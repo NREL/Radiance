@@ -223,7 +223,16 @@ again:
 		break;
 	case 'm':				/* move camera */
 		if (badcom("move"))
+#ifdef  MSTATS
+		{
+			if (badcom("memory"))
+				goto commerr;
+			printmemstats(stderr);
+			break;
+		}
+#else
 			goto commerr;
+#endif
 		getmove(args);
 		break;
 	case 'r':				/* rotate/repaint */
