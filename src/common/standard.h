@@ -8,6 +8,8 @@
 
 #include  <stdio.h>
 
+#include  <sys/types.h>
+
 #include  <fcntl.h>
 
 #include  <math.h>
@@ -74,13 +76,17 @@ extern char  errmsg[];			/* global buffer for error messages */
 #define	 copystruct(d,s)	(*(d) = *(s))
 #endif
 
-#ifndef	 BSD
+#ifdef	 BSD
+extern long  lseek();
+#else
 #define	 bcopy(s,d,n)		(void)memcpy(d,s,n)
 #define	 bzero(d,n)		(void)memset(d,0,n)
 #define	 bcmp(b1,b2,n)		memcmp(b1,b2,n)
 #define	 index			strchr
 #define	 rindex			strrchr
+extern off_t  lseek();
 #endif
+extern long  ftell();
 
 extern char  *sskip(), *sskip2();
 extern char  *getpath(), *getenv();
