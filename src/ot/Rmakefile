@@ -12,6 +12,8 @@ OPT = -O
 MACH = -DBSD -DSTRUCTASSIGN -f68881 /usr/lib/libm.il
 CFLAGS = -DSTRICT $(OPT) $(MACH)
 
+LIBDIR = /usr/local/lib/ray
+
 INSTDIR = /lumen/lumen/ray/bin.sun3
 
 COMPAT = bmalloc.o
@@ -30,6 +32,9 @@ install:	oconv
 
 clean:
 	set nonomatch; rm -f oconv *.o core
+
+oconv.o:	oconv.c
+	cc $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c oconv.c
 
 xf.o:	xf.c
 	cc $(CFLAGS) -DINVXF -c xf.c
