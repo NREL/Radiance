@@ -38,7 +38,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  BORWIDTH	5		/* border width */
 #define  BARHEIGHT	25		/* menu bar size */
 
-double  gamcor = 2.0;			/* gamma correction */
+double  gamcor = 2.2;			/* gamma correction */
 
 XRASTER  *ourras = NULL;		/* our stored raster image */
 
