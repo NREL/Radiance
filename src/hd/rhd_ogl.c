@@ -231,6 +231,8 @@ char  *id;
 	glDisable(GL_CULL_FACE);
 	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 					/* figure out sensible view */
 	pwidth = (double)DisplayWidthMM(ourdisplay, ourscreen) /
 			DisplayWidth(ourdisplay, ourscreen);
@@ -280,7 +282,8 @@ dev_close()			/* close our display and free resources */
 
 dev_clear()			/* clear our representation */
 {
-	wipeclean();
+	viewflags |= VWCHANGE;		/* pretend our view has changed */
+	wipeclean();			/* clean off display and samples */
 	rayqleft = 0;			/* hold off update */
 }
 
@@ -502,8 +505,7 @@ xferdepth()			/* load and clear depth buffer */
 	}
 				/* allocate alpha buffer for portals */
 	if (gmPortals)
-		pbuf = (GLubyte *)malloc(odev.hres*odev.vres *
-				(4*sizeof(GLubyte)));
+		pbuf = (GLubyte *)malloc(odev.hres*odev.vres*sizeof(GLubyte));
 	else
 		pbuf = NULL;
 #ifdef STEREO
@@ -514,10 +516,10 @@ xferdepth()			/* load and clear depth buffer */
 		glClear(GL_COLOR_BUFFER_BIT);
 		gmDrawPortals(0xff, -1, -1, -1);
 		glReadPixels(0, 0, odev.hres, odev.vres,
-				GL_RGBA, GL_UNSIGNED_BYTE, pbuf);
+				GL_RED, GL_UNSIGNED_BYTE, pbuf);
 	}
 	for (dbp = depthright + odev.hres*odev.vres; dbp-- > depthright; )
-		if (pbuf != NULL && pbuf[4*(dbp-depthright)]&0x40)
+		if (pbuf != NULL && pbuf[dbp-depthright]&0x40)
 			*dbp = FHUGE;
 		else
 			*dbp = mapdepth(*dbp);
@@ -532,10 +534,13 @@ xferdepth()			/* load and clear depth buffer */
 		glClear(GL_COLOR_BUFFER_BIT);		/* find portals */
 		gmDrawPortals(0xff, -1, -1, -1);
 		glReadPixels(0, 0, odev.hres, odev.vres,
-				GL_RGBA, GL_UNSIGNED_BYTE, pbuf);
+				GL_RED, GL_UNSIGNED_BYTE, pbuf);
+#ifdef DEBUG
+		glXSwapBuffers(ourdisplay, gwind);
+#endif
 	}
 	for (dbp = depthbuffer + odev.hres*odev.vres; dbp-- > depthbuffer; )
-		if (pbuf != NULL && pbuf[4*(dbp-depthbuffer)]&0x40)
+		if (pbuf != NULL && pbuf[dbp-depthbuffer]&0x40)
 			*dbp = FHUGE;
 		else
 			*dbp = mapdepth(*dbp);
@@ -845,7 +850,7 @@ register VIEW	*vp;
 		dev_zmax = 100.;
 	} else {
 		dev_zmin = 0.5*depthlim[0];
-		dev_zmax = 1.75*depthlim[1];
+		dev_zmax = 2.0*depthlim[1];
 		if (dev_zmin > dev_zmax/5.)
 			dev_zmin = dev_zmax/5.;
 	}
@@ -928,7 +933,8 @@ wipeclean()			/* prepare for redraw */
 			(VWCHANGE|VWSTEADY)) {	/* clear samples if new */
 		odClean();
 		viewflags &= ~VWCHANGE;		/* change noted */
-	}
+	} else if (viewflags & VWSTEADY)
+		odRedrawAll();
 	setglpersp(&odev.v);		/* reset view & clipping planes */
 }
 
@@ -979,7 +985,7 @@ register XKeyPressedEvent  *ekey;
 		inpresflags |= DFL(DC_RESUME);
 		return;
 	case CTRL('R'):			/* redraw screen */
-		odRemap(0);
+		odRemap(0);			/* new tone mapping */
 		glClear(GL_DEPTH_BUFFER_BIT);
 #ifdef STEREO
 		setstereobuf(STEREO_BUFFER_RIGHT);
@@ -992,12 +998,11 @@ register XKeyPressedEvent  *ekey;
 			return;
 		XRaiseWindow(ourdisplay, gwind);
 		XFlush(ourdisplay);
-		sleep(1);
-		wipeclean();			/* fresh display */
-		odRemap(1);			/* fresh tone mapping */
+		sleep(1);			/* wait for restacking */
+		dev_clear();			/* clear display and samples */
 		dev_flush();			/* draw octrees */
+		odRemap(1);			/* start fresh histogram */
 		inpresflags |= DFL(DC_REDRAW);	/* resend values from server */
-		rayqleft = 0;			/* hold off update */
 		return;
 	case 'K':			/* kill rtrace process(es) */
 		inpresflags |= DFL(DC_KILL);
@@ -1030,6 +1035,21 @@ register XExposeEvent  *eexp;
 	}
 	xmin = eexp->x; xmax = eexp->x + eexp->width;
 	ymin = odev.vres - eexp->y - eexp->height; ymax = odev.vres - eexp->y;
+
+	if (xmin <= 0 && xmax >= odev.hres-1 &&
+			ymin <= 0 && ymax >= odev.vres) {
+		DCHECK(eexp->count, WARNING, "multiple clear in fixwindow");
+		if (viewflags & VWORTHO)	/* workaround for... */
+			glDrawBuffer(GL_FRONT);	/* ...GLX window mapping bug */
+		glClear(GL_DEPTH_BUFFER_BIT);	/* clear the entire buffer */
+#ifdef STEREO
+		setstereobuf(STEREO_BUFFER_RIGHT);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		setstereobuf(STEREO_BUFFER_LEFT);
+#endif
+		odRedrawAll();
+		return;
+	}
 						/* clear portion of depth */
 	glPushAttrib(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
