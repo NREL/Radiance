@@ -93,7 +93,7 @@ int	silent = 0;		/* silent mode? */
 int	noaction = 0;		/* take no action? */
 
 char	*remsh;			/* remote shell program/script */
-char	rendopt[2048] = "";	/* rendering options */
+char	rendopt[2048];		/* rendering options */
 char	rresopt[32];		/* rendering resolution options */
 char	fresopt[32];		/* filter resolution options */
 int	pfiltalways;		/* always use pfilt? */
@@ -901,7 +901,7 @@ int	rvr;
 		strcat(combuf, viewopt(vp));
 		if (vbool(RTRACE))
 			sprintf(combuf+strlen(combuf), " -ff -fr '%s -w0 %s'",
-					rendopt, vval(OCTREE));
+					rendopt+1, vval(OCTREE));
 		if (vdef(PINTERP))
 			sprintf(combuf+strlen(combuf), " %s", vval(PINTERP));
 		if (usepfilt)
