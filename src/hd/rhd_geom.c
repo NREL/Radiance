@@ -83,24 +83,34 @@ gmEndGeom()			/* make next list current */
 
 
 int
-gmDrawGeom(clearports)		/* draw current list of octrees (and ports) */
-int	clearports;
+gmDrawGeom()			/* draw current list of octrees (and ports) */
 {
 	register int	n;
 
 	FORALLGEOM(gmCurrent, n)
 		glCallList(gmCurrent[n].listid);
-	if (!n | !clearports | !gmPortals)
-		return(n);
-				/* mark alpha channel over the portals */
-	glPushAttrib(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
+	return(n);
+}
+
+
+gmDrawPortals(r, g, b, a)	/* draw portals with specific RGBA value */
+int	r, g, b, a;
+{
+	if (!gmPortals || r<0 & g<0 & b<0 & a<0)
+		return;
+	glPushAttrib(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT|
+			GL_POLYGON_BIT|GL_LIGHTING_BIT);
+	glDisable(GL_LIGHTING);
+	glDisable(GL_DITHER);
+	glShadeModel(GL_SMOOTH);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+					/* don't actually write depth */
 	glDepthMask(GL_FALSE);
-	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_TRUE);
-	glClear(GL_COLOR_BUFFER_BIT);
-	glColor4ub(0, 0, 0, 0xff);	/* write alpha buffer as mask */
+					/* draw only selected channels */
+	glColorMask(r>=0, g>=0, b>=0, a>=0);
+	glColor4ub(r&0xff, g&0xff, b&0xff, a&0xff);
 	glCallList(gmPortals);		/* draw them portals */
 	glPopAttrib();
-	return(n);
 }
 
 
