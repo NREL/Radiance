@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -291,11 +291,18 @@ struct hdStruct  *hp;
 		colrs_gambs(inl, hp->x);
 		if (hp->dataBits == 16) {
 			register unsigned short  *dp;
+			register int  v;
 			dp = (unsigned short *)tarData + j*hp->x;
 			for (i = 0; i < hp->x; i++) {
-				*dp = ((inl[i][RED]+(random()&7)) & 0xf8)<<7;
-				*dp |= ((inl[i][GRN]+(random()&7)) & 0xf8)<<2;
-				*dp++ |= (inl[i][BLU]+(random()&7))>>3;
+				v = inl[i][RED] + (random()&7);
+				if (v > 255) v = 255;
+				*dp = (v&0xf8)<<7;
+				v = inl[i][GRN] + (random()&7);
+				if (v > 255) v = 255;
+				*dp |= (v&0xf8)<<2;
+				v = inl[i][BLU] + (random()&7);
+				if (v > 255) v = 255;
+				*dp++ |= v>>3;
 			}
 		} else {	/* hp->dataBits == 24 */
 			register unsigned char  *dp;
