@@ -69,7 +69,7 @@ MGF_LIB:
 		CFLAGS="$(OPT) $(MACH) '-DMEM_PTR=char *' -DNOPROTO" ; \
 	cp libmgf.a ../../lib
 
-mgf2rad.o:	mgflib/parser.h tmesh.h
+mgf2rad.o:	mgflib/parser.h tmesh.h ../common/color.h
 	$(CC) $(CFLAGS) '-DMEM_PTR=char *' -DNOPROTO -c mgf2rad.c
 
 mgf2meta.o:	mgflib/parser.h
