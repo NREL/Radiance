@@ -38,8 +38,6 @@ static  gaussamp();
  *	red 	grn	blu	rspec	rough	trans	tspec
  */
 
-#define  BSPEC(m)	(6.0)		/* specularity parameter b */
-
 				/* specularity flags */
 #define  SP_REFL	01		/* has reflected specular component */
 #define  SP_TRAN	02		/* has transmitted specular */
@@ -156,7 +154,6 @@ register RAY  *r;
 {
 	NORMDAT  nd;
 	double  transtest, transdist;
-	double  dtmp;
 	COLOR  ctmp;
 	register int  i;
 						/* easy shadow test */
@@ -195,16 +192,8 @@ register RAY  *r;
 		else
 			setcolor(nd.scolor, 1.0, 1.0, 1.0);
 		scalecolor(nd.scolor, nd.rspec);
-						/* improved model */
-		dtmp = exp(-BSPEC(m)*nd.pdot);
-		for (i = 0; i < 3; i++)
-			colval(nd.scolor,i) += (1.0-colval(nd.scolor,i))*dtmp;
-		nd.rspec += (1.0-nd.rspec)*dtmp;
 						/* check threshold */
-		if (!(nd.specfl & SP_PURE) &&
-				specthresh > FTINY &&
-				(specthresh >= 1.-FTINY ||
-				specthresh + .05 - .1*frandom() > nd.rspec))
+		if (!(nd.specfl & SP_PURE) && specthresh >= nd.rspec-FTINY)
 			nd.specfl |= SP_RBLT;
 						/* compute reflected ray */
 		for (i = 0; i < 3; i++)
@@ -231,9 +220,8 @@ register RAY  *r;
 		if (nd.tspec > FTINY) {
 			nd.specfl |= SP_TRAN;
 							/* check threshold */
-			if (!(nd.specfl & SP_PURE) && specthresh > FTINY &&
-					(specthresh >= 1.-FTINY ||
-				specthresh + .05 - .1*frandom() > nd.tspec))
+			if (!(nd.specfl & SP_PURE) &&
+					specthresh >= nd.tspec-FTINY)
 				nd.specfl |= SP_TBLT;
 			if (r->crtype & SHADOW ||
 					DOT(r->pert,r->pert) <= FTINY*FTINY) {
