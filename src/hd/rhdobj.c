@@ -432,6 +432,8 @@ dobj_command(cmd, args)		/* run object display command */
 char	*cmd;
 register char	*args;
 {
+	int	somechange = 0;
+	VIEW	sameview;
 	int	cn, na, doxfm;
 	register int	nn;
 	char	*alist[MAXAC+1], *nm;
@@ -465,9 +467,9 @@ register char	*args;
 	case DO_UNLOAD:				/* clear an object */
 		if (na > 1) goto toomany;
 		if (na && alist[0][0] == '*')
-			dobj_cleanup();
+			somechange += dobj_cleanup();
 		else
-			dobj_unload(na ? alist[0] : curname);
+			somechange += dobj_unload(na ? alist[0] : curname);
 		break;
 	case DO_XFORM:				/* transform object */
 	case DO_MOVE:
@@ -478,10 +480,10 @@ register char	*args;
 		}
 		if (cn == DO_MOVE && nn >= na)
 			return(cmderror(cn, "missing transform"));
-		dobj_xform(nm, cn==DO_MOVE, na-nn, alist+nn);
+		somechange += dobj_xform(nm, cn==DO_MOVE, na-nn, alist+nn);
 		break;
 	case DO_UNMOVE:				/* undo last transform */
-		dobj_unmove();
+		somechange += dobj_unmove();
 		break;
 	case DO_OBJECT:				/* print object statistics */
 		if (dobj_putstats(na ? alist[0] : curname, sstdout))
@@ -508,7 +510,7 @@ register char	*args;
 		if (!dobj_dup(nm, alist[nn-1]))
 			break;
 		if (na > nn)
-			dobj_xform(curname, 1, na-nn, alist+nn);
+			somechange += dobj_xform(curname, 1, na-nn, alist+nn);
 		else
 			curobj->drawcode = DO_HIDE;
 		savedxf(curobj);
@@ -518,11 +520,15 @@ register char	*args;
 	case DO_HIDE:
 		if (na > 1) goto toomany;
 		dobj_lighting(na ? alist[0] : curname, cn);
+		somechange++;
 		break;
 	default:
 		error(CONSISTENCY, "bad command id in dobj_command");
 	}
-	dev_view(&odev.v);			/* redraw */
+	if (somechange) {
+		copystruct(&sameview, &odev.v);	/* make 'em think new view */
+		dev_view(&sameview);		/* redraw */
+	}
 	return(cn);
 toomany:
 	return(cmderror(cn, "too many arguments"));
@@ -571,6 +577,7 @@ char	*oct, *nam;
 	op->xfav[op->xfac=0] = NULL;
 					/* load octree into display list */
 	dolights = 0;
+	domats = 1;
 	op->listid = rgl_octlist(fpath, op->center, &op->radius);
 					/* start rtrace */
 	rtargv[RTARGC-1] = fpath;
