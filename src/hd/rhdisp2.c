@@ -29,7 +29,7 @@ static VOXL voxel[MAXVOXEL] = {{-1}};	/* current voxel list */
 
 static struct beamcomp {
 	int	hd;		/* holodeck section number */
-	int4	bi;		/* beam index */
+	int	bi;		/* beam index */
 	int4	nr;		/* number of samples desired */
 } *cbeam = NULL;	/* current beam list */
 
@@ -307,7 +307,7 @@ register struct cellact	*cap;
 		}
 	}
 #ifdef DEBUG
-	if (axmax < 0.)
+	if (axmax < 0)
 		error(CONSISTENCY, "botched axis computation in docell");
 #endif
 				/* compute offset vectors */
@@ -349,12 +349,16 @@ struct cellact	*cap;
 }
 
 
-beam_init()			/* clear beam list for new view(s) */
+beam_init(fresh)		/* clear beam list for new view(s) */
+int	fresh;
 {
 	register int	i;
-					/* clear desire flags */
-	for (i = ncbeams+xcbeams; i--; )
-		cbeam[i].nr = 0;
+
+	if (fresh)			/* discard old beams? */
+		ncbeams = xcbeams = 0;
+	else				/* else clear sample requests */
+		for (i = ncbeams+xcbeams; i--; )
+			cbeam[i].nr = 0;
 	voxel[0].hd = -1;		/* clear voxel list */
 }
 
@@ -384,8 +388,8 @@ int
 beam_sync(all)			/* update beam list on server */
 int	all;
 {
-					/* sort list to put orphans at end */
-	cbeamsort(0);
+					/* sort list (put orphans at end) */
+	cbeamsort(all < 0);
 	if (all)
 		cbeamop(DR_NEWSET, cbeam, ncbeams);
 	else
