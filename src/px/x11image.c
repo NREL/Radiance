@@ -653,10 +653,11 @@ add2icon(y, scan)		/* add a scanline to our icon data */
 int  y;
 COLR  *scan;
 {
-	static char  *dp = NULL;
 	static short  cerr[ICONSIZ];
+	static int  ynext;
+	static char  *dp;
 	register int  err;
-	register int	x, xi;
+	register int	x, ti;
 
 	if (iconheight == 0) {		/* initialize */
 		if (xmax <= ICONSIZ && ymax <= ICONSIZ) {
@@ -669,26 +670,24 @@ COLR  *scan;
 			iconwidth = ICONSIZ*xmax/ymax;
 			iconheight = ICONSIZ;
 		}
+		ynext = 0;
 		dp = icondata - 1;
 	}
-	if (dp == NULL)			/* done already */
-		return;
-	if (y % (ymax/iconheight))	/* skip this one */
+	if (y < ynext*ymax/iconheight)	/* skip this one */
 		return;
 	err = 0;
 	for (x = 0; x < iconwidth; x++) {
 		if (!(x&7))
 			*++dp = 0;
-		xi = x*xmax/iconwidth;
-		err += normbright(scan[xi]) + cerr[x];
+		ti = x*xmax/iconwidth;
+		err += normbright(scan[ti]) + cerr[x];
 		if (err > 127)
 			err -= 255;
 		else
 			*dp |= 1<<(x&07);
 		cerr[x] = err >>= 1;
 	}
-	if (y >= ymax - ymax/iconheight)	/* all done */
-		dp = NULL;
+	ynext++;
 }
 
 
