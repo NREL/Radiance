@@ -161,10 +161,10 @@ char	*argv[];
 	dev_open(radfile = argv[i]);
 					/* load octree or scene files */
 	if (octree != NULL) {
-		displist = rgl_octlist(octree, NULL, NULL);
+		displist = rgl_octlist(octree, NULL, NULL, NULL);
 		startrtrace(octree);
 	} else
-		displist = rgl_filelist(nscenef, scene);
+		displist = rgl_filelist(nscenef, scene, NULL);
 					/* set initial view */
 	dev_view(currentview < 0 ? &thisview : vwl[currentview].v);
 					/* input/render loop */
