@@ -120,8 +120,12 @@ int	n;
 	int	d;
 	register int4	i, p;
 
-	if (n <= 0)
+	if (n <= 0) {
+#ifdef DEBUG
+		error(WARNING, "neighborless sample in kill_occl");
+#endif
 		return(1);
+	}
 	p = v*hres + h;
 	forequad[0][0] = forequad[0][1] = forequad[1][0] = forequad[1][1] = 0;
 	for (i = n; i--; ) {
@@ -147,7 +151,7 @@ int	n;
 	int	dis[NNEIGH], ndis;
 	COLOR	mykern[MAXRAD2];
 	int4	maxr2;
-	double	w, d;
+	double	d;
 	register int4	p, r2;
 	int	i, r, maxr, h2, v2;
 
@@ -192,8 +196,7 @@ int	n;
 			}
 			if (i >= 0) continue;	/* outside edge */
 			addcolor(mypixel[v2*hres+h2], mykern[r2]);
-			myweight[v2*hres+h2] += pixWeight[r2] *
-							myweight[v*hres+h];
+			myweight[v2*hres+h2] += pixWeight[r2] * myweight[p];
 		}
 	}
 	return(1);
@@ -202,11 +205,11 @@ int	n;
 
 pixFlush()			/* done with beams -- flush pixel values */
 {
+	if (pixWeight[0] <= FTINY)
+		init_wfunc();		/* initialize weighting function */
 	reset_flags();			/* set occupancy flags */
 	meet_neighbors(kill_occl);	/* eliminate occlusion errors */
 	reset_flags();			/* reset occupancy flags */
-	if (pixWeight[0] <= FTINY)
-		init_wfunc();		/* initialize weighting function */
 	meet_neighbors(grow_samp);	/* grow valid samples over image */
 	free((char *)pixFlags);		/* free pixel flags */
 	pixFlags = NULL;
