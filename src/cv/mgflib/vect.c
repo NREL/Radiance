@@ -9,6 +9,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #ifndef M_PI
 #define M_PI	3.14159265358979323846
 #endif
+#define PI	((double)M_PI)
 
 #define EPSILON 1e-6
 
@@ -132,7 +133,7 @@ float vect_angle (Vector v1, Vector v2)
 	else if (cos_theta >= +1.0)
 	    angle = 0.0;
 	else
-	    angle = (180.0/M_PI) * acos(cos_theta);
+	    angle = (180.0/PI) * acos(cos_theta);
     }
 
     return angle;
@@ -162,8 +163,8 @@ void vect_rotate (Vector v1, Vector v2, int axis, float angle)
 {
     float  cosa, sina;
 
-    cosa = cos ((M_PI/180.0) * angle);
-    sina = sin ((M_PI/180.0) * angle);
+    cosa = cos ((PI/180.0) * angle);
+    sina = sin ((PI/180.0) * angle);
 
     switch (axis) {
 	case X:
@@ -193,8 +194,8 @@ void vect_axis_rotate (Vector v1, Vector v2, Vector axis, float angle)
     float  cosa, sina;
     Matrix mat;
 
-    cosa = cos ((M_PI/180.0) * angle);
-    sina = sin ((M_PI/180.0) * angle);
+    cosa = cos ((PI/180.0) * angle);
+    sina = sin ((PI/180.0) * angle);
 
     mat[0][0] = (axis[X] * axis[X]) + ((1.0 - (axis[X] * axis[X]))*cosa);
     mat[0][1] = (axis[X] * axis[Y] * (1.0 - cosa)) - (axis[Z] * sina);
@@ -260,8 +261,8 @@ void mat_rotate (Matrix mat1, Matrix mat2, int axis, float angle)
     Matrix mat;
     float  cosa, sina;
 
-    cosa = cos ((M_PI/180.0) * angle);
-    sina = sin ((M_PI/180.0) * angle);
+    cosa = cos ((PI/180.0) * angle);
+    sina = sin ((PI/180.0) * angle);
 
     mat_identity (mat);
 
@@ -297,8 +298,8 @@ void mat_axis_rotate (Matrix mat1, Matrix mat2, Vector axis, float angle)
     float  cosa, sina;
     Matrix mat;
 
-    cosa = cos ((M_PI/180.0) * angle);
-    sina = sin ((M_PI/180.0) * angle);
+    cosa = cos ((PI/180.0) * angle);
+    sina = sin ((PI/180.0) * angle);
 
     mat[0][0] = (axis[X] * axis[X]) + ((1.0 - (axis[X] * axis[X]))*cosa);
     mat[0][1] = (axis[X] * axis[Y] * (1.0 - cosa)) - (axis[Z] * sina);
@@ -422,9 +423,9 @@ void mat_decode (Matrix mat, Vector scale,  Vector shear, Vector rotate,
     }
 
     /* Convert the rotations to degrees */
-    rotate[X] = (180.0/M_PI)*rotate[X];
-    rotate[Y] = (180.0/M_PI)*rotate[Y];
-    rotate[Z] = (180.0/M_PI)*rotate[Z];
+    rotate[X] = (180.0/PI)*rotate[X];
+    rotate[Y] = (180.0/PI)*rotate[Y];
+    rotate[Z] = (180.0/PI)*rotate[Z];
 }
 
 
