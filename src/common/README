@@ -40,6 +40,7 @@ ealloc.c	memory routines which call quit on error
 eputs.c		default routine for error output
 erf.c		BSD implementation of erf() and erfc()
 error.c		standard error reporting function
+expandarg.c	expand command-line argument to read from environ or file
 face.c		routines dealing with polygonal faces
 fgetline.c	read line with escaped newlines
 fgetword.c	read white space separated words from stream
