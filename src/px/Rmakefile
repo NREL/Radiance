@@ -19,12 +19,12 @@ PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar -lm
 
 PROGS = pfilt ttyimage oki20c paintjet mt160r getinfo psign \
 greyscale pvalue pcompos colorscale prot ra_pr ra_pr24 \
-ra_t8 ra_bn ra_t16 pcomb pinterp x11image xshowtrace pflip
+ra_t8 ra_bn ra_t16 pcomb pinterp ximage xshowtrace pflip
 
 all:	$(PROGS)
 
-x10:	ximage
-	cp ximage $(INSTDIR)
+x10:	x10image
+	cp x10image $(INSTDIR)
 
 aed:	aedimage
 	cp aedimage $(INSTDIR)
@@ -118,14 +118,14 @@ ra_im: ra_im.o
 ra_bn: ra_bn.o color.o colrops.o resolu.o header.o
 	cc $(CFLAGS) -o ra_bn ra_bn.o color.o colrops.o resolu.o header.o -lm
 
-ximage:	ximage.o color.o colrops.o resolu.o ciq.o cut.o closest.o ealloc.o \
-xraster.o header.o biq.o image.o fvect.o
-	cc $(CFLAGS) -o ximage ximage.o color.o colrops.o resolu.o xraster.o \
+x10image:	ximage.o color.o colrops.o resolu.o ciq.o cut.o closest.o  \
+ealloc.o xraster.o header.o biq.o image.o fvect.o
+	cc $(CFLAGS) -o x10image ximage.o color.o colrops.o resolu.o xraster.o \
 header.o ciq.o cut.o closest.o ealloc.o biq.o image.o fvect.o -lX -lm
 
-x11image:	x11image.o color.o colrops.o resolu.o ciq.o cut.o closest.o \
+ximage:	x11image.o color.o colrops.o resolu.o ciq.o cut.o closest.o \
 ealloc.o x11raster.o header.o biq.o image.o fvect.o
-	cc $(CFLAGS) -o x11image x11image.o color.o colrops.o resolu.o \
+	cc $(CFLAGS) -o ximage x11image.o color.o colrops.o resolu.o \
 x11raster.o header.o ciq.o cut.o closest.o ealloc.o biq.o image.o \
 fvect.o -lX11 -lm
 
