@@ -237,6 +237,7 @@ char  *p;			/* data for f */
 {
 	extern int  (*trace)();
 	register int  sn;
+	register CONTRIB  *scp;
 	SRCINDEX  si;
 	int  nshadcheck, ncnts;
 	int  nhits;
@@ -258,19 +259,20 @@ char  *p;			/* data for f */
 				error(SYSTEM, "out of memory in direct");
 		}
 		cntord[sn].sndx = sn;
-		srccnt[sn].sno = sr.rsrc;
+		scp = srccnt + sn;
+		scp->sno = sr.rsrc;
 						/* compute coefficient */
-		(*f)(srccnt[sn].coef, p, sr.rdir, si.dom);
-		cntord[sn].brt = bright(srccnt[sn].coef);
+		(*f)(scp->coef, p, sr.rdir, si.dom);
+		cntord[sn].brt = bright(scp->coef);
 		if (cntord[sn].brt <= 0.0)
 			continue;
-		VCOPY(srccnt[sn].dir, sr.rdir);
+		VCOPY(scp->dir, sr.rdir);
 						/* compute potential */
 		sr.revf = srcvalue;
 		rayvalue(&sr);
-		copycolor(srccnt[sn].val, sr.rcol);
-		multcolor(srccnt[sn].val, srccnt[sn].coef);
-		cntord[sn].brt = bright(srccnt[sn].val);
+		copycolor(scp->val, sr.rcol);
+		multcolor(scp->val, scp->coef);
+		cntord[sn].brt = bright(scp->val);
 	}
 						/* sort contributions */
 	qsort(cntord, sn, sizeof(CNTPTR), cntcmp);
@@ -304,28 +306,28 @@ char  *p;			/* data for f */
 				cntord[sn].brt-cntord[sn+nshadcheck].brt)
 				< ourthresh*bright(r->rcol))
 			break;
+		scp = srccnt + cntord[sn].sndx;
 						/* test for hit */
 		rayorigin(&sr, r, SHADOW, 1.0);
-		VCOPY(sr.rdir, srccnt[cntord[sn].sndx].dir);
-		sr.rsrc = srccnt[cntord[sn].sndx].sno;
-		source[sr.rsrc].ntests++;	/* keep statistics */
+		VCOPY(sr.rdir, scp->dir);
+		sr.rsrc = scp->sno;
+		source[scp->sno].ntests++;	/* keep statistics */
 		if (localhit(&sr, &thescene) &&
-				( sr.ro != source[sr.rsrc].so ||
-				source[sr.rsrc].sflags & SFOLLOW )) {
+				( sr.ro != source[scp->sno].so ||
+				source[scp->sno].sflags & SFOLLOW )) {
 						/* follow entire path */
 			raycont(&sr);
 			if (trace != NULL)
 				(*trace)(&sr);	/* trace execution */
 			if (bright(sr.rcol) <= FTINY)
 				continue;	/* missed! */
-			copycolor(srccnt[cntord[sn].sndx].val, sr.rcol);
-			multcolor(srccnt[cntord[sn].sndx].val,
-					srccnt[cntord[sn].sndx].coef);
+			copycolor(scp->val, sr.rcol);
+			multcolor(scp->val, scp->coef);
 		}
 						/* add contribution if hit */
-		addcolor(r->rcol, srccnt[cntord[sn].sndx].val);
+		addcolor(r->rcol, scp->val);
 		nhits++;
-		source[sr.rsrc].nhits++;
+		source[scp->sno].nhits++;
 	}
 					/* surface hit rate */
 	if (sn > 0)
@@ -339,11 +341,11 @@ char  *p;			/* data for f */
 #endif
 					/* add in untested sources */
 	for ( ; sn < ncnts; sn++) {
-		sr.rsrc = srccnt[cntord[sn].sndx].sno;
-		prob = hwt * (double)source[sr.rsrc].nhits /
-				(double)source[sr.rsrc].ntests;
-		scalecolor(srccnt[cntord[sn].sndx].val, prob);
-		addcolor(r->rcol, srccnt[cntord[sn].sndx].val);
+		scp = srccnt + cntord[sn].sndx;
+		prob = hwt * (double)source[scp->sno].nhits /
+				(double)source[scp->sno].ntests;
+		scalecolor(scp->val, prob);
+		addcolor(r->rcol, scp->val);
 	}
 }
 
