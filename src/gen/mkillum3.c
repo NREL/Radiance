@@ -95,43 +95,48 @@ float  *da;
 int  n, m;
 FVECT  u, v, w;
 {
+	float  *Ninv;
 	FILE  *dfp;
-	float  col[3];
 	int  i;
 
+	if ((Ninv = (float *)malloc(3*m*sizeof(float))) == NULL)
+		error(SYSTEM, "out of memory in flatout");
+	compinv(Ninv, da, m);
 	if (il->flags & IL_COLDST) {
 		printf("\n%s %s %s%s", VOIDID, ofun[PAT_CDATA].funame,
 				il->matname, DSTSUF);
-		printf("\n9 h_red h_grn h_blu");
+		printf("\n9 red green blue");
 		for (i = 0; i < 3; i++) {
 			dfp = dfopen(il, DATORD[i]);
 			fprintf(dfp, "2\n%f %f %d\n%f %f %d\n",
-					1.-.5/n, .5/n, n,
+					1.+.5/n, .5/n, n+1,
 					0., 2.*PI, m+1);
+			colorout(i, Ninv, 1, m, 1./il->nsamps/il->col[i], dfp);
 			colorout(i, da, n, m, 1./il->nsamps/il->col[i], dfp);
+			fputeol(dfp);
 			fclose(dfp);
 			printf(" %s", dfname(il, DATORD[i]));
 		}
 	} else {
 		printf("\n%s %s %s%s", VOIDID, ofun[PAT_BDATA].funame,
 				il->matname, DSTSUF);
-		printf("\n5 h_gry");
+		printf("\n5 noneg");
 		dfp = dfopen(il, 0);
-		fprintf(dfp, "2\n%f %f %d\n%f %f %d\n", 1.-.5/n, .5/n, n,
+		fprintf(dfp, "2\n%f %f %d\n%f %f %d\n", 1.+.5/n, .5/n, n+1,
 				0., 2.*PI, m+1);
+		brightout(Ninv, 1, m, 1./il->nsamps/brt(il->col), dfp);
 		brightout(da, n, m, 1./il->nsamps/brt(il->col), dfp);
+		fputeol(dfp);
 		fclose(dfp);
 		printf(" %s", dfname(il, 0));
 	}
 	printf("\n\t%s il_alth il_azih", FNCFNM);
-	printf("\n0\n13\n");
-	compavg(col, da, m, il->nsamps);
-	printf("\t%f\t%f\t%f\t%f\n", col[0]/il->col[0],
-			col[1]/il->col[1], col[2]/il->col[2], 1.-.5/n);
+	printf("\n0\n9\n");
 	printf("\t%f\t%f\t%f\n", u[0], u[1], u[2]);
 	printf("\t%f\t%f\t%f\n", v[0], v[1], v[2]);
 	printf("\t%f\t%f\t%f\n", w[0], w[1], w[2]);
 	il->dfnum++;
+	free((char *)Ninv);
 }
 
 
@@ -140,44 +145,50 @@ struct illum_args  *il;
 float  *da;
 int  n, m;
 {
+	float  *Ninv, *Sinv;
 	FILE  *dfp;
-	float  col[3];
 	int  i;
 
+	if ((Ninv = (float *)malloc(3*m*sizeof(float))) == NULL ||
+			(Sinv = (float *)malloc(3*m*sizeof(float))) == NULL)
+		error(SYSTEM, "out of memory in flatout");
+	compinv(Ninv, da, m);
+	compinv(Sinv, da+3*m*(n-1), m);
 	if (il->flags & IL_COLDST) {
 		printf("\n%s %s %s%s", VOIDID, ofun[PAT_CDATA].funame,
 				il->matname, DSTSUF);
-		printf("\n9 s_red s_grn s_blu");
+		printf("\n9 red green blue");
 		for (i = 0; i < 3; i++) {
 			dfp = dfopen(il, DATORD[i]);
 			fprintf(dfp, "2\n%f %f %d\n%f %f %d\n",
-					1.-1./n, -1.+1./n, n,
+					1.+1./n, -1.-1./n, n+2,
 					0., 2.*PI, m+1);
+			colorout(i, Ninv, 1, m, 1./il->nsamps/il->col[i], dfp);
 			colorout(i, da, n, m, 1./il->nsamps/il->col[i], dfp);
+			colorout(i, Sinv, 1, m, 1./il->nsamps/il->col[i], dfp);
+			fputeol(dfp);
 			fclose(dfp);
 			printf(" %s", dfname(il, DATORD[i]));
 		}
 	} else {
 		printf("\n%s %s %s%s", VOIDID, ofun[PAT_BDATA].funame,
 				il->matname, DSTSUF);
-		printf("\n5 s_gry");
+		printf("\n5 noneg");
 		dfp = dfopen(il, 0);
 		fprintf(dfp, "2\n%f %f %d\n%f %f %d\n", 1.-1./n, -1.+1./n, n,
 				0., 2.*PI, m+1);
+		brightout(Ninv, 1, m, 1./il->nsamps/brt(il->col), dfp);
 		brightout(da, n, m, 1./il->nsamps/brt(il->col), dfp);
+		brightout(Sinv, 1, m, 1./il->nsamps/brt(il->col), dfp);
+		fputeol(dfp);
 		fclose(dfp);
 		printf(" %s", dfname(il, 0));
 	}
 	printf("\n\t%s il_alt il_azi", FNCFNM);
-	printf("\n0\n7\n");
-	compavg(col, da, m, il->nsamps);		/* north pole */
-	printf("\t%f\t%f\t%f\n", col[0]/il->col[0],
-			col[1]/il->col[1], col[2]/il->col[2]);
-	compavg(col, da+(n-1)*m*3, m, il->nsamps);	/* south pole */
-	printf("\t%f\t%f\t%f\n", col[0]/il->col[0],
-			col[1]/il->col[1], col[2]/il->col[2]);
-	printf("\t%f\n", 1.-1./n);
+	printf("\n0\n0\n");
 	il->dfnum++;
+	free((char *)Ninv);
+	free((char *)Sinv);
 }
 
 
@@ -210,10 +221,10 @@ OBJREC  *ob;
 }
 
 
-compavg(col, da, n, ns)		/* compute average for set of data values */
+compavg(col, da, n)		/* compute average for set of data values */
 float  col[3];
 register float  *da;
-int  n, ns;
+int  n;
 {
 	register int  i;
 
@@ -225,7 +236,22 @@ int  n, ns;
 		col[2] += *da++;
 	}
 	for (i = 0; i < 3; i++)
-		col[i] /= (double)(n*ns);
+		col[i] /= (double)n;
+}
+
+
+compinv(rinv, rp, m)		/* compute other side of row average */
+register float  *rinv, *rp;
+int  m;
+{
+	float  avg[3];
+
+	compavg(avg, rp, m);		/* row average */
+	while (m-- > 0) {
+		*rinv++ = 2.*avg[0] - *rp++;
+		*rinv++ = 2.*avg[1] - *rp++;
+		*rinv++ = 2.*avg[2] - *rp++;
+	}
 }
 
 
@@ -234,7 +260,12 @@ register struct illum_args  *il;
 float  *da;
 int  n;
 {
-	compavg(il->col, da, n, il->nsamps);
+	compavg(il->col, da, n);	/* average */
+	if (il->nsamps > 1) {
+		il->col[0] /= (double)il->nsamps;
+		il->col[1] /= (double)il->nsamps;
+		il->col[2] /= (double)il->nsamps;
+	}
 					/* brighter than minimum? */
 	return(brt(il->col) > il->minbrt+FTINY);
 }
@@ -246,7 +277,7 @@ fputnum(d, fp)			/* put out a number to fp */
 double  d;
 FILE  *fp;
 {
-	if (colmcnt++ % 6 == 0)
+	if (colmcnt++ % 5 == 0)
 		putc('\n', fp);
 	fprintf(fp, " %11e", d);
 }
@@ -276,7 +307,6 @@ FILE  *fp;
 		}
 		fputnum(mult*da[p-3*m], fp);	/* wrap phi */
 	}
-	fputeol(fp);
 }
 
 
@@ -295,5 +325,4 @@ FILE  *fp;
 		}
 		fputnum(mult*brt(da-3*m), fp);	/* wrap phi */
 	}
-	fputeol(fp);
 }
