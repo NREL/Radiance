@@ -13,7 +13,7 @@
 #define int2	short
 #endif
 #ifndef int4
-#define int4	long
+#define int4	int
 #endif
 				/* child ordering */
 #define	DL		0		/* down left */
@@ -55,3 +55,6 @@ extern struct rleaves {
 extern RTREE	qtrunk;		/* trunk of quadtree */
 extern double	qtDepthEps;	/* epsilon to compare depths (z fraction) */
 extern int	qtMinNodesiz;	/* minimum node dimension (pixels) */
+
+extern int4	encodedir();
+extern double	fdir2diff(), dir2diff();
