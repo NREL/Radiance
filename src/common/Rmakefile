@@ -16,7 +16,7 @@ PICOBJ = color.o header.o image.o lamps.o resolu.o rexpr.o spec_rgb.o \
 	colrops.o 
 
 STDOBJ = fgetline.o fropen.o linregr.o xf.o mat4.o fvect.o urand.o \
-	calexpr.o caldefn.o calfunc.o calprnt.o \
+	urind.o peano.o calexpr.o caldefn.o calfunc.o calprnt.o \
 	process.o getpath.o error.o savestr.o savqstr.o \
 	fgetword.o words.o cputs.o wputs.o eputs.o quit.o
 
