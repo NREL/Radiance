@@ -77,6 +77,7 @@ extern long  nrays;			/* number of rays traced */
 
 #define  pixjitter()	(.5+dstrpix*(.5-frandom()))
 
+#define  RFTEMPLATE	"rfXXXXXX"
 #define  HFTEMPLATE	"/tmp/hfXXXXXX"
 
 static char  *hfname = NULL;		/* header file name */
@@ -179,7 +180,8 @@ char  *pout, *zout, *prvr;
  */
 {
 	extern char  *rindex(), *strncpy(), *strcat();
-	char  fbuf[128], fbuf2[128], *zf;
+	char  fbuf[128], fbuf2[128];
+	register char  *cp;
 	RESOLU  rs;
 	double  pa;
 					/* finished writing header */
@@ -197,7 +199,7 @@ char  *pout, *zout, *prvr;
 	if (seq <= 0)
 		seq = 0;
 	else if (prvr != NULL && isint(prvr)) {
-		int  rn;			/* skip to specified view */
+		register int  rn;		/* skip to specified view */
 		if ((rn = atoi(prvr)) < seq)
 			error(USER, "recover frame less than start frame");
 		if (pout == NULL)
@@ -211,9 +213,9 @@ char  *pout, *zout, *prvr;
 		sprintf(fbuf, pout, seq);
 		if (!strcmp(prvr, fbuf)) {	/* rename recover file */
 			fbuf2[0] = '\0';
-			if ((prvr = rindex(fbuf, '/')) != NULL)
-				strncpy(fbuf2, fbuf, prvr-fbuf+1);
-			strcat(fbuf2, "rfXXXXXX");
+			if ((cp = rindex(fbuf, '/')) != NULL)
+				strncpy(fbuf2, fbuf, cp-fbuf+1);
+			strcat(fbuf2, RFTEMPLATE);
 			prvr = mktemp(fbuf2);
 			if (rename(fbuf, prvr) < 0 && errno != ENOENT) {
 				sprintf(errmsg,
@@ -244,13 +246,12 @@ char  *pout, *zout, *prvr;
 			"cannot recover view parameters from \"%s\"", prvr);
 				error(WARNING, errmsg);
 			} else {
-				char  *err;
-				if ((err = setview(&ourview)) != NULL)
-					error(USER, err);
 				pa = 0.0;
 				hres = scanlen(&rs);
 				vres = numscans(&rs);
 			}
+		if ((cp = setview(&ourview)) != NULL)
+			error(USER, cp);
 		normaspect(viewaspect(&ourview), &pa, &hres, &vres);
 		if (seq) {
 			if (ralrm > 0) {
@@ -267,10 +268,10 @@ char  *pout, *zout, *prvr;
 		fputformat(COLRFMT, stdout);
 		putchar('\n');
 		if (zout != NULL)
-			sprintf(zf=fbuf, zout, seq);
+			sprintf(cp=fbuf, zout, seq);
 		else
-			zf = NULL;
-		render(zf, prvr);
+			cp = NULL;
+		render(cp, prvr);
 		prvr = NULL;
 	} while (seq++);
 }
@@ -279,14 +280,11 @@ char  *pout, *zout, *prvr;
 nextview(fp)				/* get next view from fp */
 FILE  *fp;
 {
-	char  linebuf[256], *err;
+	char  linebuf[256];
 
 	while (fgets(linebuf, sizeof(linebuf), fp) != NULL)
-		if (isview(linebuf) && sscanview(&ourview, linebuf) > 0) {
-			if ((err = setview(&ourview)) != NULL)
-				error(USER, err);
+		if (isview(linebuf) && sscanview(&ourview, linebuf) > 0)
 			return(0);
-		}
 	return(EOF);
 }	
 
@@ -615,7 +613,8 @@ char  *oldfile;
 	unlink(oldfile);
 	return(y);
 writerr:
-	error(SYSTEM, "write error in salvage");
+	sprintf(errmsg, "write error during recovery of \"%s\"", oldfile);
+	error(SYSTEM, errmsg);
 }
 
 
