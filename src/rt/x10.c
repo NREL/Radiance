@@ -67,8 +67,6 @@ static int  c_last = 0;			/* last character in queue */
 
 extern char  *malloc();
 
-int  xnewcolr();
-
 int  x_close(), x_clear(), x_paintr(), x_errout(),
 		x_getcur(), x_comout(), x_comin();
 
@@ -92,7 +90,7 @@ char  *name;
 		stderr_v("not enough colors\n");
 		return(NULL);
 	}
-	make_cmap(GAMMA);			/* make color map */
+	make_gmap(GAMMA);			/* make color map */
 	if (getpixels() < 0)			/* get pixels */
 		stderr_v("cannot allocate colors\n");
 
@@ -158,7 +156,7 @@ int  xres, yres;
 		gheight = yres;
 	} else						/* just clear */
 		XClear(gwind);
-	if (new_ctab(ncolors, xnewcolr) == 0) {
+	if (new_ctab(ncolors) == 0) {
 		stderr_v("Color allocation error\n");
 		quit(1);
 	}
@@ -176,11 +174,12 @@ COLOR  col;
 int  xmin, ymin, xmax, ymax;
 {
 	extern long  nrays;		/* global ray count */
+	extern int  xnewcolr();		/* pixel assignment routine */
 	static long  lastflush = 0;	/* ray count at last flush */
 
 	if (ncolors > 0) {
 		XPixSet(gwind, xmin, gheight-ymax, xmax-xmin, ymax-ymin,
-				pixval[get_pixel(col)]);
+				pixval[get_pixel(col, xnewcolr)]);
 	}
 	if (nrays - lastflush >= WFLUSH) {
 		if (ncolors <= 0)	/* output necessary for death */
@@ -323,7 +322,7 @@ getevent()			/* get next event */
 				stderr_v("cannot allocate colors\n");
 				break;
 			}
-			new_ctab(ncolors, xnewcolr);
+			new_ctab(ncolors);
 		}
 		/* fall through */
 	case ExposeRegion:

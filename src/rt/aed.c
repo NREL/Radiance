@@ -56,8 +56,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  COMHT		16		/* height of command line */
 #define  COMCW		63		/* maximum chars on command line */
 
-int  anewcolr();
-
 int  aed_close(), aed_clear(), aed_paintr(),
 		aed_getcur(), aed_comout(), aed_errout();
 
@@ -88,7 +86,7 @@ char  *name;
 	byte(BLK); byte(WHT); byte(15);
 	command(SCP);
 	byte('+'); byte(0); byte(1);
-	make_cmap(GAMMA);				/* make color map */
+	make_gmap(GAMMA);				/* make color map */
 	errvec = aed_errout;				/* set error vector */
 	cmdvec = aed_errout;
 	if (wrnvec != NULL)
@@ -119,7 +117,7 @@ aed_clear(x, y)					/* clear AED */
 int  x, y;
 {
 	command(FFD);
-	new_ctab(NCOLORS, anewcolr);		/* init color table */
+	new_ctab(NCOLORS);			/* init color table */
 	flush();
 }
 
@@ -129,9 +127,10 @@ aed_paintr(col, xmin, ymin, xmax, ymax)		/* paint a rectangle */
 COLOR  col;
 int  xmin, ymin, xmax, ymax;
 {
+	extern int  anewcolr();
 	int  ndx;
 
-	ndx = get_pixel(col);			/* may call anewcolr() */
+	ndx = get_pixel(col, anewcolr);		/* calls anewcolr() */
 	command(SEC);				/* draw rectangle */
 	byte(ndx+MINPIX);
 	aedsetcap(xmin, ymin+COMHT);
