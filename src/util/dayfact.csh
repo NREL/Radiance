@@ -38,14 +38,15 @@ endif
 echo ""
 echo "In what scene file is the gensky command located?"
 readvar genskyf
-if ( "$genskyf" == "$none" || ! -r "$genskyf" ) then
+if ( "$genskyf" == "$nofile" || ! -r "$genskyf" ) then
 	echo "You will not be able to compute"
 	echo "daylight factors without a gensky file"
 else
 	set extamb=`xform -e $genskyf|sed -n 's/^# Ground ambient level: //p'`
+	echo extamb = $extamb
 endif
-echo "Is the z-axis your zenith direction?"
-if ( "$ans" !~ [yY]* ) then
+echo -n "Is the z-axis your zenith direction? "
+if ( "$<" !~ [yY]* ) then
 	echo "I'm sorry, you cannot use this script"
 	exit 1
 endif
@@ -53,7 +54,7 @@ echo "What is the origin (smallest x y z coordinates) of the workplane?"
 readvar wporig
 set wporig=($wporig)
 echo "What is the x and y size (width and length) of the workplane?"
-read wpsize
+readvar wpsize
 set wpsize=($wpsize)
 set wpres=(`rcalc -n -e '$1=if(l,'"floor($maxres*$wpsize[1]/$wpsize[2]),$maxres);"'$2=if(l,'"$maxres,floor($maxres*$wpsize[2]/$wpsize[1]));l=$wpsize[2]-$wpsize[1]"`)
 set rtargs=($rtargs -ar `getinfo -d<$octree|rcalc -e '$1=floor(16*$4/'"($wpsize[1]+$wpsize[2]))"`)
@@ -71,12 +72,13 @@ if ( "$ilpict" == "$nofile" && "$dfpict" == "$nofile" ) then
 	exit 0
 endif
 echo "Starting rtrace calculation -- this will take some time..."
-cnt $wpres | rcalc -e '$1=($1+.5)/'"$wpres[1]*$wpsize[1]+$wporig[1]" \
-		-e '$2=(1-($2+.5)/$wpres[2])*$wpsize[2]+$wporig[2]" \
-		-e '$3='"$wporig[3]" -e "$4=0;$5=0;$6=1" \
+cnt $wpres[2] $wpres[1] \
+	| rcalc -e '$1=($2+.5)/'"$wpres[1]*$wpsize[1]+$wporig[1]" \
+		-e '$2=(1-($1+.5)/'"$wpres[2])*$wpsize[2]+$wporig[2]" \
+		-e '$3='"$wporig[3]" -e '$4=0;$5=0;$6=1' \
 	| rtrace $rtargs -I -ov -faf $octree \
 	| pvalue -r -x $wpres[1] -y $wpres[2] -df \
-	| pfilt -h 20 -n 0 -x 512 -y 512 -p 1 -r .7 > $iltemp
+	| pfilt -h 20 -n 0 -x 256 -y 256 -p 1 -r 1 > $iltemp
 set maxval=`getinfo < $iltemp | rcalc -i 'EXPOSURE=${e}' -e '$1=3/e'`
 if ( "$ilpict" != "$nofile" ) then
 	echo "Making illuminance contour picture $ilpict..."
