@@ -320,40 +320,41 @@ register ANISODAT  *np;
 	FVECT  h;
 	double  rv[2];
 	double  d, sinp, cosp;
-	int  confuse;
+	int  ntries;
 	register int  i;
 					/* compute reflection */
 	if (np->specfl & SP_REFL &&
 			rayorigin(&sr, r, SPECULAR, np->rspec) == 0) {
-		confuse = 0;
 		dimlist[ndims++] = (int)np->mp;
-	refagain:
-		dimlist[ndims] = confuse += 3601;
-		d = urand(ilhash(dimlist,ndims+1)+samplendx);
-		multisamp(rv, 2, d);
-		d = 2.0*PI * rv[0];
-		cosp = np->u_alpha * cos(d);
-		sinp = np->v_alpha * sin(d);
-		d = sqrt(cosp*cosp + sinp*sinp);
-		cosp /= d;
-		sinp /= d;
-		if (rv[1] <= FTINY)
-			d = 1.0;
-		else
-			d = sqrt( -log(rv[1]) /
-				(cosp*cosp/(np->u_alpha*np->u_alpha) +
-				 sinp*sinp/(np->v_alpha*np->v_alpha)) );
-		for (i = 0; i < 3; i++)
-			h[i] = np->pnorm[i] +
+		for (ntries = 0; ntries < 10; ntries++) {
+			dimlist[ndims] = ntries * 3601;
+			d = urand(ilhash(dimlist,ndims+1)+samplendx);
+			multisamp(rv, 2, d);
+			d = 2.0*PI * rv[0];
+			cosp = np->u_alpha * cos(d);
+			sinp = np->v_alpha * sin(d);
+			d = sqrt(cosp*cosp + sinp*sinp);
+			cosp /= d;
+			sinp /= d;
+			if (rv[1] <= FTINY)
+				d = 1.0;
+			else
+				d = sqrt(-log(rv[1]) /
+					(cosp*cosp/(np->u_alpha*np->u_alpha) +
+					 sinp*sinp/(np->v_alpha*np->v_alpha)));
+			for (i = 0; i < 3; i++)
+				h[i] = np->pnorm[i] +
 					d*(cosp*np->u[i] + sinp*np->v[i]);
-		d = -2.0 * DOT(h, r->rdir) / (1.0 + d*d);
-		for (i = 0; i < 3; i++)
-			sr.rdir[i] = r->rdir[i] + d*h[i];
-		if (DOT(sr.rdir, r->ron) <= FTINY)	/* oops! */
-			goto refagain;
-		rayvalue(&sr);
-		multcolor(sr.rcol, np->scolor);
-		addcolor(r->rcol, sr.rcol);
+			d = -2.0 * DOT(h, r->rdir) / (1.0 + d*d);
+			for (i = 0; i < 3; i++)
+				sr.rdir[i] = r->rdir[i] + d*h[i];
+			if (DOT(sr.rdir, r->ron) > FTINY) {
+				rayvalue(&sr);
+				multcolor(sr.rcol, np->scolor);
+				addcolor(r->rcol, sr.rcol);
+				break;
+			}
+		}
 		ndims--;
 	}
 					/* compute transmission */
