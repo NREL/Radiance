@@ -487,10 +487,10 @@ FILE	*fp;
 	}
 						/* put out faces */
 	sprintf(buf, "op%d", ++nopens);
-	putface(openmod, buf, "ref", &newp, 3, 7, 4, 0, fp);
-	putface(openmod, buf, "opp", &newp, 5, 6, 2, 1, fp);
-	putface(openmod, buf, "end1", &newp, 2, 6, 7, 3, fp);
-	putface(openmod, buf, "end2", &newp, 4, 5, 1, 0, fp);
+	putface(openmod, buf, "ref", &newp, 4, 5, 1, 0, fp);
+	putface(openmod, buf, "opp", &newp, 2, 6, 7, 3, fp);
+	putface(openmod, buf, "end1", &newp, 5, 6, 2, 1, fp);
+	putface(openmod, buf, "end2", &newp, 3, 7, 4, 0, fp);
 	putface(openmod, buf, "bot", &newp, 1, 2, 3, 0, fp);
 	putface(openmod, buf, "top", &newp, 7, 6, 5, 4, fp);
 }
@@ -542,12 +542,12 @@ FILE	*fp;
 		return;
 	bn = blkname(bp);
 	if (ff & 1<<F_REF)
-		putface(m, bn, "ref", &bp->p, 3, 7, 4, 0, fp);
+		putface(m, bn, "ref", &bp->p, 4, 5, 1, 0, fp);
 	if (ff & 1<<F_OPP)
-		putface(m, bn, "opp", &bp->p, 5, 6, 2, 1, fp);
+		putface(m, bn, "opp", &bp->p, 2, 6, 7, 3, fp);
 	if (ff & 1<<F_END) {
-		putface(m, bn, "end1", &bp->p, 2, 6, 7, 3, fp);
-		putface(m, bn, "end2", &bp->p, 4, 5, 1, 0, fp);
+		putface(m, bn, "end1", &bp->p, 5, 6, 2, 1, fp);
+		putface(m, bn, "end2", &bp->p, 3, 7, 4, 0, fp);
 	}
 	if (ff & 1<<F_BOT)
 		putface(m, bn, "bot", &bp->p, 1, 2, 3, 0, fp);
