@@ -9,25 +9,22 @@ set TLIBFILES = ( *[a-z].tcl *.hlp trad.icon tclIndex )
 
 set TDIFFS = (`ls | sed -n 's/3\.6\.tcl$//p'`)
 
-foreach d ($path)
-	if (-x $d/wish4.0) then
-		set wishcom = $d/wish4.0
-		break
-	endif
-end
-if (! $?wishcom) then
+set WISHCOMS = ( wish4.{3,2,1,0} wish )
+
+foreach w ( $WISHCOMS )
 	foreach d ($path)
-		if (-x $d/wish) then
-			set wishcom = "$d/wish -f"
+		if (-x $d/$w) then
+			set wishcom = $d/$w
 			break
 		endif
 	end
-	if (! $?wishcom) then
-		echo "Cannot find wish executable in current path -- trad not installed."
-		exit 1
-	endif
-	set oldwish
+	if ( $?wishcom ) break
+end
+if (! $?wishcom) then
+	echo "Cannot find wish executable in current path -- trad not installed."
+	exit 1
 endif
+if ( $wishcom:t == wish ) set oldwish
 
 echo "Installing trad using $wishcom"
 
