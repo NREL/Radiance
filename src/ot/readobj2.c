@@ -5,13 +5,13 @@ static const char	RCSid[] = "$Id$";
  *  readobj2.c - routines for reading in object descriptions.
  */
 
+#include  <ctype.h>
+
 #include  "standard.h"
-
+#include  "platform.h"
 #include  "object.h"
-
 #include  "otypes.h"
 
-#include  <ctype.h>
 
 extern char  *fgetword();
 

@@ -41,20 +41,24 @@ double  targeth = 3.0;			/* target height (inches) */
 int  xres = 16;				/* x sample resolution */
 int  yres = 16;				/* y sample resolution */
 
+static void  quit(int code);
 
 main(argc, argv)
 int  argc;
 char  *argv[];
 {
 	char  *strcat(), *mktemp();
-	int  quit();
 	int  i;
 
+#ifdef SIGHUP
 	signal(SIGHUP, quit);
+#endif
 	signal(SIGINT, quit);
 	signal(SIGTERM, quit);
+#ifdef SIGXCPU
 	signal(SIGXCPU, SIG_IGN);
 	signal(SIGXFSZ, SIG_IGN);
+#endif
 
 	for (i = 1; i < argc && argv[i][0] == '-'; i++)
 		switch (argv[i][1]) {

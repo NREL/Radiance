@@ -26,7 +26,6 @@ static const char	RCSid[] = "$Id$";
 
 #define  MAXTAB		1024		/* maximum number of data rows */
 #define  MAXLINE	4096		/* maximum line width (characters) */
-/*#define  FLOAT		float	*/	/* real type (precision) */
 #define  OUTFMT		"%.7g"		/* output format conversion string */
 
 int	interpolate = 0;
@@ -34,8 +33,8 @@ char	*progname;
 char	**func;
 int	nfuncs;
 
-FLOAT	abscissa[MAXTAB];		/* independent values (first column) */
-FLOAT	(*ordinate)[MAXTAB];		/* dependent values (other columns) */
+RREAL	abscissa[MAXTAB];		/* independent values (first column) */
+RREAL	(*ordinate)[MAXTAB];		/* dependent values (other columns) */
 int	tabsize = 0;			/* final table size (number of rows) */
 char	locID[16];			/* local identifier (for uniqueness) */
 
@@ -43,7 +42,7 @@ char	locID[16];			/* local identifier (for uniqueness) */
 
 static void load_data(FILE *fp);
 static void print_funcs(char *xe);
-static void putlist(register FLOAT *av, int al, register int pos);
+static void putlist(register RREAL *av, int al, register int pos);
 static char * absc_exp(void);
 
 int
@@ -68,7 +67,7 @@ char	**argv
 	}
 	func = argv;
 	nfuncs = argc;
-	ordinate = (FLOAT (*)[MAXTAB])malloc(nfuncs*MAXTAB*sizeof(FLOAT));
+	ordinate = (RREAL (*)[MAXTAB])malloc(nfuncs*MAXTAB*sizeof(RREAL));
 	if (ordinate == NULL) {
 		fprintf(stderr, "%s: not enough memory\n", progname);
 		exit(1);
@@ -212,7 +211,7 @@ char	*xe
 
 static void
 putlist(		/* put out array of values */
-register FLOAT	*av,
+register RREAL	*av,
 int	al,
 register int	pos
 )

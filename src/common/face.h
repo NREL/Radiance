@@ -14,9 +14,9 @@ extern "C" {
 
 typedef struct {	/* a polygonal face */
 	FVECT  norm;		/* the plane's unit normal */
-	FLOAT  offset;		/* plane equation:  DOT(norm, v) == offset */
-	FLOAT  area;		/* area of face */
-	FLOAT  *va;		/* vertex array (o->oargs.farg) */
+	RREAL  offset;		/* plane equation:  DOT(norm, v) == offset */
+	RREAL  area;		/* area of face */
+	RREAL  *va;		/* vertex array (o->oargs.farg) */
 	short  nv;		/* # of vertices */
 	short  ax;		/* axis closest to normal */
 } FACE;

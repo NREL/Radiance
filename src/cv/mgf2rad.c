@@ -421,7 +421,7 @@ int	iv;
 {
 	static int	ntris;
 	BARYCCM	bvecs;
-	FLOAT	bcoor[3][3];
+	RREAL	bcoor[3][3];
 	C_VERTEX	*cvt;
 	FVECT	v1, v2, v3;
 	FVECT	n1, n2, n3;

@@ -6,10 +6,13 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include "standard.h"
+
+#include <ctype.h>
+
+#include "platform.h"
 #include "view.h"
 #include "paths.h"
 #include "vars.h"
-#include <ctype.h>
 
 				/* variables (alphabetical by name) */
 #define AMBFILE		0		/* ambient file name */

@@ -24,7 +24,7 @@ extern "C" {
 #define  ABOVE		052		/* above bits */
 
 
-extern int	clip(FLOAT *ep1, FLOAT *ep2, FVECT min, FVECT max);
+extern int	clip(RREAL *ep1, RREAL *ep2, FVECT min, FVECT max);
 extern int	plocate(FVECT p, FVECT min, FVECT max);
 
 

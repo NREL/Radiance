@@ -2,12 +2,17 @@
 /*
  * Common definitions for mkillum
  */
+#ifndef _RAD_MKILLUM_H_
+#define _RAD_MKILLUM_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #include  "standard.h"
-
 #include  "object.h"
-
 #include  "otypes.h"
+#include  "rtprocess.h"
 
 				/* illum flags */
 #define  IL_LIGHT	0x1		/* light rather than illum */
@@ -28,9 +33,16 @@ struct illum_args {
 };				/* illum options */
 
 struct rtproc {
-	int	pd[3];			/* rtrace pipe descriptors */
+	SUBPROC pd;			/* rtrace pipe descriptors */
 	float	*buf;			/* rtrace i/o buffer */
 	int	bsiz;			/* maximum rays for rtrace buffer */
 	float	**dest;			/* destination for each ray result */
 	int	nrays;			/* current length of rtrace buffer */
 };				/* rtrace process */
+
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_MKILLUM_H_ */
+

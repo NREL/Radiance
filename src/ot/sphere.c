@@ -56,7 +56,7 @@ register CUBE  *cu;
 {
 	FVECT  v1;
 	double  d1, d2;
-	register FLOAT  *fa;
+	register RREAL  *fa;
 	register int  i;
 #define  cent		fa
 #define  rad		fa[3]

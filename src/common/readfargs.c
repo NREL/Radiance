@@ -58,7 +58,7 @@ FILE  *fp;
 	if (!getint(sbuf) || (n = atoi(sbuf)) < 0)
 		return(0);
 	if (fa->nfargs = n) {
-		fa->farg = (FLOAT *)malloc(n*sizeof(FLOAT));
+		fa->farg = (RREAL *)malloc(n*sizeof(RREAL));
 		if (fa->farg == NULL)
 			return(-1);
 		for (i = 0; i < n; i++) {

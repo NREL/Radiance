@@ -64,8 +64,8 @@ int	objsiz;
 		objp->oargs.iarg = NULL;
 #endif
 	if ((objp->oargs.nfargs = getint(2, fp)) > 0) {
-		objp->oargs.farg = (FLOAT *)malloc
-				(objp->oargs.nfargs*sizeof(FLOAT));
+		objp->oargs.farg = (RREAL *)malloc
+				(objp->oargs.nfargs*sizeof(RREAL));
 		if (objp->oargs.farg == NULL)
 			goto memerr;
 		for (i = 0; i < objp->oargs.nfargs; i++)

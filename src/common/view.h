@@ -55,7 +55,7 @@ extern char	*setview(VIEW *v);
 extern void	normaspect(double va, double *ap, int *xp, int *yp);
 extern double	viewray(FVECT orig, FVECT direc, VIEW *v, double x, double y);
 extern void	viewloc(FVECT ip, VIEW *v, FVECT p);
-extern void	pix2loc(FLOAT loc[2], RESOLU *rp, int px, int py);
+extern void	pix2loc(RREAL loc[2], RESOLU *rp, int px, int py);
 extern void	loc2pix(int pp[2], RESOLU *rp, double lx, double ly);
 extern int	getviewopt(VIEW *v, int ac, char *av[]);
 extern int	sscanview(VIEW *vp, char *s);

@@ -125,7 +125,7 @@ FACE  *f;
 	double  x, y;
 	int  tst;
 	register int  xi, yi;
-	register FLOAT  *p0, *p1;
+	register RREAL  *p0, *p1;
 
 	xi = (f->ax+1)%3;
 	yi = (f->ax+2)%3;

@@ -6,11 +6,8 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include  "mkillum.h"
-
 #include  "face.h"
-
 #include  "cone.h"
-
 #include  "random.h"
 
 
@@ -302,7 +299,7 @@ register struct rtproc  *rt;
 		return;
 	bzero(rt->buf+6*rt->nrays, 6*sizeof(float));
 	errno = 0;
-	if ( process(rt->pd, (char *)rt->buf, (char *)rt->buf,
+	if ( process(&(rt->pd), (char *)rt->buf, (char *)rt->buf,
 			3*sizeof(float)*(rt->nrays+1),
 			6*sizeof(float)*(rt->nrays+1)) <
 			3*sizeof(float)*(rt->nrays+1) )

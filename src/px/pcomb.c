@@ -518,7 +518,7 @@ register char	*nam;
 	static unsigned long	ltick[MAXINP];
 	static FVECT	lorg[MAXINP], ldir[MAXINP];
 	static double	ldist[MAXINP];
-	FLOAT	loc[2];
+	RREAL	loc[2];
 	int	fn;
 	register int	i;
 
@@ -556,7 +556,7 @@ l_psize()			/* compute pixel size in steradians */
 	static unsigned long	ltick[MAXINP];
 	static double	psize[MAXINP];
 	FVECT	dir0, org, dirx, diry;
-	FLOAT	locx[2], locy[2];
+	RREAL	locx[2], locy[2];
 	double	d;
 	int	fn;
 	register int	i;

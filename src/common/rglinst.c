@@ -356,8 +356,8 @@ loadobj()				/* get next object */
 #endif
 					/* get real arguments */
 	if (ob.oargs.nfargs = ogetint(2)) {
-		ob.oargs.farg = (FLOAT *)malloc
-				(ob.oargs.nfargs*sizeof(FLOAT));
+		ob.oargs.farg = (RREAL *)malloc
+				(ob.oargs.nfargs*sizeof(RREAL));
 		if (ob.oargs.farg == NULL)
 			goto memerr;
 		for (i = 0; i < ob.oargs.nfargs; i++)

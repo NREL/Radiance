@@ -27,7 +27,7 @@ typedef struct {
 	short  nsargs;			/* # of string arguments */
 	short  nfargs;			/* # of real arguments */
 	char  **sarg;			/* string arguments */
-	FLOAT  *farg;			/* real arguments */
+	RREAL  *farg;			/* real arguments */
 #ifdef  IARGS
 	short  niargs;			/* # of integer arguments */
 	long  *iarg;			/* integer arguments */

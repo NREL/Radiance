@@ -271,7 +271,7 @@ FVECT  p;
 
 void
 pix2loc(loc, rp, px, py)	/* compute image location from pixel pos. */
-FLOAT  loc[2];
+RREAL  loc[2];
 register RESOLU  *rp;
 int  px, py;
 {

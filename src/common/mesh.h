@@ -79,7 +79,7 @@ typedef struct mesh {
 	int		nref;		/* reference count */
 	int		ldflags;	/* what we've loaded */
 	CUBE		mcube;		/* bounds and octree */
-	FLOAT		uvlim[2][2];	/* local coordinate extrema */
+	RREAL		uvlim[2][2];	/* local coordinate extrema */
 	OBJECT		mat0;		/* base material index */
 	OBJECT		nmats;		/* number of materials */
 	MESHPATCH	*patch;		/* mesh patch list */
@@ -106,7 +106,7 @@ typedef struct {
 	int		fl;		/* setting flags */
 	FVECT		v;		/* vertex location */
 	FVECT		n;		/* vertex normal */
-	FLOAT		uv[2];		/* local coordinates */
+	RREAL		uv[2];		/* local coordinates */
 } MESHVERT;
 
 				/* mesh format identifier */

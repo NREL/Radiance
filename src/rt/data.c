@@ -160,7 +160,7 @@ char  *pname;
 	COLR  *scanin;
 	int  sl, ns;
 	RESOLU	inpres;
-	FLOAT  loc[2];
+	RREAL  loc[2];
 	int  y;
 	register int  x, i;
 	register DATARRAY  *pp;

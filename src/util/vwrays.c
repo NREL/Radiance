@@ -193,7 +193,7 @@ pix2rays(FILE *fp)
 
 putrays()
 {
-	static FLOAT	loc[2];
+	static RREAL	loc[2];
 	static FVECT	rorg, rdir;
 	float	*zbuf;
 	int	sc;

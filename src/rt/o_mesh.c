@@ -153,7 +153,7 @@ register RAY	*r;
 	int		flags;
 	MESHVERT	tv[3];
 	OBJECT		tmod;
-	FLOAT		wt[3];
+	RREAL		wt[3];
 	int		i;
 					/* get the mesh instance */
 	prep_edge_cache(o);

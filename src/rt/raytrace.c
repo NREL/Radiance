@@ -20,7 +20,7 @@ static const char RCSid[] = "$Id$";
 unsigned long  raynum = 0;		/* next unique ray number */
 unsigned long  nrays = 0;		/* number of calls to localhit */
 
-static FLOAT  Lambfa[5] = {PI, PI, PI, 0.0, 0.0};
+static RREAL  Lambfa[5] = {PI, PI, PI, 0.0, 0.0};
 OBJREC  Lamb = {
 	OVOID, MAT_PLASTIC, "Lambertian",
 	{0, 5, NULL, Lambfa}, NULL,

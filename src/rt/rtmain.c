@@ -234,10 +234,16 @@ char  *argv[];
 	initurand(2048);
 					/* set up signal handling */
 	sigdie(SIGINT, "Interrupt");
+#ifdef SIGHUP
 	sigdie(SIGHUP, "Hangup");
+#endif
 	sigdie(SIGTERM, "Terminate");
+#ifdef SIGPIPE
 	sigdie(SIGPIPE, "Broken pipe");
+#endif
+#ifdef SIGALRM
 	sigdie(SIGALRM, "Alarm clock");
+#endif
 #ifdef	SIGXCPU
 	sigdie(SIGXCPU, "CPU limit exceeded");
 	sigdie(SIGXFSZ, "File size exceeded");
@@ -387,8 +393,10 @@ int  signo;
 	if (gotsig++)			/* two signals and we're gone! */
 		_exit(signo);
 
+#ifdef SIGALRM
 	alarm(15);			/* allow 15 seconds to clean up */
 	signal(SIGALRM, SIG_DFL);	/* make certain we do die */
+#endif
 	eputs("signal - ");
 	eputs(sigerr[signo]);
 	eputs("\n");

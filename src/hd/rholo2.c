@@ -27,7 +27,7 @@ register struct gclim	*gcl;
 register HOLO	*hp;
 GCOORD	*gc;
 {
-	register FLOAT	*v;
+	register RREAL	*v;
 	register int	i;
 
 	if (hp != NULL) {

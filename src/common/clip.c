@@ -16,13 +16,13 @@ static const char	RCSid[] = "$Id$";
 
 int
 clip(ep1, ep2, min, max)	/* clip a line segment to a box */
-FLOAT  *ep1, *ep2;
+RREAL  *ep1, *ep2;
 FVECT  min, max;
 {
 	int  itlim = MAXITER;
 	int  loc1, loc2;
 	int  accept;
-	FLOAT  *dp;
+	RREAL  *dp;
 	double  d;
 	register int  i, j;
 

@@ -118,7 +118,7 @@ int
 rgl_octlist(fname, cent, radp, nl)	/* load scen into display list */
 char	*fname;
 FVECT	cent;			/* returned octree center (optional) */
-FLOAT	*radp;			/* returned octree size (optional) */
+RREAL	*radp;			/* returned octree size (optional) */
 int	*nl;			/* returned number of lists (optional) */
 {
 	double	r;

@@ -134,7 +134,7 @@ register FVECT	cp[4];	/* returned (may be passed as FVECT cp[2][2]) */
 register HOLO	*hp;
 register GCOORD	*gc;
 {
-	register FLOAT	*v;
+	register RREAL	*v;
 	double	d;
 					/* compute common component */
 	VCOPY(cp[0], hp->orig);
@@ -263,7 +263,7 @@ FVECT	ro, rd;		/* normalization of rd affects distances */
 {
 	FVECT	p[2], vt;
 	double	d, t0, t1, d0, d1;
-	register FLOAT	*v;
+	register RREAL	*v;
 	register int	i;
 					/* first, intersect walls */
 	gc[0].w = gc[1].w = -1;

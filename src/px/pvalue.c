@@ -389,7 +389,7 @@ pixtoval()				/* convert picture to values */
 	register COLOR	*scanln;
 	int  dogamma;
 	COLOR  lastc;
-	FLOAT  hv[2];
+	RREAL  hv[2];
 	int  startprim, endprim;
 	long  startpos;
 	int  y;

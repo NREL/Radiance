@@ -163,7 +163,9 @@ setambient()				/* initialize calculation */
 					(flen - pos)/AMBVALSIZ);
 			error(WARNING, errmsg);
 			fseek(ambfp, pos, 0);
+#ifndef _WIN32 /* XXX we need a replacement for that one */
 			ftruncate(fileno(ambfp), (off_t)pos);
+#endif
 		}
 	} else if ((ambfp = fopen(ambfile, "w+")) != NULL) {
 		initambfile(1);			/* else create new file */

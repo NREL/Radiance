@@ -23,7 +23,7 @@ static char	*newportlist[MAXPORT];	/* new portal file list */
 static struct gmEntry {
 	char	*gfile;			/* geometry file name */
 	FVECT	cent;			/* centroid */
-	FLOAT	rad;			/* radius */
+	RREAL	rad;			/* radius */
 	int	listid;			/* display list identifier */
 	int	nlists;			/* number of lists allocated */
 } gmCurrent[MAXGEO], gmNext[MAXGEO];	/* current and next list */

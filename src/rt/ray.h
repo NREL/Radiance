@@ -55,7 +55,7 @@ typedef struct ray {
 	FVECT	ron;		/* intersection surface normal */
 	double	rod;		/* -DOT(rdir, ron) */
 	FULLXF	*rox;		/* object transformation */
-	FLOAT	uv[2];		/* local coordinates */
+	RREAL	uv[2];		/* local coordinates */
 	FVECT	pert;		/* surface normal perturbation */
 	COLOR	pcol;		/* pattern color */
 	COLOR	rcol;		/* returned ray value */

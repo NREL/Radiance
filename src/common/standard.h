@@ -25,7 +25,7 @@ extern "C" {
 				/* regular transformation */
 typedef struct {
 	MAT4  xfm;				/* transform matrix */
-	FLOAT  sca;				/* scalefactor */
+	RREAL  sca;				/* scalefactor */
 }  XF;
 				/* complemetary tranformation */
 typedef struct {
@@ -136,7 +136,7 @@ extern char	*fgetword(char *s, int n, FILE *fp);
 					/* defined in fputword.c */
 extern void	fputword(char *s, FILE *fp);
 					/* defined in fixargv0.c */
-extern char	*fixargv0(char *av0);
+/*extern char	*fixargv0(char *av0);*/ /* XXX include paths.h instead */
 					/* defined in fropen.c */
 extern FILE	*frlibopen(char *fname);
 					/* defined in getlibpath.c */
@@ -151,12 +151,14 @@ extern char	*getstr(char *s, FILE *fp);
 extern long	getint(int siz, FILE *fp);
 extern double	getflt(FILE *fp);
 					/* defined in process.c */
+/*
 extern int	open_process(int pd[3], char *av[]);
 extern int	process(int pd[3], char *recvbuf, char *sendbuf,
 				int nbr, int nbs);
 extern int	close_process(int pd[3]);
 extern int	readbuf(int fd, char *bpos, int siz);
 extern int	writebuf(int fd, char *bpos, int siz);
+*/
 					/* defined in rexpr.c */
 extern int	ecompile(char *sp, int iflg, int wflag);
 extern char	*expsave(void);

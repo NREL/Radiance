@@ -14,7 +14,7 @@ extern "C" {
 
 #include  "fvect.h"
 
-typedef FLOAT  MAT4[4][4];
+typedef RREAL  MAT4[4][4];
 
 #ifdef  BSD
 #define  copymat4(m4a,m4b)	bcopy((void *)m4b,(void *)m4a,sizeof(MAT4))

@@ -170,7 +170,7 @@ register CONE  *co;
 	register double  d;
 	register int  i;
 
-	co->tm = (FLOAT (*)[4])malloc(sizeof(MAT4));
+	co->tm = (RREAL (*)[4])malloc(sizeof(MAT4));
 	if (co->tm == NULL)
 		error(SYSTEM, "out of memory in conexform");
 

@@ -298,7 +298,7 @@ char	*pcf, *zbf;
 	int	eshft;
 	double	emult;
 	RESOLU	prs;
-	FLOAT	vl[2];
+	RREAL	vl[2];
 	FVECT	ro, rd;
 	double	aftd;
 	COLOR	ctmp;

@@ -203,7 +203,7 @@ register VERTEX	*v1, *v2, *v3;
 	static int	ntri = 0;
 	int		flatness = ISFLAT;
 	BARYCCM	bvecs;
-	FLOAT	bvm[3][3];
+	RREAL	bvm[3][3];
 	register int	i;
 					/* compute barycentric coordinates */
 	if (v1->flags & v2->flags & v3->flags & (V_HASINDX|V_HASNORM))

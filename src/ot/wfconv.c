@@ -21,7 +21,7 @@ static FVECT	*vlist;		/* our vertex list */
 static int	nvs;		/* number of vertices in our list */
 static FVECT	*vnlist;	/* vertex normal list */
 static int	nvns;
-static FLOAT	(*vtlist)[2];	/* map vertex list */
+static RREAL	(*vtlist)[2];	/* map vertex list */
 static int	nvts;
 
 static char	*inpfile;	/* input file name */
@@ -289,8 +289,8 @@ puttri(v1, v2, v3)			/* convert a triangle */
 char	*v1, *v2, *v3;
 {
 	VNDX	v1i, v2i, v3i;
-	FLOAT	*v1c, *v2c, *v3c;
-	FLOAT	*v1n, *v2n, *v3n;
+	RREAL	*v1c, *v2c, *v3c;
+	RREAL	*v1n, *v2n, *v3n;
 	
 	if (!cvtndx(v1i, v1) || !cvtndx(v2i, v2) || !cvtndx(v3i, v3))
 		return(0);
@@ -382,10 +382,10 @@ double	x, y;
 {
 	if (!(nvts%CHUNKSIZ)) {		/* allocate next block */
 		if (nvts == 0)
-			vtlist = (FLOAT (*)[2])malloc(CHUNKSIZ*2*sizeof(FLOAT));
+			vtlist = (RREAL (*)[2])malloc(CHUNKSIZ*2*sizeof(RREAL));
 		else
-			vtlist = (FLOAT (*)[2])realloc((void *)vtlist,
-					(nvts+CHUNKSIZ)*2*sizeof(FLOAT));
+			vtlist = (RREAL (*)[2])realloc((void *)vtlist,
+					(nvts+CHUNKSIZ)*2*sizeof(RREAL));
 		if (vtlist == NULL)
 			error(SYSTEM, "out of memory in newvt");
 	}
