@@ -8,6 +8,8 @@ static char SCCSid[] = "$SunId$ LBL";
  * Check argument list against format string.
  */
 
+#include <ctype.h>
+
 #define NULL		0
 
 int
@@ -25,15 +27,15 @@ register char	*fl;
 			return(-1);
 		switch (*fl) {
 		case 's':		/* string */
-			if (**av == '\0' || **av == ' ' || **av == '\t')
+			if (**av == '\0' || isspace(**av))
 				return(i);
 			break;
 		case 'i':		/* integer */
-			if (!isintd(*av, " \t"))
+			if (!isintd(*av, " \t\r\n"))
 				return(i);
 			break;
 		case 'f':		/* float */
-			if (!isfltd(*av, " \t"))
+			if (!isfltd(*av, " \t\r\n"))
 				return(i);
 			break;
 		default:		/* bad call! */
