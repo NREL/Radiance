@@ -415,6 +415,11 @@ rpiece()			/* render picture piece by piece */
 		pview.horiz = ourview.horiz / hmult;
 		pview.vert = ourview.vert / vmult;
 		break;
+	case VT_CYL:
+		pview.horiz = ourview.horiz / hmult;
+		pview.vert = 2.*180./PI*atan(
+				tan(PI/180./2.*ourview.vert)/vmult );
+		break;
 	case VT_HEM:
 		pview.horiz = 2.*180./PI*asin(
 				sin(PI/180./2.*ourview.horiz)/hmult );
@@ -522,6 +527,10 @@ int  xpos, ypos;
 	if (fcntl(outfd, F_SETLKW, &fls) < 0)
 		filerr("lock");
 #endif
+	if (verbose) {				/* notify caller */
+		printf("%d %d done\n", xpos, ypos);
+		fflush(stdout);
+	}
 	if (syncfp != NULL) {			/* record what's been done */
 		sflock(F_WRLCK);
 		fseek(syncfp, 0L, 2);		/* append index */
@@ -529,10 +538,6 @@ int  xpos, ypos;
 		fflush(syncfp);
 				/*** Unlock not necessary, since
 		sflock(F_UNLCK);	_exit() or nextpiece() is next ***/
-	}
-	if (verbose) {				/* notify caller */
-		printf("%d %d done\n", xpos, ypos);
-		fflush(stdout);
 	}
 	if (pid == -1)		/* didn't fork or fork failed */
 		return(0);
