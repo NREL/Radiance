@@ -117,7 +117,6 @@ char  *argv[];
 			break;
 		case 'h':			/* height of characters */
 			cheight = atoi(argv[++an])*SSS;
-			xsiz = xsiz = 0;
 			break;
 		case 'a':			/* aspect ratio */
 			aspect = atof(argv[++an]);
@@ -161,11 +160,13 @@ makemap()			/* create the bit map */
 	double  pictaspect;
 	
 	if (direct == 'r' || direct == 'l') {
-		if (xsiz == 0 || ysiz == 0) {
+		if (xsiz <= 0) {
 			cwidth = cheight/aspect + 0.5;
 			xsiz = (long)maxwidth*cwidth >> 8;
 			ysiz = nlines*cheight;
 		} else if (aspect > FTINY) {
+			if (ysiz <= 0)
+				ysiz = cheight*nlines;
 			pictaspect = 256*nlines*aspect/maxwidth;
 			if (pictaspect*xsiz < ysiz)
 				ysiz = pictaspect*xsiz + 0.5;
@@ -174,17 +175,21 @@ makemap()			/* create the bit map */
 			cheight = ysiz/nlines;
 			cwidth = cheight/aspect + 0.5;
 		} else {
+			if (ysiz <= 0)
+				ysiz = cheight*nlines;
 			pictaspect = (double)ysiz/xsiz;
 			aspect = pictaspect*maxwidth/(256*nlines);
 			cheight = ysiz/nlines;
 			cwidth = cheight/aspect + 0.5;
 		}
 	} else {			/* reverse orientation */
-		if (xsiz == 0 || ysiz == 0) {
+		if (ysiz <= 0) {
 			cwidth = cheight/aspect + 0.5;
 			xsiz = nlines*cheight;
 			ysiz = (long)maxwidth*cwidth >> 8;
 		} else if (aspect > FTINY) {
+			if (xsiz <= 0)
+				xsiz = cheight*nlines;
 			pictaspect = maxwidth/(256*nlines*aspect);
 			if (pictaspect*xsiz < ysiz)
 				ysiz = pictaspect*xsiz + 0.5;
@@ -193,6 +198,8 @@ makemap()			/* create the bit map */
 			cheight = xsiz/nlines;
 			cwidth = cheight/aspect + 0.5;
 		} else {
+			if (xsiz <= 0)
+				xsiz = cheight*nlines;
 			pictaspect = (double)ysiz/xsiz;
 			aspect = maxwidth/(256*nlines*pictaspect);
 			cheight = xsiz/nlines;
