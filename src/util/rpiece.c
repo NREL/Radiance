@@ -171,7 +171,7 @@ char  **av;
 	} else if ((outfd = open(outfile, O_RDWR)) >= 0) {
 		if ((fp = fdopen(dup(outfd), "r+")) == NULL)
 			goto filerr;
-		getheader(fp, NULL);		/* skip header */
+		getheader(fp, NULL, NULL);	/* skip header */
 		if (fscnresolu(&hr, &vr, fp) < 0 ||	/* check resolution */
 				hr != hres*hmult || vr != vres*vmult) {
 			fprintf(stderr, "%s: resolution mismatch on file \"%s\"\n",
@@ -334,7 +334,7 @@ int  xpos, ypos;
 		exit(cleanup(1));
 	}
 				/* check header from rpict */
-	getheader(fromrp, NULL);
+	getheader(fromrp, NULL, NULL);
 	if (fscnresolu(&hr, &vr, fromrp) < 0 || hr != hres | vr != vres) {
 		fprintf(stderr, "%s: resolution mismatch from %s\n",
 				progname, rpargv[0]);
