@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/bin/csh -fe
 # SCCSid "$SunId$ LBL"
 # Install correct version of trad for wish or wish4.0
 #
@@ -33,13 +33,15 @@ echo "Installing trad using $wishcom"
 
 sed -e "1s|/usr/local/bin/wish4\.0|$wishcom|" \
 	-e "s|^set radlib .*|set radlib $libdir|" trad.wsh > $instdir/trad
-if ($status) exit 1
 chmod 755 $instdir/trad
+if (! -d $libdir) then
+	mkdir $libdir
+endif
 (cd $libdir ; rm -f $TLIBFILES)
 cp $TLIBFILES $libdir
 if ($?oldwish) then
 	foreach i ($TDIFFS)
-		(cd $libdir ; rm -f $i.tcl)
+		rm -f $libdir/$i.tcl
 		cp ${i}3.6.tcl $libdir/$i.tcl
 	end
 endif
