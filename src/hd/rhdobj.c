@@ -55,6 +55,7 @@ typedef struct dobject {
 	FVECT	center;			/* orig. object center */
 	FLOAT	radius;			/* orig. object radius */
 	int	listid;			/* GL display list identifier */
+	int	nlists;			/* number of lists allocated */
 	int	rtp[3];			/* associated rtrace process */
 	DLIGHTS	*ol;			/* object lights */
 	FULLXF	xfb;			/* coordinate transform */
@@ -119,7 +120,7 @@ register DOBJECT	*op;
 	}
 	dobjects = ohead.next;
 	if (!foundlink) {
-		glDeleteLists(op->listid, 1);
+		glDeleteLists(op->listid, op->nlists);
 		close_process(op->rtp);
 	}
 	while (op->xfac)
@@ -577,7 +578,7 @@ char	*oct, *nam;
 					/* load octree into display list */
 	dolights = 0;
 	domats = 1;
-	op->listid = rgl_octlist(fpath, op->center, &op->radius);
+	op->listid = rgl_octlist(fpath, op->center, &op->radius, &op->nlists);
 					/* start rtrace */
 	rtargv[RTARGC-1] = fpath;
 	rtargv[RTARGC] = NULL;

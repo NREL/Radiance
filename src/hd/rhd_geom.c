@@ -19,6 +19,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 int	gmPortals = 0;			/* current portal GL list id */
+static int	Nlists = 0;		/* number of lists allocated */
 static char	*curportlist[MAXPORT];	/* current portal list */
 static char	*newportlist[MAXPORT];	/* new portal file list */
 
@@ -27,6 +28,7 @@ static struct gmEntry {
 	FVECT	cent;			/* centroid */
 	FLOAT	rad;			/* radius */
 	int	listid;			/* display list identifier */
+	int	nlists;			/* number of lists allocated */
 } gmCurrent[MAXGEO], gmNext[MAXGEO];	/* current and next list */
 
 #define FORALLGEOM(ot,i)	for (i=0;i<MAXGEO&&ot[i].gfile!=NULL;i++)
@@ -58,7 +60,8 @@ char	*file;
 	gmNext[i].gfile = savestr(file);
 	dolights = 0;
 	domats = 1;
-	gmNext[i].listid = rgl_octlist(file, gmNext[i].cent, &gmNext[i].rad);
+	gmNext[i].listid = rgl_octlist(file, gmNext[i].cent, &gmNext[i].rad,
+					&gmNext[i].nlists);
 	gmNext[i].rad *= 1.732;		/* go to corners */
 #ifdef DEBUG
 	fprintf(stderr, "Loaded octree \"%s\" into listID %d with radius %f\n",
@@ -76,7 +79,8 @@ gmEndGeom()			/* make next list current */
 			if (gmNext[j].listid == gmCurrent[i].listid)
 				break;
 		if (j >= MAXGEO || gmNext[j].gfile == NULL) {
-			glDeleteLists(gmCurrent[i].listid, 1);	/* not found */
+			glDeleteLists(gmCurrent[i].listid,	/* not found */
+					gmCurrent[i].nlists);
 			freestr(gmCurrent[i].gfile);
 		}
 	}
@@ -177,7 +181,7 @@ gmEndPortal()			/* close portal list and return GL list */
 	FORALLPORT(newportlist, n);
 	if (!n) {			/* free old GL list */
 		if (gmPortals)
-			glDeleteLists(gmPortals, 1);
+			glDeleteLists(gmPortals, Nlists);
 		gmPortals = 0;
 	} else
 		qsort(newportlist, n, sizeof(char *), sstrcmp);
@@ -190,7 +194,7 @@ gmEndPortal()			/* close portal list and return GL list */
 			FORALLPORT(newportlist, n);
 			dolights = 0;
 			domats = 0;
-			gmPortals = rgl_filelist(n, newportlist);
+			gmPortals = rgl_filelist(n, newportlist, &Nlists);
 			break;
 		}
 	FORALLPORT(curportlist, n)		/* free old file list */
