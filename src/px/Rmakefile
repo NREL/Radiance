@@ -40,8 +40,9 @@ pdfblur.csh pmblur.csh xyzimage.csh pgblur.csh
 	cp phisto.csh $(INSTDIR)/phisto
 	cp pdelta.csh $(INSTDIR)/pdelta
 	cp pgblur.csh $(INSTDIR)/pgblur
+	cp ra_pfm.csh $(INSTDIR)/ra_pfm
 	cd $(INSTDIR) ; chmod 755 normpat falsecolor pdfblur \
-		pmblur xyzimage phisto pdelta pgblur
+		pmblur xyzimage phisto pdelta pgblur ra_pfm
 
 clean:
 	rm -f $(PROGS) $(SPECIAL) *.o core
