@@ -16,11 +16,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <ctype.h>
 
-
-typedef struct {
-	char  *funame;			/* function name */
-	int  (*funp)();			/* pointer to function */
-}  FUN;
+#include  "otypes.h"
 
 int  xac;				/* global xform argument count */
 char  **xav;				/* global xform argument pointer */
@@ -34,60 +30,11 @@ int  expand = 0;			/* boolean true to expand commands */
 
 char  *idprefix = NULL;			/* prefix for object identifiers */
 
-extern int  o_source();
-extern int  o_sphere();
-extern int  o_face();
-extern int  o_cone();
-extern int  o_cylinder();
-extern int  o_ring();
-extern int  m_glow();
-extern int  m_spot();
-extern int  m_dielectric();
-extern int  m_interface();
-extern int  text();
-extern int  alias();
-extern int  passargs();
-extern int  addxform();
+#define  ALIAS		NUMOTYPE	/* put alias at end of array */
 
-FUN  ofun[] = {
-	{ "source", o_source },
-	{ "sphere", o_sphere },
-	{ "bubble", o_sphere },
-	{ "polygon", o_face },
-	{ "cone", o_cone },
-	{ "cup", o_cone },
-	{ "cylinder", o_cylinder },
-	{ "tube", o_cylinder },
-	{ "ring", o_ring },
-	{ "instance", addxform },
-	{ "alias", alias },
-	{ "antimatter", passargs },
-	{ "glow", m_glow },
-	{ "spotlight", m_spot },
-	{ "dielectric", m_dielectric },
-	{ "interface", m_interface },
-	{ "colortext", text },
-	{ "brighttext", text },
-	{ "texfunc", addxform },
-	{ "texdata", addxform },
-	{ "colorfunc", addxform },
-	{ "brightfunc", addxform },
-	{ "colorpict", addxform },
-	{ "colordata", addxform },
-	{ "brightdata", addxform },
-	{ "mixfunc", addxform },
-	{ "mixdata", addxform },
-	{ "mixtext", text },
-	{ "light", passargs },
-	{ "illum", passargs },
-	{ "plastic", passargs },
-	{ "metal", passargs },
-	{ "trans", passargs },
-	{ "glass", passargs },
-	{ 0 }					/* terminator */
-};
+#define  NUMTYPES	(NUMOTYPE+1)	/* total number of object types */
 
-#define  issurface(t)		((t)<=9)
+FUN  ofun[NUMTYPES] = INIT_OTYPE;	/* default types and actions */
 
 typedef struct {
 	short  nsargs;			/* # of string arguments */
@@ -117,6 +64,8 @@ char  *argv[];
 	for (a = 1; a < argc; a++)
 		if (!strcmp(argv[a], "-a"))
 			return(doarray(argc, argv, a));
+
+	initotypes();
 
 	for (a = 1; a < argc; a++) {
 		if (argv[a][0] == '-')
@@ -309,7 +258,7 @@ FILE  *fin;
 }
 
 
-passargs(fin)			/* pass on arguments unchanged */
+o_default(fin)			/* pass on arguments unchanged */
 FILE  *fin;
 {
 	register int  i;
@@ -373,7 +322,7 @@ register char  *ofname;
 {
 	register int  i;
 
-	for (i = 0; ofun[i].funame != NULL; i++)
+	for (i = 0; i < NUMTYPES; i++)
 		if (!strcmp(ofun[i].funame, ofname))
 			return(i);
 
@@ -733,4 +682,53 @@ register FUNARGS  *fa;
 	if (fa->nfargs)
 		free(fa->farg);
 	free(fa);
+}
+
+
+initotypes()			/* initialize ofun[] array */
+{
+	extern int  o_source();
+	extern int  o_sphere();
+	extern int  o_face();
+	extern int  o_cone();
+	extern int  o_cylinder();
+	extern int  o_ring();
+	extern int  m_glow();
+	extern int  m_spot();
+	extern int  m_dielectric();
+	extern int  m_interface();
+	extern int  text();
+	extern int  alias();
+	extern int  passargs();
+	extern int  addxform();
+	register int  i;
+
+	if (ofun[OBJ_SOURCE].funp == o_source)
+		return;			/* done already */
+					/* alias is additional */
+	ofun[ALIAS].funame = ALIASID;
+	ofun[ALIAS].flags = 0;
+					/* functions get new transform */
+	for (i = 0; i < NUMTYPES; i++)
+		if (hasfunc(i))
+			ofun[i].funp = addxform;
+					/* special cases */
+	ofun[OBJ_SOURCE].funp = o_source;
+	ofun[OBJ_SPHERE].funp =
+	ofun[OBJ_BUBBLE].funp = o_sphere;
+	ofun[OBJ_FACE].funp = o_face;
+	ofun[OBJ_CONE].funp =
+	ofun[OBJ_CUP].funp = o_cone;
+	ofun[OBJ_CYLINDER].funp =
+	ofun[OBJ_TUBE].funp = o_cylinder;
+	ofun[OBJ_RING].funp = o_ring;
+	ofun[OBJ_INSTANCE].funp = addxform;
+	ofun[MAT_GLOW].funp = m_glow;
+	ofun[MAT_SPOT].funp = m_spot;
+	ofun[MAT_DIELECTRIC].funp = m_dielectric;
+	ofun[MAT_INTERFACE].funp = m_interface;
+	ofun[PAT_CTEXT].funp =
+	ofun[PAT_BTEXT].funp =
+	ofun[MIX_TEXT].funp = text;
+	ofun[ALIAS].funp = alias;
 }
