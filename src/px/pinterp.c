@@ -10,7 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "standard.h"
 
-#include <sys/fcntl.h>
+#include <fcntl.h>
 
 #include "view.h"
 
