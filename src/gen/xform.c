@@ -404,6 +404,24 @@ FILE  *fin;
 }
 
 
+m_mist(fin)		/* transform arguments for mist */
+FILE  *fin;
+{
+	FUNARGS	 fa;
+
+	if (readfargs(&fa, fin) != 1)
+		return(-1);
+	if (fa.nsargs != 0  || fa.nfargs != 4)
+		return(-1);
+	printf("0\n0\n4");
+	printf(" %18.12g %18.12g %18.12g", fa.farg[0]/tot.sca,
+			fa.farg[1]/tot.sca, fa.farg[2]/tot.sca);
+	printf(" %18.12g\n", fa.farg[3]);
+	freefargs(&fa);
+	return(0);
+}
+
+
 m_dielectric(fin)		/* transform arguments for dielectric */
 FILE  *fin;
 {
@@ -668,6 +686,7 @@ initotypes()			/* initialize ofun[] array */
 	ofun[MAT_SPOT].funp = m_spot;
 	ofun[MAT_DIELECTRIC].funp = m_dielectric;
 	ofun[MAT_INTERFACE].funp = m_interface;
+	ofun[MAT_MIST].funp = m_mist;
 	ofun[PAT_CTEXT].funp =
 	ofun[PAT_BTEXT].funp =
 	ofun[MIX_TEXT].funp = text;
