@@ -1,3 +1,9 @@
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
+
+#ifndef lint
+static char SCCSid[] = "$SunId$ SGI";
+#endif
+
 /*
  * Routines for tracking beam compuatations
  */
@@ -14,7 +20,7 @@ static int	lastin= -1;	/* last ordered position in list */
 
 
 int
-beamcmp(b0, b1)			/* comparison for descending compute order */
+beamcmp(b0, b1)				/* comparison for compute order */
 register PACKHEAD	*b0, *b1;
 {
 	return(	b1->nr*(b0->nc+1) - b0->nr*(b1->nc+1) );
@@ -22,10 +28,20 @@ register PACKHEAD	*b0, *b1;
 
 
 int
-dispbeam(b, hp, bi)			/* display a holodeck beam */
+beamidcmp(b0, b1)			/* comparison for beam searching */
+register PACKHEAD	*b0, *b1;
+{
+	register int	c = b0->hd - b1->hd;
+
+	if (c) return(c);
+	return(b0->bi - b1->bi);
+}
+
+
+int
+dispbeam(b, hb)				/* display a holodeck beam */
 register BEAM	*b;
-HOLO	*hp;
-int	bi;
+register HDBEAMI	*hb;
 {
 	static int	n = 0;
 	static PACKHEAD	*p = NULL;
@@ -42,53 +58,57 @@ int	bi;
 					/* assign packet fields */
 	bcopy((char *)hdbray(b), (char *)packra(p), b->nrm*sizeof(RAYVAL));
 	p->nr = p->nc = b->nrm;
-	for (p->hd = 0; hdlist[p->hd] != hp; p->hd++)
+	for (p->hd = 0; hdlist[p->hd] != hb->h; p->hd++)
 		if (hdlist[p->hd] == NULL)
 			error(CONSISTENCY, "unregistered holodeck in dispbeam");
-	p->bi = bi;
+	p->bi = hb->b;
 	disp_packet(p);			/* display it */
 }
 
 
 bundle_set(op, clist, nents)	/* bundle set operation */
 int	op;
-register PACKHEAD	*clist;
+PACKHEAD	*clist;
 int	nents;
 {
-	int	oldnr;
-	register HDBEAMI	*hb;
-	register int	i, n;
-				/* look for common members */
-	for (n = 0; n < nents; n++) {
-		for (i = 0; i < complen; i++)
-			if (clist[n].bi == complist[i].bi &&
-					clist[n].hd == complist[i].hd) {
-				oldnr = complist[i].nr;
-				clist[n].nc = complist[i].nc;
-				switch (op) {
-				case BS_ADD:		/* add to count */
-					complist[i].nr += clist[n].nr;
-					clist[n].nr = 0;
-					break;
-				case BS_ADJ:		/* reset count */
-					complist[i].nr = clist[n].nr;
-					clist[n].nr = 0;
-					break;
-				case BS_DEL:		/* delete count */
-					if (clist[n].nr == 0 ||
-						clist[n].nr >= complist[i].nr)
-						complist[i].nr = 0;
-					else
-						complist[i].nr -= clist[n].nr;
-					break;
-				}
-				if (complist[i].nr != oldnr)
-					lastin = -1;	/* flag sort */
-				break;
-			}
-		if (i >= complen)
-			clist[n].nc = bnrays(hdlist[clist[n].hd], clist[n].bi);
+	int	oldnr, n;
+	HDBEAMI	*hbarr;
+	register PACKHEAD	*csm;
+	register int	i;
+					/* search for common members */
+	qsort((char *)clist, nents, sizeof(PACKHEAD), beamidcmp);
+	for (csm = clist+nents; csm-- > clist; )
+		csm->nc = -1;
+	for (i = 0; i < complen; i++) {
+		csm = (PACKHEAD *)bsearch((char *)(complist+i), (char *)clist,
+				nents, sizeof(PACKHEAD), beamidcmp);
+		if (csm == NULL)
+			continue;
+		oldnr = complist[i].nr;
+		csm->nc = complist[i].nc;
+		switch (op) {
+		case BS_ADD:		/* add to count */
+			complist[i].nr += csm->nr;
+			csm->nr = 0;
+			break;
+		case BS_ADJ:		/* reset count */
+			complist[i].nr = csm->nr;
+			csm->nr = 0;
+			break;
+		case BS_DEL:		/* delete count */
+			if (csm->nr == 0 || csm->nr >= complist[i].nr)
+				complist[i].nr = 0;
+			else
+				complist[i].nr -= csm->nr;
+			break;
+		}
+		if (complist[i].nr != oldnr)
+			lastin = -1;	/* flag sort */
 	}
+				/* computed rays for each uncommon beams */
+	for (csm = clist+nents; csm-- > clist; )
+		if (csm->nc < 0)
+			csm->nc = bnrays(hdlist[csm->hd], csm->bi);
 				/* complete list operations */
 	switch (op) {
 	case BS_NEW:			/* new computation set */
@@ -110,8 +130,9 @@ int	nents;
 		sortcomplist();		/* sort updated list & new entries */
 		qsort((char *)clist, nents, sizeof(PACKHEAD), beamcmp);
 					/* what can't we satisfy? */
-		for (n = 0; n < nents && clist[n].nr > clist[n].nc; n++)
+		for (i = nents, csm = clist; i-- && csm->nr > csm->nc; csm++)
 			;
+		n = csm - clist;
 		if (op == BS_ADJ) {	/* don't regenerate adjusted beams */
 			for (i = n; i < nents && clist[i].nr > 0; i++)
 				;
@@ -141,13 +162,13 @@ int	nents;
 	if (outdev == NULL)		/* nothing to display? */
 		return;
 					/* load and display beams we have */
-	hb = (HDBEAMI *)malloc(nents*sizeof(HDBEAMI));
-	for (i = 0; i < nents; i++) {
-		hb[i].h = hdlist[clist[i].hd];
-		hb[i].b = clist[i].bi;
+	hbarr = (HDBEAMI *)malloc(nents*sizeof(HDBEAMI));
+	for (i = nents; i--; ) {
+		hbarr[i].h = hdlist[clist[i].hd];
+		hbarr[i].b = clist[i].bi;
 	}
-	hdloadbeams(hb, nents, dispbeam);
-	free((char *)hb);
+	hdloadbeams(hbarr, nents, dispbeam);
+	free((char *)hbarr);
 	return;
 memerr:
 	error(SYSTEM, "out of memory in bundle_set");
