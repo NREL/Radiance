@@ -266,7 +266,7 @@ x11.o:	x11icon.h
 
 ambient.o ambcomp.o lookamb.o:	ambient.h
 
-data.o rmain.o rpict.o rv2.o:	../common/resolu.h
+data.o rmain.o rpict.o rtrace.o rv2.o:	../common/resolu.h
 
 aniso.o func.o m_brdf.o m_direct.o mx_data.o mx_func.o p_data.o \
 p_func.o t_data.o t_func.o:	func.h
