@@ -349,7 +349,7 @@ register int  sn;	/* target source number */
 					/* check against source */
 		initsrcindex(&si);
 		si.sn = sn;
-		nopart(&si, sr.rorg);
+		nopart(&si, &sr);
 		samplendx++;
 		if (!srcray(&sr, NULL, &si) || sr.rsrc != sn)
 			continue;
