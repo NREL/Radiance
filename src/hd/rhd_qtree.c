@@ -318,11 +318,14 @@ int	drop;
 		tp->k[q].li = lo;
 	}
 dropit:
-	if (drop) {
-		qtL.chr[li][0] = qtL.chr[li][1] = qtL.chr[li][2] = 0;
-		qtL.wd[li] = falleaves;
-		falleaves = li;
-	}
+	if (drop)
+		if (li+1 == (qtL.tl ? qtL.tl : qtL.nl))
+			qtL.tl = li;		/* special case */
+		else {
+			qtL.chr[li][0] = qtL.chr[li][1] = qtL.chr[li][2] = 0;
+			qtL.wd[li] = falleaves;
+			falleaves = li;
+		}
 	return(li == lo);
 }
 
@@ -334,19 +337,19 @@ FVECT	p, v;
 	register int	li;
 	int	mapit;
 				/* grab a leaf */
-	if (falleaves >= 0) {		/* check for fallen leaves */
+	if (!imm_mode && falleaves >= 0) {	/* check for fallen leaves */
 		li = falleaves;
 		falleaves = qtL.wd[li];
 		mapit = qtL.tml <= qtL.tl ?
 				(li < qtL.tml || li >= qtL.tl) :
 				(li < qtL.tml && li >= qtL.tl) ;
-	} else {			/* else allocate new one */
+	} else {				/* else allocate new one */
 		li = qtL.tl++;
-		if (qtL.tl >= qtL.nl)	/* advance to next leaf in ring */
+		if (qtL.tl >= qtL.nl)		/* next leaf in ring */
 			qtL.tl = 0;
-		if (qtL.tl == qtL.bl)	/* need to shake some free */
+		if (qtL.tl == qtL.bl)		/* need to shake some free */
 			qtCompost(LFREEPCT);
-		mapit = 0;		/* we'll map it later */
+		mapit = 0;			/* we'll map it later */
 	}
 	VCOPY(qtL.wp[li], p);
 	qtL.wd[li] = encodedir(v);

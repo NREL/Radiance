@@ -15,6 +15,8 @@ extern struct driver {
 	int	ifd;		/* input file descriptor (for select) */
 } odev;			/* our open device */
 
+extern int	imm_mode;	/* bundles are being delivered immediately */
+
 				/* user commands */
 #define	DC_SETVIEW	0		/* set the view */
 #define	DC_GETVIEW	1		/* print the current view */
@@ -71,7 +73,8 @@ COLR	c;		: pixel color (RGBE)
 FVECT	p;		: world intersection point
 FVECT	v;		: ray direction vector
 
-Add the given color point to the display output queue.
+Add the given color point to the display output queue.  If imm_mode is
+non-zero, then values are being sent in rapid succession.
 
 
 int
