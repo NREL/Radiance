@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 /* SCCSid "$SunId$ SGI" */
 
@@ -41,6 +41,13 @@ typedef struct {
 #define	 W_OK		2		/* writable */
 #define	 X_OK		1		/* executable */
 #define	 F_OK		0		/* exists */
+#endif
+
+#ifndef  int2
+#define  int2		short		/* two-byte integer */
+#endif
+#ifndef  int4
+#define  int4		int		/* four-byte integer */
 #endif
 
 extern int  eputs(), wputs();	/* standard error output functions */
