@@ -12,6 +12,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+#include  <math.h>
+
 #include  "color.h"
 
 
@@ -23,7 +25,7 @@ int  argc;
 char  *argv[];
 {
 	COLOR  col;
-	double  d1,d2,d3, log();
+	double  d1,d2,d3;
 	int  i;
 
 	printargs(argc, argv, stdout);

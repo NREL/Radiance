@@ -10,6 +10,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+#include  <math.h>
+
 #include  "tiffio.h"
 
 #include  "color.h"
