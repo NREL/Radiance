@@ -147,19 +147,16 @@ int  xmin, ymin, xmax, ymax;
 		return;
 	}
 						/* jitter ray direction */
-	p->x = h = xmin + (xmax-xmin)*frandom();
-	h /= hresolu;
-	p->y = v = ymin + (ymax-ymin)*frandom();
-	v /= vresolu;
+	h = xmin + (xmax-xmin)*frandom();
+	v = ymin + (ymax-ymin)*frandom();
 	
-	viewray(thisray.rorg, thisray.rdir, &ourview, h, v);
-
+	viewray(thisray.rorg, thisray.rdir, &ourview, h/hresolu, v/vresolu);
 	rayorigin(&thisray, NULL, PRIMARY, 1.0);
-	
 	rayvalue(&thisray);
 
+	p->x = h;
+	p->y = v;
 	copycolor(p->v, thisray.rcol);
-
 	scalecolor(p->v, exposure);
 
 	(*dev->paintr)(greyscale?greyof(p->v):p->v, xmin, ymin, xmax, ymax);
