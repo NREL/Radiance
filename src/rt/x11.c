@@ -100,12 +100,15 @@ char  *name, *id;
 	} else if (nplanes <= 12) {
 		if (!XMatchVisualInfo(ourdisplay,ourscreen,
 				nplanes,PseudoColor,&ourvinfo)) {
-			stderr_v("PseudoColor not supported\n");
+			stderr_v("PseudoColor server required\n");
 			return(NULL);
 		}
 	} else if (!XMatchVisualInfo(ourdisplay,ourscreen,
-			nplanes,TrueColor,&ourvinfo)) {
-		stderr_v("TrueColor not supported\n");
+			nplanes,TrueColor,&ourvinfo) &&
+						/* kludge for DirectColor */
+			!XMatchVisualInfo(ourdisplay,ourscreen,
+			nplanes,DirectColor,&ourvinfo)) {
+		stderr_v("TrueColor server required\n");
 		return(NULL);
 	}
 	ourvisual = ourvinfo.visual;
@@ -225,7 +228,7 @@ int  xmin, ymin, xmax, ymax;
 
 	if (ncolors > 0)
 		pixel = pixval[get_pixel(col, xnewcolr)];
-	else if (ourvisual->class == TrueColor)
+	else if (ourvisual->class != PseudoColor)
 		pixel = true_pixel(col);
 	else
 		return;
