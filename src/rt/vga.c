@@ -10,6 +10,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+#include  <math.h>
+
 #include  <graph.h>
 
 #include  "driver.h"
