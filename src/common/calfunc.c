@@ -387,7 +387,12 @@ register VARDEF  *vp;
 #endif
     if (errno) {
 	wputs(fname);
-	wputs(": bad call\n");
+	if (errno == EDOM)
+		wputs(": domain error\n");
+	else if (errno == ERANGE)
+		wputs(": range error\n");
+	else
+		wputs(": error in call\n");
 	return(0.0);
     }
     errno = lasterrno;
