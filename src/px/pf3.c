@@ -124,7 +124,7 @@ int  c, r;
 	for (y = ycent+1-ybrad; y <= ycent+ybrad; y++) {
 		if (y < 0) continue;
 		if (y >= yres) break;
-		d = y_r < 1.0 ? y_r*y - r : (double)(y - ycent);
+		d = y_r < 1.0 ? y_r*y - (r+.5) : (double)(y - ycent);
 		if (d < -0.5) continue;
 		if (d >= 0.5) break;
 		scan = scanin[y%barsize];
@@ -132,7 +132,7 @@ int  c, r;
 			offs = x < 0 ? xres : x >= xres ? -xres : 0;
 			if (offs && !wrapfilt)
 				continue;
-			d = x_c < 1.0 ? x_c*x - c : (double)(x - xcent);
+			d = x_c < 1.0 ? x_c*x - (c+.5) : (double)(x - xcent);
 			if (d < -0.5) continue;
 			if (d >= 0.5) break;
 			wsum++;
@@ -208,14 +208,14 @@ int  ccent, rcent;
 	for (y = ycent+1-ybrad; y <= ycent+ybrad; y++) {
 		if (y < 0) continue;
 		if (y >= yres) break;
-		d = y_r < 1.0 ? y_r*y - rcent : (double)(y - ycent);
+		d = y_r < 1.0 ? y_r*y - (rcent+.5) : (double)(y - ycent);
 		if (d < -0.5) continue;
 		if (d >= 0.5) break;
 		for (x = xcent+1-xbrad; x <= xcent+xbrad; x++) {
 			offs = x < 0 ? xres : x >= xres ? -xres : 0;
 			if (offs && !wrapfilt)
 				continue;
-			d = x_c < 1.0 ? x_c*x - ccent : (double)(x - xcent);
+			d = x_c < 1.0 ? x_c*x - (ccent+.5) : (double)(x - xcent);
 			if (d < -0.5) continue;
 			if (d >= 0.5) break;
 			sumans(x, y, rcent, ccent,
