@@ -19,9 +19,15 @@ static char SCCSid[] = "$SunId$ SGI";
 #ifndef NVSAMPS
 #define NVSAMPS		4096	/* number of ray samples per view */
 #endif
-
+#ifndef MEYERNG
+#define MEYERNG		0.2	/* target mean eye range (rel. to grid) */
+#endif
+#ifndef MAXTODO
 #define MAXTODO		3	/* maximum sections to look at */
-#define MAXDRAT		3.0	/* maximum distance ratio */
+#endif
+#ifndef MAXDRAT
+#define MAXDRAT		3.0	/* maximum distance ratio btwn. cand. sect. */
+#endif
 
 #define CBEAMBLK	1024	/* cbeam allocation block size */
 
@@ -30,6 +36,8 @@ static struct beamcomp {
 	int	bi;		/* beam index */
 	int4	nr;		/* number of samples desired */
 } *cbeam = NULL;	/* current beam list */
+
+VIEWPOINT	cureye;		/* current eye position */
 
 static int	ncbeams = 0;	/* number of sorted beams in cbeam */
 static int	xcbeams = 0;	/* extra (unregistered) beams past ncbeams */
@@ -256,6 +264,7 @@ int	fresh;
 	else				/* else clear sample requests */
 		for (i = ncbeams+xcbeams; i--; )
 			cbeam[i].nr = 0;
+	cureye.rng = 0.;
 }
 
 
@@ -263,15 +272,36 @@ beam_view(vn, hr, vr)		/* add beam view (if advisable) */
 VIEW	*vn;
 int	hr, vr;
 {
-	int	todo[MAXTODO+1];
-	int	n;
+	int	todo[MAXTODO+1], n;
+	double	hdgsiz, d;
+	register HOLO	*hp;
+	register int	i;
 					/* sort our list */
 	cbeamsort(1);
 					/* add view to nearby sections */
 	if (!(n = comptodo(todo, vn)))
 		return(0);
-	while (n--)
-		addview(todo[n], vn, hr, vr);
+	for (i = 0; i < n; i++)
+		addview(todo[i], vn, hr, vr);
+	if (MEYERNG <= FTINY || vn->type == VT_PAR)
+		return(1);
+	hdgsiz = 0.; d = 1./3. / n;	/* compute mean grid size */
+	for (i = 0; i < n; i++) {
+		hp = hdlist[todo[i]];
+		hdgsiz += d * (	VLEN(hp->xv[0])/hp->grid[0] +
+				VLEN(hp->xv[1])/hp->grid[1] +
+				VLEN(hp->xv[2])/hp->grid[2] ) ;
+	}
+					/* add to current eye position */
+	if (cureye.rng <= FTINY) {
+		VCOPY(cureye.vpt, vn->vp);
+		cureye.rng = MEYERNG * hdgsiz;
+	} else if ((d = sqrt(dist2(vn->vp,cureye.vpt))) + MEYERNG*hdgsiz >
+			cureye.rng) {
+		for (i = 3; i--; )
+			cureye.vpt[i] = 0.5*(cureye.vpt[i] + vn->vp[i]);
+		cureye.rng = 0.5*(cureye.rng + MEYERNG*hdgsiz + d);
+	}
 	return(1);
 }
 
@@ -280,8 +310,11 @@ int
 beam_sync(all)			/* update beam list on server */
 int	all;
 {
+					/* set new eye position */
+	serv_request(DR_VIEWPOINT, sizeof(VIEWPOINT), (char *)&cureye);
 					/* sort list (put orphans at end) */
 	cbeamsort(all < 0);
+					/* send beam request */
 	if (all)
 		cbeamop(DR_NEWSET, cbeam, ncbeams);
 	else

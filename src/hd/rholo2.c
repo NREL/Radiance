@@ -13,38 +13,72 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "random.h"
 
 
+VIEWPOINT	myeye;		/* target view position */
+
+
 packrays(rod, p)		/* pack ray origins and directions */
 register float	*rod;
 register PACKET	*p;
 {
-	static FVECT	ro, rd;
+	short	packord[RPACKSIZ];
+	float	packdc[RPACKSIZ];
+	int	iterleft = 3*p->nr;
+	BYTE	rpos[2][2];
+	FVECT	ro, rd, rp1;
 	GCOORD	gc[2];
-	int	ila[2], hsh;
-	double	d, sl[4];
-	register int	i;
+	double	d, dc, meandist;
+	int	i;
+	register int	ii;
 
 	if (!hdbcoord(gc, hdlist[p->hd], p->bi))
 		error(CONSISTENCY, "bad beam index in packrays");
-	ila[0] = p->hd; ila[1] = p->bi;
-	hsh = ilhash(ila,2) + p->nc;
-	for (i = 0; i < p->nr; i++) {
-		multisamp(sl, 4, urand(hsh+i));
-		p->ra[i].r[0][0] = sl[0] * 256.;
-		p->ra[i].r[0][1] = sl[1] * 256.;
-		p->ra[i].r[1][0] = sl[2] * 256.;
-		p->ra[i].r[1][1] = sl[3] * 256.;
-		d = hdray(ro, rd, hdlist[p->hd], gc, p->ra[i].r);
-		if (!vdef(OBSTRUCTIONS))
-			d *= frandom();			/* random offset */
+	for (i = 0, meandist = 0.; i < p->nr || meandist > myeye.rng+FTINY; ) {
+		rpos[0][0] = frandom() * 256.;
+		rpos[0][1] = frandom() * 256.;
+		rpos[1][0] = frandom() * 256.;
+		rpos[1][1] = frandom() * 256.;
+		d = hdray(ro, rd, hdlist[p->hd], gc, rpos);
+		if (myeye.rng > FTINY) {		/* check eyepoint */
+			register int	nexti;
+
+			VSUM(rp1, ro, rd, d);
+			dc = sqrt(dist2line(myeye.vpt, ro, rp1)) / p->nr;
+			if (i == p->nr) {		/* packet full */
+				nexti = packord[i-1];
+				if (!iterleft--)
+					break;		/* tried enough! */
+				if (dc >= packdc[nexti])
+					continue;	/* worse than worst */
+				meandist -= packdc[nexti];
+			} else
+				nexti = i++;
+			meandist += packdc[nexti] = dc;	/* new distance */
+			for (ii = i; --ii; ) {		/* insertion sort */
+				if (dc > packdc[packord[ii-1]])
+					break;
+				packord[ii] = packord[ii-1];
+			}
+			packord[ii] = nexti;
+			ii = nexti;			/* put it here */
+		} else
+			ii = i++;
 		if (p->offset != NULL) {
+			if (!vdef(OBSTRUCTIONS))
+				d *= frandom();		/* random offset */
 			VSUM(ro, ro, rd, d);		/* advance ray */
-			p->offset[i] = d;
+			p->offset[ii] = d;
 		}
-		VCOPY(rod, ro);
-		rod += 3;
-		VCOPY(rod, rd);
-		rod += 3;
+		p->ra[ii].r[0][0] = rpos[0][0];
+		p->ra[ii].r[0][1] = rpos[0][1];
+		p->ra[ii].r[1][0] = rpos[1][0];
+		p->ra[ii].r[1][1] = rpos[1][1];
+		VCOPY(rod+6*ii, ro);
+		VCOPY(rod+6*ii+3, rd);
 	}
+#ifdef DEBUG
+	fprintf(stderr, "%f mean distance for target %f (%d iterations)\n",
+			meandist, myeye.rng, 3*p->nr - iterleft);
+#endif
 }
 
 

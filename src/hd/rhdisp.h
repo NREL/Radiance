@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 /* SCCSid "$SunId$ SGI" */
 
@@ -18,6 +18,7 @@
 #define DR_KILL		8		/* kill rtrace process(es) */
 #define DR_RESTART	9		/* restart rtrace */
 #define DR_CLOBBER	10		/* clobber holodeck */
+#define DR_VIEWPOINT	11		/* set desired eye position */
 
 				/* server responses */
 #define DS_BUNDLE	32		/* computed bundle */
