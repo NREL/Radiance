@@ -10,6 +10,7 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #include "rholo.h"
 #include "random.h"
+#include "paths.h"
 #include "selcall.h"
 #include <signal.h>
 #include <sys/time.h>
@@ -18,7 +19,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #define MAXPROC		16
 #endif
 
-static char	PFILE[] = "/usr/tmp/RHpersist";	/* persist file name */
+static char	pfile[] = TEMPLATE;		/* persist file name */
 
 static int	rtpd[MAXPROC][3];		/* process descriptors */
 static float	*rtbuf = NULL;			/* allocated i/o buffer */
@@ -54,10 +55,11 @@ start_rtrace()			/* start rtrace process */
 	rtargv[rtargc++] = "-x"; rtargv[rtargc++] = buf1;
 	rtargv[rtargc++] = "-y"; rtargv[rtargc++] = "0";
 	rtargv[rtargc++] = "-fff";
-	rtargv[rtargc++] = "-ovL";
+	rtargv[rtargc++] = vbool(VDIST) ? "-ovl" : "-ovL";
 	rtargv[rtargc++] = nowarn ? "-w-" : "-w+";
 	if (npt > 1) {
-		rtargv[rtargc++] = "-PP"; rtargv[rtargc++] = PFILE;
+		mktemp(pfile);
+		rtargv[rtargc++] = "-PP"; rtargv[rtargc++] = pfile;
 	}
 	rtargv[rtargc++] = vval(OCTREE);
 	rtargv[rtargc] = NULL;
@@ -291,10 +293,10 @@ killpersist()			/* kill persistent process */
 	FILE	*fp;
 	int	pid;
 
-	if ((fp = fopen(PFILE, "r")) == NULL)
+	if ((fp = fopen(pfile, "r")) == NULL)
 		return;
 	if (fscanf(fp, "%*s %d", &pid) != 1 || kill(pid, SIGALRM) < 0)
-		unlink(PFILE);
+		unlink(pfile);
 	fclose(fp);
 }
 
