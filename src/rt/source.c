@@ -544,12 +544,11 @@ register RAY  *r
  */
 
 static int
-weaksrcmat(int obj)		/* identify material */
+weaksrcmat(OBJECT obj)		/* identify material */
 {
-	register OBJREC *o = objptr(obj);
+	OBJREC *o = findmaterial(objptr(obj));
 	
-	while (!ismaterial(o->otype))	/* find material */
-		o = objptr(o->omod);
+	if (o == NULL) return 0;
 	return((o->otype==MAT_ILLUM)|(o->otype==MAT_GLOW));
 }
 
