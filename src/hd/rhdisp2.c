@@ -147,12 +147,12 @@ int	fresh;
 }
 
 
-int2 *
+int16 *
 beam_view(vn, hr, vr)		/* add beam view (if advisable) */
 VIEW	*vn;
 int	hr, vr;
 {
-	int2	*slist;
+	int16	*slist;
 	BEAMLIST	blist;
 	double	eravg, d;
 	register HOLO	*hp;

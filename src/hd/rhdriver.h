@@ -162,4 +162,4 @@ Set odev.v.type=0 and odev.hres=odev.vres=0 when done.
 
 extern VIEW	*dev_auxview();
 
-extern int2	*beam_view();
+extern int16	*beam_view();

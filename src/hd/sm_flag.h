@@ -8,4 +8,4 @@
 #define IS_FLAG(f,t)		F_OP(f,t,&)
 #define SET_FLAG(f,t)		F_OP(f,t,|=)
 #define CLR_FLAG(f,t)		F_OP(f,t,&=~)
-#define FLAG_BYTES(n)            ((((n)+31) >>5)*sizeof(int4))
+#define FLAG_BYTES(n)            ((((n)+31) >>5)*sizeof(int32))

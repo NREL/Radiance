@@ -19,7 +19,7 @@ static const char	RCSid[] = "$Id$";
 QUADTREE  *quad_block[QT_MAX_BLK];	  /* our quadtree */
 static QUADTREE  quad_free_list = EMPTY;  /* freed octree nodes */
 static QUADTREE  treetop = 0;		  /* next free node */
-int4 *quad_flag= NULL;                    /* quadtree flags */
+int32 *quad_flag= NULL;                    /* quadtree flags */
 
 
 qtremovelast(qt,id)
@@ -52,7 +52,7 @@ qtAlloc()			/* allocate a quadtree */
 	   error(SYSTEM,"qtAlloc(): Unable to allocate memory\n");
 
 	/* Realloc the per/node flags */
-	quad_flag = (int4 *)realloc((void *)quad_flag,
+	quad_flag = (int32 *)realloc((void *)quad_flag,
 			(QT_BLOCK(freet)+1)*((QT_BLOCK_SIZE+7)>>3));
 	if (quad_flag == NULL)
 	   error(SYSTEM,"qtAlloc(): Unable to allocate memory\n");

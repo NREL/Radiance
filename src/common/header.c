@@ -31,8 +31,6 @@ static const char	RCSid[] = "$Id$";
 #include  <time.h>
 #include  <ctype.h>
 
-#include  "standard.h"
-
 #define	 MAXLINE	512
 
 char  HDRSTR[] = "#?";		/* information header magic number */

@@ -2,7 +2,7 @@
 static const char RCSid[] = "$Id$";
 #endif
 /*
- * Compute a 4-byte direction code (int4 type defined in standard.h).
+ * Compute a 4-byte direction code (int32 type defined in standard.h).
  *
  * Mean accuracy is 0.0022 degrees, with a maximum error of 0.0058 degrees.
  */
@@ -19,11 +19,11 @@ static const char RCSid[] = "$Id$";
 #define F2SFT		18
 #define FMASK		0x1fff
 
-int4
+int32
 encodedir(dv)		/* encode a normalized direction vector */
 FVECT	dv;
 {
-	register int4	dc = 0;
+	register int32	dc = 0;
 	int	cd[3], cm;
 	register int	i;
 
@@ -53,7 +53,7 @@ FVECT	dv;
 void
 decodedir(dv, dc)	/* decode a normalized direction vector */
 register FVECT	dv;	/* returned */
-register int4	dc;
+register int32	dc;
 {
 	double	d1, d2, der;
 
@@ -77,7 +77,7 @@ register int4	dc;
 
 double
 dir2diff(dc1, dc2)		/* approx. radians^2 between directions */
-int4	dc1, dc2;
+int32	dc1, dc2;
 {
 	FVECT	v1, v2;
 
@@ -90,7 +90,7 @@ int4	dc1, dc2;
 
 double
 fdir2diff(dc1, v2)		/* approx. radians^2 between directions */
-int4	dc1;
+int32	dc1;
 register FVECT	v2;
 {
 	FVECT	v1;

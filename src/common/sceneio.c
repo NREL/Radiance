@@ -137,7 +137,7 @@ register OBJREC  *o;
 
 void
 writescene(firstobj, nobjs, fp)		/* write binary scene description */
-OBJECT	firstobj, nobjs;
+int	firstobj, nobjs;
 FILE	*fp;
 {
 	int	i;

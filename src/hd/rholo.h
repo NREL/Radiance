@@ -11,20 +11,20 @@
 #endif
 
 typedef struct packet {
-	int2	hd;		/* holodeck section (first) */
-	int4	bi;		/* beam index (second) */
-	int4	nr;		/* number of rays (third) */
-	int4	nc;		/* number calculated (fourth) */
+	int16	hd;		/* holodeck section (first) */
+	int32	bi;		/* beam index (second) */
+	int32	nr;		/* number of rays (third) */
+	int32	nc;		/* number calculated (fourth) */
 	RAYVAL	ra[RPACKSIZ];	/* ray values (fifth) */
 	float	*offset;	/* offset array if !vbool(OBSTRUCTIONS) */
 	struct packet	*next;	/* next in packet list */
 } PACKET;		/* a beam packet */
 
 typedef struct {
-	int2	hd;		/* holodeck section (first) */
-	int4	bi;		/* beam index (second) */
-	int4	nr;		/* number of rays (third) */
-	int4	nc;		/* number calculated (fourth) */
+	int16	hd;		/* holodeck section (first) */
+	int32	bi;		/* beam index (second) */
+	int32	nr;		/* number of rays (third) */
+	int32	nc;		/* number calculated (fourth) */
 } PACKHEAD;		/* followed by ray values */
 
 #define packsiz(nr)	(sizeof(PACKHEAD)+(nr)*sizeof(RAYVAL))
@@ -113,4 +113,4 @@ extern char	*rtargv[];
 
 extern PACKET	*do_packets(), *get_packets(), *flush_queue();
 
-extern int2	*viewbeams();
+extern int16	*viewbeams();

@@ -42,8 +42,8 @@
 #endif
 
 typedef struct {
-	int2	type;		/* message type */
-	int4	nbytes;		/* number of additional bytes */
+	int16	type;		/* message type */
+	int32	nbytes;		/* number of additional bytes */
 } MSGHEAD;		/* message head */
 
 /*

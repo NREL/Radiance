@@ -413,7 +413,7 @@ creatholo(gp)			/* create a holodeck output file */
 HDGRID	*gp;
 {
 	extern char	VersionID[];
-	int4	lastloc, nextloc;
+	int32	lastloc, nextloc;
 	int	n;
 	int	fd;
 	FILE	*fp;
@@ -479,7 +479,7 @@ loadholo()			/* start loading a holodeck from fname */
 	FILE	*fp;
 	int	fd;
 	int	n;
-	int4	nextloc;
+	int32	nextloc;
 	
 	if (ncprocs > 0 & force >= 0)
 		fp = fopen(hdkfile, "r+");

@@ -21,7 +21,7 @@ static const char	RCSid[] = "$Id$";
 OBJECT	**qtsettab= NULL;		/* quadtree leaf node table */
 QUADTREE  qtnumsets=0;			/* number of used set indices */
 static int  qtfreesets = EMPTY;		/* free set index list */
-int4 *qtsetflag = NULL;
+int32 *qtsetflag = NULL;
 static int qtallocsets =0;
 
 qtclearsetflags()
@@ -50,7 +50,7 @@ OBJECT  *oset;
 				(unsigned)(osi+QTSETIBLK)*sizeof(OBJECT *));
 		if (qtsettab == NULL)
 			goto memerr;
-		qtsetflag = (int4 *)realloc((void *)qtsetflag,
+		qtsetflag = (int32 *)realloc((void *)qtsetflag,
 				   FLAG_BYTES(osi+ QTSETIBLK));
 		if (qtsetflag == NULL)
 			goto memerr;

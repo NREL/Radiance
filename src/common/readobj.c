@@ -165,7 +165,7 @@ newobject()				/* get a new object */
 
 void
 freeobjects(firstobj, nobjs)		/* free a range of objects */
-OBJECT  firstobj, nobjs;
+int  firstobj, nobjs;
 {
 	register int  obj;
 					/* check bounds */

@@ -40,7 +40,7 @@ FILE	*fout;
 	FILE	*fp;
 	HOLO	*hdsect;
 	int	fd;
-	int4	nextloc;
+	int32	nextloc;
 	int	n;
 					/* open holodeck file */
 	if ((fp = fopen(fname, "r")) == NULL) {

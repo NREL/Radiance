@@ -14,8 +14,6 @@ static const char RCSid[] = "$Id$";
 #include  "color.h"
 #include  "resolu.h"
 
-typedef	unsigned short uint16;	/* sizeof (uint16) must == 2 */
-
 #define	 min(a,b)		((a)<(b)?(a):(b))
 
 				/* what to put out (also RED, GRN, BLU) */

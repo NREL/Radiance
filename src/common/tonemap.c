@@ -390,7 +390,7 @@ double	Ldmax;
 	float	*cumf;
 	int	brt0, histlen, threshold, ceiling, trimmings;
 	double	logLddyn, Ldmin, Ldavg, Lwavg, Tr, Lw, Ld;
-	int4	histot;
+	int32	histot;
 	double	sum;
 	register double	d;
 	register int	i, j;
@@ -492,7 +492,7 @@ register BYTE	*cs;
 int	len;
 {
 	static char	funcName[] = "tmMapPixels";
-	register int4	li, pv;
+	register int32	li, pv;
 
 	if (tmTop == NULL || tmTop->lumap == NULL)
 		returnErr(TM_E_TMINVAL);

@@ -275,7 +275,7 @@ register VIEW	*v;
 	static unsigned	nhist;
 	VIEW	*dv;
 	int	i, res[2];
-	int2	*slist;
+	int16	*slist;
 	char	*err;
 				/* restore previous view? */
 	if (v == NULL) {

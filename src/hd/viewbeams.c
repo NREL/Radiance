@@ -46,14 +46,14 @@ int	hd, bi, nr;
 }
 
 
-int2 *
+int16 *
 viewbeams(vp, hr, vr, blp)		/* convert view into sections/beams */
 VIEW	*vp;
 int	hr, vr;
 BEAMLIST	*blp;
 {
-	static int2	sectlist[HDMAX+1];
-	int2	sectarr[MINRES+1][MINRES+1];
+	static int16	sectlist[HDMAX+1];
+	int16	sectarr[MINRES+1][MINRES+1];
 	double	d0, d1, mindist;
 	GCOORD	gc[2];
 	FVECT	rorg, rdir;

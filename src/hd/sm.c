@@ -327,7 +327,7 @@ int max_verts,max_tris;
       goto memerr;
 
     for(i=0; i< T_FLAGS; i++)
-      if(!(SM_NTH_FLAGS(sm,i)=(int4 *)malloc(fbytes)))
+      if(!(SM_NTH_FLAGS(sm,i)=(int32 *)malloc(fbytes)))
 	goto memerr;
 
     SM_MAX_VERTS(sm) = max_verts;

@@ -260,7 +260,7 @@ int	bi;
 
 ambient_list()			/* compute ambient beam list */
 {
-	int4	wtotal, minrt;
+	int32	wtotal, minrt;
 	double	frac;
 	int	i;
 	register int	j, k;

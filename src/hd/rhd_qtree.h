@@ -31,7 +31,7 @@ typedef struct rtree {
 
 extern struct rleaves {
 	float		(*wp)[3];	/* world intersection point array */
-	int4		*wd;		/* world direction array */
+	int32		*wd;		/* world direction array */
 	TMbright	*brt;		/* encoded brightness array */
 	BYTE		(*chr)[3];	/* encoded chrominance array */
 	BYTE		(*rgb)[3];	/* tone-mapped color array */
@@ -49,5 +49,5 @@ extern int	qtMinNodesiz;	/* minimum node dimension (pixels) */
 
 extern int	rayqleft;	/* number of rays to queue before flush */
 
-extern int4	encodedir();
+extern int32	encodedir();
 extern double	fdir2diff(), dir2diff();
