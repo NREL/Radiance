@@ -43,7 +43,10 @@ proc addview {{pos end}} {		# add current view
 		return -1
 	}
 	set curmess {}
-	set n [lsearch -glob $radvar(view) "$viewname *"]
+	set n [lsearch -exact $radvar(view) $viewname]
+	if {$n < 0} {
+		set n [lsearch -glob $radvar(view) "$viewname *"]
+	}
 	if {$n >= 0} {
 		set radvar(view) [lreplace $radvar(view) $n $n]
 		if {"$pos" != "end" && $pos > $n} {incr pos -1}
