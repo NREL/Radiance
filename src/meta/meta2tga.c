@@ -161,8 +161,12 @@ thispage()		/* rewind current file */
 initfile()		/* initialize this file */
 {
     static int  filenum = 0;
+    /*
     static unsigned char  cmap[24] = {255,255,255, 255,152,0, 0,188,0, 0,0,255,
 			179,179,0, 255,0,255, 0,200,200, 0,0,0};
+     */
+    static unsigned char  cmap[24] = {0,0,0, 0,0,255, 0,188,0, 255,152,0,
+			0,200,200, 255,0,255, 179,179,0, 255,255,255};
     struct hdStruct  thead;
     register int  i;
 
