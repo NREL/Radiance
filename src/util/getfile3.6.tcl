@@ -23,6 +23,7 @@ proc getfile args {		# get filename interactively
 	set dograb 0
 	set curdir .
 	set curpat *
+	set curfile {}
 	set transient 1
 	# Get options
 	while {[llength $args]} {
@@ -160,7 +161,7 @@ proc getfile args {		# get filename interactively
 
 proc update_dir w {			# Update working directory
 	global curdir curpat
-	if {"$curpat" == ""} {
+	if {"$curpat" == {}} {
 		set curpat *
 	}
 	if {"$curdir" == {}} {set curdir {~}}
@@ -194,7 +195,7 @@ proc update_dir w {			# Update working directory
 }
 
 
-proc set_curfile {w {sp ""}} {		# change current file selection
+proc set_curfile {w {sp {}}} {		# change current file selection
 	global curdir curfile
 	set f [$w.fm.fl get [$w.fm.fl curselection]]
 	if [string match */ $f] {
@@ -202,7 +203,7 @@ proc set_curfile {w {sp ""}} {		# change current file selection
 		update_dir $w
 	} else {
 		set curfile $f
-		if {"$sp" > ""} {
+		if {"$sp" != {}} {
 			$sp $curdir/$curfile
 		}
 	}
@@ -211,7 +212,7 @@ proc set_curfile {w {sp ""}} {		# change current file selection
 
 proc chk_select w {			# check if current selection is file
 	set s [$w.fm.fl curselection]
-	if {"$s" > "" && [file isfile [$w.fm.fl get $s]]} {
+	if {"$s" != {} && [file isfile [$w.fm.fl get $s]]} {
 		$w.vi configure -state normal
 	} else {
 		$w.vi configure -state disabled
