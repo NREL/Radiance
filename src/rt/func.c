@@ -16,7 +16,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 
 #define  INITFILE	"rayinit.cal"
-#define  DEFVNAME	"FILE_LOADED`"
+#define  DEFVNAME	"`FILE_LOADED"
 
 XF  unitxf = {			/* identity transform */
 	1.0, 0.0, 0.0, 0.0,
