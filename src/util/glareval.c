@@ -142,10 +142,13 @@ int	vh, vv;
 
 	if (compdir(dir, vh, vv) < 0)
 		return(-1.0);
+	npixinvw++;
 	if ((res = pict_val(dir)) >= 0.0)
 		return(res);
-	if (rt_pid == -1)
+	if (rt_pid == -1) {
+		npixmiss++;
 		return(-1.0);
+	}
 	rt_buf[0] = ourview.vp[0];
 	rt_buf[1] = ourview.vp[1];
 	rt_buf[2] = ourview.vp[2];
@@ -178,10 +181,13 @@ float	*vb;
 			vb[vh+hsize] = -1.0;
 			continue;
 		}
+		npixinvw++;
 		if ((vb[vh+hsize] = pict_val(dir)) >= 0.0)
 			continue;
-		if (rt_pid == -1)		/* missing information */
+		if (rt_pid == -1) {		/* missing information */
+			npixmiss++;
 			continue;
+		}
 						/* send to rtrace */
 		if (n >= MAXPIX) {			/* flush */
 			rt_compute(rt_buf, n);
