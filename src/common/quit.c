@@ -9,6 +9,8 @@ static const char	RCSid[] = "$Id$";
 
 #include <stdlib.h>
 
+#include "rterror.h"
+
 void
 quit(code)			/* quit program */
 int  code;

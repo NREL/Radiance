@@ -9,10 +9,10 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
-#include "rtio.h"
-
 #include <ctype.h>
+#include <stdio.h>
 
+#include "rtio.h"
 
 void
 fputword(s, fp)			/* put (quoted) word to file stream */

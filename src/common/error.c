@@ -10,6 +10,7 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  <stdio.h>
+#include  <stdlib.h>
 
 #include  "rterror.h"
 

@@ -11,8 +11,8 @@ static const char RCSid[] = "$Id$";
 
 #include <stdlib.h>
 
-extern void	eputs();
-extern void	quit();
+#include "rterror.h"
+
 
 #if 1
 

@@ -6,6 +6,7 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include "copyright.h"
+#include "random.h"
 
 #define NBITS		32		/* number of bits in an integer */
 

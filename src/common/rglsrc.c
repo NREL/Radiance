@@ -36,7 +36,7 @@ static struct {
 
 static int	nlights;		/* number of defined lights */
 
-static void	l_flatsrc(), l_sphsrc(), l_source();
+static void	l_flatsrc(int), l_sphsrc(int), l_source(int);
 
 
 void

@@ -28,11 +28,10 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  <stdio.h>
-
 #include  <string.h>
-
 #include  <ctype.h>
 
+#include  "rterror.h"
 #include  "calcomp.h"
 
 #ifndef	 NHASH
@@ -43,7 +42,7 @@ static const char	RCSid[] = "$Id$";
 
 #define	 newnode()	(EPNODE *)ecalloc(1, sizeof(EPNODE))
 
-static double  dvalue();
+static double  dvalue(char  *name, EPNODE *d);
 
 #define  MAXCLOCK	(1L<<31)	/* clock wrap value */
 
@@ -689,11 +688,8 @@ getchan(void)			/* A -> $N = E1 */
  */
 
 
-static double
-dvalue(			/* evaluate a variable */
-char  *name,
-EPNODE	*d
-)
+static double			/* evaluate a variable */
+dvalue(char  *name, EPNODE	*d)
 {
     register EPNODE  *ep1, *ep2;
     

@@ -21,6 +21,8 @@ extern "C" {
 					/* defined in bmalloc.c */
 extern char	*bmalloc(unsigned int n);
 extern void	bfree(char *p, unsigned int n);
+					/*  defined in myhostname.c */
+extern char	*myhostname(void);
 
 #ifdef __cplusplus
 }

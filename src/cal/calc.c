@@ -13,8 +13,8 @@ static const char	RCSid[] = "$Id$";
 #include  <setjmp.h>
 #include  <ctype.h>
 
+#include  "rterror.h"
 #include  "calcomp.h"
-
 
 #define  MAXRES		100
 

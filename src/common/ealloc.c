@@ -11,6 +11,7 @@ static const char	RCSid[] = "$Id$";
 #include  <stdio.h>
 #include  <stdlib.h>
 
+#include "rterror.h"
 
 char *
 emalloc(n)			/* return pointer to n uninitialized bytes */

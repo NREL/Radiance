@@ -9,6 +9,8 @@ static const char	RCSid[] = "$Id$";
 
 #include <unistd.h>
 
+#include "rtmisc.h"
+
 char *
 myhostname()
 {

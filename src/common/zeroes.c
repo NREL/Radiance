@@ -13,7 +13,7 @@ static const char	RCSid[] = "$Id$";
 #include  <math.h>
 
 #include  "fvect.h"
-
+#include  "rtmath.h"
 
 int
 quadratic(r, a, b, c)		/* find real roots of quadratic equation */

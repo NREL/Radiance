@@ -15,6 +15,8 @@ static const char	RCSid[] = "$Id$";
 
 #include <stdlib.h>
 
+#include "rtmisc.h"
+
 #ifndef  MBLKSIZ
 #define  MBLKSIZ	16376		/* size of memory allocation block */
 #endif

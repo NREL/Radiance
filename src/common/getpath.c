@@ -17,7 +17,7 @@ static const char	RCSid[] = "$Id$";
 #endif
 
 #include  "paths.h"
-
+#include  "rtio.h"
 
 
 #ifdef _WIN32

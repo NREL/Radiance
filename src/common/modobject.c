@@ -21,7 +21,7 @@ static struct ohtab {
 	OBJECT  *htab;			/* table, if allocated */
 }  modtab = {100, NULL}, objtab = {1000, NULL};	/* modifiers and objects */
 
-static int  otndx();
+static int  otndx(char *, struct ohtab *);
 
 
 OBJECT

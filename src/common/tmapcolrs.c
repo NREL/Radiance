@@ -250,7 +250,7 @@ done:						/* clean up */
 
 
 #ifdef PCOND
-int					/* run pcond to map picture */
+static int					/* run pcond to map picture */
 dopcond(psp, xp, yp, flags, monpri, gamval, Lddyn, Ldmax, fname)
 BYTE	**psp;
 int	*xp, *yp;

@@ -11,6 +11,8 @@ static const char	RCSid[] = "$Id$";
 
 #include <stdio.h>
 
+#include "rtio.h"
+
 #ifndef frexp
 extern double  frexp();
 #endif

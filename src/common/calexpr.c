@@ -26,6 +26,7 @@ static const char	RCSid[] = "$Id$";
 #include  <math.h>
 #include  <stdlib.h>
 
+#include  "rterror.h"
 #include  "calcomp.h"
 
 #define	 MAXLINE	256		/* maximum line length */
@@ -34,10 +35,12 @@ static const char	RCSid[] = "$Id$";
 
 #define	 isdecimal(c)	(isdigit(c) || (c) == '.')
 
-static double  euminus(), eargument(), enumber();
-static double  echannel();
-static double  eadd(), esubtr(), emult(), edivi(), epow();
-static double  ebotch();
+static double  euminus(EPNODE *), eargument(EPNODE *), enumber(EPNODE *);
+static double  echannel(EPNODE *);
+static double  eadd(EPNODE *), esubtr(EPNODE *),
+               emult(EPNODE *), edivi(EPNODE *),
+               epow(EPNODE *);
+static double  ebotch(EPNODE *);
 
 unsigned int  esupport =		/* what to support */
 		E_VARIABLE | E_FUNCTION ;

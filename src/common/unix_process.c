@@ -10,6 +10,9 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
+#include <sys/types.h>
+#include <sys/wait.h>
+
 #include "rtprocess.h"
 #include  "vfork.h"
 

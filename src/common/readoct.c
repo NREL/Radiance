@@ -17,13 +17,13 @@ static const char	RCSid[] = "$Id$";
 #include  "otypes.h"
 #include  "resolu.h"
 
-static double  ogetflt();
-static long  ogetint();
-static char  *ogetstr();
-static int  nonsurfinset();
+static double  ogetflt(void);
+static long  ogetint(int);
+static char  *ogetstr(char *);
+static int  nonsurfinset(OBJECT *);
 static void  octerror(int  etyp, char  *msg);
 static void  skiptree(void);
-static OCTREE  getfullnode(), gettree();
+static OCTREE  getfullnode(void), gettree(void);
 
 static char  *infn;			/* input file specification */
 static FILE  *infp;			/* input file stream */

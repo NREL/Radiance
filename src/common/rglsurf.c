@@ -106,7 +106,7 @@ GLdouble	**dataOut;
 }
 
 
-static
+static void
 newtess()			/* allocate GLU tessellation object */
 {
 	if ((gluto = gluNewTess()) == NULL)
@@ -120,7 +120,7 @@ newtess()			/* allocate GLU tessellation object */
 }
 
 
-static
+static void
 newquadric()			/* allocate GLU quadric structure */
 {
 	if ((gluqo = gluNewQuadric()) == NULL)

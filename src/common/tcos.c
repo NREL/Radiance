@@ -16,6 +16,8 @@ static const char	RCSid[] = "$Id$";
 
 #include <math.h>
 
+#include "rtmath.h"
+
 #ifndef NCOSENTRY
 #define NCOSENTRY	256
 #endif

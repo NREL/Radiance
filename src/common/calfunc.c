@@ -17,6 +17,7 @@ static const char	RCSid[] = "$Id$";
 #include  <errno.h>
 #include  <math.h>
 
+#include  "rterror.h"
 #include  "calcomp.h"
 
 				/* bits in argument flag (better be right!) */
@@ -33,7 +34,7 @@ typedef struct activation {
 
 static ACTIVATION  *curact = NULL;
 
-static double  libfunc();
+static double  libfunc(char *fname, VARDEF *vp);
 
 #ifndef  MAXLIB
 #define  MAXLIB		64	/* maximum number of library functions */

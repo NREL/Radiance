@@ -37,6 +37,7 @@
     #define NON_POSIX
   #else
     /* assumedly posix systems */
+	#include <unistd.h>
     #define RHAS_GETPWNAM
     #define RHAS_STAT
     #define RHAS_FORK_EXEC
