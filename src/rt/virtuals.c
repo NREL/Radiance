@@ -254,7 +254,7 @@ register int  sn;	/* target source number */
 	double  or, d;
 	int  infront;
 	int  ssn;
-	int  nhit;
+	int  nhit, nok;
 	register int  i, n;
 				/* return if pretesting disabled */
 	if (vspretest <= 0)
@@ -280,7 +280,7 @@ register int  sn;	/* target source number */
 				/* sample */
 	or = sqrt(or2);
 	ssn = 25*n;
-	nhit = 0;
+	nhit = nok = 0;
 	while (n-- > 0) {
 					/* get sample point */
 		do {
@@ -316,18 +316,18 @@ register int  sn;	/* target source number */
 		rayvalue(&sr);
 		if (bright(sr.rcol) <= FTINY)
 			continue;
+		nok++;
 					/* check against obstructions */
 		srcray(&sr, NULL, sn);
 		rayvalue(&sr);
-		if (bright(sr.rcol) <= FTINY) {
-			if (nhit > 0) {
-#ifdef DEBUG
-				fprintf(stderr, "\tpartially occluded\n");
-#endif
-				return(f);	/* need to shadow test */
-			}
-		} else
+		if (bright(sr.rcol) > FTINY)
 			nhit++;
+		if (nhit > 0 && nhit < nok) {
+#ifdef DEBUG
+			fprintf(stderr, "\tpartially occluded\n");
+#endif
+			return(f);		/* need to shadow test */
+		}
 	}
 	if (nhit == 0) {
 #ifdef DEBUG
