@@ -335,7 +335,7 @@ varinsert(name)			/* get a link to a variable */
 char  *name;
 {
     register VARDEF  *vp;
-    LIBR  *libp;
+    register LIBR  *libp;
     int  hv;
     
     if ((vp = varlookup(name)) != NULL) {
@@ -359,6 +359,21 @@ char  *name;
     hashtbl[hv] = vp;
     return(vp);
 }
+
+
+#ifdef  FUNCTION
+libupdate(fn)			/* update library links */
+char  *fn;
+{
+    register int  i;
+    register VARDEF  *vp;
+					/* if fn is NULL then relink all */
+    for (i = 0; i < NHASH; i++)
+	for (vp = hashtbl[i]; vp != NULL; vp = vp->next)
+	    if (vp->lib != NULL || fn == NULL || !strcmp(fn, vp->name))
+		vp->lib = liblookup(vp->name);
+}
+#endif
 
 
 varfree(ln)				/* release link to variable */
