@@ -268,38 +268,39 @@ rpiece()			/* render picture piece by piece */
 {
 	VIEW  pview;
 	int  xorg, yorg;
-	
+					/* compute view parameters */
+	copystruct(&pview, &ourview);
+	switch (ourview.type) {
+	case VT_PER:
+		pview.horiz = 2.*180./PI*atan(
+				tan(PI/180./2.*ourview.horiz)/hmult );
+		pview.vert = 2.*180./PI*atan(
+				tan(PI/180./2.*ourview.vert)/vmult );
+		break;
+	case VT_PAR:
+	case VT_ANG:
+		pview.horiz = ourview.horiz / hmult;
+		pview.vert = ourview.vert / vmult;
+		break;
+	case VT_HEM:
+		pview.horiz = 2.*180./PI*asin(
+				sin(PI/180./2.*ourview.horiz)/hmult );
+		pview.vert = 2.*180./PI*asin(
+				sin(PI/180./2.*ourview.vert)/vmult );
+		break;
+	default:
+		fprintf(stderr, "%s: unknown view type '-vt%c'\n",
+				progname, ourview.type);
+		exit(cleanup(1));
+	}
+					/* render each piece */
 	while (nextpiece(&xorg, &yorg)) {
-		copystruct(&pview, &ourview);	/* compute view for piece */
-		switch (ourview.type) {
-		case VT_PER:
-			pview.horiz = 2.*180./PI*atan(
-					tan(PI/180./2.*ourview.horiz)/hmult );
-			pview.vert = 2.*180./PI*atan(
-					tan(PI/180./2.*ourview.vert)/vmult );
-			break;
-		case VT_PAR:
-		case VT_ANG:
-			pview.horiz = ourview.horiz / hmult;
-			pview.vert = ourview.vert / vmult;
-			break;
-		case VT_HEM:
-			pview.horiz = 2.*180./PI*asin(
-					sin(PI/180./2.*ourview.horiz)/hmult );
-			pview.vert = 2.*180./PI*asin(
-					sin(PI/180./2.*ourview.vert)/vmult );
-			break;
-		default:
-			fprintf(stderr, "%s: unknown view type '-vt%c'\n",
-					progname, ourview.type);
-			exit(cleanup(1));
-		}
-		pview.hoff += xorg - 0.5*(hmult-1);
-		pview.voff += yorg - 0.5*(vmult-1);
+		pview.hoff = ourview.hoff + xorg - 0.5*(hmult-1);
+		pview.voff = ourview.voff + yorg - 0.5*(vmult-1);
 		fputs(VIEWSTR, torp);
 		fprintview(&pview, torp);
 		putc('\n', torp);
-		fflush(torp);			/* assign piece to rpict */
+		fflush(torp);			/* assigns piece to rpict */
 		putpiece(xorg, yorg);		/* place piece in output */
 		if (verbose) {			/* notify caller */
 			printf("%d %d done\n", xorg, yorg);
@@ -325,7 +326,7 @@ int  xpos, ypos;
 	}
 				/* check header from rpict */
 	getheader(fromrp, NULL);
-	if (fscnresolu(&hr, &vr, fromrp) < 0 || hr != hres || vr != vres) {
+	if (fscnresolu(&hr, &vr, fromrp) < 0 || hr != hres | vr != vres) {
 		fprintf(stderr, "%s: resolution mismatch from %s\n",
 				progname, rpargv[0]);
 		exit(cleanup(1));
