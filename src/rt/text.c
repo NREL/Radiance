@@ -1,7 +1,7 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -105,7 +105,7 @@ RAY  *r;
 		char  *modname = m->oargs.sarg[foreground ? 0 : 1];
 		if (!strcmp(modname, VOIDID))
 			omod = OVOID;
-		else if ((omod = modifier(modname)) == OVOID) {
+		else if ((omod = lastmod(objndx(m), modname)) == OVOID) {
 			sprintf(errmsg, "undefined modifier \"%s\"", modname);
 			objerror(m, USER, errmsg);
 		}

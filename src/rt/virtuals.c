@@ -1,7 +1,7 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -126,7 +126,7 @@ OBJREC  *o;
 	m = objptr(i);
 	if (m->otype != MAT_ILLUM || m->oargs.nsargs < 1 ||
 			!strcmp(m->oargs.sarg[0], VOIDID) ||
-			(i = modifier(m->oargs.sarg[0])) == OVOID)
+			(i = lastmod(objndx(m), m->oargs.sarg[0])) == OVOID)
 		return(m);		/* direct modifier */
 	return(objptr(i));		/* illum alternate */
 }
