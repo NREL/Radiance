@@ -97,7 +97,7 @@ register FILE  *fp;
 	register int  i, j;
 	int  code;
 					/* determine scanline type */
-	if (len < MINELEN)
+	if (len < MINELEN | len > 0x7fff)
 		return(oldreadcolrs(scanline, len, fp));
 	if ((i = getc(fp)) == EOF)
 		return(-1);
