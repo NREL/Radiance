@@ -142,9 +142,8 @@ FILE	*fp;
 				exit(1);
 			}
 			for (inx = 0; inx < nrows && xoff+inx < xres; inx++)
-				bcopy((char *)inln[xoff+inx],
-						(char *)scanbar[inx*yres+iny],
-						sizeof(COLR));
+				copycolr(scanbar[inx*yres+iny],
+						inln[xoff+inx]);
 		}
 		for (inx = 0; inx < nrows && xoff+inx < xres; inx++)
 			if (fwritecolrs(scanbar+inx*yres, yres, stdout) < 0) {
@@ -179,9 +178,8 @@ FILE	*fp;
 				exit(1);
 			}
 			for (inx = 0; inx < nrows && xoff-inx >= 0; inx++)
-				bcopy((char *)inln[xoff-inx],
-						(char *)scanbar[inx*yres+iny],
-						sizeof(COLR));
+				copycolr(scanbar[inx*yres+iny],
+						inln[xoff-inx]);
 		}
 		for (inx = 0; inx < nrows && xoff-inx >= 0; inx++)
 			if (fwritecolrs(scanbar+inx*yres, yres, stdout) < 0) {
