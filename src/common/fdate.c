@@ -1,4 +1,4 @@
-/* Copyright (c) 1993 Regents of the University of California */
+/* Copyright (c) 1994 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -22,4 +22,17 @@ char  *fname;
 		return(0);
 
 	return(sbuf.st_mtime);
+}
+
+
+int
+setfdate(fname, ftim)			/* set file date */
+char  *fname;
+long  ftim;
+{
+	time_t  ftm[2];
+
+	ftm[0] = ftm[1] = ftim;
+
+	return(utime(fname, ftm));
 }
