@@ -17,9 +17,10 @@ static char SCCSid[] = "$SunId$ LBL";
 typedef struct {
 	short  t, p;		/* theta, phi indices */
 	COLOR  v;		/* value sum */
-	float  k;		/* error contribution for this division */
+	float  r;		/* 1/distance sum */
+	float  k;		/* variance for this division */
 	int  n;			/* number of subsamples */
-}  AMBSAMP;		/* ambient division sample */
+}  AMBSAMP;		/* ambient sample division */
 
 typedef struct {
 	FVECT  ux, uy, uz;	/* x, y and z axis directions */
@@ -53,7 +54,7 @@ AMBSAMP  *d1, *d2;
 }
 
 
-static double
+double
 divsample(dp, h, r)			/* sample a division */
 register AMBSAMP  *dp;
 AMBHEMI  *h;
@@ -64,7 +65,7 @@ RAY  *r;
 	double  xd, yd, zd;
 	double  b2;
 	double  phi;
-	register int  k;
+	register int  i;
 
 	if (rayorigin(&ar, r, AMBIENT, 0.5) < 0)
 		return(0.0);
@@ -78,14 +79,16 @@ RAY  *r;
 	xd = cos(phi) * zd;
 	yd = sin(phi) * zd;
 	zd = sqrt(1.0 - zd*zd);
-	for (k = 0; k < 3; k++)
-		ar.rdir[k] =	xd*h->ux[k] +
-				yd*h->uy[k] +
-				zd*h->uz[k];
-	dimlist[ndims++] = dp->t*h->np + dp->p + 38813;
+	for (i = 0; i < 3; i++)
+		ar.rdir[i] =	xd*h->ux[i] +
+				yd*h->uy[i] +
+				zd*h->uz[i];
+	dimlist[ndims++] = dp->t*h->np + dp->p + 90171;
 	rayvalue(&ar);
 	ndims--;
 	addcolor(dp->v, ar.rcol);
+	if (ar.rot < FHUGE)
+		dp->r += 1.0/ar.rot;
 					/* (re)initialize error */
 	if (dp->n++) {
 		b2 = bright(dp->v)/dp->n - bright(ar.rcol);
@@ -134,15 +137,16 @@ FVECT  pg, dg;
 		for (j = 0; j < hemi.np; j++) {
 			dp->t = i; dp->p = j;
 			setcolor(dp->v, 0.0, 0.0, 0.0);
+			dp->r = 0.0;
 			dp->n = 0;
 			if ((d = divsample(dp, &hemi, r)) == 0.0)
 				goto oopsy;
-			if (d < FHUGE)
-				arad += 1.0 / d;
 			if (div != NULL)
 				dp++;
-			else
+			else {
 				addcolor(acol, dp->v);
+				arad += dp->r;
+			}
 		}
 	if (ns > 0) {			/* perform super-sampling */
 		comperrs(div, hemi);			/* compute errors */
@@ -151,6 +155,7 @@ FVECT  pg, dg;
 		for (i = ndivs; i > ns; i--) {
 			dp--;
 			addcolor(acol, dp->v);
+			arad += dp->r;
 		}
 						/* super-sample */
 		for (i = ns; i > 0; i--) {
@@ -170,15 +175,17 @@ FVECT  pg, dg;
 							/* extract darkest */
 			if (i <= ndivs) {
 				dp = div + i-1;
+				arad += dp->r;
 				if (dp->n > 1) {
 					b = 1.0/dp->n;
 					scalecolor(dp->v, b);
+					dp->r *= b;
 					dp->n = 1;
 				}
 				addcolor(acol, dp->v);
 			}
 		}
-		if (pg != NULL || dg != NULL)	/* reorder */
+		if (pg != NULL || dg != NULL)	/* restore order */
 			qsort(div, ndivs, sizeof(AMBSAMP), ambnorm);
 	}
 					/* compute returned values */
@@ -211,19 +218,19 @@ inithemi(hp, r)			/* initialize sampling hemisphere */
 register AMBHEMI  *hp;
 RAY  *r;
 {
-	register int  k;
+	register int  i;
 					/* set number of divisions */
 	hp->nt = sqrt(ambdiv * r->rweight * 0.5) + 0.5;
 	hp->np = 2 * hp->nt;
 					/* make axes */
 	VCOPY(hp->uz, r->ron);
 	hp->uy[0] = hp->uy[1] = hp->uy[2] = 0.0;
-	for (k = 0; k < 3; k++)
-		if (hp->uz[k] < 0.6 && hp->uz[k] > -0.6)
+	for (i = 0; i < 3; i++)
+		if (hp->uz[i] < 0.6 && hp->uz[i] > -0.6)
 			break;
-	if (k >= 3)
+	if (i >= 3)
 		error(CONSISTENCY, "bad ray direction in inithemi");
-	hp->uy[k] = 1.0;
+	hp->uy[i] = 1.0;
 	fcross(hp->ux, hp->uz, hp->uy);
 	normalize(hp->ux);
 	fcross(hp->uy, hp->ux, hp->uz);
@@ -231,7 +238,7 @@ RAY  *r;
 
 
 comperrs(da, hp)		/* compute initial error estimates */
-AMBSAMP  *da;
+AMBSAMP  *da;		/* assumes standard ordering */
 register AMBHEMI  *hp;
 {
 	double  b, b2;
@@ -278,17 +285,84 @@ register AMBHEMI  *hp;
 
 posgradient(gv, da, hp)				/* compute position gradient */
 FVECT  gv;
-AMBSAMP  *da;
+AMBSAMP  *da;			/* assumes standard ordering */
 AMBHEMI  *hp;
 {
-	gv[0] = 0.0; gv[1] = 0.0; gv[2] = 0.0;
+	register int  i, j;
+	double  b, d;
+	double  mag0, mag1;
+	double  phi, cosp, sinp, xd, yd;
+	register AMBSAMP  *dp;
+
+	xd = yd = 0.0;
+	for (j = 0; j < hp->np; j++) {
+		dp = da + j;
+		mag0 = mag1 = 0.0;
+		for (i = 0; i < hp->nt; i++) {
+#ifdef  DEBUG
+			if (dp->t != i || dp->p != j)
+				error(CONSISTENCY,
+					"division order in posgradient");
+#endif
+			b = bright(dp->v);
+			if (i > 0) {
+				d = dp[-hp->np].r;
+				if (dp[0].r > d) d = dp[0].r;
+				d *= 1.0 - sqrt((double)i/hp->nt);
+				mag0 += d*(b - bright(dp[-hp->np].v));
+			}
+			if (j > 0) {
+				d = dp[-1].r;
+				if (dp[0].r > d) d = dp[0].r;
+				mag1 += d*(b - bright(dp[-1].v));
+			} else {
+				d = dp[hp->np-1].r;
+				if (dp[0].r > d) d = dp[0].r;
+				mag1 += d*(b - bright(dp[hp->np-1].v));
+			}
+			dp += hp->np;
+		}
+		if (hp->nt > 1) {
+			mag0 /= (double)(hp->nt-1);
+			mag1 /= (double)hp->nt;
+		}
+		phi = 2.0*PI * (double)j/hp->np;
+		cosp = cos(phi); sinp = sin(phi);
+		xd += mag0*cosp - mag1*sinp;
+		yd += mag0*sinp + mag1*cosp;
+	}
+	for (i = 0; i < 3; i++)
+		gv[i] = (xd*hp->ux[i] + yd*hp->uy[i])/hp->np;
 }
 
 
 dirgradient(gv, da, hp)				/* compute direction gradient */
 FVECT  gv;
-AMBSAMP  *da;
+AMBSAMP  *da;			/* assumes standard ordering */
 AMBHEMI  *hp;
 {
-	gv[0] = 0.0; gv[1] = 0.0; gv[2] = 0.0;
+	register int  i, j;
+	double  mag;
+	double  phi, xd, yd;
+	register AMBSAMP  *dp;
+
+	xd = yd = 0.0;
+	for (j = 0; j < hp->np; j++) {
+		dp = da + j;
+		mag = 0.0;
+		for (i = 0; i < hp->nt; i++) {
+#ifdef  DEBUG
+			if (dp->t != i || dp->p != j)
+				error(CONSISTENCY,
+					"division order in dirgradient");
+#endif
+			mag += sqrt((i+.5)/hp->nt)*bright(dp->v);
+			dp += hp->np;
+		}
+		phi = 2.0*PI * (j+.5)/hp->np + PI/2.0;
+		xd += mag * cos(phi);
+		yd += mag * sin(phi);
+	}
+	for (i = 0; i < 3; i++)
+		gv[i] = (xd*hp->ux[i] + yd*hp->uy[i])/(hp->nt*hp->np);
 }
