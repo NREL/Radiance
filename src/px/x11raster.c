@@ -48,14 +48,17 @@ int	bm_pad;
 	xr->image = XCreateImage(disp,ourvinfo.visual,depth,
 			depth==1 ? XYBitmap : ZPixmap,
 			0,data,width,height,bm_pad,0);
-	if (depth == 1) {
-		xr->image->bitmap_bit_order = MSBFirst;
-		xr->image->byte_order = MSBFirst;
-	} else
-		xr->image->byte_order = LSBFirst;
+	xr->image->bitmap_bit_order = MSBFirst;
+	xr->image->byte_order = MSBFirst;
+	xr->image->red_mask = 0xff;
+	xr->image->green_mask = 0xff00;
+	xr->image->blue_mask = 0xff0000;
 	if (xr->image->bits_per_pixel == 32) {
 		xr->image->bytes_per_line = xr->image->bytes_per_line*24/32;
 		xr->image->bits_per_pixel = 24;
+		xr->image->bitmap_unit = 8;
+		while (xr->image->bytes_per_line % (bm_pad/8))
+			xr->image->bytes_per_line++;
 	}
 	xr->gc = XCreateGC(disp, RootWindow(disp,scrn), 0, 0);
 	XSetState(disp, xr->gc, BlackPixel(disp,scrn), WhitePixel(disp,scrn),
