@@ -197,7 +197,7 @@ FILE	*fp
 			((fname == NULL) & (fp == TM_GETFILE)))
 		returnErr(TM_E_ILLEGAL);
 	*xp = *yp = 0;				/* error precaution */
-	if ((inpf = fp) == TM_GETFILE && (inpf = fopen(fname, "r")) == NULL)
+	if ((inpf = fp) == TM_GETFILE && (inpf = fopen(fname, "rb")) == NULL)
 		returnErr(TM_E_BADFILE);
 	*lpp = NULL;
 	if (cpp != TM_NOCHROMP) *cpp = NULL;
