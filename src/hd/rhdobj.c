@@ -866,8 +866,10 @@ FVECT   rorg, rdir;
 }
 
 
+int
 dobj_render()			/* render our objects in OpenGL */
 {
+	int	nrendered = 0;
 	GLboolean	normalizing;
 	GLfloat	vec[4];
 	FVECT	v1;
@@ -878,7 +880,7 @@ dobj_render()			/* render our objects in OpenGL */
 		if (op->drawcode != DO_HIDE)
 			break;
 	if (op == NULL)
-		return(1);
+		return(0);
 					/* set up general rendering params */
 	glGetBooleanv(GL_NORMALIZE, &normalizing);
 	glPushAttrib(GL_LIGHTING_BIT|GL_TRANSFORM_BIT|GL_ENABLE_BIT|
@@ -964,6 +966,7 @@ dobj_render()			/* render our objects in OpenGL */
 		}
 					/* render the display list */
 		glCallList(op->listid);
+		nrendered++;
 					/* restore matrix */
 		if (op->xfac) {
 			glMatrixMode(GL_MODELVIEW);
@@ -981,5 +984,5 @@ dobj_render()			/* render our objects in OpenGL */
 	}
 	glPopAttrib();			/* restore rendering params */
 	rgl_checkerr("rendering objects in dobj_render");
-	return(1);
+	return(nrendered);
 }

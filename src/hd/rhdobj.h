@@ -61,13 +61,14 @@ of the intersected object is returned, or "" if none.  If nm is NULL,
 then all visible objects are checked, but the name is not returned.
 
 
-void
+int
 dobj_render()			: render visible objects to OpenGL
 
 Renders all display objects using OpenGL, assuming desired view has
 been set.  This routine also assumes that the tone-mapping library
 is being used to set exposure, and it queries this information to
-adjust light sources as necessary for illuminated objects.
+adjust light sources as necessary for illuminated objects.  Returns
+the number of objects rendered.
 
 
 void
