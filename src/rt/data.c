@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1993 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -18,8 +18,18 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "data.h"
 
+				/* picture memory usage before warning */
+#ifndef PSIZWARN
+#ifdef BIGMEM
+#define PSIZWARN	3000000
+#else
+#define PSIZWARN	1000000
+#endif
+#endif
 
+#ifndef TABSIZ
 #define TABSIZ		97		/* table size (prime) */
+#endif
 
 #define hash(s)		(shash(s)%TABSIZ)
 
@@ -198,6 +208,15 @@ char  *pname;
 	getheader(fp, headaspect, &inpaspect);
 	if (!fgetsresolu(&inpres, fp))
 		goto readerr;
+#if PSIZWARN
+						/* check memory usage */
+	i = 3*sizeof(DATATYPE)*inpres.xr*inpres.yr;
+	if (i > PSIZWARN) {
+		sprintf(errmsg, "picture file \"%s\" using %d bytes of memory",
+				pname, i);
+		error(WARNING, errmsg);
+	}
+#endif
 	for (i = 0; i < 3; i++) {
 		pp[i].nd = 2;
 		pp[i].dim[0].ne = inpres.yr;
