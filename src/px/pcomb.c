@@ -10,21 +10,15 @@ static char SCCSid[] = "$SunId$ LBL";
  *	1/4/89
  */
 
-#include <stdio.h>
-
-#ifdef MSDOS
-#include <fcntl.h>
-#endif
-
-#include <math.h>
-
-#include <errno.h>
+#include "standard.h"
 
 #include "color.h"
 
 #include "resolu.h"
 
 #include "calcomp.h"
+
+#include "view.h"
 
 #define MAXINP		32		/* maximum number of input files */
 #define WINSIZ		9		/* scanline window size */
@@ -33,6 +27,8 @@ static char SCCSid[] = "$SunId$ LBL";
 struct {
 	char	*name;		/* file or command name */
 	FILE	*fp;		/* stream pointer */
+	VIEW	vw;		/* view for picture */
+	RESOLU	rs;		/* image resolution and orientation */
 	COLOR	*scan[WINSIZ];	/* input scanline window */
 	COLOR	coef;		/* coefficient */
 	COLOR	expos;		/* recorded exposure */
@@ -47,6 +43,8 @@ char	vbrtin[] = "li";
 char	vbrtout[] = "lo";
 char	vcolexp[3][4] = {"re", "ge", "be"};
 char	vbrtexp[] = "le";
+
+char	vray[6][4] = {"Ox", "Oy", "Oz", "Dx", "Dy", "Dz"};
 
 char	vnfiles[] = "nfiles";
 char	vxmax[] = "xmax";
@@ -66,7 +64,10 @@ int	xres, yres;			/* output resolution */
 
 int	xpos, ypos;			/* output position */
 
+char	*progname;			/* global argv[0] */
+
 int	wrongformat = 0;
+int	gotview;
 
 FILE	*popen();
 
@@ -86,6 +87,7 @@ char	*argv[];
 	setmode(fileno(stdin), O_BINARY);
 	setmode(fileno(stdout), O_BINARY);
 #endif
+	progname = argv[0];
 						/* scan options */
 	for (a = 1; a < argc; a++) {
 		if (argv[a][0] == '-')
@@ -108,6 +110,7 @@ char	*argv[];
 	for (nfiles = 0; nfiles < MAXINP; nfiles++) {
 		setcolor(input[nfiles].coef, 1.0, 1.0, 1.0);
 		setcolor(input[nfiles].expos, 1.0, 1.0, 1.0);
+		copystruct(&input[nfiles].vw, &stdview);
 	}
 	nfiles = 0;
 	original = 0;
@@ -232,7 +235,8 @@ char	*s;
 	} else if (iscolcor(s)) {		/* color correction */
 		colcorval(ctmp, s);
 		multcolor(input[nfiles].expos, ctmp);
-	}
+	} else if (isview(s) && sscanview(&input[nfiles].vw, s) > 0)
+		gotview++;
 						/* echo line */
 	putchar('\t');
 	fputs(s, stdout);
@@ -241,9 +245,9 @@ char	*s;
 
 checkfile()			/* ready a file */
 {
-	int	xinp, yinp;
 	register int	i;
 					/* process header */
+	gotview = 0;
 	fputs(input[nfiles].name, stdout);
 	fputs(":\n", stdout);
 	getheader(input[nfiles].fp, tputs, NULL);
@@ -252,15 +256,18 @@ checkfile()			/* ready a file */
 		eputs(": not in Radiance picture format\n");
 		quit(1);
 	}
-	if (fgetresolu(&xinp, &yinp, input[nfiles].fp) < 0) {
+	if (!gotview || setview(&input[nfiles].vw) != NULL)
+		input[nfiles].vw.type = 0;
+	if (!fgetsresolu(&input[nfiles].rs, input[nfiles].fp)) {
 		eputs(input[nfiles].name);
 		eputs(": bad picture size\n");
 		quit(1);
 	}
 	if (xmax == 0 && ymax == 0) {
-		xmax = xinp;
-		ymax = yinp;
-	} else if (xinp != xmax || yinp != ymax) {
+		xmax = scanlen(&input[nfiles].rs);
+		ymax = numscans(&input[nfiles].rs);
+	} else if (scanlen(&input[nfiles].rs) != xmax ||
+			numscans(&input[nfiles].rs) != ymax) {
 		eputs(input[nfiles].name);
 		eputs(": resolution mismatch\n");
 		quit(1);
@@ -273,7 +280,7 @@ checkfile()			/* ready a file */
 
 init()					/* perform final setup */
 {
-	double	l_colin(), l_expos();
+	double	l_colin(), l_expos(), l_ray();
 	register int	i;
 						/* define constants */
 	varset(vnfiles, ':', (double)nfiles);
@@ -286,6 +293,8 @@ init()					/* perform final setup */
 	}
 	funset(vbrtexp, 1, ':', l_expos);
 	funset(vbrtin, 1, '=', l_colin);
+	for (i = 0; i < 6; i++)
+		funset(vray[i], 1, '=', l_ray);
 }
 
 
@@ -448,6 +457,47 @@ register char	*nam;
 	    if (nam == vcolin[n])
 		return(colval(input[fn].scan[MIDSCN+yoff][xscan+xoff],n));
 	eputs("Bad call to l_colin()!\n");
+	quit(1);
+}
+
+
+double
+l_ray(nam)		/* return ray origin or direction */
+register char	*nam;
+{
+	static long	ltick[MAXINP];
+	static FVECT	lorg[MAXINP], ldir[MAXINP];
+	FLOAT	loc[2];
+	double	d;
+	int	fn;
+	register int	i;
+
+	d = argument(1);
+	if (d > -.5 && d < .5)
+		return((double)nfiles);
+	fn = d - .5;
+	if (fn < 0 || fn >= nfiles) {
+		errno = EDOM;
+		return(0.0);
+	}
+	if (ltick[fn] < eclock) {		/* need to compute? */
+		lorg[fn][0] = lorg[fn][1] = lorg[fn][2] = 0.0;
+		ldir[fn][0] = ldir[fn][1] = ldir[fn][2] = 0.0;
+		if (input[fn].vw.type == 0)
+			errno = ERANGE;
+		else {
+			pix2loc(loc, &input[fn].rs, xpos, ypos);
+			if (viewray(lorg[fn], ldir[fn],
+					&input[fn].vw, loc[0], loc[1]) < 0)
+				errno = ERANGE;
+		}
+		ltick[fn] = eclock;
+	}
+	i = 6;
+	while (i--)
+		if (nam == vray[i])
+			return(i < 3 ? lorg[fn][i] : ldir[fn][i-3]);
+	eputs("Bad call to l_ray()!\n");
 	quit(1);
 }
 
