@@ -247,11 +247,11 @@ init_global()			/* initialize global ray computation */
 
 
 mergeclists(cdest, cl1, n1, cl2, n2)	/* merge two sorted lists */
-PACKHEAD	*cdest;
-PACKHEAD	*cl1, *cl2;
+register PACKHEAD	*cdest;
+register PACKHEAD	*cl1, *cl2;
 int	n1, n2;
 {
-	int	cmp;
+	register int	cmp;
 
 	while (n1 | n2) {
 		if (!n1) cmp = 1;
