@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -26,10 +26,16 @@ register RAY  *r;
 	register double  *ap;
 	register int  i;
 
-	if (so->oargs.nfargs != 4 || so->oargs.farg[3] <= FTINY)
-		objerror(so, USER, "bad arguments");
-
+	if (so->oargs.nfargs != 4)
+		objerror(so, USER, "bad # arguments");
 	ap = so->oargs.farg;
+	if (ap[3] < -FTINY) {
+		objerror(so, WARNING, "negative radius");
+		so->otype = so->otype == OBJ_SPHERE ?
+				OBJ_BUBBLE : OBJ_SPHERE;
+		ap[3] = -ap[3];
+	} else if (ap[3] <= FTINY)
+		objerror(so, USER, "zero radius");
 
 	/*
 	 *	We compute the intersection by substituting into
