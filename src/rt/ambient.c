@@ -41,7 +41,6 @@ double  minarad;		/* minimum ambient radius */
 static AMBTREE  atrunk;		/* our ambient trunk node */
 
 static FILE  *ambfp = NULL;	/* ambient file pointer */
-static char  *afname;		/* ambient file name */
 
 #define  AMBFLUSH	(BUFSIZ/AMBVALSIZ)
 
@@ -50,6 +49,7 @@ static char  *afname;		/* ambient file name */
 #define  newambtree()	(AMBTREE *)calloc(8, sizeof(AMBTREE))
 
 extern long  ftell(), lseek();
+static int  initambfile(), avsave(), avinsert(), ambsync();
 
 
 setambres(ar)				/* set ambient resolution */
@@ -78,7 +78,7 @@ char  *afile;
 						/* init ambient limits */
 	setambres(ambres);
 						/* open ambient file */
-	if ((afname = afile) != NULL)
+	if (afile != NULL)
 		if ((ambfp = fopen(afile, "r+")) != NULL) {
 			initambfile(0);
 			headlen = ftell(ambfp);
@@ -87,7 +87,7 @@ char  *afile;
 						thescene.cusize);
 							/* align */
 			fseek(ambfp, -((ftell(ambfp)-headlen)%AMBVALSIZ), 1);
-		} else if ((ambfp = fopen(afile, "w")) != NULL)
+		} else if ((ambfp = fopen(afile, "w+")) != NULL)
 			initambfile(1);
 		else {
 			sprintf(errmsg, "cannot open ambient file \"%s\"",
@@ -324,11 +324,8 @@ int  creat;
 		putc('\n', ambfp);
 		putambmagic(ambfp);
 		fflush(ambfp);
-	} else if (checkheader(ambfp, AMBFMT, NULL) < 0
-			|| !hasambmagic(ambfp)) {
-		sprintf(errmsg, "\"%s\" is not an ambient file", afname);
-		error(USER, errmsg);
-	}
+	} else if (checkheader(ambfp, AMBFMT, NULL) < 0 || !hasambmagic(ambfp))
+		error(USER, "bad ambient file");
 }
 
 
@@ -391,14 +388,26 @@ memerr:
 }
 
 
-#include  <fcntl.h>
+#ifdef  NIX
 
+static
+ambsync()			/* flush ambient file */
+{
+	return(fflush(ambfp));
+}
+
+#else
+
+#include  <fcntl.h>
+#include  <sys/types.h>
+#include  <sys/stat.h>
 
 static
 ambsync()			/* synchronize ambient file */
 {
 	static FILE  *ambinp = NULL;
 	struct flock  fls;
+	struct stat  sts;
 	AMBVAL  avs;
 	long  lastpos, flen;
 	register int  n;
@@ -411,20 +420,23 @@ ambsync()			/* synchronize ambient file */
 		error(SYSTEM, "cannot lock ambient file");
 				/* see if file has grown */
 	lastpos = lseek(fileno(ambfp), 0L, 1);	/* get previous position */
-	flen = lseek(fileno(ambfp), 0L, 2);	/* new(?) file length */
-	if (n = (flen - lastpos)%AMBVALSIZ)	/* assure alignment */
-		lseek(fileno(ambfp), (long)-n, 1);
+	if (fstat(fileno(ambfp), &sts) < 0)	/* get current length */
+		error(SYSTEM, "cannot stat ambient file");
+	flen = sts.st_size;
 	if (n = (flen - lastpos)/AMBVALSIZ) {	/* file has grown */
-		if (ambinp == NULL && (ambinp = fopen(afname, "r")) == NULL)
-			error(SYSTEM, "cannot reopen ambient file");
-		fseek(ambinp, lastpos, 0);	/* go to previous position */
+		if (ambinp == NULL)		/* use duplicate file */
+			ambinp = fdopen(dup(fileno(ambfp)), "r");
 		while (n--) {			/* load contributed values */
 			readambval(&avs, ambinp);
 			avinsert(&avs,&atrunk,thescene.cuorg,thescene.cusize);
-		}
+		}				/* moves shared file pointer */
+		if (n = (flen - lastpos)%AMBVALSIZ)	/* alignment */
+			lseek(fileno(ambfp), flen-n, 0);
 	}
 	n = fflush(ambfp);			/* calls write() at last */
 	fls.l_type = F_UNLCK;			/* release file */
 	fcntl(fileno(ambfp), F_SETLKW, &fls);
 	return(n);
 }
+
+#endif
