@@ -175,7 +175,7 @@ if {[llength $argv] == 0} {
 	cd [file dirname $argv]
 	set curfile [file tail $argv]
 	if {! [file exists $curfile]} {
-		newnew $argv
+		newnew $curfile
 		.scene invoke
 	} elseif {[newload $curfile]} {
 		if $alldone {
