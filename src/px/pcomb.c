@@ -22,8 +22,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #define WINSIZ		9		/* scanline window size */
 #define MIDSCN		4		/* current scan position */
 
-#define BRT		(-1)		/* special index for brightness */
-
 struct {
 	char	*name;		/* file or command name */
 	FILE	*fp;		/* stream pointer */
@@ -34,11 +32,11 @@ struct {
 
 int	nfiles;				/* number of input files */
 
-char	*vcolin[3] = {"ri", "gi", "bi"};
-char	*vcolout[3] = {"ro", "go", "bo"};
+char	vcolin[3][4] = {"ri", "gi", "bi"};
+char	vcolout[3][4] = {"ro", "go", "bo"};
 char	vbrtin[] = "li";
 char	vbrtout[] = "lo";
-char	*vcolexp[3] = {"re", "ge", "be"};
+char	vcolexp[3][4] = {"re", "ge", "be"};
 char	vbrtexp[] = "le";
 
 char	vnfiles[] = "nfiles";
@@ -68,7 +66,6 @@ main(argc, argv)
 int	argc;
 char	*argv[];
 {
-	char	buf[128];
 	int	original;
 	double	f;
 	int	a, i;
@@ -152,16 +149,10 @@ char	*argv[];
 		if (argv[a][0] == '-')
 			switch (argv[a][1]) {
 			case 'x':
-				strcpy(buf, vxres);
-				strcat(buf, ":");
-				strcat(buf, argv[++a]);
-				scompile(buf, NULL, 0);
+				varset(vxres, ':', eval(argv[++a]));
 				continue;
 			case 'y':
-				strcpy(buf, vyres);
-				strcat(buf, ":");
-				strcat(buf, argv[++a]);
-				scompile(buf, NULL, 0);
+				varset(vyres, ':', eval(argv[++a]));
 				continue;
 			case 'w':
 				continue;
