@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1990 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
 
@@ -42,10 +42,7 @@ typedef struct ray {
 	FVECT  rop;		/* intersection point */
 	FVECT  ron;		/* intersection surface normal */
 	double  rod;		/* -DOT(rdir, ron) */
-	double  rofx[4][4];	/* transform from object space */
-	double  rofs;		/* scaling factor from object */
-	double  robx[4][4];	/* transform back to object space */
-	double  robs;		/* back scaling factor */
+	FULLXF  *rox;		/* object transformation */
 	FVECT  pert;		/* surface normal perturbation */
 	COLOR  pcol;		/* pattern color */
 	COLOR  rcol;		/* returned ray value */
