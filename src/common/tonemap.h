@@ -73,8 +73,9 @@ extern struct tmStruct {
 	RGBPRIMP	inppri;		/* current input primaries */
 	double		inpsf;		/* current input scalefactor */
 	COLORMAT	cmat;		/* color conversion matrix */
-	TMbright	brmin, brmax;	/* input brightness limits */	
+	TMbright	hbrmin, hbrmax;	/* histogram brightness limits */	
 	int		*histo;		/* input histogram */
+	TMbright	mbrmin, mbrmax;	/* mapped brightness limits */
 	unsigned short	*lumap;		/* computed luminance map */
 	struct tmStruct	*tmprev;	/* previous tone mapping */
 	MEM_PTR		pd[TM_MAXPKG];	/* pointers to private data */
@@ -197,7 +198,9 @@ tmAddHisto(TMbright *ls, int len, int wt);
 extern int
 tmComputeMapping(double gamval, double Lddyn, double Ldmax);
 /*
-	Compute tone mapping function.
+	Compute tone mapping function.  This mapping will be used
+	in subsequent calls to tmMapPixels() until a new tone mapping
+	is computed.  I.e., calls to tmAddHisto() have no immediate effect.
 
 	gamval	-	display gamma response (0. for default).
 	Lddyn	-	the display's dynamic range (0. for default).
