@@ -37,9 +37,9 @@ $(DEVDIR)/x11h.hdisp:	$(DEVDIR)/x11.hdisp
 	ln $(DEVDIR)/x11.hdisp $(DEVDIR)/x11h.hdisp
 
 $(DEVDIR)/x11.hdisp:	rhdisp.o rhdisp2.o rhdisp3.o rhd_x11.o rhd_qtree.o \
-rhd_ctab.o holo.o
+rhd_qtree2r.o rhd_ctab.o holo.o
 	$(CC) $(CFLAGS) -o $(DEVDIR)/x11.hdisp rhdisp.o rhdisp2.o rhdisp3.o \
-rhd_x11.o rhd_qtree.o rhd_ctab.o holo.o -lrt -lX11 -lm
+rhd_x11.o rhd_qtree.o rhd_qtree2r.o rhd_ctab.o holo.o -lrt -lX11 -lm
 
 rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o \
 rhdisp.o rhdisp2.o rhdisp3.o:	rholo.h
@@ -56,9 +56,10 @@ rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o:	holo.h \
 ../common/vars.h ../common/color.h \
 ../common/standard.h ../common/mat4.h ../common/fvect.h
 
-rhd_x11.o rhd_qtree.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
+rhd_x11.o rhd_qtree.o rhd_qtree2r.o:	../common/standard.h \
+../common/mat4.h ../common/fvect.h
 
-rhd_x11.o rhd_qtree.o:	rhd_qtree.h rhdriver.h \
+rhd_x11.o rhd_qtree.o rhd_qtree2r.o:	rhd_qtree.h rhdriver.h \
 ../common/tonemap.h ../common/color.h
 
 rhd_x11.o:	x11icon.h
