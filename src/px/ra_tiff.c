@@ -19,13 +19,15 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "resolu.h"
 
 
+#define  GAMCOR		2.2		/* default gamma */
+
 extern char  *malloc(), *realloc();
 
 int  lzcomp = 0;			/* use Lempel-Ziv compression? */
 
 int  greyscale = 0;			/* produce greyscale image? */
 
-double	gamcor = 2.2;			/* gamma correction */
+double	gamcor = GAMCOR;		/* gamma correction */
 
 int  bradj = 0;				/* brightness adjustment */
 
@@ -145,6 +147,8 @@ char	*inpf, *outf;
 	fputs(progname, stdout);
 	if (bradj)
 		printf(" -e %+d", bradj);
+	if (gamcor != GAMCOR)
+		printf(" -g %f", gamcor);
 	fputs(" -r\n", stdout);
 	fputformat(COLRFMT, stdout);
 	putchar('\n');
