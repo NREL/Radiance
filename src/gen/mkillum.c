@@ -103,7 +103,7 @@ char	*argv[];
 	init();
 	if (gargc+1 < argc)
 		for (i = gargc+1; i < argc; i++) {
-			if ((fp = fopen(argv[i], "r")) == NULL {
+			if ((fp = fopen(argv[i], "r")) == NULL) {
 				sprintf(errmsg,
 				"cannot open scene file \"%s\"", argv[i]);
 				error(SYSTEM, errmsg);
@@ -286,8 +286,7 @@ char	*nm;
 				thisillum.flags &= ~IL_COLDST;
 				break;
 			case 'd':			/* distribution */
-				thisillum.flags |= IL_COLDST;
-				thisillum.flags &= ~IL_COLAVG;
+				thisillum.flags |= (IL_COLDST|IL_COLAVG);
 				break;
 			case 'n':			/* none */
 				thisillum.flags &= ~(IL_COLAVG|IL_COLDST);

@@ -11,7 +11,7 @@ CFLAGS = $(MACH) $(OPT) -I../common
 INSTDIR = /lumen/lumen/ray/bin.sun3
 
 PROGS = genbox gensky xform genblinds genrev genworm \
-		gensurf genprism replmarks
+		gensurf genprism replmarks mkillum
 
 all:	$(PROGS)
 
@@ -47,6 +47,10 @@ xform:	xform.o
 replmarks:	replmarks.o
 	cc $(CFLAGS) -o replmarks replmarks.o ../common/librt.a -lm
 
+mkillum:	mkillum.o mkillum2.o mkillum3.o
+	cc $(CFLAGS) -o mkillum mkillum.o mkillum2.o mkillum3.o \
+../common/librt.a -lm
+
 genrev:	genrev.o 
 	cc $(CFLAGS) -o genrev genrev.o ../common/librt.a -lm
 
@@ -63,5 +67,8 @@ gensurf.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
 
 genworm.o replmarks.o:	../common/fvect.h
 
-xform.o:	../common/standard.h ../common/mat4.h \
-../common/fvect.h ../common/otypes.h
+xform.o:	../common/standard.h ../common/mat4.h ../common/fvect.h \
+../common/otypes.h ../common/object.h
+
+mkillum.o mkillum2.o mkillum3.o:	mkillum.h ../common/standard.h \
+../common/mat4.h ../common/fvect.h ../common/otypes.h ../common/object.h

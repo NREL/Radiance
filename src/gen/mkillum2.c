@@ -5,7 +5,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #endif
 
 /*
- * Routines to do the actual calcultion and output for mkillum
+ * Routines to do the actual calculation for mkillum
  */
 
 #include  "mkillum.h"
@@ -15,33 +15,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "cone.h"
 
 #include  "random.h"
-
-
-printobj(mod, obj)		/* print out an object */
-char  *mod;
-register OBJREC  *obj;
-{
-	register int  i;
-
-	printf("\n%s %s %s", mod, ofun[obj->otype].funame, obj->oname);
-	printf("\n%d", obj->oargs.nsargs);
-	for (i = 0; i < obj->oargs.nsargs; i++)
-		printf(" %s", obj->oargs.sarg[i]);
-#ifdef  IARGS
-	printf("\n%d", obj->oargs.niargs);
-	for (i = 0; i < obj->oargs.niargs; i++)
-		printf(" %d", obj->oargs.iarg[i]);
-#else
-	printf("\n0");
-#endif
-	printf("\n%d", obj->oargs.nfargs);
-	for (i = 0; i < obj->oargs.nfargs; i++) {
-		if (i%3 == 0)
-			putchar('\n');
-		printf(" %18.12g", obj->oargs.farg[i]);
-	}
-	putchar('\n');
-}
 
 
 o_default(ob, il, rt, nm)	/* default illum action */
@@ -54,7 +27,7 @@ char  *nm;
 			nm, ofun[ob->otype].funame, ob->oname);
 	error(WARNING, errmsg);
 	if (!(il->flags & IL_LIGHT))
-		printobj(il->altname, ob);
+		printobj(il->altmat, ob);
 }
 
 
@@ -69,7 +42,7 @@ char  *nm;
 	int  n, nalt, nazi;
 	float  *distarr;
 	double  r1, r2;
-	FVECT  dn, pos, dir;
+	FVECT  dn, org, dir;
 	FVECT  u, v;
 	double  ur[2], vr[2];
 	int  nmisses;
@@ -118,11 +91,11 @@ char  *nm;
 					/* random location */
 		    do {
 			dim[3] = 3;
-			r1 = ur[0] +
-				(ur[1]-ur[0])*urand(urind(ilhash(dim,4),i));
+			r1 = ur[0] + (ur[1]-ur[0]) *
+					urand(urind(ilhash(dim,4),i+nmisses));
 			dim[3] = 4;
-			r2 = vr[0] +
-				(vr[1]-vr[0])*urand(urind(ilhash(dim,4),i));
+			r2 = vr[0] + (vr[1]-vr[0]) *
+					urand(urind(ilhash(dim,4),i+nmisses));
 			for (j = 0; j < 3; j++)
 			    org[j] = r1*u[j] + r2*v[j]
 					+ fa->offset*fa->norm[j];
@@ -141,8 +114,9 @@ char  *nm;
 		    raysamp(distarr+dim[1]*nazi+dim[2], org, dir, rt);
 		}
 	rayflush(rt);
-				/* write out the distribution */
-	flatdist(distarr, nalt, nazi, il, ob);
+				/* write out the face w/ distribution */
+	flatout(il, distarr, nalt, nazi, u, v, fa->norm);
+	illumout(il, ob);
 				/* clean up */
 	freeface(ob);
 	free((char *)distarr);
@@ -160,7 +134,7 @@ char  *nm;
 	int  n, nalt, nazi;
 	float  *distarr;
 	double  r1, r2;
-	FVECT  pos, dir;
+	FVECT  org, dir;
 	FVECT  u, v;
 	register int  i, j;
 				/* check arguments */
@@ -192,7 +166,7 @@ char  *nm;
 		    dim[3] = 4;
 		    r2 = 2.*PI*urand(urind(ilhash(dim,4),i));
 		    for (j = 0; j < 3; j++)
-			org[j] = obj->oargs.farg[j] + obj->oargs.farg[3] *
+			org[j] = ob->oargs.farg[j] + ob->oargs.farg[3] *
 					( r1*cos(r2)*u[j] + r1*sin(r2)*v[j]
 						- sqrt(1.01-r1*r1)*dir[j] );
 
@@ -200,8 +174,9 @@ char  *nm;
 		    raysamp(distarr+dim[1]*nazi+dim[2], org, dir, rt);
 		}
 	rayflush(rt);
-				/* write out the distribution */
-	rounddist(distarr, nalt, nazi, il, ob);
+				/* write out the sphere w/ distribution */
+	roundout(il, distarr, nalt, nazi);
+	illumout(il, ob);
 				/* clean up */
 	free((char *)distarr);
 }
@@ -217,7 +192,7 @@ char  *nm;
 	int  n, nalt, nazi;
 	float  *distarr;
 	double  r1, r2;
-	FVECT  dn, pos, dir;
+	FVECT  dn, org, dir;
 	FVECT  u, v;
 	register CONE  *co;
 	register int  i, j;
@@ -261,8 +236,9 @@ char  *nm;
 		    raysamp(distarr+dim[1]*nazi+dim[2], org, dir, rt);
 		}
 	rayflush(rt);
-				/* write out the distribution */
-	flatdist(distarr, nalt, nazi, il, ob);
+				/* write out the ring w/ distribution */
+	flatout(il, distarr, nalt, nazi, u, v, co->ad);
+	illumout(il, ob);
 				/* clean up */
 	freecone(ob);
 	free((char *)distarr);
@@ -306,4 +282,48 @@ register struct rtproc  *rt;
 		rt->dest[i][2] += rt->buf[3*i+2];
 	}
 	rt->nrays = 0;
+}
+
+
+mkaxes(u, v, n)			/* compute u and v to go with n */
+FVECT  u, v, n;
+{
+	register int  i;
+
+	v[0] = v[1] = v[2] = 0.0;
+	for (i = 0; i < 3; i++)
+		if (n[i] < 0.6 && n[i] > -0.6)
+			break;
+	v[i] = 1.0;
+	fcross(u, v, n);
+	normalize(u);
+	fcross(v, n, u);
+}
+
+
+rounddir(dv, alt, azi)		/* compute uniform spherical direction */
+register FVECT  dv;
+double  alt, azi;
+{
+	double  d1, d2;
+
+	dv[2] = 1. - 2.*alt;
+	d1 = sqrt(1. - dv[2]*dv[2]);
+	d2 = 2.*PI * azi;
+	dv[0] = d1*cos(d2);
+	dv[1] = d1*sin(d2);
+}
+
+
+flatdir(dv, alt, azi)		/* compute uniform hemispherical direction */
+register FVECT  dv;
+double  alt, azi;
+{
+	double  d1, d2;
+
+	d1 = sqrt(alt);
+	d2 = 2.*PI * azi;
+	dv[0] = d1*cos(d2);
+	dv[1] = d1*sin(d2);
+	dv[2] = sqrt(1. - d1*d1);
 }
