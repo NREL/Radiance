@@ -46,6 +46,7 @@ char  *tfname = NULL;
 
 int  xres, yres;		/* resolution of input */
 double  inpaspect = 1.0;	/* pixel aspect ratio of input */
+int  correctaspect = 0;		/* aspect ratio correction? */
 
 int  xrad;			/* x window size */
 int  yrad;			/* y window size */
@@ -102,6 +103,9 @@ char  **argv;
 					nrows = 0;
 				} else
 					nrows = atoi(argv[i]);
+				break;
+			case 'c':
+				correctaspect = !correctaspect;
 				break;
 			case 'p':
 				i++;
@@ -368,9 +372,11 @@ scan2init()			/* prepare scanline arrays */
 		quit(1);
 	}
 					/* record pixel aspect and exposure */
-	d = x_c / y_r;
-	if (d < .99 || d > 1.01)
-		fputaspect(d, stdout);
+	if (!correctaspect) {
+		d = x_c / y_r;
+		if (d < .99 || d > 1.01)
+			fputaspect(d, stdout);
+	}
 	d = bright(exposure);
 	if (d < .995 || d > 1.005)
 		fputexpos(d, stdout);
