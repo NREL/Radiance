@@ -50,13 +50,12 @@ char	*argv[];
 					/* add new header info. */
 	printf("%s\n\n", progname);
 					/* get picture size */
-	if (fgets(buf, sizeof(buf), fin) == NULL ||
-			sscanf(buf, "-Y %d +X %d\n", &yres, &xres) != 2) {
+	if (fgetresolu(&xres, &yres, fin) != (YMAJOR|YDECR)) {
 		fprintf(stderr, "%s: bad picture size\n", progname);
 		exit(1);
 	}
 					/* write new picture size */
-	printf("-Y %d +X %d\n", xres, yres);
+	fputresolu(YMAJOR|YDECR, yres, xres, stdout);
 					/* compute buffer capacity */
 	nrows = sizeof(buf)/sizeof(COLR)/yres;
 	rotate(fin);			/* rotate the image */

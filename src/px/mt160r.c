@@ -53,8 +53,7 @@ char  *fname;
 	while (fgets(sbuf, sizeof(sbuf), input) != NULL && sbuf[0] != '\n')
 		;
 				/* get picture dimensions */
-	if (fgets(sbuf, sizeof(sbuf), input) == NULL ||
-			sscanf(sbuf, "-Y %d +X %d\n", &yres, &xres) != 2) {
+	if (fgetresolu(&xres, &yres, input) != (YMAJOR|YDECR)) {
 		fprintf(stderr, "%s: bad picture size\n", fname);
 		return(-1);
 	}

@@ -132,8 +132,8 @@ getfile:
 		printf("%s:\n", input[nfile].name);
 		getheader(input[nfile].fp, tabputs);
 						/* get picture size */
-		if (fscanf(input[nfile].fp, "-Y %d +X %d\n",
-				&input[nfile].yres, &input[nfile].xres) != 2) {
+		if (fgetresolu(&input[nfile].xres, &input[nfile].yres,
+				input[nfile].fp) != (YMAJOR|YDECR)) {
 			fprintf(stderr, "%s: bad picture size\n",
 					input[nfile].name);
 			quit(1);

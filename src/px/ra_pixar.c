@@ -162,7 +162,7 @@ int		*h;
       exit(1);
    }
    getheader(radiance_fp,NULL);
-   if (fscanf(radiance_fp,"-Y %d +X %d\n",h,w) != 2)
+   if (fgetresolu(w, h, radiance_fp) != (YMAJOR|YDECR))
    {
       fprintf(stderr,"bad RADIANCE format\n");
       exit(1);
@@ -269,7 +269,7 @@ int		y;
 {
    printargs(global_argc,global_argv,fp);
    fputc('\n',fp);
-   fprintf(fp,"-Y %d +X %d\n",y,x);
+   fputresolu(YMAJOR|YDECR, x, y, fp);
    fflush(fp);
 }
 

@@ -96,7 +96,7 @@ char  *argv[];
 		fputs(":\n", stdout);
 		getheader(fptr[nfile], tabputs);
 						/* get picture size */
-		if (fscanf(fptr[nfile], "-Y %d +X %d\n", &yres, &xres) != 2) {
+		if (fgetresolu(&xres, &yres, fptr[nfile]) != (YMAJOR|YDECR)) {
 			fprintf(stderr, "%s: bad picture size\n", progname);
 			quit(1);
 		} else if (nfile == 0) {
@@ -112,7 +112,8 @@ char  *argv[];
 	}
 					/* add new header info. */
 	printargs(argc, argv, stdout);
-	printf("\n-Y %d +X %d\n", ysiz, xsiz);
+	putchar('\n');
+	fputresolu(YMAJOR|YDECR, xsiz, ysiz, stdout);
 
 	psum();
 	

@@ -141,7 +141,7 @@ char  *argv[];
 				/* get header */
 	getheader(fin, headline);
 				/* get picture dimensions */
-	if (fscanf(fin, "-Y %d +X %d\n", &ymax, &xmax) != 2)
+	if (fgetresolu(&xmax, &ymax, fin) != (YMAJOR|YDECR))
 		quiterr("bad picture size");
 				/* set view parameters */
 	if (gotview) {

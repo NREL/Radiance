@@ -146,8 +146,7 @@ char  *argv[];
 			exposure *= atof(sbuf+9);
 
 				/* get picture dimensions */
-	if (fgets(sbuf, sizeof(sbuf), fin) == NULL ||
-			sscanf(sbuf, "-Y %d +X %d\n", &ymax, &xmax) != 2)
+	if (fgetresolu(&xmax, &ymax, fin) != (YMAJOR|YDECR))
 		quitmsg("bad picture size");
 	if (xmax > NCOLS || ymax > NROWS)
 		quitmsg("resolution mismatch");

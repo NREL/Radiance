@@ -129,14 +129,14 @@ unkopt:
 					progname);
 			quit(1);
 		}
-		printf("-Y %d +X %d\n", yres, xres);	/* resolution */
+		fputresolu(YMAJOR|YDECR, xres, yres, stdout);
 		valtopix();
 	} else {
 						/* get header */
 		getheader(fin, checkhead);
 
 		if (xres <= 0 || yres <= 0)		/* get picture size */
-			if (fscanf(fin, "-Y %d +X %d\n", &yres, &xres) != 2) {
+			if (fgetresolu(&xres, &yres, fin) != (YMAJOR|YDECR)) {
 				fprintf(stderr,
 				"%s: missing x and y resolution\n",
 						progname);
