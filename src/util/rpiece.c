@@ -49,15 +49,15 @@ char *argv[];
 #define unguard()	0
 #endif
 				/* rpict command */
-char  *rpargv[128] = {"rpict", "-S", "1", "-x", "512", "-y", "512", "-pa", "1"};
-int  rpargc = 9;
+char  *rpargv[128] = {"rpict", "-S", "1"};
+int  rpargc = 3;
 int  rpd[3];
 FILE  *torp, *fromrp;
 COLR  *pbuf;
 				/* our view parameters */
 VIEW  ourview = STDVIEW;
 double  pixaspect = 1.0;
-int  hres = 512, vres = 512, hmult = 2, vmult = 2;
+int  hres = 1024, vres = 1024, hmult = 4, vmult = 4;
 				/* output file */
 char  *outfile = NULL;
 int  outfd;
@@ -113,17 +113,20 @@ char  *argv[];
 				}
 				break;
 			case 'p':		/* pixel aspect ratio? */
-				if (argv[i][2] == 'a' && !argv[i][3])
-					pixaspect = atof(argv[i+1]);
-				break;
-			case 'x':		/* piece x resolution */
-				if (!argv[i][2])
-					hres = atoi(argv[i+1]);
-				break;
-			case 'y':		/* piece y resolution */
-				if (!argv[i][2])
-					vres = atoi(argv[i+1]);
-				break;
+				if (argv[i][2] != 'a' || argv[i][3])
+					break;
+				pixaspect = atof(argv[i+1]);
+				continue;
+			case 'x':		/* overall x resolution */
+				if (argv[i][2])
+					break;
+				hres = atoi(argv[++i]);
+				continue;
+			case 'y':		/* overall y resolution */
+				if (argv[i][2])
+					break;
+				vres = atoi(argv[++i]);
+				continue;
 			case 'X':		/* horizontal multiplier */
 				if (argv[i][2])
 					break;
@@ -153,10 +156,14 @@ char  *argv[];
 					break;
 				outfile = argv[++i];
 				continue;
-			}
+			} else if (i >= argc-1)
+				break;
 		rpargv[rpargc++] = argv[i];
 	}
-	rpargv[rpargc] = NULL;
+	if (i >= argc) {
+		fprintf(stderr, "%s: missing octree argument\n", argv[0]);
+		exit(1);
+	}
 	if (outfile == NULL) {
 		fprintf(stderr, "%s: missing output file\n", argv[0]);
 		exit(1);
@@ -171,6 +178,7 @@ init(ac, av)			/* set up output file and start rpict */
 int  ac;
 char  **av;
 {
+	static char  hrbuf[16], vrbuf[16];
 	extern char  VersionID[];
 	char  *err;
 	FILE  *fp;
@@ -185,7 +193,17 @@ char  **av;
 		buf[read(syncfd, buf, sizeof(buf)-1)] = '\0';
 		sscanf(buf, "%d %d", &hmult, &vmult);
 	}
+					/* compute piece size */
+	hres /= hmult;
+	vres /= vmult;
 	normaspect(viewaspect(&ourview)*hmult/vmult, &pixaspect, &hres, &vres);
+	sprintf(hrbuf, "%d", hres);
+	rpargv[rpargc++] = "-x"; rpargv[rpargc++] = hrbuf;
+	sprintf(vrbuf, "%d", vres);
+	rpargv[rpargc++] = "-y"; rpargv[rpargc++] = vrbuf;
+	rpargv[rpargc++] = "-pa"; rpargv[rpargc++] = "0";
+	rpargv[rpargc++] = av[ac-1];
+	rpargv[rpargc] = NULL;
 					/* open output file */
 	if ((outfd = open(outfile, O_WRONLY|O_CREAT|O_EXCL, 0666)) >= 0) {
 		if ((fp = fdopen(dup(outfd), "w")) == NULL)
@@ -232,7 +250,7 @@ char  **av;
 				progname, rpargv[0]);
 		exit(1);
 	}
-	if ((pbuf = (COLR *)malloc(hres*vres*sizeof(COLR))) == NULL) {
+	if ((pbuf = (COLR *)bmalloc(hres*vres*sizeof(COLR))) == NULL) {
 		fprintf(stderr, "%s: out of memory\n", progname);
 		exit(1);
 	}
@@ -294,7 +312,7 @@ int  rstat;
 {
 	int  status;
 
-	free((char *)pbuf);
+	bfree((char *)pbuf, hres*vres*sizeof(COLR));
 	fclose(torp);
 	fclose(fromrp);
 	while (wait(&status) != -1)
