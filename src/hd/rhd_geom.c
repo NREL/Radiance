@@ -102,7 +102,7 @@ int	r, g, b, a;
 			GL_POLYGON_BIT|GL_LIGHTING_BIT);
 	glDisable(GL_LIGHTING);
 	glDisable(GL_DITHER);
-	glShadeModel(GL_SMOOTH);
+	glShadeModel(GL_FLAT);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 					/* don't actually write depth */
 	glDepthMask(GL_FALSE);
