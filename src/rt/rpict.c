@@ -277,8 +277,12 @@ int  xres, y, xstep;
 		z = pixvalue(scanline[i], i, y);
 		if (zline) zline[i] = z;
 		if (sd) b = sd[0] > sd[1] ? sd[0] : sd[1];
-		b = fillsample(scanline+i-xstep, zline ? zline+i-xstep : NULL,
-				i-xstep, y, xstep, 0, b/2);
+		if (i <= xstep)
+			b = fillsample(scanline, zline, 0, y, i, 0, b/2);
+		else
+			b = fillsample(scanline+i-xstep,
+					zline ? zline+i-xstep : NULL,
+					i-xstep, y, xstep, 0, b/2);
 		if (sd) *sd++ = nc & 1 ? bl : b;
 		bl = b;
 	}
