@@ -10,6 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
  
 #include "standard.h"
 #include <fcntl.h>
+#include <signal.h>
 #include "color.h"
 #include "view.h"
 #include "resolu.h"
@@ -34,6 +35,9 @@ char  *progname;
 int  verbose = 0;
 
 extern long  lseek(), ftell();
+
+int  gotalrm = 0;
+int  onalrm() { gotalrm++; }
 
 
 main(argc, argv)
@@ -184,6 +188,7 @@ char  **av;
 		fprintf(stderr, "%s: out of memory\n", progname);
 		exit(1);
 	}
+	signal(SIGALRM, onalrm);
 	return;
 filerr:
 	fprintf(stderr, "%s: file i/o error\n", outfile);
@@ -199,7 +204,9 @@ int  *xp, *yp;
 	struct flock  fls;
 	char  buf[64];
 
-	if (syncfd != -1) {		/* using sync file */
+	if (gotalrm)			/* someone wants us to quit */
+		return(0);
+	if (syncfd != -1) {		/* use sync file */
 		fls.l_type = F_WRLCK;		/* gain exclusive access */
 		fls.l_whence = 0;
 		fls.l_start = 0L;
@@ -225,7 +232,7 @@ int  *xp, *yp;
 		fcntl(syncfd, F_SETLKW, &fls);
 		return(1);
 	}
-	if (fgets(buf, sizeof(buf), stdin) == NULL)	/* using stdin */
+	if (fgets(buf, sizeof(buf), stdin) == NULL)	/* use stdin */
 		return(0);
 	if (sscanf(buf, "%d %d", xp, yp) == 2)
 		return(1);
