@@ -13,8 +13,10 @@ static const char	RCSid[] = "$Id$";
 #include	<string.h>
 #include	<math.h>
 #include	<time.h>
+
 #include	"tmprivat.h"
 #include	"resolu.h"
+#include	"rtprocess.h"
 
 #ifndef TM_PIC_CTRANS
 #define TM_PIC_CTRANS	1		/* transform colors? (expensive) */

@@ -202,7 +202,7 @@ report(int dummy)		/* report progress */
 }
 #else
 static void
-report(int)		/* report progress */
+report(int dummy)		/* report progress */
 {
 	tlastrept = time((time_t *)NULL);
 	sprintf(errmsg, "%lu rays, %4.2f%% after %5.4f hours\n",

@@ -52,10 +52,11 @@ register size_t  n
 
 void
 bfree(			/* free random memory */
-register void	*p,
+register void	*pp,
 register size_t	n
 )
 {
+	register char *p = pp;
 	register size_t	bsiz;
 					/* check alignment */
 	bsiz = BYTES_WORD - ((size_t)p&(BYTES_WORD-1));

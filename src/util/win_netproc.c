@@ -112,11 +112,6 @@ PSERVER* findjob(int *pnp)
 	return &ps;
 }
 
-int
-kill(pid_t pid, int sig)
-{
-	return 0;
-}
 
 int startjob(
 	PSERVER* pPS,

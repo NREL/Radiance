@@ -1145,6 +1145,11 @@ myprintview(			/* print out selected view */
 	VIEW	vwr;
 	char	buf[128];
 	register char	*cp;
+#ifdef _WIN32
+/* XXX Should we allow something like this for all platforms? */
+/* XXX Or is it still required at all? */
+again:
+#endif
 	if (vopts == NULL)
 		return(-1);
 #ifdef _WIN32

@@ -21,6 +21,8 @@
   #endif
   extern FILE *win_popen(char *command, char *type);
   extern int win_pclose(FILE *p);
+  int win_kill(RT_PID pid, int sig /* ignored */);
+  #define kill(pid,sig) win_kill(pid,sig)
   #ifdef __cplusplus
   }
   #endif
