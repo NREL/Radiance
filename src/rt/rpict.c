@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -53,6 +53,11 @@ int  ralrm = 0;				/* seconds between reports */
 
 double  pctdone = 0.0;			/* percentage done */
 
+long  tlastrept = 0L;			/* time at last report */
+
+extern long  time();
+extern long  tstart;			/* starting time */
+
 extern long  nrays;			/* number of rays traced */
 
 #define  MAXDIV		32		/* maximum sample size */
@@ -72,9 +77,9 @@ int  code;
 }
 
 
+#ifdef BSD
 report()		/* report progress */
 {
-#ifdef BSD
 	struct rusage  rubuf;
 	double  t;
 
@@ -87,15 +92,19 @@ report()		/* report progress */
 
 	sprintf(errmsg, "%ld rays, %4.2f%% done after %5.4f CPU hours\n",
 			nrays, pctdone, t/3600.0);
-#else
-	signal(SIGALRM, report);
-	sprintf(errmsg, "%ld rays, %4.2f%% done\n", nrays, pctdone);
-#endif
 	eputs(errmsg);
-
-	if (ralrm > 0)
-		alarm(ralrm);
+	tlastrept = time((long *)0);
 }
+#else
+report()		/* report progress */
+{
+	signal(SIGALRM, report);
+	tlastrept = time((long *)0);
+	sprintf(errmsg, "%ld rays, %4.2f%% done after %5.4f hours\n",
+			nrays, pctdone, (tlastrept-tstart)/3600.0);
+	eputs(errmsg);
+}
+#endif
 
 
 render(zfile, oldfile)				/* render the scene */
@@ -144,13 +153,14 @@ char  *zfile, *oldfile;
 	if (zfd != -1 && i > 0 &&
 			lseek(zfd, (long)i*hresolu*sizeof(float), 0) == -1)
 		error(SYSTEM, "z file seek error in render");
+	pctdone = 100.0*i/vresolu;
+	if (ralrm > 0)			/* report init stats */
+		report();
 	ypos = vresolu-1 - i;
 	fillscanline(scanbar[0], zbar[0], hresolu, ypos, psample);
 	ystep = psample;
 						/* compute scanlines */
 	for (ypos -= ystep; ypos > -ystep; ypos -= ystep) {
-							/* record progress */
-		pctdone = 100.0*(vresolu-1-ypos-ystep)/vresolu;
 							/* bottom adjust? */
 		if (ypos < 0) {
 			ystep += ypos;
@@ -177,6 +187,10 @@ char  *zfile, *oldfile;
 		}
 		if (fflush(stdout) == EOF)
 			goto writerr;
+							/* record progress */
+		pctdone = 100.0*(vresolu-1-ypos)/vresolu;
+		if (ralrm > 0 && time((long *)0) >= tlastrept+ralrm)
+			report();
 	}
 						/* clean up */
 	if (zfd != -1) {
