@@ -240,7 +240,7 @@ ambient.o ambcomp.o aniso.o dielectric.o func.o glass.o m_clip.o m_mirror.o \
 m_brdf.o mx_data.o mx_func.o normal.o o_cone.o o_face.o o_instance.o \
 p_data.o p_func.o text.o raytrace.o rpmain.o rtmain.o rvmain.o rpict.o \
 rtrace.o rview.o rv2.o rv3.o source.o srcsamp.o srcsupp.o virtuals.o \
-sphere.o t_data.o t_func.o persist.o duphead.o:	ray.h ../common/standard.h \
+sphere.o t_data.o t_func.o persist.o:	ray.h ../common/standard.h \
 ../common/mat4.h ../common/fvect.h ../common/object.h ../common/color.h
 
 rv2.o rv3.o rview.o:	rpaint.h driver.h ../common/view.h
@@ -249,7 +249,7 @@ m_direct.o m_mirror.o \
 source.o srcsamp.o srcsupp.o virtuals.o:	source.h
 
 cone.o data.o devcomm.o freeobjmem.o initotypes.o fprism.o \
-octree.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
+duphead.o octree.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
 
 initotypes.o raytrace.o:	otspecial.h
 
