@@ -985,12 +985,12 @@ int	n;
 		}
 		return(NULL);
 	}
-	if (viewfp == NULL) {		/* open file */
+	if (viewfp == NULL) {			/* open file */
 		if ((viewfp = fopen(vval(VIEWFILE), "r")) == NULL) {
 			perror(vval(VIEWFILE));
 			quit(1);
 		}
-	} else if (n < viewnum) {	/* rewind file */
+	} else if (n > 0 && n < viewnum) {	/* rewind file */
 		if (viewnum == 1 && feof(viewfp))
 			return(&curview);		/* just one view */
 		if (fseek(viewfp, 0L, 0) == EOF) {
@@ -999,6 +999,13 @@ int	n;
 		}
 		copystruct(&curview, &stdview);
 		viewnum = 0;
+	}
+	if (n < 0) {				/* get next view */
+		register int	c = getc(viewfp);
+		if (c == EOF)
+			return((VIEW *)NULL);		/* that's it */
+		ungetc(c, viewfp);
+		n = viewnum + 1;
 	}
 	while (n > viewnum) {		/* scan to desired view */
 		if (fgets(linebuf, sizeof(linebuf), viewfp) == NULL)
@@ -1013,9 +1020,11 @@ int	n;
 int
 countviews()			/* count views in view file */
 {
-	register int	n = 0;
+	int	n;
 
-	while (getview(n+1) != NULL)
+	if (getview(n=1) == NULL)
+		return(0);
+	while (getview(-1) != NULL)
 		n++;
 	return(n);
 }
