@@ -180,7 +180,12 @@ double	La;
 	};
 	double	l10La;
 	register int	i;
-					/* interpolate/extrapolate data */
+					/* check limits */
+	if (La <= 7.85e-4)
+		return(resfreq[0]);
+	if (La >= 1.78e3)
+		return(resfreq[NPOINTS-1]);
+					/* interpolate data */
 	l10La = log10(La);
 	for (i = 0; i < NPOINTS-2 && l10lum[i+1] <= l10La; i++)
 		;
