@@ -95,6 +95,7 @@ seekerr:
 }
 
 
+#ifdef DEBUG
 pict_stats()			/* print out picture read statistics */
 {
 	static long	lastcall = 0L;	/* ncall at last report */
@@ -102,12 +103,12 @@ pict_stats()			/* print out picture read statistics */
 
 	if (ncall == lastcall)
 		return;
-	fprintf(stderr, "%s: %ld scanlines read, %ld reused\n",
-			progname, nread-lastread,
-			(ncall-lastcall)-(nread-lastread));
+	fprintf(stderr, "%s: %ld scanlines read in %ld calls\n",
+			progname, nread-lastread, ncall-lastcall);
 	lastcall = ncall;
 	lastread = nread;
 }
+#endif
 
 
 double
