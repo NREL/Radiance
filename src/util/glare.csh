@@ -135,15 +135,7 @@ endif
 if ($?DISPLAY && $picture != $nofile) then
 	echo ""
 	echo "Displaying glare sources in '$picture'..."
-	xglaresrc $picture $glarefile >& /dev/null
-	if ($status == 2) then
-		echo "Starting ximage..."
-		ximage =+0+0 $picture &
-		WaitAndTryXglrAgain:
-			sleep 10
-			xglaresrc $picture $glarefile >& /dev/null
-		if ($status == 2) goto WaitAndTryXglrAgain
-	endif
+	xglaresrc $picture $glarefile
 endif
 set ndxnam=("Guth Visual Comfort Probability" "Guth Disability Glare Ratio" "CIE Glare Index")
 set ndxcom=("glarendx -t guth_vcp" "glarendx -t guth_dgr" "glarendx -t cie_cgi")
