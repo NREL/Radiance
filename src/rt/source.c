@@ -188,7 +188,7 @@ register int  sn;		/* source number */
 		else if (srcval[sn].so->otype == OBJ_RING)
 			norm = getcone(srcval[sn].so,0)->ad;
 
-		if (norm != NULL && (ddot = -DOT(sr->rdir, norm)) <= 0.0)
+		if (norm != NULL && (ddot = -DOT(sr->rdir, norm)) <= FTINY)
 			return(0.0);		/* behind surface! */
 	}
 	if (dstrsrc > FTINY) {
