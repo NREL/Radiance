@@ -21,8 +21,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <stdio.h>
 #include  <math.h>
 
-#define  PI		3.141592653589793
-#define  DELTA		5.  /*  MINIMAL SUSTAINED ANGLE IN DEGREES */
+#define  PI		3.14159265358979323846
+#define  DELTA		10.  /*  MINIMAL SUSTAINED ANGLE IN DEGREES */
 
 double  baseflat[4][3], baseblind[4][3][180];
 double  A[3],X[3];
