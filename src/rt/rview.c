@@ -1,4 +1,4 @@
-/* Copyright (c) 1987 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -311,8 +311,10 @@ rsample()			/* sample the image */
 	if (rl == NULL)
 		return;
 	pl = (PNODE **)malloc(xsiz*sizeof(PNODE *));
-	if (pl == NULL)
+	if (pl == NULL) {
+		free((char *)rl);
 		return;
+	}
 	/*
 	 * Initialize the bottom row.
 	 */
@@ -402,7 +404,7 @@ int  pd;
 			return(0);
 		/*
 		 *  The following paint order can leave a black pixel
-		 *  when redraw() is called in (*dev->paintr)().
+		 *  if redraw() is called in (*dev->paintr)().
 		 */
 		if (p->x >= mx && p->y >= my)
 			pcopy(p, p->kid+UR);
