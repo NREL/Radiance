@@ -9,6 +9,7 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include <stdio.h>
+#include <math.h>
 #include <string.h>
 #include "fvect.h"
 #include "object.h"
@@ -17,9 +18,12 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define PI	3.14159265358979323846
 
+#define C_1SIDEDTHICK	0.005
+
 int	o_face(), o_cone(), o_sphere(), o_ring(), o_cylinder();
 int	o_instance(), o_source(), o_illum();
-int	o_plastic(), o_metal(), o_glass(), o_mirror(), o_trans(), o_light();
+int	o_plastic(), o_metal(), o_glass(), o_dielectric(),
+		o_mirror(), o_trans(), o_light();
 
 extern void	free();
 extern char	*malloc();
@@ -284,6 +288,7 @@ init()			/* initialize dispatch table and output */
 	add2dispatch("metal", o_metal);
 	add2dispatch("metal2", o_metal);
 	add2dispatch("glass", o_glass);
+	add2dispatch("dielectric", o_dielectric);
 	add2dispatch("trans", o_trans);
 	add2dispatch("trans2", o_trans);
 	add2dispatch("mirror", o_mirror);
@@ -624,6 +629,7 @@ register FUNARGS	*fa;
 	newmat(id, NULL);
 	if (fa->nfargs == 4)
 		nrfr = fa->farg[3];
+	printf("\tir %f 0\n", nrfr);
 	F = (1. - nrfr)/(1. + nrfr);		/* use normal incidence */
 	F *= F;
 	for (i = 0; i < 3; i++) {
@@ -638,6 +644,36 @@ register FUNARGS	*fa;
 	if (d > FTINY)
 		printf("\t\tcxy %.4f %.4f\n", cxyz[0]/d, cxyz[1]/d);
 	printf("\trs %.4f 0\n", cxyz[1]);
+	rgb_cie(cxyz, trgb);			/* put transmitted component */
+	puts("\tc");
+	d = cxyz[0] + cxyz[1] + cxyz[2];
+	if (d > FTINY)
+		printf("\t\tcxy %.4f %.4f\n", cxyz[0]/d, cxyz[1]/d);
+	printf("\tts %.4f 0\n", cxyz[1]);
+	return(0);
+}
+
+
+int
+o_dielectric(mod, typ, id, fa)	/* convert a dielectric material */
+char	*mod, *typ, *id;
+register FUNARGS	*fa;
+{
+	COLOR	cxyz, trgb;
+	double	F, d;
+	register int	i;
+
+	if (fa->nfargs != 5)
+		return(-1);
+	newmat(id, NULL);
+	F = (1. - fa->farg[3])/(1. + fa->farg[3]);	/* normal incidence */
+	F *= F;
+	for (i = 0; i < 3; i++)
+		trgb[i] = (1. - F)*pow(fa->farg[i], C_1SIDEDTHICK/unit_mult);
+	printf("\tir %f 0\n", fa->farg[3]);	/* put index of refraction */
+	printf("\tsides 1\n");
+	puts("\tc");				/* put reflected component */
+	printf("\trs %.4f 0\n", F);
 	rgb_cie(cxyz, trgb);			/* put transmitted component */
 	puts("\tc");
 	d = cxyz[0] + cxyz[1] + cxyz[2];
