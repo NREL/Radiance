@@ -429,10 +429,7 @@ register int	i;
 	if (hp->bl[i] == NULL || (nrays = hp->bl[i]->nrm) == hp->bi[i].nrd)
 		return(0);
 					/* locate fragment */
-	if (hp->fd >= nhdfragls || !hdfragl[hp->fd].nlinks) /* untracked */
-		hp->bi[i].fo = lseek(hp->fd, 0L, 2);
-
-	else if (hp->bi[i].fo + hp->bi[i].nrd*sizeof(RAYVAL) ==
+	if (hp->bi[i].fo + hp->bi[i].nrd*sizeof(RAYVAL) ==
 			hdfragl[hp->fd].flen)		/* EOF special case */
 		hdfragl[hp->fd].flen = (nfo=hp->bi[i].fo) + nrays*sizeof(RAYVAL);
 
@@ -512,7 +509,7 @@ register int	i;
 		n = hp->bl[i]->nrm * sizeof(RAYVAL);
 		if (write(hp->fd, (char *)hdbray(hp->bl[i]), n) != n) {
 			hdfragl[hp->fd].writerr++;
-			hdsync(hp, 0);		/* sync directory */
+			hdsync(NULL, 0);	/* sync directories */
 			error(SYSTEM, "write error in hdsyncbeam");
 		}
 	}
