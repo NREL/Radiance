@@ -174,7 +174,7 @@ proc do_action w {		# Action screen
 	global rifname rvview rpview radvar bfname batch_pid \
 			curmess scname mywin alldone batch_fmt hostname
 	if {"$w" == "done"} {
-		unset rpview bfname batch_pid mywin
+		unset rvview rpview bfname batch_pid mywin
 		return
 	}
 	set bfname [file rootname [file tail $rifname]].err
@@ -225,8 +225,12 @@ proc do_action w {		# Action screen
 	helplink $w.rbce trad action checkerr
 	if [file exists $bfname] {
 		set fi [open $bfname r]
-		scan [gets $fi] $batch_fmt batch_pid batch_host
-		gets $fi radcom
+		if {[scan [gets $fi] $batch_fmt batch_pid batch_host] != 2} {
+			set batch_host unknown
+			set radcom {}
+		} else {
+			gets $fi radcom
+		}
 		close $fi
 		if [string match "rad -v *" $radcom] {
 			set rpview [lindex $radcom 2]
