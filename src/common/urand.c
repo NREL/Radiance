@@ -16,7 +16,6 @@ extern char  *malloc();
 
 short  *urperm;		/* urand() permutation */
 int  urmask;		/* bits used in permutation */
-static int  urorder;	/* number of bits */
 
 
 initurand(size)		/* initialize urand() for size entries */
@@ -49,7 +48,7 @@ int  size;
 
 
 int
-urhash(d, n)			/* hash a set of integer values */
+ilhash(d, n)			/* hash a set of integer values */
 register int  *d;
 register int  n;
 {
@@ -59,5 +58,5 @@ register int  n;
 	hval = 0;
 	while (n-- > 0)
 		hval += *d++ * tab[n&7];
-	return(hval & urmask);
+	return(hval);
 }
