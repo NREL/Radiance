@@ -155,6 +155,8 @@ disp_wait()			/* wait for more input */
 	int	n;
 	register int	i;
 				/* see if we can avoid select call */
+	if (hdlist[0] == NULL)
+		return(RDY_SRV);	/* initialize first */
 	flgs = 0;		/* flag what's ready already */
 	if (imm_mode || stdin->_cnt > 0)
 		flgs |= RDY_SRV;
@@ -269,7 +271,8 @@ register VIEW	*v;
 	static VIEW	viewhist[VIEWHISTLEN];
 	static unsigned	nhist;
 	VIEW	*dv;
-	int	i, res[2], *slist;
+	int	i, res[2];
+	int2	*slist;
 	char	*err;
 				/* restore previous view? */
 	if (v == NULL) {
