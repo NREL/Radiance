@@ -9,11 +9,11 @@ static char SCCSid[] = "$SunId$ LBL";
  * Assume the passed pointer array is big enough to hold them all.
  */
 
+#include <ctype.h>
+
 #define NULL		0
 
-#define BUFSIZ		4096		/* file must be smaller than this */
-
-#include <ctype.h>
+#define MAXFLEN		10240		/* file must be smaller than this */
 
 extern char	*bmalloc();
 
@@ -29,19 +29,19 @@ char	*fname;
 	register int	n;
 	register char	*cp;
 					/* allocate memory */
-	if ((cp = buf = bmalloc(BUFSIZ)) == NULL)
+	if ((cp = buf = bmalloc(MAXFLEN)) == NULL)
 		return(-1);
 	if ((fd = open(fname, 0)) < 0)
 		goto err;
-	n = read(fd, buf, BUFSIZ);
+	n = read(fd, buf, MAXFLEN);
 	close(fd);
 	if (n < 0)
 		goto err;
-	if (n == BUFSIZ)		/* file too big, take what we can */
+	if (n == MAXFLEN)		/* file too big, take what we can */
 		while (!isspace(buf[--n]))
 			if (n <= 0)
 				goto err;
-	bfree(buf+n+1, BUFSIZ-n-1);	/* return unneeded memory */
+	bfree(buf+n+1, MAXFLEN-n-1);	/* return unneeded memory */
 	while (n > 0) {			/* break buffer into words */
 		while (isspace(*cp)) {
 			cp++;
@@ -56,8 +56,9 @@ char	*fname;
 		}
 		*cp++ = '\0'; n--;
 	}
+	*wp = NULL;			/* null terminator */
 	return(wp - words);
 err:
-	bfree(buf, BUFSIZ);
+	bfree(buf, MAXFLEN);
 	return(-1);
 }
