@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -65,6 +65,16 @@ char  *s;
 	int  change = 0;
 	VIEW  nv;
 
+	while (isspace(*s))
+		s++;
+	if (*s == '-') {			/* command line parameters */
+		copystruct(&nv, &ourview);
+		if (sscanview(&nv, s))
+			newview(&nv);
+		else
+			error(COMMAND, "bad view option(s)");
+		return;
+	}
 	if (sscanf(s, "%s", buf) == 1) {	/* write parameters to a file */
 		if ((fname = getpath(buf, NULL, 0)) == NULL ||
 				(fp = fopen(fname, "a")) == NULL) {
