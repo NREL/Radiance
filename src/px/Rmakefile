@@ -43,8 +43,9 @@ pdfblur.csh pmblur.csh xyzimage.csh
 	cp pdfblur.csh $(INSTDIR)/pdfblur
 	cp pmblur.csh $(INSTDIR)/pmblur
 	cp xyzimage.csh $(INSTDIR)/xyzimage
+	cp phisto.csh $(INSTDIR)/phisto
 	chmod 755 $(INSTDIR)/normpat $(INSTDIR)/falsecolor \
-$(INSTDIR)/pdfblur $(INSTDIR)/pmblur $(INSTDIR)/xyzimage
+$(INSTDIR)/pdfblur $(INSTDIR)/pmblur $(INSTDIR)/xyzimage $(INSTDIR)/phisto
 
 clean:
 	set nonomatch; rm -f x10image aedimage glimage ra_tiff \
