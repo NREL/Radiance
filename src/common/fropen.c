@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -10,18 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include <stdio.h>
 
-#ifndef	DEFPATH
-#define	DEFPATH		":/usr/local/lib/ray"
-#endif
-#ifndef ULIBVAR
-#define ULIBVAR		"RAYPATH"
-#endif
-#ifndef DIRSEP
-#define DIRSEP		'/'
-#endif
-#ifndef PATHSEP
-#define PATHSEP		':'
-#endif
+#include "paths.h"
 
 char  *libpath = NULL;		/* library search path */
 
@@ -30,7 +19,7 @@ FILE *
 fropen(fname)			/* find file and open for reading */
 register char  *fname;
 {
-	extern char  *strcpy(), *getenv();
+	extern char  *strcpy();
 	FILE  *fp;
 	char  pname[256];
 	register char  *sp, *cp;

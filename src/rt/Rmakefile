@@ -269,3 +269,5 @@ aniso.o func.o m_brdf.o m_direct.o mx_data.o mx_func.o p_data.o \
 p_func.o t_data.o t_func.o:	func.h
 
 devcomm.o:	../common/vfork.h
+
+rtmain.o rpmain.o rvmain.o:	../common/paths.h

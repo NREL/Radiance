@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -8,21 +8,16 @@ static char SCCSid[] = "$SunId$ LBL";
  *  getpath.c - function to search for file in a list of directories
  */
 
+#include "paths.h"
+
 #define  NULL		0
 
 #ifndef  NIX
 #include  <pwd.h>
-#endif
-
-#ifndef DIRSEP
-#define DIRSEP		'/'
-#endif
-#ifndef PATHSEP
-#define PATHSEP		':'
-#endif
-
-extern char  *strcpy(), *strcat(), *getenv();
 extern struct passwd  *getpwnam();
+#endif
+
+extern char  *strcpy(), *strcat();
 
 
 char *
