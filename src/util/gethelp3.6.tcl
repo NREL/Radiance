@@ -102,11 +102,11 @@ proc gethelp {helpfile category topic} {	# Open help window
 }
 
 proc helpopen fname {			# open the named help file
-	global curhelp helplib
+	global curhelp helpindex helplib
 	if {"$fname" == "$curhelp(file)"} {return}
 	if {"$curhelp(file)" != {}} {
 		close $curhelp(fid)
-		unset curhelp
+		unset curhelp helpindex
 	}
 	if {[set curhelp(file) $fname] == {}} {return}
 	# Complete file name as required
@@ -128,19 +128,20 @@ proc helpopen fname {			# open the named help file
 	.helpwin.txt insert end "Loading $fname..."
 	update
 	set curhelp(fid) [open $fname r]
-	set curhelp(index) {}
-	set catlist {}
+	set curhelp(catlist) {}
 	while {[gets $curhelp(fid) li] >= 0} {
 		if [regexp -nocase {^\.([A-Z][A-Z0-9]*)\.([A-Z][A-Z0-9]*)$} \
 				$li dummy cat top] {
-			lappend curhelp(index) "$cat $top [tell $curhelp(fid)]"
-			if {[lsearch -exact $catlist $cat] < 0} {
-				lappend catlist $cat
+			lappend helpindex([string toupper $cat]) $top
+			set helpindex([string toupper $cat,$top]) \
+					[tell $curhelp(fid)]
+			if {[lsearch -exact $curhelp(catlist) $cat] < 0} {
+				lappend curhelp(catlist) $cat
 			}
 		}
 	}
 	.helpwin.but.catb.m delete 0 last
-	foreach cat $catlist {
+	foreach cat $curhelp(catlist) {
 		.helpwin.but.catb.m add command -label $cat \
 				-command "helphist new $cat intro"
 	}
@@ -152,7 +153,7 @@ proc helpopen fname {			# open the named help file
 }
 
 proc helpgoto {cat top} {		# find selected category and topic
-	global curhelp
+	global curhelp helpindex
 	# Capitalize "just in case"
 	set cat [string toupper $cat]
 	set top [string toupper $top]
@@ -160,17 +161,8 @@ proc helpgoto {cat top} {		# find selected category and topic
 	set curhelp(topic) $top
 	if {"$cat" != "$curhelp(category)"} {
 		set curhelp(category) $cat
-		set toplist {}
-		set n [llength $curhelp(index)]
-		for {set i 0} {$i < $n} {incr i} {
-			if {"[string toupper [lindex [lindex \
-					$curhelp(index) $i] 0]]" == "$cat"} {
-				lappend toplist [lindex [lindex \
-						$curhelp(index) $i] 1]
-			}
-		}
 		.helpwin.but.topb.m delete 0 last
-		foreach top $toplist {
+		foreach top $helpindex($cat) {
 			.helpwin.but.topb.m add command -label $top \
 				-command "helphist new \$curhelp(category) $top"
 		}
@@ -179,7 +171,7 @@ proc helpgoto {cat top} {		# find selected category and topic
 }
 
 proc helpupdate {} {			# update help text window
-	global curhelp helpfontwidth
+	global curhelp helpindex helpfontwidth
 	# Print category and topic
 	set linelen [expr "[winfo width .helpwin.txt] / $helpfontwidth - 1"]
 	.helpwin.txt configure -state normal
@@ -194,20 +186,14 @@ proc helpupdate {} {			# update help text window
 	# Search for it in file
 	if {"$curhelp(category) $curhelp(topic)" !=
 			"[string toupper $curhelp(next)]"} {
-		for {set i [llength $curhelp(index)]} {[incr i -1] >= 0} {} {
-			if {"$curhelp(category) $curhelp(topic)" ==
-					[lrange [string toupper [lindex \
-					$curhelp(index) $i]] 0 1]} {
-				break
-			}
-		}
-		if {$i < 0} {
+		if [info exists helpindex($curhelp(category),$curhelp(topic))] {
+			seek $curhelp(fid) $helpindex($curhelp(category),$curhelp(topic))
+		} else {
 			.helpwin.txt insert end "\nNo such help topic."
 			.helpwin.txt configure -state disabled
 			return ".$curhelp(category).$curhelp(topic) not found\
 					in $curhelp(file)"
 		}
-		seek $curhelp(fid) [lindex [lindex $curhelp(index) $i] 2]
 	}
 	# Load help text into our window
 	set linepos 0
@@ -305,16 +291,16 @@ proc helphist {op args} {		# access help history list
 }
 
 proc helpsearch word {		# search for occurances of the given word
-	global curhelp
+	global curhelp helpindex
 	if {"$curhelp(search)" == {}} {
 		set curhelp(msg) "No pattern."
 		return 0
 	}
 	set nmatches 0
-	set cat [lindex [lindex $curhelp(index) 0] 0]
-	set top [lindex [lindex $curhelp(index) 0] 1]
+	set cat [lindex $curhelp(catlist) 0]
+	set top [lindex $helpindex([string toupper $cat]) 0]
 	set startpos [tell $curhelp(fid)]
-	seek $curhelp(fid) [lindex [lindex $curhelp(index) 0] 2]
+	seek $curhelp(fid) $helpindex([string toupper $cat,$top])
 	set foundmatch 0
 	while {[gets $curhelp(fid) li] >= 0} {
 		if [regexp -nocase {^\.([A-Z][A-Z0-9]*)\.([A-Z][A-Z0-9]*)$} \
