@@ -27,10 +27,13 @@ register VIEW  *v;
 	if (normalize(v->vdir) == 0.0)		/* normalize direction */
 		return("zero view direction");
 
+	if (normalize(v->vup) == 0.0)		/* normalize view up */
+		return("zero view up vector");
+
 	fcross(v->hvec, v->vdir, v->vup);	/* compute horiz dir */
 
 	if (normalize(v->hvec) == 0.0)
-		return("illegal view up vector");
+		return("view up parallel to view direction");
 
 	fcross(v->vvec, v->hvec, v->vdir);	/* compute vert dir */
 
