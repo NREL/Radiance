@@ -64,9 +64,9 @@ OCTSRC = octree.c readobj.c readoct.c objset.c otypes.c initotypes.c
 RAYOBJS = raytrace.o ambient.o ambcomp.o
 RAYSRC = raytrace.c ambient.c ambcomp.c
 
-SURFOBJS = face.o sphere.o source.o o_face.o cone.o \
+SURFOBJS = face.o sphere.o source.o virtuals.o o_face.o cone.o \
 		o_cone.o o_instance.o instance.o
-SURFSRC = face.c sphere.c source.c o_face.c cone.c \
+SURFSRC = face.c sphere.c source.c virtuals.c o_face.c cone.c \
 		o_cone.c o_instance.c instance.c
 
 MATOBJS = normal.o dielectric.o m_clip.o glass.o m_brdf.o
@@ -203,14 +203,14 @@ caldefn.o calexpr.o calfunc.o:	calcomp.h
 aed.o color.o colortab.o data.o devcomm.o spec_rgb.o \
 devmain.o lookamb.o resolu.o rview.o sundev.o x10.o x11.o:	color.h
 
-cone.o o_cone.o source.o:	cone.h
+cone.o o_cone.o source.o virtuals.o:	cone.h
 
 data.o m_brdf.o mx_data.o p_data.o t_data.o:	data.h
 
 aed.o devcomm.o devmain.o devtable.o \
 editline.o nwsdev.o sundev.o tty.o x10.o x11.o:	driver.h
 
-face.o o_face.o source.o:	face.h
+face.o o_face.o source.o virtuals.o:	face.h
 
 fvect.o:	fvect.h
 
@@ -223,19 +223,19 @@ o_instance.o instance.o:	instance.h octree.h
 
 ambient.o cone.o dielectric.o func.o initotypes.o m_brdf.o normal.o o_cone.o \
 objset.o otypes.o text.o raytrace.o readobj.o readoct.o rtrace.o \
-rv2.o source.o sphere.o:	otypes.h
+rv2.o source.o virtuals.o sphere.o:	otypes.h
 
 ambient.o ambcomp.o rpict.o rv3.o source.o:	random.h
 
 ambient.o ambcomp.o dielectric.o func.o glass.o m_clip.o \
 m_brdf.o mx_data.o mx_func.o normal.o o_cone.o o_face.o o_instance.o \
 p_data.o p_func.o text.o raytrace.o rpmain.o rtmain.o rvmain.o rpict.o \
-rtrace.o rview.o rv2.o rv3.o source.o sphere.o \
+rtrace.o rview.o rv2.o rv3.o source.o virtuals.o sphere.o \
 t_data.o t_func.o:	ray.h standard.h mat4.h fvect.h object.h color.h
 
 rv2.o rv3.o rview.o:	rpaint.h driver.h view.h
 
-source.o:	source.h
+source.o virtuals.o:	source.h
 
 cone.o data.o devcomm.o face.o image.o initotypes.o xf.o misc.o objset.o \
 octree.o otypes.o readobj.o readoct.o:	standard.h mat4.h fvect.h

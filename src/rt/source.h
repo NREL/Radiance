@@ -8,31 +8,38 @@
  *     8/20/85
  */
 
+#define  AIMREQT	100		/* required aim success/failure */
+
 #define  SDISTANT	01		/* source distant flag */
 #define  SSKIP		02		/* source skip flag */
 #define  SPROX		04		/* source proximity flag */
 #define  SSPOT		010		/* source spotlight flag */
-
-#define  AIMREQT	100		/* required aim success/failure */
+#define  SVIRTUAL	020		/* source virtual flag */
+#define  SFLAT		040		/* source flat flag */
+#define  SFOLLOW	0100		/* source follow path flag */
 
 typedef struct {
-	float  siz;		/* output solid angle */
+	FVECT  aim;		/* aim direction or center */
+	float  siz;		/* output solid angle or area */
 	float  flen;		/* focal length */
-	FVECT  aim;		/* aim direction */
 } SPOT;			/* spotlight */
 
 typedef struct {
-	short  sflags;		/* source flags */
+	int  sflags;		/* source flags */
 	FVECT  sloc;		/* direction or position of source */
+	FVECT  snorm;		/* surface normal of flat source */
 	float  ss;		/* tangent or disk radius */
 	float  ss2;		/* domega or projected area */
-	union {
+	struct {
 		float  prox;		/* proximity */
 		SPOT  *s;		/* spot */
 	} sl;			/* localized source information */
-	int  aimsuccess;	/* aim successes - AIMREQT*failures */
+	union {
+		int  success;		/* successes - AIMREQT*failures */
+		int  svnext;		/* next source to aim for */
+	} sa;			/* source aiming information */
 	long  ntests, nhits;	/* shadow tests and hits */
-	OBJREC  *so;		/* source object */
+	OBJREC  *so;		/* source destination object */
 }  SRCREC;		/* light source */
 
 typedef struct {
@@ -52,3 +59,5 @@ extern int  nsources;			/* the number of sources */
 extern double  srcray();                /* ray to source */
 
 extern SPOT  *makespot();		/* make spotlight */
+
+extern SRCREC  *newsource();		/* allocate new source */
