@@ -33,7 +33,7 @@ if ( $?doexpos ) then
 		>> $argv[1]
 endif
 lookamb -h -d $tf.amb | rcalc -e '$1=$10;$2=$11;$3=$12' >> $tf.dat
-set lavg=`rcalc -e 'lum=.265*$1+.670*$2+.065*$3;cond=lum-1e-5' $tf.dat | total -m -p`
+set lavg=`rcalc -e '$1=lum;lum=.265*$1+.670*$2+.065*$3;cond=lum-1e-5' $tf.dat | total -m -p`
 if ( $?docolor ) then
 	set cavg=(`total -m $tf.dat`)
 	set av=(`rcalc -n -e "r=$cavg[1];g=$cavg[2];b=$cavg[3];sf=$lavg/(.265*r+.670*g+.065*b)" -e '$1=sf*r;$2=sf*g;$3=sf*b'`)
