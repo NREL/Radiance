@@ -18,7 +18,7 @@ LIBDIR = /usr/local/lib/ray
 
 PROGS = rholo rhcopy
 
-DEVS = $(DEVDIR)/x11.hdisp $(DEVDIR)/x11h.hdisp
+DEVS = $(DEVDIR)/x11.hdi $(DEVDIR)/x11h.hdi
 
 all:	$(PROGS)
 
@@ -35,13 +35,13 @@ holo.o holofile.o Version.o -lrt -lm
 rhcopy:	rhcopy.o holo.o holofile.o
 	$(CC) $(CFLAGS) -o rhcopy rhcopy.o holo.o holofile.o -lrt -lm
 
-$(DEVDIR)/x11h.hdisp:	$(DEVDIR)/x11.hdisp
-	rm -f $(DEVDIR)/x11h.hdisp
-	ln $(DEVDIR)/x11.hdisp $(DEVDIR)/x11h.hdisp
+$(DEVDIR)/x11h.hdi:	$(DEVDIR)/x11.hdi
+	rm -f $(DEVDIR)/x11h.hdi
+	ln $(DEVDIR)/x11.hdi $(DEVDIR)/x11h.hdi
 
-$(DEVDIR)/x11.hdisp:	rhdisp.o rhdisp2.o rhdisp3.o rhd_x11.o rhd_qtree.o \
+$(DEVDIR)/x11.hdi:	rhdisp.o rhdisp2.o rhdisp3.o rhd_x11.o rhd_qtree.o \
 rhd_qtree2r.o rhd_ctab.o holo.o
-	$(CC) $(CFLAGS) -o $(DEVDIR)/x11.hdisp rhdisp.o rhdisp2.o rhdisp3.o \
+	$(CC) $(CFLAGS) -o $(DEVDIR)/x11.hdi rhdisp.o rhdisp2.o rhdisp3.o \
 rhd_x11.o rhd_qtree.o rhd_qtree2r.o rhd_ctab.o holo.o -lrt -lX11 -lm
 
 rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o \
