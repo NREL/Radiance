@@ -374,7 +374,7 @@ xfcomm(			/* transform a command */
 )
 {
 	FILE  *pin;
-	char  buf[512];
+	char  buf[2048];
 	int  i;
 
 	fgetline(buf, sizeof(buf), fin);
