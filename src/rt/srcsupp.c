@@ -526,15 +526,6 @@ register RAY  *r;
 #define  wrongsource(m, r)	(r->rsrc>=0 && source[r->rsrc].so!=r->ro && \
 				(m->otype!=MAT_ILLUM || wrongillum(m,r)))
 
-/* badspecular *
- *
- * Any undirected specular ray that hits a light source
- * should be discarded.  This is because the source contribution to
- * specular components is calculated separately to reduce variance.
- */
-
-#define  badspecular(m, r)	(r->rsrc<0 && r->crtype&SPECULAR)
-
 /* distglow *
  *
  * A distant glow is an object that sometimes acts as a light source,
@@ -544,23 +535,24 @@ register RAY  *r;
 #define  distglow(m, r)		(m->otype==MAT_GLOW && \
 				r->rot > m->oargs.farg[3])
 
-/* badambient *
+/* badcomponent *
  *
- * We must avoid including counting light sources in the ambient calculation,
+ * We must avoid counting light sources in the ambient calculation,
  * since the direct component is handled separately.  Therefore, any
  * ambient ray which hits an active light source must be discarded.
+ * The same is true for stray specular samples, since the specular
+ * contribution from light sources is calculated separately.
  */
 
-#define  badambient(m, r)	((r->crtype&(AMBIENT|SHADOW))==AMBIENT && \
-				!distglow(m, r))
+#define  badcomponent(m, r)	(r->crtype&(AMBIENT|SPECULAR) && \
+				!(r->crtype&SHADOW || distglow(m, r)))
 
 /* overcount *
  *
  * All overcounting possibilities are contained here.
  */
 
-#define  overcount(m, r)	(badspecular(m,r) || wrongsource(m,r) || \
-				badambient(m,r))
+#define  overcount(m, r)	(badcomponent(m,r) || wrongsource(m,r))
 
 /* passillum *
  *
