@@ -24,7 +24,7 @@ extern double  minweight;		/* minimum ray weight */
 extern int  do_irrad;			/* compute irradiance? */
 
 long  raynum = 0L;			/* next unique ray number */
-long  nrays = 0L;			/* number of calls to rayvalue */
+long  nrays = 0L;			/* number of calls to localhit */
 
 static double  Lambfa[5] = {PI, PI, PI, 0.0, 0.0};
 OBJREC  Lamb = {
@@ -48,6 +48,7 @@ double  rw;
 		r->crtype = r->rtype = rt;
 		r->rsrc = -1;
 		r->clipset = NULL;
+		r->revf = raytrace;
 	} else {				/* spawned ray */
 		r->rlvl = ro->rlvl;
 		if (rt & RAYREFL) {
@@ -58,6 +59,7 @@ double  rw;
 			r->rsrc = ro->rsrc;
 			r->clipset = ro->newcset;
 		}
+		r->revf = ro->revf;
 		r->rweight = ro->rweight * rw;
 		r->crtype = ro->crtype | (r->rtype = rt);
 		VCOPY(r->rorg, ro->rop);
@@ -74,12 +76,11 @@ double  rw;
 }
 
 
-rayvalue(r)			/* compute a ray's value */
+raytrace(r)			/* trace a ray and compute its value */
 RAY  *r;
 {
 	extern int  (*trace)();
 
-	nrays++;			/* increment trace counter */
 	if (localhit(r, &thescene))
 		raycont(r);
 	else if (sourcehit(r))
@@ -315,6 +316,7 @@ register CUBE  *scene;
 	double  t, dt;
 	register int  i;
 
+	nrays++;			/* increment trace counter */
 	sflags = 0;
 	for (i = 0; i < 3; i++) {
 		curpos[i] = r->rorg[i];
