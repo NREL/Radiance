@@ -22,12 +22,17 @@ struct tmStruct	*tmTop = NULL;		/* current tone mapping stack */
 struct tmPackage	*tmPkg[TM_MAXPKG];
 int	tmNumPkgs = 0;			/* number of registered packages */
 
+int	tmLastError;			/* last error incurred by library */
+char	*tmLastFunction;		/* error-generating function name */
+
 
 int
 tmErrorReturn(func, err)		/* error return (with message) */
 char	*func;
 int	err;
 {
+	tmLastFunction = func;
+	tmLastError = err;
 	if (tmTop != NULL && tmTop->flags & TM_F_NOSTDERR)
 		return(err);
 	fputs(func, stderr);
