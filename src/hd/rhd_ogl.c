@@ -284,6 +284,7 @@ dev_clear()			/* clear our representation */
 {
 	viewflags |= VWCHANGE;		/* pretend our view has changed */
 	wipeclean();			/* clean off display and samples */
+	dev_flush();			/* redraw geometry & get depth */
 	rayqleft = 0;			/* hold off update */
 }
 
@@ -372,8 +373,15 @@ dev_auxcom(cmd, args)		/* process an auxiliary command */
 char	*cmd, *args;
 {
 #ifdef DOBJ
-	if (dobj_command(cmd, args) >= 0)
+	int	vischange;
+
+	if ((vischange = dobj_command(cmd, args)) >= 0) {
+		if (vischange) {
+			imm_mode = beam_sync(1) > 0;
+			dev_clear();
+		}
 		return;
+	}
 #endif
 	sprintf(errmsg, "%s: unknown command", cmd);
 	error(COMMAND, errmsg);
@@ -509,7 +517,7 @@ xferdepth()			/* load and clear depth buffer */
 	else
 		pbuf = NULL;
 #ifdef STEREO
-	setstereobuf(STEREO_BUFFER_RIGHT);
+	pushright();
 	glReadPixels(0, 0, odev.hres, odev.vres,
 			GL_DEPTH_COMPONENT, GL_FLOAT, depthright);
 	if (pbuf != NULL) {
@@ -524,8 +532,8 @@ xferdepth()			/* load and clear depth buffer */
 		else
 			*dbp = mapdepth(*dbp);
 	glClear(GL_DEPTH_BUFFER_BIT);
-	setstereobuf(STEREO_BUFFER_LEFT);
 	odDepthMap(1, depthright);
+	popright();
 #endif
 				/* read back depth buffer */
 	glReadPixels(0, 0, odev.hres, odev.vres,
@@ -994,14 +1002,12 @@ register XKeyPressedEvent  *ekey;
 		return;
 	case CTRL('L'):			/* refresh from server */
 		if (inpresflags & DFL(DC_REDRAW))
-			return;
+			return;			/* already called */
 		XRaiseWindow(ourdisplay, gwind);
 		XFlush(ourdisplay);		/* raise up window */
 		sleep(1);			/* wait for restacking */
 		dev_clear();			/* clear buffer and samples */
 		odRemap(1);			/* start fresh histogram */
-		dev_flush();			/* redraw geometry */
-		rayqleft = 0;			/* hold off update */
 		inpresflags |= DFL(DC_REDRAW);	/* resend values from server */
 		return;
 	case 'K':			/* kill rtrace process(es) */
