@@ -51,7 +51,7 @@ long	nraysdone = 0L;		/* number of rays done */
 long	npacksdone = 0L;	/* number of packets done */
 
 PACKET	*freepacks;		/* available packets */
-int	avgqlen;		/* average queue length when full */
+int	totqlen;		/* maximum queue length when full */
 
 char  *sigerr[NSIG];		/* signal error messages */
 
@@ -222,7 +222,7 @@ initrholo()			/* get our holodeck running */
 		endtime = starttime + vflt(TIME)*3600. + .5;
 						/* start rtrace */
 	if (ncprocs > 0) {
-		i = start_rtrace();
+		totqlen = i = start_rtrace();
 		if (i < 1)
 			error(USER, "cannot start rtrace process(es)");
 		if (vdef(REPORT)) {		/* make first report */
@@ -233,8 +233,6 @@ initrholo()			/* get our holodeck running */
 		freepacks = (PACKET *)bmalloc(i*sizeof(PACKET));
 		if (freepacks == NULL)
 			goto memerr;
-		if (!(avgqlen = i/nprocs))	/* record mean queue length */
-			avgqlen = 1;
 		freepacks[--i].nr = 0;
 		freepacks[i].next = NULL;
 		if (!vdef(OBSTRUCTIONS) || !vbool(OBSTRUCTIONS)) {
@@ -302,7 +300,7 @@ rholo()				/* holodeck main loop */
 		report(t);
 					/* figure out good packet size */
 #if MAXQTIME
-	pksiz = nraysdone*MAXQTIME/(avgqlen*(t - starttime + 1L));
+	pksiz = nraysdone*MAXQTIME/(totqlen*(t - starttime + 1L));
 	if (pksiz < 1)
 		pksiz = 1;
 	else if (pksiz > RPACKSIZ)
@@ -506,7 +504,7 @@ PACKET	*pl;
 		p->next = freepacks;		/* push onto free list */
 		freepacks = p;
 	}
-	if (n2flush > 300/MAXQTIME*avgqlen*nprocs) {
+	if (n2flush > 300/MAXQTIME*totqlen) {
 		hdflush(NULL);			/* flush holodeck buffers */
 		n2flush = 0;
 	}
