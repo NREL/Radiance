@@ -12,6 +12,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "ray.h"
 
+#include  "otypes.h"
+
 /*
  *  This definition of glass provides for a quick calculation
  *  using a single surface where two closely spaced parallel
@@ -51,8 +53,10 @@ register RAY  *r;
 	FVECT  pnorm;
 	double  rindex, cos2;
 	COLOR  trans, refl;
+	int  hastexture;
 	double  d, r1e, r1m;
 	double  transtest, transdist;
+	double  mirtest, mirdist;
 	RAY  p;
 	register int  i;
 						/* check arguments */
@@ -67,11 +71,16 @@ register RAY  *r;
 
 	if (r->rod < 0.0)			/* reorient if necessary */
 		flipsurface(r);
-	transtest = 0;
-	transdist = r->rot;
+	mirtest = transtest = 0;
+	mirdist = transdist = r->rot;
 						/* get modifiers */
 	raytexture(r, m->omod);
-	pdot = raynormal(pnorm, r);
+	if (hastexture = DOT(r->pert,r->pert) > FTINY*FTINY)
+		pdot = raynormal(pnorm, r);
+	else {
+		VCOPY(pnorm, r->ron);
+		pdot = r->rod;
+	}
 						/* angular transmission */
 	cos2 = sqrt( (1.0-1.0/(rindex*rindex)) +
 		     pdot*pdot/(rindex*rindex) );
@@ -92,8 +101,7 @@ register RAY  *r;
 	}
 						/* transmitted ray */
 	if (rayorigin(&p, r, TRANS, bright(trans)) == 0) {
-		if (!(r->crtype & SHADOW) &&
-				DOT(r->pert,r->pert) > FTINY*FTINY) {
+		if (!(r->crtype & SHADOW) && hastexture) {
 			for (i = 0; i < 3; i++)		/* perturb direction */
 				p.rdir[i] = r->rdir[i] +
 						2.*(1.-rindex)*r->pert[i];
@@ -113,8 +121,10 @@ register RAY  *r;
 		transdist = r->rot + p.rt;
 	}
 
-	if (r->crtype & SHADOW)			/* skip reflected ray */
+	if (r->crtype & SHADOW) {		/* skip reflected ray */
+		r->rt = transdist;
 		return(1);
+	}
 						/* compute reflectance */
 	for (i = 0; i < 3; i++) {
 		d = colval(mcolor, i);
@@ -129,8 +139,16 @@ register RAY  *r;
 		rayvalue(&p);
 		multcolor(p.rcol, refl);
 		addcolor(r->rcol, p.rcol);
+		if (!hastexture && r->ro != NULL && isflat(r->ro->otype)) {
+			mirtest = 2.0*bright(p.rcol);
+			mirdist = r->rot + p.rt;
+		}
 	}
-	if (transtest > bright(r->rcol))
+                                        /* check distance */
+	d = bright(r->rcol);
+	if (transtest > d)
 		r->rt = transdist;
+	else if (mirtest > d)
+		r->rt = mirdist;
 	return(1);
 }
