@@ -338,8 +338,7 @@ int  *xp, *yp;
 	char  com[128];
 	FILE  *fp;
 
-	sprintf(com, "psign -h %d '%.30s' | pfilt -1 -x /2 -y /2",
-			2*labelht, s);
+	sprintf(com, "psign -s -.2 -h %d '%.30s'", labelht, s);
 	if ((fp = popen(com, "r")) == NULL)
 		return(NULL);
 	if (checkheader(fp, COLRFMT, NULL) < 0)

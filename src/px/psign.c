@@ -38,6 +38,7 @@ int  direct = 'r';			/* direction (right, up, left, down) */
 
 int  cheight = 32*SSS;			/* character height */
 double  aspect = 1.67;			/* height/width character aspect */
+double  spacing = 0.0;			/* character spacing */
 int  cwidth;				/* computed character width */
 
 unsigned char  *ourbitmap;		/* our output bitmap */
@@ -115,6 +116,9 @@ char  *argv[];
 		case 'a':			/* aspect ratio */
 			aspect = atof(argv[++an]);
 			break;
+		case 's':			/* spacing */
+			spacing = atof(argv[++an]);
+			break;
 		default:;
 unkopt:
 			fprintf(stderr, "%s: unknown option: %s\n",
@@ -191,7 +195,14 @@ FILE  *fp;
 			maxline = len;
 		strncpy(curl->s, buf, len);
 		curl->s[len] = '\0';
-len = uniftext(curl->sp, curl->s, ourfont);
+		if (spacing < 0.0)
+			len = squeeztext(curl->sp, curl->s, ourfont,
+					(int)(spacing*-256.0));
+		else if (spacing > 0.0)
+			len = proptext(curl->sp, curl->s, ourfont,
+					(int)(spacing*256.0), 3);
+		else
+			len = uniftext(curl->sp, curl->s, ourfont);
 		if (len > maxwidth)
 			maxwidth = len;
 		curl->next = ourtext;
@@ -227,7 +238,14 @@ char  *av[];
 	ourtext->sp = (short *)malloc(sizeof(short)*(maxline+1));
 	if (ourtext->sp == NULL)
 		goto memerr;
-maxwidth = squeeztext(ourtext->sp, ourtext->s, ourfont, 50);
+	if (spacing < 0.0)
+		maxwidth = squeeztext(ourtext->sp, ourtext->s, ourfont,
+				(int)(spacing*-256.0));
+	else if (spacing > 0.0)
+		maxwidth = proptext(ourtext->sp, ourtext->s, ourfont,
+				(int)(spacing*256.0), 3);
+	else
+		maxwidth = uniftext(ourtext->sp, ourtext->s, ourfont);
 	nlines = 1;
 	return;
 memerr:
