@@ -18,19 +18,26 @@
 	the x,y,z axes, are given in meters regardless of the
 	units being used in the scene file.
 
+	cylcorr function provides the same correction for a
+	cylinder whose central axis is aligned with the Z-axis.
+
 	A1		- optional multipier
 	A2,A3,A4	- X,Y,Z dimensions of axis-aligned box (in meters!)
+or
+	A2,A3		- diameter and height of Z-aligned cylinder (meters)
 }
 					{ local definitions }
 boxprojection = abs(Dx)*A3*A4 + abs(Dy)*A2*A4 + abs(Dz)*A2*A3;
 lboxprojection = (	noneg(abs(Px-Dx*Ts)-A2/2)*A3*A4 +
 			noneg(abs(Py-Dy*Ts)-A3/2)*A2*A4 +
 			noneg(abs(Pz-Dz*Ts)-A4/2)*A2*A3 ) / Ts;
+cylprojection = A2*A3*sqrt(1-Dz*Dz) + PI/4*A2*A2*abs(Dz);
 
 flatcorr(v) = corr(v) / Rdot;		{ correction for flat sources }
 corr(v) = if(AC-.5, A1*v, v);		{ multiplier correction }
 boxcorr(v) = A1 * v / boxprojection;	{ correction for emitting box }
 lboxcorr(v) = A1 * v / lboxprojection;	{ local box correction }
+cylcorr(v) = A1 * v / cylprojection;	{ cylinder correction }
 
 src_theta = Acos(Dz) / DEGREE;			{ 0-180 }
 src_phi = mod( Atan2(Dy, -Dx) / DEGREE, 360 );	{ 0-360 }
