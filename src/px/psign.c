@@ -16,18 +16,13 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "font.h"
 
+#include  "paths.h"
+
 #ifndef  SSS
 #define  SSS			3	/* super-sample size */
 #endif
 
 #define  MAXLINE		512	/* longest allowable line */
-
-#ifndef  DEFPATH
-#define  DEFPATH		":/usr/local/lib/ray"
-#endif
-#ifndef  ULIBVAR
-#define  ULIBVAR		"RAYPATH"
-#endif
 
 char  *fontfile = "helvet.fnt";		/* our font file */
 
@@ -64,8 +59,6 @@ typedef struct line {
 LINE  *ourtext;				/* our text */
 int  nlines, maxline;			/* text dimensions */
 int  maxwidth;				/* maximum line width (dvi) */
-
-extern char  *getenv();
 
 
 main(argc, argv)

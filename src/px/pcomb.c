@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -34,6 +34,7 @@ struct {
 
 int	nfiles;				/* number of input files */
 
+char	Command[] = "<Command>";
 char	vcolin[3][4] = {"ri", "gi", "bi"};
 char	vcolout[3][4] = {"ro", "go", "bo"};
 char	vbrtin[] = "li";
@@ -125,7 +126,7 @@ char	*argv[];
 			}
 		else {
 			if (argv[a][0] == '!') {
-				input[nfiles].name = "<Command>";
+				input[nfiles].name = Command;
 				input[nfiles].fp = popen(argv[a]+1, "r");
 			} else {
 				input[nfiles].name = argv[a];
@@ -453,29 +454,15 @@ char	*msg;
 }
 
 
-#ifdef  NIX
-
-quit(code)
-int  code;
-{
-	exit(code);
-}
-
-#else
-
 quit(code)		/* exit gracefully */
 int  code;
 {
-	int  status;
 	register int  i;
 				/* close input files */
 	for (i = 0; i < nfiles; i++)
-		fclose(input[i].fp);
-				/* reap children */
-	while (wait(&status) != -1)
-		if (code == 0)
-			code = status>>8 & 0xff;
+		if (input[i].name == Command)
+			pclose(input[i].fp);
+		else
+			fclose(input[i].fp);
 	exit(code);
 }
-
-#endif

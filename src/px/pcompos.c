@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -32,6 +32,9 @@ COLR  bgcolr = BLKCOLR;			/* background color */
 int  labelht = 24;			/* label height */
 
 int  checkthresh = 0;			/* check threshold value */
+
+char  Command[] = "<Command>";
+char  Label[] = "<Label>";
 
 char  *progname;
 
@@ -170,7 +173,7 @@ getfile:
 			input[nfile].fp = stdin;
 		} else {
 			if (argv[an][0] == '!') {
-				input[nfile].name = "<Command>";
+				input[nfile].name = Command;
 				input[nfile].fp = popen(argv[an]+1, "r");
 			} else {
 				input[nfile].name = argv[an];
@@ -222,7 +225,7 @@ getfile:
 		if (thislabel != NULL) {
 			if (++nfile >= MAXFILE)
 				goto toomany;
-			input[nfile].name = "<Label>";
+			input[nfile].name = Label;
 			input[nfile].hasmin = input[nfile].hasmax = 0;
 			input[nfile].xres = input[nfile-1].xres;
 			input[nfile].yres = labelht;
@@ -365,27 +368,15 @@ err:
 }
 
 
-#ifdef  NIX
-
-quit(code)
-int  code;
-{
-	exit(code);
-}
-
-#else
-
 quit(code)		/* exit gracefully */
 int  code;
 {
 	register int  i;
 				/* close input files */
 	for (i = 0; i < nfile; i++)
-		fclose(input[i].fp);
-				/* reap any children */
-	while (wait(0) != -1)
-		;
+		if (input[i].name == Command || input[i].name == Label)
+			pclose(input[i].fp);
+		else
+			fclose(input[i].fp);
 	exit(code);
 }
-
-#endif
