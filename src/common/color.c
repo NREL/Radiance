@@ -39,17 +39,16 @@ unsigned  len;
 
 fwritecolrs(scanline, len, fp)		/* write out a colr scanline */
 register COLR  *scanline;
-int  len;
+unsigned  len;
 register FILE  *fp;
 {
 	register int  i, j, beg, cnt;
 	int  c2;
 	
-	if (len < MINELEN)		/* too small to encode */
+	if (len < MINELEN | len > 0x7fff)	/* OOBs, write out flat */
 		return(fwrite((char *)scanline,sizeof(COLR),len,fp) - len);
-	if (len > 32767)		/* too big! */
-		return(-1);
-	putc(2, fp);			/* put magic header */
+					/* put magic header */
+	putc(2, fp);
 	putc(2, fp);
 	putc(len>>8, fp);
 	putc(len&255, fp);
