@@ -137,17 +137,20 @@ char  *argv[];
 			default:
 				goto userr;
 			}
+		else if (argv[i][0] == '=')
+			geometry = argv[i];
 		else
 			break;
 
-	if (argc-i == 1) {
+	if (i == argc-1) {
 		fname = argv[i];
 		fin = fopen(fname, "r");
 		if (fin == NULL) {
 			sprintf(errmsg, "can't open file \"%s\"", fname);
 			quiterr(errmsg);
 		}
-	}
+	} else if (i != argc)
+		goto userr;
 				/* get header */
 	getheader(fin, headline);
 				/* get picture dimensions */
@@ -223,15 +226,22 @@ init()			/* get data and open window */
 		bzero((char *)&oursizhints, sizeof(oursizhints));
 		i = XParseGeometry(geometry, &oursizhints.x, &oursizhints.y,
 				&oursizhints.width, &oursizhints.height);
-		if (i & (XValue|YValue) == (XValue|YValue)) {
+		if ((i&(WidthValue|HeightValue)) == (WidthValue|HeightValue))
+			oursizhints.flags |= USSize;
+		else {
+			oursizhints.width = xmax;
+			oursizhints.height = ymax;
+			oursizhints.flags |= PSize;
+		}
+		if ((i&(XValue|YValue)) == (XValue|YValue)) {
 			oursizhints.flags |= USPosition;
 			if (i & XNegative)
-				oursizhints.x += DisplayWidth(thedisplay,ourscreen)-1;
+				oursizhints.x += DisplayWidth(thedisplay,
+				ourscreen)-1-oursizhints.width-2*BORWIDTH;
 			if (i & YNegative)
-				oursizhints.y += DisplayHeight(thedisplay,ourscreen)-1;
+				oursizhints.y += DisplayHeight(thedisplay,
+				ourscreen)-1-oursizhints.height-2*BORWIDTH;
 		}
-		if (i & (WidthValue|HeightValue) == (WidthValue|HeightValue))
-			oursizhints.flags |= USSize;
 		XSetNormalHints(thedisplay, wind, &oursizhints);
 	}
 				/* store image */
@@ -274,9 +284,7 @@ int  code;
 getras()				/* get raster file */
 {
 	colormap	ourmap;
-	unsigned char	rmap[256], gmap[256], bmap[256];
 	XVisualInfo	vinfo;
-	register int  i;
 
 	if (maxcolors <= 2) {		/* monochrome */
 		ourdata = (unsigned char *)malloc(ymax*((xmax+7)/8));
@@ -308,12 +316,7 @@ getras()				/* get raster file */
 			biq(dither,maxcolors,1,ourmap);
 		else
 			ciq(dither,maxcolors,1,ourmap);
-		for (i = 0; i < 256; i++) {
-			rmap[i] = ourmap[0][i];
-			gmap[i] = ourmap[1][i];
-			bmap[i] = ourmap[2][i];
-		}
-		if (init_rcolors(ourras, rmap, gmap, bmap) == 0)
+		if (init_rcolors(ourras, ourmap[0], ourmap[1], ourmap[2]) == 0)
 			goto fail;
 	}
 	return;
@@ -402,8 +405,8 @@ XKeyPressedEvent  *ekey;
 					colval(cval,BLU)*comp);
 			break;
 		}
-		XDrawImageString(thedisplay, wind, ourgc, box.xmin, box.ymin, 
-				buf, strlen(buf)); 
+		XDrawImageString(thedisplay, wind, ourgc,
+				box.xmin, box.ymin+box.ysiz, buf, strlen(buf)); 
 		return(0);
 	case 'i':				/* identify (contour) */
 		if (ourras->pixels == NULL)
@@ -443,8 +446,8 @@ XKeyPressedEvent  *ekey;
 		scale_rcolors(ourras, pow(2.0, (double)n));
 		scale += n;
 		sprintf(buf, "%+d", scale);
-		XDrawImageString(thedisplay, wind, ourgc, box.xmin, box.ymin,
-				buf, strlen(buf));
+		XDrawImageString(thedisplay, wind, ourgc,
+				box.xmin, box.ymin+box.ysiz, buf, strlen(buf));
 		XFlush(thedisplay);
 		free(ourdata);
 		free_raster(ourras);
@@ -473,11 +476,20 @@ moveimage(ebut)				/* shift the image */
 XButtonPressedEvent  *ebut;
 {
 	union {
-		XEvent	u;
-		XButtonReleasedEvent	b;
-	} e;
+		XEvent  u;
+		XButtonReleasedEvent  b;
+		XPointerMovedEvent  m;
+	}  e;
+	int	nxo, nyo;
 
-	XMaskEvent(thedisplay, ButtonReleaseMask, &e.u);
+	XMaskEvent(thedisplay, ButtonReleaseMask|ButtonMotionMask, &e.u);
+	while (e.u.type == MotionNotify) {
+		nxo = xoff + e.m.x - ebut->x;
+		nyo = yoff + e.m.y - ebut->y;
+		revbox(nxo, nyo, nxo+xmax, nyo+ymax);
+		XMaskEvent(thedisplay,ButtonReleaseMask|ButtonMotionMask,&e.u);
+		revbox(nxo, nyo, nxo+xmax, nyo+ymax);
+	}
 	xoff += e.b.x - ebut->x;
 	yoff += e.b.y - ebut->y;
 	XClearWindow(thedisplay, wind);
@@ -595,7 +607,7 @@ getmono()			/* get monochrome data */
 			if (err > 127)
 				err -= 255;
 			else
-				*dp |= 1<<(x&07);
+				*dp |= 1<<(7-(x&07));
 			cerr[x] = err >>= 1;
 		}
 	}

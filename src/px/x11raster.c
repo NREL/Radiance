@@ -34,7 +34,7 @@ int	bm_pad;
 	} else if (depth == 8) {
 		if (!XMatchVisualInfo(disp,scrn,8,PseudoColor,&ourvinfo))
 			return(NULL);
-	} else if (depth > 12) {
+	} else if (depth == 24) {
 		if (!XMatchVisualInfo(disp,scrn,24,TrueColor,&ourvinfo))
 			return(NULL);
 	} else
@@ -45,7 +45,9 @@ int	bm_pad;
 	xr->screen = scrn;
 	xr->visual = ourvinfo.visual;
 	xr->image = XCreateImage(disp,ourvinfo.visual,depth,
-			ZPixmap,0,data,width,height,bm_pad,0);
+			depth==1 ? XYBitmap : ZPixmap,
+			0,data,width,height,bm_pad,0);
+	xr->image->bitmap_bit_order = MSBFirst;
 	xr->gc = XCreateGC(disp, RootWindow(disp,scrn), 0, 0);
 	XSetState(disp, xr->gc, BlackPixel(disp,scrn), WhitePixel(disp,scrn),
 			GXcopy, AllPlanes);
@@ -56,7 +58,7 @@ int	bm_pad;
 int
 init_rcolors(xr, rmap, gmap, bmap)		/* initialize colors */
 register XRASTER	*xr;
-unsigned char	rmap[256], gmap[256], bmap[256];
+int	rmap[256], gmap[256], bmap[256];
 {
 	register unsigned char	*p;
 	register int	i;
@@ -89,6 +91,49 @@ unsigned char	rmap[256], gmap[256], bmap[256];
 	return(xr->ncolors);
 }
 
+Colormap
+newcmap(disp, scrn, w, vis)		/* get colormap and fix b & w */
+Display	*disp;
+int	scrn;
+Window	w;
+Visual	*vis;
+{
+	XColor	thiscolor;
+	unsigned long	*pixels;
+	Colormap	cmap;
+	int	n;
+	register int	i, j;
+
+	cmap = XCreateColormap(disp, w, vis, AllocNone);
+	if (cmap == 0)
+		return(0);
+	pixels=(unsigned long *)malloc(vis->map_entries*sizeof(unsigned long));
+	if (pixels == NULL)
+		return(0);
+	for (n = vis->map_entries; n > 0; n--)
+		if (XAllocColorCells(disp, cmap, 0, NULL, 0, pixels, n) != 0)
+			break;
+	if (n == 0)
+		return(0);
+					/* reset black and white */
+	for (i = 0; i < n; i++) {
+		if (pixels[i] != BlackPixel(disp,scrn)
+				&& pixels[i] != WhitePixel(disp,scrn))
+			continue;
+		thiscolor.pixel = pixels[i];
+		thiscolor.flags = DoRed|DoGreen|DoBlue;
+		XQueryColor(disp, DefaultColormap(disp,scrn), &thiscolor);
+		XStoreColor(disp, cmap, &thiscolor);
+		for (j = i; j+1 < n; j++)
+			pixels[j] = pixels[j+1];
+		n--;
+		i--;
+	}
+	XFreeColors(disp, cmap, pixels, n, 0);
+	free((char *)pixels);
+	return(cmap);
+}
+
 
 unsigned long *
 map_rcolors(xr, w)				/* get and assign pixels */
@@ -97,7 +142,6 @@ Window	w;
 {
 	register int	i;
 	register unsigned char	*p;
-	int	j;
 
 	if (xr->ncolors == 0 || xr->image->depth != 8)
 		return(NULL);
@@ -106,21 +150,19 @@ Window	w;
 	xr->pixels = (unsigned long *)malloc(xr->ncolors*sizeof(unsigned long));
 	if (xr->pixels == NULL)
 		return(NULL);
-	if (xr->visual == DefaultVisual(xr->disp, xr->screen)) {
+	if (xr->visual == DefaultVisual(xr->disp, xr->screen))
 		xr->cmap = DefaultColormap(xr->disp, xr->screen);
-		goto gotmap;
-	}
-getmap:
-	xr->cmap = XCreateColormap(xr->disp, w, xr->visual, AllocNone);
-gotmap:
-	if (XAllocColorCells(xr->disp, xr->cmap, 0,
-			&j, 0, xr->pixels, xr->ncolors) == 0) {
+	else
+		xr->cmap = newcmap(xr->disp, xr->screen, w, xr->visual);
+	while (XAllocColorCells(xr->disp, xr->cmap, 0,
+			NULL, 0, xr->pixels, xr->ncolors) == 0)
 		if (xr->cmap == DefaultColormap(xr->disp, xr->screen))
-			goto getmap;
-		free((char *)xr->pixels);
-		xr->pixels = NULL;
-		return(NULL);
-	}
+			xr->cmap = newcmap(xr->disp, xr->screen, w, xr->visual);
+		else {
+			free((char *)xr->pixels);
+			xr->pixels = NULL;
+			return(NULL);
+		}
 	for (i = 0; i < xr->ncolors; i++)
 		if (xr->pmap[xr->pixels[i]] == -1)
 			break;
@@ -152,7 +194,8 @@ register XRASTER	*xr;
 	if (xr->pm != 0)
 		return(xr->pm);
 	pm = XCreatePixmap(xr->disp, RootWindow(xr->disp, xr->screen),
-			xr->image->width, xr->image->height, xr->image->depth);
+			xr->image->width, xr->image->height,
+			DisplayPlanes(xr->disp, xr->screen));
 	if (pm == 0)
 		return(0);
 	put_raster(pm, 0, 0, xr);
