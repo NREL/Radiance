@@ -224,9 +224,7 @@ xf_xfmpoint(v1, v2)		/* transform a point by the current matrix */
 FVECT	v1, v2;
 {
 	if (xf_context == NULL) {
-		v1[0] = v2[0];
-		v1[1] = v2[1];
-		v1[2] = v2[2];
+		VCOPY(v1, v2);
 		return;
 	}
 	multp3(v1, v2, xf_context->xf.xfm);
@@ -238,9 +236,7 @@ xf_xfmvect(v1, v2)		/* transform a vector using current matrix */
 FVECT	v1, v2;
 {
 	if (xf_context == NULL) {
-		v1[0] = v2[0];
-		v1[1] = v2[1];
-		v1[2] = v2[2];
+		VCOPY(v1, v2);
 		return;
 	}
 	multv3(v1, v2, xf_context->xf.xfm);
