@@ -28,7 +28,7 @@ int  flags;
 	char  *pathname;
 	register SCENE  *sc;
 
-	flags &= ~IO_FILES;			/* not allowed */
+	flags &= ~(IO_FILES|IO_INFO);		/* not allowed */
 	for (sc = slist; sc != NULL; sc = sc->next)
 		if (!strcmp(sname, sc->name)) {
 			if ((sc->ldflags & flags) == flags)
