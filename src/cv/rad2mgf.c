@@ -1,4 +1,4 @@
-/* Copyright (c) 1994 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -10,6 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include <stdio.h>
 #include <math.h>
+#include <ctype.h>
 #include <string.h>
 #include "fvect.h"
 #include "object.h"
@@ -263,8 +264,16 @@ char	*id;
 	if (end == NULL)
 		end = cp;
 				/* copy to current object */
-	for (cp = id, cp2 = curobj; cp < end; *cp2++ = *cp++)
+	cp2 = curobj;
+	if (!isalpha(*id)) {	/* start with letter */
+		diff = *cp2 != 'O';
+		*cp2++ = 'O';
+	}
+	for (cp = id; cp < end; *cp2++ = *cp++) {
+		if (*cp < '!' | *cp > '~')	/* limit to visible chars */
+			*cp = '?';
 		diff += *cp != *cp2;
+	}
 	if (!diff && !*cp2)
 		return;
 	*cp2 = '\0';
