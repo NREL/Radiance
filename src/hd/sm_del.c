@@ -234,8 +234,12 @@ LIST *l;
       id_e0 = E_NTH_VERT(e,0);
       id_e1 = E_NTH_VERT(e,1);
       /* NOTE: DO these need to be normalized? Just subtract center? */
-      smDir(sm,e0,id_e0);
-      smDir(sm,e1,id_e1);
+      /*
+	smDir(sm,e0,id_e0);
+	smDir(sm,e1,id_e1);
+	*/
+      VSUB(e0,SM_NTH_WV(sm,id_e0),SM_VIEW_CENTER(sm));
+      VSUB(e1,SM_NTH_WV(sm,id_e1),SM_VIEW_CENTER(sm));
       if(sedge_intersect(v0,v1,e0,e1))
 	return(TRUE);
 

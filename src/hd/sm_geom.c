@@ -667,10 +667,10 @@ FVECT pt;
   double pd;
   int type;
 
-  point_on_sphere(p0,v0,orig);
-  point_on_sphere(p1,v1,orig);
-  point_on_sphere(p2,v2,orig);
-  
+  VSUB(p0,v0,orig);
+  VSUB(p1,v1,orig);
+  VSUB(p2,v2,orig);
+
   if(point_in_stri(p0,p1,p2,dir))
   {
       /* Intersect the ray with the triangle plane */
@@ -1026,84 +1026,6 @@ FVECT v;
   i = (a>=b)?((a>=c)?0:2):((b>=c)?1:2);  
   return(i);
 }
-
-
-
-/*
- * int
- * traceRay(FVECT orig, FVECT dir,FVECT v0,FVECT v1,FVECT v2,FVECT r) 
- *
- *   Intersect the ray with triangle v0v1v2, return intersection point in r
- *
- *    Assumes orig,v0,v1,v2 are in spherical coordinates, and orig is
- *    unit
- */
-int
-traceRay(orig,dir,v0,v1,v2,r)
-  FVECT orig,dir;
-  FVECT v0,v1,v2;
-  FVECT r;
-{
-  FVECT n,p[3],d;
-  double pt[3],r_eps;
-  int i;
-  int which;
-
-  /* Find the plane equation for the triangle defined by the edge v0v1 and
-   the view center*/
-  VCROSS(n,v0,v1);
-  /* Intersect the ray with this plane */
-  i = intersect_ray_plane(orig,dir,n,0.0,&(pt[0]),p[0]);
-  if(i)
-    which = 0;
-  else
-    which = -1;
-
-  VCROSS(n,v1,v2);
-  i = intersect_ray_plane(orig,dir,n,0.0,&(pt[1]),p[1]);
-  if(i)
-    if((which==-1) || pt[1] < pt[0])
-      which = 1;
-
-  VCROSS(n,v2,v0);
-  i = intersect_ray_plane(orig,dir,n,0.0,&(pt[2]),p[2]);
-  if(i)
-    if((which==-1) || pt[2] < pt[which])
-      which = 2;
-
-  if(which != -1)
-  {
-      /* Return point that is K*eps along projection of the ray on
-	 the sphere to push intersection point p[which] into next cell
-      */
-      normalize(p[which]);
-      /* Calculate the ray perpendicular to the intersection point: approx
-       the direction moved along the sphere a distance of K*epsilon*/
-      r_eps = -DOT(p[which],dir);
-      VSUM(n,dir,p[which],r_eps);
-     /* Calculate the length along ray p[which]-dir needed to move to
-	 cause a move along the sphere of k*epsilon
-       */
-       r_eps = DOT(n,dir); 
-      VSUM(r,p[which],dir,(20*FTINY)/r_eps);
-      normalize(r);
-      return(TRUE);
-  }
-  else
-  {
-      /* Unable to find intersection: move along ray and try again */
-      r_eps = -DOT(orig,dir);
-      VSUM(n,dir,orig,r_eps);
-      r_eps = DOT(n,dir); 
-      VSUM(r,orig,dir,(20*FTINY)/r_eps);
-      normalize(r);
-#ifdef DEBUG
-      eputs("traceRay:Ray does not intersect triangle\n");
-#endif 
-      return(FALSE);
-  }
-}
-
 
 int
 closest_point_in_tri(p0,p1,p2,p,p0id,p1id,p2id)

@@ -1247,6 +1247,9 @@ qtRoot_visit_tri_edges2(qtptr,q0,q1,q2,tri,i_pt,wptr,func,arg1,arg2)
   }
   else
  {
+   /* NOTE: for stability: do not increment with ipt- use full dir and
+      calculate t: but for wrap around case: could get same problem? 
+      */
    VSUB(db[w],b[j],b[3]);
    t[w] = 1.0;
    move_to_nbr(b[3],db[w][0],db[w][1],db[w][2],&exit_pt);

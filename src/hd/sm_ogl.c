@@ -65,7 +65,7 @@ int *arg;
     if(SM_IS_NTH_T_BASE(smMesh,t_id))
 	continue;
     SM_SET_NTH_T_ACTIVE(smMesh,t_id);
-    /* FOR NOW:Also set the LRU clock bit: MAY WANT TO CHANGE: */      
+    /* NOTE:Also set the LRU clock bit: MAY WANT TO CHANGE: */      
     SM_SET_NTH_T_LRU(smMesh,t_id);
   }
   return(TRUE);
@@ -581,6 +581,13 @@ T_DEPTH *td;
 	continue;
     }
     tri = SM_NTH_TRI(sm,t_id);
+#ifdef DEBUG
+    if(i >= smNew_tri_cnt)
+    {
+      eputs("smDepth_sort_tris():More tris than reported by smNew_tri_cnt\n");
+      break;
+    }
+#endif
     td[i].tri = t_id;
     min_d = -1;
     for(j=0;j < 3;j++)
@@ -643,7 +650,7 @@ int clr;
      smRender_bg_tri(sm,pop_list(&bglist),vp,d,clr);
   glEnd();
 
-  glEnable(GL_DEPTH_TEST);
+
   glBegin(GL_TRIANGLES);
   i=0;
   while(td[i].tri != -1)
@@ -749,6 +756,7 @@ smUpdate(view,qual)
   {
     smClean_notify = FALSE;
     smNew_tri_cnt = 0;
+    smClear_flags(smMesh,T_NEW_FLAG);
     qtCache_init(0);
   }
 

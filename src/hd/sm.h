@@ -67,8 +67,8 @@ typedef struct _TRI {
 #define T_NTH_V(t,i)  ((t)->verts[(i)])
 #define T_WHICH_V(t,i)     \
          (T_NTH_V(t,0)==(i)?0:T_NTH_V(t,1)==(i)?1:T_NTH_V(t,2)==(i)?2:-1)
-#define T_NEXT_FREE(t) ((t)->verts[0])
-#define T_VALID_FLAG(t) ((t)->verts[1])
+#define T_NEXT_FREE(t) ((t)->nbrs[0])
+#define T_VALID_FLAG(t) ((t)->nbrs[1])
 #define T_IS_VALID(t)  (T_VALID_FLAG(t)!=-1)
 #define T_FLAGS 4
 #define T_FLAG_BYTES T_FLAGS/8.0
