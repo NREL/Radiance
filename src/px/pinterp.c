@@ -51,6 +51,14 @@ char	*argv[];
 			check(2,1);
 			zeps = atof(argv[++i]);
 			break;
+		case 'x':				/* x resolution */
+			check(2,1);
+			ourview.hresolu = atoi(argv[++i]);
+			break;
+		case 'y':				/* y resolution */
+			check(2,1);
+			ourview.vresolu = atoi(argv[++i]);
+			break;
 		case 'v':				/* view */
 			switch (argv[i][2]) {
 			case 't':				/* type */
