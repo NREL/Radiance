@@ -44,7 +44,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  ourblack	BlackPixel(thedisplay,ourscreen)
 #define  ourwhite	WhitePixel(thedisplay,ourscreen)
 #define  ourroot	RootWindow(thedisplay,ourscreen)
-#define  ourgc		DefaultGC(thedisplay,ourscreen)
 
 #define  revline(x0,y0,x1,y1)	XDrawLine(thedisplay,wind,revgc,x0,y0,x1,y1)
 
@@ -54,6 +53,8 @@ double  gamcor = 2.2;			/* gamma correction */
 
 int  dither = 1;			/* dither colors? */
 int  fast = 0;				/* keep picture in Pixmap? */
+
+char	*dispname = NULL;		/* our display name */
 
 Window  wind = 0;			/* our output window */
 Font  fontid;				/* our font */
@@ -83,9 +84,12 @@ double  exposure = 1.0;			/* exposure compensation used */
 
 int  wrongformat = 0;			/* input in another format? */
 
+GC	ourgc;				/* standard graphics context */
 GC	revgc;				/* graphics context with GXinvert */
 
-XRASTER	*ourras;			/* our stored image */
+int		*ourrank;		/* our visual class ranking */
+XVisualInfo	ourvis;			/* our visual */
+XRASTER		*ourras;		/* our stored image */
 unsigned char	*ourdata;		/* our image data */
 
 struct {
@@ -131,6 +135,10 @@ char  *argv[];
 				maxcolors = 2;
 				break;
 			case 'd':
+				if (argv[i][2] == 'i') {
+					dispname = argv[++i];
+					break;
+				}
 				dither = !dither;
 				break;
 			case 'f':
@@ -159,7 +167,7 @@ char  *argv[];
 		fname = argv[i];
 		fin = fopen(fname, "r");
 		if (fin == NULL) {
-			sprintf(errmsg, "can't open file \"%s\"", fname);
+			sprintf(errmsg, "cannot open file \"%s\"", fname);
 			quiterr(errmsg);
 		}
 	} else if (i != argc)
@@ -208,8 +216,8 @@ init()			/* get data and open window */
 {
 	XWMHints	ourxwmhints;
 	XSetWindowAttributes	ourwinattr;
-	XSizeHints  oursizhints;
-	register int  i;
+	XSizeHints	oursizhints;
+	register int	i;
 	
 	if (fname != NULL) {
 		scanpos = (long *)malloc(ymax*sizeof(long));
@@ -218,31 +226,33 @@ init()			/* get data and open window */
 		for (i = 0; i < ymax; i++)
 			scanpos[i] = -1;
 	}
-	if ((thedisplay = XOpenDisplay(NULL)) == NULL)
-		quiterr("can't open display; DISPLAY variable set?");
-	if (maxcolors == 0) {		/* get number of available colors */
-		i = DisplayPlanes(thedisplay,ourscreen);
-		maxcolors = i > 8 ? 256 : 1<<i;
-		if (maxcolors > 4) maxcolors -= 2;
-	}
+	if ((thedisplay = XOpenDisplay(dispname)) == NULL)
+		quiterr("cannot open display");
+				/* get best visual for default screen */
+	getbestvis();
 				/* store image */
 	getras();
 				/* open window */
 	ourwinattr.border_pixel = ourblack;
 	ourwinattr.background_pixel = ourwhite;
+	ourwinattr.colormap = XCreateColormap(thedisplay, ourroot,
+			ourvis.visual, AllocNone);
 	wind = XCreateWindow(thedisplay, ourroot, 0, 0, xmax, ymax, BORWIDTH,
-			0, InputOutput, ourras->visual, 
-			CWBackPixel|CWBorderPixel, &ourwinattr);
+			ourvis.depth, InputOutput, ourvis.visual, 
+			CWBackPixel|CWBorderPixel|CWColormap, &ourwinattr);
 	if (wind == 0)
-		quiterr("can't create window");
+		quiterr("cannot create window");
 	width = xmax;
 	height = ymax;
-	fontid = XLoadFont(thedisplay, FONTNAME);
-	if (fontid == 0)
-		quiterr("can't get font");
-	XSetFont(thedisplay, ourgc, fontid);
+	ourgc = XCreateGC(thedisplay, wind, 0, 0);
+	XSetState(thedisplay, ourgc, BlackPixel(thedisplay,ourscreen),
+			WhitePixel(thedisplay,ourscreen), GXcopy, AllPlanes);
 	revgc = XCreateGC(thedisplay, wind, 0, 0);
 	XSetFunction(thedisplay, revgc, GXinvert);
+	fontid = XLoadFont(thedisplay, FONTNAME);
+	if (fontid == 0)
+		quiterr("cannot get font");
+	XSetFont(thedisplay, ourgc, fontid);
 	XDefineCursor(thedisplay, wind, XCreateFontCursor(thedisplay, 
 			XC_diamond_cross));
 	XStoreName(thedisplay, wind, fname == NULL ? progname : fname);
@@ -309,6 +319,106 @@ int  code;
 }
 
 
+static int
+viscmp(v1,v2)		/* compare visual to see which is better, descending */
+register XVisualInfo	*v1, *v2;
+{
+	int	bad1 = 0, bad2 = 0;
+	register int  *rp;
+
+	if (v1->class == v2->class) {
+		if (v1->class == TrueColor || v1->class == DirectColor) {
+					/* prefer 24-bit to 32-bit */
+			if (v1->depth == 24 && v2->depth == 32)
+				return(-1);
+			if (v1->depth == 32 && v2->depth == 24)
+				return(1);
+			return(0);
+		}
+					/* don't be too greedy */
+		if (maxcolors <= 1<<v1->depth && maxcolors <= 1<<v2->depth)
+			return(v1->depth - v2->depth);
+		return(v2->depth - v1->depth);
+	}
+					/* prefer Pseudo when < 24-bit */
+	if ((v1->class == TrueColor || v1->class == DirectColor) &&
+			v1->depth < 24)
+		bad1 = 1;
+	if ((v2->class == TrueColor || v2->class == DirectColor) &&
+			v2->depth < 24)
+		bad2 = -1;
+	if (bad1 | bad2)
+		return(bad1+bad2);
+					/* otherwise, use class ranking */
+	for (rp = ourrank; *rp != -1; rp++) {
+		if (v1->class == *rp)
+			return(-1);
+		if (v2->class == *rp)
+			return(1);
+	}
+	return(0);
+}
+
+
+getbestvis()			/* get the best visual for this screen */
+{
+static char  vistype[][12] = {
+		"StaticGray",
+		"GrayScale",
+		"StaticColor",
+		"PseudoColor",
+		"TrueColor",
+		"DirectColor"
+};
+	static int	rankings[3][6] = {
+		{TrueColor,DirectColor,PseudoColor,GrayScale,StaticGray,-1},
+		{PseudoColor,GrayScale,-1},
+		{PseudoColor,GrayScale,-1}
+	};
+	XVisualInfo	*xvi;
+	int	vismatched;
+	register int	i, j;
+
+	if (greyscale) {
+		ourrank = rankings[2];
+		if (maxcolors < 2) maxcolors = 256;
+	} else if (maxcolors >= 2 && maxcolors <= 256)
+		ourrank = rankings[1];
+	else {
+		ourrank = rankings[0];
+		maxcolors = 256;
+	}
+					/* find best visual */
+	ourvis.screen = ourscreen;
+	xvi = XGetVisualInfo(thedisplay,VisualScreenMask,&ourvis,&vismatched);
+	if (xvi == NULL)
+		quiterr("no visuals for this screen!");
+for (i = 0; i < vismatched; i++)
+fprintf(stderr, "Type %s, depth %d\n", vistype[xvi[i].class], xvi[i].depth);
+	for (i = 0, j = 1; j < vismatched; j++)
+		if (viscmp(&xvi[i],&xvi[j]) > 0)
+			i = j;
+					/* compare to least acceptable */
+	for (j = 0; ourrank[j++] != -1; )
+		;
+	ourvis.class = ourrank[--j];
+	ourvis.depth = 1;
+	if (viscmp(&xvi[i],&ourvis) > 0)
+		quiterr("inadequate visuals on this screen");
+					/* OK, we'll use it */
+	copystruct(&ourvis, &xvi[i]);
+fprintf(stderr, "Selected visual type %s, depth %d\n", vistype[ourvis.class],
+ourvis.depth);
+	if (ourvis.class == GrayScale || ourvis.class == StaticGray)
+		greyscale = 1;
+	if (1<<ourvis.depth < maxcolors)
+		maxcolors = 1<<ourvis.depth;
+	if (maxcolors > 4)
+		maxcolors -= 2;
+	XFree((char *)xvi);
+}
+
+
 getras()				/* get raster file */
 {
 	colormap	ourmap;
@@ -318,19 +428,17 @@ getras()				/* get raster file */
 		ourdata = (unsigned char *)malloc(ymax*((xmax+7)/8));
 		if (ourdata == NULL)
 			goto fail;
-		ourras = make_raster(thedisplay, ourscreen, 1, ourdata,
+		ourras = make_raster(thedisplay, &ourvis, 1, ourdata,
 				xmax, ymax, 8);
 		if (ourras == NULL)
 			goto fail;
 		getmono();
-	} else if (XMatchVisualInfo(thedisplay,ourscreen,24,TrueColor,&vinfo)
-						/* kludge for DirectColor */
-	|| XMatchVisualInfo(thedisplay,ourscreen,24,DirectColor,&vinfo)) {
-		ourdata = (unsigned char *)malloc(xmax*ymax*3);
+	} else if (ourvis.class == TrueColor || ourvis.class == DirectColor) {
+		ourdata = (unsigned char *)malloc(4*xmax*ymax);
 		if (ourdata == NULL)
 			goto fail;
-		ourras = make_raster(thedisplay, ourscreen, 24, ourdata,
-				xmax, ymax, 8);
+		ourras = make_raster(thedisplay, &ourvis, 32,
+				ourdata, xmax, ymax, 32);
 		if (ourras == NULL)
 			goto fail;
 		getfull();
@@ -338,7 +446,7 @@ getras()				/* get raster file */
 		ourdata = (unsigned char *)malloc(xmax*ymax);
 		if (ourdata == NULL)
 			goto fail;
-		ourras = make_raster(thedisplay, ourscreen, 8, ourdata,
+		ourras = make_raster(thedisplay, &ourvis, 8, ourdata,
 				xmax, ymax, 8);
 		if (ourras == NULL)
 			goto fail;
@@ -377,7 +485,7 @@ getevent()				/* process the next event */
 	case MapNotify:
 		map_rcolors(ourras, wind);
 		if (fast)
-			make_rpixmap(ourras);
+			make_rpixmap(ourras, wind);
 		break;
 	case UnmapNotify:
 		unmap_rcolors(ourras);
@@ -709,12 +817,12 @@ COLR  *scan;
 getfull()			/* get full (24-bit) data */
 {
 	int	y;
-	register unsigned char	*dp;
+	register unsigned long	*dp;
 	register int	x;
 					/* set gamma correction */
 	setcolrgam(gamcor);
 					/* read and convert file */
-	dp = ourdata;
+	dp = (unsigned long *)ourdata;
 	for (y = 0; y < ymax; y++) {
 		if (getscan(y) < 0)
 			quiterr("seek error in getfull");
@@ -722,11 +830,16 @@ getfull()			/* get full (24-bit) data */
 			shiftcolrs(scanline, xmax, scale);
 		colrs_gambs(scanline, xmax);
 		add2icon(y, scanline);
-		for (x = 0; x < xmax; x++) {	/* BGR byte ordering */
-			*dp++ = scanline[x][BLU];
-			*dp++ = scanline[x][GRN];
-			*dp++ = scanline[x][RED];
-		}
+		if (ourras->image->blue_mask & 1)
+			for (x = 0; x < xmax; x++)
+				*dp++ =	scanline[x][RED] << 16 |
+					scanline[x][GRN] << 8 |
+					scanline[x][BLU] ;
+		else
+			for (x = 0; x < xmax; x++)
+				*dp++ =	scanline[x][RED] |
+					scanline[x][GRN] << 8 |
+					scanline[x][BLU] << 16 ;
 	}
 }
 

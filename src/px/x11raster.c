@@ -18,51 +18,41 @@ static char SCCSid[] = "$SunId$ LBL";
 
 
 XRASTER *
-make_raster(disp, scrn, depth, data, width, height, bm_pad)
+make_raster(disp, vis, npixbits, data, width, height, bm_pad)
 Display	*disp;
-int	scrn;
-int	depth;
+XVisualInfo	*vis;
+int	npixbits;
 char	*data;
 int	width, height;
 int	bm_pad;
 {
+	static long	swaptest = 1;
 	register XRASTER	*xr;
-	XVisualInfo	ourvinfo;
-						/* Pick appropriate Visual */
-	if (depth == 1) {
-		ourvinfo.visual = DefaultVisual(disp,scrn);
-	} else if (depth == 8) {
-		if (!XMatchVisualInfo(disp,scrn,8,PseudoColor,&ourvinfo))
-			return(NULL);
-	} else if (depth == 24) {
-		if (!XMatchVisualInfo(disp,scrn,24,TrueColor,&ourvinfo) &&
-			!XMatchVisualInfo(disp,scrn,24,DirectColor,&ourvinfo))
-			return(NULL);
-	} else
-		return(NULL);
+
 	if ((xr = (XRASTER *)calloc(1, sizeof(XRASTER))) == NULL)
 		return(NULL);
 	xr->disp = disp;
-	xr->screen = scrn;
-	xr->visual = ourvinfo.visual;
-	xr->image = XCreateImage(disp,ourvinfo.visual,depth,
-			depth==1 ? XYBitmap : ZPixmap,
-			0,data,width,height,bm_pad,0);
+	xr->screen = vis->screen;
+	xr->visual = vis->visual;
+	if (npixbits == 1)
+		xr->image = XCreateImage(disp,vis->visual,1,
+				XYBitmap,0,data,width,height,bm_pad,0);
+	else
+		xr->image = XCreateImage(disp,vis->visual,vis->depth,
+				ZPixmap,0,data,width,height,bm_pad,0);
 	xr->image->bitmap_bit_order = MSBFirst;
-	xr->image->byte_order = MSBFirst;
-	xr->image->red_mask = 0xff;
-	xr->image->green_mask = 0xff00;
-	xr->image->blue_mask = 0xff0000;
-	if (xr->image->bits_per_pixel == 32) {
-		xr->image->bytes_per_line = xr->image->bytes_per_line*24/32;
-		xr->image->bits_per_pixel = 24;
-		xr->image->bitmap_unit = 8;
-		while (xr->image->bytes_per_line % (bm_pad/8))
-			xr->image->bytes_per_line++;
+	xr->image->byte_order = *(char *)&swaptest ? LSBFirst : MSBFirst;
+	if (vis->depth >= 24 && (xr->image->red_mask != 0xff ||
+			xr->image->green_mask != 0xff00 ||
+			xr->image->blue_mask != 0xff0000) &&
+			(xr->image->red_mask != 0xff0000 ||
+			xr->image->green_mask != 0xff00 ||
+			xr->image->blue_mask != 0xff)) {
+		xr->image->red_mask = 0xff;
+		xr->image->green_mask = 0xff00;
+		xr->image->blue_mask = 0xff0000;
 	}
-	xr->gc = XCreateGC(disp, RootWindow(disp,scrn), 0, 0);
-	XSetState(disp, xr->gc, BlackPixel(disp,scrn), WhitePixel(disp,scrn),
-			GXcopy, AllPlanes);
+	xr->gc = 0;
 	return(xr);
 }
 
@@ -102,6 +92,7 @@ int	rmap[256], gmap[256], bmap[256];
 		return(0);
 	return(xr->ncolors);
 }
+
 
 Colormap
 newcmap(disp, scrn, w, vis)		/* get colormap and fix b & w */
@@ -198,16 +189,17 @@ Window	w;
 
 
 Pixmap
-make_rpixmap(xr)			/* make pixmap for raster */
+make_rpixmap(xr, d)			/* make pixmap for raster */
 register XRASTER	*xr;
+Drawable	d;
 {
 	Pixmap	pm;
 
 	if (xr->pm != 0)
 		return(xr->pm);
-	pm = XCreatePixmap(xr->disp, RootWindow(xr->disp, xr->screen),
+	pm = XCreatePixmap(xr->disp, d,
 			xr->image->width, xr->image->height,
-			DisplayPlanes(xr->disp, xr->screen));
+			xr->image->depth);
 	if (pm == 0)
 		return(0);
 	put_raster(pm, 0, 0, xr);
@@ -238,6 +230,11 @@ register XRASTER	*xr;
 	if (ysrc + height > xr->image->height)
 		height = xr->image->height - ysrc;
 
+	if (xr->gc == 0) {
+		xr->gc = XCreateGC(xr->disp, d, 0, 0);
+		XSetState(xr->disp, xr->gc, BlackPixel(xr->disp,xr->screen),
+			WhitePixel(xr->disp,xr->screen), GXcopy, AllPlanes);
+	}
 	if (xr->pm == 0)
 		XPutImage(xr->disp, d, xr->gc, xr->image, xsrc, ysrc,
 				xdst, ydst, width, height);
@@ -280,6 +277,7 @@ register XRASTER	*xr;
 		free((char *)xr->cdefs);
 	}
 	XDestroyImage(xr->image);
-	XFreeGC(xr->disp, xr->gc);
+	if (xr->gc != 0)
+		XFreeGC(xr->disp, xr->gc);
 	free((char *)xr);
 }
