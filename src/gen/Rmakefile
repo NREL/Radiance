@@ -8,7 +8,7 @@ OPT = -O
 MACH = -DBSD -DSTRUCTASSIGN -f68881 /usr/lib/f68881.il -DIEEE
 CFLAGS = $(MACH) $(OPT)
 
-INSTDIR = /usr/local/ray
+INSTDIR = ../../bin
 
 PROGS = genbox gensky xform genblinds genrev genworm \
 		gensurf genprism replmarks
@@ -17,8 +17,11 @@ all:	$(PROGS)
 
 install:	$(PROGS) genpine.csh genwindow.csh
 	cp $(PROGS) $(INSTDIR)
-	install genpine.csh $(INSTDIR)/genpine
-	install genwindow.csh $(INSTDIR)/genwindow
+	cp genwindow.csh $(INSTDIR)/genwindow
+	chmod 755 $(INSTDIR)/genwindow
+
+clean:
+	rm -f $(PROGS) *.o core
 
 genbeads:	genbeads.o hermite3.o
 	cc $(CFLAGS) -o genbeads genbeads.o hermite3.o -lm
