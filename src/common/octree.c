@@ -56,6 +56,19 @@ register OCTREE  ot;
 }
 
 
+octdone()			/* free EVERYTHING */
+{
+	register int	i;
+
+	for (i = 0; i < MAXOBLK; i++) {
+		bfree((char *)octblock[i], (unsigned)256*8*sizeof(OCTREE));
+		octblock[i] = NULL;
+	}
+	ofreelist = EMPTY;
+	treetop = 0;
+}
+
+
 OCTREE
 combine(ot)			/* recursively combine nodes */
 register OCTREE  ot;

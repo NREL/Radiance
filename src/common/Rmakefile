@@ -67,7 +67,7 @@ modobject.o readfargs.o readobj.o readoct.o:	object.h
 
 objset.o octree.o readoct.o:	octree.h
 
-cone.o modobject.o objset.o otypes.o readobj.o readoct.o:	otypes.h
+cone.o modobject.o otypes.o readobj.o readoct.o:	otypes.h
 
 urand.o:	random.h
 

@@ -21,6 +21,7 @@ static char SCCSid[] = "$SunId$ LBL";
 static double  ogetflt();
 static long  ogetint();
 static char  *ogetstr();
+static int  nonsurfinset();
 static int  getobj(), octerror(), skiptree();
 static OCTREE  getfullnode(), gettree();
 
@@ -28,6 +29,7 @@ static char  *infn;			/* input file name */
 static FILE  *infp;			/* input file stream */
 static int  objsize;			/* size of stored OBJECT's */
 static OBJECT  objorig;			/* zeroeth object */
+static OBJECT  fnobjects;		/* number of objects in this file */
 static short  otypmap[NUMOTYPE+8];	/* object type map */
 
 
@@ -40,7 +42,6 @@ char  *ofn[];
 {
 	char  sbuf[512];
 	int  nf;
-	OBJECT	fnobjects;
 	register int  i;
 	long  m;
 	
@@ -109,7 +110,7 @@ char  *ofn[];
 		if (nobjects != objorig+fnobjects)
 			octerror(USER, "bad object count; octree stale?");
 				/* check for non-surfaces */
-		if (nonsurfinset(objorig, fnobjects))
+		if (dosets(nonsurfinset))
 			octerror(USER, "modifier in tree; octree stale?");
 	    }
 	fclose(infp);
@@ -196,6 +197,21 @@ gettree()			/* get a pre-ordered octree */
 	default:
 		octerror(USER, "damaged octree");
 	}
+}
+
+
+static int
+nonsurfinset(os)			/* check set for modifier */
+register OBJECT  *os;
+{
+	register OBJECT  s;
+	register int  i;
+
+	for (i = *os; i-- > 0; )
+		if ((s = *++os) >= objorig && s < objorig+fnobjects &&
+				ismodifier(objptr(s)->otype))
+			return(1);
+	return(0);
 }
 
 
