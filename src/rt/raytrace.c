@@ -210,7 +210,7 @@ register RAY  *r;
 	 *  still fraught with problems since reflected rays and similar
 	 *  directions calculated from the surface normal may spawn rays behind
 	 *  the surface.  The only solution is to curb textures at high
-	 *  incidence (Rdot << 1).
+	 *  incidence (namely, keep DOT(rdir,pert) < Rdot).
 	 */
 
 	for (i = 0; i < 3; i++)
