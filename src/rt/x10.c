@@ -377,9 +377,10 @@ register XKeyPressedEvent  *ekey;
 	register char  *str;
 
 	str = XLookupMapping(ekey, &n);
-	while (n-- > 0 && c_last < sizeof(c_queue))
+	while (n-- > 0 && c_last < sizeof(c_queue)) {
 		c_queue[c_last++] = *str++;
-	x_driver.inpready = c_last - c_first;
+		x_driver.inpready++;
+	}
 }
 
 
