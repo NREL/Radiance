@@ -17,6 +17,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define putv(v)		printf("%18.12g %18.12g %18.12g\n",(v)[0],(v)[1],(v)[2])
 
+#define invert		(xf_context != NULL && xf_context->rev)
+
 double	glowdist = FHUGE;		/* glow test distance */
 
 double  emult = 1.;			/* emitter multiplier */
@@ -293,7 +295,7 @@ char	**av;
 	printf("\n%s polygon %sf%d\n", mat, object(), ++nfaces);
 	printf("0\n0\n%d\n", 3*(ac-1));
 	for (i = 1; i < ac; i++) {
-		if ((cv = c_getvert(av[i])) == NULL)
+		if ((cv = c_getvert(av[invert ? ac-i : i])) == NULL)
 			return(MG_EUNDEF);
 		xf_xfmpoint(v, cv->p);
 		putv(v);
@@ -367,9 +369,14 @@ char	*mat, *vn1, *vn2, *vn3;
 	FVECT	n1, n2, n3;
 	register int	i;
 			/* the following is repeat code, so assume it's OK */
-	cv1 = c_getvert(vn1);
 	cv2 = c_getvert(vn2);
-	cv3 = c_getvert(vn3);
+	if (invert) {
+		cv3 = c_getvert(vn1);
+		cv1 = c_getvert(vn3);
+	} else {
+		cv1 = c_getvert(vn1);
+		cv3 = c_getvert(vn3);
+	}
 	xf_xfmpoint(v1, cv1->p);
 	xf_xfmpoint(v2, cv2->p);
 	xf_xfmpoint(v3, cv3->p);
