@@ -23,9 +23,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #endif
 #endif
 
-#ifndef BSD
-#define vfork		fork
-#endif
+#include  "vfork.h"
 
 
 int
