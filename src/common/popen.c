@@ -27,14 +27,16 @@ popen(cmd, mode)		/* open command for reading or writing */
 register char	*cmd;
 char	*mode;
 {
-	extern FILE	*fopen();
-	extern char	*malloc(), *mktemp(), *strcpy();
-	static int	fnum = 0;
+	extern char	*malloc(), *strcpy();
 	FILE	*fp;
 	char	*newcmd, *fname;
 	register char	*cp, *cp2 = NULL;
 	int	quote = '\0', paren = 0;
 	
+	while (isspace(*cmd))
+		cmd++;
+	if (!*cmd)
+		return(NULL);
 	fname = malloc(TEMPLEN+1);
 	newcmd = malloc(TEMPLEN+6+strlen(cmd));
 	if (fname == NULL | newcmd == NULL)
@@ -54,10 +56,19 @@ char	*mode;
 				break;
 			*cp++ = '"';		/* double quotes only */
 			continue;
+		case '\\':
+			if (!quote && cmd[1] == '\n') {
+				*cp++ = ' ';
+				cmd++;
+				continue;
+			}
+			cmd++;
+			break;
 #else
 			break;
-#endif		      
-#ifndef MSDOS
+		case '\\':
+			*cp++ = *cmd++;
+			break;
 		case '(':
 			if (!quote)
 				paren++;
@@ -66,25 +77,17 @@ char	*mode;
 			if (!quote && paren)
 				paren--;
 			break;
-		case '\\':
-			if (!quote && cmd[1] == '\n') {
-				*cp++ = ' ';
-				cmd++;
-				continue;
-			}
-			*cp++ = *cmd++;
-			break;
+		case ';':
 #endif
+		case '|':
+			if (!quote && !paren && cp2 == NULL)
+				cp2 = fname;
+			break;
 		case ' ':
 		case '\t':
 			if (!quote)
 				while (isspace(cmd[1]))
 					cmd++;
-			break;
-		case '|':
-		case ';':
-			if (!quote && !paren && cp2 == NULL)
-				cp2 = fname;
 			break;
 		case '\n':
 		case '\0':
@@ -93,7 +96,7 @@ char	*mode;
 			break;
 		}
 		if (cp2 == fname && *mode == 'w') {	/* add input file */
-			*cp++ = ' '; *cp++ = '<'; *cp++ = ' ';
+			*cp++ = ' '; *cp++ = '<';
 			while (*cp2)
 				*cp++ = *cp2++;
 			*cp++ = ' ';
@@ -105,7 +108,7 @@ char	*mode;
 	if (*mode == 'r') {			/* add output file */
 		while (isspace(cp[-1]) || cp[-1] == ';')
 			cp--;
-		*cp++ = ' '; *cp++ = '>'; *cp++ = ' ';
+		*cp++ = ' '; *cp++ = '>';
 		while (*cp2)
 			*cp++ = *cp2++;
 		*cp = '\0';
