@@ -133,12 +133,15 @@ getfullnode()			/* get a set, return fullnode */
 
 
 static long
-getint(siz)			/* get a siz-byte positive integer */
+getint(siz)			/* get a siz-byte integer */
 register int  siz;
 {
 	register int  c;
-	register long  r = 0L;
+	register long  r;
 
+	c = getc(infp);
+	r = c&0x80 ? -1L : 0L;		/* sign extend */
+	ungetc(c, infp);
 	while (siz--) {
 		if ((c = getc(infp)) == EOF)
 			octerror(USER, "truncated octree");
@@ -155,8 +158,8 @@ getflt()			/* get a floating point number */
 	extern double  ldexp();
 	double  d;
 
-	d = (double)getint(sizeof(long))/0x7fffffff;
-	return(ldexp(d, (char)getint(1)));	/* sign extend */
+	d = (double)getint(4)/0x7fffffff;
+	return(ldexp(d, getint(1)));	/* sign extend */
 }
 	
 
@@ -194,7 +197,7 @@ getobj()				/* get next object */
 	register OBJREC  *objp;
 
 	i = getint(1);
-	if (i & 0x80)
+	if (i == -1)
 		return(OVOID);		/* terminator */
 	if ((obj = newobject()) == OVOID)
 		error(SYSTEM, "out of object space");
@@ -220,7 +223,7 @@ getobj()				/* get next object */
 		if (objp->oargs.iarg == NULL)
 			goto memerr;
 		for (i = 0; i < objp->oargs.niargs; i++)
-			objp->oargs.iarg[i] = getint(sizeof(long));
+			objp->oargs.iarg[i] = getint(4);
 	} else
 		objp->oargs.iarg = NULL;
 #endif
