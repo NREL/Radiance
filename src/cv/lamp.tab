@@ -57,6 +57,7 @@
 /\<[EP]AR\>/				(incandescent)
 /ER30/					(incandescent)
 /\<D65WHITE\>/				.313 .329 1
+/\<WHITE\>/				.3333 .3333 1
 /\<MH\>/				(metal halide)
 /\<clear HID\>/				(high pressure sodium)
 /\<HID\>/				(clear HID)
