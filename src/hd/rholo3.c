@@ -27,13 +27,40 @@ register PACKHEAD	*b0, *b1;
 }
 
 
+int
+dispbeam(b, hp, bi)			/* display a holodeck beam */
+register BEAM	*b;
+HOLO	*hp;
+int	bi;
+{
+	static int	n = 0;
+	static PACKHEAD	*p = NULL;
+
+	if (b == NULL)
+		return;
+	if (b->nrm > n) {		/* (re)allocate packet holder */
+		n = b->nrm;
+		if (p == NULL) p = (PACKHEAD *)malloc(packsiz(n));
+		else p = (PACKHEAD *)realloc((char *)p, packsiz(n));
+		if (p == NULL)
+			error(SYSTEM, "out of memory in dispbeam");
+	}
+					/* assign packet fields */
+	bcopy((char *)hdbray(b), (char *)packra(p), b->nrm*sizeof(RAYVAL));
+	p->nr = p->nc = b->nrm;
+	for (p->hd = 0; hdlist[p->hd] != hp; p->hd++)
+		if (hdlist[p->hd] == NULL)
+			error(CONSISTENCY, "unregistered holodeck in dispbeam");
+	p->bi = bi;
+	disp_packet(p);			/* display it */
+}
+
+
 bundle_set(op, clist, nents)	/* bundle set operation */
 int	op;
-PACKHEAD	*clist;
+register PACKHEAD	*clist;
 int	nents;
 {
-	BEAM	*b;
-	PACKHEAD	*p;
 	register int	i, n;
 
 	switch (op) {
@@ -121,29 +148,17 @@ int	nents;
 	default:
 		error(CONSISTENCY, "bundle_set called with unknown operation");
 	}
-	if (outdev == NULL)
-		return;
-	n = 32*RPACKSIZ;		/* allocate packet holder */
-	p = (PACKHEAD *)malloc(packsiz(n));
-	if (p == NULL)
-		goto memerr;
-					/* display what we have */
-	for (i = 0; i < nents; i++)
-		if ((b = hdgetbeam(hdlist[clist[i].hd], clist[i].bi)) != NULL) {
-			if (b->nrm > n) {
-				n = b->nrm;
-				p = (PACKHEAD *)realloc((char *)p, packsiz(n));
-				if (p == NULL)
-					goto memerr;
-			}
-			bcopy((char *)hdbray(b), (char *)packra(p),
-					b->nrm*sizeof(RAYVAL));
-			p->hd = clist[i].hd;
-			p->bi = clist[i].bi;
-			p->nr = p->nc = b->nrm;
-			disp_packet(p);
+	if (outdev != NULL) {		/* load and display beams we have */
+		register HDBEAMI	*hb;
+
+		hb = (HDBEAMI *)malloc(nents*sizeof(HDBEAMI));
+		for (i = 0; i < nents; i++) {
+			hb[i].h = hdlist[clist[i].hd];
+			hb[i].b = clist[i].bi;
 		}
-	free((char *)p);		/* clean up */
+		hdloadbeams(hb, nents, dispbeam);
+		free((char *)hb);
+	}
 	if (op == BS_NEW) {
 		done_packets(flush_queue());	/* empty queue, so we can... */
 		for (i = 0; i < complen; i++)	/* ...get number computed */
