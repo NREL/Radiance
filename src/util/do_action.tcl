@@ -144,29 +144,26 @@ proc make_vmenus {} {		# make/update view menus
 		set rvview [lindex [lindex $radvar(view) 0] 0]
 	}
 	catch {destroy $mywin.rivmb.m}
-	if {[llength $radvar(view)] < 2} {
-		$mywin.rivmb configure -state disabled
-	} else {
-		menu $mywin.rivmb.m
-		$mywin.rivmb configure -menu $mywin.rivmb.m
-		foreach v $radvar(view) {
-			$mywin.rivmb.m add radiobutton -label [lindex $v 0] \
-					-variable rvview -value [lindex $v 0]
-		}
-	}
 	catch {destroy $mywin.rbvmb.m}
 	if {[llength $radvar(view)] < 2} {
+		$mywin.rivmb configure -state disabled
 		$mywin.rbvmb configure -state disabled
-	} else {
-		menu $mywin.rbvmb.m
-		$mywin.rbvmb configure -menu $mywin.rbvmb.m
-		$mywin.rbvmb.m add radiobutton -label ALL \
-				-variable rpview -value " ALL"
-		$mywin.rbvmb.m add separator
-		foreach v $radvar(view) {
-			$mywin.rbvmb.m add radiobutton -label [lindex $v 0] \
-					-variable rpview -value [lindex $v 0]
-		}
+		return
+	}
+	menu $mywin.rivmb.m
+	$mywin.rivmb configure -menu $mywin.rivmb.m -state normal
+	foreach v $radvar(view) {
+		$mywin.rivmb.m add radiobutton -label [lindex $v 0] \
+				-variable rvview -value [lindex $v 0]
+	}
+	menu $mywin.rbvmb.m
+	$mywin.rbvmb configure -menu $mywin.rbvmb.m -state normal
+	$mywin.rbvmb.m add radiobutton -label ALL \
+			-variable rpview -value " ALL"
+	$mywin.rbvmb.m add separator
+	foreach v $radvar(view) {
+		$mywin.rbvmb.m add radiobutton -label [lindex $v 0] \
+				-variable rpview -value [lindex $v 0]
 	}
 }
 
