@@ -1,6 +1,6 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1999 Silicon Graphics, Inc. */
 
-/* SCCSid "$SunId$ LBL" */
+/* SCCSid "$SunId$ SGI" */
 
 /*
  *  object.h - header file for routines using objects and object sets.
@@ -54,7 +54,7 @@ typedef struct {
 #ifdef  BIGMEM
 #define  MAXOBJBLK	65535		/* maximum number of object blocks */
 #else
-#define  MAXOBJBLK	31		/* maximum number of object blocks */
+#define  MAXOBJBLK	63		/* maximum number of object blocks */
 #endif
 #endif
 
