@@ -181,17 +181,7 @@ register FILE  *fin;
 			} while (c != '\n');
 		} else if (c == '!') {			/* command */
 			ungetc(c, fin);
-			if (expand)
-				xfcomm(name, fin);
-			else {
-				putchar('\n');
-				while ((c = getc(fin)) != EOF && c != '\n')
-					putchar(c);
-				printf(" | %s -e", xav[0]);
-				for (c = 1; c < xac; c++)
-					printf(" %s", xav[c]);
-				putchar('\n');
-			}
+			xfcomm(name, fin);
 		} else {				/* object */
 			ungetc(c, fin);
 			xfobject(name, fin);
@@ -200,24 +190,30 @@ register FILE  *fin;
 }
 
 
-xfcomm(fname, fin)				/* expand a command */
+xfcomm(fname, fin)			/* transform a command */
 FILE  *fin;
 {
 	FILE  *popen();
-	char  *fgets();
+	char  *fgetline();
 	FILE  *pin;
 	char  buf[512];
+	int  i;
 
-	fgets(buf, sizeof(buf), fin);
-	if (buf[strlen(buf)-1] == '\n')
-		buf[strlen(buf)-1] = '\0';
-	if ((pin = popen(buf+1, "r")) == NULL) {
-		fprintf(stderr, "%s: (%s): cannot execute \"%s\"\n",
-				progname, fname, buf);
-		exit(1);
+	fgetline(buf, sizeof(buf), fin);
+	if (expand) {
+		if ((pin = popen(buf+1, "r")) == NULL) {
+			fprintf(stderr, "%s: (%s): cannot execute \"%s\"\n",
+					progname, fname, buf);
+			exit(1);
+		}
+		xform(buf, pin);
+		pclose(pin);
+	} else {
+		printf("\n%s | %s -e", buf, xav[0]);
+		for (i = 1; i < xac; i++)
+			printf(" %s", xav[i]);
+		putchar('\n');
 	}
-	xform(buf, pin);
-	pclose(pin);
 }
 
 

@@ -26,7 +26,7 @@ readobj(input)			/* read in an object file or stream */
 char  *input;
 {
 	FILE  *popen();
-	char  *fgets();
+	char  *fgets(), *fgetline();
 	FILE  *infp;
 	char  buf[512];
 	register int  c;
@@ -48,12 +48,9 @@ char  *input;
 			continue;
 		if (c == '#') {				/* comment */
 			fgets(buf, sizeof(buf), infp);
-		} else if (c == '!') {			/* pipe */
+		} else if (c == '!') {			/* command */
 			ungetc(c, infp);
-			fgets(buf, sizeof(buf), infp);
-			c = strlen(buf);
-			if (buf[c-1] == '\n')
-				buf[c-1] = '\0';
+			fgetline(buf, sizeof(buf), infp);
 			readobj(buf);
 		} else {				/* object */
 			ungetc(c, infp);
