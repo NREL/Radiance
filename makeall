@@ -265,13 +265,6 @@ if (! $inpath ) then
 	echo "	PATH=$idir"':$PATH'
 	echo "	export PATH"
 endif
-if (! -d /usr/tmp) then
-	ln -s /tmp /usr/tmp
-	if ($status) then
-		echo ""
-		echo "IMPORTANT: Execute 'sudo ln -s /tmp /usr/tmp'"
-	endif
-endif
 else
 cd src
 foreach i ( $srcdirs )

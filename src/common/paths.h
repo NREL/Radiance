@@ -97,7 +97,7 @@
     #define PATHSEP		':'
 	#define CURDIR		'.'
     #define DEFAULT_TEMPDIRS {"/var/tmp", "/usr/tmp", "/tmp", ".", NULL}
-    #define TEMPLATE	"/usr/tmp/rtXXXXXX"
+    #define TEMPLATE	"/tmp/rtXXXXXX"
     #define TEMPLEN		17
     #define ULIBVAR		"RAYPATH"
     #ifndef DEFPATH
