@@ -1,8 +1,10 @@
-/*
+/* Copyright 1988 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
+
+/*
  * xraster.c - routine to load a Sun rasterfile for X windows.
  *
  *	2/18/88

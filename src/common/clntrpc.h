@@ -1,7 +1,5 @@
 /* clntrpc.h      Distribution 1.0   88/9/19   Scry */
 
-/* SCCSid "$SunId$ LBL" */
-
 /*   The Scry system is copyright (C) 1988, Regents  of  the
 University  of  California.   Anyone may reproduce ``Scry'',
 the software in this distribution, in whole or in part, pro-
