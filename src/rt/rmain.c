@@ -430,6 +430,12 @@ char  *argv[];
 		}
 		if (pixaspect < .99 || pixaspect > 1.01)
 			fputaspect(pixaspect, stdout);
+		fputformat(COLRFMT, stdout);
+#endif
+#if  RTRACE
+		fputformat(	outform=='a' ? "ascii" :
+				outform=='f' ? "float" :
+				"double",	stdout	);
 #endif
 		printf("\n");
 	}
