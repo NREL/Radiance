@@ -74,6 +74,8 @@ struct driver *
 x_init(name, id)		/* initialize driver */
 char  *name, *id;
 {
+	extern char  *getenv();
+	char  *gv;
 	char  defgeom[32];
 	OpaqueFrame  mainframe;
 
@@ -86,7 +88,11 @@ char  *name, *id;
 		stderr_v("not enough colors\n");
 		return(NULL);
 	}
-	make_gmap(GAMMA);			/* make color map */
+				/* make color map */
+	if ((gv = getenv("GAMMA")) != NULL)
+		make_gmap(atof(gv));
+	else
+		make_gmap(GAMMA);
 
 	pickcursor = XCreateCursor(bcross_width, bcross_height,
 			bcross_bits, bcross_mask_bits,
