@@ -23,6 +23,7 @@ extern struct driver {
 #define	DEV_RESUME	020	/* resume after pause */
 #define	DEV_REDRAW	040	/* redraw from server */
 #define DEV_PUTVIEW	0100	/* print out current view */
+#define DEV_LASTVIEW	0200	/* restore previous view */
 
 
 /************************************************************************
@@ -38,13 +39,16 @@ The view type, horizontal and vertical view angles and other default
 parameters in odev.v should also be assigned.
 
 
-void
+int
 dev_view(nv)		: set display view parameters
 VIEW	*nv;		: the new view
 
 Updates the display for the given view change.
 Look for nv==&odev.v when making view current after dev_input()
-returns DEV_NEWVIEW flag.
+returns DEV_NEWVIEW flag.  Return 1 on success, or 0 if the
+new view would conflict with device requirements.  In the latter
+case, reset parameters in nv to make it more agreeable, calling
+error(COMMAND, "appropriate user warning").
 
 
 void
