@@ -1,5 +1,5 @@
 #ifndef lint
-static const char	RCSid[] = "$Id$";
+static const char RCSid[] = "$Id$";
 #endif
 /*
  *  pf3.c - routines for gaussian and box filtering
@@ -66,7 +66,7 @@ initmask()			/* initialize gaussian lookup table */
 	double  d;
 	register int  x;
 
-	gtabsiz = 111*CHECKRAD*CHECKRAD/(rad*rad);
+	gtabsiz = 111*CHECKRAD*CHECKRAD;
 	gausstable = (float *)malloc(gtabsiz*sizeof(float));
 	if (gausstable == NULL)
 		goto memerr;
