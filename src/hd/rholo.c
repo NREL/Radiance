@@ -270,12 +270,20 @@ initrholo()			/* get our holodeck running */
 	}
 					/* set up signal handling */
 	sigdie(SIGINT, "Interrupt");
-	sigdie(SIGHUP, "Hangup");
 	sigdie(SIGTERM, "Terminate");
+#ifdef SIGHUP
+	sigdie(SIGHUP, "Hangup");
+#endif
+#ifdef SIGPIPE
 	sigdie(SIGPIPE, "Broken pipe");
+#endif
+#ifdef SIGALRM
 	sigdie(SIGALRM, "Alarm clock");
+#endif
 #ifdef	SIGXCPU
 	sigdie(SIGXCPU, "CPU limit exceeded");
+#endif
+#ifdef	SIGXFSZ
 	sigdie(SIGXFSZ, "File size exceeded");
 #endif
 					/* protect holodeck file */

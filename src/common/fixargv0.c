@@ -4,11 +4,12 @@ static const char	RCSid[] = "$Id$";
 /*
  * Fix argv[0] for DOS environments
  *
- *  External symbols declared in standard.h
+ *  External symbols declared in paths.h
  */
 
 #include "copyright.h"
 
+#include <ctype.h>
 
 char *
 fixargv0(av0)			/* extract command name from full path */

@@ -21,9 +21,16 @@ static char RCSid[]="$Id$";
 #include "rtprocess.h"
 
 
-/* Looks like some Windows versions use negative PIDs.
-   Let's just hope they either make them *all* negative, or none.  */
-static int system_uses_negative_pids = 0;
+int
+win_nice(int inc) /* simple nice(2) replacement for Windows */
+{
+	/* We don't have much granularity available: IDLE_PRIORITY_CLASS
+	   will run whenever no other higher priority process is running */
+	if (inc > 0) {
+		return (int)!SetPriorityClass(GetCurrentProcess(), IDLE_PRIORITY_CLASS);
+	}
+	return 0;
+}
 
 
 /*

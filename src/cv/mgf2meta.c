@@ -16,7 +16,7 @@ static const char	RCSid[] = "$Id$";
 #define	MX(v)	(int)(MSIZE*(v)[(proj_axis+1)%3])
 #define	MY(v)	(int)(MSIZE*(v)[(proj_axis+2)%3])
 
-int	r_face();
+int	r_face(int ac, char **av);
 int	proj_axis;
 double	limit[3][2];
 int	layer;

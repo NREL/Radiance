@@ -5,6 +5,7 @@ static const char	RCSid[] = "$Id$";
  *   Sorting routines for meta-files
  */
 
+#include  "platform.h"  /* [_]snprintf() */
 #include  "rtprocess.h" /* getpid() */
 #include  "rterror.h"
 #include  "meta.h"

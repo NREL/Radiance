@@ -13,6 +13,7 @@
   #include <stdio.h>
   #define popen _popen
   #define pclose _pclose
+  #define snprintf _snprintf
 
   #include <windows.h>
   #define sleep(s) Sleep(s*1000)
