@@ -14,6 +14,7 @@ static const char RCSid[] = "$Id$";
 #include  "oconv.h"
 
 #ifdef putc_unlocked		/* avoid horrendous overhead of flockfile */
+#undef putc
 #define putc    putc_unlocked
 #endif
 
