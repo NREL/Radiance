@@ -30,6 +30,7 @@ install:	$(PROGS) $(LIBFILES)
 
 clean:
 	set nonomatch; rm -f $(PROGS) *.o core
+	cd mgflib ; make clean
 
 thf2rad:	thf2rad.o
 	$(CC) $(CFLAGS) -o thf2rad thf2rad.o
