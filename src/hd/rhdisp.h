@@ -27,6 +27,7 @@
 #define DS_STARTIMM	36		/* begin immediate bundle set */
 #define DS_ENDIMM	37		/* end immediate bundle set */
 #define DS_OUTSECT	38		/* render from outside sections */
+#define DS_EYESEP	39		/* eye separation distance */
 
 /*
  * Normally, the server channel has priority, with the display process

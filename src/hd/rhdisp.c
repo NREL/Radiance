@@ -26,6 +26,8 @@ int	imm_mode = 0;		/* bundles are being delivered immediately */
 
 int	do_outside = 0;		/* render from outside sections */
 
+double	eyesepdist = 1;		/* eye separation distance */
+
 char	*progname;		/* global argv[0] */
 
 FILE	*sstdin, *sstdout;	/* server's standard input and output */
@@ -405,6 +407,10 @@ serv_result()			/* get next server result and process it */
 		break;
 	case DS_OUTSECT:
 		do_outside = 1;
+		break;
+	case DS_EYESEP:
+		if (msg.nbytes <= 1 || (eyesepdist = atof(buf)) <= FTINY)
+			error(INTERNAL, "bad eye separation from server");
 		break;
 	case DS_STARTIMM:
 	case DS_ENDIMM:
