@@ -27,6 +27,10 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  MAXVERT	6	/* maximum number of vertices for markers */
 #define  MAXMARK	32	/* maximum number of markers */
 
+#ifdef  DCL_ATOF
+extern double  atof();
+#endif
+
 typedef struct {
 	short	beg, end;		/* beginning and ending vertex */
 	float	len2;			/* length squared */
