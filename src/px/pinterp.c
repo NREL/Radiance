@@ -199,10 +199,11 @@ char	*argv[];
 	}
 	normaspect(viewaspect(&ourview), &pixaspect, &hresolu, &vresolu);
 						/* allocate frame */
-	ourpict = (COLR *)malloc(hresolu*vresolu*sizeof(COLR));
-	ourzbuf = (float *)calloc(hresolu*vresolu,sizeof(float));
+	ourpict = (COLR *)bmalloc(hresolu*vresolu*sizeof(COLR));
+	ourzbuf = (float *)bmalloc(hresolu*vresolu*sizeof(float));
 	if (ourpict == NULL || ourzbuf == NULL)
 		syserror();
+	bzero((char *)ourzbuf, hresolu*vresolu*sizeof(float));
 							/* get input */
 	for ( ; i < argc; i += 2)
 		addpicture(argv[i], argv[i+1]);
