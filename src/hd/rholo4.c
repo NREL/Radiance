@@ -44,10 +44,9 @@ char	*dname;
 
 
 disp_packet(p)			/* display a packet */
-register PACKET	*p;
+register PACKHEAD	*p;
 {
-	disp_result(DS_BUNDLE, sizeof(PACKHEAD) + p->nr*sizeof(RAYVAL),
-			(char *)p);
+	disp_result(DS_BUNDLE, packsiz(p->nr), (char *)p);
 }
 
 
@@ -163,11 +162,8 @@ char	*p;
 		while (n < 0 && errno == EINTR);
 		if (n != sizeof(MSGHEAD))
 			goto writerr;
-		if (nbytes > 0) {
-			n = writebuf(dpd[1], p, nbytes);
-			if (n != nbytes)
-				goto writerr;
-		}
+		if (nbytes > 0 && writebuf(dpd[1], p, nbytes) != nbytes)
+			goto writerr;
 		return;
 	}
 	iov[0].iov_base = (char *)&msg;

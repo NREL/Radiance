@@ -399,7 +399,7 @@ PACKET	*pl;
 				(char *)hdnewrays(hdlist[p->hd],p->bi,p->nr),
 				p->nr*sizeof(RAYVAL));
 			if (outdev != NULL)	/* display it */
-				disp_packet(p);
+				disp_packet((PACKHEAD *)p);
 			else
 				nunflushed += p->nr;
 			nraysdone += p->nr;
