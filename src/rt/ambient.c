@@ -47,17 +47,30 @@ static FILE  *ambfp = NULL;	/* ambient file pointer */
 #define  newambtree()	(AMBTREE *)calloc(8, sizeof(AMBTREE))
 
 
+setambres(ar)				/* set ambient resolution */
+int  ar;
+{
+						/* set min & max radii */
+	if (ar <= 0) {
+		minarad = 0.0;
+		maxarad = thescene.cusize / 2.0;
+	} else {
+		minarad = thescene.cusize / ar;
+		maxarad = 16.0 * minarad;		/* heuristic */
+		if (maxarad > thescene.cusize / 2.0)
+			maxarad = thescene.cusize / 2.0;
+	}
+}
+
+
 setambient(afile)			/* initialize calculation */
 char  *afile;
 {
 	long  ftell();
 	AMBVAL  amb;
-
-	maxarad = thescene.cusize / 2.0;		/* maximum radius */
-							/* minimum radius */
-	minarad = ambres > 0 ? thescene.cusize/ambres : 0.0;
-
-					/* open ambient file */
+						/* init ambient limits */
+	setambres(ambres);
+						/* open ambient file */
 	if (afile != NULL)
 		if ((ambfp = fopen(afile, "r+")) != NULL) {
 			while (fread((char *)&amb,sizeof(AMBVAL),1,ambfp) == 1)
