@@ -396,9 +396,9 @@ check2do()		/* check histogram to see what isn't worth doing */
 					/* determine if acuity adj. useful */
 	if (what2do&DO_ACUITY &&
 			hacuity(l) >= (inpres.xr/sqrt(ourview.hn2) +
-			inpres.yr/sqrt(ourview.vn2))/(2.*180./PI*2.))
+			inpres.yr/sqrt(ourview.vn2))/(2.*180./PI))
 		what2do &= ~DO_ACUITY;
 					/* color sensitivity loss? */
-	if (l >= 6.0)
+	if (l >= TopMesopic)
 		what2do &= ~DO_COLOR;
 }

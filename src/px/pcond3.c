@@ -13,9 +13,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define CVRATIO		0.025		/* fraction of pixels allowed > env. */
 
-#define BotMesopic	5.62e-3		/* top of scotopic range */
-#define TopMesopic	5.62		/* bottom of photopic range */
-
 #define exp10(x)	exp(2.302585093*(x))
 
 int	modhist[HISTRES];		/* modified histogram */
