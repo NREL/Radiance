@@ -189,14 +189,15 @@ register char  *ctx;
 
     if (ctx == NULL)
 	return(context);		/* just asking */
+    while (*ctx == CNTXMARK)
+	ctx++;				/* skip past marks */
     if (!*ctx) {
-	context[0] = '\0';		/* clear context */
+	context[0] = '\0';		/* empty means clear context */
 	return(context);
     }
-    cpp = context;			/* else copy it (carefully!) */
-    if (*ctx != CNTXMARK)
-	*cpp++ = CNTXMARK;		/* make sure there's a mark */
-    do {
+    cpp = context;			/* start context with mark */
+    *cpp++ = CNTXMARK;
+    do {				/* carefully copy new context */
 	if (cpp >= context+MAXWORD)
 	    break;			/* just copy what we can */
 	if (isid(*ctx))
@@ -205,7 +206,46 @@ register char  *ctx;
 	    *cpp++ = '_'; ctx++;
 	}
     } while (*ctx);
+    while (cpp[-1] == CNTXMARK)		/* cannot end in context mark */
+	cpp--;
     *cpp = '\0';
+    return(context);
+}
+
+
+char *
+pushcontext(ctx)		/* push on another context */
+char  *ctx;
+{
+    extern char  *strncpy(), *strcpy();
+    char  oldcontext[MAXWORD+1];
+    register int  n;
+
+    strcpy(oldcontext, context);	/* save old context */
+    setcontext(ctx);			/* set new context */
+    n = strlen(context);		/* tack on old */
+    if (n+strlen(oldcontext) > MAXWORD) {
+	strncpy(context+n, oldcontext, MAXWORD-n);
+	context[MAXWORD] = '\0';
+    } else
+	strcpy(context+n, oldcontext);
+    return(context);
+}
+
+
+char *
+popcontext()			/* pop off top context */
+{
+    register char  *cp1, *cp2;
+
+    if (!context[0])			/* nothing left to pop */
+	return(context);
+    cp2 = context;			/* find mark */
+    while (*++cp2 && *cp2 != CNTXMARK)
+	;
+    cp1 = context;			/* copy tail to front */
+    while (*cp1++ = *cp2++)
+	;
     return(context);
 }
 
