@@ -68,7 +68,7 @@ newimage()				/* start a new image */
 	freepkids(&ptrunk);
 						/* set up frame */
 	if (ourview.hresolu > dev->xsiz || ourview.vresolu > dev->ysiz)
-		error(USER, "resolution mismatch");
+		newview(&ourview);		/* beware recursive loop! */
 	pframe.l = pframe.d = 0;
 	pframe.r = ourview.hresolu; pframe.u = ourview.vresolu;
 	pdepth = 0;
@@ -247,15 +247,21 @@ register VIEW  *vp;
 {
 	char  *err;
 
-	if (vp->hresolu > dev->xsiz || vp->vresolu > dev->ysiz) {
-		error(COMMAND, "view not set - resolution mismatch");
-	} else if ((err = setview(vp)) != NULL) {
+	if (vp->hresolu > dev->xsiz || vp->vresolu > dev->ysiz)	/* shrink */
+		if (vp->vresolu * dev->xsiz < vp->hresolu * dev->ysiz) {
+			vp->vresolu = dev->xsiz * vp->vresolu / vp->hresolu;
+			vp->hresolu = dev->xsiz;
+		} else {
+			vp->hresolu = dev->ysiz * vp->hresolu / vp->vresolu;
+			vp->vresolu = dev->ysiz;
+		}
+	if ((err = setview(vp)) != NULL) {
 		sprintf(errmsg, "view not set - %s", err);
 		error(COMMAND, errmsg);
 	} else if (bcmp(vp, &ourview, sizeof(VIEW))) {
 		bcopy(&ourview, &oldview, sizeof(VIEW));
 		bcopy(vp, &ourview, sizeof(VIEW));
-		newimage();
+		newimage();		/* newimage() calls with vp=&ourview! */
 	}
 }
 
