@@ -124,7 +124,7 @@ getradfile()			/* run rad and get needed variables */
 	register char	*cp;
 					/* check if rad file specified */
 	if (!vdef(RIF))
-		return;
+		return(0);
 					/* create rad command */
 	mktemp(tf1);
 	sprintf(tf2, "%s.rif", tf1);
@@ -150,7 +150,8 @@ getradfile()			/* run rad and get needed variables */
 	if (system(combuf)) {
 		unlink(tf2);			/* clean up */
 		unlink(tf1);
-		error(USER, "error executing rad command");
+		error(WARNING, "error executing rad command");
+		return(-1);
 	}
 	if (pippt == NULL) {
 		loadvars(tf2);			/* load variables */
@@ -158,6 +159,7 @@ getradfile()			/* run rad and get needed variables */
 	}
 	rtargc += wordfile(rtargv+rtargc, tf1);	/* get rtrace options */
 	unlink(tf1);			/* clean up */
+	return(1);
 }
 
 
