@@ -96,7 +96,6 @@ pfhold()		/* holding pattern for idle rendering process */
 	register int	n;
 				/* close input and output descriptors */
 	close(fileno(stdin));
-	fflush(stdout);
 	close(fileno(stdout));
 				/* create named pipes for input and output */
 	if (mknod(mktemp(strcpy(inpname,TEMPLATE)), S_IFIFO|0600) < 0)

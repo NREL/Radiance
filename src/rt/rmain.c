@@ -593,6 +593,7 @@ runagain:
 #if  RVIEW
 	rview();
 #endif
+	ambsync();			/* flush ambient file */
 #ifdef  PERSIST
 	if (persist == 1) {		/* first run-through */
 		if ((rval=fork()) == 0) {	/* child loops until killed */
@@ -605,7 +606,7 @@ runagain:
 			persist = 0;
 		}
 	}
-	if (persist) {			/* wait for the signal then go again */
+	if (persist) {			/* wait for a signal then go again */
 		pfhold();
 		dupheader();
 		goto runagain;

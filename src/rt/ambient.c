@@ -37,6 +37,7 @@ static AMBTREE	atrunk;		/* our ambient trunk node */
 
 static char  *ambfname = NULL;	/* ambient file name */
 static FILE  *ambfp = NULL;	/* ambient file pointer */
+static int  nunflshed = 0;	/* number of unflushed ambient values */
 
 #define	 AMBFLUSH	(BUFSIZ/AMBVALSIZ)
 
@@ -45,7 +46,7 @@ static FILE  *ambfp = NULL;	/* ambient file pointer */
 #define	 newambtree()	(AMBTREE *)calloc(8, sizeof(AMBTREE))
 
 extern long  ftell(), lseek();
-static int  initambfile(), avsave(), avinsert(), ambsync();
+static int  initambfile(), avsave(), avinsert();
 
 
 setambres(ar)				/* set ambient resolution */
@@ -74,7 +75,7 @@ char  *afile;
 						/* init ambient limits */
 	setambres(ambres);
 						/* open ambient file */
-	if ((ambfname = afile) != NULL)
+	if ((ambfname = afile) != NULL) {
 		if ((ambfp = fopen(afile, "r+")) != NULL) {
 			initambfile(0);
 			headlen = ftell(ambfp);
@@ -90,6 +91,9 @@ char  *afile;
 					afile);
 			error(SYSTEM, errmsg);
 		}
+		nunflshed++;	/* lie */
+		ambsync();
+	}
 }
 
 
@@ -321,9 +325,10 @@ int  creat;
 		fputformat(AMBFMT, ambfp);
 		putc('\n', ambfp);
 		putambmagic(ambfp);
-	} else if (checkheader(ambfp, AMBFMT, NULL) < 0 || !hasambmagic(ambfp))
-		error(USER, "bad ambient file");
-	ambsync();
+	} else if (checkheader(ambfp, AMBFMT, NULL) < 0 || !hasambmagic(ambfp)) {
+		sprintf(errmsg, "bad ambient file \"%s\"", ambfname);
+		error(USER, errmsg);
+	}
 }
 
 
@@ -331,21 +336,18 @@ static
 avsave(av)				/* insert and save an ambient value */
 AMBVAL	*av;
 {
-	static int  nunflshed = 0;
-
 	avinsert(av, &atrunk, thescene.cuorg, thescene.cusize);
 	if (ambfp == NULL)
 		return;
 	if (writambval(av, ambfp) < 0)
 		goto writerr;
-	if (++nunflshed >= AMBFLUSH) {
+	if (++nunflshed >= AMBFLUSH)
 		if (ambsync() == EOF)
 			goto writerr;
-		nunflshed = 0;
-	}
 	return;
 writerr:
-	error(SYSTEM, "error writing ambient file");
+	sprintf(errmsg, "error writing ambient file \"%s\"", ambfname);
+	error(SYSTEM, errmsg);
 }
 
 
@@ -388,15 +390,18 @@ memerr:
 
 #ifdef	NIX
 
-static
+int
 ambsync()			/* flush ambient file */
 {
+	if (nunflshed == 0)
+		return(0);
+	nunflshed = 0;
 	return(fflush(ambfp));
 }
 
 #else
 
-static
+int
 ambsync()			/* synchronize ambient file */
 {
 	static FILE  *ambinp = NULL;
@@ -405,6 +410,9 @@ ambsync()			/* synchronize ambient file */
 	long  flen;
 	AMBVAL	avs;
 	register int  n;
+
+	if (nunflshed == 0)
+		return(0);
 				/* gain exclusive access */
 	fls.l_type = F_WRLCK;
 	fls.l_whence = 0;
@@ -438,6 +446,7 @@ syncend:
 	lastpos = lseek(fileno(ambfp), 0L, 1);
 	fls.l_type = F_UNLCK;			/* release file */
 	fcntl(fileno(ambfp), F_SETLKW, &fls);
+	nunflshed = 0;
 	return(n);
 }
 

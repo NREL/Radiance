@@ -139,8 +139,11 @@ char  *fname;
 	default:
 		error(CONSISTENCY, "botched output format");
 	}
-	if (hresolu > 0 && vresolu > 0)
-		fprtresolu(hresolu, vresolu, stdout);
+	if (hresolu > 0) {
+		if (vresolu > 0)
+			fprtresolu(hresolu, vresolu, stdout);
+		fflush(stdout);
+	}
 					/* process file */
 	while (getvec(orig, inform, fp) == 0 &&
 			getvec(direc, inform, fp) == 0) {
@@ -165,9 +168,11 @@ char  *fname;
 		if (--vcount == 0)			/* check for end */
 			break;
 	}
+	fflush(stdout);
 	if (vcount > 0)
 		error(USER, "read error");
-	fclose(fp);
+	if (fname != NULL)
+		fclose(fp);
 }
 
 
