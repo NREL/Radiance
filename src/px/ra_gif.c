@@ -38,12 +38,15 @@ extern BYTE  clrtab[][3];
 extern int  getgifpix();
 
 COLR	*scanln;
+BYTE	*pixscan;
 
 int  xmax, ymax;			/* picture size */
 
 double	gamv = 2.2;			/* gamma correction */
 
 int  greyscale = 0;			/* convert to B&W? */
+
+int  dither = 1;			/* dither colors? */
 
 int  bradj = 0;				/* brightness adjustment */
 
@@ -73,6 +76,9 @@ char  *argv[];
 				break;
 			case 'b':
 				greyscale = 1;
+				break;
+			case 'd':
+				dither = !dither;
 				break;
 			case 'c':
 				ncolors = atoi(argv[++i]);
@@ -154,6 +160,8 @@ int  y;
 	if (bradj)
 		shiftcolrs(scanln, xmax, bradj);
 	colrs_gambs(scanln, xmax);
+	if (pixscan != NULL)
+		dith_colrs(pixscan, scanln, xmax);
 }
 
 
@@ -172,6 +180,10 @@ int	nc;
 		rmap[i] = clrtab[i][RED];
 		gmap[i] = clrtab[i][GRN];
 		bmap[i] = clrtab[i][BLU];
+	}
+	if (dither && (pixscan = (BYTE *)malloc(xmax)) == NULL) {
+		fprintf(stderr, "%s: out of memory\n", progname);
+		exit(1);
 	}
 }
 
@@ -198,6 +210,8 @@ int  x, y;
 	getrow(y);
 	if (greyscale)
 		return(normbright(scanln[x]));
+	if (pixscan != NULL)
+		return(pixscan[x]);
 	return(map_pixel(scanln[x]));
 }
 
