@@ -45,6 +45,10 @@ static double  echannel();
 static double  eadd(), esubtr(), emult(), edivi(), epow();
 static double  ebotch();
 
+#ifdef  DCL_ATOF
+extern double  atof();
+#endif
+
 int  nextc;				/* lookahead character */
 
 double	(*eoper[])() = {		/* expression operations */
