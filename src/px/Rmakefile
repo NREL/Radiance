@@ -89,8 +89,8 @@ psum:	psum.o color.o resolu.o header.o
 pcompos:	pcompos.o color.o resolu.o header.o
 	cc $(CFLAGS) -o pcompos pcompos.o color.o resolu.o header.o
 
-psign:	psign.o color.o resolu.o fropen.o
-	cc $(CFLAGS) -o psign psign.o color.o resolu.o fropen.o
+psign:	psign.o color.o resolu.o fropen.o header.o
+	cc $(CFLAGS) -o psign psign.o color.o resolu.o fropen.o header.o
 
 d48c:	d48c.o color.o resolu.o
 	cc $(CFLAGS) -o d48c d48c.o color.o resolu.o
