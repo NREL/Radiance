@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -13,6 +13,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include <stdio.h>
 #include <ctype.h>
 #include "color.h"
+#include "paths.h"
 
 #define PI		3.14159265358979323846
 					/* floating comparisons */
@@ -35,7 +36,6 @@ static char SCCSid[] = "$SunId$ LBL";
 					/* string lengths */
 #define MAXLINE		132
 #define MAXWORD		76
-#define MAXPATH		128
 					/* file types */
 #define T_RAD		".rad"
 #define T_DST		".dat"
@@ -49,7 +49,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define F_M		.3048		/* feet to meters */
 
-#define abspath(p)	((p)[0] == '/' || (p)[0] == '.')
+#define abspath(p)	(ISDIRSEP((p)[0]) || (p)[0] == '.')
 
 static char	default_name[] = "default";
 
@@ -64,8 +64,6 @@ float	defcolor[3] = {1.,1.,1.};	/* default lamp color */
 float	*lampcolor = defcolor;		/* pointer to current lamp color */
 double	multiplier = 1.0;		/* multiplier for all light sources */
 char	units[64] = "meters";		/* output units */
-double	minaspect = 0.0;		/* minimum allowed aspect ratio */
-int	maxemitters = 1;		/* maximum emitters per hemisphere */
 double	illumrad = 0.0;			/* radius for illum sphere */
 
 typedef struct {
@@ -155,14 +153,6 @@ char	*argv[];
 			break;
 		case 'o':		/* output file name */
 			outfile = argv[++i];
-			break;
-		case 's':		/* square emitters */
-			minaspect = .6;
-			if (argv[i][2] == '/') {
-				maxemitters = atoi(argv[i]+3);
-				if (maxemitters < 1)
-					goto badopt;
-			}
 			break;
 		case 'i':		/* illum */
 			illumrad = atof(argv[++i]);
@@ -284,7 +274,7 @@ char	*path, *fname, *suffix;
 	else if (abspath(fname))
 		strcpy(stradd(path, fname, 0), suffix);
 	else
-		libname(stradd(path, libdir, '/'), fname, suffix);
+		libname(stradd(path, libdir, DIRSEP), fname, suffix);
 
 	return(path);
 }
@@ -297,7 +287,7 @@ char	*path, *fname, *suffix;
 	if (abspath(fname))
 		strcpy(stradd(path, fname, 0), suffix);
 	else
-		strcpy(stradd(stradd(path, prefdir, '/'), fname, 0), suffix);
+		strcpy(stradd(stradd(path, prefdir, DIRSEP), fname, 0), suffix);
 
 	return(path);
 }
@@ -310,7 +300,7 @@ register char	*path;
 	register char	*cp;
 
 	for (cp = path; *path; path++)
-		if (*path == '/')
+		if (ISDIRSEP(*path))
 			cp = path+1;
 	return(cp);
 }
@@ -323,7 +313,7 @@ char	*path;
 	register char	*p1, *p2;
 
 	for (p1 = p2 = path; *p2; p2++)
-		if (*p2 == '/')
+		if (ISDIRSEP(*p2))
 			p1 = p2;
 	*p1 = '\0';
 	return(path);
@@ -457,10 +447,10 @@ char	*dir, *tltspec, *dfltname, *tltid;
 		datin = in;
 		strcpy(tltname, dfltname);
 	} else {
-		if (tltspec[0] == '/')
+		if (ISDIRSEP(tltspec[0]))
 			strcpy(buf, tltspec);
 		else
-			strcpy(stradd(buf, dir, '/'), tltspec);
+			strcpy(stradd(buf, dir, DIRSEP), tltspec);
 		if ((datin = fopen(buf, "r")) == NULL) {
 			perror(buf);
 			return(-1);
