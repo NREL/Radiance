@@ -18,6 +18,12 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define	 min(a,b)		((a)<(b)?(a):(b))
 
+				/* what to put out (also RED, GRN, BLU) */
+#define  ALL		3
+#define  BRIGHT		4
+
+#define  brightonly	(putprim==BRIGHT)
+
 RESOLU	picres;			/* resolution of picture */
 
 int  uniq = 0;			/* print only unique values? */
@@ -26,7 +32,7 @@ int  doexposure = 0;		/* exposure change? (>100 to print) */
 
 int  dataonly = 0;		/* data only format? */
 
-int  brightonly = 0;		/* only brightness values? */
+int  putprim = ALL;		/* what to put out */
 
 int  reverse = 0;		/* reverse conversion? */
 
@@ -34,6 +40,8 @@ int  format = 'a';		/* input/output format */
 char  *fmtid = "ascii";		/* format identifier for header */
 
 int  header = 1;		/* do header? */
+
+long  skipbytes = 0;		/* skip bytes in input? */
 
 int  resolution = 1;		/* put/get resolution string? */
 
@@ -51,6 +59,7 @@ COLOR  exposure = WHTCOLOR;
 char  *progname;
 
 FILE  *fin;
+FILE  *fin2 = NULL, *fin3 = NULL;	/* for other color channels */
 
 int  (*getval)(), (*putval)();
 
@@ -60,6 +69,7 @@ int  argc;
 char  **argv;
 {
 	extern int  checkhead();
+	extern long  atol();
 	double  d, expval = 1.0;
 	int  i;
 
@@ -73,6 +83,9 @@ char  **argv;
 				break;
 			case 'H':		/* resolution string */
 				resolution = argv[i][0] == '+';
+				break;
+			case 's':		/* skip bytes in header */
+				skipbytes = atol(argv[++i]);
 				break;
 			case 'u':		/* unique values */
 				uniq = argv[i][0] == '-';
@@ -107,7 +120,15 @@ char  **argv;
 				reverse = argv[i][0] == '-';
 				break;
 			case 'b':		/* brightness values */
-				brightonly = argv[i][0] == '-';
+				putprim = argv[i][0] == '-' ? BRIGHT : ALL;
+				break;
+			case 'p':		/* put primary */
+				switch (argv[i][2]) {
+				case 'r': case 'R': putprim = RED; break;
+				case 'g': case 'G': putprim = GRN; break;
+				case 'b': case 'B': putprim = BLU; break;
+				default: goto unkopt;
+				}
 				break;
 			case 'd':		/* data only (no indices) */
 				dataonly = argv[i][0] == '-';
@@ -178,13 +199,32 @@ unkopt:
 					/* get input */
 	if (i == argc) {
 		fin = stdin;
-	} else if (i == argc-1) {
+	} else if (i < argc) {
 		if ((fin = fopen(argv[i], "r")) == NULL) {
 			fprintf(stderr, "%s: can't open file \"%s\"\n",
 						progname, argv[i]);
 			quit(1);
 		}
-	} else {
+		if (skipbytes && fseek(fin, skipbytes, 0))
+			goto seekerr;
+		if (reverse && !brightonly && i == argc-3) {
+			if ((fin2 = fopen(argv[i+1], "r")) == NULL) {
+				fprintf(stderr, "%s: can't open file \"%s\"\n",
+						progname, argv[i+1]);
+				quit(1);
+			}
+			if ((fin3 = fopen(argv[i+2], "r")) == NULL) {
+				fprintf(stderr, "%s: can't open file \"%s\"\n",
+						progname, argv[i+2]);
+				quit(1);
+			}
+			if (skipbytes && (fseek(fin2, skipbytes, 0) ||
+					fseek(fin3, skipbytes, 0)))
+				goto seekerr;
+		} else if (i != argc-1)
+			fin = NULL;
+	}
+	if (fin == NULL) {
 		fprintf(stderr, "%s: bad # file arguments\n", progname);
 		quit(1);
 	}
@@ -204,6 +244,10 @@ unkopt:
 						progname);
 				quit(1);
 			}
+			if (fin2 != NULL) {
+				getheader(fin2, NULL, NULL);
+				getheader(fin3, NULL, NULL);
+			}
 		} else
 			newheader("RADIANCE", stdout);
 					/* get resolution */
@@ -211,6 +255,21 @@ unkopt:
 				picres.xr <= 0 || picres.yr <= 0) {
 			fprintf(stderr, "%s: missing resolution\n", progname);
 			quit(1);
+		}
+		if (resolution && fin2 != NULL) {
+			RESOLU  pres2;
+			if (!fgetsresolu(&pres2, fin2) ||
+					pres2.or != picres.or ||
+					pres2.xr != picres.xr ||
+					pres2.yr != picres.yr ||
+					!fgetsresolu(&pres2, fin3) ||
+					pres2.or != picres.or ||
+					pres2.xr != picres.xr ||
+					pres2.yr != picres.yr) {
+				fprintf(stderr, "%s: resolution mismatch\n",
+						progname);
+				quit(1);
+			}
 		}
 						/* add to header */
 		printargs(i, argv, stdout);
@@ -250,6 +309,10 @@ unkopt:
 	}
 
 	quit(0);
+seekerr:
+	fprintf(stderr, "%s: cannot skip %ld bytes on input\n",
+			progname, skipbytes);
+	quit(1);
 }
 
 
@@ -346,9 +409,14 @@ valtopix()			/* convert values to a pixel file */
 	dogamma = gamcor < .95 || gamcor > 1.05;
 	for (y = 0; y < numscans(&picres); y++) {
 		for (x = 0; x < scanlen(&picres); x++) {
-			if (!dataonly)
+			if (!dataonly) {
 				fscanf(fin, "%*d %*d");
-			if ((*getval)(scanln[x], fin) < 0) {
+				if (fin2 != NULL) {
+					fscanf(fin2, "%*d %*d");
+					fscanf(fin3, "%*d %*d");
+				}
+			}
+			if ((*getval)(scanln[x], fin, fin2, fin3) < 0) {
 				fprintf(stderr, "%s: read error\n", progname);
 				quit(1);
 			}
@@ -376,67 +444,102 @@ int  code;
 }
 
 
-getcascii(col, fp)		/* get an ascii color value from fp */
+getcascii(col, f1, f2, f3)	/* get an ascii color value from stream(s) */
 COLOR  col;
-FILE  *fp;
+FILE  *f1, *f2, *f3;
 {
 	double	vd[3];
 
-	if (fscanf(fp, "%lf %lf %lf", &vd[0], &vd[1], &vd[2]) != 3)
-		return(-1);
+	if (f2 == NULL) {
+		if (fscanf(f1, "%lf %lf %lf", &vd[0], &vd[1], &vd[2]) != 3)
+			return(-1);
+	} else {
+		if (fscanf(f1, "%lf", &vd[0]) != 1 ||
+				fscanf(f2, "%lf", &vd[1]) != 1 ||
+				fscanf(f3, "%lf", &vd[2]) != 1)
+			return(-1);
+	}
 	setcolor(col, vd[rord[RED]], vd[rord[GRN]], vd[rord[BLU]]);
 	return(0);
 }
 
 
-getcdouble(col, fp)		/* get a double color value from fp */
+getcdouble(col, f1, f2, f3)	/* get a double color value from stream(s) */
 COLOR  col;
-FILE  *fp;
+FILE  *f1, *f2, *f3;
 {
 	double	vd[3];
 
-	if (fread((char *)vd, sizeof(double), 3, fp) != 3)
-		return(-1);
+	if (f2 == NULL) {
+		if (fread((char *)vd, sizeof(double), 3, f1) != 3)
+			return(-1);
+	} else {
+		if (fread((char *)vd, sizeof(double), 1, f1) != 1 ||
+			fread((char *)(vd+1), sizeof(double), 1, f2) != 1 ||
+			fread((char *)(vd+2), sizeof(double), 1, f3) != 1)
+			return(-1);
+	}
 	setcolor(col, vd[rord[RED]], vd[rord[GRN]], vd[rord[BLU]]);
 	return(0);
 }
 
 
-getcfloat(col, fp)		/* get a float color value from fp */
+getcfloat(col, f1, f2, f3)	/* get a float color value from stream(s) */
 COLOR  col;
-FILE  *fp;
+FILE  *f1, *f2, *f3;
 {
 	float  vf[3];
 
-	if (fread((char *)vf, sizeof(float), 3, fp) != 3)
-		return(-1);
+	if (f2 == NULL) {
+		if (fread((char *)vf, sizeof(float), 3, f1) != 3)
+			return(-1);
+	} else {
+		if (fread((char *)vf, sizeof(float), 1, f1) != 1 ||
+			fread((char *)(vf+1), sizeof(float), 1, f2) != 1 ||
+			fread((char *)(vf+2), sizeof(float), 1, f3) != 1)
+			return(-1);
+	}
 	setcolor(col, vf[rord[RED]], vf[rord[GRN]], vf[rord[BLU]]);
 	return(0);
 }
 
 
-getcint(col, fp)		/* get an int color value from fp */
+getcint(col, f1, f2, f3)	/* get an int color value from stream(s) */
 COLOR  col;
-FILE  *fp;
+FILE  *f1, *f2, *f3;
 {
 	int  vi[3];
 
-	if (fscanf(fp, "%d %d %d", &vi[0], &vi[1], &vi[2]) != 3)
-		return(-1);
+	if (f2 == NULL) {
+		if (fscanf(f1, "%d %d %d", &vi[0], &vi[1], &vi[2]) != 3)
+			return(-1);
+	} else {
+		if (fscanf(f1, "%d", &vi[0]) != 1 ||
+				fscanf(f2, "%d", &vi[1]) != 1 ||
+				fscanf(f3, "%d", &vi[2]) != 1)
+			return(-1);
+	}
 	setcolor(col, (vi[rord[RED]]+.5)/256.,
 			(vi[rord[GRN]]+.5)/256., (vi[rord[BLU]]+.5)/256.);
 	return(0);
 }
 
 
-getcbyte(col, fp)		/* get a byte color value from fp */
+getcbyte(col, f1, f2, f3)	/* get a byte color value from stream(s) */
 COLOR  col;
-FILE  *fp;
+FILE  *f1, *f2, *f3;
 {
 	BYTE  vb[3];
 
-	if (fread((char *)vb, sizeof(BYTE), 3, fp) != 3)
-		return(-1);
+	if (f2 == NULL) {
+		if (fread((char *)vb, sizeof(BYTE), 3, f1) != 3)
+			return(-1);
+	} else {
+		if (fread((char *)vb, sizeof(BYTE), 1, f1) != 1 ||
+			fread((char *)(vb+1), sizeof(BYTE), 1, f2) != 1 ||
+			fread((char *)(vb+2), sizeof(BYTE), 1, f3) != 1)
+			return(-1);
+	}
 	setcolor(col, (vb[rord[RED]]+.5)/256.,
 			(vb[rord[GRN]]+.5)/256., (vb[rord[BLU]]+.5)/256.);
 	return(0);
@@ -648,49 +751,125 @@ FILE  *fp;
 }
 
 
+putpascii(col, fp)			/* put an ascii primary to fp */
+COLOR  col;
+FILE  *fp;
+{
+	fprintf(fp, "%15.3e\n", colval(col,putprim));
+
+	return(ferror(fp) ? -1 : 0);
+}
+
+
+putpfloat(col, fp)			/* put a float primary to fp */
+COLOR  col;
+FILE  *fp;
+{
+	float  vf;
+
+	vf = colval(col,putprim);
+	fwrite((char *)&vf, sizeof(float), 1, fp);
+
+	return(ferror(fp) ? -1 : 0);
+}
+
+
+putpdouble(col, fp)			/* put a double primary to fp */
+COLOR  col;
+FILE  *fp;
+{
+	double	vd;
+
+	vd = colval(col,putprim);
+	fwrite((char *)&vd, sizeof(double), 1, fp);
+
+	return(ferror(fp) ? -1 : 0);
+}
+
+
+putpint(col, fp)			/* put an int primary to fp */
+COLOR  col;
+FILE  *fp;
+{
+	fprintf(fp, "%d\n", (int)(colval(col,putprim)*256.));
+
+	return(ferror(fp) ? -1 : 0);
+}
+
+
+putpbyte(col, fp)			/* put a byte primary to fp */
+COLOR  col;
+FILE  *fp;
+{
+	register int  i;
+	BYTE  vb;
+
+	i = colval(col,putprim)*256.;
+	vb = min(i,255);
+	fwrite((char *)&vb, sizeof(BYTE), 1, fp);
+
+	return(ferror(fp) ? -1 : 0);
+}
+
+
 set_io()			/* set put and get functions */
 {
 	switch (format) {
 	case 'a':					/* ascii */
-		if (brightonly) {
+		if (putprim == BRIGHT) {
 			getval = getbascii;
 			putval = putbascii;
+		} else if (putprim != ALL) {
+			getval = getbascii;
+			putval = putpascii;
 		} else {
 			getval = getcascii;
 			putval = putcascii;
 		}
 		return;
 	case 'f':					/* binary float */
-		if (brightonly) {
+		if (putprim == BRIGHT) {
 			getval = getbfloat;
 			putval = putbfloat;
+		} else if (putprim != ALL) {
+			getval = getbfloat;
+			putval = putpfloat;
 		} else {
 			getval = getcfloat;
 			putval = putcfloat;
 		}
 		return;
 	case 'd':					/* binary double */
-		if (brightonly) {
+		if (putprim == BRIGHT) {
 			getval = getbdouble;
 			putval = putbdouble;
+		} else if (putprim != ALL) {
+			getval = getbdouble;
+			putval = putpdouble;
 		} else {
 			getval = getcdouble;
 			putval = putcdouble;
 		}
 		return;
 	case 'i':					/* integer */
-		if (brightonly) {
+		if (putprim == BRIGHT) {
 			getval = getbint;
 			putval = putbint;
+		} else if (putprim != ALL) {
+			getval = getbint;
+			putval = putpint;
 		} else {
 			getval = getcint;
 			putval = putcint;
 		}
 		return;
 	case 'b':					/* byte */
-		if (brightonly) {
+		if (putprim == BRIGHT) {
 			getval = getbbyte;
 			putval = putbbyte;
+		} else if (putprim != ALL) {
+			getval = getbbyte;
+			putval = putpbyte;
 		} else {
 			getval = getcbyte;
 			putval = putcbyte;
