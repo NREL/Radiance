@@ -163,8 +163,7 @@ char	*otnm;
 	if (ofun[OBJ_SPHERE].funp == o_default)
 		initotypes();
 					/* initialize urand */
-	if (urperm == NULL)
-		initurand(2048);
+	initurand(2048);
 					/* read scene octree */
 	readoct(octname = otnm, ~(IO_FILES|IO_INFO), &thescene, NULL);
 	nsceneobjs = nobjects;
