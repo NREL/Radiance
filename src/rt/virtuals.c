@@ -161,14 +161,24 @@ MAT4  pm;
 			return(-1);		/* at source!! */
 		if (source[sn].sflags & SPROX && d > source[sn].sl.prox)
 			return(-1);		/* too far away */
-		ourspot.siz = 2.*PI*(1. - d/sqrt(d*d+maxrad2));
 		ourspot.flen = 0.;
+		if (d*d > maxrad2)
+			ourspot.siz = 2.*PI*(1. - sqrt(1.-maxrad2/(d*d)));
+		else
+			nsflags &= ~SSPOT;
 		if (source[sn].sflags & SSPOT) {
 			copystruct(&theirspot, source[sn].sl.s);
 			multv3(theirspot.aim, source[sn].sl.s->aim, pm);
-			d = ourspot.siz;
-			if (!commonspot(&ourspot, &theirspot, nsloc))
-				return(-1);	/* no overlap */
+			if (nsflags & SSPOT) {
+				ourspot.flen = theirspot.flen;
+				d = ourspot.siz;
+				if (!commonspot(&ourspot, &theirspot, nsloc))
+					return(-1);	/* no overlap */
+			} else {
+				nsflags |= SSPOT;
+				copystruct(&ourspot, &theirspot);
+				d = 2.*ourspot.siz;
+			}
 			if (ourspot.siz < d-FTINY) {	/* it shrunk */
 				d = spotdisk(v, op, &ourspot, nsloc);
 				if (d <= FTINY)
@@ -178,7 +188,6 @@ MAT4  pm;
 					VCOPY(ocent, v);
 				}
 			}
-			ourspot.flen = theirspot.flen;
 		}
 		if (source[sn].sflags & SFLAT) {	/* behind source? */
 			multv3(nsnorm, source[sn].snorm, pm);
@@ -198,9 +207,11 @@ MAT4  pm;
 	if (nsflags & SFLAT)
 		VCOPY(source[i].snorm, nsnorm);
 	source[i].ss = source[sn].ss; source[i].ss2 = source[sn].ss2;
-	if ((source[i].sl.s = (SPOT *)malloc(sizeof(SPOT))) == NULL)
-		goto memerr;
-	copystruct(source[i].sl.s, &ourspot);
+	if (nsflags & SSPOT) {
+		if ((source[i].sl.s = (SPOT *)malloc(sizeof(SPOT))) == NULL)
+			goto memerr;
+		copystruct(source[i].sl.s, &ourspot);
+	}
 	if (nsflags & SPROX)
 		source[i].sl.prox = source[sn].sl.prox;
 	source[i].sa.svnext = sn;
