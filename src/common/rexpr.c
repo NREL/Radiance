@@ -24,6 +24,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define same(a,b) (a==b || (iflag && (a^b)==' ' && isalpha(a)))
 
+#ifdef  BSD
+#define  memcpy(to,from,len)	bcopy(from,to,len)
+#endif
+
 static char    expbuf[ESIZE];
 static int     iflag;
 static int     circf;
