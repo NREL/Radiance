@@ -128,7 +128,7 @@ extern void adjveil(void);		/* adjust veil image */
 #endif
 extern void acuscan(COLOR *scln, int y);	/* get acuity-sampled scanline */
 extern void addveil(COLOR *sl, int y);	/* add veil to scanline */
-extern int initacuity(void);		/* initialize variable acuity sampling */
+extern void initacuity(void);		/* initialize variable acuity sampling */
 extern double hacuity(double La);	/* human acuity func. (cycles/deg.) */
 
 #ifdef __cplusplus

@@ -260,7 +260,8 @@ getahead(void)			/* load picture header */
 				progname);
 		exit(1);
 	}
-	if (!gotview || ourview.type == VT_PAR) {
+	if (!gotview || ourview.type == VT_PAR ||
+			ourview.horiz <= 3. | ourview.vert <= 3.) {
 		ourview = stdview;
 		ourview.type = VT_PER;
 		if (pixaspect*inpres.yr < inpres.xr) {

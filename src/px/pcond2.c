@@ -115,11 +115,8 @@ firstscan(void)				/* return first processed scanline */
 			comprgb2rgbWBmat(mbcond.cmat, inprims, outprims);
 		else
 			compxyz2rgbWBmat(mbcond.cmat, outprims);
-	if (what2do&DO_ACUITY && !initacuity()) {
-		fprintf(stderr, "%s: warning - cannot initialize acuity pass\n",
-				progname);
-		what2do &= ~DO_ACUITY;
-	}
+	if (what2do&DO_ACUITY)
+		initacuity();
 	scanbuf = (COLOR *)malloc(scanlen(&inpres)*sizeof(COLOR));
 	if (scanbuf == NULL)
 		syserror("malloc");
