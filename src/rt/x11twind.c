@@ -93,6 +93,8 @@ xt_putc(c, t)				/* output a character */
 int  c;
 register TEXTWIND  *t;
 {
+	char	ch[2];
+
 	checkcurs(t);
 	switch (c) {
 	case '\n':
@@ -113,8 +115,9 @@ register TEXTWIND  *t;
 	default:
 		if (t->c >= t->nc)
 			xt_putc('\n', t);
+		ch[0] = c; ch[1] = '\0';
 		XDrawImageString(t->dpy, t->w, t->gc, LEFTMAR+t->c*Width(t->f), 
-			YStart(t->f)+t->r*Height(t->f), &c, 1);
+			YStart(t->f)+t->r*Height(t->f), ch, 1);
 		t->lp[t->r][t->c++] = c;
 		break;
 	}
