@@ -379,7 +379,7 @@ setpalette()			/* set our palette using clrtab */
 	cvals[ourblack] = _BLACK;
 	cvals[ourwhite] = _BRIGHTWHITE;
 	for (i = 0; i < maxcolors; i++)
-		cvals[i+minpix] = clrtab[i][BLU]<<14 & 0x3f0000L |
+		cvals[i+minpix] = (long)clrtab[i][BLU]<<14 & 0x3f0000L |
 				  clrtab[i][GRN]<<6 & 0x3f00 |
 				  clrtab[i][RED]>>2;
 	_remapallpalette(cvals);
