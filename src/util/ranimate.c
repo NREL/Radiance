@@ -1,4 +1,4 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1996 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -175,8 +175,11 @@ char	*argv[];
 		argv[i] = vval(NEXTANIM);	/* just change input file */
 		if (!silent)
 			printargs(argc, argv, stdout);
-		execvp(progname, argv);		/* pass to next */
-		quit(1);			/* shouldn't return */
+		if ((argv[0] = getpath(progname,getenv("PATH"),X_OK)) == NULL)
+			fprintf(stderr, "%s: command not found\n", progname);
+		else
+			execv(progname, argv);
+		quit(1);
 	}
 	quit(0);
 userr:
