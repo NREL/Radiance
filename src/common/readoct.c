@@ -59,7 +59,7 @@ char  *ofn[];
 		getheader(infp, NULL);
 					/* check format */
 	if (getint(2) != OCTMAGIC)
-		octerror(USER, "bad octree");
+		octerror(USER, "invalid octree format");
 					/* get boundaries */
 	if (load & IO_BOUNDS) {
 		for (i = 0; i < 3; i++)
