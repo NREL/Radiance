@@ -127,14 +127,22 @@ register RAY  *r;
 	if (rdiff <= FTINY && tdiff <= FTINY && alpha2 <= FTINY)
 		return;				/* purely specular */
 
-	ambient(ctmp, r);		/* compute ambient component */
-	scalecolor(ctmp, 1.0-trans);	/* from this side */
-	multcolor(ctmp, mcolor);	/* modified by material color */
-	addcolor(r->rcol, ctmp);	/* add to returned color */
-
-	if (trans > FTINY) {		/* ambient from other side */
+	if (rdiff > FTINY) {		/* ambient from this side */
+		ambient(ctmp, r);
+		if (alpha2 <= FTINY)
+			scalecolor(ctmp, rdiff);
+		else
+			scalecolor(ctmp, 1.0-trans);
+		multcolor(ctmp, mcolor);	/* modified by material color */
+		addcolor(r->rcol, ctmp);	/* add to returned color */
+	}
+	if (tdiff > FTINY) {		/* ambient from other side */
 		flipsurface(r);
-		scalecolor(ctmp, trans);
+		ambient(ctmp, r);
+		if (alpha2 <= FTINY)
+			scalecolor(ctmp, tdiff);
+		else
+			scalecolor(ctmp, trans);
 		multcolor(ctmp, mcolor);
 		addcolor(r->rcol, ctmp);
 		flipsurface(r);
