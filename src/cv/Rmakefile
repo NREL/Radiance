@@ -1,0 +1,29 @@
+# SCCSid "$SunId$ LBL"
+
+#
+# Makefile for conversion programs
+#
+
+CFLAGS = -O
+
+DESTDIR = /usr/local/ray
+
+all:	$(DESTDIR)/thf2rad $(DESTDIR)/ies2rad $(DESTDIR)/arch2rad \
+$(DESTDIR)/nff2rad
+
+$(DESTDIR)/thf2rad:	thf2rad.o
+	cc $(CFLAGS) -o $(DESTDIR)/thf2rad thf2rad.o
+
+$(DESTDIR)/ies2rad:	ies2rad.o lamps.o spec_rgb.o fropen.o rexpr.o
+	cc $(CFLAGS) -o $(DESTDIR)/ies2rad ies2rad.o lamps.o \
+spec_rgb.o fropen.o rexpr.o
+
+$(DESTDIR)/arch2rad:	arch2rad.o trans.o savestr.o
+	cc $(CFLAGS) -o $(DESTDIR)/arch2rad arch2rad.o trans.o savestr.o
+
+$(DESTDIR)/nff2rad:	nff2rad.o
+	cc $(CFLAGS) -o $(DESTDIR)/nff2rad nff2rad.o
+
+arch2rad.o trans.o:	trans.h
+
+spec_rgb.o:	color.h
