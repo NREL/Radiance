@@ -10,7 +10,7 @@
 
 #ifdef	MSDOS
 
-#define random		rand
+#define random()	((long)rand()<<16^(long)rand()<<6^(long)rand()>>4)
 
 #define frandom()	(rand()*(1./32768.))
 
