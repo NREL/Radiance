@@ -49,7 +49,7 @@ or \"ring\".  These may be abbreviated as a single letter." },
 	{ "total lamp lumens", "0", outpcheck,
 "This is the overall light output of the lamp and its fixture.  If you do\n\
 not know this value explicitly, you can compute the approximate lumens\n\
-by multiplying the input wattage by 15 for incandescent fixtures or 40\n\
+by multiplying the input wattage by 14 for incandescent fixtures or 70\n\
 for fluorescent fixtures." },
 };
 
