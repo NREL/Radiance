@@ -5,7 +5,7 @@
 set instdir = $1
 set libdir = $2
 
-set TLIBFILES = ( *.tcl *.hlp trad.icon tclIndex )
+set TLIBFILES = ( *[a-z].tcl *.hlp trad.icon tclIndex )
 
 set TDIFFS = (`ls | sed -n 's/3\.6\.tcl$//p'`)
 
@@ -18,7 +18,7 @@ end
 if (! $?wishcom) then
 	foreach d ($path)
 		if (-x $d/wish) then
-			set wishcom = $d/wish
+			set wishcom = "$d/wish -f"
 			break
 		endif
 	end
@@ -31,7 +31,7 @@ endif
 
 echo "Installing trad using $wishcom"
 
-sed -e "1s|/usr/local/bin/wish|$wishcom|" \
+sed -e "1s|/usr/local/bin/wish4\.0|$wishcom|" \
 	-e "s|^set radlib .*|set radlib $libdir|" trad.wsh > $instdir/trad
 if ($status) exit 1
 chmod 755 $instdir/trad
