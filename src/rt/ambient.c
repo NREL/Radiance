@@ -279,8 +279,7 @@ double	s;
 		 *  Jittering final test reduces image artifacts.
 		 */
 		wt = sqrt(e1) + sqrt(e2);
-		wt *= .9 + .2*urand(9015+samplendx);
-		if (wt > ambacc)
+		if (wt > ambacc*(.9+.2*urand(9015+samplendx)))
 			continue;
 		if (wt <= 1e-3)
 			wt = 1e3;
