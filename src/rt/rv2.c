@@ -22,7 +22,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  CTRL(c)	('c'-'@')
 
+extern char  VersionID[];
 extern char  *progname;
+extern char  *octname;
 
 
 getframe(s)				/* get a new frame */
@@ -542,7 +544,6 @@ char  *s;
 writepict(s)				/* write the picture to a file */
 char  *s;
 {
-	extern char  VersionID[];
 	static char  buf[128];
 	char  *fname;
 	FILE  *fp;
@@ -565,7 +566,10 @@ char  *s;
 						/* write header */
 	fputs(progname, fp);
 	fprintview(&ourview, fp);
-	putc('\n', fp);
+	if (octname != NULL)
+		fprintf(fp, " %s\n", octname);
+	else
+		putc('\n', fp);
 	fprintf(fp, "SOFTWARE= %s\n", VersionID);
 	if (exposure != 1.0)
 		fputexpos(exposure, fp);
