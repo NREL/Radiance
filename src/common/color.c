@@ -253,9 +253,19 @@ double  r, g, b;
 
 	d = frexp(d, &e) * 255.9999 / d;
 
-	clr[RED] = r * d;
-	clr[GRN] = g * d;
-	clr[BLU] = b * d;
+	if (r > 0.0)
+		clr[RED] = r * d;
+	else
+		clr[RED] = 0;
+	if (g > 0.0)
+		clr[GRN] = g * d;
+	else
+		clr[GRN] = 0;
+	if (b > 0.0)
+		clr[BLU] = b * d;
+	else
+		clr[BLU] = 0;
+
 	clr[EXP] = e + COLXS;
 }
 
