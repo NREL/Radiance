@@ -428,10 +428,12 @@ extern int	xf(XF *, int, char **);		/* interpret transform spec. */
  *	Miscellaneous definitions
  */
 
+#ifndef  PI
 #ifdef	M_PI
 #define	 PI		M_PI
 #else
 #define	 PI		3.14159265358979323846
+#endif
 #endif
 
 #ifdef DCL_ATOF
