@@ -22,8 +22,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 int	(*wrnvec)(), (*errvec)(), (*cmdvec)();	/* error vectors, unused */
 
-long	nrays = 0;				/* fake it */
-
 struct driver	*dev = NULL;			/* output device */
 
 FILE	*devin, *devout;			/* communications channels */
@@ -32,11 +30,12 @@ int	notified = 0;				/* notified parent of input? */
 
 char	*progname;				/* driver name */
 
-int	r_clear(), r_paintr(), r_getcur(), r_comout(), r_comin();
+int	r_clear(), r_paintr(), r_getcur(), r_comout(), r_comin(), r_flush();
 
 int	(*dev_func[NREQUESTS])() = {		/* request handlers */
 		r_clear, r_paintr,
-		r_getcur, r_comout, r_comin
+		r_getcur, r_comout,
+		r_comin, r_flush
 	};
 
 
@@ -102,7 +101,6 @@ r_paintr()				/* paint a rectangle */
 	COLOR	col;
 	int	xmin, ymin, xmax, ymax;
 
-	nrays += 5;			/* pretend */
 	fread((char *)col, sizeof(COLOR), 1, devin);
 	xmin = getw(devin); ymin = getw(devin);
 	xmax = getw(devin); ymax = getw(devin);
@@ -112,6 +110,13 @@ r_paintr()				/* paint a rectangle */
 		notified = 1;
 		kill(getppid(), SIGIO);
 	}
+}
+
+
+r_flush()				/* flush output */
+{
+	if (dev->flush != NULL)
+		(*dev->flush)();
 }
 
 

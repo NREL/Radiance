@@ -18,6 +18,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "random.h"
 
+#ifndef WFLUSH
+#define WFLUSH		30		/* flush after this many rays */
+#endif
+
 
 getrect(s, r)				/* get a box */
 char  *s;
@@ -130,6 +134,8 @@ paint(p, xmin, ymin, xmax, ymax)	/* compute and paint a rectangle */
 register PNODE  *p;
 int  xmin, ymin, xmax, ymax;
 {
+	extern long  nrays;
+	static long  lastflush = 0;
 	static RAY  thisray;
 	double  h, v;
 	register int  i;
@@ -157,6 +163,11 @@ int  xmin, ymin, xmax, ymax;
 	scalecolor(p->v, exposure);
 
 	(*dev->paintr)(greyscale?greyof(p->v):p->v, xmin, ymin, xmax, ymax);
+
+	if (dev->flush != NULL && nrays - lastflush >= WFLUSH) {
+		lastflush = nrays;
+		(*dev->flush)();
+	}
 }
 
 

@@ -35,16 +35,10 @@ static char SCCSid[] = "$SunId$ LBL";
 #define COMCW		8		/* approx. character width (pixels) */
 #define COMCH		14		/* approx. character height (pixels) */
 
-#ifndef WFLUSH
-#define WFLUSH		30		/* flush after this many rays */
-#endif
-
 #define  ourscreen	DefaultScreen(ourdisplay)
 #define  ourroot	RootWindow(ourdisplay,ourscreen)
 #define  ourwhite	WhitePixel(ourdisplay,ourscreen)
 #define  ourblack	BlackPixel(ourdisplay,ourscreen)
-
-#define  checkinp()	while (XPending(ourdisplay) > 0) getevent()
 
 #define  levptr(etype)	((etype *)&currentevent)
 
@@ -74,11 +68,11 @@ static Colormap ourmap;			/* our color map */
 extern char  *malloc();
 
 int  x11_close(), x11_clear(), x11_paintr(), x11_errout(),
-		x11_getcur(), x11_comout(), x11_comin();
+		x11_getcur(), x11_comout(), x11_comin(), x11_flush();
 
 static struct driver  x11_driver = {
 	x11_close, x11_clear, x11_paintr, x11_getcur,
-	x11_comout, x11_comin, 1.0
+	x11_comout, x11_comin, x11_flush, 1.0
 };
 
 
@@ -195,9 +189,7 @@ x11_paintr(col, xmin, ymin, xmax, ymax)		/* fill a rectangle */
 COLOR  col;
 int  xmin, ymin, xmax, ymax;
 {
-	extern long  nrays;		/* global ray count */
 	extern int  xnewcolr();		/* pixel assignment routine */
-	static long  lastflush = 0;	/* ray count at last flush */
 
 	if (ncolors > 0) {
 		XSetForeground(ourdisplay, ourgc, 
@@ -205,13 +197,16 @@ int  xmin, ymin, xmax, ymax;
 		XFillRectangle(ourdisplay, gwind, 
 			ourgc, xmin, gheight-ymax, xmax-xmin, ymax-ymin);
 	}
-	if (nrays - lastflush >= WFLUSH) {
-		if (ncolors <= 0)	/* output necessary for death */
-			XFillRectangle(ourdisplay, gwind, 
-					ourgc, 0, 0, 1 ,1);
-		checkinp();
-		lastflush = nrays;
-	}
+}
+
+
+static
+x11_flush()			/* flush output */
+{
+	if (ncolors <= 0)	/* output necessary for death */
+		XFillRectangle(ourdisplay, gwind, ourgc, 0, 0, 1 ,1);
+	while (XPending(ourdisplay) > 0)
+		getevent();
 }
 
 

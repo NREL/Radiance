@@ -42,7 +42,7 @@ int  sun_close(), sun_clear(), sun_paintr(), sun_getcur(),
 static struct driver  sun_driver = {
 	sun_close, sun_clear, sun_paintr,
 	sun_getcur, sun_comout, sun_comin,
-	1.0, 1100, 800
+	NULL, 1.0, 1100, 800
 };
 
 static FILE  *ttyin;

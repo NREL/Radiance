@@ -26,20 +26,16 @@ static char SCCSid[] = "$SunId$ LBL";
 #define vfork		fork
 #endif
 
-#ifndef WFLUSH
-#define WFLUSH		30		/* flush after this many rays */
-#endif
-
 extern char	*getpath(), *getenv();
 
 int	onsigio();
 
 int	comm_close(), comm_clear(), comm_paintr(), comm_errout(),
-		comm_getcur(), comm_comout(), comm_comin();
+		comm_getcur(), comm_comout(), comm_comin(), comm_flush();
 
-struct driver	comm_driver, comm_default = {
+struct driver	comm_driver = {
 	comm_close, comm_clear, comm_paintr, comm_getcur,
-	comm_comout, comm_comin
+	comm_comout, comm_comin, comm_flush
 };
 
 FILE	*devin, *devout;
@@ -80,7 +76,6 @@ char	*dname, *id;
 		goto syserr;
 	if ((devin = fdopen(p2[0], "r")) == NULL)
 		goto syserr;
-	copystruct(&comm_driver, &comm_default);
 						/* verify & get resolution */
 	putw(COM_SENDM, devout);
 	fflush(devout);
@@ -135,19 +130,20 @@ comm_paintr(col, xmin, ymin, xmax, ymax)	/* paint a rectangle */
 COLOR	col;
 int	xmin, ymin, xmax, ymax;
 {
-	extern long	nrays;		/* number of rays traced */
-	static long	lastflush = 0;	/* ray count at last flush */
-
 	putc(COM_PAINTR, devout);
 	fwrite((char *)col, sizeof(COLOR), 1, devout);
 	putw(xmin, devout);
 	putw(ymin, devout);
 	putw(xmax, devout);
 	putw(ymax, devout);
-	if (nrays - lastflush >= WFLUSH) {
-		fflush(devout);
-		lastflush = nrays;
-	}
+}
+
+
+static
+comm_flush()				/* flush output to driver */
+{
+	putc(COM_FLUSH, devout);
+	fflush(devout);
 }
 
 
