@@ -250,7 +250,7 @@ register RAY  *r;
 			} else {
 				for (i = 0; i < 3; i++)		/* perturb */
 					nd.prdir[i] = r->rdir[i] -
-							.75*r->pert[i];
+							0.5*r->pert[i];
 				if (DOT(nd.prdir, r->ron) < -FTINY)
 					normalize(nd.prdir);	/* OK */
 				else
@@ -389,4 +389,31 @@ register ANISODAT  *np;
 		ndims--;
 	}
 					/* compute transmission */
+	if ((np->specfl & (SP_TRAN|SP_TBLT)) == SP_TRAN &&
+			rayorigin(&sr, r, SPECULAR, np->tspec) == 0) {
+		dimlist[ndims++] = (int)np->mp;
+		d = urand(ilhash(dimlist,ndims)+1823+samplendx);
+		multisamp(rv, 2, d);
+		d = 2.0*PI * rv[0];
+		cosp = cos(d);
+		sinp = sin(d);
+		rv[1] = 1.0 - specjitter*rv[1];
+		if (rv[1] <= FTINY)
+			d = 1.0;
+		else
+			d = sqrt(-log(rv[1]) /
+				(cosp*cosp*4./(np->u_alpha*np->u_alpha) +
+				 sinp*sinp*4./(np->v_alpha*np->v_alpha)));
+		for (i = 0; i < 3; i++)
+			sr.rdir[i] = np->prdir[i] +
+					d*(cosp*np->u[i] + sinp*np->v[i]);
+		if (DOT(sr.rdir, r->ron) < -FTINY)
+			normalize(sr.rdir);		/* OK, normalize */
+		else
+			VCOPY(sr.rdir, np->prdir);	/* else no jitter */
+		rayvalue(&sr);
+		multcolor(sr.rcol, np->scolor);
+		addcolor(r->rcol, sr.rcol);
+		ndims--;
+	}
 }
