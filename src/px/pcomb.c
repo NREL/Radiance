@@ -484,7 +484,7 @@ register char	*nam;
 		lorg[fn][0] = lorg[fn][1] = lorg[fn][2] = 0.0;
 		ldir[fn][0] = ldir[fn][1] = ldir[fn][2] = 0.0;
 		if (input[fn].vw.type == 0)
-			errno = ERANGE;
+			errno = EDOM;
 		else {
 			pix2loc(loc, &input[fn].rs, xscan, ymax-1-yscan);
 			if (viewray(lorg[fn], ldir[fn],
