@@ -30,8 +30,8 @@ char  *emsg;
 		return;
 	ep = erract + etype;
 	if (ep->pf != NULL) {
-		(*ep->pf)(ep->pre);
-		(*ep->pf)(emsg);
+		if (ep->pre[0]) (*ep->pf)(ep->pre);
+		if (emsg != NULL && emsg[0]) (*ep->pf)(emsg);
 		if (etype == SYSTEM && errno > 0) {
 			(*ep->pf)(": ");
 			if (errno <= sys_nerr)
