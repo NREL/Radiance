@@ -217,6 +217,8 @@ getfile:
 				goto toomany;
 			input[nfile].name = "<Label>";
 			input[nfile].hasmin = input[nfile].hasmax = 0;
+			input[nfile].xres = input[nfile-1].xres;
+			input[nfile].yres = labelht;
 			if ((input[nfile].fp = lblopen(thislabel,
 					&input[nfile].xres,
 					&input[nfile].yres)) == NULL)
@@ -337,7 +339,7 @@ int  *xp, *yp;
 	char  com[128];
 	FILE  *fp;
 
-	sprintf(com, "psign -s -.2 -h %d '%.30s'", labelht, s);
+	sprintf(com, "psign -s -.15 -a 2 -x %d -y %d '%.90s'", *xp, *yp, s);
 	if ((fp = popen(com, "r")) == NULL)
 		return(NULL);
 	if (checkheader(fp, COLRFMT, NULL) < 0)
