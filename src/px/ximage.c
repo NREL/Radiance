@@ -170,7 +170,7 @@ userr:
 headline(s)		/* get relevant info from header */
 char  *s;
 {
-	static char  *altname[] = {"rview","rpict","VIEW=",NULL};
+	static char  *altname[] = {"rview","rpict",VIEWSTR,NULL};
 	register char  **an;
 
 	if (!strncmp(s, "EXPOSURE=", 9))
