@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
 
@@ -21,9 +21,10 @@
 #define  REFRACTED	010		/* refracted (bent) ray */
 #define  TRANS		020		/* transmitted/transferred ray */
 #define  AMBIENT	040		/* ray scattered for interreflection */
+#define  SPECULAR	0100		/* ray scattered for specular */
 
 				/* reflected ray types */
-#define  RAYREFL	(SHADOW|REFLECTED|AMBIENT)
+#define  RAYREFL	(SHADOW|REFLECTED|AMBIENT|SPECULAR)
 
 typedef struct ray {
 	long  rno;		/* unique ray number */
@@ -58,6 +59,6 @@ extern int  dimlist[];		/* dimension list for distribution */
 extern int  ndims;		/* number of dimensions so far */
 extern int  samplendx;		/* index for this sample */
 
-#define  MAXDIM		16	/* maximum number of dimensions */
+#define  MAXDIM		32	/* maximum number of dimensions */
 
 #define  rayvalue(r)	(*(r)->revf)(r)
