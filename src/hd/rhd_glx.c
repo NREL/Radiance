@@ -308,13 +308,13 @@ register VIEW	*nv;
 			dev_input();	/* get resize event */
 		}
 		copystruct(&odev.v, nv);	/* setview() already called */
-#ifdef STEREO
-		copystruct(&vwright, nv);
-		d = eyesepdist / sqrt(nv->hn2);
-		VSUM(vwright.vp, nv->vp, nv->hvec, d);
-		/* setview(&vwright);	-- Unnecessary */
-#endif
 	}
+#ifdef STEREO
+	copystruct(&vwright, nv);
+	d = eyesepdist / sqrt(nv->hn2);
+	VSUM(vwright.vp, nv->vp, nv->hvec, d);
+	/* setview(&vwright);	-- Unnecessary */
+#endif
 	wipeclean();
 	return(1);
 }
