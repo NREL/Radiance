@@ -108,7 +108,9 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-#define  check(olen,narg)	if (argv[i][olen] || narg >= argc-i) goto badopt
+#define  check(ol,al)		if (argv[i][ol] || \
+				badarg(argc-i-1,argv+i+1,al)) \
+				goto badopt
 #define  bool(olen,var)		switch (argv[i][olen]) { \
 				case '\0': var = !var; break; \
 				case 'y': case 'Y': case 't': case 'T': \
@@ -167,7 +169,7 @@ char  *argv[];
 		case 'v':				/* view file */
 			if (argv[i][2] != 'f')
 				goto badopt;
-			check(3,1);
+			check(3,"s");
 			rval = viewfile(argv[++i], &ourview, 0, 0);
 			if (rval < 0) {
 				sprintf(errmsg,
@@ -186,30 +188,30 @@ char  *argv[];
 		case 'd':				/* direct */
 			switch (argv[i][2]) {
 			case 't':				/* threshold */
-				check(3,1);
+				check(3,"f");
 				shadthresh = atof(argv[++i]);
 				break;
 			case 'c':				/* certainty */
-				check(3,1);
+				check(3,"f");
 				shadcert = atof(argv[++i]);
 				break;
 			case 'j':				/* jitter */
-				check(3,1);
+				check(3,"f");
 				dstrsrc = atof(argv[++i]);
 				break;
 			case 'r':				/* relays */
-				check(3,1);
+				check(3,"i");
 				directrelay = atoi(argv[++i]);
 				break;
 			case 'p':				/* pretest */
-				check(3,1);
+				check(3,"i");
 				vspretest = atoi(argv[++i]);
 				break;
 			case 'i':				/* invis. */
 				bool(3,directinvis);
 				break;
 			case 's':				/* size */
-				check(3,1);
+				check(3,"f");
 				srcsizerat = atof(argv[++i]);
 				break;
 			default:
@@ -220,16 +222,16 @@ char  *argv[];
 		case 's':				/* sample */
 			switch (argv[i][2]) {
 			case 'p':				/* pixel */
-				check(3,1);
+				check(3,"i");
 				psample = atoi(argv[++i]);
 				break;
 			case 't':				/* threshold */
-				check(3,1);
+				check(3,"f");
 				maxdiff = atof(argv[++i]);
 				break;
 #if  RPICT
 			case 'j':				/* jitter */
-				check(3,1);
+				check(3,"f");
 				dstrpix = atof(argv[++i]);
 				break;
 #endif
@@ -240,17 +242,17 @@ char  *argv[];
 #endif
 #if  RPICT|RTRACE
 		case 'x':				/* x resolution */
-			check(2,1);
+			check(2,"i");
 			hresolu = atoi(argv[++i]);
 			break;
 		case 'y':				/* y resolution */
-			check(2,1);
+			check(2,"i");
 			vresolu = atoi(argv[++i]);
 			break;
 #endif
 #if  RPICT	
 		case 'p':				/* pixel aspect */
-			check(2,1);
+			check(2,"f");
 			pixaspect = atof(argv[++i]);
 			break;
 #endif
@@ -260,17 +262,17 @@ char  *argv[];
 			wrnvec = rval ? stderr_v : NULL;
 			break;
 		case 'e':				/* error file */
-			check(2,1);
+			check(2,"s");
 			errfile = argv[++i];
 			break;
 		case 'l':				/* limit */
 			switch (argv[i][2]) {
 			case 'r':				/* recursion */
-				check(3,1);
+				check(3,"i");
 				maxdepth = atoi(argv[++i]);
 				break;
 			case 'w':				/* weight */
-				check(3,1);
+				check(3,"f");
 				minweight = atof(argv[++i]);
 				break;
 			default:
@@ -282,11 +284,11 @@ char  *argv[];
 			break;
 #if  RPICT
 		case 'z':				/* z file */
-			check(2,1);
+			check(2,"s");
 			zfile = argv[++i];
 			break;
 		case 'r':				/* recover file */
-			check(2,1);
+			check(2,"s");
 			recover = argv[++i];
 			rval = viewfile(recover, &ourview, &hresolu, &vresolu);
 			if (rval <= 0) {
@@ -299,41 +301,41 @@ char  *argv[];
 			}
 			break;
 		case 't':				/* timer */
-			check(2,1);
+			check(2,"i");
 			ralrm = atoi(argv[++i]);
 			break;
 #endif
 		case 'a':				/* ambient */
 			switch (argv[i][2]) {
 			case 'v':				/* value */
-				check(3,3);
+				check(3,"fff");
 				setcolor(ambval, atof(argv[i+1]),
 						atof(argv[i+2]),
 						atof(argv[i+3]));
 				i += 3;
 				break;
 			case 'a':				/* accuracy */
-				check(3,1);
+				check(3,"f");
 				ambacc = atof(argv[++i]);
 				break;
 			case 'r':				/* resolution */
-				check(3,1);
+				check(3,"i");
 				ambres = atoi(argv[++i]);
 				break;
 			case 'd':				/* divisions */
-				check(3,1);
+				check(3,"i");
 				ambdiv = atoi(argv[++i]);
 				break;
 			case 's':				/* super-samp */
-				check(3,1);
+				check(3,"i");
 				ambssamp = atoi(argv[++i]);
 				break;
 			case 'b':				/* bounces */
-				check(3,1);
+				check(3,"i");
 				ambounce = atoi(argv[++i]);
 				break;
 			case 'i':				/* include */
-				check(3,1);
+				check(3,"s");
 				if (ambincl != 1) {
 					ambincl = 1;
 					amblp = amblist;
@@ -341,7 +343,7 @@ char  *argv[];
 				*amblp++ = argv[++i];
 				break;
 			case 'e':				/* exclude */
-				check(3,1);
+				check(3,"s");
 				if (ambincl != 0) {
 					ambincl = 0;
 					amblp = amblist;
@@ -349,7 +351,7 @@ char  *argv[];
 				*amblp++ = argv[++i];
 				break;
 			case 'f':				/* file */
-				check(3,1);
+				check(3,"s");
 				ambfile= argv[++i];
 				break;
 			default:
@@ -377,7 +379,7 @@ char  *argv[];
 			case 'a':				/* ascii */
 			case 'f':				/* float */
 			case 'd':				/* double */
-				check(4,0);
+				check(4,"");
 				outform = argv[i][3];
 				break;
 			default:
@@ -396,11 +398,10 @@ char  *argv[];
 #endif
 #if  RVIEW
 		case 'b':				/* black and white */
-			check(2,0);
-			greyscale = !greyscale;
+			bool(2,greyscale);
 			break;
 		case 'o':				/* output device */
-			check(2,1);
+			check(2,"s");
 			devname = argv[++i];
 			break;
 #endif
@@ -582,6 +583,10 @@ printdefaults()			/* print default values to stdout */
 #endif
 	printf(do_irrad ? "-i+\t\t\t\t# irradiance calculation on\n" :
 			"-i-\t\t\t\t# irradiance calculation off\n");
+#if  RVIEW
+	printf(greyscale ? "-b+\t\t\t\t# greyscale on\n" :
+			"-b-\t\t\t\t# greyscale off\n");
+#endif
 #if  RPICT|RVIEW
 	printf("-vt%c\t\t\t\t# view type %s\n", ourview.type,
 			ourview.type==VT_PER ? "perspective" :
