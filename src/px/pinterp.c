@@ -263,47 +263,45 @@ fillpicture()				/* fill in empty spaces */
 		return;
 	}
 	for (x = 0; x < ourview.hresolu; x++)
-		yback[x] = -1;
+		yback[x] = -2;
 							/* fill image */
-	for (y = 0; y < ourview.vresolu; y++)
+	for (y = 0; y < ourview.vresolu; y++) {
+		xback = -2;
 		for (x = 0; x < ourview.hresolu; x++)
-			if (zscan(y)[x] <= 0.0) {	/* found hole */
-				xback = x-1;
-				do {			/* find boundary */
-					if (yback[x] < 0) {
-						for (i = y+1;
-							i < ourview.vresolu;
-								i++)
-							if (zscan(i)[x] > 0.0)
-								break;
-						if (i < ourview.vresolu
+			if (zscan(y)[x] <= 0.0) {	/* empty pixel */
+				if (yback[x] == -2) {
+					for (i = y+1; i < ourview.vresolu; i++)
+						if (zscan(i)[x] > 0.0)
+							break;
+					if (i < ourview.vresolu
 				&& (y <= 0 || zscan(y-1)[x] < zscan(i)[x]))
-							yback[x] = i;
-						else
-							yback[x] = y-1;
-					}
-				} while (++x < ourview.hresolu
-						&& zscan(y)[x] <= 0.0);
-				i = xback;		/* pick background */
-				if (x < ourview.hresolu
-			&& (i < 0 || zscan(y)[i] < zscan(y)[x]))
-					xback = x;
-							/* fill hole */
-				if (xback < 0) {
-					while (++i < x)
-						if (yback[i] >= 0)
-				copycolr(pscan(y)[i],pscan(yback[i])[i]);
-				} else {
-					while (++i < x)
-						if (yback[i] < 0
-				|| ABS(i-xback) <= 1 || (ABS(y-yback[i]) > 1
-				&& zscan(yback[i])[i] < zscan(y)[xback]))
-					copycolr(pscan(y)[i],pscan(y)[xback]);
-						else
-					copycolr(pscan(y)[i],pscan(yback[i])[i]);
+						yback[x] = i;
+					else
+						yback[x] = y-1;
 				}
-		} else
-			yback[x] = -1;			/* clear boundary */
+				if (xback == -2) {
+					for (i = x+1; x < ourview.hresolu; i++)
+						if (zscan(y)[i] > 0.0)
+							break;
+					if (i < ourview.hresolu
+				&& (x <= 0 || zscan(y)[x-1] < zscan(y)[i]))
+						xback = i;
+					else
+						xback = x-1;
+				}
+				if (xback < 0 && yback[x] < 0)
+					continue;
+				if (yback[x] < 0 || ABS(x-xback) <= 1
+					|| ( ABS(y-yback[x]) > 1
+				&& zscan(yback[x])[x] < zscan(y)[xback] ))
+					copycolr(pscan(y)[x],pscan(y)[xback]);
+				else
+					copycolr(pscan(y)[x],pscan(yback[x])[x]);
+			} else {				/* full pixel */
+				yback[x] = -2;
+				xback = -2;
+			}
+	}
 	free((char *)yback);
 }
 
