@@ -42,7 +42,6 @@ static AMBTREE  atrunk;		/* our ambient trunk node */
 
 static FILE  *ambfp = NULL;	/* ambient file pointer */
 static char  *afname;		/* ambient file name */
-static long  ambheadlen;	/* length of ambient file header */
 
 #define  AMBFLUSH	(BUFSIZ/AMBVALSIZ)
 
@@ -74,6 +73,7 @@ int  ar;
 setambient(afile)			/* initialize calculation */
 char  *afile;
 {
+	long  headlen;
 	AMBVAL  amb;
 						/* init ambient limits */
 	setambres(ambres);
@@ -81,11 +81,12 @@ char  *afile;
 	if ((afname = afile) != NULL)
 		if ((ambfp = fopen(afile, "r+")) != NULL) {
 			initambfile(0);
+			headlen = ftell(ambfp);
 			while (readambval(&amb, ambfp))
 				avinsert(&amb, &atrunk, thescene.cuorg,
 						thescene.cusize);
 							/* align */
-			fseek(ambfp, -((ftell(ambfp)-ambheadlen)%AMBVALSIZ), 1);
+			fseek(ambfp, -((ftell(ambfp)-headlen)%AMBVALSIZ), 1);
 		} else if ((ambfp = fopen(afile, "w")) != NULL)
 			initambfile(1);
 		else {
@@ -93,34 +94,6 @@ char  *afile;
 					afile);
 			error(SYSTEM, errmsg);
 		}
-}
-
-
-initambfile(creat)		/* initialize ambient file */
-int  creat;
-{
-	extern char  *progname, *octname, VersionID[];
-
-	setbuf(ambfp, bmalloc(BUFSIZ));
-	if (creat) {			/* new file */
-		fprintf(ambfp, "%s -av %g %g %g -ab %d -aa %g ",
-				progname, colval(ambval,RED),
-				colval(ambval,GRN), colval(ambval,BLU),
-				ambounce, ambacc);
-		fprintf(ambfp, "-ad %d -as %d -ar %d %s\n",
-				ambdiv, ambssamp, ambres,
-				octname==NULL ? "" : octname);
-		fprintf(ambfp, "SOFTWARE= %s\n", VersionID);
-		fputformat(AMBFMT, ambfp);
-		putc('\n', ambfp);
-		putambmagic(ambfp);
-		fflush(ambfp);
-	} else if (checkheader(ambfp, AMBFMT, NULL) < 0
-			|| !hasambmagic(ambfp)) {
-		sprintf(errmsg, "\"%s\" is not an ambient file", afname);
-		error(USER, errmsg);
-	}
-	ambheadlen = ftell(ambfp);
 }
 
 
@@ -332,6 +305,34 @@ FVECT  pv, nv;
 
 
 static
+initambfile(creat)		/* initialize ambient file */
+int  creat;
+{
+	extern char  *progname, *octname, VersionID[];
+
+	setbuf(ambfp, bmalloc(BUFSIZ));
+	if (creat) {			/* new file */
+		fprintf(ambfp, "%s -av %g %g %g -ab %d -aa %g ",
+				progname, colval(ambval,RED),
+				colval(ambval,GRN), colval(ambval,BLU),
+				ambounce, ambacc);
+		fprintf(ambfp, "-ad %d -as %d -ar %d %s\n",
+				ambdiv, ambssamp, ambres,
+				octname==NULL ? "" : octname);
+		fprintf(ambfp, "SOFTWARE= %s\n", VersionID);
+		fputformat(AMBFMT, ambfp);
+		putc('\n', ambfp);
+		putambmagic(ambfp);
+		fflush(ambfp);
+	} else if (checkheader(ambfp, AMBFMT, NULL) < 0
+			|| !hasambmagic(ambfp)) {
+		sprintf(errmsg, "\"%s\" is not an ambient file", afname);
+		error(USER, errmsg);
+	}
+}
+
+
+static
 avsave(av)				/* insert and save an ambient value */
 AMBVAL  *av;
 {
@@ -409,10 +410,10 @@ ambsync()			/* synchronize ambient file */
 	if (fcntl(fileno(ambfp), F_SETLKW, &fls) < 0)
 		error(SYSTEM, "cannot lock ambient file");
 				/* see if file has grown */
-	lastpos = lseek(fileno(ambfp), 0L, 2);	/* may move pointer */
-	flen = lseek(fileno(ambfp), 0L, 1);	/* new(?) file length */
+	lastpos = lseek(fileno(ambfp), 0L, 1);	/* get previous position */
+	flen = lseek(fileno(ambfp), 0L, 2);	/* new(?) file length */
 	if (n = (flen - lastpos)%AMBVALSIZ)	/* assure alignment */
-		lseek(fileno(ambfp), flen -= n, 0);
+		lseek(fileno(ambfp), (long)-n, 1);
 	if (n = (flen - lastpos)/AMBVALSIZ) {	/* file has grown */
 		if (ambinp == NULL && (ambinp = fopen(afname, "r")) == NULL)
 			error(SYSTEM, "cannot reopen ambient file");
