@@ -61,6 +61,8 @@ extern CUBE  thescene;			/* the main scene */
 #define  IO_FILES	010		/* object file names */
 #define  IO_BOUNDS	020		/* octree boundary */
 #define  IO_ALL		(~0)		/* everything */
+				/* octree format identifier */
+#define  OCTFMT		"Radiance_octree"
 				/* magic number for octree files */
 #define  OCTMAGIC	(283+sizeof(OBJECT))
 				/* octree node types */

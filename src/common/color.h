@@ -68,6 +68,9 @@ typedef float  COLOR[3];	/* red, green, blue */
 #define  YDECR			2
 #define  YMAJOR			4
 
+				/* picture format identifier */
+#define  COLRFMT		"32-bit_rle_rgbe"
+
 				/* macros for exposures */
 #define  EXPOSSTR		"EXPOSURE="
 #define  EXPOSSTRL		9
