@@ -12,8 +12,6 @@ INSTDIR = /lumen/lumen/ray/bin.sun3
 
 LIBDIR = /lumen/lumen/ray/lib
 
-CALDEFS = -DFUNCTION -DVARIABLE -DRCONST -DBIGLIB
-
 PIXAR_INCLUDE=	-I/usr/pixar/include
 PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar -lm
 
@@ -127,9 +125,8 @@ panim:	panim.o client/libclient.a
 	cc $(CFLAGS) -o panim panim.o \
 ../common/librt.a client/libclient.a -lrpcsvc -lm
 
-pcomb:	pcomb.o calexpr.o calfunc.o caldefn.o
-	cc $(CFLAGS) -o pcomb pcomb.o calexpr.o calfunc.o caldefn.o \
-../common/librt.a -lm
+pcomb:	pcomb.o
+	cc $(CFLAGS) -o pcomb pcomb.o ../common/librt.a -lm
 
 pinterp:	pinterp.o
 	cc $(CFLAGS) -o pinterp pinterp.o ../common/librt.a -lm
@@ -137,15 +134,6 @@ pinterp:	pinterp.o
 ra_pixar:	ra_pixar.o ra_pixar.c
 	cc $(CFLAGS) $(PIXAR_INCLUDE) -o $@ ra_pixar.o ../common/librt.a \
 $(PIXAR_LIB)
-
-calexpr.o:	calexpr.c
-	cc $(CFLAGS) $(CALDEFS) -c calexpr.c
-
-calfunc.o:	calfunc.c
-	cc $(CFLAGS) $(CALDEFS) -c calfunc.c
-
-caldefn.o:	caldefn.c
-	cc $(CFLAGS) $(CALDEFS) -c caldefn.c
 
 ra_pixar.o:	ra_pixar.c
 	cc $(CFLAGS) $(PIXAR_INCLUDE) -c ra_pixar.c
@@ -157,7 +145,7 @@ x11findwind.o ../common/librt.a -lm -lX11
 xshowtrace.o:	../common/view.h ../common/standard.h \
 ../common/mat4.h ../common/fvect.h
 
-pcomb.o calexpr.o calfunc.o caldefn.o:	../common/calcomp.h
+pcomb.o:	../common/calcomp.h
 
 panim.o:	client/scan.h ../common/color.h ../common/random.h
 
