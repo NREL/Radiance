@@ -8,7 +8,7 @@ set rif_glob *.rif
 proc preen {} {			# clean up radvar
 	global radvar rifname
 	foreach n {objects scene materials illum mkillum render oconv pfilt
-			AMBFILE OPTFILE EXPOSURE ZONE REPORT} {
+			RAWFILE ZFILE AMBFILE OPTFILE EXPOSURE ZONE REPORT} {
 		if {! [info exists radvar($n)]} {
 			set radvar($n) {}
 		}
