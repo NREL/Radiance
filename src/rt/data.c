@@ -53,7 +53,7 @@ char  *dname;
 	 *
 	 */
 
-	if ((dfname = getpath(dname, libpath)) == NULL) {
+	if ((dfname = getpath(dname, libpath, R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find data file \"%s\"", dname);
 		error(USER, errmsg);
 	}
@@ -119,7 +119,7 @@ char  *pname;
 		if (!strcmp(pname, pp->name))
 			return(pp);		/* found! */
 
-	if ((pfname = getpath(pname, libpath)) == NULL) {
+	if ((pfname = getpath(pname, libpath, R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find picture file \"%s\"", pname);
 		error(USER, errmsg);
 	}
