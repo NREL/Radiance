@@ -56,6 +56,8 @@ sphere.o writeoct.o:	../common/object.h
 
 bbox.o initotypes.o oconv.o obj2mesh.o sphere.o:	../common/otypes.h
 
+bbox.o getbbox.o initotypes.o oconv.o readobj2.o writeoct.o: oconv.h
+
 oconv.o:	../common/paths.h
 
 bbox.o o_cone.o:	../common/cone.h
