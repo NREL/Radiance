@@ -102,7 +102,7 @@ $(DEVDIR)/sun.com:	suncom.o editline.o
 	cc $(CFLAGS) -o $(DEVDIR)/sun.com suncom.o editline.o
 
 $(DEVDIR)/X11dev:	x11.o x11twind.o colortab.o
-	cc $(CFLAGS) -o $(DEVDIR)/x11dev devmain.o sundev.o colortab.o \
+	cc $(CFLAGS) -o $(DEVDIR)/x11dev devmain.o x11.o colortab.o \
 -lX11 $(LIBS)
 
 #
@@ -133,7 +133,7 @@ rvmain.o:	rmain.c
 # end of dispersion compiles.
 
 sundev.o:	sundev.c
-	cc $(CFLAGS) -c sundev.c
+	cc $(CFLAGS) -Dsun_init=dinit -c sundev.c
 
 devcomm.o:	devcomm.c
 	cc $(CFLAGS) -c devcomm.c
