@@ -77,6 +77,8 @@ int	ncolors;
 #ifdef CLOSEST
 	closest(ncolors);	/* ensure colors picked are closest */
 #endif
+				/* reset dithering function */
+	dith_colrs((BYTE *)NULL, (COLR *)NULL, 0);
 				/* return new color table size */
 	return(ncolors);
 }
