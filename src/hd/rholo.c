@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -176,7 +176,7 @@ int	fd, mod;
 	if (fstat(fd, &stbuf) < 0)
 		error(SYSTEM, "cannot stat open holodeck file");
 	mod &= stbuf.st_mode;		/* always more restrictive */
-	if (mod == stbuf.st_mode)
+	if (mod == (stbuf.st_mode & 0777))
 		return(-1);		/* already set */
 					/* else change it */
 	if (fchmod(fd, mod) < 0) {
