@@ -16,9 +16,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 
 fgetid(idp, dls, fp)		/* read an id up to char in dls from fp */
-register ID	*idp;
+ID	*idp;
 char	*dls;
-FILE	*fp;
+register FILE	*fp;
 {
 	char	dset[256/8];
 	char	buf[MAXSTR];
