@@ -66,7 +66,7 @@ char  *argv[];
 	nseg = atoi(argv[5]);
 	if (nseg <= 0)
 		goto userror;
-	modname = smooth ? "phong" : argv[1];
+	modname = smooth ? "Phong" : argv[1];
 
 	printhead(argc, argv);
 
@@ -98,7 +98,7 @@ char  *argv[];
 		if (!orient)
 			goto endfor;
 		if (smooth) {
-			printf("\n%s texfunc phong\n", argv[1]);
+			printf("\n%s texfunc Phong\n", argv[1]);
 			printf("4 rev_dx rev_dy rev_dz rev.cal\n");
 			printf("0\n4\n");
 			if (orient&(UP|DOWN)) {
