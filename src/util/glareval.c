@@ -292,7 +292,7 @@ open_pict(fn)			/* open picture file */
 char	*fn;
 {
 	if ((pictfp = fopen(fn, "r")) == NULL) {
-		fprintf("%s: cannot open\n", fn);
+		fprintf(stderr, "%s: cannot open\n", fn);
 		exit(1);
 	}
 	exposure = 1.0;
