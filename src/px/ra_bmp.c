@@ -41,7 +41,7 @@ main(int argc, char *argv[])
 	progname = argv[0];
 
 	for (i = 1; i < argc; i++)
-		if (argv[i][0] == '-')
+		if (argv[i][0] == '-' && argv[i][1])
 			switch (argv[i][1]) {
 			case 'b':
 				rgbp = NULL;
@@ -71,8 +71,6 @@ main(int argc, char *argv[])
 				break;
 			case 'r':
 				reverse = !reverse;
-				break;
-			case '\0':
 				break;
 			default:
 				goto userr;
