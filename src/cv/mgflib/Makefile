@@ -20,7 +20,7 @@ libmgf.a:	$(OBJS)
 	-ranlib libmgf.a
 
 clean:
-	set nonomatch ; rm -f *.o
+	set nonomatch ; rm -f *.o libmgf.a mgfilt
 
 parser.o context.o xf.o object.o fvect.o:	parser.h
 
