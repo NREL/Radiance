@@ -301,9 +301,10 @@ cvmeshbounds()			/* set mesh boundaries */
 		ourmesh->uvlim[1][0] = ourmesh->uvlim[1][1] = 0.;
 	} else {
 		for (i = 0; i < 2; i++) {
-			double	marg;
-			marg = 1e-6*(ourmesh->uvlim[1][i] -
-					ourmesh->uvlim[0][i]);
+			double	marg;		/* expand past endpoints */
+			marg = (2./(1L<<(8*sizeof(uint16)))) *
+					(ourmesh->uvlim[1][i] -
+					 ourmesh->uvlim[0][i]);
 			ourmesh->uvlim[0][i] -= marg;
 			ourmesh->uvlim[1][i] += marg;
 		}

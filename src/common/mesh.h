@@ -50,7 +50,7 @@ extern "C" {
 typedef struct {
 	uint32		(*xyz)[3];	/* up to 256 patch vertices */
 	int32		*norm;		/* vertex normals */
-	uint32		(*uv)[2];	/* vertex local coordinates */
+	uint16		(*uv)[2];	/* vertex local coordinates */
 	struct PTri {
 		BYTE		v1, v2, v3;	/* local vertices */
 	}		*tri;		/* local triangles */
@@ -111,7 +111,7 @@ typedef struct {
 				/* mesh format identifier */
 #define MESHFMT		"Radiance_tmesh"
 				/* magic number for mesh files */
-#define MESHMAGIC	( 1 *MAXOBJSIZ+311)	/* increment first value */
+#define MESHMAGIC	( 2 *MAXOBJSIZ+311)	/* increment first value */
 
 
 extern MESH	*getmesh(char *mname, int flags);
