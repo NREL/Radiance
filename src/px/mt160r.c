@@ -73,9 +73,6 @@ char  *fname;
 	}
 
 	fputs("\033[6~\033[7z", stdout);
-#ifdef _IOLBF
-	stdout->_flag &= ~_IOLBF;
-#endif
 	
 	for (i = yres-1; i >= 0; i--) {
 		if (freadcolrs(scanline, xres, input) < 0) {
