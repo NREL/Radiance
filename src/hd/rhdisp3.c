@@ -5,7 +5,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
- * Holodeck beam support
+ * Holodeck beam support for display process
  */
 
 #include "rholo.h"
@@ -90,24 +90,20 @@ char	*dp;
 			hdworld(lo, hp, gp);
 			gp[((gc.w>>1)+1)%3] = 1;
 			hdworld(ld, hp, gp);
-			ld[0] -= lo[0]; ld[1] -= lo[1]; ld[2] -= lo[1];
+			ld[0] -= lo[0]; ld[1] -= lo[1]; ld[2] -= lo[2];
 						/* find scanline limits */
 			lbeg = 0; lend = hp->grid[((gc.w>>1)+1)%3];
 			for (i = 0; i < 4; i++) {
 				t = DOT(pn[i], lo) - po[i];
 				d = -DOT(pn[i], ld);
-				if (d <= FTINY && d >= -FTINY) {
-					if (t < 0)
-						goto nextscan;
-					continue;
-				}
-				if (t > 0) {
+				if (d > FTINY) {		/* <- plane */
 					if ((t /= d) < lend)
 						lend = t;
-				} else {
+				} else if (d < -FTINY) {	/* plane -> */
 					if ((t /= d) > lbeg)
 						lbeg = t;
-				}
+				} else if (t < 0)		/* outside */
+					goto nextscan;
 			}
 			i = lend + .5;		/* visit cells on this scan */
 			for (gc.i[0] = lbeg + .5; gc.i[0] < i; gc.i[0]++)
@@ -173,8 +169,9 @@ VIEW	*vp;
 		return(NULL);
 	}
 #if 0
-	/* We're just going to free this memory in a moment, and list is */
-	/* sorted automatically by visit_cells(), so we don't need this. */
+	/* We're just going to free this memory in a moment, and list is
+	 * sorted automatically by visit_cells(), so we don't need this.
+	 */
 	if (*cl < n) {			/* optimize memory use */
 		cl = (int *)realloc((char *)cl,
 				sizeof(int) + *cl*sizeof(GCOORD));
