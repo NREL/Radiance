@@ -290,6 +290,8 @@ srcblocker(register RAY *r)
 	if (r->robj == OVOID || objptr(r->robj) != r->ro ||
 			isvolume(r->ro->otype))
 		return(0);		/* don't record complex blockers */
+	if (r->rsrc < 0 || source[r->rsrc].so == r->ro)
+		return(0);		/* just a mistake, that's all */
 	m = findmaterial(r->ro);
 	if (m == NULL)
 		return(0);		/* no material?! */
