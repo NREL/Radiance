@@ -32,7 +32,7 @@ install:	oconv getbbox
 	cp oconv getbbox $(INSTDIR)
 
 clean:
-	set nonomatch; rm -f oconv *.o core
+	set nonomatch; rm -f oconv getbbox *.o core
 
 oconv.o:	oconv.c
 	cc $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c oconv.c
