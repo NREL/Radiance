@@ -55,6 +55,6 @@ extern char  *memcpy(), *memset();
 #endif
 
 extern char  *sskip();
-extern char  *getpath();
+extern char  *getpath(), *getenv();
 extern char  *malloc(), *calloc(), *realloc();
 extern char  *bmalloc(), *savestr(), *savqstr();
