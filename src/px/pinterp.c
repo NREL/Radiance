@@ -20,6 +20,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "resolu.h"
 
+#define LOG2		0.69314718055994530942
+
 #define pscan(y)	(ourpict+(y)*hresolu)
 #define sscan(y)	(ourspict+(y)*hresolu)
 #define wscan(y)	(ourweigh+(y)*hresolu)
@@ -66,7 +68,9 @@ COLR	backcolr = BLKCOLR;		/* background color */
 COLOR	backcolor = BLKCOLOR;		/* background color (float) */
 double	backz = 0.0;			/* background z value */
 int	normdist = 1;			/* normalized distance? */
-double	ourexp = -1;			/* output picture exposure */
+double	ourexp = -1;			/* original picture exposure */
+int	expadj = 0;			/* exposure adjustment (f-stops) */
+double	rexpadj = 1;			/* real exposure adjustment */
 
 VIEW	theirview = STDVIEW;		/* input view */
 int	gotview;			/* got input view? */
@@ -95,6 +99,7 @@ char	*argv[];
 	int	gotvfile = 0;
 	int	doavg = -1;
 	char	*zfile = NULL;
+	char	*expcomp = NULL;
 	char	*err;
 	int	i, rval;
 
@@ -107,6 +112,10 @@ char	*argv[];
 			continue;
 		}
 		switch (argv[i][1]) {
+		case 'e':				/* exposure */
+			check(2,"f");
+			expcomp = argv[++i];
+			break;
 		case 't':				/* threshold */
 			check(2,"f");
 			zeps = atof(argv[++i]);
@@ -214,6 +223,21 @@ char	*argv[];
 		fillo &= ~F_BACK;
 	if (doavg < 0)
 		doavg = (argc-i) > 2;
+	if (expcomp != NULL)
+		if (expcomp[0] == '+' | expcomp[0] == '-') {
+			expadj = atof(expcomp) + (expcomp[0]=='+' ? .5 : -.5);
+			if (doavg)
+				rexpadj = pow(2.0, atof(expcomp));
+			else
+				rexpadj = pow(2.0, (double)expadj);
+		} else {
+			if (!isflt(expcomp))
+				goto userr;
+			rexpadj = atof(expcomp);
+			expadj = log(rexpadj)/LOG2 + (rexpadj>1 ? .5 : -.5);
+			if (!doavg)
+				rexpadj = pow(2.0, (double)expadj);
+		}
 						/* set view */
 	if ((err = setview(&ourview)) != NULL) {
 		fprintf(stderr, "%s: %s\n", progname, err);
@@ -256,9 +280,13 @@ char	*argv[];
 		fprintview(&ourview, stdout);
 		putc('\n', stdout);
 	}
-	if (pixaspect < .99 || pixaspect > 1.01)
+	if (pixaspect < .99 | pixaspect > 1.01)
 		fputaspect(pixaspect, stdout);
-	if (ourexp > 0 && (ourexp < .995 || ourexp > 1.005))
+	if (ourexp > 0)
+		ourexp *= rexpadj;
+	else
+		ourexp = rexpadj;
+	if (ourexp < .995 | ourexp > 1.005)
 		fputexpos(ourexp, stdout);
 	fputformat(COLRFMT, stdout);
 	putc('\n', stdout);
@@ -271,7 +299,7 @@ char	*argv[];
 	exit(0);
 userr:
 	fprintf(stderr,
-	"Usage: %s [view opts][-t eps][-z zout][-fT][-n] pfile zspec ..\n",
+	"Usage: %s [view opts][-t eps][-z zout][-e spec][-a|-q][-fT][-n] pfile zspec ..\n",
 			progname);
 	exit(1);
 #undef check
@@ -842,7 +870,7 @@ clipaft()			/* perform aft clipping as indicated */
 }
 
 
-writepicture()				/* write out picture */
+writepicture()				/* write out picture (alters buffer) */
 {
 	int	y;
 	register int	x;
@@ -852,21 +880,25 @@ writepicture()				/* write out picture */
 	for (y = vresolu-1; y >= 0; y--)
 		if (averaging) {
 			for (x = 0; x < hresolu; x++) {	/* average pixels */
-				d = 1./wscan(y)[x];
+				d = rexpadj/wscan(y)[x];
 				scalecolor(sscan(y)[x], d);
-				wscan(y)[x] = 1;
 			}
 			if (fwritescan(sscan(y), hresolu, stdout) < 0)
 				syserror(progname);
-		} else if (fwritecolrs(pscan(y), hresolu, stdout) < 0)
-			syserror(progname);
+		} else {
+			if (expadj)
+				shiftcolrs(pscan(y), hresolu, expadj);
+			if (fwritecolrs(pscan(y), hresolu, stdout) < 0)
+				syserror(progname);
+		}
 }
 
 
 writedistance(fname)			/* write out z file */
 char	*fname;
 {
-	int	donorm = normdist && ourview.type == VT_PER;
+	int	donorm = normdist && ourview.type == VT_PER &&
+			!averaging && hasmatrix;
 	int	fd;
 	int	y;
 	float	*zout;
