@@ -19,8 +19,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "random.h"
 
-#define  MINSAMPLES	5		/* minimum number of pretest samples */
-#define  STESTMAX	30		/* maximum seeks per sample */
+#define  MINSAMPLES	16		/* minimum number of pretest samples */
+#define  STESTMAX	32		/* maximum seeks per sample */
 
 
 double  getdisk();
@@ -287,8 +287,7 @@ register int  sn;	/* target source number */
 	getplaneq(onorm, o);
 				/* set number of rays to sample */
 	if (source[sn].sflags & SDISTANT) {
-		n = (2./3.*PI*PI)*or2/(thescene.cusize*thescene.cusize)*
-				vspretest + .5;
+		n = 4.*or2/(thescene.cusize*thescene.cusize)*vspretest + .5;
 		infront = DOT(onorm, source[sn].sloc) > 0.;
 	} else {
 		for (i = 0; i < 3; i++)
