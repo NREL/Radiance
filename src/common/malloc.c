@@ -101,9 +101,6 @@ register unsigned  n;
 	unsigned  thisamnt;
 	register char	*p;
 
-#ifdef MSTATS
-	b_nalloced += n;
-#endif
 	if (pagesz == 0) {				/* initialize */
 		pagesz = amnt = getpagesize();
 		nrem = (int)sbrk(0);			/* page align break */
@@ -139,6 +136,9 @@ register unsigned  n;
 	p = bpos;
 	bpos += n;					/* advance */
 	nrem -= n;
+#ifdef MSTATS
+	b_nalloced += n;
+#endif
 	return(p);
 }
 
@@ -191,10 +191,6 @@ unsigned	n;
 		errno = EINVAL;
 		return(NULL);
 	}
-#ifdef MSTATS
-	m_nalloced += bsiz + sizeof(M_HEAD);
-	m_nwasted += bsiz + sizeof(M_HEAD) - n;
-#endif
 	if (free_list[bucket] == NULL) {	/* need more core */
 		mp = (M_HEAD *)bmalloc(bsiz+sizeof(M_HEAD));
 		if (mp == NULL)
@@ -203,6 +199,10 @@ unsigned	n;
 		mp = free_list[bucket];
 		free_list[bucket] = mp->next;
 	}
+#ifdef MSTATS
+	m_nalloced += bsiz + sizeof(M_HEAD);
+	m_nwasted += bsiz + sizeof(M_HEAD) - n;
+#endif
 	mp->a.magic = MAGIC;			/* tag block */
 	mp->a.bucket = bucket;
 	return((char *)(mp+1));
@@ -223,14 +223,16 @@ unsigned	n;
 		on = 0;
 	if (n <= on && (n > on>>1 || on == 1<<FIRSTBUCKET))
 		return(op);		/* same bucket */
-	p = malloc(n);
-	if (p != NULL)
+	if ((p = malloc(n)) == NULL)
+		return(NULL);
+	if (on) {
 #ifdef  BSD
 		bcopy(op, p, n>on ? on : n);
 #else
 		(void)memcpy(p, op, n>on ? on : n);
 #endif
-	free(op);
+		free(op);
+	}
 	return(p);
 }
 
@@ -242,16 +244,17 @@ char	*p;
 	register int	bucket;
 
 	if (p == NULL || p == DUMMYLOC)
-		return;
+		return(1);
 	mp = (M_HEAD *)p - 1;
 	if (mp->a.magic != MAGIC)		/* sanity check */
-		return;
+		return(0);
 	bucket = mp->a.bucket;
 	mp->next = free_list[bucket];
 	free_list[bucket] = mp;
 #ifdef MSTATS
 	m_nfreed += (1 << bucket) + sizeof(M_HEAD);
 #endif
+	return(1);
 }
 
 
