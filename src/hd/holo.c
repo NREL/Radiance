@@ -256,11 +256,18 @@ FVECT	wp;
 hdworld(wp, hp, gp)		/* compute world coordinates */
 register FVECT	wp;
 register HOLO	*hp;
-register FVECT	gp;
+FVECT	gp;
 {
-	VSUM(wp, hp->orig, hp->xv[0], gp[0]);
-	VSUM(wp, wp, hp->xv[1], gp[1]);
-	VSUM(wp, wp, hp->xv[2], gp[2]);
+	register double	d;
+
+	d = gp[0]/hp->grid[0];
+	VSUM(wp, hp->orig, hp->xv[0], d);
+
+	d = gp[1]/hp->grid[1];
+	VSUM(wp, wp, hp->xv[1], d);
+
+	d = gp[2]/hp->grid[2];
+	VSUM(wp, wp, hp->xv[2], d);
 }
 
 
