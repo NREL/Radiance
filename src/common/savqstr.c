@@ -1,34 +1,68 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1993 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
 
 /*
- *  Quick and dirty string saver.
+ *  Save unshared strings, packing them together into
+ *  large blocks to optimize paging in VM environments.
  */
 
 #define  NULL		0
 
-extern char  *strcpy(), *strcat(), *bmalloc();
+#ifdef  BIGMEM
+#ifndef  MINBLOCK
+#define  MINBLOCK	(1<<12)		/* minimum allocation block size */
+#endif
+#ifndef  MAXBLOCK
+#define  MAXBLOCK	(1<<16)		/* maximum allocation block size */
+#endif
+#else
+#ifndef  MINBLOCK
+#define  MINBLOCK	(1<<10)		/* minimum allocation block size */
+#endif
+#ifndef  MAXBLOCK
+#define  MAXBLOCK	(1<<14)		/* maximum allocation block size */
+#endif
+#endif
+
+extern char  *bmalloc();
 
 
 char *
 savqstr(s)			/* save a private string */
-char  *s;
+register char  *s;
 {
+	static char  *curp = NULL;		/* allocated memory pointer */
+	static unsigned  nrem = 0;		/* bytes remaining in block */
+	static unsigned  nextalloc = MINBLOCK;	/* next block size */
 	register char  *cp;
+	register unsigned  n;
 
-	if ((cp = bmalloc(strlen(s)+1)) == NULL) {
-		eputs("out of memory in savqstr");
-		quit(1);
+	for (cp = s; *cp++; )			/* compute strlen()+1 */
+		;
+	if ((n = cp-s) > nrem) {		/* do we need more core? */
+		bfree(curp, nrem);			/* free remnant */
+		while (n > nextalloc)
+			nextalloc <<= 1;
+		if ((curp = bmalloc(nrem=nextalloc)) == NULL) {
+			eputs("out of memory in savqstr");
+			quit(1);
+		}
+		if ((nextalloc <<= 1) > MAXBLOCK)	/* double block size */
+			nextalloc = MAXBLOCK;
 	}
-	(void)strcpy(cp, s);
-	return(cp);
+	for (cp = curp; *cp++ = *s++; )		/* inline strcpy() */
+		;
+	s = curp;				/* update allocation info. */
+	curp = cp;
+	nrem -= n;
+	return(s);				/* return new location */
 }
 
 
-freeqstr(s)			/* free a private string */
+freeqstr(s)			/* free a private string (not recommended) */
 char  *s;
 {
 	bfree(s, strlen(s)+1);
