@@ -37,17 +37,18 @@ float	*ourzbuf;			/* corresponding z-buffer */
 
 char	*progname;
 
-VIEW	theirview = STDVIEW(512);	/* input view */
-int	gotview;			/* got input view? */
-
 int	fill = F_FORE|F_BACK;		/* selected fill algorithm */
 extern int	backfill(), rcalfill();	/* fill functions */
 int	(*deffill)() = backfill;	/* selected fill function */
 COLR	backcolr = BLKCOLR;		/* background color */
 double	backz = 0.0;			/* background z value */
-
-double	theirs2ours[4][4];		/* transformation matrix */
 int	normdist = 1;			/* normalized distance? */
+double	ourexp = -1;			/* output picture exposure */
+
+VIEW	theirview = STDVIEW(512);	/* input view */
+int	gotview;			/* got input view? */
+double	theirs2ours[4][4];		/* transformation matrix */
+double	theirexp;			/* input picture exposure */
 
 int	childpid = -1;			/* id of fill process */
 FILE	*psend, *precv;			/* pipes to/from fill calculation */
@@ -213,6 +214,8 @@ char	*argv[];
 		fprintview(&ourview, stdout);
 		printf("\n");
 	}
+	if (ourexp > 0 && ourexp != 1.0)
+		fputexpos(ourexp, stdout);
 	printf("\n");
 							/* write picture */
 	writepicture();
@@ -238,6 +241,10 @@ char	*s;
 
 	printf("\t%s", s);
 
+	if (isexpos(s)) {
+		theirexp *= exposval(s);
+		return;
+	}
 	for (an = altname; *an != NULL; an++)
 		if (!strncmp(*an, s, strlen(*an))) {
 			if (sscanview(&theirview, s+strlen(*an)) == 0)
@@ -262,15 +269,20 @@ char	*pfile, *zspec;
 		perror(pfile);
 		exit(1);
 	}
-					/* get header and view */
-	printf("%s:\n", pfile);
+					/* get header with exposure and view */
+	theirexp = 1.0;
 	gotview = 0;
+	printf("%s:\n", pfile);
 	getheader(pfp, headline);
 	if (!gotview || fgetresolu(&theirview.hresolu, &theirview.vresolu, pfp)
 			!= (YMAJOR|YDECR)) {
 		fprintf(stderr, "%s: picture view error\n", pfile);
 		exit(1);
 	}
+	if (ourexp <= 0)
+		ourexp = theirexp;
+	else if (ABS(theirexp-ourexp) > .01*ourexp)
+		fprintf(stderr, "%s: different exposure (warning)\n", pfile);
 	if (err = setview(&theirview)) {
 		fprintf(stderr, "%s: %s\n", pfile, err);
 		exit(1);
@@ -714,6 +726,11 @@ clearqueue()				/* get results from queue */
 			fprintf(stderr, "%s: read error in clearqueue\n",
 					progname);
 			exit(1);
+		}
+		if (ourexp > 0 && ourexp != 1.0) {
+			inbuf[0] *= ourexp;
+			inbuf[1] *= ourexp;
+			inbuf[2] *= ourexp;
 		}
 		setcolr(pscan(queue[i][1])[queue[i][0]],
 				inbuf[0], inbuf[1], inbuf[2]);
