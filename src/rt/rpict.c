@@ -232,6 +232,7 @@ char  *pout, *zout, *prvr;
 		for ( ; seq < rn; seq++)
 			if (nextview(stdin) == EOF)
 				error(USER, "unexpected EOF on view input");
+		setview(&ourview);
 		prvr = fbuf;			/* mark for renaming */
 	}
 	if (pout != NULL & prvr != NULL) {
@@ -273,6 +274,7 @@ char  *pout, *zout, *prvr;
 						fbuf);
 					error(USER, errmsg);
 				}
+				setview(&ourview);
 				continue;		/* don't clobber */
 			}
 			if (freopen(fbuf, "w", stdout) == NULL) {
