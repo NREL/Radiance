@@ -145,8 +145,13 @@ headaspect(s, iap)			/* check string for aspect ratio */
 char  *s;
 double  *iap;
 {
+	char	fmt[32];
+
 	if (isaspect(s))
 		*iap *= aspectval(s);
+	else if (formatval(fmt, s) && strcmp(fmt, COLRFMT))
+		*iap = 0.0;
+	return(0);
 }
 
 
@@ -188,7 +193,7 @@ char  *pname;
 						/* get dimensions */
 	inpaspect = 1.0;
 	getheader(fp, headaspect, &inpaspect);
-	if (!fgetsresolu(&inpres, fp))
+	if (inpaspect <= FTINY || !fgetsresolu(&inpres, fp))
 		goto readerr;
 	pp[0].nd = 2;
 	pp[0].dim[0].ne = inpres.yr;
