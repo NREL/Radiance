@@ -51,8 +51,8 @@ COLOR	mbRGB[24];		/* MacBeth RGB values */
 
 #define	NMBNEU		6	/* Number of MacBeth neutral colors */
 short	mbneu[NMBNEU] = {23,22,21,20,19,18};
-#define NMBMOD		3	/* Number of MacBeth moderate colors */
-short	mbmod[NMBMOD] = {1,2,21};
+#define NMBMOD		16	/* Number of MacBeth unsaturated colors */
+short	mbmod[NMBMOD] = {0,1,2,3,4,5,6,7,8,9,10,11,19,20,21,22};
 #define NMBSAT		6	/* Number of MacBeth saturated colors */
 short	mbsat[NMBSAT] = {14,12,13,15,16,17};
 
@@ -231,18 +231,21 @@ getcolors()				/* load in picture colors */
 bresp(y, x)		/* piecewise linear interpolation of primaries */
 COLOR	y, x;
 {
+	double	cv[3];
 	register int	i, n;
 
 	for (i = 0; i < 3; i++) {
 		n = NMBNEU;
 		while (n > 0 && colval(x,i) < colval(bramp[--n][0],i))
 			;
-		colval(y,i) = ((colval(bramp[n+1][0],i) - colval(x,i)) *
+		cv[i] = ((colval(bramp[n+1][0],i) - colval(x,i)) *
 						colval(bramp[n][1],i) +
 				(colval(x,i) - colval(bramp[n][0],i)) *
 						colval(bramp[n+1][1],i)) /
 			(colval(bramp[n+1][0],i) - colval(bramp[n][0],i));
+		if (cv[i] < 0.) cv[i] = 0.;
 	}
+	setcolor(y, cv[0], cv[1], cv[2]);
 }
 
 
@@ -304,14 +307,15 @@ putmapping()			/* put out color mapping for pcomb -f */
 	}
 					/* print color mapping */
 	printf("ro = %g*rn + %g*gn + %g*bn ;\n",
-			solmat[0][0], solmat[1][0], solmat[2][0]);
+			solmat[0][0], solmat[0][1], solmat[0][2]);
 	printf("go = %g*rn + %g*gn + %g*bn ;\n",
-			solmat[0][1], solmat[1][1], solmat[2][1]);
+			solmat[1][0], solmat[1][1], solmat[1][2]);
 	printf("bo = %g*rn + %g*gn + %g*bn ;\n",
-			solmat[0][2], solmat[1][2], solmat[2][2]);
+			solmat[2][0], solmat[2][1], solmat[2][2]);
 }
 
 
+#if NMBMOD == 3
 compsoln(cin, cout, n)		/* solve 3x3 system */
 COLOR	cin[], cout[];
 int	n;
@@ -343,12 +347,57 @@ int	n;
 			invmat[i][j] /= det;
 	for (i = 0; i < 3; i++) {
 		for (j = 0; j < 3; j++)
-			rowv[j] = colval(cout[j],i);
-		mx3d_transform(rowv, invmat, colv);
+			colv[j] = colval(cout[j],i);
+		mx3d_transform(colv, invmat, rowv);
 		for (j = 0; j < 3; j++)
-			solmat[j][i] = colv[j];
+			solmat[i][j] = rowv[j];
 	}
 }
+#else
+compsoln(cin, cout, n)		/* solve 3xN system (N > 3) */
+COLOR	cin[], cout[];
+int	n;
+{
+	double	*au[NMBMOD], *v[3], vv[3][3], auv[NMBMOD][3], w[3];
+	double	b[NMBMOD];
+	register int	i, j;
+
+	if (n > NMBMOD) {
+		fprintf(stderr, "%s: inconsistent code!\n", progname);
+		exit(1);
+	}
+	for (i = 0; i < n; i++)		/* assign rectangular matrix A */
+		for (j = 0; j < 3; j++)
+			auv[i][j] = colval(cin[i],j);
+				/* svdcmp indexing requires pointer offsets */
+	for (j = 0; j < 3; j++)
+		v[j] = vv[j] - 1;
+	for (i = 0; i < n; i++)
+		au[i] = auv[i] - 1;
+				/* compute singular value decomposition */
+fprintf(stderr, "A:\n");
+for (i = 1; i <= n; i++)
+fprintf(stderr, "%g %g %g\n", (au-1)[i][1], (au-1)[i][2], (au-1)[i][3]);
+	svdcmp(au-1, n, 3, w-1, v-1);
+fprintf(stderr, "U:\n");
+for (i = 0; i < n; i++)
+fprintf(stderr, "%g %g %g\n", auv[i][0], auv[i][1], auv[i][2]);
+fprintf(stderr, "V:\n");
+for (i = 0; i < 3; i++)
+fprintf(stderr, "%g %g %g\n", vv[i][0], vv[i][1], vv[i][2]);
+fprintf(stderr, "W: %g %g %g\n", w[0], w[1], w[2]);
+				/* zero out small weights */
+	for (j = 0; j < 3; j++)
+		if (w[j] < 1e-4)
+			w[j] = 0.;
+				/* back substitution for each row vector */
+	for (j = 0; j < 3; j++) {
+		for (i = 0; i < n; i++)
+			b[i] = colval(cout[i],j);
+		svbksb(au-1, w-1, v-1, n, 3, b-1, solmat[j]-1);
+	}
+}
+#endif
 
 
 cvtcolor(cout, cin)		/* convert color according to our mapping */
@@ -357,13 +406,13 @@ COLOR	cout, cin;
 	double	r, g, b;
 
 	bresp(cout, cin);
-	r = colval(cout,0)*solmat[0][0] + colval(cout,1)*solmat[1][0]
-			+ colval(cout,2)*solmat[2][0];
+	r = colval(cout,0)*solmat[0][0] + colval(cout,1)*solmat[0][1]
+			+ colval(cout,2)*solmat[0][2];
 	if (r < 0) r = 0;
-	g = colval(cout,0)*solmat[0][1] + colval(cout,1)*solmat[1][1]
-			+ colval(cout,2)*solmat[2][1];
+	g = colval(cout,0)*solmat[1][0] + colval(cout,1)*solmat[1][1]
+			+ colval(cout,2)*solmat[1][2];
 	if (g < 0) g = 0;
-	b = colval(cout,0)*solmat[0][2] + colval(cout,1)*solmat[1][2]
+	b = colval(cout,0)*solmat[2][0] + colval(cout,1)*solmat[2][1]
 			+ colval(cout,2)*solmat[2][2];
 	if (b < 0) b = 0;
 	setcolor(cout, r, g, b);
