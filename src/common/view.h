@@ -38,6 +38,8 @@ extern char  *setview();
 
 extern double  viewray();
 
+extern char  *viewopt();
+
 #define  viewaspect(v)	sqrt((v)->vn2/(v)->hn2)
 
 #define  STDVIEW	{VT_PER,{0.,0.,0.},{0.,1.,0.},{0.,0.,1.}, \
