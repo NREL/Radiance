@@ -70,6 +70,9 @@ colormap ocm;
     rgbpixel *line;
     colormap map;
 
+    for (x = 0; x < len; x++)	/* clear histogram */
+	hist[x] = 0;
+
     line = line3alloc(xmax);
     convertmap(ocm,map);
 
