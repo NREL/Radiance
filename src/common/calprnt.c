@@ -58,14 +58,8 @@ FILE  *fp;
 	    break;
 
 	case UMINUS:
-	    if (ep->v.kid->type == UMINUS) {
-		fputs("-(", fp);
-	        eprint(ep->v.kid, fp);
-		fputs(")", fp);
-	    } else {
-		fputs("-", fp);
-		eprint(ep->v.kid, fp);
-	    }
+	    fputs("-", fp);
+	    eprint(ep->v.kid, fp);
 	    break;
 
 	case CHAN:
