@@ -216,9 +216,11 @@ static
 x_comout(out)			/* output a string to command line */
 char  *out;
 {
-	if (comline != NULL)
-		xt_puts(out, comline);
-	XFlush();
+	if (comline == NULL)
+		return;
+	xt_puts(out, comline);
+	if (out[strlen(out)-1] == '\n')
+		XFlush();
 }
 
 
@@ -226,8 +228,8 @@ static
 x_errout(msg)			/* output an error message */
 char  *msg;
 {
-	x_comout(msg);
 	stderr_v(msg);		/* send to stderr also! */
+	x_comout(msg);
 }
 
 
