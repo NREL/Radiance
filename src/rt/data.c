@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -299,12 +299,10 @@ double  *pt;
 			i = (lower + upper) >> 1;
 			if (pt[0] >= dp->dim[0].p[i])
 				lower = i;
-			else if (pt[0] < dp->dim[0].p[i])
+			else
 				upper = i;
 		} while (i != (lower + upper) >> 1);
-		if (i < 0)
-			i = 0;
-		else if (i > dp->dim[0].ne - 2)
+		if (i > dp->dim[0].ne - 2)
 			i = dp->dim[0].ne - 2;
 		x = i + (pt[0] - dp->dim[0].p[i]) /
 				(dp->dim[0].p[i+1] - dp->dim[0].p[i]);
