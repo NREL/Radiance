@@ -30,7 +30,7 @@ rad -n -s -V $argv[1] \
 echo \# Rad input file modified by $0 `date` >> $argv[1]
 if ( $?doexpos ) then
 	(echo -n 'EXPOSURE= '; \
-		total -u $tf.dat | rcalc -e '$1=1/(.265*$1+.670*$2+.065*$3)') \
+		total -u $tf.dat | rcalc -e '$1=2/(.265*$1+.670*$2+.065*$3)') \
 		>> $argv[1]
 endif
 lookamb -h -d $tf.amb | rcalc -e '$1=$10;$2=$11;$3=$12' >> $tf.dat
