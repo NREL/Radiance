@@ -260,7 +260,7 @@ char  *nm;
 		    r1 = r3*cos(r2);
 		    r2 = r3*sin(r2);
 		    for (j = 0; j < 3; j++)
-			org[j] = CO_P0(co)[j] + r1*u[j] + r1*v[j] +
+			org[j] = CO_P0(co)[j] + r1*u[j] + r2*v[j] +
 					.001*co->ad[j];
 
 					/* send sample */
