@@ -24,7 +24,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 extern char  *malloc();
 
-double	gamma = 2.0;			/* gamma correction */
+double	gamcor = 2.0;			/* gamma correction */
 
 int  bradj = 0;				/* brightness adjustment */
 
@@ -55,7 +55,7 @@ char  *argv[];
 		if (argv[i][0] == '-')
 			switch (argv[i][1]) {
 			case 'g':
-				gamma = atof(argv[++i]);
+				gamcor = atof(argv[++i]);
 				break;
 			case 'r':
 				reverse = !reverse;
@@ -71,7 +71,7 @@ char  *argv[];
 		else
 			break;
 						/* set gamma correction */
-	setcolrgam(gamma);
+	setcolrgam(gamcor);
 
 	if (reverse) {
 		if (i > argc-1 || i < argc-2)
