@@ -119,8 +119,8 @@ COLR  clr;
 register int  x;
 {
 	static int  cerr[NCOLS];
-	static int  err, errp;
-	int  b;
+	static int  err;
+	int  b, errp;
 	register int  isblack;
 
 	b = normbright(clr);

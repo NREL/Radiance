@@ -113,16 +113,16 @@ register int  x;
 register int  a;
 {
 	static int  cerr[NCOLS][3];
-	static int  err[3], errp[3];
-	int  b;
+	static int  err[3];
+	int  b, errp;
 	register int  ison;
 
 	b = col[a];
-	errp[a] = err[a];
+	errp = err[a];
 	err[a] += b + cerr[x][a];
 	ison = err[a] > 128;
 	if (ison) err[a] -= 256;
 	err[a] /= 3;
-	cerr[x][a] = err[a] + errp[a];
+	cerr[x][a] = err[a] + errp;
 	return(ison);
 }
