@@ -141,7 +141,7 @@ l_erfc()			/* cumulative error function */
 
 
 funcfile(fname)			/* set context, load file if necessary */
-char  *fname;
+register char  *fname;
 {
 	extern char  *setcontext();
 	static char  initfile[] = INITFILE;
@@ -163,10 +163,14 @@ char  *fname;
 		loadfunc(initfile);
 		initfile[0] = '\0';
 	}
-	setcontext(fname);
-	if (!vardefined(DEFVNAME)) {
-		loadfunc(fname);
-		varset(DEFVNAME, ':', 1.0);
+	if (fname[0] == '.' && fname[1] == '\0')
+		setcontext("");			/* "." means no file */
+	else {
+		setcontext(fname);
+		if (!vardefined(DEFVNAME)) {
+			loadfunc(fname);
+			varset(DEFVNAME, ':', 1.0);
+		}
 	}
 }
 
