@@ -18,6 +18,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  SAMPDENS	48		/* points per projected steradian */
 #define  NSAMPS		32		/* samples per point */
 #define  DFLMAT		"illum_mat"	/* material name */
+#define  DFLDAT		"illum"		/* data file name */
 				/* selection options */
 #define  S_NONE		0		/* select none */
 #define  S_ELEM		1		/* select specified element */
@@ -36,7 +37,7 @@ struct rtproc	rt;		/* our rtrace process */
 struct illum_args  thisillum = {	/* our illum and default values */
 		0,
 		DFLMAT,
-		DFLMAT,
+		DFLDAT,
 		0,
 		VOIDID,
 		SAMPDENS,
@@ -257,6 +258,7 @@ char	*nm;
 				break;
 			if (!*++cp) {
 				strcpy(thisillum.datafile,thisillum.matname);
+				thisillum.dfnum = 0;
 				thisillum.flags &= ~IL_DATCLB;
 				continue;
 			}
