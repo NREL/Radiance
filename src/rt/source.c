@@ -86,6 +86,12 @@ marksources()			/* find and mark source objects */
 			source[ns].sflags |= SSPOT;
 			if ((source[ns].sl.s = makespot(m)) == NULL)
 				goto memerr;
+			if (source[ns].sflags & SFLAT &&
+				!checkspot(source[ns].sl.s,source[ns].snorm)) {
+				objerror(o, WARNING,
+					"invalid spotlight direction");
+				source[ns].sflags |= SSKIP;
+			}
 		}
 	}
 	if (nsources <= 0) {
