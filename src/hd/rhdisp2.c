@@ -245,7 +245,7 @@ FVECT	vp;
 
 
 int
-dobeam(gcp, bp)		/* express interest or disintrest in a beam */
+dobeam(gcp, bp)		/* express interest in a beam */
 GCOORD	*gcp;
 register struct beamact	*bp;
 {
