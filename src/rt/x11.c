@@ -378,6 +378,15 @@ char  *inp, *prompt;
 		if (!x11_driver.inpready)
 			fputs(prompt, stdout);
 	}
+#ifdef FNDELAY
+	if (inpcheck == IC_READ) {	/* turn off FNDELAY */
+		if (fcntl(fileno(stdin), F_SETFL, 0) < 0) {
+			stderr_v("Cannot change input mode\n");
+			quit(1);
+		}
+		inpcheck = IC_IOCTL;
+	}
+#endif
 	if (gets(inp) == NULL) {
 		strcpy(inp, "quit");
 		return;
