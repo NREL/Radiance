@@ -87,7 +87,7 @@ extern double	tcos();			/* table-based cosine approximation */
 #define  ttan(x)		(tsin(x)/tcos(x))
 #endif
 					/* custom version of assert(3) */
-#define  CHECK(be,et,em)	if (be) error(et,em) else
+#define  CHECK(be,et,em)	if (be) error(et,em); else
 #ifdef  DEBUG
 #define  DCHECK			CHECK
 #else
