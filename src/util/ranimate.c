@@ -230,7 +230,7 @@ getastat()			/* check/set animation status */
 		}
 		/* assume it is dead */
 	}
-	if (strcmp(cfname, astat.cfname) && astat.tnext != 0) {	/* other's */
+	if (strcmp(cfname, astat.cfname) && astat.pid != 0) {	/* other's */
 		fprintf(stderr, "%s: unfinished job \"%s\"\n",
 				progname, astat.cfname);
 		return(-1);
