@@ -57,6 +57,7 @@ char	*mode;
 #else
 			break;
 #endif		      
+#ifndef MSDOS
 		case '(':
 			if (!quote)
 				paren++;
@@ -73,6 +74,7 @@ char	*mode;
 			}
 			*cp++ = *cmd++;
 			break;
+#endif
 		case ' ':
 		case '\t':
 			if (!quote)
@@ -115,8 +117,8 @@ char	*mode;
 		return(NULL);
 	}
 	if (fileno(fp) >= NFILE) {
-		fputs("popen: too many open files\n", stderr);
-		exit(1);
+		eputs("popen: too many open files\n");
+		quit(1);
 	}
 	pips[fileno(fp)].f = fname;
 	if (*mode == 'r') {
