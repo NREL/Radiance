@@ -194,7 +194,7 @@ normtiff:	normtiff.o ../lib/libtiff.a
 	$(CC) $(CFLAGS) -o normtiff normtiff.o -lrt -ltiff $(MLIB)
 
 ../lib/libtiff.a:	tiff/config.local
-	cd tiff ; ./configure -quiet -noninteractive -with-CC=$(CC) \
+	cd tiff ; sh configure -quiet -noninteractive -with-CC=$(CC) \
 		"-with-ENVOPTS=$(OPT)" ; \
 	cd libtiff ; make install
 
