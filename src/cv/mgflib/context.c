@@ -1,4 +1,4 @@
-/* Copyright (c) 1994 Regents of the University of California */
+/* Copyright (c) 1997 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -177,8 +177,6 @@ register char	**av;
 		if (!isflt(av[1]))
 			return(MG_ETYPE);
 		wsum = atof(av[1]);
-		if (wsum < 0.)
-			return(MG_EILL);
 		if ((lp = lu_find(&clr_tab, av[2])) == NULL)
 			return(MG_EMEM);
 		if (lp->data == NULL)
@@ -188,8 +186,6 @@ register char	**av;
 			if (!isflt(av[i]))
 				return(MG_ETYPE);
 			w = atof(av[i]);
-			if (w < 0.)
-				return(MG_EILL);
 			if ((lp = lu_find(&clr_tab, av[i+1])) == NULL)
 				return(MG_EMEM);
 			if (lp->data == NULL)
@@ -198,6 +194,8 @@ register char	**av;
 					w, (C_COLOR *)lp->data);
 			wsum += w;
 		}
+		if (wsum <= 0.)
+			return(MG_EILL);
 		c_ccolor->clock++;
 		return(MG_OK);
 	}
@@ -667,7 +665,10 @@ double	w1, w2;
 	} else {					/* CIE xy mixing */
 		c_ccvt(c1, C_CSXY);
 		c_ccvt(c2, C_CSXY);
-		scale = 1. / (w1/c1->cy + w2/c2->cy);
+		scale = w1/c1->cy + w2/c2->cy;
+		if (scale == 0.)
+			return;
+		scale = 1. / scale;
 		cres->cx = (c1->cx*w1/c1->cy + c2->cx*w2/c2->cy) * scale;
 		cres->cy = (w1 + w2) * scale;
 		cres->flags = C_CDXY|C_CSXY;
