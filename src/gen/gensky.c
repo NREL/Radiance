@@ -128,10 +128,10 @@ computesky()			/* compute sky parameters */
 	if (zenithbr <= 0.0)
 		if (cloudy) {
 			zenithbr = 8.6*sundir[2] + .123;
-			zenithbr *= 1000.0/683.0;
+			zenithbr *= 1000.0*.0064/3.;
 		} else {
 			zenithbr = (1.376*turbidity-1.81)*tan(altitude)+0.38;
-			zenithbr *= 1000.0/683.0;
+			zenithbr *= 1000.0*.0064/3.;
 		}
 	if (zenithbr < 0.0)
 		zenithbr = 0.0;
