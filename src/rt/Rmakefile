@@ -11,7 +11,7 @@ CFLAGS = -DBSD -O -DIEEE -f68881 /usr/lib/f68881.il
 #
 DESTDIR = .
 INSTDIR = /usr/local/ray
-INSTALL = install
+INSTALL = cp
 
 #
 # The following paths must exist and be relative to root:
