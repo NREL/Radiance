@@ -160,6 +160,7 @@ pix2rays(
 	register int	i;
 
 	while (fscanf(fp, "%lf %lf", &px, &py) == 2) {
+		px += .5; py += .5;
 		if (px < 0 || px >= rs.xr ||
 				py < 0 || py >= rs.yr) {
 			fprintf(stderr,
