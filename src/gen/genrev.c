@@ -35,6 +35,7 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
+	extern long	eclock;
 	char  stmp[256];
 	char  *modname;
 	int  smooth = 0;
@@ -71,6 +72,7 @@ char  *argv[];
 	modname = smooth ? "Phong" : argv[1];
 
 	printhead(argc, argv);
+	eclock = 0;
 
 	lastnz = lastnr = 0.0;
 	t = 0.0;
