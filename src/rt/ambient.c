@@ -176,9 +176,10 @@ OBJECT	obj;
 }
 
 
-ambient(acol, r)		/* compute ambient component for ray */
+ambient(acol, r, nrm)		/* compute ambient component for ray */
 COLOR  acol;
 register RAY  *r;
+FVECT  nrm;
 {
 	static int  rdepth = 0;			/* ambient recursion */
 	double	d;
@@ -205,14 +206,14 @@ register RAY  *r;
 	sortambvals(0);
 						/* get ambient value */
 	setcolor(acol, 0.0, 0.0, 0.0);
-	d = sumambient(acol, r, rdepth,
+	d = sumambient(acol, r, nrm, rdepth,
 			&atrunk, thescene.cuorg, thescene.cusize);
 	if (d > FTINY) {
 		scalecolor(acol, 1.0/d);
 		return;
 	}
 	rdepth++;				/* need to cache new value */
-	d = makeambient(acol, r, rdepth-1);
+	d = makeambient(acol, r, nrm, rdepth-1);
 	rdepth--;
 	if (d > FTINY)
 		return;
@@ -230,9 +231,10 @@ dumbamb:					/* return global value */
 
 
 double
-sumambient(acol, r, al, at, c0, s)	/* get interpolated ambient value */
+sumambient(acol, r, rn, al, at, c0, s)	/* get interpolated ambient value */
 COLOR  acol;
 register RAY  *r;
+FVECT  rn;
 int  al;
 AMBTREE	 *at;
 FVECT  c0;
@@ -296,7 +298,7 @@ double	s;
 		else
 			wt = 1.0 / wt;
 		wsum += wt;
-		extambient(ct, av, r->rop, r->ron);
+		extambient(ct, av, r->rop, rn);
 		scalecolor(ct, wt);
 		addcolor(acol, ct);
 	}
@@ -315,16 +317,17 @@ double	s;
 				break;
 		}
 		if (j == 3)
-			wsum += sumambient(acol, r, al, at->kid+i, ck0, s);
+			wsum += sumambient(acol, r, rn, al, at->kid+i, ck0, s);
 	}
 	return(wsum);
 }
 
 
 double
-makeambient(acol, r, al)	/* make a new ambient value */
+makeambient(acol, r, rn, al)	/* make a new ambient value */
 COLOR  acol;
 register RAY  *r;
+FVECT  rn;
 int  al;
 {
 	AMBVAL	amb;
@@ -346,6 +349,8 @@ int  al;
 	VCOPY(amb.gdir, gd);
 						/* insert into tree */
 	avsave(&amb);				/* and save to file */
+	if (rn != r->ron)
+		extambient(acol, &amb, r->rop, rn);	/* texture */
 	return(amb.rad);
 }
 
