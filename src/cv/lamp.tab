@@ -53,11 +53,10 @@
 /diffuse\>.*\<HID\>/			(high pressure sodium)
 /frosted\>.*\<HID\>/			(diffuse HID)
 /HPS/					(high pressure sodium)
-/LPS/					(low pressure sodium)
-/[EP]AR/				(incandescent)
+/\<LPS/					(low pressure sodium)
+/\<[EP]AR\>/				(incandescent)
 /ER30/					(incandescent)
-/\<D65/					.313 .329 1
-/MH/					(metal halide)
-/clear HID\>/				(high pressure sodium)
-/HID/					(clear HID)
-/\<white\>/				(D65)
+/\<D65WHITE\>/				.313 .329 1
+/\<MH\>/				(metal halide)
+/\<clear HID\>/				(high pressure sodium)
+/\<HID\>/				(clear HID)
