@@ -33,13 +33,16 @@ static char SCCSid[] = "$SunId$ SGI";
 #define NCONEV		7		/* number of cone base vertices */
 #endif
 #ifndef CONEH
-#define CONEH		5.		/* cone height (fraction of depth) */
+#define CONEH		3.		/* cone height (fraction of depth) */
 #endif
 #ifndef CONEW
-#define CONEW		0.07		/* cone width (fraction of screen) */
+#define CONEW		0.05		/* cone width (fraction of screen) */
 #endif
 #ifndef DIRPEN
 #define DIRPEN		0.001		/* direction penalty factor */
+#endif
+#ifndef VALUA
+#define VALUA		16		/* target value area (pixels) */
 #endif
 
 #define GAMMA		1.4		/* default gamma correction */
@@ -86,6 +89,8 @@ static double	coneh;			/* cone height */
 static int	inpresflags;		/* input result flags */
 
 static int	headlocked = 0;		/* lock vertical motion */
+
+static int	quicken = 0;		/* quicker, sloppier update rate? */
 
 static struct {
 	float		(*wp)[3];	/* world intersection point array */
@@ -189,7 +194,7 @@ char  *id;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 					/* allocate our value list */
 	if (!AllocValues(DisplayWidth(ourdisplay,ourscreen) *
-			DisplayHeight(ourdisplay,ourscreen) / 4))
+			DisplayHeight(ourdisplay,ourscreen) / VALUA))
 		error(SYSTEM, "insufficient memory for value storage");
 	odev.name = id;
 	odev.ifd = ConnectionNumber(ourdisplay);
@@ -382,14 +387,25 @@ setGLview()			/* set our GL view */
 }
 
 
+#define SUCCSTEP	8	/* skip step when successful */
+#define MAXSTEP		64
+
 static
 drawvalue(li)			/* draw a pixel value as a cone */
 register int	li;
 {
+	static int	skipstep = 1;
 	static FVECT	disp;
 	FVECT	apex;
 	double	d, dorg, dnew, h, v;
 	register int	i;
+				/* check for quicker update */
+	if (quicken) {
+		if (li % skipstep)
+			return;
+		if (skipstep < MAXSTEP)
+			skipstep++;
+	}
 				/* compute cone coordinates */
 	disp[0] = rV.wp[li][0] - odev.v.vp[0];
 	disp[1] = rV.wp[li][1] - odev.v.vp[1];
@@ -402,6 +418,7 @@ register int	li;
 	if (dorg > 1e5) {	/* background pixel */
 		dnew = maxdepth;
 		d = dnew/dorg;
+		dorg = maxdepth;
 	} else {		/* foreground pixel, compute penalty */
 		normalize(disp);
 		d = dnew = dorg + coneh*fdir2diff(rV.wd[li],disp)*DIRPEN;
@@ -433,7 +450,11 @@ register int	li;
 	glVertex3d(conev[0][0] + disp[0], conev[0][1] + disp[1],
 			conev[0][2] + disp[2]);
 	glEnd();		/* done */
+	skipstep = SUCCSTEP;
 }
+
+#undef SUCCSTEP
+#undef MAXSTEP
 
 
 #define	LEAFSIZ		(3*sizeof(float)+sizeof(int4)+\
@@ -808,6 +829,7 @@ XButtonPressedEvent	*ebut;
 	int	rootx, rooty, wx, wy;
 	unsigned int	statemask;
 
+	quicken = 1;			/* accelerate update rate */
 	XNoOp(ourdisplay);
 
 	while (!XCheckMaskEvent(ourdisplay,
@@ -833,6 +855,7 @@ XButtonPressedEvent	*ebut;
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		redraw();
 	}
+	quicken = 0;
 	dev_flush();
 }
 
