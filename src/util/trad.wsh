@@ -73,12 +73,12 @@ trace variable rifname w setrname
 
 # Make main window frames
 
-frame .upper -geometry 830x410
+frame .upper -geometry 640x410
 pack .upper -side top
-frame .upper.right -geometry 130x410
-place .upper.right -x 700 -y 0
+frame .upper.right -geometry 120x410
+place .upper.right -relx .98 -rely 0 -anchor ne
 message .mess -relief ridge -font fixed -textvariable curmess \
-		-width 830 -anchor nw
+		-anchor nw -width 620
 pack .mess -side top -expand yes -fill both
 helplink .mess trad trad messages
 
@@ -94,7 +94,7 @@ proc changescreen {} {		# switch screen according to curmode
 	}
 	set curscreen $curmode
 	do_$curscreen .upper.left
-	.upper.left configure -geometry 700x410
+	.upper.left configure -geometry 520x410
 	place .upper.left -x 0 -y 0
 }
 
@@ -127,7 +127,7 @@ button .upper.right.quit -text QUIT \
 pack .upper.right.quit -side top -pady 10 -anchor se
 helplink .upper.right.quit trad trad quit
 
-wm minsize . 830 460
+wm minsize . 640 460
 wm iconbitmap . @$radlib/trad.icon
 
 proc gotfile {{o 1}} {		# set file possession state
