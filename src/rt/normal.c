@@ -15,8 +15,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "ray.h"
 
-#include  "source.h"
-
 #include  "otypes.h"
 
 /*
@@ -36,22 +34,101 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  BSPEC(m)	(6.0)		/* specularity parameter b */
 
+extern double  exp();
 
-m_normal(m, r)			/* color a ray which hit something normal */
-register OBJREC  *m;
-register RAY  *r;
-{
-	double  exp();
+typedef struct {
+	OBJREC  *mp;		/* material pointer */
+	RAY  *pr;		/* intersected ray */
 	COLOR  mcolor;		/* color of this material */
 	COLOR  scolor;		/* color of specular component */
 	FVECT  vrefl;		/* vector in direction of reflected ray */
 	double  alpha2;		/* roughness squared times 2 */
-	RAY  lr;		/* ray to illumination source */
 	double  rdiff, rspec;	/* reflected specular, diffuse */
 	double  trans;		/* transmissivity */
 	double  tdiff, tspec;	/* transmitted specular, diffuse */
 	FVECT  pnorm;		/* perturbed surface normal */
 	double  pdot;		/* perturbed dot product */
+}  NORMDAT;		/* normal material data */
+
+
+dirnorm(cval, np, ldir, omega)		/* compute source contribution */
+COLOR  cval;			/* returned coefficient */
+register NORMDAT  *np;		/* material data */
+FVECT  ldir;			/* light source direction */
+double  omega;			/* light source size */
+{
+	double  ldot;
+	double  dtmp;
+	COLOR  ctmp;
+
+	setcolor(cval, 0.0, 0.0, 0.0);
+
+	ldot = DOT(np->pnorm, ldir);
+
+	if (ldot < 0.0 ? np->trans <= FTINY : np->trans >= 1.0-FTINY)
+		return;		/* wrong side */
+
+	if (ldot > FTINY && np->rdiff > FTINY) {
+		/*
+		 *  Compute and add diffuse component to returned color.
+		 *  The diffuse component will always be modified by the
+		 *  color of the material.
+		 */
+		copycolor(ctmp, np->mcolor);
+		dtmp = ldot * omega * np->rdiff / PI;
+		scalecolor(ctmp, dtmp);
+		addcolor(cval, ctmp);
+	}
+	if (ldot > FTINY && np->rspec > FTINY && np->alpha2 > FTINY) {
+		/*
+		 *  Compute specular reflection coefficient using
+		 *  gaussian distribution model.
+		 */
+						/* roughness + source */
+		dtmp = np->alpha2 + omega/(2.0*PI);
+						/* gaussian */
+		dtmp = exp((DOT(np->vrefl,ldir)-1.)/dtmp)/(2.*PI)/dtmp;
+						/* worth using? */
+		if (dtmp > FTINY) {
+			copycolor(ctmp, np->scolor);
+			dtmp *= omega;
+			scalecolor(ctmp, dtmp);
+			addcolor(cval, ctmp);
+		}
+	}
+	if (ldot < -FTINY && np->tdiff > FTINY) {
+		/*
+		 *  Compute diffuse transmission.
+		 */
+		copycolor(ctmp, np->mcolor);
+		dtmp = -ldot * omega * np->tdiff / PI;
+		scalecolor(ctmp, dtmp);
+		addcolor(cval, ctmp);
+	}
+	if (ldot < -FTINY && np->tspec > FTINY && np->alpha2 > FTINY) {
+		/*
+		 *  Compute specular transmission.
+		 */
+						/* roughness + source */
+		dtmp = np->alpha2 + omega/(2.0*PI);
+						/* gaussian */
+		dtmp = exp((DOT(np->pr->rdir,ldir)-1.)/dtmp)/(2.*PI)/dtmp;
+						/* worth using? */
+		if (dtmp > FTINY) {
+			copycolor(ctmp, np->mcolor);
+			dtmp *= np->tspec * omega;
+			scalecolor(ctmp, dtmp);
+			addcolor(cval, ctmp);
+		}
+	}
+}
+
+
+m_normal(m, r)			/* color a ray which hit something normal */
+register OBJREC  *m;
+register RAY  *r;
+{
+	NORMDAT  nd;
 	double  ldot;
 	double  omega;
 	double  dtmp;
@@ -63,161 +140,96 @@ register RAY  *r;
 						/* easy shadow test */
 	if (r->crtype & SHADOW && m->otype != MAT_TRANS)
 		return;
+	nd.mp = m;
+	nd.pr = r;
 						/* get material color */
-	setcolor(mcolor, m->oargs.farg[0],
+	setcolor(nd.mcolor, m->oargs.farg[0],
 			   m->oargs.farg[1],
 			   m->oargs.farg[2]);
 						/* get roughness */
-	alpha2 = m->oargs.farg[4];
-	alpha2 *= 2.0 * alpha2;
+	nd.alpha2 = m->oargs.farg[4];
+	nd.alpha2 *= 2.0 * nd.alpha2;
 						/* reorient if necessary */
 	if (r->rod < 0.0)
 		flipsurface(r);
 						/* get modifiers */
 	raytexture(r, m->omod);
-	pdot = raynormal(pnorm, r);		/* perturb normal */
-	multcolor(mcolor, r->pcol);		/* modify material color */
+	nd.pdot = raynormal(nd.pnorm, r);	/* perturb normal */
+	multcolor(nd.mcolor, r->pcol);		/* modify material color */
 						/* get specular component */
-	rspec = m->oargs.farg[3];
+	nd.rspec = m->oargs.farg[3];
 
-	if (rspec > FTINY) {			/* has specular component */
+	if (nd.rspec > FTINY) {			/* has specular component */
 						/* compute specular color */
 		if (m->otype == MAT_METAL)
-			copycolor(scolor, mcolor);
+			copycolor(nd.scolor, nd.mcolor);
 		else
-			setcolor(scolor, 1.0, 1.0, 1.0);
-		scalecolor(scolor, rspec);
+			setcolor(nd.scolor, 1.0, 1.0, 1.0);
+		scalecolor(nd.scolor, nd.rspec);
 						/* improved model */
-		dtmp = exp(-BSPEC(m)*pdot);
+		dtmp = exp(-BSPEC(m)*nd.pdot);
 		for (i = 0; i < 3; i++)
-			colval(scolor,i) += (1.0-colval(scolor,i))*dtmp;
-		rspec += (1.0-rspec)*dtmp;
+			colval(nd.scolor,i) += (1.0-colval(nd.scolor,i))*dtmp;
+		nd.rspec += (1.0-nd.rspec)*dtmp;
 						/* compute reflected ray */
 		for (i = 0; i < 3; i++)
-			vrefl[i] = r->rdir[i] + 2.0*pdot*pnorm[i];
+			nd.vrefl[i] = r->rdir[i] + 2.0*nd.pdot*nd.pnorm[i];
 
-		if (alpha2 <= FTINY && !(r->crtype & SHADOW))
-			if (rayorigin(&lr, r, REFLECTED, rspec) == 0) {
-				VCOPY(lr.rdir, vrefl);
+		if (nd.alpha2 <= FTINY && !(r->crtype & SHADOW)) {
+			RAY  lr;
+			if (rayorigin(&lr, r, REFLECTED, nd.rspec) == 0) {
+				VCOPY(lr.rdir, nd.vrefl);
 				rayvalue(&lr);
-				multcolor(lr.rcol, scolor);
+				multcolor(lr.rcol, nd.scolor);
 				addcolor(r->rcol, lr.rcol);
 			}
+		}
 	}
-
+						/* compute transmission */
 	if (m->otype == MAT_TRANS) {
-		trans = m->oargs.farg[5]*(1.0 - rspec);
-		tspec = trans * m->oargs.farg[6];
-		tdiff = trans - tspec;
+		nd.trans = m->oargs.farg[5]*(1.0 - nd.rspec);
+		nd.tspec = nd.trans * m->oargs.farg[6];
+		nd.tdiff = nd.trans - nd.tspec;
 	} else
-		tdiff = tspec = trans = 0.0;
+		nd.tdiff = nd.tspec = nd.trans = 0.0;
 						/* transmitted ray */
-	if (tspec > FTINY && alpha2 <= FTINY)
-		if (rayorigin(&lr, r, TRANS, tspec) == 0) {
+	if (nd.tspec > FTINY && nd.alpha2 <= FTINY) {
+		RAY  lr;
+		if (rayorigin(&lr, r, TRANS, nd.tspec) == 0) {
 			VCOPY(lr.rdir, r->rdir);
 			rayvalue(&lr);
-			scalecolor(lr.rcol, tspec);
+			scalecolor(lr.rcol, nd.tspec);
 			addcolor(r->rcol, lr.rcol);
 		}
+	}
 	if (r->crtype & SHADOW)			/* the rest is shadow */
 		return;
 						/* diffuse reflection */
-	rdiff = 1.0 - trans - rspec;
+	nd.rdiff = 1.0 - nd.trans - nd.rspec;
 
-	if (rdiff <= FTINY && tdiff <= FTINY && alpha2 <= FTINY)
+	if (nd.rdiff <= FTINY && nd.tdiff <= FTINY && nd.alpha2 <= FTINY)
 		return;				/* purely specular */
 
-	if (rdiff > FTINY) {		/* ambient from this side */
+	if (nd.rdiff > FTINY) {		/* ambient from this side */
 		ambient(ctmp, r);
-		if (alpha2 <= FTINY)
-			scalecolor(ctmp, rdiff);
+		if (nd.alpha2 <= FTINY)
+			scalecolor(ctmp, nd.rdiff);
 		else
-			scalecolor(ctmp, 1.0-trans);
-		multcolor(ctmp, mcolor);	/* modified by material color */
+			scalecolor(ctmp, 1.0-nd.trans);
+		multcolor(ctmp, nd.mcolor);	/* modified by material color */
 		addcolor(r->rcol, ctmp);	/* add to returned color */
 	}
-	if (tdiff > FTINY) {		/* ambient from other side */
+	if (nd.tdiff > FTINY) {		/* ambient from other side */
 		flipsurface(r);
 		ambient(ctmp, r);
-		if (alpha2 <= FTINY)
-			scalecolor(ctmp, tdiff);
+		if (nd.alpha2 <= FTINY)
+			scalecolor(ctmp, nd.tdiff);
 		else
-			scalecolor(ctmp, trans);
-		multcolor(ctmp, mcolor);
+			scalecolor(ctmp, nd.trans);
+		multcolor(ctmp, nd.mcolor);
 		addcolor(r->rcol, ctmp);
 		flipsurface(r);
 	}
-	
-	for (i = 0; i < nsources; i++) {	/* add specular and diffuse */
-
-		if ((omega = srcray(&lr, r, i)) == 0.0)
-			continue;		/* bad source */
-
-		ldot = DOT(pnorm, lr.rdir);
-	
-		if (ldot < 0.0 ? trans <= FTINY : trans >= 1.0-FTINY)
-			continue;		/* wrong side */
-	
-		rayvalue(&lr);			/* compute light ray value */
-	
-		if (intens(lr.rcol) <= FTINY)
-			continue;		/* didn't hit light source */
-
-		if (ldot > FTINY && rdiff > FTINY) {
-			/*
-			 *  Compute and add diffuse component to returned color.
-			 *  The diffuse component will always be modified by the
-			 *  color of the material.
-			 */
-			copycolor(ctmp, lr.rcol);
-			dtmp = ldot * omega * rdiff / PI;
-			scalecolor(ctmp, dtmp);
-			multcolor(ctmp, mcolor);
-			addcolor(r->rcol, ctmp);
-		}
-		if (ldot > FTINY && rspec > FTINY && alpha2 > FTINY) {
-			/*
-			 *  Compute specular reflection coefficient using
-			 *  gaussian distribution model.
-			 */
-							/* roughness + source */
-			dtmp = alpha2 + omega/(2.0*PI);
-							/* gaussian */
-			dtmp = exp((DOT(vrefl,lr.rdir)-1.)/dtmp)/(2.*PI)/dtmp;
-							/* worth using? */
-			if (dtmp > FTINY) {
-				copycolor(ctmp, lr.rcol);
-				dtmp *= omega;
-				scalecolor(ctmp, dtmp);
-				multcolor(ctmp, scolor);
-				addcolor(r->rcol, ctmp);
-			}
-		}
-		if (ldot < -FTINY && tdiff > FTINY) {
-			/*
-			 *  Compute diffuse transmission.
-			 */
-			copycolor(ctmp, lr.rcol);
-			dtmp = -ldot * omega * tdiff / PI;
-			scalecolor(ctmp, dtmp);
-			multcolor(ctmp, mcolor);
-			addcolor(r->rcol, ctmp);
-		}
-		if (ldot < -FTINY && tspec > FTINY && alpha2 > FTINY) {
-			/*
-			 *  Compute specular transmission.
-			 */
-							/* roughness + source */
-			dtmp = alpha2 + omega/(2.0*PI);
-							/* gaussian */
-			dtmp = exp((DOT(r->rdir,lr.rdir)-1.)/dtmp)/(2.*PI)/dtmp;
-							/* worth using? */
-			if (dtmp > FTINY) {
-				copycolor(ctmp, lr.rcol);
-				dtmp *= tspec * omega;
-				scalecolor(ctmp, dtmp);
-				addcolor(r->rcol, ctmp);
-			}
-		}
-	}
+					/* add direct component */
+	direct(r, dirnorm, &nd);
 }

@@ -24,11 +24,11 @@ static char SCCSid[] = "$SunId$ LBL";
 VIEW  ourview = STDVIEW(512);		/* view parameters */
 
 int  psample = 4;			/* pixel sample size */
-
 double  maxdiff = .05;			/* max. difference for interpolation */
-
 double  dstrpix = 0.67;			/* square pixel distribution */
+
 double  dstrsrc = 0.0;			/* square source distribution */
+double  shadthresh = .01;		/* shadow threshold */
 
 int  maxdepth = 6;			/* maximum recursion depth */
 double  minweight = 5e-3;		/* minimum ray weight */
