@@ -25,7 +25,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define BRT		(-1)		/* special index for brightness */
 
 struct {
-	char	*name;		/* file name */
+	char	*name;		/* file or command name */
 	FILE	*fp;		/* stream pointer */
 	COLOR	*scan[WINSIZ];	/* input scanline window */
 	COLOR	coef;		/* coefficient */
@@ -60,6 +60,8 @@ int	xres, yres;			/* output resolution */
 int	xpos, ypos;			/* output position */
 
 int	wrongformat = 0;
+
+FILE	*popen();
 
 
 main(argc, argv)
@@ -124,7 +126,9 @@ char	*argv[];
 			}
 		else {
 			input[nfiles].name = argv[a];
-			input[nfiles].fp = fopen(argv[a], "r");
+			input[nfiles].fp = argv[a][0]=='!' ?
+					popen(argv[a]+1, "r") :
+					fopen(argv[a], "r");
 			if (input[nfiles].fp == NULL) {
 				perror(argv[a]);
 				quit(1);
