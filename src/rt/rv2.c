@@ -41,7 +41,7 @@ char  *s;
 
 	if (getrect(s, &box) < 0)
 		return;
-	paintrect(&ptrunk, 0, 0, ourview.hresolu, ourview.vresolu, &box);
+	paintrect(&ptrunk, 0, 0, hresolu, vresolu, &box);
 }
 
 
@@ -113,15 +113,15 @@ char  *s;
 	else {
 		nv.horiz = ourview.horiz; nv.vert = ourview.vert;
 	}
-	sprintf(buf, "x and y resolution (%d %d): ",
-			ourview.hresolu, ourview.vresolu);
+	sprintf(buf, "view shift and lift (%.6g %.6g): ",
+			ourview.hoff, ourview.voff);
 	(*dev->comout)(buf);
 	(*dev->comin)(buf);
 	if (buf[0] == CTRL(C)) return;
-	if (sscanf(buf, "%d %d", &nv.hresolu, &nv.vresolu) == 2)
+	if (sscanf(buf, "%lf %lf", &nv.hoff, &nv.voff) == 2)
 		change++;
 	else {
-		nv.hresolu = ourview.hresolu; nv.vresolu = ourview.vresolu;
+		nv.hoff = ourview.hoff; nv.voff = ourview.voff;
 	}
 	if (change)
 		newview(&nv);
@@ -137,7 +137,7 @@ char  *s;
 	VIEW  nv;
 
 	if (sscanf(s, "%s", buf) == 1) {	/* get parameters from a file */
-		bcopy(&stdview, &nv, sizeof(VIEW));
+		copyview(&nv, &stdview);
 		if ((fname = getpath(buf, NULL, 0)) == NULL ||
 				(success = viewfile(fname, &nv)) == -1) {
 			sprintf(errmsg, "cannot open \"%s\"", buf);
@@ -150,13 +150,13 @@ char  *s;
 			newview(&nv);
 		return;
 	}
-	if (oldview.hresolu == 0) {	/* no old view! */
+	if (oldview.horiz == 0) {	/* no old view! */
 		error(COMMAND, "no previous view");
 		return;
 	}
-	bcopy(&ourview, &nv, sizeof(VIEW));
-	bcopy(&oldview, &ourview, sizeof(VIEW));
-	bcopy(&nv, &oldview, sizeof(VIEW));
+	copyview(&nv, &ourview);
+	copyview(&ourview, &oldview);
+	copyview(&oldview, &nv);
 	newimage();
 }
 
@@ -172,7 +172,7 @@ char  *s;
 		return;
 	VCOPY(nv.vp, ourview.vp);
 	VCOPY(nv.vup, ourview.vup);
-	nv.hresolu = ourview.hresolu; nv.vresolu = ourview.vresolu;
+	nv.hoff = ourview.hoff; nv.voff = ourview.voff;
 	if ((nv.type = ourview.type) == VT_PAR) {
 		nv.horiz = ourview.horiz / zfact;
 		nv.vert = ourview.vert / zfact;
@@ -213,7 +213,7 @@ char  *s;
 	}
 	VCOPY(nv.vp, ourview.vp);
 	VCOPY(nv.vup, ourview.vup);
-	nv.hresolu = ourview.hresolu; nv.vresolu = ourview.vresolu;
+	nv.hoff = ourview.hoff; nv.voff = ourview.voff;
 	spinvector(nv.vdir, ourview.vdir, ourview.vup, angle*(PI/180.));
 	if (elev != 0.0) {
 		fcross(v1, nv.vdir, ourview.vup);
@@ -270,7 +270,7 @@ char  *s;
 		if ((*dev->getcur)(&x, &y) == ABORT)
 			return;
 		r.l = r.d = 0;
-		r.r = ourview.hresolu; r.u = ourview.vresolu;
+		r.r = hresolu; r.u = vresolu;
 		p = findrect(x, y, &ptrunk, &r, -1);
 		e = 1.0;
 	} else {
@@ -540,7 +540,8 @@ char  *s;
 		if ((*dev->getcur)(&x, &y) == ABORT)
 			return;
 
-		rayview(thisray.rorg, thisray.rdir, &ourview, x+.5, y+.5);
+		viewray(thisray.rorg, thisray.rdir, &ourview,
+				(x+.5)/hresolu, (y+.5)/vresolu);
 		
 	} else if (normalize(thisray.rdir) == 0.0) {
 		error(COMMAND, "zero ray direction");
@@ -607,15 +608,14 @@ char  *s;
 	if (exposure != 1.0)
 		fputexpos(exposure, fp);
 	putc('\n', fp);
-	fputresolu(YMAJOR|YDECR, ourview.hresolu, ourview.vresolu, fp);
+	fputresolu(YMAJOR|YDECR, hresolu, vresolu, fp);
 
-	scanline = (COLR *)malloc(ourview.hresolu*sizeof(COLR));
+	scanline = (COLR *)malloc(hresolu*sizeof(COLR));
 	if (scanline == NULL)
 		error(SYSTEM, "out of memory in writepict");
-	for (y = ourview.vresolu-1; y >= 0; y--) {
-		getpictcolrs(y, scanline, &ptrunk,
-				ourview.hresolu, ourview.vresolu);
-		if (fwritecolrs(scanline, ourview.hresolu, fp) < 0)
+	for (y = vresolu-1; y >= 0; y--) {
+		getpictcolrs(y, scanline, &ptrunk, hresolu, vresolu);
+		if (fwritecolrs(scanline, hresolu, fp) < 0)
 			break;
 	}
 	if (fclose(fp) < 0)

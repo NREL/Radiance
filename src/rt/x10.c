@@ -27,8 +27,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #define GAMMA		2.2		/* exponent for color correction */
 
 #define BORWIDTH	5		/* border width */
-#define BARHEIGHT	25		/* menu bar size */
 #define COMHEIGHT	(COMLH*COMCH)	/* command line height (pixels) */
+#define MINWIDTH	(32*COMCW)	/* minimum graphics window width */
+#define MINHEIGHT	64		/* minimum graphics window height */
 
 #define COMFN		"8x13"		/* command line font name */
 #define COMLH		3		/* number of command lines */
@@ -65,15 +66,14 @@ static char  c_queue[64];		/* input queue */
 static int  c_first = 0;		/* first character in queue */
 static int  c_last = 0;			/* last character in queue */
 
-extern char  *malloc();
+extern char  *malloc(), *getcombuf();
 
 int  x_close(), x_clear(), x_paintr(), x_errout(),
 		x_getcur(), x_comout(), x_comin();
 
 static struct driver  x_driver = {
 	x_close, x_clear, x_paintr, x_getcur,
-	x_comout, x_comin,
-	MAXRES, MAXRES
+	x_comout, x_comin, 1.0
 };
 
 
@@ -97,6 +97,8 @@ char  *name, *id;
 			bcross_x_hot, bcross_y_hot,
 			BlackPixel, WhitePixel, GXcopy);
 	clientname = id;
+	x_driver.xsiz = DisplayWidth()-(2*BORWIDTH);
+	x_driver.ysiz = DisplayHeight()-(COMHEIGHT+2*BORWIDTH);
 	x_driver.inpready = 0;
 	cmdvec = x_comout;			/* set error vectors */
 	if (wrnvec != NULL)
@@ -133,11 +135,15 @@ static
 x_clear(xres, yres)			/* clear our display */
 int  xres, yres;
 {
+	if (xres < MINWIDTH)
+		xres = MINWIDTH;
+	if (yres < MINHEIGHT)
+		yres = MINHEIGHT;
 	if (xres != gwidth || yres != gheight) {	/* new window */
 		if (comline != NULL)
 			xt_close(comline);
 		if (gwind == 0) {
-			gwind = XCreateWindow(RootWindow, 0, BARHEIGHT,
+			gwind = XCreateWindow(RootWindow, 0, 0,
 					xres, yres+COMHEIGHT, BORWIDTH,
 					BlackPixmap, BlackPixmap);
 			if (gwind == 0)
@@ -196,6 +202,8 @@ char  *inp;
 {
 	int  x_getc(), x_comout();
 
+	if (fromcombuf(inp, &x_driver))
+		return;
 	xt_cursor(comline, TBLKCURS);
 	editline(inp, x_getc, x_comout);
 	xt_cursor(comline, TNOCURS);
@@ -317,14 +325,8 @@ getevent()			/* get next event */
 		getkey(levptr(XKeyPressedEvent));
 		break;
 	case ExposeWindow:
-		if (levptr(XExposeEvent)->subwindow == 0) {
-			if (ncolors == 0 && getpixels() == 0) {
-				stderr_v("cannot allocate colors\n");
-				break;
-			}
-			new_ctab(ncolors);
-		}
-		/* fall through */
+		windowchange(levptr(XExposeEvent));
+		break;
 	case ExposeRegion:
 		fixwindow(levptr(XExposeEvent));
 		break;
@@ -335,6 +337,32 @@ getevent()			/* get next event */
 	case ButtonPressed:		/* handled in x_getcur() */
 		break;
 	}
+}
+
+
+static
+windowchange(eexp)			/* process window change event */
+register XExposeEvent  *eexp;
+{
+	if (eexp->subwindow != 0) {
+		fixwindow(eexp);
+		return;
+	}
+					/* check for change in size */
+	if (eexp->width != gwidth || eexp->height != gheight+COMHEIGHT) {
+		x_driver.xsiz = eexp->width;
+		x_driver.ysiz = eexp->height;
+		strcpy(getcombuf(&x_driver), "new\n");
+		return;
+	}
+					/* remap colors */
+	if (ncolors == 0 && getpixels() == 0) {
+		stderr_v("cannot allocate colors\n");
+		return;
+	}
+	new_ctab(ncolors);
+					/* redraw */
+	fixwindow(eexp);
 }
 
 
@@ -357,7 +385,8 @@ fixwindow(eexp)				/* repair damage to window */
 register XExposeEvent  *eexp;
 {
 	if (eexp->subwindow == 0)
-		repaint(eexp->x, gheight - eexp->y - eexp->height,
+		sprintf(getcombuf(&x_driver), "repaint %d %d %d %d\n",
+			eexp->x, gheight - eexp->y - eexp->height,
 			eexp->x + eexp->width, gheight - eexp->y);
 	else if (eexp->subwindow == comline->w)
 		xt_redraw(comline);

@@ -20,7 +20,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <ctype.h>
 
-VIEW  ourview = STDVIEW(470);		/* viewing parameters */
+VIEW  ourview = STDVIEW;		/* viewing parameters */
+int  hresolu, vresolu;			/* image resolution */
 
 int  psample = 8;			/* pixel sample size */
 double  maxdiff = .15;			/* max. sample difference */
@@ -114,20 +115,19 @@ rview()				/* do a view */
 	newimage();			/* set up image */
 
 	for ( ; ; ) {			/* quit in command() */
-		while (ourview.hresolu <= 1<<pdepth &&
-				ourview.vresolu <= 1<<pdepth)
+		while (hresolu <= 1<<pdepth &&
+				vresolu <= 1<<pdepth)
 			command("done: ");
 
-		if (ourview.hresolu <= psample<<pdepth &&
-				ourview.vresolu <= psample<<pdepth) {
+		if (hresolu <= psample<<pdepth &&
+				vresolu <= psample<<pdepth) {
 			sprintf(buf, "%d sampling...\n", 1<<pdepth);
 			(*dev->comout)(buf);
 			rsample();
 		} else {
 			sprintf(buf, "%d refining...\n", 1<<pdepth);
 			(*dev->comout)(buf);
-			refine(&ptrunk, 0, 0, ourview.hresolu,
-					ourview.vresolu, pdepth+1);
+			refine(&ptrunk, 0, 0, hresolu, vresolu, pdepth+1);
 		}
 		if (dev->inpready)
 			command(": ");
@@ -266,10 +266,8 @@ rsample()			/* sample the image */
 	 * difference, we subsample the super-pixels.  The testing process
 	 * includes initialization of the next row.
 	 */
-	xsiz = (((pframe.r-pframe.l)<<pdepth)+ourview.hresolu-1) /
-			ourview.hresolu;
-	ysiz = (((pframe.u-pframe.d)<<pdepth)+ourview.vresolu-1) /
-			ourview.vresolu;
+	xsiz = (((pframe.r-pframe.l)<<pdepth)+hresolu-1) / hresolu;
+	ysiz = (((pframe.u-pframe.d)<<pdepth)+vresolu-1) / vresolu;
 	rl = (RECT *)malloc(xsiz*sizeof(RECT));
 	pl = (PNODE **)malloc(xsiz*sizeof(PNODE *));
 	if (rl == NULL || pl == NULL)
@@ -278,12 +276,12 @@ rsample()			/* sample the image */
 	 * Initialize the bottom row.
 	 */
 	rl[0].l = rl[0].d = 0;
-	rl[0].r = ourview.hresolu; rl[0].u = ourview.vresolu;
+	rl[0].r = hresolu; rl[0].u = vresolu;
 	pl[0] = findrect(pframe.l, pframe.d, &ptrunk, rl, pdepth);
 	for (x = 1; x < xsiz; x++) {
 		rl[x].l = rl[x].d = 0;
-		rl[x].r = ourview.hresolu; rl[x].u = ourview.vresolu;
-		pl[x] = findrect(pframe.l+((x*ourview.hresolu)>>pdepth),
+		rl[x].r = hresolu; rl[x].u = vresolu;
+		pl[x] = findrect(pframe.l+((x*hresolu)>>pdepth),
 				pframe.d, &ptrunk, rl+x, pdepth);
 	}
 						/* sample the image */
@@ -311,9 +309,9 @@ rsample()			/* sample the image */
 			 * Find super-pixel at this position in next row.
 			 */
 			r.l = r.d = 0;
-			r.r = ourview.hresolu; r.u = ourview.vresolu;
-			p = findrect(pframe.l+((x*ourview.hresolu)>>pdepth),
-				pframe.d+(((y+1)*ourview.vresolu)>>pdepth),
+			r.r = hresolu; r.u = vresolu;
+			p = findrect(pframe.l+((x*hresolu)>>pdepth),
+				pframe.d+(((y+1)*vresolu)>>pdepth),
 					&ptrunk, &r, pdepth);
 			/*
 			 * Test super-pixel in next row.

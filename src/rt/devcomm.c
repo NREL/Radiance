@@ -39,8 +39,7 @@ int	comm_close(), comm_clear(), comm_paintr(), comm_errout(),
 
 struct driver	comm_driver, comm_default = {
 	comm_close, comm_clear, comm_paintr, comm_getcur,
-	comm_comout, comm_comin,
-	MAXRES, MAXRES, 0
+	comm_comout, comm_comin
 };
 
 FILE	*devin, *devout;
@@ -89,6 +88,7 @@ char	*dname, *id;
 		return(NULL);
 	comm_driver.xsiz = getw(devin);
 	comm_driver.ysiz = getw(devin);
+	fread(comm_driver.pixaspect, sizeof(comm_driver.pixaspect), 1, devin);
 						/* input handling */
 	signal(SIGIO, onsigio);
 						/* set error vectors */
@@ -123,8 +123,8 @@ comm_clear(xres, yres)				/* clear screen */
 int	xres, yres;
 {
 	putc(COM_CLEAR, devout);
-	fwrite(&xres, sizeof(xres), 1, devout);
-	fwrite(&yres, sizeof(yres), 1, devout);
+	putw(xres, devout);
+	putw(yres, devout);
 	fflush(devout);
 }
 
@@ -139,10 +139,10 @@ int	xmin, ymin, xmax, ymax;
 
 	putc(COM_PAINTR, devout);
 	fwrite(col, sizeof(COLOR), 1, devout);
-	fwrite(&xmin, sizeof(xmin), 1, devout);
-	fwrite(&ymin, sizeof(ymin), 1, devout);
-	fwrite(&xmax, sizeof(xmax), 1, devout);
-	fwrite(&ymax, sizeof(ymax), 1, devout);
+	putw(xmin, devout);
+	putw(ymin, devout);
+	putw(xmax, devout);
+	putw(ymax, devout);
 	if (nrays - lastflush >= WFLUSH) {
 		fflush(devout);
 		lastflush = nrays;
@@ -161,8 +161,8 @@ int	*xp, *yp;
 	if (getc(devin) != COM_GETCUR)
 		reply_error("getcur");
 	c = getc(devin);
-	fread(xp, sizeof(*xp), 1, devin);
-	fread(yp, sizeof(*yp), 1, devin);
+	*xp = getw(devin);
+	*yp = getw(devin);
 	return(c);
 }
 

@@ -27,8 +27,8 @@ register RECT  *r;
 
 	if (*s && !strncmp(s, "all", strlen(s))) {
 		r->l = r->d = 0;
-		r->r = ourview.hresolu;
-		r->u = ourview.vresolu;
+		r->r = hresolu;
+		r->u = vresolu;
 		return(0);
 	}
 	if (sscanf(s, "%d %d %d %d", &x0, &y0, &x1, &y1) != 4) {
@@ -57,8 +57,8 @@ register RECT  *r;
 	}
 	if (r->l < 0) r->l = 0;
 	if (r->d < 0) r->d = 0;
-	if (r->r > ourview.hresolu) r->r = ourview.hresolu;
-	if (r->u > ourview.vresolu) r->u = ourview.vresolu;
+	if (r->r > hresolu) r->r = hresolu;
+	if (r->u > vresolu) r->u = vresolu;
 	if (r->l > r->r) r->l = r->r;
 	if (r->d > r->u) r->d = r->u;
 	return(0);
@@ -89,7 +89,8 @@ double  *mp;
 		(*dev->comout)("Pick view center\n");
 		if ((*dev->getcur)(&x, &y) == ABORT)
 			return(-1);
-		rayview(thisray.rorg, thisray.rdir, &ourview, x+.5, y+.5);
+		viewray(thisray.rorg, thisray.rdir, &ourview,
+				(x+.5)/hresolu, (y+.5)/vresolu);
 		if (!direc || ourview.type == VT_PAR) {
 			rayorigin(&thisray, NULL, PRIMARY, 1.0);
 			if (!localhit(&thisray, &thescene)) {
@@ -141,9 +142,11 @@ int  xmin, ymin, xmax, ymax;
 	}
 						/* jitter ray direction */
 	p->x = h = xmin + (xmax-xmin)*frandom();
+	h /= hresolu;
 	p->y = v = ymin + (ymax-ymin)*frandom();
+	v /= vresolu;
 	
-	rayview(thisray.rorg, thisray.rdir, &ourview, h, v);
+	viewray(thisray.rorg, thisray.rdir, &ourview, h, v);
 
 	rayorigin(&thisray, NULL, PRIMARY, 1.0);
 	
@@ -161,24 +164,29 @@ newimage()				/* start a new image */
 {
 						/* free old image */
 	freepkids(&ptrunk);
-						/* set up frame */
-	if (ourview.hresolu > dev->xsiz || ourview.vresolu > dev->ysiz)
-		newview(&ourview);		/* beware recursive loop! */
+						/* compute resolution */
+	if (viewaspect(&ourview)*dev->xsiz > dev->pixaspect*dev->ysiz) {
+		vresolu = dev->ysiz;
+		hresolu = vresolu/viewaspect(&ourview)*dev->pixaspect;
+	} else {
+		hresolu = dev->xsiz;
+		vresolu = hresolu*viewaspect(&ourview)/dev->pixaspect;
+	}
 	pframe.l = pframe.d = 0;
-	pframe.r = ourview.hresolu; pframe.u = ourview.vresolu;
+	pframe.r = hresolu; pframe.u = vresolu;
 	pdepth = 0;
 						/* clear device */
-	(*dev->clear)(ourview.hresolu, ourview.vresolu);
+	(*dev->clear)(hresolu, vresolu);
 						/* get first value */
-	paint(&ptrunk, 0, 0, ourview.hresolu, ourview.vresolu);
+	paint(&ptrunk, 0, 0, hresolu, vresolu);
 }
 
 
 redraw()				/* redraw the image */
 {
-	(*dev->clear)(ourview.hresolu, ourview.vresolu);
+	(*dev->clear)(hresolu, vresolu);
 	(*dev->comout)("redrawing...\n");
-	repaint(0, 0, ourview.hresolu, ourview.vresolu);
+	repaint(0, 0, hresolu, vresolu);
 	(*dev->comout)("\n");
 }
 
@@ -191,7 +199,7 @@ int  xmin, ymin, xmax, ymax;
 	reg.l = xmin; reg.r = xmax;
 	reg.d = ymin; reg.u = ymax;
 
-	paintrect(&ptrunk, 0, 0, ourview.hresolu, ourview.vresolu, &reg);
+	paintrect(&ptrunk, 0, 0, hresolu, vresolu, &reg);
 }
 
 
@@ -339,20 +347,12 @@ register VIEW  *vp;
 {
 	char  *err;
 
-	if (vp->hresolu > dev->xsiz || vp->vresolu > dev->ysiz)	/* shrink */
-		if (vp->vresolu * dev->xsiz < vp->hresolu * dev->ysiz) {
-			vp->vresolu = dev->xsiz * vp->vresolu / vp->hresolu;
-			vp->hresolu = dev->xsiz;
-		} else {
-			vp->hresolu = dev->ysiz * vp->hresolu / vp->vresolu;
-			vp->vresolu = dev->ysiz;
-		}
 	if ((err = setview(vp)) != NULL) {
 		sprintf(errmsg, "view not set - %s", err);
 		error(COMMAND, errmsg);
 	} else if (bcmp(vp, &ourview, sizeof(VIEW))) {
-		bcopy(&ourview, &oldview, sizeof(VIEW));
-		bcopy(vp, &ourview, sizeof(VIEW));
+		copyview(&oldview, &ourview);
+		copyview(&ourview, vp);
 		newimage();		/* newimage() calls with vp=&ourview! */
 	}
 }
@@ -369,7 +369,7 @@ FVECT  vc;
 	register int  i;
 
 	VCOPY(nv.vup, ourview.vup);
-	nv.hresolu = ourview.hresolu; nv.vresolu = ourview.vresolu;
+	nv.hoff = ourview.hoff; nv.voff = ourview.voff;
 	spinvector(nv.vdir, ourview.vdir, ourview.vup, angle*(PI/180.));
 	if (elev != 0.0) {
 		fcross(v1, ourview.vup, nv.vdir);
