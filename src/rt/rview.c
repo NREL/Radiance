@@ -10,9 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *     3/24/87
  */
 
-#include  "standard.h"
-
-#include  "color.h"
+#include  "ray.h"
 
 #include  "rpaint.h"
 
@@ -22,6 +20,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 VIEW  ourview = STDVIEW;		/* viewing parameters */
 int  hresolu, vresolu;			/* image resolution */
+
+int  dimlist[MAXDIM];			/* sampling dimensions */
+int  ndims = 0;				/* number of sampling dimensions */
+int  samplendx = 0;			/* index for this sample */
 
 int  psample = 8;			/* pixel sample size */
 double  maxdiff = .15;			/* max. sample difference */

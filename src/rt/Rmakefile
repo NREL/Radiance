@@ -36,7 +36,7 @@ COMPAT = bmalloc.o
 #
 DOBJS = devtable.o devcomm.o editline.o x11.o x11twind.o \
 	colortab.o
-DSRC = devtable.c devcomm.c editline.c x10.c xtwind.c \
+DSRC = devtable.c devcomm.c editline.c x11.c x11twind.c \
 	colortab.c
 DLIBS = -lX11
 
@@ -79,9 +79,9 @@ SUPPOBJS = zeroes.o calexpr.o caldefn.o calfunc.o func.o noise3.o data.o
 SUPPSRC = zeroes.c calexpr.c caldefn.c calfunc.c func.c noise3.c data.c
 
 MISCOBJS = misc.o header.o mat4.o xf.o fvect.o savestr.o fgetline.o ealloc.o \
-		color.o resolu.o
+		color.o resolu.o urand.o
 MISCSRC = misc.c header.c mat4.c xf.c fvect.c savestr.c fgetline.c ealloc.c \
-		color.c resolu.c
+		color.c resolu.c urand.c
 
 #
 # What this makefile produces:
@@ -230,7 +230,7 @@ ambient.o rpict.o rv3.o source.o:	random.h
 ambient.o dielectric.o func.o glass.o m_clip.o \
 m_brdf.o mx_data.o mx_func.o normal.o o_cone.o o_face.o o_instance.o \
 p_data.o p_func.o text.o raytrace.o rpmain.o rtmain.o rvmain.o rpict.o \
-rtrace.o rv2.o rv3.o source.o sphere.o \
+rtrace.o rview.o rv2.o rv3.o source.o sphere.o \
 t_data.o t_func.o:	ray.h standard.h mat4.h fvect.h object.h color.h
 
 rv2.o rv3.o rview.o:	rpaint.h driver.h view.h
@@ -238,7 +238,7 @@ rv2.o rv3.o rview.o:	rpaint.h driver.h view.h
 source.o:	source.h
 
 cone.o data.o devcomm.o face.o image.o initotypes.o xf.o misc.o objset.o \
-octree.o otypes.o readobj.o readoct.o rview.o:	standard.h mat4.h fvect.h
+octree.o otypes.o readobj.o readoct.o:	standard.h mat4.h fvect.h
 
 initotypes.o raytrace.o:	otspecial.h
 

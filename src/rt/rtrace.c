@@ -30,6 +30,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "otypes.h"
 
+int  dimlist[MAXDIM];			/* sampling dimensions */
+int  ndims = 0;				/* number of sampling dimensions */
+int  samplendx = 0;			/* index for this sample */
+
 int  imm_irrad = 0;			/* compute immediate irradiance? */
 
 int  inform = 'a';			/* input format */
@@ -106,6 +110,7 @@ char  *fname;
 			fflush(stdout);
 			continue;
 		}
+		samplendx++;
 							/* compute and print */
 		if (imm_irrad)
 			irrad(orig, direc);
