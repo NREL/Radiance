@@ -2,9 +2,11 @@
 # SCCSid "$SunId$ LBL"
 # Makefile for MGF parser library
 #
-
-OPT = -O
+# Use -DNOPROTO flag to get back K&R compatibility.
+# Use -DBSD flag if your UNIX has a strong BSD flavor.
+# Use '-DMEM_PTR=char *' if your malloc return type is not 'void *'.
 MACH = 
+OPT = -O
 CFLAGS = $(MACH) $(OPT)
 CC = cc
 
