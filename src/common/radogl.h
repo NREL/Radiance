@@ -37,6 +37,7 @@ typedef struct {
 
 extern double	expval;		/* global exposure value */
 extern COLOR	ambval;		/* global ambient value */
+extern int	glightid[MAXLIGHTS];	/* OpenGL GL_LIGHTi values */
 extern int	dolights;	/* are we outputting light sources? */
 extern int	domats;		/* are we doing materials? */
 

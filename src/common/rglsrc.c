@@ -16,7 +16,7 @@ COLOR	ambval = {0.2, 0.2, 0.2};	/* global ambient value */
 
 int	dolights = MAXLIGHTS;		/* do how many more light sources? */
 
-static int	lightid[MAXLIGHTS] = {GL_LIGHT0, GL_LIGHT1, GL_LIGHT2,
+int	glightid[MAXLIGHTS] = {GL_LIGHT0, GL_LIGHT1, GL_LIGHT2,
 			GL_LIGHT3, GL_LIGHT4, GL_LIGHT5, GL_LIGHT6, GL_LIGHT7};
 
 static int	lightlist;		/* light list id */
@@ -163,7 +163,7 @@ l_source(n)			/* convert a distant source */
 register int	n;
 {
 	register MATREC	*m = lightrec[n].m;
-	int	thislight = lightid[n];
+	int	thislight = glightid[n];
 	GLfloat	vec[4];
 						/* assign direction */
 	VCOPY(vec, lightrec[n].pos);
@@ -188,7 +188,7 @@ register int	n;
 {
 	GLfloat	vec[4];
 	register MATREC	*m = lightrec[n].m;
-	int	thislight = lightid[n];
+	int	thislight = glightid[n];
 						/* assign position */
 	VCOPY(vec, lightrec[n].pos); vec[3] = 1.;
 	glLightfv(thislight, GL_POSITION, vec);
@@ -223,7 +223,7 @@ register int	n;
 {
 	GLfloat	vec[4];
 	register MATREC	*m = lightrec[n].m;
-	int	thislight = lightid[n];
+	int	thislight = glightid[n];
 						/* assign position */
 	VCOPY(vec, lightrec[n].pos); vec[3] = 1.;
 	glLightfv(thislight, GL_POSITION, vec);
