@@ -10,6 +10,9 @@ INSTDIR = /usr/local/ray
 
 CALDEFS = -DIEEE -DFUNCTION -DVARIABLE -DRCONST -DBIGLIB
 
+PIXAR_INCLUDE=	-I/usr/pixar/include
+PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar -lm
+
 PROGS = pfilt ttyimage aedimage oki20c mt160r getinfo psign \
 greyscale pvalue pcompos colorscale ra_pr ximage prot \
 panim ra_t8 ra_bn ra_t16 pcomb
@@ -96,6 +99,10 @@ header.o ealloc.o savestr.o
 	cc $(CFLAGS) -o pcomb pcomb.o calexpr.o calfunc.o caldefn.o \
 color.o header.o ealloc.o savestr.o -lm
 
+ra_pixar:	ra_pixar.o ra_pixar.c color.o header.o
+	cc $(CFLAGS) $(PIXAR_INCLUDE) -o $@ ra_pixar.o color.o header.o \
+$(PIXAR_LIB)
+
 calexpr.o:	calexpr.c
 	cc $(CFLAGS) $(CALDEFS) -c calexpr.c
 
@@ -104,6 +111,9 @@ calfunc.o:	calfunc.c
 
 caldefn.o:	caldefn.c
 	cc $(CFLAGS) $(CALDEFS) -c caldefn.c
+
+ra_pixar.o:	ra_pixar.c
+	cc $(CFLAGS) $(PIXAR_INCLUDE) -c ra_pixar.c
 
 pcomb.o calexpr.o calfunc.o caldefn.o:	calcomp.h
 
