@@ -51,6 +51,7 @@ char  **argv;
 	extern char  *getenv();
 	FVECT  bbmin, bbmax;
 	char  *infile = NULL;
+	int  inpfrozen = 0;
 	int  outflags = IO_ALL;
 	OBJECT	startobj;
 	int  i;
@@ -65,6 +66,7 @@ char  **argv;
 	for (i = 1; i < argc && argv[i][0] == '-'; i++)
 		switch (argv[i][1]) {
 		case '\0':				/* scene from stdin */
+			outflags &= ~IO_FILES;
 			goto breakopt;
 		case 'i':				/* input octree */
 			infile = argv[++i];
@@ -100,10 +102,8 @@ breakopt:
 		if (thescene.cusize > FTINY)
 			error(USER, "only one of '-b' or '-i'");
 		nfiles = readoct(infile, IO_ALL, &thescene, ofname);
-		if (nfiles == 0 && outflags & IO_FILES) {
-			error(WARNING, "frozen octree");
-			outflags &= ~IO_FILES;
-		}
+		if (nfiles == 0)
+			inpfrozen++;
 	}
 
 	printargs(argc, argv, stdout);	/* info. header */
@@ -123,6 +123,11 @@ breakopt:
 		}
 
 	ofname[nfiles] = NULL;
+
+	if (inpfrozen && outflags & IO_FILES) {
+		error(WARNING, "frozen octree");
+		outflags &= ~IO_FILES;
+	}
 						/* find bounding box */
 	bbmin[0] = bbmin[1] = bbmin[2] = FHUGE;
 	bbmax[0] = bbmax[1] = bbmax[2] = -FHUGE;
