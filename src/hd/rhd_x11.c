@@ -464,11 +464,29 @@ ilclip(dp, wp)			/* clip world coordinates to device */
 int	dp[2][2];
 FVECT	wp[2];
 {
-	static FVECT	vmin = {0.,0.,0.}, vmax = {1.,1.,FHUGE};
-	FVECT	ip[2];
-				/* not exactly right, but who cares? */
-	viewloc(ip[0], &odev.v, wp[0]);
-	viewloc(ip[1], &odev.v, wp[1]);
+	static FVECT	vmin = {0.,0.,0.}, vmax = {1.-FTINY,1.-FTINY,FHUGE};
+	FVECT	wpc[2], ip[2];
+	double	d, d0, d1;
+				/* check for points behind view */
+	d = DOT(odev.v.vp, odev.v.vdir);
+	d0 = DOT(wp[0], odev.v.vdir) - d;
+	d1 = DOT(wp[1], odev.v.vdir) - d;
+				/* work on copy of world points */
+	if (d0 <= d1) {
+		VCOPY(wpc[0], wp[0]); VCOPY(wpc[1], wp[1]);
+	} else {
+		d = d0; d0 = d1; d1 = d;
+		VCOPY(wpc[1], wp[0]); VCOPY(wpc[0], wp[1]);
+	}
+	if (d0 <= FTINY) {
+		if (d1 <= FTINY) return(0);
+		VSUB(wpc[0], wpc[0], wpc[1]);
+		d = .99*d1/(d1-d0);
+		VSUM(wpc[0], wpc[1], wpc[0], d);
+	}
+				/* get view coordinates and clip to window */
+	viewloc(ip[0], &odev.v, wpc[0]);
+	viewloc(ip[1], &odev.v, wpc[1]);
 	if (!clip(ip[0], ip[1], vmin, vmax))
 		return(0);
 	dp[0][0] = ip[0][0]*odev.hres;
@@ -499,8 +517,6 @@ draw_grids()			/* draw holodeck section grids */
 	static BYTE	gridrgb[3] = {0x0, 0xff, 0xff};
 	unsigned long  pixel;
 
-	if (!mapped)
-		return;
 	if (ncolors > 0)
 		pixel = pixval[get_pixel(gridrgb, xnewcolr)];
 	else
