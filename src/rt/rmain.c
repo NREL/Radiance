@@ -90,7 +90,7 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-#define  check(c,n)	if (argv[i][c] || n >= argc-i) goto badopt
+#define  check(olen,narg)	if (argv[i][olen] || narg >= argc-i) goto badopt
 	double  atof();
 	char  *getenv();
 	int  report();
@@ -369,7 +369,7 @@ char  *argv[];
 #endif
 		default:
 badopt:
-			sprintf(errmsg, "bad option: '%s'", argv[i]);
+			sprintf(errmsg, "command line error at '%s'", argv[i]);
 			error(USER, errmsg);
 			break;
 		}
