@@ -1,10 +1,10 @@
+/* Copyright (c) 1992 Regents of the University of California */
+
 #ifndef lint
-static char SCCSid[] = "$SunId$ Auckuni";
+static char SCCSid[] = "$SunId$ LBL";
 #endif
 
-/*
- *	rad2pict - 
- *		Convert an Radiance image to APPLE pict format.
+/*		Convert an Radiance image to APPLE pict format.
  *
  *			Orginally Iris to PICT by	Paul Haeberli - 1990
  *			Hacked into Rad to PICT by Russell Street 1990
@@ -20,6 +20,9 @@ static char SCCSid[] = "$SunId$ Auckuni";
  */
 
 #include <stdio.h>
+#ifdef MSDOS
+#include <fcntl.h>
+#endif
 
 #include "pict.h"
 #include "color.h"
@@ -97,11 +100,16 @@ char **argv;
     int xsize, ysize;
     int i, picsize;
     int ssizepos, lsizepos;
-
+#ifdef MSDOS
+    extern int	_fmode;
+    _fmode = O_BINARY;
+    setmode(fileno(stdin), O_BINARY);
+    setmode(fileno(stdout), O_BINARY);
+#endif
     progname = argv[0];
 
     for (i = 1; i < argc ; i++)
-        if (argv[i][0] ==  '-')
+	if (argv[i][0] ==  '-')
 	    switch (argv[i][1]) {
 		case 'g':	gamma = atof(argv[++i]);
 				break;
@@ -148,18 +156,18 @@ outofparse:
 	
 #ifdef DEBUG
 	fprintf(stderr, "Input file: %s\n", i <= argc - 1 ? argv[i] : "stdin");
-        fprintf(stderr, "Outut file: %s\n", i <= argc - 2 ? argv[i+1] : "stdout" );
+	fprintf(stderr, "Outut file: %s\n", i <= argc - 2 ? argv[i+1] : "stdout" );
 	fprintf(stderr, "Gamma: %f\n", gamma);
 	fprintf(stderr, "Brightness adjust: %d\n", bradj);
-        fprintf(stderr, "Verbose: %s\n", verbose ? "on" : "off");
+	fprintf(stderr, "Verbose: %s\n", verbose ? "on" : "off");
 #endif
 
 
-             /* OK. Now we read the size of the Radiance picture */
+	     /* OK. Now we read the size of the Radiance picture */
     if (checkheader(stdin, COLRFMT, NULL) < 0 ||
-            fgetresolu(&xsize, &ysize, stdin) < 0 /* != (YMAJOR|YDECR) */ ) {
-        fprintf(stderr, "%s: not a radiance picture\n", progname);
-        exit(1);
+	    fgetresolu(&xsize, &ysize, stdin) < 0 /* != (YMAJOR|YDECR) */ ) {
+	fprintf(stderr, "%s: not a radiance picture\n", progname);
+	exit(1);
 	}
 
 	    /* Set the gamma correction */
@@ -170,18 +178,18 @@ outofparse:
 	putbyte(0);
 
     ssizepos = outbytes;
-    putashort(0);	 	/* low 16 bits of file size less HEADER_SIZE */
+    putashort(0);		/* low 16 bits of file size less HEADER_SIZE */
     putrect(0,0,xsize,ysize);	/* bounding box of picture */
     putashort(PICT_picVersion);
     putashort(0x02ff);		/* version 2 pict */
     putashort(PICT_reservedHeader);	/* reserved header opcode */
 
     lsizepos = outbytes;
-    putalong(0);  		/* full size of the file */
-    putfprect(0,0,xsize,ysize);	/* fixed point bounding box of picture */
-    putalong(0);  		/* reserved */
+    putalong(0);		/* full size of the file */
+    putfprect(0,0,xsize,ysize); /* fixed point bounding box of picture */
+    putalong(0);		/* reserved */
 
-    putashort(PICT_clipRgn); 	/* the clip region */
+    putashort(PICT_clipRgn);	/* the clip region */
     putashort(10);
     putrect(0,0,xsize,ysize);
 
@@ -236,7 +244,7 @@ int ysize;
 
     if(rowbytes&1)
 	rowbytes++;
-    putashort(rowbytes|0x8000);	/* rowbytes */
+    putashort(rowbytes|0x8000); /* rowbytes */
     putrect(0,0,xsize,ysize);	/* bounds */
     putashort(0);		/* version */
 
@@ -285,7 +293,7 @@ FILE *in;
 char *cbuf;
 int xsize;
 {
-    extern char	*tempbuffer();		/* defined in color.c */
+    extern char *tempbuffer();		/* defined in color.c */
     COLR    *scanin = NULL;
     int	    x;
 
@@ -295,9 +303,9 @@ int xsize;
     }
 
     if (freadcolrs(scanin, xsize, in) < 0) {
-        fprintf(stderr, "%s: read error\n", progname);
-        exit(1);
-        }
+	fprintf(stderr, "%s: read error\n", progname);
+	exit(1);
+	}
 
     if (bradj)	    /* Adjust exposure level */
 	shiftcolrs(scanin, xsize, bradj);
@@ -331,7 +339,7 @@ int nbits;
 	ibits += 2;
 	while((ibits<ibitsend)&&((ibits[-2]!=ibits[-1])||(ibits[-1]!=ibits[0])))
 	    ibits++;
- 	if(ibits != ibitsend) {
+	if(ibits != ibitsend) {
 	    ibits -= 2;
 	}
 	count = ibits-sptr;
