@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -233,12 +233,17 @@ register unsigned  n;
 		pagesz = amnt = getpagesize();
 		nrem = (int)sbrk(0);			/* page align break */
 		nrem = pagesz - (nrem&(pagesz-1));
-		bpos = sbrk(nrem);			/* word aligned! */
+		bpos = sbrk(nrem);
 		if ((int)bpos == -1)
 			return(NULL);
 #ifdef MSTATS
 		b_nsbrked += nrem;
 #endif
+		thisamnt = BYTES_WORD - ((unsigned)bpos&(BYTES_WORD-1));
+		if (thisamnt < BYTES_WORD) {		/* align pointer */
+			bpos += thisamnt;
+			nrem -= thisamnt;
+		}
 	}
 
 	n = (n+(BYTES_WORD-1))&~(BYTES_WORD-1);		/* word align rqst. */
