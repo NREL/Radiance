@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1997 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -44,7 +44,9 @@ static double  dvalue();
 
 unsigned long  eclock = 0;		/* value storage timer */
 
-static char  context[MAXWORD+1];	/* current context path */
+#define  MAXCNTX	1023		/* maximum context length */
+
+static char  context[MAXCNTX+1];	/* current context path */
 
 static VARDEF  *hashtbl[NHASH];		/* definition list */
 static int  htndx;			/* index for */		
@@ -198,7 +200,7 @@ register char  *ctx;
     cpp = context;			/* start context with mark */
     *cpp++ = CNTXMARK;
     do {				/* carefully copy new context */
-	if (cpp >= context+MAXWORD)
+	if (cpp >= context+MAXCNTX)
 	    break;			/* just copy what we can */
 	if (isid(*ctx))
 	    *cpp++ = *ctx++;
@@ -218,15 +220,15 @@ pushcontext(ctx)		/* push on another context */
 char  *ctx;
 {
     extern char  *strncpy(), *strcpy();
-    char  oldcontext[MAXWORD+1];
+    char  oldcontext[MAXCNTX+1];
     register int  n;
 
     strcpy(oldcontext, context);	/* save old context */
     setcontext(ctx);			/* set new context */
     n = strlen(context);		/* tack on old */
-    if (n+strlen(oldcontext) > MAXWORD) {
-	strncpy(context+n, oldcontext, MAXWORD-n);
-	context[MAXWORD] = '\0';
+    if (n+strlen(oldcontext) > MAXCNTX) {
+	strncpy(context+n, oldcontext, MAXCNTX-n);
+	context[MAXCNTX] = '\0';
     } else
 	strcpy(context+n, oldcontext);
     return(context);
