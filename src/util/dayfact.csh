@@ -8,17 +8,17 @@ set genskyf=$nofile
 set octree=$nofile
 set dfpict=$nofile
 set ilpict=$nofile
+set fcopts=($*)
 set wporig=(0 0 0)
 set wpsize=(1 1)
 set rtargs=(-ab 1 -ad 256 -as 128 -aa .15 -av .1 .1 .1)
 
 set maxres=128
 set iltemp=/usr/tmp/il$$.pic
-set tempfiles=($iltemp)
+set sctemp=/usr/tmp/sc$$.csh
+set tempfiles=($iltemp $sctemp)
 
 alias readvar 'echo -n Enter \!:1 "[$\!:1]: ";set ans="$<";if("$ans" != "")set \!:1="$ans"'
-
-onintr quit
 
 cat <<_EOF_
 			DAYLIGHT FACTOR CALCULATION
@@ -69,7 +69,12 @@ if ( "$ilpict" == "$nofile" && "$dfpict" == "$nofile" ) then
 	echo "Since you don't want any output, I guess we're done."
 	exit 0
 endif
-echo "Starting rtrace calculation -- this will take some time..."
+cat <<'_EOF_' > $sctemp
+onintr quit
+echo "Your dayfact job is finished."
+echo "Please check for error messages below."
+echo ""
+set echo
 cnt $wpres[2] $wpres[1] \
 	| rcalc -e '$1=($2+.5)/'"$wpres[1]*$wpsize[1]+$wporig[1]" \
 		-e '$2=(1-($1+.5)/'"$wpres[2])*$wpsize[2]+$wporig[2]" \
@@ -78,15 +83,16 @@ cnt $wpres[2] $wpres[1] \
 	| pvalue -r -x $wpres[1] -y $wpres[2] -df \
 	| pfilt -h 20 -n 0 -x 350 -y 350 -p 1 -r 1 > $iltemp
 set maxval=`getinfo < $iltemp | rcalc -i 'EXPOSURE=${e}' -e '$1=3/e'`
+'_EOF_'
 if ( "$ilpict" != "$nofile" ) then
-	echo "Making illuminance contour picture $ilpict..."
-	falsecolor -s "$maxval*470" -m 470 -l Lux -cb -pi $iltemp > $ilpict
+	echo 'falsecolor -cb -l Lux $fcopts -s "$maxval*470" -m 470 \\
+		-pi $iltemp > $ilpict' >> $sctemp
 endif
 if ( "$dfpict" != "$nofile" ) then
-	echo "Making daylight factor contour picture $dfpict..."
-	falsecolor -s "$maxval/$extamb" -m "1/$extamb" -l DF \
-		-cb -pi $iltemp > $dfpict
+	echo 'falsecolor -cb -l DF $fcopts -s "$maxval/$extamb" \\
+		-m "1/$extamb" -pi $iltemp > $dfpict' >> $sctemp
 endif
-echo "Done."
-quit:
-	rm -f $tempfiles
+echo 'rm -f $tempfiles' >> $sctemp
+(source $sctemp) |& mail `whoami` &
+echo "Your job is started in the background."
+echo "I will send you mail when it is done."
