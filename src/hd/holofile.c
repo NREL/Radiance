@@ -554,7 +554,7 @@ int	i;
 		}
 	biglob(hp)->nrd -= bi->nrd;		/* tell fragment it's free */
 	bi->nrd = 0;
-	bi->fo = 0;
+	bi->fo = 0L;
 	return(1);
 }
 
@@ -644,7 +644,8 @@ register int	i;
 		hp->bi[i].fo = nfo;
 	} else
 		hp->bi[i].fo = 0L;
-	biglob(hp)->nrd += hp->bi[i].nrd = nrays;
+	biglob(hp)->nrd += nrays - hp->bi[i].nrd;
+	hp->bi[i].nrd = nrays;
 	markdirty(hp, i);		/* section directory now out of date */
 	return(1);
 }
@@ -719,6 +720,7 @@ register int	i;
 	if (hp->bi[i].nrd) {
 		if (hdfragflags&FF_KILL)
 			hdfreefrag(hp, i);
+		biglob(hp)->nrd -= hp->bi[i].nrd;
 		hp->bi[i].nrd = 0;	/* make sure it's gone */
 		hp->bi[i].fo = 0L;
 	}
