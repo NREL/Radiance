@@ -300,9 +300,9 @@ struct hdStruct  *hp;
 			register unsigned char  *dp;
 			dp = (unsigned char *)tarData + j*3*hp->x;
 			for (i = 0; i < hp->x; i++) {
-				*dp++ = inl[i][RED];
-				*dp++ = inl[i][GRN];
 				*dp++ = inl[i][BLU];
+				*dp++ = inl[i][GRN];
+				*dp++ = inl[i][RED];
 			}
 		}
 	}
