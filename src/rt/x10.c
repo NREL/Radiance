@@ -55,8 +55,7 @@ static Window  gwind = 0;		/* our graphics window */
 
 static Cursor  pickcursor = 0;		/* cursor used for picking */
 
-static int  gwidth = 0;			/* graphics window width */
-static int  gheight = 0;		/* graphics window height */
+static int  gwidth, gheight;		/* graphics window size */
 
 static TEXTWIND  *comline = NULL;	/* our command line */
 
@@ -111,11 +110,12 @@ char  *name, *id;
 		return(NULL);
 	}
 	XStoreName(gwind, id);
-	XMapWindow(gwind);
 	XSelectInput(gwind, KeyPressed|ButtonPressed|
 			ExposeWindow|ExposeRegion|UnmapWindow);
-	x_driver.xsiz = mainframe.width;
-	x_driver.ysiz = mainframe.height-COMHEIGHT;
+	gwidth = mainframe.width;
+	gheight = mainframe.height-COMHEIGHT;
+	x_driver.xsiz = gwidth < MINWIDTH ? MINWIDTH : gwidth;
+	x_driver.ysiz = gheight < MINHEIGHT ? MINHEIGHT : gheight;
 	x_driver.inpready = 0;
 	cmdvec = x_comout;			/* set error vectors */
 	if (wrnvec != NULL)
@@ -139,7 +139,6 @@ x_close()			/* close our display */
 	if (gwind != 0) {
 		XDestroyWindow(gwind);
 		gwind = 0;
-		gwidth = gheight = 0;
 	}
 	XFreeCursor(pickcursor);
 	freepixels();
@@ -152,10 +151,6 @@ static
 x_clear(xres, yres)			/* clear our display */
 int  xres, yres;
 {
-	if (xres < MINWIDTH)
-		xres = MINWIDTH;
-	if (yres < MINHEIGHT)
-		yres = MINHEIGHT;
 	if (xres != gwidth || yres != gheight) {	/* new window */
 		if (comline != NULL)
 			xt_close(comline);
@@ -174,6 +169,8 @@ int  xres, yres;
 		stderr_v("cannot allocate colors\n");
 	else
 		new_ctab(ncolors);
+
+	XMapWindow(gwind);			/* make sure it's mapped */
 	XSync(1);				/* discard input */
 	return;
 }
@@ -359,8 +356,10 @@ register XExposeEvent  *eexp;
 	}
 					/* check for change in size */
 	if (eexp->width != gwidth || eexp->height-COMHEIGHT != gheight) {
-		x_driver.xsiz = eexp->width;
-		x_driver.ysiz = eexp->height-COMHEIGHT;
+		gwidth = eexp->width;
+		gheight = eexp->height-COMHEIGHT;
+		x_driver.xsiz = gwidth < MINWIDTH ? MINWIDTH : gwidth;
+		x_driver.ysiz = gheight < MINHEIGHT ? MINHEIGHT : gheight;
 		strcpy(getcombuf(&x_driver), "new\n");
 		return;
 	}
