@@ -33,11 +33,12 @@ int  mode;
 	if (fname == NULL)
 		return(NULL);
 
+	pname[0] = '\0';		/* check for full specification */
 	switch (*fname) {
 	CASEDIRSEP:				/* relative to root */
 	case '.':				/* relative to cwd */
 		strcpy(pname, fname);
-		return(pname);
+		break;
 #ifndef NIX
 	case '~':				/* relative to home directory */
 		fname++;
@@ -46,7 +47,7 @@ int  mode;
 				return(NULL);
 			strcpy(pname, cp);
 			strcat(pname, fname);
-			return(pname);
+			break;
 		}
 		cp = pname;					/* user */
 		do
@@ -57,9 +58,11 @@ int  mode;
 			return(NULL);
 		strcpy(pname, pwent->pw_dir);
 		strcat(pname, fname);
-		return(pname);
+		break;
 #endif
 	}
+	if (pname[0])		/* got it, check access if search requested */
+		return(searchpath==NULL||access(pname,mode)==0 ? pname : NULL);
 
 	if (searchpath == NULL) {			/* don't search */
 		strcpy(pname, fname);
