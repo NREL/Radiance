@@ -24,6 +24,12 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  MAXLINE	512
 
+#ifndef BSD
+#define  index	strchr
+#endif
+
+extern char  *index();
+
 char  FMTSTR[] = "FORMAT=";
 int  FMTSTRL = 7;
 
@@ -31,10 +37,21 @@ int  FMTSTRL = 7;
 printargs(ac, av, fp)		/* print arguments to a file */
 int  ac;
 char  **av;
-FILE  *fp;
+register FILE  *fp;
 {
+	int  quote;
+
 	while (ac-- > 0) {
-		fputs(*av++, fp);
+		if (index(*av, ' ') != NULL) {		/* quote it */
+			if (index(*av, '\'') != NULL)
+				quote = '"';
+			else
+				quote = '\'';
+			putc(quote, fp);
+			fputs(*av++, fp);
+			putc(quote, fp);
+		} else
+			fputs(*av++, fp);
 		putc(' ', fp);
 	}
 	putc('\n', fp);
