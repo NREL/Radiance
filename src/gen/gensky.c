@@ -39,7 +39,7 @@ int  month, day;				/* date */
 double  hour;					/* standard time */
 double  altitude, azimuth;			/* or solar angles */
 					/* default values */
-int  cloudy = 0;
+int  cloudy = 0;				/* 1=standard, 2=uniform */
 int  dosun = 1;
 double  zenithbr = -1.0;
 double  turbidity = 2.75;
@@ -85,7 +85,7 @@ char  *argv[];
 				dosun = argv[i][0] == '+';
 				break;
 			case 'c':
-				cloudy = 1;
+				cloudy = argv[i][0] == '+' ? 2 : 1;
 				dosun = 0;
 				break;
 			case 't':
@@ -155,7 +155,10 @@ computesky()			/* compute sky parameters */
 		zenithbr = 0.0;
 					/* Compute horizontal radiance */
 	if (cloudy) {
-		groundbr = zenithbr*0.777778;
+		if (cloudy == 2)
+			groundbr = zenithbr;
+		else
+			groundbr = zenithbr*0.777778;
 		printf("# Ground ambient level: %f\n", groundbr);
 	} else {
 		F2 = 0.274*(0.91 + 10.0*exp(-3.0*(PI/2.0-altitude)) +
@@ -191,7 +194,7 @@ printsky()			/* print out sky */
 	printf("2 skybright skybright.cal\n");
 	printf("0\n");
 	if (cloudy)
-		printf("3 1 %.2e %.2e\n", zenithbr, groundbr);
+		printf("3 %d %.2e %.2e\n", cloudy, zenithbr, groundbr);
 	else
 		printf("7 -1 %.2e %.2e %.2e %f %f %f\n", zenithbr, groundbr,
 				F2, sundir[0], sundir[1], sundir[2]);
@@ -200,8 +203,10 @@ printsky()			/* print out sky */
 
 printdefaults()			/* print default values */
 {
-	if (cloudy)
+	if (cloudy == 1)
 		printf("-c\t\t\t\t# Cloudy sky\n");
+	else if (cloudy == 2)
+		printf("+c\t\t\t\t# Uniform cloudy sky\n");
 	else if (dosun)
 		printf("+s\t\t\t\t# Sunny sky with sun\n");
 	else
