@@ -57,9 +57,6 @@ char	*argv[];
 	if ((dev = dinit(argv[0], argv[3])) == NULL)
 		quit(1);
 	putw(COM_RECVM, devout);		/* verify initialization */
-	fwrite((char *)&dev->pixaspect, sizeof(dev->pixaspect), 1, devout);
-	putw(dev->xsiz, devout);
-	putw(dev->ysiz, devout);
 	fflush(devout);
 						/* loop on requests */
 	while ((com = getc(devin)) != EOF) {
@@ -109,6 +106,9 @@ r_flush()				/* flush output */
 	if (dev->flush != NULL)
 		(*dev->flush)();
 	putc(COM_FLUSH, devout);
+	fwrite((char *)&dev->pixaspect, sizeof(dev->pixaspect), 1, devout);
+	putw(dev->xsiz, devout);
+	putw(dev->ysiz, devout);
 	putw(dev->inpready, devout);
 	fflush(devout);
 }

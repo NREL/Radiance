@@ -20,6 +20,10 @@ static char SCCSid[] = "$SunId$ LBL";
 #define DEVPATH		getenv("PATH")	/* device search path */
 #endif
 
+#ifndef DELAY
+#define DELAY		20		/* seconds to wait for response */
+#endif
+
 #ifndef BSD
 #define vfork		fork
 #endif
@@ -74,15 +78,13 @@ char	*dname, *id;
 		goto syserr;
 	if ((devin = fdopen(p2[0], "r")) == NULL)
 		goto syserr;
-						/* verify & get resolution */
+						/* verify initialization */
 	putw(COM_SENDM, devout);
 	fflush(devout);
 	if (getw(devin) != COM_RECVM)
 		return(NULL);
-	fread((char *)&comm_driver.pixaspect,
-			sizeof(comm_driver.pixaspect), 1, devin);
-	comm_driver.xsiz = getw(devin);
-	comm_driver.ysiz = getw(devin);
+						/* get driver parameters */
+	comm_flush();
 						/* set error vectors */
 	cmdvec = comm_comout;
 	if (wrnvec != NULL)
@@ -141,6 +143,10 @@ comm_flush()				/* flush output to driver */
 	fflush(devout);
 	if (getc(devin) != COM_FLUSH)
 		reply_error("flush");
+	fread((char *)&comm_driver.pixaspect,
+			sizeof(comm_driver.pixaspect), 1, devin);
+	comm_driver.xsiz = getw(devin);
+	comm_driver.ysiz = getw(devin);
 	comm_driver.inpready = getw(devin);
 }
 

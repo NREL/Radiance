@@ -94,9 +94,9 @@ $(DESTDIR)/rview:	$(RVOBJS)
 $(DESTDIR)/lookamb:	lookamb.o
 	cc $(CFLAGS) -o $(DESTDIR)/lookamb lookamb.o
 
-$(DEVDIR)/sundev:	sundev.o devmain.o colortab.o
+$(DEVDIR)/sundev:	sundev.o devmain.o colortab.o editline.o
 	cc $(CFLAGS) -o $(DEVDIR)/sundev devmain.o sundev.o colortab.o \
--lsuntool -lsunwindow -lpixrect $(LIBS)
+editline.o -lsuntool -lsunwindow -lpixrect $(LIBS)
 
 $(DEVDIR)/sun.com:	suncom.o editline.o
 	cc $(CFLAGS) -o $(DEVDIR)/sun.com suncom.o editline.o
