@@ -6,7 +6,7 @@ static char SCCSid[] = "$SunId$ SGI";
 
 /*
  * OpenGL GLX driver for holodeck display.
- * Based on rview driver.
+ * Based on x11 driver.
  */
 
 #include "standard.h"
@@ -26,20 +26,23 @@ static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 #ifndef FREEPCT
-#define FREEPCT		25		/* percentage of values to free */
+#define FREEPCT		10		/* percentage of values to free */
 #endif
 
 #ifndef NCONEV
 #define NCONEV		7		/* number of cone base vertices */
 #endif
 #ifndef CONEH
-#define CONEH		0.25		/* cone height (fraction of depth) */
+#define CONEH		5.		/* cone height (fraction of depth) */
 #endif
 #ifndef CONEW
-#define CONEW		0.035		/* cone width (fraction of screen) */
+#define CONEW		0.07		/* cone width (fraction of screen) */
+#endif
+#ifndef DIRPEN
+#define DIRPEN		0.001		/* direction penalty factor */
 #endif
 
-#define GAMMA		2.2		/* default gamma correction */
+#define GAMMA		1.4		/* default gamma correction */
 
 #define MOVPCT		7		/* percent distance to move /frame */
 #define MOVDIR(b)	((b)==Button1 ? 1 : (b)==Button2 ? 0 : -1)
@@ -65,7 +68,6 @@ struct driver	odev;			/* global device driver structure */
 static XEvent  currentevent;		/* current event */
 
 static int  mapped = 0;			/* window is mapped? */
-static unsigned long  *pixval = NULL;	/* allocated pixels */
 static unsigned long  ourblack=0, ourwhite=~0;
 
 static Display  *ourdisplay = NULL;	/* our display */
@@ -74,7 +76,7 @@ static Window  gwind = 0;		/* our graphics window */
 static GLXContext	gctx;		/* our GLX context */
 
 static double	mindepth = FHUGE;	/* minimum depth value so far */
-static double	maxdepth = 0.;		/* maximum depth value */
+static double	maxdepth = 0.;		/* maximum depth value so far */
 
 static double	pwidth, pheight;	/* pixel dimensions (mm) */
 
@@ -99,12 +101,19 @@ static struct {
 	char		*base;		/* base of allocated memory */
 }	rV;			/* our collection of values */
 
+static int	*valmap = NULL;		/* sorted map of screen values */
+static int	vmaplen = 0;		/* value map length */
+
 #define redraw()	(rV.drl = rV.bl)
 
 static int  resizewindow(), getevent(), getkey(), moveview(),
 		setGLview(), getmove(), fixwindow(), mytmflags(),
-		newvalue(), drawvalue(), Compost(),
-		FindValue(), AllocValues(), TMapValues(), FreeValues();
+		drawvalue(), valcmp(), clralphas(), setalphas(), mergalphas(),
+		IndexValue(), Compost(), FindValue(), TMapValues(),
+		AllocValues(), FreeValues();
+
+extern int4	encodedir();
+extern double	fdir2diff(), dir2diff();
 
 
 dev_open(id)			/* initialize X11 driver */
@@ -113,12 +122,8 @@ char  *id;
 	extern char	*getenv();
 	static int	atlBest[] = {GLX_RGBA, GLX_RED_SIZE,8,
 				GLX_GREEN_SIZE,8, GLX_BLUE_SIZE,8,
-				GLX_ALPHA_SIZE,8, GLX_DEPTH_SIZE,23,
-				/*GLX_DOUBLEBUFFER,*/ None};
-	static int	atlOK[] = {GLX_RGBA, GLX_RED_SIZE,4,
-				GLX_GREEN_SIZE,4, GLX_BLUE_SIZE,4,
-				GLX_ALPHA_SIZE,4, GLX_DEPTH_SIZE,15,
-				/*GLX_DOUBLEBUFFER,*/ None};
+				GLX_ALPHA_SIZE,8, GLX_DEPTH_SIZE,15,
+				None};
 	char	*gv;
 	double	gamval = GAMMA;
 	XSetWindowAttributes	ourwinattr;
@@ -130,8 +135,6 @@ char  *id;
 		error(USER, "cannot open X-windows; DISPLAY variable set?\n");
 					/* find a usable visual */
 	ourvinf = glXChooseVisual(ourdisplay, ourscreen, atlBest);
-	if (ourvinf == NULL)
-		ourvinf = glXChooseVisual(ourdisplay, ourscreen, atlOK);
 	if (ourvinf == NULL)
 		error(USER, "no suitable visuals available");
 					/* get a context */
@@ -167,13 +170,12 @@ char  *id;
 	oursizhints.min_height = MINHEIGHT;
 	oursizhints.flags = PMinSize;
 	XSetNormalHints(ourdisplay, gwind, &oursizhints);
-					/* map the window and get its size */
-	XMapWindow(ourdisplay, gwind);
-	dev_input();
-					/* allocate our value list */
-	if (!AllocValues(DisplayWidth(ourdisplay,ourscreen) *
-			DisplayHeight(ourdisplay,ourscreen) / 4))
-		error(SYSTEM, "insufficient memory for value storage");
+					/* set GLX context */
+	glXMakeCurrent(ourdisplay, gwind, gctx);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+	glShadeModel(GL_FLAT);
+	glDisable(GL_DITHER);
 					/* figure out sensible view */
 	pwidth = (double)DisplayWidthMM(ourdisplay, ourscreen) /
 			DisplayWidth(ourdisplay, ourscreen);
@@ -181,20 +183,16 @@ char  *id;
 			DisplayHeight(ourdisplay, ourscreen);
 	copystruct(&odev.v, &stdview);
 	odev.v.type = VT_PER;
-	odev.v.horiz = 2.*180./PI * atan(0.5/VIEWDIST*pwidth*odev.hres);
-	odev.v.vert = 2.*180./PI * atan(0.5/VIEWDIST*pheight*odev.vres);
+					/* map the window */
+	XMapWindow(ourdisplay, gwind);
+	dev_input();			/* sets size and view angles */
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+					/* allocate our value list */
+	if (!AllocValues(DisplayWidth(ourdisplay,ourscreen) *
+			DisplayHeight(ourdisplay,ourscreen) / 4))
+		error(SYSTEM, "insufficient memory for value storage");
 	odev.name = id;
 	odev.ifd = ConnectionNumber(ourdisplay);
-					/* set GLX context and clear buffers */
-	glXMakeCurrent(ourdisplay, gwind, gctx);
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
-	glShadeModel(GL_FLAT);
-	glDisable(GL_DITHER);
-	glDrawBuffer(GL_FRONT_AND_BACK);
-	glReadBuffer(GL_BACK);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	setGLview();			/* initialize view */
 }
 
 
@@ -247,12 +245,13 @@ register VIEW	*nv;
 				odev.vres = dh;
 			}
 			XResizeWindow(ourdisplay, gwind, odev.hres, odev.vres);
+			dev_input();	/* get resize event */
 		}
 		copystruct(&odev.v, nv);
 		setGLview();
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		redraw();
 	}
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	redraw();
 	return(1);
 }
 
@@ -277,7 +276,11 @@ FVECT	p, v;
 {
 	register int	li;
 
-	li = newvalue();
+	li = rV.tl++;
+	if (rV.tl >= rV.nl)	/* get next leaf in ring */
+		rV.tl = 0;
+	if (rV.tl == rV.bl)	/* need to shake some free */
+		Compost(FREEPCT);
 	VCOPY(rV.wp[li], p);
 	rV.wd[li] = encodedir(v);
 	tmCvColrs(&rV.brt[li], rV.chr[li], c, 1);
@@ -331,7 +334,7 @@ setGLview()			/* set our GL view */
 		return;
 	if (mindepth < maxdepth) {
 		zmin = 0.25*mindepth;
-		zmax = 8.0*maxdepth;
+		zmax = 4.0*(1.+CONEH)*maxdepth;
 	} else {
 		zmin = 0.01;
 		zmax = 1000.;
@@ -379,66 +382,57 @@ setGLview()			/* set our GL view */
 }
 
 
-static int
-newvalue()			/* allocate a leaf from our pile */
-{
-	int	li;
-	
-	li = rV.tl++;
-	if (rV.tl >= rV.nl)	/* get next leaf in ring */
-		rV.tl = 0;
-	if (rV.tl == rV.bl)	/* need to shake some free */
-		Compost(FREEPCT);
-	return(li);
-}
-
-
 static
 drawvalue(li)			/* draw a pixel value as a cone */
 register int	li;
 {
-	static FVECT	apex, disp;
-	double	d, h, v;
+	static FVECT	disp;
+	FVECT	apex;
+	double	d, dorg, dnew, h, v;
 	register int	i;
-					/* compute cone's base displacement */
-	VCOPY(apex, rV.wp[li]);
-	disp[0] = apex[0] - odev.v.vp[0];
-	disp[1] = apex[1] - odev.v.vp[1];
-	disp[2] = apex[2] - odev.v.vp[2];
-	if ((d = DOT(disp,odev.v.vdir)) <= odev.v.vfore || d <= FTINY)
-		return;
-	if (d > 1e5) {		/* background region */
-		if (odev.v.vaft > FTINY)
-			return;
-		h = maxdepth/d;
-		disp[0] *= h; disp[1] *= h; disp[2] *= h;
-		apex[0] = odev.v.vp[0] + disp[0];
-		apex[1] = odev.v.vp[1] + disp[1];
-		apex[2] = odev.v.vp[2] + disp[2];
-		d = maxdepth;
-	} else if (d > maxdepth)
-		maxdepth = d;
-	h = DOT(disp,odev.v.hvec)/(d*odev.v.hn2);
-	v = DOT(disp,odev.v.vvec)/(d*odev.v.vn2);
-	if (fabs(h - odev.v.hoff) < 0.5 && fabs(v - odev.v.voff) < 0.5 &&
-			d < mindepth)
-{
-fprintf(stderr, "min depth now %lf (%lf,%lf,%lf)\n", d, apex[0], apex[1], apex[2]);
-		mindepth = d;
-}
+				/* compute cone coordinates */
+	disp[0] = rV.wp[li][0] - odev.v.vp[0];
+	disp[1] = rV.wp[li][1] - odev.v.vp[1];
+	disp[2] = rV.wp[li][2] - odev.v.vp[2];
+	dorg = DOT(disp,odev.v.vdir);
+	if (dorg <= odev.v.vfore)
+		return;		/* clipped too near */
+	if (odev.v.vaft > FTINY && dorg > odev.v.vaft)
+		return;		/* clipped too far */
+	if (dorg > 1e5) {	/* background pixel */
+		dnew = maxdepth;
+		d = dnew/dorg;
+	} else {		/* foreground pixel, compute penalty */
+		normalize(disp);
+		d = dnew = dorg + coneh*fdir2diff(rV.wd[li],disp)*DIRPEN;
+	}
+				/* compute adjusted apex position */
+	disp[0] *= d; disp[1] *= d; disp[2] *= d;
+	apex[0] = odev.v.vp[0] + disp[0];
+	apex[1] = odev.v.vp[1] + disp[1];
+	apex[2] = odev.v.vp[2] + disp[2];
+				/* compute view position and base offset */
+	h = DOT(disp,odev.v.hvec)/(dnew*odev.v.hn2);
+	v = DOT(disp,odev.v.vvec)/(dnew*odev.v.vn2);
+	if (fabs(h - odev.v.hoff) > 0.5 || fabs(v - odev.v.voff) > 0.5)
+		return;		/* clipped off screen */
+	if (dorg < mindepth)
+		mindepth = dorg;
+	if (dorg > maxdepth)
+		maxdepth = dorg;
 	for (i = 0; i < 3; i++)
 		disp[i] = apex[i] + coneh*(h*odev.v.hvec[i] + v*odev.v.vvec[i]);
-					/* draw pyramid (cone approx.) */
+				/* draw cone (pyramid approx.) */
 	glColor4ub(rV.rgb[li][0], rV.rgb[li][1], rV.rgb[li][2], rV.alpha[li]);
 	glBegin(GL_TRIANGLE_FAN);
 	glVertex3f(apex[0], apex[1], apex[2]);
 	for (i = 0; i < NCONEV; i++)
 		glVertex3d(conev[i][0] + disp[0], conev[i][1] + disp[1],
 				conev[i][2] + disp[2]);
-					/* connect last side to first */
+				/* connect last face to first */
 	glVertex3d(conev[0][0] + disp[0], conev[0][1] + disp[1],
 			conev[0][2] + disp[2]);
-	glEnd();			/* done */
+	glEnd();		/* done */
 }
 
 
@@ -493,6 +487,109 @@ FreeValues()			/* free our allocated values */
 
 
 static
+clralphas()			/* prepare for new alpha values */
+{
+	if (!vmaplen)
+		return;
+	free((char *)valmap);
+	valmap = NULL;
+	vmaplen = 0;
+}
+
+
+static int
+valcmp(v1p, v2p)		/* compare two pixel values */
+int	*v1p, *v2p;
+{
+	register int	v1 = *v1p, v2 = *v2p;
+	register int	c;
+
+	if ((c = rV.rgb[v1][0] - rV.rgb[v2][0])) return(c);
+	if ((c = rV.rgb[v1][1] - rV.rgb[v2][1])) return(c);
+	if ((c = rV.rgb[v1][2] - rV.rgb[v2][2])) return(c);
+	return(rV.alpha[v1] - rV.alpha[v2]);
+}
+
+
+static
+mergalphas(adest, al1, n1, al2, n2)	/* merge two sorted alpha lists */
+register int	*adest, *al1, *al2;
+int	n1, n2;
+{
+	register int	cmp;
+
+	while (n1 | n2) {
+		if (!n1) cmp = 1;
+		else if (!n2) cmp = -1;
+		else cmp = valcmp(al1, al2);
+		if (cmp > 0) {
+			*adest++ = *al2++;
+			n2--;
+		} else {
+			*adest++ = *al1++;
+			n1--;
+		}
+	}
+}
+
+
+static
+setalphas(vbeg, nvals)		/* add values to our map and set alphas */
+int	vbeg, nvals;
+{
+	register int	*newmap;
+	short	ccmp[3], lastalpha;
+	int	newmaplen;
+
+	if (nvals <= 0)
+		return;
+	newmaplen = vmaplen + nvals;	/* allocate new map */
+	newmap = (int *)malloc(newmaplen*sizeof(int));
+	if (newmap == NULL)
+		error(SYSTEM, "out of memory in setalphas");
+	while (nvals--) {		/* add new values to end */
+		rV.alpha[vbeg] = 255;
+		newmap[vmaplen+nvals] = vbeg++;
+	}
+	if (nvals >= 3*vmaplen) {	/* resort the combined array */
+		while (vmaplen--)
+			newmap[vmaplen] = valmap[vmaplen];
+		qsort((char *)newmap, newmaplen, sizeof(int), valcmp);
+	} else {			/* perform merge sort */
+		qsort((char *)(newmap+vmaplen), newmaplen-vmaplen,
+				sizeof(int), valcmp);
+		mergalphas(newmap, valmap, vmaplen,
+				newmap+vmaplen, newmaplen-vmaplen);
+	}
+	if (valmap != NULL)		/* free old map and assign new one */
+		free((char *)valmap);
+	valmap = newmap;
+	vmaplen = newmaplen;
+	lastalpha = 0;			/* set new alpha values */
+	ccmp[0] = ccmp[1] = ccmp[2] = 256;
+	while (newmaplen--)
+		if (rV.rgb[*newmap][0] == ccmp[0] &&
+				rV.rgb[*newmap][1] == ccmp[1] &&
+				rV.rgb[*newmap][2] == ccmp[2]) {
+			if (lastalpha >= 255)
+				newmap++;
+			else if (rV.alpha[*newmap] < 255)
+				lastalpha = rV.alpha[*newmap++];
+			else
+				rV.alpha[*newmap++] = ++lastalpha;
+		} else {
+			ccmp[0] = rV.rgb[*newmap][0];
+			ccmp[1] = rV.rgb[*newmap][1];
+			ccmp[2] = rV.rgb[*newmap][2];
+			if (rV.alpha[*newmap] < 255)
+				lastalpha = rV.alpha[*newmap++];
+			else
+				rV.alpha[*newmap++] = lastalpha = 1;
+		}
+}
+
+
+static
 TMapValues(redo)		/* map our values to RGB */
 int	redo;
 {
@@ -521,7 +618,8 @@ int	redo;
 			tmAddHisto(rV.brt+borg, blen, 1);
 		if (tmComputeMapping(0., 0., 0.) != TM_E_OK)
 			return(0);
-		rV.drl = rV.bl;
+		clralphas();		/* restart value list */
+		rV.drl = rV.bl;		/* need to redraw */
 	}
 	if (tmMapPixels(rV.rgb+aorg, rV.brt+aorg,
 			rV.chr+aorg, alen) != TM_E_OK)
@@ -529,8 +627,10 @@ int	redo;
 	if (blen > 0)
 		tmMapPixels(rV.rgb+borg, rV.brt+borg,
 				rV.chr+borg, blen);
-					/* compute unique alpha values */
-	rV.tml = rV.tl;
+	setalphas(aorg, alen);		/* compute add'l alpha values */
+	if (blen > 0)
+		setalphas(borg, blen);
+	rV.tml = rV.tl;			/* we're all up to date */
 	return(1);
 }
 
@@ -547,7 +647,7 @@ int	pct;
 	nclear -= rV.nl - nused;
 	if (nclear <= 0)
 		return(0);
-	if (nclear >= nused) {	/* clear them all */
+	if (nclear >= nused) {	/* clear them all? */
 		rV.drl = rV.tml = rV.bl = rV.tl = 0;
 		return(nused);
 	}
@@ -603,7 +703,7 @@ register FVECT	wp[2];
 static
 draw_grids()			/* draw holodeck section grids */
 {
-	static GLubyte	gridrgba[4] = {0x0, 0xff, 0xff, 0x00};
+	static BYTE	gridrgba[4] = {0x0, 0xff, 0xff, 0x00};
 
 	if (!mapped)
 		return;
@@ -616,10 +716,37 @@ draw_grids()			/* draw holodeck section grids */
 
 
 static int
+IndexValue(rgba)		/* locate a pixel by it's framebuffer value */
+register BYTE	rgba[4];
+{
+	register int	*vp;
+					/* check legality */
+	if (rgba[3] == 0 || rgba[3] == 255)
+		return(-1);
+					/* borrow a value slot */
+	rV.rgb[rV.tl][0] = rgba[0];
+	rV.rgb[rV.tl][1] = rgba[1];
+	rV.rgb[rV.tl][2] = rgba[2];
+	rV.alpha[rV.tl] = rgba[3];
+					/* find it */
+	vp = (int *)bsearch((char *)&rV.tl, (char *)valmap, vmaplen,
+			sizeof(int), valcmp);
+	if (vp == NULL)
+		return(-1);
+	return(*vp);
+}
+
+
+static int
 FindValue(dx, dy)		/* find a value on the display */
 int	dx, dy;
 {
-	return(-1);		/* not found */
+	BYTE	rgba[4];
+
+	if (dx < 0 || dy < 0 || dx >= odev.hres || dy >= odev.vres)
+		return(-1);
+	glReadPixels(dx, dy, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+	return(IndexValue(rgba));
 }
 
 
@@ -702,6 +829,9 @@ XButtonPressedEvent	*ebut;
 		wx = levptr(XButtonReleasedEvent)->x;
 		wy = levptr(XButtonReleasedEvent)->y;
 		moveview(wx, odev.vres-1-wy, movdir, movorb);
+	} else {
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		redraw();
 	}
 	dev_flush();
 }
@@ -739,17 +869,16 @@ register XKeyPressedEvent  *ekey;
 		return;
 	case CTRL('R'):			/* redraw screen */
 		TMapValues(1);
+		glClear(GL_DEPTH_BUFFER_BIT);
 		redraw();
 		return;
 	case CTRL('L'):			/* refresh from server */
 		if (inpresflags & DFL(DC_REDRAW))
 			return;
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glDrawBuffer(GL_FRONT);
 		glDisable(GL_DEPTH_TEST);
 		draw_grids();
 		glEnable(GL_DEPTH_TEST);
-		glDrawBuffer(GL_FRONT_AND_BACK);
 		glFlush();
 		Compost(100);			/* get rid of old values */
 		inpresflags |= DFL(DC_REDRAW);	/* resend values from server */
@@ -777,14 +906,14 @@ static
 fixwindow(eexp)				/* repair damage to window */
 register XExposeEvent  *eexp;
 {
-	if (odev.hres == 0 || odev.vres == 0) {	/* first exposure */
-		odev.hres = eexp->width;
-		odev.vres = eexp->height;
-	}
+	if (odev.hres == 0 || odev.vres == 0)	/* first exposure */
+		resizewindow((XConfigureEvent *)eexp);
 	if (eexp->width == odev.hres && eexp->height == odev.vres)
 		TMapValues(1);
-	if (!eexp->count)
+	if (!eexp->count) {
+		glClear(GL_DEPTH_BUFFER_BIT);
 		redraw();
+	}
 }
 
 
