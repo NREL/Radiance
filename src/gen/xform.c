@@ -836,7 +836,8 @@ initotypes()			/* initialize ofun[] array */
 	ofun[OBJ_CYLINDER].funp =
 	ofun[OBJ_TUBE].funp = o_cylinder;
 	ofun[OBJ_RING].funp = o_ring;
-	ofun[OBJ_INSTANCE].funp = addxform;
+	ofun[OBJ_INSTANCE].funp =
+	ofun[OBJ_MESH].funp = addxform;
 	ofun[MAT_GLOW].funp = m_glow;
 	ofun[MAT_SPOT].funp = m_spot;
 	ofun[MAT_DIELECTRIC].funp = m_dielectric;
