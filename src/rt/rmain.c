@@ -106,6 +106,8 @@ extern int  psample;			/* pixel sample size */
 extern double  maxdiff;			/* max. sample difference */
 extern double  dstrpix;			/* square pixel distribution */
 
+extern double  mblur;			/* motion blur parameter */
+
 extern double  dstrsrc;			/* square source distribution */
 extern double  shadthresh;		/* shadow threshold */
 extern double  shadcert;		/* shadow testing certainty */
@@ -302,6 +304,10 @@ char  *argv[];
 			case 'a':				/* aspect */
 				check(3,"f");
 				pixaspect = atof(argv[++i]);
+				break;
+			case 'm':				/* motion */
+				check(3,"f");
+				mblur = atof(argv[++i]);
 				break;
 #endif
 #if  RVIEW
@@ -868,6 +874,7 @@ printdefaults()			/* print default values to stdout */
 #if  RPICT
 	printf("-pa %f\t\t\t# pixel aspect ratio\n", pixaspect);
 	printf("-pj %f\t\t\t# pixel jitter\n", dstrpix);
+	printf("-pm %f\t\t\t# pixel motion\n", mblur);
 #endif
 #if  RVIEW
 	printf("-pe %f\t\t\t# pixel exposure\n", exposure);

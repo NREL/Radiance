@@ -53,6 +53,8 @@ int  psample = 4;			/* pixel sample size */
 double	maxdiff = .05;			/* max. difference for interpolation */
 double	dstrpix = 0.67;			/* square pixel distribution */
 
+double  mblur = 0.;			/* motion blur parameter */
+
 double	dstrsrc = 0.0;			/* square source distribution */
 double	shadthresh = .05;		/* shadow threshold */
 double	shadcert = .5;			/* shadow certainty */
@@ -103,6 +105,8 @@ extern unsigned long  nrays;		/* number of rays traced */
 #define	 pixjitter()	(.5+dstrpix*(.5-frandom()))
 
 int  hres, vres;			/* resolution for this frame */
+
+static VIEW	lastview;		/* the previous view input */
 
 extern char  *mktemp();
 
@@ -331,6 +335,7 @@ FILE  *fp;
 {
 	char  linebuf[256];
 
+	copystruct(&lastview, &ourview);
 	while (fgets(linebuf, sizeof(linebuf), fp) != NULL)
 		if (isview(linebuf) && sscanview(&ourview, linebuf) > 0)
 			return(0);
@@ -603,17 +608,36 @@ pixvalue(col, x, y)		/* compute pixel value */
 COLOR  col;			/* returned color */
 int  x, y;			/* pixel position */
 {
-	static RAY  thisray;
-
-	if ((thisray.rmax = viewray(thisray.rorg, thisray.rdir, &ourview,
-			(x+pixjitter())/hres, (y+pixjitter())/vres)) < -FTINY) {
+	RAY  thisray;
+	FVECT	lorg, ldir;
+	double	hpos, vpos, lmax, d;
+						/* compute view ray */
+	hpos = (x+pixjitter())/hres;
+	vpos = (y+pixjitter())/vres;
+	if ((thisray.rmax = viewray(thisray.rorg, thisray.rdir,
+					&ourview, hpos, vpos)) < -FTINY) {
 		setcolor(col, 0.0, 0.0, 0.0);
 		return(0.0);
 	}
 
-	rayorigin(&thisray, NULL, PRIMARY, 1.0);
-
 	samplendx = pixnumber(x,y,hres,vres);	/* set pixel index */
+
+						/* optional motion blur */
+	if (lastview.type && mblur > FTINY && (lmax = viewray(lorg, ldir,
+					&lastview, hpos, vpos)) >= -FTINY) {
+		register int	i;
+		register double  d = mblur*(.5-urand(281+samplendx));
+
+		thisray.rmax = (1.-d)*thisray.rmax + d*lmax;
+		for (i = 3; i--; ) {
+			thisray.rorg[i] = (1.-d)*thisray.rorg[i] + d*lorg[i];
+			thisray.rdir[i] = (1.-d)*thisray.rdir[i] + d*ldir[i];
+		}
+		if (normalize(thisray.rdir) == 0.0)
+			return(0.0);
+	}
+
+	rayorigin(&thisray, NULL, PRIMARY, 1.0);
 
 	rayvalue(&thisray);			/* trace ray */
 
