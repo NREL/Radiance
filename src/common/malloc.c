@@ -24,8 +24,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <errno.h>
 
-extern int	errno;
-
 #ifndef  BSD
 #define  bcopy(s,d,n)		(void)memcpy(d,s,n)
 #define  bzero(d,n)		(void)memset(d,0,n)
@@ -253,6 +251,7 @@ register unsigned  n;
 	n = (n+(BYTES_WORD-1))&~(BYTES_WORD-1);		/* word align rqst. */
 
 	if (n > nrem) {					/* need more core */
+	tryagain:
 		if (n > amnt) {				/* big chunk */
 			thisamnt = (n+(pagesz-1))&~(pagesz-1);
 			if (thisamnt <= MAXINCR)	/* increase amnt */
@@ -261,10 +260,17 @@ register unsigned  n;
 			thisamnt = amnt;
 		p = sbrk(thisamnt);
 		if ((int)p == -1) {			/* uh-oh, ENOMEM */
-			thisamnt = n;			/* search free lists */
-			p = mscrounge(&thisamnt);
-			if (p == NULL)			/* we're really out */
+			errno = 0;			/* call cavalry */
+			if (thisamnt >= n+pagesz) {
+				amnt = pagesz;		/* minimize request */
+				goto tryagain;
+			}
+			thisamnt = n;
+			p = mscrounge(&thisamnt);	/* search free lists */
+			if (p == NULL) {		/* we're really out */
+				errno = ENOMEM;
 				return(NULL);
+			}
 		}
 #ifdef MSTATS
 		else b_nsbrked += thisamnt;
