@@ -1,4 +1,4 @@
-/* Copyright (c) 1994 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -563,7 +563,7 @@ double	org[3], *sizp;
 	extern FILE	*popen();
 	static double	oorg[3], osiz = 0.;
 	double	min[3], max[3];
-	char	buf[512];
+	char	buf[1024];
 	FILE	*fp;
 	register int	i;
 
@@ -689,7 +689,7 @@ printvals()			/* print variable values */
 oconv()				/* run oconv and mkillum if necessary */
 {
 	static char	illumtmp[] = "ilXXXXXX";
-	char	combuf[512], ocopts[64], mkopts[64];
+	char	combuf[1024], ocopts[64], mkopts[64];
 
 	oconvopts(ocopts);		/* get options */
 	if (octreedate < scenedate) {	/* check date on original octree */
@@ -777,6 +777,7 @@ oconv()				/* run oconv and mkillum if necessary */
 				"%s: error generating octree\n\t%s removed\n",
 					progname, oct1name);
 			unlink(oct1name);
+			unlink(illumtmp);
 			exit(1);
 		}
 		rmfile(illumtmp);
