@@ -33,7 +33,7 @@ main(argc, argv)		/* convert files to stdout */
 int	argc;
 char	*argv[];
 {
-	int	i, rv;
+	int	i;
 				/* print out parser version */
 	printf("## Translated from MGF Version %d.%d\n", MG_VMAJOR, MG_VMINOR);
 				/* initialize dispatch table */
@@ -94,7 +94,7 @@ char	*argv[];
 	}
 	putchar('\n');
 	if (i == argc) {		/* convert stdin */
-		if ((rv = mg_load(NULL)) != MG_OK)
+		if (mg_load(NULL) != MG_OK)
 			exit(1);
 		if (mg_nunknown)
 			printf("## %s: %u unknown entities\n",
@@ -103,7 +103,7 @@ char	*argv[];
 		for ( ; i < argc; i++) {
 			printf("## %s %s ##############################\n",
 					argv[0], argv[i]);
-			if ((rv = mg_load(argv[i])) != MG_OK)
+			if (mg_load(argv[i]) != MG_OK)
 				exit(1);
 			if (mg_nunknown) {
 				printf("## %s %s: %u unknown entities\n",
