@@ -10,7 +10,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  NULL		0
 
+#ifndef  NIX
 #include  <pwd.h>
+#endif
 
 #ifndef DIRSEP
 #define DIRSEP		'/'
@@ -29,8 +31,10 @@ register char  *fname;
 register char  *searchpath;
 int  mode;
 {
-	static char  pname[256];
+#ifndef  NIX
 	struct passwd  *pwent;
+#endif
+	static char  pname[256];
 	register char  *cp;
 
 	if (fname == NULL)
