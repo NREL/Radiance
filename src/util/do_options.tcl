@@ -14,7 +14,7 @@ proc amb_delete {} {		# delete ambient file
 	set nv [expr ($fl - $hl - 3) / 75]
 	if {$nv && [tk_dialog .dlg {Verification} \
 				"Really delete ambient file $radvar(AMBFILE)\
-				with $nv indirect irradiances values?" \
+				with $nv indirect irradiance values?" \
 				questhead 1 {Delete} {Cancel}]} {
 		return 0
 	}
