@@ -1,0 +1,4688 @@
+.\" SCCSid "$SunId$ LBL"
+.nr PS 11
+.ps 11
+.nr VS 12
+.vs 12
+.nr PD .5v
+.ds LF MGF
+.ds RF Version 1.0
+.DA May 1995
+.TL
+The Materials and Geometry Format
+.AU
+Greg Ward
+.br
+Lawrence Berkeley Laboratory
+.NH
+Introduction
+.LP
+The Materials and Geometry Format (referred to henceforth as MGF)
+is a description language for 3-dimensional environments expressly
+suited to visible light simulation and rendering.
+The materials are physically-based and rely on standard and
+well-accepted definitions of color, reflectance and transmittance
+for good accuracy and reproducibility.
+The geometry is based on boundary representation using simple
+geometric primitives such as polygons, spheres and cones.
+The file format itself is terse but human-readable ASCII text.
+.NH 2
+What makes MGF special?
+.LP
+There are three principal reasons to use MGF as an input language for
+lighting simulation and physically-based rendering:
+.RS
+.IP 1.
+It's the only existing format that describes materials physically.
+.IP 2.
+It is endorsed by the Illuminating Engineering Society of North
+America (IESNA) as part of their LM-63-1995 standard for luminaire data.
+.IP 3.
+It's easy and fun to support since it comes with a standard parser
+and sample scenes and objects at the web site,
+"http://radsite.lbl.gov/mgf/HOME.html".
+.RE
+.LP
+The standard parser provides both immediate and a long-term
+benefits, since it presents a programming interface that is more
+stable even than the language itself.
+Unlike AutoCAD DXF and other de facto standards, a change to the
+language will not break existing programs.
+This is because the parser gives the calling software only those
+entities it can handle.
+If the translator understands only polygons, it will be given only
+polygons.
+If a new geometric primitive is included in a later version of the
+standard, the new parser that comes with it will still be able to
+express this entity as polygons.
+Thus, the urgency of modifying code to support a changing standard
+is removed, and long-term stability is assured.
+.LP
+This notion of
+.I extensibility
+is a cornerstone of the format, and it goes well beyond the
+extensibility of other languages because is guarantees that new
+versions of the standard will not break existing programs, and the
+new information will be used as much as possible.
+Other languages either require that all translators stay up to date
+with the latest standard, or allow forward compatibility by simply
+.I ignoring
+new entities.
+In MGF, if NURBS are added at some point and the translator or
+loader does not handle them directly, the new version of the parser
+will automatically convert them to smoothed polygons without
+changing a single line of the calling program.
+It is merely necessary to link to the new library, and all the new
+entities are supported\(dg.
+.FS
+\(dgIf an old version of the parser encounters new entities it does
+not recognize, the default action is to ignore them, printing a warning
+message.
+This may be overridden to support custom entities, but such
+practice is discouraged because it weakens the standard.
+.FE
+.NH 2
+What does MGF look like?
+.LP
+MGF has a simple entity-per-line structure, with a similar
+appearance to Wavefront's .OBJ format.
+Each entity is specified by a short keyword, and
+arguments are separated by white space (tabs and/or spaces).
+A newline may be escaped with a backslash ('\\'), in which case it
+counts as a space.
+Lines and continued lines may have up to 4096 characters, including
+newlines, tabs and spaces.
+A comment is an ignored entity whose keyword is the pound sign ('#').
+.LP
+Here is an MGF file that describes a simple two-drawer file cabinet:
+.DS
+# Conversion from inches to meters
+xf -s .0254
+# Surface material
+m burgundy_formica =
+	c
+		cxy .362 .283
+	rd .0402
+	c
+	rs .0284 .05
+	sides 1
+# Cabinet vertices
+v fc.xy =
+	p .05 0 0
+v fc.xY =
+	p .05 18 0
+v fc.XY =
+	p 35.95 18 0
+v fc.Xy =
+	p 35.95 0 0
+# Cabinet
+prism fc.xy fc.xY fc.XY fc.Xy 24
+# Drawer vertices
+v fcd.Xz =
+	p 34 0 0
+v fcd.XZ =
+	p 34 0 10
+v fcd.xZ =
+	p 0 0 10
+v fcd.xz =
+	p 0 0 0
+# Two drawers
+o drawer
+	xf -t 1 18.1 2 -a 2 -t 0 0 11
+	prism fcd.xz fcd.Xz fcd.XZ fcd.xZ .9
+	xf
+o
+# End of units conversion
+xf
+.DE
+.NH 2
+MGF's place in the world of standards
+.LP
+MGF was developed initially to support detailed geometric
+description of light fixtures for the IESNA luminaire data standard,
+publication LM-63\(dg.
+.FS
+\(dgTo obtain the latest version of this standard, write to:
+Illuminating Engineering Society of North America,
+345 East 47th St.,
+New York, NY  10017.
+.FE
+Existing standards for geometric description were either too
+cumbersome (e.g.
+.I Radiance)
+or did not include physical materials (e.g. IGES).
+It was noted early on that a standard able to fully describe
+luminaires would necessarily be
+capable of describing other objects as well; indeed whole
+environments could be defined this way.
+Since the descriptions would be physical, they could serve as input
+to both lighting simulation and rendering software.
+A standard language for describing the appearance of physical
+objects has been lacking for some time, and current efforts in this
+direction (i.e. STEP) seem several years away from fruition.
+(There are other languages for describing realistic scenes
+that deserve mention here, such as VRML and the Manchester Scene
+Description Language, but none give specific attention to physical
+material properties and are thus unsuitable for lighting
+simulation.)\0
+.LP
+In short, we saw this as an opportunity to offer the lighting and
+rendering community a simple and easy-to-support standard for
+describing environments in a physically valid way.
+Our hope is that this will promote sharing color, material and object
+libraries as well as complete scene descriptions.
+Sharing libraries is of obvious benefit to users and software
+developers alike.
+Sharing scenes should also permit
+comparisons between rendering systems and
+intervalidation of lighting calculations.
+As anyone who works in this field knows, modeling is the most
+difficult step in creating any simulation or rendering, and there is
+no excuse for this data being held prisoner by a proprietary data
+format.
+.NH
+MGF Basics
+.LP
+The default coordinate system in MGF is right-handed with
+distances given in meters, though this can be effectively changed
+by specifying a global transformation.
+The transformation context is affected by the
+.UL xf
+entity, and the whole of MGF can be understood in terms of entities
+and contexts.
+.NH 2
+Entities and Contexts
+.LP
+An
+.I entity
+in MGF is any non-blank line, which must be one of a finite set of
+command keywords followed by zero or more arguments.
+(As mentioned previously, an entity may continue over multiple lines
+by escaping the newline with a backslash.)\0
+Table 1 gives a list of entities and their expected arguments.
+Section 3 gives more detailed information on each entity.
+.KF
+.TS
+expand, box;
+l l l.
+Keyword	Arguments	Interpretation
+=	=	=
+#	[anything ...]	a comment
+o	[name]	begin/end object context
+xf	[xform]	begin/end transformation context
+i	pathname [xform]	include file (with transformation)
+ies	pathname [-m f][xform]	include IES luminaire (with transformation)
+_	_	_
+c	[id [= [template]]]	get/set color context
+cxy	x y	set CIE (x,y) chromaticity for current color
+cspec	l_min l_max v1 v2 ...	set relative spectrum for current color
+cct	temperature	set spectrum based on black body temperature
+cmix	w1 c1 w2 c2 ...	mix named colors to make current color
+_	_	_
+m	[id [= [template]]]	get/set material context
+sides	{1|2}	set number of sides for current material
+rd	rho_d	set diffuse reflectance for current material
+td	tau_d	set diffuse transmittance for current material
+ed	epsilon_d	set diffuse emittance for current material
+rs	rho_s alpha_r	set specular reflectance for current material
+ts	tau_s alpha_t	set specular transmittance for current material
+ir	n_real n_imag	set index of refraction for current material
+_	_	_
+v	[id [= [template]]]	get/set vertex context
+p	x y z	set point position for current vertex
+n	dx dy dz	set surface normal for current vertex
+_	_	_
+f	v1 v2 v3 ...	polygon using current material, spec. vertices
+sph	vc radius	sphere
+cyl	v1 radius v2	truncated right cylinder (open-ended)
+cone	v1 rad1 v2 rad2	truncated right cone (open-ended)
+prism	v1 v2 v3 ... length	truncated right prism (closed solid)
+ring	vc rmin rmax	circular ring with inner and outer radii
+torus	vc rmin rmax	circular torus with inner and outer radii
+.TE
+.QP
+.B "Table 1".
+MGF entities and their arguments.
+Arguments in brackets are optional.
+Arguments in curly braces mean one of the given choices must
+appear.
+Ellipsis (...) mean that any number of arguments may be given.
+.sp
+.KE
+.LP
+A
+.I context
+describes the current state of the interpreter, and affects or is
+affected by certain entities as they are read in.
+MGF contexts can be divided into two types,
+.I "hierarchical contexts"
+and
+.I "named contexts".
+.LP
+Hierarchical contexts are manipulated by a single entity and
+have an associated "stack" onto which new
+contexts are "pushed" using the entity.
+The last context may be "popped" by giving the entity again with no
+arguments.
+The two hierarchical contexts in MGF are the current transformation,
+manipulated with the
+.UL xf
+entity, and the current object, manipulated with the
+.UL o
+entity.
+.KF
+.TS
+expand, allbox;
+l c l l l.
+Context	Cntl. Entity	Default Value	Field Entities	Affects
+=	=	=	=	=
+Object	o	-	-	-
+Transform	xf	-	-	T{
+f, sph, cyl, cone,
+ring, torus, prism
+T}
+Material	m	2-sided black	T{
+sides, rd, td,
+ed, rs, ts
+T}	T{
+f, sph, cyl, cone,
+ring, torus, prism
+T}
+Color	c	neutral grey	T{
+cxy, cspec, cct, cmix
+T}	T{
+rd, td, ed, rs, ts
+T}
+Vertex	v	T{
+(0,0,0),
+no normal
+T}	p, n	T{
+f, sph, cyl, cone,
+ring, torus, prism
+T}
+.TE
+.QP
+.B "Table 2".
+MGF contexts and their related entities and default values.
+.sp
+.KE
+.LP
+Named contexts in contrast hold sets of values that are swapped
+in and out one at a time.
+There are three named contexts in MGF, the current material, the
+current color and the current vertex.
+Each one may be associated with an identifier (any non-white
+sequence of printing ASCII characters beginning with a letter),
+and one of each is in effect at any given time.
+Initially, these contexts are unnamed, and invoking an unnamed
+context always returns to the original (default) values.
+(See Table 2 for a list of contexts, their related
+entities and defaults.)\0
+.LP
+It is easiest to think of a context as a "scratch space" where
+values are written by some entities and read by others.
+Naming a context allows us to reestablish the same scratch space
+later, usually for reference but it can be altered as well.
+Let us say we wanted to create a smooth blue plastic material with a
+diffuse reflectance of 20% and a specular reflectance of 4%:
+.DS
+# Establish a new material context called "blue_plastic"
+m blue_plastic =
+	# Reestablish a previous color context called "blue"
+	c blue
+	# Set the diffuse reflectance, which uses the above color
+	rd .20
+	# Get the unnamed color context (always starts out grey)
+	c
+	# Set the specular reflectance, which is uncolored
+	rs .04 0
+# We're done, the current material context is now "blue_plastic"
+.DE
+Note that the above assumes that we have previously defined a color
+context named "blue".
+If we forgot to do that, the above description would generate an
+"undefined" error.
+The color context affects the material context indirectly because it
+is read by the specular and diffuse reflectance entities, which are
+in turn written to the current material.
+It is not necessary to indent the entities that affect the material
+definition, but it improves readability.
+Note also that there is no explicit end to the material definition.
+As long as a context remains in effect, its contents may be altered
+by its field entities.
+This will not affect previous uses of the context, however.
+For example, a surface entity following the above definition will 
+have the specified color and reflectance, and later changes to the
+material "blue_plastic" will have no effect on it.
+.LP
+Each of the three named contexts has an associated entity that
+controls it.
+The material context is controlled by the
+.UL m
+entity, the color context is controlled by the
+.UL c
+entity, and the vertex context is controlled by the
+.UL v
+entity.
+There are exactly four forms for each entity.
+The first form is the keyword by itself, which establishes
+an unnamed context with predetermined default values.
+This is a useful way to set values without worrying about saving
+them for recall later.
+The second form is to give the keyword with a previously defined
+name.
+This reestablishes a prior context for reuse.
+The third form is to give the keyword with a name followed by an
+equals sign.
+(There must be a space between the name and the equals sign, since
+it is a separate argument.)\0
+This establishes a new context and assigns it the same default
+values as the unnamed context.
+The fourth and final form gives the keyword followed by a name then
+an equals then the name of a previous context definition.
+This establishes a new context for the first name, assigning the
+values from the second named context rather than the usual defaults.
+This is a convenient way create an alias or
+to modify a context under a new name (i.e. "save as").
+.NH 2
+Hierarchical Contexts and Transformations
+.LP
+As mentioned in the last subsection, there are two hierarchical
+contexts in MGF, the current object and the current transformation.
+We will start by discussing the current object, since it is
+the simpler of the two.
+.NH 3
+Objects
+.LP
+There is no particular need in lighting simulation or rendering to
+name objects, but it may help the user
+to know what object a particular surface is associated with.
+The
+.UL o
+entity provides a convenient mechanism for associating names with
+surfaces.
+The basic use of this entity is as follows:
+.DS
+o object_name
+	[object entities...]
+	o subobject_name
+		[subobject entities...]
+	o
+	[more object entities and subobjects...]
+o
+.DE
+The
+.UL o
+keyword by itself marks the end of an object context.
+Any number of hierarchical context levels are supported, and there are no
+rules governing the choice of object names except that they begin
+with a letter and be made up of printing, non-white ASCII characters.
+Indentation is not necessary of course, but it does improve
+readability.
+.NH 3
+Transformations
+.LP
+MGF supports only rigid-body (i.e. non-distorting) transformations
+with uniform scaling.
+Unlike the other contexts, transformations have no associated
+name, only arguments.
+Thus, there is no way to reestablish a previous transformation other
+than to give the same arguments over again.
+Since the arguments are concise and self-explanatory, this was thought
+sufficient.
+The following transformation flags and
+parameters are defined:
+.TS I
+l l.
+-t dx dy dz	translate objects along the given vector
+-rx degrees	rotate objects about the X-axis
+-ry degrees	rotate objects about the Y-axis
+-rz degrees	rotate objects about the Z-axis
+-s scalefactor	scale objects by the given factor
+-mx	mirror objects about the Y-Z plane
+-my	mirror objects about the X-Z plane
+-mz	mirror objects about the X-Y plane
+-i N	repeat the following arguments N times
+-a N	make an array of N geometric instances
+.TE
+Transform arguments have a cumulative effect.
+That is, a rotation
+about X of 20 degrees followed by a rotation about X of -50 degrees
+results in a total rotation of -30 degrees.
+However, if the two
+rotations are separated by some translation vector, the cumulative
+effect is quite different.
+It is best to think of each argument as
+acting on the included geometric objects, and each subsequent transformation
+argument affects the objects relative to their new position/orientation.
+.LP
+For example, rotating an object about its center is most easily done
+by translating
+the object back to the origin, applying the desired rotation, and translating
+it again back to its original position, like so:
+.DS
+# rotate an included object 20 degrees clockwise looking down
+# an axis parallel to Y and passing through the point (15,0,-35)
+xf -t -15 0 35 -ry -20 -t 15 0 -35
+i object.mgf
+xf
+.DE
+Note that the include entity,
+.UL i,
+permits a transformation to be given with it, so the above could
+have been written more compactly as:
+.DS
+i object.mgf -t -15 0 35 -ry -20 -t 15 0 -35
+.DE
+.LP
+Rotations are given in degrees counter-clockwise about a principal axis.
+That is, with the thumb of the right hand pointing in the direction
+of the axis, rotation follows the curl of the fingers.
+.LP
+The transform entity itself is cumulative, but in the reverse
+order to its arguments.
+That is, later transformations (i.e. enclosed transformations)
+are prepended to existing (i.e. enclosing) ones.
+A transform command
+with no arguments is used to return to the previous condition.
+It is
+necessary that transforms and their end statements ("xf" by itself) be
+balanced in a file, so that later or enclosing files are not affected.
+.LP
+Transformations apply only to geometric types, e.g. polygons, spheres, etc.
+Vertices and the components that go into geometry are not directly affected.
+This is to avoid confusion and the inadvertent multiple application of a
+given transformation.
+For example:
+.DS
+xf -t 5 0 0
+v v1 =
+	p 0 10 0
+	n 0 0 1
+xf -rx 180
+# Transform now in effect is "-rx 180 -t 5 0 0"
+ring v1 0 2
+xf
+xf
+.DE
+The final ring center is (5,-10,0) -- note that the vertex itself is
+not affected by the transformation, only the geometry that calls on
+it.
+The normal orientation is (0,0,-1) due to the rotation about X,
+which also reversed the sign of the central Y coordinate.
+.NH 3
+Arrays
+.LP
+The -a N transform specification causes the following transform
+arguments to be repeated along with the contents of the included
+objects N times.
+The first instance of the geometry will be in its
+initial location; the second instance will be repositioned according
+to the named transformation; the third instance will be repositioned by
+applying this transformation twice, and so on up to N-1 applications.
+.LP
+Multi-dimensional arrays may be specified with a single include
+entity by giving multiple array commands separated by their
+corresponding transforms.
+A final transformation may be given
+by preceding it with a -i 1 specification.
+In other words, the
+scope of an array command continues until the next -i or -a option.
+.LP
+The following MGF description places 60 spheres at a one unit spacing
+in a 3x4x5 array, then moves the whole thing to an origin of
+(15,30,45):
+.DS
+v v0 =
+	p 0 0 0
+xf -a 3 -t 1 0 0 -a 4 -t 0 1 0 -a 5 -t 0 0 1 -i 1 -t 15 30 45
+sph v0 0.1
+xf
+.DE
+Note the "-i 1" in the specification, which marks the end of the
+third array arguments before the final translation.
+.NH 2
+Detailed MGF Example
+.LP
+The following example of a simple room with a single door
+and six file cabinets shows MGF in action, with copious comments to
+help explain what's going on.
+.DS
+# "ceiling_tile" is a diffuse white surface with 75% reflectance:
+# Create new named material context and clear it
+m ceiling_tile =
+	# Specify one-sided material so we can see through from above
+	sides 1
+	# Set neutral color
+	c
+	# Set diffuse reflectance
+	rd .75
+# "stainless_steel" is a mostly specular surface with 70% reflectance:
+m stainless_steel =
+	sides 1
+	c
+	# Set specular reflectance to 50%, .08 roughness
+	rs .5 .08
+	# Other 20% reflectance is diffuse
+	rd .2
+
+# The following materials were measured with a spectrophotometer:
+m beige_paint =
+	sides 1
+	# Set diffuse spectral reflectance
+	c
+		# Spectrum measured in 10 nm increments from 400 to 700 nm
+		cspec 400 700 35.29 44.87 47.25 47.03 46.87 47.00 47.09 \\\\
+			 47.15 46.80 46.17 46.26 48.74 51.08 51.31 51.10 \\\\
+			 51.11 50.52 50.36 51.72 53.61 53.95 52.08 49.49 \\\\
+			 48.30 48.75 49.99 51.35 52.75 54.44 56.34 58.00
+	rd 0.5078
+	# Neutral (grey) specular component
+	c
+	rs 0.0099 0.08000
+m mottled_carpet =
+	sides 1
+	c
+		cspec 400 700 11.23 11.28 11.39 11.49 11.61 11.73 11.88 \\\\
+			 12.02 12.12 12.19 12.30 12.37 12.37 12.36 12.34 \\\\
+			 12.28 12.22 12.29 12.45 12.59 12.70 12.77 12.82 \\\\
+			 12.88 12.98 13.24 13.67 14.31 15.55 17.46 19.75
+	rd 0.1245
+m reddish_cloth =
+	# 2-sided so we can observe it from behind
+	sides 2
+	c
+		cspec 400 700 28.62 27.96 27.86 28.28 29.28 30.49 31.61 \\\\
+			 32.27 32.26 31.83 31.13 30.07 29.14 29.03 29.69 \\\\
+			 30.79 32.30 33.90 34.56 34.32 33.85 33.51 33.30 \\\\
+			 33.43 34.06 35.26 37.04 39.41 42.55 46.46 51.00
+	rd 0.3210
+m burgundy_formica =
+	sides 1
+	c
+		cspec 400 700  3.86  3.74  3.63  3.51  3.34  3.21  3.14 \\\\
+			  3.09  3.08  3.14  3.13  2.91  2.72  2.74  2.72 \\\\
+			  2.60  2.68  3.40  4.76  6.05  6.65  6.75  6.68 \\\\
+			  6.63  6.56  6.51  6.46  6.41  6.36  6.34  6.34
+	rd 0.0402
+	c
+	rs 0.0284 0.05000
+m speckled_grey_formica =
+	sides 1
+	c
+		cspec 400 700 30.95 44.77 51.15 52.60 53.00 53.37 53.68 \\\\
+			 54.07 54.33 54.57 54.85 55.20 55.42 55.51 55.54 \\\\
+			 55.46 55.33 55.30 55.52 55.81 55.91 55.92 56.00 \\\\
+			 56.22 56.45 56.66 56.72 56.58 56.44 56.39 56.39
+	rd 0.5550
+	c
+	rs 0.0149 0.15000
+
+# 40' x 22' x 9' office space with no windows and one door
+
+# All measurements are in inches, so enclose with a metric conversion:
+xf -s .0254
+
+# The room corner vertices:
+v rc.xyz =
+	p 0 0 0
+v rc.Xyz =
+	p 480 0 0
+v rc.xYz =
+	p 0 264 0
+v rc.xyZ =
+	p 0 0 108
+v rc.XYz =
+	p 480 264 0
+v rc.xYZ =
+	p 0 264 108
+v rc.XyZ =
+	p 480 0 108
+v rc.XYZ =
+	p 480 264 108
+
+# The floor:
+# Push object name
+o floor
+	# Get previously defined carpet material
+	m mottled_carpet
+	# Polygonal face using defined vertices
+	f rc.xyz rc.Xyz rc.XYz rc.xYz
+# Pop object name
+o
+
+# The ceiling:
+o ceiling
+	m ceiling_tile
+	f rc.xyZ rc.xYZ rc.XYZ rc.XyZ
+o
+
+# The door outline vertices:
+v do.xz =
+	p 216 0 0
+v do.Xz =
+	p 264 0 0
+v do.xZ =
+	p 216 0 84
+v do.XZ =
+	p 264 0 84
+
+# The walls:
+o wall
+	m beige_paint
+	o x
+		f rc.xyz rc.xYz rc.xYZ rc.xyZ
+	o
+	o X
+		f rc.Xyz rc.XyZ rc.XYZ rc.XYz
+	o
+	o y
+		f rc.xyz rc.xyZ rc.XyZ rc.Xyz do.Xz do.XZ do.xZ do.xz
+	o
+	o Y
+		f rc.xYz rc.XYz rc.XYZ rc.xYZ
+	o
+o
+
+# The door and jam vertices:
+v djo.xz =
+	p 216 .5 0
+v djo.xZ =
+	p 216 .5 84
+v djo.XZ =
+	p 264 .5 84
+v djo.Xz =
+	p 264 .5 0
+v dji.Xz =
+	p 262 .5 0
+v dji.XZ =
+	p 262 .5 82
+v dji.xZ =
+	p 218 .5 82
+v dji.xz =
+	p 218 .5 0
+v door.xz =
+	p 218 0 0
+v door.xZ =
+	p 218 0 82
+v door.XZ =
+	p 262 0 82
+v door.Xz =
+	p 262 0 0
+
+# The door, jam and knob
+o door
+	m burgundy_formica
+	f door.xz door.xZ door.XZ door.Xz
+	o jam
+		m beige_paint
+		f djo.xz djo.xZ djo.XZ djo.Xz dji.Xz dji.XZ dji.xZ dji.xz
+		f djo.xz do.xz do.xZ djo.xZ
+		f djo.xZ do.xZ do.XZ djo.XZ
+		f djo.Xz djo.XZ do.XZ do.Xz
+		f dji.xz dji.xZ door.xZ door.xz
+		f dji.xZ dji.XZ door.XZ door.xZ
+		f dji.Xz door.Xz door.XZ dji.XZ
+	o
+	o knob
+		m stainless_steel
+		# Define vertices needed for curved geometry
+		v kb1 =
+			p 257 0 36
+		v kb2 =
+			p 257 .25 36
+			n 0 1 0
+		v kb3 =
+			p 257 2 36
+		# 1" diameter cylindrical base from kb1 to kb2
+		cyl kb1 1 kb2
+		# Ring at base of knob stem
+		ring kb2 .4 1
+		# Knob stem
+		cyl kb2 .4 kb3
+		# Spherical knob
+		sph kb3 .85
+	o
+o
+
+	i cubfurn.inc -mx -t 405 133.5 0
+o
+
+# Six file cabinets (36" wide each)
+# ("filecab.inc" was given as an earlier example in Section 1.2)
+o filecab.x
+	# include a file as an array of three 36" apart
+	i filecab.inc -t -36 0 0 -rz -90 -t 1 54 0 -a 3 -t 0 36 0
+o
+o filecab.X
+	# the other three cabinets
+	i filecab.inc -rz 90 -t 479 54 0 -a 3 -t 0 36 0
+o
+
+# End of transform from inches to meters:
+xf
+
+# The 10 recessed fluorescent ceiling fixtures
+ies hlrs2gna.ies -t 1.2192 2.1336 2.74 -a 5 -t 2.4384 0 0 -a 2 -t 0 2.4384 0
+.DE
+.bp
+.NH
+MGF Entity Reference
+.LP
+There are currently 28 entities in the MGF specification.
+For ease of reference we have broken these into five categories:
+.IP 1.
+General
+.TS I
+lw(.75i) lw(1.75i) lw(3i).
+#	[anything ...]	a comment
+o	[name]	begin/end object context
+xf	[xform]	begin/end transformation context
+i	pathname [xform]	include file (with transformation)
+ies	pathname [-m f][xform]	include IES luminaire (with transformation)
+.TE
+.IP 2.
+Color
+.TS I
+lw(.75i) lw(1.75i) lw(3i).
+c	[id [= [template]]]	get/set color context
+cxy	x y	set CIE (x,y) chromaticity for current color
+cspec	l_min l_max v1 v2 ...	set relative spectrum for current color
+cct	temperature	set spectrum based on black body temperature
+cmix	w1 c1 w2 c2 ...	mix named colors to make current color
+.TE
+.IP 3.
+Material
+.TS
+lw(.75i) lw(1.75i) lw(3i).
+m	[id [= [template]]]	get/set material context
+sides	{1|2}	set number of sides for current material
+rd	rho_d	set diffuse reflectance for current material
+td	tau_d	set diffuse transmittance for current material
+ed	epsilon_d	set diffuse emittance for current material
+rs	rho_s alpha_r	set specular reflectance for current material
+ts	tau_s alpha_t	set specular transmittance for current material
+ir	n_real n_imag	set index of refraction for current material
+.TE
+.IP 4.
+Vertex
+.TS
+lw(.75i) lw(1.75i) lw(3i).
+v	[id [= [template]]]	get/set vertex context
+p	x y z	set point position for current vertex
+n	dx dy dz	set surface normal for current vertex
+.TE
+.IP 5.
+Geometry
+.TS
+lw(.75i) lw(1.75i) lw(3i).
+f	v1 v2 v3 ...	polygon using current material, spec. vertices
+sph	vc radius	sphere
+cyl	v1 radius v2	truncated right cylinder (open-ended)
+cone	v1 rad1 v2 rad2	truncated right cone (open-ended)
+prism	v1 v2 v3 ... length	truncated right prism (closed solid)
+ring	vc rmin rmax	circular ring with inner and outer radii
+torus	vc rmin rmax	circular torus with inner and outer radii
+.TE
+.ds LH General Entities
+.ds RH #
+.bp
+.SH
+NAME
+.LP
+# - a comment
+.SH
+SYNOPSIS
+.LP
+.B #
+[
+.I anything
+]
+.SH
+DESCRIPTION
+.LP
+A comment is a bit of text explanation.
+Since it is an entity like any other (except that it has no effect),
+there must be at least one space between the keyword (which is a
+pound sign) and the "arguments," and the end of line may be escaped
+as usual with the backslash character ('\\').
+.LP
+A comment may actually be used to hold auxiliary information such as
+view parameters, which may be interpreted by some destination program.
+Care should be taken under such circumstances that the user does not
+inadvertently mung or mimic this information in other comments, and
+it is therefore advisable to use an additional set of identifying
+characters to distinguish such data.
+.SH
+EXAMPLE
+.DS
+# The following include file is in inches, so convert to meters
+i cubgeom.inc -s .0254
+# Stuff we don't want to see at the moment:
+# i person.mgf -t 3 2 0
+# ies hlrs3gna.ies -rz 90 -t 1.524 1.8288 2.74 \\\\
+                -a 6 -t 1.8288 0 0 -a 2 -t 0 3.048 0
+.DE
+.ds RH O
+.bp
+.SH
+NAME
+.LP
+o - begin or end object context
+.SH
+SYNOPSIS
+.LP
+.B o
+[
+.I name
+]
+.SH
+DESCRIPTION
+.LP
+If
+.I name
+is given, we push a new object context onto the stack, which is to
+say that we begin a new subobject by this name\(dg.
+.FS
+\(dgA name is any sequence of printing, non-white ASCII characters
+beginning with a letter.
+.FE
+If the
+.UL o
+keyword is given by itself, then we pop the last object context off
+the stack, which means that we leave the current subobject.
+.LP
+All geometry between the start of an object context and its matching
+end statement is associated with the given name.
+This may be used in modeling software to help identify objects and
+subobjects, or it may be ignored altogether.
+.LP
+Object begin and end statements should be balanced in a file, and
+care should be taken not to overlap transform
+.UL (xf)
+contexts with object contexts, especially when arrays are involved.
+This is because the standard parser will assign object contexts to
+instanced geometry, which can get confused with other object
+contexts if a clear enclosure is not maintained.
+.SH
+EXAMPLE
+.DS
+o body
+	o torso
+		i torso.mgf
+	o
+	o arm
+		o left
+			i leftarm.mgf
+		o
+		o right
+			i leftarm.mgf -mx
+		o
+	o
+o
+.DE
+.SH
+SEE ALSO
+.LP
+.UL xf
+.ds RH XF
+.bp
+.SH
+NAME
+.LP
+xf - begin or end transformation context
+.SH
+SYNOPSIS
+.LP
+.B xf
+[
+.I transform
+]
+.SH
+DESCRIPTION
+.LP
+If a set of
+.I transform
+arguments are given, we push a new transformation context onto the
+stack.
+If the
+.UL xf
+keyword is given by itself, then we pop the last transformation
+context off the stack.
+The total transformation in effect at any given time is
+computed by prepending each set subcontext arguments onto those of
+its enclosing context.
+This and other details about transformation specifications
+are explained in some detail in section 2.2.2.
+.LP
+The following transformation flags and
+parameters are defined:
+.TS
+center;
+l l.
+-t dx dy dz	translate objects along the given vector
+-rx degrees	rotate objects about the X-axis
+-ry degrees	rotate objects about the Y-axis
+-rz degrees	rotate objects about the Z-axis
+-s scalefactor	scale objects by the given factor
+-mx	mirror objects about the Y-Z plane
+-my	mirror objects about the X-Z plane
+-mz	mirror objects about the X-Y plane
+-i N	repeat the following arguments N times
+-a N	make an array of N geometric instances
+.TE
+.SH
+EXAMPLE
+.DS
+# Create 3x5 array of evenly-spaced spheres (grid size = 3)
+v vc =
+	p 0 0 0
+xf -t 1 1 10 -a 3 -t 3 0 0 -a 5 -t 0 3 0
+	sph vc .5
+xf
+.DE
+.SH
+SEE ALSO
+.LP
+.UL i,
+.UL ies,
+.UL o
+.ds RH I
+.bp
+.SH
+NAME
+.LP
+i - include MGF data file
+.SH
+SYNOPSIS
+.LP
+.B i
+.I pathname
+[
+.I transform
+]
+.SH
+DESCRIPTION
+.LP
+Include the information contained in the file
+.I pathname.
+If a
+.I transform
+specification is given, then it will be applied as though the
+include statement were enclosed by beginning and ending
+.UL xf
+entities with this transformation.
+.LP
+The
+.I pathname
+will be interpreted relative to the enclosing MGF file.
+That is, if the file containing the include statement is in some
+parent or subdirectory, then the given pathname is appended to this
+directory.
+It is illegal to specify a
+.I pathname
+relative to the root directory, and the MGF standard requires that
+all filenames adhere to the ISO-9660 8.3 name format for maximum
+portability between systems.
+The directory separator is defined to be slash ('/'), and drive
+specifications (such as "c:") are not allowed.
+All pathnames should be given in lower case, and will be converted to
+upper case on systems that require it.
+(That way, there are no accidental name collisions.)\0
+.LP
+The suggested suffix for MGF-adherent files is ".mgf".
+Files that are not in metric units but are in MGF may be given any
+suffix, but we suggest using ".inc" as a convention.
+.SH
+EXAMPLE
+.DS
+# Define vertices for 62x30" partition
+i pv62x30.inc
+# Insert 2 62x30" partitions
+o cpart1
+        i partn.inc -t 75 130.5 0
+o
+o cpart3
+        i partn.inc -t 186 130.5 0
+o
+# Define vertices for 62x36" partition
+i pv62x36.inc
+# Insert 62x36" partition
+o cpart2
+        i partn.inc -t 105 130.5 0
+o
+.DE
+.SH
+SEE ALSO
+.LP
+.UL ies,
+.UL o,
+.UL xf
+.ds RH IES
+.bp
+.SH
+NAME
+.LP
+ies - include IESNA luminaire file
+.SH
+SYNOPSIS
+.LP
+.B ies
+.I pathname
+[
+.B \-m
+.I multiplier
+]
+[
+.I transform
+]
+.SH
+DESCRIPTION
+.LP
+Load the IES standard luminaire information contained in the file
+.I pathname.
+If a
+.I multiplier
+is given, all candela values will be multiplied by this factor.
+(This option must appear first if present.)\0
+If a
+.I transform
+specification is given, then it will be applied as though the
+statement were enclosed by beginning and ending
+.UL xf
+entities with this transformation.
+.LP
+The
+.I pathname
+will be interpreted relative to the enclosing MGF file, and all
+restrictions discussed under the
+.UL i
+entity also apply to the IES file name.
+The suggested suffix is ".ies", but this has not been followed
+consistently by lighting manufacturers.
+.SH
+EXAMPLE
+.DS
+# Insert 10 2x4' fluorescent troffers in two groups
+ies cf9pr240.ies -t 3.6576 2.1336 2.74 -a 3 -t 2.4384 0 0 -a 2 -t 0 2.4384 0
+ies cf9pr240.ies -rz 90 -t 1.2192 1.8288 2.74 \\\\
+                -a 2 -t 9.7536 0 0 -a 2 -t 0 3.048 0
+.DE
+.SH
+SEE ALSO
+.LP
+.UL i,
+.UL o,
+.UL xf
+.ds LH Color Entities
+.ds RH C
+.bp
+.SH
+NAME
+.LP
+c - get or set the current color context
+.SH
+SYNOPSIS
+.LP
+.B c
+[
+.I id
+[
+.B =
+[
+.I template
+]
+]
+]
+.SH
+DESCRIPTION
+.LP
+If the
+.UL c
+keyword is given by itself, then it establishes the unnamed color
+context, which is neutral (i.e. equal-energy) grey.
+This context may be modified, but the changes will not be saved.
+.LP
+If the keyword is followed by an identifier
+.I id,
+then it reestablishes a previous context.
+If the specified context was never defined, an error will result.
+.LP
+If the entity is given with an identifier
+followed by an equals sign ('='), then a new context is established,
+and cleared to the default neutral grey.
+(Note that the equals sign must be separated from other
+arguments by white space to be properly recognized.)\0
+If the equals sign is followed by a second identifier
+.I template,
+then this previously defined color will be used as a source of
+default values rather than grey.
+This is most useful for establishing a color alias.
+.SH
+EXAMPLE
+.DS
+# Define the color "red32"
+c red32 =
+	cxy .42 .15
+# Make "cabinet_color" an alias for "red32"
+c cabinet_color = red32
+
+# Later in another part of the description...
+
+# Get our cabinet color
+c cabinet_color
+# Get the geometry
+i cabgeom.mgf
+.DE
+.SH
+SEE ALSO
+.LP
+.UL cct,
+.UL cmix,
+.UL cspec,
+.UL cxy,
+.UL m
+.ds RH CXY
+.bp
+.SH
+NAME
+.LP
+cxy - set the CIE (x,y) chromaticity for the current color
+.SH
+SYNOPSIS
+.LP
+.B cxy
+.I "x y"
+.SH
+DESCRIPTION
+.LP
+This entity sets the current color using (x,y) chromaticity
+coordinates for the 1931 CIE standard 2 degree observer.
+Legal values for
+.I x
+and
+.I y
+are greater than zero and sum to less than one, and more
+specifically they must fit within the curve of the visible spectrum.
+The
+.I x
+coordinate roughly corresponds to the red part of the spectrum and
+the
+.I y
+coordinate corresponds to the green.
+The CIE z coordinate is implicit, since it is equal to (1-x-y).
+.LP
+All colors in MGF are absolute, thus colorimeter measurements should
+be conducted the same for surfaces as for light sources.
+Applying a standard illuminant calculation is redundant and
+introduces inaccuracies, and should therefore be avoided if
+possible.
+.LP
+Conversion between CIE colors and those more commonly used in
+computer graphics are described in the application notes section
+6.1.1.
+.SH
+EXAMPLE
+.DS
+# Set unnamed color context
+c
+# Set CIE chromaticity to a bluish hue
+cxy .15 .2
+# Apply color to diffuse reflectance of 15%
+rd .15
+.DE
+.SH
+SEE ALSO
+.LP
+.UL c,
+.UL cct,
+.UL cmix,
+.UL cspec
+.ds RH CSPEC
+.bp
+.SH
+NAME
+.LP
+cspec - set the relative spectrum for the current color
+.SH
+SYNOPSIS
+.LP
+.B cspec
+.I "l_min l_max o1 o2 ... oN"
+.SH
+DESCRIPTION
+.LP
+Assign a relative spectrum measured between
+.I l_min
+and
+.I l_max
+nanometers at evenly spaced intervals.
+The first value,
+.I o1
+corresponds to the measurement at
+.I l_min,
+and the last value,
+.I oN
+corresponds to the measurement at
+.I l_max.
+Values in between are separated by
+.I "(l_max-l_min)/(N-1)"
+nanometers.
+All values must be non-negative, and the spectrum outside of the
+specified range is assumed to be zero.
+(The visible range is 380 to 780 nm.)\0
+The actual units and scale of the measurements do not matter,
+since the total will be
+normalized according to whatever the color is modifying
+(e.g. photometric reflectance or emittance).
+.SH
+EXAMPLE
+.DS
+# Color measured at 10 nm increments from 400 to 700
+m reddish_cloth =
+        c
+                cspec 400 700 28.62 27.96 27.86 28.28 29.28 30.49 31.61 \\\\
+                         32.27 32.26 31.83 31.13 30.07 29.14 29.03 29.69 \\\\
+                         30.79 32.30 33.90 34.56 34.32 33.85 33.51 33.30 \\\\
+                         33.43 34.06 35.26 37.04 39.41 42.55 46.46 51.00
+        rd 0.3210
+.DE
+.SH
+SEE ALSO
+.LP
+.UL c,
+.UL cct,
+.UL cmix,
+.UL cxy
+.ds RH CCT
+.bp
+.SH
+NAME
+.LP
+cct - set the current color to a black body spectrum
+.SH
+SYNOPSIS
+.LP
+.B cct
+.I temperature
+.SH
+DESCRIPTION
+.LP
+The
+.UL cct
+entity sets the current color to the spectrum of an ideal
+black body radiating at
+.I temperature
+degrees Kelvin.
+This is often the most convenient way to set the color of an
+incandescent light source, but it is not recommended for
+fluorescent lamps or other materials that do not fit a
+black body spectrum.
+.SH
+EXAMPLE
+.DS
+# Define an incandescent source material at 3000 degrees K
+m incand3000k =
+	c
+		cct 3000
+	ed 1500
+.DE
+.SH
+SEE ALSO
+.LP
+.UL c,
+.UL cmix,
+.UL cspec,
+.UL cxy
+.ds RH CMIX
+.bp
+.SH
+NAME
+.LP
+cmix - mix two or more named colors to make the current color
+.SH
+SYNOPSIS
+.LP
+.B cmix
+.I "w1 c1 w2 c2 ..."
+.SH
+DESCRIPTION
+.LP
+The
+.UL cmix
+entity sums together two or more named colors using specified
+weighting coefficients, which correspond to the relative
+photometric brightness of each.
+As in all color specifications, the result is normalized so the
+absolute scale of the weights does not matter, only their relative 
+values.
+.LP
+If any of the colors is a spectral quantity (i.e. from a
+.UL cspec
+or
+.UL cct
+entity), then all the colors are first converted to spectral
+quantities.
+This is done with an approximation for CIE (x,y) chromaticities,
+which may be problematic depending on their values.
+In general, it is safest to add together colors that are either
+all spectral quantities or all CIE quantities.
+.SH
+EXAMPLE
+.DS
+# Define RGB primaries for a standard color monitor
+c R =
+	cxy 0.640 0.330
+c G =
+	cxy 0.290 0.600
+c B =
+	cxy 0.150 0.060
+# Mix them together in appropriate amounts for white
+c white =
+	cmix 0.265 R 0.670 G 0.065 B
+.DE
+.SH
+SEE ALSO
+.LP
+.UL c,
+.UL cct,
+.UL cspec,
+.UL cxy
+.ds LH Material Entities
+.ds RH M
+.bp
+.SH
+NAME
+.LP
+m - get or set the current material context
+.SH
+SYNOPSIS
+.LP
+.B m
+[
+.I id
+[
+.B =
+[
+.I template
+]
+]
+]
+.SH
+DESCRIPTION
+.LP
+If the
+.UL m
+keyword is given by itself, then it establishes
+the unnamed material context, which is a perfect two-sided black absorber.
+This context may be modified, but the changes will not be saved.
+.LP
+If the keyword is followed by an identifier
+.I id,
+then it reestablishes a previous context.
+If the specified context was never defined, an error will result.
+.LP
+If the entity is given with an identifier
+followed by an equals sign ('='), then a new context is established,
+and cleared to the default material.
+(Note that the equals sign must be separated from other
+arguments by white space to be properly recognized.)\0
+If the equals sign is followed by a second identifier
+.I template,
+then this previously defined material will be used as a source of
+default values instead.
+This may be used to establish a material alias, or to modify an
+existing material and give it a new name.
+.LP
+The sum of the diffuse and specular reflectances and transmittances
+must not be greater than one (with no negative values, obviously).
+These values are assumed to be measured at normal incidence.
+If an index of refraction is given, this may modify the balance between
+diffuse and specular reflectance at other incident angles.
+If the
+material is one-sided (see 
+.UL sides
+entity), then it may be a dielectric interface.
+In this case, the specular transmittance given is that which would be
+measured at normal incidence for a pane of the material 5 mm thick.
+This is important for figuring the actual transmittance for non-planar
+geometries assuming a uniformly absorbing medium.
+(Diffuse transmittance will not be affected by thickness.)\0
+If the index of
+refraction has an imaginary part, then the surface is a metal and this
+implies other properties as well.
+The default index of refraction is that of a vacuum, i.e. (1,0).
+.SH
+EXAMPLE
+.DS
+# Define a blue enamel paint
+m blue_enamel =
+        c
+                cxy 0.2771 0.2975
+        rd 0.5011
+        c
+        rs 0.0100 0.0350
+# Assign blue_enamel to be the color of the south wall
+m swall_mat = blue_enamel
+# ...
+# South wall face
+m swall_mat
+f sv1 sv2 sv3 sv4
+.DE
+.SH
+SEE ALSO
+.LP
+.UL ed,
+.UL ir,
+.UL rd,
+.UL rs,
+.UL sides,
+.UL td,
+.UL ts
+.ds RH SIDES
+.bp
+.SH
+NAME
+.LP
+sides - set the number of sides for the current material
+.SH
+SYNOPSIS
+.LP
+.B sides
+{
+.B 1
+|
+.B 2
+}
+.SH
+DESCRIPTION
+.LP
+The
+.UL sides
+entity is used to set the number of sides for the current material.
+If a surface is two-sided, then it will appear
+identical when viewed from either the front or the back.
+If a surface is one-sided,
+then it appears invisible when viewed from the back side.
+This means
+that a transmitting object will affect the light coming in through the
+front surface and ignore the characteristics of the back surface,
+unless the index of refraction is set.
+If the index of refraction is set, then the object will act as a
+solid piece of dielectric material.
+In either case, the transmission properties of the exiting surface
+should be the same as the incident surface for the model to be
+physically valid.
+.LP
+The default number of sides is two.
+.SH
+EXAMPLE
+.DS
+# Describe a blue crystal ball
+m blue_crystal =
+        ir 1.650000 0
+	# Solid dielectrics must use one-sided materials
+        sides 1
+        c
+        rs 0.0602 0
+        c
+                cxy 0.3127 0.2881
+        ts 0.6425 0
+v sc =
+	p 10 15 1.5
+sph sc .02
+.DE
+.SH
+SEE ALSO
+.LP
+.UL ed,
+.UL ir,
+.UL m,
+.UL rd,
+.UL rs,
+.UL td,
+.UL ts
+.ds RH RD
+.bp
+.SH
+NAME
+.LP
+rd - set the diffuse reflectance for the current material
+.SH
+SYNOPSIS
+.LP
+.B rd
+.I rho_d
+.SH
+DESCRIPTION
+.LP
+Set the diffuse reflectance for the current material to
+.I rho_d
+using the current color to determine the spectral characteristics.
+This is the fraction of visible light that is reflected from a
+surface equally in all directions according to Lambert's law, and is
+often called the "Lambertian component."
+Photometric reflectance is measured according to v(lambda)
+response function of the 1931 CIE standard 2
+degree observer, and assumes an equal-energy white light source.
+The value must be between zero and one, and may be further
+restricted by the luminosity of the selected color.
+(I.e. it is impossible to have a violet material with a photometric
+reflectance close to one since the eye is less sensitive in this part
+of the spectrum.)\0
+.LP
+The default diffuse reflectance is zero.
+.SH
+EXAMPLE
+.DS
+# An off-white paint with 70% reflectance
+m flat_white70 =
+	c
+		cxy .3632 .3420
+	rd .70
+.DE
+.SH
+SEE ALSO
+.LP
+.UL c,
+.UL ed,
+.UL ir,
+.UL m,
+.UL rs,
+.UL sides,
+.UL td,
+.UL ts
+.ds RH TD
+.bp
+.SH
+NAME
+.LP
+td - set the diffuse transmittance for the current material
+.SH
+SYNOPSIS
+.LP
+.B td
+.I tau_d
+.SH
+DESCRIPTION
+.LP
+Set the diffuse transmittance for the current material to
+.I tau_d
+using the current color to determine the spectral characteristics.
+This is the fraction of visible light that is transmitted through a
+surface equally in all (transmitted) directions.
+Like reflectance, transmittance is measured according to the
+standard v(lambda) curve, and assumes an equal-energy white light source.
+It is probably not possible to create a material with a diffuse
+transmittance above 50%, since well-diffused light will be reflected
+as well.
+.LP
+The default diffuse transmittance is zero.
+.SH
+EXAMPLE
+.DS
+# Model a perfect spherical diffuser, i.e. light hitting \
+	either side will be scattered equally in all directions
+m wonderland_diffuser =
+	c
+	td .5
+	rd .5
+.DE
+.SH
+SEE ALSO
+.LP
+.UL c,
+.UL ed,
+.UL ir,
+.UL m,
+.UL rd,
+.UL rs,
+.UL sides,
+.UL ts
+.ds RH ED
+.bp
+.SH
+NAME
+.LP
+ed - set the diffuse emittance for the current material
+.SH
+SYNOPSIS
+.LP
+.B ed
+.I epsilon_d
+.SH
+DESCRIPTION
+.LP
+Set the diffuse emittance for the current material to
+.I epsilon_d
+lumens per square meter using the current color to determine the
+spectral characteristics.
+Note that this is emittance rather than exitance, and therefore
+does not include reflected or transmitted light, which is a function
+of the other material settings and the illuminated environment.
+.LP
+The total lumen output of a convex emitting object
+is the radiating area of that object multiplied by its emittance.
+Therefore, one can compute the appropriate
+.I epsilon_d
+value for an emitter by dividing the total lumen output by the
+radiating area (in square meters).
+.LP
+The default emittance is zero.
+.SH
+EXAMPLE
+.DS
+# A 100-watt incandescent bulb (1600 lumens) modeled as a sphere
+m
+	c
+	cct 3000
+	ed 87712
+v cent =
+	p 0 0 0
+sph cent .0381
+.DE
+.SH
+SEE ALSO
+.LP
+.UL c,
+.UL ir,
+.UL m,
+.UL rd,
+.UL rs,
+.UL sides,
+.UL td,
+.UL ts
+.ds RH RS
+.bp
+.SH
+NAME
+.LP
+rs - set the specular reflectance for the current material
+.SH
+SYNOPSIS
+.LP
+.B rs
+.I "rho_s alpha_r"
+.SH
+DESCRIPTION
+.LP
+Set the specular reflectance for the current material to
+.I rho_s
+using the current color to determine the spectral characteristics.
+The surface roughness parameter is set to
+.I alpha_r,
+which is the RMS height of surface variations over the
+autocorrelation distance (equivalent to RMS facet slope).
+A roughness value of zero means a perfectly smooth surface, and
+values greater than 0.2 are unusual.
+(See application notes section 6.1.2 for a comparison between the
+roughness parameter and Phong specular power.)\0
+.LP
+The default specular reflectance is zero.
+.SH
+EXAMPLE
+.DS
+# Define a slightly rough brass metallic surface
+m rough_brass =
+	c
+		cxy .3820 .4035
+	# 30% specular, 9% diffuse
+	rs .30 .08
+	rd .09
+.DE
+.SH
+SEE ALSO
+.LP
+.UL c,
+.UL ed,
+.UL ir,
+.UL m,
+.UL rd,
+.UL sides,
+.UL td,
+.UL ts
+.ds RH TS
+.bp
+.SH
+NAME
+.LP
+ts - set the specular transmittance for the current material
+.SH
+SYNOPSIS
+.LP
+.B ts
+.I "tau_s alpha_t"
+.SH
+DESCRIPTION
+.LP
+Set the specular transmittance for the current material to
+.I tau_s
+using the current color to determine the spectral characteristics.
+The effective surface roughness is set to
+.I alpha_t.
+Rays will be transmitted with the same distribution as they would
+have been reflected with if this roughness value were given to the
+.UL rs
+entity.
+.LP
+The default specular transmittance is zero.
+.SH
+EXAMPLE
+.DS
+# Define a green glass material (58% transmittance)
+m glass =
+	sides 2
+        ir 1.52 0
+        c
+        rs 0.0725 0
+	c
+		cxy .23 .38
+        ts 0.5815 0
+# Define an uncolored translucent plastic (40% transmittance)
+m translucent =
+	sides 2
+	ir 1.4 0
+	c
+	rs .045 0
+	ts .40 .05
+.DE
+.SH
+SEE ALSO
+.LP
+.UL c,
+.UL ed,
+.UL ir,
+.UL m,
+.UL rd,
+.UL rs,
+.UL sides,
+.UL td
+.ds RH IR
+.bp
+.SH
+NAME
+.LP
+ir - set the complex index of refraction for the current material
+.SH
+SYNOPSIS
+.LP
+.B ir
+.I "n_real n_imag"
+.SH
+DESCRIPTION
+.LP
+Set the index of refraction for the current material to
+.I (n_real,n_imag).
+If the material is a dielectric (as opposed to metallic), then
+.I n_imag
+should be zero.
+For solid dielectric objects, the material should be made one-sided.
+If it is being used for thin objects, then a two-sided
+material is appropriate.
+(See the
+.UL sides
+entity.)\0
+.LP
+The default index of refraction is that of a vacuum, (1,0).
+.SH
+EXAMPLE
+.DS
+# Define polished aluminum material
+m polished_aluminum =
+	# Complex index of refraction (from physics table)
+	ir .770058 6.08351
+	c
+	rs .75 0
+.DE
+.SH
+SEE ALSO
+.LP
+.UL c,
+.UL ed,
+.UL m,
+.UL rd,
+.UL rs,
+.UL sides,
+.UL td,
+.UL ts
+.ds LH Vertex Entities
+.ds RH V
+.bp
+.SH
+NAME
+.LP
+v - get or set the current vertex context
+.SH
+SYNOPSIS
+.LP
+.B v
+[
+.I id
+[
+.B =
+[
+.I template
+]
+]
+]
+.SH
+DESCRIPTION
+.LP
+If the
+.UL v
+keyword is given by itself, then it establishes
+the unnamed vertex context, which is the origin with no normal.
+This context may be modified, but the changes will not be saved.
+(The unnamed vertex is never used except as a source of default
+values since all geometric entities call their vertices by name.)\0
+.LP
+If the keyword is followed by an identifier
+.I id,
+then it reestablishes a previous context.
+If the specified context was never defined, an error will result.
+.LP
+If the entity is given with an identifier
+followed by an equals sign ('='), then a new context is established,
+and cleared to the default vertex (the origin).
+(Note that the equals sign must be separated from other
+arguments by white space to be properly recognized.)\0
+If the equals sign is followed by a second identifier
+.I template,
+then this previously defined vertex will be used as a source of
+default values instead.
+This may be used to establish a vertex alias, or to modify an
+existing vertex and give it a new name.
+.LP
+A non-zero vertex normal must be given for
+certain entities, specifically
+.UL ring
+and
+.UL torus
+require a normal direction.
+An
+.UL f
+entity will interpolate vertex normals if given, and
+use the polygon plane normal otherwise.
+See the
+.UL prism
+entry for an explanation of how it interprets and uses vertex
+normals.
+The other entities ignore vertex normals if present.
+.LP
+The actual position and normal direction for a vertex is determined
+at the time of use by a geometric entity.
+Specifically, the transformation in effect at the time the vertex is
+defined is irrelevant.
+The only transformation that matters is the one that is applied to
+the geometry itself.
+This prevents double-transformation of vertices and allows one set
+of vertices to be used for multiple purposes, e.g. the front and
+back sides of a drawer.
+.SH
+EXAMPLE
+.DS
+# Make a capped cylinder
+v end1 =
+	p 0 0 0
+	n 0 0 -1
+v end2 =
+	p 0 0 1
+cyl end1 1.2 end2
+# Forgot normal for end2
+v end2
+	n 0 0 1
+ring end1 0 1.2
+ring end2 0 1.2
+.DE
+.SH
+SEE ALSO
+.LP
+.UL cone,
+.UL cyl,
+.UL f,
+.UL n,
+.UL p,
+.UL prism,
+.UL ring,
+.UL sph,
+.UL torus
+.ds RH P
+.bp
+.SH
+NAME
+.LP
+p - set the point location for the current vertex
+.SH
+SYNOPSIS
+.LP
+.B p
+.I "px py pz"
+.SH
+DESCRIPTION
+.LP
+Set the 3-dimensional position for the current vertex to
+.I (px,py,pz).
+The actual position of the vertex will be determined by the
+transformation in effect at the time the vertex is applied to a
+geometric surface entity.
+The transform current when the position is set is irrelevant.
+.LP
+The default vertex position is the origin, (0,0,0).
+.SH
+EXAMPLE
+.DS
+# Make a small circle of 6 spheres
+v scent =
+	p 1 0 0
+xf -a 6 -rz 60
+	sph scent .05
+xf
+.DE
+.SH
+SEE ALSO
+.LP
+.UL cone,
+.UL cyl,
+.UL f,
+.UL n,
+.UL prism,
+.UL ring,
+.UL sph,
+.UL torus,
+.UL v
+.ds RH N
+.bp
+.SH
+NAME
+.LP
+n - set the surface normal direction for the current vertex
+.SH
+SYNOPSIS
+.LP
+.B n
+.I "dx dy dz"
+.SH
+DESCRIPTION
+.LP
+Set the 3-dimensional surface normal for the current vertex to the
+normalized vector along
+.I (dx,dy,dz).
+If this vector is zero, then the surface normal is effectively
+unset.
+The actual surface normal orientation of the vertex will be determined
+by the transformation in effect at the time the vertex is applied to a
+geometric surface entity.
+The current transform when the normal is set is irrelevant.
+.LP
+The default vertex normal is the zero vector (i.e. no normal).
+.SH
+EXAMPLE
+.DS
+# Make a chain of 10 interlocking doughnuts
+v tcent =
+	p 0 0 0
+	n 0 1 0
+xf -a 10 -rx 90 -t .2 0 0
+	torus tcent .1 .2
+xf
+.DE
+.SH
+SEE ALSO
+.LP
+.UL f,
+.UL p,
+.UL prism,
+.UL ring,
+.UL torus,
+.UL v
+.ds LH Geometric Entities
+.ds RH F
+.bp
+.SH
+NAME
+.LP
+f - create an N-sided polygonal face
+.SH
+SYNOPSIS
+.LP
+.B f
+.I "v1 v2 ... vN"
+.SH
+DESCRIPTION
+.LP
+Create a polygonal face made of the current material
+by connecting the named vertices in order, and connecting the last
+vertex to the first.
+There must be at least three vertices, and if any vertex is undefined,
+an error will result.
+.LP
+The surface orientation is determined by the right-hand rule; when
+the curl of the fingers follows the given order of the vertices, the
+surface normal points in the thumb direction.
+Face vertices should be coplanar, though this is difficult to guarantee
+in a 3-dimensional specification.
+.LP
+If any vertices have associated surface normals, they will be used
+instead of the average plane normal, though it is safest to specify
+either all normals or no normals, and to stick with triangles
+when normals are used.
+Also, specified normals should point in the general direction of the
+surface for best results.
+.LP
+There is no explicit representation of holes in MGF.  A hole must be
+represented implicitly by connecting vertices to form "seams."  For
+example, a wall with a window in it might look as shown in Figure 1.
+In many systems, the wall itself would be represented with the first
+list of vertices, (v1,v2,v3,v4) and the hole associated with that
+wall as a second set of vertices (v5,v6,v7,v8).  In MGF, we must
+give the whole thing as a single polygon, connecting the vertices so
+as to create a "seam," as shown in Figure 2.
+This could be written in MGF as "f v1 v2 v3 v4 v5 v6 v7 v8 v5 v4".
+.LP
+It is very important that the order of the hole be opposite to the
+order of the outer perimeter, otherwise the polygon will be
+"twisted" on top of itself.  Note also that the seam was traversed
+in both directions, once going from v4 to v5, and again returning
+from v5 to v4.  This is a necessary condition for a proper seam.
+.LP
+The choice of vertices to make into a seam is somewhat arbitrary, but
+some rendering systems may not give sane results if you cross over a
+hole with part of your seam.  If we had chosen to create the seam
+between v2 and v5 in the above example instead of v4 and v5, the seam
+would cross our hole and may not render correctly\(dg.
+.FS
+\(dgFor systems that
+are sensitive to this, it is probably safest for their MGF
+loader/translator to re-expresses seams in terms of holes again, which can
+be done easily so long as vertices are shared in the fashion shown.
+.FE
+.bp
+Replace this page with the first page from "figures.ps".
+.bp
+.SH
+EXAMPLE
+.DS
+# Make a pyramid
+v apex =
+	p 1 1 1
+v base0 =
+	p 0 0 0
+v base1 =
+	p 0 2 0
+v base2 =
+	p 2 2 0
+v base3 =
+	p 2 0 0
+# Bottom
+f base0 base1 base2 base3
+# Sides
+f base0 apex base1
+f base1 apex base2
+f base2 apex base3
+f base3 apex base0
+.DE
+.SH
+SEE ALSO
+.LP
+.UL cone,
+.UL cyl,
+.UL m,
+.UL prism,
+.UL ring,
+.UL sph,
+.UL torus,
+.UL v
+.ds RH SPH
+.bp
+.SH
+NAME
+.LP
+sph - create a sphere
+.SH
+SYNOPSIS
+.LP
+.B sph
+.I "vc rad"
+.SH
+DESCRIPTION
+.LP
+Create a sphere made of the current material with its center at the
+named vertex
+.I vc
+and a radius of
+.I rad.
+If the vertex is undefined an error will result.
+.LP
+The surface normal is usually directed outward, but will be directed
+inward if the given radius is negative.
+(This typically matters only for one-sided materials.)\0
+A zero radius is illegal.
+.SH
+EXAMPLE
+.DS
+# Create a thick glass sphere with a hollow inside
+m glass =
+	sides 1
+	ir 1.52 0
+	c
+	rs .06 0
+	ts .88 0
+v cent =
+	p 0 0 1.1
+# The outer shell
+sph cent .1
+# The inner bubble
+sph cent -.08
+.DE
+.SH
+SEE ALSO
+.LP
+.UL cone,
+.UL cyl,
+.UL f,
+.UL m,
+.UL prism,
+.UL ring,
+.UL torus,
+.UL v
+.ds RH CYL
+.bp
+.SH
+NAME
+.LP
+cyl - create an open-ended, truncated right cylinder
+.SH
+SYNOPSIS
+.LP
+.B cyl
+.I "v1 rad v2"
+.SH
+DESCRIPTION
+.LP
+Create a truncated right cylinder of radius
+.I rad
+using the current material, starting at the named vertex
+.I v1
+and continuing to
+.I v2.
+The ends will be open, but may be capped using the
+.UL ring
+entity if desired.
+.LP
+The surface normal will usually be directed outward, but may be
+directed inward by giving a negative value for
+.I rad.
+A zero radius is illegal, and
+.I v1
+cannot equal
+.I v2.
+.SH
+EXAMPLE
+.DS
+# A stylus with one rounded and one pointed end
+o stylus
+	v vtip0 =
+		p 0 0 0
+	v vtip1 =
+		p 0 0 .005
+	v vend =
+		p 0 0 .05
+	cyl vtip1 .0015
+	sph vend .0015
+	cone vtip0 0 vtip1 .0015
+o
+.DE
+.SH
+SEE ALSO
+.LP
+.UL cone,
+.UL f,
+.UL m,
+.UL prism,
+.UL ring,
+.UL sph,
+.UL torus,
+.UL v
+.ds RH CONE
+.bp
+.SH
+NAME
+.LP
+cone - create an open-ended, truncated right cone
+.SH
+SYNOPSIS
+.LP
+.B cone
+.I "v1 rad1 v2 rad2"
+.SH
+DESCRIPTION
+.LP
+Create a truncated right cone using the current material.
+The starting radius is
+.I rad1
+at
+.I v1
+and the ending radius is
+is
+.I rad2
+at
+.I v2.
+The ends will be open, but may be capped using the
+.UL ring
+entity if desired.
+.LP
+The surface normal will usually be directed outward, but may be
+directed inward by giving negative values for both radii.
+(It is illegal for the signs of the two radii to disagree.)\0
+One but not both radii may be zero, indicating that the cone comes
+to a point.
+.LP
+Although it is not strictly forbidden to have equal cone radii, the
+.UL cyl
+entity should be used in such cases.
+Likewise, the
+.UL ring
+entity must be used if
+.I v1
+and
+.I v2
+are equal.
+.SH
+EXAMPLE
+.DS
+# A parasol
+o parasol
+	v v1 =
+		p 0 0 0
+	v v2 =
+		p 0 0 .75
+	v v3 =
+		p 0 0 .7
+	m handle_mat
+	cyl v1 .002 v2
+	m parasol_paper
+	cyl v2 0 v3 .33
+o
+.DE
+.SH
+SEE ALSO
+.LP
+.UL cyl,
+.UL f,
+.UL m,
+.UL prism,
+.UL ring,
+.UL sph,
+.UL torus,
+.UL v
+.ds RH PRISM
+.bp
+.SH
+NAME
+.LP
+prism - create a closed right prism
+.SH
+SYNOPSIS
+.LP
+.B prism
+.I "v1 v2 ... vN length"
+.SH
+DESCRIPTION
+.LP
+Create a closed right prism using the current material.
+One end face will be enclosed by the named vertices, and the
+opposite end face will be a mirror image at a distance
+.I length
+from the original.
+The edges will be extruded into N quadrilaterals connecting
+the two end faces.
+.LP
+The order of vertices determines the original face orientation
+according to the right-hand rule as explained for the
+.UL f
+entity.
+Normally, the prism is extruded in the direction opposite to the
+original surface normal, resulting in faces that all point outward.
+If the specified
+.I length
+is negative, the prism will be extruded above the original face
+and all surface normals will point inward.
+.LP
+If the vertices have associated normals, they are applied to the
+side faces only, and should generally point in the appropriate
+direction (i.e. in or out depending on whether
+.I length
+is negative or positive).
+.SH
+EXAMPLE
+.DS
+# Make a unit cube starting at the origin and \\\\
+	extending to the positive octant
+v cv0 =
+	p 0 0 0
+v cv1 =
+	p 0 1 0
+v cv2 =
+	p 1 1 0
+v cv3 =
+	p 1 0 0
+# Right hand rule has original face looking in -Z direction
+prism cv0 cv1 cv2 cv3 1
+.DE
+.SH
+SEE ALSO
+.LP
+.UL cyl,
+.UL cone,
+.UL f,
+.UL m,
+.UL ring,
+.UL sph,
+.UL torus,
+.UL v
+.ds RH RING
+.bp
+.SH
+NAME
+.LP
+ring - create a circular ring with inner and outer radii
+.SH
+SYNOPSIS
+.LP
+.B cyl
+.I "vc rmin rmax"
+.SH
+DESCRIPTION
+.LP
+Create a circular face of the current material centered on the named
+vertex
+.I vc
+with an inner radius of
+.I rmin
+and an outer radius of
+.I rmax.
+The surface orientation is determined by the normal vector
+associated with
+.I vc.
+If this vertex is undefined or has no normal, an error will result.
+The minimum radius may be equal to but not less than zero, and the
+maximum radius must be strictly greater than the minimum.
+.SH
+EXAMPLE
+.DS
+# The proverbial brass ring
+o brass_ring
+	m brass
+	v end1 =
+		p 0 -.005 0
+		n 0 -1 0
+	v end2 =
+		p 0 .005 0
+		n 0 1 0
+	ring end1 .02 .03
+	cyl end1 .03 end2
+	ring end2 .02 .03
+	cyl end2 -.02 end1
+o
+.DE
+.SH
+SEE ALSO
+.LP
+.UL cyl,
+.UL cone,
+.UL f,
+.UL m,
+.UL prism,
+.UL sph,
+.UL torus,
+.UL v
+.ds RH TORUS
+.bp
+.SH
+NAME
+.LP
+torus - create a regular torus
+.SH
+SYNOPSIS
+.LP
+.B torus
+.I "vc rmin rmax"
+.SH
+DESCRIPTION
+.LP
+Create a torus of the current material centered on the named vertex
+.I vc
+with an inner radius of
+.I rmin
+and an outer radius of
+.I rmax.
+The plane of the torus will be perpendicular to the normal vector
+associated with
+.I vc.
+If this vertex is undefined or has no normal, an error will result.
+.LP
+If a torus with an inward facing surface normal is desired,
+.I rmin
+and
+.I rmax
+may be negative.
+The minimum radius may be zero, but may not be negative when
+.I rmax
+is positive or vice versa.
+The magnitude or
+.I rmax
+must always be strictly greater than that of
+.I rmin.
+.SH
+EXAMPLE
+.DS
+# The proverbial brass ring -- easy grip version
+o brass_ring
+	m brass
+	v center =
+		p 0 0 0
+		n 0 1 0
+	torus center .02 .03
+o
+.DE
+.SH
+SEE ALSO
+.LP
+.UL cyl,
+.UL cone,
+.UL f,
+.UL m,
+.UL prism,
+.UL ring,
+.UL sph,
+.UL v
+.ds RH
+.ds LH
+.bp
+.NH
+MGF Translators
+.LP
+Initially, there are four translators for MGF data, but only
+one of these is distributed with the MGF parser itself,
+.I mgfilt.
+Two of the other translators,
+.I mgf2rad
+and
+.I rad2mgf
+convert between MGF and the Radiance scene description language,
+and are distributed for free with the rest of the Radiance
+package\(dg.
+.FS
+\(dgRadiance is available by anonymous ftp from hobbes.lbl.gov and
+nestor.epfl.ch, or by WWW from
+"http://radsite.lbl.gov/radiance/HOME.html"
+.FE
+A third translator,
+.I mgf2meta,
+converts to a 2-dimensional line plot, and is also
+distributed with Radiance.
+.LP
+Mgfilt is a simple but useful utility that takes MGF on its input
+and produces MGF on its output.
+It uses the parser to convert entities that are not wanted or
+understood, and produces only the requested ones.
+This is useful for seeing what exactly a program must understand
+when it supports a given set of entities, and may serve as a
+substitute for linking to the parser library for programmers who
+wish to interpret the ASCII input directly but without all the
+unwanted entities.
+In future releases of MGF, this utility will also be handy for
+taking new entities and producing older versions of MGF for
+translators that have not yet been updated properly.
+.ds LH Translators
+.ds RH MGFILT
+.bp
+.SH
+NAME
+.LP
+mgfilt - get usable MGF entities from input
+.SH
+SYNOPSIS
+.LP
+.B mgfilt
+.B version
+[
+.B input ..
+]
+.br
+or
+.br
+.B mgfilt
+.B "e1,e2,.."
+[
+.B input ..
+]
+.SH
+DESCRIPTION
+.LP
+.I Mgfilt
+takes one or more MGF input files and converts all the entities to
+the types listed.
+In the first form, a single integer is given for the
+.I version
+of MGF that is to be produced.
+Since MGF is in its first major release, this is not yet a useful
+form, but it will be when the second major release comes out.
+.LP
+In the second form,
+.I mgfilt
+produces only the entities listed in the first argument, which must
+be comma-separated.
+The listed entity order is not important, but all entities given
+must be defined in the current version of MGF.
+Unknown entities will be summarily discarded on the input, and a
+warning message will be printed to the standard error.
+.SH
+EXAMPLES
+.LP
+To take an MGF version 3 file and send it to a version 2
+translator:
+.IP
+mgfilt 2 input.mgf | mgf2rad > input.rad
+.LP
+To take an MGF file and produce only flat polygonal faces
+with no materials:
+.IP
+mgfilt f,v,p,xf input.mgf > flatpoly.mgf
+.SH
+SEE ALSO
+.LP
+mgf2rad, rad2mgf
+.ds RH MGF2RAD
+.bp
+.SH
+NAME
+.LP
+mgf2rad - convert Materials and Geometry Format file to RADIANCE description
+.SH
+SYNOPSIS
+.LP
+.B mgf2rad
+[
+.B "\-m matfile"
+][
+.B "\-e mult"
+][
+.B "\-g dist"
+]
+[
+.B input ..
+]
+.SH
+DESCRIPTION
+.LP
+.I Mgf2rad
+converts one or more Materials and Geometry Format (MGF)
+files to a RADIANCE scene description.
+By definition, all output dimensions are in meters.
+The material names and properties
+for the surfaces will be those assigned in MGF.
+Any materials not defined in MGF will result in an error during
+translation.
+Light sources are described inline as IES luminaire files, and
+.I mgf2rad
+calls the program
+.I ies2rad(1)
+to translate these files.
+If an IES file in turn contains an MGF description of the local
+fixture geometry, this may result in a recursive call to
+.I mgf2rad,
+which is normal and should be transparent.
+The only side-effect of this additional translation is the
+appearance of other RADIANCE scene and data files produced
+automatically by
+.I ies2rad.
+.LP
+The
+.I \-m
+option may be used to put all the translated materials into a separate
+RADIANCE file.
+This is not always advisable, as any given material name may be
+reused at different points in the MGF description, and writing them
+to a separate file loses the contextual association between
+materials and surfaces.
+As long as unique material names are used throughout the MGF
+description and material properties are not redefined, there
+will be no problem.
+Note that this is the only way to get all the translated materials
+into a single file, since no output is produced for unreferenced
+materials; i.e. translating just the MGF materials does not work.
+.LP
+The
+.I \-e
+option may be used to multiply all the emission values by the
+given
+.I mult
+factor.
+The
+.I \-g
+option may be used to establish a glow distance (in meters)
+for all emitting surfaces.
+These two options are employed principally by
+.I ies2rad,
+and are not generally useful to most users.
+.SH
+EXAMPLES
+.LP
+To translate two MGF files into one RADIANCE materials file and
+one geometry file:
+.IP
+mgf2rad -m materials.rad building1.mgf building2.mgf > building1+2.rad
+.LP
+To create an octree directly from two MGF files and one RADIANCE
+file:
+.IP
+oconv '\\!mgf2rad materials.mgf scene.mgf' source.rad > scene.oct
+.SH
+FILES
+.LP
+tmesh.cal	Used to smooth polygonal geometry
+.br
+*.rad		RADIANCE source descriptions created by ies2rad
+.br
+*.dat		RADIANCE source data created by ies2rad
+.br
+source.cal	Used for IES source coordinates
+.SH
+AUTHOR
+.LP
+Greg Ward
+.SH
+SEE ALSO
+.LP
+ies2rad(1), mgf2meta(1), obj2rad(1), oconv(1), rad2mgf(1), xform(1)
+.ds RH
+RAD2MGF
+.bp
+.SH
+NAME
+.LP
+rad2mgf - convert RADIANCE scene description to Materials and Geometry Format
+.SH
+SYNOPSIS
+.LP
+.B rad2mgf
+[
+.B \-dU
+]
+[
+.B input ..
+]
+.SH
+DESCRIPTION
+.LP
+.I Rad2mgf
+converts one or more RADIANCE scene files
+to the Materials and Geometry Format (MGF).
+Input units are specified with the
+.I \-mU
+option, where
+.I U
+is one of 'm' (meters), 'c' (centimeters), 'f' (feet) or 'i'
+(inches).
+The assumed unit is meters, which is the required output unit for
+MGF (thus the need to know).
+If the input dimensions are in none of these units, then the user
+should apply
+.I xform(1)
+with the
+.I \-s
+option to bring the units into line prior to translation.
+.LP
+The MGF material names and properties
+for the surfaces will be those assigned in RADIANCE.
+If a referenced material has not been defined, then its name will
+be invoked in the MGF output without definition, and the description
+will be incomplete.
+.SH
+LIMITATIONS
+.LP
+Although MGF supports all of the geometric types and the most
+common material types used in RADIANCE, there is currently no
+support for advanced BRDF materials, patterns, textures or mixtures.
+Also, the special types "source" and "antimatter" are not supported,
+and all light source materials are converted to simple diffuse emitters
+(except "illum" materials, which are converted to their alternates).
+These primitives are reproduced as comments in the output and
+must be replaced manually if necessary.
+.LP
+The RADIANCE "instance" type is treated specially.
+.I Rad2mgf
+converts each instance to an MGF include statement, using the corresponding
+transformation and a file name derived from the octree name.
+(The original octree suffix is replaced by ".mgf".)\0
+For this to work, the user must separately create the referenced
+MGF files from the original RADIANCE descriptions.
+The description file names can usually be determined using the
+.I getinfo(1)
+command run on the octrees in question.
+.SH
+EXAMPLES
+.LP
+To convert three RADIANCE files (in feet) to one MGF file:
+.IP
+mgf2rad -df file1.rad file2.rad file3.rad > scene.mgf
+.LP
+To translate a RADIANCE materials file to MGF:
+.IP
+mgf2rad materials.rad > materials.mgf
+.SH
+AUTHOR
+.LP
+Greg Ward
+.SH
+SEE ALSO
+.LP
+getinfo(1), ies2rad(1), mgf2meta(1), mgf2rad(1), obj2rad(1), oconv(1), xform(1)
+.ds RH MGF2META
+.bp
+.SH
+NAME
+.LP
+mgf2meta - convert Materials and Geometry Format file to Metafile graphics
+.SH
+SYNOPSIS
+.LP
+.B mgf2meta
+[
+.B "-t threshold"
+]
+.B "{x|y|z} xmin xmax ymin ymax zmin zmax"
+[
+.B input ..
+]
+.SH
+DESCRIPTION
+.LP
+.I Mgf2meta
+converts one or more Materials and Geometry Format (MGF)
+files to a 2-D orthographic projection along the selected axis in the
+.I metafile(1)
+graphics format.
+All geometry is clipped to the specified bounding box, and the
+resulting orientation is as follows:
+.sp .5
+.nf
+	Projection	Orientation
+	=======	========
+	x		Y-axis right, Z-axis up
+	y		Z-axis right, X-axis up
+	z		X-axis right, Z-axis up
+.fi
+.LP
+If multiple input files are given, the first file prints in black,
+the second prints in red, the third in green and the fourth in blue.
+If more than four input files are given, they cycle through the
+colors again in three other line types:  dashed, dotted and
+dot-dashed.
+.LP
+The
+.I \-t
+option may be used to randomly throw out line segments that are
+shorter than the given
+.I threshold
+(given as a fraction of the plot width).
+Segments are included with a
+probability equal to the square of the line length over the square
+of the threshold.
+This can greatly reduce the number of lines in the drawing (and
+therefore improve the drawing speed) with only a modest loss in
+quality.
+A typical value for this parameter is 0.005.
+.LP
+All MGF material information is ignored on the input.
+.SH
+EXAMPLES
+.LP
+To project two MGF files along the Z-axis and display them under
+X11:
+.IP
+mgf2meta z 0 10 0 15 0 9 building1.mgf building2.mgf | x11meta
+.LP
+To convert a RADIANCE scene to a line drawing in RADIANCE picture
+format:
+.IP
+rad2mgf scene.rad | mgf2meta x `getbbox -h scene.rad` | meta2tga |
+ra_t8 -r > scene.pic
+.SH
+AUTHOR
+.LP
+Greg Ward
+.SH
+SEE ALSO
+.LP
+getbbox(1), meta2tga(1), metafile(5), mgf2rad(1), pflip(1),
+protate(1), psmeta(1), ra_t8(1), rad2mgf(1), t4014(1), x11meta(1)
+.ds RH
+.ds LH
+.bp
+.NH
+MGF Parser Library
+.LP
+The principal motivation for creating a standard parser library for
+MGF is to make it easy for software developers to offer some base
+level of compliance.
+The key to making MGF easy to support in fact is the parser, which
+has the ability to express higher order entities in terms of
+lower order ones.
+For example, tori are part of the MGF specification, but if a given
+program or translator does not support them, the parser will convert
+them to cones.
+If cones are not supported either, it will convert them further into
+smoothed polygons.
+If smoothing (vertex normal information) is not supported, it will
+be ignored and the program will just get flat polygons.
+This is done in such a way that future versions of the standard may
+include new entities that old software does not even have to know
+about, and they will be converted appropriately.
+Forward compatibility is thus built right into the parser loading
+mechanism itself -- the programmer simply links to the new code and
+the new standard is supported without any further changes.
+.SH
+Language
+.LP
+The provided MGF parser is written in ANSI-C.
+This language was chosen for reasons of portability and efficiency.
+Almost all systems support some form of ANSI-compatible C, and many
+languages can cross-link to C libraries without modification.
+Backward compatibility to Kernighan and Ritchie C is achieved by
+compiling with the -DNOPROTO flag.
+.LP
+All of the data structures and prototypes needed for the library
+are in the header file "parser.h".
+This file is the best resource for the parser and is updated with
+each MGF release.
+.SH
+Mechanism
+.LP
+The parser works by a simple callback mechanism to routines that
+actually interpret the individual entities.
+Some of these routines will belong to the calling program, and some
+will be entity support routines included in the library itself.
+There is a global array of function pointers, called
+.I mg_ehand.
+It is defined thus:
+.DS
+extern int	(*mg_ehand[MG_NENTITIES])(int argc, char **argv);
+.DE
+Before parsing begins, this dispatch table is initialized to point to the
+routines that will handle each supported entity.
+Every entity handler has the same basic prototype, which is the
+same as the
+.I main
+function, i.e:
+.DS
+extern int	\f2handler\f1(int argc, char **argv);
+.DE
+The first argument is the number of words in the MGF entity
+(counting the entity itself) and the second argument is an array of
+nul-terminated strings with the entity and its arguments.
+The function should return zero or one of the error
+codes defined in "parser.h".
+A non-zero return value causes the parser to abort, returning the
+error up through its call stack to the entry function, usually
+.I mg_load.
+.LP
+A special function pointer for undefined entities is
+defined as follows:
+.DS
+extern int	(*mg_uhand)(int argc, char **argv);
+.DE
+By default, this points to the library function
+.I mg_defuhand,
+which prints an error message on the first unknown entity and keeps a
+count from then on, which is stored in the global unsigned integer
+.I mg_nunknown.
+If the
+.I mg_uhand
+pointer is assigned a value of NULL instead, parsing will abort at the
+first unrecognized entity.
+The reason this is not the default action is that ignoring unknown entities
+offers a certain base level of forward compatibility.
+Ignoring things one does not understand is not the best approach, but it
+is usually better than quitting with an error message if the input is
+in fact valid, but is a later version of the standard.
+The real solution is to update the interpreter by linking to a new version
+of the parser, or use a new version of the
+.I mgfilt
+command to convert the new MGF input to an older standard.
+.LP
+The
+.I mg_uhand
+pointer may also be used to customize the language for a particular
+application by adding entities, though this is discouraged because it
+tends to weaken the standard.
+.LP
+The skeletal framework for an MGF loader or translator is to assign
+function pointers to the
+.I mg_ehand
+array, call the parser initialization function
+.I mg_init,
+then call the file loader function
+.I mg_load
+once for each input file.
+This will in turn make calls back to the functions assigned to
+.I mg_ehand.
+To give a simple example, let us look at a
+translator that understands only flat polygonal faces, putting out
+vertex locations immediately after each "face" keyword:
+.DS
+#include <stdio.h>
+#include "parser.h"
+
+int
+myfaceh(ac, av)			/* face handling routine */
+int	ac;
+char	**av;
+{
+	C_VERTEX	*vp;	/* vertex structure pointer */
+	FVECT	vert;		/* vertex point location */
+	int	i;
+
+	if (ac < 4)			/* check # arguments */
+		return(MG_EARGC);
+	printf("face\n");		/* begin face output */
+	for (i = 1; i < ac; i++) {
+		if ((vp = c_getvert(av[i])) == NULL)	/* vertex from name */
+			return(MG_EUNDEF);
+		xf_xfmpoint(vert, vp->p);			/* apply transform */
+		printf("%15.9f %15.9f %15.9f\n",
+			vert[0], vert[1], vert[2]);			/* output vertex */
+	}
+	printf(";\\n");			/* end of face output */
+	return(MG_OK);			/* normal exit */
+}
+
+main(argc, argv)		/* translate MGF file(s) */
+int	argc;
+char	**argv;
+{
+	int	i;
+					/* initialize dispatch table */
+	mg_ehand[MG_E_FACE] = myfaceh;		/* ours */
+	mg_ehand[MG_E_VERTEX] = c_hvertex;		/* parser lib */
+	mg_ehand[MG_E_POINT] = c_hvertex;		/* parser lib */
+	mg_ehand[MG_E_XF] = xf_handler;		/* parser lib */
+	mg_init();				/* initialize parser */
+	for (i = 1; i < argc; i++)		/* load each file argument */
+		if (mg_load(argv[i]) != MG_OK)	/* and check for error */
+			exit(1);
+	exit(0);			/* all done! */
+}
+.DE
+Hopefully, this example demonstrates just how easy it is to
+write an MGF translator.
+Of course, translators get more complicated the more entity
+types they support, but the point is that one does not
+.I have
+to support every entity -- the parser handles what the translator
+does not.
+Also, the library includes many general entity handlers,
+further reducing the burden on the programmer.
+This same principle means that it is not necessary to modify an
+existing program to accommodate a new version of MGF -- one need only
+link to the new parser library to comply with the new standard.
+.SH
+Division of Labor
+.LP
+As seen in the previous example, there are two parser routines that
+are normally called directly in an MGF translator or loader program.
+The first is
+.I mg_init,
+which takes no arguments but relies on the program having
+initialized those parts of the global
+.I mg_ehand
+array it cares about.
+The second routine is
+.I mg_load,
+which is called once on each input file.
+(A third routine,
+.I mg_clear,
+may be called to free the parser data structures after each file or
+after all files, if the program plans to continue rather than
+exit.)\0
+.LP
+The rest of the routines in a translator or loader program are
+called indirectly through the
+.I mg_ehand
+dispatch table, and they are the ones that do the real work of
+supporting the MGF entities.
+In addition to converting or discarding entities that the calling
+program does not know or care about, the parser library includes a
+set of context handlers that greatly simplify the translation
+process.
+There are three handlers for each of the three named contexts and
+their constituents, and two handlers for the two hierarchical
+context entities.
+To use these handlers, one simply sets the appropriate positions in the
+.I mg_ehand
+dispatch table to point to these functions.
+Additional functions and global data structures provide convenient
+access to the relevant contexts, and all of these are detailed in
+the following manual pages.
+.ds LH Basic Parser Routines
+.ds RH MG_INIT
+.bp
+.SH
+NAME
+.LP
+mg_init, mg_ehand, mg_uhand - initialize MGF entity handlers
+.SH
+SYNOPSIS
+.LP
+#include "parser.h"
+.LP
+.B void
+mg_init(
+.B void
+)
+.LP
+.B int
+mg_defuhand(
+.B int
+argc,
+.B char
+**argv )
+.LP
+.B "extern int"
+(*mg_ehand[MG_NENTITIES])(
+.B int
+argc,
+.B char
+**argv )
+.LP
+.B "extern int"
+(*mg_uhand)(
+.B int
+argc,
+.B char
+**argv )
+.LP
+.B "extern unsigned"
+mg_nunknown
+.SH
+DESCRIPTION
+.LP
+The parser dispatch table,
+.I mg_ehand
+is initially set to all NULL pointers, and it
+is the duty of the calling program to assign entity handler functions to
+each of the supported entity positions in the array.
+The entities are given in the include file "parser.h" as the
+following:
+.DS
+#define MG_E_COMMENT	0		/* #		*/
+#define MG_E_COLOR		1		/* c		*/
+#define MG_E_CCT		2		/* cct		*/
+#define MG_E_CONE		3		/* cone	*/
+#define MG_E_CMIX		4		/* cmix	*/
+#define MG_E_CSPEC		5		/* cspec	*/
+#define MG_E_CXY		6		/* cxy		*/
+#define MG_E_CYL		7		/* cyl	*/
+#define MG_E_ED		8		/* ed		*/
+#define MG_E_FACE		9		/* f		*/
+#define MG_E_INCLUDE	10		/* i		*/
+#define MG_E_IES		11		/* ies		*/
+#define MG_E_IR		12		/* ir		*/
+#define MG_E_MATERIAL	13		/* m		*/
+#define MG_E_NORMAL	14		/* n		*/
+#define MG_E_OBJECT	15		/* o		*/
+#define MG_E_POINT		16		/* p		*/
+#define MG_E_PRISM		17		/* prism	*/
+#define MG_E_RD		18		/* rd		*/
+#define MG_E_RING		19		/* ring	*/
+#define MG_E_RS		20		/* rs		*/
+#define MG_E_SIDES		21		/* sides	*/
+#define MG_E_SPH		22		/* sph	*/
+#define MG_E_TD		23		/* td		*/
+#define MG_E_TORUS		24		/* torus	*/
+#define MG_E_TS		25		/* ts		*/
+#define MG_E_VERTEX	26		/* v		*/
+#define MG_E_XF		27		/* xf		*/
+
+#define MG_NENTITIES	28		/* total # entities */
+.DE
+.LP
+Once the
+.I mg_ehand
+array has been set by the program, the
+.I mg_init
+routine must be called to complete the initialization process.
+This should be done once and only once per invocation, before any other
+parser routines are called.
+.LP
+The
+.I mg_uhand
+variable points to the current handler for unknown entities
+encountered on the input.
+Its default value points to the
+.I mg_defuhand
+function, which simply increments the global variable
+.I mg_nunknown,
+printing a warning message on the standard error on the first
+offense.
+(This message may be avoided by incrementing
+.I mg_nunknown
+before processing begins.)\0
+If
+.I mg_uhand
+is assigned a value of NULL, then an unknown entity will return an
+.I MG_EUNK
+error, which will cause the parser to abort.
+(See the
+.I mg_load
+page for a list of errors.)\0
+If the
+.I mg_uhand
+pointer is assigned to another function, that function will receive
+any unknown entities and their arguments, and the parsing will
+abort if the new function returns a non-zero error value.
+This offers a convenient way to customize the language by adding
+non-standard entities.
+.SH
+DIAGNOSTICS
+.LP
+If an inconsistent set of entities has been set for support, the
+.I mg_init
+routine will print an informative message to standard error and abort
+the calling program with a call to
+.I exit.
+This is normally unacceptable behavior for a library routine, but since
+such an error indicates a fault with the calling program itself,
+recovery is impossible.
+.SH
+SEE ALSO
+.LP
+mg_load, mg_handle
+.ds RH MG_LOAD
+.bp
+.SH
+NAME
+.LP
+mg_load, mg_clear, mg_file, mg_err - load MGF file, clear data structures
+.SH
+SYNOPSIS
+.LP
+#include "parser.h"
+.LP
+.B int
+mg_load(
+.B char
+*filename )
+.LP
+.B void
+mg_clear(
+.B void
+)
+.LP
+.B extern
+MG_FCTXT *mg_file
+.LP
+.B "extern char"
+*mg_err[MG_NERRS]
+.SH
+DESCRIPTION
+.LP
+The
+.I mg_load
+function loads the named file, or standard input if
+.I filename
+is the NULL pointer.
+Calls back to the appropriate MGF handler routines are made through the
+.I mg_ehand
+dispatch table.
+.LP
+The global
+.I mg_file
+variable points to the current file context structure, which
+may be useful for the interpretation of certain entities, such as
+.UL ies,
+which must know the directory path of the enclosing file.
+This structure is of the defined type
+.I MG_FCTXT,
+given in "parser.h" as:
+.DS
+typedef struct mg_fctxt {
+	char	fname[96];			/* file name */
+	FILE	*fp;				/* stream pointer */
+	int	fid;				/* unique file context id */
+	char	inpline[4096];		/* input line */
+	int	lineno;			/* line number */
+	struct mg_fctxt	*prev;	/* previous context */
+} MG_FCTXT;
+.DE
+.SH
+DIAGNOSTICS
+.LP
+If an error is encountered during parsing,
+.I mg_load
+will print an appropriate error message to the standard error stream
+and return one of the non-zero values from "parser.h" listed below:
+.DS
+#define MG_OK			0		/* normal return value */
+#define MG_EUNK		1		/* unknown entity */
+#define MG_EARGC		2		/* wrong number of arguments */
+#define MG_ETYPE		3		/* argument type error */
+#define MG_EILL		4		/* illegal argument value */
+#define MG_EUNDEF		5		/* undefined reference */
+#define MG_ENOFILE		6		/* cannot open input file */
+#define MG_EINCL		7		/* error in included file */
+#define MG_EMEM		8		/* out of memory */
+#define MG_ESEEK		9		/* file seek error */
+#define MG_EBADMAT	10		/* bad material specification */
+
+#define MG_NERRS	11
+.DE
+If it is inappropriate to send output to standard error, the calling
+program should use the routines listed under
+.I mg_open
+for better control over the parsing process.
+.LP
+The
+.I mg_err
+array contains error messages corresponding to each of the values
+listed above in the native country's language.
+.SH
+SEE ALSO
+.LP
+mg_fgetpos, mg_handle, mg_init
+.ds RH MG_OPEN
+.bp
+.SH
+NAME
+.LP
+mg_open, mg_read, mg_parse, mg_close - MGF file loading subroutines
+.SH
+SYNOPSIS
+.LP
+#include "parser.h"
+.LP
+.B int
+mg_open( MG_FCTXT *fcp,
+.B char
+*filename )
+.LP
+.B int
+mg_read(
+.B void
+)
+.LP
+.B int
+mg_parse(
+.B void
+)
+.LP
+.B void
+mg_close(
+.B void
+)
+.SH
+DESCRIPTION
+.LP
+Most loaders and translators will call the
+.I mg_load
+routine to handle the above operations, but some programs or
+entity handlers require tighter control over the loading process.
+.LP
+The
+.I mg_open
+routine takes an uninitialized
+.I MG_FCTXT
+structure and a file name as its arguments.
+If
+.I filename
+is the NULL pointer, the standard input is "opened."
+The
+.I fcp
+structure will be set by
+.I mg_open
+prior to its return, and the global
+.I mg_file
+pointer will be assigned to point to it.
+This variable must not be destroyed until after the file is closed
+with a call to
+.I mg_close.
+(See the
+.I mg_load
+page for a definition of
+.I mg_file
+and the
+.I MG_FCTXT
+type.)\0
+.LP
+The
+.I mg_read
+function reads the next input line from the current file,
+returning the number of characters in the line, or zero if the
+end of file is reached or there is a file error.
+The function skips over escaped newlines, and keeps track of the
+line number in the current file context
+.I mg_file,
+which also contains the line that was read.
+.LP
+The
+.I mg_parse
+function breaks the current line in the
+.I mg_file
+structure into words and calls the appropriate handler routine, if
+any.
+Blank lines and unsupported entities cause a quick return.
+.LP
+The
+.I mg_close
+routine closes the current input file (unless it is the standard
+input) and returns to the previous file context (if any).
+.SH
+DIAGNOSTICS
+.LP
+The
+.I mg_open
+function returns
+.I MG_OK
+(0) normally, or
+.I MG_ENOFILE
+if the open fails for some reason.
+.LP
+The
+.I mg_parse
+function returns
+.I MG_OK
+if the current line was successfully interpreted, or one of the
+defined error values if there is a problem.
+(See the
+.I mg_load
+page for the defined error values.)\0
+.SH
+SEE ALSO
+.LP
+mg_fgetpos, mg_handle, mg_init, mg_load
+.ds RH MG_FGETPOS
+.bp
+.SH
+NAME
+.LP
+mg_fgetpos, mg_fgoto - get current file position and seek to pointer
+.SH
+SYNOPSIS
+.LP
+#include "parser.h"
+.LP
+.B void
+mg_fgetpos( MG_FPOS *pos )
+.LP
+.B int
+mg_fgoto( MG_FPOS *pos )
+.SH
+DESCRIPTION
+.LP
+The
+.I mg_fgetpos
+gets the current MGF file position and loads it into the passed
+.I MG_FPOS
+structure,
+.I pos.
+.LP
+The
+.I mg_fgoto
+function seeks to the position
+.I pos,
+taken from a previous call to
+.I mg_fgetpos.
+.SH
+DIAGNOSTICS
+.LP
+If
+.I mg_fgoto
+is passed an illegal pointer or one that does not correspond to the
+current
+.I mg_file
+context, it will return the
+.I MG_ESEEK
+error value.
+Normally, it returns
+.I MG_OK
+(0).
+.SH
+SEE ALSO
+.LP
+mg_load, mg_open
+.ds RH MG_HANDLE
+.bp
+.SH
+NAME
+.LP
+mg_handle, mg_entity, mg_ename, mg_nqcdivs - entity assistance and control
+.SH
+SYNOPSIS
+.LP
+.B int
+mg_handle(
+.B int
+en,
+.B int
+ac,
+.B char
+*av )
+.LP
+.B int
+mg_entity(
+.B char
+*name )
+.LP
+.B "extern char"
+mg_ename[MG_NENTITIES][MG_MAXELEN]
+.LP
+.B "extern int"
+mg_nqcdivs
+.SH
+DESCRIPTION
+.LP
+The
+.I mg_handle
+routine may be used to pass entities back to the parser
+to be redirected through the
+.I mg_ehand
+dispatch table.
+This method is recommended rather than calling through
+.I mg_ehand
+directly, since the parser sometimes has its own support routines
+that it needs to call for specific entities.
+The first argument,
+.I en,
+is the corresponding entity number, or -1 if
+.I mg_handle
+should figure it out from the first
+.I av
+argument.
+.LP
+The
+.I mg_entity
+function gets an entity number from its name, using a hash
+table on the
+.I mg_ename
+list.
+.LP
+The
+.I mg_ename
+table contains the string names corresponding to each MGF entity in
+the designated order.
+(See the
+.I mg_init
+page for the list of MGF entities.)\0
+.LP
+The global integer variable
+.I mg_nqcdivs
+tells the parser how many subdivisions to use per quarter circle (90
+degrees) when tesselating curved geometry.
+The default value is 5, and it may be reset at any time by the
+calling program.
+.SH
+DIAGNOSTICS
+.LP
+The
+.I mg_handle
+function returns
+.I MG_OK
+if the entity is handled correctly, or one of the predefined error
+values if there is a problem.
+(See the
+.I mg_load
+page for a list of error values.)\0
+.LP
+The
+.I mg_entity
+function returns -1 if the passed name does not appear in the
+.I mg_ename
+list.
+.SH
+SEE ALSO
+.LP
+mg_init, mg_load, mg_open
+.ds RH ISINT, ISFLT, ISNAME
+.bp
+.SH
+NAME
+.LP
+isint, isflt, isname - determine if string fits integer or real format,
+or is legal identifier
+.SH
+SYNOPSIS
+.LP
+.B int
+isint(
+.B char
+*str )
+.LP
+.B int
+isflt(
+.B char
+*str )
+.LP
+.B int
+isname(
+.B char
+*str )
+.SH
+DESCRIPTION
+.LP
+The
+.I isint
+function checks to see if the passed string
+.I str
+matches a decimal integer format (positive or negative),
+and returns 1 or 0 based on whether it does or does not.
+.LP
+The
+.I isflt
+function checks to see if the passed string
+.I str
+matches a floating point format (positive or negative with optional
+exponent), and returns 1 or 0 based on whether it does or does not.
+.LP
+The
+.I isname
+function checks to see if the passed string
+.I str
+is a legal identifier name.
+In MGF, a legal identifier must begin with a letter and contain only
+visible ASCII characters (those between decimal 33 and 127 inclusive).
+The one caveat to this is that names may begin with one or more
+underscores ('_'), but this is a trick employed by the parser to
+maintain a separate name space from the user, and is not legal usage
+otherwise.
+.LP
+Note that a string that matches an integer format is also a valid
+floating point value.
+Conversely, a string that is not a floating point number cannot be a
+valid integer.
+.LP
+These routines are useful for checking arguments passed to entity
+handlers that certain types in certain positions.
+If an invalid argument is passed, the handler should return an
+.I MG_ETYPE
+error.
+.SH
+SEE ALSO
+.LP
+mg_init, mg_load
+.ds LH Entity Support Routines
+.ds RH C_HVERTEX
+.bp
+.SH
+NAME
+.LP
+c_hvertex, c_getvert, c_cvname, c_cvertex - vertex entity support
+.SH
+SYNOPSIS
+.LP
+#include "parser.h"
+.LP
+.B int
+c_hvertex(
+.B int
+argc,
+.B char
+**argv )
+.LP
+C_VERTEX *c_getvert(
+.B char
+*name )
+.LP
+.B "extern char"
+*c_vname
+.LP
+.B extern
+C_VERTEX *c_cvertex
+.SH
+DESCRIPTION
+.LP
+The
+.I c_hvertex
+function handles the MGF vertex entities,
+.UL v,
+.UL p
+and
+.UL n.
+If either
+.UL p
+or
+.UL n
+is supported, then
+.UL v
+must be also.
+The assignments are normally made to the
+.I mg_ehand
+array prior to parser initialization, like so:
+.DS
+mg_ehand[MG_E_VERTEX] = c_hvertex;		/* support "v" entity */
+mg_ehand[MG_E_POINT] = c_hvertex;		/* support "p" entity */
+mg_ehand[MG_E_NORMAL] = c_hvertex;	/* support "n" entity */
+/* other entity handler assignments... */
+mg_init();			/* initialize parser */
+.DE
+If vertex normals are not understood by any of the program-supported
+entities, then the
+.I MG_E_NORMAL
+entry may be left with its original NULL assignment.
+.LP
+The
+.I c_getvert
+call takes the name of a defined vertex and returns a pointer to its
+.I C_VERTEX
+structure, defined in "parser.h" as:
+.DS
+typedef FLOAT  FVECT[3];	/* a 3-d real vector */
+
+typedef struct {
+	int	clock;			/* incremented each change -- resettable */
+	FVECT	p, n;		/* point and normal */
+} C_VERTEX;		/* vertex context */
+.DE
+The
+.I clock
+member will be incremented each time the value gets changed by a
+.UL p
+or
+.UL n
+entity, and may be reset by the controlling program if desired.
+This is a convenient way to keep track of whether or not a vertex has
+changed since its last use.
+To link identical vertices, one must also check that the current
+transform has not changed, which is uniquely identified by the
+global
+.I xf_context->xid
+variable, but only if one is using the parser libraries transform
+handler.
+(See the
+.I xf_handler
+page.)\0
+.LP
+It is possible but not recommended to alter the contents of the
+vertex structure returned by
+.I c_getvert.
+Normally it is read during the
+interpretation of entities using named vertices.
+.LP
+The name of the current vertex is given by the global
+.I c_cvname
+variable, which is set to NULL if the unnamed vertex is current.
+The current vertex value is pointed to by the global variable
+.I c_cvertex,
+which should never be NULL.
+.SH
+DIAGNOSTICS
+.LP
+The
+.I c_hvertex
+function returns
+.I MG_OK
+(0) if the vertex is handled correctly, or one of the predefined
+error values if there is a problem.
+(See the
+.I mg_load
+page for a list of errors.)\0
+.LP
+The
+.I c_getvert
+function returns NULL if the specified vertex name is undefined, at
+which point the calling function should return an
+.I MG_EUNDEF
+error.
+.SH
+SEE ALSO
+.LP
+c_hcolor, c_hmaterial, mg_init, mg_load, xf_handler
+.ds RH C_HCOLOR
+.bp
+.SH
+NAME
+.LP
+c_hcolor, c_getcolor, c_ccname, c_ccolor, c_ccvt, c_isgrey -
+color entity support
+.SH
+SYNOPSIS
+.LP
+#include "parser.h"
+.LP
+.B int
+c_hcolor(
+.B int
+argc,
+.B char
+**argv )
+.LP
+C_COLOR *c_getcolor(
+.B char
+*name )
+.LP
+.B "extern char"
+*c_ccname
+.LP
+.B extern
+C_COLOR *c_ccolor
+.LP
+.B void
+c_ccvt( C_COLOR *cvp,
+.B int
+cflags )
+.LP
+.B int
+c_isgrey( C_COLOR *cvp )
+.SH
+DESCRIPTION
+.LP
+The
+.I c_hcolor
+function supports the MGF entities,
+.UL c,
+.UL cxy,
+.UL cspec,
+.UL cct
+and
+.UL cmix.
+It is an error to support any of the color field entities without
+supporting the
+.UL c
+entity itself.
+The assignments are normally made to the
+.I mg_ehand
+array prior to parser initialization, like so:
+.DS
+mg_ehand[MG_E_COLOR] = c_hcolor;	/* support "c" entity */
+mg_ehand[MG_E_CXY] = c_hcolor;	/* support "cxy" entity */
+mg_ehand[MG_E_CSPEC] = c_hcolor;	/* support "cspec" entity */
+mg_ehand[MG_E_CCT] = c_hcolor;		/* support "cct" entity */
+mg_ehand[MG_E_CMIX] = c_hcolor;	/* support "cmix" entity */
+/* other entity handler assignments... */
+mg_init();			/* initialize parser */
+.DE
+If the loader/translator has no use for spectral data, the entries for
+.UL cspec
+and
+.UL cct
+may be left with their original NULL assignments and these entities will
+be re-expressed appropriately as tristimulus values.
+.LP
+The
+.I c_getcolor
+function takes the name of a defined color and returns a pointer to its
+.I C_COLOR
+structure, defined in "parser.h" as:
+.DS
+#define C_CMINWL	380					/* minimum wavelength */
+#define C_CMAXWL	780					/* maximum wavelength */
+#define C_CNSS		41					/* number of spectral samples */
+#define C_CWLI		((C_CMAXWL-C_CMINWL)/(C_CNSS-1))
+#define C_CMAXV		10000			/* nominal maximum sample value */
+#define C_CLPWM		(683./C_CMAXV)	/* peak lumens/watt multiplier */
+
+typedef struct {
+	int	clock;			/* incremented each change */
+	short	flags;			/* what's been set */
+	short	ssamp[C_CNSS];	/* spectral samples, min wl to max */
+	long	ssum;			/* straight sum of spectral values */
+	float	cx, cy;		/* xy chromaticity value */
+	float	eff;			/* efficacy (lumens/watt) */
+} C_COLOR;		/* color context */
+.DE
+The
+.I clock
+member will be incremented each time the value gets changed by a
+color field entity, and may be reset by the calling program if
+desired.
+This is a convenient way to keep track of whether or not a color has
+changed since its last use.
+The
+.I flags
+member indicates which color representations have been assigned,
+and is an inclusive OR of one or more of the following:
+.DS
+#define C_CSSPEC	01		/* flag if spectrum is set */
+#define C_CDSPEC	02		/* flag if defined w/ spectrum */
+#define C_CSXY		04		/* flag if xy is set */
+#define C_CDXY		010		/* flag if defined w/ xy */
+#define C_CSEFF		020		/* flag if efficacy set */
+.DE
+.LP
+It is possible but not recommended to alter the contents of the
+color structure returned by
+.I c_getcolor.
+Normally, this routine is never called directly, since there are no
+entities that access colors by name other than
+.UL c.
+.LP
+The global variable
+.I c_ccname
+points to the name of the current color, or NULL if it is unnamed.
+The variable
+.I c_ccolor
+points to the current color value, which should never be NULL.
+.LP
+The
+.I c_ccvt
+routine takes a
+.I C_COLOR
+structure and a set of desired flag settings and computes the
+missing color representation(s).
+.LP
+The
+.I c_isgrey
+function returns 1 if the passed color is very close to neutral
+grey, or 0 otherwise.
+.SH
+DIAGNOSTICS
+.LP
+The
+.I c_hcolor
+function returns
+.I MG_OK
+(0) if the color is handled correctly, or one of the predefined
+error values if there is a problem.
+(See the
+.I mg_load
+page for a list of errors.)\0
+.LP
+The
+.I c_getcolor
+function returns NULL if the specified color name is undefined, at
+which point the calling function should return an
+.I MG_EUNDEF
+error.
+.SH
+SEE ALSO
+.LP
+c_hmaterial, c_hvertex, mg_init, mg_load
+.ds RH C_HMATERIAL
+.bp
+.SH
+NAME
+.LP
+c_hmaterial, c_getmaterial, c_cmname, c_cmaterial -
+material entity support
+.SH
+SYNOPSIS
+.LP
+#include "parser.h"
+.LP
+.B int
+c_hmaterial(
+.B int
+argc,
+.B char
+**argv )
+.LP
+C_MATERIAL *c_getmaterial(
+.B char
+*name )
+.LP
+.B "extern char"
+*c_cmname
+.LP
+.B extern
+C_MATERIAL *c_cmaterial
+.SH
+DESCRIPTION
+.LP
+The
+.I c_hmaterial
+function supports the MGF entities,
+.UL m,
+.UL ed,
+.UL ir,
+.UL rd,
+.UL rs,
+.UL sides,
+.UL td,
+and
+.UL ts.
+It is an error to support any of the material field entities without
+supporting the
+.UL m
+entity itself.
+The assignments are normally made to the
+.I mg_ehand
+array prior to parser initialization, like so:
+.DS
+mg_ehand[MG_E_MATERIAL] = c_hmaterial;	/* support "m" entity */
+mg_ehand[MG_E_ED] = c_hmaterial;		/* support "ed" entity */
+mg_ehand[MG_E_IR] = c_hmaterial;		/* support "ir" entity */
+mg_ehand[MG_E_RD] = c_hmaterial;		/* support "rd" entity */
+mg_ehand[MG_E_RS] = c_hmaterial;		/* support "rs" entity */
+mg_ehand[MG_E_SIDES] = c_hmaterial;		/* support "sides" entity */
+mg_ehand[MG_E_TD] = c_hmaterial;		/* support "td" entity */
+mg_ehand[MG_E_TS] = c_hmaterial;		/* support "ts" entity */
+/* other entity handler assignments... */
+mg_init();			/* initialize parser */
+.DE
+Any of the above entities besides
+.UL m
+may be unsupported, but the parser will not attempt to include their
+effect into other members, e.g. an unsupported
+.UL rs
+component will not be added back into the
+.UL rd
+member.
+It is therefore safer to support all of the relevant material
+entities and make final approximations from the complete
+.I C_MATERIAL
+structure.
+.LP
+The
+.I c_getmaterial
+function takes the name of a defined material and returns a pointer to its
+.I C_MATERIAL
+structure, defined in "parser.h" as:
+.DS
+#define C_1SIDEDTHICK	0.005		/* assumed thickness of 1-sided mat. */
+
+typedef struct {
+	int	clock;		/* incremented each change -- resettable */
+	int	sided;		/* 1 if surface is 1-sided, 0 for 2-sided */
+	float	nr, ni;		/* index of refraction, real and imaginary */
+	float	rd;		/* diffuse reflectance */
+	C_COLOR	rd_c;	/* diffuse reflectance color */
+	float	td;		/* diffuse transmittance */
+	C_COLOR	td_c;	/* diffuse transmittance color */
+	float	ed;		/* diffuse emittance */
+	C_COLOR	ed_c;	/* diffuse emittance color */
+	float	rs;		/* specular reflectance */
+	C_COLOR	rs_c;	/* specular reflectance color */
+	float	rs_a;		/* specular reflectance roughness */
+	float	ts;		/* specular transmittance */
+	C_COLOR	ts_c;	/* specular transmittance color */
+	float	ts_a;		/* specular transmittance roughness */
+} C_MATERIAL;	/* material context */
+.DE
+The
+.I clock
+member will be incremented each time the value gets changed by a
+material field entity, and may be reset by the calling program if
+desired.
+This is a convenient way to keep track of whether or not a material has
+changed since its last use.
+.LP
+All reflectance and transmittance values correspond to normal
+incidence, and may vary as a function of angle depending on the
+index of refraction.
+A solid object is normally represented with a one-sided material.
+A two-sided material is most appropriate for thin surfaces, though
+it may be used also when the surface normal orientations in a model
+are unreliable.
+.LP
+If a transparent or translucent surface is one-sided, then the
+absorption will change as a function of distance through the
+material, and a single value for diffuse or specular transmittance is
+ambiguous.
+We therefore define a standard thickness,
+.I C_1SIDEDTHICK,
+which is the object thickness to which the given values correspond,
+so that one may compute the isotropic absorptance of the material.
+.LP
+It is possible but not recommended to alter the contents of the
+material structure returned by
+.I c_getmaterial.
+Normally, this routine is never called directly, since there are no
+entities that access materials by name other than
+.UL m.
+.LP
+The global variable
+.I c_cmname
+points to the name of the current material, or NULL if it is unnamed.
+The variable
+.I c_cmaterial
+points to the current material value, which should never be NULL.
+.SH
+DIAGNOSTICS
+.LP
+The
+.I c_hmaterial
+function returns
+.I MG_OK
+(0) if the color is handled correctly, or one of the predefined
+error values if there is a problem.
+(See the
+.I mg_load
+page for a list of errors.)\0
+.LP
+The
+.I c_getmaterial
+function returns NULL if the specified material name is undefined, at
+which point the calling function should return an
+.I MG_EUNDEF
+error.
+.SH
+SEE ALSO
+.LP
+c_hcolor, c_hvertex, mg_init, mg_load
+.ds RH OBJ_HANDLER
+.bp
+.SH
+NAME
+.LP
+obj_handler, obj_clear, obj_nnames, obj_name - object name support
+.SH
+SYNOPSIS
+.LP
+.B int
+obj_handler(
+.B int
+argc,
+.B char
+**argv )
+.LP
+.B void
+obj_clear(
+.B void
+)
+.LP
+.B "extern int"
+obj_nnames
+.LP
+.B "extern char"
+**obj_name
+.SH
+DESCRIPTION
+.LP
+The
+.I obj_handler
+routine should be assigned to the
+.I MG_E_OBJECT
+entry of the parser's
+.I mg_ehand
+array prior to calling
+.I mg_load
+if the loader/translator wishes to support hierarchical object
+names.
+.LP
+The
+.I obj_clear
+function may be used to clear the object name stack and free any
+associated memory, but this is usually not necessary since
+.UL o
+begin and end entities are normally balanced in the input.
+.LP
+The global
+.I obj_nnames
+variable indicates the number of names currently in the object
+stack, and the
+.I obj_name
+list contains the name strings in the same order as they were
+encountered on the input.
+(I.e. the most recently pushed name is last.)\0
+.SH
+DIAGNOSTICS
+.LP
+The
+.I obj_handler
+function returns
+.I MG_OK
+(0) if the color is handled correctly, or one of the predefined
+error values if there is a problem.
+(See the
+.I mg_load
+page for a list of errors.)\0
+.SH
+SEE ALSO
+.LP
+mg_init, mg_load, xf_handler
+.ds RH XF_HANDLER
+.bp
+.SH
+NAME
+.LP
+xf_handler, xf_clear, xf_context, xf_argend - transformation support
+.SH
+SYNOPSIS
+.LP
+.B int
+xf_handler(
+.B int
+argc,
+.B char
+**argv )
+.LP
+.B void
+xf_clear(
+.B void
+)
+.LP
+.B extern
+XF_SPEC *xf_context
+.LP
+.B "extern char"
+**xf_argend
+.SH
+DESCRIPTION
+.LP
+The
+.I xf_handler
+routine should be assigned to the
+.I MG_E_XF
+entry of the parser's
+.I mg_ehand
+array prior to calling
+.I mg_load
+if the loader/translator wishes to support hierarchical
+transformations.
+(Note that all MGF geometric entities require this support.)\0
+.LP
+The
+.I xf_clear
+function may be used to clear the transform stack and free any
+associated memory, but this is usually not necessary since
+.UL xf
+begin and end entities are normally balanced in the input.
+.LP
+The global
+.I xf_context
+variable points to the current transformation context, which is of
+the type
+.I XF_SPEC,
+described in "parser.h":
+.DS
+typedef struct xf_spec {
+	long	xid;				/* unique transform id */
+	short	xac;				/* context argument count */
+	short	rev;				/* boolean true if vertices reversed */
+	XF	xf;				/* cumulative transformation */
+	struct xf_array	*xarr;		/* transformation array pointer */
+	struct xf_spec	*prev;	/* previous transformation context */
+} XF_SPEC;		/* followed by argument buffer */
+.DE
+The
+.I xid
+member is a identifier associated with this transformation,
+which should be the same for identical transformations, as an aid to
+vertex sharing.
+(See also the
+.I c_hvertex
+page.)\0
+The
+.I xac
+member indicates the total number of transform arguments, and is
+used to indicate the position of the first argument relative to the
+last one pointed to by the global
+.I xf_argend
+variable.
+.LP
+The first transform argument starts at
+.I xf_argv,
+which is a macro defined in "parser.h" as:
+.DS
+#define xf_argv		(xf_argend - xf_context->xac)
+.DE
+Note that accessing this macro will result in a segmentation violation
+if the current context is NULL, so one should first test the second macro
+.I xf_argc
+against zero.
+This macro is defined as:
+.DS
+#define xf_argc		(xf_context==NULL ? 0 : xf_context->xac)
+.DE
+.LP
+Normally, neither of these macros will be used, since there are
+routines for transforming points, vectors and scalars directly based
+on the current transformation context.
+(See the
+.I xf_xfmpoint
+page for details.)\0
+.LP
+The
+.I rev
+member of the
+.I XF_SPEC
+structure indicates whether or not this transform reverses the order
+of polygon vertices.
+This member will be 1 if the transformation mirrors about an odd
+number of coordinate axes, thus inverting faces.
+The usual thing to do in this circumstance is to interpret the
+vertex arguments in the reverse order, so as to bring the face back
+to its original orientation in the new position.
+.LP
+The
+.I xf
+member contains the transformation scalefactor (in xf.sca)
+and 4x4 homogeneous matrix (in xf.xfm), but these will usually not
+be accessed directly.
+Likewise, the
+.I xarr
+and
+.I prev
+members point to data that should not be needed by the calling
+program.
+.SH
+DIAGNOSTICS
+.LP
+The
+.I xf_handler
+function returns
+.I MG_OK
+(0) if the color is handled correctly, or one of the predefined
+error values if there is a problem.
+(See the
+.I mg_load
+page for a list of errors.)\0
+.SH
+SEE ALSO
+.LP
+mg_init, mg_load, obj_handler, xf_xfmpoint
+.ds RH XF_XFMPOINT
+.bp
+.SH
+NAME
+.LP
+xf_xfmpoint xf_xfmvect, xf_rotvect, xf_scale - apply current
+transformation
+.SH
+SYNOPSIS
+.LP
+.B void
+xf_xfmpoint( FVECT pnew, FVECT pold )
+.LP
+.B void
+xf_xfmvect( FVECT vnew, FVECT vold )
+.LP
+.B void
+xf_rotvect( FVECT nnew, FVECT nold )
+.LP
+.B double
+xf_scale(
+.B double
+sold )
+.SH
+DESCRIPTION
+.LP
+The
+.I xf_xfmpoint
+routine applies the current transformation defined by
+.I xf_context
+to the point
+.I pold,
+scaling, rotating and moving it to its proper location, which is put in
+.I pnew.
+(The two arguments may point to the same vector.)\0
+.LP
+The
+.I xf_xfmvect
+routine applies the current transformation to the vector
+.I vold,
+scaling and rotating it to its proper location, which is put in
+.I vnew.
+(The two arguments may point to the same vector.)\0
+The only difference between
+.I xf_xfmpoint
+and
+.I xf_xfmvect
+is that in the latter, the final translation is not applied.
+.LP
+The
+.I xf_rotvect
+routine rotates the vector
+.I nold
+using the current transformation, and stores the result in
+.I nnew.
+(The two arguments may point to the same vector.)\0
+No translation or scaling is applied, which is the appropriate
+action for surface normal vectors for example.
+.LP
+The
+.I xf_scale
+function takes a scalar argument
+.I sold
+and applies the current scale factor, returning the result.
+.SH
+SEE ALSO
+.LP
+xf_handler
+.ds LH
+.ds RH
+.bp
+.NH
+Application Notes
+.NH 2
+Relation to Standard Practices in Computer Graphics
+.LP
+For those coming from a computer graphics background, some of the
+choices in the material model may seem strange or even capricious.
+Why not simply stick with RGB colors and a Phong specular component
+like everyone else?
+What is the point in choosing the number of sides to a material?
+.LP
+In the real world, a surface can have only one side,
+defining the interface between one volume and another.
+Many object-space rendering packages (e.g. z-buffer algorithms) take
+advantage of this fact by culling back-facing polygons and thus saving
+as much as 50% of the preprocessing time.
+However, many models rely on an
+approximation whereby a single surface is used to represent a very thin
+volume, such as a pane of glass, and this also can provide significant
+calculational savings in an image-space algorithm (such as
+ray-tracing).
+Also, many models are created in such a way that the front vs. back
+information is lost or confused, so that the back side of one or
+more surfaces may have to serve as the front side during rendering.
+(AutoCAD is one easily identified culprit in this department.)\0
+Since both types of surface models are useful and any
+rendering algorithm may ultimately be applied, MGF provides a way
+to specify sidedness rather than picking one interpretation or the other.
+.LP
+The problem with RGB is that there is no accepted standard, and even
+if we were to set one it would either be impossible to realize (i.e.
+impossible to create phosphors with the chosen colors) or it would
+have a gamut that excludes many saturated colors.
+The CIE color system was very carefully conceived and developed,
+and is the standard to which all photometric measurements adhere.
+It is therefore the logical choice in any standard format, though it
+has been too often ignored by the computer graphics community.
+.LP
+Regarding Phong shading, this was never a physical model and making it
+behave basic laws of reciprocity and energy balance is difficult.
+More to the point, specular power has almost nothing to do with
+surface microstructure, and is difficult to set properly
+even if every physical characteristic of a material has
+been carefully measured.
+This is the ultimate indictment of any physical model -- that it
+is incapable of reproducing any measurement whatsoever.
+.LP
+Admittedly, the compliment of diffuse and specular component plus
+surface roughness and index of refraction used in MGF is less than a
+perfect model, but it is serviceable for most materials and
+relatively simple to incorporate into a rendering algorithm.
+In the long term, MGF shall probably include full spectral
+scattering functions, though the sheer quantity of data involved
+makes this burdensome from both the measurement side and the
+simulation side.
+.NH 3
+Converting between Phong Specular Power and Gaussian Roughness
+.LP
+So-called specular reflection and transmission are modeled using a
+Gaussian distribution of surface facets.
+The roughness parameters to the
+.UL rs
+and
+.UL ts
+entities specify
+the root-mean-squared (RMS) surface facet slope, which varies from 0
+for a perfectly smooth surface to around .2 for a fairly rough one.
+The effect this will have on the reflected component distribution is
+well-defined, but predicting the behavior of the transmitted
+component requires further assumptions.
+We assume that the surface
+scatters light passing through it just as much as it scatters
+reflected light.
+This assumption is approximately correct for a
+two-sided transparent material with an index of refraction of 1.5
+(like glass) and both sides having the given RMS facet slope.
+.LP
+Oftentimes, one is translating from a Phong exponent on the cosine
+of the half-vector-to-normal angle to the more physical but less
+familiar Gaussian model of MGF.
+The hardest part is translating the specular power to a roughness value.
+For this, we recommend the following approximation:
+.IP
+roughness = 0.6/sqrt(specular_power)
+.LP
+It is not a perfect correlation, but it is about as close as one can get.
+.NH 3
+Converting between RGB and CIE Colors
+.LP
+Unlike most graphics languages, MGF does not use an RGB color model,
+simply because there is no recognized definition for this model.
+It is based on computer monitor phosphors, which vary from one
+CRT to the next.
+(There is an RGB standard defined in the TV
+industry, but this has a rather poor correlation to most computer
+monitors and it is impossible to express many real-world colors
+within its limited gamut.)\0
+.LP
+MGF uses two alternative, well-defined standards, spectral power
+distributions and the 1931 CIE 2 degree standard observer.
+With the CIE standard, any viewable
+color may be exactly represented as an (x,y) chromaticity value.
+Unfortunately, the interaction between
+colors (i.e. colored light sources and interreflections) cannot be
+specified exactly with any finite coordinate set, including CIE
+chromaticities.
+So, MGF offers the ability to give reflectance,
+transmittance or emittance as a function of wavelength over the visible
+spectrum.
+This function is still discretized, but at a user-selectable
+resolution.
+Furthermore, spectral colors may be mixed, providing (nearly)
+arbitrary basis functions, which can produce more accurate results in
+some cases and are merely a convenience for translation in others.
+.LP
+Conversion back and forth between CIE chromaticity coordinates and spectral
+samples is provided within the MGF parser.
+Unfortunately, conversion
+to and from RGB values depends on a particular RGB definition, and as we
+have said, there is no recognized standard.
+We therefore recommend that
+you decide yourself what chromaticity values to use for each RGB primary,
+and adopt the following code to convert between CIE and RGB coordinates.
+.LP
+.nf
+#ifdef  NTSC
+#define  CIE_x_r		0.670		/* standard NTSC primaries */
+#define  CIE_y_r		0.330
+#define  CIE_x_g		0.210
+#define  CIE_y_g		0.710
+#define  CIE_x_b		0.140
+#define  CIE_y_b		0.080
+#define  CIE_x_w		0.3333		/* monitor white point */
+#define  CIE_y_w		0.3333
+#else
+#define  CIE_x_r		0.640		/* nominal CRT primaries */
+#define  CIE_y_r		0.330
+#define  CIE_x_g		0.290
+#define  CIE_y_g		0.600
+#define  CIE_x_b		0.150
+#define  CIE_y_b		0.060
+#define  CIE_x_w		0.3333		/* monitor white point */
+#define  CIE_y_w		0.3333
+#endif
+
+#define CIE_D		(	CIE_x_r*(CIE_y_g - CIE_y_b) + \\\\
+				CIE_x_g*(CIE_y_b - CIE_y_r) + \\\\
+				CIE_x_b*(CIE_y_r - CIE_y_g)	)
+#define CIE_C_rD	( (1./CIE_y_w) * \\\\
+				( CIE_x_w*(CIE_y_g - CIE_y_b) - \\\\
+				  CIE_y_w*(CIE_x_g - CIE_x_b) + \\\\
+				  CIE_x_g*CIE_y_b - CIE_x_b*CIE_y_g	) )
+#define CIE_C_gD	( (1./CIE_y_w) * \\\\
+				( CIE_x_w*(CIE_y_b - CIE_y_r) - \\\\
+				  CIE_y_w*(CIE_x_b - CIE_x_r) - \\\\
+				  CIE_x_r*CIE_y_b + CIE_x_b*CIE_y_r	) )
+#define CIE_C_bD	( (1./CIE_y_w) * \\\\
+				( CIE_x_w*(CIE_y_r - CIE_y_g) - \\\\
+				  CIE_y_w*(CIE_x_r - CIE_x_g) + \\\\
+				  CIE_x_r*CIE_y_g - CIE_x_g*CIE_y_r	) )
+
+#define CIE_rf		(CIE_y_r*CIE_C_rD/CIE_D)
+#define CIE_gf		(CIE_y_g*CIE_C_gD/CIE_D)
+#define CIE_bf		(CIE_y_b*CIE_C_bD/CIE_D)
+
+float  xyz2rgbmat[3][3] = {	/* XYZ to RGB */
+	{(CIE_y_g - CIE_y_b - CIE_x_b*CIE_y_g + CIE_y_b*CIE_x_g)/CIE_C_rD,
+	 (CIE_x_b - CIE_x_g - CIE_x_b*CIE_y_g + CIE_x_g*CIE_y_b)/CIE_C_rD,
+	 (CIE_x_g*CIE_y_b - CIE_x_b*CIE_y_g)/CIE_C_rD},
+	{(CIE_y_b - CIE_y_r - CIE_y_b*CIE_x_r + CIE_y_r*CIE_x_b)/CIE_C_gD,
+	 (CIE_x_r - CIE_x_b - CIE_x_r*CIE_y_b + CIE_x_b*CIE_y_r)/CIE_C_gD,
+	 (CIE_x_b*CIE_y_r - CIE_x_r*CIE_y_b)/CIE_C_gD},
+	{(CIE_y_r - CIE_y_g - CIE_y_r*CIE_x_g + CIE_y_g*CIE_x_r)/CIE_C_bD,
+	 (CIE_x_g - CIE_x_r - CIE_x_g*CIE_y_r + CIE_x_r*CIE_y_g)/CIE_C_bD,
+	 (CIE_x_r*CIE_y_g - CIE_x_g*CIE_y_r)/CIE_C_bD}
+};
+
+float  rgb2xyzmat[3][3] = {	/* RGB to XYZ */
+	{CIE_x_r*CIE_C_rD/CIE_D,CIE_x_g*CIE_C_gD/CIE_D,CIE_x_b*CIE_C_bD/CIE_D},
+	{CIE_y_r*CIE_C_rD/CIE_D,CIE_y_g*CIE_C_gD/CIE_D,CIE_y_b*CIE_C_bD/CIE_D},
+	{(1.-CIE_x_r-CIE_y_r)*CIE_C_rD/CIE_D,
+	 (1.-CIE_x_g-CIE_y_g)*CIE_C_gD/CIE_D,
+	 (1.-CIE_x_b-CIE_y_b)*CIE_C_bD/CIE_D}
+};
+
+
+cie_rgb(rgbcolor, ciecolor)		/* convert CIE to RGB */
+register float  *rgbcolor, *ciecolor;
+{
+	register int  i;
+
+	for (i = 0; i < 3; i++) {
+		rgbcolor[i] =	xyz2rgbmat[i][0]*ciecolor[0] +
+				xyz2rgbmat[i][1]*ciecolor[1] +
+				xyz2rgbmat[i][2]*ciecolor[2] ;
+		if (rgbcolor[i] < 0.0)		/* watch for negative values */
+			rgbcolor[i] = 0.0;
+	}
+}
+
+
+rgb_cie(ciecolor, rgbcolor)		/* convert RGB to CIE */
+register float  *ciecolor, *rgbcolor;
+{
+	register int  i;
+
+	for (i = 0; i < 3; i++)
+		ciecolor[i] =	rgb2xyzmat[i][0]*rgbcolor[0] +
+				rgb2xyzmat[i][1]*rgbcolor[1] +
+				rgb2xyzmat[i][2]*rgbcolor[2] ;
+}
+.fi
+.LP
+An alternative to adopting the above code is to use the MGF "cmix"
+entity to convert from RGB directly by naming the three primaries in
+terms of their chromaticities, e.g:
+.DS
+c R =
+	cxy 0.640 0.330
+c G =
+	cxy 0.290 0.600
+c B =
+	cxy 0.150 0.060
+.DE
+.LP
+Then, converting from RGB to MGF colors is as simple as multiplying each
+component by its relative luminance in a cmix statement, for instance:
+.DS
+c white =
+	cmix 0.265 R 0.670 G 0.065 B
+.DE
+.LP
+For the chosen RGB standard, the above specification would result a pure
+white.
+The reason the coefficients are not all 1 as you might expect is
+that cmix uses relative luminance as the standard for its weights.
+Since
+blue is less luminous for the same energy than red, which is in turn
+less luminous than green, the weights cannot be the same to achieve an
+even spectral balance.
+Unfortunately, computing these relative weights
+is not straightforward, though it is given in the above macros as CIE_rf,
+CIE_gf and CIE_bf.
+(The common factors in these macros may of course
+be removed since
+.UL cmix
+weights are all relative.)\0
+Alternatively, one could measure the actual full scale luminance of
+the phosphors with a luminance probe and get the same relative
+values.
+.NH 2
+Relation to IESNA LM-63 and Luminaire Catalogs
+.LP
+Recently, the Illuminating Engineering Society of North America
+(IESNA) adopted MGF as the official standard for
+representing luminaire geometry and materials.
+The way this works in an IES luminaire data file is through the
+addition of a keyword called LUMINOUSGEOMETRY, which is given on a
+line in the header portion of a file (before the TILT specification)
+like so:
+.LP
+.B [LUMINOUSGEOMETRY]
+.I mgf_file
+.LP
+The given MGF file must exist relative to the directory containing
+the IES file (i.e. the same stipulations and restrictions on pathnames
+apply as for the MGF
+.UL i
+entity).
+Furthermore, the position of the MGF geometry must be
+such that the gross geometric specification of emitting surfaces
+in the IES file completely
+blocks or encloses the luminous portions of the MGF description.
+Specifically, any ray traced towards the MGF geometry must strike
+the IES gross geometry before it strikes any luminous surface in the
+MGF description.
+This provides a convenient way of preventing overcounting in the
+illumination calculation, while still allowing for accurate fixture
+appearance.
+.LP
+To give two examples, let us consider first a recessed can, followed
+by a hanging direct/indirect fluorescent fixture.
+.LP
+The most appropriate IES geometric specification for the emitting
+area of a can light would be a circular disk.
+Since the IES gross geometry gives only the diameter of the disk, the
+actual 3-dimensional placement is implicitly defined as having a
+center at the origin, with the radiating disk facing in the
+negative Z direction (nadir, downwards).
+The MGF geometry would then be placed such that any luminous portion
+was above this disk, and no portion of it would obstruct the IES
+geometry.
+The most sensible position therefore has the IES disk flush with the
+MGF can opening, as shown in Figure 3.
+.bp
+Replace this page with the second page from "figures.ps".
+.bp
+.LP
+In the case of a direct/indirect fluorescent fixture, light will
+exit both the top and the bottom sides, and the IES geometry must
+enclose the radiating portion of the fixture entirely.
+It is acceptable to have additional MGF geometry above the 
+fixture so long as it does not radiate, which is what we must do if
+we wish to include the support rods, as shown in Figure 4.
+.LP
+Note that the origin is always in the exact center of the IES
+geometry.
+.LP
+Not all fixtures will fit the simple IES geometry specification so
+nicely.
+For odd-shaped fixtures, it may be necessary to use an IES geometry
+that does not match the radiating area terribly well in order that
+it completely block or enclose the required MGF specification.
+.LP
+The unit of length in the MGF file is always meters, regardless of
+the units specified in the enclosing IES file.
+However, any and all multipliers applied to the candlepower data in the
+IES file will also be applied to the emittance of surfaces in the
+MGF specification, so that one MGF file may serve similar
+luminaires that differ in their total output.
+.NH
+Credits
+.LP
+The MGF language grew out of a joint investigation into physical
+representations for rendering undertaken by the author
+(Greg Ward of LBL) and Holly Rushmeier of the National
+Institute of Standards and Technology.
+After deciding that a complete and robust specification was
+an extreme challenge, we shelved the project for another time.
+A few months later, the author spoke with Ian Ashdown and Robert
+Shakespeare, who are both members of the IES Computing Committee,
+about the need for extending the existing data standard to
+include luminaire geometry and near-field photometry.
+We then moved forward as a team towards a somewhat less ambitious
+approach to physical materials and geometry that had the advantage
+of simplicity and the possibility of support with a standard parser
+library.
+The author went to work over the next two months
+on the detailed design of the language
+and an ANSI-C parser, with regular feedback from the other three
+team members.
+Several months and several versions later, we arrived at release
+1.0, which is the occasion of this document's creation.
+.LP
+Funding for this work... would be nice.
