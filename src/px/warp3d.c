@@ -137,7 +137,7 @@ WARP3D	*wp;
 {
 	W3VEC	cv[8];
 	GNDX	gi;
-	int	rval = 0;
+	int	rval = W3OK;
 	register int	i;
 					/* get corner values */
 	for (i = 0; i < 8; i++) {
@@ -367,6 +367,9 @@ register WARP3D	*wp;
 	}
 	if (wp->grid.flags & W3EXACT) {
 		wp->grid.gn[0] = wp->grid.gn[1] = wp->grid.gn[2] = 1;
+		wp->grid.gstep[0] = gmax[0] - wp->grid.gmin[0];
+		wp->grid.gstep[1] = gmax[1] - wp->grid.gmin[1];
+		wp->grid.gstep[2] = gmax[2] - wp->grid.gmin[2];
 		return(W3OK);		/* no interpolation, so no grid */
 	}
 				/* create grid */
