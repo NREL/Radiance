@@ -136,10 +136,10 @@ FVECT ps,p,c;
 
 
 int
-intersect_vector_plane(v,plane_n,plane_d,pd,r)
+intersect_vector_plane(v,plane_n,plane_d,tptr,r)
    FVECT v,plane_n;
    double plane_d;
-   double *pd;
+   double *tptr;
    FVECT r;
 {
   double t;
@@ -160,8 +160,8 @@ intersect_vector_plane(v,plane_n,plane_d,pd,r)
     r[0] = v[0]*t;
     r[1] = v[1]*t;
     r[2] = v[2]*t;
-    if(pd)
-       *pd = t;
+    if(tptr)
+       *tptr = t;
   return(hit);
 }
 
@@ -179,9 +179,10 @@ intersect_ray_plane(orig,dir,plane_n,plane_d,pd,r)
       Plane is Ax + By + Cz +D = 0:
       plane[0] = A,plane[1] = B,plane[2] = C,plane[3] = D
     */
-     /*  A(orig[0] + dxt) + B(orig[1] + dyt) + C(orig[2] + dzt) + pd = 0 */
-    /* t = -(DOT(plane_n,orig)+ plane_d)/(DOT(plane_n,d))
-    /* line is  l = p1 + (p2-p1)t */
+     /*  A(orig[0] + dxt) + B(orig[1] + dyt) + C(orig[2] + dzt) + pd = 0
+         t = -(DOT(plane_n,orig)+ plane_d)/(DOT(plane_n,d))
+       line is  l = p1 + (p2-p1)t 
+     */
     /* Solve for t: */
     t =  -(DOT(plane_n,orig) + plane_d)/(DOT(plane_n,dir));
     if(ZERO(t) || t >0)
@@ -879,4 +880,115 @@ FVECT a0,a1,b0,b1;
       return(FALSE);
     return(TRUE);
 }
+
+
+
+/* Find the normalized barycentric coordinates of p relative to
+ * triangle v0,v1,v2. Return result in coord
+ */
+bary2d(x1,y1,x2,y2,x3,y3,px,py,coord)
+double x1,y1,x2,y2,x3,y3;
+double px,py;
+double coord[3];
+{
+  double a;
+
+  a =  (x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1);
+  coord[0] = ((x2 - px) * (y3 - py) - (x3 - px) * (y2 - py)) / a; 
+  coord[1] = ((x3 - px) * (y1 - py) - (x1 - px) * (y3 - py)) / a;
+  coord[2]  = 1.0 - coord[0] - coord[1];
+ 
+}
+
+int
+bary2d_child(coord)
+double coord[3];
+{
+  int i;
+
+  /* First check if one of the original vertices */
+  for(i=0;i<3;i++)
+    if(EQUAL(coord[i],1.0))
+      return(i);
+
+  /* Check if one of the new vertices: for all return center child */
+  if(ZERO(coord[0]) && EQUAL(coord[1],0.5))
+  {
+    coord[0] = 1.0f;
+    coord[1] = 0.0f;
+    coord[2] = 0.0f;
+    return(3);
+  }
+  if(ZERO(coord[1]) && EQUAL(coord[0],0.5))
+  {
+    coord[0] = 0.0f;
+    coord[1] = 1.0f;
+    coord[2] = 0.0f;
+    return(3);
+  }
+  if(ZERO(coord[2]) && EQUAL(coord[0],0.5))
+    {
+      coord[0] = 0.0f;
+      coord[1] = 0.0f;
+      coord[2] = 1.0f;
+      return(3);
+    }
+
+  /* Otherwise return child */
+  if(coord[0] > 0.5)
+  { 
+      /* update bary for child */
+      coord[0] = 2.0*coord[0]- 1.0;
+      coord[1] *= 2.0;
+      coord[2] *= 2.0;
+      return(0);
+  }
+  else
+    if(coord[1] > 0.5)
+    {
+      coord[0] *= 2.0;
+      coord[1] = 2.0*coord[1]- 1.0;
+      coord[2] *= 2.0;
+      return(1);
+    }
+    else
+      if(coord[2] > 0.5)
+      {
+	coord[0] *= 2.0;
+	coord[1] *= 2.0;
+	coord[2] = 2.0*coord[2]- 1.0;
+	return(2);
+      }
+      else
+	 {
+	   coord[0] = 1.0 - 2.0*coord[0];
+	   coord[1] = 1.0 - 2.0*coord[1];
+	   coord[2] = 1.0 - 2.0*coord[2];
+	   return(3);
+	 }
+}
+
+int
+max_index(v)
+FVECT v;
+{
+  double a,b,c;
+  int i;
+
+  a = fabs(v[0]);
+  b = fabs(v[1]);
+  c = fabs(v[2]);
+  i = (a>=b)?((a>=c)?0:2):((b>=c)?1:2);  
+  return(i);
+}
+
+
+
+
+
+
+
+
+
+
 

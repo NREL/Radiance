@@ -162,6 +162,10 @@ FVECT vp;
      */
   for(j=2; j>= 0; j--)
   {
+#ifdef DEBUG
+    if(SM_BG_SAMPLE(sm,T_NTH_V(tri,j)))
+      eputs("SmRenderTri(): shouldnt have bg samples\n");
+#endif
     glColor3ub(SM_NTH_RGB(sm,T_NTH_V(tri,j))[0],
 	       SM_NTH_RGB(sm,T_NTH_V(tri,j))[1],
 	       SM_NTH_RGB(sm,T_NTH_V(tri,j))[2]);
@@ -173,15 +177,17 @@ FVECT vp;
 /* NOTE SEEMS BAD TO PENALIZE POLYGONS INFRONT BY LETTING
 ADJACENT TRIANGLES TO BG be BG
 */
-smRender_bg_tri(sm,i,vp)
+smRender_bg_tri(sm,i,vp,d)
 SM *sm;
 int i;
 FVECT vp;
+double d;
 {
   TRI *tri;
   FVECT p;
   int j,ids[3],cnt;
-  BYTE rgb[3];
+  int rgb[3];
+
 
   tri = SM_NTH_TRI(sm,i);
   SM_CLEAR_NTH_T_NEW(sm,i);
@@ -214,7 +220,16 @@ FVECT vp;
 	         SM_NTH_RGB(sm,ids[j])[2]);
     else
       glColor3ub(rgb[0],rgb[1],rgb[2]);
-    VSUB(p,SM_NTH_WV(sm,ids[j]),SM_VIEW_CENTER(sm));
+    if(SM_BG_SAMPLE(sm,ids[j]))
+      VSUB(p,SM_NTH_WV(sm,ids[j]),SM_VIEW_CENTER(sm));
+    else
+      smDir(sm,p,ids[j]);
+    if(dev_zmin > 1.0)
+    {
+      p[0] *= d;
+      p[1] *= d;
+      p[2] *= d;
+    }
     VADD(p,p,vp);
     glVertex3d(p[0],p[1],p[2]);
   }
@@ -226,16 +241,18 @@ FVECT vp;
 {
   int i;
   TRI *tri;
-  double ptr[3];
+  double ptr[3],d;
   int j;
 
+  d = (dev_zmin+dev_zmax)/2.0;
   glPushAttrib(GL_DEPTH_BUFFER_BIT);
   
   /* First draw background polygons */
+
   glDisable(GL_DEPTH_TEST);
   glBegin(GL_TRIANGLES);
   SM_FOR_ALL_ACTIVE_BG_TRIS(sm,i)
-    smRender_bg_tri(sm,i,vp);
+    smRender_bg_tri(sm,i,vp,d);
   glEnd();
   
   glEnable(GL_DEPTH_TEST);
@@ -322,6 +339,7 @@ VIEW *vp;
   static int tsize = 0;
   int i;
   GLint depth_test;
+  double d;
 
   /* For all of the NEW triangles (since last update): assume
      ACTIVE. Go through and sort on depth value (from vp). Turn
@@ -345,13 +363,14 @@ VIEW *vp;
   glPushAttrib(GL_DEPTH_BUFFER_BIT);
   glDepthFunc(GL_ALWAYS);          /* Turn off Depth-painter's algorithm */
 
+  d = (dev_zmin+dev_zmax)/2.0;
   /* Now render back-to front */
   /* First render bg triangles */
   glDisable(GL_DEPTH_TEST);
   glBegin(GL_TRIANGLES);
   for(i=0; i< smNew_tri_cnt; i++)
     if(SM_BG_TRI(sm,td[i].tri))
-      smRender_bg_tri(sm,td[i].tri,vp);
+      smRender_bg_tri(sm,td[i].tri,vp,d);
   glEnd();
 
   glEnable(GL_DEPTH_TEST);

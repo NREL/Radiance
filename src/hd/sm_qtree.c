@@ -102,19 +102,40 @@ register QUADTREE  qt;
 }
 
 QUADTREE
-qtPoint_locate(qtptr,v1,v2,v3,pt,type,which,p0,p1,p2)
+qtLocate_leaf(qtptr,bcoord,type,which)
 QUADTREE *qtptr;
-FVECT v1,v2,v3;
+double bcoord[3];
+char *type,*which;
+{
+  int i;
+  QUADTREE *child;
+
+    if(QT_IS_TREE(*qtptr))
+    {  
+      i = bary2d_child(bcoord);
+      child = QT_NTH_CHILD_PTR(*qtptr,i);
+      return(qtLocate_leaf(child,bcoord,type,which));
+    }
+    else
+      return(*qtptr);
+}
+
+
+
+
+QUADTREE
+qtRoot_point_locate(qtptr,v0,v1,v2,pt,type,which)
+QUADTREE *qtptr;
+FVECT v0,v1,v2;
 FVECT pt;
 char *type,*which;
-FVECT p0,p1,p2;
 {
     char d,w;
-    int i;
+    int i,x,y;
     QUADTREE *child;
     QUADTREE qt;
-    FVECT a,b,c;
-    FVECT t1,t2,t3;
+    FVECT n,i_pt;
+    double pd,bcoord[3];
 
     /* Determine if point lies within pyramid (and therefore
        inside a spherical quadtree cell):GT_INTERIOR, on one of the 
@@ -123,7 +144,7 @@ FVECT p0,p1,p2;
        For each triangle edge: compare the
        point against the plane formed by the edge and the view center
     */
-    d = test_single_point_against_spherical_tri(v1,v2,v3,pt,&w);  
+    d = test_single_point_against_spherical_tri(v0,v1,v2,pt,&w);  
 
     /* Not in this triangle */
     if(!d)
@@ -138,38 +159,21 @@ FVECT p0,p1,p2;
        triangle encountered in the child traversal- the others can
        be derived using triangle adjacency information
     */
-    
     if(QT_IS_TREE(*qtptr))
     {  
-      qtSubdivide_tri(v1,v2,v3,a,b,c);
-      child = QT_NTH_CHILD_PTR(*qtptr,0);
-      if(!QT_IS_EMPTY(*child))
-      {
-	qt = qtPoint_locate(child,v1,a,c,pt,type,which,p0,p1,p2);
-	if(!QT_IS_EMPTY(qt))
-	  return(qt);
-      }
-      child = QT_NTH_CHILD_PTR(*qtptr,1);
-      if(!QT_IS_EMPTY(*child))
-      {
-	qt = qtPoint_locate(child,a,b,c,pt,type,which,p0,p1,p2);
-	if(!QT_IS_EMPTY(qt))
-	  return(qt);
-      }
-      child = QT_NTH_CHILD_PTR(*qtptr,2);
-      if(!QT_IS_EMPTY(*child))
-      {
-	qt = qtPoint_locate(child,a,v2,b,pt,type,which,p0,p1,p2);
-	if(!QT_IS_EMPTY(qt))
-	  return(qt);
-      }
-      child = QT_NTH_CHILD_PTR(*qtptr,3);
-      if(!QT_IS_EMPTY(*child))
-      {
-	qt = qtPoint_locate(child,c,b,v3,pt,type,which,p0,p1,p2);
-	if(!QT_IS_EMPTY(qt))
-	  return(qt);
-      }
+      /* Find the intersection point */
+      tri_plane_equation(v0,v1,v2,n,&pd,FALSE);
+      intersect_vector_plane(pt,n,pd,NULL,i_pt);
+
+      i = max_index(n);
+      x = (i+1)%3;
+      y = (i+2)%3;
+      /* Calculate barycentric coordinates of i_pt */
+      bary2d(v0[x],v0[y],v1[x],v1[y],v2[x],v2[y],i_pt[x],i_pt[y],bcoord);
+
+      i = bary2d_child(bcoord);
+      child = QT_NTH_CHILD_PTR(*qtptr,i);
+      return(qtLocate_leaf(child,bcoord,type,which));
     }
     else
        if(!QT_IS_EMPTY(*qtptr))
@@ -181,9 +185,6 @@ FVECT p0,p1,p2;
 	   *type = d;
 	 if(which)
 	   *which = w;
-	 VCOPY(p0,v1);
-	 VCOPY(p1,v2);
-	 VCOPY(p2,v3);
 	 return(*qtptr);
        }
     return(EMPTY);
@@ -201,8 +202,9 @@ char *type,*which;
     char d,w;
     int i,id;
     FVECT p0,p1,p2;
-  
-    qt = qtPoint_locate(qtptr,v0,v1,v2,pt,type,which,p0,p1,p2);
+
+    qt = qtRoot_point_locate(qtptr,v0,v1,v2,pt,type,which);
+
     if(QT_IS_EMPTY(qt))
        return(EMPTY);
     
@@ -250,51 +252,45 @@ int n;
   return(node);
 }
 
-/* for triangle v1-v2-v3- returns a,b,c: children are:
+/* for triangle v0-v1-v2- returns a,b,c: children are:
 
-	v3                     0: v1,a,c
-        /\                     1: a,b,c
-       /3 \                    2: a,v2,b
-     c/____\b                  3: c,b,v3
+	v2                     0: v0,a,c
+        /\                     1: a,v1,b                  
+       /2 \                    2: c,b,v2
+     c/____\b                  3: b,c,a
      /\    /\  
-    /0 \1 /2 \
- v1/____\/____\v2
+    /0 \3 /1 \
+  v0____\/____\v1
         a
  */
 
-qtSubdivide_tri(v1,v2,v3,a,b,c)
-FVECT v1,v2,v3;
+qtSubdivide_tri(v0,v1,v2,a,b,c)
+FVECT v0,v1,v2;
 FVECT a,b,c;
 {
-    EDGE_MIDPOINT_VEC3(a,v1,v2);
-    normalize(a);
-    EDGE_MIDPOINT_VEC3(b,v2,v3);
-    normalize(b);
-    EDGE_MIDPOINT_VEC3(c,v3,v1);
-    normalize(c);
+    EDGE_MIDPOINT_VEC3(a,v0,v1);
+    EDGE_MIDPOINT_VEC3(b,v1,v2);
+    EDGE_MIDPOINT_VEC3(c,v2,v0);
 }
 
-qtNth_child_tri(v1,v2,v3,a,b,c,i,r1,r2,r3)
-FVECT v1,v2,v3;
+qtNth_child_tri(v0,v1,v2,a,b,c,i,r0,r1,r2)
+FVECT v0,v1,v2;
 FVECT a,b,c;
 int i;
-FVECT r1,r2,r3;
+FVECT r0,r1,r2;
 {
-  VCOPY(r1,a); VCOPY(r2,b);    VCOPY(r3,c);
   switch(i){
   case 0:  
-    VCOPY(r2,r1);
-    VCOPY(r1,v1);
+  VCOPY(r0,v0); VCOPY(r1,a);    VCOPY(r2,c);
     break;
   case 1:  
+  VCOPY(r0,a); VCOPY(r1,v1);    VCOPY(r2,b);
     break;
   case 2:  
-    VCOPY(r3,r2);
-    VCOPY(r2,v2);
+  VCOPY(r0,c); VCOPY(r1,b);    VCOPY(r2,v2);
     break;
   case 3:  
-    VCOPY(r1,r3);
-    VCOPY(r3,v3);
+  VCOPY(r0,b); VCOPY(r1,c);    VCOPY(r2,a);
     break;
   }
 }
@@ -308,11 +304,11 @@ into the new child cells: it is assumed that "v1,v2,v3" are normalized
 */
 
 int
-qtAdd_tri(qtptr,id,t1,t2,t3,v1,v2,v3,n)
+qtAdd_tri(qtptr,id,t0,t1,t2,v0,v1,v2,n)
 QUADTREE *qtptr;
 int id;
-FVECT t1,t2,t3;
-FVECT v1,v2,v3;
+FVECT t0,t1,t2;
+FVECT v0,v1,v2;
 int n;
 {
   
@@ -322,10 +318,10 @@ int n;
   OBJECT os[MAXSET+1],*optr;
   QUADTREE qt;
   int found;
-  FVECT r1,r2,r3;
+  FVECT r0,r1,r2;
 
-  /* test if triangle (t1,t2,t3) overlaps cell triangle (v1,v2,v3) */
-  test = spherical_tri_intersect(t1,t2,t3,v1,v2,v3);
+  /* test if triangle (t0,t1,t2) overlaps cell triangle (v0,v1,v2) */
+  test = spherical_tri_intersect(t0,t1,t2,v0,v1,v2);
 
   /* If triangles do not overlap: done */
   if(!test)
@@ -336,11 +332,11 @@ int n;
   if(QT_IS_TREE(*qtptr))
   {
     n++;
-    qtSubdivide_tri(v1,v2,v3,a,b,c);
-    found |= qtAdd_tri(QT_NTH_CHILD_PTR(*qtptr,0),id,t1,t2,t3,v1,a,c,n);
-    found |= qtAdd_tri(QT_NTH_CHILD_PTR(*qtptr,1),id,t1,t2,t3,a,b,c,n);
-    found |= qtAdd_tri(QT_NTH_CHILD_PTR(*qtptr,2),id,t1,t2,t3,a,v2,b,n);
-    found |= qtAdd_tri(QT_NTH_CHILD_PTR(*qtptr,3),id,t1,t2,t3,c,b,v3,n);
+    qtSubdivide_tri(v0,v1,v2,a,b,c);
+    found |= qtAdd_tri(QT_NTH_CHILD_PTR(*qtptr,0),id,t0,t1,t2,v0,a,c,n);
+    found |= qtAdd_tri(QT_NTH_CHILD_PTR(*qtptr,1),id,t0,t1,t2,a,v1,b,n);
+    found |= qtAdd_tri(QT_NTH_CHILD_PTR(*qtptr,2),id,t0,t1,t2,c,b,v2,n);
+    found |= qtAdd_tri(QT_NTH_CHILD_PTR(*qtptr,3),id,t0,t1,t2,b,c,a,n);
 
 #if 0
     if(!found)
@@ -408,7 +404,7 @@ int n;
 		 n++;
 		 qtfreeleaf(*qtptr);
 		 qtSubdivide(qtptr);
-		 found = qtAdd_tri(qtptr,id,t1,t2,t3,v1,v2,v3,n);
+		 found = qtAdd_tri(qtptr,id,t0,t1,t2,v0,v1,v2,n);
 #if 0
 		 if(!found)
 		 {
@@ -422,8 +418,8 @@ int n;
 		 for(optr = &(os[1]),i = QT_SET_CNT(os); i > 0; i--)
 		 {
 		   id = QT_SET_NEXT_ELEM(optr);
-		   qtTri_verts_from_id(id,r1,r2,r3);
-		   found=qtAdd_tri(qtptr,id,r1,r2,r3,v1,v2,v3,n);
+		   qtTri_verts_from_id(id,r0,r1,r2);
+		   found=qtAdd_tri(qtptr,id,r0,r1,r2,v0,v1,v2,n);
 #ifdef DEBUG
 		 if(!found)
 		    eputs("qtAdd_tri():Reinsert-in parent but not children\n");
@@ -464,18 +460,18 @@ int n;
 
 
 int
-qtApply_to_tri_cells(qtptr,t1,t2,t3,v1,v2,v3,func,arg)
+qtApply_to_tri_cells(qtptr,t0,t1,t2,v0,v1,v2,func,arg)
 QUADTREE *qtptr;
-FVECT t1,t2,t3;
-FVECT v1,v2,v3;
+FVECT t0,t1,t2;
+FVECT v0,v1,v2;
 int (*func)();
 char *arg;
 {
   char test;
   FVECT a,b,c;
 
-  /* test if triangle (t1,t2,t3) overlaps cell triangle (v1,v2,v3) */
-  test = spherical_tri_intersect(t1,t2,t3,v1,v2,v3);
+  /* test if triangle (t0,t1,t2) overlaps cell triangle (v0,v1,v2) */
+  test = spherical_tri_intersect(t0,t1,t2,v0,v1,v2);
 
   /* If triangles do not overlap: done */
   if(!test)
@@ -484,11 +480,11 @@ char *arg;
   /* if this is tree: recurse */
   if(QT_IS_TREE(*qtptr))
   {
-    qtSubdivide_tri(v1,v2,v3,a,b,c);
-    qtApply_to_tri_cells(QT_NTH_CHILD_PTR(*qtptr,0),t1,t2,t3,v1,a,c,func,arg);
-    qtApply_to_tri_cells(QT_NTH_CHILD_PTR(*qtptr,1),t1,t2,t3,a,b,c,func,arg);
-    qtApply_to_tri_cells(QT_NTH_CHILD_PTR(*qtptr,2),t1,t2,t3,a,v2,b,func,arg);
-    qtApply_to_tri_cells(QT_NTH_CHILD_PTR(*qtptr,3),t1,t2,t3,c,b,v3,func,arg);
+    qtSubdivide_tri(v0,v1,v2,a,b,c);
+    qtApply_to_tri_cells(QT_NTH_CHILD_PTR(*qtptr,0),t0,t1,t2,v0,a,c,func,arg);
+    qtApply_to_tri_cells(QT_NTH_CHILD_PTR(*qtptr,1),t0,t1,t2,a,v1,b,func,arg);
+    qtApply_to_tri_cells(QT_NTH_CHILD_PTR(*qtptr,2),t0,t1,t2,c,b,v2,func,arg);
+    qtApply_to_tri_cells(QT_NTH_CHILD_PTR(*qtptr,3),t0,t1,t2,b,c,a,func,arg);
   }
   else
     return(func(qtptr,arg));
@@ -496,11 +492,11 @@ char *arg;
 
 
 int
-qtRemove_tri(qtptr,id,t1,t2,t3,v1,v2,v3)
+qtRemove_tri(qtptr,id,t0,t1,t2,v0,v1,v2)
 QUADTREE *qtptr;
 int id;
-FVECT t1,t2,t3;
-FVECT v1,v2,v3;
+FVECT t0,t1,t2;
+FVECT v0,v1,v2;
 {
   
   char test;
@@ -508,8 +504,8 @@ FVECT v1,v2,v3;
   FVECT a,b,c;
   OBJECT os[MAXSET+1];
   
-  /* test if triangle (t1,t2,t3) overlaps cell triangle (v1,v2,v3) */
-  test = spherical_tri_intersect(t1,t2,t3,v1,v2,v3);
+  /* test if triangle (t0,t1,t2) overlaps cell triangle (v0,v1,v2) */
+  test = spherical_tri_intersect(t0,t1,t2,v0,v1,v2);
 
   /* If triangles do not overlap: done */
   if(!test)
@@ -518,11 +514,11 @@ FVECT v1,v2,v3;
   /* if this is tree: recurse */
   if(QT_IS_TREE(*qtptr))
   {
-    qtSubdivide_tri(v1,v2,v3,a,b,c);
-    qtRemove_tri(QT_NTH_CHILD_PTR(*qtptr,0),id,t1,t2,t3,v1,a,c);
-    qtRemove_tri(QT_NTH_CHILD_PTR(*qtptr,1),id,t1,t2,t3,a,b,c);
-    qtRemove_tri(QT_NTH_CHILD_PTR(*qtptr,2),id,t1,t2,t3,a,v2,b);
-    qtRemove_tri(QT_NTH_CHILD_PTR(*qtptr,3),id,t1,t2,t3,c,b,v3);
+    qtSubdivide_tri(v0,v1,v2,a,b,c);
+    qtRemove_tri(QT_NTH_CHILD_PTR(*qtptr,0),id,t0,t1,t2,v0,a,c);
+    qtRemove_tri(QT_NTH_CHILD_PTR(*qtptr,1),id,t0,t1,t2,a,v1,b);
+    qtRemove_tri(QT_NTH_CHILD_PTR(*qtptr,2),id,t0,t1,t2,c,b,v2);
+    qtRemove_tri(QT_NTH_CHILD_PTR(*qtptr,3),id,t0,t1,t2,b,c,a);
   }
   else
   {
@@ -563,3 +559,14 @@ FVECT v1,v2,v3;
   }
   return(TRUE);
 }
+
+
+
+
+
+
+
+
+
+
+

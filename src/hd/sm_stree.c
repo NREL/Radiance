@@ -110,16 +110,16 @@ stPoint_locate(st,npt,type,which)
     QUADTREE *rootptr,qt;
     FVECT v1,v2,v3;
     OBJECT os[MAXSET+1],*optr;
-    FVECT p0,p1,p2;
     char w;
-    
+    FVECT p0,p1,p2;
+
     /* Test each of the root triangles against point id */
     for(i=0; i < 4; i++)
      {
 	 rootptr = ST_NTH_ROOT_PTR(st,i);
 	 stNth_base_verts(st,i,v1,v2,v3);
 	 /* Return tri that p falls in */
-	 qt = qtPoint_locate(rootptr,v1,v2,v3,npt,type,which,p0,p1,p2);
+	 qt = qtRoot_point_locate(rootptr,v1,v2,v3,npt,type,which);
 	 if(QT_IS_EMPTY(qt))
 	    continue;
 	 /* Get the set */
@@ -148,9 +148,9 @@ stPoint_locate(st,npt,type,which)
 }
 
 int
-stPoint_locate_cell(st,p,p0,p1,p2,type,which)
+stPoint_locate_cell(st,p,type,which)
     STREE *st;
-    FVECT p,p0,p1,p2;
+    FVECT p;
     char *type,*which;
 {
     int i,d;
@@ -164,7 +164,7 @@ stPoint_locate_cell(st,p,p0,p1,p2,type,which)
 	 rootptr = ST_NTH_ROOT_PTR(st,i);
 	 stNth_base_verts(st,i,v0,v1,v2);
 	 /* Return tri that p falls in */
-	 qt = qtPoint_locate(rootptr,v0,v1,v2,p,type,which,p0,p1,p2);
+	 qt = qtRoot_point_locate(rootptr,v0,v1,v2,p,type,which);
 	 /* NOTE: For now return only one triangle */
 	 if(!QT_IS_EMPTY(qt))
 	    return(qt);
@@ -177,22 +177,22 @@ stPoint_locate_cell(st,p,p0,p1,p2,type,which)
 }
 
 int
-stAdd_tri(st,id,v1,v2,v3)
+stAdd_tri(st,id,v0,v1,v2)
 STREE *st;
 int id;
-FVECT v1,v2,v3;
+FVECT v0,v1,v2;
 {
   
   int i,found;
   QUADTREE *rootptr;
-  FVECT t1,t2,t3;
-  
+  FVECT t0,t1,t2;
+
   found = 0;
   for(i=0; i < 4; i++)
   {
     rootptr = ST_NTH_ROOT_PTR(st,i);
-    stNth_base_verts(st,i,t1,t2,t3);
-    found |= qtAdd_tri(rootptr,id,v1,v2,v3,t1,t2,t3,0);
+    stNth_base_verts(st,i,t0,t1,t2);
+    found |= qtAdd_tri(rootptr,id,v0,v1,v2,t0,t1,t2,0);
   }
   return(found);
 }
