@@ -16,7 +16,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #define MAXDIST		42	/* maximum distance outside section */
 #endif
 
-#define MAXVOXEL	16	/* maximum number of active voxels */
+#define MAXVOXEL	32	/* maximum number of active voxels */
 
 typedef struct {
 	int	hd;		/* holodeck section number (-1 if inactive) */
@@ -28,8 +28,7 @@ static VOXL voxel[MAXVOXEL] = {{-1}};	/* current voxel list */
 #define CBEAMBLK	1024	/* cbeam allocation block size */
 
 static struct beamcomp {
-	unsigned int2	wants;	/* flags telling which voxels want us */
-	unsigned int2	hd;	/* holodeck section number */
+	int	hd;		/* holodeck section number */
 	int4	bi;		/* beam index */
 	int4	nr;		/* number of samples desired */
 } *cbeam = NULL;	/* current beam list */
@@ -40,7 +39,6 @@ static int	maxcbeam = 0;	/* size of cbeam array */
 
 struct cellact {
 	short	vi;		/* voxel index */
-	short	add;		/* zero means delete */
 	short	rev;		/* reverse ray direction? */
 	VIEW	*vp;		/* view for image */
 	short	hr, vr;		/* image resolution */
@@ -90,9 +88,9 @@ register struct beamcomp	*cb1, *cb2;
 {
 	register int	c;
 
-	if (!cb1->wants)		/* put orphans at the end, unsorted */
-		return(cb2->wants);
-	if (!cb2->wants)
+	if (!cb1->nr)			/* put orphans at the end, unsorted */
+		return(cb2->nr);
+	if (!cb2->nr)
 		return(-1);
 	if ((c = cb1->bi - cb2->bi))	/* sort on beam index first */
 		return(c);
@@ -109,7 +107,7 @@ int	hd, bi;
 
 	if (ncbeams <= 0)
 		return(-1);
-	cb.wants = 0; cb.hd = hd; cb.bi = bi; cb.nr = 0;
+	cb.hd = hd; cb.bi = bi; cb.nr = 0;
 	p = (struct beamcomp *)bsearch((char *)&cb, (char *)cbeam, ncbeams,
 			sizeof(struct beamcomp), cbeamcmp);
 	if (p == NULL)
@@ -137,7 +135,7 @@ int	bi;
 	if (bi < 1 | bi > nbeams(hdlist[hd]))
 		error(INTERNAL, "illegal beam index in getcbeam");
 	n = newcbeam();		/* allocate and assign */
-	cbeam[n].wants = cbeam[n].nr = 0; cbeam[n].hd = hd; cbeam[n].bi = bi;
+	cbeam[n].nr = 0; cbeam[n].hd = hd; cbeam[n].bi = bi;
 	return(n);
 }
 
@@ -155,7 +153,7 @@ int	adopt;
 	if (adopt)
 		return;
 	for (i = ncbeams; i--; )	/* identify orphans */
-		if (cbeam[i].wants)
+		if (cbeam[i].nr)
 			break;
 	xcbeams = ncbeams - ++i;	/* put orphans after ncbeams */
 	ncbeams = i;
@@ -186,6 +184,7 @@ int	n;
 }
 
 
+unsigned int4
 add_voxels(vp)		/* add voxels corresponding to view point */
 FVECT	vp;
 {
@@ -262,24 +261,13 @@ register struct beamact	*bp;
 	}
 	if ((bi = hdbindex(hdlist[voxel[bp->ca.vi].hd], gc)) <= 0)
 		error(CONSISTENCY, "bad grid coordinate in dobeam");
-	if (bp->ca.add) {		/* add it in */
-		i = getcbeam(voxel[bp->ca.vi].hd, bi);
-		cbeam[i].wants |= 1<<bp->ca.vi;	/* say we want it */
-		n = npixels(bp->ca.vp, bp->ca.hr, bp->ca.vr,
-				hdlist[cbeam[i].hd], cbeam[i].bi);
-		if (n > cbeam[i].nr)
-			cbeam[i].nr = n;
-		return(i == ncbeams+xcbeams-1);	/* return 1 if totally new */
-	}
-					/* else delete it */
-	i = findcbeam(voxel[bp->ca.vi].hd, bi);
-	if (i >= 0 && cbeam[i].wants & 1<<bp->ca.vi) {
-		cbeam[i].wants &= ~(1<<bp->ca.vi);	/* we don't want it */
-		if (!cbeam[i].wants)
-			cbeam[i].nr = 0;
-		return(1);			/* indicate change */
-	}
-	return(0);
+					/* add it in */
+	i = getcbeam(voxel[bp->ca.vi].hd, bi);
+	n = npixels(bp->ca.vp, bp->ca.hr, bp->ca.vr,
+			hdlist[cbeam[i].hd], cbeam[i].bi);
+	if (n > cbeam[i].nr)
+		cbeam[i].nr = n;
+	return(i == ncbeams+xcbeams-1);	/* return 1 if totally new */
 }
 
 
@@ -366,7 +354,7 @@ beam_init()			/* clear beam list for new view(s) */
 	register int	i;
 					/* clear desire flags */
 	for (i = ncbeams+xcbeams; i--; )
-		cbeam[i].wants = cbeam[i].nr = 0;
+		cbeam[i].nr = 0;
 	voxel[0].hd = -1;		/* clear voxel list */
 }
 
@@ -376,7 +364,7 @@ VIEW	*vn;
 int	hr, vr;
 {
 	struct cellact	ca;
-	int	vfl;
+	unsigned int4	vfl;
 					/* sort our list */
 	cbeamsort(1);
 					/* add new voxels */
@@ -384,7 +372,7 @@ int	hr, vr;
 	if (!vfl)
 		return(0);
 	ca.vp = vn; ca.hr = hr; ca.vr = vr;
-	ca.add = 1;			/* update our beam list */
+					/* update our beam list */
 	for (ca.vi = 0; vfl; vfl >>= 1, ca.vi++)
 		if (vfl & 1)
 			doview(&ca);
