@@ -318,7 +318,11 @@ char  *argv[];
 			zfile = argv[++i];
 			break;
 		case 'r':				/* recover file */
-			check(2,"s");
+			if (argv[i][2] == 'o') {		/* +output */
+				check(3,"s");
+				outfile = argv[i+1];
+			} else
+				check(2,"s");
 			recover = argv[++i];
 			break;
 		case 't':				/* timer */
