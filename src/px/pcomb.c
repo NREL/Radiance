@@ -29,6 +29,7 @@ struct {
 	FILE	*fp;		/* stream pointer */
 	COLOR	*scan[WINSIZ];	/* input scanline window */
 	COLOR	coef;		/* coefficient */
+	COLOR	expos;		/* recorded exposure */
 }	input[MAXINP];			/* input pictures */
 
 int	nfiles;				/* number of input files */
@@ -37,8 +38,8 @@ char	*vcolin[3] = {"ri", "gi", "bi"};
 char	*vcolout[3] = {"ro", "go", "bo"};
 char	vbrtin[] = "li";
 char	vbrtout[] = "lo";
-char	*vcolcoef[3] = {"rc", "gc", "bc"};
-char	vbrtcoef[] = "lc";
+char	*vcolexp[3] = {"re", "ge", "be"};
+char	vbrtexp[] = "le";
 
 #define vnfiles		"nfiles"
 #define vxres		"xres"
@@ -76,9 +77,6 @@ char	*argv[];
 			case 'w':
 				nowarn = !nowarn;
 				continue;
-			case 'o':
-				original = !original;
-				continue;
 			case 'f':
 			case 'e':
 				a++;
@@ -87,8 +85,10 @@ char	*argv[];
 		break;
 	}
 					/* process files */
-	for (nfiles = 0; nfiles < MAXINP; nfiles++)
+	for (nfiles = 0; nfiles < MAXINP; nfiles++) {
 		setcolor(input[nfiles].coef, 1.0, 1.0, 1.0);
+		setcolor(input[nfiles].expos, 1.0, 1.0, 1.0);
+	}
 	nfiles = 0;
 	for ( ; a < argc; a++) {
 		if (nfiles >= MAXINP) {
@@ -101,6 +101,9 @@ char	*argv[];
 			case '\0':
 				input[nfiles].name = "<stdin>";
 				input[nfiles].fp = stdin;
+				break;
+			case 'o':
+				original++;
 				break;
 			case 's':
 				f = atof(argv[++a]);
@@ -123,6 +126,7 @@ char	*argv[];
 			}
 		}
 		checkfile();
+		original = 0;
 		nfiles++;
 	}
 	init();				/* set constant expressions */
@@ -135,7 +139,6 @@ char	*argv[];
 				a++;
 				continue;
 			case 'w':
-			case 'o':
 				continue;
 			case 'f':
 				fcompile(argv[++a]);
@@ -173,18 +176,25 @@ char	*s;
 	if (isformat(s)) {			/* check format */
 		formatval(fmt, s);
 		wrongformat = strcmp(fmt, COLRFMT);
-	} else if (original && isexpos(s)) {	/* exposure */
-		d = 1.0/exposval(s);
-		scalecolor(input[nfiles].coef, d);
-	} else if (original && iscolcor(s)) {	/* color correction */
-		colcorval(ctmp, s);
-		colval(input[nfiles].coef,RED) /= colval(ctmp,RED);
-		colval(input[nfiles].coef,GRN) /= colval(ctmp,GRN);
-		colval(input[nfiles].coef,BLU) /= colval(ctmp,BLU);
-	} else {				/* echo unaffected line */
-		putchar('\t');
-		fputs(s, stdout);
+		return;		/* don't echo */
 	}
+	if (isexpos(s)) {			/* exposure */
+		d = exposval(s);
+		scalecolor(input[nfiles].expos, d);
+		if (original)
+			scalecolor(input[nfiles].coef, 1.0/d);
+	} else if (iscolcor(s)) {		/* color correction */
+		colcorval(ctmp, s);
+		multcolor(input[nfiles].expos, ctmp);
+		if (original) {
+			colval(input[nfiles].coef,RED) /= colval(ctmp,RED);
+			colval(input[nfiles].coef,GRN) /= colval(ctmp,GRN);
+			colval(input[nfiles].coef,BLU) /= colval(ctmp,BLU);
+		}
+	}
+						/* echo line */
+	putchar('\t');
+	fputs(s, stdout);
 }
 
 
@@ -221,7 +231,7 @@ checkfile()			/* ready a file */
 
 init()				/* perform final setup */
 {
-	double	l_colin(), l_coef();
+	double	l_colin(), l_expos();
 	register int	i;
 						/* prime input */
 	for (ypos = yres+(MIDSCN-1); ypos >= yres; ypos--)
@@ -232,10 +242,10 @@ init()				/* perform final setup */
 	varset(vyres, ':', (double)yres);
 						/* set functions */
 	for (i = 0; i < 3; i++) {
-		funset(vcolcoef[i], 1, ':', l_coef);
+		funset(vcolexp[i], 1, ':', l_expos);
 		funset(vcolin[i], 1, '=', l_colin);
 	}
-	funset(vbrtcoef, 1, ':', l_coef);
+	funset(vbrtexp, 1, ':', l_expos);
 	funset(vbrtin, 1, '=', l_colin);
 }
 
@@ -319,7 +329,7 @@ advance()			/* read in next scanline */
 
 
 double
-l_coef(nam)			/* return picture coefficients */
+l_expos(nam)			/* return picture exposure */
 register char	*nam;
 {
 	register int	fn, n;
@@ -333,13 +343,13 @@ register char	*nam;
 		errno = EDOM;
 		return(0.0);
 	}
-	if (nam == vbrtcoef)
-		return(bright(input[fn].coef));
+	if (nam == vbrtexp)
+		return(bright(input[fn].expos));
 	n = 3;
 	while (n--)
-		if (nam == vcolcoef[n])
-			return(colval(input[fn].coef,n));
-	eputs("Bad call to l_coef()!\n");
+		if (nam == vcolexp[n])
+			return(colval(input[fn].expos,n));
+	eputs("Bad call to l_expos()!\n");
 	quit(1);
 }
 
