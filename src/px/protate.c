@@ -21,7 +21,11 @@ int	xres, yres;			/* input resolution */
 
 int	correctorder = 0;		/* order correction? */
 
+#ifdef BIGMEM
+char	buf[1<<22];			/* output buffer */
+#else
 char	buf[1<<20];			/* output buffer */
+#endif
 
 int	nrows;				/* number of rows output at once */
 
