@@ -160,13 +160,13 @@ xf.o:	xf.c
 caldefn.o calexpr.o calfunc.o:	calcomp.h
 
 aed.o color.o colortab.o data.o devcomm.o \
-lookamb.o rview.o sundev.o x10.o:	color.h
+devmain.o lookamb.o rview.o sundev.o x10.o:	color.h
 
 cone.o o_cone.o source.o:	cone.h
 
 data.o mx_data.o p_data.o t_data.o:	data.h
 
-aed.o devcomm.o devtable.o sundev.o tty.o x10.o:	driver.h
+aed.o devcomm.o devmain.o devtable.o sundev.o tty.o x10.o:	driver.h
 
 face.o o_face.o source.o:	face.h
 
