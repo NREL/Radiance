@@ -18,7 +18,7 @@
 #define int2	short
 #endif
 #ifndef int4
-#define int4	long
+#define int4	int
 #endif
 
 #define DCINF	(unsigned)((1L<<16)-1)	/* special value for infinity */
