@@ -24,8 +24,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define GAMMA		2.2		/* exponent for color correction */
 
-#define MINWIDTH	(4*COMCW)	/* minimum graphics window width */
-#define MINHEIGHT	16		/* minimum graphics window height */
+#define MINWIDTH	(32*COMCW)	/* minimum graphics window width */
+#define MINHEIGHT	MINWIDTH	/* minimum graphics window height */
 
 #define BORWIDTH	5		/* border width */
 #define COMHEIGHT	(COMLH*COMCH)	/* command line height (pixels) */
@@ -49,6 +49,8 @@ static int  *pixval = NULL;		/* allocated pixels */
 
 static Display  *ourdisplay = NULL;	/* our display */
 
+static Visual  *ourvisual;		/* our visual structure */
+
 static Window  gwind = 0;		/* our graphics window */
 
 static Cursor  pickcursor = 0;		/* cursor used for picking */
@@ -63,7 +65,7 @@ static int  c_last = 0;			/* last character in queue */
 
 static GC  ourgc = 0;			/* our graphics context for drawing */
 
-static Colormap ourmap;			/* our color map */
+static Colormap ourmap = 0;		/* our color map */
 
 extern char  *malloc();
 
@@ -80,6 +82,8 @@ struct driver *
 x11_init(name, id)		/* initialize driver */
 char  *name, *id;
 {
+	int  nplanes;
+	XVisualInfo  ourvinfo;
 	XWMHints  ourxwmhints;
 	Pixmap  bmCursorSrc, bmCursorMsk;
 
@@ -88,12 +92,23 @@ char  *name, *id;
 		stderr_v("cannot open X-windows; DISPLAY variable set?\n");
 		return(NULL);
 	}
-	if (DisplayPlanes(ourdisplay, ourscreen) < 4) {
+	nplanes = DisplayPlanes(ourdisplay, ourscreen);
+	if (nplanes < 4) {
 		stderr_v("not enough colors\n");
 		return(NULL);
+	} else if (nplanes <= 12) {
+		if (!XMatchVisualInfo(ourdisplay,ourscreen,
+				nplanes,PseudoColor,&ourvinfo)) {
+			stderr_v("PseudoColor not supported\n");
+			return(NULL);
+		}
+	} else if (!XMatchVisualInfo(ourdisplay,ourscreen,
+			nplanes,TrueColor,&ourvinfo)) {
+		stderr_v("TrueColor not supported\n");
+		return(NULL);
 	}
-	ourmap = DefaultColormap(ourdisplay,ourscreen);
-	make_gmap(GAMMA);			/* make color map */
+	ourvisual = ourvinfo.visual;
+	make_gmap(GAMMA);
 	/* create a cursor */
 	pickcursor = XCreateFontCursor (ourdisplay, XC_diamond_cross);
 	/* open window */
@@ -138,13 +153,13 @@ x11_close()			/* close our display */
 		comline = NULL;
 	}
 	if (gwind != 0) {
+		freepixels();
 		XFreeGC(ourdisplay, ourgc);
 		XDestroyWindow(ourdisplay, gwind);
 		gwind = 0;
 		ourgc = 0;
 	}
 	XFreeCursor(ourdisplay, pickcursor);
-	freepixels();
 	XCloseDisplay(ourdisplay);
 	ourdisplay = NULL;
 }
@@ -173,11 +188,11 @@ int  xres, yres;
 		sleep(2);			/* wait for window manager */
 	}
 	XClearWindow(ourdisplay, gwind);
-						/* reinitialize color table */
-	if (getpixels() == 0)
-		stderr_v("cannot allocate colors\n");
-	else
-		new_ctab(ncolors);
+	if (ourvisual->class == PseudoColor)	/* reinitialize color table */
+		if (getpixels() == 0)
+			stderr_v("cannot allocate colors\n");
+		else
+			new_ctab(ncolors);
 
 	XSelectInput(ourdisplay, gwind,
 		StructureNotifyMask|ExposureMask|KeyPressMask|ButtonPressMask);
@@ -190,13 +205,18 @@ COLOR  col;
 int  xmin, ymin, xmax, ymax;
 {
 	extern int  xnewcolr();		/* pixel assignment routine */
+	extern unsigned long  true_pixel();
+	unsigned long  pixel;
 
-	if (ncolors > 0) {
-		XSetForeground(ourdisplay, ourgc, 
-				pixval[get_pixel(col, xnewcolr)]);
-		XFillRectangle(ourdisplay, gwind, 
-			ourgc, xmin, gheight-ymax, xmax-xmin, ymax-ymin);
-	}
+	if (ncolors > 0)
+		pixel = pixval[get_pixel(col, xnewcolr)];
+	else if (ourvisual->class == TrueColor)
+		pixel = true_pixel(col);
+	else
+		return;
+	XSetForeground(ourdisplay, ourgc, pixel);
+	XFillRectangle(ourdisplay, gwind, 
+		ourgc, xmin, gheight-ymax, xmax-xmin, ymax-ymin);
 }
 
 
@@ -297,20 +317,54 @@ int  r, g, b;
 static int
 getpixels()				/* get the color map */
 {
-	Visual  *ourvis = DefaultVisual(ourdisplay,ourscreen);
-
 	if (ncolors > 0)
 		return(ncolors);
-	for (ncolors=(ourvis->map_entries)-3; ncolors>12; ncolors=ncolors*.937){
+	if (ourvisual == DefaultVisual(ourdisplay,ourscreen)) {
+		ourmap = DefaultColormap(ourdisplay,ourscreen);
+		goto loop;
+	}
+newmap:
+	ourmap = XCreateColormap(ourdisplay,gwind,ourvisual,AllocNone);
+loop:
+	for (ncolors = ourvisual->map_entries;
+			ncolors > ourvisual->map_entries/3;
+			ncolors = ncolors*.937) {
 		pixval = (int *)malloc(ncolors*sizeof(int));
 		if (pixval == NULL)
-			break;
+			return(ncolors = 0);
 		if (XAllocColorCells(ourdisplay,ourmap,0,NULL,0,
 				pixval,ncolors) != 0)
-			return(ncolors);
+			break;
 		free((char *)pixval);
+		pixval = NULL;
 	}
-	return(ncolors = 0);
+	if (pixval == NULL) {
+		if (ourmap == DefaultColormap(ourdisplay,ourscreen))
+			goto newmap;		/* try it with our map */
+		else
+			return(ncolors = 0);	/* failed */
+	}
+	if (ourmap != DefaultColormap(ourdisplay,ourscreen)) {
+		XColor  thiscolor;
+		register int  i, j;
+						/* reset black and white */
+		for (i = 0; i < ncolors; i++) {
+			if (pixval[i] != ourblack && pixval[i] != ourwhite)
+				continue;
+			thiscolor.pixel = pixval[i];
+			thiscolor.flags = DoRed|DoGreen|DoBlue;
+			XQueryColor(ourdisplay,
+					DefaultColormap(ourdisplay,ourscreen),
+					&thiscolor);
+			XStoreColor(ourdisplay, ourmap, &thiscolor);
+			for (j = i; j+1 < ncolors; j++)
+				pixval[j] = pixval[j+1];
+			ncolors--;
+			i--;
+		}
+	}
+	XSetWindowColormap(ourdisplay, gwind, ourmap);
+	return(ncolors);
 }
 
 
@@ -321,6 +375,24 @@ freepixels()				/* free our pixels */
 		return;
 	XFreeColors(ourdisplay,ourmap,pixval,ncolors,0L);
 	ncolors = 0;
+	if (ourmap != 0 && ourmap != DefaultColormap(ourdisplay,ourscreen))
+		XFreeColormap(ourdisplay, ourmap);
+	ourmap = 0;
+}
+
+
+static unsigned long
+true_pixel(col)			/* return true pixel value for color */
+COLOR  col;
+{
+	unsigned long  rval;
+	BYTE  rgb[3];
+
+	map_color(rgb, col);
+	rval = ourvisual->red_mask*rgb[RED]/255 & ourvisual->red_mask;
+	rval |= ourvisual->green_mask*rgb[GRN]/255 & ourvisual->green_mask;
+	rval |= ourvisual->blue_mask*rgb[BLU]/255 & ourvisual->blue_mask;
+	return(rval);
 }
 
 
@@ -348,10 +420,11 @@ getevent()			/* get next event */
 		freepixels();
 		break;
 	case MapNotify:
-		if (getpixels() == 0)
-			stderr_v("Cannot allocate colors\n");
-		else
-			new_ctab(ncolors);
+		if (ourvisual->class == PseudoColor)
+			if (getpixels() == 0)
+				stderr_v("Cannot allocate colors\n");
+			else
+				new_ctab(ncolors);
 		break;
 	case Expose:
 		fixwindow(levptr(XExposeEvent));
