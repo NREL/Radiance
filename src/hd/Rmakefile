@@ -18,7 +18,7 @@ DEVDIR = $(INSTDIR)/dev
 
 LIBDIR = /usr/local/lib/ray
 
-PROGS = rholo rhcopy genrhgrid rhoptimize
+PROGS = rholo rhcopy genrhgrid rhoptimize rhinfo
 
 DEVS = $(DEVDIR)/x11.hdi $(DEVDIR)/x11h.hdi
 
@@ -40,7 +40,6 @@ ogl:	$(DEVDIR)/glx.hdi $(DEVDIR)/glxh.hdi \
 	$(DEVDIR)/ogls.hdi $(DEVDIR)/oglsh.hdi \
 	$(DEVDIR)/oglso.hdi $(DEVDIR)/oglsoh.hdi
 
-
 x10:
 
 aed:
@@ -61,6 +60,9 @@ holo.o holofile.o -lrt -lm
 rhoptimize:	rhoptimize.o clumpbeams.o holo.o holofile.o
 	$(CC) $(CFLAGS) -o rhoptimize rhoptimize.o clumpbeams.o \
 holo.o holofile.o -lrt -lm
+
+rhinfo:	rhinfo.o holo.o holofile.o
+	$(CC) $(CFLAGS) -o rhinfo rhinfo.o holo.o holofile.o -lrt -lm
 
 genrhenv:	genrhenv.o holo.o holofile.o
 	$(CC) $(CFLAGS) -o genrhenv genrhenv.o holo.o holofile.o -lrt -lm
@@ -224,7 +226,7 @@ rhdisp3.o:	rhdisp.h ../common/view.h
 
 holo.o holofile.o rhdisp.o rhdisp2.o rhdisp3.o genrhenv.o genrhgrid.o \
 rhcopy.o rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o \
-clumpbeams.o rhoptimize.o:	holo.h \
+rhinfo.o clumpbeams.o rhoptimize.o:	holo.h \
 ../common/vars.h ../common/color.h \
 ../common/standard.h ../common/mat4.h ../common/fvect.h
 
