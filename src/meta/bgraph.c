@@ -89,13 +89,7 @@ char  *file;
 }
 
 
-eputs(msg)				/* print error message */
-char  *msg;
-{
-	fputs(msg, stderr);
-}
-
-
+void
 quit(code)				/* quit program */
 int  code;
 {

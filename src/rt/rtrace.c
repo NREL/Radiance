@@ -21,6 +21,8 @@ static const char	RCSid[] = "$Id$";
  *  irradiance values are desired.
  */
 
+#include  <time.h>
+
 #include  "platform.h"
 #include  "ray.h"
 #include  "otypes.h"

@@ -5,6 +5,8 @@ static const char RCSid[] = "$Id$";
  *  Routines for reading a compiled mesh from a file
  */
 
+#include  <time.h>
+
 #include  "standard.h"
 #include  "platform.h"
 #include  "octree.h"
