@@ -246,16 +246,13 @@ register RAY  *r;
 				break;
 		if (i-3 != nd.dp->nd)
 			objerror(m, USER, "dimension error");
-		if (!fundefined(m->oargs.sarg[3]))
-			loadfunc(m->oargs.sarg[2]);
+		funcfile(m->oargs.sarg[2]);
 	} else if (m->otype == MAT_BRTDF) {
 		nd.dp = NULL;
-		if (!fundefined(m->oargs.sarg[7]))
-			loadfunc(m->oargs.sarg[9]);
+		funcfile(m->oargs.sarg[9]);
 	} else {
 		nd.dp = NULL;
-		if (!fundefined(m->oargs.sarg[0]))
-			loadfunc(m->oargs.sarg[1]);
+		funcfile(m->oargs.sarg[1]);
 	}
 						/* set special variables */
 	setbrdfunc(&nd);

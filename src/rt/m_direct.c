@@ -185,8 +185,7 @@ register OBJREC  *m;
 	ff = m->otype == MAT_DIRECT1 ? 5 : 9;
 	if (ff > m->oargs.nsargs)
 		objerror(m, USER, "too few arguments");
-	if (!vardefined(m->oargs.sarg[0]))
-		loadfunc(m->oargs.sarg[ff-1]);
+	funcfile(m->oargs.sarg[ff-1]);
 	if (m->os == NULL) {
 		mxf = (FULLXF *)malloc(sizeof(FULLXF));
 		if (mxf == NULL)
