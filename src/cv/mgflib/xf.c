@@ -1,4 +1,4 @@
-/* Copyright (c) 1994 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -25,10 +25,6 @@ XF_SPEC	*xf_context;		/* current context */
 char	**xf_argend;		/* end of transform argument list */
 static char	**xf_argbeg;	/* beginning of transform argument list */
 
-static XF_SPEC	*new_xf();
-static long	comp_xfid();
-static int	put_oname();
-
 
 int
 xf_handler(ac, av)		/* handle xf entity */
@@ -46,7 +42,7 @@ char	**av;
 		if (spec->xarr != NULL) {	/* check for iteration */
 			register struct xf_array	*ap = spec->xarr;
 
-			(void)put_oname((struct xf_array *)NULL);
+			(void)xf_aname((struct xf_array *)NULL);
 			n = ap->ndim;
 			while (n--) {
 				if (++ap->aarg[n].i < ap->aarg[n].n)
@@ -58,25 +54,25 @@ char	**av;
 				if ((rv = mg_fgoto(&ap->spos)) != MG_OK)
 					return(rv);
 				sprintf(ap->aarg[n].arg, "%d", ap->aarg[n].i);
-				(void)put_oname(ap);
-			} else
-				free((MEM_PTR)ap);
+				(void)xf_aname(ap);
+			}
 		}
 		if (n < 0) {			/* pop transform */
 			xf_context = spec->prev;
-			free((MEM_PTR)spec);
+			free_xf(spec);
 			return(MG_OK);
 		}
 	} else {			/* else allocate transform */
 		if ((spec = new_xf(ac-1, av+1)) == NULL)
 			return(MG_EMEM);
+		if (spec->xarr != NULL)
+			(void)xf_aname(spec->xarr);
 		spec->prev = xf_context;	/* push onto stack */
 		xf_context = spec;
 	}
 					/* translate new specification */
 	n = xf_ac(spec);
-	if (spec->prev != NULL)		/* incremental comp. is more eff. */
-		n -= xf_ac(spec->prev);
+	n -= xf_ac(spec->prev);		/* incremental comp. is more eff. */
 	if (xf(&spec->xf, n, xf_av(spec)) != n)
 		return(MG_ETYPE);
 					/* check for vertex reversal */
@@ -93,7 +89,7 @@ char	**av;
 }
 
 
-static XF_SPEC *
+XF_SPEC *
 new_xf(ac, av)			/* allocate new transform structure */
 int	ac;
 char	**av;
@@ -151,14 +147,22 @@ char	**av;
 			xf_av(spec)[i] = strcpy(cp, av[i]);
 			cp += strlen(av[i]) + 1;
 		}
-	if (spec->xarr != NULL)
-		(void)put_oname(spec->xarr);
 	return(spec);
 }
 
 
-static int
-put_oname(ap)			/* put out name for this instance */
+void
+free_xf(spec)			/* free a transform */
+register XF_SPEC	*spec;
+{
+	if (spec->xarr != NULL)
+		free((MEM_PTR)spec->xarr);
+	free((MEM_PTR)spec);
+}
+
+
+int
+xf_aname(ap)			/* put out name for this instance */
 register struct xf_array	*ap;
 {
 	static char	oname[10*XF_MAXDIM];
@@ -180,7 +184,7 @@ register struct xf_array	*ap;
 }
 
 
-static long
+long
 comp_xfid(xfm)			/* compute unique ID from matrix */
 register MAT4	xfm;
 {
@@ -212,9 +216,7 @@ xf_clear()			/* clear transform stack */
 	}
 	while ((spec = xf_context) != NULL) {
 		xf_context = spec->prev;
-		if (spec->xarr != NULL)
-			free((MEM_PTR)spec->xarr);
-		free((MEM_PTR)spec);
+		free_xf(spec);
 	}
 }
 

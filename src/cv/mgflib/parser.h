@@ -9,7 +9,7 @@
 /* must include stdio.h before us */
 
 #define MG_VMAJOR	1		/* major version number */
-#define MG_VMINOR	0		/* minor version number */
+#define MG_VMINOR	1		/* minor version number */
 
 			/* Entities (list is only appended, never modified) */
 #define MG_E_COMMENT	0		/* #		*/
@@ -364,10 +364,10 @@ typedef struct xf_spec {
 extern XF_SPEC	*xf_context;			/* current transform context */
 extern char	**xf_argend;			/* last transform argument */
 
-#define xf_ac(xf)	((xf)->xac)
+#define xf_ac(xf)	((xf)==NULL ? 0 : (xf)->xac)
 #define xf_av(xf)	(xf_argend - (xf)->xac)
 
-#define xf_argc		(xf_context==NULL ? 0 : xf_ac(xf_context))
+#define xf_argc		xf_ac(xf_context)
 #define xf_argv		xf_av(xf_context)
 
 /*
@@ -393,6 +393,10 @@ extern void	xf_clear();		/* clear xf stack */
 
 /* The following are support routines you probably won't call directly */
 
+XF_SPEC		*new_xf();		/* allocate new transform */
+void		free_xf();		/* free a transform */
+int		xf_aname();		/* name this instance */
+long		comp_xfid();		/* compute unique ID */
 extern void	multmat4();		/* m4a = m4b X m4c */
 extern void	multv3();		/* v3a = v3b X m4 (vectors) */
 extern void	multp3();		/* p3a = p3b X m4 (points) */
@@ -409,6 +413,10 @@ extern void	xf_clear(void);			/* clear xf stack */
 
 /* The following are support routines you probably won't call directly */
 
+XF_SPEC		*new_xf(int, char **);		/* allocate new transform */
+void		free_xf(XF_SPEC *);		/* free a transform */
+int		xf_aname(struct xf_array *);	/* name this instance */
+long		comp_xfid(MAT4);		/* compute unique ID */
 extern void	multmat4(MAT4, MAT4, MAT4);	/* m4a = m4b X m4c */
 extern void	multv3(FVECT, FVECT, MAT4);	/* v3a = v3b X m4 (vectors) */
 extern void	multp3(FVECT, FVECT, MAT4);	/* p3a = p3b X m4 (points) */
