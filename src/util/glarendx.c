@@ -5,11 +5,14 @@ static char SCCSid[] = "$SunId$ LBL";
 #endif
 
 /*
- * Compute Glare Index given by program name:
+ * Compute Glare Index given by program name or -t option:
  *
  *	guth_dgr -	Guth discomfort glare rating
  *	guth_vcp -	Guth visual comfort probability
- *	cie_cgi -	CIE Glare Index (1983)
+ *	cie_cgi -	CIE Glare Index (1983, due to Einhorn)
+ *	vert_dir -	Direct vertical illuminance
+ *	vert_ind -	Indirect vertical illuminance (from input)
+ *	vert_ill -	Total vertical illuminance
  *
  *		12 April 1991	Greg Ward	EPFL
  */
@@ -20,18 +23,21 @@ static char SCCSid[] = "$SunId$ LBL";
 extern double	erfc();
 
 double	posindex();
-int	headline();
 
-double	direct(), guth_dgr(), guth_vcp(), cie_cgi();
+double	direct(), guth_dgr(), guth_vcp(), cie_cgi(),
+	indirect(), total();
 
 struct named_func {
 	char	*name;
 	double	(*func)();
+	char	*descrip;
 } all_funcs[] = {
-	{"direct", direct},
-	{"guth_dgr", guth_dgr},
-	{"guth_vcp", guth_vcp},
-	{"cie_cgi", cie_cgi},
+	{"guth_vcp", guth_vcp, "Guth Visual Comfort Probability"},
+	{"cie_cgi", cie_cgi, "CIE Glare Index (Einhorn)"},
+	{"guth_dgr", guth_dgr, "Guth Disability Glare Rating"},
+	{"vert_dir", direct, "Direct Vertical Illuminance"},
+	{"vert_ill", total, "Total Vertical Illuminance"},
+	{"vert_ind", indirect, "Indirect Vertical Illuminance"},
 	{NULL}
 };
 
@@ -92,35 +98,24 @@ char	*argv[];
 			perror(argv[i]);
 			exit(1);
 		}
-					/* read header */
-	getheader(stdin, headline, NULL);
-	if (wrongformat) {
-		fprintf(stderr, "%s: bad input format\n", progname);
-		exit(1);
-	}
-	if (print_header) {		/* add to header */
-		printargs(i, argv, stdout);
-		putchar('\n');
-	}
-					/* set view */
-	if (setview(&midview) != NULL) {
-		fprintf(stderr, "%s: bad view information in input\n",
-				progname);
-		exit(1);
-	}
-					/* get findglare data */
-	read_input();
-					/* find calculation */
+					/* find and run calculation */
 	for (funp = all_funcs; funp->name != NULL; funp++)
 		if (!strcmp(funp->name, progtail)) {
+			init();
+			read_input();
+			if (print_header) {
+				printargs(i, argv, stdout);
+				putchar('\n');
+			}
 			print_values(funp->func);
 			exit(0);		/* we're done */
 		}
 					/* invalid function */
-	fprintf(stderr, "%s: unknown function!\n", progtail);
-	exit(1);
 userr:
-	fprintf(stderr, "Usage: %s [-t type][-h] [input]\n", progname);
+	fprintf(stderr, "Usage: %s -t type [-h] [input]\n", progname);
+	fprintf(stderr, "\twhere 'type' is one of the following:\n");
+	for (funp = all_funcs; funp->name != NULL; funp++)
+		fprintf(stderr, "\t%12s\t%s\n", funp->name, funp->descrip);
 	exit(1);
 }
 
@@ -137,6 +132,23 @@ char	*s;
 	else if (isformat(s)) {
 		formatval(fmt, s);
 		wrongformat = strcmp(fmt, "ascii");
+	}
+}
+
+
+init()				/* initialize calculation */
+{
+					/* read header */
+	getheader(stdin, headline, NULL);
+	if (wrongformat) {
+		fprintf(stderr, "%s: bad input format\n", progname);
+		exit(1);
+	}
+					/* set view */
+	if (setview(&midview) != NULL) {
+		fprintf(stderr, "%s: bad view information in input\n",
+				progname);
+		exit(1);
 	}
 }
 
@@ -213,7 +225,7 @@ double	(*funp)();
 
 
 double
-direct(gd)			/* compute direct illuminance */
+direct(gd)			/* compute direct vertical illuminance */
 struct glare_dir	*gd;
 {
 	FVECT	mydir;
@@ -228,6 +240,22 @@ struct glare_dir	*gd;
 			dval += d * gs->dom * gs->lum;
 	}
 	return(dval);
+}
+
+
+double
+indirect(gd)			/* return indirect vertical illuminance */
+struct glare_dir	*gd;
+{
+	return(gd->indirect);
+}
+
+
+double
+total(gd)			/* return total vertical illuminance */
+struct glare_dir	*gd;
+{
+	return(direct(gd)+gd->indirect);
 }
 
 
