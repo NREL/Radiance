@@ -91,7 +91,7 @@ double  omega;			/* light source size */
 						/* worth using? */
 		if (dtmp > FTINY) {
 			copycolor(ctmp, np->scolor);
-			dtmp *= omega;
+			dtmp *= omega / np->pdot;
 			scalecolor(ctmp, dtmp);
 			addcolor(cval, ctmp);
 		}
@@ -108,7 +108,7 @@ double  omega;			/* light source size */
 	if (ldot < -FTINY && np->tspec > FTINY && np->alpha2 > FTINY) {
 		/*
 		 *  Compute specular transmission.  Specular transmission
-		 *  is unaffected by material color.
+		 *  is always modified by material color.
 		 */
 						/* roughness + source */
 		dtmp = np->alpha2 + omega/(2.0*PI);
@@ -116,8 +116,9 @@ double  omega;			/* light source size */
 		dtmp = exp((DOT(np->pr->rdir,ldir)-1.)/dtmp)/(2.*PI)/dtmp;
 						/* worth using? */
 		if (dtmp > FTINY) {
-			dtmp *= np->tspec * omega;
-			setcolor(ctmp, dtmp, dtmp, dtmp);
+			copycolor(ctmp, np->mcolor);
+			dtmp *= np->tspec * omega / np->pdot;
+			scalecolor(ctmp, dtmp);
 			addcolor(cval, ctmp);
 		}
 	}
@@ -154,6 +155,8 @@ register RAY  *r;
 						/* get modifiers */
 	raytexture(r, m->omod);
 	nd.pdot = raynormal(nd.pnorm, r);	/* perturb normal */
+	if (nd.pdot < .001)
+		nd.pdot = .001;			/* non-zero for dirnorm() */
 	multcolor(nd.mcolor, r->pcol);		/* modify material color */
 	transtest = 0;
 						/* get specular component */
@@ -238,7 +241,7 @@ register RAY  *r;
 			scalecolor(ctmp, nd.tdiff);
 		else
 			scalecolor(ctmp, nd.trans);
-		multcolor(ctmp, nd.mcolor);
+		multcolor(ctmp, nd.mcolor);	/* modified by color */
 		addcolor(r->rcol, ctmp);
 		flipsurface(r);
 	}
