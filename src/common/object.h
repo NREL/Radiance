@@ -48,7 +48,6 @@ typedef struct {
 	char  *oname;			/* object name */
 	FUNARGS  oargs;			/* object specification */
 	char  *os;			/* object structure */
-	long  lastrno;			/* last ray this was used with */
 }  OBJREC;
 
 #ifndef  MAXOBJBLK

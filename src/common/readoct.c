@@ -280,7 +280,6 @@ getobj()				/* get next object */
 		objp->oargs.farg = NULL;
 						/* initialize */
 	objp->os = NULL;
-	objp->lastrno = -1;
 						/* insert */
 	insertobject(obj);
 	return(obj);

@@ -122,7 +122,6 @@ FILE  *fp;
 	}
 					/* initialize */
 	objp->os = NULL;
-	objp->lastrno = -1;
 
 	insertobject(obj);		/* add to global structure */
 }
