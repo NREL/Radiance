@@ -18,6 +18,11 @@
 
 #define SEPS		2		/* sources this close ==> contig. */
 
+#define SAMIN		.005		/* minimum solid angle for source */
+#define MAXBUDDY	(4.*sqrt(SAMIN/PI))	/* max separation for pairing */
+
+#define TOOSMALL(s)	((s)->brt*(s)->dom < threshold*SAMIN)
+
 extern VIEW	ourview;		/* our view */
 extern VIEW	pictview;		/* picture view */
 extern VIEW	leftview, rightview;	/* leftmost and rightmost views */
