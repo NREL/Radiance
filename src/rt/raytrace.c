@@ -105,7 +105,8 @@ RAY  *r;
 raycont(r)			/* check for clipped object and continue */
 register RAY  *r;
 {
-	if (r->clipset != NULL && inset(r->clipset, r->ro->omod))
+	if ((r->clipset != NULL && inset(r->clipset, r->ro->omod)) ||
+			r->ro->omod == OVOID)
 		raytrans(r);
 	else
 		rayshade(r, r->ro->omod);
@@ -463,8 +464,6 @@ OBJECT  *cxs;
 	checkset(oset, cxs);			/* eliminate double-checking */
 	for (i = oset[0]; i > 0; i--) {
 		o = objptr(oset[i]);
-		if (o->omod == OVOID && issurface(o->otype))
-			continue;		/* ignore void surfaces */
 		(*ofun[o->otype].funp)(o, r);
 	}
 	if (r->ro == NULL)
