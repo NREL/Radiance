@@ -114,6 +114,7 @@ dofiles:
 				fprintf(stderr,
 				"%s: only %d files allowed with labels\n",
 					progname, MAXFILE/2);
+				quit(1);
 			}
 		} else {
 			if (nfile >= MAXFILE) {
@@ -121,10 +122,6 @@ dofiles:
 						progname, MAXFILE);
 				quit(1);
 			}
-		}
-		if (nfile >= (dolabels ? MAXFILE-1 : MAXFILE)) {
-			fprintf(stderr, "%s: too many files\n", progname);
-			quit(1);
 		}
 		input[nfile].hasmin = input[nfile].hasmax = 0;
 		while (an < argc && (argv[an][0] == '-' || argv[an][0] == '+'))
@@ -235,8 +232,9 @@ getfile:
 	
 	quit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-x xres][-y yres][-b r g b] ", progname);
-	fprintf(stderr, "[-t min1][+t max1] file1 x1 y1 ..\n");
+	fprintf(stderr, "Usage: %s [-x xr][-y yr][-b r g b][-a n][-l] ",
+			progname);
+	fprintf(stderr, "[-t min1][+t max1] pic1 x1 y1 ..\n");
 	quit(1);
 labelerr:
 	fprintf(stderr, "%s: error opening label\n", progname);
