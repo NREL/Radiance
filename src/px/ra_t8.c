@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -53,6 +53,8 @@ extern double  atof(), pow();
 
 double	gamma = 2.0;			/* gamma correction */
 
+int  bradj = 0;				/* brightness adjustment */
+
 pic	*inpic;
 
 char  *progname;
@@ -95,6 +97,11 @@ char  *argv[];
 			case 'b':
 				greyscale = 1;
 				break;
+			case 'e':
+				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
+					goto userr;
+				bradj = atoi(argv[++i]);
+				break;
 			case 'c':
 				ncolors = atoi(argv[++i]);
 				break;
@@ -131,7 +138,7 @@ char  *argv[];
 					/* convert file */
 		tg2ra(&head);
 	} else {
-		if (i > argc-1 || i < argc-2)
+		if (i < argc-2 || (!greyscale && i > argc-1))
 			goto userr;
 		if ((inpic = openinput(argv[i], &head)) == NULL) {
 			sprintf(errmsg, "can't open input \"%s\"", argv[i]);
@@ -154,9 +161,9 @@ char  *argv[];
 	quiterr(NULL);
 userr:
 	fprintf(stderr,
-	"Usage: %s [-d][-c ncolors][-b][-g gamma] input [output]\n",
+	"Usage: %s [-d][-c ncolors][-b][-g gamma][-e +/-stops] input [output]\n",
 			progname);
-	fprintf(stderr, "   Or: %s -r [-g gamma] [input [output]]\n",
+	fprintf(stderr, "   Or: %s -r [-g gamma][-e +/-stops] [input [output]]\n",
 			progname);
 	exit(1);
 }
@@ -340,7 +347,8 @@ struct hdStruct  *hp;
 					pow((map.c4[i][3]+.5)/256.,gamma),
 					pow((map.c4[i][2]+.5)/256.,gamma),
 					pow((map.c4[i][1]+.5)/256.,gamma));
-
+	if (bradj)
+		shiftcolrs(ctab, 256, bradj);
 					/* allocate targa data */
 	tarData = taralloc(hp);
 					/* get data */
@@ -383,7 +391,7 @@ register rgbpixel  *l3;
 		quiterr("read error in picreadline3");
 	inpic->nexty = y+1;
 							/* convert scanline */
-	normcolrs(inl, xmax, 0);
+	normcolrs(inl, xmax, bradj);
 	for (i = 0; i < xmax; i++) {
 		l3[i].r = inl[i][RED];
 		l3[i].g = inl[i][GRN];

@@ -36,6 +36,8 @@ extern double  atof(), pow();
 
 double	gamma = 2.0;			/* gamma correction */
 
+int  bradj = 0;				/* brightness adjustment */
+
 char  *progname;
 
 char  msg[128];
@@ -66,6 +68,11 @@ char  *argv[];
 				break;
 			case '3':
 				head.dataBits = 24;
+				break;
+			case 'e':
+				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
+					goto userr;
+				bradj = atoi(argv[++i]);
 				break;
 			default:
 				goto userr;
@@ -119,7 +126,7 @@ char  *argv[];
 	}
 	exit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-2|-3|-r][-g gamma] [input [output]]\n",
+	fprintf(stderr, "Usage: %s [-2|-3|-r][-g gamma][-e +/-stops] [input [output]]\n",
 			progname);
 	exit(1);
 }
@@ -267,6 +274,8 @@ struct hdStruct  *hp;
 			}
 		}
 		gambs_colrs(scanline, hp->x);
+		if (bradj)
+			shiftcolrs(scanline, hp->x, bradj);
 		if (fwritecolrs(scanline, hp->x, stdout) < 0)
 			quiterr("error writing RADIANCE file");
 	}
@@ -288,6 +297,8 @@ struct hdStruct  *hp;
 	for (j = hp->y-1; j >= 0; j--) {
 		if (freadcolrs(inl, hp->x, stdin) < 0)
 			quiterr("error reading RADIANCE file");
+		if (bradj)
+			shiftcolrs(inl, hp->x, bradj);
 		colrs_gambs(inl, hp->x);
 		if (hp->dataBits == 16) {
 			register unsigned short  *dp;
