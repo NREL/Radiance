@@ -89,7 +89,7 @@ int  ar;
 		maxarad = thescene.cusize / 2.0;
 	} else {
 		minarad = thescene.cusize / ar;
-		maxarad = 16 * minarad;			/* heuristic */
+		maxarad = 64 * minarad;			/* heuristic */
 		if (maxarad > thescene.cusize / 2.0)
 			maxarad = thescene.cusize / 2.0;
 	}
