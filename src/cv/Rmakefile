@@ -22,7 +22,7 @@ install:	$(PROGS)
 	cp $(PROGS) $(INSTDIR)
 
 clean:
-	rm -f $(PROGS) *.o core
+	set nonomatch; rm -f $(PROGS) *.o core
 
 thf2rad:	thf2rad.o
 	cc $(CFLAGS) -o thf2rad thf2rad.o

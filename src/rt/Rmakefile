@@ -101,7 +101,7 @@ x10:	$(DEVDIR)/x10
 aed:	$(DEVDIR)/aed
 
 clean:
-	rm -f $(PROGS) *.o core
+	set nonomatch; rm -f $(PROGS) *.o core
 
 lint:	$(RVSRC)
 	$(LINT) $(LINTFLAGS) -DRVIEW $(RVSRC) $(LIBS)
