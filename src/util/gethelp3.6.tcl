@@ -25,9 +25,9 @@ proc gethelp {helpfile category topic} {	# Open help window
 	global curhelp helpfontwidth
 	if {! [winfo exists .helpwin]} {		# Set up window
 		toplevel .helpwin
-		wm minsize .helpwin 400 400
+		wm minsize .helpwin 450 350
 		wm iconbitmap .helpwin question
-		frame .helpwin.but -geometry 200x500
+		frame .helpwin.but -geometry 150x350
 		pack .helpwin.but -side right -fill none -expand no
 		label .helpwin.but.lab -textvariable curhelp(title)
 		place .helpwin.but.lab -relx .1667 -rely 0
@@ -80,10 +80,10 @@ proc gethelp {helpfile category topic} {	# Open help window
 		helplink .helpwin.but.done help help done
 		text .helpwin.txt -wrap word -width 48 -height 20 -bd 2 \
 			-yscrollcommand ".helpwin.sb set" -relief raised \
-			-font -*-courier-medium-r-normal--18-*-*-*-*-*-iso8859-1
+			-font -*-courier-medium-r-normal--14-*-*-*-*-*-iso8859-1
 		.helpwin.txt tag configure highlight \
-			-font -*-courier-bold-r-normal--18-*-*-*-*-*-iso8859-1
-		set helpfontwidth 11
+			-font -*-courier-bold-r-normal--14-*-*-*-*-*-iso8859-1
+		set helpfontwidth 9
 		scrollbar .helpwin.sb -relief flat \
 				-command ".helpwin.txt yview"
 		pack .helpwin.sb -side right -fill y
@@ -91,7 +91,6 @@ proc gethelp {helpfile category topic} {	# Open help window
 		helplink .helpwin.sb help helpwin scroll
 		helplink .helpwin.txt help helpwin intro
 		tkwait visibility .helpwin
-		update
 	} elseif {! [winfo ismapped .helpwin]} {	# map window
 		wm deiconify .helpwin
 	} else {					# raise window
@@ -124,6 +123,10 @@ proc helpopen fname {			# open the named help file
 	set curhelp(title) "[string toupper\
 			[file rootname [file tail $fname]]]  HELP"
 	wm iconname .helpwin [string tolower $curhelp(title)]
+	.helpwin.txt configure -state normal
+	.helpwin.txt delete 1.0 end
+	.helpwin.txt insert end "Loading $fname..."
+	update
 	set curhelp(fid) [open $fname r]
 	set curhelp(index) {}
 	set catlist {}
