@@ -391,18 +391,21 @@ int  nc;		/* number of colors to use */
 			quiterr("error reading Radiance input");
 		if (bradj)
 			shiftcolrs(inl, xmax, bradj);
+		x = xmax;
+		while (x--)
+			inl[x][GRN] = normbright(inl[x]);
 		colrs_gambs(inl, xmax);
 		x = xmax;
 		if (nc < 256)
 			while (x--)
-				*--dp = ((long)normbright(inl[x])*nc+128)>>8;
+				*--dp = ((long)inl[x][GRN]*nc+nc/2)>>8;
 		else
 			while (x--)
-				*--dp = normbright(inl[x]);
+				*--dp = inl[x][GRN];
 	}
 	for (x = 0; x < nc; x++)
 		clrtab[x][RED] = clrtab[x][GRN] =
-			clrtab[x][BLU] = ((long)x*256+nc/2)/nc;
+			clrtab[x][BLU] = ((long)x*256+128)/nc;
 }
 
 
