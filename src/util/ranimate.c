@@ -115,7 +115,7 @@ struct pslot	*findpslot();
 PSERVER	*lastpserver;		/* last process server with error */
 
 VIEW	*getview();
-char	*getexp();
+char	*getexp(), *dirfile();
 
 extern time_t	fdate(), time();
 
@@ -536,9 +536,7 @@ animate()			/* run animation */
 		quit(1);
 	}
 					/* initialize archive argument list */
-	i = 16;
-	if (vdef(ARCHIVE) && strlen(vval(ARCHIVE)) > i)
-		i = strlen(vval(ARCHIVE));
+	i = vdef(ARCHIVE) ? strlen(vval(ARCHIVE))+132 : 132;
 	arcnext = arcfirst = arcargs + i;
 					/* initialize status file */
 	if (astat.rnext == 0)
@@ -642,7 +640,7 @@ filterframes()				/* catch up with filtering */
 
 transferframes()			/* catch up with picture transfers */
 {
-	char	combuf[10240];
+	char	combuf[10240], *fbase;
 	register char	*cp;
 	register int	i;
 
@@ -653,12 +651,19 @@ transferframes()			/* catch up with picture transfers */
 		putastat();		/* update status */
 		return;
 	}
-	strcpy(combuf, vval(TRANSFER));	/* start transfer command */
-	cp = combuf + strlen(combuf);
+	strcpy(combuf, "cd ");		/* start transfer command */
+	fbase = dirfile(cp = combuf+3, vval(BASENAME));
+	if (*cp) {
+		while (*++cp) ;
+		*cp++ = ';'; *cp++ = ' ';
+	} else
+		cp = combuf;
+	strcpy(cp, vval(TRANSFER));
+	while (*cp) cp++;
 					/* make argument list */
 	for (i = astat.tnext; i < astat.fnext; i++) {
 		*cp++ = ' ';
-		sprintf(cp, vval(BASENAME), i);
+		sprintf(cp, fbase, i);
 		while (*cp) cp++;
 		strcpy(cp, ".pic");
 		cp += 4;
@@ -799,22 +804,40 @@ archive()			/* archive and remove renderings */
 {
 #define RMCOML	(sizeof(rmcom)-1)
 	static char	rmcom[] = "rm -f";
-	register int	i;
+	char	basedir[128];
+	int	dlen, alen;
+	register int	j;
 
 	if (arcnext == arcfirst)
 		return;				/* nothing to do */
+	dirfile(basedir, vval(BASENAME));
+	dlen = strlen(basedir);
 	if (vdef(ARCHIVE)) {			/* run archive command */
-		i = strlen(vval(ARCHIVE));
-		strncpy(arcfirst-i, vval(ARCHIVE), i);
-		if (runcom(arcfirst-i)) {
+		alen = strlen(vval(ARCHIVE));
+		if (dlen) {
+			j = alen + dlen + 5;
+			strncpy(arcfirst-j, "cd ", 3);
+			strncpy(arcfirst-j+3, basedir, dlen);
+			(arcfirst-j)[dlen+3] = ';'; (arcfirst-j)[dlen+4] = ' ';
+		} else
+			j = alen;
+		strncpy(arcfirst-alen, vval(ARCHIVE), alen);
+		if (runcom(arcfirst-j)) {
 			fprintf(stderr, "%s: error running archive command\n",
 					progname);
 			quit(1);
 		}
 	}
+	if (dlen) {
+		j = RMCOML + dlen + 5;
+		strncpy(arcfirst-j, "cd ", 3);
+		strncpy(arcfirst-j+3, basedir, dlen);
+		(arcfirst-j)[dlen+3] = ';'; (arcfirst-j)[dlen+4] = ' ';
+	} else
+		j = RMCOML;
 						/* run remove command */
 	strncpy(arcfirst-RMCOML, rmcom, RMCOML);
-	runcom(arcfirst-RMCOML);
+	runcom(arcfirst-j);
 	arcnext = arcfirst;			/* reset argument list */
 #undef RMCOML
 }
@@ -829,7 +852,7 @@ int	rvr;
 {
 	extern int	frecover();
 	static int	iter = 0;
-	char	fnbefore[128], fnafter[128];
+	char	fnbefore[128], fnafter[128], *fbase;
 	char	combuf[1024], fname0[128], fname1[128];
 	int	usepinterp, usepfilt, nora_rgbe;
 	int	frseq[2];
@@ -843,6 +866,7 @@ int	rvr;
 						/* compute rendered views */
 	frseq[0] = frame - ((frame-1) % (vint(INTERP)+1));
 	frseq[1] = frseq[0] + vint(INTERP) + 1;
+	fbase = dirfile(NULL, vval(BASENAME));
 	if (frseq[1] > vint(END))
 		frseq[1] = vint(END);
 	if (frseq[1] == frame) {			/* pfilt only */
@@ -852,14 +876,13 @@ int	rvr;
 	} else if (frseq[0] == frame) {		/* no interpolation needed */
 		if (!rvr && frame > 1+vint(INTERP)) {	/* archive previous */
 			*arcnext++ = ' ';
-			sprintf(arcnext, vval(BASENAME), frame-vint(INTERP)-1);
+			sprintf(arcnext, fbase, frame-vint(INTERP)-1);
 			while (*arcnext) arcnext++;
 			strcpy(arcnext, ".unf");
 			arcnext += 4;
 			if (usepinterp || vint(INTERP)) {	/* and Z-buf */
 				*arcnext++ = ' ';
-				sprintf(arcnext, vval(BASENAME),
-						frame-vint(INTERP)-1);
+				sprintf(arcnext, fbase, frame-vint(INTERP)-1);
 				while (*arcnext) arcnext++;
 				strcpy(arcnext, ".zbf");
 				arcnext += 4;
@@ -880,29 +903,31 @@ int	rvr;
 		if (rvr == 2 && recover(frseq[1]))	/* recover after? */
 			return(1);
 		if (atoi(vval(MBLUR))) {
-			FILE	*fp;		/* motion blurring */
 			sprintf(fname0, "%s/vw0%c", vval(DIRECTORY),
 					'a'+(iter%26));
-			if ((fp = fopen(fname0, "w")) == NULL) {
-				perror(fname0); quit(1);
-			}
-			fputs(VIEWSTR, fp);
-			fprintview(vp, fp);
-			putc('\n', fp); fclose(fp);
-			if ((vp = getview(frame+1)) == NULL) {
-				fprintf(stderr,
-			"%s: unexpected error reading view for frame %d\n",
-						progname, frame+1);
-				quit(1);
-			}
 			sprintf(fname1, "%s/vw1%c", vval(DIRECTORY),
 					'a'+(iter%26));
-			if ((fp = fopen(fname1, "w")) == NULL) {
-				perror(fname1); quit(1);
+			if (!noaction) {
+				FILE	*fp;		/* motion blurring */
+				if ((fp = fopen(fname0, "w")) == NULL) {
+					perror(fname0); quit(1);
+				}
+				fputs(VIEWSTR, fp);
+				fprintview(vp, fp);
+				putc('\n', fp); fclose(fp);
+				if ((vp = getview(frame+1)) == NULL) {
+					fprintf(stderr,
+			"%s: unexpected error reading view for frame %d\n",
+							progname, frame+1);
+					quit(1);
+				}
+				if ((fp = fopen(fname1, "w")) == NULL) {
+					perror(fname1); quit(1);
+				}
+				fputs(VIEWSTR, fp);
+				fprintview(vp, fp);
+				putc('\n', fp); fclose(fp);
 			}
-			fputs(VIEWSTR, fp);
-			fprintview(vp, fp);
-			putc('\n', fp); fclose(fp);
 			sprintf(combuf,
 			"(pmblur %s %d %s %s; rm -f %s %s) | pinterp -B",
 			*sskip(vval(MBLUR)) ? sskip2(vval(MBLUR),1) : "1",
@@ -1326,4 +1351,28 @@ int	vc;
 	fprintf(stderr, "%s: bad value for variable '%s'\n",
 			progname, vnam(vc));
 	quit(1);
+}
+
+
+char *
+dirfile(df, path)		/* separate path into directory and file */
+char	*df;
+register char	*path;
+{
+	register int	i;
+	int	psep;
+
+	for (i = 0, psep = -1; path[i]; i++)
+		if (path[i] == '/')
+			psep = i;
+	if (df != NULL)
+		if (psep == 0) {
+			df[0] = '/';
+			df[1] = '\0';
+		} else if (psep > 0) {
+			strncpy(df, path, psep);
+			df[psep] = '\0';
+		} else
+			df[0] = '\0';
+	return(path+psep+1);
 }
