@@ -20,7 +20,7 @@ skybright = wmean((Dz+1.01)^10, if(A1, cloudysky, sunnysky),
 
 wmean(a, x, b, y) = (a*x + b*y) / (a + b);
 
-cloudysky = A2 * if(A1-1, 1, (1 + 2*Dz)/3);
+cloudysky = A2 * if(A1-1.5, 1, (1 + 2*Dz)/3);
 
 sunnysky = A2 * (.91 + 10*exp(-3*gamma) + .45*cosgamma*cosgamma)
 	      *  if( Dz - .01, 1.0 - exp(-.32/Dz), 1.0) / A4;
