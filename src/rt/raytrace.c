@@ -207,19 +207,24 @@ double  coef;
 		coef = 1.0;
 	else if (coef < 0.0)
 		coef = 0.0;
+					/* compute foreground and background */
+	foremat = backmat = -1;
 					/* foreground */
 	copystruct(&fr, r);
 	if (fore != OVOID && coef > FTINY)
 		foremat = rayshade(&fr, fore);
-	else
-		foremat = 0;
 					/* background */
 	copystruct(&br, r);
 	if (back != OVOID && coef < 1.0-FTINY)
 		backmat = rayshade(&br, back);
-	else
-		backmat = foremat;
 					/* check */
+	if (foremat < 0)
+		if (backmat < 0)
+			foremat = backmat = 0;
+		else
+			foremat = backmat;
+	else if (backmat < 0)
+		backmat = foremat;
 	if ((foremat==0) != (backmat==0))
 		objerror(r->ro, USER, "mixing material with non-material");
 					/* mix perturbations */
