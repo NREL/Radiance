@@ -320,8 +320,8 @@ register VIEW	*nv;
 }
 
 
-dev_section(ofn)		/* add octree for geometry rendering */
-char	*ofn;
+dev_section(gfn, pfn)		/* add octree for geometry rendering */
+char	*gfn, *pfn;
 {
 	/* unimplemented */
 }
@@ -714,9 +714,7 @@ register VIEW	*vp;
 		dev_zmax = 100.;
 	} else {
 		dev_zmin = 0.5*mindpth;
-		dev_zmax = 1.5*maxdpth;
-		if (dev_zmin > dev_zmax/5.)
-			dev_zmin = dev_zmax/5.;
+		dev_zmax = 5.0*maxdpth;
 	}
 	if (odev.v.vfore > FTINY)
 		dev_zmin = odev.v.vfore;
