@@ -10,8 +10,7 @@
 
 #include <values.h>
 
-#define F_TINY 1e-3
-
+#define F_TINY 1e-5
 #define FZERO(x) ((x) < F_TINY && (x) > -F_TINY)
 #define FEQUAL(a,b) FZERO((a) - (b))
 
@@ -38,13 +37,12 @@ typedef struct _FPEQ {
 typedef long BCOORD;
 typedef long BDIR;
 typedef long TINT;
-#define BITS_BCOORD     (BITS(long)>>1)
-#define SHIFT_MAXBCOORD (BITS_BCOORD-2)   
-#define MAXBCOORD      (1L << SHIFT_MAXBCOORD)
+
+#define BITS_BCOORD     (BITS(long)-2)
+#define SHIFT_MAXBCOORD (BITS_BCOORD-1)   
+#define MAXBCOORD      ((1L << BITS_BCOORD)-1)
 #define MAXBCOORD2      (MAXBCOORD>>1)
-#define MAXBDIR        MAXBCOORD
-#define MAXT           MAXBCOORD
-#define HUGET      MAXLONG
+#define MAXBCOORD4      (MAXBCOORD2>>1)
 
 #define M_2_3_PI PI*2/3
 
@@ -63,6 +61,7 @@ typedef long TINT;
 
 #define ZERO_VEC3(v)     (ZERO(v[0]) && ZERO(v[1]) && ZERO(v[2]) )
 #define EQUAL_VEC3(a,b)  (EQUAL(a[0],b[0])&&EQUAL(a[1],b[1])&&EQUAL(a[2],b[2]))
+#define OPP_EQUAL_VEC3(a,b)  (EQUAL(a[0],-b[0])&&EQUAL(a[1],-b[1])&&EQUAL(a[2],-b[2]))
 #define FZERO_VEC3(v)     (FZERO(v[0]) && FZERO(v[1]) && FZERO(v[2]) )
 #define FEQUAL_VEC3(a,b) (FEQUAL(a[0],b[0])&&FEQUAL(a[1],b[1])&&FEQUAL(a[2],b[2]))
 #define NEGATE_VEC3(v)   ((v)[0] *= -1.0,(v)[1] *= -1.0,(v)[2] *= -1.0)
@@ -74,10 +73,11 @@ typedef long TINT;
 			        ((a)[1]-(b)[1])*((a)[1]-(b)[1]) + \
 				((a)[2]-(b)[2])*((a)[2]-(b)[2]))
 
+#define SIGN(x) ((x<0)?-1:1)
 #define CROSS_VEC2(v1,v2) (((v1)[0]*(v2)[1]) - ((v1)[1]*(v2)[0])) 
 #define DOT_VEC2(v1,v2) ((v1)[0]*(v2)[0] + (v1)[1]*(v2)[1])
 
-#define EDGE_MIDPOINT_VEC3(a,v1,v2) ((a)[0]=((v1)[0]+(v2)[0])*0.5, \
+#define EDGE_MIDPOINT(a,v1,v2) ((a)[0]=((v1)[0]+(v2)[0])*0.5, \
 (a)[1]=((v1)[1]+(v2)[1])*0.5,(a)[2] = ((v1)[2]+(v2)[2])*0.5)
 
 #define MIN_VEC3(v) ((v)[0]<(v)[1]?((v)[0]<(v)[2]?(v)[0]:v[2]): \
@@ -124,8 +124,10 @@ typedef long TINT;
 double tri_normal();
 /* double spherical_edge_normal(FVECT v0,FVECT v1,FVECT n,char norm) */
 double spherical_edge_normal();
+double point_on_sphere();
 
 #define point_in_stri_n(n0,n1,n2,p) \
-  ((DOT(n0,p)<=F_TINY)&&(DOT(n1,p)<=F_TINY)&&(DOT(n2,p)<=F_TINY))
+  ((DOT(n0,p)<=FTINY)&&(DOT(n1,p)<=FTINY)&&(DOT(n2,p)<=FTINY))
 
 #define PT_ON_PLANE(p,peq) (DOT(FP_N(peq),p)+FP_D(peq))
+

@@ -57,7 +57,7 @@ FVECT v0,v1,v2;
 
 /* calculates the normal of a face contour using Newell's formula. e
 
-               a =  SUMi (yi - yi+1)(zi + zi+1)smMesh->samples->max_samp+4);
+               a =  SUMi (yi - yi+1)(zi + zi+1);
 	       b =  SUMi (zi - zi+1)(xi + xi+1)
 	       c =  SUMi (xi - xi+1)(yi + yi+1)
 */
@@ -74,7 +74,7 @@ int norm;
   
   n[1] = (v0[2] - v1[2]) * (v0[0] + v1[0]) +
 	   (v1[2] - v2[2]) * (v1[0] + v2[0]) +
-	   (v2[2] - v0[2]) * (v2[0] + v0[0]);
+	    (v2[2] - v0[2]) * (v2[0] + v0[0]);
   
   n[2] = (v0[1] + v1[1]) * (v0[0] - v1[0]) +
          (v1[1] + v2[1]) * (v1[0] - v2[0]) +
@@ -119,12 +119,14 @@ FVECT p0,p1;
 }
 
 
-
+double
 point_on_sphere(ps,p,c)
 FVECT ps,p,c;
 {
+  double d;
     VSUB(ps,p,c);    
-    normalize(ps);
+    d= normalize(ps);
+    return(d);
 }
 
 
@@ -247,6 +249,24 @@ intersect_ray_oplane(orig,dir,n,pd,r)
   return(hit);
 }
 
+/* Assumption: know crosses plane:dont need to check for 'on' case */
+intersect_edge_coord_plane(v0,v1,w,r)
+FVECT v0,v1;
+int w;
+FVECT r;
+{
+  FVECT dv;
+  int wnext;
+  double t;
+
+  VSUB(dv,v1,v0);
+  t = -v0[w]/dv[w];
+  r[w] = 0.0;
+  wnext = (w+1)%3;
+  r[wnext] = v0[wnext] + dv[wnext]*t;
+  wnext = (w+2)%3;
+  r[wnext] = v0[wnext] + dv[wnext]*t;
+}
 
 int
 intersect_edge_plane(e0,e1,peq,pd,r)
@@ -319,7 +339,7 @@ FVECT p0,p1,p2;
     VSUB(p2,p2,p0);
     VSUB(np,np,p0);
     
-    p1[0] = VLEN(p1);
+    p1[0] = DOT(p1,x_axis);
     p1[1] = 0;
 
     d1 = DOT(p2,x_axis);
@@ -647,25 +667,41 @@ FVECT a1,a2,a3,b1,b2,b3;
   int which,test,n_set[2];
   int sides[2][3][3],i,j,inext,jnext;
   int tests[2][3];
-  FVECT n[2][3],p,avg[2];
+  FVECT n[2][3],p,avg[2],t1,t2,t3;
  
+#ifdef DEBUG
+    tri_normal(b1,b2,b3,p,FALSE);
+    if(DOT(p,b1) > 0)
+      {
+       VCOPY(t3,b1);
+       VCOPY(t2,b2);
+       VCOPY(t1,b3);
+      }
+    else
+#endif
+      {
+       VCOPY(t1,b1);
+       VCOPY(t2,b2);
+       VCOPY(t3,b3);
+      }
+
   /* Test the vertices of triangle a against the pyramid formed by triangle
      b and the origin. If any vertex of a is interior to triangle b, or
      if all 3 vertices of a are ON the edges of b,return TRUE. Remember
      the results of the edge normal and sidedness tests for later.
    */
- if(vertices_in_stri(a1,a2,a3,b1,b2,b3,&(n_set[0]),n[0],avg[0],sides[1]))
+ if(vertices_in_stri(a1,a2,a3,t1,t2,t3,&(n_set[0]),n[0],avg[0],sides[1]))
      return(TRUE);
   
- if(vertices_in_stri(b1,b2,b3,a1,a2,a3,&(n_set[1]),n[1],avg[1],sides[0]))
+ if(vertices_in_stri(t1,t2,t3,a1,a2,a3,&(n_set[1]),n[1],avg[1],sides[0]))
      return(TRUE);
 
 
-  set_sidedness_tests(b1,b2,b3,a1,a2,a3,tests[0],sides[0],n_set[1],n[1]);
+  set_sidedness_tests(t1,t2,t3,a1,a2,a3,tests[0],sides[0],n_set[1],n[1]);
   if(tests[0][0]&tests[0][1]&tests[0][2])
     return(FALSE);
 
-  set_sidedness_tests(a1,a2,a3,b1,b2,b3,tests[1],sides[1],n_set[0],n[0]);
+  set_sidedness_tests(a1,a2,a3,t1,t2,t3,tests[1],sides[1],n_set[0],n[0]);
   if(tests[1][0]&tests[1][1]&tests[1][2])
     return(FALSE);
 
@@ -871,7 +907,6 @@ FVECT a0,a1,b0,b1;
 }
 
 
-
 /* Find the normalized barycentric coordinates of p relative to
  * triangle v0,v1,v2. Return result in coord
  */
@@ -889,112 +924,36 @@ double coord[3];
  
 }
 
-bary_ith_child(coord,i)
-double coord[3];
- int i;
-{
- 
-  switch(i){
-  case 0:
-      /* update bary for child */
-      coord[0] = 2.0*coord[0]- 1.0;
-      coord[1] *= 2.0;
-      coord[2] *= 2.0;
-      break;
-  case 1:
-    coord[0] *= 2.0;
-    coord[1] = 2.0*coord[1]- 1.0;
-    coord[2] *= 2.0;
-    break;
-  case 2:
-    coord[0] *= 2.0;
-    coord[1] *= 2.0;
-    coord[2] = 2.0*coord[2]- 1.0;
-    break;
-  case 3:
-    coord[0] = 1.0 - 2.0*coord[0];
-    coord[1] = 1.0 - 2.0*coord[1];
-    coord[2] = 1.0 - 2.0*coord[2];
-    break;
-#ifdef DEBUG
-  default:
-    eputs("bary_ith_child():Invalid child\n");
-    break;
-#endif
-  }
-}
 
 
-int
-bary_child(coord)
-double coord[3];
-{
-  int i;
 
-  if(coord[0] > 0.5)
-  { 
-      /* update bary for child */
-      coord[0] = 2.0*coord[0]- 1.0;
-      coord[1] *= 2.0;
-      coord[2] *= 2.0;
-      return(0);
-  }
-  else
-    if(coord[1] > 0.5)
-    {
-      coord[0] *= 2.0;
-      coord[1] = 2.0*coord[1]- 1.0;
-      coord[2] *= 2.0;
-      return(1);
-    }
-    else
-      if(coord[2] > 0.5)
-      {
-	coord[0] *= 2.0;
-	coord[1] *= 2.0;
-	coord[2] = 2.0*coord[2]- 1.0;
-	return(2);
-      }
-      else
-	 {
-	   coord[0] = 1.0 - 2.0*coord[0];
-	   coord[1] = 1.0 - 2.0*coord[1];
-	   coord[2] = 1.0 - 2.0*coord[2];
-	   return(3);
-	 }
-}
-
-/* Coord was the ith child of the parent: set the coordinate
-   relative to the parent
-*/
 bary_parent(coord,i)
-double coord[3];
+BCOORD coord[3];
 int i;
 {
-
   switch(i) {
   case 0:
     /* update bary for child */
-    coord[0] = coord[0]*0.5 + 0.5;
-    coord[1] *= 0.5;
-    coord[2] *= 0.5;
+    coord[0] = (coord[0] >> 1) + MAXBCOORD4;
+    coord[1] >>= 1;
+    coord[2] >>= 1;
     break;
   case 1:
-    coord[0] *= 0.5;
-    coord[1]  = coord[1]*0.5 + 0.5;
-    coord[2] *= 0.5;
+    coord[0] >>= 1;
+    coord[1]  = (coord[1] >> 1) + MAXBCOORD4;
+    coord[2] >>= 1;
     break;
     
   case 2:
-    coord[0] *= 0.5;
-    coord[1] *= 0.5;
-    coord[2] = coord[2]*0.5 + 0.5;
+    coord[0] >>= 1;
+    coord[1] >>= 1;
+    coord[2] = (coord[2] >> 1) + MAXBCOORD4;
     break;
     
   case 3:
-    coord[0] = 0.5 - 0.5*coord[0];
-    coord[1] = 0.5 - 0.5*coord[1];
-    coord[2] = 0.5 - 0.5*coord[2];
+    coord[0] = MAXBCOORD4 - (coord[0] >> 1);
+    coord[1] = MAXBCOORD4 - (coord[1] >> 1);
+    coord[2] = MAXBCOORD4 - (coord[2] >> 1);
     break;
 #ifdef DEBUG
   default:
@@ -1005,7 +964,7 @@ int i;
 }
 
 bary_from_child(coord,child,next)
-double coord[3];
+BCOORD coord[3];
 int child,next;
 {
 #ifdef DEBUG
@@ -1025,167 +984,35 @@ int child,next;
 
   switch(child){
   case 0:
-    switch(next){
-    case 1:
-      coord[0] += 1.0;
-      coord[1] -= 1.0;
-      break;
-    case 2:
-      coord[0] += 1.0;
-      coord[2] -= 1.0;
-      break;
-    case 3:
-      coord[0] *= -1.0;
-      coord[1] = 1 - coord[1];
-      coord[2] = 1 - coord[2];
-      break;
-
-    }
-    break;
-  case 1:
-    switch(next){
-    case 0:
-      coord[0] -= 1.0;
-      coord[1] += 1.0;
-      break;
-    case 2:
-      coord[1] += 1.0;
-      coord[2] -= 1.0;
-      break;
-    case 3:
-      coord[0] = 1 - coord[0];
-      coord[1] *= -1.0;
-      coord[2] = 1 - coord[2];
-      break;
-    }
-    break;
-  case 2:
-    switch(next){
-    case 0:
-      coord[0] -= 1.0;
-      coord[2] += 1.0;
-      break;
-    case 1:
-      coord[1] -= 1.0;
-      coord[2] += 1.0;
-      break;
-    case 3:
-      coord[0] = 1 - coord[0];
-      coord[1] = 1 - coord[1];
-      coord[2] *= -1.0;
-      break;
-    }
-    break;
-  case 3:
-    switch(next){
-    case 0:
-      coord[0] *= -1.0;
-      coord[1] = 1 - coord[1];
-      coord[2] = 1 - coord[2];
-      break;
-    case 1:
-      coord[0] = 1 - coord[0];
-      coord[1] *= -1.0;
-      coord[2] = 1 - coord[2];
-      break;
-    case 2:
-      coord[0] = 1 - coord[0];
-      coord[1] = 1 - coord[1];
-      coord[2] *= -1.0;
-      break;
-    }
-    break;
-  }
-}
-
-
-baryi_parent(coord,i)
-BCOORD coord[3];
-int i;
-{
-
-  switch(i) {
-  case 0:
-    /* update bary for child */
-    coord[0] = (coord[0] >> 1) + MAXBCOORD2;
-    coord[1] >>= 1;
-    coord[2] >>= 1;
-    break;
-  case 1:
-    coord[0] >>= 1;
-    coord[1]  = (coord[1] >> 1) + MAXBCOORD2;
-    coord[2] >>= 1;
-    break;
-    
-  case 2:
-    coord[0] >>= 1;
-    coord[1] >>= 1;
-    coord[2] = (coord[2] >> 1) + MAXBCOORD2;
-    break;
-    
-  case 3:
-    coord[0] = MAXBCOORD2 - (coord[0] >> 1);
-    coord[1] = MAXBCOORD2 - (coord[1] >> 1);
-    coord[2] = MAXBCOORD2 - (coord[2] >> 1);
-    break;
-#ifdef DEBUG
-  default:
-    eputs("baryi_parent():Invalid child\n");
-    break;
-#endif
-  }
-}
-
-baryi_from_child(coord,child,next)
-BCOORD coord[3];
-int child,next;
-{
-#ifdef DEBUG
-  if(child <0 || child > 3)
-  {
-    eputs("baryi_from_child():Invalid child\n");
-    return;
-  }
-  if(next <0 || next > 3)
-  {
-    eputs("baryi_from_child():Invalid next\n");
-    return;
-  }
-#endif
-  if(next == child)
-    return;
-
-  switch(child){
-  case 0:
       coord[0] = 0;
-      coord[1] = MAXBCOORD - coord[1];
-      coord[2] = MAXBCOORD - coord[2];
+      coord[1] = MAXBCOORD2 - coord[1];
+      coord[2] = MAXBCOORD2 - coord[2];
       break;
   case 1:
-      coord[0] = MAXBCOORD - coord[0];
+      coord[0] = MAXBCOORD2 - coord[0];
       coord[1] = 0;
-      coord[2] = MAXBCOORD - coord[2];
+      coord[2] = MAXBCOORD2 - coord[2];
       break;
   case 2:
-      coord[0] = MAXBCOORD - coord[0];
-      coord[1] = MAXBCOORD - coord[1];
+      coord[0] = MAXBCOORD2 - coord[0];
+      coord[1] = MAXBCOORD2 - coord[1];
       coord[2] = 0;
     break;
   case 3:
     switch(next){
     case 0:
       coord[0] = 0;
-      coord[1] = MAXBCOORD - coord[1];
-      coord[2] = MAXBCOORD - coord[2];
+      coord[1] = MAXBCOORD2 - coord[1];
+      coord[2] = MAXBCOORD2 - coord[2];
       break;
     case 1:
-      coord[0] = MAXBCOORD - coord[0];
+      coord[0] = MAXBCOORD2 - coord[0];
       coord[1] = 0;
-      coord[2] = MAXBCOORD - coord[2];
+      coord[2] = MAXBCOORD2 - coord[2];
       break;
     case 2:
-      coord[0] = MAXBCOORD - coord[0];
-      coord[1] = MAXBCOORD - coord[1];
+      coord[0] = MAXBCOORD2 - coord[0];
+      coord[1] = MAXBCOORD2 - coord[1];
       coord[2] = 0;
       break;
     }
@@ -1194,46 +1021,46 @@ int child,next;
 }
 
 int
-baryi_child(coord)
+bary_child(coord)
 BCOORD coord[3];
 {
   int i;
 
-  if(coord[0] > MAXBCOORD2)
+  if(coord[0] > MAXBCOORD4)
   { 
       /* update bary for child */
-      coord[0] = (coord[0]<< 1) - MAXBCOORD;
+      coord[0] = (coord[0]<< 1) - MAXBCOORD2;
       coord[1] <<= 1;
       coord[2] <<= 1;
       return(0);
   }
   else
-    if(coord[1] > MAXBCOORD2)
+    if(coord[1] > MAXBCOORD4)
     {
       coord[0] <<= 1;
-      coord[1] = (coord[1] << 1) - MAXBCOORD;
+      coord[1] = (coord[1] << 1) - MAXBCOORD2;
       coord[2] <<= 1;
       return(1);
     }
     else
-      if(coord[2] > MAXBCOORD2)
+      if(coord[2] > MAXBCOORD4)
       {
 	coord[0] <<= 1;
 	coord[1] <<= 1;
-	coord[2] = (coord[2] << 1) - MAXBCOORD;
+	coord[2] = (coord[2] << 1) - MAXBCOORD2;
 	return(2);
       }
       else
 	 {
-	   coord[0] = MAXBCOORD - (coord[0] << 1);
-	   coord[1] = MAXBCOORD - (coord[1] << 1);
-	   coord[2] = MAXBCOORD - (coord[2] << 1);
+	   coord[0] = MAXBCOORD2 - (coord[0] << 1);
+	   coord[1] = MAXBCOORD2 - (coord[1] << 1);
+	   coord[2] = MAXBCOORD2 - (coord[2] << 1);
 	   return(3);
 	 }
 }
 
 int
-baryi_nth_child(coord,i)
+bary_nth_child(coord,i)
 BCOORD coord[3];
 int i;
 {
@@ -1241,219 +1068,27 @@ int i;
   switch(i){
   case 0:
     /* update bary for child */
-    coord[0] = (coord[0]<< 1) - MAXBCOORD;
+    coord[0] = (coord[0]<< 1) - MAXBCOORD2;
     coord[1] <<= 1;
     coord[2] <<= 1;
     break;
   case 1:
     coord[0] <<= 1;
-    coord[1] = (coord[1] << 1) - MAXBCOORD;
+    coord[1] = (coord[1] << 1) - MAXBCOORD2;
     coord[2] <<= 1;
     break;
   case 2:
     coord[0] <<= 1;
     coord[1] <<= 1;
-    coord[2] = (coord[2] << 1) - MAXBCOORD;
+    coord[2] = (coord[2] << 1) - MAXBCOORD2;
     break;
   case 3:
-    coord[0] = MAXBCOORD - (coord[0] << 1);
-    coord[1] = MAXBCOORD - (coord[1] << 1);
-    coord[2] = MAXBCOORD - (coord[2] << 1);
+    coord[0] = MAXBCOORD2 - (coord[0] << 1);
+    coord[1] = MAXBCOORD2 - (coord[1] << 1);
+    coord[2] = MAXBCOORD2 - (coord[2] << 1);
     break;
   }
 }
-
-
-baryi_children(coord,i,in_tri,rcoord,rin_tri)
-BCOORD coord[3][3];
-int i;
-int in_tri[3];
-BCOORD rcoord[3][3];
-int rin_tri[3];
-{
-  int j;
-
-  for(j=0; j< 3; j++)
-  {
-    if(!in_tri[j])
-    {
-      rin_tri[j]=0;
-      continue;
-    }
-    
-    if(i != 3)
-    {
-      if(coord[j][i] < MAXBCOORD2)
-	{
-	  rin_tri[j] = 0;
-	  continue;
-	}
-    }
-    else
-      if( !(coord[j][0] <= MAXBCOORD2 && coord[j][1] <= MAXBCOORD2 &&
-	    coord[j][2] <= MAXBCOORD2))
-	{
-	  rin_tri[j] = 0;
-	  continue;
-	}
-      
-    rin_tri[j]=1;
-    VCOPY(rcoord[j],coord[j]);
-    baryi_nth_child(rcoord[j],i);
-  }
-
-}
-
-convert_dtol(b,bi)
-double b[3];
-BCOORD bi[3];
-{
-  int i;
-
-  for(i=0; i < 2;i++)
-  {
-
-    if(b[i] <= 0.0)
-    {
-      bi[i]= 0;
-    }
-    else
-      if(b[i] >= 1.0)
-      {
-	bi[i]= MAXBCOORD;
-      }
-      else
-	bi[i] = (BCOORD)(b[i]*MAXBCOORD);
-  }
-  bi[2] = bi[0] +  bi[1];
-  if(bi[2] > MAXBCOORD)
-  {
-      bi[2] = 0;
-      bi[1] = MAXBCOORD - bi[0];
-  }
-  else
-    bi[2] = MAXBCOORD - bi[2];
-
-}
-
-/* convert barycentric coordinate b in [-eps,1+eps] to [0,MAXLONG],
-   dir unbounded to [-MAXLONG,MAXLONG]
- */
-bary_dtol(b,db,bi,dbi,t,w)
-double b[3],db[3][3];
-BCOORD bi[3];
-BDIR dbi[3][3];
-TINT t[3];
-int w;
-{
-  int i,id,j,k;
-  double d;
-
-  convert_dtol(b,bi);
-
-  for(j=w; j< 3; j++)
-  {
-    if(t[j] == HUGET)
-    {
-      max_index(db[j],&d);
-      for(i=0; i< 3; i++)
-	dbi[j][i] = (BDIR)(db[j][i]/d*MAXBDIR);
-      break;
-    }
-    else
-    {
-      for(i=0; i< 3; i++)
-	  dbi[j][i] = (BDIR)(db[j][i]*MAXBDIR);
-    }
-  }
-}
-
-
-/* convert barycentric coordinate b in [-eps,1+eps] to [0,MAXLONG],
-   dir unbounded to [-MAXLONG,MAXLONG]
- */
-bary_dtol_new(b,db,bi,boi,dbi,t)
-double b[4][3],db[3][3];
-BCOORD bi[3],boi[3][3];
-BDIR dbi[3][3];
-int t[3];
-{
-  int i,id,j,k;
-  double d;
-
-  convert_dtol(b[3],bi);
-
-  for(j=0; j<3;j++)
-  {
-    if(t[j] != 1)
-      continue;
-    convert_dtol(b[j],boi[j]);
-  }
-  for(j=0; j< 3; j++)
-  {
-    k = (j+1)%3;
-    if(t[k]==0)
-      continue;
-    if(t[k] == -1)
-      { 
-	max_index(db[j],&d);
-	for(i=0; i< 3; i++)
-   	  dbi[j][i] = (BDIR)(db[j][i]/d*MAXBDIR);
-	t[k] = 0;
-      }
-    else
-      if(t[j] != 1)
-	for(i=0; i< 3; i++)
-	  dbi[j][i] = (BDIR)(db[j][i]*MAXBDIR);
-    else
-      for(i=0; i< 3; i++)
-	dbi[j][i] = boi[k][i] - boi[j][i];
-    
-  }
-}
-
-
-bary_dtolb(b,bi,in_tri)
-double b[3][3];
-BCOORD bi[3][3];
-int in_tri[3];
-{
-  int i,j;
-
-  for(j=0; j<3;j++)
-  {
-    if(!in_tri[j])
-      continue;
-    for(i=0; i < 2;i++)
-    {
-    if(b[j][i] <= 0.0)
-    {
-      bi[j][i]= 0;
-    }
-    else
-      if(b[j][i] >= 1.0)
-      {
-	bi[j][i]= MAXBCOORD;
-      }
-      else
-	bi[j][i] = (BCOORD)(b[j][i]*MAXBCOORD);
-    }
-    bi[j][2] = MAXBCOORD - bi[j][0] - bi[j][1]; 
-    if(bi[j][2] < 0)
-      {
-	bi[j][2] = 0;
-	bi[j][1] = MAXBCOORD - bi[j][0];
-      }
-  }
-}
-
-
-
-
-
-
-
-
 
 
 

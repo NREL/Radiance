@@ -38,7 +38,7 @@ LIST *push_data();
 int  pop_data();
 LIST *add_data_to_circular_list();
 int remove_from_list();
-
+LIST *add_data();
 
 
 

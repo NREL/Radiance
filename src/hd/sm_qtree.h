@@ -20,7 +20,13 @@
  *		< -1:	it is an index to a set of objects
  */
 #include "object.h"
+typedef struct _FUNC {
+    int (*func)();
+    int *argptr;
+}FUNC;
 
+#define F_FUNC(f) (f.func)
+#define F_ARGS(f) (f.argptr)
 #define  QUADTREE		int
 
 #define  EMPTY		(-1)
@@ -72,11 +78,11 @@
 #define MAXCSET          2*QT_MAXSET
 #define QT_MAXCSET       MAXCSET
 #ifndef QT_SET_THRESHOLD
-#define QT_SET_THRESHOLD 30  
+#define QT_SET_THRESHOLD 64  
 #endif
 
 #ifndef QT_MAX_LEVELS
-#define QT_MAX_LEVELS     12
+#define QT_MAX_LEVELS     10
 #endif
 
 #define QT_FILL_THRESHOLD 2
@@ -93,9 +99,9 @@
 #define QT_FLAG_SET_MODIFIED(f)   ((f) |= QT_MODIFIED)
 
 #define qtSubdivide(qt) (qt = qtAlloc(),QT_CLEAR_CHILDREN(qt))
-#define qtSubdivide_tri(v0,v1,v2,a,b,c) (EDGE_MIDPOINT_VEC3(a,v0,v1), \
-					 EDGE_MIDPOINT_VEC3(b,v1,v2), \
-					 EDGE_MIDPOINT_VEC3(c,v2,v0))
+#define qtSubdivide_tri(v0,v1,v2,a,b,c) (EDGE_MIDPOINT(a,v0,v1), \
+					 EDGE_MIDPOINT(b,v1,v2), \
+					 EDGE_MIDPOINT(c,v2,v0))
  
 extern QUADTREE  qtnewleaf(), qtaddelem(), qtdelelem();
 
@@ -113,6 +119,17 @@ extern OBJECT	*qtqueryset();
 
 #define qtinset(qt,id)	inset(qtqueryset(qt),id)
 #define qtgetset(os,qt)	setcopy(os,qtqueryset(qt))
+
+
+#define SIDES_GTR(b0,b1,b2,s0,s1,s2,a,b,c) \
+    (s0 = ((b0[0] > a?4:0) | (b1[0] > a?2:0) | (b2[0] > a?1:0)), \
+     s1 = ((b0[1] > b?4:0) | (b1[1] > b?2:0) | (b2[1] > b?1:0)), \
+     s2 = ((b0[2] > c?4:0) | (b1[2] > c?2:0) | (b2[2] > c?1:0)))
+
+#define SIDES_LESS(b0,b1,b2,s0,s1,s2,a,b,c) \
+    (s0 = ((b0[0] < a?4:0) | (b1[0] < a?2:0) | (b2[0] < a?1:0)), \
+     s1 = ((b0[1] < b?4:0) | (b1[1] < b?2:0) | (b2[1] < b?1:0)), \
+     s2 = ((b0[2] < c?4:0) | (b1[2] < c?2:0) | (b2[2] < c?1:0)))
 
 /* 
 QUADTREE qtRoot_point_locate(qt,q0,q1,q2,peq,pt,r0,r1,r2)

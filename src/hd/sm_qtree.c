@@ -110,7 +110,7 @@ qtDone()			/* free EVERYTHING */
 }
 
 QUADTREE
-qtLocate_leaf(qt,bcoord)
+qtLocate(qt,bcoord)
 QUADTREE qt;
 BCOORD bcoord[3];
 {
@@ -118,361 +118,26 @@ BCOORD bcoord[3];
 
   if(QT_IS_TREE(qt))
   {  
-    i = baryi_child(bcoord);
+    i = bary_child(bcoord);
 
-    return(qtLocate_leaf(QT_NTH_CHILD(qt,i),bcoord));
+    return(qtLocate(QT_NTH_CHILD(qt,i),bcoord));
   }
   else
     return(qt);
 }
-
-/*
-   Return the quadtree node containing pt. It is assumed that pt is in
-   the root node qt with ws vertices q0,q1,q2 and plane equation peq.
-*/
-QUADTREE
-qtRoot_point_locate(qt,q0,q1,q2,peq,pt)
-QUADTREE qt;
-FVECT q0,q1,q2;
-FPEQ peq;
-FVECT pt;
-{
-    int i,x,y;
-    FVECT i_pt;
-    double bcoord[3];
-    BCOORD bcoordi[3];
-
-     /* Will return lowest level triangle containing point: It the
-       point is on an edge or vertex: will return first associated
-       triangle encountered in the child traversal- the others can
-       be derived using triangle adjacency information
-    */
-    if(QT_IS_TREE(qt))
-    {  
-      /* Find the intersection point */
-      intersect_vector_plane(pt,peq,NULL,i_pt);
-
-      x = FP_X(peq);
-      y = FP_Y(peq);
-      /* Calculate barycentric coordinates of i_pt */
-      bary2d(q0[x],q0[y],q1[x],q1[y],q2[x],q2[y],i_pt[x],i_pt[y],bcoord);
-      
-      /* convert to integer coordinate */
-      convert_dtol(bcoord,bcoordi);
-
-      i = baryi_child(bcoordi);
-
-      return(qtLocate_leaf(QT_NTH_CHILD(qt,i),bcoordi));
-    }
-    else
-      return(qt);
-}
-
-
-
-
-/* for triangle v0-v1-v2- returns a,b,c: children are:
-
-	v2                     0: v0,a,c
-        /\                     1: a,v1,b                  
-       /2 \                    2: c,b,v2
-     c/____\b                  3: b,c,a
-     /\    /\  
-    /0 \3 /1 \
-  v0____\/____\v1
-        a
- */
-
-
-qtNth_child_tri(v0,v1,v2,a,b,c,i,r0,r1,r2)
-FVECT v0,v1,v2;
-FVECT a,b,c;
-int i;
-FVECT r0,r1,r2;
-{
-
-  if(!a)
-  {
-    /* Caution: r's must not be equal to v's:will be incorrect */
-    switch(i){
-    case 0:  
-      VCOPY(r0,v0);
-      EDGE_MIDPOINT_VEC3(r1,v0,v1);
-      EDGE_MIDPOINT_VEC3(r2,v2,v0);
-      break;
-    case 1:  
-      EDGE_MIDPOINT_VEC3(r0,v0,v1);
-      VCOPY(r1,v1);    
-      EDGE_MIDPOINT_VEC3(r2,v1,v2);
-      break;
-    case 2:  
-      EDGE_MIDPOINT_VEC3(r0,v2,v0);
-      EDGE_MIDPOINT_VEC3(r1,v1,v2);
-      VCOPY(r2,v2);
-      break;
-    case 3:  
-      EDGE_MIDPOINT_VEC3(r0,v1,v2);
-      EDGE_MIDPOINT_VEC3(r1,v2,v0);
-      EDGE_MIDPOINT_VEC3(r2,v0,v1);
-      break;
-    }
-  }
-  else
-  {
-    switch(i){
-    case 0:  
-      VCOPY(r0,v0); VCOPY(r1,a);    VCOPY(r2,c);
-      break;
-    case 1:  
-      VCOPY(r0,a); VCOPY(r1,v1);    VCOPY(r2,b);
-      break;
-    case 2:  
-      VCOPY(r0,c); VCOPY(r1,b);    VCOPY(r2,v2);
-      break;
-    case 3:  
-      VCOPY(r0,b); VCOPY(r1,c);    VCOPY(r2,a);
-      break;
-    }
-  }
-}
-
-/* Add triangle "id" to all leaf level cells that are children of 
-quadtree pointed to by "qtptr" with cell vertices "t1,t2,t3"
-that it overlaps (vertex and edge adjacencies do not count
-as overlapping). If the addition of the triangle causes the cell to go over
-threshold- the cell is split- and the triangle must be recursively inserted
-into the new child cells: it is assumed that "v1,v2,v3" are normalized
-*/
-
-QUADTREE
-qtRoot_add_tri(qt,q0,q1,q2,t0,t1,t2,id,n)
-QUADTREE qt;
-FVECT q0,q1,q2;
-FVECT t0,t1,t2;
-int id,n;
-{
-  if(stri_intersect(q0,q1,q2,t0,t1,t2))
-    qt = qtAdd_tri(qt,q0,q1,q2,t0,t1,t2,id,n);
-
-  return(qt);
-}
-
-QUADTREE
-qtRoot_remove_tri(qt,q0,q1,q2,t0,t1,t2,id,n)
-QUADTREE qt;
-FVECT q0,q1,q2;
-FVECT t0,t1,t2;
-int id,n;
-{
-
-  if(stri_intersect(q0,q1,q2,t0,t1,t2))
-    qt = qtRemove_tri(qt,q0,q1,q2,t0,t1,t2,id,n);
-  return(qt);
-}
-
-
-QUADTREE
-qtAdd_tri(qt,q0,q1,q2,t0,t1,t2,id,n)
-QUADTREE qt;
-FVECT q0,q1,q2;
-FVECT t0,t1,t2;
-int id;
-int n;
-{
-  FVECT a,b,c;
-  OBJECT tset[QT_MAXSET+1],*optr,*tptr;
-  FVECT r0,r1,r2;
-  int i;
-
-  /* if this is tree: recurse */
-  if(QT_IS_TREE(qt))
-  {
-    QT_SET_FLAG(qt);
-    n++;
-    qtSubdivide_tri(q0,q1,q2,a,b,c);
-
-    if(stri_intersect(t0,t1,t2,q0,a,c))
-      QT_NTH_CHILD(qt,0) = qtAdd_tri(QT_NTH_CHILD(qt,0),q0,a,c,t0,t1,t2,id,n);
-    if(stri_intersect(t0,t1,t2,a,q1,b))
-       QT_NTH_CHILD(qt,1) = qtAdd_tri(QT_NTH_CHILD(qt,1),a,q1,b,t0,t1,t2,id,n);
-    if(stri_intersect(t0,t1,t2,c,b,q2))
-      QT_NTH_CHILD(qt,2) = qtAdd_tri(QT_NTH_CHILD(qt,2),c,b,q2,t0,t1,t2,id,n);
-    if(stri_intersect(t0,t1,t2,b,c,a))
-      QT_NTH_CHILD(qt,3) = qtAdd_tri(QT_NTH_CHILD(qt,3),b,c,a,t0,t1,t2,id,n);
-    return(qt);
-  }
-  else
-  {
-      /* If this leave node emptry- create a new set */
-      if(QT_IS_EMPTY(qt))
-	qt = qtaddelem(qt,id);
-      else
-      {
-	  /* If the set is too large: subdivide */
-	optr = qtqueryset(qt);
-
-	if(QT_SET_CNT(optr) < QT_SET_THRESHOLD)
-	  qt = qtaddelem(qt,id);
-	else
-	{
-	  if (n < QT_MAX_LEVELS)
-          {
-	    /* If set size exceeds threshold: subdivide cell and
-	       reinsert set tris into cell
-	       */
-	    /* CAUTION:If QT_SET_THRESHOLD << QT_MAXSET, and dont add
-	       more than a few triangles before expanding: then are safe here
-	       otherwise must check to make sure set size is < MAXSET,
-	       or  qtgetset could overflow os.
-	       */
-	    tptr = qtqueryset(qt);
-	    if(QT_SET_CNT(tptr) > QT_MAXSET)
-	      tptr = (OBJECT *)malloc((QT_SET_CNT(tptr)+1)*sizeof(OBJECT));
-	    else
-	      tptr = tset;
-	    if(!tptr)
-	      goto memerr;
-
-	    qtgetset(tptr,qt);	
-	    n++;
-	    qtfreeleaf(qt);
-	    qtSubdivide(qt);
-	    qt = qtAdd_tri(qt,q0,q1,q2,t0,t1,t2,id,n);
-
-	    for(optr = QT_SET_PTR(tptr),i = QT_SET_CNT(tptr); i > 0; i--)
-	      {
-		id = QT_SET_NEXT_ELEM(optr);
-		if(!qtTri_from_id(id,r0,r1,r2))
-		  continue;
-		qt  = qtAdd_tri(qt,q0,q1,q2,r0,r1,r2,id,n);
-	      }
-	    if(tptr != tset)
-	      free(tptr);
-	    }
-	    else
-		qt = qtaddelem(qt,id);
-	}
-      }
-  }
-  return(qt);
-memerr:
-    error(SYSTEM,"qtAdd_tri():Unable to allocate memory");
-}
-
-
-QUADTREE
-qtRemove_tri(qt,id,q0,q1,q2,t0,t1,t2)
-QUADTREE qt;
-int id;
-FVECT q0,q1,q2;
-FVECT t0,t1,t2;
-{
-  FVECT a,b,c;
-  
-  /* test if triangle (t0,t1,t2) overlaps cell triangle (v0,v1,v2) */
-  if(!stri_intersect(t0,t1,t2,q0,q1,q2))
-    return(qt);
-
-  /* if this is tree: recurse */
-  if(QT_IS_TREE(qt))
-  {
-    qtSubdivide_tri(q0,q1,q2,a,b,c);
-    QT_NTH_CHILD(qt,0) = qtRemove_tri(QT_NTH_CHILD(qt,0),id,t0,t1,t2,q0,a,c);
-    QT_NTH_CHILD(qt,1) = qtRemove_tri(QT_NTH_CHILD(qt,1),id,t0,t1,t2,a,q1,b);
-    QT_NTH_CHILD(qt,2) = qtRemove_tri(QT_NTH_CHILD(qt,2),id,t0,t1,t2,c,b,q2);
-    QT_NTH_CHILD(qt,3) = qtRemove_tri(QT_NTH_CHILD(qt,3),id,t0,t1,t2,b,c,a);
-    return(qt);
-  }
-  else
-  {
-      if(QT_IS_EMPTY(qt))
-      {
-#ifdef DEBUG	 
-	  eputs("qtRemove_tri(): triangle not found\n");
-#endif
-      }
-      /* remove id from set */
-      else
-      {
-	  if(!qtinset(qt,id))
-	  {
-#ifdef DEBUG	      
-	      eputs("qtRemove_tri(): tri not in set\n");
-#endif
-	  }
-	  else
-	    qt = qtdelelem(qt,id);
-      }
-  }
-  return(qt);
-}
-
-
-QUADTREE
-qtVisit_tri_interior(qt,q0,q1,q2,t0,t1,t2,n0,n1,n2,n,func,f,argptr)
-   QUADTREE qt;
-   FVECT q0,q1,q2;
-   FVECT t0,t1,t2;
-   FVECT n0,n1,n2;
-   int n;
-   int (*func)(),*f;
-   int *argptr;
-{
-    FVECT a,b,c;
-    
-    /* If qt Flag set, or qt vertices interior to t0t1t2-descend */
-tree_modified:
-
-    if(QT_IS_TREE(qt))
-    {  
-	if(QT_IS_FLAG(qt) ||  point_in_stri_n(n0,n1,n2,q0))
-	{
-	    QT_SET_FLAG(qt);
-	    qtSubdivide_tri(q0,q1,q2,a,b,c);
-	    /* descend to children */
-	    QT_NTH_CHILD(qt,0) = qtVisit_tri_interior(QT_NTH_CHILD(qt,0),
-			          q0,a,c,t0,t1,t2,n0,n1,n2,n+1,func,f,argptr);
-	    QT_NTH_CHILD(qt,1) = qtVisit_tri_interior(QT_NTH_CHILD(qt,1),
-			          a,q1,b,t0,t1,t2,n0,n1,n2,n+1,func,f,argptr);
-	    QT_NTH_CHILD(qt,2) = qtVisit_tri_interior(QT_NTH_CHILD(qt,2),
-			          c,b,q2,t0,t1,t2,n0,n1,n2,n+1,func,f,argptr);
-	    QT_NTH_CHILD(qt,3) = qtVisit_tri_interior(QT_NTH_CHILD(qt,3),
-			          b,c,a,t0,t1,t2,n0,n1,n2,n+1,func,f,argptr);
-	}
-    }
-    else
-      if((!QT_IS_EMPTY(qt) && QT_LEAF_IS_FLAG(qt)) ||
-	 point_in_stri_n(n0,n1,n2,q0))
-      {
-	func(&qt,f,argptr,q0,q1,q2,t0,t1,t2,n);
-	if(QT_FLAG_IS_MODIFIED(*f))
-       {
-	 QT_SET_FLAG(qt);
-	 goto tree_modified;
-       }
-	if(QT_IS_LEAF(qt))
-	   QT_LEAF_SET_FLAG(qt);
-	else
-	  if(QT_IS_TREE(qt))
-	    QT_SET_FLAG(qt);
-      }
-    return(qt);
-}
-
-
 
 int
-move_to_nbri(b,db0,db1,db2,tptr)
+move_to_nbr(b,db0,db1,db2,tptr)
 BCOORD b[3];
 BDIR db0,db1,db2;
-TINT *tptr;
+double *tptr;
 {
-  TINT t,dt;
+  double t,dt;
   BCOORD bc;
   int nbr;
   
   nbr = -1;
-  *tptr = 0;
+  *tptr = 0.0;
   /* Advance to next node */
   if(b[0]==0 && db0 < 0)
     return(0);
@@ -480,19 +145,16 @@ TINT *tptr;
     return(1);
   if(b[2]==0 && db2 < 0)
     return(2);
-
   if(db0 < 0)
    {
-     bc = b[0]<<SHIFT_MAXBCOORD;
-     t = bc/-db0;
+     t = ((double)b[0])/-db0;
      nbr = 0;
    }
   else
-    t = HUGET;
+    t = MAXFLOAT;
   if(db1 < 0)
   {
-     bc = b[1] <<SHIFT_MAXBCOORD;
-     dt = bc/-db1;
+     dt = ((double)b[1])/-db1;
     if( dt < t)
     {
       t = dt;
@@ -501,8 +163,7 @@ TINT *tptr;
   }
   if(db2 < 0)
   {
-     bc = b[2] << SHIFT_MAXBCOORD;
-     dt = bc/-db2;
+     dt = ((double)b[2])/-db2;
        if( dt < t)
       {
 	t = dt;
@@ -513,52 +174,36 @@ TINT *tptr;
   return(nbr);
 }
 
-QUADTREE
-qtVisit_tri_edges(qt,b,db0,db1,db2,db,wptr,nextptr,t,sign,sfactor,func,f,argptr)
+qtTrace_ray(qt,b,db0,db1,db2,nextptr,sign,sfactor,func,f)
    QUADTREE qt;
    BCOORD b[3];
-   BDIR db0,db1,db2,db[3][3];
-   int *wptr,*nextptr;
-   TINT t[3];
+   BDIR db0,db1,db2;
+   int *nextptr;
    int sign,sfactor;
-   int (*func)();
-   int *f,*argptr;
+   FUNC func;
+   int *f;
 {
     int i,found;
     QUADTREE child;
     int nbr,next,w;
-    TINT t_g,t_l,t_i,l;
+    double t;
 
     if(QT_IS_TREE(qt))
     {
       /* Find the appropriate child and reset the coord */
-      i = baryi_child(b);
-
-      QT_SET_FLAG(qt);
+      i = bary_child(b);
 
       for(;;)
       {
-	w = *wptr;
 	child = QT_NTH_CHILD(qt,i);
 	if(i != 3)
-	  QT_NTH_CHILD(qt,i) = 
-	    qtVisit_tri_edges(child,b,db0,db1,db2,db,wptr,nextptr,t,sign,
-				sfactor+1,func,f,argptr);
+	  qtTrace_ray(child,b,db0,db1,db2,nextptr,sign,sfactor+1,func,f);
 	else
 	  /* If the center cell- must flip direction signs */
-	  QT_NTH_CHILD(qt,i) = 
-	    qtVisit_tri_edges(child,b,-db0,-db1,-db2,db,wptr,nextptr,t,1-sign,
-				  sfactor+1,func,f,argptr);
+	  qtTrace_ray(child,b,-db0,-db1,-db2,nextptr,1-sign,sfactor+1,func,f);
 
 	if(QT_FLAG_IS_DONE(*f))
-	  return(qt);
-	if(*wptr != w)
-	{
-	  w = *wptr;
-	  db0 = db[w][0];db1 = db[w][1];db2 = db[w][2];
-	  if(sign)
-	    {  db0 *= -1;db1 *= -1; db2 *= -1;}
-	}
+	  return;
 	/* If in same block: traverse */
 	if(i==3)
 	  next = *nextptr;
@@ -568,11 +213,11 @@ qtVisit_tri_edges(qt,b,db0,db1,db2,db,wptr,nextptr,t,sign,sfactor,func,f,argptr)
 	  else
 	 {
 	   /* reset the barycentric coordinates in the parents*/
-	   baryi_parent(b,i);
+	   bary_parent(b,i);
 	   /* Else pop up to parent and traverse from there */
 	   return(qt);
 	 }
-	baryi_from_child(b,i,next);
+	bary_from_child(b,i,next);
 	i = next;
       }
     }
@@ -582,265 +227,974 @@ qtVisit_tri_edges(qt,b,db0,db1,db2,db,wptr,nextptr,t,sign,sfactor,func,f,argptr)
        if(Pick_cnt < 500)
 	  Pick_q[Pick_cnt++]=qt;
 #endif;
-       func(&qt,f,argptr);
+       F_FUNC(func)(qt,F_ARGS(func),f);
      if(QT_FLAG_IS_DONE(*f))
-     {
-       if(!QT_IS_EMPTY(qt))
-	 QT_LEAF_SET_FLAG(qt);
-       return(qt);
-     }
-     
-     if(!QT_IS_EMPTY(qt))
-       QT_LEAF_SET_FLAG(qt);
+       return;
      /* Advance to next node */
-     w = *wptr;
-     while(1)
-       {
-	 nbr = move_to_nbri(b,db0,db1,db2,&t_i);
-	 
-	 t_g = t_i >> sfactor;
-	 	 
-	 if(t_g >= t[w])
-	 {
-	   if(w == 2)
-	   {
-	     QT_FLAG_SET_DONE(*f);
-	     return(qt);
-	   }
-	   /* The edge fits in the cell- therefore the result of shifting
-	      db by sfactor is guaranteed to be less than MAXBCOORD
-	      */
-	   /* Caution: (t[w]*db) must occur before divide by MAXBCOORD
-	      since t[w] will always be < MAXBCOORD
-	      */
-	   l = t[w] << sfactor;
-	   /* NOTE: Change divides to Shift and multiply by sign*/
-	   b[0] += (l*db0)/MAXBCOORD;
-	   b[1] += (l*db1)/MAXBCOORD;
-	   b[2] += (l*db2)/MAXBCOORD;
-	   w++;
-	   db0 = db[w][0]; db1 = db[w][1]; db2 = db[w][2];
-	   if(sign)
-	     {  db0 *= -1;db1 *= -1; db2 *= -1;}
-	 }
-	 else
-	 {
-	   /* Caution: (t_i*db) must occur before divide by MAXBCOORD
-	      since t_i will always be < MAXBCOORD*/
-	   /* NOTE: Change divides to Shift and  by sign*/
-	   b[0] += (t_i *db0) / MAXBCOORD;
-	   b[1] += (t_i *db1) / MAXBCOORD;
-	   b[2] += (t_i *db2) / MAXBCOORD;
-	   
-	   t[w] -= t_g;
-	   *wptr = w;
-	   *nextptr = nbr;
-	   return(qt);
-	 }
-       }
-   }    
-}
+     nbr = move_to_nbr(b,db0,db1,db2,&t);
 
-
-QUADTREE
-qtRoot_visit_tri_edges(qt,q0,q1,q2,peq,tri,i_pt,wptr,nextptr,func,f,argptr)
-   QUADTREE qt;
-   FVECT q0,q1,q2;
-   FPEQ  peq;
-   FVECT tri[3],i_pt;
-   int *wptr,*nextptr;
-   int (*func)();
-   int *f,*argptr;
-{
-  int x,y,z,w,i,j,first;
-  QUADTREE child;
-  FVECT c,d,v[3];
-  double b[4][3],db[3][3],et[3],exit_pt;
-  BCOORD bi[3];
-  TINT t[3];
-  BDIR dbi[3][3];
-  
- first =0;
-  w = *wptr;
-  if(w==-1)
-  {
-    first = 1;
-    *wptr = w = 0;
-  }
-  /* Project the origin onto the root node plane */
-
-  t[0] = t[1] = t[2] = 0;
-  /* Find the intersection point of the origin */
-  /* map to 2d by dropping maximum magnitude component of normal */
-
-  x = FP_X(peq);
-  y = FP_Y(peq);
-  z = FP_Z(peq);
-  /* Calculate barycentric coordinates for current vertex */
-  if(!first)
-    bary2d(q0[x],q0[y],q1[x],q1[y],q2[x],q2[y],i_pt[x],i_pt[y],b[3]);  
-  else
-  /* Just starting: b[0] is the origin point: guaranteed to be valid b*/
-  {
-    intersect_vector_plane(tri[0],peq,&(et[0]),v[0]);
-    bary2d(q0[x],q0[y],q1[x],q1[y],q2[x],q2[y],v[0][x],v[0][y],b[0]);  
-    VCOPY(b[3],b[0]);
-  }
-
-  j = (w+1)%3;
-  intersect_vector_plane(tri[j],peq,&(et[j]),v[j]);
-  bary2d(q0[x],q0[y],q1[x],q1[y],q2[x],q2[y],v[j][x],v[j][y],b[j]);  
-  if(et[j] < 0.0)
-  {
-      VSUB(db[w],b[3],b[j]);
-      t[w] = HUGET;
-  }
-  else
- {
-   /* NOTE: for stability: do not increment with ipt- use full dir and
-      calculate t: but for wrap around case: could get same problem? 
-      */
-   VSUB(db[w],b[j],b[3]);
-   /* Check if the point is out side of the triangle: if so t[w] =HUGET */
-   if((fabs(b[j][0])>(FTINY+1.0)) ||(fabs(b[j][1])>(FTINY+1.0)) ||
-      (fabs(b[j][2])>(FTINY+1.0))||(b[j][0] <-FTINY) ||
-      (b[j][1]<-FTINY) ||(b[j][2]<-FTINY))
-     t[w] = HUGET;
-   else
-   {
-       /* The next point is in the triangle- so db values will be in valid
-	  range and t[w]= MAXT
-	*/  
-       t[w] = MAXT;
-       if(j != 0)
-	 for(;j < 3;j++)
-	 {
-	   i = (j+1)%3;
-	   if(!first || i != 0)
-	   {
-	     intersect_vector_plane(tri[i],peq,&(et[i]),v[i]);
-	     bary2d(q0[x],q0[y],q1[x],q1[y],q2[x],q2[y],v[i][x],
-		    v[i][y],b[i]);
-	   }
-	   if(et[i] < 0.0)
-	   {
-	     VSUB(db[j],b[j],b[i]);
-	     t[j] = HUGET;
-	     break;
-	   }
-	   else
-	   {
-	     VSUB(db[j],b[i],b[j]);
-	     if((fabs(b[j][0])>(FTINY+1.0))||(fabs(b[j][1])>(FTINY+1.0)) ||
-		(fabs(b[j][2])>(FTINY+1.0))||(b[i][0] <-FTINY) ||
-		(b[i][1]<-FTINY) ||(b[i][2]<-FTINY))
-	       {
-		 t[j] = HUGET;
-		 break;
-	       }
-	     else
-	       t[j] = MAXT;
-	   }
-	 }
-   }
- }
-  bary_dtol(b[3],db,bi,dbi,t,w);
-  
-  /* trace the ray starting with this node */
-  qt = qtVisit_tri_edges(qt,bi,dbi[w][0],dbi[w][1],dbi[w][2],
-		     dbi,wptr,nextptr,t,0,0,func,f,argptr);
-  if(!QT_FLAG_IS_DONE(*f))
-  {
-    b[3][0] = (double)bi[0]/(double)MAXBCOORD;
-    b[3][1] = (double)bi[1]/(double)MAXBCOORD;
-    b[3][2] = (double)bi[2]/(double)MAXBCOORD;
-    i_pt[x] = b[3][0]*q0[x] + b[3][1]*q1[x] + b[3][2]*q2[x];
-    i_pt[y] = b[3][0]*q0[y] + b[3][1]*q1[y] + b[3][2]*q2[y];
-    i_pt[z] = (-FP_N(peq)[x]*i_pt[x] - FP_N(peq)[y]*i_pt[y]-FP_D(peq))/FP_N(peq)[z]; 
-  }
-  return(qt);
-    
-}
-
-
-QUADTREE
-qtRoot_trace_ray(qt,q0,q1,q2,peq,orig,dir,nextptr,func,f,argptr)
-   QUADTREE qt;
-   FVECT q0,q1,q2;
-   FPEQ  peq;
-   FVECT orig,dir;
-   int *nextptr;
-   int (*func)();
-   int *f,*argptr;
-{
-  int x,y,z,nbr,w,i;
-  QUADTREE child;
-  FVECT v,i_pt;
-  double b[2][3],db[3],et[2],d,br[3];
-  BCOORD bi[3];
-  TINT t[3];
-  BDIR dbi[3][3];
-  
-  /* Project the origin onto the root node plane */
-  t[0] = t[1] = t[2] = 0;
-
-  VADD(v,orig,dir);
-  /* Find the intersection point of the origin */
-  /* map to 2d by dropping maximum magnitude component of normal */
-  x = FP_X(peq);
-  y = FP_Y(peq);
-  z = FP_Z(peq);
-
-  /* Calculate barycentric coordinates for current vertex */
-  intersect_vector_plane(orig,peq,&(et[0]),i_pt);
-  bary2d(q0[x],q0[y],q1[x],q1[y],q2[x],q2[y],i_pt[x],i_pt[y],b[0]);  
-
-  intersect_vector_plane(v,peq,&(et[1]),i_pt);
-  bary2d(q0[x],q0[y],q1[x],q1[y],q2[x],q2[y],i_pt[x],i_pt[y],b[1]);  
-  if(et[1] < 0.0)
-    VSUB(db,b[0],b[1]);
-  else
-   VSUB(db,b[1],b[0]);
-  t[0] = HUGET;
-  convert_dtol(b[0],bi);
-   if(et[1]<0.0 ||(fabs(b[1][0])>(FTINY+1.0))||(fabs(b[1][1])>(FTINY+1.0)) ||
-      (fabs(b[1][2])>(FTINY+1.0))||(b[1][0] <-FTINY) ||
-      (b[1][1]<-FTINY) ||(b[1][2]<-FTINY))
+     if(nbr==-1)
      {
-       max_index(db,&d);
-       for(i=0; i< 3; i++)
-	 dbi[0][i] = (BDIR)(db[i]/d*MAXBDIR);
+       QT_FLAG_SET_DONE(*f); 
+       return;
      }
-   else
-       for(i=0; i< 3; i++)
-	 dbi[0][i] = (BDIR)(db[i]*MAXBDIR);
-  w=0;
-  /* trace the ray starting with this node */
-  qt = qtVisit_tri_edges(qt,bi,dbi[0][0],dbi[0][1],dbi[0][2], dbi,&w,
-			 nextptr,t,0,0,func,f,argptr);
-  if(!QT_FLAG_IS_DONE(*f))
+     b[0] += (BCOORD)(t *db0);
+     b[1] += (BCOORD)(t *db1);
+     b[2] += (BCOORD)(t *db2);
+     *nextptr = nbr;
+     return;
+     
+   }
+}    
+
+
+
+
+
+
+
+
+#define TEST_INT(tl,th,d,q0,q1,h,l) \
+                  tl=d>q0;th=d<q1; if(tl&&th) goto Lfunc_call; \
+		 if(tl) if(l) goto Lfunc_call; else h=TRUE; \
+		 if(th) if(h) goto Lfunc_call; else l = TRUE; \
+		 if(th) if(h) goto Lfunc_call; else l = TRUE;
+
+/* Leaf node: Do definitive test */
+QUADTREE
+qtLeaf_insert_tri(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,
+		 scale, s0,s1,s2,sq0,sq1,sq2,f,n)
+int root;
+QUADTREE qt;
+BCOORD q0[3],q1[3],q2[3];
+BCOORD t0[3],t1[3],t2[3];
+BCOORD dt10[3],dt21[3],dt02[3];
+unsigned int scale,s0,s1,s2,sq0,sq1,sq2;
+FUNC f;
+int n;
+{ 
+  double db;
+  unsigned int e0,e1,e2;
+  char al,ah,bl,bh,cl,ch,testl,testh;
+  char test_t0t1,test_t1t2,test_t2t0;
+  BCOORD a,b,c;
+
+  /* First check if can trivial accept: if vertex in cell */
+  if(s0 & s1 & s2)
+    goto Lfunc_call;
+
+  /* Assumption: Could not trivial reject*/
+  /* IF any coords lie on edge- must be in if couldnt reject */
+  a = q1[0];b= q0[1]; c= q0[2];
+  if(t0[0]== a || t0[1] == b || t0[2] == c)
+    goto Lfunc_call;
+  if(t1[0]== a || t1[1] == b || t1[2] == c)
+    goto Lfunc_call;
+  if(t2[0]== a || t2[1] == b || t2[2] == c)
+    goto Lfunc_call;
+  
+  /* Test for edge crossings */
+  /* Test t0t1,t1t2,t2t0 against a */
+  /* Calculate edge crossings */
+  e0  = (s0 ^ ((s0 >> 1) | (s0 << 2 & 4)));
+  /* See if edge can be trivially rejected from intersetion testing */
+  test_t0t1 = !(((s0 & 6)==0) || ((s1 & 6)==0)|| ((s2 & 6)==0) || 
+       ((sq0 & 6)==6) ||((sq1 & 6)==6)|| ((sq2 & 6)==6));
+  bl=bh=0;
+  if(test_t0t1 && (e0 & 2) )
   {
-    br[0] = (double)bi[0]/(double)MAXBCOORD;
-    br[1] = (double)bi[1]/(double)MAXBCOORD;
-    br[2] = (double)bi[2]/(double)MAXBCOORD;
-    orig[x] = br[0]*q0[x] + br[1]*q1[x] + br[2]*q2[x];
-    orig[y] = br[0]*q0[y] + br[1]*q1[y] + br[2]*q2[y];
-    orig[z]=(-FP_N(peq)[x]*orig[x] - 
-	     FP_N(peq)[y]*orig[y]-FP_D(peq))/FP_N(peq)[z]; 
+    /* Must do double calculation to avoid overflow */
+    db = t0[1] + dt10[1]*((double)(a-t0[0]))/dt10[0];
+    TEST_INT(testl,testh,db,b,q1[1],bl,bh)
   }
+  test_t1t2= !(((s0 & 3)==0) || ((s1 & 3)==0)|| ((s2 & 3)==0) || 
+       ((sq0 & 3)==3) ||((sq1 & 3)==3)|| ((sq2 & 3)==3));
+  if(test_t1t2 && (e0 & 1))
+  {    /* test t1t2 against a */
+      db = t1[1] + dt21[1]*((double)(a - t1[0]))/dt21[0];
+      TEST_INT(testl,testh,db,b,q1[1],bl,bh)
+  }
+  test_t2t0 = !(((s0 & 5)==0) || ((s1 & 5)==0)|| ((s2 & 5)==0) || 
+       ((sq0 & 5)==5) ||((sq1 & 5)==5)|| ((sq2 & 5)==5));
+  if(test_t2t0 && (e0 & 4))
+  {
+      db = t2[1] + dt02[1]*((double)(a - t2[0]))/dt02[0];
+      TEST_INT(testl,testh,db,b,q1[1],bl,bh)
+  }
+  e1  = (s1 ^ ((s1 >> 1) | (s1 << 2 & 4)));
+  cl = ch = 0;
+  if(test_t0t1 && (e1 & 2))
+  {/* test t0t1 against b */
+      db = t0[2] + dt10[2]*((double)(b-t0[1]))/dt10[1];
+      TEST_INT(testl,testh,db,c,q2[2],cl,ch)
+  }
+  if(test_t1t2 && (e1 & 1))
+  {/* test t1t2 against b */
+    db = t1[2] + dt21[2]*((double)(q0[1] - t1[1]))/dt21[1];
+    TEST_INT(testl,testh,db,c,q2[2],cl,ch)
+  }
+  if(test_t2t0 && (e1 & 4))
+  {/* test t2t0 against b */
+    db = t2[2] + dt02[2]*((double)(q0[1] - t2[1]))/dt02[1];
+    TEST_INT(testl,testh,db,c,q2[2],cl,ch)
+  }
+ 
+  /* test edges against c */
+  e2  = (s2 ^ ((s2 >> 1) | (s2 << 2 & 4)));
+  al = ah = 0;
+  if(test_t0t1 && (e2 & 2))
+  { /* test t0t1 against c */
+    db = t0[0] + dt10[0]*((double)(c-t0[2]))/dt10[2];
+    TEST_INT(testl,testh,db,a,q0[0],al,ah)
+   }
+  if(test_t1t2 && (e2 & 1))
+  {
+    db = t1[0] + dt21[0]*((double)(c - t1[2]))/dt21[2];
+    TEST_INT(testl,testh,db,a,q0[0],al,ah)
+  }
+  if(test_t2t0 && (e2 & 4))
+  { /* test t2t0 against c */
+    db = t2[0] + dt02[0]*((double)(c - t2[2]))/dt02[2];
+    TEST_INT(testl,testh,db,a,q0[0],al,ah)
+  }
+  /* Only remaining case is if some edge trivially rejected */
+  if(!e0 || !e1 || !e2)
+    return(qt);
+
+  /* Only one/none got tested - pick either of other two/any two */
+  /* Only need to test one edge */
+  if(!test_t0t1 && (e0 & 2))
+  {
+     db = t0[1] + dt10[1]*((double)(a-t0[0]))/dt10[0];
+     TEST_INT(testl,testh,db,b,q1[1],bl,bh)
+  }
+  if(!test_t1t2 && (e0 & 1))
+    {/* test t1t2 against a */
+      db = t1[1] + dt21[1]*((double)(a - t1[0]))/dt21[0];
+      TEST_INT(testl,testh,db,b,q1[1],bl,bh)
+   }
+  if(!test_t2t0 && (e0 & 4))
+  {
+    db = t2[1] + dt02[1]*((double)(a - t2[0]))/dt02[0];
+    TEST_INT(testl,testh,db,b,q1[1],bl,bh)
+  }
+
   return(qt);
-    
+
+Lfunc_call:
+  qt = f.func(f.argptr,root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,scale,
+	      s0,s1,s2,sq0,sq1,sq2,0,f,n);
+  return(qt);
+
+}
+
+
+
+/* Leaf node: Do definitive test */
+QUADTREE
+qtLeaf_insert_tri_rev(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,
+		 scale, s0,s1,s2,sq0,sq1,sq2,f,n)
+int root;
+QUADTREE qt;
+BCOORD q0[3],q1[3],q2[3];
+BCOORD t0[3],t1[3],t2[3];
+BCOORD dt10[3],dt21[3],dt02[3];
+unsigned int scale,s0,s1,s2,sq0,sq1,sq2;
+FUNC f;
+int n;
+{ 
+  double db;
+  unsigned int e0,e1,e2;
+  BCOORD a,b,c;
+  double p0[2], p1[2],cp;
+  char al,ah,bl,bh,cl,ch;
+  char testl,testh,test_t0t1,test_t1t2,test_t2t0;
+  unsigned int ls0,ls1,ls2;
+  
+  /* May have gotten passed trivial reject if one/two vertices are ON */
+  a = q1[0];b= q0[1]; c= q0[2];
+  SIDES_LESS(t0,t1,t2,ls0,ls1,ls2,a,b,c);
+  
+  /* First check if can trivial accept: if vertex in cell */
+  if(ls0 & ls1 & ls2)
+    goto Lfunc_call;
+
+  if(ls0==0 || ls1 == 0 || ls2 ==0)
+    return(qt);
+  /* Assumption: Could not trivial reject*/
+  /* IF any coords lie on edge- must be in if couldnt reject */
+
+  if(t0[0]== a || t0[1] == b || t0[2] == c)
+    goto Lfunc_call;
+  if(t1[0]== a || t1[1] == b || t1[2] == c)
+    goto Lfunc_call;
+  if(t2[0]== a || t2[1] == b || t2[2] == c)
+    goto Lfunc_call;
+
+  /* Test for edge crossings */
+  /* Test t0t1 against a,b,c */
+  /* First test if t0t1 can be trivially rejected */
+  /* If both edges are outside bounds- dont need to test */
+  
+  /* Test t0t1,t1t2,t2t0 against a */
+  test_t0t1 = !(((ls0 & 6)==0) || ((ls1 & 6)==0)|| ((ls2 & 6)==0) || 
+       ((sq0 & 6)==0) ||((sq1 & 6)==0)|| ((sq2 & 6)==0));
+  e0  = (ls0 ^ ((ls0 >> 1) | (ls0 << 2 & 4)));
+  bl=bh=0;
+  /* Test t0t1,t1t2,t2t0 against a */
+  if(test_t0t1 && (e0 & 2) )
+  {
+      db = t0[1] + dt10[1]*((double)(a-t0[0])/dt10[0]);
+      TEST_INT(testl,testh,db,q1[1],b,bl,bh)
+  }
+  test_t1t2= !(((ls0 & 3)==0) || ((ls1 & 3)==0)|| ((ls2 & 3)==0) || 
+       ((sq0 & 3)==0) ||((sq1 & 3)==0)|| ((sq2 & 3)==0));
+  if(test_t1t2 && (e0 & 1))
+  {    /* test t1t2 against a */
+      db = t1[1] + dt21[1]*((double)(a - t1[0]))/dt21[0];
+      TEST_INT(testl,testh,db,q1[1],b,bl,bh)
+  }
+  test_t2t0 = !(((ls0 & 5)==0) || ((ls1 & 5)==0)|| ((ls2 & 5)==0) || 
+       ((sq0 & 5)==0) ||((sq1 & 5)==0)|| ((sq2 & 5)==0));
+  if(test_t2t0 && (e0 & 4))
+  {
+      db = t2[1] + dt02[1]*((double)(a - t2[0]))/dt02[0];
+      TEST_INT(testl,testh,db,q1[1],b,bl,bh)
+  }
+  cl = ch = 0;
+  e1  = (ls1 ^ ((ls1 >> 1) | (ls1 << 2 & 4)));
+  if(test_t0t1 && (e1 & 2))
+  {/* test t0t1 against b */
+      db = t0[2] + dt10[2]*(((double)(b-t0[1]))/dt10[1]);
+      TEST_INT(testl,testh,db,q1[2],c,cl,ch)
+  }
+  if(test_t1t2 && (e1 & 1))
+  {/* test t1t2 against b */
+    db = t1[2] + dt21[2]*((double)(b - t1[1]))/dt21[1];
+    TEST_INT(testl,testh,db,q1[2],c,cl,ch)
+  }
+  if(test_t2t0 && (e1 & 4))
+  {/* test t2t0 against b */
+    db = t2[2] + dt02[2]*((double)(b - t2[1]))/dt02[1];
+    TEST_INT(testl,testh,db,q1[2],c,cl,ch)
+  }
+  al = ah = 0;
+  e2  = (ls2 ^ ((ls2 >> 1) | (ls2 << 2 & 4)));
+  if(test_t0t1 && (e2 & 2))
+  { /* test t0t1 against c */
+    db = t0[0] + dt10[0]*(((double)(c-t0[2]))/dt10[2]);
+    TEST_INT(testl,testh,db,q0[0],a,al,ah)
+   }
+  if(test_t1t2 && (e2 & 1))
+  {
+    db = t1[0] + dt21[0]*((double)(c - t1[2]))/dt21[2];
+    TEST_INT(testl,testh,db,q0[0],a,al,ah)
+  }
+  if(test_t2t0 && (e2 & 4))
+  { /* test t2t0 against c */
+    db = t2[0] + dt02[0]*((double)(c - t2[2]))/dt02[2];
+    TEST_INT(testl,testh,db,q0[0],a,al,ah)
+  }
+  /* Only remaining case is if some edge trivially rejected */
+  if(!e0 || !e1 || !e2)
+    return(qt);
+
+  /* Only one/none got tested - pick either of other two/any two */
+  /* Only need to test one edge */
+  if(!test_t0t1 && (e0 & 2))
+  {
+     db = t0[1] + dt10[1]*((double)(a-t0[0]))/dt10[0];
+     TEST_INT(testl,testh,db,q1[1],b,bl,bh)
+  }
+  if(!test_t1t2 && (e0 & 1))
+    {/* test t1t2 against a */
+      db = t1[1] + dt21[1]*((double)(a - t1[0]))/dt21[0];
+      TEST_INT(testl,testh,db,q1[1],b,bl,bh)
+   }
+  if(!test_t2t0 && (e0 & 4))
+  {
+    db = t2[1] + dt02[1]*((double)(a - t2[0]))/dt02[0];
+    TEST_INT(testl,testh,db,q1[1],b,bl,bh)
+  }
+
+  return(qt);
+Lfunc_call:
+
+  qt = f.func(f.argptr,root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,scale,
+	      s0,s1,s2,sq0,sq1,sq2,1,f,n);
+  return(qt);
+  }
+
+
+
+/* ASSUMPTION: that triangle t0,t1,t2 intersects quad cell q0,q1,q2 */
+
+/*-------q2--------- sq2
+	/ \
+s1     /sc \ s0
+     qb_____qa
+     / \   / \
+\sq0/sa \ /sb \   /sq1
+ \ q0____qc____q1/
+  \             /
+   \     s2    /
+*/
+
+int Find_id=0;
+
+QUADTREE
+qtInsert_tri(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,scale,
+	    s0,s1,s2,sq0,sq1,sq2,f,n)
+int root;
+QUADTREE qt;
+BCOORD q0[3],q1[3],q2[3];
+BCOORD t0[3],t1[3],t2[3];
+BCOORD dt10[3],dt21[3],dt02[3];
+BCOORD scale;
+unsigned int s0,s1,s2,sq0,sq1,sq2;
+FUNC f;
+int n;
+{
+  BCOORD a,b,c;
+  BCOORD va[3],vb[3],vc[3];
+  unsigned int sa,sb,sc;
+
+  /* If a tree: trivial reject and recurse on potential children */
+  if(QT_IS_TREE(qt))
+  {
+    /* Test against new a edge: if entirely to left: only need
+       to visit child 0
+    */
+    a = q1[0] + scale;
+    b = q0[1] + scale;
+    c = q0[2] + scale;
+
+    SIDES_GTR(t0,t1,t2,sa,sb,sc,a,b,c);
+
+    if(sa==7)
+    {
+      vb[1] = q0[1];
+      vc[2] = q0[2];
+      vc[1] = b; 
+      vb[2] = c;
+      vb[0] = vc[0] = a;
+      QT_NTH_CHILD(qt,0) = qtInsert_tri(root,QT_NTH_CHILD(qt,0),q0,vc,
+	  vb,t0,t1,t2,dt10,dt21,dt02, scale>>1,sa,s1,s2,sq0,sb,sc,f,n+1);
+      return(qt);
+    }
+   if(sb==7)
+   {
+     va[0] = q1[0]; 
+     vc[2] = q0[2];
+     va[1] = vc[1] = b; 
+     va[2] = c;
+     vc[0] = a;
+     QT_NTH_CHILD(qt,1) = qtInsert_tri(root,QT_NTH_CHILD(qt,1),vc,q1,va,
+	     t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,sb,s2,sa,sq1,sc,f,n+1);
+     return(qt);
+   }
+   if(sc==7)
+   {
+     va[0] = q1[0]; 
+     vb[1] = q0[1];
+     va[1] = b; 
+     va[2] = vb[2] = c;
+     vb[0] = a;
+     QT_NTH_CHILD(qt,2) = qtInsert_tri(root,QT_NTH_CHILD(qt,2),vb,va,
+       q2,t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,s1,sc,sa,sb,sq2,f,n+1);
+     return(qt);
+   }
+
+   va[0] = q1[0]; 
+   vb[1] = q0[1];
+   vc[2] = q0[2];
+   va[1] = vc[1] = b; 
+   va[2] = vb[2] = c;
+   vb[0] = vc[0] = a;
+   /* If outside of all edges: only need to Visit 3  */
+   if(sa==0 && sb==0 && sc==0)
+   {
+      QT_NTH_CHILD(qt,3) = qtInsert_tri_rev(root,QT_NTH_CHILD(qt,3),va,vb,
+       vc,t0,t1,t2,dt10,dt21,dt02, scale>>1,sa,sb,sc,s0,s1,s2,f,n+1);
+      return(qt);
+   }
+
+   if(sa)
+     QT_NTH_CHILD(qt,0) = qtInsert_tri(root,QT_NTH_CHILD(qt,0),q0,vc,vb,t0,
+	  t1,t2,dt10,dt21,dt02,scale>>1,sa,s1,s2,sq0,sb,sc,f,n+1);
+   if(sb)
+     QT_NTH_CHILD(qt,1) = qtInsert_tri(root,QT_NTH_CHILD(qt,1),vc,q1,va,t0,
+	      t1,t2,dt10,dt21,dt02,scale>>1,s0,sb,s2,sa,sq1,sc,f,n+1);
+   if(sc)
+	QT_NTH_CHILD(qt,2) = qtInsert_tri(root,QT_NTH_CHILD(qt,2),vb,va,q2,t0,
+	      t1,t2,dt10,dt21,dt02,scale>>1,s0,s1,sc,sa,sb,sq2,f,n+1);
+   QT_NTH_CHILD(qt,3) = qtInsert_tri_rev(root,QT_NTH_CHILD(qt,3),va,vb,vc,t0,
+	     t1,t2,dt10,dt21,dt02,scale>>1,sa,sb,sc,s0,s1,s2,f,n+1);
+   return(qt);
+  }
+  /* Leaf node: Do definitive test */
+  else
+    return(qt = qtLeaf_insert_tri(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,
+			 scale,s0,s1,s2,sq0,sq1,sq2,f,n));
+}
+
+
+QUADTREE
+qtInsert_tri_rev(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,scale,
+	    s0,s1,s2,sq0,sq1,sq2,f,n)
+int root;
+QUADTREE qt;
+BCOORD q0[3],q1[3],q2[3];
+BCOORD t0[3],t1[3],t2[3];
+BCOORD dt10[3],dt21[3],dt02[3];
+BCOORD scale;
+unsigned int s0,s1,s2,sq0,sq1,sq2;
+FUNC f;
+{
+  BCOORD a,b,c;
+  BCOORD va[3],vb[3],vc[3];
+  unsigned int sa,sb,sc;
+
+  /* If a tree: trivial reject and recurse on potential children */
+  if(QT_IS_TREE(qt))
+  {
+    /* Test against new a edge: if entirely to left: only need
+       to visit child 0
+    */
+    a = q1[0] - scale;
+    b = q0[1] - scale;
+    c = q0[2] - scale;
+
+    SIDES_GTR(t0,t1,t2,sa,sb,sc,a,b,c);
+
+    if(sa==0)
+    {
+      vb[1] = q0[1];
+      vc[2] = q0[2];
+      vc[1] = b; 
+      vb[2] = c;
+      vb[0] = vc[0] = a;
+
+      QT_NTH_CHILD(qt,0) = qtInsert_tri_rev(root,QT_NTH_CHILD(qt,0),q0,vc,
+	  vb,t0,t1,t2,dt10,dt21,dt02, scale>>1,sa,s1,s2,sq0,sb,sc,f,n+1);
+      return(qt);
+    }
+    if(sb==0)
+    {
+      va[0] = q1[0]; 
+      vc[2] = q0[2];
+      va[1] = vc[1] = b; 
+      va[2] = c;
+      vc[0] = a;
+      QT_NTH_CHILD(qt,1) = qtInsert_tri_rev(root,QT_NTH_CHILD(qt,1),vc,q1,va,
+         t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,sb,s2,sa,sq1,sc,f,n+1);
+      return(qt);
+    }
+    if(sc==0)
+    {
+      va[0] = q1[0]; 
+      vb[1] = q0[1];
+      va[1] = b; 
+      va[2] = vb[2] = c;
+      vb[0] = a;
+      QT_NTH_CHILD(qt,2) = qtInsert_tri_rev(root,QT_NTH_CHILD(qt,2),vb,va,
+	 q2,t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,s1,sc,sa,sb,sq2,f,n+1);
+      return(qt);
+    }
+    va[0] = q1[0]; 
+    vb[1] = q0[1];
+    vc[2] = q0[2];
+    va[1] = vc[1] = b; 
+    va[2] = vb[2] = c;
+    vb[0] = vc[0] = a;
+    /* If outside of all edges: only need to Visit 3  */
+    if(sa==7 && sb==7 && sc==7)
+    {
+      QT_NTH_CHILD(qt,3) = qtInsert_tri(root,QT_NTH_CHILD(qt,3),va,vb,
+	   vc,t0,t1,t2,dt10,dt21,dt02, scale>>1,sa,sb,sc,s0,s1,s2,f,n+1);
+      return(qt);
+    }
+    if(sa!=7)
+      QT_NTH_CHILD(qt,0) = qtInsert_tri_rev(root,QT_NTH_CHILD(qt,0),q0,vc,vb,
+	   t0,t1,t2,dt10,dt21,dt02,scale>>1,sa,s1,s2,sq0,sb,sc,f,n+1);
+    if(sb!=7)
+      QT_NTH_CHILD(qt,1) = qtInsert_tri_rev(root,QT_NTH_CHILD(qt,1),vc,q1,va,
+	   t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,sb,s2,sa,sq1,sc,f,n+1);
+    if(sc!=7)
+      QT_NTH_CHILD(qt,2) = qtInsert_tri_rev(root,QT_NTH_CHILD(qt,2),vb,va,q2,
+	   t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,s1,sc,sa,sb,sq2,f,n+1);
+
+    QT_NTH_CHILD(qt,3) = qtInsert_tri(root,QT_NTH_CHILD(qt,3),va,vb,vc,t0,t1,
+	      t2,dt10,dt21,dt02,scale>>1,sa,sb,sc,s0,s1,s2,f,n+1);
+    return(qt);
+  }
+  /* Leaf node: Do definitive test */
+  else
+    return(qt = qtLeaf_insert_tri_rev(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,
+			 scale,s0,s1,s2,sq0,sq1,sq2,f,n));
 }
 
 
 
 
+/*************************************************************************/
+/* Visit code for applying functions: NOTE THIS IS THE SAME AS INSERT CODE:
+  except sets flags: wanted insert to be as efficient as possible: so 
+  broke into two sets of routines
+*/
+
+qtVisit_tri(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,scale,
+	    s0,s1,s2,sq0,sq1,sq2,f)
+int root;
+QUADTREE qt;
+BCOORD q0[3],q1[3],q2[3];
+BCOORD t0[3],t1[3],t2[3];
+BCOORD dt10[3],dt21[3],dt02[3];
+BCOORD scale;
+unsigned int s0,s1,s2,sq0,sq1,sq2;
+FUNC f;
+{
+  BCOORD a,b,c;
+  BCOORD va[3],vb[3],vc[3];
+  unsigned int sa,sb,sc;
+
+  /* If a tree: trivial reject and recurse on potential children */
+  if(QT_IS_TREE(qt))
+  {
+    QT_SET_FLAG(qt);
+
+    /* Test against new a edge: if entirely to left: only need
+       to visit child 0
+    */
+    a = q1[0] + scale;
+    b = q0[1] + scale;
+    c = q0[2] + scale;
+
+    SIDES_GTR(t0,t1,t2,sa,sb,sc,a,b,c);
+
+    if(sa==7)
+    {
+      vb[1] = q0[1];
+      vc[2] = q0[2];
+      vc[1] = b; 
+      vb[2] = c;
+      vb[0] = vc[0] = a;
+      qtVisit_tri(root,QT_NTH_CHILD(qt,0),q0,vc,
+	  vb,t0,t1,t2,dt10,dt21,dt02, scale>>1,sa,s1,s2,sq0,sb,sc,f);
+      return;
+    }
+   if(sb==7)
+   {
+     va[0] = q1[0]; 
+     vc[2] = q0[2];
+     va[1] = vc[1] = b; 
+     va[2] = c;
+     vc[0] = a;
+     qtVisit_tri(root,QT_NTH_CHILD(qt,1),vc,q1,va,
+	     t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,sb,s2,sa,sq1,sc,f);
+     return;
+   }
+   if(sc==7)
+   {
+     va[0] = q1[0]; 
+     vb[1] = q0[1];
+     va[1] = b; 
+     va[2] = vb[2] = c;
+     vb[0] = a;
+     qtVisit_tri(root,QT_NTH_CHILD(qt,2),vb,va,
+       q2,t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,s1,sc,sa,sb,sq2,f);
+     return;
+   }
+
+   va[0] = q1[0]; 
+   vb[1] = q0[1];
+   vc[2] = q0[2];
+   va[1] = vc[1] = b; 
+   va[2] = vb[2] = c;
+   vb[0] = vc[0] = a;
+   /* If outside of all edges: only need to Visit 3  */
+   if(sa==0 && sb==0 && sc==0)
+   {
+     qtVisit_tri_rev(root,QT_NTH_CHILD(qt,3),va,vb,
+       vc,t0,t1,t2,dt10,dt21,dt02, scale>>1,sa,sb,sc,s0,s1,s2,f);
+      return;
+   }
+
+   if(sa)
+     qtVisit_tri(root,QT_NTH_CHILD(qt,0),q0,vc,vb,t0,
+	  t1,t2,dt10,dt21,dt02,scale>>1,sa,s1,s2,sq0,sb,sc,f);
+   if(sb)
+     qtVisit_tri(root,QT_NTH_CHILD(qt,1),vc,q1,va,t0,
+	      t1,t2,dt10,dt21,dt02,scale>>1,s0,sb,s2,sa,sq1,sc,f);
+   if(sc)
+     qtVisit_tri(root,QT_NTH_CHILD(qt,2),vb,va,q2,t0,
+	      t1,t2,dt10,dt21,dt02,scale>>1,s0,s1,sc,sa,sb,sq2,f);
+   qtVisit_tri_rev(root,QT_NTH_CHILD(qt,3),va,vb,vc,t0,
+	     t1,t2,dt10,dt21,dt02,scale>>1,sa,sb,sc,s0,s1,s2,f);
+  }
+  /* Leaf node: Do definitive test */
+  else
+    qtLeaf_visit_tri(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,
+			 scale,s0,s1,s2,sq0,sq1,sq2,f);
+
+}
+
+
+qtVisit_tri_rev(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,scale,
+	    s0,s1,s2,sq0,sq1,sq2,f)
+int root;
+QUADTREE qt;
+BCOORD q0[3],q1[3],q2[3];
+BCOORD t0[3],t1[3],t2[3];
+BCOORD dt10[3],dt21[3],dt02[3];
+BCOORD scale;
+unsigned int s0,s1,s2,sq0,sq1,sq2;
+FUNC f;
+{
+  BCOORD a,b,c;
+  BCOORD va[3],vb[3],vc[3];
+  unsigned int sa,sb,sc;
+
+  /* If a tree: trivial reject and recurse on potential children */
+  if(QT_IS_TREE(qt))
+  {
+    QT_SET_FLAG(qt);
+    /* Test against new a edge: if entirely to left: only need
+       to visit child 0
+    */
+    a = q1[0] - scale;
+    b = q0[1] - scale;
+    c = q0[2] - scale;
+
+    SIDES_GTR(t0,t1,t2,sa,sb,sc,a,b,c);
+
+    if(sa==0)
+    {
+      vb[1] = q0[1];
+      vc[2] = q0[2];
+      vc[1] = b; 
+      vb[2] = c;
+      vb[0] = vc[0] = a;
+      qtVisit_tri_rev(root,QT_NTH_CHILD(qt,0),q0,vc,
+	  vb,t0,t1,t2,dt10,dt21,dt02, scale>>1,sa,s1,s2,sq0,sb,sc,f);
+      return;
+    }
+    if(sb==0)
+    {
+      va[0] = q1[0]; 
+      vc[2] = q0[2];
+      va[1] = vc[1] = b; 
+      va[2] = c;
+      vc[0] = a;
+      qtVisit_tri_rev(root,QT_NTH_CHILD(qt,1),vc,q1,va,
+         t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,sb,s2,sa,sq1,sc,f);
+      return;
+    }
+    if(sc==0)
+    {
+      va[0] = q1[0]; 
+      vb[1] = q0[1];
+      va[1] = b; 
+      va[2] = vb[2] = c;
+      vb[0] = a;
+      qtVisit_tri_rev(root,QT_NTH_CHILD(qt,2),vb,va,
+	 q2,t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,s1,sc,sa,sb,sq2,f);
+      return;
+    }
+    va[0] = q1[0]; 
+    vb[1] = q0[1];
+    vc[2] = q0[2];
+    va[1] = vc[1] = b; 
+    va[2] = vb[2] = c;
+    vb[0] = vc[0] = a;
+    /* If outside of all edges: only need to Visit 3  */
+    if(sa==7 && sb==7 && sc==7)
+    {
+     qtVisit_tri(root,QT_NTH_CHILD(qt,3),va,vb,
+	   vc,t0,t1,t2,dt10,dt21,dt02, scale>>1,sa,sb,sc,s0,s1,s2,f);
+      return;
+    }
+    if(sa!=7)
+      qtVisit_tri_rev(root,QT_NTH_CHILD(qt,0),q0,vc,vb,
+	   t0,t1,t2,dt10,dt21,dt02,scale>>1,sa,s1,s2,sq0,sb,sc,f);
+    if(sb!=7)
+      qtVisit_tri_rev(root,QT_NTH_CHILD(qt,1),vc,q1,va,
+	   t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,sb,s2,sa,sq1,sc,f);
+    if(sc!=7)
+      qtVisit_tri_rev(root,QT_NTH_CHILD(qt,2),vb,va,q2,
+	   t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,s1,sc,sa,sb,sq2,f);
+
+    qtVisit_tri(root,QT_NTH_CHILD(qt,3),va,vb,vc,t0,t1,
+	      t2,dt10,dt21,dt02,scale>>1,sa,sb,sc,s0,s1,s2,f);
+    return;
+  }
+  /* Leaf node: Do definitive test */
+  else
+    qtLeaf_visit_tri_rev(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,
+			 scale,s0,s1,s2,sq0,sq1,sq2,f);
+}
 
 
 
+qtLeaf_visit_tri(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,
+		 scale, s0,s1,s2,sq0,sq1,sq2,f)
+int root;
+QUADTREE qt;
+BCOORD q0[3],q1[3],q2[3];
+BCOORD t0[3],t1[3],t2[3];
+BCOORD dt10[3],dt21[3],dt02[3];
+unsigned int scale,s0,s1,s2,sq0,sq1,sq2;
+FUNC f;
+{ 
+  double db;
+  unsigned int e0,e1,e2;
+  char al,ah,bl,bh,cl,ch,testl,testh;
+  char test_t0t1,test_t1t2,test_t2t0;
+  BCOORD a,b,c;
+
+  /* First check if can trivial accept: if vertex in cell */
+  if(s0 & s1 & s2)
+    goto Lfunc_call;
+
+  /* Assumption: Could not trivial reject*/
+  /* IF any coords lie on edge- must be in if couldnt reject */
+  a = q1[0];b= q0[1]; c= q0[2];
+  if(t0[0]== a || t0[1] == b || t0[2] == c)
+    goto Lfunc_call;
+  if(t1[0]== a || t1[1] == b || t1[2] == c)
+    goto Lfunc_call;
+  if(t2[0]== a || t2[1] == b || t2[2] == c)
+    goto Lfunc_call;
+  
+  /* Test for edge crossings */
+  /* Test t0t1,t1t2,t2t0 against a */
+  /* Calculate edge crossings */
+  e0  = (s0 ^ ((s0 >> 1) | (s0 << 2 & 4)));
+  /* See if edge can be trivially rejected from intersetion testing */
+  test_t0t1 = !(((s0 & 6)==0) || ((s1 & 6)==0)|| ((s2 & 6)==0) || 
+       ((sq0 & 6)==6) ||((sq1 & 6)==6)|| ((sq2 & 6)==6));
+  bl=bh=0;
+  if(test_t0t1 && (e0 & 2) )
+  {
+    /* Must do double calculation to avoid overflow */
+    db = t0[1] + dt10[1]*((double)(a-t0[0]))/dt10[0];
+    TEST_INT(testl,testh,db,b,q1[1],bl,bh)
+  }
+  test_t1t2= !(((s0 & 3)==0) || ((s1 & 3)==0)|| ((s2 & 3)==0) || 
+       ((sq0 & 3)==3) ||((sq1 & 3)==3)|| ((sq2 & 3)==3));
+  if(test_t1t2 && (e0 & 1))
+  {    /* test t1t2 against a */
+      db = t1[1] + dt21[1]*((double)(a - t1[0]))/dt21[0];
+      TEST_INT(testl,testh,db,b,q1[1],bl,bh)
+  }
+  test_t2t0 = !(((s0 & 5)==0) || ((s1 & 5)==0)|| ((s2 & 5)==0) || 
+       ((sq0 & 5)==5) ||((sq1 & 5)==5)|| ((sq2 & 5)==5));
+  if(test_t2t0 && (e0 & 4))
+  {
+      db = t2[1] + dt02[1]*((double)(a - t2[0]))/dt02[0];
+      TEST_INT(testl,testh,db,b,q1[1],bl,bh)
+  }
+  e1  = (s1 ^ ((s1 >> 1) | (s1 << 2 & 4)));
+  cl = ch = 0;
+  if(test_t0t1 && (e1 & 2))
+  {/* test t0t1 against b */
+      db = t0[2] + dt10[2]*((double)(b-t0[1]))/dt10[1];
+      TEST_INT(testl,testh,db,c,q2[2],cl,ch)
+  }
+  if(test_t1t2 && (e1 & 1))
+  {/* test t1t2 against b */
+    db = t1[2] + dt21[2]*((double)(q0[1] - t1[1]))/dt21[1];
+    TEST_INT(testl,testh,db,c,q2[2],cl,ch)
+  }
+  if(test_t2t0 && (e1 & 4))
+  {/* test t2t0 against b */
+    db = t2[2] + dt02[2]*((double)(q0[1] - t2[1]))/dt02[1];
+    TEST_INT(testl,testh,db,c,q2[2],cl,ch)
+  }
+ 
+  /* test edges against c */
+  e2  = (s2 ^ ((s2 >> 1) | (s2 << 2 & 4)));
+  al = ah = 0;
+  if(test_t0t1 && (e2 & 2))
+  { /* test t0t1 against c */
+    db = t0[0] + dt10[0]*((double)(c-t0[2]))/dt10[2];
+    TEST_INT(testl,testh,db,a,q0[0],al,ah)
+   }
+  if(test_t1t2 && (e2 & 1))
+  {
+    db = t1[0] + dt21[0]*((double)(c - t1[2]))/dt21[2];
+    TEST_INT(testl,testh,db,a,q0[0],al,ah)
+  }
+  if(test_t2t0 && (e2 & 4))
+  { /* test t2t0 against c */
+    db = t2[0] + dt02[0]*((double)(c - t2[2]))/dt02[2];
+    TEST_INT(testl,testh,db,a,q0[0],al,ah)
+  }
+  /* Only remaining case is if some edge trivially rejected */
+  if(!e0 || !e1 || !e2)
+    return;
+
+  /* Only one/none got tested - pick either of other two/any two */
+  /* Only need to test one edge */
+  if(!test_t0t1 && (e0 & 2))
+  {
+     db = t0[1] + dt10[1]*((double)(a-t0[0]))/dt10[0];
+     TEST_INT(testl,testh,db,b,q1[1],bl,bh)
+  }
+  if(!test_t1t2 && (e0 & 1))
+    {/* test t1t2 against a */
+      db = t1[1] + dt21[1]*((double)(a - t1[0]))/dt21[0];
+      TEST_INT(testl,testh,db,b,q1[1],bl,bh)
+   }
+  if(!test_t2t0 && (e0 & 4))
+  {
+    db = t2[1] + dt02[1]*((double)(a - t2[0]))/dt02[0];
+    TEST_INT(testl,testh,db,b,q1[1],bl,bh)
+  }
+
+  return;
+
+Lfunc_call:
+  f.func(f.argptr,root,qt);
+  if(!QT_IS_EMPTY(qt))
+    QT_LEAF_SET_FLAG(qt);
+}
 
 
 
+/* Leaf node: Do definitive test */
+QUADTREE
+qtLeaf_visit_tri_rev(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,
+		 scale, s0,s1,s2,sq0,sq1,sq2,f)
+int root;
+QUADTREE qt;
+BCOORD q0[3],q1[3],q2[3];
+BCOORD t0[3],t1[3],t2[3];
+BCOORD dt10[3],dt21[3],dt02[3];
+unsigned int scale,s0,s1,s2,sq0,sq1,sq2;
+FUNC f;
+{ 
+  double db;
+  unsigned int e0,e1,e2;
+  BCOORD a,b,c;
+  double p0[2], p1[2],cp;
+  char al,ah,bl,bh,cl,ch;
+  char testl,testh,test_t0t1,test_t1t2,test_t2t0;
+  unsigned int ls0,ls1,ls2;
+  
+  /* May have gotten passed trivial reject if one/two vertices are ON */
+  a = q1[0];b= q0[1]; c= q0[2];
+  SIDES_LESS(t0,t1,t2,ls0,ls1,ls2,a,b,c);
+  
+  /* First check if can trivial accept: if vertex in cell */
+  if(ls0 & ls1 & ls2)
+    goto Lfunc_call;
+
+  if(ls0==0 || ls1 == 0 || ls2 ==0)
+    return;
+  /* Assumption: Could not trivial reject*/
+  /* IF any coords lie on edge- must be in if couldnt reject */
+
+  if(t0[0]== a || t0[1] == b || t0[2] == c)
+    goto Lfunc_call;
+  if(t1[0]== a || t1[1] == b || t1[2] == c)
+    goto Lfunc_call;
+  if(t2[0]== a || t2[1] == b || t2[2] == c)
+    goto Lfunc_call;
+
+  /* Test for edge crossings */
+  /* Test t0t1 against a,b,c */
+  /* First test if t0t1 can be trivially rejected */
+  /* If both edges are outside bounds- dont need to test */
+  
+  /* Test t0t1,t1t2,t2t0 against a */
+  test_t0t1 = !(((ls0 & 6)==0) || ((ls1 & 6)==0)|| ((ls2 & 6)==0) || 
+       ((sq0 & 6)==0) ||((sq1 & 6)==0)|| ((sq2 & 6)==0));
+  e0  = (ls0 ^ ((ls0 >> 1) | (ls0 << 2 & 4)));
+  bl=bh=0;
+  /* Test t0t1,t1t2,t2t0 against a */
+  if(test_t0t1 && (e0 & 2) )
+  {
+      db = t0[1] + dt10[1]*((double)(a-t0[0])/dt10[0]);
+      TEST_INT(testl,testh,db,q1[1],b,bl,bh)
+  }
+  test_t1t2= !(((ls0 & 3)==0) || ((ls1 & 3)==0)|| ((ls2 & 3)==0) || 
+       ((sq0 & 3)==0) ||((sq1 & 3)==0)|| ((sq2 & 3)==0));
+  if(test_t1t2 && (e0 & 1))
+  {    /* test t1t2 against a */
+      db = t1[1] + dt21[1]*((double)(a - t1[0]))/dt21[0];
+      TEST_INT(testl,testh,db,q1[1],b,bl,bh)
+  }
+  test_t2t0 = !(((ls0 & 5)==0) || ((ls1 & 5)==0)|| ((ls2 & 5)==0) || 
+       ((sq0 & 5)==0) ||((sq1 & 5)==0)|| ((sq2 & 5)==0));
+  if(test_t2t0 && (e0 & 4))
+  {
+      db = t2[1] + dt02[1]*((double)(a - t2[0]))/dt02[0];
+      TEST_INT(testl,testh,db,q1[1],b,bl,bh)
+  }
+  cl = ch = 0;
+  e1  = (ls1 ^ ((ls1 >> 1) | (ls1 << 2 & 4)));
+  if(test_t0t1 && (e1 & 2))
+  {/* test t0t1 against b */
+      db = t0[2] + dt10[2]*(((double)(b-t0[1]))/dt10[1]);
+      TEST_INT(testl,testh,db,q1[2],c,cl,ch)
+  }
+  if(test_t1t2 && (e1 & 1))
+  {/* test t1t2 against b */
+    db = t1[2] + dt21[2]*((double)(b - t1[1]))/dt21[1];
+    TEST_INT(testl,testh,db,q1[2],c,cl,ch)
+  }
+  if(test_t2t0 && (e1 & 4))
+  {/* test t2t0 against b */
+    db = t2[2] + dt02[2]*((double)(b - t2[1]))/dt02[1];
+    TEST_INT(testl,testh,db,q1[2],c,cl,ch)
+  }
+  al = ah = 0;
+  e2  = (ls2 ^ ((ls2 >> 1) | (ls2 << 2 & 4)));
+  if(test_t0t1 && (e2 & 2))
+  { /* test t0t1 against c */
+    db = t0[0] + dt10[0]*(((double)(c-t0[2]))/dt10[2]);
+    TEST_INT(testl,testh,db,q0[0],a,al,ah)
+   }
+  if(test_t1t2 && (e2 & 1))
+  {
+    db = t1[0] + dt21[0]*((double)(c - t1[2]))/dt21[2];
+    TEST_INT(testl,testh,db,q0[0],a,al,ah)
+  }
+  if(test_t2t0 && (e2 & 4))
+  { /* test t2t0 against c */
+    db = t2[0] + dt02[0]*((double)(c - t2[2]))/dt02[2];
+    TEST_INT(testl,testh,db,q0[0],a,al,ah)
+  }
+  /* Only remaining case is if some edge trivially rejected */
+  if(!e0 || !e1 || !e2)
+    return;
+
+  /* Only one/none got tested - pick either of other two/any two */
+  /* Only need to test one edge */
+  if(!test_t0t1 && (e0 & 2))
+  {
+     db = t0[1] + dt10[1]*((double)(a-t0[0]))/dt10[0];
+     TEST_INT(testl,testh,db,q1[1],b,bl,bh)
+  }
+  if(!test_t1t2 && (e0 & 1))
+    {/* test t1t2 against a */
+      db = t1[1] + dt21[1]*((double)(a - t1[0]))/dt21[0];
+      TEST_INT(testl,testh,db,q1[1],b,bl,bh)
+   }
+  if(!test_t2t0 && (e0 & 4))
+  {
+    db = t2[1] + dt02[1]*((double)(a - t2[0]))/dt02[0];
+    TEST_INT(testl,testh,db,q1[1],b,bl,bh)
+  }
+
+  return;
+
+Lfunc_call:
+  f.func(f.argptr,root,qt);
+  if(!QT_IS_EMPTY(qt))
+    QT_LEAF_SET_FLAG(qt);
+}
 
 
 

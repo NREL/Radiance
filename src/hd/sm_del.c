@@ -19,56 +19,15 @@ static int Max_edges=200;
 static EDGE *Edges=NULL;
 static int Ecnt=0;
 
-#define remove_tri_compress remove_tri
-remove_tri(qtptr,fptr,tptr)
-   QUADTREE *qtptr;
-   int *fptr;
-   int *tptr;
-{
-    int n;
-
-    if(QT_IS_EMPTY(*qtptr))
-      return;
-    if(QT_LEAF_IS_FLAG(*qtptr))
-      return;
-
-    n = QT_SET_CNT(qtqueryset(*qtptr))-1;
-    *qtptr = qtdelelem(*qtptr,*tptr);
-    if(n  == 0)
-      (*fptr) |= QT_COMPRESS;
-    if(!QT_FLAG_FILL_TRI(*fptr))
-      (*fptr)++;
-}
-
-
-smLocator_remove_tri(sm,t_id,v0_id,v1_id,v2_id)
-SM *sm;
-int t_id;
-int v0_id,v1_id,v2_id;
-{
-  STREE *st;
-  FVECT v0,v1,v2;
-  
-  st = SM_LOCATOR(sm);
-
-  VSUB(v0,SM_NTH_WV(sm,v0_id),SM_VIEW_CENTER(sm));
-  VSUB(v1,SM_NTH_WV(sm,v1_id),SM_VIEW_CENTER(sm));
-  VSUB(v2,SM_NTH_WV(sm,v2_id),SM_VIEW_CENTER(sm));
-
-  qtClearAllFlags();
-  
-  stApply_to_tri(st,v0,v1,v2,remove_tri,remove_tri_compress,&t_id);
-
-}
-
 smFree_tri(sm,id)
 SM *sm;
 int id;
 {
-  TRI *tri;
+  TRI *tri,*t;
 
   tri = SM_NTH_TRI(sm,id);
   /* Add to the free_list */
+
   T_NEXT_FREE(tri) = SM_FREE_TRIS(sm);
   SM_FREE_TRIS(sm) = id;
   T_VALID_FLAG(tri) = -1;
@@ -97,6 +56,21 @@ int t_id;
   smClear_tri_flags(sm,t_id);
 
   smFree_tri(sm,t_id);
+
+#if 0
+  {
+    int i;
+    TRI *t;
+    for(i=0; i < SM_NUM_TRI(sm);i++)
+    {
+      t = SM_NTH_TRI(sm,i);
+      if(!T_IS_VALID(t))
+	continue;
+      if(T_NTH_NBR(t,0)==t_id || T_NTH_NBR(t,1)==t_id || T_NTH_NBR(t,2)==t_id)
+	eputs("Stale pointer: smDelete_tri()\n");
+    }
+  }
+#endif
 }
 
 
@@ -125,15 +99,14 @@ memerr:
 adjacent to id. Return set of triangles adjacent to id to delete in delptr
 */
 LIST 
-*smVertexPolygon(sm,id,delptr)
+*smVertexPolygon(sm,id,del_ptr)
 SM *sm;
 int id;
-QUADTREE *delptr;
+LIST **del_ptr;
 {
     TRI *tri,*t_next;
     LIST *elist,*end;
     int e,t_id,v_next,t_next_id,b_id,v_id;
-    OBJECT del_set[2];
 
     eClear_edges();
     elist = end =  NULL;
@@ -156,9 +129,8 @@ QUADTREE *delptr;
     t_next_id = t_id;
     t_next = tri;
 
+    *del_ptr = push_data(*del_ptr,t_id);
     /* Create a set to hold all of the triangles for deletion later */
-    del_set[0] = 1; del_set[1] = t_id;
-    *delptr = qtnewleaf(del_set);
 
     while((t_next_id = T_NTH_NBR(t_next,b_id)) != t_id)
     {
@@ -172,7 +144,7 @@ QUADTREE *delptr;
       v_next = T_NTH_V(t_next,(b_id+1)%3);
       SET_E_NTH_VERT(e,1,v_next);
       elist = add_data_to_circular_list(elist,&end,e);
-      qtaddelem(*delptr,t_next_id);
+      *del_ptr = push_data(*del_ptr,t_next_id);
     }
     return(elist);
 }
@@ -261,6 +233,7 @@ LIST *plist,**add_ptr;
     FVECT v0,v1,v2,n,p;
     int is_tri,is_convex,cut,t_id,id0,id1,id2,e2,e1,enew;
     double dp;
+    static int debug=0;
 
     VSUB(p,SM_NTH_WV(sm,id),SM_VIEW_CENTER(sm));
     enew = 0;
@@ -354,14 +327,15 @@ LIST *plist,**add_ptr;
 #ifdef DEBUG
 	  eputs("smTriangulate():Unable to triangulate\n");
 #endif
-	  free_list(l);
+	 free_list(l);
 	  while(*add_ptr)
 	  {
 	    t_id = pop_list(add_ptr);
 	    smDelete_tri(sm,t_id);
 	  }
 	  return(FALSE);
-        }
+	 }
+        
         cut = FALSE;
 	is_convex = TRUE;
       }
@@ -416,11 +390,9 @@ TRI *t;
    lies inside the circle defined by the CCW triangle- the edge is swapped 
    for the opposite diagonal
 */
-smFixEdges(sm,add_list,delptr)
+smFixEdges(sm,add_list)
    SM *sm;
    LIST *add_list;
-   QUADTREE *delptr;
-
 {
     int e,t0_id,t1_id,e_new,e0,e1,e0_next,e1_next;
     int i,v0_id,v1_id,v2_id,p_id,t0_nid,t1_nid;
@@ -455,8 +427,7 @@ smFixEdges(sm,add_list,delptr)
 	VSUB(p,p,SM_VIEW_CENTER(sm));
 	if(point_in_cone(p,v0,v1,v2))
 	{
-	   smTris_swap_edge(sm,t0_id,t1_id,e0,e1,&t0_nid,&t1_nid,&add_list,
-			    delptr);
+	   smTris_swap_edge(sm,t0_id,t1_id,e0,e1,&t0_nid,&t1_nid,&add_list);
 	    
 	   /* Adjust the triangle pointers of the remaining edges to be
 	      processed
@@ -489,8 +460,7 @@ smFixEdges(sm,add_list,delptr)
 	}
     }
     /* Add/Delete the appropriate triangles from the stree */
-    smUpdate_locator(sm,add_list,qtqueryset(*delptr));
-
+    smUpdate_locator(sm,add_list);
 }
 
 /* Remove vertex "id" from the mesh- and retriangulate the resulting
@@ -501,35 +471,51 @@ smRemoveVertex(sm,id)
    SM *sm;
    int id;
 {
-    LIST *b_list,*add_list;
-    QUADTREE delnode=-1;
-    int t_id;
-
+    LIST *b_list,*add_list,*del_list;
+    int t_id,i;
+    static int cnt=0;
+    OBJECT *optr,*os;
     /* generate list of edges that form the boundary of the
        polygon formed by the triangles adjacent to vertex 'id'
      */
-    b_list = smVertexPolygon(sm,id,&delnode);
+    del_list = NULL;
+    b_list = smVertexPolygon(sm,id,&del_list);
 
     add_list = NULL;
     /* Triangulate polygonal hole  */
     if(!smTriangulate(sm,id,b_list,&add_list))
     {
-      qtfreeleaf(delnode);
+      free_list(del_list);
       return(FALSE);
     }
+    else
+    {
+#ifdef DEBUG
+      b_list = del_list;
+      while(b_list)
+      {
+	t_id = LIST_DATA(b_list);
+	b_list = LIST_NEXT(b_list);
+	T_VALID_FLAG(SM_NTH_TRI(sm,t_id))=-1;
+      }
+#endif
+      while(del_list)
+      {
+	t_id = pop_list(&del_list);
+	smDelete_tri(sm,t_id);
+      }     
+    }      
     /* Fix up new triangles to be Delaunay-delnode contains set of
      triangles to delete,add_list is the set of new triangles to add
      */
-    smFixEdges(sm,add_list,&delnode);
+    smFixEdges(sm,add_list);
 
-
-    qtfreeleaf(delnode);
     return(TRUE);
 }
    
 
 
-
+ 
 
 
 
