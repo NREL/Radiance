@@ -138,7 +138,7 @@ initrholo()			/* get our holodeck running */
 	if (!vdef(DISKSPACE))
 		maxdisk = 0;
 	else
-		maxdisk = 1024.*1024.*vflt(DISKSPACE));
+		maxdisk = 1024.*1024.*vflt(DISKSPACE);
 						/* record end time */
 	if (!vdef(TIME) || vflt(TIME) <= FTINY)
 		endtime = 0;
@@ -205,7 +205,7 @@ rholo()				/* holodeck main loop */
 	if (ncprocs <= 0)
 		return(1);
 					/* check file size */
-	if (maxdisk > 0 && hdfiluse(hdlist[0]->fd,0)+hdmemuse(0) >= maxdisk) {
+	if (maxdisk > 0 && hdfilen(hdlist[0]->fd) >= maxdisk) {
 		error(WARNING, "file limit exceeded");
 		return(0);
 	}
@@ -421,7 +421,7 @@ PACKET	*pl;
 getradfile(rfargs)		/* run rad and get needed variables */
 char	*rfargs;
 {
-	static short	mvar[] = {VIEW,OCTREE,EXPOSURE,-1};
+	static short	mvar[] = {OCTREE,EXPOSURE,-1};
 	static char	tf1[] = TEMPLATE;
 	char	tf2[64];
 	char	combuf[256];
@@ -530,7 +530,7 @@ int	ec;
 			if (vdef(REPORT)) {
 				long	fsiz, fuse;
 				report(0);
-				fsiz = lseek(hdlist[0]->fd, 0L, 2);
+				fsiz = hdfilen(hdlist[0]->fd);
 				fuse = hdfiluse(hdlist[0]->fd, 1);
 				fprintf(stderr,
 			"%s: %.1f Mbyte holodeck file, %.1f%% fragmentation\n",
