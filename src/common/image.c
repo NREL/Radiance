@@ -332,21 +332,25 @@ FILE  *fp;
 }
 
 
-static VIEW  *hview;			/* view from header */
-static int  gothview;			/* success indicator */
 static char  *altname[] = {NULL,"rpict","rview","pinterp",VIEWSTR,NULL};
+
+struct myview {
+	VIEW	*hv;
+	int	ok;
+};
 
 
 static
-gethview(s)				/* get view from header */
+gethview(s, v)				/* get view from header */
 char  *s;
+register struct myview  *v;
 {
 	register char  **an;
 
 	for (an = altname; *an != NULL; an++)
 		if (!strncmp(*an, s, strlen(*an))) {
-			if (sscanview(hview, s+strlen(*an)) > 0)
-				gothview++;
+			if (sscanview(v->hv, s+strlen(*an)) > 0)
+				v->ok++;
 			return;
 		}
 }
@@ -359,22 +363,23 @@ VIEW  *vp;
 int  *xp, *yp;
 {
 	extern char  *progname;
+	struct myview	mvs;
 	FILE  *fp;
 
 	if ((fp = fopen(fname, "r")) == NULL)
 		return(-1);
 
 	altname[0] = progname;
-	hview = vp;
-	gothview = 0;
+	mvs.hv = vp;
+	mvs.ok = 0;
 
-	getheader(fp, gethview);
+	getheader(fp, gethview, &mvs);
 
 	if (xp != NULL && yp != NULL
 			&& fgetresolu(xp, yp, fp) == -1)
-		gothview = 0;
+		mvs.ok = 0;
 
 	fclose(fp);
 
-	return(gothview);
+	return(mvs.ok);
 }
