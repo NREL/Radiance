@@ -37,6 +37,7 @@ register FVECT  v;
 }
 
 
+void
 fcross(vres, v1, v2)		/* vres = v1 X v2 */
 register FVECT  vres, v1, v2;
 {
