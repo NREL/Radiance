@@ -360,7 +360,7 @@ register VIEW  *vp;
 	} else if (bcmp((char *)vp, (char *)&ourview, sizeof(VIEW))) {
 		copystruct(&oldview, &ourview);
 		copystruct(&ourview, vp);
-		newimage();		/* newimage() calls with vp=&ourview! */
+		newimage();
 	}
 }
 
