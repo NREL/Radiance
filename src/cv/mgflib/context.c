@@ -376,12 +376,15 @@ c_clearall()			/* empty context tables */
 {
 	c_uncolor = c_dfcolor;
 	c_ccolor = &c_uncolor;
+	c_ccname = NULL;
 	lu_done(&clr_tab);
 	c_unmaterial = c_dfmaterial;
 	c_cmaterial = &c_unmaterial;
+	c_cmname = NULL;
 	lu_done(&mat_tab);
 	c_unvertex = c_dfvertex;
 	c_cvertex = &c_unvertex;
+	c_cvname = NULL;
 	lu_done(&vtx_tab);
 }
 
