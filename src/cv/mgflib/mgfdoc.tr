@@ -2388,7 +2388,7 @@ ring - create a circular ring with inner and outer radii
 .SH
 SYNOPSIS
 .LP
-.B cyl
+.B ring
 .I "vc rmin rmax"
 .SH
 DESCRIPTION
