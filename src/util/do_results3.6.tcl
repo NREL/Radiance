@@ -140,7 +140,7 @@ proc cnvpic {} {		# Convert selected pictures
 		set p $radvar(PICTURE)_$vw.pic
 		set df [format $convdest $vw]
 		set curmess "Converting $p to $df..."
-		update idletasks
+		update
 		set cc [format $conv($conv(typ),com) $p $df]
 		if {! [catch {eval exec $cc} curmess]} {
 			set curmess "Done."
@@ -154,7 +154,7 @@ proc prtpic {} {		# Print selected pictures
 	foreach i [$fvwbox curselection] {
 		set p $radvar(PICTURE)_[$fvwbox get $i].pic
 		set curmess "Printing $p..."
-		update idletasks
+		update
 		set pc [format $prntcom $p]
 		if {! [catch {eval exec $pc} curmess]} {
 			set curmess "Done."
