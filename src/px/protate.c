@@ -20,6 +20,7 @@ int	order;				/* input scanline order */
 int	xres, yres;			/* input resolution */
 
 int	correctorder = 0;		/* order correction? */
+int	ccw = 0;			/* rotate CCW? */
 
 #ifdef BIGMEM
 char	buf[1<<22];			/* output buffer */
@@ -33,8 +34,24 @@ int	nrows;				/* number of rows output at once */
 
 char	*progname;
 
-#define neworder()	(correctorder ? order : \
-			(order^(order&YMAJOR?YDECR:XDECR)^YMAJOR))
+short	ordertab[4][2] = {
+	{0,XDECR}, {XDECR,XDECR|YDECR}, {XDECR|YDECR,YDECR}, {YDECR,0}
+};
+
+
+int
+neworder()		/* return corrected order */
+{
+	register int	i;
+
+	if (correctorder)
+		return(order);
+	for (i = 4; i--; )
+		if ((order&~YMAJOR) == ordertab[i][ccw])
+			return(ordertab[i][1-ccw] | ((order&YMAJOR)^YMAJOR));
+	fputs("Order botch!\n", stderr);
+	exit(2);
+}
 
 
 main(argc, argv)
@@ -47,14 +64,21 @@ char	*argv[];
 
 	progname = argv[0];
 
-	if (argc > 2 && !strcmp(argv[1], "-c")) {
-		correctorder++;
+	while (argc > 2 && argv[1][0] == '-') {
+		switch (argv[1][1]) {
+		case 'c':
+			correctorder = 1;
+			break;
+		case 'r':
+			ccw = 1;
+			break;
+		default:
+			goto userr;
+		}
 		argc--; argv++;
 	}
-	if (argc != 2 && argc != 3) {
-		fprintf(stderr, "Usage: %s [-c] infile [outfile]\n", progname);
-		exit(1);
-	}
+	if (argc != 2 && argc != 3)
+		goto userr;
 	if ((fin = fopen(argv[1], "r")) == NULL) {
 		fprintf(stderr, "%s: cannot open\n", argv[1]);
 		exit(1);
@@ -71,7 +95,10 @@ char	*argv[];
 	if (rval)
 		fputformat(picfmt, stdout);
 					/* add new header info. */
-	printf("%s%s\n\n", progname, correctorder?" -c":"");
+	fputs(progname, stdout);
+	if (ccw) fputs(" -r", stdout);
+	if (correctorder) fputs(" -c", stdout);
+	fputs("\n\n", stdout);
 					/* get picture size */
 	if ((order = fgetresolu(&xres, &yres, fin)) < 0) {
 		fprintf(stderr, "%s: bad picture size\n", progname);
@@ -81,12 +108,18 @@ char	*argv[];
 	fputresolu(neworder(), yres, xres, stdout);
 					/* compute buffer capacity */
 	nrows = sizeof(buf)/sizeof(COLR)/yres;
-	rotate(fin);			/* rotate the image */
+	if (ccw)			/* rotate the image */
+		rotateccw(fin);
+	else
+		rotatecw(fin);
 	exit(0);
+userr:
+	fprintf(stderr, "Usage: %s [-r][-c] infile [outfile]\n", progname);
+	exit(1);
 }
 
 
-rotate(fp)			/* rotate picture */
+rotatecw(fp)			/* rotate picture clockwise */
 FILE	*fp;
 {
 	register COLR	*inln;
@@ -114,6 +147,43 @@ FILE	*fp;
 						sizeof(COLR));
 		}
 		for (inx = 0; inx < nrows && xoff+inx < xres; inx++)
+			if (fwritecolrs(scanbar+inx*yres, yres, stdout) < 0) {
+				fprintf(stderr, "%s: write error\n", progname);
+				exit(1);
+			}
+	}
+	free((char *)inln);
+}
+
+
+rotateccw(fp)			/* rotate picture counter-clockwise */
+FILE	*fp;
+{
+	register COLR	*inln;
+	register int	xoff, inx, iny;
+	long	start, ftell();
+
+	if ((inln = (COLR *)malloc(xres*sizeof(COLR))) == NULL) {
+		fprintf(stderr, "%s: out of memory\n", progname);
+		exit(1);
+	}
+	start = ftell(fp);
+	for (xoff = xres-1; xoff >= 0; xoff -= nrows) {
+		if (fseek(fp, start, 0) < 0) {
+			fprintf(stderr, "%s: seek error\n", progname);
+			exit(1);
+		}
+		for (iny = 0; iny < yres; iny++) {
+			if (freadcolrs(inln, xres, fp) < 0) {
+				fprintf(stderr, "%s: read error\n", progname);
+				exit(1);
+			}
+			for (inx = 0; inx < nrows && xoff-inx >= 0; inx++)
+				bcopy((char *)inln[xoff-inx],
+						(char *)scanbar[inx*yres+iny],
+						sizeof(COLR));
+		}
+		for (inx = 0; inx < nrows && xoff-inx >= 0; inx++)
 			if (fwritecolrs(scanbar+inx*yres, yres, stdout) < 0) {
 				fprintf(stderr, "%s: write error\n", progname);
 				exit(1);
