@@ -61,7 +61,7 @@ char	*key;
 {
 	int  hval, i;
 	register int  ndx;
-	LUENT  *oldtabl;
+	register LUENT  *oldtabl;
 					/* look up object */
 	hval = lu_hash(key);
 tryagain:
@@ -83,6 +83,11 @@ tryagain:
 	}
 	if (!ndx)
 		goto tryagain;
+	/*
+	 * The following code may fail if the user has reclaimed many
+	 * deleted entries and the system runs out of memory in a
+	 * recursive call to lu_find().
+	 */
 	while (ndx--)
 		if (oldtabl[ndx].key != NULL)
 			if (oldtabl[ndx].data != NULL)
