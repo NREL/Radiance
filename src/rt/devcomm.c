@@ -49,33 +49,28 @@ int	devchild;
 
 
 struct driver *
-comm_init(argv)			/* set up and execute driver */
-char	*argv[];
+comm_init(dname, id)			/* set up and execute driver */
+char	*dname, *id;
 {
 	char	*devname;
 	int	p1[2], p2[2];
-
-	if ((devname = getpath(argv[0], DEVPATH, 1)) == NULL) {
-		stderr_v(argv[0]);
+	char	pin[16], pout[16];
+						/* find driver program */
+	if ((devname = getpath(dname, DEVPATH, 1)) == NULL) {
+		stderr_v(dname);
 		stderr_v(": not found\n");
 		return(NULL);
 	}
+						/* open communication pipes */
 	if (pipe(p1) == -1 || pipe(p2) == -1)
 		goto syserr;
-	if ((devchild = vfork()) == 0) {
+	if ((devchild = vfork()) == 0) {	/* fork driver process */
 		close(p1[1]);
 		close(p2[0]);
-		if (p1[0] != 0) {
-			dup2(p1[0], 0);
-			close(p1[0]);
-		}
-		if (p2[1] != 1) {
-			dup2(p2[1], 1);
-			close(p2[1]);
-		}
-		execv(devname, argv);
-		stderr_v(devname);
-		stderr_v(": cannot execute\n");
+		sprintf(pin, "%d", p1[0]);
+		sprintf(pout, "%d", p2[1]);
+		execl(devname, dname, pin, pout, id, 0);
+		perror(devname);
 		_exit(127);
 	}
 	if (devchild == -1)
@@ -87,13 +82,22 @@ char	*argv[];
 	if ((devin = fdopen(p2[0], "r")) == NULL)
 		goto syserr;
 	bcopy(&comm_default, &comm_driver, sizeof(comm_driver));
+						/* verify & get resolution */
+	putw(COM_SENDM, devout);
+	fflush(devout);
+	if (getw(devin) != COM_RECVM)
+		return(NULL);
+	comm_driver.xsiz = getw(devin);
+	comm_driver.ysiz = getw(devin);
+						/* input handling */
 	signal(SIGIO, onsigio);
-	cmdvec = comm_comout;			/* set error vectors */
+						/* set error vectors */
+	cmdvec = comm_comout;
 	if (wrnvec != NULL)
 		wrnvec = comm_comout;
 	return(&comm_driver);
 syserr:
-	perror(argv[0]);
+	perror(dname);
 	return(NULL);
 }
 
@@ -182,7 +186,8 @@ char	*buf;
 	if (getc(devin) != COM_COMIN)
 		reply_error("comin");
 	mygets(buf, devin);
-	comm_driver.inpready = 0;
+	if (comm_driver.inpready > 0)
+		comm_driver.inpready--;
 }
 
 
