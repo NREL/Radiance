@@ -10,6 +10,7 @@ CC = cc
 LINT = lint
 LINTFLAGS = -DSTRUCTASSIGN -DBSD -DIEEE -DVARIABLE -DFUNCTION \
 -DINCHAN -DRCONST -DREDEFW -DBIGLIB
+COMPAT = malloc.o
 
 #
 # The following are user-definable:
@@ -52,7 +53,7 @@ RVOBJS = rvmain.o rview.o rv2.o rv3.o $(DOBJS) $(ROBJS)
 RVSRC = rmain.c rview.c rv2.c rv3.c $(DSRC) $(RSRC)
 
 ROBJS = $(RAYOBJS) $(SURFOBJS) $(MATOBJS) \
-	$(MODOBJS) $(SUPPOBJS)
+	$(MODOBJS) $(SUPPOBJS) $(COMPAT)
 RSRC = $(RAYSRC) $(SURFSRC) $(MATSRC) \
 	$(MODSRC) $(SUPPSRC)
 
@@ -151,6 +152,9 @@ rvmain.o:	rmain.c
 
 readfargs.o:	readfargs.c ../common/object.h
 	$(CC) $(CFLAGS) -DMEMHOG -c readfargs.c
+
+malloc.o:	malloc.c
+	$(CC) $(CFLAGS) -DMCOMP -c malloc.c
 
 #
 # Uncomment the following to model dispersion:
