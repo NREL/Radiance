@@ -13,7 +13,10 @@ static char SCCSid[] = "$SunId$ SGI";
 #include <sys/uio.h>
 
 #ifndef HDSUF
-#define HDSUF	".hdi"
+#define HDSUF		".hdi"
+#endif
+#ifndef SLAVENAME
+#define SLAVENAME	"slave"
 #endif
 
 #ifndef FNONBLK
@@ -30,33 +33,40 @@ char	*dname;
 {
 	char	buf[sizeof(HDGRID)+512], fd0[8], fd1[8], *cmd[5], *sfn;
 	int	i, n, len;
-				/* get full display program name */
+
+	if (!strcmp(dname, SLAVENAME)) {
+		dpd[0] = 0;		/* read from stdin */
+		dpout = stdout;		/* write to stdout */
+		dpd[2] = -1;		/* we're the slave process */
+	} else {
+					/* get full display program name */
 #ifdef DEVPATH
-	sprintf(buf, "%s/%s%s", DEVPATH, dname, HDSUF);
+		sprintf(buf, "%s/%s%s", DEVPATH, dname, HDSUF);
 #else
-	sprintf(buf, "dev/%s%s", dname, HDSUF);
+		sprintf(buf, "dev/%s%s", dname, HDSUF);
 #endif
-				/* dup stdin and stdout */
-	if (readinp)
-		sprintf(fd0, "%d", dup(0));
-	else
-		strcpy(fd0, "-1");
-	sprintf(fd1, "%d", dup(1));
-				/* start the display process */
-	cmd[0] = buf;
-	cmd[1] = froot; cmd[2] = fd1; cmd[3] = fd0;
-	cmd[4] = NULL;
-	i = open_process(dpd, cmd);
-	if (i <= 0)
-		error(USER, "cannot start display process");
-	if ((dpout = fdopen(dpd[1], "w")) == NULL)
-		error(SYSTEM, "cannot associate FILE with display pipe");
+					/* dup stdin and stdout */
+		if (readinp)
+			sprintf(fd0, "%d", dup(0));
+		else
+			strcpy(fd0, "-1");
+		sprintf(fd1, "%d", dup(1));
+					/* start the display process */
+		cmd[0] = buf;
+		cmd[1] = froot; cmd[2] = fd1; cmd[3] = fd0;
+		cmd[4] = NULL;
+		i = open_process(dpd, cmd);
+		if (i <= 0)
+			error(USER, "cannot start display process");
+		if ((dpout = fdopen(dpd[1], "w")) == NULL)
+			error(SYSTEM, "problem opening display pipe");
+					/* close dup'ed stdin and stdout */
+		if (readinp)
+			close(atoi(fd0));
+		close(atoi(fd1));
+	}
 	dpd[1] = -1;		/* causes ignored error in close_process() */
 	inp_flags = 0;
-				/* close dup'ed stdin and stdout */
-	if (readinp)
-		close(atoi(fd0));
-	close(atoi(fd1));
 				/* check if outside */
 	if (vdef(OBSTRUCTIONS) && vbool(OBSTRUCTIONS))
 		disp_result(DS_OUTSECT, 0, NULL);
@@ -243,7 +253,7 @@ disp_close()			/* close our display process */
 	disp_result(DS_SHUTDOWN, 0, NULL);
 	fclose(dpout);
 	dpout = NULL;
-	return(close_process(dpd));
+	return(dpd[2]<0 ? 0 : close_process(dpd));
 }
 
 
