@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -15,11 +15,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "color.h"
 
 
-typedef double  FVECT[3];
-
 typedef struct ambval {
-	FVECT  pos;		/* position in space */
-	FVECT  dir;		/* normal direction */
+	float  pos[3];		/* position in space */
+	float  dir[3];		/* normal direction */
 	int  lvl;		/* recursion level of parent ray */
 	float  weight;		/* weight of parent ray */
 	COLOR  val;		/* computed ambient value */
@@ -105,12 +103,12 @@ FILE  *fp;
 	for ( ; ; ) {
 		if (!dataonly)
 			fscanf(fp, "%*s");
-		if (fscanf(fp, "%lf %lf %lf",
+		if (fscanf(fp, "%f %f %f",
 				&av.pos[0], &av.pos[1], &av.pos[2]) != 3)
 			return;
 		if (!dataonly)
 			fscanf(fp, "%*s");
-		if (fscanf(fp, "%lf %lf %lf",
+		if (fscanf(fp, "%f %f %f",
 				&av.dir[0], &av.dir[1], &av.dir[2]) != 3)
 			return;
 		if (!dataonly)
