@@ -345,7 +345,7 @@ char	**av;
 		op = fname + strlen(fname);
 	(void)strcpy(op, ".rad");
 					/* see if we need to run ies2rad */
-	if (access(op, 0) == -1) {
+	if (access(fname, 0) == -1) {
 		(void)strcpy(combuf, "ies2rad");/* build ies2rad command */
 		op = combuf + 7;		/* get -m option (first) */
 		if (ac-xa0 >= 2 && !strcmp(av[xa0], "-m")) {
