@@ -99,8 +99,11 @@ compveil()				/* compute veiling image */
 					t2 = DOT(rdirscan(py)[px],
 							rdirscan(y)[x]);
 					if (t2 <= FTINY) continue;
+					/*	use approximation instead
 					t2 = acos(t2);
 					t2 = 1./(t2*t2);
+					*/
+					t2 = .5 / (1. - t2);
 					copycolor(ctmp, fovscan(y)[x]);
 					scalecolor(ctmp, t2);
 					addcolor(vsum, ctmp);
@@ -355,9 +358,10 @@ initacuity()			/* initialize variable acuity sampling */
 			}
 			fcross(cp, diffx, diffy);
 			omega = 0.5 * sqrt(DOT(cp,cp));
-			tsampr(x,y) = PI/180. / sqrt(omega) /
-					hacuity(plum(fovscan(y)[x]));
-			if (tsampr(x,y) > maxsr)
+			if (omega <= FTINY)
+				tsampr(x,y) = 1.;
+			else if ((tsampr(x,y) = PI/180. / sqrt(omega) /
+					hacuity(plum(fovscan(y)[x]))) > maxsr)
 				maxsr = tsampr(x,y);
 		}
 					/* copy perimeter (easier) */
