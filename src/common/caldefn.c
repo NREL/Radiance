@@ -252,9 +252,18 @@ int  lvl;
     return(nambuf);		/* return qualified name */
 toolong:
     *cp = '\0';
-    wputs(nambuf);
-    wputs(": name too long\n");
-    return(NULL);
+    eputs(nambuf);
+    eputs(": name too long\n");
+    quit(1);
+}
+
+
+incontext(qn)			/* is qualified name in current context? */
+register char  *qn;
+{
+    while (*qn && *qn != CNTXMARK)	/* find context mark */
+	;
+    return(!strcmp(qn, context));
 }
 
 
@@ -277,13 +286,14 @@ int  lvl;
     register int  i;
     register VARDEF  *vp;
     register EPNODE  *ep;
-
+				/* if context is global, clear all */
     for (i = 0; i < NHASH; i++)
 	for (vp = hashtbl[i]; vp != NULL; vp = vp->next)
-	    if (lvl >= 2)
-		dremove(vp->name);
-	    else
-		dclear(vp->name);
+	    if (!context[0] || incontext(vp->name))
+		if (lvl >= 2)
+		    dremove(vp->name);
+		else
+		    dclear(vp->name);
 #ifdef  OUTCHAN
     if (lvl >= 1) {
 	for (ep = outchan; ep != NULL; ep = ep->sibling)
