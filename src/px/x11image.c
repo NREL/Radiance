@@ -870,18 +870,20 @@ getgrey()			/* get greyscale data */
 		add2icon(y, scanline);
 		if (scale)
 			shiftcolrs(scanline, xmax, scale);
+		for (x = 0; x < xmax; x++)
+			scanline[x][GRN] = normbright(scanline[x]);
 		colrs_gambs(scanline, xmax);
 		if (maxcolors < 256)
 			for (x = 0; x < xmax; x++)
-				*dp++ =	((long)normbright(scanline[x]) *
-					maxcolors + 128) >> 8;
+				*dp++ =	((long)scanline[x][GRN] *
+					maxcolors + maxcolors/2) >> 8;
 		else
 			for (x = 0; x < xmax; x++)
-				*dp++ =	normbright(scanline[x]);
+				*dp++ =	scanline[x][GRN];
 	}
 	for (x = 0; x < maxcolors; x++)
 		clrtab[x][RED] = clrtab[x][GRN] =
-			clrtab[x][BLU] = ((long)x*256+maxcolors/2)/maxcolors;
+			clrtab[x][BLU] = ((long)x*256 + 128)/maxcolors;
 }
 
 

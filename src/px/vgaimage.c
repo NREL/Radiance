@@ -186,12 +186,13 @@ init()			/* initialize and load display */
 	ms_init();
 	initialized = 1;
 	_getvideoconfig(&config);
-	if (maxcolors == 0)
-		maxcolors = config.numcolors;
-	if (maxcolors > 4) {
-		maxcolors -= minpix = 2;
-		_settextcolor(ourwhite);
-	}
+	if (maxcolors == 0 | maxcolors > config.numcolors)
+		maxcolors = config.numcolors-2;
+	if (maxcolors <= config.numcolors-2)
+		minpix = 2;
+	else
+		ourwhite = maxcolors-1;
+	_settextcolor(ourwhite);
 	cheight = config.numypixels/config.numtextrows;
 	cwidth = config.numxpixels/config.numtextcols;
 				/* clear scan position array */
@@ -375,9 +376,8 @@ setpalette()			/* set our palette using clrtab */
 	long	cvals[256];
 	register int	i;
 
-	if (minpix >= 2) {
-		cvals[ourblack] = _BLACK; cvals[ourwhite] = _BRIGHTWHITE;
-	}
+	cvals[ourblack] = _BLACK;
+	cvals[ourwhite] = _BRIGHTWHITE;
 	for (i = 0; i < maxcolors; i++)
 		cvals[i+minpix] = clrtab[i][BLU]<<14 & 0x3f0000L |
 				  clrtab[i][GRN]<<6 & 0x3f00 |
@@ -395,8 +395,8 @@ greyimage()			/* display greyscale image */
 	setcolrgam(gamcor);
 					/* set up color map */
 	for (x = 0; x < maxcolors; x++)
-		clrtab[x][RED] = clrtab[x][GRN] =
-			clrtab[x][BLU] = ((long)x*256+maxcolors/2)/maxcolors;
+		clrtab[x][RED] = clrtab[x][GRN] = clrtab[x][BLU] =
+				((long)x*256 + 128)/maxcolors;
 	setpalette();
 	_setplotaction(_GPSET);
 					/* read and display file */
@@ -404,18 +404,20 @@ greyimage()			/* display greyscale image */
 		getscan(y);
 		if (scale)
 			shiftcolrs(scanline, xmax, scale);
+		for (x = 0; x < xmax; x++)
+			scanline[x][GRN] = normbright(scanline[x]);
 		colrs_gambs(scanline, xmax);
 		if (maxcolors < 256)
 			for (x = 0; x < xmax; x++) {
-				thiscolor = ((long)normbright(scanline[x]) *
-					maxcolors + 128) >> 8;
+				thiscolor = ((long)scanline[x][GRN] *
+						maxcolors + maxcolors/2) / 256;
 				if (thiscolor != lastcolor)
 					_setcolor((lastcolor=thiscolor)+minpix);
 				_setpixel(x, y);
 			}
 		else
 			for (x = 0; x < xmax; x++) {
-				thiscolor = normbright(scanline[x]);
+				thiscolor = scanline[x][GRN];
 				if (thiscolor != lastcolor)
 					_setcolor((lastcolor=thiscolor)+minpix);
 				_setpixel(x, y);
@@ -476,7 +478,7 @@ int  y;
 		if (fseek(fin, scanpos[y], 0) == -1)
 			quiterr("fseek error");
 		cury = y;
-	} else if (scanpos != NULL && scanpos[y] == -1)
+	} else if (fin != stdin && scanpos[y] == -1)
 		scanpos[y] = ftell(fin);
 
 	if (freadcolrs(scanline, xmax, fin) < 0)
@@ -597,4 +599,3 @@ ms_done()
     inregs.w.ax = 0;
     int386 (0x33, &inregs, &outregs);
 }
-
