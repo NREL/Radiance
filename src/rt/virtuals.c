@@ -320,12 +320,14 @@ register int  sn;	/* target source number */
 		srcray(&sr, NULL, sn);
 		rayvalue(&sr);
 		if (bright(sr.rcol) <= FTINY) {
+			if (nhit > 0) {
 #ifdef DEBUG
-			fprintf(stderr, "\tfound an occlusion\n");
+				fprintf(stderr, "\tpartially occluded\n");
 #endif
-			return(f);	/* need to shadow test */
-		}
-		nhit++;
+				return(f);	/* need to shadow test */
+			}
+		} else
+			nhit++;
 	}
 	if (nhit == 0) {
 #ifdef DEBUG
