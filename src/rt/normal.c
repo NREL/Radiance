@@ -50,6 +50,7 @@ extern double  specjitter;		/* specular sampling jitter */
 
 typedef struct {
 	OBJREC  *mp;		/* material pointer */
+	RAY  *rp;		/* ray pointer */
 	short  specfl;		/* specularity flags, defined above */
 	COLOR  mcolor;		/* color of this material */
 	COLOR  scolor;		/* color of specular component */
@@ -71,8 +72,9 @@ FVECT  ldir;			/* light source direction */
 double  omega;			/* light source size */
 {
 	double  ldot;
-	double  dtmp;
-	int	i;
+	double  dtmp, d2;
+	FVECT  vtmp;
+	register int	i;
 	COLOR  ctmp;
 
 	setcolor(cval, 0.0, 0.0, 0.0);
@@ -99,12 +101,17 @@ double  omega;			/* light source size */
 		 *  gaussian distribution model.
 		 */
 						/* roughness */
-		dtmp = 2.0*np->alpha2;
+		dtmp = np->alpha2;
 						/* + source if flat */
 		if (np->specfl & SP_FLAT)
-			dtmp += omega/(2.0*PI);
+			dtmp += omega/(4.0*PI);
+						/* delta */
+		for (i = 0; i < 3; i++)
+			vtmp[i] = ldir[i] - np->rp->rdir[i];
+		d2 = DOT(vtmp, np->pnorm);
+		d2 = 2.0 - 2.0*d2/sqrt(DOT(vtmp,vtmp));
 						/* gaussian */
-		dtmp = exp((DOT(np->vrefl,ldir)-1.)/dtmp)/(2.*PI)/dtmp;
+		dtmp = exp(-d2/dtmp)/(4.*PI*dtmp);
 						/* worth using? */
 		if (dtmp > FTINY) {
 			copycolor(ctmp, np->scolor);
@@ -158,6 +165,7 @@ register RAY  *r;
 	if (m->oargs.nfargs != (m->otype == MAT_TRANS ? 7 : 5))
 		objerror(m, USER, "bad number of arguments");
 	nd.mp = m;
+	nd.rp = r;
 						/* get material color */
 	setcolor(nd.mcolor, m->oargs.farg[0],
 			   m->oargs.farg[1],
