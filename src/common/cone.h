@@ -25,8 +25,8 @@ typedef struct cone {
 	RREAL  (*tm)[4];	/* pointer to transformation matrix */
 }  CONE;
 
-#define  CO_R0(co)	((co)->ca[(co)->r0])
-#define  CO_R1(co)	((co)->ca[(co)->r1])
+#define  CO_R0(co)	((co)->ca[(int)((co)->r0)])
+#define  CO_R1(co)	((co)->ca[(int)((co)->r1)])
 #define  CO_P0(co)	((co)->ca+(co)->p0)
 #define  CO_P1(co)	((co)->ca+(co)->p1)
 

@@ -151,7 +151,7 @@ register RREAL		com[][3];
 int			n;
 {
 	double	a, b;
-	register int	i, j;
+	register int	i;
 
 	printf("%d\t%d\n", 1+3*n, bcm->ax);
 	for (i = 0; i < n; i++) {

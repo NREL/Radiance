@@ -7,12 +7,12 @@ static const char RCSid[] = "$Id$";
 
 #include "copyright.h"
 
-#include  "standard.h"
+#include  "rtmath.h"
+#include  "rterror.h"
+#include  "rtio.h"
 
 #include  "octree.h"
-
 #include  "object.h"
-
 #include  "instance.h"
 
 #define  IO_ILLEGAL	(IO_FILES|IO_INFO)

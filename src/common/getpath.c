@@ -12,7 +12,6 @@ static const char	RCSid[] = "$Id$";
 #include  <string.h>
 #include  <ctype.h>
 
-#include  "paths.h"
 #include  "rtio.h"
 
 

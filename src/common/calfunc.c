@@ -193,7 +193,7 @@ argument(n)			/* return nth argument for active function */
 register int  n;
 {
     register ACTIVATION  *actp = curact;
-    register EPNODE  *ep;
+    register EPNODE  *ep = NULL;
     double  aval;
 
     if (actp == NULL || --n < 0) {

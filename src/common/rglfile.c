@@ -7,6 +7,8 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
+#include <ctype.h>
+
 #include "rtprocess.h"
 #include "radogl.h"
 

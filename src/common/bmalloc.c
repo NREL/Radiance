@@ -31,8 +31,9 @@ static unsigned int  nremain = 0;
 
 
 char *
-bmalloc(n)		/* allocate a block of n bytes */
-register unsigned int  n;
+bmalloc(		/* allocate a block of n bytes */
+register unsigned int  n
+)
 {
 	if (n > nremain && (n > MBLKSIZ || nremain > MBLKSIZ/WASTEFRAC))
 		return(malloc(n));			/* too big */
@@ -50,9 +51,10 @@ register unsigned int  n;
 
 
 void
-bfree(p, n)			/* free random memory */
-register char	*p;
-register unsigned int	n;
+bfree(			/* free random memory */
+register char	*p,
+register unsigned int	n
+)
 {
 	register unsigned int	bsiz;
 					/* check alignment */

@@ -8,18 +8,21 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 
-bcopy(src, dest, nbytes)
-register char	*src, *dest;
-register int	nbytes;
+bcopy(
+register char *src,
+register char *dest,
+register int  nbytes
+)
 {
 	while (nbytes-- > 0)
 		*dest++ = *src++;
 }
 
 
-bzero(b, nbytes)
-register char	*b;
-register int	nbytes;
+bzero(
+register char	*b,
+register int	nbytes
+)
 {
 	while (nbytes-- > 0)
 		*b++ = 0;
@@ -27,9 +30,11 @@ register int	nbytes;
 
 
 int
-bcmp(b1, b2, nbytes)
-register unsigned char	*b1, *b2;
-register int	nbytes;
+bcmp(
+register unsigned char *b1,
+register unsigned char *b2,
+register int	nbytes
+)
 {
 	while (nbytes-- > 0)
 		if (*b1++ - *b2++)

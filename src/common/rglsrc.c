@@ -43,7 +43,6 @@ void
 lightinit()			/* initialize lighting */
 {
 	GLfloat	ambv[4];
-	register int	i;
 
 	if (!dolights)
 		return;
@@ -73,8 +72,6 @@ lightclean()			/* clean up light source commands */
 void
 lightdefs()			/* define light source list */
 {
-	register int	i;
-
 	if (!nlights)
 		return;
 	glNewList(lightlist, GL_COMPILE);

@@ -28,6 +28,7 @@
   #define popen(cmd,mode) win_popen(cmd,mode)
   #define pclose(p) win_pclose(p)
 #else
+  #include <stdio.h>
   #include <sys/param.h>
 #endif
 

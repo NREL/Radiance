@@ -95,6 +95,7 @@ char	*nam;
 	return((MATREC *)lup->data);
 memerr:
 	error(SYSTEM, "out of memory in newmaterial");
+	return NULL; /* pro forma return */
 }
 
 

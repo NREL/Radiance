@@ -9,11 +9,9 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
-#include  "standard.h"
-
+#include  "rtio.h"
 #include  "view.h"
 
-#include  "paths.h"
 
 #define  FEQ(x,y)	(fabs((x)-(y)) <= FTINY)
 #define  VEQ(v,w)	(FEQ((v)[0],(w)[0]) && FEQ((v)[1],(w)[1]) \

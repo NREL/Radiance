@@ -17,7 +17,7 @@ FVECT	cent;
 {
 	GLfloat	vec[4];
 
-	if (mp == NULL | !domats)
+	if ((mp == NULL) | !domats)
 		return;
 	if (islight(mp->type)) {
 		vec[0] = colval(mp->u.l.emission,RED);

@@ -19,7 +19,7 @@ register EPNODE  *ep;
 FILE  *fp;
 {
     static EPNODE  *curdef = NULL;
-    register EPNODE  *ep1;
+    register EPNODE  *ep1 = NULL;
 
     switch (ep->type) {
 

@@ -15,10 +15,11 @@ static const char	RCSid[] = "$Id$";
 
 
 int
-badarg(ac, av, fl)		/* check argument list */
-int	ac;
-register char	**av;
-register char	*fl;
+badarg(		/* check argument list */
+int	ac,
+register char	**av,
+register char	*fl
+)
 {
 	register int  i;
 

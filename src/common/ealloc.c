@@ -26,6 +26,7 @@ emalloc(unsigned int  n)
 
 	eputs("Out of memory in emalloc\n");
 	quit(1);
+	return NULL; /* pro forma return */
 }
 
 
@@ -68,6 +69,7 @@ erealloc(register char  *cp, unsigned int  n)
 
 	eputs("Out of memory in erealloc\n");
 	quit(1);
+	return NULL; /* pro forma return */
 }
 
 

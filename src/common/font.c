@@ -7,8 +7,8 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
-#include "standard.h"
-
+#include "rtio.h"
+#include "rterror.h"
 #include "font.h"
 
 #define galloc(nv)	(GLYPH *)malloc(sizeof(GLYPH)+2*sizeof(GORD)*(nv))
@@ -24,7 +24,7 @@ getfont(fname)				/* return font fname */
 char  *fname;
 {
 	FILE  *fp;
-	char  *pathname, *err;
+	char  *pathname, *err = NULL;
 	unsigned  wsum, hsum, ngly;
 	int  gn, ngv, gv;
 	register GLYPH	*g;
@@ -208,7 +208,7 @@ FONT  *f;			/* font */
 int  cis;			/* target intercharacter spacing */
 int  nsi;			/* minimum number of spaces for indent */
 {
-	register char  *end, *tab;
+	register char  *end, *tab = NULL;
 	GLYPH  *gp;
 	short  *nsp;
 	int  alen, len, width;
