@@ -88,6 +88,7 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
+#define  check(c,n)	if (argv[i][c] || n >= argc-i) goto badopt
 	double  atof();
 	char  *getenv();
 	int  report();
@@ -104,7 +105,7 @@ char  *argv[];
 					/* get library path */
 	if ((libpath = getenv(ULIBVAR)) == NULL)
 		libpath = DEFPATH;
-						/* option city */
+					/* option city */
 	for (i = 1; i < argc && argv[i][0] == '-'; i++) {
 		if (!strcmp(argv[i], "-defaults")) {
 			printdefaults();
@@ -124,27 +125,33 @@ char  *argv[];
 				ourview.type = argv[i][3];
 				break;
 			case 'p':				/* point */
+				check(3,3);
 				ourview.vp[0] = atof(argv[++i]);
 				ourview.vp[1] = atof(argv[++i]);
 				ourview.vp[2] = atof(argv[++i]);
 				break;
 			case 'd':				/* direction */
+				check(3,3);
 				ourview.vdir[0] = atof(argv[++i]);
 				ourview.vdir[1] = atof(argv[++i]);
 				ourview.vdir[2] = atof(argv[++i]);
 				break;
 			case 'u':				/* up */
+				check(3,3);
 				ourview.vup[0] = atof(argv[++i]);
 				ourview.vup[1] = atof(argv[++i]);
 				ourview.vup[2] = atof(argv[++i]);
 				break;
 			case 'h':				/* horizontal */
+				check(3,1);
 				ourview.horiz = atof(argv[++i]);
 				break;
 			case 'v':				/* vertical */
+				check(3,1);
 				ourview.vert = atof(argv[++i]);
 				break;
 			case 'f':				/* file */
+				check(3,1);
 				rval = viewfile(argv[++i], &ourview);
 				if (rval < 0) {
 					sprintf(errmsg,
@@ -160,7 +167,7 @@ char  *argv[];
 					gotvfile += rval;
 				break;
 			default:
-				goto unkopt;
+				goto badopt;
 			}
 			break;
 #endif
@@ -168,64 +175,77 @@ char  *argv[];
 			switch (argv[i][2]) {
 #if  RPICT
 			case 'p':				/* pixel */
+				check(3,1);
 				dstrpix = atof(argv[++i]);
 				break;
 #endif
 			case 's':				/* source */
+				check(3,1);
 				dstrsrc = atof(argv[++i]);
 				break;
 			default:
-				goto unkopt;
+				goto badopt;
 			}
 			break;
 #if  RPICT|RVIEW
 		case 's':				/* sample */
 			switch (argv[i][2]) {
 			case 'p':				/* pixel */
+				check(3,1);
 				psample = atoi(argv[++i]);
 				break;
 			case 'd':				/* difference */
+				check(3,1);
 				maxdiff = atof(argv[++i]);
 				break;
 			default:
-				goto unkopt;
+				goto badopt;
 			}
 			break;
 		case 'x':				/* x resolution */
+			check(2,1);
 			ourview.hresolu = atoi(argv[++i]);
 			break;
 		case 'y':				/* y resolution */
+			check(2,1);
 			ourview.vresolu = atoi(argv[++i]);
 			break;
 #endif
 #if  RTRACE
 		case 'x':				/* x resolution */
+			check(2,1);
 			hresolu = atoi(argv[++i]);
 			break;
 		case 'y':				/* y resolution */
+			check(2,1);
 			vresolu = atoi(argv[++i]);
 			break;
 #endif
 		case 'w':				/* warnings */
+			check(2,0);
 			wrnvec = wrnvec==NULL ? stderr_v : NULL;
 			break;
 		case 'e':				/* error file */
+			check(2,1);
 			errfile = argv[++i];
 			break;
 		case 'l':				/* limit */
 			switch (argv[i][2]) {
 			case 'r':				/* recursion */
+				check(3,1);
 				maxdepth = atoi(argv[++i]);
 				break;
 			case 'w':				/* weight */
+				check(3,1);
 				minweight = atof(argv[++i]);
 				break;
 			default:
-				goto unkopt;
+				goto badopt;
 			}
 			break;
 #if  RPICT
 		case 'r':				/* recover file */
+			check(2,1);
 			recover = argv[++i];
 			rval = viewfile(recover, &ourview);
 			if (rval <= 0) {
@@ -236,33 +256,41 @@ char  *argv[];
 				gotvfile += rval;
 			break;
 		case 't':				/* timer */
+			check(2,1);
 			ralrm = atoi(argv[++i]);
 			break;
 #endif
 		case 'a':				/* ambient */
 			switch (argv[i][2]) {
 			case 'v':				/* value */
+				check(3,3);
 				setcolor(ambval, atof(argv[i+1]),
 						atof(argv[i+2]),
 						atof(argv[i+3]));
 				i += 3;
 				break;
 			case 'a':				/* accuracy */
+				check(3,1);
 				ambacc = atof(argv[++i]);
 				break;
 			case 'r':				/* resolution */
+				check(3,1);
 				ambres = atoi(argv[++i]);
 				break;
 			case 'd':				/* divisions */
+				check(3,1);
 				ambdiv = atoi(argv[++i]);
 				break;
 			case 's':				/* super-samp */
+				check(3,1);
 				ambssamp = atoi(argv[++i]);
 				break;
 			case 'b':				/* bounces */
+				check(3,1);
 				ambounce = atoi(argv[++i]);
 				break;
 			case 'i':				/* include */
+				check(3,1);
 				if (ambincl != 1) {
 					ambincl = 1;
 					amblp = amblist;
@@ -270,6 +298,7 @@ char  *argv[];
 				*amblp++ = argv[++i];
 				break;
 			case 'e':				/* exclude */
+				check(3,1);
 				if (ambincl != 0) {
 					ambincl = 0;
 					amblp = amblist;
@@ -277,10 +306,11 @@ char  *argv[];
 				*amblp++ = argv[++i];
 				break;
 			case 'f':				/* file */
+				check(3,1);
 				ambfile= argv[++i];
 				break;
 			default:
-				goto unkopt;
+				goto badopt;
 			}
 			break;
 #if  RTRACE
@@ -292,7 +322,7 @@ char  *argv[];
 				inform = argv[i][2];
 				break;
 			default:
-				goto unkopt;
+				goto badopt;
 			}
 			switch (argv[i][3]) {
 			case '\0':
@@ -304,27 +334,30 @@ char  *argv[];
 				outform = argv[i][3];
 				break;
 			default:
-				goto unkopt;
+				goto badopt;
 			}
 			break;
 		case 'o':				/* output */
 			outvals = argv[i]+2;
 			break;
 		case 'h':				/* toggle header */
+			check(2,0);
 			loadflags ^= IO_INFO;
 			break;
 #endif
 #if  RVIEW
 		case 'b':				/* black and white */
+			check(2,0);
 			greyscale = !greyscale;
 			break;
 		case 'o':				/* output device */
+			check(2,1);
 			devname = argv[++i];
 			break;
 #endif
 		default:
-unkopt:
-			sprintf(errmsg, "unknown option: '%s'", argv[i]);
+badopt:
+			sprintf(errmsg, "bad option: '%s'", argv[i]);
 			error(USER, errmsg);
 			break;
 		}
@@ -403,6 +436,7 @@ unkopt:
 	rview();			/* go */
 #endif
 	quit(0);
+#undef  check
 }
 
 
