@@ -20,7 +20,7 @@ char  *rpargv[128] = {"rpict", "-S", "1", "-x", "512", "-y", "512", "-pa", "1"};
 int  rpargc = 9;
 int  rpd[3];
 FILE  *torp, *fromrp;
-COLR  *scanline;
+COLR  *pbuf;
 				/* our view parameters */
 VIEW  ourview = STDVIEW;
 double  pixaspect = 1.0;
@@ -161,17 +161,19 @@ char  **av;
 		getheader(fp, NULL);		/* skip header */
 		if (fscnresolu(&hr, &vr, fp) < 0 ||	/* check resolution */
 				hr != hres*hmult || vr != vres*vmult) {
-			fprintf(stderr, "%s: picture resolution mismatch\n",
-					outfile);
+			fprintf(stderr, "%s: resolution mismatch on file \"%s\"\n",
+					progname, outfile);
 			exit(1);
 		}
 	} else {
-		fprintf(stderr, "%s: cannot open\n", outfile);
+		fprintf(stderr, "%s: cannot open file \"%s\"\n",
+				progname, outfile);
 		exit(1);
 	}
 	scanorig = ftell(fp);		/* record position of first scanline */
 	if (fclose(fp) == -1)		/* done with stream i/o */
 		goto filerr;
+	sync();				/* flush NFS buffers */
 					/* start rpict process */
 	if (open_process(rpd, rpargv) <= 0) {
 		fprintf(stderr, "%s: cannot start %s\n", progname, rpargv[0]);
@@ -183,14 +185,14 @@ char  **av;
 				progname, rpargv[0]);
 		exit(1);
 	}
-	if ((scanline = (COLR *)malloc(hres*sizeof(COLR))) == NULL) {
+	if ((pbuf = (COLR *)malloc(hres*vres*sizeof(COLR))) == NULL) {
 		fprintf(stderr, "%s: out of memory\n", progname);
 		exit(1);
 	}
 	signal(SIGALRM, onalrm);
 	return;
 filerr:
-	fprintf(stderr, "%s: file i/o error\n", outfile);
+	fprintf(stderr, "%s: i/o error on file \"%s\"\n", progname, outfile);
 	exit(1);
 }
 
@@ -214,12 +216,12 @@ int  *xp, *yp;
 		lseek(syncfd, 0L, 0);
 		buf[read(syncfd, buf, sizeof(buf)-1)] = '\0';
 		if (sscanf(buf, "%*d %*d %d %d", xp, yp) < 2) {
-			*xp = hmult;
-			*yp = vmult-1;
-		}
-		if (--(*xp) < 0) {		/* decrement position */
 			*xp = hmult-1;
-			if (--(*yp) < 0) {	/* all done! */
+			*yp = vmult;
+		}
+		if (--(*yp) < 0) {		/* decrement position */
+			*yp = vmult-1;
+			if (--(*xp) < 0) {	/* all done! */
 				close(syncfd);
 				return(0);
 			}
@@ -245,7 +247,7 @@ cleanup()			/* close rpict process and clean up */
 {
 	register int  rpstat;
 
-	free((char *)scanline);
+	free((char *)pbuf);
 	fclose(torp);
 	fclose(fromrp);
 	rpstat = close_process(rpd);
@@ -305,43 +307,52 @@ int  xpos, ypos;
 {
 	struct flock  fls;
 	int  hr, vr;
-	int  y;
-
+	register int  y;
+				/* check bounds */
 	if (xpos < 0 | ypos < 0 | xpos >= hmult | ypos >= vmult) {
 		fprintf(stderr, "%s: requested piece (%d,%d) out of range\n",
 				progname, xpos, ypos);
 		exit(1);
 	}
-	getheader(fromrp, NULL);	/* discard header info. */
-	if (fscnresolu(&hr, &vr, fromrp) < 0 ||	/* check resolution */
-			hr != hres || vr != vres) {
+				/* check header from rpict */
+	getheader(fromrp, NULL);
+	if (fscnresolu(&hr, &vr, fromrp) < 0 || hr != hres || vr != vres) {
 		fprintf(stderr, "%s: resolution mismatch from %s\n",
 				progname, rpargv[0]);
 		exit(1);
 	}
-	fls.l_whence = 1;
-	fls.l_start = 0L;
-	fls.l_len = hr*sizeof(COLR);
-	for (y = 0; y < vr; y++) {	/* transfer scanlines */
-		if (freadcolrs(scanline, hr, fromrp) < 0) {
+				/* load new piece into buffer */
+	for (y = 0; y < vr; y++)
+		if (freadcolrs(pbuf+y*hr, hr, fromrp) < 0) {
 			fprintf(stderr, "%s: read error from %s\n",
 					progname, rpargv[0]);
 			exit(1);
 		}
-		if ((y == 0 || hmult != 1) && lseek(outfd,
-scanorig+((long)((vmult-1-ypos)*vres+y)*hmult*hres+xpos*hres)*sizeof(COLR),
-				0) == -1) {
-			fprintf(stderr, "%s: seek error\n", outfile);
-			exit(1);
-		}
-		fls.l_type = F_WRLCK;
-		fcntl(outfd, F_SETLKW, &fls);
-		if (writebuf(outfd, (char *)scanline, hr*sizeof(COLR)) !=
+				/* lock file section so NFS doesn't mess up */
+	fls.l_whence = 0;
+	fls.l_len = (long)vres*hmult*hres*sizeof(COLR);
+	fls.l_start = scanorig + (vmult-1-ypos)*fls.l_len;
+	fls.l_type = F_WRLCK;
+	fcntl(outfd, F_SETLKW, &fls);
+				/* write new piece to file */
+	if (lseek(outfd, fls.l_start+(long)xpos*hres*sizeof(COLR), 0) == -1)
+		goto seekerr;
+	for (y = 0; y < vr; y++) {
+		if (writebuf(outfd, (char *)(pbuf+y*hr), hr*sizeof(COLR)) !=
 				hr*sizeof(COLR)) {
-			fprintf(stderr, "%s: write error\n", outfile);
+			fprintf(stderr, "%s: write error on file \"%s\"\n",
+					progname, outfile);
 			exit(1);
 		}
-		fls.l_type = F_UNLCK;
-		fcntl(outfd, F_SETLKW, &fls);
+		if (hmult != 1 && y < vr-1 && lseek(outfd,
+				(long)(hmult-1)*hr*sizeof(COLR), 1) == -1)
+			goto seekerr;
 	}
+				/* unlock file section */
+	fls.l_type = F_UNLCK;
+	fcntl(outfd, F_SETLKW, &fls);
+	return;
+seekerr:
+	fprintf(stderr, "%s: seek error on file \"%s\"\n", progname, outfile);
+	exit(1);
 }
