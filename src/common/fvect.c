@@ -83,6 +83,16 @@ register FVECT  vres, v1, v2;
 }
 
 
+fvsum(vres, v0, v1, f)		/* vres = v0 + f*v1 */
+FVECT  vres, v0, v1;
+double  f;
+{
+	vres[0] = v0[0] + f*v1[0];
+	vres[1] = v0[1] + f*v1[1];
+	vres[2] = v0[2] + f*v1[2];
+}
+
+
 double
 normalize(v)			/* normalize a vector, return old magnitude */
 register FVECT  v;
