@@ -206,18 +206,25 @@ FVECT  pg, dg;
 	b = 1.0/ndivs;
 	scalecolor(acol, b);
 	if (arad <= FTINY)
-		arad = FHUGE;
-	else
+		arad = maxarad;
+	else {
 		arad = (ndivs+ns)/arad;
+		if (arad > maxarad)
+			arad = maxarad;
+	}
 	if (pg != NULL) {		/* reduce radius if gradient large */
 		d = DOT(pg,pg);
 		if (d*arad*arad > 1.0)
 			arad = 1.0/sqrt(d);
 	}
-	if (arad > maxarad)
-		arad = maxarad;
-	else if (arad < minarad)
+	if (arad < minarad) {
 		arad = minarad;
+		if (pg != NULL && d*arad*arad > 1.0) {	/* cap gradient */
+			d = 1.0/arad/sqrt(d);
+			for (i = 0; i < 3; i++)
+				pg[i] *= d;
+		}
+	}
 	return(arad/sqrt(wt));
 oopsy:
 	if (div != NULL)
