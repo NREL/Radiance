@@ -4,26 +4,25 @@
 This directory contains special and general purpose filters for RADIANCE
 picture files and converters to and from other image formats.
 
-ciq.h		header file for color quantization routines
 pic.h		header file for reading and writing pictures
+ciq.h		header file for color quantization routines
 pict.h		header file defining Macintosh PICT format
 rasterfile.h	header description for Sun rasterfiles
-x11icon.h	icon for ximage program
+x11icon.h	icon for ximage (X10) program
 x11raster.h	header file for X11 routines using images
 xraster.h	header file for X10 routines using images
 aedimage.c	display program for AED 512 color graphics terminal
 biq.c		simple greyscale quantization
 ciq.c		color quantization routine
 closest.c	color quantization - find closest color
-colorscale.c	program to produce color pallets
 clrtab.c	more compact but slower replacement for ciq.c+split.c+closest.c
+colorscale.c	program to produce color pallets
 cut.c		color quantization - median cut algorithm
-falsecolor.csh 	C-shell script to produce false color pictures
 getinfo.c	program to read info. header from file
 glimage.c	simple program to display image on SGI
 greyscale.c	program to produce grey test levels
 mt160r.c	program to dump pixel file to Mannesman-Tally 160
-normpat.csh	C-shell script to normalize pictures for tiling patterns
+neuclrtab.c	neural network color quantization code
 oki20.c		program to dump pixel file to OkiMate 20 monochrome printer
 oki20c.c	program to dump pixel file to OkiMate 20 color printer
 paintjet.c	program to dump pixel file to HP PaintJet color printer
@@ -39,7 +38,9 @@ protate.c	program to rotate picture file 90 degrees clockwise
 psign.c		produce picture from text
 psum.c		program to sum pictures
 pvalue.c	program to print pixel values
+ra_avs.c	program to convert between RADIANCE and AVS picture format
 ra_bn.c		convert between RADIANCE and barneyscan picture format
+ra_gif.c	program to convert from RADIANCE to GIF format
 ra_pict.c	convert to Macintosh PICT file
 ra_pixar.c	convert to/from PIXAR image file.
 ra_ppm.c	program to convert between RADIANCE and Poskanzer Pixmaps
@@ -57,6 +58,11 @@ ttyimage.c	program to dump pixel file to dumb terminal
 vgaimage.c	program to display pixel file on VGA or SVGA card
 x11findwind.c	function to find X11 window by name
 x11image.c	picture display driver for X11
+x11raster.c	routines to handle images for X11
+xdebugamb.c	program for debugging ambient files (experimental)
 ximage.c	picture display driver for X10R4
 xraster.c	routines to handle images for X10
 xshowtrace.c	display a picture under X11 and watch the rays get traced
+falsecolor.csh 	C-shell script to produce false color pictures
+normpat.csh	C-shell script to normalize pictures for tiling patterns
+libtiff/	TIFF image library

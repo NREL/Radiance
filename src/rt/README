@@ -3,10 +3,12 @@
 
 This directory contains the RADIANCE renderers "rpict", "rtrace" and "rview".
 
+VERSION		system version number
 ambient.h	common definitions for interreflection routines
 data.h		header file for routines which interpolate data
 driver.h	header file for interactive device drivers
 func.h		header file for modifiers using function files
+newsconstants.h	header for NeWS driver
 nwsdev.h	header file for NeWS driver
 otspecial.h	special type flags for objects used in rendering
 ray.h		header file for routines using rays
@@ -15,20 +17,21 @@ source.h	header file for ray tracing sources
 x11icon.h	icon for rview under X11
 x11twind.h	header for X11 text window routines
 xtwind.h	header for X10 text window routines
-Version.c	program version
+Version.c	program version (made from VERSION and current date)
 aed.c		driver for AED 512 terminal
 ambcomp.c	routines to compute "ambient" values using Monte Carlo
 ambient.c	routines dealing with ambient (inter-reflected) component
 ambio.c		ambient value input and output routines
 aniso.c		material functions for plastic2, metal2 and trans2
-caldefn.c	store variable definitions
-calexpr.c	compute data values using expression parser
+caldefn.c	store variable definitions (symbolic link to ../common)
+calexpr.c	compute data values using expression parser (symbolic link)
 colortab.c	allocate and control dynamic color table
 data.c		routines dealing with interpolated data
 devcomm.c	communication routines for separate drivers
 devmain.c	main for independent drivers
 devtable.c	device table for rview
 dielectric.c	shading function for transparent materials
+duphead.c	routine to duplicate picture header multiple times
 editline.c	routine for editing raw input for rview
 fprism.c	routines for prismatic glazing calculations
 freeobjmem.c	routines for freeing unneeded object structures
@@ -40,7 +43,8 @@ m_brdf.c	shading for materials with arbitrary BRDF's
 m_clip.c	routine for clipped (cut) objects
 m_direct.c	routines for prism material types
 m_mirror.c	routines for mirror material supporting virtual light sources
-malloc.c	memory allocation routines
+malloc.c	memory allocation routines (symbolic link to ../common)
+msmouse.c	MS-DOS mouse-handling routine for rview
 mx_data.c	routine for stored mixtures
 mx_func.c	routine for mixture functions
 noise3.c	noise functions for random textures
@@ -54,9 +58,8 @@ p_data.c	routine for stored patterns
 p_func.c	routine for procedural patterns
 persist.c	routines for persistent (& parallel) execution
 preload.c	routines for preloading (initializing) data structures
-rayinit.cal	initialization function file
 raytrace.c	routines for tracing and shading rays
-readfargs.c	allocate, read and free object arguments
+readfargs.c	allocate, read and free object arguments (symbolic link)
 rmain.c		main for ray tracing programs
 rpict.c		routines and variables for picture generation
 rtrace.c	program and variables for individual ray tracing
@@ -73,9 +76,12 @@ t_data.c	routine for stored textures
 t_func.c	routine for procedural textures
 text.c		functions for text patterns and mixtures
 tty.c		i/o for terminal drivers
+vga.c		MS-DOS VGA driver
 virtuals.c	routines for simulating virtual light sources
 x10.c		driver for X-windows version 10R4
 x11.c		driver for X-windows version 11R3
 x11twind.c	routines for X11 text windows
 xtwind.c	routines for X text windows
 zeroes.c	compute roots for various equations
+rayinit.cal	initialization function file
+suntools.icon	icon for Sun Windows driver

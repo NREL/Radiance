@@ -10,13 +10,13 @@ cone.h		header file for cones (cones, cylinders, rings, cups, tubes)
 face.h		header for routines using polygonal faces
 font.h		header for font handling rountines
 fvect.h		header file for floating point routines using vectors
-instance.h	header file for routines using octree objects
 linregr.h	header file for linear regression calculation
 mat4.h		definitions for 4x4 matrix operations
 object.h	header file for routines using objects and object sets
 octree.h	header file for routines using octrees
 otypes.h	defines for object types
 paths.h		header file defining standard path names for this architecture
+plocate.h	header for 3D vector location
 random.h	header file for random(3) and urand() function
 resolu.h	definitions for resolution line in image file.
 standard.h	standard include file for most programs
@@ -32,6 +32,7 @@ caldefn.c	store variable definitions
 calexpr.c	compute data values using expression parser
 calfunc.c	routines for calcomp using functions
 calprnt.c	routines for printing calcomp expressions
+clip.c		routine to clip 3D line segments to a box
 color.c		routines for color calculations
 colrops.c	integer operations on COLR scanlines
 cone.c		routines for making cones
@@ -42,28 +43,37 @@ erf.c		BSD implementation of erf() and erfc()
 error.c		standard error reporting function
 expandarg.c	expand command-line argument to read from environ or file
 face.c		routines dealing with polygonal faces
+fdate.c		return UNIX date in system-independent interface
 fgetline.c	read line with escaped newlines
+fgetval.c	scanf replacement that skips # comments
 fgetword.c	read white space separated words from stream
+fixargv0.c	MS-DOS compatibility routine to fix program name + arg. list
 font.c		library routines for font handling
-frexp.c		free exponent
+frexp.c		free exponent (library routine replacement)
 fropen.c	find and open a Radiance library file
 fvect.c		routines for float vector calculations
 fwrite.c	standard lib replacement
+getlibpath.c	return standard library path from RAYLIB (or default)
 getpagesize.c	return system page size for non-BSD machine
 getpath.c	function to search for file in a list of directories
 header.c	routines for reading and writing information headers
 image.c		routines for image generation / pixel mapping
 instance.c	routines for octree objects
+invmat4.c	compute inverse of 4x4 matrix
 lamps.c		load lamp data
 linregr.c	basic linear regression calculation
+lookup.c	hash table lookup routines
 malloc.c	fast malloc for memory hogs and VM environments
 mat4.c		routines dealing with 4 X 4 homogeneous matrices
+mktemp.c	make temporary file (system-independent replacement)
 modobject.c	routines for tracking object modifiers
 multisamp.c	binary space partitioning curve for multidimensional sampling
 objset.c	routines for maintaining object sets
 octree.c	routines dealing with octrees and cubes
 otypes.c	object type lookup and error reporting
 peano.c		generate an N-dimensional Peano space-filling curve
+plocate.c	routine to locate 3D vector w.r.t. box
+popen.c		system-independent replacement for popen(3) call
 portio.c	routines for portable binary input and output
 process.c	routines to communicate with separate process via dual pipes
 quit.c		default quit() routine, calles exit()
