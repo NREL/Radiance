@@ -14,16 +14,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 
+#include  "ambient.h"
 
-typedef struct ambval {
-	float  pos[3];		/* position in space */
-	float  dir[3];		/* normal direction */
-	int  lvl;		/* recursion level of parent ray */
-	float  weight;		/* weight of parent ray */
-	COLOR  val;		/* computed ambient value */
-	float  rad;		/* validity radius */
-	struct ambval  *next;	/* next in list */
-}  AMBVAL;			/* ambient value */
 
 int  dataonly = 0;
 
@@ -81,6 +73,10 @@ FILE  *fp;
 			printf("%e\t%e\t%e\n", colval(av.val,RED),
 						colval(av.val,GRN),
 						colval(av.val,BLU));
+			printf("%f\t%f\t%f\t", av.gpos[0],
+					av.gpos[1], av.gpos[2]);
+			printf("%f\t%f\t%f\t", av.gdir[0],
+					av.gdir[1], av.gdir[2]);
 		} else {
 			printf("\nPosition:\t%f\t%f\t%f\n", av.pos[0],
 					av.pos[1], av.pos[2]);
@@ -90,6 +86,10 @@ FILE  *fp;
 					av.weight, av.rad);
 			printf("Value:\t\t%e\t%e\t%e\n", colval(av.val,RED),
 					colval(av.val,GRN), colval(av.val,BLU));
+			printf("Pos.Grad:\t%f\t%f\t%f\n", av.gpos[0],
+					av.gpos[1], av.gpos[2]);
+			printf("Dir.Grad:\t%f\t%f\t%f\n", av.gdir[0],
+					av.gdir[1], av.gdir[2]);
 		}
 		if (ferror(stdout))
 			exit(1);
@@ -121,6 +121,17 @@ FILE  *fp;
 		if (fscanf(fp, "%f %f %f",
 				&av.val[RED], &av.val[GRN], &av.val[BLU]) != 3)
 			return;
+		if (!dataonly)
+			fscanf(fp, "%*s");
+		if (fscanf(fp, "%f %f %f",
+				&av.gpos[0], &av.gpos[1], &av.gpos[2]) != 3)
+			return;
+		if (!dataonly)
+			fscanf(fp, "%*s");
+		if (fscanf(fp, "%f %f %f",
+				&av.gdir[0], &av.gdir[1], &av.gdir[2]) != 3)
+			return;
+		av.next = NULL;
 		fwrite((char *)&av, sizeof(AMBVAL), 1, stdout);
 		if (ferror(stdout))
 			exit(1);
