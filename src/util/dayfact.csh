@@ -27,16 +27,16 @@ or more color Radiance pictures.
 _EOF_
 readvar octree
 if ( "$octree" == "$nofile" || ! -f "$octree" ) then
-	echo "You must first create an octree with oconv"
-	echo "before running this script."
+	echo "You must first create an octree with"
+	echo "oconv before running this script."
 	exit 1
 endif
 set title="$octree:r"
 echo "In what scene file is the gensky command located?"
 readvar genskyf
 if ( "$genskyf" == "$nofile" || ! -r "$genskyf" ) then
-	echo "You will not be able to compute"
-	echo "daylight factors without a gensky file"
+	echo "You will not be able to compute daylight"
+	echo "factors since there is no gensky file."
 else
 	set title=$title\ `sed -n 's/^.*\<gensky  *\([0-9][0-9]*  *[0-9][0-9]*  *[0-9][0-9.]*\).*$/\1/p' $genskyf`
 	set extamb=`xform -e $genskyf|sed -n 's/^# Ground ambient level: //p'`
@@ -55,7 +55,7 @@ set wpsize=($wpsize)
 set wpres=(`rcalc -n -e '$1=if(l,'"floor($maxres*$wpsize[1]/$wpsize[2]),$maxres);"'$2=if(l,'"$maxres,floor($maxres*$wpsize[2]/$wpsize[1]));l=$wpsize[2]-$wpsize[1]"`)
 set rtargs=($rtargs -ar `getinfo -d<$octree|rcalc -e '$1=floor(16*$4/'"($wpsize[1]+$wpsize[2]))"`)
 echo "What calculation options do you want to give to rtrace?"
-echo "(It is very important to set the -a? options correctly.)"
+echo "(It is very important to set the -a* options correctly.)"
 readvar rtargs
 echo "Illuminance contour picture if you want one"
 readvar ilpict
@@ -101,4 +101,4 @@ endif
 echo 'rm -f $tempfiles' >> $sctemp
 (source $sctemp) |& mail `whoami` &
 echo "Your job is started in the background."
-echo "I will send you mail when it is done."
+echo "You will be notified by mail when it is done."
