@@ -5,7 +5,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #endif
 
 #include <stdio.h>
-#include <rasterfile.h>
+#include "rasterfile.h"
 
 main(argc, argv)
 int	argc;
