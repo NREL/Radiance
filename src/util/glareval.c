@@ -154,9 +154,11 @@ float	*vb;
 	FVECT	dir;
 	register int	vh;
 
+#ifdef DEBUG
 	if (verbose)
 		fprintf(stderr, "%s: computing view span at %d...\n",
 				progname, vv);
+#endif
 	n = 0;
 	for (vh = -hsize; vh <= hsize; vh++) {
 		if (compdir(dir, vh, vv) < 0) {	/* off viewable region */
@@ -181,8 +183,10 @@ float	*vb;
 		rt_buf[6*n+5] = dir[2];
 		buf_vh[n++] = vh;
 	}
+#ifdef DEBUG
 	if (verbose)
 		pict_stats();
+#endif
 	if (n > 0) {				/* process pending buffer */
 		rt_compute(rt_buf, n);
 		while (n-- > 0)
@@ -197,9 +201,11 @@ int	np;
 {
 	static float	nbuf[6] = {0.,0.,0.,0.,0.,0.};
 
+#ifdef DEBUG
 	if (verbose && np > 1)
 		fprintf(stderr, "%s: sending %d samples to rtrace...\n",
 				progname, np);
+#endif
 	if (writebuf(fd_tort,(char *)pb,6*sizeof(float)*np) < 6*sizeof(float)*np
 		|| writebuf(fd_tort,(char *)nbuf,sizeof(nbuf)) < sizeof(nbuf)) {
 		fprintf(stderr, "%s: error writing to rtrace process\n",
