@@ -6,7 +6,7 @@
 
 OPT = -O -pipe
 MACH = -DSTRUCTASSIGN -DBSD -DIEEE -f68881 /usr/lib/libm.il
-CFLAGS = $(MACH) $(OPT)
+CFLAGS = $(MACH) $(OPT) -I../common
 CC = cc
 LINT = lint
 LINTFLAGS = -DSTRUCTASSIGN -DBSD -DIEEE -DVARIABLE -DFUNCTION \
@@ -189,7 +189,7 @@ nwsdev.h:	nwsdev.cps newsconstants.h
 caldefn.o calexpr.o calfunc.o:	calcomp.h
 
 aed.o colortab.o data.o devcomm.o \
-devmain.o lookamb.o rview.o sundev.o x10.o x11.o:	color.h
+devmain.o lookamb.o rview.o sundev.o x10.o x11.o:	../common/color.h
 
 o_cone.o srcsupp.o:	cone.h
 
@@ -198,37 +198,38 @@ data.o m_brdf.o mx_data.o p_data.o t_data.o:	data.h
 aed.o devcomm.o devmain.o devtable.o \
 editline.o nwsdev.o sundev.o tty.o x10.o x11.o:	driver.h
 
-o_face.o srcsupp.o:	face.h
+o_face.o srcsupp.o:	../common/face.h
 
 ambient.o raytrace.o rpmain.o rtmain.o \
-rtrace.o rvmain.o rv2.o rv3.o source.o:	octree.h
+rtrace.o rvmain.o rv2.o rv3.o source.o:	../common/octree.h
 
-o_instance.o:	instance.h octree.h
+o_instance.o:	../common/instance.h ../common/octree.h
 
 ambient.o dielectric.o func.o initotypes.o m_brdf.o \
 normal.o o_cone.o text.o raytrace.o rtrace.o \
-rv2.o source.o srcsupp.o virtuals.o sphere.o:	otypes.h
+rv2.o source.o srcsupp.o virtuals.o sphere.o:	../common/otypes.h
 
-ambient.o ambcomp.o rpict.o rv3.o source.o:	random.h
+ambient.o ambcomp.o rpict.o rv3.o source.o:	../common/random.h
 
 ambient.o ambcomp.o dielectric.o func.o glass.o m_clip.o m_mirror.o \
 m_brdf.o mx_data.o mx_func.o normal.o o_cone.o o_face.o o_instance.o \
 p_data.o p_func.o text.o raytrace.o rpmain.o rtmain.o rvmain.o rpict.o \
 rtrace.o rview.o rv2.o rv3.o source.o srcsupp.o virtuals.o sphere.o \
-t_data.o t_func.o:	ray.h standard.h mat4.h fvect.h object.h color.h
+t_data.o t_func.o:	ray.h ../common/standard.h ../common/mat4.h \
+../common/fvect.h ../common/object.h ../common/color.h
 
-rv2.o rv3.o rview.o:	rpaint.h driver.h view.h
+rv2.o rv3.o rview.o:	rpaint.h driver.h ../common/view.h
 
 mirror.o source.o srcsupp.o virtuals.o:	source.h
 
 cone.o data.o devcomm.o initotypes.o \
-octree.o:	standard.h mat4.h fvect.h
+octree.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
 
 initotypes.o raytrace.o:	otspecial.h
 
 sundev.o:	suntools.icon
 
-rpmain.o rtmain.o rvmain.o rpict.o:	view.h
+rpmain.o rtmain.o rvmain.o rpict.o:	../common/view.h
 
 x10.o xtwind.o:	xtwind.h
 
