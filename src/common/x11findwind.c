@@ -8,15 +8,18 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include <X11/Xlib.h>
 
 
 Window
-xfindwind(dpy, win, name, depth)
-Display	*dpy;
-Window	win;
-char	*name;
-int	depth;
+xfindwind(
+	Display	*dpy,
+	Window	win,
+	char	*name,
+	int	depth
+)
 {
 	char	*nr;
 	Window	rr, pr, *cl;
