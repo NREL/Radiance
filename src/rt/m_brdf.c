@@ -24,14 +24,14 @@ static char SCCSid[] = "$SunId$ LBL";
  *  surface can be used to represent an infinitely thin object.
  *
  *  Arguments for MAT_PFUNC and MAT_MFUNC are:
- *	2+	func	funcfile	transform ..
+ *	2+	func	funcfile	transform
  *	0
- *	4+	red	grn	blu	specularity	args ..
+ *	4+	red	grn	blu	specularity	A5 ..
  *
  *  Arguments for MAT_PDATA and MAT_MDATA are:
- *	4+	func	datafile	funcfile	v0 ..	transform ..
+ *	4+	func	datafile	funcfile	v0 ..	transform
  *	0
- *	4+	red	grn	blu	specularity	args ..
+ *	4+	red	grn	blu	specularity	A5 ..
  */
 
 extern double	funvalue(), varvalue();
@@ -55,9 +55,11 @@ register BRDFDAT  *np;		/* material data */
 FVECT  ldir;			/* light source direction */
 double  omega;			/* light source size */
 {
+	extern XF  funcxf;
 	double  ldot;
 	double  dtmp;
 	COLOR  ctmp;
+	FVECT  ldx;
 	double  pt[MAXDIM];
 	register int	i;
 
@@ -84,13 +86,18 @@ double  omega;			/* light source size */
 		 *  Compute specular component.
 		 */
 		setfunc(np->mp, np->pr);
+						/* transform light vector */
+		multv3(ldx, ldir, funcxf.xfm);
+		for (i = 0; i < 3; i++)
+			ldx[i] /= funcxf.sca;
+						/* evaluate BRDF */
 		errno = 0;
 		if (np->dp == NULL)
-			dtmp = funvalue(np->mp->oargs.sarg[0], 3, ldir);
+			dtmp = funvalue(np->mp->oargs.sarg[0], 3, ldx);
 		else {
 			for (i = 0; i < np->dp->nd; i++)
 				pt[i] = funvalue(np->mp->oargs.sarg[3+i],
-						3, ldir);
+						3, ldx);
 			dtmp = datavalue(np->dp, pt);
 			dtmp = funvalue(np->mp->oargs.sarg[0], 1, &dtmp);
 		}
@@ -115,7 +122,6 @@ register OBJREC  *m;
 register RAY  *r;
 {
 	BRDFDAT  nd;
-	double  dtmp;
 	COLOR  ctmp;
 	register int  i;
 

@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1990 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -28,13 +28,6 @@ static char SCCSid[] = "$SunId$ LBL";
  *  from the original coordinates to the current coordinates.
  */
 
-typedef struct {
-	struct {
-		double  sca;		/* scale factor */
-		double  xfm[4][4];	/* transformation matrix */
-	}  fore, back;
-}  XFORM;
-
 
 t_func(m, r)			/* compute texture for ray */
 register OBJREC  *m;
@@ -44,7 +37,7 @@ register RAY  *r;
 	extern int  errno;
 	FVECT  disp;
 	double  d;
-	register XFORM  *mxf;
+	register FULLXF  *mxf;
 	register int  i;
 	register char  **sa;
 
@@ -52,23 +45,20 @@ register RAY  *r;
 		objerror(m, USER, "bad # arguments");
 	sa = m->oargs.sarg;
 
-	if ((mxf = (XFORM *)m->os) == NULL) {
-		mxf = (XFORM *)malloc(sizeof(XFORM));
+	if ((mxf = (FULLXF *)m->os) == NULL) {
+		mxf = (FULLXF *)malloc(sizeof(FULLXF));
 		if (mxf == NULL)
 			goto memerr;
-		if (xf(mxf->fore.xfm, &mxf->fore.sca,
-			m->oargs.nsargs-4, sa+4) != m->oargs.nsargs-4)
+		if (fullxf(mxf, m->oargs.nsargs-4, sa+4) != m->oargs.nsargs-4)
 			objerror(m, USER, "bad transform");
-		if (mxf->fore.sca < 0.0)
-			mxf->fore.sca = -mxf->fore.sca;
-		invxf(mxf->back.xfm, &mxf->back.sca,
-				m->oargs.nsargs-4, sa+4);
-		if (mxf->back.sca < 0.0)
-			mxf->back.sca = -mxf->back.sca;
+		if (mxf->f.sca < 0.0)
+			mxf->f.sca = -mxf->f.sca;
+		if (mxf->b.sca < 0.0)
+			mxf->b.sca = -mxf->b.sca;
 		m->os = (char *)mxf;
 	}
 
-	setmap(m, r, mxf->back.xfm, mxf->back.sca);
+	setmap(m, r, &mxf->b);
 
 	if (!vardefined(sa[0]))
 		loadfunc(sa[3]);
@@ -79,9 +69,12 @@ register RAY  *r;
 		objerror(m, WARNING, "compute error");
 		return;
 	}
-	multv3(disp, disp, mxf->fore.xfm);
-	multv3(disp, disp, r->rofx);
-	d = 1.0 / (mxf->fore.sca * r->rofs);
+	multv3(disp, disp, mxf->f.xfm);
+	if (r->rox != NULL) {
+		multv3(disp, disp, r->rox->f.xfm);
+		d = 1.0 / (mxf->f.sca * r->rox->f.sca);
+	} else
+		d = 1.0 / mxf->f.sca;
 	for (i = 0; i < 3; i++)
 		r->pert[i] += disp[i] * d;
 	return;

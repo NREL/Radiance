@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1990 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -89,7 +89,10 @@ RAY  *r;
 
 				/* first, discover position in text */
 	ap = m->oargs.farg;
-	multp3(v, r->rop, r->robx);
+	if (r->rox != NULL)
+		multp3(v, r->rop, r->rox->b.xfm);
+	else
+		VCOPY(v, r->rop);
 	v[0] -= ap[0];
 	v[1] -= ap[1];
 	v[2] -= ap[2];

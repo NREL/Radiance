@@ -1,4 +1,4 @@
-/* Copyright (c) 1988 Regents of the University of California */
+/* Copyright (c) 1990 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -31,33 +31,37 @@ register RAY  *r;
 	rcont.rno = nrays;
 	rcont.ro = NULL;
 	rcont.rot = FHUGE;
-	multp3(rcont.rorg, r->rorg, in->b.xfm);
-	multv3(rcont.rdir, r->rdir, in->b.xfm);
+	multp3(rcont.rorg, r->rorg, in->x.b.xfm);
+	multv3(rcont.rdir, r->rdir, in->x.b.xfm);
 	for (i = 0; i < 3; i++)
-		rcont.rdir[i] /= in->b.sca;
+		rcont.rdir[i] /= in->x.b.sca;
 					/* trace it */
 	if (!localhit(&rcont, &in->obj->scube))
 		return(0);		/* missed */
-	if (rcont.rot * in->f.sca >= r->rot)
+	if (rcont.rot * in->x.f.sca >= r->rot)
 		return(0);		/* not close enough */
 
 	if (o->omod != OVOID) {		/* if we have modifier, use it */
 		r->ro = o;
-		r->rofs = 1.0; setident4(r->rofx);
-		r->robs = 1.0; setident4(r->robx);
+		r->rox = NULL;
 	} else {			/* else use theirs */
 		r->ro = rcont.ro;
-		multmat4(r->rofx, rcont.rofx, in->f.xfm);
-		r->rofs = rcont.rofs * in->f.sca;
-		multmat4(r->robx, in->b.xfm, rcont.robx);
-		r->robs = in->b.sca * rcont.robs;
+		newrayxf(r);		/* allocate transformation */
+				/* NOTE: r->rox may equal rcont.rox! */
+		if (rcont.rox != NULL) {
+			multmat4(r->rox->f.xfm, rcont.rox->f.xfm, in->x.f.xfm);
+			r->rox->f.sca = rcont.rox->f.sca * in->x.f.sca;
+			multmat4(r->rox->b.xfm, in->x.b.xfm, rcont.rox->b.xfm);
+			r->rox->b.sca = in->x.b.sca * rcont.rox->b.sca;
+		} else
+			copystruct(r->rox, &in->x);
 	}
 					/* transform it back */
-	r->rot = rcont.rot * in->f.sca;
-	multp3(r->rop, rcont.rop, in->f.xfm);
-	multv3(r->ron, rcont.ron, in->f.xfm);
+	r->rot = rcont.rot * in->x.f.sca;
+	multp3(r->rop, rcont.rop, in->x.f.xfm);
+	multv3(r->ron, rcont.ron, in->x.f.xfm);
 	for (i = 0; i < 3; i++)
-		r->ron[i] /= in->f.sca;
+		r->ron[i] /= in->x.f.sca;
 	r->rod = rcont.rod;
 					/* return hit */
 	return(1);

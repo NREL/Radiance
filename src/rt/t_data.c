@@ -1,4 +1,4 @@
-/* Copyright (c) 1989 Regents of the University of California */
+/* Copyright (c) 1990 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -31,13 +31,6 @@ static char SCCSid[] = "$SunId$ LBL";
  *  to get from the original coordinates to the current coordinates.
  */
 
-typedef struct {
-	struct {
-		double  sca;		/* scale factor */
-		double  xfm[4][4];	/* transformation matrix */
-	}  fore, back;
-}  XFORM;
-
 
 t_data(m, r)			/* interpolate texture data */
 register OBJREC  *m;
@@ -50,7 +43,7 @@ RAY  *r;
 	double  pt[MAXDIM];
 	double  d;
 	DATARRAY  *dp;
-	register XFORM  *mxf;
+	register FULLXF  *mxf;
 	register char  **sa;
 	register int  i;
 
@@ -61,23 +54,20 @@ RAY  *r;
 	for (i = 7; i < m->oargs.nsargs && sa[i][0] != '-'; i++)
 		;
 	nv = i-7;
-	if ((mxf = (XFORM *)m->os) == NULL) {
-		mxf = (XFORM *)malloc(sizeof(XFORM));
+	if ((mxf = (FULLXF *)m->os) == NULL) {
+		mxf = (FULLXF *)malloc(sizeof(FULLXF));
 		if (mxf == NULL)
 			goto memerr;
-		if (xf(mxf->fore.xfm, &mxf->fore.sca,
-			m->oargs.nsargs-i, sa+i) != m->oargs.nsargs-i)
+		if (fullxf(mxf, m->oargs.nsargs-i, sa+i) != m->oargs.nsargs-i)
 			objerror(m, USER, "bad transform");
-		if (mxf->fore.sca < 0.0)
-			mxf->fore.sca = -mxf->fore.sca;
-		invxf(mxf->back.xfm, &mxf->back.sca,
-				m->oargs.nsargs-i, sa+i);
-		if (mxf->back.sca < 0.0)
-			mxf->back.sca = -mxf->back.sca;
+		if (mxf->f.sca < 0.0)
+			mxf->f.sca = -mxf->f.sca;
+		if (mxf->b.sca < 0.0)
+			mxf->b.sca = -mxf->b.sca;
 		m->os = (char *)mxf;
 	}
 
-	setmap(m, r, mxf->back.xfm, mxf->back.sca);
+	setmap(m, r, &mxf->b);
 
 	if (nv > MAXDIM)
 		goto dimerr;
@@ -100,9 +90,12 @@ RAY  *r;
 	if (errno)
 		goto computerr;
 
-	multv3(disp, disp, mxf->fore.xfm);
-	multv3(disp, disp, r->rofx);
-	d = 1.0 / (mxf->fore.sca * r->rofs);
+	multv3(disp, disp, mxf->f.xfm);
+	if (r->rox != NULL) {
+		multv3(disp, disp, r->rox->f.xfm);
+		d = 1.0 / (mxf->f.sca * r->rox->f.sca);
+	} else
+		d = 1.0 / mxf->f.sca;
 	for (i = 0; i < 3; i++)
 		r->pert[i] += disp[i] * d;
 	return;

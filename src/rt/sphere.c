@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1990 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -71,8 +71,7 @@ register RAY  *r;
 		r->ron[i] = (r->rop[i] - ap[i]) / a;
 	}
 	r->rod = -DOT(r->rdir, r->ron);
-	r->rofs = 1.0; setident4(r->rofx);
-	r->robs = 1.0; setident4(r->robx);
+	r->rox = NULL;
 
 	return(1);			/* hit */
 }
