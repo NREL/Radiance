@@ -303,7 +303,6 @@ char	*pfile, *zspec;
 		register int	x;
 		if (!isfloat(zspec) || (zvalue = atof(zspec)) <= 0.0)
 			syserror(zspec);
-			exit(1);
 		for (x = scanlen(&tresolu); x-- > 0; )
 			zin[x] = zvalue;
 	}
