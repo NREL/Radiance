@@ -61,15 +61,16 @@ double  rw;
 			r->rlvl++;
 			r->rsrc = -1;
 			r->clipset = ro->clipset;
+			r->rmax = 0.0;
 		} else {
 			r->rsrc = ro->rsrc;
 			r->clipset = ro->newcset;
+			r->rmax = ro->rmax <= FTINY ? 0.0 : ro->rmax - ro->rot;
 		}
 		r->revf = ro->revf;
 		r->rweight = ro->rweight * rw;
 		r->crtype = ro->crtype | (r->rtype = rt);
 		VCOPY(r->rorg, ro->rop);
-		r->rmax = 0.0;
 	}
 	rayclear(r);
 	return(r->rlvl <= maxdepth && r->rweight >= minweight ? 0 : -1);
@@ -131,8 +132,6 @@ register RAY  *r;
 
 	if (rayorigin(&tr, r, TRANS, 1.0) == 0) {
 		VCOPY(tr.rdir, r->rdir);
-		if (r->rmax > FTINY)
-			tr.rmax = r->rmax - r->rot;
 		rayvalue(&tr);
 		copycolor(r->rcol, tr.rcol);
 		r->rt = r->rot + tr.rt;
