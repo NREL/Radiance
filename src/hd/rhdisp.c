@@ -58,22 +58,22 @@ char	*argv[];
 		rdy = disp_wait();
 		if (rdy & RDY_DEV) {		/* user input from driver */
 			inp = dev_input();
-			if (inp & DEV_PUTVIEW)
-				printview();
-			if (inp & DEV_NEWVIEW)
+			if (inp & DFL(DC_SETVIEW))
 				new_view(&odev.v);
-			if (inp & DEV_LASTVIEW)
+			if (inp & DFL(DC_GETVIEW))
+				printview();
+			if (inp & DFL(DC_LASTVIEW))
 				new_view(NULL);
-			if (inp & DEV_SHUTDOWN)
-				serv_request(DR_SHUTDOWN, 0, NULL);
-			if (inp & DEV_REDRAW)
-				imm_mode = beam_sync() > 0;
-			if (inp & DEV_WAIT)
+			if (inp & DFL(DC_PAUSE))
 				pause = 1;
-			if (inp & DEV_RESUME) {
+			if (inp & DFL(DC_RESUME)) {
 				serv_request(DR_NOOP, 0, NULL);
 				pause = 0;
 			}
+			if (inp & DFL(DC_REDRAW))
+				imm_mode = beam_sync() > 0;
+			if (inp & DFL(DC_QUIT))
+				serv_request(DR_SHUTDOWN, 0, NULL);
 		}
 		if (rdy & RDY_SIN)		/* user input from sstdin */
 			switch (usr_input()) {
@@ -272,6 +272,9 @@ usr_input()			/* get user input and process it */
 	case DC_PAUSE:			/* pause the current calculation */
 	case DC_RESUME:			/* resume the calculation */
 		/* handled in main() */
+		break;
+	case DC_REDRAW:			/* redraw from server */
+		imm_mode = beam_sync() > 0;
 		break;
 	case DC_QUIT:			/* quit request */
 		serv_request(DR_SHUTDOWN, 0, NULL);

@@ -15,15 +15,26 @@ extern struct driver {
 	int	ifd;		/* input file descriptor (for select) */
 } odev;			/* our open device */
 
-			/* dev_input() return flags */
-#define	DEV_SHUTDOWN	01	/* user shutdown request */
-#define	DEV_NEWVIEW	02	/* view change (new view in odev.v) */
-#define	DEV_NEWSIZE	04	/* device resolution change */
-#define	DEV_WAIT	010	/* pause computation and wait for input */
-#define	DEV_RESUME	020	/* resume after pause */
-#define	DEV_REDRAW	040	/* redraw from server */
-#define DEV_PUTVIEW	0100	/* print out current view */
-#define DEV_LASTVIEW	0200	/* restore previous view */
+				/* user commands */
+#define	DC_SETVIEW	0		/* set the view */
+#define	DC_GETVIEW	1		/* print the current view */
+#define	DC_LASTVIEW	2		/* restore previous view */
+#define	DC_PAUSE	3		/* pause the current calculation */
+#define	DC_RESUME	4		/* resume the calculation */
+#define DC_REDRAW	5		/* redraw from server */
+#define	DC_QUIT		6		/* quit the program */
+
+#define	DC_NCMDS	7		/* number of commands */
+
+				/* dev_input() returns flags from above */
+#define DFL(dc)		(1<<(dc))
+
+#define	CTRL(c)		((c)-'@')
+				/* commands entered in display window */
+#define DV_INIT		{'\0','v','l','p','\r',CTRL('R'),'q'}
+				/* commands entered on stdin */
+#define	DC_INIT		{"VIEW=","where","last","pause","resume","redraw",\
+				"quit"}
 
 
 /************************************************************************
@@ -72,7 +83,7 @@ dev_input()		: process pending display input
 
 Called when odev struct file descriptor shows input is ready.
 Returns flags indicating actions to take in the control process.
-If the DEV_NEWVIEW or DEV_NEWSIZE flag is returned, the odev
+If the DC_VIEW or DC_RESIZE flag is returned, the odev
 structure must be updated beforehand.
 
 
