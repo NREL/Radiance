@@ -123,6 +123,8 @@ char  *name;
 	printf("%%%%EndComments\n");
 	printf("gsave\n");
 	printf("64 dict begin\n");
+					/* define image reader */
+	PSprocdef("read6bit");
 					/* set up transformation matrix */
 	printf("%f %f translate\n", HMARGIN, VMARGIN);
 	if (PWIDTH > PHEIGHT ^ landscape) {
@@ -143,8 +145,8 @@ char  *name;
 	}
 	printf("%f %f translate\n", (pwidth-iwidth)*.5, (pheight-iheight)*.5);
 	printf("%f %f scale\n", iwidth, iheight);
-	PSprocdef("read6bit");
 	printf("%%%%EndProlog\n");
+					/* start image procedure */
 	printf("%d %d 8 [%d 0 0 %d 0 %d] {read6bit} image", xmax, ymax,
 			xmax, -ymax, ymax);
 }
