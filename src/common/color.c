@@ -377,27 +377,29 @@ int  len;
 	while (len-- > 0) {
 		shift = scan[0][EXP] - COLXS;
 		if (shift > 0) {
-			if (shift >= 8) {
+			if (shift > 8) {
 				scan[0][RED] =
 				scan[0][GRN] =
 				scan[0][BLU] = 255;
 			} else {
-				c = scan[0][RED] << shift;
+				shift--;
+				c = (scan[0][RED]<<1 | 1) << shift;
 				scan[0][RED] = c > 255 ? 255 : c;
-				c = scan[0][GRN] << shift;
+				c = (scan[0][GRN]<<1 | 1) << shift;
 				scan[0][GRN] = c > 255 ? 255 : c;
-				c = scan[0][BLU] << shift;
+				c = (scan[0][BLU]<<1 | 1) << shift;
 				scan[0][BLU] = c > 255 ? 255 : c;
 			}
 		} else if (shift < 0) {
-			if (shift <= -8) {
+			if (shift < -8) {
 				scan[0][RED] =
 				scan[0][GRN] =
 				scan[0][BLU] = 0;
 			} else {
-				scan[0][RED] = scan[0][RED] >> -shift;
-				scan[0][GRN] = scan[0][GRN] >> -shift;
-				scan[0][BLU] = scan[0][BLU] >> -shift;
+				shift = -1-shift;
+				scan[0][RED] = ((scan[0][RED]>>shift)+1)>>1;
+				scan[0][GRN] = ((scan[0][GRN]>>shift)+1)>>1;
+				scan[0][BLU] = ((scan[0][BLU]>>shift)+1)>>1;
 			}
 		}
 		scan[0][EXP] = COLXS;
