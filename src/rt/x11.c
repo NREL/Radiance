@@ -13,6 +13,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <stdio.h>
 #include  <math.h>
 #include  <sys/ioctl.h>
+#include  <fcntl.h>
 
 #include  <X11/Xlib.h>
 #include  <X11/cursorfont.h>
@@ -68,6 +69,12 @@ static int  c_last = 0;			/* last character in queue */
 static GC  ourgc = 0;			/* our graphics context for drawing */
 
 static Colormap ourmap = 0;		/* our color map */
+
+#define IC_X11		0
+#define IC_IOCTL	1
+#define IC_READ		2
+
+static int  inpcheck;			/* whence to check input */
 
 extern char  *malloc(), *getcombuf();
 
@@ -182,10 +189,12 @@ char  *name, *id;
 		cmdvec = x11_comout;
 		if (wrnvec != NULL)
 			wrnvec = x11_errout;
+		inpcheck = IC_X11;
 	} else {
 		x11_driver.comin = std_comin;
 		x11_driver.comout = std_comout;
 		cmdvec = std_comout;
+		inpcheck = IC_IOCTL;
 	}
 	return(&x11_driver);
 }
@@ -282,18 +291,29 @@ int  xmin, ymin, xmax, ymax;
 static
 x11_flush()			/* flush output */
 {
+	char	buf[256];
 	int	n;
 						/* check for input */
 	XNoOp(ourdisplay);
 	n = XPending(ourdisplay);			/* from X server */
 	while (n-- > 0)
 		getevent();
-	if (x11_driver.comin == std_comin) {		/* from stdin */
+	if (inpcheck == IC_IOCTL) {			/* from stdin */
 		if (ioctl(fileno(stdin), FIONREAD, &n) < 0) {
-			stderr_v("ioctl error on stdin\n");
-			quit(1);
+			if (fcntl(fileno(stdin), F_SETFL, FNDELAY) < 0) {
+				stderr_v("Cannot change input mode\n");
+				quit(1);
+			}
+			inpcheck = IC_READ;
+		} else
+			x11_driver.inpready += n;
+	}
+	if (inpcheck == IC_READ) {
+		n = read(fileno(stdin), buf, sizeof(buf)-1);
+		if (n > 0) {
+			buf[n] = '\0';
+			strcpy(getcombuf(&x11_driver), buf);
 		}
-		x11_driver.inpready += n;
 	}
 }
 
