@@ -26,6 +26,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define ABS(x)		((x)>0?(x):-(x))
 
+struct position {int x,y; float z;};
+
 VIEW	ourview = STDVIEW(512);		/* desired view */
 
 double	zeps = .02;			/* allowed z epsilon */
@@ -192,10 +194,8 @@ char	*argv[];
 						/* allocate frame */
 	ourpict = (COLR *)malloc(ourview.hresolu*ourview.vresolu*sizeof(COLR));
 	ourzbuf = (float *)calloc(ourview.hresolu*ourview.vresolu,sizeof(float));
-	if (ourpict == NULL || ourzbuf == NULL) {
-		perror(progname);
-		exit(1);
-	}
+	if (ourpict == NULL || ourzbuf == NULL)
+		syserror();
 							/* get input */
 	for ( ; i < argc; i += 2)
 		addpicture(argv[i], argv[i+1]);
@@ -254,8 +254,8 @@ char	*pfile, *zspec;
 	FILE	*pfp, *zfp;
 	char	*err;
 	COLR	*scanin;
-	float	*zin, *zlast;
-	int	*plast;
+	float	*zin;
+	struct position	*plast;
 	int	y;
 					/* open picture file */
 	if ((pfp = fopen(pfile, "r")) == NULL) {
@@ -280,12 +280,10 @@ char	*pfile, *zspec;
 					/* allocate scanlines */
 	scanin = (COLR *)malloc(theirview.hresolu*sizeof(COLR));
 	zin = (float *)malloc(theirview.hresolu*sizeof(float));
-	plast = (int *)calloc(theirview.hresolu, sizeof(int));
-	zlast = (float *)calloc(theirview.hresolu, sizeof(float));
-	if (scanin == NULL || zin == NULL || plast == NULL || zlast == NULL) {
-		perror(progname);
-		exit(1);
-	}
+	plast = (struct position *)calloc(theirview.hresolu,
+						sizeof(struct position));
+	if (scanin == NULL || zin == NULL || plast == NULL)
+		syserror();
 					/* get z specification or file */
 	if ((zfp = fopen(zspec, "r")) == NULL) {
 		double	zvalue;
@@ -309,13 +307,12 @@ char	*pfile, *zspec;
 			fprintf(stderr, "%s: read error\n", zspec);
 			exit(1);
 		}
-		addscanline(y, scanin, zin, plast, zlast);
+		addscanline(y, scanin, zin, plast);
 	}
 					/* clean up */
 	free((char *)scanin);
 	free((char *)zin);
 	free((char *)plast);
-	free((char *)zlast);
 	fclose(pfp);
 	if (zfp != NULL)
 		fclose(zfp);
@@ -358,19 +355,15 @@ register VIEW	*vw1, *vw2;
 }
 
 
-addscanline(y, pline, zline, lasty, lastyz)	/* add scanline to output */
+addscanline(y, pline, zline, lasty)	/* add scanline to output */
 int	y;
 COLR	*pline;
 float	*zline;
-int	*lasty;			/* input/output */
-float	*lastyz;		/* input/output */
+struct position	*lasty;		/* input/output */
 {
 	extern double	sqrt();
 	double	pos[3];
-	int	lastx = 0;
-	double	lastxz = 0;
-	double  zt;
-	int	xpos, ypos;
+	struct position	lastx, newpos;
 	register int	x;
 
 	for (x = theirview.hresolu-1; x >= 0; x--) {
@@ -386,58 +379,82 @@ float	*lastyz;		/* input/output */
 			pos[1] *= pos[2];
 		}
 		multp3(pos, pos, theirs2ours);
-		if (pos[2] <= 0)
+		if (pos[2] <= 0) {
+			lasty[x].z = lastx.z = 0;	/* mark invalid */
 			continue;
+		}
 		if (ourview.type == VT_PER) {
 			pos[0] /= pos[2];
 			pos[1] /= pos[2];
 		}
 		pos[0] += .5*ourview.hresolu;
 		pos[1] += .5*ourview.vresolu;
-		if (pos[0] < 0 || (xpos = pos[0]) >= ourview.hresolu
-			|| pos[1] < 0 || (ypos = pos[1]) >= ourview.vresolu)
-			continue;
+		newpos.x = pos[0];
+		newpos.y = pos[1];
+		newpos.z = zline[x];
 					/* add pixel to our image */
-		zt = 2.*zeps*zline[x];
-		addpixel(xpos, ypos,
-			(fill&F_FORE && ABS(zline[x]-lastxz) <= zt)
-				? lastx - xpos : 1,
-			(fill&F_FORE && ABS(zline[x]-lastyz[x]) <= zt)
-				? lasty[x] - ypos : 1,
-			pline[x], pos[2]);
-		lastx = xpos;
-		lasty[x] = ypos;
-		lastxz = lastyz[x] = zline[x];
+		if (pos[0] >= 0 && newpos.x < ourview.hresolu
+				&& pos[1] >= 0 && newpos.y < ourview.vresolu) {
+			addpixel(&newpos, &lastx, &lasty[x], pline[x], pos[2]);
+			lasty[x].x = lastx.x = newpos.x;
+			lasty[x].y = lastx.y = newpos.y;
+			lasty[x].z = lastx.z = newpos.z;
+		} else
+			lasty[x].z = lastx.z = 0;	/* mark invalid */
 	}
 }
 
 
-addpixel(xstart, ystart, width, height, pix, z)	/* fill in area for pixel */
-int	xstart, ystart;
-int	width, height;
+addpixel(p0, p1, p2, pix, z)		/* fill in pixel parallelogram */
+struct position	*p0, *p1, *p2;
 COLR	pix;
 double	z;
 {
-	register int	x, y;
-					/* make width and height positive */
-	if (width < 0) {
-		width = -width;
-		xstart = xstart-width+1;
-	} else if (width == 0)
-		width = 1;
-	if (height < 0) {
-		height = -height;
-		ystart = ystart-height+1;
-	} else if (height == 0)
-		height = 1;
-					/* fill pixel(s) within rectangle */
-	for (y = ystart; y < ystart+height; y++)
-		for (x = xstart; x < xstart+width; x++)
-			if (zscan(y)[x] <= 0
-					|| zscan(y)[x]-z > zeps*zscan(y)[x]) {
+	double	zt = 2.*zeps*p0->z;		/* threshold */
+	int	s1x, s1y, s2x, s2y;		/* step sizes */
+	int	l1, l2, c1, c2;			/* side lengths and counters */
+	int	p1isy;				/* p0p1 along y? */
+	int	x1, y1;				/* p1 position */
+	register int	x, y;			/* final position */
+
+					/* compute vector p0p1 */
+	if (fill&F_FORE && ABS(p1->z-p0->z) <= zt) {
+		s1x = p1->x - p0->x;
+		s1y = p1->y - p0->y;
+		l1 = ABS(s1x);
+		if (p1isy = (ABS(s1y) > l1))
+			l1 = ABS(s1y);
+	} else {
+		l1 = s1x = s1y = 1;
+		p1isy = -1;
+	}
+					/* compute vector p0p2 */
+	if (fill&F_FORE && ABS(p2->z-p0->z) <= zt) {
+		s2x = p2->x - p0->x;
+		s2y = p2->y - p0->y;
+		if (p1isy == 1)
+			l2 = ABS(s2x);
+		else {
+			l2 = ABS(s2y);
+			if (p1isy != 0 && ABS(s2x) > l2)
+				l2 = ABS(s2x);
+		}
+	} else
+		l2 = s2x = s2y = 1;
+					/* fill the parallelogram */
+	for (c1 = l1; c1-- > 0; ) {
+		x1 = p0->x + c1*s1x/l1;
+		y1 = p0->y + c1*s1y/l1;
+		for (c2 = l2; c2-- > 0; ) {
+			x = x1 + c2*s2x/l2;
+			y = y1 + c2*s2y/l2;
+			if (zscan(y)[x] <= 0 || zscan(y)[x]-z
+						> zeps*zscan(y)[x]) {
 				zscan(y)[x] = z;
 				copycolr(pscan(y)[x], pix);
 			}
+		}
+	}
 }
 
 
@@ -449,10 +466,8 @@ backpicture()				/* background fill algorithm */
 	register int	x, i;
 							/* get back buffer */
 	yback = (int *)malloc(ourview.hresolu*sizeof(int));
-	if (yback == NULL) {
-		perror(progname);
-		return;
-	}
+	if (yback == NULL)
+		syserror();
 	for (x = 0; x < ourview.hresolu; x++)
 		yback[x] = -2;
 	/*
@@ -542,10 +557,8 @@ writepicture()				/* write out picture */
 
 	fputresolu(YMAJOR|YDECR, ourview.hresolu, ourview.vresolu, stdout);
 	for (y = ourview.vresolu-1; y >= 0; y--)
-		if (fwritecolrs(pscan(y), ourview.hresolu, stdout) < 0) {
-			perror(progname);
-			exit(1);
-		}
+		if (fwritecolrs(pscan(y), ourview.hresolu, stdout) < 0)
+			syserror();
 }
 
 
@@ -563,10 +576,8 @@ char	*fname;
 		exit(1);
 	}
 	if (donorm
-	&& (zout = (float *)malloc(ourview.hresolu*sizeof(float))) == NULL) {
-		perror(progname);
-		exit(1);
-	}
+	&& (zout = (float *)malloc(ourview.hresolu*sizeof(float))) == NULL)
+		syserror();
 	for (y = ourview.vresolu-1; y >= 0; y--) {
 		if (donorm) {
 			double	vx, yzn2;
