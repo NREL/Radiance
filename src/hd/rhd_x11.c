@@ -451,6 +451,7 @@ XButtonPressedEvent	*ebut;
 		wx = levptr(XButtonReleasedEvent)->x;
 		wy = levptr(XButtonReleasedEvent)->y;
 		moveview(wx, odev.vres-1-wy, MOVDIR(whichbutton));
+		dev_flush();
 	}
 
 	qtMinNodesiz = oldnodesiz;	/* restore quadtree resolution */
@@ -494,7 +495,10 @@ register XKeyPressedEvent  *ekey;
 		qtRedraw(0, 0, odev.hres, odev.vres);
 		return;
 	case CTRL('L'):			/* refresh from server */
+		if (inpresflags & DEV_REDRAW)
+			return;
 		XClearWindow(ourdisplay, gwind);
+		XFlush(ourdisplay);
 		qtCompost(100);			/* unload the old tree */
 		if (ncolors > 0)
 			new_ctab(ncolors);
