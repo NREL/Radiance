@@ -18,6 +18,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <signal.h>
 
+#include  <setjmp.h>
+
 #include  <ctype.h>
 
 VIEW  ourview = STDVIEW;		/* viewing parameters */
@@ -55,6 +57,7 @@ PNODE  ptrunk;				/* the base of our image */
 RECT  pframe;				/* current frame boundaries */
 int  pdepth;				/* image depth in current frame */
 
+static jmp_buf  mainloop;		/* longjmp back to main loop */
 static char  *reserve_mem = NULL;	/* pre-allocated reserve memory */
 
 #define RESERVE_AMT	8192		/* amount of memory to reserve */
@@ -117,7 +120,7 @@ rview()				/* do a view */
 
 	devopen(devname);		/* open device */
 	newimage();			/* set up image */
-
+	setjmp(mainloop);
 	for ( ; ; ) {			/* quit in command() */
 		while (hresolu <= 1<<pdepth &&
 				vresolu <= 1<<pdepth)
@@ -158,8 +161,10 @@ char	*detail;
 	}
 	free(reserve_mem);
 	reserve_mem = NULL;
-	for ( ; ; )
+	do
 		command("out of memory: ");
+	while (reserve_mem == NULL);
+	longjmp(mainloop, 1);
 }
 
 
