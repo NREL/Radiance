@@ -1,4 +1,4 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1996 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -63,11 +63,12 @@ int	mg_nqcdivs = MG_NQCD;	/* number of divisions per quarter circle */
 
 static int	e_any_toss(),		/* discard unneeded entity */
 		e_ies(),		/* IES luminaire file */
-		e_include(),		/* include file */
-		e_sph(),		/* sphere */
 		e_cct(),		/* color temperature */
 		e_cmix(),		/* color mixtures */
-		e_cspec(),		/* color spectra */
+		e_cspec();		/* color spectra */
+
+int		e_include(),		/* include file */
+		e_sph(),		/* sphere */
 		e_cyl(),		/* cylinder */
 		e_cone(),		/* cone */
 		e_prism(),		/* prism */
@@ -260,9 +261,8 @@ mg_close()			/* close input file */
 	register MG_FCTXT	*ctx = mg_file;
 
 	mg_file = ctx->prev;		/* restore enclosing context */
-	if (ctx->fp == stdin)
-		return;			/* don't close standard input */
-	fclose(ctx->fp);
+	if (ctx->fp != stdin)		/* close file if it's a file */
+		fclose(ctx->fp);
 }
 
 
@@ -392,7 +392,8 @@ void
 mg_clear()			/* clear parser history */
 {
 	c_clearall();			/* clear context tables */
-	mg_file = NULL;			/* reset our context */
+	while (mg_file != NULL)		/* reset our file context */
+		mg_close();
 }
 
 
@@ -410,7 +411,7 @@ char	**av;
 }
 
 
-static int
+int
 e_include(ac, av)		/* include file */
 int	ac;
 char	**av;
@@ -480,7 +481,7 @@ FVECT	u, v, w;
 }
 
 
-static int
+int
 e_sph(ac, av)			/* expand a sphere into cones */
 int	ac;
 char	**av;
@@ -532,7 +533,7 @@ char	**av;
 }
 
 
-static int
+int
 e_torus(ac, av)			/* expand a torus into cones */
 int	ac;
 char	**av;
@@ -624,7 +625,7 @@ char	**av;
 }
 
 
-static int
+int
 e_cyl(ac, av)			/* replace a cylinder with equivalent cone */
 int	ac;
 char	**av;
@@ -641,7 +642,7 @@ char	**av;
 }
 
 
-static int
+int
 e_ring(ac, av)			/* turn a ring into polygons */
 int	ac;
 char	**av;
@@ -739,7 +740,7 @@ char	**av;
 }
 
 
-static int
+int
 e_cone(ac, av)			/* turn a cone into polygons */
 int	ac;
 char	**av;
@@ -909,7 +910,7 @@ char	**av;
 }
 
 
-static int
+int
 e_prism(ac, av)			/* turn a prism into polygons */
 int	ac;
 char	**av;
@@ -1021,13 +1022,10 @@ put_cxy()			/* put out current xy chromaticities */
 {
 	static char	xbuf[24], ybuf[24];
 	static char	*ccom[4] = {mg_ename[MG_E_CXY], xbuf, ybuf};
-	int	rv;
 
 	sprintf(xbuf, "%.4f", c_ccolor->cx);
 	sprintf(ybuf, "%.4f", c_ccolor->cy);
-	if ((rv = mg_handle(MG_E_CXY, 3, ccom)) != MG_OK)
-		return(rv);
-	return(MG_OK);
+	return(mg_handle(MG_E_CXY, 3, ccom));
 }
 
 
