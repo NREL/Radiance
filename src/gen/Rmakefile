@@ -69,7 +69,7 @@ calexpr.o:	calexpr.c calcomp.h
 	cc $(CFLAGS) -c -DVARIABLE -DFUNCTION -DRCONST calexpr.c
 
 caldefn.o:	caldefn.c calcomp.h
-	cc $(CFLAGS) -c -DFUNCTION caldefn.c
+	cc $(CFLAGS) -c -DFUNCTION -DRCONST caldefn.c
 
 calfunc.o:	calfunc.c calcomp.h
 	cc $(CFLAGS) -c -DVARIABLE -DBIGLIB calfunc.c
