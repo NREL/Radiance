@@ -401,3 +401,17 @@ COLR  clr, nclr;
 	nclr[EXP] = COLXS;
 	return(shift);
 }
+
+
+bigdiff(c1, c2, md)			/* c1 delta c2 > md? */
+register COLOR  c1, c2;
+double  md;
+{
+	register int  i;
+
+	for (i = 0; i < 3; i++)
+		if (colval(c1,i)-colval(c2,i) > md*colval(c2,i) ||
+			colval(c2,i)-colval(c1,i) > md*colval(c1,i))
+			return(1);
+	return(0);
+}
