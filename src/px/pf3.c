@@ -89,7 +89,7 @@ initmask()			/* initialize gaussian lookup table */
 	for (x = 2*orad*orad+1; --x > orad*orad; )
 		ringndx[x] = -1;
 	do
-		ringndx[x] = sqrt((double)x) + 0.5;
+		ringndx[x] = sqrt((double)x);
 	while (x--);
 	ringsum = (float *)malloc((orad+1)*sizeof(float));
 	ringwt = (short *)malloc((orad+1)*sizeof(short));
@@ -185,7 +185,7 @@ int  ccent, rcent;
 	bzero((char *)ringwt, (orad+1)*sizeof(short));
 	for (r = -orad; r <= orad; r++) {
 		if (rcent+r < 0) continue;
-		if (rcent+r >= ncols) break;
+		if (rcent+r >= nrows) break;
 		gscan = greybar[(rcent+r)%obarsize];
 		for (c = -orad; c <= orad; c++) {
 			if (ccent+c < 0) continue;
@@ -229,10 +229,10 @@ double  p0;
 	do {
 					/* compute grey weighted average */
 		i = 1.25*CHECKRAD*rad*m + .5;
-		if (i > orad) i = orad+1;
+		if (i > orad) i = orad;
 		avg = wsum = 0.0;
 		while (i--) {
-			t = i/(m*rad);
+			t = (i+.5)/(m*rad);
 			t = lookgauss(t*t);
 			avg += t*ringsum[i];
 			wsum += t*ringwt[i];
