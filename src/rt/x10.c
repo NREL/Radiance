@@ -36,12 +36,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #define COMCW		8		/* approx. character width (pixels) */
 #define COMCH		13		/* approx. character height (pixels) */
 
-#ifndef WFLUSH
-#define WFLUSH		30		/* flush after this many rays */
-#endif
-
-#define  checkinp()	while (XPending() > 0) getevent()
-
 #define  levptr(etype)	((etype *)&thisevent)
 
 static XEvent  thisevent;		/* current event */
@@ -68,11 +62,11 @@ extern char  *malloc(), *getcombuf();
 extern char  *progname;
 
 int  x_close(), x_clear(), x_paintr(), x_errout(),
-		x_getcur(), x_comout(), x_comin();
+		x_getcur(), x_comout(), x_comin(), x_flush();
 
 static struct driver  x_driver = {
 	x_close, x_clear, x_paintr, x_getcur,
-	x_comout, x_comin, 1.0
+	x_comout, x_comin, x_flush, 1.0
 };
 
 
@@ -181,20 +175,23 @@ x_paintr(col, xmin, ymin, xmax, ymax)		/* fill a rectangle */
 COLOR  col;
 int  xmin, ymin, xmax, ymax;
 {
-	extern long  nrays;		/* global ray count */
 	extern int  xnewcolr();		/* pixel assignment routine */
-	static long  lastflush = 0;	/* ray count at last flush */
 
 	if (ncolors > 0) {
 		XPixSet(gwind, xmin, gheight-ymax, xmax-xmin, ymax-ymin,
 				pixval[get_pixel(col, xnewcolr)]);
 	}
-	if (nrays - lastflush >= WFLUSH) {
-		if (ncolors <= 0)	/* output necessary for death */
-			XPixSet(gwind,0,0,1,1,BlackPixel);
-		checkinp();
-		lastflush = nrays;
-	}
+}
+
+
+static
+x_flush()			/* flush output */
+{
+	if (ncolors <= 0)	/* output necessary for death */
+		XPixSet(gwind,0,0,1,1,BlackPixel);
+	while (XPending() > 0)
+		getevent();
+
 }
 
 

@@ -15,6 +15,7 @@ struct driver {				/* driver functions */
 	int  (*getcur)();			/* get cursor position */
 	int  (*comout)();			/* command line output */
 	int  (*comin)();			/* command line input */
+	int  (*flush)();			/* flush output */
 	double  pixaspect;			/* pixel aspect ratio */
 	int  xsiz, ysiz;			/* device size */
 	int  inpready;				/* input ready on device */
@@ -33,7 +34,8 @@ extern struct driver  *comm_init();	/* stream interface */
 #define COM_GETCUR		2
 #define COM_COMOUT		3
 #define COM_COMIN		4
-#define NREQUESTS		5	/* number of valid requests */
+#define COM_FLUSH		5
+#define NREQUESTS		6	/* number of valid requests */
 
 extern struct device {			/* interactive device */
 	char  *name;				/* device name */
@@ -75,7 +77,7 @@ extern struct device {			/* interactive device */
  *  int  xmin, ymin, xmax, ymax;
  *  {
  *	Paint a half-open rectangle from (xmin,ymin) to (xmax,ymax)
- *	with the color col.  Can call repaint() if necessary.
+ *	with the color col.
  *  }
  *  (*dev->getcur)(xp, yp)
  *  int  *xp, *yp;
@@ -103,6 +105,13 @@ extern struct device {			/* interactive device */
  *	terminate input and return the string with only that character.
  *	The input string should not contain a newline.  The routines in
  *	editline.c may be useful.  Comin must work in consort with comout.
+ *  }
+ *  (*dev->flush)()
+ *  {
+ *	Flush output to the display.  This is guaranteed to be called
+ *	frequently enough to keep the display up to date.
+ *	This is an ideal time to check for device input.
+ *	This function can be NULL for devices that don't need it.
  *  }
  *  xsiz, ysiz
  *	The maximum allowable x and y dimensions.  If any

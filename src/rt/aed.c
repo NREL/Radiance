@@ -61,7 +61,7 @@ int  aed_close(), aed_clear(), aed_paintr(),
 
 static struct driver  aed_driver = {
 	aed_close, aed_clear, aed_paintr, aed_getcur,
-	aed_comout, NULL,
+	aed_comout, NULL, NULL,
 	1.0, NCOLS, NROWS
 };
 
