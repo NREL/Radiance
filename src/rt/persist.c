@@ -9,6 +9,9 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include "standard.h"
+
+#ifdef F_SETLKW
+
 #include "paths.h"
 #include <signal.h>
 #include <sys/types.h>
@@ -193,3 +196,5 @@ io_process()		/* just act as conduits to and from actual process */
 formerr:
 	error(USER, "format error in persist file");
 }
+
+#endif

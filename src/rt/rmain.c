@@ -20,12 +20,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #ifndef	 RVIEW
 #define	 RVIEW		0
 #endif
-					/* persistent processes define */
-#ifndef  NIX
-#if  RPICT|RTRACE
-#define  PERSIST	1
-#endif
-#endif
 
 #include  "ray.h"
 
@@ -38,6 +32,12 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "view.h"
 
 #include  "paths.h"
+					/* persistent processes define */
+#ifdef  F_SETLKW
+#if  RPICT|RTRACE
+#define  PERSIST	1
+#endif
+#endif
 
 char  *progname;			/* argv[0] */
 
