@@ -63,7 +63,7 @@ some of them in the following sections.
 Initializing the parser is the most important part of writing an MGF
 program, and it is done through the mg_ehand array and a call to mg_init.
 The global mg_ehand variable is an array of pointers to entity handler
-functions.  The arguments to these functions is always the same, an
+functions.  The arguments to these functions are always the same, an
 argument count and an array of argument pointers (ala main).  The return
 value for these integer functions is one of the error codes defined in
 parser.h, or MG_OK if the entity was handled correctly.  You must
@@ -107,7 +107,22 @@ to c_hmaterial.  Then, whenever a material is needed, the global
 c_cmaterial variable will be pointing to a structure with all the
 current settings.  (Note that you would have to also set the color
 mg_ehand entries to c_hcolor if you intended to support color
-materials.)
+materials.)  A list of related mg_ehand assignments is given below:
+
+	mg_ehand[MG_E_COLOR] = c_hcolor;
+	mg_ehand[MG_E_CMIX] = c_hcolor;
+	mg_ehand[MG_E_CSPEC] = c_hcolor;
+	mg_ehand[MG_E_CXY] = c_hcolor;
+	mg_ehand[MG_E_ED] = c_hmaterial;
+	mg_ehand[MG_E_MATERIAL] = c_hmaterial;
+	mg_ehand[MG_E_NORMAL] = c_hvertex;
+	mg_ehand[MG_E_POINT] = c_hvertex;
+	mg_ehand[MG_E_RD] = c_hmaterial;
+	mg_ehand[MG_E_RS] = c_hmaterial;
+	mg_ehand[MG_E_SIDES] = c_hmaterial;
+	mg_ehand[MG_E_TD] = c_hmaterial;
+	mg_ehand[MG_E_TS] = c_hmaterial;
+	mg_ehand[MG_E_VERTEX] = c_hvertex;
 
 In addition to the three handler functions, context.c contains a
 few support routines that make life simpler.  For vertices, there
@@ -121,7 +136,7 @@ coordinates).  Also, there is a function called c_isgrey, which
 simply returns 1 or 0 based on whether the passed color structure
 is close to grey or not.  Finally, there is the c_clearall routine,
 which clears and frees all context data structures, and is the
-principle action of the parser's mg_clear function.
+principal action of the parser's mg_clear function.
 
 Transform Support
 =================
