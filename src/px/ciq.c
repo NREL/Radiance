@@ -22,6 +22,9 @@ int hist[len];		/* list of frequencies or pixelvalues for coded color */
 colormap color;		/* quantization colormap */
 int n;			/* number of colors in it */
 
+#define ERRMAX 20	/* maximum allowed propagated error,
+			   if >=255 then no clamping */
+
 /*----------------------------------------------------------------------*/
 
 ciq(dith,nw,synth,cm)
@@ -48,6 +51,7 @@ colormap cm;		/* quantization colormap */
     }
     picwritecm(color);
 
+    initializeclosest();
     if (dith)
 	draw_dith(ocm);
     else {
@@ -139,9 +143,16 @@ colormap ocm;			/* colormap for orig */
 	Q[0] = Q[1] = Q[2] = 0;
 	picreadline3(y,iline);
 	for (p=P, q=Q, x=0; x<xmax; x++, p+=3, q+=3) {
-	    rr = ocm[0][iline[x].r]+p[0];
-	    gg = ocm[1][iline[x].g]+p[1];	/* ideal */
-	    bb = ocm[2][iline[x].b]+p[2];
+	    rr = p[0];
+	    if (rr<-ERRMAX) rr = -ERRMAX; else if (rr>ERRMAX) rr = ERRMAX;
+	    gg = p[1];
+	    if (gg<-ERRMAX) gg = -ERRMAX; else if (gg>ERRMAX) gg = ERRMAX;
+	    bb = p[2];
+	    if (bb<-ERRMAX) bb = -ERRMAX; else if (bb>ERRMAX) bb = ERRMAX;
+	    /* now rr,gg,bb is propagated color */
+	    rr += ocm[0][iline[x].r];
+	    gg += ocm[1][iline[x].g];	/* ideal */
+	    bb += ocm[2][iline[x].b];
 	    if (rr<0) rr = 0; else if (rr>255) rr = 255;
 	    if (gg<0) gg = 0; else if (gg>255) gg = 255;
 	    if (bb<0) bb = 0; else if (bb>255) bb = 255;
