@@ -85,7 +85,6 @@ char  *name, *id;
 	int  nplanes;
 	XVisualInfo  ourvinfo;
 	XWMHints  ourxwmhints;
-	Pixmap  bmCursorSrc, bmCursorMsk;
 
 	ourdisplay = XOpenDisplay(NULL);
 	if (ourdisplay == NULL) {
@@ -152,13 +151,11 @@ x11_close()			/* close our display */
 		xt_close(comline);
 		comline = NULL;
 	}
-	if (gwind != 0) {
-		freepixels();
-		XFreeGC(ourdisplay, ourgc);
-		XDestroyWindow(ourdisplay, gwind);
-		gwind = 0;
-		ourgc = 0;
-	}
+	freepixels();
+	XFreeGC(ourdisplay, ourgc);
+	XDestroyWindow(ourdisplay, gwind);
+	gwind = 0;
+	ourgc = 0;
 	XFreeCursor(ourdisplay, pickcursor);
 	XCloseDisplay(ourdisplay);
 	ourdisplay = NULL;
@@ -184,8 +181,9 @@ int  xres, yres;
 		XSelectInput(ourdisplay, comline->w, ExposureMask);
 		gwidth = xres;
 		gheight = yres;
-		XSync(ourdisplay, 1);		/* discard input */
+		XFlush(ourdisplay);
 		sleep(2);			/* wait for window manager */
+		XSync(ourdisplay, 1);		/* discard input */
 	}
 	XClearWindow(ourdisplay, gwind);
 	if (ourvisual->class == PseudoColor)	/* reinitialize color table */
@@ -223,7 +221,7 @@ int  xmin, ymin, xmax, ymax;
 static
 x11_flush()			/* flush output */
 {
-	if (ncolors <= 0)	/* output necessary for death */
+	if (ncolors <= 0 && ourvisual->class != TrueColor)	/* dummy */
 		XFillRectangle(ourdisplay, gwind, ourgc, 0, 0, 1 ,1);
 	while (XPending(ourdisplay) > 0)
 		getevent();
@@ -253,7 +251,6 @@ char  *out;
 {
 	if (comline != NULL)
 		xt_puts(out, comline);
-	XFlush(ourdisplay);
 }
 
 
@@ -375,7 +372,7 @@ freepixels()				/* free our pixels */
 		return;
 	XFreeColors(ourdisplay,ourmap,pixval,ncolors,0L);
 	ncolors = 0;
-	if (ourmap != 0 && ourmap != DefaultColormap(ourdisplay,ourscreen))
+	if (ourmap != DefaultColormap(ourdisplay,ourscreen))
 		XFreeColormap(ourdisplay, ourmap);
 	ourmap = 0;
 }
@@ -442,7 +439,7 @@ static
 getkey(ekey)				/* get input key */
 register XKeyPressedEvent  *ekey;
 {
-	int  n;
+	register int  n;
 
 	n = XLookupString(ekey, c_queue+c_last, sizeof(c_queue)-c_last,
 				NULL, NULL);
