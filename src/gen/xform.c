@@ -39,7 +39,7 @@ char  *idprefix = NULL;			/* prefix for object identifiers */
 
 FUN  ofun[NUMTYPES] = INIT_OTYPE;	/* default types and actions */
 
-extern char  *malloc();
+extern char  *malloc(), *fgetword();
 
 #define  progname  (xav[0])
 
@@ -228,7 +228,9 @@ FILE  *fin;
 	char  typ[16], nam[MAXSTR];
 	int  fn;
 						/* modifier and type */
-	fscanf(fin, "%s %s", nam, typ);
+	strcpy(typ, "EOF");
+	fgetword(nam, sizeof(nam), fin);
+	fgetword(typ, sizeof(typ), fin);
 	if ((fn = otype(typ)) < 0) {
 		fprintf(stderr, "%s: (%s): unknown object type \"%s\"\n",
 				progname, fname, typ);
@@ -236,7 +238,7 @@ FILE  *fin;
 	}
 	printf("\n%s %s ", newmod!=NULL && issurface(fn) ? newmod : nam, typ);
 						/* object name */
-	fscanf(fin, "%s", nam);
+	fgetword(nam, sizeof(nam), fin);
 	if (idprefix != NULL && issurface(fn))
 		printf("%s.%s\n", idprefix, nam);
 	else
@@ -256,7 +258,7 @@ FILE  *fin;
 	register int  i;
 	FUNARGS  fa;
 
-	if (readfargs(&fa, fin) <= 0)
+	if (readfargs(&fa, fin) != 1)
 		return(-1);
 					/* string arguments */
 	printf("%d", fa.nsargs);
@@ -269,6 +271,8 @@ FILE  *fin;
 	for (i = 0; i < fa.niargs; i++)
 		printf(" %d", fa.iarg[i]);
 	printf("\n");
+#else
+	printf("0\n");
 #endif
 					/* float arguments */
 	printf("%d", fa.nfargs);
@@ -286,7 +290,7 @@ FILE  *fin;
 	register int  i;
 	FUNARGS  fa;
 
-	if (readfargs(&fa, fin) <= 0)
+	if (readfargs(&fa, fin) != 1)
 		return(-1);
 					/* string arguments */
 	printf("%d", fa.nsargs + xac-xfa);
@@ -301,6 +305,8 @@ FILE  *fin;
 	for (i = 0; i < fa.niargs; i++)
 		printf(" %d", fa.iarg[i]);
 	printf("\n");
+#else
+	printf("0\n");
 #endif
 					/* float arguments */
 	printf("%d", fa.nfargs);
@@ -331,7 +337,7 @@ FILE  *fin;
 {
 	char  aliasnm[MAXSTR];
 
-	if (fscanf(fin, "%s", aliasnm) != 1)
+	if (fgetword(aliasnm, MAXSTR, fin) == NULL)
 		return(-1);
 	printf("\t%s\n", aliasnm);
 	return(0);
@@ -343,7 +349,7 @@ FILE  *fin;
 {
 	FUNARGS  fa;
 
-	if (readfargs(&fa, fin) <= 0)
+	if (readfargs(&fa, fin) != 1)
 		return(-1);
 	if (fa.nsargs != 0  || fa.nfargs != 4)
 		return(-1);
@@ -362,7 +368,7 @@ FILE  *fin;
 	double  v[3];
 	FUNARGS  fa;
 
-	if (readfargs(&fa, fin) <= 0)
+	if (readfargs(&fa, fin) != 1)
 		return(-1);
 	if (fa.nsargs != 0  || fa.nfargs != 7)
 		return(-1);
@@ -382,7 +388,7 @@ FILE  *fin;
 	double  pow();
 	FUNARGS  fa;
 
-	if (readfargs(&fa, fin) <= 0)
+	if (readfargs(&fa, fin) != 1)
 		return(-1);
 	if (fa.nsargs != 0  || fa.nfargs != 5)
 		return(-1);
@@ -403,7 +409,7 @@ FILE  *fin;
 	double  pow();
 	FUNARGS  fa;
 
-	if (readfargs(&fa, fin) <= 0)
+	if (readfargs(&fa, fin) != 1)
 		return(-1);
 	if (fa.nsargs != 0  || fa.nfargs != 8)
 		return(-1);
@@ -430,7 +436,7 @@ FILE  *fin;
 	double  v[3];
 	FUNARGS  fa;
 
-	if (readfargs(&fa, fin) <= 0)
+	if (readfargs(&fa, fin) != 1)
 		return(-1);
 	if (fa.nfargs != 9 && fa.nfargs != 11 && fa.nfargs != 15)
 		return(-1);
@@ -468,7 +474,7 @@ FILE  *fin;
 	double  dv[3];
 	FUNARGS  fa;
 
-	if (readfargs(&fa, fin) <= 0)
+	if (readfargs(&fa, fin) != 1)
 		return(-1);
 	if (fa.nsargs != 0  || fa.nfargs != 4)
 		return(-1);
@@ -489,7 +495,7 @@ FILE  *fin;
 	double  cent[3], rad;
 	FUNARGS  fa;
 
-	if (readfargs(&fa, fin) <= 0)
+	if (readfargs(&fa, fin) != 1)
 		return(-1);
 	if (fa.nsargs != 0  || fa.nfargs != 4)
 		return(-1);
@@ -513,7 +519,7 @@ FILE  *fin;
 	register int  i;
 	FUNARGS  fa;
 
-	if (readfargs(&fa, fin) <= 0)
+	if (readfargs(&fa, fin) != 1)
 		return(-1);
 	if (fa.nsargs != 0  || fa.nfargs % 3)
 		return(-1);
@@ -538,7 +544,7 @@ FILE  *fin;
 	double  p0[3], p1[3], r0, r1;
 	FUNARGS  fa;
 
-	if (readfargs(&fa, fin) <= 0)
+	if (readfargs(&fa, fin) != 1)
 		return(-1);
 	if (fa.nsargs != 0  || fa.nfargs != 8)
 		return(-1);
@@ -564,7 +570,7 @@ FILE  *fin;
 	double  p0[3], p1[3], rad;
 	FUNARGS  fa;
 
-	if (readfargs(&fa, fin) <= 0)
+	if (readfargs(&fa, fin) != 1)
 		return(-1);
 	if (fa.nsargs != 0  || fa.nfargs != 7)
 		return(-1);
@@ -588,7 +594,7 @@ FILE  *fin;
 	double  p0[3], pd[3], r0, r1;
 	FUNARGS  fa;
 
-	if (readfargs(&fa, fin) <= 0)
+	if (readfargs(&fa, fin) != 1)
 		return(-1);
 	if (fa.nsargs != 0  || fa.nfargs != 8)
 		return(-1);
