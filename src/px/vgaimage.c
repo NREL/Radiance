@@ -23,12 +23,12 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  M_MOTION       0x1
 
 int crad;
-#define right_button (mouse_event & M_RIGHTBUTT)
-#define left_button (mouse_event & M_LEFTBUTT)
 int mouse_event = 0;
 int mouse_xpos = -1;
 int mouse_ypos = -1;
 
+#define  hide_cursor	move_cursor(-1,-1)
+#define  show_cursor	move_cursor(mouse_xpos,mouse_ypos)
 
 #define  CTRL(c)        ((c)-'@')
 
@@ -255,7 +255,9 @@ docommand()                     /* execute command */
 			break;
 		}
 		postext(box.xmin+box.xsiz/2, box.ymin+box.ysiz/2);
+		hide_cursor();
 		_outtext(buf);
+		show_cursor();
 		return(1);
 	default:
 		return(-1);
@@ -277,7 +279,7 @@ watch_mouse()                   /* look after mousie */
 	if (!(mouse_event & M_LDOWN))
 		return;
 	l_x = a_x = mouse_xpos; l_y = a_y = mouse_ypos;
-	move_cursor(-1, -1);                    /* hide cursor */
+	hide_cursor();
 	revbox(a_x, a_y, l_x, l_y);             /* show box */
 	do {
 		mouse_event = 0;
@@ -289,7 +291,7 @@ watch_mouse()                   /* look after mousie */
 		}
 	} while (!(mouse_event & M_LUP));
 	revbox(a_x, a_y, l_x, l_y);             /* hide box */
-	move_cursor(mouse_xpos, mouse_ypos);    /* show cursor */
+	show_cursor();
 	box.xmin = mouse_xpos;
 	box.ymin = mouse_ypos;
 	if (box.xmin > a_x) {
