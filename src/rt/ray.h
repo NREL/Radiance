@@ -50,3 +50,9 @@ typedef struct ray {
 }  RAY;
 
 extern double  raynormal();
+
+extern int  dimlist[];		/* dimension list for distribution */
+extern int  ndims;		/* number of dimensions so far */
+extern int  samplendx;		/* index for this sample */
+
+#define  MAXDIM		16	/* maximum number of dimensions */
