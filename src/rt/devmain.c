@@ -187,12 +187,14 @@ register char  *s;
 {
 	static int  midline = 0;
 
+	if (!*s)
+		return;
 	if (!midline++) {
 		fputs(progname, stderr);
 		fputs(": ", stderr);
 	}
 	fputs(s, stderr);
-	if (*s && s[strlen(s)-1] == '\n') {
+	if (s[strlen(s)-1] == '\n') {
 		fflush(stderr);
 		midline = 0;
 	}
