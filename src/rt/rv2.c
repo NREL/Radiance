@@ -75,6 +75,7 @@ char  *s;
 	FILE  *fp;
 	char  buf[128];
 	char  *fname, *getpath();
+	int  change = 0;
 	VIEW  nv;
 
 	if (sscanf(s, "%s", buf) == 1) {	/* write parameters to a file */
@@ -94,37 +95,46 @@ char  *s;
 	(*dev->comout)(buf);
 	(*dev->comin)(buf);
 	if (buf[0] == CTRL(C)) return;
-	if (buf[0])
+	if (buf[0] && buf[0] != ourview.type) {
 		nv.type = buf[0];
-	else
+		change++;
+	} else
 		nv.type = ourview.type;
 	sprintf(buf, "view point (%.6g %.6g %.6g): ",
 			ourview.vp[0], ourview.vp[1], ourview.vp[2]);
 	(*dev->comout)(buf);
 	(*dev->comin)(buf);
 	if (buf[0] == CTRL(C)) return;
-	if (sscanf(buf, "%lf %lf %lf", &nv.vp[0], &nv.vp[1], &nv.vp[2]) != 3)
+	if (sscanf(buf, "%lf %lf %lf", &nv.vp[0], &nv.vp[1], &nv.vp[2]) == 3)
+		change++;
+	else
 		VCOPY(nv.vp, ourview.vp);
 	sprintf(buf, "view direction (%.6g %.6g %.6g): ",
 			ourview.vdir[0], ourview.vdir[1], ourview.vdir[2]);
 	(*dev->comout)(buf);
 	(*dev->comin)(buf);
 	if (buf[0] == CTRL(C)) return;
-	if (sscanf(buf,"%lf %lf %lf",&nv.vdir[0],&nv.vdir[1],&nv.vdir[2]) != 3)
+	if (sscanf(buf,"%lf %lf %lf",&nv.vdir[0],&nv.vdir[1],&nv.vdir[2]) == 3)
+		change++;
+	else
 		VCOPY(nv.vdir, ourview.vdir);
 	sprintf(buf, "view up (%.6g %.6g %.6g): ",
 			ourview.vup[0], ourview.vup[1], ourview.vup[2]);
 	(*dev->comout)(buf);
 	(*dev->comin)(buf);
 	if (buf[0] == CTRL(C)) return;
-	if (sscanf(buf,"%lf %lf %lf",&nv.vup[0],&nv.vup[1],&nv.vup[2]) != 3)
+	if (sscanf(buf,"%lf %lf %lf",&nv.vup[0],&nv.vup[1],&nv.vup[2]) == 3)
+		change++;
+	else
 		VCOPY(nv.vup, ourview.vup);
 	sprintf(buf, "view horiz and vert size (%.6g %.6g): ",
 			ourview.horiz, ourview.vert);
 	(*dev->comout)(buf);
 	(*dev->comin)(buf);
 	if (buf[0] == CTRL(C)) return;
-	if (sscanf(buf, "%lf %lf", &nv.horiz, &nv.vert) != 2) {
+	if (sscanf(buf, "%lf %lf", &nv.horiz, &nv.vert) == 2)
+		change++;
+	else {
 		nv.horiz = ourview.horiz; nv.vert = ourview.vert;
 	}
 	sprintf(buf, "x and y resolution (%d %d): ",
@@ -132,10 +142,13 @@ char  *s;
 	(*dev->comout)(buf);
 	(*dev->comin)(buf);
 	if (buf[0] == CTRL(C)) return;
-	if (sscanf(buf, "%d %d", &nv.hresolu, &nv.vresolu) != 2) {
+	if (sscanf(buf, "%d %d", &nv.hresolu, &nv.vresolu) == 2)
+		change++;
+	else {
 		nv.hresolu = ourview.hresolu; nv.vresolu = ourview.vresolu;
 	}
-	newview(&nv);
+	if (change)
+		newview(&nv);
 }
 
 
