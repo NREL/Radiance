@@ -351,6 +351,8 @@ char *read_string (void);
 float findfov (float lens);
 int read_mgfmatname (char *s, int n, FILE *f);
 
+char *progname;
+
 
 int main (int argc, char *argv[])
 {
@@ -453,7 +455,6 @@ int main (int argc, char *argv[])
 void process_args (int argc, char *argv[])
 {
     int i;
-    char *progname;
     char *env_opt, *option;
 
     printf("\n\nAutodesk 3D Studio to Raytracer file Translator. Feb/96\n");
@@ -2376,7 +2377,10 @@ void parse_3ds (Chunk *mainchunk)
 
     do  {
 	start_chunk (&chunk);
-
+	if (feof(in)) {
+		fprintf(stderr, "%s: unexpected EOF\n", progname);
+		break;
+	}
 	if (chunk.end <= mainchunk->end) {
 	    switch (chunk.tag) {
 		case 0x3D3D: parse_mdata (&chunk);
