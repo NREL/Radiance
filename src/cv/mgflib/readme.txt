@@ -136,6 +136,18 @@ xf_xfmvect, xf_rotvect or xf_scale.  These functions transform a 3-D
 point, 3-D vector (without translation), rotate a 3-D vector (without
 scaling) and scale a floating-point value, respectively.
 
+Object Support
+==============
+The MGF language includes a single entity for naming objects, MG_E_OBJECT.
+It is mostly provided as a convenience for the user, so that individual
+geometric parts may be easily identified.  Although supporting this entity
+directly is possible, it's hierarchical nature requires maintaining a stack
+of object names.  The object handler in object.c provides this functionality.
+Simply set the MG_E_OBJECT entry of the mg_ehand array to obj_handler,
+and the current object name list will be kept in the global array obj_name.
+The number of names is stored in the global obj_nnames variable.  To clear
+this array (freeing any memory used in the process), call obj_clear.
+
 Examples
 ========
 Two example translator programs are included with this package.
@@ -161,7 +173,7 @@ and he'll be happy to provide you with the missing pieces.
 Copyright
 =========
 At this point, the legal issues related to this parser have not been
-considered.  The intent is to offer it free of charge to all those who
+worked out.  The intent is to offer it free of charge to all those who
 wish to use it (with no guarantees, of course).  However, we may decide
 that copyright protections are necessary to prevent unauthorized versions
 of the parser that do not properly support the MGF standard from getting
