@@ -162,7 +162,7 @@ temp_fd(char *s, size_t len, char *templ)
 FILE *
 temp_fp(char *s, size_t len, char *templ)
 {
-	int fd = temp_file(s, len, templ);
+	int fd = temp_fd(s, len, templ);
 	if (fd < 0) return NULL;
 	return fdopen(fd, "w+");
 }

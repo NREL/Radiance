@@ -83,7 +83,7 @@ PRIMITIVE  *g;
 	case PEOF:
 		return(0);
 
-	case PPAUSE:
+	case PPAUS:
 		break;
 
 	case PINCL:

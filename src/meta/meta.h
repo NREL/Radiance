@@ -21,7 +21,7 @@ extern "C" {
 
 #define  PEOF  'F'		/* end of file global */
 #define  PEOP  'E'		/* end of page global */
-#define  PPAUSE  'P'		/* pause global */
+#define  PPAUS  'P'		/* pause global */
 #define  PDRAW  'D'		/* draw global */
 #define  POPEN  'O'		/* open segment */
 #define  PCLOSE  'C'		/* close segment */

@@ -87,7 +87,7 @@ PRIMITIVE  *g;
 	        error(USER, "illegal continue direction in doglobal");
 	    break;
 
-	case PPAUSE:
+	case PPAUS:
 	    fflush(stdout);
 	    tty = open(TTY, O_RDWR);
 	    if (g->args != NULL) {
