@@ -150,7 +150,7 @@ char  *argv[];
 				sprintf(errmsg, "cannot expand '%s'", argv[i]);
 				error(SYSTEM, errmsg);
 			}
-		if (argv[i][0] != '-')
+		if (argv[i] == NULL || argv[i][0] != '-')
 			break;			/* break from options */
 		if (!strcmp(argv[i], "-version")) {
 			puts(VersionID);
