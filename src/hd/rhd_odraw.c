@@ -25,6 +25,9 @@ static char SCCSid[] = "$SunId$ SGI";
 #ifndef SFREEFRAC
 #define SFREEFRAC	0.2		/* fraction to free at a time */
 #endif
+#ifndef REDRAWTHRESH
+#define REDRAWTHRESH	10240		/* number of samples for dissolve */
+#endif
 #ifndef MAXFAN
 #define MAXFAN		32		/* maximum arms in a triangle fan */
 #endif
@@ -143,6 +146,7 @@ int	n;
 			odView[i].bmap[j].nused = 0;
 		}
 		odView[i].snext = nextsamp;
+		odView[i].n2redraw = 0;
 	}
 	CLR4ALL(odS.redraw, odS.nsamp);		/* clear redraw flags */
 	for (i = odS.nsamp; i--; ) {		/* clear values */
@@ -188,7 +192,7 @@ double	prox;
 	if (CHK4(odView[vn].pmap, vh*odView[vn].hhi + hh))
 		i = bp->first + bp->nsamp;
 	else
-		i = -1;
+		i = 0;
 	while (i-- > bp->first)
 		if (hh == odS.ip[i][0] && vh == odS.ip[i][1]) {	/* found it! */
 						/* search free list for it */
@@ -203,11 +207,10 @@ double	prox;
 						bp->nused++;
 						goto gotit;
 					}
-			if (prox >= 0.999*odS.closeness(i))
+			if (prox >= 0.99*odS.closeness(i))
 				return(-1);	/* previous sample is fine */
 			goto gotit;
 		}
-	DCHECK(i>=-1, WARNING, "pixel in presence map not found in block");
 	if (bp->free != ENDFREE) {	/* allocate from free list */
 		i = bp->free;
 		if (odS.ip[i][0] >= 0 & odS.ip[i][1] >= 0)
@@ -304,6 +307,7 @@ FVECT	d, p;
 		else					/* else map it now */
 			tmMapPixels(odS.rgb[id], &odS.brt[id], odS.chr[id], 1);
 		SET4(odS.redraw, id);			/* mark for redraw */
+		odView[i].n2redraw++;
 	}
 }
 
@@ -326,6 +330,9 @@ odRedrawAll()				/* mark all samples for redraw */
 	for (i = odS.nsamp; i--; )
 		if (odS.ip[i][0] >= 0)
 			SET4(odS.redraw, i);
+					/* not right, but not important */
+	for (i = 0; i < odNViews; i++)
+		odView[i].n2redraw = odView[i].snext - odView[i].sfirst;
 }
 
 
@@ -355,8 +362,10 @@ int	vn, hmin, vmin, hmax, vmax;
 		for (j = vmin; j <= vmax; j++) {
 			bp = odView[vn].bmap + j*odView[vn].hlow + i;
 			for (k = bp->nsamp; k--; )
-				if (odS.ip[bp->first+k][0] >= 0)
+				if (odS.ip[bp->first+k][0] >= 0) {
 					SET4(odS.redraw, bp->first+k);
+					odView[vn].n2redraw++;
+				}
 		}
 }
 
@@ -437,7 +446,9 @@ GLfloat	*dm;
 odUpdate(vn)				/* update this view */
 int	vn;
 {
-	register int	i, j;
+	static short	primes[] = {9431,6803,4177,2659,1609,887,587,251,47,1};
+	int	myprime;
+	register int	i, n;
 
 	DCHECK(vn<0 | vn>=odNViews, CONSISTENCY,
 			"bad view number in odUpdate");
@@ -458,14 +469,31 @@ int	vn;
 			return;
 		needmapping &= ~NEWRGB;
 	}
-					/* this code segment was too slow */
-#if 0
-	for (i = odView[vn].sfirst; i < odView[vn].snext; i++)
+	if (odView[vn].n2redraw <= 0)
+		return;
+#if REDRAWTHRESH
+	if (odView[vn].n2redraw < REDRAWTHRESH)
+		goto quickdraw;
+					/* pick a good prime step size */
+	n = odView[vn].snext - odView[vn].sfirst;
+	for (i = 0; primes[i]<<5 >= n; i++)
+		;
+	while ((myprime = primes[i++]) > 1)
+		if (n % myprime)
+			break;
+					/* dissolve in new samples */
+	for (i = odView[vn].sfirst; n-- > 0; i += myprime) {
+		if (i >= odView[vn].snext)
+			i -= odView[vn].snext - odView[vn].sfirst;
 		if (CHK4(odS.redraw, i)) {
 			odDrawSamp(vn, i);
 			CLR4(odS.redraw, i);
 		}
-#else
+	}
+	odView[vn].n2redraw = 0;
+	return;
+quickdraw:				/* quicker sparse flag checking */
+#endif
 					/* redraw samples at end */
 	for (i = odView[vn].snext-31; i < odView[vn].snext; i++)
 		if (CHK4(odS.redraw, i)) {
@@ -473,11 +501,11 @@ int	vn;
 			CLR4(odS.redraw, i);
 		}
 					/* faster flag checks in middle */
-	for (j = odView[vn].snext>>5; j-- > (odView[vn].sfirst+0x1f)>>5; )
-		for (i = 0; odS.redraw[j]; i++)		/* skips faster */
-			if (odS.redraw[j] & 1L<<i) {
-				odDrawSamp(vn, (j<<5)+i);
-				odS.redraw[j] &= ~(1L<<i);
+	for (n = odView[vn].snext>>5; n-- > (odView[vn].sfirst+0x1f)>>5; )
+		for (i = 0; odS.redraw[n]; i++)		/* skips faster */
+			if (odS.redraw[n] & 1L<<i) {
+				odDrawSamp(vn, (n<<5)+i);
+				odS.redraw[n] &= ~(1L<<i);
 			}
 					/* redraw samples at beginning */
 	for (i = odView[vn].sfirst; i < odView[vn].sfirst+31; i++)
@@ -485,7 +513,7 @@ int	vn;
 			odDrawSamp(vn, i);
 			CLR4(odS.redraw, i);
 		}
-#endif
+	odView[vn].n2redraw = 0;
 }
 
 
