@@ -33,6 +33,8 @@ typedef struct s_head {
 
 static S_HEAD  *stab[NHASH];
 
+static int  shash();
+
 extern char  *savestr(), *strcpy(), *malloc();
 
 #define  NULL		0

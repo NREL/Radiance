@@ -22,6 +22,7 @@ extern double  atof();
 static double  getflt();
 static long  getint();
 static char  *getstr();
+static int  getobj(), octerror();
 static OCTREE  getfullnode(), gettree();
 
 static char  *infn;			/* input file name */

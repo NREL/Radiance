@@ -28,6 +28,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  memcpy(to,from,len)	bcopy(from,to,len)
 #endif
 
+static int     advance(), cclass();
+
 static char    expbuf[ESIZE];
 static int     iflag;
 static int     circf;
