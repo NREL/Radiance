@@ -457,6 +457,11 @@ char	*p;
 {
 	MSGHEAD	msg;
 	int	m;
+				/* consistency checks */
+#ifdef DEBUG
+	if (nbytes < 0 || nbytes > 0 & p == NULL)
+		error(CONSISTENCY, "bad buffer handed to serv_request");
+#endif
 				/* get server's attention for big request */
 	if (nbytes >= BIGREQSIZ-sizeof(MSGHEAD)) {
 		serv_request(DR_ATTEN, 0, NULL);
