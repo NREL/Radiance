@@ -2501,9 +2501,11 @@ SEE ALSO
 .NH
 MGF Translators
 .LP
-Initially, there are four translators for MGF data, but only
-one of these is distributed with the MGF parser itself,
-.I mgfilt.
+Initially, there are five translators for MGF data, but only
+two of these are distributed with the MGF parser itself,
+.I mgfilt
+and
+.I mgf2inv.
 Two of the other translators,
 .I mgf2rad
 and
@@ -2516,7 +2518,7 @@ package\(dg.
 nestor.epfl.ch, or by WWW from
 "http://radsite.lbl.gov/radiance/HOME.html"
 .FE
-A third translator,
+The fifth translator,
 .I mgf2meta,
 converts to a 2-dimensional line plot, and is also
 distributed with Radiance.
@@ -2533,6 +2535,10 @@ unwanted entities.
 In future releases of MGF, this utility will also be handy for
 taking new entities and producing older versions of MGF for
 translators that have not yet been updated properly.
+.LP
+Mgf2inv converts from MGF to Inventor or VRML format.
+Some information is lost, because these formats do not support
+physical light sources or materials.
 .ds LH Translators
 .ds RH MGFILT
 .bp
@@ -2595,7 +2601,55 @@ mgfilt f,v,p,xf input.mgf > flatpoly.mgf
 .SH
 SEE ALSO
 .LP
-i, mgf2rad, rad2mgf
+i, mgf2inv, mgf2rad, rad2mgf
+.ds RH MGF2INV
+.bp
+.SH
+NAME
+.LP
+mgf2inv - convert from MGF to Inventor or VRML format
+.SH
+SYNOPSIS
+.LP
+.B mgf2inv
+[
+.B "-1|-2|-vrml"
+]
+[
+.B input ..
+]
+.SH
+DESCRIPTION
+.LP
+.I Mgf2inv
+takes one or more MGF input files and converts it to
+Inventor or VRML format.
+If the
+.I \-1
+option is used, then Inventor 1.0 ASCII output is produced.
+If the
+.I \-2
+option is used, then Inventor 2.0 ASCII output is produced.
+(This is the default.)\0
+If the
+.I \-vrml
+option is used, then VRML 1.0 ASCII output is produced.
+.LP
+This converter does not work properly for light sources, since
+the output formats do not support IES-type luminaires with recorded
+distributions.
+Also, some material information may be lost because Inventor lacks
+a physically valid reflectance model.
+.SH
+EXAMPLES
+.LP
+To take an MGF file and convert it to VRML format:
+.IP
+mgf2inv -vrml myscene.mgf > myscene.iv
+.SH
+SEE ALSO
+.LP
+mgf2rad, mgfilt, rad2mgf
 .ds RH MGF2RAD
 .bp
 .SH
