@@ -34,7 +34,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 extern char  *ecalloc(), *savestr();
 
-extern double  dvalue();
+static double  dvalue();
 
 long  eclock = -1;			/* value storage timer */
 
