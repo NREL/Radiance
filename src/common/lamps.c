@@ -123,3 +123,21 @@ fmterr:
 	fprintf(stderr, "%s: %s\n", file, cp1);
 	return(-1);
 }
+
+
+freelamps()			/* free our lamps list */
+{
+	register LAMP	*lp1, *lp2;
+	
+	for (lp1 = lamps; lp1 != NULL; lp1 = lp1->next) {
+		free(lp1->pattern);
+		if (lp1->color != NULL) {
+			for (lp2 = lp1->next; lp2 != NULL; lp2 = lp2->next)
+				if (lp2->color == lp1->color)
+					lp2->color = NULL;
+			free((char *)lp1->color);
+		}
+		free((char *)lp1);
+	}
+	lamps = NULL;
+}
