@@ -104,9 +104,8 @@ breakopt:
 		nfiles = readoct(infile, IO_ALL, &thescene, ofname);
 		if (nfiles == 0)
 			inpfrozen++;
-	}
-
-	newheader("RADIANCE", stdout);	/* new binary file header */
+	} else
+		newheader("RADIANCE", stdout);	/* new binary file header */
 	printargs(argc, argv, stdout);
 	fputformat(OCTFMT, stdout);
 	printf("\n");
