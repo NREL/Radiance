@@ -18,6 +18,9 @@
 #define SWNORM		2.26		/* scotopic/photopic ratio for white */
 #define WHTSEFFICACY	(SWNORM*WHTEFFICACY)
 
+#define BotMesopic	5.62e-3		/* top of scotopic range */
+#define TopMesopic	5.62		/* bottom of photopic range */
+
 #define FOVDIA		(1.0*PI/180.)	/* foveal diameter (radians) */
 
 #define	HISTRES		100		/* histogram resolution */
