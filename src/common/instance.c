@@ -26,7 +26,7 @@ getscene(sname, flags)			/* load octree sname */
 char  *sname;
 int  flags;
 {
-	extern char  *libpath;
+	extern char  *getlibpath();
 	char  *pathname;
 	register SCENE  *sc;
 
@@ -51,7 +51,7 @@ int  flags;
 		sc->next = slist;
 		slist = sc;
 	}
-	if ((pathname = getpath(sname, libpath, R_OK)) == NULL) {
+	if ((pathname = getpath(sname, getlibpath(), R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find octree file \"%s\"", sname);
 		error(USER, errmsg);
 	}

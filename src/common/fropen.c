@@ -12,14 +12,12 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "paths.h"
 
-char  *libpath = NULL;		/* library search path */
-
 
 FILE *
 fropen(fname)			/* find file and open for reading */
 register char  *fname;
 {
-	extern char  *strcpy(), *getenv();
+	extern char  *strcpy(), *getlibpath();
 	FILE  *fp;
 	char  pname[MAXPATH];
 	register char  *sp, *cp;
@@ -29,14 +27,8 @@ register char  *fname;
 
 	if (ISDIRSEP(fname[0]) || fname[0] == '.')	/* absolute path */
 		return(fopen(fname, "r"));
-		
-	if (libpath == NULL) {			/* get search path */
-		libpath = getenv(ULIBVAR);
-		if (libpath == NULL)
-			libpath = DEFPATH;
-	}
 						/* check search path */
-	sp = libpath;
+	sp = getlibpath();
 	do {
 		cp = pname;
 		while (*sp && (*cp = *sp++) != PATHSEP)
