@@ -128,7 +128,7 @@ double  omega;			/* light source size */
 		 *  is always modified by material color.
 		 */
 						/* roughness + source */
-		dtmp = np->alpha2 + omega/(2.0*PI);
+		dtmp = np->alpha2/2.0 + omega/(2.0*PI);
 						/* gaussian */
 		dtmp = exp((DOT(np->prdir,ldir)-1.)/dtmp)/(2.*PI)/dtmp;
 						/* worth using? */
@@ -235,7 +235,7 @@ register RAY  *r;
 			} else {
 				for (i = 0; i < 3; i++)		/* perturb */
 					nd.prdir[i] = r->rdir[i] -
-							.75*r->pert[i];
+							0.5*r->pert[i];
 				if (DOT(nd.prdir, r->ron) < -FTINY)
 					normalize(nd.prdir);	/* OK */
 				else
@@ -346,4 +346,28 @@ register NORMDAT  *np;
 		ndims--;
 	}
 					/* compute transmission */
+	if ((np->specfl & (SP_TRAN|SP_TBLT)) == SP_TRAN &&
+			rayorigin(&sr, r, SPECULAR, np->tspec) == 0) {
+		dimlist[ndims++] = (int)np->mp;
+		d = urand(ilhash(dimlist,ndims)+1823+samplendx);
+		multisamp(rv, 2, d);
+		d = 2.0*PI * rv[0];
+		cosp = cos(d);
+		sinp = sin(d);
+		rv[1] = 1.0 - specjitter*rv[1];
+		if (rv[1] <= FTINY)
+			d = 1.0;
+		else
+			d = sqrt( np->alpha2/4.0 * -log(rv[1]) );
+		for (i = 0; i < 3; i++)
+			sr.rdir[i] = np->prdir[i] + d*(cosp*u[i] + sinp*v[i]);
+		if (DOT(sr.rdir, r->ron) < -FTINY)
+			normalize(sr.rdir);		/* OK, normalize */
+		else
+			VCOPY(sr.rdir, np->prdir);	/* else no jitter */
+		rayvalue(&sr);
+		multcolor(sr.rcol, np->scolor);
+		addcolor(r->rcol, sr.rcol);
+		ndims--;
+	}
 }
