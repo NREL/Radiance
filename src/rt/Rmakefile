@@ -150,15 +150,15 @@ $(DEVDIR)/news: nwsdev.o devmain.o editline.o
 #
 
 rtmain.o:	rmain.c
-	$(CC) $(CFLAGS) -DRTRACE -DNICE=4 -DDEFPATH=\":$(LIBDIR)\" -c rmain.c
+	$(CC) $(CFLAGS) -DRTRACE -DNICE=4 -c rmain.c
 	mv rmain.o rtmain.o
 
 rpmain.o:	rmain.c
-	$(CC) $(CFLAGS) -DRPICT -DNICE=6 -DDEFPATH=\":$(LIBDIR)\" -c rmain.c
+	$(CC) $(CFLAGS) -DRPICT -DNICE=6 -c rmain.c
 	mv rmain.o rpmain.o
 
 rvmain.o:	rmain.c
-	$(CC) $(CFLAGS) -DRVIEW -DDEFPATH=\":$(LIBDIR)\" -c rmain.c
+	$(CC) $(CFLAGS) -DRVIEW -c rmain.c
 	mv rmain.o rvmain.o
 
 readfargs.o:	readfargs.c ../common/object.h
