@@ -73,9 +73,16 @@ trace variable rifname w setrname
 
 # Make main window frames
 
-frame .upper -geometry 640x410
+set smallscrn [expr [winfo screenwidth .] < 830]
+
+if $smallscrn {
+	frame .upper -geometry 640x410
+	frame .upper.right -geometry 120x410
+} else {
+	frame .upper -geometry 830x410
+	frame .upper.right -geometry 130x410
+}
 pack .upper -side top
-frame .upper.right -geometry 120x410
 place .upper.right -relx .98 -rely 0 -anchor ne
 message .mess -relief ridge -font fixed -textvariable curmess \
 		-anchor nw -width 620
@@ -85,7 +92,7 @@ helplink .mess trad trad messages
 # Make mode buttons
 
 proc changescreen {} {		# switch screen according to curmode
-	global curscreen curmode curmess
+	global curscreen curmode curmess smallscrn
 	if [info exists curscreen] {
 		if {"$curmode" == "$curscreen"} {return}
 		destroy .upper.left
@@ -94,7 +101,11 @@ proc changescreen {} {		# switch screen according to curmode
 	}
 	set curscreen $curmode
 	do_$curscreen .upper.left
-	.upper.left configure -geometry 520x410
+	if $smallscrn {
+		.upper.left configure -geometry 520x410
+	} else {
+		.upper.left configure -geometry 700x410
+	}
 	place .upper.left -x 0 -y 0
 }
 
@@ -127,7 +138,11 @@ button .upper.right.quit -text QUIT \
 pack .upper.right.quit -side top -pady 10 -anchor se
 helplink .upper.right.quit trad trad quit
 
-wm minsize . 640 460
+if $smallscrn {
+	wm minsize . 640 460
+} else {
+	wm minsize . 830 460
+}
 wm iconbitmap . @$radlib/trad.icon
 
 proc gotfile {{o 1}} {		# set file possession state
