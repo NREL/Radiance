@@ -1,7 +1,7 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -73,7 +73,6 @@ register RAY  *r;
 	double  cos1, cos2, nratio;
 	COLOR  ctrans;
 	COLOR  talb;
-	double  mabsorp;
 	double  refl, trans;
 	FVECT  dnorm;
 	double  d1, d2;
@@ -128,14 +127,6 @@ register RAY  *r;
 			r->gecc = 0.;
 		}
 	}
-						/* estimate absorption */
-	mabsorp = colval(r->cext,RED) < colval(r->cext,GRN) ?
-			colval(r->cext,RED) : colval(r->cext,GRN);
-	if (colval(r->cext,BLU) < mabsorp) mabsorp = colval(r->cext,BLU);
-	if (mabsorp > 0.)
-		mabsorp = exp(-mabsorp*r->rot);		/* conservative */
-	else
-		mabsorp = 1.0;
 
 	d2 = 1.0 - nratio*nratio*(1.0 - cos1*cos1);	/* compute cos theta2 */
 
@@ -159,7 +150,7 @@ register RAY  *r;
 		refl *= 0.5;
 		trans = 1.0 - refl;
 
-		if (rayorigin(&p, r, REFRACTED, mabsorp*trans) == 0) {
+		if (rayorigin(&p, r, REFRACTED, trans) == 0) {
 
 						/* compute refracted ray */
 			d1 = nratio*cos1 - cos2;
@@ -188,7 +179,7 @@ register RAY  *r;
 	}
 		
 	if (!(r->crtype & SHADOW) &&
-			rayorigin(&p, r, REFLECTED, mabsorp*refl) == 0) {
+			rayorigin(&p, r, REFLECTED, refl) == 0) {
 
 					/* compute reflected ray */
 		for (i = 0; i < 3; i++)

@@ -1,7 +1,7 @@
-/* Copyright (c) 1996 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -54,6 +54,8 @@ register RAY  *r, *ro;
 int  rt;
 double  rw;
 {
+	double	re;
+
 	if ((r->parent = ro) == NULL) {		/* primary ray */
 		r->rlvl = 0;
 		r->rweight = rw;
@@ -82,9 +84,15 @@ double  rw;
 		copycolor(r->albedo, ro->albedo);
 		r->gecc = ro->gecc;
 		r->slights = ro->slights;
-		r->rweight = ro->rweight * rw;
 		r->crtype = ro->crtype | (r->rtype = rt);
 		VCOPY(r->rorg, ro->rop);
+		r->rweight = ro->rweight * rw;
+						/* estimate absorption */
+		re = colval(ro->cext,RED) < colval(ro->cext,GRN) ?
+				colval(ro->cext,RED) : colval(ro->cext,GRN);
+		if (colval(ro->cext,BLU) < re) re = colval(ro->cext,BLU);
+		if (re > 0.)
+			r->rweight *= exp(-re*ro->rot);
 	}
 	rayclear(r);
 	return(r->rlvl <= maxdepth && r->rweight >= minweight ? 0 : -1);
