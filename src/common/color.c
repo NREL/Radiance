@@ -17,6 +17,11 @@ static const char	RCSid[] = "$Id$";
 
 #include  "color.h"
 
+#ifdef getc_unlocked		/* avoid horrendous overhead of flockfile */
+#define getc    getc_unlocked
+#define putc    putc_unlocked
+#endif
+
 #define  MINELEN	8	/* minimum scanline length for encoding */
 #define  MAXELEN	0x7fff	/* maximum scanline length for encoding */
 #define  MINRUN		4	/* minimum run length */
