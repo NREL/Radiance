@@ -94,7 +94,7 @@ extern int	nowarn;		/* turn warnings off? */
 extern int	ncprocs;	/* number of requested compute processes */
 extern int	nprocs;		/* number of running compute processes */
 
-extern double	expval;		/* global exposure value */
+extern int	chunkycmp;	/* using "chunky" comparison mode */
 
 extern VIEWPOINT	myeye;	/* target view position */
 

@@ -26,11 +26,12 @@ static char SCCSid[] = "$SunId$ SGI";
 
 extern time_t	time();
 
+int	chunkycmp = 0;		/* clump beams together on disk */
+
 static PACKHEAD	*complist=NULL;	/* list of beams to compute */
 static int	complen=0;	/* length of complist */
 static int	listpos=0;	/* current list position for next_packet */
 static int	lastin= -1;	/* last ordered position in list */
-static int	chunky=0;	/* clump beams together on disk */
 
 
 int
@@ -40,7 +41,7 @@ register PACKHEAD	*b0, *b1;
 	BEAMI	*bip0, *bip1;
 	register long	c;
 					/* first check desired quantities */
-	if (chunky)
+	if (chunkycmp)
 		c = rchunk(b1->nr)*(rchunk(b0->nc)+1L) -
 				rchunk(b0->nr)*(rchunk(b1->nc)+1L);
 	else
@@ -334,23 +335,18 @@ sortcomplist()			/* fix our list order */
 
 	if (complen <= 0)	/* check to see if there is even a list */
 		return;
-	if (!chunky)		/* check to see if fragment list is full */
+	if (!chunkycmp)		/* check to see if fragment list is full */
 		if (!hdfragOK(hdlist[0]->fd, &listlen, NULL)
 #if NFRAG2CHUNK
 				|| listlen >= NFRAG2CHUNK
 #endif
 				) {
+			chunkycmp++;	/* use "chunky" comparison */
+			lastin = -1;	/* need to re-sort list */
 #ifdef DEBUG
 			error(WARNING, "using chunky comparison mode");
 #endif
-			chunky++;	/* use "chunky" comparison */
-			lastin = -1;	/* need to re-sort list */
 		}
-#ifdef DEBUG
-			else
-				fprintf(stderr, "sortcomplist: %d fragments\n",
-						listlen);
-#endif
 	if (lastin < 0 || listpos*4 >= complen*3)
 		qsort((char *)complist, complen, sizeof(PACKHEAD), beamcmp);
 	else if (listpos) {	/* else sort and merge sublist */

@@ -318,13 +318,14 @@ rholo()				/* holodeck main loop */
 	if (reporttime > 0 && t >= reporttime)
 		report(t);
 					/* figure out good packet size */
+	pksiz = RPACKSIZ;
 #if MAXQTIME
-	pksiz = nraysdone*MAXQTIME/(totqlen*(t - starttime + 1L));
-	if (pksiz < 1)
-		pksiz = 1;
-	else if (pksiz > RPACKSIZ)
+	if (!chunkycmp) {
+		pksiz = nraysdone*MAXQTIME/(totqlen*(t - starttime + 1L));
+		if (pksiz < 1) pksiz = 1;
+		else if (pksiz > RPACKSIZ) pksiz = RPACKSIZ;
+	}
 #endif
-		pksiz = RPACKSIZ;
 	idle = 0;			/* get packets to process */
 	while (freepacks != NULL) {
 		p = freepacks; freepacks = p->next; p->next = NULL;
