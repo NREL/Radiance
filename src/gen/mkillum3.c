@@ -112,7 +112,7 @@ FVECT  u, v, w;
 	} else {
 		printf("\n%s %s %s%s", VOIDID, ofun[PAT_BDATA].funame,
 				il->matname, DSTSUF);
-		printf("\n5 noop");
+		printf("\n5 noneg");
 		dfp = dfopen(il, 0);
 		fprintf(dfp, "2\n%f %f %d\n%f %f %d\n", 1.-.5/n, .5/n, n,
 				0., 2.*PI, m+1);
@@ -153,7 +153,7 @@ int  n, m;
 	} else {
 		printf("\n%s %s %s%s", VOIDID, ofun[PAT_BDATA].funame,
 				il->matname, DSTSUF);
-		printf("\n5 noop");
+		printf("\n5 noneg");
 		dfp = dfopen(il, 0);
 		fprintf(dfp, "2\n%f %f %d\n%f %f %d\n", 1.-1./n, -1.+1./n, n,
 				0., 2.*PI, m+1);
