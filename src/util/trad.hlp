@@ -110,9 +110,7 @@ it is saved.
 Loading a writable file always clears the "Read Only" check box.
 
 If an error is encountered while trying to load the file, a message
-will be printed in the box at the bottom and it will be necessary to
-load another file.
-(I.e. any previous information will be lost.)
+will be printed in the box at the bottom.
 
 .File.Save
 
