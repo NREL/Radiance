@@ -70,4 +70,4 @@ image.o xglaresrc.o:	../common/standard.h ../common/mat4.h \
 
 swaprasheader.o:	../common/rasterfile.h
 
-glareval.o:	../common/resolu.h
+glareval.o xglaresrc.o:	../common/resolu.h

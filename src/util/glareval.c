@@ -9,6 +9,7 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include "glare.h"
+#include "resolu.h"
 					/* maximum rtrace buffer size */
 #define MAXPIX		(4096/(6*sizeof(float)))
 
@@ -153,7 +154,7 @@ pict_val(vd)			/* find picture value for view direction */
 FVECT	vd;
 {
 	FVECT	pp;
-	double	vpx, vpy, vpz;
+	FVECT	ip;
 	COLOR	res;
 
 	if (pictfp == NULL)
@@ -161,10 +162,11 @@ FVECT	vd;
 	pp[0] = pictview.vp[0] + vd[0];
 	pp[1] = pictview.vp[1] + vd[1];
 	pp[2] = pictview.vp[2] + vd[2];
-	viewpixel(&vpx, &vpy, &vpz, &pictview, pp);
-	if (vpz <= FTINY || vpx < 0. || vpx >= 1. || vpy < 0. || vpy >= 1.)
+	viewloc(ip, &pictview, pp);
+	if (ip[2] <= FTINY || ip[0] < 0. || ip[0] >= 1. ||
+			ip[1] < 0. || ip[1] >= 1.)
 		return(-1.0);
-	colr_color(res, getpictscan((int)(vpy*pysiz))[(int)(vpx*pxsiz)]);
+	colr_color(res, getpictscan((int)(ip[1]*pysiz))[(int)(ip[0]*pxsiz)]);
 	return(luminance(res)/exposure);
 }
 
@@ -293,9 +295,8 @@ char	*fn;
 	}
 	exposure = 1.0;
 	getheader(pictfp, getexpos, NULL);
-	if (wrongformat ||
-			fgetresolu(&pxsiz, &pysiz, pictfp) != (YMAJOR|YDECR)) {
-		fprintf("%s: bad picture format\n", fn);
+	if (wrongformat || !fscnresolu(&pxsiz, &pysiz, pictfp)) {
+		fprintf(stderr, "%s: incompatible picture format\n", fn);
 		exit(1);
 	}
 	initscans();
