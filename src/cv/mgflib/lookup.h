@@ -12,6 +12,7 @@ typedef struct {
 	char	*data;		/* pointer to client data */
 } LUENT;
 
+#ifdef NOPROTO
 typedef struct {
 	long	(*hashf)();	/* key hash function */
 	int	(*keycmp)();	/* key comparison function */
@@ -21,6 +22,17 @@ typedef struct {
 	LUENT	*tabl;		/* table, if allocated */
 	int	ndel;		/* number of deleted entries */
 } LUTAB;
+#else
+typedef struct {
+	long	(*hashf)();	/* key hash function */
+	int	(*keycmp)(const char *, const char *);	/* key comparison function */
+	void	(*freek)(char *);	/* free a key */
+	void	(*freed)(char *);	/* free the data */
+	int	tsiz;		/* current table size */
+	LUENT	*tabl;		/* table, if allocated */
+	int	ndel;		/* number of deleted entries */
+} LUTAB;
+#endif
 
 #define LU_SINIT(fk,fd)		{lu_shash,strcmp,(void (*)())(fk),\
 				(void (*)())(fd),0,NULL,0}
