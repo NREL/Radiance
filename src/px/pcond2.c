@@ -63,7 +63,8 @@ nextscan()				/* read and condition next scanline */
 #ifdef DEBUG
 		fputs("done\n", stderr);
 #endif
-		return(NULL);
+		free((char *)scanbuf);
+		return(scanbuf = NULL);
 	}
 	if (what2do&DO_ACUITY)
 		acuscan(scanbuf, nread);

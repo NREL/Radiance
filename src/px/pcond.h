@@ -65,12 +65,12 @@ extern short	fvxr, fvyr;		/* foveal image resolution */
 
 #define fovscan(y)	(fovimg+(y)*fvxr)
 
-extern int	bwhist[HISTRES];	/* luminance histogram */
-extern long	histot;			/* total count of histogram */
+extern float	bwhist[HISTRES];	/* luminance histogram */
+extern double	histot;			/* total count of histogram */
 extern double	bwmin, bwmax;		/* histogram limits */
 extern double	bwavg;			/* mean brightness */
 
-#define bwhc(B)		bwhist[(int)(HISTRES*((B)-bwmin)/(bwmax-bwmin))]
+#define bwhi(B)		(int)(HISTRES*((B)-bwmin)/(bwmax-bwmin))
 
 extern RGBPRIMP	inprims;		/* input primaries */
 extern COLORMAT	inrgb2xyz;		/* convert input RGB to XYZ */

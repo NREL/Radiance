@@ -253,5 +253,3 @@ psign.o:	../common/font.h
 pcond.o pcond2.o pcond3.o pcond4.o:	pcond.h ../common/standard.h \
 ../common/mat4.h ../common/fvect.h \
 ../common/color.h ../common/view.h ../common/resolu.h
-
-pcond.o:	../common/random.h

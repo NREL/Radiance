@@ -11,23 +11,27 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "pcond.h"
 
 
-#define CVRATIO		0.025		/* fraction of pixels allowed > env. */
+#define CVRATIO		0.025		/* fraction of samples allowed > env. */
 
 #define exp10(x)	exp(2.302585093*(x))
 
-int	modhist[HISTRES];		/* modified histogram */
+float	modhist[HISTRES];		/* modified histogram */
+double	mhistot;			/* modified histogram total */
 float	cumf[HISTRES+1];		/* cumulative distribution function */
 
 
 mkcumf()			/* make cumulative distribution function */
 {
 	register int	i;
-	register long	sum;
+	register double	sum;
 
-	cumf[0] = 0.;
-	sum = modhist[0];
-	for (i = 1; i < HISTRES; i++) {
-		cumf[i] = (double)sum/histot;
+	mhistot = 0.;		/* compute modified total */
+	for (i = 0; i < HISTRES; i++)
+		mhistot += modhist[i];
+
+	sum = 0.;		/* compute cumulative function */
+	for (i = 0; i < HISTRES; i++) {
+		cumf[i] = sum/mhistot;
 		sum += modhist[i];
 	}
 	cumf[HISTRES] = 1.;
@@ -108,54 +112,29 @@ double	bw;
 int
 mkbrmap()			/* make dynamic range map */
 {
-	int	hdiffs[HISTRES], above, below;
 	double	T, b, s;
-	int	maxd, maxi, sd;
+	double	ceiling, trimmings;
 	register int	i;
 					/* copy initial histogram */
-	for (i = 0; i < HISTRES; i++)
-		modhist[i] = bwhist[i];
-	T = histot * (bwmax - bwmin) / HISTRES;
+	bcopy((char *)bwhist, (char *)modhist, sizeof(modhist));
 	s = (bwmax - bwmin)/HISTRES;
 					/* loop until satisfactory */
-	for ( ; ; ) {
-		mkcumf();		/* sync brightness mapping */
-		above = below = 0;	/* compute visibility overflow */
+	do {
+		mkcumf();			/* sync brightness mapping */
+		if (mhistot <= histot*CVRATIO)
+			return(-1);		/* no compression needed! */
+		T = mhistot * (bwmax - bwmin) / HISTRES;
+		trimmings = 0.;			/* clip to envelope */
 		for (i = 0, b = bwmin + .5*s; i < HISTRES; i++, b += s) {
-			hdiffs[i] = modhist[i] - (int)(T*clampf(Lb(b)) + .5);
-			if (hdiffs[i] > 0) above += hdiffs[i];
-			else below -= hdiffs[i];
+			ceiling = T*clampf(Lb(b));
+			if (modhist[i] > ceiling) {
+				trimmings += modhist[i] - ceiling;
+				modhist[i] = ceiling;
+			}
 		}
-		if (above <= histot*CVRATIO)
-			break;		/* close enough */
-		if (above-below >= 0)
-			return(-1);	/* Houston, we have a problem.... */
-		/* original looped here as well (BEGIN_L2) */
-		maxd = 0;		/* find largest overvis */
-		for (i = 0; i < HISTRES; i++)
-			if (hdiffs[i] > maxd)
-				maxd = hdiffs[maxi=i];
-		/* broke loop here when (maxd == 0) (BREAK_L2) */
-		for (sd = shiftdir((maxi+.5)/HISTRES*(bwmax-bwmin)+bwmin);
-				hdiffs[maxi] == maxd; sd = -sd)
-			for (i = maxi+sd; i >= 0 & i < HISTRES; i += sd)
-				if (hdiffs[i] < 0) {
-					if (hdiffs[i] <= -maxd) {
-						modhist[i] += maxd;
-						modhist[maxi] -= maxd;
-						hdiffs[i] += maxd;
-						hdiffs[maxi] = 0;
-					} else {
-						modhist[maxi] += hdiffs[i];
-						modhist[i] -= hdiffs[i];
-						hdiffs[maxi] += hdiffs[i];
-						hdiffs[i] = 0;
-					}
-					break;
-				}
-		/* (END_L2) */
-	}
-	return(0);
+	} while (trimmings > histot*CVRATIO);
+
+	return(0);			/* we got it */
 }
 
 
@@ -229,39 +208,3 @@ FILE	*fp;
 			fprintf(fp, "%e %e\n", wlum, Lb(BLw(wlum)));
 	}
 }
-
-
-#ifdef DEBUG
-doplots()			/* generate debugging plots */
-{
-	double	T, b, s;
-	FILE	*fp;
-	char	fname[128];
-	register int	i;
-
-	T = histot * (bwmax - bwmin) / HISTRES;
-	s = (bwmax - bwmin)/HISTRES;
-
-	sprintf(fname, "%s_hist.plt", infn);
-	if ((fp = fopen(fname, "w")) == NULL)
-		syserror(fname);
-	fputs("include=curve.plt\n", fp);
-	fputs("title=\"Brightness Frequency Distribution\"\n", fp);
-	fprintf(fp, "subtitle=%s\n", infn);
-	fputs("ymin=0\n", fp);
-	fputs("xlabel=\"Perceptual Brightness B(Lw)\"\n", fp);
-	fputs("ylabel=\"Frequency Count\"\n", fp);
-	fputs("Alabel=\"Histogram\"\n", fp);
-	fputs("Alintype=0\n", fp);
-	fputs("Blabel=\"Envelope\"\n", fp);
-	fputs("Bsymsize=0\n", fp);
-	fputs("Adata=\n", fp);
-	for (i = 0, b = bwmin + .5*s; i < HISTRES; i++, b += s)
-		fprintf(fp, "\t%f %d\n", b, modhist[i]);
-	fputs(";\nBdata=\n", fp);
-	for (i = 0, b = bwmin + .5*s; i < HISTRES; i++, b += s)
-		fprintf(fp, "\t%f %f\n", b, T*clampf(Lb(b)));
-	fputs(";\n", fp);
-	fclose(fp);
-}
-#endif
