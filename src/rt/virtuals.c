@@ -111,19 +111,12 @@ MAT4  pm;
 		}
 	} else {				/* local source */
 		multp3(nsloc, sp->sloc, pm);
-		if (sp->sflags & SPROX) {
-			d2 = 0.;
-			for (i = 0; i < 3; i++) {
-				d1 = ocent[i] - nsloc[i];
-				d2 += d1*d1;
-			}
-			if (d2 > sp->sl.prox*sp->sl.prox)
-				return(NULL);	/* too far away */
-		}
 		for (i = 0; i < 3; i++)
 			ourspot.aim[i] = ocent[i] - nsloc[i];
 		if ((d1 = normalize(ourspot.aim)) == 0.)
 			return(NULL);		/* at source!! */
+		if (sp->sflags & SPROX && d1 > sp->sl.prox)
+			return(NULL);		/* too far away */
 		ourspot.siz = 2.*PI*(1. - d1/sqrt(d1*d1+maxrad2));
 		ourspot.flen = 0.;
 		if (sp->sflags & SSPOT) {
@@ -164,17 +157,16 @@ register SPOT  *sp1, *sp2;
 FVECT  org;
 {
 	FVECT  cent;
-	double  rad2, d1r2, d2r2;
+	double  rad2, cos1, cos2;
 
-	d1r2 = 1. - sp1->siz/(2.*PI);
-	d2r2 = 1. - sp2->siz/(2.*PI);
+	cos1 = 1. - sp1->siz/(2.*PI);
+	cos2 = 1. - sp2->siz/(2.*PI);
 	if (sp2->siz >= 2.*PI-FTINY)		/* BIG, just check overlap */
-		return(DOT(sp1->aim,sp2->aim) >= d1r2*d2r2 -
-					sqrt((1.-d1r2*d1r2)*(1.-d2r2*d2r2)));
+		return(DOT(sp1->aim,sp2->aim) >= cos1*cos2 -
+					sqrt((1.-cos1*cos1)*(1.-cos2*cos2)));
 				/* compute and check disks */
-	d1r2 = 1./(d1r2*d1r2) - 1.;
-	d2r2 = 1./(d2r2*d2r2) - 1.;
-	rad2 = intercircle(cent, sp1->aim, sp2->aim, d1r2, d2r2);
+	rad2 = intercircle(cent, sp1->aim, sp2->aim,
+			1./(cos1*cos1) - 1.,  1./(cos2*cos2) - 1.);
 	if (rad2 <= FTINY || normalize(cent) == 0.)
 		return(0);
 	VCOPY(sp1->aim, cent);
@@ -193,7 +185,7 @@ FVECT  dir;
 					/* move centers to common plane */
 	d = DOT(sp1->aim, dir);
 	for (i = 0; i < 3; i++)
-		c1[i] = sp2->aim[i] - d*dir[i];
+		c1[i] = sp1->aim[i] - d*dir[i];
 	d = DOT(sp2->aim, dir);
 	for (i = 0; i < 3; i++)
 		c2[i] = sp2->aim[i] - d*dir[i];
@@ -267,6 +259,7 @@ double  r1s, r2s;		/* radii squared */
 					/* no overlap? */
 	if (a2 <= 0.)
 		return(0.);
+					/* overlap, compute center */
 	l = sqrt((r1s - a2)/d2);
 	for (i = 0; i < 3; i++)
 		cc[i] = c1[i] + l*disp[i];
@@ -289,7 +282,7 @@ register OBJREC  *op;
 	switch (op->otype) {
 	case OBJ_FACE:
 		{
-			double  d1, d2;
+			double  d2;
 			register int  i, j;
 			register FACE  *f = getface(op);
 
@@ -301,11 +294,7 @@ register OBJREC  *op;
 			}
 			maxrad2 = 0.;
 			for (j = 0; j < f->nv; j++) {
-				d2 = 0.;
-				for (i = 0; i < 3; i++) {
-					d1 = VERTEX(f,j)[i] - ocent[i];
-					d2 += d1*d1;
-				}
+				d2 = dist2(VERTEX(f,j), ocent);
 				if (d2 > maxrad2)
 					maxrad2 = d2;
 			}
