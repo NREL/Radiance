@@ -278,7 +278,6 @@ close_allsrcs()			/* done with everything */
 donesource(sp)			/* finished with this source */
 register struct source	*sp;
 {
-	FVECT	dthis, dright;
 	register struct srcspan	*ss;
 	int	h, n;
 	double	hsum, vsum, d;
@@ -290,7 +289,7 @@ register struct source	*sp;
 	for (ss = sp->first; ss != NULL; ss = ss->next) {
 		sp->brt += ss->brsum;
 		n += ss->r - ss->l;
-		for (h = ss->r-1; h >= ss->l; h--) {
+		for (h = ss->l; h < ss->r; h++) {
 			d = pixsize(h, ss->v);
 			hsum += d*h;
 			vsum += d*ss->v;
