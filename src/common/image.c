@@ -143,7 +143,7 @@ register char  *av[];
 #define check(c,n)	if ((av[0][c]&&av[0][c]!=' ') || n>=ac) return(-1)
 	extern double  atof();
 
-	if (av[0][0] != '-' || av[0][1] != 'v')
+	if (ac <= 0 || av[0][0] != '-' || av[0][1] != 'v')
 		return(-1);
 	switch (av[0][2]) {
 	case 't':			/* type */
@@ -205,7 +205,7 @@ register char  *s;
 
 	while (*s == ' ')
 		s++;
-	do {
+	while (*s) {
 		ac = 0;
 		do {
 			av[ac++] = s;
@@ -218,8 +218,9 @@ register char  *s;
 			if (na+1 < ac)
 				s = av[na+1];
 			nvopts++;
-		}
-	} while (*s);
+		} else if (ac > 1)
+			s = av[1];
+	}
 	return(nvopts);
 }
 
@@ -233,7 +234,7 @@ FILE  *fp;
 	fprintf(fp, " -vd %.6g %.6g %.6g", vp->vdir[0], vp->vdir[1], vp->vdir[2]);
 	fprintf(fp, " -vu %.6g %.6g %.6g", vp->vup[0], vp->vup[1], vp->vup[2]);
 	fprintf(fp, " -vh %.6g -vv %.6g", vp->horiz, vp->vert);
-	fprintf(fp, " -vs %d -vl %d", vp->hoff, vp->voff);
+	fprintf(fp, " -vs %.6g -vl %.6g", vp->hoff, vp->voff);
 }
 
 
