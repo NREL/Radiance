@@ -542,6 +542,7 @@ char  *s;
 writepict(s)				/* write the picture to a file */
 char  *s;
 {
+	extern char  VersionID[];
 	static char  buf[128];
 	char  *fname;
 	FILE  *fp;
@@ -565,6 +566,7 @@ char  *s;
 	fputs(progname, fp);
 	fprintview(&ourview, fp);
 	putc('\n', fp);
+	fprintf(fp, "SOFTWARE= %s\n", VersionID);
 	if (exposure != 1.0)
 		fputexpos(exposure, fp);
 	if (dev->pixaspect != 1.0)

@@ -44,6 +44,8 @@ char  *libpath;				/* library directory list */
 
 char  *sigerr[NSIG];			/* signal error messages */
 
+extern char  VersionID[];		/* version ID string */
+
 extern int  stderr_v();			/* standard error output */
 int  (*errvec)() = stderr_v;		/* error output vector */
 int  (*wrnvec)() = stderr_v;		/* warning output vector */
@@ -137,6 +139,10 @@ char  *argv[];
 	initurand(2048);
 					/* option city */
 	for (i = 1; i < argc && argv[i][0] == '-'; i++) {
+		if (!strcmp(argv[i], "-version")) {
+			puts(VersionID);
+			quit(0);
+		}
 		if (!strcmp(argv[i], "-defaults") ||
 				!strcmp(argv[i], "-help")) {
 			printdefaults();
@@ -447,6 +453,7 @@ char  *argv[];
 
 	if (loadflags & IO_INFO) {	/* print header */
 		printargs(i, argv, stdout);
+		printf("SOFTWARE= %s\n", VersionID);
 #if  RPICT
 		if (gotvfile) {
 			printf(VIEWSTR);
