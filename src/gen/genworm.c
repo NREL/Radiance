@@ -25,8 +25,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  PI		3.14159265358979323846
 
-#define  FTINY		1e-7
-
 #define  max(a,b)	((a) > (b) ? (a) : (b))
 
 
