@@ -1,4 +1,4 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
+/* Copyright (c) 1999 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -175,7 +175,7 @@ COLR	cv;
 		bi = hdbindex(hp, gc);		/* check for duplicates */
 		if (checkrepeats && (bp = hdgetbeam(hp, bi)) != NULL) {
 			for (n = bp->nrm, rv = hdbray(bp); n--; rv++)
-				if (rv->d == dc &&
+				if ((hp->priv != NULL || rv->d == dc) &&
 						rv->r[0][0] == rr[0][0] &&
 						rv->r[0][1] == rr[0][1] &&
 						rv->r[1][0] == rr[1][0] &&
