@@ -126,7 +126,7 @@ OBJREC  *o;
 	m = objptr(i);
 	if (m->otype != MAT_ILLUM || m->oargs.nsargs < 1 ||
 			!strcmp(m->oargs.sarg[0], VOIDID) ||
-			(i = modifier(m->oargs.sarg[0])) < 0)
+			(i = modifier(m->oargs.sarg[0])) == OVOID)
 		return(m);		/* direct modifier */
 	return(objptr(i));		/* illum alternate */
 }
