@@ -29,6 +29,12 @@ double	qtDepthEps = .05;	/* epsilon to compare depths (z fraction) */
 int	qtMinNodesiz = 2;	/* minimum node dimension (pixels) */
 struct rleaves	qtL;		/* our pile of leaves */
 
+static int4	falleaves;	/* our list of fallen leaves */
+
+#define composted(li)	(qtL.bl <= qtL.tl ? \
+					((li) < qtL.bl || (li) >= qtL.tl) : \
+					((li) < qtL.bl && (li) >= qtL.tl))
+
 #define	TBUNDLESIZ	409	/* number of twigs in a bundle */
 
 static RTREE	**twigbundle;	/* free twig blocks (NULL term.) */
@@ -120,6 +126,7 @@ register int	n;
 	qtL.rgb = (BYTE (*)[3])(qtL.chr + n);
 	qtL.nl = n;
 	qtL.tml = qtL.bl = qtL.tl = 0;
+	falleaves = -1;
 	return(n);
 }
 
@@ -150,9 +157,7 @@ register RTREE	*tp;
 				tp->flgs &= ~BRF(i);
 		} else if (tp->flgs & LFF(i)) {
 			li = tp->k[i].li;
-			if (qtL.bl < qtL.tl ?
-				(li < qtL.bl || li >= qtL.tl) :
-				(li < qtL.bl && li >= qtL.tl))
+			if (composted(li))
 				tp->flgs &= ~LFF(i);
 		}
 }
@@ -162,8 +167,8 @@ int
 qtCompost(pct)			/* free up some leaves */
 int	pct;
 {
+	register int4	*fl;
 	int	nused, nclear, nmapped;
-
 				/* figure out how many leaves to clear */
 	nclear = qtL.nl * pct / 100;
 	nused = qtL.tl - qtL.bl;
@@ -174,6 +179,7 @@ int	pct;
 	if (nclear >= nused) {	/* clear them all */
 		qtFreeTree(0);
 		qtL.tml = qtL.bl = qtL.tl = 0;
+		falleaves = -1;
 		return(nused);
 	}
 				/* else clear leaves from bottom */
@@ -182,7 +188,11 @@ int	pct;
 	qtL.bl += nclear;
 	if (qtL.bl >= qtL.nl) qtL.bl -= qtL.nl;
 	if (nmapped <= nclear) qtL.tml = qtL.bl;
-	shaketree(&qtrunk);
+	shaketree(&qtrunk);	/* dereference composted leaves */
+	for (fl = &falleaves; *fl >= 0; fl = qtL.wd + *fl)
+		while (composted(*fl))
+			if ((*fl = qtL.wd[*fl]) < 0)
+				return(nclear);
 	return(nclear);
 }
 
@@ -225,33 +235,37 @@ int	x, y;
 
 
 static
-addleaf(li)			/* add a leaf to our tree */
-int	li;
+putleaf(li, drop)		/* put a leaf in our tree */
+register int	li;
+int	drop;
 {
 	register RTREE	*tp = &qtrunk;
 	int	x0=0, y0=0, x1=odev.hres, y1=odev.vres;
-	int	lo = -1;
+	register int	lo = -1;
 	double	d2;
 	int	x, y, mx, my;
 	double	z;
 	FVECT	ip, wp, vd;
 	register int	q;
+					/* check for dead leaf */
+	if (!qtL.chr[li][1] && !(qtL.chr[li][0] | qtL.chr[li][2]))
+		return(0);
 					/* compute leaf location in view */
 	VCOPY(wp, qtL.wp[li]);
 	viewloc(ip, &odev.v, wp);
 	if (ip[2] <= 0. || ip[0] < 0. || ip[0] >= 1.
 			|| ip[1] < 0. || ip[1] >= 1.)
-		return(-1);			/* behind or outside view */
+		goto dropit;			/* behind or outside view */
 #ifdef DEBUG
 	if (odev.v.type == VT_PAR | odev.v.vfore > FTINY)
-		error(INTERNAL, "bad view assumption in addleaf");
+		error(INTERNAL, "bad view assumption in putleaf");
 #endif
 	for (q = 0; q < 3; q++)
 		vd[q] = (wp[q] - odev.v.vp[q])/ip[2];
 	d2 = fdir2diff(qtL.wd[li], vd);
 #ifdef MAXDIFF2
 	if (d2 > MAXDIFF2)
-		return(0);			/* leaf dir. too far off */
+		goto dropit;			/* leaf dir. too far off */
 #endif
 	x = ip[0] * odev.hres;
 	y = ip[1] * odev.vres;
@@ -273,7 +287,7 @@ int	li;
 		if (!(tp->flgs & LFF(q))) {	/* found stem for leaf */
 			tp->k[q].li = li;
 			tp->flgs |= CHLFF(q);
-			break;
+			return(1);
 		}	
 		if (lo != tp->k[q].li) {	/* check old leaf */
 			lo = tp->k[q].li;
@@ -283,12 +297,13 @@ int	li;
 						/* is node minimum size? */
 		if (y1-y0 <= qtMinNodesiz || x1-x0 <= qtMinNodesiz) {
 			if (z > (1.+qtDepthEps)*ip[2])
-				return(0);		/* old one closer */
+				break;			/* old one closer */
 			if (z >= (1.-qtDepthEps)*ip[2] &&
 					fdir2diff(qtL.wd[lo], vd) < d2)
-				return(0);		/* old one better */
-			tp->k[q].li = li;		/* else new one is */
+				break;			/* old one better */
+			tp->k[q].li = li;		/* attach new */
 			tp->flgs |= CHF(q);
+			li = lo;			/* drop old... */
 			break;
 		}
 		tp->flgs &= ~LFF(q);		/* else grow tree */
@@ -302,7 +317,13 @@ int	li;
 		tp->flgs = CH_ANY|LFF(q);	/* all new */
 		tp->k[q].li = lo;
 	}
-	return(1);		/* done */
+dropit:
+	if (drop) {
+		qtL.chr[li][0] = qtL.chr[li][1] = qtL.chr[li][2] = 0;
+		qtL.wd[li] = falleaves;
+		falleaves = li;
+	}
+	return(li == lo);
 }
 
 
@@ -311,17 +332,27 @@ COLR	c;
 FVECT	p, v;
 {
 	register int	li;
-
-	li = qtL.tl++;
-	if (qtL.tl >= qtL.nl)	/* advance to next leaf in ring */
-		qtL.tl = 0;
-	if (qtL.tl == qtL.bl)	/* need to shake some free */
-		qtCompost(LFREEPCT);
+	int	mapit;
+				/* grab a leaf */
+	if (falleaves >= 0) {		/* check for fallen leaves */
+		li = falleaves;
+		falleaves = qtL.wd[li];
+		mapit = qtL.tml <= qtL.tl ?
+				(li < qtL.tml || li >= qtL.tl) :
+				(li < qtL.tml && li >= qtL.tl) ;
+	} else {			/* else allocate new one */
+		li = qtL.tl++;
+		if (qtL.tl >= qtL.nl)	/* advance to next leaf in ring */
+			qtL.tl = 0;
+		if (qtL.tl == qtL.bl)	/* need to shake some free */
+			qtCompost(LFREEPCT);
+		mapit = 0;		/* we'll map it later */
+	}
 	VCOPY(qtL.wp[li], p);
 	qtL.wd[li] = encodedir(v);
 	tmCvColrs(&qtL.brt[li], qtL.chr[li], c, 1);
-	if (!addleaf(li))
-		qtL.tl = li;	/* unget this leaf */
+	if (putleaf(li, 1) && mapit)
+		tmMapPixels(qtL.rgb+li, qtL.brt+li, qtL.chr+li, 1);
 }
 
 
@@ -334,7 +365,7 @@ qtReplant()			/* replant our tree using new view */
 	qtFreeTree(0);			/* blow the old tree away */
 					/* regrow it in new place */
 	for (i = qtL.bl; i != qtL.tl; ) {
-		addleaf(i);
+		putleaf(i, 0);
 		if (++i >= qtL.nl) i = 0;
 	}
 }
