@@ -22,6 +22,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 int	(*wrnvec)(), (*errvec)(), (*cmdvec)();	/* error vectors, unused */
 
+long	nrays = 0;				/* fake it */
+
 struct driver	*dev = NULL;			/* output device */
 
 FILE	*devin, *devout;			/* communications channels */
@@ -57,10 +59,8 @@ char	*argv[];
 		quit(1);
 	}
 						/* open device */
-	if ((dev = dinit(argv[0], argv[3])) == NULL) {
-		stderr_v("initialization failure\n");
+	if ((dev = dinit(argv[0], argv[3])) == NULL)
 		quit(1);
-	}
 	putw(COM_RECVM, devout);		/* verify initialization */
 	putw(dev->xsiz, devout);
 	putw(dev->ysiz, devout);
@@ -101,6 +101,7 @@ r_paintr()				/* paint a rectangle */
 	COLOR	col;
 	int	xmin, ymin, xmax, ymax;
 
+	nrays += 5;			/* pretend */
 	fread(col, sizeof(COLOR), 1, devin);
 	xmin = getw(devin); ymin = getw(devin);
 	xmax = getw(devin); ymax = getw(devin);
@@ -181,7 +182,7 @@ register FILE	*fp;
 repaint(xmin, ymin, xmax, ymax)		/* repaint section of display */
 int	xmin, ymin, xmax, ymax;
 {
-	stderr_v("repaint called!\n");		/* no can do! */
+	/* no can do! */
 }
 
 
