@@ -14,16 +14,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #include <fcntl.h>
 #include "netproc.h"
 #include "vfork.h"
-					/* Remote shell location */
-#ifdef sgi
-#define RSH		"/usr/bsd/rsh"
-#endif
-#ifdef _AUX_SOURCE
-#define RSH		"/usr/bin/remsh"
-#endif
-#ifndef RSH
-#define RSH		"/usr/ucb/rsh"
-#endif
 					/* select call compatibility stuff */
 #ifndef FD_SETSIZE
 #include <sys/param.h>
@@ -53,6 +43,8 @@ static char	*ourshell;	/* our user's shell */
 
 static fd_set	errdesc;	/* error file descriptors */
 static int	maxfd;		/* maximum assigned descriptor */
+
+extern char	*remsh;		/* externally defined remote shell program */
 
 extern char	*malloc(), *realloc();
 extern char	*getenv();
@@ -177,7 +169,8 @@ register PSERVER	*ps;
 char	*command;
 int	(*compf)();
 {
-	char	*av[12];
+	char	udirt[128];
+	char	*av[16];
 	int	pfd[2], pid;
 	register int	i;
 
@@ -205,14 +198,19 @@ int	(*compf)();
 			close(pfd[1]);
 		}
 		if (ps->hostname[0]) {		/* rsh command */
-			av[i=0] = RSH;
+			av[i=0] = remsh;
 			av[++i] = ps->hostname;
-			av[++i] = "-n";		/* no stdin */
-			if (ps->username[0]) {
+			av[++i] = "-n";			/* no stdin */
+			if (ps->username[0]) {		/* different user */
 				av[++i] = "-l";
 				av[++i] = ps->username;
+				av[++i] = "cd";
+				udirt[0] = '~';
+				strcpy(udirt+1, ouruser);
+				av[++i] = udirt;
+				av[++i] = ";";
 			}
-			if (ps->directory[0]) {
+			if (ps->directory[0]) {		/* change directory */
 				av[++i] = "cd";
 				av[++i] = ps->directory;
 				av[++i] = ";";
