@@ -10,11 +10,23 @@ static char SCCSid[] = "$SunId$ LBL";
  *     10/17/85
  */
 
+#include  <ctype.h>
+
 #include  "standard.h"
 
 #include  "view.h"
 
 VIEW  stdview = STDVIEW(512);		/* default view parameters */
+
+
+char *
+sskip(s)		/* skip a word */
+register char  *s;
+{
+	while (isspace(*s)) s++;
+	while (*s && !isspace(*s)) s++;
+	return(s);
+}
 
 
 char *
@@ -67,6 +79,9 @@ register VIEW  *v;
 	v->vvinc[1] *= dt;
 	v->vvinc[2] *= dt;
 
+	v->vhs2 = 1.0/DOT(v->vhinc,v->vhinc);
+	v->vvs2 = 1.0/DOT(v->vvinc,v->vvinc);
+
 	return(NULL);
 }
 
@@ -76,21 +91,53 @@ FVECT  orig, direc;
 register VIEW  *v;
 double  x, y;
 {
-	register int  i;
-
 	x -= 0.5 * v->hresolu;
 	y -= 0.5 * v->vresolu;
 
 	if (v->type == VT_PAR) {	/* parallel view */
-		for (i = 0; i < 3; i++)
-			orig[i] = v->vp[i] + x*v->vhinc[i] + y*v->vvinc[i];
+		orig[0] = v->vp[0] + x*v->vhinc[0] + y*v->vvinc[0];
+		orig[1] = v->vp[1] + x*v->vhinc[1] + y*v->vvinc[1];
+		orig[2] = v->vp[2] + x*v->vhinc[2] + y*v->vvinc[2];
 		VCOPY(direc, v->vdir);
 	} else {			/* perspective view */
 		VCOPY(orig, v->vp);
-		for (i = 0; i < 3; i++)
-			direc[i] = v->vdir[i] + x*v->vhinc[i] + y*v->vvinc[i];
+		direc[0] = v->vdir[0] + x*v->vhinc[0] + y*v->vvinc[0];
+		direc[1] = v->vdir[1] + x*v->vhinc[1] + y*v->vvinc[1];
+		direc[2] = v->vdir[2] + x*v->vhinc[2] + y*v->vvinc[2];
 		normalize(direc);
 	}
+}
+
+
+pixelview(xp, yp, zp, v, p)		/* find image location for point */
+double  *xp, *yp, *zp;
+register VIEW  *v;
+FVECT  p;
+{
+	extern double  sqrt();
+	double  d;
+	FVECT  disp;
+	
+	disp[0] = p[0] - v->vp[0];
+	disp[1] = p[1] - v->vp[1];
+	disp[2] = p[2] - v->vp[2];
+
+	if (v->type == VT_PAR) {	/* parallel view */
+		if (zp != NULL)
+			*zp = DOT(disp,v->vdir);
+	} else {			/* perspective view */
+		d = 1.0/DOT(disp,v->vdir);
+		if (zp != NULL) {
+			*zp = sqrt(DOT(disp,disp));
+			if (d < 0.0)
+				*zp = -*zp;
+		}
+		disp[0] *= d;
+		disp[1] *= d;
+		disp[2] *= d;
+	}
+	*xp = DOT(disp,v->vhinc)*v->vhs2 + 0.5*v->hresolu;
+	*yp = DOT(disp,v->vvinc)*v->vvs2 + 0.5*v->vresolu;
 }
 
 
@@ -183,7 +230,7 @@ FILE  *fp;
 
 static VIEW  *hview;			/* view from header */
 static int  gothview;			/* success indicator */
-static char  *altname[] = {NULL,"rpict","rview",VIEWSTR,NULL};
+static char  *altname[] = {NULL,"rpict","rview","pinterp",VIEWSTR,NULL};
 
 
 static
