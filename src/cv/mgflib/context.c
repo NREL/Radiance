@@ -67,6 +67,7 @@ register char	**av;
 		lp = lu_find(&clr_tab, av[1]);	/* lookup context */
 		if (lp == NULL)
 			return(MG_EMEM);
+		c_ccname = lp->key;
 		c_ccolor = (C_COLOR *)lp->data;
 		if (ac == 2) {		/* reestablish previous context */
 			if (c_ccolor == NULL)
@@ -83,10 +84,10 @@ register char	**av;
 			lp->data = (char *)malloc(sizeof(C_COLOR));
 			if (lp->data == NULL)
 				return(MG_EMEM);
+			c_ccname = lp->key;
 			c_ccolor = (C_COLOR *)lp->data;
 			c_ccolor->clock = 0;
 		}
-		c_ccname = lp->key;
 		i = c_ccolor->clock;
 		if (ac == 3) {		/* use default template */
 			*c_ccolor = c_dfcolor;
@@ -176,6 +177,7 @@ register char	**av;
 		lp = lu_find(&mat_tab, av[1]);	/* lookup context */
 		if (lp == NULL)
 			return(MG_EMEM);
+		c_cmname = lp->key;
 		c_cmaterial = (C_MATERIAL *)lp->data;
 		if (ac == 2) {		/* reestablish previous context */
 			if (c_cmaterial == NULL)
@@ -192,10 +194,10 @@ register char	**av;
 			lp->data = (char *)malloc(sizeof(C_MATERIAL));
 			if (lp->data == NULL)
 				return(MG_EMEM);
+			c_cmname = lp->key;
 			c_cmaterial = (C_MATERIAL *)lp->data;
 			c_cmaterial->clock = 0;
 		}
-		c_cmname = lp->key;
 		i = c_cmaterial->clock;
 		if (ac == 3) {		/* use default template */
 			*c_cmaterial = c_dfmaterial;
@@ -309,6 +311,7 @@ register char	**av;
 		lp = lu_find(&vtx_tab, av[1]);	/* lookup context */
 		if (lp == NULL)
 			return(MG_EMEM);
+		c_cvname = lp->key;
 		c_cvertex = (C_VERTEX *)lp->data;
 		if (ac == 2) {		/* reestablish previous context */
 			if (c_cvertex == NULL)
@@ -325,9 +328,9 @@ register char	**av;
 			lp->data = (char *)malloc(sizeof(C_VERTEX));
 			if (lp->data == NULL)
 				return(MG_EMEM);
+			c_cvname = lp->key;
 			c_cvertex = (C_VERTEX *)lp->data;
 		}
-		c_cvname = lp->key;
 		i = c_cvertex->clock;
 		if (ac == 3) {		/* use default template */
 			*c_cvertex = c_dfvertex;
