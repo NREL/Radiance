@@ -83,6 +83,7 @@ extern int  ralrm;			/* seconds between reports */
 
 extern int  greyscale;			/* map colors to brightness? */
 extern char  *devname;			/* output device name */
+extern double  exposure;		/* exposure compensation */
 
 extern char  *formstr();		/* string from format */
 extern int  inform;			/* input format */
@@ -282,6 +283,14 @@ char  *argv[];
 			case 'a':				/* aspect */
 				check(3,"f");
 				pixaspect = atof(argv[++i]);
+				break;
+#endif
+#if  RVIEW
+			case 'e':				/* exposure */
+				check(3,"f");
+				exposure = atof(argv[++i]);
+				if (argv[i][0] == '+' || argv[i][0] == '-')
+					exposure = pow(2.0, exposure);
 				break;
 #endif
 			default:
@@ -821,6 +830,9 @@ printdefaults()			/* print default values to stdout */
 #if  RPICT
 	printf("-pa %f\t\t\t# pixel aspect ratio\n", pixaspect);
 	printf("-pj %f\t\t\t# pixel jitter\n", dstrpix);
+#endif
+#if  RVIEW
+	printf("-pe %f\t\t\t# pixel exposure\n", exposure);
 #endif
 #if  RPICT|RVIEW
 	printf("-ps %-9d\t\t\t# pixel sample\n", psample);
