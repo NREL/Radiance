@@ -22,14 +22,15 @@ STDOBJ = fgetline.o fropen.o linregr.o xf.o mat4.o fvect.o urand.o \
 
 SYSOBJ = ealloc.o bmalloc.o erf.o # frexp.o fwrite.o random.o bcopy.o
 
+install:	librt.a
+	mv librt.a ../lib
+
 librt.a:	$(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 	ar rc librt.a $(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
-	@ ranlib librt.a
-
-install:	librt.a
+	-ranlib librt.a
 
 clean:
-	rm -f $(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
+	rm -f $(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ) librt.a
 
 fropen.o:	fropen.c
 	cc $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c fropen.c
