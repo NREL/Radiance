@@ -266,7 +266,6 @@ FVECT  vc;
 {
 	extern double  sqrt(), dist2();
 	double  d;
-	FVECT  v;
 	VIEW  nv;
 	register int  i;
 
@@ -276,9 +275,9 @@ FVECT  vc;
 	if ((nv.type = ourview.type) == VT_PAR) {
 		nv.horiz = ourview.horiz / mag;
 		nv.vert = ourview.vert / mag;
+		d = 0.0;			/* don't move closer */
 		for (i = 0; i < 3; i++)
-			v[i] = vc[i] - ourview.vp[i];
-		d = DOT(v, ourview.vdir);	/* don't move closer */
+			d += (vc[i] - ourview.vp[i])*ourview.vdir[i];
 	} else {
 		nv.horiz = ourview.horiz;
 		nv.vert = ourview.vert;
