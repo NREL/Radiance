@@ -11,7 +11,7 @@
 #include "color.h"
 #include "setscan.h"
 
-#define GLAREBR		10.0		/* glare source is this * avg. lum. */
+#define GLAREBR		7.0		/* glare source is this * avg. lum. */
 
 #define SAMPDENS	50		/* default samples per unit in image */
 #define TSAMPSTEP	10		/* sample step to compute threshold */
@@ -65,6 +65,11 @@ extern struct source {
 	struct srcspan	*first;	/* first span for this source */
 	struct source	*next;	/* next source in list */
 } *donelist;			/* finished sources */
+
+typedef struct {
+	double	err;		/* cumulative error */
+	double	prob;		/* target probability */
+} SPANERR;		/* probability record for computing spans */
 
 extern double	getviewpix();
 

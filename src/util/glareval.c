@@ -177,14 +177,15 @@ FVECT	vd;
 
 
 double
-getviewpix(vh, vv)		/* compute single view pixel */
+getviewpix(vh, vv, se)		/* compute single view pixel */
 int	vh, vv;
+SPANERR	*se;
 {
 	FVECT	dir;
 	float	rt_buf[6];
 	double	res;
 
-	if (compdir(dir, vh, vv) < 0)
+	if (compdir(dir, vh, vv, se) < 0)
 		return(-1.0);
 	npixinvw++;
 	if ((res = pict_val(dir)) >= 0.0)
@@ -211,6 +212,7 @@ float	*vb;
 	float	rt_buf[6*MAXPIX];	/* rtrace send/receive buffer */
 	register int	n;		/* number of pixels in buffer */
 	short	buf_vh[MAXPIX];		/* pixel positions */
+	SPANERR	sperr;
 	FVECT	dir;
 	register int	vh;
 
@@ -219,9 +221,10 @@ float	*vb;
 		fprintf(stderr, "%s: computing view span at %d...\n",
 				progname, vv);
 #endif
+	setspanerr(&sperr, vv);
 	n = 0;
 	for (vh = -hsize; vh <= hsize; vh++) {
-		if (compdir(dir, vh, vv) < 0) {	/* off viewable region */
+		if (compdir(dir, vh, vv, &sperr) < 0) {	/* not in view */
 			vb[vh+hsize] = -1.0;
 			continue;
 		}
@@ -295,8 +298,6 @@ char	*s;
 open_pict(fn)			/* open picture file */
 char	*fn;
 {
-	register int	i;
-
 	if ((pictfp = fopen(fn, "r")) == NULL) {
 		fprintf("%s: cannot open\n", fn);
 		exit(1);
@@ -313,8 +314,6 @@ char	*fn;
 
 close_pict()			/* done with picture */
 {
-	register int	i;
-
 	if (pictfp == NULL)
 		return;
 	fclose(pictfp);

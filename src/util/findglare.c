@@ -281,7 +281,7 @@ init()				/* initialize global variables */
 cleanup()				/* close files, wait for children */
 {
 	if (verbose)
-		fprintf(stderr, "%s: cleaning up...\n", progname);
+		fprintf(stderr, "%s: cleaning up...        \n", progname);
 	if (picture != NULL)
 		close_pict();
 	if (octree != NULL)
@@ -292,13 +292,11 @@ cleanup()				/* close files, wait for children */
 }
 
 
-compdir(vd, x, y)			/* compute direction for x,y */
+compdir(vd, x, y, se)			/* compute direction for x,y */
 FVECT	vd;
 int	x, y;
+SPANERR	*se;
 {
-	static int	cury = 10000;
-	static double	err, cmpval;
-	long	t;
 	FVECT	org;			/* dummy variable */
 
 	if (x <= -hlim)			/* left region */
@@ -310,20 +308,25 @@ int	x, y;
 				(double)(x-hlim)/(2*sampdens)+.5,
 				(double)y/(2*sampdens)+.5));
 					/* central region */
-				/* avoid over-counting of poles */
-	if (cury != y) {
-		err = 0.0;
-		cmpval = sqrt(1.0 - (double)((long)y*y)/((long)vsize*vsize));
-		cury = y;
+	if (se != NULL) {	/* avoid over-counting of poles */
+		se->err += se->prob;
+		if (se->err <= 0.5)
+			return(-1);
+		se->err -= 1.0;
 	}
-	err += cmpval;
-	if (err <= 0.5)
-		return(-1);
-	err -= 1.0;
 	if (viewray(org, vd, &ourview, .5, (double)y/(2*sampdens)+.5) < 0)
 		return(-1);
 	spinvector(vd, vd, ourview.vup, h_theta(x));
 	return(0);
+}
+
+
+setspanerr(se, y)		/* initialize span error at y */
+register SPANERR	*se;
+int	y;
+{
+	se->err = 0.0;
+	se->prob = sqrt(1.0 - (double)((long)y*y)/((long)vsize*vsize));
 }
 
 
