@@ -182,8 +182,10 @@ register RAY  *r;
 			raytrans(r);
 			return(1);
 		}
+		raytexture(r, m->omod);
 		flipsurface(r);			/* reorient if backvis */
-	}
+	} else
+		raytexture(r, m->omod);
 	nd.mp = m;
 	nd.rp = r;
 						/* get material color */
@@ -197,8 +199,7 @@ register RAY  *r;
 		nd.specfl |= SP_PURE;
 	if (r->ro != NULL && isflat(r->ro->otype))
 		nd.specfl |= SP_FLAT;
-						/* get modifiers */
-	raytexture(r, m->omod);
+
 	if (hastexture = DOT(r->pert,r->pert) > FTINY*FTINY)
 		nd.pdot = raynormal(nd.pnorm, r);	/* perturb normal */
 	else {
