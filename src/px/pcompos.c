@@ -1,4 +1,4 @@
-/* Copyright (c) 1987 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -17,6 +17,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  MAXFILE	32
 
+#define  SIGNHT		24
+#define  setpscom(b,n)	sprintf(b, "psign -h %d '%.30s'|pfilt -1 -x /2 -y /2",\
+				2*SIGNHT, n)
+
 					/* output picture size */
 int  xsiz = 0;
 int  ysiz = 0;
@@ -33,7 +37,7 @@ int  checkthresh = 0;			/* check threshold value */
 char  *progname;
 
 struct {
-	char  *name;			/* file name */
+	char  *name;			/* file or command name */
 	FILE  *fp;			/* stream pointer */
 	int  xres, yres;		/* picture size */
 	int  xloc, yloc;		/* anchor point */
@@ -44,6 +48,10 @@ struct {
 int  nfile;			/* number of files */
 
 int  wrongformat = 0;
+
+char  tmpbuf[128];
+
+FILE  *popen();
 
 
 tabputs(s)			/* print line preceded by a tab */
@@ -66,6 +74,9 @@ int  argc;
 char  *argv[];
 {
 	double  atof();
+	int  ncolumns = 0;
+	int  dolabels = 0;
+	int  curcol = 0, curx = 0, cury = 0;
 	int  an;
 
 	progname = argv[0];
@@ -84,6 +95,12 @@ char  *argv[];
 					atof(argv[an+3]));
 			an += 3;
 			break;
+		case 'a':
+			ncolumns = atoi(argv[++an]);
+			break;
+		case 'l':
+			dolabels++;
+			break;
 		case '\0':
 		case 't':
 			goto dofiles;
@@ -92,7 +109,20 @@ char  *argv[];
 		}
 dofiles:
 	for (nfile = 0; an < argc; nfile++) {
-		if (nfile >= MAXFILE) {
+		if (dolabels) {
+			if (nfile >= MAXFILE-1) {
+				fprintf(stderr,
+				"%s: only %d files allowed with labels\n",
+					progname, MAXFILE/2);
+			}
+		} else {
+			if (nfile >= MAXFILE) {
+				fprintf(stderr, "%s: only %d files allowed\n",
+						progname, MAXFILE);
+				quit(1);
+			}
+		}
+		if (nfile >= (dolabels ? MAXFILE-1 : MAXFILE)) {
 			fprintf(stderr, "%s: too many files\n", progname);
 			quit(1);
 		}
@@ -124,14 +154,16 @@ dofiles:
 				goto userr;
 			}
 getfile:
-		if (argc-an < 3)
+		if (argc-an < (ncolumns ? 1 : 3))
 			goto userr;
 		if (!strcmp(argv[an], "-")) {
 			input[nfile].name = "<stdin>";
 			input[nfile].fp = stdin;
 		} else {
 			input[nfile].name = argv[an];
-			if ((input[nfile].fp = fopen(argv[an], "r")) == NULL) {
+			if ((input[nfile].fp = argv[an][0] == '!' ?
+					popen(argv[an]+1, "r") :
+					fopen(argv[an], "r")) == NULL) {
 				perror(argv[an]);
 				quit(1);
 			}
@@ -152,8 +184,20 @@ getfile:
 					input[nfile].name);
 			quit(1);
 		}
-		input[nfile].xloc = atoi(argv[an++]);
-		input[nfile].yloc = atoi(argv[an++]);
+		if (ncolumns > 0) {
+			if (curcol >= ncolumns) {
+				cury = ymax;
+				curx = 0;
+				curcol = 0;
+			}
+			input[nfile].xloc = curx;
+			input[nfile].yloc = cury;
+			curx += input[nfile].xres;
+			curcol++;
+		} else {
+			input[nfile].xloc = atoi(argv[an++]);
+			input[nfile].yloc = atoi(argv[an++]);
+		}
 		if (input[nfile].xloc < xmin)
 			xmin = input[nfile].xloc;
 		if (input[nfile].yloc < ymin)
@@ -162,6 +206,21 @@ getfile:
 			xmax = input[nfile].xloc+input[nfile].xres;
 		if (input[nfile].yloc+input[nfile].yres > ymax)
 			ymax = input[nfile].yloc+input[nfile].yres;
+		if (dolabels) {
+			input[++nfile].name = "<Label>";
+			setpscom(tmpbuf, input[nfile-1].name);
+			if ((input[nfile].fp = popen(tmpbuf, "r")) == NULL)
+				goto labelerr;
+			if (checkheader(input[nfile].fp, COLRFMT, NULL) < 0)
+				goto labelerr;
+			if (fgetresolu(&input[nfile].xres, &input[nfile].yres,
+					input[nfile].fp) != (YMAJOR|YDECR))
+				goto labelerr;
+			input[nfile].xloc = input[nfile-1].xloc;
+			input[nfile].yloc = input[nfile-1].yloc +
+					input[nfile-1].yres - SIGNHT;
+			input[nfile].hasmin = input[nfile].hasmax = 0;
+		}
 	}
 	if (xsiz <= 0)
 		xsiz = xmax;
@@ -178,6 +237,9 @@ getfile:
 userr:
 	fprintf(stderr, "Usage: %s [-x xres][-y yres][-b r g b] ", progname);
 	fprintf(stderr, "[-t min1][+t max1] file1 x1 y1 ..\n");
+	quit(1);
+labelerr:
+	fprintf(stderr, "%s: error opening label\n", progname);
 	quit(1);
 }
 
