@@ -5,7 +5,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
- * Holodeck beam tracking
+ * Holodeck beam tracking for display process
  */
 
 #include "rholo.h"
@@ -15,7 +15,7 @@ static char SCCSid[] = "$SunId$ SGI";
 extern int	*getviewcells();
 
 typedef struct {
-	int	hd;		/* holodeck section number */
+	int	hd;		/* holodeck section number (-1 if inactive) */
 	int	i[3];		/* voxel index (may be outside section) */
 } VOXL;			/* a voxel */
 
@@ -36,12 +36,10 @@ static int	ncbeams = 0;	/* number of sorted beams in cbeam */
 static int	xcbeams = 0;	/* extra (unregistered) beams past ncbeams */
 static int	maxcbeam = 0;	/* size of cbeam array */
 
-
 struct cellact {
 	short	vi;		/* voxel index */
 	short	add;		/* zero means delete */
 };		/* action for cell */
-
 
 struct beamact {
 	struct cellact	ca;	/* cell action */
@@ -292,7 +290,7 @@ register struct beamact	*bp;
 	copystruct(gc, gcp);
 	copystruct(gc+1, &bp->gc);
 	if ((bi = hdbindex(hdlist[voxel[bp->ca.vi].hd], gc)) <= 0)
-		return(0);		/* should report an error? */
+		error(CONSISTENCY, "bad grid coordinate in dobeam");
 	if (bp->ca.add) {		/* add it in */
 		i = getcbeam(voxel[bp->ca.vi].hd, bi);
 		cbeam[i].wants |= 1<<bp->ca.vi;	/* say we want it */
@@ -403,9 +401,9 @@ VIEW	*vold, *vnew;
 		}
 				/* take care of list tails */
 	for (ca.add = 1; ncnt > 0; ncnt--)
-		docell(ngcp++, &ca);
+		netchange += docell(ngcp++, &ca);
 	for (ca.add = 0; ocnt > 0; ocnt--)
-		docell(ogcp++, &ca);
+		netchange -= docell(ogcp++, &ca);
 				/* clean up */
 	if (ocl != NULL) free((char *)ocl);
 	if (ncl != NULL) free((char *)ncl);
