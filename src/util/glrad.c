@@ -13,6 +13,9 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "paths.h"
 #include <sys/types.h>
 #include <GL/glx.h>
+#ifndef NOSTEREO
+#include <X11/extensions/SGIStereo.h>
+#endif
 #include <ctype.h>
 #include "glradicon.h"
 
@@ -65,6 +68,7 @@ struct {
 
 int	currentview = 0;		/* current view number */
 VIEW	thisview = STDVIEW;		/* displayed view */
+double	eyedist = 1;			/* interocular distance */
 VIEW	lastview;			/* last recorded view */
 
 char	*progname;			/* global argv[0] */
@@ -75,13 +79,27 @@ char	*octree;			/* octree name (NULL if unnec.) */
 
 int	rtpd[3];			/* rtrace process descriptors */
 
+int	silent = 0;			/* run rad silently? */
 int	backvis = 1;			/* back faces visible? */
+int	stereo = 0;			/* do stereo? */
+
+#ifdef NOSTEREO
+#define setstereobuf(bid)	0
+#else
+#define setstereobuf(bid)	(glXWaitGL(), \
+				XSGISetStereoBuffer(ourdisplay, gwind, bid), \
+				glXWaitX())
+#endif
 
 int	displist;			/* our scene display list */
 
 int	in_dev_view = 0;		/* currently in dev_view() */
 
-extern char	*fgets(), *fgetline(), *atos(), *scan4var();
+#ifdef BSD
+#define strchr		index
+#endif
+
+extern char	*strchr(), *fgets(), *fgetline(), *atos(), *scan4var();
 extern int	nowarn;			/* turn warnings off? */
 extern time_t	time();
 
@@ -103,6 +121,12 @@ char	*argv[];
 		case 'w':
 			nowarn = !nowarn;
 			break;
+		case 's':
+			silent = !silent;
+			break;
+		case 'S':
+			stereo = !stereo;
+			break;
 		case 'c':
 			vwintvl = atoi(argv[++i]);
 			break;
@@ -114,6 +138,10 @@ char	*argv[];
 		}
 	if (i >= argc)
 		goto userr;
+#ifdef NOSTEREO
+	if (stereo)
+		error(INTERNAL, "stereo not supported in this version");
+#endif
 					/* run rad and get views */
 	runrad(argc-i, argv+i);
 					/* check view */
@@ -196,6 +224,10 @@ char	**av;
 					/* set rad commmand */
 	strcpy(radcomm, "rad -w -v 0        ");	/* look out below! */
 	cp = radcomm + 19;
+	if (silent) {
+		strcpy(cp, "-s ");
+		cp += 3;
+	}
 	while (ac--) {
 		strcpy(cp, *av++);
 		while (*cp) cp++;
@@ -218,6 +250,9 @@ char	**av;
 			expval = pow(2., expval);
 		expval *= 0.5;		/* compensate for local shading */
 	}
+						/* look for eye separation */
+	if ((cp = scan4var(buf, sizeof(buf), "EYESEP", fp)) != NULL)
+		eyedist = atof(cp);
 						/* look for materials */
 	while ((cp = scan4var(buf, sizeof(buf), "materials", fp)) != NULL) {
 		nscenef += wordstring(scene+nscenef, cp);
@@ -258,14 +293,15 @@ char	**av;
 						/* open options file */
 	if ((fp = fopen(optfile, "r")) == NULL)
 		error(SYSTEM, "cannot open options file");
-						/* get ambient value */
+						/* get relevant options */
 	while (fgets(buf, sizeof(buf), fp) != NULL)
-		if (!strncmp(buf, "-av ", 4)) {
+		if (!strncmp(buf, "-av ", 4))
 			setcolor(ambval, atof(buf+4),
 					atof(sskip2(buf+4,1)),
 					atof(sskip2(buf+4,2)));
-			break;
-		}
+		else if (backvis && !strncmp(buf, "-bv", 3) &&
+				(!buf[3] || strchr(" 0-FfNn", buf[3]) != NULL))
+			backvis = 0;
 	fclose(fp);
 	unlink(optfile);			/* delete options file */
 }
@@ -364,6 +400,21 @@ char  *id;
 	if (gwind == 0)
 		error(SYSTEM, "cannot create window\n");
    	XStoreName(ourdisplay, gwind, id);
+#ifndef NOSTEREO
+	if (stereo)			/* check if stereo working */
+		switch (XSGIQueryStereoMode(ourdisplay, gwind)) {
+		case STEREO_TOP:
+		case STEREO_BOTTOM:
+			break;
+		case STEREO_OFF:
+			error(USER,
+		"wrong video mode: run \"/usr/gfx/setmon -n STR_TOP\" first");
+		case X_STEREO_UNSUPPORTED:
+			error(USER, "stereo not supported on this screen");
+		default:
+			error(INTERNAL, "unknown stereo mode");
+		}
+#endif
 					/* set window manager hints */
 	ourxwmhints.flags = InputHint|IconPixmapHint;
 	ourxwmhints.input = True;
@@ -371,7 +422,7 @@ char  *id;
 		gwind, glradicon_bits, glradicon_width, glradicon_height);
 	XSetWMHints(ourdisplay, gwind, &ourxwmhints);
 	oursizhints.min_width = MINWIDTH;
-	oursizhints.min_height = MINHEIGHT;
+	oursizhints.min_height = stereo ? MINHEIGHT/2 : MINHEIGHT;
 	oursizhints.flags = PMinSize;
 	XSetNormalHints(ourdisplay, gwind, &oursizhints);
 					/* set GLX context */
@@ -395,6 +446,10 @@ char  *id;
 			DisplayWidth(ourdisplay, ourscreen);
 	pheight = (double)DisplayHeightMM(ourdisplay, ourscreen) /
 			DisplayHeight(ourdisplay, ourscreen);
+	if (stereo) {			/* set stereo mode */
+		setstereobuf(STEREO_BUFFER_LEFT);
+		pheight *= 2.;
+	}
 					/* map the window */
 	XMapWindow(ourdisplay, gwind);
 	do
@@ -507,10 +562,25 @@ int	nsecs;
 
 render()			/* render our display list and swap buffers */
 {
+	double	d;
+
 	if (!mapped)
 		return;
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	glCallList(displist);
+	if (stereo) {				/* do right eye for stereo */
+		setstereobuf(STEREO_BUFFER_RIGHT);
+		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		d = -eyedist / sqrt(thisview.hn2);
+		glTranslated(d*thisview.hvec[0], d*thisview.hvec[1],
+				d*thisview.hvec[2]);
+		glCallList(displist);
+		glMatrixMode(GL_MODELVIEW);
+		glPopMatrix();
+		setstereobuf(STEREO_BUFFER_LEFT);
+	}
 	glXSwapBuffers(ourdisplay, gwind);	/* calls glFlush() */
 	rgl_checkerr("rendering display list");
 }
@@ -747,7 +817,7 @@ int	vwnum;
 		vwnum = 0;
 	if (vwnum == currentview)
 		return;
-	/* copylastv("change view"); */
+	copylastv("standard view");
 	dev_view(vwl[currentview=vwnum].v);
 }
 
