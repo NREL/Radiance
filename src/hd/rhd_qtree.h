@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 /* SCCSid "$SunId$ SGI" */
 
@@ -9,13 +9,6 @@
 #include "tonemap.h"
 #include "rhdriver.h"
 
-#ifndef int2
-#define int2	short
-#endif
-#ifndef int4
-#define int4	int
-#endif
-				/* child ordering */
 #define	DL		0		/* down left */
 #define	DR		1		/* down right */
 #define	UL		2		/* up left */

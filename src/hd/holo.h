@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 /* SCCSid "$SunId$ SGI" */
 
@@ -14,21 +14,15 @@
 #ifndef HDMAX
 #define HDMAX		128	/* maximum active holodeck sections */
 #endif
-#ifndef int2
-#define int2	short
-#endif
-#ifndef int4
-#define int4	int
-#endif
 
 #define DCINF	(unsigned)((1L<<16)-1)	/* special value for infinity */
 #define DCLIN	(unsigned)(1L<<11)	/* linear depth limit */
 
 typedef struct {
 	BYTE 	r[2][2];	/* ray direction index */
-	COLR 	v;		/* value */
-	unsigned int2	d;	/* depth code */
-} RAYVAL;		/* ray value (from second wall) */
+	COLR 	v;		/* color value */
+	unsigned int2	d;	/* depth code (from entry wall) */
+} RAYVAL;		/* ray value */
 
 /*
  * Walls are ordered:		X0	X1	X2	WN
