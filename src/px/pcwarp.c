@@ -14,7 +14,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 char	*progname;			/* global argv[0] */
 
-FILE	*infp = stdin;			/* input stream */
+FILE	*infp = NULL;			/* input stream */
 int	xres, yres;			/* input picture resolution */
 
 WARP3D	*cwarp;				/* our warp map */
@@ -32,6 +32,7 @@ char	*argv[];
 	int	i;
 
 	progname = argv[0];
+	infp = stdin;
 					/* get options */
 	for (i = 1; i < argc && argv[i][0] == '-'; i++)
 		switch (argv[i][1]) {
