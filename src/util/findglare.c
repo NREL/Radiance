@@ -364,8 +364,8 @@ int	x, y;
 		xo = x-hl;
 	else
 		xo = 0;
-	disc = 1. - (double)(xo*xo + y*y)/(sampdens*sampdens);
-	if (disc <= FTINY)
+	disc = 1. - (double)((long)xo*xo + (long)y*y)/((long)sampdens*sampdens);
+	if (disc <= FTINY*FTINY)
 		return(0.);
 	return(1./(sampdens*sampdens*sqrt(disc)));
 }
