@@ -384,7 +384,7 @@ pixtoval()				/* convert picture to values */
 				printf("%7d %7d ", (int)(hv[0]*picres.xr),
 						(int)(hv[1]*picres.yr));
 			}
-			if ((*putval)(scanln[x], stdout) < 0) {
+			if ((*putval)(scanln[x]) < 0) {
 				fprintf(stderr, "%s: write error\n", progname);
 				quit(1);
 			}
@@ -416,7 +416,7 @@ valtopix()			/* convert values to a pixel file */
 					fscanf(fin3, "%*d %*d");
 				}
 			}
-			if ((*getval)(scanln[x], fin, fin2, fin3) < 0) {
+			if ((*getval)(scanln[x]) < 0) {
 				fprintf(stderr, "%s: read error\n", progname);
 				quit(1);
 			}
@@ -444,19 +444,18 @@ int  code;
 }
 
 
-getcascii(col, f1, f2, f3)	/* get an ascii color value from stream(s) */
+getcascii(col)		/* get an ascii color value from stream(s) */
 COLOR  col;
-FILE  *f1, *f2, *f3;
 {
 	double	vd[3];
 
-	if (f2 == NULL) {
-		if (fscanf(f1, "%lf %lf %lf", &vd[0], &vd[1], &vd[2]) != 3)
+	if (fin2 == NULL) {
+		if (fscanf(fin, "%lf %lf %lf", &vd[0], &vd[1], &vd[2]) != 3)
 			return(-1);
 	} else {
-		if (fscanf(f1, "%lf", &vd[0]) != 1 ||
-				fscanf(f2, "%lf", &vd[1]) != 1 ||
-				fscanf(f3, "%lf", &vd[2]) != 1)
+		if (fscanf(fin, "%lf", &vd[0]) != 1 ||
+				fscanf(fin2, "%lf", &vd[1]) != 1 ||
+				fscanf(fin3, "%lf", &vd[2]) != 1)
 			return(-1);
 	}
 	setcolor(col, vd[rord[RED]], vd[rord[GRN]], vd[rord[BLU]]);
@@ -464,19 +463,18 @@ FILE  *f1, *f2, *f3;
 }
 
 
-getcdouble(col, f1, f2, f3)	/* get a double color value from stream(s) */
+getcdouble(col)		/* get a double color value from stream(s) */
 COLOR  col;
-FILE  *f1, *f2, *f3;
 {
 	double	vd[3];
 
-	if (f2 == NULL) {
-		if (fread((char *)vd, sizeof(double), 3, f1) != 3)
+	if (fin2 == NULL) {
+		if (fread((char *)vd, sizeof(double), 3, fin) != 3)
 			return(-1);
 	} else {
-		if (fread((char *)vd, sizeof(double), 1, f1) != 1 ||
-			fread((char *)(vd+1), sizeof(double), 1, f2) != 1 ||
-			fread((char *)(vd+2), sizeof(double), 1, f3) != 1)
+		if (fread((char *)vd, sizeof(double), 1, fin) != 1 ||
+			fread((char *)(vd+1), sizeof(double), 1, fin2) != 1 ||
+			fread((char *)(vd+2), sizeof(double), 1, fin3) != 1)
 			return(-1);
 	}
 	setcolor(col, vd[rord[RED]], vd[rord[GRN]], vd[rord[BLU]]);
@@ -484,19 +482,18 @@ FILE  *f1, *f2, *f3;
 }
 
 
-getcfloat(col, f1, f2, f3)	/* get a float color value from stream(s) */
+getcfloat(col)		/* get a float color value from stream(s) */
 COLOR  col;
-FILE  *f1, *f2, *f3;
 {
 	float  vf[3];
 
-	if (f2 == NULL) {
-		if (fread((char *)vf, sizeof(float), 3, f1) != 3)
+	if (fin2 == NULL) {
+		if (fread((char *)vf, sizeof(float), 3, fin) != 3)
 			return(-1);
 	} else {
-		if (fread((char *)vf, sizeof(float), 1, f1) != 1 ||
-			fread((char *)(vf+1), sizeof(float), 1, f2) != 1 ||
-			fread((char *)(vf+2), sizeof(float), 1, f3) != 1)
+		if (fread((char *)vf, sizeof(float), 1, fin) != 1 ||
+			fread((char *)(vf+1), sizeof(float), 1, fin2) != 1 ||
+			fread((char *)(vf+2), sizeof(float), 1, fin3) != 1)
 			return(-1);
 	}
 	setcolor(col, vf[rord[RED]], vf[rord[GRN]], vf[rord[BLU]]);
@@ -504,19 +501,18 @@ FILE  *f1, *f2, *f3;
 }
 
 
-getcint(col, f1, f2, f3)	/* get an int color value from stream(s) */
+getcint(col)		/* get an int color value from stream(s) */
 COLOR  col;
-FILE  *f1, *f2, *f3;
 {
 	int  vi[3];
 
-	if (f2 == NULL) {
-		if (fscanf(f1, "%d %d %d", &vi[0], &vi[1], &vi[2]) != 3)
+	if (fin2 == NULL) {
+		if (fscanf(fin, "%d %d %d", &vi[0], &vi[1], &vi[2]) != 3)
 			return(-1);
 	} else {
-		if (fscanf(f1, "%d", &vi[0]) != 1 ||
-				fscanf(f2, "%d", &vi[1]) != 1 ||
-				fscanf(f3, "%d", &vi[2]) != 1)
+		if (fscanf(fin, "%d", &vi[0]) != 1 ||
+				fscanf(fin2, "%d", &vi[1]) != 1 ||
+				fscanf(fin3, "%d", &vi[2]) != 1)
 			return(-1);
 	}
 	setcolor(col, (vi[rord[RED]]+.5)/256.,
@@ -525,19 +521,18 @@ FILE  *f1, *f2, *f3;
 }
 
 
-getcbyte(col, f1, f2, f3)	/* get a byte color value from stream(s) */
+getcbyte(col)		/* get a byte color value from stream(s) */
 COLOR  col;
-FILE  *f1, *f2, *f3;
 {
 	BYTE  vb[3];
 
-	if (f2 == NULL) {
-		if (fread((char *)vb, sizeof(BYTE), 3, f1) != 3)
+	if (fin2 == NULL) {
+		if (fread((char *)vb, sizeof(BYTE), 3, fin) != 3)
 			return(-1);
 	} else {
-		if (fread((char *)vb, sizeof(BYTE), 1, f1) != 1 ||
-			fread((char *)(vb+1), sizeof(BYTE), 1, f2) != 1 ||
-			fread((char *)(vb+2), sizeof(BYTE), 1, f3) != 1)
+		if (fread((char *)vb, sizeof(BYTE), 1, fin) != 1 ||
+			fread((char *)(vb+1), sizeof(BYTE), 1, fin2) != 1 ||
+			fread((char *)(vb+2), sizeof(BYTE), 1, fin3) != 1)
 			return(-1);
 	}
 	setcolor(col, (vb[rord[RED]]+.5)/256.,
@@ -546,53 +541,49 @@ FILE  *f1, *f2, *f3;
 }
 
 
-getbascii(col, fp)		/* get an ascii brightness value from fp */
+getbascii(col)		/* get an ascii brightness value from fin */
 COLOR  col;
-FILE  *fp;
 {
 	double	vd;
 
-	if (fscanf(fp, "%lf", &vd) != 1)
+	if (fscanf(fin, "%lf", &vd) != 1)
 		return(-1);
 	setcolor(col, vd, vd, vd);
 	return(0);
 }
 
 
-getbdouble(col, fp)		/* get a double brightness value from fp */
+getbdouble(col)		/* get a double brightness value from fin */
 COLOR  col;
-FILE  *fp;
 {
 	double	vd;
 
-	if (fread((char *)&vd, sizeof(double), 1, fp) != 1)
+	if (fread((char *)&vd, sizeof(double), 1, fin) != 1)
 		return(-1);
 	setcolor(col, vd, vd, vd);
 	return(0);
 }
 
 
-getbfloat(col, fp)		/* get a float brightness value from fp */
+getbfloat(col)		/* get a float brightness value from fin */
 COLOR  col;
-FILE  *fp;
 {
 	float  vf;
 
-	if (fread((char *)&vf, sizeof(float), 1, fp) != 1)
+	if (fread((char *)&vf, sizeof(float), 1, fin) != 1)
 		return(-1);
 	setcolor(col, vf, vf, vf);
 	return(0);
 }
 
 
-getbint(col, fp)		/* get an int brightness value from fp */
+getbint(col)		/* get an int brightness value from fin */
 COLOR  col;
-FILE  *fp;
 {
 	int  vi;
 	double	d;
 
-	if (fscanf(fp, "%d", &vi) != 1)
+	if (fscanf(fin, "%d", &vi) != 1)
 		return(-1);
 	d = (vi+.5)/256.;
 	setcolor(col, d, d, d);
@@ -600,14 +591,13 @@ FILE  *fp;
 }
 
 
-getbbyte(col, fp)		/* get a byte brightness value from fp */
+getbbyte(col)		/* get a byte brightness value from fin */
 COLOR  col;
-FILE  *fp;
 {
 	BYTE  vb;
 	double	d;
 
-	if (fread((char *)&vb, sizeof(BYTE), 1, fp) != 1)
+	if (fread((char *)&vb, sizeof(BYTE), 1, fin) != 1)
 		return(-1);
 	d = (vb+.5)/256.;
 	setcolor(col, d, d, d);
@@ -615,65 +605,60 @@ FILE  *fp;
 }
 
 
-putcascii(col, fp)			/* put an ascii color to fp */
+putcascii(col)			/* put an ascii color to stdout */
 COLOR  col;
-FILE  *fp;
 {
-	fprintf(fp, "%15.3e %15.3e %15.3e\n",
+	fprintf(stdout, "%15.3e %15.3e %15.3e\n",
 			colval(col,ord[0]),
 			colval(col,ord[1]),
 			colval(col,ord[2]));
 
-	return(ferror(fp) ? -1 : 0);
+	return(ferror(stdout) ? -1 : 0);
 }
 
 
-putcfloat(col, fp)			/* put a float color to fp */
+putcfloat(col)			/* put a float color to stdout */
 COLOR  col;
-FILE  *fp;
 {
 	float  vf[3];
 
 	vf[0] = colval(col,ord[0]);
 	vf[1] = colval(col,ord[1]);
 	vf[2] = colval(col,ord[2]);
-	fwrite((char *)vf, sizeof(float), 3, fp);
+	fwrite((char *)vf, sizeof(float), 3, stdout);
 
-	return(ferror(fp) ? -1 : 0);
+	return(ferror(stdout) ? -1 : 0);
 }
 
 
-putcdouble(col, fp)			/* put a double color to fp */
+putcdouble(col)			/* put a double color to stdout */
 COLOR  col;
-FILE  *fp;
 {
 	double	vd[3];
 
 	vd[0] = colval(col,ord[0]);
 	vd[1] = colval(col,ord[1]);
 	vd[2] = colval(col,ord[2]);
-	fwrite((char *)vd, sizeof(double), 3, fp);
+	fwrite((char *)vd, sizeof(double), 3, stdout);
 
-	return(ferror(fp) ? -1 : 0);
+	return(ferror(stdout) ? -1 : 0);
 }
 
 
-putcint(col, fp)			/* put an int color to fp */
+putcint(col)			/* put an int color to stdout */
 COLOR  col;
-FILE  *fp;
 {
-	fprintf(fp, "%d %d %d\n",
+	fprintf(stdout, "%d %d %d\n",
 			(int)(colval(col,ord[0])*256.),
 			(int)(colval(col,ord[1])*256.),
 			(int)(colval(col,ord[2])*256.));
 
-	return(ferror(fp) ? -1 : 0);
+	return(ferror(stdout) ? -1 : 0);
 }
 
 
-putcbyte(col, fp)			/* put a byte color to fp */
+putcbyte(col)			/* put a byte color to stdout */
 COLOR  col;
-FILE  *fp;
 {
 	register int  i;
 	BYTE  vb[3];
@@ -684,131 +669,121 @@ FILE  *fp;
 	vb[1] = min(i,255);
 	i = colval(col,ord[2])*256.;
 	vb[2] = min(i,255);
-	fwrite((char *)vb, sizeof(BYTE), 3, fp);
+	fwrite((char *)vb, sizeof(BYTE), 3, stdout);
 
-	return(ferror(fp) ? -1 : 0);
+	return(ferror(stdout) ? -1 : 0);
 }
 
 
-putbascii(col, fp)			/* put an ascii brightness to fp */
+putbascii(col)			/* put an ascii brightness to stdout */
 COLOR  col;
-FILE  *fp;
 {
-	fprintf(fp, "%15.3e\n", bright(col));
+	fprintf(stdout, "%15.3e\n", bright(col));
 
-	return(ferror(fp) ? -1 : 0);
+	return(ferror(stdout) ? -1 : 0);
 }
 
 
-putbfloat(col, fp)			/* put a float brightness to fp */
+putbfloat(col)			/* put a float brightness to stdout */
 COLOR  col;
-FILE  *fp;
 {
 	float  vf;
 
 	vf = bright(col);
-	fwrite((char *)&vf, sizeof(float), 1, fp);
+	fwrite((char *)&vf, sizeof(float), 1, stdout);
 
-	return(ferror(fp) ? -1 : 0);
+	return(ferror(stdout) ? -1 : 0);
 }
 
 
-putbdouble(col, fp)			/* put a double brightness to fp */
+putbdouble(col)			/* put a double brightness to stdout */
 COLOR  col;
-FILE  *fp;
 {
 	double	vd;
 
 	vd = bright(col);
-	fwrite((char *)&vd, sizeof(double), 1, fp);
+	fwrite((char *)&vd, sizeof(double), 1, stdout);
 
-	return(ferror(fp) ? -1 : 0);
+	return(ferror(stdout) ? -1 : 0);
 }
 
 
-putbint(col, fp)			/* put an int brightness to fp */
+putbint(col)			/* put an int brightness to stdout */
 COLOR  col;
-FILE  *fp;
 {
-	fprintf(fp, "%d\n", (int)(bright(col)*256.));
+	fprintf(stdout, "%d\n", (int)(bright(col)*256.));
 
-	return(ferror(fp) ? -1 : 0);
+	return(ferror(stdout) ? -1 : 0);
 }
 
 
-putbbyte(col, fp)			/* put a byte brightness to fp */
+putbbyte(col)			/* put a byte brightness to stdout */
 COLOR  col;
-FILE  *fp;
 {
 	register int  i;
 	BYTE  vb;
 
 	i = bright(col)*256.;
 	vb = min(i,255);
-	fwrite((char *)&vb, sizeof(BYTE), 1, fp);
+	fwrite((char *)&vb, sizeof(BYTE), 1, stdout);
 
-	return(ferror(fp) ? -1 : 0);
+	return(ferror(stdout) ? -1 : 0);
 }
 
 
-putpascii(col, fp)			/* put an ascii primary to fp */
+putpascii(col)			/* put an ascii primary to stdout */
 COLOR  col;
-FILE  *fp;
 {
-	fprintf(fp, "%15.3e\n", colval(col,putprim));
+	fprintf(stdout, "%15.3e\n", colval(col,putprim));
 
-	return(ferror(fp) ? -1 : 0);
+	return(ferror(stdout) ? -1 : 0);
 }
 
 
-putpfloat(col, fp)			/* put a float primary to fp */
+putpfloat(col)			/* put a float primary to stdout */
 COLOR  col;
-FILE  *fp;
 {
 	float  vf;
 
 	vf = colval(col,putprim);
-	fwrite((char *)&vf, sizeof(float), 1, fp);
+	fwrite((char *)&vf, sizeof(float), 1, stdout);
 
-	return(ferror(fp) ? -1 : 0);
+	return(ferror(stdout) ? -1 : 0);
 }
 
 
-putpdouble(col, fp)			/* put a double primary to fp */
+putpdouble(col)			/* put a double primary to stdout */
 COLOR  col;
-FILE  *fp;
 {
 	double	vd;
 
 	vd = colval(col,putprim);
-	fwrite((char *)&vd, sizeof(double), 1, fp);
+	fwrite((char *)&vd, sizeof(double), 1, stdout);
 
-	return(ferror(fp) ? -1 : 0);
+	return(ferror(stdout) ? -1 : 0);
 }
 
 
-putpint(col, fp)			/* put an int primary to fp */
+putpint(col)			/* put an int primary to stdout */
 COLOR  col;
-FILE  *fp;
 {
-	fprintf(fp, "%d\n", (int)(colval(col,putprim)*256.));
+	fprintf(stdout, "%d\n", (int)(colval(col,putprim)*256.));
 
-	return(ferror(fp) ? -1 : 0);
+	return(ferror(stdout) ? -1 : 0);
 }
 
 
-putpbyte(col, fp)			/* put a byte primary to fp */
+putpbyte(col)			/* put a byte primary to stdout */
 COLOR  col;
-FILE  *fp;
 {
 	register int  i;
 	BYTE  vb;
 
 	i = colval(col,putprim)*256.;
 	vb = min(i,255);
-	fwrite((char *)&vb, sizeof(BYTE), 1, fp);
+	fwrite((char *)&vb, sizeof(BYTE), 1, stdout);
 
-	return(ferror(fp) ? -1 : 0);
+	return(ferror(stdout) ? -1 : 0);
 }
 
 
