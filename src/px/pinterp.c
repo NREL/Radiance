@@ -21,7 +21,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 VIEW	ourview = STDVIEW(512);		/* desired view */
 
-double	zeps = 0.001;			/* allowed z epsilon */
+double	zeps = .02;			/* allowed z epsilon */
 
 COLR	*ourpict;			/* output picture */
 float	*ourzbuf;			/* corresponding z-buffer */
@@ -173,9 +173,10 @@ addpicture(pfile, zfile)		/* add picture to output */
 char	*pfile, *zfile;
 {
 	FILE	*pfp, *zfp;
-	COLR	*scanin;
-	float	*zin;
 	char	*err;
+	COLR	*scanin;
+	float	*zin, *zout;
+	int	*pout;
 	int	xres, yres;
 	int	y;
 					/* open input files */
@@ -206,7 +207,9 @@ char	*pfile, *zfile;
 					/* allocate scanlines */
 	scanin = (COLR *)malloc(xres*sizeof(COLR));
 	zin = (float *)malloc(xres*sizeof(float));
-	if (scanin == NULL || zin == NULL) {
+	zout = (float *)calloc(xres, sizeof(float));
+	pout = (int *)calloc(xres, sizeof(int));
+	if (scanin == NULL || zin == NULL || zout == NULL || pout == NULL) {
 		perror(progname);
 		exit(1);
 	}
@@ -220,11 +223,13 @@ char	*pfile, *zfile;
 			fprintf(stderr, "%s: read error\n", zfile);
 			exit(1);
 		}
-		addscanline(y, scanin, zin);
+		addscanline(y, scanin, zin, pout, zout);
 	}
 					/* clean up */
 	free((char *)scanin);
 	free((char *)zin);
+	free((char *)pout);
+	free((char *)zout);
 	fclose(pfp);
 	fclose(zfp);
 }
@@ -266,21 +271,31 @@ register VIEW	*vw1, *vw2;
 }
 
 
-addscanline(y, pline, zline)		/* add scanline to output */
+addscanline(y, pline, zline, lasty, lastyz)	/* add scanline to output */
 int	y;
 COLR	*pline;
 float	*zline;
+int	*lasty;
+float	*lastyz;
 {
-	extern double	sqrt();
+	extern double	sqrt(), fabs();
 	double	pos[3];
+	int	lastx = 0;
+	double	lastxz = 0;
+	double  zt;
+	int	xpos, ypos;
 	register int	x;
-	register int	xpos, ypos;
 
-	for (x = 0; x < theirview.hresolu; x++) {
+	for (x = theirview.hresolu-1; x >= 0; x--) {
 		pos[0] = x - .5*(theirview.hresolu-1);
 		pos[1] = y - .5*(theirview.vresolu-1);
 		pos[2] = zline[x];
 		if (theirview.type == VT_PER) {
+			/*
+			 * The following (single) statement can go
+			 * if z is along the view direction rather
+			 * than an eye ray.
+			 */
 			pos[2] /= sqrt( 1.
 					+ pos[0]*pos[0]*theirview.vhn2
 					+ pos[1]*pos[1]*theirview.vvn2 );
@@ -288,7 +303,7 @@ float	*zline;
 			pos[1] *= pos[2];
 		}
 		multp3(pos, pos, theirs2ours);
-		if (pos[2] <= 0.0)
+		if (pos[2] <= 0)
 			continue;
 		if (ourview.type == VT_PER) {
 			pos[0] /= pos[2];
@@ -296,19 +311,48 @@ float	*zline;
 		}
 		pos[0] += .5*ourview.hresolu;
 		pos[1] += .5*ourview.vresolu;
-		if (pos[0] < 0 || pos[0] >= ourview.hresolu
-				|| pos[1] < 0 || pos[1] >= ourview.vresolu)
+		if (pos[0] < 0 || (xpos = pos[0]) >= ourview.hresolu
+			|| pos[1] < 0 || (ypos = pos[1]) >= ourview.vresolu)
 			continue;
-					/* check current value at pos */
-		xpos = pos[0];
-		ypos = pos[1];
-		if (zscan(ypos)[xpos] <= 0.0
-				|| zscan(ypos)[xpos] - pos[2]
-					> zeps*zscan(ypos)[xpos]) {
-			zscan(ypos)[xpos] = pos[2];
-			copycolr(pscan(ypos)[xpos], pline[x]);
-		}
+					/* add pixel to our image */
+		zt = 2.*zeps*zline[x];
+		addpixel(xpos, ypos,
+			(fabs(zline[x]-lastxz) <= zt) ? lastx - xpos : 1,
+			(fabs(zline[x]-lastyz[x]) <= zt) ? lasty[x] - ypos : 1,
+			pline[x], pos[2]);
+		lastx = xpos;
+		lasty[x] = ypos;
+		lastxz = lastyz[x] = zline[x];
 	}
+}
+
+
+addpixel(xstart, ystart, width, height, pix, z)	/* fill in area for pixel */
+int	xstart, ystart;
+int	width, height;
+COLR	pix;
+double	z;
+{
+	register int	x, y;
+					/* make width and height positive */
+	if (width < 0) {
+		width = -width;
+		xstart = xstart-width+1;
+	} else if (width == 0)
+		width = 1;
+	if (height < 0) {
+		height = -height;
+		ystart = ystart-height+1;
+	} else if (height == 0)
+		height = 1;
+					/* fill pixel(s) within rectangle */
+	for (y = ystart; y < ystart+height; y++)
+		for (x = xstart; x < xstart+width; x++)
+			if (zscan(y)[x] <= 0
+					|| zscan(y)[x]-z > zeps*zscan(y)[x]) {
+				zscan(y)[x] = z;
+				copycolr(pscan(y)[x], pix);
+			}
 }
 
 
@@ -336,14 +380,14 @@ fillpicture()				/* fill in empty spaces */
 	for (y = 0; y < ourview.vresolu; y++) {
 		xback = -2;
 		for (x = 0; x < ourview.hresolu; x++)
-			if (zscan(y)[x] <= 0.0) {	/* empty pixel */
+			if (zscan(y)[x] <= 0) {		/* empty pixel */
 				/*
 				 * First, find background from above or below.
 				 * (farthest assigned pixel)
 				 */
 				if (yback[x] == -2) {
 					for (i = y+1; i < ourview.vresolu; i++)
-						if (zscan(i)[x] > 0.0)
+						if (zscan(i)[x] > 0)
 							break;
 					if (i < ourview.vresolu
 				&& (y <= 0 || zscan(y-1)[x] < zscan(i)[x]))
@@ -356,7 +400,7 @@ fillpicture()				/* fill in empty spaces */
 				 */
 				if (xback == -2) {
 					for (i = x+1; x < ourview.hresolu; i++)
-						if (zscan(y)[i] > 0.0)
+						if (zscan(y)[i] > 0)
 							break;
 					if (i < ourview.hresolu
 				&& (x <= 0 || zscan(y)[x-1] < zscan(y)[i]))
