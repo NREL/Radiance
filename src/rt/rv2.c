@@ -462,7 +462,8 @@ register char  *s;
 			getparam(s+2, "ambient value", 'C', (COLOR *)ambval);
 			break;
 		case 'a':			/* accuracy */
-			getparam(s+2, "ambient accuracy", 'r', &ambacc);
+			if (getparam(s+2, "ambient accuracy", 'r', &ambacc))
+				setambacc(ambacc);
 			break;
 		case 'd':			/* divisions */
 			getparam(s+2, "ambient divisions", 'i', &ambdiv);
