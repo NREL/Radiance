@@ -43,6 +43,7 @@ register RAY  *r;
 	extern double  varvalue();
 	extern int  errno;
 	FVECT  disp;
+	double  d;
 	register XFORM  *mxf;
 	register int  i;
 	register char  **sa;
@@ -84,8 +85,9 @@ register RAY  *r;
 	}
 	multv3(disp, disp, mxf->fore.xfm);
 	multv3(disp, disp, r->rofx);
+	d = 1.0 / (mxf->fore.sca * r->rofs);
 	for (i = 0; i < 3; i++)
-		r->pert[i] += disp[i] / (mxf->fore.sca * r->rofs);
+		r->pert[i] += disp[i] * d;
 	return;
 memerr:
 	error(SYSTEM, "out of memory in t_func");
