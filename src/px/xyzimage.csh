@@ -48,25 +48,26 @@ while ( $i <= $#argv && ! $firstarg )
 	endsw
 	set i=$i1
 end
+set td=/usr/tmp/xyz$$
+set ecode=1
 onintr quit
+mkdir $td
 if ( ! $firstarg ) then
-	set rgbfiles=/usr/tmp/stdin.$$
-	ra_xyze -r -u $popt > /usr/tmp/stdin.$$
+	ra_xyze -r -u $popt > $td/stdin
 	if ( $status ) goto quit
 else
-	set rgbfiles=""
 	set i=$firstarg
 	while ( $i <= $#argv )
-		set rgbfiles=($rgbfiles /usr/tmp/$argv[$i]:t.$$)
-		ra_xyze -r -u $popt $argv[$i] /usr/tmp/$argv[$i]:t.$$
+		ra_xyze -r -u $popt $argv[$i] $td/$argv[$i]:t
 		if ( $status ) goto quit
 		@ i++
 	end
 endif
-ximage $xiargs $rgbfiles
+ximage $xiargs $td/*
+set ecode=$status
 quit:
-	rm -f $rgbfiles
-	exit 0
+	rm -rf $td
+	exit $ecode
 notenough:
 	echo "Missing arguments for $argv[$i] option"
 	exit 1
