@@ -96,21 +96,6 @@ char  *s;
 }
 
 
-int
-strcmp(s1, s2)				/* check for s1==s2 */
-register char  *s1, *s2;
-{
-	if (s1 == s2)
-		return(0);
-
-	while (*s1 == *s2++)
-		if (!*s1++)
-			return(0);
-
-	return(*s1 - *--s2);
-}
-
-
 static int
 shash(s)				/* hash a string */
 register char  *s;
