@@ -672,9 +672,16 @@ XKeyPressedEvent  *ekey;
 	case '@':				/* adaptation level */
 		if (avgbox(cval) == -1)
 			return(-1);
-		comp = com=='@'
-		? 106./pow(1.219+pow(luminance(cval)/exposure,.4),2.5)/exposure
-		: .5/bright(cval) ;
+		comp = bright(cval);
+		if (comp < 1e-20) {
+			XBell(thedisplay, 0);
+			return(-1);
+		}
+		if (com == '@')
+			comp = 106./exposure/
+			pow(1.219+pow(comp*WHTEFFICACY/exposure,.4),2.5);
+		else
+			comp = .5/comp;
 		comp = log(comp)/.69315 - scale;
 		n = comp < 0 ? comp-.5 : comp+.5 ;	/* round */
 		if (n == 0)
