@@ -1,4 +1,4 @@
-/* Copyright (c) 1996 Regents of the University of California */
+/* Copyright (c) 1997 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -185,16 +185,19 @@ FILE	*fp;
 {
 	double	b, s;
 	register int	i;
-	double	wlum, sf;
+	double	wlum, sf, dlum;
 
 	sf = scalef*inpexp;
 	if (lumf == cielum) sf *= WHTEFFICACY;
 	s = (bwmax - bwmin)/HISTRES;
 	for (i = 0, b = bwmin + .5*s; i < HISTRES; i++, b += s) {
 		wlum = Lb(b);
-		if (what2do&DO_LINEAR)
-			fprintf(fp, "%e %e\n", wlum, sf*wlum);
-		else
+		if (what2do&DO_LINEAR) {
+			dlum = sf*wlum;
+			if (dlum > ldmax) dlum = ldmax;
+			else if (dlum < ldmin) dlum = ldmin;
+			fprintf(fp, "%e %e\n", wlum, dlum);
+		} else
 			fprintf(fp, "%e %e\n", wlum, Lb(BLw(wlum)));
 	}
 }
