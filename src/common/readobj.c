@@ -105,7 +105,7 @@ FILE  *fp;
 			error(USER, errmsg);
 		}
 		objp->otype = objptr(alias)->otype;
-		bcopy(&objptr(alias)->oargs, &objp->oargs, sizeof(FUNARGS));
+		copystruct(&objp->oargs, &objptr(alias)->oargs);
 	} else if (readfargs(&objp->oargs, fp) < 0) {
 		sprintf(errmsg, "(%s): bad arguments", name);
 		objerror(objp, USER, errmsg);

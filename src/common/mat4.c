@@ -13,7 +13,12 @@ static char SCCSid[] = "$SunId$ LBL";
 
 static double  m4tmp[4][4];		/* for efficiency */
 
+#ifdef  BSD
 #define  copymat4(m4a,m4b)	bcopy((char *)m4b,(char *)m4a,sizeof(m4tmp))
+#else
+#define  copymat4(m4a,m4b)	(void)memcpy((char *)m4a,(char *)m4b,sizeof(m4tmp))
+extern char  *memcpy();
+#endif
 
 
 setident4(m4)
