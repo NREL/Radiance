@@ -25,7 +25,9 @@ char  **xav;				/* global xform argument pointer */
 int  xfa;				/* start of xf arguments */
 
 XF  tot;				/* total transformation */
-int  reverse;				/* boolean true if scene inverted */
+int  reverse;				/* boolean true if scene mirrored */
+
+int  invert = 0;			/* boolean true to invert surfaces */
 
 int  expand = 0;			/* boolean true to expand commands */
 
@@ -38,6 +40,8 @@ char  *idprefix = NULL;			/* prefix for object identifiers */
 #define  NUMTYPES	(NUMOTYPE+1)	/* total number of object types */
 
 FUN  ofun[NUMTYPES] = INIT_OTYPE;	/* default types and actions */
+
+short  tinvers[NUMOTYPE];		/* inverse types for surfaces */
 
 extern char  *malloc(), *fgetword();
 
@@ -76,6 +80,11 @@ char  *argv[];
 					break;
 				expand = 1;
 				continue;
+			case 'I':
+				if (argv[a][2])
+					break;
+				invert = 1;
+				continue;
 			}
 		break;
 	}
@@ -87,6 +96,8 @@ char  *argv[];
 
 	if (reverse = tot.sca < 0.0)
 		tot.sca = -tot.sca;
+	if (invert)
+		reverse = !reverse;
 
 	if (a < argc && argv[a][0] == '-') {
 		fprintf(stderr, "%s: command line error at '%s'\n",
@@ -225,6 +236,7 @@ xfobject(fname, fin)				/* transform an object */
 char  *fname;
 FILE  *fin;
 {
+	extern char  *strcpy();
 	char  typ[16], nam[MAXSTR];
 	int  fn;
 						/* modifier and type */
@@ -236,7 +248,11 @@ FILE  *fin;
 				progname, fname, typ);
 		exit(1);
 	}
-	printf("\n%s %s ", newmod!=NULL && issurface(fn) ? newmod : nam, typ);
+	if (issurface(fn))
+		printf("\n%s %s ", newmod != NULL ? newmod : nam,
+				invert ? ofun[tinvers[fn]].funame : typ);
+	else
+		printf("\n%s %s ", nam, typ);
 						/* object name */
 	fgetword(nam, sizeof(nam), fin);
 	if (idprefix != NULL && issurface(fn))
@@ -603,6 +619,11 @@ FILE  *fin;
 
 	multp3(p0, fa.farg, tot.xfm);
 	multv3(pd, fa.farg+3, tot.xfm);
+	if (invert) {
+		pd[0] = -pd[0];
+		pd[1] = -pd[1];
+		pd[2] = -pd[2];
+	}
 	r0 = fa.farg[6] * tot.sca;
 	r1 = fa.farg[7] * tot.sca;
 	printf(" %18.12g %18.12g %18.12g\n", p0[0], p0[1], p0[2]);
@@ -659,4 +680,14 @@ initotypes()			/* initialize ofun[] array */
 	ofun[PAT_BTEXT].funp =
 	ofun[MIX_TEXT].funp = text;
 	ofun[ALIAS].funp = alias;
+					/* surface inverses */
+	tinvers[OBJ_SOURCE] = OBJ_SOURCE;
+	tinvers[OBJ_CONE] = OBJ_CUP;
+	tinvers[OBJ_CUP] = OBJ_CONE;
+	tinvers[OBJ_SPHERE] = OBJ_BUBBLE;
+	tinvers[OBJ_BUBBLE] = OBJ_SPHERE;
+	tinvers[OBJ_RING] = OBJ_RING;
+	tinvers[OBJ_CYLINDER] = OBJ_TUBE;
+	tinvers[OBJ_TUBE] = OBJ_CYLINDER;
+	tinvers[OBJ_INSTANCE] = OBJ_INSTANCE;	/* oh, well */
 }
