@@ -430,10 +430,11 @@ getdefn()			/* A -> SYM = E1 */
     addekid(ep2, ep1);
     addekid(ep2, getE1());
 
+    if (
 #ifdef  FUNCTION
-    if (ep1->type == SYM)
+    	    ep1->type == SYM &&
 #endif
-    {
+	    ep1->sibling->type != NUM) {
 	ep1 = newnode();
 	ep1->type = TICK;
 	ep1->v.tick = -1;
