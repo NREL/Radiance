@@ -66,10 +66,6 @@ char  **argv;
  FILE  *fp;
  int  axflag;
 
-#ifdef  CPM
- fixargs("tbar", &argc, &argv);
-#endif
-
  progname = *argv++;
  argc--;
 

@@ -65,36 +65,24 @@ char  **argv;
 
 {
  FILE  *fp;
-#ifdef  UNIX
  FILE  *popen();
-#endif
  char  comargs[200], command[300];
-
-#ifdef  CPM
- fixargs("meta2tga", &argc, &argv);
-#endif
 
   fout = stdout;
  progname = *argv++;
  argc--;
 
  condonly = FALSE;
-#ifdef  CPM
- conditioned = TRUE;
-#else
  conditioned = FALSE;
-#endif
  
  while (argc && **argv == '-')  {
     switch (*(*argv+1))  {
-#ifdef  UNIX
        case 'c':
 	  condonly = TRUE;
 	  break;
        case 'r':
 	  conditioned = TRUE;
 	  break;
-#endif
        case 'm':
 	  minwidth = atoi(*++argv);
 	  argc--;
@@ -142,7 +130,6 @@ char  **argv;
        argc--;
        }
     sprintf(command, XCOM, comargs);
-#ifdef  UNIX
     if (condonly)
        return(system(command));
     else  {
@@ -153,7 +140,6 @@ char  **argv;
        if (lineno)
 	  nextpage();
        }
-#endif
     }
 
  return(0);

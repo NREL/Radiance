@@ -17,10 +17,6 @@ static const char RCSid[] = "$Id$";
 #include  "calcomp.h"
 #include  "rterror.h"
 
-#ifdef  CPM
-#define  getc           agetc   /* text files only, right? */
-#endif
-
 #define  isnum(c)       (isdigit(c) || (c)=='-' || (c)=='.' \
 				|| (c)=='+' || (c)=='e' || (c)=='E')
 

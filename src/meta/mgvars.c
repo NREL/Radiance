@@ -330,7 +330,6 @@ char  *string;
 			}
 			if (!*s) {
 				loaddata(fname, fp, &vp->v.d);
-#ifdef  UNIX
 			} else if (*s == '!') {
 				if ((fp2 = popen(s+1, "r")) == NULL) {
 					fprintf(stderr, "%s\n", string);
@@ -341,7 +340,6 @@ char  *string;
 				}
 				loaddata(s, fp2, &vp->v.d);
 				pclose(fp2);
-#endif
 			} else {
 				if ((fp2 = fopen(s, "r")) == NULL) {
 				    fprintf(stderr, "%s\n", string);

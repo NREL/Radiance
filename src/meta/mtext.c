@@ -43,10 +43,6 @@ char  **argv;
 {
     FILE  *fp;
     
-#ifdef  CPM
-    fixargs("mtext", &argc, &argv);
-#endif
-
     progname = *argv++;
     argc--;
 

@@ -26,14 +26,8 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-#if  UNIX || MAC
 	char  *getenv();
-#endif
 	int  i, file0;
-#ifdef  CPM
-#define getenv(s) NULL
-	fixargs("bgraph", &argc, &argv);
-#endif
 	progname = argv[0];
 	libpath[0] = "";
 	if ((libpath[i=1] = getenv("MDIR")) != NULL)

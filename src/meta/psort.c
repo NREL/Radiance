@@ -34,10 +34,6 @@ char  **argv;
  FILE  *fp;
  int  i, pcompare();
 
-#ifdef  CPM
- fixargs("psort", &argc, &argv);
-#endif
-
  progname = *argv++;
  argc--;
 

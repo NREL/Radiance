@@ -19,7 +19,7 @@ EXEC2 = $(INSTDIR)
 
 CC = cc
 
-CFLAGS = -DUNIX -DMDIR=\"$(MLIBDIR)/\" $(OPT) $(MACH) -I../common -L../lib
+CFLAGS = -DMDIR=\"$(MLIBDIR)/\" $(OPT) $(MACH) -I../common -L../lib
 
 io = mfio.o
 

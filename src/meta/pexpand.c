@@ -30,10 +30,6 @@ char  **argv;
  int  com;
  short  exlist[NCOMMANDS];	/* 1==expand, 0==pass, -1==discard */
 
-#ifdef  CPM
- fixargs("pexpand", &argc, &argv);
-#endif
-
  progname = *argv++;
  argc--;
 

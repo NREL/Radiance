@@ -10,12 +10,6 @@ static const char RCSid[] = "$Id$";
 
 
 
-#if  CPM || MAC
-#define  getc  agetc
-#define  putc  aputc
-#endif
-
-
 static PRIMITIVE  peof = {PEOF, 0200, -1, -1, -1, -1, NULL};
 
 

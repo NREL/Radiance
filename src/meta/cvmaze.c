@@ -95,8 +95,6 @@ int  cellsize;		/* the size of a maze cell (in metacoordinates) */
 
 char  *progname;
 
-#define  CPMEOF  0x1a
-
 
 main(argc, argv)
 
@@ -106,9 +104,6 @@ char  **argv;
 {
     FILE  *fp;
 
-#ifdef  CPM
-    fixargs("cvmaze", &argc, &argv);
-#endif
     progname = *argv++;
     argc--;
         

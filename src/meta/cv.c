@@ -25,10 +25,6 @@ char  **argv;
  PRIMITIVE  curp;
  short  htom = TRUE;
 
-#ifdef  CPM
- fixargs("cv", &argc, &argv);
-#endif
-
  progname = *argv++;
  argc--;
 

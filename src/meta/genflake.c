@@ -29,9 +29,6 @@ char  *argv[];
 	int  seed = 0;
 	int  nflakes = 1;
 	
-#ifdef  CPM
-	fixargs("genflake", &argc, &argv);
-#endif
 	progname = argv[0];
 	for (i = 1; i < argc && argv[i][0] == '-'; i++)
 		switch (argv[i][1]) {

@@ -25,9 +25,6 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-#ifdef  CPM
-	fixargs("gentree", &argc, &argv);
-#endif
 	progname = argv[0];
 	if (argc != 7) {
 		sprintf(errmsg, "Usage: %s x0 y0 x1 y1 nbranch depth", progname);

@@ -37,11 +37,9 @@ char  *mode;
 
 {
     char  *mdir, stemp[MAXFNAME];
-#if  UNIX || MAC || _WIN32
     char  *getenv();
 
     if ((mdir = getenv("MDIR")) == NULL)
-#endif
 	mdir = MDIR;
     sprintf(stemp, "%s%s", mdir, fname);
 
@@ -49,23 +47,3 @@ char  *mode;
 }
 
 
-
-#ifdef  CPM
-getpid()			/* for CP/M, get user number */
-
-{
-
- return(getusr());
- }
-#endif
-
-
-
-#ifdef  MAC
-getpid()			/* dummy value for MacIntosh */
-
-{
-
- return(0);
- }
-#endif

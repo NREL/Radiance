@@ -68,10 +68,6 @@ char  **argv;
  FILE  *fp;
  int  axflag;
 
-#ifdef  CPM
- fixargs("tcurve", &argc, &argv);
-#endif
-
  progname = *argv++;
  argc--;
 
