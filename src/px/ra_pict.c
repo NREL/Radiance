@@ -18,8 +18,6 @@ int outbytes;
 FILE *outf, *inf;
 char **gargv;
 
-putpic(int, int);
-
 putrect(xorg,yorg,xsize,ysize)
 int xorg, yorg, xsize, ysize;
 {
@@ -193,7 +191,11 @@ int ysize;
 	putbyte(0);
 }
 
-int getrow(FILE *in, char *mybuff, int xsize)
+int
+getrow(in, mybuff, xsize)
+FILE  *in;
+char  *mybuff;
+int  xsize;
 {
     COLOR    color;
     COLR    *scanin = (COLR*) malloc(xsize * sizeof(COLR));

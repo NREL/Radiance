@@ -5,10 +5,10 @@
 
 ARCH = sun
 OPT = -O
-MACH = -DSTRUCTASSIGN -f68881 /usr/lib/libm.il -DIEEE -DBSD
+MACH = -DSTRUCTASSIGN -DBSD
 CFLAGS = $(OPT) $(MACH) -I../common -L../lib
 
-INSTDIR = /lumen/lumen/ray/bin.sun3
+INSTDIR = /usr/local/bin
 
 LIBDIR = /usr/local/lib/ray
 
@@ -18,7 +18,7 @@ PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar -lm
 PROGS = pfilt ttyimage oki20c paintjet mt160r getinfo psign \
 greyscale pvalue pcompos colorscale prot ra_pr ra_pr24 \
 ra_t8 ra_bn ra_t16 pcomb pinterp ximage xshowtrace pflip ra_ppm \
-ra_rgbe
+ra_rgbe ra_pict
 
 all:	$(PROGS)
 
@@ -117,6 +117,10 @@ ra_bn: ra_bn.o
 ra_rgbe:	ra_rgbe.o
 	cc $(CFLAGS) -o ra_rgbe ra_rgbe.o -lrt -lm
 
+ra_pict:    ra_pict.o
+	cc $(CFLAGS) -o ra_pict ra_pict.o -lrt -lm
+
+
 x10image:	ximage.o ciq.o cut.o closest.o xraster.o biq.o
 	cc $(CFLAGS) -o x10image ximage.o xraster.o \
 ciq.o cut.o closest.o biq.o -lX -lrt -lm
@@ -190,3 +194,5 @@ aedimage.o ximage.o ra_t8.o ra_pr.o:	pic.h
 ciq.o cut.o closest.o biq.o:	pic.h ciq.h
 
 pinterp.o ximage.o image.o:	../common/view.h
+
+ra_pict.o:	pict.h
