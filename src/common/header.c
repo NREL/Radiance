@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -9,7 +9,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *
  *	8/19/88
  *
- *  printargs(ac,av,fp)	print an argument list to fp, followed by '\n'
+ *  printargs(ac,av,fp) print an argument list to fp, followed by '\n'
  *  isformat(s)		returns true if s is of the form "FORMAT=*"
  *  formatval(r,s)	copy the format value in s to r
  *  fputformat(s,fp)	write "FORMAT=%s" to fp
@@ -22,10 +22,10 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <stdio.h>
 #include  <ctype.h>
 
-#define  MAXLINE	512
+#define	 MAXLINE	512
 
 #ifndef BSD
-#define  index	strchr
+#define	 index	strchr
 #endif
 
 extern char  *index();
@@ -97,10 +97,14 @@ char  *p;
 
 	for ( ; ; ) {
 		buf[MAXLINE-2] = '\n';
-		if (fgets(buf, sizeof(buf), fp) == NULL)
+		if (fgets(buf, MAXLINE, fp) == NULL)
 			return(-1);
 		if (buf[0] == '\n')
 			return(0);
+#ifdef MSDOS
+		if (buf[0] == '\r' && buf[1] == '\n')
+			return(0);
+#endif
 		if (buf[MAXLINE-2] != '\n') {
 			ungetc(buf[MAXLINE-2], fp);	/* prevent false end */
 			buf[MAXLINE-2] = '\0';
