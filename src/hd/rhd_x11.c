@@ -18,6 +18,10 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #include  "x11icon.h"
 
+#ifndef FEQ
+#define FEQ(a,b)	((a)-(b) <= FTINY && (a)-(b) >= -FTINY)
+#endif
+
 #define	CTRL(c)		((c)-'@')
 
 #define GAMMA		2.2		/* default gamma correction */
@@ -197,8 +201,17 @@ dev_close()			/* close our display */
 dev_view(nv)			/* assign new driver view */
 VIEW	*nv;
 {
-	if (nv != &odev.v)
+	if (nv != &odev.v) {
+		if (!FEQ(nv->horiz,odev.v.horiz) ||	/* resize window? */
+				!FEQ(nv->vert,odev.v.vert)) {
+			odev.hres = 2.*VIEWDIST*tan(PI/180./2.*nv->horiz) /
+					pwidth;
+			odev.vres = 2.*VIEWDIST*tan(PI/180./2.*nv->vert) /
+					pheight;
+			XResizeWindow(ourdisplay, gwind, odev.hres, odev.vres);
+		}
 		copystruct(&odev.v, nv);
+	}
 	qtReplant();
 }
 
@@ -530,9 +543,7 @@ register XKeyPressedEvent  *ekey;
 		inpresflags |= DEV_WAIT;
 		return;
 	case 'v':			/* spit out view */
-		fputs(VIEWSTR, stderr);
-		fprintview(&odev.v, stderr);
-		fputc('\n', stderr);
+		inpresflags |= DEV_PUTVIEW;
 		return;
 	case CTRL('Q'):
 	case '\n':
@@ -589,10 +600,8 @@ register XConfigureEvent  *ersz;
 		return;
 
 	if (odev.hres != 0 && odev.vres != 0) {
-		odev.v.horiz = 2.*180./PI * atan(
-			tan(PI/180./2.*odev.v.horiz) * ersz->width/odev.hres );
-		odev.v.vert = 2.*180./PI * atan(
-			tan(PI/180./2.*odev.v.vert) * ersz->height/odev.vres );
+		odev.v.horiz = 2.*180./PI * atan(0.5/VIEWDIST*pwidth*odev.hres);
+		odev.v.vert = 2.*180./PI * atan(0.5/VIEWDIST*pheight*odev.vres);
 		inpresflags |= DEV_NEWVIEW;
 	}
 	odev.hres = ersz->width;
