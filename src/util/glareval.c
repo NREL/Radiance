@@ -20,7 +20,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define vfork		fork
 #endif
 
-#define MAXSBUF		524268	/* maximum total size of scanline buffer */
+#define MAXSBUF		786432	/* maximum total size of scanline buffer */
 #define HSIZE		317	/* size of scanline hash table */
 #define NRETIRE		16	/* number of scanlines to retire at once */
 
