@@ -215,7 +215,7 @@ int	len;
 			continue;
 						/* get chrominance */
 		if (tmTop->flags & TM_F_MESOPIC && ls[i] < BMESUPPER) {
-			if (uv_decode(uvp, uvp+1, luvs[i]&0x3fff) < 0) {
+			if (uv_decode(&uvp[0], &uvp[1], luvs[i]&0x3fff) < 0) {
 				uvp[0] = U_NEU;		/* should barf? */
 				uvp[1] = V_NEU;
 			}
