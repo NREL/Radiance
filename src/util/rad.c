@@ -1185,7 +1185,7 @@ register char	*vs;
 		zpos = -1; vs++;
 	}
 	viewtype = 'v';
-	if (*vs == 'v' | *vs == 'l' | *vs == 'a' | *vs == 'h')
+	if (*vs == 'v' | *vs == 'l' | *vs == 'a' | *vs == 'h' | *vs == 'c')
 		viewtype = *vs++;
 	cp = viewopts;
 	if ((!*vs || isspace(*vs)) && (xpos|ypos|zpos)) {	/* got one! */
@@ -1239,6 +1239,9 @@ register char	*vs;
 		case 'a':
 		case 'h':
 			cp = addarg(cp, "-vh 180 -vv 180");
+			break;
+		case 'c':
+			cp = addarg(cp, "-vh 180 -vv 90");
 			break;
 		}
 	} else {
