@@ -10,6 +10,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include <stdio.h>
 
+#include "fvect.h"
+
 #include "object.h"
 
 
@@ -69,7 +71,7 @@ FILE  *fp;
 	if (!getint() || (n = atoi(sbuf)) < 0)
 		return(0);
 	if (fa->nfargs = n) {
-		fa->farg = (double *)bmalloc(n*sizeof(double));
+		fa->farg = (FLOAT *)bmalloc(n*sizeof(FLOAT));
 		if (fa->farg == NULL)
 			return(-1);
 		for (i = 0; i < n; i++) {

@@ -216,7 +216,7 @@ flatpart(si, r)				/* partition a flat source */
 register SRCINDEX  *si;
 register RAY  *r;
 {
-	register double  *vp;
+	register FLOAT  *vp;
 	FVECT  v;
 	double  du2, dv2;
 	int  pi;
@@ -300,7 +300,7 @@ scylform(sn, dir)		/* compute cosine for cylinder's projection */
 int  sn;
 register FVECT  dir;		/* assume normalized */
 {
-	register double  *dv;
+	register FLOAT  *dv;
 	double  d;
 
 	dv = source[sn].ss[SU];

@@ -161,11 +161,11 @@ conexform(co)			/* get cone transformation matrix */
 register CONE  *co;
 {
 	double  sqrt(), fabs();
-	double  m4[4][4];
+	MAT4  m4;
 	register double  d;
 	register int  i;
 
-	co->tm = (double (*)[4])malloc(sizeof(m4));
+	co->tm = (FLOAT (*)[4])malloc(sizeof(m4));
 	if (co->tm == NULL)
 		error(SYSTEM, "out of memory in conexform");
 

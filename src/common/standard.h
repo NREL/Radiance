@@ -24,9 +24,6 @@ typedef struct {
 	XF  b;					/* backward */
 }  FULLXF;
 
-#define  FHUGE		(1e10)		/* large real number */
-#define  FTINY		(1e-6)		/* small real number */
-
 #ifdef  M_PI
 #define  PI		M_PI
 #else

@@ -61,4 +61,6 @@ bbox.o o_instance.o:	../common/instance.h ../common/octree.h
 
 clip.o o_face.o plocate.o:	plocate.h
 
+clip.o plocate.o:	../common/fvect.h
+
 initotypes.o initotypes2.o:	../common/otypes.h

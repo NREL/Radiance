@@ -2,13 +2,14 @@
 
 /* SCCSid "$SunId$ LBL" */
 
-#ifndef  FLOAT
-#ifdef  SMLMEM
+#ifdef  SMLFLT
 #define  FLOAT		float
+#define  FTINY		(1e-4)
 #else
 #define  FLOAT		double
+#define  FTINY		(1e-6)
 #endif
-#endif
+#define  FHUGE		(1e10)
 
 typedef FLOAT  FVECT[3];
 

@@ -93,7 +93,7 @@ text(m, r)
 register OBJREC  *m;
 RAY  *r;
 {
-	double  v[3];
+	FVECT  v;
 	int  foreground;
 				/* get transformed position */
 	if (r->rox != NULL)
@@ -250,7 +250,8 @@ OBJREC  *m;
 {
 	register TEXT  *tp;
 	register TLINE  *tlp;
-	double  v[3], y, x;
+	FVECT  v;
+	double  y, x;
 	int  col;
 	register int  lno;
 				/* first, compute position in text */
