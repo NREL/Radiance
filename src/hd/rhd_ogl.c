@@ -262,7 +262,7 @@ char  *id;
 	XMapWindow(ourdisplay, gwind);
 	dev_input();			/* sets size and view angles */
 	if (!odInit(DisplayWidth(ourdisplay,ourscreen) *
-			DisplayHeight(ourdisplay,ourscreen) / 10))
+			DisplayHeight(ourdisplay,ourscreen) / 4))
 		error(SYSTEM, "insufficient memory for value storage");
 	odev.name = id;
 	odev.firstuse = 1;		/* can't recycle samples */
@@ -363,6 +363,7 @@ char	*gfn, *pfn;
 	if (gfn == NULL) {
 		gmEndGeom();
 		gmEndPortal();
+		wipeclean();		/* new geometry, so redraw it */
 		return;
 	}
 	if (access(gfn, R_OK) == 0)
@@ -463,16 +464,12 @@ dev_flush()			/* flush output as appropriate */
 			gmDrawPortals(PORTRED, PORTGRN, PORTBLU, PORTALP);
 		checkglerr("rendering base view");
 	}
-	if (mapped && viewsteady) {
-		if (isperspective) {		/* first time after steady */
-#ifdef STEREO
-			pushright();
-			popright();
-#endif
+	if (mapped && viewsteady)
+		if (isperspective > 0) {	/* first time after steady */
 			if (ndrawn)
 				xferdepth();	/* transfer and clear depth */
 			setglortho();		/* set orthographic view */
-		} else {
+		} else if (!isperspective) {
 #ifdef STEREO
 			pushright();
 			odUpdate(1);		/* draw right eye */
@@ -480,7 +477,6 @@ dev_flush()			/* flush output as appropriate */
 #endif
 			odUpdate(0);		/* draw left eye */
 		}
-	}
 	glFlush();				/* flush OpenGL */
 	rayqleft = RAYQLEN;
 					/* flush X11 and return # pending */
