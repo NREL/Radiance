@@ -556,7 +556,7 @@ getstatement()			/* get next statement */
 	qname = qualname(dname(ep), 0);
 #ifdef	REDEFW
 	if ((vdef = varlookup(qname)) != NULL)
-	    if (vdef->def != NULL) {
+	    if (vdef->def != NULL && epcmp(ep, vdef->def)) {
 		wputs(qname);
 		if (vdef->def->type == ':')
 		    wputs(": redefined constant expression\n");
