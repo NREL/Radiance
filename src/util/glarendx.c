@@ -255,21 +255,24 @@ struct glare_dir	*gd;
 	register struct glare_src	*gs;
 	double	p;
 	double	sum;
+	double	wtot, brsum;
 	int	n;
 
-	sum = 0.0; n = 0;
+	sum = wtot = brsum = 0.0; n = 0;
 	for (gs = all_srcs; gs != NULL; gs = gs->next) {
 		p = posindex(gs->dir, midview.vdir, midview.vup);
 		if (p <= FTINY)
 			continue;
 		sum += gs->lum * q(gs->dom) / p;
+		brsum += gs->lum * gs->dom;
+		wtot += gs->dom;
 		n++;
 	}
 	if (n == 0)
 		return(0.0);
 	else
 		return( pow(
-			.5*sum/pow(direct(gd)+gd->indirect,.44),
+			.5*sum/pow((brsum+(5.-wtot)*gd->indirect/PI)/5.,.44),
 			pow((double)n, -.0914) ) );
 #undef q
 }
@@ -288,5 +291,5 @@ double
 guth_vcp(gd)		/* compute Guth visual comfort probability */
 struct glare_dir	*gd;
 {
-	return(100.*norm_integral(-6.374+1.3227*log(guth_dgr(gd))));
+	return(100.*norm_integral(6.374-1.3227*log(guth_dgr(gd))));
 }
