@@ -47,6 +47,7 @@ double  hmarg = DEFMARG,
 	vmarg = DEFMARG;		/* horizontal and vertical margins */
 double	width = DEFWIDTH,
 	height = DEFHEIGHT;		/* default paper width and height */
+double  dpi = 0;			/* print density (0 if unknown) */
 int  docolor = 0;			/* produce color image? */
 int  bradj = 0;				/* brightness adjustment */
 int  ncopies = 1;			/* number of copies */
@@ -57,7 +58,7 @@ int  (*putprim)() = Aputprim;		/* function for writing scanline */
 
 char  *progname;
 
-int  xmax, ymax;
+int  xmax, ymax;			/* input image dimensions */
 
 extern char  *malloc();
 extern double	unit2inch();
@@ -102,6 +103,9 @@ char  *argv[];
 				break;
 			case 'C':		/* compressed ASCII encoding */
 				putprim = Cputprim;
+				break;
+			case 'd':		/* print density */
+				dpi = atof(argv[++i]);
 				break;
 			case 'g':		/* device gamma adjustment */
 				devgam = atof(argv[++i]);
@@ -174,7 +178,7 @@ char  *argv[];
 	exit(0);
 userr:
 	fprintf(stderr,
-"Usage: %s [-b|c][-A|B|C][-e +/-stops][-p paper][-m[h|v] margin][-g gamma] [input [output]]\n",
+"Usage: %s [-b|c][-A|B|C][-e +/-stops][-p paper][-m[h|v] margin][-d dpi][-g gamma] [input [output]]\n",
 			progname);
 	exit(1);
 }
@@ -289,7 +293,7 @@ PSheader(name)			/* print PostScript header */
 char  *name;
 {
 	char  *rstr;
-	int  landscape = 0;
+	int  landscape, rotate, n;
 	double	pwidth, pheight;
 	double	iwidth, iheight;
 					/* EPS comments */
@@ -301,21 +305,32 @@ char  *name;
 		puts("%%Orientation: Landscape");
 	else
 		puts("%%Orientation: Portrait");
-	if (PWIDTH > PHEIGHT ^ landscape) {
+	if (rotate = PWIDTH > PHEIGHT ^ landscape) {
 		pwidth = PHEIGHT;
 		pheight = PWIDTH;
 	} else {
 		pwidth = PWIDTH;
 		pheight = PHEIGHT;
 	}
-	if (pheight/pwidth > pixaspect*ymax/xmax) {
-		iwidth = pwidth;
-		iheight = pwidth*pixaspect*ymax/xmax;
-	} else {
-		iheight = pheight;
-		iwidth = pheight*xmax/(pixaspect*ymax);
-	}
-	if (pwidth == PHEIGHT)
+	if (dpi > 100 && pixaspect >= 0.99 & pixaspect <= 1.01)
+		if (pheight/pwidth > ymax/xmax) {
+			n = pwidth*dpi/xmax;	/* floor */
+			iwidth = n > 0 ? (double)(n*xmax)/dpi : pwidth;
+			iheight = iwidth*ymax/xmax;
+		} else {
+			n = pheight*dpi/ymax;	/* floor */
+			iheight = n > 0 ? (double)(n*ymax)/dpi : pheight;
+			iwidth = iheight*xmax/ymax;
+		}
+	else
+		if (pheight/pwidth > pixaspect*ymax/xmax) {
+			iwidth = pwidth;
+			iheight = iwidth*pixaspect*ymax/xmax;
+		} else {
+			iheight = pheight;
+			iwidth = iheight*xmax/(pixaspect*ymax);
+		}
+	if (rotate)
 		printf("%%%%BoundingBox: %.0f %.0f %.0f %.0f\n",
 				HMARGIN+(pheight-iheight)*.5,
 				VMARGIN+(pwidth-iwidth)*.5,
@@ -342,7 +357,7 @@ char  *name;
 		PSprocdef("read6bitRLE");
 					/* set up transformation matrix */
 	printf("%f %f translate\n", HMARGIN, VMARGIN);
-	if (pwidth == PHEIGHT) {
+	if (rotate) {
 		printf("%f 0 translate\n", PWIDTH);
 		puts("90 rotate");
 	}
