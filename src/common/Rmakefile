@@ -23,7 +23,7 @@ STDOBJ = fgetline.o fropen.o linregr.o xf.o mat4.o fvect.o urand.o \
 	multisamp.o process.o getpath.o error.o savestr.o savqstr.o \
 	badarg.o fgetword.o words.o wordfile.o cputs.o wputs.o eputs.o quit.o
 
-SYSOBJ = ealloc.o $(COMPAT)
+SYSOBJ = ealloc.o portio.o $(COMPAT)
 
 librt.a:	$(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 	ar rc librt.a $(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
