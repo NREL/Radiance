@@ -282,8 +282,8 @@ proc do_file w {
 	pack $w.left -side left
 	button $w.left.load -text LOAD -width 5 \
 			-relief raised -command {newload $curfile}
-	button $w.left.save -text SAVE -width 5 \
-			-relief raised -command {newsave $curfile}
+	button $w.left.save -text SAVE -width 5 -relief raised \
+			-command "newsave \$curfile; update_dir $w.right"
 	button $w.left.new -text NEW -width 5 \
 			-relief raised -command {newnew $curfile}
 	pack $w.left.load $w.left.save $w.left.new -side top -pady 15 -padx 20
