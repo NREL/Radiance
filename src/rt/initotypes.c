@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -20,6 +20,7 @@ extern int  o_cone();
 extern int  o_instance();
 extern int  m_light();
 extern int  m_normal();
+extern int  m_aniso();
 extern int  m_dielectric();
 extern int  m_glass();
 extern int  m_clip();
@@ -54,6 +55,10 @@ initotypes()			/* initialize ofun array */
 	ofun[MAT_METAL].funp =
 	ofun[MAT_TRANS].funp = m_normal;
 	ofun[MAT_TRANS].flags |= T_IRR_IGN;
+	ofun[MAT_PLASTIC2].funp =
+	ofun[MAT_METAL2].funp =
+	ofun[MAT_TRANS2].funp = m_aniso;
+	ofun[MAT_TRANS2].flags |= T_IRR_IGN;
 	ofun[MAT_DIELECTRIC].funp =
 	ofun[MAT_INTERFACE].funp = m_dielectric;
 	ofun[MAT_DIELECTRIC].flags |= T_IRR_IGN;

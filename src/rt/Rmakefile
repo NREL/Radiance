@@ -65,8 +65,8 @@ SURFOBJS = source.o sphere.o srcsupp.o srcsamp.o virtuals.o o_face.o \
 SURFSRC = sphere.c source.c srcsupp.c virtuals.c o_face.c \
 		srcsamp.c o_cone.c o_instance.c
 
-MATOBJS = normal.o dielectric.o m_clip.o glass.o m_brdf.o m_mirror.o \
-	m_direct.o
+MATOBJS = aniso.o normal.o dielectric.o m_clip.o glass.o m_brdf.o \
+	m_mirror.o m_direct.o
 MATSRC = normal.c dielectric.c m_clip.c glass.c m_brdf.c m_mirror.c \
 	m_direct.c
 
@@ -230,13 +230,14 @@ rtrace.o rvmain.o rv2.o rv3.o source.o:	../common/octree.h
 
 o_instance.o:	../common/instance.h ../common/octree.h
 
-ambient.o dielectric.o func.o initotypes.o m_brdf.o \
+ambient.o aniso.o dielectric.o func.o initotypes.o m_brdf.o \
 normal.o o_cone.o text.o raytrace.o rtrace.o \
 rv2.o source.o srcsupp.o virtuals.o sphere.o:	../common/otypes.h
 
-ambient.o ambcomp.o rpict.o rv3.o srcsamp.o:	../common/random.h
+ambient.o ambcomp.o aniso.o normal.o rpict.o \
+rv3.o srcsamp.o:	../common/random.h
 
-ambient.o ambcomp.o dielectric.o func.o glass.o m_clip.o m_mirror.o \
+ambient.o ambcomp.o aniso.o dielectric.o func.o glass.o m_clip.o m_mirror.o \
 m_brdf.o mx_data.o mx_func.o normal.o o_cone.o o_face.o o_instance.o \
 p_data.o p_func.o text.o raytrace.o rpmain.o rtmain.o rvmain.o rpict.o \
 rtrace.o rview.o rv2.o rv3.o source.o srcsamp.o srcsupp.o virtuals.o \
@@ -267,5 +268,5 @@ ambient.o ambcomp.o lookamb.o:	ambient.h
 
 data.o rmain.o rpict.o rv2.o:	../common/resolu.h
 
-func.o m_brdf.o m_direct.o mx_data.o mx_func.o p_data.o \
+aniso.o func.o m_brdf.o m_direct.o mx_data.o mx_func.o p_data.o \
 p_func.o t_data.o t_func.o:	func.h
