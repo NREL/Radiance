@@ -554,6 +554,7 @@ char	**av;
 	int	n, imax;
 	int	wl;
 	double	wl0, wlstep;
+	double	boxpos, boxstep;
 					/* check bounds */
 	if (wlmax <= C_CMINWL | wlmax <= wlmin | wlmin >= C_CMAXWL)
 		return(MG_EILL);
@@ -566,22 +567,25 @@ char	**av;
 		wlmax -= wlstep;
 		ac--;
 	}
-	if (ac < 2)
-		return(MG_EILL);
 	imax = ac;			/* box filter if necessary */
+	boxpos = 0;
+	boxstep = 1;
 	if (wlstep < C_CWLI) {
+		imax = (wlmax - wlmin)/C_CWLI + (1-FTINY);
+		boxpos = (wlmin - C_CMINWL)/C_CWLI;
+		boxstep = wlstep/C_CWLI;
 		wlstep = C_CWLI;
-		imax = (wlmax - wlmin)/wlstep;
 	}
 	scale = 0.;			/* get values and maximum */
 	pos = 0;
 	for (i = 0; i < imax; i++) {
 		va[i] = 0.; n = 0;
-		while (pos < (i+.5)*ac/imax) {
+		while (boxpos < i+.5 && pos < ac) {
 			if (!isflt(av[pos]))
 				return(MG_ETYPE);
 			va[i] += atof(av[pos++]);
 			n++;
+			boxpos += boxstep;
 		}
 		if (n > 1)
 			va[i] /= (double)n;
@@ -590,7 +594,7 @@ char	**av;
 		if (va[i] > scale)
 			scale = va[i];
 	}
-	if (scale == 0.)
+	if (scale <= FTINY)
 		return(MG_EILL);
 	scale = C_CMAXV / scale;
 	clr->ssum = 0;			/* convert to our spacing */
