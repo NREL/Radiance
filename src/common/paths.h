@@ -59,3 +59,10 @@ extern char  *fixargv0();
 #endif
 
 extern char  *mktemp(), *getenv();
+
+#ifdef BSD
+extern char  *getwd();
+#else
+extern char  *getcwd();
+#define  getwd(p)	getcwd(p, sizeof(p))
+#endif
