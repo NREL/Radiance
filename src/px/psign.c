@@ -10,11 +10,20 @@ static char SCCSid[] = "$SunId$ LBL";
  *	7/1/87
  */
 
-#include  <stdio.h>
+#include  "standard.h"
 
 #include  "color.h"
 
+#include  "font.h"
+
 #define  MAXLINE		512	/* longest allowable line */
+
+#ifndef  DEFPATH
+#define  DEFPATH		":/usr/local/lib/ray"
+#endif
+#ifndef  ULIBVAR
+#define  ULIBVAR		"RAYPATH"
+#endif
 
 char  *fontfile = "helvet.fnt";		/* our font file */
 
@@ -39,7 +48,9 @@ int  xdim;				/* size of horizontal scan (bytes) */
 
 typedef unsigned char  GLYPH;
 
-GLYPH  *ourfont[128];			/* our font */
+FONT  *ourfont;				/* our font */
+
+char  *libpath;				/* library search path */
 
 typedef struct line {
 	char  *s;		/* line w/o LF */
@@ -49,8 +60,8 @@ typedef struct line {
 LINE  *ourtext;				/* our text */
 int  nlines, maxline;			/* text dimensions */
 
+extern char  *getenv();
 extern char  *malloc(), *calloc();
-extern FILE  *fropen();
 
 
 main(argc, argv)
@@ -115,7 +126,9 @@ unkopt:
 					/* create bit map */
 	makemap();
 					/* load font file */
-	loadfont();
+	if ((libpath = getenv(ULIBVAR)) == NULL)
+		libpath = DEFPATH;
+	ourfont = getfont(fontfile);
 					/* convert text to bitmap */
 	maptext();
 					/* print header */
@@ -145,59 +158,6 @@ makemap()			/* create the bit map */
 		fprintf(stderr, "out of memory in makemap\n");
 		exit(1);
 	}
-}
-
-
-loadfont()			/* load the font file */
-{
-	FILE  *fp;
-	char  *err;
-	int  gn, ngv, gv;
-	register GLYPH  *g;
-
-	if ((fp = fropen(fontfile)) == NULL) {
-		fprintf(stderr, "cannot find font file \"%s\"\n",
-				fontfile);
-		exit(1);
-	}
-	while (fscanf(fp, "%d", &gn) == 1) {	/* get each glyph */
-		if (gn < 0 || gn > 127) {
-			err = "illegal";
-			goto fonterr;
-		}
-		if (ourfont[gn] != NULL) {
-			err = "duplicate";
-			goto fonterr;
-		}
-		if (fscanf(fp, "%d", &ngv) != 1 ||
-				ngv < 0 || ngv > 255) {
-			err = "bad # vertices for";
-			goto fonterr;
-		}
-		g = (GLYPH *)malloc((2*ngv+1)*sizeof(GLYPH));
-		if (g == NULL)
-			goto memerr;
-		ourfont[gn] = g;
-		*g++ = ngv;
-		ngv *= 2;
-		while (ngv--) {
-			if (fscanf(fp, "%d", &gv) != 1 ||
-					gv < 0 || gv > 255) {
-				err = "bad vertex for";
-				goto fonterr;
-			}
-			*g++ = gv;
-		}
-	}
-	fclose(fp);
-	return;
-fonterr:
-	fprintf(stderr, "%s character (%d) in font file \"%s\"\n",
-			err, gn, fontfile);
-	exit(1);
-memerr:
-	fprintf(stderr, "out of memory in loadfont\n");
-	exit(1);
 }
 
 
@@ -270,28 +230,30 @@ maptext()			/* map our text */
 
 	for (l = 0, curl = ourtext; curl != NULL; l++, curl = curl->next)
 		for (c = strlen(curl->s)-1; c >= 0; c--)
-			mapglyph(ourfont[curl->s[c]], c, l);
+			mapglyph(ourfont->fg[curl->s[c]&0xff], c, l);
 }
 
 
 mapglyph(gl, tx0, ty0)		/* convert a glyph */
-register GLYPH  *gl;
+GLYPH  *gl;
 int  tx0, ty0;
 {
 	int  n;
+	register GORD  *gp;
 	int  p0[2], p1[2];
 
 	if (gl == NULL)
 		return;
 
 	tx0 <<= 8; ty0 <<= 8;
-	n = *gl++;
-	mapcoord(p0, gl[2*n-2]+tx0, gl[2*n-1]+ty0);
+	n = gl->nverts;
+	gp = gvlist(gl);
+	mapcoord(p0, gp[2*n-2]+tx0, gp[2*n-1]+ty0);
 	while (n--) {
-		mapcoord(p1, gl[0]+tx0, gl[1]+ty0);
+		mapcoord(p1, gp[0]+tx0, gp[1]+ty0);
 		mapedge(p0[0], p0[1], p1[0]-p0[0], p1[1]-p0[1]);
 		p0[0] = p1[0]; p0[1] = p1[1];
-		gl += 2;
+		gp += 2;
 	}
 }
 
