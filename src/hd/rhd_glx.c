@@ -566,12 +566,20 @@ register XKeyPressedEvent  *ekey;
 		inpresflags |= DFL(DC_RESUME);
 		return;
 	case CTRL('R'):			/* redraw screen */
+		if (nxtzmax > FTINY) {
+			curzmax = nxtzmax;
+			nxtzmax = 0.;
+		}
 		glClear(GL_DEPTH_BUFFER_BIT);
 		qtRedraw(0, 0, odev.hres, odev.vres);
 		return;
 	case CTRL('L'):			/* refresh from server */
 		if (inpresflags & DFL(DC_REDRAW))
 			return;
+		if (nxtzmax > FTINY) {
+			curzmax = nxtzmax;
+			nxtzmax = 0.;
+		}
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		draw_grids();
 		glFlush();
