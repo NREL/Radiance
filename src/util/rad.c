@@ -208,6 +208,9 @@ register char	*rn, *fn;
 }
 
 
+#define NOCHAR	127		/* constant for character to delete */
+
+
 load(rfname)			/* load Radiance simulation file */
 char	*rfname;
 {
@@ -223,8 +226,7 @@ char	*rfname;
 		for (cp = buf; *cp; cp++) {
 			switch (*cp) {
 			case '\\':
-			case '\n':
-				*cp = ' ';
+				*cp++ = NOCHAR;
 				continue;
 			case '#':
 				*cp = '\0';
@@ -244,10 +246,11 @@ setvariable(ass)		/* assign variable according to string */
 register char	*ass;
 {
 	char	varname[32];
+	char	varval[512];
+	int	n;
 	register char	*cp;
 	register VARIABLE	*vp;
 	register int	i;
-	int	n;
 
 	while (isspace(*ass))		/* skip leading space */
 		ass++;
@@ -261,11 +264,9 @@ register char	*ass;
 					/* trim value */
 	while (isspace(*ass) || *ass == '=')
 		ass++;
-	cp = ass + strlen(ass);
-	do
-		*cp-- = '\0';
-	while (cp >= ass && isspace(*cp));
-	n = cp - ass + 1;
+	for (n = strlen(ass); n > 0; n--)
+		if (!isspace(ass[n-1]))
+			break;
 	if (!n) {
 		fprintf(stderr, "%s: warning - missing value for variable '%s'\n",
 				progname, varname);
@@ -290,7 +291,17 @@ register char	*ass;
 		vp->value = malloc(n+1);
 	if (vp->value == NULL)
 		syserr(progname);
-	strcpy(vp->value+i, ass);
+	cp = vp->value+i;		/* copy value, squeezing spaces */
+	*cp = *ass;
+	for (i = 1; i <= n; i++) {
+		if (ass[i] == NOCHAR)
+			continue;
+		if (isspace(*cp))
+			while (isspace(ass[i]))
+				i++;
+		*++cp = ass[i];
+	}
+	*++cp = '\0';
 	vp->nass++;
 }
 
