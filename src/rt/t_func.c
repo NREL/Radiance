@@ -71,7 +71,7 @@ register RAY  *r;
 		m->os = (char *)mxf;
 	}
 
-	setmap(m, r, mxf->back.sca, mxf->back.xfm);
+	setmap(m, r, mxf->back.xfm, mxf->back.sca);
 
 	if (!vardefined(sa[0]))
 		loadfunc(sa[3]);
