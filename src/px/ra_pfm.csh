@@ -26,7 +26,7 @@ if ($?reverse) then
 		exit 1
 	endif
 	set res=($hl[2])
-	tail +4 $inp:q | pvalue -r -h -y $res[1] +x $res[2] $format
+	tail +4 $inp:q | pvalue -r -h -y $res[2] +x $res[1] $format
 	exit $status
 endif
 if (! $?inp) then
