@@ -248,13 +248,14 @@ memerr:
 freetext(m)			/* free text structures associated with m */
 OBJREC  *m;
 {
-	register TEXT  *tp;
-	register TLINE  *tlp;
+	TEXT  *tp;
+	register TLINE  *tlp, *tln;
 
 	tp = (TEXT *)m->os;
 	if (tp == NULL)
 		return;
-	for (tlp = tp->tl.next; tlp != NULL; tlp = tlp->next) {
+	for (tlp = tp->tl.next; tlp != NULL; tlp = tln) {
+		tln = tlp->next;
 		free((char *)tlp->spc);
 		free((char *)tlp);
 	}
