@@ -10,6 +10,7 @@ setscan.h	defines for programs using setscan()
 vars.h		header file for loadvars.c routines (used by rad and ranimate)
 Version.c	symbolic link to ../rt/Version.c (current Radiance version)
 findglare.c	find glare sources in a scene or image
+getinfo.c	program to read and manipulate binary file information headers
 glarendx.c	compute Glare Index given by program name or -t option
 glaresrc.c	gather samples and compute glare sources
 glareval.c	compute pixels for glare calculation
