@@ -47,195 +47,12 @@ static QT_LUENT	*qt_htbl = NULL;	/* quadtree cache */
 static int	qt_hsiz = 0;		/* quadtree cache size */
 
 
-
-mark_active_tris(qtptr,fptr)
-QUADTREE *qtptr;
-int *fptr;
-{
-  QUADTREE qt = *qtptr;
-  OBJECT *os,*optr;
-  register int i,t_id;
-  TRI *tri;
-
-  if(!QT_FLAG_FILL_TRI(*fptr))
-     (*fptr)++;
-  if(QT_IS_EMPTY(qt) || QT_LEAF_IS_FLAG(qt))
-    return;
-
-  /* For each triangle in the set, set the which flag*/
-  os = qtqueryset(qt);
-
-  for (i = QT_SET_CNT(os), optr = QT_SET_PTR(os); i > 0; i--)
-  {
-    t_id = QT_SET_NEXT_ELEM(optr);
-    /* Set the render flag */
-    tri = SM_NTH_TRI(smMesh,t_id);
-    if(!T_IS_VALID(tri) || SM_IS_NTH_T_BASE(smMesh,t_id))
-	continue;
-    SM_SET_NTH_T_ACTIVE(smMesh,t_id);
-    /* Set the Active bits of the Vertices */
-    S_SET_FLAG(T_NTH_V(tri,0));
-    S_SET_FLAG(T_NTH_V(tri,1));
-    S_SET_FLAG(T_NTH_V(tri,2));
-
-  }
-}
-
-#define mark_active_interior mark_active_tris
-
-mark_tris_in_frustum(view)
-VIEW *view;
-{
-    FVECT nr[4],far[4];
-    FPEQ peq;
-    int debug=0;
-    /* Mark triangles in approx. view frustum as being active:set
-       LRU counter: for use in discarding samples when out
-       of space
-       Radiance often has no far clipping plane: but driver will set
-       dev_zmin,dev_zmax to satisfy OGL
-    */
-
-    /* First clear all the quadtree node and triangle active flags */
-    qtClearAllFlags();
-    smClear_flags(smMesh,T_ACTIVE_FLAG);
-    /* Clear all of the active sample flags*/
-    sClear_all_flags(SM_SAMP(smMesh));
-
-
-    /* calculate the world space coordinates of the view frustum */
-    calculate_view_frustum(view->vp,view->hvec,view->vvec,view->horiz,
-			   view->vert, dev_zmin,dev_zmax,nr,far);
-
-#ifdef TEST_DRIVER
-    VCOPY(FrustumFar[0],far[0]);
-    VCOPY(FrustumFar[1],far[1]);
-    VCOPY(FrustumFar[2],far[2]);
-    VCOPY(FrustumFar[3],far[3]);
-    VCOPY(FrustumNear[0],nr[0]);
-    VCOPY(FrustumNear[1],nr[1]);
-    VCOPY(FrustumNear[2],nr[2]);
-    VCOPY(FrustumNear[3],nr[3]);
-#endif
-    /* Project the view frustum onto the spherical quadtree */
-    /* For every cell intersected by the projection of the faces
-
-       of the frustum: mark all triangles in the cell as ACTIVE-
-       Also set the triangles LRU clock counter
-       */
-    
-    if(EQUAL_VEC3(view->vp,SM_VIEW_CENTER(smMesh)))
-    {/* Near face triangles */
-
-      smLocator_apply_func(smMesh,nr[0],nr[2],nr[3],mark_active_tris,
-			 mark_active_interior,NULL);
-      smLocator_apply_func(smMesh,nr[2],nr[0],nr[1],mark_active_tris,
-			 mark_active_interior,NULL);
-      return;
-    }
-
-    /* Test the view against the planes: and swap orientation if inside:*/
-    tri_plane_equation(nr[0],nr[2],nr[3], &peq,FALSE);
-    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
-    {/* Near face triangles */
-      smLocator_apply_func(smMesh,nr[3],nr[2],nr[0],mark_active_tris,
-			   mark_active_interior,NULL);
-      smLocator_apply_func(smMesh,nr[1],nr[0],nr[2],mark_active_tris,
-			 mark_active_interior,NULL);
-    }
-    else
-    {/* Near face triangles */
-      smLocator_apply_func(smMesh,nr[0],nr[2],nr[3],mark_active_tris,
-			   mark_active_interior,NULL);
-      smLocator_apply_func(smMesh,nr[2],nr[0],nr[1],mark_active_tris,
-			 mark_active_interior,NULL);
-    }
-    tri_plane_equation(nr[0],far[3],far[0], &peq,FALSE);
-    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
-    { /* Right face triangles */
-      smLocator_apply_func(smMesh,far[0],far[3],nr[0],mark_active_tris,
-			   mark_active_interior,NULL);
-      smLocator_apply_func(smMesh,nr[3],nr[0],far[3],mark_active_tris,
-			   mark_active_interior,NULL);
-    }
-    else
-    {/* Right face triangles */
-      smLocator_apply_func(smMesh,nr[0],far[3],far[0],mark_active_tris,
-			   mark_active_interior,NULL);
-      smLocator_apply_func(smMesh,far[3],nr[0],nr[3],mark_active_tris,
-			   mark_active_interior,NULL);
-    }
-
-    tri_plane_equation(nr[1],far[2],nr[2], &peq,FALSE);
-    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
-    { /* Left face triangles */
-      smLocator_apply_func(smMesh,nr[2],far[2],nr[1],mark_active_tris,
-			   mark_active_interior,NULL);
-      smLocator_apply_func(smMesh,far[1],nr[1],far[2],mark_active_tris,
-			   mark_active_interior,NULL);	
-    }
-    else
-    { /* Left face triangles */
-      smLocator_apply_func(smMesh,nr[1],far[2],nr[2],mark_active_tris,
-			   mark_active_interior,NULL);
-      smLocator_apply_func(smMesh,far[2],nr[1],far[1],mark_active_tris,
-		   mark_active_interior,NULL);
-
-    }
-    tri_plane_equation(nr[0],far[0],nr[1], &peq,FALSE);
-    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
-    {/* Top face triangles */
-      smLocator_apply_func(smMesh,nr[1],far[0],nr[0],mark_active_tris,
-			   mark_active_interior,NULL);
-      smLocator_apply_func(smMesh,far[1],far[0],nr[1],mark_active_tris,
-			   mark_active_interior,NULL);
-    }
-    else
-    {/* Top face triangles */
-      smLocator_apply_func(smMesh,nr[0],far[0],nr[1],mark_active_tris,
-			   mark_active_interior,NULL);
-      smLocator_apply_func(smMesh,nr[1],far[0],far[1],mark_active_tris,
-			   mark_active_interior,NULL);
-    }
-    tri_plane_equation(nr[3],nr[2],far[3], &peq,FALSE);
-    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
-    {/* Bottom face triangles */
-      smLocator_apply_func(smMesh,far[3],nr[2],nr[3],mark_active_tris,
-			   mark_active_interior,NULL);
-      smLocator_apply_func(smMesh,far[3],far[2],nr[2],mark_active_tris,
-			   mark_active_interior,NULL);
-    }
-    else
-    { /* Bottom face triangles */
-      smLocator_apply_func(smMesh,nr[3],nr[2],far[3],mark_active_tris,
-			   mark_active_interior,NULL);
-      smLocator_apply_func(smMesh,nr[2],far[2],far[3],mark_active_tris,
-			   mark_active_interior,NULL);
-    }
-     tri_plane_equation(far[2],far[0],far[1], &peq,FALSE);
-    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
-    {/* Far face triangles */
-      smLocator_apply_func(smMesh,far[0],far[2],far[1],mark_active_tris,
-			   mark_active_interior,NULL);
-      smLocator_apply_func(smMesh,far[2],far[0],far[3],mark_active_tris,
-			   mark_active_interior,NULL);
-    }
-    else
-    {/* Far face triangles */
-      smLocator_apply_func(smMesh,far[1],far[2],far[0],mark_active_tris,
-			   mark_active_interior,NULL);
-      smLocator_apply_func(smMesh,far[3],far[0],far[2],mark_active_tris,
-			   mark_active_interior,NULL);
-    }
-
-}
-
-/*
- * smClean()		: display has been wiped clean
- *
- * Called after display has been effectively cleared, meaning that all
- * geometry must be resent down the pipeline in the next call to smUpdate().
- */
+ /*
+  * smClean()		: display has been wiped clean
+  *
+  * Called after display has been effectively cleared, meaning that all
+  * geometry must be resent down the pipeline in the next call to smUpdate().
+  */
 smClean()
 {
     smClean_notify = TRUE;
@@ -322,7 +139,8 @@ register QUADTREE qt;
     stCount_level_leaves(lcnt+1, QT_NTH_CHILD(qt,3));
   }
   else
-    lcnt[0]++;
+    if(QT_LEAF_IS_FLAG(qt))
+      lcnt[0]++;
 }
 
 
@@ -341,6 +159,8 @@ int lvl;
   if (QT_IS_EMPTY(qt))				/* empty leaf node */
     return(NULL);
   if (QT_IS_TREE(qt) && !QT_IS_FLAG(qt))	/* not in our frustum */
+    return(NULL);
+  if(QT_IS_LEAF(qt)  && !QT_LEAF_IS_FLAG(qt))	/* not in our frustum */
     return(NULL);
 					/* else look up node */
   if ((le = qtCache_find(qt)) == NULL)
@@ -434,7 +254,7 @@ smRender_stree_level(sm,lvl)
 SM *sm;
 int lvl;
 {
-  QUADTREE root;
+  QUADTREE qt;
   int i;
   FVECT t0,t1,t2;
   STREE *st;
@@ -448,8 +268,8 @@ int lvl;
   glBegin(GL_TRIANGLES);
   for(i=0; i < ST_NUM_ROOT_NODES; i++)
   {
-    root = ST_NTH_ROOT(st,i);
-    qtRender_level(root,ST_NTH_V(st,i,0),ST_NTH_V(st,i,1),ST_NTH_V(st,i,2),
+    qt = ST_ROOT_QT(st,i);
+    qtRender_level(qt,ST_NTH_V(st,i,0),ST_NTH_V(st,i,1),ST_NTH_V(st,i,2),
 		   sm,lvl-1);
   }
   glEnd();
@@ -463,6 +283,7 @@ int qual;
 {
   int i, ntarget;
   int lvlcnt[QT_MAX_LEVELS];
+  STREE *st;
 
   if (qual <= 0)
     return;
@@ -475,8 +296,11 @@ int qual;
     return;
   for (i = QT_MAX_LEVELS; i--; )
     lvlcnt[i] = 0;
-  stCount_level_leaves(lvlcnt, ST_TOP_ROOT(SM_LOCATOR(sm)));
-  stCount_level_leaves(lvlcnt, ST_BOTTOM_ROOT(SM_LOCATOR(sm)));  
+  
+  st = SM_LOCATOR(sm);
+  for(i=0; i < ST_NUM_ROOT_NODES;i++)
+    stCount_level_leaves(lvlcnt, ST_ROOT_QT(st,i));
+  
   for (ntarget -= lvlcnt[i=0]; i < QT_MAX_LEVELS-1; ntarget -= lvlcnt[++i])
     if (ntarget < lvlcnt[i+1])
       break;
@@ -801,6 +625,9 @@ smUpdate(view,qual)
 
   if(!smMesh)
     return;
+
+
+
   d = DIST(view->vp,SM_VIEW_CENTER(smMesh));
   if(qual >= 100 && d > SM_ALLOWED_VIEW_CHANGE(smMesh))
   {
@@ -823,10 +650,9 @@ smUpdate(view,qual)
     {
        tmClearHisto();
        tmAddHisto(SM_BRT(smMesh),SM_NUM_SAMP(smMesh),1);
-       if(tmComputeMapping(0.,0.,0.) != TM_E_OK ||
-		   tmMapPixels(SM_RGB(smMesh),SM_BRT(smMesh),SM_CHR(smMesh),
-				SM_NUM_SAMP(smMesh)) != TM_E_OK)
-	    return;
+       tmComputeMapping(0.,0.,0.);
+       tmMapPixels(SM_RGB(smMesh),SM_BRT(smMesh),SM_CHR(smMesh),
+		   SM_NUM_SAMP(smMesh));
     }
 #endif
     mark_tris_in_frustum(view);
@@ -855,9 +681,9 @@ smUpdate(view,qual)
 	if(tmComputeMapping(0.,0.,0.) != TM_E_OK)
 	   return;
     }
-    if(tmMapPixels(SM_NTH_RGB(smMesh,t),&SM_NTH_BRT(smMesh,t),
-		   SM_NTH_CHR(smMesh,t), SM_NUM_SAMP(smMesh)-t) != TM_E_OK)
-	  return;
+    tmMapPixels(SM_NTH_RGB(smMesh,t),&SM_NTH_BRT(smMesh,t),
+		   SM_NTH_CHR(smMesh,t), SM_NUM_SAMP(smMesh)-t);
+	
 #endif    
     smUpdate_Rendered_mesh(smMesh,view->vp,last_update);
     

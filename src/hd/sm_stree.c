@@ -13,6 +13,7 @@ static char SCCSid[] = "$SunId$ SGI";
  *  sphere center.
  */
 #include "standard.h"
+#include "sm_list.h"
 #include "sm_flag.h"
 #include "sm_geom.h"
 #include "sm_qtree.h"
@@ -26,24 +27,48 @@ extern int Pick_cnt;
 FVECT stDefault_base[6] = {  {1.,0.,0.},{0.,1.,0.}, {0.,0.,1.},
 			    {-1.,0.,0.},{0.,-1.,0.},{0.,0.,-1.}};
 /* octahedron triangle vertices */
-int stBase_verts[8][3] = { {2,1,0},{1,5,0},{5,1,3},{1,2,3},
-			  {4,2,0},{4,0,5},{3,4,5},{4,3,2}};
+int stBase_verts[8][3] = { {0,1,2},{3,1,2},{0,4,2},{3,4,2},
+			   {0,1,5},{3,1,5},{0,4,5},{3,4,5}};
 /* octahedron triangle nbrs ; nbr i is the face opposite vertex i*/
-int stBase_nbrs[8][3] =  { {1,4,3},{5,0,2},{3,6,1},{7,2,0},
-			  {0,5,7},{1,6,4},{5,2,7},{3,4,6}};
-/* look up table for octahedron point location */
-int stlocatetbl[8] = {6,7,2,3,5,4,1,0};
+int stBase_nbrs[8][3] =  { {1,2,4},{0,3,5},{3,0,6},{2,1,7},
+			   {5,6,0},{4,7,1},{7,4,2},{6,5,3}};
+int stRoot_indices[8][3] = {{1,1,1},{-1,1,1},{1,-1,1},{-1,-1,1},
+			    {1,1,-1},{-1,1,-1},{1,-1,-1},{-1,-1,-1}};
+/*
+ +z   y                -z   y
+      |                     |
+ 1    |   0             5   |   4
+______|______ x      _______|______ x
+ 3    |   2             7   |   6   
+      |                     |
 
-
-/* Initializes an stree structure with origin 'center': 
-   Frees existing quadtrees hanging off of the roots
+Nbrs
+  +z   y                -z   y
+     /0|1\                 /1|0\
+ 5  /  |  \ 4             /  |  \
+   /(1)|(0)\           1 /(5)|(4)\ 0
+  /    |    \           /    |    \
+ /2   1|0   2\         /2   0|1   2\
+/------|------\x      /------|------\x
+\0    1|2    0/       \0    2|2    1/ 
+ \     |     /         \     |     /
+ 7\ (3)|(2) / 6       3 \ (7)|(6) / 2
+   \   |   /             \   |   /
+    \ 2|1 /               \ 1|0 /
 */
+
+
 stInit(st)
 STREE *st;
 {
-    ST_TOP_ROOT(st) = qtAlloc();
-    ST_BOTTOM_ROOT(st) = qtAlloc();
-    ST_INIT_ROOT(st);
+  int i,j;
+
+    ST_TOP_QT(st) = qtAlloc();
+    ST_BOTTOM_QT(st) = qtAlloc();
+    /* Clear the children */
+
+   QT_CLEAR_CHILDREN(ST_TOP_QT(st));
+   QT_CLEAR_CHILDREN(ST_BOTTOM_QT(st));
 }
 
 /* Frees the children of the 2 quadtrees rooted at st,
@@ -72,6 +97,8 @@ STREE *st;
   /* Allocate the top and bottom quadtree root nodes */
   stInit(st);
   
+  
+  /* will go ********************************************/
   /* Set the octahedron base */
   ST_SET_BASE(st,stDefault_base);
 
@@ -90,7 +117,151 @@ STREE *st;
       VCROSS(ST_EDGE_NORM(st,i,1),v1,v2);
       VCROSS(ST_EDGE_NORM(st,i,2),v2,v0);
   }
+
+  /*****************************************************************/
   return(st);
+}
+
+#define BARY_INT(v,b)  if((v)>2.0) (b) = MAXBCOORD;else \
+  if((v)<-2.0) (b)=-MAXBCOORD;else (b)=(BCOORD)((v)*MAXBCOORD2);
+
+vert_to_qt_frame(root,v,b)
+int root;
+FVECT v;
+BCOORD b[3];
+{
+  int i;
+  double scale;
+  double d0,d1,d2;
+
+  if(STR_NTH_INDEX(root,0)==-1)
+    d0 = -v[0];
+  else
+    d0 = v[0];
+  if(STR_NTH_INDEX(root,1)==-1)
+    d1 = -v[1];
+  else
+    d1 = v[1];
+  if(STR_NTH_INDEX(root,2)==-1)
+    d2 = -v[2];
+  else
+    d2 = v[2];
+
+  /* Plane is now x+y+z = 1 - intersection of pt ray is qtv/den */
+  scale = 1.0/ (d0 + d1 + d2);
+  d0 *= scale;
+  d1 *= scale;
+  d2 *= scale;
+
+  BARY_INT(d0,b[0])
+  BARY_INT(d1,b[1])
+  BARY_INT(d2,b[2])
+}
+
+
+
+
+ray_to_qt_frame(root,v,dir,b,db)
+int root;
+FVECT v,dir;
+BCOORD b[3],db[3];
+{
+  int i;
+  double scale;
+  double d0,d1,d2;
+  double dir0,dir1,dir2;
+
+  if(STR_NTH_INDEX(root,0)==-1)
+  {
+    d0 = -v[0];
+    dir0 = -dir[0];
+  }
+  else
+  {
+    d0 = v[0];
+    dir0 = dir[0];
+  }
+  if(STR_NTH_INDEX(root,1)==-1)
+  {
+    d1 = -v[1];
+    dir1 = -dir[1];
+  }
+  else
+  {
+    d1 = v[1];
+    dir1 = dir[1];
+  }
+  if(STR_NTH_INDEX(root,2)==-1)
+  {
+    d2 = -v[2];
+    dir2 = -dir[2];
+  }
+  else
+  {
+    d2 = v[2];
+    dir2 = dir[2];
+  }
+  /* Plane is now x+y+z = 1 - intersection of pt ray is qtv/den */
+  scale = 1.0/ (d0 + d1 + d2);
+  d0 *= scale;
+  d1 *= scale;
+  d2 *= scale;
+
+  /* Calculate intersection point of orig+dir: This calculation is done
+     after the origin is projected into the plane in order to constrain
+     the projection( i.e. the size of the projection of the unit direction
+     vector translated to the origin depends on how close
+     the origin is to the view center
+     */
+  /* Must divide by at least root2 to insure that projection will fit 
+     int [-2,2] bounds: assumed length is 1: therefore greatest projection
+     from endpoint of triangle is at 45 degrees or projected length of root2
+  */
+  dir0 = d0 + dir0*0.5;
+  dir1 = d1 + dir1*0.5;
+  dir2 = d2 + dir2*0.5;
+
+  scale = 1.0/ (dir0 + dir1 + dir2);
+  dir0 *= scale;
+  dir1 *= scale;
+  dir2 *= scale;
+
+  BARY_INT(d0,b[0])
+  BARY_INT(d1,b[1])
+  BARY_INT(d2,b[2])
+  BARY_INT(dir0,db[0])
+  BARY_INT(dir1,db[1])
+  BARY_INT(dir2,db[2])
+
+  db[0]  -= b[0];
+  db[1]  -= b[1];
+  db[2]  -= b[2];
+}
+
+qt_frame_to_vert(root,b,v)
+int root;
+BCOORD b[3];
+FVECT v;
+{
+  int i;
+  double d0,d1,d2;
+
+  d0 = b[0]/(double)MAXBCOORD2;
+  d1 = b[1]/(double)MAXBCOORD2;
+  d2 = b[2]/(double)MAXBCOORD2;
+  
+  if(STR_NTH_INDEX(root,0)==-1)
+    v[0] = -d0;
+  else
+    v[0] = d0;
+  if(STR_NTH_INDEX(root,1)==-1)
+    v[1] = -d1;
+  else
+    v[1] = d1;
+  if(STR_NTH_INDEX(root,2)==-1)
+    v[2] = -d2;
+  else
+    v[2] = d2;
 }
 
 
@@ -100,117 +271,143 @@ stPoint_locate(st,p)
     STREE *st;
     FVECT p;
 {
+    QUADTREE qt;
+    BCOORD bcoordi[3];
     int i;
-    QUADTREE root,qt;
 
     /* Find root quadtree that contains p */
-    i = stPoint_in_root(p);
-    root = ST_NTH_ROOT(st,i);
+    i = stLocate_root(p);
+    qt = ST_ROOT_QT(st,i);
     
-    /* Traverse quadtree to leaf level */
-    qt = qtRoot_point_locate(root,ST_NTH_V(st,i,0),ST_NTH_V(st,i,1),
-			ST_NTH_V(st,i,2),ST_NTH_PLANE(st,i),p);
-    return(qt);
-}
-
-/* Add triangle 'id' with coordinates 't0,t1,t2' to the stree: returns
-   FALSE on error, TRUE otherwise
-*/
-
-stAdd_tri(st,id,t0,t1,t2)
-STREE *st;
-int id;
-FVECT t0,t1,t2;
-{
-  int i;
-  QUADTREE root;
-
-  for(i=0; i < ST_NUM_ROOT_NODES; i++)
-  {
-    root = ST_NTH_ROOT(st,i);
-    ST_NTH_ROOT(st,i) = qtRoot_add_tri(root,ST_NTH_V(st,i,0),ST_NTH_V(st,i,1),
-			    ST_NTH_V(st,i,2),t0,t1,t2,id,0);
-  }
-}
-
-/* Remove triangle 'id' with coordinates 't0,t1,t2' to the stree: returns
-   FALSE on error, TRUE otherwise
-*/
-
-stRemove_tri(st,id,t0,t1,t2)
-STREE *st;
-int id;
-FVECT t0,t1,t2;
-{
-  int i;
-  QUADTREE root;
-
-  for(i=0; i < ST_NUM_ROOT_NODES; i++)
-  {
-    root = ST_NTH_ROOT(st,i);
-    ST_NTH_ROOT(st,i)=qtRoot_remove_tri(root,id,ST_NTH_V(st,i,0),ST_NTH_V(st,i,1),
-			  ST_NTH_V(st,i,2),t0,t1,t2);
-  }
-}
-
-/* Visit all nodes that are intersected by the edges of triangle 't0,t1,t2'
-   and apply 'func'
-*/
-
-stVisit_tri_edges(st,t0,t1,t2,func,fptr,argptr)
-   STREE *st;
-   FVECT t0,t1,t2;
-   int (*func)(),*fptr;
-   int *argptr;
-{
-    int id,i,w,next;
-    QUADTREE root;
-    FVECT v[3],i_pt;
-
-    VCOPY(v[0],t0); VCOPY(v[1],t1); VCOPY(v[2],t2);
-    w = -1;
-
-    /* Locate the root containing triangle vertex v0 */
-    i = stPoint_in_root(v[0]);
-    /* Mark the root node as visited */
-    QT_SET_FLAG(ST_ROOT(st,i));
-    root = ST_NTH_ROOT(st,i);
-    
-    ST_NTH_ROOT(st,i) = qtRoot_visit_tri_edges(root,ST_NTH_V(st,i,0),
-       ST_NTH_V(st,i,1),ST_NTH_V(st,i,2),ST_NTH_PLANE(st,i),v,i_pt,&w,
-					       &next,func,fptr,argptr);
-    if(QT_FLAG_IS_DONE(*fptr))
-      return;
-	
-    /* Crossed over to next node: id = nbr */
-    while(1) 
-    {
-	/* test if ray crosses plane between this quadtree triangle and
-	   its neighbor- if it does then find intersection point with 
-	   ray and plane- this is the new start point
-	   */
-	i = stBase_nbrs[i][next];
-	root = ST_NTH_ROOT(st,i);
-	ST_NTH_ROOT(st,i) = 
-	  qtRoot_visit_tri_edges(root,ST_NTH_V(st,i,0),ST_NTH_V(st,i,1),
-         ST_NTH_V(st,i,2),ST_NTH_PLANE(st,i),v,i_pt,&w,&next,func,fptr,argptr);
-	if(QT_FLAG_IS_DONE(*fptr))
-	  return;
+     /* Will return lowest level triangle containing point: It the
+       point is on an edge or vertex: will return first associated
+       triangle encountered in the child traversal- the others can
+       be derived using triangle adjacency information
+    */
+    if(QT_IS_TREE(qt))
+    {  
+      vert_to_qt_frame(i,p,bcoordi);
+      i = bary_child(bcoordi);
+      return(qtLocate(QT_NTH_CHILD(qt,i),bcoordi));
     }
+    else
+      return(qt);
+}
+
+static unsigned int nbr_b[8][3] ={{2,4,16},{1,8,32},{8,1,64},{4,2,128},
+			   {32,64,1},{16,128,2},{128,16,4},{64,32,8}};
+unsigned int
+stTri_cells(st,v)
+     STREE *st;
+     FVECT v[3];
+{
+  unsigned int cells,cross;
+  unsigned int vcell[3];
+  double t0,t1;
+  int i,inext;
+
+  /* First find base cells that tri vertices are in (0-7)*/
+  vcell[0] = stLocate_root(v[0]);
+  vcell[1] = stLocate_root(v[1]);
+  vcell[2] = stLocate_root(v[2]);
+
+  /* If all in same cell- return that bit only */
+  if(vcell[0] == vcell[1] && vcell[1] == vcell[2])
+    return( 1 << vcell[0]);
+
+  cells = 0;
+  for(i=0;i<3; i++)
+  {
+    if(i==2)
+      inext = 0;
+    else
+      inext = i+1;
+    /* Mark cell containing initial vertex */
+    cells |= 1 << vcell[i];
+
+    /* Take the exclusive or: will have bits set where edge crosses axis=0*/
+    cross = vcell[i] ^ vcell[inext];
+    /* If crosses 2 planes: then have 2 options for edge crossing-pick closest
+     otherwise just hits two*/
+    /* Neighbors are zyx */
+    switch(cross){
+    case 3: /* crosses x=0 and y=0 */
+      t0 = -v[i][0]/(v[inext][0]-v[i][0]);
+      t1 = -v[i][1]/(v[inext][1]-v[i][1]);
+      if(t0==t1)
+	break;
+      else if(t0 < t1)
+	cells |= nbr_b[vcell[i]][0];
+	  else
+	    cells |= nbr_b[vcell[i]][1];
+      break;
+    case 5: /* crosses x=0 and z=0 */
+      t0 = -v[i][0]/(v[inext][0]-v[i][0]);
+      t1 = -v[i][2]/(v[inext][2]-v[i][2]);
+      if(t0==t1)
+	break;
+      else if(t0 < t1)
+	cells |= nbr_b[vcell[i]][0];
+	  else
+	    cells |=nbr_b[vcell[i]][2];
+
+      break;
+    case 6:/* crosses  z=0 and y=0 */
+      t0 = -v[i][2]/(v[inext][2]-v[i][2]);
+      t1 = -v[i][1]/(v[inext][1]-v[i][1]);
+      if(t0==t1)
+	break;
+      else if(t0 < t1)
+      {
+	cells |= nbr_b[vcell[i]][2];
+      }
+      else
+      {
+	cells |=nbr_b[vcell[i]][1];
+      }
+      break;
+    case 7:
+      error(CONSISTENCY," Insert:Edge shouldnt be able to span 3 cells");
+      break;
+    }
+  }
+  return(cells);
+}
+
+
+stRoot_trace_ray(qt,root,orig,dir,nextptr,func,f)
+   QUADTREE qt;
+   int root;
+   FVECT orig,dir;
+   int *nextptr;
+   FUNC func;
+   int *f;
+{
+  double br[3];
+  BCOORD bi[3],dbi[3];
+  
+  /* Project the origin onto the root node plane */
+  /* Find the intersection point of the origin */
+  ray_to_qt_frame(root,orig,dir,bi,dbi);
+
+  /* trace the ray starting with this node */
+  qtTrace_ray(qt,bi,dbi[0],dbi[1],dbi[2],nextptr,0,0,func,f);
+  if(!QT_FLAG_IS_DONE(*f))
+    qt_frame_to_vert(root,bi,orig);
+
 }
 
 /* Trace ray 'orig-dir' through stree and apply 'func(qtptr,f,argptr)' at each
    node that it intersects
 */
 int
-stTrace_ray(st,orig,dir,func,argptr)
+stTrace_ray(st,orig,dir,func)
    STREE *st;
    FVECT orig,dir;
-   int (*func)();
-   int *argptr;
+   FUNC func;
 {
     int next,last,i,f=0;
-    QUADTREE root;
+    QUADTREE qt;
     FVECT o,n,v;
     double pd,t,d;
 
@@ -218,19 +415,18 @@ stTrace_ray(st,orig,dir,func,argptr)
 #ifdef TEST_DRIVER
        Pick_cnt=0;
 #endif;
-    /* Find the root node that o falls in */
-    i = stPoint_in_root(o);
-    root = ST_NTH_ROOT(st,i);
+    /* Find the qt node that o falls in */
+    i = stLocate_root(o);
+    qt = ST_ROOT_QT(st,i);
     
-    ST_NTH_ROOT(st,i) = 
-      qtRoot_trace_ray(root,ST_NTH_V(st,i,0),ST_NTH_V(st,i,1),
-	  ST_NTH_V(st,i,2),ST_NTH_PLANE(st,i),o,dir,&next,func,&f,argptr);
+    stRoot_trace_ray(qt,i,o,dir,&next,func,&f);
 
     if(QT_FLAG_IS_DONE(f))
       return(TRUE);
-    
+    /*    
     d = DOT(orig,dir)/sqrt(DOT(orig,orig));
     VSUM(v,orig,dir,-d);
+    */
     /* Crossed over to next cell: id = nbr */
     while(1) 
       {
@@ -240,84 +436,310 @@ stTrace_ray(st,orig,dir,func,argptr)
 	   */
 	if(next == INVALID)
 	  return(FALSE);
-#if 0
-	if(!intersect_ray_oplane(o,dir,ST_EDGE_NORM(st,i,(next+1)%3),NULL,o))
-#endif
-	   if(DOT(o,v) < 0.0)
-	   /* Ray does not cross into next cell: done and tri not found*/
-	   return(FALSE);
-
-	VSUM(o,o,dir,10*FTINY);
+	/*
+	if(DOT(o,v) < 0.0)
+	  return(FALSE);
+	  */
 	i = stBase_nbrs[i][next];
-	root = ST_NTH_ROOT(st,i);
-	
-	ST_NTH_ROOT(st,i) = 
-	  qtRoot_trace_ray(root, ST_NTH_V(st,i,0),ST_NTH_V(st,i,1),
-	       ST_NTH_V(st,i,2),ST_NTH_PLANE(st,i),o,dir,&next,func,&f,argptr);
+	qt = ST_ROOT_QT(st,i);
+	stRoot_trace_ray(qt,i,o,dir,&next,func,&f);
 	if(QT_FLAG_IS_DONE(f))
 	  return(TRUE);
       }
 }
 
 
-/* Visit nodes intersected by tri 't0,t1,t2' and apply 'func(arg1,arg2,arg3):
-   assumes that stVisit_tri_edges has already been called such that all nodes
-   intersected by tri edges are already marked as visited
-*/
-stVisit_tri(st,t0,t1,t2,func,f,argptr)
-   STREE *st;
-   FVECT t0,t1,t2;
-   int (*func)(),*f;
-   int *argptr;
+stVisit_poly(st,verts,l,root,func)
+STREE *st;
+FVECT *verts;
+LIST *l;
+unsigned int root;
+FUNC func;
 {
-  int i;
-  QUADTREE root;
-  FVECT n0,n1,n2;
+  int id0,id1,id2;
+  FVECT tri[3];
 
-  /* Calcuate the edge normals for tri */
-  VCROSS(n0,t0,t1);
-  VCROSS(n1,t1,t2);
-  VCROSS(n2,t2,t0);
-
-  for(i=0; i < ST_NUM_ROOT_NODES; i++)
+  id0 = pop_list(&l);
+  id1 = pop_list(&l);
+  while(l)
   {
-    root = ST_NTH_ROOT(st,i);
-    ST_NTH_ROOT(st,i) = qtVisit_tri_interior(root,ST_NTH_V(st,i,0),
-	ST_NTH_V(st,i,1),ST_NTH_V(st,i,2),t0,t1,t2,n0,n1,n2,0,func,f,argptr);
-
+    id2 = pop_list(&l);
+    VCOPY(tri[0],verts[id0]);
+    VCOPY(tri[1],verts[id1]);
+    VCOPY(tri[2],verts[id2]);
+    stRoot_visit_tri(st,root,tri,func);
+    id1 = id2;
   }
 }
 
-/* Visit nodes intersected by tri 't0,t1,t2'.Apply 'edge_func(arg1,arg2,arg3)',
-   to those nodes intersected by edges, and interior_func to ALL nodes:
-   ie some Nodes  will be visited more than once
- */
-int
-stApply_to_tri(st,t0,t1,t2,edge_func,tri_func,argptr)
-   STREE *st;
-   FVECT t0,t1,t2;
-   int (*edge_func)(),(*tri_func)();
-   int *argptr;
+stVisit_clip(st,i,verts,vcnt,l,cell,func)
+     STREE *st;
+     int i;
+     FVECT *verts;
+     int *vcnt;
+     LIST *l;
+     unsigned int cell;
+     FUNC func;
 {
-    int f;
-    FVECT dir;
 
-#ifdef TEST_DRIVER
-    Pick_cnt=0;
-#endif;
-  /* First add all of the leaf cells lying on the triangle perimeter:
-     mark all cells seen on the way
-   */
-    f = 0;
-    /* Visit cells along edges of the tri */
-    stVisit_tri_edges(st,t0,t1,t2,edge_func,&f,argptr);
+  LIST *labove,*lbelow,*endb,*enda;
+  int last = -1;
+  int id,last_id;
+  int first,first_id;
+  unsigned int cellb;
 
-    /* Now visit All cells interior */
-    if(QT_FLAG_FILL_TRI(f) || QT_FLAG_UPDATE(f))
-       stVisit_tri(st,t0,t1,t2,tri_func,&f,argptr);
+  labove = lbelow = NULL;
+  enda = endb = NULL;
+  while(l)
+  {
+    id = pop_list(&l);
+    if(ZERO(verts[id][i]))
+    {
+      if(last==-1)
+      {/* add below and above */
+	first = 2;
+	first_id= id;
+      }
+      lbelow=add_data(lbelow,id,&endb);
+      labove=add_data(labove,id,&enda);
+      last_id = id;
+      last = 2;
+      continue;
+    }
+    if(verts[id][i] < 0)
+    {
+      if(last != 1)
+      {
+	lbelow=add_data(lbelow,id,&endb);
+	if(last==-1)
+	{
+	  first = 0;
+	  first_id = id;
+	}
+	last_id = id;
+	last = 0;
+	continue;
+      }
+      /* intersect_edges */
+      intersect_edge_coord_plane(verts[last_id],verts[id],i,verts[*vcnt]);
+      /*newpoint goes to above and below*/
+      lbelow=add_data(lbelow,*vcnt,&endb);
+      lbelow=add_data(lbelow,id,&endb);
+      labove=add_data(labove,*vcnt,&enda);
+      last = 0;
+      last_id = id;
+      (*vcnt)++;
+    }
+    else
+    {
+      if(last != 0)
+      {
+	labove=add_data(labove,id,&enda);
+	if(last==-1)
+	{
+	  first = 1;
+	  first_id = id;
+	}
+	last_id = id;
+	last = 1;
+	continue;
+      }
+      /* intersect_edges */
+      /*newpoint goes to above and below*/
+      intersect_edge_coord_plane(verts[last_id],verts[id],i,verts[*vcnt]);
+      lbelow=add_data(lbelow,*vcnt,&endb);
+      labove=add_data(labove,*vcnt,&enda);
+      labove=add_data(labove,id,&enda);
+      last_id = id;
+      (*vcnt)++;
+      last = 1;
+    }
+  }
+  if(first != 2 && first != last)
+  {
+    intersect_edge_coord_plane(verts[id],verts[first_id],i,verts[*vcnt]);
+    /*newpoint goes to above and below*/
+    lbelow=add_data(lbelow,*vcnt,&endb);
+    labove=add_data(labove,*vcnt,&enda);
+    (*vcnt)++;
+
+  }
+  if(i==2)
+  {
+    if(lbelow)
+    {
+      if(LIST_NEXT(lbelow) && LIST_NEXT(LIST_NEXT(lbelow)))
+      {
+	cellb = cell | (1 << i);
+	stVisit_poly(st,verts,lbelow,cellb,func);
+      }
+      else
+	free_list(lbelow);
+    }
+    if(labove)
+     {
+      if(LIST_NEXT(labove) && LIST_NEXT(LIST_NEXT(labove)))
+	stVisit_poly(st,verts,labove,cell,func);
+      else
+	free_list(labove);
+     }
+  }
+  else
+  {
+    if(lbelow)
+    {
+      if(LIST_NEXT(lbelow) && LIST_NEXT(LIST_NEXT(lbelow)))
+	{
+	  cellb = cell | (1 << i);
+	  stVisit_clip(st,i+1,verts,vcnt,lbelow,cellb,func);
+	}
+      else
+	free_list(lbelow);
+    }
+    if(labove)
+     {
+       if(LIST_NEXT(labove) && LIST_NEXT(LIST_NEXT(labove)))
+	 stVisit_clip(st,i+1,verts,vcnt,labove,cell,func);
+       else
+	 free_list(labove);
+     }
+  }
+
+}
+
+stVisit(st,tri,func)
+   STREE *st;
+   FVECT tri[3];
+   FUNC func;
+{
+    int r0,r1,r2;
+    LIST *l;
+
+    r0 = stLocate_root(tri[0]);
+    r1 = stLocate_root(tri[1]);
+    r2 = stLocate_root(tri[2]);
+    if(r0 == r1 && r1==r2)
+      stRoot_visit_tri(st,r0,tri,func);
+    else
+      {
+	FVECT verts[ST_CLIP_VERTS];
+	int cnt;
+
+	VCOPY(verts[0],tri[0]);
+	VCOPY(verts[1],tri[1]);
+	VCOPY(verts[2],tri[2]); 
+	
+	l = add_data(NULL,0,NULL);
+	l = add_data(l,1,NULL);
+	l = add_data(l,2,NULL);
+	cnt = 3;
+	stVisit_clip(st,0,verts,&cnt,l,0,func);
+      }
 }
 
 
+/* New Insertion code!!! */
+
+
+BCOORD qtRoot[3][3] = { {MAXBCOORD2,0,0},{0,MAXBCOORD2,0},{0,0,MAXBCOORD2}};
+
+
+convert_tri_to_frame(root,tri,b0,b1,b2,db10,db21,db02)
+int root;
+FVECT tri[3];
+BCOORD b0[3],b1[3],b2[3];
+BCOORD db10[3],db21[3],db02[3];
+{
+  /* Project the vertex into the qtree plane */
+  vert_to_qt_frame(root,tri[0],b0);
+  vert_to_qt_frame(root,tri[1],b1);
+  vert_to_qt_frame(root,tri[2],b2);
+
+  /* calculate triangle edge differences in new frame */
+  db10[0] = b1[0] - b0[0]; db10[1] = b1[1] - b0[1]; db10[2] = b1[2] - b0[2];
+  db21[0] = b2[0] - b1[0]; db21[1] = b2[1] - b1[1]; db21[2] = b2[2] - b1[2];
+  db02[0] = b0[0] - b2[0]; db02[1] = b0[1] - b2[1]; db02[2] = b0[2] - b2[2];
+}
+
+
+QUADTREE
+stRoot_insert_tri(st,root,tri,f)
+   STREE *st;
+   int root;
+   FVECT tri[3];
+   FUNC f;
+{
+  BCOORD b0[3],b1[3],b2[3];
+  BCOORD db10[3],db21[3],db02[3];
+  unsigned int s0,s1,s2,sq0,sq1,sq2;
+  QUADTREE qt;
+
+  /* Map the triangle vertices into the canonical barycentric frame */
+  convert_tri_to_frame(root,tri,b0,b1,b2,db10,db21,db02);
+
+  /* Calculate initial sidedness info */
+  SIDES_GTR(b0,b1,b2,s0,s1,s2,qtRoot[1][0],qtRoot[0][1],qtRoot[0][2]);
+  SIDES_GTR(b0,b1,b2,sq0,sq1,sq2,qtRoot[0][0],qtRoot[1][1],qtRoot[2][2]);
+
+  qt = ST_ROOT_QT(st,root);
+  /* Visit cells that triangle intersects */
+  qt = qtInsert_tri(root,qt,qtRoot[0],qtRoot[1],qtRoot[2],
+       b0,b1,b2,db10,db21,db02,MAXBCOORD2 >> 1,s0,s1,s2, sq0,sq1,sq2,f,0);
+
+  return(qt);
+}
+
+stRoot_visit_tri(st,root,tri,f)
+   STREE *st;
+   int root;
+   FVECT tri[3];
+   FUNC f;
+{
+  BCOORD b0[3],b1[3],b2[3];
+  BCOORD db10[3],db21[3],db02[3];
+  unsigned int s0,s1,s2,sq0,sq1,sq2;
+  QUADTREE qt;
+
+  /* Map the triangle vertices into the canonical barycentric frame */
+  convert_tri_to_frame(root,tri,b0,b1,b2,db10,db21,db02);
+
+  /* Calculate initial sidedness info */
+  SIDES_GTR(b0,b1,b2,s0,s1,s2,qtRoot[1][0],qtRoot[0][1],qtRoot[0][2]);
+  SIDES_GTR(b0,b1,b2,sq0,sq1,sq2,qtRoot[0][0],qtRoot[1][1],qtRoot[2][2]);
+
+  qt = ST_ROOT_QT(st,root);
+  QT_SET_FLAG(ST_QT(st,root));
+  /* Visit cells that triangle intersects */
+  qtVisit_tri(root,qt,qtRoot[0],qtRoot[1],qtRoot[2],
+       b0,b1,b2,db10,db21,db02,MAXBCOORD2 >> 1,s0,s1,s2, sq0,sq1,sq2,f);
+
+}
+
+stInsert_tri(st,tri,f)
+   STREE *st;
+   FVECT tri[3];
+   FUNC f;
+{
+  unsigned int cells,which;
+  int root;
+  
+
+  /* calculate entry/exit points of edges through the cells */
+  cells = stTri_cells(st,tri);
+
+  /* For each cell that quadtree intersects: Map the triangle vertices into
+     the canonical barycentric frame of (1,0,0), (0,1,0),(0,0,1). Insert 
+     by first doing a trivial reject on the interior nodes, and then a 
+     tri/tri intersection at the leaf nodes.
+  */
+  for(root=0,which=1; root < ST_NUM_ROOT_NODES; root++,which <<= 1)
+  {
+    /* For each of the quadtree roots: check if marked as intersecting tri*/
+    if(cells & which)
+      /* Visit tri cells */
+      ST_ROOT_QT(st,root) = stRoot_insert_tri(st,root,tri,f);
+  }
+}
 
 
 

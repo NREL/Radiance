@@ -62,6 +62,40 @@ LIST *a,*b;
     return(b);
 }
 
+/* attaches list a at the end of list b */
+LIST
+*add_data(l,d,end)
+LIST *l;
+int d;
+LIST **end;
+
+{
+    LIST *list,*lptr;
+
+    list = new_list();
+    SET_LIST_DATA(list,d);
+
+    if(!l)
+    {
+      if(end)
+	*end = list;
+      return(list);
+    }
+    if(end)
+      lptr = *end;
+    else
+    {
+      lptr = l;
+      while(LIST_NEXT(lptr))
+	lptr = LIST_NEXT(lptr);
+    }
+    LIST_NEXT(lptr) = list;
+    if(end)
+      *end = list;
+
+    return(l);
+}
+
 /* Adds data to the end of a circular list. If set, "end"
  * is a pointer to the last element in the list
  */

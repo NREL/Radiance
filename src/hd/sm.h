@@ -10,6 +10,7 @@
 #define _SM_H_
 
 #include "rhd_sample.h"
+#define NEWSETS
 
 
 #ifndef TRUE
@@ -17,9 +18,15 @@
 #define FALSE 0
 #endif
 
-#define S_REPLACE_EPS 0.06        /* if (distance on sphere between sample
+
+#define ON_V 1
+#define ON_P 2
+#define ON_E 3
+#define IN_T 4
+
+#define S_REPLACE_EPS 0.04      /* if (distance on sphere between sample
 				     and a base point) < S_REPLACE_EPS,
-				     replace base
+				     replace base: 
 				     */
 #define S_REPLACE_SCALE (5.*5.)   /* if (distance to new point squared) is
 				     > (triangle edge length squared*
@@ -32,7 +39,8 @@
 #define SQRT3_2 0.8660254
 
 #define SM_DEFAULT 0
-#define SM_EXTRA_POINTS 8
+#define SM_EXTRA_POINTS 162
+#define SM_BASE_TRIS 320
 #define SM_EXTRA_VERTS  SM_EXTRA_POINTS
 
 #define SM_INC_PERCENT 0.60            /* If number of new triangles added 
@@ -78,6 +86,7 @@ typedef struct _TRI {
 #define T_WHICH_V(t,i)     \
          (T_NTH_V(t,0)==(i)?0:T_NTH_V(t,1)==(i)?1:T_NTH_V(t,2)==(i)?2:-1)
 #define T_NEXT_FREE(t) ((t)->nbrs[0])
+#define T_NEXT_AVAILABLE(t) ((t)->nbrs[0])
 #define T_VALID_FLAG(t) ((t)->nbrs[1])
 #define T_IS_VALID(t)  (T_VALID_FLAG(t)!=-1)
 #define T_FLAGS 3
@@ -90,6 +99,7 @@ typedef struct _SM {
     int num_tri;          /* Current number of triangles */
     int sample_tris;      /* Current number of non-base triangles*/
     int free_tris;        /* pointer to free_list */
+    int available_tris;   /* pointer to available_list */
     int max_verts;        /* Maximum number of vertices in the mesh */
     TRI *tris;            /* Pointer to list of triangle structs */
     VERT *verts;          /* List of vertices */
@@ -109,6 +119,7 @@ typedef struct _SM {
 #define SM_NUM_TRI(m)                 ((m)->num_tri)
 #define SM_SAMPLE_TRIS(m)                 ((m)->sample_tris)
 #define SM_FREE_TRIS(m)               ((m)->free_tris)
+#define SM_AVAILABLE_TRIS(m)          ((m)->available_tris)
 #define SM_MAX_VERTS(m)               ((m)->max_verts)
 #define SM_TRIS(m)                    ((m)->tris)
 #define SM_VERTS(m)                   ((m)->verts)
@@ -134,6 +145,8 @@ typedef struct _SM {
 
 #define SM_NTH_TRI(m,n)               (&(SM_TRIS(m)[(n)]))
 #define SM_NTH_VERT(m,n)              (SM_VERTS(m)[(n)])
+
+#define SM_T_ID_VALID(s,t_id) T_IS_VALID(SM_NTH_TRI(s,t_id))
  
 #define SM_MAX_SAMP(m)                S_MAX_SAMP(SM_SAMP(m))
 #define SM_MAX_POINTS(m)              S_MAX_POINTS(SM_SAMP(m))
@@ -281,7 +294,6 @@ extern FVECT FrustumNear[4],FrustumFar[4];
  * been output since the last call to smClean().  (The last view drawn will
  * be vp==&odev.v each time.)
  */
-
 #endif
 
 
