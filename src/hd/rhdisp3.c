@@ -20,50 +20,63 @@ struct cellist {
 
 int
 npixels(vp, hr, vr, hp, bi)	/* compute appropriate number to evaluate */
-VIEW	*vp;
+register VIEW	*vp;
 int	hr, vr;
 HOLO	*hp;
 int	bi;
 {
-	static VIEW	vdo, vlast;
-	static HOLO	*hplast;
+	VIEW	vrev;
 	GCOORD	gc[2];
-	FVECT	cp[4];
-	FVECT	ip[4];
-	double	d;
+	FVECT	cp[4], ip[4];
+	double	af, ab;
 	register int	i;
 					/* compute cell corners in image */
 	if (!hdbcoord(gc, hp, bi))
 		error(CONSISTENCY, "bad beam index in npixels");
-					/* has holodeck or view changed? */
-	if (hp != hplast || bcmp((char *)vp, (char *)&vlast, sizeof(VIEW))) {
-		copystruct(&vdo, vp);
-		if (sect_behind(hp, &vdo)) {	/* reverse view sense */
-			vdo.vdir[0] = -vdo.vdir[0];
-			vdo.vdir[1] = -vdo.vdir[1];
-			vdo.vdir[2] = -vdo.vdir[2];
-			setview(&vdo);
-		}
-		hplast = hp;
-		copystruct(&vlast, vp);
-	}
-	hdcell(cp, hp, gc+1);		/* find cell on image */
+	hdcell(cp, hp, gc+1);		/* find cell on front image */
 	for (i = 0; i < 4; i++) {
-		viewloc(ip[i], &vdo, cp[i]);
-		if (ip[i][2] < 0.)
-			return(0);
+		viewloc(ip[i], vp, cp[i]);
+		if (ip[i][2] < 0.) {
+			af = 0;
+			goto getback;
+		}
 		ip[i][0] *= (double)hr;	/* scale by resolution */
 		ip[i][1] *= (double)vr;
 	}
-					/* compute quad area */
-	d = (ip[1][0]-ip[0][0])*(ip[2][1]-ip[0][1]) -
+					/* compute front area */
+	af = (ip[1][0]-ip[0][0])*(ip[2][1]-ip[0][1]) -
 		(ip[2][0]-ip[0][0])*(ip[1][1]-ip[0][1]);
-	d += (ip[2][0]-ip[3][0])*(ip[1][1]-ip[3][1]) -
+	af += (ip[2][0]-ip[3][0])*(ip[1][1]-ip[3][1]) -
 		(ip[1][0]-ip[3][0])*(ip[2][1]-ip[3][1]);
-	if (d < 0)
-		d = -d;
-					/* round off result */
-	return((int)(.5*d+.5));
+	if (af >= 0) af *= 0.5;
+	else af *= -0.5;
+getback:
+	copystruct(&vrev, vp);		/* compute reverse view */
+	for (i = 0; i < 3; i++) {
+		vrev.vdir[i] = -vp->vdir[i];
+		vrev.vup[i] = -vp->vup[i];
+		vrev.hvec[i] = -vp->hvec[i];
+		vrev.vvec[i] = -vp->vvec[i];
+	}
+	hdcell(cp, hp, gc);		/* find cell on back image */
+	for (i = 0; i < 4; i++) {
+		viewloc(ip[i], &vrev, cp[i]);
+		if (ip[i][2] < 0.)
+			return((int)(af + 0.5));
+		ip[i][0] *= (double)hr;	/* scale by resolution */
+		ip[i][1] *= (double)vr;
+	}
+					/* compute back area */
+	ab = (ip[1][0]-ip[0][0])*(ip[2][1]-ip[0][1]) -
+		(ip[2][0]-ip[0][0])*(ip[1][1]-ip[0][1]);
+	ab += (ip[2][0]-ip[3][0])*(ip[1][1]-ip[3][1]) -
+		(ip[1][0]-ip[3][0])*(ip[2][1]-ip[3][1]);
+	if (ab >= 0) ab *= 0.5;
+	else ab *= -0.5;
+					/* round off smaller area */
+	if (af <= ab)
+		return((int)(af + 0.5));
+	return((int)(ab + 0.5));
 }
 
 
