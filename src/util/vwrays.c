@@ -139,10 +139,11 @@ userr:
 
 putrays()
 {
+	static FLOAT	loc[2];
+	static FVECT	rorg, rdir;
 	float	*zbuf;
 	int	sc;
-	FLOAT	loc[2];
-	FVECT	rorg, rdir;
+	double	d;
 	register int	si, i;
 
 	if (zfd >= 0) {
@@ -163,7 +164,8 @@ putrays()
 		}
 		for (si = 0; si < scanlen(&rs); si++) {
 			pix2loc(loc, &rs, si, sc);
-			if (viewray(rorg, rdir, &vw, loc[0], loc[1]) < -FTINY)
+			d = viewray(rorg, rdir, &vw, loc[0], loc[1]);
+			if (d < -FTINY)
 				rorg[0] = rorg[1] = rorg[2] =
 				rdir[0] = rdir[1] = rdir[2] = 0.;
 			else if (zfd >= 0)
@@ -171,6 +173,9 @@ putrays()
 					rorg[i] += rdir[i]*zbuf[si];
 					rdir[i] = -rdir[i];
 				}
+			else if (d > FTINY) {
+				rdir[0] *= d; rdir[1] *= d; rdir[2] *= d;
+			}
 			(*putr)(rorg, rdir);
 		}
 	}
