@@ -5,7 +5,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #endif
 
 /*
- * xraster.c - routine to load a Sun rasterfile for X windows.
+ * xraster.c - routines to handle images for X windows.
  *
  *	2/18/88
  */

@@ -3,7 +3,7 @@
 /* SCCSid "$SunId$ LBL" */
 
 /*
- * xraster.h - header file for X routines using Sun rasterfiles.
+ * xraster.h - header file for X routines using images.
  *
  *	2/18/88
  */
