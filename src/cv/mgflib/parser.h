@@ -1,4 +1,4 @@
-/* Copyright (c) 1994 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
 
@@ -9,36 +9,36 @@
 /* must include stdio.h before us */
 
 			/* Entities (order doesn't really matter) */
-#define MG_E_COMMENT	0
-#define MG_E_COLOR	1
-#define MG_E_CCT	2
-#define MG_E_CONE	3
-#define MG_E_CMIX	4
-#define MG_E_CSPEC	5
-#define MG_E_CXY	6
-#define MG_E_CYL	7
-#define MG_E_ED		8
-#define MG_E_FACE	9
-#define MG_E_INCLUDE	10
-#define MG_E_IES	11
-#define MG_E_IR		12
-#define MG_E_MATERIAL	13
-#define MG_E_NORMAL	14
-#define MG_E_OBJECT	15
-#define MG_E_POINT	16
-#define MG_E_PRISM	17
-#define MG_E_RD		18
-#define MG_E_RING	19
-#define MG_E_RS		20
-#define MG_E_SIDES	21
-#define MG_E_SPH	22
-#define MG_E_TD		23
-#define MG_E_TORUS	24
-#define MG_E_TS		25
-#define MG_E_VERTEX	26
-#define MG_E_XF		27
+#define MG_E_COMMENT	0		/* #		*/
+#define MG_E_COLOR	1		/* c		*/
+#define MG_E_CCT	2		/* cct		*/
+#define MG_E_CONE	3		/* cone		*/
+#define MG_E_CMIX	4		/* cmix		*/
+#define MG_E_CSPEC	5		/* cspec	*/
+#define MG_E_CXY	6		/* cxy		*/
+#define MG_E_CYL	7		/* cyl		*/
+#define MG_E_ED		8		/* ed		*/
+#define MG_E_FACE	9		/* f		*/
+#define MG_E_INCLUDE	10		/* i		*/
+#define MG_E_IES	11		/* ies		*/
+#define MG_E_IR		12		/* ir		*/
+#define MG_E_MATERIAL	13		/* m		*/
+#define MG_E_NORMAL	14		/* n		*/
+#define MG_E_OBJECT	15		/* o		*/
+#define MG_E_POINT	16		/* p		*/
+#define MG_E_PRISM	17		/* prism	*/
+#define MG_E_RD		18		/* rd		*/
+#define MG_E_RING	19		/* ring		*/
+#define MG_E_RS		20		/* rs		*/
+#define MG_E_SIDES	21		/* sides	*/
+#define MG_E_SPH	22		/* sph		*/
+#define MG_E_TD		23		/* td		*/
+#define MG_E_TORUS	24		/* torus	*/
+#define MG_E_TS		25		/* ts		*/
+#define MG_E_VERTEX	26		/* v		*/
+#define MG_E_XF		27		/* xf		*/
 
-#define MG_NENTITIES	28
+#define MG_NENTITIES	28		/* total # entities */
 
 #define MG_NAMELIST	{"#","c","cct","cone","cmix","cspec","cxy","cyl","ed",\
 			"f","i","ies","ir","m","n","o","p","prism","rd",\
@@ -87,7 +87,7 @@ extern char	*mg_err[MG_NERRS];
  * (The first argument to mg_handle is the entity #, or -1.)
  * To free any data structures and clear the parser, use mg_clear.
  * If there is an error, mg_load, mg_open, mg_parse, mg_handle and
- * mg_rewind will return an error from the list above.  In addition,
+ * mg_fgoto will return an error from the list above.  In addition,
  * mg_load will report the error to stderr.  The mg_read routine
  * returns 0 when the end of file has been reached.
  */
