@@ -91,9 +91,7 @@ cone.o modobject.o otypes.o readobj.o readoct.o:	otypes.h
 multisamp.o urand.o:	random.h
 
 cone.o face.o image.o instance.o error.o objset.o octree.o modobject.o \
-otypes.o readobj.o readoct.o xf.o:	standard.h mat4.h fvect.h
-
-readfargs.o:	fvect.h
+readfargs.o otypes.o readobj.o readoct.o xf.o:	standard.h mat4.h fvect.h
 
 image.o:	view.h
 
