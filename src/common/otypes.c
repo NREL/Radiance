@@ -140,6 +140,7 @@ register struct ohtab  *tab;
 	}
 					/* look up object */
 	hval = shash(name);
+tryagain:
 	for (i = 0; i < tab->hsiz; i++) {
 		ndx = (hval + i*i) % tab->hsiz;
 		if (tab->htab[ndx] == OVOID ||
@@ -156,5 +157,5 @@ register struct ohtab  *tab;
 			tab->htab[i] = oldhtab[ndx];
 		}
 	free((char *)oldhtab);
-	return(otndx(name, tab));
+	goto tryagain;			/* should happen only once! */
 }
