@@ -198,9 +198,8 @@ nwsdev.h:	nwsdev.cps newsconstants.h
 # Version module:
 #
 
-Version.c:	VERSION $(RSRC) $(HEADERS) verscript.ed
-	cp VERSION Version.c
-	ls -lLt $(RSRC) $(HEADERS) >> Version.c
+Version.c:	VERSION $(RSRC) $(HEADERS)
+	( cat VERSION ; date ; whoami ; hostname ) > Version.c
 	ed - Version.c < verscript.ed
 
 #
