@@ -14,6 +14,10 @@ static char SCCSid[] = "$SunId$ LBL";
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#ifndef TIMELIM
+#define TIMELIM		(8*3600)	/* time limit for holding pattern */
+#endif
+
 extern char	*strcpy(), *index();
 
 extern int	headismine;	/* boolean true if header belongs to me */
@@ -83,7 +87,7 @@ char	*pfn;
 }
 
 
-sig_noop() {}
+int sig_noop() {}
 
 
 pfhold()		/* holding pattern for idle rendering process */
@@ -105,10 +109,13 @@ pfhold()		/* holding pattern for idle rendering process */
 	n = strlen(buf);
 	if (write(persistfd, buf, n) < n)
 		error(SYSTEM, "error writing persist file in pfhold");
-				/* wait for someone to signal us */
-	signal(SIGALRM, sig_noop);
+				/* wait TIMELIM for someone to signal us */
+	signal(SIGIO, sig_noop);
+	alarm(TIMELIM);
 	pflock(0);
 	pause();
+	alarm(0);
+	signal(SIGIO, SIG_DFL);
 	pflock(1);
 				/* someone wants us; reopen stdin and stdout */
 	if (freopen(inpname, "r", stdin) == NULL)
@@ -155,7 +162,7 @@ io_process()		/* just act as conduits to and from actual process */
 	if (cp-buf != nr)
 		goto formerr;
 				/* wake up rendering process */
-	if (kill(pid, SIGALRM) < 0)
+	if (kill(pid, SIGIO) < 0)
 		error(SYSTEM, "cannot signal rendering process in io_process");
 	pid = fork();		/* fork i/o process */
 	if (pid < 0)
