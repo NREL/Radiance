@@ -24,7 +24,7 @@ STDOBJ = fgetline.o fropen.o linregr.o xf.o mat4.o invmat4.o fvect.o urand.o \
 	badarg.o fgetword.o words.o expandarg.o wordfile.o fgetval.o \
 	clip.o plocate.o cputs.o wputs.o eputs.o quit.o lookup.o
 
-SYSOBJ = ealloc.o fdate.o portio.o $(COMPAT)
+SYSOBJ = ealloc.o fdate.o portio.o myhostname.o $(COMPAT)
 
 librt.a:	$(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 	ar rc librt.a $(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
