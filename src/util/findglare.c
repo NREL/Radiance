@@ -55,6 +55,13 @@ char	*argv[];
 	progname = argv[0];
 					/* process options */
 	for (i = 1; i < argc && argv[i][0] == '-'; i++) {
+						/* expand arguments */
+		while (rval = expandarg(&argc, &argv, i))
+			if (rval < 0) {
+				fprintf(stderr, "%s: cannot expand '%s'",
+						argv[0], argv[i]);
+				exit(1);
+			}
 		rval = getviewopt(&ourview, argc-i, argv+i);
 		if (rval >= 0) {
 			i += rval;
@@ -196,6 +203,7 @@ char	*argv[];
 		absorb_specks();		/* eliminate tiny sources */
 	cleanup();				/* tidy up */
 						/* print header */
+	newheader("RADIANCE", stdout);
 	printargs(argc, argv, stdout);
 	fputs(VIEWSTR, stdout);
 	fprintview(&ourview, stdout);
