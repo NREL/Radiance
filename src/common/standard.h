@@ -57,11 +57,14 @@ extern int  errno;			/* system error number */
 #else
 #define  copystruct(d,s)	bcopy((char *)(s),(char *)(d),sizeof(*(d)))
 #endif
+
 #ifndef  BSD
 #define  bcopy(s,d,n)		(void)memcpy(d,s,n)
 #define  bzero(d,n)		(void)memset(d,0,n)
 #define  bcmp(b1,b2,n)		memcmp(b1,b2,n)
 extern char  *memcpy(), *memset();
+#define  index			strchr
+#define  rindex			strrchr
 #endif
 
 extern char  *sskip();
