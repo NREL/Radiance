@@ -46,8 +46,10 @@ register RAY  *r;
 		r->ro = o;
 	else {				/* else use theirs */
 		r->ro = rcont.ro;
-		multmat4(r->rox, in->b.xfm, rcont.rox);
-		r->ros = in->b.sca * rcont.ros;
+		multmat4(r->rofx, in->f.xfm, rcont.rofx);
+		r->rofs = in->f.sca * rcont.rofs;
+		multmat4(r->robx, in->b.xfm, rcont.robx);
+		r->robs = in->b.sca * rcont.robs;
 	}
 					/* transform it back */
 	r->rot = rcont.rot * in->f.sca;

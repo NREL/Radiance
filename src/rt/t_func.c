@@ -82,11 +82,10 @@ register RAY  *r;
 		objerror(m, WARNING, "compute error");
 		return;
 	}
+	multv3(disp, disp, mxf->fore.xfm);
+	multv3(disp, disp, r->rofx);
 	for (i = 0; i < 3; i++)
-		r->pert[i] += (	disp[0]*mxf->fore.xfm[0][i] +
-				disp[1]*mxf->fore.xfm[1][i] +
-				disp[2]*mxf->fore.xfm[2][i] )
-					/ mxf->fore.sca;
+		r->pert[i] += disp[i] / (mxf->fore.sca * r->rofs);
 	return;
 memerr:
 	error(SYSTEM, "out of memory in t_func");

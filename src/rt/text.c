@@ -89,9 +89,10 @@ RAY  *r;
 
 				/* first, discover position in text */
 	ap = m->oargs.farg;
-	v[0] = r->rop[0] - ap[0];
-	v[1] = r->rop[1] - ap[1];
-	v[2] = r->rop[2] - ap[2];
+	multp3(v, r->rop, r->robx);
+	v[0] -= ap[0];
+	v[1] -= ap[1];
+	v[2] -= ap[2];
 	col = x = DOT(v, ap+3) / DOT(ap+3, ap+3);
 	lno = y = DOT(v, ap+6) / DOT(ap+6, ap+6);
 	x -= col;
