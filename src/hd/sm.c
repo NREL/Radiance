@@ -522,6 +522,7 @@ LIST *add_list,*del_list;
     if(!SM_IS_NTH_T_NEW(sm,t_id) && !SM_IS_NTH_T_BASE(sm,t_id))
     {
       SM_SET_NTH_T_NEW(sm,t_id);
+      smNew_tri_cnt--;
       continue;
     }
     t = SM_NTH_TRI(sm,t_id);
@@ -778,14 +779,14 @@ char norm;
 }
 
 QUADTREE
-smPointLocateCell(sm,pt,type,which,norm)
+smPointLocateCell(sm,pt,norm,v0,v1,v2)
 SM *sm;
 FVECT pt;
-char *type,*which;
 char norm;
+FVECT v0,v1,v2;
 {
   STREE *st;
-  QUADTREE qt;
+  QUADTREE *qtptr;
   FVECT npt;
 
   st = SM_LOCATOR(sm);
@@ -793,12 +794,15 @@ char norm;
   {
       point_on_sphere(npt,pt,SM_VIEW_CENTER(sm));
   
-      qt = stPoint_locate_cell(st,npt,type,which);
+      qtptr = stPoint_locate_cell(st,npt,v0,v1,v2);
   }
   else
-     qt = stPoint_locate_cell(st,pt,type,which);
+     qtptr = stPoint_locate_cell(st,pt,v0,v1,v2);
 
-  return(qt);
+  if(qtptr)
+    return(*qtptr);
+  else
+    return(EMPTY);
 }
 
 int
@@ -1119,82 +1123,6 @@ smIntersectTriSet(sm,t_set,orig,dir,pt)
     return(-1);
 }
 
-/*
- * int
- * smTraceRay(SM *sm,FVECT orig, FVECT dir,FVECT v0,FVECT v1,FVECT v2,FVECT r) 
- *
- *   Intersect the ray with triangle v0v1v2, return intersection point in r
- *
- *    Assumes orig,v0,v1,v2 are in spherical coordinates, and orig is
- *    unit
- */
-char
-smTraceRay(sm,orig,dir,v0,v1,v2,r)
-  SM *sm;
-  FVECT orig,dir;
-  FVECT v0,v1,v2;
-  FVECT r;
-{
-  FVECT n,p[3],d;
-  double pt[3],r_eps;
-  char i;
-  int which;
-
-  /* Find the plane equation for the triangle defined by the edge v0v1 and
-   the view center*/
-  VCROSS(n,v0,v1);
-  /* Intersect the ray with this plane */
-  i = intersect_ray_plane(orig,dir,n,0.0,&(pt[0]),p[0]);
-  if(i)
-    which = 0;
-  else
-    which = -1;
-
-  VCROSS(n,v1,v2);
-  i = intersect_ray_plane(orig,dir,n,0.0,&(pt[1]),p[1]);
-  if(i)
-    if((which==-1) || pt[1] < pt[0])
-      which = 1;
-
-  VCROSS(n,v2,v0);
-  i = intersect_ray_plane(orig,dir,n,0.0,&(pt[2]),p[2]);
-  if(i)
-    if((which==-1) || pt[2] < pt[which])
-      which = 2;
-
-  if(which != -1)
-  {
-      /* Return point that is K*eps along projection of the ray on
-	 the sphere to push intersection point p[which] into next cell
-      */
-      normalize(p[which]);
-      /* Calculate the ray perpendicular to the intersection point: approx
-       the direction moved along the sphere a distance of K*epsilon*/
-      r_eps = -DOT(p[which],dir);
-      VSUM(n,dir,p[which],r_eps);
-     /* Calculate the length along ray p[which]-dir needed to move to
-	 cause a move along the sphere of k*epsilon
-       */
-       r_eps = DOT(n,dir); 
-      VSUM(r,p[which],dir,(20*FTINY)/r_eps);
-      normalize(r);
-      return(TRUE);
-  }
-  else
-  {
-      /* Unable to find intersection: move along ray and try again */
-      r_eps = -DOT(orig,dir);
-      VSUM(n,dir,orig,r_eps);
-      r_eps = DOT(n,dir); 
-      VSUM(r,orig,dir,(20*FTINY)/r_eps);
-      normalize(r);
-#ifdef DEBUG
-      eputs("smTraceRay:Ray does not intersect triangle");
-#endif 
-      return(FALSE);
-  }
-}
-
 
 /*
  * int
@@ -1232,7 +1160,7 @@ FVECT orig,dir;
   d = -DOT(b,dir);
   if(EQUAL_VEC3(orig,SM_VIEW_CENTER(smMesh)) || EQUAL(fabs(d),1.0))
   {
-      qt = smPointLocateCell(smMesh,dir,NULL,NULL,FALSE);
+      qt = smPointLocateCell(smMesh,dir,FALSE,NULL,NULL,NULL);
       /* Test triangles in the set for intersection with Ray:returns
 	 first found
       */
@@ -1247,7 +1175,7 @@ FVECT orig,dir;
   {
       /* Starting with orig, Walk along projection of ray onto sphere */
       point_on_sphere(r,orig,SM_VIEW_CENTER(smMesh));
-      qt = smPointLocateCell(smMesh,r,NULL,NULL,FALSE);
+      qt = smPointLocateCell(smMesh,r,FALSE,v0,v1,v2);
       qtgetset(t_set,qt);
       /* os will contain all triangles seen thus far */
       setcopy(os,t_set);
@@ -1266,14 +1194,14 @@ FVECT orig,dir;
 	  if(s_id != EMPTY)
 	       return(s_id);
           /* Find next cell that projection of ray intersects */
-	  smTraceRay(smMesh,r,dir,v0,v1,v2,r);
-	  qt = smPointLocateCell(smMesh,r,NULL,NULL,FALSE);
+	  traceRay(r,dir,v0,v1,v2,r);
+	  qt = smPointLocateCell(smMesh,r,FALSE,v0,v1,v2);
 	  qtgetset(t_set,qt);
 	  /* Check triangles in set against those seen so far(os):only
 	     check new triangles for intersection (t_set') 
 	  */
 	  check_set(t_set,os); 
-	  d = DOT(a,r);
+	  d = DOT(a,r); 
       }
     }
 #ifdef DEBUG  

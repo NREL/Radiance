@@ -22,8 +22,7 @@ static char SCCSid[] = "$SunId$ SGI";
 QUADTREE  *quad_block[QT_MAX_BLK];		/* our quadtree */
 static QUADTREE  quad_free_list = EMPTY;  /* freed octree nodes */
 static QUADTREE  treetop = 0;		/* next free node */
-
-
+int4 *quad_flag;
 
 QUADTREE
 qtAlloc()			/* allocate a quadtree */
@@ -41,11 +40,23 @@ qtAlloc()			/* allocate a quadtree */
 	if (QT_BLOCK(freet) >= QT_MAX_BLK)
 	   return(EMPTY);
 	if ((quad_block[QT_BLOCK(freet)] = (QUADTREE *)malloc(
-		   (unsigned)QT_BLOCK_SIZE*4*sizeof(QUADTREE))) == NULL)
+			QT_BLOCK_SIZE*4*sizeof(QUADTREE))) == NULL)
 	   return(EMPTY);
+	quad_flag = (int4 *)realloc((char *)quad_flag,
+			(QT_BLOCK(freet)+1)*QT_BLOCK_SIZE/(8*sizeof(int4)));
+	if (quad_flag == NULL)
+		return(EMPTY);
     }
     treetop += 4;
     return(freet);
+}
+
+
+qtClearAllFlags()		/* clear all quadtree branch flags */
+{
+	if (!treetop) return;
+	bzero((char *)quad_flag,
+		(QT_BLOCK(treetop-1)+1)*QT_BLOCK_SIZE/(8*sizeof(int4)));
 }
 
 
@@ -72,13 +83,17 @@ qtDone()			/* free EVERYTHING */
 
 	for (i = 0; i < QT_MAX_BLK; i++)
 	{
-	    free((char *)quad_block[i],
-		  (unsigned)QT_BLOCK_SIZE*4*sizeof(QUADTREE));
+	    if (quad_block[i] == NULL)
+		break;
+	    free((char *)quad_block[i]);
 	    quad_block[i] = NULL;
 	}
+	if (i) free((char *)quad_flag);
+	quad_flag = NULL;
 	quad_free_list = EMPTY;
 	treetop = 0;
 }
+
 
 QUADTREE
 qtCompress(qt)			/* recursively combine nodes */
@@ -101,40 +116,230 @@ register QUADTREE  qt;
     return(qres);
 }
 
+
 QUADTREE
-qtLocate_leaf(qtptr,bcoord,type,which)
+*qtLocate_leaf(qtptr,bcoord,t0,t1,t2)
 QUADTREE *qtptr;
 double bcoord[3];
-char *type,*which;
+FVECT t0,t1,t2;
 {
   int i;
   QUADTREE *child;
+  FVECT a,b,c;
 
     if(QT_IS_TREE(*qtptr))
     {  
       i = bary2d_child(bcoord);
       child = QT_NTH_CHILD_PTR(*qtptr,i);
-      return(qtLocate_leaf(child,bcoord,type,which));
+      if(t0)
+      {
+	qtSubdivide_tri(t0,t1,t2,a,b,c);
+	qtNth_child_tri(t0,t1,t2,a,b,c,i,t0,t1,t2);
+      }
+      return(qtLocate_leaf(child,bcoord,t0,t1,t2));
     }
     else
-      return(*qtptr);
+      return(qtptr);
 }
 
 
 
+int
+qtLeaf_add_tri_from_pt(qtptr,bcoord,id,v0,v1,v2,n)
+QUADTREE *qtptr;
+double bcoord[3];
+int id;
+FVECT v0,v1,v2;
+int n;
+{
+  int i;
+  QUADTREE *child;
+  OBJECT os[MAXSET+1],*optr;
+  int found;
+  FVECT r0,r1,r2;
+  
+  if(QT_IS_TREE(*qtptr))
+  {  
+    QT_SET_FLAG(*qtptr);
+    i = bary2d_child(bcoord);
+    child = QT_NTH_CHILD_PTR(*qtptr,i);
+    return(qtLeaf_add_tri_from_pt(child,bcoord,id,v0,v1,v2,++n));
+  }
+  else
+    {
+      /* If this leave node emptry- create a new set */
+      if(QT_IS_EMPTY(*qtptr))
+	*qtptr = qtaddelem(*qtptr,id);
+      else
+      {
+	  qtgetset(os,*qtptr);
+	  /* If the set is too large: subdivide */
+	  if(QT_SET_CNT(os) < QT_SET_THRESHOLD)
+	    *qtptr = qtaddelem(*qtptr,id);
+	  else
+	  {
+	    if (n < QT_MAX_LEVELS)
+            {
+		 /* If set size exceeds threshold: subdivide cell and
+		    reinsert set tris into cell
+		    */
+		 n++;
+		 qtfreeleaf(*qtptr);
+		 qtSubdivide(qtptr);
+		 QT_SET_FLAG(*qtptr);
+		 found = qtLeaf_add_tri_from_pt(qtptr,bcoord,id,v0,v1,v2,n);
+#if 0
+		 if(!found)
+		 {
+#ifdef TEST_DRIVER     
+      HANDLE_ERROR("qtAdd_tri():Found in parent but not children\n");
+#else 
+		   eputs("qtAdd_tri():Found in parent but not children\n");
+#endif
+		 }
+#endif
+		 for(optr = &(os[1]),i = QT_SET_CNT(os); i > 0; i--)
+		 {
+		   id = QT_SET_NEXT_ELEM(optr);
+		   qtTri_verts_from_id(id,r0,r1,r2);
+		   found= qtLeaf_add_tri_from_pt(qtptr,bcoord,id,v0,v1,v2,++n);
+#ifdef DEBUG
+		 if(!found)
+		    eputs("qtAdd_tri():Reinsert-in parent but not children\n");
+#endif
+	       }
+	     }
+	    else
+	      if(QT_SET_CNT(os) < QT_MAX_SET)
+		{
+		  *qtptr = qtaddelem(*qtptr,id);
+		}
+	      else
+		{
+#ifdef DEBUG
+		    eputs("qtAdd_tri():two many levels\n");
+#endif
+		    return(FALSE);
+		}
+	  }
+      }
+  }
+  return(TRUE);
+}
 
-QUADTREE
-qtRoot_point_locate(qtptr,v0,v1,v2,pt,type,which)
+
+int
+qtAdd_tri_from_point(qtptr,v0,v1,v2,pt,id)
 QUADTREE *qtptr;
 FVECT v0,v1,v2;
 FVECT pt;
-char *type,*which;
+int id;
 {
     char d,w;
     int i,x,y;
     QUADTREE *child;
     QUADTREE qt;
-    FVECT n,i_pt;
+    FVECT i_pt,n,a,b,c,r0,r1,r2;
+    double pd,bcoord[3];
+    OBJECT os[MAXSET+1],*optr;
+    int found;
+        
+    /* Determine if point lies within pyramid (and therefore
+       inside a spherical quadtree cell):GT_INTERIOR, on one of the 
+       pyramid sides (and on cell edge):GT_EDGE(1,2 or 3), 
+       or on pyramid vertex (and on cell vertex):GT_VERTEX(1,2, or 3).
+       For each triangle edge: compare the
+       point against the plane formed by the edge and the view center
+    */
+    d = test_single_point_against_spherical_tri(v0,v1,v2,pt,&w);  
+
+    /* Not in this triangle */
+    if(!d)
+      return(FALSE);
+
+    /* Will return lowest level triangle containing point: It the
+       point is on an edge or vertex: will return first associated
+       triangle encountered in the child traversal- the others can
+       be derived using triangle adjacency information
+    */
+    if(QT_IS_TREE(*qtptr))
+    {  
+      QT_SET_FLAG(*qtptr);
+      /* Find the intersection point */
+      tri_plane_equation(v0,v1,v2,n,&pd,FALSE);
+      intersect_vector_plane(pt,n,pd,NULL,i_pt);
+
+      i = max_index(n);
+      x = (i+1)%3;
+      y = (i+2)%3;
+      /* Calculate barycentric coordinates of i_pt */
+      bary2d(v0[x],v0[y],v1[x],v1[y],v2[x],v2[y],i_pt[x],i_pt[y],bcoord);
+
+      i = bary2d_child(bcoord);
+      child = QT_NTH_CHILD_PTR(*qtptr,i);
+      /* NOTE: Optimize: only subdivide for specified child */
+      qtSubdivide_tri(v0,v1,v2,a,b,c);
+      qtNth_child_tri(v0,v1,v2,a,b,c,i,v0,v1,v2);
+      return(qtLeaf_add_tri_from_pt(child,bcoord,id,v0,v1,v2,1));
+    }
+    else
+   {
+      /* If this leave node emptry- create a new set */
+      if(QT_IS_EMPTY(*qtptr))
+	*qtptr = qtaddelem(*qtptr,id);
+      else
+      {
+	  qtgetset(os,*qtptr);
+	  /* If the set is too large: subdivide */
+	  if(QT_SET_CNT(os) < QT_SET_THRESHOLD)
+	    *qtptr = qtaddelem(*qtptr,id);
+	  else
+	  {
+		 /* If set size exceeds threshold: subdivide cell and
+		    reinsert set tris into cell
+		    */
+		 qtfreeleaf(*qtptr);
+		 qtSubdivide(qtptr);
+		 found = qtLeaf_add_tri_from_pt(qtptr,bcoord,id,v0,v1,v2,1);
+#if 0
+		 if(!found)
+		 {
+#ifdef TEST_DRIVER     
+      HANDLE_ERROR("qtAdd_tri():Found in parent but not children\n");
+#else 
+		   eputs("qtAdd_tri():Found in parent but not children\n");
+#endif
+		 }
+#endif
+		 for(optr = &(os[1]),i = QT_SET_CNT(os); i > 0; i--)
+		 {
+		   id = QT_SET_NEXT_ELEM(optr);
+		   qtTri_verts_from_id(id,r0,r1,r2);
+		   found=qtAdd_tri(qtptr,id,r0,r1,r2,v0,v1,v2,1);
+#ifdef DEBUG
+		 if(!found)
+		    eputs("qtAdd_tri():Reinsert-in parent but not children\n");
+#endif
+	       }
+	     }
+      }
+  }
+  return(TRUE);
+}
+
+
+QUADTREE
+*qtRoot_point_locate(qtptr,v0,v1,v2,pt,t0,t1,t2)
+QUADTREE *qtptr;
+FVECT v0,v1,v2;
+FVECT pt;
+FVECT t0,t1,t2;
+{
+    char d,w;
+    int i,x,y;
+    QUADTREE *child;
+    QUADTREE qt;
+    FVECT n,i_pt,a,b,c;
     double pd,bcoord[3];
 
     /* Determine if point lies within pyramid (and therefore
@@ -149,9 +354,7 @@ char *type,*which;
     /* Not in this triangle */
     if(!d)
     {
-      if(which)
-	*which = 0;
-      return(EMPTY);
+      return(NULL);
     }
 
     /* Will return lowest level triangle containing point: It the
@@ -173,21 +376,15 @@ char *type,*which;
 
       i = bary2d_child(bcoord);
       child = QT_NTH_CHILD_PTR(*qtptr,i);
-      return(qtLocate_leaf(child,bcoord,type,which));
+      if(t0)
+      {
+	qtSubdivide_tri(v0,v1,v2,a,b,c);
+	qtNth_child_tri(v0,v1,v2,a,b,c,i,t0,t1,t2);
+      }
+      return(qtLocate_leaf(child,bcoord,t0,t1,t2));
     }
     else
-       if(!QT_IS_EMPTY(*qtptr))
-       {  
-	   /* map GT_VERTEX,GT_EDGE,GT_FACE GT_INTERIOR of pyramid to
-	      spherical triangle primitives
-	      */
-	 if(type)
-	   *type = d;
-	 if(which)
-	   *which = w;
-	 return(*qtptr);
-       }
-    return(EMPTY);
+      return(qtptr);
 }
 
 int
@@ -197,19 +394,18 @@ FVECT v0,v1,v2;
 FVECT pt;
 char *type,*which;
 {
-    QUADTREE qt;
     OBJECT os[MAXSET+1],*optr;
     char d,w;
     int i,id;
     FVECT p0,p1,p2;
 
-    qt = qtRoot_point_locate(qtptr,v0,v1,v2,pt,type,which);
+    qtptr = qtRoot_point_locate(qtptr,v0,v1,v2,pt,NULL,NULL,NULL);
 
-    if(QT_IS_EMPTY(qt))
+    if(!qtptr || QT_IS_EMPTY(*qtptr))
        return(EMPTY);
     
     /* Get the set */
-    qtgetset(os,qt);
+    qtgetset(os,*qtptr);
     for (i = QT_SET_CNT(os),optr = QT_SET_PTR(os); i > 0; i--)
     {
 	/* Find the triangle that pt falls in (NOTE:FOR now return first 1) */
@@ -304,6 +500,44 @@ into the new child cells: it is assumed that "v1,v2,v3" are normalized
 */
 
 int
+qtRoot_add_tri(qtptr,id,t0,t1,t2,v0,v1,v2,n)
+QUADTREE *qtptr;
+int id;
+FVECT t0,t1,t2;
+FVECT v0,v1,v2;
+int n;
+{
+  char test;
+  int found;
+
+  test = spherical_tri_intersect(t0,t1,t2,v0,v1,v2);
+  if(!test)
+    return(FALSE);
+  
+  found = qtAdd_tri(qtptr,id,t0,t1,t2,v0,v1,v2,n);
+  return(found);
+}
+
+int
+qtRoot_add_tri_from_point(qtptr,id,t0,t1,t2,v0,v1,v2,n)
+QUADTREE *qtptr;
+int id;
+FVECT t0,t1,t2;
+FVECT v0,v1,v2;
+int n;
+{
+  char test;
+  int found;
+
+  test = spherical_tri_intersect(t0,t1,t2,v0,v1,v2);
+  if(!test)
+    return(FALSE);
+  
+  found = qtAdd_tri_from_point(qtptr,id,t0,t1,t2,v0,v1,v2,n);
+  return(found);
+}
+
+int
 qtAdd_tri(qtptr,id,t0,t1,t2,v0,v1,v2,n)
 QUADTREE *qtptr;
 int id;
@@ -320,23 +554,24 @@ int n;
   int found;
   FVECT r0,r1,r2;
 
-  /* test if triangle (t0,t1,t2) overlaps cell triangle (v0,v1,v2) */
-  test = spherical_tri_intersect(t0,t1,t2,v0,v1,v2);
-
-  /* If triangles do not overlap: done */
-  if(!test)
-    return(FALSE);
   found = 0;
-
   /* if this is tree: recurse */
   if(QT_IS_TREE(*qtptr))
   {
     n++;
     qtSubdivide_tri(v0,v1,v2,a,b,c);
-    found |= qtAdd_tri(QT_NTH_CHILD_PTR(*qtptr,0),id,t0,t1,t2,v0,a,c,n);
-    found |= qtAdd_tri(QT_NTH_CHILD_PTR(*qtptr,1),id,t0,t1,t2,a,v1,b,n);
-    found |= qtAdd_tri(QT_NTH_CHILD_PTR(*qtptr,2),id,t0,t1,t2,c,b,v2,n);
-    found |= qtAdd_tri(QT_NTH_CHILD_PTR(*qtptr,3),id,t0,t1,t2,b,c,a,n);
+    test = spherical_tri_intersect(t0,t1,t2,v0,a,c);
+    if(test)
+      found |= qtAdd_tri(QT_NTH_CHILD_PTR(*qtptr,0),id,t0,t1,t2,v0,a,c,n);
+    test = spherical_tri_intersect(t0,t1,t2,a,v1,b);
+    if(test)
+      found |= qtAdd_tri(QT_NTH_CHILD_PTR(*qtptr,1),id,t0,t1,t2,a,v1,b,n);
+    test = spherical_tri_intersect(t0,t1,t2,c,b,v2);
+    if(test)
+      found |= qtAdd_tri(QT_NTH_CHILD_PTR(*qtptr,2),id,t0,t1,t2,c,b,v2,n);
+    test = spherical_tri_intersect(t0,t1,t2,b,c,a);
+    if(test)
+      found |= qtAdd_tri(QT_NTH_CHILD_PTR(*qtptr,3),id,t0,t1,t2,b,c,a,n);
 
 #if 0
     if(!found)
@@ -353,47 +588,13 @@ int n;
   {
       /* If this leave node emptry- create a new set */
       if(QT_IS_EMPTY(*qtptr))
-      {
-	  *qtptr = qtaddelem(*qtptr,id);
-#if 0
-	  {
-	      int k;
-	      qtgetset(os,*qtptr);
-	      printf("\n%d:\n",os[0]);
-	      for(k=1; k <= os[0];k++)
-		 printf("%d ",os[k]);
-	      printf("\n");
-	  }
-#endif
-	  /*
-	  os[0] = 0;
-          insertelem(os,id);
-	  qt = fullnode(os);
-	  *qtptr = qt;
-	  */
-      }
+	*qtptr = qtaddelem(*qtptr,id);
       else
       {
 	  qtgetset(os,*qtptr);
 	  /* If the set is too large: subdivide */
 	  if(QT_SET_CNT(os) < QT_SET_THRESHOLD)
-	  {
 	    *qtptr = qtaddelem(*qtptr,id);
-#if 0
-	    {
-	      int k;
-	      qtgetset(os,*qtptr);
-	      printf("\n%d:\n",os[0]);
-	      for(k=1; k <= os[0];k++)
-		 printf("%d ",os[k]);
-	      printf("\n");
-	  }
-#endif	    
-	    /*
-	     insertelem(os,id);
-	     *qtptr = fullnode(os);
-	     */
-	  }
 	  else
 	  {
 	    if (n < QT_MAX_LEVELS)
@@ -541,24 +742,12 @@ FVECT v0,v1,v2;
 	  else
 	  {
 	    *qtptr = qtdelelem(*qtptr,id);
-#if 0
-	    {
-	      int k;
-	      if(!QT_IS_EMPTY(*qtptr))
-	      {qtgetset(os,*qtptr);
-	      printf("\n%d:\n",os[0]);
-	      for(k=1; k <= os[0];k++)
-		 printf("%d ",os[k]);
-	      printf("\n");
-	   }
-
-	  }
-#endif
 	}
       }
   }
   return(TRUE);
 }
+
 
 
 

@@ -107,7 +107,7 @@ stPoint_locate(st,npt,type,which)
     char *type,*which;
 {
     int i,d,j,id;
-    QUADTREE *rootptr,qt;
+    QUADTREE *rootptr,*qtptr;
     FVECT v1,v2,v3;
     OBJECT os[MAXSET+1],*optr;
     char w;
@@ -119,11 +119,11 @@ stPoint_locate(st,npt,type,which)
 	 rootptr = ST_NTH_ROOT_PTR(st,i);
 	 stNth_base_verts(st,i,v1,v2,v3);
 	 /* Return tri that p falls in */
-	 qt = qtRoot_point_locate(rootptr,v1,v2,v3,npt,type,which);
-	 if(QT_IS_EMPTY(qt))
+	 qtptr = qtRoot_point_locate(rootptr,v1,v2,v3,npt,NULL,NULL,NULL);
+	 if(!qtptr)
 	    continue;
 	 /* Get the set */
-	 qtgetset(os,qt);
+	 qtgetset(os,*qtptr);
 	 for (j = QT_SET_CNT(os),optr = QT_SET_PTR(os); j > 0; j--)
          {
 	     /* Find the first triangle that pt falls */
@@ -147,14 +147,14 @@ stPoint_locate(st,npt,type,which)
     return(EMPTY);
 }
 
-int
-stPoint_locate_cell(st,p,type,which)
+QUADTREE
+*stPoint_locate_cell(st,p,t0,t1,t2)
     STREE *st;
     FVECT p;
-    char *type,*which;
+    FVECT t0,t1,t2;
 {
     int i,d;
-    QUADTREE *rootptr,qt;
+    QUADTREE *rootptr,*qtptr;
     FVECT v0,v1,v2;
 
     
@@ -164,16 +164,38 @@ stPoint_locate_cell(st,p,type,which)
 	 rootptr = ST_NTH_ROOT_PTR(st,i);
 	 stNth_base_verts(st,i,v0,v1,v2);
 	 /* Return tri that p falls in */
-	 qt = qtRoot_point_locate(rootptr,v0,v1,v2,p,type,which);
+	 qtptr = qtRoot_point_locate(rootptr,v0,v1,v2,p,t0,t1,t2);
 	 /* NOTE: For now return only one triangle */
-	 if(!QT_IS_EMPTY(qt))
-	    return(qt);
+	 if(qtptr)
+	    return(qtptr);
      }    /* Point not found */
-    if(which)
-      *which = 0;
-    if(type)
-      *type = 0;
-    return(EMPTY);
+    return(NULL);
+}
+
+
+QUADTREE
+*stAdd_tri_from_pt(st,p,t_id)
+    STREE *st;
+    FVECT p;
+    int t_id;
+{
+    int i,d;
+    QUADTREE *rootptr,*qtptr;
+    FVECT v0,v1,v2;
+
+    
+    /* Test each of the root triangles against point id */
+    for(i=0; i < 4; i++)
+     {
+	 rootptr = ST_NTH_ROOT_PTR(st,i);
+	 stNth_base_verts(st,i,v0,v1,v2);
+	 /* Return tri that p falls in */
+	 qtptr = qtRoot_add_tri_from_point(rootptr,v0,v1,v2,p,t_id);
+	 /* NOTE: For now return only one triangle */
+	 if(qtptr)
+	    return(qtptr);
+     }    /* Point not found */
+    return(NULL);
 }
 
 int
@@ -192,7 +214,7 @@ FVECT v0,v1,v2;
   {
     rootptr = ST_NTH_ROOT_PTR(st,i);
     stNth_base_verts(st,i,t0,t1,t2);
-    found |= qtAdd_tri(rootptr,id,v0,v1,v2,t0,t1,t2,0);
+    found |= qtRoot_add_tri(rootptr,id,v0,v1,v2,t0,t1,t2,0);
   }
   return(found);
 }
@@ -246,3 +268,50 @@ FVECT v0,v1,v2;
 
 
 
+#if 0
+int
+stAdd_tri_opt(st,id,v0,v1,v2)
+STREE *st;
+int id;
+FVECT v0,v1,v2;
+{
+  
+  int i,found;
+  QUADTREE *qtptr;
+  FVECT pt,t0,t1,t2;
+
+  /* First add all of the leaf cells lying on the triangle perimeter:
+     mark all cells seen on the way
+   */
+  /* clear all of the flags */
+  qtClearAllFlags();		/* clear all quadtree branch flags */
+
+  /* Now trace each triangle edge-marking cells visited, and adding tri to
+     the leafs
+   */
+  stAdd_tri_from_pt(st,v0,id,t0,t1,t2);
+  /* Find next cell that projection of ray intersects */
+  VCOPY(pt,v0);
+  /* NOTE: Check if in same cell */
+  while(traceEdge(pt,v1,t0,t1,t2,pt))
+  {
+      stAdd_tri_from_pt(st,pt,id,t0,t1,t2);
+      traceEdge(pt,v1,t0,t1,t2,pt);
+  }
+  while(traceEdge(pt,v2,t0,t1,t2,pt))
+  {
+      stAdd_tri_from_pt(st,pt,id,t0,t1,t2);
+      traceEdge(pt,v2,t0,t1,t2,pt);
+  }
+  while(traceEdge(pt,v0,t0,t1,t2,pt))
+  {
+      stAdd_tri_from_pt(st,pt,id,t0,t1,t2);
+      traceEdge(pt,v2,t0,t1,t2,pt);
+  }
+
+  /* NOTE: Optimization: if <= 2 cells added: dont need to fill */
+  /* Traverse: follow nodes with flag set or one vertex in triangle */
+  
+}
+
+#endif
