@@ -450,28 +450,39 @@ char	*rfargs;
 	char	combuf[256];
 	register int	i;
 	register char	*cp;
+	char	*pippt;
 					/* create rad command */
 	sprintf(rendopt, " @%s/render.opt", vval(DIRECTORY));
 	sprintf(combuf,
 	"rad -v 0 -s -e -w %s OPTFILE=%s | egrep '^[ \t]*(NOMATCH",
 			rfargs, rendopt+2);
 	cp = combuf;
-	while (*cp) cp++;		/* match unset variables */
+	while (*cp) {
+		if (*cp == '|') pippt = cp;
+		cp++;
+	}				/* match unset variables */
 	for (i = 0; mvar[i] >= 0; i++)
 		if (!vdef(mvar[i])) {
 			*cp++ = '|';
 			strcpy(cp, vnam(mvar[i]));
 			while (*cp) cp++;
+			pippt = NULL;
 		}
-	sprintf(cp, ")[ \t]*=' > %s/radset.var", vval(DIRECTORY));
-	cp += 11;			/* point to file name */
+	if (pippt != NULL)
+		strcpy(pippt, "> /dev/null");	/* nothing to match */
+	else {
+		sprintf(cp, ")[ \t]*=' > %s/radset.var", vval(DIRECTORY));
+		cp += 11;		/* point to file name */
+	}
 	if (system(combuf)) {
 		fprintf(stderr, "%s: error executing rad command:\n\t%s\n",
 				progname, combuf);
 		quit(1);
 	}
-	loadvars(cp);			/* load variables and remove file */
-	unlink(cp);
+	if (pippt == NULL) {		/* load variables and remove file */
+		loadvars(cp);
+		unlink(cp);
+	}
 }
 
 
