@@ -162,6 +162,16 @@ BYTE	*rmap, *gmap, *bmap;
 }
 
 
+map_color(rgb, col)		/* map a color to a byte triplet */
+BYTE	rgb[3];
+COLOR	col;
+{
+	rgb[RED] = map_col(col,RED);
+	rgb[GRN] = map_col(col,GRN);
+	rgb[BLU] = map_col(col,BLU);
+}
+
+
 static
 cut(tree, level, box, c0, c1)		/* partition color space */
 register CNODE	*tree;
