@@ -1015,7 +1015,7 @@ char	*vn;		/* returned view name */
 printview(vopts)			/* print out selected view */
 register char	*vopts;
 {
-	extern char	*atos();
+	extern char	*atos(), *getenv();
 	char	buf[256];
 	FILE	*fp;
 	register char	*cp;
@@ -1050,8 +1050,18 @@ register char	*vopts;
 			while (isspace(*vopts))
 				vopts++;
 			putchar(' ');
-			while (*vopts && !isspace(*vopts))
-				putchar(*vopts++);
+#ifdef MSDOS
+			if (*vopts == '$') {		/* expand env. var. */
+				if (!*atos(buf, sizeof(buf), vopts+1))
+					return(-1);
+				if ((cp = getenv(buf)) == NULL)
+					return(-1);
+				fputs(cp, stdout);
+				vopts = sskip(vopts);
+			} else
+#endif
+				while (*vopts && !isspace(*vopts))
+					putchar(*vopts++);
 		}
 	} while (*vopts++);
 	putchar('\n');
