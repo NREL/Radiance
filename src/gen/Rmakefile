@@ -6,7 +6,7 @@
 
 OPT = -O
 MACH = -DBSD -DSTRUCTASSIGN -f68881 /usr/lib/libm.il -DIEEE
-CFLAGS = $(MACH) $(OPT) -I../common
+CFLAGS = $(MACH) $(OPT) -I../common -L../lib
 
 INSTDIR = /lumen/lumen/ray/bin.sun3
 
@@ -48,23 +48,22 @@ genprism:	genprism.o
 	cc $(CFLAGS) -o genprism genprism.o
 
 xform:	xform.o
-	cc $(CFLAGS) -o xform xform.o ../common/librt.a -lm
+	cc $(CFLAGS) -o xform xform.o -lrt -lm
 
 replmarks:	replmarks.o
-	cc $(CFLAGS) -o replmarks replmarks.o ../common/librt.a -lm
+	cc $(CFLAGS) -o replmarks replmarks.o -lrt -lm
 
 mkillum:	mkillum.o mkillum2.o mkillum3.o
-	cc $(CFLAGS) -o mkillum mkillum.o mkillum2.o mkillum3.o \
-../common/librt.a -lm
+	cc $(CFLAGS) -o mkillum mkillum.o mkillum2.o mkillum3.o -lrt -lm
 
 genrev:	genrev.o 
-	cc $(CFLAGS) -o genrev genrev.o ../common/librt.a -lm
+	cc $(CFLAGS) -o genrev genrev.o -lrt -lm
 
 genworm:	genworm.o
-	cc $(CFLAGS) -o genworm genworm.o ../common/librt.a -lm
+	cc $(CFLAGS) -o genworm genworm.o -lrt -lm
 
 gensurf:	gensurf.o
-	cc $(CFLAGS) -o gensurf gensurf.o ../common/librt.a -lm
+	cc $(CFLAGS) -o gensurf gensurf.o -lrt -lm
 
 genbranch:	genbranch.o
 	cc $(CFLAGS) -o genbranch genbranch.o -lm

@@ -5,7 +5,7 @@
 
 OPT = -O -pipe
 MACH = -DSTRUCTASSIGN -DBSD -DIEEE -f68881 /usr/lib/libm.il
-CFLAGS = $(MACH) $(OPT) -I../common
+CFLAGS = $(MACH) $(OPT) -I../common -L../lib
 CC = cc
 LINT = lint
 LINTFLAGS = -DSTRUCTASSIGN -DBSD -DIEEE -DVARIABLE -DFUNCTION \
@@ -27,7 +27,7 @@ LIBDIR = /usr/local/lib/ray
 #
 # Library routines:
 #
-LIBS = ../common/librt.a -lm
+LIBS = -lrt -lm
 
 #
 # Device drivers for rview (see also devtable.c):
@@ -106,13 +106,13 @@ lint:	$(RVSRC)
 # Links:
 #
 
-$(DESTDIR)/rtrace:	$(RTOBJS) ../common/librt.a
+$(DESTDIR)/rtrace:	$(RTOBJS)
 	$(CC) $(CFLAGS) -o $(DESTDIR)/rtrace $(RTOBJS) $(LIBS)
 
-$(DESTDIR)/rpict:	$(RPOBJS) ../common/librt.a
+$(DESTDIR)/rpict:	$(RPOBJS)
 	$(CC) $(CFLAGS) -o $(DESTDIR)/rpict $(RPOBJS) $(LIBS)
 
-$(DESTDIR)/rview:	$(RVOBJS) ../common/librt.a
+$(DESTDIR)/rview:	$(RVOBJS)
 	$(CC) $(CFLAGS) -o $(DESTDIR)/rview $(RVOBJS) $(DLIBS) $(LIBS)
 
 $(DESTDIR)/lookamb:	lookamb.o

@@ -6,7 +6,7 @@ MACH = -f68881 /usr/lib/libm.il -DIEEE -DBSD -DSTRUCTASSIGN
 
 OPT = -O
 
-CFLAGS = $(MACH) $(OPT) -I../common
+CFLAGS = $(MACH) $(OPT) -I../common -L../lib
 
 INSTDIR = /lumen/lumen/ray/bin.sun3
 
@@ -30,18 +30,18 @@ scanner:	scanner.o
 	cc $(CFLAGS) -o scanner scanner.o -lm
 
 makedist:	makedist.o setscan.o
-	cc $(CFLAGS) -o makedist makedist.o setscan.o ../common/librt.a -lm
+	cc $(CFLAGS) -o makedist makedist.o setscan.o -lrt -lm
 
 findglare:	findglare.o glareval.o glaresrc.o setscan.o
 	cc $(CFLAGS) -o findglare findglare.o glareval.o glaresrc.o \
-setscan.o ../common/librt.a -lm
+setscan.o -lrt -lm
 
 glarendx:	glarendx.o
-	cc $(CFLAGS) -o glarendx glarendx.o ../common/librt.a -lm
+	cc $(CFLAGS) -o glarendx glarendx.o -lrt -lm
 
 xglaresrc:	xglaresrc.o x11findwind.o
 	cc $(CFLAGS) -o xglaresrc xglaresrc.o \
-x11findwind.o ../common/librt.a -lm -lX11
+x11findwind.o -lrt -lX11 -lm
 
 contour:	contour.o
 	cc $(CFLAGS) -o contour contour.o -lm

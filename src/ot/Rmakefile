@@ -10,7 +10,7 @@
 
 OPT = -O
 MACH = -DBSD -DSTRUCTASSIGN -f68881 /usr/lib/libm.il
-CFLAGS = -DSTRICT $(OPT) $(MACH) -I../common
+CFLAGS = -DSTRICT $(OPT) $(MACH) -I../common -L../lib
 
 LIBDIR = /usr/local/lib/ray
 
@@ -22,11 +22,11 @@ oconv:	oconv.o sphere.o writeoct.o o_face.o plocate.o \
 clip.o o_cone.o o_instance.o bbox.o initotypes.o readfargs.o
 	cc $(CFLAGS) -o oconv oconv.o writeoct.o sphere.o o_face.o \
 plocate.o clip.o o_cone.o o_instance.o bbox.o readfargs.o \
-initotypes.o ../common/librt.a -lm
+initotypes.o -lrt -lm
 
 getbbox:	getbbox.o readobj2.o bbox.o initotypes2.o
 	cc $(CFLAGS) -o getbbox getbbox.o readobj2.o \
-bbox.o initotypes2.o ../common/librt.a -lm
+bbox.o initotypes2.o -lrt -lm
 
 install:	oconv getbbox
 	cp oconv getbbox $(INSTDIR)
