@@ -28,10 +28,13 @@ FILE	*mapfp = NULL;			/* tone-mapping function stream */
 VIEW	ourview = STDVIEW;		/* picture view */
 int	gotview = 0;			/* picture has view */
 double	pixaspect = 1.0;		/* pixel aspect ratio */
+double	fixfrac = 0.;			/* histogram share due to fixations */
 RESOLU	inpres;				/* input picture resolution */
 
 COLOR	*fovimg;			/* foveal (1 degree) averaged image */
 short	fvxr, fvyr;			/* foveal image resolution */
+short	(*fixlst)[2];			/* fixation history list */
+int	nfixations;			/* number of fixation points */
 float	bwhist[HISTRES];		/* luminance histogram */
 double	histot;				/* total count of histogram */
 double	bwmin, bwmax;			/* histogram limits */
@@ -75,6 +78,12 @@ char	*argv[];
 			break;
 		case 'w':
 			bool(DO_CWEIGHT);
+			break;
+		case 'i':
+			if (i+1 >= argc) goto userr;
+			fixfrac = atof(argv[++i]);
+			if (fixfrac > FTINY) what2do |= DO_FIXHIST;
+			else what2do &= ~DO_FIXHIST;
 			break;
 		case 'l':
 			bool(DO_LINEAR);
@@ -142,8 +151,10 @@ char	*argv[];
 	Bldmax = Bl(ldmax);
 	if (i >= argc || i+2 < argc)
 		goto userr;
+					/* open input file */
 	if ((infp = fopen(infn=argv[i], "r")) == NULL)
 		syserror(infn);
+					/* open output file */
 	if (i+2 == argc && freopen(argv[i+1], "w", stdout) == NULL)
 		syserror(argv[i+1]);
 #ifdef MSDOS
@@ -152,14 +163,17 @@ char	*argv[];
 #endif
 	getahead();			/* load input header */
 	printargs(argc, argv, stdout);	/* add to output header */
-	if (outprims != inprims)
+	if (mbcalfile == NULL & outprims != stdprims)
 		fputprims(outprims, stdout);
+	getfovimg();			/* get foveal sample image */
+	if (what2do&DO_FIXHIST)		/* get fixation history? */
+		getfixations(stdin);
 	mapimage();			/* map the picture */
 	if (mapfp != NULL)		/* write out basic mapping */
 		putmapping(mapfp);
 	exit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-{h|a|v|s|c|l|w}[+-]][-e ev][-p xr yr xg yg xb yb xw yw|-f mbf.cal][-t Ldmax][-b Ldmin][-m mapfile] inpic [outpic]\n",
+	fprintf(stderr, "Usage: %s [-{h|a|v|s|c|l|w}[+-]][-i ffrac][-e ev][-p xr yr xg yg xb yb xw yw|-f mbf.cal][-t Ldmax][-b Ldmin][-m mapfile] inpic [outpic]\n",
 			progname);
 	exit(1);
 #undef bool
@@ -246,36 +260,12 @@ mapimage()				/* map picture and send to stdout */
 {
 	COLOR	*scan;
 
-#ifdef DEBUG
-	fprintf(stderr, "%s: generating histogram...", progname);
-#endif
-	getfovimg();			/* get foveal sample image */
 	comphist();			/* generate adaptation histogram */
-#ifdef DEBUG
-	fputs("done\n", stderr);
-#endif
 	check2do();			/* modify what2do flags */
-	if (what2do&DO_VEIL) {
-#ifdef DEBUG
-		fprintf(stderr, "%s: computing veiling...", progname);
-#endif
+	if (what2do&DO_VEIL)
 		compveil();
-#ifdef DEBUG
-		fputs("done\n", stderr);
-#endif
-	}
-#ifdef DEBUG
-	fprintf(stderr, "%s: computing brightness mapping...", progname);
-#endif
-	if (!(what2do&DO_LINEAR) && mkbrmap() < 0) {	/* make tone map */
-		what2do |= DO_LINEAR;		/* use linear scaling */
-#ifdef DEBUG
-		fputs("failed!\n", stderr);
-	} else
-		fputs("done\n", stderr);
-#else
-	}
-#endif
+	if (!(what2do&DO_LINEAR) && mkbrmap() < 0)	/* make tone map */
+		what2do |= DO_LINEAR;	/* failed! -- use linear scaling */
 	if (what2do&DO_LINEAR) {
 		if (scalef <= FTINY) {
 			if (what2do&DO_HSENS)
@@ -285,35 +275,19 @@ mapimage()				/* map picture and send to stdout */
 				scalef = Lb(0.5*(Bldmax+Bldmin)) / Lb(bwavg);
 			scalef *= WHTEFFICACY/(inpexp*ldmax);
 		}
-#ifdef DEBUG
-		fprintf(stderr, "%s: linear scaling factor = %f\n",
-				progname, scalef);
-#endif
 		fputexpos(inpexp*scalef, stdout);	/* record exposure */
 		if (lumf == cielum) scalef /= WHTEFFICACY;
 	}
-	putchar('\n');			/* complete header */
+	fputformat(COLRFMT, stdout);	/* complete header */
+	putchar('\n');
 	fputsresolu(&inpres, stdout);	/* resolution doesn't change */
-
+					/* condition our image */
 	for (scan = firstscan(); scan != NULL; scan = nextscan())
 		if (fwritescan(scan, scanlen(&inpres), stdout) < 0) {
 			fprintf(stderr, "%s: scanline write error\n",
 					progname);
 			exit(1);
 		}
-}
-
-
-double
-centprob(x, y)			/* center-weighting probability function */
-int	x, y;
-{
-	double	xr, yr, p;
-				/* paraboloid, 0 at 90 degrees from center */
-	xr = (x - .5*(fvxr-1))/90.;	/* 180 degree fisheye has fv?r == 90 */
-	yr = (y - .5*(fvyr-1))/90.;
-	p = 1. - xr*xr - yr*yr;
-	return(p < 0. ? 0. : p);
 }
 
 
@@ -335,7 +309,7 @@ getfovimg()			/* load foveal sampled image */
 	}
 	if ((fovimg = (COLOR *)malloc(fvxr*fvyr*sizeof(COLOR))) == NULL)
 		syserror("malloc");
-	sprintf(combuf, "pfilt -1 -b -x %d -y %d %s", fvxr, fvyr, infn);
+	sprintf(combuf, "pfilt -1 -b -pa 0 -x %d -y %d %s", fvxr, fvyr, infn);
 	if ((fp = popen(combuf, "r")) == NULL)
 		syserror("popen");
 	getheader(fp, NULL, NULL);	/* skip header */
@@ -353,42 +327,6 @@ readerr:
 }
 
 
-comphist()			/* create foveal sampled image and histogram */
-{
-	double	l, b, lwmin, lwmax;
-	register int	x, y;
-
-	lwmin = 1e10;			/* find extrema */
-	lwmax = 0.;
-	for (y = 0; y < fvyr; y++)
-		for (x = 0; x < fvxr; x++) {
-			l = plum(fovscan(y)[x]);
-			if (l < lwmin) lwmin = l;
-			if (l > lwmax) lwmax = l;
-		}
-	lwmin -= FTINY;
-	lwmax += FTINY;
-	if (lwmin < LMIN) lwmin = LMIN;
-	if (lwmax > LMAX) lwmax = LMAX;
-					/* compute histogram */
-	bwmin = Bl(lwmin);
-	bwmax = Bl(lwmax);
-	bwavg = 0.;
-	for (y = 0; y < fvyr; y++)
-		for (x = 0; x < fvxr; x++) {
-			l = plum(fovscan(y)[x]);
-			if (l < lwmin) continue;
-			if (l > lwmax) continue;
-			b = Bl(l);
-			bwavg += b;
-			l = what2do&DO_CWEIGHT ? centprob(x,y) : 1.;
-			bwhist[bwhi(b)] += l;
-			histot += l;
-		}
-	bwavg /= histot;
-}
-
-
 check2do()		/* check histogram to see what isn't worth doing */
 {
 	double	sum;
@@ -396,11 +334,10 @@ check2do()		/* check histogram to see what isn't worth doing */
 	register int	i;
 
 					/* check for within display range */
-	l = Lb(bwmax)/Lb(bwmin);
-	if (l <= ldmax/ldmin)
+	if (bwmax - bwmin <= Bldmax - Bldmin)
 		what2do |= DO_LINEAR;
 					/* determine if veiling significant */
-	if (l < 100.)			/* heuristic */
+	if (bwmax - bwmin < 4.5)		/* heuristic */
 		what2do &= ~DO_VEIL;
 
 	if (!(what2do & (DO_ACUITY|DO_COLOR)))
