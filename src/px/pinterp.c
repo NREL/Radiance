@@ -61,7 +61,7 @@ COLR	*ourpict;			/* output picture (COLR's) */
 COLOR	*ourspict;			/* output pixel sums (averaging) */
 float	*ourweigh = NULL;		/* output pixel weights (averaging) */
 float	*ourzbuf;			/* corresponding z-buffer */
-COLOR	*ourbpict = NULL;		/* blurred picture */
+COLOR	*ourbpict = NULL;		/* blurred picture (view averaging) */
 
 VIEW	avgview;			/* average view for -B option */
 int	nvavg;				/* number of views averaged */
@@ -516,9 +516,9 @@ register VIEW	*vw1, *vw2;
 {
 	double	m4t[4][4];
 
-	if (vw1->type != VT_PER && vw1->type != VT_PAR)
+	if (vw1->type != VT_PER & vw1->type != VT_PAR)
 		return(0);
-	if (vw2->type != VT_PER && vw2->type != VT_PAR)
+	if (vw2->type != VT_PER & vw2->type != VT_PAR)
 		return(0);
 	setident4(xfmat);
 	xfmat[0][0] = vw1->hvec[0];
@@ -635,10 +635,10 @@ double	z;
 		y1 = p0->y + c1*s1y/l1;
 		for (c2 = l2; c2-- > 0; ) {
 			x = x1 + c2*s2x/l2;
-			if (x < 0 || x >= hresolu)
+			if (x < 0 | x >= hresolu)
 				continue;
 			y = y1 + c2*s2y/l2;
-			if (y < 0 || y >= vresolu)
+			if (y < 0 | y >= vresolu)
 				continue;
 			if (averaging) {
 				if (zscan(y)[x] <= 0 || zscan(y)[x]-z
@@ -673,7 +673,7 @@ register FVECT	pos;
 	if (usematrix) {
 		pos[0] += theirview.hoff - .5;
 		pos[1] += theirview.voff - .5;
-		if (normdist && theirview.type == VT_PER)
+		if (normdist & theirview.type == VT_PER)
 			d = sqrt(1. + pos[0]*pos[0]*theirview.hn2
 					+ pos[1]*pos[1]*theirview.vn2);
 		else
@@ -707,7 +707,7 @@ register FVECT	pos;
 		if (pos[2] <= 0)
 			return(0);
 	}
-	if (pos[0] < 0 || pos[0] >= 1-FTINY || pos[1] < 0 || pos[1] >= 1-FTINY)
+	if (pos[0] < 0 | pos[0] >= 1-FTINY | pos[1] < 0 | pos[1] >= 1-FTINY)
 		return(0);
 	if (!averaging)
 		return(1);
@@ -1178,7 +1178,7 @@ clearqueue()				/* process queue */
 		if (averaging) {
 			setcolor(sscan(queue[i][1])[queue[i][0]],
 					fbp[0], fbp[1], fbp[2]);
-			wscan(queue[i][1])[queue[i][0]] = 1;
+			wscan(queue[i][1])[queue[i][0]] = MAXWT;
 		} else
 			setcolr(pscan(queue[i][1])[queue[i][0]],
 					fbp[0], fbp[1], fbp[2]);
