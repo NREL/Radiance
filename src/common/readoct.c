@@ -18,11 +18,11 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "otypes.h"
 
-double  atof();
-double  getflt();
-long  getint();
-char  *getstr();
-OCTREE  getfullnode(), gettree();
+extern double  atof();
+static double  getflt();
+static long  getint();
+static char  *getstr();
+static OCTREE  getfullnode(), gettree();
 
 static char  *infn;			/* input file name */
 static FILE  *infp;			/* input file stream */
