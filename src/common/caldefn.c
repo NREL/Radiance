@@ -258,7 +258,7 @@ incontext(qn)			/* is qualified name in current context? */
 register char  *qn;
 {
     while (*qn && *qn != CNTXMARK)	/* find context mark */
-	;
+	qn++;
     return(!strcmp(qn, context));
 }
 
@@ -398,14 +398,16 @@ EPNODE *
 dnext()				/* return pointer to next definition */
 {
     register EPNODE  *ep;
+    register char  *nm;
 
     while (htndx < NHASH) {
     	if (htpos == NULL)
     		htpos = hashtbl[htndx++];
     	while (htpos != NULL) {
     	    ep = htpos->def;
+	    nm = htpos->name;
     	    htpos = htpos->next;
-    	    if (ep != NULL)
+    	    if (ep != NULL && incontext(nm))
     	    	return(ep);
     	}
     }
