@@ -17,6 +17,8 @@ static const char	RCSid[] = "$Id$";
 #include  <string.h>
 
 #include  "calcomp.h"
+#include  "resolu.h"
+#include  "rterror.h"
 #include  "fvect.h"
 
 #define  XNAME		"X`SYS`"		/* x function name */
@@ -31,9 +33,6 @@ static const char	RCSid[] = "$Id$";
 
 /* XXX redundant, move to library */
 double  l_hermite(char *), l_bezier(char *), l_bspline(char *);
-
-
-static void printhead(int  ac, char  **av);
 
 
 int
@@ -74,7 +73,8 @@ char  *argv[];
 	if (nseg <= 0)
 		goto userror;
 
-	printhead(argc, argv);
+	fputs("# ", stdout);
+	printargs(argc, argv, stdout);
 	eclock = 0;
 
 	for (i = 0; i <= nseg; i++) {
@@ -124,45 +124,6 @@ userror:
 "Usage: %s material name x(t) y(t) z(t) r(t) nseg [-e expr] [-f file]\n",
 			argv[0]);
 	return 1;
-}
-
-
-void
-eputs(msg)
-char  *msg;
-{
-	fputs(msg, stderr);
-}
-
-
-void
-wputs(msg)
-char  *msg;
-{
-	eputs(msg);
-}
-
-
-void
-quit(code)
-int  code;
-{
-	exit(code);
-}
-
-
-void
-printhead(		/* print command header */
-	register int  ac,
-	register char  **av
-)
-{
-	putchar('#');
-	while (ac--) {
-		putchar(' ');
-		fputs(*av++, stdout);
-	}
-	putchar('\n');
 }
 
 
