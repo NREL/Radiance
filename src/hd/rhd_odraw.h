@@ -20,6 +20,7 @@ extern struct ODview {
 	int	sfirst, snext;	/* first sample and first in next view */
 	short	hhi, vhi;	/* screen image resolution */
 	short	hlow, vlow;	/* block resolution */
+	int	n2redraw;	/* approx. number of samples needing redraw */
 	struct ODblock {
 		short	nsamp;		/* number of samples in block */
 		short	nused;		/* number actually allocated */
