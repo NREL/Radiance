@@ -18,6 +18,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "otspecial.h"
 
+#define  MAXCSET	((MAXSET+1)*2-1)	/* maximum check set size */
+
 extern CUBE  thescene;			/* our scene */
 extern int  maxdepth;			/* maximum recursion depth */
 extern double  minweight;		/* minimum ray weight */
@@ -73,7 +75,6 @@ rayclear(r)			/* clear a ray for (re)evaluation */
 register RAY  *r;
 {
 	r->rno = raynum++;
-	r->cxs[0] = 0;
 	r->newcset = r->clipset;
 	r->ro = NULL;
 	r->rot = FHUGE;
@@ -317,6 +318,7 @@ localhit(r, scene)		/* check for hit in the octree */
 register RAY  *r;
 register CUBE  *scene;
 {
+	OBJECT  cxset[MAXCSET+1];	/* set of checked objects */
 	FVECT  curpos;			/* current cube position */
 	int  sflags;			/* sign flags */
 	double  t, dt;
@@ -357,13 +359,15 @@ register CUBE  *scene;
 		if (!incube(scene, curpos))	/* non-intersecting ray */
 			return(0);
 	}
-	return(raymove(curpos, sflags, r, scene) == RAYHIT);
+	cxset[0] = 0;
+	return(raymove(curpos, cxset, sflags, r, scene) == RAYHIT);
 }
 
 
 static int
-raymove(pos, dirf, r, cu)		/* check for hit as we move */
-FVECT  pos;			/* modified */
+raymove(pos, cxs, dirf, r, cu)		/* check for hit as we move */
+FVECT  pos;			/* current position, modified herein */
+OBJECT  *cxs;			/* checked objects, modified by checkhit */
 int  dirf;			/* direction indicators to speed tests */
 register RAY  *r;
 register CUBE  *cu;
@@ -392,7 +396,7 @@ register CUBE  *cu;
 		}
 		for ( ; ; ) {
 			cukid.cutree = octkid(cu->cutree, br);
-			if ((ax = raymove(pos,dirf,r,&cukid)) == RAYHIT)
+			if ((ax = raymove(pos,cxs,dirf,r,&cukid)) == RAYHIT)
 				return(RAYHIT);
 			sgn = 1 << ax;
 			if (sgn & dirf)			/* positive axis? */
@@ -411,7 +415,7 @@ register CUBE  *cu;
 		}
 		/*NOTREACHED*/
 	}
-	if (isfull(cu->cutree) && checkhit(r, cu))
+	if (isfull(cu->cutree) && checkhit(r, cu, cxs))
 		return(RAYHIT);
 					/* advance to next cube */
 	if (dirf&0x11) {
@@ -444,16 +448,17 @@ register CUBE  *cu;
 
 
 static
-checkhit(r, cu)			/* check for hit in full cube */
+checkhit(r, cu, cxs)		/* check for hit in full cube */
 register RAY  *r;
 CUBE  *cu;
+OBJECT  *cxs;
 {
 	OBJECT  oset[MAXSET+1];
 	register OBJREC  *o;
 	register int  i;
 
 	objset(oset, cu->cutree);
-	checkset(oset, r->cxs);			/* eliminate double-checking */
+	checkset(oset, cxs);			/* eliminate double-checking */
 	for (i = oset[0]; i > 0; i--) {
 		o = objptr(oset[i]);
 		(*ofun[o->otype].funp)(o, r);
@@ -467,11 +472,12 @@ CUBE  *cu;
 
 static
 checkset(os, cs)		/* modify checked set and set to check */
-register OBJECT  os[MAXSET+1];		/* os' = os - cs */
-register OBJECT  cs[MAXCSET+1];		/* cs' = cs + os */
+register OBJECT  *os;			/* os' = os - cs */
+register OBJECT  *cs;			/* cs' = cs + os */
 {
 	OBJECT  cset[MAXCSET+MAXSET+1];
-	register int  i, j, k;
+	register int  i, j;
+	int  k;
 					/* copy os in place, cset <- cs */
 	cset[0] = 0;
 	k = 0;
@@ -483,10 +489,14 @@ register OBJECT  cs[MAXCSET+1];		/* cs' = cs + os */
 			cset[++cset[0]] = os[i];
 		}
 	}
+	if (!(os[0] = k))		/* new "to check" set size */
+		return;			/* special case */
 	while (j <= cs[0])		/* get the rest of cs */
 		cset[++cset[0]] = cs[j++];
-	if (cset[0] > MAXCSET)		/* truncate if necessary */
+	if (cset[0] > MAXCSET)		/* truncate "checked" set if nec. */
 		cset[0] = MAXCSET;
-	setcopy(cs, cset);		/* copy new "checked" set back */
-	os[0] = k;			/* new "to check" set size */
+	/* setcopy(cs, cset); */	/* copy cset back to cs */
+	os = cset;
+	for (i = os[0]; i-- >= 0; )
+		*cs++ = *os++;
 }
