@@ -19,6 +19,8 @@ static char SCCSid[] = "$SunId$ LBL";
  *	Greg Ward	Lawrence Berkeley Laboratory
  */
 
+#include  <errno.h>
+
 #define  NULL		0
 
 #ifndef ALIGN
@@ -123,7 +125,7 @@ register unsigned  n;
 	register int	bucket;
 	register unsigned	bsiz;
 					/* align pointer */
-	bsiz = BYTES_WORD - ((unsigned)p&~(BYTES_WORD-1));
+	bsiz = BYTES_WORD - ((unsigned)p&(BYTES_WORD-1));
 	if (bsiz < BYTES_WORD) {
 		p += bsiz;
 		n -= bsiz;
@@ -144,6 +146,7 @@ char *
 malloc(n)			/* allocate n bytes of memory */
 unsigned	n;
 {
+	extern int  errno;
 	register M_HEAD	*mp;
 	register int	bucket;
 	register unsigned	bsiz;
@@ -151,9 +154,14 @@ unsigned	n;
 	if (n == 0)
 		return(NULL);
 					/* find first bucket that fits */
-	bucket = FIRSTBUCKET;
-	for (bsiz = 1<<FIRSTBUCKET; bsiz < n; bsiz <<= 1)
-		bucket++;
+	for (bucket = FIRSTBUCKET, bsiz = 1<<FIRSTBUCKET;
+			bucket < NBUCKETS; bucket++, bsiz <<= 1)
+		if (bsiz >= n)
+			break;
+	if (bucket >= NBUCKETS) {
+		errno = EINVAL;
+		return(NULL);
+	}
 	if (free_list[bucket] == NULL) {	/* need more core */
 		mp = (M_HEAD *)bmalloc(bsiz+sizeof(M_HEAD));
 		if (mp == NULL)
@@ -169,17 +177,17 @@ unsigned	n;
 
 char *
 realloc(op, n)			/* reallocate memory using malloc() */
-char	*op;
+register char	*op;
 unsigned	n;
 {
-	register char	*p;
+	char	*p;
 	register unsigned	on;
-
+					/* get old size */
 	if (op != NULL)
 		on = 1 << ((M_HEAD *)op-1)->bucket;
 	else
 		on = 0;
-	if (n <= on && n > on>>1)
+	if (n <= on && (n > on>>1 || on == 1<<FIRSTBUCKET))
 		return(op);		/* same bucket */
 	p = malloc(n);
 	if (p != NULL)
