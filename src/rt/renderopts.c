@@ -144,7 +144,7 @@ getrenderopt(		/* get next render option */
 					getpath(av[1],getrlibpath(),R_OK));
 				if (rval < 0) {
 					sprintf(errmsg,
-			"cannot open ambient include file \"%s\"", av[0]);
+			"cannot open ambient include file \"%s\"", av[1]);
 					error(SYSTEM, errmsg);
 				}
 				amblp += rval;
@@ -165,7 +165,7 @@ getrenderopt(		/* get next render option */
 					getpath(av[1],getrlibpath(),R_OK));
 				if (rval < 0) {
 					sprintf(errmsg,
-			"cannot open ambient exclude file \"%s\"", av[0]);
+			"cannot open ambient exclude file \"%s\"", av[1]);
 					error(SYSTEM, errmsg);
 				}
 				amblp += rval;
