@@ -131,6 +131,16 @@ turbulencec(x,y,z,s) = if( s-1.01, 0,
 			sgn(noise3(x/s,y/s,z/s))*noise3c(x/s,y/s,z/s) +
 			turbulencec(x,y,z,2*s) );
 
+			{ Normal distribution from uniform range (0,1) }
+
+un2`private(t) : t - (2.515517+t*(.802853+t*.010328))/
+		(1+t*(1.432788+t*(.189269+t*.001308))) ;
+un1`private(p) : un2`private(sqrt(log(1/p/p))) ;
+
+unif2norm(p) : if( .5-p, un1`private(p), -un1`private(1-p) ) ;
+
+nrand(x) = unif2norm(rand(x));
+
 			{ Local (u,v) coordinates for planar surfaces }
 crosslen`private = Nx*Nx + Ny*Ny;
 			{ U is distance from origin in XY-plane }
