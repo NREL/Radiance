@@ -12,9 +12,7 @@ OPT = -O
 MACH = -DBSD -DSTRUCTASSIGN -f68881 /usr/lib/f68881.il
 CFLAGS = -DSTRICT $(OPT) $(MACH)
 
-INSTDIR = /usr/local/ray
-
-INSTALL = install
+INSTDIR = ../../bin
 
 COMPAT = malloc.o
 
@@ -28,7 +26,10 @@ face.o plocate.o clip.o cone.o o_cone.o instance.o o_instance.o mat4.o xf.o \
 bbox.o savestr.o header.o fgetline.o initotypes.o $(COMPAT) -lm
 
 install:	oconv
-	$(INSTALL) oconv $(INSTDIR)
+	cp oconv $(INSTDIR)
+
+clean:
+	rm -f oconv *.o core
 
 xf.o:	xf.c
 	cc $(CFLAGS) -DINVXF -c xf.c
