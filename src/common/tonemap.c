@@ -415,7 +415,7 @@ double	Ldmax;
 		histot += tmTop->histo[i];
 		sum += (j -= HISTEP) * tmTop->histo[i];
 	}
-	threshold = histot*.025 + .5;
+	threshold = histot*0.005 + .5;
 	if (threshold < 4)
 		returnErr(TM_E_TMFAIL);
 	Lwavg = tmLuminance( (double)sum / histot );
