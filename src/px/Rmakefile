@@ -164,9 +164,9 @@ caldefn.o:	caldefn.c
 ra_pixar.o:	ra_pixar.c
 	cc $(CFLAGS) $(PIXAR_INCLUDE) -c ra_pixar.c
 
-xshowtrace:	xshowtrace.o image.o resolu.o header.o fvect.o
+xshowtrace:	xshowtrace.o image.o resolu.o header.o fvect.o x11findwind.o
 	cc $(CFLAGS) -o xshowtrace xshowtrace.o image.o resolu.o header.o \
-fvect.o -lm -lX11
+fvect.o x11findwind.o -lm -lX11
 
 fropen.o:	fropen.c
 	cc $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c fropen.c

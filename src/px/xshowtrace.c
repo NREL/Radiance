@@ -22,6 +22,8 @@ int	xres, yres;
 
 char	*progname;			/* program name */
 
+char	*picture;			/* picture name */
+
 FILE	*pin;				/* input stream */
 
 Display	*theDisplay = NULL;		/* connection to server */
@@ -52,25 +54,26 @@ char	*argv[];
 			break;
 	if (i > argc-2) {
 		fprintf(stderr, "Usage: %s [-s] [rtrace args] octree picture\n",
-				argv[0]);
+				progname);
 		exit(1);
 	}
+	picture = argv[argc-1];
 					/* get the viewing parameters */
-	if (viewfile(argv[argc-1], &ourview, &xres, &yres) <= 0 ||
+	if (viewfile(picture, &ourview, &xres, &yres) <= 0 ||
 			setview(&ourview) != NULL) {
 		fprintf(stderr, "%s: cannot get view from \"%s\"\n",
-				argv[0], argv[argc-1]);
+				progname, picture);
 		exit(1);
 	}
 					/* open the display */
 	if ((theDisplay = XOpenDisplay(NULL)) == NULL) {
 		fprintf(stderr,
 		"%s: cannot open display; DISPLAY variable set?\n",
-				argv[0]);
+				progname);
 		exit(1);
 	}
 					/* build input command */
-	sprintf(combuf, "%s %s | %s", xicom, argv[argc-1], rtcom);
+	sprintf(combuf, "%s %s | %s", xicom, picture, rtcom);
 	for ( ; i < argc-1; i++) {
 		strcat(combuf, " ");
 		strcat(combuf, argv[i]);
@@ -178,12 +181,12 @@ double	ipt[2];
 	Window	rw, cw;
 	unsigned int	pm;
 					/* compute pointer location */
-	if (gwind == 0) {
-		XQueryPointer(theDisplay, rwind, &rw, &gwind,
-				&rx, &ry, &wx, &wy, &pm);
+	if (gwind == 0 &&
+		(gwind = xfindwind(theDisplay, rwind, picture, 2)) == 0) {
+		fprintf(stderr, "%s: cannot find display window!\n", progname);
+		exit(1);
 	}
-	XQueryPointer(theDisplay, gwind, &rw, &cw,
-			&rx, &ry, &wx, &wy, &pm);
+	XQueryPointer(theDisplay, gwind, &rw, &cw, &rx, &ry, &wx, &wy, &pm);
 	xoff = wx - ipt[0]*xres;
 	yoff = wy - (1.-ipt[1])*yres;
 					/* set graphics context */
