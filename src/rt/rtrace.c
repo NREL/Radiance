@@ -43,7 +43,7 @@ double  minweight = 4e-3;		/* minimum ray weight */
 
 COLOR  ambval = BLKCOLOR;		/* ambient value */
 double  ambacc = 0.2;			/* ambient accuracy */
-int  ambres = 128;			/* ambient resolution */
+int  ambres = 32;			/* ambient resolution */
 int  ambdiv = 128;			/* ambient divisions */
 int  ambssamp = 0;			/* ambient super-samples */
 int  ambounce = 0;			/* ambient bounces */
