@@ -412,15 +412,14 @@ int	x0, y0, x1, y1;
 	csm[0] = csm[1] = csm[2] = nc = 0;
 					/* do leaves first */
 	for (i = 0; i < 4; i++) {
-		if (!(tp->flgs & CHF(i)))
-			continue;
 		if (tp->flgs & LFF(i)) {
-			dev_paintr(cp=qtL.rgb[tp->k[i].li],
-					i&01 ? mx : x0, i&02 ? my : y0,
-					i&01 ? x1 : mx, i&02 ? y1 : my);
+			cp = qtL.rgb[tp->k[i].li];
 			csm[0] += cp[0]; csm[1] += cp[1]; csm[2] += cp[2];
 			nc++;
-		} else if (!(tp->flgs & BRF(i)))
+			if (tp->flgs & CHF(i))
+				dev_paintr(cp, i&01 ? mx : x0, i&02 ? my : y0,
+					       i&01 ? x1 : mx, i&02 ? y1 : my);
+		} else if ((tp->flgs & CHBRF(i)) == CHF(i))
 			gaps |= 1<<i;	/* empty stem */
 	}
 					/* now do branches */
