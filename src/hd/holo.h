@@ -82,6 +82,11 @@ typedef struct holo {
 	BEAMI	bi[1];		/* beam index (extends struct) */
 } HOLO;			/* holodeck section */
 
+typedef struct {
+	HOLO	*h;		/* pointer to holodeck */
+	int	b;		/* beam index */
+} HDBEAMI;		/* holodeck beam index */
+
 #define nbeams(hp)	(2*((hp)->wi[5]-1))
 #define biglob(hp)	((hp)->bi)
 #define blglob(hp)	(*(hp)->bl)
@@ -94,11 +99,12 @@ typedef struct holo {
 extern HOLO	*hdinit(), *hdalloc();
 extern BEAM	*hdgetbeam();
 extern RAYVAL	*hdnewrays();
-extern long	hdmemuse(), hdfiluse(), hdfilen();
+extern unsigned	hdmemuse();
+extern long	hdfiluse(), hdfilen();
 extern double	hdray(), hdinter();
 extern unsigned	hdcode();
 
-extern int	hdcachesize;		/* target cache size (bytes) */
+extern unsigned	hdcachesize;		/* target cache size (bytes) */
 extern unsigned long	hdclock;	/* holodeck system clock */
 extern HOLO	*hdlist[HDMAX+1];	/* holodeck pointers (NULL term.) */
 
