@@ -34,8 +34,6 @@ struct rleaves	qtL;		/* our pile of leaves */
 static RTREE	**twigbundle;	/* free twig blocks (NULL term.) */
 static int	nexttwig;	/* next free twig */
 
-#define ungetleaf(li)	(qtL.tl=(li))	/* dangerous if used improperly */
-
 
 static RTREE *
 newtwig()			/* allocate a twig */
@@ -86,20 +84,6 @@ int	really;
 		free((char *)twigbundle[i]);
 	free((char *)twigbundle);
 	twigbundle = NULL;
-}
-
-
-static int
-newleaf()			/* allocate a leaf from our pile */
-{
-	int	li;
-	
-	li = qtL.tl++;
-	if (qtL.tl >= qtL.nl)	/* get next leaf in ring */
-		qtL.tl = 0;
-	if (qtL.tl == qtL.bl)	/* need to shake some free */
-		qtCompost(LFREEPCT);
-	return(li);
 }
 
 
@@ -328,12 +312,16 @@ FVECT	p, v;
 {
 	register int	li;
 
-	li = newleaf();
+	li = qtL.tl++;
+	if (qtL.tl >= qtL.nl)	/* advance to next leaf in ring */
+		qtL.tl = 0;
+	if (qtL.tl == qtL.bl)	/* need to shake some free */
+		qtCompost(LFREEPCT);
 	VCOPY(qtL.wp[li], p);
 	qtL.wd[li] = encodedir(v);
 	tmCvColrs(&qtL.brt[li], qtL.chr[li], c, 1);
 	if (!addleaf(li))
-		ungetleaf(li);
+		qtL.tl = li;	/* unget this leaf */
 }
 
 
