@@ -81,7 +81,7 @@ ranimate:	ranimate.o netproc.o
 ranimove:	ranimove.o ranimove1.o ranimove2.o \
 ../lib/raypcalls.o ../lib/raycalls.o
 	$(CC) $(CFLAGS) -o ranimove ranimove.o ranimove1.o ranimove2.o \
-../lib/raypcalls.o ../lib/raycalls.o -lradiance -lrt -lm
+-lraypcalls.o -lraycalls.o -lradiance -lrt -lm
 
 rpiece:	rpiece.o Version.o
 	$(CC) $(CFLAGS) -o rpiece rpiece.o Version.o -lrt -lm
