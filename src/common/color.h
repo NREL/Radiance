@@ -113,7 +113,7 @@ typedef float  COLORMAT[3][3];	/* color coordinate conversion matrix */
 #define  D65EFFICACY		203.		/* standard illuminant D65 */
 #define  INCEFFICACY		160.		/* illuminant A (incand.) */
 #define  SUNEFFICACY		208.		/* illuminant B (solar dir.) */
-#define  SKYEFFICACY		D65EFFICACY	/* skylight */
+#define  SKYEFFICACY		D65EFFICACY	/* skylight (should be 110) */
 #define  DAYEFFICACY		D65EFFICACY	/* combined sky and solar */
 
 #define  luminance(col)		(WHTEFFICACY * bright(col))
