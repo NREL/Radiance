@@ -28,9 +28,9 @@ a contour plot from the result.  The input is a Radiance scene description
 (and octree) and the output is one or more color Radiance pictures.
 
 _EOF_
-echo -n "Have you already calculated an illuminance picture with dayfact? "
-if ( "$<" =~ [yY]* ) then
-	readvar illumpic
+echo "Have you already calculated an illuminance picture using dayfact?"
+readvar illumpic
+if ( $illumpic != $nofile ) then
 	if ( ! -r $illumpic ) then
 		echo "Cannot read $illumpic"
 		exit 1
