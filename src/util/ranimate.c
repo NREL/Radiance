@@ -99,6 +99,8 @@ int	npslots;		/* number of process slots */
 int	lastpid;		/* ID of last completed background process */
 PSERVER	*lastpserver;		/* last process server used */
 
+#define phostname(ps)	((ps)->hostname[0] ? (ps)->hostname : astat.host)
+
 struct pslot	*findpslot();
 
 VIEW	*getview();
@@ -636,6 +638,7 @@ int	first, last;
 char	*vfn;
 {
 	char	combuf[2048];
+	char	*inspoint;
 	register int	i;
 
 	if (!noaction && vint(INTERP))		/* create dummy frames */
@@ -646,13 +649,15 @@ char	*vfn;
 				close(open(combuf, O_RDONLY|O_CREAT, 0666));
 			}
 					/* create command */
-	sprintf(combuf, "rpict%s -w0 ", rendopt);
+	sprintf(combuf, "rpict%s -w0", rendopt);
 	if (vint(INTERP) || atoi(vval(MBLUR)))
-		sprintf(combuf+strlen(combuf), "-z %s.zbf ", vval(BASENAME));
-	sprintf(combuf+strlen(combuf), "-o %s.unf %s -S %d %s < %s",
-			vval(BASENAME), rresopt, first, vval(OCTREE), vfn);
+		sprintf(combuf+strlen(combuf), " -z %s.zbf", vval(BASENAME));
+	sprintf(combuf+strlen(combuf), " -o %s.unf %s -S %d",
+			vval(BASENAME), rresopt, first);
+	inspoint = combuf + strlen(combuf);
+	sprintf(inspoint, " %s < %s", vval(OCTREE), vfn);
 					/* run in parallel */
-	if (pruncom(combuf, (last-first+1)/(vint(INTERP)+1))) {
+	if (pruncom(combuf, inspoint, (last-first+1)/(vint(INTERP)+1))) {
 		fprintf(stderr, "%s: error rendering frames %d through %d\n",
 				progname, first, last);
 		quit(1);
@@ -1103,9 +1108,8 @@ int	(*rf)();
 	if (!silent) {
 		PSERVER	*ps;
 		int	psn = pid;
-		ps = findpjob(&psn);
-		printf("\tProcess started on %s\n",
-				ps->hostname[0] ? ps->hostname : LHOSTNAME);
+		ps = findjob(&psn);
+		printf("\tProcess started on %s\n", phostname(ps));
 		fflush(stdout);
 	}
 	psl = findpslot(pid);		/* record info. in appropriate slot */
@@ -1143,12 +1147,13 @@ int	ncoms;
 
 
 int
-pruncom(com, maxcopies)		/* run a command in parallel over network */
-char	*com;
+pruncom(com, ppins, maxcopies)	/* run a command in parallel over network */
+char	*com, *ppins;
 int	maxcopies;
 {
 	int	retstatus = 0;
 	int	hostcopies;
+	char	com1buf[10240], *com1, *endcom1;
 	int	status;
 	register PSERVER	*ps;
 
@@ -1160,19 +1165,32 @@ int	maxcopies;
 					/* start jobs on each server */
 	for (ps = pslist; ps != NULL; ps = ps->next) {
 		hostcopies = 0;
+		if (maxcopies > 1 && ps->nprocs > 1 && ppins != NULL) {
+			strcpy(com1=com1buf, com);	/* build -PP command */
+			sprintf(com1+(ppins-com), " -PP %s/%s.persist",
+					vval(DIRECTORY), phostname(ps));
+			strcat(com1, ppins);
+			endcom1 = com1 + strlen(com1);
+			sprintf(endcom1, "; kill `sed -n '1s/^[^ ]* //p' %s/%s.persist`",
+					vval(DIRECTORY), phostname(ps));
+		} else {
+			com1 = com;
+			endcom1 = NULL;
+		}
 		while (maxcopies > 0 &&
-				startjob(ps, savestr(com), donecom) != -1) {
+				startjob(ps, savestr(com1), donecom) != -1) {
 			sleep(10);
 			hostcopies++;
 			maxcopies--;
+			if (endcom1 != NULL)
+				*endcom1 = '\0';
 		}
 		if (!silent && hostcopies) {
 			if (hostcopies > 1)
 				printf("\t%d duplicate processes", hostcopies);
 			else
 				printf("\tProcess");
-			printf(" started on %s\n",
-				ps->hostname[0] ? ps->hostname : LHOSTNAME);
+			printf(" started on %s\n", phostname(ps));
 			fflush(stdout);
 		}
 	}
