@@ -8,9 +8,10 @@ static char SCCSid[] = "$SunId$ AU";
     Auckland, New Zealand
 */
 #include <stdio.h>
-#include <stdlib.h>
 #include "pict.h"
 #include "color.h"
+
+extern char  *malloc();
 
 char cbuf[8192*5]; 
 char pbuf[8192]; 
