@@ -150,6 +150,8 @@ char	*argv[];
 	cfname = argv[i];
 						/* load variables */
 	loadvars(cfname);
+						/* check variables */
+	checkvalues();
 						/* did we get DIRECTORY? */
 	checkdir();
 						/* check status */
