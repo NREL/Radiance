@@ -35,7 +35,7 @@ instance.o:	instance.h
 
 linregr.o:	linregr.h
 
-mat4.o:		mat4.h
+mat4.o:		mat4.h fvect.h
 
 cone.o face.o instance.o objset.o otypes.o \
 readobj.o readoct.o:	object.h
