@@ -408,15 +408,41 @@ m_mist(fin)		/* transform arguments for mist */
 FILE  *fin;
 {
 	FUNARGS	 fa;
+	int	i;
 
 	if (readfargs(&fa, fin) != 1)
 		return(-1);
-	if (fa.nsargs != 0  || fa.nfargs != 4)
+	if (fa.nfargs > 5)
 		return(-1);
-	printf("0\n0\n4");
-	printf(" %18.12g %18.12g %18.12g", fa.farg[0]/tot.sca,
-			fa.farg[1]/tot.sca, fa.farg[2]/tot.sca);
-	printf(" %18.12g\n", fa.farg[3]);
+	printf("%d", fa.nsargs);
+	if (idprefix == NULL)
+		for (i = 0; i < fa.nsargs; i++)
+			printf(" %s", fa.sarg[i]);
+	else
+		for (i = 0; i < fa.nsargs; i++) {
+			char	sname[256], *sp;
+			register char	*cp1, *cp2 = sname;
+							/* add idprefix */
+			for (sp = fa.sarg[i]; *sp; sp = cp1) {
+				for (cp1 = idprefix; *cp1; )
+					*cp2++ = *cp1++;
+				*cp2++ = '.';
+				for (cp1 = sp; *cp1 &&
+						(*cp2++ = *cp1++) != '>'; )
+					;
+			}
+			*cp2 = '\0';
+			printf(" %s", sname);
+		}
+	printf("\n0\n%d", fa.nfargs);
+	if (fa.nfargs > 2)
+		printf(" %12.6g %12.6g %12.6g", fa.farg[0]/tot.sca,
+				fa.farg[1]/tot.sca, fa.farg[2]/tot.sca);
+	if (fa.nfargs > 3)
+		printf(" %12.6g", fa.farg[3]);
+	if (fa.nfargs > 4)
+		printf(" %12.6g", fa.farg[4]);
+	printf("\n");
 	freefargs(&fa);
 	return(0);
 }
@@ -432,11 +458,11 @@ FILE  *fin;
 	if (fa.nsargs != 0  || fa.nfargs != 5)
 		return(-1);
 	printf("0\n0\n5");
-	printf(" %18.12g %18.12g %18.12g",
+	printf(" %12.6g %12.6g %12.6g",
 		pow(fa.farg[0], 1.0/tot.sca),
 		pow(fa.farg[1], 1.0/tot.sca),
 		pow(fa.farg[2], 1.0/tot.sca));
-	printf(" %18.12g %18.12g\n", fa.farg[3], fa.farg[4]);
+	printf(" %12.6g %12.6g\n", fa.farg[3], fa.farg[4]);
 	freefargs(&fa);
 	return(0);
 }
@@ -452,16 +478,16 @@ FILE  *fin;
 	if (fa.nsargs != 0  || fa.nfargs != 8)
 		return(-1);
 	printf("0\n0\n8\n");
-	printf("%18.12g %18.12g %18.12g",
+	printf("%12.6g %12.6g %12.6g",
 		pow(fa.farg[0], 1.0/tot.sca),
 		pow(fa.farg[1], 1.0/tot.sca),
 		pow(fa.farg[2], 1.0/tot.sca));
-	printf(" %18.12g\n", fa.farg[3]);
-	printf("%18.12g %18.12g %18.12g",
+	printf(" %12.6g\n", fa.farg[3]);
+	printf("%12.6g %12.6g %12.6g",
 		pow(fa.farg[4], 1.0/tot.sca),
 		pow(fa.farg[5], 1.0/tot.sca),
 		pow(fa.farg[6], 1.0/tot.sca));
-	printf(" %18.12g\n", fa.farg[7]);
+	printf(" %12.6g\n", fa.farg[7]);
 	freefargs(&fa);
 	return(0);
 }
