@@ -8,7 +8,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *  Skeletal 24-bit image conversion program.  Replace "skel"
  *  in this file with a more appropriate image type identifier.
  *
- *  The Makefile entry should look something like this:
+ *  The Rmakefile entry should look something like this:
  *	ra_skel:	ra_skel.o
  *		cc $(CFLAGS) -o ra_skel ra_skel.o -lrt -lm
  *	ra_skel.o:	../common/color.h ../common/resolu.h
