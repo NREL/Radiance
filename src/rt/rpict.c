@@ -49,6 +49,8 @@ double  pctdone = 0.0;			/* percentage done */
 
 extern long  nrays;			/* number of rays traced */
 
+static int  xres, yres;			/* output x and y resolution */
+
 #define  MAXDIV		32		/* maximum sample size */
 
 #define  pixjitter()	(.5+dstrpix*(.5-frandom()))
@@ -101,20 +103,19 @@ char  *oldfile;
 		psample = 1;
 	else if (psample > MAXDIV)
 		psample = MAXDIV;
+					/* output resolution may be smaller */
+	xres = ourview.hresolu - (ourview.hresolu % psample);
+	yres = ourview.vresolu - (ourview.vresolu % psample);
 
-	ourview.hresolu -= ourview.hresolu % psample;
-	ourview.vresolu -= ourview.vresolu % psample;
-		
 	for (i = 0; i <= psample; i++) {
-		scanbar[i] = (COLOR *)malloc((ourview.hresolu+1)*sizeof(COLOR));
+		scanbar[i] = (COLOR *)malloc((xres+1)*sizeof(COLOR));
 		if (scanbar[i] == NULL)
 			error(SYSTEM, "out of memory in render");
 	}
-	
 					/* write out boundaries */
-	fputresolu(YMAJOR|YDECR, ourview.hresolu, ourview.vresolu, stdout);
+	fputresolu(YMAJOR|YDECR, xres, yres, stdout);
 
-	ypos = ourview.vresolu - salvage(oldfile);	/* find top line */
+	ypos = yres - salvage(oldfile);	/* find top line */
 	fillscanline(scanbar[0], ypos, psample);	/* top scan */
 
 	for (ypos -= psample; ypos > -psample; ypos -= psample) {
@@ -128,11 +129,11 @@ char  *oldfile;
 		fillscanbar(scanbar, ypos, psample);
 		
 		for (i = psample-1; i >= 0; i--)
-			if (fwritescan(scanbar[i], ourview.hresolu, stdout) < 0)
+			if (fwritescan(scanbar[i], xres, stdout) < 0)
 				goto writerr;
 		if (fflush(stdout) == EOF)
 			goto writerr;
-		pctdone = 100.0*(ourview.vresolu-ypos)/ourview.vresolu;
+		pctdone = 100.0*(yres-ypos)/yres;
 	}
 		
 	for (i = 0; i <= psample; i++)
@@ -152,7 +153,7 @@ int  y, xstep;
 	
 	pixvalue(scanline[0], 0, y);
 
-	for (i = xstep; i <= ourview.hresolu; i += xstep) {
+	for (i = xstep; i <= xres; i += xstep) {
 	
 		pixvalue(scanline[i], i, y);
 		
@@ -169,7 +170,7 @@ int  y, ysize;
 	int  b = ysize;
 	register int  i, j;
 	
-	for (i = 0; i < ourview.hresolu; i++) {
+	for (i = 0; i < xres; i++) {
 		
 		copycolor(vline[0], scanbar[0][i]);
 		copycolor(vline[ysize], scanbar[ysize][i]);
@@ -270,20 +271,20 @@ char  *oldfile;
 		return(0);
 	}
 
-	if (x != ourview.hresolu || y != ourview.vresolu) {
+	if (x != xres || y != yres) {
 		sprintf(errmsg, "resolution mismatch in recover file \"%s\"",
 				oldfile);
 		error(USER, errmsg);
 		return(0);
 	}
 
-	scanline = (COLR *)malloc(ourview.hresolu*sizeof(COLR));
+	scanline = (COLR *)malloc(xres*sizeof(COLR));
 	if (scanline == NULL)
 		error(SYSTEM, "out of memory in salvage");
-	for (y = 0; y < ourview.vresolu; y++) {
-		if (freadcolrs(scanline, ourview.hresolu, fp) < 0)
+	for (y = 0; y < yres; y++) {
+		if (freadcolrs(scanline, xres, fp) < 0)
 			break;
-		if (fwritecolrs(scanline, ourview.hresolu, stdout) < 0)
+		if (fwritecolrs(scanline, xres, stdout) < 0)
 			goto writerr;
 	}
 	if (fflush(stdout) == EOF)
