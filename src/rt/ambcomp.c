@@ -209,20 +209,16 @@ FVECT  pg, dg;
 		arad = FHUGE;
 	else
 		arad = (ndivs+ns)/arad;
+	if (pg != NULL) {		/* reduce radius if gradient large */
+		d = DOT(pg,pg);
+		if (d*arad*arad > 1.0)
+			arad = 1.0/sqrt(d);
+	}
 	if (arad > maxarad)
 		arad = maxarad;
 	else if (arad < minarad)
 		arad = minarad;
-	arad /= sqrt(wt);
-	if (pg != NULL) {		/* clip pos. gradient if too large */
-		d = 4.0*DOT(pg,pg)*arad*arad;
-		if (d > 1.0) {
-			d = 1.0/sqrt(d);
-			for (i = 0; i < 3; i++)
-				pg[i] *= d;
-		}
-	}
-	return(arad);
+	return(arad/sqrt(wt));
 oopsy:
 	if (div != NULL)
 		free((char *)div);
@@ -333,7 +329,7 @@ AMBHEMI  *hp;
 			if (i > 0) {
 				d = dp[-hp->np].r;
 				if (dp[0].r > d) d = dp[0].r;
-				d *= 1.0 - sqrt((double)i/hp->nt);
+				d *= 1.0 - (double)i/hp->nt;	/* cos(t)^2 */
 				mag0 += d*(b - bright(dp[-hp->np].v));
 			}
 			if (j > 0) {
@@ -381,7 +377,7 @@ AMBHEMI  *hp;
 				error(CONSISTENCY,
 					"division order in dirgradient");
 #endif
-			mag += sqrt((i+.5)/hp->nt)*bright(dp->v);
+			mag += sqrt((i+.5)/hp->nt)*bright(dp->v);  /* sin(t) */
 			dp += hp->np;
 		}
 		phi = 2.0*PI * (j+.5)/hp->np + PI/2.0;
