@@ -41,19 +41,23 @@ char	vbrtout[] = "lo";
 char	*vcolexp[3] = {"re", "ge", "be"};
 char	vbrtexp[] = "le";
 
-#define vnfiles		"nfiles"
-#define vxres		"xres"
-#define vyres		"yres"
-#define vxpos		"x"
-#define vypos		"y"
+char	vnfiles[] = "nfiles";
+char	vxmax[] = "xmax";
+char	vymax[] = "ymax";
+char	vxres[] = "xres";
+char	vyres[] = "yres";
+char	vxpos[] = "x";
+char	vypos[] = "y";
 
 int	nowarn = 0;			/* no warning messages? */
 
-int	original = 0;			/* origninal values? */
+int	xmax = 0, ymax = 0;		/* input resolution */
 
-int	xres=0, yres=0;			/* picture resolution */
+int	xscan, yscan;			/* input position */
 
-int	xpos, ypos;			/* picture position */
+int	xres, yres;			/* output resolution */
+
+int	xpos, ypos;			/* output position */
 
 int	wrongformat = 0;
 
@@ -62,6 +66,8 @@ main(argc, argv)
 int	argc;
 char	*argv[];
 {
+	char	buf[128];
+	int	original;
 	double	f;
 	int	a, i;
 						/* scan options */
@@ -69,10 +75,8 @@ char	*argv[];
 		if (argv[a][0] == '-')
 			switch (argv[a][1]) {
 			case 'x':
-				xres = atoi(argv[++a]);
-				continue;
 			case 'y':
-				yres = atoi(argv[++a]);
+				a++;
 				continue;
 			case 'w':
 				nowarn = !nowarn;
@@ -90,6 +94,7 @@ char	*argv[];
 		setcolor(input[nfiles].expos, 1.0, 1.0, 1.0);
 	}
 	nfiles = 0;
+	original = 0;
 	for ( ; a < argc; a++) {
 		if (nfiles >= MAXINP) {
 			eputs(argv[0]);
@@ -126,17 +131,33 @@ char	*argv[];
 			}
 		}
 		checkfile();
-		original = 0;
+		if (original) {
+			colval(input[nfiles].coef,RED) /=
+					colval(input[nfiles].expos,RED);
+			colval(input[nfiles].coef,GRN) /=
+					colval(input[nfiles].expos,GRN);
+			colval(input[nfiles].coef,BLU) /=
+					colval(input[nfiles].expos,BLU);
+		}
 		nfiles++;
+		original = 0;
 	}
-	init();				/* set constant expressions */
+	init();				/* set constants */
 					/* go back and get expressions */
 	for (a = 1; a < argc; a++) {
 		if (argv[a][0] == '-')
 			switch (argv[a][1]) {
 			case 'x':
+				strcpy(buf, vxres);
+				strcat(buf, ":");
+				strcat(buf, argv[++a]);
+				scompile(buf, NULL, 0);
+				continue;
 			case 'y':
-				a++;
+				strcpy(buf, vyres);
+				strcat(buf, ":");
+				strcat(buf, argv[++a]);
+				scompile(buf, NULL, 0);
 				continue;
 			case 'w':
 				continue;
@@ -148,6 +169,18 @@ char	*argv[];
 				continue;
 			}
 		break;
+	}
+						/* set/get output resolution */
+	if (!vardefined(vxres))
+		varset(vxres, ':', (double)xmax);
+	if (!vardefined(vyres))
+		varset(vyres, ':', (double)ymax);
+	xres = varvalue(vxres) + .5;
+	yres = varvalue(vyres) + .5;
+	if (xres <= 0 || yres <= 0) {
+		eputs(argv[0]);
+		eputs(": illegal output resolution\n");
+		quit(1);
 	}
 						/* complete header */
 	printargs(argc, argv, stdout);
@@ -181,16 +214,9 @@ char	*s;
 	if (isexpos(s)) {			/* exposure */
 		d = exposval(s);
 		scalecolor(input[nfiles].expos, d);
-		if (original)
-			scalecolor(input[nfiles].coef, 1.0/d);
 	} else if (iscolcor(s)) {		/* color correction */
 		colcorval(ctmp, s);
 		multcolor(input[nfiles].expos, ctmp);
-		if (original) {
-			colval(input[nfiles].coef,RED) /= colval(ctmp,RED);
-			colval(input[nfiles].coef,GRN) /= colval(ctmp,GRN);
-			colval(input[nfiles].coef,BLU) /= colval(ctmp,BLU);
-		}
 	}
 						/* echo line */
 	putchar('\t');
@@ -200,6 +226,7 @@ char	*s;
 
 checkfile()			/* ready a file */
 {
+	int	xinp, yinp;
 	register int	i;
 					/* process header */
 	fputs(input[nfiles].name, stdout);
@@ -210,36 +237,33 @@ checkfile()			/* ready a file */
 		eputs(": not in Radiance picture format\n");
 		quit(1);
 	}
-	if (fgetresolu(&xpos, &ypos, input[nfiles].fp) != (YMAJOR|YDECR)) {
+	if (fgetresolu(&xinp, &yinp, input[nfiles].fp) != (YMAJOR|YDECR)) {
 		eputs(input[nfiles].name);
 		eputs(": bad picture size\n");
 		quit(1);
 	}
-	if (xres == 0 && yres == 0) {
-		xres = xpos;
-		yres = ypos;
-	} else if (xpos != xres || ypos != yres) {
+	if (xmax == 0 && ymax == 0) {
+		xmax = xinp;
+		ymax = yinp;
+	} else if (xinp != xmax || yinp != ymax) {
 		eputs(input[nfiles].name);
 		eputs(": resolution mismatch\n");
 		quit(1);
 	}
 					/* allocate scanlines */
 	for (i = 0; i < WINSIZ; i++)
-		input[nfiles].scan[i] = (COLOR *)emalloc(xres*sizeof(COLOR));
+		input[nfiles].scan[i] = (COLOR *)emalloc(xmax*sizeof(COLOR));
 }
 
 
-init()				/* perform final setup */
+init()					/* perform final setup */
 {
 	double	l_colin(), l_expos();
 	register int	i;
-						/* prime input */
-	for (ypos = yres+(MIDSCN-1); ypos >= yres; ypos--)
-		advance();
 						/* define constants */
 	varset(vnfiles, ':', (double)nfiles);
-	varset(vxres, ':', (double)xres);
-	varset(vyres, ':', (double)yres);
+	varset(vxmax, ':', (double)xmax);
+	varset(vymax, ':', (double)ymax);
 						/* set functions */
 	for (i = 0; i < 3; i++) {
 		funset(vcolexp[i], 1, ':', l_expos);
@@ -269,11 +293,14 @@ combine()			/* combine pictures */
 		brtdef = NULL;
 						/* allocate scanline */
 	scanout = (COLOR *)emalloc(xres*sizeof(COLOR));
+						/* set input position */
+	yscan = ymax+MIDSCN;
 						/* combine files */
 	for (ypos = yres-1; ypos >= 0; ypos--) {
 	    advance();
 	    varset(vypos, '=', (double)ypos);
 	    for (xpos = 0; xpos < xres; xpos++) {
+		xscan = (long)xpos*xmax/xres;
 		varset(vxpos, '=', (double)xpos);
 		eclock++;
 		if (brtdef != NULL) {
@@ -288,7 +315,7 @@ combine()			/* combine pictures */
 			} else {
 			    d = 0.0;
 			    for (i = 0; i < nfiles; i++)
-				d += colval(input[i].scan[MIDSCN][xpos],j);
+				d += colval(input[i].scan[MIDSCN][xscan],j);
 			}
 			if (d < 0.0)
 			    d = 0.0;
@@ -305,26 +332,28 @@ combine()			/* combine pictures */
 }
 
 
-advance()			/* read in next scanline */
+advance()			/* read in data for next scanline */
 {
+	int	ytarget;
 	register COLOR	*st;
 	register int	i, j;
 
-	for (i = 0; i < nfiles; i++) {
-		st = input[i].scan[WINSIZ-1];
-		for (j = WINSIZ-1; j > 0; j--)	/* rotate window */
-			input[i].scan[j] = input[i].scan[j-1];
-		input[i].scan[0] = st;
-		if (ypos < MIDSCN)		/* hit bottom */
-			continue;
-		if (freadscan(st, xres, input[i].fp) < 0) {
-			eputs(input[i].name);
-			eputs(": read error\n");
-			quit(1);
+	for (ytarget = (long)ypos*ymax/yres; yscan > ytarget; yscan--)
+		for (i = 0; i < nfiles; i++) {
+			st = input[i].scan[WINSIZ-1];
+			for (j = WINSIZ-1; j > 0; j--)	/* rotate window */
+				input[i].scan[j] = input[i].scan[j-1];
+			input[i].scan[0] = st;
+			if (yscan <= MIDSCN)		/* hit bottom? */
+				continue;
+			if (freadscan(st, xmax, input[i].fp) < 0) {	/* read */
+				eputs(input[i].name);
+				eputs(": read error\n");
+				quit(1);
+			}
+			for (j = 0; j < xmax; j++)	/* adjust color */
+				multcolor(st[j], input[i].coef);
 		}
-		for (j = 0; j < xres; j++)	/* adjust color */
-			multcolor(st[j], input[i].coef);
-	}
 }
 
 
@@ -333,16 +362,10 @@ l_expos(nam)			/* return picture exposure */
 register char	*nam;
 {
 	register int	fn, n;
-	double	d;
 
-	d = argument(1);
-	if (d > -.5 && d < .5)
-		return((double)nfiles);
-	fn = d - .5;
-	if (fn < 0 || fn >= nfiles) {
-		errno = EDOM;
-		return(0.0);
-	}
+	fn = argument(1) - .5;
+	if (fn < 0 || fn >= nfiles)
+		return(1.0);
 	if (nam == vbrtexp)
 		return(bright(input[fn].expos));
 	n = 3;
@@ -376,12 +399,12 @@ register char	*nam;
 		d = argument(2);
 		if (d < 0.0) {
 			xoff = d-.5;
-			if (xpos+xoff < 0)
-				xoff = -xpos;
+			if (xscan+xoff < 0)
+				xoff = -xscan;
 		} else {
 			xoff = d+.5;
-			if (xpos+xoff >= xres)
-				xoff = xres-1-xpos;
+			if (xscan+xoff >= xmax)
+				xoff = xmax-1-xscan;
 		}
 	}
 	if (n >= 3) {
@@ -390,22 +413,22 @@ register char	*nam;
 			yoff = d-.5;
 			if (yoff+MIDSCN < 0)
 				yoff = -MIDSCN;
-			if (ypos+yoff < 0)
-				yoff = -ypos;
+			if (yscan+yoff < 0)
+				yoff = -yscan;
 		} else {
 			yoff = d+.5;
 			if (yoff+MIDSCN >= WINSIZ)
 				yoff = WINSIZ-1-MIDSCN;
-			if (ypos+yoff >= yres)
-				yoff = yres-1-ypos;
+			if (yscan+yoff >= ymax)
+				yoff = ymax-1-yscan;
 		}
 	}
 	if (nam == vbrtin)
-		return(bright(input[fn].scan[MIDSCN+yoff][xpos+xoff]));
+		return(bright(input[fn].scan[MIDSCN+yoff][xscan+xoff]));
 	n = 3;
 	while (n--)
 	    if (nam == vcolin[n])
-		return(colval(input[fn].scan[MIDSCN+yoff][xpos+xoff],n));
+		return(colval(input[fn].scan[MIDSCN+yoff][xscan+xoff],n));
 	eputs("Bad call to l_colin()!\n");
 	quit(1);
 }
