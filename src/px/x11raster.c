@@ -17,6 +17,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "color.h"
 #include "x11raster.h"
 
+extern char  *malloc(), *realloc(), *calloc();
+
 
 XRASTER *
 make_raster(disp, vis, npixbits, data, width, height, bm_pad)

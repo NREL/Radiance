@@ -32,6 +32,13 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "random.h"
 #include  "resolu.h"
 
+#ifdef  __alpha
+#define  int4		int
+#endif
+#ifndef  int4
+#define  int4		long
+#endif
+
 #define  FONTNAME	"8x13"		/* text font we'll use */
 
 #define  CTRL(c)	((c)-'@')
@@ -466,10 +473,10 @@ getras()				/* get raster file */
 			goto fail;
 		getmono();
 	} else if (ourvis.class == TrueColor | ourvis.class == DirectColor) {
-		ourdata = (unsigned char *)malloc(4*xmax*ymax);
+		ourdata = (unsigned char *)malloc(sizeof(int4)*xmax*ymax);
 		if (ourdata == NULL)
 			goto fail;
-		ourras = make_raster(thedisplay, &ourvis, 32,
+		ourras = make_raster(thedisplay, &ourvis, sizeof(int4)*8,
 				ourdata, xmax, ymax, 32);
 		if (ourras == NULL)
 			goto fail;
@@ -876,12 +883,12 @@ COLR  *scan;
 getfull()			/* get full (24-bit) data */
 {
 	int	y;
-	register unsigned long	*dp;
+	register unsigned int4	*dp;
 	register int	x;
 					/* set gamma correction */
 	setcolrgam(gamcor);
 					/* read and convert file */
-	dp = (unsigned long *)ourdata;
+	dp = (unsigned int4 *)ourdata;
 	for (y = 0; y < ymax; y++) {
 		getscan(y);
 		add2icon(y, scanline);
