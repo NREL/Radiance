@@ -42,6 +42,7 @@ static C_COLOR	cie_yf = C_CIEY;
 static C_COLOR	cie_zf = C_CIEZ;
 
 static int	setspectrum();
+static int	setbbtemp();
 static void	mixcolors();
 
 
@@ -105,7 +106,7 @@ register char	**av;
 	case MG_E_CXY:		/* assign CIE XY value */
 		if (ac != 3)
 			return(MG_EARGC);
-		if (!isflt(av[1]) || !isflt(av[2]))
+		if (!isflt(av[1]) | !isflt(av[2]))
 			return(MG_ETYPE);
 		c_ccolor->cx = atof(av[1]);
 		c_ccolor->cy = atof(av[2]);
@@ -118,10 +119,16 @@ register char	**av;
 	case MG_E_CSPEC:	/* assign spectral values */
 		if (ac < 5)
 			return(MG_EARGC);
-		if (!isflt(av[1]) || !isflt(av[2]))
+		if (!isflt(av[1]) | !isflt(av[2]))
 			return(MG_ETYPE);
 		return(setspectrum(c_ccolor, atof(av[1]), atof(av[2]),
 				ac-3, av+3));
+	case MG_E_CCT:		/* assign black body spectrum */
+		if (ac != 2)
+			return(MG_EARGC);
+		if (!isflt(av[1]))
+			return(MG_ETYPE);
+		return(setbbtemp(c_ccolor, atof(av[1])));
 	case MG_E_CMIX:		/* mix colors */
 		if (ac < 5 || (ac-1)%2)
 			return(MG_EARGC);
@@ -248,7 +255,7 @@ register char	**av;
 	case MG_E_RS:		/* set specular reflectance */
 		if (ac != 3)
 			return(MG_EARGC);
-		if (!isflt(av[1]) || !isflt(av[2]))
+		if (!isflt(av[1]) | !isflt(av[2]))
 			return(MG_ETYPE);
 		c_cmaterial->rs = atof(av[1]);
 		c_cmaterial->rs_a = atof(av[2]);
@@ -261,7 +268,7 @@ register char	**av;
 	case MG_E_TS:		/* set specular transmittance */
 		if (ac != 3)
 			return(MG_EARGC);
-		if (!isflt(av[1]) || !isflt(av[2]))
+		if (!isflt(av[1]) | !isflt(av[2]))
 			return(MG_ETYPE);
 		c_cmaterial->ts = atof(av[1]);
 		c_cmaterial->ts_a = atof(av[2]);
@@ -348,7 +355,7 @@ register char	**av;
 	case MG_E_POINT:	/* set point */
 		if (ac != 4)
 			return(MG_EARGC);
-		if (!isflt(av[1]) || !isflt(av[2]) || !isflt(av[3]))
+		if (!isflt(av[1]) | !isflt(av[2]) | !isflt(av[3]))
 			return(MG_ETYPE);
 		c_cvertex->p[0] = atof(av[1]);
 		c_cvertex->p[1] = atof(av[2]);
@@ -358,7 +365,7 @@ register char	**av;
 	case MG_E_NORMAL:	/* set normal */
 		if (ac != 4)
 			return(MG_EARGC);
-		if (!isflt(av[1]) || !isflt(av[2]) || !isflt(av[3]))
+		if (!isflt(av[1]) | !isflt(av[2]) | !isflt(av[3]))
 			return(MG_ETYPE);
 		c_cvertex->n[0] = atof(av[1]);
 		c_cvertex->n[1] = atof(av[2]);
@@ -474,7 +481,7 @@ int	fl;
 			clr->ssum += clr->ssamp[i] =
 					x * cie_xf.ssamp[i] +
 					y * cie_yf.ssamp[i] +
-					z * cie_zf.ssamp[i] ;
+					z * cie_zf.ssamp[i] + .5;
 		clr->flags |= C_CSSPEC;
 	}
 	if (fl & C_CSEFF) {		/* compute efficacy */
@@ -556,9 +563,9 @@ char	**av;
 				pos++;
 			}
 			if (wl+FTINY >= wl0 & wl-FTINY <= wl0)
-				clr->ssamp[i] = scale*va[pos];
+				clr->ssamp[i] = scale*va[pos] + .5;
 			else		/* interpolate if necessary */
-				clr->ssamp[i] = scale / wlstep *
+				clr->ssamp[i] = .5 + scale / wlstep *
 						( va[pos]*(wl0+wlstep - wl) +
 							va[pos+1]*(wl - wl0) );
 			clr->ssum += clr->ssamp[i];
@@ -603,3 +610,41 @@ double	w1, w2;
 		cres->flags = C_CDXY|C_CSXY;
 	}
 }
+
+
+#define	C1		3.741832e-16	/* W-m^2 */
+#define C2		1.4388e-2	/* m-K */
+
+#define bbsp(l,t)	(C1/((l)*(l)*(l)*(l)*(l)*(exp(C2/((t)*(l)))-1.)))
+#define bblm(t)		(C2/5./(t))
+
+static int
+setbbtemp(clr, tk)		/* set black body spectrum */
+register C_COLOR	*clr;
+double	tk;
+{
+	double	sf, wl;
+	register int	i;
+
+	if (tk < 1000)
+		return(MG_EILL);
+	wl = bblm(tk);			/* scalefactor based on peak */
+	if (wl < C_CMINWL*1e-9)
+		wl = C_CMINWL*1e-9;
+	else if (wl > C_CMAXWL*1e-9)
+		wl = C_CMAXWL*1e-9;
+	sf = C_CMAXV/bbsp(wl,tk);
+	clr->ssum = 0;
+	for (i = 0; i < C_CNSS; i++) {
+		wl = (C_CMINWL + i*C_CWLI)*1e-9;
+		clr->ssum += clr->ssamp[i] = sf*bbsp(wl,tk) + .5;
+	}
+	clr->flags = C_CDSPEC|C_CSSPEC;
+	clr->clock++;
+	return(MG_OK);
+}
+
+#undef	C1
+#undef	C2
+#undef	bbsp
+#undef	bblm

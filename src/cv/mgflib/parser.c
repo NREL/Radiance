@@ -59,6 +59,7 @@ static int	e_any_toss(),		/* discard unneeded entity */
 		e_ies(),		/* IES luminaire file */
 		e_include(),		/* include file */
 		e_sph(),		/* sphere */
+		e_cct(),		/* color temperature */
 		e_cmix(),		/* color mixtures */
 		e_cspec(),		/* color spectra */
 		e_cyl(),		/* cylinder */
@@ -119,11 +120,15 @@ mg_init()			/* initialize alternate entity handlers */
 	if (mg_ehand[MG_E_COLOR] != NULL) {
 		if (mg_ehand[MG_E_CMIX] == NULL) {
 			mg_ehand[MG_E_CMIX] = e_cmix;
-			ineed |= 1<<MG_E_COLOR|1<<MG_E_CXY|1<<MG_E_CSPEC|1<<MG_E_CMIX;
+			ineed |= 1<<MG_E_COLOR|1<<MG_E_CXY|1<<MG_E_CSPEC|1<<MG_E_CMIX|1<<MG_E_CCT;
 		}
 		if (mg_ehand[MG_E_CSPEC] == NULL) {
 			mg_ehand[MG_E_CSPEC] = e_cspec;
-			ineed |= 1<<MG_E_COLOR|1<<MG_E_CXY|1<<MG_E_CSPEC|1<<MG_E_CMIX;
+			ineed |= 1<<MG_E_COLOR|1<<MG_E_CXY|1<<MG_E_CSPEC|1<<MG_E_CMIX|1<<MG_E_CCT;
+		}
+		if (mg_ehand[MG_E_CCT] == NULL) {
+			mg_ehand[MG_E_CCT] = e_cct;
+			ineed |= 1<<MG_E_COLOR|1<<MG_E_CXY|1<<MG_E_CSPEC|1<<MG_E_CMIX|1<<MG_E_CCT;
 		}
 	}
 					/* check for consistency */
@@ -159,12 +164,13 @@ mg_init()			/* initialize alternate entity handlers */
 		e_supp[MG_E_CSPEC] = c_hcolor;
 	if (ineed & 1<<MG_E_CMIX && mg_ehand[MG_E_CMIX] != c_hcolor)
 		e_supp[MG_E_CMIX] = c_hcolor;
+	if (ineed & 1<<MG_E_CCT && mg_ehand[MG_E_CCT] != c_hcolor)
+		e_supp[MG_E_CCT] = c_hcolor;
 					/* discard remaining entities */
 	for (i = 0; i < MG_NENTITIES; i++)
 		if (mg_ehand[i] == NULL)
 			mg_ehand[i] = e_any_toss;
 }
-
 
 
 int
@@ -968,22 +974,57 @@ char	**av;
 
 
 static int
-e_cspec(ac, av)			/* handle spectral color */
-int	ac;
-char	**av;
+put_cxy()			/* put out current xy chromaticities */
 {
 	static char	xbuf[24], ybuf[24];
 	static char	*ccom[4] = {mg_ename[MG_E_CXY], xbuf, ybuf};
 	int	rv;
 
+	sprintf(xbuf, "%.4f", c_ccolor->cx);
+	sprintf(ybuf, "%.4f", c_ccolor->cy);
+	if ((rv = mg_handle(MG_E_CXY, 3, ccom)) != MG_OK)
+		return(rv);
+	return(MG_OK);
+}
+
+
+static int
+put_cspec()			/* put out current color spectrum */
+{
+	char	wl[2][6], vbuf[C_CNSS][24];
+	char	*newav[C_CNSS+4];
+	double	sf;
+	register int	i;
+
+	if (mg_ehand[MG_E_CSPEC] != c_hcolor) {
+		sprintf(wl[0], "%d", C_CMINWL);
+		sprintf(wl[1], "%d", C_CMAXWL);
+		newav[0] = mg_ename[MG_E_CSPEC];
+		newav[1] = wl[0];
+		newav[2] = wl[1];
+		sf = (double)C_CNSS / c_ccolor->ssum;
+		for (i = 0; i < C_CNSS; i++) {
+			sprintf(vbuf[i], "%.6f", sf*c_ccolor->ssamp[i]);
+			newav[i+3] = vbuf[i];
+		}
+		newav[C_CNSS+3] = NULL;
+		if ((i = mg_handle(MG_E_CSPEC, C_CNSS+3, newav)) != MG_OK)
+			return(i);
+	}
+	return(MG_OK);
+}
+
+
+static int
+e_cspec(ac, av)			/* handle spectral color */
+int	ac;
+char	**av;
+{
+				/* convert to xy chromaticity */
 	c_ccvt(c_ccolor, C_CSXY);
 				/* if it's really their handler, use it */
-	if (mg_ehand[MG_E_CXY] != c_hcolor) {
-		sprintf(xbuf, "%.4f", c_ccolor->cx);
-		sprintf(ybuf, "%.4f", c_ccolor->cy);
-		if ((rv = mg_handle(MG_E_CXY, 3, ccom)) != MG_OK)
-			return(rv);
-	}
+	if (mg_ehand[MG_E_CXY] != c_hcolor)
+		return(put_cxy());
 	return(MG_OK);
 }
 
@@ -993,10 +1034,6 @@ e_cmix(ac, av)			/* handle mixing of colors */
 int	ac;
 char	**av;
 {
-	char	wl[2][6], vbuf[C_CNSS][24];
-	char	*newav[C_CNSS+4];
-	int	rv;
-	register int	i;
 	/*
 	 * Contorted logic works as follows:
 	 *	1. the colors are already mixed in c_hcolor() support function
@@ -1007,34 +1044,29 @@ char	**av;
 	 */
 	if (mg_ehand[MG_E_CSPEC] == e_cspec)
 		c_ccvt(c_ccolor, C_CSXY);
-	else if (c_ccolor->flags & C_CDSPEC) {
-		if (mg_ehand[MG_E_CSPEC] != c_hcolor) {
-			sprintf(wl[0], "%d", C_CMINWL);
-			sprintf(wl[1], "%d", C_CMAXWL);
-			newav[0] = mg_ename[MG_E_CSPEC];
-			newav[1] = wl[0];
-			newav[2] = wl[1];
-			for (i = 0; i < C_CNSS; i++) {
-				sprintf(vbuf[i], "%.6f",
-						(double)c_ccolor->ssamp[i] /
-						c_ccolor->ssum);
-				newav[i+3] = vbuf[i];
-			}
-			newav[C_CNSS+3] = NULL;
-			if ((rv = mg_handle(MG_E_CSPEC, C_CNSS+3, newav)) != MG_OK)
-				return(rv);
-		}
-		return(MG_OK);
-	}
-	if (mg_ehand[MG_E_CXY] != c_hcolor) {
-		sprintf(vbuf[0], "%.4f", c_ccolor->cx);
-		sprintf(vbuf[1], "%.4f", c_ccolor->cy);
-		newav[0] = mg_ename[MG_E_CXY];
-		newav[1] = vbuf[0];
-		newav[2] = vbuf[1];
-		newav[3] = NULL;
-		if ((rv = mg_handle(MG_E_CXY, 3, newav)) != MG_OK)
-			return(rv);
-	}
+	else if (c_ccolor->flags & C_CDSPEC)
+		return(put_cspec());
+	if (mg_ehand[MG_E_CXY] != c_hcolor)
+		return(put_cxy());
+	return(MG_OK);
+}
+
+
+static int
+e_cct(ac, av)			/* handle color temperature */
+int	ac;
+char	**av;
+{
+	/*
+	 * Logic is similar to e_cmix here.  Support handler has already
+	 * converted temperature to spectral color.  Put it out as such
+	 * if they support it, otherwise convert to xy chromaticity and
+	 * put it out if they handle it.
+	 */
+	if (mg_ehand[MG_E_CSPEC] != e_cspec)
+		return(put_cspec());
+	c_ccvt(c_ccolor, C_CSXY);
+	if (mg_ehand[MG_E_CXY] != c_hcolor)
+		return(put_cxy());
 	return(MG_OK);
 }
