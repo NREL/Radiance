@@ -19,10 +19,10 @@ LIBDIR = /usr/local/lib/ray
 
 PROGS = findglare xglaresrc glarendx rpiece rad ranimate vwright getinfo vwrays
 
-all:	$(PROGS) $(SPECIAL)
+all:	$(PROGS)
 
-install:	all objview.csh objpict.csh glare.csh dayfact.csh rlux.csh \
-raddepend.csh trad.wsh objline.csh compamb.csh
+install:	all $(SPECIAL) objview.csh objpict.csh glare.csh dayfact.csh \
+rlux.csh raddepend.csh trad.wsh objline.csh compamb.csh
 	cp $(PROGS) $(INSTDIR)
 	cp objview.csh $(INSTDIR)/objview
 	cp objline.csh $(INSTDIR)/objline

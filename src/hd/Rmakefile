@@ -22,9 +22,9 @@ PROGS = rholo rhcopy genrhenv genrhgrid
 
 DEVS = $(DEVDIR)/x11.hdi $(DEVDIR)/x11h.hdi
 
-all:	$(PROGS) $(SPECIAL)
+all:	$(PROGS)
 
-install:	all $(DEVS)
+install:	all $(DEVS) $(SPECIAL)
 	cp $(PROGS) $(INSTDIR)
 
 clean:

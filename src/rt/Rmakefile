@@ -89,7 +89,7 @@ HEADERS = ambient.h ray.h data.h otspecial.h source.h
 
 PROGS = $(DESTDIR)/rtrace $(DESTDIR)/rpict $(DESTDIR)/rview $(DESTDIR)/lookamb
 
-all:	$(PROGS) $(SPECIAL)
+all:	$(PROGS)
 
 install:	$(PROGS) $(SPECIAL) rayinit.cal
 	$(INSTALL) $(PROGS) $(INSTDIR)
