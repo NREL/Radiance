@@ -8,7 +8,7 @@ MACH = -DBSD
 CFLAGS = $(MACH) $(OPT)
 CC = cc
 
-COMPAT = bmalloc.o erf.o # frexp.o fwrite.o random.o
+COMPAT = bmalloc.o erf.o strcmp.o # frexp.o fwrite.o random.o
 
 LIBDIR = /usr/local/lib/ray
 
@@ -20,7 +20,7 @@ PICOBJ = color.o header.o image.o lamps.o resolu.o rexpr.o spec_rgb.o \
 
 STDOBJ = fgetline.o fropen.o linregr.o xf.o mat4.o fvect.o urand.o \
 	urind.o peano.o calexpr.o caldefn.o calfunc.o calprnt.o \
-	multisamp.o process.o getpath.o error.o savestr.o strcmp.o savqstr.o \
+	multisamp.o process.o getpath.o error.o savestr.o savqstr.o \
 	badarg.o fgetword.o words.o wordfile.o cputs.o wputs.o eputs.o quit.o
 
 SYSOBJ = ealloc.o $(COMPAT)
@@ -33,7 +33,7 @@ install:	librt.a
 	mv librt.a ../lib
 
 clean:
-	rm -f $(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ) librt.a
+	rm -f *.o librt.a
 
 fropen.o:	fropen.c
 	$(CC) $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c fropen.c
