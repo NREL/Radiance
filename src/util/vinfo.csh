@@ -25,6 +25,9 @@ set i=1
 while ( $i <= $#plist )
 	set f=$plist[$i]:q
 	set info=$ilist[$i]:q
+	if ("`tail -1 $info:q`" != "") then
+		echo "" >> $info:q
+	endif
 	getinfo < $f:q | cmp -s - $info:q
 	if ($status != 0) then
 		getinfo - < $f:q >> $info:q
