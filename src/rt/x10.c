@@ -203,7 +203,7 @@ int  xmin, ymin, xmax, ymax;
 				pixval[ndx]);
 	}
 	if (nrays - lastflush >= WFLUSH) {
-		flush();
+		flush();		/* also checks for input */
 		lastflush = nrays;
 	}
 }
@@ -227,7 +227,7 @@ char  *out;
 {
 	if (comline != NULL)
 		xt_puts(out, comline);
-	XFlush();
+	XFlush();		/* don't process events! */
 }
 
 
