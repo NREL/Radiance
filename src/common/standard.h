@@ -44,13 +44,13 @@ typedef struct {
 extern int  eputs(), wputs();	/* standard error output functions */
 
 				/* error codes */
-#define	 WARNING	1		/* non-fatal error */
-#define	 USER		2		/* fatal user-caused error */
-#define	 SYSTEM		3		/* fatal system-related error */
-#define	 INTERNAL	4		/* fatal program-related error */
-#define	 CONSISTENCY	5		/* bad consistency check, abort */
-#define	 COMMAND	6		/* interactive error */
-#define  NERRS		7
+#define	 WARNING	0		/* non-fatal error */
+#define	 USER		1		/* fatal user-caused error */
+#define	 SYSTEM		2		/* fatal system-related error */
+#define	 INTERNAL	3		/* fatal program-related error */
+#define	 CONSISTENCY	4		/* bad consistency check, abort */
+#define	 COMMAND	5		/* interactive error */
+#define  NERRS		6
 				/* error struct */
 extern struct erract {
 	char	pre[16];		/* prefix message */
