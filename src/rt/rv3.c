@@ -93,8 +93,11 @@ double  *mp;
 		(*dev->comout)("Pick view center\n");
 		if ((*dev->getcur)(&x, &y) == ABORT)
 			return(-1);
-		viewray(thisray.rorg, thisray.rdir, &ourview,
-				(x+.5)/hresolu, (y+.5)/vresolu);
+		if (viewray(thisray.rorg, thisray.rdir, &ourview,
+				(x+.5)/hresolu, (y+.5)/vresolu) < 0) {
+			error(COMMAND, "not on image");
+			return(-1);
+		}
 		if (!direc || ourview.type == VT_PAR) {
 			rayorigin(&thisray, NULL, PRIMARY, 1.0);
 			if (!localhit(&thisray, &thescene)) {
@@ -149,9 +152,13 @@ int  xmin, ymin, xmax, ymax;
 	h = xmin + (xmax-xmin)*frandom();
 	v = ymin + (ymax-ymin)*frandom();
 	
-	viewray(thisray.rorg, thisray.rdir, &ourview, h/hresolu, v/vresolu);
-	rayorigin(&thisray, NULL, PRIMARY, 1.0);
-	rayvalue(&thisray);
+	if (viewray(thisray.rorg, thisray.rdir, &ourview,
+			h/hresolu, v/vresolu) < 0) {
+		setcolor(thisray.rcol, 0.0, 0.0, 0.0);
+	} else {
+		rayorigin(&thisray, NULL, PRIMARY, 1.0);
+		rayvalue(&thisray);
+	}
 
 	p->x = h;
 	p->y = v;
@@ -393,6 +400,38 @@ FVECT  vc;
 	for (i = 0; i < 3; i++)
 		nv.vp[i] = vc[i] - d*nv.vdir[i];
 	newview(&nv);
+}
+
+
+zoomview(vp, zf)			/* zoom in our out */
+register VIEW  *vp;
+double  zf;
+{
+	switch (vp->type) {
+	case VT_PAR:				/* parallel view */
+	case VT_ANG:				/* angular fisheye */
+		vp->horiz /= zf;
+		vp->vert /= zf;
+		return;
+	case VT_PER:				/* perspective view */
+		vp->horiz = atan(tan(vp->horiz*(PI/180./2.))/zf) /
+				(PI/180./2.);
+		vp->vert = atan(tan(vp->vert*(PI/180./2.))/zf) /
+				(PI/180./2.);
+		return;
+	case VT_HEM:				/* hemispherical fisheye */
+		vp->horiz = sin(vp->horiz*(PI/180./2.))/zf;
+		if (vp->horiz >= 1.0-FTINY)
+			vp->horiz = 180.;
+		else
+			vp->horiz = asin(vp->horiz) / (PI/180./2.);
+		vp->vert = sin(vp->vert*(PI/180./2.))/zf;
+		if (vp->vert >= 1.0-FTINY)
+			vp->vert = 180.;
+		else
+			vp->vert = asin(vp->vert) / (PI/180./2.);
+		return;
+	}
 }
 
 
