@@ -18,7 +18,6 @@ closest.c	color quantization - find closest color
 clrtab.c	more compact but slower replacement for ciq.c+split.c+closest.c
 colorscale.c	program to produce color pallets
 cut.c		color quantization - median cut algorithm
-getinfo.c	program to read info. header from file
 glimage.c	simple program to display image on SGI
 greyscale.c	program to produce grey test levels
 macbethcal.c	program to calibrate image conversion using Macbeth chart
