@@ -133,10 +133,7 @@ char  *fname;
 		setmode(fileno(fp), O_BINARY);
 #endif
 					/* set up output */
-	if (imm_irrad)
-		outvals = "v";
-	else
-		setoutput(outvals);
+	setoutput(outvals);
 	switch (outform) {
 	case 'a': putreal = puta; break;
 	case 'f': putreal = putf; break;
@@ -166,7 +163,7 @@ char  *fname;
 		if (imm_irrad)
 			irrad(orig, direc);
 		else
-			traceray(orig, direc);
+			rad(orig, direc);
 							/* flush if time */
 		if (--nextflush == 0) {
 			fflush(stdout);
@@ -241,11 +238,9 @@ register char  *vs;
 }
 
 
-traceray(org, dir)		/* compute and print ray value(s) */
+rad(org, dir)			/* compute and print ray value(s) */
 FVECT  org, dir;
 {
-	register int  (**tp)();
-
 	VCOPY(thisray.rorg, org);
 	VCOPY(thisray.rdir, dir);
 	rayorigin(&thisray, NULL, PRIMARY, 1.0);
@@ -253,13 +248,7 @@ FVECT  org, dir;
 		localhit(&thisray, &thescene) || sourcehit(&thisray);
 	else
 		rayvalue(&thisray);
-
-	if (ray_out[0] == NULL)
-		return;
-	for (tp = ray_out; *tp != NULL; tp++)
-		(**tp)(&thisray);
-	if (outform == 'a')
-		putchar('\n');
+	printvals(&thisray);
 }
 
 
@@ -274,14 +263,26 @@ FVECT  org, dir;
 	}
 	rayorigin(&thisray, NULL, PRIMARY, 1.0);
 					/* pretend we hit surface */
-	thisray.rot = 1.0;
+	thisray.rot = 1.0-1e-4;
 	thisray.rod = 1.0;
 	VCOPY(thisray.ron, dir);
 	for (i = 0; i < 3; i++)		/* fudge factor */
 		thisray.rop[i] = org[i] + 1e-4*dir[i];
 					/* compute and print */
 	(*ofun[Lamb.otype].funp)(&Lamb, &thisray);
-	oputv(&thisray);
+	printvals(&thisray);
+}
+
+
+printvals(r)			/* print requested ray values */
+RAY  *r;
+{
+	register int  (**tp)();
+
+	if (ray_out[0] == NULL)
+		return;
+	for (tp = ray_out; *tp != NULL; tp++)
+		(**tp)(r);
 	if (outform == 'a')
 		putchar('\n');
 }
@@ -354,9 +355,10 @@ RAY  *r;
 
 	if (every_out[0] == NULL)
 		return;
-	if (traincl == 1 && r->ro == NULL)
-		return;
-	if (traincl != -1 && traincl != inset(traset, r->ro->omod))
+	if (r->ro == NULL) {
+		if (traincl == 1)
+			return;
+	} else if (traincl != -1 && traincl != inset(traset, r->ro->omod))
 		return;
 	tabin(r);
 	for (tp = every_out; *tp != NULL; tp++)
