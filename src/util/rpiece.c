@@ -15,14 +15,14 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "resolu.h"
 
 				/* rpict command */
-char  *rpargv[128] = {"rpict", "-S", "1", "-x", "512", "-y", "512", };
-int  rpargc = 7;
+char  *rpargv[128] = {"rpict", "-S", "1", "-x", "512", "-y", "512", "-pa", "1"};
+int  rpargc = 9;
 int  rpd[3];
 FILE  *torp, *fromrp;
 COLR  *scanline;
 				/* our view parameters */
 VIEW  ourview = STDVIEW;
-double  pixaspect = 0.0;
+double  pixaspect = 1.0;
 int  hres = 512, vres = 512, hmult = 2, vmult = 2;
 				/* output file */
 char  *outfile = NULL;
