@@ -90,7 +90,7 @@ typedef struct holo {
 
 #define hdflush(hp)	(hdfreebeam(hp,0) && hdsync(hp))
 
-extern HOLO	*hdinit();
+extern HOLO	*hdinit(), *hdalloc();
 extern BEAM	*hdgetbeam();
 extern RAYVAL	*hdnewrays();
 extern long	hdmemuse(), hdfiluse();
