@@ -197,10 +197,8 @@ char  *argv[];
 	if (i < argc) {			/* open picture file */
 		fname = argv[i];
 		fin = fopen(fname, "r");
-		if (fin == NULL) {
-			sprintf(errmsg, "cannot open file \"%s\"", fname);
-			quiterr(errmsg);
-		}
+		if (fin == NULL)
+			quiterr("cannot open picture file");
 	}
 				/* get header */
 	getheader(fin, headline, NULL);
