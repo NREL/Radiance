@@ -422,10 +422,10 @@ serv_result()			/* get next server result and process it */
 	case DS_STARTIMM:
 	case DS_ENDIMM:
 #ifdef DEBUG
-		if (imm_mode != (msg.type==DS_STARTIMM)) {
+		{
 			time_t	tnow = time(NULL);
-			if (imm_mode) timm += tnow - tmodesw;
-			else tadd += tnow - tmodesw;
+			if (msg.type==DS_STARTIMM) tadd += tnow - tmodesw;
+			else timm += tnow - tmodesw;
 			tmodesw = tnow;
 		}
 #endif
