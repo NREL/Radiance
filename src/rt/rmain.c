@@ -113,9 +113,8 @@ char  *argv[];
 				case 'n': case 'N': case 'f': case 'F': \
 				case '-': case '0': var = 0; break; \
 				default: goto badopt; }
-	double  atof();
-	char  *getenv();
-	int  report();
+	extern double  atof();
+	extern char  *getenv();
 	char  *err;
 	char  *recover = NULL;
 	char  *zfile = NULL;
@@ -412,14 +411,10 @@ char  *argv[];
 	sigdie(SIGHUP, "Hangup");
 	sigdie(SIGTERM, "Terminate");
 	sigdie(SIGPIPE, "Broken pipe");
+	sigdie(SIGALRM, "Alarm clock");
 #ifdef  SIGXCPU
 	sigdie(SIGXCPU, "CPU limit exceeded");
 	sigdie(SIGXFSZ, "File size exceeded");
-#endif
-#if  RPICT
-	signal(SIGALRM, report);
-#else
-	sigdie(SIGALRM, "Alarm clock");
 #endif
 					/* open error file */
 	if (errfile != NULL) {

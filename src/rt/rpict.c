@@ -167,6 +167,10 @@ char  *zfile, *oldfile;
 	pctdone = 100.0*i/vresolu;
 	if (ralrm > 0)			/* report init stats */
 		report();
+#ifndef  BSD
+	else
+#endif
+	signal(SIGALRM, report);
 	ypos = vresolu-1 - i;
 	fillscanline(scanbar[0], zbar[0], hresolu, ypos, psample);
 	ystep = psample;
@@ -188,6 +192,9 @@ char  *zfile, *oldfile;
 							/* fill bar */
 		fillscanbar(scanbar, zbar, hresolu, ypos, ystep);
 							/* write it out */
+#ifndef  BSD
+		signal(SIGALRM, SIG_IGN);	/* don't interrupt writes */
+#endif
 		for (i = ystep; i > 0; i--) {
 			if (zfd != -1 && write(zfd, (char *)zbar[i],
 					hresolu*sizeof(float))
@@ -202,6 +209,10 @@ char  *zfile, *oldfile;
 		pctdone = 100.0*(vresolu-1-ypos)/vresolu;
 		if (ralrm > 0 && time((long *)0) >= tlastrept+ralrm)
 			report();
+#ifndef  BSD
+		else
+			signal(SIGALRM, report);
+#endif
 	}
 						/* clean up */
 	if (zfd != -1) {
