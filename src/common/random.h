@@ -1,6 +1,6 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1997 Silicon Graphics, Inc. */
 
-/* SCCSid "$SunId$ LBL" */
+/* SCCSid "$SunId$ SGI" */
 
 /*
  *  random.h - header file for random(3) and urand() function.
@@ -33,10 +33,15 @@ extern double  drand48();
 #endif
 
 #ifdef  MC
-#define  urand(i)	frandom()
-#else
-#define	 urand(i)	((urperm[(i)&urmask]+frandom())/(urmask+1))
-#endif
 
-extern short  *urperm;
-extern int  urmask;
+#define  urand(i)	frandom()
+#define  initurand(n)	(n)
+
+#else
+
+extern short	*urperm;
+extern int	urmask, initurand();
+
+#define	 urand(i)	((urperm[(i)&urmask]+frandom())/(urmask+1))
+
+#endif

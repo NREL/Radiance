@@ -235,7 +235,7 @@ m_brdf.o m_direct.o m_mirror.o normal.o o_cone.o preload.o \
 raytrace.o rtrace.o rv2.o source.o sphere.o srcsupp.o text.o \
 virtuals.o:	../common/otypes.h
 
-ambient.o ambcomp.o aniso.o normal.o rpict.o \
+ambient.o ambcomp.o aniso.o normal.o rpict.o rvmain.o rtmain.o rpmain.o \
 source.o rv3.o srcsamp.o virtuals.o:	../common/random.h
 
 ambcomp.o ambient.o aniso.o dielectric.o func.o glass.o glazing.o \

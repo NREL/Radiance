@@ -1,7 +1,7 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1997 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -18,6 +18,7 @@ short  *urperm = NULL;	/* urand() permutation */
 int  urmask;		/* bits used in permutation */
 
 
+int
 initurand(size)		/* initialize urand() for size entries */
 int  size;
 {
@@ -46,6 +47,7 @@ int  size;
 			else
 				urperm[i+offset]++;
 		}
+	return(1<<order);
 }
 
 

@@ -23,6 +23,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "ray.h"
 
+#include  "random.h"
+
 #include  "resolu.h"
 
 #include  "octree.h"
