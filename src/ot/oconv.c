@@ -57,8 +57,10 @@ char  **argv;
 	if ((libpath = getenv("RAYPATH")) == NULL)
 		libpath = ":/usr/local/lib/ray";
 
-	for (i = 1; i < argc && argv[i][0] == '-' && argv[i][1]; i++)
+	for (i = 1; i < argc && argv[i][0] == '-'; i++)
 		switch (argv[i][1]) {
+		case '\0':				/* scene from stdin */
+			goto breakopt;
 		case 'i':				/* input octree */
 			infile = argv[++i];
 			break;
@@ -85,7 +87,7 @@ char  **argv;
 			error(USER, errmsg);
 			break;
 		}
-
+breakopt:
 	if (infile != NULL) {		/* get old octree & objects */
 		if (thescene.cusize > FTINY)
 			error(USER, "only one of '-b' or '-i'");
