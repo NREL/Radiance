@@ -93,6 +93,6 @@ FILE  *fp;
 {
 	double	d;
 
-	d = (double)getint(4, fp)/0x7fffffff;
+	d = (getint(4, fp) + .5) / 0x7fffffff;
 	return(ldexp(d, (int)getint(1, fp)));
 }
