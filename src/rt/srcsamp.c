@@ -82,22 +82,23 @@ nextsample:
 		goto nextsample;		/* at source! */
 
 					/* compute sample size */
-	si->dom  = source[si->sn].ss2;
 	if (source[si->sn].sflags & SFLAT) {
-		si->dom *= sflatform(si->sn, r->rdir);
+		si->dom = sflatform(si->sn, r->rdir);
 		si->dom *= size[SU]*size[SV]/(MAXSPART*(double)MAXSPART);
 	} else if (source[si->sn].sflags & SCYL) {
-		si->dom *= scylform(si->sn, r->rdir);
+		si->dom = scylform(si->sn, r->rdir);
 		si->dom *= size[SU]/(double)MAXSPART;
 	} else {
-		si->dom *= size[SU]*size[SV]*(double)size[SW] /
+		si->dom = size[SU]*size[SV]*(double)size[SW] /
 				(MAXSPART*MAXSPART*(double)MAXSPART) ;
 	}
-	if (source[si->sn].sflags & SDISTANT)
+	if (source[si->sn].sflags & SDISTANT) {
+		si->dom *= source[si->sn].ss2;
 		return(FHUGE);
+	}
 	if (si->dom <= 1e-4)
 		goto nextsample;		/* behind source? */
-	si->dom /= d*d;
+	si->dom *= source[si->sn].ss2/(d*d);
 	return(d);		/* sample OK, return distance */
 }
 
