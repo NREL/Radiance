@@ -176,7 +176,7 @@ int	hr, vr;
 	for (i = xcbeams; i--; ) {
 		pa[i].hd = cbeam[ncbeams+i].hd;
 		pa[i].bi = cbeam[ncbeams+i].bi;
-		pa[i].nr = npixels(v, hr, vr, hdlist[pa[i].hd], pa[i].bi);
+		pa[i].nr = npixels(v, hr, vr, hdlist[pa[i].hd], pa[i].bi) + 1;
 	}
 	n = xcbeams;			/* now sort list for deletions */
 	cbeamsort(0);
@@ -301,7 +301,7 @@ FVECT	vp;
 	}
 					/* check for really stupid move */
 	if (bestd > MAXDIST) {
-		error(WARNING, "move to outer solar system");
+		error(COMMAND, "move past outer limits");
 		return(0);
 	}
 					/* warn of dangerous moves */
@@ -352,34 +352,59 @@ docell(gcp, cap)	/* find beams corresponding to cell and voxel */
 GCOORD	*gcp;
 register struct cellact	*cap;
 {
+	register HOLO	*hp = hdlist[voxel[cap->vi].hd];
 	FVECT	org, dir[4];
-	FVECT	gp, cv[4], vc;
+	FVECT	vgp, cgp, vc;
+	FVECT	v1, v2;
 	struct beamact	bo;
+	int	axmax, j;
+	double	d, avmax;
 	register int	i;
-				/* compute cell vertices */
-	hdcell(cv, hdlist[voxel[cap->vi].hd], gcp);
-				/* compute cell and voxel centers */
-	for (i = 0; i < 3; i++) {
-		org[i] = 0.5*(cv[0][i] + cv[2][i]);
-		gp[i] = voxel[cap->vi].i[i] + 0.5;
-	}
-	hdworld(vc, hdlist[voxel[cap->vi].hd], gp);
-				/* compute voxel pyramid using vector trick */
-	for (i = 0; i < 3; i++) {
-		dir[0][i] = vc[i] - cv[0][i];		/* to 3 */
-		dir[2][i] = vc[i] - cv[3][i];		/* to 0 */
-		if (gcp->w & 1) {	/* watch vertex order! */
-			dir[1][i] = vc[i] - cv[2][i];	/* to 1 */
-			dir[3][i] = vc[i] - cv[1][i];	/* to 2 */
-		} else {
-			dir[1][i] = vc[i] - cv[1][i];	/* to 2 */
-			dir[3][i] = vc[i] - cv[2][i];	/* to 1 */
+				/* compute cell center */
+	cgp[gcp->w>>1] = gcp->w&1 ? hp->grid[gcp->w>>1] : 0 ;
+	cgp[((gcp->w>>1)+1)%3] = gcp->i[0] + .5;
+	cgp[((gcp->w>>1)+2)%3] = gcp->i[1] + .5;
+	hdworld(org, hp, cgp);
+				/* compute direction to voxel center */
+	for (i = 3; i--; )
+		vgp[i] = voxel[cap->vi].i[i] + 0.5;
+	hdworld(vc, hp, vgp);
+	for (i = 3; i--; )
+		vc[i] -= org[i];
+				/* compute maximum area axis */
+	axmax = -1; avmax = 0;
+	for (i = 3; i--; ) {
+		d = vgp[i] - cgp[i];
+		if (d < 0) d = -d;
+		if (d > avmax) {
+			avmax = d;
+			axmax = i;
 		}
+	}
+#ifdef DEBUG
+	if (axmax < 0)
+		error(CONSISTENCY, "botched axis computation in docell");
+#endif
+				/* compute offset vectors */
+	d = 0.5/hp->grid[j=(axmax+1)%3];
+	for (i = 3; i--; )
+		v1[i] = hp->xv[j][i] * d;
+	d = 0.5/hp->grid[j=(axmax+2)%3];
+	if (DOT(hp->wn[axmax], vc) < 0)
+		d = -d;	/* reverse vertex ordering */
+	for (i = 3; i--; )
+		v2[i] = hp->xv[j][i] * d;
+				/* compute voxel pyramid */
+	for (i = 3; i--; ) {
+		dir[0][i] = vc[i] - v1[i] - v2[i];
+		dir[1][i] = vc[i] + v1[i] - v2[i];
+		dir[2][i] = vc[i] + v1[i] + v2[i];
+		dir[3][i] = vc[i] - v1[i] + v2[i];
 	}
 				/* visit beams for opposite cells */
 	copystruct(&bo.ca, cap);
 	copystruct(&bo.gc, gcp);
-	return(visit_cells(org, dir, hdlist[voxel[cap->vi].hd], dobeam, &bo));
+	return(visit_cells(org, dir, hp, dobeam, &bo));
 }
 
 
