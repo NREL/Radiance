@@ -306,10 +306,9 @@ sortcomplist()			/* fix our list order */
 	} else if (i < complen-1) {
 		list2 = (PACKHEAD *)realloc((char *)complist,
 				(i+1)*sizeof(PACKHEAD));
-		if (list2 != NULL) {
+		if (list2 != NULL)
 			complist = list2;
-			complen = i+1;
-		}
+		complen = i+1;
 	}
 	listpos = 0; lastin = i;
 }
