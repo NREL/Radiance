@@ -7,16 +7,21 @@ static char SCCSid[] = "$SunId$ LBL";
 /*
  * Calibrate a scanned MacBeth Color Checker Chart
  *
- * Produce a .cal file suitable for use with pcomb.
+ * Produce a .cal file suitable for use with pcomb,
+ * or .cwp file suitable for use with pcwarp.
+ *
+ * Warping code depends on conformance of COLOR and W3VEC types.
  */
 
 #include <stdio.h>
+#include <math.h>
 #ifdef MSDOS
 #include <fcntl.h>
 #endif
 #include "color.h"
 #include "resolu.h"
 #include "pmap.h"
+#include "warp3d.h"
 
 				/* MacBeth colors */
 #define	DarkSkin	0
@@ -96,6 +101,8 @@ short	mbneu[NMBNEU] = {Black,Neutral35,Neutral5,Neutral65,Neutral8,White};
 #define  RG_CORR	04	/* corrected color region */
 
 int	scanning = 1;		/* scanned input (or recorded output)? */
+double	irrad = 1.0;		/* irradiance multiplication factor */
+int	rawmap = 0;		/* put out raw color mapping? */
 
 int	xmax, ymax;		/* input image dimensions */
 int	bounds[4][2];		/* image coordinates of chart corners */
@@ -108,6 +115,8 @@ long	gmtflags = 0;		/* flags of out-of-gamut colors */
 COLOR	bramp[NMBNEU][2];	/* brightness ramp (per primary) */
 COLORMAT	solmat;		/* color mapping matrix */
 COLOR	colmin, colmax;		/* gamut limits */
+
+WARP3D	*wcor = NULL;		/* color space warp */
 
 FILE	*debugfp = NULL;	/* debug output picture */
 char	*progname;
@@ -151,6 +160,15 @@ char	**argv;
 			bounds[3][1] = atoi(argv[++i]);
 			scanning = 2;
 			break;
+		case 'i':				/* irradiance factor */
+			i++;
+			if (badarg(argc-i, argv+i, "f"))
+				goto userr;
+			irrad = atof(argv[i]);
+			break;
+		case 'm':				/* raw map output */
+			rawmap = 1;
+			break;
 		case 'c':				/* color input */
 			scanning = 0;
 			break;
@@ -191,16 +209,34 @@ char	**argv;
 	else
 		getcolors();
 	compute();			/* compute color mapping */
-					/* print comment */
-	printf("{\n\tColor correction file computed by:\n\t\t");
-	printargs(argc, argv, stdout);
-	printf("\n\tUsage: pcomb -f %s uncorrected.pic > corrected.pic\n",
-			i+1 < argc ? argv[i+1] : "{this_file}");
-	if (!scanning)
-		printf("\t   Or: pcond [options] -f %s orig.pic > output.pic\n",
+	if (rawmap) {			/* print out raw correspondence */
+		register int	j;
+
+		printf("# Color correspondence produced by:\n#\t\t");
+		printargs(argc, argv, stdout);
+		printf("#\tUsage: pcwarp -m %s uncorrected.pic > corrected.pic\n",
 				i+1 < argc ? argv[i+1] : "{this_file}");
-	printf("}\n");
-	putmapping();			/* put out color mapping */
+		printf("#\t   Or: pcond [options] -m %s orig.pic > output.pic\n",
+				i+1 < argc ? argv[i+1] : "{this_file}");
+		for (j = 0; j < 24; j++)
+			printf("%f %f %f    %f %f %f\n",
+				colval(inpRGB[j],RED), colval(inpRGB[j],GRN),
+				colval(inpRGB[j],BLU), colval(mbRGB[j],RED),
+				colval(mbRGB[j],GRN), colval(mbRGB[j],BLU));
+		if (scanning && debugfp != NULL)
+			cwarp();		/* color warp for debugging */
+	} else {			/* print color mapping */
+						/* print header */
+		printf("{\n\tColor correction file computed by:\n\t\t");
+		printargs(argc, argv, stdout);
+		printf("\n\tUsage: pcomb -f %s uncorrected.pic > corrected.pic\n",
+				i+1 < argc ? argv[i+1] : "{this_file}");
+		if (!scanning)
+			printf("\t   Or: pcond [options] -f %s orig.pic > output.pic\n",
+					i+1 < argc ? argv[i+1] : "{this_file}");
+		printf("}\n");
+		putmapping();			/* put out color mapping */
+	}
 	if (debugfp != NULL)		/* put out debug picture */
 		if (scanning)
 			picdebug();
@@ -209,9 +245,9 @@ char	**argv;
 	exit(0);
 userr:
 	fprintf(stderr,
-"Usage: %s [-d dbg.pic][-p xul yul xur yur xll yll xlr ylr] input.pic [output.cal]\n",
+"Usage: %s [-d dbg.pic][-p xul yul xur yur xll yll xlr ylr][-i irrad][-m] input.pic [output.{cal|cwp}]\n",
 			progname);
-	fprintf(stderr, "   or: %s [-d dbg.pic] -c [xyY.dat [output.cal]]\n",
+	fprintf(stderr, "   or: %s [-d dbg.pic][-i irrad][-m] -c [xyY.dat [output.{cal|cwp}]]\n",
 			progname);
 	exit(1);
 }
@@ -236,8 +272,10 @@ init()				/* initialize */
 		exit(1);
 	}
 					/* map MacBeth colors to RGB space */
-	for (i = 0; i < 24; i++)
+	for (i = 0; i < 24; i++) {
 		xyY2RGB(mbRGB[i], mbxyY[i]);
+		scalecolor(mbRGB[i], irrad);
+	}
 }
 
 
@@ -402,6 +440,7 @@ compute()			/* compute color mapping */
 	if (scanning) {
 		copycolor(colmin, cblack);
 		copycolor(colmax, cwhite);
+		scalecolor(colmax, irrad);
 	} else
 		for (i = 0; i < 3; i++) {
 			colval(colmin,i) = colval(bramp[0][0],i) -
@@ -426,10 +465,10 @@ compute()			/* compute color mapping */
 				n++;
 			}
 		compsoln(clrin, clrout, n);
-						/* check out-of-gamut colors */
-		for (i = 0; i < 24; i++)
-			if (cflags & 1L<<i && cvtcolor(ctmp, mbRGB[i]))
-				gmtflags |= 1L<<i;
+		if (irrad > 0.99 && irrad < 1.01)	/* check gamut */
+			for (i = 0; i < 24; i++)
+				if (cflags & 1L<<i && cvtcolor(ctmp, mbRGB[i]))
+					gmtflags |= 1L<<i;
 	} while (cflags & gmtflags);
 	if (gmtflags & MODFLGS)
 		fprintf(stderr,
@@ -438,7 +477,7 @@ compute()			/* compute color mapping */
 }
 
 
-putmapping()			/* put out color mapping for pcomb -f */
+putmapping()			/* put out color mapping */
 {
 	static char	cchar[3] = {'r', 'g', 'b'};
 	register int	i, j;
@@ -546,6 +585,22 @@ int	n;
 }
 
 
+cwarp()				/* compute color warp map */
+{
+	register int	i;
+
+	if ((wcor = new3dw(W3EXACT)) == NULL)
+		goto memerr;
+	for (i = 0; i < 24; i++)
+		if (!add3dpt(wcor, inpRGB[i], mbRGB[i]))
+			goto memerr;
+	return;
+memerr:
+	perror(progname);
+	exit(1);
+}
+
+
 int
 cvtcolor(cout, cin)		/* convert color according to our mapping */
 COLOR	cout, cin;
@@ -553,7 +608,10 @@ COLOR	cout, cin;
 	COLOR	ctmp;
 	int	clipped;
 
-	if (scanning) {
+	if (wcor != NULL) {
+		clipped = warp3d(cout, cin, wcor);
+		clipped |= clipgamut(cout,bright(cout),CGAMUT,colmin,colmax);
+	} else if (scanning) {
 		bresp(ctmp, cin);
 		clipped = cresp(cout, ctmp);
 	} else {
@@ -625,7 +683,7 @@ picdebug()			/* put out debugging picture */
 				if (!(1L<<i & gmtflags) || (x+y)&07) {
 					copycolor(scan[x], mbRGB[i]);
 					clipgamut(scan[x], bright(scan[x]),
-						CGAMUT, cblack, cwhite);
+						CGAMUT, colmin, colmax);
 				} else
 					copycolor(scan[x], blkcol);
 			} else if (rg == RG_CORR)
@@ -664,11 +722,17 @@ clrdebug()			/* put out debug picture from color input */
 			clipgamut(ctmp, bright(ctmp), CGAMUT, cblack, cwhite);
 			setcolr(orclr[i], colval(ctmp,RED),
 					colval(ctmp,GRN), colval(ctmp,BLU));
-			bresp(ctmp, inpRGB[i]);
-			colortrans(ct2, solmat, ctmp);
-			clipgamut(ct2, bright(ct2), CGAMUT, cblack, cwhite);
-			setcolr(cvclr[i], colval(ct2,RED),
-					colval(ct2,GRN), colval(ct2,BLU));
+			if (rawmap)
+				copycolr(cvclr[i], mbclr[i]);
+			else {
+				bresp(ctmp, inpRGB[i]);
+				colortrans(ct2, solmat, ctmp);
+				clipgamut(ct2, bright(ct2), CGAMUT,
+						cblack, cwhite);
+				setcolr(cvclr[i], colval(ct2,RED),
+						colval(ct2,GRN),
+						colval(ct2,BLU));
+			}
 		}
 	}
 						/* allocate scanline */
