@@ -714,6 +714,7 @@ FILE	*fp;
 char	*mod, *name;
 int	dolower, doupper;
 {
+	int	dosides = 0;
 	char	buf[MAXWORD];
 	
 	fprintf(fp, "\n%s %s %s_light\n", mod,
@@ -724,15 +725,13 @@ int	dolower, doupper;
 			lampcolor[1]/shp->area,
 			lampcolor[2]/shp->area);
 	if (doupper && dolower && shp->type != SPHERE && shp->h > MINDIM)
-		if (shp->isillum) {
-			fprintf(fp, "\nvoid illum %s_glow\n", name);
-			fprintf(fp, "0\n0\n3 0 0 0\n");
-		} else {
+		if (!shp->isillum) {
 			fprintf(fp, "\n%s glow %s_glow\n", mod, name);
 			fprintf(fp, "0\n0\n4 %g %g %g -1\n",
 					lampcolor[0]/shp->area,
 					lampcolor[1]/shp->area,
 					lampcolor[2]/shp->area);
+			dosides++;
 		}
 	switch (shp->type) {
 	case RECT:
@@ -741,7 +740,7 @@ int	dolower, doupper;
 			putrectsrc(shp, fp, buf, name, 0);
 		if (doupper)
 			putrectsrc(shp, fp, buf, name, 1);
-		if (doupper && dolower && shp->h > MINDIM) {
+		if (dosides) {
 			strcat(strcpy(buf, name), "_glow");
 			putsides(shp, fp, buf, name);
 		}
@@ -752,7 +751,7 @@ int	dolower, doupper;
 			putdisksrc(shp, fp, buf, name, 0);
 		if (doupper)
 			putdisksrc(shp, fp, buf, name, 1);
-		if (doupper && dolower && shp->h > MINDIM) {
+		if (dosides) {
 			strcat(strcpy(buf, name), "_glow");
 			putcyl(shp, fp, buf, name);
 		}
