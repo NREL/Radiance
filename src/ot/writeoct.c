@@ -92,7 +92,7 @@ register long  i;
 register int  siz;
 {
 	while (siz--)
-		putc(i>>(siz<<3) & 0377, stdout);
+		putc(i>>(siz<<3) & 0xff, stdout);
 	if (ferror(stdout))
 		error(SYSTEM, "write error in putint");
 }
@@ -105,7 +105,7 @@ double  f;
 	extern double  frexp();
 	int  e;
 
-	putint((long)(frexp(f,&e)*0x7fffffff), sizeof(long));
+	putint((long)(frexp(f,&e)*0x7fffffff), 4);
 	putint(e, 1);
 }
 
@@ -147,7 +147,7 @@ register OBJREC  *o;
 #ifdef  IARGS
 	putint(o->oargs.niargs, 2);
 	for (i = 0; i < o->oargs.niargs; i++)
-		putint(o->oargs.iarg[i], sizeof(long));
+		putint(o->oargs.iarg[i], 4);
 #endif
 	putint((long)o->oargs.nfargs, 2);
 	for (i = 0; i < o->oargs.nfargs; i++)
