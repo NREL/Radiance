@@ -75,11 +75,11 @@ char  *afile;
 						/* open ambient file */
 	if (afile != NULL)
 		if ((ambfp = fopen(afile, "r+")) != NULL) {
-			while (fread((char *)&amb,sizeof(AMBVAL),1,ambfp) == 1)
+			while (readambval(&amb, ambfp))
 				avinsert(&amb, &atrunk, thescene.cuorg,
 						thescene.cusize);
 							/* align */
-			fseek(ambfp, -(ftell(ambfp)%sizeof(AMBVAL)), 1);
+			fseek(ambfp, -(ftell(ambfp)%AMBVALSIZ), 1);
 		} else if ((ambfp = fopen(afile, "w")) == NULL) {
 			sprintf(errmsg, "cannot open ambient file \"%s\"",
 					afile);
@@ -305,7 +305,7 @@ AMBVAL  *av;
 #endif
 	if (ambfp == NULL)
 		return;
-	if (fwrite((char *)av, sizeof(AMBVAL), 1, ambfp) != 1)
+	if (writambval(av, ambfp) < 0)
 		goto writerr;
 #ifdef  AMBFLUSH
 	if (++nunflshed >= AMBFLUSH) {

@@ -65,7 +65,7 @@ char  *argv[];
 lookamb(fp)			/* get ambient values from a file */
 FILE  *fp;
 {
-	while (fread((char *)&av, sizeof(AMBVAL), 1, fp) == 1) {
+	while (readambval(&av, fp)) {
 		if (dataonly) {
 			printf("%f\t%f\t%f\t", av.pos[0], av.pos[1], av.pos[2]);
 			printf("%f\t%f\t%f\t", av.dir[0], av.dir[1], av.dir[2]);
@@ -132,7 +132,7 @@ FILE  *fp;
 				&av.gdir[0], &av.gdir[1], &av.gdir[2]) != 3)
 			return;
 		av.next = NULL;
-		fwrite((char *)&av, sizeof(AMBVAL), 1, stdout);
+		writambval(&av, stdout);
 		if (ferror(stdout))
 			exit(1);
 	}
