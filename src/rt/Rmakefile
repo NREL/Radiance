@@ -56,7 +56,7 @@ RAYOBJS = raytrace.o ambient.o
 SURFOBJS = face.o sphere.o source.o o_face.o cone.o \
 		o_cone.o o_instance.o instance.o
 
-MATOBJS = normal.o dielectric.o m_clip.o glass.o
+MATOBJS = normal.o dielectric.o m_clip.o glass.o m_brdf.o
 
 MODOBJS = p_func.o t_func.o p_data.o t_data.o text.o mx_func.o mx_data.o
 
