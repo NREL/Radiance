@@ -71,11 +71,12 @@ char  *nm;
 		u[0] = VERTEX(fa,i)[0] - VERTEX(fa,j)[0];
 		u[1] = VERTEX(fa,i)[1] - VERTEX(fa,j)[1];
 		u[2] = VERTEX(fa,i)[2] - VERTEX(fa,j)[2];
-		if (DOT(u,u) >= fa->area-FTINY)
+		if ((r1 = DOT(u,u)) >= fa->area-FTINY)
 			break;
 	}
 	if (i < fa->nv) {	/* got one! -- let's align our axes */
-		normalize(u);
+		r2 = 1.0/sqrt(r1);
+		u[0] *= r2; u[1] *= r2; u[2] *= r2;
 		fcross(v, fa->norm, u);
 	} else			/* oh well, we'll just have to wing it */
 		mkaxes(u, v, fa->norm);
