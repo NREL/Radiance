@@ -32,7 +32,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 extern char  *atos();
 
-extern char  rifname[];			/* rad input file name */
+extern char  rifname[128];		/* rad input file name */
 
 extern char  VersionID[];
 extern char  *progname;
@@ -200,7 +200,11 @@ char  *s;
 		}
 		s = sskip(s);
 	}
-	if (sscanf(s, "%s", rifname) != 1 && rifname[0] == '\0') {
+	while (isspace(*s))
+		s++;
+	if (*s)
+		atos(rifname, sizeof(rifname), s);
+	else if (rifname[0] == '\0') {
 		error(COMMAND, "no previous rad file");
 		return;
 	}
@@ -231,7 +235,9 @@ char  *s;
 		s = sskip(s);
 	else
 		strcat(buf, "1");
-	if (sscanf(s, "%s", rifname) != 1 && rifname[0] == '\0') {
+	if (*s)
+		atos(rifname, sizeof(rifname), s);
+	else if (rifname[0] == '\0') {
 		error(COMMAND, "no previous rad file");
 		return;
 	}
@@ -662,7 +668,11 @@ char  *s;
 	COLR  *scanline;
 	int  y;
 
-	if (sscanf(s, "%s", buf) != 1 && buf[0] == '\0') {
+	while (isspace(*s))
+		s++;
+	if (*s)
+		atos(buf, sizeof(buf), s);
+	else if (buf[0] == '\0') {
 		error(COMMAND, "no file");
 		return;
 	}
