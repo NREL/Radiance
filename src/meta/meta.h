@@ -46,7 +46,7 @@ extern "C" {
 #define  ADELIM  '`'		/* additional argument delimiter */
 #define  CDELIM  '#'		/* comment delimiter */
 
-#define  MAXARGS  512		/* maximum # of arguments for primitive */
+#define  MAXARGS  2048		/* maximum argument string for primitive */
 
 #define  SALL  0		/* set all */
 #define  SPAT0  04		/* set pattern 0 */
