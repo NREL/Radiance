@@ -32,6 +32,10 @@ int  rdepth = 3;			/* recursion depth */
 
 double  var = 0.3;			/* variability */
 
+#ifdef  DCL_ATOF
+extern double  atof();
+#endif
+
 
 main(argc, argv)
 int  argc;

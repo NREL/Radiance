@@ -15,6 +15,10 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <math.h>
 
 
+#ifdef  DCL_ATOF
+extern double  atof();
+#endif
+
 char  let[]="0123456789._ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 char  *cmtype;		/* ppd material type */

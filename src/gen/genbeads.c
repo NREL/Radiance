@@ -18,6 +18,10 @@ char  *mtype;		/* material type */
 
 char  *name;		/* name */
 
+#ifdef  DCL_ATOF
+extern double  atof();
+#endif
+
 
 main(argc, argv)
 int  argc;

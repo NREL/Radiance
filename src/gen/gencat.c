@@ -30,6 +30,10 @@ static char SCCSid[] = "$SunId$ LBL";
 #include <stdio.h>
 #include <math.h>
 
+#ifdef  DCL_ATOF
+extern double  atof();
+#endif
+
 char  *cmtype, *cname;
 double z0, z1;
 double k, D;

@@ -30,6 +30,10 @@ char  *material, *name;
 double  height;
 int  nslats,  nsurf;
 
+#ifdef  DCL_ATOF
+extern double  atof();
+#endif
+
 
 main(argc, argv)
 int  argc;
