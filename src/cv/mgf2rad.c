@@ -23,6 +23,8 @@ double	glowdist = FHUGE;		/* glow test distance */
 
 double  emult = 1.;			/* emitter multiplier */
 
+FILE	*matfp = stdout;		/* material output file */
+
 int	r_comment(), r_cone(), r_cyl(), r_face(), r_ies(), r_ring(), r_sph();
 char	*material(), *object(), *addarg();
 
@@ -74,6 +76,14 @@ char	*argv[];
 			emult = atof(argv[++i]);
 			printf(" %s", argv[i]);
 			break;
+		case 'm':			/* materials file */
+			matfp = fopen(argv[++i], "a");
+			if (matfp == NULL) {
+				fprintf(stderr, "%s: cannot append\n", argv[i]);
+				exit(1);
+			}
+			printf(" %s", argv[i]);
+			break;
 		default:
 			goto userr;
 		}
@@ -91,7 +101,7 @@ char	*argv[];
 		}
 	exit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-g dist][-m mult] [file.mgf] ..\n",
+	fprintf(stderr, "Usage: %s [-g dist][-e mult][-m matf] [file.mgf] ..\n",
 			argv[0]);
 	exit(1);
 }
@@ -419,13 +429,13 @@ material()			/* get (and print) current material */
 		cvtcolor(radrgb, &c_cmaterial->ed_c,
 				emult*c_cmaterial->ed/WHTEFFICACY);
 		if (glowdist < FHUGE) {		/* do a glow */
-			printf("\nvoid glow %s\n0\n0\n", mname);
-			printf("4 %f %f %f %f\n", colval(radrgb,RED),
+			fprintf(matfp, "\nvoid glow %s\n0\n0\n", mname);
+			fprintf(matfp, "4 %f %f %f %f\n", colval(radrgb,RED),
 					colval(radrgb,GRN),
 					colval(radrgb,BLU), glowdist);
 		} else {
-			printf("\nvoid light %s\n0\n0\n", mname);
-			printf("3 %f %f %f\n", colval(radrgb,RED),
+			fprintf(matfp, "\nvoid light %s\n0\n0\n", mname);
+			fprintf(matfp, "3 %f %f %f\n", colval(radrgb,RED),
 					colval(radrgb,GRN),
 					colval(radrgb,BLU));
 		}
@@ -464,10 +474,10 @@ material()			/* get (and print) current material */
 		else
 			d = c_cmaterial->td + ts;
 		scalecolor(radrgb, d);
-		printf("\nvoid trans %s\n0\n0\n", mname);
-		printf("7 %f %f %f\n", colval(radrgb,RED),
+		fprintf(matfp, "\nvoid trans %s\n0\n0\n", mname);
+		fprintf(matfp, "7 %f %f %f\n", colval(radrgb,RED),
 				colval(radrgb,GRN), colval(radrgb,BLU));
-		printf("\t%f %f %f %f\n", c_cmaterial->rs, a5, a6,
+		fprintf(matfp, "\t%f %f %f %f\n", c_cmaterial->rs, a5, a6,
 				ts/(ts + c_cmaterial->td));
 		return(mname);
 	}
@@ -476,8 +486,8 @@ material()			/* get (and print) current material */
 					c_isgrey(&c_cmaterial->rs_c))) {
 		cvtcolor(radrgb, &c_cmaterial->rd_c,
 					c_cmaterial->rd/(1.-c_cmaterial->rs));
-		printf("\nvoid plastic %s\n0\n0\n", mname);
-		printf("5 %f %f %f %f %f\n", colval(radrgb,RED),
+		fprintf(matfp, "\nvoid plastic %s\n0\n0\n", mname);
+		fprintf(matfp, "5 %f %f %f %f %f\n", colval(radrgb,RED),
 				colval(radrgb,GRN), colval(radrgb,BLU),
 				c_cmaterial->rs, c_cmaterial->rs_a);
 		return(mname);
@@ -487,8 +497,8 @@ material()			/* get (and print) current material */
 	cvtcolor(radrgb, &c_cmaterial->rd_c, c_cmaterial->rd);
 	cvtcolor(c2, &c_cmaterial->rs_c, c_cmaterial->rs);
 	addcolor(radrgb, c2);
-	printf("\nvoid metal %s\n0\n0\n", mname);
-	printf("5 %f %f %f %f %f\n", colval(radrgb,RED),
+	fprintf(matfp, "\nvoid metal %s\n0\n0\n", mname);
+	fprintf(matfp, "5 %f %f %f %f %f\n", colval(radrgb,RED),
 			colval(radrgb,GRN), colval(radrgb,BLU),
 			c_cmaterial->rs/(c_cmaterial->rd + c_cmaterial->rs),
 			c_cmaterial->rs_a);
