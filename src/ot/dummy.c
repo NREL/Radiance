@@ -29,6 +29,8 @@ p_bfunc() { return(0); }
 
 t_func() { return(0); }
 
+t_data() { return(0); }
+
 p_pdata() { return(0); }
 
 p_cdata() { return(0); }
