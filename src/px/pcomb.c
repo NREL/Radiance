@@ -214,9 +214,9 @@ combine()			/* combine pictures */
 	else
 		brtdef = NULL;
 						/* predefine variables */
-	varset(vnfiles, (double)nfiles);
-	varset(vxres, (double)xres);
-	varset(vyres, (double)yres);
+	varset(vnfiles, '=', (double)nfiles);
+	varset(vxres, '=', (double)xres);
+	varset(vyres, '=', (double)yres);
 						/* allocate scanline */
 	scanout = (COLOR *)emalloc(xres*sizeof(COLOR));
 						/* combine files */
@@ -227,11 +227,11 @@ combine()			/* combine pictures */
 			    eputs(": read error\n");
 			    quit(1);
 		    }
-	    varset(vypos, (double)ypos);
+	    varset(vypos, '=', (double)ypos);
 	    for (xpos = 0; xpos < xres; xpos++) {
 		for (i = 0; i < nfiles; i++)
 			multcolor(input[i].scan[xpos],input[i].coef);
-		varset(vxpos, (double)xpos);
+		varset(vxpos, '=', (double)xpos);
 		eclock++;
 		if (brtdef != NULL) {
 		    d = evalue(brtdef);
