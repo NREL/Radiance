@@ -1,0 +1,27 @@
+{ SCCSid "$SunId$ LBL" }
+
+{
+	Interpolate triangle-mesh values using barycentric coordinates.
+
+	A1 through A12	= Transformation matrix for barycentric system
+and:
+	A13 through A21	= Surface normal perturbation matrix
+or:
+	A13 through A18	= Lookup in 2-dimensional pattern or texture
+}
+					{ Compute barycentric coordinates }
+a = Px*arg( 1) + Py*arg( 2) + Pz*arg( 3) + arg( 4);
+b = Px*arg( 5) + Py*arg( 6) + Pz*arg( 7) + arg( 8);
+c = Px*arg( 9) + Py*arg(10) + Pz*arg(11) + arg(12);
+					{ Compute variables }
+v1 = a*arg(13) + b*arg(14) + c*arg(15);
+v2 = a*arg(16) + b*arg(17) + c*arg(18);
+v3 = a*arg(19) + b*arg(20) + c*arg(21);
+					{ Surface normal perturbation }
+nf = 1/sqrt(v1*v1 + v2*v2 + v3*v3);
+dx = v1*nf - Nx;
+dy = v2*nf - Ny;
+dz = v3*nf - Nz;
+					{ Lookup table index }
+u = v1;
+v = v2;
