@@ -24,7 +24,8 @@ static char SCCSid[] = "$SunId$ SGI";
 
 HOLO	*hdlist[HDMAX+1];	/* global holodeck list */
 
-char	*hdofn[HDMAX+1];	/* holodeck section octree list */
+char	*hdgfn[HDMAX];		/* holodeck section geometry list */
+char	*hdpfn[HDMAX];		/* section portal list */
 
 char	cmdlist[DC_NCMDS][8] = DC_INIT;
 
@@ -195,9 +196,9 @@ disp_wait()			/* wait for more input */
 }
 
 
-add_holo(hdg, ofn)		/* register a new holodeck section */
+add_holo(hdg, gfn, pfn)		/* register a new holodeck section */
 HDGRID	*hdg;
-char	*ofn;
+char	*gfn, *pfn;
 {
 	VIEW	nv;
 	double	d;
@@ -212,7 +213,8 @@ char	*ofn;
 		error(SYSTEM, "out of memory in add_holo");
 	bcopy((char *)hdg, (char *)hdlist[hd], sizeof(HDGRID));
 	hdcompgrid(hdlist[hd]);
-	hdofn[hd] = savestr(ofn);
+	hdgfn[hd] = savestr(gfn);
+	hdpfn[hd] = pfn && *pfn ? savestr(pfn) : (char *)NULL;
 	if (hd)
 		return;
 					/* set initial viewpoint */
@@ -300,10 +302,10 @@ again:
 			goto again;	/* poss. overloading dev_section()? */
 		}
 		DCHECK(*slist < 0, WARNING, "no visible sections in new_view");
-		while (*slist >= 0)
-			dev_section(hdofn[*slist++]);
+		for ( ; *slist >= 0; slist++)
+			dev_section(hdgfn[*slist], hdpfn[*slist]);
 	}
-	dev_section(NULL);	/* end section list */
+	dev_section(NULL,NULL);	/* end section list */
 	dev_flush();		/* update display */
 				/* update server */
 	imm_mode = beam_sync(odev.firstuse) > 0;
@@ -486,9 +488,10 @@ serv_result()			/* get next server result and process it */
 		disp_bundle((PACKHEAD *)buf);
 		break;
 	case DS_ADDHOLO:
-		if (msg.nbytes <= sizeof(HDGRID))
+		if (msg.nbytes < sizeof(HDGRID)+2)
 			error(INTERNAL, "bad holodeck record from server");
-		add_holo((HDGRID *)buf, buf+sizeof(HDGRID));
+		add_holo((HDGRID *)buf, buf+sizeof(HDGRID),
+			buf+sizeof(HDGRID)+strlen(buf+sizeof(HDGRID))+1);
 		break;
 	case DS_OUTSECT:
 		do_outside = 1;
@@ -579,7 +582,9 @@ register char  *s;
 quit(code)			/* clean up and exit */
 int	code;
 {
+	if (code)
+		exit(code);
 	if (odev.v.type)
 		dev_close();
-	exit(code);
+	exit(0);
 }
