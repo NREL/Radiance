@@ -174,8 +174,8 @@ char  *id;
 	dev_input();			/* sets size and view angles */
 					/* allocate our leaf pile */
 	if (!qtAllocLeaves(DisplayWidth(ourdisplay,ourscreen) *
-			DisplayHeight(ourdisplay,ourscreen) /
-			(qtMinNodesiz*qtMinNodesiz)))
+			DisplayHeight(ourdisplay,ourscreen) * 3 /
+			(qtMinNodesiz*qtMinNodesiz*2)))
 		error(SYSTEM, "insufficient memory for leaf storage");
 	odev.name = id;
 	odev.ifd = ConnectionNumber(ourdisplay);
