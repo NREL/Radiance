@@ -93,7 +93,7 @@ _EOF_
 		else
 			set fgargs=(-r 250 $fgargs)
 		endif
-		echo -n "Are these sources very bright? "
+		echo -n "Are these sources relatively bright? "
 		if ("$<" =~ [nN]*) then
 			set fgargs=(-c $fgargs)
 		endif
