@@ -208,12 +208,18 @@ int	n;
 }
 
 /* The following was adapted and modified from the original (GW)        */
+
+/* cheater definitions (GW) */
+#define thepicture	thesamples
+#define lengthcount	(nsamples*3)
+#define samplefac	1
+
 /*----------------------------------------------------------------------*/
 /*									*/
 /* 				NeuQuant				*/
 /*				--------				*/
 /*									*/
-/* 		Copyright: Anthony Dekker, June 1994			*/
+/* 		Copyright: Anthony Dekker, November 1994		*/
 /*									*/
 /* This program performs colour quantization of graphics images (SUN	*/
 /* raster files).  It uses a Kohonen Neural Network.  It produces	*/
@@ -246,95 +252,91 @@ int	n;
 /* Email:	tdekker@iscs.nus.sg					*/
 /*----------------------------------------------------------------------*/
 
-#define bool    int
-#define false   0
-#define true    1
+#define bool    	int
+#define false   	0
+#define true    	1
 
-#define initrad			32
-#define radiusdec		30
-#define alphadec		30
+/* network defs */
+#define netsize		256			/* number of colours - can change this */
+#define maxnetpos	(netsize-1)
+#define netbiasshift	4			/* bias for colour values */
+#define ncycles		100			/* no. of learning cycles */
 
 /* defs for freq and bias */
-#define gammashift  	10
-#define betashift  	gammashift
-#define intbiasshift    16
-#define intbias		(1<<intbiasshift)
-#define gamma   	(1<<gammashift)
-#define beta		(intbias>>betashift)
+#define intbiasshift    16			/* bias for fractions */
+#define intbias		(((int) 1)<<intbiasshift)
+#define gammashift  	10			/* gamma = 1024 */
+#define gamma   	(((int) 1)<<gammashift)
+#define betashift  	10
+#define beta		(intbias>>betashift)	/* beta = 1/1024 */
 #define betagamma	(intbias<<(gammashift-betashift))
-#define gammaphi	(intbias<<(gammashift-8))
 
-/* defs for rad and alpha */
-#define maxrad	 	(initrad+1)
-#define radiusbiasshift	6
-#define radiusbias	(1<<radiusbiasshift)
-#define initradius	((int) (initrad*radiusbias))
-#define alphabiasshift	10
-#define initalpha	(1<<alphabiasshift)
+/* defs for decreasing radius factor */
+#define initrad		(netsize>>3)		/* for 256 cols, radius starts */
+#define radiusbiasshift	6			/* at 32.0 biased by 6 bits */
+#define radiusbias	(((int) 1)<<radiusbiasshift)
+#define initradius	(initrad*radiusbias)	/* and decreases by a */
+#define radiusdec	30			/* factor of 1/30 each cycle */ 
+
+/* defs for decreasing alpha factor */
+#define alphabiasshift	10			/* alpha starts at 1.0 */
+#define initalpha	(((int) 1)<<alphabiasshift)
+int alphadec;					/* biased by 10 bits */
+
+/* radbias and alpharadbias used for radpower calculation */
 #define radbiasshift	8
-#define radbias		(1<<radbiasshift)
+#define radbias		(((int) 1)<<radbiasshift)
 #define alpharadbshift  (alphabiasshift+radbiasshift)
-#define alpharadbias    (1<<alpharadbshift)
+#define alpharadbias    (((int) 1)<<alpharadbshift)
 
-/* other defs */
-#define netbiasshift	4
-#define funnyshift	(intbiasshift-netbiasshift)
-#define maxnetval	((256<<netbiasshift)-1)
-#define ncycles		100
-#define jump1		499	/* prime */
-#define jump2		491	/* prime */
-#define jump3		487	/* any pic whose size was divisible by all */
-#define jump4		503	/* four primes would be simply enormous */
-
-/* cheater definitions (GW) */
-#define thepicture	thesamples
-#define lengthcount	(nsamples*3)
-#define samplefac	1
+/* four primes near 500 - assume no image has a length so large */
+/* that it is divisible by all four primes */
+#define prime1		499
+#define prime2		491
+#define prime3		487
+#define prime4		503
 
 typedef int pixel[4];  /* BGRc */
+pixel network[netsize];
 
-static pixel network[256];
+int netindex[256];	/* for network lookup - really 256 */
 
-static int netindex[256];
-
-static int bias [256];
-static int freq [256];
-static int radpower[256];	/* actually need only go up to maxrad */
-
-/* fixed space overhead 256*4+256+256+256+256 words = 256*8 = 8kB */
+int bias [netsize];	/* bias and freq arrays for learning */
+int freq [netsize];
+int radpower[initrad];	/* radpower for precomputation */
 
 
-static
-initnet()
+/* initialise network in range (0,0,0) to (255,255,255) */
+
+initnet()	
 {
 	register int i;
 	register int *p;
 	
 	for (i=0; i<clrtabsiz; i++) {
 		p = network[i];
-		p[0] =
-		p[1] =
-		p[2] = (i<<(netbiasshift+8))/clrtabsiz;
-		freq[i] = intbias/clrtabsiz;  /* 1/256 */
+		p[0] = p[1] = p[2] = (i << (netbiasshift+8))/clrtabsiz;
+		freq[i] = intbias/clrtabsiz;  /* 1/clrtabsiz */
 		bias[i] = 0;
 	}
 }
 
 
-static
+/* do after unbias - insertion sort of network and build netindex[0..255] */
+
 inxbuild()
 {
 	register int i,j,smallpos,smallval;
 	register int *p,*q;
-	int start,previous;
+	int previouscol,startpos;
 
-	previous = 0;
-	start = 0;
+	previouscol = 0;
+	startpos = 0;
 	for (i=0; i<clrtabsiz; i++) {
 		p = network[i];
 		smallpos = i;
 		smallval = p[1];	/* index on g */
-		/* find smallest in i+1..clrtabsiz-1 */
+		/* find smallest in i..clrtabsiz-1 */
 		for (j=i+1; j<clrtabsiz; j++) {
 			q = network[j];
 			if (q[1] < smallval) {	/* index on g */
@@ -343,6 +345,7 @@ inxbuild()
 			}
 		}
 		q = network[smallpos];
+		/* swap p (i) and q (smallpos) entries */
 		if (i != smallpos) {
 			j = q[0];   q[0] = p[0];   p[0] = j;
 			j = q[1];   q[1] = p[1];   p[1] = j;
@@ -350,64 +353,60 @@ inxbuild()
 			j = q[3];   q[3] = p[3];   p[3] = j;
 		}
 		/* smallval entry is now in position i */
-		if (smallval != previous) {
-			netindex[previous] = (start+i)>>1;
-			for (j=previous+1; j<smallval; j++) netindex[j] = i;
-			previous = smallval;
-			start = i;
+		if (smallval != previouscol) {
+			netindex[previouscol] = (startpos+i)>>1;
+			for (j=previouscol+1; j<smallval; j++) netindex[j] = i;
+			previouscol = smallval;
+			startpos = i;
 		}
 	}
-	netindex[previous] = (start+255)>>1;
-        for (j=previous+1; j<256; j++) netindex[j] = 255;
+	netindex[previouscol] = (startpos+maxnetpos)>>1;
+	for (j=previouscol+1; j<256; j++) netindex[j] = maxnetpos; /* really 256 */
 }
 
 
-static int
-inxsearch(b,g,r)  /* accepts real BGR values after net is unbiased */
+int inxsearch(b,g,r)  /* accepts real BGR values after net is unbiased */
 register int b,g,r;
 {
-	register int i,j,best,x,y,bestd;
+	register int i,j,dist,a,bestd;
 	register int *p;
+	int best;
 
 	bestd = 1000;	/* biggest possible dist is 256*3 */
 	best = -1;
 	i = netindex[g]; /* index on g */
-	j = i-1;
+	j = i-1;	 /* start at netindex[g] and work outwards */
 
 	while ((i<clrtabsiz) || (j>=0)) {
 		if (i<clrtabsiz) {
 			p = network[i];
-			x = p[1] - g;	/* inx key */
-			if (x >= bestd) i = clrtabsiz; /* stop iter */
+			dist = p[1] - g;	/* inx key */
+			if (dist >= bestd) i = clrtabsiz; /* stop iter */
 			else {
 				i++;
-				if (x<0) x = -x;
-				y = p[0] - b;
-				if (y<0) y = -y;
-				x += y;
-				if (x<bestd) {
-					y = p[2] - r;	
-					if (y<0) y = -y;
-					x += y;	/* x holds distance */
-					if (x<bestd) {bestd=x; best=p[3];}
+				if (dist<0) dist = -dist;
+				a = p[0] - b;   if (a<0) a = -a;
+				dist += a;
+				if (dist<bestd) {
+					a = p[2] - r;   if (a<0) a = -a;
+					dist += a;
+					if (dist<bestd) {bestd=dist; best=p[3];}
 				}
 			}
 		}
 		if (j>=0) {
 			p = network[j];
-			x = g - p[1]; /* inx key - reverse dif */
-			if (x >= bestd) j = -1; /* stop iter */
+			dist = g - p[1]; /* inx key - reverse dif */
+			if (dist >= bestd) j = -1; /* stop iter */
 			else {
 				j--;
-				if (x<0) x = -x;
-				y = p[0] - b;
-				if (y<0) y = -y;
-				x += y;
-				if (x<bestd) {
-					y = p[2] - r;	
-					if (y<0) y = -y;
-					x += y;	/* x holds distance */
-					if (x<bestd) {bestd=x; best=p[3];}
+				if (dist<0) dist = -dist;
+				a = p[0] - b;   if (a<0) a = -a;
+				dist += a;
+				if (dist<bestd) {
+					a = p[2] - r;   if (a<0) a = -a;
+					dist += a;
+					if (dist<bestd) {bestd=dist; best=p[3];}
 				}
 			}
 		}
@@ -416,57 +415,73 @@ register int b,g,r;
 }
 
 
-static int
-contest(b,g,r)	/* accepts biased BGR values */
+/* finds closest neuron (min dist) and updates freq */
+/* finds best neuron (min dist-bias) and returns position */
+/* for frequently chosen neurons, freq[i] is high and bias[i] is negative */
+/* bias[i] = gamma*((1/clrtabsiz)-freq[i]) */
+
+int contest(b,g,r)	/* accepts biased BGR values */
 register int b,g,r;
 {
-	register int i,best,bestbias,x,y,bestd,bestbiasd;
-	register int *p,*q, *pp;
+	register int i,dist,a,biasdist,betafreq;
+	int bestpos,bestbiaspos,bestd,bestbiasd;
+	register int *p,*f, *n;
 
-	bestd = ~(1<<31);
+	bestd = ~(((int) 1)<<31);
 	bestbiasd = bestd;
-	best = -1;
-	bestbias = best;
-	q = bias;
-	p = freq;
+	bestpos = -1;
+	bestbiaspos = bestpos;
+	p = bias;
+	f = freq;
+
 	for (i=0; i<clrtabsiz; i++) {
-		pp = network[i];
-		x = pp[0] - b;
-		if (x<0) x = -x;
-		y = pp[1] - g;
-		if (y<0) y = -y;
-		x += y;
-		y = pp[2] - r;	
-		if (y<0) y = -y;
-		x += y;	/* x holds distance */
-			/* >> netbiasshift not needed if funnyshift used */
-		if (x<bestd) {bestd=x; best=i;}
-		y = x - ((*q)>>funnyshift);  /* y holds biasd */
-		if (y<bestbiasd) {bestbiasd=y; bestbias=i;}
-		y = (*p >> betashift);	     /* y holds beta*freq */
-		*p -= y;
-		*q += (y<<gammashift);
-		p++;
-		q++;
+		n = network[i];
+		dist = n[0] - b;   if (dist<0) dist = -dist;
+		a = n[1] - g;   if (a<0) a = -a;
+		dist += a;
+		a = n[2] - r;   if (a<0) a = -a;
+		dist += a;
+		if (dist<bestd) {bestd=dist; bestpos=i;}
+		biasdist = dist - ((*p)>>(intbiasshift-netbiasshift));
+		if (biasdist<bestbiasd) {bestbiasd=biasdist; bestbiaspos=i;}
+		betafreq = (*f >> betashift);
+		*f++ -= betafreq;
+		*p++ += (betafreq<<gammashift);
 	}
-	freq[best] += beta;
-	bias[best] -= betagamma;
-	return(bestbias);
+	freq[bestpos] += beta;
+	bias[bestpos] -= betagamma;
+	return(bestbiaspos);
 }
 
 
-static
-alterneigh(rad,i,b,g,r)	/* accepts biased BGR values */
+/* move neuron i towards (b,g,r) by factor alpha */
+
+altersingle(alpha,i,b,g,r)	/* accepts biased BGR values */
+register int alpha,i,b,g,r;
+{
+	register int *n;
+
+	n = network[i];		/* alter hit neuron */
+	*n -= (alpha*(*n - b)) / initalpha;
+	n++;
+	*n -= (alpha*(*n - g)) / initalpha;
+	n++;
+	*n -= (alpha*(*n - r)) / initalpha;
+}
+
+
+/* move neurons adjacent to i towards (b,g,r) by factor */
+/* alpha*(1-((i-j)^2/[r]^2)) precomputed as radpower[|i-j|]*/
+
+alterneigh(rad,i,b,g,r)	/* accents biased BGR values */
 int rad,i;
 register int b,g,r;
 {
 	register int j,k,lo,hi,a;
 	register int *p, *q;
 
-	lo = i-rad;
-	if (lo<-1) lo= -1;
-	hi = i+rad;
-	if (hi>clrtabsiz) hi=clrtabsiz;
+	lo = i-rad;   if (lo<-1) lo= -1;
+	hi = i+rad;   if (hi>clrtabsiz) hi=clrtabsiz;
 
 	j = i+1;
 	k = i-1;
@@ -495,58 +510,44 @@ register int b,g,r;
 }
 
 
-static
-altersingle(alpha,j,b,g,r)	/* accepts biased BGR values */
-register int alpha,j,b,g,r;
-{
-	register int *q;
-
-	q = network[j];		/* alter hit neuron */
-	*q -= (alpha*(*q - b)) / initalpha;
-	q++;
-	*q -= (alpha*(*q - g)) / initalpha;
-	q++;
-	*q -= (alpha*(*q - r)) / initalpha;
-}
-
-
-static
 learn()
 {
 	register int i,j,b,g,r;
-	int radius,rad,alpha,step,delta,upto;
+	int radius,rad,alpha,step,delta,samplepixels;
 	register unsigned char *p;
 	unsigned char *lim;
 
-	upto = lengthcount/(3*samplefac);
-	delta = upto/ncycles;
-	lim = thepicture + lengthcount;
+	alphadec = 30 + ((samplefac-1)/3);
 	p = thepicture;
+	lim = thepicture + lengthcount;
+	samplepixels = lengthcount/(3*samplefac);
+	delta = samplepixels/ncycles;
 	alpha = initalpha;
 	radius = initradius;
+	
 	rad = radius >> radiusbiasshift;
 	if (rad <= 1) rad = 0;
 	for (i=0; i<rad; i++) 
 		radpower[i] = alpha*(((rad*rad - i*i)*radbias)/(rad*rad));
-
-	if ((lengthcount%jump1) != 0) step = 3*jump1;
+	
+	if ((lengthcount%prime1) != 0) step = 3*prime1;
 	else {
-		if ((lengthcount%jump2) !=0) step = 3*jump2;
+		if ((lengthcount%prime2) !=0) step = 3*prime2;
 		else {
-			if ((lengthcount%jump3) !=0) step = 3*jump3;
-			else step = 3*jump4;
+			if ((lengthcount%prime3) !=0) step = 3*prime3;
+			else step = 3*prime4;
 		}
 	}
+	
 	i = 0;
-	while (i < upto) {
+	while (i < samplepixels) {
 		b = p[0] << netbiasshift;
 		g = p[1] << netbiasshift;
 		r = p[2] << netbiasshift;
 		j = contest(b,g,r);
 
 		altersingle(alpha,j,b,g,r);
-		if (rad) alterneigh(rad,j,b,g,r);
-						/* alter neighbours */
+		if (rad) alterneigh(rad,j,b,g,r);   /* alter neighbours */
 
 		p += step;
 		if (p >= lim) p -= lengthcount;
@@ -563,7 +564,10 @@ learn()
 	}
 }
 	
-static
+/* unbias network to give 0..255 entries */
+/* which can then be used for colour map */
+/* and record position i to prepare for sort */
+
 unbiasnet()
 {
 	int i,j;
@@ -575,7 +579,8 @@ unbiasnet()
 	}
 }
 
-/* Don't do this until the network has been unbiased */
+
+/* Don't do this until the network has been unbiased (GW) */
 		
 static
 cpyclrtab()
