@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -68,7 +68,7 @@ char  *av[];
 				m4[1][0] = -(m4[0][1] = sin(dtmp));
 				break;
 			default:
-				return(i);
+				goto done;
 			}
 			break;
 
@@ -101,7 +101,7 @@ char  *av[];
 				m4[2][2] = -1.0;
 				break;
 			default:
-				return(i);
+				goto done;
 			}
 			break;
 
@@ -117,7 +117,7 @@ char  *av[];
 			continue;
 
 		default:
-			return(i);
+			goto done;
 
 		}
 		multmat4(xfmat, xfmat, m4);
@@ -182,7 +182,7 @@ char  *av[];
 				m4[1][0] = -(m4[0][1] = sin(dtmp));
 				break;
 			default:
-				return(i);
+				goto done;
 			}
 			break;
 
@@ -215,7 +215,7 @@ char  *av[];
 				m4[2][2] = -1.0;
 				break;
 			default:
-				return(i);
+				goto done;
 			}
 			break;
 
@@ -231,7 +231,7 @@ char  *av[];
 			break;
 
 		default:
-			return(i);
+			goto done;
 
 		}
 		multmat4(xfmat, m4, xfmat);	/* left multiply */
