@@ -262,20 +262,21 @@ memerr:
 
 rholo()				/* holodeck main loop */
 {
-	static int	idle = 1;
+	static int	idle = 0;
 	PACKET	*pl = NULL, *plend;
 	register PACKET	*p;
 	time_t	t;
 	long	l;
-
-	if (outdev != NULL)		/* check display */
-		if (!disp_check(idle))
-			return(0);
-					/* display only? */
-	if (nprocs <= 0) {
+					/* check display */
+	if (nprocs <= 0)
 		idle = 1;
-		return(outdev != NULL);
-	}
+	if (outdev != NULL) {
+		if (!disp_check(idle))
+			return(0);	/* quit request */
+		if (nprocs <= 0)
+			return(1);
+	} else if (idle)
+		return(0);		/* all done */
 					/* check file size */
 	if (maxdisk > 0 && hdfilen(hdlist[0]->fd) >= maxdisk) {
 		error(WARNING, "file limit exceeded");
