@@ -105,6 +105,7 @@ extern long	fdate(), time();
 
 long	scenedate;		/* date of latest scene or object file */
 long	octreedate;		/* date of octree */
+long	matdate;		/* date of latest material file */
 
 int	explicate = 0;		/* explicate variables */
 int	silent = 0;		/* do work silently */
@@ -423,6 +424,9 @@ checkfiles()			/* check for existence and modified times */
 				vnam(OCTREE), vnam(SCENE));
 		exit(1);
 	}
+	matdate = -1;
+	if (vdef(MATERIAL))
+		matdate = checklast(vval(MATERIAL));
 }	
 
 
@@ -561,11 +565,12 @@ checkambfile()			/* check date on ambient file */
 {
 	long	afdate;
 
-	if (vdef(AMBFILE)) {
-		afdate = fdate(vval(AMBFILE));
-		if (afdate >= 0 & octreedate > afdate)
-			rmfile(vval(AMBFILE));
-	}
+	if (!vdef(AMBFILE))
+		return;
+	if ((afdate = fdate(vval(AMBFILE))) < 0)
+		return;
+	if (octreedate > afdate | matdate > afdate)
+		rmfile(vval(AMBFILE));
 }
 
 
@@ -1052,11 +1057,11 @@ char	*opts;
 			sprintf(vs, "%d", vn);
 		sprintf(picfile, "%s_%s.pic", vval(PICTURE), vs);
 						/* check date on picture */
-		if (fdate(picfile) > octreedate)
+		if (fdate(picfile) >= octreedate)
 			continue;
 						/* build rpict command */
 		sprintf(rawfile, "%s_%s.raw", vval(PICTURE), vs);
-		if (fdate(rawfile) > octreedate)	/* recover */
+		if (fdate(rawfile) >= octreedate)	/* recover */
 			sprintf(combuf, "rpict%s%s -ro %s %s",
 					rep, opts, rawfile, vval(OCTREE));
 		else {
