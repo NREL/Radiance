@@ -18,7 +18,12 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #include  "x11icon.h"
 
+#define	CTRL(c)		((c)-'@')
+
 #define GAMMA		2.2		/* default gamma correction */
+
+#define MOVPCT		10		/* percent distance to move */
+#define MOVDIR(b)	((b)==Button1 ? 1 : (b)==Button2 ? 0 : -1)
 
 #define MINWIDTH	480		/* minimum graphics window width */
 #define MINHEIGHT	400		/* minimum graphics window height */
@@ -30,7 +35,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #define  ourscreen	DefaultScreen(ourdisplay)
 #define  ourroot	RootWindow(ourdisplay,ourscreen)
 #define  ourmask	(StructureNotifyMask|ExposureMask|KeyPressMask|\
-			ButtonPressMask)
+			ButtonPressMask|ButtonReleaseMask)
 
 #define  levptr(etype)	((etype *)&currentevent)
 
@@ -57,10 +62,10 @@ static double	pwidth, pheight;	/* pixel dimensions (mm) */
 
 static int	inpresflags;		/* input result flags */
 
-static int	heightlocked = 0;	/* lock vertical motion */
+static int	headlocked = 0;		/* lock vertical motion */
 
 static int  getpixels(), xnewcolr(), freepixels(), resizewindow(),
-		getevent(), getkey(), fixwindow();
+		getevent(), getkey(), moveview(), getmove(), fixwindow();
 static unsigned long  true_pixel();
 
 
@@ -90,10 +95,12 @@ char  *id;
 	char  *gv;
 	double	gamval = GAMMA;
 	int  nplanes;
-	int  n;
 	XSetWindowAttributes	ourwinattr;
 	XWMHints  ourxwmhints;
 	XSizeHints	oursizhints;
+					/* set quadtree globals */
+	qtDepthEps = 0.02;
+	qtMinNodesiz = 1;
 					/* open display server */
 	ourdisplay = XOpenDisplay(NULL);
 	if (ourdisplay == NULL)
@@ -155,6 +162,12 @@ char  *id;
 					/* map the window and get its size */
 	XMapWindow(ourdisplay, gwind);
 	dev_input();
+					/* allocate our leaf pile */
+	if (!qtAllocLeaves(DisplayWidth(ourdisplay,ourscreen) *
+			DisplayHeight(ourdisplay,ourscreen) /
+			(qtMinNodesiz*qtMinNodesiz)))
+		error(SYSTEM, "insufficient memory for leaf storage");
+
 					/* figure out sensible view */
 	pwidth = (double)DisplayWidthMM(ourdisplay, ourscreen) /
 			DisplayWidth(ourdisplay, ourscreen);
@@ -166,12 +179,6 @@ char  *id;
 	odev.v.horiz = 2.*180./PI * atan(0.5/VIEWDIST*pwidth*odev.hres);
 	odev.v.vert = 2.*180./PI * atan(0.5/VIEWDIST*pheight*odev.vres);
 	odev.ifd = ConnectionNumber(ourdisplay);
-					/* allocate our leaf pile */
-	qtDepthEps = 0.02;
-	n = odev.hres < odev.vres ? odev.hres : odev.vres;
-	qtMinNodesiz = 1;
-	if (!qtAllocLeaves(n*n/(qtMinNodesiz*qtMinNodesiz)))
-		error(SYSTEM, "insufficient memory for leaf storage");
 }
 
 
@@ -365,9 +372,86 @@ getevent()			/* get next event */
 		getkey(levptr(XKeyPressedEvent));
 		break;
 	case ButtonPress:
-		/* getmove(levptr(XButtonPressedEvent)); */
+		getmove(levptr(XButtonPressedEvent));
 		break;
 	}
+}
+
+
+static
+moveview(dx, dy, move)		/* move our view */
+int	dx, dy, move;
+{
+	VIEW	nv;
+	double	d;
+	register int	i;
+				/* start with old view */
+	copystruct(&nv, &odev.v);
+				/* change view direction */
+	if (move) {
+		register RLEAF	*lp;
+		if ((lp = qtFindLeaf(dx, dy)) == NULL)
+			return(0);	/* not on window */
+		for (i = 0; i < 3; i++)
+			nv.vdir[i] = lp->wp[i] - nv.vp[i];
+	} else {
+		if (viewray(nv.vp, nv.vdir, &odev.v,
+				(dx+.5)/odev.hres, (dy+.5)/odev.vres) < -FTINY)
+			return(0);	/* outside view */
+	}
+				/* move viewpoint */
+	if (move > 0)
+		for (i = 0; i < 3; i++)
+			nv.vp[i] += MOVPCT/100. * nv.vdir[i];
+	else if (move < 0)
+		for (i = 0; i < 3; i++)
+			nv.vp[i] -= MOVPCT/100. * nv.vdir[i];
+	if (move && headlocked) {
+		d = 0;		/* bring head back to same height */
+		for (i = 0; i < 3; i++)
+			d += odev.v.vup[i] * (odev.v.vp[i] - nv.vp[i]);
+		for (i = 0; i < 3; i++)
+			nv.vp[i] += d * odev.v.vup[i];
+	}
+	if (setview(&nv) != NULL)
+		return(0);	/* illegal view */
+	dev_view(&nv);
+	inpresflags |= DEV_NEWVIEW;
+	return(1);
+}
+
+
+static
+getmove(ebut)				/* get view change */
+XButtonPressedEvent	*ebut;
+{
+	int	whichbutton = ebut->button;
+	int	oldnodesiz = qtMinNodesiz;
+	Window	rootw, childw;
+	int	rootx, rooty, wx, wy;
+	unsigned int	statemask;
+
+	qtMinNodesiz = 16;		/* for quicker update */
+
+	do {
+		if (!XQueryPointer(ourdisplay, gwind, &rootw, &childw,
+				&rootx, &rooty, &wx, &wy, &statemask))
+			break;		/* on another screen */
+
+		if (!moveview(wx, odev.vres-1-wy, MOVDIR(whichbutton)))
+			sleep(1);
+
+	} while (!XCheckMaskEvent(ourdisplay,
+			ButtonReleaseMask, levptr(XEvent)));
+
+	if (!(inpresflags & DEV_NEWVIEW)) {	/* do final motion */
+		whichbutton = levptr(XButtonReleasedEvent)->button;
+		wx = levptr(XButtonReleasedEvent)->x;
+		wy = levptr(XButtonReleasedEvent)->y;
+		moveview(wx, odev.vres-1-wy, MOVDIR(whichbutton));
+	}
+
+	qtMinNodesiz = oldnodesiz;	/* restore quadtree resolution */
 }
 
 
@@ -383,11 +467,19 @@ register XKeyPressedEvent  *ekey;
 		return;
 	switch (buf[0]) {
 	case 'h':			/* turn on height motion lock */
-		heightlocked = 1;
+		headlocked = 1;
 		return;
 	case 'H':			/* turn off height motion lock */
-		heightlocked = 0;
+		headlocked = 0;
 		return;
+	case CTRL('Z'):
+	case 'p':			/* pause computation */
+		inpresflags |= DEV_WAIT;
+		return;
+	case '\n':
+	case '\r':			/* release */
+		return;
+	case CTRL('D'):
 	case 'Q':
 	case 'q':			/* quit the program */
 		inpresflags |= DEV_SHUTDOWN;
@@ -404,7 +496,6 @@ fixwindow(eexp)				/* repair damage to window */
 register XExposeEvent  *eexp;
 {
 	if (odev.hres == 0 || odev.vres == 0) {	/* first exposure */
-eputs("Resizing window in fixwindow\n");
 		odev.hres = eexp->width;
 		odev.vres = eexp->height;
 		inpresflags |= DEV_NEWSIZE;
