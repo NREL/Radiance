@@ -59,7 +59,3 @@ extern int  nextc;
 extern int  errno;
 
 #define  evalue(ep)	(*eoper[(ep)->type])(ep)
-
-#ifdef  CPM
-#define  defined(D)	D
-#endif
