@@ -8,23 +8,16 @@ static char SCCSid[] = "$SunId$ LBL";
  * Source sampling routines
  */
 
-#include  "standard.h"
-
-#include  "object.h"
+#include  "ray.h"
 
 #include  "source.h"
 
 #include  "random.h"
 
 
-extern int  dimlist[];		/* dimension list for distribution */
-extern int  ndims;		/* number of dimensions so far */
-extern int  samplendx;		/* index for this sample */
-
-
 double
-nextssamp(org, dir, si)		/* compute sample for source, rtn. distance */
-FVECT  org, dir;		/* origin is read only, direction is set */
+nextssamp(r, si)		/* compute sample for source, rtn. distance */
+register RAY  *r;		/* origin is read, direction is set */
 register SRCINDEX  *si;		/* source index (modified to current) */
 {
 	int  cent[3], size[3], parr[2];
@@ -36,12 +29,12 @@ tryagain:
 		if (++si->sn >= nsources)
 			return(0.0);	/* no more */
 		if (srcsizerat <= FTINY)
-			nopart(si, org);
+			nopart(si, r);
 		else {
 			for (i = si->sn; source[i].sflags & SVIRTUAL;
 					i = source[i].sa.sv.sn)
 				;		/* partition source */
-			(*sfun[source[i].so->otype].of->partit)(si, org);
+			(*sfun[source[i].so->otype].of->partit)(si, r);
 		}
 		si->sp = -1;
 	}
@@ -71,29 +64,29 @@ tryagain:
 		vpos[i] += (double)cent[i]/MAXSPART;
 					/* compute direction */
 	for (i = 0; i < 3; i++)
-		dir[i] = source[si->sn].sloc[i] +
+		r->rdir[i] = source[si->sn].sloc[i] +
 				vpos[SU]*source[si->sn].ss[SU][i] +
 				vpos[SV]*source[si->sn].ss[SV][i] +
 				vpos[SW]*source[si->sn].ss[SW][i];
 
 	if (!(source[si->sn].sflags & SDISTANT))
 		for (i = 0; i < 3; i++)
-			dir[i] -= org[i];
+			r->rdir[i] -= r->rorg[i];
 					/* compute distance */
-	if ((d = normalize(dir)) == 0.0)
+	if ((d = normalize(r->rdir)) == 0.0)
 		goto tryagain;	/* at source! */
 
 					/* compute sample size */
 	si->dom  = source[si->sn].ss2;
 	if (source[si->sn].sflags & SFLAT) {
-		si->dom *= sflatform(si->sn, dir);
+		si->dom *= sflatform(si->sn, r->rdir);
 		if (si->dom <= FTINY) {		/* behind source */
 			si->np = 0;
 			goto tryagain;
 		}
 		si->dom *= (double)(size[SU]*size[SV])/(MAXSPART*MAXSPART);
 	} else if (source[si->sn].sflags & SCYL) {
-		si->dom *= scylform(si->sn, dir);
+		si->dom *= scylform(si->sn, r->rdir);
 		si->dom *= (double)size[SU]/MAXSPART;
 	} else {
 		si->dom *= (double)(size[SU]*size[SV]*size[SW]) /
@@ -137,9 +130,9 @@ unsigned char  *pt;		/* partition array */
 }
 
 
-nopart(si, ro)			/* single source partition */
+nopart(si, r)			/* single source partition */
 register SRCINDEX  *si;
-FVECT  ro;
+RAY  *r;
 {
 	clrpart(si->spt);
 	setpart(si->spt, 0, S0);
@@ -147,9 +140,9 @@ FVECT  ro;
 }
 
 
-cylpart(si, ro)			/* partition a cylinder */
+cylpart(si, r)			/* partition a cylinder */
 SRCINDEX  *si;
-FVECT  ro;
+register RAY  *r;
 {
 	double  dist2, safedist2, dist2cent, rad2;
 	FVECT  v;
@@ -157,11 +150,11 @@ FVECT  ro;
 	int  pi;
 					/* first check point location */
 	clrpart(si->spt);
-	sp = &source[si->sn];
+	sp = source + si->sn;
 	rad2 = 1.365 * DOT(sp->ss[SV],sp->ss[SV]);
-	v[0] = ro[0] - sp->sloc[0];
-	v[1] = ro[1] - sp->sloc[1];
-	v[2] = ro[2] - sp->sloc[2];
+	v[0] = r->rorg[0] - sp->sloc[0];
+	v[1] = r->rorg[1] - sp->sloc[1];
+	v[2] = r->rorg[2] - sp->sloc[2];
 	dist2 = DOT(v,sp->ss[SU]);
 	safedist2 = DOT(sp->ss[SU],sp->ss[SU]);
 	dist2 *= dist2 / safedist2;
@@ -171,15 +164,15 @@ FVECT  ro;
 		si->np = 0;
 		return;
 	}
-	safedist2 *= 4./(srcsizerat*srcsizerat);
+	safedist2 *= 4.*r->rweight*r->rweight/(srcsizerat*srcsizerat);
 	if (dist2 <= 4.*rad2 ||		/* point too close to subdivide? */
-			dist2cent >= safedist2) {
+			dist2cent >= safedist2) {	/* too far? */
 		setpart(si->spt, 0, S0);
 		si->np = 1;
 		return;
 	}
 	pi = 0;
-	si->np = cyl_partit(ro, si->spt, &pi, MAXSPART,
+	si->np = cyl_partit(r->rorg, si->spt, &pi, MAXSPART,
 			sp->sloc, sp->ss[SU], safedist2);
 }
 
@@ -223,21 +216,24 @@ double  d2;
 }
 
 
-flatpart(si, ro)			/* partition a flat source */
+flatpart(si, r)				/* partition a flat source */
 register SRCINDEX  *si;
-FVECT  ro;
+RAY  *r;
 {
 	register double  *vp;
 	double  du2, dv2;
 	int  pi;
 
+	dv2 = 2.*r->rweight/srcsizerat;
+	dv2 *= dv2;
 	vp = source[si->sn].ss[SU];
-	du2 = 4./(srcsizerat*srcsizerat) * DOT(vp,vp);
+	du2 = dv2 * DOT(vp,vp);
 	vp = source[si->sn].ss[SV];
-	dv2 = 4./(srcsizerat*srcsizerat) * DOT(vp,vp);
+	dv2 *= DOT(vp,vp);
 	clrpart(si->spt);
 	pi = 0;
-	si->np = flt_partit(ro, si->spt, &pi, MAXSPART, source[si->sn].sloc,
+	si->np = flt_partit(r->rorg, si->spt, &pi, MAXSPART,
+		source[si->sn].sloc,
 		source[si->sn].ss[SU], source[si->sn].ss[SV], du2, dv2);
 }
 

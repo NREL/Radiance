@@ -123,7 +123,7 @@ SRCINDEX  *si;			/* source sample index */
 
     rayorigin(sr, r, SHADOW, 1.0);		/* ignore limits */
 
-    while ((d = nextssamp(sr->rorg, sr->rdir, si)) != 0.0) {
+    while ((d = nextssamp(sr, si)) != 0.0) {
 	sr->rsrc = si->sn;			/* remember source */
 	srcp = source + si->sn;
 	if (srcp->sflags & SDISTANT) {
