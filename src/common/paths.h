@@ -13,8 +13,8 @@
 #define CASEDIRSEP	case '/': case '\\'
 #define PATHSEP		';'
 #define MAXPATH		128
-#define TEMPLATE	"c:\\tmp\\rtXXXXXX"
-#define TEMPLEN		15
+#define TEMPLATE	"rtXXXXXX"
+#define TEMPLEN		8
 #define ULIBVAR		"RAYPATH"
 #ifndef DEFPATH
 #define DEFPATH		";c:/ray/lib"
