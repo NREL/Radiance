@@ -335,26 +335,24 @@ varinsert(name)			/* get a link to a variable */
 char  *name;
 {
     register VARDEF  *vp;
-    register LIBR  *libp;
     int  hv;
     
     if ((vp = varlookup(name)) != NULL) {
 	vp->nlinks++;
 	return(vp);
     }
+    vp = (VARDEF *)emalloc(sizeof(VARDEF));
 #ifdef  FUNCTION
-    libp = liblookup(name);
+    vp->lib = liblookup(name);
 #else
-    libp = NULL;
+    vp->lib = NULL;
 #endif
-    if (libp == NULL)			/* if name not in library */
+    if (vp->lib == NULL)		/* if name not in library */
 	name = qualname(name, 0);	/* use fully qualified version */
     hv = hash(name);
-    vp = (VARDEF *)emalloc(sizeof(VARDEF));
     vp->name = savestr(name);
     vp->nlinks = 1;
     vp->def = NULL;
-    vp->lib = libp;
     vp->next = hashtbl[hv];
     hashtbl[hv] = vp;
     return(vp);
