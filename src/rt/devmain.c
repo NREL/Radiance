@@ -32,12 +32,16 @@ int	notified = 0;				/* notified parent of input? */
 
 char	*progname;				/* driver name */
 
-int	r_clear(), r_paintr(), r_getcur(), r_comout(), r_comin();
+int	r_clear(), r_paintr(), r_getcur(), r_comout(), r_comin(), r_mycomin();
 
 int	(*dev_func[NREQUESTS])() = {		/* request handlers */
 		r_clear, r_paintr,
 		r_getcur, r_comout, r_comin
 	};
+
+char	mybuf[512] = "";
+
+char	*mybufp();
 
 
 main(argc, argv)		/* set up communications and main loop */
@@ -107,9 +111,9 @@ r_paintr()				/* paint a rectangle */
 	xmax = getw(devin); ymax = getw(devin);
 	(*dev->paintr)(col, xmin, ymin, xmax, ymax);
 					/* check for input */
-	if (dev->inpready > notified) {
+	if (!notified && dev->inpready > 0) {
+		notified = 1;
 		kill(getppid(), SIGIO);
-		notified = dev->inpready;
 	}
 }
 
@@ -179,10 +183,25 @@ register FILE	*fp;
 }
 
 
-repaint(xmin, ymin, xmax, ymax)		/* repaint section of display */
-int	xmin, ymin, xmax, ymax;
+r_mycomin()				/* get command from my buffer */
 {
-	/* no can do! */
+	register char	*cp;
+						/* get next command */
+	for (cp = mybuf; *cp != '\n'; cp++)
+		;
+	*cp++ = '\0';
+	(*dev->comout)(mybuf);			/* echo my command */
+						/* send it as reply */
+	putc(COM_COMIN, devout);
+	myputs(mybuf, devout);
+	fflush(devout);
+						/* get next command */
+	(*dev->comout)("\n");
+	strcpy(mybuf, cp);
+	if (mybuf[0])
+		kill(getppid(), SIGIO);			/* signal more */
+	else
+		dev_func[COM_COMIN] = r_comin;		/* else reset */
 }
 
 
@@ -200,4 +219,23 @@ register char  *s;
 		fflush(stderr);
 		inline = 0;
 	}
+}
+
+
+char *
+mybufp()				/* return buffer for my command */
+{
+	if (dev_func[COM_COMIN] != r_mycomin) {
+		dev_func[COM_COMIN] = r_mycomin;
+		kill(getppid(), SIGIO);
+	}
+	return(mybuf+strlen(mybuf));
+}
+
+
+repaint(xmin, ymin, xmax, ymax)		/* repaint section of display */
+int	xmin, ymin, xmax, ymax;
+{
+	sprintf(mybufp(), "repaint %d %d %d %d\n",
+			xmin, ymin, xmax, ymax);
 }
