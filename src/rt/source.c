@@ -382,6 +382,8 @@ srcobstructp(register RAY *r)
 		ondx += (int)(2*SHADCACHE*srcp->obscache->p.d.e2 *
 				(r->rorg[ax2] + t*srcp->sloc[ax2] -
 					srcp->obscache->p.d.o[ax2]));
+		if (ondx < 0 | ondx >= 4*SHADCACHE*SHADCACHE)
+			return &nobs;   /* could happen if ray is outside */
 	} else if (srcp->sflags & SFLAT) {
 		FVECT   sd;
 		RREAL   sd0m, sd1m;

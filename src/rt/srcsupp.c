@@ -59,8 +59,8 @@ newsource()			/* allocate new source in our array */
 	if (source == NULL)
 		return(-1);
 	source[nsources].sflags = 0;
-	source[nsources].nhits = 1;
-	source[nsources].ntests = 2;	/* initial hit probability = 1/2 */
+	source[nsources].nhits = 0;
+	source[nsources].ntests = 1;	/* initial hit probability = 0 */
 #if SHADCACHE
 	source[nsources].obscache = NULL;
 #endif
