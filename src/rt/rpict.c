@@ -20,7 +20,10 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <sys/types.h>
 #include  <sys/times.h>
 #include  <limits.h>
+extern time_t	time();
 #endif
+#else
+extern unsigned long	time();
 #endif
 
 #include  <signal.h>
@@ -83,10 +86,9 @@ int  ralrm = 0;				/* seconds between reports */
 
 double	pctdone = 0.0;			/* percentage done */
 
-long  tlastrept = 0L;			/* time at last report */
+unsigned long  tlastrept = 0L;		/* time at last report */
 
-extern long  time();
-extern long  tstart;			/* starting time */
+extern unsigned long  tstart;		/* starting time */
 
 extern unsigned long  nrays;		/* number of rays traced */
 
@@ -138,7 +140,7 @@ report()		/* report progress */
 	struct tms  tbuf;
 #endif
 
-	tlastrept = time((long *)0);
+	tlastrept = time((unsigned long *)NULL);
 #ifdef BSD
 	getrusage(RUSAGE_SELF, &rubuf);
 	u = rubuf.ru_utime.tv_sec + rubuf.ru_utime.tv_usec/1e6;
@@ -162,7 +164,7 @@ report()		/* report progress */
 #else
 report()		/* report progress */
 {
-	tlastrept = time((long *)0);
+	tlastrept = time((unsigned long *)NULL);
 	sprintf(errmsg, "%lu rays, %4.2f%% after %5.4f hours\n",
 			nrays, pctdone, (tlastrept-tstart)/3600.0);
 	eputs(errmsg);
@@ -422,7 +424,7 @@ char  *zfile, *oldfile;
 			goto writerr;
 							/* record progress */
 		pctdone = 100.0*(vres-1-ypos)/vres;
-		if (ralrm > 0 && time((long *)0) >= tlastrept+ralrm)
+		if (ralrm > 0 && time((unsigned long *)NULL) >= tlastrept+ralrm)
 			report();
 #ifndef	 BSD
 		else
