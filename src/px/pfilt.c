@@ -383,7 +383,7 @@ FILE  *in;
 				if (freadscan(scanin[yread%barsize],
 						xres, in) < 0) {
 					fprintf(stderr,
-						"%s: bad read (y=%d)\n",
+						"%s: truncated input (y=%d)\n",
 						progname, yres-1-yread);
 					quit(1);
 				}
