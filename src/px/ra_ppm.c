@@ -14,13 +14,14 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <fcntl.h>
 #endif
 
+#include  <math.h>
+
 #include  <ctype.h>
 
 #include  "color.h"
 
 #include  "resolu.h"
 
-extern double  pow();
 
 extern char  *malloc();
 

@@ -16,6 +16,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <fcntl.h>
 #endif
 
+#include  <math.h>
+
 #include  <signal.h>
 
 #include  "color.h"
@@ -76,7 +78,6 @@ main(argc, argv)
 int  argc;
 char  **argv;
 {
-	extern double  pow();
 	extern long  ftell();
 	extern int  quit(), headline();
 	FILE  *fin;

@@ -13,6 +13,12 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+#ifdef MSDOS
+#include  <fcntl.h>
+#endif
+
+#include  <math.h>
+
 #include  "color.h"
 
 #include  "resolu.h"
@@ -34,8 +40,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 extern char	*ecalloc(), *emalloc();
 
-extern double  pow();
-
 double	gamma = 2.2;			/* gamma correction */
 
 int  bradj = 0;				/* brightness adjustment */
@@ -52,7 +56,12 @@ char  *argv[];
 	struct hdStruct  head;
 	int  reverse = 0;
 	int  i;
-	
+#ifdef MSDOS
+	extern int  _fmode;
+	_fmode = O_BINARY;
+	setmode(fileno(stdin), O_BINARY);
+	setmode(fileno(stdout), O_BINARY);
+#endif
 	progname = argv[0];
 
 	head.dataBits = 16;

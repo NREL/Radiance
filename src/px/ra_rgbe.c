@@ -9,12 +9,13 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include  <stdio.h>
+#include  <math.h>
+#include  "color.h"
+#include  "resolu.h"
+
 #ifdef MSDOS
 #include  <fcntl.h>
 #endif
-
-#include  "color.h"
-#include  "resolu.h"
 
 extern char  *malloc();
 
@@ -89,7 +90,6 @@ char  *err;
 
 transfer()		/* transfer Radiance picture */
 {
-	extern double	pow();
 	int	order;
 	int	xmax, ymax;
 	COLR	*scanin;
