@@ -11,7 +11,11 @@ extern "C" {
 typedef struct {
 	char  *funame;			/* function name */
 	int  flags;			/* type flags */
+#ifdef FUN_ARGLIST
+	int  (*funp)(FUN_ARGLIST);	/* pointer to function */
+#else
 	int  (*funp)();			/* pointer to function */
+#endif
 }  FUN;
 				/* object types in decreasing frequency */
 #define  OBJ_FACE	0		/* polygon */
