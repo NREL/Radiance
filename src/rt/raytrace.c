@@ -136,7 +136,7 @@ int  mod;
 				raytrans(r);
 				return;
 			}
-			if (m->otype != MAT_ILLUM)
+			if (!islight(m->otype))
 				m = &Lamb;
 		}
 		(*ofun[m->otype].funp)(m, r);	/* execute function */
