@@ -24,6 +24,7 @@ int  wrongformat = 0;			/* input in wrong format? */
 double  pixaspect = 1.0;		/* pixel aspect ratio */
 
 int  bradj = 0;				/* brightness adjustment */
+int  ncopies = 1;			/* number of copies */
 
 char  *progname;
 
@@ -58,6 +59,9 @@ char  *argv[];
 				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
 					goto userr;
 				bradj = atoi(argv[++i]);
+				break;
+			case 'n':		/* number of copies */
+				ncopies = atoi(argv[++i]);
 				break;
 			default:
 				goto userr;
@@ -115,7 +119,7 @@ char  *name;
 	printf("%%!\n");
 	printf("%%%%Title: %s\n", name);
 	printf("%%%%Creator: %s\n", progname);
-	printf("%%%%Pages: 1\n");
+	printf("%%%%Pages: %d\n", ncopies);
 	if (landscape = xmax > pixaspect*ymax)
 		printf("%%%%Landscape\n");
 	else
@@ -155,9 +159,10 @@ char  *name;
 PStrailer()			/* print PostScript trailer */
 {
 	puts("%%Trailer");
-	puts("end");
+	if (ncopies > 1)
+		printf("/#copies %d def\n", ncopies);
 	puts("showpage");
-	puts("grestore");
+	puts("end");
 	puts("%%EOF");
 }
 
