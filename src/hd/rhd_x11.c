@@ -432,7 +432,6 @@ XButtonPressedEvent	*ebut;
 	unsigned int	statemask;
 
 	qtMinNodesiz = 16;		/* for quicker update */
-	qtCompost(50);
 
 	do {
 		if (!XQueryPointer(ourdisplay, gwind, &rootw, &childw,
@@ -479,12 +478,23 @@ register XKeyPressedEvent  *ekey;
 	case 'p':			/* pause computation */
 		inpresflags |= DEV_WAIT;
 		return;
+	case 'v':			/* spit out view */
+		fputs(VIEWSTR, stderr);
+		fprintview(&odev.v, stderr);
+		fputc('\n', stderr);
+		return;
 	case CTRL('Q'):
 	case '\n':
 	case '\r':			/* resume computation */
 		inpresflags |= DEV_RESUME;
 		return;
-	case CTRL('R'):			/* redraw */
+	case CTRL('R'):			/* redraw screen */
+		if (ncolors > 0)
+			new_ctab(ncolors);
+		qtRedraw(0, 0, odev.hres, odev.vres);
+		return;
+	case CTRL('L'):			/* refresh from server */
+		XClearWindow(ourdisplay, gwind);
 		qtCompost(100);			/* unload the old tree */
 		if (ncolors > 0)
 			new_ctab(ncolors);
