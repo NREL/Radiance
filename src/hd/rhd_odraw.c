@@ -466,13 +466,8 @@ int	vn;
 			CLR4(odS.redraw, i);
 		}
 #else
-					/* redraw samples at each end */
+					/* redraw samples at beginning */
 	for (i = odView[vn].sfirst; i < odView[vn].sfirst+31; i++)
-		if (CHK4(odS.redraw, i)) {
-			odDrawSamp(vn, i);
-			CLR4(odS.redraw, i);
-		}
-	for (i = odView[vn].snext-31; i < odView[vn].snext; i++)
 		if (CHK4(odS.redraw, i)) {
 			odDrawSamp(vn, i);
 			CLR4(odS.redraw, i);
@@ -484,6 +479,12 @@ int	vn;
 				odDrawSamp(vn, (j<<5)+i);
 				odS.redraw[j] &= ~(1L<<i);
 			}
+					/* redraw samples at end */
+	for (i = odView[vn].snext-31; i < odView[vn].snext; i++)
+		if (CHK4(odS.redraw, i)) {
+			odDrawSamp(vn, i);
+			CLR4(odS.redraw, i);
+		}
 #endif
 }
 
@@ -628,10 +629,12 @@ blockedge(vp, bi0, bi1)			/* check for edge between blocks? */
 register struct ODview	*vp;
 register int	bi0, bi1;
 {
+	if (bi1 == bi0)
+		return(0);		/* same block */
 	if (bi1 < 0)
 		return(1);		/* end off view */
 	if (CHK4(vp->emap, bi1))
-		return(1);		/* end has edges */
+		return(1);		/* end block has edges */
 	if (bi1 == bi0+1 || bi1 == bi0-1 ||
 			bi1 == bi0+vp->hlow || bi1 == bi0-vp->hlow)
 		return(0);		/* end in adjacent block -- no edges */
