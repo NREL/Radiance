@@ -241,14 +241,14 @@ initfromtif()		/* initialize conversion from TIFF input */
 		if (cvts.pconf != PLANARCONFIG_CONTIG)
 			quiterr("cannot handle separate Luv planes");
 		TIFFSetField(cvts.tif, TIFFTAG_SGILOGDATAFMT,
-				SGILOGDATAFMT_FLTXYZ);
+				SGILOGDATAFMT_FLOAT);
 		cvts.tf = Luv2Color;
 		break;
 	case PHOTOMETRIC_LOGL:
 		SET(C_GRY|C_RFLT|C_TFLT|C_GAMUT);
 		cvts.pconf = PLANARCONFIG_CONTIG;
 		TIFFSetField(cvts.tif, TIFFTAG_SGILOGDATAFMT,
-				SGILOGDATAFMT_FLTY);
+				SGILOGDATAFMT_FLOAT);
 		cvts.tf = L2Color;
 		break;
 	case PHOTOMETRIC_YCBCR:
@@ -416,7 +416,7 @@ initfromrad()			/* initialize input from a Radiance picture */
 				cvts.comp != COMPRESSION_SGILOG24)
 			quiterr("internal error 2 in initfromrad");
 		TIFFSetField(cvts.tif, TIFFTAG_SGILOGDATAFMT,
-				SGILOGDATAFMT_FLTXYZ);
+				SGILOGDATAFMT_FLOAT);
 		cvts.tf = Color2Luv;
 		break;
 	case PHOTOMETRIC_LOGL:
@@ -424,7 +424,7 @@ initfromrad()			/* initialize input from a Radiance picture */
 		if (cvts.comp != COMPRESSION_SGILOG)	
 			quiterr("internal error 3 in initfromrad");
 		TIFFSetField(cvts.tif, TIFFTAG_SGILOGDATAFMT,
-				SGILOGDATAFMT_FLTY);
+				SGILOGDATAFMT_FLOAT);
 		cvts.tf = Color2L;
 		break;
 	case PHOTOMETRIC_RGB:
