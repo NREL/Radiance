@@ -16,6 +16,7 @@ biq.c		simple greyscale quantization
 ciq.c		color quantization routine
 closest.c	color quantization - find closest color
 colorscale.c	program to produce color pallets
+clrtab.c	more compact but slower replacement for ciq.c+split.c+closest.c
 cut.c		color quantization - median cut algorithm
 falsecolor.csh 	C-shell script to produce false color pictures
 getinfo.c	program to read info. header from file
@@ -53,6 +54,7 @@ ra_tiff.c	program to convert between RADIANCE and 24-bit TIFF files
 ra_xim.c	program to convert to X11 dump file
 t4027.c		program to dump pixel file to Tektronix 4027
 ttyimage.c	program to dump pixel file to dumb terminal
+vgaimage.c	program to display pixel file on VGA or SVGA card
 x11findwind.c	function to find X11 window by name
 x11image.c	picture display driver for X11
 ximage.c	picture display driver for X10R4
