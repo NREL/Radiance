@@ -13,8 +13,7 @@ if ($#argv) then
 		xform -e $f > $d/$f.orig
 		rad2mgf $d/$f.orig > $d/$f:r.orig.mgf
 		set origf=($origf $f:r.orig.mgf)
-		(echo xf $oblqxf; cat $d/$f:r.orig.mgf; echo xf) \
-				> $d/$f:r.oblq.mgf
+		echo i $f:r.orig.mgf $oblqxf > $d/$f:r.oblq.mgf
 		set oblqf=($oblqf $f:r.oblq.mgf)
 	end
 else
@@ -22,8 +21,7 @@ else
 	set oblqf=stdin.oblq.mgf
 	xform -e > $d/stdin.orig
 	rad2mgf $d/stdin.orig > $d/stdin.orig.mgf
-	(echo xf $oblqxf; cat $d/stdin.orig.mgf; echo xf) \
-			> $d/stdin.oblq.mgf
+	echo i stdin.orig.mgf $oblqxf > $d/stdin.oblq.mgf
 endif
 cd $d
 set rce='xm=($1+$2)/2;ym=($3+$4)/2;zm=($5+$6)/2;\
