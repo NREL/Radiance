@@ -40,7 +40,7 @@ extern char  *fixargv0();
 #define DIRSEP		'/'
 #define PATHSEP		':'
 #define MAXPATH		256
-#define TEMPLATE	"/tmp/rtXXXXXX"
+#define TEMPLATE	"/usr/tmp/rtXXXXXX"
 #define TEMPLEN		13
 #define ULIBVAR		"RAYPATH"
 #ifndef DEFPATH
