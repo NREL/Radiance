@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1993 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -263,13 +263,18 @@ char  *s;
 {
 	char  buf[128];
 	register char  *cp;
-	register PNODE  *p;
 	RECT  r;
 	int  x, y;
-	double  e;
-
+	register PNODE  *p = &ptrunk;
+	int  adapt = 0;
+	double  e = 1.0;
+start:
 	for (cp = s; isspace(*cp); cp++)
 		;
+	if (*cp == '@') {
+		adapt++;
+		goto start;
+	}
 	if (*cp == '\0') {		/* normalize to point */
 		if (dev->getcur == NULL)
 			return;
@@ -279,7 +284,6 @@ char  *s;
 		r.l = r.d = 0;
 		r.r = hresolu; r.u = vresolu;
 		p = findrect(x, y, &ptrunk, &r, -1);
-		e = 1.0;
 	} else {
 		if (*cp == '=') {	/* absolute setting */
 			p = NULL;
@@ -295,9 +299,6 @@ char  *s;
 				if (*cp == '\0')
 					return;
 			}
-		} else {		/* normalize to average */
-			p = &ptrunk;
-			e = 1.0;
 		}
 		if (*cp == '+' || *cp == '-')	/* f-stops */
 			e *= pow(2.0, atof(cp));
@@ -309,7 +310,10 @@ char  *s;
 			error(COMMAND, "cannot normalize to zero");
 			return;
 		}
-		e *= 0.5 / bright(p->v);
+		if (adapt)
+			e *= 106./pow(1.219+pow(luminance(p->v)/exposure,.4),2.5)/exposure;
+		else
+			e *= 0.5 / bright(p->v);
 	}
 	if (e <= FTINY || fabs(1.0 - e) <= FTINY)
 		return;
