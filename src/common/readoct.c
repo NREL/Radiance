@@ -37,7 +37,7 @@ int  load;
 CUBE  *scene;
 char  *ofn[];
 {
-	char  sbuf[128];
+	char  sbuf[512];
 	int  nf;
 	OBJECT  fnobjects;
 	register int  i;
