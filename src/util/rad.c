@@ -832,7 +832,7 @@ register char	*op;
 	}
 	op = addarg(op, "-pt .08");
 	if (vbool(PENUMBRAS))
-		op = addarg(op, "-ds .2 -dj .35");
+		op = addarg(op, "-ds .2 -dj .5");
 	else
 		op = addarg(op, "-ds .3");
 	op = addarg(op, "-dt .1 -dc .5 -dr 1 -sj .7 -st .1");
