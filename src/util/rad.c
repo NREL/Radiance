@@ -850,6 +850,8 @@ char	*po;
 			&siz[0], &org[1], &siz[1], &org[2], &siz[2]) != 6)
 		badvalue(ZONE);
 	siz[0] -= org[0]; siz[1] -= org[1]; siz[2] -= org[2];
+	if (siz[0] <= FTINY | siz[1] <= FTINY | siz[2] <= FTINY)
+		badvalue(ZONE);
 	getoctcube(org, &d);
 	d *= 3./(siz[0]+siz[1]+siz[2]);
 	switch (vscale(DETAIL)) {
@@ -916,6 +918,8 @@ char	*po;
 			&siz[0], &org[1], &siz[1], &org[2], &siz[2]) != 6)
 		badvalue(ZONE);
 	siz[0] -= org[0]; siz[1] -= org[1]; siz[2] -= org[2];
+	if (siz[0] <= FTINY | siz[1] <= FTINY | siz[2] <= FTINY)
+		badvalue(ZONE);
 	getoctcube(org, &d);
 	d *= 3./(siz[0]+siz[1]+siz[2]);
 	switch (vscale(DETAIL)) {
@@ -985,6 +989,8 @@ char	*po;
 			&siz[0], &org[1], &siz[1], &org[2], &siz[2]) != 6)
 		badvalue(ZONE);
 	siz[0] -= org[0]; siz[1] -= org[1]; siz[2] -= org[2];
+	if (siz[0] <= FTINY | siz[1] <= FTINY | siz[2] <= FTINY)
+		badvalue(ZONE);
 	getoctcube(org, &d);
 	d *= 3./(siz[0]+siz[1]+siz[2]);
 	switch (vscale(DETAIL)) {
@@ -1157,6 +1163,8 @@ register char	*vs;
 			badvalue(ZONE);
 		for (i = 0; i < 3; i++) {
 			dim[i] -= cent[i];
+			if (dim[i] <= FTINY)
+				badvalue(ZONE);
 			cent[i] += .5*dim[i];
 		}
 		mult = vlet(ZONE)=='E' ? 2. : .45 ;
