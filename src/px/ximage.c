@@ -29,6 +29,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "pic.h"
 
+#include  "random.h"
+
 #define  controlshift(e)	(((XButtonEvent *)(e))->detail & (ShiftMask|ControlMask))
 
 #define  FONTNAME	"9x15"		/* text font we'll use */
@@ -360,6 +362,7 @@ XKeyEvent  *ekey;
 {
 	char  buf[80];
 	COLOR  cval;
+	Color  cvx;
 	char  *cp;
 	int  n;
 	double  comp;
@@ -370,7 +373,7 @@ XKeyEvent  *ekey;
 		return(0);
 	switch (*cp) {			/* interpret command */
 	case 'q':
-	case CTRL(D):				/* quiterr */
+	case CTRL(D):				/* quit */
 		quit(0);
 	case '\n':
 	case '\r':
@@ -396,6 +399,17 @@ XKeyEvent  *ekey;
 		}
 		XText(wind, box.xmin, box.ymin, buf, strlen(buf),
 				fontid, BlackPixel, WhitePixel);
+		return(0);
+	case 'i':				/* identify (contour) */
+		if (ourras->ncolors == 0)
+			return(-1);
+		n = ourras->data.bz[ekey->x-xoff+BZPixmapSize(xmax,ekey->y-yoff)];
+		n = ourras->pmap[n];
+		cvx.pixel = ourras->cdefs[n].pixel;
+		cvx.red = random() & 65535;
+		cvx.green = random() & 65535;
+		cvx.blue = random() & 65535;
+		XStoreColor(&cvx);
 		return(0);
 	case 'p':				/* position */
 		sprintf(buf, "(%d,%d)", ekey->x-xoff, ymax-1-ekey->y+yoff);
@@ -431,6 +445,7 @@ XKeyEvent  *ekey;
 	case CTRL(R):				/* redraw */
 	case CTRL(L):
 		XClear(wind);
+		XStoreColors(ourras->ncolors, ourras->cdefs);
 		return(redraw(0, 0, width, height));
 	case ' ':				/* clear */
 		return(redraw(box.xmin, box.ymin, box.xsiz, box.ysiz));
