@@ -804,7 +804,7 @@ char	*op;
 		medqopts(op);
 		break;
 	case HIGH:
-		lowqopts(op);
+		hiqopts(op);
 		break;
 	}
 }
