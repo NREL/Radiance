@@ -20,7 +20,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define vfork		fork
 #endif
 
-#define NSCANS		16		/* number of scanlines to buffer */
+#define NSCANS		32		/* number of scanlines to buffer */
 
 int	rt_pid = -1;		/* process id for rtrace */
 int	fd_tort, fd_fromrt;	/* pipe descriptors */
@@ -36,13 +36,15 @@ struct {
 	COLR	*sl;		/* scanline contents */
 } scan[NSCANS];		/* buffered scanlines */
 
+static long	ncall = 0L;	/* number of calls to getpictscan */
+static long	nread = 0L;	/* number of scanlines read */
+
 
 COLR *
 getpictscan(y)			/* get picture scanline */
 int	y;
 {
 	extern long	ftell();
-	static long	ncall = 0;
 	int	minused;
 	register int	i;
 					/* first check our buffers */
@@ -58,9 +60,6 @@ int	y;
 	}
 					/* not there, read it in */
 	if (scanpos[y] == -1) {			/* need to search */
-		if (verbose)
-			fprintf(stderr, "%s: reading picture...\n",
-					progname);
 		while (curpos > y) {
 			scanpos[curpos] = ftell(pictfp);
 			if (freadcolrs(scan[minused].sl, pxsiz, pictfp) < 0)
@@ -71,10 +70,9 @@ int	y;
 		fprintf(stderr, "%s: picture seek error\n", progname);
 		exit(1);
 	}
-	if (verbose)
-		fprintf(stderr, "%s: reading scanline %d...\n", progname, y);
 	if (freadcolrs(scan[minused].sl, pxsiz, pictfp) < 0)
 		goto readerr;
+	nread++;
 	curpos = y-1;
 	scan[minused].lused = ncall;
 	scan[minused].y = y;
@@ -82,6 +80,21 @@ int	y;
 readerr:
 	fprintf(stderr, "%s: picture read error\n", progname);
 	exit(1);
+}
+
+
+pict_stats()			/* print out picture read statistics */
+{
+	static long	lastcall = 0L;	/* ncall at last report */
+	static long	lastread = 0L;	/* nread at last report */
+
+	if (ncall == lastcall)
+		return;
+	fprintf(stderr, "%s: %ld scanlines read, %ld reused\n",
+			progname, nread-lastread,
+			(ncall-lastcall)-(nread-lastread));
+	lastcall = ncall;
+	lastread = nread;
 }
 
 
@@ -162,12 +175,12 @@ float	*vb;
 				vb[buf_vh[i]+hsize] = luminance(rt_buf+3*i);
 			npix_tort = 0;
 		}
-		rt_buf[npix_tort] = ourview.vp[0];
-		rt_buf[npix_tort+1] = ourview.vp[1];
-		rt_buf[npix_tort+2] = ourview.vp[2];
-		rt_buf[npix_tort+3] = dir[0];
-		rt_buf[npix_tort+4] = dir[1];
-		rt_buf[npix_tort+5] = dir[2];
+		rt_buf[6*npix_tort] = ourview.vp[0];
+		rt_buf[6*npix_tort+1] = ourview.vp[1];
+		rt_buf[6*npix_tort+2] = ourview.vp[2];
+		rt_buf[6*npix_tort+3] = dir[0];
+		rt_buf[6*npix_tort+4] = dir[1];
+		rt_buf[6*npix_tort+5] = dir[2];
 		buf_vh[npix_tort++] = vh;
 	}
 	if (npix_tort > 0) {			/* process pending buffer */
@@ -175,6 +188,8 @@ float	*vb;
 		for (i = 0; i < npix_tort; i++)
 			vb[buf_vh[i]+hsize] = luminance(rt_buf+3*i);
 	}
+	if (verbose)
+		pict_stats();
 }
 
 

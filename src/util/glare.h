@@ -27,11 +27,11 @@ extern char	*progname;		/* global argv[0] */
 
 extern ANGLE	glarang[];		/* glare calculation angles */
 extern int	nglarangs;
+extern double	maxtheta;		/* maximum glare angle (in radians) */
 extern int	hsize;			/* horizontal size */
 extern int	hlim;			/* horizontal limit of central view */
 
 #define nglardirs	(2*nglarangs+1)
-#define maxtheta	((PI/180.)*glarang[nglarangs-1])
 #define vsize		SAMPDENS
 #define h_theta(h)	((double)(h)/(double)SAMPDENS)
 
