@@ -144,6 +144,7 @@ pfhold()		/* holding pattern for idle rendering process */
 		goto openerr;
 	if (freopen(outpname, "w", stdout) == NULL)
 		goto openerr;
+	sleep(3);		/* give them a chance to open their pipes */
 	if (errname[0]) {
 		if (freopen(errname, "w", stderr) == NULL)
 			goto openerr;
@@ -168,8 +169,8 @@ io_process()		/* just act as go-between for actual process */
 	register int	nr, n;
 	char	buf[BUFSIZ], *pfin, *pfout, *pferr;
 	int	pid, nfds;
-	int	fdin, fdout, fderr = -1;
-	fd_set	readfds, writefds, excepfds;
+	int	fdout, fderr = -1;
+	fd_set	readfds, excepfds;
 					/* load persist file */
 	n = 40;
 	while ((nr = read(persistfd, buf, sizeof(buf)-1)) == 0) {
@@ -212,23 +213,37 @@ io_process()		/* just act as go-between for actual process */
 					/* wake up rendering process */
 	if (kill(pid, SIGIO) < 0)
 		error(SYSTEM, "cannot signal rendering process in io_process");
-					/* open named pipes, in order */
-	if ((fdin = open(pfin, O_WRONLY)) < 0)
-		error(SYSTEM, "cannot open input pipe in io_process");
+					/* fork child feeder process */
+	pid = fork();
+	if (pid < 0)
+		error(SYSTEM, "fork failed in io_process");
+	if (pid == 0) {			/* feeder loop */
+		int	fdin;
+		close(1);		/* open input pipe */
+		if ((fdin = open(pfin, O_WRONLY)) < 0)
+			error(SYSTEM, "cannot open feed pipe in io_process");
+						/* renderer stdin */
+		while ((nr = read(0, cp=buf, sizeof(buf))) > 0) {
+			do {
+				if ((n = write(fdin, cp, nr)) <= 0)
+					goto writerr;
+				cp += n;
+			} while ((nr -= n) > 0);
+		}
+		if (nr < 0)
+			goto readerr;
+		_exit(0);
+	}
+	close(0);
+					/* open output pipes, in order */
 	if ((fdout = open(pfout, O_RDONLY)) < 0)
 		error(SYSTEM, "cannot open output pipe in io_process");
 	if (pferr[0] && (fderr = open(pferr, O_RDONLY)) < 0)
 		error(SYSTEM, "cannot open error pipe in io_process");
-	for ( ; ; ) {			/* loop on select call */
+	for ( ; ; ) {			/* eater loop */
 		FD_ZERO(&readfds);
-		FD_ZERO(&writefds);
 		FD_ZERO(&excepfds);
 		nfds = 0;
-		if (fdin >= 0) {
-			FD_SET(fdin, &writefds);
-			FD_SET(fdin, &excepfds);
-			nfds = fdin+1;
-		}
 		if (fdout >= 0) {
 			FD_SET(fdout, &readfds);
 			FD_SET(fdout, &excepfds);
@@ -241,7 +256,7 @@ io_process()		/* just act as go-between for actual process */
 		}
 		if (nfds == 0)
 			break;			/* all done, exit */
-		if (select(nfds, &readfds, &writefds, &excepfds, NULL) < 0)
+		if (select(nfds, &readfds, NULL, &excepfds, NULL) < 0)
 			error(SYSTEM, "error in select call in io_process");
 						/* renderer stderr */
 		if (fderr >= 0 && (FD_ISSET(fderr, &readfds) ||
@@ -276,19 +291,6 @@ io_process()		/* just act as go-between for actual process */
 						goto writerr;
 					cp += n;
 				} while ((nr -= n) > 0);
-		}
-						/* renderer stdin */
-		if (fdin >= 0 && (FD_ISSET(fdin, &writefds) ||
-				FD_ISSET(fdin, &excepfds))) {
-			nr = read(0, buf, 512);	/* use minimal buffer */
-			if (nr < 0)
-				goto readerr;
-			if (nr == 0) {
-				close(0);
-				close(fdin);
-				fdin = -1;
-			} else if (write(fdin, buf, nr) < nr)
-				goto writerr;	/* what else to do? */
 		}
 	}
 	_exit(0);		/* we ought to return renderer error status! */
