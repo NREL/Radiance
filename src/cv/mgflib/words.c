@@ -104,3 +104,17 @@ char  *s, *ds;
 	cp = fskip(s);
 	return(cp != NULL && strchr(ds, *cp) != NULL);
 }
+
+
+int
+isname(s)			/* check for legal identifier name */
+register char  *s;
+{
+	while (*s == '_')			/* skip leading underscores */
+		s++;
+	if (!isascii(*s) || !isalpha(*s))	/* start with a letter */
+		return(0);
+	while (isascii(*++s) && isgraph(*s))	/* all visible characters */
+		;
+	return(*s == '\0');			/* ending in nul */
+}
