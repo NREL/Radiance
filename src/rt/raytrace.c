@@ -260,6 +260,21 @@ double  coef;
 
 
 double
+raydist(r, flags)		/* compute (cumulative) ray distance */
+register RAY  *r;
+register int  flags;
+{
+	double  sum = 0.0;
+
+	while (r != NULL && r->crtype&flags) {
+		sum += r->rot;
+		r = r->parent;
+	}
+	return(sum);
+}
+
+
+double
 raynormal(norm, r)		/* compute perturbed normal for ray */
 FVECT  norm;
 register RAY  *r;

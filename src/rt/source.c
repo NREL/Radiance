@@ -1,4 +1,4 @@
-/* Copyright (c) 1993 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -405,9 +405,9 @@ return(o->otype==MAT_ILLUM|o->otype==MAT_GLOW);}
  * (Glows with negative radii should NEVER participate in illumination.)
  */
 
-#define  distglow(m, r)		(m->otype==MAT_GLOW && \
+#define  distglow(m, r, d)	(m->otype==MAT_GLOW && \
 				m->oargs.farg[3] >= -FTINY && \
-				r->rot > m->oargs.farg[3])
+				d > m->oargs.farg[3])
 
 /* badcomponent *
  *
@@ -420,7 +420,7 @@ return(o->otype==MAT_ILLUM|o->otype==MAT_GLOW);}
 
 #define  badcomponent(m, r)	(r->crtype&(AMBIENT|SPECULAR) && \
 				!(r->crtype&SHADOW || r->rod < 0.0 || \
-					distglow(m, r)))
+		/* not 100% correct */	distglow(m, r, r->rot)))
 
 /* passillum *
  *
@@ -438,8 +438,8 @@ return(o->otype==MAT_ILLUM|o->otype==MAT_GLOW);}
  * The -dv flag is normally on for sources to be visible.
  */
 
-#define  srcignore(m, r)	(!directvis && !(r->crtype&SHADOW) && \
-				!distglow(m, r))
+#define  srcignore(m, r)	!(directvis || r->crtype&SHADOW || \
+				distglow(m, r, raydist(r,PRIMARY)))
 
 
 m_light(m, r)			/* ray hit a light source */
@@ -449,7 +449,7 @@ register RAY  *r;
 						/* check for over-counting */
 	if (badcomponent(m, r))
 		return(1);
-	if (wrongsource(m,r))
+	if (wrongsource(m, r))
 		return(1);
 						/* check for passed illum */
 	if (passillum(m, r)) {
