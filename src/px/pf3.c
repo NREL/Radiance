@@ -10,55 +10,96 @@ static char SCCSid[] = "$SunId$ LBL";
  *     8/13/86
  */
 
-#include  <stdio.h>
-
-#include  <math.h>
+#include  "standard.h"
 
 #include  "color.h"
 
-#define	 FTINY		1e-7
+#define  TEPS		0.25	/* threshold proximity goal */
+
+extern double  CHECKRAD;	/* radius over which gaussian is summed */
 
 extern double  rad;		/* output pixel radius for filtering */
 
+extern double  thresh;		/* maximum contribution for subpixel */
+
 extern int  nrows;		/* number of rows for output */
 extern int  ncols;		/* number of columns for output */
-
-extern int  boxfilt;		/* do box filtering? */
 
 extern int  xres, yres;		/* resolution of input */
 
 extern double  x_c, y_r;	/* conversion factors */
 
-extern int  xrad;		/* x window size */
-extern int  yrad;		/* y window size */
+extern int  xrad;		/* x search radius */
+extern int  yrad;		/* y search radius */
+extern int  xbrad;		/* x box size */
+extern int  ybrad;		/* y box size */
 
 extern int  barsize;		/* size of input scan bar */
 extern COLOR  **scanin;		/* input scan bar */
 extern COLOR  *scanout;		/* output scan line */
+extern COLOR  **scoutbar;	/* output scan bar (if thresh > 0) */
+extern float  **greybar;	/* grey-averaged input values */
+extern int  obarsize;		/* size of output scan bar */
+extern int  orad;		/* output window radius */
 
 extern char  *progname;
 
 float  *gausstable;		/* gauss lookup table */
+
+float  *ringsum;		/* sum of ring values */
+short  *ringwt;			/* weight (count) of ring values */
+short  *ringndx;		/* ring index table */
+float  *warr;			/* array of pixel weights */
+
+double  pickfilt();
 
 #define	 lookgauss(x)		gausstable[(int)(10.*(x)+.5)]
 
 
 initmask()			/* initialize gaussian lookup table */
 {
-	extern char  *malloc();
+	int  gtabsiz;
+	double  gaussN;
 	double  d;
 	register int  x;
 
-	gausstable = (float *)malloc(100*sizeof(float));
-	if (gausstable == NULL) {
-		fprintf(stderr, "%s: out of memory in initmask\n", progname);
-		quit(1);
-	}
-	d = x_c*y_r*0.25/rad/rad;
+	gtabsiz = 150*CHECKRAD;
+	gausstable = (float *)malloc(gtabsiz*sizeof(float));
+	if (gausstable == NULL)
+		goto memerr;
+	d = x_c*y_r*0.25/(rad*rad);
 	gausstable[0] = exp(-d)/sqrt(d);
-	for (x = 1; x < 100; x++)
+	for (x = 1; x < gtabsiz; x++)
 		if ((gausstable[x] = exp(-x*0.1)/sqrt(x*0.1)) > gausstable[0])
 			gausstable[x] = gausstable[0];
+	if (obarsize == 0)
+		return;
+					/* compute integral of filter */
+	gaussN = PI*sqrt(d)*exp(-d);		/* plateau */
+	for (d = sqrt(d)+0.05; d <= 1.25*CHECKRAD; d += 0.1)
+		gaussN += 0.1*2.0*PI*exp(-d*d);
+					/* normalize filter */
+	gaussN = x_c*y_r/(rad*rad*gaussN);
+	for (x = 0; x < gtabsiz; x++)
+		gausstable[x] *= gaussN;
+					/* create ring averages table */
+	ringndx = (short *)malloc((2*orad*orad+1)*sizeof(short));
+	if (ringndx == NULL)
+		goto memerr;
+	for (x = 2*orad*orad+1; --x > orad*orad; )
+		ringndx[x] = -1;
+	do
+		ringndx[x] = sqrt((double)x) + 0.5;
+	while (x--);
+	ringsum = (float *)malloc((orad+1)*sizeof(float));
+	ringwt = (short *)malloc((orad+1)*sizeof(short));
+	warr = (float *)malloc(obarsize*obarsize*sizeof(float));
+	if (ringsum == NULL | ringwt == 0 | warr == NULL)
+		goto memerr;
+	return;
+memerr:
+	fprintf(stderr, "%s: out of memory in initmask\n", progname);
+	quit(1);
 }
 
 
@@ -72,22 +113,22 @@ int  c, r;
 	int  y;
 	register int  x;
 	register COLOR	*scan;
-
+	
 	wsum = 0;
 	setcolor(csum, 0.0, 0.0, 0.0);
-	for (y = ycent+1-yrad; y <= ycent+yrad; y++) {
+	for (y = ycent+1-ybrad; y <= ycent+ybrad; y++) {
 		if (y < 0) continue;
 		if (y >= yres) break;
 		d = y_r < 1.0 ? y_r*y - r : (double)(y - ycent);
-		if (d > 0.5+FTINY || d < -0.5-FTINY)
-			continue;
+		if (d < -0.5) continue;
+		if (d >= 0.5) break;
 		scan = scanin[y%barsize];
-		for (x = xcent+1-xrad; x <= xcent+xrad; x++) {
+		for (x = xcent+1-xbrad; x <= xcent+xbrad; x++) {
 			if (x < 0) continue;
 			if (x >= xres) break;
 			d = x_c < 1.0 ? x_c*x - c : (double)(x - xcent);
-			if (d > 0.5+FTINY || d < -0.5-FTINY)
-				continue;
+			if (d < -0.5) continue;
+			if (d >= 0.5) break;
 			wsum++;
 			addcolor(csum, scan[x]);
 		}
@@ -127,4 +168,142 @@ int  c, r;
 		}
 	}
 	scalecolor(csum, 1.0/wsum);
+}
+
+
+dothresh(xcent, ycent, ccent, rcent)	/* gaussian threshold filter */
+int  xcent, ycent;
+int  ccent, rcent;
+{
+	double  d;
+	int  r, y;
+	register int  c, x;
+	register float  *gscan;
+#define pval gscan
+					/* compute ring sums */
+	bzero((char *)ringsum, (orad+1)*sizeof(float));
+	bzero((char *)ringwt, (orad+1)*sizeof(short));
+	for (r = -orad; r <= orad; r++) {
+		if (rcent+r < 0) continue;
+		if (rcent+r >= ncols) break;
+		gscan = greybar[(rcent+r)%obarsize];
+		for (c = -orad; c <= orad; c++) {
+			if (ccent+c < 0) continue;
+			if (ccent+c >= ncols) break;
+			x = ringndx[c*c + r*r];
+			if (x < 0) continue;
+			ringsum[x] += gscan[ccent+c];
+			ringwt[x]++;
+		}
+	}
+					/* filter each subpixel */
+	for (y = ycent+1-ybrad; y <= ycent+ybrad; y++) {
+		if (y < 0) continue;
+		if (y >= yres) break;
+		d = y_r < 1.0 ? y_r*y - rcent : (double)(y - ycent);
+		if (d < -0.5) continue;
+		if (d >= 0.5) break;
+		for (x = xcent+1-xbrad; x <= xcent+xbrad; x++) {
+			if (x < 0) continue;
+			if (x >= xres) break;
+			d = x_c < 1.0 ? x_c*x - ccent : (double)(x - xcent);
+			if (d < -0.5) continue;
+			if (d >= 0.5) break;
+			pval = scanin[y%barsize][x];
+			sumans(x, y, rcent, ccent, pickfilt(bright(pval)));
+		}
+	}
+#undef pval
+}
+
+
+double
+pickfilt(p0)			/* find filter multiplier for p0 */
+double  p0;
+{
+	double  m = 1.0;
+	double  t, avg, wsum;
+	int  ilimit = 5/TEPS;
+	register int  i;
+				/* iterative search for m */
+	do {
+					/* compute grey weighted average */
+		i = 1.25*CHECKRAD*rad*m + .5;
+		if (i > orad) i = orad+1;
+		avg = wsum = 0.0;
+		while (i--) {
+			t = i/(m*rad);
+			t = lookgauss(t*t);
+			avg += t*ringsum[i];
+			wsum += t*ringwt[i];
+		}
+		avg /= wsum;
+					/* check threshold */
+		t = p0 - avg;
+		if (t < 0.0) t = -t;
+		t *= gausstable[0]/(m*m*avg);
+		if (t <= thresh && (m <= 1.0+FTINY ||
+				(thresh-t)/thresh <= TEPS))
+			break;
+		if (t > thresh && (m*CHECKRAD*rad >= orad-FTINY ||
+				(t-thresh)/thresh <= TEPS))
+			break;
+					/* next guesstimate */
+		m *= sqrt(t/thresh);
+		if (m < 1.0) m = 1.0;
+		else if (m*CHECKRAD*rad > orad) m = orad/rad/CHECKRAD;
+	} while (--ilimit > 0);
+	return(m);
+}
+
+
+sumans(px, py, rcent, ccent, m)		/* sum input pixel to output */
+int  px, py;
+int  rcent, ccent;
+double  m;
+{
+	double  dy, dx;
+	COLOR  pval, ctmp;
+	int  ksiz, r;
+	double  pc, pr, norm;
+	register int  i, c;
+	register COLOR	*scan;
+
+	copycolor(pval, scanin[py%barsize][px]);
+	pc = x_c*(px+.5);
+	pr = y_r*(py+.5);
+	ksiz = CHECKRAD*m*rad + 1;
+	if (ksiz > orad) ksiz = orad;
+						/* compute normalization */
+	norm = 0.0;
+	i = 0;
+	for (r = rcent-ksiz; r <= rcent+ksiz; r++) {
+		if (r < 0) continue;
+		if (r >= nrows) break;
+		dy = (pr - (r+.5))/(m*rad);
+		for (c = ccent-ksiz; c <= ccent+ksiz; c++) {
+			if (c < 0) continue;
+			if (c >= ncols) break;
+			dx = (pc - (c+.5))/(m*rad);
+			norm += warr[i++] = lookgauss(dx*dx + dy*dy);
+		}
+	}
+	norm = 1.0/norm;
+	if (x_c < 1.0) norm *= x_c;
+	if (y_r < 1.0) norm *= y_r;
+						/* sum pixels */
+	i = 0;
+	for (r = rcent-ksiz; r <= rcent+ksiz; r++) {
+		if (r < 0) continue;
+		if (r >= nrows) break;
+		scan = scoutbar[r%obarsize];
+		for (c = ccent-ksiz; c <= ccent+ksiz; c++) {
+			if (c < 0) continue;
+			if (c >= ncols) break;
+			copycolor(ctmp, pval);
+			dx = norm*warr[i++];
+			scalecolor(ctmp, dx);
+			addcolor(scan[c], ctmp);
+		}
+	}
 }

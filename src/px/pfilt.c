@@ -8,6 +8,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *  pfilt.c - program to post-process picture file.
  *
  *     9/26/85
+ *     6/23/93	Added additional buffers for value spreading
  */
 
 #include  "standard.h"
@@ -24,11 +25,15 @@ extern float  *matchlamp();
 
 #define	 FEQ(a,b)	((a) >= .98*(b) && (a) <= 1.02*(b))
 
-#define	 CHECKRAD	1.5	/* radius to check for filtering */
+double	 CHECKRAD = 1.5;	/* radius to check for filtering */
+
+#define  THRESHRAD	5.0	/* maximum sample spread in output */
 
 COLOR  exposure = WHTCOLOR;	/* exposure for the frame */
 
 double	rad = 0.0;		/* output pixel radius for filtering */
+
+double  thresh = 0.0;		/* maximum contribution for subpixel */
 
 int  nrows = 0;			/* number of rows for output */
 int  ncols = 0;			/* number of columns for output */
@@ -57,12 +62,18 @@ int  correctaspect = 0;		/* aspect ratio correction? */
 
 int  wrongformat = 0;
 
-int  xrad;			/* x window size */
-int  yrad;			/* y window size */
+int  xrad;			/* x search radius */
+int  yrad;			/* y search radius */
+int  xbrad;			/* x box size */
+int  ybrad;			/* y box size */
 
 int  barsize;			/* size of input scan bar */
 COLOR  **scanin;		/* input scan bar */
 COLOR  *scanout;		/* output scan line */
+COLOR  **scoutbar;		/* output scan bar (if thresh > 0) */
+float  **greybar;		/* grey-averaged input values */
+int  obarsize = 0;		/* size of output scan bar */
+int  orad = 0;			/* output window radius */
 
 char  *progname;
 
@@ -181,8 +192,13 @@ char  **argv;
 			case 'r':
 				rad = atof(argv[++i]);
 				break;
+			case 'm':
+				thresh = atof(argv[++i]);
+				if (rad <= FTINY)
+					rad = 1.0;
+				break;
 			case 'b':
-				rad = 0.0;
+				rad = thresh = 0.0;
 				break;
 			default:;
 			badopt:
@@ -373,24 +389,29 @@ FILE  *in;
 			}
 			yread++;
 		}
+		if (obarsize > 0)
+			scan2sync(r);
 		for (c = 0; c < ncols; c++) {
 			xcent = (long)c*xres/ncols;
-			if (rad <= 0.0)
-				dobox(scanout[c], xcent, ycent, c, r);
-			else
+			if (thresh > FTINY)
+				dothresh(xcent, ycent, c, r);
+			else if (rad > FTINY)
 				dogauss(scanout[c], xcent, ycent, c, r);
+			else
+				dobox(scanout[c], xcent, ycent, c, r);
 		}
-		if (fwritescan(scanout, ncols, stdout) < 0) {
+		if (scanout != NULL && fwritescan(scanout, ncols, stdout) < 0) {
 			fprintf(stderr, "%s: write error in pass2\n", progname);
 			quit(1);
 		}
 	}
-					/* skip leftovers */
+					/* skip leftover input */
 	while (yread < yres) {
 		if (freadscan(scanin[0], xres, in) < 0)
 			break;
 		yread++;
 	}
+	scan2flush();			/* flush output */
 }
 
 
@@ -400,17 +421,25 @@ scan2init()			/* prepare scanline arrays */
 	double	d;
 	register int  i;
 
-	if (rad <= 0.0) {
-		xrad = xres/ncols/2 + 1;
-		yrad = yres/nrows/2 + 1;
-	} else {
+	xbrad = xres/ncols/2 + 1;
+	ybrad = yres/nrows/2 + 1;
+	if (rad > FTINY) {
 		if (nrows >= yres && ncols >= xres)
 			rad *= (y_r + x_c)/2.0;
 
-		xrad = CHECKRAD*rad/x_c + 1;
-		yrad = CHECKRAD*rad/y_r + 1;
-
+		if (thresh > FTINY) {
+			xrad = CHECKRAD*THRESHRAD*rad/x_c + xbrad;
+			yrad = CHECKRAD*THRESHRAD*rad/y_r + ybrad;
+			orad = CHECKRAD*THRESHRAD*rad + 1;
+			obarsize = 2*orad + 1;
+		} else {
+			xrad = CHECKRAD*rad/x_c + 1;
+			yrad = CHECKRAD*rad/y_r + 1;
+		}
 		initmask();		/* initialize filter table */
+	} else {
+		xrad = xbrad;
+		yrad = ybrad;
 	}
 	barsize = 2*yrad + 1;
 	scanin = (COLOR **)malloc(barsize*sizeof(COLOR *));
@@ -421,10 +450,24 @@ scan2init()			/* prepare scanline arrays */
 			quit(1);
 		}
 	}
-	scanout = (COLOR *)malloc(ncols*sizeof(COLOR));
-	if (scanout == NULL) {
-		fprintf(stderr, "%s: out of memory\n", progname);
-		quit(1);
+	if (obarsize > 0) {
+		scoutbar = (COLOR **)malloc(obarsize*sizeof(COLOR *));
+		greybar = (float **)malloc(obarsize*sizeof(float *));
+		for (i = 0; i < obarsize; i++) {
+			scoutbar[i] = (COLOR *)malloc(ncols*sizeof(COLOR));
+			greybar[i] = (float *)malloc(ncols*sizeof(float));
+			if (scoutbar[i] == NULL | greybar[i] == NULL) {
+				fprintf(stderr, "%s: out of memory\n",
+						progname);
+				quit(1);
+			}
+		}
+	} else {
+		scanout = (COLOR *)malloc(ncols*sizeof(COLOR));
+		if (scanout == NULL) {
+			fprintf(stderr, "%s: out of memory\n", progname);
+			quit(1);
+		}
 	}
 					/* record pixel aspect ratio */
 	if (!correctaspect) {
@@ -445,6 +488,46 @@ scan2init()			/* prepare scanline arrays */
 	printf("\n");
 					/* write out resolution */
 	fputresolu(order, ncols, nrows, stdout);
+}
+
+
+scan2sync(r)			/* synchronize grey averages and output scan */
+int  r;
+{
+	static int  nextrow = 0;
+	COLOR  ctmp;
+	int  ybot;
+	register int  c;
+					/* average input scanlines */
+	while (nextrow < r+orad && nextrow < nrows) {
+		ybot = (long)nextrow*yres/nrows;
+		for (c = 0; c < ncols; c++) {
+			dobox(ctmp, (int)((long)c*xres/ncols),ybot, c,nextrow);
+			greybar[nextrow%obarsize][c] = bright(ctmp);
+		}
+					/* and zero output scanline */
+		bzero((char *)scoutbar[nextrow%obarsize], ncols*sizeof(COLOR));
+		nextrow++;
+	}
+					/* point to top scanline for output */
+	if (r-orad >= 0)
+		scanout = scoutbar[(r-orad)%obarsize];
+	else
+		scanout = NULL;
+}
+
+
+scan2flush()			/* flush output buffer */
+{
+	register int  r;
+
+	for (r = nrows-orad; r < nrows; r++)
+		if (fwritescan(scoutbar[r%obarsize], ncols, stdout) < 0)
+			break;
+	if (fflush(stdout) < 0) {
+		fprintf(stderr, "%s: write error at end of pass2\n", progname);
+		exit(1);
+	}
 }
 
 
