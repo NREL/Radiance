@@ -104,13 +104,13 @@ HDGRID	*hproto;
 
 
 hdbcoord(gc, hp, i)		/* compute beam coordinates from index */
-BCOORD	gc;		/* returned */
+GCOORD	gc[2];		/* returned */
 register HOLO	*hp;
 register int	i;
 {
 	register int	j, n;
 	int	n2, reverse;
-	BCOORD	g2;
+	GCOORD	g2[2];
 					/* check range */
 	if (i < 1 | i > nbeams(hp))
 		return(0);
@@ -150,9 +150,9 @@ register int	i;
 int
 hdbindex(hp, gc)		/* compute index from beam coordinates */
 register HOLO	*hp;
-register BCOORD	gc;
+register GCOORD	gc[2];
 {
-	BCOORD	g2;
+	GCOORD	g2[2];
 	int	reverse;
 	register int	i, j;
 					/* check ordering and limits */
@@ -183,7 +183,7 @@ register int	lseg[2][3];
 register HOLO	*hp;
 int	i;
 {
-	BCOORD	gc;
+	GCOORD	gc[2];
 	register int	k;
 
 	if (!hdbcoord(gc, hp, i))		/* compute grid coordinates */
@@ -220,7 +220,7 @@ double
 hdray(ro, rd, hp, gc, r)	/* compute ray within a beam */
 FVECT	ro, rd;		/* returned */
 register HOLO	*hp;
-register BCOORD	gc;
+register GCOORD	gc[2];
 BYTE	r[2][2];
 {
 	FVECT	p[2];
@@ -253,7 +253,7 @@ BYTE	r[2][2];
 
 double
 hdinter(gc, r, hp, ro, rd)	/* compute ray intersection with section */
-register BCOORD	gc;	/* returned */
+register GCOORD	gc[2];	/* returned */
 BYTE	r[2][2];	/* returned */
 register HOLO	*hp;
 FVECT	ro, rd;		/* rd should be normalized */
