@@ -322,8 +322,8 @@ register struct cellact	*cap;
 	register int	i;
 				/* compute cell center */
 	cgp[gcp->w>>1] = gcp->w&1 ? hp->grid[gcp->w>>1] : 0 ;
-	cgp[((gcp->w>>1)+1)%3] = gcp->i[0] + .5;
-	cgp[((gcp->w>>1)+2)%3] = gcp->i[1] + .5;
+	cgp[hdwg0[gcp->w]] = gcp->i[0] + .5;
+	cgp[hdwg1[gcp->w]] = gcp->i[1] + .5;
 	hdworld(org, hp, cgp);
 				/* compute direction to voxel center */
 	for (i = 3; i--; )
@@ -350,8 +350,8 @@ register struct cellact	*cap;
 	for (i = 3; i--; )
 		v1[i] = hp->xv[j][i] * d;
 	d = 0.5/hp->grid[j=(axmax+2)%3];
-	if (DOT(hp->wn[axmax], vc) < 0.)
-		d = -d;	/* reverse vertex ordering */
+	if (DOT(hp->wg[axmax], vc) < 0.)
+		d = -d;	/* reverse vertex order */
 	for (i = 3; i--; )
 		v2[i] = hp->xv[j][i] * d;
 				/* compute voxel pyramid */

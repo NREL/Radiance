@@ -14,10 +14,10 @@ static char SCCSid[] = "$SunId$ SGI";
 
 float	hd_depthmap[DCINF-DCLIN];
 
-static double	logstep;
+int	hdwg0[6] = {1,1,2,2,0,0};
+int	hdwg1[6] = {2,2,0,0,1,1};
 
-static int	wg0[6] = {1,1,2,2,0,0};
-static int	wg1[6] = {2,2,0,0,1,1};
+static double	logstep;
 
 
 hdcompgrid(hp)			/* compute derived grid vector and index */
@@ -36,13 +36,15 @@ register HOLO	*hp;
 	}
 				/* compute grid coordinate vectors */
 	for (i = 0; i < 3; i++) {
-		fcross(hp->wn[i], hp->xv[(i+1)%3], hp->xv[(i+2)%3]);
-		if (normalize(hp->wn[i]) == 0.)
+		fcross(hp->wg[i], hp->xv[(i+1)%3], hp->xv[(i+2)%3]);
+		d = DOT(hp->wg[i],hp->xv[i]);
+		if (d <= FTINY & d >= -FTINY)
 			error(USER, "degenerate holodeck section");
-		hp->wo[i<<1] = DOT(hp->wn[i],hp->orig);
-		d = DOT(hp->wn[i],hp->xv[i]);
+		d = (double)hp->grid[i] / d;
+		hp->wg[i][0] *= d; hp->wg[i][1] *= d; hp->wg[i][2] *= d;
+		hp->wo[i<<1] = DOT(hp->wg[i],hp->orig);
+		d = DOT(hp->wg[i],hp->xv[i]);
 		hp->wo[i<<1|1] = hp->wo[i<<1] + d;
-		hp->wg[i] = (double)hp->grid[i] / d;
 	}
 				/* compute linear depth range */
 	hp->tlin = VLEN(hp->xv[0]) + VLEN(hp->xv[1]) + VLEN(hp->xv[2]);
@@ -51,8 +53,8 @@ register HOLO	*hp;
 	for (i = 1; i < 6; i++) {
 		hp->wi[i] = 0;
 		for (j = i; j < 6; j++)
-			hp->wi[i] += hp->grid[wg0[j]] * hp->grid[wg1[j]];
-		hp->wi[i] *= hp->grid[wg0[i-1]] * hp->grid[wg1[i-1]];
+			hp->wi[i] += hp->grid[hdwg0[j]] * hp->grid[hdwg1[j]];
+		hp->wi[i] *= hp->grid[hdwg0[i-1]] * hp->grid[hdwg1[i-1]];
 		hp->wi[i] += hp->wi[i-1];
 	}
 }
@@ -110,23 +112,23 @@ register int	i;
 			break;
 	i -= hp->wi[gc[0].w=j];
 					/* find w1 */
-	n2 = hp->grid[wg0[j]] * hp->grid[wg1[j]];
+	n2 = hp->grid[hdwg0[j]] * hp->grid[hdwg1[j]];
 	while (++j < 5)	{
-		n = n2 * hp->grid[wg0[j]] * hp->grid[wg1[j]];
+		n = n2 * hp->grid[hdwg0[j]] * hp->grid[hdwg1[j]];
 		if (n > i)
 			break;
 		i -= n;
 	}
 	gc[1].w = j;
 					/* find position on w0 */
-	n2 = hp->grid[wg0[j]] * hp->grid[wg1[j]];
+	n2 = hp->grid[hdwg0[j]] * hp->grid[hdwg1[j]];
 	n = i / n2;
-	gc[0].i[1] = n / hp->grid[wg0[gc[0].w]];
-	gc[0].i[0] = n - gc[0].i[1]*hp->grid[wg0[gc[0].w]];
+	gc[0].i[1] = n / hp->grid[hdwg0[gc[0].w]];
+	gc[0].i[0] = n - gc[0].i[1]*hp->grid[hdwg0[gc[0].w]];
 	i -= n*n2;
 					/* find position on w1 */
-	gc[1].i[1] = i / hp->grid[wg0[gc[1].w]];
-	gc[1].i[0] = i - gc[1].i[1]*hp->grid[wg0[gc[1].w]];
+	gc[1].i[1] = i / hp->grid[hdwg0[gc[1].w]];
+	gc[1].i[0] = i - gc[1].i[1]*hp->grid[hdwg0[gc[1].w]];
 	if (reverse) {
 		copystruct(g2, gc+1);
 		copystruct(gc+1, gc);
@@ -155,12 +157,12 @@ register GCOORD	gc[2];
 		return(0);
 	i = 0;				/* compute index */
 	for (j = gc[0].w+1; j < gc[1].w; j++)
-		i += hp->grid[wg0[j]] * hp->grid[wg1[j]];
-	i *= hp->grid[wg0[gc[0].w]] * hp->grid[wg1[gc[0].w]];
+		i += hp->grid[hdwg0[j]] * hp->grid[hdwg1[j]];
+	i *= hp->grid[hdwg0[gc[0].w]] * hp->grid[hdwg1[gc[0].w]];
 	i += hp->wi[gc[0].w];
-	i += (hp->grid[wg0[gc[0].w]]*gc[0].i[1] + gc[0].i[0]) *
-			hp->grid[wg0[gc[1].w]] * hp->grid[wg1[gc[1].w]] ;
-	i += hp->grid[wg0[gc[1].w]]*gc[1].i[1] + gc[1].i[0];
+	i += (hp->grid[hdwg0[gc[0].w]]*gc[0].i[1] + gc[0].i[0]) *
+			hp->grid[hdwg0[gc[1].w]] * hp->grid[hdwg1[gc[1].w]] ;
+	i += hp->grid[hdwg0[gc[1].w]]*gc[1].i[1] + gc[1].i[0];
 	if (reverse)
 		i += hp->wi[5] - 1;
 	return(i);
@@ -180,20 +182,20 @@ register GCOORD	*gc;
 		v = hp->xv[gc->w>>1];
 		cp[0][0] += v[0]; cp[0][1] += v[1]; cp[0][2] += v[2];
 	}
-	v = hp->xv[wg0[gc->w]];
-	d = (double)gc->i[0] / hp->grid[wg0[gc->w]];
+	v = hp->xv[hdwg0[gc->w]];
+	d = (double)gc->i[0] / hp->grid[hdwg0[gc->w]];
 	VSUM(cp[0], cp[0], v, d);
-	v = hp->xv[wg1[gc->w]];
-	d = (double)gc->i[1] / hp->grid[wg1[gc->w]];
+	v = hp->xv[hdwg1[gc->w]];
+	d = (double)gc->i[1] / hp->grid[hdwg1[gc->w]];
 	VSUM(cp[0], cp[0], v, d);
 					/* compute x1 sums */
-	v = hp->xv[wg0[gc->w]];
-	d = 1.0 / hp->grid[wg0[gc->w]];
+	v = hp->xv[hdwg0[gc->w]];
+	d = 1.0 / hp->grid[hdwg0[gc->w]];
 	VSUM(cp[1], cp[0], v, d);
 	VSUM(cp[3], cp[0], v, d);
 					/* compute y1 sums */
-	v = hp->xv[wg1[gc->w]];
-	d = 1.0 / hp->grid[wg1[gc->w]];
+	v = hp->xv[hdwg1[gc->w]];
+	d = 1.0 / hp->grid[hdwg1[gc->w]];
 	VSUM(cp[2], cp[0], v, d);
 	VSUM(cp[3], cp[3], v, d);
 }
@@ -208,8 +210,8 @@ GCOORD	gc[2];
 
 	for (k = 0; k < 2; k++) {		/* compute end points */
 		lseg[k][gc[k].w>>1] = gc[k].w&1	? hp->grid[gc[k].w>>1]-1 : 0 ;
-		lseg[k][wg0[gc[k].w]] = gc[k].i[0];
-		lseg[k][wg1[gc[k].w]] = gc[k].i[1];
+		lseg[k][hdwg0[gc[k].w]] = gc[k].i[0];
+		lseg[k][hdwg1[gc[k].w]] = gc[k].i[1];
 	}
 	return(1);
 }
@@ -244,9 +246,9 @@ FVECT	wp;
 	vt[0] = wp[0] - hp->orig[0];
 	vt[1] = wp[1] - hp->orig[1];
 	vt[2] = wp[2] - hp->orig[2];
-	gp[0] = DOT(vt, hp->wn[0]) * hp->wg[0];
-	gp[1] = DOT(vt, hp->wn[1]) * hp->wg[1];
-	gp[2] = DOT(vt, hp->wn[2]) * hp->wg[2];
+	gp[0] = DOT(vt, hp->wg[0]);
+	gp[1] = DOT(vt, hp->wg[1]);
+	gp[2] = DOT(vt, hp->wg[2]);
 }
 
 
@@ -311,10 +313,10 @@ FVECT	ro, rd;		/* normalization of rd affects distances */
 	gc[0].w = gc[1].w = -1;
 	t0 = -FHUGE; t1 = FHUGE;
 	for (i = 0; i < 3; i++) {		/* for each wall pair */
-		d = -DOT(rd, hp->wn[i]);	/* plane distance */
+		d = -DOT(rd, hp->wg[i]);	/* plane distance */
 		if (d <= FTINY && d >= -FTINY)	/* check for parallel */
 			continue;
-		d1 = DOT(ro, hp->wn[i]);	/* ray distances */
+		d1 = DOT(ro, hp->wg[i]);	/* ray distances */
 		d0 = (d1 - hp->wo[i<<1]) / d;
 		d1 = (d1 - hp->wo[i<<1|1]) / d;
 		if (d0 < d1) {		/* check against best */
@@ -349,15 +351,15 @@ FVECT	ro, rd;		/* normalization of rd affects distances */
 		vt[0] = p[i][0] - hp->orig[0];
 		vt[1] = p[i][1] - hp->orig[1];
 		vt[2] = p[i][2] - hp->orig[2];
-		v = hp->wn[wg0[gc[i].w]];
-		d = DOT(vt, v) * hp->wg[wg0[gc[i].w]];
-		if (d < 0. || (gc[i].i[0] = d) >= hp->grid[wg0[gc[i].w]])
+		v = hp->wg[hdwg0[gc[i].w]];
+		d = DOT(vt, v);
+		if (d < 0. || (gc[i].i[0] = d) >= hp->grid[hdwg0[gc[i].w]])
 			return(FHUGE);		/* outside wall */
 		if (r != NULL)
 			r[i][0] = 256. * (d - gc[i].i[0]);
-		v = hp->wn[wg1[gc[i].w]];
-		d = DOT(vt, v) * hp->wg[wg1[gc[i].w]];
-		if (d < 0. || (gc[i].i[1] = d) >= hp->grid[wg1[gc[i].w]])
+		v = hp->wg[hdwg1[gc[i].w]];
+		d = DOT(vt, v);
+		if (d < 0. || (gc[i].i[1] = d) >= hp->grid[hdwg1[gc[i].w]])
 			return(FHUGE);		/* outside wall */
 		if (r != NULL)
 			r[i][1] = 256. * (d - gc[i].i[1]);
