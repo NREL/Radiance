@@ -91,7 +91,7 @@ _EOF_
 		if ("$<" =~ [yY]) then
 			set fgargs=(-r 400 $fgargs)
 		else
-			set fgargs=(-r 200 $fgargs)
+			set fgargs=(-r 250 $fgargs)
 		endif
 		echo -n "Are these sources very bright? "
 		if ("$<" =~ [nN]*) then
