@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -80,18 +80,6 @@ int  oldsiz;
 		if (*hsp > oldsiz)
 			return(*hsp);
 	return(oldsiz*2 + 1);		/* not always prime */
-}
-
-
-static int
-shash(s)			/* hash a string */
-register char  *s;
-{
-	register int  h = 0;
-
-	while (*s)
-		h = (h<<1 & 0x7fff) ^ *s++;
-	return(h);
 }
 
 
