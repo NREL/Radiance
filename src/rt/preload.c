@@ -47,16 +47,3 @@ preload_objs()		/* preload object data structures */
 	for (on = 0; on < nobjects; on++)
 		load_os(objptr(on));
 }
-
-
-clean_slate()		/* reset time and ray counters */
-{
-	extern long	tstart, time();
-	extern long	raynum, nrays;
-	register OBJECT	on;
-
-	tstart = time(0);
-	raynum = nrays = 0;
-	for (on = 0; on < nobjects; on++)
-		objptr(on)->lastrno = -1;
-}

@@ -29,7 +29,7 @@ long  nrays = 0L;			/* number of calls to localhit */
 static FLOAT  Lambfa[5] = {PI, PI, PI, 0.0, 0.0};
 OBJREC  Lamb = {
 	OVOID, MAT_PLASTIC, "Lambertian",
-	{0, 5, NULL, Lambfa}, NULL, -1,
+	{0, 5, NULL, Lambfa}, NULL,
 };					/* a Lambertian surface */
 
 #define  MAXLOOP	128		/* modifier loop detection */
@@ -73,6 +73,7 @@ rayclear(r)			/* clear a ray for (re)evaluation */
 register RAY  *r;
 {
 	r->rno = raynum++;
+	r->cxs[0] = 0;
 	r->newcset = r->clipset;
 	r->ro = NULL;
 	r->rot = FHUGE;
@@ -151,7 +152,6 @@ int  mod;
 				m = &Lamb;
 		}
 		(*ofun[m->otype].funp)(m, r);	/* execute function */
-		m->lastrno = r->rno;
 		if (ismaterial(m->otype)) {	/* materials call raytexture */
 			depth--;
 			return;		/* we're done */
@@ -178,7 +178,6 @@ int  mod;
 			error(USER, errmsg);
 		}
 		(*ofun[m->otype].funp)(m, r);
-		m->lastrno = r->rno;
 	}
 	depth--;			/* end here */
 }
@@ -454,15 +453,40 @@ CUBE  *cu;
 	register int  i;
 
 	objset(oset, cu->cutree);
+	checkset(oset, r->cxs);			/* eliminate double-checking */
 	for (i = oset[0]; i > 0; i--) {
 		o = objptr(oset[i]);
-		if (o->lastrno == r->rno)		/* checked already? */
-			continue;
 		(*ofun[o->otype].funp)(o, r);
-		o->lastrno = r->rno;
 	}
 	if (r->ro == NULL)
 		return(0);			/* no scores yet */
 
 	return(incube(cu, r->rop));		/* hit OK if in current cube */
+}
+
+
+static
+checkset(os, cs)		/* modify checked set and set to check */
+register OBJECT  os[MAXSET+1];		/* os' = os - cs */
+register OBJECT  cs[MAXCSET+1];		/* cs' = cs + os */
+{
+	OBJECT  cset[MAXCSET+MAXSET+1];
+	register int  i, j, k;
+					/* copy os in place, cset <- cs */
+	cset[0] = 0;
+	k = 0;
+	for (i = j = 1; i <= os[0]; i++) {
+		while (j <= cs[0] && cs[j] < os[i])
+			cset[++cset[0]] = cs[j++];
+		if (j > cs[0] || os[i] != cs[j]) {	/* object to check */
+			os[++k] = os[i];
+			cset[++cset[0]] = os[i];
+		}
+	}
+	while (j <= cs[0])		/* get the rest of cs */
+		cset[++cset[0]] = cs[j++];
+	if (cset[0] > MAXCSET)		/* truncate if necessary */
+		cset[0] = MAXCSET;
+	setcopy(cs, cset);		/* copy new "checked" set back */
+	os[0] = k;			/* new "to check" set size */
 }
