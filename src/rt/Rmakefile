@@ -180,7 +180,7 @@ calexpr.o:	calexpr.c calcomp.h
 	$(CC) $(CFLAGS) -DVARIABLE -DFUNCTION -DINCHAN -DRCONST -c calexpr.c
 
 caldefn.o:	caldefn.c calcomp.h
-	$(CC) $(CFLAGS) -DFUNCTION -DREDEFW -c caldefn.c
+	$(CC) $(CFLAGS) -DFUNCTION -DREDEFW -DRCONST -c caldefn.c
 
 calfunc.o:	calfunc.c calcomp.h
 	$(CC) $(CFLAGS) -DVARIABLE -DBIGLIB -c calfunc.c
