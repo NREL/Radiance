@@ -27,7 +27,7 @@ char  *ofn[];
 	char  sbuf[64];
 	register int  i;
 					/* write format number */
-	putint((long)OCTMAGIC, 2);
+	putint((long)(OCTMAGIC+sizeof(OBJECT)), 2);
 
 	if (!(store & IO_BOUNDS))
 		return;
