@@ -67,8 +67,8 @@ SURFSRC = sphere.c source.c srcsupp.c virtuals.c o_face.c \
 
 MATOBJS = aniso.o normal.o dielectric.o m_clip.o glass.o m_brdf.o \
 	m_mirror.o m_direct.o
-MATSRC = normal.c dielectric.c m_clip.c glass.c m_brdf.c m_mirror.c \
-	m_direct.c
+MATSRC = aniso.c normal.c dielectric.c m_clip.c glass.c m_brdf.c \
+	m_mirror.c m_direct.c
 
 MODOBJS = p_func.o t_func.o p_data.o t_data.o text.o mx_func.o mx_data.o
 MODSRC = p_func.c t_func.c p_data.c t_data.c text.c mx_func.c mx_data.c
