@@ -84,7 +84,7 @@ int	ncolors;
 				/* partition color space */
 	cut(ctree, 0, CLRCUBE, 0, ncolors);
 				/* clear histogram */
-	bzero((char *)histo, sizeof(histo));
+	bzero((void *)histo, sizeof(histo));
 				/* return number of colors used */
 	return(ncolors);
 }
@@ -161,9 +161,9 @@ void
 set_cmap(rmap, gmap, bmap)	/* set custom color correction map */
 BYTE	*rmap, *gmap, *bmap;
 {
-	bcopy((char *)rmap, (char *)clrmap[RED], 256);
-	bcopy((char *)gmap, (char *)clrmap[GRN], 256);
-	bcopy((char *)bmap, (char *)clrmap[BLU], 256);
+	bcopy((void *)rmap, (void *)clrmap[RED], 256);
+	bcopy((void *)gmap, (void *)clrmap[GRN], 256);
+	bcopy((void *)bmap, (void *)clrmap[BLU], 256);
 }
 
 
@@ -193,7 +193,7 @@ int	c0, c1;
 	}
 					/* split box */
 	*tree = split(box);
-	bcopy((char *)box, (char *)kb, sizeof(kb));
+	bcopy((void *)box, (void *)kb, sizeof(kb));
 						/* do left (lesser) branch */
 	kb[prim(*tree)][1] = part(*tree);
 	cut(tree+(1<<level), level+1, kb, c0, (c0+c1)>>1);

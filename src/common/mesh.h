@@ -115,7 +115,7 @@ typedef struct {
 #ifdef NOPROTO
 
 extern MESH	*getmesh();
-extern INSTANCE	*getmeshinst();
+extern MESHINST	*getmeshinst();
 extern int	getmeshtrivid();
 extern int	getmeshvert();
 extern int	getmeshtri();

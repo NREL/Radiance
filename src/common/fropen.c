@@ -18,7 +18,7 @@ FILE *
 frlibopen(fname)		/* find file and open for reading */
 register char  *fname;
 {
-	extern char  *strcpy(), *getlibpath();
+	extern char  *strcpy(), *getrlibpath();
 	FILE  *fp;
 	char  pname[MAXPATH];
 	register char  *sp, *cp;
@@ -29,7 +29,7 @@ register char  *fname;
 	if (ISDIRSEP(fname[0]) || fname[0] == '.')	/* absolute path */
 		return(fopen(fname, "r"));
 						/* check search path */
-	sp = getlibpath();
+	sp = getrlibpath();
 	do {
 		cp = pname;
 		while (*sp && (*cp = *sp++) != PATHSEP)

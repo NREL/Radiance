@@ -74,7 +74,7 @@ char	*dname;
 	}
 				/* write out hologram grids & octrees */
 	for (i = 0; hdlist[i] != NULL; i++) {
-		bcopy((char *)hdlist[i], buf, sizeof(HDGRID));
+		bcopy((void *)hdlist[i], buf, sizeof(HDGRID));
 		len = sizeof(HDGRID);
 		n = vdef(GEOMETRY);
 		sfn = i<n ? nvalue(GEOMETRY,i) :

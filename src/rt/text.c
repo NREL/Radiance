@@ -196,7 +196,7 @@ register OBJREC  *tm;
 		tlp = tlp->next;
 	} else {				/* text file */
 		if ((s = getpath(tm->oargs.sarg[tndx(tm)],
-				getlibpath(), R_OK)) == NULL) {
+				getrlibpath(), R_OK)) == NULL) {
 			sprintf(errmsg, "cannot find text file \"%s\"",
 					tm->oargs.sarg[tndx(tm)]);
 			error(USER, errmsg);

@@ -94,7 +94,7 @@ int	flags;
 		ms->next = mlist;
 		mlist = ms;
 	}
-	if ((pathname = getpath(mname, getlibpath(), R_OK)) == NULL) {
+	if ((pathname = getpath(mname, getrlibpath(), R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find mesh file \"%s\"", mname);
 		error(USER, errmsg);
 	}

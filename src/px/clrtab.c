@@ -45,7 +45,7 @@ static unsigned	dist();
 new_histo(n)		/* clear our histogram */
 int	n;
 {
-	bzero((char *)histo, sizeof(histo));
+	bzero((void *)histo, sizeof(histo));
 	return(0);
 }
 
@@ -130,7 +130,7 @@ int	n;
 			return;
 		}
 		N = n;
-		bzero((char *)cerr, 3*N*sizeof(short));
+		bzero((void *)cerr, 3*N*sizeof(short));
 	}
 	err[0] = err[1] = err[2] = 0;
 	for (x = 0; x < n; x++) {
@@ -169,7 +169,7 @@ int	c0, c1;
 	}
 					/* split box */
 	branch = split(box);
-	bcopy((char *)box, (char *)kb, sizeof(kb));
+	bcopy((void *)box, (void *)kb, sizeof(kb));
 						/* do left (lesser) branch */
 	kb[prim(branch)][1] = part(branch);
 	cut(kb, c0, (c0+c1)>>1);

@@ -179,7 +179,7 @@ OBJECT  firstobj, nobjs;
 		free_os(o);		/* free client memory */
 		freeqstr(o->oname);
 		freefargs(&o->oargs);
-		bzero(o, sizeof(OBJREC));
+		bzero((void *)o, sizeof(OBJREC));
 	}
 	clearobjndx();
 					/* free objects off end */

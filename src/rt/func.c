@@ -200,7 +200,7 @@ char  *fname;
 {
 	char  *ffname;
 
-	if ((ffname = getpath(fname, getlibpath(), R_OK)) == NULL) {
+	if ((ffname = getpath(fname, getrlibpath(), R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find function file \"%s\"", fname);
 		error(USER, errmsg);
 	}

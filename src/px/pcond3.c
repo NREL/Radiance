@@ -350,7 +350,7 @@ mkbrmap()			/* make dynamic range map */
 	double	ceiling, trimmings;
 	register int	i;
 					/* copy initial histogram */
-	bcopy((char *)bwhist, (char *)modhist, sizeof(modhist));
+	bcopy((void *)bwhist, (void *)modhist, sizeof(modhist));
 	s = (bwmax - bwmin)/HISTRES;	/* s is delta b */
 					/* loop until satisfactory */
 	do {

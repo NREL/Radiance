@@ -67,7 +67,7 @@ char  *dname;
 	 *		0 0 ni p0i p1i .. pni
 	 */
 
-	if ((dfname = getpath(dname, getlibpath(), R_OK)) == NULL) {
+	if ((dfname = getpath(dname, getrlibpath(), R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find data file \"%s\"", dname);
 		error(USER, errmsg);
 	}
@@ -171,7 +171,7 @@ char  *pname;
 		if (!strcmp(pname, pp->name))
 			return(pp);		/* found! */
 
-	if ((pfname = getpath(pname, getlibpath(), R_OK)) == NULL) {
+	if ((pfname = getpath(pname, getrlibpath(), R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find picture file \"%s\"", pname);
 		error(USER, errmsg);
 	}

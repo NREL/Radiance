@@ -52,7 +52,7 @@ int  flags;
 		sc->next = slist;
 		slist = sc;
 	}
-	if ((pathname = getpath(sname, getlibpath(), R_OK)) == NULL) {
+	if ((pathname = getpath(sname, getrlibpath(), R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find octree file \"%s\"", sname);
 		error(USER, errmsg);
 	}

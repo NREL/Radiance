@@ -95,7 +95,7 @@ extern double	tcos();			/* table-based cosine approximation */
 #endif
 					/* memory operations */
 #ifdef	NOSTRUCTASS
-#define	 copystruct(d,s)	bcopy((char *)(s),(char *)(d),sizeof(*(d)))
+#define	 copystruct(d,s)	bcopy((void *)(s),(void *)(d),sizeof(*(d)))
 #else
 #define	 copystruct(d,s)	(*(d) = *(s))
 #endif
@@ -131,7 +131,7 @@ extern char	*fgetword();
 extern void	fputword();
 extern char	*fixargv0();
 extern FILE	*frlibopen();
-extern char	*getlibpath();
+extern char	*getrlibpath();
 extern char	*getpath();
 extern void	putstr();
 extern void	putint();
@@ -204,7 +204,7 @@ extern char	*fixargv0(char *av0);
 					/* defined in fropen.c */
 extern FILE	*frlibopen(char *fname);
 					/* defined in getlibpath.c */
-extern char	*getlibpath(void);
+extern char	*getrlibpath(void);
 					/* defined in getpath.c */
 extern char	*getpath(char *fname, char *searchpath, int mode);
 					/* defined in portio.c */

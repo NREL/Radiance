@@ -930,7 +930,7 @@ char  *iname;
 	}
 	strcpy(curfn, iname);			/* remember input name */
 						/* get full path for file */
-	if ((fpath = getpath(iname, getlibpath(), R_OK)) == NULL) {
+	if ((fpath = getpath(iname, getrlibpath(), R_OK)) == NULL) {
 		fprintf(stderr, "%s: cannot find file \"%s\"\n",
 				progname, iname);
 		exit(1);

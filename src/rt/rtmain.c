@@ -176,7 +176,7 @@ char  *argv[];
 				}
 				if (argv[i][2] == 'I') {	/* file */
 					rval = wordfile(tralp,
-					getpath(argv[++i],getlibpath(),R_OK));
+					getpath(argv[++i],getrlibpath(),R_OK));
 					if (rval < 0) {
 						sprintf(errmsg,
 				"cannot open trace include file \"%s\"",
@@ -198,7 +198,7 @@ char  *argv[];
 				}
 				if (argv[i][2] == 'E') {	/* file */
 					rval = wordfile(tralp,
-					getpath(argv[++i],getlibpath(),R_OK));
+					getpath(argv[++i],getrlibpath(),R_OK));
 					if (rval < 0) {
 						sprintf(errmsg,
 				"cannot open trace exclude file \"%s\"",

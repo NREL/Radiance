@@ -531,8 +531,8 @@ PACKET	*pl;
 	while (pl != NULL) {
 		p = pl; pl = p->next; p->next = NULL;
 		if (p->nr > 0) {		/* add to holodeck */
-			bcopy((char *)p->ra,
-				(char *)hdnewrays(hdlist[p->hd],p->bi,p->nr),
+			bcopy((void *)p->ra,
+				(void *)hdnewrays(hdlist[p->hd],p->bi,p->nr),
 				p->nr*sizeof(RAYVAL));
 			if (outdev != NULL)	/* display it */
 				disp_packet((PACKHEAD *)p);

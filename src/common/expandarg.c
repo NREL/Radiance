@@ -46,11 +46,11 @@ int	n;
 	if (newav == NULL)
 		return(-1);
 					/* copy preceeding arguments */
-	bcopy((char *)*avp, (char *)newav, n*sizeof(char *));
+	bcopy((void *)*avp, (void *)newav, n*sizeof(char *));
 					/* copy expanded argument */
-	bcopy((char *)ave, (char *)(newav+n), ace*sizeof(char *));
+	bcopy((void *)ave, (void *)(newav+n), ace*sizeof(char *));
 					/* copy trailing arguments + NULL */
-	bcopy((char *)(*avp+n+1), (char *)(newav+n+ace), (*acp-n)*sizeof(char *));
+	bcopy((void *)(*avp+n+1), (void *)(newav+n+ace), (*acp-n)*sizeof(char *));
 					/* free old list */
 	bfree((char *)*avp, (*acp+1)*sizeof(char *));
 					/* assign new list */

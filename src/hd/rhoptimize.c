@@ -190,13 +190,13 @@ int	*bq, nb;
 	int	n;
 
 	beamdir = hp->bi;		/* sort based on file position */
-	qsort((char *)bq, nb, sizeof(*bq), bpcmp);
+	qsort((void *)bq, nb, sizeof(*bq), bpcmp);
 					/* transfer and free each beam */
 	for (i = 0; i < nb; i++) {
 		bp = hdgetbeam(hp, bq[i]);
 		DCHECK(bp==NULL, CONSISTENCY, "empty beam in xferclump");
 		n = dupchecking ? nuniq(hdbray(bp),bp->nrm) : bp->nrm;
-		bcopy((char *)hdbray(bp), (char *)hdnewrays(hout,bq[i],n),
+		bcopy((void *)hdbray(bp), (void *)hdnewrays(hout,bq[i],n),
 				n*sizeof(RAYVAL));
 		hdfreebeam(hp, bq[i]);
 	}

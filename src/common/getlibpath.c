@@ -15,7 +15,7 @@ static const char	RCSid[] = "$Id$";
 
 
 char *
-getlibpath()
+getrlibpath()
 {
 	static char	*libpath = NULL;
 

@@ -123,7 +123,6 @@ static OCTINST *
 getoct(name)				/* get/assign octree list id */
 char	*name;
 {
-	extern char	*getpath(), *getlibpath();
 	char	*path;
 	register LUENT	*lp;
 	register OCTINST	*op;
@@ -137,7 +136,7 @@ char	*name;
 		strcpy(lp->key, name);
 	}
 	if ((op = (OCTINST *)lp->data) == NULL) {
-		path = getpath(name, getlibpath(), R_OK);
+		path = getpath(name, getrlibpath(), R_OK);
 		if (path == NULL) {
 			sprintf(errmsg, "cannot find octree \"%s\"", name);
 			error(USER, errmsg);

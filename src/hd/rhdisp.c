@@ -216,7 +216,7 @@ char	*gfn, *pfn;
 	hdlist[hd] = (HOLO *)malloc(sizeof(HOLO));
 	if (hdlist[hd] == NULL)
 		error(SYSTEM, "out of memory in add_holo");
-	bcopy((char *)hdg, (char *)hdlist[hd], sizeof(HDGRID));
+	bcopy((void *)hdg, (void *)hdlist[hd], sizeof(HDGRID));
 	hdcompgrid(hdlist[hd]);
 	hdgfn[hd] = savestr(gfn);
 	hdpfn[hd] = pfn && *pfn ? savestr(pfn) : (char *)NULL;

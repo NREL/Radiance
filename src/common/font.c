@@ -37,7 +37,7 @@ char  *fname;
 			return(f);
 		}
 						/* load the font file */
-	if ((pathname = getpath(fname, getlibpath(), R_OK)) == NULL) {
+	if ((pathname = getpath(fname, getrlibpath(), R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find font file \"%s\"", fname);
 		error(USER, errmsg);
 	}

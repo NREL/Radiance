@@ -81,8 +81,8 @@ gmEndGeom()			/* make next list current */
 			freestr(gmCurrent[i].gfile);
 		}
 	}
-	bcopy((char *)gmNext, (char *)gmCurrent, sizeof(gmNext));
-	bzero((char *)gmNext, sizeof(gmNext));
+	bcopy((void *)gmNext, (void *)gmCurrent, sizeof(gmNext));
+	bzero((void *)gmNext, sizeof(gmNext));
 }
 
 
@@ -196,7 +196,7 @@ gmEndPortal()			/* close portal list and return GL list */
 		}
 	FORALLPORT(curportlist, n)		/* free old file list */
 		freestr(curportlist[n]);
-	bcopy((char *)newportlist, (char *)curportlist, sizeof(newportlist));
-	bzero((char *)newportlist, sizeof(newportlist));
+	bcopy((void *)newportlist, (void *)curportlist, sizeof(newportlist));
+	bzero((void *)newportlist, sizeof(newportlist));
 	return(gmPortals);			/* return GL list id */
 }

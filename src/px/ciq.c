@@ -41,7 +41,7 @@ colormap cm;		/* quantization colormap */
     if (synth)
 	n = makecm(nw,&na);	/* analyze histogram and synthesize colormap */
     else {
-	bcopy((char *)cm,(char *)color,sizeof color);
+	bcopy((void *)cm,(void *)color,sizeof color);
 	n = nw;
 	na = 0;
 	for (i=0; i<len; i++) if (hist[i]) na++;
@@ -58,7 +58,7 @@ colormap cm;		/* quantization colormap */
 	draw_nodith(ocm);
     }
 
-    bcopy((char *)color,(char *)cm,sizeof color);
+    bcopy((void *)color,(void *)cm,sizeof color);
     /*endclosest();*/
 }
 
