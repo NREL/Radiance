@@ -1,11 +1,11 @@
+/* Copyright (c) 1992 Regents of the University of California */
+
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
 
-/* Copyright (c) 1989 Regents of the University of California */
-
 /*
- *  x11.c - driver for X-windows version 11.3
+ *  x11.c - driver for X-windows version 11
  *
  *     Jan 1990
  */
@@ -94,14 +94,20 @@ char  *name, *id;
 	}
 					/* find a usable visual */
 	nplanes = DisplayPlanes(ourdisplay, ourscreen);
-	if (	!XMatchVisualInfo(ourdisplay,ourscreen,
-			24,TrueColor,&ourvinfo) &&
-		!XMatchVisualInfo(ourdisplay,ourscreen,
-			24,DirectColor,&ourvinfo)	) {
+	if (XMatchVisualInfo(ourdisplay,ourscreen,
+				24,TrueColor,&ourvinfo) ||
+			XMatchVisualInfo(ourdisplay,ourscreen,
+				24,DirectColor,&ourvinfo)) {
+		ourblack = 0;
+		ourwhite = ourvinfo.red_mask |
+				ourvinfo.green_mask |
+				ourvinfo.blue_mask ;
+	} else {
 		if (nplanes < 4) {
 			stderr_v("not enough colors\n");
 			return(NULL);
-		} else if (!XMatchVisualInfo(ourdisplay,ourscreen,
+		}
+		if (!XMatchVisualInfo(ourdisplay,ourscreen,
 					nplanes,PseudoColor,&ourvinfo) &&
 				!XMatchVisualInfo(ourdisplay,ourscreen,
 					nplanes,GrayScale,&ourvinfo)) {
@@ -110,15 +116,12 @@ char  *name, *id;
 		}
 		ourblack = BlackPixel(ourdisplay,ourscreen);
 		ourwhite = WhitePixel(ourdisplay,ourscreen);
-	} else {
-		ourblack = 0;
-		ourwhite = ~0;
 	}
 	make_gmap(GAMMA);
 	/* open window */
 	ourwinattr.background_pixel = ourblack;
 	ourwinattr.border_pixel = ourblack;
-					/* this is a waste! */
+					/* this is stupid */
 	ourwinattr.colormap = XCreateColormap(ourdisplay, ourroot,
 				ourvinfo.visual, AllocNone);
 	gwind = XCreateWindow(ourdisplay, ourroot, 0, 0,
@@ -130,7 +133,8 @@ char  *name, *id;
 		stderr_v("cannot create window\n");
 		return(NULL);
 	}
-	XStoreName(ourdisplay, gwind, id);
+	XFreeColormap(ourdisplay, ourwinattr.colormap);
+   	XStoreName(ourdisplay, gwind, id);
 	/* create a cursor */
 	pickcursor = XCreateFontCursor(ourdisplay, XC_diamond_cross);
 	ourgc = XCreateGC(ourdisplay, gwind, 0, NULL);
