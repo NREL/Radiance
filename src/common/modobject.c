@@ -31,10 +31,10 @@ register OBJREC  *op;
 {
 	register int  i, j;
 
-	for (i = nobjects>>6; i >= 0; i--) {
+	for (i = nobjects>>OBJBLKSHFT; i >= 0; i--) {
 		j = op - objblock[i];
-		if (j >= 0 && j < 0100)
-			return((i<<6) + j);
+		if (j >= 0 && j < OBJBLKSIZ)
+			return((i<<OBJBLKSHFT) + j);
 	}
 	return(OVOID);
 }

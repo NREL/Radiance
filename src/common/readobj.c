@@ -138,9 +138,9 @@ newobject()				/* get a new object */
 {
 	register int  i;
 
-	if ((nobjects & 077) == 0) {		/* new block */
+	if ((nobjects & (OBJBLKSIZ-1)) == 0) {	/* new block */
 		errno = 0;
-		i = nobjects >> 6;
+		i = nobjects >> OBJBLKSHFT;
 		if (i >= MAXOBJBLK)
 			return(OVOID);
 		objblock[i] = (OBJREC *)bmalloc(OBJBLKSIZ*sizeof(OBJREC));

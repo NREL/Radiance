@@ -61,8 +61,9 @@ typedef struct {
 extern OBJREC  *objblock[MAXOBJBLK];	/* the object blocks */
 extern OBJECT  nobjects;		/* # of objects */
 
-#define  OBJBLKSIZ	01000		/* object block size */
-#define  objptr(obj)	(objblock[(obj)>>9]+((obj)&0777))
+#define  OBJBLKSHFT	9
+#define  OBJBLKSIZ	(1<<OBJBLKSHFT)	/* object block size */
+#define  objptr(obj)	(objblock[(obj)>>OBJBLKSHFT]+((obj)&(OBJBLKSIZ-1)))
 
 #define  OVOID		(-1)		/* void object */
 #define  VOIDID		"void"		/* void identifier */
