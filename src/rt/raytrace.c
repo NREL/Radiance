@@ -228,9 +228,10 @@ register RAY  *r;
 }
 
 
+void
 raytexture(r, mod)			/* get material modifiers */
 RAY  *r;
-int  mod;
+OBJECT  mod;
 {
 	register OBJREC  *m;
 #if  MAXLOOP
