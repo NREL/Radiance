@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -109,8 +109,15 @@ char  *argv[];
 				goto unkopt;
 			}
 			break;
+		case 'x':			/* x resolution */
+			xsiz = atoi(argv[++an])*SSS;
+			break;
+		case 'y':
+			ysiz = atoi(argv[++an])*SSS;
+			break;
 		case 'h':			/* height of characters */
 			cheight = atoi(argv[++an])*SSS;
+			xsiz = xsiz = 0;
 			break;
 		case 'a':			/* aspect ratio */
 			aspect = atof(argv[++an]);
@@ -151,13 +158,36 @@ unkopt:
 
 makemap()			/* create the bit map */
 {
-	cwidth = cheight/aspect + 0.5;
+	double  pictaspect;
+	
 	if (direct == 'r' || direct == 'l') {
-		xsiz = (long)maxwidth*cwidth >> 8;
-		ysiz = nlines*cheight;
+		if (xsiz == 0 || ysiz == 0) {
+			cwidth = cheight/aspect + 0.5;
+			xsiz = (long)maxwidth*cwidth >> 8;
+			ysiz = nlines*cheight;
+		} else {
+			pictaspect = 256*nlines*aspect/maxwidth;
+			if (pictaspect*xsiz < ysiz)
+				ysiz = pictaspect*xsiz + 0.5;
+			else
+				xsiz = ysiz/pictaspect + 0.5;
+			cheight = ysiz/nlines;
+			cwidth = cheight/aspect + 0.5;
+		}
 	} else {			/* reverse orientation */
-		xsiz = nlines*cheight;
-		ysiz = (long)maxwidth*cwidth >> 8;
+		if (xsiz == 0 || ysiz == 0) {
+			cwidth = cheight/aspect + 0.5;
+			xsiz = nlines*cheight;
+			ysiz = (long)maxwidth*cwidth >> 8;
+		} else {
+			pictaspect = maxwidth/(256*nlines*aspect);
+			if (pictaspect*xsiz < ysiz)
+				ysiz = pictaspect*xsiz + 0.5;
+			else
+				xsiz = ysiz/pictaspect + 0.5;
+			cheight = xsiz/nlines;
+			cwidth = cheight/aspect + 0.5;
+		}
 	}
 	if (xsiz % SSS)
 		xsiz += SSS - xsiz%SSS;
