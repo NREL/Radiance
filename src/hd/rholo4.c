@@ -105,6 +105,8 @@ int	block;
 		return(2);		/* acceptable failure */
 	}
 	if (msg.nbytes) {		/* get the message body */
+		if (msg.nbytes < 0)
+			error(INTERNAL, "anti-message from display process");
 		buf = (char *)malloc(msg.nbytes);
 		if (buf == NULL)
 			error(SYSTEM, "out of memory in disp_check");
@@ -229,7 +231,11 @@ int	type, nbytes;
 char	*p;
 {
 	MSGHEAD	msg;
-
+					/* consistency checks */
+#ifdef DEBUG
+	if (nbytes < 0 || nbytes > 0 & p == NULL)
+		error(CONSISTENCY, "bad buffer handed to disp_result");
+#endif
 	if (dpout == NULL)
 		return;
 	msg.type = type;
