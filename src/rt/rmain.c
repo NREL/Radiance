@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1993 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -566,7 +566,9 @@ char  *argv[];
 
 #ifdef  PERSIST
 	if (persist) {
-		fflush(stdout);
+		fflush(stdout);			/* reconnect stdout */
+		dup2(duped1, fileno(stdout));
+		close(duped1);
 		if (persist == 2) {	/* multiprocessing */
 			preload_objs();		/* preload scene */
 			while ((rval=fork()) == 0) {	/* keep on forkin' */
@@ -578,8 +580,6 @@ char  *argv[];
 			pfdetach();
 			persist = 0;		/* parent shan't persist */
 		}
-		dup2(duped1, fileno(stdout));	/* reconnect stdout */
-		close(duped1);
 		dupheader();
 	}
 runagain:
@@ -594,8 +594,20 @@ runagain:
 	rview();
 #endif
 #ifdef  PERSIST
-	if (persist) {
-		pfhold();		/* loop until killed */
+	if (persist == 1) {		/* first run-through */
+		if ((rval=fork()) == 0) {	/* child loops until killed */
+			pflock(1);
+			persist = -1;
+		} else {			/* original process exits */
+			if (rval < 0)
+				error(SYSTEM, "cannot fork child for persist function");
+			pfdetach();
+			persist = 0;
+		}
+	}
+	if (persist) {			/* wait for the signal then go again */
+		pfhold();
+		dupheader();
 		goto runagain;
 	}
 #endif
