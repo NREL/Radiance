@@ -70,7 +70,7 @@ objset.o octree.o readoct.o:	octree.h
 
 cone.o modobject.o otypes.o readobj.o readoct.o:	otypes.h
 
-urand.o:	random.h
+multisamp.o urand.o:	random.h
 
 cone.o face.o image.o instance.o error.o objset.o octree.o modobject.o \
 otypes.o readobj.o readoct.o xf.o:	standard.h mat4.h fvect.h

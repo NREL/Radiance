@@ -1,8 +1,10 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1997 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
+
+#include "random.h"
 
 /*
  * Binary space partitioning curve for multidimensional sampling.
@@ -33,5 +35,5 @@ double	r;			/* 1-dimensional sample [0,1) */
 	}
 	i = n;
 	while (i-- > 0)
-		t[i] = 1./256. * ti[i];
+		t[i] = 1./256. * (ti[i] + frandom());
 }
