@@ -14,7 +14,7 @@ typedef struct {
 
 #ifdef NOPROTO
 typedef struct {
-	long	(*hashf)();	/* key hash function */
+	unsigned long	(*hashf)();	/* key hash function */
 	int	(*keycmp)();	/* key comparison function */
 	void	(*freek)();	/* free a key */
 	void	(*freed)();	/* free the data */
@@ -24,7 +24,7 @@ typedef struct {
 } LUTAB;
 #else
 typedef struct {
-	long	(*hashf)();	/* key hash function */
+	unsigned long	(*hashf)(char *);	/* key hash function */
 	int	(*keycmp)(const char *, const char *);	/* key comparison function */
 	void	(*freek)(char *);	/* free a key */
 	void	(*freed)(char *);	/* free the data */
@@ -83,11 +83,11 @@ extern int	lu_init();
 extern LUENT	*lu_find();
 extern void	lu_delete();
 extern void	lu_done();
-extern long	lu_shash();
+extern unsigned long	lu_shash();
 #else
 extern int	lu_init(LUTAB *, int);
 extern LUENT	*lu_find(LUTAB *, char *);
 extern void	lu_delete(LUTAB *, char *);
 extern void	lu_done(LUTAB *);
-extern long	lu_shash(char *);
+extern unsigned long	lu_shash(char *);
 #endif
