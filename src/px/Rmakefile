@@ -104,8 +104,9 @@ header.o ealloc.o savestr.o
 	cc $(CFLAGS) -o pcomb pcomb.o calexpr.o calfunc.o caldefn.o \
 color.o header.o ealloc.o savestr.o -lm
 
-pinterp:	pinterp.o image.o header.o color.o fvect.o
-	cc $(CFLAGS) -o pinterp pinterp.o image.o header.o fvect.o color.o -lm
+pinterp:	pinterp.o image.o header.o color.o fvect.o mat4.o
+	cc $(CFLAGS) -o pinterp pinterp.o image.o header.o mat4.o \
+fvect.o color.o -lm
 
 ra_pixar:	ra_pixar.o ra_pixar.c color.o header.o
 	cc $(CFLAGS) $(PIXAR_INCLUDE) -o $@ ra_pixar.o color.o header.o \

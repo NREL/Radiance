@@ -31,6 +31,8 @@ char	*progname;
 VIEW	theirview = STDVIEW(512);	/* input view */
 int	gotview;			/* got input view? */
 
+double	theirs2ours[4][4];		/* transformation matrix */
+
 
 main(argc, argv)			/* interpolate pictures */
 int	argc;
@@ -191,6 +193,8 @@ char	*pfile, *zfile;
 		fprintf(stderr, "%s: %s\n", pfile, err);
 		exit(1);
 	}
+					/* compute transformation */
+	pixform(theirs2ours, &theirview, &ourview);
 					/* allocate scanlines */
 	scanin = (COLR *)malloc(xres*sizeof(COLR));
 	zin = (float *)malloc(xres*sizeof(float));
@@ -218,32 +222,82 @@ char	*pfile, *zfile;
 }
 
 
+pixform(xfmat, vw1, vw2)		/* compute view1 to view2 matrix */
+register double	xfmat[4][4];
+register VIEW	*vw1, *vw2;
+{
+	double	m4t[4][4];
+
+	setident4(xfmat);
+	xfmat[0][0] = vw1->vhinc[0];
+	xfmat[0][1] = vw1->vhinc[1];
+	xfmat[0][2] = vw1->vhinc[2];
+	xfmat[1][0] = vw1->vvinc[0];
+	xfmat[1][1] = vw1->vvinc[1];
+	xfmat[1][2] = vw1->vvinc[2];
+	xfmat[2][0] = vw1->vdir[0];
+	xfmat[2][1] = vw1->vdir[1];
+	xfmat[2][2] = vw1->vdir[2];
+	xfmat[3][0] = vw1->vp[0];
+	xfmat[3][1] = vw1->vp[1];
+	xfmat[3][2] = vw1->vp[2];
+	setident4(m4t);
+	m4t[0][0] = vw2->vhinc[0]/vw2->vhn2;
+	m4t[1][0] = vw2->vhinc[1]/vw2->vhn2;
+	m4t[2][0] = vw2->vhinc[2]/vw2->vhn2;
+	m4t[3][0] = -DOT(vw2->vp,vw2->vhinc)/vw2->vhn2;
+	m4t[0][1] = vw2->vvinc[0]/vw2->vvn2;
+	m4t[1][1] = vw2->vvinc[1]/vw2->vvn2;
+	m4t[2][1] = vw2->vvinc[2]/vw2->vvn2;
+	m4t[3][1] = -DOT(vw2->vp,vw2->vvinc)/vw2->vvn2;
+	m4t[0][2] = vw2->vdir[0];
+	m4t[1][2] = vw2->vdir[1];
+	m4t[2][2] = vw2->vdir[2];
+	m4t[3][2] = -DOT(vw2->vp,vw2->vdir);
+	multmat4(xfmat, xfmat, m4t);
+}
+
+
 addscanline(y, pline, zline)		/* add scanline to output */
 int	y;
 COLR	*pline;
 float	*zline;
 {
-	FVECT	p, dir;
-	double	xnew, ynew, znew;
+	extern double	sqrt();
+	double	pos[3];
 	register int	x;
 	register int	xpos, ypos;
 
 	for (x = 0; x < theirview.hresolu; x++) {
-		rayview(p, dir, &theirview, x+.5, y+.5);
-		p[0] += zline[x]*dir[0];
-		p[1] += zline[x]*dir[1];
-		p[2] += zline[x]*dir[2];
-		pixelview(&xnew, &ynew, &znew, &ourview, p);
-		if (znew <= 0.0 || xnew < 0 || xnew > ourview.hresolu
-				|| ynew < 0 || ynew > ourview.vresolu)
+		pos[0] = x - .5*(theirview.hresolu-1);
+		pos[1] = y - .5*(theirview.vresolu-1);
+		pos[2] = zline[x];
+		if (theirview.type == VT_PER) {
+			pos[2] /= sqrt( 1.
+					+ pos[0]*pos[0]*theirview.vhn2
+					+ pos[1]*pos[1]*theirview.vvn2 );
+			pos[0] *= pos[2];
+			pos[1] *= pos[2];
+		}
+		multp3(pos, pos, theirs2ours);
+		if (pos[2] <= 0.0)
 			continue;
-					/* check current value at position */
-		xpos = xnew;
-		ypos = ynew;
+		if (ourview.type == VT_PER) {
+			pos[0] /= pos[2];
+			pos[1] /= pos[2];
+		}
+		pos[0] += .5*ourview.hresolu;
+		pos[1] += .5*ourview.vresolu;
+		if (pos[0] < 0 || pos[0] > ourview.hresolu
+				|| pos[1] < 0 || pos[1] > ourview.vresolu)
+			continue;
+					/* check current value at pos */
+		xpos = pos[0];
+		ypos = pos[1];
 		if (zscan(ypos)[xpos] <= 0.0
-				|| zscan(ypos)[xpos] - znew
+				|| zscan(ypos)[xpos] - pos[2]
 					> zeps*zscan(ypos)[xpos]) {
-			zscan(ypos)[xpos] = znew;
+			zscan(ypos)[xpos] = pos[2];
 			copycolr(pscan(ypos)[xpos], pline[x]);
 		}
 	}
