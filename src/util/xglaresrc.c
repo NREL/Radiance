@@ -13,7 +13,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "standard.h"
 #include "view.h"
 #include <X11/Xlib.h>
-#include <X11/cursorfont.h>
 #include <X11/Xutil.h>
 
 #define NSEG		30		/* number of segments per circle */
@@ -61,8 +60,8 @@ char	*argv[];
 init(name)			/* set up vector drawing from pick */
 char	*name;
 {
+	extern Window	xfindwind();
 	XWindowAttributes	wa;
-	XEvent	xev;
 	XColor	xc;
 	XGCValues	gcv;
 					/* get the viewing parameters */
@@ -79,21 +78,14 @@ char	*name;
 				progname);
 		exit(1);
 	}
-	pickcursor = XCreateFontCursor(theDisplay, XC_hand2);
 					/* find our window */
-	while (XGrabPointer(theDisplay, rwind, True, ButtonPressMask,
-			GrabModeAsync, GrabModeAsync, None, pickcursor,
-			CurrentTime) != GrabSuccess)
-		sleep(2);
-	printf("%s: click mouse in \"%s\" display window\n", progname, name);
-	XNextEvent(theDisplay, &xev);
-	XUngrabPointer(theDisplay, CurrentTime);
-	if (((XButtonEvent *)&xev)->subwindow == None) {
-		fprintf(stderr, "%s: no window selected\n", progname);
+	gwind = xfindwind(theDisplay, rwind, name, 2);
+	if (gwind == None) {
+		fprintf(stderr, "%s: cannot find \"%s\" window\n",
+				progname, name);
 		exit(1);
 	}
-	gwind = ((XButtonEvent *)&xev)->subwindow;
-	XRaiseWindow(theDisplay, gwind);
+	XMapRaised(theDisplay, gwind);
 	XGetWindowAttributes(theDisplay, gwind, &wa);
 	sleep(4);
 	if (wa.width != xres || wa.height != yres) {

@@ -38,9 +38,9 @@ glarendx:	glarendx.o image.o header.o erf.o fvect.o resolu.o
 	cc $(CFLAGS) -o glarendx glarendx.o image.o header.o fvect.o \
 erf.o resolu.o -lm
 
-xglaresrc:	xglaresrc.o fvect.o image.o resolu.o header.o
+xglaresrc:	xglaresrc.o fvect.o image.o resolu.o header.o x11findwind.o
 	cc $(CFLAGS) -o xglaresrc xglaresrc.o fvect.o image.o \
-header.o resolu.o -lm -lX11
+header.o resolu.o x11findwind.o -lm -lX11
 
 contour:	contour.o
 	cc $(CFLAGS) -o contour contour.o -lm
