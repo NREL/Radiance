@@ -313,7 +313,8 @@ char  *p;			/* data for f */
 	extern double  pow();
 	register int  sn;
 	int  nshadcheck, ncnts;
-	double  prob, ourthresh, hwt, test2, hit2;
+	int  nhits;
+	double  prob, ourthresh, hwt;
 	RAY  sr;
 			/* NOTE: srccnt and cntord global so no recursion */
 	if (nsources <= 0)
@@ -369,9 +370,8 @@ char  *p;			/* data for f */
                                                 /* accumulate tail */
         for (sn = ncnts-1; sn > 0; sn--)
                 cntord[sn-1].brt += cntord[sn].brt;
-						/* start with prob=.5 */
-	hit2 = 0.5; test2 = 1.0;
 						/* test for shadows */
+	nhits = 0;
 	for (sn = 0; sn < ncnts; sn++) {
 						/* check threshold */
 		if ((sn+nshadcheck>=ncnts ? cntord[sn].brt :
@@ -379,9 +379,6 @@ char  *p;			/* data for f */
 				< ourthresh*bright(r->rcol))
 			break;
 						/* get statistics */
-		hwt = (double)source[cntord[sn].sno].nhits /
-				(double)source[cntord[sn].sno].ntests;
-		test2 += hwt;
 		source[cntord[sn].sno].ntests++;
 						/* test for hit */
 		rayorigin(&sr, r, SHADOW, 1.0);
@@ -400,11 +397,14 @@ char  *p;			/* data for f */
 		}
 						/* add contribution if hit */
 		addcolor(r->rcol, srccnt[cntord[sn].sno].val);
-		hit2 += hwt;
+		nhits++;
 		source[cntord[sn].sno].nhits++;
 	}
-					/* weighted hit rate */
-	hwt = hit2 / test2;
+					/* surface hit rate */
+	if (sn > 0)
+		hwt = (double)nhits / (double)sn;
+	else
+		hwt = 0.5;
 #ifdef DEBUG
 	sprintf(errmsg, "%d tested, %d untested, %f hit rate\n",
 			sn, ncnts-sn, hwt);
