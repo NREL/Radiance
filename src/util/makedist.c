@@ -22,7 +22,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "random.h"
 
-#include  "setscan.c"
+#include  "setscan.h"
 
 
 #define  FTINY		1e-7
