@@ -44,24 +44,25 @@ typedef struct {
 #define  MAT_LIGHT	27		/* primary light source */
 #define  MAT_ILLUM	28		/* secondary light source */
 #define  MAT_SPOT	29		/* spot light source */
-#define  MAT_MIRROR	30		/* mirror (secondary source) */
-#define  MAT_TFUNC	31		/* trans brdf function */
-#define  MAT_BRTDF	32		/* brtd function */
-#define  MAT_PDATA	33		/* plastic brdf data */
-#define  MAT_MDATA	34		/* metal brdf data */
-#define  MAT_TDATA	35		/* trans brdf data */
-#define  PAT_CFUNC	36		/* color function */
-#define  MAT_CLIP	37		/* clipping surface */
-#define  PAT_CDATA	38		/* color data */
-#define  PAT_CTEXT	39		/* colored text */
-#define  TEX_DATA	40		/* surface texture data */
-#define  MIX_FUNC	41		/* mixing function */
-#define  MIX_DATA	42		/* mixing data */
-#define  MIX_TEXT	43		/* mixing text */
-#define  MAT_DIRECT1	44		/* unidirecting material */
-#define  MAT_DIRECT2	45		/* bidirecting material */
+#define  MAT_MIST	30		/* mist medium */
+#define  MAT_MIRROR	31		/* mirror (secondary source) */
+#define  MAT_TFUNC	32		/* trans brdf function */
+#define  MAT_BRTDF	33		/* brtd function */
+#define  MAT_PDATA	34		/* plastic brdf data */
+#define  MAT_MDATA	35		/* metal brdf data */
+#define  MAT_TDATA	36		/* trans brdf data */
+#define  PAT_CFUNC	37		/* color function */
+#define  MAT_CLIP	38		/* clipping surface */
+#define  PAT_CDATA	39		/* color data */
+#define  PAT_CTEXT	40		/* colored text */
+#define  TEX_DATA	41		/* surface texture data */
+#define  MIX_FUNC	42		/* mixing function */
+#define  MIX_DATA	43		/* mixing data */
+#define  MIX_TEXT	44		/* mixing text */
+#define  MAT_DIRECT1	45		/* unidirecting material */
+#define  MAT_DIRECT2	46		/* bidirecting material */
 				/* number of object types */
-#define  NUMOTYPE	46
+#define  NUMOTYPE	47
 				/* type flags */
 #define  T_S		01		/* surface (object) */
 #define  T_M		02		/* material */
@@ -125,6 +126,7 @@ extern int  o_default();
 				{ "light",	T_M|T_L,	o_default }, \
 				{ "illum",	T_M|T_L,	o_default }, \
 				{ "spotlight",	T_M|T_L,	o_default }, \
+				{ "mist",	T_M,		o_default }, \
 				{ "mirror",	T_M|T_LV,	o_default }, \
 				{ "transfunc",	T_M|T_F,	o_default }, \
 				{ "BRTDfunc",	T_M|T_F,	o_default }, \
