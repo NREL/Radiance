@@ -59,7 +59,6 @@ extern char  errmsg[];			/* global buffer for error messages */
 #define	 bcopy(s,d,n)		(void)memcpy(d,s,n)
 #define	 bzero(d,n)		(void)memset(d,0,n)
 #define	 bcmp(b1,b2,n)		memcmp(b1,b2,n)
-extern char  *memcpy(), *memset();
 #define	 index			strchr
 #define	 rindex			strrchr
 #endif

@@ -194,6 +194,5 @@ extern COLORMAT  xyz2rgbmat;		/* XYZ to RGB conversion matrix */
 #ifdef BSD
 #define  cpcolormat(md,ms)	bcopy((char *)ms,(char *)md,sizeof(COLORMAT))
 #else
-extern char  *memcpy();
 #define  cpcolormat(md,ms)	(void)memcpy((char *)md,(char *)ms,sizeof(COLORMAT))
 #endif

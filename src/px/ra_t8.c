@@ -27,7 +27,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #ifndef	 BSD
 #define	 bcopy(s,d,n)		(void)memcpy(d,s,n)
-extern char  *memcpy();
 #endif
 
 #define	 goodpic(h)	(my_imType(h) && my_mapType(h))
