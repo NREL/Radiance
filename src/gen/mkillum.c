@@ -371,8 +371,8 @@ char	*nm;
 
 printopts()			/* print out option default values */
 {
-	printf("m=%s\t\t\t# material name\n", thisillum.matname);
-	printf("f=%s\t\t\t# data file name\n", thisillum.datafile);
+	printf("m=%-15s\t\t# material name\n", thisillum.matname);
+	printf("f=%-15s\t\t# data file name\n", thisillum.datafile);
 	printf("c=n\t\t\t\t# color none\n");
 	printf("d=%d\t\t\t\t# density of points\n", thisillum.sampdens);
 	printf("s=%d\t\t\t\t# samples per point\n", thisillum.nsamps);
