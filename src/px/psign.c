@@ -16,7 +16,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "font.h"
 
-#define  SSS			2	/* super-sample size */
+#ifndef  SSS
+#define  SSS			3	/* super-sample size */
+#endif
 
 #define  MAXLINE		512	/* longest allowable line */
 
@@ -29,12 +31,12 @@ static char SCCSid[] = "$SunId$ LBL";
 
 char  *fontfile = "helvet.fnt";		/* our font file */
 
-COLR  bgcolr = WHTCOLR;			/* background color */
-COLR  fgcolr = BLKCOLR;			/* foreground color */
+COLOR  bgcolor = WHTCOLOR;		/* background color */
+COLOR  fgcolor = BLKCOLOR;		/* foreground color */
 
 int  direct = 'r';			/* direction (right, up, left, down) */
 
-int  cheight = 32;			/* character height */
+int  cheight = 32*SSS;			/* character height */
 double  aspect = 1.67;			/* height/width character aspect */
 int  cwidth;				/* computed character width */
 
@@ -77,13 +79,13 @@ char  *argv[];
 		case 'c':			/* color */
 			switch (argv[an][2]) {
 			case 'f':			/* foreground */
-				setcolr(fgcolr, atof(argv[an+1]),
+				setcolor(fgcolor, atof(argv[an+1]),
 						atof(argv[an+2]),
 						atof(argv[an+3]));
 				an += 3;
 				break;
 			case 'b':			/* background */
-				setcolr(bgcolr, atof(argv[an+1]),
+				setcolor(bgcolor, atof(argv[an+1]),
 						atof(argv[an+2]),
 						atof(argv[an+3]));
 				an += 3;
@@ -108,7 +110,7 @@ char  *argv[];
 			}
 			break;
 		case 'h':			/* height of characters */
-			cheight = atoi(argv[++an]);
+			cheight = atoi(argv[++an])*SSS;
 			break;
 		case 'a':			/* aspect ratio */
 			aspect = atof(argv[++an]);
@@ -148,18 +150,20 @@ makemap()			/* create the bit map */
 {
 	cwidth = cheight/aspect + 0.5;
 	if (direct == 'r' || direct == 'l') {
-		xsiz = maxline*cwidth;
+		xsiz = (long)maxwidth*cwidth >> 8;
 		ysiz = nlines*cheight;
 	} else {			/* reverse orientation */
 		xsiz = nlines*cheight;
-		ysiz = maxline*cwidth;
+		ysiz = (long)maxwidth*cwidth >> 8;
 	}
+	if (xsiz % SSS)
+		xsiz += SSS - xsiz%SSS;
+	if (ysiz % SSS)
+		ysiz += SSS - ysiz%SSS;
 	xdim = (xsiz+7)/8;
 	ourbitmap = (BYTE *)calloc(ysiz, xdim);
-	if (ourbitmap == NULL) {
-		fprintf(stderr, "out of memory in makemap\n");
-		exit(1);
-	}
+	if (ourbitmap == NULL)
+		error(SYSTEM, "Out of memory in makemap");
 }
 
 
@@ -196,8 +200,7 @@ len = uniftext(curl->sp, curl->s, ourfont);
 	}
 	return;
 memerr:
-	fprintf(stderr, "out of memory in gettext\n");
-	exit(1);
+	error(SYSTEM, "Out of memory in gettext");
 }
 
 
@@ -224,12 +227,11 @@ char  *av[];
 	ourtext->sp = (short *)malloc(sizeof(short)*(maxline+1));
 	if (ourtext->sp == NULL)
 		goto memerr;
-maxwidth = uniftext(ourtext->sp, ourtext->s, ourfont);
+maxwidth = squeeztext(ourtext->sp, ourtext->s, ourfont, 50);
 	nlines = 1;
 	return;
 memerr:
-	fprintf(stderr, "out of memory in arg_text\n");
-	exit(1);
+	error(SYSTEM, "Out of memory in arg_text");
 }
 
 
@@ -339,29 +341,45 @@ int  run, rise;
 writemap(fp)			/* write out bitmap */
 FILE  *fp;
 {
+	COLR  pixval[SSS*SSS+1];	/* possible pixel values */
+	COLOR  ctmp0, ctmp1;
+	double  d;
 	COLR  *scanout;
-	int  y;
-	register int  x;
+	int  x, y;
+	register int  i, j;
+	int  cnt;
 	register int  inglyph;
 
-	fprintf(fp, "-Y %d +X %d\n", ysiz, xsiz);
+	fprintf(fp, "-Y %d +X %d\n", ysiz/SSS, xsiz/SSS);
 
-	scanout = (COLR *)malloc(xsiz*sizeof(COLR));
-	if (scanout == NULL) {
-		fprintf(stderr, "out of memory in writemap\n");
-		exit(1);
+	scanout = (COLR *)malloc(xsiz/SSS*sizeof(COLR));
+	if (scanout == NULL)
+		error(SYSTEM, "Out of memory in writemap");
+	for (i = 0; i <= SSS*SSS; i++) {	/* compute possible values */
+		copycolor(ctmp0, fgcolor);
+		d = (double)i/(SSS*SSS);
+		scalecolor(ctmp0, d);
+		copycolor(ctmp1, bgcolor);
+		d = 1.0 - d;
+		scalecolor(ctmp1, d);
+		addcolor(ctmp0, ctmp1);
+		setcolr(pixval[i], colval(ctmp0,RED),
+				colval(ctmp0,GRN), colval(ctmp0,BLU));
 	}
-	for (y = ysiz-1; y >= 0; y--) {
+	for (y = ysiz/SSS-1; y >= 0; y--) {
 		inglyph = 0;
-		for (x = 0; x < xsiz; x++) {
-			if (tstbit(x, y))
-				inglyph ^= 1;
-			if (inglyph)
-				copycolr(scanout[x], fgcolr);
-			else
-				copycolr(scanout[x], bgcolr);
+		for (x = 0; x < xsiz/SSS; x++) {
+			cnt = 0;
+			for (j = 0; j < SSS; j++)
+				for (i = 0; i < SSS; i++) {
+					if (tstbit(x*SSS+i, y*SSS+j))
+						inglyph ^= 1<<j;
+					if (inglyph & 1<<j)
+						cnt++;
+				}
+			copycolr(scanout[x], pixval[cnt]);
 		}
-		if (fwritecolrs(scanout, xsiz, fp) < 0) {
+		if (fwritecolrs(scanout, xsiz/SSS, fp) < 0) {
 			fprintf(stderr, "write error in writemap\n");
 			exit(1);
 		}
