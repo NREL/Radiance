@@ -23,8 +23,8 @@ typedef struct {
 	int  vresolu;		/* vertical resolution */
 	FVECT  vhinc;		/* computed horizontal increment */
 	FVECT  vvinc;		/* computed vertical increment */
-	double  vhs2;		/* 1.0/DOT(vhinc,vhinc) */
-	double  vvs2;		/* 1.0/DOT(vvinc,vvinc) */
+	double  vhn2;		/* DOT(vhinc,vhinc) */
+	double  vvn2;		/* DOT(vvinc,vvinc) */
 } VIEW;			/* view parameters */
 
 extern VIEW  stdview;

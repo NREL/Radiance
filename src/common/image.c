@@ -79,8 +79,8 @@ register VIEW  *v;
 	v->vvinc[1] *= dt;
 	v->vvinc[2] *= dt;
 
-	v->vhs2 = 1.0/DOT(v->vhinc,v->vhinc);
-	v->vvs2 = 1.0/DOT(v->vvinc,v->vvinc);
+	v->vhn2 = DOT(v->vhinc,v->vhinc);
+	v->vvn2 = DOT(v->vvinc,v->vvinc);
 
 	return(NULL);
 }
@@ -136,8 +136,8 @@ FVECT  p;
 		disp[1] *= d;
 		disp[2] *= d;
 	}
-	*xp = DOT(disp,v->vhinc)*v->vhs2 + 0.5*v->hresolu;
-	*yp = DOT(disp,v->vvinc)*v->vvs2 + 0.5*v->vresolu;
+	*xp = DOT(disp,v->vhinc)/v->vhn2 + 0.5*v->hresolu;
+	*yp = DOT(disp,v->vvinc)/v->vvn2 + 0.5*v->vresolu;
 }
 
 
