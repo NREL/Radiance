@@ -453,7 +453,7 @@ draw_grids()			/* draw holodeck section grids */
 	static BYTE	gridrgb[3] = {0x0, 0xff, 0xff};
 	unsigned long  pixel;
 
-	if (!mapped || odev.v.type != VT_PER)
+	if (!mapped)
 		return;
 	if (ncolors > 0)
 		pixel = pixval[get_pixel(gridrgb, xnewcolr)];
