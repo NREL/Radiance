@@ -89,6 +89,9 @@ char	rresopt[32];		/* rendering resolution options */
 char	fresopt[32];		/* filter resolution options */
 int	pfiltalways;		/* always use pfilt? */
 
+char	arcargs[10240];		/* files to archive */
+char	*arcfirst, *arcnext;	/* pointers to first and next argument */
+
 struct pslot {
 	int	pid;			/* process ID (0 if empty) */
 	int	fout;			/* output frame number */
@@ -406,8 +409,8 @@ sethosts()			/* set up process servers */
 }
 
 
-getradfile(rfname)		/* run rad and get needed variables */
-char	*rfname;
+getradfile(rfargs)		/* run rad and get needed variables */
+char	*rfargs;
 {
 	static short	mvar[] = {OCTREE,PFILT,RESOLUTION,EXPOSURE,-1};
 	char	combuf[256];
@@ -417,7 +420,7 @@ char	*rfname;
 	sprintf(rendopt, " @%s/render.opt", vval(DIRECTORY));
 	sprintf(combuf,
 	"rad -v 0 -s -e -w %s OPTFILE=%s | egrep '^[ \t]*(NOMATCH",
-			rfname, rendopt+2);
+			rfargs, rendopt+2);
 	cp = combuf;
 	while (*cp) cp++;		/* match unset variables */
 	for (i = 0; mvar[i] >= 0; i++)
@@ -429,8 +432,8 @@ char	*rfname;
 	sprintf(cp, ")[ \t]*=' > %s/radset.var", vval(DIRECTORY));
 	cp += 11;			/* point to file name */
 	if (system(combuf)) {
-		fprintf(stderr, "%s: bad rad input file \"%s\"\n",
-				progname, rfname);
+		fprintf(stderr, "%s: error executing rad command:\n\t%s\n",
+				progname, combuf);
 		quit(1);
 	}
 	loadvars(cp);			/* load variables and remove file */
@@ -487,6 +490,11 @@ animate()			/* run animation */
 				progname);
 		quit(1);
 	}
+					/* initialize archive argument list */
+	i = 16;
+	if (vdef(ARCHIVE) && strlen(vval(ARCHIVE)) > i)
+		i = strlen(vval(ARCHIVE));
+	arcnext = arcfirst = arcargs + i;
 					/* initialize status file */
 	if (astat.rnext == 0)
 		astat.rnext = astat.fnext = astat.tnext = vint(START);
@@ -581,7 +589,7 @@ filterframes()				/* catch up with filtering */
 		dofilt(i, vp, getexp(i), 0);		/* filter frame */
 	}
 	bwait(0);			/* wait for filter processes */
-	archive(astat.fnext, i-1);	/* archive originals */
+	archive();			/* archive originals */
 	astat.fnext = i;		/* update status */
 	putastat();
 }
@@ -662,7 +670,9 @@ char	*vfn;
 	inspoint = combuf + strlen(combuf);
 	sprintf(inspoint, " %s < %s", vval(OCTREE), vfn);
 					/* run in parallel */
-	if (pruncom(combuf, inspoint, (last-first+1)/(vint(INTERP)+1))) {
+	i = (last-first+1)/(vint(INTERP)+1);
+	if (i < 1) i = 1;
+	if (pruncom(combuf, inspoint, i)) {
 		fprintf(stderr, "%s: error rendering frames %d through %d\n",
 				progname, first, last);
 		quit(1);
@@ -740,53 +750,27 @@ int	frame;
 }
 
 
-archive(first, last)			/* archive and remove renderings */
-int	first, last;
+archive()			/* archive and remove renderings */
 {
 #define RMCOML	(sizeof(rmcom)-1)
 	static char	rmcom[] = "rm -f";
-	int	offset = RMCOML;
-	char	combuf[10240];
-	struct stat	stb;
-	register char	*cp;
 	register int	i;
 
-	if (noaction)
-		return;
-	if (vdef(ARCHIVE) && strlen(vval(ARCHIVE)) > offset)
-		offset = strlen(vval(ARCHIVE));
-	cp = combuf + offset;
-	*cp++ = ' ';				/* make argument list */
-	for (i = first; i <= last; i++) {
-		sprintf(cp, vval(BASENAME), i);
-		strcat(cp, ".unf");
-		if (stat(cp, &stb) == 0 && stb.st_size > 0) {	/* non-zero? */
-			while (*cp) cp++;
-			*cp++ = ' ';
-			sprintf(cp, vval(BASENAME), i);
-			strcat(cp, ".zbf");
-			if (access(cp, F_OK) == 0) {		/* exists? */
-				while (*cp) cp++;
-				*cp++ = ' ';
-			}
-		}
-	}
-	*--cp = '\0';
-	if (cp <= combuf + offset)		/* no files? */
-		return;
+	if (arcnext == arcfirst)
+		return;				/* nothing to do */
 	if (vdef(ARCHIVE)) {			/* run archive command */
 		i = strlen(vval(ARCHIVE));
-		strncpy(combuf+offset-i, vval(ARCHIVE), i);
-		if (runcom(combuf+offset-i)) {
-			fprintf(stderr,
-		"%s: error running archive command on frames %d through %d\n",
-					progname, first, last);
+		strncpy(arcfirst-i, vval(ARCHIVE), i);
+		if (runcom(arcfirst-i)) {
+			fprintf(stderr, "%s: error running archive command\n",
+					progname);
 			quit(1);
 		}
 	}
 						/* run remove command */
-	strncpy(combuf+offset-RMCOML, rmcom, RMCOML);
-	runcom(combuf+offset-RMCOML);
+	strncpy(arcfirst-RMCOML, rmcom, RMCOML);
+	runcom(arcfirst-RMCOML);
+	arcnext = arcfirst;			/* reset argument list */
 #undef RMCOML
 }
 
@@ -802,11 +786,15 @@ int	rvr;
 	static int	iter = 0;
 	char	fnbefore[128], fnafter[128];
 	char	combuf[1024], fname0[128], fname1[128];
-	int	usepinterp, usepfilt;
+	int	usepinterp, usepfilt, nora_rgbe;
 	int	frseq[2];
 						/* check what is needed */
 	usepinterp = atoi(vval(MBLUR));
 	usepfilt = pfiltalways | ep==NULL;
+	if (ep != NULL && !strcmp(ep, "1"))
+		ep = "+0";
+	nora_rgbe = strcmp(vval(OVERSAMP),"1") || ep==NULL ||
+			*ep != '+' || *ep != '-' || !isint(ep);
 						/* compute rendered views */
 	frseq[0] = frame - ((frame-1) % (vint(INTERP)+1));
 	frseq[1] = frseq[0] + vint(INTERP) + 1;
@@ -815,11 +803,25 @@ int	rvr;
 	if (frseq[1] == frame) {			/* pfilt only */
 		frseq[0] = frseq[1];
 		usepinterp = 0;			/* update what's needed */
-		usepfilt |= vflt(OVERSAMP)>1.01 || strcmp(ep,"1");
-	} else if (frseq[0] == frame) {		/* no interpolation */
-						/* update what's needed */
-		if (!usepinterp)
-			usepfilt |= vflt(OVERSAMP)>1.01 || strcmp(ep,"1");
+		usepfilt |= nora_rgbe;
+	} else if (frseq[0] == frame) {		/* no interpolation needed */
+		if (!rvr && frame > 1+vint(INTERP)) {	/* archive previous */
+			*arcnext++ = ' ';
+			sprintf(arcnext, vval(BASENAME), frame-vint(INTERP)-1);
+			while (*arcnext) arcnext++;
+			strcpy(arcnext, ".unf");
+			arcnext += 4;
+			if (usepinterp || vint(INTERP)) {	/* and z-buf */
+				*arcnext++ = ' ';
+				sprintf(arcnext, vval(BASENAME),
+						frame-vint(INTERP)-1);
+				while (*arcnext) arcnext++;
+				strcpy(arcnext, ".zbf");
+				arcnext += 4;
+			}
+		}
+		if (!usepinterp)		/* update what's needed */
+			usepfilt |= nora_rgbe;
 	} else					/* interpolation needed */
 		usepinterp++;
 	if (frseq[1] >= astat.rnext)		/* next batch unavailable */
@@ -908,7 +910,7 @@ int	rvr;
 	} else {				/* else just check it */
 		if (rvr == 2)
 			return(1);
-		sprintf(combuf, "ra_rgbe -r %s.unf", fnbefore);
+		sprintf(combuf, "ra_rgbe -e %s -r %s.unf", ep, fnbefore);
 	}
 						/* output file name */
 	sprintf(fname0, vval(BASENAME), frame);
