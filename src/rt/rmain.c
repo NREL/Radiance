@@ -33,7 +33,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "paths.h"
 					/* persistent processes define */
-#define  NOPERS		0		/* do not persist (must be zero) */
 #ifdef  F_SETLKW
 #if  RPICT|RTRACE
 #define  PERSIST	1		/* normal persist */
@@ -148,7 +147,7 @@ char  *argv[];
 	char  *ambfile = NULL;
 	int  loadflags = ~IO_FILES;
 	int  seqstart = 0;
-	int  persist = NOPERS;
+	int  persist = 0;
 	char  **amblp;
 	char  **tralp;
 	int  duped1;
