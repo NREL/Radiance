@@ -38,14 +38,14 @@ double  sca;
 
 	if (initfile != NULL) {
 		loadfunc(initfile);
-		scompile(NULL, "Dx=$1;Dy=$2;Dz=$3;");
-		scompile(NULL, "Nx=$4;Ny=$5;Nz=$6;");
-		scompile(NULL, "Px=$7;Py=$8;Pz=$9;");
-		scompile(NULL, "T=$10;Rdot=$11;");
-		scompile(NULL, "S=$12;Tx=$13;Ty=$14;Tz=$15;");
-		scompile(NULL, "Ix=$16;Iy=$17;Iz=$18;");
-		scompile(NULL, "Jx=$19;Jy=$20;Jz=$21;");
-		scompile(NULL, "Kx=$22;Ky=$23;Kz=$24;");
+		scompile("Dx=$1;Dy=$2;Dz=$3;", NULL, 0);
+		scompile("Nx=$4;Ny=$5;Nz=$6;", NULL, 0);
+		scompile("Px=$7;Py=$8;Pz=$9;", NULL, 0);
+		scompile("T=$10;Rdot=$11;", NULL, 0);
+		scompile("S=$12;Tx=$13;Ty=$14;Tz=$15;", NULL, 0);
+		scompile("Ix=$16;Iy=$17;Iz=$18;", NULL, 0);
+		scompile("Jx=$19;Jy=$20;Jz=$21;", NULL, 0);
+		scompile("Kx=$22;Ky=$23;Kz=$24;", NULL, 0);
 		funset("arg", 1, l_arg);
 		funset("noise3", 3, l_noise3);
 		funset("noise3a", 3, l_noise3a);
