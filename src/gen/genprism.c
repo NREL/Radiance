@@ -10,8 +10,6 @@ static char SCCSid[] = "$SunId$ LBL";
  *		command line or from a file.  Their order together
  *		with the extrude direction will determine surface
  *		orientation.
- *
- *     8/24/87
  */
 
 #include  <stdio.h>
@@ -55,6 +53,11 @@ char  **argv;
 		an = 4;
 	} else if (isdigit(argv[3][0])) {
 		nverts = atoi(argv[3]);
+		if (nverts > MAXVERT) {
+			fprintf(stderr, "%s: too many vertices (%d limit)\n",
+					argv[0], MAXVERT);
+			exit(1);
+		}
 		if (argc-3 < 2*nverts)
 			goto userr;
 		for (an = 0; an < nverts; an++) {
@@ -111,14 +114,19 @@ char  *fname;
 {
 	FILE  *fp;
 
-	if (fname == NULL)
+	if (fname == NULL) {
 		fp = stdin;
-	else if ((fp = fopen(fname, "r")) == NULL) {
+		fname = "<stdin>";
+	} else if ((fp = fopen(fname, "r")) == NULL) {
 		fprintf(stderr, "%s: cannot open\n", fname);
 		exit(1);
 	}
 	while (fscanf(fp, "%lf %lf", &vert[nverts][0], &vert[nverts][1]) == 2)
-		nverts++;
+		if (++nverts >= MAXVERT) {
+			fprintf(stderr, "%s: too many vertices (%d limit)\n",
+					fname, MAXVERT-1);
+			exit(1);
+		}
 	fclose(fp);
 }
 
