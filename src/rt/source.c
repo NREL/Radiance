@@ -438,27 +438,26 @@ register RAY  *r;
 {
 						/* check for over-counting */
 	if (badcomponent(m, r))
-		return;
+		return(1);
 	if (wrongsource(m,r))
-		return;
+		return(1);
 						/* check for passed illum */
 	if (passillum(m, r)) {
-		if (m->oargs.nsargs < 1 || !strcmp(m->oargs.sarg[0], VOIDID))
-			raytrans(r);
-		else
-			rayshade(r, modifier(m->oargs.sarg[0]));
-		return;
+		if (m->oargs.nsargs && strcmp(m->oargs.sarg[0], VOIDID))
+			return(rayshade(r, modifier(m->oargs.sarg[0])));
+		raytrans(r);
+		return(1);
 	}
 					/* otherwise treat as source */
 						/* check for behind */
 	if (r->rod < 0.0)
-		return;
+		return(1);
 						/* check for invisibility */
 	if (srcignore(m, r))
-		return;
+		return(1);
 						/* check for outside spot */
 	if (m->otype==MAT_SPOT && spotout(r, makespot(m), r->rot>=FHUGE))
-		return;
+		return(1);
 						/* get distribution pattern */
 	raytexture(r, m->omod);
 						/* get source color */
@@ -467,4 +466,5 @@ register RAY  *r;
 			  m->oargs.farg[2]);
 						/* modify value */
 	multcolor(r->rcol, r->pcol);
+	return(1);
 }
