@@ -203,7 +203,7 @@ dev_view(nv)			/* assign new driver view */
 VIEW	*nv;
 {
 	if (nv->type == VT_PAR ||		/* check view legality */
-		nv->horiz > 160. || nv->vert > 160.) {
+			nv->horiz > 160. || nv->vert > 160.) {
 		error(COMMAND, "illegal view type/angle");
 		nv->type = VT_PER;
 		nv->horiz = odev.v.horiz;
@@ -472,7 +472,7 @@ moveview(dx, dy, mov, orb)	/* move our view */
 int	dx, dy, mov, orb;
 {
 	VIEW	nv;
-	FVECT	v1;
+	FVECT	odir, v1;
 	double	d;
 	register int	li;
 				/* start with old view */
@@ -481,24 +481,26 @@ int	dx, dy, mov, orb;
 	if (mov | orb) {
 		if ((li = qtFindLeaf(dx, dy)) < 0)
 			return(0);	/* not on window */
-		VSUM(nv.vdir, qtL.wp[li], nv.vp, -1.);
+		VSUM(odir, qtL.wp[li], nv.vp, -1.);
 	} else {
 		if (viewray(nv.vp, nv.vdir, &odev.v,
 				(dx+.5)/odev.hres, (dy+.5)/odev.vres) < -FTINY)
 			return(0);	/* outside view */
 	}
 	if (orb && mov) {		/* orbit left/right */
-		spinvector(nv.vdir, nv.vdir, nv.vup, MOVDEG*PI/180.*mov);
-		VSUM(nv.vp, qtL.wp[li], nv.vdir, -1.);
+		spinvector(odir, odir, nv.vup, d=MOVDEG*PI/180.*mov);
+		VSUM(nv.vp, qtL.wp[li], odir, -1.);
+		spinvector(nv.vdir, nv.vdir, nv.vup, d);
 	} else if (orb) {		/* orbit up/down */
-		fcross(v1, nv.vdir, nv.vup);
+		fcross(v1, odir, nv.vup);
 		if (normalize(v1) == 0.)
 			return(0);
-		spinvector(nv.vdir, nv.vdir, v1, MOVDEG*PI/180.*orb);
-		VSUM(nv.vp, qtL.wp[li], nv.vdir, -1.);
+		spinvector(odir, odir, v1, d=MOVDEG*PI/180.*orb);
+		VSUM(nv.vp, qtL.wp[li], odir, -1.);
+		spinvector(nv.vdir, nv.vdir, v1, d);
 	} else if (mov) {		/* move forward/backward */
 		d = MOVPCT/100. * mov;
-		VSUM(nv.vp, nv.vp, nv.vdir, d);
+		VSUM(nv.vp, nv.vp, odir, d);
 	}
 	if (!mov ^ !orb && headlocked) {	/* restore head height */
 		VSUM(v1, odev.v.vp, nv.vp, -1.);
