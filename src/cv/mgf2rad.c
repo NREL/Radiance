@@ -34,6 +34,8 @@ int	argc;
 char	*argv[];
 {
 	int	i, rv;
+				/* print out parser version */
+	printf("## Translated from MGF Version %d.%d\n", MG_VMAJOR, MG_VMINOR);
 				/* initialize dispatch table */
 	mg_ehand[MG_E_COMMENT] = r_comment;	/* we pass comments */
 	mg_ehand[MG_E_COLOR] = c_hcolor;	/* they get color */
