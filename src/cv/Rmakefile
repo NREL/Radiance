@@ -8,7 +8,7 @@ OPT = -O
 
 MACH = -f68881 /usr/lib/libm.il -DBSD
 
-CFLAGS = $(OPT) $(MACH)
+CFLAGS = $(OPT) $(MACH) -I../common
 
 INSTDIR = /lumen/lumen/ray/bin.sun3
 
@@ -27,23 +27,18 @@ clean:
 thf2rad:	thf2rad.o
 	cc $(CFLAGS) -o thf2rad thf2rad.o
 
-ies2rad:	ies2rad.o lamps.o spec_rgb.o fropen.o rexpr.o
-	cc $(CFLAGS) -o ies2rad ies2rad.o lamps.o \
-spec_rgb.o fropen.o rexpr.o
+ies2rad:	ies2rad.o
+	cc $(CFLAGS) -o ies2rad ies2rad.o ../common/librt.a
 
-arch2rad:	arch2rad.o trans.o savestr.o
-	cc $(CFLAGS) -o arch2rad arch2rad.o trans.o savestr.o
+arch2rad:	arch2rad.o trans.o
+	cc $(CFLAGS) -o arch2rad arch2rad.o trans.o ../common/librt.a
 
 nff2rad:	nff2rad.o
 	cc $(CFLAGS) -o nff2rad nff2rad.o
 
-lampcolor:	lampcolor.o lamps.o spec_rgb.o fropen.o rexpr.o
-	cc $(CFLAGS) -o lampcolor lampcolor.o spec_rgb.o \
-lamps.o fropen.o rexpr.o
-
-fropen.o:	fropen.c
-	cc $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c fropen.c
+lampcolor:	lampcolor.o
+	cc $(CFLAGS) -o lampcolor lampcolor.o ../common/librt.a
 
 arch2rad.o trans.o:	trans.h
 
-ies2rad.o spec_rgb.o:	color.h
+ies2rad.o spec_rgb.o:	../common/color.h
