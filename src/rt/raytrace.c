@@ -1,4 +1,4 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1996 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -197,7 +197,7 @@ register RAY  *r;
 	if ((dist = r->rot) >= FHUGE)
 		dist = 2.*thescene.cusize;	/* what to use for infinity? */
 	if (r->crtype & SHADOW)
-		dist *= 1. - salbedo;		/* no scattering for sources */
+		dist *= 1. - r->albedo;		/* no scattering for sources */
 	if (dist <= FTINY)
 		return;				/* no effective ray travel */
 	re = dist*colval(r->cext,RED);
@@ -209,9 +209,9 @@ register RAY  *r;
 	multcolor(r->rcol, ce);			/* path absorption */
 	if (r->albedo <= FTINY || r->crtype & SHADOW)
 		return;				/* no scattering */
-	setcolor(ca,	salbedo*colval(ambval,RED)*(1.-colval(ce,RED)),
-			salbedo*colval(ambval,GRN)*(1.-colval(ce,GRN)),
-			salbedo*colval(ambval,BLU)*(1.-colval(ce,BLU)));
+	setcolor(ca,	r->albedo*colval(ambval,RED)*(1.-colval(ce,RED)),
+			r->albedo*colval(ambval,GRN)*(1.-colval(ce,GRN)),
+			r->albedo*colval(ambval,BLU)*(1.-colval(ce,BLU)));
 	addcolor(r->rcol, ca);			/* ambient in scattering */
 	srcscatter(r);				/* source in scattering */
 }
