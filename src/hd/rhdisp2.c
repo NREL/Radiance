@@ -484,11 +484,11 @@ VIEW	*vn;
 	VOXL	vlnew[8];
 	int	n, comn;
 
-	if (!vn->type) {		/* clear our beam list */
+	if (vn == NULL || !vn->type) {	/* clear our beam list */
 		set_voxels(vlnew, 0);
 		cbeamop(DR_DELSET, cbeam, ncbeams, NULL, 0, 0);
 		ncbeams = 0;
-		copystruct(&dvw, vn);
+		dvw.type = 0;
 		return(1);
 	}
 					/* find our new voxels */
