@@ -94,6 +94,21 @@ extern char  *mktemp();
 
 double	pixvalue();
 
+#ifdef NIX
+#define  file_exists(f)	(access(f,F_OK)==0)
+#else
+#include  <sys/types.h>
+#include  <sys/stat.h>
+int
+file_exists(fname)				/* ordinary file exists? */
+char  *fname;
+{
+	struct stat  sbuf;
+	if (stat(fname, &sbuf) < 0) return(0);
+	return((sbuf.st_mode & S_IFREG) != 0);
+}
+#endif
+
 
 quit(code)			/* quit program */
 int  code;
@@ -205,8 +220,15 @@ char  *pout, *zout, *prvr;
 		pctdone = 0.0;
 		if (pout != NULL) {
 			sprintf(fbuf, pout, seq);
-			if (prvr == NULL && access(fbuf, F_OK) == 0)
+			if (file_exists(fbuf)) {
+				if (prvr != NULL || !strcmp(fbuf, pout)) {
+					sprintf(errmsg,
+						"output file \"%s\" exists",
+						fbuf);
+					error(USER, errmsg);
+				}
 				continue;		/* don't clobber */
+			}
 			if (freopen(fbuf, "w", stdout) == NULL) {
 				sprintf(errmsg,
 					"cannot open output file \"%s\"", fbuf);
