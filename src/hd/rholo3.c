@@ -158,74 +158,49 @@ memerr:
 }
 
 
-int
-weightf(hp, x0, x1, x2)		/* voxel weighting function */
-register HOLO	*hp;
-register int	x0, x1, x2;
-{
-	switch (vlet(OCCUPANCY)) {
-	case 'U':		/* uniform weighting */
-		return(1);
-	case 'C':		/* center weighting (crude) */
-		x0 += x0 - hp->grid[0] + 1;
-		x0 = abs(x0)*hp->grid[1]*hp->grid[2];
-		x1 += x1 - hp->grid[1] + 1;
-		x1 = abs(x1)*hp->grid[0]*hp->grid[2];
-		x2 += x2 - hp->grid[2] + 1;
-		x2 = abs(x2)*hp->grid[0]*hp->grid[1];
-		return(hp->grid[0]*hp->grid[1]*hp->grid[2] -
-				(x0+x1+x2)/3);
-	default:
-		badvalue(OCCUPANCY);
-	}
-}
-
-
-/* The following is by Daniel Cohen, taken from Graphics Gems IV, p. 368 */
-long
-lineweight(hp, x, y, z, dx, dy, dz)	/* compute weights along a line */
+double
+beamvolume(hp, bi)	/* compute approximate volume of a beam */
 HOLO	*hp;
-int	x, y, z, dx, dy, dz;
+int	bi;
 {
-	long	wres = 0;
-	int	n, sx, sy, sz, exy, exz, ezy, ax, ay, az, bx, by, bz;
-
-	sx = sgn(dx);	sy = sgn(dy);	sz = sgn(dz);
-	ax = abs(dx);	ay = abs(dy);	az = abs(dz);
-	bx = 2*ax;	by = 2*ay;	bz = 2*az;
-	exy = ay-ax;	exz = az-ax;	ezy = ay-az;
-	n = ax+ay+az + 1;		/* added increment to visit last */
-	while (n--) {
-		wres += weightf(hp, x, y, z);
-		if (exy < 0) {
-			if (exz < 0) {
-				x += sx;
-				exy += by; exz += bz;
-			} else {
-				z += sz;
-				exz -= bx; ezy += by;
-			}
-		} else {
-			if (ezy < 0) {
-				z += sz;
-				exz -= bx; ezy += by;
-			} else {
-				y += sy;
-				exy -= bx; ezy -= bz;
-			}
-		}
+	GCOORD	gc[2];
+	FVECT	cp[4], edgeA, edgeB, cent[2];
+	FVECT	v, crossp[2], diffv;
+	double	vol[2];
+	register int	i;
+					/* get grid coordinates */
+	if (!hdbcoord(gc, hp, bi))
+		error(CONSISTENCY, "bad beam index in beamvolume");
+	for (i = 0; i < 2; i++) {	/* compute cell area vectors */
+		hdcell(cp, hp, gc+i);
+		VSUM(edgeA, cp[1], cp[0], -1.0);
+		VSUM(edgeB, cp[3], cp[1], -1.0);
+		fcross(crossp[i], edgeA, edgeB);
+		VSUM(edgeA, cp[2], cp[3], -1.0);
+		VSUM(edgeB, cp[0], cp[2], -1.0);
+		fcross(v, edgeA, edgeB);
+		VSUM(crossp[i], crossp[i], v, 1.0);
+					/* compute center */
+		cent[i][0] = 0.5*(cp[0][0] + cp[2][0]);
+		cent[i][1] = 0.5*(cp[0][1] + cp[2][1]);
+		cent[i][2] = 0.5*(cp[0][2] + cp[2][2]);
 	}
-	return(wres);
+					/* compute difference vector */
+	VSUM(diffv, cent[1], cent[0], -1.0);
+	for (i = 0; i < 2; i++) {	/* compute volume contributions */
+		vol[i] = 0.25*DOT(crossp[i], diffv);
+		if (vol[i] < 0.) vol[i] = -vol[i];
+	}
+	return(vol[0] + vol[1]);	/* return total volume */
 }
 
 
 init_global()			/* initialize global ray computation */
 {
 	long	wtotal = 0;
-	int	i, j;
-	int	lseg[2][3];
 	double	frac;
-	register int	k;
+	int	i;
+	register int	j, k;
 					/* free old list */
 	if (complen > 0)
 		free((char *)complist);
@@ -238,18 +213,16 @@ init_global()			/* initialize global ray computation */
 		error(SYSTEM, "out of memory in init_global");
 					/* compute beam weights */
 	k = 0;
-	for (j = 0; hdlist[j] != NULL; j++)
+	for (j = 0; hdlist[j] != NULL; j++) {
+		frac = 512. * hdlist[j]->wg[0] *
+				hdlist[j]->wg[1] * hdlist[j]->wg[2];
 		for (i = nbeams(hdlist[j]); i > 0; i--) {
-			hdlseg(lseg, hdlist[j], i);
 			complist[k].hd = j;
 			complist[k].bi = i;
-			complist[k].nr = lineweight( hdlist[j],
-					lseg[0][0], lseg[0][1], lseg[0][2],
-					lseg[1][0] - lseg[0][0],
-					lseg[1][1] - lseg[0][1],
-					lseg[1][2] - lseg[0][2] );
+			complist[k].nr = frac*beamvolume(hdlist[j], i) + 0.5;
 			wtotal += complist[k++].nr;
 		}
+	}
 					/* adjust weights */
 	if (vdef(DISKSPACE))
 		frac = 1024.*1024.*vflt(DISKSPACE) / (wtotal*sizeof(RAYVAL));
