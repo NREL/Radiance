@@ -517,11 +517,12 @@ char	**av;
 		return(MG_EARGC);
 	if ((cv = c_getvert(av[1])) == NULL)
 		return(MG_EUNDEF);
-	if (cv->n[0]==0. && cv->n[1]==0. && cv->n[2]==0.)
+	if (is0vect(cv->n))
 		return(MG_EILL);
 	if (!isflt(av[2]) || !isflt(av[3]))
 		return(MG_ETYPE);
 	minrad = atof(av[2]);
+	round0(minrad);
 	maxrad = atof(av[3]);
 					/* check orientation */
 	if (minrad > 0.)
@@ -629,11 +630,12 @@ char	**av;
 		return(MG_EARGC);
 	if ((cv = c_getvert(av[1])) == NULL)
 		return(MG_EUNDEF);
-	if (cv->n[0]==0. && cv->n[1]==0. && cv->n[2]==0.)
+	if (is0vect(cv->n))
 		return(MG_EILL);
 	if (!isflt(av[2]) || !isflt(av[3]))
 		return(MG_ETYPE);
 	minrad = atof(av[2]);
+	round0(minrad);
 	maxrad = atof(av[3]);
 	if (minrad < 0. || maxrad <= minrad)
 		return(MG_EILL);
@@ -659,7 +661,7 @@ char	**av;
 				sprintf(p3[j], FLTFMT, cv->p[j] +
 						maxrad*u[j]*cos(theta) +
 						maxrad*v[j]*sin(theta));
-			if ((rv = handle_it(MG_E_VERTEX, 3, v3ent)) != MG_OK)
+			if ((rv = handle_it(MG_E_VERTEX, 2, v3ent)) != MG_OK)
 				return(rv);
 			if ((rv = handle_it(MG_E_POINT, 4, p3ent)) != MG_OK)
 				return(rv);
@@ -685,11 +687,11 @@ char	**av;
 				sprintf(p3[j], FLTFMT, cv->p[j] + maxrad*d);
 				sprintf(p4[j], FLTFMT, cv->p[j] + minrad*d);
 			}
-			if ((rv = handle_it(MG_E_VERTEX, 3, v3ent)) != MG_OK)
+			if ((rv = handle_it(MG_E_VERTEX, 2, v3ent)) != MG_OK)
 				return(rv);
 			if ((rv = handle_it(MG_E_POINT, 4, p3ent)) != MG_OK)
 				return(rv);
-			if ((rv = handle_it(MG_E_VERTEX, 3, v4ent)) != MG_OK)
+			if ((rv = handle_it(MG_E_VERTEX, 2, v4ent)) != MG_OK)
 				return(rv);
 			if ((rv = handle_it(MG_E_POINT, 4, p4ent)) != MG_OK)
 				return(rv);
@@ -734,7 +736,9 @@ char	**av;
 	if (!isflt(av[2]) || !isflt(av[4]))
 		return(MG_ETYPE);
 	rad1 = atof(av[2]);
+	round0(rad1);
 	rad2 = atof(av[4]);
+	round0(rad2);
 	if (rad1 == 0.) {
 		if (rad2 == 0.)
 			return(MG_EILL);
@@ -758,13 +762,20 @@ char	**av;
 	if ((d = normalize(w)) == 0.)
 		return(MG_EILL);
 	n1off = n2off = (rad2 - rad1)/d;
-	if (warpconends)		/* hack for e_sph and e_torus */
-		n2off = tan(atan(n2off)-(PI/4)/mg_nqcdivs);
-	n2off = sgn*n2off;
+	if (warpconends) {		/* hack for e_sph and e_torus */
+		d = atan(n2off) - (PI/4)/mg_nqcdivs;
+		if (d <= -PI/2+FTINY)
+			n2off = -FHUGE;
+		else
+			n2off = tan(d);
+	}
 	make_axes(u, v, w);
 	for (j = 0; j < 3; j++) {
 		sprintf(p3[j], FLTFMT, cv2->p[j] + rad2*u[j]);
-		sprintf(n3[j], FLTFMT, u[j] + w[j]*n2off);
+		if (n2off <= -FHUGE)
+			sprintf(n3[j], FLTFMT, -w[j]);
+		else
+			sprintf(n3[j], FLTFMT, u[j] + w[j]*n2off);
 	}
 	if ((rv = handle_it(MG_E_VERTEX, 3, v3ent)) != MG_OK)
 		return(rv);
@@ -787,25 +798,34 @@ char	**av;
 			for (j = 0; j < 3; j++) {
 				d = u[j]*cos(theta) + v[j]*sin(theta);
 				sprintf(p3[j], FLTFMT, cv2->p[j] + rad2*d);
-				sprintf(n3[j], FLTFMT, d + w[j]*n2off);
+				if (n2off > -FHUGE)
+					sprintf(n3[j], FLTFMT, d + w[j]*n2off);
 			}
-			if ((rv = handle_it(MG_E_VERTEX, 3, v3ent)) != MG_OK)
+			if ((rv = handle_it(MG_E_VERTEX, 2, v3ent)) != MG_OK)
 				return(rv);
 			if ((rv = handle_it(MG_E_POINT, 4, p3ent)) != MG_OK)
 				return(rv);
-			if ((rv = handle_it(MG_E_NORMAL, 4, n3ent)) != MG_OK)
+			if (n2off > -FHUGE &&
+			(rv = handle_it(MG_E_NORMAL, 4, n3ent)) != MG_OK)
 				return(rv);
 			if ((rv = handle_it(MG_E_FACE, 4, fent)) != MG_OK)
 				return(rv);
 		}
 	} else {			/* quads */
 		v1ent[3] = "_cv4";
-		if (warpconends)		/* hack for e_sph and e_torus */
-			n1off = tan(atan(n1off)+(PI/4)/mg_nqcdivs);
-		n1off = sgn*n1off;
+		if (warpconends) {		/* hack for e_sph and e_torus */
+			d = atan(n1off) + (PI/4)/mg_nqcdivs;
+			if (d >= PI/2-FTINY)
+				n1off = FHUGE;
+			else
+				n1off = tan(atan(n1off)+(PI/4)/mg_nqcdivs);
+		}
 		for (j = 0; j < 3; j++) {
 			sprintf(p4[j], FLTFMT, cv1->p[j] + rad1*u[j]);
-			sprintf(n4[j], FLTFMT, u[j] + w[j]*n1off);
+			if (n1off >= FHUGE)
+				sprintf(n4[j], FLTFMT, w[j]);
+			else
+				sprintf(n4[j], FLTFMT, u[j] + w[j]*n1off);
 		}
 		if ((rv = handle_it(MG_E_VERTEX, 3, v4ent)) != MG_OK)
 			return(rv);
@@ -822,21 +842,25 @@ char	**av;
 			for (j = 0; j < 3; j++) {
 				d = u[j]*cos(theta) + v[j]*sin(theta);
 				sprintf(p3[j], FLTFMT, cv2->p[j] + rad2*d);
-				sprintf(n3[j], FLTFMT, d + w[j]*n2off);
+				if (n2off > -FHUGE)
+					sprintf(n3[j], FLTFMT, d + w[j]*n2off);
 				sprintf(p4[j], FLTFMT, cv1->p[j] + rad1*d);
-				sprintf(n4[j], FLTFMT, d + w[j]*n1off);
+				if (n1off < FHUGE)
+					sprintf(n4[j], FLTFMT, d + w[j]*n1off);
 			}
-			if ((rv = handle_it(MG_E_VERTEX, 3, v3ent)) != MG_OK)
+			if ((rv = handle_it(MG_E_VERTEX, 2, v3ent)) != MG_OK)
 				return(rv);
 			if ((rv = handle_it(MG_E_POINT, 4, p3ent)) != MG_OK)
 				return(rv);
-			if ((rv = handle_it(MG_E_NORMAL, 4, n3ent)) != MG_OK)
+			if (n2off > -FHUGE &&
+			(rv = handle_it(MG_E_NORMAL, 4, n3ent)) != MG_OK)
 				return(rv);
-			if ((rv = handle_it(MG_E_VERTEX, 3, v4ent)) != MG_OK)
+			if ((rv = handle_it(MG_E_VERTEX, 2, v4ent)) != MG_OK)
 				return(rv);
 			if ((rv = handle_it(MG_E_POINT, 4, p4ent)) != MG_OK)
 				return(rv);
-			if ((rv = handle_it(MG_E_NORMAL, 4, n4ent)) != MG_OK)
+			if (n1off < FHUGE &&
+			(rv = handle_it(MG_E_NORMAL, 4, n4ent)) != MG_OK)
 				return(rv);
 			if ((rv = handle_it(MG_E_FACE, 5, fent)) != MG_OK)
 				return(rv);
