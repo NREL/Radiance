@@ -15,7 +15,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "octree.h"
 
 OCTREE  *octblock[MAXOBLK];		/* our octree */
-static OCTREE  ofreelist = EMPTY;	/* free octree nodes */
+static OCTREE  ofreelist = EMPTY;	/* freed octree nodes */
 static OCTREE  treetop = 0;		/* next free node */
 
 
@@ -69,8 +69,10 @@ register OCTREE  ot;
 	for (i = 1; i < 8; i++)
 		if ((octkid(ot, i) = combine(octkid(ot, i))) != ores)
 			ores = ot;
-	if (!istree(ores))	/* all were identical leaves */
-		octfree(ot);
+	if (!istree(ores)) {	/* all were identical leaves */
+		octkid(ot, 0) = ofreelist;
+		ofreelist = ot;
+	}
 	return(ores);
 }
 
