@@ -5,7 +5,7 @@
 ARCH = sun
 OPT = -O
 MACH = -DBSD
-SPECIAL = aed tiff
+SPECIAL = aed
 CFLAGS = $(OPT) $(MACH) -I../common -L../lib
 CC = cc
 MLIB = -lm
@@ -18,7 +18,7 @@ PIXAR_INCLUDE=	-I/usr/pixar/include
 PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar $(MLIB)
 
 PROGS = pfilt ttyimage oki20c oki20 paintjet mt160r psign \
-greyscale pvalue pcompos colorscale protate ra_pr ra_pr24 ra_avs \
+pvalue pcompos protate ra_pr ra_pr24 ra_avs \
 ra_t8 ra_bn ra_t16 pcomb pinterp ximage xshowtrace pflip ra_ppm \
 ra_rgbe ra_pict ra_ps pextrem ra_gif ra_xyze macbethcal pcond pcwarp
 
@@ -89,7 +89,7 @@ greyscale:	greyscale.o
 	$(CC) $(CFLAGS) -o greyscale greyscale.o -lrt $(MLIB)
 
 colorscale:	colorscale.o
-	$(CC) $(CFLAGS) -o colorscale colorscale.o -lrt
+	$(CC) $(CFLAGS) -o colorscale colorscale.o -lrt -lm
 
 pvalue:	pvalue.o
 	$(CC) $(CFLAGS) -o pvalue pvalue.o -lrt $(MLIB)
@@ -101,7 +101,7 @@ pcompos:	pcompos.o
 	$(CC) $(CFLAGS) -o pcompos pcompos.o -lrt
 
 psign:	psign.o
-	$(CC) $(CFLAGS) -o psign psign.o -lrt
+	$(CC) $(CFLAGS) -o psign psign.o -lrt -lm
 
 d48c:	d48c.o
 	$(CC) $(CFLAGS) -o d48c d48c.o -lrt
@@ -153,13 +153,13 @@ ximage:	x11image.o x11raster.o clrtab.o
 clrtab.o -lX11 -lrt $(MLIB)
 
 protate:		protate.o
-	$(CC) $(CFLAGS) -o protate protate.o -lrt
+	$(CC) $(CFLAGS) -o protate protate.o -lrt -lm
 
 pextrem:	pextrem.o
-	$(CC) $(CFLAGS) -o pextrem pextrem.o -lrt
+	$(CC) $(CFLAGS) -o pextrem pextrem.o -lrt -lm
 
 pflip:		pflip.o
-	$(CC) $(CFLAGS) -o pflip pflip.o -lrt
+	$(CC) $(CFLAGS) -o pflip pflip.o -lrt -lm
 
 panim:	panim.o client/libclient.a
 	$(CC) $(CFLAGS) -o panim panim.o \
@@ -177,7 +177,7 @@ ra_xyze:	ra_xyze.o
 ra_tiff:	ra_tiff.o ../lib/libtiff.a
 	$(CC) $(CFLAGS) -o ra_tiff ra_tiff.o -lrt -ltiff $(MLIB)
 
-../common/tiff.h ../lib/libtiff.a:	tiff/config.local
+../lib/libtiff.a:	tiff/config.local
 	cd tiff ; ./configure -quiet -noninteractive ; \
 	cd libtiff ; make install ;
 #	cd .. ; make distclean
