@@ -681,7 +681,7 @@ colormap  map;
 	register int  i, val;
 
 	for (i = 0; i < 256; i++) {
-		val = pow(i/256.0, 1.0/gamcor) * 256.0;
+		val = pow((i+0.5)/256.0, 1.0/gamcor) * 256.0;
 		map[0][i] = map[1][i] = map[2][i] = val;
 	}
 }
