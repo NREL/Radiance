@@ -345,7 +345,7 @@ redraw(x, y, w, h)			/* redraw section of window */
 int  x, y;
 int  w, h;
 {
-	if (map_rcolors(ourras) == NULL) {
+	if (ourras->ncolors && map_rcolors(ourras) == NULL) {
 		fprintf(stderr, "%s: cannot allocate colors\n", progname);
 		return(-1);
 	}
