@@ -18,7 +18,8 @@ static const char	RCSid[] = "$Id$";
 
 #define	 ASPECT		(120./144.)	/* pixel aspect ratio */
 
-#define	 FILTER		"pfilt -1 -x %d -y %d -p %f %s",NCOLS,NROWS,ASPECT
+#define	 FILTER		"pfilt -1 -x %d -y %d -p %f",NCOLS,NROWS,ASPECT
+#define	 FILTER_F	"pfilt -1 -x %d -y %d -p %f \"%s\"",NCOLS,NROWS,ASPECT
 
 /*
  *  Subtractive primaries are ordered:	Yellow, Magenta, Cyan.
@@ -55,7 +56,7 @@ char  *argv[];
 printp(fname)				/* print a picture */
 char  *fname;
 {
-	char  buf[64];
+	char  buf[PATH_MAX];
 	FILE  *input;
 	int  xres, yres;
 	COLR  scanline[NCOLS];
@@ -63,10 +64,10 @@ char  *fname;
 
 	if (dofilter) {
 		if (fname == NULL) {
-			sprintf(buf, FILTER, "");
+			sprintf(buf, FILTER);
 			fname = "<stdin>";
 		} else
-			sprintf(buf, FILTER, fname);
+			sprintf(buf, FILTER_F, fname);
 		if ((input = popen(buf, "r")) == NULL) {
 			fprintf(stderr, "Cannot execute: %s\n", buf);
 			return(-1);

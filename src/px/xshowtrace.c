@@ -7,9 +7,11 @@ static const char	RCSid[] = "$Id$";
  *	9/21/90	Greg Ward
  */
 
-#include "standard.h"
-#include "view.h"
 #include <X11/Xlib.h>
+
+#include "standard.h"
+#include "paths.h"
+#include "view.h"
 
 #define MAXDEPTH	32		/* ridiculous ray tree depth */
 
@@ -49,7 +51,7 @@ int	argc;
 char	*argv[];
 {
 	int	i;
-	char	combuf[256];
+	char	combuf[PATH_MAX];
 
 	progname = argv[0];
 	for (i = 1; i < argc-2; i++)
@@ -78,7 +80,7 @@ char	*argv[];
 		exit(1);
 	}
 					/* build input command */
-	sprintf(combuf, "%s %s | %s", xicom, picture, rtcom);
+	sprintf(combuf, "%s \"%s\" | %s", xicom, picture, rtcom);
 	for ( ; i < argc-1; i++) {
 		strcat(combuf, " ");
 		strcat(combuf, argv[i]);

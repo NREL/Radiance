@@ -99,7 +99,7 @@ short	mbneu[NMBNEU] = {Black,Neutral35,Neutral5,Neutral65,Neutral8,White};
 #define  RG_CORR	04	/* corrected color region */
 
 #ifndef  DISPCOM
-#define  DISPCOM	"ximage -op %s"
+#define  DISPCOM	"ximage -op \"%s\""
 #endif
 
 int	scanning = 1;		/* scanned input (or recorded output)? */
@@ -799,7 +799,7 @@ FILE	*fp;
 pickchartpos(pfn)		/* display picture and pick chart location */
 char	*pfn;
 {
-	char	combuf[512];
+	char	combuf[PATH_MAX];
 	FILE	*pfp;
 
 	sprintf(combuf, DISPCOM, pfn);

@@ -393,7 +393,7 @@ lblopen(s, xp, yp)		/* open pipe to label generator */
 char  *s;
 int  *xp, *yp;
 {
-	char  com[128];
+	char  com[PATH_MAX];
 	FILE  *fp;
 
 	sprintf(com, "psign -s -.15 -a 2 -x %d -y %d '%.90s'", *xp, *yp, s);

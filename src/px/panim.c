@@ -74,7 +74,7 @@ char	*argv[];
 sendframe(file)			/* convert and send a frame */
 char	*file;
 {
-	char	command[128];
+	char	command[PATH_MAX];
 	COLR	scanin[SCANLINE];
 	int	xres, yres;
 	int	xbeg, ybeg;
@@ -90,7 +90,7 @@ char	*file;
 		file = "<stdin>";
 	} else {
 		if (pcom != NULL) {
-			sprintf(command, "( %s ) < %s", pcom, file);
+			sprintf(command, "( %s ) < \"%s\"", pcom, file);
 			fp = popen(command, "r");
 		} else
 			fp = fopen(file, "r");

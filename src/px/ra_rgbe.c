@@ -93,7 +93,7 @@ userr:
 transfer(ospec)			/* transfer a Radiance picture */
 char	*ospec;
 {
-	char	oname[128];
+	char	oname[PATH_MAX];
 	FILE	*fp;
 	int	order;
 	int	xmax, ymax;
