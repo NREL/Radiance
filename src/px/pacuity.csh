@@ -38,7 +38,7 @@ EOF
 set pres=(`getinfo -d < $ifile | sed 's/^-Y \([1-9][0-9]*\) +X \([1-9][0-9]*\)$/\2 \1/'`)
 set vp=`vwright V < $ifile`
 set aext=(`pextrem -o $ifile | rcalc -f $tfc1 -e 'max(a,b):if(a-b,a,b);$1=acuity(log10(max(179*(.265*$3+.67*$4+.065*$5),1e-4)))'`)
-( rcalc -e "$vp" -e "A:3879*sqrt(Vhn/$pres[1]*Vvn/$pres[2])" \
+( rcalc -e "$vp" -e "A:3438*sqrt(Vhn/$pres[1]*Vvn/$pres[2])" \
 	-e 'f=60/A/2/$1;cond=if(1.5-$1,1,if(1-f,-1,if($1-'"$aext[2]"',-1,$1-'"$aext[1])))" \
 	-o 'pfilt -1 -r 2 -x /${f} -y /${f} '"$ifile | pfilt -1 -r 1 -x $pres[1] -y $pres[2] > $td/"'c${$1}d'$$.pic \
 	| csh -f ) << EOF
