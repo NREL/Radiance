@@ -7,7 +7,7 @@
 #include <ctype.h>
 
 #define  ANGLE		short
-#define  AEND		(-11111)
+#define  AEND		(-1)
 
 setscan(ang, arg)			/* set up scan according to arg */
 register ANGLE  *ang;
@@ -34,7 +34,7 @@ register char  *arg;
 		default:
 			return(-1);
 		}
-		if (!isdigit(*arg) && *arg != '-' && *arg != '+')
+		if (!isdigit(*arg))
 			return(-1);
 		do
 			arg++;
