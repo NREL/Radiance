@@ -121,6 +121,7 @@ int  mod;
 					/* check for infinite loop */
 	if (depth++ >= MAXLOOP)
 		objerror(r->ro, USER, "possible modifier loop");
+	r->rt = r->rot;			/* set effective ray length */
 	for ( ; mod != OVOID; mod = m->omod) {
 		m = objptr(mod);
 		/****** unnecessary test since modifier() is always called
