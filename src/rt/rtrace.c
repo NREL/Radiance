@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -29,6 +29,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "octree.h"
 
 #include  "otypes.h"
+
+#include  "resolu.h"
 
 int  dimlist[MAXDIM];			/* sampling dimensions */
 int  ndims = 0;				/* number of sampling dimensions */
@@ -88,6 +90,20 @@ int  code;
 }
 
 
+char *
+formstr(f)				/* return format identifier */
+int  f;
+{
+	switch (f) {
+	case 'a': return("ascii");
+	case 'f': return("float");
+	case 'd': return("double");
+	case 'c': return(COLRFMT);
+	}
+	return("unknown");
+}
+
+
 rtrace(fname)				/* trace rays from file */
 char  *fname;
 {
@@ -108,7 +124,17 @@ char  *fname;
 	case 'a': putreal = puta; break;
 	case 'f': putreal = putf; break;
 	case 'd': putreal = putd; break;
+	case 'c': 
+		if (strcmp(outvals, "v"))
+			error(USER, "color format with value output only");
+		break;
+	default:
+		error(CONSISTENCY, "botched output format");
 	}
+	fputformat(formstr(outform), stdout);
+	putchar('\n');
+	if (hresolu > 0 && vresolu > 0)
+		fprtresolu(hresolu, vresolu, stdout);
 					/* process file */
 	while (getvec(orig, inform, fp) == 0 &&
 			getvec(direc, inform, fp) == 0) {
@@ -267,6 +293,8 @@ FILE  *fp;
 			return(-1);
 		vec[0] = vd[0]; vec[1] = vd[1]; vec[2] = vd[2];
 		break;
+	default:
+		error(CONSISTENCY, "botched input format");
 	}
 	return(0);
 }
@@ -322,6 +350,15 @@ static
 oputv(r)				/* print value */
 register RAY  *r;
 {
+	COLR  cout;
+	
+	if (outform == 'c') {
+		setcolr(cout,	colval(r->rcol,RED),
+				colval(r->rcol,GRN),
+				colval(r->rcol,BLU));
+		fwrite((char *)cout, sizeof(cout), 1, stdout);
+		return;
+	}
 	(*putreal)(colval(r->rcol,RED));
 	(*putreal)(colval(r->rcol,GRN));
 	(*putreal)(colval(r->rcol,BLU));
