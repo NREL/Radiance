@@ -10,7 +10,6 @@
 #define _SM_H_
 
 #include "rhd_sample.h"
-#include "sm_stree.h"
 
 
 #ifndef TRUE
@@ -18,17 +17,14 @@
 #define FALSE 0
 #endif
 
-#define P_REPLACE_EPS 0.5
+#define S_REPLACE_EPS 0.06
+#define S_REPLACE_SCALE 10.0
+
 #define SQRT3_2 0.8660254
 
-#define MAX_EDGES 200
-
-#define SM_INVALID  -1
-#define SM_DEFAULT   0
-#define SM_EXTRA_POINTS 5
+#define SM_DEFAULT 0
+#define SM_EXTRA_POINTS 8
 #define SM_EXTRA_VERTS  SM_EXTRA_POINTS
-#define	SM_POINTSIZ	(3*sizeof(float)+ sizeof(int4))
-#define SM_POINT_SPACE SM_EXTRA_POINTS * SM_POINTSIZ
 
 #define SM_INC_PERCENT 0.60
 #define SM_VIEW_FRAC   0.1
@@ -41,13 +37,13 @@ typedef struct _EDGE {
     int verts[2];
     int tris[2];
 } EDGE;
+
 #define E_NTH_VERT(e,i)  ((e>0)?Edges[(e)].verts[(i)]:Edges[-(e)].verts[(1-i)])
 #define SET_E_NTH_VERT(e,i,v) if(e>0) Edges[(e)].verts[(i)]=(v); \
 			       else Edges[-(e)].verts[(1-i)]=(v)
 #define E_NTH_TRI(e,i)  ((e>0)?Edges[(e)].tris[(i)]:Edges[-(e)].tris[(1-i)])
 #define SET_E_NTH_TRI(e,i,v) if(e>0) Edges[(e)].tris[(i)]=(v); \
                               else Edges[-(e)].tris[(1-i)]=(v)
-#define eNew_edge() (((Ecnt) < MAX_EDGES)?(++Ecnt):SM_INVALID)
 #define eClear_edges() (Ecnt = 0)
 
 #define FOR_ALL_EDGES(i) for((i)=1; (i) <= Ecnt; i++)
@@ -70,99 +66,86 @@ typedef struct _TRI {
 #define T_NEXT_FREE(t) ((t)->nbrs[0])
 #define T_VALID_FLAG(t) ((t)->nbrs[1])
 #define T_IS_VALID(t)  (T_VALID_FLAG(t)!=-1)
-#define T_FLAGS 4
-#define T_FLAG_BYTES T_FLAGS/8.0
-#define T_TOTAL_FLAG_BYTES(c)  ((((c)+31)>>5)*sizeof(int4))
+#define T_FLAGS 3
 
 typedef struct _SM {
     FVECT view_center;    /* Canonical view center defining unit sphere */
-    RSAMP *samples;       /* Sample point information */
-    STREE locator;      /* spherical quadtree for point/triangle location */
+    SAMP *samples;        /* Sample point information */
+    STREE locator;        /* spherical quadtree for point/triangle location */
     int max_tris;         /* Maximum number of triangles */
-    int tri_cnt;          /* Total number of tris ever alloc at one time*/
-    int num_tris;         /* Current number of sample (nonbase)triangles */
+    int num_tri;          /* Current number of triangles */
+    int sample_tris;      /* Current number of non-base triangles*/
     int free_tris;        /* pointer to free_list */
     int max_verts;        /* Maximum number of vertices in the mesh */
     TRI *tris;            /* Pointer to list of triangle structs */
     VERT *verts;          /* List of vertices */
     int4 *flags[T_FLAGS]; /* Bit 0 set if active(in current frustum) */
-                             /* Bit 1 set if not rendered since created */
-                             /* Bit 2 set if base triangle */
-                             /* Bit 3 set used for LRU replacement */
-    char *base;           /* Allocated space */
+                          /* Bit 1 set if not rendered since created */
+                          /* Bit 2 set if base triangle */
 }SM;
 
 #define T_ACTIVE_FLAG   0
 #define T_NEW_FLAG      1
 #define T_BASE_FLAG     2
-#define T_LRU_FLAG      3
 
 #define SM_VIEW_CENTER(m)             ((m)->view_center)
 #define SM_SAMP(m)                    ((m)->samples)
 #define SM_LOCATOR(m)                 (&((m)->locator))
 #define SM_MAX_TRIS(m)                ((m)->max_tris)
-#define SM_TRI_CNT(m)                 ((m)->tri_cnt)
-#define SM_NUM_TRIS(m)                 ((m)->num_tris)
+#define SM_NUM_TRI(m)                 ((m)->num_tri)
+#define SM_SAMPLE_TRIS(m)                 ((m)->sample_tris)
 #define SM_FREE_TRIS(m)               ((m)->free_tris)
 #define SM_MAX_VERTS(m)               ((m)->max_verts)
 #define SM_TRIS(m)                    ((m)->tris)
 #define SM_VERTS(m)                   ((m)->verts)
 #define SM_NTH_FLAGS(m,n)             ((m)->flags[(n)])
-#define SM_BASE(m)                    ((m)->base)
+#define SM_FLAGS(m)                   ((m)->flags)
 
-#define TF_OFFSET(n)  ((n) >> 5)
-#define TF_BIT(n)     ((n) & 0x1f)
-#define SM_IS_NTH_T_FLAG(sm,n,f)  (SM_NTH_FLAGS(sm,f)[TF_OFFSET(n)] & (0x1 <<TF_BIT(n)))
-#define SM_SET_NTH_T_FLAG(sm,n,f) (SM_NTH_FLAGS(sm,f)[TF_OFFSET(n)] |= (0x1<<TF_BIT(n)))
-#define SM_CLEAR_NTH_T_FLAG(sm,n,f) (SM_NTH_FLAGS(sm,f)[TF_OFFSET(n)] &= ~(0x1<<TF_BIT(n)))
+
+#define SM_IS_NTH_T_FLAG(sm,n,f)  IS_FLAG(SM_NTH_FLAGS(sm,f),n)
+#define SM_SET_NTH_T_FLAG(sm,n,f) SET_FLAG(SM_NTH_FLAGS(sm,f),n)
+#define SM_CLR_NTH_T_FLAG(sm,n,f) CLR_FLAG(SM_NTH_FLAGS(sm,f),n)
 
 #define SM_IS_NTH_T_ACTIVE(sm,n)     SM_IS_NTH_T_FLAG(sm,n,T_ACTIVE_FLAG)
 #define SM_IS_NTH_T_BASE(sm,n)       SM_IS_NTH_T_FLAG(sm,n,T_BASE_FLAG)
 #define SM_IS_NTH_T_NEW(sm,n)        SM_IS_NTH_T_FLAG(sm,n,T_NEW_FLAG)
-#define SM_IS_NTH_T_LRU(sm,n)        SM_IS_NTH_T_FLAG(sm,n,T_LRU_FLAG)
 
 #define SM_SET_NTH_T_ACTIVE(sm,n)    SM_SET_NTH_T_FLAG(sm,n,T_ACTIVE_FLAG)
 #define SM_SET_NTH_T_BASE(sm,n)      SM_SET_NTH_T_FLAG(sm,n,T_BASE_FLAG)
-#define SM_SET_NTH_T_NEW(sm,n)    SM_SET_NTH_T_FLAG(sm,n,T_NEW_FLAG)
-#define SM_SET_NTH_T_LRU(sm,n)       SM_SET_NTH_T_FLAG(sm,n,T_LRU_FLAG)
+#define SM_SET_NTH_T_NEW(sm,n)       SM_SET_NTH_T_FLAG(sm,n,T_NEW_FLAG)
 
-#define SM_CLEAR_NTH_T_ACTIVE(sm,n)  SM_CLEAR_NTH_T_FLAG(sm,n,T_ACTIVE_FLAG)
-#define SM_CLEAR_NTH_T_BASE(sm,n)    SM_CLEAR_NTH_T_FLAG(sm,n,T_BASE_FLAG)
-#define SM_CLEAR_NTH_T_NEW(sm,n)  SM_CLEAR_NTH_T_FLAG(sm,n,T_NEW_FLAG)
-#define SM_CLEAR_NTH_T_LRU(sm,n)     SM_CLEAR_NTH_T_FLAG(sm,n,T_LRU_FLAG)
+#define SM_CLR_NTH_T_ACTIVE(sm,n)   SM_CLR_NTH_T_FLAG(sm,n,T_ACTIVE_FLAG)
+#define SM_CLR_NTH_T_BASE(sm,n)     SM_CLR_NTH_T_FLAG(sm,n,T_BASE_FLAG)
+#define SM_CLR_NTH_T_NEW(sm,n)      SM_CLR_NTH_T_FLAG(sm,n,T_NEW_FLAG)
 
 #define SM_NTH_TRI(m,n)               (&(SM_TRIS(m)[(n)]))
 #define SM_NTH_VERT(m,n)              (SM_VERTS(m)[(n)])
-#define SM_FREE_TRI_ID(m,n) (n = SM_FREE_TRIS(m)==-1? \
-    (SM_TRI_CNT(m)<SM_MAX_TRIS(m)?SM_TRI_CNT(m)++:-1):(n=SM_FREE_TRIS(m), \
-     SM_FREE_TRIS(m)=T_NEXT_FREE(SM_NTH_TRI(m,SM_FREE_TRIS(m))),n))
  
-#define SM_SAMP_BASE(m)               RS_BASE(SM_SAMP(m))
-#define SM_SAMP_FREE(m)               RS_FREE(SM_SAMP(m))
-#define SM_SAMP_EOL(m)                RS_EOL(SM_SAMP(m))
-#define SM_MAX_SAMP(m)                RS_MAX_SAMP(SM_SAMP(m))
-#define SM_MAX_AUX_PT(m)              RS_MAX_AUX_PT(SM_SAMP(m))
-#define SM_NTH_WV(m,i)                RS_NTH_W_PT(SM_SAMP(m),i)
-#define SM_NTH_W_DIR(m,i)             RS_NTH_W_DIR(SM_SAMP(m),i)
-#define SM_NTH_RGB(m,i)               RS_NTH_RGB(SM_SAMP(m),i)
-#define SM_RGB(m)                    RS_RGB(SM_SAMP(m))
-#define SM_BRT(m)                     RS_BRT(SM_SAMP(m))
-#define SM_NTH_BRT(m,i)               RS_NTH_BRT(SM_SAMP(m),i)
-#define SM_CHR(m)                     RS_CHR(SM_SAMP(m))
-#define SM_NTH_CHR(m,i)               RS_NTH_CHR(SM_SAMP(m),i)
-#define SM_NUM_SAMP(m)               RS_NUM_SAMP(SM_SAMP(m))
-#define SM_TONE_MAP(m)               RS_TONE_MAP(SM_SAMP(m))
+#define SM_MAX_SAMP(m)                S_MAX_SAMP(SM_SAMP(m))
+#define SM_MAX_POINTS(m)              S_MAX_POINTS(SM_SAMP(m))
+#define SM_SAMP_BASE(m)               S_BASE(SM_SAMP(m))
+#define SM_NTH_WV(m,i)                S_NTH_W_PT(SM_SAMP(m),i)
+#define SM_NTH_W_DIR(m,i)             S_NTH_W_DIR(SM_SAMP(m),i)
+#define SM_DIR_ID(m,i)                (SM_NTH_W_DIR(m,i)==-1)
+#define SM_NTH_RGB(m,i)               S_NTH_RGB(SM_SAMP(m),i)
+#define SM_RGB(m)                    S_RGB(SM_SAMP(m))
+#define SM_BRT(m)                     S_BRT(SM_SAMP(m))
+#define SM_NTH_BRT(m,i)               S_NTH_BRT(SM_SAMP(m),i)
+#define SM_CHR(m)                     S_CHR(SM_SAMP(m))
+#define SM_NTH_CHR(m,i)               S_NTH_CHR(SM_SAMP(m),i)
+#define SM_NUM_SAMP(m)               S_NUM_SAMP(SM_SAMP(m))
+#define SM_TONE_MAP(m)               S_TONE_MAP(SM_SAMP(m))
 
 #define SM_ALLOWED_VIEW_CHANGE(m) (SM_NUM_SAMP(m)/smDist_sum*SM_VIEW_FRAC)
 
 #define SM_FOR_ALL_FLAGGED_TRIS(m,i,w,b) for(i=smNext_tri_flag_set(m,0,w,b); \
-i < SM_TRI_CNT(m); i=smNext_tri_flag_set(m,i+1,w,b))
+i < SM_NUM_TRI(m); i=smNext_tri_flag_set(m,i+1,w,b))
 
 #define SM_FOR_ALL_ACTIVE_TRIS(m,i) SM_FOR_ALL_FLAGGED_TRIS(m,i,T_ACTIVE_FLAG,0)
 #define SM_FOR_ALL_NEW_TRIS(m,i) SM_FOR_ALL_FLAGGED_TRIS(m,i,T_NEW_FLAG,0)
 #define SM_FOR_ALL_BASE_TRIS(m,i) SM_FOR_ALL_FLAGGED_TRIS(m,i,T_BASE_FLAG,0)
 #define SM_FOR_ALL_VALID_TRIS(m,i) for(i=smNext_valid_tri(m,0); \
-i < SM_TRI_CNT(m); i=smNext_valid_tri(m,i+1))
+i < SM_NUM_TRI(m); i=smNext_valid_tri(m,i+1))
 
 #define SM_FOR_ALL_ACTIVE_FG_TRIS(m,i) SM_FOR_ALL_FLAGGED_TRIS(m,i,T_ACTIVE_FLAG,1)
 
@@ -173,12 +156,11 @@ i < SM_TRI_CNT(m); i=smNext_valid_tri(m,i+1))
 t!=SM_NTH_TRI(sm,SM_NTH_VERT(sm,id)); t=smTri_next_ccw_nbr(sm,t,id))
 
 #define SM_INVALID_SAMP_ID(sm,id)  (((id) < 0) || ((id) >= SM_MAX_SAMP(sm)))
-#define SM_INVALID_POINT_ID(sm,id)  (((id) < 0) || ((id) >= SM_MAX_AUX_PT(sm)))
-#define SM_T_CENTROID(sm,t,c)  tri_centroid(SM_NTH_WV(sm,T_NTH_V(t,0)),SM_NTH_WV(sm,T_NTH_V(t,1)),SM_NTH_WV(sm,T_NTH_V(t,2)),c)
+#define SM_INVALID_POINT_ID(sm,id)  (((id) < 0) || ((id) >= SM_MAX_POINTS(sm)))
 #define SM_T_NTH_WV(sm,t,i)  (SM_NTH_WV(sm,T_NTH_V(t,i)))
 
 #define SM_BASE_ID(s,i)  \
- ((i) >= RS_MAX_SAMP(SM_SAMP(s)) && (i) < RS_MAX_AUX_PT(SM_SAMP(s)))
+ ((i) >= S_MAX_SAMP(SM_SAMP(s)) && (i) < S_MAX_BASE_PT(SM_SAMP(s)))
 
 #define SM_BG_SAMPLE(sm,i)   (SM_NTH_W_DIR(sm,i)==-1)
 
@@ -191,15 +173,43 @@ t!=SM_NTH_TRI(sm,SM_NTH_VERT(sm,id)); t=smTri_next_ccw_nbr(sm,t,id))
 
 #define SM_FOR_ALL_SAMPLES(sm,i) for((i)=0;i < SM_NUM_SAMP(sm);(i)++)
 
+#define smInit_locator(sm,c)    (stInit(SM_LOCATOR(sm)), \
+				 ST_SET_CENTER(SM_LOCATOR(sm),c))
+#define smClear_locator(sm)    stClear(SM_LOCATOR(sm))
+#define smAlloc_locator(sm)   stAlloc(SM_LOCATOR(sm))
+#define smFree_locator(sm)   stClear(SM_LOCATOR(sm))
+#define smPointLocateCell(sm,pt)  stPoint_locate(SM_LOCATOR(sm),pt)
+#define smUnalloc_samp(sm,id)  sUnalloc_samp(SM_SAMP(sm),id)
+#define smFree_samples(sm)     sFree(SM_SAMP(sm))
+#define smClear_samples(sm)    sClear(SM_SAMP(sm))
+#define smInit_samples(sm)     sInit(SM_SAMP(sm))
+
+
+#define smClear_vert(sm,id)    (SM_NTH_VERT(sm,id) = INVALID)
+
+#define SQRT3_INV 0.5773502692
+
 typedef struct _T_DEPTH {
   int tri;
   double depth;
 }T_DEPTH;
 
+typedef struct _RT_ARGS_{
+  FVECT orig,dir;
+  int t_id;
+  OBJECT *os;
+}RT_ARGS;
+
+
+typedef struct _ADD_ARGS {
+  int t_id;
+  OBJECT *del_set;
+}ADD_ARGS;
 
 extern SM *smMesh;
 extern int smNew_tri_cnt;
 extern double smDist_sum;
+
 
 #ifdef TEST_DRIVER
 extern VIEW View;
@@ -212,9 +222,51 @@ extern int Pick_cnt;
 extern FVECT FrustumNear[4],FrustumFar[4];
 #endif
 
-#ifdef DEBUG
-extern int Malloc_cnt;
-#endif
+
+/*
+ * int
+ * smInit(n)		: Initialize/clear data structures for n entries
+ * int	n;
+ *
+ * Initialize sampL and other data structures for at least n samples.
+ * If n is 0, then free data structures.  Return number actually allocated.
+ *
+ *
+ * int
+ * smNewSamp(c, p, v)	: register new sample point and return index
+ * COLR	c;		: pixel color (RGBE)
+ * FVECT	p;	: world intersection point
+ * FVECT	v;	: ray direction vector
+ *
+ * Add new sample point to data structures, removing old values as necessary.
+ * New sample representation will be output in next call to smUpdate().
+ *
+ *
+ * int
+ * smFindSamp(orig, dir): intersect ray with 3D rep. and find closest sample
+ * FVECT	orig, dir;
+ *
+ * Find the closest sample to the given ray.  Return -1 on failure.
+ *
+ *
+ * smClean()		: display has been wiped clean
+ *
+ * Called after display has been effectively cleared, meaning that all
+ * geometry must be resent down the pipeline in the next call to smUpdate().
+ *
+ *
+ * smUpdate(vp, qua)	: update OpenGL output geometry for view vp
+ * VIEW	*vp;		: desired view
+ * int	qua;		: quality level (percentage on linear time scale)
+ *
+ * Draw new geometric representation using OpenGL calls.  Assume that the
+ * view has already been set up and the correct frame buffer has been
+ * selected for drawing.  The quality level is on a linear scale, where 100%
+ * is full (final) quality.  It is not necessary to redraw geometry that has
+ * been output since the last call to smClean().  (The last view drawn will
+ * be vp==&odev.v each time.)
+ */
+
 #endif
 
 

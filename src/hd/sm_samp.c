@@ -8,260 +8,261 @@ static char SCCSid[] = "$SunId$ SGI";
  * sm_samp.c
  */
 #include "standard.h"
+#include "sm_flag.h"
+#include "rhd_sample.h"
 
-#include "sm.h"
+SAMP rsL;
+int4 *samp_flag=NULL;
 
-RSAMP rsL;
 
+/* Each sample has a world coord point, and direction, brightness,chrominance,
+   and RGB triples
+ */
+#ifndef HP_VERSION
+#define TMSIZE sizeof(TMbright)
+#else
+#define TMSIZE 0
+#endif
+#define SAMPSIZ (3*sizeof(float)+sizeof(int4)+ 6*sizeof(BYTE) + TMSIZE)
 
-#define SAMPSIZ (3*sizeof(float)+sizeof(int4)+\
-			sizeof(TMbright)+6*sizeof(BYTE))
-/* Initialize/clear global smL sample list for at least n samples */
-int
-smAlloc_samples(sm,n,extra_points)
-SM *sm;
-register int n,extra_points;
+ /* Extra points just need direction and world space point */
+#define POINTSIZ (3*sizeof(float))
+
+/* Clear the flags for all samples */ 
+sClear_all_flags(s)
+SAMP *s;
+{
+  if(samp_flag)
+    bzero((char *)samp_flag,FLAG_BYTES(S_MAX_SAMP(s)));
+}
+
+sInit(s)
+   SAMP *s;
+{
+  S_REPLACE_SAMP(s) = 0;
+  S_NUM_SAMP(s) = 0;
+  S_TONE_MAP(s) = 0;
+  S_FREE_SAMP(s) = -1;
+  sClear_base_points(s);
+  sClear_all_flags(s);
+
+}
+
+sFree(s)
+SAMP *s;
+{
+    if(S_BASE(s))
+    {
+	free(S_BASE(s));
+	S_BASE(s)=NULL;
+    }
+    if(samp_flag)
+    {
+	free(samp_flag);
+	samp_flag = NULL;
+    }
+}
+	/* Initialize/clear global smL sample list for at least n samples */
+SAMP
+*sAlloc(nptr,extra_points)
+int *nptr,extra_points;
 {
   unsigned nbytes;
   register unsigned	i;
-  RSAMP *rs;
-
-  rs = &rsL;
-
-  SM_SAMP(sm) = rs;
-
+  SAMP *s;
+  int n;
+  
+  s = &rsL;
   /* round space up to nearest power of 2 */
-  nbytes = n*SAMPSIZ + extra_points*SM_POINTSIZ + 8;
+  nbytes = (*nptr)*SAMPSIZ + extra_points*POINTSIZ + 8;
   for (i = 1024; nbytes > i; i <<= 1)
 		;
-  n = (i - 8 - extra_points*SM_POINTSIZ) / SAMPSIZ;	
+  /* get number of samples that fit in block */
+  n = (i - 8 - extra_points*POINTSIZ) / SAMPSIZ;	
 
-  RS_BASE(rs) = (char *)malloc(n*SAMPSIZ + extra_points*SM_POINTSIZ);
-  if (!RS_BASE(rs))
+  S_BASE(s) = (char *)malloc(n*SAMPSIZ + extra_points*POINTSIZ);
+  if (!S_BASE(s))
     error(SYSTEM,"smInit_samples(): Unable to allocate memory");
 
   /* assign larger alignment types earlier */
-  RS_W_PT(rs) = (float (*)[3])RS_BASE(rs);
-  RS_W_DIR(rs) = (int4 *)(RS_W_PT(rs) + n + extra_points);
-  RS_BRT(rs) = (TMbright *)(RS_W_DIR(rs) + n + extra_points);
-  RS_CHR(rs) = (BYTE (*)[3])(RS_BRT(rs) + n);
-  RS_RGB(rs) = (BYTE (*)[3])(RS_CHR(rs) + n);
-  RS_MAX_SAMP(rs) = n;
-  RS_MAX_AUX_PT(rs) = n + extra_points;
+  S_W_PT(s) = (float (*)[3])S_BASE(s);
+  S_W_DIR(s) = (int4 *)(S_W_PT(s) + n + extra_points);
+#ifndef HP_VERSION 
+ S_BRT(s) = (TMbright *)(S_W_DIR(s) + n);
+  S_CHR(s) = (BYTE (*)[3])(S_BRT(s) + n);
+#else
+  S_CHR(s) = (BYTE (*)[3])(S_W_DIR(s) + n);
+#endif
+  S_RGB(s) = (BYTE (*)[3])(S_CHR(s) + n);
+  S_MAX_SAMP(s) = n;
+  S_MAX_BASE_PT(s) = n + extra_points;
 
-  smClear_samples(sm);
+  /* Allocate memory for a per/sample bit flag */
+  if(!(samp_flag = (int4 *)malloc(FLAG_BYTES(n))))
+    error(SYSTEM,"smInit_samples(): Unable to allocate flag memory");
 
-  return(n);
+  sInit(s);
+  *nptr = n;
+  
+  return(s);
 }
 
-smClear_aux_samples(sm)
-SM *sm;
-{
-  RS_NEXT_AUX_PT(SM_SAMP(sm)) = RS_MAX_SAMP(SM_SAMP(sm));
-}
 
+/* Add a base point to the sample structure: only the world point
+   is added: These points are not displayed-they are used to form the
+   initial mesh
+ */
 int
-smClear_samples(sm)
-     SM *sm;
+sAdd_base_point(s,v)
+     SAMP *s;
+     FVECT v;
 {
-  RSAMP *samp;
-
-  samp = SM_SAMP(sm);
-  RS_FREE_SAMP(samp) = -1;
-  RS_REPLACE_SAMP(samp) = 0;
-  RS_NUM_SAMP(samp) = 0;
-  RS_TONE_MAP(samp) = 0;
-  smClear_aux_samples(sm);
-  return(1);
-}
-
-int
-smAdd_aux_point(sm,v,d)
-     SM *sm;
-     FVECT v,d;
-{
-    RSAMP *samp;
     int id;
-    
-    /* Get the SM sample array */    
-    samp = SM_SAMP(sm);
+
     /* Get pointer to next available point */
-    id = RS_NEXT_AUX_PT(samp);
-    if(id >= RS_MAX_AUX_PT(samp))
+    id = S_NEXT_BASE_PT(s);
+    if(id >= S_MAX_BASE_PT(s))
        return(-1);
 
     /* Update free aux pointer */
-    RS_NEXT_AUX_PT(samp)++;
+    S_NEXT_BASE_PT(s)++;
 
     /* Copy vector into point */
-    VCOPY(RS_NTH_W_PT(samp,id),v);
-    RS_NTH_W_DIR(samp,id) = encodedir(d);
+    VCOPY(S_NTH_W_PT(s,id),v);
     return(id);
 }
 
+/* Initialize the sample 'id' to contain world point 'p', direction 'd' and
+   color 'c'. If 'p' is NULL, a direction only is represented in 'd'. In
+   this case, the world point is set to the projection of the direction on
+   the view sphere, and the direction value is set to -1
+ */
 void
-smInit_sample(sm,id,c,d,p)
-   SM *sm;
+sInit_samp(s,id,c,d,p)
+   SAMP *s;
    int id;
    COLR c;
    FVECT d,p;
 {
-   RSAMP *samp;
-
-   samp = SM_SAMP(sm);
-    if(p)
-   {
-       /* Copy vector into point */
-       VCOPY(RS_NTH_W_PT(samp,id),p);
-       RS_NTH_W_DIR(samp,id) = encodedir(d);
-   }
+    /* Copy vector into point */
+    VCOPY(S_NTH_W_PT(s,id),p);
+    if(d)
+      S_NTH_W_DIR(s,id) = encodedir(d);
+  /* direction only */
     else
-       {
-	   VADD(RS_NTH_W_PT(samp,id),d,SM_VIEW_CENTER(sm));
-	   RS_NTH_W_DIR(samp,id) = -1;
-       }
-    
+      S_NTH_W_DIR(s,id) = -1;
+
+   /* calculate the brightness and chrominance */
 #ifndef TEST_DRIVER
-    tmCvColrs(&RS_NTH_BRT(samp,id),RS_NTH_CHR(samp,id),c,1);
+    tmCvColrs(&S_NTH_BRT(s,id),S_NTH_CHR(s,id),c,1);
 #else
     if(c)
     {
-	RS_NTH_RGB(samp,id)[0] = c[0];
-	RS_NTH_RGB(samp,id)[1] = c[1];
-	RS_NTH_RGB(samp,id)[2] = c[2];
+      S_NTH_RGB(s,id)[0] = c[0];
+      S_NTH_RGB(s,id)[1] = c[1];
+      S_NTH_RGB(s,id)[2] = c[2];
     }
     else
     { 
-	RS_NTH_RGB(samp,id)[0] = 100;
-       RS_NTH_RGB(samp,id)[1] = 0;
-       RS_NTH_RGB(samp,id)[2] = 0;
+	S_NTH_RGB(s,id)[0] = 100;
+       S_NTH_RGB(s,id)[1] = 0;
+       S_NTH_RGB(s,id)[2] = 0;
     }
 #endif
-}
-
-
-void
-smReset_sample(sm,id,n_id)
-   SM *sm;
-   int id,n_id;
-{
-   RSAMP *samp;
-
-   samp = SM_SAMP(sm);
-    
-    /* Copy vector into point */
-    VCOPY(RS_NTH_W_PT(samp,id),RS_NTH_W_PT(samp,n_id));
-    RS_NTH_W_DIR(samp,id) = RS_NTH_W_DIR(samp,n_id);
-
-    RS_NTH_BRT(samp,id) = RS_NTH_BRT(samp,n_id);
-    RS_NTH_CHR(samp,id)[0] = RS_NTH_CHR(samp,n_id)[0];
-    RS_NTH_CHR(samp,id)[1] = RS_NTH_CHR(samp,n_id)[1];
-    RS_NTH_CHR(samp,id)[2] = RS_NTH_CHR(samp,n_id)[2];
-    RS_NTH_RGB(samp,id)[0] = RS_NTH_RGB(samp,n_id)[0];
-    RS_NTH_RGB(samp,id)[1] = RS_NTH_RGB(samp,n_id)[1];
-    RS_NTH_RGB(samp,id)[2] = RS_NTH_RGB(samp,n_id)[2];
+    /* Set ACTIVE bit upon creation */
+    S_SET_FLAG(id);
 
 }
 
+
+/* Copy the values of sample n_id into sample id: Note must not call with
+   Base point n_id
+*/
 int
-rsAlloc_samp(samp,replaced)
-   RSAMP *samp;
+sReset_samp(s,n_id,id)
+   SAMP *s;
+   int n_id,id;
+{
+
+#ifdef DEBUG
+   if(id <0||id >= S_MAX_SAMP(s)||n_id <0||n_id >= S_MAX_SAMP(s))
+   {
+     eputs("smReset_sample():invalid sample id\n");
+     return(0);
+   }
+#endif
+
+ /* Copy vector into point */
+   VCOPY(S_NTH_W_PT(s,n_id),S_NTH_W_PT(s,id));
+   S_NTH_W_DIR(s,n_id) = S_NTH_W_DIR(s,id);
+
+#ifndef HP_VERSION
+   S_NTH_BRT(s,n_id) = S_NTH_BRT(s,id);
+#endif
+   S_NTH_CHR(s,n_id)[0] = S_NTH_CHR(s,id)[0];
+   S_NTH_CHR(s,n_id)[1] = S_NTH_CHR(s,id)[1];
+   S_NTH_CHR(s,n_id)[2] = S_NTH_CHR(s,id)[2];
+   return(1);
+}
+
+/* Allocate a new sample. If an existing sample was replaced: set flag */
+int
+sAlloc_samp(s,replaced)
+   SAMP *s;
    int *replaced;
    
 {
     int id;
 
     if(replaced)
-       *replaced = FALSE;
-    if(RS_NUM_SAMP(samp) < RS_MAX_SAMP(samp))
+       *replaced = 0;
+
+    if((id = S_FREE_SAMP(s)) != INVALID)
     {
-	id = RS_NUM_SAMP(samp);
-	RS_NUM_SAMP(samp)++;
-	
+      S_FREE_SAMP(s) = INVALID;
+      return(id);
     }
+    /* If havn't reached end of sample array:return next sample */
+    if(S_NUM_SAMP(s) < S_MAX_SAMP(s))
+	id = S_NUM_SAMP(s)++;
     else
-       if(RS_REPLACE_SAMP(samp) != -1)
-	{
-	    id = RS_REPLACE_SAMP(samp);
-	    /* NOTE: NEED to do LRU later*/
-	    RS_REPLACE_SAMP(samp) = (id + 1)% RS_MAX_SAMP(samp);
-	    if(replaced)
-	       *replaced = TRUE;
-	}
-       else
-	  if(RS_FREE_SAMP(samp) != -1)
-	     {
-		 id = RS_FREE_SAMP(samp);
-		 RS_FREE_SAMP(samp) = RS_NTH_W_DIR(samp,id);
-	     }
-	  else
-	     {
+    {
+      /* CLOCKED LRU replacement policy: Search through samples starting 
+	 with S_REPLACE_SAMP for a sample that does not have its active 
+	 bit set. Clear bit along the way 
+       */
+      id = S_REPLACE_SAMP(s);
+      while(S_IS_FLAG(id))
+      {
+	S_CLR_FLAG(id);
+	id = (id +1)% S_MAX_SAMP(s);
+      }
+      S_REPLACE_SAMP(s) = id = (id +1)% S_MAX_SAMP(s);
+      if(replaced)
+	*replaced = 1;
+    }
+    return(id);
+}
+
+/* Set the sample flag to be unused- so will get replaced on next LRU
+   iteration
+   */
+
+/* NOTE: Do we want a free list as well? */
+int
+sDelete_samp(s,id)
+SAMP *s;
+int id;
+{
 #ifdef DEBUG
-		 eputs("rsAlloc_samp(): no samples available");
+    /* Fist check for a valid id */
+    if(id >= S_MAX_SAMP(s) || id < 0)
+       return(0);
 #endif
-		 id = -1;
-	     }
     
-    return(id);
+    S_CLR_FLAG(id);
+    return(1);
 }
-
-int
-rsDelete_sample(samp,id)
-RSAMP *samp;
-int id;
-{
-    /* First check for a valid id */
-    if(id >= RS_MAX_SAMP(samp) || id < 0)
-       return(FALSE);
-    
-    RS_NTH_W_DIR(samp,id) = RS_FREE_SAMP(samp);
-    RS_FREE_SAMP(samp) = id;
-
-    return(TRUE);
-}
-
-int
-smDelete_sample(sm,id)
-SM *sm;
-int id;
-{
-    RSAMP *samp;
-
-    samp = SM_SAMP(sm);
-    return(rsDelete_sample(samp,id));
-}
-
-/* NEEDS: to add free list- and bit for clocked LRU  */
-int
-smAdd_sample_point(sm,c,dir,p)
-     SM *sm;
-     COLR c;
-     FVECT dir;
-     FVECT p;
-
-{
-    RSAMP *samp;
-    int id;
-    int replaced;
-    
-    /* Get the SM sample array */    
-    samp = SM_SAMP(sm);
-    /* Get pointer to next available point */
-    id = rsAlloc_samp(samp,&replaced);
-    if(id < 0)
-       return(-1);
-
-    if(replaced)
-       smMesh_remove_vertex(sm,id);
-    
-    smInit_sample(sm,id,c,dir,p);
-
-    return(id);
-}
-
-
-
-
 
 
 
