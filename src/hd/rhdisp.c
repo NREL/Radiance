@@ -14,6 +14,10 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "selcall.h"
 #include <ctype.h>
 
+#ifndef VIEWHISTLEN
+#define VIEWHISTLEN	2	/* number of remembered views */
+#endif
+
 HOLO	*hdlist[HDMAX+1];	/* global holodeck list */
 
 char	cmdlist[DC_NCMDS][8] = DC_INIT;
@@ -58,12 +62,12 @@ char	*argv[];
 				printview();
 			if (inp & DEV_NEWVIEW)
 				new_view(&odev.v);
+			if (inp & DEV_LASTVIEW)
+				new_view(NULL);
 			if (inp & DEV_SHUTDOWN)
 				serv_request(DR_SHUTDOWN, 0, NULL);
-			if (inp & DEV_REDRAW) {
-				imm_mode = 1;	/* preempt updates */
-				beam_sync();
-			}
+			if (inp & DEV_REDRAW)
+				imm_mode = beam_sync() > 0;
 			if (inp & DEV_WAIT)
 				pause = 1;
 			if (inp & DEV_RESUME) {
@@ -190,22 +194,38 @@ register PACKHEAD	*p;
 
 
 new_view(v)			/* change view parameters */
-VIEW	*v;
+register VIEW	*v;
 {
+	static VIEW	viewhist[VIEWHISTLEN];
+	static unsigned	nhist;
 	char	*err;
-
-	do {
-		if ((err = setview(v)) != NULL) {
-			error(COMMAND, err);
+				/* restore previous view? */
+	if (v == NULL) {
+		if (nhist < 2) {
+			error(COMMAND, "no previous view");
 			return;
 		}
-		if (v->type == VT_PAR) {
-			error(COMMAND, "cannot handle parallel views");
-			return;
-		}
-		dev_view(v);		/* update display driver */
-		dev_flush();		/* update screen */
-	} while (!beam_view(v));	/* update beam list */
+		nhist--;	/* get one before last setting */
+		v = viewhist + ((nhist-1)%VIEWHISTLEN);
+	} else if ((err = setview(v)) != NULL) {
+		error(COMMAND, err);
+		return;
+	}
+again:
+	if (v->type == VT_PAR) {
+		error(COMMAND, "cannot handle parallel views");
+		return;
+	}
+	if (!dev_view(v))	/* update display driver */
+		goto again;
+	dev_flush();		/* update screen */
+	if (!beam_view(v))	/* update beam list */
+		goto again;
+				/* record new view */
+	if (v < viewhist || v >= viewhist+VIEWHISTLEN) {
+		copystruct(viewhist + (nhist%VIEWHISTLEN), v);
+		nhist++;
+	}
 }
 
 
@@ -245,6 +265,9 @@ usr_input()			/* get user input and process it */
 		break;
 	case DC_GETVIEW:		/* print the current view */
 		printview();
+		break;
+	case DC_LASTVIEW:		/* restore previous view */
+		new_view(NULL);
 		break;
 	case DC_PAUSE:			/* pause the current calculation */
 	case DC_RESUME:			/* resume the calculation */
