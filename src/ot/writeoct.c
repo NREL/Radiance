@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -18,7 +18,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "otypes.h"
 
-static int  putint(), putstr(), puttree(), putobj();
+static int  oputint(), oputstr(), puttree(), putobj();
 
 
 writeoct(store, scene, ofn)		/* write octree structures to stdout */
@@ -29,24 +29,24 @@ char  *ofn[];
 	char  sbuf[64];
 	register int  i;
 					/* write format number */
-	putint((long)(OCTMAGIC+sizeof(OBJECT)), 2);
+	oputint((long)(OCTMAGIC+sizeof(OBJECT)), 2);
 
 	if (!(store & IO_BOUNDS))
 		return;
 					/* write boundaries */
 	for (i = 0; i < 3; i++) {
 		sprintf(sbuf, "%.12g", scene->cuorg[i]);
-		putstr(sbuf);
+		oputstr(sbuf);
 	}
 	sprintf(sbuf, "%.12g", scene->cusize);
-	putstr(sbuf);
+	oputstr(sbuf);
 					/* write object file names */
 	if (store & IO_FILES)
 		for (i = 0; ofn[i] != NULL; i++)
-			putstr(ofn[i]);
-	putstr("");
+			oputstr(ofn[i]);
+	oputstr("");
 					/* write number of objects */
-	putint((long)nobjects, sizeof(OBJECT));
+	oputint((long)nobjects, sizeof(OBJECT));
 
 	if (!(store & IO_TREE))
 		return;
@@ -57,8 +57,8 @@ char  *ofn[];
 		return;
 					/* write the scene */
 	for (i = 0; i < NUMOTYPE; i++)
-		putstr(ofun[i].funame);
-	putstr("");
+		oputstr(ofun[i].funame);
+	oputstr("");
 	for (i = 0; i < nobjects; i++)
 		putobj(objptr(i));
 	putobj(NULL);
@@ -66,12 +66,10 @@ char  *ofn[];
 
 
 static
-putstr(s)			/* write null-terminated string to stdout */
+oputstr(s)			/* write null-terminated string to stdout */
 register char  *s;
 {
-	do
-		putc(*s, stdout);
-	while (*s++);
+	putstr(s, stdout);
 	if (ferror(stdout))
 		error(SYSTEM, "write error in putstr");
 }
@@ -86,31 +84,28 @@ OCTREE  fn;
 
 	objset(oset, fn);
 	for (i = 0; i <= oset[0]; i++)
-		putint((long)oset[i], sizeof(OBJECT));
+		oputint((long)oset[i], sizeof(OBJECT));
 }
 
 
 static
-putint(i, siz)			/* write a siz-byte integer to stdout */
+oputint(i, siz)			/* write a siz-byte integer to stdout */
 register long  i;
 register int  siz;
 {
-	while (siz--)
-		putc(i>>(siz<<3) & 0xff, stdout);
+	putint(i, siz, stdout);
 	if (ferror(stdout))
 		error(SYSTEM, "write error in putint");
 }
 
 
 static
-putflt(f)			/* put out floating point number */
+oputflt(f)			/* put out floating point number */
 double  f;
 {
-	extern double  frexp();
-	int  e;
-
-	putint((long)(frexp(f,&e)*0x7fffffff), 4);
-	putint((long)e, 1);
+	putflt(f, stdout);
+	if (ferror(stdout))
+		error(SYSTEM, "write error in putflt");
 }
 
 
@@ -139,21 +134,21 @@ register OBJREC  *o;
 	register int  i;
 
 	if (o == NULL) {		/* terminator */
-		putint(-1L, 1);
+		oputint(-1L, 1);
 		return;
 	}
-	putint((long)o->otype, 1);
-	putint((long)o->omod, sizeof(OBJECT));
-	putstr(o->oname);
-	putint((long)o->oargs.nsargs, 2);
+	oputint((long)o->otype, 1);
+	oputint((long)o->omod, sizeof(OBJECT));
+	oputstr(o->oname);
+	oputint((long)o->oargs.nsargs, 2);
 	for (i = 0; i < o->oargs.nsargs; i++)
-		putstr(o->oargs.sarg[i]);
+		oputstr(o->oargs.sarg[i]);
 #ifdef  IARGS
-	putint((long)o->oargs.niargs, 2);
+	oputint((long)o->oargs.niargs, 2);
 	for (i = 0; i < o->oargs.niargs; i++)
-		putint((long)o->oargs.iarg[i], 4);
+		oputint((long)o->oargs.iarg[i], 4);
 #endif
-	putint((long)o->oargs.nfargs, 2);
+	oputint((long)o->oargs.nfargs, 2);
 	for (i = 0; i < o->oargs.nfargs; i++)
-		putflt(o->oargs.farg[i]);
+		oputflt(o->oargs.farg[i]);
 }
