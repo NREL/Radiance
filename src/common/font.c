@@ -15,9 +15,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define galloc(nv)	(GLYPH *)malloc(sizeof(GLYPH)+2*sizeof(GORD)*(nv))
 
 
-extern char  *libpath;			/* list of library directories */
-
-extern char  *fgetword();
+extern char  *fgetword(), *getlibpath();
 
 static FONT	*fontlist = NULL;	/* list of loaded fonts */
 
@@ -40,7 +38,7 @@ char  *fname;
 		if (!strcmp(f->name, fname))
 			return(f);
 						/* load the font file */
-	if ((pathname = getpath(fname, libpath, R_OK)) == NULL) {
+	if ((pathname = getpath(fname, getlibpath(), R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find font file \"%s\"", fname);
 		error(USER, errmsg);
 	}
