@@ -318,7 +318,7 @@ register int  sn;	/* target source number */
 #endif
 				return(f);	/* too small a target! */
 			}
-			peano(offsdir, 3, urand(931*i+5827+ssn), .005);
+			peano(offsdir, 3, urand(sn*931+5827+ssn), .005);
 			for (i = 0; i < 3; i++)
 				offsdir[i] = or*(1. - 2.*offsdir[i]);
 			ssn++;
@@ -348,9 +348,7 @@ register int  sn;	/* target source number */
 		nok++;
 					/* check against obstructions */
 		rayclear(&sr);
-		sr.revf = raytrace;
-		rayvalue(&sr);
-		if (bright(sr.rcol) > FTINY)
+		if (!localhit(&sr, &thescene) || sr.ro == source[sn].so)
 			nhit++;
 		if (nhit > 0 && nhit < nok) {
 #ifdef DEBUG
