@@ -12,6 +12,8 @@ CFLAGS = -DSTRICT -O -f68881 /usr/lib/f68881.il
 
 INSTDIR = /usr/local/ray
 
+INSTALL = install
+
 COMPAT = malloc.o
 
 oconv:	dummy.o misc.o objset.o oconv.o octree.o readobj.o \
@@ -24,8 +26,7 @@ face.o plocate.o clip.o cone.o o_cone.o instance.o o_instance.o mat4.o xf.o \
 bbox.o savestr.o header.o $(COMPAT) -lm
 
 install:	oconv
-	sccs check
-	install oconv $(INSTDIR)
+	$(INSTALL) oconv $(INSTDIR)
 
 xf.o:	xf.c
 	cc $(CFLAGS) -DINVXF -c xf.c
