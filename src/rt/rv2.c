@@ -171,18 +171,12 @@ char  *s;
 
 	if (getinterest(s, 1, nv.vdir, &zfact) < 0)
 		return;
+	nv.type = ourview.type;
 	VCOPY(nv.vp, ourview.vp);
 	VCOPY(nv.vup, ourview.vup);
 	nv.hoff = ourview.hoff; nv.voff = ourview.voff;
-	if ((nv.type = ourview.type) == VT_PAR) {
-		nv.horiz = ourview.horiz / zfact;
-		nv.vert = ourview.vert / zfact;
-	} else {
-		nv.horiz = atan(tan(ourview.horiz*(PI/180./2.))/zfact) /
-				(PI/180./2.);
-		nv.vert = atan(tan(ourview.vert*(PI/180./2.))/zfact) /
-				(PI/180./2.);
-	}
+	nv.horiz = ourview.horiz; nv.vert = ourview.vert;
+	zoomview(&nv, zfact);
 	newview(&nv);
 }
 
@@ -212,6 +206,7 @@ char  *s;
 		error(COMMAND, "missing angle");
 		return;
 	}
+	nv.type = ourview.type;
 	VCOPY(nv.vp, ourview.vp);
 	VCOPY(nv.vup, ourview.vup);
 	nv.hoff = ourview.hoff; nv.voff = ourview.voff;
@@ -221,15 +216,8 @@ char  *s;
 		normalize(v1);
 		spinvector(nv.vdir, nv.vdir, v1, elev*(PI/180.));
 	}
-	if ((nv.type = ourview.type) == VT_PAR) {
-		nv.horiz = ourview.horiz / zfact;
-		nv.vert = ourview.vert / zfact;
-	} else {
-		nv.horiz = atan(tan(ourview.horiz*(PI/180./2.))/zfact) /
-				(PI/180./2.);
-		nv.vert = atan(tan(ourview.vert*(PI/180./2.))/zfact) /
-				(PI/180./2.);
-	}
+	nv.horiz = ourview.horiz; nv.vert = ourview.vert;
+	zoomview(&nv, zfact);
 	newview(&nv);
 }
 
@@ -541,9 +529,12 @@ char  *s;
 		if ((*dev->getcur)(&x, &y) == ABORT)
 			return;
 
-		viewray(thisray.rorg, thisray.rdir, &ourview,
-				(x+.5)/hresolu, (y+.5)/vresolu);
-		
+		if (viewray(thisray.rorg, thisray.rdir, &ourview,
+				(x+.5)/hresolu, (y+.5)/vresolu) < 0) {
+			error(COMMAND, "not on image");
+			return;
+		}
+
 	} else if (normalize(thisray.rdir) == 0.0) {
 		error(COMMAND, "zero ray direction");
 		return;
