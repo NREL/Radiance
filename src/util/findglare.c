@@ -105,10 +105,18 @@ char	*argv[];
 			combine = !combine;
 			break;
 		case 'd':
+			if (argv[i][2] == 'v') {
+				rtargv[rtargc++] = argv[i];
+				break;
+			}
+			/* FALL THROUGH */
 		case 'l':
 		case 's':
 			rtargv[rtargc++] = argv[i];
 			rtargv[rtargc++] = argv[++i];
+			break;
+		case 'w':
+			rtargv[rtargc++] = argv[i];
 			break;
 		case 'a':
 			rtargv[rtargc++] = argv[i];
