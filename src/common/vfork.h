@@ -6,18 +6,11 @@
  * Header for routines using vfork() system call.
  */
 
-#ifdef BSD
 
-#ifdef sparc
-#include "/usr/include/vfork.h"
-#else
-extern int	vfork();
-#endif
-
-#else
-
-extern int	fork();
+#if !defined(BSD) || defined(sparc)
 
 #define	vfork	fork
 
 #endif
+
+extern int	vfork();
