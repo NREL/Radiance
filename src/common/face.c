@@ -63,8 +63,10 @@ OBJREC  *o;
 		f->nv--;
 						/* compute area and normal */
 	f->norm[0] = f->norm[1] = f->norm[2] = 0.0;
-	v1[0] = v1[1] = v1[2] = 0.0;
-	for (i = 1; i < f->nv; i++) {
+	v1[0] = VERTEX(f,1)[0] - VERTEX(f,0)[0];
+	v1[1] = VERTEX(f,1)[1] - VERTEX(f,0)[1];
+	v1[2] = VERTEX(f,1)[2] - VERTEX(f,0)[2];
+	for (i = 2; i < f->nv; i++) {
 		v2[0] = VERTEX(f,i)[0] - VERTEX(f,0)[0];
 		v2[1] = VERTEX(f,i)[1] - VERTEX(f,0)[1];
 		v2[2] = VERTEX(f,i)[2] - VERTEX(f,0)[2];
