@@ -455,16 +455,16 @@ drawsources(
 					continue;	/* missed/blocked */
 							/* modify pixel */
 				if (zbf[y-y0] != NULL &&
-						sr.rt < 0.99*zbf[y-y0][x-x0])
+						sr.rt < 0.99*zbf[y-y0][x-x0]) {
 					zbf[y-y0][x-x0] = sr.rt;
-				else if (!bigdiff(sr.rcol, pic[y-y0][x-x0],
-						0.01))	/* source sample */
+				} else if (!bigdiff(sr.rcol, pic[y-y0][x-x0],
+						0.01)) { /* source sample */
 					scalecolor(pic[y-y0][x-x0], w);
-				else {
-					scalecolor(sr.rcol, w);
-					scalecolor(pic[y-y0][x-x0], 1.-w);
-					addcolor(pic[y-y0][x-x0], sr.rcol);
+					continue;
 				}
+				scalecolor(sr.rcol, w);
+				scalecolor(pic[y-y0][x-x0], 1.-w);
+				addcolor(pic[y-y0][x-x0], sr.rcol);
 			}
 	}
 }
