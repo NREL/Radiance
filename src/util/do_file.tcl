@@ -242,6 +242,10 @@ proc newsave f {		# save a RIF
 			return 0
 		}
 	}
+	if {! [file writable $f] && [catch {exec chmod u+w $f} curmess]} {
+		beep
+		return 0
+	}
 	if [save_vars $f] {
 		set rifname [pwd]/$f
 		set readonly 0
