@@ -175,9 +175,6 @@ static
 x11_clear(xres, yres)			/* clear our display */
 int  xres, yres;
 {
-						/* destroy command line */
-	if (comline != NULL)
-		xt_close(comline);
 						/* check limits */
 	if (xres < MINWIDTH)
 		xres = MINWIDTH;
@@ -193,7 +190,16 @@ int  xres, yres;
 		sleep(2);			/* wait for window manager */
 		XSync(ourdisplay, 1);		/* discard input */
 	}
+	XClearWindow(ourdisplay, gwind);
+						/* reinitialize color table */
+	if (ourvisual->class == PseudoColor)
+		if (getpixels() == 0)
+			stderr_v("cannot allocate colors\n");
+		else
+			new_ctab(ncolors);
 						/* get new command line */
+	if (comline != NULL)
+		xt_close(comline);
 	comline = xt_open(ourdisplay,
 			DefaultGC(ourdisplay,ourscreen),
 			gwind, 0, gheight, gwidth, COMHEIGHT, 0, COMFN);
@@ -202,14 +208,6 @@ int  xres, yres;
 		quit(1);
 	}
 	XSelectInput(ourdisplay, comline->w, ExposureMask);
-						/* clear graphics window */
-	XClearWindow(ourdisplay, gwind);
-						/* reinitialize color table */
-	if (ourvisual->class == PseudoColor)
-		if (getpixels() == 0)
-			stderr_v("cannot allocate colors\n");
-		else
-			new_ctab(ncolors);
 						/* remove earmuffs */
 	XSelectInput(ourdisplay, gwind,
 		StructureNotifyMask|ExposureMask|KeyPressMask|ButtonPressMask);
