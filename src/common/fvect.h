@@ -19,4 +19,4 @@ typedef FLOAT  FVECT[3];
 				(vr)[1]=(v1)[1]+(f)*(v2)[1], \
 				(vr)[2]=(v1)[2]+(f)*(v2)[2])
 
-extern double  sqrt(), fdot(), dist2(), dist2lseg(), dist2line(), normalize();
+extern double  fdot(), dist2(), dist2lseg(), dist2line(), normalize();

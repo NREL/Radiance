@@ -24,6 +24,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <errno.h>
 
+#include  <math.h>
+
 #include  "calcomp.h"
 
 #define	 MAXLINE	256		/* maximum line length */
@@ -35,7 +37,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #ifndef atof
 extern double  atof();
 #endif
-extern double  pow();
 extern char  *fgets(), *savestr();
 extern char  *emalloc(), *ecalloc();
 extern EPNODE  *curfunc;

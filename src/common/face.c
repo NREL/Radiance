@@ -34,7 +34,6 @@ FACE *
 getface(o)			/* get arguments for a face */
 OBJREC  *o;
 {
-	double  fabs();
 	double  d1;
 	int  badvert;
 	FVECT  v1, v2, v3;

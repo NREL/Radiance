@@ -20,6 +20,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <errno.h>
 
+#include  <math.h>
+
 #include  "calcomp.h"
 
 				/* bits in argument flag (better be right!) */
@@ -469,7 +471,6 @@ l_select()		/* return argument #(A1+1) */
 static double
 l_rand()		/* random function between 0 and 1 */
 {
-    extern double  floor();
     double  x;
 
     x = argument(1);
@@ -483,8 +484,6 @@ l_rand()		/* random function between 0 and 1 */
 static double
 l_floor()		/* return largest integer not greater than arg1 */
 {
-    extern double  floor();
-
     return(floor(argument(1)));
 }
 
@@ -492,8 +491,6 @@ l_floor()		/* return largest integer not greater than arg1 */
 static double
 l_ceil()		/* return smallest integer not less than arg1 */
 {
-    extern double  ceil();
-
     return(ceil(argument(1)));
 }
 
@@ -502,8 +499,6 @@ l_ceil()		/* return smallest integer not less than arg1 */
 static double
 l_sqrt()
 {
-    extern double  sqrt();
-
     return(sqrt(argument(1)));
 }
 
@@ -511,8 +506,6 @@ l_sqrt()
 static double
 l_sin()
 {
-    extern double  sin();
-
     return(sin(argument(1)));
 }
 
@@ -520,8 +513,6 @@ l_sin()
 static double
 l_cos()
 {
-    extern double  cos();
-
     return(cos(argument(1)));
 }
 
@@ -529,8 +520,6 @@ l_cos()
 static double
 l_tan()
 {
-    extern double  tan();
-
     return(tan(argument(1)));
 }
 
@@ -538,8 +527,6 @@ l_tan()
 static double
 l_asin()
 {
-    extern double  asin();
-
     return(asin(argument(1)));
 }
 
@@ -547,8 +534,6 @@ l_asin()
 static double
 l_acos()
 {
-    extern double  acos();
-
     return(acos(argument(1)));
 }
 
@@ -556,8 +541,6 @@ l_acos()
 static double
 l_atan()
 {
-    extern double  atan();
-
     return(atan(argument(1)));
 }
 
@@ -565,8 +548,6 @@ l_atan()
 static double
 l_atan2()
 {
-    extern double  atan2();
-
     return(atan2(argument(1), argument(2)));
 }
 
@@ -574,8 +555,6 @@ l_atan2()
 static double
 l_exp()
 {
-    extern double  exp();
-
     return(exp(argument(1)));
 }
 
@@ -583,8 +562,6 @@ l_exp()
 static double
 l_log()
 {
-    extern double  log();
-
     return(log(argument(1)));
 }
 
@@ -592,8 +569,6 @@ l_log()
 static double
 l_log10()
 {
-    extern double  log10();
-
     return(log10(argument(1)));
 }
 #endif
