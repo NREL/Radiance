@@ -367,7 +367,7 @@ register HDGRID	*gp;
 		for (i = 0; i < 3; i++)
 			len[i] = VLEN(gp->xv[i]);
 		if (!vdef(GRID)) {
-			d = 2/5e5*( len[0]*len[0]*(len[1]*len[1] +
+			d = 2/2e5*( len[0]*len[0]*(len[1]*len[1] +
 					len[2]*len[2] + 4*len[1]*len[2])
 				+ len[1]*len[1]*len[2]*(len[2] + 4*len[0])
 				+ 4*len[0]*len[1]*len[2]*len[2] );
