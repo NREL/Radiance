@@ -36,7 +36,7 @@ FVECT	dv;
 	for (i = 0; i < 3; i++)
 		if (dv[i] < 0.) {
 			cd[i] = dv[i] * -DCSCALE;
-			dc |= 1<<i;
+			dc |= FXNEG<<i;
 		} else
 			cd[i] = dv[i] * DCSCALE;
 	if (cd[0] <= cd[1]) {
@@ -60,8 +60,8 @@ register int4	dc;
 {
 	double	d1, d2, der;
 
-	d1 = ((dc>>F1SFT & FMASK)+.5)/DCSCALE;
-	d2 = ((dc>>F2SFT & FMASK)+.5)/DCSCALE;
+	d1 = ((dc>>F1SFT & FMASK)+.5)*(1./DCSCALE);
+	d2 = ((dc>>F2SFT & FMASK)+.5)*(1./DCSCALE);
 	der = sqrt(1. - d1*d1 - d2*d2);
 	if (dc & F1X) {
 		dv[0] = d1;
