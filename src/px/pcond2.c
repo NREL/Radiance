@@ -60,9 +60,6 @@ COLOR *
 nextscan()				/* read and condition next scanline */
 {
 	if (nread >= numscans(&inpres)) {
-#ifdef DEBUG
-		fputs("done\n", stderr);
-#endif
 		free((char *)scanbuf);
 		return(scanbuf = NULL);
 	}
@@ -100,23 +97,12 @@ firstscan()				/* return first processed scanline */
 			comprgb2rgbmat(mbcond.cmat, inprims, outprims);
 		else
 			compxyz2rgbmat(mbcond.cmat, outprims);
-	if (what2do&DO_ACUITY) {
-#ifdef DEBUG
-		fprintf(stderr, "%s: initializing acuity sampling...",
-				progname);
-#endif
+	if (what2do&DO_ACUITY)
 		initacuity();
-#ifdef DEBUG
-		fprintf(stderr, "done\n");
-#endif
-	}
 	scanbuf = (COLOR *)malloc(scanlen(&inpres)*sizeof(COLOR));
 	if (scanbuf == NULL)
 		syserror("malloc");
 	nread = 0;
-#ifdef DEBUG
-	fprintf(stderr, "%s: processing image...", progname);
-#endif
 	return(nextscan());
 }
 
