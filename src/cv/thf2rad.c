@@ -24,7 +24,7 @@ typedef struct {
 
 double	rad = 0.0;			/* line radius */
 
-#ifdef  DECL_ATOF
+#ifdef  DCL_ATOF
 extern double  atof();
 #endif
 
