@@ -81,6 +81,7 @@ extern double  pixaspect;		/* pixel aspect ratio */
 extern int  psample;			/* pixel sample size */
 extern double  maxdiff;			/* max. sample difference */
 extern double  dstrpix;			/* square pixel distribution */
+extern int  psuper;			/* pixel super-sampling rate */
 
 extern double  dstrsrc;			/* square source distribution */
 extern double  shadthresh;		/* shadow threshold */
@@ -126,6 +127,8 @@ char  *argv[];
 		libpath = DEFPATH;
 					/* initialize object types */
 	initotypes();
+					/* initialize urand */
+	initurand(512);
 					/* option city */
 	for (i = 1; i < argc && argv[i][0] == '-'; i++) {
 		if (!strcmp(argv[i], "-defaults") ||
@@ -200,6 +203,10 @@ char  *argv[];
 			case 'j':				/* jitter */
 				check(3,1);
 				dstrpix = atof(argv[++i]);
+				break;
+			case 's':				/* super-samp */
+				check(3,1);
+				psuper = atoi(argv[++i]);
 				break;
 #endif
 			default:
@@ -575,6 +582,7 @@ printdefaults()			/* print default values to stdout */
 #endif
 #if  RPICT
 	printf("-sj %f\t\t\t# sample jitter\n", dstrpix);
+	printf("-ss %-9d\t\t\t# super-sample rate\n", psuper);
 #endif
 	printf("-dt %f\t\t\t# direct threshold\n", shadthresh);
 	printf("-dc %f\t\t\t# direct certainty\n", shadcert);

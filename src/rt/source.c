@@ -215,9 +215,13 @@ register int  sn;		/* source number */
 	}
 	if (dstrsrc > FTINY) {
 					/* distribute source direction */
-		for (i = 0; i < 3; i++)
-			vd[i] = dstrsrc * source[sn].ss * (1.0 - 2.0*frandom());
-
+		dimlist[ndims++] = sn;
+		for (i = 0; i < 3; i++) {
+			dimlist[ndims] = i + 8831;
+			vd[i] = dstrsrc * source[sn].ss *
+		(1.0 - 2.0*urand(ilhash(dimlist,ndims+1)+samplendx));
+		}
+		ndims--;
 		if (norm != NULL) {		/* project offset */
 			d = DOT(vd, norm);
 			for (i = 0; i < 3; i++)

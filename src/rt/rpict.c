@@ -24,6 +24,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "random.h"
 
+int  dimlist[MAXDIM];			/* sampling dimensions */
+int  ndims = 0;				/* number of sampling dimensions */
+int  samplendx;				/* sample index number */
+
 VIEW  ourview = STDVIEW;		/* view parameters */
 int  hresolu = 512;			/* horizontal resolution */
 int  vresolu = 512;			/* vertical resolution */
@@ -32,6 +36,7 @@ double  pixaspect = 1.0;		/* pixel aspect ratio */
 int  psample = 4;			/* pixel sample size */
 double  maxdiff = .05;			/* max. difference for interpolation */
 double  dstrpix = 0.67;			/* square pixel distribution */
+int  psuper = 2;			/* pixel super-sampling rate */
 
 double  dstrsrc = 0.0;			/* square source distribution */
 double  shadthresh = .05;		/* shadow threshold */
@@ -333,7 +338,7 @@ pixvalue(col, x, y)		/* compute pixel value */
 COLOR  col;			/* returned color */
 int  x, y;			/* pixel position */
 {
-	static RAY  thisray;	/* our ray for this pixel */
+	static RAY  thisray;
 
 	if (viewray(thisray.rorg, thisray.rdir, &ourview,
 			(x+pixjitter())/hresolu, (y+pixjitter())/vresolu) < 0) {
@@ -342,7 +347,9 @@ int  x, y;			/* pixel position */
 	}
 
 	rayorigin(&thisray, NULL, PRIMARY, 1.0);
-	
+
+	samplendx = 3*y + x;			/* set pixel index */
+
 	rayvalue(&thisray);			/* trace ray */
 
 	copycolor(col, thisray.rcol);		/* return color */

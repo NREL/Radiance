@@ -157,6 +157,7 @@ int  xmin, ymin, xmax, ymax;
 		setcolor(thisray.rcol, 0.0, 0.0, 0.0);
 	} else {
 		rayorigin(&thisray, NULL, PRIMARY, 1.0);
+		samplendx++;
 		rayvalue(&thisray);
 	}
 
