@@ -96,12 +96,13 @@ int  n, m;
 FVECT  u, v, w;
 {
 	FILE  *dfp;
+	float  col[3];
 	int  i;
 
 	if (il->flags & IL_COLDST) {
 		printf("\n%s %s %s%s", VOIDID, ofun[PAT_CDATA].funame,
 				il->matname, DSTSUF);
-		printf("\n9 red green blue");
+		printf("\n9 h_red h_grn h_blu");
 		for (i = 0; i < 3; i++) {
 			dfp = dfopen(il, DATORD[i]);
 			fprintf(dfp, "2\n%f %f %d\n%f %f %d\n",
@@ -114,7 +115,7 @@ FVECT  u, v, w;
 	} else {
 		printf("\n%s %s %s%s", VOIDID, ofun[PAT_BDATA].funame,
 				il->matname, DSTSUF);
-		printf("\n5 noneg");
+		printf("\n5 h_gry");
 		dfp = dfopen(il, 0);
 		fprintf(dfp, "2\n%f %f %d\n%f %f %d\n", 1.-.5/n, .5/n, n,
 				0., 2.*PI, m+1);
@@ -123,7 +124,10 @@ FVECT  u, v, w;
 		printf(" %s", dfname(il, 0));
 	}
 	printf("\n\t%s il_alth il_azih", FNCFNM);
-	printf("\n0\n9\n");
+	printf("\n0\n13\n");
+	compavg(col, da, m, il->nsamps);
+	printf("\t%f\t%f\t%f\t%f\n", col[0]/il->col[0],
+			col[1]/il->col[1], col[2]/il->col[2], 1.-.5/n);
 	printf("\t%f\t%f\t%f\n", u[0], u[1], u[2]);
 	printf("\t%f\t%f\t%f\n", v[0], v[1], v[2]);
 	printf("\t%f\t%f\t%f\n", w[0], w[1], w[2]);
@@ -137,12 +141,13 @@ float  *da;
 int  n, m;
 {
 	FILE  *dfp;
+	float  col[3];
 	int  i;
 
 	if (il->flags & IL_COLDST) {
 		printf("\n%s %s %s%s", VOIDID, ofun[PAT_CDATA].funame,
 				il->matname, DSTSUF);
-		printf("\n9 red green blue");
+		printf("\n9 s_red s_grn s_blu");
 		for (i = 0; i < 3; i++) {
 			dfp = dfopen(il, DATORD[i]);
 			fprintf(dfp, "2\n%f %f %d\n%f %f %d\n",
@@ -155,7 +160,7 @@ int  n, m;
 	} else {
 		printf("\n%s %s %s%s", VOIDID, ofun[PAT_BDATA].funame,
 				il->matname, DSTSUF);
-		printf("\n5 noneg");
+		printf("\n5 s_gry");
 		dfp = dfopen(il, 0);
 		fprintf(dfp, "2\n%f %f %d\n%f %f %d\n", 1.-1./n, -1.+1./n, n,
 				0., 2.*PI, m+1);
@@ -164,7 +169,14 @@ int  n, m;
 		printf(" %s", dfname(il, 0));
 	}
 	printf("\n\t%s il_alt il_azi", FNCFNM);
-	printf("\n0\n0\n");
+	printf("\n0\n7\n");
+	compavg(col, da, m, il->nsamps);		/* north pole */
+	printf("\t%f\t%f\t%f\n", col[0]/il->col[0],
+			col[1]/il->col[1], col[2]/il->col[2]);
+	compavg(col, da+(n-1)*m*3, m, il->nsamps);	/* south pole */
+	printf("\t%f\t%f\t%f\n", col[0]/il->col[0],
+			col[1]/il->col[1], col[2]/il->col[2]);
+	printf("\t%f\n", 1.-1./n);
 	il->dfnum++;
 }
 
@@ -198,23 +210,32 @@ OBJREC  *ob;
 }
 
 
-average(il, da, n)		/* compute average value for distribution */
-register struct illum_args  *il;
+compavg(col, da, n, ns)		/* compute average for set of data values */
+float  col[3];
 register float  *da;
-int  n;
+int  n, ns;
 {
 	register int  i;
 
-	il->col[0] = il->col[1] = il->col[2] = 0.;
+	col[0] = col[1] = col[2] = 0.;
 	i = n;
 	while (i-- > 0) {
-		il->col[0] += *da++;
-		il->col[1] += *da++;
-		il->col[2] += *da++;
+		col[0] += *da++;
+		col[1] += *da++;
+		col[2] += *da++;
 	}
 	for (i = 0; i < 3; i++)
-		il->col[i] /= (double)n*il->nsamps;
+		col[i] /= (double)(n*ns);
+}
 
+
+average(il, da, n)		/* evaluate average value for distribution */
+register struct illum_args  *il;
+float  *da;
+int  n;
+{
+	compavg(il->col, da, n, il->nsamps);
+					/* brighter than minimum? */
 	return(brt(il->col) > il->minbrt+FTINY);
 }
 
