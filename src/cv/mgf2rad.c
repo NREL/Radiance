@@ -422,7 +422,8 @@ material()			/* get (and print) current material */
 			c_cmaterial->rs + c_cmaterial->ts;
 	if (d <= 0. | d >= 1.)
 		return(NULL);
-	if (c_cmaterial->td > .01 || c_cmaterial->ts > .01) {	/* trans */
+					/* check for trans */
+	if (c_cmaterial->td > .01 || c_cmaterial->ts > .01) {
 		double	ts, a5, a6;
 
 		ts = sqrt(c_cmaterial->ts);	/* because we use 2 sides */
@@ -450,7 +451,8 @@ material()			/* get (and print) current material */
 				ts/(ts + c_cmaterial->td));
 		return(mname);
 	}
-	if (c_cmaterial->rs < .01 || isgrey(&c_cmaterial->rs_c)) { /* plastic */
+					/* check for plastic */
+	if (c_cmaterial->rs < .01 || c_isgrey(&c_cmaterial->rs_c)) {
 		if (c_cmaterial->rs > .999)
 			cvtcolor(radrgb, &c_cmaterial->rd_c, 1.);
 		else
