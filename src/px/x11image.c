@@ -27,6 +27,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <X11/Xutil.h>
 #include  <X11/Xatom.h>
 
+#undef	NOPROTO
+#define	NOPROTO 1
 #include  "tonemap.h"
 #include  "view.h"
 #include  "x11raster.h"
