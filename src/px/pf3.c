@@ -72,16 +72,16 @@ int  c, r;
 	wsum = 0;
 	setcolor(csum, 0.0, 0.0, 0.0);
 	for (y = ycent+1-yrad; y <= ycent+yrad; y++) {
-		if (y < 0 || y >= yres)
-			continue;
-		d = y_r < 1.0 ? y_r*y - r : y - ycent;
+		if (y < 0) continue;
+		if (y >= yres) break;
+		d = y_r < 1.0 ? y_r*y - r : (double)(y - ycent);
 		if (d > 0.5+FTINY || d < -0.5-FTINY)
 			continue;
 		scan = scanin[y%barsize];
 		for (x = xcent+1-xrad; x <= xcent+xrad; x++) {
-			if (x < 0 || x >= xres)
-				continue;
-			d = x_c < 1.0 ? x_c*x - c : x - xcent;
+			if (x < 0) continue;
+			if (x >= xres) break;
+			d = x_c < 1.0 ? x_c*x - c : (double)(x - xcent);
 			if (d > 0.5+FTINY || d < -0.5-FTINY)
 				continue;
 			wsum++;
@@ -107,13 +107,13 @@ int  c, r;
 	wsum = FTINY;
 	setcolor(csum, 0.0, 0.0, 0.0);
 	for (y = ycent-yrad; y <= ycent+yrad; y++) {
-		if (y < 0 || y >= yres)
-			continue;
+		if (y < 0) continue;
+		if (y >= yres) break;
 		dy = (y_r*(y+.5) - (r+.5))/rad;
 		scan = scanin[y%barsize];
 		for (x = xcent-xrad; x <= xcent+xrad; x++) {
-			if (x < 0 || x >= xres)
-				continue;
+			if (x < 0) continue;
+			if (x >= xres) break;
 			dx = (x_c*(x+.5) - (c+.5))/rad;
 			weight = lookexp(-(dx*dx + dy*dy));
 			wsum += weight;
