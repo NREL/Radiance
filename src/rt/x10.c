@@ -41,7 +41,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  hashcolr(c)	((67*(c)[RED]+59*(c)[GRN]+71*(c)[BLU])%ncolors)
 
-#define  flush()	while (XPending() > 0) getevent()
+#define  flush()	XFlush()
+
+#define  checkinp()	while (QLength() > 0) getevent()
 
 #define  levptr(etype)	((etype *)&thisevent)
 
@@ -201,9 +203,10 @@ int  xmin, ymin, xmax, ymax;
 				pixval[ndx]);
 	}
 	if (nrays - lastflush >= WFLUSH) {
-		flush();		/* also checks for input */
+		flush();
 		lastflush = nrays;
 	}
+	checkinp();
 }
 
 
