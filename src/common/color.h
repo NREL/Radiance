@@ -40,7 +40,13 @@ typedef float  COLOR[3];	/* red, green, blue */
 
 #define  multcolor(c1,c2)	((c1)[0]*=(c2)[0],(c1)[1]*=(c2)[1],(c1)[2]*=(c2)[2])
 
-#define  bright(col)		(.30*(col)[RED]+.59*(col)[GRN]+.11*(col)[BLU])
+#ifdef  NTSC
+#define  bright(col)		(.295*(col)[RED]+.636*(col)[GRN]+.070*(col)[BLU])
+#define  normbright(c)		(int)((74L*(c)[RED]+164L*(c)[GRN]+18L*(c)[BLU])/256)
+#else
+#define  bright(col)		(.263*(col)[RED]+.655*(col)[GRN]+.082*(col)[BLU])
+#define  normbright(c)		(int)((67L*(c)[RED]+168L*(c)[GRN]+21L*(c)[BLU])/256)
+#endif
 
 #define  intens(col)		( (col)[0] > (col)[1] \
 				? (col)[0] > (col)[2] ? (col)[0] : (col)[2] \
@@ -49,8 +55,6 @@ typedef float  COLOR[3];	/* red, green, blue */
 #define  colrval(c,p)		( (c)[EXP] ? \
 				ldexp((c)[p]+.5,(int)(c)[EXP]-(COLXS+8)) : \
 				0. )
-
-#define  normbright(c)		(int)((77L*(c)[RED]+151L*(c)[GRN]+28L*(c)[BLU])/256)
 
 #define  WHTCOLOR		{1.0,1.0,1.0}
 #define  BLKCOLOR		{0.0,0.0,0.0}
