@@ -34,7 +34,8 @@ extern int  ambounce;		/* number of ambient bounces */
 extern char  *amblist[];	/* ambient include/exclude list */
 extern int  ambincl;		/* include == 1, exclude == 0 */
 
-OBJECT  ambset[256]={0};	/* ambient include/exclude set */
+#define  MAXASET	511	/* maximum number of elements in ambient set */
+OBJECT  ambset[MAXASET+1]={0};	/* ambient include/exclude set */
 
 double  maxarad;		/* maximum ambient radius */
 double  minarad;		/* minimum ambient radius */
@@ -101,13 +102,19 @@ char  *afile;
 ambnotify(obj)			/* record new modifier */
 OBJECT  obj;
 {
+	static int  hitlimit = 0;
 	register OBJREC  *o = objptr(obj);
 	register char  **amblp;
 
-	if (!ismodifier(o->otype))
+	if (hitlimit || !ismodifier(o->otype))
 		return;
 	for (amblp = amblist; *amblp != NULL; amblp++)
 		if (!strcmp(o->oname, *amblp)) {
+			if (ambset[0] >= MAXASET) {
+				error(WARNING, "too many modifiers in ambient list");
+				hitlimit++;
+				return;		/* should this be fatal? */
+			}
 			insertelem(ambset, obj);
 			return;
 		}
