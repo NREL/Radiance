@@ -147,21 +147,23 @@ rhcopy.o rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o:	holo.h \
 ../common/vars.h ../common/color.h \
 ../common/standard.h ../common/mat4.h ../common/fvect.h
 
-rhcopy.o:	../common/resolu.h
-
-rhcopy.o:	../common/view.h
+rhcopy.o:	../common/resolu.h ../common/view.h
 
 rhd_x11.o rhd_qtree.o rhd_sets.o rhd_qtree2r.o:	../common/standard.h \
 ../common/mat4.h ../common/fvect.h
 
 rhd_x11.o rhd_qtree.o rhd_qtree2r.o:	rhd_qtree.h rhdriver.h \
-x11icon.h ../common/tonemap.h ../common/color.h
+../common/view.h x11icon.h ../common/tonemap.h ../common/color.h
 
 rhd_glx0.o rhd_glxo.o rhd_glxs.o rhd_glxso.o:	rhd_sample.h rhdriver.h \
 x11icon.h ../common/tonemap.h ../common/view.h \
 ../common/standard.h ../common/mat4.h ../common/fvect.h
 
-rhd_glxs.o rhd_glxso.o rhdobj.o:	rhdobj.h
+rhd_glxo.o rhd_glxso.o rhdobj.o:	rhdobj.h
+
+rhdobj.o:	rhdisp.h rhdriver.h ../common/view.h ../common/tonemap.h \
+../common/radogl.h ../common/standard.h ../common/fvect.h ../common/mat4.h \
+../common/object.h ../common/otypes.h ../common/lookup.h
 
 sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
 sm_ogl.o sm.o:	sm.h rhd_sample.h \
