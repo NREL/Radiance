@@ -327,8 +327,8 @@ rsample()			/* sample the image */
 	 * difference, we subsample the super-pixels.  The testing process
 	 * includes initialization of the next row.
 	 */
-	xsiz = (((pframe.r-pframe.l)<<pdepth)+hresolu-1) / hresolu;
-	ysiz = (((pframe.u-pframe.d)<<pdepth)+vresolu-1) / vresolu;
+	xsiz = (((long)(pframe.r-pframe.l)<<pdepth)+hresolu-1) / hresolu;
+	ysiz = (((long)(pframe.u-pframe.d)<<pdepth)+vresolu-1) / vresolu;
 	rl = (RECT *)malloc(xsiz*sizeof(RECT));
 	if (rl == NULL)
 		return;
