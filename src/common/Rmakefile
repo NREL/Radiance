@@ -4,7 +4,7 @@
 #
 
 OPT = -O
-MACH = -DSTRUCTASSIGN -DBSD
+MACH = -DBSD
 CFLAGS = $(MACH) $(OPT)
 
 COMPAT = bmalloc.o erf.o # frexp.o fwrite.o random.o
@@ -20,7 +20,7 @@ PICOBJ = color.o header.o image.o lamps.o resolu.o rexpr.o spec_rgb.o \
 STDOBJ = fgetline.o fropen.o linregr.o xf.o mat4.o fvect.o urand.o \
 	urind.o peano.o calexpr.o caldefn.o calfunc.o calprnt.o \
 	multisamp.o process.o getpath.o error.o savestr.o savqstr.o \
-	fgetword.o words.o cputs.o wputs.o eputs.o quit.o
+	badarg.o fgetword.o words.o cputs.o wputs.o eputs.o quit.o
 
 SYSOBJ = ealloc.o $(COMPAT)
 
