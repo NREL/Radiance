@@ -89,16 +89,18 @@ char  **argv;
 		if (argv[i][0] == '-')
 			switch (argv[i][1]) {
 			case 'x':
-				if (argv[i][2] == '/')
-					xrat = atof(argv[++i]);
+				i++;
+				if (argv[i][0] == '/')
+					xrat = atof(argv[i]+1);
 				else
-					ncols = atoi(argv[++i]);
+					ncols = atoi(argv[i]);
 				break;
 			case 'y':
-				if (argv[i][2] == '/')
-					yrat = atof(argv[++i]);
+				i++;
+				if (argv[i][0] == '/')
+					yrat = atof(argv[i]+1);
 				else
-					nrows = atoi(argv[++i]);
+					nrows = atoi(argv[i]);
 				break;
 			case 'e':
 				if (argv[i+1][0] == '+' || argv[i+1][0] == '-')
