@@ -71,7 +71,7 @@ char  *argv[];
 
  	/* HOW MANY ELEMENTARY SURFACES SHOULD BE CALCULATED ? */
 
-	nsurf = (theta / ((PI/180.)*DELTA));
+	nsurf = (theta / ((PI/180.)*DELTA)) + 1;
 
 	/* WHAT IS THE DEPTH OF THE ELEMENTARY SURFACES ? */
 
