@@ -502,6 +502,8 @@ serv_result()			/* get next server result and process it */
 		break;
 	case DS_STARTIMM:
 	case DS_ENDIMM:
+		if (!(imm_mode = msg.type==DS_STARTIMM))
+			dev_flush();
 #ifdef DEBUG
 		{
 			time_t	tnow = time(NULL);
@@ -510,8 +512,6 @@ serv_result()			/* get next server result and process it */
 			tmodesw = tnow;
 		}
 #endif
-		if (!(imm_mode = msg.type==DS_STARTIMM))
-			dev_flush();
 		goto noargs;
 	case DS_ACKNOW:
 	case DS_SHUTDOWN:
