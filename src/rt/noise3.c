@@ -37,7 +37,7 @@ static double  xarg[3];
 
 #define  EPSILON	.0001		/* error allowed in fractal */
 
-#define  frand3(x,y,z)	frand((long)((12.38*(x)-22.30*(y)-42.63*(z))/EPSILON))
+#define  frand3(x,y,z)	frand(17*(x)+23*(y)+29*(z))
 
 double  fnoise3();
 
@@ -165,44 +165,44 @@ l_hermite()			/* library call for hermite interpolation */
 
 double
 fnoise3(p)			/* compute fractal noise function */
-register double  p[3];
+double  p[3];
 {
 	double  floor();
-	double  v[3], beg[3], fval[8], s, fc;
-	int  closing, branch;
+	long  t[3], v[3], beg[3], s;
+	double  fval[8], fc;
+	int  branch;
 	register int  i, j;
 						/* get starting cube */
-	for (i = 0; i < 3; i++)
-		beg[i] = floor(p[i]);
+	s = (long)(1.0/EPSILON);
+	for (i = 0; i < 3; i++) {
+		t[i] = s*p[i];
+		beg[i] = s*floor(p[i]);
+	}
 	for (j = 0; j < 8; j++) {
 		for (i = 0; i < 3; i++) {
 			v[i] = beg[i];
 			if (j & 1<<i)
-				v[i] += 1.0;
+				v[i] += s;
 		}
 		fval[j] = frand3(v[0],v[1],v[2]);
 	}
-	s = 1.0;
 						/* compute fractal */
 	for ( ; ; ) {
-		s *= 0.5;
+		s >>= 1;
 		branch = 0;
-		closing = 0;
 		for (i = 0; i < 3; i++) {	/* do center */
 			v[i] = beg[i] + s;
-			if (p[i] > v[i]) {
+			if (t[i] > v[i]) {
 				branch |= 1<<i;
-				if (p[i] - v[i] > EPSILON)
-					closing++;
-			} else if (v[i] - p[i] > EPSILON)
-				closing++;
+			}
 		}
 		fc = 0.0;
 		for (j = 0; j < 8; j++)
 			fc += fval[j];
-		fc = 0.125*fc + s*frand3(v[0],v[1],v[2]);
-		if (closing == 0)
+		fc *= 0.125;
+		if (s < 1)
 			return(fc);		/* close enough */
+		fc += s*EPSILON*frand3(v[0],v[1],v[2]);
 		fval[~branch & 7] = fc;
 		for (i = 0; i < 3; i++) {	/* do faces */
 			if (branch & 1<<i)
@@ -213,7 +213,7 @@ register double  p[3];
 			for (j = 0; j < 8; j++)
 				if (~(j^branch) & 1<<i)
 					fc += fval[j];
-			fc = 0.25*fc + s*frand3(v[0],v[1],v[2]);
+			fc = 0.25*fc + s*EPSILON*frand3(v[0],v[1],v[2]);
 			fval[~(branch^1<<i) & 7] = fc;
 			v[i] = beg[i] + s;
 		}
@@ -230,7 +230,7 @@ register double  p[3];
 				v[j] -= s;
 			fc = fval[branch & ~(1<<i)];
 			fc += fval[branch | 1<<i];
-			fc = 0.5*fc + s*frand3(v[0],v[1],v[2]);
+			fc = 0.5*fc + s*EPSILON*frand3(v[0],v[1],v[2]);
 			fval[branch^1<<i] = fc;
 			j = (i+1)%3;
 			v[j] = beg[j] + s;
