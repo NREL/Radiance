@@ -5,7 +5,7 @@
 
 ARCH = sun
 OPT = -O
-MACH = -DSTRUCTASSIGN -DBSD
+MACH = -DBSD
 SPECIAL = aed tiff
 CFLAGS = $(OPT) $(MACH) -I../common -L../lib
 
