@@ -138,7 +138,6 @@ int  xmin, ymin, xmax, ymax;
 	static long  lastflush = 0;
 	static RAY  thisray;
 	double  h, v;
-	register int  i;
 
 	if (xmax - xmin <= 0 || ymax - ymin <= 0) {	/* empty */
 		p->x = xmin;

@@ -76,7 +76,6 @@ setambient(afile)			/* initialize calculation */
 char  *afile;
 {
 	long  ftell();
-	OBJECT  obj;
 	AMBVAL  amb;
 
 	maxarad = thescene.cusize / 2.0;		/* maximum radius */

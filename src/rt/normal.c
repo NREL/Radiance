@@ -129,8 +129,6 @@ register OBJREC  *m;
 register RAY  *r;
 {
 	NORMDAT  nd;
-	double  ldot;
-	double  omega;
 	double  dtmp;
 	COLOR  ctmp;
 	register int  i;
