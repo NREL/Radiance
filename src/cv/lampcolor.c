@@ -79,7 +79,7 @@ main(
 		while (i < NPARAMS) {
 			printf("Enter %s [%s]: ", param[i].name,
 					param[i].value);
-			if (fgets(buf, sizeof(buf), stdin) == NULL)
+			if (fgetline(buf, sizeof(buf), stdin) == NULL)
 				exit(0);
 			if (buf[0] == '?') {
 				puts(param[i].help);
