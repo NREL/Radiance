@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -43,12 +43,14 @@ register RAY  *r;
 	 *  quadratic equation in t is then solved for the
 	 *  smallest positive root, which is our point of
 	 *  intersection.
-	 *	Because the ray direction is normalized, a is always 1.
+	 *	Since the ray is normalized, a should always be
+	 *  one.  We compute it here to prevent instability in the
+	 *  intersection calculation.
 	 */
-
-	a = 1.0;		/* compute quadratic coefficients */
-	b = c = 0.0;
+				/* compute quadratic coefficients */
+	a = b = c = 0.0;
 	for (i = 0; i < 3; i++) {
+		a += r->rdir[i]*r->rdir[i];
 		t = r->rorg[i] - ap[i];
 		b += 2.0*r->rdir[i]*t;
 		c += t*t;
