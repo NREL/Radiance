@@ -204,7 +204,7 @@ init()				/* initialize global variables */
 						/* set direction vectors */
 	for (i = 0; glarang[i] != AEND; i++)
 		;
-	if (i > 0 && glarang[0] <= 0 || glarang[i-1] >= 180) {
+	if (i > 0 && (glarang[0] <= 0 || glarang[i-1] >= 180)) {
 		fprintf(stderr, "%s: glare angles must be between 1 and 179\n",
 				progname);
 		exit(1);
