@@ -303,7 +303,7 @@ register unsigned  n;
 	register int	bucket;
 	register unsigned	bsiz;
 
-	if (n < 1<<FIRSTBUCKET)
+	if (n < 1<<FIRSTBUCKET || p == NULL)
 		return;
 #ifdef MSTATS
 	b_nfreed += n;
