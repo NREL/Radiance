@@ -1,4 +1,4 @@
-/* Copyright (c) 1993 Regents of the University of California */
+/* Copyright (c) 1994 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -114,6 +114,7 @@ time_t	oct0date;		/* date of pre-mkillum octree */
 char	*oct1name;		/* name of post-mkillum octree */
 time_t	oct1date;		/* date of post-mkillum octree (>= matdate) */
 
+int	nowarn = 0;		/* no warnings */
 int	explicate = 0;		/* explicate variables */
 int	silent = 0;		/* do work silently */
 int	noaction = 0;		/* don't do anything */
@@ -157,6 +158,9 @@ char	*argv[];
 			break;
 		case 'v':
 			viewselect = argv[++i];
+			break;
+		case 'w':
+			nowarn++;
 			break;
 		default:
 			goto userr;
@@ -273,7 +277,7 @@ register char	*ass;
 	for (n = strlen(ass); n > 0; n--)
 		if (!isspace(ass[n-1]))
 			break;
-	if (!n) {
+	if (!n && !nowarn) {
 		fprintf(stderr, "%s: warning - missing value for variable '%s'\n",
 				progname, varname);
 		return;
@@ -359,7 +363,9 @@ register VARIABLE	*vp;
 {
 	if (vp->nass < 2)
 		return;
-	fprintf(stderr, "%s: warning - multiple assignment of variable '%s'\n",
+	if (!nowarn)
+		fprintf(stderr,
+		"%s: warning - multiple assignment of variable '%s'\n",
 			progname, vp->name);
 	do
 		vp->value += strlen(vp->value)+1;
