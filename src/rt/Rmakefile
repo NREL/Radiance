@@ -240,6 +240,8 @@ source.o:	source.h
 cone.o data.o devcomm.o face.o image.o initotypes.o xf.o misc.o objset.o \
 octree.o otypes.o readobj.o readoct.o rview.o:	standard.h mat4.h fvect.h
 
+initotypes.o raytrace.o:	otspecial.h
+
 mat4.o:		mat4.h fvect.h
 
 sundev.o:	suntools.icon
