@@ -49,8 +49,8 @@ RTSRC = rmain.c rtrace.c $(RSRC) Version.c
 RPOBJS = rpmain.o rpict.o duphead.o persist.o preload.o $(ROBJS) Version.o
 RPSRC = rmain.c rpict.c $(RSRC) Version.c
 
-RVOBJS = rvmain.o rview.o rv2.o rv3.o $(DOBJS) $(ROBJS) Version.o
-RVSRC = rmain.c rview.c rv2.c rv3.c $(DSRC) $(RSRC) Version.c
+RVOBJS = rvmain.o rview.o rv2.o rv3.o freeobjmem.o $(DOBJS) $(ROBJS) Version.o
+RVSRC = rmain.c rview.c rv2.c rv3.c freeobjmem.c $(DSRC) $(RSRC) Version.c
 
 ROBJS = $(RAYOBJS) $(SURFOBJS) $(MATOBJS) \
 	$(MODOBJS) $(SUPPOBJS)
@@ -228,7 +228,7 @@ rtrace.o rvmain.o rv2.o rv3.o source.o:	../common/octree.h
 o_instance.o:	../common/instance.h ../common/octree.h
 
 ambient.o aniso.o dielectric.o func.o initotypes.o m_brdf.o \
-normal.o o_cone.o text.o raytrace.o rtrace.o \
+normal.o o_cone.o text.o raytrace.o rtrace.o freeobjmem.o \
 rv2.o source.o srcsupp.o virtuals.o sphere.o:	../common/otypes.h
 
 ambient.o ambcomp.o aniso.o normal.o rpict.o \
@@ -246,7 +246,7 @@ rv2.o rv3.o rview.o:	rpaint.h driver.h ../common/view.h
 m_direct.o m_mirror.o \
 source.o srcsamp.o srcsupp.o virtuals.o:	source.h
 
-cone.o data.o devcomm.o initotypes.o \
+cone.o data.o devcomm.o freeobjmem.o initotypes.o \
 octree.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
 
 initotypes.o raytrace.o:	otspecial.h
@@ -267,6 +267,8 @@ data.o rmain.o rpict.o rtrace.o rv2.o:	../common/resolu.h
 
 aniso.o func.o m_brdf.o m_direct.o mx_data.o mx_func.o p_data.o \
 p_func.o t_data.o t_func.o:	func.h
+
+freeobjmem.o:	../common/object.h
 
 devcomm.o:	../common/vfork.h
 
