@@ -11,9 +11,22 @@
 #include  <errno.h>
 #ifdef _WIN32
   #include <windows.h> /* DWORD etc. */
+  #include <stdio.h>
   typedef DWORD pid_t;
   #include <process.h> /* getpid() and others */
   #define nice(inc) win_nice(inc)
+
+  #ifdef __cplusplus
+  extern "C" {
+  #endif
+  extern FILE *win_popen(char *command, char *type);
+  extern int win_pclose(FILE *p);
+  #ifdef __cplusplus
+  }
+  #endif
+
+  #define popen(cmd,mode) win_popen(cmd,mode)
+  #define pclose(p) win_pclose(p)
 #else
   #include <sys/param.h>
 #endif

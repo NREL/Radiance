@@ -11,8 +11,6 @@
   typedef long off_t;
 
   #include <stdio.h>
-  #define popen _popen
-  #define pclose _pclose
   #define snprintf _snprintf
 
   #include <windows.h>
@@ -39,7 +37,6 @@
   #else
     /* assumedly posix systems */
 	#include <unistd.h>
-    #define RHAS_GETPWNAM
     #define RHAS_STAT
     #define RHAS_FORK_EXEC
   #endif

@@ -36,7 +36,7 @@ static void resetStdHandles(HANDLE stdoutOrig, HANDLE stdinOrig);
 
 
 int
-pclose(    /* posix pclose replacement */
+win_pclose(    /* posix pclose replacement */
 FILE* p
 )
 {
@@ -47,7 +47,7 @@ FILE* p
 
 
 FILE *
-popen(     /* posix popen replacement */
+win_popen(     /* posix popen replacement */
 char* command,
 char* type
 )

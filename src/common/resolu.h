@@ -15,6 +15,10 @@
  */
 #ifndef _RAD_RESOLU_H_
 #define _RAD_RESOLU_H_
+
+#include <time.h>
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif

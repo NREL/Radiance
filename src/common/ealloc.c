@@ -13,7 +13,7 @@ static const char	RCSid[] = "$Id$";
 
 #include "rterror.h"
 
-char *	/* return pointer to n uninitialized bytes */
+extern char *	/* return pointer to n uninitialized bytes */
 emalloc(unsigned int  n)
 {
 	register char  *cp;
@@ -29,7 +29,7 @@ emalloc(unsigned int  n)
 }
 
 
-char *			/* return pointer to initialized memory */
+extern char *			/* return pointer to initialized memory */
 ecalloc(register unsigned int ne, unsigned int es)
 {
 	register char  *cp;
@@ -49,7 +49,7 @@ ecalloc(register unsigned int ne, unsigned int es)
 }
 
 
-char *			/* reallocate cp to size n */
+extern char *			/* reallocate cp to size n */
 erealloc(register char  *cp, unsigned int  n)
 {
 	if (n == 0) {
@@ -71,7 +71,7 @@ erealloc(register char  *cp, unsigned int  n)
 }
 
 
-void			/* free memory allocated by above */
+extern void			/* free memory allocated by above */
 efree(char  *cp)
 {
 	free((void *)cp);

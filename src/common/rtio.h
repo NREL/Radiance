@@ -44,6 +44,8 @@ extern void	fputword(char *s, FILE *fp);
 extern FILE	*frlibopen(char *fname);
 					/* defined in getlibpath.c */
 extern char	*getrlibpath(void);
+					/* defined in gethomedir.c */
+extern char *gethomedir(char *uname, char *path, int plen);
 					/* defined in getpath.c */
 extern char	*getpath(char *fname, char *searchpath, int mode);
 					/* defined in portio.c */

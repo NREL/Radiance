@@ -11,7 +11,7 @@ static const char	RCSid[] = "$Id$";
 
 #include <ctype.h>
 
-char *
+extern char *
 fixargv0(av0)			/* extract command name from full path */
 char  *av0;
 {

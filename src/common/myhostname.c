@@ -8,14 +8,14 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #ifdef _WIN32
-  #include <winsock.h>
+  #include <winsock2.h>
 #else
   #include <unistd.h>
 #endif
 
 #include "rtmisc.h"
 
-char *
+extern char *
 myhostname()
 {
 	static char	hostname[65];

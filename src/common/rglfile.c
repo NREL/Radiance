@@ -7,6 +7,7 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
+#include "rtprocess.h"
 #include "radogl.h"
 
 #ifndef NLIST2ALLOC
@@ -148,7 +149,6 @@ void
 rgl_load(inpspec)		/* convert scene description into OGL calls */
 char	*inpspec;
 {
-	FILE	*popen();
 	char	*fgetline();
 	FILE	*infp;
 	char	buf[1024];

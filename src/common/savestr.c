@@ -23,7 +23,7 @@ static const char	RCSid[] = "$Id$";
 #include <string.h>
 #include <stdlib.h>
 
-#include "standard.h"
+#include "rtmisc.h"
 
 #ifndef  NHASH
 #define  NHASH		509		/* hash table size (prime!) */

@@ -9,6 +9,8 @@
 #define _RAD_VIEW_H_
 
 #include  <time.h>
+
+#include  "rtmath.h"
 #include  "resolu.h"
 
 #ifdef __cplusplus

@@ -23,8 +23,8 @@ PICOBJ = color.o header.o image.o lamps.o resolu.o rexpr.o spec_rgb.o \
 
 STDOBJ = fgetline.o fropen.o linregr.o xf.o mat4.o invmat4.o fvect.o urand.o \
 	urind.o calexpr.o caldefn.o calfunc.o calprnt.o biggerlib.o multisamp.o \
-	unix_process.o process.o getpath.o error.o savestr.o savqstr.o \
-	badarg.o fgetword.o words.o expandarg.o wordfile.o fgetval.o \
+	unix_process.o process.o gethomedir.c getpath.o error.o savestr.o \
+	savqstr.o badarg.o fgetword.o words.o expandarg.o wordfile.o fgetval.o \
 	clip.o plocate.o eputs.o wputs.o quit.o lookup.o \
 	loadvars.o tcos.o fputword.o chanvalue.o dircode.o paths.o
 
