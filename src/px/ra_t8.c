@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -21,8 +21,14 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "targa.h"
 
-#ifndef  BSD
-#define  bcopy(s,d,n)		(void)memcpy(d,s,n)
+#ifdef MSDOS
+#include  <fcntl.h>
+#endif
+
+#include  <math.h>
+
+#ifndef	 BSD
+#define	 bcopy(s,d,n)		(void)memcpy(d,s,n)
 extern char  *memcpy();
 #endif
 			/* descriptor for a picture file or frame buffer */
@@ -37,21 +43,19 @@ typedef struct {
 	} pos;				/* position(s) */
 } pic;
 
-#define  goodpic(h)	(my_imType(h) && my_mapType(h))
-#define  my_imType(h)	(((h)->dataType==IM_CMAP || (h)->dataType==IM_CCMAP) \
+#define	 goodpic(h)	(my_imType(h) && my_mapType(h))
+#define	 my_imType(h)	(((h)->dataType==IM_CMAP || (h)->dataType==IM_CCMAP) \
 				&& (h)->dataBits==8 && (h)->imType==0)
-#define  my_mapType(h)	((h)->mapType==CM_HASMAP && \
+#define	 my_mapType(h)	((h)->mapType==CM_HASMAP && \
 				((h)->CMapBits==24 || (h)->CMapBits==32))
 
-#define  taralloc(h)	(pixel *)emalloc((h)->x*(h)->y*sizeof(pixel))
+#define	 taralloc(h)	(pixel *)emalloc((h)->x*(h)->y*sizeof(pixel))
 
 extern pic	*openinput();
 
 extern char	*ecalloc(), *emalloc();
 
 extern long  ftell();
-
-extern double  pow();
 
 double	gamma = 2.2;			/* gamma correction */
 
@@ -75,13 +79,18 @@ int  argc;
 char  *argv[];
 {
 	colormap  rasmap;
-	struct hdStruct  head;
+	struct hdStruct	 head;
 	int  dither = 1;
 	int  reverse = 0;
 	int  ncolors = 256;
 	int  greyscale = 0;
 	int  i;
-	
+#ifdef MSDOS
+	extern int  _fmode;
+	_fmode = O_BINARY;
+	setmode(fileno(stdin), O_BINARY);
+	setmode(fileno(stdout), O_BINARY);
+#endif
 	progname = argv[0];
 
 	for (i = 1; i < argc; i++)
@@ -219,7 +228,7 @@ int code;
 
 
 getthead(hp, ip, fp)		/* read header from input */
-struct hdStruct  *hp;
+struct hdStruct	 *hp;
 char  *ip;
 register FILE  *fp;
 {
@@ -252,7 +261,7 @@ register FILE  *fp;
 
 
 putthead(hp, ip, fp)		/* write header to output */
-struct hdStruct  *hp;
+struct hdStruct	 *hp;
 char  *ip;
 register FILE  *fp;
 {
@@ -323,7 +332,7 @@ register struct hdStruct  *h;
 
 
 tg2ra(hp)			/* targa file to RADIANCE file */
-struct hdStruct  *hp;
+struct hdStruct	 *hp;
 {
 	union {
 		BYTE  c3[256][3];
@@ -413,7 +422,7 @@ pixel  *l;
 
 
 writetarga(h, d, fp)		/* write out targa data */
-struct hdStruct  *h;
+struct hdStruct	 *h;
 pixel  *d;
 FILE  *fp;
 {
@@ -427,7 +436,7 @@ FILE  *fp;
 
 
 readtarga(h, data, fp)		/* read in targa data */
-struct hdStruct  *h;
+struct hdStruct	 *h;
 pixel  *data;
 FILE  *fp;
 {

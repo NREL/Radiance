@@ -4,12 +4,6 @@
 static char SCCSid[] = "$SunId$ LBL";
 #endif
 
-/*
- * Microsoft Mouse handling routines
- */
-
-#include <stdio.h>
-#include <dos.h>
 #include <i86.h>
 #include <graph.h>
 #include "driver.h"
@@ -18,7 +12,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define	 M_LEFTBUTT	0x2
 #define	 M_MOTION	0x1
 
-static int ydispsize;
+static int xdispsize, ydispsize;
 static int crad;
 #define right_button (mouse_event & M_RIGHTBUTT)
 #define left_button (mouse_event & M_LEFTBUTT)
@@ -33,7 +27,7 @@ static void _loadds far mouse_handler (int max, int mcx, int mdx)
 #pragma aux mouse_handler parm [EAX] [ECX] [EDX]
 	mouse_event = max;
 	mouse_xpos = mcx;
-	mouse_ypos = mdx;
+	mouse_ypos = mdx * (long)ydispsize / 200;	/* kludge */
 }
 #pragma on (check_stack)
 
@@ -45,6 +39,10 @@ int  newx, newy;
 	extern char  *bmalloc();
 	static char  *imp = NULL;
 	static int  curx = -1, cury = -1;
+#define xcmin		(curx-crad<0 ? 0 : curx-crad)
+#define ycmin		(cury-crad<0 ? 0 : cury-crad)
+#define xcmax		(curx+crad>=xdispsize ? xdispsize-1 : curx+crad)
+#define ycmax		(cury+crad>=ydispsize ? ydispsize-1 : cury+crad)
 
 	if (imp == NULL &&
 		(imp = bmalloc(_imagesize(0,0,2*crad+1,2*crad+1))) == NULL) {
@@ -52,22 +50,26 @@ int  newx, newy;
 		quit(1);
 	}
 	if (curx >= 0 & cury >= 0)	/* clear old cursor */
-		_putimage(curx-crad, cury-crad, imp, _GPSET);
+		_putimage(xcmin, ycmin, imp, _GPSET);
 					/* record new position */
 	curx = newx; cury = newy;
 	if (curx < 0 | cury < 0)
 		return;		/* no cursor */
 					/* save under new cursor */
-	_getimage(newx-crad,newy-crad,newx+crad,newy+crad, imp);
+	_getimage(xcmin, ycmin, xcmax, ycmax, imp);
 					/* draw new cursor */
 	_setcolor(1);
-	_rectangle(_GFILLINTERIOR, newx-crad, newy-1, newx+crad, newy+1);
-	_rectangle(_GFILLINTERIOR, newx-1, newy-crad, newx+1, newy+crad);
+	_rectangle(_GFILLINTERIOR, xcmin, cury-1, xcmax, cury+1);
+	_rectangle(_GFILLINTERIOR, curx-1, ycmin, curx+1, ycmax);
 	_setcolor(0);
-	_moveto(newx-crad+1, newy);
-	_lineto(newx+crad-1, newy);
-	_moveto(newx, newy-crad+1);
-	_lineto(newx, newy+crad-1);
+	_moveto(xcmin+1, cury);
+	_lineto(xcmax-1, cury);
+	_moveto(curx, ycmin+1);
+	_lineto(curx, ycmax-1);
+#undef xcmin
+#undef ycmin
+#undef xcmax
+#undef ycmax
 }
 
 
@@ -147,6 +149,7 @@ struct driver  *dp;
 
     /* get relevant parameters */
 
+    xdispsize = dp->xsiz;
     ydispsize = dp->ysiz;
     crad = dp->ysiz/40;
 
