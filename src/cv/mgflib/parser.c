@@ -1004,7 +1004,7 @@ put_cspec()			/* put out current color spectrum */
 		newav[2] = wl[1];
 		sf = (double)C_CNSS / c_ccolor->ssum;
 		for (i = 0; i < C_CNSS; i++) {
-			sprintf(vbuf[i], "%.6f", sf*c_ccolor->ssamp[i]);
+			sprintf(vbuf[i], "%.4f", sf*c_ccolor->ssamp[i]);
 			newav[i+3] = vbuf[i];
 		}
 		newav[C_CNSS+3] = NULL;
