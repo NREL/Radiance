@@ -9,6 +9,7 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include "standard.h"
+#include "view.h"
 #include "paths.h"
 #include "vars.h"
 #include <ctype.h>
@@ -23,7 +24,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define RENDER		5		/* rendering options */
 #define OCONV		6		/* oconv options */
 #define PFILT		7		/* pfilt options */
-#define VIEW		8		/* view(s) for picture(s) */
+#define VIEWS		8		/* view(s) for picture(s) */
 #define ZONE		9		/* simulation zone */
 #define QUALITY		10		/* desired rendering quality */
 #define OCTREE		11		/* octree file name */
@@ -364,9 +365,9 @@ setdefaults()			/* set default values for unassigned var's */
 		vval(PICTURE) = radname;
 		vdef(PICTURE)++;
 	}
-	if (!vdef(VIEW)) {
-		vval(VIEW) = "X";
-		vdef(VIEW)++;
+	if (!vdef(VIEWS)) {
+		vval(VIEWS) = "X";
+		vdef(VIEWS)++;
 	}
 	if (!vdef(DETAIL)) {
 		vval(DETAIL) = "M";
@@ -999,14 +1000,14 @@ char	*vn;		/* returned view name */
 		}
 						/* view number? */
 		if (isint(viewselect))
-			return(specview(nvalue(VIEW, atoi(viewselect)-1)));
+			return(specview(nvalue(VIEWS, atoi(viewselect)-1)));
 						/* check list */
-		while ((mv = nvalue(VIEW, n++)) != NULL)
+		while ((mv = nvalue(VIEWS, n++)) != NULL)
 			if (matchword(viewselect, mv))
 				return(specview(mv));
 		return(specview(viewselect));	/* standard view? */
 	}
-	mv = nvalue(VIEW, n);		/* use view n */
+	mv = nvalue(VIEWS, n);		/* use view n */
 	if (vn != NULL & mv != NULL) {
 		register char	*mv2 = mv;
 		if (*mv2 != '-')
@@ -1021,56 +1022,28 @@ char	*vn;		/* returned view name */
 printview(vopts)			/* print out selected view */
 register char	*vopts;
 {
-	extern char	*atos(), *getenv();
-	char	buf[256];
-	FILE	*fp;
+	extern char	*strstr(), *atos(), *getenv();
+	VIEW	vwr;
+	char	buf[128];
 	register char	*cp;
-
+again:
 	if (vopts == NULL)
 		return(-1);
-	fputs("VIEW=", stdout);
-	do {
-		if (matchword(vopts, "-vf")) {		/* expand view file */
-			vopts = sskip(vopts);
-			if (!*atos(buf, sizeof(buf), vopts))
-				return(-1);
-			if ((fp = fopen(buf, "r")) == NULL)
-				return(-1);
-			for (buf[sizeof(buf)-2] = '\n';
-					fgets(buf, sizeof(buf), fp) != NULL &&
-						buf[0] != '\n';
-					buf[sizeof(buf)-2] = '\n') {
-				if (buf[sizeof(buf)-2] != '\n') {
-					ungetc(buf[sizeof(buf)-2], fp);
-					buf[sizeof(buf)-2] = '\0';
-				}
-				if (matchword(buf, "VIEW=") ||
-						matchword(buf, "rview")) {
-					for (cp = sskip(buf); *cp && *cp != '\n'; cp++)
-						putchar(*cp);
-				}
-			}
-			fclose(fp);
-			vopts = sskip(vopts);
-		} else {
-			while (isspace(*vopts))
-				vopts++;
-			putchar(' ');
 #ifdef MSDOS
-			if (*vopts == '$') {		/* expand env. var. */
-				if (!*atos(buf, sizeof(buf), vopts+1))
-					return(-1);
-				if ((cp = getenv(buf)) == NULL)
-					return(-1);
-				fputs(cp, stdout);
-				vopts = sskip(vopts);
-			} else
+	if (vopts[0] == '$') {
+		vopts = getenv(vopts+1);
+		goto again;
+	}
 #endif
-				while (*vopts && !isspace(*vopts))
-					putchar(*vopts++);
-		}
-	} while (*vopts++);
-	putchar('\n');
+	copystruct(&vwr, &stdview);
+	cp = vopts;				/* get -vf files first */
+	while ((cp = strstr(cp, "-vf ")) != NULL &&
+			*atos(buf, sizeof(buf), cp += 4))
+		viewfile(buf, &vwr, NULL);
+	sscanview(&vwr, vopts);			/* get the rest */
+	fputs(VIEWSTR, stdout);
+	fprintview(&vwr, stdout);		/* print full spec. */
+	fputc('\n', stdout);
 	return(0);
 }
 
