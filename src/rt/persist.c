@@ -101,9 +101,9 @@ pfhold()		/* holding pattern for idle rendering process */
 	close(fileno(stdin));
 	close(fileno(stdout));
 				/* create named pipes for input and output */
-	if (mknod(mktemp(strcpy(inpname,TEMPLATE)), S_IFIFO|0600) < 0)
+	if (mknod(mktemp(strcpy(inpname,TEMPLATE)), S_IFIFO|0600, 0) < 0)
 		goto createrr;
-	if (mknod(mktemp(strcpy(outpname,TEMPLATE)), S_IFIFO|0600) < 0)
+	if (mknod(mktemp(strcpy(outpname,TEMPLATE)), S_IFIFO|0600, 0) < 0)
 		goto createrr;
 	sprintf(buf, "%d\n%s\n%s\n", getpid(), inpname, outpname);
 	if (lseek(persistfd, 0L, 0) < 0 || ftruncate(persistfd, 0L) < 0)
