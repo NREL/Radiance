@@ -75,7 +75,7 @@ sendline()				/* read a line in raw mode */
 {
 	char  buf[256];
 
-	editline(buf, getch, sends, ttymode.sg_erase, ttymode.sg_kill);
+	editline(buf, getch, sends);
 	putc('\0', stdout);
 	sends(buf);
 }

@@ -67,8 +67,6 @@ static int  gheight = 0;		/* graphics window height */
 
 static TEXTWIND  *comline = NULL;	/* our command line */
 
-static int  c_erase, c_kill;		/* erase and kill characters */
-
 static char  c_queue[64];		/* input queue */
 static int  c_first = 0;		/* first character in queue */
 static int  c_last = 0;			/* last character in queue */
@@ -89,16 +87,6 @@ struct driver *
 x_init(name)			/* initialize driver */
 char  *name;
 {
-	struct sgttyb  ttymode;
-	
-	if (isatty(0)) {
-		ioctl(0, TIOCGETP, &ttymode);
-		c_erase = ttymode.sg_erase;
-		c_kill = ttymode.sg_kill;
-	} else {
-		c_erase = 'H'-'@';
-		c_kill = 'U'-'@';
-	}
 	ourdisplay = XOpenDisplay(NULL);
 	if (ourdisplay == NULL) {
 		stderr_v("cannot open X-windows; DISPLAY variable set?\n");
@@ -216,7 +204,7 @@ char  *inp;
 	int  x_getc(), x_comout();
 
 	xt_cursor(comline, TBLKCURS);
-	editline(inp, x_getc, x_comout, c_erase, c_kill);
+	editline(inp, x_getc, x_comout);
 	xt_cursor(comline, TNOCURS);
 }
 
