@@ -88,9 +88,6 @@ char	*argv[];
 		default:
 			goto userr;
 		}
-						/* do we have a job? */
-	if (outdev == NULL && ncprocs <= 0)
-		goto userr;
 						/* get root file name */
 	rootname(froot, hdkfile=argv[i++]);
 						/* load... */
@@ -133,7 +130,7 @@ char	*argv[];
 	quit(0);
 userr:
 	fprintf(stderr,
-"Usage: %s {-n nprocs|-o disp} [-w][-f] output.hdk [control.hif [VAR=val ..]]\n",
+"Usage: %s [-n nprocs][-o disp][-w][-f] output.hdk [control.hif [VAR=val ..]]\n",
 			progname);
 	quit(1);
 }
