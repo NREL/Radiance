@@ -21,7 +21,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #else
 #include  <sys/times.h>
 #include  <sys/utsname.h>
-#include  <limits.h>
+#include  <unistd.h>
 #endif
 #endif
 
@@ -140,6 +140,7 @@ report()		/* report progress */
 #else
 	struct tms  tbuf;
 	struct utsname  nambuf;
+	double  period;
 #define hostname  nambuf.sysname
 #endif
 
@@ -154,8 +155,9 @@ report()		/* report progress */
 	gethostname(hostname, sizeof(hostname));
 #else
 	times(&tbuf);
-	u = ( tbuf.tms_utime + tbuf.tms_cutime ) / CLK_TCK;
-	s = ( tbuf.tms_stime + tbuf.tms_cstime ) / CLK_TCK;
+	period = 1.0 / sysconf(_SC_CLK_TCK);
+	u = ( tbuf.tms_utime + tbuf.tms_cutime ) * period;
+	s = ( tbuf.tms_stime + tbuf.tms_cstime ) * period;
 	uname(&nambuf);
 #endif
 
