@@ -70,6 +70,8 @@ VIEW  ourview = STDVIEW;
 int  gotview = 0;
 int  wrapfilt = 0;		/* wrap filter horizontally? */
 
+int  estatus = 0;		/* exit status (for non-fatal errors) */
+
 int  xrad;			/* x search radius */
 int  yrad;			/* y search radius */
 int  xbrad;			/* x box size */
@@ -153,7 +155,7 @@ char  **argv;
 					fprintf(stderr,
 						"%s: exposure out of range\n",
 							argv[0]);
-					exit(1);
+					quit(1);
 				}
 				switch (argv[i][2]) {
 				case '\0':
@@ -307,7 +309,7 @@ char  **argv;
 	}
 	pass2(fin);
 
-	quit(0);
+	quit(estatus);
 }
 
 
@@ -392,6 +394,7 @@ FILE  *in;
 					progname, (int)(100L*i/yres));
 			yres = i;
 			y_r = (double)nrows/yres;
+			estatus++;
 			break;
 		}
 		pass1scan(scan, i);
@@ -563,7 +566,7 @@ scan2flush()			/* flush output buffer */
 			break;
 	if (fflush(stdout) < 0) {
 		fprintf(stderr, "%s: write error at end of pass2\n", progname);
-		exit(1);
+		quit(1);
 	}
 }
 
