@@ -677,7 +677,8 @@ char	*mod, *name;
 	else
 		fprintf(out, "5 ");
 	fprintf(out, "%s %s source.cal ",
-			sinf->type==SPHERE ? "corr" : "flatcorr",
+			sinf->type==SPHERE ? "corr" :
+			sinf->type==DISK ? "cylcorr" : "boxcorr",
 			libname(buf,name,T_DST));
 	if (pmtype == PM_B) {
 		if (FEQ(bounds[1][0],0.))
@@ -700,7 +701,14 @@ char	*mod, *name;
 		} else
 			fprintf(out, "src_theta ");
 	}
-	fprintf(out, "\n0\n1 %g\n", sinf->mult);
+	if (sinf->type == SPHERE)
+		fprintf(out, "\n0\n1 %g\n", sinf->mult/sinf->area);
+	else if (sinf->type == DISK)
+		fprintf(out, "\n0\n3 %g %g %g\n", sinf->mult,
+				sinf->l, sinf->h);
+	else
+		fprintf(out, "\n0\n4 %g %g %g %g\n", sinf->mult,
+				sinf->l, sinf->w, sinf->h);
 	if (putsource(sinf, out, id, filename(name),
 			bounds[0][0]<90., bounds[0][1]>90.) != 0)
 		return(-1);
@@ -714,51 +722,33 @@ FILE	*fp;
 char	*mod, *name;
 int	dolower, doupper;
 {
-	int	dosides = 0;
-	char	buf[MAXWORD];
+	int	dosides = doupper && dolower && shp->h > MINDIM;
+	char	lname[MAXWORD];
 	
-	fprintf(fp, "\n%s %s %s_light\n", mod,
-			shp->isillum ? "illum" : "light",
-			name);
+	strcat(strcpy(lname, name), "_light");
+	fprintf(fp, "\n%s %s %s\n", mod,
+			shp->isillum ? "illum" : "light", lname);
 	fprintf(fp, "0\n0\n3 %g %g %g\n",
-			lampcolor[0]/shp->area,
-			lampcolor[1]/shp->area,
-			lampcolor[2]/shp->area);
-	if (doupper && dolower && shp->type != SPHERE && shp->h > MINDIM)
-		if (!shp->isillum) {
-			fprintf(fp, "\n%s glow %s_glow\n", mod, name);
-			fprintf(fp, "0\n0\n4 %g %g %g -1\n",
-					lampcolor[0]/shp->area,
-					lampcolor[1]/shp->area,
-					lampcolor[2]/shp->area);
-			dosides++;
-		}
+			lampcolor[0], lampcolor[1], lampcolor[2]);
 	switch (shp->type) {
 	case RECT:
-		strcat(strcpy(buf, name), "_light");
 		if (dolower)
-			putrectsrc(shp, fp, buf, name, 0);
+			putrectsrc(shp, fp, lname, name, 0);
 		if (doupper)
-			putrectsrc(shp, fp, buf, name, 1);
-		if (dosides) {
-			strcat(strcpy(buf, name), "_glow");
-			putsides(shp, fp, buf, name);
-		}
+			putrectsrc(shp, fp, lname, name, 1);
+		if (dosides)
+			putsides(shp, fp, lname, name);
 		break;
 	case DISK:
-		strcat(strcpy(buf, name), "_light");
 		if (dolower)
-			putdisksrc(shp, fp, buf, name, 0);
+			putdisksrc(shp, fp, lname, name, 0);
 		if (doupper)
-			putdisksrc(shp, fp, buf, name, 1);
-		if (dosides) {
-			strcat(strcpy(buf, name), "_glow");
-			putcyl(shp, fp, buf, name);
-		}
+			putdisksrc(shp, fp, lname, name, 1);
+		if (dosides)
+			putcyl(shp, fp, lname, name);
 		break;
 	case SPHERE:
-		strcat(strcpy(buf, name), "_light");
-		putspheresrc(shp, fp, buf, name);
+		putspheresrc(shp, fp, lname, name);
 		break;
 	}
 	return(0);
