@@ -103,7 +103,7 @@ char  *argv[];
 	int  i;
 	
 	progname = argv[0];
-	if ((gv = getenv("GAMMA")) != NULL)
+	if ((gv = getenv("DISPLAY_GAMMA")) != NULL)
 		gamcor = atof(gv);
 
 	for (i = 1; i < argc; i++)

@@ -129,7 +129,7 @@ char  *name, *id;
 	}
 					/* set gamma */
 	if ((gv = XGetDefault(ourdisplay, "radiance", "gamma")) != NULL
-			|| (gv = getenv("GAMMA")) != NULL)
+			|| (gv = getenv("DISPLAY_GAMMA")) != NULL)
 		make_gmap(atof(gv));
 	else
 		make_gmap(GAMMA);
