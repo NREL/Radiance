@@ -109,8 +109,13 @@ RAY  *r;
 			sprintf(errmsg, "undefined modifier \"%s\"", modname);
 			objerror(m, USER, errmsg);
 		}
-		raytexture(r, omod);
-	} else if (m->otype == PAT_BTEXT) {
+		if (rayshade(r, omod)) {
+			if (m->omod != OVOID)
+				objerror(m, USER, "inappropriate modifier");
+			return(1);
+		}
+	}
+	if (m->otype == PAT_BTEXT) {
 		if (foreground)
 			scalecolor(r->pcol, m->oargs.farg[9]);
 		else
@@ -127,6 +132,7 @@ RAY  *r;
 					m->oargs.farg[14]);
 		multcolor(r->pcol, cval);
 	}
+	return(0);
 }
 
 
