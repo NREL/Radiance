@@ -76,8 +76,8 @@ static int  oputo(), oputd(), oputv(), oputl(), oputL(),
 		oputp(), oputn(), oputN(), oputs(), oputw(), oputm();
 
 static int  ourtrace(), tabin();
-static int  (*ray_out[10])(), (*every_out[10])();
-static int  castonly;
+static int  (*ray_out[16])(), (*every_out[16])();
+static int  castonly = 0;
 
 static int  puta(), putf(), putd();
 
@@ -128,7 +128,10 @@ char  *fname;
 		setmode(fileno(fp), O_BINARY);
 #endif
 					/* set up output */
-	setoutput(outvals);
+	if (imm_irrad)
+		outvals = "v";
+	else
+		setoutput(outvals);
 	switch (outform) {
 	case 'a': putreal = puta; break;
 	case 'f': putreal = putf; break;
