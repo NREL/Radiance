@@ -96,6 +96,7 @@ extern double  shadthresh;		/* relative shadow threshold */
 extern double  shadcert;		/* shadow testing certainty */
 extern int  directrelay;		/* maximum number of source relays */
 extern int  vspretest;			/* virtual source pretest density */
+extern int  directinvis;		/* sources invisible? */
 
 #define  getplaneq(c,o)		(*sfun[(o)->otype].of->getpleq)(c,o)
 #define  getmaxdisk(c,o)	(*sfun[(o)->otype].of->getdisk)(c,o)
