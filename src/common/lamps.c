@@ -114,7 +114,7 @@ char	*file;
 		lastp = lp;
 	}
 	fclose(fp);
-	return(1);
+	return(lastp != NULL);
 memerr:
 	fputs("Out of memory in loadlamps\n", stderr);
 	return(-1);
