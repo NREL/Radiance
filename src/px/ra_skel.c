@@ -134,10 +134,12 @@ skel2ra()		/* convert 24-bit scanlines to Radiance picture */
 		quiterr("out of memory in skel2ra");
 						/* convert image */
 	for (y = ymax-1; y >= 0; y--) {
-		scanout[x][RED] = getc(stdin);
-		scanout[x][GRN] = getc(stdin);
-		scanout[x][BLU] = getc(stdin);
-		if (feof(stdin) || ferror(stdin))
+		for (x = 0; x < xmax; x++) {
+			scanout[x][RED] = getc(stdin);
+			scanout[x][GRN] = getc(stdin);
+			scanout[x][BLU] = getc(stdin);
+		}
+		if (feof(stdin) | ferror(stdin))
 			quiterr("error reading skel image");
 						/* undo gamma */
 		gambs_colrs(scanout, xmax);

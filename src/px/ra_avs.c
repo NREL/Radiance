@@ -127,11 +127,13 @@ avs2ra()		/* convert 24-bit scanlines to Radiance picture */
 		quiterr("out of memory in avs2ra");
 						/* convert image */
 	for (y = ymax-1; y >= 0; y--) {
-		(void)getc(stdin);			/* toss alpha */
-		scanout[x][RED] = getc(stdin);
-		scanout[x][GRN] = getc(stdin);
-		scanout[x][BLU] = getc(stdin);
-		if (feof(stdin) || ferror(stdin))
+		for (x = 0; x < xmax; x++) {
+			(void)getc(stdin);			/* toss alpha */
+			scanout[x][RED] = getc(stdin);
+			scanout[x][GRN] = getc(stdin);
+			scanout[x][BLU] = getc(stdin);
+		}
+		if (feof(stdin) | ferror(stdin))
 			quiterr("error reading AVS image");
 						/* undo gamma */
 		gambs_colrs(scanout, xmax);
