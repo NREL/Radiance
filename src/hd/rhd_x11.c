@@ -485,9 +485,10 @@ register XKeyPressedEvent  *ekey;
 		inpresflags |= DEV_RESUME;
 		return;
 	case CTRL('R'):			/* redraw */
+		qtCompost(100);			/* unload the old tree */
 		if (ncolors > 0)
 			new_ctab(ncolors);
-		qtRedraw(0, 0, odev.hres, odev.vres);
+		inpresflags |= DEV_REDRAW;	/* resend values from server */
 		return;
 	case CTRL('D'):
 	case 'Q':

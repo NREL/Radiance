@@ -21,8 +21,8 @@ VIEW	dvw;			/* our current display view */
 
 char	*progname;		/* global argv[0] */
 
-#define SERV_READY	01
-#define DEV_READY	02
+#define RDY_SRV	01
+#define RDY_DEV	02
 
 
 main(argc, argv)
@@ -39,12 +39,16 @@ char	*argv[];
 					/* enter main loop */
 	do {
 		rdy = disp_wait();
-		if (rdy & DEV_READY) {		/* get user input */
+		if (rdy & RDY_DEV) {		/* get user input */
 			inp = dev_input();
 			if (inp & DEV_NEWVIEW)
 				new_view(&odev.v);
 			if (inp & DEV_SHUTDOWN)
 				serv_request(DR_SHUTDOWN, 0, NULL);
+			if (inp & DEV_REDRAW) {
+				beam_sync();
+				imm_mode = 1;	/* preempt updates */
+			}
 			if (inp & DEV_WAIT)
 				pause = 1;
 			if (inp & DEV_RESUME) {
@@ -52,7 +56,7 @@ char	*argv[];
 				pause = 0;
 			}
 		}
-		if (rdy & SERV_READY) {		/* get server result */
+		if (rdy & RDY_SRV) {		/* get server result */
 			res = serv_result();
 			if (pause && res != DS_SHUTDOWN) {
 				serv_request(DR_ATTEN, 0, NULL);
@@ -76,9 +80,9 @@ disp_wait()			/* wait for more input */
 	register int	i;
 				/* see if we can avoid select call */
 	if (imm_mode || stdin->_cnt > 0)
-		return(SERV_READY);
+		return(RDY_SRV);
 	if (dev_flush())
-		return(DEV_READY);
+		return(RDY_DEV);
 				/* make the call */
 	FD_ZERO(&readset); FD_ZERO(&errset);
 	FD_SET(0, &readset);
@@ -94,9 +98,9 @@ disp_wait()			/* wait for more input */
 	}
 	flgs = 0;		/* flag what's ready */
 	if (FD_ISSET(0, &readset) || FD_ISSET(0, &errset))
-		flgs |= SERV_READY;
+		flgs |= RDY_SRV;
 	if (FD_ISSET(odev.ifd, &readset) || FD_ISSET(odev.ifd, &errset))
-		flgs |= DEV_READY;
+		flgs |= RDY_DEV;
 	return(flgs);
 }
 
