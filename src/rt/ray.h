@@ -1,4 +1,4 @@
-/* Copyright (c) 1994 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
 
@@ -55,6 +55,8 @@ typedef struct ray {
 extern int  raytrace();
 
 extern double  raynormal();
+
+extern double  raydistance();
 
 extern int  dimlist[];		/* dimension list for distribution */
 extern int  ndims;		/* number of dimensions so far */

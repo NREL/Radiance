@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -251,9 +251,6 @@ double
 chanvalue(n)			/* return channel n to calcomp */
 register int  n;
 {
-	double  sum;
-	register RAY  *r;
-
 	if (fray == NULL)
 		syntax("ray parameter used in constant expression");
 
@@ -281,13 +278,8 @@ register int  n;
 				fray->rop[2]*funcxf.xfm[2][n-6] +
 					     funcxf.xfm[3][n-6] );
 
-	if (n == 9) {			/* total distance */
-		sum = fray->rot;
-		for (r = fray->parent; r != NULL; r = r->parent)
-			sum += r->rot;
-		return(sum * funcxf.sca);
-
-	}
+	if (n == 9)			/* total distance */
+		return(raydist(fray,PRIMARY) * funcxf.sca);
 
 	if (n == 10)			/* dot product (range [-1,1]) */
 		return(	fray->rod <= -1.0 ? -1.0 :
@@ -309,13 +301,8 @@ register int  n;
 	if (n < 24)			/* k unit vector */
 		return(funcxf.xfm[2][n-21] / funcxf.sca);
 
-	if (n == 24) {			/* single ray (shadow) distance */
-		sum = fray->rot;
-		for (r = fray->parent; r != NULL && r->crtype&SHADOW;
-				r = r->parent)
-			sum += r->rot;
-		return(sum * funcxf.sca);
-	}
+	if (n == 24)			/* single ray (shadow) distance */
+		return((fray->rot+raydist(fray->parent,SHADOW)) * funcxf.sca);
 badchan:
 	error(USER, "illegal channel number");
 }
