@@ -105,8 +105,7 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-	int  onintr();
-	double  atof();
+	int  onintr(), checkhead();
 	char  sbuf[256];
 	register int  i;
 	
@@ -141,10 +140,7 @@ char  *argv[];
 		quitmsg(errmsg);
 	}
 				/* get header */
-	while (fgets(sbuf, sizeof(sbuf), fin) != NULL && sbuf[0] != '\n')
-		if (!strncmp(sbuf, "EXPOSURE=", 9))
-			exposure *= atof(sbuf+9);
-
+	getheader(fin, checkhead);
 				/* get picture dimensions */
 	if (fgetresolu(&xmax, &ymax, fin) != (YMAJOR|YDECR))
 		quitmsg("bad picture size");
@@ -167,6 +163,14 @@ char  *argv[];
 userr:
 	fprintf(stderr, "Usage: %s [-d][-b] input\n", progname);
 	quit(1);
+}
+
+
+checkhead(line)				/* deal with line from header */
+char  *line;
+{
+	if (!strncmp(line, "EXPOSURE=", 9))
+		exposure *= atof(line+9);
 }
 
 
