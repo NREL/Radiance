@@ -160,8 +160,10 @@ main(int argc, char *argv[])
 		if (rgbp == NULL) {
 			hdr = BMPmappedHeader(scanlen(&rs),
 						numscans(&rs), 0, 256);
+			/*
 			if (outfile != NULL)
 				hdr->compr = BI_RLE8;
+			*/
 		} else
 			hdr = BMPtruecolorHeader(scanlen(&rs),
 						numscans(&rs), 0);
