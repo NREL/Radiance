@@ -3,45 +3,22 @@
 {
 	Coordinate computations for mkillum output.
 
-	For the spherical case, A1-A3 is the value at the positive pole,
-	A4-A6 is the value at the negative pole, and A7 is the pole influence:
+	There are no arguments for the spherical case:
 
 	il_alt		- Altitude (1 to -1) for spherical coordinates
 	il_azi		- Azimuth (0 to 2*PI) for sphere
 
-	For the hemispherical case, A1-A3 and A4 are the pole value and
-	influence, respectively, and A5-A13 are the unit vectors for the
+	For the hemispherical case, A1-A9 are the unit vectors for the
 	hemisphere's coordinate system:
 
 	il_alth		- Altitude (1 to 0) for hemispherical coordinates
 	il_azih		- Azimuth (0 to 2*PI) for hemisphere
 }
 
-norm_rad(r) : if( r, r, r+2*PI );
-					{ sphere coordinates }
 il_alt = Dz;
 il_azi = norm_rad(atan2(Dy, Dx));
 
-s_val(v, vN, vS) = if( il_alt-A7,
-			linterp((il_alt-A7)/(1-A7), v, vN),
-			if ( -il_alt-A7,
-				linterp((-il_alt-A7)/(1-A7), v, vS),
-				v ),
-			v );
-					{ sphere values }
-s_red(r,g,b) = s_val(r, A1, A4);
-s_grn(r,g,b) = s_val(g, A2, A5);
-s_blu(r,g,b) = s_val(b, A3, A6);
-s_gry(v) = s_val(v, grey(A1,A2,A3), grey(A4,A5,A6));
+il_alth = sq(-Dx*A7-Dy*A8-Dz*A9);
+il_azih = norm_rad(atan2(-Dx*A4-Dy*A5-Dz*A6, -Dx*A1-Dy*A2-Dz*A3));
 
-					{ hemisphere coordinates }
-il_alth = sq(-Dx*arg(11)-Dy*arg(12)-Dz*arg(13));
-il_azih = norm_rad(atan2(-Dx*arg(8)-Dy*arg(9)-Dz*arg(10),
-			-Dx*arg(5)-Dy*arg(6)-Dz*arg(7)));
-
-h_val(v, vN) = if( il_alth-A4, linterp((il_alth-A4)/(1-A4), v, vN), noneg(v) );
-					{ hemisphere values }
-h_red(r,g,b) = h_val(r, A1);
-h_grn(r,g,b) = h_val(g, A2);
-h_blu(r,g,b) = h_val(b, A3);
-h_gry(v) = h_val(v, grey(A1,A2,A3));
+norm_rad(r) = if( r, r, r+2*PI );
