@@ -6,11 +6,12 @@
  */
 #ifndef _RAD_TONEMAP_H_
 #define _RAD_TONEMAP_H_
+
+#include	"tifftypes.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include	"tifftypes.h"
 
 /****    Argument Macros    ****/
 				/* Flags of what to do */

@@ -4,10 +4,16 @@
  *
  * Include after "standard.h"
  */
+#ifndef _RAD_RHD_ODRAW_H_
+#define _RAD_RHD_ODRAW_H_
 
 #include "color.h"
 #include "tonemap.h"
 #include "rhdriver.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern struct ODview {
 	int	sfirst, snext;	/* first sample and first in next view */
@@ -130,3 +136,9 @@ and redraw them on the next call(s) to odUpdate().  If newhist
 is non-zero, then clear the previous sample history.
 
  **********************************************************************/
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_RHD_ODRAW_H_ */
+

@@ -1,6 +1,13 @@
 /* RCSid: $Id$ */
 /* New imPress codes */
 
+#ifndef _RAD_IMPCODES_H_
+#define _RAD_IMPCODES_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define	imP_SP			128
 #define	imP_SP1			129
 #define	imP_OLD_MMOVE		130
@@ -60,4 +67,9 @@
 
 #define imP_NO_OP		254
 #define	imP_EOF			255
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_IMPCODES_H_ */
 

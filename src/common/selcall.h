@@ -4,9 +4,6 @@
  */
 #ifndef _RAD_SELCALL_H_
 #define _RAD_SELCALL_H_
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include <string.h>
 #include <sys/types.h>
@@ -36,6 +33,11 @@ extern "C" {
 #define FD_ZERO(p)	memset((char *)(p), 0, sizeof(*(p)))
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* nothing yet */
 
 #ifdef __cplusplus
 }

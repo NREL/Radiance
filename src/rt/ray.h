@@ -4,17 +4,15 @@
  */
 #ifndef _RAD_RAY_H_
 #define _RAD_RAY_H_
+
+#include  "standard.h"
+#include  "octree.h"
+#include  "object.h"
+#include  "color.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include  "standard.h"
-
-#include  "octree.h"
-
-#include  "object.h"
-
-#include  "color.h"
 
 #define  MAXDIM		32	/* maximum number of dimensions */
 

@@ -4,9 +4,6 @@
  */
 #ifndef _RAD_RTMISC_H_
 #define _RAD_RTMISC_H_
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include  <stdlib.h>
 					/* memory operations */
@@ -15,6 +12,10 @@ extern "C" {
 #define	 copystruct(d,s)	memcpy((void *)(d),(void *)(s),sizeof(*(d)))
 #else
 #define	 copystruct(d,s)	(*(d) = *(s))
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 					/* defined in bmalloc.c */

@@ -4,6 +4,13 @@
  *
  *	8/25/88
  */
+#ifndef _RAD_TARGA_H_
+#define _RAD_TARGA_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 			/* header structure adapted from tardev.h */
 struct hdStruct {
 	char textSize;			/* size of info. line ( < 256) */
@@ -33,3 +40,9 @@ struct hdStruct {
 #define  CM_HASMAP	1		/* has color map */
 
 #define  bits_bytes(n)	(((n)+7)>>3)	/* number of bits to number of bytes */
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_TARGA_H_ */
+

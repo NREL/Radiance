@@ -4,6 +4,12 @@
  *
  *    adapted from octree.h 
  */
+#ifndef _RAD_CONE_H_
+#define _RAD_CONE_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  *	An quadtree is expressed as an integer which is either
@@ -153,7 +159,8 @@ extern QUADTREE qtRoot_visit_tri_edges();
 extern QUADTREE qtRoot_trace_ray();
 
 
-
-
-
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_CONE_H_ */
 

@@ -4,15 +4,16 @@
  */
 #ifndef _RAD_TMPRIVAT_H_
 #define _RAD_TMPRIVAT_H_
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #ifndef	MEM_PTR
 #define	MEM_PTR		void *
 #endif
 #include	"color.h"
 #include	"tonemap.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 				/* required constants */
 #ifndef M_LN2

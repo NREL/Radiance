@@ -2,13 +2,16 @@
 /*
  * Header file for picture file conditioning.
  */
+#ifndef _RAD_PCOND_H_
+#define _RAD_PCOND_H_
 
 #include "standard.h"
-
 #include "color.h"
-
 #include "view.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef ADJ_VEIL
 #define ADJ_VEIL	0		/* adjust veil to preserve contrast? */
@@ -103,3 +106,8 @@ extern double	crfactor();		/* contrast reduction factor */
 
 extern COLOR	*firstscan();		/* first processed scanline */
 extern COLOR	*nextscan();		/* next processed scanline */
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_PCOND_H_ */

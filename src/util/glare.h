@@ -4,15 +4,15 @@
  */
 #ifndef _RAD_GLARE_H_
 #define _RAD_GLARE_H_
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 
 #include "standard.h"
 #include "view.h"
 #include "color.h"
 #include "setscan.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define GLAREBR		7.0		/* glare source is this * avg. lum. */
 

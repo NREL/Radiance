@@ -4,9 +4,6 @@
  */
 #ifndef _RAD_META_H_
 #define _RAD_META_H_
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include "copyright.h"
 
@@ -16,6 +13,9 @@ extern "C" {
 
 #include  "rterror.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define  TRUE  1
 #define  FALSE  0

@@ -4,6 +4,13 @@
  *
  *	3/1/90
  */
+#ifndef _RAD_X11RASTER_H_
+#define _RAD_X11RASTER_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 typedef struct {
 	Display	*disp;				/* the display */
@@ -29,3 +36,9 @@ extern XRASTER	*make_raster();
 
 #define put_raster(d,xdst,ydst,xr) patch_raster(d,0,0,xdst,ydst, \
 				(xr)->image->width,(xr)->image->height,xr)
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_X11RASTER_H_ */
+

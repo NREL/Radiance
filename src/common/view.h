@@ -7,11 +7,12 @@
  */
 #ifndef _RAD_VIEW_H_
 #define _RAD_VIEW_H_
+
+#include  "resolu.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include  "resolu.h"
 
 				/* view types */
 #define  VT_PER		'v'		/* perspective */

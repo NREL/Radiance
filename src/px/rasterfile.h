@@ -4,9 +4,12 @@
 /*
  * Description of header for files containing raster images
  */
+#ifndef _RAD_RASTERFILE_H_
+#define _RAD_RASTERFILE_H_
 
-#ifndef _rasterfile_h
-#define _rasterfile_h
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct rasterfile {
 	int	ras_magic;		/* magic number */
@@ -48,4 +51,8 @@ struct rasterfile {
  *   true length from the width, height, and depth fields.
  */
 
-#endif /*!_rasterfile_h*/
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_RASTERFILE_H_ */
+

@@ -4,9 +4,6 @@
  */
 #ifndef _RAD_RADOGL_H_
 #define _RAD_RADOGL_H_
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include "standard.h"
 #include <GL/glu.h>
@@ -14,6 +11,10 @@ extern "C" {
 #include "object.h"
 #include "otypes.h"
 #include "lookup.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define MAXLIGHTS	8	/* number of OGL light sources */
 

@@ -6,11 +6,12 @@
  */
 #ifndef _RAD_MESH_H_
 #define _RAD_MESH_H_
+
+#include "lookup.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "lookup.h"
 
 #ifndef BYTE
 #define BYTE	unsigned char

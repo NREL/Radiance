@@ -2,8 +2,14 @@
 /*
  * Header file for holodeck device driver routines.
  */
+#ifndef _RAD_RHDRIVER_H_
+#define _RAD_RHDRIVER_H_
 
 #include "view.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern struct driver {
 	char	*name;		/* holodeck name or title */
@@ -163,3 +169,10 @@ Set odev.v.type=0 and odev.hres=odev.vres=0 when done.
 extern VIEW	*dev_auxview();
 
 extern int16	*beam_view();
+
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_RHDRIVER_H_ */
+

@@ -18,14 +18,15 @@
  */
 #ifndef _RAD_RANIMOVE_H_
 #define _RAD_RANIMOVE_H_
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 
 #include "ray.h"
 #include "view.h"
 #include "vars.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 				/* input variables (alphabetical by name) */
 #define BASENAME	0		/* output image base name */
 #define END		1		/* number of animation frames */

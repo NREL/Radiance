@@ -11,11 +11,12 @@
  */
 #ifndef _RAD_COLOR_H_
 #define _RAD_COLOR_H_
+
+#include <stdlib.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdlib.h>
 
 #define  RED		0
 #define  GRN		1

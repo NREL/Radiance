@@ -3,11 +3,17 @@
  *  sm.h
  */
 
-#ifndef _SM_H_
-#define _SM_H_
+#ifndef _RAD_SM_H_
+#define _RAD_SM_H_
+
 #include "rhd_sample.h"
 #include "sm_qtree.h"
 #include "sm_stree.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define NEWSETS
 
 
@@ -265,12 +271,9 @@ extern FVECT FrustumNear[4],FrustumFar[4];
  * Find the closest sample to the given ray.  Return -1 on failure.
  *
  */
+
+#ifdef __cplusplus
+}
 #endif
-
-
-
-
-
-
-
+#endif /* define _RAD_SM_H_ */
 

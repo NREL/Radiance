@@ -2,6 +2,13 @@
 /*
  *		Board types used for targa->boardType
  */
+#ifndef _RAD_TARDEV_H_
+#define _RAD_TARDEV_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define    TYPE_8	 8
 #define    TYPE_16  16
 #define    TYPE_24  24
@@ -332,3 +339,10 @@ typedef struct {
 	int *strokes;			/* where the strokes are located */
 	SFONTCHAR *info;		/* info on each character */
 } SFONT;
+
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_TARDEV_H_ */
+

@@ -4,13 +4,13 @@
  */
 #ifndef _RAD_RPAINT_H_
 #define _RAD_RPAINT_H_
+
+#include  "driver.h"
+#include  "view.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include  "driver.h"
-
-#include  "view.h"
 
 typedef short  COORD;		/* an image coordinate */
 

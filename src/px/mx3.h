@@ -1,8 +1,12 @@
 /* RCSid: $Id$ */
-#ifndef MX3_HDR
-#define MX3_HDR
+#ifndef _RAD_MX3_H_
+#define _RAD_MX3_H_
 
 #include <string.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define mx3_copy(a, b) memcpy(b, a, 3*3*sizeof(double))
 
@@ -30,4 +34,7 @@ void  mx3d_transform(/* p, a, q */);
 double  mx3d_transform_div(/* p, a, q */);
 #define mx3d_copy(a, b) memcpy(b, a, 3*3*sizeof(double))
 
+#ifdef __cplusplus
+}
 #endif
+#endif /* _RAD_MX3_H_ */

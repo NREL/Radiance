@@ -7,9 +7,6 @@
  */
 #ifndef _RAD_PROCESS_H_
 #define _RAD_PROCESS_H_
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include  <errno.h>
 #ifdef _WIN32
@@ -22,6 +19,9 @@ extern "C" {
 
 #include "paths.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* On Windows, a process ID is a DWORD. That might actually be the
    same thing as an int, but it's better not to assume anything.

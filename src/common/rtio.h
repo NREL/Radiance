@@ -5,14 +5,15 @@
 
 #ifndef _RAD_RTIO_H_
 #define _RAD_RTIO_H_
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include  <stdio.h>
 #include  <sys/types.h>
 #include  <fcntl.h>
 #include  <string.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* XXX include paths.h instead */
 #ifndef	 F_OK			/* mode bits for access(2) call */

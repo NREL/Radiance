@@ -2,6 +2,12 @@
 /*
  *   Structures for line segment output to raster files
  */
+#ifndef _RAD_RAST_H_
+#define _RAD_RAST_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define  NUMSCANS	16		/* number of scanlines per block */
 
@@ -40,3 +46,9 @@ extern SCANBLOCK  outblock;		/* output span */
 				somebelow(p,outblock.ytop+1))
 #define  innext(p)	(ydown ? somebelow(p,outblock.ybot) : \
 				someabove(p,outblock.ytop))
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_RAST_H_ */
+

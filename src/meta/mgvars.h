@@ -6,6 +6,14 @@
  *
  *     Greg Ward Larson
  */
+#ifndef _RAD_MGVARS_H_
+#define _RAD_MGVARS_H_
+
+#include <errno.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  *  Data arrays are used to store point data.
@@ -102,6 +110,11 @@ extern VARIABLE  *vlookup();
 
 extern double  varvalue(), funvalue();
 
-extern int  errno;
-
 #define  mgclear(vname)		undefine(vlookup(vname))
+
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_MGVARS_H_ */
+

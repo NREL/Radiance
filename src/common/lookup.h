@@ -4,6 +4,9 @@
  */
 #ifndef _RAD_LOOKUP_H_
 #define _RAD_LOOKUP_H_
+
+#include <string.h> /* strcmp() */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -74,8 +77,6 @@ typedef struct {
  * in the LU_TAB structure.  The final action of lu_done is to free the
  * allocated table itself.
  */
-
-#include <string.h> /* strcmp() */
 
 extern int	lu_init(LUTAB *tbl, int nel);
 extern unsigned long	lu_shash(char *s);

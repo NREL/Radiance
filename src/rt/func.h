@@ -6,11 +6,12 @@
  */
 #ifndef _RAD_FUNC_H_
 #define _RAD_FUNC_H_
+
+#include  "calcomp.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include  "calcomp.h"
 
 #define  MAXEXPR	9	/* maximum expressions in modifier */
 

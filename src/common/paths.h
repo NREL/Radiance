@@ -4,9 +4,6 @@
  */
 #ifndef _RAD_PATHS_H_
 #define _RAD_PATHS_H_
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,7 +48,14 @@ extern "C" {
     #define S_IRUSR _S_IREAD
     #define S_IWUSR _S_IWRITE
   #endif
-extern char  *fixargv0();
+
+  #ifdef __cplusplus
+    extern "C" {
+  #endif
+  extern char  *fixargv0();
+  #ifdef __cplusplus
+    }
+  #endif
 
 #else /* everything but Windows */
   #include <unistd.h>
@@ -109,6 +113,9 @@ extern char  *fixargv0();
   #define CASEDIRSEP	case DIRSEP
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Find a writeable directory for temporary files */
 /* If s is NULL, we return a static string */

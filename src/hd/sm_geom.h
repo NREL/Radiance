@@ -4,8 +4,14 @@
  */
 
 /* Assumes included after standard.h  */
+#ifndef _RAD_SM_GEOM_H_
+#define _RAD_SM_GEOM_H_
 
 #include <values.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef SMLFLT
 #define EQUALITY_EPS 1e-6
@@ -118,4 +124,8 @@ double tri_normal();
 double point_on_sphere();
 
 
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_SM_GEOM_H_ */
 

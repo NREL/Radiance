@@ -1,8 +1,16 @@
 /* RCSid: $Id$ */
 
+#ifndef _RAD_TGRAPH_H_
+#define _RAD_TGRAPH_H_
+
+#include  <stdlib.h>
 #include  <math.h>
 
 #include  "meta.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define  MINDIVS  4		/* Minimum number of divisions for axis */
 
@@ -66,4 +74,9 @@ extern int    ncurves;			/* number of curves in file */
 
 extern char  *snagquo(), *instr();
 
-extern double  atof(), floor(), ceil(), log();
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_TGRAPH_H_ */
+

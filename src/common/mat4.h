@@ -4,13 +4,14 @@
  */
 #ifndef _RAD_MAT4_H_
 #define _RAD_MAT4_H_
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include  <string.h>
 
 #include  "fvect.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef RREAL  MAT4[4][4];
 

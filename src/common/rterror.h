@@ -5,11 +5,13 @@
 
 #ifndef _RAD_RTERROR_H_
 #define _RAD_RTERROR_H_
+
+#include <errno.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <errno.h>
 				/* error codes */
 #define	 WARNING	0		/* non-fatal error */
 #define	 USER		1		/* fatal user-caused error */

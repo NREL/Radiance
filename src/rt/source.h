@@ -6,11 +6,12 @@
  */
 #ifndef _RAD_SOURCE_H_
 #define _RAD_SOURCE_H_
+
+#include <string.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <string.h>
 
 #define  AIMREQT	100		/* required aim success/failure */
 

@@ -2,9 +2,15 @@
 /*
  * Header file for rholo program
  */
+#ifndef _RAD_RHOLO_H_
+#define _RAD_RHOLO_H_
 
 #include "holo.h"
 #include "vars.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef RPACKSIZ
 #define RPACKSIZ	21		/* good packet size */
@@ -114,3 +120,10 @@ extern char	*rtargv[];
 extern PACKET	*do_packets(), *get_packets(), *flush_queue();
 
 extern int16	*viewbeams();
+
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_RHOLO_H_ */
+

@@ -5,15 +5,15 @@
 
 #ifndef _RAD_RTMATH_H_
 #define _RAD_RTMATH_H_
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include  <math.h>
 
 #include  "tifftypes.h"
-
 #include  "mat4.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 				/* regular transformation */
 typedef struct {

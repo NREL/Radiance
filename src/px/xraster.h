@@ -2,6 +2,12 @@
 /*
  * xraster.h - header file for X routines using images.
  */
+#ifndef _RAD_XRASTER_H_
+#define _RAD_XRASTER_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct {
 	int	width, height;			/* image size */
@@ -19,3 +25,9 @@ typedef struct {
 extern int	*map_rcolors();
 
 extern Pixmap	make_rpixmap();
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_XRASTER_H_ */
+

@@ -2,6 +2,12 @@
 /*
  * Header file for object display routines for rholo drivers.
  */
+#ifndef _RAD_RHDOBJ_H_
+#define _RAD_RHDOBJ_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 				/* additional user commands */
 #define DO_LOAD		0		/* load octree object */
@@ -148,3 +154,9 @@ extern double	dobj_trace();
 extern char	rhdcmd[DO_NCMDS][8];
 
 extern int	(*dobj_lightsamp)();	/* pointer to function to get lights */
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_RHDOBJ_H_ */
+

@@ -1,6 +1,13 @@
 /* RCSid: $Id$ */
 /* the following three structures are used by ciq */
 
+#ifndef _RAD_PIC_H_
+#define _RAD_PIC_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef int colormap[3][256];
 
 typedef unsigned char pixel;
@@ -13,3 +20,9 @@ typedef struct {
 
 /* image resolution */
 extern int	xmax,ymax;
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_PIC_H_ */
+

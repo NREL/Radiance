@@ -6,13 +6,14 @@
  */
 #ifndef _RAD_CVMESH_H_
 #define _RAD_CVMESH_H_
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include "octree.h"
 #include "object.h"
 #include "mesh.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern MESH	*ourmesh;		/* global mesh pointer */
 
