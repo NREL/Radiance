@@ -87,6 +87,7 @@ char  *name, *id;
 static
 vga_close()					/* close VGA */
 {
+	ms_gcdone(&vga_driver);
 	_setvideomode(_DEFAULTMODE);
 	errvec = stderr_v;			/* reset error vectors */
 	cmdvec = NULL;

@@ -175,3 +175,21 @@ struct driver  *dp;
 
     dp->getcur = ms_getcur;
 }
+
+void
+ms_gcdone( dp )
+struct driver  *dp;
+{
+    union REGS inregs, outregs;
+
+    if (dp->getcur != ms_getcur)
+	return;			/* not installed */
+
+    dp->getcur = NULL;
+
+    /* uninstall watcher */
+
+    inregs.w.ax = 0;
+    int386 (0x33, &inregs, &outregs);
+}
+
