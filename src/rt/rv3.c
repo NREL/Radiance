@@ -167,7 +167,7 @@ newimage()				/* start a new image */
 						/* compute resolution */
 	hresolu = dev->xsiz;
 	vresolu = dev->ysiz;
-	normaspect(&ourview, &dev->pixaspect, &hresolu, &vresolu);
+	normaspect(viewaspect(&ourview), &dev->pixaspect, &hresolu, &vresolu);
 	pframe.l = pframe.d = 0;
 	pframe.r = hresolu; pframe.u = vresolu;
 	pdepth = 0;
