@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -201,40 +201,7 @@ register RAY  *r;
 	multcolor(nd.mcolor, r->pcol);		/* modify material color */
 	mirtest = transtest = 0;
 	mirdist = transdist = r->rot;
-						/* get specular component */
-	if ((nd.rspec = m->oargs.farg[3]) > FTINY) {
-		nd.specfl |= SP_REFL;
-						/* compute specular color */
-		if (m->otype == MAT_METAL)
-			copycolor(nd.scolor, nd.mcolor);
-		else
-			setcolor(nd.scolor, 1.0, 1.0, 1.0);
-		scalecolor(nd.scolor, nd.rspec);
-						/* check threshold */
-		if (!(nd.specfl & SP_PURE) && specthresh >= nd.rspec-FTINY)
-			nd.specfl |= SP_RBLT;
-						/* compute reflected ray */
-		for (i = 0; i < 3; i++)
-			nd.vrefl[i] = r->rdir[i] + 2.*nd.pdot*nd.pnorm[i];
-						/* penetration? */
-		if (hastexture && DOT(nd.vrefl, r->ron) <= FTINY)
-			for (i = 0; i < 3; i++)		/* safety measure */
-				nd.vrefl[i] = r->rdir[i] + 2.*r->rod*r->ron[i];
-
-		if (!(r->crtype & SHADOW) && nd.specfl & SP_PURE) {
-			RAY  lr;
-			if (rayorigin(&lr, r, REFLECTED, nd.rspec) == 0) {
-				VCOPY(lr.rdir, nd.vrefl);
-				rayvalue(&lr);
-				multcolor(lr.rcol, nd.scolor);
-				addcolor(r->rcol, lr.rcol);
-				if (!hastexture && nd.specfl & SP_FLAT) {
-					mirtest = 2.*bright(lr.rcol);
-					mirdist = r->rot + lr.rt;
-				}
-			}
-		}
-	}
+	nd.rspec = m->oargs.farg[3];
 						/* compute transmission */
 	if (m->otype == MAT_TRANS) {
 		nd.trans = m->oargs.farg[5]*(1.0 - nd.rspec);
@@ -278,6 +245,40 @@ register RAY  *r;
 	if (r->crtype & SHADOW) {		/* the rest is shadow */
 		r->rt = transdist;
 		return(1);
+	}
+						/* get specular reflection */
+	if (nd.rspec > FTINY) {
+		nd.specfl |= SP_REFL;
+						/* compute specular color */
+		if (m->otype == MAT_METAL)
+			copycolor(nd.scolor, nd.mcolor);
+		else
+			setcolor(nd.scolor, 1.0, 1.0, 1.0);
+		scalecolor(nd.scolor, nd.rspec);
+						/* check threshold */
+		if (!(nd.specfl & SP_PURE) && specthresh >= nd.rspec-FTINY)
+			nd.specfl |= SP_RBLT;
+						/* compute reflected ray */
+		for (i = 0; i < 3; i++)
+			nd.vrefl[i] = r->rdir[i] + 2.*nd.pdot*nd.pnorm[i];
+						/* penetration? */
+		if (hastexture && DOT(nd.vrefl, r->ron) <= FTINY)
+			for (i = 0; i < 3; i++)		/* safety measure */
+				nd.vrefl[i] = r->rdir[i] + 2.*r->rod*r->ron[i];
+
+		if (!(r->crtype & SHADOW) && nd.specfl & SP_PURE) {
+			RAY  lr;
+			if (rayorigin(&lr, r, REFLECTED, nd.rspec) == 0) {
+				VCOPY(lr.rdir, nd.vrefl);
+				rayvalue(&lr);
+				multcolor(lr.rcol, nd.scolor);
+				addcolor(r->rcol, lr.rcol);
+				if (!hastexture && nd.specfl & SP_FLAT) {
+					mirtest = 2.*bright(lr.rcol);
+					mirdist = r->rot + lr.rt;
+				}
+			}
+		}
 	}
 						/* diffuse reflection */
 	nd.rdiff = 1.0 - nd.trans - nd.rspec;
