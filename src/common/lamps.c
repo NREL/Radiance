@@ -129,7 +129,7 @@ freelamps()			/* free our lamps list */
 {
 	register LAMP	*lp1, *lp2;
 	
-	for (lp1 = lamps; lp1 != NULL; lp1 = lp1->next) {
+	for (lp1 = lamps; lp1 != NULL; lp1 = lp2) {
 		free(lp1->pattern);
 		if (lp1->color != NULL) {
 			for (lp2 = lp1->next; lp2 != NULL; lp2 = lp2->next)
@@ -137,6 +137,7 @@ freelamps()			/* free our lamps list */
 					lp2->color = NULL;
 			free((char *)lp1->color);
 		}
+		lp2 = lp1->next;
 		free((char *)lp1);
 	}
 	lamps = NULL;
