@@ -343,8 +343,6 @@ TRI **tptr;
     SM_NTH_VERT(sm,v1_id) = t_id;
     SM_NTH_VERT(sm,v2_id) = t_id;
 
-    /* Add triangle to the locator */
-    smLocator_add_tri(sm,t_id,v0_id,v1_id,v2_id);
     if(t)
        *tptr = t;
     /* return initialized triangle */
@@ -442,11 +440,12 @@ FVECT p;
 }
 
 void
-smTris_swap_edge(sm,t_id,t1_id,e,e1,tn_id,tn1_id)
+smTris_swap_edge(sm,t_id,t1_id,e,e1,tn_id,tn1_id,add,del)
    SM *sm;
    int t_id,t1_id;
    int e,e1;
    int **tn_id,**tn1_id;
+   LIST **add,**del;
 
 {
     TRI *t,*t1;
@@ -469,12 +468,14 @@ smTris_swap_edge(sm,t_id,t1_id,e,e1,tn_id,tn1_id)
     verts[enext] = T_NTH_V(t1,e1prev);
     verts[eprev] = T_NTH_V(t,eprev);
     ta_id = smAdd_tri(sm,verts[0],verts[1],verts[2],&ta);
+    *add = push_data(*add,ta_id);
 
     verts[e1] = T_NTH_V(t1,e1);
     verts[e1next] = T_NTH_V(t,eprev);
     verts[e1prev] = T_NTH_V(t1,e1prev);
     tb_id = smAdd_tri(sm,verts[0],verts[1],verts[2],&tb);
-    
+    *add = push_data(*add,tb_id);
+
     /* set the neighbors */
     T_NTH_NBR(ta,e) = T_NTH_NBR(t1,e1next);
     T_NTH_NBR(tb,e1) = T_NTH_NBR(t,enext);
@@ -495,31 +496,69 @@ smTris_swap_edge(sm,t_id,t1_id,e,e1,tn_id,tn1_id)
     T_NTH_NBR(n,T_NTH_NBR_PTR(t1_id,n)) = tb_id;
 
     /* Delete two parent triangles */
-    smDelete_tri(sm,t_id);
-    smDelete_tri(sm,t1_id);
+    *del = push_data(*del,t_id);
+    if(SM_IS_NTH_T_NEW(sm,t_id))
+      SM_CLEAR_NTH_T_NEW(sm,t_id);
+    else
+      SM_CLEAR_NTH_T_BASE(sm,t_id);
+    *del = push_data(*del,t1_id);
+    if(SM_IS_NTH_T_NEW(sm,t1_id))
+      SM_CLEAR_NTH_T_NEW(sm,t1_id);
+    else
+      SM_CLEAR_NTH_T_BASE(sm,t1_id);
     *tn_id = ta_id;
     *tn1_id = tb_id;
 }
 
+smUpdate_locator(sm,add_list,del_list)
+SM *sm;
+LIST *add_list,*del_list;
+{
+  int t_id;
+  TRI *t;
+  while(add_list)
+  {
+    t_id = pop_list(&add_list);
+    if(!SM_IS_NTH_T_NEW(sm,t_id) && !SM_IS_NTH_T_BASE(sm,t_id))
+    {
+      SM_SET_NTH_T_NEW(sm,t_id);
+      continue;
+    }
+    t = SM_NTH_TRI(sm,t_id);
+    smLocator_add_tri(sm,t_id,T_NTH_V(t,0),T_NTH_V(t,1),T_NTH_V(t,2));
+  }
+  
+  while(del_list)
+  {
+    t_id = pop_list(&del_list);
+    if(SM_IS_NTH_T_NEW(sm,t_id))
+    {
+      smDelete_tri(sm,t_id); 
+      continue;
+    }
+    smLocator_remove_tri(sm,t_id);
+    smDelete_tri(sm,t_id); 
+  }
+}
 /* MUST add check for constrained edges */
-char
+int
 smFix_tris(sm,id,tlist)
 SM *sm;
 int id;
 LIST *tlist;
 {
     TRI *t,*t_opp;
-    FVECT p,p1,np,p2,p3;
-    int swapped = 0;
-    int e,e1,e_id;
-    char debug = 0;
+    FVECT p,p1,p2,p3;
+    int e,e1,swapped = 0;
     int t_id,t_opp_id;
-    
-    VCOPY(p,SM_NTH_WV(sm,id));    
-    VSUB(p,p,SM_VIEW_CENTER(sm));
+    LIST *add_list,*del_list;
+
+
+    add_list = del_list = NULL;
+    VSUB(p,SM_NTH_WV(sm,id),SM_VIEW_CENTER(sm));
     while(tlist)
     {
-	t_id = (int)pop_list(&tlist);
+	t_id = pop_list(&tlist);
         t = SM_NTH_TRI(sm,t_id);
         e = (T_WHICH_V(t,id)+1)%3;
         t_opp_id = T_NTH_NBR(t,e);
@@ -534,12 +573,14 @@ LIST *tlist;
 	    e1 = T_NTH_NBR_PTR(t_id,t_opp);
 	    /* check list for t_opp and Remove if there */
 	    remove_from_list(t_opp_id,&tlist);
-
-	    smTris_swap_edge(sm,t_id,t_opp_id,e,e1,&t_id,&t_opp_id);
+	    smTris_swap_edge(sm,t_id,t_opp_id,e,e1,&t_id,&t_opp_id,
+			     &add_list,&del_list);
 	    tlist = push_data(tlist,t_id);
 	    tlist = push_data(tlist,t_opp_id);
 	}
     }
+    smUpdate_locator(sm,add_list,del_list);
+
     return(swapped);
 }
 
@@ -670,9 +711,14 @@ smInsert_point_in_tri(sm,c,dir,p,s_id,tri_id)
       n_id = smClosest_vertex_in_tri(sm,t0_id,t1_id,t2_id,npt,P_REPLACE_EPS);
     }
     t0_id = smAdd_tri(sm,s_id,v0_id,v1_id,&t0);
+    /* Add triangle to the locator */
+    smLocator_add_tri(sm,t0_id,s_id,v0_id,v1_id);
+
     t1_id = smAdd_tri(sm,s_id,v1_id,v2_id,&t1);	
+    smLocator_add_tri(sm,t1_id,s_id,v1_id,v2_id);
     t2_id = smAdd_tri(sm,s_id,v2_id,v0_id,&t2);
-	
+    smLocator_add_tri(sm,t2_id,s_id,v2_id,v0_id);	
+
     /* Set the neighbor pointers for the new tris */
     T_NTH_NBR(t0,0) = t2_id;
     T_NTH_NBR(t0,1) = T_NTH_NBR(tri,0);
@@ -692,6 +738,7 @@ smInsert_point_in_tri(sm,c,dir,p,s_id,tri_id)
     nbr = SM_NTH_TRI(sm,T_NTH_NBR(tri,2));
     T_NTH_NBR(nbr,T_NTH_NBR_PTR(tri_id,nbr)) = t2_id;
 	
+    smLocator_remove_tri(sm,tri_id);
     smDelete_tri(sm,tri_id);
 	
     /* Fix up the new triangles*/
@@ -957,6 +1004,7 @@ int type;
     v2_id = p[stTri_verts[i][2]];
     if((ids[i] = smAdd_tri(sm, v0_id,v1_id,v2_id,&(tris[i])))== -1)
      return(0);
+    smLocator_add_tri(sm,ids[i],v0_id,v1_id,v2_id);
   }
   /* Set neighbors */
 
