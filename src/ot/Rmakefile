@@ -74,4 +74,4 @@ initotypes.o init2otypes.o:	../common/otypes.h
 cvmesh.o obj2mesh.o wfconv.o:	cvmesh.h \
 ../common/octree.h ../common/object.h ../common/mesh.h
 
-cvmesh.o:	../common/otypes.h ../common/face.h
+cvmesh.o:	../common/otypes.h ../common/face.h ../common/tmesh.h
