@@ -109,7 +109,7 @@ char	*argv[];
 			if (inp & DFL(DC_QUIT))
 				serv_request(DR_SHUTDOWN, 0, NULL);
 		}
-		if (rdy & RDY_SIN)		/* user input from sstdin */
+		if (rdy & RDY_SIN && !imm_mode)	/* user input from sstdin */
 			switch (usr_input()) {
 			case DC_PAUSE:
 				pause = 1;
@@ -289,8 +289,9 @@ again:
 			}
 			copystruct(v, viewhist + ((nhist-1)%VIEWHISTLEN));
 			goto again;
-		}
-	beam_sync(0);		/* update server */
+		}	
+				/* update server */
+	imm_mode = beam_sync(0) > 0;
 				/* record new view */
 	if (v < viewhist || v >= viewhist+VIEWHISTLEN) {
 		copystruct(viewhist + (nhist%VIEWHISTLEN), v);
@@ -428,7 +429,8 @@ serv_result()			/* get next server result and process it */
 			tmodesw = tnow;
 		}
 #endif
-		imm_mode = msg.type==DS_STARTIMM;
+		if (!(imm_mode = msg.type==DS_STARTIMM))
+			dev_flush();
 		goto noargs;
 	case DS_ACKNOW:
 	case DS_SHUTDOWN:
