@@ -116,6 +116,10 @@ char  *argv[];
 					exit(1);
 				}
 				continue;
+			case 'z':		/* z-file ist verbotten */
+				fprintf(stderr, "%s: -z option not allowed\n",
+						argv[0]);
+				exit(1);
 			case 'o':		/* output file */
 				if (argv[i][2])
 					break;
@@ -131,8 +135,7 @@ char  *argv[];
 	}
 	init(argc, argv);
 	rpiece();
-	rval = cleanup(0);
-	exit(rval);
+	exit(cleanup(0));
 }
 
 
@@ -173,7 +176,7 @@ char  **av;
 		if ((fp = fdopen(dup(outfd), "r+")) == NULL)
 			goto filerr;
 		getheader(fp, NULL, NULL);	/* skip header */
-		if (fscnresolu(&hr, &vr, fp) < 0 ||	/* check resolution */
+		if (!fscnresolu(&hr, &vr, fp) ||	/* check resolution */
 				hr != hres*hmult || vr != vres*vmult) {
 			fprintf(stderr, "%s: resolution mismatch on file \"%s\"\n",
 					progname, outfile);
@@ -336,7 +339,7 @@ int  xpos, ypos;
 	}
 				/* check header from rpict */
 	getheader(fromrp, NULL, NULL);
-	if (fscnresolu(&hr, &vr, fromrp) < 0 || hr != hres | vr != vres) {
+	if (!fscnresolu(&hr, &vr, fromrp) || hr != hres | vr != vres) {
 		fprintf(stderr, "%s: resolution mismatch from %s\n",
 				progname, rpargv[0]);
 		exit(cleanup(1));
@@ -362,11 +365,11 @@ int  xpos, ypos;
 #else
 	pid = -1;		/* no forking */
 #endif
+	fls.l_len = (long)vres*hmult*hres*sizeof(COLR);
+	fls.l_start = scanorig + (vmult-1-ypos)*fls.l_len;
 #if NFS
 				/* lock file section so NFS doesn't mess up */
 	fls.l_whence = 0;
-	fls.l_len = (long)vres*hmult*hres*sizeof(COLR);
-	fls.l_start = scanorig + (vmult-1-ypos)*fls.l_len;
 	fls.l_type = F_WRLCK;
 	fcntl(outfd, F_SETLKW, &fls);
 #endif
