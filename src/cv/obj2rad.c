@@ -564,7 +564,7 @@ char	*v1, *v2, *v3;
 	char	*mod;
 	VNDX	v1i, v2i, v3i;
 	BARYCCM	bvecs;
-	FVECT	bcoor[3];
+	FLOAT	bcoor[3][3];
 	int	texOK, patOK;
 	register int	i;
 
@@ -672,7 +672,7 @@ FLOAT	*v1, *v2, *v3;
 
 put_baryc(bcm, com, n)			/* put barycentric coord. vectors */
 register BARYCCM	*bcm;
-register FVECT	com[];
+register FLOAT	com[][3];
 int	n;
 {
 	double	a, b;

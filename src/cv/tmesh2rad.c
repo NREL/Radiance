@@ -210,7 +210,7 @@ register VERTEX	*v1, *v2, *v3;
 {
 	static int	ntri = 0;
 	BARYCCM	bvecs;
-	FVECT	bvm[3];
+	FLOAT	bvm[3][3];
 	register int	i;
 					/* compute barycentric coordinates */
 	if (v1->flags & v2->flags & v3->flags & (V_HASINDX|V_HASNORM))
@@ -300,7 +300,7 @@ FLOAT	*v1, *v2, *v3;
 
 put_baryc(bcm, com, n)			/* put barycentric coord. vectors */
 register BARYCCM	*bcm;
-register FVECT	com[];
+register FLOAT	com[][3];
 int	n;
 {
 	double	a, b;
