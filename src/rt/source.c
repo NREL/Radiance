@@ -423,6 +423,7 @@ register RAY  *r;
 			copycolor(sr.cext, r->cext);
 			copycolor(sr.albedo, r->albedo);
 			sr.gecc = r->gecc;
+			sr.slights = r->slights;
 			rayvalue(&sr);			/* eval. source ray */
 			if (bright(sr.rcol) <= FTINY)
 				continue;
