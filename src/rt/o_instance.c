@@ -41,10 +41,12 @@ register RAY  *r;
 		return(0);		/* missed */
 	if (rcont.rot * in->f.sca >= r->rot)
 		return(0);		/* not close enough */
-					/* if we have modifier, use it */
-	if (o->omod != OVOID)
+
+	if (o->omod != OVOID) {		/* if we have modifier, use it */
 		r->ro = o;
-	else {				/* else use theirs */
+		r->rofs = 1.0; setident4(r->rofx);
+		r->robs = 1.0; setident4(r->robx);
+	} else {			/* else use theirs */
 		r->ro = rcont.ro;
 		multmat4(r->rofx, rcont.rofx, in->f.xfm);
 		r->rofs = rcont.rofs * in->f.sca;
