@@ -33,6 +33,26 @@ double	unit_mult = 1.;				/* units multiplier */
 
 #define hasmult		(unit_mult < .999 || unit_mult > 1.001)
 
+/*
+ * Stuff for tracking and reusing vertices:
+ */
+
+char	VKFMT[] = "%+1.9e %+1.9e %+1.9e";
+#define VKLEN		64
+
+#define mkvkey(k,v)	sprintf(k, VKFMT, (v)[0], (v)[1], (v)[2])
+
+#define NVERTS		256
+
+long	clock;		/* incremented at each vertex request */
+
+struct vert {
+	long	lused;		/* when last used (0 if unassigned) */
+	FVECT	p;		/* track point position only */
+} vert[NVERTS];		/* our vertex cache */
+
+LUTAB	vertab = LU_SINIT(free,NULL);	/* our vertex lookup table */
+
 
 main(argc, argv)
 int	argc;
@@ -244,6 +264,7 @@ char	*id;
 
 init()			/* initialize dispatch table and output */
 {
+	lu_init(&vertab, NVERTS);
 	lu_init(&rdispatch, 22);
 	add2dispatch("polygon", o_face);
 	add2dispatch("cone", o_cone);
@@ -281,6 +302,7 @@ uninit()			/* mark end of MGF file */
 	puts("# End of data converted from Radiance scene input");
 	lu_done(&rdispatch);
 	lu_done(&rmats);
+	lu_done(&vertab);
 }
 
 
@@ -301,27 +323,6 @@ int	(*func)();
 }
 
 
-/*
- * Stuff for tracking and reusing vertices:
- */
-
-char	VKFMT[] = "%+1.9e %+1.9e %+1.9e";
-#define VKLEN		64
-
-#define mkvkey(k,v)	sprintf(k, VKFMT, (v)[0], (v)[1], (v)[2])
-
-#define NVERTS		256
-
-long	clock;		/* incremented at each vertex request */
-
-struct vert {
-	long	lused;		/* when last used (0 if unassigned) */
-	FVECT	p;		/* track point position only */
-} vert[NVERTS];
-
-LUTAB	vertab = LU_SINIT(free,NULL);	/* our vertex lookup table */
-
-
 char *
 getvertid(vname, vp)		/* get/set vertex ID for this point */
 char	*vname;
@@ -331,8 +332,6 @@ FVECT	vp;
 	register LUENT	*lp;
 	register int	i, vndx;
 
-	if (!vertab.tsiz && !lu_init(&vertab, NVERTS))
-		goto memerr;
 	clock++;			/* increment counter */
 	mkvkey(vkey, vp);
 	if ((lp = lu_find(&vertab, vkey)) == NULL)
