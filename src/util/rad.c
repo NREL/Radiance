@@ -641,11 +641,32 @@ setdefaults()			/* set default values for unassigned var's */
 
 printvals()			/* print variable values */
 {
-	register int	i, j;
+	int	i, j, clipline;
+	register char	*cp;
+	register int	k;
 
-	for (i = 0; i < NVARS; i++)
-		for (j = 0; j < vdef(i); j++)
-			printf("%s= %s\n", vnam(i), nvalue(vv+i, j));
+	for (i = 0; i < NVARS; i++)		/* print each variable */
+	    for (j = 0; j < vdef(i); j++) {	/* print each assignment */
+		fputs(vnam(i), stdout);
+		fputs("= ", stdout);
+		k = clipline = ( vv[i].fixval == catvalues ? 64 : 320 )
+				- strlen(vnam(i)) ;
+		cp = nvalue(vv+i, j);
+		while (*cp) {
+		    putchar(*cp++);
+		    if (--k <= 0) {		/* line too long */
+			while (*cp && !isspace(*cp))
+			    putchar(*cp++);	/* finish this word */
+			if (*cp) {		/* start new line */
+			    putchar('\n');
+			    fputs(vnam(i), stdout);
+			    putchar('=');
+			    k = clipline;
+			}
+		    }
+		}
+	        putchar('\n');
+	    }
 	fflush(stdout);
 }
 
