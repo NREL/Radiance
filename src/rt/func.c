@@ -111,14 +111,14 @@ int  dofwd;
 		f->f = f->b = &unitxf;
 	else {				/* get transform */
 		if ((f->b = (XF *)malloc(sizeof(XF))) == NULL)
-			goto memerr;;
+			goto memerr;
 		if (invxf(f->b, na-i, arg+i) != na-i)
 			objerror(m, USER, "bad transform");
 		if (f->b->sca < 0.0)
 			f->b->sca = -f->b->sca;
 		if (dofwd) {			/* do both transforms */
 			if ((f->f = (XF *)malloc(sizeof(XF))) == NULL)
-				goto memerr;;
+				goto memerr;
 			xf(f->f, na-i, arg+i);
 			if (f->f->sca < 0.0)
 				f->f->sca = -f->f->sca;
