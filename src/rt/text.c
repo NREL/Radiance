@@ -154,7 +154,7 @@ register OBJREC  *tm;
 {
 #define  R	(tm->oargs.farg+3)
 #define  D	(tm->oargs.farg+6)
-	extern char  *strcpy(), *fgets();
+	extern char  *strcpy();
 	FVECT  DxR;
 	double  d;
 	FILE  *fp;

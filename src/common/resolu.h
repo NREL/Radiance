@@ -47,4 +47,4 @@ extern char  resolu_buf[RESOLU_BUFLEN];
 #define  fprtresolu(sl,ns,fp)	fprintf(fp,PIXSTDFMT,ns,sl)
 #define  fscnresolu(sl,ns,fp)	(fscanf(fp,PIXSTDFMT,ns,sl)==2)
 
-extern char  *fgets(), *resolu2str();
+extern char  *resolu2str();
