@@ -613,7 +613,7 @@ waitabit()				/* pause a moment */
 {
 	struct timespec	ts;
 	ts.tv_sec = 0;
-	ts.tv_nsec = 5000000;
+	ts.tv_nsec = 50000000;
 	nanosleep(&ts, NULL);
 }
 
