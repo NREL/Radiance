@@ -65,6 +65,10 @@ typedef struct {
 #define  T_D		0400		/* data */
 #define  T_I		01000		/* picture */
 #define  T_E		02000		/* text */
+				/* user-defined types */
+#define  T_SP1		010000
+#define  T_SP2		020000
+#define  T_SP3		040000
 
 extern FUN  ofun[];			/* our type list */
 
