@@ -1,4 +1,4 @@
-/* Copyright (c) 1994 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -219,7 +219,6 @@ register MG_FCTXT	*ctx;
 char	*fn;
 {
 	static int	nfids;
-	int	olen;
 	register char	*cp;
 
 	ctx->fid = ++nfids;
@@ -232,14 +231,11 @@ char	*fn;
 		return(MG_OK);
 	}
 					/* get name relative to this context */
-	if (mg_file != NULL &&
-			(cp = strrchr(mg_file->fname, '/')) != NULL)
-		olen = cp - mg_file->fname + 1;
-	else
-		olen = 0;
-	if (olen)
+	if (mg_file != NULL && (cp = strrchr(mg_file->fname, '/')) != NULL) {
 		strcpy(ctx->fname, mg_file->fname);
-	strcpy(ctx->fname+olen, fn);
+		strcpy(ctx->fname+(cp-mg_file->fname+1), fn);
+	} else
+		strcpy(ctx->fname, fn);
 	ctx->fp = fopen(ctx->fname, "r");
 	if (ctx->fp == NULL)
 		return(MG_ENOFILE);
@@ -390,6 +386,7 @@ char	**av;
 {
 	char	*xfarg[MG_MAXARGC];
 	MG_FCTXT	ictx;
+	XF_SPEC	*xf_orig = xf_context;
 	int	rv;
 
 	if (ac < 2)
@@ -406,7 +403,7 @@ char	**av;
 		if ((rv = mg_handle(MG_E_XF, ac-1, xfarg)) != MG_OK)
 			return(rv);
 	}
-	while (!feof(mg_file->fp)) {
+	do {
 		while (mg_read())
 			if ((rv = mg_parse()) != MG_OK) {
 				fprintf(stderr, "%s: %d: %s:\n%s", ictx.fname,
@@ -418,7 +415,7 @@ char	**av;
 		if (ac > 2)
 			if ((rv = mg_handle(MG_E_XF, 1, xfarg)) != MG_OK)
 				return(rv);
-	}
+	} while (xf_context != xf_orig);
 	mg_close();
 	return(MG_OK);
 }
