@@ -13,7 +13,10 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "object.h"
 
 
-extern char  *savestr(), *malloc();
+extern char  *savestr(), *malloc(), *fgetword();
+extern double  atof();
+extern int  atoi();
+extern long  atol();
 
 #ifdef  MEMHOG
 extern char  *bmalloc();
@@ -26,56 +29,65 @@ readfargs(fa, fp)		/* read function arguments from stream */
 register FUNARGS  *fa;
 FILE  *fp;
 {
+#define getstr()	(fgetword(sbuf,MAXSTR,fp)!=NULL)
+#define getint()	(getstr() && isint(sbuf))
+#define getflt()	(getstr() && isflt(sbuf))
 	char  sbuf[MAXSTR];
-	int  n;
-	register int  i;
+	register int  n, i;
 
-	if (fscanf(fp, "%d", &n) != 1 || n < 0)
+	if (!getint() || (n = atoi(sbuf)) < 0)
 		return(0);
 	if (fa->nsargs = n) {
 		fa->sarg = (char **)bmalloc(n*sizeof(char *));
 		if (fa->sarg == NULL)
 			return(-1);
 		for (i = 0; i < fa->nsargs; i++) {
-			if (fscanf(fp, "%s", sbuf) != 1)
+			if (!getstr())
 				return(0);
 			fa->sarg[i] = savestr(sbuf);
 		}
 	} else
 		fa->sarg = NULL;
-	if (fscanf(fp, "%d", &n) != 1 || n < 0)
+	if (!getint() || (n = atoi(sbuf)) < 0)
 		return(0);
 #ifdef  IARGS
 	if (fa->niargs = n) {
 		fa->iarg = (long *)bmalloc(n*sizeof(long));
 		if (fa->iarg == NULL)
 			return(-1);
-		for (i = 0; i < n; i++)
-			if (fscanf(fp, "%ld", &fa->iarg[i]) != 1)
+		for (i = 0; i < n; i++) {
+			if (!getint())
 				return(0);
+			fa->iarg[i] = atol(sbuf);
+		}
 	} else
 		fa->iarg = NULL;
 #else
 	if (n != 0)
 		return(0);
 #endif
-	if (fscanf(fp, "%d", &n) != 1 || n < 0)
+	if (!getint() || (n = atoi(sbuf)) < 0)
 		return(0);
 	if (fa->nfargs = n) {
 		fa->farg = (double *)bmalloc(n*sizeof(double));
 		if (fa->farg == NULL)
 			return(-1);
-		for (i = 0; i < n; i++)
-			if (fscanf(fp, "%lf", &fa->farg[i]) != 1)
+		for (i = 0; i < n; i++) {
+			if (!getflt())
 				return(0);
+			fa->farg[i] = atof(sbuf);
+		}
 	} else
 		fa->farg = NULL;
 	return(1);
+#undef getflt
+#undef getint
+#undef getstr
 }
 
 
 #ifndef  MEMHOG
-freefargs(fa)		/* free object arguments */
+freefargs(fa)			/* free object arguments */
 register FUNARGS  *fa;
 {
 	register int  i;
