@@ -214,9 +214,9 @@ int  nsi;			/* minimum number of spaces for indent */
 					/* start by squeezing it */
 	squeeztext(sp, tp, f, cis);
 					/* now, realign spacing */
-	len = 0;
-	width = alen = *sp++;
+	width = *sp++;
 	while (*tp) {
+		len = alen = 0;
 		nsp = sp;
 		for (end = tp; *end; end = tab) {
 			tab = end + 1;
@@ -240,8 +240,6 @@ int  nsi;			/* minimum number of spaces for indent */
 			*sp++ += alen;
 			len -= alen;
 		}
-		len = 0;
-		alen = 0;
 		tp = tab;
 	}
 	return(width);
