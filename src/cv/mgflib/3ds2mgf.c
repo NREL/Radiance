@@ -473,7 +473,7 @@ void process_args (int argc, char *argv[])
 	printf ("         -b<object>   - Convert this object as a box\n");
 	printf ("         +i, -i       - Turn internal bounding on or off\n");
 	printf ("         +v, -v       - Turn verbose status messages on or off\n");
-	printf ("         -op          - Output to POV-Ray 2.0 format (default)\n");
+	printf ("         -op          - Output to POV-Ray 2.0 format\n");
 	printf ("         -op1         - Output to POV-Ray 1.0 format\n");
 	printf ("         -ov          - Output to Vivid format\n");
 	printf ("         -ol          - Output to poLyray format\n");
@@ -497,7 +497,7 @@ void process_args (int argc, char *argv[])
     else if (!strcmp(progname, "3ds2raw"))
 	format = RAW;
     else
-	format = MGF;		/* default if program name strange */
+	format = POV20;		/* default if program name strange */
 
     strcpy (inname, "");
     strcpy (outname, "");
@@ -1011,7 +1011,7 @@ void write_light (FILE *f, char *name, Vector pos, Colour col)
 	    if (name[0]) fprintf (f, "o %s\n", name);
 	    fprintf (f, "m\n\tsides 1\n\tc\n\t\t\tcmix %.3f R %.3f G %.3f B\n\ted %e\n",
 		    CIE_Y_r*col.red, CIE_Y_g*col.green, CIE_Y_b*col.blue,
-	    10000.0*(CIE_Y_r*col.red + CIE_Y_g*col.green + CIE_Y_b*col.blue));
+	    100000.0*(CIE_Y_r*col.red + CIE_Y_g*col.green + CIE_Y_b*col.blue));
 	    fprintf (f, "v c =\n\tp %.4f %.4f %.4f\nsph c .01\n",
 		    pos[X], pos[Y], pos[Z]);
 	    if (name[0]) fprintf (f, "o\n");
@@ -1086,7 +1086,7 @@ void write_spot (FILE *f, char *name, Vector pos, Vector target, Colour col,
 	    fprintf (f, "# hotspot: %.2f\n# falloff: %.2f\n", hotspot, falloff);
 	    fprintf (f, "m\n\tsides 1\n\tc\n\t\t\tcmix %.3f R %.3f G %.3f B\n\ted %e\n",
 		    CIE_Y_r*col.red, CIE_Y_g*col.green, CIE_Y_b*col.blue,
-	    10000.0*(CIE_Y_r*col.red + CIE_Y_g*col.green + CIE_Y_b*col.blue));
+	    100000.0*(CIE_Y_r*col.red + CIE_Y_g*col.green + CIE_Y_b*col.blue));
 	    fprintf (f, "v c =\n\tp %.4f %.4f %.4f\n\tn %.4f %.4f %.4f\n",
 		    pos[X], pos[Y], pos[Z],
 		    target[X]-pos[X], target[Y]-pos[Y], target[Z]-pos[Z]);
