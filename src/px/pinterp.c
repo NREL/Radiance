@@ -17,6 +17,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #define pscan(y)	(ourpict+(y)*ourview.hresolu)
 #define zscan(y)	(ourzbuf+(y)*ourview.hresolu)
 
+#define ABS(x)		((x)>0?(x):-(x))
+
 VIEW	ourview = STDVIEW(512);		/* desired view */
 
 double	zeps = 0.001;			/* allowed z epsilon */
@@ -293,8 +295,9 @@ fillpicture()				/* fill in empty spaces */
 				copycolr(pscan(y)[i],pscan(yback[i])[i]);
 				} else {
 					while (++i < x)
-						if (yback[i] < 0 ||
-				zscan(yback[i])[i] < zscan(y)[xback])
+						if (yback[i] < 0
+				|| ABS(i-xback) <= 1 || (ABS(y-yback[i]) > 1
+				&& zscan(yback[i])[i] < zscan(y)[xback]))
 					copycolr(pscan(y)[i],pscan(y)[xback]);
 						else
 					copycolr(pscan(y)[i],pscan(yback[i])[i]);
