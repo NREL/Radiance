@@ -40,6 +40,8 @@ extern int  o_face();
 extern int  o_cone();
 extern int  o_cylinder();
 extern int  o_ring();
+extern int  m_glow();
+extern int  m_spot();
 extern int  m_dielectric();
 extern int  m_interface();
 extern int  text();
@@ -60,6 +62,8 @@ FUN  ofun[] = {
 	{ "instance", addxform },
 	{ "alias", alias },
 	{ "antimatter", passargs },
+	{ "glow", m_glow },
+	{ "spotlight", m_spot },
 	{ "dielectric", m_dielectric },
 	{ "interface", m_interface },
 	{ "colortext", text },
@@ -76,7 +80,6 @@ FUN  ofun[] = {
 	{ "mixtext", text },
 	{ "light", passargs },
 	{ "illum", passargs },
-	{ "glow", passargs },
 	{ "plastic", passargs },
 	{ "metal", passargs },
 	{ "trans", passargs },
@@ -328,6 +331,44 @@ FILE  *fin;
 	if (fscanf(fin, "%s", alias) != 1)
 		return(-1);
 	printf("\t%s\n", alias);
+	return(0);
+}
+
+
+m_glow(fin)			/* transform arguments for proximity light */
+FILE  *fin;
+{
+	register FUNARGS  *fa;
+
+	if ((fa = getfargs(fin)) == NULL)
+		return(-1);
+	if (fa->nsargs != 0 || fa->niargs != 0 || fa->nfargs != 4)
+		return(-1);
+	printf("0\n0\n4");
+	printf(" %18.12g %18.12g %18.12g",
+			fa->farg[0], fa->farg[1], fa->farg[2]);
+	printf(" %18.12g\n", fa->farg[3] * totscale);
+	freefargs(fa);
+	return(0);
+}
+
+
+m_spot(fin)			/* transform arguments for spotlight */
+FILE  *fin;
+{
+	double  v[3];
+	register FUNARGS  *fa;
+
+	if ((fa = getfargs(fin)) == NULL)
+		return(-1);
+	if (fa->nsargs != 0 || fa->niargs != 0 || fa->nfargs != 7)
+		return(-1);
+	printf("0\n0\n7");
+	printf(" %18.12g %18.12g %18.12g %18.12g\n",
+			fa->farg[0], fa->farg[1], fa->farg[2], fa->farg[3]);
+	multv3(v, fa->farg+4, totxform);
+	printf("\t%18.12g %18.12g %18.12g\n", v[0], v[1], v[2]);
+	freefargs(fa);
 	return(0);
 }
 
