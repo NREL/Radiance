@@ -191,6 +191,11 @@ register char  *s;
 		inln = 0;
 }
 
+				/* conflicting def's in param.h */
+#undef  tstbit
+#undef  setbit
+#undef  clrbit
+#undef  tglbit
 
 #define	 bitop(f,i,op)		(f[((i)>>3)] op (1<<((i)&7)))
 #define	 tstbit(f,i)		bitop(f,i,&)

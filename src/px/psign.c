@@ -34,6 +34,12 @@ unsigned char  *ourbitmap;		/* our output bitmap */
 int  xsiz, ysiz;			/* bitmap dimensions */
 int  xdim;				/* size of horizontal scan (bytes) */
 
+				/* conflicting def's in param.h */
+#undef	tstbit
+#undef	setbit
+#undef	clrbit
+#undef	tglbit
+
 #define	 bitop(x,y,op)		(ourbitmap[(y)*xdim+((x)>>3)] op (1<<((x)&7)))
 #define	 tstbit(x,y)		bitop(x,y,&)
 #define	 setbit(x,y)		bitop(x,y,|=)

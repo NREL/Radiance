@@ -12,8 +12,6 @@ static const char	RCSid[] = "$Id$";
 #include "standard.h"
 #include "color.h"
 
-#define PI	3.14159265358979323846
-
 				/* lamp parameters */
 #define LTYPE		0
 #define LUNIT		1
