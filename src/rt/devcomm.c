@@ -168,6 +168,8 @@ char	*str;
 {
 	putc(COM_COMOUT, devout);
 	myputs(str, devout);
+	if (str[strlen(str)-1] == '\n')
+		fflush(devout);
 }
 
 
