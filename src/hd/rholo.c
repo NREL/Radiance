@@ -489,7 +489,7 @@ PACKET	*pl;
 		p->next = freepacks;
 		freepacks = p;
 	}
-	if (n2flush > 512*RPACKSIZ*nprocs) {
+	if (n2flush > 1024*RPACKSIZ*nprocs) {
 		hdflush(NULL);			/* flush holodeck buffers */
 		n2flush = 0;
 	}
