@@ -30,7 +30,11 @@ static char SCCSid[] = "$SunId$ LBL";
 					r0*((t-2.0)*t+1.0)*t + \
 					r1*(t-1.0)*t*t )
 
-double  *noise3(), noise3coef(), argument(), frand();
+static char  *noise_name[4] = {"noise3a", "noise3b", "noise3c", "noise3"};
+static char  fnoise_name[] = "fnoise3";
+static char  hermite_name[] = "hermite";
+
+double  *noise3(), fnoise3(), argument(), frand();
 
 static long  xlim[3][2];
 static double  xarg[3];
@@ -39,61 +43,49 @@ static double  xarg[3];
 
 #define  frand3(x,y,z)	frand(17*(x)+23*(y)+29*(z))
 
-double  fnoise3();
-
-
-double
-l_noise3()			/* compute 3-dimensional noise function */
-{
-	return(noise3coef(D));
-}
-
-
-double
-l_noise3a()			/* compute x slope of noise function */
-{
-	return(noise3coef(A));
-}
-
-
-double
-l_noise3b()			/* compute y slope of noise function */
-{
-	return(noise3coef(B));
-}
-
-
-double
-l_noise3c()			/* compute z slope of noise function */
-{
-	return(noise3coef(C));
-}
-
-
-double
-l_fnoise3()			/* compute fractal noise function */
-{
-	double  x[3];
-
-	x[0] = argument(1);
-	x[1] = argument(2);
-	x[2] = argument(3);
-
-	return(fnoise3(x));
-}
-
 
 static double
-noise3coef(coef)		/* return coefficient of noise function */
-int  coef;
+l_noise3(nam)			/* compute a noise function */
+register char  *nam;
 {
+	register int  i;
 	double  x[3];
-
+					/* get point */
 	x[0] = argument(1);
 	x[1] = argument(2);
 	x[2] = argument(3);
+					/* make appropriate call */
+	if (nam == fnoise_name)
+		return(fnoise3(x));
+	i = 4;
+	while (i--)
+		if (nam == noise_name[i])
+			return(noise3(x)[i]);
+	eputs("Bad call to l_noise3()!\n");
+	quit(1);
+}
 
-	return(noise3(x)[coef]);
+
+double
+l_hermite()			/* library call for hermite interpolation */
+{
+	double  t;
+	
+	t = argument(5);
+	return( hermite(argument(1), argument(2),
+			argument(3), argument(4), t) );
+}
+
+
+setnoisefuncs()			/* add noise functions to library */
+{
+	register int  i;
+
+	funset(hermite_name, 5, ':', l_hermite);
+	funset(fnoise_name, 3, ':', l_noise3);
+	i = 4;
+	while (i--)
+		funset(noise_name[i], 3, ':', l_noise3);
 }
 
 
@@ -149,17 +141,6 @@ register long  s;
 {
 	s = s<<13 ^ s;
 	return(1.0-((s*(s*s*15731+789221)+1376312589)&0x7fffffff)/1073741824.0);
-}
-
-
-double
-l_hermite()			/* library call for hermite interpolation */
-{
-	double  t;
-	
-	t = argument(5);
-	return( hermite(argument(1), argument(2),
-			argument(3), argument(4), t) );
 }
 
 
