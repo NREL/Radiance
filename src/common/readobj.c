@@ -31,7 +31,7 @@ char  *inpspec;
 	char  *fgetline();
 	OBJECT  lastobj;
 	FILE  *infp;
-	char  buf[512];
+	char  buf[1024];
 	register int  c;
 
 	lastobj = nobjects;
