@@ -51,7 +51,8 @@ char	*argv[];
 	HDGRID	hdg;
 	int	i;
 	int	force = 0;
-
+						/* mark start time */
+	starttime = time(NULL);
 	progname = argv[0];			/* get arguments */
 	for (i = 1; i < argc && argv[i][0] == '-'; i++)
 		switch (argv[i][1]) {
@@ -102,8 +103,11 @@ char	*argv[];
 				"holodeck file exists -- use -f to overwrite");
 							/* create holodeck */
 		creatholo(&hdg);
-	} else					/* else load holodeck */
+	} else {				/* else load holodeck */
 		loadholo();
+		if (vdef(RIF))				/* load RIF if any */
+			getradfile(vval(RIF));
+	}
 						/* initialize */
 	initrholo();
 						/* run */
@@ -128,8 +132,7 @@ initrholo()			/* get our holodeck running */
 		open_display(outdev);
 	else if (ncprocs > 0)			/* else use global ray feed */
 		init_global();
-						/* record the time */
-	starttime = time(NULL);
+						/* record end time */
 	if (!vdef(TIME) || vflt(TIME) <= FTINY)
 		endtime = 0;
 	else
@@ -195,11 +198,11 @@ rholo()				/* holodeck main loop */
 			hdfiluse(hdlist[0]->fd, 0) + hdmemuse(0) >= l)
 		return(0);
 					/* check time */
-	if (endtime > 0 || vdef(REPORT))
+	if (endtime > 0 || reporttime > 0)
 		t = time(NULL);
 	if (endtime > 0 && t >= endtime)
 		return(0);
-	if (vdef(REPORT) && t >= reporttime)
+	if (reporttime > 0 && t >= reporttime)
 		report(t);
 					/* get packets to process */
 	while (freepacks != NULL) {
@@ -230,7 +233,8 @@ time_t	t;
 	fprintf(stderr, "%s: %ld packets (%ld rays) done after %.2f hours\n",
 			progname, npacksdone, nraysdone, (t-starttime)/3600.);
 	fflush(stderr);
-	reporttime = t + (time_t)(vflt(REPORT)*60.);
+	if (vdef(REPORT))
+		reporttime = t + (time_t)(vflt(REPORT)*60.+.5);
 }
 
 
@@ -415,6 +419,7 @@ char	*rfargs;
 	static char	tf1[] = TEMPLATE;
 	char	tf2[64];
 	char	combuf[256];
+	char	*pippt;
 	register int	i;
 	register char	*cp;
 					/* create rad command */
@@ -424,24 +429,33 @@ char	*rfargs;
 		"rad -v 0 -s -e -w %s OPTFILE=%s | egrep '^[ \t]*(NOMATCH",
 			rfargs, tf1);
 	cp = combuf;
-	while (*cp) cp++;		/* match unset variables */
+	while (*cp){
+		if (*cp == '|') pippt = cp;
+		cp++;
+	}				/* match unset variables */
 	for (i = 0; mvar[i] >= 0; i++)
 		if (!vdef(mvar[i])) {
 			*cp++ = '|';
 			strcpy(cp, vnam(mvar[i]));
 			while (*cp) cp++;
+			pippt = NULL;
 		}
-	sprintf(cp, ")[ \t]*=' > %s", tf2);
+	if (pippt != NULL)
+		strcpy(pippt, "> /dev/null");	/* nothing to match */
+	else
+		sprintf(cp, ")[ \t]*=' > %s", tf2);
 	if (system(combuf)) {
 		error(SYSTEM, "cannot execute rad command");
 		unlink(tf2);			/* clean up */
 		unlink(tf1);
 		quit(1);
 	}
-	loadvars(tf2);			/* load variables */
+	if (pippt == NULL) {
+		loadvars(tf2);			/* load variables */
+		unlink(tf2);
+	}
 	rtargc += wordfile(rtargv+rtargc, tf1);	/* get rtrace options */
-	unlink(tf2);			/* clean up */
-	unlink(tf1);
+	unlink(tf1);			/* clean up */
 }
 
 
@@ -511,7 +525,7 @@ int	ec;
 				fsiz = lseek(hdlist[0]->fd, 0L, 2);
 				fuse = hdfiluse(hdlist[0]->fd, 1);
 				fprintf(stderr,
-			"%s: %.1f Mbyte holodeck file, %.2f%% fragmentation\n",
+			"%s: %.1f Mbyte holodeck file, %.1f%% fragmentation\n",
 						hdkfile, fsiz/(1024.*1024.),
 						100.*(fsiz-fuse)/fsiz);
 			}
