@@ -133,7 +133,6 @@ char  *name, *id;
 		stderr_v("cannot create window\n");
 		return(NULL);
 	}
-	XFreeColormap(ourdisplay, ourwinattr.colormap);
    	XStoreName(ourdisplay, gwind, id);
 	/* create a cursor */
 	pickcursor = XCreateFontCursor(ourdisplay, XC_diamond_cross);
