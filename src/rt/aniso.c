@@ -206,7 +206,10 @@ register RAY  *r;
 			colval(nd.scolor,i) += (1.0-colval(nd.scolor,i))*dtmp;
 		nd.rspec += (1.0-nd.rspec)*dtmp;
 						/* check threshold */
-		if (nd.rspec <= specthresh+FTINY)
+		if (specthresh > FTINY &&
+				((specthresh >= 1.-FTINY ||
+				specthresh + (.1 - .2*urand(8199+samplendx))
+					> nd.rspec)))
 			nd.specfl |= SP_RBLT;
 
 		if (!(r->crtype & SHADOW) && nd.specfl & SP_PURE) {
@@ -229,7 +232,11 @@ register RAY  *r;
 		if (nd.tspec > FTINY) {
 			nd.specfl |= SP_TRAN;
 							/* check threshold */
-			if (nd.tspec <= specthresh+FTINY)
+			if (specthresh > FTINY &&
+					((specthresh >= 1.-FTINY ||
+					specthresh +
+					    (.1 - .2*urand(7241+samplendx))
+						> nd.tspec)))
 				nd.specfl |= SP_TBLT;
 			if (r->crtype & SHADOW ||
 					DOT(r->pert,r->pert) <= FTINY*FTINY) {
