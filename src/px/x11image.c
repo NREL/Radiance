@@ -1,4 +1,4 @@
-/* Copyright (c) 1993 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -74,6 +74,7 @@ int  xoff = 0;				/* x image offset */
 int  yoff = 0;				/* y image offset */
 
 int  parent = 0;			/* number of children, -1 if child */
+int  sequential = 0;			/* display images in sequence */
 
 VIEW  ourview = STDVIEW;		/* image view parameters */
 int  gotview = 0;			/* got parameters from file */
@@ -159,6 +160,9 @@ char  *argv[];
 			case 'f':
 				fast = !fast;
 				break;
+			case 's':
+				sequential = !sequential;
+				break;
 			case 'e':
 				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
 					goto userr;
@@ -219,7 +223,7 @@ char  *argv[];
 		getevent();		/* main loop */
 userr:
 	fprintf(stderr,
-"Usage: %s [-di disp][[-ge] spec][-b][-m][-d][-f][-c nclrs][-e +/-stops][-g gamcor] pic ..\n",
+"Usage: %s [-di disp][[-ge] spec][-b][-m][-d][-f][-c nclrs][-e +/-stops][-g gamcor][-s] pic ..\n",
 			progname);
 	exit(1);
 }
@@ -561,7 +565,7 @@ getevent()				/* process the next event */
 		map_rcolors(ourras, wind);
 		if (fast)
 			make_rpixmap(ourras, wind);
-		if (parent < 0 & sigrecv == 0) {	/* notify parent */
+		if (!sequential & parent < 0 & sigrecv == 0) {
 			kill(getppid(), SIGCONT);
 			sigrecv--;
 		}
