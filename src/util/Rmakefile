@@ -12,7 +12,7 @@ CC = cc
 
 INSTDIR = /usr/local/bin
 
-PROGS = findglare xglaresrc glarendx rpiece render
+PROGS = findglare xglaresrc glarendx rpiece rad
 
 all:	$(PROGS)
 
@@ -49,8 +49,8 @@ xglaresrc:	xglaresrc.o x11findwind.o
 	$(CC) $(CFLAGS) -o xglaresrc xglaresrc.o \
 x11findwind.o -lrt -lX11 -lm
 
-render:	render.o
-	$(CC) $(CFLAGS) -o render render.o -lrt -lm
+rad:	rad.o
+	$(CC) $(CFLAGS) -o rad rad.o -lrt -lm
 
 rpiece:	rpiece.o Version.o
 	$(CC) $(CFLAGS) -o rpiece rpiece.o Version.o -lrt -lm
@@ -78,7 +78,7 @@ glaresrc.o:	../common/linregr.h
 
 rpiece.o:	../common/color.h ../common/view.h ../common/resolu.h
 
-render.o rpiece.o xglaresrc.o:	../common/standard.h \
+rad.o rpiece.o xglaresrc.o:	../common/standard.h \
 ../common/mat4.h ../common/fvect.h
 
 xglaresrc.o:	../common/view.h
