@@ -187,8 +187,8 @@ rpmain.o rtmain.o rtrace.o rvmain.o rv2.o rv3.o source.o:	octree.h
 
 o_instance.o instance.o:	instance.h octree.h
 
-ambient.o cone.o dielectric.o func.o normal.o o_cone.o otypes.o \
-text.o raytrace.o readobj.o readoct.o rtrace.o \
+ambient.o cone.o dielectric.o func.o normal.o o_cone.o objset.o \
+otypes.o text.o raytrace.o readobj.o readoct.o rtrace.o \
 rv2.o source.o sphere.o:	otypes.h
 
 ambient.o rpict.o rv3.o source.o:	random.h
