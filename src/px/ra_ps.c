@@ -1,7 +1,7 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1997 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -15,7 +15,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #endif
 #include  "color.h"
 
-#define GAMVAL		1.47			/* gamma value for pixels */
+#define CODE6GAM	1.47			/* gamma for 6-bit codes */
+#define DEFDGAM		1.0			/* default device gamma */
 
 #define GRY		-1			/* artificial index for grey */
 
@@ -35,6 +36,7 @@ char  code[] =			/* 6-bit code lookup table */
 int  wrongformat = 0;			/* input in wrong format? */
 double	pixaspect = 1.0;		/* pixel aspect ratio */
 
+double  devgam = DEFDGAM;		/* device gamma response */
 int  docolor = 0;			/* produce color image? */
 int  bradj = 0;				/* brightness adjustment */
 int  ncopies = 1;			/* number of copies */
@@ -89,6 +91,9 @@ char  *argv[];
 			case 'C':		/* compressed ASCII encoding */
 				putprim = Cputprim;
 				break;
+			case 'g':
+				devgam = atof(argv[++i]);
+				break;
 			case 'e':		/* exposure adjustment */
 				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
 					goto userr;
@@ -124,7 +129,9 @@ char  *argv[];
 		quiterr("bad picture format");
 				/* gamma compression */
 	if (putprim == Cputprim)
-		setcolrgam(GAMVAL);
+		setcolrgam(CODE6GAM/devgam);
+	else if (devgam != 1.)
+		setcolrgam(1./devgam);
 				/* write header */
 	PSheader(i <= argc-1 ? argv[i] : "<stdin>");
 				/* convert file */
@@ -133,7 +140,7 @@ char  *argv[];
 	PStrailer();
 	exit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-b|c][-A|B|C][-e +/-stops] [input [output]]\n",
+	fprintf(stderr, "Usage: %s [-b|c][-A|B|C][-e +/-stops][-g gamma] [input [output]]\n",
 			progname);
 	exit(1);
 }
@@ -258,7 +265,7 @@ char  *nam;
 	for (i = 0; i < 128; i++)	/* clear */
 		itab[i] = -1;
 	for (i = 1; i < 63; i++)	/* assign greys */
-		itab[code[i]] = 256.0*pow((i+.5)/64.0, GAMVAL);
+		itab[code[i]] = 256.0*pow((i+.5)/64.0, CODE6GAM);
 	itab[code[0]] = 0;		/* black is black */
 	itab[code[63]] = 255;		/* and white is white */
 	printf("/codetab [");
@@ -301,7 +308,7 @@ ra2ps()				/* convert Radiance scanlines to 6-bit */
 	for (y = ymax-1; y >= 0; y--) {
 		if (freadcolrs(scanin, xmax, stdin) < 0)
 			quiterr("error reading Radiance picture");
-		if (putprim == Cputprim) {
+		if (putprim == Cputprim || devgam != 1.) {
 			if (bradj)			/* adjust exposure */
 				shiftcolrs(scanin, xmax, bradj);
 			colrs_gambs(scanin, xmax);	/* gamma compression */
