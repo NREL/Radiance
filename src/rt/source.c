@@ -379,10 +379,7 @@ char  *p;			/* data for f */
 		if (localhit(&sr, &thescene) &&
 				sr.ro != source[cntord[sn].sno].so) {
 						/* check for transmission */
-			if (sr.clipset != NULL && inset(sr.clipset,sr.ro->omod))
-				raytrans(&sr);		/* object is clipped */
-			else
-				rayshade(&sr, sr.ro->omod);
+			rayshade(&sr, sr.ro->omod);
 			if (bright(sr.rcol) <= FTINY)
 				continue;	/* missed! */
 			(*f)(srccnt[cntord[sn].sno].val, p,
