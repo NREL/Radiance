@@ -168,7 +168,7 @@ ra2pr()			/* convert Radiance scanlines to 24-bit rasterfile */
 						/* allocate scanline */
 	scanin = (COLR *)malloc(xmax*sizeof(COLR));
 	if (scanin == NULL)
-		quiterr("out of memory in pr2ra");
+		quiterr("out of memory in ra2pr");
 						/* convert image */
 	for (y = ymax-1; y >= 0; y--) {
 		if (freadcolrs(scanin, xmax, stdin) < 0)
