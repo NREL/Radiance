@@ -127,24 +127,16 @@ char  *name;
 	int  landscape = 0;
 	double	pwidth, pheight;
 	double	iwidth, iheight;
-
-	printf("%%!\n");
+					/* EPS comments */
+	puts("%%!PS-Adobe-2.0 EPSF-2.0");
 	printf("%%%%Title: %s\n", name);
-	printf("%%%%Creator: %s\n", progname);
+	printf("%%%%Creator: %s = %s\n", progname, SCCSid);
 	printf("%%%%Pages: %d\n", ncopies);
 	if (landscape = xmax > pixaspect*ymax)
-		printf("%%%%Landscape\n");
+		puts("%%Orientation: Landscape");
 	else
-		printf("%%%%Portrait\n");
-	printf("%%%%EndComments\n");
-	printf("64 dict begin\n");
-					/* define image reader */
-	PSprocdef("read6bitRLE");
-					/* set up transformation matrix */
-	printf("%f %f translate\n", HMARGIN, VMARGIN);
+		puts("%%Orientation: Portrait");
 	if (PWIDTH > PHEIGHT ^ landscape) {
-		printf("0 %f translate\n", PHEIGHT);
-		printf("-90 rotate\n");
 		pwidth = PHEIGHT;
 		pheight = PWIDTH;
 	} else {
@@ -158,9 +150,32 @@ char  *name;
 		iheight = pheight;
 		iwidth = pheight*xmax/(pixaspect*ymax);
 	}
+	if (pwidth == PHEIGHT)
+		printf("%%%%BoundingBox: %.0f %.0f %.0f %.0f\n",
+				HMARGIN+(pheight-iheight)*.5,
+				VMARGIN+(pwidth-iwidth)*.5,
+				HMARGIN+(pheight-iheight)*.5+iheight,
+				VMARGIN+(pwidth-iwidth)*.5+iwidth);
+	else
+		printf("%%%%BoundingBox: %.0f %.0f %.0f %.0f\n",
+				HMARGIN+(pwidth-iwidth)*.5,
+				VMARGIN+(pheight-iheight)*.5,
+				HMARGIN+(pwidth-iwidth)*.5+iwidth,
+				VMARGIN+(pheight-iheight)*.5+iheight);
+	puts("%%EndComments");
+	puts("save");
+	puts("64 dict begin");
+					/* define image reader */
+	PSprocdef("read6bitRLE");
+					/* set up transformation matrix */
+	printf("%f %f translate\n", HMARGIN, VMARGIN);
+	if (pwidth == PHEIGHT) {
+		printf("0 %f translate\n", PHEIGHT);
+		puts("-90 rotate");
+	}
 	printf("%f %f translate\n", (pwidth-iwidth)*.5, (pheight-iheight)*.5);
 	printf("%f %f scale\n", iwidth, iheight);
-	printf("%%%%EndProlog\n");
+	puts("%%%%EndProlog");
 					/* start image procedure */
 	printf("%d %d 8 [%d 0 0 %d 0 %d] {read6bitRLE} image\n", xmax, ymax,
 			xmax, -ymax, ymax);
@@ -174,6 +189,7 @@ PStrailer()			/* print PostScript trailer */
 		printf("/#copies %d def\n", ncopies);
 	puts("showpage");
 	puts("end");
+	puts("restore");
 	puts("%%EOF");
 }
 
