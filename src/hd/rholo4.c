@@ -28,8 +28,8 @@ static FILE	*dpout;
 disp_open(dname)		/* open the named display driver */
 char	*dname;
 {
-	char	buf[128], fd0[8], fd1[8], *cmd[5], *ofn;
-	int	i, n;
+	char	buf[128], fd0[8], fd1[8], *cmd[5], *sfn;
+	int	i, n, len;
 				/* get full display program name */
 #ifdef DEVPATH
 	sprintf(buf, "%s/%s%s", DEVPATH, dname, HDSUF);
@@ -68,11 +68,17 @@ char	*dname;
 				/* write out hologram grids & octrees */
 	for (i = 0; hdlist[i] != NULL; i++) {
 		bcopy((char *)hdlist[i], buf, sizeof(HDGRID));
-		n = vdef(OSECTION);
-		ofn = i<n ? nvalue(OSECTION,i) :
-				n ? nvalue(OSECTION,n-1) : vval(OCTREE);
-		strcpy(buf+sizeof(HDGRID), ofn);
-		disp_result(DS_ADDHOLO, sizeof(HDGRID)+1+strlen(ofn), buf);
+		len = sizeof(HDGRID);
+		n = vdef(GEOMETRY);
+		sfn = i<n ? nvalue(GEOMETRY,i) :
+				n ? nvalue(GEOMETRY,n-1) : vval(OCTREE);
+		strcpy(buf+len, sfn);
+		len += strlen(sfn) + 1;
+		n = vdef(PORTS);
+		sfn = i<n ? nvalue(PORTS,i) : n ? nvalue(PORTS,n-1) : "";
+		strcpy(buf+len, sfn);
+		len += strlen(sfn) + 1;
+		disp_result(DS_ADDHOLO, len, buf);
 	}
 	disp_flush();
 }

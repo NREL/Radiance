@@ -133,19 +133,24 @@ views.  The zeroeth auxiliary view is the base view itself.
 
 
 void
-dev_section(otf)	: add octree geometry for rendering
-char	*otf;		: octree and portal file names
+dev_section(gf, pf)	: add geometry and ports for rendering
+char	*gf;		: geometry file name
+char	*pf;		: portal file name(s)
 
-Add the given octree file to the list of geometry to be used to render
-intermediate views if direct geometry rendering is available.  Additional
-file names (separated by spaces) are Radiance scene files containing
-the geometry for "portals" to separate sections.  The given
-character string is guaranteed to be static (or permanently allocated)
-such that it may be safely stored as a pointer.  The same pointer or
-file list may be (and often is) given repeatedly.  If a given octree
-does not exist, the call should be silently ignored.  If otn is NULL,
-then the last octree has been given, and the display can be updated
-with the new information.
+Add the given geometry file to the list of geometry to render for
+intermediate views if direct geometry rendering is available.  The
+second argument gives the name(s) of any portal geometry files
+associated with this section.  Multiple portal file names are separated
+by spaces.  A single octree file will be given for the geometry, ending
+in the ".oct" suffix.  Portal files will be given as zero or more
+Radiance scene description file names.  If no portals are given for
+this section, the string may be NULL.  The character strings are
+guaranteed to be static (or permanently allocated) such that they may
+be safely stored as a pointer.  The same pointers or file lists may be
+(and often are) given repeatedly.  If a given geometry file does not
+exist, the call should be silently ignored.  If gf is NULL, then the
+last section has been given, and the display can be updated with the
+new information.
 
 
 void
