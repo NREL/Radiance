@@ -496,6 +496,49 @@ double	z;
 }
 
 
+movepixel(pos)				/* reposition image point */
+FVECT	pos;
+{
+	double	d0, d1;
+	FVECT	pt, direc;
+	
+	if (pos[2] <= 0)		/* empty pixel */
+		return(-1);
+	if (normdist && theirview.type == VT_PER) {	/* adjust distance */
+		d0 = pos[0] + theirview.hoff - .5;
+		d1 = pos[1] + theirview.voff - .5;
+		pos[2] /= sqrt(1. + d0*d0*theirview.hn2 + d1*d1*theirview.vn2);
+	}
+	if (hasmatrix) {
+		pos[0] += theirview.hoff - .5;
+		pos[1] += theirview.voff - .5;
+		if (theirview.type == VT_PER) {
+			pos[0] *= pos[2];
+			pos[1] *= pos[2];
+		}
+		multp3(pos, pos, theirs2ours);
+		if (pos[2] <= 0)
+			return(-1);
+		if (ourview.type == VT_PER) {
+			pos[0] /= pos[2];
+			pos[1] /= pos[2];
+		}
+		pos[0] += .5 - ourview.hoff;
+		pos[1] += .5 - ourview.voff;
+		return(0);
+	}
+	if (viewray(pt, direc, &theirview, pos[0], pos[1]) < -FTINY)
+		return(-1);
+	pt[0] += direc[0]*pos[2];
+	pt[1] += direc[1]*pos[2];
+	pt[2] += direc[2]*pos[2];
+	viewloc(pos, &ourview, pt);
+	if (pos[2] <= 0)
+		return(-1);
+	return(0);
+}
+
+
 getperim(xl, yl, zline, zfd)		/* compute overlapping image area */
 register struct bound	*xl;
 struct bound	*yl;
@@ -561,14 +604,19 @@ int	zfd;
 			}
 		}
 							/* fill in between */
-		if (xl[y].min < xl[y-step].min)
+		if (y < step) {
 			xl[y-1].min = xl[y].min;
-		else
-			xl[y-1].min = xl[y-step].min;
-		if (xl[y].max > xl[y-step].max)
 			xl[y-1].max = xl[y].max;
-		else
-			xl[y-1].max = xl[y-step].max;
+		} else {
+			if (xl[y].min < xl[y-step].min)
+				xl[y-1].min = xl[y].min;
+			else
+				xl[y-1].min = xl[y-step].min;
+			if (xl[y].max > xl[y-step].max)
+				xl[y-1].max = xl[y].max;
+			else
+				xl[y-1].max = xl[y-step].max;
+		}
 		for (x = 2; x < step; x++)
 			copystruct(xl+y-x, xl+y-1);
 	}
@@ -577,49 +625,6 @@ int	zfd;
 	for (x = numscans(&tresolu) - 1; x > y; x--)	/* fill bottom rows */
 		copystruct(xl+x, xl+y);
 	return(yl->max >= yl->min);
-}
-
-
-movepixel(pos)				/* reposition image point */
-FVECT	pos;
-{
-	double	d0, d1;
-	FVECT	pt, direc;
-	
-	if (pos[2] <= 0)		/* empty pixel */
-		return(-1);
-	if (normdist && theirview.type == VT_PER) {	/* adjust distance */
-		d0 = pos[0] + theirview.hoff - .5;
-		d1 = pos[1] + theirview.voff - .5;
-		pos[2] /= sqrt(1. + d0*d0*theirview.hn2 + d1*d1*theirview.vn2);
-	}
-	if (hasmatrix) {
-		pos[0] += theirview.hoff - .5;
-		pos[1] += theirview.voff - .5;
-		if (theirview.type == VT_PER) {
-			pos[0] *= pos[2];
-			pos[1] *= pos[2];
-		}
-		multp3(pos, pos, theirs2ours);
-		if (pos[2] <= 0)
-			return(-1);
-		if (ourview.type == VT_PER) {
-			pos[0] /= pos[2];
-			pos[1] /= pos[2];
-		}
-		pos[0] += .5 - ourview.hoff;
-		pos[1] += .5 - ourview.voff;
-		return(0);
-	}
-	if (viewray(pt, direc, &theirview, pos[0], pos[1]) < -FTINY)
-		return(-1);
-	pt[0] += direc[0]*pos[2];
-	pt[1] += direc[1]*pos[2];
-	pt[2] += direc[2]*pos[2];
-	viewloc(pos, &ourview, pt);
-	if (pos[2] <= 0)
-		return(-1);
-	return(0);
 }
 
 
