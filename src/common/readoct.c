@@ -26,6 +26,7 @@ static OCTREE  getfullnode(), gettree();
 
 static char  *infn;			/* input file name */
 static FILE  *infp;			/* input file stream */
+static int  objsize;			/* size of stored OBJECT's */
 static OBJECT  objorig;			/* zeroeth object */
 static short  otypmap[NUMOTYPE+8];	/* object type map */
 
@@ -58,7 +59,8 @@ char  *ofn[];
 	if (checkheader(infp, OCTFMT, load&IO_INFO ? stdout : NULL) < 0)
 		octerror(USER, "not an octree");
 					/* check format */
-	if (getint(2) != OCTMAGIC)
+	if ((objsize = getint(2)-OCTMAGIC) <= 0 ||
+			objsize > MAXOBJSIZ || objsize > sizeof(long))
 		octerror(USER, "incompatible octree format");
 					/* get boundaries */
 	if (load & IO_BOUNDS) {
@@ -81,7 +83,7 @@ char  *ofn[];
 	if (load & IO_FILES)
 		ofn[nf] = NULL;
 					/* get number of objects */
-	fnobjects = getint(sizeof(OBJECT));
+	fnobjects = getint(objsize);
 
 	if (load & IO_TREE) {
 						/* get the octree */
@@ -131,12 +133,18 @@ getfullnode()			/* get a set, return fullnode */
 {
 	OBJECT  set[MAXSET+1];
 	register int  i;
+	register long  m;
 
-	set[0] = getint(sizeof(OBJECT));
-	if (set[0] > MAXSET)
+	m = getint(objsize);
+	if (m > MAXSET)
 		octerror(USER, "bad set in getfullnode");
-	for (i = 1; i <= set[0]; i++)
-		set[i] = getint(sizeof(OBJECT)) + objorig;
+	set[0] = m;
+	for (i = 1; i <= set[0]; i++) {
+		m = getint(objsize) + objorig;
+		if ((OBJECT)m != m)
+			octerror(USER, "too many objects");
+		set[i] = m;
+	}
 	return(fullnode(set));
 }	
 
@@ -205,6 +213,7 @@ getobj()				/* get next object */
 	char  sbuf[MAXSTR];
 	int  obj;
 	register int  i;
+	register long  m;
 	register OBJREC  *objp;
 
 	i = getint(1);
@@ -215,8 +224,12 @@ getobj()				/* get next object */
 	objp = objptr(obj);
 	if ((objp->otype = otypmap[i]) < 0)
 		octerror(USER, "reference to unknown type");
-	if ((objp->omod = getint(sizeof(OBJECT))) != OVOID)
-		objp->omod += objorig;
+	if ((m = getint(objsize)) != OVOID) {
+		m += objorig;
+		if ((OBJECT)m != m)
+			octerror(USER, "too many objects");
+	}
+	objp->omod = m;
 	objp->oname = savqstr(getstr(sbuf));
 	if (objp->oargs.nsargs = getint(2)) {
 		objp->oargs.sarg = (char **)bmalloc
