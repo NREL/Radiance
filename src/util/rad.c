@@ -110,6 +110,7 @@ long	matdate;		/* date of latest material file */
 int	explicate = 0;		/* explicate variables */
 int	silent = 0;		/* do work silently */
 int	noaction = 0;		/* don't do anything */
+int	vwonly = 0;		/* print view only */
 char	*rvdevice = NULL;	/* rview output device */
 char	*viewselect = NULL;	/* specific view only */
 
@@ -143,6 +144,9 @@ char	*argv[];
 		case 'o':
 			rvdevice = argv[++i];
 			break;
+		case 'V':
+			vwonly++;
+		/* fall through */
 		case 'v':
 			viewselect = argv[++i];
 			break;
@@ -167,6 +171,9 @@ char	*argv[];
 				/* print all values if requested */
 	if (explicate)
 		printvals();
+				/* print view and exit? */
+	if (vwonly)
+		exit(printview()==0 ? 0 : 1);
 				/* build octree */
 	oconv();
 				/* check date on ambient file */
@@ -578,11 +585,11 @@ double
 ambval()				/* compute ambient value */
 {
 	if (vdef(EXPOSURE)) {
+		if (!isflt(vval(EXPOSURE)))
+			badvalue(EXPOSURE);
 		if (vval(EXPOSURE)[0] == '+' || vval(EXPOSURE)[0] == '-')
 			return(.5/pow(2.,atof(vval(EXPOSURE))));
-		if (isdigit(vval(EXPOSURE)[0]) || vval(EXPOSURE)[0] == '.')
-			return(.5/atof(vval(EXPOSURE)));
-		badvalue(EXPOSURE);
+		return(.5/atof(vval(EXPOSURE)));
 	}
 	if (vlet(ZONE) == 'E')
 		return(10.);
@@ -986,7 +993,7 @@ char	*vn;		/* returned view name */
 			*vn = '\0';
 		}
 						/* view number? */
-		if (isdigit(viewselect[0]))
+		if (isint(viewselect))
 			return(specview(nvalue(vv+VIEW, atoi(viewselect)-1)));
 						/* check list */
 		while ((mv = nvalue(vv+VIEW, n++)) != NULL)
@@ -1003,6 +1010,53 @@ char	*vn;		/* returned view name */
 		*vn = '\0';
 	}
 	return(specview(mv));
+}
+
+
+printview()			/* print out selected view */
+{
+	extern char	*atos();
+	char	buf[256];
+	FILE	*fp;
+	register char	*vopts, *cp;
+
+	vopts = getview(0, NULL);
+	if (vopts == NULL)
+		return(-1);
+	fputs("VIEW=", stdout);
+	do {
+		if (matchword(vopts, "-vf")) {		/* expand view file */
+			vopts = sskip(vopts);
+			if (!*atos(buf, sizeof(buf), vopts))
+				return(-1);
+			if ((fp = fopen(buf, "r")) == NULL)
+				return(-1);
+			for (buf[sizeof(buf)-2] = '\n';
+					fgets(buf, sizeof(buf), fp) != NULL &&
+						buf[0] != '\n';
+					buf[sizeof(buf)-2] = '\n') {
+				if (buf[sizeof(buf)-2] != '\n') {
+					ungetc(buf[sizeof(buf)-2], fp);
+					buf[sizeof(buf)-2] = '\0';
+				}
+				if (matchword(buf, "VIEW=") ||
+						matchword(buf, "rview")) {
+					for (cp = sskip(buf); *cp && *cp != '\n'; cp++)
+						putchar(*cp);
+				}
+			}
+			fclose(fp);
+			vopts = sskip(vopts);
+		} else {
+			while (isspace(*vopts))
+				vopts++;
+			putchar(' ');
+			while (*vopts && !isspace(*vopts))
+				putchar(*vopts++);
+		}
+	} while (*vopts++);
+	putchar('\n');
+	return(0);
 }
 
 
