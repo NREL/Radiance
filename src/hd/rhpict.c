@@ -50,9 +50,9 @@ char	*argv[];
 		case 'p':			/* pixel aspect/exposure */
 			if (badarg(argc-i-1,argv+i+1,"f"))
 				goto userr;
-			if (argv[i][1] == 'a')
+			if (argv[i][2] == 'a')
 				pixaspect = atof(argv[++i]);
-			else if (argv[i][1] == 'e') {
+			else if (argv[i][2] == 'e') {
 				expval = atof(argv[++i]);
 				if (argv[i][0] == '-' | argv[i][0] == '+')
 					expval = pow(2., expval);
@@ -98,9 +98,9 @@ char	*argv[];
 		}
 	}
 						/* open holodeck file */
-	if (i >= argc)
+	if (i != argc-1)
 		goto userr;
-	hdkfile = argv[i++];
+	hdkfile = argv[i];
 	initialize();
 						/* render picture(s) */
 	if (seqstart <= 0)
@@ -145,11 +145,13 @@ int	fn;
 		sprintf(errmsg, "error writing frame %d", fn);
 		error(SYSTEM, errmsg);
 	}
+#ifdef DEBUG
 	if (blist.nb > 0 & rval > 0) {
-		sprintf(errmsg, "%.1f%% unrendered pixels in frame %d",
-				100.*rval/(hres*vres), fn);
+		sprintf(errmsg, "%d unrendered pixels in frame %d (%.1f%%)",
+				rval, fn, 100.*rval/(hres*vres));
 		error(WARNING, errmsg);
 	}
+#endif
 }
 
 
