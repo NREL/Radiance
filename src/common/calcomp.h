@@ -15,7 +15,7 @@
 #define  ARG		6
 #define  TICK		7
 #define  SYM		8
-				/* also: '+', '-', '*', '/', '^', '=' */
+				/* also: '+', '-', '*', '/', '^', '=', ':' */
 
 typedef struct {
     char  *fname;		/* function name */
