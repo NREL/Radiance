@@ -10,7 +10,7 @@ CFLAGS = $(MACH) $(OPT)
 
 INSTDIR = /lumen/lumen/ray/bin.sun3
 
-PROGS = makedist swaprasheader
+PROGS = makedist swaprasheader findglare
 
 all:	$(PROGS)
 
@@ -29,6 +29,11 @@ scanner:	scanner.o
 makedist:	makedist.o fvect.o setscan.o
 	cc $(CFLAGS) -o makedist makedist.o fvect.o setscan.o -lm
 
+findglare:	findglare.o glareval.o glaresrc.o color.o fvect.o image.o \
+header.o resolu.o setscan.o
+	cc $(CFLAGS) -o findglare findglare.o glareval.o glaresrc.o \
+color.o fvect.o image.o header.o resolu.o setscan.o -lm
+
 contour:	contour.o
 	cc $(CFLAGS) -o contour contour.o -lm
 
@@ -42,4 +47,13 @@ client/libclient.a -lrpcsvc
 
 t16anim.o pranim.o:	client/clnt.h
 
-makedist.o:	setscan.h
+setscan.o makedist.o:	setscan.h
+
+findglare.o glareval.o \
+glaresrc.o:	glare.h standard.h mat4.h fvect.h view.h color.h setscan.h
+
+image.o:	view.h
+
+fvect.o:	fvect.h
+
+resolu.o:	color.h
