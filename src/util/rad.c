@@ -942,7 +942,7 @@ medqopts(op, po)			/* medium quality rendering options */
 register char	*op;
 char	*po;
 {
-	double	d, org[3], siz[3];
+	double	d, org[3], siz[3], asz;
 
 	*op = '\0';
 	*po = '\0';
@@ -953,12 +953,15 @@ char	*po;
 	if (siz[0] <= FTINY | siz[1] <= FTINY | siz[2] <= FTINY)
 		badvalue(ZONE);
 	getoctcube(org, &d);
-	d *= 3./(siz[0]+siz[1]+siz[2]);
+	asz = (siz[0]+siz[1]+siz[2])/3.;
+	d /= asz;
 	switch (vscale(DETAIL)) {
 	case LOW:
 		po = addarg(po, vbool(PENUMBRAS) ? "-ps 4" : "-ps 8");
 		op = addarg(op, "-dp 256");
 		sprintf(op, " -ar %d", (int)(8*d));
+		op += strlen(op);
+		sprintf(op, " -ms %.2g", asz/20.);
 		op += strlen(op);
 		break;
 	case MEDIUM:
@@ -966,11 +969,15 @@ char	*po;
 		op = addarg(op, "-dp 512");
 		sprintf(op, " -ar %d", (int)(16*d));
 		op += strlen(op);
+		sprintf(op, " -ms %.2g", asz/40.);
+		op += strlen(op);
 		break;
 	case HIGH:
 		po = addarg(po, vbool(PENUMBRAS) ? "-ps 2" : "-ps 4");
 		op = addarg(op, "-dp 1024");
 		sprintf(op, " -ar %d", (int)(32*d));
+		op += strlen(op);
+		sprintf(op, " -ms %.2g", asz/80.);
 		op += strlen(op);
 		break;
 	}
@@ -1013,7 +1020,7 @@ hiqopts(op, po)				/* high quality rendering options */
 register char	*op;
 char	*po;
 {
-	double	d, org[3], siz[3];
+	double	d, org[3], siz[3], asz;
 
 	*op = '\0';
 	*po = '\0';
@@ -1024,12 +1031,15 @@ char	*po;
 	if (siz[0] <= FTINY | siz[1] <= FTINY | siz[2] <= FTINY)
 		badvalue(ZONE);
 	getoctcube(org, &d);
-	d *= 3./(siz[0]+siz[1]+siz[2]);
+	asz = (siz[0]+siz[1]+siz[2])/3.;
+	d /= asz;
 	switch (vscale(DETAIL)) {
 	case LOW:
 		po = addarg(po, vbool(PENUMBRAS) ? "-ps 1" : "-ps 8");
 		op = addarg(op, "-dp 1024");
 		sprintf(op, " -ar %d", (int)(16*d));
+		op += strlen(op);
+		sprintf(op, " -ms %.2g", asz/40.);
 		op += strlen(op);
 		break;
 	case MEDIUM:
@@ -1037,11 +1047,15 @@ char	*po;
 		op = addarg(op, "-dp 2048");
 		sprintf(op, " -ar %d", (int)(32*d));
 		op += strlen(op);
+		sprintf(op, " -ms %.2g", asz/80.);
+		op += strlen(op);
 		break;
 	case HIGH:
 		po = addarg(po, vbool(PENUMBRAS) ? "-ps 1" : "-ps 3");
 		op = addarg(op, "-dp 4096");
 		sprintf(op, " -ar %d", (int)(64*d));
+		op += strlen(op);
+		sprintf(op, " -ms %.2g", asz/160.);
 		op += strlen(op);
 		break;
 	}
