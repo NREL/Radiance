@@ -33,7 +33,7 @@ typedef struct s_head {
 
 static S_HEAD  *stab[NHASH];
 
-static int  shash();
+#define  hash(s)	(shash(s)%NHASH)
 
 extern char  *savestr(), *strcpy(), *malloc();
 
@@ -55,7 +55,7 @@ char  *str;
 
 	if (str == NULL)
 		return(NULL);
-	hval = shash(str);
+	hval = hash(str);
 	for (sp = stab[hval]; sp != NULL; sp = sp->next)
 		if (!strcmp(str, string(sp))) {
 			sp->nl++;
@@ -81,7 +81,7 @@ char  *s;
 
 	if (s == NULL)
 		return;
-	hval = shash(s);
+	hval = hash(s);
 	for (spl = NULL, sp = stab[hval]; sp != NULL; spl = sp, sp = sp->next)
 		if (s == string(sp)) {
 			if (--sp->nl > 0)
@@ -96,14 +96,13 @@ char  *s;
 }
 
 
-static int
-shash(s)				/* hash a string */
+int
+shash(s)
 register char  *s;
 {
 	register int  h = 0;
 
 	while (*s)
-		h += *s++;
-
-	return(h % NHASH);
+		h = (h<<1 & 0x7fff) ^ *s++;
+	return(h);
 }
