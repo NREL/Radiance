@@ -49,6 +49,7 @@ register char	**av;
 {
 	double	w, wsum;
 	register int	i;
+	char	*nm;
 	register LUENT	*lp;
 
 	switch (mg_entity(av[0])) {
@@ -82,10 +83,11 @@ register char	**av;
 			c_ccolor = (C_COLOR *)lp->data;
 			c_ccolor->clock = 0;
 		}
+		nm = lp->key;
+		i = c_ccolor->clock;
 		if (ac == 3) {		/* use default template */
-			i = c_ccolor->clock;
 			*c_ccolor = c_dfcolor;
-			c_ccolor->name = av[1];
+			c_ccolor->name = nm;
 			c_ccolor->clock = i + 1;
 			return(MG_OK);
 		}
@@ -94,9 +96,8 @@ register char	**av;
 			return(MG_EMEM);
 		if (lp->data == NULL)
 			return(MG_EUNDEF);
-		i = c_ccolor->clock;
 		*c_ccolor = *(C_COLOR *)lp->data;
-		c_ccolor->name = av[1];
+		c_ccolor->name = nm;
 		c_ccolor->clock = i + 1;
 		return(MG_OK);
 	case MG_E_CXY:		/* assign CIE XY value */
@@ -146,6 +147,7 @@ register char	**av;
 					w, (C_COLOR *)lp->data);
 			wsum += w;
 		}
+		c_ccolor->clock++;
 		return(MG_OK);
 	}
 	return(MG_EUNK);
@@ -158,6 +160,7 @@ int	ac;
 register char	**av;
 {
 	int	i;
+	char	*nm;
 	register LUENT	*lp;
 
 	switch (mg_entity(av[0])) {
@@ -191,10 +194,11 @@ register char	**av;
 			c_cmaterial = (C_MATERIAL *)lp->data;
 			c_cmaterial->clock = 0;
 		}
+		nm = lp->key;
+		i = c_cmaterial->clock;
 		if (ac == 3) {		/* use default template */
-			i = c_cmaterial->clock;
 			*c_cmaterial = c_dfmaterial;
-			c_cmaterial->name = av[1];
+			c_cmaterial->name = nm;
 			c_cmaterial->clock = i + 1;
 			return(MG_OK);
 		}
@@ -203,9 +207,8 @@ register char	**av;
 			return(MG_EMEM);
 		if (lp->data == NULL)
 			return(MG_EUNDEF);
-		i = c_cmaterial->clock;
 		*c_cmaterial = *(C_MATERIAL *)lp->data;
-		c_cmaterial->name = av[1];
+		c_cmaterial->name = nm;
 		c_cmaterial->clock = i + 1;
 		return(MG_OK);
 	case MG_E_RD:		/* set diffuse reflectance */
@@ -278,6 +281,7 @@ int	ac;
 register char	**av;
 {
 	int	i;
+	char	*nm;
 	register LUENT	*lp;
 
 	switch (mg_entity(av[0])) {
@@ -310,10 +314,11 @@ register char	**av;
 				return(MG_EMEM);
 			c_cvertex = (C_VERTEX *)lp->data;
 		}
+		nm = lp->key;
+		i = c_cvertex->clock;
 		if (ac == 3) {		/* use default template */
-			i = c_cvertex->clock;
 			*c_cvertex = c_dfvertex;
-			c_cvertex->name = av[1];
+			c_cvertex->name = nm;
 			c_cvertex->clock = i + 1;
 			return(MG_OK);
 		}
@@ -322,9 +327,8 @@ register char	**av;
 			return(MG_EMEM);
 		if (lp->data == NULL)
 			return(MG_EUNDEF);
-		i = c_cvertex->clock;
 		*c_cvertex = *(C_VERTEX *)lp->data;
-		c_cvertex->name = av[1];
+		c_cvertex->name = nm;
 		c_cvertex->clock = i + 1;
 		return(MG_OK);
 	case MG_E_POINT:	/* set point */
@@ -533,5 +537,4 @@ double	w1, w2;
 		cres->cy = (w1 + w2) * scale;
 		cres->flags = C_CDXY|C_CSXY;
 	}
-	cres->clock++;			/* record the change */
 }
