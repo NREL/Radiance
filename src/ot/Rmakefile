@@ -9,7 +9,7 @@
 #
 
 OPT = -O
-MACH = -DBSD -DSTRUCTASSIGN
+MACH = -DBSD
 CFLAGS = -DSTRICT $(OPT) $(MACH) -I../common -L../lib
 
 LIBDIR = /usr/local/lib/ray

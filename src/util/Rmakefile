@@ -2,7 +2,7 @@
 # SCCSid "$SunId$ LBL"
 #
 
-MACH = -DBSD -DSTRUCTASSIGN
+MACH = -DBSD
 
 OPT = -O
 
