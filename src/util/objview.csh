@@ -1,5 +1,5 @@
 #!/bin/csh -f
-# SCCSid "$SunId$ SGI"
+# RCSid: $Id$
 #
 # Make a nice view of an object
 # Arguments are scene input files
@@ -91,7 +91,7 @@ EXPOSURE= .5
 UP= $up
 view= $vw
 OCTREE= $octree
-oconv= -f
+oconv= -f -r 16384
 render= $rendopts
 _EOF_
 

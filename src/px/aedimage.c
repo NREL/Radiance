@@ -1,9 +1,6 @@
-/* Copyright (c) 1986 Regents of the University of California */
-
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static const char	RCSid[] = "$Id$";
 #endif
-
 /*
  *  aedimage.c - RADIANCE driver for AED 512 terminal.
  *
@@ -247,6 +244,7 @@ char  *err;
 }
 
 
+void
 eputs(s)
 char  *s;
 {
@@ -254,6 +252,7 @@ char  *s;
 }
 
 
+void
 quit(status)
 int  status;
 {

@@ -1,5 +1,5 @@
 #!/bin/csh -f
-# SCCSid "$Id$	LBL"
+# RCSid: $Id$
 #
 # Generate a tree
 # Pine version 2

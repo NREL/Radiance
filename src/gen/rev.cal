@@ -1,5 +1,4 @@
-{ SCCSid "$SunId$ LBL" }
-
+{ RCSid: $Id$ }
 {
 	Phong normal interpolation for surfaces of revolution about z.
 

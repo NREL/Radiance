@@ -1,9 +1,6 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
-
 #ifndef lint
-static char SCCSid[] = "$SunId$ SGI";
+static const char	RCSid[] = "$Id$";
 #endif
-
 /*
  * Holodeck beam support for display process
  */
@@ -286,7 +283,7 @@ VIEW	*vp;
 	cl.n = 0;			/* add cells within pyramid */
 	visit_cells(org, dir, hp, addcell, (char *)&cl);
 	if (!cl.n) {
-		free((char *)cl.cl);
+		free((void *)cl.cl);
 		return(NULL);
 	}
 	*np = cl.n * orient;

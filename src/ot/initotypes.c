@@ -1,9 +1,6 @@
-/* Copyright (c) 1990 Regents of the University of California */
-
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static const char	RCSid[] = "$Id$";
 #endif
-
 /*
  * Initialize ofun[] list for octree generator
  */

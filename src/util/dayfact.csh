@@ -1,5 +1,5 @@
 #!/bin/csh -f
-# SCCSid "$SunId$ LBL"
+# RCSid: $Id$
 #
 # Interactive script to calculate daylight factors
 #

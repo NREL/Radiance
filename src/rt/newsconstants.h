@@ -1,3 +1,4 @@
+/* RCSid: $Id$ */
 #define textareaheight 150
 #define textbottom 10
 #define thefont /Times-Bold

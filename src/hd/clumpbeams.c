@@ -1,9 +1,6 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
-
 #ifndef lint
-static char SCCSid[] = "$SunId$ SGI";
+static const char	RCSid[] = "$Id$";
 #endif
-
 /*
  * Bundle holodeck beams together into clumps.
  */
@@ -156,6 +153,6 @@ int	(*cf)();
 		(*cf)(hp, bqueue, bqlen);	/* transfer clump */
 	}
 					/* all done; clean up */
-	free((char *)bqueue);
-	free((char *)bflags);
+	free((void *)bqueue);
+	free((void *)bflags);
 }

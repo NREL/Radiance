@@ -1,4 +1,4 @@
-# SCCSid "$SunId$ LBL"
+# RCSid: $Id$
 #
 # Get help from a file, formatted like so:
 #

@@ -1,7 +1,4 @@
-/* Copyright (c) 1999 Silicon Graphics, Inc. */
-
-/* SCCSid "$SunId$ SGI" */
-
+/* RCSid: $Id$ */
 /*
  * Header file for holodeck device driver routines.
  */

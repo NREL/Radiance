@@ -1,5 +1,5 @@
 #!/bin/csh -f
-# SCCSid "$SunId$ LBL"
+# RCSid: $Id$
 # Create four standard views of scene and present as line drawings
 #
 set oblqxf="-rz 45 -ry 45"

@@ -1,5 +1,4 @@
-{ SCCSid "$SunId$ LBL" }
-
+{ RCSid: $Id$ }
 {
 	tilt.cal - tilt data for IES luminaires
 }

@@ -1,9 +1,6 @@
-/* Copyright (c) 1987 Regents of the University of California */
-
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static const char	RCSid[] = "$Id$";
 #endif
-
 /*
  *  colorscale.c - program to produce color pallets
  *

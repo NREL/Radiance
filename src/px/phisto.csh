@@ -1,5 +1,5 @@
 #!/bin/csh -f
-# SCCSid "$SunId$ SGI"
+# RCSid: $Id$
 #
 # Compute foveal histogram for picture set
 #

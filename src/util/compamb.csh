@@ -1,5 +1,5 @@
 #!/bin/csh -f
-# SCCSid "$SunId$ SGI"
+# RCSid: $Id$
 #
 # Compute best ambient value for a scene and append to rad input file
 #

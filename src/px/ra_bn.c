@@ -1,9 +1,6 @@
-/* Copyright (c) 1992 Regents of the University of California */
-
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static const char	RCSid[] = "$Id$";
 #endif
-
 /*
  *  ra_bn.c - program to convert between RADIANCE and barneyscan picture format.
  *
@@ -16,13 +13,13 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <fcntl.h>
 #endif
 
+#include  <time.h>
+
 #include  <math.h>
 
 #include  "color.h"
 
 #include  "resolu.h"
-
-extern char  *malloc();
 
 double	gamcor = 2.0;			/* gamma correction */
 
@@ -210,7 +207,7 @@ ra2bn()					/* convert radiance to barneyscan */
 		if (ferror(bnfp[0]) || ferror(bnfp[1]) || ferror(bnfp[2]))
 			quiterr("error writing Barney files");
 	}
-	free((char *)inl);
+	free((void *)inl);
 }
 
 
@@ -236,5 +233,5 @@ bn2ra()					/* convert barneyscan to radiance */
 		if (fwritecolrs(outline, xmax, rafp) < 0)
 			quiterr("error writing RADIANCE file");
 	}
-	free((char *)outline);
+	free((void *)outline);
 }

@@ -1,9 +1,6 @@
-/* Copyright (c) 1986 Regents of the University of California */
-
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static const char	RCSid[] = "$Id$";
 #endif
-
 /*
  *  genbeads.c - generate a string of spheres using Hermite
  *		curve specification.
@@ -12,15 +9,12 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include  <stdio.h>
+#include <stdlib.h>
 #include  <math.h>
 
 char  *mtype;		/* material type */
 
 char  *name;		/* name */
-
-#ifdef  DCL_ATOF
-extern double  atof();
-#endif
 
 
 main(argc, argv)

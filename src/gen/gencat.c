@@ -1,9 +1,6 @@
-/* Copyright (c) 1993 Regents of the University of California */
-
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static const char	RCSid[] = "$Id$";
 #endif
-
 /*****************************************************************************
   This program is to make series of right triangles forming hyperbolic cosin
   (ie, cosh) curve in between of 2 points.
@@ -28,11 +25,8 @@ static char SCCSid[] = "$SunId$ LBL";
 ******************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
-
-#ifdef  DCL_ATOF
-extern double  atof();
-#endif
 
 char  *cmtype, *cname;
 double z0, z1;

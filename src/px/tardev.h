@@ -1,7 +1,4 @@
-/* Copyright 1988 Regents of the University of California */
-
-/* SCCSid "$SunId$ LBL" */
-
+/* RCSid: $Id$ */
 /*
  *		Board types used for targa->boardType
  */

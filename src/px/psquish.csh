@@ -1,5 +1,5 @@
 #!/bin/csh -f
-# SCCSid "$SunId$ LBL"
+# RCSid: $Id$
 set Lmin=.0001		# minimum visible world luminance
 set Ldmin=1		# minimum display luminance
 set Ldmax=100		# maximum display luminance

@@ -1,9 +1,6 @@
-/* Copyright (c) 1990 Regents of the University of California */
-
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static const char	RCSid[] = "$Id$";
 #endif
-
 /*
  * Translator utilities
  *
@@ -11,6 +8,8 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include <stdio.h>
+
+#include <stdlib.h>
 
 #include "trans.h"
 

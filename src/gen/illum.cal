@@ -1,5 +1,4 @@
-{ SCCSid "$SunId$ LBL" }
-
+{ RCSid: $Id$ }
 {
 	Coordinate computations for mkillum output.
 

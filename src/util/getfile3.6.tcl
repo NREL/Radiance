@@ -1,4 +1,4 @@
-# SCCSid "$SunId$ LBL"
+# RCSid: $Id$
 #
 # Usage: getfile [-win w] [-grab] [-perm] [-glob pattern] [-view proc] [-send proc]
 #

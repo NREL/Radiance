@@ -1,5 +1,5 @@
 #!/bin/csh -f
-# SCCSid "$Id$	LBL"
+# RCSid: $Id$
 #
 #  Generate source description for window with venetian blinds.
 #

@@ -1,14 +1,13 @@
-/* Copyright (c) 1994 Regents of the University of California */
-
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static const char	RCSid[] = "$Id$";
 #endif
-
 /*
  *  pf2.c - routines used by pfilt.
  */
 
 #include  <stdio.h>
+
+#include  <stdlib.h>
 
 #include  <math.h>
 
@@ -75,7 +74,6 @@ pass1scan(scan, y)		/* process first pass scanline */
 register COLOR	*scan;
 int  y;
 {
-	extern char  *malloc();
 	double	cbrt;
 	register int  x;
 	register HOTPIX	 *hp;

@@ -1,5 +1,5 @@
 #!/bin/csh -fe
-# SCCSid "$SunId$ LBL"
+# RCSid: $Id$
 #
 # Prepare Instant View directory
 #

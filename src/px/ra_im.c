@@ -1,9 +1,6 @@
-/* Copyright (c) 1988 Regents of the University of California */
-
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static const char	RCSid[] = "$Id$";
 #endif
-
 /*
  *  ra_im.c - convert Radiance picture to imagetools raw format.
  *

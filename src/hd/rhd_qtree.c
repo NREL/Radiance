@@ -1,9 +1,6 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
-
 #ifndef lint
-static char SCCSid[] = "$SunId$ SGI";
+static const char	RCSid[] = "$Id$";
 #endif
-
 /*
  * Quadtree driver support routines.
  */
@@ -89,8 +86,8 @@ int	really;
 	}
 				/* else "really" means free up memory */
 	for (i = 0; twigbundle[i] != NULL; i++)
-		free((char *)twigbundle[i]);
-	free((char *)twigbundle);
+		free((void *)twigbundle[i]);
+	free((void *)twigbundle);
 	twigbundle = NULL;
 }
 

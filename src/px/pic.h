@@ -1,7 +1,4 @@
-/* Copyright 1988 Regents of the University of California */
-
-/* SCCSid "$SunId$ LBL" */
-
+/* RCSid: $Id$ */
 /* the following three structures are used by ciq */
 
 typedef int colormap[3][256];

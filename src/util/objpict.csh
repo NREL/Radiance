@@ -1,5 +1,5 @@
 #!/bin/csh -f
-# SCCSid "$SunId$ LBL"
+# RCSid: $Id$
 #
 # Make a nice multi-view picture of an object
 # Standard input is description made to fit in unit cube in positive quadrant

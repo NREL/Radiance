@@ -1,5 +1,5 @@
-#!/bin/csh -f
-# SCCSid "$SunId$ LBL"
+#!/bin/csh -fe
+# RCSid: $Id$
 #
 # Create false color image with legend
 #

@@ -1,5 +1,4 @@
-{ SCCSid "$SunId$ LBL" }
-
+{ RCSid: $Id$ }
 {
 	surf.cal - calculation of interpolated surface normal
 

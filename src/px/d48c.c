@@ -1,9 +1,6 @@
-/* Copyright 1988 Regents of the University of California */
-
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static const char	RCSid[] = "$Id$";
 #endif
-
 /*
  *  d48c.c - driver for dicomed D48 film recorder w/ color optics.
  *
@@ -184,6 +181,7 @@ char  *cname;
 }
 
 
+void
 quit(code)			/* quit program */
 int  code;
 {

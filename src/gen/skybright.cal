@@ -1,5 +1,4 @@
-{ SCCSid "$SunId$ LBL" }
-
+{ RCSid: $Id$ }
 {
      Sky brightness function for sunny and cloudy skies.
 

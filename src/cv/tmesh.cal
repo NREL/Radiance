@@ -1,5 +1,4 @@
-{ SCCSid "$SunId$ LBL" }
-
+{ RCSid: $Id$ }
 {
 	Interpolate triangle-mesh values using barycentric coordinates.
 
