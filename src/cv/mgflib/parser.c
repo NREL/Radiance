@@ -904,15 +904,15 @@ char	**av;
 
 	if (ac < 5)
 		return(MG_EARGC);
-	if (!isflt(av[1]))
+	if (!isflt(av[ac-1]))
 		return(MG_ETYPE);
-	length = atof(av[1]);
+	length = atof(av[ac-1]);
 	if (length <= FTINY && length >= -FTINY)
 		return(MG_EILL);
 					/* do bottom face */
 	newav[0] = mg_ename[MG_E_FACE];
 	for (i = 1; i < ac-1; i++)
-		newav[i] = av[i+1];
+		newav[i] = av[i];
 	newav[i] = NULL;
 	if ((rv = handle_it(MG_E_FACE, i, newav)) != MG_OK)
 		return(rv);
@@ -922,7 +922,7 @@ char	**av;
 	norm[0] = norm[1] = norm[2] = 0.;
 	v1[0] = v1[1] = v1[2] = 0.;
 	for (i = 2; i < ac-1; i++) {
-		if ((cv = c_getvert(av[i+1])) == NULL)
+		if ((cv = c_getvert(av[i])) == NULL)
 			return(MG_EUNDEF);
 		v2[0] = cv->p[0] - cv0->p[0];
 		v2[1] = cv->p[1] - cv0->p[1];
@@ -941,7 +941,7 @@ char	**av;
 		vent[1] = nvn[i-1];
 		if ((rv = handle_it(MG_E_VERTEX, 3, vent)) != MG_OK)
 			return(rv);
-		cv = c_getvert(av[i+1]);	/* checked above */
+		cv = c_getvert(av[i]);		/* checked above */
 		for (j = 0; j < 3; j++)
 			sprintf(p[j], FLTFMT, cv->p[j] - length*norm[j]);
 		if ((rv = handle_it(MG_E_POINT, 4, pent)) != MG_OK)
@@ -953,11 +953,11 @@ char	**av;
 		return(rv);
 						/* do the side faces */
 	newav[5] = NULL;
-	newav[3] = av[ac-1];
+	newav[3] = av[ac-2];
 	newav[4] = nvn[ac-3];
 	for (i = 1; i < ac-1; i++) {
 		newav[1] = nvn[i-1];
-		newav[2] = av[i+1];
+		newav[2] = av[i];
 		if ((rv = handle_it(MG_E_FACE, 5, newav)) != MG_OK)
 			return(rv);
 		newav[3] = newav[2];
