@@ -131,6 +131,7 @@ double	br;
 
 comp_thresh()			/* compute glare threshold */
 {
+	SPANERR	sperr;
 	int	h, v;
 	int	nsamps;
 	double	brsum, br;
@@ -140,13 +141,15 @@ comp_thresh()			/* compute glare threshold */
 				progname);
 	brsum = 0.0;
 	nsamps = 0;
-	for (v = vsize; v >= -vsize; v -= TSAMPSTEP)
+	for (v = vsize; v >= -vsize; v -= TSAMPSTEP) {
+		setspanerr(&sperr, v);
 		for (h = -hsize; h <= hsize; h += TSAMPSTEP) {
-			if ((br = getviewpix(h, v)) < 0.0)
+			if ((br = getviewpix(h, v, &sperr)) < 0.0)
 				continue;
 			brsum += br;
 			nsamps++;
 		}
+	}
 	if (nsamps == 0) {
 		fprintf(stderr, "%s: no viewable scene!\n", progname);
 		exit(1);
@@ -287,10 +290,10 @@ register struct source	*sp;
 	for (ss = sp->first; ss != NULL; ss = ss->next) {
 		sp->brt += ss->brsum;
 		n += ss->r - ss->l;
-		if (compdir(dright, ss->r, ss->v) < 0)
-			compdir(dright, ss->r-2, ss->v);
+		if (compdir(dright, ss->r, ss->v, NULL) < 0)
+			compdir(dright, ss->r-2, ss->v, NULL);
 		for (h = ss->r-1; h >= ss->l; h--)
-			if (compdir(dthis, h, ss->v) == 0) {
+			if (compdir(dthis, h, ss->v, NULL) == 0) {
 				d = dist2(dthis, dright);
 				fvsum(sp->dir, sp->dir, dthis, d);
 				sp->dom += d;
@@ -305,7 +308,7 @@ register struct source	*sp;
 	donelist = sp;
 	if (verbose)
 		fprintf(stderr,
-	"%s: found source at (%.3f,%.3f,%.3f), dw %.5f, br %.1f (%d samps)\n",
+	"%s: source at [%.3f,%.3f,%.3f], dw %.5f, br %.1f (%d samps)\n",
 			progname, sp->dir[0], sp->dir[1], sp->dir[2], 
 			sp->dom, sp->brt, n);
 }
