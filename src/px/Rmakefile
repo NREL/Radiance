@@ -23,6 +23,8 @@ all:	$(PROGS)
 
 install:	$(PROGS)
 	cp $(PROGS) $(INSTDIR)
+	cp normpat.csh $(INSTDIR)/normpat
+	chmod 755 $(INSTDIR)/normpat
 
 pfilt:	pfilt.o pf2.o pf3.o resolu.o color.o header.o lamps.o \
 rexpr.o fropen.o spec_rgb.o
