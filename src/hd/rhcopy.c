@@ -203,9 +203,9 @@ char	*hdf;
 		hbl = (HDBEAMI *)malloc(nbeams(hp)*sizeof(HDBEAMI));
 		if (hbl == NULL)
 			error(SYSTEM, "out of memory in addholo");
-		for (j = nbeams(hp); j > 0; j--) {	/* sort the beams */
+		for (j = nbeams(hp); j--; ) {	/* sort the beams */
 			hbl[j].h = hp;
-			hbl[j].b = j;
+			hbl[j].b = j+1;
 		}
 		qsort((char *)hbl, nbeams(hp), sizeof(HDBEAMI), hdfilord);
 		for (j = 0; j < nbeams(hp); j++)	/* load each beam */
