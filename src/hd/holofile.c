@@ -483,6 +483,7 @@ int	(*bf)();		/* callback function (optional) */
 }
 
 
+int
 hdfreefrag(hp, i)			/* free a file fragment */
 HOLO	*hp;
 int	i;
@@ -492,7 +493,7 @@ int	i;
 	register int	j, k;
 
 	if (bi->nrd <= 0)
-		return;
+		return(0);
 	DCHECK(hp->fd < 0 | hp->fd >= nhdfragls || !hdfragl[hp->fd].nlinks,
 			CONSISTENCY, "bad file descriptor in hdfreefrag");
 	f = &hdfragl[hp->fd];
@@ -512,7 +513,7 @@ int	i;
 	if (j >= MAXFRAGB*FRAGBLK) {
 		f->nfrags = j--;	/* stop list growth */
 		if (bi->nrd <= f->fi[j].nrd)
-			return;		/* new one no better than discard */
+			return(0);	/* new one no better than discard */
 	}
 #endif
 	if (j % FRAGBLK == 0) {		/* more (or less) free list space */
@@ -524,7 +525,7 @@ int	i;
 					(j+FRAGBLK)*sizeof(BEAMI));
 		if (newp == NULL) {
 			f->nfrags--;	/* graceful failure */
-			return;
+			return(0);
 		}
 		f->fi = newp;
 	}
@@ -554,6 +555,7 @@ int	i;
 	biglob(hp)->nrd -= bi->nrd;		/* tell fragment it's free */
 	bi->nrd = 0;
 	bi->fo = 0;
+	return(1);
 }
 
 
@@ -587,7 +589,7 @@ int	fd;
 unsigned int4	nrays;
 {
 	register struct fraglist	*f;
-	register int	j, k;
+	register int	j;
 	long	nfo;
 
 	if (nrays == 0)
@@ -595,19 +597,16 @@ unsigned int4	nrays;
 	DCHECK(fd < 0 | fd >= nhdfragls || !hdfragl[fd].nlinks,
 			CONSISTENCY, "bad file descriptor in hdallocfrag");
 	f = &hdfragl[fd];
-	k = -1;				/* find closest-sized fragment */
-	for (j = f->nfrags; j-- > 0; )
-		if (f->fi[j].nrd >= nrays &&
-				(k < 0 || f->fi[j].nrd < f->fi[k].nrd))
-			if (f->fi[k=j].nrd == nrays)
-				break;
-	if (k < 0) {			/* no fragment -- extend file */
+	for (j = f->nfrags; j-- > 0; )	/* first fit algorithm */
+		if (f->fi[j].nrd >= nrays)
+			break;
+	if (j < 0) {			/* no fragment -- extend file */
 		nfo = f->flen;
 		f->flen += nrays*sizeof(RAYVAL);
 	} else {			/* else use fragment */
-		nfo = f->fi[k].fo;
-		f->fi[k].fo += nrays*sizeof(RAYVAL);
-		f->fi[k].nrd -= nrays;
+		nfo = f->fi[j].fo;
+		f->fi[j].fo += nrays*sizeof(RAYVAL);
+		f->fi[j].nrd -= nrays;
 	}
 	return(nfo);
 }
