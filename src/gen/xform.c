@@ -179,7 +179,7 @@ int  ac, fi;
 		}
 		n = 0;			/* count number of lines in file */
 		while (fgets(argbuf,sizeof(argbuf),argfp) != NULL)
-			n++;
+			n += argbuf[0] != '\n' & argbuf[0] != '#';
 		if (!n) {
 			fprintf(stderr, "%s: empty argument file \"%s\"\n",
 					av[0], av[fi+1]);
@@ -188,8 +188,10 @@ int  ac, fi;
 		nrept *= n;
 		rewind(argfp);
 	}
-	err = 0;			/* read each arg list and call main */
-	for (k = 0; fgets(argbuf,sizeof(argbuf),argfp) != NULL; k++) {
+	err = 0; k = 0;			/* read each arg list and call main */
+	while (fgets(argbuf,sizeof(argbuf),argfp) != NULL) {
+		if (argbuf[0] == '\n' | argbuf[0] == '#')
+			continue;
 		avp = newav+2;
 		avp[0] = av[0];
 		for (i = 1; i < fi; i++)
@@ -227,6 +229,7 @@ int  ac, fi;
 		else
 			sprintf(newid, "%s.%d", oldid, k);
 		err |= main(newac, avp);
+		k++;
 	}
 	fclose(argfp);
 	return(err);
