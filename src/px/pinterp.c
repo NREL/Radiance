@@ -243,8 +243,6 @@ userr:
 headline(s)				/* process header string */
 char	*s;
 {
-	static char	*altname[] = {VIEWSTR,"rpict","rview","pinterp",NULL};
-	register char	**an;
 	char	fmt[32];
 
 	if (isformat(s)) {
@@ -259,12 +257,8 @@ char	*s;
 		theirexp *= exposval(s);
 		return;
 	}
-	for (an = altname; *an != NULL; an++)
-		if (!strncmp(*an, s, strlen(*an))) {
-			if (sscanview(&theirview, s+strlen(*an)) > 0)
-				gotview++;
-			break;
-		}
+	if (isview(s) && sscanview(&theirview, s) > 0)
+		gotview++;
 }
 
 
