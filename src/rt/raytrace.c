@@ -156,7 +156,7 @@ int  mod;
 			if (irr_ignore(m->otype)) {
 				depth--;
 				raytrans(r);
-				return;
+				return(1);
 			}
 			if (!islight(m->otype))
 				m = &Lamb;
