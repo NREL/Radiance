@@ -113,8 +113,10 @@ char  *argv[];
 	FILE  *fopen();
 	FILE  *fp;
 	int  a;
-
-	xav = argv;
+					/* check for array */
+	for (a = 1; a < argc; a++)
+		if (!strcmp(argv[a], "-a"))
+			return(doarray(argc, argv, a));
 
 	for (a = 1; a < argc; a++) {
 		if (argv[a][0] == '-')
@@ -129,6 +131,7 @@ char  *argv[];
 		break;
 	}
 
+	xav = argv;
 	xfa = a;
 
 	totscale = 1.0;
@@ -159,7 +162,47 @@ char  *argv[];
 			fclose(fp);
 		}
 
-	exit(0);
+	return(0);
+}
+
+
+doarray(ac, av, ai)			/* make array */
+char  **av;
+int  ac, ai;
+{
+	char  *newav[256], **avp;
+	char  newid[128], repts[32];
+	char  *oldid = NULL;
+	int  i, err;
+	
+	avp = newav+2;
+	avp[0] = av[0];
+	for (i = 1; i < ac; i++)
+		if (!strcmp(av[i-1], "-n")) {
+			oldid = av[i];
+			avp[i] = newid;
+		} else
+			avp[i] = av[i];
+	avp[ai] = "-i";
+	avp[ai+1] = repts;
+	avp[i] = NULL;
+	if (oldid == NULL) {
+		newav[0] = av[0];
+		newav[1] = "-n";
+		newav[2] = newid;
+		avp = newav;
+		ac += 2;
+	}
+	err = 0;
+	for (i = 0; i < atoi(av[ai+1]); i++) {
+		if (oldid == NULL)
+			sprintf(newid, "a%d", i);
+		else
+			sprintf(newid, "%s.%d", oldid, i);
+		sprintf(repts, "%d", i);
+		err |= main(ac, avp);
+	}
+	return(err);
 }
 
 
