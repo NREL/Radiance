@@ -208,7 +208,7 @@ FILE	*fp;
 		}
 		nstats++;
 	}
-	printf("# Done processing file: %s\n", fname);
+	printf("\n# Done processing file: %s\n", fname);
 	printf("# %d lines, %d statements, %d unrecognized\n",
 			lineno, nstats, nunknown);
 }
@@ -318,17 +318,19 @@ char	*v1, *v2, *v3;
 	char	*mod = matname;
 	VNDX	v1i, v2i, v3i;
 	BARYCCM	bvecs;
+	int	texOK, patOK;
 
 	if (!cvtndx(v1i, v1) || !cvtndx(v2i, v2) || !cvtndx(v3i, v3))
 		return(0);
 					/* compute barycentric coordinates */
-	if ((v1i[2]>=0&&v2i[2]>=0&&v3i[2]>=0) ||
-			(v1i[1]>=0&&v2i[1]>=0&&v3i[1]>=0))
+	texOK = (v1i[2]>=0 && v2i[2]>=0 && v3i[2]>=0);
+	patOK = picfile[0] && (v1i[1]>=0 && v2i[1]>=0 && v3i[1]>=0);
+	if (texOK | patOK)
 		if (comp_baryc(bvecs, vlist[v1i[0]], vlist[v2i[0]],
 				vlist[v3i[0]]) < 0)
-			return(0);
+			return(-1);
 					/* put out texture (if any) */
-	if (v1i[2]>=0 && v2i[2]>=0 && v3i[2]>=0) {
+	if (texOK) {
 		printf("\n%s texfunc %s\n", mod, TEXNAME);
 		mod = TEXNAME;
 		printf("4 dx dy dz %s\n", TCALNAME);
@@ -345,7 +347,7 @@ char	*v1, *v2, *v3;
 				vnlist[v3i[2]][2]);
 	}
 					/* put out pattern (if any) */
-	if (picfile[0] && v1i[1]>=0 && v2i[1]>=0 && v3i[1]>=0) {
+	if (patOK) {
 		printf("\n%s colorpict %s\n", mod, PATNAME);
 		mod = PATNAME;
 		printf("7 noneg noneg noneg %s %s u v\n", picfile, TCALNAME);
@@ -357,7 +359,7 @@ char	*v1, *v2, *v3;
 				vtlist[v2i[1]][1], vtlist[v3i[1]][1]);
 	}
 					/* put out triangle */
-	printf("\n%s polygon %s.%d\n", matname, objname, ++nfaces);
+	printf("\n%s polygon %s.%d\n", mod, objname, ++nfaces);
 	printf("0\n0\n9\n");
 	pvect(vlist[v1i[0]]);
 	pvect(vlist[v2i[0]]);
@@ -439,7 +441,7 @@ char  *p0, *p1, *p2, *p3;
 	fcross(vc2, v1, v2);
 	ok2 = normalize(vc2) != 0.0;
 	if (!(ok1 | ok2))
-		return(0);
+		return(-1);
 					/* compute normal interpolation */
 	axis = norminterp(norm, p0i, p1i, p2i, p3i);
 
