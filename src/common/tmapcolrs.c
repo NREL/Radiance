@@ -17,6 +17,22 @@ static char SCCSid[] = "$SunId$ LBL";
 
 extern char	*tempbuffer();
 
+#define GAMTSZ	1024
+
+typedef struct {
+	BYTE		gamb[GAMTSZ];	/* gamma lookup table */
+	COLR		clfb;		/* encoded tm->clf */
+	TMbright	inpsfb;		/* encoded tm->inpsf */
+} COLRDATA;
+
+static MEM_PTR	colrInit();
+static void	colrNewSpace();
+extern void	free();
+static struct tmPackage	colrPkg = {	/* our package functions */
+	colrInit, colrNewSpace, free
+};
+static int	colrReg = -1;		/* our package registration number */
+
 #define	LOGISZ	260
 static TMbright	logi[LOGISZ];
 static BYTE	photofact[BMESUPPER-BMESLOWER];
@@ -31,13 +47,14 @@ int	len;
 {
 	static char	funcName[] = "tmCvColrs";
 	COLR	cmon;
+	register COLRDATA	*cd;
 	register int	i, bi, li;
 
 	if (tmTop == NULL)
 		returnErr(TM_E_TMINVAL);
 	if (ls == NULL | scan == NULL | len <= 0)
 		returnErr(TM_E_ILLEGAL);
-	if (tmTop->flags & TM_F_NEEDMAT) {	/* need floating point */
+	if (tmNeedMatrix(tmTop)) {		/* need floating point */
 		register COLOR	*newscan;
 		newscan = (COLOR *)tempbuffer(len*sizeof(COLOR));
 		if (newscan == NULL)
@@ -46,7 +63,10 @@ int	len;
 			colr_color(newscan[i], scan[i]);
 		return(tmCvColors(ls, cs, newscan, len));
 	}
-	if (logi[0] == 0) {			/* build tables if necessary */
+	if (colrReg == -1) {			/* build tables if necessary */
+		colrReg = tmRegPkg(&colrPkg);
+		if (colrReg < 0)
+			returnErr(TM_E_CODERR1);
 		for (i = 256; i--; )
 			logi[i] = TM_BRTSCALE*log((i+.5)/256.) - .5;
 		for (i = 256; i < LOGISZ; i++)
@@ -56,14 +76,16 @@ int	len;
 					(tmLuminance(i) - LMESLOWER) /
 					(LMESUPPER - LMESLOWER);
 	}
+	if ((cd = (COLRDATA *)tmPkgData(tmTop,colrReg)) == NULL)
+		returnErr(TM_E_NOMEM);
 	for (i = len; i--; ) {
 		copycolr(cmon, scan[i]);
 							/* world luminance */
-		li =  ( tmTop->clfb[RED]*cmon[RED] +
-			tmTop->clfb[GRN]*cmon[GRN] +
-			tmTop->clfb[BLU]*cmon[BLU] ) >> 8;
+		li =  ( cd->clfb[RED]*cmon[RED] +
+			cd->clfb[GRN]*cmon[GRN] +
+			cd->clfb[BLU]*cmon[BLU] ) >> 8;
 		bi = BRT2SCALE*(cmon[EXP]-COLXS) +
-				logi[li] + tmTop->inpsfb;
+				logi[li] + cd->inpsfb;
 		if (bi < MINBRT) {
 			bi = MINBRT-1;			/* bogus value */
 			li++;				/* avoid li==0 */
@@ -88,12 +110,12 @@ int	len;
 		} else if (tmTop->flags & TM_F_BW) {
 			cmon[RED] = cmon[GRN] = cmon[BLU] = li;
 		}
-		bi = ( (int4)TM_GAMTSZ*tmTop->clfb[RED]*cmon[RED]/li ) >> 8;
-		cs[3*i  ] = bi>=TM_GAMTSZ ? 255 : tmTop->gamb[bi];
-		bi = ( (int4)TM_GAMTSZ*tmTop->clfb[GRN]*cmon[GRN]/li ) >> 8;
-		cs[3*i+1] = bi>=TM_GAMTSZ ? 255 : tmTop->gamb[bi];
-		bi = ( (int4)TM_GAMTSZ*tmTop->clfb[BLU]*cmon[BLU]/li ) >> 8;
-		cs[3*i+2] = bi>=TM_GAMTSZ ? 255 : tmTop->gamb[bi];
+		bi = ( (int4)GAMTSZ*cd->clfb[RED]*cmon[RED]/li ) >> 8;
+		cs[3*i  ] = bi>=GAMTSZ ? 255 : cd->gamb[bi];
+		bi = ( (int4)GAMTSZ*cd->clfb[GRN]*cmon[GRN]/li ) >> 8;
+		cs[3*i+1] = bi>=GAMTSZ ? 255 : cd->gamb[bi];
+		bi = ( (int4)GAMTSZ*cd->clfb[BLU]*cmon[BLU]/li ) >> 8;
+		cs[3*i+2] = bi>=GAMTSZ ? 255 : cd->gamb[bi];
 	}
 	returnOK;
 }
@@ -365,4 +387,41 @@ done:						/* clean up */
 		returnErr(err);
 	}
 	returnOK;
+}
+
+
+static void
+colrNewSpace(tms)		/* color space changed for tone mapping */
+register struct tmStruct	*tms;
+{
+	register COLRDATA	*cd;
+	double	d;
+
+	cd = (COLRDATA *)tms->pd[colrReg];
+	cd->clfb[RED] = 256.*tms->clf[RED] + .5;
+	cd->clfb[GRN] = 256.*tms->clf[GRN] + .5;
+	cd->clfb[BLU] = 256.*tms->clf[BLU] + .5;
+	cd->clfb[EXP] = COLXS;
+	d = TM_BRTSCALE*log(tms->inpsf);
+	cd->inpsfb = d<0. ? d-.5 : d+.5;
+}
+
+
+static MEM_PTR
+colrInit(tms)			/* initialize private data for tone mapping */
+register struct tmStruct	*tms;
+{
+	register COLRDATA	*cd;
+	register int	i;
+					/* allocate our data */
+	cd = (COLRDATA *)malloc(sizeof(COLRDATA));
+	if (cd == NULL)
+		return(NULL);
+	tms->pd[colrReg] = (MEM_PTR)cd;
+					/* compute gamma table */
+	for (i = GAMTSZ; i--; )
+		cd->gamb[i] = 256.*pow((i+.5)/GAMTSZ, 1./tms->mongam);
+					/* compute color and scale factors */
+	colrNewSpace(tms);
+	return((MEM_PTR)cd);
 }

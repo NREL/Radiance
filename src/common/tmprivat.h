@@ -8,6 +8,9 @@
 
 #undef	NOPROTO
 #define	NOPROTO		1
+#ifndef	MEM_PTR
+#define	MEM_PTR		char *
+#endif
 #include	"tonemap.h"
 
 				/* required constants */
@@ -24,10 +27,6 @@
 #define DEFLDDYN	32.
 #define	MINLDMAX	1.
 #define	DEFLDMAX	100.
-
-				/* private flags */
-#define	TM_F_INITED	010000		/* initialized flag */
-#define	TM_F_NEEDMAT	020000		/* need matrix conversion */
 
 #define BRT2SCALE	((int)(M_LN2*TM_BRTSCALE+.5))
 
@@ -59,7 +58,8 @@
 				(int4)(SCO_bf*256.+.5)*(c)[BLU]	) >> 8 )
 
 #ifndef	malloc
-extern char	*malloc(), *calloc();
+MEM_PTR		malloc();
+MEM_PTR		calloc();
 #endif
 extern int	tmErrorReturn();
 

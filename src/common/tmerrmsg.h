@@ -15,4 +15,6 @@ char	*tmErrorMessage[] = {
 		"invalid tone mapping",
 		"cannot compute tone mapping",
 		"file cannot be opened or is the wrong type",
+		"code consistency error 1",
+		"code consistency error 2",
 	};
