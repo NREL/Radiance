@@ -10,10 +10,8 @@ static char SCCSid[] = "$SunId$ LBL";
  *     Jan 1990
  */
 
-#include  <stdio.h>
-#include  <math.h>
+#include  "standard.h"
 #include  <sys/ioctl.h>
-#include  <fcntl.h>
 #ifdef sparc
 #include  <sys/conf.h>
 #include  <sys/file.h>
@@ -114,7 +112,7 @@ char  *name, *id;
 					/* open display server */
 	ourdisplay = XOpenDisplay(NULL);
 	if (ourdisplay == NULL) {
-		stderr_v("cannot open X-windows; DISPLAY variable set?\n");
+		eputs("cannot open X-windows; DISPLAY variable set?\n");
 		return(NULL);
 	}
 					/* find a usable visual */
@@ -129,14 +127,14 @@ char  *name, *id;
 				ourvinfo.blue_mask ;
 	} else {
 		if (nplanes < 4) {
-			stderr_v("not enough colors\n");
+			eputs("not enough colors\n");
 			return(NULL);
 		}
 		if (!XMatchVisualInfo(ourdisplay,ourscreen,
 					nplanes,PseudoColor,&ourvinfo) &&
 				!XMatchVisualInfo(ourdisplay,ourscreen,
 					nplanes,GrayScale,&ourvinfo)) {
-			stderr_v("unsupported visual type\n");
+			eputs("unsupported visual type\n");
 			return(NULL);
 		}
 		ourblack = BlackPixel(ourdisplay,ourscreen);
@@ -154,7 +152,7 @@ char  *name, *id;
 	else /* "x11d" */ {
 		comheight = 0;
 #ifndef  FNDELAY
-		stderr_v("warning: x11d driver not fully functional on this machine\n");
+		eputs("warning: x11d driver not fully functional on this machine\n");
 #endif
 	}
 					/* open window */
@@ -169,7 +167,7 @@ char  *name, *id;
 		BORWIDTH, ourvinfo.depth, InputOutput, ourvinfo.visual,
 		CWBackPixel|CWBorderPixel|CWColormap, &ourwinattr);
 	if (gwind == 0) {
-		stderr_v("cannot create window\n");
+		eputs("cannot create window\n");
 		return(NULL);
 	}
    	XStoreName(ourdisplay, gwind, id);
@@ -198,14 +196,14 @@ char  *name, *id;
 	if (comheight) {
 		x11_driver.comin = x11_comin;
 		x11_driver.comout = x11_comout;
-		cmdvec = x11_comout;
-		if (wrnvec != NULL)
-			wrnvec = x11_errout;
+		erract[COMMAND].pf = x11_comout;
+		if (erract[WARNING].pf != NULL)
+			erract[WARNING].pf = x11_errout;
 		inpcheck = IC_X11;
 	} else {
 		x11_driver.comin = std_comin;
 		x11_driver.comout = std_comout;
-		cmdvec = std_comout;
+		erract[COMMAND].pf = std_comout;
 		inpcheck = IC_IOCTL;
 	}
 	return(&x11_driver);
@@ -215,9 +213,9 @@ char  *name, *id;
 static
 x11_close()			/* close our display */
 {
-	cmdvec = NULL;				/* reset error vectors */
-	if (wrnvec != NULL)
-		wrnvec = stderr_v;
+	erract[COMMAND].pf = NULL;		/* reset error vectors */
+	if (erract[WARNING].pf != NULL)
+		erract[WARNING].pf = wputs;
 	if (ourdisplay == NULL)
 		return;
 	if (comline != NULL) {
@@ -258,7 +256,7 @@ int  xres, yres;
 						/* reinitialize color table */
 	if (ourvinfo.class == PseudoColor || ourvinfo.class == GrayScale)
 		if (getpixels() == 0)
-			stderr_v("cannot allocate colors\n");
+			eputs("cannot allocate colors\n");
 		else
 			new_ctab(ncolors);
 						/* get new command line */
@@ -268,7 +266,7 @@ int  xres, yres;
 		comline = xt_open(ourdisplay, gwind, 0, gheight, gwidth,
 				comheight, 0, ourblack, ourwhite, COMFN);
 		if (comline == NULL) {
-			stderr_v("cannot open command line window\n");
+			eputs("cannot open command line window\n");
 			quit(1);
 		}
 		XSelectInput(ourdisplay, comline->w, ExposureMask);
@@ -318,7 +316,7 @@ x11_flush()			/* flush output */
 		if (1) {
 #endif
 			if (fcntl(fileno(stdin), F_SETFL, FNDELAY) < 0) {
-				stderr_v("cannot change input mode\n");
+				eputs("cannot change input mode\n");
 				quit(1);
 			}
 			inpcheck = IC_READ;
@@ -368,7 +366,7 @@ static
 x11_errout(msg)			/* output an error message */
 char  *msg;
 {
-	stderr_v(msg);		/* send to stderr also! */
+	eputs(msg);		/* send to stderr also! */
 	x11_comout(msg);
 }
 
@@ -388,7 +386,7 @@ char  *inp, *prompt;
 #ifdef FNDELAY
 	if (inpcheck == IC_READ) {	/* turn off FNDELAY */
 		if (fcntl(fileno(stdin), F_SETFL, 0) < 0) {
-			stderr_v("cannot change input mode\n");
+			eputs("cannot change input mode\n");
 			quit(1);
 		}
 		inpcheck = IC_IOCTL;
@@ -569,7 +567,7 @@ getevent()			/* get next event */
 		if (ourvinfo.class == PseudoColor ||
 				ourvinfo.class == GrayScale)
 			if (getpixels() == 0)
-				stderr_v("cannot allocate colors\n");
+				eputs("cannot allocate colors\n");
 			else
 				new_ctab(ncolors);
 		mapped = 1;

@@ -8,7 +8,7 @@ static char SCCSid[] = "$SunId$ LBL";
  * July 1990
  */
 
-#include <math.h>
+#include "standard.h"
 #include "newsconstants.h"
 #include "driver.h"
 #include "nwsdev.h"
@@ -61,16 +61,16 @@ char *name,*id;
   nws_driver.xsiz=wW;
   nws_driver.ysiz=wH-textareaheight;
   nws_driver.inpready=0;
-  cmdvec=nws_printer;
-  if(wrnvec!=NULL)wrnvec=nws_errout;
+  erract[COMMAND].pf=nws_printer;
+  if(erract[WARNING].pf!=NULL)erract[WARNING].pf=nws_errout;
   return(&nws_driver);
  }
 
 static int
 nws_close()       /* close the display */
  {
-  cmdvec=NULL;
-  if(wrnvec!=NULL)wrnvec=stderr_v;
+  erract[COMMAND].pf=NULL;
+  if(erract[WARNING].pf!=NULL)erract[WARNING].pf=wputs;
   cps_cleanup();
   ps_flush_PostScript();
   ps_close_PostScript();
@@ -87,7 +87,7 @@ static int
 nws_errout(msg)    /* output an error message */
 char *msg;         /* my comments are so bogus */
  {
-  stderr_v(msg);
+  eputs(msg);
   nws_printer(msg);
  }
 

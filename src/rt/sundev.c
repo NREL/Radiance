@@ -10,9 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *     10/3/88
  */
 
-#include  <stdio.h>
-#include  <math.h>
-#include  <fcntl.h>
+#include  "standard.h"
 #include  <suntool/sunview.h>
 #include  <suntool/canvas.h>
 #include  <suntool/tty.h>
@@ -78,11 +76,11 @@ char  *name, *id;
 			WIN_X, 0, WIN_Y, 0,
 			0);
 	if (frame == 0) {
-		stderr_v("cannot create frame\n");
+		eputs("cannot create frame\n");
 		return(NULL);
 	}
 	if (pipe(pd) == -1) {
-		stderr_v("cannot create pipe\n");
+		eputs("cannot create pipe\n");
 		return(NULL);
 	}
 	sprintf(arg1, "%d", pd[1]);
@@ -98,12 +96,12 @@ char  *name, *id;
 			TTY_QUIT_ON_CHILD_DEATH, TRUE,
 			0);
 	if (tty == 0) {
-		stderr_v("cannot create tty subwindow\n");
+		eputs("cannot create tty subwindow\n");
 		return(NULL);
 	}
 	close(pd[1]);
 	if ((ttyin = fdopen(pd[0], "r")) == NULL) {
-		stderr_v("cannot open tty\n");
+		eputs("cannot open tty\n");
 		return(NULL);
 	}
 	notify_set_input_func(sun_init, newinput, pd[0]);
@@ -115,11 +113,11 @@ char  *name, *id;
 				MS_LEFT, MS_MIDDLE, MS_RIGHT, 0,
 			0);
 	if (canvas == 0) {
-		stderr_v("cannot create canvas\n");
+		eputs("cannot create canvas\n");
 		return(NULL);
 	}
 	if (getmap() < 0) {
-		stderr_v("not a color screen\n");
+		eputs("not a color screen\n");
 		return(NULL);
 	}
 	if ((gv = getenv("DISPLAY_GAMMA")) != NULL)
@@ -262,7 +260,7 @@ int  *xpp, *ypp;
 again:
 	if (window_read_event(canvas, &ev) == -1) {
 		notify_perror();
-		stderr_v("window event read error\n");
+		eputs("window event read error\n");
 		quit(1);
 	}
 	c = event_id(&ev);
