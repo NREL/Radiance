@@ -9,6 +9,7 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include <stdio.h>
+#include <math.h>
 #include <string.h>
 #include "parser.h"
 #include "lookup.h"
@@ -134,6 +135,7 @@ register char	**av;
 		c_cmaterial = (C_MATERIAL *)lp->data;
 		if (ac == 3) {		/* use default template */
 			*c_cmaterial = c_dfmaterial;
+			c_cmaterial->name = lp->key;
 			return(MG_OK);
 		}
 		lp = lu_find(&mat_tab, av[3]);	/* lookup template */
@@ -142,6 +144,8 @@ register char	**av;
 		if (lp->data == NULL)
 			return(MG_EUNDEF);
 		*c_cmaterial = *(C_MATERIAL *)lp->data;
+		c_cmaterial->name = lp->key;
+		c_cmaterial->clock = 1;
 		if (ac > 4)
 			return(MG_EARGC);
 		return(MG_OK);
@@ -154,6 +158,7 @@ register char	**av;
 		if (c_cmaterial->rd < 0. | c_cmaterial->rd > 1.)
 			return(MG_EILL);
 		c_cmaterial->rd_c = *c_ccolor;
+		c_cmaterial->clock++;
 		return(MG_OK);
 	case MG_E_ED:		/* set diffuse emittance */
 		if (ac != 2)
@@ -164,6 +169,7 @@ register char	**av;
 		if (c_cmaterial->ed < 0.)
 			return(MG_EILL);
 		c_cmaterial->ed_c = *c_ccolor;
+		c_cmaterial->clock++;
 		return(MG_OK);
 	case MG_E_TD:		/* set diffuse transmittance */
 		if (ac != 2)
@@ -186,6 +192,7 @@ register char	**av;
 				c_cmaterial->rs_a < 0.)
 			return(MG_EILL);
 		c_cmaterial->rs_c = *c_ccolor;
+		c_cmaterial->clock++;
 		return(MG_OK);
 	case MG_E_TS:		/* set specular transmittance */
 		if (ac != 3)
@@ -198,6 +205,7 @@ register char	**av;
 				c_cmaterial->ts_a < 0.)
 			return(MG_EILL);
 		c_cmaterial->ts_c = *c_ccolor;
+		c_cmaterial->clock++;
 		return(MG_OK);
 	}
 	return(MG_EUNK);

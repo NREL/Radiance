@@ -87,6 +87,25 @@ char	**av;
 
 
 void
+xf_clear()			/* clear transform stack */
+{
+	register XF_SPEC	*spec;
+
+	while (xf_argc)
+		free((MEM_PTR)xf_argv[--xf_argc]);
+	if (xf_maxarg) {
+		free((MEM_PTR)xf_argv);
+		xf_argv = NULL;
+		xf_maxarg = 0;
+	}
+	while ((spec = xf_context) != NULL) {
+		xf_context = spec->prev;
+		free((MEM_PTR)spec);
+	}
+}
+
+
+void
 xf_xfmpoint(v1, v2)		/* transform a point by the current matrix */
 FVECT	v1, v2;
 {
