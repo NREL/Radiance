@@ -19,6 +19,8 @@ Version.c	program version
 aed.c		driver for AED 512 terminal
 ambcomp.c	routines to compute "ambient" values using Monte Carlo
 ambient.c	routines dealing with ambient (inter-reflected) component
+ambio.c		ambient value input and output routines
+aniso.c		material functions for plastic2, metal2 and trans2
 caldefn.c	store variable definitions
 calexpr.c	compute data values using expression parser
 colortab.c	allocate and control dynamic color table
@@ -36,16 +38,19 @@ m_brdf.c	shading for materials with arbitrary BRDF's
 m_clip.c	routine for clipped (cut) objects
 m_direct.c	routines for prism material types
 m_mirror.c	routines for mirror material supporting virtual light sources
+malloc.c	memory allocation routines
 mx_data.c	routine for stored mixtures
 mx_func.c	routine for mixture functions
 noise3.c	noise functions for random textures
 normal.c	shading function for normal materials
 nwsdev.c	NeWS driver, by Isaac Kwo
+nwsdev.cps	NeWS driver source
 o_cone.c	routine to determine ray intersection with cones
 o_face.c	compute ray intersection with faces
 o_instance.c	routines for computing ray intersections with octrees
 p_data.c	routine for stored patterns
 p_func.c	routine for procedural patterns
+rayinit.cal	initialization function file
 raytrace.c	routines for tracing and shading rays
 readfargs.c	allocate, read and free object arguments
 rmain.c		main for ray tracing programs
