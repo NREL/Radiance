@@ -24,7 +24,7 @@ register SRCINDEX  *si;		/* source index (modified to current) */
 	FVECT  vpos;
 	double  d;
 	register int  i;
-
+nextsample:
 	while (++si->sp >= si->np) {	/* get next sample */
 		if (++si->sn >= nsources)
 			return(0.0);	/* no more */
@@ -76,7 +76,7 @@ register SRCINDEX  *si;		/* source index (modified to current) */
 			r->rdir[i] -= r->rorg[i];
 					/* compute distance */
 	if ((d = normalize(r->rdir)) == 0.0)
-		return(nextssamp(r, si));	/* at source! */
+		goto nextsample;		/* at source! */
 
 					/* compute sample size */
 	si->dom  = source[si->sn].ss2;
@@ -92,6 +92,8 @@ register SRCINDEX  *si;		/* source index (modified to current) */
 	}
 	if (source[si->sn].sflags & SDISTANT)
 		return(FHUGE);
+	if (si->dom <= FTINY)
+		goto nextsample;		/* behind source? */
 	si->dom /= d*d;
 	return(d);		/* sample OK, return distance */
 }
