@@ -45,7 +45,7 @@ char  *dname;
 
 	/*
 	 *	If we haven't loaded the data already, we will look
-	 *  for it in the directorys specified by the library path.
+	 *  for it in the directories specified by the library path.
 	 *
 	 *	The file has the following format:
 	 *
@@ -248,44 +248,46 @@ readerr:
 freedata(dname)			/* free memory associated with dname */
 char  *dname;
 {
+	DATARRAY  head;
 	register DATARRAY  *dp, *dpl;
 	register int  i;
 
-	for (dpl = NULL, dp = dlist; dp != NULL; dpl = dp, dp = dp->next)
-		if (!strcmp(dname, dp->name)) {
-			if (dpl == NULL)
-				dlist = dp->next;
-			else
-				dpl->next = dp->next;
+	head.next = dlist;
+	dpl = &head;
+	while ((dp = dpl->next) != NULL)
+		if (dname == NULL || !strcmp(dname, dp->name)) {
+			dpl->next = dp->next;
 			free((char *)dp->arr);
 			for (i = 0; i < dp->nd; i++)
 				if (dp->dim[i].p != NULL)
 					free((char *)dp->dim[i].p);
 			freestr(dp->name);
 			free((char *)dp);
-			return;
-		}
+		} else
+			dpl = dp;
+	dlist = head.next;
 }
 
 
 freepict(pname)			/* free memory associated with pname */
 char  *pname;
 {
+	DATARRAY  head;
 	register DATARRAY  *pp, *ppl;
 
-	for (ppl = NULL, pp = plist; pp != NULL; ppl = pp, pp = pp->next)
-		if (!strcmp(pname, pp->name)) {
-			if (ppl == NULL)
-				plist = pp->next;
-			else
-				ppl->next = pp->next;
+	head.next = plist;
+	ppl = &head;
+	while ((pp = ppl->next) != NULL)
+		if (pname == NULL || !strcmp(pname, pp->name)) {
+			ppl->next = pp->next;
 			free((char *)pp[0].arr);
 			free((char *)pp[1].arr);
 			free((char *)pp[2].arr);
 			freestr(pp[0].name);
 			free((char *)pp);
-			return;
-		}
+		} else
+			ppl = pp;
+	plist = head.next;
 }
 
 
