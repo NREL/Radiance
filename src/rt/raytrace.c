@@ -44,7 +44,9 @@ OBJREC  Aftplane;			/* aft clipping plane object */
 
 static int  raymove(), checkset(), checkhit();
 
-#define  MAXLOOP	128		/* modifier loop detection */
+#ifndef  MAXLOOP
+#define  MAXLOOP	0		/* modifier loop detection */
+#endif
 
 #define  RAYHIT		(-1)		/* return value for intercepted ray */
 
@@ -160,12 +162,14 @@ rayshade(r, mod)		/* shade ray r with material mod */
 register RAY  *r;
 int  mod;
 {
-	static int  depth = 0;
 	int  gotmat;
 	register OBJREC  *m;
+#if  MAXLOOP
+	static int  depth = 0;
 					/* check for infinite loop */
 	if (depth++ >= MAXLOOP)
 		objerror(r->ro, USER, "possible modifier loop");
+#endif
 	r->rt = r->rot;			/* set effective ray length */
 	for (gotmat = 0; !gotmat && mod != OVOID; mod = m->omod) {
 		m = objptr(mod);
@@ -178,7 +182,9 @@ int  mod;
 					/* hack for irradiance calculation */
 		if (do_irrad && !(r->crtype & ~(PRIMARY|TRANS))) {
 			if (irr_ignore(m->otype)) {
+#if  MAXLOOP
 				depth--;
+#endif
 				raytrans(r);
 				return(1);
 			}
@@ -188,7 +194,9 @@ int  mod;
 					/* materials call raytexture */
 		gotmat = (*ofun[m->otype].funp)(m, r);
 	}
+#if  MAXLOOP
 	depth--;
+#endif
 	return(gotmat);
 }
 
@@ -228,11 +236,13 @@ raytexture(r, mod)			/* get material modifiers */
 RAY  *r;
 int  mod;
 {
-	static int  depth = 0;
 	register OBJREC  *m;
+#if  MAXLOOP
+	static int  depth = 0;
 					/* check for infinite loop */
 	if (depth++ >= MAXLOOP)
 		objerror(r->ro, USER, "modifier loop");
+#endif
 					/* execute textures and patterns */
 	for ( ; mod != OVOID; mod = m->omod) {
 		m = objptr(mod);
@@ -248,7 +258,9 @@ int  mod;
 			objerror(r->ro, USER, errmsg);
 		}
 	}
+#if  MAXLOOP
 	depth--;			/* end here */
+#endif
 }
 
 
@@ -277,9 +289,9 @@ double  coef;
 		backmat = rayshade(&br, back);
 					/* check for transparency */
 	if (backmat ^ foremat)
-		if (!foremat && coef > FTINY)
+		if (backmat && coef > FTINY)
 			raytrans(&fr);
-		else if (!backmat && coef < 1.0-FTINY)
+		else if (foremat && coef < 1.0-FTINY)
 			raytrans(&br);
 					/* mix perturbations */
 	for (i = 0; i < 3; i++)
