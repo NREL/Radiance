@@ -146,13 +146,18 @@ disp_wait()			/* wait for more input */
 	int	n;
 	register int	i;
 				/* see if we can avoid select call */
+	flgs = 0;		/* flag what's ready already */
 	if (imm_mode || stdin->_cnt > 0)
-		return(RDY_SRV);
+		flgs |= RDY_SRV;
 	if (sstdin != NULL && sstdin->_cnt > 0)
-		return(RDY_SIN);
-	if (dev_flush())
+		flgs |= RDY_SIN;
+	if (odev.inpready)
+		flgs |= RDY_DEV;
+	if (flgs)		/* got something? */
+		return(flgs);
+	if (dev_flush())	/* else flush output & check keyboard+mouse */
 		return(RDY_DEV);
-				/* make the call */
+				/* if nothing, we need to call select */
 	FD_ZERO(&readset); FD_ZERO(&errset);
 	FD_SET(0, &readset);
 	FD_SET(0, &errset);
@@ -171,7 +176,6 @@ disp_wait()			/* wait for more input */
 			return(0);
 		error(SYSTEM, "select call failure in disp_wait");
 	}
-	flgs = 0;		/* flag what's ready */
 	if (FD_ISSET(0, &readset) || FD_ISSET(0, &errset))
 		flgs |= RDY_SRV;
 	if (FD_ISSET(odev.ifd, &readset) || FD_ISSET(odev.ifd, &errset))

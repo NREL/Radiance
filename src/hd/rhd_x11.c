@@ -293,7 +293,9 @@ dev_input()			/* get X11 input */
 	do
 		getevent();
 
-	while (XQLength(ourdisplay) > 0);
+	while (XPending(ourdisplay) > 0);
+
+	odev.inpready = 0;
 
 	return(inpresflags);
 }
@@ -322,7 +324,7 @@ dev_flush()			/* flush output */
 {
 	qtUpdate();
 	rayqleft = RAYQLEN;
-	return(XPending(ourdisplay));
+	return(odev.inpready = XPending(ourdisplay));
 }
 
 
