@@ -235,7 +235,7 @@ int  al;
 	FVECT	gp, gd;
 						/* compute weight */
 	amb.weight = pow(AVGREFL, (double)al);
-	if (r->rweight < 0.1*amb.weight)	/* heuristic */
+	if (r->rweight < 0.2*amb.weight)	/* heuristic */
 		amb.weight = r->rweight;
 						/* compute ambient */
 	amb.rad = doambient(acol, r, amb.weight, gp, gd);
