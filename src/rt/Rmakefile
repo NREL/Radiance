@@ -4,7 +4,7 @@
 #  Compiles for ray tracing programs.
 #
 
-OPT = -O
+OPT = -O -pipe
 MACH = -DSTRUCTASSIGN -DBSD -DIEEE -f68881 /usr/lib/f68881.il
 CFLAGS = $(MACH) $(OPT)
 CC = cc
@@ -32,8 +32,8 @@ COMPAT = malloc.o
 # Device drivers for rview (see also devtable.c):
 #
 DOBJS = devtable.o devcomm.o aed.o tty.o editline.o x10.o xtwind.o \
-	colortab.o
-DLIBS = -lX
+	colortab.o nwsdev.o
+DLIBS = -lX -lcps
 DRIVERS = $(DEVDIR)/sundev $(DEVDIR)/sun.com $(DEVDIR)/x11dev
 
 #
@@ -154,6 +154,12 @@ calfunc.o:	calfunc.c calcomp.h
 xf.o:	xf.c
 	$(CC) $(CFLAGS) -DINVXF -c xf.c
 
+nwsdev.o:	nwsdev.c nwsdev.h newsconstants.h
+	$(CC) $(CFLAGS) -c nwsdev.c
+
+nwsdev.h:	nwsdev.cps newsconstants.h
+	cps nwsdev.cps
+
 #
 # Include dependencies:
 #
@@ -168,7 +174,7 @@ cone.o o_cone.o source.o:	cone.h
 data.o mx_data.o p_data.o t_data.o:	data.h
 
 aed.o devcomm.o devmain.o devtable.o \
-editline.o sundev.o tty.o x10.o x11.o:	driver.h
+editline.o nwsdev.o sundev.o tty.o x10.o x11.o:	driver.h
 
 face.o o_face.o source.o:	face.h
 

@@ -14,10 +14,11 @@ static char SCCSid[] = "$SunId$ LBL";
 
 char  dev_default[] = "X";
 
-extern struct driver  *aed_init(), *x_init();
+extern struct driver  *aed_init(), *x_init(), *nws_init();
 
 struct device  devtable[] = {			/* supported devices */
 	{"aed", "AED 512 color graphics terminal", aed_init},
+	{"news", "NeWS color or greyscale display", nws_init},
 	{"sundev", "SunView color or greyscale screen", comm_init},
 	{"X", "X10 color or greyscale display", x_init},
 	{"x11dev", "X11 color or greyscale display", comm_init},
