@@ -74,7 +74,9 @@ static char SCCSid[] = "$SunId$ SGI";
 
 struct driver	odev;			/* global device driver structure */
 
+#ifdef STEREO
 static VIEW	vwright;		/* right eye view */
+#endif
 
 static int	rayqleft = 0;		/* rays left to queue before flush */
 
@@ -216,6 +218,7 @@ char  *id;
 	pheight *= 2.;
 	setstereobuf(STEREO_BUFFER_LEFT);
 #endif
+	checkglerr("setting rendering parameters");
 	copystruct(&odev.v, &stdview);
 	odev.v.type = VT_PER;
 					/* map the window */
@@ -390,13 +393,11 @@ dev_flush()			/* flush output */
 	if (mapped) {
 #ifdef STEREO
 		pushright();			/* update right eye */
-		glClear(GL_DEPTH_BUFFER_BIT);
 		smUpdate(&vwright, 100);
 #ifdef DOBJ
 		dobj_render();			/* usually in foreground */
 #endif
 		popright();			/* update left eye */
-		glClear(GL_DEPTH_BUFFER_BIT);
 #endif
 		smUpdate(&odev.v, 100);
 		checkglerr("rendering mesh");
@@ -435,6 +436,7 @@ pushright()			/* push on right view */
 	glPushMatrix();
 	d = -eyesepdist / sqrt(odev.v.hn2);
 	glTranslated(d*odev.v.hvec[0], d*odev.v.hvec[1], d*odev.v.hvec[2]);
+	checkglerr("setting right view");
 }
 
 
@@ -506,8 +508,6 @@ static
 draw_grids(fore)		/* draw holodeck section grids */
 int	fore;
 {
-	if (!mapped)
-		return;
 	if (fore)
 		glColor4ub(0, 255, 255, 0);
 	else
@@ -515,6 +515,7 @@ int	fore;
 	glBegin(GL_LINES);		/* draw each grid line */
 	gridlines(draw3dline);
 	glEnd();
+	checkglerr("drawing grid lines");
 }
 
 
@@ -593,22 +594,27 @@ XButtonPressedEvent	*ebut;
 	int	rootx, rooty, wx, wy;
 	unsigned int	statemask;
 
-	XNoOp(ourdisplay);
+	XNoOp(ourdisplay);		/* makes sure we're not idle */
 
 	lasttime = time(0); nframes = 0;
 	while (!XCheckMaskEvent(ourdisplay,
 			ButtonReleaseMask, levptr(XEvent))) {
-
+					/* get cursor position */
 		if (!XQueryPointer(ourdisplay, gwind, &rootw, &childw,
 				&rootx, &rooty, &wx, &wy, &statemask))
 			break;		/* on another screen */
 
 		draw_grids(0);		/* clear old grid lines */
+#ifdef STEREO
+		pushright(); draw_grids(0); popright();
+#endif
+					/* compute view motion */
 		if (!moveview(wx, odev.vres-1-wy, movdir, movorb)) {
 			sleep(1);
 			lasttime++;
-			continue;
+			continue;	/* cursor in bad place */
 		}
+		draw_grids(1);		/* redraw grid */
 #ifdef STEREO
 		pushright();
 		draw_grids(1);
@@ -618,14 +624,13 @@ XButtonPressedEvent	*ebut;
 #endif
 		popright();
 #endif
-		draw_grids(1);
+					/* redraw mesh */
 		smUpdate(&odev.v, qlevel);
 #ifdef DOBJ
-		dobj_render();
+		dobj_render();		/* redraw object */
 #endif
 		glFlush();
-		checkglerr("moving view");
-		nframes++;
+		nframes++;		/* figure out good quality level */
 		thistime = time(0);
 		if (thistime - lasttime >= 3 ||
 				nframes > (int)(3*3*TARGETFPS)) {
@@ -690,6 +695,7 @@ register VIEW	*vp;
 		odev.v.vp[1] + odev.v.vdir[1],
 		odev.v.vp[2] + odev.v.vdir[2],
 		odev.v.vup[0], odev.v.vup[1], odev.v.vup[2]);
+	checkglerr("setting perspective view");
 }
 
 
@@ -744,8 +750,9 @@ register XKeyPressedEvent  *ekey;
 	case CTRL('L'):			/* refresh from server */
 		if (inpresflags & DFL(DC_REDRAW))
 			return;
+		setglpersp(&odev.v);		/* reset clipping planes */
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_DEPTH_TEST);	/* so grids will clear */
 		draw_grids(1);
 #ifdef STEREO
 		pushright();
@@ -757,7 +764,6 @@ register XKeyPressedEvent  *ekey;
 		glFlush();
 		smInit(rsL.max_samp);		/* get rid of old values */
 		inpresflags |= DFL(DC_REDRAW);	/* resend values from server */
-		setglpersp(&odev.v);		/* reset clipping planes */
 		rayqleft = 0;			/* hold off update */
 		return;
 	case 'K':			/* kill rtrace process(es) */
