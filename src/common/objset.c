@@ -16,6 +16,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "object.h"
 
+#include  "otypes.h"
+
 #define  OSTSIZ		3037		/* object table size (a prime!) */
 
 static OBJECT  *ostable[OSTSIZ];	/* the object set table */
@@ -173,4 +175,46 @@ OCTREE  ot;
 	return;
 noderr:
 	error(CONSISTENCY, "bad node in objset");
+}
+
+
+nonsurfinset(orig, nobjs)		/* check sets for non-surfaces */
+int  orig, nobjs;
+{
+	int  n;
+	OBJECT  *nonset;
+	register OBJECT  *os;
+	register OBJECT  i;
+						/* count non-surfaces */
+	n = 0;
+	for (i = orig; i < orig+nobjs; i++)
+		if (!issurface(objptr(i)->otype))
+			n++;
+	if (n <= 0)
+		return(0);
+						/* allocate set */
+	if ((nonset = (OBJECT *)malloc((n+1)*sizeof(OBJECT))) == NULL)
+		return(0);		/* give up if we haven't enough mem */
+						/* fill set */
+	os = nonset;
+	*os = n;
+	for (i = orig; i < orig+nobjs; i++)
+		if (!issurface(objptr(i)->otype))
+			*++os = i;
+						/* now check all sets */
+	for (n = 0; n < OSTSIZ; n++) {
+		if ((os = ostable[n]) == NULL)
+			continue;
+		while ((i = *os++) > 0)
+			while (i--) {
+				if (*os >= nonset[1]
+						&& *os <= nonset[nonset[0]]
+						&& inset(nonset, *os))
+					goto done;
+				os++;
+			}
+	}
+done:
+	free((char *)nonset);
+	return(n < OSTSIZ);
 }
