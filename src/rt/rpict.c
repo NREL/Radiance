@@ -320,8 +320,11 @@ int  x, y;			/* pixel position */
 {
 	static RAY  thisray;	/* our ray for this pixel */
 
-	viewray(thisray.rorg, thisray.rdir, &ourview,
-			(x+pixjitter())/hresolu, (y+pixjitter())/vresolu);
+	if (viewray(thisray.rorg, thisray.rdir, &ourview,
+			(x+pixjitter())/hresolu, (y+pixjitter())/vresolu) < 0) {
+		setcolor(col, 0.0, 0.0, 0.0);
+		return(0.0);
+	}
 
 	rayorigin(&thisray, NULL, PRIMARY, 1.0);
 	

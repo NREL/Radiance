@@ -525,6 +525,8 @@ printdefaults()			/* print default values to stdout */
 	printf("-vt%c\t\t\t\t# view type %s\n", ourview.type,
 			ourview.type==VT_PER ? "perspective" :
 			ourview.type==VT_PAR ? "parallel" :
+			ourview.type==VT_HEM ? "hemispherical" :
+			ourview.type==VT_ANG ? "angular" :
 			"unknown");
 	printf("-vp %f %f %f\t# view point\n",
 			ourview.vp[0], ourview.vp[1], ourview.vp[2]);
