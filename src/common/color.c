@@ -354,7 +354,7 @@ colr_color(col, clr)		/* convert short to float color */
 register COLOR  col;
 register COLR  clr;
 {
-	double  ldexp(), f;
+	double  f;
 	
 	if (clr[EXP] == 0)
 		col[RED] = col[GRN] = col[BLU] = 0.0;
@@ -364,4 +364,40 @@ register COLR  clr;
 		col[GRN] = (clr[GRN] + 0.5)*f;
 		col[BLU] = (clr[BLU] + 0.5)*f;
 	}
+}
+
+
+int
+colr_norm(clr, nclr)		/* normalize a short color, return shift */
+COLR  clr, nclr;
+{
+	register int  c;
+	register int  shift = clr[EXP]-COLXS;
+
+	if (shift > 0) {
+		if (shift >= 8) {
+			nclr[RED] = nclr[GRN] = nclr[BLU] = 255;
+		} else {
+			c = clr[RED] << shift;
+			nclr[RED] = c > 255 ? 255 : c;
+			c = clr[GRN] << shift;
+			nclr[GRN] = c > 255 ? 255 : c;
+			c = clr[BLU] << shift;
+			nclr[BLU] = c > 255 ? 255 : c;
+		}
+	} else if (shift < 0) {
+		if (shift <= -8) {
+			nclr[RED] = nclr[GRN] = nclr[BLU] = 0;
+		} else {
+			nclr[RED] = clr[RED] >> -shift;
+			nclr[GRN] = clr[GRN] >> -shift;
+			nclr[BLU] = clr[BLU] >> -shift;
+		}
+	} else {
+		nclr[RED] = clr[RED];
+		nclr[GRN] = clr[GRN];
+		nclr[BLU] = clr[BLU];
+	}
+	nclr[EXP] = COLXS;
+	return(shift);
 }
