@@ -15,9 +15,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #ifdef BSD
 #include  <sys/time.h>
 #include  <sys/resource.h>
-#else
-#include  <signal.h>
 #endif
+
+#include  <signal.h>
 #include  <fcntl.h>
 
 #include  "view.h"
