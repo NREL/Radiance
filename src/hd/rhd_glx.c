@@ -278,6 +278,9 @@ double	rad;
 {
 	register int	ci, j;
 	double	apexh, basez;
+					/* is window mapped? */
+	if (!mapped)
+		return;
 					/* compute apex height (0. to 1.) */
 	if (ip[2] > 1e6)
 		apexh = 1. - 1./DEPTHFACT;
