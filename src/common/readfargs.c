@@ -16,7 +16,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 
 extern char  *savestr(), *malloc(), *fgetword();
+#ifndef atof
 extern double  atof();
+#endif
 extern int  atoi();
 extern long  atol();
 
