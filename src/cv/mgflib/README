@@ -1,0 +1,28 @@
+		MGF Parser Library Version 1.0
+		SCCSid "$SunId$ LBL"
+
+Welcome to the initial release of the MGF language and parser library.
+If you have not read it already, you should take a look at the documentation
+in the troff file "mgfdoc.tr".  This can be printed out using the -ms
+macro package, or by sending the file "mgfdoc.ps" to a PostScript printer.
+The figures for this document are contained in "figures.ps", which may
+also be sent to a PostScript printer, or displayed with ghostview (if you
+have it).
+
+Most of the source files go directly into the parser library, with
+the following exceptions:
+
+	face2tri.C	- C++ converter from polygons to triangles
+	mgf2rad.c	- MGF to Radiance converter, missing some libraries
+	mgfilt.c	- MGF to MGF filter, compiled in Makefile
+	rad2mgf.c	- Radiance to MGF converter, missing some libraries
+
+The Makefile creates two useful items:
+
+	mgfilt		- a filter for MGF
+	libmgf.a	- the MGF parser library
+
+Before you compile, you should probably check to make sure that the
+compiler and flags you like are included.  If you're like me and lack
+an ANSII-compatible C compiler on your machine, use the -DNOPROTO flag
+to take out function prototypes and get back K&R compatibility.
