@@ -56,6 +56,15 @@ char	*argv[];
 					/* enter main loop */
 	do {
 		rdy = disp_wait();
+		if (rdy & RDY_SRV) {		/* process server result */
+			res = serv_result();
+			if (pause && res != DS_SHUTDOWN) {
+				serv_request(DR_ATTEN, 0, NULL);
+				while ((res = serv_result()) != DS_ACKNOW &&
+						res != DS_SHUTDOWN)
+					;
+			}
+		}
 		if (rdy & RDY_DEV) {		/* user input from driver */
 			inp = dev_input();
 			if (inp & DFL(DC_SETVIEW))
@@ -98,15 +107,6 @@ char	*argv[];
 				pause = 0;
 				break;
 			}
-		if (rdy & RDY_SRV) {		/* process server result */
-			res = serv_result();
-			if (pause && res != DS_SHUTDOWN) {
-				serv_request(DR_ATTEN, 0, NULL);
-				while ((res = serv_result()) != DS_ACKNOW &&
-						res != DS_SHUTDOWN)
-					;
-			}
-		}
 	} while (res != DS_SHUTDOWN);
 					/* all done */
 	quit(0);
