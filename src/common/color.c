@@ -45,7 +45,7 @@ static BYTE  chroma[3][NINC] = {
 };
 
 
-spec_rgb(col, s, e)		/* comput RGB color from spectral range */
+spec_rgb(col, s, e)		/* compute RGB color from spectral range */
 COLOR  col;
 int  s, e;
 {
