@@ -568,7 +568,7 @@ insert_tri(argptr,root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,scale,
   /* If the set size is below expansion threshold,or at maximum
      number of quadtree levels : just add */
   optr = qtqueryset(qt);
-  if(QT_SET_CNT(optr) < QT_SET_THRESHOLD || (n >= QT_MAX_LEVELS))
+  if(QT_SET_CNT(optr) < QT_SET_THRESHOLD || (n > (QT_MAX_LEVELS-2)))
     return(qtadduelem(qt,t_id));
   /* otherwise: expand node- and insert tri, and reinsert existing tris
      in set to children of new node
@@ -769,6 +769,7 @@ smTris_swap_edge(sm,t_id,t1_id,e,e1,tn_id,tn1_id,add_ptr)
 		       !T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(tb,1))) || 
 		       !T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(tb,2))))
 	  goto Ltri_error;
+	/*
 	if(SM_NTH_TRI(sm,T_NTH_NBR(ta,0))==SM_NTH_TRI(sm,T_NTH_NBR(ta,1)) ||
 	   SM_NTH_TRI(sm,T_NTH_NBR(ta,0))==SM_NTH_TRI(sm,T_NTH_NBR(ta,2)) ||
 	   SM_NTH_TRI(sm,T_NTH_NBR(ta,1))==SM_NTH_TRI(sm,T_NTH_NBR(ta,2)) ||
@@ -776,6 +777,7 @@ smTris_swap_edge(sm,t_id,t1_id,e,e1,tn_id,tn1_id,add_ptr)
 	   SM_NTH_TRI(sm,T_NTH_NBR(tb,0))==SM_NTH_TRI(sm,T_NTH_NBR(tb,2)) ||
 	   SM_NTH_TRI(sm,T_NTH_NBR(tb,1))==SM_NTH_TRI(sm,T_NTH_NBR(tb,2)) )
 	  goto Ltri_error;
+	  */
 #endif
     /* Reset neighbor pointers of original neighbors */
     n = SM_NTH_TRI(sm,T_NTH_NBR(t,enext));

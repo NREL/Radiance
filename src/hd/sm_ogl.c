@@ -168,10 +168,10 @@ int lvl;
   if (QT_IS_TREE(qt) && (QT_IS_EMPTY(le->qt) || lvl > 0))
   {					/* compute children */
     qtSubdivide_tri(v0,v1,v2,a,b,c);
-    rc[0] = qtRender_level(QT_NTH_CHILD(qt,0),v0,a,c,sm,lvl-1);
-    rc[1] = qtRender_level(QT_NTH_CHILD(qt,1),a,v1,b,sm,lvl-1);
-    rc[2] = qtRender_level(QT_NTH_CHILD(qt,2),c,b,v2,sm,lvl-1);
-    rc[3] = qtRender_level(QT_NTH_CHILD(qt,3),b,c,a,sm,lvl-1);
+    rc[0] = qtRender_level(QT_NTH_CHILD(qt,0),v0,c,b,sm,lvl-1);
+    rc[1] = qtRender_level(QT_NTH_CHILD(qt,1),c,v1,a,sm,lvl-1);
+    rc[2] = qtRender_level(QT_NTH_CHILD(qt,2),b,a,v2,sm,lvl-1);
+    rc[3] = qtRender_level(QT_NTH_CHILD(qt,3),a,b,c,sm,lvl-1);
   }
   if (QT_IS_EMPTY(le->qt))
   {					/* let's make some data! */
@@ -194,16 +194,16 @@ int lvl;
     {					/* from triangle set */
       OBJECT *os;
       int s0, s1, s2;
-
+      
       os = qtqueryset(qt);
-      for (n = os[0]; n; n--)
+      for (i = os[0]; i; i--)
       {
-	if(SM_IS_NTH_T_BASE(sm,os[n]))
+	if(SM_IS_NTH_T_BASE(sm,os[i]))
 	   continue;
-	tri = SM_NTH_TRI(sm,os[n]);
+	tri = SM_NTH_TRI(sm,os[i]);
 	if(!T_IS_VALID(tri))
 	  continue;
-	
+	n++;
 	s0 = T_NTH_V(tri,0);
 	s1 = T_NTH_V(tri,1);
 	s2 = T_NTH_V(tri,2);
@@ -223,7 +223,7 @@ int lvl;
 	rgbs[2] += SM_NTH_RGB(sm,s0)[2] + SM_NTH_RGB(sm,s1)[2]
 		  + SM_NTH_RGB(sm,s2)[2];
       }
-      n = 3*os[0];
+      n *= 3;
     }
     if (!n)
       return(NULL);
@@ -260,7 +260,7 @@ int lvl;
   STREE *st;
 
   
-  if (lvl < 1)
+  if (lvl < 0)
     return;
   st = SM_LOCATOR(sm);
   glPushAttrib(GL_LIGHTING_BIT);
@@ -270,7 +270,7 @@ int lvl;
   {
     qt = ST_ROOT_QT(st,i);
     qtRender_level(qt,ST_NTH_V(st,i,0),ST_NTH_V(st,i,1),ST_NTH_V(st,i,2),
-		   sm,lvl-1);
+		   sm,lvl);
   }
   glEnd();
   glPopAttrib();
