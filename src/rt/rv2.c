@@ -574,14 +574,18 @@ char  *s;
 	fputresolu(YMAJOR|YDECR, hresolu, vresolu, fp);
 
 	scanline = (COLR *)malloc(hresolu*sizeof(COLR));
-	if (scanline == NULL)
-		error(SYSTEM, "out of memory in writepict");
+	if (scanline == NULL) {
+		error(COMMAND, "not enough memory!");
+		fclose(fp);
+		unlink(fname);
+		return;
+	}
 	for (y = vresolu-1; y >= 0; y--) {
 		getpictcolrs(y, scanline, &ptrunk, hresolu, vresolu);
 		if (fwritecolrs(scanline, hresolu, fp) < 0)
 			break;
 	}
+	free((char *)scanline);
 	if (fclose(fp) < 0)
 		error(COMMAND, "write error");
-	free((char *)scanline);
 }

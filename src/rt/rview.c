@@ -62,7 +62,7 @@ int  pdepth;				/* image depth in current frame */
 
 static char  *reserve_mem = NULL;	/* pre-allocated reserve memory */
 
-#define RESERVE_AMT	8192		/* amount of memory to reserve */
+#define RESERVE_AMT	32768		/* amount of memory to reserve */
 
 #define  CTRL(c)	('c'-'@')
 
@@ -316,7 +316,7 @@ rsample()			/* sample the image */
 						/* sample the image */
 	for (y = 0; /* y < ysiz */ ; y++) {
 		for (x = 0; x < xsiz-1; x++) {
-			if (dev->inpready)
+			if (dev->inpready || errno == ENOMEM)
 				goto escape;
 			/*
 			 * Test super-pixel to the right.
@@ -332,7 +332,7 @@ rsample()			/* sample the image */
 		if (y >= ysiz-1)
 			break;
 		for (x = 0; x < xsiz; x++) {
-			if (dev->inpready)
+			if (dev->inpready || errno == ENOMEM)
 				goto escape;
 			/*
 			 * Find super-pixel at this position in next row.
@@ -387,7 +387,7 @@ int  pd;
 	if (p->kid == NULL) {			/* subdivide */
 
 		if ((p->kid = newptree()) == NULL)
-			return(growth);
+			return(0);
 		/*
 		 *  The following paint order can leave a black pixel
 		 *  when redraw() is called in (*dev->paintr)().
