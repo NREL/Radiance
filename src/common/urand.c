@@ -53,7 +53,7 @@ register int  *d;
 register int  n;
 {
 	static int  tab[8] = {13623,353,1637,5831,2314,3887,5832,8737};
-	register unsigned  hval;
+	register int  hval;
 
 	hval = 0;
 	while (n-- > 0)
