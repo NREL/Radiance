@@ -25,9 +25,9 @@ proc gethelp {helpfile category topic} {	# Open help window
 	global curhelp helpfontwidth
 	if {! [winfo exists .helpwin]} {		# Set up window
 		toplevel .helpwin
-		wm minsize .helpwin 450 350
+		wm minsize .helpwin 500 400
 		wm iconbitmap .helpwin question
-		frame .helpwin.but -geometry 150x350
+		frame .helpwin.but -geometry 150x400
 		pack .helpwin.but -side right -fill none -expand no
 		label .helpwin.but.lab -textvariable curhelp(title)
 		place .helpwin.but.lab -relx .1667 -rely 0
@@ -36,23 +36,23 @@ proc gethelp {helpfile category topic} {	# Open help window
 				-text Category -menu .helpwin.but.catb.m
 		menu .helpwin.but.catb.m
 		place .helpwin.but.catb -relx .1667 -rely .1100 \
-				-relwidth .5000 -relheight .0500
+				-relwidth .5000 -relheight .0600
 		helplink .helpwin.but.catb help help category
 		menubutton .helpwin.but.topb -relief raised -height 1 \
 				-text Topic -menu .helpwin.but.topb.m
 		menu .helpwin.but.topb.m
 		place .helpwin.but.topb -relx .1667 -rely .2200 \
-				-relwidth .5000 -relheight .0500
+				-relwidth .5000 -relheight .0600
 		helplink .helpwin.but.topb help help topic
 		button .helpwin.but.srchb -text Grep -relief raised \
 				-height 1 -command {helpsearch $curhelp(search)}
 		place .helpwin.but.srchb -relx .1667 -rely .3500 \
-				-relwidth .5000 -relheight .0500
+				-relwidth .5000 -relheight .0600
 		helplink .helpwin.but.srchb help navigate search
 		entry .helpwin.but.srche -relief sunken -insertofftime 0 \
 				-textvariable curhelp(search)
 		place .helpwin.but.srche -relx .1667 -rely .4200 \
-				-relwidth .6667 -relheight .0500
+				-relwidth .6667 -relheight .0600
 		bind .helpwin.but.srche <Return> {set curhelp(msg) {}
 							helpupdate}
 		helplink .helpwin.but.srche help navigate search
@@ -61,22 +61,22 @@ proc gethelp {helpfile category topic} {	# Open help window
 		button .helpwin.but.next -text Next -relief raised -height 1 \
 				-command {eval helphist new $curhelp(next)}
 		place .helpwin.but.next -relx .1667 -rely .7500 \
-				-relwidth .5 -relheight .0500
+				-relwidth .5 -relheight .0600
 		helplink .helpwin.but.next help navigate next
 		button .helpwin.but.back -text Back -relief raised -height 1 \
 				-command "helphist back"
 		place .helpwin.but.back -relx .1667 -rely .6500 \
-				-relwidth .5 -relheight .0500
+				-relwidth .5 -relheight .0600
 		helplink .helpwin.but.back help navigate back
 		button .helpwin.but.forw -text Forward -relief raised -height 1\
 				-command "helphist forward"
 		place .helpwin.but.forw -relx .1667 -rely .5500 \
-				-relwidth .5 -relheight .0500
+				-relwidth .5 -relheight .0600
 		helplink .helpwin.but.forw help navigate forward
 		button .helpwin.but.done -text Done -relief raised -height 1 \
 				-command "destroy .helpwin ; helpopen {}"
 		place .helpwin.but.done -relx .1667 -rely .9000 \
-				-relwidth .5 -relheight .0500
+				-relwidth .5 -relheight .0600
 		helplink .helpwin.but.done help help done
 		text .helpwin.txt -wrap word -width 48 -height 20 -bd 2 \
 			-yscrollcommand ".helpwin.sb set" -relief raised \
@@ -313,6 +313,7 @@ proc helpsearch word {		# search for occurances of the given word
 	set nmatches 0
 	set cat [lindex [lindex $curhelp(index) 0] 0]
 	set top [lindex [lindex $curhelp(index) 0] 1]
+	set startpos [tell $curhelp(fid)]
 	seek $curhelp(fid) [lindex [lindex $curhelp(index) 0] 2]
 	set foundmatch 0
 	while {[gets $curhelp(fid) li] >= 0} {
@@ -335,5 +336,6 @@ proc helpsearch word {		# search for occurances of the given word
 	} else {
 		set curhelp(msg) "Not found."
 	}
+	seek $curhelp(fid) $startpos
 	return $nmatches
 }

@@ -64,10 +64,10 @@ proc getfile args {		# get filename interactively
 		pack $w
 	}
 	label $w.dt -text Directory:
-	place $w.dt -relx .0625 -rely .03125 -relwidth .15625 -relheight .0625
+	place $w.dt -relx .025 -rely .03125
 	helplink $w.dt file directory intro
 	button $w.ls -text List -command "update_dir $w"
-	place $w.ls -relx .0625 -rely .125 -relwidth .125 -relheight .0625
+	place $w.ls -relx .025 -rely .125 -relwidth .15 -relheight .0625
 	helplink $w.ls file directory list
 	entry $w.de -textvariable curdir -relief sunken
 	place $w.de -relx .25 -rely .03125 -relwidth .6875 -relheight .0625
@@ -95,8 +95,7 @@ proc getfile args {		# get filename interactively
 	} else {
 		bind $w.fm.fl <Double-Button-1> "set_curfile $w"
 		label $w.fl -text File:
-		place $w.fl -relx .10625 -rely .875 \
-				-relwidth .10625 -relheight .0625
+		place $w.fl -relx .10625 -rely .875
 		entry $w.fn -relief sunken -textvariable curfile
 		place $w.fn -relx .25 -rely .875 \
 				-relwidth .6875 -relheight .0625
@@ -110,20 +109,20 @@ proc getfile args {		# get filename interactively
 	}
 	if {$transient != [info exists sendproc]} {
 		button $w.ok -text OK -command "destroy $w"
-		place $w.ok -relx .0625 -rely .28125 \
-				-relwidth .125 -relheight .0625
+		place $w.ok -relx .025 -rely .28125 \
+				-relwidth .15 -relheight .0625
 	}
 	if {$transient || [info exists sendproc]} {
 		button $w.cancel -text Cancel \
 				-command "destroy $w; unset curdir"
-		place $w.cancel -relx .0625 -rely .375 \
-				-relwidth .125 -relheight .0625
+		place $w.cancel -relx .025 -rely .375 \
+				-relwidth .15 -relheight .0625
 	}
 	if [info exists viewproc] {
 		button $w.vi -text View -state disabled \
 		-command "$viewproc \[$w.fm.fl get \[$w.fm.fl curselection\]\]"
-		place $w.vi -relx .0625 -rely .46875 \
-				-relwidth .125 -relheight .0625
+		place $w.vi -relx .025 -rely .46875 \
+				-relwidth .15 -relheight .0625
 		bind $w.fm.fl <ButtonRelease-1> "+chk_select $w"
 		helplink $w.vi file file view
 	}
