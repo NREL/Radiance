@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -84,7 +84,7 @@ OBJREC  *o;
 		badvert += fabs(d1 - f->offset/i) > VERTEPS;
 		f->offset += d1;
 	}
-	f->offset /= f->nv;
+	f->offset /= (double)f->nv;
 	if (badvert)
 		objerror(o, WARNING, "non-planar vertex");
 						/* find axis */
