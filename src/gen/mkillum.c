@@ -24,7 +24,7 @@ static const char RCSid[] = "$Id$";
 
 				/* rtrace command and defaults */
 char  *rtargv[64] = { "rtrace", "-dj", ".25", "-dr", "3", "-dv-",
-		"-ab", "2", "-ad", "256", "-as", "128", "-aa", ".15", };
+		"-ab", "2", "-ad", "1024", "-as", "512", "-aa", ".1", };
 int  rtargc = 14;
 				/* overriding rtrace options */
 char  *myrtopts[] = { "-I-", "-i-", "-ld-", "-ov", "-h-",
