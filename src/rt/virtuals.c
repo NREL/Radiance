@@ -97,7 +97,7 @@ int  n;
 		if ((*vsmat->vproj)(proj, o, &source[sn], i))
 			if ((ns = makevsrc(o, sn, proj)) >= 0) {
 #ifdef DEBUG
-				virtverb(&source[sn], stderr);
+				virtverb(&source[ns], stderr);
 #endif
 				addvirtuals(ns, n);
 			}
@@ -123,13 +123,13 @@ MAT4  pm;
 	if (sfun[op->otype].of->getdisk != NULL) {
 		maxrad2 = (*sfun[op->otype].of->getdisk)(ocent, op);
 		if (maxrad2 <= FTINY)			/* too small? */
-			return(NULL);
+			return(-1);
 		nsflags |= SSPOT;
 	}
 					/* get location and spot */
 	if (source[sn].sflags & SDISTANT) {		/* distant source */
 		if (source[sn].sflags & SPROX)
-			return(NULL);		/* should never get here! */
+			return(-1);		/* should never get here! */
 		multv3(nsloc, source[sn].sloc, pm);
 		if (nsflags & SSPOT) {
 			VCOPY(ourspot.aim, ocent);
@@ -141,7 +141,7 @@ MAT4  pm;
 			multp3(theirspot.aim, source[sn].sl.s->aim, pm);
 			if (nsflags & SSPOT &&
 				!commonbeam(&ourspot, &theirspot, nsloc))
-				return(NULL);		/* no overlap */
+				return(-1);		/* no overlap */
 		}
 	} else {				/* local source */
 		multp3(nsloc, source[sn].sloc, pm);
@@ -149,10 +149,10 @@ MAT4  pm;
 			for (i = 0; i < 3; i++)
 				ourspot.aim[i] = ocent[i] - nsloc[i];
 			if ((d1 = normalize(ourspot.aim)) == 0.)
-				return(NULL);		/* at source!! */
+				return(-1);		/* at source!! */
 			if (source[sn].sflags & SPROX &&
 					d1 > source[sn].sl.prox)
-				return(NULL);		/* too far away */
+				return(-1);		/* too far away */
 			ourspot.siz = 2.*PI*(1. - d1/sqrt(d1*d1+maxrad2));
 			ourspot.flen = 0.;
 		} else if (source[sn].sflags & SPROX) {
@@ -163,21 +163,21 @@ MAT4  pm;
 			d1 = DOT(norm, nsloc) - offs;
 			if (d1 < 0.) d1 = -d1;
 			if (d1 > source[sn].sl.prox)
-				return(NULL);		/* too far away */
+				return(-1);		/* too far away */
 		}
 		if (source[sn].sflags & SSPOT) {
 			copystruct(&theirspot, source[sn].sl.s);
 			multv3(theirspot.aim, source[sn].sl.s->aim, pm);
 			if (nsflags & SSPOT) {
 				if (!commonspot(&ourspot, &theirspot, nsloc))
-					return(NULL);	/* no overlap */
+					return(-1);	/* no overlap */
 				ourspot.flen = theirspot.flen;
 			}
 		}
 		if (source[sn].sflags & SFLAT) {	/* behind source? */
 			multv3(nsnorm, source[sn].snorm, pm);
 			if (nsflags & SSPOT && checkspot(&ourspot, nsnorm) < 0)
-				return(NULL);
+				return(-1);
 		}
 	}
 					/* everything is OK, make source */
