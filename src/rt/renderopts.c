@@ -149,7 +149,7 @@ getrenderopt(		/* get next render option */
 				}
 				amblp += rval;
 			} else {
-				*amblp++ = av[1];
+				*amblp++ = savqstr(av[1]);
 				*amblp = NULL;
 			}
 			return(1);
@@ -170,13 +170,13 @@ getrenderopt(		/* get next render option */
 				}
 				amblp += rval;
 			} else {
-				*amblp++ = av[1];
+				*amblp++ = savqstr(av[1]);
 				*amblp = NULL;
 			}
 			return(1);
 		case 'f':				/* file */
 			check(3,"s");
-			ambfile= av[1];
+			ambfile = savqstr(av[1]);
 			return(1);
 		}
 		break;
