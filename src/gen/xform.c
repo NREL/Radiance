@@ -49,7 +49,7 @@ int  nrept = 1;				/* number of array repetitions */
 
 extern char  *malloc(), *fgetword();
 
-char  *mainfn[MAXPATH];			/* main file name */
+char  mainfn[MAXPATH];			/* main file name */
 FILE  *mainfp = NULL;			/* main file pointer */
 
 #define	 progname  (xav[0])
