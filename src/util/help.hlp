@@ -1,4 +1,4 @@
-	$Id: help.hlp,v 2.1 1994/10/27 15:56:03 greg Exp $
+	$Id: help.hlp,v 2.2 1994/11/28 15:16:01 greg Exp $
 
 This help file is for the gethelp.tcl utility itself, and explains
 the various buttons and windows it uses.
@@ -7,11 +7,13 @@ All help files have the same general format.  Each help section is
 named by its category and topic, and its position in the file is
 indicated with a line beginning with ".Category.Topic", where
 "Category" and "Topic" are replaced by the appropriate names.
-These names must begin with letters and may contain letters and/or
-numbers, but no special characters.  They will appear on the menus
-of the help utility when that file is open.
+Each category must have a topic called "Intro", which is the first
+topic called up whenever this category is selected from the menu.
+Both category and topic  names must begin with letters and may contain
+letters and/or numbers, but no special characters.  They will appear on
+the menus of the help utility when that file is open.
 
-The file is unformatted, and will be filled by the help utility
+The help file is unformatted, and will be filled by the help utility
 dynamically based on the current window size.  The formatting code
 is very simple, placing a single space between adjacent lines,
 except when a line ends a sentence, when two spaces are used.
