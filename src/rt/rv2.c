@@ -163,7 +163,7 @@ char  *s;
 
 	if (sscanf(s, "%s", buf) == 1) {	/* get parameters from a file */
 		copystruct(&nv, &stdview);
-		if ((fname = getpath(buf, NULL, 0)) == NULL ||
+		if ((fname = getpath(buf, "", R_OK)) == NULL ||
 				(success = viewfile(fname, &nv, NULL)) == -1) {
 			sprintf(errmsg, "cannot open \"%s\"", buf);
 			error(COMMAND, errmsg);
@@ -193,8 +193,13 @@ char  *s;
 	char  *fname;
 	FILE  *fp;
 
-	if (*atos(view, sizeof(view), s))
+	if (*atos(view, sizeof(view), s)) {
+		if (isint(view)) {
+			error(COMMAND, "cannot write view by number");
+			return;
+		}
 		s = sskip(s);
+	}
 	if (sscanf(s, "%s", rifname) != 1 && rifname[0] == '\0') {
 		error(COMMAND, "no previous rad file");
 		return;
@@ -230,8 +235,7 @@ char  *s;
 		error(COMMAND, "no previous rad file");
 		return;
 	}
-	fname = getpath(rifname, NULL, 0);
-	if (fname == NULL || access(fname, R_OK) == -1) {
+	if ((fname = getpath(rifname, "", R_OK)) == NULL) {
 		sprintf(errmsg, "cannot access \"%s\"", rifname);
 		error(COMMAND, errmsg);
 		return;
