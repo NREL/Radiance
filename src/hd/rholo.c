@@ -26,8 +26,6 @@ char	froot[MAXPATH];		/* root file name */
 
 int	nowarn = 0;		/* turn warnings off? */
 
-double	expval = 1.;		/* global exposure value */
-
 int	ncprocs = 0;		/* desired number of compute processes */
 
 char	*outdev = NULL;		/* output device name */
@@ -115,12 +113,17 @@ char	*argv[];
 		creatholo(&hdg);
 	} else {				/* else load holodeck */
 		loadholo();
-		if (vdef(RIF))				/* load RIF if any */
+							/* check settings */
+		checkvalues();
+							/* load RIF if any */
+		if (vdef(RIF))
 			getradfile(vval(RIF));
+							/* set defaults */
+		setdefaults(NULL);
 	}
 						/* initialize */
 	initrholo();
-						/* run */
+						/* main loop */
 	while (rholo())
 		;
 						/* done */
@@ -335,32 +338,6 @@ register HDGRID	*gp;
 		sprintf(errmsg, "ignoring all but first %s", vnam(SECTION));
 		error(WARNING, errmsg);
 	}
-	if (sscanf(vval(SECTION),
-			"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
-			&gp->orig[0], &gp->orig[1], &gp->orig[2],
-			&gp->xv[0][0], &gp->xv[0][1], &gp->xv[0][2],
-			&gp->xv[1][0], &gp->xv[1][1], &gp->xv[1][2],
-			&gp->xv[2][0], &gp->xv[2][1], &gp->xv[2][2]) != 12)
-		badvalue(SECTION);
-	maxlen = 0.;
-	for (i = 0; i < 3; i++)
-		if ((len[i] = VLEN(gp->xv[i])) > maxlen)
-			maxlen = len[i];
-	if (!vdef(GRID)) {
-		sprintf(buf, "%.4f", maxlen/8.);
-		vval(GRID) = savqstr(buf);
-		vdef(GRID)++;
-	}
-	if ((d = vflt(GRID)) <= FTINY)
-		badvalue(GRID);
-	for (i = 0; i < 3; i++)
-		gp->grid[i] = len[i]/d + (1.-FTINY);
-	if (!vdef(EXPOSURE)) {
-		sprintf(errmsg, "%s must be defined", vnam(EXPOSURE));
-		error(USER, errmsg);
-	}
-	expval = vval(EXPOSURE)[0] == '-' || vval(EXPOSURE)[0] == '+' ?
-			pow(2., vflt(EXPOSURE)) : vflt(EXPOSURE);
 	if (!vdef(OCTREE)) {
 		if ((vval(OCTREE) = bmalloc(strlen(froot)+5)) == NULL)
 			error(SYSTEM, "out of memory");
@@ -382,6 +359,30 @@ register HDGRID	*gp;
 				/* append rendering options */
 	if (vdef(RENDER))
 		rtargc += wordstring(rtargv+rtargc, vval(RENDER));
+	
+	if (gp == NULL)		/* already initialized? */
+		return;
+				/* set grid parameters */
+	if (sscanf(vval(SECTION),
+			"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
+			&gp->orig[0], &gp->orig[1], &gp->orig[2],
+			&gp->xv[0][0], &gp->xv[0][1], &gp->xv[0][2],
+			&gp->xv[1][0], &gp->xv[1][1], &gp->xv[1][2],
+			&gp->xv[2][0], &gp->xv[2][1], &gp->xv[2][2]) != 12)
+		badvalue(SECTION);
+	maxlen = 0.;
+	for (i = 0; i < 3; i++)
+		if ((len[i] = VLEN(gp->xv[i])) > maxlen)
+			maxlen = len[i];
+	if (!vdef(GRID)) {
+		sprintf(buf, "%.4f", maxlen/8.);
+		vval(GRID) = savqstr(buf);
+		vdef(GRID)++;
+	}
+	if ((d = vflt(GRID)) <= FTINY)
+		badvalue(GRID);
+	for (i = 0; i < 3; i++)
+		gp->grid[i] = len[i]/d + (1.-FTINY);
 }
 
 
@@ -499,7 +500,7 @@ PACKET	*pl;
 getradfile(rfargs)		/* run rad and get needed variables */
 char	*rfargs;
 {
-	static short	mvar[] = {OCTREE,EXPOSURE,-1};
+	static short	mvar[] = {OCTREE,-1};
 	static char	tf1[] = TEMPLATE;
 	char	tf2[64];
 	char	combuf[256];

@@ -38,24 +38,22 @@ typedef struct {
 #define SECTION		1		/* holodeck section boundaries */
 #define OCTREE		2		/* octree file name */
 #define RIF		3		/* rad input file */
-#define EXPOSURE	4		/* section exposure value */
-#define TIME		5		/* maximum rendering time */
-#define DISKSPACE	6		/* how much disk space to use */
-#define CACHE		7		/* amount of memory to use as cache */
-#define GRID		8		/* target grid size */
-#define OBSTRUCTIONS	9		/* shall we track obstructions? */
-#define VDIST		10		/* virtual distance calculation */
-#define OCCUPANCY	11		/* expected occupancy probability */
-#define REPORT		12		/* report interval and error file */
+#define TIME		4		/* maximum rendering time */
+#define DISKSPACE	5		/* how much disk space to use */
+#define CACHE		6		/* amount of memory to use as cache */
+#define GRID		7		/* target grid size */
+#define OBSTRUCTIONS	8		/* shall we track obstructions? */
+#define VDIST		9		/* virtual distance calculation */
+#define OCCUPANCY	10		/* expected occupancy probability */
+#define REPORT		11		/* report interval and error file */
 
-#define NRHVARS		13		/* number of variables */
+#define NRHVARS		12		/* number of variables */
 
 #define RHVINIT { \
 	{"render",	3,	0,	NULL,	catvalues}, \
 	{"section",	3,	0,	NULL,	NULL}, \
 	{"OCTREE",	3,	0,	NULL,	onevalue}, \
 	{"RIF",		3,	0,	NULL,	onevalue}, \
-	{"EXPOSURE",	3,	0,	NULL,	fltvalue}, \
 	{"TIME",	2,	0,	NULL,	fltvalue}, \
 	{"DISKSPACE",	3,	0,	NULL,	fltvalue}, \
 	{"CACHE",	2,	0,	NULL,	fltvalue}, \
