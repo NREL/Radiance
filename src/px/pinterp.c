@@ -32,6 +32,7 @@ VIEW	theirview = STDVIEW(512);	/* input view */
 int	gotview;			/* got input view? */
 
 double	theirs2ours[4][4];		/* transformation matrix */
+int	regdist = 0;			/* regular distance? */
 
 
 main(argc, argv)			/* interpolate pictures */
@@ -50,6 +51,10 @@ char	*argv[];
 		case 't':				/* threshold */
 			check(2,1);
 			zeps = atof(argv[++i]);
+			break;
+		case 'r':				/* regular distance */
+			check(2,0);
+			regdist = !regdist;
 			break;
 		case 'x':				/* x resolution */
 			check(2,1);
@@ -109,16 +114,13 @@ char	*argv[];
 			break;
 		default:
 		badopt:
-			fprintf(stderr, "%s: unknown option '%s'\n",
+			fprintf(stderr, "%s: command line error at '%s'\n",
 					progname, argv[i]);
-			exit(1);
+			goto userr;
 		}
 						/* check arguments */
-	if (argc-i < 2 || (argc-i)%2) {
-		fprintf(stderr, "Usage: %s [view args] pfile zfile ..\n",
-				progname);
-		exit(1);
-	}
+	if (argc-i < 2 || (argc-i)%2)
+		goto userr;
 						/* set view */
 	if (err = setview(&ourview)) {
 		fprintf(stderr, "%s: %s\n", progname, err);
@@ -148,6 +150,11 @@ char	*argv[];
 	writepicture();
 
 	exit(0);
+userr:
+	fprintf(stderr,
+	"Usage: %s [view opts][-t zthresh][-r] pfile zspec ..\n",
+			progname);
+	exit(1);
 #undef check
 }
 
@@ -169,22 +176,19 @@ char	*s;
 }
 
 
-addpicture(pfile, zfile)		/* add picture to output */
-char	*pfile, *zfile;
+addpicture(pfile, zspec)		/* add picture to output */
+char	*pfile, *zspec;
 {
+	extern double	atof();
 	FILE	*pfp, *zfp;
 	char	*err;
 	COLR	*scanin;
 	float	*zin, *zlast;
 	int	*plast;
 	int	y;
-					/* open input files */
+					/* open picture file */
 	if ((pfp = fopen(pfile, "r")) == NULL) {
 		perror(pfile);
-		exit(1);
-	}
-	if ((zfp = fopen(zfile, "r")) == NULL) {
-		perror(zfile);
 		exit(1);
 	}
 					/* get header and view */
@@ -205,11 +209,22 @@ char	*pfile, *zfile;
 					/* allocate scanlines */
 	scanin = (COLR *)malloc(theirview.hresolu*sizeof(COLR));
 	zin = (float *)malloc(theirview.hresolu*sizeof(float));
-	zlast = (float *)calloc(theirview.hresolu, sizeof(float));
 	plast = (int *)calloc(theirview.hresolu, sizeof(int));
-	if (scanin == NULL || zin == NULL || zlast == NULL || plast == NULL) {
+	zlast = (float *)calloc(theirview.hresolu, sizeof(float));
+	if (scanin == NULL || zin == NULL || plast == NULL || zlast == NULL) {
 		perror(progname);
 		exit(1);
+	}
+					/* get z specification or file */
+	if ((zfp = fopen(zspec, "r")) == NULL) {
+		double	zvalue;
+		register int	x;
+		if (!isfloat(zspec) || (zvalue = atof(zspec)) <= 0.0) {
+			perror(zspec);
+			exit(1);
+		}
+		for (x = 0; x < theirview.hresolu; x++)
+			zin[x] = zvalue;
 	}
 					/* load image */
 	for (y = theirview.vresolu-1; y >= 0; y--) {
@@ -217,9 +232,10 @@ char	*pfile, *zfile;
 			fprintf(stderr, "%s: read error\n", pfile);
 			exit(1);
 		}
-		if (fread(zin, sizeof(float), theirview.hresolu, zfp)
+		if (zfp != NULL
+			&& fread(zin,sizeof(float),theirview.hresolu,zfp)
 				< theirview.hresolu) {
-			fprintf(stderr, "%s: read error\n", zfile);
+			fprintf(stderr, "%s: read error\n", zspec);
 			exit(1);
 		}
 		addscanline(y, scanin, zin, plast, zlast);
@@ -230,7 +246,8 @@ char	*pfile, *zfile;
 	free((char *)plast);
 	free((char *)zlast);
 	fclose(pfp);
-	fclose(zfp);
+	if (zfp != NULL)
+		fclose(zfp);
 }
 
 
@@ -290,12 +307,8 @@ float	*lastyz;		/* input/output */
 		pos[1] = y - .5*(theirview.vresolu-1);
 		pos[2] = zline[x];
 		if (theirview.type == VT_PER) {
-			/*
-			 * The following (single) statement can go
-			 * if z is along the view direction rather
-			 * than an eye ray.
-			 */
-			pos[2] /= sqrt( 1.
+			if (!regdist)	/* adjust for eye-ray distance */
+				pos[2] /= sqrt( 1.
 					+ pos[0]*pos[0]*theirview.vhn2
 					+ pos[1]*pos[1]*theirview.vvn2 );
 			pos[0] *= pos[2];
@@ -438,4 +451,15 @@ writepicture()				/* write out picture */
 			perror(progname);
 			exit(1);
 		}
+}
+
+
+isfloat(s)				/* see if string is floating number */
+register char	*s;
+{
+	for ( ; *s; s++)
+		if ((*s < '0' || *s > '9') && *s != '.' && *s != '-'
+				&& *s != 'e' && *s != 'E' && *s != '+')
+			return(0);
+	return(1);
 }
