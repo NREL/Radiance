@@ -8,7 +8,7 @@
 
 #include  "fvect.h"
 
-typedef double  MAT4[4][4];
+typedef FLOAT  MAT4[4][4];
 
 #ifdef  BSD
 #define  copymat4(m4a,m4b)	bcopy((char *)m4b,(char *)m4a,sizeof(MAT4))
