@@ -35,33 +35,33 @@ char	*argv[];
 {
 	int	i, rv;
 				/* initialize dispatch table */
-	mg_ehand[MG_E_COMMENT] = r_comment;
-	mg_ehand[MG_E_COLOR] = c_hcolor;
-	mg_ehand[MG_E_CONE] = r_cone;
-	mg_ehand[MG_E_CMIX] = c_hcolor;
-	mg_ehand[MG_E_CSPEC] = c_hcolor;
-	mg_ehand[MG_E_CXY] = c_hcolor;
-	mg_ehand[MG_E_CCT] = c_hcolor;
-	mg_ehand[MG_E_CYL] = r_cyl;
-	mg_ehand[MG_E_ED] = c_hmaterial;
-	mg_ehand[MG_E_FACE] = r_face;
-	mg_ehand[MG_E_IES] = r_ies;
-	mg_ehand[MG_E_IR] = c_hmaterial;
-	mg_ehand[MG_E_MATERIAL] = c_hmaterial;
-	mg_ehand[MG_E_NORMAL] = c_hvertex;
-	mg_ehand[MG_E_OBJECT] = obj_handler;
-	mg_ehand[MG_E_POINT] = c_hvertex;
-	mg_ehand[MG_E_RD] = c_hmaterial;
-	mg_ehand[MG_E_RING] = r_ring;
-	mg_ehand[MG_E_RS] = c_hmaterial;
-	mg_ehand[MG_E_SIDES] = c_hmaterial;
-	mg_ehand[MG_E_SPH] = r_sph;
-	mg_ehand[MG_E_TD] = c_hmaterial;
-	mg_ehand[MG_E_TS] = c_hmaterial;
-	mg_ehand[MG_E_VERTEX] = c_hvertex;
-	mg_ehand[MG_E_XF] = xf_handler;
+	mg_ehand[MG_E_COMMENT] = r_comment;	/* we pass comments */
+	mg_ehand[MG_E_COLOR] = c_hcolor;	/* they get color */
+	mg_ehand[MG_E_CONE] = r_cone;		/* we do cones */
+	mg_ehand[MG_E_CMIX] = c_hcolor;		/* they mix colors */
+	mg_ehand[MG_E_CSPEC] = c_hcolor;	/* they get spectra */
+	mg_ehand[MG_E_CXY] = c_hcolor;		/* they get chromaticities */
+	mg_ehand[MG_E_CCT] = c_hcolor;		/* they get color temp's */
+	mg_ehand[MG_E_CYL] = r_cyl;		/* we do cylinders */
+	mg_ehand[MG_E_ED] = c_hmaterial;	/* they get emission */
+	mg_ehand[MG_E_FACE] = r_face;		/* we do faces */
+	mg_ehand[MG_E_IES] = r_ies;		/* we do IES files */
+	mg_ehand[MG_E_IR] = c_hmaterial;	/* they get refractive index */
+	mg_ehand[MG_E_MATERIAL] = c_hmaterial;	/* they get materials */
+	mg_ehand[MG_E_NORMAL] = c_hvertex;	/* they get normals */
+	mg_ehand[MG_E_OBJECT] = obj_handler;	/* they track object names */
+	mg_ehand[MG_E_POINT] = c_hvertex;	/* they get points */
+	mg_ehand[MG_E_RD] = c_hmaterial;	/* they get diffuse refl. */
+	mg_ehand[MG_E_RING] = r_ring;		/* we do rings */
+	mg_ehand[MG_E_RS] = c_hmaterial;	/* they get specular refl. */
+	mg_ehand[MG_E_SIDES] = c_hmaterial;	/* they get # sides */
+	mg_ehand[MG_E_SPH] = r_sph;		/* we do spheres */
+	mg_ehand[MG_E_TD] = c_hmaterial;	/* they get diffuse trans. */
+	mg_ehand[MG_E_TS] = c_hmaterial;	/* they get specular trans. */
+	mg_ehand[MG_E_VERTEX] = c_hvertex;	/* they get vertices */
+	mg_ehand[MG_E_XF] = xf_handler;		/* they track transforms */
 	mg_init();		/* initialize the parser */
-					/* get options & print header */
+					/* get our options & print header */
 	printf("## %s", argv[0]);
 	for (i = 1; i < argc && argv[i][0] == '-'; i++) {
 		printf(" %s", argv[i]);
@@ -115,7 +115,7 @@ register int	ac;
 register char	**av;
 {
 	putchar('#');		/* use Radiance comment character */
-	while (--ac) {
+	while (--ac) {			/* pass through verbatim */
 		putchar(' ');
 		fputs(*++av, stdout);
 	}
@@ -135,20 +135,21 @@ char	**av;
 	C_VERTEX	*cv1, *cv2;
 	FVECT	p1, p2;
 	int	inv;
-
+					/* check argument count and type */
 	if (ac != 5)
 		return(MG_EARGC);
 	if (!isflt(av[2]) || !isflt(av[4]))
 		return(MG_ETYPE);
+					/* get the endpoint vertices */
 	if ((cv1 = c_getvert(av[1])) == NULL ||
 			(cv2 = c_getvert(av[3])) == NULL)
 		return(MG_EUNDEF);
-	xf_xfmpoint(p1, cv1->p);
+	xf_xfmpoint(p1, cv1->p);	/* transform endpoints */
 	xf_xfmpoint(p2, cv2->p);
-	r1 = xf_scale(atof(av[2]));
+	r1 = xf_scale(atof(av[2]));	/* scale radii */
 	r2 = xf_scale(atof(av[4]));
-	inv = r1 < 0.;
-	if (r1 == 0.) {
+	inv = r1 < 0.;			/* check for inverted cone */
+	if (r1 == 0.) {			/* check for illegal radii */
 		if (r2 == 0.)
 			return(MG_EILL);
 		inv = r2 < 0.;
@@ -158,8 +159,9 @@ char	**av;
 		r1 = -r1;
 		r2 = -r2;
 	}
-	if ((mat = material()) == NULL)
+	if ((mat = material()) == NULL)	/* get material */
 		return(MG_EBADMAT);
+					/* spit the sucker out */
 	printf("\n%s %s %sc%d\n", mat, inv ? "cup" : "cone",
 			object(), ++ncones);
 	printf("0\n0\n8\n");
@@ -181,21 +183,23 @@ char	**av;
 	C_VERTEX	*cv1, *cv2;
 	FVECT	p1, p2;
 	int	inv;
-
+					/* check argument count and type */
 	if (ac != 4)
 		return(MG_EARGC);
 	if (!isflt(av[2]))
 		return(MG_ETYPE);
+					/* get the endpoint vertices */
 	if ((cv1 = c_getvert(av[1])) == NULL ||
 			(cv2 = c_getvert(av[3])) == NULL)
 		return(MG_EUNDEF);
-	xf_xfmpoint(p1, cv1->p);
+	xf_xfmpoint(p1, cv1->p);	/* transform endpoints */
 	xf_xfmpoint(p2, cv2->p);
-	rad = xf_scale(atof(av[2]));
-	if ((inv = rad < 0.))
+	rad = xf_scale(atof(av[2]));	/* scale radius */
+	if ((inv = rad < 0.))		/* check for inverted cylinder */
 		rad = -rad;
-	if ((mat = material()) == NULL)
+	if ((mat = material()) == NULL)	/* get material */
 		return(MG_EBADMAT);
+					/* spit out the primitive */
 	printf("\n%s %s %scy%d\n", mat, inv ? "tube" : "cylinder",
 			object(), ++ncyls);
 	printf("0\n0\n7\n");
@@ -217,19 +221,20 @@ char	**av;
 	C_VERTEX	*cv;
 	FVECT	cent;
 	int	inv;
-
+					/* check argument count and type */
 	if (ac != 3)
 		return(MG_EARGC);
 	if (!isflt(av[2]))
 		return(MG_ETYPE);
-	if ((cv = c_getvert(av[1])) == NULL)
+	if ((cv = c_getvert(av[1])) == NULL)	/* get center vertex */
 		return(MG_EUNDEF);
-	xf_xfmpoint(cent, cv->p);
-	rad = xf_scale(atof(av[2]));
-	if ((inv = rad < 0.))
+	xf_xfmpoint(cent, cv->p);		/* transform center */
+	rad = xf_scale(atof(av[2]));		/* scale radius */
+	if ((inv = rad < 0.))			/* check for inversion */
 		rad = -rad;
-	if ((mat = material()) == NULL)
+	if ((mat = material()) == NULL)		/* get material */
 		return(MG_EBADMAT);
+						/* spit out primitive */
 	printf("\n%s %s %ss%d\n", mat, inv ? "bubble" : "sphere",
 			object(), ++nsphs);
 	printf("0\n0\n4 %18.12g %18.12g %18.12g %18.12g\n",
@@ -248,23 +253,24 @@ char	**av;
 	double	r1, r2;
 	C_VERTEX	*cv;
 	FVECT	cent, norm;
-
+					/* check argument count and type */
 	if (ac != 4)
 		return(MG_EARGC);
 	if (!isflt(av[2]) || !isflt(av[3]))
 		return(MG_ETYPE);
-	if ((cv = c_getvert(av[1])) == NULL)
+	if ((cv = c_getvert(av[1])) == NULL)	/* get center vertex */
 		return(MG_EUNDEF);
-	if (is0vect(cv->n))
+	if (is0vect(cv->n))			/* make sure we have normal */
 		return(MG_EILL);
-	xf_xfmpoint(cent, cv->p);
-	xf_rotvect(norm, cv->n);
-	r1 = xf_scale(atof(av[2]));
+	xf_xfmpoint(cent, cv->p);		/* transform center */
+	xf_rotvect(norm, cv->n);		/* rotate normal */
+	r1 = xf_scale(atof(av[2]));		/* scale radii */
 	r2 = xf_scale(atof(av[3]));
 	if (r1 < 0. | r2 <= r1)
 		return(MG_EILL);
-	if ((mat = material()) == NULL)
+	if ((mat = material()) == NULL)		/* get material */
 		return(MG_EBADMAT);
+						/* spit out primitive */
 	printf("\n%s ring %sr%d\n", mat, object(), ++nrings);
 	printf("0\n0\n8\n");
 	putv(cent);
@@ -285,12 +291,12 @@ char	**av;
 	register C_VERTEX	*cv;
 	FVECT	v;
 	int	rv;
-
+					/* check argument count and type */
 	if (ac < 4)
 		return(MG_EARGC);
-	if ((mat = material()) == NULL)
+	if ((mat = material()) == NULL)	/* get material */
 		return(MG_EBADMAT);
-	if (ac <= 5) {				/* check for surface normals */
+	if (ac <= 5) {				/* check for smoothing */
 		for (i = 1; i < ac; i++) {
 			if ((cv = c_getvert(av[i])) == NULL)
 				return(MG_EUNDEF);
@@ -304,9 +310,10 @@ char	**av;
 			return(MG_OK);
 		}
 	}
+					/* spit out unsmoothed primitive */
 	printf("\n%s polygon %sf%d\n", mat, object(), ++nfaces);
 	printf("0\n0\n%d\n", 3*(ac-1));
-	for (i = 1; i < ac; i++) {
+	for (i = 1; i < ac; i++) {	/* get, transform, print each vertex */
 		if ((cv = c_getvert(av[invert ? ac-i : i])) == NULL)
 			return(MG_EUNDEF);
 		xf_xfmpoint(v, cv->p);
@@ -327,39 +334,41 @@ char	**av;
 	char	*oname;
 	register char	*op;
 	register int	i;
-
+					/* check argument count */
 	if (ac < 2)
 		return(MG_EARGC);
-	(void)strcpy(combuf, "ies2rad");
-	op = combuf + 7;		/* get -m option (must be first) */
-	if (ac-xa0 >= 2 && !strcmp(av[xa0], "-m")) {
-		if (!isflt(av[xa0+1]))
-			return(MG_ETYPE);
-		op = addarg(addarg(op, "-m"), av[xa0+1]);
-		xa0 += 2;
-	}
-	*op++ = ' ';			/* build IES filename */
-	i = 0;
-	if (mg_file != NULL &&
-			(oname = strrchr(mg_file->fname, '/')) != NULL) {
-		i = oname - mg_file->fname + 1;
-		(void)strcpy(op, mg_file->fname);
-	}
-	(void)strcpy(op+i, av[1]);
-	if (access(op, 0) == -1)
-		return(MG_ENOFILE);
-	system(combuf);			/* run ies2rad */
-					/* now let's find the output file */
+					/* construct output file name */
 	if ((op = strrchr(av[1], '/')) == NULL)
 		op = av[1];
 	(void)strcpy(fname, op);
 	if ((op = strrchr(fname, '.')) == NULL)
 		op = fname + strlen(fname);
 	(void)strcpy(op, ".rad");
-	if (access(fname, 0) == -1)
-		return(MG_EINCL);
-					/* put out xform command */
-	printf("\n!xform");
+					/* see if we need to run ies2rad */
+	if (access(op, 0) == -1) {
+		(void)strcpy(combuf, "ies2rad");/* build ies2rad command */
+		op = combuf + 7;		/* get -m option (first) */
+		if (ac-xa0 >= 2 && !strcmp(av[xa0], "-m")) {
+			if (!isflt(av[xa0+1]))
+				return(MG_ETYPE);
+			op = addarg(addarg(op, "-m"), av[xa0+1]);
+			xa0 += 2;
+		}
+		*op++ = ' ';			/* build IES filename */
+		i = 0;
+		if (mg_file != NULL &&
+				(oname = strrchr(mg_file->fname,'/')) != NULL) {
+			i = oname - mg_file->fname + 1;
+			(void)strcpy(op, mg_file->fname);
+		}
+		(void)strcpy(op+i, av[1]);
+		if (access(op, 0) == -1)	/* check for file existence */
+			return(MG_ENOFILE);
+		system(combuf);			/* run ies2rad */
+		if (access(fname, 0) == -1)	/* check success */
+			return(MG_EINCL);
+	}
+	printf("\n!xform");			/* put out xform command */
 	oname = object();
 	if (*oname) {
 		printf(" -n ");
@@ -399,9 +408,10 @@ char	*mat, *vn1, *vn2, *vn3;
 	xf_xfmpoint(v1, cv1->p);
 	xf_xfmpoint(v2, cv2->p);
 	xf_xfmpoint(v3, cv3->p);
+					/* compute barycentric coords. */
 	if (comp_baryc(&bvecs, v1, v2, v3) < 0)
 		return;				/* degenerate triangle! */
-	printf("\n%s texfunc T-nor\n", mat);
+	printf("\n%s texfunc T-nor\n", mat);	/* put out texture */
 	printf("4 dx dy dz %s\n0\n", TCALNAME);
 	xf_rotvect(n1, cv1->n);
 	xf_rotvect(n2, cv2->n);
@@ -412,6 +422,7 @@ char	*mat, *vn1, *vn2, *vn3;
 		bcoor[i][2] = n3[i];
 	}
 	put_baryc(&bvecs, bcoor, 3);
+						/* put out triangle */
 	printf("\nT-nor polygon %st%d\n", object(), ++ntris);
 	printf("0\n0\n9\n");
 	putv(v1);
@@ -542,7 +553,7 @@ material()			/* get (and print) current material */
 }
 
 
-cvtcolor(radrgb, ciec, intensity)	/* convert a CIE color to Radiance */
+cvtcolor(radrgb, ciec, intensity)	/* convert a CIE XYZ color to RGB */
 COLOR	radrgb;
 register C_COLOR	*ciec;
 double	intensity;
@@ -564,7 +575,7 @@ object()			/* return current object name */
 	register int	i;
 	register char	*cp;
 	int	len;
-
+						/* tracked by obj_handler */
 	i = obj_nnames - sizeof(objbuf)/16;
 	if (i < 0)
 		i = 0;
