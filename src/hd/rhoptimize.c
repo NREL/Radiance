@@ -200,7 +200,7 @@ int	*bq, nb;
 				n*sizeof(RAYVAL));
 		hdfreebeam(hp, bq[i]);
 	}
-	hdflush(hout);			/* write & free clump */
+	hdfreebeam(hout, 0);		/* write & free clump */
 	return(0);
 }
 
