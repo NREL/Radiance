@@ -7,8 +7,11 @@ languages and Radiance.
 trans.h		translator definitions
 arch2rad.c	convert Architrion file to Radiance
 ies2rad.c	convert IES luminaire data to Radiance description
+lamp.tab	default lookup table associating lamp types with colors
 lampcolor.c	program to convert lamp color from table and compute radiance
 nff2rad.c	convert Neutral File Format input to Radiance scene description
+source.cal	function file for light sources from ies2rad
 thf2rad.c	convert GDS things file to Radiance scene description
 thf2rad2.c	modified thf2rad with different cylinder end caps
+tilt.cal	computes tilt factor for ies2rad
 trans.c		translator utilities
