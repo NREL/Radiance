@@ -269,9 +269,9 @@ double  coef;
 		backmat = rayshade(&br, back);
 					/* check for transparency */
 	if (backmat ^ foremat)
-		if (backmat)
+		if (backmat && coef > FTINY)
 			raytrans(&fr);
-		else
+		else if (foremat && coef < 1.0-FTINY)
 			raytrans(&br);
 					/* mix perturbations */
 	for (i = 0; i < 3; i++)
