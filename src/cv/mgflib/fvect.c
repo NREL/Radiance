@@ -19,12 +19,15 @@ register FVECT  v;
 {
 	static double  len;
 	
-	len = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+	len = DOT(v, v);
 	
 	if (len <= 0.0)
 		return(0.0);
 	
-	len = sqrt(len);
+	if (len <= 1.0+FTINY && len >= 1.0-FTINY)
+		len = 0.5 + 0.5*len;	/* first order approximation */
+	else
+		len = sqrt(len);
 
 	v[0] /= len;
 	v[1] /= len;
