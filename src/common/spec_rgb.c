@@ -40,7 +40,7 @@ static BYTE  chroma[3][NINC] = {
 };
 
 #ifdef  NTSC
-static float  xyz2rgbmat[3][3] = {	/* XYZ to RGB (NTSC */
+static float  xyz2rgbmat[3][3] = {	/* XYZ to RGB (NTSC) */
 	1.73, -.48, -.26,
 	-.81, 1.65, -.02,
 	 .08, -.17, 1.28,
@@ -100,7 +100,7 @@ int  s, e;		/* starting and ending wavelengths */
 }
 
 
-cie_rgb(rgbcolor, ciecolor)		/* convert CIE to RGB (NTSC) */
+cie_rgb(rgbcolor, ciecolor)		/* convert CIE to RGB */
 register COLOR  rgbcolor, ciecolor;
 {
 	register int  i;
