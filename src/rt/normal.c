@@ -70,9 +70,9 @@ double  omega;			/* light source size */
 
 	if (ldot > FTINY && np->rdiff > FTINY) {
 		/*
-		 *  Compute and add diffuse component to returned color.
-		 *  The diffuse component will always be modified by the
-		 *  color of the material.
+		 *  Compute and add diffuse reflected component to returned
+		 *  color.  The diffuse reflected component will always be
+		 *  modified by the color of the material.
 		 */
 		copycolor(ctmp, np->mcolor);
 		dtmp = ldot * omega * np->rdiff / PI;
@@ -107,7 +107,8 @@ double  omega;			/* light source size */
 	}
 	if (ldot < -FTINY && np->tspec > FTINY && np->alpha2 > FTINY) {
 		/*
-		 *  Compute specular transmission.
+		 *  Compute specular transmission.  Specular transmission
+		 *  is unaffected by material color.
 		 */
 						/* roughness + source */
 		dtmp = np->alpha2 + omega/(2.0*PI);
@@ -115,9 +116,8 @@ double  omega;			/* light source size */
 		dtmp = exp((DOT(np->pr->rdir,ldir)-1.)/dtmp)/(2.*PI)/dtmp;
 						/* worth using? */
 		if (dtmp > FTINY) {
-			copycolor(ctmp, np->mcolor);
 			dtmp *= np->tspec * omega;
-			scalecolor(ctmp, dtmp);
+			setcolor(ctmp, dtmp, dtmp, dtmp);
 			addcolor(cval, ctmp);
 		}
 	}
