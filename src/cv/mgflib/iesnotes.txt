@@ -1,0 +1,27 @@
+		Enclosing IES File Notes
+		SCCSid "$SunId$ LBL"
+
+The following notes describe how MGF data is to be referred to by
+an enclosing IES luminaire file, and these notes are in a state of flux.
+
+The basic method for specifying an MGF geometry file within an IES
+file is a single line immediately preceeding the TILT= line, which reads:
+
+GEOM=file.mgf
+
+where "file.mgf" is replaced by the name of the relevant MGF file.
+
+IES data file contains simplified geometry, which must completely
+enclose the detailed geometry specified by the "GEOM=file.mgf" line.
+This detailed geometry file is always in meters, whatever the units of
+the enclosing IES file, and must have its origin at the center of the
+simplified geometry.  The X-axis corresponds to the 0-180 degree plane,
+the Y-axis corresponds to the 90-270 degree plane, and the Z-axis
+corresponds to the up direction.  (This is a right-handed coordinate
+system.)
+
+The emission values in the MGF file will be multiplied by the usual
+IES luminaire factors, i.e. the tilt factors (if any), the candela
+multiplier, the ballast factor and the ballast lamp factor.  Thus,
+the MGF file emissions should correspond to those of the as-tested
+luminaire configuration.

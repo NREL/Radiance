@@ -1,0 +1,270 @@
+# SCCSid "$SunId$ LBL"
+# This is a hand-built example
+# describing the geometry and materials
+# of a Ledalite "APEX TYPE #2" fixture,
+# which is a hanging direct/indirect fluorescent
+# luminaire approx. 35" by 10" by 3.5"
+# Fixture situated so dead center is at the origin
+#
+# Greg Ward, LBL, July 1994
+
+# First, we describe the materials...
+
+# Assume cool white lamps
+c cool_white =
+	cxy .373 .385
+m lamp_emitter =
+	sides 1
+	c cool_white
+	ed 44700
+	rd .6
+
+# Exterior is matte white
+m matte_white =
+	sides 1
+	c
+	rd .8
+
+# Interior is unfinished and polished (Alzak) aluminum
+m unfinished_aluminum =
+	sides 1
+	c
+	rs .75 .08
+m polished_aluminum =
+	sides 1
+	c
+	rs .9 0
+
+# All units are inches in this file
+xf -s .0254
+
+# Next, we put out the vertices...
+
+# The following vertices go with the outer casing
+v    vc1+ =
+	p   24 3.0625 -1.75
+	n 0           0       -2
+v    vc2+ =
+	p   24 3.46294 -1.7095
+	n 0     0.40044  -1.9595
+v    vc3+ =
+	p   24 3.84717 -1.58965
+	n 0     0.78467 -1.83965
+v    vc4+ =
+	p   24 4.19961 -1.39529
+	n 0     1.13711 -1.64529
+v    vc5+ =
+	p   24 4.50601 -1.1343
+	n 0     1.44351  -1.3843
+v    vc6+ =
+	p   24 4.75394 -0.817248
+	n 0     1.69144 -1.06725
+v    vc7+ =
+	p   24 4.93338 -0.456974
+	n 0     1.87088 -0.706974
+v    vc8+ =
+	p   24 5.03705 -0.0680697
+	n 0     1.97455 -0.31807
+v    vc9+ =
+	p   24 5.06075 0.333716
+	n 0     1.99825 0.083716
+v   vc10+ =
+	p   24 5.00352 0.732112
+	n 0     1.94102 0.482112
+v   vc11+ =
+	p   24 4.86769 1.11098
+	n 0     1.80519  0.86098
+v   vc12+ =
+	p   24 4.65875 1.45498
+	n 0     1.59625  1.20498
+v   vc13+ =
+	p   24 4.38516 1.75019
+	n 0     1.32266  1.50019
+v    vc1- =
+	p  -24 3.0625 -1.75
+	n 0           0       -2
+v    vc2- =
+	p  -24 3.46294 -1.7095
+	n 0     0.40044  -1.9595
+v    vc3- =
+	p  -24 3.84717 -1.58965
+	n 0     0.78467 -1.83965
+v    vc4- =
+	p  -24 4.19961 -1.39529
+	n 0     1.13711 -1.64529
+v    vc5- =
+	p  -24 4.50601 -1.1343
+	n 0     1.44351  -1.3843
+v    vc6- =
+	p  -24 4.75394 -0.817248
+	n 0     1.69144 -1.06725
+v    vc7- =
+	p  -24 4.93338 -0.456974
+	n 0     1.87088 -0.706974
+v    vc8- =
+	p  -24 5.03705 -0.0680697
+	n 0     1.97455 -0.31807
+v    vc9- =
+	p  -24 5.06075 0.333716
+	n 0     1.99825 0.083716
+v   vc10- =
+	p  -24 5.00352 0.732112
+	n 0     1.94102 0.482112
+v   vc11- =
+	p  -24 4.86769 1.11098
+	n 0     1.80519  0.86098
+v   vc12- =
+	p  -24 4.65875 1.45498
+	n 0     1.59625  1.20498
+v   vc13- =
+	p  -24 4.38516 1.75019
+	n 0     1.32266  1.50019
+v vc-top =
+	p -24 0 1.75
+v vc-bot =
+	p -24 0 -1.75
+v vc+top =
+	p 24 0 1.75
+v vc+bot =
+	p 24 0 -1.75
+
+# The following vertices go with the upper reflector
+v vur-top = vc13-
+v vur-corner =
+	p -24 4.25 .5833
+v vur-mid =
+	p -24 2.5625 .5833
+v vur+top = vc13+
+v vur+corner =
+	p 24 4.25 .5833
+v vur+mid =
+	p 24 2.5625 .5833
+
+# The following vertices go with the lower reflector
+v vlr1+ =
+	p 24 2.5625 0.5833
+	n 0    -1 -0.235194
+v vlr2+ =
+	p 24 2.66998 0.11664
+	n 0    -1 -0.225724
+v vlr3+ =
+	p 24 2.77332 -0.35002
+	n 0    -1 -0.217314
+v vlr4+ =
+	p 24 2.87294 -0.81668
+	n 0    -1 -0.209778
+v vlr5+ =
+	p 24 2.96922 -1.28334
+	n 0    -1 -0.202976
+v vlr6+ =
+	p 24 3.0625 -1.75
+	n 0    -1 -0.196795
+v vlr1- =
+	p -24 2.5625 0.5833
+	n 0    -1 -0.235194
+v vlr2- =
+	p -24 2.66998 0.11664
+	n 0    -1 -0.225724
+v vlr3- =
+	p -24 2.77332 -0.35002
+	n 0    -1 -0.217314
+v vlr4- =
+	p -24 2.87294 -0.81668
+	n 0    -1 -0.209778
+v vlr5- =
+	p -24 2.96922 -1.28334
+	n 0    -1 -0.202976
+v vlr6- =
+	p -24 3.0625 -1.75
+	n 0    -1 -0.196795
+
+# The following vertices go with the reflector vanes
+v vvr_xyz =
+	p -.0625 -3.1 -1.7
+v vvr_xyZ =
+	p -.0825 -2.9 -.533
+v vvr_xYz =
+	p -.0625 3.1 -1.7
+v vvr_xYZ =
+	p -.0825 2.9 -.533
+v vvr_Xyz =
+	p .0625 -3.1 -1.7
+v vvr_XyZ =
+	p .0825 -2.9 -.533
+v vvr_XYz =
+	p .0625 3.1 -1.7
+v vvr_XYZ =
+	p .0825 2.9 -.533
+
+# Finally, we get to the geometry...
+
+# Overall geometry is symmetrical about the 0 degree (XZ) plane
+xf -a 2 -my
+
+o lamp
+m lamp_emitter
+v v1 =
+	p -24 1 1.25
+v v2 =
+	p 24 1 1.25
+cyl v1 .5 v2
+o
+
+o casing
+m matte_white
+o outer
+f vc1- vc2- vc2+ vc1+
+f vc2- vc3- vc3+ vc2+
+f vc3- vc4- vc4+ vc3+
+f vc4- vc5- vc5+ vc4+
+f vc5- vc6- vc6+ vc5+
+f vc6- vc7- vc7+ vc6+
+f vc7- vc8- vc8+ vc7+
+f vc8- vc9- vc9+ vc8+
+f vc9- vc10- vc10+ vc9+
+f vc10- vc11- vc11+ vc10+
+f vc11- vc12- vc12+ vc11+
+f vc12- vc13- vc13+ vc12+
+o
+o end-
+prism vc1- vc2- vc3- vc4- vc5- vc6- vc7- vc8- vc9- vc10- vc11- vc12- vc13- \
+	vc-top vc-bot .125
+o
+o end+
+prism vc13+ vc12+ vc11+ vc10+ vc9+ vc8+ vc7+ vc6+ vc5+ vc4+ vc3+ vc2+ vc1+ \
+	vc+bot vc+top .125
+o
+o
+
+o reflector
+o upper
+m unfinished_aluminum
+f vur-mid vur+mid vur+corner vur-corner
+f vur-corner vur+corner vur+top vur-top
+o
+o lower
+m polished_aluminum
+f vlr1- vlr2- vlr2+ vlr1+
+f vlr2- vlr3- vlr3+ vlr2+
+f vlr3- vlr4- vlr4+ vlr3+
+f vlr4- vlr5- vlr5+ vlr4+
+f vlr5- vlr6- vlr6+ vlr5+
+o
+o
+
+xf
+
+# The following reflector vanes repeat on 3" centers
+xf -t -21 0 0 -a 15 -t 3 0 0
+
+o reflector.vane
+m polished_aluminum
+f vvr_xyz vvr_xYz vvr_XYz vvr_Xyz
+f vvr_XyZ vvr_XYZ vvr_xYZ vvr_xyZ
+f vvr_xyz vvr_xyZ vvr_xYZ vvr_xYz
+f vvr_XYz vvr_XYZ vvr_XyZ vvr_Xyz
+o
+
+xf
+
+xf
