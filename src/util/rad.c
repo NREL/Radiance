@@ -11,6 +11,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "standard.h"
 #include "paths.h"
 #include <ctype.h>
+#include <sys/types.h>
 
 
 typedef struct {
@@ -101,17 +102,17 @@ char	overfile[] = "overture.raw";
 char	overfile[] = "/dev/null";
 #endif
 
-extern unsigned long	fdate(), time();
+extern time_t	fdate(), time();
 
-unsigned long	scenedate;	/* date of latest scene or object file */
-unsigned long	octreedate;	/* date of octree */
-unsigned long	matdate;	/* date of latest material file */
-unsigned long	illumdate;	/* date of last illum file */
+time_t	scenedate;		/* date of latest scene or object file */
+time_t	octreedate;		/* date of octree */
+time_t	matdate;		/* date of latest material file */
+time_t	illumdate;		/* date of last illum file */
 
 char	*oct0name;		/* name of pre-mkillum octree */
-unsigned long	oct0date;	/* date of pre-mkillum octree */
+time_t	oct0date;		/* date of pre-mkillum octree */
 char	*oct1name;		/* name of post-mkillum octree */
-unsigned long	oct1date;	/* date of post-mkillum octree (>= matdate) */
+time_t	oct1date;		/* date of post-mkillum octree (>= matdate) */
 
 int	explicate = 0;		/* explicate variables */
 int	silent = 0;		/* do work silently */
@@ -459,12 +460,12 @@ register VARIABLE	*vp;
 }
 
 
-unsigned long
+time_t
 checklast(fnames)			/* check files and find most recent */
 register char	*fnames;
 {
 	char	thisfile[MAXPATH];
-	unsigned long	thisdate, lastdate = 0;
+	time_t	thisdate, lastdate = 0;
 	register char	*cp;
 
 	if (fnames == NULL)
@@ -512,7 +513,7 @@ int	pred;
 
 checkfiles()			/* check for existence and modified times */
 {
-	unsigned long	objdate;
+	time_t	objdate;
 
 	if (!vdef(OCTREE)) {
 		if ((vval(OCTREE) = bmalloc(strlen(radname)+5)) == NULL)
@@ -671,7 +672,7 @@ oconv()				/* run oconv and mkillum if necessary */
 			unlink(vval(OCTREE));
 			exit(1);
 		}
-		octreedate = time((unsigned long *)NULL);
+		octreedate = time((time_t *)NULL);
 	}
 	if (oct1name == vval(OCTREE))		/* no mkillum? */
 		oct1date = octreedate > matdate ? octreedate : matdate;
@@ -697,7 +698,7 @@ oconv()				/* run oconv and mkillum if necessary */
 			unlink(oct0name);
 			exit(1);
 		}
-		oct0date = time((unsigned long *)NULL);
+		oct0date = time((time_t *)NULL);
 	}
 	mkillumopts(mkopts);			/* build mkillum command */
 	mktemp(illumtmp);
@@ -725,7 +726,7 @@ oconv()				/* run oconv and mkillum if necessary */
 		unlink(oct1name);
 		exit(1);
 	}
-	oct1date = time((unsigned long *)NULL);
+	oct1date = time((time_t *)NULL);
 	rmfile(illumtmp);
 }
 
@@ -765,7 +766,7 @@ register char	*mo;
 
 checkambfile()			/* check date on ambient file */
 {
-	unsigned long	afdate;
+	time_t	afdate;
 
 	if (!vdef(AMBFILE))
 		return;
