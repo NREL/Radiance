@@ -10,6 +10,19 @@ static char SCCSid[] = "$SunId$ LBL";
  
 #include "standard.h"
 #include <fcntl.h>
+
+#ifndef F_SETLKW
+
+main(argc, argv)
+int argc;
+char *argv[];
+{
+	fprintf(stderr, "%s: no NFS lock manager on this machine\n", argv[0]);
+	exit(1);
+}
+
+#else
+
 #include <signal.h>
 #include "color.h"
 #include "view.h"
@@ -405,3 +418,5 @@ writerr:
 	fprintf(stderr, "%s: write error on file \"%s\"\n", progname, outfile);
 	_exit(1);
 }
+
+#endif
