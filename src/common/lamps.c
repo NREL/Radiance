@@ -10,6 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 #include  <ctype.h>
+#include  "color.h"
 
 extern char	*eindex(), *expsave(), *malloc();
 extern FILE	*frlibopen();
