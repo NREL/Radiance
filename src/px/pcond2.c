@@ -140,6 +140,7 @@ register struct mbc	*mb;
 	register int	i, j;
 
 	while (len--) {
+		colortrans(sl[0], mb->cmat, sl[0]);
 		for (i = 0; i < 3; i++) {
 			d = colval(sl[0],i);
 			for (j = 0; j < 4 && mb->xa[i][j+1] <= d; j++)
@@ -148,7 +149,6 @@ register struct mbc	*mb;
 					(d - mb->xa[i][j])*mb->ya[i][j+1] ) /
 					(mb->xa[i][j+1] - mb->xa[i][j]);
 		}
-		colortrans(sl[0], mb->cmat, sl[0]);
 		sl++;
 	}
 }
@@ -216,19 +216,19 @@ register struct mbc	*mb;
 			inpflags |= 040;
 		else if (!(inpflags & 0100) &&
 				sscanf(buf,
-				"ro = %f*rn + %f*gn + %f*bn",
+				"r = %f*r1 + %f*g1 + %f*b1",
 				&mb->cmat[0][0], &mb->cmat[0][1],
 				&mb->cmat[0][2]) == 3)
 			inpflags |= 0100;
 		else if (!(inpflags & 0200) &&
 				sscanf(buf,
-				"go = %f*rn + %f*gn + %f*bn",
+				"g = %f*r1 + %f*g1 + %f*b1",
 				&mb->cmat[1][0], &mb->cmat[1][1],
 				&mb->cmat[1][2]) == 3)
 			inpflags |= 0200;
 		else if (!(inpflags & 0400) &&
 				sscanf(buf,
-				"bo = %f*rn + %f*gn + %f*bn",
+				"b = %f*r1 + %f*g1 + %f*b1",
 				&mb->cmat[2][0], &mb->cmat[2][1],
 				&mb->cmat[2][2]) == 3)
 			inpflags |= 0400;

@@ -95,6 +95,8 @@ short	mbneu[NMBNEU] = {Black,Neutral35,Neutral5,Neutral65,Neutral8,White};
 #define  RG_ORIG	02	/* original color region */
 #define  RG_CORR	04	/* corrected color region */
 
+int	scanning = 1;		/* scanned input (or recorded output)? */
+
 int	xmax, ymax;		/* input image dimensions */
 int	bounds[4][2];		/* image coordinates of chart corners */
 double	imgxfm[3][3];		/* coordinate transformation matrix */
@@ -116,7 +118,6 @@ main(argc, argv)
 int	argc;
 char	**argv;
 {
-	int	inpispic = 1;
 	int	i;
 
 	progname = argv[0];
@@ -147,10 +148,10 @@ char	**argv;
 			bounds[2][1] = atoi(argv[++i]);
 			bounds[3][0] = atoi(argv[++i]);
 			bounds[3][1] = atoi(argv[++i]);
-			inpispic = 2;
+			scanning = 2;
 			break;
 		case 'c':				/* color input */
-			inpispic = 0;
+			scanning = 0;
 			break;
 		default:
 			goto userr;
@@ -164,7 +165,7 @@ char	**argv;
 		perror(argv[2]);
 		exit(1);
 	}
-	if (inpispic) {			/* load input picture header */
+	if (scanning) {			/* load input picture header */
 #ifdef MSDOS
 		setmode(fileno(stdin), O_BINARY);
 #endif
@@ -177,14 +178,14 @@ char	**argv;
 		xmax = 512;
 		ymax = 2*512/3;
 	}
-	if (inpispic != 2) {		/* use default boundaries */
+	if (scanning != 2) {		/* use default boundaries */
 		bounds[0][0] = bounds[2][0] = .029*xmax + .5;
 		bounds[0][1] = bounds[1][1] = .956*ymax + .5;
 		bounds[1][0] = bounds[3][0] = .971*xmax + .5;
 		bounds[2][1] = bounds[3][1] = .056*ymax + .5;
 	}
 	init();				/* initialize */
-	if (inpispic)			/* get picture colors */
+	if (scanning)			/* get picture colors */
 		getpicture();
 	else
 		getcolors();
@@ -194,10 +195,13 @@ char	**argv;
 	printargs(argc, argv, stdout);
 	printf("\n\tUsage: pcomb -f %s uncorrected.pic > corrected.pic\n",
 			i+1 < argc ? argv[i+1] : "{this_file}");
+	if (!scanning)
+		printf("\t   Or: pcond [options] -f %s orig.pic > output.pic\n",
+				i+1 < argc ? argv[i+1] : "{this_file}");
 	printf("}\n");
 	putmapping();			/* put out color mapping */
 	if (debugfp != NULL)		/* put out debug picture */
-		if (inpispic)
+		if (scanning)
 			picdebug();
 		else
 			clrdebug();
@@ -407,10 +411,10 @@ compute()			/* compute color mapping */
 						/* check out-of-gamut colors */
 		for (i = 0; i < 24; i++)
 			if (cflags & 1L<<i) {
-				cresp(ctmp, mbRGB[i]);
+				cvtcolor(ctmp, mbRGB[i]);
 				for (j = 0; j < 3; j++)
-					if (colval(ctmp,j) <= 0. ||
-						colval(ctmp,j) >= 1.) {
+					if (colval(ctmp,j) <= 1e-6 ||
+						colval(ctmp,j) >= 1.-1e-6) {
 						gmtflags |= 1L<<i;
 						break;
 					}
@@ -437,14 +441,13 @@ putmapping()			/* put out color mapping for pcomb -f */
 		for (i = 0; i < NMBNEU; i++)
 			printf(",%g", colval(bramp[i][1],j));
 		printf(");\n");
-		printf("%c = %ci(1);\n", cchar[j], cchar[j]);
 		printf("%cfi(n) = if(n-%g, %d, if(%cxa(n+1)-%c, n, %cfi(n+1)));\n",
 				cchar[j], NMBNEU-1.5, NMBNEU-1, cchar[j],
 				cchar[j], cchar[j]);
 		printf("%cndx = %cfi(1);\n", cchar[j], cchar[j]);
-		printf("%cn = ((%cxa(%cndx+1)-%c)*%cya(%cndx) + ",
-				cchar[j], cchar[j], cchar[j],
-				cchar[j], cchar[j], cchar[j]);
+		printf("%c%c = ((%cxa(%cndx+1)-%c)*%cya(%cndx) + ",
+				cchar[j], scanning?'n':'o', cchar[j],
+				cchar[j], cchar[j], cchar[j], cchar[j]);
 		printf("(%c-%cxa(%cndx))*%cya(%cndx+1)) /\n",
 				cchar[j], cchar[j], cchar[j],
 				cchar[j], cchar[j]);
@@ -452,12 +455,23 @@ putmapping()			/* put out color mapping for pcomb -f */
 				cchar[j], cchar[j], cchar[j], cchar[j]);
 	}
 					/* print color mapping */
-	printf("ro = %g*rn + %g*gn + %g*bn ;\n",
-			solmat[0][0], solmat[0][1], solmat[0][2]);
-	printf("go = %g*rn + %g*gn + %g*bn ;\n",
-			solmat[1][0], solmat[1][1], solmat[1][2]);
-	printf("bo = %g*rn + %g*gn + %g*bn ;\n",
-			solmat[2][0], solmat[2][1], solmat[2][2]);
+	if (scanning) {
+		printf("r = ri(1); g = gi(1); b = bi(1);\n");
+		printf("ro = %g*rn + %g*gn + %g*bn ;\n",
+				solmat[0][0], solmat[0][1], solmat[0][2]);
+		printf("go = %g*rn + %g*gn + %g*bn ;\n",
+				solmat[1][0], solmat[1][1], solmat[1][2]);
+		printf("bo = %g*rn + %g*gn + %g*bn ;\n",
+				solmat[2][0], solmat[2][1], solmat[2][2]);
+	} else {
+		printf("r1 = ri(1); g1 = gi(1); b1 = bi(1);\n");
+		printf("r = %g*r1 + %g*g1 + %g*b1 ;\n",
+				solmat[0][0], solmat[0][1], solmat[0][2]);
+		printf("g = %g*r1 + %g*g1 + %g*b1 ;\n",
+				solmat[1][0], solmat[1][1], solmat[1][2]);
+		printf("b = %g*r1 + %g*g1 + %g*b1 ;\n",
+				solmat[2][0], solmat[2][1], solmat[2][2]);
+	}
 }
 
 
@@ -526,8 +540,13 @@ COLOR	cout, cin;
 {
 	COLOR	ctmp;
 
-	bresp(ctmp, cin);
-	cresp(cout, ctmp);
+	if (scanning) {
+		bresp(ctmp, cin);
+		cresp(cout, ctmp);
+	} else {
+		cresp(ctmp, cin);
+		bresp(cout, ctmp);
+	}
 	if (colval(cout,RED) < 0.)
 		colval(cout,RED) = 0.;
 	if (colval(cout,GRN) < 0.)
