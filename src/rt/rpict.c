@@ -141,7 +141,7 @@ report()		/* report progress */
 	struct tms  tbuf;
 	struct utsname  nambuf;
 	double  period;
-#define hostname  nambuf.sysname
+#define hostname  nambuf.nodename
 #endif
 
 	tlastrept = time((time_t *)NULL);
