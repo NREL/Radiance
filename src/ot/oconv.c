@@ -195,10 +195,13 @@ addobject(cu, obj)			/* add an object to a cube */
 register CUBE  *cu;
 OBJECT  obj;
 {
+#define nexti(n)  ((ndx += cnt*cnt++)%(n))
+	static unsigned long  ndx;
+	static unsigned int  cnt;
 	CUBE  cukid;
 	OCTREE  ot;
 	OBJECT  oset[MAXSET+1];
-	int  in;
+	int  in, k;
 	register int  i, j;
 
 	in = (*ofun[objptr(obj)->otype].funp)(objptr(obj), cu);
@@ -259,7 +262,11 @@ OBJECT  obj;
 							/* then this object */
 				addobject(&cukid, obj);
 							/* volumes last */
-				for (j = 1; j <= oset[0]; j++)
+				k = nexti(oset[0]);	/* random start */
+				for (j = k+1; j <= oset[0]; j++)
+					if (isvolume(objptr(oset[j])->otype))
+						addobject(&cukid, oset[j]);
+				for (j = 1; j <= k; j++)
 					if (isvolume(objptr(oset[j])->otype))
 						addobject(&cukid, oset[j]);
 				octkid(ot, i) = cukid.cutree;
@@ -267,4 +274,5 @@ OBJECT  obj;
 			cu->cutree = ot;
 		}
 	}
+#undef nexti
 }
