@@ -63,7 +63,11 @@ int  ambounce = 0;			/* ambient bounces */
 char  *amblist[128];			/* ambient include/exclude list */
 int  ambincl = -1;			/* include == 1, exclude == 0 */
 
+#ifdef MSDOS
+int  ralrm = 60;			/* seconds between reports */
+#else
 int  ralrm = 0;				/* seconds between reports */
+#endif
 
 double	pctdone = 0.0;			/* percentage done */
 

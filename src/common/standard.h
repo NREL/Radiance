@@ -64,9 +64,14 @@ extern char  *memcpy(), *memset();
 #define	 rindex			strrchr
 #endif
 
+#ifndef atof
+extern double  atof();
+#endif
 extern char  *sskip();
 extern char  *getpath(), *getenv();
+#ifndef malloc
 extern char  *malloc(), *calloc(), *realloc();
+#endif
 extern char  *bmalloc(), *savestr(), *savqstr();
 
 #ifdef MSDOS
