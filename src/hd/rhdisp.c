@@ -273,7 +273,7 @@ again:
 	if (!dev_view(v))	/* notify display driver */
 		goto again;
 	dev_flush();		/* update screen */
-	beam_init();		/* compute new beam set */
+	beam_init(0);		/* compute new beam set */
 	for (i = 0; (dv = dev_auxview(i, res)) != NULL; i++)
 		if (!beam_view(dv, res[0], res[1])) {
 			if (!nhist) {
