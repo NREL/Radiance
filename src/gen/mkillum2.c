@@ -111,7 +111,7 @@ char  *nm;
 		    for (j = 0; j < 3; j++)
 			org[j] += .001*fa->norm[j];
 					/* send sample */
-		    raysamp(distarr+dim[1]*nazi+dim[2], org, dir, rt);
+		    raysamp(distarr+3*(dim[1]*nazi+dim[2]), org, dir, rt);
 		}
 	rayflush(rt);
 				/* write out the face w/ distribution */
@@ -179,7 +179,7 @@ char  *nm;
 			dir[j] = -dir[j];
 		    }
 					/* send sample */
-		    raysamp(distarr+dim[1]*nazi+dim[2], org, dir, rt);
+		    raysamp(distarr+3*(dim[1]*nazi+dim[2]), org, dir, rt);
 		}
 	    }
 	rayflush(rt);
@@ -243,7 +243,7 @@ char  *nm;
 					.001*co->ad[j];
 
 					/* send sample */
-		    raysamp(distarr+dim[1]*nazi+dim[2], org, dir, rt);
+		    raysamp(distarr+3*(dim[1]*nazi+dim[2]), org, dir, rt);
 		}
 	rayflush(rt);
 				/* write out the ring w/ distribution */
