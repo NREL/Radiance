@@ -121,7 +121,7 @@ double  newa;
 setambient(afile)			/* initialize calculation */
 char  *afile;
 {
-	long  headlen;
+	long  pos, flen;
 	AMBVAL	amb;
 						/* init ambient limits */
 	setambres(ambres);
@@ -137,11 +137,19 @@ char  *afile;
 						/* open ambient file */
 	if ((ambfp = fopen(afile, "r+")) != NULL) {
 		initambfile(0);
-		headlen = ftell(ambfp);
+		pos = ftell(ambfp);
 		while (readambval(&amb, ambfp))
 			avinsert(avstore(&amb));
 						/* align */
-		fseek(ambfp, -((ftell(ambfp)-headlen)%AMBVALSIZ), 1);
+		pos += (long)nambvals*AMBVALSIZ;
+		flen = lseek(fileno(ambfp), 0L, 2);
+		if (flen != pos) {
+			error(WARNING,
+			"ignoring last %ld values in ambient file (corrupted)",
+					(flen - pos)/AMBVALSIZ);
+			fseek(ambfp, pos, 0);
+			ftruncate(fileno(ambfp), pos);
+		}
 		nambshare = nambvals;
 	} else if ((ambfp = fopen(afile, "w+")) != NULL)
 		initambfile(1);
@@ -731,7 +739,13 @@ ambsync()			/* synchronize ambient file */
 		if (fseek(ambinp, lastpos, 0) < 0)
 			goto seekerr;
 		while (n >= AMBVALSIZ) {	/* load contributed values */
-			readambval(&avs, ambinp);
+			if (!readambval(&avs, ambinp)) {
+				sprintf(errmsg,
+				"ambient file corrupted near character %ld",
+						flen - n);
+				error(WARNING, errmsg);
+				break;
+			}
 			avinsert(avstore(&avs));
 			n -= AMBVALSIZ;
 		}
