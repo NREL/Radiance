@@ -28,13 +28,13 @@ static FILE	*dpout;
 disp_open(dname)		/* open the named display driver */
 char	*dname;
 {
-	char	dpath[128], fd0[8], fd1[8], *cmd[5];
-	int	i;
+	char	buf[128], fd0[8], fd1[8], *cmd[5], *ofn;
+	int	i, n;
 				/* get full display program name */
 #ifdef DEVPATH
-	sprintf(dpath, "%s/%s%s", DEVPATH, dname, HDSUF);
+	sprintf(buf, "%s/%s%s", DEVPATH, dname, HDSUF);
 #else
-	sprintf(dpath, "dev/%s%s", dname, HDSUF);
+	sprintf(buf, "dev/%s%s", dname, HDSUF);
 #endif
 				/* dup stdin and stdout */
 	if (readinp)
@@ -43,7 +43,7 @@ char	*dname;
 		strcpy(fd0, "-1");
 	sprintf(fd1, "%d", dup(1));
 				/* start the display process */
-	cmd[0] = dpath;
+	cmd[0] = buf;
 	cmd[1] = froot; cmd[2] = fd1; cmd[3] = fd0;
 	cmd[4] = NULL;
 	i = open_process(dpd, cmd);
@@ -62,13 +62,18 @@ char	*dname;
 		disp_result(DS_OUTSECT, 0, NULL);
 				/* send eye separation if specified */
 	if (vdef(EYESEP)) {
-		char	fbuf[32];
-		sprintf(fbuf, "%.9e", vflt(EYESEP));
-		disp_result(DS_EYESEP, strlen(fbuf)+1, fbuf);
+		sprintf(buf, "%.9e", vflt(EYESEP));
+		disp_result(DS_EYESEP, strlen(buf)+1, buf);
 	}
-				/* write out hologram grids */
-	for (i = 0; hdlist[i] != NULL; i++)
-		disp_result(DS_ADDHOLO, sizeof(HDGRID), (char *)hdlist[i]);
+				/* write out hologram grids & octrees */
+	for (i = 0; hdlist[i] != NULL; i++) {
+		bcopy((char *)hdlist[i], buf, sizeof(HDGRID));
+		n = vdef(OSECTION);
+		ofn = i<n ? nvalue(OSECTION,i) :
+				n ? nvalue(OSECTION,n-1) : vval(OCTREE);
+		strcpy(buf+sizeof(HDGRID), ofn);
+		disp_result(DS_ADDHOLO, sizeof(HDGRID)+1+strlen(ofn), buf);
+	}
 	disp_flush();
 }
 
@@ -228,6 +233,7 @@ disp_close()			/* close our display process */
 
 	if (dpout == NULL)
 		return(-1);
+	myeye.rng = 0;
 	disp_result(DS_SHUTDOWN, 0, NULL);
 	fclose(dpout);
 	dpout = NULL;

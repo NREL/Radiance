@@ -13,6 +13,7 @@ extern struct driver {
 	VIEW	v;		/* base view parameters */
 	int	hres, vres;	/* base view resolution */
 	int	ifd;		/* input file descriptor (for select) */
+	int	firstuse;	/* non-zero if driver can't recycle samples */
 	int	inpready;	/* number of unprocessed input events */
 } odev;			/* our open device */
 
@@ -132,6 +133,22 @@ views.  The zeroeth auxiliary view is the base view itself.
 
 
 void
+dev_section(otf)	: add octree geometry for rendering
+char	*otf;		: octree and portal file names
+
+Add the given octree file to the list of geometry to be used to render
+intermediate views if direct geometry rendering is available.  Additional
+file names (separated by spaces) are Radiance scene files containing
+the geometry for "portals" to separate sections.  The given
+character string is guaranteed to be static (or permanently allocated)
+such that it may be safely stored as a pointer.  The same pointer or
+file list may be (and often is) given repeatedly.  If a given octree
+does not exist, the call should be silently ignored.  If otn is NULL,
+then the last octree has been given, and the display can be updated
+with the new information.
+
+
+void
 dev_close()		: close the display
 
 Close the display device and free up resources in preparation for exit.
@@ -142,3 +159,5 @@ Set odev.v.type=0 and odev.hres=odev.vres=0 when done.
 
 
 extern VIEW	*dev_auxview();
+
+extern int	*beam_view();
