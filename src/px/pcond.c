@@ -1,4 +1,4 @@
-/* Copyright (c) 1996 Regents of the University of California */
+/* Copyright (c) 1997 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -357,8 +357,8 @@ fovhist()			/* create foveal sampled image and histogram */
 	if (lwmin < LMIN) lwmin = LMIN;
 	if (lwmax > LMAX) lwmax = LMAX;
 					/* compute histogram */
-	bwmin = Bl(lwmin)*(1. - .01/HISTRES);
-	bwmax = Bl(lwmax)*(1. + .01/HISTRES);
+	bwmin = Bl(lwmin);
+	bwmax = Bl(lwmax);
 	bwavg = 0.;
 	for (y = 0; y < fvyr; y++)
 		for (x = 0; x < fvxr; x++) {
@@ -366,9 +366,9 @@ fovhist()			/* create foveal sampled image and histogram */
 					frandom() > centprob(x,y))
 				continue;
 			l = plum(fovscan(y)[x]);
+			if (l < lwmin) continue;
+			if (l > lwmax) continue;
 			b = Bl(l);
-			if (b < bwmin) continue;
-			if (b > bwmax) continue;
 			bwavg += b;
 			bwhc(b)++;
 			histot++;
