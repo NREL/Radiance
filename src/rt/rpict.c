@@ -112,7 +112,7 @@ char  *oldfile;
 	}
 	
 					/* write out boundaries */
-	printf("-Y %d +X %d\n", ourview.vresolu, ourview.hresolu);
+	fputresolu(YMAJOR|YDECR, ourview.hresolu, ourview.vresolu, stdout);
 
 	ypos = ourview.vresolu - salvage(oldfile);	/* find top line */
 	fillscanline(scanbar[0], ypos, psample);	/* top scan */
@@ -263,7 +263,7 @@ char  *oldfile;
 				/* discard header */
 	getheader(fp, NULL);
 				/* get picture size */
-	if (fscanf(fp, "-Y %d +X %d\n", &y, &x) != 2) {
+	if (fgetresolu(&x, &y, fp) != (YMAJOR|YDECR)) {
 		sprintf(errmsg, "bad recover file \"%s\"", oldfile);
 		error(WARNING, errmsg);
 		fclose(fp);
