@@ -26,9 +26,12 @@ LUTAB	rmats = LU_SINIT(free,NULL);		/* defined material table */
 
 LUTAB	rdispatch = LU_SINIT(NULL,NULL);	/* function dispatch table */
 
-char	curmat[80];		/* current material */
+char	curmat[80];				/* current material */
+char	curobj[128] = "Untitled";		/* current object name */
 
-double	unit_mult = 1.;		/* units multiplier */
+double	unit_mult = 1.;				/* units multiplier */
+
+#define hasmult		(unit_mult < .999 || unit_mult > 1.001)
 
 
 main(argc, argv)
@@ -85,7 +88,7 @@ char	*inp;
 	register int	c;
 
 	if (inp == NULL) {
-		inp = "the standard input";
+		inp = "standard input";
 		fp = stdin;
 	} else if (inp[0] == '!') {
 		if ((fp = popen(inp+1, "r")) == NULL) {
@@ -209,8 +212,33 @@ char	*id;
 {
 	if (!strcmp(id, curmat))	/* already set? */
 		return;
+	if (!strcmp(id, VOIDID))	/* cannot set */
+		return;
 	printf("m %s\n", id);
 	strcpy(curmat, id);
+}
+
+
+setobj(id)			/* set object name to this one */
+char	*id;
+{
+	register char	*cp, *cp2;
+	char	*end = NULL;
+	int	diff = 0;
+				/* use all but final suffix */
+	for (cp = id; *cp; cp++)
+		if (*cp == '.')
+			end = cp;
+	if (end == NULL)
+		end = cp;
+				/* copy to current object */
+	for (cp = id, cp2 = curobj; cp < end; *cp2++ = *cp++)
+		diff += *cp != *cp2;
+	if (!diff && !*cp2)
+		return;
+	*cp2 = '\0';
+	fputs("o\no ", stdout);
+	puts(curobj);
 }
 
 
@@ -239,14 +267,16 @@ init()			/* initialize dispatch table and output */
 	add2dispatch("glow", o_light);
 	add2dispatch("illum", o_illum);
 	puts("# The following was converted from Radiance scene input");
-	if (unit_mult < .999 || unit_mult > 1.001)
+	if (hasmult)
 		printf("xf -s %.4e\n", unit_mult);
+	printf("o %s\n", curobj);
 }
 
 
 uninit()			/* mark end of MGF file */
 {
-	if (unit_mult < .999 || unit_mult > 1.001)
+	puts("o");
+	if (hasmult)
 		puts("xf");
 	puts("# End of data converted from Radiance scene input");
 	lu_done(&rdispatch);
@@ -271,6 +301,10 @@ int	(*func)();
 }
 
 
+/*
+ * Stuff for tracking and reusing vertices:
+ */
+
 char	VKFMT[] = "%+1.9e %+1.9e %+1.9e";
 #define VKLEN		64
 
@@ -289,10 +323,10 @@ LUTAB	vertab = LU_SINIT(free,NULL);	/* our vertex lookup table */
 
 
 char *
-getvertid(vp)			/* get/set vertex ID for this point */
+getvertid(vname, vp)		/* get/set vertex ID for this point */
+char	*vname;
 FVECT	vp;
 {
-	static char	vname[6];
 	char	vkey[VKLEN];
 	register LUENT	*lp;
 	register int	i, vndx;
@@ -321,7 +355,7 @@ FVECT	vp;
 		}
 		vert[vndx].lused = clock;			/* assign it */
 		VCOPY(vert[vndx].p, vp);
-		printf("v v%d =\np %.15g %.15g %.15g\n",	/* print it */
+		printf("v v%d =\n\tp %.15g %.15g %.15g\n",	/* print it */
 				vndx, vp[0], vp[1], vp[2]);
 		lp->data = (char *)&vert[vndx];			/* set it */
 	} else
@@ -340,23 +374,22 @@ char	*mod, *typ, *id;
 FUNARGS	*fa;
 {
 	char	entbuf[512];
-	register char	*cp1, *cp2;
+	register char	*cp;
 	register int	i;
 
 	if (fa->nfargs < 9 | fa->nfargs % 3)
 		return(-1);
 	setmat(mod);
-	printf("o %s\n", id);
-	cp1 = entbuf;
-	*cp1++ = 'f';
+	setobj(id);
+	cp = entbuf;
+	*cp++ = 'f';
 	for (i = 0; i < fa->nfargs; i += 3) {
-		cp2 = getvertid(fa->farg + i);
-		*cp1++ = ' ';
-		while ((*cp1 = *cp2++))
-			cp1++;
+		*cp++ = ' ';
+		getvertid(cp, fa->farg + i);
+		while (*cp)
+			cp++;
 	}
 	puts(entbuf);
-	puts("o");
 	return(0);
 }
 
@@ -366,21 +399,20 @@ o_cone(mod, typ, id, fa)	/* print out a cone */
 char	*mod, *typ, *id;
 register FUNARGS	*fa;
 {
+	char	v1[6], v2[6];
+
 	if (fa->nfargs != 8)
 		return(-1);
 	setmat(mod);
-	printf("o %s\n", id);
-	printf("v cv1 =\np %.12g %.12g %.12g\n",
-			fa->farg[0], fa->farg[1], fa->farg[2]);
-	printf("v cv2 =\np %.12g %.12g %.12g\n",
-			fa->farg[3], fa->farg[4], fa->farg[5]);
+	setobj(id);
+	getvertid(v1, fa->farg);
+	getvertid(v2, fa->farg + 3);
 	if (typ[1] == 'u')			/* cup -> inverted cone */
-		printf("cone cv1 %.12g cv2 %.12g\n",
-				-fa->farg[6], -fa->farg[7]);
+		printf("cone %s %.12g %s %.12g\n",
+				v1, -fa->farg[6], v2, -fa->farg[7]);
 	else
-		printf("cone cv1 %.12g cv2 %.12g\n",
-				fa->farg[6], fa->farg[7]);
-	puts("o");
+		printf("cone %s %.12g %s %.12g\n",
+				v1, fa->farg[6], v2, fa->farg[7]);
 	return(0);
 }
 
@@ -390,14 +422,14 @@ o_sphere(mod, typ, id, fa)	/* print out a sphere */
 char	*mod, *typ, *id;
 register FUNARGS	*fa;
 {
+	char	cent[6];
+
 	if (fa->nfargs != 4)
 		return(-1);
 	setmat(mod);
-	printf("o %s\n", id);
-	printf("v cent =\np %.12g %.12g %.12g\n",
-			fa->farg[0], fa->farg[1], fa->farg[2]);
-	printf("sph cent %.12g\n", typ[0]=='b' ? -fa->farg[3] : fa->farg[3]);
-	puts("o");
+	setobj(id);
+	printf("sph %s %.12g\n", getvertid(cent, fa->farg),
+			typ[0]=='b' ? -fa->farg[3] : fa->farg[3]);
 	return(0);
 }
 
@@ -407,17 +439,16 @@ o_cylinder(mod, typ, id, fa)	/* print out a cylinder */
 char	*mod, *typ, *id;
 register FUNARGS	*fa;
 {
+	char	v1[6], v2[6];
+
 	if (fa->nfargs != 7)
 		return(-1);
 	setmat(mod);
-	printf("o %s\n", id);
-	printf("v cv1 =\np %.12g %.12g %.12g\n",
-			fa->farg[0], fa->farg[1], fa->farg[2]);
-	printf("v cv2 =\np %.12g %.12g %.12g\n",
-			fa->farg[3], fa->farg[4], fa->farg[5]);
-	printf("cyl cv1 %.12g cv2\n",
-			typ[0]=='t' ? -fa->farg[6] : fa->farg[6]);
-	puts("o");
+	setobj(id);
+	getvertid(v1, fa->farg);
+	getvertid(v2, fa->farg + 3);
+	printf("cyl %s %.12g %s\n", v1,
+			typ[0]=='t' ? -fa->farg[6] : fa->farg[6], v2);
 	return(0);
 }
 
@@ -430,10 +461,10 @@ register FUNARGS	*fa;
 	if (fa->nfargs != 8)
 		return(-1);
 	setmat(mod);
-	printf("o %s\n", id);
-	printf("v cent =\np %.12g %.12g %.12g\n",
+	setobj(id);
+	printf("v cent =\n\tp %.12g %.12g %.12g\n",
 			fa->farg[0], fa->farg[1], fa->farg[2]);
-	printf("n %.12g %.12g %.12g\n",
+	printf("\tn %.12g %.12g %.12g\n",
 			fa->farg[3], fa->farg[4], fa->farg[5]);
 	if (fa->farg[6] < fa->farg[7])
 		printf("ring cent %.12g %.12g\n",
@@ -441,7 +472,6 @@ register FUNARGS	*fa;
 	else
 		printf("ring cent %.12g %.12g\n",
 				fa->farg[7], fa->farg[6]);
-	puts("o");
 	return(0);
 }
 
@@ -451,7 +481,38 @@ o_instance(mod, typ, id, fa)	/* convert an instance */
 char	*mod, *typ, *id;
 FUNARGS	*fa;
 {
-	return(0);		/* this is too damned difficult! */
+	register int	i;
+	register char	*cp;
+	char	*start = NULL, *end = NULL;
+	/*
+	 * We don't really know how to do this, so we just create
+	 * a reference to an undefined MGF file and it's the user's
+	 * responsibility to create this file and put the appropriate
+	 * stuff into it.
+	 */
+	if (fa->nsargs < 1)
+		return(-1);
+	setmat(mod);			/* only works if surfaces are void */
+	setobj(id);
+	for (cp = fa->sarg[0]; *cp; cp++)	/* construct MGF file name */
+		if (*cp == '/')
+			start = cp+1;
+		else if (*cp == '.')
+			end = cp;
+	if (start == NULL)
+		start = fa->sarg[0];
+	if (end == NULL || start >= end)
+		end = cp;
+	fputs("i ", stdout);			/* print include entity */
+	for (cp = start; cp < end; cp++)
+		putchar(*cp);
+	fputs(".mgf", stdout);			/* add MGF suffix */
+	for (i = 1; i < fa->nsargs; i++) {	/* add transform */
+		putchar(' ');
+		fputs(fa->sarg[i], stdout);
+	}
+	putchar('\n');
+	return(0);
 }
 
 
@@ -475,7 +536,7 @@ FUNARGS	*fa;
 	}
 					/* else create invisible material */
 	newmat(id, NULL);
-	puts("ts 1 0");
+	puts("\tts 1 0");
 	return(0);
 }
 
@@ -493,15 +554,17 @@ register FUNARGS	*fa;
 	newmat(id, NULL);
 	rrgb[0] = fa->farg[0]; rrgb[1] = fa->farg[1]; rrgb[2] = fa->farg[2];
 	rgb_cie(cxyz, rrgb);
-	puts("c");				/* put diffuse component */
+	puts("\tc");				/* put diffuse component */
 	d = cxyz[0] + cxyz[1] + cxyz[2];
 	if (d > FTINY)
-		printf("cxy %.4f %.4f\n", cxyz[0]/d, cxyz[1]/d);
-	printf("rd %.4f\n", cxyz[1]*(1. - fa->farg[3]));
-	puts("c");				/* put specular component */
-	printf("rs %.4f %.4f\n", fa->farg[3],
-			typ[7]=='2' ? .5*(fa->farg[4] + fa->farg[5]) :
-					fa->farg[4]);
+		printf("\t\tcxy %.4f %.4f\n", cxyz[0]/d, cxyz[1]/d);
+	printf("\trd %.4f\n", cxyz[1]*(1. - fa->farg[3]));
+	if (fa->farg[3] > FTINY) {		/* put specular component */
+		puts("\tc");
+		printf("\trs %.4f %.4f\n", fa->farg[3],
+				typ[7]=='2' ? .5*(fa->farg[4] + fa->farg[5]) :
+						fa->farg[4]);
+	}
 	return(0);
 }
 
@@ -519,13 +582,13 @@ register FUNARGS	*fa;
 	newmat(id, NULL);
 	rrgb[0] = fa->farg[0]; rrgb[1] = fa->farg[1]; rrgb[2] = fa->farg[2];
 	rgb_cie(cxyz, rrgb);
-	puts("c");				/* put diffuse component */
+	puts("\tc");				/* put diffuse component */
 	d = cxyz[0] + cxyz[1] + cxyz[2];
 	if (d > FTINY)
-		printf("cxy %.4f %.4f\n", cxyz[0]/d, cxyz[1]/d);
-	printf("rd %.4f\n", cxyz[1]*(1. - fa->farg[3]));
+		printf("\t\tcxy %.4f %.4f\n", cxyz[0]/d, cxyz[1]/d);
+	printf("\trd %.4f\n", cxyz[1]*(1. - fa->farg[3]));
 						/* put specular component */
-	printf("rs %.4f %.4f\n", cxyz[1]*fa->farg[3],
+	printf("\trs %.4f %.4f\n", cxyz[1]*fa->farg[3],
 			typ[5]=='2' ? .5*(fa->farg[4] + fa->farg[5]) :
 					fa->farg[4]);
 	return(0);
@@ -549,22 +612,23 @@ register FUNARGS	*fa;
 	F = (1. - nrfr)/(1. + nrfr);		/* use normal incidence */
 	F *= F;
 	for (i = 0; i < 3; i++) {
-		rrgb[i] = (1. - F)*(1. - F)/(1. - F*F*fa->farg[i]*fa->farg[i]);
-		trgb[i] = F * (1. + (1. - 2.*F)*fa->farg[i]) /
+		trgb[i] = fa->farg[i] * (1. - F)*(1. - F) /
+				(1. - F*F*fa->farg[i]*fa->farg[i]);
+		rrgb[i] = F * (1. + (1. - 2.*F)*fa->farg[i]) /
 				(1. - F*F*fa->farg[i]*fa->farg[i]);
 	}
 	rgb_cie(cxyz, rrgb);			/* put reflected component */
-	puts("c");
+	puts("\tc");
 	d = cxyz[0] + cxyz[1] + cxyz[2];
 	if (d > FTINY)
-		printf("cxy %.4f %.4f\n", cxyz[0]/d, cxyz[1]/d);
-	printf("rs %.4f 0\n", cxyz[1]);
+		printf("\t\tcxy %.4f %.4f\n", cxyz[0]/d, cxyz[1]/d);
+	printf("\trs %.4f 0\n", cxyz[1]);
 	rgb_cie(cxyz, trgb);			/* put transmitted component */
-	puts("c");
+	puts("\tc");
 	d = cxyz[0] + cxyz[1] + cxyz[2];
 	if (d > FTINY)
-		printf("cxy %.4f %.4f\n", cxyz[0]/d, cxyz[1]/d);
-	printf("ts %.4f 0\n", cxyz[1]);
+		printf("\t\tcxy %.4f %.4f\n", cxyz[0]/d, cxyz[1]/d);
+	printf("\tts %.4f 0\n", cxyz[1]);
 	return(0);
 }
 
@@ -586,11 +650,11 @@ register FUNARGS	*fa;
 	newmat(id, NULL);
 	rrgb[0] = fa->farg[0]; rrgb[1] = fa->farg[1]; rrgb[2] = fa->farg[2];
 	rgb_cie(cxyz, rrgb);
-	puts("c");				/* put specular component */
+	puts("\tc");				/* put specular component */
 	d = cxyz[0] + cxyz[1] + cxyz[2];
 	if (d > FTINY)
-		printf("cxy %.4f %.4f\n", cxyz[0]/d, cxyz[1]/d);
-	printf("rs %.4f 0\n", cxyz[1]);
+		printf("\t\tcxy %.4f %.4f\n", cxyz[0]/d, cxyz[1]/d);
+	printf("\trs %.4f 0\n", cxyz[1]);
 	return(0);
 }
 
@@ -619,17 +683,17 @@ register FUNARGS	*fa;
 	newmat(id, NULL);
 	rrgb[0] = fa->farg[0]; rrgb[1] = fa->farg[1]; rrgb[2] = fa->farg[2];
 	rgb_cie(cxyz, rrgb);
-	puts("c");				/* put transmitted diffuse */
+	puts("\tc");				/* put transmitted diffuse */
 	d = cxyz[0] + cxyz[1] + cxyz[2];
 	if (d > FTINY)
-		printf("cxy %.4f %.4f\n", cxyz[0]/d, cxyz[1]/d);
-	printf("td %.4f\n", cxyz[1]*trans*(1. - fa->farg[3])*(1. - tspec));
+		printf("\t\tcxy %.4f %.4f\n", cxyz[0]/d, cxyz[1]/d);
+	printf("\ttd %.4f\n", cxyz[1]*trans*(1. - fa->farg[3])*(1. - tspec));
 						/* put transmitted specular */
-	printf("ts %.4f %.4f\n", cxyz[1]*trans*tspec*(1. - fa->farg[3]), rough);
+	printf("\tts %.4f %.4f\n", cxyz[1]*trans*tspec*(1. - fa->farg[3]), rough);
 						/* put reflected diffuse */
-	printf("rd %.4f\n", cxyz[1]*(1. - fa->farg[3])*(1. - trans));
-	puts("c");				/* put reflected specular */
-	printf("rs %.4f %.4f\n", fa->farg[3], rough);
+	printf("\trd %.4f\n", cxyz[1]*(1. - fa->farg[3])*(1. - trans));
+	puts("\tc");				/* put reflected specular */
+	printf("\trs %.4f %.4f\n", fa->farg[3], rough);
 	return(0);
 }
 
@@ -648,9 +712,9 @@ register FUNARGS	*fa;
 	rrgb[0] = fa->farg[0]; rrgb[1] = fa->farg[1]; rrgb[2] = fa->farg[2];
 	rgb_cie(cxyz, rrgb);
 	d = cxyz[0] + cxyz[1] + cxyz[2];
-	puts("c");
+	puts("\tc");
 	if (d > FTINY)
-		printf("cxy %.4f %.4f\n", cxyz[0]/d, cxyz[1]/d);
-	printf("ed %.4g\n", cxyz[1]);
+		printf("\t\tcxy %.4f %.4f\n", cxyz[0]/d, cxyz[1]/d);
+	printf("\ted %.4g\n", cxyz[1]*WHTEFFICACY);
 	return(0);
 }
