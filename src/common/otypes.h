@@ -59,10 +59,11 @@ typedef struct {
 #define  MIX_FUNC	42		/* mixing function */
 #define  MIX_DATA	43		/* mixing data */
 #define  MIX_TEXT	44		/* mixing text */
-#define  MAT_DIRECT1	45		/* unidirecting material */
-#define  MAT_DIRECT2	46		/* bidirecting material */
+#define  MIX_PICT	45		/* mixing picture */
+#define  MAT_DIRECT1	46		/* unidirecting material */
+#define  MAT_DIRECT2	47		/* bidirecting material */
 				/* number of object types */
-#define  NUMOTYPE	47
+#define  NUMOTYPE	48
 				/* type flags */
 #define  T_S		01		/* surface (object) */
 #define  T_M		02		/* material */
@@ -141,6 +142,7 @@ extern int  o_default();
 				{ "mixfunc",	T_X|T_F,	o_default }, \
 				{ "mixdata",	T_X|T_D,	o_default }, \
 				{ "mixtext",	T_X|T_E,	o_default }, \
+				{ "mixpict",	T_X|T_I,	o_default }, \
 				{ "prism1",	T_M|T_F|T_LV,	o_default }, \
 				{ "prism2",	T_M|T_F|T_LV,	o_default }, \
 			}
