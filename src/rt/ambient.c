@@ -100,14 +100,12 @@ COLOR  acol;
 register RAY  *r;
 {
 	static int  rdepth = 0;			/* ambient recursion */
-	double  wsum;
-
-	rdepth++;				/* increment level */
+	double  d;
 
 	if (ambdiv <= 0)			/* no ambient calculation */
 		goto dumbamb;
 						/* check number of bounces */
-	if (rdepth > ambounce)
+	if (rdepth >= ambounce)
 		goto dumbamb;
 						/* check ambient list */
 	if (ambincl != -1 && r->ro != NULL &&
@@ -115,30 +113,35 @@ register RAY  *r;
 		goto dumbamb;
 
 	if (ambacc <= FTINY) {			/* no ambient storage */
-		if (doambient(acol, r, NULL, NULL) == 0.0)
+		rdepth++;
+		d = doambient(acol, r, r->rweight, NULL, NULL);
+		rdepth--;
+		if (d == 0.0)
 			goto dumbamb;
-		goto done;
+		return;
 	}
 						/* get ambient value */
 	setcolor(acol, 0.0, 0.0, 0.0);
-	wsum = sumambient(acol, r, &atrunk, thescene.cuorg, thescene.cusize);
-	if (wsum > FTINY)
-		scalecolor(acol, 1.0/wsum);
-	else if (makeambient(acol, r) == 0.0)
-		goto dumbamb;
-	goto done;
-
+	d = sumambient(acol, r, rdepth,
+			&atrunk, thescene.cuorg, thescene.cusize);
+	if (d > FTINY)
+		scalecolor(acol, 1.0/d);
+	else {
+		d = makeambient(acol, r, rdepth++);
+		rdepth--;
+	}
+	if (d > FTINY)
+		return;
 dumbamb:					/* return global value */
 	copycolor(acol, ambval);
-done:						/* must finish here! */
-	rdepth--;
 }
 
 
 double
-sumambient(acol, r, at, c0, s)		/* get interpolated ambient value */
+sumambient(acol, r, al, at, c0, s)	/* get interpolated ambient value */
 COLOR  acol;
 register RAY  *r;
+int  al;
 AMBTREE  *at;
 FVECT  c0;
 double  s;
@@ -154,9 +157,9 @@ double  s;
 	wsum = 0.0;
 	for (av = at->alist; av != NULL; av = av->next) {
 		/*
-		 *  Ray strength test.
+		 *  Ambient level test.
 		 */
-		if (av->lvl > r->rlvl || av->weight < r->rweight-FTINY)
+		if (av->lvl > al || av->weight < r->rweight-FTINY)
 			continue;
 		/*
 		 *  Ambient radius test.
@@ -216,28 +219,32 @@ double  s;
 				break;
 		}
 		if (j == 3)
-			wsum += sumambient(acol, r, at->kid+i, ck0, s);
+			wsum += sumambient(acol, r, al, at->kid+i, ck0, s);
 	}
 	return(wsum);
 }
 
 
 double
-makeambient(acol, r)		/* make a new ambient value */
+makeambient(acol, r, al)	/* make a new ambient value */
 COLOR  acol;
 register RAY  *r;
+int  al;
 {
 	AMBVAL  amb;
 	FVECT	gp, gd;
-
-	amb.rad = doambient(acol, r, gp, gd);	/* compute ambient */
+						/* compute weight */
+	amb.weight = pow(AVGREFL, (double)al);
+	if (r->rweight < 0.1*amb.weight)	/* heuristic */
+		amb.weight = r->rweight;
+						/* compute ambient */
+	amb.rad = doambient(acol, r, amb.weight, gp, gd);
 	if (amb.rad == 0.0)
 		return(0.0);
 						/* store it */
 	VCOPY(amb.pos, r->rop);
 	VCOPY(amb.dir, r->ron);
-	amb.lvl = r->rlvl;
-	amb.weight = r->rweight;
+	amb.lvl = al;
 	copycolor(amb.val, acol);
 	VCOPY(amb.gpos, gp);
 	VCOPY(amb.gdir, gd);
