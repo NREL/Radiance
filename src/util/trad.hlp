@@ -1,9 +1,9 @@
-	$Id: trad.hlp,v 2.5 1994/11/06 09:39:09 greg Exp $
+	$Id: trad.hlp,v 2.6 1994/12/02 14:02:12 greg Exp $
 
 This help file is associated with the trad interface to the Radiance
 rad(1) program.  Trad consists of trad.wsh and one do_*.tcl file for
-each screen.  There are currently seven such screens:  Action, File,
-Options, Results, Scene, Views and Zone.
+each screen.  There are currently seven such screens:  File, Scene,
+Zone, Views, Options, Action and Results.
 
 .Trad.Intro
 
@@ -1055,6 +1055,12 @@ just to the right.
 Other views may be accessed within rview using the "L name"
 command, and new views can be added with the "V name"
 command.
+
+When using the "V" command to change an existing view, do not
+give it a name because the previous view will not be overridden.
+Instead, give it a new name (or no name, which will show up as
+a number later), then use the Views screen to override the previous
+view definition with the new one.
 (See the rview(1) man page and the "View" topic in the current
 help category for more information.)
 
