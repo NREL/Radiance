@@ -20,7 +20,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *  All values default to ascii representation of real
  *  numbers.  Binary representations can be selected
  *  with '-ff' for float or '-fd' for double.  By default,
- *  radiance is computed.  The '-i' option indicates that
+ *  radiance is computed.  The '-oi' or '-oI' options indicate that
  *  irradiance values are desired.
  */
 
@@ -65,6 +65,12 @@ static int  puta(), putf(), putd();
 
 static int  (*putreal)();
 
+static double  Lambfa[5] = {PI, PI, PI, 0.0, 0.0};
+static OBJREC  Lamb = {
+	OVOID, MAT_PLASTIC, "Lambertian",
+	{0, 5, NULL, Lambfa}, NULL, -1,
+};					/* a Lambertian surface */
+
 
 quit(code)			/* quit program */
 int  code;
@@ -105,6 +111,8 @@ char  *fname;
 							/* compute and print */
 		if (outvals[0] == 'i')
 			irrad(orig, direc);
+		else if (outvals[0] == 'I')
+			Irrad(orig, direc);
 		else
 			radiance(orig, direc);
 							/* flush if time */
@@ -197,11 +205,6 @@ FVECT  org, dir;
 irrad(org, dir)			/* compute irradiance value */
 FVECT  org, dir;
 {
-	static double  Lambfa[5] = {PI, PI, PI, 0.0, 0.0};
-	static OBJREC  Lamb = {
-		OVOID, MAT_PLASTIC, "Lambertian",
-		{0, 5, NULL, Lambfa}, NULL, -1,
-	};
 	register int  i;
 
 	for (i = 0; i < 3; i++) {
@@ -217,6 +220,22 @@ FVECT  org, dir;
 		thisray.rop[i] = org[i] + 1e-4*dir[i];
 					/* compute and print */
 	(*ofun[Lamb.otype].funp)(&Lamb, &thisray);
+	oputv(&thisray);
+	if (outform == 'a')
+		putchar('\n');
+}
+
+
+Irrad(org, dir)		/* compute irradiance value after intersection */
+FVECT  org, dir;
+{
+					/* compute intersection */
+	VCOPY(thisray.rorg, org);
+	VCOPY(thisray.rdir, dir);
+	rayorigin(&thisray, NULL, PRIMARY, 1.0);
+	localhit(&thisray, &thescene);
+	if (thisray.ro != NULL)		/* pretend we hit Lambertian surf. */
+		(*ofun[Lamb.otype].funp)(&Lamb, &thisray);
 	oputv(&thisray);
 	if (outform == 'a')
 		putchar('\n');
