@@ -18,7 +18,12 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "random.h"
 
+#ifndef  OCTSCALE
 #define	 OCTSCALE	1.0	/* ceil((valid rad.)/(cube size)) */
+#endif
+#ifndef  AMBVWT
+#define  AMBVWT		250	/* relative ambient value weight (# calcs) */
+#endif
 
 typedef struct ambtree {
 	AMBVAL	*alist;		/* ambient value list */
@@ -54,8 +59,9 @@ static int  nunflshed = 0;	/* number of unflushed ambient values */
 #define MAX_SORT_INTVL	(SORT_INTVL<<4)
 #endif
 
+static COLOR  avsum = BLKCOLOR;		/* computed ambient value sum */
+static unsigned int  nambvals = 0;	/* number of computed ambient values */
 static unsigned long  ambclock = 0;	/* ambient access clock */
-static unsigned int  nambvals = 0;	/* number of stored ambient values */
 static unsigned long  lastsort = 0;	/* time of last value sort */
 static long  sortintvl = SORT_INTVL;	/* time until next sort */
 
@@ -196,7 +202,7 @@ register RAY  *r;
 		rdepth++;
 		d = doambient(acol, r, r->rweight, NULL, NULL);
 		rdepth--;
-		if (d == 0.0)
+		if (d <= FTINY)
 			goto dumbamb;
 		return;
 	}
@@ -206,16 +212,25 @@ register RAY  *r;
 	setcolor(acol, 0.0, 0.0, 0.0);
 	d = sumambient(acol, r, rdepth,
 			&atrunk, thescene.cuorg, thescene.cusize);
-	if (d > FTINY)
+	if (d > FTINY) {
 		scalecolor(acol, 1.0/d);
-	else {
-		d = makeambient(acol, r, rdepth++);
-		rdepth--;
+		return;
 	}
+	rdepth++;
+	d = makeambient(acol, r, rdepth-1);
+	rdepth--;
 	if (d > FTINY)
 		return;
 dumbamb:					/* return global value */
 	copycolor(acol, ambval);
+#if  AMBVWT
+	if (nambvals == 0)
+		return;
+	scalecolor(acol, (double)AMBVWT);
+	addcolor(acol, avsum);			/* average in computations */
+	d = 1.0/(AMBVWT+nambvals);
+	scalecolor(acol, d);
+#endif
 }
 
 
@@ -426,6 +441,7 @@ register AMBVAL  *aval;
 	copystruct(av, aval);
 	av->latick = ambclock;
 	av->next = NULL;
+	addcolor(avsum, av->val);	/* add to sum for averaging */
 	nambvals++;
 	return(av);
 }
@@ -662,7 +678,7 @@ int	always;
 		free((char *)avlist2);
 						/* compute new sort interval */
 		sortintvl = ambclock - lastsort;
-		if (sortintvl > MAX_SORT_INTVL)
+		if (sortintvl >= MAX_SORT_INTVL/2)
 			sortintvl = MAX_SORT_INTVL;
 		else
 			sortintvl <<= 1;	/* wait twice as long next */
