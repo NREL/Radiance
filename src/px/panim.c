@@ -100,7 +100,7 @@ char	*file;
 		exit(1);
 	}
 						/* get dimensions */
-	getheader(fp, NULL);
+	getheader(fp, NULL, NULL);
 	if (checkheader(fp, COLRFMT, NULL) < 0) {
 		fputs(file, stderr);
 		fputs(": not a Radiance picture\n", stderr);

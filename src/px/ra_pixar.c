@@ -161,7 +161,7 @@ int		*h;
       perror("open");
       exit(1);
    }
-   getheader(radiance_fp,NULL);
+   getheader(radiance_fp,NULL,NULL);
    if (fgetresolu(w, h, radiance_fp) < 0)
    {
       fprintf(stderr,"bad RADIANCE format\n");
