@@ -134,7 +134,7 @@ expandarg.o badarg.o xf.o:	rtio.h
 
 expandarg.o:	rtmisc.h
 
-dircode.o xf.o:	rtmath.h mat4.h fvect.h
+dircode.o xf.o:	rtmath.h mat4.h fvect.h tifftypes.h
 
 error.o:	rterror.h
 
