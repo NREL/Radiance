@@ -552,6 +552,8 @@ int  signo;
 	if (gotsig++)			/* two signals and we're gone! */
 		_exit(signo);
 
+	alarm(15);			/* allow 15 seconds to clean up */
+	signal(SIGALRM, SIG_DFL);	/* make certain we do die */
 	eputs("signal - ");
 	eputs(sigerr[signo]);
 	eputs("\n");
