@@ -131,7 +131,7 @@ double  x, y;
 		orig[2] = v->vp[2] + v->vfore*v->vdir[2]
 				+ x*v->hvec[2] + y*v->vvec[2];
 		VCOPY(direc, v->vdir);
-		return(v->vaft - v->vfore);
+		return(v->vaft > FTINY ? v->vaft - v->vfore : 0.0);
 	case VT_PER:			/* perspective view */
 		direc[0] = v->vdir[0] + x*v->hvec[0] + y*v->vvec[0];
 		direc[1] = v->vdir[1] + x*v->hvec[1] + y*v->vvec[1];
@@ -140,7 +140,7 @@ double  x, y;
 		orig[1] = v->vp[1] + v->vfore*direc[1];
 		orig[2] = v->vp[2] + v->vfore*direc[2];
 		d = normalize(direc);
-		return((v->vaft - v->vfore)*d);
+		return(v->vaft > FTINY ? (v->vaft - v->vfore)*d : 0.0);
 	case VT_HEM:			/* hemispherical fisheye */
 		z = 1.0 - x*x*v->hn2 - y*y*v->vn2;
 		if (z < 0.0)
@@ -152,7 +152,7 @@ double  x, y;
 		orig[0] = v->vp[0] + v->vfore*direc[0];
 		orig[1] = v->vp[1] + v->vfore*direc[1];
 		orig[2] = v->vp[2] + v->vfore*direc[2];
-		return(v->vaft - v->vfore);
+		return(v->vaft > FTINY ? v->vaft - v->vfore : 0.0);
 	case VT_ANG:			/* angular fisheye */
 		x *= v->horiz/180.0;
 		y *= v->vert/180.0;
@@ -170,7 +170,7 @@ double  x, y;
 		orig[0] = v->vp[0] + v->vfore*direc[0];
 		orig[1] = v->vp[1] + v->vfore*direc[1];
 		orig[2] = v->vp[2] + v->vfore*direc[2];
-		return(v->vaft - v->vfore);
+		return(v->vaft > FTINY ? v->vaft - v->vfore : 0.0);
 	}
 	return(-1.0);
 }
