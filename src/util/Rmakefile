@@ -15,7 +15,7 @@ INSTDIR = /usr/local/bin
 
 LIBDIR = /usr/local/lib/ray
 
-PROGS = findglare xglaresrc glarendx rpiece rad
+PROGS = findglare xglaresrc glarendx rpiece rad vwright
 
 TLIBFILES = do_action.tcl do_file.tcl do_options.tcl do_results.tcl \
 		do_scene.tcl do_views.tcl do_zone.tcl \
@@ -71,6 +71,9 @@ rad:	rad.o
 
 rpiece:	rpiece.o Version.o
 	$(CC) $(CFLAGS) -o rpiece rpiece.o Version.o -lrt -lm
+
+vwright:	vwright.o
+	$(CC) $(CFLAGS) -o vwright vwright.o -lrt -lm
 
 contour:	contour.o
 	$(CC) $(CFLAGS) -o contour contour.o -lm
