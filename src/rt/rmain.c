@@ -368,6 +368,13 @@ char  *argv[];
 	normaspect(viewaspect(&ourview), &pixaspect, &hresolu, &vresolu);
 #endif
 					/* set up signal handling */
+#ifdef  _AUX_SOURCE
+#include  <compat.h>
+	if ((rval = getcompat()) >= 0) {
+		rval |= COMPAT_BSDSIGNALS | COMPAT_SYSCALLS;
+		setcompat(rval);
+	}
+#endif
 	sigdie(SIGINT, "Interrupt");
 	sigdie(SIGHUP, "Hangup");
 	sigdie(SIGTERM, "Terminate");
