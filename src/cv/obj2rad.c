@@ -568,7 +568,22 @@ char	*v1, *v2, *v3;
 	if (!cvtndx(v1i, v1) || !cvtndx(v2i, v2) || !cvtndx(v3i, v3))
 		return(0);
 					/* compute barycentric coordinates */
-	texOK = !flatten && (v1i[2]>=0 && v2i[2]>=0 && v3i[2]>=0);
+	if (!flatten && v1i[2]>=0 && v2i[2]>=0 && v3i[2]>=0)
+		switch (flat_tri(vlist[v1i[0]], vlist[v2i[0]], vlist[v3i[0]],
+			vnlist[v1i[2]], vnlist[v2i[2]], vnlist[v3i[2]])) {
+		case DEGEN:		/* zero area */
+			return(-1);
+		case RVFLAT:		/* reversed normals, but flat */
+		case ISFLAT:		/* smoothing unnecessary */
+			texOK = 0;
+			break;
+		case RVBENT:		/* reversed normals with smoothing */
+		case ISBENT:		/* proper smoothing */
+			texOK = 1;
+			break;
+		}
+	else
+		texOK = 0;
 #ifdef TEXMAPS
 	patOK = mapname[0] && (v1i[1]>=0 && v2i[1]>=0 && v3i[1]>=0);
 #else

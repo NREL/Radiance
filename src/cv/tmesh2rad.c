@@ -211,7 +211,9 @@ register VERTEX	*v1, *v2, *v3;
 		if (comp_baryc(&bvecs, v1->pos, v2->pos, v3->pos) < 0)
 			return;
 					/* put out texture (if any) */
-	if (v1->flags & v2->flags & v3->flags & V_HASNORM) {
+	if (v1->flags & v2->flags & v3->flags & V_HASNORM &&
+			!flat_tri(v1->pos, v2->pos, v3->pos,
+					v1->nor, v2->nor, v3->nor)) {
 		printf("\n%s texfunc %s\n", mod, TEXNAME);
 		mod = TEXNAME;
 		printf("4 dx dy dz %s\n", TCALNAME);
