@@ -15,6 +15,7 @@ getinfo.c	program to read and manipulate binary file information headers
 glarendx.c	compute Glare Index given by program name or -t option
 glaresrc.c	gather samples and compute glare sources
 glareval.c	compute pixels for glare calculation
+glrad.c		render Radiance scene in OpenGL
 loadvars.c	routines to read variables for rad and ranimate
 makedist.c	program to make a source distribution (obsolete with mkillum)
 netproc.c	routines to control processes on local and remote hosts
