@@ -13,14 +13,16 @@ Most of the source files go directly into the parser library, with
 the following exceptions:
 
 	face2tri.C	- C++ converter from polygons to triangles
+	mgf2inv.c	- MGF to Inventor converter, complete
 	mgf2rad.c	- MGF to Radiance converter, missing some libraries
 	mgfilt.c	- MGF to MGF filter, compiled in Makefile
 	rad2mgf.c	- Radiance to MGF converter, missing some libraries
 
-The Makefile creates two useful items:
+The Makefile creates three useful items:
 
 	mgfilt		- a filter for MGF
 	libmgf.a	- the MGF parser library
+	mgf2inv		- a translator from MGF to Inventor (or VRML) format
 
 Before you compile, you should probably check to make sure that the
 compiler and flags you like are included.  If you're like me and lack
