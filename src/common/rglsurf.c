@@ -89,6 +89,23 @@ GLenum	en;
 }
 
 
+static void
+myCombine(coords, vertex_data, weight, dataOut)
+register GLdouble	coords[3];
+GLdouble	*vertex_data[4];
+GLfloat	weight[4];
+GLdouble	**dataOut;
+{
+	register GLdouble	*newvert;
+
+	newvert = (GLdouble *)malloc(3*sizeof(GLdouble));
+	if (newvert == NULL)
+		error(SYSTEM, "out of memory in myCombine");
+	VCOPY(newvert, coords);		/* no data, just coordinates */
+	*dataOut = newvert;
+}
+
+
 static
 newtess()			/* allocate GLU tessellation object */
 {
@@ -97,6 +114,7 @@ newtess()			/* allocate GLU tessellation object */
 	gluTessCallback(gluto, GLU_TESS_BEGIN, glBegin);
 	gluTessCallback(gluto, GLU_TESS_VERTEX, glVertex3dv);
 	gluTessCallback(gluto, GLU_TESS_END, glEnd);
+	gluTessCallback(gluto, GLU_TESS_COMBINE, myCombine);
 	gluTessCallback(gluto, GLU_TESS_ERROR, glu_error);
 	gluTessProperty(gluto, GLU_TESS_WINDING_RULE, GLU_TESS_WINDING_NONZERO);
 }
@@ -229,10 +247,12 @@ register OBJREC *o;
 		objerror(o, USER, "illegal radii");
 	if (o->oargs.farg[6] <= FTINY && (iscyl || o->oargs.farg[7] <= FTINY))
 		return;
-	if (o->oargs.farg[6] < 0.)		/* complains for tiny neg's */
-		o->oargs.farg[6] = 0.;
-	if (!iscyl && o->oargs.farg[7] < 0.)
-		o->oargs.farg[7] = 0.;
+	if (!iscyl) {
+		if (o->oargs.farg[6] < 0.)	/* complains for tiny neg's */
+			o->oargs.farg[6] = 0.;
+		if (o->oargs.farg[7] < 0.)
+			o->oargs.farg[7] = 0.;
+	}
 	cent[0] = .5*(o->oargs.farg[0] + o->oargs.farg[3]);
 	cent[1] = .5*(o->oargs.farg[1] + o->oargs.farg[4]);
 	cent[2] = .5*(o->oargs.farg[2] + o->oargs.farg[5]);
