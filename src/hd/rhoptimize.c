@@ -1,4 +1,4 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
+/* Copyright (c) 1999 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -20,6 +20,7 @@ static char SCCSid[] = "$SunId$ SGI";
 
 char	*progname;
 char	tempfile[128];
+int	dupchecking = 0;
 
 extern char	*rindex();
 extern int	quit();
@@ -35,13 +36,20 @@ char	*argv[];
 	long	nextipos, lastopos, thisopos;
 
 	progname = argv[0];
-	if (argc < 2 | argc > 3) {
-		fprintf(stderr, "Usage: %s input.hdk [output.hdk]\n", progname);
+	argv++; argc--;			/* duplicate checking flag? */
+	if (argc > 1 && !strcmp(argv[0], "-u")) {
+		dupchecking++;
+		argv++; argc--;
+	}
+	if (argc < 1 | argc > 2) {
+		fprintf(stderr, "Usage: %s [-u] input.hdk [output.hdk]\n",
+				progname);
 		exit(1);
 	}
-	inpname = argv[1];
-	if (argc == 3)			/* use given output file */
-		outname = argv[2];
+	inpname = argv[0];		/* get input file */
+	argv++; argc--;
+	if (argc == 1)			/* use given output file */
+		outname = argv[0];
 	else {				/* else use temporary file */
 		if (access(inpname, R_OK|W_OK) < 0) {	/* check permissions */
 			sprintf(errmsg, "cannot access \"%s\"", inpname);
@@ -133,6 +141,31 @@ char	*infn, *outfn;
 }
 
 
+int
+nuniq(rva, n)			/* sort unique rays to front of beam list */
+register RAYVAL	*rva;
+int	n;
+{
+	register int	i, j;
+	RAYVAL	rtmp;
+
+	for (j = 0; j < n; j++)
+		for (i = j+1; i < n; i++)
+			if ( rva[i].d == rva[j].d &&
+					rva[i].r[0][0]==rva[j].r[0][0] &&
+					rva[i].r[0][1]==rva[j].r[0][1] &&
+					rva[i].r[1][0]==rva[j].r[1][0] &&
+					rva[i].r[1][1]==rva[j].r[1][1] ) {
+				n--;		/* swap duplicate with end */
+				copystruct(&rtmp, rva+n);
+				copystruct(rva+n, rva+i);
+				copystruct(rva+i, &rtmp);
+				i--;		/* recheck one we swapped */
+			}
+	return(n);
+}
+
+
 static BEAMI	*beamdir;
 
 static int
@@ -141,9 +174,8 @@ int	*b1p, *b2p;
 {
 	register long	pdif = beamdir[*b1p].fo - beamdir[*b2p].fo;
 
-	if (pdif > 0L) return(1);
 	if (pdif < 0L) return(-1);
-	return(0);
+	return(pdif > 0L);
 }
 
 static HOLO	*hout;
@@ -155,14 +187,17 @@ int	*bq, nb;
 {
 	register int	i;
 	register BEAM	*bp;
+	int	n;
 
 	beamdir = hp->bi;		/* sort based on file position */
 	qsort((char *)bq, nb, sizeof(*bq), bpcmp);
 					/* transfer and free each beam */
 	for (i = 0; i < nb; i++) {
 		bp = hdgetbeam(hp, bq[i]);
-		bcopy((char *)hdbray(bp), (char *)hdnewrays(hout,bq[i],bp->nrm),
-				bp->nrm*sizeof(RAYVAL));
+		DCHECK(bp==NULL, CONSISTENCY, "empty beam in xferclump");
+		n = dupchecking ? nuniq(hdbray(bp),bp->nrm) : bp->nrm;
+		bcopy((char *)hdbray(bp), (char *)hdnewrays(hout,bq[i],n),
+				n*sizeof(RAYVAL));
 		hdfreebeam(hp, bq[i]);
 	}
 	hdflush(hout);			/* write & free clump */
