@@ -11,6 +11,8 @@ rholo.h		main header for rholo modules
 x11icon.h	icon output of "bitmap" for rholo X11 and GLX drivers
 Version.c	symbolic link to ../rt/Version.c
 dircode.c	direction vector encoding/decoding
+genrhenv.c	program to generate environment maps from holodeck sections
+genrhgrid.c	program to generate Radiance section grid representations
 holo.c		holodeck initialization and manipulation routines
 holofile.c	holodeck file handling routines
 rhcopy.c	program for copying information into holodeck files
