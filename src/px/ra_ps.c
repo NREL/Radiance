@@ -13,12 +13,16 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <fcntl.h>
 #endif
 #include  "color.h"
-#include  "random.h"
 
 #define HMARGIN		(.5*72)			/* horizontal margin */
 #define VMARGIN		(.5*72)			/* vertical margin */
 #define PWIDTH		(8.5*72-2*HMARGIN)	/* width of device */
 #define PHEIGHT		(11*72-2*VMARGIN)	/* height of device */
+
+#define RUNCHR		'*'			/* character to start rle */
+#define MINRUN		4			/* minimum run-length */
+#define RSTRT		'!'			/* character for MINRUN */
+#define MAXRUN		(MINRUN+'~'-RSTRT)	/* maximum run-length */
 
 char  code[] =			/* 6-bit code lookup table */
 	"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@+";
@@ -135,7 +139,7 @@ char  *name;
 	printf("%%%%EndComments\n");
 	printf("64 dict begin\n");
 					/* define image reader */
-	PSprocdef("read6bit");
+	PSprocdef("read6bitRLE");
 					/* set up transformation matrix */
 	printf("%f %f translate\n", HMARGIN, VMARGIN);
 	if (PWIDTH > PHEIGHT ^ landscape) {
@@ -158,7 +162,7 @@ char  *name;
 	printf("%f %f scale\n", iwidth, iheight);
 	printf("%%%%EndProlog\n");
 					/* start image procedure */
-	printf("%d %d 8 [%d 0 0 %d 0 %d] {read6bit} image", xmax, ymax,
+	printf("%d %d 8 [%d 0 0 %d 0 %d] {read6bitRLE} image\n", xmax, ymax,
 			xmax, -ymax, ymax);
 }
 
@@ -186,7 +190,7 @@ char  *nam;
 		itab[code[i]] = i<<2 | 2;
 	itab[code[0]] = 0;		/* black is black */
 	itab[code[63]] = 255;		/* and white is white */
-	printf("/decode [");
+	printf("/codetab [");
 	for (i = 0; i < 128; i++) {
 		if (!(i & 0xf))
 			putchar('\n');
@@ -194,20 +198,31 @@ char  *nam;
 	}
 	printf("\n] def\n");
 	printf("/scanline %d string def\n", xmax);
+	printf("/nrept 0 def\n");
+	printf("/readbyte { currentfile read not {stop} if } def\n");
+	printf("/decode { codetab exch get } def\n");
 	printf("/%s {\n", nam);
 	printf("\t{ 0 1 %d { scanline exch\n", xmax-1);
-	printf("\t\t{ decode currentfile read not {stop} if get\n");
-	printf("\tdup 0 lt {pop} {exit} ifelse } loop put } for\n");
-	printf("\t} stopped {pop pop pop 0 string} {scanline} ifelse\n");
+	printf("\t\tnrept 0 le\n");
+	printf("\t\t\t{ { readbyte dup %d eq\n", RUNCHR);
+	printf("\t\t\t\t\t{ pop /nrept readbyte %d sub def\n", RSTRT-MINRUN+1);
+	printf("\t\t\t\t\t\t/reptv readbyte decode def\n");
+	printf("\t\t\t\t\t\treptv exit }\n");
+	printf("\t\t\t\t\t{ decode dup 0 lt {pop} {exit} ifelse }\n");
+	printf("\t\t\t\tifelse } loop }\n");
+	printf("\t\t\t{ /nrept nrept 1 sub def reptv }\n");
+	printf("\t\tifelse put\n");
+	printf("\t\t} for\n");
+	printf("\t} stopped {pop pop 0 string} {scanline} ifelse\n");
 	printf("} bind def\n");
 }
 
 
 ra2ps()				/* convert Radiance scanlines to 6-bit */
 {
-	COLR	*scanin;
-	register int	col = 0;
+	register COLR	*scanin;
 	register int	c;
+	int	lastc, cnt;
 	register int	x;
 	int	y;
 						/* allocate scanline */
@@ -219,17 +234,46 @@ ra2ps()				/* convert Radiance scanlines to 6-bit */
 		if (freadcolrs(scanin, xmax, stdin) < 0)
 			quiterr("error reading Radiance picture");
 		normcolrs(scanin, xmax, bradj); /* normalize */
+		lastc = -1; cnt = 0;
 		for (x = 0; x < xmax; x++) {
-			if (!(col++ & 0x3f))
-				putchar('\n');
-			c = normbright(scanin[x]) + (random()&3);
+			c = normbright(scanin[x]) + 2;
 			if (c > 255) c = 255;
-			putchar(code[c>>2]);
+			c = code[c>>2];
+			if (c == lastc && cnt < MAXRUN)
+				cnt++;
+			else {
+				putrle(cnt, lastc);
+				lastc = c;
+				cnt = 1;
+			}
 		}
+		putrle(cnt, lastc);
 		if (ferror(stdout))
 			quiterr("error writing PostScript file");
 	}
 	putchar('\n');
 						/* free scanline */
 	free((char *)scanin);
+}
+
+
+putrle(cnt, cod)		/* put out cnt of cod */
+register int	cnt, cod;
+{
+	static int	col = 0;
+
+	if (cnt >= MINRUN) {
+		col += 3;
+		putchar(RUNCHR);
+		putchar(RSTRT-MINRUN+cnt);
+		putchar(cod);
+	} else {
+		col += cnt;
+		while (cnt-- > 0)
+			putchar(cod);
+	}
+	if (col >= 72) {
+		putchar('\n');
+		col = 0;
+	}
 }
