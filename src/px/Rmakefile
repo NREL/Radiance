@@ -130,7 +130,7 @@ ra_t16.o:	random.h
 
 pfilt.o pf2.o ttyimage.o t4027.o mt160r.o psum.o psign.o prot.o \
 d48c.o aedimage.o pcompos.o color.o greyscale.o ra_t8.o \
-ra_bn.o ra_t16.o ra_pr.o pvalue.o image.o pcomb.o:	color.h
+ra_bn.o ra_t16.o ra_pr.o pvalue.o pcomb.o:	color.h
 
 ximage.o image.o:	standard.h fvect.h
 
