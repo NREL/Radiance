@@ -129,9 +129,9 @@ pr2ra()			/* convert 24-bit scanlines to Radiance picture */
 						/* convert image */
 	for (y = ymax-1; y >= 0; y--) {
 		for (x = 0; x < xmax; x++) {
-			scanout[x][RED] = getc(stdin);
-			scanout[x][GRN] = getc(stdin);
 			scanout[x][BLU] = getc(stdin);
+			scanout[x][GRN] = getc(stdin);
+			scanout[x][RED] = getc(stdin);
 		}
 		if (feof(stdin) || ferror(stdin))
 			quiterr("error reading rasterfile");
@@ -159,9 +159,9 @@ ra2pr()			/* convert Radiance scanlines to 24-bit rasterfile */
 			quiterr("error reading Radiance picture");
 		colrs_gambs(scanin, xmax);
 		for (x = 0; x < xmax; x++) {
-			putc(scanin[x][RED], stdout);
-			putc(scanin[x][GRN], stdout);
 			putc(scanin[x][BLU], stdout);
+			putc(scanin[x][GRN], stdout);
+			putc(scanin[x][RED], stdout);
 		}
 		if (ferror(stdout))
 			quiterr("error writing rasterfile");
