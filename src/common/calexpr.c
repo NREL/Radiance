@@ -604,6 +604,7 @@ getE5()				/* E5 -> (E1) */
 				/*       ARG */
 {
     int  i;
+    char  *nam;
     register EPNODE  *ep1, *ep2;
 
     if (nextc == '(') {
@@ -627,22 +628,25 @@ getE5()				/* E5 -> (E1) */
 
 #if  defined(VARIABLE) || defined(FUNCTION)
     if (isalpha(nextc)) {
-	ep1 = newnode();
-	ep1->type = VAR;
-	ep1->v.ln = varinsert(getname());
-
+	nam = getname();
 #if  defined(VARIABLE) && defined(FUNCTION)
+	ep1 = NULL;
 	if (curfunc != NULL)
 	    for (i = 1, ep2 = curfunc->v.kid->sibling;
 	    			ep2 != NULL; i++, ep2 = ep2->sibling)
-		if (!strcmp(ep2->v.name, ep1->v.ln->name)) {
-		    epfree(ep1);
+		if (!strcmp(ep2->v.name, nam)) {
 		    ep1 = newnode();
 		    ep1->type = ARG;
 		    ep1->v.chan = i;
 		    break;
 		}
+	if (ep1 == NULL)
 #endif
+	{
+	    ep1 = newnode();
+	    ep1->type = VAR;
+	    ep1->v.ln = varinsert(nam);
+	}
 #ifdef  FUNCTION
 	if (nextc == '(') {
 	    ep2 = newnode();
