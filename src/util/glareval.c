@@ -39,12 +39,13 @@ struct {
 static long	ncall = 0L;	/* number of calls to getpictscan */
 static long	nread = 0L;	/* number of scanlines read */
 
+extern long	ftell();
+
 
 COLR *
 getpictscan(y)			/* get picture scanline */
 int	y;
 {
-	extern long	ftell();
 	int	minused;
 	register int	i;
 					/* first check our buffers */
@@ -59,26 +60,37 @@ int	y;
 			minused = i;
 	}
 					/* not there, read it in */
-	if (scanpos[y] == -1) {			/* need to search */
-		while (curpos > y) {
+	if (scanpos[y] < 0) {			/* need to search */
+		for (i = y+1; i < curpos; i++)
+			if (scanpos[i] >= 0) {
+				if (fseek(pictfp, scanpos[i], 0) < 0)
+					goto seekerr;
+				curpos = i;
+				break;
+			}
+		while (curpos >= y) {
 			scanpos[curpos] = ftell(pictfp);
 			if (freadcolrs(scan[minused].sl, pxsiz, pictfp) < 0)
 				goto readerr;
+			nread++;
 			curpos--;
 		}
-	} else if (fseek(pictfp, scanpos[y], 0) < 0) {
-		fprintf(stderr, "%s: picture seek error\n", progname);
-		exit(1);
+	} else {
+		if (curpos != y && fseek(pictfp, scanpos[y], 0) < 0)
+			goto seekerr;
+		if (freadcolrs(scan[minused].sl, pxsiz, pictfp) < 0)
+			goto readerr;
+		nread++;
+		curpos = y-1;
 	}
-	if (freadcolrs(scan[minused].sl, pxsiz, pictfp) < 0)
-		goto readerr;
-	nread++;
-	curpos = y-1;
 	scan[minused].lused = ncall;
 	scan[minused].y = y;
 	return(scan[minused].sl);
 readerr:
 	fprintf(stderr, "%s: picture read error\n", progname);
+	exit(1);
+seekerr:
+	fprintf(stderr, "%s: picture seek error\n", progname);
 	exit(1);
 }
 
@@ -247,8 +259,9 @@ char	*fn;
 	scanpos = (long *)malloc(pysiz*sizeof(long));
 	if (scanpos == NULL)
 		memerr("scanline positions");
-	for (i = 0; i < pysiz; i++)
+	for (i = pysiz-1; i >= 0; i--)
 		scanpos[i] = -1L;
+	curpos = pysiz-1;
 	for (i = 0; i < NSCANS; i++) {
 		scan[i].lused = -1;
 		scan[i].y = -1;
@@ -256,7 +269,6 @@ char	*fn;
 		if (scan[i].sl == NULL)
 			memerr("scanline buffers");
 	}
-	curpos = pysiz-1;
 }
 
 
