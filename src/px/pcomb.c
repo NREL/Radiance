@@ -35,8 +35,10 @@ int	nfiles;				/* number of input files */
 
 char	*vcolin[3] = {"ri", "gi", "bi"};
 char	*vcolout[3] = {"ro", "go", "bo"};
-#define	vbrtin		"li"
-#define vbrtout		"lo"
+char	vbrtin[] = "li";
+char	vbrtout[] = "lo";
+char	*vcolcoef[3] = {"rc", "gc", "bc"};
+char	vbrtcoef[] = "lc";
 
 #define vnfiles		"nfiles"
 #define vxres		"xres"
@@ -55,76 +57,35 @@ int	xpos, ypos;			/* picture position */
 int	wrongformat = 0;
 
 
-tputs(s)			/* put out string preceded by a tab */
-char	*s;
-{
-	char	fmt[32];
-	double	d;
-	COLOR	ctmp;
-
-	if (isformat(s)) {			/* check format */
-		formatval(fmt, s);
-		wrongformat = strcmp(fmt, COLRFMT);
-	} else if (original && isexpos(s)) {	/* exposure */
-		d = 1.0/exposval(s);
-		scalecolor(input[nfiles].coef, d);
-	} else if (original && iscolcor(s)) {	/* color correction */
-		colcorval(ctmp, s);
-		colval(input[nfiles].coef,RED) /= colval(ctmp,RED);
-		colval(input[nfiles].coef,GRN) /= colval(ctmp,GRN);
-		colval(input[nfiles].coef,BLU) /= colval(ctmp,BLU);
-	} else {				/* echo unaffected line */
-		putchar('\t');
-		fputs(s, stdout);
-	}
-
-}
-
-
 main(argc, argv)
 int	argc;
 char	*argv[];
 {
-	extern double	l_redin(), l_grnin(), l_bluin(), l_brtin(), atof();
 	double	f;
 	int	a, i;
-	
-	funset(vcolin[RED], 1, '=', l_redin);
-	funset(vcolin[GRN], 1, '=', l_grnin);
-	funset(vcolin[BLU], 1, '=', l_bluin);
-	funset(vbrtin, 1, '=', l_brtin);
-	
-	for (a = 1; a < argc; a++)
+						/* scan options */
+	for (a = 1; a < argc; a++) {
 		if (argv[a][0] == '-')
 			switch (argv[a][1]) {
-			case '\0':
-			case 's':
-			case 'c':
-				goto getfiles;
 			case 'x':
 				xres = atoi(argv[++a]);
-				break;
+				continue;
 			case 'y':
 				yres = atoi(argv[++a]);
-				break;
+				continue;
 			case 'w':
 				nowarn = !nowarn;
-				break;
+				continue;
 			case 'o':
 				original = !original;
-				break;
+				continue;
 			case 'f':
-				fcompile(argv[++a]);
-				break;
 			case 'e':
-				scompile(argv[++a], NULL, 0);
-				break;
- 			default:
-				goto usage;
+				continue;
 			}
-		else
-			break;
-getfiles:
+		break;
+	}
+					/* process files */
 	for (nfiles = 0; nfiles < MAXINP; nfiles++)
 		setcolor(input[nfiles].coef, 1.0, 1.0, 1.0);
 	nfiles = 0;
@@ -160,37 +121,33 @@ getfiles:
 				quit(1);
 			}
 		}
-		fputs(input[nfiles].name, stdout);
-		fputs(":\n", stdout);
-		getheader(input[nfiles].fp, tputs, NULL);
-		if (wrongformat) {
-			eputs(input[nfiles].name);
-			eputs(": not in Radiance picture format\n");
-			quit(1);
-		}
-		if (fgetresolu(&xpos, &ypos, input[nfiles].fp) !=
-				(YMAJOR|YDECR)) {
-			eputs(input[nfiles].name);
-			eputs(": bad picture size\n");
-			quit(1);
-		}
-		if (xres == 0 && yres == 0) {
-			xres = xpos;
-			yres = ypos;
-		} else if (xpos != xres || ypos != yres) {
-			eputs(argv[0]);
-			eputs(": resolution mismatch\n");
-			quit(1);
-		}
-		for (i = 0; i < WINSIZ; i++)
-			input[nfiles].scan[i] =
-					(COLOR *)emalloc(xres*sizeof(COLOR));
 		nfiles++;
 	}
+	initfiles();		/* initialize files and variables */
+					/* go back and get expressions */
+	for (a = 1; a < argc; a++) {
+		if (argv[a][0] == '-')
+			switch (argv[a][1]) {
+			case 'x':
+			case 'y':
+			case 'w':
+			case 'o':
+				continue;
+			case 'f':
+				fcompile(argv[++a]);
+				continue;
+			case 'e':
+				scompile(argv[++a], NULL, 0);
+				continue;
+			}
+		break;
+	}
+						/* complete header */
 	printargs(argc, argv, stdout);
 	fputformat(COLRFMT, stdout);
 	putchar('\n');
 	fputresolu(YMAJOR|YDECR, xres, yres, stdout);
+						/* combine pictures */
 	combine();
 	quit(0);
 usage:
@@ -199,6 +156,79 @@ usage:
 	eputs(
 " [-w][-h][-x xr][-y yr][-e expr][-f file] [ [-s f][-c r g b] pic ..]\n");
 	quit(1);
+}
+
+
+tputs(s)			/* put out string preceded by a tab */
+char	*s;
+{
+	char	fmt[32];
+	double	d;
+	COLOR	ctmp;
+
+	if (isformat(s)) {			/* check format */
+		formatval(fmt, s);
+		wrongformat = strcmp(fmt, COLRFMT);
+	} else if (original && isexpos(s)) {	/* exposure */
+		d = 1.0/exposval(s);
+		scalecolor(input[nfiles].coef, d);
+	} else if (original && iscolcor(s)) {	/* color correction */
+		colcorval(ctmp, s);
+		colval(input[nfiles].coef,RED) /= colval(ctmp,RED);
+		colval(input[nfiles].coef,GRN) /= colval(ctmp,GRN);
+		colval(input[nfiles].coef,BLU) /= colval(ctmp,BLU);
+	} else {				/* echo unaffected line */
+		putchar('\t');
+		fputs(s, stdout);
+	}
+
+}
+
+
+initfiles()			/* ready files and set variables */
+{
+	double	l_colin(), l_coef();
+	register int	n, i;
+					/* process picture headers */
+	for (n = 0; n < nfiles; n++) {
+		fputs(input[n].name, stdout);
+		fputs(":\n", stdout);
+		getheader(input[n].fp, tputs, NULL);
+		if (wrongformat) {
+			eputs(input[n].name);
+			eputs(": not in Radiance picture format\n");
+			quit(1);
+		}
+		if (fgetresolu(&xpos, &ypos, input[n].fp) != (YMAJOR|YDECR)) {
+			eputs(input[n].name);
+			eputs(": bad picture size\n");
+			quit(1);
+		}
+		if (xres == 0 && yres == 0) {
+			xres = xpos;
+			yres = ypos;
+		} else if (xpos != xres || ypos != yres) {
+			eputs(input[n].name);
+			eputs(": resolution mismatch\n");
+			quit(1);
+		}
+		for (i = 0; i < WINSIZ; i++)
+			input[n].scan[i] = (COLOR *)emalloc(xres*sizeof(COLOR));
+	}
+						/* prime input */
+	for (ypos = yres+(MIDSCN-1); ypos >= yres; ypos--)
+		advance();
+						/* define constants */
+	varset(vnfiles, ':', (double)nfiles);
+	varset(vxres, ':', (double)xres);
+	varset(vyres, ':', (double)yres);
+						/* set functions */
+	for (i = 0; i < 3; i++) {
+		funset(vcolcoef[i], 1, ':', l_coef);
+		funset(vcolin[i], 1, '=', l_colin);
+	}
+	funset(vbrtcoef, 1, ':', l_coef);
+	funset(vbrtin, 1, '=', l_colin);
 }
 
 
@@ -219,14 +249,8 @@ combine()			/* combine pictures */
 		brtdef = eparse(vbrtout);
 	else
 		brtdef = NULL;
-						/* define constants */
-	varset(vnfiles, ':', (double)nfiles);
-	varset(vxres, ':', (double)xres);
-	varset(vyres, ':', (double)yres);
 						/* allocate scanline */
 	scanout = (COLOR *)emalloc(xres*sizeof(COLOR));
-						/* initialize input */
-	initinp();
 						/* combine files */
 	for (ypos = yres-1; ypos >= 0; ypos--) {
 	    advance();
@@ -263,13 +287,6 @@ combine()			/* combine pictures */
 }
 
 
-initinp()			/* initilize scan windows */
-{
-	for (ypos = yres+(MIDSCN-1); ypos >= yres; ypos--)
-		advance();
-}
-
-
 advance()			/* read in next scanline */
 {
 	register COLOR	*st;
@@ -294,11 +311,36 @@ advance()			/* read in next scanline */
 
 
 double
-colin(ci)			/* return color value for picture */
-register int	ci;
+l_coef(nam)			/* return picture coefficients */
+register char	*nam;
 {
-	int	n, fn;
-	register int	xoff, yoff;
+	register int	fn, n;
+	double	d;
+
+	fn = (d = argument(1)) - .5;
+	if (d <= -.5 || fn >= nfiles) {
+		errno = EDOM;
+		return(0.0);
+	}
+	if (d < .5)
+		return((double)nfiles);
+	if (nam == vbrtcoef)
+		return(bright(input[fn].coef));
+	n = 3;
+	while (n--)
+		if (nam == vcolcoef[n])
+			return(colval(input[fn].coef,n));
+	eputs("Bad call to l_coef()!\n");
+	quit(1);
+}
+
+
+double
+l_colin(nam)			/* return color value for picture */
+register char	*nam;
+{
+	int	fn;
+	register int	n, xoff, yoff;
 	double	d;
 
 	fn = (d = argument(1)) - .5;
@@ -338,37 +380,14 @@ register int	ci;
 				yoff = yres-1-ypos;
 		}
 	}
-	if (ci == BRT)
+	if (nam == vbrtin)
 		return(bright(input[fn].scan[MIDSCN+yoff][xpos+xoff]));
-	return(colval(input[fn].scan[MIDSCN+yoff][xpos+xoff],ci));
-}
-
-
-double
-l_redin()			/* get red color */
-{
-	return(colin(RED));
-}
-
-
-double
-l_grnin()			/* get green color */
-{
-	return(colin(GRN));
-}
-
-
-double
-l_bluin()			/* get blue color */
-{
-	return(colin(BLU));
-}
-
-
-double
-l_brtin()			/* get brightness value */
-{
-	return(colin(BRT));
+	n = 3;
+	while (n--)
+	    if (nam == vcolin[n])
+		return(colval(input[fn].scan[MIDSCN+yoff][xpos+xoff],n));
+	eputs("Bad call to l_colin()!\n");
+	quit(1);
 }
 
 
