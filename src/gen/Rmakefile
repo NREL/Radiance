@@ -6,7 +6,7 @@
 
 OPT = -O
 MACH = -DBSD -DSTRUCTASSIGN -f68881 /usr/lib/libm.il -DIEEE
-CFLAGS = $(MACH) $(OPT)
+CFLAGS = $(MACH) $(OPT) -I../common
 
 INSTDIR = /lumen/lumen/ray/bin.sun3
 
@@ -29,7 +29,7 @@ genbeads:	genbeads.o hermite3.o
 genbox:	genbox.o
 	cc $(CFLAGS) -o genbox genbox.o
 
-genmarble:	genmarble.o random.h
+genmarble:	genmarble.o ../common/random.h
 	cc $(CFLAGS) -o genmarble genmarble.o -lm
 
 gensky:	gensky.o sun.o
@@ -41,43 +41,27 @@ genblinds:	genblinds.o
 genprism:	genprism.o
 	cc $(CFLAGS) -o genprism genprism.o
 
-xform:	xform.o xf.o mat4.o fgetline.o
-	cc $(CFLAGS) -o xform xform.o xf.o mat4.o fgetline.o -lm
+xform:	xform.o
+	cc $(CFLAGS) -o xform xform.o ../common/librt.a -lm
 
-replmarks:	replmarks.o fvect.o fgetline.o
-	cc $(CFLAGS) -o replmarks replmarks.o fvect.o fgetline.o -lm
+replmarks:	replmarks.o
+	cc $(CFLAGS) -o replmarks replmarks.o ../common/librt.a -lm
 
-genrev:	genrev.o calexpr.o caldefn.o calfunc.o \
-ealloc.o savestr.o
-	cc $(CFLAGS) -o genrev genrev.o caldefn.o calexpr.o \
-calfunc.o ealloc.o savestr.o -lm
+genrev:	genrev.o 
+	cc $(CFLAGS) -o genrev genrev.o ../common/librt.a -lm
 
-genworm:	genworm.o calexpr.o caldefn.o calfunc.o \
-ealloc.o savestr.o fvect.o
-	cc $(CFLAGS) -o genworm genworm.o caldefn.o calexpr.o \
-calfunc.o ealloc.o savestr.o fvect.o -lm
+genworm:	genworm.o
+	cc $(CFLAGS) -o genworm genworm.o ../common/librt.a -lm
 
-gensurf:	gensurf.o fvect.o calexpr.o caldefn.o calfunc.o \
-ealloc.o savestr.o
-	cc $(CFLAGS) -o gensurf gensurf.o caldefn.o calexpr.o \
-calfunc.o ealloc.o savestr.o fvect.o -lm
+gensurf:	gensurf.o
+	cc $(CFLAGS) -o gensurf gensurf.o ../common/librt.a -lm
 
 genbranch:	genbranch.o
 	cc $(CFLAGS) -o genbranch genbranch.o -lm
 
-calexpr.o:	calexpr.c calcomp.h
-	cc $(CFLAGS) -c -DVARIABLE -DFUNCTION -DRCONST calexpr.c
+gensurf.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
 
-caldefn.o:	caldefn.c calcomp.h
-	cc $(CFLAGS) -c -DFUNCTION -DRCONST caldefn.c
+genworm.o replmarks.o:	../common/fvect.h
 
-calfunc.o:	calfunc.c calcomp.h
-	cc $(CFLAGS) -c -DVARIABLE -DBIGLIB calfunc.c
-
-gensurf.o xf.o:	standard.h mat4.h fvect.h
-
-fvect.o genworm.o replmarks.o:	fvect.h
-
-mat4.o:		mat4.h fvect.h
-
-xform.o:	standard.h mat4.h fvect.h otypes.h
+xform.o:	../common/standard.h ../common/mat4.h \
+../common/fvect.h ../common/otypes.h
