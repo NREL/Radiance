@@ -49,7 +49,9 @@ typedef struct {
 extern double  maxarad;		/* maximum ambient radius */
 extern double  minarad;		/* minimum ambient radius */
 
+#ifndef AVGREFL
 #define  AVGREFL	0.5	/* assumed average reflectance */
+#endif
 
 #define  AMBVALSIZ	75	/* number of bytes in portable AMBVAL struct */
 #define  AMBMAGIC	557	/* magic number for ambient value files */
