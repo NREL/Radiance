@@ -207,11 +207,8 @@ FVECT  pg, dg;
 	scalecolor(acol, b);
 	if (arad <= FTINY)
 		arad = maxarad;
-	else {
+	else
 		arad = (ndivs+ns)/arad;
-		if (arad > maxarad)
-			arad = maxarad;
-	}
 	if (pg != NULL) {		/* reduce radius if gradient large */
 		d = DOT(pg,pg);
 		if (d*arad*arad > 1.0)
@@ -225,7 +222,9 @@ FVECT  pg, dg;
 				pg[i] *= d;
 		}
 	}
-	return(arad/sqrt(wt));
+	if ((arad /= sqrt(wt)) > maxarad)
+		arad = maxarad;
+	return(arad);
 oopsy:
 	if (div != NULL)
 		free((char *)div);
