@@ -15,7 +15,7 @@ LIBDIR = /usr/local/lib/ray
 PIXAR_INCLUDE=	-I/usr/pixar/include
 PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar -lm
 
-PROGS = pfilt ttyimage oki20c paintjet mt160r getinfo psign \
+PROGS = pfilt ttyimage oki20c oki20 paintjet mt160r getinfo psign \
 greyscale pvalue pcompos colorscale protate ra_pr ra_pr24 \
 ra_t8 ra_bn ra_t16 pcomb pinterp ximage xshowtrace pflip ra_ppm \
 ra_rgbe ra_pict
@@ -64,6 +64,9 @@ biq.o -lrt -lm
 
 oki20c:	oki20c.o
 	cc $(CFLAGS) -o oki20c oki20c.o -lrt -lm
+
+oki20:	oki20.o
+	cc $(CFLAGS) -o oki20 oki20.o -lrt -lm
 
 paintjet:	paintjet.o
 	cc $(CFLAGS) -o paintjet paintjet.o -lrt -lm
