@@ -238,11 +238,12 @@ virtuals.o:	../common/otypes.h
 ambient.o ambcomp.o aniso.o normal.o rpict.o \
 source.o rv3.o srcsamp.o virtuals.o:	../common/random.h
 
-ambient.o ambcomp.o aniso.o dielectric.o func.o glass.o m_clip.o m_mirror.o \
-m_brdf.o mx_data.o mx_func.o normal.o o_cone.o o_face.o o_instance.o \
-p_data.o p_func.o text.o raytrace.o rpmain.o rtmain.o rvmain.o rpict.o \
-rtrace.o rview.o rv2.o rv3.o source.o srcdraw.o srcsamp.o srcsupp.o virtuals.o \
-sphere.o m_mist.o t_data.o t_func.o persist.o:	ray.h ../common/standard.h \
+ambcomp.o ambient.o aniso.o dielectric.o func.o glass.o glazing.o \
+m_brdf.o m_clip.o m_direct.o m_mirror.o m_mist.o mx_data.o mx_func.o \
+normal.o o_cone.o o_face.o o_instance.o p_data.o p_func.o raytrace.o \
+rmain.o rpict.o rtrace.o rv2.o rv3.o rview.o source.o sphere.o srcdraw.o \
+srcsamp.o srcsupp.o t_data.o t_func.o text.o \
+virtuals.o:	ray.h ../common/standard.h \
 ../common/mat4.h ../common/fvect.h ../common/object.h ../common/color.h
 
 rv2.o rv3.o rview.o:	rpaint.h driver.h ../common/view.h
