@@ -31,6 +31,7 @@ register FVECT  p1, p2;
 	delta[0] = p2[0] - p1[0];
 	delta[1] = p2[1] - p1[1];
 	delta[2] = p2[2] - p1[2];
+
 	return(DOT(delta, delta));
 }
 
@@ -44,9 +45,9 @@ FVECT  ep1, ep2;	/* points on the line */
 
 	d = dist2(ep1, ep2);
 	d1 = dist2(ep1, p);
-	d2 = dist2(ep2, p);
+	d2 = d + d1 - dist2(ep2, p);
 
-	return(d1 - (d+d1-d2)*(d+d1-d2)/d/4);
+	return(d1 - 0.25*d2*d2/d);
 }
 
 
@@ -68,8 +69,9 @@ FVECT  ep1, ep2;	/* the end points */
 		if (d1 - d2 > d)
 			return(d2);
 	}
+	d2 = d + d1 - d2;
 
-	return(d1 - (d+d1-d2)*(d+d1-d2)/d/4);	/* distance to line */
+	return(d1 - 0.25*d2*d2/d);	/* distance to line */
 }
 
 
@@ -83,8 +85,8 @@ register FVECT  vres, v1, v2;
 
 
 fvsum(vres, v0, v1, f)		/* vres = v0 + f*v1 */
-FVECT  vres, v0, v1;
-double  f;
+register FVECT  vres, v0, v1;
+register double  f;
 {
 	vres[0] = v0[0] + f*v1[0];
 	vres[1] = v0[1] + f*v1[1];
@@ -96,21 +98,21 @@ double
 normalize(v)			/* normalize a vector, return old magnitude */
 register FVECT  v;
 {
-	register double  len;
+	register double  len, d;
 	
-	len = DOT(v, v);
+	d = DOT(v, v);
 	
-	if (len <= 0.0)
+	if (d <= 0.0)
 		return(0.0);
 	
-	if (len <= 1.0+FTINY && len >= 1.0-FTINY)
-		len = 0.5 + 0.5*len;	/* first order approximation */
+	if (d <= 1.0+FTINY && d >= 1.0-FTINY)
+		len = 0.5 + 0.5*d;	/* first order approximation */
 	else
-		len = sqrt(len);
+		len = sqrt(d);
 
-	v[0] /= len;
-	v[1] /= len;
-	v[2] /= len;
+	v[0] *= d = 1.0/len;
+	v[1] *= d;
+	v[2] *= d;
 
 	return(len);
 }
