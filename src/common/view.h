@@ -40,3 +40,4 @@ extern double  sqrt();
 #define  STDVIEW	{VT_PER,0.,0.,0.,0.,1.,0.,0.,0.,1.,45.,45.,0.,0.}
 
 #define  VIEWSTR	"VIEW="
+#define  VIEWSTRL	5
