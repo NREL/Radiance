@@ -92,6 +92,8 @@ extern char  *outvals;			/* output values */
 
 extern VIEW  ourview;			/* viewing parameters */
 
+extern char  rifname[];			/* rad input file name */
+
 extern int  hresolu;			/* horizontal resolution */
 extern int  vresolu;			/* vertical resolution */
 extern double  pixaspect;		/* pixel aspect ratio */
@@ -528,6 +530,10 @@ char  *argv[];
 		case 'o':				/* output device */
 			check(2,"s");
 			devname = argv[++i];
+			break;
+		case 'R':				/* render input file */
+			check(2,"s");
+			strcpy(rifname, argv[++i]);
 			break;
 #endif
 #ifdef  PERSIST
