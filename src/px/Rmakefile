@@ -6,6 +6,7 @@
 ARCH = sun
 OPT = -O
 MACH = -DSTRUCTASSIGN -DBSD
+SPECIAL = aed tiff
 CFLAGS = $(OPT) $(MACH) -I../common -L../lib
 
 INSTDIR = /usr/local/bin
@@ -20,7 +21,7 @@ greyscale pvalue pcompos colorscale prot ra_pr ra_pr24 \
 ra_t8 ra_bn ra_t16 pcomb pinterp ximage xshowtrace pflip ra_ppm \
 ra_rgbe ra_pict
 
-all:	$(PROGS)
+all:	$(PROGS) $(SPECIAL)
 
 x10:	x10image
 	cp x10image $(INSTDIR)
@@ -33,7 +34,7 @@ tiff:	ra_tiff
 
 sun:
 
-install:	$(PROGS) normpat.csh falsecolor.csh
+install:	$(PROGS) $(SPECIAL) normpat.csh falsecolor.csh
 	cp $(PROGS) $(INSTDIR)
 	cp normpat.csh $(INSTDIR)/normpat
 	cp falsecolor.csh $(INSTDIR)/falsecolor

@@ -6,6 +6,7 @@
 OPT = -O
 MACH = -DSTRUCTASSIGN -DBSD
 CFLAGS = $(MACH) $(OPT) -I../common -L../lib
+SPECIAL = aed
 CC = cc
 LINT = lint
 LINTFLAGS = -DSTRUCTASSIGN -DBSD -DIEEE -DVARIABLE -DFUNCTION \
@@ -85,9 +86,9 @@ HEADERS = ambient.h ray.h data.h otspecial.h source.h
 
 PROGS = $(DESTDIR)/rtrace $(DESTDIR)/rpict $(DESTDIR)/rview $(DESTDIR)/lookamb
 
-all:	$(PROGS)
+all:	$(PROGS) $(SPECIAL)
 
-install:	$(PROGS) rayinit.cal
+install:	$(PROGS) $(SPECIAL) rayinit.cal
 	$(INSTALL) $(PROGS) $(INSTDIR)
 	rm -f $(LIBDIR)/rayinit.cal
 	cp rayinit.cal $(LIBDIR)
