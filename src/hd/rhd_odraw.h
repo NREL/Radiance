@@ -24,6 +24,7 @@ extern struct ODview {
 		short	nused;		/* number actually allocated */
 		int	first;		/* first sample in this block */
 		int	free;		/* index for block free list */
+		float	pthresh;	/* proximity threshold */
 	}	*bmap;		/* low resolution image map */
 	int4	*emap;		/* low resolution edge presence map */
 	GLfloat	*dmap;		/* high resolution depth map */
@@ -118,9 +119,11 @@ Draw all new and undrawn sample values since last call for this view.
 
 
 void
-odRemap()			: recompute tone mapping
+odRemap(newhist)		: recompute tone mapping
+int	newhist;		: flag whether to clear history
 
 Recompute the tone mapping for all the samples in all the views
-and redraw them on the next call(s) to odUpdate().
+and redraw them on the next call(s) to odUpdate().  If newhist
+is non-zero, then clear the previous sample history.
 
  **********************************************************************/
