@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -19,7 +19,7 @@ struct cellist {
 
 
 int
-npixels(vp, hr, vr, hp, bi)	/* compute appropriate number to evaluate */
+npixels(vp, hr, vr, hp, bi)	/* compute appropriate nrays to evaluate */
 register VIEW	*vp;
 int	hr, vr;
 HOLO	*hp;
@@ -27,14 +27,17 @@ int	bi;
 {
 	VIEW	vrev;
 	GCOORD	gc[2];
-	FVECT	cp[4], ip[4];
-	double	af, ab;
+	FVECT	cp[4], ip[4], pf, pb;
+	double	af, ab, sf2, sb2, dfb2, df2, db2, penalty;
 	register int	i;
 					/* compute cell corners in image */
 	if (!hdbcoord(gc, hp, bi))
 		error(CONSISTENCY, "bad beam index in npixels");
 	hdcell(cp, hp, gc+1);		/* find cell on front image */
-	for (i = 0; i < 4; i++) {
+	for (i = 3; i--; )		/* compute front center */
+		pf[i] = 0.5*(cp[0][i] + cp[2][i]);
+	sf2 = 0.25*dist2(cp[0], cp[2]);	/* compute half diagonal length */
+	for (i = 0; i < 4; i++) {	/* compute visible quad */
 		viewloc(ip[i], vp, cp[i]);
 		if (ip[i][2] < 0.) {
 			af = 0;
@@ -48,8 +51,7 @@ int	bi;
 		(ip[2][0]-ip[0][0])*(ip[1][1]-ip[0][1]);
 	af += (ip[2][0]-ip[3][0])*(ip[1][1]-ip[3][1]) -
 		(ip[1][0]-ip[3][0])*(ip[2][1]-ip[3][1]);
-	if (af >= 0) af *= 0.5;
-	else af *= -0.5;
+	af *= af >= 0 ? 0.5 : -0.5;
 getback:
 	copystruct(&vrev, vp);		/* compute reverse view */
 	for (i = 0; i < 3; i++) {
@@ -59,10 +61,15 @@ getback:
 		vrev.vvec[i] = -vp->vvec[i];
 	}
 	hdcell(cp, hp, gc);		/* find cell on back image */
-	for (i = 0; i < 4; i++) {
+	for (i = 3; i--; )		/* compute rear center */
+		pb[i] = 0.5*(cp[0][i] + cp[2][i]);
+	sb2 = 0.25*dist2(cp[0], cp[2]);	/* compute half diagonal length */
+	for (i = 0; i < 4; i++) {	/* compute visible quad */
 		viewloc(ip[i], &vrev, cp[i]);
-		if (ip[i][2] < 0.)
-			return((int)(af + 0.5));
+		if (ip[i][2] < 0.) {
+			ab = 0;
+			goto finish;
+		}
 		ip[i][0] *= (double)hr;	/* scale by resolution */
 		ip[i][1] *= (double)vr;
 	}
@@ -71,12 +78,20 @@ getback:
 		(ip[2][0]-ip[0][0])*(ip[1][1]-ip[0][1]);
 	ab += (ip[2][0]-ip[3][0])*(ip[1][1]-ip[3][1]) -
 		(ip[1][0]-ip[3][0])*(ip[2][1]-ip[3][1]);
-	if (ab >= 0) ab *= 0.5;
-	else ab *= -0.5;
-					/* round off smaller area */
-	if (af <= ab)
-		return((int)(af + 0.5));
-	return((int)(ab + 0.5));
+	ab *= ab >= 0 ? 0.5 : -0.5;
+finish:		/* compute penalty based on dist. sightline - viewpoint */
+	df2 = dist2(vp->vp, pf);
+	db2 = dist2(vp->vp, pb);
+	dfb2 = dist2(pf, pb);
+	penalty = dfb2 + df2 - db2;
+	penalty = df2 - 0.25*penalty*penalty/dfb2;
+	if (df2 > db2)	penalty /= df2 <= dfb2 ? sb2 : sb2*df2/dfb2;
+	else		penalty /= db2 <= dfb2 ? sf2 : sf2*db2/dfb2;
+	if (penalty < 1.) penalty = 1.;
+					/* round off smaller non-zero area */
+	if (ab <= FTINY || (af > FTINY && af <= ab))
+		return((int)(af/penalty + 0.5));
+	return((int)(ab/penalty + 0.5));
 }
 
 
