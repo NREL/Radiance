@@ -512,7 +512,7 @@ animate()			/* run animation */
 					/* figure # frames per batch */
 	d1 = mult*xres*mult*yres*4;		/* space for orig. picture */
 	if ((i=vint(INTERP)) || atoi(vval(MBLUR)))
-		d1 += mult*xres*mult*yres*4;	/* space for z-buffer */
+		d1 += mult*xres*mult*yres*sizeof(float);	/* Z-buffer */
 	d2 = xres*yres*4;			/* space for final picture */
 	frames_batch = (i+1)*(vflt(DISKSPACE)*1048576.-d1)/(d1+i*d2);
 	if (frames_batch < i+2) {
@@ -841,7 +841,7 @@ int	rvr;
 			while (*arcnext) arcnext++;
 			strcpy(arcnext, ".unf");
 			arcnext += 4;
-			if (usepinterp || vint(INTERP)) {	/* and z-buf */
+			if (usepinterp || vint(INTERP)) {	/* and Z-buf */
 				*arcnext++ = ' ';
 				sprintf(arcnext, vval(BASENAME),
 						frame-vint(INTERP)-1);
