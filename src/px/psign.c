@@ -195,10 +195,10 @@ FILE  *fp;
 			maxline = len;
 		strncpy(curl->s, buf, len);
 		curl->s[len] = '\0';
-		if (spacing < 0.0)
+		if (spacing < -1./256.)
 			len = squeeztext(curl->sp, curl->s, ourfont,
 					(int)(spacing*-256.0));
-		else if (spacing > 0.0)
+		else if (spacing > 1./256.)
 			len = proptext(curl->sp, curl->s, ourfont,
 					(int)(spacing*256.0), 3);
 		else
