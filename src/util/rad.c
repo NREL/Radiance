@@ -626,7 +626,7 @@ register char	*op;
 		op = addarg(op, "-ds .4");
 	else
 		op = addarg(op, "-ds 0");
-	op = addarg(op, "-dt .2 -dc .25 -dr 0 -sj 0 -st .7");
+	op = addarg(op, "-dt .2 -dc .25 -dr 0 -sj 0 -st .5");
 	if (vdef(AMBFILE)) {
 		sprintf(op, " -af %s", vval(AMBFILE));
 		op += strlen(op);
@@ -690,7 +690,7 @@ register char	*op;
 		op = addarg(op, "-ds .2 -dj .35");
 	else
 		op = addarg(op, "-ds .3");
-	op = addarg(op, "-dt .1 -dc .5 -dr 1 -sj .7 -st .15");
+	op = addarg(op, "-dt .1 -dc .5 -dr 1 -sj .7 -st .1");
 	if (overture = vint(INDIRECT)) {
 		sprintf(op, " -ab %d", overture);
 		op += strlen(op);
@@ -757,7 +757,7 @@ register char	*op;
 		op = addarg(op, "-ds .1 -dj .7");
 	else
 		op = addarg(op, "-ds .2");
-	op = addarg(op, "-dt .05 -dc .75 -dr 3 -sj 1 -st .03");
+	op = addarg(op, "-dt .05 -dc .75 -dr 3 -sj 1 -st .01");
 	sprintf(op, " -ab %d", overture=vint(INDIRECT)+1);
 	op += strlen(op);
 	if (vdef(AMBFILE)) {
