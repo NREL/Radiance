@@ -7,6 +7,7 @@
 set tmpdir=/usr/tmp
 set octree=$tmpdir/ov$$.oct
 set tmpfiles="$octree"
+if ( ! $?RVIEW ) set RVIEW="rview"
 onintr quit
 
 oconv - $argv[*]:q > $octree <<_EOF_
@@ -20,7 +21,7 @@ _EOF_
 
 set vp=`getinfo -d <$octree|rcalc -e '$1=$1-3.5*$4;$2=$2-3.5*$4;$3=$3+2.5*$4'`
 
-rview -av .2 .2 .2 -vp $vp -vd 1 1 -.5 -vv 15 -vh 15 $octree
+$RVIEW -av .2 .2 .2 -vp $vp -vd 1 1 -.5 -vv 15 -vh 15 $octree
 
 quit:
 rm -f $tmpfiles
