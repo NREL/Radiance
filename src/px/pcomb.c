@@ -467,7 +467,7 @@ double
 l_ray(nam)		/* return ray origin or direction */
 register char	*nam;
 {
-	static long	ltick[MAXINP];
+	static unsigned long	ltick[MAXINP];
 	static FVECT	lorg[MAXINP], ldir[MAXINP];
 	FLOAT	loc[2];
 	double	d;

@@ -42,7 +42,7 @@ extern char  *ecalloc(), *emalloc(), *savestr(), *strcpy();
 
 static double  dvalue();
 
-long  eclock = -1;			/* value storage timer */
+unsigned long  eclock = 0;		/* value storage timer */
 
 static char  context[MAXWORD+1];	/* current context path */
 
@@ -638,7 +638,7 @@ getdefn()			/* A -> SYM = E1 */
 	    ep1->sibling->type != NUM) {
 	ep1 = newnode();
 	ep1->type = TICK;
-	ep1->v.tick = -1;
+	ep1->v.tick = 0;
 	addekid(ep2, ep1);
 	ep1 = newnode();
 	ep1->type = NUM;
@@ -699,8 +699,8 @@ EPNODE	*d;
     if (ep1->type == NUM)
 	return(ep1->v.num);			/* return if number */
     ep2 = ep1->sibling;				/* check time */
-    if (ep2->v.tick < 0 || ep2->v.tick < eclock) {
-	ep2->v.tick = d->type == ':' ? 1L<<30 : eclock;
+    if (ep2->v.tick == 0 || ep2->v.tick < eclock) {
+	ep2->v.tick = d->type == ':' ? ~0L : eclock;
 	ep2 = ep2->sibling;
 	ep2->v.num = evalue(ep1);		/* needs new value */
     } else
