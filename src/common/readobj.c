@@ -30,7 +30,7 @@ char  *inpspec;
 {
 	OBJECT  lastobj;
 	FILE  *infp;
-	char  buf[1024];
+	char  buf[2048];
 	register int  c;
 
 	lastobj = nobjects;

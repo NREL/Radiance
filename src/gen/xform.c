@@ -181,7 +181,7 @@ doargf(			/* take argument list from file */
 {
 	int  inquote;
 	char  *newav[256], **avp;
-	char  argbuf[1024];
+	char  argbuf[2048];
 	char  newid[128];
 	char  *oldid;
 	register char	*cp;
