@@ -18,6 +18,7 @@ static char SCCSid[] = "$SunId$ LBL";
 int	r_face();
 int	proj_axis;
 double	limit[3][2];
+int	layer;
 
 extern int	mg_nqcdivs;
 
@@ -44,13 +45,16 @@ char	*argv[];
 	if (argc == 8) {		/* convert stdin */
 		if (mg_load(NULL) != MG_OK)
 			exit(1);
-		mendpage();
 	} else				/* convert each file */
 		for (i = 8; i < argc; i++) {
 			if (mg_load(argv[i]) != MG_OK)
 				exit(1);
-			mendpage();
+			if (++layer >= 16) {
+				mendpage();
+				layer = 0;
+			}
 		}
+	mendpage();			/* print page */
 	mdone();			/* close output */
 	exit(0);
 userr:
@@ -88,7 +92,7 @@ char	**av;
 		VCOPY(v1, vo);
 		VCOPY(vo, v2);
 		if (clip(v1, v2, bbmin, bbmax)) {
-			mline(MX(v1), MY(v1), 0, 0, 0);
+			mline(MX(v1), MY(v1), layer/4, 0, layer%4);
 			mdraw(MX(v2), MY(v2));
 		}
 	}
