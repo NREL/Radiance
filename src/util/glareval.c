@@ -49,6 +49,7 @@ static SCAN	*hashtab[HSIZE];	/* scanline hash table */
 
 static long	ncall = 0L;	/* number of calls to getpictscan */
 static long	nread = 0L;	/* number of scanlines read */
+static long	nrecl = 0L;	/* number of scanlines reclaimed */
 
 static int	wrongformat = 0;
 
@@ -77,12 +78,7 @@ int	y;
 			if (sl->y == y) {		/* reclaim */
 				sl->next = hashtab[hi];
 				hashtab[hi] = sl;
-#ifdef DEBUG
-				if (verbose)
-					fprintf(stderr,
-						"%s: scanline %d reclaimed\n",
-							progname, y);
-#endif
+				nrecl++;
 			}
 			return(sl);
 		}
@@ -146,13 +142,15 @@ pict_stats()			/* print out picture read statistics */
 {
 	static long	lastcall = 0L;	/* ncall at last report */
 	static long	lastread = 0L;	/* nread at last report */
+	static long	lastrecl = 0L;	/* nrecl at last report */
 
 	if (ncall == lastcall)
 		return;
-	fprintf(stderr, "%s: %ld scanlines read in %ld calls\n",
-			progname, nread-lastread, ncall-lastcall);
+	fprintf(stderr, "%s: %ld scanlines read (%ld reclaimed) in %ld calls\n",
+		progname, nread-lastread, nrecl-lastrecl, ncall-lastcall);
 	lastcall = ncall;
 	lastread = nread;
+	lastrecl = nrecl;
 }
 #endif
 
