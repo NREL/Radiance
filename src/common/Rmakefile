@@ -48,7 +48,7 @@ calfunc.o:	calfunc.c calcomp.h
 getlibpath.o:	getlibpath.c
 	$(CC) $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c getlibpath.c
 
-color.o colrops.o spec_rgb.o:	color.h
+color.o colrops.o lamps.o spec_rgb.o:	color.h
 
 cone.o:		cone.h
 
