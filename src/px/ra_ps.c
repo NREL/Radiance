@@ -19,7 +19,8 @@ static char SCCSid[] = "$SunId$ SGI";
 #define UPPER(c)	((c)&~0x20)		/* ASCII trick */
 
 #define CODE6GAM	1.47			/* gamma for 6-bit codes */
-#define DEFDGAM		1.0			/* default device gamma */
+#define DEFGGAM		1.0			/* greyscale device gamma */
+#define DEFCGAM		1.8			/* color device gamma */
 
 #define GRY		-1			/* artificial index for grey */
 
@@ -42,13 +43,13 @@ char  code[] =			/* 6-bit code lookup table */
 int  wrongformat = 0;			/* input in wrong format? */
 double	pixaspect = 1.0;		/* pixel aspect ratio */
 
-double  devgam = DEFDGAM;		/* device gamma response */
+double  devgam = 0.;			/* device gamma response */
 double  hmarg = DEFMARG,
 	vmarg = DEFMARG;		/* horizontal and vertical margins */
 double	width = DEFWIDTH,
 	height = DEFHEIGHT;		/* default paper width and height */
 double  dpi = 0;			/* print density (0 if unknown) */
-int  docolor = 0;			/* produce color image? */
+int  docolor = 1;			/* produce color image? */
 int  bradj = 0;				/* brightness adjustment */
 int  ncopies = 1;			/* number of copies */
 
@@ -165,12 +166,14 @@ char  *argv[];
 	if (wrongformat || fgetresolu(&xmax, &ymax, stdin) < 0)
 		quiterr("bad picture format");
 				/* gamma compression */
+	if (devgam <= 0.05)
+		devgam = docolor ? DEFCGAM : DEFGGAM;
 	if (putprim == Cputprim)
 		setcolrgam(CODE6GAM);
 	else if (devgam != 1.)
 		setcolrgam(devgam);
 				/* write header */
-	PSheader(i <= argc-1 ? argv[i] : "<stdin>");
+	PSheader(argc, argv);
 				/* convert file */
 	ra2ps();
 				/* write trailer */
@@ -289,8 +292,9 @@ char  *err;
 }
 
 
-PSheader(name)			/* print PostScript header */
-char  *name;
+PSheader(ac, av)		/* print PostScript header */
+int  ac;
+char  **av;
 {
 	char  *rstr;
 	int  landscape, rotate, n;
@@ -298,8 +302,8 @@ char  *name;
 	double	iwidth, iheight;
 					/* EPS comments */
 	puts("%!PS-Adobe-2.0 EPSF-2.0");
-	printf("%%%%Title: %s\n", name);
-	printf("%%%%Creator: %s = %s\n", progname, SCCSid);
+	printf("%%%%Title: "); printargs(ac, av, stdout);
+	printf("%%%%Creator: %s\n", SCCSid);
 	printf("%%%%Pages: %d\n", ncopies);
 	if (landscape = xmax > pixaspect*ymax)
 		puts("%%Orientation: Landscape");
