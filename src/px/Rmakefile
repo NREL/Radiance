@@ -17,7 +17,7 @@ PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar -lm
 
 PROGS = pfilt ttyimage aedimage oki20c paintjet mt160r getinfo psign \
 greyscale pvalue pcompos colorscale ra_pr ximage prot \
-panim ra_t8 ra_bn ra_t16 pcomb
+panim ra_t8 ra_bn ra_t16 pcomb pinterp
 
 all:	$(PROGS)
 
@@ -104,6 +104,9 @@ header.o ealloc.o savestr.o
 	cc $(CFLAGS) -o pcomb pcomb.o calexpr.o calfunc.o caldefn.o \
 color.o header.o ealloc.o savestr.o -lm
 
+pinterp:	pinterp.o image.o header.o color.o fvect.o
+	cc $(CFLAGS) -o pinterp pinterp.o image.o header.o fvect.o color.o -lm
+
 ra_pixar:	ra_pixar.o ra_pixar.c color.o header.o
 	cc $(CFLAGS) $(PIXAR_INCLUDE) -o $@ ra_pixar.o color.o header.o \
 $(PIXAR_LIB)
@@ -130,9 +133,9 @@ ra_t16.o:	random.h
 
 pfilt.o pf2.o ttyimage.o t4027.o mt160r.o psum.o psign.o prot.o \
 d48c.o aedimage.o pcompos.o color.o greyscale.o ra_t8.o \
-ra_bn.o ra_t16.o ra_pr.o pvalue.o pcomb.o:	color.h
+ra_bn.o ra_t16.o ra_pr.o pvalue.o pcomb.o pinterp.o:	color.h
 
-ximage.o image.o:	standard.h fvect.h
+pinterp.o ximage.o image.o:	standard.h fvect.h
 
 ximage.o:	xraster.h
 
@@ -144,4 +147,4 @@ aedimage.o ximage.o ra_t8.o ra_pr.o:	pic.h
 
 ciq.o cut.o closest.o biq.o:	pic.h ciq.h
 
-ximage.o image.o:	view.h
+pinterp.o ximage.o image.o:	view.h
