@@ -229,48 +229,6 @@ register COLR  clr;
 }
 
 
-normcolrs(scan, len, adjust)	/* normalize a scanline of colrs */
-register COLR  *scan;
-int  len;
-int  adjust;
-{
-	register int  c;
-	register int  shift;
-
-	while (len-- > 0) {
-		shift = scan[0][EXP] + adjust - COLXS;
-		if (shift > 0) {
-			if (shift > 8) {
-				scan[0][RED] =
-				scan[0][GRN] =
-				scan[0][BLU] = 255;
-			} else {
-				shift--;
-				c = (scan[0][RED]<<1 | 1) << shift;
-				scan[0][RED] = c > 255 ? 255 : c;
-				c = (scan[0][GRN]<<1 | 1) << shift;
-				scan[0][GRN] = c > 255 ? 255 : c;
-				c = (scan[0][BLU]<<1 | 1) << shift;
-				scan[0][BLU] = c > 255 ? 255 : c;
-			}
-		} else if (shift < 0) {
-			if (shift < -8) {
-				scan[0][RED] =
-				scan[0][GRN] =
-				scan[0][BLU] = 0;
-			} else {
-				shift = -1-shift;
-				scan[0][RED] = ((scan[0][RED]>>shift)+1)>>1;
-				scan[0][GRN] = ((scan[0][GRN]>>shift)+1)>>1;
-				scan[0][BLU] = ((scan[0][BLU]>>shift)+1)>>1;
-			}
-		}
-		scan[0][EXP] = COLXS - adjust;
-		scan++;
-	}
-}
-
-
 bigdiff(c1, c2, md)			/* c1 delta c2 > md? */
 register COLOR  c1, c2;
 double  md;
