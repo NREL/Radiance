@@ -10,9 +10,6 @@
 
 #include  "octree.h"
 
-#define  GET_BOUNDS	IO_BOUNDS	/* just load boundaries */
-#define  GET_ALL	(IO_BOUNDS|IO_SCENE|IO_TREE)	/* everything */
-
 typedef struct scene {
 	char  *name;			/* octree name */
 	int  ldflags;			/* what was loaded */
