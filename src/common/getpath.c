@@ -8,16 +8,14 @@ static char SCCSid[] = "$SunId$ LBL";
  *  getpath.c - function to search for file in a list of directories
  */
 
+#include  "standard.h"
+
 #include  "paths.h"
 
-#define  NULL		0
-
-#ifndef  NIX
+#ifndef	 NIX
 #include  <pwd.h>
 extern struct passwd  *getpwnam();
 #endif
-
-extern char  *strcpy(), *strcat(), *getenv();
 
 
 char *
@@ -26,7 +24,7 @@ register char  *fname;
 register char  *searchpath;
 int  mode;
 {
-#ifndef  NIX
+#ifndef	 NIX
 	struct passwd  *pwent;
 #endif
 	static char  pname[MAXPATH];

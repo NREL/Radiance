@@ -17,6 +17,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 extern char  *libpath;			/* list of library directories */
 
+extern char  *fgetword();
+
 static FONT	*fontlist = NULL;	/* list of loaded fonts */
 
 
@@ -30,7 +32,7 @@ char  *fname;
 	unsigned  wsum, hsum, ngly;
 	int  gn, ngv;
 	register int  gv;
-	register GLYPH  *g;
+	register GLYPH	*g;
 	GORD  *gp;
 	register FONT  *f;
 
@@ -124,7 +126,7 @@ memerr:
 
 int
 uniftext(sp, tp, f)			/* uniformly space text line */
-register short  *sp;		/* returned character spacing */
+register short	*sp;		/* returned character spacing */
 register char  *tp;		/* text line */
 register FONT  *f;		/* font */
 {
@@ -148,7 +150,7 @@ FONT  *f;			/* font */
 int  cis;			/* intercharacter spacing */
 {
 	int  linelen;
-	register GLYPH  *gp;
+	register GLYPH	*gp;
 
 	gp = NULL;
 	while (*tp && (gp = f->fg[*tp++&0xff]) == NULL)

@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -26,11 +26,11 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "calcomp.h"
 
-#define  MAXLINE	256		/* maximum line length */
+#define	 MAXLINE	256		/* maximum line length */
 
-#define  newnode()	(EPNODE *)ecalloc(1, sizeof(EPNODE))
+#define	 newnode()	(EPNODE *)ecalloc(1, sizeof(EPNODE))
 
-#define  isdecimal(c)	(isdigit(c) || (c) == '.')
+#define	 isdecimal(c)	(isdigit(c) || (c) == '.')
 
 #ifndef atof
 extern double  atof();
@@ -43,25 +43,24 @@ extern double  efunc(), evariable();
 static double  euminus(), echannel(), eargument(), enumber();
 static double  eadd(), esubtr(), emult(), edivi(), epow();
 static double  ebotch();
-extern int  errno;
 
 int  nextc;				/* lookahead character */
 
-double  (*eoper[])() = {		/* expression operations */
+double	(*eoper[])() = {		/* expression operations */
 	ebotch,
-#ifdef  VARIABLE
+#ifdef	VARIABLE
 	evariable,
 #else
 	ebotch,
 #endif
 	enumber,
 	euminus,
-#ifdef  INCHAN
+#ifdef	INCHAN
 	echannel,
 #else
 	ebotch,
 #endif
-#ifdef  FUNCTION
+#ifdef	FUNCTION
 	efunc,
 	eargument,
 #else
@@ -126,7 +125,7 @@ char  *expr;
 
 
 epfree(epar)			/* free a parse tree */
-register EPNODE  *epar;
+register EPNODE	 *epar;
 {
     register EPNODE  *ep;
 
@@ -159,10 +158,10 @@ register EPNODE  *epar;
 }
 
 				/* the following used to be a switch */
-#ifdef  FUNCTION
+#ifdef	FUNCTION
 static double
 eargument(ep)
-EPNODE  *ep;
+EPNODE	*ep;
 {
     return(argument(ep->v.chan));
 }
@@ -170,24 +169,24 @@ EPNODE  *ep;
 
 static double
 enumber(ep)
-EPNODE  *ep;
+EPNODE	*ep;
 {
     return(ep->v.num);
 }
 
 static double
 euminus(ep)
-EPNODE  *ep;
+EPNODE	*ep;
 {
     register EPNODE  *ep1 = ep->v.kid;
 
     return(-evalue(ep1));
 }
 
-#ifdef  INCHAN
+#ifdef	INCHAN
 static double
 echannel(ep)
-EPNODE  *ep;
+EPNODE	*ep;
 {
     return(chanvalue(ep->v.chan));
 }
@@ -195,7 +194,7 @@ EPNODE  *ep;
 
 static double
 eadd(ep)
-EPNODE  *ep;
+EPNODE	*ep;
 {
     register EPNODE  *ep1 = ep->v.kid;
 
@@ -204,7 +203,7 @@ EPNODE  *ep;
 
 static double
 esubtr(ep)
-EPNODE  *ep;
+EPNODE	*ep;
 {
     register EPNODE  *ep1 = ep->v.kid;
 
@@ -213,7 +212,7 @@ EPNODE  *ep;
 
 static double
 emult(ep)
-EPNODE  *ep;
+EPNODE	*ep;
 {
     register EPNODE  *ep1 = ep->v.kid;
 
@@ -222,7 +221,7 @@ EPNODE  *ep;
 
 static double
 edivi(ep)
-EPNODE  *ep;
+EPNODE	*ep;
 {
     register EPNODE  *ep1 = ep->v.kid;
     double  d;
@@ -238,16 +237,16 @@ EPNODE  *ep;
 
 static double
 epow(ep)
-EPNODE  *ep;
+EPNODE	*ep;
 {
     register EPNODE  *ep1 = ep->v.kid;
     double  d;
-    int  lasterrno;
+    int	 lasterrno;
 
     lasterrno = errno;
     errno = 0;
     d = pow(evalue(ep1), evalue(ep1->sibling));
-#ifdef  IEEE
+#ifdef	IEEE
     if (!finite(d))
 	errno = EDOM;
 #endif
@@ -261,7 +260,7 @@ EPNODE  *ep;
 
 static double
 ebotch(ep)
-EPNODE  *ep;
+EPNODE	*ep;
 {
     eputs("Bad expression!\n");
     quit(1);
@@ -270,7 +269,7 @@ EPNODE  *ep;
 
 EPNODE *
 ekid(ep, n)			/* return pointer to a node's nth kid */
-register EPNODE  *ep;
+register EPNODE	 *ep;
 register int  n;
 {
 
@@ -284,7 +283,7 @@ register int  n;
 
 int
 nekids(ep)			/* return # of kids for node ep */
-register EPNODE  *ep;
+register EPNODE	 *ep;
 {
     register int  n = 0;
 
@@ -300,7 +299,7 @@ FILE  *fp;
 char  *fn;
 int  ln;
 {
-    static char  inpbuf[MAXLINE];
+    static char	 inpbuf[MAXLINE];
 
     infp = fp;
     linbuf = inpbuf;
@@ -375,9 +374,9 @@ char *
 ltoa(l)				/* convert long to ascii */
 long  l;
 {
-    static char  buf[16];
+    static char	 buf[16];
     register char  *cp;
-    int  neg = 0;
+    int	 neg = 0;
 
     if (l == 0)
 	return("0");
@@ -423,8 +422,8 @@ char  *err;
 
 
 addekid(ep, ekid)			/* add a child to ep */
-register EPNODE  *ep;
-EPNODE  *ekid;
+register EPNODE	 *ep;
+EPNODE	*ekid;
 {
     if (ep->v.kid == NULL)
 	ep->v.kid = ekid;
@@ -441,7 +440,7 @@ EPNODE  *ekid;
 char *
 getname()			/* scan an identifier */
 {
-    static char  str[MAXWORD+1];
+    static char	 str[MAXWORD+1];
     register int  i, lnext;
 
     lnext = nextc;
@@ -484,16 +483,16 @@ getnum()			/* scan a positive float */
 	lnext = scan();
     }
     if (lnext == '.' && i < MAXWORD) {
-    	str[i++] = lnext;
-    	lnext = scan();
+	str[i++] = lnext;
+	lnext = scan();
 	while (isdigit(lnext) && i < MAXWORD) {
 	    str[i++] = lnext;
 	    lnext = scan();
 	}
     }
     if ((lnext == 'e' || lnext == 'E') && i < MAXWORD) {
-    	str[i++] = lnext;
-    	lnext = scan();
+	str[i++] = lnext;
+	lnext = scan();
 	if ((lnext == '-' || lnext == '+') && i < MAXWORD) {
 	    str[i++] = lnext;
 	    lnext = scan();
@@ -511,7 +510,7 @@ getnum()			/* scan a positive float */
 
 EPNODE *
 getE1()				/* E1 -> E1 ADDOP E2 */
-				/*       E2 */
+				/*	 E2 */
 {
     register EPNODE  *ep1, *ep2;
 
@@ -522,7 +521,7 @@ getE1()				/* E1 -> E1 ADDOP E2 */
 	scan();
 	addekid(ep2, ep1);
 	addekid(ep2, getE2());
-#ifdef  RCONST
+#ifdef	RCONST
 	if (ep1->type == NUM && ep1->sibling->type == NUM)
 		ep2 = rconst(ep2);
 #endif
@@ -534,7 +533,7 @@ getE1()				/* E1 -> E1 ADDOP E2 */
 
 EPNODE *
 getE2()				/* E2 -> E2 MULOP E3 */
-				/*       E3 */
+				/*	 E3 */
 {
     register EPNODE  *ep1, *ep2;
 
@@ -545,7 +544,7 @@ getE2()				/* E2 -> E2 MULOP E3 */
 	scan();
 	addekid(ep2, ep1);
 	addekid(ep2, getE3());
-#ifdef  RCONST
+#ifdef	RCONST
 	if (ep1->type == NUM && ep1->sibling->type == NUM)
 		ep2 = rconst(ep2);
 #endif
@@ -557,7 +556,7 @@ getE2()				/* E2 -> E2 MULOP E3 */
 
 EPNODE *
 getE3()				/* E3 -> E4 ^ E3 */
-				/*       E4 */
+				/*	 E4 */
 {
     register EPNODE  *ep1, *ep2;
 
@@ -568,7 +567,7 @@ getE3()				/* E3 -> E4 ^ E3 */
 	scan();
 	addekid(ep2, ep1);
 	addekid(ep2, getE3());
-#ifdef  RCONST
+#ifdef	RCONST
 	if (ep1->type == NUM && ep1->sibling->type == NUM)
 		ep2 = rconst(ep2);
 #endif
@@ -580,7 +579,7 @@ getE3()				/* E3 -> E4 ^ E3 */
 
 EPNODE *
 getE4()				/* E4 -> ADDOP E5 */
-				/*       E5 */
+				/*	 E5 */
 {
     register EPNODE  *ep1, *ep2;
 
@@ -608,13 +607,13 @@ getE4()				/* E4 -> ADDOP E5 */
 
 EPNODE *
 getE5()				/* E5 -> (E1) */
-				/*       VAR */
-				/*       NUM */
-				/*       $N */
-				/*       FUNC(E1,..) */
-				/*       ARG */
+				/*	 VAR */
+				/*	 NUM */
+				/*	 $N */
+				/*	 FUNC(E1,..) */
+				/*	 ARG */
 {
-    int  i;
+    int	 i;
     char  *nam;
     register EPNODE  *ep1, *ep2;
 
@@ -627,7 +626,7 @@ getE5()				/* E5 -> (E1) */
 	return(ep1);
     }
 
-#ifdef  INCHAN
+#ifdef	INCHAN
     if (nextc == '$') {
 	scan();
 	ep1 = newnode();
@@ -644,7 +643,7 @@ getE5()				/* E5 -> (E1) */
 	ep1 = NULL;
 	if (curfunc != NULL)
 	    for (i = 1, ep2 = curfunc->v.kid->sibling;
-	    			ep2 != NULL; i++, ep2 = ep2->sibling)
+				ep2 != NULL; i++, ep2 = ep2->sibling)
 		if (!strcmp(ep2->v.name, nam)) {
 		    ep1 = newnode();
 		    ep1->type = ARG;
@@ -658,7 +657,7 @@ getE5()				/* E5 -> (E1) */
 	    ep1->type = VAR;
 	    ep1->v.ln = varinsert(nam);
 	}
-#ifdef  FUNCTION
+#ifdef	FUNCTION
 	if (nextc == '(') {
 	    ep2 = newnode();
 	    ep2->type = FUNC;
@@ -672,12 +671,12 @@ getE5()				/* E5 -> (E1) */
 		syntax("')' expected");
 	    scan();
 	}
-#ifndef  VARIABLE
+#ifndef	 VARIABLE
 	else
 	    syntax("'(' expected");
 #endif
 #endif
-#ifdef  RCONST
+#ifdef	RCONST
 	if (isconstvar(ep1))
 	    ep1 = rconst(ep1);
 #endif
@@ -695,10 +694,10 @@ getE5()				/* E5 -> (E1) */
 }
 
 
-#ifdef  RCONST
+#ifdef	RCONST
 EPNODE *
 rconst(epar)			/* reduce a constant expression */
-register EPNODE  *epar;
+register EPNODE	 *epar;
 {
     register EPNODE  *ep;
 
@@ -707,7 +706,7 @@ register EPNODE  *epar;
     errno = 0;
     ep->v.num = evalue(epar);
     if (errno)
-    	syntax("bad constant expression");
+	syntax("bad constant expression");
     epfree(epar);
  
     return(ep);
@@ -715,11 +714,11 @@ register EPNODE  *epar;
 
 
 isconstvar(ep)			/* is ep linked to a constant expression? */
-register EPNODE  *ep;
+register EPNODE	 *ep;
 {
-#ifdef  VARIABLE
+#ifdef	VARIABLE
     register EPNODE  *ep1;
-#ifdef  FUNCTION
+#ifdef	FUNCTION
 
     if (ep->type == FUNC) {
 	if (!isconstfun(ep->v.kid))
@@ -735,7 +734,7 @@ register EPNODE  *ep;
     ep1 = ep->v.ln->def;
     if (ep1 == NULL || ep1->type != ':')
 	return(0);
-#ifdef  FUNCTION
+#ifdef	FUNCTION
     if (ep1->v.kid->type != SYM)
 	return(0);
 #endif
@@ -748,7 +747,7 @@ register EPNODE  *ep;
 
 #if  defined(FUNCTION) && defined(VARIABLE)
 isconstfun(ep)			/* is ep linked to a constant function? */
-register EPNODE  *ep;
+register EPNODE	 *ep;
 {
     register EPNODE  *dp;
     register LIBR  *lp;

@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
 
@@ -8,23 +8,31 @@
  *     10/1/85
  */
 
-#ifdef  BSD
+#ifdef	MSDOS
+
+#define random		rand
+
+#define frandom()	(rand()*(1./32768.))
+
+#else
+#ifdef	BSD
 
 extern long  random();
 
-#define  frandom()	(random()*(1./2147483648.))
+#define	 frandom()	(random()*(1./2147483648.))
 
 #else
 
 extern long  lrand48();
 extern double  drand48();
 
-#define  random()	lrand48()
-#define  frandom()	drand48()
+#define	 random()	lrand48()
+#define	 frandom()	drand48()
 
 #endif
+#endif
 
-#define  urand(i)	((urperm[(i)&urmask]+frandom())/(urmask+1))
+#define	 urand(i)	((urperm[(i)&urmask]+frandom())/(urmask+1))
 
 extern short  *urperm;
 extern int  urmask;

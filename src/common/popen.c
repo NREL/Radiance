@@ -43,13 +43,20 @@ char	*mode;
 				/* build our command */
 	for (cp = newcmd; ; cmd++) {
 		switch (*cmd) {
-		case '"':
 		case '\'':
+		case '"':
 			if (!quote)
 				quote = *cmd;
 			else if (quote == *cmd)
 				quote = '\0';
+#ifdef MSDOS
+			else
+				break;
+			*cp++ = '"';		/* double quotes only */
+			continue;
+#else
 			break;
+#endif		      
 		case '(':
 			if (!quote)
 				paren++;
@@ -65,6 +72,12 @@ char	*mode;
 				continue;
 			}
 			*cp++ = *cmd++;
+			break;
+		case ' ':
+		case '\t':
+			if (!quote)
+				while (isspace(cmd[1]))
+					cmd++;
 			break;
 		case '|':
 		case ';':

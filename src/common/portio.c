@@ -27,12 +27,13 @@ register int  siz;
 register FILE  *fp;
 {
 	while (siz--)
-		putc(i>>(siz<<3) & 0xff, fp);
+		putc((int)(i>>(siz<<3) & 0xff), fp);
 }
 
 
 putflt(f, fp)			/* put out floating point number */
-double  f;
+double	f;
+FILE  *fp;
 {
 	extern double  frexp();
 	int  e;
@@ -85,7 +86,7 @@ getflt(fp)			/* get a floating point number */
 FILE  *fp;
 {
 	extern double  ldexp();
-	double  d;
+	double	d;
 
 	d = (double)getint(4, fp)/0x7fffffff;
 	return(ldexp(d, (int)getint(1, fp)));
