@@ -84,10 +84,10 @@ extern char	*mg_err[MG_NERRS];
  * the mg_handle function rather than the mg_ehand routines directly.
  * (The first argument to mg_handle is the entity #, or -1.)
  * To free any data structures and clear the parser, use mg_clear.
- * If there is an error, mg_load, mg_open, mg_parse, and mg_rewind
- * will return an error from the list above.  In addition, mg_load
- * will report the error to stderr.  The mg_read routine returns 0
- * when the end of file has been reached.
+ * If there is an error, mg_load, mg_open, mg_parse, mg_handle and
+ * mg_rewind will return an error from the list above.  In addition,
+ * mg_load will report the error to stderr.  The mg_read routine
+ * returns 0 when the end of file has been reached.
  */
 
 #define MG_MAXLINE	512		/* maximum input line length */
@@ -237,7 +237,7 @@ typedef struct {
 			11,8,3,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},\
 			106770L, .167, .009 }
 
-#define c_cval(c,l)	((double)(c)->ssamp[((l)-C_MINWL)/C_CWLI] / (c)->sum)
+#define c_cval(c,l)	((double)(c)->ssamp[((l)-C_MINWL)/C_CWLI] / (c)->ssum)
 
 typedef struct {
 	int	clock;		/* incremented each change -- resettable */
