@@ -1,4 +1,4 @@
-{ RCSid: $Id$ }
+{ RCSid $Id$ }
 {
 	Initialization file for Radiance.
 
@@ -16,6 +16,10 @@
 	Jx, Jy, Jz			- world j unit vector
 	Kx, Ky, Kz			- world k unit vector
 	arg(n)				- real arguments, arg(0) is count
+
+	For mesh objects, the following are available:
+
+	Lu, Lv				- local (u,v) coordinates
 
 	For brdf functions, the following are also available:
 

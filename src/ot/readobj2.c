@@ -70,9 +70,7 @@ int  (*f)();
 	thisobj.omod = OVOID;
 					/* get type */
 	fgetword(sbuf, MAXSTR, fp);
-	if (!strcmp(sbuf, ALIASID))
-		thisobj.otype = -1;
-	else if ((thisobj.otype = otype(sbuf)) < 0) {
+	if ((thisobj.otype = otype(sbuf)) < 0) {
 		sprintf(errmsg, "(%s): unknown type \"%s\"", name, sbuf);
 		error(USER, errmsg);
 	}
@@ -80,7 +78,7 @@ int  (*f)();
 	fgetword(sbuf, MAXSTR, fp);
 	thisobj.oname = sbuf;
 					/* get arguments */
-	if (thisobj.otype == -1) {
+	if (thisobj.otype == MOD_ALIAS) {
 		fscanf(fp, "%*s");
 		return;
 	}

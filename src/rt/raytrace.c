@@ -174,7 +174,8 @@ int  mod;
 		}
 		******/
 					/* hack for irradiance calculation */
-		if (do_irrad && !(r->crtype & ~(PRIMARY|TRANS))) {
+		if (do_irrad && !(r->crtype & ~(PRIMARY|TRANS)) &&
+				(ofun[m->otype].flags & (T_M|T_X))) {
 			if (irr_ignore(m->otype)) {
 #if  MAXLOOP
 				depth--;

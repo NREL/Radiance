@@ -198,16 +198,14 @@ FILE  *fp;
 	strcpy(sbuf, "EOF");
 	fgetword(sbuf, MAXSTR, fp);
 	ob.omod = 0;			/* use ob.os for pointer to material */
-	if (!strcmp(sbuf, VOIDID))
+	if (!strcmp(sbuf, VOIDID) || !strcmp(sbuf, ALIASMOD))
 		ob.os = NULL;
 	else
 		ob.os = (char *)getmatp(sbuf);
 					/* get type */
 	strcpy(sbuf, "EOF");
 	fgetword(sbuf, MAXSTR, fp);
-	if (!strcmp(sbuf, ALIASID))
-		ob.otype = -1;
-	else if ((ob.otype = otype(sbuf)) < 0) {
+	if ((ob.otype = otype(sbuf)) < 0) {
 		sprintf(errmsg, "(%s): unknown type \"%s\"", name, sbuf);
 		error(USER, errmsg);
 	}
@@ -216,7 +214,7 @@ FILE  *fp;
 	fgetword(sbuf, MAXSTR, fp);
 	ob.oname = sbuf;
 					/* get arguments */
-	if (ob.otype == -1) {
+	if (ob.otype == MOD_ALIAS) {
 		char  sbuf2[MAXSTR];		/* get alias */
 		strcpy(sbuf2, "EOF");
 		fgetword(sbuf2, MAXSTR, fp);
