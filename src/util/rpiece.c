@@ -148,7 +148,8 @@ char  *argv[];
 			case 'F':		/* syncronization file */
 				if (argv[i][2])
 					break;
-				if ((syncfp = fopen(argv[++i],"r+")) == NULL) {
+				if ((syncfp =
+		fdopen(open(argv[++i],O_RDWR|O_CREAT,0666),"r+")) == NULL) {
 					fprintf(stderr, "%s: cannot open\n",
 							argv[i]);
 					exit(1);
@@ -186,10 +187,12 @@ int  fd;
 int  ltyp;
 {
 	static struct flock  fls;	/* static so initialized to zeroes */
+	extern char  *sys_errlist[];
 
 	fls.l_type = ltyp;
 	if (fcntl(fd, F_SETLKW, &fls) < 0) {
-		fprintf(stderr, "%s: cannot lock/unlock file\n", progname);
+		fprintf(stderr, "%s: cannot lock/unlock file: %s\n",
+				progname, sys_errlist[errno]);
 		exit(1);
 	}
 }
