@@ -23,7 +23,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define part(cn)	((cn)>>2)
 #define prim(cn)	((cn)&3)
 				/* our color table (global) */
-BYTE	clrtab[256][3];
+extern BYTE	clrtab[256][3];
 				/* histogram of colors / color assignments */
 static unsigned	histo[NRED][NGRN][NBLU];
 #define cndx(c)		histo[((c)[RED]*NRED)>>8][((c)[GRN]*NGRN)>>8][((c)[BLU]*NBLU)>>8]
@@ -41,9 +41,11 @@ static int	CLRCUBE[3][2] = {0,NRED,0,NGRN,0,NBLU};
 #endif
 
 
-new_histo()		/* clear our histogram */
+new_histo(n)		/* clear our histogram */
+int	n;
 {
 	bzero((char *)histo, sizeof(histo));
+	return(0);
 }
 
 

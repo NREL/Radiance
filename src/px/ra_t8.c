@@ -38,7 +38,9 @@ extern char  *memcpy();
 
 #define	 taralloc(h)	(BYTE *)emalloc((h)->x*(h)->y)
 
-extern BYTE  clrtab[][3];
+BYTE  clrtab[256][3];
+
+extern int	samplefac;
 
 extern char	*ecalloc(), *emalloc();
 
@@ -76,6 +78,7 @@ char  *argv[];
 	setmode(fileno(stdout), O_BINARY);
 #endif
 	progname = argv[0];
+	samplefac = 0;
 
 	for (i = 1; i < argc; i++)
 		if (argv[i][0] == '-')
@@ -99,6 +102,9 @@ char  *argv[];
 				break;
 			case 'c':
 				ncolors = atoi(argv[++i]);
+				break;
+			case 'n':
+				samplefac = atoi(argv[++i]);
 				break;
 			default:
 				goto userr;
@@ -352,28 +358,41 @@ int  dith;		/* use dithering? */
 
 	setcolrgam(gamv);
 	fpos = ftell(stdin);
-	new_histo();			/* build histogram */
+	if ((samplefac ? neu_init(xmax*ymax) : new_histo(xmax*ymax)) == -1)
+		quiterr("cannot initialized histogram");
 	for (y = ymax-1; y >= 0; y--) {
 		if (freadcolrs(inl, xmax, stdin) < 0)
 			quiterr("error reading Radiance input");
 		if (bradj)
 			shiftcolrs(inl, xmax, bradj);
 		colrs_gambs(inl, xmax);
-		cnt_colrs(inl, xmax);
+		if (samplefac)
+			neu_colrs(inl, xmax);
+		else
+			cnt_colrs(inl, xmax);
 	}
 	if (fseek(stdin, fpos, 0) == EOF)
 		quiterr("Radiance input must be from a file");
-	new_clrtab(nc);			/* map colors */
+	if (samplefac)			/* map colors */
+		neu_clrtab(nc);
+	else
+		new_clrtab(nc);
 	for (y = ymax-1; y >= 0; y--) {
 		if (freadcolrs(inl, xmax, stdin) < 0)
 			quiterr("error reading Radiance input");
 		if (bradj)
 			shiftcolrs(inl, xmax, bradj);
 		colrs_gambs(inl, xmax);
-		if (dith)
-			dith_colrs(tarData+y*xmax, inl, xmax);
+		if (samplefac)
+			if (dith)
+				neu_dith_colrs(tarData+y*xmax, inl, xmax);
+			else
+				neu_map_colrs(tarData+y*xmax, inl, xmax);
 		else
-			map_colrs(tarData+y*xmax, inl, xmax);
+			if (dith)
+				dith_colrs(tarData+y*xmax, inl, xmax);
+			else
+				map_colrs(tarData+y*xmax, inl, xmax);
 	}
 }
 
