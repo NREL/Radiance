@@ -91,6 +91,7 @@ extern FUN  ofun[];			/* our type list */
 #define  hasdata(t)	(ofun[t].flags & (T_D|T_I))
 #define  hasfunc(t)	(ofun[t].flags & (T_F|T_D|T_I))
 #define  hastext(t)	(ofun[t].flags & T_E)
+#define  isflat(t)	((t)==OBJ_FACE || (t)==OBJ_RING)
 
 extern int  o_default();
 					/* type list initialization */
