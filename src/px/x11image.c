@@ -1,5 +1,5 @@
 #ifndef lint
-static const char	RCSid[] = "$Id$";
+static const char RCSid[] = "$Id";
 #endif
 /*
  *  x11image.c - driver for X-windows
@@ -625,7 +625,6 @@ getevent()				/* process the next event */
 traceray(xpos, ypos)			/* print requested pixel data */
 int  xpos, ypos;
 {
-	extern char  *index();
 	FLOAT  hv[2];
 	FVECT  rorg, rdir;
 	COLOR  cval;

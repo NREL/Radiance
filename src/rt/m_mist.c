@@ -1,5 +1,5 @@
 #ifndef lint
-static const char	RCSid[] = "$Id$";
+static const char RCSid[] = "$Id";
 #endif
 /*
  * Mist volumetric material.
@@ -69,7 +69,6 @@ srcmatch(sp, id)	/* check for an id match on a light source */
 register SRCREC  *sp;
 register char  *id;
 {
-	extern char  *index();
 	register char  *cp;
 						/* check for relay sources */
 	while ((cp = index(id, RELAYDELIM)) != NULL) {

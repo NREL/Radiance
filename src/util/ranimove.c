@@ -1,5 +1,5 @@
 #ifndef lint
-static const char	RCSid[] = "$Id$";
+static const char RCSid[] = "$Id";
 #endif
 /*
  *  Radiance object animation program
@@ -12,6 +12,7 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include "ranimove.h"
+#include <time.h>
 #include <sys/time.h>
 #include <ctype.h>
 
