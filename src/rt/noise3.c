@@ -168,9 +168,10 @@ fnoise3(p)			/* compute fractal noise function */
 double  p[3];
 {
 	double  floor();
-	long  t[3], v[3], beg[3], s;
+	long  t[3], v[3], beg[3];
 	double  fval[8], fc;
 	int  branch;
+	register long  s;
 	register int  i, j;
 						/* get starting cube */
 	s = (long)(1.0/EPSILON);
@@ -188,7 +189,12 @@ double  p[3];
 	}
 						/* compute fractal */
 	for ( ; ; ) {
-		s >>= 1;
+		fc = 0.0;
+		for (j = 0; j < 8; j++)
+			fc += fval[j];
+		fc *= 0.125;
+		if ((s >>= 1) == 0)
+			return(fc);		/* close enough */
 		branch = 0;
 		for (i = 0; i < 3; i++) {	/* do center */
 			v[i] = beg[i] + s;
@@ -196,12 +202,6 @@ double  p[3];
 				branch |= 1<<i;
 			}
 		}
-		fc = 0.0;
-		for (j = 0; j < 8; j++)
-			fc += fval[j];
-		fc *= 0.125;
-		if (s < 1)
-			return(fc);		/* close enough */
 		fc += s*EPSILON*frand3(v[0],v[1],v[2]);
 		fval[~branch & 7] = fc;
 		for (i = 0; i < 3; i++) {	/* do faces */
