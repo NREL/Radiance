@@ -30,7 +30,7 @@ static char SCCSid[] = "$SunId$ LBL";
 					r0*((t-2.0)*t+1.0)*t + \
 					r1*(t-1.0)*t*t )
 
-static char  *noise_name[4] = {"noise3a", "noise3b", "noise3c", "noise3"};
+static char  noise_name[4][8] = {"noise3a", "noise3b", "noise3c", "noise3"};
 static char  fnoise_name[] = "fnoise3";
 static char  hermite_name[] = "hermite";
 
@@ -61,7 +61,8 @@ register char  *nam;
 	while (i--)
 		if (nam == noise_name[i])
 			return(noise3(x)[i]);
-	eputs("Bad call to l_noise3()!\n");
+	eputs(nam);
+	eputs(": called l_noise3!\n");
 	quit(1);
 }
 
