@@ -1,4 +1,4 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
+/* Copyright (c) 1999 Silicon Graphics, Inc. */
 
 /* SCCSid "$SunId$ SGI" */
 
@@ -11,6 +11,7 @@
 #ifdef	MSDOS
 
 #define random()	((long)rand()<<16^(long)rand()<<6^(long)rand()>>4)
+#define srandom(s)	srand((unsigned)(s))
 
 #define frandom()	(rand()*(1./32768.))
 
@@ -27,6 +28,7 @@ extern long  lrand48();
 extern double  drand48();
 
 #define	 random()	lrand48()
+#define  srandom(s)	srand48((long)(s))
 #define	 frandom()	drand48()
 
 #endif
