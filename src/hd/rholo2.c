@@ -147,12 +147,10 @@ getradfile()			/* run rad and get needed variables */
 		strcpy(pippt, "> /dev/null");	/* nothing to match */
 	else
 		sprintf(cp, ")[ \t]*=' > %s", tf2);
-	if (system(combuf)) {
-		unlink(tf2);			/* clean up */
-		unlink(tf1);
-		error(WARNING, "error executing rad command");
-		return(-1);
-	}
+#ifdef DEBUG
+	wputs(combuf); wputs("\n");
+#endif
+	system(combuf);				/* ignore exit code */
 	if (pippt == NULL) {
 		loadvars(tf2);			/* load variables */
 		unlink(tf2);
