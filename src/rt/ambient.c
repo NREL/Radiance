@@ -384,18 +384,7 @@ memerr:
 }
 
 
-#ifdef	NIX
-
-int
-ambsync()			/* flush ambient file */
-{
-	if (nunflshed == 0)
-		return(0);
-	nunflshed = 0;
-	return(fflush(ambfp));
-}
-
-#else
+#ifdef	F_SETLKW
 
 int
 ambsync()			/* synchronize ambient file */
@@ -444,6 +433,17 @@ syncend:
 	fcntl(fileno(ambfp), F_SETLKW, &fls);
 	nunflshed = 0;
 	return(n);
+}
+
+#else
+
+int
+ambsync()			/* flush ambient file */
+{
+	if (nunflshed == 0)
+		return(0);
+	nunflshed = 0;
+	return(fflush(ambfp));
 }
 
 #endif
