@@ -24,7 +24,10 @@ if (! $?wishcom) then
 	echo "Cannot find wish executable in current path -- trad not installed."
 	exit 1
 endif
-if ( $wishcom:t == wish ) set oldwish
+if ( $wishcom:t == wish ) then
+	set wishcom="$wishcom -f"
+	set oldwish
+endif
 
 echo "Installing trad using $wishcom"
 
