@@ -156,10 +156,8 @@ int  xres, yres;
 		gheight = yres;
 	} else						/* just clear */
 		XClear(gwind);
-	if (new_ctab(ncolors) == 0) {
-		stderr_v("Color allocation error\n");
-		quit(1);
-	}
+						/* redo color table */
+	new_ctab(ncolors);
 	checkinp();
 	return;
 fail:
