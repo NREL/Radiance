@@ -100,10 +100,10 @@ marksources()			/* find and mark source objects */
 	}
 	markvirtuals();			/* find and add virtual sources */
 				/* allocate our contribution arrays */
-	maxcntr = nsources + MAXSPART*2;	/* start with this many */
+	maxcntr = nsources + MAXSPART;	/* start with this many */
 	srccnt = (CONTRIB *)malloc(maxcntr*sizeof(CONTRIB));
 	cntord = (CNTPTR *)malloc(maxcntr*sizeof(CNTPTR));
-	if (srccnt == NULL || cntord == NULL)
+	if (srccnt == NULL | cntord == NULL)
 		goto memerr;
 	return;
 memerr:
@@ -228,7 +228,7 @@ char  *p;			/* data for f */
 					maxcntr*sizeof(CONTRIB));
 			cntord = (CNTPTR *)realloc((char *)cntord,
 					maxcntr*sizeof(CNTPTR));
-			if (srccnt == NULL || cntord == NULL)
+			if (srccnt == NULL | cntord == NULL)
 				error(SYSTEM, "out of memory in direct");
 		}
 		cntord[sn].sndx = sn;
