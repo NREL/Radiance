@@ -65,15 +65,13 @@ register VIEW  *v;
 }
 
 
-normaspect(vp, ap, xp, yp)		/* fix pixel aspect or resolution */
-VIEW  *vp;
-double  *ap;
-int  *xp, *yp;
+normaspect(va, ap, xp, yp)		/* fix pixel aspect or resolution */
+double  va;			/* view aspect ratio */
+double  *ap;			/* pixel aspect in (or out if 0) */
+int  *xp, *yp;			/* x and y resolution in (or out if *ap!=0) */
 {
-	double  va = viewaspect(vp);
-
 	if (*ap <= FTINY)
-		*ap = (double)*yp / *xp / va;	/* compute pixel aspect */
+		*ap = va * *xp / *yp;		/* compute pixel aspect */
 	else if (va * *xp > *ap * *yp)
 		*xp = *yp / va * *ap;		/* reduce x resolution */
 	else
