@@ -50,7 +50,7 @@ static unsigned long  *pixval = NULL;	/* allocated pixels */
 
 static Display  *ourdisplay = NULL;	/* our display */
 
-static Visual  *ourvisual;		/* our visual structure */
+static XVisualInfo  ourvinfo;		/* our visual information */
 
 static Window  gwind = 0;		/* our graphics window */
 
@@ -84,7 +84,6 @@ x11_init(name, id)		/* initialize driver */
 char  *name, *id;
 {
 	int  nplanes;
-	XVisualInfo  ourvinfo;
 	XSetWindowAttributes	ourwinattr;
 	XWMHints  ourxwmhints;
 	XSizeHints	oursizhints;
@@ -94,34 +93,34 @@ char  *name, *id;
 		stderr_v("cannot open X-windows; DISPLAY variable set?\n");
 		return(NULL);
 	}
+					/* find a usable visual */
 	nplanes = DisplayPlanes(ourdisplay, ourscreen);
-	if (nplanes < 4) {
-		stderr_v("not enough colors\n");
-		return(NULL);
-	} else if (nplanes <= 12) {
-		if (!XMatchVisualInfo(ourdisplay,ourscreen,
-				nplanes,PseudoColor,&ourvinfo)) {
-			stderr_v("PseudoColor server required\n");
+	if (	!XMatchVisualInfo(ourdisplay,ourscreen,
+			24,TrueColor,&ourvinfo) &&
+		!XMatchVisualInfo(ourdisplay,ourscreen,
+			24,DirectColor,&ourvinfo)	)
+		if (nplanes < 4) {
+			stderr_v("not enough colors\n");
+			return(NULL);
+		} else if (!XMatchVisualInfo(ourdisplay,ourscreen,
+					nplanes,PseudoColor,&ourvinfo) &&
+				!XMatchVisualInfo(ourdisplay,ourscreen,
+					nplanes,GrayScale,&ourvinfo)) {
+			stderr_v("unsupported visual type\n");
 			return(NULL);
 		}
-	} else if (!XMatchVisualInfo(ourdisplay,ourscreen,
-			nplanes,TrueColor,&ourvinfo) &&
-						/* kludge for DirectColor */
-			!XMatchVisualInfo(ourdisplay,ourscreen,
-			nplanes,DirectColor,&ourvinfo)) {
-		stderr_v("TrueColor server required\n");
-		return(NULL);
-	}
-	ourvisual = ourvinfo.visual;
 	make_gmap(GAMMA);
 	/* open window */
 	ourwinattr.background_pixel = ourblack;
 	ourwinattr.border_pixel = ourblack;
+					/* this is a waste! */
+	ourwinattr.colormap = XCreateColormap(ourdisplay, ourroot,
+				ourvinfo.visual, AllocNone);
 	gwind = XCreateWindow(ourdisplay, ourroot, 0, 0,
 		DisplayWidth(ourdisplay,ourscreen)-2*BORWIDTH,
 		DisplayHeight(ourdisplay,ourscreen)-2*BORWIDTH,
-		BORWIDTH, nplanes, InputOutput, ourvisual,
-		CWBackPixel|CWBorderPixel, &ourwinattr);
+		BORWIDTH, ourvinfo.depth, InputOutput, ourvinfo.visual,
+		CWBackPixel|CWBorderPixel|CWColormap, &ourwinattr);
 	if (gwind == 0) {
 		stderr_v("cannot create window\n");
 		return(NULL);
@@ -198,7 +197,7 @@ int  xres, yres;
 	}
 	XClearWindow(ourdisplay, gwind);
 						/* reinitialize color table */
-	if (ourvisual->class == PseudoColor)
+	if (ourvinfo.class == PseudoColor || ourvinfo.class == GrayScale)
 		if (getpixels() == 0)
 			stderr_v("cannot allocate colors\n");
 		else
@@ -231,7 +230,7 @@ int  xmin, ymin, xmax, ymax;
 
 	if (ncolors > 0)
 		pixel = pixval[get_pixel(col, xnewcolr)];
-	else if (ourvisual->class != PseudoColor)
+	else if (ourvinfo.class == TrueColor || ourvinfo.class == DirectColor)
 		pixel = true_pixel(col);
 	else
 		return;
@@ -343,16 +342,16 @@ getpixels()				/* get the color map */
 	register int  i, j;
 
 	if (ncolors > 0)
-		goto donecolors;
-	if (ourvisual == DefaultVisual(ourdisplay,ourscreen)) {
+		return(ncolors);
+	if (ourvinfo.visual == DefaultVisual(ourdisplay,ourscreen)) {
 		ourmap = DefaultColormap(ourdisplay,ourscreen);
 		goto loop;
 	}
 newmap:
-	ourmap = XCreateColormap(ourdisplay,gwind,ourvisual,AllocNone);
+	ourmap = XCreateColormap(ourdisplay,gwind,ourvinfo.visual,AllocNone);
 loop:
-	for (ncolors = ourvisual->map_entries;
-			ncolors > ourvisual->map_entries/3;
+	for (ncolors = ourvinfo.colormap_size;
+			ncolors > ourvinfo.colormap_size/3;
 			ncolors = ncolors*.937) {
 		pixval = (unsigned long *)malloc(ncolors*sizeof(unsigned long));
 		if (pixval == NULL)
@@ -385,15 +384,6 @@ loop:
 			i--;
 		}
 	XSetWindowColormap(ourdisplay, gwind, ourmap);
-donecolors:
-#ifdef  DEBUG
-	thiscolor.flags = DoRed|DoGreen|DoBlue;
-	thiscolor.red = thiscolor.green = thiscolor.blue = 0;
-	for (i = 0; i < ncolors; i++) {
-		thiscolor.pixel = pixval[i];
-		XStoreColor(ourdisplay, ourmap, &thiscolor);
-	}
-#endif
 	return(ncolors);
 }
 
@@ -419,9 +409,9 @@ COLOR  col;
 	BYTE  rgb[3];
 
 	map_color(rgb, col);
-	rval = ourvisual->red_mask*rgb[RED]/255 & ourvisual->red_mask;
-	rval |= ourvisual->green_mask*rgb[GRN]/255 & ourvisual->green_mask;
-	rval |= ourvisual->blue_mask*rgb[BLU]/255 & ourvisual->blue_mask;
+	rval = ourvinfo.red_mask*rgb[RED]/255 & ourvinfo.red_mask;
+	rval |= ourvinfo.green_mask*rgb[GRN]/255 & ourvinfo.green_mask;
+	rval |= ourvinfo.blue_mask*rgb[BLU]/255 & ourvinfo.blue_mask;
 	return(rval);
 }
 
@@ -450,7 +440,8 @@ getevent()			/* get next event */
 		freepixels();
 		break;
 	case MapNotify:
-		if (ourvisual->class == PseudoColor)
+		if (ourvinfo.class == PseudoColor ||
+				ourvinfo.class == GrayScale)
 			if (getpixels() == 0)
 				stderr_v("Cannot allocate colors\n");
 			else
