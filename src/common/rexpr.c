@@ -264,6 +264,7 @@ static int
 cclass(set, c, af)
 register char *set;
 register c;
+int af;
 {
         register n;
 

@@ -21,7 +21,7 @@ static char SCCSid[] = "$SunId$ LBL";
 static double  ogetflt();
 static long  ogetint();
 static char  *ogetstr();
-static int  getobj(), octerror();
+static int  getobj(), octerror(), skiptree();
 static OCTREE  getfullnode(), gettree();
 
 static char  *infn;			/* input file name */
