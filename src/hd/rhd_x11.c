@@ -158,25 +158,22 @@ char  *id;
 	oursizhints.min_height = MINHEIGHT;
 	oursizhints.flags = PMinSize;
 	XSetNormalHints(ourdisplay, gwind, &oursizhints);
-					/* map the window and get its size */
-	XMapWindow(ourdisplay, gwind);
-	dev_input();
-					/* allocate our leaf pile */
-	if (!qtAllocLeaves(DisplayWidth(ourdisplay,ourscreen) *
-			DisplayHeight(ourdisplay,ourscreen) /
-			(qtMinNodesiz*qtMinNodesiz)))
-		error(SYSTEM, "insufficient memory for leaf storage");
-
 					/* figure out sensible view */
 	pwidth = (double)DisplayWidthMM(ourdisplay, ourscreen) /
 			DisplayWidth(ourdisplay, ourscreen);
 	pheight = (double)DisplayHeightMM(ourdisplay, ourscreen) /
 			DisplayHeight(ourdisplay, ourscreen);
 	copystruct(&odev.v, &stdview);
-	odev.name = id;
 	odev.v.type = VT_PER;
-	odev.v.horiz = 2.*180./PI * atan(0.5/VIEWDIST*pwidth*odev.hres);
-	odev.v.vert = 2.*180./PI * atan(0.5/VIEWDIST*pheight*odev.vres);
+					/* map the window and get its size */
+	XMapWindow(ourdisplay, gwind);
+	dev_input();			/* sets size and view angles */
+					/* allocate our leaf pile */
+	if (!qtAllocLeaves(DisplayWidth(ourdisplay,ourscreen) *
+			DisplayHeight(ourdisplay,ourscreen) /
+			(qtMinNodesiz*qtMinNodesiz)))
+		error(SYSTEM, "insufficient memory for leaf storage");
+	odev.name = id;
 	odev.ifd = ConnectionNumber(ourdisplay);
 }
 
@@ -236,6 +233,7 @@ VIEW	*nv;
 				odev.vres = dh;
 			}
 			XResizeWindow(ourdisplay, gwind, odev.hres, odev.vres);
+			dev_input();	/* wait for resize event */
 		}
 		copystruct(&odev.v, nv);
 	}
