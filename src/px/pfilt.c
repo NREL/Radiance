@@ -281,6 +281,7 @@ FILE  *in;
 			fprintf(stderr, "%s: warning - partial frame (%d%%)\n",
 					progname, 100*i/yres);
 			yres = i;
+			y_r = (double)nrows/yres;
 			break;
 		}
 		pass1scan(scan, i);
