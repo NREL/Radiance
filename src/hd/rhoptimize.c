@@ -133,16 +133,39 @@ char	*infn, *outfn;
 }
 
 
-static HOLO	*hout;		/* output holodeck section */
+static BEAMI	*beamdir;
 
 static int
-xferbeam(bp, hb)		/* transfer the given beam to hout and free */
-register BEAM	*bp;
-HDBEAMI	*hb;
+bpcmp(b1p, b2p)			/* compare beam positions on disk */
+int	*b1p, *b2p;
 {
-	bcopy((char *)hdbray(bp), (char *)hdnewrays(hout,hb->b,bp->nrm),
-			bp->nrm*sizeof(RAYVAL));
-	hdfreebeam(hb->h, hb->b);
+	register long	pdif = beamdir[*b1p].fo - beamdir[*b2p].fo;
+
+	if (pdif > 0L) return(1);
+	if (pdif < 0L) return(-1);
+	return(0);
+}
+
+static HOLO	*hout;
+
+static int
+xferclump(hp, bq, nb)		/* transfer the given clump to hout and free */
+HOLO	*hp;
+int	*bq, nb;
+{
+	register int	i;
+	register BEAM	*bp;
+
+	beamdir = hp->bi;		/* sort based on file position */
+	qsort((char *)bq, nb, sizeof(*bq), bpcmp);
+					/* transfer and free each beam */
+	for (i = 0; i < nb; i++) {
+		bp = hdgetbeam(hp, bq[i]);
+		bcopy((char *)hdbray(bp), (char *)hdnewrays(hout,bq[i],bp->nrm),
+				bp->nrm*sizeof(RAYVAL));
+		hdfreebeam(hp, bq[i]);
+	}
+	hdflush(hout);			/* write & free clump */
 	return(0);
 }
 
@@ -155,7 +178,7 @@ int	ifd, ofd;
 					/* create output section directory */
 	hout = hdinit(ofd, (HDGRID *)hinp);
 					/* clump the beams */
-	clumpbeams(hinp, 0, BKBSIZE*1024, xferbeam);
+	clumpbeams(hinp, 0, BKBSIZE*1024, xferclump);
 					/* clean up */
 	hddone(hinp);
 	hddone(hout);
