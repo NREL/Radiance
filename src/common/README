@@ -17,6 +17,7 @@ octree.h	header file for routines using octrees
 otypes.h	defines for object types
 paths.h		header file defining standard path names for this architecture
 plocate.h	header for 3D vector location
+radogl.h	header for routines using OpenGL to display Radiance scenes
 random.h	header file for random(3) and urand() function
 resolu.h	definitions for resolution line in image file.
 standard.h	standard include file for most programs
@@ -87,6 +88,12 @@ readobj.c	routines for reading in object descriptions
 readoct.c	routines to read octree information
 resolu.c	read and write image resolutions
 rexpr.c		regular expression parser (ala grep)
+rgldomat.c	set OpenGL material
+rglfile.c	process Radiance scene files into OpenGL display lists
+rglinst.c	convert Radiance octrees and instances into OpenGL
+rglmat.c	convert Radiance materials into OpenGL
+rglsrc.c	convert Radiance light sources into OpenGL
+rglsurf.c	convert Radiance surfaces into OpenGL
 savestr.c	routines for efficient string storage
 savqstr.c	quick and dirty string saver
 spec_rgb.c	convert colors and spectral ranges

@@ -1,5 +1,5 @@
 #
-# SCCSid "$SunId$ LBL"
+# SCCSid "$SunId$ SGI"
 # Makefile for ray tracing library routines
 #
 
@@ -7,6 +7,7 @@ OPT = -O
 MACH = -DBSD
 CFLAGS = $(MACH) $(OPT)
 CC = cc
+SPECIAL =
 
 COMPAT = bmalloc.o erf.o strcmp.o # frexp.o fwrite.o random.o
 
@@ -27,6 +28,8 @@ STDOBJ = fgetline.o fropen.o linregr.o xf.o mat4.o invmat4.o fvect.o urand.o \
 
 SYSOBJ = ealloc.o fdate.o portio.o myhostname.o $(COMPAT)
 
+OGLOBJ = rglfile.o rglmat.o rgldomat.o rglsurf.o rglinst.o rglsrc.o
+
 librt.a:	$(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 	ar rc librt.a $(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 	-ranlib librt.a
@@ -36,6 +39,11 @@ install:	librt.a
 
 clean:
 	rm -f *.o librt.a
+
+ogl:	$(OGLOBJ)
+	ar rc librgl.a $(OGLOBJ)
+	-ranlib librgl.a
+	mv librgl.a ../lib/librgl.a
 
 calexpr.o:	calexpr.c calcomp.h
 	$(CC) $(CFLAGS) -DVARIABLE -DFUNCTION -DRCONST -c calexpr.c
@@ -96,3 +104,6 @@ loadvars.o:	vars.h
 tonemap.o tmapcolrs.o:	tmprivat.h tonemap.h color.h
 
 tonemap.o:	tmerrmsg.h
+
+rglfile.o rglmat.o rgldomat.o rglsurf.o rglinst.o rglsrc.o:	radogl.h \
+standard.h mat4.h fvect.h color.h object.h otypes.h lookup.h
