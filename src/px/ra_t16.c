@@ -276,13 +276,16 @@ struct hdStruct  *hp;
 ra2tg(hp)			/* convert radiance to targa file */
 struct hdStruct  *hp;
 {
+#define  map(v)		(v >= 1.0 ? 1023 : (int)(v*1023.+.5))
 	unsigned char	gmap[1024];
-	register int	i, j, c;
+	register int	i, j;
 	unsigned char  *tarData;
 	COLOR	*inline;
 					/* set up gamma correction */
-	for (i = 0; i < 1024; i++)
-		gmap[i] = 256.*pow((i+.5)/1024., 1./gamma);
+	for (i = 0; i < 1024; i++) {
+		j = 256.*pow((i+.5)/1024., 1./gamma);
+		gmap[i] = hp->dataBits == 16 && j > 248 ? 248 : j;
+	}
 					/* allocate space for data */
 	inline = (COLOR *)emalloc(hp->x*sizeof(COLOR));
 	tarData = taralloc(hp);
@@ -294,29 +297,20 @@ struct hdStruct  *hp;
 			register unsigned short  *dp;
 			dp = (unsigned short *)tarData + j*hp->x;
 			for (i = 0; i < hp->x; i++) {
-				c = 1024.*colval(inline[i],RED);
-				if (c > 1023) c = 1023;
-				*dp = (gmap[c] & 0xf8)<<7;
-				c = 1024.*colval(inline[i],GRN);
-				if (c > 1023) c = 1023;
-				*dp |= (gmap[c] & 0xf8)<<2;
-				c = 1024.*colval(inline[i],BLU);
-				if (c > 1023) c = 1023;
-				*dp++ |= gmap[c]>>3;
+				*dp = ((gmap[map(colval(inline[i],RED))]
+						+(random()&7)) & 0xf8)<<7;
+				*dp |= ((gmap[map(colval(inline[i],GRN))]
+						+(random()&7)) & 0xf8)<<2;
+				*dp++ |= (gmap[map(colval(inline[i],BLU))]
+						+(random()&7))>>3;
 			}
 		} else {	/* hp->dataBits == 24 */
 			register unsigned char  *dp;
 			dp = (unsigned char *)tarData + j*3*hp->x;
 			for (i = 0; i < hp->x; i++) {
-				c = 1024.*colval(inline[i],BLU);
-				if (c > 1023) c = 1023;
-				*dp++ = gmap[c];
-				c = 1024.*colval(inline[i],GRN);
-				if (c > 1023) c = 1023;
-				*dp++ = gmap[c];
-				c = 1024.*colval(inline[i],RED);
-				if (c > 1023) c = 1023;
-				*dp++ = gmap[c];
+				*dp++ = gmap[map(colval(inline[i],BLU))];
+				*dp++ = gmap[map(colval(inline[i],GRN))];
+				*dp++ = gmap[map(colval(inline[i],RED))];
 			}
 		}
 	}
@@ -325,6 +319,7 @@ struct hdStruct  *hp;
 
 	free((char *)inline);
 	free((char *)tarData);
+#undef  map
 }
 
 
