@@ -183,6 +183,7 @@ init()			/* initialize and load display */
 		quiterr("input picture too large");
 	if (_setvideomode(video[i].mode) == 0)
 		quiterr("inadequate display card for picture");
+	ms_init();
 	initialized = 1;
 	_getvideoconfig(&config);
 	if (maxcolors == 0)
@@ -207,8 +208,10 @@ init()			/* initialize and load display */
 quiterr(err)		/* print message and exit */
 char  *err;
 {
-	if (initialized)
+	if (initialized) {
+		ms_done();
 		_setvideomode(_DEFAULTMODE);
+	}
 	if (err != NULL) {
 		fprintf(stderr, "%s: %s\n", progname, err);
 		exit(1);
@@ -267,13 +270,8 @@ docommand()			/* execute command */
 
 watch_mouse()			/* look after mousie */
 {
-	static int	mouse_installed = 0;
 	int	a_x, a_y, l_x, l_y;
 
-	if (!mouse_installed) {
-		ms_init();
-		mouse_installed = 1;
-	}
 	if (mouse_event & M_MOTION)
 		move_cursor(mouse_xpos, mouse_ypos);
 	if (!(mouse_event & M_LDOWN))
@@ -434,6 +432,7 @@ mappedimage()			/* display color-mapped image */
 					/* set gamma correction */
 	setcolrgam(gamcor);
 					/* make histogram */
+	_outtext("Quantizing image -- Please wait...");
 	new_histo();
 	for (y = 0; y < ymax; y++) {
 		if (getscan(y) < 0)
@@ -588,3 +587,14 @@ ms_init()
 
     return(1);
 }
+
+ms_done()
+{
+    union REGS inregs, outregs;
+
+    /* uninstall watcher */
+
+    inregs.w.ax = 0;
+    int386 (0x33, &inregs, &outregs);
+}
+
