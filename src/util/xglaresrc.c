@@ -13,13 +13,10 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "standard.h"
 #include "view.h"
 #include "resolu.h"
+#include "vfork.h"
 #include <signal.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-
-#ifndef BSD
-#define vfork	fork
-#endif
 
 #define XIM		"ximage"
 
