@@ -97,3 +97,7 @@ typedef float  COLOR[3];	/* red, green, blue */
 					&(cc)[RED],&(cc)[GRN],&(cc)[BLU])
 #define  fputcolcor(cc,fp)	fprintf(fp,"%s %f %f %f\n",COLCORSTR, \
 					(cc)[RED],(cc)[GRN],(cc)[BLU])
+
+#ifdef  DCL_ATOF
+extern double  atof(), ldexp(), frexp();
+#endif

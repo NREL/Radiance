@@ -71,6 +71,10 @@ extern char  *malloc(), *calloc(), *realloc();
 #endif
 extern char  *bmalloc(), *savestr(), *savqstr();
 
+#ifdef  DCL_ATOF
+extern double  atof();
+#endif
+
 #ifdef MSDOS
 #define NIX 1
 #endif
