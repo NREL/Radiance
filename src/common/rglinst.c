@@ -74,6 +74,7 @@ register OBJREC	*o;
 	glCallList(ot->listid);
 
 	if (o->oargs.nsargs > 1) {	/* end transform */
+		glMatrixMode(GL_MODELVIEW);
 		glPopMatrix();
 		glPopAttrib();
 	}
