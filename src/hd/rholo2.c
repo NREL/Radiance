@@ -14,25 +14,66 @@ static char SCCSid[] = "$SunId$ SGI";
 
 
 packrays(rod, p)		/* pack ray origins and directions */
-register float	*rod;
+float	*rod;
 register PACKET	*p;
 {
-	static FVECT	ro, rd;
+	static int	nmh = 0;
+	static int	*mhtab;
+	FVECT	ro, rd;
+	register BEAM	*bp;
 	GCOORD	gc[2];
-	int	ila[2], hsh;
+	int	ila[4], offset;
 	double	d, sl[4];
-	register int	i;
+	register int	i, j, k;
 
 	if (!hdbcoord(gc, hdlist[p->hd], p->bi))
 		error(CONSISTENCY, "bad beam index in packrays");
+							/* uniqueness hash */
+	if ((bp = hdgetbeam(hdlist[p->hd], p->bi)) != NULL) {
+		if (2*bp->nrm > nmh) {
+			if (nmh) free((char *)mhtab);
+			nmh = 2*bp->nrm + 1;
+			mhtab = (int *)malloc(nmh*sizeof(int));
+			if (mhtab == NULL)
+				error(SYSTEM, "out of memory in packrays");
+		}
+		for (k = nmh; k--; )
+			mhtab[k] = -1;
+		for (i = bp->nrm; i--; ) {
+			ila[0] = hdbray(bp)[i].r[0][0];
+			ila[1] = hdbray(bp)[i].r[0][1];
+			ila[2] = hdbray(bp)[i].r[1][0];
+			ila[3] = hdbray(bp)[i].r[1][1];
+			for (k = ilhash(ila,4); mhtab[k%nmh] >= 0; k++)
+				;
+			mhtab[k%nmh] = i;
+		}
+	}
+							/* init each ray */
 	ila[0] = p->hd; ila[1] = p->bi;
-	hsh = ilhash(ila,2) + p->nc;
+	offset = ilhash(ila,2) + p->nc;
 	for (i = 0; i < p->nr; i++) {
-		multisamp(sl, 4, urand(hsh+i));
-		p->ra[i].r[0][0] = sl[0] * 256.;
-		p->ra[i].r[0][1] = sl[1] * 256.;
-		p->ra[i].r[1][0] = sl[2] * 256.;
-		p->ra[i].r[1][1] = sl[3] * 256.;
+		do {					/* next unique ray */
+			multisamp(sl, 4, urand(offset+i));
+			p->ra[i].r[0][0] = ila[0] = sl[0] * 256.;
+			p->ra[i].r[0][1] = ila[1] = sl[1] * 256.;
+			p->ra[i].r[1][0] = ila[2] = sl[2] * 256.;
+			p->ra[i].r[1][1] = ila[3] = sl[3] * 256.;
+			if (bp == NULL)
+				break;
+			for (k = ilhash(ila,4); (j = mhtab[k%nmh]) >= 0; k++)
+				if (hdbray(bp)[j].r[0][0] ==
+							p->ra[i].r[0][0] &&
+						hdbray(bp)[j].r[0][1] ==
+							p->ra[i].r[0][1] &&
+						hdbray(bp)[j].r[1][0] ==
+							p->ra[i].r[1][0] &&
+						hdbray(bp)[j].r[1][1] ==
+							p->ra[i].r[1][1]) {
+					offset += bp->nrm - j;
+					break;
+				}
+		} while (j >= 0);
 		d = hdray(ro, rd, hdlist[p->hd], gc, p->ra[i].r);
 		if (!vdef(OBSTRUCTIONS))
 			d *= frandom();			/* random offset */
