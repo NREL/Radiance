@@ -237,26 +237,24 @@ register int  sn;		/* source number */
 						/* domega constant */
 		return(source[sn].ss2);
 
-	else {
 						/* check proximity */
-		if (source[sn].sflags & SPROX &&
-				d > source[sn].sl.prox)
-			return(0.0);
-
-		if (norm != NULL)
-			ddot /= d;
-		else
-			ddot = 1.0;
+	if (source[sn].sflags & SPROX &&
+			d > source[sn].sl.prox)
+		return(0.0);
+						/* compute dot product */
+	if (norm != NULL)
+		ddot /= d;
+	else
+		ddot = 1.0;
 						/* check angle */
-		if (source[sn].sflags & SSPOT) {
-			if (source[sn].sl.s->siz < 2.0*PI *
+	if (source[sn].sflags & SSPOT) {
+		if (source[sn].sl.s->siz < 2.0*PI *
 				(1.0 + DOT(source[sn].sl.s->aim,sr->rdir)))
-				return(0.0);
-			d += source[sn].sl.s->flen;
-		}
-						/* return domega */
-		return(ddot*source[sn].ss2/(d*d));
+			return(0.0);
+		d += source[sn].sl.s->flen;	/* adjust length */
 	}
+						/* compute domega */
+	return(ddot*source[sn].ss2/(d*d));
 }
 
 
@@ -376,8 +374,8 @@ char  *p;			/* data for f */
 	for (sn = 0; sn < ncnts; sn++) {
 						/* check threshold */
 		if ((sn+nshadcheck>=ncnts ? cntord[sn].brt :
-				cntord[sn].brt-cntord[sn+nshadcheck].brt) <
-				ourthresh*bright(r->rcol))
+				cntord[sn].brt-cntord[sn+nshadcheck].brt)
+				< ourthresh*bright(r->rcol))
 			break;
 						/* get statistics */
 		hwt = (double)source[cntord[sn].sno].nhits /
