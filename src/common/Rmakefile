@@ -42,7 +42,7 @@ librt.a:	$(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 	mv librt.a ../lib/librt.a
 
 install:	all
-	cd $(LIBDIR) ; rm -f $(LIBFILES)
+	cd $(LIBDIR) && rm -f $(LIBFILES)
 	cp $(LIBFILES) $(LIBDIR)
 
 clean:

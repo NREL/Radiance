@@ -28,7 +28,7 @@ all:	$(PROGS)
 
 install:	$(PROGS) $(LIBFILES)
 	cp $(PROGS) $(INSTDIR)
-	cd $(LIBDIR) ; rm -f $(LIBFILES)
+	cd $(LIBDIR) && rm -f $(LIBFILES)
 	cp $(LIBFILES) $(LIBDIR)
 
 clean:

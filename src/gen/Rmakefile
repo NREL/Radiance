@@ -25,7 +25,7 @@ install:	$(PROGS) $(LIBFILES) glaze.csh
 	cp $(PROGS) $(INSTDIR)
 	cp glaze.csh $(INSTDIR)/glaze
 	chmod 755 $(INSTDIR)/glaze
-	cd $(LIBDIR) ; rm -f $(LIBFILES)
+	cd $(LIBDIR) && rm -f $(LIBFILES)
 	cp $(LIBFILES) $(LIBDIR)
 
 clean:
