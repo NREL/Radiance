@@ -605,7 +605,7 @@ char  *s;
 	fprintview(&ourview, fp);
 	putc('\n', fp);
 	if (exposure != 1.0)
-		fprintf(fp, "EXPOSURE=%e\n", exposure);
+		fputexpos(exposure, fp);
 	putc('\n', fp);
 	fputresolu(YMAJOR|YDECR, ourview.hresolu, ourview.vresolu, fp);
 
