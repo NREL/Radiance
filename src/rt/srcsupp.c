@@ -239,13 +239,46 @@ register OBJREC  *m;
 {
 	register SPOT  *ns;
 
+	if ((ns = (SPOT *)m->os) != NULL)
+		return(ns);
 	if ((ns = (SPOT *)malloc(sizeof(SPOT))) == NULL)
 		return(NULL);
 	ns->siz = 2.0*PI * (1.0 - cos(PI/180.0/2.0 * m->oargs.farg[3]));
 	VCOPY(ns->aim, m->oargs.farg+4);
 	if ((ns->flen = normalize(ns->aim)) == 0.0)
 		objerror(m, USER, "zero focus vector");
+	m->os = (char *)ns;
 	return(ns);
+}
+
+
+spotout(r, s, dist)		/* check if we're outside spot region */
+register RAY  *r;
+register SPOT  *s;
+int  dist;
+{
+	double  d;
+	FVECT  vd;
+	
+	if (s == NULL)
+		return(0);
+	if (dist) {			/* distant source */
+		vd[0] = s->aim[0] - r->rorg[0];
+		vd[1] = s->aim[1] - r->rorg[1];
+		vd[2] = s->aim[2] - r->rorg[2];
+		d = DOT(r->rdir,vd);
+		/*			wrong side?
+		if (d <= FTINY)
+			return(1);	*/
+		d = DOT(vd,vd) - d*d;
+		if (PI*d > s->siz)
+			return(1);	/* out */
+		return(0);	/* OK */
+	}
+					/* local source */
+	if (s->siz < 2.0*PI * (1.0 + DOT(s->aim,r->rdir)))
+		return(1);	/* out */
+	return(0);	/* OK */
 }
 
 
@@ -497,112 +530,4 @@ register RAY  *r;
 		return(1);
 	}
 	return(0);
-}
-
-
-/****************************************************************
- * The following macros were separated from the m_light() routine
- * because they are very nasty and difficult to understand.
- */
-
-/* wrongillum *
- *
- * We cannot allow an illum to pass to another illum, because that
- * would almost certainly constitute overcounting.
- * However, we do allow an illum to pass to another illum
- * that is actually going to relay to a virtual light source.
- */
-
-#define  wrongillum(m, r)	(!(source[r->rsrc].sflags&SVIRTUAL) && \
-			objptr(source[r->rsrc].so->omod)->otype==MAT_ILLUM)
-
-/* wrongsource *
- *
- * This source is the wrong source (ie. overcounted) if we are
- * aimed to a different source than the one we hit and the one
- * we hit is not an illum which should be passed.
- */
-
-#define  wrongsource(m, r)	(r->rsrc>=0 && source[r->rsrc].so!=r->ro && \
-				(m->otype!=MAT_ILLUM || wrongillum(m,r)))
-
-/* distglow *
- *
- * A distant glow is an object that sometimes acts as a light source,
- * but is too far away from the test point to be one in this case.
- */
-
-#define  distglow(m, r)		(m->otype==MAT_GLOW && \
-				r->rot > m->oargs.farg[3])
-
-/* badcomponent *
- *
- * We must avoid counting light sources in the ambient calculation,
- * since the direct component is handled separately.  Therefore, any
- * ambient ray which hits an active light source must be discarded.
- * The same is true for stray specular samples, since the specular
- * contribution from light sources is calculated separately.
- */
-
-#define  badcomponent(m, r)	(r->crtype&(AMBIENT|SPECULAR) && \
-				!(r->crtype&SHADOW || r->rod < 0.0 || \
-					distglow(m, r)))
-
-/* overcount *
- *
- * All overcounting possibilities are contained here.
- */
-
-#define  overcount(m, r)	(badcomponent(m,r) || wrongsource(m,r))
-
-/* passillum *
- *
- * An illum passes to another material type when we didn't hit it
- * on purpose (as part of a direct calculation), or it is relaying
- * a virtual light source.
- */
-
-#define  passillum(m, r)	(m->otype==MAT_ILLUM && \
-				(r->rsrc<0 || source[r->rsrc].so!=r->ro || \
-				source[r->rsrc].sflags&SVIRTUAL))
-
-/* srcignore *
- *
- * The -di flag renders light sources invisible, and here is the test.
- */
-
-#define  srcignore(m, r)	(directinvis && !(r->crtype&SHADOW) && \
-				!distglow(m, r))
-
-
-m_light(m, r)			/* ray hit a light source */
-register OBJREC  *m;
-register RAY  *r;
-{
-						/* check for over-counting */
-	if (overcount(m, r))
-		return;
-						/* check for passed illum */
-	if (passillum(m, r)) {
-		if (m->oargs.nsargs < 1 || !strcmp(m->oargs.sarg[0], VOIDID))
-			raytrans(r);
-		else
-			rayshade(r, modifier(m->oargs.sarg[0]));
-		return;
-	}
-					/* otherwise treat as source */
-						/* check for behind */
-	if (r->rod < 0.0)
-		return;
-						/* check for invisibility */
-	if (srcignore(m, r))
-		return;
-						/* get distribution pattern */
-	raytexture(r, m->omod);
-						/* get source color */
-	setcolor(r->rcol, m->oargs.farg[0],
-			  m->oargs.farg[1],
-			  m->oargs.farg[2]);
-						/* modify value */
-	multcolor(r->rcol, r->pcol);
 }
