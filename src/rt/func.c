@@ -33,8 +33,7 @@ OBJREC  *m;
 register RAY  *r;
 XF  *bx;
 {
-	extern double  l_noise3(), l_noise3a(), l_noise3b(), l_noise3c();
-	extern double  l_hermite(), l_fnoise3(), l_arg();
+	extern double  l_arg();
 	extern long  eclock;
 	static char  *initfile = "rayinit.cal";
 					/* initialize if first call */
@@ -49,12 +48,7 @@ XF  *bx;
 		scompile("Jx=$19;Jy=$20;Jz=$21;", NULL, 0);
 		scompile("Kx=$22;Ky=$23;Kz=$24;", NULL, 0);
 		funset("arg", 1, '=', l_arg);
-		funset("noise3", 3, ':', l_noise3);
-		funset("noise3a", 3, ':', l_noise3a);
-		funset("noise3b", 3, ':', l_noise3b);
-		funset("noise3c", 3, ':', l_noise3c);
-		funset("hermite", 5, ':', l_hermite);
-		funset("fnoise3", 3, ':', l_fnoise3);
+		setnoisefuncs();
 		initfile = NULL;
 	}
 	fobj = m;
