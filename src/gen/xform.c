@@ -187,8 +187,8 @@ register FILE  *fin;
 				putchar('\n');
 				while ((c = getc(fin)) != EOF && c != '\n')
 					putchar(c);
-				printf(" |");
-				for (c = 0; c < xac; c++)
+				printf(" | %s -e", xav[0]);
+				for (c = 1; c < xac; c++)
 					printf(" %s", xav[c]);
 				putchar('\n');
 			}
