@@ -65,6 +65,22 @@ register VIEW  *v;
 }
 
 
+normaspect(vp, ap, xp, yp)		/* fix pixel aspect or resolution */
+VIEW  *vp;
+double  *ap;
+int  *xp, *yp;
+{
+	double  va = viewaspect(vp);
+
+	if (*ap <= FTINY)
+		*ap = (double)*yp / *xp / va;	/* compute pixel aspect */
+	else if (va * *xp > *ap * *yp)
+		*xp = *yp / va * *ap;		/* reduce x resolution */
+	else
+		*yp = *xp * va / *ap;		/* reduce y resolution */
+}
+
+
 viewray(orig, direc, v, x, y)		/* compute ray origin and direction */
 FVECT  orig, direc;
 register VIEW  *v;
