@@ -165,7 +165,7 @@ double	dom;
 		if (pz <= 0.0)
 			goto fail;
 		pt[i].x = px*xres;
-		pt[i].y = py*yres;
+		pt[i].y = yres-1 - (int)(py*yres);
 	}
 	XDrawLines(theDisplay, gwind, vecGC, pt, NSEG+1, CoordModeOrigin);
 	return;
