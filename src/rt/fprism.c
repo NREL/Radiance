@@ -367,6 +367,22 @@ TRAYON r_initial;
  
 
 
+static int
+compare(r1,r2,marge)
+TRAYON r1, r2;
+double marge;
+
+{
+ double arctg1, arctg2;
+
+ arctg1 = atan2(Y(r1),X(r1));
+ arctg2 = atan2(Y(r2),X(r2));
+ if ((arctg1 - marge <= arctg2) && (arctg1 + marge >= arctg2)) return 1;
+ else return 0;
+}
+
+
+
 
 static
 sortie(r)
@@ -506,22 +522,6 @@ TRAYON r_incident;
 
 
 
-static int
-compare(r1,r2,marge)
-TRAYON r1, r2;
-double marge;
-
-{
- double arctg1, arctg2;
-
- arctg1 = atan2(Y(r1),X(r1));
- arctg2 = atan2(Y(r2),X(r2));
- if ((arctg1 - marge <= arctg2) && (arctg1 + marge >= arctg2)) return 1;
- else return 0;
-}
-
-
-
 #define ensuite(rayon,prob_passage,destination) r_suite = rayon; \
 				 r_suite.e = prob_passage(rayon)*rayon.e; \
 				 r_suite.dest = destination; \
@@ -633,63 +633,8 @@ TRAYON *r1,*r2;
 
 
 
-static double
-l_get_val()
-
-{
- int val, dir, i, trouve, curseur;
- int nb;
- double valeur;
- TRAYON *rayt, raynull;
- 
- if (prismclock < 0 || prismclock < eclock) setprism();
- if (bidon == BADVAL) {
-	errno = EDOM;
-	return(0.0);
- }
- val = (int)(argument(1) + .5);
- dir = (int)(argument(2) + .5);
- nb = (int)(argument(3) + .5);
- X(raynull) = bidon;
- Y(raynull) = Z(raynull) = 0.;
- raynull.e = 0.;
- trouve = curseur = 0;
- if ( !nosource && nb==2 ) nb=1; /* on est en train de tracer la source
-				     a partir de sa seconde source virtuelle */ 
-#ifdef DEBUG
- fprintf(stderr, " On considere le rayon no: %d\n", nb);
-#endif
- for(i=0; i < nbrayons &&!trouve; i++)
-  {
-   if(ray[i].v[0] * dir * sens >= 0.) curseur ++;
-   if(curseur == nb)
-   {
-    rayt = &ray[i];
-    trouve = 1;
-   }
-  }
- if(!trouve) rayt = &raynull; 
- switch(val) {
-	case 0 : valeur = rayt->v[0];
-	         break;
-	case 1 : valeur = rayt->v[1];
-		 break;
-	case 2 : valeur = rayt->v[2];
-		 break;
-	case 3 : valeur = rayt->e;
-		 break;
-	default : errno = EDOM; return(0.0);
-    } 
-#ifdef DEBUG
-  fprintf(stderr, "get_val( %i, %i, %i) = %lf\n",val,dir,nb,valeur);
-#endif
-  return valeur;
-}
-
-
 static
 setprism()
-
 {
  double d;
  TRAYON r_initial,rsource;
@@ -784,6 +729,61 @@ if ( X(r_initial) != 0.)
  bidon = BADVAL;
  return;
 }
+
+
+static double
+l_get_val()
+
+{
+ int val, dir, i, trouve, curseur;
+ int nb;
+ double valeur;
+ TRAYON *rayt, raynull;
+ 
+ if (prismclock < 0 || prismclock < eclock) setprism();
+ if (bidon == BADVAL) {
+	errno = EDOM;
+	return(0.0);
+ }
+ val = (int)(argument(1) + .5);
+ dir = (int)(argument(2) + .5);
+ nb = (int)(argument(3) + .5);
+ X(raynull) = bidon;
+ Y(raynull) = Z(raynull) = 0.;
+ raynull.e = 0.;
+ trouve = curseur = 0;
+ if ( !nosource && nb==2 ) nb=1; /* on est en train de tracer la source
+				     a partir de sa seconde source virtuelle */ 
+#ifdef DEBUG
+ fprintf(stderr, " On considere le rayon no: %d\n", nb);
+#endif
+ for(i=0; i < nbrayons &&!trouve; i++)
+  {
+   if(ray[i].v[0] * dir * sens >= 0.) curseur ++;
+   if(curseur == nb)
+   {
+    rayt = &ray[i];
+    trouve = 1;
+   }
+  }
+ if(!trouve) rayt = &raynull; 
+ switch(val) {
+	case 0 : valeur = rayt->v[0];
+	         break;
+	case 1 : valeur = rayt->v[1];
+		 break;
+	case 2 : valeur = rayt->v[2];
+		 break;
+	case 3 : valeur = rayt->e;
+		 break;
+	default : errno = EDOM; return(0.0);
+    } 
+#ifdef DEBUG
+  fprintf(stderr, "get_val( %i, %i, %i) = %lf\n",val,dir,nb,valeur);
+#endif
+  return valeur;
+}
+
 
 setprismfuncs()
 {
