@@ -1,4 +1,4 @@
-/* Copyright (c) 1996 Regents of the University of California */
+/* Copyright (c) 1997 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -171,32 +171,9 @@ float	*inpacuD;		/* input acuity data (cycles/degree) */
 double
 hacuity(La)			/* return visual acuity in cycles/degree */
 double	La;
-{				/* data due to S. Shaler (we should fit it!) */
-#define NPOINTS	20
-	static float	l10lum[NPOINTS] = {
-		-3.10503,-2.66403,-2.37703,-2.09303,-1.64403,-1.35803,
-		-1.07403,-0.67203,-0.38503,-0.10103,0.29397,0.58097,0.86497,
-		1.25697,1.54397,1.82797,2.27597,2.56297,2.84697,3.24897
-	};
-	static float	resfreq[NPOINTS] = {
-		2.09,3.28,3.79,4.39,6.11,8.83,10.94,18.66,23.88,31.05,37.42,
-		37.68,41.60,43.16,45.30,47.00,48.43,48.32,51.06,51.09
-	};
-	double	l10La;
-	register int	i;
-					/* check limits */
-	if (La <= 7.85e-4)
-		return(resfreq[0]);
-	if (La >= 1.78e3)
-		return(resfreq[NPOINTS-1]);
-					/* interpolate data */
-	l10La = log10(La);
-	for (i = 0; i < NPOINTS-2 && l10lum[i+1] <= l10La; i++)
-		;
-	return( ( (l10lum[i+1] - l10La)*resfreq[i] +
-			(l10La - l10lum[i])*resfreq[i+1] ) /
-			(l10lum[i+1] - l10lum[i]) );
-#undef NPOINTS
+{
+					/* functional fit */
+	return(17.25*atan(1.4*log10(La) + 0.35) + 25.72);
 }
 
 
