@@ -122,9 +122,13 @@ char  *argv[];
 		if (argv[a][0] == '-')
 			switch (argv[a][1]) {
 			case 'n':
+				if (argv[a][2] || a+1 >= argc)
+					break;
 				idprefix = argv[++a];
 				continue;
 			case 'e':
+				if (argv[a][2])
+					break;
 				expand = 1;
 				continue;
 			}
@@ -142,6 +146,11 @@ char  *argv[];
 	if (reverse = totscale < 0.0)
 		totscale = -totscale;
 
+	if (a < argc && argv[a][0] == '-') {
+		fprintf(stderr, "%s: command line error at '%s'\n",
+				argv[0], argv[a]);
+		exit(1);
+	}
 	xac = a;
 
 	putchar('#');				/* simple header */
