@@ -401,7 +401,8 @@ register char  *s;
 	while (*s) {
 		ac = 0;
 		do {
-			av[ac++] = s;
+			if (ac || *s == '-')
+				av[ac++] = s;
 			while (*s && *s != ' ')
 				s++;
 			while (*s == ' ')
