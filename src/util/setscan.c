@@ -1,13 +1,17 @@
 /* Copyright (c) 1991 Regents of the University of California */
 
-/* SCCSid "$SunId$ LBL" */
+#ifndef lint
+static char SCCSid[] = "$SunId$ LBL";
+#endif
 
-/* Copyright (c) 1991 Regents of the University of California */
+/*
+ * Convert angle ranges of the form a-b:s,c to discrete values
+ */
 
 #include <ctype.h>
 
-#define  ANGLE		short
-#define  AEND		(-1)
+#include "setscan.h"
+
 
 setscan(ang, arg)			/* set up scan according to arg */
 register ANGLE  *ang;
