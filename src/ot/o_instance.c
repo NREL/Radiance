@@ -72,11 +72,11 @@ CUBE  *cu;
 		vloc &= j;
 	}
 	if (vout == 0)			/* all inside */
-		return(2);
+		return(O_IN);
 	if (vout < 8)			/* some inside */
-		return(1);
+		return(O_HIT);
 	if (vloc)			/* all to one side */
-		return(0);
+		return(O_MISS);
 					/* octree vertices in cube? */
 	for (j = 0; j < 3; j++)
 		cumax[j] = (cumin[j] = cu->cuorg[j]) + cu->cusize;
@@ -91,10 +91,10 @@ CUBE  *cu;
 		if (j = plocate(vert[i], cumin, cumax))
 			vloc &= j;
 		else
-			return(1);	/* vertex inside */
+			return(O_HIT);	/* vertex inside */
 	}
 	if (vloc)			/* all to one side */
-		return(0);
+		return(O_MISS);
 					/* check edges */
 	for (i = 0; i < 4; i++)
 		for (j = 0; j < 3; j++) {
@@ -102,8 +102,8 @@ CUBE  *cu;
 			VCOPY(v1, vert[vstart[i]]);
 			VCOPY(v2, vert[vstart[i] ^ 1<<j]);
 			if (clip(v1, v2, cumin, cumax))
-				return(1);		/* edge inside */
+				return(O_HIT);		/* edge inside */
 		}
 
-	return(0);			/* no intersection */
+	return(O_MISS);			/* no intersection */
 }

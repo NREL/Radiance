@@ -76,14 +76,14 @@ register CUBE  *cu;
 	d2 = DOT(v1,v1);
 
 	if (d2 > (rad+d1+FTINY)*(rad+d1+FTINY))	/* quick test */
-		return(0);			/* cube outside */
+		return(O_MISS);			/* cube outside */
 	
 					/* check sphere interior */
 	if (d1 < rad) {
 		if (d2 < (rad-d1-FTINY)*(rad-d1-FTINY))
-			return(0);		/* cube inside sphere */
+			return(O_MISS);		/* cube inside sphere */
 		if (d2 < (rad+FTINY)*(rad+FTINY))
-			return(1);		/* cube center inside */
+			return(O_HIT);		/* cube center inside */
 	}
 					/* find closest distance */
 	for (i = 0; i < 3; i++)
@@ -95,7 +95,7 @@ register CUBE  *cu;
 			v1[i] = 0;
 					/* final intersection check */
 	if (DOT(v1,v1) <= (rad+FTINY)*(rad+FTINY))
-		return(1);
+		return(O_HIT);
 	else
-		return(0);
+		return(O_MISS);
 }

@@ -201,7 +201,7 @@ OBJECT  obj;
 
 	in = (*ofun[objptr(obj)->otype].funp)(objptr(obj), cu);
 
-	if (!in)
+	if (in == O_MISS)
 		return;				/* no intersection */
 	
 	if (istree(cu->cutree)) {
@@ -228,7 +228,7 @@ OBJECT  obj;
 		objset(oset, cu->cutree);
 		cukid.cusize = cu->cusize * 0.5;
 		
-		if (in == 2 || oset[0] < objlim || cukid.cusize < mincusize) {
+		if (in==O_IN || oset[0] < objlim || cukid.cusize < mincusize) {
 							/* add to set */
 			if (oset[0] >= MAXSET) {
 				sprintf(errmsg,
@@ -250,9 +250,9 @@ OBJECT  obj;
 					if ((1<<j) & i)
 						cukid.cuorg[j] += cukid.cusize;
 				}
+				addobject(&cukid, obj);
 				for (j = 1; j <= oset[0]; j++)
 					addobject(&cukid, oset[j]);
-				addobject(&cukid, obj);
 				octkid(ot, i) = cukid.cutree;
 			}
 			cu->cutree = ot;

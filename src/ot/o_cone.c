@@ -59,19 +59,19 @@ register CUBE  *cu;
 	if (findcseg(ep0, ep1, co, p) > 0.0) {
 					/* check min. distance to cone */
 		if (dist2lseg(p, ep0, ep1) > (r+FTINY)*(r+FTINY))
-			return(0);
+			return(O_MISS);
 #ifdef  STRICT
 					/* get cube boundaries */
 		for (i = 0; i < 3; i++)
 			cumax[i] = (cumin[i] = cu->cuorg[i]) + cu->cusize;
 					/* closest segment intersects? */
 		if (clip(ep0, ep1, cumin, cumax))
-			return(1);
+			return(O_HIT);
 	}
 					/* check sub-cubes */
 	cukid.cusize = cu->cusize * 0.5;
 	if (cukid.cusize < mincusize)
-		return(1);		/* cube too small */
+		return(O_HIT);		/* cube too small */
 	cukid.cutree = EMPTY;
 
 	for (j = 0; j < 8; j++) {
@@ -81,12 +81,12 @@ register CUBE  *cu;
 				cukid.cuorg[i] += cukid.cusize;
 		}
 		if (o_cone(o, &cukid))
-			return(1);	/* sub-cube intersects */
+			return(O_HIT);	/* sub-cube intersects */
 	}
-	return(0);			/* no intersection */
+	return(O_MISS);			/* no intersection */
 #else
 	}
-	return(1);			/* assume intersection */
+	return(O_HIT);			/* assume intersection */
 #endif
 }
 
