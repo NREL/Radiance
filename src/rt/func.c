@@ -36,6 +36,10 @@ XF  *bx;
 	extern double  l_arg();
 	extern long  eclock;
 	static char  *initfile = "rayinit.cal";
+	static long  lastrno = -1;
+					/* check to see if already set */
+	if (m == fobj && r->rno == lastrno)
+		return;
 					/* initialize if first call */
 	if (initfile != NULL) {
 		loadfunc(initfile);
@@ -61,6 +65,7 @@ XF  *bx;
 			copystruct(&funcxf, &r->rox->b);
 	else
 		copystruct(&funcxf, bx);
+	lastrno = r->rno;
 	eclock++;		/* notify expression evaluator */
 }
 
