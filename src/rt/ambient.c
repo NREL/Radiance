@@ -17,6 +17,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "octree.h"
 
+#include  "otypes.h"
+
 #include  "random.h"
 
 #define  OCTSCALE	0.5	/* ceil((valid rad.)/(cube size)) */
@@ -32,7 +34,7 @@ extern int  ambounce;		/* number of ambient bounces */
 extern char  *amblist[];	/* ambient include/exclude list */
 extern int  ambincl;		/* include == 1, exclude == 0 */
 
-OBJECT  ambset[128];		/* ambient include/exclude set */
+OBJECT  ambset[256]={0};	/* ambient include/exclude set */
 
 double  maxarad;		/* maximum ambient radius */
 double  minarad;		/* minimum ambient radius */
@@ -74,21 +76,9 @@ setambient(afile)			/* initialize calculation */
 char  *afile;
 {
 	long  ftell();
-	char  **amblp;
 	OBJECT  obj;
 	AMBVAL  amb;
-					/* set up ambient set */
-	ambset[0] = 0;
-	for (amblp = amblist; *amblp != NULL; amblp++) {
-		if ((obj = modifier(*amblp)) == OVOID) {
-			sprintf(errmsg, "unknown %s modifier \"%s\"", 
-				ambincl ? "include" : "exclude", *amblp);
-			error(WARNING, errmsg);
-			continue;
-		}
-		if (!inset(ambset, obj))
-			insertelem(ambset, obj);
-	}
+
 	maxarad = thescene.cusize / 2.0;		/* maximum radius */
 							/* minimum radius */
 	minarad = ambres > 0 ? thescene.cusize/ambres : 0.0;
@@ -105,6 +95,22 @@ char  *afile;
 			sprintf(errmsg, "cannot open ambient file \"%s\"",
 					afile);
 			error(SYSTEM, errmsg);
+		}
+}
+
+
+ambnotify(obj)			/* record new modifier */
+OBJECT  obj;
+{
+	register OBJREC  *o = objptr(obj);
+	register char  **amblp;
+
+	if (!ismodifier(o->otype))
+		return;
+	for (amblp = amblist; *amblp != NULL; amblp++)
+		if (!strcmp(o->oname, *amblp)) {
+			insertelem(ambset, obj);
+			return;
 		}
 }
 
