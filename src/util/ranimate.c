@@ -1052,13 +1052,10 @@ int	status;
 	register PROC	*pp;
 
 	pp = ps->proc + pn;
-	if (!silent) {			/* echo command */
-		if (ps->hostname[0])
-			printf("On %s:", ps->hostname);
-		printf("\t%s\n", pp->com);
-		fflush(stdout);
-	}
 	if (pp->elen) {			/* pass errors */
+		if (ps->hostname[0])
+			fprintf(stderr, "%s: ", ps->hostname);
+		fprintf(stderr, "Error output from: %s\n", pp->com);
 		fputs(pp->errs, stderr);
 		fflush(stderr);
 		if (ps->hostname[0])
@@ -1095,14 +1092,22 @@ int	(*rf)();
 	int	pid;
 	register struct pslot	*psl;
 
-	if (noaction) {
-		if (!silent)
-			printf("\t%s\n", com);	/* just echo it */
+	if (!silent)
+		printf("\t%s &\n", com);	/* echo command */
+	if (noaction)
 		return(0);
-	}
+	fflush(stdout);
 					/* else start it when we can */
 	while ((pid = startjob(NULL, savestr(com), donecom)) == -1)
 		bwait(1);
+	if (!silent) {
+		PSERVER	*ps;
+		int	psn = pid;
+		ps = findpjob(&psn);
+		printf("\tProcess started on %s\n",
+				ps->hostname[0] ? ps->hostname : LHOSTNAME);
+		fflush(stdout);
+	}
 	psl = findpslot(pid);		/* record info. in appropriate slot */
 	psl->pid = pid;
 	psl->fout = fout;
@@ -1143,21 +1148,34 @@ char	*com;
 int	maxcopies;
 {
 	int	retstatus = 0;
+	int	hostcopies;
 	int	status;
 	register PSERVER	*ps;
 
-	if (noaction) {
-		if (!silent)
-			printf("\t%s\n", com);	/* just echo */
+	if (!silent)
+		printf("\t%s &\n", com);	/* echo command */
+	if (noaction)
 		return(0);
-	}
+	fflush(stdout);
 					/* start jobs on each server */
-	for (ps = pslist; ps != NULL; ps = ps->next)
+	for (ps = pslist; ps != NULL; ps = ps->next) {
+		hostcopies = 0;
 		while (maxcopies > 0 &&
 				startjob(ps, savestr(com), donecom) != -1) {
 			sleep(10);
+			hostcopies++;
 			maxcopies--;
 		}
+		if (!silent && hostcopies) {
+			if (hostcopies > 1)
+				printf("\t%d duplicate processes", hostcopies);
+			else
+				printf("\tProcess");
+			printf(" started on %s\n",
+				ps->hostname[0] ? ps->hostname : LHOSTNAME);
+			fflush(stdout);
+		}
+	}
 					/* wait for jobs to finish */
 	while ((status = wait4job(NULL, -1)) != -1)
 		if (status)
