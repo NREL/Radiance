@@ -231,22 +231,22 @@ init()				/* initialize global variables */
 	setview(&rightview);
 	indirect[nglarangs].lcos =
 	indirect[nglarangs].rcos = cos(maxtheta);
-	indirect[nglarangs].lsin =
-	-(indirect[nglarangs].rsin = sin(maxtheta));
+	indirect[nglarangs].rsin =
+	-(indirect[nglarangs].lsin = sin(maxtheta));
 	indirect[nglarangs].theta = 0.0;
 	for (i = 0; i < nglarangs; i++) {
 		d = (glarang[nglarangs-1] - glarang[i])*(PI/180.);
 		indirect[nglarangs-i-1].lcos =
 		indirect[nglarangs+i+1].rcos = cos(d);
-		indirect[nglarangs-i-1].lsin =
-		-(indirect[nglarangs+i+1].rsin = sin(d));
+		indirect[nglarangs+i+1].rsin =
+		-(indirect[nglarangs-i-1].lsin = sin(d));
 		d = (glarang[nglarangs-1] + glarang[i])*(PI/180.);
 		indirect[nglarangs-i-1].rcos =
 		indirect[nglarangs+i+1].lcos = cos(d);
-		indirect[nglarangs+i+1].lsin =
-		-(indirect[nglarangs-i-1].rsin = sin(d));
-		indirect[nglarangs-i-1].theta = -(PI/180.)*glarang[i];
-		indirect[nglarangs+i+1].theta = (PI/180.)*glarang[i];
+		indirect[nglarangs-i-1].rsin =
+		-(indirect[nglarangs+i+1].lsin = sin(d));
+		indirect[nglarangs-i-1].theta = (PI/180.)*glarang[i];
+		indirect[nglarangs+i+1].theta = -(PI/180.)*glarang[i];
 	}
 						/* open picture */
 	if (picture != NULL) {
