@@ -337,8 +337,7 @@ char  *p;			/* data for f */
 				( sr.ro != source[scp->sno].so ||
 				source[scp->sno].sflags & SFOLLOW )) {
 						/* follow entire path */
-			if (!raycont(&sr))
-				objerror(sr.ro, USER, "material not found");
+			raycont(&sr);
 			rayparticipate(&sr);
 			if (trace != NULL)
 				(*trace)(&sr);	/* trace execution */
