@@ -20,7 +20,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #define NVSAMPS		16384	/* number of ray samples per view */
 #endif
 #ifndef MEYERNG
-#define MEYERNG		0.1	/* target mean eye range (rel. to grid) */
+#define MEYERNG		0.2	/* target mean eye range (rel. to grid) */
 #endif
 #ifndef MAXTODO
 #define MAXTODO		3	/* maximum sections to look at */
@@ -222,9 +222,10 @@ VIEW	*vw;
 
 
 int
-addview(hd, vw, hres, vres)	/* add view for section */
+addview(hd, vw, rad, hres, vres)	/* add view for section */
 int	hd;
 VIEW	*vw;
+double	rad;
 int	hres, vres;
 {
 	int	sampquant, samptot = 0;
@@ -246,8 +247,13 @@ int	hres, vres;
 			if (viewray(rorg, rdir, vw, (v+frandom())/svr,
 						(h+frandom())/shr) < -FTINY)
 				continue;
+			if (rad > FTINY) {
+				rorg[0] += (1.-2.*frandom())*rad;
+				rorg[1] += (1.-2.*frandom())*rad;
+				rorg[2] += (1.-2.*frandom())*rad;
+			}
 			if (hdinter(gc, NULL, NULL, hdlist[hd], rorg, rdir)
-						>= FHUGE)
+						>= 0.99*FHUGE)
 				continue;
 			cbeam[getcbeam(hd,hdbindex(hdlist[hd],gc))].nr +=
 					sampquant;
@@ -278,41 +284,44 @@ int	hr, vr;
 {
 	static int	todo[MAXTODO+1];
 	int	n;
-	double	hdgsiz, d;
+	double	er, eravg, d;
 	register HOLO	*hp;
 	register int	i;
 					/* find nearby sections */
 	if (!(n = comptodo(todo, vn)))
 		return(NULL);
-					/* sort our list */
+					/* sort current beam list */
 	cbeamsort(1);
-					/* add view to flagged sections */
-	for (i = 0; i < n; i++)
-		if (!addview(todo[i], vn, hr, vr)) {	/* whoops! */
-			register int	j;
+					/* add view to nearby sections */
+	eravg = 0.;
+	for (i = 0; i < n; i++) {
+		hp = hdlist[todo[i]];
+		if (MEYERNG > FTINY)
+			er = 	MEYERNG/3. / VLEN(hp->wg[0]) +
+				MEYERNG/3. / VLEN(hp->wg[1]) +
+				MEYERNG/3. / VLEN(hp->wg[2]) ;
+		else
+			er = 0.;
+		if (!addview(todo[i], vn, 0.25*er, hr, vr)) {
+			register int	j;		/* whoops! */
 			n--;				/* delete from list */
 			for (j = i--; j <= n; j++)
 				todo[j] = todo[j+1];
-		}
-	if (!n || MEYERNG <= FTINY || vn->type == VT_PAR)
-		return(todo);
-	hdgsiz = 0.;			/* compute mean grid size */
-	for (i = 0; i < n; i++) {
-		hp = hdlist[todo[i]];
-		hdgsiz += 	1./3. / VLEN(hp->wg[0]) +
-				1./3. / VLEN(hp->wg[1]) +
-				1./3. / VLEN(hp->wg[2]) ;
+		} else
+			eravg += er;
 	}
-	hdgsiz /= (double)n;
+	if (eravg <= FTINY)
+		return(todo);
+					/* compute average eye range */
+	eravg /= (double)n;
 					/* add to current eye position */
 	if (cureye.rng <= FTINY) {
 		VCOPY(cureye.vpt, vn->vp);
-		cureye.rng = MEYERNG * hdgsiz;
-	} else if ((d = sqrt(dist2(vn->vp,cureye.vpt))) + MEYERNG*hdgsiz >
-			cureye.rng) {
+		cureye.rng = eravg;
+	} else if ((d = sqrt(dist2(vn->vp,cureye.vpt))) + eravg > cureye.rng) {
 		for (i = 3; i--; )
 			cureye.vpt[i] = 0.5*(cureye.vpt[i] + vn->vp[i]);
-		cureye.rng = 0.5*(cureye.rng + MEYERNG*hdgsiz + d);
+		cureye.rng = 0.5*(cureye.rng + eravg + d);
 	}
 	return(todo);
 }
