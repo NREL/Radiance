@@ -19,7 +19,6 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-	extern int  errno;
 	int  i;
 
 	esupport |= E_FUNCTION;
