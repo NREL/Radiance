@@ -2,8 +2,11 @@
 # SCCSid "$SunId$ LBL"
 #
 # Normalize a pattern for tiling (-b option blends edges) by removing
-# lowest frequencies from image and reducing to standard size (-r option)
+# lowest frequencies from image (-f option) and reducing to
+# standard size (-r option)
 #
+set ha=$0
+set ha=$ha:t
 set pf="pfilt -e 2"
 while ($#argv > 0)
 	switch ($argv[1])
@@ -11,7 +14,12 @@ while ($#argv > 0)
 		shift argv
 		set pf="$pf -x $argv[1] -y $argv[1] -p 1"
 		breaksw
+	case -f:
+		set ha="$ha -f"
+		set dofsub
+		breaksw
 	case -b:
+		set ha="$ha -b"
 		set blend
 		breaksw
 	case -v:
@@ -29,13 +37,6 @@ dofiles:
 onintr quit
 set td=/usr/tmp/np$$
 mkdir $td
-set ha=$0
-set ha=$ha:t
-if ( $?blend ) then
-	set ha="$ha -b"
-else
-	mknod $td/hf p
-endif
 cat > $td/coef.fmt << '_EOF_'
   rcx=${   $1   };   rcy=${   $2   };   rsx=${   $3   };   rsy=${   $4   };
 rcxcy=${   $5   }; rcxsy=${   $6   }; rsxcy=${   $7   }; rsxsy=${   $8   };
@@ -82,6 +83,10 @@ w
 q
 _EOF_
 	set resolu=`getinfo -d < $td/pf | sed 's/-Y \([0-9]*\) +X \([0-9]*\)/\2 \1/'`
+	if ( ! $?dofsub ) then
+		mv $td/pf $td/hf
+		goto donefsub
+	endif
 	if ( $?verb ) then
 		echo computing Fourier coefficients...
 	endif
@@ -93,12 +98,10 @@ _EOF_
 		cat $td/coef
 		echo removing low frequencies...
 	endif
-	if ( ! $?blend ) then
-		( getinfo - < $td/hf >> $f & ) > /dev/null
-	endif
 	pcomb -f $td/fsub.cal -f $td/coef \
 		-e "xres=$resolu[1];yres=$resolu[2]" \
 		$td/pf > $td/hf
+	donefsub:
 	if ( $?blend ) then
 		if ( $?verb ) then
 			echo blending edges...
@@ -125,6 +128,8 @@ _EOF_
 			$td/bottom $td/top > $td/top.patch
 		pcompos $td/hflr 0 0 $td/bottom.patch 0 0 $td/top.patch 0 $mar \
 			| getinfo - >> $f
+	else
+		getinfo - < $td/hf >> $f
 	endif
 	if ( $?verb ) then
 		echo $f done.
