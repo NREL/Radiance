@@ -24,6 +24,7 @@ double	expval = 1.;		/* exposure value */
 
 COLOR	*mypixel;		/* pixels being rendered */
 float	*myweight;		/* weights (used to compute final pixels) */
+float	*mydepth;		/* depth values (visibility culling) */
 int	hres, vres;		/* current horizontal and vertical res. */
 
 extern int	nowarn;		/* turn warnings off? */
@@ -156,7 +157,7 @@ render_frame(bl, nb)		/* render frame from beam values */
 register PACKHEAD	*bl;
 int	nb;
 {
-	extern int	render_beam();
+	extern int	pixBeam();
 	register HDBEAMI	*bil;
 	register int	i;
 
@@ -167,7 +168,8 @@ int	nb;
 		bil[i].h = hdlist[bl[i].hd];
 		bil[i].b = bl[i].bi;
 	}
-	hdloadbeams(bil, nb, render_beam);
+	hdloadbeams(bil, nb, pixBeam);
+	pixFlush();
 	free((char *)bil);
 }
 
@@ -209,6 +211,7 @@ int	fn;
 				/* prepare image buffers */
 	bzero((char *)mypixel, hres*vres*sizeof(COLOR));
 	bzero((char *)myweight, hres*vres*sizeof(float));
+	bzero((char *)mydepth, hres*vres*sizeof(float));
 }
 
 
@@ -269,7 +272,8 @@ initialize()			/* initialize holodeck and buffers */
 					/* allocate picture buffer */
 	mypixel = (COLOR *)bmalloc(xres*yres*sizeof(COLOR));
 	myweight = (float *)bmalloc(xres*yres*sizeof(float));
-	if (mypixel == NULL | myweight == NULL)
+	mydepth = (float *)bmalloc(xres*yres*sizeof(float));
+	if (mypixel == NULL | myweight == NULL | mydepth == NULL)
 		error(SYSTEM, "out of memory in initialize");
 }
 
