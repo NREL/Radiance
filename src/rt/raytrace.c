@@ -452,7 +452,10 @@ register CUBE  *cu;
 		}
 		/*NOTREACHED*/
 	}
-	if (isfull(cu->cutree) && checkhit(r, cu, cxs))
+	if (isfull(cu->cutree)) {
+		if (checkhit(r, cu, cxs))
+			return(RAYHIT);
+	} else if (r->ro == &Aftplane && incube(cu, r->rop))
 		return(RAYHIT);
 					/* advance to next cube */
 	if (dirf&0x11) {
