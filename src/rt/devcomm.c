@@ -168,7 +168,6 @@ char	*str;
 {
 	putc(COM_COMOUT, devout);
 	myputs(str, devout);
-	fflush(devout);
 }
 
 
