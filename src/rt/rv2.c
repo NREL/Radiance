@@ -286,8 +286,9 @@ char  *s;
 	nv.type = ourview.type;
 	VCOPY(nv.vp, ourview.vp);
 	VCOPY(nv.vup, ourview.vup);
-	nv.hoff = ourview.hoff; nv.voff = ourview.voff;
 	nv.horiz = ourview.horiz; nv.vert = ourview.vert;
+	nv.vfore = ourview.vfore; nv.vaft = ourview.vaft;
+	nv.hoff = ourview.hoff; nv.voff = ourview.voff;
 	zoomview(&nv, zfact);
 	newview(&nv);
 }
@@ -321,6 +322,7 @@ char  *s;
 	VCOPY(nv.vp, ourview.vp);
 	VCOPY(nv.vup, ourview.vup);
 	nv.hoff = ourview.hoff; nv.voff = ourview.voff;
+	nv.vfore = ourview.vfore; nv.vaft = ourview.vaft;
 	spinvector(nv.vdir, ourview.vdir, ourview.vup, angle*(PI/180.));
 	if (elev != 0.0) {
 		fcross(v1, nv.vdir, ourview.vup);
