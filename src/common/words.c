@@ -1,5 +1,5 @@
 #ifndef lint
-static const char RCSid[] = "$Id";
+static const char RCSid[] = "$Id$";
 #endif
 /*
  * Routines for recognizing and moving about words in strings.
