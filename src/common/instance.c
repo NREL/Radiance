@@ -79,7 +79,7 @@ int  flags;
 		if (in->b.sca < 0.0)
 			in->b.sca = -in->b.sca;
 		in->obj = NULL;
-		(INSTANCE *)o->os = in;
+		o->os = (char *)in;
 	}
 	if (in->obj == NULL || (in->obj->ldflags & flags) != flags)
 		in->obj = getscene(o->oargs.sarg[0], flags);

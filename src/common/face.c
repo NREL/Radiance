@@ -69,20 +69,20 @@ OBJREC  *o;
 	f->area = normalize(f->norm);
 	if (f->area == 0.0) {
 		objerror(o, WARNING, "zero area");	/* used to be fatal */
-		f->const = 0.0;
+		f->offset = 0.0;
 		f->ax = 0;
 		return(f);
 	}
 	f->area *= 0.5;
-						/* compute constant */
+						/* compute offset */
 	badvert = 0;
-	f->const = DOT(f->norm, VERTEX(f,0));
+	f->offset = DOT(f->norm, VERTEX(f,0));
 	for (i = 1; i < f->nv; i++) {
 		d1 = DOT(f->norm, VERTEX(f,i));
-		badvert += fabs(d1 - f->const/i) > VERTEPS;
-		f->const += d1;
+		badvert += fabs(d1 - f->offset/i) > VERTEPS;
+		f->offset += d1;
 	}
-	f->const /= f->nv;
+	f->offset /= f->nv;
 	if (badvert)
 		objerror(o, WARNING, "non-planar vertex");
 						/* find axis */
@@ -90,7 +90,7 @@ OBJREC  *o;
 	if (fabs(f->norm[2]) > fabs(f->norm[f->ax]))
 		f->ax = 2;
 
-	(FACE *)o->os = f;			/* save face */
+	o->os = (char *)f;			/* save face */
 	return(f);
 }
 

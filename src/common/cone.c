@@ -104,7 +104,7 @@ int  getxf;
 			co->sl = co->al;
 		}
 		co->tm = NULL;
-		(CONE *)o->os = co;
+		o->os = (char *)co;
 	}
 	if (getxf && co->tm == NULL)
 		conexform(co);
