@@ -1057,12 +1057,13 @@ command, and new views can be added with the "V name"
 command.
 
 When using the "V" command to change an existing view, do not
-give it a name because the previous view will not be overridden.
+give it an existing name because the previous view will not be overridden.
 Instead, give it a new name (or no name, which will show up as
 a number later), then use the Views screen to override the previous
 view definition with the new one.
-(See the rview(1) man page and the "View" topic in the current
-help category for more information.)
+(See the "View" topic in the current
+help category, the "Change" topic under "Views" and the rview(1)
+manual page for more information.)
 
 If the octree is out-of-date, it will be rebuilt before rendering
 begins.
