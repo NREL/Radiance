@@ -108,7 +108,8 @@ compveil()				/* compute veiling image */
 					t2sum += t2;
 				}
 			/* VADAPT of original is subtracted in addveil() */
-			scalecolor(vsum, VADAPT/t2sum);
+			if (t2sum > FTINY)
+				scalecolor(vsum, VADAPT/t2sum);
 			copycolor(veilscan(py)[px], vsum);
 		}
 					/* modify FOV sample image */
