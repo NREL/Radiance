@@ -7,12 +7,12 @@ static char SCCSid[] = "$SunId$ LBL";
 /*
  * Fast malloc for memory hogs and VM environments.
  * Performs a minimum of searching through free lists.
- * bmalloc() doesn't keep track of free lists -- it's basically
- *	just a buffered call to sbrk(2).  However, bmalloc will
- *	call mscrounge() if sbrk fails.
- * bfree() puts memory from any source into malloc free lists.
  * malloc(), realloc() and free() use buckets
  *	containing blocks in powers of two, similar to CIT routines.
+ * bfree() puts memory from any source into malloc free lists.
+ * bmalloc() doesn't keep track of free lists -- it's usually
+ *	just a buffered call to sbrk(2).  However, bmalloc will
+ *	call mscrounge() if sbrk fails.
  * mscrounge() returns whatever memory it can find to satisfy the
  *	request along with the number of bytes (modified).
  *
@@ -45,7 +45,7 @@ static M_HEAD	*free_list[NBUCKETS];
 
 
 char *
-mscrounge(np)		/* search free lists trying to satisfy request */
+mscrounge(np)		/* search free lists to satisfy request */
 register unsigned	*np;
 {
 	char	*p;
@@ -96,17 +96,17 @@ register unsigned  n;
 		} else
 			thisamnt = amnt;
 		p = sbrk(thisamnt);
-		if ((int)p == -1) {			/* uh-oh */
+		if ((int)p == -1) {			/* uh-oh, ENOMEM */
 			thisamnt = n;			/* search free lists */
 			p = mscrounge(&thisamnt);
 			if (p == NULL)			/* we're really out */
 				return(NULL);
 		}
 		if (p != bpos+nrem) {			/* not an increment */
-			bfree(bpos, nrem);
+			bfree(bpos, nrem);		/* free what we have */
 			bpos = p;
 			nrem = thisamnt;
-		} else
+		} else					/* otherwise tack on */
 			nrem += thisamnt;
 	}
 	p = bpos;
@@ -122,20 +122,21 @@ register unsigned  n;
 {
 	register int	bucket;
 	register unsigned	bsiz;
-					/* find largest bucket */
-	bucket = 0;
-	for (bsiz = 1; bsiz+sizeof(M_HEAD) <= n; bsiz <<= 1)
-		bucket++;
-	while (bucket > FIRSTBUCKET) {
-		bsiz >>= 1;
-		bucket--;
-		if (n < bsiz+sizeof(M_HEAD))	/* nothing for this bucket */
-			continue;
-		((M_HEAD *)p)->next = free_list[bucket];
-		free_list[bucket] = (M_HEAD *)p;
-		p += bsiz+sizeof(M_HEAD);
-		n -= bsiz+sizeof(M_HEAD);
+					/* align pointer */
+	bsiz = BYTES_WORD - ((unsigned)p&~(BYTES_WORD-1));
+	if (bsiz < BYTES_WORD) {
+		p += bsiz;
+		n -= bsiz;
 	}
+					/* fill big buckets first */
+	for (bucket = NBUCKETS-1, bsiz = 1<<(NBUCKETS-1);
+			bucket >= FIRSTBUCKET; bucket--, bsiz >>= 1)
+		if (n >= bsiz+sizeof(M_HEAD)) {
+			((M_HEAD *)p)->next = free_list[bucket];
+			free_list[bucket] = (M_HEAD *)p;
+			p += bsiz+sizeof(M_HEAD);
+			n -= bsiz+sizeof(M_HEAD);
+		}
 }
 
 
@@ -153,15 +154,15 @@ unsigned	n;
 	bucket = FIRSTBUCKET;
 	for (bsiz = 1<<FIRSTBUCKET; bsiz < n; bsiz <<= 1)
 		bucket++;
-	if (free_list[bucket] == NULL) {
+	if (free_list[bucket] == NULL) {	/* need more core */
 		mp = (M_HEAD *)bmalloc(bsiz+sizeof(M_HEAD));
 		if (mp == NULL)
 			return(NULL);
-	} else {
+	} else {				/* got it */
 		mp = free_list[bucket];
 		free_list[bucket] = mp->next;
 	}
-	mp->bucket = bucket;
+	mp->bucket = bucket;			/* tag block */
 	return((char *)(mp+1));
 }
 
@@ -171,23 +172,20 @@ realloc(op, n)			/* reallocate memory using malloc() */
 char	*op;
 unsigned	n;
 {
+	extern char	*memcpy();
 	register char	*p;
 	register unsigned	on;
 
-	if (op != NULL)
-		on = 1 << ((M_HEAD *)op-1)->bucket;
-	else
-		on = 0;
-	if (n <= on && n > on>>1)
-		return(op);		/* same bucket */
-	p = malloc(n);
-	if (p != NULL)
+	free(op);			/* free it first */
+	p = malloc(n);			/* p==op if same bucket */
+	if (p == NULL)
+		return(NULL);
+	if (p != op)			/* different bucket, do copy */
 #ifdef  BSD
 		bcopy(op, p, n>on ? on : n);
 #else
 		(void)memcpy(p, op, n>on ? on : n);
 #endif
-	free(op);
 	return(p);
 }
 
