@@ -68,6 +68,7 @@ mat4.c		routines dealing with 4 X 4 homogeneous matrices
 mktemp.c	make temporary file (system-independent replacement)
 modobject.c	routines for tracking object modifiers
 multisamp.c	binary space partitioning curve for multidimensional sampling
+myhostname.c	system-independent host name call
 objset.c	routines for maintaining object sets
 octree.c	routines dealing with octrees and cubes
 otypes.c	object type lookup and error reporting
