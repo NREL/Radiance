@@ -279,23 +279,26 @@ register FILE	*fp;
 	    for (j = 0; j < vdef(i); j++) {	/* print each assignment */
 		fputs(vnam(i), fp);
 		fputs("= ", fp);
-		k = clipline = ( vv[i].fixval == catvalues ? 64 : 320 )
+		k = clipline = ( vv[i].fixval == catvalues ? 64 : 120 )
 				- strlen(vnam(i)) ;
 		cp = nvalue(i, j);
 		while (*cp) {
 		    putc(*cp++, fp);
 		    if (--k <= 0) {		/* line too long */
 			while (*cp && !isspace(*cp))
-			    putc(*cp++, fp);	/* finish this word */
+			    fputc(*cp++, fp);	/* finish this word */
 			if (*cp) {		/* start new line */
-			    putc('\n', fp);
-			    fputs(vnam(i), fp);
-			    putc('=', fp);
+			    if (vv[i].fixval == catvalues) {
+				fputc('\n', fp);
+				fputs(vnam(i), fp);
+				fputc('=', fp);
+			    } else
+				fputs(" \\\n", fp);
 			    k = clipline;
 			}
 		    }
 		}
-	        putc('\n', fp);
+	        fputc('\n', fp);
 	    }
 	fflush(fp);
 }
