@@ -84,6 +84,7 @@ register RAY  *r;
 		setcolor(mcolor, pow(m->oargs.farg[0], r->rot),
 				 pow(m->oargs.farg[1], r->rot),
 				 pow(m->oargs.farg[2], r->rot));
+		multcolor(mcolor, r->pcol);	/* modify */
 	} else {				/* outside */
 		nratio = 1.0 / nratio;
 		if (m->otype == MAT_INTERFACE)
@@ -134,7 +135,6 @@ register RAY  *r;
 #endif
 			{
 				rayvalue(&p);
-				multcolor(mcolor, r->pcol);	/* modify */
 				scalecolor(p.rcol, trans);
 				addcolor(r->rcol, p.rcol);
 				if (nratio >= 1.0-FTINY && nratio <= 1.0+FTINY)
