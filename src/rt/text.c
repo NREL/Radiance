@@ -70,6 +70,8 @@ typedef struct {
 	TLINE  tl;			/* line list */
 }  TEXT;
 
+extern char  *libpath;
+
 extern char  *fgetword();
 
 TEXT  *gettext();
@@ -265,7 +267,7 @@ OBJREC  *m;
 
 inglyph(x, y, gl)		/* (x,y) within font glyph gl? */
 double  x, y;
-GLYPH  *gl;
+register GLYPH  *gl;
 {
 	int  n, ncross;
 	int  xlb, ylb;
@@ -277,6 +279,9 @@ GLYPH  *gl;
 	y *= 256.0;
 	xlb = x + 0.5;
 	ylb = y + 0.5;
+	if (gl->left > xlb || gl->right <= xlb ||
+			gl->bottom > ylb || gl->top <= ylb)
+		return(0);	/* outside extent */
 	n = gl->nverts;			/* get # of vertices */
 	p0 = gvlist(gl) + 2*(n-1);	/* connect last to first */
 	p1 = gvlist(gl);
