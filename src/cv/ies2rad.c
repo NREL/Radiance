@@ -12,6 +12,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include <stdio.h>
 #include <ctype.h>
+#include "color.h"
 
 #define PI		3.14159265358979323846
 					/* floating comparisons */
@@ -50,14 +51,17 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define abspath(p)	((p)[0] == '/' || (p)[0] == '.')
 
+static char	default_name[] = "default";
+
 char	*libdir = NULL;			/* library directory location */
 char	*prefdir = NULL;		/* subdirectory */
 char	*lampdat = "lamp.tab";		/* lamp data file */
 
 double	meters2out = 1.0;		/* conversion from meters to output */
 char	*lamptype = NULL;		/* selected lamp type */
-float	*lampcolor = NULL;		/* pointer to lamp color */
+char	*deflamp = NULL;		/* default lamp type */
 float	defcolor[3] = {1.,1.,1.};	/* default lamp color */
+float	*lampcolor = defcolor;		/* pointer to current lamp color */
 double	multiplier = 1.0;		/* multiplier for all light sources */
 char	units[64] = "meters";		/* output units */
 double	minaspect = 0.0;		/* minimum allowed aspect ratio */
@@ -166,8 +170,11 @@ char	*argv[];
 			if (illumrad < MINDIM)
 				illumrad = MINDIM;
 			break;
-		case 't':		/* select lamp type */
+		case 't':		/* override lamp type */
 			lamptype = argv[++i];
+			break;
+		case 'u':		/* default lamp type */
+			deflamp = argv[++i];
 			break;
 		case 'c':		/* default lamp color */
 			defcolor[0] = atof(argv[++i]);
@@ -185,14 +192,7 @@ char	*argv[];
 		}
 	gargc = i;
 	gargv = argv;
-					/* get lamp data */
-	if ((status = loadlamps(lampdat)) < 0)
-		exit(1);
-	if (status == 0 || (lamptype != NULL &&
-			(lampcolor = matchlamp(lamptype)) == NULL)) {
-		lampcolor = defcolor;
-		fprintf(stderr, "%s: warning - no lamp data\n", argv[0]);
-	}
+	initlamps();			/* get lamp data (if needed) */
 					/* convert ies file(s) */
 	if (outfile != NULL) {
 		if (i == argc)
@@ -216,6 +216,46 @@ char	*argv[];
 			status = 1;
 	}
 	exit(status);
+}
+
+
+initlamps()				/* set up lamps */
+{
+	float	*lcol;
+	int	status;
+
+	if (lamptype != NULL && !strcmp(lamptype, default_name) &&
+			deflamp == NULL)
+		return;				/* no need for data */
+						/* else load file */
+	if ((status = loadlamps(lampdat)) < 0)
+		exit(1);
+	if (status == 0) {
+		fprintf(stderr, "%s: warning - no lamp data\n", lampdat);
+		lamptype = default_name;
+		return;
+	}
+	if (deflamp != NULL) {			/* match default type */
+		if ((lcol = matchlamp(deflamp)) == NULL)
+			fprintf(stderr,
+				"%s: warning - unknown default lamp type\n",
+					deflamp);
+		else
+			copycolor(defcolor, lcol);
+	}
+	if (lamptype != NULL) {			/* match selected type */
+		if (strcmp(lamptype, default_name)) {
+			if ((lcol = matchlamp(lamptype)) == NULL) {
+				fprintf(stderr,
+					"%s: warning - unknown lamp type\n",
+						lamptype);
+				lamptype = default_name;
+			} else
+				copycolor(defcolor, lcol);
+		}
+		freelamps();			/* all done with data */
+	}
+						/* else keep lamp data */
 }
 
 
