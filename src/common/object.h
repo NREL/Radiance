@@ -26,7 +26,7 @@ typedef struct {
 #endif
 }  FUNARGS;
 
-#define  MAXSTR		512		/* maximum string length */
+#define  MAXSTR		128		/* maximum string length */
 
 /*
  *	An object is defined as an index into an array of
