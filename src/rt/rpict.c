@@ -596,7 +596,7 @@ char  *oldfile;
 	setmode(fileno(fp), O_BINARY);
 #endif
 				/* discard header */
-	getheader(fp, NULL);
+	getheader(fp, NULL, NULL);
 				/* get picture size */
 	if (!fscnresolu(&x, &y, fp)) {
 		sprintf(errmsg, "bad recover file \"%s\"", oldfile);
