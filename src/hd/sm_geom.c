@@ -736,7 +736,45 @@ FVECT fnear[4],ffar[4];
     ffar[3][2] =  width*nhv[2] - height*nvv[2] + far*ndv[2] + vp[2] ;
 }
 
+int
+max_index(v,r)
+FVECT v;
+double *r;
+{
+  double p[3];
+  int i;
 
+  p[0] = fabs(v[0]);
+  p[1] = fabs(v[1]);
+  p[2] = fabs(v[2]);
+  i = (p[0]>=p[1])?((p[0]>=p[2])?0:2):((p[1]>=p[2])?1:2);  
+  if(r)
+    *r = p[i];
+  return(i);
+}
+
+int
+closest_point_in_tri(p0,p1,p2,p,p0id,p1id,p2id)
+FVECT p0,p1,p2,p;
+int p0id,p1id,p2id;
+{
+    double d,d1;
+    int i;
+    
+    d =  DIST_SQ(p,p0);
+    d1 = DIST_SQ(p,p1);
+    if(d < d1)
+    {
+      d1 = DIST_SQ(p,p2);
+      i = (d1 < d)?p2id:p0id;
+    }
+    else
+    {
+      d = DIST_SQ(p,p2);
+      i = (d < d1)? p2id:p1id;
+    }
+    return(i);
+}
 
 
 int
@@ -800,7 +838,7 @@ double coord[3];
   a =  (x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1);
   coord[0] = ((x2 - px) * (y3 - py) - (x3 - px) * (y2 - py)) / a; 
   coord[1] = ((x3 - px) * (y1 - py) - (x1 - px) * (y3 - py)) / a;
-  coord[2]  = 1.0 - coord[0] - coord[1];
+  coord[2] = ((x1 - px) * (y2 - py) - (x2 - px) * (y1 - py)) / a;
  
 }
 
@@ -1013,42 +1051,188 @@ int child,next;
   }
 }
 
-int
-max_index(v)
-FVECT v;
+
+baryi_parent(coord,i)
+BCOORD coord[3];
+int i;
 {
-  double a,b,c;
+
+  switch(i) {
+  case 0:
+    /* update bary for child */
+    coord[0] = (coord[0] >> 1) + MAXBCOORD2;
+    coord[1] >>= 1;
+    coord[2] >>= 1;
+    break;
+  case 1:
+    coord[0] >>= 1;
+    coord[1]  = (coord[1] >> 1) + MAXBCOORD2;
+    coord[2] >>= 1;
+    break;
+    
+  case 2:
+    coord[0] >>= 1;
+    coord[1] >>= 1;
+    coord[2] = (coord[2] >> 1) + MAXBCOORD2;
+    break;
+    
+  case 3:
+    coord[0] = MAXBCOORD2 - (coord[0] >> 1);
+    coord[1] = MAXBCOORD2 - (coord[1] >> 1);
+    coord[2] = MAXBCOORD2 - (coord[2] >> 1);
+    break;
+#ifdef DEBUG
+  default:
+    eputs("baryi_parent():Invalid child\n");
+    break;
+#endif
+  }
+}
+
+baryi_from_child(coord,child,next)
+BCOORD coord[3];
+int child,next;
+{
+#ifdef DEBUG
+  if(child <0 || child > 3)
+  {
+    eputs("baryi_from_child():Invalid child\n");
+    return;
+  }
+  if(next <0 || next > 3)
+  {
+    eputs("baryi_from_child():Invalid next\n");
+    return;
+  }
+#endif
+  if(next == child)
+    return;
+
+  switch(child){
+  case 0:
+      coord[0] = 0;
+      coord[1] = MAXBCOORD - coord[1];
+      coord[2] = MAXBCOORD - coord[2];
+      break;
+  case 1:
+      coord[0] = MAXBCOORD - coord[0];
+      coord[1] = 0;
+      coord[2] = MAXBCOORD - coord[2];
+      break;
+  case 2:
+      coord[0] = MAXBCOORD - coord[0];
+      coord[1] = MAXBCOORD - coord[1];
+      coord[2] = 0;
+    break;
+  case 3:
+    switch(next){
+    case 0:
+      coord[0] = 0;
+      coord[1] = MAXBCOORD - coord[1];
+      coord[2] = MAXBCOORD - coord[2];
+      break;
+    case 1:
+      coord[0] = MAXBCOORD - coord[0];
+      coord[1] = 0;
+      coord[2] = MAXBCOORD - coord[2];
+      break;
+    case 2:
+      coord[0] = MAXBCOORD - coord[0];
+      coord[1] = MAXBCOORD - coord[1];
+      coord[2] = 0;
+      break;
+    }
+    break;
+  }
+}
+
+int
+baryi_child(coord)
+BCOORD coord[3];
+{
   int i;
 
-  a = fabs(v[0]);
-  b = fabs(v[1]);
-  c = fabs(v[2]);
-  i = (a>=b)?((a>=c)?0:2):((b>=c)?1:2);  
-  return(i);
-}
-
-int
-closest_point_in_tri(p0,p1,p2,p,p0id,p1id,p2id)
-FVECT p0,p1,p2,p;
-int p0id,p1id,p2id;
-{
-    double d,d1;
-    int i;
-    
-    d =  DIST_SQ(p,p0);
-    d1 = DIST_SQ(p,p1);
-    if(d < d1)
+  if(coord[0] > MAXBCOORD2)
+  { 
+      /* update bary for child */
+      coord[0] = (coord[0]<< 1) - MAXBCOORD;
+      coord[1] <<= 1;
+      coord[2] <<= 1;
+      return(0);
+  }
+  else
+    if(coord[1] > MAXBCOORD2)
     {
-      d1 = DIST_SQ(p,p2);
-      i = (d1 < d)?p2id:p0id;
+      coord[0] <<= 1;
+      coord[1] = (coord[1] << 1) - MAXBCOORD;
+      coord[2] <<= 1;
+      return(1);
     }
     else
-    {
-      d = DIST_SQ(p,p2);
-      i = (d < d1)? p2id:p1id;
-    }
-    return(i);
+      if(coord[2] > MAXBCOORD2)
+      {
+	coord[0] <<= 1;
+	coord[1] <<= 1;
+	coord[2] = (coord[2] << 1) - MAXBCOORD;
+	return(2);
+      }
+      else
+	 {
+	   coord[0] = MAXBCOORD - (coord[0] << 1);
+	   coord[1] = MAXBCOORD - (coord[1] << 1);
+	   coord[2] = MAXBCOORD - (coord[2] << 1);
+	   return(3);
+	 }
 }
+
+/* convert barycentric coordinate b in [-eps,1+eps] to [0,MAXLONG],
+   dir unbounded to [-MAXLONG,MAXLONG]
+ */
+bary_dtol(b,db,bi,dbi,t)
+double b[3],db[3][3];
+BCOORD bi[3];
+BDIR dbi[3][3];
+TINT t[3];
+{
+  int i,id,j;
+  double d;
+
+  for(i=0; i < 2;i++)
+  {
+    if(b[i] <= 0.0)
+    {
+      bi[i]= 0;
+    }
+    else
+      if(b[i] >= 1.0)
+      {
+	bi[i]= MAXBCOORD;
+      }
+      else
+	bi[i] = (BCOORD)(b[i]*MAXBCOORD);
+  }
+  bi[2] = MAXBCOORD - bi[0] - bi[1]; 
+
+  if(bi[2] < 0)
+  {
+      bi[2] = 0;
+      bi[1] = MAXBCOORD - bi[0];
+  }
+  for(j=0; j< 3; j++)
+  {
+    if(t[j]==0)
+      continue;
+    if(t[j] == HUGET)
+       max_index(db[j],&d);
+    for(i=0; i< 3; i++)
+       if(t[j] != HUGET)
+	  dbi[j][i] = (BDIR)(db[j][i]*MAXBDIR);
+       else
+	  dbi[j][i] = (BDIR)(db[j][i]/d*MAXBDIR);
+  }
+}
+
+
 
 
 

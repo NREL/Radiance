@@ -50,9 +50,6 @@ LIST *a,*b;
 {
     LIST * l;
 
-    if(!a)
-      return(b);
-
     if(!b)
        return(a);
     
