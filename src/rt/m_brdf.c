@@ -228,7 +228,7 @@ register RAY  *r;
 			   m->oargs.farg[1],
 			   m->oargs.farg[2]);
 						/* fix orientation */
-	if (r->rod < 0.0)
+	if (m->otype != MAT_BRTDF && r->rod < 0.0)
 		flipsurface(r);
 						/* get modifiers */
 	raytexture(r, m->omod);
