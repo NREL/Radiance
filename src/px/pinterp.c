@@ -296,8 +296,8 @@ float	*zline;
 		}
 		pos[0] += .5*ourview.hresolu;
 		pos[1] += .5*ourview.vresolu;
-		if (pos[0] < 0 || pos[0] > ourview.hresolu
-				|| pos[1] < 0 || pos[1] > ourview.vresolu)
+		if (pos[0] < 0 || pos[0] >= ourview.hresolu
+				|| pos[1] < 0 || pos[1] >= ourview.vresolu)
 			continue;
 					/* check current value at pos */
 		xpos = pos[0];
@@ -326,11 +326,21 @@ fillpicture()				/* fill in empty spaces */
 	}
 	for (x = 0; x < ourview.hresolu; x++)
 		yback[x] = -2;
+	/*
+	 * Xback and yback are the pixel locations of suitable
+	 * background values in each direction.
+	 * A value of -2 means unassigned, and -1 means
+	 * that there is no suitable background in this direction.
+	 */
 							/* fill image */
 	for (y = 0; y < ourview.vresolu; y++) {
 		xback = -2;
 		for (x = 0; x < ourview.hresolu; x++)
 			if (zscan(y)[x] <= 0.0) {	/* empty pixel */
+				/*
+				 * First, find background from above or below.
+				 * (farthest assigned pixel)
+				 */
 				if (yback[x] == -2) {
 					for (i = y+1; i < ourview.vresolu; i++)
 						if (zscan(i)[x] > 0.0)
@@ -341,6 +351,9 @@ fillpicture()				/* fill in empty spaces */
 					else
 						yback[x] = y-1;
 				}
+				/*
+				 * Next, find background from left or right.
+				 */
 				if (xback == -2) {
 					for (i = x+1; x < ourview.hresolu; i++)
 						if (zscan(y)[i] > 0.0)
@@ -352,7 +365,11 @@ fillpicture()				/* fill in empty spaces */
 						xback = x-1;
 				}
 				if (xback < 0 && yback[x] < 0)
-					continue;
+					continue;	/* no background */
+				/*
+				 * Compare, and use the background that is
+				 * farther, unless one of them is next to us.
+				 */
 				if (yback[x] < 0 || ABS(x-xback) <= 1
 					|| ( ABS(y-yback[x]) > 1
 				&& zscan(yback[x])[x] < zscan(y)[xback] ))
