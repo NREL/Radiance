@@ -8,10 +8,6 @@
 
 #include "tonemap.h"
 #include "rhdriver.h"
-				/* quantity of leaves to free at a time */
-#ifndef LFREEPCT
-#define	LFREEPCT	15
-#endif
 				/* child ordering */
 #define	DL		0		/* down left */
 #define	DR		1		/* down right */
