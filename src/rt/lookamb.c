@@ -29,6 +29,7 @@ AMBVAL  av;
 
 
 main(argc, argv)		/* load ambient values from a file */
+int  argc;
 char  *argv[];
 {
 	FILE  *fp;

@@ -19,7 +19,7 @@ static char SCCSid[] = "$SunId$ LBL";
 extern double  specthresh;		/* specular sampling threshold */
 extern double  specjitter;		/* specular sampling jitter */
 
-static  agaussamp();
+static  agaussamp(), getacoords();
 
 /*
  *	This routine implements the anisotropic Gaussian

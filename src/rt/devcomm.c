@@ -30,6 +30,8 @@ struct driver	comm_driver = {
 	comm_comout, comm_comin, comm_flush
 };
 
+static int	mygets(), myputs(), reply_error(), getstate();
+
 FILE	*devin, *devout;
 
 int	devchild;
