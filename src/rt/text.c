@@ -70,7 +70,7 @@ typedef struct tline {
 					/* followed by the string */
 }  TLINE;
 
-#define  TLSTR(l)	((char *)(l+1))
+#define  TLSTR(l)	((char *)((l)+1))
 
 typedef struct {
 	FVECT  right, down;		/* right and down unit vectors */
@@ -177,11 +177,11 @@ register OBJREC  *tm;
 						/* compute vectors */
 	fcross(DxR, D, R);
 	fcross(t->right, DxR, D);
-	d = DOT(D,D) / DOT(t->right,t->right);
+	d = DOT(D,D)/DOT(t->right,t->right);
 	for (i = 0; i < 3; i++)
 		t->right[i] *= d;
 	fcross(t->down, R, DxR);
-	d = DOT(R,R) / DOT(t->down,t->down);
+	d = DOT(R,R)/DOT(t->down,t->down);
 	for (i = 0; i < 3; i++)
 		t->down[i] *= d;
 						/* get text */
@@ -238,7 +238,7 @@ OBJREC  *m;
 	if (tp == NULL)
 		return;
 	for (tlp = tp->tl.next; tlp != NULL; tlp = tlp->next);
-		free(TLSTR(tlp));
+		free((char *)tlp);
 	free((char *)tp);
 	m->os = NULL;
 }
@@ -254,6 +254,7 @@ OBJREC  *m;
 	int  col;
 	register int  lno;
 				/* first, compute position in text */
+	tp = gettext(m);
 	v[0] = p[0] - m->oargs.farg[0];
 	v[1] = p[1] - m->oargs.farg[1];
 	v[2] = p[2] - m->oargs.farg[2];
@@ -264,7 +265,6 @@ OBJREC  *m;
 	x -= (double)col;
 	y = (lno+1) - y;
 				/* get the font character */
-	tp = gettext(m);
 	for (tlp = tp->tl.next; tlp != NULL; tlp = tlp->next)
 		if (--lno < 0)
 			break;
