@@ -174,7 +174,7 @@ FVECT t0,t1,t2;
       tri_plane_equation(v0,v1,v2,n,&pd,FALSE);
       intersect_vector_plane(pt,n,pd,NULL,i_pt);
 
-      i = max_index(n);
+      i = max_index(n,NULL);
       x = (i+1)%3;
       y = (i+2)%3;
       /* Calculate barycentric coordinates of i_pt */
@@ -374,7 +374,7 @@ int n;
 	      for(optr = QT_SET_PTR(os),i = QT_SET_CNT(os); i > 0; i--)
 		{
 		  id = QT_SET_NEXT_ELEM(optr);
-		  qtTri_from_id(id,NULL,NULL,NULL,r0,r1,r2,NULL,NULL,NULL);
+		  qtTri_from_id(id,r0,r1,r2,NULL,NULL,NULL,NULL,NULL,NULL);
 		  found=qtAdd_tri(qtptr,q0,q1,q2,r0,r1,r2,id,n);
 #ifdef DEBUG
 		  if(!found)
@@ -527,107 +527,6 @@ double *tptr;
 }
 
 int
-qtTrace_edge(qtptr,b,db,orig,dir,max_t,func,arg1,arg2)
-   QUADTREE *qtptr;
-   double b[3],db[3];
-   FVECT orig,dir;
-   double max_t;
-   int (*func)();
-   int *arg1,arg2;
-{
-
-    int i,found;
-    QUADTREE *child;
-    int nbr,next;
-    double t;
-#ifdef DEBUG_TEST_DRIVER
-    
-    FVECT a1,b1,c1;
-    int Pick_parent = Pick_cnt-1;
-    qtSubdivide_tri(Pick_v0[Pick_parent],Pick_v1[Pick_parent],
-			   Pick_v2[Pick_parent],a1,b1,c1);
-
-#endif
-    if(QT_IS_TREE(*qtptr))
-    {
-	/* Find the appropriate child and reset the coord */
-	i = bary_child(b);
-
-	QT_SET_FLAG(*qtptr);
-
-	for(;;)
-        {
-	   child = QT_NTH_CHILD_PTR(*qtptr,i);
-
-	   if(i != 3)
-	     {
-
-	       db[0] *= 2.0;db[1] *= 2.0; db[2] *= 2.0;
-	      nbr = qtTrace_edge(child,b,db,orig,dir,max_t,func,arg1,arg2);
-	       db[0] *= 0.5;db[1] *= 0.5; db[2] *= 0.5;
-	     }
-	   else
-	     {
-	       db[0] *=-2.0;db[1] *= -2.0; db[2] *= -2.0;
-	      /* If the center cell- must flip direction signs */
-	      nbr = qtTrace_edge(child,b,db,orig,dir,max_t,func,arg1,arg2);
-	      db[0] *=-0.5;db[1] *= -0.5; db[2] *= -0.5;
-	     }
-	   if(nbr == QT_DONE)
-	      return(nbr);
-
-	   /* If in same block: traverse */
-	   if(i==3)
-	      next = nbr;
-	     else
-		if(nbr == i)
-		   next = 3;
-	     else
-	       {
-		 /* reset the barycentric coordinates in the parents*/
-		 bary_parent(b,i);
-		 /* Else pop up to parent and traverse from there */
-		 return(nbr);
-	       }
-	     bary_from_child(b,i,next);
-	     i = next;
-	 }
-    }
-    else
-   {
-#ifdef DEBUG_TEST_DRIVER
-	   qtNth_child_tri(Pick_v0[Pick_parent],Pick_v1[Pick_parent],
-			   Pick_v2[Pick_parent],a1,b1,c1,i,
-			   Pick_v0[Pick_cnt],Pick_v1[Pick_cnt],
-			   Pick_v2[Pick_cnt]);
-	   Pick_cnt++;
-#endif
-
-       if(func(qtptr,arg1,arg2) == QT_DONE)
-	  return(QT_DONE);
-
-       /* Advance to next node */
-       /* NOTE: Optimize: should only have to check 1/2 */
-       nbr = move_to_nbr(b,db[0],db[1],db[2],&t);
-
-       if(t >= max_t)
-	  return(QT_DONE);
-       if(nbr != -1)
-       {
-	 b[0] += t * db[0];
-	 b[1] += t * db[1];
-	 b[2] += t * db[2];
-	 db[0] *= (1.0 - t);
-	 db[1] *= (1.0 - t);
-	 db[2] *= (1.0 - t);
-       }
-       return(nbr);
-   }
-    
-}
-
-
-int
 qtTrace_ray(qtptr,b,db0,db1,db2,orig,dir,func,arg1,arg2)
    QUADTREE *qtptr;
    double b[3],db0,db1,db2;
@@ -746,7 +645,7 @@ qtRoot_trace_ray(qtptr,q0,q1,q2,orig,dir,func,arg1,arg2)
   intersect_vector_plane(c,n,pd,&t,c);
 
     /* map to 2d by dropping maximum magnitude component of normal */
-  i = max_index(n);
+  i = max_index(n,NULL);
   x = (i+1)%3;
   y = (i+2)%3;
   /* Calculate barycentric coordinates of orig */
@@ -772,75 +671,13 @@ qtRoot_trace_ray(qtptr,q0,q1,q2,orig,dir,func,arg1,arg2)
     
 }
 
-
-int
-qtRoot_trace_edge(qtptr,q0,q1,q2,orig,dir,max_t,func,arg1,arg2)
-   QUADTREE *qtptr;
-   FVECT q0,q1,q2;
-   FVECT orig,dir;
-   double max_t;
-   int (*func)();
-   int *arg1,arg2;
-{
-  int i,x,y,nbr;
-  QUADTREE *child;
-  FVECT n,c,i_pt,d;
-  double pd,b[3],db[3],t;
-    /* Determine if point lies within pyramid (and therefore
-       inside a spherical quadtree cell):GT_INTERIOR, on one of the 
-       pyramid sides (and on cell edge):GT_EDGE(1,2 or 3), 
-       or on pyramid vertex (and on cell vertex):GT_VERTEX(1,2, or 3).
-       For each triangle edge: compare the
-       point against the plane formed by the edge and the view center
-    */
-  i = point_in_stri(q0,q1,q2,orig);  
-    
-  /* Not in this triangle */
-  if(!i)
-     return(-1);
-  /* Project the origin onto the root node plane */
-
-  /* Find the intersection point of the origin */
-  tri_plane_equation(q0,q1,q2,n,&pd,FALSE);
-  intersect_vector_plane(orig,n,pd,NULL,i_pt);
-  /* project the dir as well */
-  VADD(c,orig,dir);
-  intersect_vector_plane(c,n,pd,&t,c);
-
-    /* map to 2d by dropping maximum magnitude component of normal */
-  i = max_index(n);
-  x = (i+1)%3;
-  y = (i+2)%3;
-  /* Calculate barycentric coordinates of orig */
-  bary2d(q0[x],q0[y],q1[x],q1[y],q2[x],q2[y],i_pt[x],i_pt[y],b);
-  /* Calculate barycentric coordinates of dir */
-  bary2d(q0[x],q0[y],q1[x],q1[y],q2[x],q2[y],c[x],c[y],db);
-  if(t < 0.0)
-     VSUB(db,b,db);
-  else
-     VSUB(db,db,b);
-
-
-#ifdef DEBUG_TEST_DRIVER
-    VCOPY(Pick_v0[Pick_cnt],q0);
-    VCOPY(Pick_v1[Pick_cnt],q1);
-    VCOPY(Pick_v2[Pick_cnt],q2);
-    Pick_cnt++;
-#endif
-      /* trace the ray starting with this node */
-    nbr = qtTrace_edge(qtptr,b,db,orig,d,max_t,func,arg1,arg2);
-    return(nbr);
-    
-}
-
-
-qtVisit_tri_interior(qtptr,q0,q1,q2,t0,t1,t2,n,func,arg1,arg2)
+qtVisit_tri_interior(qtptr,q0,q1,q2,t0,t1,t2,n,func,arg1,arg2,arg3)
    QUADTREE *qtptr;
    FVECT q0,q1,q2;
    FVECT t0,t1,t2;
    int n;
    int (*func)();
-   int *arg1,arg2;
+   int *arg1,arg2,*arg3;
 {
     int i,found,test;
     QUADTREE *child;
@@ -863,7 +700,7 @@ tree_modified:
 		child = QT_NTH_CHILD_PTR(*qtptr,i);
 		qtNth_child_tri(q0,q1,q2,a,b,c,i,c0,c1,c2);
 		qtVisit_tri_interior(child,c0,c1,c2,t0,t1,t2,n+1,
-				     func,arg1,arg2);
+				     func,arg1,arg2,arg3);
 	    }
 	}
     }
@@ -873,13 +710,13 @@ tree_modified:
       if(!QT_IS_EMPTY(*qtptr))
       {
 	 if(qtinset(*qtptr,arg2))
-	   if(func(qtptr,q0,q1,q2,t0,t1,t2,n,arg1,arg2)==QT_MODIFIED)
+	   if(func(qtptr,q0,q1,q2,t0,t1,t2,n,arg1,arg2,arg3)==QT_MODIFIED)
 	     goto tree_modified;
 	   else
 	     return;
       }
       if(point_in_stri(t0,t1,t2,q0) )
-	  if(func(qtptr,q0,q1,q2,t0,t1,t2,n,arg1,arg2)==QT_MODIFIED)
+	  if(func(qtptr,q0,q1,q2,t0,t1,t2,n,arg1,arg2,arg3)==QT_MODIFIED)
 	    goto tree_modified;
     }
 }
@@ -889,189 +726,10 @@ tree_modified:
 
 
 
-int
-qtVisit_tri_edges(qtptr,b,db,wptr,sfactor,func,arg1,arg2)
-   QUADTREE *qtptr;
-   double b[3],db[3][3];
-   int *wptr;
-   double sfactor;
-   int (*func)();
-   int *arg1,arg2;
-{
-    int i,found;
-    QUADTREE *child;
-    int nbr,next,w;
-    double t;
-#ifdef DEBUG_TEST_DRIVER
-    FVECT a1,b1,c1;
-    int Pick_parent = Pick_cnt-1;
-    qtSubdivide_tri(Pick_v0[Pick_parent],Pick_v1[Pick_parent],
-			   Pick_v2[Pick_parent],a1,b1,c1);
-#endif
-
-    if(QT_IS_TREE(*qtptr))
-    {
-	/* Find the appropriate child and reset the coord */
-	i = bary_child(b);
-
-	QT_SET_FLAG(*qtptr);
-
-	for(;;)
-        {
-	  w = *wptr;
-	   child = QT_NTH_CHILD_PTR(*qtptr,i);
-
-	   if(i != 3)
-	     {
-
-	       db[w][0] *= 2.0;db[w][1] *= 2.0; db[w][2] *= 2.0;
-	       nbr = qtVisit_tri_edges(child,b,db,wptr,sfactor*2.0,
-				      func,arg1,arg2);
-	       w = *wptr;
-	       db[w][0] *= 0.5;db[w][1] *= 0.5; db[w][2] *= 0.5;
-	     }
-	   else
-	     {
-	       db[w][0] *=-2.0;db[w][1] *= -2.0; db[w][2] *= -2.0;
-	      /* If the center cell- must flip direction signs */
-	       nbr = qtVisit_tri_edges(child,b,db,wptr,sfactor*(-2.0),
-				 func,arg1,arg2);
-	       w = *wptr;
-	       db[w][0] *=-0.5;db[w][1] *= -0.5; db[w][2] *= -0.5;
-	     }
-	   if(nbr == QT_DONE)
-	      return(nbr);
-
-	   /* If in same block: traverse */
-	   if(i==3)
-	      next = nbr;
-	     else
-		if(nbr == i)
-		   next = 3;
-	     else
-	       {
-		 /* reset the barycentric coordinates in the parents*/
-		 bary_parent(b,i);
-		 /* Else pop up to parent and traverse from there */
-		 return(nbr);
-	       }
-	     bary_from_child(b,i,next);
-	     i = next;
-	 }
-    }
-    else
-   {
-#ifdef DEBUG_TEST_DRIVER
-	   qtNth_child_tri(Pick_v0[Pick_parent],Pick_v1[Pick_parent],
-			   Pick_v2[Pick_parent],a1,b1,c1,i,Pick_v0[Pick_cnt],
-			   Pick_v1[Pick_cnt],Pick_v2[Pick_cnt]);
-	   Pick_cnt++;
-#endif
-
-       if(func(qtptr,arg1,arg2) == QT_DONE)
-	  return(QT_DONE);
-
-       /* Advance to next node */
-       /* NOTE: Optimize: should only have to check 1/2 */
-       w = *wptr;
-       while(1)
-       {
-	 nbr = move_to_nbr(b,db[w][0],db[w][1],db[w][2],&t);
-
-	 if(t >= 1.0)
-         {
-	   if(w == 2)
-	     return(QT_DONE);
-	   b[0] += db[w][0];
-	   b[1] += db[w][1];
-	   b[2] += db[w][2];
-	   w++;
-	   db[w][0] *= sfactor;
-	   db[w][1] *= sfactor;
-	   db[w][2] *= sfactor;
-	 }
-       else
-	 if(nbr != INVALID)
-         {
-	   b[0] += t * db[w][0];
-	   b[1] += t * db[w][1];
-	   b[2] += t * db[w][2];
-	   db[w][0] *= (1.0 - t);
-	   db[w][1] *= (1.0 - t);
-	   db[w][2] *= (1.0 - t);
-	   *wptr = w;
-	   return(nbr);
-	 }
-	 else
-	   return(INVALID);
-       }
-   }
-    
-}
-
-
-int
-qtRoot_visit_tri_edges(qtptr,q0,q1,q2,tri,dir,wptr,func,arg1,arg2)
-   QUADTREE *qtptr;
-   FVECT q0,q1,q2;
-   FVECT tri[3],dir[3];
-   int *wptr;
-   int (*func)();
-   int *arg1,arg2;
-{
-  int i,x,y,nbr,w;
-  QUADTREE *child;
-  FVECT n,c,i_pt,d;
-  double pd,b[3][3],db[3][3],t;
-    
-  w = *wptr;
-
-  /* Project the origin onto the root node plane */
-
-  /* Find the intersection point of the origin */
-  tri_plane_equation(q0,q1,q2,n,&pd,FALSE);
-  /* map to 2d by dropping maximum magnitude component of normal */
-  i = max_index(n);
-  x = (i+1)%3;
-  y = (i+2)%3;
-  /* Calculate barycentric coordinates for current vertex */
-  
-  for(i=0;i < 3; i++)
-  {
-    /* If processing 3rd edge-dont need info for t1 */
-    if(i==1 && w==2)
-      continue;
-    /* project the dir as well */
-    intersect_vector_plane(tri[i],n,pd,NULL,i_pt);
-    bary2d(q0[x],q0[y],q1[x],q1[y],q2[x],q2[y],i_pt[x],i_pt[y],b[i]);  
-    VADD(c,tri[i],dir[i]);
-    intersect_vector_plane(c,n,pd,&t,c);
-    /* Calculate barycentric coordinates of dir */
-    bary2d(q0[x],q0[y],q1[x],q1[y],q2[x],q2[y],c[x],c[y],db[i]);
-    if(t < 0.0)
-      VSUB(db[i],b[i],db[i]);
-    else
-      VSUB(db[i],db[i],b[i]);
-  }
-#ifdef DEBUG_TEST_DRIVER
-    VCOPY(Pick_v0[Pick_cnt],q0);
-    VCOPY(Pick_v1[Pick_cnt],q1);
-    VCOPY(Pick_v2[Pick_cnt],q2);
-    Pick_cnt++;
-#endif
-      /* trace the ray starting with this node */
-    nbr = qtVisit_tri_edges(qtptr,b[w],db,wptr,1.0,func,arg1,arg2);
-    return(nbr);
-    
-}
-
-
-
-
 /* NOTE: SINCE DIR could be unit: then we could use integer math */
 int
-qtVisit_tri_edges2(qtptr,b,db0,db1,db2,
-		   db,wptr,t,sign,sfactor,func,arg1,arg2)
+qtVisit_tri_edges(qtptr,b,db0,db1,db2,
+		   db,wptr,t,sign,sfactor,func,arg1,arg2,arg3)
    QUADTREE *qtptr;
    double b[3],db0,db1,db2,db[3][3];
    int *wptr;
@@ -1079,7 +737,7 @@ qtVisit_tri_edges2(qtptr,b,db0,db1,db2,
    int sign;
    double sfactor;
    int (*func)();
-   int *arg1,arg2;
+   int *arg1,arg2,*arg3;
 {
     int i,found;
     QUADTREE *child;
@@ -1104,14 +762,14 @@ qtVisit_tri_edges2(qtptr,b,db0,db1,db2,
 	   child = QT_NTH_CHILD_PTR(*qtptr,i);
 
 	   if(i != 3)
-	       nbr = qtVisit_tri_edges2(child,b,db0,db1,db2,
+	       nbr = qtVisit_tri_edges(child,b,db0,db1,db2,
 					db,wptr,t,sign,
-					sfactor*2.0,func,arg1,arg2);
+					sfactor*2.0,func,arg1,arg2,arg3);
 	   else
 	     /* If the center cell- must flip direction signs */
-	     nbr = qtVisit_tri_edges2(child,b,-db0,-db1,-db2,
+	     nbr = qtVisit_tri_edges(child,b,-db0,-db1,-db2,
 				     db,wptr,t,1-sign,
-				     sfactor*2.0,func,arg1,arg2);
+				     sfactor*2.0,func,arg1,arg2,arg3);
 
 	   if(nbr == QT_DONE)
 	     return(nbr);
@@ -1148,7 +806,7 @@ qtVisit_tri_edges2(qtptr,b,db0,db1,db2,
 	   Pick_cnt++;
 #endif
 
-       if(func(qtptr,arg1,arg2) == QT_DONE)
+       if(func(qtptr,arg1,arg2,arg3) == QT_DONE)
 	  return(QT_DONE);
 
        /* Advance to next node */
@@ -1160,7 +818,7 @@ qtVisit_tri_edges2(qtptr,b,db0,db1,db2,
 	 t_g = t_l/sfactor;
 #ifdef DEBUG
 	 if(t[w] <= 0.0)
-	   eputs("qtVisit_tri_edges2():negative t\n");
+	   eputs("qtVisit_tri_edges():negative t\n");
 #endif
 	 if(t_g >= t[w])
 	 {
@@ -1197,13 +855,13 @@ qtVisit_tri_edges2(qtptr,b,db0,db1,db2,
 
 
 int
-qtRoot_visit_tri_edges2(qtptr,q0,q1,q2,tri,i_pt,wptr,func,arg1,arg2)
+qtRoot_visit_tri_edges(qtptr,q0,q1,q2,tri,i_pt,wptr,func,arg1,arg2,arg3)
    QUADTREE *qtptr;
    FVECT q0,q1,q2;
    FVECT tri[3],i_pt;
    int *wptr;
    int (*func)();
-   int *arg1,arg2;
+   int *arg1,arg2,*arg3;
 {
   int x,y,z,nbr,w,i,j;
   QUADTREE *child;
@@ -1217,7 +875,7 @@ qtRoot_visit_tri_edges2(qtptr,q0,q1,q2,tri,i_pt,wptr,func,arg1,arg2)
   /* Find the intersection point of the origin */
   tri_plane_equation(q0,q1,q2,n,&pd,FALSE);
   /* map to 2d by dropping maximum magnitude component of normal */
-  z = max_index(n);
+  z = max_index(n,NULL);
   x = (z+1)%3;
   y = (z+2)%3;
   /* Calculate barycentric coordinates for current vertex */
@@ -1283,8 +941,8 @@ qtRoot_visit_tri_edges2(qtptr,q0,q1,q2,tri,i_pt,wptr,func,arg1,arg2)
  }
   *wptr = w;
   /* trace the ray starting with this node */
-    nbr = qtVisit_tri_edges2(qtptr,b[3],db[w][0],db[w][1],db[w][2],
-			     db,wptr,t,0,1.0,func,arg1,arg2);
+    nbr = qtVisit_tri_edges(qtptr,b[3],db[w][0],db[w][1],db[w][2],
+			     db,wptr,t,0,1.0,func,arg1,arg2,arg3);
     if(nbr != INVALID && nbr != QT_DONE)
     {
       i_pt[x] = b[3][0]*q0[x] + b[3][1]*q1[x] + b[3][2]*q2[x];
@@ -1295,7 +953,299 @@ qtRoot_visit_tri_edges2(qtptr,q0,q1,q2,tri,i_pt,wptr,func,arg1,arg2)
     
 }
 
+int
+move_to_nbri(b,db0,db1,db2,tptr)
+BCOORD b[3];
+BDIR db0,db1,db2;
+TINT *tptr;
+{
+  TINT t,dt;
+  BCOORD bc;
+  int nbr;
+  
+  nbr = -1;
+  /* Advance to next node */
+  if(db0 < 0)
+   {
+     bc = MAXBCOORD*b[0];
+     t = bc/-db0;
+     nbr = 0;
+   }
+  else
+    t = HUGET;
+  if(db1 < 0)
+  {
+     bc = MAXBCOORD*b[1];
+     dt = bc/-db1;
+    if( dt < t)
+    {
+      t = dt;
+      nbr = 1;
+    }
+  }
+  if(db2 < 0)
+  {
+     bc = MAXBCOORD*b[2];
+     dt = bc/-db2;
+       if( dt < t)
+      {
+	t = dt;
+	nbr = 2;
+      }
+    }
+  *tptr = t;
+  return(nbr);
+}
+/* NOTE: SINCE DIR could be unit: then we could use integer math */
+int
+qtVisit_tri_edgesi(qtptr,b,db0,db1,db2,
+		   db,wptr,t,sign,sfactor,func,arg1,arg2,arg3)
+   QUADTREE *qtptr;
+   BCOORD b[3];
+   BDIR db0,db1,db2,db[3][3];
+   int *wptr;
+   TINT t[3];
+   int sign;
+   int sfactor;
+   int (*func)();
+   int *arg1,arg2,*arg3;
+{
+    int i,found;
+    QUADTREE *child;
+    int nbr,next,w;
+    TINT t_g,t_l,t_i;
+#ifdef DEBUG_TEST_DRIVER
+    FVECT a1,b1,c1;
+    int Pick_parent = Pick_cnt-1;
+    qtSubdivide_tri(Pick_v0[Pick_parent],Pick_v1[Pick_parent],
+			   Pick_v2[Pick_parent],a1,b1,c1);
+#endif
+    if(QT_IS_TREE(*qtptr))
+    {
+	/* Find the appropriate child and reset the coord */
+	i = baryi_child(b);
 
+	QT_SET_FLAG(*qtptr);
+
+	for(;;)
+        {
+	  w = *wptr;
+	   child = QT_NTH_CHILD_PTR(*qtptr,i);
+
+	   if(i != 3)
+	       nbr = qtVisit_tri_edgesi(child,b,db0,db1,db2,
+					db,wptr,t,sign,
+					sfactor+1,func,arg1,arg2,arg3);
+	   else
+	     /* If the center cell- must flip direction signs */
+	     nbr = qtVisit_tri_edgesi(child,b,-db0,-db1,-db2,
+				     db,wptr,t,1-sign,
+				     sfactor+1,func,arg1,arg2,arg3);
+
+	   if(nbr == QT_DONE)
+	     return(nbr);
+	   if(*wptr != w)
+	   {
+	     w = *wptr;
+	     db0 = db[w][0];db1 = db[w][1];db2 = db[w][2];
+	     if(sign)
+	       {  db0 *= -1;db1 *= -1; db2 *= -1;}
+	   }
+	   /* If in same block: traverse */
+	   if(i==3)
+	      next = nbr;
+	     else
+		if(nbr == i)
+		   next = 3;
+	     else
+	       {
+		 /* reset the barycentric coordinates in the parents*/
+		 baryi_parent(b,i);
+		 /* Else pop up to parent and traverse from there */
+		 return(nbr);
+	       }
+	   baryi_from_child(b,i,next);
+	   i = next;
+	}
+    }
+    else
+   {
+#ifdef DEBUG_TEST_DRIVER
+	   qtNth_child_tri(Pick_v0[Pick_parent],Pick_v1[Pick_parent],
+			   Pick_v2[Pick_parent],a1,b1,c1,i,Pick_v0[Pick_cnt],
+			   Pick_v1[Pick_cnt],Pick_v2[Pick_cnt]);
+	   Pick_cnt++;
+#endif
+
+       if(func(qtptr,arg1,arg2,arg3) == QT_DONE)
+	  return(QT_DONE);
+
+       /* Advance to next node */
+       w = *wptr;
+       while(1)
+       {
+	   nbr = move_to_nbri(b,db0,db1,db2,&t_i);
+
+	 t_g = t_i >> sfactor;
+	 	 
+	 if(t_g >= t[w])
+	 {
+	   if(w == 2)
+	     return(QT_DONE);
+
+	   /* The edge fits in the cell- therefore the result of shifting db by
+	      sfactor is guaranteed to be less than MAXBCOORD
+	    */
+	   /* Caution: (t[w]*db) must occur before divide by MAXBCOORD
+	      since t[w] will always be < MAXBCOORD
+	   */
+	   b[0] = b[0] + (t[w]*db0*(1 << sfactor))/MAXBCOORD;
+	   b[1] = b[1] + (t[w]*db1*(1 << sfactor))/MAXBCOORD;
+	   b[2] = b[2] + (t[w]*db2*(1 << sfactor))/MAXBCOORD;
+	   w++;
+	   db0 = db[w][0]; db1 = db[w][1]; db2 = db[w][2];
+	   if(sign)
+	   {  db0 *= -1;db1 *= -1; db2 *= -1;}
+	 }
+       else
+	 if(nbr != INVALID)
+         {
+	   /* Caution: (t_i*db) must occur before divide by MAXBCOORD
+	      since t_i will always be < MAXBCOORD
+	   */
+	   b[0] = b[0] + (t_i *db0) / MAXBCOORD;
+	   b[1] = b[1] + (t_i *db1) / MAXBCOORD;
+	   b[2] = b[2] + (t_i *db2) / MAXBCOORD;
+
+	   t[w] -= t_g;
+	   *wptr = w;
+	   return(nbr);
+	 }
+	 else
+	   return(INVALID);
+       }
+   }    
+}
+
+
+int
+qtRoot_visit_tri_edgesi(qtptr,q0,q1,q2,tri,i_pt,wptr,func,arg1,arg2,arg3)
+   QUADTREE *qtptr;
+   FVECT q0,q1,q2;
+   FVECT tri[3],i_pt;
+   int *wptr;
+   int (*func)();
+   int *arg1,arg2,*arg3;
+{
+  int x,y,z,nbr,w,i,j;
+  QUADTREE *child;
+  FVECT n,c,d,v[3];
+  double pd,b[4][3],db[3][3],et[3],exit_pt;
+  BCOORD bi[3];
+  TINT t[3];
+  BDIR dbi[3][3];
+  w = *wptr;
+
+  /* Project the origin onto the root node plane */
+
+  t[0] = t[1] = t[2] = 0;
+  /* Find the intersection point of the origin */
+  tri_plane_equation(q0,q1,q2,n,&pd,FALSE);
+  /* map to 2d by dropping maximum magnitude component of normal */
+  z = max_index(n,NULL);
+  x = (z+1)%3;
+  y = (z+2)%3;
+  /* Calculate barycentric coordinates for current vertex */
+  if(w != -1)
+  {
+    bary2d(q0[x],q0[y],q1[x],q1[y],q2[x],q2[y],i_pt[x],i_pt[y],b[3]);  
+    intersect_vector_plane(tri[w],n,pd,&(et[w]),v[w]);
+    bary2d(q0[x],q0[y],q1[x],q1[y],q2[x],q2[y],v[w][x],v[w][y],b[w]);  
+  }
+  else
+  /* Just starting: b[0] is the origin point: guaranteed to be valid b*/
+  {
+    w = 0;
+    intersect_vector_plane(tri[0],n,pd,&(et[0]),v[0]);
+    bary2d(q0[x],q0[y],q1[x],q1[y],q2[x],q2[y],v[0][x],v[0][y],b[0]);  
+    VCOPY(b[3],b[0]);
+  }
+
+
+  j = (w+1)%3;
+  intersect_vector_plane(tri[j],n,pd,&(et[j]),v[j]);
+  bary2d(q0[x],q0[y],q1[x],q1[y],q2[x],q2[y],v[j][x],v[j][y],b[j]);  
+  if(et[j] < 0.0)
+  {
+      VSUB(db[w],b[3],b[j]);
+      t[w] = HUGET;
+  }
+  else
+ {
+   /* NOTE: for stability: do not increment with ipt- use full dir and
+      calculate t: but for wrap around case: could get same problem? 
+      */
+   VSUB(db[w],b[j],b[3]);
+   /* Check if the point is out side of the triangle: if so t[w] =HUGET */
+   if((fabs(b[j][0])>(FTINY+1.0)) ||(fabs(b[j][1])>(FTINY+1.0)) ||
+      (fabs(b[j][2])>(FTINY+1.0)))
+      t[w] = HUGET;
+   else
+   {
+       /* The next point is in the triangle- so db values will be in valid
+	  range and t[w]= MAXT
+	*/  
+       t[w] = MAXT;
+       if(j != 0)
+	  for(;j < 3;j++)
+	     {
+		 i = (j+1)%3;
+		 if(i!= w)
+	         {
+		     intersect_vector_plane(tri[i],n,pd,&(et[i]),v[i]);
+		     bary2d(q0[x],q0[y],q1[x],q1[y],q2[x],q2[y],v[i][x],
+			    v[i][y],b[i]);
+		 }
+		 if(et[i] < 0.0)
+	         {
+		     VSUB(db[j],b[j],b[i]);
+		     t[j] = HUGET;
+		     break;
+		 }
+		 else
+		 {
+		     VSUB(db[j],b[i],b[j]);
+		     if((fabs(b[j][0])>(FTINY+1.0)) ||
+			(fabs(b[j][1])>(FTINY+1.0)) ||
+			(fabs(b[j][2])>(FTINY+1.0)))
+			{
+			    t[j] = HUGET;
+			    break;
+			}
+		     else
+			t[j] = MAXT;
+		 }
+	     }
+   }
+}
+  *wptr = w;
+  bary_dtol(b[3],db,bi,dbi,t);
+
+  /* trace the ray starting with this node */
+    nbr = qtVisit_tri_edgesi(qtptr,bi,dbi[w][0],dbi[w][1],dbi[w][2],
+			     dbi,wptr,t,0,0,func,arg1,arg2,arg3);
+    if(nbr != INVALID && nbr != QT_DONE)
+    {
+	b[3][0] = (double)bi[0]/(double)MAXBCOORD;
+	b[3][1] = (double)bi[1]/(double)MAXBCOORD;
+	b[3][2] = (double)bi[2]/(double)MAXBCOORD;
+	i_pt[x] = b[3][0]*q0[x] + b[3][1]*q1[x] + b[3][2]*q2[x];
+	i_pt[y] = b[3][0]*q0[y] + b[3][1]*q1[y] + b[3][2]*q2[y];
+	i_pt[z] = (-n[x]*i_pt[x] - n[y]*i_pt[y] -pd)/n[z]; 
+    }
+    return(nbr);
+    
+}
 
 
 

@@ -15,10 +15,12 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #define QTSETIBLK	2048     	/* set index allocation block size */
 #define QTELEMBLK	8		/* set element allocation block */
+#define QTELEMMOD(ne)	((ne)&7)	/* (ne) % QTELEMBLK */
 
-#define QTNODESIZ(ne)	((ne) + QTELEMBLK - ((ne) % QTELEMBLK))
+#define QTONTHRESH(ne)	(!QTELEMMOD((ne)+1))
+#define QTNODESIZ(ne)	((ne) + QTELEMBLK - QTELEMMOD(ne))
 
-OBJECT	**qtsettab= NULL;			/* quadtree leaf node table */
+OBJECT	**qtsettab= NULL;		/* quadtree leaf node table */
 QUADTREE  qtnumsets;			/* number of used set indices */
 static int  qtfreesets = EMPTY;		/* free set index list */
 
@@ -28,7 +30,6 @@ qtnewleaf(oset)			/* return new leaf node for object set */
 OBJECT  *oset;
 {
 	register QUADTREE  osi;
-	int	nalc;
 
 	if (*oset <= 0)
 		return(EMPTY);		/* should be error? */
@@ -41,8 +42,8 @@ OBJECT  *oset;
 		if (qtsettab == NULL)
 			goto memerr;
 	}
-	nalc = QTNODESIZ(*oset);
-	if ((qtsettab[osi] = (OBJECT *)malloc(nalc*sizeof(OBJECT))) == NULL)
+	qtsettab[osi] = (OBJECT *)malloc(QTNODESIZ(*oset)*sizeof(OBJECT));
+	if (qtsettab[osi] == NULL)
 		goto memerr;
 	setcopy(qtsettab[osi], oset);
 	return(QT_INDEX(osi));
@@ -52,12 +53,11 @@ memerr:
 
 
 QUADTREE
-qtdelelem(qt, id)		/* delete element from leaf node, no quest. */
+qtdelelem(qt, id)		/* delete element from leaf node */
 QUADTREE  qt;
 OBJECT  id;
 {
 	register QUADTREE  lf;
-	int  oalc, nalc;
 
 #ifdef DEBUG
 	if(id < 0)
@@ -74,25 +74,22 @@ OBJECT  id;
 		qtsettab[lf] = (OBJECT *)qtfreesets;
 		qtfreesets = lf;
 		return(EMPTY);
-	}					/* else delete element */
-	oalc = QTNODESIZ(qtsettab[lf][0]);
-	nalc = QTNODESIZ(qtsettab[lf][0] - 1);
+	}
 	deletelem(qtsettab[lf], id);
-	if (nalc != oalc)
+	if (QTONTHRESH(qtsettab[lf][0]))
 		qtsettab[lf] = (OBJECT *)realloc((char *)qtsettab[lf],
-				nalc*sizeof(OBJECT));
+				QTNODESIZ(qtsettab[lf][0])*sizeof(OBJECT));
 	return(qt);
 }
 
 
 QUADTREE
-qtaddelem(qt, id)		/* add element to leaf node, no quest. */
+qtaddelem(qt, id)		/* add element to leaf node */
 QUADTREE  qt;
 OBJECT  id;
 {
 	OBJECT	newset[2];
 	register QUADTREE  lf;
-	int  oalc, nalc;
 
 #ifdef DEBUG
 	if(id < 0)
@@ -110,11 +107,9 @@ OBJECT  id;
 #else
 	lf = QT_SET_INDEX(qt);
 #endif
-	oalc = QTNODESIZ(qtsettab[lf][0]);
-	nalc = QTNODESIZ(qtsettab[lf][0] + 1);
-	if (nalc != oalc) {
+	if (QTONTHRESH(qtsettab[lf][0])) {
 		qtsettab[lf] = (OBJECT *)realloc((char *)qtsettab[lf],
-				nalc*sizeof(OBJECT));
+				QTNODESIZ(qtsettab[lf][0]+1)*sizeof(OBJECT));
 		if (qtsettab[lf] == NULL)
 			error(SYSTEM, "out of memory in qtaddelem");
 	}

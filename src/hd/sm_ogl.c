@@ -45,9 +45,42 @@ static int	qt_hsiz = 0;		/* quadtree cache size */
 
 
 int
-mark_active_tris(qtptr,arg)
+mark_active_tris(qtptr,fptr,arg1,arg2)
 QUADTREE *qtptr;
-int *arg;
+int *fptr,arg1,*arg2;
+{
+  QUADTREE qt = *qtptr;
+  OBJECT *os,*optr;
+  register int i,t_id;
+
+  if (!QT_IS_LEAF(qt))
+    return(TRUE);
+  
+  if(!QT_FLAG_FILL_TRI(*fptr))
+     (*fptr)++;
+  /* For each triangle in the set, set the which flag*/
+  os = qtqueryset(qt);
+
+  for (i = QT_SET_CNT(os), optr = QT_SET_PTR(os); i > 0; i--)
+  {
+    t_id = QT_SET_NEXT_ELEM(optr);
+    /* Set the render flag */
+    if(SM_IS_NTH_T_BASE(smMesh,t_id))
+	continue;
+    SM_SET_NTH_T_ACTIVE(smMesh,t_id);
+    /* NOTE:Also set the LRU clock bit: MAY WANT TO CHANGE: */      
+    SM_SET_NTH_T_LRU(smMesh,t_id);
+  }
+  return(TRUE);
+}
+
+int
+mark_active_interior(qtptr,q0,q1,q2,t0,t1,t2,n,arg1,arg2,arg3)
+QUADTREE *qtptr;
+FVECT q0,q1,q2;
+FVECT t0,t1,t2;
+int n;
+int *arg1,arg2,*arg3;
 {
   QUADTREE qt = *qtptr;
   OBJECT *os,*optr;
@@ -97,24 +130,36 @@ VIEW *view;
        Also set the triangles LRU clock counter
        */
     /* Near face triangles */
-    smLocator_apply_func(smMesh,nr[0],nr[2],nr[3],mark_active_tris,NULL);
-    smLocator_apply_func(smMesh,nr[2],nr[0],nr[1],mark_active_tris,NULL);
+    smLocator_apply_func(smMesh,nr[0],nr[2],nr[3],mark_active_tris,
+			 mark_active_interior,NULL,NULL);
+    smLocator_apply_func(smMesh,nr[2],nr[0],nr[1],mark_active_tris,
+			 mark_active_interior,NULL,NULL);
     /* Right face triangles */
-    smLocator_apply_func(smMesh,nr[0],far[3],far[0],mark_active_tris,NULL);
-    smLocator_apply_func(smMesh,far[3],nr[0],nr[3],mark_active_tris,NULL);
+    smLocator_apply_func(smMesh,nr[0],far[3],far[0],mark_active_tris,
+			 mark_active_interior,NULL,NULL);
+    smLocator_apply_func(smMesh,far[3],nr[0],nr[3],mark_active_tris,
+			 mark_active_interior,NULL,NULL);
     /* Left face triangles */
-    smLocator_apply_func(smMesh,nr[1],far[2],nr[2],mark_active_tris,NULL);
-    smLocator_apply_func(smMesh,far[2],nr[1],far[1],mark_active_tris,NULL);
+    smLocator_apply_func(smMesh,nr[1],far[2],nr[2],mark_active_tris,
+			 mark_active_interior,NULL,NULL);
+    smLocator_apply_func(smMesh,far[2],nr[1],far[1],mark_active_tris,
+			 mark_active_interior,NULL,NULL);
     /* Top face triangles */
-    smLocator_apply_func(smMesh,nr[0],far[0],nr[1],mark_active_tris,NULL);
-    smLocator_apply_func(smMesh,nr[1],far[0],far[1],mark_active_tris,NULL);
+    smLocator_apply_func(smMesh,nr[0],far[0],nr[1],mark_active_tris,
+			 mark_active_interior,NULL,NULL);
+    smLocator_apply_func(smMesh,nr[1],far[0],far[1],mark_active_tris,
+			 mark_active_interior,NULL,NULL);
     /* Bottom face triangles */
-    smLocator_apply_func(smMesh,nr[3],nr[2],far[3],mark_active_tris,NULL);
-    smLocator_apply_func(smMesh,nr[2],far[2],far[3],mark_active_tris,NULL);
+    smLocator_apply_func(smMesh,nr[3],nr[2],far[3],mark_active_tris,
+			 mark_active_interior,NULL,NULL);
+    smLocator_apply_func(smMesh,nr[2],far[2],far[3],mark_active_tris,
+			 mark_active_interior,NULL,NULL);
     /* Far face triangles */
-    smLocator_apply_func(smMesh,far[0],far[2],far[1],mark_active_tris,NULL);
-    smLocator_apply_func(smMesh,far[2],far[0],far[3],mark_active_tris,NULL);
-
+    smLocator_apply_func(smMesh,far[0],far[2],far[1],mark_active_tris,
+			 mark_active_interior,NULL,NULL);
+    
+    smLocator_apply_func(smMesh,far[2],far[0],far[3],mark_active_tris,
+			 mark_active_interior,NULL,NULL);
 #ifdef TEST_DRIVER
     VCOPY(FrustumFar[0],far[0]);
     VCOPY(FrustumFar[1],far[1]);
@@ -233,6 +278,7 @@ int lvl;
   FVECT a,b,c;
   register QT_LUENT *le;
   QTRAVG *rc[4];
+  TRI *tri;
   
   if (QT_IS_EMPTY(qt))				/* empty leaf node */
     return(NULL);
@@ -274,7 +320,13 @@ int lvl;
       os = qtqueryset(qt);
       for (n = os[0]; n; n--)
       {
-	qtTri_from_id(os[n],a,b,c,NULL,NULL,NULL,&s0,&s1,&s2);
+	tri = SM_NTH_TRI(sm,os[n]);
+	s0 = T_NTH_V(tri,0);
+	s1 = T_NTH_V(tri,1);
+	s2 = T_NTH_V(tri,2);
+	VCOPY(a,SM_NTH_WV(sm,s0));
+	VCOPY(b,SM_NTH_WV(sm,s1));
+	VCOPY(c,SM_NTH_WV(sm,s2));	      
 	distsum += SM_BG_SAMPLE(sm,s0) ? dev_zmax
 				: sqrt(dist2(a,SM_VIEW_CENTER(sm)));
 	distsum += SM_BG_SAMPLE(sm,s1) ? dev_zmax

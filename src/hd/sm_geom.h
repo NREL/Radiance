@@ -8,6 +8,8 @@
 
 /* Assumes included after standard.h  */
 
+#include <values.h>
+
 #define ZERO(x) ((x) < FTINY && (x) > -FTINY)
 #define EQUAL(a,b) ZERO((a) - (b))
 
@@ -15,6 +17,17 @@
 #define TRUE 1
 #define FALSE 0
 #endif
+
+typedef long BCOORD;
+typedef long BDIR;
+typedef long TINT;
+#define BITS_BCOORD     (BITS(long)>>1)
+#define SHIFT_MAXBCOORD (BITS_BCOORD-2)   
+#define MAXBCOORD      (1L << SHIFT_MAXBCOORD)
+#define MAXBCOORD2      (MAXBCOORD>>1)
+#define MAXBDIR        MAXBCOORD
+#define MAXT           MAXBCOORD
+#define HUGET      MAXLONG
 
 #define M_2_3_PI PI*2/3
 

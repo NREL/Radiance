@@ -40,6 +40,16 @@ smDir(sm,ps,id)
     VCOPY(p,SM_NTH_WV(sm,id));
     point_on_sphere(ps,p,SM_VIEW_CENTER(sm)); 
 }
+smDir_in_cone(sm,ps,id)
+   SM *sm;
+   FVECT ps;
+   int id;
+{
+    FVECT p;
+    
+    VCOPY(p,SM_NTH_WV(sm,id));
+    point_on_sphere(ps,p,SM_VIEW_CENTER(sm)); 
+}
 
 smClear_mesh(sm)
     SM *sm;
@@ -251,15 +261,14 @@ smInit(n)
 }
 
 
-int
-smLocator_apply_func(sm,v0,v1,v2,func,arg)
-SM *sm;
-FVECT v0,v1,v2;
-int (*func)();
-int *arg;
+smLocator_apply_func(sm,v0,v1,v2,edge_func,interior_func,arg1,arg2)
+   SM *sm;
+   FVECT v0,v1,v2;
+   int (*edge_func)();
+   int (*interior_func)();
+   int *arg1,arg2;
 {
   STREE *st;
-  int found;
   FVECT p0,p1,p2;
 
   st = SM_LOCATOR(sm);
@@ -268,25 +277,26 @@ int *arg;
   VSUB(p1,v1,SM_VIEW_CENTER(sm));
   VSUB(p2,v2,SM_VIEW_CENTER(sm));
 
-  found = stApply_to_tri_cells(st,p0,p1,p2,func,arg);
+  stApply_to_tri(st,p0,p1,p2,edge_func,interior_func,arg1,arg2);
 
-  return(found);
 }
 
 
 int
-add_tri_expand(qtptr,q0,q1,q2,t0,t1,t2,n,arg,t_id)
+add_tri_expand(qtptr,q0,q1,q2,t0,t1,t2,n,arg,t_id,del_set)
 QUADTREE *qtptr;
 FVECT q0,q1,q2;
 FVECT t0,t1,t2;
 int n;
 int *arg;
 int t_id;
+OBJECT *del_set;
 {
-    OBJECT tset[QT_MAXSET+1],*optr;	
+    OBJECT t_set[QT_MAXSET+1],*optr,*tptr,r_set[QT_MAXSET+1];
     int i,id,found;
     FVECT v0,v1,v2;
     TRI *tri;
+    
 #ifdef DEBUG_TEST_DRIVER
     Pick_tri = t_id;
     Picking = TRUE;
@@ -297,8 +307,25 @@ int t_id;
       *qtptr = qtaddelem(*qtptr,t_id);
       return(TRUE);
     }
-    
+
     optr = qtqueryset(*qtptr);
+    if(del_set)
+    {
+	setintersect(r_set,del_set,optr);
+	if(QT_SET_CNT(r_set) > 0)
+	 {
+	     qtgetset(t_set,*qtptr);
+	     optr = QT_SET_PTR(r_set);
+	     for(i = QT_SET_CNT(r_set); i > 0; i--)
+	     {
+		 id = QT_SET_NEXT_ELEM(optr);
+		 deletelem(t_set,id);
+	     }
+	     qtfreeleaf(*qtptr);
+	     *qtptr = qtnewleaf(t_set);
+	     optr = t_set;
+	 }
+    }
     if(!inset(optr,t_id))
     {
       if(QT_SET_CNT(optr) < QT_MAXSET)
@@ -315,12 +342,12 @@ int t_id;
     if(QT_SET_CNT(optr) >= QT_SET_THRESHOLD)
       if (n < QT_MAX_LEVELS)
       {
-	qtgetset(tset,*qtptr);
+	qtgetset(t_set,*qtptr);
 	/* If set size exceeds threshold: subdivide cell and reinsert tris*/
 	qtfreeleaf(*qtptr);
 	qtSubdivide(qtptr);
 
-	for(optr = QT_SET_PTR(tset),i=QT_SET_CNT(tset); i > 0; i--)
+	for(optr = QT_SET_PTR(t_set),i=QT_SET_CNT(t_set); i > 0; i--)
 	{
 	  id = QT_SET_NEXT_ELEM(optr);
 	  tri = SM_NTH_TRI(smMesh,id);
@@ -354,14 +381,16 @@ int t_id;
 
 
 int
-add_tri(qtptr,fptr,t_id)
+add_tri(qtptr,fptr,t_id,del_set)
    QUADTREE *qtptr;
    int *fptr;
    int t_id;
+   OBJECT *del_set;
 {
 
-  OBJECT *optr;
-
+  OBJECT *optr,*tptr;
+  OBJECT t_set[QT_MAXSET +1],r_set[QT_MAXSET +1];
+  int i,id,found;
 #ifdef DEBUG_TEST_DRIVER
     Pick_tri = t_id;
     Picking = TRUE;
@@ -374,59 +403,52 @@ add_tri(qtptr,fptr,t_id)
     }
     else
      {
-       optr = qtqueryset(*qtptr);
-       if(!inset(optr,t_id))
-       {
-	 if(QT_SET_CNT(optr) < QT_MAXSET)
+	 optr = qtqueryset(*qtptr);
+	 if(del_set)
+	  {
+	      setintersect(r_set,del_set,optr);
+	      if(QT_SET_CNT(r_set) > 0)
+	      {
+		  qtgetset(t_set,*qtptr);
+		  optr = QT_SET_PTR(r_set);
+		  for(i = QT_SET_CNT(r_set); i > 0; i--)
+		     {
+			 id = QT_SET_NEXT_ELEM(optr);
+			 deletelem(t_set,id);
+		     }
+		  qtfreeleaf(*qtptr);
+		  *qtptr = qtnewleaf(t_set);
+		  optr = t_set;
+	      }
+	  }
+	 if(!inset(optr,t_id))
 	 {
-	   if(QT_SET_CNT(optr) >= QT_SET_THRESHOLD)
-	     (*fptr) |= QT_EXPAND;
-	   if(!QT_FLAG_FILL_TRI(*fptr))
-	     (*fptr)++;
-	   *qtptr = qtaddelem(*qtptr,t_id);
-	 }
-	 else
-	   {
+	     if(QT_SET_CNT(optr) < QT_MAXSET)
+	     {
+		 if(QT_SET_CNT(optr) >= QT_SET_THRESHOLD)
+		    (*fptr) |= QT_EXPAND;
+		 if(!QT_FLAG_FILL_TRI(*fptr))
+		    (*fptr)++;
+		 *qtptr = qtaddelem(*qtptr,t_id);
+	     }
+	     else
+		{
 #ifdef DEBUG_TESTDRIVER	      
-	     eputs("add_tri():exceeded set size\n");
+		    eputs("add_tri():exceeded set size\n");
 #endif
-	     return(FALSE);
-	   }
-       }
+		    return(FALSE);
+		}
+	 }
      }
     return(TRUE);
 }
 
 
-int
-stInsert_tri(st,t_id,t0,t1,t2)
-   STREE *st;
-   int t_id;
-   FVECT t0,t1,t2;
-{
-    int f;
-    FVECT dir;
-    
-  /* First add all of the leaf cells lying on the triangle perimeter:
-     mark all cells seen on the way
-   */
-    ST_CLEAR_FLAGS(st);
-    f = 0;
-    VSUB(dir,t1,t0);
-    stTrace_edge(st,t0,dir,1.0,add_tri,&f,t_id);
-    VSUB(dir,t2,t1);
-    stTrace_edge(st,t1,dir,1.0,add_tri,&f,t_id);
-    VSUB(dir,t0,t2);
-    stTrace_edge(st,t2,dir,1.0,add_tri,&f,t_id);
-    /* Now visit interior */
-    if(QT_FLAG_FILL_TRI(f) || QT_FLAG_UPDATE(f))
-       stVisit_tri_interior(st,t0,t1,t2,add_tri_expand,&f,t_id);
-}
-
-smLocator_add_tri(sm,t_id,v0_id,v1_id,v2_id)
+smLocator_add_tri(sm,t_id,v0_id,v1_id,v2_id,del_set)
 SM *sm;
 int t_id;
-int v0_id,v1_id,v2_id;  
+int v0_id,v1_id,v2_id;
+OBJECT *del_set;
 {
   STREE *st;
   FVECT v0,v1,v2;
@@ -437,7 +459,9 @@ int v0_id,v1_id,v2_id;
   VSUB(v1,SM_NTH_WV(sm,v1_id),SM_VIEW_CENTER(sm));
   VSUB(v2,SM_NTH_WV(sm,v2_id),SM_VIEW_CENTER(sm));
 
-  stUpdate_tri(st,t_id,v0,v1,v2,add_tri,add_tri_expand);
+  qtClearAllFlags();
+  
+  stApply_to_tri(st,v0,v1,v2,add_tri,add_tri_expand,t_id,del_set);
 
 }
 
@@ -577,12 +601,13 @@ FVECT p;
 }
 
 void
-smTris_swap_edge(sm,t_id,t1_id,e,e1,tn_id,tn1_id,add,del)
+smTris_swap_edge(sm,t_id,t1_id,e,e1,tn_id,tn1_id,add_ptr,del_set)
    SM *sm;
    int t_id,t1_id;
    int e,e1;
    int *tn_id,*tn1_id;
-   LIST **add,**del;
+   LIST **add_ptr;
+   OBJECT *del_set;
 
 {
     TRI *t,*t1;
@@ -605,12 +630,12 @@ smTris_swap_edge(sm,t_id,t1_id,e,e1,tn_id,tn1_id,add,del)
     verts[enext] = T_NTH_V(t1,e1prev);
     verts[eprev] = T_NTH_V(t,eprev);
     ta_id = smAdd_tri(sm,verts[0],verts[1],verts[2],&ta);
-    *add = push_data(*add,ta_id);
+    *add_ptr = push_data(*add_ptr,ta_id);
     verts[e1] = T_NTH_V(t1,e1);
     verts[e1next] = T_NTH_V(t,eprev);
     verts[e1prev] = T_NTH_V(t1,e1prev);
     tb_id = smAdd_tri(sm,verts[0],verts[1],verts[2],&tb);
-    *add = push_data(*add,tb_id);
+    *add_ptr = push_data(*add_ptr,tb_id);
 
     /* set the neighbors */
     T_NTH_NBR(ta,e) = T_NTH_NBR(t1,e1next);
@@ -632,51 +657,51 @@ smTris_swap_edge(sm,t_id,t1_id,e,e1,tn_id,tn1_id,add,del)
     T_NTH_NBR(n,T_NTH_NBR_PTR(t1_id,n)) = tb_id;
 
     /* Delete two parent triangles */
+    if(remove_from_list(t_id,add_ptr))
+       smDelete_tri(sm,t_id); 
+    else
+       insertelem(del_set,t_id);
 
-    *del = push_data(*del,t_id);
-    T_VALID_FLAG(t) = -1;
-    *del = push_data(*del,t1_id);
-    T_VALID_FLAG(t1) = -1;
+    if(remove_from_list(t1_id,add_ptr))
+       smDelete_tri(sm,t1_id); 
+    else
+       insertelem(del_set,t1_id);
+
     *tn_id = ta_id;
     *tn1_id = tb_id;
 }
 
-smUpdate_locator(sm,add_list,del_list)
+smUpdate_locator(sm,add_list,del_set)
 SM *sm;
-LIST *add_list,*del_list;
+LIST *add_list;
+OBJECT *del_set;
 {
-  int t_id;
+  int t_id,i;
   TRI *t;
+  OBJECT *optr;
+  
   while(add_list)
   {
     t_id = pop_list(&add_list);
     t = SM_NTH_TRI(sm,t_id);
-    if(!T_IS_VALID(t))
-    {
-      T_VALID_FLAG(t) = 1;
-      continue;
-    }
-    smLocator_add_tri(sm,t_id,T_NTH_V(t,0),T_NTH_V(t,1),T_NTH_V(t,2));
+    smLocator_add_tri(sm,t_id,T_NTH_V(t,0),T_NTH_V(t,1),T_NTH_V(t,2),del_set);
   }
-  
-  while(del_list)
+
+  optr = QT_SET_PTR(del_set);
+  for(i = QT_SET_CNT(del_set); i > 0; i--)
   {
-    t_id = pop_list(&del_list);
-    t = SM_NTH_TRI(sm,t_id);
-    if(!T_IS_VALID(t))
-    { 
-      smLocator_remove_tri(sm,t_id);
-    }
-    smDelete_tri(sm,t_id); 
+      t_id = QT_SET_NEXT_ELEM(optr);
+      smDelete_tri(sm,t_id); 
   }
 }
 /* MUST add check for constrained edges */
 int
-smFix_tris(sm,id,tlist,add_list,del_list)
+smFix_tris(sm,id,tlist,add_list,del_set)
 SM *sm;
 int id;
 LIST *tlist;
-LIST *add_list,*del_list;
+LIST *add_list;
+OBJECT *del_set;
 {
     TRI *t,*t_opp;
     FVECT p,p1,p2,p3;
@@ -697,9 +722,9 @@ LIST *add_list,*del_list;
 	VSUB(p2,SM_T_NTH_WV(sm,t_opp,1),SM_VIEW_CENTER(sm));
 	VSUB(p3,SM_T_NTH_WV(sm,t_opp,2),SM_VIEW_CENTER(sm));
 	*/
-	smDir(sm,p1,T_NTH_V(t_opp,0));
-	smDir(sm,p2,T_NTH_V(t_opp,1));
-	smDir(sm,p3,T_NTH_V(t_opp,2));
+	smDir_in_cone(sm,p1,T_NTH_V(t_opp,0));
+	smDir_in_cone(sm,p2,T_NTH_V(t_opp,1));
+	smDir_in_cone(sm,p3,T_NTH_V(t_opp,2));
 	if(point_in_cone(p,p1,p2,p3))
 	{
 	    swapped = 1;
@@ -707,12 +732,12 @@ LIST *add_list,*del_list;
 	    /* check list for t_opp and Remove if there */
 	    remove_from_list(t_opp_id,&tlist);
 	    smTris_swap_edge(sm,t_id,t_opp_id,e,e1,&t_id,&t_opp_id,
-			     &add_list,&del_list);
+			     &add_list,del_set);
 	    tlist = push_data(tlist,t_id);
 	    tlist = push_data(tlist,t_opp_id);
 	}
     }
-    smUpdate_locator(sm,add_list,del_list);
+    smUpdate_locator(sm,add_list,del_set);
     return(swapped);
 }
 
@@ -821,10 +846,12 @@ smInsert_point_in_tri(sm,c,dir,p,s_id,tri_id)
     TRI *tri,*t0,*t1,*t2,*nbr;
     int v0_id,v1_id,v2_id,n_id;
     int t0_id,t1_id,t2_id;
-    LIST *tlist,*add_list,*del_list;
+    LIST *tlist,*add_list;
+    OBJECT del_set[QT_MAXSET+1]; 
     FVECT npt;
 
-    add_list = del_list = NULL;
+    add_list = NULL;
+    QT_CLEAR_SET(del_set);
     if(s_id == SM_INVALID)
        s_id = smAdd_sample_point(sm,c,dir,p);
     
@@ -873,15 +900,14 @@ smInsert_point_in_tri(sm,c,dir,p,s_id,tri_id)
     nbr = SM_NTH_TRI(sm,T_NTH_NBR(tri,2));
     T_NTH_NBR(nbr,T_NTH_NBR_PTR(tri_id,nbr)) = t2_id;
 	
-    del_list = push_data(del_list,tri_id);
-    T_VALID_FLAG(tri) = -1;
+    insertelem(del_set,tri_id);
 
     /* Fix up the new triangles*/
     tlist = push_data(NULL,t0_id);
     tlist = push_data(tlist,t1_id);
     tlist = push_data(tlist,t2_id);
 
-    smFix_tris(sm,s_id,tlist,add_list,del_list);
+    smFix_tris(sm,s_id,tlist,add_list,del_set);
 
     if(n_id != -1)
        smDelete_point(sm,n_id);
@@ -1115,8 +1141,7 @@ int type;
     cntr[1] += .02;
     cntr[2] += .03;
     VADD(cntr,cntr,SM_VIEW_CENTER(sm));
-    /* WONT use dir */
-    point_on_sphere(d,cntr,SM_VIEW_CENTER(sm));
+    d[0] = -1;
     id = smAdd_base_vertex(sm,cntr,d);
     /* test to make sure vertex allocated */
     if(id != -1)
@@ -1132,7 +1157,7 @@ int type;
     v2_id = p[stTri_verts[i][2]];
     if((ids[i] = smAdd_tri(sm, v0_id,v1_id,v2_id,&(tris[i])))== -1)
      return(0);
-    smLocator_add_tri(sm,ids[i],v0_id,v1_id,v2_id);
+    smLocator_add_tri(sm,ids[i],v0_id,v1_id,v2_id,NULL);
   }
   /* Set neighbors */
 
@@ -1199,9 +1224,9 @@ int *v0_idp,*v1_idp,*v2_idp;
 
   if(v0)
   {
-      VCOPY(v0,SM_NTH_WV(smMesh,v0_id));
-      VCOPY(v1,SM_NTH_WV(smMesh,v1_id));
-      VCOPY(v2,SM_NTH_WV(smMesh,v2_id));
+      VSUB(v0,SM_NTH_WV(smMesh,v0_id),SM_VIEW_CENTER(smMesh));
+      VSUB(v1,SM_NTH_WV(smMesh,v1_id),SM_VIEW_CENTER(smMesh));
+      VSUB(v2,SM_NTH_WV(smMesh,v2_id),SM_VIEW_CENTER(smMesh));
   }
   if(n0)
   {

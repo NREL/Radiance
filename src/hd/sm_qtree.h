@@ -69,15 +69,15 @@
 #define QT_SET_PTR(s)          (&((s)[1]))
 
 
-#define QT_MAXSET        255
+#define QT_MAXSET        511
 #define MAXCSET          2*QT_MAXSET
 #define QT_MAXCSET       MAXCSET
 #ifndef QT_SET_THRESHOLD
-#define QT_SET_THRESHOLD  80  
+#define QT_SET_THRESHOLD  100  
 #endif
 
 #ifndef QT_MAX_LEVELS
-#define QT_MAX_LEVELS     17
+#define QT_MAX_LEVELS     12
 #endif
 
 #define QT_HIT  -2

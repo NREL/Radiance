@@ -22,7 +22,6 @@ remove_tri(qtptr,fptr,t_id)
    int *fptr;
    int t_id;
 {
-    OBJECT tset[QT_MAXSET+1];	
     int n;
 
    if(QT_IS_EMPTY(*qtptr))
@@ -57,39 +56,11 @@ int t_id;
 }
 
 
-
-int
-stDelete_tri(st,t_id,t0,t1,t2)
-   STREE *st;
-   int t_id;
-   FVECT t0,t1,t2;
-{
-    int f;
-    FVECT dir;
-    
-  /* First add all of the leaf cells lying on the triangle perimeter:
-     mark all cells seen on the way
-   */
-    ST_CLEAR_FLAGS(st);
-    f = 0;
-    VSUB(dir,t1,t0);
-    stTrace_edge(st,t0,dir,1.0,remove_tri,&f,t_id);
-    VSUB(dir,t2,t1);
-    stTrace_edge(st,t1,dir,1.0,remove_tri,&f,t_id);
-    VSUB(dir,t0,t2);
-    stTrace_edge(st,t2,dir,1.0,remove_tri,&f,t_id);
-    /* Now visit interior */
-    if(QT_FLAG_FILL_TRI(f) || QT_FLAG_UPDATE(f))
-       stVisit_tri_interior(st,t0,t1,t2,remove_tri_compress,&f,t_id);
-}
-
-
 smLocator_remove_tri(sm,t_id)
 SM *sm;
 int t_id;
 {
   STREE *st;
-  char found;
   TRI *t;
   FVECT v0,v1,v2;
 
@@ -100,8 +71,7 @@ int t_id;
   VSUB(v0,SM_T_NTH_WV(sm,t,0),SM_VIEW_CENTER(sm));
   VSUB(v1,SM_T_NTH_WV(sm,t,1),SM_VIEW_CENTER(sm));
   VSUB(v2,SM_T_NTH_WV(sm,t,2),SM_VIEW_CENTER(sm));
-  found = stUpdate_tri(st,t_id,v0,v1,v2,remove_tri,remove_tri_compress);
-  return(found);
+  stApply_to_tri(st,v0,v1,v2,remove_tri,remove_tri_compress,t_id,NULL);
 }
 
 smFree_tri(sm,id)
@@ -145,14 +115,14 @@ int t_id;
 }
 
 
-
-LIST
-*smVertex_star_polygon(sm,id)
+LIST 
+*smVertex_star_polygon(sm,id,del_set)
 SM *sm;
 int id;
+OBJECT *del_set;
 {
     TRI *tri,*t_next;
-    LIST *elist,*end,*tlist;
+    LIST *elist,*end;
     int t_id,v_next,t_next_id;
     int e;
 
@@ -181,7 +151,7 @@ int id;
     t_next_id = t_id;
     t_next = tri;
 
-    tlist = push_data(NULL,t_id);
+    insertelem(del_set,t_id);
 
     while((t_next_id = smTri_next_ccw_nbr(sm,t_next,id)) != t_id)
     {	
@@ -200,14 +170,7 @@ int id;
 	SET_E_NTH_TRI(e,1,T_NTH_NBR(t_next,v_next));
 	v_next = (T_WHICH_V(t_next,id)+2)%3;
 	SET_E_NTH_VERT(e,1,T_NTH_V(t_next,v_next));
-	tlist = push_data(tlist,t_next_id);
-    }
-    while(tlist)
-    {
-	t_id = (int)pop_list(&tlist);
-	/* first remove from point location structure */
-	smLocator_remove_tri(sm,t_id);
-	smDelete_tri(sm,t_id);
+	insertelem(del_set,t_next_id);
     }
     return(elist);
 }
@@ -233,11 +196,7 @@ LIST *l;
       e = (int)LIST_DATA(el);
       id_e0 = E_NTH_VERT(e,0);
       id_e1 = E_NTH_VERT(e,1);
-      /* NOTE: DO these need to be normalized? Just subtract center? */
-      /*
-	smDir(sm,e0,id_e0);
-	smDir(sm,e1,id_e1);
-	*/
+
       VSUB(e0,SM_NTH_WV(sm,id_e0),SM_VIEW_CENTER(sm));
       VSUB(e1,SM_NTH_WV(sm,id_e1),SM_VIEW_CENTER(sm));
       if(sedge_intersect(v0,v1,e0,e1))
@@ -354,9 +313,9 @@ LIST **l,**lnew;
 
 
 int
-smTriangulate_convex(sm,plist)
+smTriangulate_convex(sm,plist,add_ptr)
 SM *sm;
-LIST *plist;
+LIST *plist,**add_ptr;
 {
     TRI *tri;
     int t_id,e_id0,e_id1,e_id2;
@@ -375,7 +334,8 @@ LIST *plist;
 	v_id2 = E_NTH_VERT(e_id1,1);
 	/* form a triangle for each triple of with v0 as base of star */
 	t_id = smAdd_tri(sm,v_id0,v_id1,v_id2,&tri);
-	smLocator_add_tri(sm,t_id,v_id0,v_id1,v_id2);
+	*add_ptr = push_data(*add_ptr,t_id);
+
 	/* add which pointer?*/
 
 	lptr = LIST_NEXT(lptr);
@@ -396,14 +356,13 @@ LIST *plist;
 
 	e_id0 = -e_id2;
     }
-    
     free_list(plist);
     return(TRUE);
 }
 int
-smTriangulate_elist(sm,plist)
+smTriangulate_elist(sm,plist,add_ptr)
 SM *sm;
-LIST *plist;
+LIST *plist,**add_ptr;
 {
     LIST *l,*el1;
     FVECT v0,v1,v2;
@@ -450,25 +409,25 @@ LIST *plist;
       */
       split_edge_list(id1,id_next,&l,&el1);
       /* Recurse and triangulate the two edge lists */
-      done = smTriangulate_elist(sm,l);
+      done = smTriangulate_elist(sm,l,add_ptr);
       if(done)
-	done = smTriangulate_elist(sm,el1);
+	done = smTriangulate_elist(sm,el1,add_ptr);
       return(done);
     }
-    done = smTriangulate_convex(sm,plist);
+    done = smTriangulate_convex(sm,plist,add_ptr);
     return(done);
 }
 
 int
-smTriangulate(sm,plist)
+smTriangulate(sm,plist,add_ptr)
 SM *sm;
-LIST *plist;
+LIST *plist,**add_ptr;
 {
     int e,id_t0,id_t1,e0,e1;
     TRI *t0,*t1;
     int test;
     
-    test = smTriangulate_elist(sm,plist);
+    test = smTriangulate_elist(sm,plist,add_ptr);
 
     if(!test)
        return(test);
@@ -509,16 +468,16 @@ TRI *t;
       return(T_NTH_V(t,0)==E_NTH_VERT(e,1)||T_NTH_V(t,1)==E_NTH_VERT(e,1));
   return(FALSE);
 }
-smFix_edges(sm)
+smFix_edges(sm,add_list,del_set)
    SM *sm;
+   LIST *add_list;
+   OBJECT *del_set;
 {
     int e,id_t0,id_t1,e_new,e0,e1,e0_next,e1_next;
     TRI *t0,*t1,*nt0,*nt1;
     int i,id_v0,id_v1,id_v2,id_p,nid_t0,nid_t1;
     FVECT v0,v1,v2,p,np,v;
-    LIST *add,*del;
-    
-    add = del = NULL;
+
     FOR_ALL_EDGES(e)
     {
 	id_t0 = E_NTH_TRI(e,0);
@@ -542,15 +501,16 @@ smFix_edges(sm)
 	id_v2 = T_NTH_V(t0,e0_next);
 	id_p = T_NTH_V(t1,e1_next);
 
-	smDir(sm,v0,id_v0);
-	smDir(sm,v1,id_v1);
-	smDir(sm,v2,id_v2);
+	smDir_in_cone(sm,v0,id_v0);
+	smDir_in_cone(sm,v1,id_v1);
+	smDir_in_cone(sm,v2,id_v2);
 	
 	VCOPY(p,SM_NTH_WV(sm,id_p));	
 	VSUB(p,p,SM_VIEW_CENTER(sm));
 	if(point_in_cone(p,v0,v1,v2))
 	{
-	    smTris_swap_edge(sm,id_t0,id_t1,e0,e1,&nid_t0,&nid_t1,&add,&del);
+	   smTris_swap_edge(sm,id_t0,id_t1,e0,e1,&nid_t0,&nid_t1,&add_list,
+			    del_set);
 	    
 	    nt0 = SM_NTH_TRI(sm,nid_t0);
 	    nt1 = SM_NTH_TRI(sm,nid_t1);
@@ -581,7 +541,7 @@ smFix_edges(sm)
 	    SET_E_NTH_TRI(e_new,1,id_t1);
 	}
     }
-    smUpdate_locator(sm,add,del);
+    smUpdate_locator(sm,add_list,del_set);
 }
 
 int
@@ -590,23 +550,27 @@ smMesh_remove_vertex(sm,id)
    int id;
 {
     int tri;
-    LIST *elist;
+    LIST *elist,*add_list;
     int cnt,debug;
+    OBJECT del_set[QT_MAXSET +1];
+    
     /* generate list of vertices that form the boundary of the
        star polygon formed by vertex id and all of its adjacent
        triangles
      */
     eClear_edges();
-    elist = smVertex_star_polygon(sm,id);
+    QT_CLEAR_SET(del_set);
+    elist = smVertex_star_polygon(sm,id,del_set);
     if(!elist)
        return(FALSE);
 
+    add_list = NULL;
     /* Triangulate spherical polygon */
-    smTriangulate(sm,elist);
+    smTriangulate(sm,elist,&add_list);
 
 
     /* Fix up new triangles to be Delaunay */
-    smFix_edges(sm);
+    smFix_edges(sm,add_list,del_set);
 
     return(TRUE);
 }
