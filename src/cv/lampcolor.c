@@ -207,11 +207,11 @@ again:
 
 getpolygon()			/* get projected area for a polygon */
 {
-	static double	area = 1.0;
+	static double	parea = 1.0;
 
-	getd("Polygon area", &area,
+	getd("Polygon area", &parea,
 		"Enter the total radiating area of the polygon.");
-	area = unit2meter*unit2meter * area;
+	area = unit2meter*unit2meter * parea;
 	return(1);
 }
 
