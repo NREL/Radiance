@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1993 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -155,7 +155,11 @@ report()		/* report progress */
 	gethostname(hostname, sizeof(hostname));
 #else
 	times(&tbuf);
+#ifdef _SC_CLK_TCK
 	period = 1.0 / sysconf(_SC_CLK_TCK);
+#else
+	period = 1.0 / 60.0;
+#endif
 	u = ( tbuf.tms_utime + tbuf.tms_cutime ) * period;
 	s = ( tbuf.tms_stime + tbuf.tms_cstime ) * period;
 	uname(&nambuf);
