@@ -32,7 +32,11 @@ extern double  drand48();
 #endif
 #endif
 
+#ifdef  MC
+#define  urand(i)	frandom()
+#else
 #define	 urand(i)	((urperm[(i)&urmask]+frandom())/(urmask+1))
+#endif
 
 extern short  *urperm;
 extern int  urmask;
