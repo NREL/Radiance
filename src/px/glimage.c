@@ -16,6 +16,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 
+#include  "resolu.h"
+
 
 main(argc, argv)				/* print a picture */
 int  argc;
@@ -44,7 +46,7 @@ char  *argv[];
 		exit(1);
 	}
 				/* get picture dimensions */
-	if (fgetresolu(&xres, &yres, input) != (YMAJOR|YDECR)) {
+	if (fgetresolu(&xres, &yres, input) < 0) {
 		fprintf(stderr, "%s: bad picture size\n", fname);
 		exit(1);
 	}
