@@ -26,7 +26,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define zscan(y)	(ourzbuf+(y)*hresolu)
 #define averaging	(ourweigh != NULL)
 
-#define MAXWT		100.		/* maximum pixel weight (averaging) */
+#define MAXWT		1000.		/* maximum pixel weight (averaging) */
 
 #define F_FORE		1		/* fill foreground */
 #define F_BACK		2		/* fill background */
@@ -52,8 +52,8 @@ double	pixaspect = 1.0;		/* pixel aspect ratio */
 double	zeps = .02;			/* allowed z epsilon */
 
 COLR	*ourpict;			/* output picture (COLR's) */
-COLOR	*ourspict;			/* output pixel sums (-a option) */
-float	*ourweigh = NULL;		/* output pixel weights (-a option) */
+COLOR	*ourspict;			/* output pixel sums (averaging) */
+float	*ourweigh = NULL;		/* output pixel weights (averaging) */
 float	*ourzbuf;			/* corresponding z-buffer */
 
 char	*progname;
@@ -212,6 +212,8 @@ char	*argv[];
 		goto userr;
 	if (fillsamp == 1)
 		fillo &= ~F_BACK;
+	if (doavg < 0)
+		doavg = (argc-i) > 2;
 						/* set view */
 	if ((err = setview(&ourview)) != NULL) {
 		fprintf(stderr, "%s: %s\n", progname, err);
@@ -219,8 +221,6 @@ char	*argv[];
 	}
 	normaspect(viewaspect(&ourview), &pixaspect, &hresolu, &vresolu);
 						/* allocate frame */
-	if (doavg < 0)
-		doavg = (argc-i) > 2;
 	if (doavg) {
 		ourspict = (COLOR *)bmalloc(hresolu*vresolu*sizeof(COLOR));
 		ourweigh = (float *)bmalloc(hresolu*vresolu*sizeof(float));
@@ -490,7 +490,7 @@ double	z;
 		l1 = ABS(s1x);
 		if (p1isy = (ABS(s1y) > l1))
 			l1 = ABS(s1y);
-		if (l1 < 1)
+		else if (l1 < 1)
 			l1 = 1;
 	} else {
 		l1 = s1x = s1y = 1;
@@ -548,23 +548,21 @@ double	z;
 
 double
 movepixel(pos)				/* reposition image point */
-FVECT	pos;
+register FVECT	pos;
 {
-	double	d0, d1;
 	FVECT	pt, tdir, odir;
+	double	d;
 	register int	i;
 	
 	if (pos[2] <= 0)		/* empty pixel */
 		return(0);
-	if (normdist && theirview.type == VT_PER) {	/* adjust distance */
-		d0 = pos[0] + theirview.hoff - .5;
-		d1 = pos[1] + theirview.voff - .5;
-		pos[2] /= sqrt(1. + d0*d0*theirview.hn2 + d1*d1*theirview.vn2);
-	}
 	if (!averaging && hasmatrix) {
 		pos[0] += theirview.hoff - .5;
 		pos[1] += theirview.voff - .5;
 		if (theirview.type == VT_PER) {
+			if (normdist)			/* adjust distance */
+				pos[2] /= sqrt(1. + pos[0]*pos[0]*theirview.hn2
+						+ pos[1]*pos[1]*theirview.vn2);
 			pos[0] *= pos[2];
 			pos[1] *= pos[2];
 		}
@@ -580,6 +578,9 @@ FVECT	pos;
 	} else {
 		if (viewray(pt, tdir, &theirview, pos[0], pos[1]) < -FTINY)
 			return(0);
+		if (!normdist && theirview.type == VT_PER)	/* adjust */
+			pos[2] *= sqrt(1. + pos[0]*pos[0]*theirview.hn2
+					+ pos[1]*pos[1]*theirview.vn2);
 		pt[0] += tdir[0]*pos[2];
 		pt[1] += tdir[1]*pos[2];
 		pt[2] += tdir[2]*pos[2];
@@ -596,12 +597,10 @@ FVECT	pos;
 	else
 		for (i = 0; i < 3; i++)
 			odir[i] = (pt[i] - ourview.vp[i])/pos[2];
-	d0 = DOT(odir,tdir);			/* compute pixel weight */
-	if (d0 <= FTINY)
-		return(0);		/* relative angle >= 90 degrees */
-	if (d0 >= 1.-1./MAXWT/MAXWT)
+	d = DOT(odir,tdir);			/* compute pixel weight */
+	if (d >= 1.-1./MAXWT/MAXWT)
 		return(MAXWT);		/* clip to maximum weight */
-	return(1./sqrt(1.-d0));
+	return(1./sqrt(1.-d));
 }
 
 
@@ -682,6 +681,7 @@ int	zfd;
 	}
 	if (yl->max >= numscans(&tresolu))
 		yl->max = numscans(&tresolu) - 1;
+	y -= step;
 	for (x = numscans(&tresolu) - 1; x > y; x--)	/* fill bottom rows */
 		copystruct(xl+x, xl+y);
 	return(yl->max >= yl->min);
@@ -854,6 +854,7 @@ writepicture()				/* write out picture */
 			for (x = 0; x < hresolu; x++) {	/* average pixels */
 				d = 1./wscan(y)[x];
 				scalecolor(sscan(y)[x], d);
+				wscan(y)[x] = 1;
 			}
 			if (fwritescan(sscan(y), hresolu, stdout) < 0)
 				syserror(progname);
