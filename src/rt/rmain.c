@@ -377,9 +377,11 @@ char  *argv[];
 		case 'o':				/* output */
 			outvals = argv[i]+2;
 			break;
-		case 'h':				/* toggle header */
-			check(2,0);
-			loadflags ^= IO_INFO;
+		case 'h':				/* header output */
+			rval = loadflags & IO_INFO;
+			bool(2,rval);
+			loadflags = rval ? loadflags | IO_INFO :
+					loadflags & ~IO_INFO;
 			break;
 #endif
 #if  RVIEW
