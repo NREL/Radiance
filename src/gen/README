@@ -8,19 +8,23 @@ mkillum.h	common definitions for mkillum
 genbeads.c	generate a string of spheres using Hermite curve
 genblinds.c	make some curved or flat venetian blinds
 genbox.c	generate a parallelepiped
+genbranch.c	generate a tree branch
+gencat.c	generate a catenary of marks (use with replmarks)
+genclock.c	generate a clock showing a specified time
+genmarble.c	generate a marble with air bubbles
 genprism.c	generate a prism
 genrev.c	program to generate functions of rotation about z
 gensky.c	program to generate sky functions
 gensurf.c	program to generate functional surfaces
 genworm.c	program to generate worms (strings with varying thickness)
 hermite3.c	routines for 3D hermite curves
-illum.cal	function file for mkillum output
 mkillum.c	make illum sources for optimizing rendering process
 mkillum2.c	routines to do the actual calculation for mkillum
 mkillum3.c	routines to print mkillum objects
 replmarks.c	replace markers with objects or instances
+sun.c		solar postion calculations
+xform.c		program to transform object files
+illum.cal	function file for mkillum output
 rev.cal		function file for smoothing option of genrev
 skybright.cal	function file for gensky output
-sun.c		solar postion calculations
 surf.cal	function file for gensurf smoothing
-xform.c		program to transform object files
