@@ -21,12 +21,10 @@ static char SCCSid[] = "$SunId$ SGI";
 #ifndef PCTFREE
 #define PCTFREE		12	/* maximum fraction to free (%) */
 #endif
-#ifndef FFDMAX
-#define FFDMAX		64	/* max. file descriptor for tracking */
-#endif
-#ifndef MAXFRAG
-#define MAXFRAG		2048	/* maximum fragments tracked in each file */
-#endif
+
+#define MAXFRAG		8192	/* maximum fragments tracked per open file */
+
+#define FRAGBLK		64	/* number of fragments to allocate at a time */
 
 int	hdcachesize = CACHESIZE*1024*1024;	/* target cache size (bytes) */
 unsigned long	hdclock;	/* clock value */
@@ -36,25 +34,31 @@ HOLO	*hdlist[HDMAX+1];	/* holodeck pointers (NULL term.) */
 static struct fragment {
 	short	nlinks;		/* number of holodeck sections using us */
 	short	nfrags;		/* number of known fragments */
-	BEAMI	fi[MAXFRAG];	/* fragments, descending file position */
+	BEAMI	*fi;		/* fragments, descending file position */
 	long	flen;		/* last known file length */
-} *hdfrag[FFDMAX];	/* fragment lists, indexed by file descriptor */
+} *hdfrag;		/* fragment lists, indexed by file descriptor */
+
+static int	nhdfrags;	/* size of hdfrag array */
 
 
 hdattach(fd)		/* start tracking file fragments for some section */
 register int	fd;
 {
-	if (fd >= FFDMAX)
-		return;				/* descriptor out of range */
-	if (hdfrag[fd] == NULL) {
-		if ((hdfrag[fd] = (struct fragment *)
-				malloc(sizeof(struct fragment))) == NULL)
-			return;			/* should flag error? */
-		hdfrag[fd]->nlinks = 0;
-		hdfrag[fd]->nfrags = 0;
+	if (fd >= nhdfrags) {
+		if (nhdfrags)
+			hdfrag = (struct fragment *)realloc((char *)hdfrag,
+					(fd+1)*sizeof(struct fragment));
+		else
+			hdfrag = (struct fragment *)malloc(
+					(fd+1)*sizeof(struct fragment));
+		if (hdfrag == NULL)
+			error(SYSTEM, "out of memory in hdattach");
+		bzero((char *)(hdfrag+nhdfrags),
+				(fd+1-nhdfrags)*sizeof(struct fragment));
+		nhdfrags = fd+1;
 	}
-	hdfrag[fd]->nlinks++;
-	hdfrag[fd]->flen = lseek(fd, 0L, 2);	/* get file length */
+	hdfrag[fd].nlinks++;
+	hdfrag[fd].flen = lseek(fd, 0L, 2);	/* get file length */
 }
 
 
@@ -64,11 +68,12 @@ register int	fd;
 hdrelease(fd)		/* stop tracking file fragments for some section */
 register int	fd;
 {
-	if (fd >= FFDMAX || hdfrag[fd] == NULL)
+	if (fd >= nhdfrags || !hdfrag[fd].nlinks)
 		return;
-	if (!--hdfrag[fd]->nlinks) {
-		free((char *)hdfrag[fd]);
-		hdfrag[fd] = NULL;
+	if (!--hdfrag[fd].nlinks && hdfrag[fd].nfrags) {
+		free((char *)hdfrag[fd].fi);
+		hdfrag[fd].fi = NULL;
+		hdfrag[fd].nfrags = 0;
 	}
 }
 
@@ -172,9 +177,12 @@ int	all;			/* include overhead (painful) */
 		}
 	}
 	if (all)
-		for (j = 0; j < FFDMAX; j++)
-			if (hdfrag[j] != NULL)
-				total += sizeof(struct fragment);
+		for (j = 0; j < nhdfrags; j++) {
+			total += sizeof(struct fragment);
+			if (hdfrag[j].nfrags)
+				total += FRAGBLK*sizeof(BEAMI) *
+					((hdfrag[j].nfrags-1)/FRAGBLK + 1) ;
+		}
 	return(total);
 }
 
@@ -294,20 +302,35 @@ register int	i;
 	if (hp->bi[i].nrd == nrays)	/* current one will do? */
 		return(0);
 
-	if (hp->fd >= FFDMAX || hdfrag[hp->fd] == NULL)	/* untracked */
+	if (hp->fd >= nhdfrags || !hdfrag[hp->fd].nlinks) /* untracked */
 		hp->bi[i].fo = lseek(hp->fd, 0L, 2);
 
 	else if (hp->bi[i].fo + hp->bi[i].nrd*sizeof(RAYVAL) ==
-			hdfrag[hp->fd]->flen)		/* EOF special case */
-		hdfrag[hp->fd]->flen = hp->bi[i].fo + nrays*sizeof(RAYVAL);
+			hdfrag[hp->fd].flen)		/* EOF special case */
+		hdfrag[hp->fd].flen = hp->bi[i].fo + nrays*sizeof(RAYVAL);
 
 	else {						/* general case */
-		register struct fragment	*f = hdfrag[hp->fd];
+		register struct fragment	*f = &hdfrag[hp->fd];
 		register int	j, k;
 					/* relinquish old fragment */
 		if (hp->bi[i].nrd) {
-			if ((j = ++f->nfrags) >= MAXFRAG)
+			j = ++f->nfrags;
+#ifdef MAXFRAG
+			if (j >= MAXFRAG)
 				f->nfrags--;
+			else
+#endif
+			if (j % FRAGBLK == 1) {		/* more frag. space */
+				if (f->fi == NULL)
+					f->fi = (BEAMI *)malloc(
+							FRAGBLK*sizeof(BEAMI));
+				else
+					f->fi = (BEAMI *)realloc((char *)f->fi,
+						(FRAGBLK-1+j)*sizeof(BEAMI));
+				if (f->fi == NULL)
+					error(SYSTEM,
+						"out of memory in hdgetbi");
+			}
 			for ( ; ; ) {	/* stick it in our descending list */
 				if (!--j || hp->bi[i].fo < f->fi[j-1].fo) {
 					f->fi[j].fo = hp->bi[i].fo;
