@@ -9,6 +9,7 @@
 	Nx, Ny, Nz			- surface normal
 	Px, Py, Pz			- intersection point
 	T				- distance from start
+	Ts				- single ray (shadow) distance
 	Rdot				- ray dot product
 	S				- world scale
 	Tx, Ty, Tz			- world origin
