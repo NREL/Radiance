@@ -298,8 +298,13 @@ x11_flush()			/* flush output */
 	n = XPending(ourdisplay);			/* from X server */
 	while (n-- > 0)
 		getevent();
+#ifdef FNDELAY
 	if (inpcheck == IC_IOCTL) {			/* from stdin */
+#ifdef FIONREAD
 		if (ioctl(fileno(stdin), FIONREAD, &n) < 0) {
+#else
+		if (1) {
+#endif
 			if (fcntl(fileno(stdin), F_SETFL, FNDELAY) < 0) {
 				stderr_v("Cannot change input mode\n");
 				quit(1);
@@ -315,6 +320,7 @@ x11_flush()			/* flush output */
 			tocombuf(buf, &x11_driver);
 		}
 	}
+#endif
 }
 
 
