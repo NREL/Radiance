@@ -13,7 +13,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
-#include  <rasterfile.h>
+#include  "rasterfile.h"
 
 #include  "color.h"
 
