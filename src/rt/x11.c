@@ -78,6 +78,10 @@ static struct driver  x11_driver = {
 	x11_comout, x11_comin, x11_flush, 1.0
 };
 
+static int  getpixels(), xnewcolr(), freepixels(),
+		getevent(), getkey(), fixwindow();
+static unsigned long  true_pixel();
+
 
 struct driver *
 x11_init(name, id)		/* initialize driver */
@@ -239,8 +243,6 @@ x11_paintr(col, xmin, ymin, xmax, ymax)		/* fill a rectangle */
 COLOR  col;
 int  xmin, ymin, xmax, ymax;
 {
-	extern int  xnewcolr();		/* pixel assignment routine */
-	extern unsigned long  true_pixel();
 	unsigned long  pixel;
 
 	if (!mapped)
