@@ -63,7 +63,11 @@ int  mode;
 	do {
 		cp = pname;
 		while (*searchpath && (*cp = *searchpath++) != ':')
-			cp++;
+			if (*cp == '\\') {		/* escape */
+				if (*searchpath)
+					*cp++ = *searchpath++;
+			} else
+				cp++;
 		if (cp > pname && cp[-1] != '/')
 			*cp++ = '/';
 		strcpy(cp, fname);
