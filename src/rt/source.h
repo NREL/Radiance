@@ -33,12 +33,15 @@ typedef struct {
 }  SRCREC;		/* light source */
 
 typedef struct {
-	int  sno;		/* source number */
 	FVECT  dir;		/* source direction */
 	float  dom;		/* domega for source */
-	float  brt;		/* brightness (for comparison) */
 	COLOR  val;		/* contribution */
 }  CONTRIB;		/* direct contribution */
+
+typedef struct {
+	int  sno;		/* source number */
+	float  brt;		/* brightness (for comparison) */
+}  CNTPTR;		/* contribution pointer */
 
 extern SRCREC  *source;			/* our source list */
 extern int  nsources;			/* the number of sources */

@@ -286,7 +286,7 @@ register RAY  *r;
 
 static int
 cntcmp(sc1, sc2)			/* contribution compare (descending) */
-register CONTRIB  *sc1, *sc2;
+register CNTPTR  *sc1, *sc2;
 {
 	if (sc1->brt > sc2->brt)
 		return(-1);
@@ -303,27 +303,29 @@ char  *p;			/* data for f */
 {
 	register int  sn;
 	register CONTRIB  *srccnt;
+	register CNTPTR  *cntord;
 	int  ncnts;
 	double  ourthresh, prob, hwt, test2, hit2;
 	RAY  sr;
 
-	if ((srccnt = (CONTRIB *)malloc(nsources*sizeof(CONTRIB))) == NULL)
+	srccnt = (CONTRIB *)malloc(nsources*sizeof(CONTRIB));
+	cntord = (CNTPTR *)malloc(nsources*sizeof(CNTPTR));
+	if (srccnt == NULL || cntord == NULL)
 		error(SYSTEM, "out of memory in direct");
 						/* modify threshold */
 	ourthresh = shadthresh / r->rweight;
 						/* potential contributions */
 	for (sn = 0; sn < nsources; sn++) {
-		srccnt[sn].sno = sn;
-		setcolor(srccnt[sn].val, 0.0, 0.0, 0.0);
-		srccnt[sn].brt = 0.0;
+		cntord[sn].sno = sn;
+		cntord[sn].brt = 0.0;
 						/* get source ray */
 		if ((srccnt[sn].dom = srcray(&sr, r, sn)) == 0.0)
 			continue;
 		VCOPY(srccnt[sn].dir, sr.rdir);
 						/* compute coefficient */
 		(*f)(srccnt[sn].val, p, srccnt[sn].dir, srccnt[sn].dom);
-		srccnt[sn].brt = bright(srccnt[sn].val);
-		if (srccnt[sn].brt <= FTINY)
+		cntord[sn].brt = bright(srccnt[sn].val);
+		if (cntord[sn].brt <= FTINY)
 			continue;
 						/* compute intersection */
 		if (!( source[sn].sflags & SDISTANT ?
@@ -334,39 +336,39 @@ char  *p;			/* data for f */
 						/* compute contribution */
 		rayshade(&sr, sr.ro->omod);
 		multcolor(srccnt[sn].val, sr.rcol);
-		srccnt[sn].brt = bright(srccnt[sn].val);
+		cntord[sn].brt = bright(srccnt[sn].val);
 	}
 						/* sort contributions */
-	qsort(srccnt, nsources, sizeof(CONTRIB), cntcmp);
+	qsort(cntord, nsources, sizeof(CNTPTR), cntcmp);
 	hit2 = 0.0; test2 = FTINY;
 						/* find last */
 	sn = 0; ncnts = nsources;
 	while (sn < ncnts-1) {
 		register int  m;
 		m = (sn + ncnts) >> 1;
-		if (srccnt[m].brt > 0.0)
+		if (cntord[m].brt > 0.0)
 			sn = m;
 		else
 			ncnts = m;
 	}
 						/* accumulate tail */
 	for (sn = ncnts-1; sn > 0; sn--)
-		srccnt[sn-1].brt += srccnt[sn].brt;
+		cntord[sn-1].brt += cntord[sn].brt;
 						/* shadow testing */
 	for (sn = 0; sn < ncnts; sn++) {
 						/* tail below threshold? */
-		if (srccnt[sn].brt < ourthresh*bright(r->rcol))
+		if (cntord[sn].brt < ourthresh*bright(r->rcol))
 			break;
 						/* get statistics */
-		hwt = (double)source[srccnt[sn].sno].nhits /
-				(double)source[srccnt[sn].sno].ntests;
+		hwt = (double)source[cntord[sn].sno].nhits /
+				(double)source[cntord[sn].sno].ntests;
 		test2 += hwt;
-		source[srccnt[sn].sno].ntests++;
+		source[cntord[sn].sno].ntests++;
 						/* test for hit */
 		rayorigin(&sr, r, SHADOW, 1.0);
-		VCOPY(sr.rdir, srccnt[sn].dir);
+		VCOPY(sr.rdir, srccnt[cntord[sn].sno].dir);
 		if (localhit(&sr, &thescene) &&
-				sr.ro != source[srccnt[sn].sno].so) {
+				sr.ro != source[cntord[sn].sno].so) {
 						/* check for transmission */
 			if (sr.clipset != NULL && inset(sr.clipset,sr.ro->omod))
 				raytrans(&sr);		/* object is clipped */
@@ -374,13 +376,15 @@ char  *p;			/* data for f */
 				rayshade(&sr, sr.ro->omod);
 			if (bright(sr.rcol) <= FTINY)
 				continue;	/* missed! */
-			(*f)(srccnt[sn].val, p, srccnt[sn].dir, srccnt[sn].dom);
-			multcolor(srccnt[sn].val, sr.rcol);
+			(*f)(srccnt[cntord[sn].sno].val, p,
+					srccnt[cntord[sn].sno].dir,
+					srccnt[cntord[sn].sno].dom);
+			multcolor(srccnt[cntord[sn].sno].val, sr.rcol);
 		}
 						/* add contribution if hit */
-		addcolor(r->rcol, srccnt[sn].val);
+		addcolor(r->rcol, srccnt[cntord[sn].sno].val);
 		hit2 += hwt;
-		source[srccnt[sn].sno].nhits++;
+		source[cntord[sn].sno].nhits++;
 	}
 					/* weighted hit rate */
 	hwt = hit2 / test2;
@@ -390,12 +394,13 @@ char  *p;			/* data for f */
 #endif
 					/* add in untested sources */
 	for ( ; sn < ncnts; sn++) {
-		prob = hwt * (double)source[srccnt[sn].sno].nhits /
-				(double)source[srccnt[sn].sno].ntests;
-		scalecolor(srccnt[sn].val, prob);
-		addcolor(r->rcol, srccnt[sn].val);
+		prob = hwt * (double)source[cntord[sn].sno].nhits /
+				(double)source[cntord[sn].sno].ntests;
+		scalecolor(srccnt[cntord[sn].sno].val, prob);
+		addcolor(r->rcol, srccnt[cntord[sn].sno].val);
 	}
 	free(srccnt);
+	free(cntord);
 }
 
 
