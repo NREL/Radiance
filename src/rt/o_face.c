@@ -49,13 +49,16 @@ register RAY  *r;
 	for (i = 0; i < 3; i++)
 		pisect[i] = r->rorg[i] + r->rdir[i]*t;
 
-	if (inface(pisect, f)) {		/* ray intersects face? */
+	if (!inface(pisect, f))			/* ray intersects face? */
+		return(0);
 
-		r->ro = o;
-		r->rot = t;
-		VCOPY(r->rop, pisect);
-		VCOPY(r->ron, f->norm);
-		r->rod = rdot;
-	}
+	r->ro = o;
+	r->rot = t;
+	VCOPY(r->rop, pisect);
+	VCOPY(r->ron, f->norm);
+	r->rod = rdot;
+	r->rofs = 1.0; setident4(r->rofx);
+	r->robs = 1.0; setident4(r->robx);
+
 	return(1);				/* hit */
 }

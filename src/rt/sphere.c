@@ -57,18 +57,22 @@ register RAY  *r;
 	if (i >= nroots)
 		return(0);			/* no positive root */
 
-	if (t < r->rot) {			/* found closer intersection */
-		r->ro = so;
-		r->rot = t;
-						/* compute normal */
-		a = ap[3];
-		if (so->otype == OBJ_BUBBLE)
-			a = -a;			/* reverse */
-		for (i = 0; i < 3; i++) {
-			r->rop[i] = r->rorg[i] + r->rdir[i]*t;
-			r->ron[i] = (r->rop[i] - ap[i]) / a;
-		}
-		r->rod = -DOT(r->rdir, r->ron);
+	if (t >= r->rot)
+		return(0);			/* other is closer */
+
+	r->ro = so;
+	r->rot = t;
+					/* compute normal */
+	a = ap[3];
+	if (so->otype == OBJ_BUBBLE)
+		a = -a;			/* reverse */
+	for (i = 0; i < 3; i++) {
+		r->rop[i] = r->rorg[i] + r->rdir[i]*t;
+		r->ron[i] = (r->rop[i] - ap[i]) / a;
 	}
-	return(1);
+	r->rod = -DOT(r->rdir, r->ron);
+	r->rofs = 1.0; setident4(r->rofx);
+	r->robs = 1.0; setident4(r->robx);
+
+	return(1);			/* hit */
 }

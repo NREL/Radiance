@@ -86,6 +86,8 @@ register RAY  *r;
 			r->rop[i] = r->rorg[i] + r->rdir[i]*r->rot;
 		VCOPY(r->ron, co->ad);
 		r->rod = -rdx[2];
+		r->rofs = 1.0; setident4(r->rofx);
+		r->robs = 1.0; setident4(r->robx);
 		return(1);				/* good */
 	}
 					/* roots for cone, cup, cyl., tube */
@@ -129,6 +131,8 @@ register RAY  *r;
 				r->ron[i] = (co->al*r->ron[i] - c*co->ad[i])
 						/co->sl;
 		r->rod = -DOT(r->rdir, r->ron);
+		r->rofs = 1.0; setident4(r->rofx);
+		r->robs = 1.0; setident4(r->robx);
 		return(1);			/* good */
 	}
 	return(0);
