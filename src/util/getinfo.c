@@ -14,6 +14,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #ifdef MSDOS
 #include <fcntl.h>
+extern int  _fmode;
 #endif
 
 extern int  fputs();
@@ -33,7 +34,7 @@ register char  *s;
 
 main(argc, argv)
 int  argc;
-char  *argv[];
+char  **argv;
 {
 	int  dim = 0;
 	FILE  *fp;
@@ -42,12 +43,15 @@ char  *argv[];
 	if (argc > 1 && !strcmp(argv[1], "-d")) {
 		argc--; argv++;
 		dim = 1;
+#ifdef MSDOS
+		setmode(fileno(stdin), _fmode = O_BINARY);
+#endif
 	} else if (argc == 2 && !strcmp(argv[1], "-")) {
 #ifdef MSDOS
 		setmode(fileno(stdin), O_BINARY);
 		setmode(fileno(stdout), O_BINARY);
 #endif
-		getheader(stdin, NULL);
+		getheader(stdin, NULL, NULL);
 		copycat();
 		exit(0);
 	}
@@ -84,7 +88,7 @@ register FILE  *fp;
 	int  j;
 	register int  c;
 
-	getheader(fp, NULL);	/* skip header */
+	getheader(fp, NULL, NULL);	/* skip header */
 
 	switch (c = getc(fp)) {
 	case '+':		/* picture */
@@ -116,7 +120,7 @@ register FILE  *fp;
 copycat()			/* copy input to output */
 {
 	register int	c;
-	
+
 	while ((c = getchar()) != EOF)
 		putchar(c);
 }
