@@ -407,7 +407,7 @@ char  *err;
 	    eputs(infile != NULL ? ", line " : "line ");
 	    eputs(ltoa((long)lineno));
 	}
-	eputs(": syntax error:\n");
+	eputs(":\n");
     }
     eputs(linbuf);
     if (linbuf[strlen(linbuf)-1] != '\n')
