@@ -9,10 +9,13 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include  <stdio.h>
+#include  <math.h>
 #ifdef MSDOS
 #include  <fcntl.h>
 #endif
 #include  "color.h"
+
+#define GAMVAL		1.5			/* gamma value for pixels */
 
 #define GRY		-1			/* artificial index for grey */
 
@@ -103,6 +106,8 @@ char  *argv[];
 	getheader(stdin, headline, NULL);
 	if (wrongformat || fgetresolu(&xmax, &ymax, stdin) < 0)
 		quiterr("bad picture format");
+				/* gamma compression */
+	setcolrgam(GAMVAL);
 				/* write header */
 	PSheader(i <= argc-1 ? argv[i] : "<stdin>");
 				/* convert file */
@@ -170,7 +175,7 @@ char  *name;
 				HMARGIN+(pwidth-iwidth)*.5+iwidth,
 				VMARGIN+(pheight-iheight)*.5+iheight);
 	puts("%%EndComments");
-	puts("save");
+	puts("gsave save");
 	puts("64 dict begin");
 					/* define image reader */
 	if (docolor) {
@@ -209,7 +214,7 @@ PStrailer()			/* print PostScript trailer */
 		printf("/#copies %d def\n", ncopies);
 	puts("showpage");
 	puts("end");
-	puts("restore");
+	puts("restore grestore");
 	puts("%%EOF");
 }
 
@@ -223,7 +228,7 @@ char  *nam, *inam;
 	for (i = 0; i < 128; i++)	/* clear */
 		itab[i] = -1;
 	for (i = 1; i < 63; i++)	/* assign greys */
-		itab[code[i]] = i<<2 | 2;
+		itab[code[i]] = 256.0*pow(((i<<2)+2.5)/256.0, GAMVAL);
 	itab[code[0]] = 0;		/* black is black */
 	itab[code[63]] = 255;		/* and white is white */
 	printf("/codetab [");
@@ -281,7 +286,9 @@ ra2ps()				/* convert Radiance scanlines to 6-bit */
 	for (y = ymax-1; y >= 0; y--) {
 		if (freadcolrs(scanin, xmax, stdin) < 0)
 			quiterr("error reading Radiance picture");
-		normcolrs(scanin, xmax, bradj); /* normalize */
+		if (bradj)			/* adjust exposure */
+			shiftcolrs(scanin, xmax, bradj);
+		colrs_gambs(scanin, xmax);	/* gamma compression */
 		if (docolor) {
 			putprim(scanin, RED);
 			putprim(scanin, GRN);
