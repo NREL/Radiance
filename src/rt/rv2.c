@@ -676,10 +676,11 @@ char  *s;
 						/* write header */
 	fputs(progname, fp);
 	fprintview(&ourview, fp);
-	fputs("\n", fp);
+	putc('\n', fp);
 	if (exposure != 1.0)
 		fprintf(fp, "EXPOSURE=%e\n", exposure);
-	fprintf(fp, "\n-Y %d +X %d\n", ourview.vresolu, ourview.hresolu);
+	putc('\n', fp);
+	fputresolu(YMAJOR|YDECR, ourview.hresolu, ourview.vresolu, fp);
 
 	scanline = (COLR *)malloc(ourview.hresolu*sizeof(COLR));
 	if (scanline == NULL)
