@@ -13,9 +13,13 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "holo.h"
 
 #ifndef BKBSIZE
-#define BKBSIZE		64		/* beam clump size (kilobytes) */
+#define BKBSIZE		256		/* beam clump size (kilobytes) */
 #endif
 
+#define flgop(p,i,op)		((p)[(i)>>5] op (1L<<((i)&0x1f)))
+#define isset(p,i)		flgop(p,i,&)
+#define setfl(p,i)		flgop(p,i,|=)
+#define clrfl(p,i)		flgop(p,i,&=~)
 
 char	*progname;
 
@@ -149,14 +153,14 @@ HOLO	*hp;
 GCOORD	*gc;
 {
 	GCOORD	gci0;
-	int	i, j;
+	register int	i, j;
 
 	for (i = 3; i--; ) {
 		copystruct(&gci0, gc);
 		gcshifti(&gci0, 0, i-1, hp);
 		for (j = 3; j--; ) {
 			copystruct(ng+(3*i+j), &gci0);
-			gcshifti(ng+(3*i+j), 1, j-1, hp);
+			gcshifti(ng+(3*i+j), gci0.w==gc->w, j-1, hp);
 		}
 	}
 }
@@ -183,33 +187,60 @@ int	b;
 		for (j = 9; j--; ) {
 			if (i == 4 & j == 4)
 				continue;
+			if (wg0[i].w == wg1[j].w)
+				continue;
 			copystruct(bgc, wg0+i);
 			copystruct(bgc+1, wg1+j);
 			bneighlist[bneighrem++] = hdbindex(hp, bgc);
+#ifdef DEBUG
+			if (bneighlist[bneighrem-1] <= 0)
+				error(CONSISTENCY, "bad beam in firstneigh");
+#endif
 		}
 	return(nextneigh());
+}
+
+
+BEAMI	*beamdir;
+
+int
+bpcmp(b1p, b2p)			/* compare beam positions on disk */
+int	*b1p, *b2p;
+{
+	register long	pdif = beamdir[*b1p].fo - beamdir[*b2p].fo;
+
+	if (pdif > 0) return(1);
+	if (pdif < 0) return(-1);
+	return(0);
 }
 
 
 copysect(ifd, ofd)		/* copy holodeck section from ifd to ofd */
 int	ifd, ofd;
 {
-#define beamdone(b)	(!hinp->bi[b].nrd || bnrays(hout,b))
 	static short	primes[] = {9431,6803,4177,2659,1609,887,587,251,47,1};
-	register HOLO	*hinp, *hout;
+	register HOLO	*hinp;
+	HOLO	*hout;
 	register BEAM	*bp;
+	unsigned int4	*bflags;
 	int	*bqueue;
 	int	bqlen;
 	int4	bqtotal;
-	int	bc, bci, bqc, bnc, myprime;
+	int	bc, bci, bqc, myprime;
 	register int	i;
 					/* load input section directory */
 	hinp = hdinit(ifd, NULL);
 					/* create output section directory */
 	hout = hdinit(ofd, (HDGRID *)hinp);
 					/* allocate beam queue */
-	if ((bqueue = (int *)malloc(nbeams(hinp)*sizeof(int))) == NULL)
+	bqueue = (int *)malloc(nbeams(hinp)*sizeof(int));
+	bflags = (int4 *)calloc((nbeams(hinp)>>3)+1, sizeof(int4));
+	if (bqueue == NULL | bflags == NULL)
 		error(SYSTEM, "out of memory in copysect");
+					/* mark empty beams as done */
+	for (i = nbeams(hinp); i-- > 0; )
+		if (!hinp->bi[i].nrd)
+			setfl(bflags, i);
 					/* pick a good prime step size */
 	for (i = 0; primes[i]<<5 >= nbeams(hinp); i++)
 		;
@@ -219,44 +250,48 @@ int	ifd, ofd;
 					/* add each input beam and neighbors */
 	for (bc = bci = nbeams(hinp); bc > 0; bc--,
 			bci += bci>myprime ? -myprime : nbeams(hinp)-myprime) {
-		if (beamdone(bci))
+		if (isset(bflags, bci))
 			continue;
 		bqueue[0] = bci;		/* initialize queue */
 		bqlen = 1;
 		bqtotal = bnrays(hinp, bci);
+		setfl(bflags, bci);
 						/* run through growing queue */
 		for (bqc = 0; bqc < bqlen; bqc++) {
-						/* transfer the beam */
-			bp = hdgetbeam(hinp, bqueue[bqc]);
-			bcopy((char *)hdbray(bp),
-				(char *)hdnewrays(hout,bqueue[bqc],bp->nrm),
-					bp->nrm*sizeof(RAYVAL));
-			hdfreebeam(hinp, bqueue[bqc]);
-						/* check queue size */
-			if (bqtotal >= BKBSIZE*1024/sizeof(RAYVAL))
-				continue;
-						/* add neighbors to queue */
-			for (bnc = firstneigh(hinp,bqueue[bqc]); bnc > 0;
-					bnc = nextneigh()) {
-				if (beamdone(bnc))	/* see if valid */
+						/* add neighbors until full */
+			for (i = firstneigh(hinp,bqueue[bqc]); i > 0;
+					i = nextneigh()) {
+				if (isset(bflags, i))	/* done already? */
 					continue;
-				for (i = bqlen; i--; )
-					if (bqueue[i] == bnc) break;
-				if (i >= 0)
-					continue;
-				bqueue[bqlen++] = bnc;	/* add it */
-				bqtotal += bnrays(hinp, bnc);
+				bqueue[bqlen++] = i;	/* add it */
+				bqtotal += bnrays(hinp, i);
+				setfl(bflags, i);
 				if (bqtotal >= BKBSIZE*1024/sizeof(RAYVAL))
 					break;		/* queue full */
 			}
+			if (i > 0)
+				break;
+		}
+		beamdir = hinp->bi;		/* sort queue */
+		qsort((char *)bqueue, bqlen, sizeof(*bqueue), bpcmp);
+						/* transfer each beam */
+		for (i = 0; i < bqlen; i++) {
+			bp = hdgetbeam(hinp, bqueue[i]);
+			bcopy((char *)hdbray(bp),
+				(char *)hdnewrays(hout,bqueue[i],bp->nrm),
+					bp->nrm*sizeof(RAYVAL));
+			hdfreebeam(hinp, bqueue[i]);
 		}
 		hdfreebeam(hout, 0);		/* flush output block */
+#ifdef DEBUG
+		hdsync(hout, 0);
+#endif
 	}
 					/* we're done -- clean up */
 	free((char *)bqueue);
+	free((char *)bflags);
 	hddone(hinp);
 	hddone(hout);
-#undef beamdone
 }
 
 
