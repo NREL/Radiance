@@ -1,4 +1,4 @@
-/* Copyright (c) 1994 Regents of the University of California */
+/* Copyright (c) 1996 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -6,8 +6,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 /*
  *  image.c - routines for image generation.
- *
- *     10/17/85
  */
 
 #include  "standard.h"
@@ -17,6 +15,10 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "resolu.h"
 
 #include  "paths.h"
+
+#define  FEQ(x,y)	(fabs((x)-(y)) <= FTINY)
+#define  VEQ(v,w)	(FEQ((v)[0],(w)[0]) && FEQ((v)[1],(w)[1]) \
+				&& FEQ((v)[2],(w)[2]))
 
 VIEW  stdview = STDVIEW;		/* default view parameters */
 
@@ -425,6 +427,60 @@ FILE  *fp;
 	fprintf(fp, " -vh %.6g -vv %.6g", vp->horiz, vp->vert);
 	fprintf(fp, " -vo %.6g -va %.6g", vp->vfore, vp->vaft);
 	fprintf(fp, " -vs %.6g -vl %.6g", vp->hoff, vp->voff);
+}
+
+
+char *
+viewopt(vp)				/* translate to minimal view string */
+register VIEW  *vp;
+{
+	static char  vwstr[128];
+	register char  *cp = vwstr;
+
+	if (vp->type != stdview.type) {
+		sprintf(cp, " -vt%c", vp->type);
+		cp += strlen(cp);
+	}
+	if (!VEQ(vp->vp,stdview.vp)) {
+		sprintf(cp, " -vp %.6g %.6g %.6g",
+				vp->vp[0], vp->vp[1], vp->vp[2]);
+		cp += strlen(cp);
+	}
+	if (!VEQ(vp->vdir,stdview.vdir)) {
+		sprintf(cp, " -vd %.6g %.6g %.6g",
+				vp->vdir[0], vp->vdir[1], vp->vdir[2]);
+		cp += strlen(cp);
+	}
+	if (!VEQ(vp->vup,stdview.vup)) {
+		sprintf(cp, " -vu %.6g %.6g %.6g",
+				vp->vup[0], vp->vup[1], vp->vup[2]);
+		cp += strlen(cp);
+	}
+	if (!FEQ(vp->horiz,stdview.horiz)) {
+		sprintf(cp, " -vh %.6g", vp->horiz);
+		cp += strlen(cp);
+	}
+	if (!FEQ(vp->vert,stdview.vert)) {
+		sprintf(cp, " -vv %.6g", vp->vert);
+		cp += strlen(cp);
+	}
+	if (!FEQ(vp->vfore,stdview.vfore)) {
+		sprintf(cp, " -vo %.6g", vp->vfore);
+		cp += strlen(cp);
+	}
+	if (!FEQ(vp->vaft,stdview.vaft)) {
+		sprintf(cp, " -va %.6g", vp->vaft);
+		cp += strlen(cp);
+	}
+	if (!FEQ(vp->hoff,stdview.hoff)) {
+		sprintf(cp, " -vs %.6g", vp->hoff);
+		cp += strlen(cp);
+	}
+	if (!FEQ(vp->voff,stdview.voff)) {
+		sprintf(cp, " -vl %.6g", vp->voff);
+		cp += strlen(cp);
+	}
+	return(vwstr);
 }
 
 
