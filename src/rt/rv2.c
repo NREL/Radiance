@@ -384,6 +384,7 @@ register char  *s;
 	extern int  ambssamp;
 	extern int  ambounce;
 	extern int  directinvis;
+	extern double  srcsizerat;
 	extern int  do_irrad;
 	char  buf[128];
 	
@@ -420,6 +421,9 @@ register char  *s;
 		case 'i':			/* invisibility */
 			getparam(s+2, "direct invisibility",
 					'b', &directinvis);
+			break;
+		case 's':			/* sampling */
+			getparam(s+2, "direct sampling", 'r', &srcsizerat);
 			break;
 		default:
 			goto badparam;
