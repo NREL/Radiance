@@ -47,10 +47,7 @@ marksources()			/* find and mark source objects */
 
 		m = objptr(o->omod);
 
-		if (m->otype != MAT_LIGHT &&
-				m->otype != MAT_ILLUM &&
-				m->otype != MAT_GLOW &&
-				m->otype != MAT_SPOT)
+		if (!islight(m->otype))
 			continue;
 	
 		if (m->oargs.nfargs != (m->otype == MAT_GLOW ? 4 :
@@ -459,6 +456,3 @@ register RAY  *r;
 		r->rt = r->rot;
 	}
 }
-
-
-o_source() {}		/* intersection with a source is done elsewhere */
