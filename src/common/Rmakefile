@@ -6,7 +6,8 @@
 OPT = -O -pipe
 MACH = -DSTRUCTASSIGN -DBSD -DIEEE -f68881 /usr/lib/libm.il
 CFLAGS = $(MACH) $(OPT)
-CC = cc
+
+LIBDIR = /usr/local/lib/ray
 
 RTOBJ = cone.o face.o instance.o readobj.o readoct.o otypes.o objset.o \
 	octree.o
@@ -14,7 +15,7 @@ RTOBJ = cone.o face.o instance.o readobj.o readoct.o otypes.o objset.o \
 PICOBJ = color.o header.o image.o lamps.o resolu.o rexpr.o spec_rgb.o \
 	colrops.o 
 
-STDOBJ = fgetline.o linregr.o xf.o mat4.o misc.o fvect.o \
+STDOBJ = fgetline.o fropen.o linregr.o xf.o mat4.o misc.o fvect.o \
 	savestr.o urand.o cputs.o wputs.o eputs.o quit.o
 
 SYSOBJ = ealloc.o bmalloc.o # erf.o frexp.o fwrite.o random.o bcopy.o
@@ -22,6 +23,9 @@ SYSOBJ = ealloc.o bmalloc.o # erf.o frexp.o fwrite.o random.o bcopy.o
 librt.a:	$(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 	ar rc librt.a $(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 	@ ranlib librt.a
+
+fropen.o:	fropen.c
+	cc $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c fropen.c
 
 color.o colrops.o resolu.o spec_rgb.o:	color.h
 
