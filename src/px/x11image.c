@@ -755,8 +755,8 @@ getmono()			/* get monochrome data */
 	dp = ourdata - 1;
 	for (y = 0; y < ymax; y++) {
 		getscan(y);
-		normcolrs(scanline, xmax, scale);
 		add2icon(y, scanline);
+		normcolrs(scanline, xmax, scale);
 		err = 0;
 		for (x = 0; x < xmax; x++) {
 			if (!(x&7))
@@ -782,6 +782,8 @@ COLR  *scan;
 	static short  cerr[ICONSIZ];
 	static int  ynext;
 	static char  *dp;
+	double  sf;
+	COLOR  col;
 	register int  err;
 	register int	x, ti;
 	int  errp;
@@ -806,13 +808,17 @@ COLR  *scan;
 	}
 	if (y < ynext*ymax/iconheight)	/* skip this one */
 		return;
+	sf = pow(2.0, (double)(scale+8));
 	err = 0;
 	for (x = 0; x < iconwidth; x++) {
 		if (!(x&7))
 			*++dp = 0;
 		errp = err;
 		ti = x*xmax/iconwidth;
-		err += normbright(scan[ti]) + cerr[x];
+		colr_color(col, scan[ti]);
+		ti = sf*bright(col);
+		if (ti > 255) ti = 255;
+		err += ti + cerr[x];
 		if (err > 127)
 			err -= 255;
 		else
@@ -835,10 +841,10 @@ getfull()			/* get full (24-bit) data */
 	dp = (unsigned long *)ourdata;
 	for (y = 0; y < ymax; y++) {
 		getscan(y);
+		add2icon(y, scanline);
 		if (scale)
 			shiftcolrs(scanline, xmax, scale);
 		colrs_gambs(scanline, xmax);
-		add2icon(y, scanline);
 		if (ourras->image->blue_mask & 1)
 			for (x = 0; x < xmax; x++)
 				*dp++ =	scanline[x][RED] << 16 |
@@ -864,10 +870,10 @@ getgrey()			/* get greyscale data */
 	dp = ourdata;
 	for (y = 0; y < ymax; y++) {
 		getscan(y);
+		add2icon(y, scanline);
 		if (scale)
 			shiftcolrs(scanline, xmax, scale);
 		colrs_gambs(scanline, xmax);
-		add2icon(y, scanline);
 		if (maxcolors < 256)
 			for (x = 0; x < xmax; x++)
 				*dp++ =	((long)normbright(scanline[x]) *
@@ -892,10 +898,10 @@ getmapped()			/* get color-mapped data */
 	for (y = 0; y < ymax; y++) {
 		if (getscan(y) < 0)
 			quiterr("seek error in getmapped");
+		add2icon(y, scanline);
 		if (scale)
 			shiftcolrs(scanline, xmax, scale);
 		colrs_gambs(scanline, xmax);
-		add2icon(y, scanline);
 		cnt_colrs(scanline, xmax);
 	}
 					/* map pixels */
