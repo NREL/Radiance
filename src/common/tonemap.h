@@ -1,0 +1,331 @@
+/* Copyright (c) 1997 Regents of the University of California */
+
+/* SCCSid "$SunId$ LBL" */
+
+/*
+ * Header file for tone mapping functions.
+ */
+				/* required non-system header files */
+#include	"color.h"
+
+/****    Argument Macros    ****/
+				/* Flags of what to do */
+#define	TM_F_HCONTR	01		/* human contrast sensitivity */
+#define	TM_F_MESOPIC	02		/* mesopic color sensitivity */
+#define	TM_F_LINEAR	04		/* linear brightness mapping */
+#define	TM_F_ACUITY	010		/* acuity adjustment */
+#define	TM_F_VEIL	020		/* veiling glare */
+#define	TM_F_CWEIGHT	040		/* center weighting */
+#define	TM_F_FOVEAL	0100		/* use foveal sample size */
+#define	TM_F_BW		0200		/* luminance only */
+#define	TM_F_NOERRS	0400		/* don't report errors to stderr */
+				/* combined modes */
+#define	TM_F_CAMERA	0
+#define	TM_F_HUMAN	(TM_F_HCONTR|TM_F_MESOPIC|TM_F_VEIL|\
+				TM_F_ACUITY|TM_F_FOVEAL)
+#define	TM_F_UNIMPL	(TM_F_CWEIGHT|TM_F_VEIL|TM_F_ACUITY|TM_F_FOVEAL)
+
+				/* special pointer values */
+#define	TM_XYZPRIM	(RGBPRIMP)NULL	/* indicate XYZ primaries (Note 1) */
+#define	TM_NOCHROM	(BYTE *)NULL	/* indicate no chrominance */
+#define	TM_NOCHROMP	(BYTE **)NULL	/* indicate no chrominances */
+#define	TM_GETFILE	(FILE *)NULL	/* indicate file must be opened */
+
+/****    Error Return Values    ****/
+
+#define TM_E_OK		0		/* normal return status */
+#define	TM_E_NOMEM	1		/* out of memory */
+#define	TM_E_ILLEGAL	2		/* illegal argument value */
+#define	TM_E_TMINVAL	3		/* no valid tone mapping */
+#define	TM_E_TMFAIL	4		/* cannot compute tone mapping */
+#define	TM_E_BADFILE	5		/* cannot open or understand file */
+
+/****    Conversion Constants and Table Sizes    ****/
+
+#define	TM_BRTSCALE	128		/* brightness scale factor (integer) */
+
+#define TM_GAMTSZ	1024		/* gamma lookup table size */
+
+/****    Global Data Structures    ****/
+
+extern char	*tmErrorMessage[];	/* error messages */
+
+typedef short	TMbright;		/* encoded luminance type */
+
+				/* basic tone mapping data structure */
+extern struct tmStruct {
+	int		flags;		/* flags of what to do */
+	RGBPRIMP	monpri;		/* monitor RGB primaries */
+	double		mongam;		/* monitor gamma value (approx.) */
+	BYTE		gamb[TM_GAMTSZ];/* gamma lookup table from mongam */
+	COLOR		clf;		/* computed luminance coefficients */
+	COLR		clfb;		/* normalized version of clf */
+	RGBPRIMP	inppri;		/* current input primaries */
+	double		inpsf;		/* current input scalefactor */
+	TMbright	inpsfb;		/* encoded version of inpsf */
+	COLORMAT	cmat;		/* color conversion matrix */
+	TMbright	brmin, brmax;	/* input brightness limits */	
+	int		*histo;		/* input histogram */
+	unsigned short	*lumap;		/* computed luminance map */
+	struct tmStruct	*tmprev;	/* previous tone mapping */
+}	*tmTop;			/* current tone mapping stack */
+
+/****    Useful Macros    ****/
+
+#define	tmLuminance(li)	exp((li)/(double)TM_BRTSCALE)
+
+/****    Library Function Calls    ****/
+
+#ifdef NOPROTO
+
+extern struct tmStruct	*tmInit(), *tmPop();
+extern void	tmClearHisto(), tmDone();
+extern int	tmSetSpace(), tmCvColors(), tmCvColrs();
+extern int	tmAddHisto(), tmComputeMapping(), tmMapPixels();
+extern int	tmLoadPicture(), tmMapPicture(), tmPull(), tmPush();
+
+#else
+
+extern struct tmStruct *
+tmInit(int flags, RGBPRIMP monpri, double gamval);
+/*
+	Initialize new tone mapping and push it onto stack.
+
+	flags	-	TM_F_* flags indicating what is to be done.
+	monpri	-	display monitor primaries (Note 1).
+	gamval	-	display gamma response (can be approximate).
+
+	returns	-	new tmTop, or NULL if insufficient memory.
+*/
+
+extern int
+tmSetSpace(RGBPRIMP pri, double sf);
+/*
+	Set color primaries and scale factor for incoming scanlines.
+
+	pri	-	RGB color input primaries (Note 1).
+	sf	-	scale factor to get to luminance in cd/m^2.
+
+	returns	-	0 on success, TM_E_* code on failure.
+*/
+
+extern void
+tmClearHisto(void);
+/*
+	Clear histogram for current tone mapping.
+*/
+
+extern int
+tmCvColors(TMbright *ls, BYTE *cs, COLOR *scan, int len);
+/*
+	Convert RGB/XYZ float scanline to encoded luminance and chrominance.
+
+	ls	-	returned encoded luminance values.
+	cs	-	returned encoded chrominance values (Note 2).
+	scan	-	input scanline.
+	len	-	scanline length.
+
+	returns	-	0 on success, TM_E_* on error.
+*/
+
+extern int
+tmCvColrs(TMbright *ls, BYTE *cs, COLR *scan, int len);
+/*
+	Convert RGBE/XYZE scanline to encoded luminance and chrominance.
+
+	ls	-	returned encoded luminance values.
+	cs	-	returned encoded chrominance values (Note 2).
+	scan	-	input scanline.
+	len	-	scanline length.
+
+	returns	-	0 on success, TM_E_* on error.
+*/
+
+extern int
+tmAddHisto(TMbright *ls, int len, int wt);
+/*
+	Add brightness values to current histogram.
+
+	ls	-	encoded luminance values.
+	len	-	number of luminance values.
+	wt	-	integer weight to use for each value (usually 1 or -1).
+
+	returns	-	0 on success, TM_E_* on error.
+*/
+
+extern int
+tmComputeMapping(double gamval, double Lddyn, double Ldmax);
+/*
+	Compute tone mapping function.
+
+	gamval	-	display gamma response (0. for default).
+	Lddyn	-	the display's dynamic range (0. for default).
+	Ldmax	-	maximum display luminance in cd/m^2 (0. for default).
+
+	returns	-	0 on success, TM_E_* on failure.
+*/
+
+extern int
+tmMapPixels(BYTE *ps, TMbright *ls, BYTE *cs, int len);
+/*
+	Apply tone mapping function to pixel values.
+
+	ps	-	returned pixel values (Note 2).
+	ls	-	encoded luminance values.
+	cs	-	encoded chrominance values (Note 2).
+	len	-	number of pixels.
+
+	returns	-	0 on success, TM_E_* on failure.
+*/
+
+extern int
+tmLoadPicture(TMbright **lpp, BYTE **cpp, int *xp, int *yp,
+		char *fname, FILE *fp);
+/*
+	Load Radiance picture and convert to tone mapping representation.
+
+	lpp	-	returned array of encoded luminances, English ordering.
+	cpp	-	returned array of encoded chrominances (Note 2).
+	xp, yp	-	returned picture dimensions.
+	fname	-	picture file name.
+	fp	-	pointer to open file (Note 3).
+
+	returns	-	0 on success, TM_E_* on failure.
+*/
+
+extern int
+tmMapPicture(BYTE **psp, int *xp, int *yp, int flags,
+		RGBPRIMP monpri, double gamval, double Lddyn, double Ldmax,
+		char *fname, FILE *fp);
+/*
+	Load and apply tone mapping to Radiance picture.
+	Stack is restored to its original state upon return.
+	If fp is TM_GETFILE and (flags&TM_F_UNIMPL)!=0, tmMapPicture()
+	calls pcond to perform the actual conversion, which takes
+	longer but gives access to all the TM_F_* features.
+
+	psp	-	returned array of tone mapped pixels, English ordering.
+	xp, yp	-	returned picture dimensions.
+	flags	-	TM_F_* flags indicating what is to be done.
+	monpri	-	display monitor primaries (Note 1).
+	gamval	-	display gamma response.
+	Lddyn	-	the display's dynamic range (0. for default).
+	Ldmax	-	maximum display luminance in cd/m^2 (0. for default).
+	fname	-	picture file name.
+	fp	-	pointer to open file (Note 3).
+
+	returns	-	0 on success, TM_E_* on failure.
+*/
+
+extern struct tmStruct *
+tmPop(void);
+/*
+	Pops current tone mapping from stack.
+
+	returns	-	pointer to tone mapping structure, or NULL if none.
+*/
+
+extern int
+tmPull(struct tmStruct *tms);
+/*
+	Pull tone mapping from anywhere in stack.
+
+	tms	-	tone mapping structure to find.
+
+	returns	-	1 if found in stack, 0 otherwise.
+*/
+
+extern int
+tmPush(struct tmStruct *tms);
+/*
+	Make tone mapping active by (pulling it and) pushing it to the top.
+
+	tms	-	initialized tone mapping structure.
+
+	returns	-	0 on success, TM_E_* if tms is invalid.
+*/
+
+extern void
+tmDone(struct tmStruct *tms);
+/*
+	Free data associated with the given tone mapping structure.
+	Calls tmPull() first to remove it from the stack if present.
+	The calls tmDone(tmPop()), tmDone(tmTop) and tmDone(NULL)
+	all have the same effect, which is to remove and free
+	the current tone mapping.
+
+	tms	-	tone mapping structure to free.
+*/
+
+#endif
+
+/****    Notes    ****/
+/*
+	General:
+
+	The usual sequence after calling tmInit() is to convert some
+	pixel values to chroma and luminance encodings, which can
+	be passed to tmAddHisto() to put into the tone mapping histogram.
+	This histogram is then used along with the display parameters
+	by tmComputMapping() to compute the luminance mapping function.
+	(Colors are tone-mapped as they are converted if TM_F_MESOPIC
+	is set.)  The encoded chroma and luminance values may then be
+	passed to tmMapPixels() to apply the computed tone mapping in
+	a second pass.
+
+	Especially for RGBE colors in the same color space as the
+	target display, the conversion to chroma and luminance values
+	is fast enough that it may be recomputed on the second pass
+	if memory is at a premium.  (Since the chroma values are only
+	used during final mapping, setting the cs parameter to TM_NOCHROM
+	on the first pass will save time.)  Another memory saving option
+	if third and subsequent passes are not needed is to use the
+	same array to store the mapped pixels as is used to store
+	the encoded chroma values.  This way, only two extra bytes
+	for storing encoded luminances are required per pixel.  This
+	is the method employed by tmMapPicture(), for example.
+*/
+/*
+	Note 1:
+
+	All RGBPRIMP values should be pointers to static structures.
+	I.e., the same pointer should be used for the same primaries,
+	and those primaries should not change from one call to the next.
+	This is because the routines use the pointer value to identify
+	computed conversion matrices, so the matrices do not have to be
+	rebuilt each time.  If you are using the standard primaries,
+	use the standard primary pointer, stdprims.
+
+	To indicate a set of input primaries are actually CIE XYZ,
+	the TM_XYZPRIM macro may be passed.  If the input primaries
+	are unknown, it is wisest to pass tmTop->monpri to tmSetSpace().
+	By default, the input primaries equal the monitor primaries
+	and the scalefactor is set to WHTEFFICACY in tmInit().
+*/
+/*
+	Note 2:
+
+	Chrominance is optional in most of these routines, whether
+	TM_F_BW is set or not.  Passing a value of TM_NOCHROM (or
+	TM_NOCHROMP for picture reading) indicates that returned
+	color values are not desired.
+	
+	If TM_NOCHROM is passed to a mapping routine expecting chroma
+	input, it will do without it and return luminance channel
+	rather than RGB pixel values.  Otherwise, the array for
+	returned pixel values may be the same array used to pass
+	encoded chrominances if no other mappings are desired.
+*/
+/*
+	Note 3:
+
+	Picture files may either be opened by the calling routine or by
+	the library function.  If opened by the calling routine, the
+	pointer to the stream is passed, which may be a pipe or other
+	non-seekable input as it is only read once.  It must be
+	positioned at the beginning when the function is called, and it
+	will be positioned at the end on return.  It will not be closed.
+	If the passed stream pointer is TM_GETFILE, then the library
+	function will open the file, read its contents and close it
+	before returning, whether or not an error was encountered.
+*/
