@@ -15,13 +15,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "source.h"
 
-#include  "cone.h"
-
-#include  "face.h"
-
 
 double  intercircle();
-SRCREC  *makevsrc();
 
 static OBJECT  *vobject;		/* virtual source objects */
 static int  nvobjects = 0;		/* number of virtual source objects */
@@ -55,18 +50,21 @@ markvirtuals()			/* find and mark virtual sources */
 	}
 	if (nvobjects == 0)
 		return;
+#ifdef DEBUG
+	fprintf(stderr, "found %d virtual source objects\n", nvobjects);
+#endif
 					/* append virtual sources */
 	for (i = nsources; i-- > 0; )
 		if (!(source[i].sflags & SSKIP))
-			addvirtuals(&source[i], directrelay);
+			addvirtuals(i, directrelay);
 					/* done with our object list */
 	free((char *)vobject);
 	nvobjects = 0;
 }
 
 
-addvirtuals(sr, nr)		/* add virtual sources associated with sr */
-SRCREC  *sr;
+addvirtuals(sn, nr)		/* add virtuals associated with source */
+int  sn;
 int  nr;
 {
 	register int  i;
@@ -76,36 +74,43 @@ int  nr;
 				/* check each virtual object for projection */
 	for (i = 0; i < nvobjects; i++)
 					/* vproject() calls us recursively */
-		vproject(objptr(i), sr, nr-1);
+		vproject(objptr(vobject[i]), sn, nr-1);
 }
 
 
-vproject(o, s, n)		/* create projected source(s) if they exist */
+vproject(o, sn, n)		/* create projected source(s) if they exist */
 OBJREC  *o;
-SRCREC  *s;
+int  sn;
 int  n;
 {
 	register int  i;
 	register VSMATERIAL  *vsmat;
 	MAT4  proj;
-	SRCREC  *ns;
+	int  ns;
+
+	if (o == source[sn].so)	/* objects cannot project themselves */
+		return;
 				/* get virtual source material */
 	vsmat = sfun[objptr(o->omod)->otype].mf;
 				/* project virtual sources */
 	for (i = 0; i < vsmat->nproj; i++)
-		if ((*vsmat->vproj)(proj, o, s, i))
-			if ((ns = makevsrc(o, s, proj)) != NULL)
+		if ((*vsmat->vproj)(proj, o, &source[sn], i))
+			if ((ns = makevsrc(o, sn, proj)) >= 0) {
+#ifdef DEBUG
+				virtverb(&source[sn], stderr);
+#endif
 				addvirtuals(ns, n);
+			}
 }
 
 
-SRCREC *
-makevsrc(op, sp, pm)		/* make virtual source if reasonable */
+int
+makevsrc(op, sn, pm)		/* make virtual source if reasonable */
 OBJREC  *op;
-register SRCREC  *sp;
+register int  sn;
 MAT4  pm;
 {
-	register SRCREC  *newsrc;
+	register int  nsn;
 	FVECT  nsloc, ocent, nsnorm;
 	int  nsflags;
 	double  maxrad2;
@@ -113,7 +118,7 @@ MAT4  pm;
 	SPOT  theirspot, ourspot;
 	register int  i;
 
-	nsflags = (sp->sflags|(SVIRTUAL|SFOLLOW)) & ~SSPOT;
+	nsflags = (source[sn].sflags|(SVIRTUAL|SFOLLOW)) & ~SSPOT;
 					/* get object center and max. radius */
 	if (sfun[op->otype].of->getdisk != NULL) {
 		maxrad2 = (*sfun[op->otype].of->getdisk)(ocent, op);
@@ -122,78 +127,81 @@ MAT4  pm;
 		nsflags |= SSPOT;
 	}
 					/* get location and spot */
-	if (sp->sflags & SDISTANT) {		/* distant source */
-		if (sp->sflags & SPROX)
+	if (source[sn].sflags & SDISTANT) {		/* distant source */
+		if (source[sn].sflags & SPROX)
 			return(NULL);		/* should never get here! */
-		multv3(nsloc, sp->sloc, pm);
+		multv3(nsloc, source[sn].sloc, pm);
 		if (nsflags & SSPOT) {
 			VCOPY(ourspot.aim, ocent);
 			ourspot.siz = PI*maxrad2;
 			ourspot.flen = 0.;
 		}
-		if (sp->sflags & SSPOT) {
-			copystruct(&theirspot, sp->sl.s);
-			multp3(theirspot.aim, sp->sl.s->aim, pm);
+		if (source[sn].sflags & SSPOT) {
+			copystruct(&theirspot, source[sn].sl.s);
+			multp3(theirspot.aim, source[sn].sl.s->aim, pm);
 			if (nsflags & SSPOT &&
 				!commonbeam(&ourspot, &theirspot, nsloc))
 				return(NULL);		/* no overlap */
 		}
 	} else {				/* local source */
-		multp3(nsloc, sp->sloc, pm);
+		multp3(nsloc, source[sn].sloc, pm);
 		if (nsflags & SSPOT) {
 			for (i = 0; i < 3; i++)
 				ourspot.aim[i] = ocent[i] - nsloc[i];
 			if ((d1 = normalize(ourspot.aim)) == 0.)
 				return(NULL);		/* at source!! */
-			if (sp->sflags & SPROX && d1 > sp->sl.prox)
+			if (source[sn].sflags & SPROX &&
+					d1 > source[sn].sl.prox)
 				return(NULL);		/* too far away */
 			ourspot.siz = 2.*PI*(1. - d1/sqrt(d1*d1+maxrad2));
 			ourspot.flen = 0.;
-		} else if (sp->sflags & SPROX) {
+		} else if (source[sn].sflags & SPROX) {
 			FVECT  norm;
 			double  offs;
 						/* use distance from plane */
 			offs = (*sfun[op->otype].of->getpleq)(norm, op);
 			d1 = DOT(norm, nsloc) - offs;
-			if (d1 > sp->sl.prox || d1 < -sp->sl.prox)
+			if (d1 < 0.) d1 = -d1;
+			if (d1 > source[sn].sl.prox)
 				return(NULL);		/* too far away */
 		}
-		if (sp->sflags & SSPOT) {
-			copystruct(&theirspot, sp->sl.s);
-			multv3(theirspot.aim, sp->sl.s->aim, pm);
+		if (source[sn].sflags & SSPOT) {
+			copystruct(&theirspot, source[sn].sl.s);
+			multv3(theirspot.aim, source[sn].sl.s->aim, pm);
 			if (nsflags & SSPOT) {
 				if (!commonspot(&ourspot, &theirspot, nsloc))
 					return(NULL);	/* no overlap */
 				ourspot.flen = theirspot.flen;
 			}
 		}
-		if (sp->sflags & SFLAT) {	/* check for behind source */
-			multv3(nsnorm, sp->snorm, pm);
+		if (source[sn].sflags & SFLAT) {	/* behind source? */
+			multv3(nsnorm, source[sn].snorm, pm);
 			if (nsflags & SSPOT && checkspot(&ourspot, nsnorm) < 0)
 				return(NULL);
 		}
 	}
 					/* everything is OK, make source */
-	if ((newsrc = newsource()) == NULL)
+	if ((nsn = newsource()) < 0)
 		goto memerr;
-	newsrc->sflags = nsflags;
-	VCOPY(newsrc->sloc, nsloc);
+	source[nsn].sflags = nsflags;
+	VCOPY(source[nsn].sloc, nsloc);
 	if (nsflags & SFLAT)
-		VCOPY(newsrc->snorm, nsnorm);
-	newsrc->ss = sp->ss; newsrc->ss2 = sp->ss2;
-	if ((nsflags | sp->sflags) & SSPOT) {
-		if ((newsrc->sl.s = (SPOT *)malloc(sizeof(SPOT))) == NULL)
+		VCOPY(source[nsn].snorm, nsnorm);
+	source[nsn].ss = source[sn].ss; source[nsn].ss2 = source[sn].ss2;
+	if ((nsflags | source[sn].sflags) & SSPOT) {
+		if ((source[nsn].sl.s = (SPOT *)malloc(sizeof(SPOT))) == NULL)
 			goto memerr;
 		if (nsflags & SSPOT)
-			copystruct(newsrc->sl.s, &ourspot);
+			copystruct(source[nsn].sl.s, &ourspot);
 		else
-			copystruct(newsrc->sl.s, &theirspot);
-		newsrc->sflags |= SSPOT;
+			copystruct(source[nsn].sl.s, &theirspot);
+		source[nsn].sflags |= SSPOT;
 	}
 	if (nsflags & SPROX)
-		newsrc->sl.prox = sp->sl.prox;
-	newsrc->sa.svnext = sp - source;
-	return(newsrc);
+		source[nsn].sl.prox = source[sn].sl.prox;
+	source[nsn].sa.svnext = sn;
+	source[nsn].so = op;
+	return(nsn);
 memerr:
 	error(SYSTEM, "out of memory in makevsrc");
 }
@@ -296,3 +304,30 @@ double  r1s, r2s;		/* radii squared */
 		cc[i] = c1[i] + l*disp[i];
 	return(a2);
 }
+
+
+#ifdef DEBUG
+virtverb(vs, fp)	/* print verbose description of virtual source */
+register SRCREC  *vs;
+FILE  *fp;
+{
+	register int  i;
+
+	fprintf(fp, "%s virtual source %d in %s %s\n",
+			vs->sflags & SDISTANT ? "distant" : "local",
+			vs-source, ofun[vs->so->otype].funame, vs->so->oname);
+	fprintf(fp, "\tat (%f,%f,%f)\n",
+			vs->sloc[0], vs->sloc[1], vs->sloc[2]);
+	fprintf(fp, "\tlinked to source %d (%s)\n",
+			vs->sa.svnext, source[vs->sa.svnext].so->oname);
+	if (vs->sflags & SFOLLOW)
+		fprintf(fp, "\talways followed\n");
+	else
+		fprintf(fp, "\tnever followed\n");
+	if (!(vs->sflags & SSPOT))
+		return;
+	fprintf(fp, "\twith spot aim (%f,%f,%f) and size %f\n",
+			vs->sl.s->aim[0], vs->sl.s->aim[1], vs->sl.s->aim[2],
+			vs->sl.s->siz);
+}
+#endif

@@ -43,7 +43,7 @@ marksources()			/* find and mark source objects */
 {
 	int  i;
 	register OBJREC  *o, *m;
-	register SRCREC  *ns;
+	register int  ns;
 					/* initialize dispatch table */
 	initstypes();
 					/* find direct sources */
@@ -72,19 +72,19 @@ marksources()			/* find and mark source objects */
 				sfun[o->otype].of->setsrc == NULL)
 			objerror(o, USER, "illegal material");
 
-		if ((ns = newsource()) == NULL)
+		if ((ns = newsource()) < 0)
 			goto memerr;
 
-		(*sfun[o->otype].of->setsrc)(ns, o);
+		(*sfun[o->otype].of->setsrc)(&source[ns], o);
 
 		if (m->otype == MAT_GLOW) {
-			ns->sflags |= SPROX;
-			ns->sl.prox = m->oargs.farg[3];
+			source[ns].sflags |= SPROX;
+			source[ns].sl.prox = m->oargs.farg[3];
 			if (o->otype == OBJ_SOURCE)
-				ns->sflags |= SSKIP;
+				source[ns].sflags |= SSKIP;
 		} else if (m->otype == MAT_SPOT) {
-			ns->sflags |= SSPOT;
-			if ((ns->sl.s = makespot(m)) == NULL)
+			source[ns].sflags |= SSPOT;
+			if ((source[ns].sl.s = makespot(m)) == NULL)
 				goto memerr;
 		}
 	}
@@ -95,7 +95,7 @@ marksources()			/* find and mark source objects */
 	markvirtuals();			/* find and add virtual sources */
 	srccnt = (CONTRIB *)malloc(nsources*sizeof(CONTRIB));
 	cntord = (CNTPTR *)malloc(nsources*sizeof(CNTPTR));
-	if (srccnt != NULL && cntord != NULL)
+	if (srccnt == NULL || cntord == NULL)
 		goto memerr;
 	return;
 memerr:
