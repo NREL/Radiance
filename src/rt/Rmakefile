@@ -251,7 +251,7 @@ rv2.o rv3.o rview.o:	rpaint.h driver.h ../common/view.h
 m_direct.o m_mirror.o m_mist.o dielectric.o \
 source.o srcdraw.o srcsamp.o srcsupp.o virtuals.o:	source.h
 
-cone.o data.o devcomm.o freeobjmem.o initotypes.o fprism.o \
+cone.o data.o devcomm.o freeobjmem.o initotypes.o fprism.o preload.o \
 duphead.o octree.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
 
 ambio.o:	../common/fvect.h
@@ -274,6 +274,9 @@ data.o rmain.o rpict.o rtrace.o rv2.o:	../common/resolu.h
 
 aniso.o func.o m_brdf.o m_direct.o mx_data.o mx_func.o p_data.o \
 p_func.o t_data.o t_func.o:	func.h
+
+preload.o:	../common/object.h ../common/face.h ../common/cone.h \
+../common/instance.h ../common/color.h data.h
 
 freeobjmem.o:	../common/object.h
 
