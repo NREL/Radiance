@@ -66,6 +66,8 @@ static int  c_last = 0;			/* last character in queue */
 
 extern char  *malloc(), *getcombuf();
 
+extern char  *progname;
+
 int  x_close(), x_clear(), x_paintr(), x_errout(),
 		x_getcur(), x_comout(), x_comin();
 
@@ -102,7 +104,7 @@ char  *name, *id;
 	mainframe.background = BlackPixmap;
 	sprintf(defgeom, "=%dx%d+0+22", DisplayWidth()-(2*BORWIDTH),
 			DisplayHeight()-(2*BORWIDTH+22));
-	gwind = XCreate("X10 driver", name, NULL, defgeom,
+	gwind = XCreate("X10 display driver", progname, NULL, defgeom,
 			&mainframe, MINWIDTH, MINHEIGHT+COMHEIGHT);
 	if (gwind == 0) {
 		stderr_v("can't create window\n");
