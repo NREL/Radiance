@@ -14,12 +14,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define	VADAPT		0.08		/* fraction of adaptation from veil */
 
-extern COLOR	*fovimg;		/* foveal (1 degree) averaged image */
-extern short	fvxr, fvyr;		/* foveal image resolution */
-
-#define fovscan(y)	(fovimg+(y)*fvxr)
-
-static COLOR	*veilimg;		/* veiling image */
+static COLOR	*veilimg = NULL;	/* veiling image */
 
 #define veilscan(y)	(veilimg+(y)*fvxr)
 
@@ -83,6 +78,9 @@ compveil()				/* compute veiling image */
 	COLOR	ctmp, vsum;
 	int	px, py;
 	register int	x, y;
+
+	if (veilimg != NULL)		/* already done? */
+		return;
 					/* compute ray directions */
 	compraydir();
 					/* compute veil image */
@@ -113,6 +111,13 @@ compveil()				/* compute veiling image */
 			scalecolor(vsum, VADAPT/t2sum);
 			copycolor(veilscan(py)[px], vsum);
 		}
+					/* modify FOV sample image */
+	for (y = 0; y < fvyr; y++)
+		for (x = 0; x < fvxr; x++) {
+			scalecolor(fovscan(y)[x], 1.-VADAPT);
+			addcolor(fovscan(y)[x], veilscan(y)[x]);
+		}
+	comphist();			/* recompute histogram */
 }
 
 

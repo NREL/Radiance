@@ -10,8 +10,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "pcond.h"
 
-#include "random.h"
-
 
 #define	LDMAX		100		/* default max. display luminance */
 #define LDMINF		0.01		/* default min. display lum. factor */
@@ -34,8 +32,8 @@ RESOLU	inpres;				/* input picture resolution */
 
 COLOR	*fovimg;			/* foveal (1 degree) averaged image */
 short	fvxr, fvyr;			/* foveal image resolution */
-int	bwhist[HISTRES];		/* luminance histogram */
-long	histot;				/* total count of histogram */
+float	bwhist[HISTRES];		/* luminance histogram */
+double	histot;				/* total count of histogram */
 double	bwmin, bwmax;			/* histogram limits */
 double	bwavg;				/* mean brightness */
 
@@ -251,7 +249,8 @@ mapimage()				/* map picture and send to stdout */
 #ifdef DEBUG
 	fprintf(stderr, "%s: generating histogram...", progname);
 #endif
-	fovhist();			/* generate adaptation histogram */
+	getfovimg();			/* get foveal sample image */
+	comphist();			/* generate adaptation histogram */
 #ifdef DEBUG
 	fputs("done\n", stderr);
 #endif
@@ -309,22 +308,22 @@ double
 centprob(x, y)			/* center-weighting probability function */
 int	x, y;
 {
-	double	xr, yr;
-
-	xr = (x+.5)/fvxr - .5;
-	yr = (y+.5)/fvyr - .5;
-	return(1. - xr*xr - yr*yr);	/* radial, == 0.5 at corners */
+	double	xr, yr, p;
+				/* paraboloid, 0 at 90 degrees from center */
+	xr = (x - .5*(fvxr-1))/90.;	/* 180 degree fisheye has fv?r == 90 */
+	yr = (y - .5*(fvyr-1))/90.;
+	p = 1. - xr*xr - yr*yr;
+	return(p < 0. ? 0. : p);
 }
 
 
-fovhist()			/* create foveal sampled image and histogram */
+getfovimg()			/* load foveal sampled image */
 {
 	extern FILE	*popen();
 	char	combuf[128];
-	double	l, b, lwmin, lwmax;
 	FILE	*fp;
 	int	x, y;
-
+						/* compute image size */
 	fvxr = sqrt(ourview.hn2)/FOVDIA + 0.5;
 	if (fvxr < 2) fvxr = 2;
 	fvyr = sqrt(ourview.vn2)/FOVDIA + 0.5;
@@ -346,34 +345,6 @@ fovhist()			/* create foveal sampled image and histogram */
 		if (freadscan(fovscan(y), fvxr, fp) < 0)
 			goto readerr;
 	pclose(fp);
-	lwmin = 1e10;			/* find extrema */
-	lwmax = 0.;
-	for (y = 0; y < fvyr; y++)
-		for (x = 0; x < fvxr; x++) {
-			l = plum(fovscan(y)[x]);
-			if (l < lwmin) lwmin = l;
-			if (l > lwmax) lwmax = l;
-		}
-	if (lwmin < LMIN) lwmin = LMIN;
-	if (lwmax > LMAX) lwmax = LMAX;
-					/* compute histogram */
-	bwmin = Bl(lwmin);
-	bwmax = Bl(lwmax);
-	bwavg = 0.;
-	for (y = 0; y < fvyr; y++)
-		for (x = 0; x < fvxr; x++) {
-			if (what2do & DO_CWEIGHT &&
-					frandom() > centprob(x,y))
-				continue;
-			l = plum(fovscan(y)[x]);
-			if (l < lwmin) continue;
-			if (l > lwmax) continue;
-			b = Bl(l);
-			bwavg += b;
-			bwhc(b)++;
-			histot++;
-		}
-	bwavg /= (double)histot;
 	return;
 readerr:
 	fprintf(stderr, "%s: error reading from pfilt process in fovimage\n",
@@ -382,9 +353,45 @@ readerr:
 }
 
 
+comphist()			/* create foveal sampled image and histogram */
+{
+	double	l, b, lwmin, lwmax;
+	register int	x, y;
+
+	lwmin = 1e10;			/* find extrema */
+	lwmax = 0.;
+	for (y = 0; y < fvyr; y++)
+		for (x = 0; x < fvxr; x++) {
+			l = plum(fovscan(y)[x]);
+			if (l < lwmin) lwmin = l;
+			if (l > lwmax) lwmax = l;
+		}
+	lwmin -= FTINY;
+	lwmax += FTINY;
+	if (lwmin < LMIN) lwmin = LMIN;
+	if (lwmax > LMAX) lwmax = LMAX;
+					/* compute histogram */
+	bwmin = Bl(lwmin);
+	bwmax = Bl(lwmax);
+	bwavg = 0.;
+	for (y = 0; y < fvyr; y++)
+		for (x = 0; x < fvxr; x++) {
+			l = plum(fovscan(y)[x]);
+			if (l < lwmin) continue;
+			if (l > lwmax) continue;
+			b = Bl(l);
+			bwavg += b;
+			l = what2do&DO_CWEIGHT ? centprob(x,y) : 1.;
+			bwhist[bwhi(b)] += l;
+			histot += l;
+		}
+	bwavg /= histot;
+}
+
+
 check2do()		/* check histogram to see what isn't worth doing */
 {
-	long	sum;
+	double	sum;
 	double	b, l;
 	register int	i;
 
@@ -399,7 +406,7 @@ check2do()		/* check histogram to see what isn't worth doing */
 	if (!(what2do & (DO_ACUITY|DO_COLOR)))
 		return;
 					/* find 5th percentile */
-	sum = histot*0.05 + .5;
+	sum = histot*0.05;
 	for (i = 0; i < HISTRES; i++)
 		if ((sum -= bwhist[i]) <= 0)
 			break;
