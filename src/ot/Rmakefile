@@ -14,7 +14,7 @@ CFLAGS = -DSTRICT $(OPT) $(MACH)
 
 INSTDIR = /lumen/lumen/ray/bin.sun3
 
-COMPAT = malloc.o
+COMPAT = bmalloc.o
 
 oconv:	misc.o objset.o oconv.o octree.o readobj.o \
 readoct.o sphere.o fvect.o otypes.o writeoct.o o_face.o face.o plocate.o xf.o \
