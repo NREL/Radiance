@@ -206,6 +206,8 @@ int  n;
 	}
 	for (i = 0; i < 3; i++)
 		il->col[i] /= (double)n*il->nsamps;
+
+	return(brt(il->col) >= il->minbrt);
 }
 
 
