@@ -374,6 +374,7 @@ char  *p;			/* data for f */
 srcscatter(r)			/* compute source scattering into ray */
 register RAY  *r;
 {
+	int  oldsampndx;
 	int  nsamps;
 	RAY  sr;
 	SRCINDEX  si;
@@ -385,6 +386,8 @@ register RAY  *r;
 		return;
 	if (ssampdist <= FTINY || (nsamps = r->rot/ssampdist + .5) < 1)
 		nsamps = 1;
+	oldsampndx = samplendx;
+	samplendx = random()&0x7fff;		/* randomize */
 	initsrcindex(&si);
 	for (i = r->slights[0]; i > 0; i--) {	/* for each source */
 		setcolor(cumval, 0., 0., 0.);
@@ -438,6 +441,7 @@ register RAY  *r;
 		multcolor(cumval, ctmp);
 		addcolor(r->rcol, cumval);	/* sum into ray result */
 	}
+	samplendx = oldsampndx;
 }
 
 
