@@ -671,10 +671,7 @@ caldone()				/* done with calculation */
 
 	if (childpid == -1)
 		return;
-	if (fclose(psend) == EOF)
-		syserror();
-	clearqueue();
-	fclose(precv);
+	clearqueue(1);
 	while ((pid = wait(0)) != -1 && pid != childpid)
 		;
 	childpid = -1;
@@ -684,47 +681,49 @@ caldone()				/* done with calculation */
 rcalfill(x, y)				/* fill with ray-calculated pixel */
 int	x, y;
 {
-	FVECT	orig, dir;
-	float	outbuf[6];
-
-	if (queuesiz >= PACKSIZ) {	/* flush queue */
-		if (fflush(psend) == EOF)
-			syserror();
-		clearqueue();
-	}
-					/* send new ray */
-	viewray(orig, dir, &ourview, (x+.5)/hresolu, (y+.5)/vresolu);
-	outbuf[0] = orig[0]; outbuf[1] = orig[1]; outbuf[2] = orig[2];
-	outbuf[3] = dir[0]; outbuf[4] = dir[1]; outbuf[5] = dir[2];
-	if (fwrite(outbuf, sizeof(float), 6, psend) < 6)
-		syserror();
-					/* remember it */
+	if (queuesiz >= PACKSIZ)	/* flush queue if needed */
+		clearqueue(0);
+					/* add position to queue */
 	queue[queuesiz][0] = x;
 	queue[queuesiz][1] = y;
 	queuesiz++;
 }
 
 
-clearqueue()				/* get results from queue */
+clearqueue(done)			/* process queue */
+int	done;
 {
-	float	inbuf[4];
+	FVECT	orig, dir;
+	float	fbuf[6];
 	register int	i;
 
 	for (i = 0; i < queuesiz; i++) {
-		if (fread(inbuf, sizeof(float), 4, precv) < 4) {
+		viewray(orig, dir, &ourview,
+				(queue[i][0]+.5)/hresolu,
+				(queue[i][1]+.5)/vresolu);
+		fbuf[0] = orig[0]; fbuf[1] = orig[1]; fbuf[2] = orig[2];
+		fbuf[3] = dir[0]; fbuf[4] = dir[1]; fbuf[5] = dir[2];
+		fwrite(fbuf, sizeof(float), 6, psend);
+	}
+	if ((done ? fclose(psend) : fflush(psend)) == EOF)
+		syserror();
+	for (i = 0; i < queuesiz; i++) {
+		if (fread(fbuf, sizeof(float), 4, precv) < 4) {
 			fprintf(stderr, "%s: read error in clearqueue\n",
 					progname);
 			exit(1);
 		}
 		if (ourexp > 0 && ourexp != 1.0) {
-			inbuf[0] *= ourexp;
-			inbuf[1] *= ourexp;
-			inbuf[2] *= ourexp;
+			fbuf[0] *= ourexp;
+			fbuf[1] *= ourexp;
+			fbuf[2] *= ourexp;
 		}
 		setcolr(pscan(queue[i][1])[queue[i][0]],
-				inbuf[0], inbuf[1], inbuf[2]);
-		zscan(queue[i][1])[queue[i][0]] = inbuf[3];
+				fbuf[0], fbuf[1], fbuf[2]);
+		zscan(queue[i][1])[queue[i][0]] = fbuf[3];
 	}
+	if (done)
+		fclose(precv);
 	queuesiz = 0;
 }
 
