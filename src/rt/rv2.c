@@ -24,6 +24,13 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  CTRL(c)	((c)-'@')
 
+#ifdef  SMLFLT
+#define  sscanvec(s,v)	(sscanf(s,"%f %f %f",v,v+1,v+2)==3)
+#else
+#define  sscanvec(s,v)	(sscanf(s,"%lf %lf %lf",v,v+1,v+2)==3)
+#endif
+
+
 extern char  VersionID[];
 extern char  *progname;
 extern char  *octname;
@@ -86,7 +93,7 @@ char  *s;
 	(*dev->comout)(buf);
 	(*dev->comin)(buf, NULL);
 	if (buf[0] == CTRL('C')) return;
-	if (sscanf(buf, "%lf %lf %lf", &nv.vp[0], &nv.vp[1], &nv.vp[2]) == 3)
+	if (sscanvec(buf, nv.vp))
 		change++;
 	else
 		VCOPY(nv.vp, ourview.vp);
@@ -95,7 +102,7 @@ char  *s;
 	(*dev->comout)(buf);
 	(*dev->comin)(buf, NULL);
 	if (buf[0] == CTRL('C')) return;
-	if (sscanf(buf,"%lf %lf %lf",&nv.vdir[0],&nv.vdir[1],&nv.vdir[2]) == 3)
+	if (sscanvec(buf, nv.vdir))
 		change++;
 	else
 		VCOPY(nv.vdir, ourview.vdir);
@@ -104,7 +111,7 @@ char  *s;
 	(*dev->comout)(buf);
 	(*dev->comin)(buf, NULL);
 	if (buf[0] == CTRL('C')) return;
-	if (sscanf(buf,"%lf %lf %lf",&nv.vup[0],&nv.vup[1],&nv.vup[2]) == 3)
+	if (sscanvec(buf, nv.vup))
 		change++;
 	else
 		VCOPY(nv.vup, ourview.vup);
@@ -509,9 +516,8 @@ char  *s;
 	int  x, y;
 	RAY  thisray;
 
-	if (sscanf(s, "%lf %lf %lf %lf %lf %lf",
-		&thisray.rorg[0], &thisray.rorg[1], &thisray.rorg[2],
-		&thisray.rdir[0], &thisray.rdir[1], &thisray.rdir[2]) != 6) {
+	if (!sscanvec(s, thisray.rorg) ||
+			!sscanvec(sskip(sskip(sskip(s))), thisray.rdir)) {
 
 		if (dev->getcur == NULL)
 			return;
