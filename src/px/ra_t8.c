@@ -17,8 +17,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "resolu.h"
 
-#include  "pic.h"
-
 #include  "targa.h"
 
 #ifdef MSDOS
@@ -31,17 +29,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #define	 bcopy(s,d,n)		(void)memcpy(d,s,n)
 extern char  *memcpy();
 #endif
-			/* descriptor for a picture file or frame buffer */
-typedef struct {
-	char	*name;			/* file name */
-	FILE	*fp;			/* file pointer */
-	int	nexty;			/* file positioning */
-	int	bytes_line;		/* 0 == variable length lines */
-	union {
-		long	b;			/* initial scanline */
-		long	*y;			/* individual scanline */
-	} pos;				/* position(s) */
-} pic;
 
 #define	 goodpic(h)	(my_imType(h) && my_mapType(h))
 #define	 my_imType(h)	(((h)->dataType==IM_CMAP || (h)->dataType==IM_CCMAP) \
@@ -49,19 +36,17 @@ typedef struct {
 #define	 my_mapType(h)	((h)->mapType==CM_HASMAP && \
 				((h)->CMapBits==24 || (h)->CMapBits==32))
 
-#define	 taralloc(h)	(pixel *)emalloc((h)->x*(h)->y*sizeof(pixel))
+#define	 taralloc(h)	(BYTE *)emalloc((h)->x*(h)->y)
 
-extern pic	*openinput();
+extern BYTE  clrtab[][3];
 
 extern char	*ecalloc(), *emalloc();
 
 extern long  ftell();
 
-double	gamma = 2.2;			/* gamma correction */
+double	gamv = 2.2;			/* gamv correction */
 
 int  bradj = 0;				/* brightness adjustment */
-
-pic	*inpic;
 
 char  *progname;
 
@@ -69,7 +54,7 @@ char  errmsg[128];
 
 COLR	*inl;
 
-pixel	*tarData;
+BYTE	*tarData;
 
 int  xmax, ymax;
 
@@ -78,7 +63,6 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-	colormap  rasmap;
 	struct hdStruct	 head;
 	int  dither = 1;
 	int  reverse = 0;
@@ -100,7 +84,7 @@ char  *argv[];
 				dither = !dither;
 				break;
 			case 'g':
-				gamma = atof(argv[++i]);
+				gamv = atof(argv[++i]);
 				break;
 			case 'r':
 				reverse = !reverse;
@@ -122,13 +106,17 @@ char  *argv[];
 		else
 			break;
 
+	if (i < argc-2)
+		goto userr;
+	if (i <= argc-1 && freopen(argv[i], "r", stdin) == NULL) {
+		sprintf(errmsg, "cannot open input \"%s\"", argv[i]);
+		quiterr(errmsg);
+	}
+	if (i == argc-2 && freopen(argv[i+1], "w", stdout) == NULL) {
+		sprintf(errmsg, "cannot open output \"%s\"", argv[i+1]);
+		quiterr(errmsg);
+	}
 	if (reverse) {
-		if (i < argc-2)
-			goto userr;
-		if (i <= argc-1 && freopen(argv[i], "r", stdin) == NULL) {
-			sprintf(errmsg, "can't open input \"%s\"", argv[i]);
-			quiterr(errmsg);
-		}
 					/* get header */
 		if (getthead(&head, NULL, stdin) < 0)
 			quiterr("bad targa file");
@@ -136,11 +124,6 @@ char  *argv[];
 			quiterr("incompatible format");
 		xmax = head.x;
 		ymax = head.y;
-					/* open output file */
-		if (i == argc-2 && freopen(argv[i+1], "w", stdout) == NULL) {
-			sprintf(errmsg, "can't open output \"%s\"", argv[i+1]);
-			quiterr(errmsg);
-		}
 					/* put header */
 		printargs(i, argv, stdout);
 		fputformat(COLRFMT, stdout);
@@ -149,32 +132,24 @@ char  *argv[];
 					/* convert file */
 		tg2ra(&head);
 	} else {
-		if (i < argc-2 || (!greyscale && i > argc-1))
-			goto userr;
-		if ((inpic = openinput(argv[i], &head)) == NULL) {
-			sprintf(errmsg, "can't open input \"%s\"", argv[i]);
-			quiterr(errmsg);
-		}
-		if (i == argc-2 && freopen(argv[i+1], "w", stdout) == NULL) {
-			sprintf(errmsg, "can't open output \"%s\"", argv[i+1]);
-			quiterr(errmsg);
-		}
+		if (getrhead(&head, stdin) < 0)
+			quiterr("bad Radiance input");
 					/* write header */
 		putthead(&head, NULL, stdout);
 					/* convert file */
 		if (greyscale)
-			biq(dither,ncolors,1,rasmap);
+			getgrey(ncolors);
 		else
-			ciq(dither,ncolors,1,rasmap);
+			getmapped(ncolors, dither);
 					/* write data */
 		writetarga(&head, tarData, stdout);
 	}
 	quiterr(NULL);
 userr:
 	fprintf(stderr,
-	"Usage: %s [-d][-c ncolors][-b][-g gamma][-e +/-stops] input [output]\n",
+	"Usage: %s [-d][-c ncolors][-b][-g gamv][-e +/-stops] input [output]\n",
 			progname);
-	fprintf(stderr, "   Or: %s -r [-g gamma][-e +/-stops] [input [output]]\n",
+	fprintf(stderr, "   Or: %s -r [-g gamv][-e +/-stops] [input [output]]\n",
 			progname);
 	exit(1);
 }
@@ -288,27 +263,14 @@ register FILE  *fp;
 }
 
 
-pic *
-openinput(fname, h)		/* open RADIANCE input file */
-char  *fname;
+getrhead(h, fp)			/* load RADIANCE input file header */
 register struct hdStruct  *h;
+FILE  *fp;
 {
-	register pic  *p;
-
-	p = (pic *)emalloc(sizeof(pic));
-	p->name = fname;
-	if (fname == NULL)
-		p->fp = stdin;
-	else if ((p->fp = fopen(fname, "r")) == NULL)
-		return(NULL);
 					/* get header info. */
-	if (checkheader(p->fp, COLRFMT, NULL) < 0 ||
-			fgetresolu(&xmax, &ymax, p->fp) < 0)
-		quiterr("bad picture format");
-	p->nexty = 0;
-	p->bytes_line = 0;		/* variable length lines */
-	p->pos.y = (long *)ecalloc(ymax, sizeof(long));
-	p->pos.y[0] = ftell(p->fp);
+	if (checkheader(fp, COLRFMT, NULL) < 0 ||
+			fgetresolu(&xmax, &ymax, fp) < 0)
+		return(-1);
 					/* assign header */
 	h->textSize = 0;
 	h->mapType = CM_HASMAP;
@@ -327,7 +289,7 @@ register struct hdStruct  *h;
 					/* allocate targa data */
 	tarData = taralloc(h);
 
-	return(p);
+	return(0);
 }
 
 
@@ -352,14 +314,14 @@ struct hdStruct	 *hp;
 	for (i = hp->mapOrig; i < hp->mapOrig+hp->mapLength; i++)
 		if (hp->CMapBits == 24)
 			setcolr(ctab[i],
-					pow((map.c3[i][2]+.5)/256.,gamma),
-					pow((map.c3[i][1]+.5)/256.,gamma),
-					pow((map.c3[i][0]+.5)/256.,gamma));
+					pow((map.c3[i][2]+.5)/256.,gamv),
+					pow((map.c3[i][1]+.5)/256.,gamv),
+					pow((map.c3[i][0]+.5)/256.,gamv));
 		else
 			setcolr(ctab[i],
-					pow((map.c4[i][3]+.5)/256.,gamma),
-					pow((map.c4[i][2]+.5)/256.,gamma),
-					pow((map.c4[i][1]+.5)/256.,gamma));
+					pow((map.c4[i][3]+.5)/256.,gamv),
+					pow((map.c4[i][2]+.5)/256.,gamv),
+					pow((map.c4[i][1]+.5)/256.,gamv));
 	if (bradj)
 		shiftcolrs(ctab, 256, bradj);
 					/* allocate targa data */
@@ -380,54 +342,82 @@ struct hdStruct	 *hp;
 }
 
 
-picreadline3(y, l3)			/* read in 3-byte scanline */
-int  y;
-register rgbpixel  *l3;
+getmapped(nc, dith)		/* read in and quantize image */
+int  nc;		/* number of colors to use */
+int  dith;		/* use dithering? */
 {
-	register int	i;
+	long  fpos;
+	register int  y;
 
-	if (inpic->nexty != y) {			/* find scanline */
-		if (inpic->bytes_line == 0) {
-			if (inpic->pos.y[y] == 0) {
-				while (inpic->nexty < y) {
-					if (freadcolrs(inl, xmax, inpic->fp) < 0)
-						quiterr("read error in picreadline3");
-					inpic->pos.y[++inpic->nexty] = ftell(inpic->fp);
-				}
-			} else if (fseek(inpic->fp, inpic->pos.y[y], 0) == EOF)
-				quiterr("seek error in picreadline3");
-		} else if (fseek(inpic->fp, y*inpic->bytes_line+inpic->pos.b, 0) == EOF)
-			quiterr("seek error in picreadline3");
-	} else if (inpic->bytes_line == 0 && inpic->pos.y[inpic->nexty] == 0)
-		inpic->pos.y[inpic->nexty] = ftell(inpic->fp);
-	if (freadcolrs(inl, xmax, inpic->fp) < 0)	/* read scanline */
-		quiterr("read error in picreadline3");
-	inpic->nexty = y+1;
-							/* convert scanline */
-	normcolrs(inl, xmax, bradj);
-	for (i = 0; i < xmax; i++) {
-		l3[i].r = inl[i][RED];
-		l3[i].g = inl[i][GRN];
-		l3[i].b = inl[i][BLU];
+	setcolrgam(gamv);
+	fpos = ftell(stdin);
+	new_histo();			/* build histogram */
+	for (y = ymax-1; y >= 0; y--) {
+		if (freadcolrs(inl, xmax, stdin) < 0)
+			quiterr("error reading Radiance input");
+		if (bradj)
+			shiftcolrs(inl, xmax, bradj);
+		colrs_gambs(inl, xmax);
+		cnt_colrs(inl, xmax);
+	}
+	if (fseek(stdin, fpos, 0) == EOF)
+		quiterr("Radiance input must be from a file");
+	new_clrtab(nc);			/* map colors */
+	for (y = ymax-1; y >= 0; y--) {
+		if (freadcolrs(inl, xmax, stdin) < 0)
+			quiterr("error reading Radiance input");
+		if (bradj)
+			shiftcolrs(inl, xmax, bradj);
+		colrs_gambs(inl, xmax);
+		if (dith)
+			dith_colrs(tarData+y*xmax, inl, xmax);
+		else
+			map_colrs(tarData+y*xmax, inl, xmax);
 	}
 }
 
 
-picwriteline(y, l)			/* save output scanline */
-int  y;
-pixel  *l;
+getgrey(nc)			/* read in and convert to greyscale image */
+int  nc;		/* number of colors to use */
 {
-	bcopy((char *)l, (char *)&tarData[(ymax-1-y)*xmax], xmax*sizeof(pixel));
+	int  y;
+	register BYTE  *dp;
+	register int  x;
+
+	setcolrgam(gamv);
+	dp = tarData+xmax*ymax;;
+	for (y = ymax-1; y >= 0; y--) {
+		if (freadcolrs(inl, xmax, stdin) < 0)
+			quiterr("error reading Radiance input");
+		if (bradj)
+			shiftcolrs(inl, xmax, bradj);
+		colrs_gambs(inl, xmax);
+		x = xmax;
+		if (nc < 256)
+			while (x--)
+				*--dp = ((long)normbright(inl[x])*nc+128)>>8;
+		else
+			while (x--)
+				*--dp = normbright(inl[x]);
+	}
+	for (x = 0; x < nc; x++)
+		clrtab[x][RED] = clrtab[x][GRN] =
+			clrtab[x][BLU] = ((long)x*256+nc/2)/nc;
 }
 
 
 writetarga(h, d, fp)		/* write out targa data */
 struct hdStruct	 *h;
-pixel  *d;
+BYTE  *d;
 FILE  *fp;
 {
+	register int  i, j;
+
+	for (i = 0; i < h->mapLength; i++)	/* write color map */
+		for (j = 2; j >= 0; j--)
+			putc(clrtab[i][j], fp);
 	if (h->dataType == IM_CMAP) {		/* uncompressed */
-		if (fwrite((char *)d,h->x*sizeof(pixel),h->y,fp) != h->y)
+		if (fwrite((char *)d,h->x*sizeof(BYTE),h->y,fp) != h->y)
 			quiterr("error writing targa file");
 		return;
 	}
@@ -437,14 +427,14 @@ FILE  *fp;
 
 readtarga(h, data, fp)		/* read in targa data */
 struct hdStruct	 *h;
-pixel  *data;
+BYTE  *data;
 FILE  *fp;
 {
 	register int  cnt, c;
-	register pixel	*dp;
+	register BYTE	*dp;
 
 	if (h->dataType == IM_CMAP) {		/* uncompressed */
-		if (fread((char *)data,h->x*sizeof(pixel),h->y,fp) != h->y)
+		if (fread((char *)data,h->x*sizeof(BYTE),h->y,fp) != h->y)
 			goto readerr;
 		return;
 	}
@@ -467,27 +457,4 @@ FILE  *fp;
 	return;
 readerr:
 	quiterr("error reading targa file");
-}
-
-
-picwritecm(cm)			/* write out color map */
-colormap  cm;
-{
-	register int  i, j;
-
-	for (j = 0; j < 256; j++)
-		for (i = 2; i >= 0; i--)
-			putc(cm[i][j], stdout);
-}
-
-
-picreadcm(map)			/* do gamma correction if requested */
-colormap  map;
-{
-	register int  i, val;
-
-	for (i = 0; i < 256; i++) {
-		val = pow((i+0.5)/256.0, 1.0/gamma) * 256.0;
-		map[0][i] = map[1][i] = map[2][i] = val;
-	}
 }

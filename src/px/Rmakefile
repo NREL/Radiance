@@ -112,9 +112,8 @@ ra_ps:	ra_ps.o
 ra_ppm:		ra_ppm.o
 	$(CC) $(CFLAGS) -o ra_ppm ra_ppm.o -lrt -lm
 
-ra_t8:	ra_t8.o ciq.o cut.o closest.o biq.o
-	$(CC) $(CFLAGS) -o ra_t8 ra_t8.o ciq.o cut.o closest.o \
-biq.o -lrt -lm
+ra_t8:	ra_t8.o clrtab.o
+	$(CC) $(CFLAGS) -o ra_t8 ra_t8.o clrtab.o -lrt -lm
 
 ra_t16: ra_t16.o
 	$(CC) $(CFLAGS) -o ra_t16 ra_t16.o -lrt -lm
@@ -136,9 +135,9 @@ x10image:	ximage.o ciq.o cut.o closest.o xraster.o biq.o
 	$(CC) $(CFLAGS) -o x10image ximage.o xraster.o \
 ciq.o cut.o closest.o biq.o -lX -lrt -lm
 
-ximage:	x11image.o ciq.o cut.o closest.o x11raster.o biq.o
+ximage:	x11image.o x11raster.o clrtab.o
 	$(CC) $(CFLAGS) -o ximage x11image.o x11raster.o \
-ciq.o cut.o closest.o biq.o -lX11 -lrt -lm
+clrtab.o -lX11 -lrt -lm
 
 protate:		protate.o
 	$(CC) $(CFLAGS) -o protate protate.o -lrt
