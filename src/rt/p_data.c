@@ -68,15 +68,15 @@ RAY  *r;
 		objerror(m, USER, "bad # arguments");
 	if (!vardefined(sa[3]))
 		loadfunc(sa[2]);
+	errno = 0;
 	for (nv = 0; nv+3 < m->oargs.nsargs &&
 			sa[nv+3][0] != '-'; nv++) {
 		if (nv >= MAXDIM)
 			goto dimerr;
-		errno = 0;
 		pt[nv] = varvalue(sa[nv+3]);
-		if (errno)
-			goto computerr;
 	}
+	if (errno)
+		goto computerr;
 	dp = getdata(sa[1]);
 	if (dp->nd != nv)
 		goto dimerr;
