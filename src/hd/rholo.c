@@ -10,7 +10,9 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #include "rholo.h"
 #include "paths.h"
+#include <signal.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 
 			/* the following must be consistent with rholo.h */
 int	NVARS = NRHVARS;		/* total number of variables */
@@ -38,10 +40,14 @@ long	maxdisk;		/* maximum file space (bytes) */
 int	rtargc = 1;		/* rtrace command */
 char	*rtargv[128] = {"rtrace", NULL};
 
+int	orig_mode = -1;		/* original file mode (-1 if unchanged) */
+
 long	nraysdone = 0L;		/* number of rays done */
 long	npacksdone = 0L;	/* number of packets done */
 
 PACKET	*freepacks;		/* available packets */
+
+char  *sigerr[NSIG];		/* signal error messages */
 
 extern time_t	time();
 
@@ -125,6 +131,53 @@ userr:
 }
 
 
+onsig(signo)				/* fatal signal */
+int  signo;
+{
+	static int  gotsig = 0;
+
+	if (gotsig++)			/* two signals and we're gone! */
+		_exit(signo);
+
+	alarm(30);			/* allow 30 seconds to clean up */
+	signal(SIGALRM, SIG_DFL);	/* make certain we do die */
+	eputs("signal - ");
+	eputs(sigerr[signo]);
+	eputs("\n");
+	quit(3);
+}
+
+
+sigdie(signo, msg)			/* set fatal signal */
+int  signo;
+char  *msg;
+{
+	if (signal(signo, onsig) == SIG_IGN)
+		signal(signo, SIG_IGN);
+	sigerr[signo] = msg;
+}
+
+
+int
+resfmode(fd, mod)		/* restrict open file access mode */
+int	fd, mod;
+{
+	struct stat	stbuf;
+					/* get original mode */
+	if (fstat(fd, &stbuf) < 0)
+		error(SYSTEM, "cannot stat open holodeck file");
+	mod &= stbuf.st_mode;		/* always more restrictive */
+	if (mod == stbuf.st_mode)
+		return(-1);		/* already set */
+					/* else change it */
+	if (fchmod(fd, mod) < 0) {
+		error(WARNING, "cannot change holodeck file access mode");
+		return(-1);
+	}
+	return(stbuf.st_mode);		/* return original mode */
+}
+
+
 initrholo()			/* get our holodeck running */
 {
 	extern int	global_packet();
@@ -184,6 +237,18 @@ initrholo()			/* get our holodeck running */
 			freepacks[i].next = &freepacks[i+1];
 		}
 	}
+					/* set up signal handling */
+	sigdie(SIGINT, "Interrupt");
+	sigdie(SIGHUP, "Hangup");
+	sigdie(SIGTERM, "Terminate");
+	sigdie(SIGPIPE, "Broken pipe");
+	sigdie(SIGALRM, "Alarm clock");
+#ifdef	SIGXCPU
+	sigdie(SIGXCPU, "CPU limit exceeded");
+	sigdie(SIGXFSZ, "File size exceeded");
+#endif
+						/* protect holodeck file */
+	orig_mode = resfmode(hdlist[0]->fd, ncprocs>0 ? 0 : 0444);
 	return;
 memerr:
 	error(SYSTEM, "out of memory in initrholo");
@@ -317,6 +382,7 @@ register HDGRID	*gp;
 creatholo(gp)			/* create a holodeck output file */
 HDGRID	*gp;
 {
+	extern char	VersionID[];
 	long	endloc = 0;
 	int	fd;
 	FILE	*fp;
@@ -327,6 +393,7 @@ HDGRID	*gp;
 	}
 					/* write information header */
 	newheader("RADIANCE", fp);
+	fprintf(fp, "SOFTWARE= %s\n", VersionID);
 	printvars(fp);
 	fputformat(HOLOFMT, fp);
 	fputc('\n', fp);
@@ -543,6 +610,8 @@ int	ec;
 		} else
 			hdflush(NULL);
 	}
+	if (orig_mode >= 0)		/* reset holodeck access mode */
+		fchmod(hdlist[0]->fd, orig_mode);
 	if (outdev != NULL)		/* close display */
 		disp_close();
 	exit(ec ? ec : status);		/* exit */
