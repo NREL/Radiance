@@ -11,6 +11,10 @@ static const char	RCSid[] = "$Id$";
 
 #include  "rtio.h"
 
+#ifdef getc_unlocked		/* avoid horrendous overhead of flockfile */
+#define getc    getc_unlocked
+#endif
+
 
 char *
 fgetline(s, n, fp)	/* read in line with escapes, elide final newline */

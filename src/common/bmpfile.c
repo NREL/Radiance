@@ -10,6 +10,11 @@ static const char RCSid[] = "$Id$";
 #include <string.h>
 #include "bmpfile.h"
 
+#ifdef getc_unlocked		/* avoid horrendous overhead of flockfile */
+#define getc    getc_unlocked
+#define putc    putc_unlocked
+#endif
+
 /* get corresponding error message */
 const char *
 BMPerrorMessage(int ec)

@@ -13,6 +13,9 @@ static const char RCSid[] = "$Id$";
 #include  "object.h"
 #include  "oconv.h"
 
+#ifdef putc_unlocked		/* avoid horrendous overhead of flockfile */
+#define putc    putc_unlocked
+#endif
 
 static void oputstr(char *s);
 static void putfullnode(OCTREE fn);

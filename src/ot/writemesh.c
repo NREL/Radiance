@@ -10,6 +10,9 @@ static const char RCSid[] = "$Id$";
 #include  "object.h"
 #include  "mesh.h"
 
+#ifdef putc_unlocked		/* avoid horrendous overhead of flockfile */
+#define putc    putc_unlocked
+#endif
 
 static void putfullnode(OCTREE fn, FILE *fp);
 static void puttree(OCTREE ot, FILE *fp);
