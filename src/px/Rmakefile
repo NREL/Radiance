@@ -31,10 +31,11 @@ aed:	aedimage
 
 sun:
 
-install:	$(PROGS) normpat.csh
+install:	$(PROGS) normpat.csh falsecolor.csh
 	cp $(PROGS) $(INSTDIR)
 	cp normpat.csh $(INSTDIR)/normpat
-	chmod 755 $(INSTDIR)/normpat
+	cp falsecolor.csh $(INSTDIR)/falsecolor
+	chmod 755 $(INSTDIR)/normpat $(INSTDIR)/falsecolor
 
 clean:
 	set nonomatch; rm -f $(PROGS) *.o core
