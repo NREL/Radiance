@@ -29,6 +29,7 @@ char	*octree = NULL;			/* octree file name */
 int	verbose = 0;			/* verbose reporting */
 char	*progname;			/* global argv[0] */
 
+int	sampdens = SAMPDENS;		/* sample density */
 ANGLE	glarang[180] = {AEND};		/* glare calculation angles */
 int	nglarangs = 0;
 double	maxtheta;			/* maximum angle (in radians) */
@@ -56,6 +57,9 @@ char	*argv[];
 			continue;
 		}
 		switch (argv[i][1]) {
+		case 'r':
+			sampdens = atoi(argv[++i])/2;
+			break;
 		case 'v':
 			if (argv[i][2] == '\0') {
 				verbose++;
@@ -201,15 +205,15 @@ init()				/* initialize global variables */
 	}
 	nglarangs = i;
 	/* nglardirs = 2*nglarangs + 1; */
-	/* vsize = SAMPDENS; */
+	/* vsize = sampdens; */
 	if (nglarangs > 0)
 		maxtheta = (PI/180.)*glarang[nglarangs-1];
 	else
 		maxtheta = 0.0;
-	hlim = SAMPDENS*maxtheta;
-	hsize = SAMPDENS + hlim;
-	if (hsize > (int)(PI*SAMPDENS))
-		hsize = PI*SAMPDENS;
+	hlim = sampdens*maxtheta;
+	hsize = sampdens + hlim;
+	if (hsize > (int)(PI*sampdens))
+		hsize = PI*sampdens;
 	indirect = (struct illum *)calloc(nglardirs, sizeof(struct illum));
 	if (indirect == NULL)
 		memerr("indirect illuminances");
@@ -277,14 +281,14 @@ int	x, y;
 
 	if (x <= -hlim)			/* left region */
 		return(viewray(org, vd, &leftview,
-				(x+hlim)/(2.*SAMPDENS)+.5,
-				y/(2.*SAMPDENS)+.5));
+				(x+hlim)/(2.*sampdens)+.5,
+				y/(2.*sampdens)+.5));
 	if (x >= hlim)			/* right region */
 		return(viewray(org, vd, &rightview,
-				(x-hlim)/(2.*SAMPDENS)+.5,
-				y/(2.*SAMPDENS)+.5));
+				(x-hlim)/(2.*sampdens)+.5,
+				y/(2.*sampdens)+.5));
 						/* central region */
-	if (viewray(org, vd, &ourview, .5, y/(2.*SAMPDENS)+.5) < 0)
+	if (viewray(org, vd, &ourview, .5, y/(2.*sampdens)+.5) < 0)
 		return(-1);
 	spinvector(vd, vd, ourview.vup, h_theta(x));
 	return(0);
