@@ -56,7 +56,6 @@ double  rw;
 	r->newcset = r->clipset;
 	r->ro = NULL;
 	r->rot = FHUGE;
-	r->rox = NULL;
 	r->pert[0] = r->pert[1] = r->pert[2] = 0.0;
 	setcolor(r->pcol, 1.0, 1.0, 1.0);
 	setcolor(r->rcol, 0.0, 0.0, 0.0);
