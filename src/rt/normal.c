@@ -74,7 +74,6 @@ double  omega;			/* light source size */
 	double  ldot;
 	double  dtmp, d2;
 	FVECT  vtmp;
-	register int	i;
 	COLOR  ctmp;
 
 	setcolor(cval, 0.0, 0.0, 0.0);
@@ -106,8 +105,9 @@ double  omega;			/* light source size */
 		if (np->specfl & SP_FLAT)
 			dtmp += omega/(4.0*PI);
 						/* delta */
-		for (i = 0; i < 3; i++)
-			vtmp[i] = ldir[i] - np->rp->rdir[i];
+		vtmp[0] = ldir[0] - np->rp->rdir[0];
+		vtmp[1] = ldir[1] - np->rp->rdir[1];
+		vtmp[2] = ldir[2] - np->rp->rdir[2];
 		d2 = DOT(vtmp, np->pnorm);
 		d2 = 2.0 - 2.0*d2/sqrt(DOT(vtmp,vtmp));
 						/* gaussian */
@@ -135,13 +135,13 @@ double  omega;			/* light source size */
 		 *  is always modified by material color.
 		 */
 						/* roughness + source */
-		dtmp = np->alpha2/2.0 + omega/(2.0*PI);
+		dtmp = np->alpha2/4.0 + omega/PI;
 						/* gaussian */
-		dtmp = exp((DOT(np->prdir,ldir)-1.)/dtmp)/(2.*PI)/dtmp;
+		dtmp = exp((2.*DOT(np->prdir,ldir)-2.)/dtmp)/(4.*PI*dtmp);
 						/* worth using? */
 		if (dtmp > FTINY) {
 			copycolor(ctmp, np->mcolor);
-			dtmp *= np->tspec * omega * sqrt(ldot/np->pdot);
+			dtmp *= np->tspec * omega * sqrt(-ldot/np->pdot);
 			scalecolor(ctmp, dtmp);
 			addcolor(cval, ctmp);
 		}
