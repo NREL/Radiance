@@ -98,9 +98,9 @@ currentdict /createcanvas known not % check if they're defined or not
   kdevent /Canvas Can put  % something which acts interchangably with
   kdevent expressinterest  % a normal keyboard event.
 
-cdef box(x1,y1,x2,y2,float r,float g,float b)
+cdef box(x1,y1,x2,y2,r,g,b)
  % Draw a filled box at x,y in pixels with color r,g,b
-  r g b setrgbcolor newpath
+  r 500 div g 500 div b 500 div setrgbcolor newpath
   x1 y1 x2 y2 points2rect rectpath fill
 #define tag 1990
 cdef cps_cleanup() => tag()
@@ -124,7 +124,7 @@ cdef getthebox(X,Y,W,H) => tag(X,Y,W,H)
 % used to determine whether the coordinates should be translated.
 
   currentcanvas createoverlay setcanvas
-  currentdict /createcanvas known not
+  currentdict /SGIWindow known
    {
     .75 .75 scale
    } if
@@ -135,6 +135,14 @@ cdef getthebox(X,Y,W,H) => tag(X,Y,W,H)
   y0 y1 gt { /y y1 def /h y0 y1 sub def }
            { /y y0 def /h y1 y0 sub def } ifelse
   h w y x tag tagprint typedprint typedprint typedprint typedprint
+cdef sgicheck(V) => tag(V)
+ % Check if this is viewed on an SGI screen
+  0
+  currentdict /SGIWindow known
+   {
+    pop 100
+   } if
+  tag tagprint typedprint
 cdef printout(string message)
  % print message without scrolling the text "window" up
   message myshow
