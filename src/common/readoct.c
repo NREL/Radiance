@@ -225,7 +225,7 @@ nonsurfintree(OCTREE ot)		/* check tree for modifiers */
 		return(0);
 	}
 	objset(set, ot);
-	for (i = set[0]; i-- > 0; )
+	for (i = set[0]; i > 0; i-- )
 		if (ismodifier(objptr(set[i])->otype))
 			return(1);
 	return(0);
