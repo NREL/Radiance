@@ -1,4 +1,4 @@
-/* Copyright (c) 1987 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -73,12 +73,19 @@ register char  *b;
 register struct driver  *d;
 {
 	register char  *cp;
+	char  *comstart;
 
 	for (cp = mybuf; *cp; cp++)
 		;
+	comstart = cp;
 	while (*cp++ = *b)
-		if (*b++ == '\n')
+		if (cp >= mybuf+sizeof(mybuf)) {
+			*comstart = '\0';
+			return;		/* what should I do about this? */
+		} else if (*b++ == '\n') {
 			d->inpready++;
+			comstart = cp;
+		}
 }
 
 
@@ -99,7 +106,7 @@ struct driver  *d;
 						/* send it as reply */
 	strcpy(b, mybuf);
 	d->inpready--;
-						/* get next command */
+						/* advance commands */
 	strcpy(mybuf, cp);
 	return(1);
 }
