@@ -385,7 +385,17 @@ printopts()			/* print out option default values */
 {
 	printf("m=%-15s\t\t# material name\n", thisillum.matname);
 	printf("f=%-15s\t\t# data file name\n", thisillum.datafile);
-	printf("c=n\t\t\t\t# color none\n");
+	if (thisillum.flags & IL_COLAVG)
+		if (thisillum.flags & IL_COLDST)
+			printf("c=d\t\t\t\t# color distribution\n");
+		else
+			printf("c=a\t\t\t\t# color average\n");
+	else
+		printf("c=n\t\t\t\t# color none\n");
+	if (thisillum.flags & IL_LIGHT)
+		printf("l+\t\t\t\t# light type on\n");
+	else
+		printf("l-\t\t\t\t# light type off\n");
 	printf("d=%d\t\t\t\t# density of points\n", thisillum.sampdens);
 	printf("s=%d\t\t\t\t# samples per point\n", thisillum.nsamps);
 	printf("b=%f\t\t\t# minimum average brightness\n", thisillum.minbrt);
