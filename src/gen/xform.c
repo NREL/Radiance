@@ -381,7 +381,7 @@ FILE  *fin;
 m_spot(fin)			/* transform arguments for spotlight */
 FILE  *fin;
 {
-	double  v[3];
+	FVECT  v;
 	FUNARGS  fa;
 
 	if (readfargs(&fa, fin) != 1)
@@ -449,7 +449,7 @@ text(fin)			/* transform text arguments */
 FILE  *fin;
 {
 	int  i;
-	double  v[3];
+	FVECT  v;
 	FUNARGS  fa;
 
 	if (readfargs(&fa, fin) != 1)
@@ -487,7 +487,7 @@ FILE  *fin;
 o_source(fin)			/* transform source arguments */
 FILE  *fin;
 {
-	double  dv[3];
+	FVECT  dv;
 	FUNARGS  fa;
 
 	if (readfargs(&fa, fin) != 1)
@@ -508,7 +508,8 @@ FILE  *fin;
 o_sphere(fin)			/* transform sphere arguments */
 FILE  *fin;
 {
-	double  cent[3], rad;
+	FVECT  cent;
+	double  rad;
 	FUNARGS  fa;
 
 	if (readfargs(&fa, fin) != 1)
@@ -531,7 +532,7 @@ FILE  *fin;
 o_face(fin)			/* transform face arguments */
 FILE  *fin;
 {
-	double  p[3];
+	FVECT  p;
 	register int  i;
 	FUNARGS  fa;
 
@@ -557,7 +558,8 @@ FILE  *fin;
 o_cone(fin)			/* transform cone and cup arguments */
 FILE  *fin;
 {
-	double  p0[3], p1[3], r0, r1;
+	FVECT  p0, p1;
+	double  r0, r1;
 	FUNARGS  fa;
 
 	if (readfargs(&fa, fin) != 1)
@@ -583,7 +585,8 @@ FILE  *fin;
 o_cylinder(fin)			/* transform cylinder and tube arguments */
 FILE  *fin;
 {
-	double  p0[3], p1[3], rad;
+	FVECT  p0, p1;
+	double  rad;
 	FUNARGS  fa;
 
 	if (readfargs(&fa, fin) != 1)
@@ -607,7 +610,8 @@ FILE  *fin;
 o_ring(fin)			/* transform ring arguments */
 FILE  *fin;
 {
-	double  p0[3], pd[3], r0, r1;
+	FVECT  p0, pd;
+	double  r0, r1;
 	FUNARGS  fa;
 
 	if (readfargs(&fa, fin) != 1)
