@@ -117,7 +117,7 @@ extern float	hd_depthmap[];		/* depth conversion map */
 
 #define HOLOFMT		"Holodeck"	/* file format identifier */
 #define HOLOVERS	0		/* file format version number */
-#define HOLOMAGIC	(327+HOLOVERS)	/* file magic number */
+#define HOLOMAGIC	(323+sizeof(long)+8*HOLOVERS)	/* file magic number */
 
 /*
  * A holodeck file consists of an information header terminated by a
