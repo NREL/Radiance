@@ -388,7 +388,6 @@ register RAY  *r;
 		nsamps = 1;
 	oldsampndx = samplendx;
 	samplendx = random()&0x7fff;		/* randomize */
-	initsrcindex(&si);
 	for (i = r->slights[0]; i > 0; i--) {	/* for each source */
 		setcolor(cumval, 0., 0., 0.);
 		lastt = r->rot;
@@ -399,15 +398,12 @@ register RAY  *r;
 			sr.rorg[1] = r->rorg[1] + r->rdir[1]*t;
 			sr.rorg[2] = r->rorg[2] + r->rdir[2]*t;
 			sr.rmax = 0.;
-						/* sample ray to this source */
-			if (si.sp >= si.np-1 || !srcray(&sr, NULL, &si) ||
-					sr.rsrc != r->slights[i]) {
-				si.sn = r->slights[i]-1;	/* reset */
-				si.np = 0;
-				if (!srcray(&sr, NULL, &si) ||
-						sr.rsrc != r->slights[i])
-					continue;		/* no path */
-			}
+			initsrcindex(&si);	/* sample ray to this source */
+			si.sn = r->slights[i];
+			nopart(&si, &sr);
+			if (!srcray(&sr, NULL, &si) ||
+					sr.rsrc != r->slights[i])
+				continue;		/* no path */
 			copycolor(sr.cext, r->cext);
 			sr.albedo = r->albedo;
 			sr.gecc = r->gecc;
