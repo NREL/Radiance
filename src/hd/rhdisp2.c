@@ -12,7 +12,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "rhdisp.h"
 #include "rhdriver.h"
 
-extern int	*getviewcells();
+extern GCOORD	*getviewcells();
 
 typedef struct {
 	int	hd;		/* holodeck section number (-1 if inactive) */
@@ -39,6 +39,7 @@ static int	maxcbeam = 0;	/* size of cbeam array */
 struct cellact {
 	short	vi;		/* voxel index */
 	short	add;		/* zero means delete */
+	short	rev;		/* reverse ray direction? */
 };		/* action for cell */
 
 struct beamact {
@@ -274,8 +275,13 @@ register struct beamact	*bp;
 	GCOORD	gc[2];
 	int	bi, i;
 					/* compute beam index */
-	copystruct(gc, gcp);
-	copystruct(gc+1, &bp->gc);
+	if (bp->ca.rev) {
+		copystruct(gc, &bp->gc);
+		copystruct(gc+1, gcp);
+	} else {
+		copystruct(gc, gcp);
+		copystruct(gc+1, &bp->gc);
+	}
 	if ((bi = hdbindex(hdlist[voxel[bp->ca.vi].hd], gc)) <= 0)
 		error(CONSISTENCY, "bad grid coordinate in dobeam");
 	if (bp->ca.add) {		/* add it in */
@@ -335,17 +341,15 @@ doview(cap, vp)			/* visit cells for a given view */
 struct cellact	*cap;
 VIEW	*vp;
 {
+	int	orient;
 	FVECT	org, dir[4];
 					/* compute view pyramid */
-	if (vp->type == VT_PAR) goto viewerr;
-	if (viewray(org, dir[0], vp, 0., 0.) < -FTINY) goto viewerr;
-	if (viewray(org, dir[1], vp, 0., 1.) < -FTINY) goto viewerr;
-	if (viewray(org, dir[2], vp, 1., 1.) < -FTINY) goto viewerr;
-	if (viewray(org, dir[3], vp, 1., 0.) < -FTINY) goto viewerr;
+	orient = viewpyramid(org, dir, hdlist[voxel[cap->vi].hd], vp);
+	if (!orient)
+		error(INTERNAL, "unusable view in doview");
+	cap->rev = orient < 0;
 					/* visit cells within pyramid */
 	return(visit_cells(org, dir, hdlist[voxel[cap->vi].hd], docell, cap));
-viewerr:
-	error(INTERNAL, "unusable view in doview");
 }
 
 
@@ -354,46 +358,44 @@ int	voxi;
 VIEW	*vold, *vnew;
 {
 	int	netchange = 0;
-	int	*ocl, *ncl;
-	struct cellact	ca;
+	struct cellact	oca, nca;
 	int	ocnt, ncnt;
 	int	c;
 	register GCOORD	*ogcp, *ngcp;
 				/* get old and new cell lists */
-	ocl = getviewcells(hdlist[voxel[voxi].hd], vold);
-	ncl = getviewcells(hdlist[voxel[voxi].hd], vnew);
-	if (ocl != NULL) {
-		ocnt = *ocl; ogcp = (GCOORD *)(ocl+1);
-	} else {
-		ocnt = 0; ogcp = NULL;
-	}
-	if (ncl != NULL) {
-		ncnt = *ncl; ngcp = (GCOORD *)(ncl+1);
-	} else {
-		ncnt = 0; ngcp = NULL;
-	}
-	ca.vi = voxi;		/* add and delete cells */
+	ogcp = getviewcells(&ocnt, hdlist[voxel[voxi].hd], vold);
+	ngcp = getviewcells(&ncnt, hdlist[voxel[voxi].hd], vnew);
+				/* set up actions */
+	oca.vi = nca.vi = voxi;
+	oca.rev = nca.rev = 0;
+	oca.add = 0; nca.add = 1;
+	if ((oca.rev = ocnt < 0))
+		ocnt = -ocnt;
+	if ((nca.rev = ncnt < 0))
+		ncnt = -ncnt;
+				/* add and delete cells in order */
 	while (ocnt > 0 & ncnt > 0)
-		if ((c = cellcmp(ogcp, ngcp)) > 0) {
-			ca.add = 1;		/* new cell */
-			netchange += docell(ngcp++, &ca);
+		if ((c = cellcmp(ogcp, ngcp)) > 0) {	/* new cell */
+			netchange += docell(ngcp++, &nca);
 			ncnt--;
-		} else if (c < 0) {
-			ca.add = 0;		/* obsolete cell */
-			netchange -= docell(ogcp++, &ca);
+		} else if (c < 0) {			/* obsolete cell */
+			netchange -= docell(ogcp++, &oca);
 			ocnt--;
-		} else {
-			ogcp++; ocnt--;		/* unchanged cell */
+		} else {				/* same cell? */
+			if (oca.rev != nca.rev)		/* not */
+				netchange += docell(ngcp, &nca) -
+						docell(ogcp, &oca);
+			ogcp++; ocnt--;
 			ngcp++; ncnt--;
 		}
 				/* take care of list tails */
-	for (ca.add = 1; ncnt > 0; ncnt--)
-		netchange += docell(ngcp++, &ca);
-	for (ca.add = 0; ocnt > 0; ocnt--)
-		netchange -= docell(ogcp++, &ca);
+	for ( ; ncnt > 0; ncnt--)
+		netchange += docell(ngcp++, &nca);
+	for ( ; ocnt > 0; ocnt--)
+		netchange -= docell(ogcp++, &oca);
 				/* clean up */
-	if (ocl != NULL) free((char *)ocl);
-	if (ncl != NULL) free((char *)ncl);
+	if (ogcp != NULL) free((char *)ogcp);
+	if (ngcp != NULL) free((char *)ngcp);
 	return(netchange);
 }
 
