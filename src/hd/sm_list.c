@@ -24,8 +24,6 @@ LIST
 {
     LIST *l;
 
-
-
     /* check free list for available edges */
     if( free_lists )
     {
@@ -118,6 +116,7 @@ LIST * l;
 {
     if(!l)
        return(NULL);
+
     free_lists = append_list(free_lists,l);
 
     return(NULL);
@@ -131,7 +130,7 @@ pop_list(l)
 LIST **l;
 {
     LIST *p;
-    void *d;
+    int d;
     
     if(!l)
        return(NULL);

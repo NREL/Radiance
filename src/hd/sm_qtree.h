@@ -19,6 +19,7 @@
  *
  *		< -1:	it is an index to a set of objects
  */
+#include "object.h"
 
 #define  QUADTREE		int
 
@@ -33,6 +34,7 @@
 #define  QT_BLOCK_SIZE		1024		/* quadtrees in block */
 #define  QT_BLOCK(qt)		((qt)>>10)	/* quadtree block index */
 #define  QT_BLOCK_INDEX(qt)   (((qt)&0x3ff)<<2)	/* quadtree index in block */
+
 
 #ifndef  QT_MAX_BLK
 #ifdef  BIGMEM
@@ -67,8 +69,9 @@
 #define QT_SET_PTR(s)          (&((s)[1]))
 
 
-#define QT_MAX_SET        255
-#define MAXCSET           QT_MAX_SET*2
+#define QT_MAXSET        255
+#define MAXCSET          2*QT_MAXSET
+#define QT_MAXCSET       MAXCSET
 #ifndef QT_SET_THRESHOLD
 #define QT_SET_THRESHOLD  30  
 #endif
@@ -77,7 +80,32 @@
 #define QT_MAX_LEVELS     17
 #endif
 
+#define QT_HIT  -2
+#define QT_DONE -4
+#define QT_MODIFIED -8
+
+#define QT_FILL_THRESHOLD 3
+#define QT_EXPAND   8
+#define QT_COMPRESS 16
+
+#define QT_FLAG_FILL_TRI(f)  (((f)&0x7) == QT_FILL_THRESHOLD)
+#define QT_FLAG_UPDATE(f)    ((f)& (QT_EXPAND | QT_COMPRESS))
+
 extern QUADTREE  qtnewleaf(), qtaddelem(), qtdelelem();
 
 extern QUADTREE  *quad_block[QT_MAX_BLK];	/* quadtree blocks */
 extern int4  *quad_flag;			/* zeroeth quadtree flag */
+
+extern OBJECT	**qtsettab;		/* quadtree leaf node table */
+extern QUADTREE  qtnumsets;		/* number of used set indices */
+
+#ifdef DEBUG
+extern OBJECT	*qtqueryset();
+#else
+#define qtqueryset(qt)	(qtsettab[QT_SET_INDEX(qt)])
+#endif
+
+#define qtinset(qt,id)	inset(qtqueryset(qt),id)
+#define qtgetset(os,qt)	setcopy(os,qtqueryset(qt))
+
+extern QUADTREE *qtRoot_point_locate();

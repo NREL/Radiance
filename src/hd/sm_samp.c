@@ -166,7 +166,7 @@ smReset_sample(sm,id,n_id)
 int
 rsAlloc_samp(samp,replaced)
    RSAMP *samp;
-   char *replaced;
+   int *replaced;
    
 {
     int id;
@@ -242,7 +242,7 @@ smAdd_sample_point(sm,c,dir,p)
 {
     RSAMP *samp;
     int id;
-    char replaced;
+    int replaced;
     
     /* Get the SM sample array */    
     samp = SM_SAMP(sm);

@@ -16,6 +16,73 @@ static char SCCSid[] = "$SunId$ SGI";
 static EDGE Edges[MAX_EDGES];
 static int Ecnt=0;
 
+int
+remove_tri(qtptr,fptr,t_id)
+   QUADTREE *qtptr;
+   int *fptr;
+   int t_id;
+{
+    OBJECT tset[QT_MAXSET+1];	
+    int n;
+
+   if(QT_IS_EMPTY(*qtptr))
+     return(FALSE);
+   /* remove id from set */
+      else
+      {
+	 if(!qtinset(*qtptr,t_id))
+	   return(FALSE);
+	 n = QT_SET_CNT(qtqueryset(*qtptr))-1;
+	 *qtptr = qtdelelem(*qtptr,t_id);
+	  if(n  == 0)
+	     (*fptr) |= QT_COMPRESS;
+	if(!QT_FLAG_FILL_TRI(*fptr))
+	  (*fptr)++;
+      }
+    return(TRUE);
+}
+
+int
+remove_tri_compress(qtptr,q0,q1,q2,t0,t1,t2,n,arg,t_id)
+QUADTREE *qtptr;
+FVECT q0,q1,q2;
+FVECT t0,t1,t2;
+int n;
+int *arg;
+int t_id;
+{
+    int f = 0;
+    /* NOTE compress */
+    return(remove_tri(qtptr,&f,t_id));
+}
+
+
+
+int
+stDelete_tri(st,t_id,t0,t1,t2)
+   STREE *st;
+   int t_id;
+   FVECT t0,t1,t2;
+{
+    int f;
+    FVECT dir;
+    
+  /* First add all of the leaf cells lying on the triangle perimeter:
+     mark all cells seen on the way
+   */
+    ST_CLEAR_FLAGS(st);
+    f = 0;
+    VSUB(dir,t1,t0);
+    stTrace_edge(st,t0,dir,1.0,remove_tri,&f,t_id);
+    VSUB(dir,t2,t1);
+    stTrace_edge(st,t1,dir,1.0,remove_tri,&f,t_id);
+    VSUB(dir,t0,t2);
+    stTrace_edge(st,t2,dir,1.0,remove_tri,&f,t_id);
+    /* Now visit interior */
+    if(QT_FLAG_FILL_TRI(f) || QT_FLAG_UPDATE(f))
+       stVisit_tri_interior(st,t0,t1,t2,remove_tri_compress,&f,t_id);
+}
+
 
 smLocator_remove_tri(sm,t_id)
 SM *sm;
@@ -24,18 +91,16 @@ int t_id;
   STREE *st;
   char found;
   TRI *t;
-  FVECT p0,p1,p2;
+  FVECT v0,v1,v2;
 
   st = SM_LOCATOR(sm);
 
   t = SM_NTH_TRI(sm,t_id);
 
-  smDir(sm,p0,T_NTH_V(t,0));
-  smDir(sm,p1,T_NTH_V(t,1));
-  smDir(sm,p2,T_NTH_V(t,2));
-
-  found = stRemove_tri(st,t_id,p0,p1,p2);
-
+  VSUB(v0,SM_T_NTH_WV(sm,t,0),SM_VIEW_CENTER(sm));
+  VSUB(v1,SM_T_NTH_WV(sm,t,1),SM_VIEW_CENTER(sm));
+  VSUB(v2,SM_T_NTH_WV(sm,t,2),SM_VIEW_CENTER(sm));
+  found = stUpdate_tri(st,t_id,v0,v1,v2,remove_tri,remove_tri_compress);
   return(found);
 }
 
@@ -168,10 +233,10 @@ LIST *l;
       e = (int)LIST_DATA(el);
       id_e0 = E_NTH_VERT(e,0);
       id_e1 = E_NTH_VERT(e,1);
-
+      /* NOTE: DO these need to be normalized? Just subtract center? */
       smDir(sm,e0,id_e0);
       smDir(sm,e1,id_e1);
-      if(spherical_polygon_edge_intersect(v0,v1,e0,e1))
+      if(sedge_intersect(v0,v1,e0,e1))
 	return(TRUE);
 
       el = LIST_NEXT(el);
@@ -284,9 +349,8 @@ LIST **l,**lnew;
 }
 
 
-
-LIST
-*smTriangulate_convex(sm,plist)
+int
+smTriangulate_convex(sm,plist)
 SM *sm;
 LIST *plist;
 {
@@ -328,9 +392,11 @@ LIST *plist;
 
 	e_id0 = -e_id2;
     }
+    
     free_list(plist);
+    return(TRUE);
 }
-
+int
 smTriangulate_elist(sm,plist)
 SM *sm;
 LIST *plist;
@@ -339,7 +405,7 @@ LIST *plist;
     FVECT v0,v1,v2;
     int id0,id1,id2,e,id_next;
     char flipped;
-    int debug = TRUE;
+    int done;
 
     l = plist;
     
@@ -371,28 +437,26 @@ LIST *plist;
 #ifdef DEBUG
 	  eputs("smTriangulate_elist():Unable to find convex vertex\n");
 #endif
-	  return;
+	  return(FALSE);
       }
       /* add edge */
       el1 = NULL;
       /* Split edge list l into two lists: one from id1-id_next-id1,
 	 and the next from id2-id_next-id2
       */
-      debug = split_edge_list(id1,id_next,&l,&el1);
+      split_edge_list(id1,id_next,&l,&el1);
       /* Recurse and triangulate the two edge lists */
-      if(debug)
-	debug = smTriangulate_elist(sm,l);
-      if(debug)
-	debug = smTriangulate_elist(sm,el1);
-
-      return(debug);
+      done = smTriangulate_elist(sm,l);
+      if(done)
+	done = smTriangulate_elist(sm,el1);
+      return(done);
     }
-    smTriangulate_convex(sm,plist);
-    return(TRUE);
+    done = smTriangulate_convex(sm,plist);
+    return(done);
 }
 
 int
-smTriangulate_polygon(sm,plist)
+smTriangulate(sm,plist)
 SM *sm;
 LIST *plist;
 {
@@ -400,7 +464,7 @@ LIST *plist;
     TRI *t0,*t1;
     int test;
     
-    test = smTriangulate_elist(sm,plist,NULL);
+    test = smTriangulate_elist(sm,plist);
 
     if(!test)
        return(test);
@@ -411,7 +475,7 @@ LIST *plist;
 	if((id_t0==SM_INVALID) || (id_t1==SM_INVALID))
 	{
 #ifdef DEBUG
-	   eputs("smTriangulate_polygon(): Unassigned edge neighbor\n");
+	   eputs("smTriangulate(): Unassigned edge neighbor\n");
 #endif
 	    continue;
 	}
@@ -534,12 +598,11 @@ smMesh_remove_vertex(sm,id)
        return(FALSE);
 
     /* Triangulate spherical polygon */
-    debug = smTriangulate_polygon(sm,elist);
+    smTriangulate(sm,elist);
 
 
     /* Fix up new triangles to be Delaunay */
-    if(debug)
-       smFix_edges(sm);
+    smFix_edges(sm);
 
     return(TRUE);
 }

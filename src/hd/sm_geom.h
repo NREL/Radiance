@@ -18,6 +18,8 @@
 
 #define M_2_3_PI PI*2/3
 
+#define INVALID -1
+
 #define GT_INVALID  0
 #define GT_VERTEX   1
 #define GT_EDGE     2
@@ -34,6 +36,9 @@
 #define DIST(a,b)         (sqrt(((a)[0]-(b)[0])*((a)[0]-(b)[0]) + \
 			        ((a)[1]-(b)[1])*((a)[1]-(b)[1]) + \
 				((a)[2]-(b)[2])*((a)[2]-(b)[2])))
+#define DIST_SQ(a,b)      (((a)[0]-(b)[0])*((a)[0]-(b)[0]) + \
+			        ((a)[1]-(b)[1])*((a)[1]-(b)[1]) + \
+				((a)[2]-(b)[2])*((a)[2]-(b)[2]))
 
 #define CROSS_VEC2(v1,v2) (((v1)[0]*(v2)[1]) - ((v1)[1]*(v2)[0])) 
 #define DOT_VEC2(v1,v2) ((v1)[0]*(v2)[0] + (v1)[1]*(v2)[1])

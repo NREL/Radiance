@@ -39,7 +39,7 @@ FVECT v0,v1,v2;
     VCROSS(cp01,v0,v1);
     VCROSS(cp12,v1,v2);
     VCROSS(cp,cp01,cp12);
-    if(DOT(cp,v1) < 0)
+    if(DOT(cp,v1) < 0.0)
        return(FALSE);
     return(TRUE);
 }
@@ -53,7 +53,7 @@ FVECT v0,v1,v2;
 double
 tri_normal(v0,v1,v2,n,norm)
 FVECT v0,v1,v2,n;
-char norm;
+int norm;
 {
   double mag;
 
@@ -83,27 +83,11 @@ char norm;
 tri_plane_equation(v0,v1,v2,n,nd,norm)
    FVECT v0,v1,v2,n;
    double *nd;
-   char norm;
+   int norm;
 {
     tri_normal(v0,v1,v2,n,norm);
 
     *nd = -(DOT(n,v0));
-}
-
-int
-point_relative_to_plane(p,n,nd)
-   FVECT p,n;
-   double nd;
-{
-    double d;
-    
-    d = p[0]*n[0] + p[1]*n[1] + p[2]*n[2] + nd;
-    if(d < 0)
-       return(-1);
-    if(ZERO(d))
-       return(0);
-    else
-       return(1);
 }
 
 /* From quad_edge-code */
@@ -135,6 +119,11 @@ FVECT ps,p,c;
 }
 
 
+/* returns TRUE if ray from origin in direction v intersects plane defined
+  * by normal plane_n, and plane_d. If plane is not parallel- returns
+  * intersection point if r != NULL. If tptr!= NULL returns value of
+  * t, if parallel, returns t=FHUGE
+  */
 int
 intersect_vector_plane(v,plane_n,plane_d,tptr,r)
    FVECT v,plane_n;
@@ -142,7 +131,7 @@ intersect_vector_plane(v,plane_n,plane_d,tptr,r)
    double *tptr;
    FVECT r;
 {
-  double t;
+  double t,d;
   int hit;
     /*
       Plane is Ax + By + Cz +D = 0:
@@ -152,14 +141,26 @@ intersect_vector_plane(v,plane_n,plane_d,tptr,r)
     /* line is  l = p1 + (p2-p1)t, p1=origin */
 
     /* Solve for t: */
-    t =  plane_d/-(DOT(plane_n,v));
-    if(t >0 || ZERO(t))
-       hit = 1;
-    else
-       hit = 0;
-    r[0] = v[0]*t;
-    r[1] = v[1]*t;
-    r[2] = v[2]*t;
+  d = -(DOT(plane_n,v));
+  if(ZERO(d))
+  {
+      t = FHUGE;
+      hit = 0;
+  }
+  else
+  {
+      t =  plane_d/d;
+      if(t < 0 )
+	 hit = 0;
+      else
+	 hit = 1;
+      if(r)
+	 {
+	     r[0] = v[0]*t;
+	     r[1] = v[1]*t;
+	     r[2] = v[2]*t;
+	 }
+  }
     if(tptr)
        *tptr = t;
   return(hit);
@@ -185,12 +186,48 @@ intersect_ray_plane(orig,dir,plane_n,plane_d,pd,r)
      */
     /* Solve for t: */
     t =  -(DOT(plane_n,orig) + plane_d)/(DOT(plane_n,dir));
-    if(ZERO(t) || t >0)
-       hit = 1;
-    else
+    if(t < 0)
        hit = 0;
+    else
+       hit = 1;
 
-  VSUM(r,orig,dir,t);
+  if(r)
+     VSUM(r,orig,dir,t);
+
+    if(pd)
+       *pd = t;
+  return(hit);
+}
+
+
+int
+intersect_edge_plane(e0,e1,plane_n,plane_d,pd,r)
+   FVECT e0,e1;
+   FVECT plane_n;
+   double plane_d;
+   double *pd;
+   FVECT r;
+{
+  double t;
+  int hit;
+  FVECT d;
+  /*
+      Plane is Ax + By + Cz +D = 0:
+      plane[0] = A,plane[1] = B,plane[2] = C,plane[3] = D
+    */
+     /*  A(orig[0] + dxt) + B(orig[1] + dyt) + C(orig[2] + dzt) + pd = 0
+         t = -(DOT(plane_n,orig)+ plane_d)/(DOT(plane_n,d))
+       line is  l = p1 + (p2-p1)t 
+     */
+    /* Solve for t: */
+  VSUB(d,e1,e0);
+  t =  -(DOT(plane_n,e0) + plane_d)/(DOT(plane_n,d));
+    if(t < 0)
+       hit = 0;
+    else
+       hit = 1;
+
+  VSUM(r,e0,d,t);
 
     if(pd)
        *pd = t;
@@ -220,6 +257,7 @@ FVECT p0,p1,p2;
        n cross x-axis
      */
     /* Project p onto the plane */
+    /* NOTE: check this: does sideness check?*/
     if(!intersect_vector_plane(p,n,d,NULL,np))
 	return(FALSE);
 
@@ -252,16 +290,14 @@ FVECT p0,p1,p2;
 }
 
 int
-test_point_against_spherical_tri(v0,v1,v2,p,n,nset,which,sides)
+point_set_in_stri(v0,v1,v2,p,n,nset,sides)
 FVECT v0,v1,v2,p;
 FVECT n[3];
-char *nset;
-char *which;
-char sides[3];
+int *nset;
+int sides[3];
 
 {
-    float d;
-
+    double d;
     /* Find the normal to the triangle ORIGIN:v0:v1 */
     if(!NTH_BIT(*nset,0))
     {
@@ -271,14 +307,11 @@ char sides[3];
     /* Test the point for sidedness */
     d  = DOT(n[0],p);
 
-    if(ZERO(d))
-       sides[0] = GT_EDGE;
-    else
-       if(d > 0)
-      {
-	  sides[0] =  GT_OUT;
-	  sides[1] = sides[2] = GT_INVALID;
-	  return(FALSE);
+    if(d > 0.0)
+     {
+       sides[0] =  GT_OUT;
+       sides[1] = sides[2] = GT_INVALID;
+       return(FALSE);
       }
     else
        sides[0] = GT_INTERIOR;
@@ -291,18 +324,7 @@ char sides[3];
     }
     /* Test the point for sidedness */
     d  = DOT(n[1],p);
-    if(ZERO(d))
-    {
-	sides[1] = GT_EDGE;
-	/* If on plane 0-and on plane 1: lies on edge */
-	if(sides[0] == GT_EDGE)
-	{
-	    *which = 1;
-	    sides[2] = GT_INVALID;
-	    return(GT_EDGE);
-	}
-    }
-    else if(d > 0)
+    if(d > 0.0)
     {
 	sides[1] = GT_OUT;
 	sides[2] = GT_INVALID;
@@ -313,56 +335,18 @@ char sides[3];
     /* Test next edge */
     if(!NTH_BIT(*nset,2))
     {
-
         VCROSS(n[2],v0,v2);
 	SET_NTH_BIT(*nset,2);
     }
     /* Test the point for sidedness */
     d  = DOT(n[2],p);
-    if(ZERO(d))
+    if(d > 0.0)
     {
-	sides[2] = GT_EDGE;
-
-	/* If on plane 0 and 2: lies on edge 0*/
-	if(sides[0] == GT_EDGE)
-	   {
-	       *which = 0;
-	       return(GT_EDGE);
-	   }
-	/* If on plane 1 and 2: lies on edge  2*/
-	if(sides[1] == GT_EDGE)
-	   {
-	       *which = 2;
-	       return(GT_EDGE);
-	   }
-	/* otherwise: on face 2 */
-	else
-	   {
-	       *which = 2;
-	       return(GT_FACE);
-	   }
+      sides[2] = GT_OUT;
+      return(FALSE);
     }
-    else if(d > 0)
-      {
-	sides[2] = GT_OUT;
-	return(FALSE);
-      }
-    /* If on edge */
     else 
        sides[2] = GT_INTERIOR;
-    
-    /* If on plane 0 only: on face 0 */
-    if(sides[0] == GT_EDGE)
-    {
-	*which = 0;
-	return(GT_FACE);
-    }
-    /* If on plane 1 only: on face 1 */
-    if(sides[1] == GT_EDGE)
-    {
-	*which = 1;
-	return(GT_FACE);
-    }
     /* Must be interior to the pyramid */
     return(GT_INTERIOR);
 }
@@ -371,105 +355,47 @@ char sides[3];
 
 
 int
-test_single_point_against_spherical_tri(v0,v1,v2,p,which)
+point_in_stri(v0,v1,v2,p)
 FVECT v0,v1,v2,p;
-char *which;
 {
-    float d;
+    double d;
     FVECT n;  
-    char sides[3];
 
-    /* First test if point coincides with any of the vertices */
-    if(EQUAL_VEC3(p,v0))
-    {
-        *which = 0;
-        return(GT_VERTEX);
-    }
-    if(EQUAL_VEC3(p,v1))
-    {
-        *which = 1;
-        return(GT_VERTEX);
-    }
-    if(EQUAL_VEC3(p,v2))
-    {
-	*which = 2;
-	return(GT_VERTEX);
-    }
     VCROSS(n,v1,v0);
     /* Test the point for sidedness */
     d  = DOT(n,p);
-    if(ZERO(d))
-       sides[0] = GT_EDGE;
-    else
-       if(d > 0)
-	  return(FALSE);
-       else 
-	  sides[0] = GT_INTERIOR;
+    if(d > 0.0)
+      return(FALSE);
+
     /* Test next edge */
     VCROSS(n,v2,v1);
     /* Test the point for sidedness */
     d  = DOT(n,p);
-    if(ZERO(d))
-    {
-	sides[1] = GT_EDGE;
-	/* If on plane 0-and on plane 1: lies on edge */
-	if(sides[0] == GT_EDGE)
-	{
-	    *which = 1;
-	    return(GT_VERTEX);
-	}
-    }
-    else if(d > 0)
+    if(d > 0.0)
        return(FALSE);
-    else 
-       sides[1] = GT_INTERIOR;
 
     /* Test next edge */
     VCROSS(n,v0,v2);
     /* Test the point for sidedness */
     d  = DOT(n,p);
-    if(ZERO(d))
-    {
-	sides[2] = GT_EDGE;
-	
-	/* If on plane 0 and 2: lies on edge 0*/
-	if(sides[0] == GT_EDGE)
-	{
-	    *which = 0;
-	    return(GT_VERTEX);
-	}
-	/* If on plane 1 and 2: lies on edge  2*/
-	if(sides[1] == GT_EDGE)
-	{
-	    *which = 2;
-	    return(GT_VERTEX);
-	}
-	/* otherwise: on face 2 */
-	else
-       {
-	   return(GT_FACE);
-       }
-    }
-    else if(d > 0)
+    if(d > 0.0)
        return(FALSE);
     /* Must be interior to the pyramid */
-    return(GT_FACE);
+    return(GT_INTERIOR);
 }
 
 int
-test_vertices_for_tri_inclusion(t0,t1,t2,p0,p1,p2,nset,n,avg,pt_sides)
+vertices_in_stri(t0,t1,t2,p0,p1,p2,nset,n,avg,pt_sides)
 FVECT t0,t1,t2,p0,p1,p2;
-char *nset;
+int *nset;
 FVECT n[3];
 FVECT avg;
-char pt_sides[3][3];
+int pt_sides[3][3];
 
 {
-    char below_plane[3],on_edge,test;
-    char which;
+    int below_plane[3],test;
 
     SUM_3VEC3(avg,t0,t1,t2); 
-    on_edge = 0;
     *nset = 0;
     /* Test vertex v[i] against triangle j*/
     /* Check if v[i] lies below plane defined by avg of 3 vectors
@@ -477,66 +403,51 @@ char pt_sides[3][3];
        */
 
     /* test point 0 */
-    if(DOT(avg,p0) < 0)
+    if(DOT(avg,p0) < 0.0)
       below_plane[0] = 1;
     else
-      below_plane[0]=0;
+      below_plane[0] = 0;
     /* Test if b[i] lies in or on triangle a */
-    test = test_point_against_spherical_tri(t0,t1,t2,p0,
-						 n,nset,&which,pt_sides[0]);
+    test = point_set_in_stri(t0,t1,t2,p0,n,nset,pt_sides[0]);
     /* If pts[i] is interior: done */
     if(!below_plane[0])
       {
 	if(test == GT_INTERIOR) 
 	  return(TRUE);
-	/* Remember if b[i] fell on one of the 3 defining planes */
-	if(test)
-	  on_edge++;
       }
     /* Now test point 1*/
 
-    if(DOT(avg,p1) < 0)
+    if(DOT(avg,p1) < 0.0)
       below_plane[1] = 1;
     else
       below_plane[1]=0;
     /* Test if b[i] lies in or on triangle a */
-    test = test_point_against_spherical_tri(t0,t1,t2,p1,
-						 n,nset,&which,pt_sides[1]);
+    test = point_set_in_stri(t0,t1,t2,p1,n,nset,pt_sides[1]);
     /* If pts[i] is interior: done */
     if(!below_plane[1])
     {
       if(test == GT_INTERIOR) 
 	return(TRUE);
-      /* Remember if b[i] fell on one of the 3 defining planes */
-      if(test)
-	on_edge++;
     }
     
     /* Now test point 2 */
-    if(DOT(avg,p2) < 0)
+    if(DOT(avg,p2) < 0.0)
       below_plane[2] = 1;
     else
-      below_plane[2]=0;
+      below_plane[2] = 0;
 	/* Test if b[i] lies in or on triangle a */
-    test = test_point_against_spherical_tri(t0,t1,t2,p2,
-						 n,nset,&which,pt_sides[2]);
+    test = point_set_in_stri(t0,t1,t2,p2,n,nset,pt_sides[2]);
 
     /* If pts[i] is interior: done */
     if(!below_plane[2])
       {
 	if(test == GT_INTERIOR) 
 	  return(TRUE);
-	/* Remember if b[i] fell on one of the 3 defining planes */
-	if(test)
-	  on_edge++;
       }
 
     /* If all three points below separating plane: trivial reject */
     if(below_plane[0] && below_plane[1] && below_plane[2])
        return(FALSE);
-    /* Accept if all points lie on a triangle vertex/edge edge- accept*/
-    if(on_edge == 3)
-       return(TRUE);
     /* Now check vertices in a against triangle b */
     return(FALSE);
 }
@@ -544,12 +455,12 @@ char pt_sides[3][3];
 
 set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
    FVECT t0,t1,t2,p0,p1,p2;
-   char test[3];
-   char sides[3][3];
-   char nset;
+   int test[3];
+   int sides[3][3];
+   int nset;
    FVECT n[3];
 {
-    char t;
+    int t;
     double d;
 
     
@@ -561,7 +472,7 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
 	VCROSS(n[0],t1,t0);
       /* Test the point for sidedness */
       d  = DOT(n[0],p0);
-      if(d >= 0)
+      if(d >= 0.0)
 	SET_NTH_BIT(test[0],0);
     }
     else
@@ -574,7 +485,7 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
 	VCROSS(n[1],t2,t1);
 	/* Test the point for sidedness */
 	d  = DOT(n[1],p0);
-	if(d >= 0)
+	if(d >= 0.0)
 	  SET_NTH_BIT(test[0],1);
     }
     else
@@ -587,7 +498,7 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
 	VCROSS(n[2],t0,t2);
       /* Test the point for sidedness */
       d  = DOT(n[2],p0);
-      if(d >= 0)
+      if(d >= 0.0)
 	SET_NTH_BIT(test[0],2);
     }
     else
@@ -603,7 +514,7 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
 	VCROSS(n[0],t1,t0);
       /* Test the point for sidedness */
       d  = DOT(n[0],p1);
-      if(d >= 0)
+      if(d >= 0.0)
 	SET_NTH_BIT(test[1],0);
     }
     else
@@ -617,7 +528,7 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
 	VCROSS(n[1],t2,t1);
       /* Test the point for sidedness */
       d  = DOT(n[1],p1);
-      if(d >= 0)
+      if(d >= 0.0)
 	SET_NTH_BIT(test[1],1);
     }
     else
@@ -631,7 +542,7 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
 	VCROSS(n[2],t0,t2);
       /* Test the point for sidedness */
       d  = DOT(n[2],p1);
-      if(d >= 0)
+      if(d >= 0.0)
 	SET_NTH_BIT(test[1],2);
     }
     else
@@ -647,7 +558,7 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
 	VCROSS(n[0],t1,t0);
       /* Test the point for sidedness */
       d  = DOT(n[0],p2);
-      if(d >= 0)
+      if(d >= 0.0)
 	SET_NTH_BIT(test[2],0);
     }
     else
@@ -660,7 +571,7 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
 	VCROSS(n[1],t2,t1);
       /* Test the point for sidedness */
       d  = DOT(n[1],p2);
-      if(d >= 0)
+      if(d >= 0.0)
 	SET_NTH_BIT(test[2],1);
     }
     else
@@ -673,7 +584,7 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
 	VCROSS(n[2],t0,t2);
       /* Test the point for sidedness */
       d  = DOT(n[2],p2);
-      if(d >= 0)
+      if(d >= 0.0)
 	SET_NTH_BIT(test[2],2);
     }
     else
@@ -683,12 +594,12 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
 
 
 int
-spherical_tri_intersect(a1,a2,a3,b1,b2,b3)
+stri_intersect(a1,a2,a3,b1,b2,b3)
 FVECT a1,a2,a3,b1,b2,b3;
 {
-  char which,test,n_set[2];
-  char sides[2][3][3],i,j,inext,jnext;
-  char tests[2][3];
+  int which,test,n_set[2];
+  int sides[2][3][3],i,j,inext,jnext;
+  int tests[2][3];
   FVECT n[2][3],p,avg[2];
  
   /* Test the vertices of triangle a against the pyramid formed by triangle
@@ -696,12 +607,10 @@ FVECT a1,a2,a3,b1,b2,b3;
      if all 3 vertices of a are ON the edges of b,return TRUE. Remember
      the results of the edge normal and sidedness tests for later.
    */
- if(test_vertices_for_tri_inclusion(a1,a2,a3,b1,b2,b3,
-				    &(n_set[0]),n[0],avg[0],sides[1]))
+ if(vertices_in_stri(a1,a2,a3,b1,b2,b3,&(n_set[0]),n[0],avg[0],sides[1]))
      return(TRUE);
   
- if(test_vertices_for_tri_inclusion(b1,b2,b3,a1,a2,a3,
-				    &(n_set[1]),n[1],avg[1],sides[0]))
+ if(vertices_in_stri(b1,b2,b3,a1,a2,a3,&(n_set[1]),n[1],avg[1],sides[0]))
      return(TRUE);
 
 
@@ -749,31 +658,26 @@ FVECT a1,a2,a3,b1,b2,b3;
 }
 
 int
-ray_intersect_tri(orig,dir,v0,v1,v2,pt,wptr)
+ray_intersect_tri(orig,dir,v0,v1,v2,pt)
 FVECT orig,dir;
 FVECT v0,v1,v2;
 FVECT pt;
-char *wptr;
 {
   FVECT p0,p1,p2,p,n;
-  char type,which;
   double pd;
-  
+  int type;
+
   point_on_sphere(p0,v0,orig);
   point_on_sphere(p1,v1,orig);
   point_on_sphere(p2,v2,orig);
-  type = test_single_point_against_spherical_tri(p0,p1,p2,dir,&which);
-
-  if(type)
+  
+  if(point_in_stri(p0,p1,p2,dir))
   {
       /* Intersect the ray with the triangle plane */
       tri_plane_equation(v0,v1,v2,n,&pd,FALSE);
-      intersect_ray_plane(orig,dir,n,pd,NULL,pt);	 
+      return(intersect_ray_plane(orig,dir,n,pd,NULL,pt));
   }
-  if(wptr)
-    *wptr = which;
-
-  return(type);
+  return(FALSE);
 }
 
 
@@ -836,7 +740,7 @@ FVECT fnear[4],ffar[4];
 
 
 int
-spherical_polygon_edge_intersect(a0,a1,b0,b1)
+sedge_intersect(a0,a1,b0,b1)
 FVECT a0,a1,b0,b1;
 {
     FVECT na,nb,avga,avgb,p;
@@ -900,41 +804,48 @@ double coord[3];
  
 }
 
+bary_ith_child(coord,i)
+double coord[3];
+ int i;
+{
+ 
+  switch(i){
+  case 0:
+      /* update bary for child */
+      coord[0] = 2.0*coord[0]- 1.0;
+      coord[1] *= 2.0;
+      coord[2] *= 2.0;
+      break;
+  case 1:
+    coord[0] *= 2.0;
+    coord[1] = 2.0*coord[1]- 1.0;
+    coord[2] *= 2.0;
+    break;
+  case 2:
+    coord[0] *= 2.0;
+    coord[1] *= 2.0;
+    coord[2] = 2.0*coord[2]- 1.0;
+    break;
+  case 3:
+    coord[0] = 1.0 - 2.0*coord[0];
+    coord[1] = 1.0 - 2.0*coord[1];
+    coord[2] = 1.0 - 2.0*coord[2];
+    break;
+#ifdef DEBUG
+  default:
+    eputs("bary_ith_child():Invalid child\n");
+    break;
+#endif
+  }
+}
+
+
 int
-bary2d_child(coord)
+bary_child(coord)
 double coord[3];
 {
   int i;
 
-  /* First check if one of the original vertices */
-  for(i=0;i<3;i++)
-    if(EQUAL(coord[i],1.0))
-      return(i);
-
-  /* Check if one of the new vertices: for all return center child */
-  if(ZERO(coord[0]) && EQUAL(coord[1],0.5))
-  {
-    coord[0] = 1.0f;
-    coord[1] = 0.0f;
-    coord[2] = 0.0f;
-    return(3);
-  }
-  if(ZERO(coord[1]) && EQUAL(coord[0],0.5))
-  {
-    coord[0] = 0.0f;
-    coord[1] = 1.0f;
-    coord[2] = 0.0f;
-    return(3);
-  }
-  if(ZERO(coord[2]) && EQUAL(coord[0],0.5))
-    {
-      coord[0] = 0.0f;
-      coord[1] = 0.0f;
-      coord[2] = 1.0f;
-      return(3);
-    }
-
-  /* Otherwise return child */
   if(coord[0] > 0.5)
   { 
       /* update bary for child */
@@ -968,6 +879,140 @@ double coord[3];
 	 }
 }
 
+/* Coord was the ith child of the parent: set the coordinate
+   relative to the parent
+*/
+bary_parent(coord,i)
+double coord[3];
+int i;
+{
+
+  switch(i) {
+  case 0:
+    /* update bary for child */
+    coord[0] = coord[0]*0.5 + 0.5;
+    coord[1] *= 0.5;
+    coord[2] *= 0.5;
+    break;
+  case 1:
+    coord[0] *= 0.5;
+    coord[1]  = coord[1]*0.5 + 0.5;
+    coord[2] *= 0.5;
+    break;
+    
+  case 2:
+    coord[0] *= 0.5;
+    coord[1] *= 0.5;
+    coord[2] = coord[2]*0.5 + 0.5;
+    break;
+    
+  case 3:
+    coord[0] = 0.5 - 0.5*coord[0];
+    coord[1] = 0.5 - 0.5*coord[1];
+    coord[2] = 0.5 - 0.5*coord[2];
+    break;
+#ifdef DEBUG
+  default:
+    eputs("bary_parent():Invalid child\n");
+    break;
+#endif
+  }
+}
+
+bary_from_child(coord,child,next)
+double coord[3];
+int child,next;
+{
+#ifdef DEBUG
+  if(child <0 || child > 3)
+  {
+    eputs("bary_from_child():Invalid child\n");
+    return;
+  }
+  if(next <0 || next > 3)
+  {
+    eputs("bary_from_child():Invalid next\n");
+    return;
+  }
+#endif
+  if(next == child)
+    return;
+
+  switch(child){
+  case 0:
+    switch(next){
+    case 1:
+      coord[0] += 1.0;
+      coord[1] -= 1.0;
+      break;
+    case 2:
+      coord[0] += 1.0;
+      coord[2] -= 1.0;
+      break;
+    case 3:
+      coord[0] *= -1.0;
+      coord[1] = 1 - coord[1];
+      coord[2] = 1 - coord[2];
+      break;
+
+    }
+    break;
+  case 1:
+    switch(next){
+    case 0:
+      coord[0] -= 1.0;
+      coord[1] += 1.0;
+      break;
+    case 2:
+      coord[1] += 1.0;
+      coord[2] -= 1.0;
+      break;
+    case 3:
+      coord[0] = 1 - coord[0];
+      coord[1] *= -1.0;
+      coord[2] = 1 - coord[2];
+      break;
+    }
+    break;
+  case 2:
+    switch(next){
+    case 0:
+      coord[0] -= 1.0;
+      coord[2] += 1.0;
+      break;
+    case 1:
+      coord[1] -= 1.0;
+      coord[2] += 1.0;
+      break;
+    case 3:
+      coord[0] = 1 - coord[0];
+      coord[1] = 1 - coord[1];
+      coord[2] *= -1.0;
+      break;
+    }
+    break;
+  case 3:
+    switch(next){
+    case 0:
+      coord[0] *= -1.0;
+      coord[1] = 1 - coord[1];
+      coord[2] = 1 - coord[2];
+      break;
+    case 1:
+      coord[0] = 1 - coord[0];
+      coord[1] *= -1.0;
+      coord[2] = 1 - coord[2];
+      break;
+    case 2:
+      coord[0] = 1 - coord[0];
+      coord[1] = 1 - coord[1];
+      coord[2] *= -1.0;
+      break;
+    }
+    break;
+  }
+}
+
 int
 max_index(v)
 FVECT v;
@@ -986,7 +1031,7 @@ FVECT v;
 
 /*
  * int
- * smRay(FVECT orig, FVECT dir,FVECT v0,FVECT v1,FVECT v2,FVECT r) 
+ * traceRay(FVECT orig, FVECT dir,FVECT v0,FVECT v1,FVECT v2,FVECT r) 
  *
  *   Intersect the ray with triangle v0v1v2, return intersection point in r
  *
@@ -1001,7 +1046,7 @@ traceRay(orig,dir,v0,v1,v2,r)
 {
   FVECT n,p[3],d;
   double pt[3],r_eps;
-  char i;
+  int i;
   int which;
 
   /* Find the plane equation for the triangle defined by the edge v0v1 and
@@ -1053,13 +1098,35 @@ traceRay(orig,dir,v0,v1,v2,r)
       VSUM(r,orig,dir,(20*FTINY)/r_eps);
       normalize(r);
 #ifdef DEBUG
-      eputs("traceRay:Ray does not intersect triangle");
+      eputs("traceRay:Ray does not intersect triangle\n");
 #endif 
       return(FALSE);
   }
 }
 
 
+int
+closest_point_in_tri(p0,p1,p2,p,p0id,p1id,p2id)
+FVECT p0,p1,p2,p;
+int p0id,p1id,p2id;
+{
+    double d,d1;
+    int i;
+    
+    d =  DIST_SQ(p,p0);
+    d1 = DIST_SQ(p,p1);
+    if(d < d1)
+    {
+      d1 = DIST_SQ(p,p2);
+      i = (d1 < d)?p2id:p0id;
+    }
+    else
+    {
+      d = DIST_SQ(p,p2);
+      i = (d < d1)? p2id:p1id;
+    }
+    return(i);
+}
 
 
 

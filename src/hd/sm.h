@@ -12,6 +12,7 @@
 #include "rhd_sample.h"
 #include "sm_stree.h"
 
+
 #ifndef TRUE
 #define TRUE 1
 #define FALSE 0
@@ -154,13 +155,14 @@ typedef struct _SM {
 
 #define SM_ALLOWED_VIEW_CHANGE(m) (SM_NUM_SAMP(m)/smDist_sum*SM_VIEW_FRAC)
 
-#define SM_FOR_ALL_FLAGGED_TRIS(m,i,w,b) for(i=0,i=smNext_tri_flag_set(m,i,w,b);i < SM_TRI_CNT(m);i++,i=smNext_tri_flag_set(m,i,w,b))
+#define SM_FOR_ALL_FLAGGED_TRIS(m,i,w,b) for(i=smNext_tri_flag_set(m,0,w,b); \
+i < SM_TRI_CNT(m); i=smNext_tri_flag_set(m,i+1,w,b))
 
 #define SM_FOR_ALL_ACTIVE_TRIS(m,i) SM_FOR_ALL_FLAGGED_TRIS(m,i,T_ACTIVE_FLAG,0)
 #define SM_FOR_ALL_NEW_TRIS(m,i) SM_FOR_ALL_FLAGGED_TRIS(m,i,T_NEW_FLAG,0)
 #define SM_FOR_ALL_BASE_TRIS(m,i) SM_FOR_ALL_FLAGGED_TRIS(m,i,T_BASE_FLAG,0)
-#define SM_FOR_ALL_VALID_TRIS(m,i) for((i)=0,(i)=smNext_valid_tri(m,i);(i)< \
-SM_TRI_CNT(m); (i)++,(i)= smNext_valid_tri(m,i))
+#define SM_FOR_ALL_VALID_TRIS(m,i) for(i=smNext_valid_tri(m,0); \
+i < SM_TRI_CNT(m); i=smNext_valid_tri(m,i+1))
 
 #define SM_FOR_ALL_ACTIVE_FG_TRIS(m,i) SM_FOR_ALL_FLAGGED_TRIS(m,i,T_ACTIVE_FLAG,1)
 
@@ -180,7 +182,10 @@ t!=SM_NTH_TRI(sm,SM_NTH_VERT(sm,id)); t=smTri_next_ccw_nbr(sm,t,id))
 
 #define SM_BG_SAMPLE(sm,i)   (SM_NTH_W_DIR(sm,i)==-1)
 
-#define SM_BG_TRI(sm,i)  (SM_BG_SAMPLE(sm,T_NTH_V(SM_NTH_TRI(sm,i),0)) || \
+#define SM_BG_TRI(sm,i)  (SM_BG_SAMPLE(sm,T_NTH_V(SM_NTH_TRI(sm,i),0)) && \
+			  SM_BG_SAMPLE(sm,T_NTH_V(SM_NTH_TRI(sm,i),1)) && \
+			  SM_BG_SAMPLE(sm,T_NTH_V(SM_NTH_TRI(sm,i),2)))
+#define SM_MIXED_TRI(sm,i)  (SM_BG_SAMPLE(sm,T_NTH_V(SM_NTH_TRI(sm,i),0)) || \
 			  SM_BG_SAMPLE(sm,T_NTH_V(SM_NTH_TRI(sm,i),1)) || \
 			  SM_BG_SAMPLE(sm,T_NTH_V(SM_NTH_TRI(sm,i),2)))
 
@@ -199,7 +204,7 @@ extern double smDist_sum;
 #ifdef TEST_DRIVER
 extern VIEW View;
 extern VIEW Current_View;
-extern int Pick_tri,Picking;
+extern int Pick_tri,Picking,Pick_samp;
 extern FVECT Pick_point[500],Pick_origin,Pick_dir;
 extern FVECT Pick_v0[500],Pick_v1[500],Pick_v2[500];
 extern FVECT P0,P1,P2;
