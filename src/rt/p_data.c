@@ -174,7 +174,7 @@ RAY  *r;
 		loadfunc(sa[4]);
 	for (i = 0; i < 2; i++) {
 		errno = 0;
-		pt[i] = varvalue(sa[i+5]);
+		pt[1-i] = varvalue(sa[i+5]);	/* y major ordering */
 		if (errno)
 			goto computerr;
 	}
