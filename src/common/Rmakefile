@@ -16,6 +16,7 @@ PICOBJ = color.o header.o image.o lamps.o resolu.o rexpr.o spec_rgb.o \
 	colrops.o 
 
 STDOBJ = fgetline.o fropen.o linregr.o xf.o mat4.o misc.o fvect.o \
+	calexpr.o caldefn.o calfunc.o calprnt.o \
 	savestr.o urand.o cputs.o wputs.o eputs.o quit.o
 
 SYSOBJ = ealloc.o bmalloc.o # erf.o frexp.o fwrite.o random.o bcopy.o
@@ -26,6 +27,15 @@ librt.a:	$(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 
 fropen.o:	fropen.c
 	cc $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c fropen.c
+
+calexpr.o:	calexpr.c calcomp.h
+	cc $(CFLAGS) -DVARIABLE -DFUNCTION -DRCONST -c calexpr.c
+
+caldefn.o:	caldefn.c calcomp.h
+	cc $(CFLAGS) -DFUNCTION -c caldefn.c
+
+calfunc.o:	calfunc.c calcomp.h
+	cc $(CFLAGS) -DVARIABLE -DBIGLIB -c calfunc.c
 
 color.o colrops.o resolu.o spec_rgb.o:	color.h
 
@@ -54,3 +64,5 @@ cone.o face.o image.o instance.o misc.o objset.o octree.o \
 otypes.o readobj.o readoct.o xf.o:	standard.h mat4.h fvect.h
 
 image.o:	view.h
+
+calprnt.o:	calcomp.h
