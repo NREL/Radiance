@@ -353,13 +353,13 @@ FVECT	vp;
 			mkvkey(vkey, vert[vndx].p);
 			lu_delete(&vertab, vkey);
 		}
-		vert[vndx].lused = clock;			/* assign it */
-		VCOPY(vert[vndx].p, vp);
+		VCOPY(vert[vndx].p, vp);			/* assign it */
 		printf("v v%d =\n\tp %.15g %.15g %.15g\n",	/* print it */
 				vndx, vp[0], vp[1], vp[2]);
 		lp->data = (char *)&vert[vndx];			/* set it */
 	} else
 		vndx = (struct vert *)lp->data - vert;
+	vert[vndx].lused = clock;		/* record this use */
 	sprintf(vname, "v%d", vndx);
 	return(vname);
 memerr:
