@@ -17,12 +17,16 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <math.h>
 
+#include  <ctype.h>
+
 #include  "color.h"
 
 extern char  *strcpy(), *strcat(), *malloc();
-extern double  stadj(), sdec(), sazi(), salt();
+extern double  stadj(), sdec(), sazi(), salt(), tz2mer();
 
-#define  PI		3.141592654
+#ifndef  PI
+#define  PI		3.14159265358979323846
+#endif
 
 #define  DOT(v1,v2)	(v1[0]*v2[0]+v1[1]*v2[1]+v1[2]*v2[2])
 
@@ -38,6 +42,28 @@ double  normsc();
 extern double  s_latitude;
 extern double  s_longitude;
 extern double  s_meridian;
+
+#undef  toupper
+#define  toupper(c)	((c) & ~0x20)	/* ASCII trick to convert case */
+
+					/* European and North American zones */
+struct {
+	char	zname[8];	/* time zone name (all caps) */
+	float	zmer;		/* standard meridian */
+} tzone[] = {
+	"YST", 135, "YDT", 120,
+	"PST", 120, "PDT", 105,
+	"MST", 105, "MDT", 90,
+	"CST", 90, "CDT", 75,
+	"EST", 75, "EDT", 60,
+	"AST", 60, "ADT", 45,
+	"NST", 52.5, "NDT", 37.5,
+	"GMT", 0, "BST", -15,
+	"WET", -15, "WETDST", -30,
+	"MET", -30, "METDST", -45,
+	"MEZ", -30, "MESZ", -45,
+	"", 0
+};
 					/* required values */
 int  month, day;				/* date */
 double  hour;					/* time */
@@ -166,6 +192,7 @@ computesky()			/* compute sky parameters */
 			st = hour + stadj(jd);
 		altitude = salt(sd, st);
 		azimuth = sazi(sd, st);
+		printf("# Local solar time: %.2f\n", st);
 		printf("# Solar altitude and azimuth: %.1f %.1f\n",
 				180./PI*altitude, 180./PI*azimuth);
 	}
@@ -329,14 +356,40 @@ cvthour(hs)			/* convert hour string */
 char  *hs;
 {
 	register char  *cp = hs;
+	register int	i, j;
 
-	while (*cp && *cp++ != ':')
-		;
-	if (*cp)
-		hour = atoi(hs) + atoi(cp)/60.0;
-	else
+	if (tsolar = *cp == '+') cp++;		/* solar time? */
+	while (isdigit(*cp)) cp++;
+	if (*cp == ':')
+		hour = atoi(hs) + atoi(++cp)/60.0;
+	else {
 		hour = atof(hs);
-	tsolar = *hs == '+';
+		if (*cp == '.') cp++;
+	}
+	while (isdigit(*cp)) cp++;
+	if (!*cp)
+		return;
+	if (tsolar || !isalpha(*cp)) {
+		fprintf(stderr, "%s: bad time format: %s\n", progname, hs);
+		exit(1);
+	}
+	i = 0;
+	do {
+		for (j = 0; cp[j]; j++)
+			if (toupper(cp[j]) != tzone[i].zname[j])
+				break;
+		if (!cp[j] && !tzone[i].zname[j]) {
+			s_meridian = tzone[i].zmer * (PI/180);
+			return;
+		}
+	} while (tzone[i++].zname[0]);
+
+	fprintf(stderr, "%s: unknown time zone: %s\n", progname, cp);
+	fprintf(stderr, "Known time zones:\n\t%s", tzone[0].zname);
+	for (i = 1; tzone[i].zname[0]; i++)
+		fprintf(stderr, " %s", tzone[i].zname);
+	putc('\n', stderr);
+	exit(1);
 }
 
 
