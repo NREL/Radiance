@@ -15,6 +15,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #ifdef BSD
 #include  <sys/time.h>
 #include  <sys/resource.h>
+#else
+#include  <signal.h>
 #endif
 
 #include  "view.h"
@@ -85,6 +87,7 @@ report()		/* report progress */
 	sprintf(errmsg, "%ld rays, %4.2f%% done after %5.4f CPU hours\n",
 			nrays, pctdone, t/3600.0);
 #else
+	signal(SIGALRM, report);
 	sprintf(errmsg, "%ld rays, %4.2f%% done\n", nrays, pctdone);
 #endif
 	eputs(errmsg);
