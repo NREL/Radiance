@@ -232,7 +232,7 @@ register RAY  *r;
 	} else
 		nd.tdiff = nd.tspec = nd.trans = 0.0;
 						/* transmitted ray */
-	if (nd.specfl&SP_TRAN && (nd.specfl&SP_PURE || r->crtype&SHADOW)) {
+	if ((nd.specfl&(SP_TRAN|SP_PURE)) == (SP_TRAN|SP_PURE)) {
 		RAY  lr;
 		if (rayorigin(&lr, r, TRANS, nd.tspec) == 0) {
 			VCOPY(lr.rdir, nd.prdir);
