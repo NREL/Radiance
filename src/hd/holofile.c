@@ -24,6 +24,10 @@ static char SCCSid[] = "$SunId$ SGI";
 #ifndef MAXFRAG
 #define MAXFRAG		32767	/* maximum fragments/file to track (0==inf) */
 #endif
+#ifndef MINDIRSEL
+				/* minimum directory seek length */
+#define MINDIRSEL	(4*BUFSIZ/sizeof(BEAMI))
+#endif
 
 #ifndef BSD
 #define write	writebuf	/* safe i/o routines */
@@ -204,25 +208,28 @@ int	i;
 		}
 		copystruct(hp->dirseg+j, hp->dirseg+(j-1));
 	}
-	mindist = nbeams(hp);			/* find closest neighbors */
-	for (j = hp->dirty; --j; )
-		if (hp->dirseg[j].s - (hp->dirseg[j-1].s + hp->dirseg[j-1].n)
-				< mindist) {
-			mindist = hp->dirseg[j].s -
+	do {				/* check neighbors */
+		mindist = nbeams(hp);		/* find closest */
+		for (j = hp->dirty; --j; )
+			if (hp->dirseg[j].s -
+					(hp->dirseg[j-1].s + hp->dirseg[j-1].n)
+					< mindist) {
+				minpos = j;
+				mindist = hp->dirseg[j].s -
 					(hp->dirseg[j-1].s + hp->dirseg[j-1].n);
-			minpos = j;
-		}
-	if (hp->dirty > MAXDIRSE || mindist <= BUFSIZ/sizeof(BEAMI)) {
+			}
+						/* good enough? */
+		if (hp->dirty <= MAXDIRSE && mindist > MINDIRSEL)
+			break;
 		j = minpos - 1;			/* coalesce neighbors */
 		if (hp->dirseg[j].s + hp->dirseg[j].n <
-				hp->dirseg[minpos].s + hp->dirseg[minpos].n) {
+				hp->dirseg[minpos].s + hp->dirseg[minpos].n)
 			hp->dirseg[j].n = hp->dirseg[minpos].s +
 					hp->dirseg[minpos].n - hp->dirseg[j].s;
-		}
-		hp->dirty--;			/* close the gap */
-		for (j = minpos; j < hp->dirty; j++)
+		hp->dirty--;
+		while (++j < hp->dirty)		/* close the gap */
 			copystruct(hp->dirseg+j, hp->dirseg+(j+1));
-	}
+	} while (mindist <= MINDIRSEL);
 }
 
 
