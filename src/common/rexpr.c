@@ -107,7 +107,8 @@ int iflg, wflag;
                         if ((c = *sp++) == '\0')
                                 return(-1);
                         if (c == '<') {
-                                *ep++ = CBRC;
+				if (ep == expbuf || ep[-1] != CBRC)
+					*ep++ = CBRC;
                                 continue;
                         }
                         if (c == '>') {
@@ -148,28 +149,26 @@ register char  *ep;
 }
 
 char *
-eindex(sp)                    /* find the expression in str */
+eindex(sp)                    /* find the expression in string sp */
 register char *sp;
 {
-        if (circf) {
-                if (advance(sp, expbuf))
-                        return(sp);
+	/* check for match at beginning of line, watch CBRC */
+	if (advance(sp, expbuf[0]==CBRC ? expbuf+1 : expbuf))
+		return(sp);
+	if (circf)
                 return(NULL);
-        }
         /* fast check for first character */
         if (expbuf[0]==CCHR) {
 		register c = expbuf[1];
-                do {
+		while (*++sp)
 			if (same(*sp, c) && advance(sp, expbuf))
 				return(sp);
-                } while (*sp++);
                 return(NULL);
         }
         /* regular algorithm */
-        do {
+	while (*++sp)
                 if (advance(sp, expbuf))
                         return(sp);
-        } while (*sp++);
         return(NULL);
 }
 
@@ -247,8 +246,6 @@ register char *ep;
                 return(0);
 
         case CBRC:
-                if (lp == alp)
-                        continue;
                 if ((isalnum(*lp) || *lp == '_') && !(isalnum(lp[-1]) || lp[-1] == '_'))
                         continue;
                 return (0);
