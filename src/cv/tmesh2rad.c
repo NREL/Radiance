@@ -199,7 +199,9 @@ triangle(pn, mod, obj, v1, v2, v3)	/* put out a triangle */
 char	*pn, *mod, *obj;
 register VERTEX	*v1, *v2, *v3;
 {
+	static char	vfmt[] = "%18.12g %18.12g %18.12g\n";
 	static int	ntri = 0;
+	int		flatness = ISFLAT;
 	BARYCCM	bvecs;
 	FLOAT	bvm[3][3];
 	register int	i;
@@ -207,10 +209,15 @@ register VERTEX	*v1, *v2, *v3;
 	if (v1->flags & v2->flags & v3->flags & (V_HASINDX|V_HASNORM))
 		if (comp_baryc(&bvecs, v1->pos, v2->pos, v3->pos) < 0)
 			return;
+					/* check flatness */
+	if (v1->flags & v2->flags & v3->flags & V_HASNORM) {
+		flatness = flat_tri(v1->pos, v2->pos, v3->pos,
+					v1->nor, v2->nor, v3->nor);
+		if (flatness == DEGEN)
+			return;
+	}
 					/* put out texture (if any) */
-	if (v1->flags & v2->flags & v3->flags & V_HASNORM &&
-			!flat_tri(v1->pos, v2->pos, v3->pos,
-					v1->nor, v2->nor, v3->nor)) {
+	if (flatness == ISBENT || flatness == RVBENT) {
 		printf("\n%s texfunc %s\n", mod, TEXNAME);
 		mod = TEXNAME;
 		printf("4 dx dy dz %s\n", TCALNAME);
@@ -235,12 +242,18 @@ register VERTEX	*v1, *v2, *v3;
 		}
 		put_baryc(&bvecs, bvm, 2);
 	}
-					/* put out triangle */
+					/* put out (reversed) triangle */
 	printf("\n%s polygon %s.%d\n", mod, obj, ++ntri);
 	printf("0\n0\n9\n");
-	printf("%18.12g %18.12g %18.12g\n", v1->pos[0],v1->pos[1],v1->pos[2]);
-	printf("%18.12g %18.12g %18.12g\n", v2->pos[0],v2->pos[1],v2->pos[2]);
-	printf("%18.12g %18.12g %18.12g\n", v3->pos[0],v3->pos[1],v3->pos[2]);
+	if (flatness == RVFLAT || flatness == RVBENT) {
+		printf(vfmt, v3->pos[0],v3->pos[1],v3->pos[2]);
+		printf(vfmt, v2->pos[0],v2->pos[1],v2->pos[2]);
+		printf(vfmt, v1->pos[0],v1->pos[1],v1->pos[2]);
+	} else {
+		printf(vfmt, v1->pos[0],v1->pos[1],v1->pos[2]);
+		printf(vfmt, v2->pos[0],v2->pos[1],v2->pos[2]);
+		printf(vfmt, v3->pos[0],v3->pos[1],v3->pos[2]);
+	}
 }
 
 
