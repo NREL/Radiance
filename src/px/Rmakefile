@@ -150,7 +150,9 @@ xshowtrace:	xshowtrace.o image.o resolu.o header.o fvect.o
 	cc $(CFLAGS) -o xshowtrace xshowtrace.o image.o resolu.o header.o \
 fvect.o -lm -lX11
 
-xshowtrace.o:	view.h standard.h fvect.h
+xshowtrace.o:	view.h standard.h mat4.h fvect.h
+
+mat4.o:		mat4.h fvect.h
 
 pcomb.o calexpr.o calfunc.o caldefn.o:	calcomp.h
 
@@ -165,7 +167,7 @@ d48c.o aedimage.o pcompos.o color.o resolu.o colrops.o \
 greyscale.o ra_t8.o glimage.o \
 ra_bn.o ra_t16.o ra_pr.o pvalue.o pcomb.o pinterp.o ximage.o:	color.h
 
-prot.o biq.o ciq.o pinterp.o ximage.o image.o:	standard.h fvect.h
+prot.o biq.o ciq.o pinterp.o ximage.o image.o:	standard.h mat4.h fvect.h
 
 ximage.o x11raster.o:	xraster.h
 

@@ -34,8 +34,8 @@ xf.o:	xf.c
 	cc $(CFLAGS) -DINVXF -c xf.c
 
 bbox.o cone.o face.o initotypes.o misc.o o_cone.o o_face.o \
-o_instance.o objset.o oconv.o instance.o octree.o \
-otypes.o readobj.o readoct.o sphere.o writeoct.o:	standard.h fvect.h
+o_instance.o objset.o oconv.o instance.o octree.o otypes.o readobj.o \
+readoct.o sphere.o writeoct.o xf.o:	standard.h mat4.h fvect.h
 
 initotypes.o o_cone.o o_face.o objset.o oconv.o octree.o \
 readoct.o sphere.o writeoct.o:	octree.h
@@ -45,6 +45,8 @@ instance.o otypes.o readobj.o readoct.o sphere.o writeoct.o:	object.h
 
 bbox.o cone.o initotypes.o objset.o oconv.o otypes.o \
 readobj.o readoct.o sphere.o writeoct.o:	otypes.h
+
+mat4.o:		mat4.h fvect.h
 
 fvect.o:	fvect.h
 
