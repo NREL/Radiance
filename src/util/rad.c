@@ -1031,7 +1031,6 @@ char	*vn;		/* returned view name */
 printview(vopts)			/* print out selected view */
 register char	*vopts;
 {
-	extern char	*strstr(), *atos(), *getenv();
 	VIEW	vwr;
 	char	buf[128];
 	register char	*cp;
