@@ -1,7 +1,7 @@
-/* Copyright (c) 1997 Regents of the University of California */
+/* Copyright (c) 1999 Regents of the University of California */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -100,6 +100,10 @@ short	mbneu[NMBNEU] = {Black,Neutral35,Neutral5,Neutral65,Neutral8,White};
 #define  RG_ORIG	02	/* original color region */
 #define  RG_CORR	04	/* corrected color region */
 
+#ifndef  DISPCOM
+#define  DISPCOM	"ximage -op %s"
+#endif
+
 int	scanning = 1;		/* scanned input (or recorded output)? */
 double	irrad = 1.0;		/* irradiance multiplication factor */
 int	rawmap = 0;		/* put out raw color mapping? */
@@ -160,6 +164,9 @@ char	**argv;
 			bounds[3][1] = atoi(argv[++i]);
 			scanning = 2;
 			break;
+		case 'P':				/* pick position */
+			scanning = 3;
+			break;
 		case 'i':				/* irradiance factor */
 			i++;
 			if (badarg(argc-i, argv+i, "f"))
@@ -192,6 +199,12 @@ char	**argv;
 				fgetresolu(&xmax, &ymax, stdin) < 0) {
 			fprintf(stderr, "%s: bad input picture\n", progname);
 			exit(1);
+		}
+		if (scanning == 3) {
+			if (i >= argc)
+				goto userr;
+			pickchartpos(argv[i]);
+			scanning = 2;
 		}
 	} else {			/* else set default xmax and ymax */
 		xmax = 512;
@@ -245,7 +258,7 @@ char	**argv;
 	exit(0);
 userr:
 	fprintf(stderr,
-"Usage: %s [-d dbg.pic][-p xul yul xur yur xll yll xlr ylr][-i irrad][-m] input.pic [output.{cal|cwp}]\n",
+"Usage: %s [-d dbg.pic][-P | -p xul yul xur yur xll yll xlr ylr][-i irrad][-m] input.pic [output.{cal|cwp}]\n",
 			progname);
 	fprintf(stderr, "   or: %s [-d dbg.pic][-i irrad][-m] -c [xyY.dat [output.{cal|cwp}]]\n",
 			progname);
@@ -770,4 +783,42 @@ clrdebug()			/* put out debug picture from color input */
 						/* clean up */
 	fclose(debugfp);
 	free((char *)scan);
+}
+
+
+getpos(name, bnds, fp)		/* get boundary position */
+char	*name;
+int	bnds[2];
+FILE	*fp;
+{
+	char	buf[64];
+
+	fprintf(stderr, "\tSelect corner: %s\n", name);
+	if (fgets(buf, sizeof(buf), fp) == NULL ||
+			sscanf(buf, "%d %d", &bnds[0], &bnds[1]) != 2) {
+		fprintf(stderr, "%s: read error from display process\n",
+				progname);
+		exit(1);
+	}
+}
+
+
+pickchartpos(pfn)		/* display picture and pick chart location */
+char	*pfn;
+{
+	char	combuf[512];
+	FILE	*pfp;
+
+	sprintf(combuf, DISPCOM, pfn);
+	if ((pfp = popen(combuf, "r")) == NULL) {
+		perror(combuf);
+		exit(1);
+	}
+	fputs("Use middle mouse button to select chart corners:\n", stderr);
+	getpos("upper left (dark skin)", bounds[0], pfp);
+	getpos("upper right (bluish green)", bounds[1], pfp);
+	getpos("lower left (white)", bounds[2], pfp);
+	getpos("lower right (black)", bounds[3], pfp);
+	fputs("Got it -- quit display program.\n", stderr);
+	pclose(pfp);
 }
