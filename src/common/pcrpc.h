@@ -1,6 +1,4 @@
 /* variables and declarations for client RPC library for software frame
-
-/* SCCSid "$SunId$ LBL" */
    buffer approach */
 
 #include <netdb.h>

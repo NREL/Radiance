@@ -1,8 +1,10 @@
-/*
+/* Copyright 1988 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
+
+/*
  *  savestr.c - routines for efficient string storage.
  *
  *	Savestr(s) stores a shared read-only string.

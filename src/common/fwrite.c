@@ -1,8 +1,10 @@
-#include  <stdio.h>
+/* Copyright 1988 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
+
+#include  <stdio.h>
 
 
 int
