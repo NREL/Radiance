@@ -799,8 +799,9 @@ char	*ep;
 int	rvr;
 {
 	extern int	frecover();
+	static int	iter = 0;
 	char	fnbefore[128], fnafter[128];
-	char	combuf[1024], fname[128];
+	char	combuf[1024], fname0[128], fname1[128];
 	int	usepinterp, usepfilt;
 	int	frseq[2];
 						/* check what is needed */
@@ -833,11 +834,10 @@ int	rvr;
 			return(1);
 		if (atoi(vval(MBLUR))) {
 			FILE	*fp;		/* motion blurring */
-			sprintf(fname, "%s/vw0", vval(DIRECTORY));
-			if (access(fname, F_OK) == 0)
-				sleep(10);
-			if ((fp = fopen(fname, "w")) == NULL) {
-				perror(fname); quit(1);
+			sprintf(fname0, "%s/vw0%c", vval(DIRECTORY),
+					'a'+(iter%26));
+			if ((fp = fopen(fname0, "w")) == NULL) {
+				perror(fname0); quit(1);
 			}
 			fputs(VIEWSTR, fp);
 			fprintview(vp, fp);
@@ -848,19 +848,20 @@ int	rvr;
 						progname, frame+1);
 				quit(1);
 			}
-			sprintf(fname, "%s/vw1", vval(DIRECTORY));
-			if ((fp = fopen(fname, "w")) == NULL) {
-				perror(fname); quit(1);
+			sprintf(fname1, "%s/vw1%c", vval(DIRECTORY),
+					'a'+(iter%26));
+			if ((fp = fopen(fname1, "w")) == NULL) {
+				perror(fname1); quit(1);
 			}
 			fputs(VIEWSTR, fp);
 			fprintview(vp, fp);
 			putc('\n', fp); fclose(fp);
 			sprintf(combuf,
-	"(pmblur %s %d %s/vw0 %s/vw1; rm -f %s/vw0 %s/vw1) | pinterp -B",
+			"(pmblur %s %d %s %s; rm -f %s %s) | pinterp -B",
 			*sskip(vval(MBLUR)) ? sskip2(vval(MBLUR),1) : "1",
-					atoi(vval(MBLUR)), vval(DIRECTORY),
-					vval(DIRECTORY), vval(DIRECTORY),
-					vval(DIRECTORY), vval(DIRECTORY));
+					atoi(vval(MBLUR)),
+					fname0, fname1, fname0, fname1);
+			iter++;
 		} else				/* no blurring */
 			strcpy(combuf, "pinterp");
 		strcat(combuf, viewopt(vp));
@@ -910,8 +911,8 @@ int	rvr;
 		sprintf(combuf, "ra_rgbe -r %s.unf", fnbefore);
 	}
 						/* output file name */
-	sprintf(fname, vval(BASENAME), frame);
-	sprintf(combuf+strlen(combuf), " > %s.pic", fname);
+	sprintf(fname0, vval(BASENAME), frame);
+	sprintf(combuf+strlen(combuf), " > %s.pic", fname0);
 	if (rvr)				/* in recovery */
 		return(runcom(combuf));
 	bruncom(combuf, frame, frecover);	/* else run in background */
@@ -1166,7 +1167,7 @@ int	maxcopies;
 	register PSERVER	*ps;
 
 	if (!silent)
-		printf("\t%s &\n", com);	/* echo command */
+		printf("\t%s\n", com);	/* echo command */
 	if (noaction)
 		return(0);
 	fflush(stdout);
