@@ -15,6 +15,7 @@ static const char	RCSid[] = "$Id$";
 #include  <stdio.h>
 #include  <string.h>
 #include  <math.h>
+#include  "calcomp.h"
 
 #define  ZNAME		"Z`SYS`"		/* z function name */
 #define  RNAME		"R`SYS`"		/* r function name */
@@ -27,8 +28,6 @@ static const char	RCSid[] = "$Id$";
 #define  IN		02
 #define  UP		04
 #define  DOWN		010
-
-double  funvalue(), l_hermite(), l_bezier(), l_bspline(), argument();
 
 void	quit(), eputs(), wputs();
 
@@ -84,7 +83,7 @@ register char  **av;
 
 
 double
-l_hermite()			
+l_hermite(char *nm)
 {
 	double  t;
 	
@@ -97,7 +96,7 @@ l_hermite()
 
 
 double
-l_bezier()
+l_bezier(char *nm)
 {
 	double  t;
 
@@ -110,7 +109,7 @@ l_bezier()
 
 
 double
-l_bspline()
+l_bspline(char *nm)
 {
 	double  t;
 
@@ -126,7 +125,6 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-	extern long	eclock;
 	char  stmp[256];
 	char  *modname;
 	int  smooth = 0;

@@ -728,7 +728,7 @@ if ( X(r_initial) != 0.)
 
 
 static double
-l_get_val()
+l_get_val(char *nm)
 
 {
  int val, dir, i, trouve, curseur;

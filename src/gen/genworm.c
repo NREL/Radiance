@@ -13,6 +13,7 @@ static const char	RCSid[] = "$Id$";
 
 #include  <stdio.h>
 #include  <math.h>
+#include  "calcomp.h"
 #include  "fvect.h"
 
 #define  XNAME		"X`SYS`"		/* x function name */
@@ -25,7 +26,7 @@ static const char	RCSid[] = "$Id$";
 #define  max(a,b)	((a) > (b) ? (a) : (b))
 
 
-double  funvalue(), l_hermite(), l_bezier(), l_bspline(), argument();
+double  l_hermite(char *), l_bezier(char *), l_bspline(char *);
 void  quit();
 
 
@@ -33,7 +34,6 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-	extern long	eclock;
 	char  stmp[256];
 	double  t, f, lastr, r;
 	FVECT  lastp, p;
@@ -158,7 +158,7 @@ register char  **av;
 
 
 double
-l_hermite()			
+l_hermite(char *nm)
 {
 	double  t;
 	
@@ -171,7 +171,7 @@ l_hermite()
 
 
 double
-l_bezier()
+l_bezier(char *nm)
 {
 	double  t;
 
@@ -184,7 +184,7 @@ l_bezier()
 
 
 double
-l_bspline()
+l_bspline(char *nm)
 {
 	double  t;
 

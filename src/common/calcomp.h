@@ -25,7 +25,7 @@ typedef struct {
     char  *fname;		/* function name */
     short  nargs;		/* # of required arguments */
     short  atyp;		/* assignment type (':' or '=') */
-    double  (*f)();		/* pointer to function */
+    double  (*f)(char *);	/* pointer to function */
 }  LIBR;		/* a library function */
 
 typedef struct epnode {
@@ -130,7 +130,8 @@ extern int	isconstfun(EPNODE *ep);
 					/* defined in calfunc.c */
 extern int	fundefined(char *fname);
 extern double	funvalue(char *fname, int n, double *a);
-extern void	funset(char *fname, int nargs, int assign, double (*fptr)());
+extern void	funset(char *fname, int nargs, int assign,
+				double (*fptr)(char *));
 extern int	nargum(void);
 extern double	argument(int n);
 extern VARDEF	*argf(int n);

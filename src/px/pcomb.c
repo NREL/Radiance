@@ -312,7 +312,8 @@ double	(*ourbright)() = rgb_bright;
 
 init()					/* perform final setup */
 {
-	double	l_colin(), l_expos(), l_pixaspect(), l_ray(), l_psize();
+	double	l_colin(char *), l_expos(char *), l_pixaspect(char *),
+			l_ray(char *), l_psize(char *);
 	register int	i;
 						/* define constants */
 	varset("PI", ':', PI);
@@ -446,7 +447,7 @@ register char	*nam;
 
 
 double
-l_pixaspect()			/* return pixel aspect ratio */
+l_pixaspect(char *nm)		/* return pixel aspect ratio */
 {
 	register int	fn;
 
@@ -551,7 +552,7 @@ register char	*nam;
 
 
 double
-l_psize()			/* compute pixel size in steradians */
+l_psize(char *nm)		/* compute pixel size in steradians */
 {
 	static unsigned long	ltick[MAXINP];
 	static double	psize[MAXINP];

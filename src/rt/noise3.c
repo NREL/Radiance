@@ -10,6 +10,8 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
+#include  "calcomp.h"
+
 #include  <math.h>
 
 #define  A		0
@@ -36,7 +38,7 @@ static char  noise_name[4][8] = {"noise3x", "noise3y", "noise3z", "noise3"};
 static char  fnoise_name[] = "fnoise3";
 static char  hermite_name[] = "hermite";
 
-double  *noise3(), fnoise3(), argument(), frand();
+double  *noise3(), fnoise3(), frand();
 static  interpolate();
 
 static long  xlim[3][2];
@@ -71,7 +73,7 @@ register char  *nam;
 
 
 double
-l_hermite()			/* library call for hermite interpolation */
+l_hermite(char *nm)		/* library call for hermite interpolation */
 {
 	double  t;
 	
