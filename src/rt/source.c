@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -120,9 +120,7 @@ RAY  *r;			/* ray which hit object */
 SRCINDEX  *si;			/* source sample index */
 {
     double  d;				/* distance to source */
-    FVECT  vd;
     register SRCREC  *srcp;
-    register int  i;
 
     rayorigin(sr, r, SHADOW, 1.0);		/* ignore limits */
 
@@ -130,16 +128,8 @@ SRCINDEX  *si;			/* source sample index */
 	sr->rsrc = si->sn;			/* remember source */
 	srcp = source + si->sn;
 	if (srcp->sflags & SDISTANT) {
-		if (srcp->sflags & SSPOT) {	/* check location */
-			for (i = 0; i < 3; i++)
-			    vd[i] = srcp->sl.s->aim[i] - sr->rorg[i];
-			d = DOT(sr->rdir,vd);
-			if (d <= FTINY)
-				continue;
-			d = DOT(vd,vd) - d*d;
-			if (PI*d > srcp->sl.s->siz)
-				continue;
-		}
+		if (srcp->sflags & SSPOT && spotout(sr, srcp->sl.s, 1))
+			continue;
 		return(1);		/* sample OK */
 	}
 				/* local source */
@@ -148,8 +138,7 @@ SRCINDEX  *si;			/* source sample index */
 		continue;
 						/* check angle */
 	if (srcp->sflags & SSPOT) {
-		if (srcp->sl.s->siz < 2.0*PI *
-				(1.0 + DOT(srcp->sl.s->aim,sr->rdir)))
+		if (spotout(sr, srcp->sl.s, 0))
 			continue;
 					/* adjust solid angle */
 		si->dom *= d*d;
@@ -322,4 +311,115 @@ char  *p;			/* data for f */
 		scalecolor(srccnt[cntord[sn].sndx].val, prob);
 		addcolor(r->rcol, srccnt[cntord[sn].sndx].val);
 	}
+}
+
+
+/****************************************************************
+ * The following macros were separated from the m_light() routine
+ * because they are very nasty and difficult to understand.
+ */
+
+/* wrongillum *
+ *
+ * We cannot allow an illum to pass to another illum, because that
+ * would almost certainly constitute overcounting.
+ * However, we do allow an illum to pass to another illum
+ * that is actually going to relay to a virtual light source.
+ */
+
+#define  wrongillum(m, r)	(!(source[r->rsrc].sflags&SVIRTUAL) && \
+			objptr(source[r->rsrc].so->omod)->otype==MAT_ILLUM)
+
+/* wrongsource *
+ *
+ * This source is the wrong source (ie. overcounted) if we are
+ * aimed to a different source than the one we hit and the one
+ * we hit is not an illum which should be passed.
+ */
+
+#define  wrongsource(m, r)	(r->rsrc>=0 && source[r->rsrc].so!=r->ro && \
+				(m->otype!=MAT_ILLUM || wrongillum(m,r)))
+
+/* distglow *
+ *
+ * A distant glow is an object that sometimes acts as a light source,
+ * but is too far away from the test point to be one in this case.
+ */
+
+#define  distglow(m, r)		(m->otype==MAT_GLOW && \
+				r->rot > m->oargs.farg[3])
+
+/* badcomponent *
+ *
+ * We must avoid counting light sources in the ambient calculation,
+ * since the direct component is handled separately.  Therefore, any
+ * ambient ray which hits an active light source must be discarded.
+ * The same is true for stray specular samples, since the specular
+ * contribution from light sources is calculated separately.
+ */
+
+#define  badcomponent(m, r)	(r->crtype&(AMBIENT|SPECULAR) && \
+				!(r->crtype&SHADOW || r->rod < 0.0 || \
+					distglow(m, r)))
+
+/* overcount *
+ *
+ * All overcounting possibilities are contained here.
+ */
+
+#define  overcount(m, r)	(badcomponent(m,r) || wrongsource(m,r))
+
+/* passillum *
+ *
+ * An illum passes to another material type when we didn't hit it
+ * on purpose (as part of a direct calculation), or it is relaying
+ * a virtual light source.
+ */
+
+#define  passillum(m, r)	(m->otype==MAT_ILLUM && \
+				(r->rsrc<0 || source[r->rsrc].so!=r->ro || \
+				source[r->rsrc].sflags&SVIRTUAL))
+
+/* srcignore *
+ *
+ * The -di flag renders light sources invisible, and here is the test.
+ */
+
+#define  srcignore(m, r)	(directinvis && !(r->crtype&SHADOW) && \
+				!distglow(m, r))
+
+
+m_light(m, r)			/* ray hit a light source */
+register OBJREC  *m;
+register RAY  *r;
+{
+						/* check for over-counting */
+	if (overcount(m, r))
+		return;
+						/* check for passed illum */
+	if (passillum(m, r)) {
+		if (m->oargs.nsargs < 1 || !strcmp(m->oargs.sarg[0], VOIDID))
+			raytrans(r);
+		else
+			rayshade(r, modifier(m->oargs.sarg[0]));
+		return;
+	}
+					/* otherwise treat as source */
+						/* check for behind */
+	if (r->rod < 0.0)
+		return;
+						/* check for invisibility */
+	if (srcignore(m, r))
+		return;
+						/* check for outside spot */
+	if (m->otype==MAT_SPOT && spotout(r, (SPOT *)m->os, r->rot>=FHUGE))
+		return;
+						/* get distribution pattern */
+	raytexture(r, m->omod);
+						/* get source color */
+	setcolor(r->rcol, m->oargs.farg[0],
+			  m->oargs.farg[1],
+			  m->oargs.farg[2]);
+						/* modify value */
+	multcolor(r->rcol, r->pcol);
 }
