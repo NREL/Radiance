@@ -70,7 +70,7 @@ FVECT  bbmin, bbmax;
 				if (j & 1<<i)
 					v[i] += io->obj->scube.cusize;
 			}
-			multp3(v, v, io->f.xfm);
+			multp3(v, v, io->x.f.xfm);
 			point2bbox(v, bbmin, bbmax);
 		}
 		break;
