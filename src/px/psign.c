@@ -168,14 +168,14 @@ makemap()			/* create the bit map */
 			else
 				xsiz = ysiz/pictaspect + 0.5;
 			cheight = ysiz/nlines;
-			cwidth = cheight/aspect + 0.5;
+			cwidth = cheight/aspect;
 		} else {
 			if (ysiz <= 0)
 				ysiz = cheight*nlines;
 			pictaspect = (double)ysiz/xsiz;
 			aspect = pictaspect*maxwidth/(256*nlines);
 			cheight = ysiz/nlines;
-			cwidth = cheight/aspect + 0.5;
+			cwidth = cheight/aspect;
 		}
 	} else {			/* reverse orientation */
 		if (ysiz <= 0) {
@@ -191,14 +191,14 @@ makemap()			/* create the bit map */
 			else
 				xsiz = ysiz/pictaspect + 0.5;
 			cheight = xsiz/nlines;
-			cwidth = cheight/aspect + 0.5;
+			cwidth = cheight/aspect;
 		} else {
 			if (xsiz <= 0)
 				xsiz = cheight*nlines;
 			pictaspect = (double)ysiz/xsiz;
 			aspect = maxwidth/(256*nlines*pictaspect);
 			cheight = xsiz/nlines;
-			cwidth = cheight/aspect + 0.5;
+			cwidth = cheight/aspect;
 		}
 	}
 	if (xsiz % SSS)
@@ -239,10 +239,10 @@ FILE  *fp;
 		curl->s[len] = '\0';
 		if (spacing < -1./256.)
 			len = squeeztext(curl->sp, curl->s, ourfont,
-					(int)(spacing*-256.0));
+					(int)(spacing*-256.));
 		else if (spacing > 1./256.)
 			len = proptext(curl->sp, curl->s, ourfont,
-					(int)(spacing*256.0), 3);
+					(int)(spacing*256.), 3);
 		else
 			len = uniftext(curl->sp, curl->s, ourfont);
 		if (len > maxwidth)
@@ -280,12 +280,12 @@ char  *av[];
 	ourtext->sp = (short *)malloc(sizeof(short)*(maxline+1));
 	if (ourtext->sp == NULL)
 		goto memerr;
-	if (spacing < 0.0)
+	if (spacing < -1./256.)
 		maxwidth = squeeztext(ourtext->sp, ourtext->s, ourfont,
-				(int)(spacing*-256.0));
-	else if (spacing > 0.0)
+				(int)(spacing*-256.));
+	else if (spacing > 1./256.)
 		maxwidth = proptext(ourtext->sp, ourtext->s, ourfont,
-				(int)(spacing*256.0), 3);
+				(int)(spacing*256.), 3);
 	else
 		maxwidth = uniftext(ourtext->sp, ourtext->s, ourfont);
 	nlines = 1;
