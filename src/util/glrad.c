@@ -90,13 +90,8 @@ int	displist;			/* our scene display list */
 
 int	no_render = 0;			/* don't rerender */
 
-#ifdef BSD
-#define strchr		index
-#endif
-
-extern char	*strchr(), *fgets(), *fgetline(), *atos(), *scan4var();
+extern char	*fgetline(), *atos(), *scan4var();
 extern int	nowarn;			/* turn warnings off? */
-extern time_t	time();
 
 
 main(argc, argv)

@@ -347,7 +347,6 @@ register VIEW	*nv;
 dev_section(gfn, pfn)		/* add octree for geometry rendering */
 char	*gfn, *pfn;
 {
-	extern char	*index();
 	char	*cp;
 
 	if (gfn == NULL) {
