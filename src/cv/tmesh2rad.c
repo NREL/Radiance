@@ -34,11 +34,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "standard.h"
 
-#define  ABS(x)		((x)>=0 ? (x) : -(x))
+#include "tmesh.h"
 
 #define VOIDID		"void"		/* this is defined in object.h */
 
-#define CALNAME		"tmesh.cal"	/* the name of our auxiliary file */
 #define PATNAME		"T-pat"		/* triangle pattern name (reused) */
 #define TEXNAME		"T-nor"		/* triangle texture name (reused) */
 
@@ -55,11 +54,6 @@ typedef struct {
 
 VERTEX	*vlist = NULL;		/* our vertex list */
 int	nverts = 0;		/* number of vertices in our list */
-
-typedef struct {
-	int	ax;		/* major axis */
-	FLOAT	tm[2][3];	/* transformation */
-} BARYCCM;
 
 #define novert(i)	((i)<0|(i)>=nverts || !(vlist[i].flags&V_DEFINED))
 
@@ -220,7 +214,7 @@ register VERTEX	*v1, *v2, *v3;
 	if (v1->flags & v2->flags & v3->flags & V_HASNORM) {
 		printf("\n%s texfunc %s\n", mod, TEXNAME);
 		mod = TEXNAME;
-		printf("4 dx dy dz %s\n", CALNAME);
+		printf("4 dx dy dz %s\n", TCALNAME);
 		printf("0\n");
 		for (i = 0; i < 3; i++) {
 			bvm[i][0] = v1->nor[i];
@@ -233,7 +227,7 @@ register VERTEX	*v1, *v2, *v3;
 	if (*pn && (v1->flags & v2->flags & v3->flags & V_HASINDX)) {
 		printf("\n%s colorpict %s\n", mod, PATNAME);
 		mod = PATNAME;
-		printf("7 noneg noneg noneg %s %s u v\n", pn, CALNAME);
+		printf("7 noneg noneg noneg %s %s u v\n", pn, TCALNAME);
 		printf("0\n");
 		for (i = 0; i < 2; i++) {
 			bvm[i][0] = v1->ndx[i];
@@ -248,73 +242,6 @@ register VERTEX	*v1, *v2, *v3;
 	printf("%18.12g %18.12g %18.12g\n", v1->pos[0],v1->pos[1],v1->pos[2]);
 	printf("%18.12g %18.12g %18.12g\n", v2->pos[0],v2->pos[1],v2->pos[2]);
 	printf("%18.12g %18.12g %18.12g\n", v3->pos[0],v3->pos[1],v3->pos[2]);
-}
-
-
-int
-comp_baryc(bcm, v1, v2, v3)		/* compute barycentric vectors */
-register BARYCCM	*bcm;
-FLOAT	*v1, *v2, *v3;
-{
-	FLOAT	*vt;
-	FVECT	va, vab, vcb;
-	double	d;
-	int	ax0, ax1;
-	register int	i, j;
-					/* compute major axis */
-	for (i = 0; i < 3; i++) {
-		vab[i] = v1[i] - v2[i];
-		vcb[i] = v3[i] - v2[i];
-	}
-	fcross(va, vab, vcb);
-	bcm->ax = ABS(va[0]) > ABS(va[1]) ? 0 : 1;
-	bcm->ax = ABS(va[bcm->ax]) > ABS(va[2]) ? bcm->ax : 2;
-	ax0 = (bcm->ax + 1) % 3;
-	ax1 = (bcm->ax + 2) % 3;
-	for (j = 0; j < 2; j++) {
-		vab[0] = v1[ax0] - v2[ax0];
-		vcb[0] = v3[ax0] - v2[ax0];
-		vab[1] = v1[ax1] - v2[ax1];
-		vcb[1] = v3[ax1] - v2[ax1];
-		d = vcb[0]*vcb[0] + vcb[1]*vcb[1];
-		if (d <= FTINY)
-			return(-1);
-		d = (vcb[0]*vab[0]+vcb[1]*vab[1])/d;
-		va[0] = vab[0] - vcb[0]*d;
-		va[1] = vab[1] - vcb[1]*d;
-		d = va[0]*va[0] + va[1]*va[1];
-		if (d <= FTINY)
-			return(-1);
-		bcm->tm[j][0] = va[0] /= d;
-		bcm->tm[j][1] = va[1] /= d;
-		bcm->tm[j][2] = -(v2[ax0]*va[0]+v2[ax1]*va[1]);
-					/* rotate vertices */
-		vt = v1;
-		v1 = v2;
-		v2 = v3;
-		v3 = vt;
-	}
-	return(0);
-}
-
-
-put_baryc(bcm, com, n)			/* put barycentric coord. vectors */
-register BARYCCM	*bcm;
-register FLOAT	com[][3];
-int	n;
-{
-	double	a, b;
-	register int	i, j;
-
-	printf("%d\t%d\n", 1+3*n, bcm->ax);
-	for (i = 0; i < n; i++) {
-		a = com[i][0] - com[i][2];
-		b = com[i][1] - com[i][2];
-		printf("%14.8f %14.8f %14.8f\n",
-			bcm->tm[0][0]*a + bcm->tm[1][0]*b,
-			bcm->tm[0][1]*a + bcm->tm[1][1]*b,
-			bcm->tm[0][2]*a + bcm->tm[1][2]*b + com[i][2]);
-	}
 }
 
 

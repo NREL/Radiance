@@ -17,15 +17,14 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "trans.h"
 
+#include "tmesh.h"
+
 #include <ctype.h>
 
-#define TCALNAME	"tmesh.cal"	/* triangle interp. file */
 #define PATNAME		"M-pat"		/* mesh pattern name (reused) */
 #define TEXNAME		"M-nor"		/* mesh texture name (reused) */
 #define DEFOBJ		"unnamed"	/* default object name */
 #define DEFMAT		"white"		/* default material name */
-
-#define  ABS(x)		((x)>=0 ? (x) : -(x))
 
 #define pvect(v)	printf("%18.12g %18.12g %18.12g\n",(v)[0],(v)[1],(v)[2])
 
@@ -35,11 +34,6 @@ FVECT	*vnlist;		/* vertex normal list */
 int	nvns;
 FLOAT	(*vtlist)[2];		/* map vertex list */
 int	nvts;
-
-typedef struct {
-	int	ax;		/* major axis */
-	FLOAT	tm[2][3];	/* transformation */
-} BARYCCM;
 
 typedef int	VNDX[3];	/* vertex index (point,map,normal) */
 
@@ -620,73 +614,6 @@ char	*v1, *v2, *v3;
 	pvect(vlist[v3i[0]]);
 
 	return(1);
-}
-
-
-int
-comp_baryc(bcm, v1, v2, v3)		/* compute barycentric vectors */
-register BARYCCM	*bcm;
-FLOAT	*v1, *v2, *v3;
-{
-	FLOAT	*vt;
-	FVECT	va, vab, vcb;
-	double	d;
-	int	ax0, ax1;
-	register int	i, j;
-					/* compute major axis */
-	for (i = 0; i < 3; i++) {
-		vab[i] = v1[i] - v2[i];
-		vcb[i] = v3[i] - v2[i];
-	}
-	fcross(va, vab, vcb);
-	bcm->ax = ABS(va[0]) > ABS(va[1]) ? 0 : 1;
-	bcm->ax = ABS(va[bcm->ax]) > ABS(va[2]) ? bcm->ax : 2;
-	ax0 = (bcm->ax + 1) % 3;
-	ax1 = (bcm->ax + 2) % 3;
-	for (j = 0; j < 2; j++) {
-		vab[0] = v1[ax0] - v2[ax0];
-		vcb[0] = v3[ax0] - v2[ax0];
-		vab[1] = v1[ax1] - v2[ax1];
-		vcb[1] = v3[ax1] - v2[ax1];
-		d = vcb[0]*vcb[0] + vcb[1]*vcb[1];
-		if (d <= FTINY)
-			return(-1);
-		d = (vcb[0]*vab[0]+vcb[1]*vab[1])/d;
-		va[0] = vab[0] - vcb[0]*d;
-		va[1] = vab[1] - vcb[1]*d;
-		d = va[0]*va[0] + va[1]*va[1];
-		if (d <= FTINY)
-			return(-1);
-		bcm->tm[j][0] = va[0] /= d;
-		bcm->tm[j][1] = va[1] /= d;
-		bcm->tm[j][2] = -(v2[ax0]*va[0]+v2[ax1]*va[1]);
-					/* rotate vertices */
-		vt = v1;
-		v1 = v2;
-		v2 = v3;
-		v3 = vt;
-	}
-	return(0);
-}
-
-
-put_baryc(bcm, com, n)			/* put barycentric coord. vectors */
-register BARYCCM	*bcm;
-register FLOAT	com[][3];
-int	n;
-{
-	double	a, b;
-	register int	i, j;
-
-	printf("%d\t%d\n", 1+3*n, bcm->ax);
-	for (i = 0; i < n; i++) {
-		a = com[i][0] - com[i][2];
-		b = com[i][1] - com[i][2];
-		printf("%14.8f %14.8f %14.8f\n",
-			bcm->tm[0][0]*a + bcm->tm[1][0]*b,
-			bcm->tm[0][1]*a + bcm->tm[1][1]*b,
-			bcm->tm[0][2]*a + bcm->tm[1][2]*b + com[i][2]);
-	}
 }
 
 
