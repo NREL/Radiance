@@ -8,6 +8,7 @@ static char SCCSid[] = "$SunId$ SGI";
  * Compute 4-byte direction code (assume this fits into int)
  */
 
+#include <math.h>
 #include "fvect.h"
 
 #ifndef int4
