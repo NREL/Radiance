@@ -38,7 +38,7 @@ if ( "$genskyf" == "$nofile" || ! -r "$genskyf" ) then
 	echo "You will not be able to compute daylight"
 	echo "factors since there is no gensky file."
 else
-	set title=$title\ `sed -n 's/^.*\<gensky  *\([0-9][0-9]*  *[0-9][0-9]*  *[0-9][0-9.]*\).*$/\1/p' $genskyf`
+	set title=$title\ `sed -n 's/^.*gensky  *\([0-9][0-9]*  *[0-9][0-9]*  *[0-9][0-9.]*\).*$/\1/p' $genskyf`
 	set extamb=`xform -e $genskyf|sed -n 's/^# Ground ambient level: //p'`
 endif
 echo -n "Is the z-axis your zenith direction? "
