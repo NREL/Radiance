@@ -50,11 +50,15 @@ be printed with error(COMMAND,err).
 
 
 double
-dobj_trace(rorg, rdir)		: check for ray intersection with objects
+dobj_trace(nm, rorg, rdir)	: check for ray intersection with objects
+char	nm[];			: object name (modified)
 FVECT	rorg, rdir;		: ray origin and direction
 
-Check to see if the given ray intersects any of the visible objects,
+Check to see if the given ray intersects the given object,
 returning the distance the ray traveled if it did, or FHUGE if it didn't.
+If nm contains "*", then all visible objects are checked and the name
+of the intersected object is returned, or "" if none.  If nm is NULL,
+then all visible objects are checked, but the name is not returned.
 
 
 void

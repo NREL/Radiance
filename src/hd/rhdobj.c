@@ -25,7 +25,7 @@ int	(*dobj_lightsamp)() = NULL;	/* pointer to function to get lights */
 #define	MAXAC		64		/* maximum number of args */
 
 #ifndef MINTHRESH
-#define MINTHRESH	7.0		/* source threshold w.r.t. mean */
+#define MINTHRESH	5.0		/* source threshold w.r.t. mean */
 #endif
 
 #ifndef NALT
@@ -68,6 +68,9 @@ static DOBJECT	*dobjects;		/* display object list */
 static DOBJECT	*curobj;		/* current (last referred) object */
 static int	lastxfac;		/* last number of transform args */
 static char	*lastxfav[MAXAC+1];	/* saved transform arguments */
+
+#define getdcent(c,op)	multp3(c,(op)->center,(op)->xfb.f.xfm)
+#define getdrad(op)	((op)->radius*(op)->xfb.f.sca)
 
 #define	RTARGC	8
 static char	*rtargv[RTARGC+1] = {"rtrace", "-h-", "-w-", "-fdd",
@@ -279,8 +282,8 @@ ssph_compute()			/* compute source set from sphere samples */
 				ncells++;
 			}
 	if (dlightsets == NULL | ncells < NALT*NAZI/4) {
-		bzero((char *)ssamp, sizeof(ssamp));
-		return(0);
+		ncells = 0;
+		goto done;
 	}
 						/* harmonic mean distance */
 	if (dlightsets->ravg > FTINY)
@@ -289,11 +292,15 @@ ssph_compute()			/* compute source set from sphere samples */
 		dlightsets->ravg = FHUGE;
 						/* light source threshold */
 	thresh = MINTHRESH*bright(csum)/ncells;
+	if (thresh <= FTINY) {
+		ncells = 0;
+		goto done;
+	}
 						/* avg. reflected brightness */
 	d = AVGREFL / (double)ncells;	
 	scalecolor(csum, d);
 	if (tmCvColors(&dlightsets->larb, TM_NOCHROM, csum, 1) != TM_E_OK)
-		error(CONSISTENCY, "bad tone mapping in ssph_compute");
+		error(CONSISTENCY, "tone mapping problem in ssph_compute");
 					/* greedy light source clustering */
 	while (dlightsets->nl < MAXLIGHTS) {
 		maxbr = 0.;			/* find brightest cell */
@@ -329,7 +336,7 @@ ssph_compute()			/* compute source set from sphere samples */
 				addcolor(dlightsets->lamb, ssamp[alt][azi].val);
 	d = 1.0/ncells;
 	scalecolor(dlightsets->lamb, d);
-					/* clear sphere sample array */
+done:					/* clear sphere sample array */
 	bzero((char *)ssamp, sizeof(ssamp));
 	return(ncells);
 }
@@ -349,16 +356,16 @@ int	force;
 	if (op->drawcode != DO_LIGHT)
 		return(0);
 					/* check for usable light set */
-	multp3(ocent, op->center, op->xfb.f.xfm);
+	getdcent(ocent, op);
 	for (dl = dlightsets; dl != NULL; dl = dl->next)
 		if ((d2 = dist2(dl->lcent, ocent)) < mind2) {
 			op->ol = dl;
 			mind2 = d2;
 		}
 					/* the following is heuristic */
-	d2 = 2.*op->radius*op->xfb.f.sca; d2 *= d2;
+	d2 = 2.*getdrad(op); d2 *= d2;
 	if ((dl = op->ol) != NULL && (mind2 < 0.0625*dl->ravg*dl->ravg ||
-		mind2 < 4.*op->radius*op->xfb.f.sca*op->radius*op->xfb.f.sca))
+			mind2 < 4.*getdrad(op)*getdrad(op)))
 		return(1);
 	if (!force)
 		return(0);
@@ -655,12 +662,12 @@ FILE	*fp;
 		error(COMMAND, "unknown object");
 		return(0);
 	}
-	multp3(ocent, op->center, op->xfb.f.xfm);
+	getdcent(ocent, op);
 	fprintf(fp, "%s: %s, center [%f %f %f], radius %f", op->name,
 			op->drawcode==DO_HIDE ? "hid" :
 			op->drawcode==DO_LIGHT && op->ol!=NULL ? "lit" :
 			"shown",
-			ocent[0],ocent[1],ocent[2], op->radius*op->xfb.f.sca);
+			ocent[0],ocent[1],ocent[2], getdrad(op));
 	if (op->xfac)
 		fputs(", (xform", fp);
 	for (i = 0; i < op->xfac; i++) {
@@ -772,32 +779,49 @@ int	cn;
 
 
 double
-dobj_trace(rorg, rdir)		/* check for ray intersection with objects */
+dobj_trace(nm, rorg, rdir)	/* check for ray intersection with object(s) */
+char	nm[];
 FVECT   rorg, rdir;
 {
 	register DOBJECT	*op;
 	FVECT	xorg, xdir;
-	double	darr[6], mindist = FHUGE;
+	double	darr[6];
+
+	if (nm == NULL || *nm == '*') {
+		double	dist, mindist = 1.01*FHUGE;
 					/* check each visible object */
-	for (op = dobjects; op != NULL; op = op->next) {
-		if (op->drawcode == DO_HIDE)
-			continue;
-		if (op->xfac) {		/* transform ray */
-			multp3(xorg, rorg, op->xfb.b.xfm);
-			multv3(xdir, rdir, op->xfb.b.xfm);
-			VCOPY(darr, xorg); VCOPY(darr+3, xdir);
-		} else {
-			VCOPY(darr, rorg); VCOPY(darr+3, rdir);
+		for (op = dobjects; op != NULL; op = op->next) {
+			if (op->drawcode == DO_HIDE)
+				continue;
+			dist = dobj_trace(op->name, rorg, rdir);
+			if (dist < mindist) {
+				dist = mindist;
+				if (nm != NULL)
+					strcpy(nm, op->name);
+			}
 		}
-					/* trace it */
-		if (process(op->rtp, darr, darr, sizeof(double),
-				6*sizeof(double)) != sizeof(double))
-			error(SYSTEM, "rtrace communication error");
-					/* get closest */
-		if ((darr[0] *= op->xfb.f.sca) < mindist)
-			mindist = darr[0];
+		return(mindist);
 	}
-	return(mindist);
+					/* else check particular object */
+	if ((op = getdobj(nm)) == NULL) {
+		error(COMMAND, "unknown object");
+		return(FHUGE);
+	}
+	if (op->xfac) {		/* transform ray */
+		multp3(xorg, rorg, op->xfb.b.xfm);
+		multv3(xdir, rdir, op->xfb.b.xfm);
+		VCOPY(darr, xorg); VCOPY(darr+3, xdir);
+	} else {
+		VCOPY(darr, rorg); VCOPY(darr+3, rdir);
+	}
+				/* trace it */
+	if (process(op->rtp, darr, darr, sizeof(double),
+			6*sizeof(double)) != sizeof(double))
+		error(SYSTEM, "rtrace communication error");
+				/* return distance */
+	if (darr[0] >= .99*FHUGE)
+		return(FHUGE);
+	return(darr[0] * op->xfb.f.sca);
 }
 
 
@@ -805,6 +829,7 @@ dobj_render()			/* render our objects in OpenGL */
 {
 	GLboolean	normalizing;
 	GLfloat	vec[4];
+	FVECT	v1;
 	register DOBJECT	*op;
 	register int	i;
 					/* anything to render? */
@@ -836,7 +861,7 @@ dobj_render()			/* render our objects in OpenGL */
 		if (op->drawcode == DO_LIGHT && op->ol != NULL) {
 			BYTE	pval;
 			double	expval, d;
-
+						/* use computed sources */
 			if (tmMapPixels(&pval, &op->ol->larb, TM_NOCHROM, 1)
 					!= TM_E_OK)
 				error(CONSISTENCY, "dobj_render w/o tone map");
@@ -862,9 +887,25 @@ dobj_render()			/* render our objects in OpenGL */
 				glLightfv(glightid[i], GL_AMBIENT, vec);
 				glEnable(glightid[i]);
 			}
-		} else {
-			vec[0] = vec[1] = vec[2] = 1.; vec[3] = 1.;
+		} else {			/* no sources to draw on */
+			vec[0] = vec[1] = vec[2] = 0.; vec[3] = 1.;
 			glLightModelfv(GL_LIGHT_MODEL_AMBIENT, vec);
+			getdcent(v1, op);
+			VSUB(v1, odev.v.vp, v1);
+			if (normalize(v1) <= getdrad(op)) {
+				vec[0] = -odev.v.vdir[0];
+				vec[1] = -odev.v.vdir[1];
+				vec[2] = -odev.v.vdir[2];
+			} else
+				VCOPY(vec, v1);
+			vec[3] = 0.;
+			glLightfv(GL_LIGHT0, GL_POSITION, vec);
+			vec[0] = vec[1] = vec[2] = .7; vec[3] = 1.;
+			glLightfv(GL_LIGHT0, GL_SPECULAR, vec);
+			glLightfv(GL_LIGHT0, GL_DIFFUSE, vec);
+			vec[0] = vec[1] = vec[2] = .3; vec[3] = 1.;
+			glLightfv(GL_LIGHT0, GL_AMBIENT, vec);
+			glEnable(GL_LIGHT0);
 		}
 					/* set up object transform */
 		if (op->xfac) {
@@ -893,6 +934,8 @@ dobj_render()			/* render our objects in OpenGL */
 		if (op->drawcode == DO_LIGHT && op->ol != NULL)
 			for (i = op->ol->nl; i--; )
 				glDisable(glightid[i]);
+		else
+			glDisable(GL_LIGHT0);
 					/* check errors */
 		rgl_checkerr("rendering object in dobj_render");
 	}
