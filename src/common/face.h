@@ -12,7 +12,7 @@
 
 typedef struct {	/* a polygonal face */
 	FVECT  norm;		/* the plane's unit normal */
-	double  const;		/* plane equation:  DOT(norm, v) == const */
+	double  offset;		/* plane equation:  DOT(norm, v) == offset */
 	double  area;		/* area of face */
 	double  *va;		/* vertex array (o->oargs.farg) */
 	short  nv;		/* # of vertices */
