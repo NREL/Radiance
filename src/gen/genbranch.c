@@ -12,13 +12,11 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+#include  <math.h>
+
 #include  "random.h"
 
 #define  errf()		(var*(0.5-frandom()))
-
-#ifndef atof
-extern double  atof();
-#endif
 
 double  bstart[3] = {0.0, 0.0, 0.0};	/* start of branch */
 double  bend[3] = {28.0, 8.0, 0.0};	/* end of branch */

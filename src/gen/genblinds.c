@@ -21,10 +21,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <stdio.h>
 #include  <math.h>
 
-#ifndef atof
-extern double  atof();
-#endif
-
 #define  PI		3.141592653589793
 #define  DELTA		5.  /*  MINIMAL SUSTAINED ANGLE IN DEGREES */
 

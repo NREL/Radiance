@@ -16,13 +16,11 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+#include  <math.h>
+
 #include  <ctype.h>
 
 #define  MAXVERT	1024		/* maximum # vertices */
-
-#ifndef atof
-extern double  atof();
-#endif
 
 char  *pmtype;		/* material type */
 char  *pname;		/* name */

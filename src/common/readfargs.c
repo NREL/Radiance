@@ -10,6 +10,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include <stdio.h>
 
+#include <math.h>
+
 #include "fvect.h"
 
 #include "object.h"
@@ -20,9 +22,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #endif
 
 extern char  *bmalloc(), *savestr(), *fgetword();
-#ifndef atof
-extern double  atof();
-#endif
 extern int  atoi();
 extern long  atol();
 

@@ -13,13 +13,10 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include <stdio.h>
+#include <math.h>
 
 #define MAXSTR		128		/* maximum string or id length */
 #define MAXPTS		2048		/* maximum points per object */
-
-#ifndef atof
-extern double  atof();
-#endif
 
 typedef struct {
 	double	x, y, z;
