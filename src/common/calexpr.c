@@ -85,9 +85,10 @@ double  (*eoper[])() = {		/* expression operations */
 	epow,
 };
 
-static char  *infile;			/* input file name */
 static FILE  *infp;			/* input file pointer */
 static char  *linbuf;			/* line buffer */
+static char  *infile;			/* input file name */
+static int  lineno;			/* input line number */
 static int  linepos;			/* position in buffer */
 
 
@@ -97,7 +98,7 @@ char  *expr;
 {
     EPNODE  *ep;
 
-    initstr(NULL, expr);
+    initstr(expr, NULL, 0);
 #if  defined(VARIABLE) && defined(FUNCTION)
     curfunc = NULL;
 #endif
@@ -292,27 +293,31 @@ register EPNODE  *ep;
 }
 
 
-initfile(file, fp)		/* prepare input file */
-char  *file;
+initfile(fp, fn, ln)		/* prepare input file */
 FILE  *fp;
+char  *fn;
+int  ln;
 {
     static char  inpbuf[MAXLINE];
 
-    infile = file;
     infp = fp;
     linbuf = inpbuf;
+    infile = fn;
+    lineno = ln;
     linepos = 0;
     inpbuf[0] = '\0';
     scan();
 }
 
 
-initstr(file, s)		/* prepare input string */
-char  *file;
+initstr(s, fn, ln)		/* prepare input string */
 char  *s;
+char  *fn;
+int  ln;
 {
-    infile = file;
     infp = NULL;
+    infile = fn;
+    lineno = ln;
     linbuf = s;
     linepos = 0;
     scan();
@@ -327,6 +332,7 @@ scan()				/* scan next character */
 		nextc = EOF;
 	    else {
 		nextc = linbuf[0];
+		lineno++;
 		linepos = 1;
 	    }
 	else
@@ -344,6 +350,32 @@ scan()				/* scan next character */
 }
 
 
+char *
+ltoa(l)				/* convert long to ascii */
+long  l;
+{
+    static char  buf[16];
+    register char  *cp;
+    int  neg = 0;
+
+    if (l == 0)
+	return("0");
+    if (l < 0) {
+	l = -l;
+	neg++;
+    }
+    cp = buf + sizeof(buf);
+    *--cp = '\0';
+    while (l) {
+	*--cp = l % 10 + '0';
+	l /= 10;
+    }
+    if (neg)
+	*--cp = '-';
+    return(cp);
+}
+
+
 syntax(err)			/* report syntax error and quit */
 char  *err;
 {
@@ -355,8 +387,13 @@ char  *err;
     for (i = 0; i < linepos-1; i++)
 	eputs(linbuf[i] == '\t' ? "\t" : " ");
     eputs("^ ");
-    if (infile != NULL) {
-	eputs(infile);
+    if (infile != NULL || lineno != 0) {
+	eputs("\n");
+	if (infile != NULL) eputs(infile);
+	if (lineno != 0) {
+	    eputs(infile != NULL ? ", line " : "line ");
+	    eputs(ltoa((long)lineno));
+	}
 	eputs(": ");
     }
     eputs(err);
