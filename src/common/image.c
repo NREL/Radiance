@@ -63,13 +63,21 @@ register VIEW  *v;
 		v->hn2 = 2.0 * tan(v->horiz*(PI/180.0/2.0));
 		v->vn2 = 2.0 * tan(v->vert*(PI/180.0/2.0));
 		break;
+	case VT_CYL:				/* cylindrical panorama */
+		if (v->horiz > 360.0+FTINY)
+			return(ill_horiz);
+		if (v->vert >= 180.0-FTINY)
+			return(ill_vert);
+		v->hn2 = v->horiz * (PI/180.0);
+		v->vn2 = 2.0 * tan(v->vert*(PI/180.0/2.0));
+		break;
 	case VT_ANG:				/* angular fisheye */
 		if (v->horiz > 360.0+FTINY)
 			return(ill_horiz);
 		if (v->vert > 360.0+FTINY)
 			return(ill_vert);
-		v->hn2 = v->horiz / 90.0;
-		v->vn2 = v->vert / 90.0;
+		v->hn2 = v->horiz * (PI/180.0);
+		v->vn2 = v->vert * (PI/180.0);
 		break;
 	case VT_HEM:				/* hemispherical fisheye */
 		if (v->horiz > 180.0+FTINY)
@@ -83,9 +91,11 @@ register VIEW  *v;
 		return("unknown view type");
 	}
 	if (v->type != VT_ANG) {
-		v->hvec[0] *= v->hn2;
-		v->hvec[1] *= v->hn2;
-		v->hvec[2] *= v->hn2;
+		if (v->type != VT_CYL) {
+			v->hvec[0] *= v->hn2;
+			v->hvec[1] *= v->hn2;
+			v->hvec[2] *= v->hn2;
+		}
 		v->vvec[0] *= v->vn2;
 		v->vvec[1] *= v->vn2;
 		v->vvec[2] *= v->vn2;
@@ -153,6 +163,18 @@ double  x, y;
 		orig[1] = v->vp[1] + v->vfore*direc[1];
 		orig[2] = v->vp[2] + v->vfore*direc[2];
 		return(v->vaft > FTINY ? v->vaft - v->vfore : 0.0);
+	case VT_CYL:			/* cylindrical panorama */
+		d = x * v->horiz * (PI/180.0);
+		z = cos(d);
+		x = sin(d);
+		direc[0] = z*v->vdir[0] + x*v->hvec[0] + y*v->vvec[0];
+		direc[1] = z*v->vdir[1] + x*v->hvec[1] + y*v->vvec[1];
+		direc[2] = z*v->vdir[2] + x*v->hvec[2] + y*v->vvec[2];
+		orig[0] = v->vp[0] + v->vfore*direc[0];
+		orig[1] = v->vp[1] + v->vfore*direc[1];
+		orig[2] = v->vp[2] + v->vfore*direc[2];
+		d = normalize(direc);
+		return(v->vaft > FTINY ? (v->vaft - v->vfore)*d : 0.0);
 	case VT_ANG:			/* angular fisheye */
 		x *= v->horiz/180.0;
 		y *= v->vert/180.0;
@@ -215,6 +237,17 @@ FVECT  p;
 			ip[2] = d;
 		ip[2] -= v->vfore;
 		break;
+	case VT_CYL:			/* cylindrical panorama */
+		ip[2] = DOT(disp,v->vdir);
+		d = DOT(disp,v->hvec);
+		ip[0] = 180.0/PI * atan2(ip[2],d) / v->horiz + 0.5 - v->hoff;
+		ip[1] = DOT(disp,v->vvec)/v->vn2 + 0.5 - v->voff;
+		if (v->vfore > FTINY)
+			ip[2] = sqrt(DOT(disp,disp)) *
+				(1.0 - v->vfore/sqrt(d*d + ip[2]*ip[2]));
+		else
+			ip[2] = sqrt(DOT(disp,disp));
+		return;
 	case VT_ANG:			/* angular fisheye */
 		ip[0] = 0.5 - v->hoff;
 		ip[1] = 0.5 - v->voff;
@@ -224,7 +257,6 @@ FVECT  p;
 			return;
 		if (d <= -(1.0-FTINY)) {
 			ip[0] += 180.0/v->horiz;
-			ip[1] += 180.0/v->vert;
 			return;
 		}
 		d = acos(d)/PI / sqrt(1.0 - d*d);
