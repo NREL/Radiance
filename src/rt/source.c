@@ -338,7 +338,7 @@ char  *p;			/* data for f */
 	register int  sn;
 	int  nshadcheck, ncnts;
 	int  nhits;
-	double  prob, ourthresh, hwt;
+	double  dom, prob, ourthresh, hwt;
 	RAY  sr;
 			/* NOTE: srccnt and cntord global so no recursion */
 	if (nsources <= 0)
@@ -352,17 +352,18 @@ char  *p;			/* data for f */
 		cntord[sn].sno = sn;
 		cntord[sn].brt = 0.0;
 						/* get source ray */
-		if ((srccnt[sn].dom = srcray(&sr, r, sn)) == 0.0)
+		if ((dom = srcray(&sr, r, sn)) == 0.0)
 			continue;
 		VCOPY(srccnt[sn].dir, sr.rdir);
 						/* compute coefficient */
-		(*f)(srccnt[sn].val, p, srccnt[sn].dir, srccnt[sn].dom);
-		cntord[sn].brt = bright(srccnt[sn].val);
+		(*f)(srccnt[sn].coef, p, srccnt[sn].dir, dom);
+		cntord[sn].brt = bright(srccnt[sn].coef);
 		if (cntord[sn].brt <= 0.0)
 			continue;
 						/* compute contribution */
 		srcvalue(&sr);
-		multcolor(srccnt[sn].val, sr.rcol);
+		copycolor(srccnt[sn].val, sr.rcol);
+		multcolor(srccnt[sn].val, srccnt[sn].coef);
 		cntord[sn].brt = bright(srccnt[sn].val);
 	}
 						/* sort contributions */
@@ -403,10 +404,9 @@ char  *p;			/* data for f */
 			raycont(&sr);
 			if (bright(sr.rcol) <= FTINY)
 				continue;	/* missed! */
-			(*f)(srccnt[cntord[sn].sno].val, p,
-					srccnt[cntord[sn].sno].dir,
-					srccnt[cntord[sn].sno].dom);
-			multcolor(srccnt[cntord[sn].sno].val, sr.rcol);
+			copycolor(srccnt[cntord[sn].sno].val, sr.rcol);
+			multcolor(srccnt[cntord[sn].sno].val,
+					srccnt[cntord[sn].sno].coef);
 		}
 						/* add contribution if hit */
 		addcolor(r->rcol, srccnt[cntord[sn].sno].val);
