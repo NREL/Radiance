@@ -18,7 +18,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "random.h"
 
-#define	 OCTSCALE	0.5	/* ceil((valid rad.)/(cube size)) */
+#define	 OCTSCALE	1.0	/* ceil((valid rad.)/(cube size)) */
 
 typedef struct ambtree {
 	AMBVAL	*alist;		/* ambient value list */
@@ -48,10 +48,10 @@ static int  nunflshed = 0;	/* number of unflushed ambient values */
 #endif
 #endif
 #ifndef SORT_INTVL
-#define SORT_INTVL	(SORT_THRESH*32)
+#define SORT_INTVL	(SORT_THRESH*256)
 #endif
 #ifndef MAX_SORT_INTVL
-#define MAX_SORT_INTVL	(SORT_INTVL<<8)
+#define MAX_SORT_INTVL	(SORT_INTVL<<4)
 #endif
 
 static unsigned long  ambclock = 0;	/* ambient access clock */
@@ -234,8 +234,9 @@ double	s;
 	int  i;
 	register int  j;
 	register AMBVAL	 *av;
-					/* do this node */
+
 	wsum = 0.0;
+					/* do this node */
 	for (av = at->alist; av != NULL; av = av->next) {
 		if (tracktime)
 			av->latick = ambclock++;
@@ -249,11 +250,12 @@ double	s;
 		/*
 		 *  Ambient radius test.
 		 */
-		e1 = 0.0;
-		for (j = 0; j < 3; j++) {
-			d = av->pos[j] - r->rop[j];
-			e1 += d * d;
-		}
+		d = av->pos[0] - r->rop[0];
+		e1 = d * d;
+		d = av->pos[1] - r->rop[1];
+		e1 += d * d;
+		d = av->pos[2] - r->rop[2];
+		e1 += d * d;
 		e1 /= av->rad * av->rad;
 		if (e1 > ambacc*ambacc*1.21)
 			continue;
@@ -630,7 +632,8 @@ int	always;
 		 * when we're thrashing, which is when we need to do it.
 		 */
 #ifdef DEBUG
-		sprintf(errmsg, "sorting %u ambient values...", nambvals);
+		sprintf(errmsg, "sorting %u ambient values at ambclock=%lu...",
+				nambvals, ambclock);
 		eputs(errmsg);
 #endif
 		i_avlist = 0;
