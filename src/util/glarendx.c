@@ -273,14 +273,16 @@ struct glare_dir	*gd;
 {
 #define q(w)	(20.4*w+1.52*pow(w,.2)-.075)
 	register struct glare_src	*gs;
+	FVECT	mydir;
 	double	p;
 	double	sum;
 	double	wtot, brsum;
 	int	n;
 
+	spinvector(mydir, midview.vdir, midview.vup, gd->ang);
 	sum = wtot = brsum = 0.0; n = 0;
 	for (gs = all_srcs; gs != NULL; gs = gs->next) {
-		p = posindex(gs->dir, midview.vdir, midview.vup);
+		p = posindex(gs->dir, mydir, midview.vup);
 		if (p <= FTINY)
 			continue;
 		sum += gs->lum * q(gs->dom) / p;
@@ -311,5 +313,10 @@ double
 guth_vcp(gd)		/* compute Guth visual comfort probability */
 struct glare_dir	*gd;
 {
-	return(100.*norm_integral(6.374-1.3227*log(guth_dgr(gd))));
+	double	dgr;
+
+	dgr = guth_dgr(gd);
+	if (dgr <= FTINY)
+		return(100.0);
+	return(100.*norm_integral(6.374-1.3227*log(dgr)));
 }
