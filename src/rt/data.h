@@ -8,7 +8,7 @@
  *     6/4/86
  */
 
-#define  MAXDIM		8		/* maximum dimensions for data array */
+#define  MAXDDIM	8		/* maximum dimensions for data array */
 
 #define  DATATYPE	float		/* single precision to save space */
 
@@ -21,7 +21,7 @@ typedef struct datarray {
 		double  org, siz;		/* coordinate domain */
 		int  ne;			/* number of elements */
 		double  *p;			/* point locations */
-	} dim[MAXDIM];			/* dimension specifications */
+	} dim[MAXDDIM];			/* dimension specifications */
 	DATATYPE  *arr;			/* the data */
 	struct datarray  *next;		/* next array in list */
 } DATARRAY;			/* a data array */

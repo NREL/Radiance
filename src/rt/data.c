@@ -74,7 +74,7 @@ char  *dname;
 							/* get dimensions */
 	if (fscanf(fp, "%d", &dp->nd) != 1)
 		goto scanerr;
-	if (dp->nd <= 0 || dp->nd > MAXDIM) {
+	if (dp->nd <= 0 || dp->nd > MAXDDIM) {
 		sprintf(errmsg, "bad number of dimensions for \"%s\"", dname);
 		error(USER, errmsg);
 	}
