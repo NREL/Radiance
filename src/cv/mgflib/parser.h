@@ -6,10 +6,12 @@
  * Header file for MGF interpreter
  */
 
+#ifndef MG_VMAJOR
+
 /* must include stdio.h before us */
 
-#define MG_VMAJOR	1		/* major version number */
-#define MG_VMINOR	1		/* minor version number */
+#define MG_VMAJOR	2		/* major version number */
+#define MG_VMINOR	0		/* minor version number */
 
 			/* Entities (list is only appended, never modified) */
 #define MG_E_COMMENT	0		/* #		*/
@@ -41,14 +43,17 @@
 #define MG_E_VERTEX	26		/* v		*/
 #define MG_E_XF		27		/* xf		*/
 			/* end of Version 1 entities */
+#define MG_E_FACEH	28		/* fh		*/
+			/* end of Version 2 entities */
 
-#define MG_NENTITIES	28		/* total # entities */
+#define MG_NENTITIES	29		/* total # entities */
 
-#define MG_NELIST	{28}		/* entity count for version 1 and up */
+#define MG_NELIST	{28,29}		/* entity count for version 1 and up */
 
 #define MG_NAMELIST	{"#","c","cct","cone","cmix","cspec","cxy","cyl","ed",\
 			"f","i","ies","ir","m","n","o","p","prism","rd",\
-			"ring","rs","sides","sph","td","torus","ts","v","xf"}
+			"ring","rs","sides","sph","td","torus","ts","v","xf",\
+			"fh"}
 
 #define MG_MAXELEN	6
 
@@ -162,13 +167,35 @@ extern int	mg_nqcdivs;		/* divisions per quarter circle */
 #ifdef NOPROTO
 extern int mg_entity();			/* get entity number from its name */
 extern int isint();			/* non-zero if integer format */
+extern int isintd();			/* same with delimiter set */
 extern int isflt();			/* non-zero if floating point format */
+extern int isfltd();			/* same with delimiter set */
 extern int isname();			/* non-zero if legal identifier name */
+extern int badarg();			/* check argument format */
+extern int e_include();			/* expand include entity */
+extern int e_sph();			/* expand sphere as other entities */
+extern int e_torus();			/* expand torus as other entities */
+extern int e_cyl();			/* expand cylinder as other entities */
+extern int e_ring();			/* expand ring as other entities */
+extern int e_cone();			/* expand cone as other entities */
+extern int e_prism();			/* expand prism as other entities */
+extern int e_faceh();			/* expand face w/ holes as face */
 #else
 extern int mg_entity(char *);		/* get entity number from its name */
 extern int isint(char *);		/* non-zero if integer format */
+extern int isintd(char *, char *);	/* same with delimiter set */
 extern int isflt(char *);		/* non-zero if floating point format */
+extern int isfltd(char *, char *);	/* same with delimiter set */
 extern int isname(char *);		/* non-zero if legal identifier name */
+extern int badarg(int, char **, char *);/* check argument format */
+extern int e_include(int, char **);	/* expand include entity */
+extern int e_sph(int, char **);		/* expand sphere as other entities */
+extern int e_torus(int, char **);	/* expand torus as other entities */
+extern int e_cyl(int, char **);		/* expand cylinder as other entities */
+extern int e_ring(int, char **);	/* expand ring as other entities */
+extern int e_cone(int, char **);	/* expand cone as other entities */
+extern int e_prism(int, char **);	/* expand prism as other entities */
+extern int e_faceh(int, char **);	/* expand face w/ holes as face */
 #endif
 
 /************************************************************************
@@ -200,6 +227,7 @@ typedef FLOAT  FVECT[3];
 extern double	normalize();		/* normalize a vector */
 #else
 extern double	normalize(FVECT);	/* normalize a vector */
+extern void	fcross(FVECT,FVECT,FVECT);/* cross product of two vectors */
 #endif
 
 /************************************************************************
@@ -448,3 +476,5 @@ extern MEM_PTR	malloc();
 extern MEM_PTR	calloc();
 extern MEM_PTR	realloc();
 extern void	free();
+
+#endif /*MG_VMAJOR*/

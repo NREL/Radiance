@@ -84,12 +84,10 @@ extern LUENT	*lu_find();
 extern void	lu_delete();
 extern void	lu_done();
 extern long	lu_shash();
-extern int	strcmp();
 #else
 extern int	lu_init(LUTAB *, int);
 extern LUENT	*lu_find(LUTAB *, char *);
 extern void	lu_delete(LUTAB *, char *);
 extern void	lu_done(LUTAB *);
 extern long	lu_shash(char *);
-extern int	strcmp(char *, char *);
 #endif
