@@ -15,7 +15,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "color.h"
 
 
-#define  MAXFILE	16
+#define  MAXFILE	32
 
 					/* output picture size */
 int  xsiz = 0;
@@ -123,7 +123,7 @@ getfile:
 		} else {
 			input[nfile].name = argv[an];
 			if ((input[nfile].fp = fopen(argv[an], "r")) == NULL) {
-				fprintf(stderr, "%s: cannot open\n", argv[an]);
+				perror(argv[an]);
 				quit(1);
 			}
 		}
@@ -217,13 +217,13 @@ compos()				/* composite pictures */
 		if (y >= ysiz)
 			continue;
 		if (fwritecolrs(scanout, xsiz, stdout) < 0) {
-			fprintf(stderr, "%s: write error\n", progname);
+			perror(progname);
 			quit(1);
 		}
 	}
 	return;
 memerr:
-	fprintf(stderr, "%s: out of memory\n", progname);
+	perror(progname);
 	quit(1);
 }
 

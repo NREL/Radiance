@@ -18,7 +18,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "calcomp.h"
 
-#define MAXINP		16		/* maximum number of input files */
+#define MAXINP		32		/* maximum number of input files */
 
 struct {
 	char	*name;		/* file name */
@@ -121,8 +121,7 @@ getfiles:
 			input[nfiles].name = argv[a];
 			input[nfiles].fp = fopen(argv[a], "r");
 			if (input[nfiles].fp == NULL) {
-				eputs(argv[a]);
-				eputs(": cannot open\n");
+				perror(argv[a]);
 				quit(1);
 			}
 		}
@@ -201,7 +200,7 @@ combine()			/* combine pictures */
 			}
 		}
 		if (fwritescan(scanout, xres, stdout) < 0) {
-			eputs("write error\n");
+			perror("write error");
 			quit(1);
 		}
 	}
