@@ -466,8 +466,8 @@ int	vn;
 			CLR4(odS.redraw, i);
 		}
 #else
-					/* redraw samples at beginning */
-	for (i = odView[vn].sfirst; i < odView[vn].sfirst+31; i++)
+					/* redraw samples at end */
+	for (i = odView[vn].snext-31; i < odView[vn].snext; i++)
 		if (CHK4(odS.redraw, i)) {
 			odDrawSamp(vn, i);
 			CLR4(odS.redraw, i);
@@ -479,8 +479,8 @@ int	vn;
 				odDrawSamp(vn, (j<<5)+i);
 				odS.redraw[j] &= ~(1L<<i);
 			}
-					/* redraw samples at end */
-	for (i = odView[vn].snext-31; i < odView[vn].snext; i++)
+					/* redraw samples at beginning */
+	for (i = odView[vn].sfirst; i < odView[vn].sfirst+31; i++)
 		if (CHK4(odS.redraw, i)) {
 			odDrawSamp(vn, i);
 			CLR4(odS.redraw, i);
