@@ -378,21 +378,23 @@ int
 isview(s)				/* is this a view string? */
 char  *s;
 {
-	static char  *altname[]={NULL,"rpict","rview","pinterp",VIEWSTR,NULL};
-	extern char  *progname, *rindex();
+	static char  *altname[]={NULL,VIEWSTR,"rpict","rview","pinterp",NULL};
+	extern char  *progname;
 	register char  *cp;
 	register char  **an;
 					/* add program name to list */
-	if (altname[0] == NULL)
-		if ((cp = rindex(progname, DIRSEP)) != NULL)
-			altname[0] = cp+1;
-		else
-			altname[0] = progname;
+	if (altname[0] == NULL) {
+		for (cp = progname; *cp; cp++)
+			;
+		while (cp > progname && !ISDIRSEP(cp[-1]))
+			cp--;
+		altname[0] = cp;
+	}
 					/* skip leading path */
 	cp = s;
 	while (*cp && *cp != ' ')
 		cp++;
-	while (cp > s && cp[-1] != DIRSEP)
+	while (cp > s && !ISDIRSEP(cp[-1]))
 		cp--;
 	for (an = altname; *an != NULL; an++)
 		if (!strncmp(*an, cp, strlen(*an)))

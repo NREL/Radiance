@@ -8,7 +8,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *  getpath.c - function to search for file in a list of directories
  */
 
-#include "paths.h"
+#include  "paths.h"
 
 #define  NULL		0
 
@@ -17,7 +17,7 @@ static char SCCSid[] = "$SunId$ LBL";
 extern struct passwd  *getpwnam();
 #endif
 
-extern char  *strcpy(), *strcat();
+extern char  *strcpy(), *strcat(), *getenv();
 
 
 char *
@@ -29,21 +29,21 @@ int  mode;
 #ifndef  NIX
 	struct passwd  *pwent;
 #endif
-	static char  pname[256];
+	static char  pname[MAXPATH];
 	register char  *cp;
 
 	if (fname == NULL)
 		return(NULL);
 
 	switch (*fname) {
-	case DIRSEP:				/* relative to root */
+	CASEDIRSEP:				/* relative to root */
 	case '.':				/* relative to cwd */
 		strcpy(pname, fname);
 		return(pname);
 #ifndef NIX
 	case '~':				/* relative to home directory */
 		fname++;
-		if (*fname == '\0' || *fname == DIRSEP) {	/* ours */
+		if (*fname == '\0' || ISDIRSEP(*fname)) {	/* ours */
 			if ((cp = getenv("HOME")) == NULL)
 				return(NULL);
 			strcpy(pname, cp);
@@ -53,7 +53,7 @@ int  mode;
 		cp = pname;					/* user */
 		do
 			*cp++ = *fname++;
-		while (*fname && *fname != DIRSEP);
+		while (*fname && !ISDIRSEP(*fname));
 		*cp = '\0';
 		if ((pwent = getpwnam(pname)) == NULL)
 			return(NULL);
@@ -72,7 +72,7 @@ int  mode;
 		cp = pname;
 		while (*searchpath && (*cp = *searchpath++) != PATHSEP)
 			cp++;
-		if (cp > pname && cp[-1] != DIRSEP)
+		if (cp > pname && !ISDIRSEP(cp[-1]))
 			*cp++ = DIRSEP;
 		strcpy(cp, fname);
 		if (access(pname, mode) == 0)		/* file accessable? */
