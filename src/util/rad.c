@@ -92,7 +92,7 @@ int	(*setqopts[3])() = {lowqopts, medqopts, hiqopts};
 
 #define renderopts	(*setqopts[vscale(QUALITY)])
 
-extern long	fdate();
+extern long	fdate(), time();
 
 long	scenedate;		/* date of latest scene or object file */
 long	octreedate;		/* date of octree */
@@ -341,8 +341,9 @@ register VARIABLE	*vp;
 		return;
 	fprintf(stderr, "%s: warning - multiple assignment of variable '%s'\n",
 			progname, vp->name);
-	while (vp->nass-- > 1)
+	do
 		vp->value += strlen(vp->value)+1;
+	while (--vp->nass > 1);
 }
 
 
@@ -387,9 +388,19 @@ register char	*fnames;
 
 checkfiles()			/* check for existence and modified times */
 {
+	char	*cp;
 	long	objdate;
 
-	octreedate = vdef(OCTREE) ? fdate(vval(OCTREE)) : -1;
+	if (!vdef(OCTREE)) {
+		if ((cp = bmalloc(strlen(radname)+5)) == NULL) {
+			perror(progname);
+			exit(1);
+		}
+		sprintf(cp, "%s.oct", radname);
+		vval(OCTREE) = cp;
+		vdef(OCTREE)++;
+	}
+	octreedate = fdate(vval(OCTREE));
 	scenedate = -1;
 	if (vdef(SCENE)) {
 		scenedate = checklast(vval(SCENE));
@@ -400,50 +411,50 @@ checkfiles()			/* check for existence and modified times */
 		}
 	}
 	if (octreedate < 0 & scenedate < 0) {
-		fprintf(stderr, "%s: need scene or octree\n", progname);
+		fprintf(stderr, "%s: need '%s' or '%s'\n", progname,
+				vnam(OCTREE), vnam(SCENE));
 		exit(1);
 	}
 }	
 
 
+getoctcube(org, sizp)		/* get octree bounding cube */
+double	org[3], *sizp;
+{
+	extern FILE	*popen();
+	static double	oorg[3], osiz = 0.;
+	char	buf[MAXPATH+16];
+	FILE	*fp;
+
+	if (osiz <= FTINY) {
+		oconv();		/* does nothing if done already */
+		sprintf(buf, "getinfo -d < %s", vval(OCTREE));
+		if ((fp = popen(buf, "r")) == NULL) {
+			perror("getinfo");
+			exit(1);
+		}
+		if (fscanf(fp, "%lf %lf %lf %lf", &oorg[0], &oorg[1],
+				&oorg[2], &osiz) != 4) {
+			fprintf(stderr,
+			"%s: error reading bounding cube from getinfo\n",
+					progname);
+			exit(1);
+		}
+		pclose(fp);
+	}
+	org[0] = oorg[0]; org[1] = oorg[1]; org[2] = oorg[2]; *sizp = osiz;
+}
+
+
 setdefaults()			/* set default values for unassigned var's */
 {
-	FILE	*fp;
-	double	xmin, ymin, zmin, size;
-	char	buf[512];
-	char	*cp;
+	double	org[3], size;
+	char	buf[128];
 
-	if (!vdef(OCTREE)) {
-		sprintf(buf, "%s.oct", radname);
-		vval(OCTREE) = savqstr(buf);
-		vdef(OCTREE)++;
-	}
 	if (!vdef(ZONE)) {
-		if (scenedate > octreedate) {
-			sprintf(buf, "getbbox -w -h %s", vval(SCENE));
-			if (!silent) {
-				printf("\t%s\n", buf);
-				fflush(stdout);
-			}
-			if ((fp = popen(buf, "r")) == NULL) {
-				perror("getbbox");
-				exit(1);
-			}
-			buf[0] = 'E'; buf[1] = ' ';
-			fgetline(buf+2, sizeof(buf)-2, fp);
-			pclose(fp);
-		} else {
-			sprintf(buf, "getinfo -d < %s", vval(OCTREE));
-			if ((fp = popen(buf, "r")) == NULL) {
-				perror("getinfo");
-				exit(1);
-			}
-			fscanf(fp, "%lf %lf %lf %lf",
-					&xmin, &ymin, &zmin, &size);
-			sprintf(buf, "E %g %g %g %g %g %g", xmin, xmin+size,
-					ymin, ymin+size, zmin, zmin+size);
-			pclose(fp);
-		}
+		getoctcube(org, &size);
+		sprintf(buf, "E %g %g %g %g %g %g", org[0], org[0]+size,
+				org[1], org[1]+size, org[2], org[2]+size);
 		vval(ZONE) = savqstr(buf);
 		vdef(ZONE)++;
 	}
@@ -466,11 +477,6 @@ setdefaults()			/* set default values for unassigned var's */
 	if (!vdef(PICTURE)) {
 		vval(PICTURE) = radname;
 		vdef(PICTURE)++;
-	}
-	if (!vdef(AMBFILE)) {
-		sprintf(buf, "%s.amb", radname);
-		vval(AMBFILE) = savqstr(buf);
-		vdef(AMBFILE)++;
 	}
 	if (!vdef(VIEW)) {
 		vval(VIEW) = "X";
@@ -506,11 +512,13 @@ oconv()				/* run oconv if necessary */
 {
 	char	combuf[512], ocopts[64];
 
-	if (octreedate > scenedate)	/* check dates */
+	if (octreedate >= scenedate)	/* check dates */
 		return;
 					/* build command */
 	oconvopts(ocopts);
-	sprintf(combuf, "oconv%s %s > %s", ocopts, vval(SCENE), vval(OCTREE));
+	sprintf(combuf, "oconv%s %s %s > %s", ocopts,
+			vdef(MATERIAL) ? vval(MATERIAL) : "",
+			vval(SCENE), vval(OCTREE));
 	if (!silent) {			/* echo it */
 		printf("\t%s\n", combuf);
 		fflush(stdout);
@@ -523,6 +531,7 @@ oconv()				/* run oconv if necessary */
 		unlink(vval(OCTREE));
 		exit(1);
 	}
+	octreedate = time(0);
 }
 
 
@@ -538,42 +547,260 @@ register char	*op, *arg;
 
 
 oconvopts(oo)				/* get oconv options */
-char	*oo;
+register char	*oo;
 {
+	/* BEWARE:  This may be called via setdefaults(), so no assumptions */
+
 	*oo = '\0';
 	if (vdef(OCONV))
 		addarg(oo, vval(OCONV));
 }
 
 
-lowqopts(ro)				/* low quality rendering options */
-char	*ro;
+double
+ambval()				/* compute ambient value */
 {
-	register char	*op = ro;
+	if (vdef(EXPOSURE))
+		if (vval(EXPOSURE)[0] == '+' || vval(EXPOSURE)[0] == '-')
+			return(.5/pow(2.,atof(vval(EXPOSURE))));
+		else
+			return(.5/atof(vval(EXPOSURE)));
+	if (vlet(ZONE) == 'E')
+		return(10.);
+	else
+		return(.01);
+}
+
+
+lowqopts(op)				/* low quality rendering options */
+register char	*op;
+{
+	double	d, org[3], siz[3];
 
 	*op = '\0';
+	if (sscanf(vval(ZONE), "%*s %lf %lf %lf %lf %lf %lf", &org[0],
+			&siz[0], &org[1], &siz[1], &org[2], &siz[2]) != 6) {
+		fprintf(stderr, "%s: bad value for variable '%s'\n",
+				progname, vnam(ZONE));
+		exit(1);
+	}
+	siz[0] -= org[0]; siz[1] -= org[1]; siz[2] -= org[2];
+	getoctcube(org, &d);
+	d *= 3./(siz[0]+siz[1]+siz[2]);
+	switch (vscale(DETAIL)) {
+	case LOW:
+		op = addarg(op, "-ps 16");
+		op = addarg(op, "-dp 16");
+		sprintf(op, " -ar %d", (int)(4*d));
+		op += strlen(op);
+		break;
+	case MEDIUM:
+		op = addarg(op, "-ps 8");
+		op = addarg(op, "-dp 32");
+		sprintf(op, " -ar %d", (int)(8*d));
+		op += strlen(op);
+		break;
+	case HIGH:
+		op = addarg(op, "-ps 4");
+		op = addarg(op, "-dp 64");
+		sprintf(op, " -ar %d", (int)(16*d));
+		op += strlen(op);
+		break;
+	}
+	op = addarg(op, "-pt .16");
+	if (vbool(PENUMBRAS))
+		op = addarg(op, "-ds .4");
+	op = addarg(op, "-dt .2");
+	op = addarg(op, "-dc .25");
+	op = addarg(op, "-dr 0");
+	op = addarg(op, "-sj 0");
+	op = addarg(op, "-st .7");
+	op = addarg(op, "-ab 0");
+	if (vdef(AMBFILE)) {
+		sprintf(op, " -af %s", vval(AMBFILE));
+		op += strlen(op);
+	} else
+		overture = 0;
+	switch (vscale(VARIABILITY)) {
+	case LOW:
+		op = addarg(op, "-aa .4");
+		op = addarg(op, "-ad 32");
+		break;
+	case MEDIUM:
+		op = addarg(op, "-aa .3");
+		op = addarg(op, "-ad 64");
+		break;
+	case HIGH:
+		op = addarg(op, "-aa .25");
+		op = addarg(op, "-ad 128");
+		break;
+	}
+	op = addarg(op, "-as 0");
+	d = ambval();
+	sprintf(op, " -av %.2g %.2g %.2g", d, d, d);
+	op += strlen(op);
+	op = addarg(op, "-lr 3");
+	op = addarg(op, "-lw .02");
 	if (vdef(RENDER))
 		op = addarg(op, vval(RENDER));
 }
 
 
-medqopts(ro)				/* medium quality rendering options */
-char	*ro;
+medqopts(op)				/* medium quality rendering options */
+register char	*op;
 {
-	register char	*op = ro;
+	double	d, org[3], siz[3];
 
 	*op = '\0';
+	if (sscanf(vval(ZONE), "%*s %lf %lf %lf %lf %lf %lf", &org[0],
+			&siz[0], &org[1], &siz[1], &org[2], &siz[2]) != 6) {
+		fprintf(stderr, "%s: bad value for variable '%s'\n",
+				progname, vnam(ZONE));
+		exit(1);
+	}
+	siz[0] -= org[0]; siz[1] -= org[1]; siz[2] -= org[2];
+	getoctcube(org, &d);
+	d *= 3./(siz[0]+siz[1]+siz[2]);
+	switch (vscale(DETAIL)) {
+	case LOW:
+		op = addarg(op, vbool(PENUMBRAS) ? "-ps 4" : "-ps 8");
+		op = addarg(op, "-dp 64");
+		sprintf(op, " -ar %d", (int)(8*d));
+		op += strlen(op);
+		break;
+	case MEDIUM:
+		op = addarg(op, vbool(PENUMBRAS) ? "-ps 3" : "-ps 6");
+		op = addarg(op, "-dp 128");
+		sprintf(op, " -ar %d", (int)(16*d));
+		op += strlen(op);
+		break;
+	case HIGH:
+		op = addarg(op, vbool(PENUMBRAS) ? "-ps 2" : "-ps 4");
+		op = addarg(op, "-dp 256");
+		sprintf(op, " -ar %d", (int)(32*d));
+		op += strlen(op);
+		break;
+	}
+	op = addarg(op, "-pt .08");
+	if (vbool(PENUMBRAS)) {
+		op = addarg(op, "-ds .2");
+		op = addarg(op, "-dj .35");
+	} else
+		op = addarg(op, "-ds .3");
+	op = addarg(op, "-dt .1");
+	op = addarg(op, "-dc .5");
+	op = addarg(op, "-dr 1");
+	op = addarg(op, "-sj .7");
+	op = addarg(op, "-st .15");
+	sprintf(op, " -ab %d", overture=vint(INDIRECT));
+	op += strlen(op);
+	if (vdef(AMBFILE)) {
+		sprintf(op, " -af %s", vval(AMBFILE));
+		op += strlen(op);
+	} else
+		overture = 0;
+	switch (vscale(VARIABILITY)) {
+	case LOW:
+		op = addarg(op, "-aa .25");
+		op = addarg(op, "-ad 128");
+		op = addarg(op, "-as 0");
+		break;
+	case MEDIUM:
+		op = addarg(op, "-aa .2");
+		op = addarg(op, "-ad 300");
+		op = addarg(op, "-as 64");
+		break;
+	case HIGH:
+		op = addarg(op, "-aa .15");
+		op = addarg(op, "-ad 500");
+		op = addarg(op, "-as 128");
+		break;
+	}
+	d = ambval();
+	sprintf(op, " -av %.2g %.2g %.2g", d, d, d);
+	op += strlen(op);
+	op = addarg(op, "-lr 6");
+	op = addarg(op, "-lw .002");
 	if (vdef(RENDER))
 		op = addarg(op, vval(RENDER));
 }
 
 
-hiqopts(ro)				/* high quality rendering options */
-char	*ro;
+hiqopts(op)				/* high quality rendering options */
+register char	*op;
 {
-	register char	*op = ro;
+	double	d, org[3], siz[3];
 
 	*op = '\0';
+	if (sscanf(vval(ZONE), "%*s %lf %lf %lf %lf %lf %lf", &org[0],
+			&siz[0], &org[1], &siz[1], &org[2], &siz[2]) != 6) {
+		fprintf(stderr, "%s: bad value for variable '%s'\n",
+				progname, vnam(ZONE));
+		exit(1);
+	}
+	siz[0] -= org[0]; siz[1] -= org[1]; siz[2] -= org[2];
+	getoctcube(org, &d);
+	d *= 3./(siz[0]+siz[1]+siz[2]);
+	switch (vscale(DETAIL)) {
+	case LOW:
+		op = addarg(op, vbool(PENUMBRAS) ? "-ps 1" : "-ps 8");
+		op = addarg(op, "-dp 256");
+		sprintf(op, " -ar %d", (int)(16*d));
+		op += strlen(op);
+		break;
+	case MEDIUM:
+		op = addarg(op, vbool(PENUMBRAS) ? "-ps 1" : "-ps 5");
+		op = addarg(op, "-dp 512");
+		sprintf(op, " -ar %d", (int)(32*d));
+		op += strlen(op);
+		break;
+	case HIGH:
+		op = addarg(op, vbool(PENUMBRAS) ? "-ps 1" : "-ps 3");
+		op = addarg(op, "-dp 1024");
+		sprintf(op, " -ar %d", (int)(64*d));
+		op += strlen(op);
+		break;
+	}
+	op = addarg(op, "-pt .04");
+	if (vbool(PENUMBRAS)) {
+		op = addarg(op, "-ds .1");
+		op = addarg(op, "-dj .7");
+	} else
+		op = addarg(op, "-ds .2");
+	op = addarg(op, "-dt .05");
+	op = addarg(op, "-dc .75");
+	op = addarg(op, "-dr 3");
+	op = addarg(op, "-sj 1");
+	op = addarg(op, "-st .03");
+	sprintf(op, " -ab %d", overture=vint(INDIRECT)+1);
+	op += strlen(op);
+	if (vdef(AMBFILE)) {
+		sprintf(op, " -af %s", vval(AMBFILE));
+		op += strlen(op);
+	} else
+		overture = 0;
+	switch (vscale(VARIABILITY)) {
+	case LOW:
+		op = addarg(op, "-aa .15");
+		op = addarg(op, "-ad 200");
+		op = addarg(op, "-as 0");
+		break;
+	case MEDIUM:
+		op = addarg(op, "-aa .125");
+		op = addarg(op, "-ad 512");
+		op = addarg(op, "-as 128");
+		break;
+	case HIGH:
+		op = addarg(op, "-aa .08");
+		op = addarg(op, "-ad 850");
+		op = addarg(op, "-as 256");
+		break;
+	}
+	d = ambval();
+	sprintf(op, " -av %.2g %.2g %.2g", d, d, d);
+	op += strlen(op);
+	op = addarg(op, "-lr 12");
+	op = addarg(op, "-lw .0005");
 	if (vdef(RENDER))
 		op = addarg(op, vval(RENDER));
 }
@@ -611,7 +838,11 @@ char	*ro;
 		}
 		strcpy(evp, "ROPT=");
 		strcat(evp, ro);
-		putenv(evp);
+		if (putenv(evp) != 0) {
+			fprintf(stderr, "%s: out of environment space\n",
+					progname);
+			exit(1);
+		}
 		strcpy(ro, " $ROPT");
 	}
 #endif
@@ -689,9 +920,9 @@ register char	*vs;
 					progname);
 			exit(1);
 		}
-		dim[0] -= cent[0];
-		dim[1] -= cent[1];
-		dim[2] -= cent[2];
+		dim[0] -= cent[0]; cent[0] += .5*dim[0];
+		dim[1] -= cent[1]; cent[1] += .5*dim[1];
+		dim[2] -= cent[2]; cent[2] += .5*dim[2];
 		exterior = vlet(ZONE) == 'E';
 		mult = exterior ? 2. : .45 ;
 		sprintf(cp, " -vp %.2g %.2g %.2g -vd %.2g %.2g %.2g",
@@ -809,7 +1040,7 @@ char	*opts;
 rpict(opts)				/* run rpict and pfilt for each view */
 char	*opts;
 {
-	char	combuf[512];
+	char	combuf[1024];
 	char	rawfile[MAXPATH], picfile[MAXPATH], rep[MAXPATH], res[32];
 	char	pfopts[64];
 	char	vs[32], *vw;
