@@ -15,44 +15,42 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "object.h"
 
 
-extern char  *savestr(), *malloc(), *fgetword();
+#ifndef  MEMHOG
+#define  bmalloc	malloc
+#endif
+
+extern char  *bmalloc(), *savestr(), *fgetword();
 #ifndef atof
 extern double  atof();
 #endif
 extern int  atoi();
 extern long  atol();
 
-#ifdef  MEMHOG
-extern char  *bmalloc();
-#else
-#define  bmalloc	malloc
-#endif
-
 
 readfargs(fa, fp)		/* read function arguments from stream */
 register FUNARGS  *fa;
 FILE  *fp;
 {
-#define getstr()	(fgetword(sbuf,MAXSTR,fp)!=NULL)
-#define getint()	(getstr() && isint(sbuf))
-#define getflt()	(getstr() && isflt(sbuf))
+#define getstr(s)	(fgetword(s,sizeof(s),fp)!=NULL)
+#define getint(s)	(getstr(s) && isint(s))
+#define getflt(s)	(getstr(s) && isflt(s))
 	char  sbuf[MAXSTR];
 	register int  n, i;
 
-	if (!getint() || (n = atoi(sbuf)) < 0)
+	if (!getint(sbuf) || (n = atoi(sbuf)) < 0)
 		return(0);
 	if (fa->nsargs = n) {
 		fa->sarg = (char **)bmalloc(n*sizeof(char *));
 		if (fa->sarg == NULL)
 			return(-1);
 		for (i = 0; i < fa->nsargs; i++) {
-			if (!getstr())
+			if (!getstr(sbuf))
 				return(0);
 			fa->sarg[i] = savestr(sbuf);
 		}
 	} else
 		fa->sarg = NULL;
-	if (!getint() || (n = atoi(sbuf)) < 0)
+	if (!getint(sbuf) || (n = atoi(sbuf)) < 0)
 		return(0);
 #ifdef  IARGS
 	if (fa->niargs = n) {
@@ -60,7 +58,7 @@ FILE  *fp;
 		if (fa->iarg == NULL)
 			return(-1);
 		for (i = 0; i < n; i++) {
-			if (!getint())
+			if (!getint(sbuf))
 				return(0);
 			fa->iarg[i] = atol(sbuf);
 		}
@@ -70,14 +68,14 @@ FILE  *fp;
 	if (n != 0)
 		return(0);
 #endif
-	if (!getint() || (n = atoi(sbuf)) < 0)
+	if (!getint(sbuf) || (n = atoi(sbuf)) < 0)
 		return(0);
 	if (fa->nfargs = n) {
 		fa->farg = (FLOAT *)bmalloc(n*sizeof(FLOAT));
 		if (fa->farg == NULL)
 			return(-1);
 		for (i = 0; i < n; i++) {
-			if (!getflt())
+			if (!getflt(sbuf))
 				return(0);
 			fa->farg[i] = atof(sbuf);
 		}
