@@ -1,4 +1,4 @@
-/* Copyright (c) 1999 Silicon Graphics, Inc. */
+/* Copyright (c) 1999 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -42,7 +42,7 @@ char	*outdev = NULL;		/* output device name */
 
 int	readinp = 0;		/* read commands from stdin */
 
-int	force = 0;		/* allow overwrite of holodeck */
+int	force = 0;		/* allow overwrite of holodeck (-1 == read-only) */
 
 time_t	starttime;		/* time we got started */
 time_t	endtime;		/* time we should end by */
@@ -82,7 +82,10 @@ char	*argv[];
 			nowarn++;
 			break;
 		case 'f':			/* force overwrite */
-			force++;
+			force = 1;
+			break;
+		case 'r':			/* read-only mode */
+			force = -1;
 			break;
 		case 'i':			/* read input from stdin */
 			readinp++;
@@ -126,6 +129,9 @@ char	*argv[];
 		HDGRID	hdg[HDMAX];
 							/* set defaults */
 		setdefaults(hdg);
+							/* check read-only */
+		if (force < 0)
+			error(USER, "cannot create read-only holodeck");
 							/* holodeck exists? */
 		if (!force && access(hdkfile, R_OK|W_OK) == 0)
 			error(USER,
@@ -143,7 +149,7 @@ char	*argv[];
 	quit(0);
 userr:
 	fprintf(stderr,
-"Usage: %s [-n nprocs][-o disp][-w][-f] output.hdk [control.hif|+|- [VAR=val ..]]\n",
+"Usage: %s [-n nprocs][-o disp][-w][-r|-f] output.hdk [control.hif|+|- [VAR=val ..]]\n",
 			progname);
 	quit(1);
 }
@@ -477,11 +483,23 @@ loadholo()			/* start loading a holodeck from fname */
 	int	fd;
 	int	n;
 	int4	nextloc;
-					/* open holodeck file */
-	if ((fp = fopen(hdkfile, ncprocs>0 ? "r+" : "r")) == NULL) {
-		sprintf(errmsg, "cannot %s \"%s\"",
-				ncprocs>0 ? "append" : "read", hdkfile);
-		error(SYSTEM, errmsg);
+	
+	if (ncprocs > 0 & force >= 0)
+		fp = fopen(hdkfile, "r+");
+	else
+		fp = NULL;
+	if (fp == NULL) {
+		if ((fp = fopen(hdkfile, "r")) == NULL) {
+			sprintf(errmsg, "cannot open \"%s\"", hdkfile);
+			error(SYSTEM, errmsg);
+		}
+		if (ncprocs > 0) {
+			sprintf(errmsg,
+			"\"%s\" opened read-only; new rays will be discarded",
+					hdkfile);
+			error(WARNING, errmsg);
+			force = -1;
+		}
 	}
 					/* load variables from header */
 	getheader(fp, headline, NULL);
@@ -590,7 +608,7 @@ int	ec;
 	if (hdlist[0] != NULL) {	/* close holodeck */
 		if (nprocs > 0)
 			status = done_rtrace();		/* calls hdsync() */
-		if (ncprocs > 0 && vdef(REPORT)) {
+		if (ncprocs > 0 & force >= 0 && vdef(REPORT)) {
 			long	fsiz, fuse;
 			fsiz = hdfilen(hdlist[0]->fd);
 			fuse = hdfiluse(hdlist[0]->fd, 1);
