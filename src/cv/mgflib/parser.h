@@ -345,3 +345,4 @@ extern double	atof();
 extern MEM_PTR	malloc();
 extern MEM_PTR	calloc();
 extern MEM_PTR	realloc();
+extern void	free();
