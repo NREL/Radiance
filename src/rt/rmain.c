@@ -703,8 +703,10 @@ printdefaults()			/* print default values to stdout */
 		case 'd': printf(" direction"); break;
 		case 'v': printf(" value"); break;
 		case 'l': printf(" length"); break;
+		case 'L': printf(" first_length"); break;
 		case 'p': printf(" point"); break;
 		case 'n': printf(" normal"); break;
+		case 'N': printf(" unperturbed_normal"); break;
 		case 's': printf(" surface"); break;
 		case 'w': printf(" weight"); break;
 		case 'm': printf(" modifier"); break;
