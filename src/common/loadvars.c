@@ -32,7 +32,7 @@ char	*rfname;
 		fp = stdin;
 	else if ((fp = fopen(rfname, "r")) == NULL) {
 		perror(rfname);
-		exit(1);
+		quit(1);
 	}
 	while (fgetline(buf, sizeof(buf), fp) != NULL) {
 		for (cp = buf; *cp; cp++) {
@@ -90,7 +90,7 @@ register char	*ass;
 	if (vp == NULL) {
 		fprintf(stderr, "%s: unknown variable '%s'\n",
 				progname, varname);
-		exit(1);
+		quit(1);
 	}
 					/* assign new value */
 	if (i = vp->nass) {
@@ -104,7 +104,7 @@ register char	*ass;
 		vp->value = malloc(n+1);
 	if (vp->value == NULL) {
 		perror(progname);
-		exit(1);
+		quit(1);
 	}
 	cp = vp->value+i;		/* copy value, squeezing spaces */
 	*cp = *ass;
@@ -221,7 +221,7 @@ register VARIABLE	*vp;
 	}
 	fprintf(stderr, "%s: illegal value for boolean variable '%s'\n",
 			progname, vp->name);
-	exit(1);
+	quit(1);
 }
 
 
@@ -243,7 +243,7 @@ register VARIABLE	*vp;
 	}
 	fprintf(stderr, "%s: illegal value for qualitative variable '%s'\n",
 			progname, vp->name);
-	exit(1);
+	quit(1);
 }
 
 
@@ -255,7 +255,7 @@ register VARIABLE	*vp;
 	if (isint(vp->value)) return;
 	fprintf(stderr, "%s: illegal value for integer variable '%s'\n",
 			progname, vp->name);
-	exit(1);
+	quit(1);
 }
 
 
@@ -267,7 +267,7 @@ register VARIABLE	*vp;
 	if (isflt(vp->value)) return;
 	fprintf(stderr, "%s: illegal value for real variable '%s'\n",
 			progname, vp->name);
-	exit(1);
+	quit(1);
 }
 
 
