@@ -295,33 +295,38 @@ OBJREC  *m;
 
 
 inglyph(x, y, gl)		/* (x,y) within font glyph gl? */
-double  x, y;
+double  x, y;		/* real coordinates in range [0,256) */
 register GLYPH  *gl;
 {
 	int  n, ncross;
-	int  xtc, ytc;
+	int  xlb, ylb;
+	int  tv;
 	register GORD  *p0, *p1;
 
 	if (gl == NULL)
 		return(0);
-	xtc = x + 0.5;			/* compute test coordinates */
-	ytc = y + 0.5;
-	if (gl->left > xtc || gl->right < xtc ||
-			gl->bottom > ytc || gl->top < ytc)
-		return(0);	/* outside extent */
+	xlb = x;
+	ylb = y;
+	if (gl->left > xlb || gl->right <= xlb ||	/* check extent */
+			gl->bottom > ylb || gl->top <= ylb)
+		return(0);
+	xlb = xlb<<1 | 1;		/* add 1/2 to test points... */
+	ylb = ylb<<1 | 1;		/* ...so no equal comparisons */
 	n = gl->nverts;			/* get # of vertices */
 	p0 = gvlist(gl) + 2*(n-1);	/* connect last to first */
 	p1 = gvlist(gl);
 	ncross = 0;
 					/* positive x axis cross test */
 	while (n--) {
-		if ((p0[1] > ytc) ^ (p1[1] > ytc))
-			if (p0[0] > xtc && p1[0] > xtc)
+		if ((p0[1]<<1 > ylb) ^ (p1[1]<<1 > ylb)) {
+			tv = p0[0]<<1 > xlb | (p1[0]<<1 > xlb) << 1;
+			if (tv == 03)
 				ncross++;
-			else if (p0[0] > xtc || p1[0] > xtc)
+			else if (tv)
 				ncross += (p1[1] > p0[1]) ^
 						((p0[1]-y)*(p1[0]-x) >
 						(p0[0]-x)*(p1[1]-y));
+		}
 		p0 = p1;
 		p1 += 2;
 	}
