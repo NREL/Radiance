@@ -51,6 +51,8 @@ OBJREC  *o;
 	if (o->oargs.nfargs < 9 || o->oargs.nfargs % 3)
 		objerror(o, USER, "bad # arguments");
 
+	o->os = (char *)f;			/* save face */
+
 	f->va = o->oargs.farg;
 	f->nv = o->oargs.nfargs / 3;
 						/* compute area and normal */
@@ -90,7 +92,6 @@ OBJREC  *o;
 	if (fabs(f->norm[2]) > fabs(f->norm[f->ax]))
 		f->ax = 2;
 
-	o->os = (char *)f;			/* save face */
 	return(f);
 }
 
