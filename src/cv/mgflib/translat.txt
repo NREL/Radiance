@@ -32,7 +32,7 @@ either select your MGF vertex names from a small, recycled pool of
 names, or figure out some way to share vertices that were not shared
 before.  In the first case, you will just allocate as many vertex
 names as you need for any given object, then reuse these names and
-therefore the parsers memory for other objects.  In the second case,
+therefore the parser's memory for other objects.  In the second case,
 you will cache vertex names and values in some LRU table of
 predetermined size, and use this table to merge vertices in the
 file.  (See rad2mgf.c as an example of how this can be done.)
@@ -53,7 +53,7 @@ what do we do with these in MGF?  If the idea is to produce a point
 or line on the final display that is one or two pixels wide, there
 is little one can do to guarantee such a thing will happen because
 the pixel size is dependent on view and display parameters as well
-as scene location.
+as object location.
 
 There are two ways of dealing with points and lines in MGF.  The
 first is to say, "Hey, these are 0 and 1 dimensional entities, so
@@ -111,7 +111,7 @@ some rendering systems may not give sane results if you cross over a
 hole with part of your seam.  If we had chosen to create the seam
 between v2 and v5 in the above example instead of v4 and v5, the seam
 would cross our hole and may not render correctly.  (For systems that
-are sensitive to this, it is probably necessary that their MGF
+are sensitive to this, it is probably safest for their MGF
 loader/translator re-expresses seams in terms of holes again, which can
 be done easily so long as vertices are shared in the above fashion.)
 
@@ -121,7 +121,7 @@ Polygons in MGF should be planar.  There is nothing about the format
 that enforces this, but the rendering or modeling software on the other
 end may have real problems if this requirement is violated.  The parser
 itself does not test for non-planar polygons, so when in doubt about a
-model it is safest to test for planarity and break a polygon into triangles
+model, it is safest to test for planarity and break a polygon into triangles
 if it is even slightly non-planar.
 
 NURBS, CSG, Blobbies, Etc.
@@ -159,7 +159,7 @@ volume, such as a pane of glass, and this also can provide significant
 calculational savings in an image-space algorithm (such as
 ray-tracing).  Since both types of surfaces are useful and both types
 of rendering algorithms may ultimately be applied, MGF provides a way
-to specify sidedness rather than picking one model or the other.
+to specify sidedness rather than picking one interpretation or the other.
 
 So-called specular reflection and transmission are modeled using a
 Gaussian distribution of surface normals.  The "alpha_r" and
@@ -191,10 +191,11 @@ Unlike most graphics languages, MGF does not use an RGB color model,
 simply because there is no recognized definition for this model.
 It is based on computer monitor phosphors, which vary from one
 CRT to the next.  (There is an RGB standard defined in the TV
-industry, but this has a rather poor correlation to most graphics.)
+industry, but this has a rather poor correlation to most computer
+monitors.)
 
 MGF uses two alternative, well-defined standards.  The first is the CIE
-standard for chromaticity coordinates.  With this standard, any viewable
+standard xy chromaticity coordinates.  With this standard, any viewable
 color may be exactly reproduced.  Unfortunately, the interaction between
 colors (i.e. colored light sources and interreflections) cannot be
 specified exactly with any finite coordinate set, including CIE
@@ -203,7 +204,7 @@ transmittance or emittance as a function of wavelength over the visible
 spectrum.  This function is still discretized, but at a user-selectable
 resolution.  Furthermore, spectral colors may be mixed, providing (nearly)
 arbitrary basis functions, which can produce more accurate results in
-some cases and are a convenience in others.
+some cases and are merely a convenience for translation in others.
 
 Conversion back and forth between CIE chromaticity coordinates and spectral
 samples is provided within the MGF parser.  Unfortunately, conversion
@@ -299,8 +300,9 @@ register float  *ciecolor, *rgbcolor;
 				rgb2xyzmat[i][2]*rgbcolor[2] ;
 }
 
-Another alternative is to use the MGF "cmix" entity to convert from RGB
-directly by naming the three primaries in terms of their chromaticities, e.g:
+An alternative to adopting the above code is to use the MGF "cmix"
+entity to convert from RGB directly by naming the three primaries in
+terms of their chromaticities, e.g:
 
 	c r =
 		cxy 0.640 0.330
@@ -321,5 +323,6 @@ that cmix uses relative luminance as the standard for its weights.  Since
 blue is less luminous for the same energy than red, which is in turn
 less luminous than green, the weights cannot be the same to achieve an
 even spectral balance.  Unfortunately, computing these relative weights
-is not straightforward, so it is given in the above macros as CIE_rf,
-CIE_gf and CIE_bf.
+is not straightforward, though it is given in the above macros as CIE_rf,
+CIE_gf and CIE_bf.  (The common factors in these macros may of course
+be removed for simplification purposes.)
