@@ -651,7 +651,7 @@ getframe(				/* get focus frame */
 	midy = (starty + endy) >> 1;
 					/* set focus distance */
 	if ((li = qtFindLeaf(midx, midy)) < 0)
-		return(0);		/* not on window */
+		return;			/* not on window */
 	VCOPY(v1, qtL.wp[li]);
 	odev.v.vdist = sqrt(dist2(odev.v.vp, v1));
 					/* set frame for rendering */
