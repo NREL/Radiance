@@ -81,6 +81,7 @@ char	*argv[];
 				continue;
 			case 'f':
 			case 'e':
+				a++;
 				continue;
 			}
 		break;
@@ -121,15 +122,18 @@ char	*argv[];
 				quit(1);
 			}
 		}
+		checkfile();
 		nfiles++;
 	}
-	initfiles();		/* initialize files and variables */
+	init();				/* set constant expressions */
 					/* go back and get expressions */
 	for (a = 1; a < argc; a++) {
 		if (argv[a][0] == '-')
 			switch (argv[a][1]) {
 			case 'x':
 			case 'y':
+				a++;
+				continue;
 			case 'w':
 			case 'o':
 				continue;
@@ -181,40 +185,44 @@ char	*s;
 		putchar('\t');
 		fputs(s, stdout);
 	}
-
 }
 
 
-initfiles()			/* ready files and set variables */
+checkfile()			/* ready a file */
+{
+	register int	i;
+					/* process header */
+	fputs(input[nfiles].name, stdout);
+	fputs(":\n", stdout);
+	getheader(input[nfiles].fp, tputs, NULL);
+	if (wrongformat) {
+		eputs(input[nfiles].name);
+		eputs(": not in Radiance picture format\n");
+		quit(1);
+	}
+	if (fgetresolu(&xpos, &ypos, input[nfiles].fp) != (YMAJOR|YDECR)) {
+		eputs(input[nfiles].name);
+		eputs(": bad picture size\n");
+		quit(1);
+	}
+	if (xres == 0 && yres == 0) {
+		xres = xpos;
+		yres = ypos;
+	} else if (xpos != xres || ypos != yres) {
+		eputs(input[nfiles].name);
+		eputs(": resolution mismatch\n");
+		quit(1);
+	}
+					/* allocate scanlines */
+	for (i = 0; i < WINSIZ; i++)
+		input[nfiles].scan[i] = (COLOR *)emalloc(xres*sizeof(COLOR));
+}
+
+
+init()				/* perform final setup */
 {
 	double	l_colin(), l_coef();
-	register int	n, i;
-					/* process picture headers */
-	for (n = 0; n < nfiles; n++) {
-		fputs(input[n].name, stdout);
-		fputs(":\n", stdout);
-		getheader(input[n].fp, tputs, NULL);
-		if (wrongformat) {
-			eputs(input[n].name);
-			eputs(": not in Radiance picture format\n");
-			quit(1);
-		}
-		if (fgetresolu(&xpos, &ypos, input[n].fp) != (YMAJOR|YDECR)) {
-			eputs(input[n].name);
-			eputs(": bad picture size\n");
-			quit(1);
-		}
-		if (xres == 0 && yres == 0) {
-			xres = xpos;
-			yres = ypos;
-		} else if (xpos != xres || ypos != yres) {
-			eputs(input[n].name);
-			eputs(": resolution mismatch\n");
-			quit(1);
-		}
-		for (i = 0; i < WINSIZ; i++)
-			input[n].scan[i] = (COLOR *)emalloc(xres*sizeof(COLOR));
-	}
+	register int	i;
 						/* prime input */
 	for (ypos = yres+(MIDSCN-1); ypos >= yres; ypos--)
 		advance();
@@ -317,13 +325,14 @@ register char	*nam;
 	register int	fn, n;
 	double	d;
 
-	fn = (d = argument(1)) - .5;
-	if (d <= -.5 || fn >= nfiles) {
+	d = argument(1);
+	if (d > -.5 && d < .5)
+		return((double)nfiles);
+	fn = d - .5;
+	if (fn < 0 || fn >= nfiles) {
 		errno = EDOM;
 		return(0.0);
 	}
-	if (d < .5)
-		return((double)nfiles);
 	if (nam == vbrtcoef)
 		return(bright(input[fn].coef));
 	n = 3;
@@ -343,13 +352,14 @@ register char	*nam;
 	register int	n, xoff, yoff;
 	double	d;
 
-	fn = (d = argument(1)) - .5;
-	if (d <= -.5 || fn >= nfiles) {
+	d = argument(1);
+	if (d > -.5 && d < .5)
+		return((double)nfiles);
+	fn = d - .5;
+	if (fn < 0 || fn >= nfiles) {
 		errno = EDOM;
 		return(0.0);
 	}
-	if (d < .5)
-		return((double)nfiles);
 	xoff = yoff = 0;
 	n = nargum();
 	if (n >= 2) {
