@@ -65,15 +65,24 @@ typedef struct font {
 	struct font  *next;		/* next font in list */
 }  FONT;
 
+typedef struct tline {
+	struct tline  *next;		/* pointer to next line */
+					/* followed by the string */
+}  TLINE;
+
+#define  TLSTR(l)	((char *)(l+1))
+
 typedef struct {
-	char  **t;			/* text array */
 	FVECT  right, down;		/* right and down unit vectors */
 	FONT  *f;			/* our font */
+	TLINE  tl;			/* line list */
 }  TEXT;
 
 extern char  *fgetword();
 
 TEXT  *gettext();
+
+TLINE  *tlalloc();
 
 FONT  *getfont();
 
@@ -124,6 +133,22 @@ RAY  *r;
 }
 
 
+TLINE *
+tlalloc(s)			/* allocate and assign text line */
+char  *s;
+{
+	extern char  *strcpy();
+	register TLINE  *tl;
+
+	tl = (TLINE *)malloc(sizeof(TLINE)+1+strlen(s));
+	if (tl == NULL)
+		error(SYSTEM, "out of memory in tlalloc");
+	tl->next = NULL;
+	strcpy(TLSTR(tl), s);
+	return(tl);
+}
+
+
 TEXT *
 gettext(tm)			/* get text structure for material */
 register OBJREC  *tm;
@@ -135,8 +160,9 @@ register OBJREC  *tm;
 	double  d;
 	FILE  *fp;
 	char  linbuf[512];
-	register TEXT  *t;
+	TEXT  *t;
 	register int  i;
+	register TLINE  *tlp;
 	register char  *s;
 
 	if ((t = (TEXT *)tm->os) != NULL)
@@ -147,7 +173,7 @@ register OBJREC  *tm;
 					tm->otype == PAT_CTEXT ? 15 : 9))
 		objerror(tm, USER, "bad # arguments");
 	if ((t = (TEXT *)malloc(sizeof(TEXT))) == NULL)
-		goto memerr;
+		error(SYSTEM, "out of memory in gettext");
 						/* compute vectors */
 	fcross(DxR, D, R);
 	fcross(t->right, DxR, D);
@@ -159,9 +185,7 @@ register OBJREC  *tm;
 	for (i = 0; i < 3; i++)
 		t->down[i] *= d;
 						/* get text */
-	t->t = (char **)malloc(2*sizeof(char **));
-	if (t->t == NULL)
-		goto memerr;
+	tlp = &t->tl;
 	if (tm->oargs.nsargs - tndx(tm) > 1) {	/* single line */
 		s = linbuf;
 		for (i = tndx(tm)+1; i < tm->oargs.nsargs; i++) {
@@ -170,8 +194,8 @@ register OBJREC  *tm;
 			*s++ = ' ';
 		}
 		*--s = '\0';
-		t->t[0] = savqstr(linbuf);
-		t->t[1] = NULL;
+		tlp->next = tlalloc(linbuf);
+		tlp = tlp->next;
 	} else {				/* text file */
 		if ((s = getpath(tm->oargs.sarg[tndx(tm)],
 				libpath, R_OK)) == NULL) {
@@ -184,26 +208,21 @@ register OBJREC  *tm;
 					s);
 			error(SYSTEM, errmsg);
 		}
-		for (i=0; fgets(linbuf,sizeof(linbuf),fp)!=NULL; i++) {
+		while (fgets(linbuf, sizeof(linbuf), fp) != NULL) {
 			s = linbuf + strlen(linbuf) - 1;
 			if (*s == '\n')
 				*s = '\0';
-			t->t=(char **)realloc((char *)t->t,
-					(i+2)*sizeof(char **));
-			if (t->t == NULL)
-				goto memerr;
-			t->t[i] = savqstr(linbuf);
+			tlp->next = tlalloc(linbuf);
+			tlp = tlp->next;
 		}
-		t->t[i] = NULL;
 		fclose(fp);
 	}
+	tlp->next = NULL;
 						/* get the font */
 	t->f = getfont(tm->oargs.sarg[fndx(tm)]);
 						/* we're done */
 	tm->os = (char *)t;
 	return(t);
-memerr:
-	error(SYSTEM, "out of memory in gettext");
 #undef  R
 #undef  D
 }
@@ -213,14 +232,13 @@ freetext(m)			/* free text structures associated with m */
 OBJREC  *m;
 {
 	register TEXT  *tp;
-	register int  i;
+	register TLINE  *tlp;
 
 	tp = (TEXT *)m->os;
 	if (tp == NULL)
 		return;
-	for (i = 0; tp->t[i] != NULL; i++)
-		freeqstr(tp->t[i]);
-	free((char *)tp->t);
+	for (tlp = tp->tl.next; tlp != NULL; tlp = tlp->next);
+		free(TLSTR(tlp));
 	free((char *)tp);
 	m->os = NULL;
 }
@@ -228,12 +246,13 @@ OBJREC  *m;
 
 intext(p, m)			/* check to see if p is in text glyph */
 FVECT  p;
-register OBJREC  *m;
+OBJREC  *m;
 {
 	register TEXT  *tp;
-	register int  i;
+	register TLINE  *tlp;
 	double  v[3], y, x;
-	int  col, lno;
+	int  col;
+	register int  lno;
 				/* first, compute position in text */
 	v[0] = p[0] - m->oargs.farg[0];
 	v[1] = p[1] - m->oargs.farg[1];
@@ -246,12 +265,12 @@ register OBJREC  *m;
 	y = (lno+1) - y;
 				/* get the font character */
 	tp = gettext(m);
-	for (i = 0; i < lno; i++)
-		if (tp->t[i] == NULL)
-			return(0);
-	if (col >= strlen(tp->t[i]))
+	for (tlp = tp->tl.next; tlp != NULL; tlp = tlp->next)
+		if (--lno < 0)
+			break;
+	if (tlp == NULL || col >= strlen(TLSTR(tlp)))
 		return(0);
-	return(inglyph(x, y, tp->f->fg[tp->t[i][col]]));
+	return(inglyph(x, y, tp->f->fg[TLSTR(tlp)[col]]));
 }
 
 
