@@ -147,6 +147,19 @@ is absent, or an '@' is followed by nothing, then
 the cursor is used to pick a specific image
 location for normalization.
 .TP
+.BI focus " [distance]"
+Set focus distance for depth-of-field sampling.
+If a distance in world coordinates is absent, then the cursor
+is used to choose a point in the scene on which to focus.
+(The focus distance setting does not affect rendering in
+.I rview,
+but can be used in
+.I rpict
+with the
+.I \-pd
+option to simulate depth-of-field on views saved from
+.I rview.)
+.TP
 .BI frame " [ xmin ymin xmax ymax ]"
 Set frame for refinement.
 If coordinates are absent, the cursor is used to

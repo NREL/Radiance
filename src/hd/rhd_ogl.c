@@ -819,15 +819,30 @@ getframe(				/* get focus frame */
 )
 {
 	int	startx = ebut->x, starty = ebut->y;
-	int	endx, endy;
-
+	int	endx, endy, midx, midy;
+	FVECT	odir, v1;
+	double	d, d1;
+						/* get mouse drag */
 	XMaskEvent(ourdisplay, ButtonReleaseMask, levptr(XEvent));
 	endx = levptr(XButtonReleasedEvent)->x;
 	endy = levptr(XButtonReleasedEvent)->y;
-	if ((endx == startx) | (endy == starty)) {
-		XBell(ourdisplay, 0);
+	midx = (startx + endx) >> 1;
+	midy = (starty + endy) >> 1;
+						/* set focus distance */
+	if (viewray(v1, odir, &odev.v,
+			(midx+.5)/odev.hres, (midy+.5)/odev.vres) < -FTINY)
 		return;
-	}
+	d = getdistance(midx, midy, odir);	/* distance from front plane */
+#ifdef DOBJ
+	d1 = dobj_trace(NULL, v1, odir);
+	if (d1 < d)
+		d = d1;
+#endif
+	if (d < .99*FHUGE)
+		odev.v.vdist = d + sqrt(dist2(v1, odev.v.vp));
+						/* set frame for rendering */
+	if ((endx == startx) | (endy == starty))
+		return;
 	if (endx < startx) {register int c = endx; endx = startx; startx = c;}
 	if (endy < starty) {register int c = endy; endy = starty; starty = c;}
 	sprintf(odev_args, "%.3f %.3f %.3f %.3f",

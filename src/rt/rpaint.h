@@ -64,6 +64,7 @@ extern void	getview(char *s);
 extern void	lastview(char *s);
 extern void	saveview(char *s);
 extern void	loadview(char *s);
+extern void	getfocus(char *s);
 extern void	getaim(char *s);
 extern void	getmove(char *s);
 extern void	getrotate(char *s);

@@ -121,10 +121,10 @@ pfhold(void)		/* holding pattern for idle rendering process */
 	char	buf[512];
 	register int	n;
 				/* close input and output descriptors */
-	close(fileno(stdin));
-	close(fileno(stdout));
+	close(0);
+	close(1);
 	if (errfile == NULL)
-		close(fileno(stderr));
+		close(2);
 				/* create named pipes for input and output */
 	if (mkfifo(mktemp(strcpy(inpname,TEMPLATE)), 0600) < 0)
 		goto createrr;

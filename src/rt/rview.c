@@ -215,11 +215,15 @@ again:
 	else *++args = '\0';
 	
 	switch (inpbuf[0]) {
-	case 'f':				/* new frame (or free mem.) */
+	case 'f':				/* new frame (|focus|free) */
 		if (badcom("frame")) {
-			if (badcom("free"))
-				goto commerr;
-			free_objmem();
+			if (badcom("focus")) {
+				if (badcom("free"))
+					goto commerr;
+				free_objmem();
+				break;
+			}
+			getfocus(args);
 			break;
 		}
 		getframe(args);
