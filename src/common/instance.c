@@ -41,6 +41,11 @@ int  flags;
 			error(SYSTEM, "out of memory in getscene");
 		sc->name = savestr(sname);
 		sc->ldflags = 0;
+		sc->scube.cutree = EMPTY;
+		sc->scube.cuorg[0] = sc->scube.cuorg[1] =
+				sc->scube.cuorg[2] = 0.;
+		sc->scube.cusize = 0.;
+		sc->firstobj = sc->nobjs = 0;
 		sc->next = slist;
 		slist = sc;
 	}
@@ -48,7 +53,11 @@ int  flags;
 		sprintf(errmsg, "cannot find octree file \"%s\"", sname);
 		error(USER, errmsg);
 	}
+	if (flags & ~sc->ldflags & IO_SCENE)
+		sc->firstobj = nobjects;
 	readoct(pathname, flags & ~sc->ldflags, &sc->scube, NULL);
+	if (flags & ~sc->ldflags & IO_SCENE)
+		sc->nobjs = nobjects - sc->firstobj;
 	sc->ldflags |= flags;
 	return(sc);
 }
