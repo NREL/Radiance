@@ -103,6 +103,6 @@ register char  *s;
 	register int  h = 0;
 
 	while (*s)
-		h = (h<<1 & 0x7fff) ^ *s++;
+		h = (h<<1 & 0x7fff) ^ (*s++ & 0xff);
 	return(h);
 }
