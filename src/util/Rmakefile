@@ -35,10 +35,11 @@ rlux.csh raddepend.csh trad.wsh objline.csh compamb.csh
 	cp raddepend.csh $(INSTDIR)/raddepend
 	cp compamb.csh $(INSTDIR)/compamb
 	cp vinfo.csh $(INSTDIR)/vinfo
+	cp genambpos.csh $(INSTDIR)/genambpos
 	chmod 755 $(INSTDIR)/objview $(INSTDIR)/objpict \
 		$(INSTDIR)/glare $(INSTDIR)/dayfact $(INSTDIR)/debugcal \
 		$(INSTDIR)/rlux $(INSTDIR)/raddepend $(INSTDIR)/objline \
-		$(INSTDIR)/compamb $(INSTDIR)/vinfo
+		$(INSTDIR)/compamb $(INSTDIR)/vinfo $(INSTDIR)/genambpos
 	csh -f tradinstall.csh $(INSTDIR) $(LIBDIR)/tcl
 
 clean:
