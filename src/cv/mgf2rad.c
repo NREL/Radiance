@@ -427,7 +427,7 @@ material()			/* get (and print) current material */
 	c_cmaterial->clock = 0;
 	if (c_cmaterial->ed > .1) {	/* emitter */
 		cvtcolor(radrgb, &c_cmaterial->ed_c,
-				emult*c_cmaterial->ed/WHTEFFICACY);
+				emult*c_cmaterial->ed/(PI*WHTEFFICACY));
 		if (glowdist < FHUGE) {		/* do a glow */
 			fprintf(matfp, "\nvoid glow %s\n0\n0\n", mname);
 			fprintf(matfp, "4 %f %f %f %f\n", colval(radrgb,RED),
