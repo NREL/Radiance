@@ -1,6 +1,6 @@
-/* Copyright (c) 1997 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
-/* SCCSid "$SunId$ LBL" */
+/* SCCSid "$SunId$ SGI" */
 
 /*
  * Header file for picture file conditioning.
@@ -25,7 +25,7 @@
 
 #define	HISTRES		100		/* histogram resolution */
 
-#define LMIN		1e-4		/* minimum visible world luminance */
+#define LMIN		1e-7		/* minimum visible world luminance */
 #define LMAX		1e5		/* maximum visible world luminance */
 
 #define Bl(Lw)		log(Lw)		/* brightness function */
