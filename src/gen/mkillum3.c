@@ -10,7 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "mkillum.h"
 
-#define  brt(col)	(.295*(col)[0] + .635*(col)[1] + .070*(col)[2])
+#define  brt(col)	(.263*(col)[0]+.655*(col)[1]+.082*(col)[2])
 
 char	DATORD[] = "RGB";		/* data ordering */
 char	DATSUF[] = ".dat";		/* data file suffix */
