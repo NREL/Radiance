@@ -143,7 +143,7 @@ newobject()				/* get a new object */
 		i = nobjects >> 6;
 		if (i >= MAXOBJBLK)
 			return(OVOID);
-		objblock[i] = (OBJREC *)bmalloc(0100*sizeof(OBJREC));
+		objblock[i] = (OBJREC *)bmalloc(OBJBLKSIZ*sizeof(OBJREC));
 		if (objblock[i] == NULL)
 			return(OVOID);
 	}
