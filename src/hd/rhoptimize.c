@@ -12,6 +12,7 @@ static const char	RCSid[] = "$Id$";
 
 #include "rtprocess.h" /* getpid() */
 #include "holo.h"
+#include "platform.h"
 
 #ifndef BKBSIZE
 #define BKBSIZE		256		/* beam clump size (kilobytes) */
@@ -65,14 +66,14 @@ char	*argv[];
 	lastopos = 0L;			/* copy sections one by one */
 	while (nextipos != 0L) {
 					/* set input position; get next */
-		lseek(hdfd[0], (off_t)nextipos, 0);
+		lseek(hdfd[0], (off_t)nextipos, SEEK_SET);
 		read(hdfd[0], (char *)&nextipos, sizeof(nextipos));
 					/* get output position; set last */
-		thisopos = lseek(hdfd[1], (off_t)0, 2);
+		thisopos = lseek(hdfd[1], (off_t)0, SEEK_END);
 		if (lastopos > 0L) {
-			lseek(hdfd[1], (off_t)lastopos, 0);
+			lseek(hdfd[1], (off_t)lastopos, SEEK_SET);
 			write(hdfd[1], (char *)&thisopos, sizeof(thisopos));
-			lseek(hdfd[1], (off_t)0, 2);
+			lseek(hdfd[1], (off_t)0, SEEK_END);
 		}
 		lastopos = thisopos;
 		thisopos = 0L;		/* write place holder */

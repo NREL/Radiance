@@ -6,6 +6,7 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include "holo.h"
+#include "platform.h"
 
 char	*progname;		/* global argv[0] */
 
@@ -60,7 +61,7 @@ int	sect;
 	nextloc = ftell(fp);			/* get stdio position */
 	fclose(fp);				/* done with stdio */
 	for (n = 0; nextloc > 0L; n++) {	/* get the section(s) */
-		lseek(fd, (off_t)nextloc, 0);
+		lseek(fd, (off_t)nextloc, SEEK_SET);
 		read(fd, (char *)&nextloc, sizeof(nextloc));
 		if ((sect < 0) | (n == sect)) {
 			read(fd, (char *)&hdsect, sizeof(HDGRID));

@@ -6,6 +6,7 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include "holo.h"
+#include "platform.h"
 
 #ifndef NHBINS
 #define NHBINS		12	/* number of histogram bins to use for stats */
@@ -56,7 +57,7 @@ FILE	*fout;
 	nextloc = ftell(fp);			/* get stdio position */
 	fclose(fp);				/* done with stdio */
 	for (n = 0; nextloc > 0L; n++) {	/* get the section(s) */
-		lseek(fd, (off_t)nextloc, 0);
+		lseek(fd, (off_t)nextloc, SEEK_SET);
 		read(fd, (char *)&nextloc, sizeof(nextloc));
 		fprintf(fout, "Section %d:\n", n);
 		hdsect = hdinit(fd, NULL);	/* load section directory */

@@ -162,10 +162,10 @@ pix2rays(FILE *fp)
 		if (zfd >= 0) {
 			loc2pix(pp, &rs, px/rs.xr, py/rs.yr);
 			if (lseek(zfd,
-				(pp[1]*scanlen(&rs)+pp[0])*sizeof(float), 0)
-					< 0 ||
+				(pp[1]*scanlen(&rs)+pp[0])*sizeof(float),
+						SEEK_SET) < 0 ||
 					read(zfd, &zval, sizeof(float))
-					< sizeof(float)) {
+						< sizeof(float)) {
 				fprintf(stderr, "%s: depth buffer read error\n",
 						progname);
 				exit(1);

@@ -23,9 +23,6 @@ extern "C" {
 #define	 F_OK		0		/* exists */
 #endif
 
-			/* <unistd.h> is missing on some systems */
-extern off_t	lseek(int, off_t, int);
-
 					/* defined in badarg.c */
 extern int	badarg(int ac, char **av, char *fl);
 					/* defined in expandarg.c */

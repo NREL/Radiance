@@ -6,6 +6,7 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include "holo.h"
+#include "platform.h"
 #include "view.h"
 
 #ifndef BKBSIZE
@@ -128,7 +129,7 @@ int	append;
 	nextloc = ftell(fp);			/* get stdio position */
 	fclose(fp);				/* done with stdio */
 	for (n = 0; nextloc > 0L; n++) {	/* initialize each section */
-		lseek(fd, (off_t)nextloc, 0);
+		lseek(fd, (off_t)nextloc, SEEK_SET);
 		read(fd, (char *)&nextloc, sizeof(nextloc));
 		hdinit(fd, NULL)->priv = hflags&H_OBST ? &obstr :
 				hflags&H_OBSF ? &unobstr : (char *)NULL;

@@ -13,6 +13,7 @@ static const char	RCSid[] = "$Id$";
 #include <string.h>
 
 #include "standard.h"
+#include "platform.h"
 #include "rtprocess.h" /* Windows: must come before color.h */
 #include "view.h"
 #include "color.h"
@@ -491,7 +492,8 @@ char	*pfile, *zspec;
 			exit(1);
 		}
 	if (zfd != -1 && lseek(zfd,
-			(off_t)ylim.min*scanlen(&tresolu)*sizeof(float), 0) < 0)
+			(off_t)ylim.min*scanlen(&tresolu)*sizeof(float),
+			SEEK_SET) < 0)
 		syserror(zspec);
 					/* load image */
 	for (y = ylim.min; y <= ylim.max; y++) {
@@ -759,7 +761,7 @@ int	zfd;
 	for (y = step - 1; y < numscans(&tresolu); y += step) {
 		if (zfd != -1) {
 			if (lseek(zfd, (off_t)y*scanlen(&tresolu)*sizeof(float),
-					0) < 0)
+					SEEK_SET) < 0)
 				syserror("lseek");
 			if (read(zfd, (char *)zline,
 					scanlen(&tresolu)*sizeof(float))

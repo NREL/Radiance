@@ -15,6 +15,7 @@ static const char	RCSid[] = "$Id$";
 
 #include "rtprocess.h" /* getpid() */
 #include "standard.h"
+#include "platform.h"
 #include "random.h"
 
 #ifdef F_SETLKW
@@ -136,7 +137,7 @@ pfhold()		/* holding pattern for idle rendering process */
 	n = strlen(buf);
 	if (write(persistfd, buf, n) < n)
 		error(SYSTEM, "error writing persist file");
-	lseek(persistfd, (off_t)0L, 0);
+	lseek(persistfd, (off_t)0, SEEK_SET);
 				/* wait TIMELIM for someone to signal us */
 	got_io = 0;
 	signal(SIGIO, sig_io);
