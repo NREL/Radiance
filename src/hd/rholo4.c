@@ -18,7 +18,6 @@ static char SCCSid[] = "$SunId$ SGI";
 
 static int	inp_flags;
 static int	dpd[3];
-static int	pipesiz;
 static FILE	*dpout;
 
 
@@ -34,8 +33,8 @@ char	*dname;
 	sprintf(dpath, "dev/%s%s", dname, HDSUF);
 #endif
 	com[0] = dpath; com[1] = froot; com[2] = NULL;
-	pipesiz = open_process(dpd, com);
-	if (pipesiz <= 0)
+	i = open_process(dpd, com);
+	if (i <= 0)
 		error(USER, "cannot start display process");
 	if ((dpout = fdopen(dup(dpd[1]), "w")) == NULL)
 		error(SYSTEM, "cannot associate FILE with display pipe");
@@ -61,7 +60,7 @@ int	block;
 	int	n;
 	char	*buf = NULL;
 
-	if (pipesiz <= 0)
+	if (dpout == NULL)
 		return(-1);
 					/* flush display output */
 	disp_flush();
@@ -144,12 +143,11 @@ disp_close()			/* close our display process */
 {
 	int	rval;
 
-	if (pipesiz <= 0)
+	if (dpout == NULL)
 		return(-1);
 	disp_result(DS_SHUTDOWN, 0, NULL);
 	fclose(dpout);
 	dpout = NULL;
-	pipesiz = 0;
 	return(close_process(dpd));
 }
 
@@ -160,6 +158,8 @@ char	*p;
 {
 	MSGHEAD	msg;
 
+	if (dpout == NULL)
+		return;
 	msg.type = type;
 	msg.nbytes = nbytes;
 	fwrite((char *)&msg, sizeof(MSGHEAD), 1, dpout);
