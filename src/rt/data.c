@@ -19,13 +19,18 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "data.h"
 
 
+#define TABSIZ		97		/* table size (prime) */
+
+#define hash(s)		(shash(s)%TABSIZ)
+
+
 extern char  *fgetword();
 
 extern char  *libpath;			/* library search path */
 
-static DATARRAY	 *dlist = NULL;		/* data array list */
+static DATARRAY	 *dtab[TABSIZ];		/* data array list */
 
-static DATARRAY	 *plist = NULL;		/* picture list */
+static DATARRAY	 *ptab[TABSIZ];		/* picture list */
 
 
 DATARRAY *
@@ -39,7 +44,7 @@ char  *dname;
 	register int  i, j;
 	register DATARRAY  *dp;
 						/* look for array in list */
-	for (dp = dlist; dp != NULL; dp = dp->next)
+	for (dp = dtab[hash(dname)]; dp != NULL; dp = dp->next)
 		if (!strcmp(dname, dp->name))
 			return(dp);		/* found! */
 
@@ -127,8 +132,9 @@ char  *dname;
 		dp->arr[i] = atof(word);
 	}
 	fclose(fp);
-	dp->next = dlist;
-	return(dlist = dp);
+	i = hash(dname);
+	dp->next = dtab[i];
+	return(dtab[i] = dp);
 
 memerr:
 	error(SYSTEM, "out of memory in getdata");
@@ -165,7 +171,7 @@ char  *pname;
 	register int  x, i;
 	register DATARRAY  *pp;
 						/* look for array in list */
-	for (pp = plist; pp != NULL; pp = pp->next)
+	for (pp = ptab[hash(pname)]; pp != NULL; pp = pp->next)
 		if (!strcmp(pname, pp->name))
 			return(pp);		/* found! */
 
@@ -232,10 +238,11 @@ char  *pname;
 	}
 	free((char *)scanin);
 	fclose(fp);
+	i = hash(pname);
 	pp[0].next =
 	pp[1].next =
-	pp[2].next = plist;
-	return(plist = pp);
+	pp[2].next = ptab[i];
+	return(ptab[i] = pp);
 
 memerr:
 	error(SYSTEM, "out of memory in getpict");
@@ -249,23 +256,31 @@ freedata(dname)			/* free memory associated with dname */
 char  *dname;
 {
 	DATARRAY  head;
+	int  hval, nents;
 	register DATARRAY  *dp, *dpl;
 	register int  i;
 
-	head.next = dlist;
-	dpl = &head;
-	while ((dp = dpl->next) != NULL)
-		if (dname == NULL || !strcmp(dname, dp->name)) {
-			dpl->next = dp->next;
-			free((char *)dp->arr);
-			for (i = 0; i < dp->nd; i++)
-				if (dp->dim[i].p != NULL)
-					free((char *)dp->dim[i].p);
-			freestr(dp->name);
-			free((char *)dp);
-		} else
-			dpl = dp;
-	dlist = head.next;
+	if (dname == NULL) {			/* free all if NULL */
+		hval = 0; nents = TABSIZ;
+	} else {
+		hval = hash(dname); nents = 1;
+	}
+	while (nents--) {
+		head.next = dtab[hval];
+		dpl = &head;
+		while ((dp = dpl->next) != NULL)
+			if (dname == NULL || !strcmp(dname, dp->name)) {
+				dpl->next = dp->next;
+				free((char *)dp->arr);
+				for (i = 0; i < dp->nd; i++)
+					if (dp->dim[i].p != NULL)
+						free((char *)dp->dim[i].p);
+				freestr(dp->name);
+				free((char *)dp);
+			} else
+				dpl = dp;
+		dtab[hval++] = head.next;
+	}
 }
 
 
@@ -273,21 +288,29 @@ freepict(pname)			/* free memory associated with pname */
 char  *pname;
 {
 	DATARRAY  head;
+	int  hval, nents;
 	register DATARRAY  *pp, *ppl;
 
-	head.next = plist;
-	ppl = &head;
-	while ((pp = ppl->next) != NULL)
-		if (pname == NULL || !strcmp(pname, pp->name)) {
-			ppl->next = pp->next;
-			free((char *)pp[0].arr);
-			free((char *)pp[1].arr);
-			free((char *)pp[2].arr);
-			freestr(pp[0].name);
-			free((char *)pp);
-		} else
-			ppl = pp;
-	plist = head.next;
+	if (pname == NULL) {			/* free all if NULL */
+		hval = 0; nents = TABSIZ;
+	} else {
+		hval = hash(pname); nents = 1;
+	}
+	while (nents--) {
+		head.next = ptab[hval];
+		ppl = &head;
+		while ((pp = ppl->next) != NULL)
+			if (pname == NULL || !strcmp(pname, pp->name)) {
+				ppl->next = pp->next;
+				free((char *)pp[0].arr);
+				free((char *)pp[1].arr);
+				free((char *)pp[2].arr);
+				freestr(pp[0].name);
+				free((char *)pp);
+			} else
+				ppl = pp;
+		ptab[hval++] = head.next;
+	}
 }
 
 
