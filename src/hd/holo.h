@@ -75,7 +75,6 @@ typedef struct holo {
 	short	dirty;		/* number of dirty segments */
 	double	tlin;		/* linear range for depth encoding */
 	FVECT	wg[3];		/* wall grid vectors (derived) */
-	double	wo[6];		/* wall grid offsets (derived) */
 	int	wi[6];		/* wall super-indices (derived) */
 	char	*priv;		/* pointer to private client data */
 	BEAM	**bl;		/* beam pointers (memory cache) */
