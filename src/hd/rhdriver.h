@@ -22,6 +22,7 @@ extern struct driver {
 #define	DEV_WAIT	010	/* pause computation and wait for input */
 #define	DEV_RESUME	020	/* resume after pause */
 #define	DEV_REDRAW	040	/* redraw from server */
+#define DEV_PUTVIEW	0100	/* print out current view */
 
 
 /************************************************************************

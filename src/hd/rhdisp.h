@@ -42,3 +42,28 @@ typedef struct {
 	int2	type;		/* message type */
 	int4	nbytes;		/* number of additional bytes */
 } MSGHEAD;		/* message head */
+
+/*
+ * The display process is started with three arguments.  The first argument
+ * is the short name of the holodeck file, appropriate for window naming, etc.
+ * The second and third arguments are the file descriptor numbers assigned to
+ * the server's standard output and input, respectively.  The stdin and stdout
+ * of the display process are used for normal communication with the server,
+ * and are connected to pipes going each way.  It is entirely appropriate
+ * for the display process to borrow the server's stdin and stdout for reading
+ * and writing user commands from the following list.  If the standard input
+ * is not available for reading, then a descriptor of -1 will be passed.
+ * The standard output will always be available for writing, though it
+ * may go to /dev/null.
+ */
+
+				/* user commands */
+#define	DC_SETVIEW	0		/* set the view */
+#define	DC_GETVIEW	1		/* print the current view */
+#define	DC_PAUSE	2		/* pause the current calculation */
+#define	DC_RESUME	3		/* resume the calculation */
+#define	DC_QUIT		4		/* quit the program */
+
+#define	DC_NCMDS	5		/* number of commands */
+
+#define	DC_INIT		{"VIEW=","where","pause","resume","quit"}
