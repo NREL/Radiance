@@ -18,6 +18,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "rpaint.h"
 
+#include  "resolu.h"
+
 #include  <ctype.h>
 
 #define  CTRL(c)	('c'-'@')
@@ -142,7 +144,7 @@ char  *s;
 	if (sscanf(s, "%s", buf) == 1) {	/* get parameters from a file */
 		copystruct(&nv, &stdview);
 		if ((fname = getpath(buf, NULL, 0)) == NULL ||
-				(success = viewfile(fname, &nv, 0, 0)) == -1) {
+				(success = viewfile(fname, &nv, NULL)) == -1) {
 			sprintf(errmsg, "cannot open \"%s\"", buf);
 			error(COMMAND, errmsg);
 			return;
@@ -583,7 +585,7 @@ char  *s;
 		fputaspect(dev->pixaspect, fp);
 	fputformat(COLRFMT, fp);
 	putc('\n', fp);
-	fputresolu(YMAJOR|YDECR, hresolu, vresolu, fp);
+	fprtresolu(hresolu, vresolu, fp);
 
 	scanline = (COLR *)malloc(hresolu*sizeof(COLR));
 	if (scanline == NULL) {
