@@ -73,7 +73,7 @@ char  *fname;
 	long  vcount = hresolu>1 ? hresolu*vresolu : vresolu;
 	long  nextflush = hresolu;
 	FILE  *fp;
-	FVECT  orig, direc, vcol;
+	FVECT  orig, direc;
 					/* set up input */
 	if (fname == NULL)
 		fp = stdin;
