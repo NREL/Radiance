@@ -86,7 +86,7 @@ RAY  *r;
 	rayvalue(&ar);
 	ndims--;
 	addcolor(dp->v, ar.rcol);
-	if (ar.rt < FHUGE)
+	if (ar.rt > FTINY && ar.rt < FHUGE)
 		dp->r += 1.0/ar.rt;
 					/* (re)initialize error */
 	if (dp->n++) {
