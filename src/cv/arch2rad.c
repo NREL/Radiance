@@ -505,7 +505,7 @@ register RULEHD	*rp;
 	ID	tmpid;
 	
 	if (rp->qflg & FL(Q_LAY)) {		/* check layer */
-		tmpid.name = NULL;
+		tmpid.name = fhead.layer[bp->layer];
 		tmpid.number = bp->layer;
 		if (!matchid(&tmpid, &idm(rp)[Q_LAY]))
 			return(0);
@@ -563,20 +563,22 @@ register BLOCK	*bp;
 	static char	nambuf[32];
 	static int	blkcnt = 0;
 	register char	*nam;
-	register int	i;
+	register int	i, j;
 
+	sprintf(nambuf, "l%d.", bp->layer);
+	i = strlen(nambuf);
 	nam = bp->refid.name;
-	if (nam == NULL)
-		nam = fhead.layer[bp->layer];
 	if (nam == NULL) {
-		sprintf(nambuf, "l%d.", bp->layer);
-		i = strlen(nambuf);
-	} else {
-		for (i = 0; i < 12 && nam[i]; i++) {
-			if (nam[i] == ' ' || nam[i] == '\t')
-				nambuf[i] = '_';
+		nam = fhead.layer[bp->layer];
+		if (nam != NULL)
+			i = 0;
+	}
+	if (nam != NULL) {
+		for (j = 0; j < 12 && nam[j]; j++) {
+			if (nam[j] == ' ' || nam[j] == '\t')
+				nambuf[i++] = '_';
 			else
-				nambuf[i] = nam[i];
+				nambuf[i++] = nam[j];
 		}
 		nambuf[i++] = '.';
 	}
