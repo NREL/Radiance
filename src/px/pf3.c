@@ -43,6 +43,8 @@ extern float  **greybar;	/* grey-averaged input values */
 extern int  obarsize;		/* size of output scan bar */
 extern int  orad;		/* output window radius */
 
+extern int  wrapfilt;		/* wrap filter horizontally? */
+
 extern char  *progname;
 
 float  *gausstable;		/* gauss lookup table */
@@ -51,6 +53,8 @@ float  *ringsum;		/* sum of ring values */
 short  *ringwt;			/* weight (count) of ring values */
 short  *ringndx;		/* ring index table */
 float  *warr;			/* array of pixel weights */
+
+extern double  (*ourbright)();	/* brightness computation function */
 
 double  pickfilt();
 
@@ -112,7 +116,7 @@ int  c, r;
 	int  wsum;
 	double  d;
 	int  y;
-	register int  x;
+	register int  x, offs;
 	register COLOR	*scan;
 	
 	wsum = 0;
@@ -125,13 +129,14 @@ int  c, r;
 		if (d >= 0.5) break;
 		scan = scanin[y%barsize];
 		for (x = xcent+1-xbrad; x <= xcent+xbrad; x++) {
-			if (x < 0) continue;
-			if (x >= xres) break;
+			offs = x < 0 ? xres : x >= xres ? -xres : 0;
+			if (offs && !wrapfilt)
+				continue;
 			d = x_c < 1.0 ? x_c*x - c : (double)(x - xcent);
 			if (d < -0.5) continue;
 			if (d >= 0.5) break;
 			wsum++;
-			addcolor(csum, scan[x]);
+			addcolor(csum, scan[x+offs]);
 		}
 	}
 	if (wsum > 1)
@@ -147,7 +152,7 @@ int  c, r;
 	double  dy, dx, weight, wsum;
 	COLOR  ctmp;
 	int  y;
-	register int  x;
+	register int  x, offs;
 	register COLOR	*scan;
 
 	wsum = FTINY;
@@ -158,12 +163,13 @@ int  c, r;
 		dy = (y_r*(y+.5) - (r+.5))/rad;
 		scan = scanin[y%barsize];
 		for (x = xcent-xrad; x <= xcent+xrad; x++) {
-			if (x < 0) continue;
-			if (x >= xres) break;
+			offs = x < 0 ? xres : x >= xres ? -xres : 0;
+			if (offs && !wrapfilt)
+				continue;
 			dx = (x_c*(x+.5) - (c+.5))/rad;
 			weight = lookgauss(dx*dx + dy*dy);
 			wsum += weight;
-			copycolor(ctmp, scan[x]);
+			copycolor(ctmp, scan[x+offs]);
 			scalecolor(ctmp, weight);
 			addcolor(csum, ctmp);
 		}
@@ -177,10 +183,9 @@ int  xcent, ycent;
 int  ccent, rcent;
 {
 	double  d;
-	int  r, y;
+	int  r, y, offs;
 	register int  c, x;
 	register float  *gscan;
-#define pval gscan
 					/* compute ring sums */
 	bzero((char *)ringsum, (orad+1)*sizeof(float));
 	bzero((char *)ringwt, (orad+1)*sizeof(short));
@@ -189,11 +194,13 @@ int  ccent, rcent;
 		if (rcent+r >= nrows) break;
 		gscan = greybar[(rcent+r)%obarsize];
 		for (c = -orad; c <= orad; c++) {
-			if (ccent+c < 0) continue;
-			if (ccent+c >= ncols) break;
+			offs = ccent+c < 0 ? ncols :
+					ccent+c >= ncols ? -ncols : 0;
+			if (offs && !wrapfilt)
+				continue;
 			x = ringndx[c*c + r*r];
 			if (x < 0) continue;
-			ringsum[x] += gscan[ccent+c];
+			ringsum[x] += gscan[ccent+c+offs];
 			ringwt[x]++;
 		}
 	}
@@ -205,16 +212,16 @@ int  ccent, rcent;
 		if (d < -0.5) continue;
 		if (d >= 0.5) break;
 		for (x = xcent+1-xbrad; x <= xcent+xbrad; x++) {
-			if (x < 0) continue;
-			if (x >= xres) break;
+			offs = x < 0 ? xres : x >= xres ? -xres : 0;
+			if (offs && !wrapfilt)
+				continue;
 			d = x_c < 1.0 ? x_c*x - ccent : (double)(x - xcent);
 			if (d < -0.5) continue;
 			if (d >= 0.5) break;
-			pval = scanin[y%barsize][x];
-			sumans(x, y, rcent, ccent, pickfilt(bright(pval)));
+			sumans(x, y, rcent, ccent,
+			pickfilt((*ourbright)(scanin[y%barsize][x+offs])));
 		}
 	}
-#undef pval
 }
 
 
@@ -285,12 +292,16 @@ double  m;
 {
 	double  dy, dx;
 	COLOR  pval, ctmp;
-	int  ksiz, r;
+	int  ksiz, r, offs;
 	double  pc, pr, norm;
 	register int  i, c;
 	register COLOR	*scan;
-
-	copycolor(pval, scanin[py%barsize][px]);
+	/*
+	 * This normalization method fails at the picture borders because
+	 * a different number of input pixels contribute there.
+	 */
+	scan = scanin[py%barsize] + (px < 0 ? xres : px >= xres ? -xres : 0);
+	copycolor(pval, scan[px]);
 	pc = x_c*(px+.5);
 	pr = y_r*(py+.5);
 	ksiz = CHECKRAD*m*rad + 1;
@@ -303,8 +314,10 @@ double  m;
 		if (r >= nrows) break;
 		dy = (pr - (r+.5))/(m*rad);
 		for (c = ccent-ksiz; c <= ccent+ksiz; c++) {
-			if (c < 0) continue;
-			if (c >= ncols) break;
+			if (!wrapfilt) {
+				if (c < 0) continue;
+				if (c >= ncols) break;
+			}
 			dx = (pc - (c+.5))/(m*rad);
 			norm += warr[i++] = lookgauss(dx*dx + dy*dy);
 		}
@@ -319,12 +332,13 @@ double  m;
 		if (r >= nrows) break;
 		scan = scoutbar[r%obarsize];
 		for (c = ccent-ksiz; c <= ccent+ksiz; c++) {
-			if (c < 0) continue;
-			if (c >= ncols) break;
+			offs = c < 0 ? ncols : c >= ncols ? -ncols : 0;
+			if (offs && !wrapfilt)
+				continue;
 			copycolor(ctmp, pval);
 			dx = norm*warr[i++];
 			scalecolor(ctmp, dx);
-			addcolor(scan[c], ctmp);
+			addcolor(scan[c+offs], ctmp);
 		}
 	}
 }
