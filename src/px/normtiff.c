@@ -38,14 +38,23 @@ short	ortab[8] = {		/* orientation conversion table */
 	0
 };
 
-extern FILE	*openpicture();
+typedef struct {
+	FILE	*fp;		/* file pointer */
+	char	fmt[32];	/* picture format */
+	double	pa;		/* pixel aspect ratio */
+	RESOLU	rs;		/* picture resolution */
+} PICTURE;
+
+extern PICTURE	*openpicture();
+
+#define closepicture(p)		(fclose((p)->fp),free((char *)(p)))
 
 
 main(argc, argv)
 int	argc;
 char	*argv[];
 {
-	FILE	*fin = NULL;
+	PICTURE	*pin = NULL;
 	TIFF	*tin = NULL;
 	int	i, rval;
 
@@ -94,7 +103,7 @@ char	*argv[];
 			goto userr;
 		}
 	if (argc-i < 2) goto userr;
-	if ((fin = openpicture(argv[i])) == NULL &&
+	if ((pin = openpicture(argv[i])) == NULL &&
 			(tin = TIFFOpen(argv[i], "r")) == NULL) {
 		fprintf(stderr, "%s: cannot open or interpret file \"%s\"\n",
 				argv[0], argv[i]);
@@ -105,9 +114,9 @@ char	*argv[];
 				argv[0], argv[i+1]);
 		exit(1);
 	}
-	if (fin != NULL) {
-		rval = tmap_picture(argv[i], fin);
-		fclose(fin);
+	if (pin != NULL) {
+		rval = tmap_picture(argv[i], pin);
+		closepicture(pin);
 	} else {
 		rval = tmap_tiff(argv[i], tin);
 		TIFFClose(tin);
@@ -122,13 +131,30 @@ userr:
 }
 
 
-FILE *
+int
+headline(s, pp)				/* process line from header */
+char	*s;
+register PICTURE	*pp;
+{
+	register char	*cp;
+
+	for (cp = s; *cp; cp++)
+		if (*cp & 0x80)
+			return(-1);	/* non-ascii in header */
+	if (isaspect(s))
+		pp->pa *= aspectval(s);
+	else
+		formatval(pp->fmt, s);
+	return(0);
+}
+
+
+PICTURE *
 openpicture(fname)			/* open/check Radiance picture file */
 char	*fname;
 {
 	FILE	*fp;
-	char	inpfmt[32];
-	int	xsiz, ysiz;
+	register PICTURE	*pp;
 	register char	*cp;
 					/* check filename suffix */
 	if (fname == NULL) return(NULL);
@@ -144,55 +170,46 @@ char	*fname;
 					/* else try opening it */
 	if ((fp = fopen(fname, "r")) == NULL)
 		return(NULL);
-					/* check format */
-	strcpy(inpfmt, PICFMT);
-	if (checkheader(fp, inpfmt, NULL) < 0 ||
-			fgetresolu(&xsiz, &ysiz, fp) < 0) {
-		fclose(fp);		/* failed test -- close file */
+					/* allocate struct */
+	if ((pp = (PICTURE *)malloc(sizeof(PICTURE))) == NULL)
+		return(NULL);		/* serious error -- should exit? */
+	pp->fp = fp; pp->fmt[0] = '\0'; pp->pa = 1.;
+					/* load header */
+	if (getheader(fp, headline, pp) < 0) {
+		closepicture(pp);
+		return(NULL);
+	}
+	if (!pp->fmt[0])		/* assume RGBE if unspecified */
+		strcpy(pp->fmt, COLRFMT);
+	if (!globmatch(PICFMT, pp->fmt) || !fgetsresolu(&pp->rs, fp)) {
+		closepicture(pp);	/* failed test -- close file */
 		return(NULL);
 	}
 	rewind(fp);			/* passed test -- rewind file */
-	return(fp);
-}
-
-
-getpixrat(s, pr)			/* get pixel aspect ratio */
-char	*s;
-double	*pr;
-{
-	if (isaspect(s))
-		*pr *= aspectval(s);
+	return(pp);
 }
 
 
 int
-tmap_picture(fname, fp)			/* tone map Radiance picture */
+tmap_picture(fname, pp)			/* tone map Radiance picture */
 char	*fname;
-FILE	*fp;
+register PICTURE	*pp;
 {
-	double	pixrat;
-	int	ord;
 	uint16	orient;
 	int	xsiz, ysiz;
 	BYTE	*pix;
 					/* read and tone map picture */
 	if (tmMapPicture(&pix, &xsiz, &ysiz, flags,
-			rgbp, gamv, lddyn, ldmax, fname, fp) != TM_E_OK)
+			rgbp, gamv, lddyn, ldmax, fname, pp->fp) != TM_E_OK)
 		return(-1);
-					/* get relevant header info. */
-	rewind(fp);
-	pixrat = 1.;
-	getheader(fp, getpixrat, &pixrat);
-	if ((ord = fgetresolu(&xsiz, &ysiz, fp)) < 0)
-		orient = 0;
-	else
-		for (orient = 8; --orient; )
-			if (ortab[orient] == ord)
-				break;
+					/* figure out TIFF orientation */
+	for (orient = 8; --orient; )
+		if (ortab[orient] == pp->rs.or)
+			break;
 	orient++;
 					/* put out our image */
 	if (putimage(orient, (uint32)xsiz, (uint32)ysiz,
-			72., 72./pixrat, 2, pix) != 0)
+			72., 72./pp->pa, 2, pix) != 0)
 		return(-1);
 					/* free data and we're done */
 	free((char *)pix);
