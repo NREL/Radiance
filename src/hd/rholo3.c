@@ -9,6 +9,7 @@ static char SCCSid[] = "$SunId$ SGI";
  */
 
 #include "rholo.h"
+#include "view.h"
 #include <sys/types.h>
 
 #ifndef NFRAG2CHUNK
@@ -92,8 +93,7 @@ register HDBEAMI	*hb;
 		n = b->nrm;
 		if (p == NULL) p = (PACKHEAD *)malloc(packsiz(n));
 		else p = (PACKHEAD *)realloc((char *)p, packsiz(n));
-		if (p == NULL)
-			error(SYSTEM, "out of memory in dispbeam");
+		CHECK(p==NULL, SYSTEM, "out of memory in dispbeam");
 	}
 					/* assign packet fields */
 	bcopy((char *)hdbray(b), (char *)packra(p), b->nrm*sizeof(RAYVAL));
@@ -135,6 +135,11 @@ int	nents;
 			complist[i].nr += csm->nr;
 			csm->nr = 0;
 			break;
+		case BS_MAX:		/* maximum of counts */
+			if (csm->nr > complist[i].nr)
+				complist[i].nr = csm->nr;
+			csm->nr = 0;
+			break;
 		case BS_ADJ:		/* reset count */
 			complist[i].nr = csm->nr;
 			csm->nr = 0;
@@ -168,6 +173,7 @@ int	nents;
 		bcopy((char *)clist, (char *)complist, nents*sizeof(PACKHEAD));
 		break;
 	case BS_ADD:			/* add to computation set */
+	case BS_MAX:			/* maximum of quantities */
 	case BS_ADJ:			/* adjust set quantities */
 		if (nents <= 0)
 			return;
@@ -177,7 +183,7 @@ int	nents;
 		for (i = nents, csm = clist; i-- && csm->nr > csm->nc; csm++)
 			;
 		n = csm - clist;
-		if (op == BS_ADJ) {	/* don't regenerate adjusted beams */
+		if (op != BS_ADD) {	/* don't regenerate adjusted beams */
 			for (++i; i-- && csm->nr > 0; csm++)
 				;
 			nents = csm - clist;
@@ -256,26 +262,18 @@ int	bi;
 }
 
 
-init_global()			/* initialize global ray computation */
+ambient_list()			/* compute ambient beam list */
 {
 	long	wtotal = 0;
 	double	frac;
 	int	i;
 	register int	j, k;
-					/* free old list and empty queue */
-	if (complen > 0) {
-		free((char *)complist);
-		done_packets(flush_queue());
-	}
-					/* reseed random number generator */
-	srandom(time(NULL));
-					/* allocate beam list */
+
 	complen = 0;
 	for (j = 0; hdlist[j] != NULL; j++)
 		complen += nbeams(hdlist[j]);
 	complist = (PACKHEAD *)malloc(complen*sizeof(PACKHEAD));
-	if (complist == NULL)
-		error(SYSTEM, "out of memory in init_global");
+	CHECK(complist==NULL, SYSTEM, "out of memory in ambient_list");
 					/* compute beam weights */
 	k = 0;
 	for (j = 0; hdlist[j] != NULL; j++) {
@@ -290,15 +288,58 @@ init_global()			/* initialize global ray computation */
 			wtotal += complist[k++].nr;
 		}
 	}
-					/* adjust weights */
+					/* adjust sample weights */
 	if (vdef(DISKSPACE))
-		frac = 1024.*1024.*vflt(DISKSPACE) / (wtotal*sizeof(RAYVAL));
+		frac = 1024.*1024.*vflt(DISKSPACE) /
+				(wtotal*sizeof(RAYVAL));
 	else
 		frac = 1024.*1024.*16384. / (wtotal*sizeof(RAYVAL));
-	while (k--)
-		complist[k].nr = frac*complist[k].nr + 0.5;
-	listpos = 0; lastin = -1;	/* perform initial sort */
-	sortcomplist();
+	if (frac > 1.11 || frac < 0.9)
+		for (k = complen; k--; )
+			complist[k].nr = frac*complist[k].nr + 0.5;
+	listpos = 0; lastin = -1;	/* flag initial sort */
+}
+
+
+view_list(fp)			/* assign beam priority from view list */
+FILE	*fp;
+{
+	double	pa = 1.;
+	VIEW	curview;
+	int	xr, yr;
+	char	*err;
+	BEAMLIST	blist;
+
+	copystruct(&curview, &stdview);
+	while (nextview(&curview, fp) != EOF) {
+		if ((err = setview(&curview)) != NULL) {
+			error(WARNING, err);
+			continue;
+		}
+		xr = yr = 1024;
+		normaspect(viewaspect(&curview), &pa, &xr, &yr);
+		viewbeams(&curview, xr, yr, &blist);
+		bundle_set(BS_MAX, blist.bl, blist.nb);
+		free((char *)blist.bl);
+	}
+}
+
+
+init_global()			/* initialize global ray computation */
+{
+	register int	k;
+					/* free old list and empty queue */
+	if (complen > 0) {
+		free((char *)complist);
+		done_packets(flush_queue());
+	}
+					/* reseed random number generator */
+	srandom(time(NULL));
+					/* allocate beam list */
+	if (readinp)
+		view_list(stdin);
+	else
+		ambient_list();
 					/* no view vicinity */
 	myeye.rng = 0;
 }
@@ -351,8 +392,7 @@ sortcomplist()			/* fix our list order */
 		qsort((char *)complist, complen, sizeof(PACKHEAD), beamcmp);
 	else if (listpos) {	/* else sort and merge sublist */
 		list2 = (PACKHEAD *)malloc(listpos*sizeof(PACKHEAD));
-		if (list2 == NULL)
-			error(SYSTEM, "out of memory in sortcomplist");
+		CHECK(list2==NULL, SYSTEM, "out of memory in sortcomplist");
 		bcopy((char *)complist,(char *)list2,listpos*sizeof(PACKHEAD));
 		qsort((char *)list2, listpos, sizeof(PACKHEAD), beamcmp);
 		mergeclists(complist, list2, listpos,

@@ -1,4 +1,4 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
+/* Copyright (c) 1999 Silicon Graphics, Inc. */
 
 /* SCCSid "$SunId$ SGI" */
 
@@ -165,4 +165,4 @@ Set odev.v.type=0 and odev.hres=odev.vres=0 when done.
 
 extern VIEW	*dev_auxview();
 
-extern int	*beam_view();
+extern int2	*beam_view();
