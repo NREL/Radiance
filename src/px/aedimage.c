@@ -58,7 +58,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define byte(b)		putc(b, stdout)
 #define flush()		fflush(stdout)
 
-#define  GAMMA		2.0		/* gamma value used in correction */
+#define  GAMMA		2.5		/* gamma value used in correction */
 
 #define  MINCOLOR	8		/* start of device color table */
 
