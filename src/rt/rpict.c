@@ -40,9 +40,10 @@ double  dstrpix = 0.67;			/* square pixel distribution */
 double  dstrsrc = 0.0;			/* square source distribution */
 double  shadthresh = .05;		/* shadow threshold */
 double  shadcert = .5;			/* shadow certainty */
-int  directrelay = 0;			/* number of source relays */
+int  directrelay = 1;			/* number of source relays */
 int  vspretest = 512;			/* virtual source pretest density */
 int  directinvis = 0;			/* sources invisible? */
+double  srcsizerat = .25;		/* maximum ratio source size/dist. */
 
 int  maxdepth = 6;			/* maximum recursion depth */
 double  minweight = 5e-3;		/* minimum ray weight */

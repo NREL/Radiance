@@ -36,6 +36,7 @@ double  shadcert = .25;			/* shadow certainty */
 int  directrelay = 0;			/* number of source relays */
 int  vspretest = 128;			/* virtual source pretest density */
 int  directinvis = 0;			/* sources invisible? */
+double  srcsizerat = 0.;		/* maximum ratio source size/dist. */
 
 int  maxdepth = 4;			/* maximum recursion depth */
 double  minweight = 1e-2;		/* minimum ray weight */

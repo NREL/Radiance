@@ -89,6 +89,7 @@ extern double  shadcert;		/* shadow testing certainty */
 extern int  directrelay;		/* number of source relays */
 extern int  vspretest;			/* virtual source pretest density */
 extern int  directinvis;		/* light sources invisible to eye? */
+extern double  srcsizerat;		/* maximum source size/dist. ratio */
 
 extern int  maxdepth;			/* maximum recursion depth */
 extern double  minweight;		/* minimum ray weight */
@@ -196,16 +197,20 @@ char  *argv[];
 				check(3,1);
 				dstrsrc = atof(argv[++i]);
 				break;
-			case 'r':
+			case 'r':				/* relays */
 				check(3,1);
 				directrelay = atoi(argv[++i]);
 				break;
-			case 'p':
+			case 'p':				/* pretest */
 				check(3,1);
 				vspretest = atoi(argv[++i]);
 				break;
-			case 'i':
+			case 'i':				/* invis. */
 				bool(3,directinvis);
+				break;
+			case 's':				/* size */
+				check(3,1);
+				srcsizerat = atof(argv[++i]);
 				break;
 			default:
 				goto badopt;
@@ -610,6 +615,7 @@ printdefaults()			/* print default values to stdout */
 	printf("-dt %f\t\t\t# direct threshold\n", shadthresh);
 	printf("-dc %f\t\t\t# direct certainty\n", shadcert);
 	printf("-dj %f\t\t\t# direct jitter\n", dstrsrc);
+	printf("-ds %f\t\t\t# direct sampling\n", srcsizerat);
 	printf("-dr %-9d\t\t\t# direct relays\n", directrelay);
 	printf("-dp %-9d\t\t\t# direct pretest density\n", vspretest);
 	printf(directinvis ? "-di+\t\t\t\t# direct invisibility on\n" :

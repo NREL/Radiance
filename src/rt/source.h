@@ -16,7 +16,8 @@
 #define  SSPOT		010		/* source spotlight flag */
 #define  SVIRTUAL	020		/* source virtual flag */
 #define  SFLAT		040		/* source flat flag */
-#define  SFOLLOW	0100		/* source follow path flag */
+#define  SCYL		0100		/* source cylindrical flag */
+#define  SFOLLOW	0200		/* source follow path flag */
 
 typedef struct {
 	FVECT  aim;		/* aim direction or center */
@@ -27,9 +28,9 @@ typedef struct {
 typedef struct {
 	int  sflags;		/* source flags */
 	FVECT  sloc;		/* direction or position of source */
-	FVECT  snorm;		/* surface normal of flat source */
-	float  ss;		/* tangent or disk radius */
-	float  ss2;		/* domega or projected area */
+	FVECT  ss[3];		/* source dimension vectors, U, V, and W */
+	float  srad;		/* maximum source radius */
+	float  ss2;		/* solid angle or projected area */
 	struct {
 		float  prox;		/* proximity */
 		SPOT  *s;		/* spot */
@@ -44,6 +45,29 @@ typedef struct {
 	long  ntests, nhits;	/* shadow tests and hits */
 	OBJREC  *so;		/* source destination object */
 }  SRCREC;		/* light source */
+
+#define MAXSPART	32		/* maximum partitions per source */
+
+#define SU		0		/* U vector or partition */
+#define SV		1		/* V vector or partition */
+#define SW		2		/* W vector or partition */
+#define S0		3		/* leaf partition */
+
+#define snorm		ss[SW]		/* normal vector for flat source */
+
+typedef struct {
+	int  sn;				/* source number */
+	short  np;				/* number of partitions */
+	short  sp;				/* this partition number */
+	double  dom;				/* solid angle of partition */
+	unsigned char  spt[MAXSPART/2];		/* source partitioning */
+}  SRCINDEX;		/* source index structure */
+
+#define initsrcindex(s)	((s)->sn = (s)->sp = -1, (s)->np = 0)
+
+#define clrpart(pt)	bzero((char *)(pt), MAXSPART/2)
+#define setpart(pt,i,v)	((pt)[(i)>>2] |= (v)<<(((i)&3)<<1))
+#define spart(pt,pi)	((pt)[(pi)>>2] >> (((pi)&3)<<1) & 3)
 
 /*
  * Special support functions for sources
@@ -68,6 +92,7 @@ typedef struct {
 
 typedef struct {
 	int	(*setsrc)();	/* set light source for object */
+	int	(*partit)();	/* partition light source object */
 	double  (*getpleq)();	/* plane equation for surface */
 	double  (*getdisk)();	/* maximum disk for surface */
 } SOBJECT;		/* source object functions */
@@ -82,8 +107,11 @@ extern SRCFUNC  sfun[];			/* source dispatch table */
 extern SRCREC  *source;			/* our source list */
 extern int  nsources;			/* the number of sources */
 
-extern double  srcray();                /* ray to source */
 extern int  srcvalue();			/* compute source value w/o shadows */
+extern double  nextssamp();		/* get next source sample location */
+extern double  scylform();		/* cosine to axis of cylinder */
+
+#define  sflatform(sn,dir)	-DOT(source[sn].snorm, dir)
 
 extern double  intercircle();		/* intersect two circles */
 extern double  spotdisk();		/* intersecting disk for spot */
@@ -94,6 +122,7 @@ extern SPOT  *makespot();		/* make spotlight */
 extern double  dstrsrc;			/* source distribution amount */
 extern double  shadthresh;		/* relative shadow threshold */
 extern double  shadcert;		/* shadow testing certainty */
+extern double  srcsizerat;		/* max. ratio of source size/dist. */
 extern int  directrelay;		/* maximum number of source relays */
 extern int  vspretest;			/* virtual source pretest density */
 extern int  directinvis;		/* sources invisible? */

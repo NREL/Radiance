@@ -18,6 +18,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "face.h"
 
+#define SRCINC		4		/* realloc increment for array */
 
 SRCREC  *source = NULL;			/* our list of sources */
 int  nsources = 0;			/* the number of sources */
@@ -28,13 +29,15 @@ SRCFUNC  sfun[NUMOTYPE];		/* source dispatch table */
 initstypes()			/* initialize source dispatch table */
 {
 	extern VSMATERIAL  mirror_vs, direct1_vs, direct2_vs;
-	extern int  fsetsrc(), ssetsrc(), sphsetsrc(), rsetsrc();
+	extern int  fsetsrc(), ssetsrc(), sphsetsrc(), cylsetsrc(), rsetsrc();
+	extern int  nopart(), flatpart(), cylpart();
 	extern double  fgetplaneq(), rgetplaneq();
 	extern double  fgetmaxdisk(), rgetmaxdisk();
-	static SOBJECT  fsobj = {fsetsrc, fgetplaneq, fgetmaxdisk};
-	static SOBJECT  ssobj = {ssetsrc};
-	static SOBJECT  sphsobj = {sphsetsrc};
-	static SOBJECT  rsobj = {rsetsrc, rgetplaneq, rgetmaxdisk};
+	static SOBJECT  fsobj = {fsetsrc, flatpart, fgetplaneq, fgetmaxdisk};
+	static SOBJECT  ssobj = {ssetsrc, nopart};
+	static SOBJECT  sphsobj = {sphsetsrc, nopart};
+	static SOBJECT  cylsobj = {cylsetsrc, cylpart};
+	static SOBJECT  rsobj = {rsetsrc, flatpart, rgetplaneq, rgetmaxdisk};
 
 	sfun[MAT_MIRROR].mf = &mirror_vs;
 	sfun[MAT_DIRECT1].mf = &direct1_vs;
@@ -42,6 +45,7 @@ initstypes()			/* initialize source dispatch table */
 	sfun[OBJ_FACE].of = &fsobj;
 	sfun[OBJ_SOURCE].of = &ssobj;
 	sfun[OBJ_SPHERE].of = &sphsobj;
+	sfun[OBJ_CYLINDER].of = &cylsobj;
 	sfun[OBJ_RING].of = &rsobj;
 }
 
@@ -49,7 +53,6 @@ initstypes()			/* initialize source dispatch table */
 int
 newsource()			/* allocate new source in our array */
 {
-#define SRCINC	4
 	if (nsources == 0)
 		source = (SRCREC *)malloc(SRCINC*sizeof(SRCREC));
 	else if (nsources%SRCINC == 0)
@@ -61,7 +64,25 @@ newsource()			/* allocate new source in our array */
 	source[nsources].nhits = 1;
 	source[nsources].ntests = 2;	/* initial hit probability = 1/2 */
 	return(nsources++);
-#undef SRCINC
+}
+
+
+setflatss(src)				/* set sampling for a flat source */
+register SRCREC  *src;
+{
+	double  mult;
+	register int  i;
+
+	src->ss[SV][0] = src->ss[SV][1] = src->ss[SV][2] = 0.0;
+	for (i = 0; i < 3; i++)
+		if (src->snorm[i] < 0.6 && src->snorm[i] > -0.6)
+			break;
+	src->ss[SV][i] = 1.0;
+	fcross(src->ss[SU], src->ss[SV], src->snorm);
+	mult = .5 * sqrt( src->ss2 / DOT(src->ss[SU],src->ss[SU]) );
+	for (i = 0; i < 3; i++)
+		src->ss[SU][i] *= mult;
+	fcross(src->ss[SV], src->snorm, src->ss[SU]);
 }
 
 
@@ -71,6 +92,7 @@ OBJREC  *so;
 {
 	register FACE  *f;
 	register int  i, j;
+	double  d;
 	
 	src->sa.success = 2*AIMREQT-1;		/* bitch on second failure */
 	src->so = so;
@@ -87,8 +109,24 @@ OBJREC  *so;
 		objerror(so, USER, "cannot hit center");
 	src->sflags |= SFLAT;
 	VCOPY(src->snorm, f->norm);
-	src->ss = sqrt(f->area / PI);
 	src->ss2 = f->area;
+						/* find maximum radius */
+	src->srad = 0.;
+	for (i = 0; i < f->nv; i++) {
+		d = dist2(VERTEX(f,i), src->sloc);
+		if (d > src->srad)
+			src->srad = d;
+	}
+	src->srad = sqrt(src->srad);
+						/* compute size vectors */
+	if (f->nv == 4 || (f->nv == 5 &&	/* parallelogram case */
+			dist2(VERTEX(f,0),VERTEX(f,4)) <= FTINY*FTINY))
+		for (j = 0; j < 3; j++) {
+			src->ss[SU][j] = .5*(VERTEX(f,1)[j]-VERTEX(f,0)[j]);
+			src->ss[SV][j] = .5*(VERTEX(f,3)[j]-VERTEX(f,0)[j]);
+		}
+	else
+		setflatss(src);
 }
 
 
@@ -109,8 +147,12 @@ register OBJREC  *so;
 	theta = PI/180.0/2.0 * so->oargs.farg[3];
 	if (theta <= FTINY)
 		objerror(so, USER, "zero size");
-	src->ss = theta >= PI/4.0 ? 1.0 : tan(theta);
 	src->ss2 = 2.0*PI * (1.0 - cos(theta));
+					/* the following is approximate */
+	src->srad = sqrt(src->ss2/PI);
+	VCOPY(src->snorm, src->sloc);
+	setflatss(src);			/* hey, whatever works */
+	src->ss[SW][0] = src->ss[SW][1] = src->ss[SW][2] = 0.0;
 }
 
 
@@ -118,6 +160,8 @@ sphsetsrc(src, so)			/* set a sphere as a source */
 register SRCREC  *src;
 register OBJREC  *so;
 {
+	register int  i;
+
 	src->sa.success = 2*AIMREQT-1;		/* bitch on second failure */
 	src->so = so;
 	if (so->oargs.nfargs != 4)
@@ -125,8 +169,12 @@ register OBJREC  *so;
 	if (so->oargs.farg[3] <= FTINY)
 		objerror(so, USER, "illegal radius");
 	VCOPY(src->sloc, so->oargs.farg);
-	src->ss = so->oargs.farg[3];
-	src->ss2 = PI * src->ss * src->ss;
+	src->srad = so->oargs.farg[3];
+	src->ss2 = PI * src->srad * src->srad;
+	for (i = 0; i < 3; i++)
+		src->ss[SU][i] = src->ss[SV][i] = src->ss[SW][i] = 0.0;
+	for (i = 0; i < 3; i++)
+		src->ss[i][i] = .886227 * so->oargs.farg[3];
 }
 
 
@@ -145,8 +193,42 @@ OBJREC  *so;
 		objerror(so, USER, "cannot hit center");
 	src->sflags |= SFLAT;
 	VCOPY(src->snorm, co->ad);
-	src->ss = CO_R1(co);
-	src->ss2 = PI * src->ss * src->ss;
+	src->srad = CO_R1(co);
+	src->ss2 = PI * src->srad * src->srad;
+	setflatss(src);
+}
+
+
+cylsetsrc(src, so)			/* set a cylinder as a source */
+register SRCREC  *src;
+OBJREC  *so;
+{
+	register CONE  *co;
+	register int  i;
+	
+	src->sa.success = 4*AIMREQT-1;		/* bitch on fourth failure */
+	src->so = so;
+						/* get the cylinder */
+	co = getcone(so, 0);
+	if (CO_R0(co) > .2*co->al)		/* heuristic constraint */
+		objerror(so, WARNING, "source aspect too small");
+	for (i = 0; i < 3; i++)
+		src->sloc[i] = .5 * (CO_P1(co)[i] + CO_P0(co)[i]);
+	src->srad = co->al;
+	src->ss2 = 2.*CO_R0(co)*co->al;
+						/* set sampling vectors */
+	for (i = 0; i < 3; i++)
+		src->ss[SU][i] = .5 * co->al * co->ad[i];
+	src->ss[SV][0] = src->ss[SV][1] = src->ss[SV][2] = 0.0;
+	for (i = 0; i < 3; i++)
+		if (co->ad[i] < 0.6 && co->ad[i] > -0.6)
+			break;
+	src->ss[SV][i] = 1.0;
+	fcross(src->ss[SW], src->ss[SV], co->ad);
+	normalize(src->ss[SW]);
+	for (i = 0; i < 3; i++)
+		src->ss[SW][i] *= .886227 * CO_R0(co);
+	fcross(src->ss[SV], src->ss[SW], co->ad);
 }
 
 
