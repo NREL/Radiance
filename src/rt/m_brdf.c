@@ -263,9 +263,9 @@ register RAY  *r;
 	if (m->otype == MAT_BRTDF && nd.tspec > FTINY) {
 		RAY  sr;
 		errno = 0;
-		setcolor(ctmp, varvalue(m->oargs.sarg[0]),
-				varvalue(m->oargs.sarg[1]),
-				varvalue(m->oargs.sarg[2]));
+		setcolor(ctmp, varvalue(m->oargs.sarg[3]),
+				varvalue(m->oargs.sarg[4]),
+				varvalue(m->oargs.sarg[5]));
 		scalecolor(ctmp, nd.tspec);
 		if (errno)
 			objerror(m, WARNING, "compute error");
@@ -293,9 +293,9 @@ register RAY  *r;
 	if (m->otype == MAT_BRTDF && nd.rspec > FTINY) {
 		RAY  sr;
 		errno = 0;
-		setcolor(ctmp, varvalue(m->oargs.sarg[3]),
-				varvalue(m->oargs.sarg[4]),
-				varvalue(m->oargs.sarg[5]));
+		setcolor(ctmp, varvalue(m->oargs.sarg[0]),
+				varvalue(m->oargs.sarg[1]),
+				varvalue(m->oargs.sarg[2]));
 		scalecolor(ctmp, nd.rspec);
 		if (errno)
 			objerror(m, WARNING, "compute error");
