@@ -14,9 +14,9 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #ifndef CACHESIZE
 #ifdef BIGMEM
-#define CACHESIZE	32	/* default cache size (Mbytes, 0==inf) */
+#define CACHESIZE	17	/* default cache size (Mbytes, 0==inf) */
 #else
-#define CACHESIZE	12
+#define CACHESIZE	5
 #endif
 #endif
 #ifndef FREEBEAMS
