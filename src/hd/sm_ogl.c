@@ -6,16 +6,13 @@ static char SCCSid[] = "$SunId$ SGI";
 
 /*
  * sm_ogl.c
+ * 
+ *  Rendering routines for triangle mesh representation utilizing OpenGL 
 */
 #include "standard.h"
 
 #include <GL/gl.h>
 
-#ifdef TEST_DRIVER
-#include <gl/device.h>
-#include <GL/glu.h>
-#include <glut.h>
-#endif
 #include "sm_flag.h"
 #include "sm_list.h"
 #include "sm_geom.h"
@@ -23,16 +20,24 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "sm_stree.h"
 #include "sm.h"
 
-#ifdef TEST_DRIVER
-#include "sm_draw.h"
-/*static char smClean_notify = TRUE; 
-MAKE STATIC LATER: ui.c using for now;
- */
-char smClean_notify = TRUE; 
-#else
-static int smClean_notify = TRUE; 
-#endif
+static int smClean_notify = TRUE;    /*If true:Do full redraw on next update*/
+static int smCompute_mapping = TRUE;/*If true:re-tonemap on next update */ 
+static int smIncremental = FALSE;    /*If true: there has been incremental 
+				       rendering since last full draw */
+#define SM_RENDER_FG 0               /* Render foreground tris only*/
+#define SM_RENDER_BG 1               /* Render background tris only */
+#define SM_RENDER_MIXED 4               /* Render mixed tris only */
+#define SM_RENDER_CULL 8          /* Perform view frustum culling */
+#define BASE 1
+#define DIR 2
+/* FOR DISPLAY LIST RENDERING: **********************************************/
+#define  SM_DL_LEVELS 2 /* # of levels down to create display lists */
+#define SM_DL_LISTS   42  /* # of qtree nodes in tree at above level: 
+			   should be 2*(4^(SM_DL_LEVELS+1)-1)/(4-1) */
+static GLuint Display_lists[SM_DL_LISTS][2] = {0}; 
+/****************************************************************************/
 
+/* FOR APPROXIMATION RENDERING **********************************************/
 typedef struct {
 	float	dist;		/* average distance */
 	BYTE	rgb[3];		/* average color */
@@ -45,12 +50,15 @@ typedef struct {
 
 static QT_LUENT	*qt_htbl = NULL;	/* quadtree cache */
 static int	qt_hsiz = 0;		/* quadtree cache size */
+/****************************************************************************/
 
-
+/* For DEPTH SORTING ********************************************************/
 typedef struct _T_DEPTH {
   int tri;
   double depth;
 }T_DEPTH;
+/**********************************************************************/
+
 
  /*
   * smClean(tmflag)	: display has been wiped clean
@@ -64,7 +72,7 @@ smClean(tmflag)
 {
     smClean_notify = TRUE;
     if(tmflag)
-       SM_TONE_MAP(smMesh) = 0;
+       smCompute_mapping = TRUE;
 }
 
 int
@@ -259,7 +267,7 @@ int lvl;
 }
 
 
-smRender_stree_level(sm,lvl)
+smRender_approx_stree_level(sm,lvl)
 SM *sm;
 int lvl;
 {
@@ -285,17 +293,32 @@ int lvl;
   glPopAttrib();
 }
 
-
-smRender_stree(sm, qual)	/* render some quadtree triangles */
+/*
+ * smRender_approx(sm,qual,view)
+ * SM *sm;                : mesh
+ * int qual;              : quality level
+ * VIEW *view;            : current view
+ *
+ *  Renders an approximation to the current mesh based on the quadtree 
+ *  subdivision. The quadtree is traversed to a level (based upon the quality:
+ *  the lower the quality, the fewer levels visited, and the coarser, and
+ *  faster, the approximation). The quadtree triangles are drawn relative to
+ *  the current viewpoint, with a depth and color averaged from all of the 
+ *  triangles that lie beneath the node. 
+ */
+smRender_approx(sm, qual,view)	
 SM *sm;
 int qual;
+VIEW *view;
 {
   int i, n,ntarget;
   int lvlcnt[QT_MAX_LEVELS];
   STREE *st;
   int4 *active_flag;
+
   if (qual <= 0)
     return;
+  smCull(sm,view,SM_ALL_LEVELS);
 				/* compute rendering target */
   ntarget = 0;
 
@@ -320,219 +343,350 @@ int qual;
     if (ntarget < lvlcnt[i+1])
       break;
 				/* compute and render target level */
-  smRender_stree_level(sm,i);
+  smRender_approx_stree_level(sm,i);
 }
-
-
 
 #define render_tri(v0,v1,v2,rgb0,rgb1,rgb2) \
   {glColor3ub(rgb0[0],rgb0[1],rgb0[2]);  glVertex3fv(v0); \
   glColor3ub(rgb1[0],rgb1[1],rgb1[2]);  glVertex3fv(v1); \
-  glColor3ub(rgb2[0],rgb2[1],rgb2[2]);  glVertex3fv(v2);} \
+  glColor3ub(rgb2[0],rgb2[1],rgb2[2]);  glVertex3fv(v2);} 
 
-render_mixed_tri(v0,v1,v2,rgb0,rgb1,rgb2,bg0,bg1,bg2,vp,vc)
+
+render_bg_tri(v0,v1,v2,rgb0,rgb1,rgb2,vp,vc,d)
+ float v0[3],v1[3],v2[3];
+ BYTE rgb0[3],rgb1[3],rgb2[3];
+ FVECT vp,vc;
+ double d;
+ {
+   double p[3];
+   
+   glColor3ub(rgb0[0],rgb0[1],rgb0[2]);
+   VSUB(p,v0,vc);
+   if(dev_zmin >= 0.99)
+   {
+     p[0] *= d;
+     p[1] *= d;
+     p[2] *= d;
+   }
+   VADD(p,p,vp);
+   glVertex3dv(p);
+ 
+   glColor3ub(rgb1[0],rgb1[1],rgb1[2]);
+   VSUB(p,v1,vc);
+   if(dev_zmin >= 0.99)
+   {
+     p[0] *= d;
+     p[1] *= d;
+     p[2] *= d;
+   }
+   VADD(p,p,vp);
+   glVertex3dv(p);
+ 
+ 
+   glColor3ub(rgb2[0],rgb2[1],rgb2[2]);
+   VSUB(p,v2,vc);
+   if(dev_zmin >= 0.99)
+   {
+     p[0] *= d;
+     p[1] *= d;
+     p[2] *= d;
+    VADD(p,p,vp);
+    glVertex3dv(p);
+   }
+ } 
+
+
+/*
+ * render_mixed_tri(v0,v1,v2,rgb0,rgb1,rgb2,b0,b1,b2)
+ *  float v0[3],v1[3],v2[3];      : triangle vertex coordinates
+ *  BYTE rgb0[3],rgb1[3],rgb2[3]; : vertex RGBs
+ *  int b0,b1,b2;                 : background or base vertex flag
+ *  
+ *  render foreground or base vertex color as average of the background 
+ *  vertex RGBs.
+ */
+render_mixed_tri(v0,v1,v2,rgb0,rgb1,rgb2,vp,vc,bg0,bg1,bg2)
 float v0[3],v1[3],v2[3];
 BYTE rgb0[3],rgb1[3],rgb2[3];
-int bg0,bg1,bg2;
 FVECT vp,vc;
+int bg0,bg1,bg2;
 {
-  double p[3],d;
-  int j,ids[3],cnt;
-  int rgb[3];
+  double d,p[3];
+  int j,cnt,rgb[3],base;
+  
+  base = bg0==BASE || bg1==BASE || bg2==BASE;
 
-  /* NOTE:Triangles are defined clockwise:historical relative to spherical
-     tris: could change
-     */
-  if(bg0 && bg1 && bg2)
-    return;
+  if(base)
+  {
+    cnt = 0;
+    rgb[0] = rgb[1] = rgb[2] = 0;
+    if(bg0 != BASE)
+    {
+      IADDV3(rgb,rgb0);
+      cnt++;
+    }
+    if(bg1 !=BASE)
+    {
+      IADDV3(rgb,rgb1);
+      cnt++;
+    }
+    if(bg2 != BASE)
+    {
+      IADDV3(rgb,rgb2);
+      cnt++;
+    }
+    IDIVV3(rgb,cnt);
+  }
 
-  cnt = 0;
-  d = 0.0;
-  rgb[0] = rgb[1] = rgb[2] = 0;
+  if(bg0== BASE)
+    glColor3ub(rgb[0],rgb[1],rgb[2]);
+  else
+    glColor3ub(rgb0[0],rgb0[1],rgb0[2]);
 
   if(!bg0)
   {
-    rgb[0] += rgb0[0];
-    rgb[1] += rgb0[1];
-    rgb[2] += rgb0[2];
-    cnt++;
-    d += DIST(vp,v0);
+    VSUB(p,v0,vp);
+    normalize(p);
+    IADDV3(p,vc);
+    glVertex3dv(p); 
   }
+  else
+    glVertex3fv(v0); 
+
+  if(bg1== BASE)
+    glColor3ub(rgb[0],rgb[1],rgb[2]);
+  else
+    glColor3ub(rgb1[0],rgb1[1],rgb1[2]);
+
   if(!bg1)
   {
-    rgb[0] += rgb1[0];
-    rgb[1] += rgb1[1];
-    rgb[2] += rgb1[2];
-    cnt++;
-    d += DIST(vp,v1);
+    VSUB(p,v1,vp);
+    normalize(p);
+    IADDV3(p,vc);
+    glVertex3dv(p); 
   }
+  else
+    glVertex3fv(v1); 
+
+  if(bg2== BASE)
+    glColor3ub(rgb[0],rgb[1],rgb[2]);
+  else
+    glColor3ub(rgb2[0],rgb2[1],rgb2[2]);
+
   if(!bg2)
   {
-    rgb[0] += rgb2[0];
-    rgb[1] += rgb2[1];
-    rgb[2] += rgb2[2];
-    cnt++;
-    d += DIST(vp,v2);
+    VSUB(p,v2,vp);
+    normalize(p);
+    IADDV3(p,vc);
+    glVertex3dv(p); 
   }
-  if(cnt > 1)
+  else
+    glVertex3fv(v2); 
+}
+
+/*
+ * smRender_bg_tris(sm,vp,t_flag,bg_flag,wp,rgb)
+ * SM *sm;                         : mesh
+ * FVECT vp;                       : current viewpoint
+ * int4  *t_flag,*bg_flag;         : triangle flags: t_flag is generic, 
+ *                                   and bg_flag indicates if background tri;
+ * float (*wp)[3];BYTE  (*rgb)[3]; : arrays of sample points and RGB colors
+ *
+ * Sequentially gos through triangle list and renders all valid tris who 
+ * have t_flag set, and bg_flag set.
+ */
+
+smRender_bg_tris(sm,vp,t_flag,bg_flag,wp,rgb)
+SM *sm;
+FVECT vp;
+int4 *t_flag,*bg_flag;
+float (*wp)[3];
+BYTE  (*rgb)[3];
+{
+  double d;
+  int v0_id,v1_id,v2_id;
+  int i,n,bg0,bg1,bg2;
+  TRI *tri;
+
+  glMatrixMode(GL_MODELVIEW);
+
+  glPushMatrix();
+  glTranslated(vp[0],vp[1],vp[2]);
+  /* The points are a distance of 1 away from the origin: if necessary scale
+     so that they fit in frustum and are therefore not clipped away
+   */
+  if(dev_zmin >= 0.99)
   {
-    rgb[0]/=cnt; rgb[1]/=cnt; rgb[2]/=cnt;
-    d /= (double)cnt;
-  } 
-  if(bg0)
+    d = (dev_zmin+dev_zmax)/2.0;
+    glScaled(d,d,d);
+  }
+  /* move relative to the new view */
+  /* move points to unit sphere at origin */
+  glTranslated(-SM_VIEW_CENTER(sm)[0],-SM_VIEW_CENTER(sm)[1],
+	       -SM_VIEW_CENTER(sm)[2]);
+  glBegin(GL_TRIANGLES);
+  for(n=((SM_NUM_TRI(sm)+31)>>5) +1; --n;)
+    if(t_flag[n] & bg_flag[n])
+      for(i=0; i < 32; i++)
+	if(t_flag[n] & bg_flag[n] & (1L << i))
+	 {
+	   tri = SM_NTH_TRI(sm,(n<<5)+i);
+	   v0_id = T_NTH_V(tri,0);
+	   v1_id = T_NTH_V(tri,1);
+	   v2_id = T_NTH_V(tri,2);
+	   bg0 = SM_DIR_ID(sm,v0_id)?DIR:SM_BASE_ID(sm,v0_id)?BASE:0;
+	   bg1 = SM_DIR_ID(sm,v1_id)?DIR:SM_BASE_ID(sm,v1_id)?BASE:0;
+	   bg2 = SM_DIR_ID(sm,v2_id)?DIR:SM_BASE_ID(sm,v2_id)?BASE:0;
+	   if(bg0==DIR && bg1==DIR && bg2==DIR)
+	     render_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
+		rgb[v2_id])
+	   else
+	     render_mixed_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],
+		      rgb[v1_id],rgb[v2_id],vp,SM_VIEW_CENTER(sm),bg0,bg1,bg2);
+	 }
+  glEnd();
+
+  glPopMatrix();
+
+}
+/*
+ * render_base_tri(v0,v1,v2,rgb0,rgb1,rgb2,vp,b0,b1,b2)
+ *  float v0[3],v1[3],v2[3];       : triangle vertex coordinates
+ *  BYTE rgb0[3],rgb1[3],rgb2[3];  : vertex RGBs
+ *  FVECT vp;                      : current viewpoint
+ *  int b0,b1,b2;                  : vertex base flag
+ *  
+ *  render base vertex color as average of the non-base vertex RGBs. The
+ *  base vertex coordinate is taken as the stored vector, scaled out by
+ *  the average distance to the non-base vertices
+ */
+render_base_tri(v0,v1,v2,rgb0,rgb1,rgb2,vp,b0,b1,b2)
+float v0[3],v1[3],v2[3];
+BYTE rgb0[3],rgb1[3],rgb2[3];
+FVECT vp;
+int b0,b1,b2;
+{
+  int cnt;
+  int rgb[3];
+  double d;
+  double p[3];
+
+  cnt = 0;
+  rgb[0] = rgb[1] = rgb[2] = 0;
+  d = 0.0;
+
+  if(b0&&b1&&b2)
+    return;
+  /* First calculate color and coordinates 
+     for base vertices based on world space vertices*/
+  if(!b0)
+  {
+    IADDV3(rgb,rgb0);
+    d += DIST(v0,vp);
+    cnt++;
+  }
+  if(!b1)
+  {
+    IADDV3(rgb,rgb1);
+    d += DIST(v1,vp);
+    cnt++;
+  }
+  if(!b2)
+  {
+    IADDV3(rgb,rgb2);
+    d += DIST(v2,vp);
+    cnt++;
+  }
+  IDIVV3(rgb,cnt);
+  d /= (double)cnt;
+  
+  /* Now render triangle */
+  if(b0)
   {
     glColor3ub(rgb[0],rgb[1],rgb[2]);
-    VSUB(p,v0,vc);
-    p[0] *= d;
-    p[1] *= d;
-    p[2] *= d;
-    VADD(p,p,vc);
-    glVertex3dv(p);
+    SUBV3(p,v0,vp);
+    ISCALEV3(p,d);
+    IADDV3(p,vp);
+    glVertex3dv(p);    
   }
   else
   {
     glColor3ub(rgb0[0],rgb0[1],rgb0[2]);
     glVertex3fv(v0);
-   }
-  if(bg1)
+  }
+  if(b1)
   {
     glColor3ub(rgb[0],rgb[1],rgb[2]);
-    VSUB(p,v1,vc);
-    p[0] *= d;
-    p[1] *= d;
-    p[2] *= d;
-    VADD(p,p,vc);
+    SUBV3(p,v1,vp);
+    ISCALEV3(p,d);
+    IADDV3(p,vp);
     glVertex3dv(p);
   }
   else
   {
     glColor3ub(rgb1[0],rgb1[1],rgb1[2]);
     glVertex3fv(v1);
-   }
-  if(bg2)
+  }
+  if(b2)
   {
     glColor3ub(rgb[0],rgb[1],rgb[2]);
-    VSUB(p,v2,vc);
-    p[0] *= d;
-    p[1] *= d;
-    p[2] *= d;
-    VADD(p,p,vc);
+    SUBV3(p,v2,vp);
+    ISCALEV3(p,d);
+    IADDV3(p,vp);
     glVertex3dv(p);
   }
   else
   {
     glColor3ub(rgb2[0],rgb2[1],rgb2[2]);
     glVertex3fv(v2);
-   }
-
+  }
 }
-
-render_bg_tri(v0,v1,v2,rgb0,rgb1,rgb2,vp,vc,d)
-float v0[3],v1[3],v2[3];
-BYTE rgb0[3],rgb1[3],rgb2[3];
-FVECT vp,vc;
-double d;
-{
-  double p[3];
-  
-  glColor3ub(rgb0[0],rgb0[1],rgb0[2]);
-  VSUB(p,v0,vc);
-  if(dev_zmin >= 0.99)
-  {
-    p[0] *= d;
-    p[1] *= d;
-    p[2] *= d;
-  }
-  VADD(p,p,vp);
-  glVertex3dv(p);
-
-  glColor3ub(rgb1[0],rgb1[1],rgb1[2]);
-  VSUB(p,v1,vc);
-  if(dev_zmin >= 0.99)
-  {
-    p[0] *= d;
-    p[1] *= d;
-    p[2] *= d;
-  }
-  VADD(p,p,vp);
-  glVertex3dv(p);
-
-
-  glColor3ub(rgb2[0],rgb2[1],rgb2[2]);
-  VSUB(p,v2,vc);
-  if(dev_zmin >= 0.99)
-  {
-    p[0] *= d;
-    p[1] *= d;
-    p[2] *= d;
-  }
-  VADD(p,p,vp);
-  glVertex3dv(p);
-
-}
-
-smRender_mesh(sm,vp)
+/*
+ * smRender_fg_tris(sm,vp,t_flag,bg_flag,wp,rgb)
+ * SM *sm;                        : mesh
+ * FVECT vp;                      : current viewpoint
+ * int4  *t_flag,*bg_flag;        : triangle flags: t_flag is generic,bg_flag 
+ *                                  indicates if background tri;
+ * float (*wp)[3];BYTE (*rgb)[3]; : arrays of sample points and RGB colors
+ *
+ * Sequentially gos through triangle list and renders all valid tris who 
+ * have t_flag set, and NOT bg_flag set.
+ */
+smRender_fg_tris(sm,vp,t_flag,bg_flag,wp,rgb)
 SM *sm;
 FVECT vp;
+int4  *t_flag,*bg_flag;
+float (*wp)[3];
+BYTE  (*rgb)[3];
 {
-  int i,n,bg0,bg1,bg2;
-  double d;
-  int v0_id,v1_id,v2_id;
   TRI *tri;
-  float (*wp)[3];
-  BYTE  (*rgb)[3];
-  int4  *active_flag,*bg_flag;
-
-  wp = SM_WP(sm);
-  rgb =SM_RGB(sm);
-  d = (dev_zmin+dev_zmax)/2.0;
-  glPushAttrib(GL_DEPTH_BUFFER_BIT);
+  int i,n,b0,b1,b2;
+  int v0_id,v1_id,v2_id;
   
-  /* First draw background polygons */
-  glDisable(GL_DEPTH_TEST);
   glBegin(GL_TRIANGLES);
-
-  active_flag = SM_NTH_FLAGS(sm,T_ACTIVE_FLAG);
-  bg_flag = SM_NTH_FLAGS(sm,T_BG_FLAG);
   for(n=((SM_NUM_TRI(sm)+31)>>5) +1; --n;)
-    if(active_flag[n] & bg_flag[n])
+    if(t_flag[n])
       for(i=0; i < 32; i++)
-	if(active_flag[n] & bg_flag[n] & (1L << i))
+	if(t_flag[n] & (1L << i) & ~bg_flag[n])
 	 {
 	   tri = SM_NTH_TRI(sm,(n<<5)+i);
 	   v0_id = T_NTH_V(tri,0);
 	   v1_id = T_NTH_V(tri,1);
 	   v2_id = T_NTH_V(tri,2);
-	   render_bg_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
-			 rgb[v2_id],vp,SM_VIEW_CENTER(sm),d);
-	 }
-  glEnd();
-
-  glEnable(GL_DEPTH_TEST);
-  glBegin(GL_TRIANGLES);
-  for(n=((SM_NUM_TRI(sm)+31)>>5) +1; --n;)
-    if(active_flag[n])
-      for(i=0; i < 32; i++)
-	if((active_flag[n] & (1L << i)) && !(bg_flag[n] & (1L << i)))
-	 {
-	   tri = SM_NTH_TRI(sm,(n<<5)+i);
-	   v0_id = T_NTH_V(tri,0);
-	   v1_id = T_NTH_V(tri,1);
-	   v2_id = T_NTH_V(tri,2);
-	   bg0 = SM_DIR_ID(sm,v0_id) || SM_BASE_ID(sm,v0_id);
-	   bg1 = SM_DIR_ID(sm,v1_id) || SM_BASE_ID(sm,v1_id);
-	   bg2 = SM_DIR_ID(sm,v2_id) || SM_BASE_ID(sm,v2_id);
-	   if(!(bg0 || bg1 || bg2))
+	   b0 = SM_BASE_ID(sm,v0_id);
+	   b1 = SM_BASE_ID(sm,v1_id);
+	   b2 = SM_BASE_ID(sm,v2_id);
+	   if(b0 || b1 || b2)
+	     render_base_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],
+	     rgb[v1_id],rgb[v2_id],SM_VIEW_CENTER(sm),b0,b1,b2);
+	   else
 	     render_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
 			rgb[v2_id])
-	       else
-		 render_mixed_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],
-		  rgb[v1_id],rgb[v2_id],bg0,bg1,bg2,vp,SM_VIEW_CENTER(sm));
 	 }
   glEnd();
 
-  glPopAttrib();
 }
+
 
 int
 compare_tri_depths(T_DEPTH *td1,T_DEPTH *td2)
@@ -540,12 +694,10 @@ compare_tri_depths(T_DEPTH *td1,T_DEPTH *td2)
   double d;
 
   d = td2->depth-td1->depth;
-  
   if(d > 0.0)
     return(1);
   if(d < 0.0)
     return(-1);
-  
   return(0);
 
 }
@@ -554,14 +706,13 @@ compare_tri_depths(T_DEPTH *td1,T_DEPTH *td2)
 #define freebuf(b)  tempbuf(-1)
 #endif
 
-
 char *
 tempbuf(len)			/* get a temporary buffer */
 unsigned  len;
 {
-	extern char  *malloc(), *realloc();
-	static char  *tempbuf = NULL;
-	static unsigned  tempbuflen = 0;
+  extern char  *malloc(), *realloc();
+  static char  *tempbuf = NULL;
+  static unsigned  tempbuflen = 0;
 
 #ifdef DEBUG
 	static int in_use=FALSE;
@@ -590,6 +741,15 @@ unsigned  len;
 	return(tempbuf);
 }
 
+/* 
+ * smOrder_new_tris(sm,vp,td)
+ * SM *sm;      : mesh 
+ * FVECT vp;    : current viewpoint
+ * T_DEPTH *td; : holds returned list of depth sorted tris
+ *
+ * Creates list of all new tris, with their distance from the current 
+ * viewpoint, and sorts the list based on this distance
+ */
 smOrder_new_tris(sm,vp,td)
 SM *sm;
 FVECT vp;
@@ -615,13 +775,10 @@ T_DEPTH *td;
 	   for(j=0;j < 3;j++)
 	     {
 	       v = T_NTH_V(tri,j);
-	       if(!SM_BG_SAMPLE(sm,v))
-		 {
-		   VSUB(diff,SM_NTH_WV(sm,v),vp);
-		   d = DOT(diff,diff);
-		   if(min_d == -1 || d < min_d)
-		     min_d = d;
-		 }
+	       VSUB(diff,SM_NTH_WV(sm,v),vp);
+	       d = DOT(diff,diff);
+	       if(min_d == -1 || d < min_d)
+		 min_d = d;
 	     }
 	   td[tcnt++].depth = min_d;
   }
@@ -630,20 +787,54 @@ T_DEPTH *td;
       qsort((void *)td,tcnt,sizeof(T_DEPTH),compare_tri_depths);
 }
 
+/* 
+ * smUpdate_tm(sm)   : Update the tone-mapping
+ * SM *sm;           : mesh
+ * 
+ */
+smUpdate_tm(sm)
+SM *sm;
+{
+  int t = SM_TONE_MAP(sm);
 
-smUpdate_Rendered_mesh(sm,vp,clr)
+  if(t==0 || smCompute_mapping)
+  {
+    tmClearHisto();
+    tmAddHisto(SM_BRT(sm),SM_NUM_SAMP(sm),1);
+    if(tmComputeMapping(0.,0.,0.) != TM_E_OK)
+      return;
+    t = 0;
+    smCompute_mapping = FALSE;
+  }
+  tmMapPixels(SM_NTH_RGB(sm,t),&SM_NTH_BRT(sm,t),SM_NTH_CHR(sm,t), 
+	      SM_NUM_SAMP(sm)-t);
+  SM_TONE_MAP(sm) = SM_NUM_SAMP(sm);
+}
+
+/* 
+ *   smRender_inc(sm,vp)      : Incremental update of mesh
+ *    SM * sm;                : mesh
+ *    FVECT vp;               : current view point
+ *
+ *  If a relatively small number of new triangles have been created,
+ *  do an incremental update. Render new triangles with depth buffering 
+ *  turned off, if the current viewpoint is not the same as canonical view- 
+ *  point, must use painter's approach to resolve visibility:first depth sort
+ *  triangles, then render back-to-front.  
+*/
+smRender_inc(sm,vp)
 SM *sm;
 FVECT vp;
-int clr;
 {
-  int i,n,v0_id,v1_id,v2_id,bg0,bg1,bg2;
-  GLint depth_test;
-  double d;
+  int i,n,v0_id,v1_id,v2_id,b0,b1,b2;
   TRI *tri;
   float (*wp)[3];
   BYTE  (*rgb)[3];
   int4  *new_flag,*bg_flag;
   T_DEPTH *td = NULL;
+
+  smUpdate_tm(sm);
+
   /* For all of the NEW triangles (since last update): assume
      ACTIVE. Go through and sort on depth value (from vp). Turn
      Depth Buffer test off and render back-front
@@ -652,68 +843,27 @@ int clr;
   {
     /* Must depth sort if view points do not coincide */
     td = (T_DEPTH *)tempbuf(smNew_tri_cnt*sizeof(T_DEPTH));
+    if(td)
+      smOrder_new_tris(sm,vp,td);
 #ifdef DEBUG
-    if(!td)
-	eputs("Cant create list:wont depth sort:smUpdate_rendered_mesh\n");
+    else
+	eputs("Cant create list:wont depth sort:smUpdate_incremental\n");
 #endif
-    smOrder_new_tris(sm,vp,td);
   }
   wp = SM_WP(sm);
   rgb =SM_RGB(sm);
+  new_flag = SM_NTH_FLAGS(sm,T_NEW_FLAG);
+  bg_flag = SM_NTH_FLAGS(sm,T_BG_FLAG);
   /* Turn Depth Test off -- using Painter's algorithm */
   glPushAttrib(GL_DEPTH_BUFFER_BIT);
   glDepthFunc(GL_ALWAYS);
-  d = (dev_zmin+dev_zmax)/2.0;
 
-  /* Now render back-to front */
-  /* First render bg triangles */
-  new_flag = SM_NTH_FLAGS(sm,T_NEW_FLAG);
-  bg_flag = SM_NTH_FLAGS(sm,T_BG_FLAG);
-  glBegin(GL_TRIANGLES);
-  for(n=((SM_NUM_TRI(sm)+31)>>5) +1; --n;)
-    if(new_flag[n] & bg_flag[n])
-      for(i=0; i < 32; i++)
-	if(new_flag[n] & (1L << i) & bg_flag[n] )
-	 {
-	   tri = SM_NTH_TRI(sm,(n<<5)+i);
-	   v0_id = T_NTH_V(tri,0);
-	   v1_id = T_NTH_V(tri,1);
-	   v2_id = T_NTH_V(tri,2);
-	   render_bg_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
-			 rgb[v2_id],vp,SM_VIEW_CENTER(sm),d);
-	 }
-  glEnd();
-
-
-  glBegin(GL_TRIANGLES);
+  smRender_bg_tris(sm,vp,new_flag,bg_flag,wp,rgb);
   if(!td)
-  {
-    for(n=((SM_NUM_TRI(sm)+31)>>5) +1; --n;)
-     if(new_flag[n] & ~bg_flag[n])
-      for(i=0; i < 32; i++)
-	if(new_flag[n] & (1L << i) & ~bg_flag[n])
-	 {
-	   tri = SM_NTH_TRI(sm,(n<<5)+i);
-	   /* Dont need to check for valid tri because flags are
-	      cleared on delete
-	    */
-	   v0_id = T_NTH_V(tri,0);
-	   v1_id = T_NTH_V(tri,1);
-	   v2_id = T_NTH_V(tri,2);
-	   bg0 = SM_DIR_ID(sm,v0_id) || SM_BASE_ID(sm,v0_id);
-	   bg1 = SM_DIR_ID(sm,v1_id) || SM_BASE_ID(sm,v1_id);
-	   bg2 = SM_DIR_ID(sm,v2_id) || SM_BASE_ID(sm,v2_id);
-	   if(!(bg0 || bg1 || bg2))
-	     render_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
-			rgb[v2_id])
-	   else
-	     render_mixed_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],
-			      rgb[v1_id],rgb[v2_id],bg0,bg1,bg2,vp,
-			      SM_VIEW_CENTER(sm));
-	 }
-  }
+    smRender_fg_tris(sm,vp,new_flag,bg_flag,wp,rgb);
   else
   {
+    glBegin(GL_TRIANGLES);
     for(i=0; td[i].tri != -1;i++)
     {
       tri = SM_NTH_TRI(sm,td[i].tri);
@@ -723,29 +873,523 @@ int clr;
       v0_id = T_NTH_V(tri,0);
       v1_id = T_NTH_V(tri,1);
       v2_id = T_NTH_V(tri,2);
-      bg0 = SM_DIR_ID(sm,v0_id) || SM_BASE_ID(sm,v0_id);
-      bg1 = SM_DIR_ID(sm,v1_id) || SM_BASE_ID(sm,v1_id);
-      bg2 = SM_DIR_ID(sm,v2_id) || SM_BASE_ID(sm,v2_id);
-      if(!(bg0 || bg1 || bg2))
+      b0 = SM_BASE_ID(sm,v0_id);
+      b1 = SM_BASE_ID(sm,v1_id);
+      b2 = SM_BASE_ID(sm,v2_id);
+      if(b0 || b1 || b2)
+	render_base_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],
+			rgb[v1_id],rgb[v2_id],SM_VIEW_CENTER(sm),b0,b1,b2);
+      else
 	render_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
 		   rgb[v2_id])
-	  else
-	    render_mixed_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],
-			     rgb[v1_id],rgb[v2_id],bg0,bg1,bg2,vp,
-			     SM_VIEW_CENTER(sm));
     }
-#ifdef DEBUG
+    glEnd();
     freebuf(td);
-#endif
   }
-  glEnd();
-
   /* Restore Depth Test */
   glPopAttrib();
 }
 
+/* 
+ * smRender_qtree_dl(sm,qt,vp,wp,rgb,i,level_i,max_level,leaf_cnt,which)
+ *  SM *sm;              : mesh
+ *  QUADTREE qt;         : quadtree base node
+ *  FVECT vp;            : current viewpoint
+ *  float (*wp)[3];      : array of sample points
+ *  BYTE (*rgb)[3];      : array of RGB values for samples
+ *  int i,level_i,level,max_level,leaf_cnt; 
+ *                       : variables to keep track of where
+ *         we are in the quadtree traversal in order to map nodes to 
+ *         corresponding array locations, where nodes are stored in breadth-
+ *         first order. i is the index of the current node,level_i is the 
+ *         index of the first node on the current quadtree level, max_level is
+ *         the maximum number of levels to traverse, and leaf_cnt is the number
+ *         of leaves on the current level
+ *  int which;          flag indicates whether to render fg or bg tris
+ *
+ * 
+ *    Render the tris stored in qtree using display lists. For each node at
+ *   the leaf or max_level, call the display_list if it exists, else traverse
+ *   down the subtree and render the nodes into a new display list which is
+ *   stored for future use.
+ */
+smRender_qtree_dl(sm,qt,vp,wp,rgb,i,level_i,level,max_level,leaf_cnt,which)
+SM *sm;
+QUADTREE qt;
+FVECT vp;
+float (*wp)[3];
+BYTE  (*rgb)[3];
+int i,level_i,level,max_level,leaf_cnt;
+int which;
+{
+  int j;
+  
+  if(QT_IS_EMPTY(qt))
+    return;
+
+  if(QT_IS_LEAF(qt) || level == max_level)
+  {
+    if(QT_IS_LEAF(qt))
+    {
+      if(!QT_LEAF_IS_FLAG(qt))
+	return;
+    }
+    else
+      if(!QT_IS_FLAG(qt))
+	return;
+
+    if(!Display_lists[i][which])
+    {
+      Display_lists[i][which] = i+1 + which*SM_DL_LISTS;
+      glNewList(Display_lists[i][which],GL_COMPILE_AND_EXECUTE);
+      smClear_flags(sm,T_NEW_FLAG);
+      glBegin(GL_TRIANGLES);
+      smRender_qtree(sm,qt,vp,wp,rgb,which,FALSE);
+      glEnd();
+      glEndList();
+    }
+    else
+    {
+      glCallList(Display_lists[i][which]);
+    }
+  }
+  else
+    if(QT_IS_FLAG(qt))
+    {
+      i = ((i - level_i)<< 2) + level_i + leaf_cnt;
+      level_i += leaf_cnt;
+      leaf_cnt <<= 2;
+      for(j=0; j < 4; j++)
+	smRender_qtree_dl(sm,QT_NTH_CHILD(qt,j),vp,wp,rgb,
+			i+j,level_i,level+1,max_level,leaf_cnt,which);
+    }
+
+}
+
+/* 
+ * smRender_qtree(sm,qt,vp,wp,rgb,which,cull) : Render the tris stored in qtree
+ *  SM *sm;             : mesh
+ *  QUADTREE qt;        : quadtree base node
+ *  FVECT vp;           : current viewpoint
+ *  float (*wp)[3]      : array of sample points
+ *  BYTE (*rgb)[3]      : array of RGB values for samples
+ *  int which;          : flag indicates whether to render fg or bg tris
+ *  int cull;           : if true, only traverse active (flagged) nodes
+ * 
+ */
+smRender_qtree(sm,qt,vp,wp,rgb,which,cull)
+SM *sm;
+QUADTREE qt;
+FVECT vp;
+float (*wp)[3];
+BYTE  (*rgb)[3];
+int which,cull;
+{
+  int i;
+  
+  if(QT_IS_EMPTY(qt))
+    return;
+
+  if(QT_IS_LEAF(qt))
+  {
+    TRI *t;
+    OBJECT *optr;
+    int t_id,v0_id,v1_id,v2_id,bg0,bg1,bg2;
+
+    if(cull && !QT_LEAF_IS_FLAG(qt))
+      return;
+
+    optr = qtqueryset(qt);
+    for (i = QT_SET_CNT(optr),optr = QT_SET_PTR(optr);i > 0; i--)
+    {
+      t_id = QT_SET_NEXT_ELEM(optr);
+      t = SM_NTH_TRI(sm,t_id);
+      if(!T_IS_VALID(t) || (cull &&!SM_IS_NTH_T_ACTIVE(sm,t_id)) || 
+	 SM_IS_NTH_T_NEW(sm,t_id))
+	continue;
+      
+      bg0 = SM_IS_NTH_T_BG(sm,t_id);
+      if((which== SM_RENDER_FG && bg0) || (which== SM_RENDER_BG && !bg0))
+	continue;
+
+      v0_id = T_NTH_V(t,0);
+      v1_id = T_NTH_V(t,1);
+      v2_id = T_NTH_V(t,2);
+      if(bg0)
+      {
+	bg0 = SM_DIR_ID(sm,v0_id)?DIR:SM_BASE_ID(sm,v0_id)?BASE:0;
+	bg1 = SM_DIR_ID(sm,v1_id)?DIR:SM_BASE_ID(sm,v1_id)?BASE:0;
+	bg2 = SM_DIR_ID(sm,v2_id)?DIR:SM_BASE_ID(sm,v2_id)?BASE:0;
+	SM_SET_NTH_T_NEW(sm,t_id);  
+	if(bg0==DIR && bg1==DIR && bg2==DIR)
+	  render_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
+		  rgb[v2_id])
+	 else
+	   render_mixed_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],
+		 rgb[v1_id],rgb[v2_id],vp,SM_VIEW_CENTER(sm),bg0,bg1,bg2);
+      }
+      else
+      {
+	SM_SET_NTH_T_NEW(sm,t_id);  
+	bg0 = SM_BASE_ID(sm,v0_id);
+	bg1 = SM_BASE_ID(sm,v1_id);
+	bg2 = SM_BASE_ID(sm,v2_id);
+	if(bg0 || bg1 || bg2)
+	  render_base_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],
+	     rgb[v1_id],rgb[v2_id],SM_VIEW_CENTER(sm),bg0,bg1,bg2);
+	else
+	  render_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
+		   rgb[v2_id])
+      }
+    }
+  }
+  else
+    if(!cull  || QT_IS_FLAG(qt))
+      for(i=0; i < 4; i++)
+	smRender_qtree(sm,QT_NTH_CHILD(qt,i),vp,wp,rgb,which,cull);
+}
+
+/* 
+ * smRender_mesh(sm,view,cull) : Render mesh Triangles
+ *   SM *sm;                   : mesh
+ *   VIEW *view;               : current view
+ *   int cull;                 : cull Flag 
+ *
+ *   If cull is TRUE, first mark tris in current 
+ *   frustum and only render them. Normally, cull will be FALSE only if 
+ *   it is known that all tris lie in frustum, e.g. after a rebuild
+ *
+ */
+smRender_mesh(sm,view,cull)
+SM *sm;
+VIEW *view;
+int cull;
+{
+  float (*wp)[3];
+  BYTE  (*rgb)[3];
+  int i;
+  STREE *st= SM_LOCATOR(sm);
+
+  smUpdate_tm(sm);
+
+  wp = SM_WP(sm);
+  rgb =SM_RGB(sm);
+
+  smClear_flags(sm,T_NEW_FLAG);
+
+  if(cull)
+    smCull(sm,view,SM_ALL_LEVELS);
+
+
+  glPushAttrib(GL_DEPTH_BUFFER_BIT);
+  glDisable(GL_DEPTH_TEST);
+  
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+  /* move relative to the new view */
+  glTranslated(view->vp[0],view->vp[1],view->vp[2]);
+
+
+  /* The points are a distance of 1 away from the origin: if necessary 
+     scale so that they fit in frustum and are therefore not clipped away
+     */
+  if(dev_zmin >= 0.99)
+  {
+    double d;
+
+    d = (dev_zmin+dev_zmax)/2.0;
+    glScaled(d,d,d);
+  }
+  /* move points to unit sphere at origin */
+  glTranslated(-SM_VIEW_CENTER(sm)[0],-SM_VIEW_CENTER(sm)[1],
+	       -SM_VIEW_CENTER(sm)[2]);
+
+  glBegin(GL_TRIANGLES);
+  for(i=0; i < ST_NUM_ROOT_NODES; i++)
+      smRender_qtree(sm,ST_ROOT_QT(st,i),view->vp,wp,rgb,SM_RENDER_BG,cull);
+  glEnd();
+
+  glPopMatrix();
+
+  glEnable(GL_DEPTH_TEST);
+
+  glBegin(GL_TRIANGLES);
+  for(i=0; i < ST_NUM_ROOT_NODES; i++)
+    smRender_qtree(sm,ST_ROOT_QT(st,i),view->vp,wp,rgb,SM_RENDER_FG,cull);
+  glEnd();
+
+  glPopAttrib();
+}
+
+/* 
+ * smRender_mesh_dl(sm,view) : Render stree utilizing display lists 
+ * SM *sm;                   : mesh
+ * VIEW *view;               : current view
+ */
+smRender_mesh_dl(sm,view)
+SM *sm;
+VIEW *view;
+{
+  float (*wp)[3];
+  BYTE  (*rgb)[3];
+  STREE *st;
+  int i;
+
+  if(SM_DL_LEVELS == 0)
+  {
+    if(!Display_lists[0][0])
+    {
+      Display_lists[0][0] = 1;
+      glNewList(Display_lists[0][0],GL_COMPILE_AND_EXECUTE);
+      smRender_mesh(sm,view,FALSE);
+      glEndList();
+    }
+    else
+      glCallList(Display_lists[0][0]);
+
+    return;
+  }    
+  smCull(sm,view,SM_DL_LEVELS);
+
+  st = SM_LOCATOR(sm);
+
+  wp = SM_WP(sm);
+  rgb =SM_RGB(sm);
+
+    /* For all active quadtree nodes- first render bg tris, then fg */
+    /* If display list exists, use otherwise create/display list */
+   glPushAttrib(GL_DEPTH_BUFFER_BIT);
+   glDisable(GL_DEPTH_TEST);
+
+   glMatrixMode(GL_MODELVIEW);
+   glPushMatrix();
+
+   /* move relative to the new view */
+   glTranslated(view->vp[0],view->vp[1],view->vp[2]);
+
+   /* The points are a distance of 1 away from the origin: if necessary 
+      scale so that they fit in frustum and are therefore not clipped away
+      */
+   if(dev_zmin >= 0.99)
+   {
+     double d;
+     d = (dev_zmin+dev_zmax)/2.0;
+     glScaled(d,d,d);
+   }
+    /* move points to unit sphere at origin */
+   glTranslated(-SM_VIEW_CENTER(sm)[0],-SM_VIEW_CENTER(sm)[1],
+		   -SM_VIEW_CENTER(sm)[2]);
+   for(i=0; i < ST_NUM_ROOT_NODES; i++)
+     smRender_qtree_dl(sm,ST_ROOT_QT(st,i),view->vp,wp,rgb,i,0,1,
+		       SM_DL_LEVELS,8,SM_RENDER_BG);
+   glPopMatrix();
+
+   glEnable(GL_DEPTH_TEST);
+   for(i=0; i < ST_NUM_ROOT_NODES; i++)
+     smRender_qtree_dl(sm,ST_ROOT_QT(st,i),view->vp,wp,rgb,i,0,1,
+			SM_DL_LEVELS,8,SM_RENDER_FG);
+   glPopAttrib();
+}
+
+
+
 /*
- * smUpdate(view, qua)	: update OpenGL output geometry for view vp
+ * smRender_tris(sm,view,render_flag)  : Render all of the mesh triangles
+ *  SM *sm             : current geometry
+ *  VIEW *view         : current view
+ *  int render_flag    : if render_flag & SM_RENDER_CULL: do culling first
+ * 
+ * Renders mesh by traversing triangle list and drawing all active tris-
+ * background tris first, then foreground and mixed tris
+ */
+smRender_tris(sm,view,render_flag)
+SM *sm;
+VIEW *view;
+int render_flag;
+{
+  int4  *active_flag,*bg_flag;
+  float (*wp)[3];
+  BYTE  (*rgb)[3];
+
+  wp = SM_WP(sm);
+  rgb =SM_RGB(sm);
+  active_flag = SM_NTH_FLAGS(sm,T_ACTIVE_FLAG);
+  bg_flag = SM_NTH_FLAGS(sm,T_BG_FLAG);
+
+  if(render_flag & SM_RENDER_CULL)
+    smCull(sm,view,SM_ALL_LEVELS);
+   
+  /* Render triangles made up of points at infinity by turning off
+     depth-buffering and projecting the points onto a sphere around the view*/
+  glPushAttrib(GL_DEPTH_BUFFER_BIT);
+  glDisable(GL_DEPTH_TEST);
+  smRender_bg_tris(sm,view->vp,active_flag,bg_flag,wp,rgb);
+
+  /* Render triangles containing world-space points */
+  glEnable(GL_DEPTH_TEST);
+  smRender_fg_tris(sm,view->vp,active_flag,bg_flag,wp,rgb);
+
+  glPopAttrib();
+
+}
+
+/* Clear all of the display lists */
+clear_display_lists()
+{
+  int i;
+  for(i=0; i< SM_DL_LISTS; i++)
+  {
+    if(Display_lists[i][0])
+    { /* Clear the foreground display list */
+      glDeleteLists(Display_lists[i][0],1);
+      Display_lists[i][0] = 0;
+    }
+    if(Display_lists[i][1])
+    { /* Clear the background display list */
+      glDeleteLists(Display_lists[i][1],1);
+      Display_lists[i][1] = 0;
+    }
+  }
+}
+
+/*
+ * qtClear_dl(qt,i,level_i,level,max_level,leaf_cnt) :clear display lists
+ * QUADTREE *qt;               : Quadtree node   
+ * int i;                      : index into list of display lists for this node
+ * int level_i;                : index for first node at this level
+ * int level,max_level;        : current level, maximum level to descend
+ * int leaf_cnt;               : number of leaves at this level
+ *
+ *  For each node under this node that has its flag set: delete all 
+ *  existing display lists. Display lists are stored in an array indexed as 
+ *  if the quadtree was traversed in a breadth first order (indices 0-7 are
+ *  the 8 quadtree roots, indices 8-11 the first level children of root 0, 
+ *  indices 12-15 the children of root 1, etc). It is assumes that the display
+ *  lists will only be stored for a small number of levels: if this is not
+ *  true, a hashing scheme would work better for storing/retrieving the
+ *  display lists
+ */
+qtClear_dl(qt,i,level_i,level,max_level,leaf_cnt)
+QUADTREE qt;
+int i,level_i,level,max_level,leaf_cnt;
+{
+  int j;
+
+  if(QT_IS_EMPTY(qt))
+    return;
+  if(QT_IS_LEAF(qt) || level== max_level)
+  {
+    if(QT_IS_LEAF(qt))
+    {
+      if(!QT_LEAF_IS_FLAG(qt))
+	return;
+    }
+    else
+      if(!QT_IS_FLAG(qt))
+	return;
+    if(Display_lists[i][0])
+    {
+      glDeleteLists(Display_lists[i][0],1);
+      Display_lists[i][0] = 0;
+    }
+    if(Display_lists[i][1])
+    {
+      glDeleteLists(Display_lists[i][1],1);
+      Display_lists[i][1] = 0;
+    }
+  }
+  else
+    if(QT_IS_FLAG(qt))
+    {
+      /* Calculate the index for the first child given the values
+	 of the parent at  the current level
+       */
+      i = ((i - level_i)<< 2) + level_i + leaf_cnt;
+      level_i += leaf_cnt;
+      leaf_cnt <<= 2;
+      for(j=0; j < 4; j++)
+	qtClear_dl(QT_NTH_CHILD(qt,j),i+j,level_i,level+1,max_level,
+			    leaf_cnt);
+    }
+}
+
+/* 
+ * smInvalidate_view(sm,view) : Invalidate rendering representation for view
+ * SM *sm;                    : mesh
+ * VIEW *view;                : current view
+ *
+ * Delete the existing display lists for geometry in the current
+ * view frustum: Called when the geometry in the frustum has been changed
+ */
+smInvalidate_view(sm,view)
+SM *sm;
+VIEW *view;
+{
+  int i;
+
+  if(SM_DL_LEVELS == 0)
+  {
+    if(Display_lists[0][0])
+    {
+      glDeleteLists(Display_lists[0][0],1);
+      Display_lists[0][0] = 0;
+    }
+    return;
+  }	
+  /* Mark qtree nodes/tris in frustum */
+  smCull(sm,view,SM_DL_LEVELS);
+
+  /* Invalidate display_lists in marked qtree nodes */
+   for(i=0; i < ST_NUM_ROOT_NODES; i++)
+     qtClear_dl(ST_ROOT_QT(SM_LOCATOR(sm),i),i,0,1,SM_DL_LEVELS,8);
+
+}
+
+
+/*
+ * smRender(sm,view, qual): render OpenGL output geometry 
+ * SM *sm;                : current mesh representation
+ * VIEW	*view;		  : desired view
+ * int	qual;             : quality level (percentage on linear time scale)
+ *
+ * Render the current mesh: 
+ * recompute tone mapping if full redraw and specified: 
+ * if moving (i.e. qual < MAXQUALITY)
+ *     render the cached display lists, if quality drops
+ *     below threshold, render approximation instead
+ *  if stationary
+ *     render mesh geometry without display lists, unless up-to-date
+ *     display lists already exist.
+ */
+smRender(sm,view,qual)
+SM *sm;
+VIEW *view;
+int qual;
+{
+
+  /* Recompute tone mapping if specified */
+  if( qual >= MAXQUALITY && smCompute_mapping)
+    smUpdate_tm(sm);
+
+  /* Unless quality > MAXQUALITY, render using display lists */
+  if(qual <= MAXQUALITY)
+  {
+    /* If quality above threshold: render mesh*/
+    if(qual > (MAXQUALITY*2/4))
+      /* render stree using display lists */
+      smRender_mesh_dl(sm,view);
+    else
+      /* If quality below threshold, use approximate rendering */
+      smRender_approx(sm,qual,view);
+  }
+  else
+      /* render stree without display lists */
+      smRender_mesh(sm,view,TRUE);
+}
+
+
+/*
+ * smUpdate(view, qual)	: update OpenGL output geometry 
  * VIEW	*view;		: desired view
  * int	qual;           : quality level (percentage on linear time scale)
  *
@@ -753,93 +1397,72 @@ int clr;
  * view has already been set up and the correct frame buffer has been
  * selected for drawing.  The quality level is on a linear scale, where 100%
  * is full (final) quality.  It is not necessary to redraw geometry that has
- * been output since the last call to smClean().  (The last view drawn will
+ * been output since the last call to smClean().(The last view drawn will
  * be view==&odev.v each time.)
  */
 smUpdate(view,qual)
    VIEW *view;
    int qual;
 {
-  double d;
-  int last_update,t;
-
-  if(!smMesh)
+  /* Is there anything to render? */
+  if(!smMesh || SM_NUM_TRI(smMesh)<=0)
     return;
 
-  /* If view has moved beyond epsilon from canonical: must rebuild -
-     epsilon is calculated as running avg of distance of sample points
-     from canonical view: m = 1/(AVG(1/r)): some fraction of this
-   */
-  d = DIST(view->vp,SM_VIEW_CENTER(smMesh));
-  if(qual >= MAXQUALITY  && d > SM_ALLOWED_VIEW_CHANGE(smMesh))
+  /* Is viewer MOVING?*/
+  if(qual < MAXQUALITY)
   {
-      /* Re-build the mesh */
-#ifdef TEST_DRIVER
-    odev.v = *view;
-#endif  
-      mark_tris_in_frustum(view);
-      smRebuild_mesh(smMesh,view);
-      smClean_notify = TRUE;
+    /* Render mesh using display lists */
+    smRender(smMesh,view,qual);
+    return;
+  }
+
+  /* Viewer is STATIONARY */
+
+  /* Has view moved epsilon from canonical view? (epsilon= percentage
+     (SM_VIEW_FRAC) of running average of the distance of the sample points 
+     from the canonical view */
+  if(DIST(view->vp,SM_VIEW_CENTER(smMesh)) > SM_ALLOWED_VIEW_CHANGE(smMesh))
+  {
+    /* Must rebuild mesh with current view as new canonical view  */
+    smRebuild_mesh(smMesh,view);
+    /* Existing display lists and tonemapping are no longer valid */
+    clear_display_lists();
+    smCompute_mapping = TRUE;
+    /* Render all the triangles in the new mesh */
+    smRender(smMesh,view,qual+1);
+  }
+  else 
+    /* Has a complete redraw been requested ?*/
+    if(smClean_notify)
+    {
+      smIncremental = FALSE;
+      smRender(smMesh,view,qual);
+    }
+    else
+    {
+      /* Viewer fixed and receiving new samples for the same view */
+      if(!smNew_tri_cnt)
+	return;
+
+      /* If number of new triangles relatively small: do incremental update */
+      if(smNew_tri_cnt < SM_SAMPLE_TRIS(smMesh)*SM_INC_PERCENT)
+	{
+	  /* Mark Existing display lists in frustum invalid */
+	  if(!smIncremental)
+          {
+	    smInvalidate_view(smMesh,view);
+	    smIncremental = TRUE;
+	  }
+	  smRender_inc(smMesh,view->vp);
+	}
+      else
+	/* Otherwise render all of the active triangles */
+	  smRender(smMesh,view,qual+1);
   }
   /* This is our final update iff qual==MAXQUALITY and view==&odev.v */
-  last_update = qual>=MAXQUALITY && view==&(odev.v);
-  /* Check if we should draw ALL triangles in current frustum */
-  if(smClean_notify || smNew_tri_cnt>SM_SAMPLE_TRIS(smMesh)*SM_INC_PERCENT)
+  if( (qual >= MAXQUALITY) && (view == &(odev.v)))
   {
-#ifdef TEST_DRIVER
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-#else
-    if (SM_TONE_MAP(smMesh) < SM_NUM_SAMP(smMesh))
-    {
-       tmClearHisto();
-       tmAddHisto(SM_BRT(smMesh),SM_NUM_SAMP(smMesh),1);
-       if(tmComputeMapping(0.,0.,0.) != TM_E_OK)
-	 return;
-       tmMapPixels(SM_RGB(smMesh),SM_BRT(smMesh),SM_CHR(smMesh),
-		   SM_NUM_SAMP(smMesh));
-    }
-#endif
-    mark_tris_in_frustum(view);
-    if (qual <= (MAXQUALITY*3/4))
-	smRender_stree(smMesh,qual);
-    else
-	smRender_mesh(smMesh,view->vp);
-#ifdef TEST_DRIVER
-    glFlush();
-    glutSwapBuffers();
-#endif
-  }
-  /* Do an incremental update instead */
-  else
-  {
-      if(!smNew_tri_cnt)
-      return;
-#ifdef TEST_DRIVER
-    glDrawBuffer(GL_FRONT);
-#else
-    t = SM_TONE_MAP(smMesh);
-    if(t == 0)
-    {
-	tmClearHisto();
-	tmAddHisto(SM_BRT(smMesh),SM_NUM_SAMP(smMesh),1);
-	if(tmComputeMapping(0.,0.,0.) != TM_E_OK)
-	   return;
-    }
-      tmMapPixels(SM_NTH_RGB(smMesh,t),&SM_NTH_BRT(smMesh,t),
-		   SM_NTH_CHR(smMesh,t), SM_NUM_SAMP(smMesh)-t);
-	
-#endif    
-    smUpdate_Rendered_mesh(smMesh,view->vp,last_update);
-    
-#ifdef TEST_DRIVER
-    glDrawBuffer(GL_BACK);
-#endif
-  }
-
-  SM_TONE_MAP(smMesh) = SM_NUM_SAMP(smMesh);
-
-  if (last_update)
-  {
+    /* reset rendering flags */
     smClean_notify = FALSE;
     smNew_tri_cnt = 0;
     smClear_flags(smMesh,T_NEW_FLAG);
@@ -847,11 +1470,3 @@ smUpdate(view,qual)
   }
 
 }
-
-
-
-
-
-
-
-
