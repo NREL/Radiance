@@ -61,3 +61,5 @@ image.o xglaresrc.o:	standard.h mat4.h fvect.h view.h
 fvect.o:	fvect.h
 
 resolu.o:	color.h
+
+swaprasheader.o:	rasterfile.h

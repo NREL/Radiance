@@ -24,6 +24,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "setscan.h"
 
+#ifndef BSD
+#define vfork		fork
+#endif
 
 #define  FTINY		1e-7
 
