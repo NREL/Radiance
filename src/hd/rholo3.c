@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -212,9 +212,11 @@ init_global()			/* initialize global ray computation */
 	double	frac;
 	int	i;
 	register int	j, k;
-					/* free old list */
-	if (complen > 0)
+					/* free old list and empty queue */
+	if (complen > 0) {
 		free((char *)complist);
+		done_packets(flush_queue());
+	}
 					/* allocate beam list */
 	complen = 0;
 	for (j = 0; hdlist[j] != NULL; j++)
@@ -232,6 +234,7 @@ init_global()			/* initialize global ray computation */
 			complist[k].hd = j;
 			complist[k].bi = i;
 			complist[k].nr = frac*beamvolume(hdlist[j], i) + 0.5;
+			complist[k].nc = bnrays(hdlist[j], i);
 			wtotal += complist[k++].nr;
 		}
 	}
