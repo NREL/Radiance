@@ -169,8 +169,8 @@ userr:
 checkhead(line)				/* deal with line from header */
 char  *line;
 {
-	if (!strncmp(line, "EXPOSURE=", 9))
-		exposure *= atof(line+9);
+	if (isexpos(line))
+		exposure *= exposval(line);
 }
 
 

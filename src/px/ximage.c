@@ -173,8 +173,8 @@ char  *s;
 	static char  *altname[] = {"rview","rpict",VIEWSTR,NULL};
 	register char  **an;
 
-	if (!strncmp(s, "EXPOSURE=", 9))
-		exposure *= atof(s+9);
+	if (isexpos(s))
+		exposure *= exposval(s);
 	else
 		for (an = altname; *an != NULL; an++)
 			if (!strncmp(*an, s, strlen(*an))) {
