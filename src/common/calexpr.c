@@ -47,7 +47,7 @@ unsigned int  esupport =		/* what to support */
 
 int  nextc;				/* lookahead character */
 
-double	(*eoper[])() = {		/* expression operations */
+double	(*eoper[])(EPNODE *) = {	/* expression operations */
 	ebotch,
 	evariable,
 	enumber,
