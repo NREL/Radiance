@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1993 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -24,6 +24,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <X11/Xlib.h>
 #include  <X11/cursorfont.h>
 #include  <X11/Xutil.h>
+#include  <X11/Xatom.h>
 
 #include  "color.h"
 #include  "view.h"
@@ -55,8 +56,6 @@ char	*dispname = NULL;		/* our display name */
 
 Window  wind = 0;			/* our output window */
 unsigned long  ourblack=0, ourwhite=1;	/* black and white for this visual */
-Font  fontid;				/* our font */
-
 int  maxcolors = 0;			/* maximum colors */
 int  greyscale = 0;			/* in grey */
 
@@ -107,9 +106,8 @@ extern BYTE  clrtab[256][3];		/* global color map */
 
 extern long  ftell();
 
-extern char  *malloc(), *calloc();
-
 Display  *thedisplay;
+Atom  closedownAtom, wmProtocolsAtom;
 
 
 main(argc, argv)
@@ -187,7 +185,7 @@ char  *argv[];
 	if ((scanline = (COLR *)malloc(xmax*sizeof(COLR))) == NULL)
 		quiterr("out of memory");
 
-	init();			/* get file and open window */
+	init(argc, argv);			/* get file and open window */
 
 	for ( ; ; )
 		getevent();		/* main loop */
@@ -214,20 +212,33 @@ char  *s;
 }
 
 
-init()			/* get data and open window */
+init(argc, argv)			/* get data and open window */
+int argc;
+char **argv;
 {
-	XWMHints	ourxwmhints;
 	XSetWindowAttributes	ourwinattr;
-	XSizeHints	oursizhints;
+	XClassHint	xclshints;
+	XWMHints	xwmhints;
+	XSizeHints	xszhints;
+	XTextProperty	windowName, iconName;
+	XGCValues	xgcv;
+	char	*name;
 	register int	i;
 	
 	if (fname != NULL) {
 		scanpos = (long *)malloc(ymax*sizeof(long));
 		if (scanpos == NULL)
-			goto memerr;
+			quiterr("out of memory");
 		for (i = 0; i < ymax; i++)
 			scanpos[i] = -1;
-	}
+		name = fname;
+	} else
+		name = progname;
+				/* remove directory prefix from name */
+	for (i = strlen(name); i-- > 0; )
+		if (name[i] == '/')
+			break;
+	name += i+1;
 	if ((thedisplay = XOpenDisplay(dispname)) == NULL)
 		quiterr("cannot open display");
 				/* get best visual for default screen */
@@ -235,65 +246,75 @@ init()			/* get data and open window */
 				/* store image */
 	getras();
 				/* get size and position */
-	bzero((char *)&oursizhints, sizeof(oursizhints));
-	oursizhints.width = xmax; oursizhints.height = ymax;
+	xszhints.flags = 0;
+	xszhints.width = xmax; xszhints.height = ymax;
 	if (geometry != NULL) {
-		i = XParseGeometry(geometry, &oursizhints.x, &oursizhints.y,
-				(unsigned *)&oursizhints.width,
-				(unsigned *)&oursizhints.height);
+		i = XParseGeometry(geometry, &xszhints.x, &xszhints.y,
+				(unsigned *)&xszhints.width,
+				(unsigned *)&xszhints.height);
 		if ((i&(WidthValue|HeightValue)) == (WidthValue|HeightValue))
-			oursizhints.flags |= USSize;
+			xszhints.flags |= USSize;
 		else
-			oursizhints.flags |= PSize;
+			xszhints.flags |= PSize;
 		if ((i&(XValue|YValue)) == (XValue|YValue)) {
-			oursizhints.flags |= USPosition;
+			xszhints.flags |= USPosition;
 			if (i & XNegative)
-				oursizhints.x += DisplayWidth(thedisplay,
-				ourscreen)-1-oursizhints.width-2*BORWIDTH;
+				xszhints.x += DisplayWidth(thedisplay,
+				ourscreen)-1-xszhints.width-2*BORWIDTH;
 			if (i & YNegative)
-				oursizhints.y += DisplayHeight(thedisplay,
-				ourscreen)-1-oursizhints.height-2*BORWIDTH;
+				xszhints.y += DisplayHeight(thedisplay,
+				ourscreen)-1-xszhints.height-2*BORWIDTH;
 		}
 	}
-				/* open window */
+	/* open window */
 	ourwinattr.border_pixel = ourwhite;
 	ourwinattr.background_pixel = ourblack;
 	ourwinattr.colormap = XCreateColormap(thedisplay, ourroot,
 			ourvis.visual, AllocNone);
-	wind = XCreateWindow(thedisplay, ourroot, oursizhints.x, oursizhints.y,
-			oursizhints.width, oursizhints.height, BORWIDTH,
-			ourvis.depth, InputOutput, ourvis.visual, 
-			CWBackPixel|CWBorderPixel|CWColormap, &ourwinattr);
+	ourwinattr.event_mask = ExposureMask|KeyPressMask|ButtonPressMask|
+			ButtonReleaseMask|ButtonMotionMask|StructureNotifyMask;
+	ourwinattr.cursor = XCreateFontCursor(thedisplay, XC_diamond_cross);
+	wind = XCreateWindow(thedisplay, ourroot, xszhints.x, xszhints.y,
+			xszhints.width, xszhints.height, BORWIDTH,
+			ourvis.depth, InputOutput, ourvis.visual, CWEventMask|
+			CWCursor|CWBackPixel|CWBorderPixel|CWColormap, &ourwinattr);
 	if (wind == 0)
 		quiterr("cannot create window");
-	XFreeColormap(thedisplay, ourwinattr.colormap);
 	width = xmax;
 	height = ymax;
-	ourgc = XCreateGC(thedisplay, wind, 0, 0);
-	XSetState(thedisplay, ourgc, ourblack, ourwhite, GXcopy, AllPlanes);
-	revgc = XCreateGC(thedisplay, wind, 0, 0);
-	XSetFunction(thedisplay, revgc, GXinvert);
-	fontid = XLoadFont(thedisplay, FONTNAME);
-	if (fontid == 0)
+	xgcv.foreground = ourblack;
+	xgcv.background = ourwhite;
+	if ((xgcv.font = XLoadFont(thedisplay, FONTNAME)) == 0)
 		quiterr("cannot get font");
-	XSetFont(thedisplay, ourgc, fontid);
-	XDefineCursor(thedisplay, wind, XCreateFontCursor(thedisplay, 
-			XC_diamond_cross));
-	XStoreName(thedisplay, wind, fname == NULL ? progname : fname);
-	if (oursizhints.flags)
-		XSetNormalHints(thedisplay, wind, &oursizhints);
-	ourxwmhints.flags = InputHint|IconPixmapHint;
-	ourxwmhints.input = True;
-	ourxwmhints.icon_pixmap = XCreateBitmapFromData(thedisplay,
+	ourgc = XCreateGC(thedisplay, wind, GCForeground|GCBackground|
+			GCFont, &xgcv);
+	xgcv.function = GXinvert;
+	revgc = XCreateGC(thedisplay, wind, GCForeground|GCBackground|
+			GCFunction, &xgcv);
+
+	/* set up the window manager */
+	xwmhints.flags = InputHint|IconPixmapHint;
+	xwmhints.input = True;
+	xwmhints.icon_pixmap = XCreateBitmapFromData(thedisplay,
 			wind, icondata, iconwidth, iconheight);
-	XSetWMHints(thedisplay, wind, &ourxwmhints);
-	XSelectInput(thedisplay, wind, ButtonPressMask|ButtonReleaseMask
-			|ButtonMotionMask|StructureNotifyMask
-			|KeyPressMask|ExposureMask);
+
+   	windowName.encoding = iconName.encoding = XA_STRING;
+	windowName.format = iconName.format = 8;
+	windowName.value = (u_char *)name;
+	windowName.nitems = strlen(windowName.value);
+	iconName.value = (u_char *)name;
+	iconName.nitems = strlen(windowName.value);
+
+	xclshints.res_name = NULL;
+	xclshints.res_class = "Ximage";
+	XSetWMProperties(thedisplay, wind, &windowName, &iconName,
+			argv, argc, &xszhints, &xwmhints, &xclshints);
+	closedownAtom = XInternAtom(thedisplay, "WM_DELETE_WINDOW", False);
+	wmProtocolsAtom = XInternAtom(thedisplay, "WM_PROTOCOLS", False);
+	XSetWMProtocols(thedisplay, wind, &closedownAtom, 1);
+
 	XMapWindow(thedisplay, wind);
 	return;
-memerr:
-	quiterr("out of memory");
 } /* end of init */
 
 
@@ -476,22 +497,16 @@ fail:
 
 getevent()				/* process the next event */
 {
-	union {
-		XEvent  u;
-		XConfigureEvent  c;
-		XExposeEvent  e;
-		XButtonPressedEvent  b;
-		XKeyPressedEvent  k;
-	} e;
+	XEvent xev;
 
-	XNextEvent(thedisplay, &e.u);
-	switch (e.u.type) {
+	XNextEvent(thedisplay, &xev);
+	switch ((int)xev.type) {
 	case KeyPress:
-		docom(&e.k);
+		docom(&xev.xkey);
 		break;
 	case ConfigureNotify:
-		width = e.c.width;
-		height = e.c.height;
+		width = xev.xconfigure.width;
+		height = xev.xconfigure.height;
 		break;
 	case MapNotify:
 		map_rcolors(ourras, wind);
@@ -503,15 +518,21 @@ getevent()				/* process the next event */
 			unmap_rcolors(ourras);
 		break;
 	case Expose:
-		redraw(e.e.x, e.e.y, e.e.width, e.e.height);
+		redraw(xev.xexpose.x, xev.xexpose.y,
+				xev.xexpose.width, xev.xexpose.height);
 		break;
 	case ButtonPress:
-		if (e.b.state & (ShiftMask|ControlMask))
-			moveimage(&e.b);
-		else if (e.b.button == Button2)
-			traceray(e.b.x, e.b.y);
+		if (xev.xbutton.state & (ShiftMask|ControlMask))
+			moveimage(&xev.xbutton);
+		else if (xev.xbutton.button == Button2)
+			traceray(xev.xbutton.x, xev.xbutton.y);
 		else
-			getbox(&e.b);
+			getbox(&xev.xbutton);
+		break;
+   case ClientMessage:
+		if ((xev.xclient.message_type == wmProtocolsAtom) &&
+				(xev.xclient.data.l[0] == closedownAtom))
+			quiterr(NULL);
 		break;
 	}
 }
@@ -647,27 +668,23 @@ XKeyPressedEvent  *ekey;
 moveimage(ebut)				/* shift the image */
 XButtonPressedEvent  *ebut;
 {
-	union {
-		XEvent  u;
-		XButtonReleasedEvent  b;
-		XPointerMovedEvent  m;
-	}  e;
+	XEvent	e;
 	int	mxo, myo;
 
-	XMaskEvent(thedisplay, ButtonReleaseMask|ButtonMotionMask, &e.u);
-	while (e.u.type == MotionNotify) {
-		mxo = e.m.x;
-		myo = e.m.y;
+	XMaskEvent(thedisplay, ButtonReleaseMask|ButtonMotionMask, &e);
+	while (e.type == MotionNotify) {
+		mxo = e.xmotion.x;
+		myo = e.xmotion.y;
 		revline(ebut->x, ebut->y, mxo, myo);
 		revbox(xoff+mxo-ebut->x, yoff+myo-ebut->y,
 				xoff+mxo-ebut->x+xmax, yoff+myo-ebut->y+ymax);
-		XMaskEvent(thedisplay,ButtonReleaseMask|ButtonMotionMask,&e.u);
+		XMaskEvent(thedisplay,ButtonReleaseMask|ButtonMotionMask,&e);
 		revline(ebut->x, ebut->y, mxo, myo);
 		revbox(xoff+mxo-ebut->x, yoff+myo-ebut->y,
 				xoff+mxo-ebut->x+xmax, yoff+myo-ebut->y+ymax);
 	}
-	xoff += e.b.x - ebut->x;
-	yoff += e.b.y - ebut->y;
+	xoff += e.xbutton.x - ebut->x;
+	yoff += e.xbutton.y - ebut->y;
 	XClearWindow(thedisplay, wind);
 	redraw(0, 0, width, height);
 }
@@ -676,20 +693,16 @@ XButtonPressedEvent  *ebut;
 getbox(ebut)				/* get new box */
 XButtonPressedEvent  *ebut;
 {
-	union {
-		XEvent  u;
-		XButtonReleasedEvent  b;
-		XPointerMovedEvent  m;
-	}  e;
+	XEvent	e;
 
-	XMaskEvent(thedisplay, ButtonReleaseMask|ButtonMotionMask, &e.u);
-	while (e.u.type == MotionNotify) {
-		revbox(ebut->x, ebut->y, box.xmin = e.m.x, box.ymin = e.m.y);
-		XMaskEvent(thedisplay,ButtonReleaseMask|ButtonMotionMask,&e.u);
+	XMaskEvent(thedisplay, ButtonReleaseMask|ButtonMotionMask, &e);
+	while (e.type == MotionNotify) {
+		revbox(ebut->x, ebut->y, box.xmin = e.xmotion.x, box.ymin = e.xmotion.y);
+		XMaskEvent(thedisplay,ButtonReleaseMask|ButtonMotionMask,&e);
 		revbox(ebut->x, ebut->y, box.xmin, box.ymin);
 	}
-	box.xmin = e.b.x<0 ? 0 : (e.b.x>=width ? width-1 : e.b.x);
-	box.ymin = e.b.y<0 ? 0 : (e.b.y>=height ? height-1 : e.b.y);
+	box.xmin = e.xbutton.x<0 ? 0 : (e.xbutton.x>=width ? width-1 : e.xbutton.x);
+	box.ymin = e.xbutton.y<0 ? 0 : (e.xbutton.y>=height ? height-1 : e.xbutton.y);
 	if (box.xmin > ebut->x) {
 		box.xsiz = box.xmin - ebut->x + 1;
 		box.xmin = ebut->x;
