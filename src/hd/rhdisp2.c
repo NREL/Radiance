@@ -13,7 +13,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "rhdriver.h"
 
 #ifndef MAXDIST
-#define MAXDIST		13	/* maximum distance outside section */
+#define MAXDIST		42	/* maximum distance outside section */
 #endif
 
 extern GCOORD	*getviewcells();
