@@ -64,9 +64,16 @@ register CUBE  *cu;
 #define  cent		fa
 #define  rad		fa[3]
 					/* get arguments */
+	if (o->oargs.nfargs != 4)
+		objerror(o, USER, "bad # arguments");
 	fa = o->oargs.farg;
-	if (o->oargs.nfargs != 4 || rad <= FTINY)
-		objerror(o, USER, "bad arguments");
+	if (rad < -FTINY) {
+		objerror(o, WARNING, "negative radius");
+		o->otype = o->otype == OBJ_SPHERE ?
+				OBJ_BUBBLE : OBJ_SPHERE;
+		rad = -rad;
+	} else if (rad <= FTINY)
+		objerror(o, USER, "zero radius");
 
 	d1 = ROOT3/2.0 * cu->cusize;	/* bounding radius for cube */
 
