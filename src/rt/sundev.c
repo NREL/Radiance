@@ -128,7 +128,7 @@ char  *msg;
 {
 	if (msg != NULL) {
 		fprintf(stderr, "%s: %s\n", progname, msg);
-		kill(getppid(), SIGHUP);
+		kill(getppid(), SIGPIPE);
 		exit(1);
 	}
 	exit(0);
