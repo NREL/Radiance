@@ -47,6 +47,11 @@ char *argv[];
 #define guard_io()	0
 #define unguard()	0
 #endif
+
+#ifndef linux
+extern char  *sys_errlist[];
+#endif
+
 				/* rpict command */
 char  *rpargv[128] = {"rpict", "-S", "1"};
 int  rpargc = 3;
@@ -193,7 +198,6 @@ int  fd;
 int  ltyp;
 {
 	static struct flock  fls;	/* static so initialized to zeroes */
-	extern char  *sys_errlist[];
 
 	fls.l_type = ltyp;
 	if (fcntl(fd, F_SETLKW, &fls) < 0) {
@@ -548,8 +552,6 @@ int  xpos, ypos;
 filerr(t)			/* report file error and exit */
 char  *t;
 {
-	extern char  *sys_errlist[];
-
 	fprintf(stderr, "%s: %s error on file \"%s\": %s\n",
 			progname, t, outfile, sys_errlist[errno]);
 	_exit(1);
