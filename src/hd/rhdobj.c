@@ -774,9 +774,10 @@ int	cn;
 	} else if ((op = getdobj(nam)) == NULL) {
 		error(COMMAND, "unknown object");
 		return(0);
-	} else if ((op->drawcode = cn) == DO_LIGHT)
-		getdlights(op, 1);
-	else
+	} else if ((op->drawcode = cn) == DO_LIGHT) {
+		if (!getdlights(op, 1))
+			error(COMMAND, "insufficient samples to light object");
+	} else
 		op->ol = NULL;
 
 	if (dobj_lightsamp != NULL) {		/* restore beam set */
@@ -851,8 +852,8 @@ dobj_render()			/* render our objects in OpenGL */
 		return(1);
 					/* set up general rendering params */
 	glGetBooleanv(GL_NORMALIZE, &normalizing);
-	glPushAttrib(GL_LIGHTING_BIT|GL_TRANSFORM_BIT|
-			GL_DEPTH_BUFFER_BIT|GL_POLYGON_BIT);
+	glPushAttrib(GL_LIGHTING_BIT|GL_TRANSFORM_BIT|GL_ENABLE_BIT|
+		GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_POLYGON_BIT);
 	glDepthFunc(GL_LESS);
 	glEnable(GL_DEPTH_TEST);
 	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
