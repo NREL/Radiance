@@ -29,7 +29,6 @@ register FILE	*fp;
 int	ty;
 char	*vp;
 {
-	static char	delims[] = " \t\n\r\f#";
 	char	wrd[64];
 	register char	*cp;
 	register int	c;
@@ -55,29 +54,29 @@ char	*vp;
 	*cp = '\0';
 	switch (ty) {			/* check and convert it */
 	case 'h':			/* short */
-		if (!isintd(wrd, delims))
+		if (!isint(wrd))
 			return(0);
 		*(short *)vp = c = atoi(wrd);
 		if (*(short *)vp != c)
 			return(0);
 		return(1);
 	case 'i':			/* integer */
-		if (!isintd(wrd, delims))
+		if (!isint(wrd))
 			return(0);
 		*(int *)vp = atoi(wrd);
 		return(1);
 	case 'l':			/* long */
-		if (!isintd(wrd, delims))
+		if (!isint(wrd))
 			return(0);
 		*(long *)vp = atol(wrd);
 		return(1);
 	case 'f':			/* float */
-		if (!isfltd(wrd, delims))
+		if (!isflt(wrd))
 			return(0);
 		*(float *)vp = atof(wrd);
 		return(1);
 	case 'd':			/* double */
-		if (!isfltd(wrd, delims))
+		if (!isflt(wrd))
 			return(0);
 		*(double *)vp = atof(wrd);
 		return(1);
