@@ -32,7 +32,7 @@ typedef struct epnode {
 	double	num;		/* number */
 	char  *name;		/* symbol name */
 	int  chan;		/* channel number */
-	long  tick;		/* timestamp */
+	unsigned long  tick;	/* timestamp */
 	struct vardef {
 	    char  *name;		/* variable name */
 	    int	 nlinks;		/* number of references */
@@ -62,7 +62,7 @@ extern EPNODE  *getdefn(), *getchan();
 extern EPNODE  *getE1(), *getE2(), *getE3(), *getE4(), *getE5(), *rconst();
 extern VARDEF  *varinsert(), *varlookup(), *argf();
 extern LIBR  *liblookup();
-extern long  eclock;
+extern unsigned long  eclock;
 extern int  nextc;
 
 #define	 evalue(ep)	(*eoper[(ep)->type])(ep)
