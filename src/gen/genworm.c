@@ -15,7 +15,7 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include  <stdio.h>
-
+#include  <math.h>
 #include  "fvect.h"
 
 #define  XNAME		"X`SYS`"		/* x function name */
