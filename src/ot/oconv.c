@@ -18,6 +18,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "otypes.h"
 
+#define  OMARGIN	(10*FTINY)	/* margin around global cube */
+
 #define  MAXOBJFIL	63		/* maximum number of scene files */
 
 char  *progname;			/* argv[0] */
@@ -61,10 +63,10 @@ char  **argv;
 			infile = argv[++i];
 			break;
 		case 'b':				/* bounding cube */
-			thescene.cuorg[0] = atof(argv[++i]) - FTINY;
-			thescene.cuorg[1] = atof(argv[++i]) - FTINY;
-			thescene.cuorg[2] = atof(argv[++i]) - FTINY;
-			thescene.cusize = atof(argv[++i]) + 2*FTINY;
+			thescene.cuorg[0] = atof(argv[++i]) - OMARGIN;
+			thescene.cuorg[1] = atof(argv[++i]) - OMARGIN;
+			thescene.cuorg[2] = atof(argv[++i]) - OMARGIN;
+			thescene.cusize = atof(argv[++i]) + 2*OMARGIN;
 			break;
 		case 'n':				/* set limit */
 			objlim = atoi(argv[++i]);
@@ -114,8 +116,8 @@ char  **argv;
 	if (thescene.cusize == 0.0) {
 		if (bbmin[0] <= bbmax[0]) {
 			for (i = 0; i < 3; i++) {
-				bbmin[i] -= FTINY;
-				bbmax[i] += FTINY;
+				bbmin[i] -= OMARGIN;
+				bbmax[i] += OMARGIN;
 			}
 			VCOPY(thescene.cuorg, bbmin);
 			for (i = 0; i < 3; i++)
