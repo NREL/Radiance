@@ -60,6 +60,7 @@ typedef struct {
 #define  NUMOTYPE	(OBJ_CNT+MAT_CNT+TP_CNT)
 
 #define  issurface(t)	((t) >= OBJ_MIN && (t) < OBJ_MIN+OBJ_CNT)
+#define  isvolume(t)	((t) == OBJ_INSTANCE)
 #define  ismodifier(t)	((t) >= MOD_MIN && (t) < MOD_MIN+MOD_CNT)
 #define  ismaterial(t)	((t) >= MAT_MIN && (t) < MAT_MIN+MAT_CNT)
 #define  istexture(t)	((t) >= TP_MIN && (t) < TP_MIN+TP_CNT)
