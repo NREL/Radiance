@@ -92,7 +92,7 @@ register RAY  *r;
 		else
 			setcolor(mcolor, 1.0, 1.0, 1.0);
 	}
-	mabsorp = intens(mcolor);
+	mabsorp = bright(mcolor);
 
 	d2 = 1.0 - nratio*nratio*(1.0 - cos1*cos1);	/* compute cos theta2 */
 
@@ -253,7 +253,7 @@ double  tr;
 						/* trace source ray */
 		normalize(sray.rdir);
 		rayvalue(&sray);
-		if (intens(sray.rcol) <= FTINY)	/* missed it */
+		if (bright(sray.rcol) <= FTINY)	/* missed it */
 			continue;
 		
 		/*

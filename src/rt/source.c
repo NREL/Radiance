@@ -280,7 +280,7 @@ char  *p;			/* data for f */
 		VCOPY(srccnt[sn].dir, sr.rdir);
 						/* compute coefficient */
 		(*f)(srccnt[sn].val, p, srccnt[sn].dir, srccnt[sn].dom);
-		srccnt[sn].brt = intens(srccnt[sn].val);
+		srccnt[sn].brt = bright(srccnt[sn].val);
 		if (srccnt[sn].brt <= FTINY)
 			continue;
 						/* compute intersection */
@@ -292,7 +292,7 @@ char  *p;			/* data for f */
 						/* compute contribution */
 		rayshade(&sr, sr.ro->omod);
 		multcolor(srccnt[sn].val, sr.rcol);
-		srccnt[sn].brt = intens(srccnt[sn].val);
+		srccnt[sn].brt = bright(srccnt[sn].val);
 	}
 						/* sort contributions */
 	qsort(srccnt, nsources, sizeof(CONTRIB), cntcmp);
@@ -300,7 +300,7 @@ char  *p;			/* data for f */
 						/* test for shadows */
 	for (sn = 0; sn < nsources; sn++) {
 						/* check threshold */
-		if (srccnt[sn].brt <= shadthresh*intens(r->rcol)/r->rweight)
+		if (srccnt[sn].brt <= shadthresh*bright(r->rcol)/r->rweight)
 			break;
 						/* get statistics */
 		hwt = (double)source[srccnt[sn].sno].nhits /
@@ -317,7 +317,7 @@ char  *p;			/* data for f */
 				raytrans(&sr);		/* object is clipped */
 			else
 				rayshade(&sr, sr.ro->omod);
-			if (intens(sr.rcol) <= FTINY)
+			if (bright(sr.rcol) <= FTINY)
 				continue;	/* missed! */
 			(*f)(srccnt[sn].val, p, srccnt[sn].dir, srccnt[sn].dom);
 			multcolor(srccnt[sn].val, sr.rcol);

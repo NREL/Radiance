@@ -80,7 +80,7 @@ register RAY  *r;
 		colval(trans,i) = (1.0-r1)*(1.0-r1)*d / (1.0 - r1*r1*d*d);
 	}
 						/* transmitted ray */
-	if (rayorigin(&p, r, TRANS, intens(trans)) == 0) {
+	if (rayorigin(&p, r, TRANS, bright(trans)) == 0) {
 		VCOPY(p.rdir, r->rdir);
 		rayvalue(&p);
 		multcolor(p.rcol, r->pcol);	/* modify */
@@ -96,7 +96,7 @@ register RAY  *r;
 		colval(refl,i) = r1 * (1.0 + (1.0-2.0*r1)*d) / (1.0 - r1*r1*d);
 	}
 						/* reflected ray */
-	if (rayorigin(&p, r, REFLECTED, intens(refl)) == 0) {
+	if (rayorigin(&p, r, REFLECTED, bright(refl)) == 0) {
 		for (i = 0; i < 3; i++)
 			p.rdir[i] = r->rdir[i] + 2.0*pdot*pnorm[i];
 		rayvalue(&p);
