@@ -82,6 +82,13 @@ char  *argv[];
 	
 	progname = argv[0];
 	for (i = 1; i < argc; i++) {
+						/* expand arguments */
+		while (rval = expandarg(&argc, &argv, i))
+			if (rval < 0) {
+				fprintf(stderr, "%s: cannot expand '%s'",
+						argv[0], argv[i]);
+				exit(1);
+			}
 		if (argv[i][0] == '-')
 			switch (argv[i][1]) {
 			case 'v':
