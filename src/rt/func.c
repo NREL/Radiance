@@ -80,12 +80,12 @@ int  dofwd;
 	if (i == 1 && arg[ff][0] == '.')
 		setcontext(f->ctx = "");	/* "." means no file */
 	else {
-		strcpy(sbuf,m->oargs.sarg[ff]);	/* file name is context */
+		strcpy(sbuf,arg[ff]);	/* file name is context */
 		if (i > LCALSUF && !strcmp(sbuf+i-LCALSUF, CALSUF))
 			sbuf[i-LCALSUF] = '\0';	/* remove suffix */
 		setcontext(f->ctx = savestr(sbuf));
 		if (!vardefined(REFVNAME)) {	/* file loaded? */
-			loadfunc(m->oargs.sarg[ff]);
+			loadfunc(arg[ff]);
 			varset(REFVNAME, '=', 1.0);
 		} else				/* reference_count++ */
 			varset(REFVNAME, '=', varvalue(REFVNAME)+1.0);
