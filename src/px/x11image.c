@@ -256,8 +256,8 @@ init()			/* get data and open window */
 		}
 	}
 				/* open window */
-	ourwinattr.border_pixel = ourblack;
-	ourwinattr.background_pixel = ourwhite;
+	ourwinattr.border_pixel = ourwhite;
+	ourwinattr.background_pixel = ourblack;
 	ourwinattr.colormap = XCreateColormap(thedisplay, ourroot,
 			ourvis.visual, AllocNone);
 	wind = XCreateWindow(thedisplay, ourroot, oursizhints.x, oursizhints.y,
