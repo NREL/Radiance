@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1990 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -56,6 +56,7 @@ double  rw;
 	r->newcset = r->clipset;
 	r->ro = NULL;
 	r->rot = FHUGE;
+	r->rox = NULL;
 	r->pert[0] = r->pert[1] = r->pert[2] = 0.0;
 	setcolor(r->pcol, 1.0, 1.0, 1.0);
 	setcolor(r->rcol, 0.0, 0.0, 0.0);
@@ -230,6 +231,42 @@ register RAY  *r;
 		newdot = -newdot;
 	}
 	return(newdot);
+}
+
+
+newrayxf(r)			/* get new tranformation matrix for ray */
+RAY  *r;
+{
+	static struct xfn {
+		struct xfn  *next;
+		FULLXF  xf;
+	}  xfseed = { &xfseed }, *xflast = &xfseed;
+	register struct xfn  *xp;
+	register RAY  *rp;
+
+	/*
+	 * Search for transform in circular list that
+	 * has no associated ray in the tree.
+	 */
+	xp = xflast;
+	for (rp = r->parent; rp != NULL; rp = rp->parent)
+		if (rp->rox == &xp->xf) {		/* xp in use */
+			xp = xp->next;			/* move to next */
+			if (xp == xflast) {		/* need new one */
+				xp = (struct xfn *)malloc(sizeof(struct xfn));
+				if (xp == NULL)
+					error(SYSTEM,
+						"out of memory in newrayxf");
+							/* insert in list */
+				xp->next = xflast->next;
+				xflast->next = xp;
+				break;			/* we're done */
+			}
+			rp = r;			/* start check over */
+		}
+					/* got it */
+	r->rox = &xp->xf;
+	xflast = xp;
 }
 
 

@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1990 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -15,27 +15,25 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "otypes.h"
 
 
-typedef struct {
-	double  xfm[4][4];		/* transform matrix */
-	double  sca;			/* scalefactor */
-}  XF;
-
-static OBJREC  *fobj;		/* current function object */
-static RAY  *fray;		/* current function ray */
-static XF  fxf;			/* current transformation */
+XF  funcxf;			/* current transformation */
+static OBJREC  *fobj = NULL;	/* current function object */
+static RAY  *fray = NULL;	/* current function ray */
 
 
-setmap(m, r, xfm, sca)		/* set channels for function call */
+setmap(m, r, bx)		/* set channels for function call */
 OBJREC  *m;
 register RAY  *r;
-double  xfm[4][4];
-double  sca;
+XF  *bx;
 {
 	extern double  l_noise3(), l_noise3a(), l_noise3b(), l_noise3c();
 	extern double  l_hermite(), l_fnoise3(), l_arg();
 	extern long  eclock;
 	static char  *initfile = "rayinit.cal";
-
+	static long  lastrno = -1;
+					/* check to see if already set */
+	if (m == fobj && r->rno == lastrno)
+		return;
+					/* initialize if first call */
 	if (initfile != NULL) {
 		loadfunc(initfile);
 		scompile("Dx=$1;Dy=$2;Dz=$3;", NULL, 0);
@@ -57,8 +55,12 @@ double  sca;
 	}
 	fobj = m;
 	fray = r;
-	fxf.sca = r->robs * sca;
-	multmat4(fxf.xfm, r->robx, xfm);
+	lastrno = r->rno;
+	if (r->rox != NULL) {
+		funcxf.sca = r->rox->b.sca * bx->sca;
+		multmat4(funcxf.xfm, r->rox->b.xfm, bx->xfm);
+	} else
+		copystruct(&funcxf, bx);
 	eclock++;		/* notify expression evaluator */
 }
 
@@ -79,13 +81,13 @@ RAY  *r;
 		mxf = (XF *)malloc(sizeof(XF));
 		if (mxf == NULL)
 			goto memerr;
-		if (invxf(mxf->xfm, &mxf->sca, n, sa) != n)
+		if (invxf(mxf, n, sa) != n)
 			objerror(m, USER, "bad transform");
 		if (mxf->sca < 0.0)
 			mxf->sca = -mxf->sca;
 		m->os = (char *)mxf;
 	}
-	setmap(m, r, mxf->xfm, mxf->sca);
+	setmap(m, r, mxf);
 	return;
 memerr:
 	error(SYSTEM, "out of memory in setfunc");
@@ -137,50 +139,50 @@ register int  n;
 
 	if (n < 3)			/* ray direction */
 
-		return( (	fray->rdir[0]*fxf.xfm[0][n] +
-				fray->rdir[1]*fxf.xfm[1][n] +
-				fray->rdir[2]*fxf.xfm[2][n]	)
-			 / fxf.sca );
+		return( (	fray->rdir[0]*funcxf.xfm[0][n] +
+				fray->rdir[1]*funcxf.xfm[1][n] +
+				fray->rdir[2]*funcxf.xfm[2][n]	)
+			 / funcxf.sca );
 
 	if (n < 6)			/* surface normal */
 
-		return( (	fray->ron[0]*fxf.xfm[0][n-3] +
-				fray->ron[1]*fxf.xfm[1][n-3] +
-				fray->ron[2]*fxf.xfm[2][n-3]	)
-			 / fxf.sca );
+		return( (	fray->ron[0]*funcxf.xfm[0][n-3] +
+				fray->ron[1]*funcxf.xfm[1][n-3] +
+				fray->ron[2]*funcxf.xfm[2][n-3]	)
+			 / funcxf.sca );
 
 	if (n < 9)			/* intersection */
 
-		return( fray->rop[0]*fxf.xfm[0][n-6] +
-				fray->rop[1]*fxf.xfm[1][n-6] +
-				fray->rop[2]*fxf.xfm[2][n-6] +
-					     fxf.xfm[3][n-6] );
+		return( fray->rop[0]*funcxf.xfm[0][n-6] +
+				fray->rop[1]*funcxf.xfm[1][n-6] +
+				fray->rop[2]*funcxf.xfm[2][n-6] +
+					     funcxf.xfm[3][n-6] );
 
 	if (n == 9) {			/* distance */
 
 		sum = fray->rot;
 		for (r = fray->parent; r != NULL; r = r->parent)
 			sum += r->rot;
-		return(sum * fxf.sca);
+		return(sum * funcxf.sca);
 
 	}
 	if (n == 10)			/* dot product */
 		return(fray->rod);
 
 	if (n == 11)			/* scale */
-		return(fxf.sca);
+		return(funcxf.sca);
 
 	if (n < 15)			/* origin */
-		return(fxf.xfm[3][n-12]);
+		return(funcxf.xfm[3][n-12]);
 
 	if (n < 18)			/* i unit vector */
-		return(fxf.xfm[0][n-15] / fxf.sca);
+		return(funcxf.xfm[0][n-15] / funcxf.sca);
 
 	if (n < 21)			/* j unit vector */
-		return(fxf.xfm[1][n-15] / fxf.sca);
+		return(funcxf.xfm[1][n-15] / funcxf.sca);
 
 	if (n < 24)			/* k unit vector */
-		return(fxf.xfm[2][n-21] / fxf.sca);
+		return(funcxf.xfm[2][n-21] / funcxf.sca);
 badchan:
 	error(USER, "illegal channel number");
 }
