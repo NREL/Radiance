@@ -19,6 +19,8 @@ static char SCCSid[] = "$SunId$ LBL";
 extern char  *malloc();
 extern float  *matchlamp();
 
+#define  FEQ(a,b)	((a) >= .98*(b) && (a) <= 1.02*(b))
+
 #define  CHECKRAD	1.5	/* radius to check for filtering */
 
 COLOR  exposure = WHTCOLOR;	/* exposure for the frame */
@@ -121,6 +123,12 @@ char  **argv;
 					d = pow(2.0, atof(argv[i+1]));
 				else
 					d = atof(argv[i+1]);
+				if (d < 1e-20 || d > 1e20) {
+					fprintf(stderr,
+						"%s: exposure out of range\n",
+							argv[0]);
+					exit(1);
+				}
 				switch (argv[i][2]) {
 				case '\0':
 					scalecolor(exposure, d);
@@ -366,6 +374,7 @@ FILE  *in;
 
 scan2init()			/* prepare scanline arrays */
 {
+	COLOR	ctmp;
 	double  d;
 	register int  i;
 
@@ -395,17 +404,25 @@ scan2init()			/* prepare scanline arrays */
 		fprintf(stderr, "%s: out of memory\n", progname);
 		quit(1);
 	}
-					/* record pixel aspect and exposure */
+					/* record pixel aspect ratio */
 	if (!correctaspect) {
 		d = x_c / y_r;
-		if (d < .99 || d > 1.01)
+		if (!FEQ(d,1.0))
 			fputaspect(d, stdout);
 	}
+					/* record exposure */
 	d = bright(exposure);
-	if (d < .995 || d > 1.005)
+	if (!FEQ(d,1.0))
 		fputexpos(d, stdout);
+					/* record color correction */
+	copycolor(ctmp, exposure);
+	scalecolor(ctmp, 1.0/d);
+	if (!FEQ(colval(ctmp,RED),colval(ctmp,GRN)) ||
+			!FEQ(colval(ctmp,GRN),colval(ctmp,BLU)))
+		fputcolcor(ctmp, stdout);
 	printf("\n");
-	fputresolu(YMAJOR|YDECR, ncols, nrows, stdout);	/* resolution */
+					/* write out resolution */
+	fputresolu(YMAJOR|YDECR, ncols, nrows, stdout);
 }
 
 

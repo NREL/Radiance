@@ -33,7 +33,7 @@ int  format = 'a';		/* input/output format */
 
 int  header = 1;		/* do header */
 
-double  exposure = 1.0;
+COLOR  exposure = WHTCOLOR;
 
 char  *progname;
 
@@ -156,10 +156,20 @@ unkopt:
 checkhead(line)				/* deal with line from header */
 char  *line;
 {
+	double	d;
+	COLOR	ctmp;
+
 	if (header)
 		fputs(line, stdout);
-	if (isexpos(line))
-		exposure *= exposval(line);
+	if (isexpos(line)) {
+		d = 1.0/exposval(line);
+		scalecolor(exposure, d);
+	} else if (iscolcor(line)) {
+		colcorval(ctmp, line);
+		colval(exposure,RED) /= colval(ctmp,RED);
+		colval(exposure,GRN) /= colval(ctmp,GRN);
+		colval(exposure,BLU) /= colval(ctmp,BLU);
+	}
 }
 
 
@@ -190,7 +200,7 @@ pixtoval()				/* convert picture to values */
 				else
 					copycolor(lastc, scanln[x]);
 			if (original)
-				scalecolor(scanln[x], 1.0/exposure);
+				multcolor(scanln[x], exposure);
 			if (!dataonly)
 				printf("%7d %7d ", x, y);
 			if ((*putval)(scanln[x], stdout) < 0) {
