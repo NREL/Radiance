@@ -174,7 +174,7 @@ proc update_dir w {			# Update working directory
 	set curdir [pwd]
 	$w.fm.fl delete 0 end
 	set ls ../
-	foreach f [glob *] {
+	foreach f [glob -nocomplain *] {
 		if [file isdirectory $f] {
 			lappend ls $f/
 		}
