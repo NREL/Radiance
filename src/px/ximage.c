@@ -1,0 +1,642 @@
+/* Copyright (c) 1987 Regents of the University of California */
+
+#ifndef lint
+static char SCCSid[] = "$SunId$ LBL";
+#endif
+
+/*
+ *  ximage.c - driver for X-windows
+ *
+ *     4/30/87
+ *     3/3/88		Added calls to xraster & Paul Heckbert's ciq routines
+ */
+
+#include  "standard.h"
+
+#include  <X/Xlib.h>
+#include  <X/cursors/bcross.cursor>
+#include  <X/cursors/bcross_mask.cursor>
+
+#include  <sys/types.h>
+
+#include  <ctype.h>
+
+#include  "color.h"
+
+#include  "xraster.h"
+
+#include  "view.h"
+
+#include  "pic.h"
+
+#define  controlshift(e)	(((XButtonEvent *)(e))->detail & (ShiftMask|ControlMask))
+
+#define  FONTNAME	"9x15"		/* text font we'll use */
+
+#define  CTRL(c)	('c'-'@')
+
+#define  BORWIDTH	5		/* border width */
+#define  BARHEIGHT	25		/* menu bar size */
+
+double  gamcor = 2.0;			/* gamcor correction */
+
+XRASTER  ourras;			/* our stored raster image */
+
+int  dither = 1;			/* dither colors? */
+int  fast = 0;				/* keep picture in Pixmap? */
+
+Window  wind = 0;			/* our output window */
+Font  fontid;				/* our font */
+
+int  maxcolors = 0;			/* maximum colors */
+int  greyscale = 0;			/* in grey */
+
+int  xoff = 0;				/* x image offset */
+int  yoff = 0;				/* y image offset */
+
+VIEW  ourview = STDVIEW(0);		/* image view parameters */
+int  gotview = 0;			/* got parameters from file */
+
+COLR  *scanline;			/* scan line buffer */
+
+int  xmax, ymax;			/* picture resolution */
+int  width, height;			/* window size */
+char  *fname = NULL;			/* input file name */
+FILE  *fin = stdin;			/* input file */
+long  *scanpos = NULL;			/* scan line positions in file */
+int  cury = 0;				/* current scan location */
+
+double  exposure = 1.0;			/* exposure compensation used */
+
+struct {
+	int  xmin, ymin, xsiz, ysiz;
+}  box = {0, 0, 0, 0};			/* current box */
+
+char  *geometry = NULL;			/* geometry specification */
+
+char  *progname;
+
+char  errmsg[128];
+
+extern long  ftell();
+
+extern char  *malloc(), *calloc();
+
+extern double  atof();
+
+
+main(argc, argv)
+int  argc;
+char  *argv[];
+{
+	int  headline();
+	int  i;
+	
+	progname = argv[0];
+
+	for (i = 1; i < argc; i++)
+		if (argv[i][0] == '-')
+			switch (argv[i][1]) {
+			case 'c':
+				maxcolors = atoi(argv[++i]);
+				break;
+			case 'b':
+				greyscale = !greyscale;
+				break;
+			case 'm':
+				maxcolors = 2;
+				break;
+			case 'd':
+				dither = !dither;
+				break;
+			case 'f':
+				fast = !fast;
+				break;
+			case 'g':
+				gamcor = atof(argv[++i]);
+				break;
+			default:
+				goto userr;
+			}
+		else if (argv[i][0] == '=')
+			geometry = argv[i];
+		else
+			break;
+
+	if (argc-i == 1) {
+		fname = argv[i];
+		fin = fopen(fname, "r");
+		if (fin == NULL) {
+			sprintf(errmsg, "can't open file \"%s\"", fname);
+			quiterr(errmsg);
+		}
+	} else
+		goto userr;
+
+				/* get header */
+	getheader(fin, headline);
+				/* get picture dimensions */
+	if (fscanf(fin, "-Y %d +X %d\n", &ymax, &xmax) != 2)
+		quiterr("bad picture size");
+				/* set view parameters */
+	if (gotview) {
+		ourview.hresolu = xmax;
+		ourview.vresolu = ymax;
+		if (setview(&ourview) != NULL)
+			gotview = 0;
+	}
+	if ((scanline = (COLR *)malloc(xmax*sizeof(COLR))) == NULL)
+		quiterr("out of memory");
+
+	init();			/* get file and open window */
+
+	for ( ; ; )
+		getevent();		/* main loop */
+userr:
+	fprintf(stderr,
+	"Usage: %s [=geometry][-b][-m][-d][-f][-c ncolors] file\n",
+			progname);
+	quit(1);
+}
+
+
+headline(s)		/* get relevant info from header */
+char  *s;
+{
+	static char  *altname[] = {"rview","rpict","VIEW=",NULL};
+	register char  **an;
+
+	if (!strncmp(s, "EXPOSURE=", 9))
+		exposure *= atof(s+9);
+	else
+		for (an = altname; *an != NULL; an++)
+			if (!strncmp(*an, s, strlen(*an))) {
+				if (sscanview(&ourview, s+strlen(*an)) == 0)
+					gotview++;
+				return;
+			}
+}
+
+
+char *
+sskip(s)		/* skip a word */
+register char  *s;
+{
+	while (isspace(*s)) s++;
+	while (*s && !isspace(*s)) s++;
+	return(s);
+}
+
+
+init()			/* get data and open window */
+{
+	register int  i;
+	colormap  ourmap;
+	OpaqueFrame  mainframe;
+	char  defgeom[32];
+	
+	if (fname != NULL) {
+		scanpos = (long *)malloc(ymax*sizeof(long));
+		if (scanpos == NULL)
+			goto memerr;
+		for (i = 0; i < ymax; i++)
+			scanpos[i] = -1;
+	}
+	if (XOpenDisplay(NULL) == NULL)
+		quiterr("can't open display; DISPLAY variable set?");
+#ifdef notdef
+	if (DisplayWidth() - 2*BORWIDTH < xmax ||
+			DisplayHeight() - 2*BORWIDTH - BARHEIGHT < ymax)
+		quiterr("resolution mismatch");
+#endif
+	if (maxcolors == 0) {		/* get number of available colors */
+		maxcolors = 1<<DisplayPlanes();
+		if (maxcolors > 4) maxcolors -= 2;
+	}
+	ourras.width = xmax;
+	ourras.height = ymax;
+				/* store image */
+	if (maxcolors <= 2) {		/* monochrome */
+		ourras.data.m = (unsigned short *)malloc(BitmapSize(xmax,ymax));
+		if (ourras.data.m == NULL)
+			goto memerr;
+		getmono();
+	} else {
+		ourras.data.bz = (unsigned char *)malloc(BZPixmapSize(xmax,ymax));
+		if (ourras.data.bz == NULL)
+			goto memerr;
+		if (greyscale)
+			biq(dither,maxcolors,1,ourmap);
+		else
+			ciq(dither,maxcolors,1,ourmap);
+		if (init_rcolors(&ourras, ourmap) == 0)
+			goto memerr;
+	}
+	mainframe.bdrwidth = BORWIDTH;
+	mainframe.border = WhitePixmap;
+	mainframe.background = BlackPixmap;
+	sprintf(defgeom, "=%dx%d+0+22", xmax, ymax);
+	wind = XCreate("Radiance Image", progname, geometry, defgeom,
+			&mainframe, 16, 16);
+	if (wind == 0)
+		quiterr("can't create window");
+	width = mainframe.width;
+	height = mainframe.height;
+	fontid = XGetFont(FONTNAME);
+	if (fontid == 0)
+		quiterr("can't get font");
+	XStoreName(wind, fname == NULL ? progname : fname);
+	XDefineCursor(wind, XCreateCursor(bcross_width, bcross_height,
+			bcross_bits, bcross_mask_bits,
+			bcross_x_hot, bcross_y_hot,
+			BlackPixel, WhitePixel, GXcopy));
+	XSelectInput(wind, ButtonPressed|ButtonReleased|UnmapWindow
+			|RightDownMotion|MiddleDownMotion|LeftDownMotion
+			|KeyPressed|ExposeWindow|ExposeRegion);
+	XMapWindow(wind);
+	return;
+memerr:
+	quiterr("out of memory");
+}
+
+
+quiterr(err)		/* print message and exit */
+char  *err;
+{
+	if (err != NULL)
+		fprintf(stderr, "%s: %s\n", progname, err);
+
+	exit(err == NULL ? 0 : 1);
+}
+
+
+eputs(s)
+char	*s;
+{
+	fputs(s, stderr);
+}
+
+
+quit(code)
+int  code;
+{
+	exit(code);
+}
+
+
+getevent()				/* process the next event */
+{
+	WindowInfo  info;
+	XEvent  e;
+
+	XNextEvent(&e);
+	switch (e.type) {
+	case KeyPressed:
+		docom(&e);
+		break;
+	case ExposeWindow:
+		XQueryWindow(wind, &info);	/* in case resized */
+		width = info.width;
+		height = info.height;
+	/* fall through */
+	case ExposeRegion:
+		fixwindow(&e);
+		break;
+	case UnmapWindow:
+		unmap_rcolors(&ourras);
+		break;
+	case ButtonPressed:
+		if (controlshift(&e))
+			moveimage(&e);
+		else
+			getbox(&e);
+		break;
+	}
+}
+
+
+fixwindow(eexp)				/* fix new or stepped-on window */
+XExposeEvent  *eexp;
+{
+	redraw(eexp->x, eexp->y, eexp->width, eexp->height);
+}
+
+
+redraw(x, y, w, h)			/* redraw section of window */
+int  x, y;
+int  w, h;
+{
+	map_rcolors(&ourras);
+	if (fast)
+		make_rpixmap(&ourras);
+	return(patch_raster(wind,x-xoff,y-yoff,x,y,w,h,&ourras) ? 0 : -1);
+}
+
+
+docom(ekey)					/* execute command */
+XKeyEvent  *ekey;
+{
+	char  buf[80];
+	COLOR  cval;
+	char  *cp;
+	int  n;
+	FVECT  rorg, rdir;
+
+	cp = XLookupMapping(ekey, &n);
+	if (n == 0)
+		return(0);
+	switch (*cp) {			/* interpret command */
+	case 'q':
+	case CTRL(D):				/* quiterr */
+		quit(0);
+	case '\n':
+	case '\r':
+	case 'l':
+	case 'c':				/* value */
+		if (avgbox(cval) == -1)
+			return(-1);
+		switch (*cp) {
+		case '\n':
+		case '\r':				/* radiance */
+			sprintf(buf, "%-3g", intens(cval)/exposure);
+			break;
+		case 'l':				/* luminance */
+			sprintf(buf, "%-3gL", bright(cval)*683.0/exposure);
+			break;
+		case 'c':				/* color */
+			sprintf(buf, "(%.2f,%.2f,%.2f)",
+					colval(cval,RED),
+					colval(cval,GRN),
+					colval(cval,BLU));
+			break;
+		}
+		XText(wind, box.xmin, box.ymin, buf, strlen(buf),
+				fontid, BlackPixel, WhitePixel);
+		return(0);
+	case 'p':				/* position */
+		sprintf(buf, "(%d,%d)", ekey->x-xoff, ymax-1-ekey->y+yoff);
+		XText(wind, ekey->x, ekey->y, buf, strlen(buf),
+				fontid, BlackPixel, WhitePixel);
+		return(0);
+	case 't':				/* trace */
+		if (!gotview) {
+			XFeep(0);
+			return(-1);
+		}
+		rayview(rorg, rdir, &ourview,
+				ekey->x-xoff + .5, ymax-1-ekey->y+yoff + .5);
+		printf("%e %e %e ", rorg[0], rorg[1], rorg[2]);
+		printf("%e %e %e\n", rdir[0], rdir[1], rdir[2]);
+		fflush(stdout);
+		return(0);
+	case CTRL(R):				/* redraw */
+		XClear(wind);
+		return(redraw(0, 0, width, height));
+	case ' ':				/* clear */
+		return(redraw(box.xmin, box.ymin, box.xsiz, box.ysiz));
+	default:
+		XFeep(0);
+		return(-1);
+	}
+}
+
+
+moveimage(ep)				/* shift the image */
+XButtonEvent  *ep;
+{
+	XButtonEvent  eb;
+
+	XMaskEvent(ButtonReleased, &eb);
+	xoff += eb.x - ep->x;
+	yoff += eb.y - ep->y;
+	XClear(wind);
+	return(redraw(0, 0, width, height));
+}
+
+
+getbox(ebut)				/* get new box */
+XButtonEvent  *ebut;
+{
+	union {
+		XEvent  e;
+		XButtonEvent  b;
+		XMouseMovedEvent  m;
+	}  e;
+
+	XMaskEvent(ButtonReleased|MouseMoved, &e.e);
+	while (e.e.type == MouseMoved) {
+		revbox(ebut->x, ebut->y, box.xmin = e.m.x, box.ymin = e.m.y);
+		XMaskEvent(ButtonReleased|MouseMoved, &e.e);
+		revbox(ebut->x, ebut->y, box.xmin, box.ymin);
+	}
+	box.xmin = e.b.x<0 ? 0 : (e.b.x>=width ? width-1 : e.b.x);
+	box.ymin = e.b.y<0 ? 0 : (e.b.y>=height ? height-1 : e.b.y);
+	if (box.xmin > ebut->x) {
+		box.xsiz = box.xmin - ebut->x + 1;
+		box.xmin = ebut->x;
+	} else {
+		box.xsiz = ebut->x - box.xmin + 1;
+	}
+	if (box.ymin > ebut->y) {
+		box.ysiz = box.ymin - ebut->y + 1;
+		box.ymin = ebut->y;
+	} else {
+		box.ysiz = ebut->y - box.ymin + 1;
+	}
+}
+
+
+revbox(x0, y0, x1, y1)			/* draw box with reversed lines */
+int  x0, y0, x1, y1;
+{
+	XLine(wind, x0, y0, x1, y0, 1, 1, 0, GXinvert, AllPlanes);
+	XLine(wind, x0, y1, x1, y1, 1, 1, 0, GXinvert, AllPlanes);
+	XLine(wind, x0, y0, x0, y1, 1, 1, 0, GXinvert, AllPlanes);
+	XLine(wind, x1, y0, x1, y1, 1, 1, 0, GXinvert, AllPlanes);
+}
+
+
+avgbox(clr)				/* average color over current box */
+COLOR  clr;
+{
+	int  left, right, top, bottom;
+	int  y;
+	double  d;
+	COLOR  ctmp;
+	register int  x;
+
+	setcolor(clr, 0.0, 0.0, 0.0);
+	left = box.xmin - xoff;
+	right = left + box.xsiz;
+	if (left < 0)
+		left = 0;
+	if (right > xmax)
+		right = xmax;
+	if (left >= right)
+		return(-1);
+	top = box.ymin - yoff;
+	bottom = top + box.ysiz;
+	if (top < 0)
+		top = 0;
+	if (bottom > ymax)
+		bottom = ymax;
+	if (top >= bottom)
+		return(-1);
+	for (y = top; y < bottom; y++) {
+		if (getscan(y) == -1)
+			return(-1);
+		for (x = left; x < right; x++) {
+			colr_color(ctmp, scanline[x]);
+			addcolor(clr, ctmp);
+		}
+	}
+	d = 1.0/((right-left)*(bottom-top));
+	scalecolor(clr, d);
+	return(0);
+}
+
+
+getmono()			/* get monochrome data */
+{
+	register unsigned short	*dp;
+	register int	x, err;
+	int	y;
+	rgbpixel	*inline;
+	short	*cerr;
+
+	if ((inline = (rgbpixel *)malloc(xmax*sizeof(rgbpixel))) == NULL
+			|| (cerr = (short *)calloc(xmax,sizeof(short))) == NULL)
+		quit("out of memory in getmono");
+	dp = ourras.data.m - 1;
+	for (y = 0; y < ymax; y++) {
+		picreadline3(y, inline);
+		err = 0;
+		for (x = 0; x < xmax; x++) {
+			if (!(x&0xf))
+				*++dp = 0;
+			err += rgb_bright(&inline[x]) + cerr[x];
+			if (err > 127)
+				err -= 255;
+			else
+				*dp |= 1<<(x&0xf);
+			cerr[x] = err >>= 1;
+		}
+	}
+	free((char *)inline);
+	free((char *)cerr);
+}
+
+
+init_rcolors(xr, cmap)				/* assign color values */
+register XRASTER	*xr;
+colormap	cmap;
+{
+	register int	i;
+	register unsigned char	*p;
+
+	xr->pmap = (int *)malloc(256*sizeof(int));
+	if (xr->pmap == NULL)
+		return(0);
+	xr->cdefs = (Color *)malloc(256*sizeof(Color));
+	if (xr->cdefs == NULL)
+		return(0);
+	for (i = 0; i < 256; i++)
+		xr->pmap[i] = -1;
+	xr->ncolors = 0;
+	for (p = xr->data.bz, i = BZPixmapSize(xr->width,xr->height); i--; p++)
+		if (xr->pmap[*p] == -1) {
+			xr->cdefs[xr->ncolors].red = cmap[0][*p] << 8;
+			xr->cdefs[xr->ncolors].green = cmap[1][*p] << 8;
+			xr->cdefs[xr->ncolors].blue = cmap[2][*p] << 8;
+			xr->cdefs[xr->ncolors].pixel = *p;
+			xr->pmap[*p] = xr->ncolors++;
+		}
+	xr->cdefs = (Color *)realloc((char *)xr->cdefs, xr->ncolors*sizeof(Color));
+	if (xr->cdefs == NULL)
+		return(0);
+	return(1);
+}
+
+
+getscan(y)
+int  y;
+{
+	if (y != cury) {
+		if (scanpos == NULL || scanpos[y] == -1)
+			return(-1);
+		if (fseek(fin, scanpos[y], 0) == -1)
+			quit("fseek error");
+		cury = y;
+	} else if (scanpos != NULL)
+		scanpos[y] = ftell(fin);
+
+	if (freadcolrs(scanline, xmax, fin) < 0)
+		quiterr("read error");
+
+	cury++;
+	return(0);
+}
+
+
+picreadline3(y, l3)			/* read in 3-byte scanline */
+int  y;
+register rgbpixel  *l3;
+{
+	register BYTE	*l4;
+	register int	shift, c;
+	int	i;
+
+	if (getscan(y) < 0)
+		quiterr("cannot seek for picreadline");
+							/* convert scanline */
+	for (l4=scanline[0], i=xmax; i--; l4+=4, l3++) {
+		shift = l4[EXP] - COLXS;
+		if (shift >= 8) {
+			l3->r = l3->g = l3->b = 255;
+		} else if (shift <= -8) {
+			l3->r = l3->g = l3->b = 0;
+		} else if (shift > 0) {
+			c = l4[RED] << shift;
+			l3->r = c > 255 ? 255 : c;
+			c = l4[GRN] << shift;
+			l3->g = c > 255 ? 255 : c;
+			c = l4[BLU] << shift;
+			l3->b = c > 255 ? 255 : c;
+		} else if (shift < 0) {
+			l3->r = l4[RED] >> -shift;
+			l3->g = l4[GRN] >> -shift;
+			l3->b = l4[BLU] >> -shift;
+		} else {
+			l3->r = l4[RED];
+			l3->g = l4[GRN];
+			l3->b = l4[BLU];
+		}
+	}
+}
+
+
+picwriteline(y, l)		/* add 8-bit scanline to image */
+int  y;
+pixel  *l;
+{
+	bcopy(l, ourras.data.bz+BZPixmapSize(xmax,y), BZPixmapSize(xmax,1));
+}
+
+
+picreadcm(map)			/* do gamcor correction */
+colormap  map;
+{
+	extern double  pow();
+	register int  i, val;
+
+	for (i = 0; i < 256; i++) {
+		val = pow(i/256.0, 1.0/gamcor) * 256.0;
+		map[0][i] = map[1][i] = map[2][i] = val;
+	}
+}
+
+
+picwritecm(map)			/* handled elsewhere */
+colormap  map;
+{
+}

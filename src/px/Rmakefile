@@ -1,0 +1,130 @@
+# SCCSid "$SunId$ LBL"
+
+#
+#  Compiles for pixel file plotters.
+#
+
+CFLAGS = -O -f68881 /usr/lib/f68881.il
+
+INSTDIR = /usr/local/ray
+
+CALDEFS = -DIEEE -DFUNCTION -DVARIABLE -DRCONST -DBIGLIB
+
+PROGS = pfilt ttyimage aedimage oki20c mt160r getinfo psign \
+greyscale pvalue psum pcompos colorscale ra_pr ximage prot \
+panim ra_t8 ra_bn ra_t16 pcomb
+
+all:	$(PROGS)
+
+install:	$(PROGS)
+	cp $(PROGS) $(INSTDIR)
+
+pfilt:	pfilt.o pf2.o pf3.o color.o header.o
+	cc $(CFLAGS) -o pfilt pfilt.o pf2.o pf3.o color.o header.o -lm
+
+ttyimage:	ttyimage.o color.o
+	cc $(CFLAGS) -o ttyimage ttyimage.o color.o
+
+t4027:	t4027.o color.o
+	cc $(CFLAGS) -o t4027 t4027.o color.o
+
+aedimage:	aedimage.o color.o ciq.o cut.o closest.o ealloc.o biq.o
+	cc $(CFLAGS) -o aedimage aedimage.o color.o ciq.o cut.o \
+closest.o ealloc.o biq.o -lm
+
+oki20c:	oki20c.o color.o header.o
+	cc $(CFLAGS) -o oki20c oki20c.o color.o header.o
+
+mt160r:	mt160r.o color.o
+	cc $(CFLAGS) -o mt160r mt160r.o color.o
+
+getinfo:	getinfo.o header.o
+	cc $(CFLAGS) -n -o getinfo getinfo.o header.o
+
+greyscale:	greyscale.o color.o
+	cc $(CFLAGS) -o greyscale greyscale.o color.o -lm
+
+colorscale:	colorscale.o color.o
+	cc $(CFLAGS) -o colorscale colorscale.o color.o
+
+pvalue:	pvalue.o color.o header.o
+	cc $(CFLAGS) -o pvalue pvalue.o color.o header.o
+
+psum:	psum.o color.o header.o
+	cc $(CFLAGS) -o psum psum.o color.o header.o
+
+pcompos:	pcompos.o color.o header.o
+	cc $(CFLAGS) -o pcompos pcompos.o color.o header.o
+
+psign:	psign.o color.o
+	cc $(CFLAGS) -o psign psign.o color.o
+
+d48c:	d48c.o color.o
+	cc $(CFLAGS) -o d48c d48c.o color.o
+
+ra_pr: ra_pr.o ciq.o cut.o closest.o color.o ealloc.o header.o biq.o
+	cc $(CFLAGS) -o ra_pr ra_pr.o ciq.o cut.o closest.o \
+color.o ealloc.o header.o biq.o -lm
+
+ra_t8: ra_t8.o ciq.o cut.o closest.o color.o ealloc.o header.o biq.o
+	cc $(CFLAGS) -o ra_t8 ra_t8.o ciq.o cut.o closest.o \
+color.o ealloc.o header.o biq.o -lm
+
+ra_t16: ra_t16.o color.o ealloc.o header.o
+	cc $(CFLAGS) -o ra_t16 ra_t16.o color.o ealloc.o header.o -lm
+
+ra_im: ra_im.o
+	cc $(CFLAGS) -n -o ra_im ra_im.o
+
+ra_bn: ra_bn.o
+	cc $(CFLAGS) -o ra_bn ra_bn.o color.o header.o -lm
+
+ximage:	ximage.o color.o ciq.o cut.o closest.o ealloc.o \
+xraster.o header.o biq.o image.o fvect.o
+	cc $(CFLAGS) -o ximage ximage.o color.o xraster.o \
+header.o ciq.o cut.o closest.o ealloc.o biq.o image.o fvect.o -lX -lm
+
+prot:		prot.o color.o
+	cc $(CFLAGS) -o prot prot.o color.o
+
+panim:	panim.o color.o header.o libclient.a
+	cc $(CFLAGS) -o panim panim.o color.o header.o \
+libclient.a -lrpcsvc -lm
+
+pcomb:	pcomb.o calexpr.o calfunc.o caldefn.o color.o \
+header.o ealloc.o savestr.o
+	cc $(CFLAGS) -o pcomb pcomb.o calexpr.o calfunc.o caldefn.o \
+color.o header.o ealloc.o savestr.o -lm
+
+calexpr.o:	calexpr.c
+	cc $(CFLAGS) $(CALDEFS) -c calexpr.c
+
+calfunc.o:	calfunc.c
+	cc $(CFLAGS) $(CALDEFS) -c calfunc.c
+
+caldefn.o:	caldefn.c
+	cc $(CFLAGS) $(CALDEFS) -c caldefn.c
+
+pcomb.o calexpr.o calfunc.o caldefn.o:	calcomp.h
+
+panim.o:	scan.h clntrpc.h color.h random.h
+
+pf2.o bnoise.o:	random.h
+
+pfilt.o pf2.o ttyimage.o t4027.o mt160r.o psum.o psign.o prot.o \
+d48c.o aedimage.o pcompos.o color.o greyscale.o ra_t8.o \
+ra_pr.o pvalue.o image.o pcomb.o:	color.h
+
+ximage.o image.o:	standard.h fvect.h
+
+ximage.o:	xraster.h
+
+ra_t8.o:	targa.h
+
+fvect.o:	fvect.h
+
+aedimage.o ximage.o ra_t8.o ra_pr.o:	pic.h
+
+ciq.o cut.o closest.o biq.o:	pic.h ciq.h
+
+ximage.o image.o:	view.h
