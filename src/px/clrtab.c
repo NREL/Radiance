@@ -107,16 +107,17 @@ register BYTE	*bs;
 register COLR	*cs;
 int	n;
 {
-	static short	(*cerr)[3];
+	static short	(*cerr)[3] = NULL;
 	static int	N = 0;
 	int	err[3], errp[3];
 	register int	x, i;
 
 	if (n != N) {		/* get error propogation array */
-		if (N)
-			cerr = (short (*)[3])realloc((char *)cerr,
-					3*n*sizeof(short));
-		else
+		if (N) {
+			free((char *)cerr);
+			cerr = NULL;
+		}
+		if (n)
 			cerr = (short (*)[3])malloc(3*n*sizeof(short));
 		if (cerr == NULL) {
 			N = 0;
