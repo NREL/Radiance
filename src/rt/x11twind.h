@@ -47,7 +47,7 @@ extern TEXTWIND	*xt_open(Display *dpy, Window parent,
 			int bw, unsigned long fore, unsigned long back,
 			char *fontname);
 extern void	xt_puts(char *s, TEXTWIND *t);
-extern void	xt_putc(char c, TEXTWIND *t);
+extern void	xt_putc(int c, TEXTWIND *t);
 extern void	xt_delete(TEXTWIND *t, int r);
 extern void	xt_insert(TEXTWIND *t, int r);
 extern void	xt_redraw(TEXTWIND *t);
