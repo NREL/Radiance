@@ -194,7 +194,7 @@ macbethcal:	macbethcal.o pmapgen.o mx3.o
 	$(CC) $(CFLAGS) -o macbethcal macbethcal.o pmapgen.o mx3.o -lrt $(MLIB)
 
 
-macbethcal.o:	pmap.h
+macbethcal.o:	pmap.h ../common/color.h ../common/resolu.h
 
 pmapgen.o:	mx3.h pmap.h
 
