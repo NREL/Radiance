@@ -99,6 +99,8 @@ x10:	$(DEVDIR)/x10
 
 aed:	$(DEVDIR)/aed
 
+sgi:	$(DEVDIR)/news
+
 tiff:	
 
 clean:
@@ -137,6 +139,10 @@ colortab.o editline.o -lX $(LIBS)
 $(DEVDIR)/aed:	aed.o colortab.o tty.o devmain.o editline.o
 	$(CC) $(CFLAGS) -s -o $(DEVDIR)/aed aed.o colortab.o \
 devmain.o tty.o editline.o $(LIBS)
+
+$(DEVDIR)/news: nwsdev.o devmain.o editline.o
+	$(CC) $(CFLAGS) -s -o $(DEVDIR)/news nwsdev.o devmain.o editline.o \
+-lcps $(LIBS)
 
 #
 # Special compiles:
@@ -190,7 +196,7 @@ caldefn.o:	caldefn.c ../common/calcomp.h
 	$(CC) $(CFLAGS) -DFUNCTION -DREDEFW -c caldefn.c
 
 nwsdev.o:	nwsdev.c nwsdev.h newsconstants.h
-	$(CC) $(CFLAGS) -c nwsdev.c
+	$(CC) $(CFLAGS) -Dnws_init=dinit -c nwsdev.c
 
 nwsdev.h:	nwsdev.cps newsconstants.h
 	cps nwsdev.cps

@@ -7,7 +7,7 @@
 #define textbackgroundBLUE .75
 #define textcursor (|)
 #define textshadowgray .85
-#define gammacorrection 2.2
+#define gammacorrection 1.0
 
 #define inputbuffer nws_inputbuffer
 #define pos nws_pos

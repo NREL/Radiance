@@ -1,4 +1,4 @@
-/* Copyright (c) 1988 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -18,6 +18,7 @@ extern struct driver  *x11_init();
 
 struct device  devtable[] = {			/* supported devices */
 	{"aed", "AED 512 color graphics terminal", comm_init},
+	{"news", "NeWS color or greyscale screen", comm_init},
 	{"sun", "SunView color or greyscale screen", comm_init},
 	{"x10", "X10 color or greyscale display", comm_init},
 	{"x11", "X11 color or greyscale display", x11_init},
