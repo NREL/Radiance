@@ -43,6 +43,8 @@ extern struct device {			/* interactive device */
 	struct driver  *(*init)();		/* initialize device */
 }  devtable[];				/* supported devices */
 
+extern char  dev_default[];		/* default device name */
+
 #define  MB1		('\n')		/* mouse button 1 */
 #define  MB2		('\r')		/* mouse button 2 */
 #define  MB3		(' ')		/* mouse button 3 */

@@ -12,6 +12,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "driver.h"
 
+char  dev_default[] = "X";
+
 extern struct driver  *aed_init(), *x_init();
 
 struct device  devtable[] = {			/* supported devices */

@@ -45,7 +45,7 @@ char  *amblist[128];			/* ambient include/exclude list */
 int  ambincl = -1;			/* include == 1, exclude == 0 */
 
 int  greyscale = 0;			/* map colors to brightness? */
-char  *devname = "X";			/* output device name */
+char  *devname = dev_default;		/* output device name */
 
 struct driver  *dev = NULL;		/* driver functions */
 
