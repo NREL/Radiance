@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -22,7 +22,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "calcomp.h"
 
-
+				/* bits in argument flag (better be right!) */
+#define  AFLAGSIZ	(8*sizeof(unsigned long))
 #define  ALISTSIZ	6	/* maximum saved argument list */
 
 typedef struct activation {
@@ -130,7 +131,10 @@ double  *a;
     act.name = fname;
     act.prev = curact;
     act.ap = a;
-    act.an = (1L<<n)-1;
+    if (n >= AFLAGSIZ)
+	act.an = ~0;
+    else
+	act.an = (1L<<n)-1;
     act.fun = NULL;
     curact = &act;
 
@@ -204,7 +208,7 @@ register int  n;
 	quit(1);
     }
 						/* already computed? */
-    if (1L<<n & actp->an)
+    if (n < AFLAGSIZ && 1L<<n & actp->an)
 	return(actp->ap[n]);
 
     if (actp->fun == NULL || (ep = ekid(actp->fun, n+1)) == NULL) {
