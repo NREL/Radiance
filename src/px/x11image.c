@@ -30,6 +30,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "pic.h"
 #include  "x11raster.h"
 #include  "random.h"
+#include  "x11icon.h"
 
 #define  FONTNAME	"8x13"		/* text font we'll use */
 
@@ -204,6 +205,7 @@ char  *s;
 
 init()			/* get data and open window */
 {
+	XWMHints	ourxwmhints;
 	XSetWindowAttributes	ourwinattr;
 	XSizeHints  oursizhints;
 	register int  i;
@@ -266,6 +268,11 @@ init()			/* get data and open window */
 		}
 		XSetNormalHints(thedisplay, wind, &oursizhints);
 	}
+	ourxwmhints.flags = InputHint|IconPixmapHint;
+	ourxwmhints.input = True;
+	ourxwmhints.icon_pixmap = XCreateBitmapFromData(thedisplay,
+			wind, x11icon_bits, x11icon_width, x11icon_height);
+	XSetWMHints(thedisplay, wind, &ourxwmhints);
 	XSelectInput(thedisplay, wind, ButtonPressMask|ButtonReleaseMask
 			|ButtonMotionMask|StructureNotifyMask
 			|KeyPressMask|ExposureMask);
