@@ -123,6 +123,7 @@ readfargs(fa, fp)		/* read function arguments from stream */
 register FUNARGS  *fa;
 FILE  *fp;
 {
+	extern char  *strcpy();
 	char  sbuf[MAXSTR];
 	int  n;
 	register int  i;
@@ -136,7 +137,10 @@ FILE  *fp;
 		for (i = 0; i < fa->nsargs; i++) {
 			if (fscanf(fp, "%s", sbuf) != 1)
 				return(-1);
-			fa->sarg[i] = savestr(sbuf);
+			fa->sarg[i] = malloc(strlen(sbuf)+1);
+			if (fa->sarg[i] == NULL)
+				goto memerr;
+			(void)strcpy(fa->sarg[i], sbuf);
 		}
 	} else
 		fa->sarg = NULL;
