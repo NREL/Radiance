@@ -11,6 +11,8 @@
 
 #include <errno.h>
 
+#include "calcomp.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -108,9 +110,14 @@ extern VARIABLE  cparam[MAXCUR][NCVARS];	/* the curve variables */
 
 extern VARIABLE  *vlookup();
 
-extern double  varvalue(), funvalue();
-
 #define  mgclear(vname)		undefine(vlookup(vname))
+
+extern void mgclearall(void);
+extern void mgload(char *file);
+extern void mgsave(char *file);
+extern void setmgvar(char *fname, FILE *fp, char *string);
+extern int mgcurve(int c, int (*f)());
+extern void mgtoa(register char *s, VARIABLE *vp);
 
 
 #ifdef __cplusplus
