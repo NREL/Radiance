@@ -58,6 +58,8 @@
 #endif
 
 extern char	*tmErrorMessage[];	/* error messages */
+extern int	tmLastError;		/* last error incurred by library */
+extern char	*tmLastFunction;	/* error-generating function name */
 
 typedef short	TMbright;		/* encoded luminance type */
 
