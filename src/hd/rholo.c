@@ -109,8 +109,9 @@ char	*argv[];
 		}
 						/* check settings */
 	checkvalues();
-						/* load RIF if any */
-	getradfile();
+						/* load RIF if rtrace */
+	if (ncprocs)
+		getradfile();
 
 	if (hdlist[0] == NULL) {		/* create new holodeck */
 		HDGRID	hdg[HDMAX];
