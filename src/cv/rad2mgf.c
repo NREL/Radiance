@@ -306,6 +306,17 @@ uninit()			/* mark end of MGF file */
 }
 
 
+clrverts()			/* clear vertex table */
+{
+	register int	i;
+
+	lu_done(&vertab);
+	for (i = 0; i < NVERTS; i++)
+		vert[i].lused = 0;
+	lu_init(&vertab, NVERTS);
+}
+
+
 add2dispatch(name, func)	/* add function to dispatch table */
 char	*name;
 int	(*func)();
@@ -511,6 +522,7 @@ FUNARGS	*fa;
 		fputs(fa->sarg[i], stdout);
 	}
 	putchar('\n');
+	clrverts();			/* vertex id's no longer reliable */
 	return(0);
 }
 
