@@ -198,53 +198,45 @@ double	*dp;
 
 getpolygon()			/* get projected area for a polygon */
 {
-	printf("Polygon area? ");
-	if (!getd(&projarea))
-		return(0);
-	projarea *= unit2meter*unit2meter;
-	projarea *= PI;
+	static double	area = 1.0;
+
+	printf("Polygon area [%g]: ", area);
+	getd(&area);
+	projarea = PI*unit2meter*unit2meter * area;
 	return(1);
 }
 
 
 getsphere()			/* get projected area for a sphere */
 {
-	double	radius;
+	static double	radius = 1.0;
 
-	printf("Sphere radius? ");
-	if (!getd(&radius))
-		return(0);
-	radius *= unit2meter;
-	projarea = 4.*PI*PI*radius*radius;
+	printf("Sphere radius [%g]: ", radius);
+	getd(&radius);
+	projarea = 4.*PI*PI*unit2meter*unit2meter * radius*radius;
 	return(1);
 }
 
 
 getcylinder()			/* get projected area for a cylinder */
 {
-	double	length, radius;
+	static double	length = 1.0, radius = 0.1;
 
-	printf("Cylinder length? ");
-	if (!getd(&length))
-		return(0);
-	length *= unit2meter;
-	printf("Cylinder radius? ");
-	if (!getd(&radius))
-		return(0);
-	radius *= unit2meter;
-	projarea = PI*PI*2.*PI*radius*length;
+	printf("Cylinder length [%g]: ", length);
+	getd(&length);
+	printf("Cylinder radius [%g]: ", radius);
+	getd(&radius);
+	projarea = PI*PI*2.*PI*unit2meter*unit2meter * radius*length;
 	return(1);
 }
 
 
 getring()			/* get projected area for a ring */
 {
-	double	radius;
+	static double	radius = 1.0;
 
-	printf("Disk radius? ");
-	if (!getd(&radius))
-		return(0);
-	radius *= unit2meter;
-	projarea = PI*PI*radius*radius;
+	printf("Disk radius [%g]: ", radius);
+	getd(&radius);
+	projarea = PI*PI*unit2meter*unit2meter * radius*radius;
 	return(1);
 }
