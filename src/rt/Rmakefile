@@ -71,8 +71,8 @@ MATSRC = normal.c dielectric.c m_clip.c glass.c m_brdf.c m_mirror.c
 MODOBJS = p_func.o t_func.o p_data.o t_data.o text.o mx_func.o mx_data.o
 MODSRC = p_func.c t_func.c p_data.c t_data.c text.c mx_func.c mx_data.c
 
-SUPPOBJS = zeroes.o calexpr.o caldefn.o calfunc.o func.o noise3.o data.o
-SUPPSRC = zeroes.c calexpr.c caldefn.c calfunc.c func.c noise3.c data.c
+SUPPOBJS = zeroes.o calexpr.o caldefn.o func.o noise3.o data.o
+SUPPSRC = zeroes.c calexpr.c caldefn.c func.c noise3.c data.c
 
 #
 # What this makefile produces:
@@ -167,14 +167,11 @@ aed.o:	aed.c
 ambient.o:	ambient.c
 	$(CC) $(CFLAGS) -DAMBFLUSH=16 -c ambient.c
 
-calexpr.o:	calexpr.c calcomp.h
+calexpr.o:	calexpr.c ../common/calcomp.h
 	$(CC) $(CFLAGS) -DVARIABLE -DFUNCTION -DINCHAN -DRCONST -c calexpr.c
 
-caldefn.o:	caldefn.c calcomp.h
-	$(CC) $(CFLAGS) -DFUNCTION -DREDEFW -DRCONST -c caldefn.c
-
-calfunc.o:	calfunc.c calcomp.h
-	$(CC) $(CFLAGS) -DVARIABLE -DBIGLIB -c calfunc.c
+caldefn.o:	caldefn.c ../common/calcomp.h
+	$(CC) $(CFLAGS) -DFUNCTION -DREDEFW -c caldefn.c
 
 nwsdev.o:	nwsdev.c nwsdev.h newsconstants.h
 	$(CC) $(CFLAGS) -c nwsdev.c
@@ -185,8 +182,6 @@ nwsdev.h:	nwsdev.cps newsconstants.h
 #
 # Include dependencies:
 #
-
-caldefn.o calexpr.o calfunc.o:	calcomp.h
 
 aed.o colortab.o data.o devcomm.o \
 devmain.o lookamb.o rview.o sundev.o x10.o x11.o:	../common/color.h
