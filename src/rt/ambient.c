@@ -351,6 +351,7 @@ int  creat;
 #endif
 	setbuf(ambfp, bmalloc(BUFSIZ+8));
 	if (creat) {			/* new file */
+		newheader("RADIANCE", ambfp);
 		fprintf(ambfp, "%s -av %g %g %g -ab %d -aa %g ",
 				progname, colval(ambval,RED),
 				colval(ambval,GRN), colval(ambval,BLU),
