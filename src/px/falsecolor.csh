@@ -50,7 +50,7 @@ while ($#argv > 0)
 		breaksw
 	case -ip:
 	case -pi:
-		shiftargv
+		shift argv
 		set picture="$argv[1]"
 		set cpict="$argv[1]"
 		breaksw
@@ -61,9 +61,9 @@ while ($#argv > 0)
 		set docont=b
 		breaksw
 	case -n:
-		shiftargv
+		shift argv
 		set ndivs="$argv[1]"
-		breadsw
+		breaksw
 	default:
 		echo bad option "'$argv[1]'"
 		exit 1
@@ -119,9 +119,9 @@ pcomb $pcargs -e 'v=(y+.5)/200;vleft=v;vright=v' \
 		-e 'ra=0;ga=0;ba=0' -x 100 -y 200 \
 		> $tempdir/scol.pic
 (echo $label; cnt $ndivs |rcalc -e '$1='"($scale)/$ndivs*($ndivs"'-.5-$1)') \
-	| psign -cf 1 1 1 -cb 0 0 0 -h `ev "floor(200/$ndivs+.5)"` \
-		> $tempdir/slab.pic
+	| psign -cf 1 1 1 -cb 0 0 0 -h `ev "floor(2*200/$ndivs+.5)"` \
+	| pfilt -1 -x /2 -y /2 > $tempdir/slab.pic
 pcomb $pcargs $picture $cpict \
-	| pcompos $tempdir/scol.pic 0 0 -t .5 $tempdir/slab.pic 25 0 - 100 0
+	| pcompos $tempdir/scol.pic 0 0 -t .2 $tempdir/slab.pic 25 0 - 100 0
 quit:
 rm -rf $tempdir
