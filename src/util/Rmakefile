@@ -15,7 +15,7 @@ INSTDIR = /usr/local/bin
 
 LIBDIR = /usr/local/lib/ray
 
-PROGS = findglare xglaresrc glarendx rpiece rad vwright
+PROGS = findglare xglaresrc glarendx rpiece rad ranimate vwright
 
 all:	$(PROGS)
 
@@ -57,6 +57,9 @@ x11findwind.o -lrt -lX11 -lm
 
 rad:	rad.o loadvars.o
 	$(CC) $(CFLAGS) -o rad rad.o loadvars.o -lrt -lm
+
+ranimate:	ranimate.o loadvars.o
+	$(CC) $(CFLAGS) -o ranimate ranimate.o loadvars.o -lrt -lm
 
 rpiece:	rpiece.o Version.o
 	$(CC) $(CFLAGS) -o rpiece rpiece.o Version.o -lrt -lm
