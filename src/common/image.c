@@ -34,6 +34,8 @@ register VIEW  *v;
 	if (v->vaft < -FTINY || (v->vaft > FTINY && v->vaft <= v->vfore))
 		return("illegal fore/aft clipping plane");
 
+	if (v->vdist <= FTINY)
+		return("illegal view distance");
 	v->vdist *= normalize(v->vdir);		/* normalize direction */
 	if (v->vdist == 0.0)
 		return("zero view direction");
