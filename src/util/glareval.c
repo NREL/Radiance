@@ -50,6 +50,8 @@ static SCAN	*hashtab[HSIZE];	/* scanline hash table */
 static long	ncall = 0L;	/* number of calls to getpictscan */
 static long	nread = 0L;	/* number of scanlines read */
 
+static int	wrongformat = 0;
+
 SCAN	*scanretire();
 
 extern long	ftell();
@@ -290,8 +292,14 @@ int	np;
 getexpos(s)			/* get exposure from header line */
 char	*s;
 {
+	char	fmt[32];
+
 	if (isexpos(s))
 		exposure *= exposval(s);
+	else if (isformat(s)) {
+		formatval(fmt, s);
+		wrongformat = strcmp(fmt, COLRFMT);
+	}
 }
 
 
@@ -303,9 +311,10 @@ char	*fn;
 		exit(1);
 	}
 	exposure = 1.0;
-	getheader(pictfp, getexpos);
-	if (fgetresolu(&pxsiz, &pysiz, pictfp) != (YMAJOR|YDECR)) {
-		fprintf("%s: bad picture resolution\n", fn);
+	getheader(pictfp, getexpos, NULL);
+	if (wrongformat ||
+			fgetresolu(&pxsiz, &pysiz, pictfp) != (YMAJOR|YDECR)) {
+		fprintf("%s: bad picture format\n", fn);
 		exit(1);
 	}
 	initscans();
