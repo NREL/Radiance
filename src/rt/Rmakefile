@@ -7,6 +7,7 @@
 OPT = -O
 MACH = -DSTRUCTASSIGN -DBSD -DIEEE -f68881 /usr/lib/f68881.il
 CFLAGS = $(MACH) $(OPT)
+CC = cc
 
 #
 # The following are user-definable:
@@ -83,26 +84,26 @@ clean:
 #
 
 $(DESTDIR)/rtrace:	$(RTOBJS)
-	cc $(CFLAGS) -o $(DESTDIR)/rtrace $(RTOBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o $(DESTDIR)/rtrace $(RTOBJS) $(LIBS)
 
 $(DESTDIR)/rpict:	$(RPOBJS)
-	cc $(CFLAGS) -o $(DESTDIR)/rpict $(RPOBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o $(DESTDIR)/rpict $(RPOBJS) $(LIBS)
 
 $(DESTDIR)/rview:	$(RVOBJS)
-	cc $(CFLAGS) -o $(DESTDIR)/rview $(RVOBJS) $(DLIBS) $(LIBS)
+	$(CC) $(CFLAGS) -o $(DESTDIR)/rview $(RVOBJS) $(DLIBS) $(LIBS)
 
 $(DESTDIR)/lookamb:	lookamb.o
-	cc $(CFLAGS) -o $(DESTDIR)/lookamb lookamb.o
+	$(CC) $(CFLAGS) -o $(DESTDIR)/lookamb lookamb.o
 
 $(DEVDIR)/sundev:	sundev.o devmain.o colortab.o editline.o
-	cc $(CFLAGS) -o $(DEVDIR)/sundev devmain.o sundev.o colortab.o \
+	$(CC) $(CFLAGS) -o $(DEVDIR)/sundev devmain.o sundev.o colortab.o \
 editline.o -lsuntool -lsunwindow -lpixrect $(LIBS)
 
 $(DEVDIR)/sun.com:	suncom.o editline.o
-	cc $(CFLAGS) -o $(DEVDIR)/sun.com suncom.o editline.o
+	$(CC) $(CFLAGS) -o $(DEVDIR)/sun.com suncom.o editline.o
 
 $(DEVDIR)/x11dev:	x11.o x11twind.o colortab.o devmain.o editline.o
-	cc $(CFLAGS) -o $(DEVDIR)/x11dev x11.o x11twind.o devmain.o \
+	$(CC) $(CFLAGS) -o $(DEVDIR)/x11dev x11.o x11twind.o devmain.o \
 colortab.o editline.o -lX11 $(LIBS)
 
 #
@@ -110,48 +111,48 @@ colortab.o editline.o -lX11 $(LIBS)
 #
 
 rtmain.o:	rmain.c
-	cc $(CFLAGS) -DRTRACE -DNICE=4 -DDEFPATH=\":$(LIBDIR)\" -c rmain.c
+	$(CC) $(CFLAGS) -DRTRACE -DNICE=4 -DDEFPATH=\":$(LIBDIR)\" -c rmain.c
 	mv rmain.o rtmain.o
 
 rpmain.o:	rmain.c
-	cc $(CFLAGS) -DRPICT -DNICE=6 -DDEFPATH=\":$(LIBDIR)\" -c rmain.c
+	$(CC) $(CFLAGS) -DRPICT -DNICE=6 -DDEFPATH=\":$(LIBDIR)\" -c rmain.c
 	mv rmain.o rpmain.o
 
 rvmain.o:	rmain.c
-	cc $(CFLAGS) -DRVIEW -DDEFPATH=\":$(LIBDIR)\" -c rmain.c
+	$(CC) $(CFLAGS) -DRVIEW -DDEFPATH=\":$(LIBDIR)\" -c rmain.c
 	mv rmain.o rvmain.o
 
 #
 # Uncomment the following to model dispersion:
 #
 #dielectric.o:	dielectric.c source.h
-#	cc $(CFLAGS) -DDISPERSE -c dielectric.c
+#	$(CC) $(CFLAGS) -DDISPERSE -c dielectric.c
 #
 #color.o:	color.c color.h
-#	cc $(CFLAGS) -DSPEC_RGB -c color.c
+#	$(CC) $(CFLAGS) -DSPEC_RGB -c color.c
 #
 # end of dispersion compiles.
 
 sundev.o:	sundev.c
-	cc $(CFLAGS) -Dsun_init=dinit -c sundev.c
+	$(CC) $(CFLAGS) -Dsun_init=dinit -c sundev.c
 
 x11.o:	x11.c
-	cc $(CFLAGS) -Dx11_init=dinit -c x11.c
+	$(CC) $(CFLAGS) -Dx11_init=dinit -c x11.c
 
 ambient.o:	ambient.c
-	cc $(CFLAGS) -DAMBFLUSH=16 -c ambient.c
+	$(CC) $(CFLAGS) -DAMBFLUSH=16 -c ambient.c
 
 calexpr.o:	calexpr.c calcomp.h
-	cc $(CFLAGS) -DVARIABLE -DFUNCTION -DINCHAN -DRCONST -c calexpr.c
+	$(CC) $(CFLAGS) -DVARIABLE -DFUNCTION -DINCHAN -DRCONST -c calexpr.c
 
 caldefn.o:	caldefn.c calcomp.h
-	cc $(CFLAGS) -DFUNCTION -DREDEFW -c caldefn.c
+	$(CC) $(CFLAGS) -DFUNCTION -DREDEFW -c caldefn.c
 
 calfunc.o:	calfunc.c calcomp.h
-	cc $(CFLAGS) -DVARIABLE -DBIGLIB -c calfunc.c
+	$(CC) $(CFLAGS) -DVARIABLE -DBIGLIB -c calfunc.c
 
 xf.o:	xf.c
-	cc $(CFLAGS) -DINVXF -c xf.c
+	$(CC) $(CFLAGS) -DINVXF -c xf.c
 
 #
 # Include dependencies:
