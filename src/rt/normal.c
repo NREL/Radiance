@@ -183,6 +183,7 @@ register RAY  *r;
 		nd.pdot = .001;			/* non-zero for dirnorm() */
 	multcolor(nd.mcolor, r->pcol);		/* modify material color */
 	transtest = 0;
+	transdist = r->rot;
 						/* get specular component */
 	if ((nd.rspec = m->oargs.farg[3]) > FTINY) {
 		nd.specfl |= SP_REFL;

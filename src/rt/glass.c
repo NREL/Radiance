@@ -68,6 +68,7 @@ register RAY  *r;
 	if (r->rod < 0.0)			/* reorient if necessary */
 		flipsurface(r);
 	transtest = 0;
+	transdist = r->rot;
 						/* get modifiers */
 	raytexture(r, m->omod);
 	pdot = raynormal(pnorm, r);
