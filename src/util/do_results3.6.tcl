@@ -34,10 +34,10 @@ set conv(ras-24,nam)	"Sun 24-bit"
 set conv(ras-24,com)	"ra_pr24 %s %s"
 set conv(ras-24,suf)	.ras
 set conv(PS-bw,nam)	"PostScript B&W"
-set conv(PS-bw,com)	"ra_ps %s %s"
+set conv(PS-bw,com)	"ra_ps -b -C %s %s"
 set conv(PS-bw,suf)	.ps
 set conv(PS-clr,nam)	"PostScript Color"
-set conv(PS-clr,com)	"ra_ps -c %s %s"
+set conv(PS-clr,com)	"ra_ps -c -C %s %s"
 set conv(PS-clr,suf)	.ps
 set conv(tga-bw,nam)	"Targa B&W"
 set conv(tga-bw,com)	"ra_t8 -b %s %s"
