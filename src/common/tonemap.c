@@ -254,7 +254,7 @@ int	len;
 int	wt;
 {
 	static char	funcName[] = "tmAddHisto";
-	int	sum, oldorig, oldlen, horig, hlen;
+	int	oldorig, oldlen, horig, hlen;
 	register int	i, j;
 
 	if (len <= 0)
