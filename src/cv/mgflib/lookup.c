@@ -28,7 +28,7 @@ int	nel;
 	};
 	register int  *hsp;
 
-	nel += nel>>2;			/* 75% occupancy */
+	nel += nel>>1;			/* 66% occupancy */
 	for (hsp = hsiztab; *hsp; hsp++)
 		if (*hsp > nel)
 			break;
@@ -37,6 +37,7 @@ int	nel;
 	tbl->tabl = (LUENT *)calloc(tbl->tsiz, sizeof(LUENT));
 	if (tbl->tabl == NULL)
 		tbl->tsiz = 0;
+	tbl->ndel = 0;
 	return(tbl->tsiz);
 }
 
@@ -60,7 +61,6 @@ char	*key;
 {
 	int  hval, i;
 	register int  ndx;
-	register LUENT	*le;
 	LUENT  *oldtabl;
 					/* look up object */
 	hval = lu_hash(key);
@@ -74,38 +74,61 @@ tryagain:
 					/* table is full, reallocate */
 	oldtabl = tbl->tabl;
 	ndx = tbl->tsiz;
-	if (!lu_init(tbl, ndx)) {	/* no more memory! */
+	i = tbl->ndel;
+	if (!lu_init(tbl, ndx-i)) {	/* no more memory! */
 		tbl->tabl = oldtabl;
 		tbl->tsiz = ndx;
+		tbl->ndel = i;
 		return(NULL);
 	}
 	if (!ndx)
 		goto tryagain;
 	while (ndx--)
-		if (oldtabl[ndx].key != NULL) {
-			le = lu_find(tbl, oldtabl[ndx].key);
-			le->key = oldtabl[ndx].key;
-			le->data = oldtabl[ndx].data;
-		}
+		if (oldtabl[ndx].key != NULL)
+			if (oldtabl[ndx].data != NULL)
+				*lu_find(tbl, oldtabl[ndx].key) = oldtabl[ndx];
+			else if (tbl->freek != NULL)
+				(*tbl->freek)(oldtabl[ndx].key);
 	free((MEM_PTR)oldtabl);
 	goto tryagain;			/* should happen only once! */
 }
 
 
 void
-lu_done(tbl, f)			/* free table and contents */
-LUTAB	*tbl;
-int	(*f)();
+lu_delete(tbl, key)		/* delete a table entry */
+register LUTAB	*tbl;
+char	*key;
+{
+	register LUENT	*le;
+
+	if ((le = lu_find(tbl, key)) == NULL)
+		return;
+	if (le->key == NULL || le->data == NULL)
+		return;
+	if (tbl->freed != NULL)
+		(*tbl->freed)(le->data);
+	le->data = NULL;
+	tbl->ndel++;
+}
+
+
+void
+lu_done(tbl)			/* free table and contents */
+register LUTAB	*tbl;
 {
 	register LUENT	*tp;
 
 	if (!tbl->tsiz)
 		return;
-	if (f != NULL)
-		for (tp = tbl->tabl + tbl->tsiz; tp-- > tbl->tabl; )
-			if (tp->key != NULL)
-				(*f)(tp);
+	for (tp = tbl->tabl + tbl->tsiz; tp-- > tbl->tabl; )
+		if (tp->key != NULL) {
+			if (tbl->freek != NULL)
+				(*tbl->freek)(tp->key);
+			if (tp->data != NULL && tbl->freed != NULL)
+				(*tbl->freed)(tp->data);
+		}
 	free((MEM_PTR)tbl->tabl);
 	tbl->tabl = NULL;
 	tbl->tsiz = 0;
+	tbl->ndel = 0;
 }

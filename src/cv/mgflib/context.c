@@ -29,9 +29,9 @@ C_COLOR		*c_ccolor = &c_uncolor;
 C_MATERIAL	*c_cmaterial = &c_unmaterial;
 C_VERTEX	*c_cvertex = &c_unvertex;
 
-static LUTAB	clr_tab;		/* color lookup table */
-static LUTAB	mat_tab;		/* material lookup table */
-static LUTAB	vtx_tab;		/* vertex lookup table */
+static LUTAB	clr_tab = LU_SINIT(free,free);	/* color lookup table */
+static LUTAB	mat_tab = LU_SINIT(free,free);	/* material lookup table */
+static LUTAB	vtx_tab = LU_SINIT(free,free);	/* vertex lookup table */
 
 
 int
@@ -284,27 +284,18 @@ register char	**av;
 }
 
 
-static void
-freectx(lp)			/* free a context table entry */
-register LUENT	*lp;
-{
-	free((MEM_PTR)lp->key);
-	free((MEM_PTR)lp->data);
-}
-
-
 void
 c_clearall()			/* empty context tables */
 {
 	c_uncolor = c_dfcolor;
 	c_ccolor = &c_uncolor;
-	lu_done(&clr_tab, freectx);
+	lu_done(&clr_tab);
 	c_unmaterial = c_dfmaterial;
 	c_cmaterial = &c_unmaterial;
-	lu_done(&mat_tab, freectx);
+	lu_done(&mat_tab);
 	c_unvertex = c_dfvertex;
 	c_cvertex = &c_unvertex;
-	lu_done(&vtx_tab, freectx);
+	lu_done(&vtx_tab);
 }
 
 
