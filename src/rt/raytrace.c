@@ -98,11 +98,10 @@ register RAY  *r;
 	r->newcset = r->clipset;
 	r->robj = OVOID;
 	r->ro = NULL;
-	r->rot = FHUGE;
+	r->rt = r->rot = FHUGE;
 	r->pert[0] = r->pert[1] = r->pert[2] = 0.0;
 	setcolor(r->pcol, 1.0, 1.0, 1.0);
 	setcolor(r->rcol, 0.0, 0.0, 0.0);
-	r->rt = 0.0;
 }
 
 
