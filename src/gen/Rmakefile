@@ -71,3 +71,5 @@ calfunc.o:	calfunc.c calcomp.h
 gensurf.o:	standard.h fvect.h
 
 fvect.o genworm.o:	fvect.h
+
+xform.o:	otypes.h
