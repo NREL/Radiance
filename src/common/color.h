@@ -80,4 +80,13 @@ typedef float  COLOR[3];	/* red, green, blue */
 #define  aspectval(hl)		atof((hl)+ASPECTSTRL)
 #define  fputaspect(pa,fp)	fprintf(fp,"%s%f\n",ASPECTSTR,pa)
 
+				/* macros for color correction */
+#define  COLCORSTR		"COLORCORR="
+#define  COLCORSTRL		10
+#define  iscolcor(hl)		(!strncmp(hl,COLCORSTR,COLCORSTRL))
+#define  colcorval(cc,hl)	sscanf(hl+COLCORSTRL,"%f %f %f", \
+					&(cc)[RED],&(cc)[GRN],&(cc)[BLU])
+#define  fputcolcor(cc,fp)	fprintf(fp,"%s %f %f %f\n",COLCORSTR, \
+					(cc)[RED],(cc)[GRN],(cc)[BLU])
+
 extern double  ldexp(), atof();
