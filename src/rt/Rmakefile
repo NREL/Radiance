@@ -42,14 +42,14 @@ DLIBS = -lX11
 # Standard object files:
 #
 
-RTOBJS = rtmain.o rtrace.o $(ROBJS)
-RTSRC = rmain.c rtrace.c $(RSRC)
+RTOBJS = rtmain.o rtrace.o $(ROBJS) Version.o
+RTSRC = rmain.c rtrace.c $(RSRC) Version.c
 
-RPOBJS = rpmain.o rpict.o $(ROBJS)
-RPSRC = rmain.c rpict.c $(RSRC)
+RPOBJS = rpmain.o rpict.o $(ROBJS) Version.o
+RPSRC = rmain.c rpict.c $(RSRC) Version.c
 
-RVOBJS = rvmain.o rview.o rv2.o rv3.o $(DOBJS) $(ROBJS)
-RVSRC = rmain.c rview.c rv2.c rv3.c $(DSRC) $(RSRC)
+RVOBJS = rvmain.o rview.o rv2.o rv3.o $(DOBJS) $(ROBJS) Version.o
+RVSRC = rmain.c rview.c rv2.c rv3.c $(DSRC) $(RSRC) Version.c
 
 ROBJS = $(RAYOBJS) $(SURFOBJS) $(MATOBJS) \
 	$(MODOBJS) $(SUPPOBJS)
@@ -76,6 +76,8 @@ SUPPOBJS = zeroes.o calexpr.o caldefn.o func.o noise3.o data.o readfargs.o \
 	malloc.o
 SUPPSRC = zeroes.c calexpr.c caldefn.c func.c noise3.c data.c readfargs.c \
 	malloc.c
+
+HEADERS = ambient.h ray.h data.h otspecial.h source.h
 
 #
 # What this makefile produces:
@@ -191,6 +193,15 @@ nwsdev.o:	nwsdev.c nwsdev.h newsconstants.h
 
 nwsdev.h:	nwsdev.cps newsconstants.h
 	cps nwsdev.cps
+
+#
+# Version module:
+#
+
+Version.c:	VERSION $(RSRC) $(HEADERS) verscript.ed
+	cp VERSION Version.c
+	ls -lLt $(RSRC) $(HEADERS) >> Version.c
+	ed - Version.c < verscript.ed
 
 #
 # Include dependencies:
