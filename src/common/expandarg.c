@@ -26,6 +26,8 @@ int	n;
 	char	*ave[MAXARGEXP];
 	char	**newav;
 					/* check argument */
+	if (n >= *acp)
+		return(0);
 	errno = 0;	
 	if ((*avp)[n][0] == filexpchr) {		/* file name */
 		ace = wordfile(ave, (*avp)[n]+1);
