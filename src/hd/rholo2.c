@@ -348,7 +348,7 @@ getradfile()			/* run rad and get needed variables */
 			pippt = NULL;
 		}
 	if (pippt != NULL)
-		strcpy(pippt, "> /dev/null");	/* nothing to match */
+		strcpy(pippt, "> " NULL_DEVICE);	/* nothing to match */
 	else
 		sprintf(cp, ")[ \t]*=' > %s", tf2);
 #ifdef DEBUG

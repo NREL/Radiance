@@ -8,7 +8,10 @@ static const char RCSid[] = "$Id$";
  *     6/23/93	Added additional buffers for value spreading
  */
 
+#include  "copyright.h"
+
 #include  <signal.h>
+#include  <string.h>
 
 #include  "standard.h"
 #include  "platform.h"
@@ -541,7 +544,7 @@ int  r;
 			greybar[nextrow%obarsize][c] = (*ourbright)(ctmp);
 		}
 					/* and zero output scanline */
-		bzero((char *)scoutbar[nextrow%obarsize], ncols*sizeof(COLOR));
+		memset((char *)scoutbar[nextrow%obarsize], '\0', ncols*sizeof(COLOR));
 		nextrow++;
 	}
 					/* point to top scanline for output */

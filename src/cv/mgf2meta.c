@@ -7,6 +7,7 @@ static const char	RCSid[] = "$Id$";
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include "random.h"
 #include "mgflib/parser.h"
@@ -111,11 +112,7 @@ short	hshtab[HTBLSIZ][4];		/* done line segments */
 
 newlayer()				/* start a new layer */
 {
-#ifdef BSD
-	bzero((char *)hshtab, sizeof(hshtab));
-#else
-	(void)memset((char *)hshtab, 0, sizeof(hshtab));
-#endif
+	(void)memset((char *)hshtab, '\0', sizeof(hshtab));
 	if (++layer >= 16) {
 		mendpage();
 		layer = 0;

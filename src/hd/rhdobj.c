@@ -5,6 +5,8 @@ static const char	RCSid[] = "$Id$";
  * Routines for loading and displaying Radiance objects in rholo with GLX.
  */
 
+#include <string.h>
+
 #include "radogl.h"
 #include "tonemap.h"
 #include "rhdisp.h"
@@ -338,7 +340,7 @@ ssph_compute()			/* compute source set from sphere samples */
 	d = 1.0/ncells;
 	scalecolor(dlightsets->lamb, d);
 done:					/* clear sphere sample array */
-	bzero((void *)ssamp, sizeof(ssamp));
+	memset((void *)ssamp, '\0', sizeof(ssamp));
 	return(ncells);
 }
 
@@ -731,13 +733,13 @@ dobj_unmove()				/* undo last transform change */
 		return(0);
 	}
 					/* hold last transform */
-	bcopy((void *)lastxfav, (void *)txfav,
+	memcpy((void *)txfav, (void *)lastxfav, 
 			(txfac=lastxfac)*sizeof(char *));
 					/* save this transform */
-	bcopy((void *)curobj->xfav, (void *)lastxfav,
+	memcpy((void *)lastxfav, (void *)curobj->xfav, 
 			(lastxfac=curobj->xfac)*sizeof(char *));
 					/* copy back last transform */
-	bcopy((void *)txfav, (void *)curobj->xfav,
+	memcpy((void *)curobj->xfav, (void *)txfav, 
 			(curobj->xfac=txfac)*sizeof(char *));
 					/* set matrices */
 	fullxf(&curobj->xfb, curobj->xfac, curobj->xfav);

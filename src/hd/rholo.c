@@ -5,10 +5,12 @@ static const char	RCSid[] = "$Id$";
  * Radiance holodeck generation controller
  */
 
-#include "rholo.h"
-#include "random.h"
 #include <signal.h>
 #include <sys/stat.h>
+#include <string.h>
+
+#include "rholo.h"
+#include "random.h"
 
 #ifndef FRAGWARN
 #define FRAGWARN	20		/* fragmentation for warning (%) */
@@ -531,8 +533,8 @@ PACKET	*pl;
 	while (pl != NULL) {
 		p = pl; pl = p->next; p->next = NULL;
 		if (p->nr > 0) {		/* add to holodeck */
-			bcopy((void *)p->ra,
-				(void *)hdnewrays(hdlist[p->hd],p->bi,p->nr),
+			memcpy( (void *)hdnewrays(hdlist[p->hd],p->bi,p->nr),
+				(void *)p->ra,
 				p->nr*sizeof(RAYVAL));
 			if (outdev != NULL)	/* display it */
 				disp_packet((PACKHEAD *)p);

@@ -5,6 +5,8 @@ static const char	RCSid[] = "$Id$";
  * Rendering routines for rhpict.
  */
 
+#include <string.h>
+
 #include "holo.h"
 #include "view.h"
 #include "random.h"
@@ -35,7 +37,7 @@ static const char	RCSid[] = "$Id$";
 #define CLR4(f,i)	FL4OP(f,i,&=~)
 #define TGL4(f,i)	FL4OP(f,i,^=)
 #define FL4NELS(n)	(((n)+0x1f)>>5)
-#define CLR4ALL(f,n)	bzero((char *)(f),FL4NELS(n)*sizeof(int32))
+#define CLR4ALL(f,n)	memset((char *)(f),'\0',FL4NELS(n)*sizeof(int32))
 #endif
 
 static int32	*pixFlags;	/* pixel occupancy flags */

@@ -16,6 +16,8 @@ static const char	RCSid[] = "$Id$";
  *	except there is no color mapping, since the tm library is used.
  */
 
+#include <string.h>
+
 #include "standard.h"
 #include "color.h"
 				/* histogram resolution */
@@ -76,7 +78,7 @@ int	ncolors;
 				/* partition color space */
 	cut(ctree, 0, CLRCUBE, 0, ncolors);
 				/* clear histogram */
-	bzero((void *)histo, sizeof(histo));
+	memset((void *)histo, '\0', sizeof(histo));
 				/* return number of colors used */
 	return(ncolors);
 }
@@ -152,7 +154,7 @@ int	c0, c1;
 	}
 					/* split box */
 	*tree = split(box);
-	bcopy((void *)box, (void *)kb, sizeof(kb));
+	memcpy((void *)kb, (void *)box, sizeof(kb));
 						/* do left (lesser) branch */
 	kb[prim(*tree)][1] = part(*tree);
 	cut(tree+(1<<level), level+1, kb, c0, (c0+c1)>>1);

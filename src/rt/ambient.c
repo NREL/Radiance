@@ -9,6 +9,8 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
+#include <string.h>
+
 #include  "platform.h"
 #include  "ray.h"
 #include  "otypes.h"
@@ -562,7 +564,7 @@ newambtree()				/* allocate 8 ambient tree structs */
 	}
 	atp = atfreelist;
 	atfreelist = atp->kid;
-	bzero((char *)atp, 8*sizeof(AMBTREE));
+	memset((char *)atp, '\0', 8*sizeof(AMBTREE));
 	return(atp);
 }
 

@@ -107,7 +107,7 @@ void
 quit(code)			/* quit program */
 int  code;
 {
-#ifndef  NIX
+#ifndef  NON_POSIX /* XXX we don't clean up elsewhere? */
 	headclean();		/* delete header file */
 	pfclean();		/* clean up persist files */
 #endif

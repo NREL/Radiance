@@ -50,7 +50,7 @@ extern struct ODsamp {
 #define CLR4(f,i)	FL4OP(f,i,&=~)
 #define TGL4(f,i)	FL4OP(f,i,^=)
 #define FL4NELS(n)	(((n)+0x1f)>>5)
-#define CLR4ALL(f,n)	bzero((char *)(f),FL4NELS(n)*sizeof(int32))
+#define CLR4ALL(f,n)	memset((char *)(f),'\0',FL4NELS(n)*sizeof(int32))
 #endif
 
 #define OMAXDEPTH	32000			/* maximum depth value */

@@ -5,6 +5,8 @@ static const char RCSid[] = "$Id$";
  * Mesh support routines
  */
 
+#include <string.h>
+
 #include "standard.h"
 #include "octree.h"
 #include "object.h"
@@ -329,7 +331,7 @@ MESHVERT	*vp;
 		goto nomem;
 	if (lvp->key == NULL) {
 		lvp->key = (char *)malloc(sizeof(MCVERT)+sizeof(int32));
-		bcopy((void *)&cv, (void *)lvp->key, sizeof(MCVERT));
+		memcpy((void *)lvp->key, (void *)&cv, sizeof(MCVERT));
 	}
 	if (lvp->data == NULL) {	/* new vertex */
 		register MESHPATCH	*pp;
@@ -345,7 +347,7 @@ MESHVERT	*vp;
 						(void *)mp->patch,
 					(mp->npatches + MPATCHBLKSIZ)*
 						sizeof(MESHPATCH));
-				bzero((void *)(mp->patch + mp->npatches),
+				memset((void *)(mp->patch + mp->npatches), '\0',
 					MPATCHBLKSIZ*sizeof(MESHPATCH));
 			}
 			if (mp->npatches++ >= 1L<<22)

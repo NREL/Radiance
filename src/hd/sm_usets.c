@@ -5,6 +5,8 @@ static const char	RCSid[] = "$Id$";
  * Quadtree-specific set operations with unsorted sets.
  */
 
+#include <string.h>
+
 #include "standard.h"
 #include "sm_flag.h"
 #include "object.h"
@@ -30,7 +32,7 @@ qtclearsetflags()
   if(!qtsetflag)
     return;
 
-    bzero((char *)qtsetflag,FLAG_BYTES(qtallocsets));
+    memset((char *)qtsetflag, '\0', FLAG_BYTES(qtallocsets));
 }
 
 
@@ -55,10 +57,10 @@ OBJECT  *oset;
 		if (qtsetflag == NULL)
 			goto memerr;
 		if(qtallocsets)
-		  bzero((char *)((char *)(qtsetflag)+FLAG_BYTES(qtallocsets)),
+		  memset((char *)((char *)(qtsetflag)+FLAG_BYTES(qtallocsets)), '\0',
 		      FLAG_BYTES(osi+QTSETIBLK)-FLAG_BYTES(qtallocsets));
 		else
-		  bzero((char *)(qtsetflag),FLAG_BYTES(osi +QTSETIBLK));
+		  memset((char *)(qtsetflag), '\0', FLAG_BYTES(osi +QTSETIBLK));
 
 		qtallocsets = osi + QTSETIBLK; 
 	}

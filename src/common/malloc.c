@@ -22,11 +22,8 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  <errno.h>
+#include  <string.h>
 
-#ifndef  BSD
-#define  bcopy(s,d,n)		(void)memcpy(d,s,n)
-#define  bzero(d,n)		(void)memset(d,0,n)
-#endif
 
 #ifdef MSTATS
 #include  <stdio.h>
@@ -182,9 +179,9 @@ unsigned	*np;
 		cptab.ptr = big->ptr;
 		cptab.siz = big->siz;
 		big->siz = 0;			/* clear and copy */
-		bcopy((char *)tab, (char *)(mtab(&cptab)+1),
+		memcpy((char *)(mtab(&cptab)+1), (char *)tab,
 				tablen*sizeof(struct mblk));
-		bzero((char *)(mtab(&cptab)+tablen+1),
+		memset((char *)(mtab(&cptab)+tablen+1), '\0',
 			(mtablen(&cptab)-tablen-1)*sizeof(struct mblk));
 	}			/* next round */
 }
@@ -384,7 +381,7 @@ unsigned	n;
 	if ((p = malloc(n)) == NULL)
 		return(n<=on ? op : NULL);
 	if (on) {
-		bcopy(op, p, n>on ? on : n);
+		memcpy(p, op, n>on ? on : n);
 		free(op);
 	}
 	return(p);

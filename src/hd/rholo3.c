@@ -5,6 +5,8 @@ static const char	RCSid[] = "$Id$";
  * Routines for tracking beam compuatations
  */
 
+#include <string.h>
+
 #include "rholo.h"
 #include "view.h"
 
@@ -92,7 +94,7 @@ register HDBEAMI	*hb;
 		CHECK(p==NULL, SYSTEM, "out of memory in dispbeam");
 	}
 					/* assign packet fields */
-	bcopy((void *)hdbray(b), (void *)packra(p), b->nrm*sizeof(RAYVAL));
+	memcpy((void *)packra(p), (void *)hdbray(b), b->nrm*sizeof(RAYVAL));
 	p->nr = p->nc = b->nrm;
 	for (p->hd = 0; hdlist[p->hd] != hb->h; p->hd++)
 		if (hdlist[p->hd] == NULL)
@@ -166,7 +168,7 @@ int	nents;
 		complist = (PACKHEAD *)malloc(nents*sizeof(PACKHEAD));
 		if (complist == NULL)
 			goto memerr;
-		bcopy((void *)clist, (void *)complist, nents*sizeof(PACKHEAD));
+		memcpy((void *)complist, (void *)clist, nents*sizeof(PACKHEAD));
 		break;
 	case BS_ADD:			/* add to computation set */
 	case BS_MAX:			/* maximum of quantities */
@@ -391,7 +393,7 @@ sortcomplist()			/* fix our list order */
 	else if (listpos) {	/* else sort and merge sublist */
 		list2 = (PACKHEAD *)malloc(listpos*sizeof(PACKHEAD));
 		CHECK(list2==NULL, SYSTEM, "out of memory in sortcomplist");
-		bcopy((void *)complist,(void *)list2,listpos*sizeof(PACKHEAD));
+		memcpy((void *)list2,(void *)complist,listpos*sizeof(PACKHEAD));
 		qsort((void *)list2, listpos, sizeof(PACKHEAD), beamcmp);
 		mergeclists(complist, list2, listpos,
 				complist+listpos, complen-listpos);

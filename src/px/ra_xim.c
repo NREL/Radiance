@@ -35,12 +35,8 @@ static char  radiance_rcsid[] =
 #include <math.h>
 #include <pwd.h>
 #include <sys/types.h>
-#ifdef SYSV
 #include <string.h>
-#else
-#include <strings.h>
 #include <sys/time.h>
-#endif
 
 /* XimHeader.h */
 
@@ -239,7 +235,7 @@ double gamcor;
 	byte gmap[256];
 
 	/* get width, height from radiance file */
-    bzero(xim, sizeof(XimImage));
+    memset(xim, '\0', sizeof(XimImage));
     if (!RadianceGetSize(ifp, &width, &height))
 		return 0;
 	xim->width = xim->bytes_line = width;

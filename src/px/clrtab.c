@@ -5,9 +5,13 @@ static const char	RCSid[] = "$Id$";
  * Simple median-cut color quantization based on colortab.c
  */
 
-#include "standard.h"
+#include "copyright.h"
 
+#include <string.h>
+
+#include "standard.h"
 #include "color.h"
+
 				/* histogram resolution */
 #define NRED		36
 #define NGRN		48
@@ -45,7 +49,7 @@ static unsigned	dist();
 new_histo(n)		/* clear our histogram */
 int	n;
 {
-	bzero((void *)histo, sizeof(histo));
+	memset((void *)histo, '\0', sizeof(histo));
 	return(0);
 }
 
@@ -130,7 +134,7 @@ int	n;
 			return;
 		}
 		N = n;
-		bzero((void *)cerr, 3*N*sizeof(short));
+		memset((void *)cerr, '\0', 3*N*sizeof(short));
 	}
 	err[0] = err[1] = err[2] = 0;
 	for (x = 0; x < n; x++) {
@@ -169,7 +173,7 @@ int	c0, c1;
 	}
 					/* split box */
 	branch = split(box);
-	bcopy((void *)box, (void *)kb, sizeof(kb));
+	memcpy((void *)kb, (void *)box, sizeof(kb));
 						/* do left (lesser) branch */
 	kb[prim(branch)][1] = part(branch);
 	cut(kb, c0, (c0+c1)>>1);

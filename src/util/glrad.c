@@ -11,6 +11,7 @@ static const char	RCSid[] = "$Id$";
 #include <X11/extensions/SGIStereo.h>
 #endif
 #include <ctype.h>
+#include <string.h>
 #include <time.h>
 
 #include "radogl.h"
@@ -830,7 +831,7 @@ VIEW	*vp;
 {
 	FILE	*fp;
 					/* check if already in there */
-	if (!bcmp(&thisview, vwl[currentview].v, sizeof(VIEW))) {
+	if (!memcmp(&thisview, vwl[currentview].v, sizeof(VIEW))) {
 		error(COMMAND, "view already in standard list");
 		return;
 	}

@@ -10,6 +10,8 @@ Paul Heckbert	16 April 82, cleaned up 8 June 86
 Greg Ward	1 March 88, modified for arbitrary picture sizes
 */
 
+#include <string.h>
+
 #include "standard.h"
 #include "ciq.h"
 
@@ -41,7 +43,7 @@ colormap cm;		/* quantization colormap */
     if (synth)
 	n = makecm(nw,&na);	/* analyze histogram and synthesize colormap */
     else {
-	bcopy((void *)cm,(void *)color,sizeof color);
+	memcpy((void *)color,(void *)cm,sizeof color);
 	n = nw;
 	na = 0;
 	for (i=0; i<len; i++) if (hist[i]) na++;
@@ -58,7 +60,7 @@ colormap cm;		/* quantization colormap */
 	draw_nodith(ocm);
     }
 
-    bcopy((void *)color,(void *)cm,sizeof color);
+    memcpy((void *)cm,(void *)color,sizeof color);
     /*endclosest();*/
 }
 

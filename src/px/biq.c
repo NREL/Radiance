@@ -7,6 +7,8 @@ static const char	RCSid[] = "$Id$";
  *	9/19/88
  */
 
+#include <string.h>
+
 #include "standard.h"
 #include "ciq.h"
 
@@ -29,7 +31,7 @@ colormap cm;		/* quantization colormap */
 
     draw_grey(ocm);
 
-    bcopy((void *)color,(void *)cm,sizeof color);
+    memcpy((void *)cm,(void *)color,sizeof color);
 }
 
 /*----------------------------------------------------------------------*/

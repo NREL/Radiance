@@ -5,6 +5,10 @@ static const char	RCSid[] = "$Id$";
  * Compute pixels for glare calculation
  */
 
+#include "copyright.h"
+
+#include <string.h>
+
 #include "rtprocess.h" /* Windows: must come first because of conflicts */
 #include "glare.h"
 
@@ -262,7 +266,7 @@ int	np;
 		fprintf(stderr, "%s: sending %d samples to rtrace...\n",
 				progname, np);
 #endif
-	bzero(pb+6*np, 6*sizeof(float));
+	memset(pb+6*np, '\0', 6*sizeof(float));
 	if (process(&rt_pd, (char *)pb, (char *)pb, 3*sizeof(float)*(np+1),
 			6*sizeof(float)*(np+1)) < 3*sizeof(float)*(np+1)) {
 		fprintf(stderr, "%s: rtrace communication error\n",

@@ -20,7 +20,7 @@ register char  *fname;
 {
 	extern char  *strcpy(), *getrlibpath();
 	FILE  *fp;
-	char  pname[MAXPATH];
+	char  pname[PATH_MAX];
 	register char  *sp, *cp;
 
 	if (fname == NULL)

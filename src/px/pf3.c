@@ -9,6 +9,8 @@ static const char RCSid[] = "$Id$";
 
 #include  "standard.h"
 
+#include  <string.h>
+
 #include  "color.h"
 
 #define  RSCA		1.13	/* square-radius multiplier: sqrt(4/PI) */
@@ -190,8 +192,8 @@ int  ccent, rcent;
 	register int  c, x;
 	register float  *gscan;
 					/* compute ring sums */
-	bzero((char *)ringsum, (orad+1)*sizeof(float));
-	bzero((char *)ringwt, (orad+1)*sizeof(short));
+	memset((char *)ringsum, '\0', (orad+1)*sizeof(float));
+	memset((char *)ringwt, '\0', (orad+1)*sizeof(short));
 	for (r = -orad; r <= orad; r++) {
 		if (rcent+r < 0) continue;
 		if (rcent+r >= nrows) break;

@@ -21,10 +21,10 @@ static const char RCSid[] = "$Id$";
 
 #include  "copyright.h"
 
+#include <string.h>
+
 #include  "ray.h"
-
 #include  "mesh.h"
-
 #include  "tmesh.h"
 
 
@@ -52,7 +52,7 @@ OBJREC	*o;
 					/* get mesh instance */
 	edge_cache.mi = getmeshinst(edge_cache.o = o, IO_ALL);
 					/* clear edge cache */
-	bzero((void *)edge_cache.cache, sizeof(edge_cache.cache));
+	memset((void *)edge_cache.cache, '\0', sizeof(edge_cache.cache));
 }
 
 

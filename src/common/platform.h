@@ -10,35 +10,37 @@ extern "C" {
 
 #ifdef _WIN32
 
-#include <stdio.h>
-#define popen _popen
-#define pclose _pclose
-#include <fcntl.h>  /* _O_BINARY, _O_TEXT */
-#include <io.h>     /* _setmode() */
-#include <stdlib.h> /* _fmode */
+  #include <stdio.h>
+  #define popen _popen
+  #define pclose _pclose
+  #include <fcntl.h>  /* _O_BINARY, _O_TEXT */
+  #include <io.h>     /* _setmode() */
+  #include <stdlib.h> /* _fmode */
 
-#define SET_DEFAULT_BINARY() _fmode = _O_BINARY
-#define SET_FILE_BINARY(fp) _setmode(fileno(fp),_O_BINARY)
-#define SET_FD_BINARY(fd) _setmode(fd,_O_BINARY)
+  #define NON_POSIX
+  #define RHAS_ACCESS
 
-
-
-
-
-
+  #define SET_DEFAULT_BINARY() _fmode = _O_BINARY
+  #define SET_FILE_BINARY(fp) _setmode(fileno(fp),_O_BINARY)
+  #define SET_FD_BINARY(fd) _setmode(fd,_O_BINARY)
 
 #else /* _WIN32 */
 
-/* NOPs on unix */
-#define SET_DEFAULT_BINARY()
-#define SET_FILE_BINARY(fp)
-#define SET_FD_BINARY(fd)
+  #ifdef AMIGA
+    #define NON_POSIX
+  #else
+    /* assumedly posix systems */
+    #define RHAS_GETPWNAM
+    #define RHAS_ACCESS
+    #define RHAS_FORK_EXEC
+  #endif
 
+  /* everybody except Windows */
 
-
-
-
-
+  /* NOPs */
+  #define SET_DEFAULT_BINARY()
+  #define SET_FILE_BINARY(fp)
+  #define SET_FD_BINARY(fd)
 
 #endif /* _WIN32 */
 

@@ -5,6 +5,8 @@ static const char	RCSid[] = "$Id$";
  * Quadtree driver support routines.
  */
 
+#include <string.h>
+
 #include "standard.h"
 #include "rhd_qtree.h"
 				/* quantity of leaves to free at a time */
@@ -81,7 +83,7 @@ int	really;
 	nexttwig = 0;
 	if (!really) {		/* just clear allocated blocks */
 		while (i--)
-			bzero((char *)twigbundle[i], TBUNDLESIZ*sizeof(RTREE));
+			memset((char *)twigbundle[i], '\0', TBUNDLESIZ*sizeof(RTREE));
 		return;
 	}
 				/* else "really" means free up memory */

@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+#include <string.h>
+
 #define  AIMREQT	100		/* required aim success/failure */
 
 #define  SDISTANT	01		/* source distant flag */
@@ -68,7 +70,7 @@ typedef struct {
 
 #define initsrcindex(s)	((s)->sn = (s)->sp = -1, (s)->np = 0)
 
-#define clrpart(pt)	bzero((char *)(pt), MAXSPART/2)
+#define clrpart(pt)	memset((char *)(pt), '\0', MAXSPART/2)
 #define setpart(pt,i,v)	((pt)[(i)>>2] |= (v)<<(((i)&3)<<1))
 #define spart(pt,pi)	((pt)[(pi)>>2] >> (((pi)&3)<<1) & 3)
 

@@ -21,11 +21,7 @@ extern "C" {
 #define	 X_OK		1		/* executable */
 #define	 F_OK		0		/* exists */
 #endif
-					/* string.h equivalents */
-#ifndef BSD
-#define  index			strchr
-#define  rindex			strrchr
-#endif
+
 			/* <unistd.h> is missing on some systems */
 extern off_t	lseek(int, off_t, int);
 

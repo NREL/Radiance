@@ -9,14 +9,10 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include  <stdio.h>
+#include  <string.h>
 
 #include  "mgvars.h"
 
-#ifndef BSD
-#define index	strchr
-#endif
-
-extern char  *index();
 
 static double  xsum, xxsum, ysum, yysum, xysum;
 static double  xmin, xmax, ymin, ymax;
@@ -29,7 +25,7 @@ char  *types;
 {
 	int  i, calcpoint();
 
-	if (index(types, 'h') == NULL)
+	if (strchr(types, 'h') == NULL)
 		gcheader(types);
 	
 	xmin = gparam[XMIN].flags & DEFINED ?

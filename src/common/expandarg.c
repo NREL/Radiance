@@ -9,11 +9,12 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
-#include "rtio.h"
+#include <errno.h>
+#include <string.h>
 
+#include "rtio.h"
 #include "rtmisc.h"
 
-#include <errno.h>
 
 #define MAXARGEXP	512		/* maximum argument expansion */
 
@@ -50,11 +51,11 @@ int	n;
 	if (newav == NULL)
 		return(-1);
 					/* copy preceeding arguments */
-	bcopy((void *)*avp, (void *)newav, n*sizeof(char *));
+	memcpy((void *)newav, (void *)*avp, n*sizeof(char *));
 					/* copy expanded argument */
-	bcopy((void *)ave, (void *)(newav+n), ace*sizeof(char *));
+	memcpy((void *)(newav+n), (void *)ave, ace*sizeof(char *));
 					/* copy trailing arguments + NULL */
-	bcopy((void *)(*avp+n+1), (void *)(newav+n+ace), (*acp-n)*sizeof(char *));
+	memcpy((void *)(newav+n+ace), (void *)(*avp+n+1), (*acp-n)*sizeof(char *));
 					/* free old list */
 	bfree((char *)*avp, (*acp+1)*sizeof(char *));
 					/* assign new list */

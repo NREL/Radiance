@@ -18,14 +18,11 @@ static const char	RCSid[] = "$Id$";
 #include "tmprivat.h"
 #include "tmaptiff.h"
 
-#ifndef BSD
-#define bzero(d,n)		(void)memset(d,0,n)
-#endif
 #define uvflgop(p,uv,op)	((p)->rgbflg[(uv)>>5] op (1L<<((uv)&0x1f)))
 #define isuvset(p,uv)		uvflgop(p,uv,&)
 #define setuv(p,uv)		uvflgop(p,uv,|=)
 #define clruv(p,uv)		uvflgop(p,uv,&=~)
-#define clruvall(p)		bzero((MEM_PTR)(p)->rgbflg,sizeof((p)->rgbflg))
+#define clruvall(p)		memset((MEM_PTR)(p)->rgbflg,'\0',sizeof((p)->rgbflg))
 
 #ifdef NOPROTO
 static MEM_PTR	luv32Init();

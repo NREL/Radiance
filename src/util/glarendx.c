@@ -19,6 +19,8 @@ static const char	RCSid[] = "$Id$";
  *		19 April 1993   R. Compagnon    EPFL (added dgi, brs_gi, ugr)
  */
  
+#include <string.h>
+
 #include "standard.h"
 #include "view.h"
  
@@ -72,13 +74,12 @@ main(argc, argv)
 int	argc;
 char	*argv[];
 {
-	extern char	*rindex();
 	struct named_func	*funp;
 	char	*progtail;
 	int	i;
 					/* get program name */
 	progname = argv[0];
-	progtail = rindex(progname, '/');	/* final component */
+	progtail = strrchr(progname, '/');	/* final component */
 	if (progtail == NULL)
 		progtail = progname;
 	else

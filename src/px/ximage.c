@@ -15,21 +15,15 @@ static const char	RCSid[] = "$Id$";
 #include  <X/cursors/bcross_mask.cursor>
 
 #include  <sys/types.h>
-
+#include  <string.h>
 #include  <ctype.h>
-
 #include  <time.h>
 
 #include  "color.h"
-
 #include  "resolu.h"
-
 #include  "xraster.h"
-
 #include  "view.h"
-
 #include  "pic.h"
-
 #include  "random.h"
 
 #define  controlshift(e)	(((XButtonEvent *)(e))->detail & (ShiftMask|ControlMask))
@@ -674,7 +668,7 @@ picwriteline(y, l)		/* add 8-bit scanline to image */
 int  y;
 pixel  *l;
 {
-	bcopy((void *)l, (void *)ourras->data.bz+BZPixmapSize(xmax,y), BZPixmapSize(xmax,1));
+	memcpy((void *)ourras->data.bz+BZPixmapSize(xmax,y), (void *)l, BZPixmapSize(xmax,1));
 }
 
 

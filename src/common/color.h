@@ -197,11 +197,7 @@ extern COLOR  cblack, cwhite;	/* black (0,0,0) and white (1,1,1) */
 
 #define  rgb_cie(xyz,rgb)	colortrans(xyz,rgb2xyzmat,rgb)
 
-#ifdef BSD
-#define  cpcolormat(md,ms)	bcopy((void *)ms,(void *)md,sizeof(COLORMAT))
-#else
 #define  cpcolormat(md,ms)	memcpy((void *)md,(void *)ms,sizeof(COLORMAT))
-#endif
 
 					/* defined in color.c */
 extern char	*tempbuffer(unsigned int len);

@@ -21,10 +21,6 @@ static const char	RCSid[] = "$Id$";
 double  result[MAXRES];
 int	nres = 0;
 
-#ifndef BSD
-#define  index		strchr
-#endif
-
 jmp_buf  env;
 int  recover = 0;
 
@@ -93,8 +89,8 @@ char  *argv[];
 			eclock++;
 			continue;
 		}
-		if ((cp = index(expr, '=')) != NULL ||
-				(cp = index(expr, ':')) != NULL) {
+		if ((cp = strchr(expr, '=')) != NULL ||
+				(cp = strchr(expr, ':')) != NULL) {
 			if (cp[1])
 				scompile(expr, NULL, 0);
 			else if (*cp == '=') {

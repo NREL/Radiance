@@ -10,6 +10,8 @@ static const char	RCSid[] = "$Id$";
  *     7/28/85
  */
 
+#include <string.h>
+
 #include "standard.h"
 #include "sm_flag.h"
 #include "sm_geom.h"
@@ -68,7 +70,8 @@ qtClearAllFlags()		/* clear all quadtree branch flags */
     return;
   
   /* Clear the node flags*/
-  bzero((char *)quad_flag, (QT_BLOCK(treetop-4)+1)*((QT_BLOCK_SIZE+7)>>3));
+  memset((char *)quad_flag, '\0',
+		  (QT_BLOCK(treetop-4)+1)*((QT_BLOCK_SIZE+7)>>3));
   /* Clear set flags */
   qtclearsetflags();
 }

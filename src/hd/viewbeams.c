@@ -5,6 +5,8 @@ static const char	RCSid[] = "$Id$";
  * Convert view to beam list.
  */
 
+#include <string.h>
+
 #include "rholo.h"
 #include "view.h"
 #include "random.h"
@@ -61,7 +63,7 @@ BEAMLIST	*blp;
 	int	v;
 	register int	h, hd;
 						/* clear section flags */
-	bzero((char *)sectlist, sizeof(sectlist));
+	memset((char *)sectlist, '\0', sizeof(sectlist));
 						/* identify view sections */
 	for (v = 0; v <= MINRES; v++)
 		for (h = 0; h <= MINRES; h++) {

@@ -7,9 +7,10 @@ static const char	RCSid[] = "$Id$";
  *  External symbols declared in rpaint.h
  */
 
-#include  <ctype.h>
-
 #include "copyright.h"
+
+#include  <ctype.h>
+#include  <string.h>
 
 #include  "platform.h"
 #include  "ray.h"
@@ -463,10 +464,10 @@ void  *p;
 			(*dev->comout)(buf);
 			(*dev->comin)(buf, NULL);
 			if (buf[0] == '\0' ||
-					index("yY+1tTnN-0fF", buf[0]) == NULL)
+					strchr("yY+1tTnN-0fF", buf[0]) == NULL)
 				return(0);
 		}
-		ptr->i = index("yY+1tT", buf[0]) != NULL;
+		ptr->i = strchr("yY+1tT", buf[0]) != NULL;
 		return(1);
 	case 'C':			/* color */
 		if (sscanf(str, "%lf %lf %lf", &d0, &d1, &d2) != 3) {

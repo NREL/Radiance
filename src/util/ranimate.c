@@ -15,9 +15,11 @@ static const char RCSid[] = "$Id$";
 
 #include "copyright.h"
 
-#include "standard.h"
 #include <ctype.h>
 #include <sys/stat.h>
+
+#include "standard.h"
+#include "paths.h"
 #include "view.h"
 #include "vars.h"
 #include "netproc.h"
@@ -480,7 +482,7 @@ char	*rfargs;
 			pippt = NULL;
 		}
 	if (pippt != NULL)
-		strcpy(pippt, "> /dev/null");	/* nothing to match */
+		strcpy(pippt, "> " NULL_DEVICE);	/* nothing to match */
 	else {
 		sprintf(cp, ")[ \t]*=' > %s/radset.var", vval(DIRECTORY));
 		cp += 11;		/* point to file name */

@@ -5,11 +5,12 @@ static const char	RCSid[] = "$Id$";
  * Holodeck display process communication
  */
 
+#include <sys/uio.h>
+#include <string.h>
+
 #include "rholo.h"
 #include "rhdisp.h"
 #include "rtprocess.h"
-
-#include <sys/uio.h>
 
 #ifndef HDSUF
 #define HDSUF		".hdi"
@@ -76,7 +77,7 @@ char	*dname;
 	}
 				/* write out hologram grids & octrees */
 	for (i = 0; hdlist[i] != NULL; i++) {
-		bcopy((void *)hdlist[i], buf, sizeof(HDGRID));
+		memcpy(buf, (void *)hdlist[i], sizeof(HDGRID));
 		len = sizeof(HDGRID);
 		n = vdef(GEOMETRY);
 		sfn = i<n ? nvalue(GEOMETRY,i) :

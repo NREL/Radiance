@@ -8,6 +8,7 @@
 extern "C" {
 #endif
 
+#include <string.h>
 #include <sys/types.h>
 #ifdef _WIN32
   /*#include <winsock2.h>*/
@@ -32,11 +33,7 @@ extern "C" {
 #define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
 #define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
-#ifdef BSD
-#define FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
-#else
 #define FD_ZERO(p)	memset((char *)(p), 0, sizeof(*(p)))
-#endif
 #endif
 
 

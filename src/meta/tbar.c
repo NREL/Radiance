@@ -10,6 +10,10 @@ static const char	RCSid[] = "$Id$";
  *      cc -o ../tbar tbar.c tgraph.o primout.o mfio.o syscalls.o misc.o -lm
  */
 
+#ifdef _WIN32
+ #include <process.h> /* getpid() */
+#endif
+
 #include  "tgraph.h"
 
 

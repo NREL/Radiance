@@ -10,7 +10,7 @@ static const char RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  <ctype.h>
-#include  <stdio.h>
+#include  <string.h>
 #include  <stdio.h>
 
 #include  "standard.h"
@@ -181,7 +181,7 @@ int  firstobj, nobjs;
 		free_os(o);		/* free client memory */
 		freeqstr(o->oname);
 		freefargs(&o->oargs);
-		bzero((void *)o, sizeof(OBJREC));
+		memset((void *)o, '\0', sizeof(OBJREC));
 	}
 	clearobjndx();
 					/* free objects off end */

@@ -32,9 +32,6 @@ static const char	RCSid[] = "$Id$";
 
 #define same(a,b) (a==b || (iflag && (a^b)==' ' && isalpha(a)))
 
-#ifdef  BSD
-#define  memcpy(to,from,len)	bcopy(from,to,len)
-#endif
 
 static int     advance(), cclass();
 

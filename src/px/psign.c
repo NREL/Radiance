@@ -7,6 +7,10 @@ static const char	RCSid[] = "$Id$";
  *	7/1/87
  */
 
+#include  "copyright.h"
+
+#include  <string.h>
+
 #include  "standard.h"
 #include  "platform.h"
 #include  "color.h"
@@ -204,7 +208,7 @@ makemap()			/* create the bit map */
 	ourbitmap = (BYTE *)bmalloc(ysiz*xdim);
 	if (ourbitmap == NULL)
 		error(SYSTEM, "Out of memory in makemap");
-	bzero((char *)ourbitmap, ysiz*xdim);
+	memset((char *)ourbitmap, '\0', ysiz*xdim);
 }
 
 

@@ -5,6 +5,9 @@ static const char	RCSid[] = "$Id$";
  *  System calls for meta-file routines
  */
 
+#ifdef _WIN32
+  #include <process.h> /* getpid() */
+#endif
 
 #include  "meta.h"
 
@@ -39,7 +42,7 @@ char  *mode;
 
 {
     char  *mdir, stemp[MAXFNAME];
-#if  UNIX || MAC
+#if  UNIX || MAC || _WIN32
     char  *getenv();
 
     if ((mdir = getenv("MDIR")) == NULL)

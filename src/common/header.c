@@ -25,12 +25,13 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include "copyright.h"
-#include "resolu.h"
 
 #include  <stdio.h>
 #include  <string.h>
 #include  <time.h>
 #include  <ctype.h>
+
+#include "resolu.h"
 
 #define	 MAXLINE	512
 

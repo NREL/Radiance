@@ -5,10 +5,12 @@ static const char	RCSid[] = "$Id$";
  * Neural-Net quantization algorithm based on work of Anthony Dekker
  */
 
+#include "copyright.h"
+
+#include <string.h>
+
 #include "standard.h"
-
 #include "color.h"
-
 #include "random.h"
 
 #ifdef COMPAT_MODE
@@ -182,7 +184,7 @@ int	n;
 			return;
 		}
 		N = n;
-		bzero((char *)cerr, 3*N*sizeof(short));
+		memset((char *)cerr, '\0', 3*N*sizeof(short));
 	}
 	err[0] = err[1] = err[2] = 0;
 	for (x = 0; x < n; x++) {

@@ -5,6 +5,8 @@ static const char	RCSid[] = "$Id$";
  * Radiance holodeck picture generator
  */
 
+#include <string.h>
+
 #include "rholo.h"
 #include "view.h"
 
@@ -219,9 +221,9 @@ int	fn;
 				/* write resolution (standard order) */
 	fprtresolu(hres, vres, stdout);
 				/* prepare image buffers */
-	bzero((char *)mypixel, hres*vres*sizeof(COLOR));
-	bzero((char *)myweight, hres*vres*sizeof(float));
-	bzero((char *)mydepth, hres*vres*sizeof(float));
+	memset((char *)mypixel, '\0', hres*vres*sizeof(COLOR));
+	memset((char *)myweight, '\0', hres*vres*sizeof(float));
+	memset((char *)mydepth, '\0', hres*vres*sizeof(float));
 }
 
 

@@ -4,6 +4,9 @@ static const char	RCSid[] = "$Id$";
 /*
  * sm_samp.c
  */
+
+#include <string.h>
+
 #include "standard.h"
 #include "sm_flag.h"
 #include "rhd_sample.h"
@@ -26,7 +29,7 @@ sClear_all_flags(s)
 SAMP *s;
 {
   if(samp_flag)
-    bzero((char *)samp_flag,FLAG_BYTES(S_MAX_BASE_PT(s)));
+    memset((char *)samp_flag, '\0', FLAG_BYTES(S_MAX_BASE_PT(s)));
 }
 
 sInit(s)

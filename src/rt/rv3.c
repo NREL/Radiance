@@ -9,10 +9,10 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
+#include <string.h>
+
 #include  "ray.h"
-
 #include  "rpaint.h"
-
 #include  "random.h"
 
 #ifndef WFLUSH
@@ -371,7 +371,7 @@ register VIEW  *vp;
 	if ((err = setview(vp)) != NULL) {
 		sprintf(errmsg, "view not set - %s", err);
 		error(COMMAND, errmsg);
-	} else if (bcmp((char *)vp, (char *)&ourview, sizeof(VIEW))) {
+	} else if (memcmp((char *)vp, (char *)&ourview, sizeof(VIEW))) {
 		copystruct(&oldview, &ourview);
 		copystruct(&ourview, vp);
 		newimage();

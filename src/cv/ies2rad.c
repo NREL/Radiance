@@ -549,7 +549,7 @@ char	*dir, *tltspec, *dfltname, *tltid;
 {
 	int	nangles, tlt_type;
 	double	minmax[2];
-	char	buf[MAXPATH], tltname[MAXWORD];
+	char	buf[PATH_MAX], tltname[MAXWORD];
 	FILE	*datin, *datout;
 
 	if (!strcmp(tltspec, TLTNONE)) {
@@ -621,7 +621,7 @@ SRCINFO	*sinf;
 FILE	*in, *out;
 char	*mod, *name;
 {
-	char	buf[MAXPATH], id[MAXWORD];
+	char	buf[PATH_MAX], id[MAXWORD];
 	FILE	*datout;
 	double	mult, bfactor, pfactor, width, length, height, wattage;
 	double	bounds[2][2];

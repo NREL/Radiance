@@ -8,6 +8,7 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include <stdio.h>
+#include <string.h>
 
 #include "random.h"
 #include "color.h"
@@ -115,7 +116,7 @@ char	*file;
 	xbeg = (SCANLINE-xres)/2;
 	ybeg = (NUMSCANS-yres)/2;
 						/* clear output */
-	bzero(sc_frame_arr, sizeof(sc_frame_arr));
+	memset(sc_frame_arr, '\0', sizeof(sc_frame_arr));
 						/* get frame */
 	for (y = yres-1; y >= 0; y--) {
 		if (freadcolrs(scanin, xres, fp) < 0) {

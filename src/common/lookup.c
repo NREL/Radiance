@@ -9,10 +9,12 @@ static const char	RCSid[] = "$Id$";
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
 #include "lookup.h"
 
 #ifdef	NOSTRUCTASS
-#define	 copystruct(d,s)	bcopy((void *)(s),(void *)(d),sizeof(*(d)))
+#define	 copystruct(d,s)	memcpy((void *)(d),(void *)(s),sizeof(*(d)))
 #else
 #define	 copystruct(d,s)	(*(d) = *(s))
 #endif

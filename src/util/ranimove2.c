@@ -11,6 +11,8 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
+#include <string.h>
+
 #include "ranimove.h"
 #include "random.h"
 
@@ -36,7 +38,7 @@ refine_first()			/* initial refinement pass */
 		printf("\tFirst refinement pass...");
 		fflush(stdout);
 	}
-	bzero((void *)esamp, sizeof(int)*hres*vres);
+	memset((void *)esamp, '\0', sizeof(int)*hres*vres);
 	/*
 	 * In our initial pass, we look for lower error pixels from
 	 * the same objects in the previous frame, and copy them here.
@@ -294,7 +296,7 @@ conspicuity()			/* compute conspicuous error map */
 	int	fx, fy;
 					/* reuse previous z-buffer */
 	cerrmap = (float *)zprev;
-	bzero((void *)cerrmap, sizeof(float)*hres*vres);
+	memset((void *)cerrmap, '\0', sizeof(float)*hres*vres);
 	cerrzero = 1;
 					/* compute base pixel frequency */
 	pixel_deg = .5*(hres/vw.horiz + vres/vw.vert);
