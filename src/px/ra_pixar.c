@@ -1,7 +1,11 @@
+#ifndef lint
+static char SCCSid[] = "$SunId$ LBL";
+#endif
+
 /* Copyright 1989 Regents of the University of California */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "@(#)ra_pixar.c 1.2 9/12/89 LBL";
 #endif
 
 /* ra_pixar.c */
@@ -32,6 +36,10 @@ static char SCCSid[] = "$SunId$ LBL";
 #ifdef undef
 #include "color.h"
 #else
+#define			XDECR			1
+#define			YDECR			2
+#define			YMAJOR			4
+
 #define			RED			0
 #define			GRN			1
 #define			BLU			2
