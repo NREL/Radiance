@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -19,52 +19,24 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "otypes.h"
 
+#include  "ambient.h"
+
 #include  "random.h"
 
 #define  OCTSCALE	0.5	/* ceil((valid rad.)/(cube size)) */
-
-extern CUBE  thescene;		/* contains space boundaries */
-
-extern COLOR  ambval;		/* global ambient component */
-extern double  ambacc;		/* ambient accuracy */
-extern int  ambres;		/* ambient resolution */
-extern int  ambdiv;		/* number of divisions for calculation */
-extern int  ambssamp;		/* number of super-samples */
-extern int  ambounce;		/* number of ambient bounces */
-extern char  *amblist[];	/* ambient include/exclude list */
-extern int  ambincl;		/* include == 1, exclude == 0 */
-
-#define  MAXASET	511	/* maximum number of elements in ambient set */
-OBJECT  ambset[MAXASET+1]={0};	/* ambient include/exclude set */
-
-double  maxarad;		/* maximum ambient radius */
-double  minarad;		/* minimum ambient radius */
-
-/*
- * Since we've defined our vectors as float below to save space,
- * watch out for changes in the definitions of VCOPY() and DOT().
- */
-typedef struct ambval {
-	float  pos[3];		/* position in space */
-	float  dir[3];		/* normal direction */
-	int  lvl;		/* recursion level of parent ray */
-	float  weight;		/* weight of parent ray */
-	COLOR  val;		/* computed ambient value */
-	float  rad;		/* validity radius */
-	struct ambval  *next;	/* next in list */
-}  AMBVAL;			/* ambient value */
 
 typedef struct ambtree {
 	AMBVAL  *alist;		/* ambient value list */
 	struct ambtree  *kid;	/* 8 child nodes */
 }  AMBTREE;			/* ambient octree */
 
-typedef struct {
-	float  k;		/* error contribution per sample */
-	COLOR  v;		/* ray sum */
-	int  n;			/* number of samples */
-	short  t, p;		/* theta, phi indices */
-}  AMBSAMP;			/* ambient sample */
+extern CUBE  thescene;		/* contains space boundaries */
+
+#define  MAXASET	511	/* maximum number of elements in ambient set */
+OBJECT  ambset[MAXASET+1]={0};	/* ambient include/exclude set */
+
+double  maxarad;		/* maximum ambient radius */
+double  minarad;		/* minimum ambient radius */
 
 static AMBTREE  atrunk;		/* our ambient trunk node */
 
@@ -73,8 +45,6 @@ static FILE  *ambfp = NULL;	/* ambient file pointer */
 #define  newambval()	(AMBVAL *)bmalloc(sizeof(AMBVAL))
 
 #define  newambtree()	(AMBTREE *)calloc(8, sizeof(AMBTREE))
-
-double  sumambient(), doambient(), makeambient();
 
 
 setambient(afile)			/* initialize calculation */
@@ -145,7 +115,7 @@ register RAY  *r;
 		goto dumbamb;
 
 	if (ambacc <= FTINY) {			/* no ambient storage */
-		if (doambient(acol, r) == 0.0)
+		if (doambient(acol, r, NULL, NULL) == 0.0)
 			goto dumbamb;
 		goto done;
 	}
@@ -258,8 +228,9 @@ COLOR  acol;
 register RAY  *r;
 {
 	AMBVAL  amb;
+	FVECT	gp, gd;
 
-	amb.rad = doambient(acol, r);		/* compute ambient */
+	amb.rad = doambient(acol, r, gp, gd);	/* compute ambient */
 	if (amb.rad == 0.0)
 		return(0.0);
 						/* store it */
@@ -268,195 +239,12 @@ register RAY  *r;
 	amb.lvl = r->rlvl;
 	amb.weight = r->rweight;
 	copycolor(amb.val, acol);
+	VCOPY(amb.gpos, gp);
+	VCOPY(amb.gdir, gd);
 						/* insert into tree */
 	avinsert(&amb, &atrunk, thescene.cuorg, thescene.cusize);
 	avsave(&amb);				/* write to file */
 	return(amb.rad);
-}
-
-
-double
-doambient(acol, r)			/* compute ambient component */
-COLOR  acol;
-register RAY  *r;
-{
-	extern int  ambcmp();
-	extern double  sin(), cos(), sqrt();
-	int  hlist[4];
-	double  phi, xd, yd, zd;
-	double  b, b2;
-	register AMBSAMP  *div;
-	AMBSAMP  dnew;
-	RAY  ar;
-	FVECT  ux, uy;
-	double  arad;
-	int  ndivs, nt, np, ns, ne, i, j;
-	register int  k;
-
-	setcolor(acol, 0.0, 0.0, 0.0);
-					/* set number of divisions */
-	nt = sqrt(ambdiv * r->rweight * 0.5) + 0.5;
-	np = 2 * nt;
-	ndivs = nt * np;
-					/* check first */
-	if (ndivs == 0 || rayorigin(&ar, r, AMBIENT, 0.5) < 0)
-		return(0.0);
-					/* set number of super-samples */
-	ns = ambssamp * r->rweight + 0.5;
-	if (ns > 0) {
-		div = (AMBSAMP *)malloc(ndivs*sizeof(AMBSAMP));
-		if (div == NULL)
-			error(SYSTEM, "out of memory in doambient");
-	} else
-		div = NULL;
-					/* make axes */
-	uy[0] = uy[1] = uy[2] = 0.0;
-	for (k = 0; k < 3; k++)
-		if (r->ron[k] < 0.6 && r->ron[k] > -0.6)
-			break;
-	uy[k] = 1.0;
-	fcross(ux, r->ron, uy);
-	normalize(ux);
-	fcross(uy, ux, r->ron);
-					/* set up urand */
-	hlist[0] = r->rno;
-						/* sample divisions */
-	arad = 0.0;
-	ne = 0;
-	for (i = 0; i < nt; i++) {
-		hlist[1] = i;
-		for (j = 0; j < np; j++) {
-			rayorigin(&ar, r, AMBIENT, 0.5);	/* pretested */
-			hlist[2] = j;
-			hlist[3] = 0;
-			zd = sqrt((i+urand(ilhash(hlist,4)))/nt);
-			hlist[3] = 1;
-			phi = 2.0*PI * (j+urand(ilhash(hlist,4)))/np;
-			xd = cos(phi) * zd;
-			yd = sin(phi) * zd;
-			zd = sqrt(1.0 - zd*zd);
-			for (k = 0; k < 3; k++)
-				ar.rdir[k] = xd*ux[k]+yd*uy[k]+zd*r->ron[k];
-			dimlist[ndims++] = i*np + j + 38813;
-			rayvalue(&ar);
-			ndims--;
-			if (ar.rot < FHUGE)
-				arad += 1.0 / ar.rot;
-			if (div != NULL) {		/* save division */
-				div[ne].k = 0.0;
-				copycolor(div[ne].v, ar.rcol);
-				div[ne].n = 0;
-				div[ne].t = i; div[ne].p = j;
-							/* sum errors */
-				b = bright(ar.rcol);
-				if (i > 0) {		/* from above */
-					b2 = bright(div[ne-np].v) - b;
-					b2 *= b2 * 0.25;
-					div[ne].k += b2;
-					div[ne].n++;
-					div[ne-np].k += b2;
-					div[ne-np].n++;
-				}
-				if (j > 0) {		/* from behind */
-					b2 = bright(div[ne-1].v) - b;
-					b2 *= b2 * 0.25;
-					div[ne].k += b2;
-					div[ne].n++;
-					div[ne-1].k += b2;
-					div[ne-1].n++;
-				}
-				if (j == np-1) {	/* around */
-					b2 = bright(div[ne-(np-1)].v) - b;
-					b2 *= b2 * 0.25;
-					div[ne].k += b2;
-					div[ne].n++;
-					div[ne-(np-1)].k += b2;
-					div[ne-(np-1)].n++;
-				}
-				ne++;
-			} else
-				addcolor(acol, ar.rcol);
-		}
-	}
-	for (k = 0; k < ne; k++) {		/* compute errors */
-		if (div[k].n > 1)
-			div[k].k /= div[k].n;
-		div[k].n = 1;
-	}
-						/* sort the divisions */
-	qsort(div, ne, sizeof(AMBSAMP), ambcmp);
-						/* skim excess */
-	while (ne > ns) {
-		ne--;
-		addcolor(acol, div[ne].v);
-	}
-						/* super-sample */
-	for (i = ns; i > 0; i--) {
-		rayorigin(&ar, r, AMBIENT, 0.5);	/* pretested */
-		hlist[1] = div[0].t;
-		hlist[2] = div[0].p;
-		hlist[3] = 0;
-		zd = sqrt((div[0].t+urand(ilhash(hlist,4)+div[0].n))/nt);
-		hlist[3] = 1;
-		phi = 2.0*PI * (div[0].p+urand(ilhash(hlist,4)+div[0].n))/np;
-		xd = cos(phi) * zd;
-		yd = sin(phi) * zd;
-		zd = sqrt(1.0 - zd*zd);
-		for (k = 0; k < 3; k++)
-			ar.rdir[k] = xd*ux[k]+yd*uy[k]+zd*r->ron[k];
-		dimlist[ndims++] = div[0].t*np + div[0].p + 38813;
-		rayvalue(&ar);
-		ndims--;
-		rayvalue(&ar);
-		if (ar.rot < FHUGE)
-			arad += 1.0 / ar.rot;
-						/* recompute error */
-		copycolor(dnew.v, div[0].v);
-		addcolor(dnew.v, ar.rcol);
-		dnew.n = div[0].n + 1;
-		dnew.t = div[0].t; dnew.p = div[0].p;
-		b2 = bright(dnew.v)/dnew.n - bright(ar.rcol);
-		b2 = b2*b2 + div[0].k*(div[0].n*div[0].n);
-		dnew.k = b2/(dnew.n*dnew.n);
-						/* reinsert */
-		for (k = 0; k < ne-1 && dnew.k < div[k+1].k; k++)
-			copystruct(&div[k], &div[k+1]);
-		copystruct(&div[k], &dnew);
-
-		if (ne >= i) {		/* extract darkest division */
-			ne--;
-			if (div[ne].n > 1) {
-				b = 1.0/div[ne].n;
-				scalecolor(div[ne].v, b);
-				div[ne].n = 1;
-			}
-			addcolor(acol, div[ne].v);
-		}
-	}
-	scalecolor(acol, 1.0/ndivs);
-	if (arad <= FTINY)
-		arad = FHUGE;
-	else
-		arad = (ndivs+ns) / arad / sqrt(r->rweight);
-	if (arad > maxarad)
-		arad = maxarad;
-	else if (arad < minarad)
-		arad = minarad;
-	if (div != NULL)
-		free((char *)div);
-	return(arad);
-}
-
-
-static int
-ambcmp(d1, d2)				/* decreasing order */
-AMBSAMP  *d1, *d2;
-{
-	if (d1->k < d2->k)
-		return(1);
-	if (d1->k > d2->k)
-		return(-1);
-	return(0);
 }
 
 
