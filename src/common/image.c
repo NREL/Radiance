@@ -394,8 +394,10 @@ register char  *s;
 	int  na;
 	int  nvopts = 0;
 
-	while (*s && *s != ' ')
+	while (*s == ' ')
 		s++;
+	if (*s != '-')
+		s = sskip2(s,1);
 	while (*s) {
 		ac = 0;
 		do {
