@@ -48,13 +48,17 @@ marksources()			/* find and mark source objects */
 
 		if (m->otype != MAT_LIGHT &&
 				m->otype != MAT_ILLUM &&
-				m->otype != MAT_GLOW)
+				m->otype != MAT_GLOW &&
+				m->otype != MAT_SPOT)
 			continue;
 	
-		if (m->oargs.nfargs != 3)
+		if (m->oargs.nfargs != (m->otype == MAT_GLOW ? 4 :
+				m->otype == MAT_SPOT ? 7 : 3))
 			objerror(m, USER, "bad # arguments");
 
-		if (m->otype == MAT_GLOW && o->otype != OBJ_SOURCE)
+		if (m->otype == MAT_GLOW &&
+				o->otype != OBJ_SOURCE &&
+				m->oargs.farg[3] <= FTINY)
 			continue;			/* don't bother */
 
 		if (source == NULL)
@@ -67,9 +71,15 @@ marksources()			/* find and mark source objects */
 
 		newsource(&source[nsources], o);
 
-		if (m->otype == MAT_GLOW)
-			source[nsources].sflags |= SSKIP;
-
+		if (m->otype == MAT_GLOW) {
+			source[nsources].sflags |= SPROX;
+			source[nsources].sl.prox = m->oargs.farg[3];
+			if (o->otype == OBJ_SOURCE)
+				source[nsources].sflags |= SSKIP;
+		} else if (m->otype == MAT_SPOT) {
+			source[nsources].sflags |= SSPOT;
+			source[nsources].sl.s = makespot(m);
+		}
 		nsources++;
 	}
 }
@@ -87,7 +97,7 @@ register OBJREC  *so;
 	register int  i;
 	
 	src->sflags = 0;
-	src->nhits = src->ntests = 1;	/* start with hit probability = 1 */
+	src->nhits = 1; src->ntests = 2;	/* start probability = 1/2 */
 	src->so = so;
 
 	switch (so->otype) {
@@ -136,6 +146,23 @@ register OBJREC  *so;
 	default:
 		objerror(so, USER, "illegal material");
 	}
+}
+
+
+SPOT *
+makespot(m)			/* make a spotlight */
+register OBJREC  *m;
+{
+	extern double  cos();
+	register SPOT  *ns;
+
+	if ((ns = (SPOT *)malloc(sizeof(SPOT))) == NULL)
+		error(SYSTEM, "out of memory in makespot");
+	ns->siz = 2.0*PI * (1.0 - cos(PI/180.0/2.0 * m->oargs.farg[3]));
+	VCOPY(ns->aim, m->oargs.farg+4);
+	if ((ns->flen = normalize(ns->aim)) == 0.0)
+		objerror(m, USER, "zero focus vector");
+	return(ns);
 }
 
 
@@ -199,11 +226,22 @@ register int  sn;		/* source number */
 		return(source[sn].ss2);
 
 	else {
+						/* check proximity */
+		if (source[sn].sflags & SPROX &&
+				d > source[sn].sl.prox)
+			return(0.0);
 
 		if (norm != NULL)
 			ddot /= d;
 		else
 			ddot = 1.0;
+						/* check angle */
+		if (source[sn].sflags & SSPOT) {
+			if (source[sn].sl.s->siz < 2.0*PI *
+				(1.0 + DOT(source[sn].sl.s->aim,sr->rdir)))
+				return(0.0);
+			d += source[sn].sl.s->flen;
+		}
 						/* return domega */
 		return(ddot*source[sn].ss2/(d*d));
 	}
@@ -274,6 +312,7 @@ char  *p;			/* data for f */
 	for (sn = 0; sn < nsources; sn++) {
 		srccnt[sn].sno = sn;
 		setcolor(srccnt[sn].val, 0.0, 0.0, 0.0);
+		srccnt[sn].brt = 0.0;
 						/* get source ray */
 		if ((srccnt[sn].dom = srcray(&sr, r, sn)) == 0.0)
 			continue;
@@ -353,7 +392,8 @@ char  *p;			/* data for f */
 				source[r->rsrc].so!=r->ro)
 
 #define  badambient(m, r)	((r->crtype&(AMBIENT|SHADOW))==AMBIENT && \
-				!(r->rtype&REFLECTED)) 	/* hack! */
+				!(r->rtype&REFLECTED) && 	/* hack! */\
+				!(m->otype==MAT_GLOW&&r->rot>m->oargs.farg[3]))
 
 #define  passillum(m, r)	(m->otype==MAT_ILLUM && \
 				!(r->rsrc>=0&&source[r->rsrc].so==r->ro))
