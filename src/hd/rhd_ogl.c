@@ -162,8 +162,8 @@ char  *id;
 #endif
 					/* open display server */
 	ourdisplay = XOpenDisplay(NULL);
-	if (ourdisplay == NULL)
-		error(USER, "cannot open X-windows; DISPLAY variable set?\n");
+	CHECK(ourdisplay==NULL, USER,
+			"cannot open X-windows; DISPLAY variable set?");
 #ifdef STEREO
 	switch (XSGIQueryStereoMode(ourdisplay, ourroot)) {
 	case STEREO_TOP:
@@ -171,7 +171,7 @@ char  *id;
 		break;
 	case STEREO_OFF:
 		error(USER,
-	"wrong video mode: run \"/usr/gfx/setmon -n STR_TOP\" first");
+		"wrong video mode: run \"/usr/gfx/setmon -n STR_TOP\" first");
 	case X_STEREO_UNSUPPORTED:
 		error(USER, "stereo mode not supported on this screen");
 	default:
@@ -180,8 +180,7 @@ char  *id;
 #endif
 					/* find a usable visual */
 	ourvinf = glXChooseVisual(ourdisplay, ourscreen, atlBest);
-	if (ourvinf == NULL)
-		error(USER, "no suitable visuals available");
+	CHECK(ourvinf==NULL, USER, "no suitable visuals available");
 					/* get a context */
 	gctx = glXCreateContext(ourdisplay, ourvinf, NULL, GL_TRUE);
 					/* set gamma and tone mapping */
@@ -213,8 +212,7 @@ char  *id;
 #endif
 		BORWIDTH, ourvinf->depth, InputOutput, ourvinf->visual,
 		CWBackPixel|CWBorderPixel|CWColormap|CWEventMask, &ourwinattr);
-	if (gwind == 0)
-		error(SYSTEM, "cannot create window\n");
+	CHECK(gwind==0, SYSTEM, "cannot create window");
    	XStoreName(ourdisplay, gwind, id);
 					/* set window manager hints */
 	ourxwmhints.flags = InputHint|IconPixmapHint;
@@ -510,8 +508,7 @@ xferdepth()			/* load and clear depth buffer */
 #endif
 		depthbuffer = (GLfloat *)malloc(
 				odev.hres*odev.vres*sizeof(GLfloat));
-		if (depthbuffer == NULL)
-			error(SYSTEM, "out of memory in xferdepth");
+		CHECK(depthbuffer==NULL, SYSTEM, "out of memory in xferdepth");
 	}
 				/* allocate alpha buffer for portals */
 	if (gmPortals)
