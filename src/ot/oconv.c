@@ -39,6 +39,8 @@ int  nfiles = 0;			/* number of object files */
 
 double  mincusize;			/* minimum cube size from resolu */
 
+int  (*addobjnotify[])() = {NULL};	/* new object notifier functions */
+
 
 main(argc, argv)		/* convert object files to an octree */
 int  argc;
