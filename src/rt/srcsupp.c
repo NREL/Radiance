@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -119,8 +119,7 @@ OBJREC  *so;
 	}
 	src->srad = sqrt(src->srad);
 						/* compute size vectors */
-	if (f->nv == 4 || (f->nv == 5 &&	/* parallelogram case */
-			dist2(VERTEX(f,0),VERTEX(f,4)) <= FTINY*FTINY))
+	if (f->nv == 4)				/* parallelogram case */
 		for (j = 0; j < 3; j++) {
 			src->ss[SU][j] = .5*(VERTEX(f,1)[j]-VERTEX(f,0)[j]);
 			src->ss[SV][j] = .5*(VERTEX(f,3)[j]-VERTEX(f,0)[j]);
