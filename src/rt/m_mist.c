@@ -44,6 +44,10 @@ static char SCCSid[] = "$SunId$ LBL";
  *  scattering.  A value approaching 1 indicates strong forward scattering.
  */
 
+#ifndef  MAXSLIST
+#define  MAXSLIST	32	/* maximum sources to check */
+#endif
+
 #define RELAYDELIM	'>'		/* relay delimiter character */
 
 extern COLOR  cextinction;		/* global coefficient of extinction */

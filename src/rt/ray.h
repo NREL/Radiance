@@ -16,8 +16,6 @@
 
 #define  MAXDIM		32	/* maximum number of dimensions */
 
-#define  MAXSLIST	32	/* maximum sources to check */
-
 				/* ray type flags */
 #define  PRIMARY	01		/* original ray */
 #define  SHADOW		02		/* ray to light source */
