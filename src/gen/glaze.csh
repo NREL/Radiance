@@ -4,6 +4,8 @@
 # Complex glazing model (goes with glaze1.cal and glaze2.cal)
 #
 # Oct. 2002 Greg Ward
+# Funding for this development generously provided by Visarc, Inc.
+# (http://www.vizarc.com)
 #
 
 #################################################################

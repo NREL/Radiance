@@ -9,7 +9,7 @@
 	spat out for dual-glazings by glaze.csh.
 }
 				{ Fresnel approximation }
-fresne = exp(-6*abs(Rdot)) - exp(-6);
+fresne = exp(-5.85*abs(Rdot)) - exp(-5.85);
 fr(r) = r + fresne*(1 - r);
 ft(t) = t*(1 - fresne);
 				{ glass reflectance and transmittance }
