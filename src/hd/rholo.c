@@ -33,6 +33,8 @@ time_t	starttime;		/* time we got started */
 time_t	endtime;		/* time we should end by */
 time_t	reporttime;		/* time for next report */
 
+long	maxdisk;		/* maximum file space (bytes) */
+
 int	rtargc = 1;		/* rtrace command */
 char	*rtargv[128] = {"rtrace", NULL};
 
@@ -132,6 +134,11 @@ initrholo()			/* get our holodeck running */
 		disp_open(outdev);
 	else if (ncprocs > 0)			/* else use global ray feed */
 		init_global();
+						/* record disk space limit */
+	if (!vdef(DISKSPACE))
+		maxdisk = 0;
+	else
+		maxdisk = 1024.*1024.*vflt(DISKSPACE));
 						/* record end time */
 	if (!vdef(TIME) || vflt(TIME) <= FTINY)
 		endtime = 0;
@@ -198,14 +205,17 @@ rholo()				/* holodeck main loop */
 	if (ncprocs <= 0)
 		return(1);
 					/* check file size */
-	if ((l = 1024.*1024.*vflt(DISKSPACE)) > 0 &&
-			hdfiluse(hdlist[0]->fd, 0) + hdmemuse(0) >= l)
+	if (maxdisk > 0 && hdfiluse(hdlist[0]->fd,0)+hdmemuse(0) >= maxdisk) {
+		error(WARNING, "file limit exceeded");
 		return(0);
+	}
 					/* check time */
 	if (endtime > 0 || reporttime > 0)
 		t = time(NULL);
-	if (endtime > 0 && t >= endtime)
+	if (endtime > 0 && t >= endtime) {
+		error(WARNING, "time limit exceeded");
 		return(0);
+	}
 	if (reporttime > 0 && t >= reporttime)
 		report(t);
 					/* get packets to process */
@@ -289,14 +299,6 @@ register HDGRID	*gp;
 			error(SYSTEM, "out of memory");
 		sprintf(vval(OCTREE), "%s.oct", froot);
 		vdef(OCTREE)++;
-	}
-	if (!vdef(DISKSPACE)) {
-		sprintf(errmsg,
-			"no %s setting, assuming 100 Mbytes available",
-				vnam(DISKSPACE));
-		error(WARNING, errmsg);
-		vval(DISKSPACE) = "100";
-		vdef(DISKSPACE)++;
 	}
 	if (!vdef(OBSTRUCTIONS)) {
 		vval(OBSTRUCTIONS) = "T";
