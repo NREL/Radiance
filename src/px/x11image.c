@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -55,7 +55,7 @@ int  fast = 0;				/* keep picture in Pixmap? */
 char	*dispname = NULL;		/* our display name */
 
 Window  wind = 0;			/* our output window */
-unsigned long  ourblack=1, ourwhite=0;	/* black and white for this visual */
+unsigned long  ourblack=0, ourwhite=1;	/* black and white for this visual */
 Font  fontid;				/* our font */
 
 int  maxcolors = 0;			/* maximum colors */
@@ -240,6 +240,7 @@ init()			/* get data and open window */
 			CWBackPixel|CWBorderPixel|CWColormap, &ourwinattr);
 	if (wind == 0)
 		quiterr("cannot create window");
+	XFreeColormap(thedisplay, ourwinattr.colormap);
 	width = xmax;
 	height = ymax;
 	ourgc = XCreateGC(thedisplay, wind, 0, 0);
@@ -427,9 +428,13 @@ static char  vistype[][12] = {
 	} else if (ourvis.class == PseudoColor) {
 		ourblack = BlackPixel(thedisplay,ourscreen);
 		ourwhite = WhitePixel(thedisplay,ourscreen);
+		if ((ourblack|ourwhite) & ~255L) {
+			ourblack = 0;
+			ourwhite = 1;
+		}
 	} else {
 		ourblack = 0;
-		ourwhite = ~0;
+		ourwhite = ourvis.red_mask|ourvis.green_mask|ourvis.blue_mask;
 	}
 	XFree((char *)xvi);
 }
