@@ -10,12 +10,10 @@ static char SCCSid[] = "$SunId$ SGI";
  */
 
 #include "standard.h"
-#include "rhd_qtree.h"
-
 #include  <X11/Xlib.h>
 #include  <X11/cursorfont.h>
 #include  <X11/Xutil.h>
-
+#include "rhd_qtree.h"
 #include  "x11icon.h"
 
 #ifndef RAYQLEN
