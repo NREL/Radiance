@@ -131,20 +131,20 @@ proc helpopen fname {			# open the named help file
 	set curhelp(fid) [open $fname r]
 	if {! [file exists $ifile] ||
 			[file mtime $fname] > [file mtime $ifile]} {
-		set curhelp(catlist) {}
+		set helpindex(catlist) {}
 		while {[gets $curhelp(fid) li] >= 0} {
 			if [regexp -nocase {^\.([A-Z][A-Z0-9]*)\.([A-Z][A-Z0-9]*)$} \
 					$li dummy cat top] {
 				lappend helpindex([string toupper $cat]) $top
 				set helpindex([string toupper $cat,$top]) \
 						[tell $curhelp(fid)]
-				if {[lsearch -exact $curhelp(catlist) $cat] < 0} {
-					lappend curhelp(catlist) $cat
+				if {[lsearch -exact $helpindex(catlist) $cat] < 0} {
+					lappend helpindex(catlist) $cat
 				}
 			}
 		}
 		if {! [catch {set fi [open $ifile w]}]} {
-			writevars $fi {curhelp(catlist) helpindex}
+			writevars $fi helpindex
 			close $fi
 			catch {exec chmod 666 $ifile}
 		}
@@ -152,7 +152,7 @@ proc helpopen fname {			# open the named help file
 		source $ifile
 	}
 	.helpwin.but.catb.m delete 0 last
-	foreach cat $curhelp(catlist) {
+	foreach cat $helpindex(catlist) {
 		.helpwin.but.catb.m add command -label $cat \
 				-command "helphist new $cat intro"
 	}
@@ -309,7 +309,7 @@ proc helpsearch word {		# search for occurances of the given word
 		return 0
 	}
 	set nmatches 0
-	set cat [lindex $curhelp(catlist) 0]
+	set cat [lindex $helpindex(catlist) 0]
 	set top [lindex $helpindex([string toupper $cat]) 0]
 	set startpos [tell $curhelp(fid)]
 	seek $curhelp(fid) $helpindex([string toupper $cat,$top])
