@@ -47,8 +47,8 @@
 extern int	what2do;		/* desired adjustments */
 
 extern double	ldmax;			/* maximum output luminance */
-extern double	ldmin;			/* minimum output luminance */
-extern double	Bldmin, Bldmax;		/* Bl(ldmin) and Bl(ldmax) */
+extern double	lddyn;			/* display dynamic range */
+extern double	Bldmin, Bldmax;		/* Bl(ldmax/lddyn) and Bl(ldmax) */
 
 extern char	*progname;		/* global argv[0] */
 
@@ -60,6 +60,8 @@ extern double	inpexp;			/* input exposure value */
 
 #define	plum(clr)	((*lumf)(clr,0)/inpexp)
 #define slum(clr)	((*lumf)(clr,1)/inpexp)
+
+#define ldmin		(ldmax/lddyn)
 
 extern COLOR	*fovimg;		/* foveal (1 degree) averaged image */
 extern short	fvxr, fvyr;		/* foveal image resolution */

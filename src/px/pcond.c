@@ -12,13 +12,13 @@ static char SCCSid[] = "$SunId$ LBL";
 
 
 #define	LDMAX		100		/* default max. display luminance */
-#define LDMINF		0.01		/* default min. display lum. factor */
+#define LDDYN		32		/* default dynamic range */
 
 int	what2do = 0;			/* desired adjustments */
 
 double	ldmax = LDMAX;			/* maximum output luminance */
-double	ldmin = 0.;			/* minimum output luminance */
-double	Bldmin, Bldmax;			/* Bl(ldmin) and Bl(ldmax) */
+double	lddyn = LDDYN;			/* display dynamic range */
+double	Bldmin, Bldmax;			/* Bl(ldmax/lddyn) and Bl(ldmax) */
 
 char	*progname;			/* global argv[0] */
 
@@ -115,17 +115,17 @@ char	*argv[];
 			if (i+1 >= argc) goto userr;
 			cwarpfile = argv[++i];
 			break;
-		case 't':
+		case 'u':
 			if (i+1 >= argc) goto userr;
 			ldmax = atof(argv[++i]);
 			if (ldmax <= FTINY)
 				goto userr;
 			break;
-		case 'b':
-			if (i+1 >= argc) goto userr;
-			ldmin = atof(argv[++i]);
-			break;
 		case 'd':
+			if (i+1 >= argc) goto userr;
+			lddyn = atof(argv[++i]);
+			break;
+		case 'x':
 			if (i+1 >= argc) goto userr;
 			if ((mapfp = fopen(argv[++i], "w")) == NULL) {
 				fprintf(stderr,
@@ -146,14 +146,7 @@ char	*argv[];
 	}
 	if (outprims == stdprims & inprims != stdprims)
 		outprims = inprims;
-	if (ldmin <= FTINY)
-		ldmin = ldmax*LDMINF;
-	else if (ldmin >= ldmax) {
-		fprintf(stderr, "%s: Ldmin (%f) >= Ldmax (%f)!\n", progname,
-				ldmin, ldmax);
-		exit(1);
-	}
-	Bldmin = Bl(ldmin);
+	Bldmin = Bl(ldmax/lddyn);
 	Bldmax = Bl(ldmax);
 	if (i >= argc || i+2 < argc)
 		goto userr;
@@ -179,7 +172,7 @@ char	*argv[];
 		putmapping(mapfp);
 	exit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-{h|a|v|s|c|l|w}[+-]][-i ffrac][-e ev][-p xr yr xg yg xb yb xw yw|-f mbf.cal|-m rgb.cwp][-t Ldmax][-b Ldmin][-d mapfile] inpic [outpic]\n",
+	fprintf(stderr, "Usage: %s [-{h|a|v|s|c|l|w}[+-]][-i ffrac][-e ev][-p xr yr xg yg xb yb xw yw|-f mbf.cal|-m rgb.cwp][-u Ldmax][-d Lddyn][-x mapfile] inpic [outpic]\n",
 			progname);
 	exit(1);
 #undef bool
