@@ -17,6 +17,7 @@ extern struct driver  *aed_init(), *x_init();
 struct device  devtable[] = {			/* supported devices */
 	{"aed", "AED 512 color graphics terminal", aed_init},
 	{"sundev", "SunView color or greyscale screen", comm_init},
-	{"X", "X-window color or greyscale display", x_init},
+	{"X", "X10 color or greyscale display", x_init},
+	{"x11dev", "X11 color or greyscale display", comm_init},
 	{0}					/* terminator */
 };
