@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -65,11 +65,17 @@ typedef struct font {
 	struct font  *next;		/* next font in list */
 }  FONT;
 
+typedef struct {
+	char  **t;			/* text array */
+	FVECT  right, down;		/* right and down unit vectors */
+	FONT  *f;			/* our font */
+}  TEXT;
+
 extern char  *fgetword();
 
-extern GLYPH  *getglyph();
+TEXT  *gettext();
 
-extern FONT  *getfont();
+FONT  *getfont();
 
 static FONT  *fontlist = NULL;		/* our font list */
 
@@ -78,35 +84,15 @@ text(m, r)
 register OBJREC  *m;
 RAY  *r;
 {
-	double  v[3], y, x;
-	int  col, lno;
+	double  v[3];
 	int  foreground;
-	GLYPH  *g;
-	register double  *ap;
-
-	if (m->oargs.nsargs - tndx(m) < 1 ||
-			m->oargs.nfargs != (m->otype == PAT_BTEXT ? 11 :
-					m->otype == PAT_CTEXT ? 15 : 9))
-		objerror(m, USER, "bad # arguments");
-
-				/* first, discover position in text */
-	ap = m->oargs.farg;
+				/* get transformed position */
 	if (r->rox != NULL)
 		multp3(v, r->rop, r->rox->b.xfm);
 	else
 		VCOPY(v, r->rop);
-	v[0] -= ap[0];
-	v[1] -= ap[1];
-	v[2] -= ap[2];
-	col = x = DOT(v, ap+3) / DOT(ap+3, ap+3);
-	lno = y = DOT(v, ap+6) / DOT(ap+6, ap+6);
-	x -= col;
-	y = (lno+1) - y;
-				/* get the font character, check it */
-	if ((g = getglyph(m, lno, col)) == NULL)
-		foreground = 0;
-	else
-		foreground = inglyph(x, y, g);
+				/* check if we are within a text glyph */
+	foreground = intext(v, m);
 				/* modify */
 	if (m->otype == MIX_TEXT) {
 		OBJECT  omod;
@@ -117,88 +103,155 @@ RAY  *r;
 			sprintf(errmsg, "undefined modifier \"%s\"", modname);
 			objerror(m, USER, errmsg);
 		}
-		raymixture(r, omod, OVOID, 1.0);
+		raytexture(r, omod);
 	} else if (m->otype == PAT_BTEXT) {
 		if (foreground)
-			scalecolor(r->pcol, ap[9]);
+			scalecolor(r->pcol, m->oargs.farg[9]);
 		else
-			scalecolor(r->pcol, ap[10]);
+			scalecolor(r->pcol, m->oargs.farg[10]);
 	} else { /* PAT_CTEXT */
 		COLOR  cval;
 		if (foreground)
-			setcolor(cval, ap[9], ap[10], ap[11]);
+			setcolor(cval, m->oargs.farg[9],
+					m->oargs.farg[10],
+					m->oargs.farg[11]);
 		else
-			setcolor(cval, ap[12], ap[13], ap[14]);
+			setcolor(cval, m->oargs.farg[12],
+					m->oargs.farg[13],
+					m->oargs.farg[14]);
 		multcolor(r->pcol, cval);
 	}
 }
 
 
-GLYPH *
-getglyph(tm, lno, col)		/* get a glyph from a text description */
+TEXT *
+gettext(tm)			/* get text structure for material */
 register OBJREC  *tm;
-int  lno;
-int  col;
 {
+#define  R	(tm->oargs.farg+3)
+#define  D	(tm->oargs.farg+6)
 	extern char  *strcpy(), *fgets();
+	FVECT  DxR;
+	double  d;
 	FILE  *fp;
 	char  linbuf[512];
+	register TEXT  *t;
 	register int  i;
-	register char  **txt;
 	register char  *s;
 
-	if (lno < 0 || col < 0)
-		return(NULL);
-	if (tm->os == NULL) {
-		txt = (char **)malloc(2*sizeof(char **));
-		if (txt == NULL)
-			goto memerr;
-		if (tm->oargs.nsargs - tndx(tm) > 1) {	/* single line */
-			s = linbuf;
-			for (i = tndx(tm)+1; i < tm->oargs.nsargs; i++) {
-				strcpy(s, tm->oargs.sarg[i]);
-				s += strlen(s);
-				*s++ = ' ';
-			}
-			*--s = '\0';
-			txt[0] = savqstr(linbuf);
-			txt[1] = NULL;
-		} else {				/* text file */
-			if ((s = getpath(tm->oargs.sarg[tndx(tm)],
-					libpath, R_OK)) == NULL) {
-				sprintf(errmsg, "cannot find text file \"%s\"",
-						tm->oargs.sarg[tndx(tm)]);
-				error(USER, errmsg);
-			}
-			if ((fp = fopen(s, "r")) == NULL) {
-				sprintf(errmsg, "cannot open text file \"%s\"",
-						s);
-				error(SYSTEM, errmsg);
-			}
-			for (i=0; fgets(linbuf,sizeof(linbuf),fp)!=NULL; i++) {
-				s = linbuf + strlen(linbuf) - 1;
-				if (*s == '\n')
-					*s = '\0';
-				txt=(char **)realloc(txt,(i+2)*sizeof(char **));
-				if (txt == NULL)
-					goto memerr;
-				txt[i] = savqstr(linbuf);
-			}
-			txt[i] = NULL;
-			fclose(fp);
+	if ((t = (TEXT *)tm->os) != NULL)
+		return(t);
+						/* check arguments */
+	if (tm->oargs.nsargs - tndx(tm) < 1 ||
+			tm->oargs.nfargs != (tm->otype == PAT_BTEXT ? 11 :
+					tm->otype == PAT_CTEXT ? 15 : 9))
+		objerror(tm, USER, "bad # arguments");
+	if ((t = (TEXT *)malloc(sizeof(TEXT))) == NULL)
+		goto memerr;
+						/* compute vectors */
+	fcross(DxR, D, R);
+	fcross(t->right, DxR, D);
+	d = DOT(D,D) / DOT(t->right,t->right);
+	for (i = 0; i < 3; i++)
+		t->right[i] *= d;
+	fcross(t->down, R, DxR);
+	d = DOT(R,R) / DOT(t->down,t->down);
+	for (i = 0; i < 3; i++)
+		t->down[i] *= d;
+						/* get text */
+	t->t = (char **)malloc(2*sizeof(char **));
+	if (t->t == NULL)
+		goto memerr;
+	if (tm->oargs.nsargs - tndx(tm) > 1) {	/* single line */
+		s = linbuf;
+		for (i = tndx(tm)+1; i < tm->oargs.nsargs; i++) {
+			strcpy(s, tm->oargs.sarg[i]);
+			s += strlen(s);
+			*s++ = ' ';
 		}
-		tm->os = (char *)txt;
+		*--s = '\0';
+		t->t[0] = savqstr(linbuf);
+		t->t[1] = NULL;
+	} else {				/* text file */
+		if ((s = getpath(tm->oargs.sarg[tndx(tm)],
+				libpath, R_OK)) == NULL) {
+			sprintf(errmsg, "cannot find text file \"%s\"",
+					tm->oargs.sarg[tndx(tm)]);
+			error(USER, errmsg);
+		}
+		if ((fp = fopen(s, "r")) == NULL) {
+			sprintf(errmsg, "cannot open text file \"%s\"",
+					s);
+			error(SYSTEM, errmsg);
+		}
+		for (i=0; fgets(linbuf,sizeof(linbuf),fp)!=NULL; i++) {
+			s = linbuf + strlen(linbuf) - 1;
+			if (*s == '\n')
+				*s = '\0';
+			t->t=(char **)realloc((char *)t->t,
+					(i+2)*sizeof(char **));
+			if (t->t == NULL)
+				goto memerr;
+			t->t[i] = savqstr(linbuf);
+		}
+		t->t[i] = NULL;
+		fclose(fp);
 	}
-	txt = (char **)tm->os;
-	for (i = 0; i < lno; i++)
-		if (txt[i] == NULL)
-			break;
-	if ((s = txt[i]) == NULL || col >= strlen(s))
-		return(NULL);
-	else
-		return(getfont(tm->oargs.sarg[fndx(tm)])->fg[s[col]]);
+						/* get the font */
+	t->f = getfont(tm->oargs.sarg[fndx(tm)]);
+						/* we're done */
+	tm->os = (char *)t;
+	return(t);
 memerr:
-	error(SYSTEM, "out of memory in getglyph");
+	error(SYSTEM, "out of memory in gettext");
+#undef  R
+#undef  D
+}
+
+
+freetext(m)			/* free text structures associated with m */
+OBJREC  *m;
+{
+	register TEXT  *tp;
+	register int  i;
+
+	tp = (TEXT *)m->os;
+	if (tp == NULL)
+		return;
+	for (i = 0; tp->t[i] != NULL; i++)
+		freeqstr(tp->t[i]);
+	free((char *)tp->t);
+	free((char *)tp);
+	m->os = NULL;
+}
+
+
+intext(p, m)			/* check to see if p is in text glyph */
+FVECT  p;
+register OBJREC  *m;
+{
+	register TEXT  *tp;
+	register int  i;
+	double  v[3], y, x;
+	int  col, lno;
+				/* first, compute position in text */
+	v[0] = p[0] - m->oargs.farg[0];
+	v[1] = p[1] - m->oargs.farg[1];
+	v[2] = p[2] - m->oargs.farg[2];
+	col = x = DOT(v, tp->right);
+	lno = y = DOT(v, tp->down);
+	if (x < 0.0 || y < 0.0)
+		return(0);
+	x -= (double)col;
+	y = (lno+1) - y;
+				/* get the font character */
+	tp = gettext(m);
+	for (i = 0; i < lno; i++)
+		if (tp->t[i] == NULL)
+			return(0);
+	if (col >= strlen(tp->t[i]))
+		return(0);
+	return(inglyph(x, y, tp->f->fg[tp->t[i][col]]));
 }
 
 
@@ -286,7 +339,7 @@ GLYPH  *gl;
 	int  xlb, ylb;
 	register GLYPH  *p0, *p1;
 
-	if (x < 0.0 || y < 0.0)
+	if (gl == NULL)
 		return(0);
 	x *= 256.0;			/* get glyph coordinates */
 	y *= 256.0;
