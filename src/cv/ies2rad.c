@@ -20,6 +20,48 @@ static char SCCSid[] = "$SunId$ LBL";
 					/* floating comparisons */
 #define FTINY		1e-6
 #define FEQ(a,b)	((a)<=(b)+FTINY&&(a)>=(b)-FTINY)
+					/* keywords */
+#define MAGICID		"IESNA"
+#define LMAGICID	5
+#define FIRSTREV	86
+#define LASTREV		95
+
+#define D86		0		/* keywords defined in LM-63-1986 */
+
+#define K_TST		0
+#define K_MAN		1
+#define K_LMC		2
+#define K_LMN		3
+#define K_LPC		4
+#define K_LMP		5
+#define K_BAL		6
+#define K_MTC		7
+#define K_OTH		8
+#define K_SCH		9
+#define K_MOR		10
+#define K_BLK		11
+#define K_EBK		12
+
+#define D91		((1L<<13)-1)	/* keywords defined in LM-63-1991 */
+
+#define K_LMG		13
+
+#define D95		((1L<<14)-1)	/* keywords defined in LM-63-1995 */
+
+char	k_kwd[][20] = {"TEST", "MANUFAC", "LUMCAT", "LUMINAIRE", "LAMPCAT",
+			"LAMP", "BALLAST", "MAINTCAT", "OTHER", "SEARCH",
+			"MORE", "BLOCK", "ENDBLOCK", "LUMINOUSGEOMETRY"};
+
+long k_defined[] = {D86, D86, D86, D86, D86, D91, D91, D91, D91, D95};
+
+int	filerev = FIRSTREV;
+
+#define keymatch(i,s)	(k_defined[filerev-FIRSTREV]&1L<<(i) &&\
+				k_match(k_kwd[i],s))
+
+#define checklamp(s)	(!(k_defined[filerev-FIRSTREV]&(1<<K_LMP|1<<K_LPC)) ||\
+				keymatch(K_LMP,s) || keymatch(K_LPC,s))
+
 					/* tilt specs */
 #define TLTSTR		"TILT="
 #define TLTSTRLEN	5
@@ -41,6 +83,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define T_RAD		".rad"
 #define T_DST		".dat"
 #define T_TLT		"%.dat"
+#define T_OCT		".oct"
 					/* shape types */
 #define RECT		1
 #define DISK		2
@@ -65,13 +108,16 @@ float	defcolor[3] = {1.,1.,1.};	/* default lamp color */
 float	*lampcolor = defcolor;		/* pointer to current lamp color */
 double	multiplier = 1.0;		/* multiplier for all light sources */
 char	units[64] = "meters";		/* output units */
+int	instantiate = 0;		/* instantiate geometry */
 double	illumrad = 0.0;			/* radius for illum sphere */
 
 typedef struct {
+	int	isillum;			/* do as illum */
 	int	type;				/* RECT, DISK, SPHERE */
+	double	mult;				/* candela multiplier */
 	double	w, l, h;			/* width, length, height */
 	double	area;				/* max. projected area */
-} SHAPE;				/* a source shape */
+} SRCINFO;				/* a source shape (units=meters) */
 
 int	gargc;				/* global argc (minus filenames) */
 char	**gargv;			/* global argv */
@@ -162,8 +208,9 @@ char	*argv[];
 			break;
 		case 'i':		/* illum */
 			illumrad = atof(argv[++i]);
-			if (illumrad < MINDIM)
-				illumrad = MINDIM;
+			break;
+		case 'g':		/* instatiate geometry? */
+			instantiate = !instantiate;
 			break;
 		case 't':		/* override lamp type */
 			lamptype = argv[++i];
@@ -321,6 +368,8 @@ char	*path;
 	for (p1 = p2 = path; *p2; p2++)
 		if (ISDIRSEP(*p2))
 			p1 = p2;
+	if (p1 == path && ISDIRSEP(*p1))
+		p1++;
 	*p1 = '\0';
 	return(path);
 }
@@ -357,6 +406,30 @@ char	*s;
 }
 
 
+k_match(kwd, hdl)			/* header line matches keyword? */
+register char	*kwd, *hdl;
+{
+	if (!*hdl++ == '[')
+		return(0);
+	while (islower(*hdl) ? toupper(*hdl) == *kwd++ : *hdl == *kwd++)
+		if (!*hdl++)
+			return(0);
+	return(!*kwd & *hdl == ']');
+}
+
+
+char *
+keyargs(hdl)				/* return keyword arguments */
+register char	*hdl;
+{
+	while (*hdl && *hdl++ != ']')
+		;
+	while (isspace(*hdl))
+		hdl++;
+	return(hdl);
+}
+
+
 putheader(out)				/* print header */
 FILE	*out;
 {
@@ -376,9 +449,14 @@ FILE	*out;
 ies2rad(inpname, outname)		/* convert IES file */
 char	*inpname, *outname;
 {
+	SRCINFO	srcinfo;
 	char	buf[MAXLINE], tltid[MAXWORD];
+	char	geomfile[128];
 	FILE	*inpfp, *outfp;
+	int	lineno = 0;
 
+	geomfile[0] = '\0';
+	srcinfo.isillum = 0;
 	if (inpname == NULL) {
 		inpname = "<stdin>";
 		inpfp = stdin;
@@ -399,11 +477,24 @@ char	*inpname, *outname;
 		blanktrunc(buf);
 		if (!buf[0])
 			continue;
+		if (!lineno++ && !strncmp(buf, MAGICID, LMAGICID)) {
+			filerev = atoi(buf+LMAGICID);
+			if (filerev < FIRSTREV)
+				filerev = FIRSTREV;
+			else if (filerev > LASTREV)
+				filerev = LASTREV;
+		}
 		fputs("#<", outfp);
 		fputs(buf, outfp);
 		putc('\n', outfp);
-		if (lampcolor == NULL)
-			lampcolor = matchlamp(buf);
+		if (lampcolor == NULL && checklamp(buf))
+			lampcolor = matchlamp( buf[0] == '[' ?
+						keyargs(buf) : buf );
+		if (keymatch(K_LMG, buf)) {		/* geometry file */
+			strcpy(geomfile, inpname);
+			strcpy(filename(geomfile), keyargs(buf));
+			srcinfo.isillum = 1;
+		}
 	}
 	if (lampcolor == NULL) {
 		fprintf(stderr, "%s: warning - no lamp type\n", inpname);
@@ -425,16 +516,20 @@ char	*inpname, *outname;
 		fprintf(stderr, "%s: bad tilt data\n", inpname);
 		goto readerr;
 	}
-	if (dosource(inpfp, outfp, tltid, outname) != 0) {
+	if (dosource(&srcinfo, inpfp, outfp, tltid, outname) != 0) {
 		fprintf(stderr, "%s: bad luminaire data\n", inpname);
 		goto readerr;
 	}
-	fclose(outfp);
 	fclose(inpfp);
+					/* cvgeometry closes outfp */
+	if (cvgeometry(geomfile, &srcinfo, outname, outfp) != 0) {
+		fprintf(stderr, "%s: bad geometry file\n", geomfile);
+		return(-1);
+	}
 	return(0);
 readerr:
-	fclose(outfp);
 	fclose(inpfp);
+	fclose(outfp);
 	unlink(fullname(buf,outname,T_RAD));
 	return(-1);
 }
@@ -513,11 +608,11 @@ char	*dir, *tltspec, *dfltname, *tltid;
 }
 
 
-dosource(in, out, mod, name)		/* create source and distribution */
+dosource(sinf, in, out, mod, name)	/* create source and distribution */
+SRCINFO	*sinf;
 FILE	*in, *out;
 char	*mod, *name;
 {
-	SHAPE	srcshape;
 	char	buf[MAXPATH], id[MAXWORD];
 	FILE	*datout;
 	double	mult, bfactor, pfactor, width, length, height, wattage;
@@ -534,6 +629,7 @@ char	*mod, *name;
 		fprintf(stderr, "dosource: bad lamp specification\n");
 		return(-1);
 	}
+	sinf->mult = multiplier*mult*bfactor*pfactor;
 	if (nangles[0] < 2 || nangles[1] < 1) {
 		fprintf(stderr, "dosource: too few measured angles\n");
 		return(-1);
@@ -543,7 +639,7 @@ char	*mod, *name;
 		length *= F_M;
 		height *= F_M;
 	}
-	if (makeshape(&srcshape, width, length, height) != 0) {
+	if (makeshape(sinf, width, length, height) != 0) {
 		fprintf(stderr, "dosource: illegal source dimensions");
 		return(-1);
 	}
@@ -571,7 +667,7 @@ char	*mod, *name;
 	else
 		fprintf(out, "5 ");
 	fprintf(out, "%s %s source.cal ",
-			srcshape.type==SPHERE ? "corr" : "flatcorr",
+			sinf->type==SPHERE ? "corr" : "flatcorr",
 			libname(buf,name,T_DST));
 	if (pmtype == PM_B) {
 		if (FEQ(bounds[1][0],0.))
@@ -594,8 +690,8 @@ char	*mod, *name;
 		} else
 			fprintf(out, "src_theta ");
 	}
-	fprintf(out, "\n0\n1 %g\n", multiplier*mult*bfactor*pfactor);
-	if (putsource(&srcshape, out, id, filename(name),
+	fprintf(out, "\n0\n1 %g\n", sinf->mult);
+	if (putsource(sinf, out, id, filename(name),
 			bounds[0][0]<90., bounds[0][1]>90.) != 0)
 		return(-1);
 	return(0);
@@ -603,7 +699,7 @@ char	*mod, *name;
 
 
 putsource(shp, fp, mod, name, dolower, doupper)		/* put out source */
-SHAPE	*shp;
+SRCINFO	*shp;
 FILE	*fp;
 char	*mod, *name;
 int	dolower, doupper;
@@ -611,19 +707,23 @@ int	dolower, doupper;
 	char	buf[MAXWORD];
 	
 	fprintf(fp, "\n%s %s %s_light\n", mod,
-			illumrad>=MINDIM/2. ? "illum" : "light",
+			shp->isillum ? "illum" : "light",
 			name);
 	fprintf(fp, "0\n0\n3 %g %g %g\n",
 			lampcolor[0]/shp->area,
 			lampcolor[1]/shp->area,
 			lampcolor[2]/shp->area);
-	if (doupper && dolower && shp->type != SPHERE && shp->h > MINDIM) {
-		fprintf(fp, "\n%s glow %s_glow\n", mod, name);
-		fprintf(fp, "0\n0\n4 %g %g %g -1\n",
-				lampcolor[0]/shp->area,
-				lampcolor[1]/shp->area,
-				lampcolor[2]/shp->area);
-	}
+	if (doupper && dolower && shp->type != SPHERE && shp->h > MINDIM)
+		if (shp->isillum) {
+			fprintf(fp, "\nvoid illum %s_glow\n", name);
+			fprintf(fp, "0\n0\n3 0 0 0\n");
+		} else {
+			fprintf(fp, "\n%s glow %s_glow\n", mod, name);
+			fprintf(fp, "0\n0\n4 %g %g %g -1\n",
+					lampcolor[0]/shp->area,
+					lampcolor[1]/shp->area,
+					lampcolor[2]/shp->area);
+		}
 	switch (shp->type) {
 	case RECT:
 		strcat(strcpy(buf, name), "_light");
@@ -657,10 +757,11 @@ int	dolower, doupper;
 
 
 makeshape(shp, width, length, height)		/* make source shape */
-register SHAPE	*shp;
+register SRCINFO	*shp;
 double	width, length, height;
 {
 	if (illumrad/meters2out >= MINDIM/2.) {
+		shp->isillum = 1;
 		shp->type = SPHERE;
 		shp->w = shp->l = shp->h = 2.*illumrad / meters2out;
 	} else if (width < MINDIM) {
@@ -705,7 +806,7 @@ double	width, length, height;
 
 
 putrectsrc(shp, fp, mod, name, up)		/* rectangular source */
-SHAPE	*shp;
+SRCINFO	*shp;
 FILE	*fp;
 char	*mod, *name;
 int	up;
@@ -718,7 +819,7 @@ int	up;
 
 
 putsides(shp, fp, mod, name)			/* put out sides of box */
-register SHAPE	*shp;
+register SRCINFO	*shp;
 FILE	*fp;
 char	*mod, *name;
 {
@@ -730,7 +831,7 @@ char	*mod, *name;
 	
 
 putrect(shp, fp, mod, name, suffix, a, b, c, d)	/* put out a rectangle */
-SHAPE	*shp;
+SRCINFO	*shp;
 FILE	*fp;
 char	*mod, *name, *suffix;
 int	a, b, c, d;
@@ -744,7 +845,7 @@ int	a, b, c, d;
 
 
 putpoint(shp, fp, p)				/* put out a point */
-register SHAPE	*shp;
+register SRCINFO	*shp;
 FILE	*fp;
 int	p;
 {
@@ -758,7 +859,7 @@ int	p;
 
 
 putdisksrc(shp, fp, mod, name, up)		/* put out a disk source */
-register SHAPE	*shp;
+register SRCINFO	*shp;
 FILE	*fp;
 char	*mod, *name;
 int	up;
@@ -780,7 +881,7 @@ int	up;
 
 
 putcyl(shp, fp, mod, name)			/* put out a cylinder */
-register SHAPE	*shp;
+register SRCINFO	*shp;
 FILE	*fp;
 char	*mod, *name;
 {
@@ -793,7 +894,7 @@ char	*mod, *name;
 
 
 putspheresrc(shp, fp, mod, name)		/* put out a sphere source */
-SHAPE	*shp;
+SRCINFO	*shp;
 FILE	*fp;
 char	*mod, *name;
 {
@@ -908,4 +1009,61 @@ char	*word;
 		return(0);
 	*rp = atof(word);
 	return(1);
+}
+
+
+cvgeometry(inpname, sinf, outname, outfp)
+char	*inpname;
+register SRCINFO	*sinf;
+char	*outname;
+FILE	*outfp;			/* close output file upon return */
+{
+	char	buf[256];
+	register char	*cp;
+
+	if (inpname == NULL || !inpname[0]) {	/* no geometry file */
+		fclose(outfp);
+		return(0);
+	}
+	putc('\n', outfp);
+	strcpy(buf, "mgf2rad ");		/* build mgf2rad command */
+	cp = buf+8;
+	if (!FEQ(sinf->mult, 1.0)) {
+		sprintf(cp, "-m %f ", sinf->mult);
+		cp += strlen(cp);
+	}
+	sprintf(cp, "-g %f %s ",
+		sqrt(sinf->w*sinf->w + sinf->h*sinf->h + sinf->l*sinf->l),
+			inpname);
+	cp += strlen(cp);
+	if (instantiate) {		/* instantiate octree */
+		strcpy(cp, "| oconv - > ");
+		cp += 12;
+		fullname(cp,outname,T_OCT);
+		if (system(buf)) {		/* create octree */
+			fclose(outfp);
+			return(-1);
+		}
+		fprintf(outfp, "void instance %s_inst\n", outname);
+		if (!FEQ(meters2out, 1.0))
+			fprintf(outfp, "3 %s -s %f\n",
+					libname(buf,outname,T_OCT),
+					meters2out);
+		else
+			fprintf(outfp, "1 %s\n", libname(buf,outname,T_OCT));
+		fprintf(outfp, "0\n0\n");
+		fclose(outfp);
+	} else {			/* else append to luminaire file */
+		fclose(outfp);
+		if (!FEQ(meters2out, 1.0)) {	/* apply scalefactor */
+			sprintf(cp, "| xform -s %f ", meters2out);
+			cp += strlen(cp);
+		}
+		strcpy(cp, ">> ");		/* append works for DOS? */
+		cp += 3;
+		fullname(cp,outname,T_RAD);
+		if (system(buf))
+			return(-1);
+	}
+	return(0);
 }
