@@ -6,7 +6,7 @@ MACH = -f68881 /usr/lib/libm.il -DIEEE -DBSD -DSTRUCTASSIGN
 
 OPT = -O
 
-CFLAGS = $(MACH) $(OPT)
+CFLAGS = $(MACH) $(OPT) -I../common
 
 INSTDIR = /lumen/lumen/ray/bin.sun3
 
@@ -29,21 +29,19 @@ clean:
 scanner:	scanner.o
 	cc $(CFLAGS) -o scanner scanner.o -lm
 
-makedist:	makedist.o fvect.o setscan.o
-	cc $(CFLAGS) -o makedist makedist.o fvect.o setscan.o -lm
+makedist:	makedist.o setscan.o
+	cc $(CFLAGS) -o makedist makedist.o setscan.o ../common/librt.a -lm
 
-findglare:	findglare.o glareval.o glaresrc.o color.o fvect.o image.o \
-header.o resolu.o setscan.o linregr.o
+findglare:	findglare.o glareval.o glaresrc.o setscan.o
 	cc $(CFLAGS) -o findglare findglare.o glareval.o glaresrc.o \
-color.o fvect.o image.o header.o resolu.o setscan.o linregr.o -lm
+setscan.o ../common/librt.a -lm
 
-glarendx:	glarendx.o image.o header.o erf.o fvect.o resolu.o
-	cc $(CFLAGS) -o glarendx glarendx.o image.o header.o fvect.o \
-erf.o resolu.o -lm
+glarendx:	glarendx.o
+	cc $(CFLAGS) -o glarendx glarendx.o ../common/librt.a -lm
 
-xglaresrc:	xglaresrc.o fvect.o image.o resolu.o header.o x11findwind.o
-	cc $(CFLAGS) -o xglaresrc xglaresrc.o fvect.o image.o \
-header.o resolu.o x11findwind.o -lm -lX11
+xglaresrc:	xglaresrc.o x11findwind.o
+	cc $(CFLAGS) -o xglaresrc xglaresrc.o \
+x11findwind.o ../common/librt.a -lm -lX11
 
 contour:	contour.o
 	cc $(CFLAGS) -o contour contour.o -lm
@@ -61,14 +59,12 @@ t16anim.o pranim.o:	client/clnt.h
 setscan.o makedist.o:	setscan.h
 
 findglare.o glareval.o \
-glaresrc.o:	glare.h standard.h mat4.h fvect.h view.h color.h setscan.h
+glaresrc.o:	glare.h ../common/standard.h ../common/mat4.h \
+../common/fvect.h ../common/view.h ../common/color.h setscan.h
 
-glaresrc.o linregr.o:	linregr.h
+glaresrc.o:	../common/linregr.h
 
-image.o xglaresrc.o:	standard.h mat4.h fvect.h view.h
+image.o xglaresrc.o:	../common/standard.h ../common/mat4.h \
+../common/fvect.h ../common/view.h
 
-fvect.o:	fvect.h
-
-resolu.o:	color.h
-
-swaprasheader.o:	rasterfile.h
+swaprasheader.o:	../common/rasterfile.h
