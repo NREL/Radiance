@@ -55,6 +55,13 @@ static char SCCSid[] = "$SunId$ SGI";
 #define FEQ(a,b)	((a)-(b) <= FTINY && (a)-(b) >= -FTINY)
 #endif
 
+#define	VWHEADLOCK	01		/* head position is locked flag */
+#define	VWPERSP		02		/* perspective view is set */
+#define	VWORTHO		04		/* orthographic view is set */
+#define	VWCHANGE	010		/* view has changed */
+#define	VWSTEADY	020		/* view is now steady */
+#define VWMAPPED	040		/* window is mapped */
+
 #define GAMMA		1.4		/* default gamma correction */
 
 #define FRAMESTATE(s)	(((s)&(ShiftMask|ControlMask))==(ShiftMask|ControlMask))
@@ -97,7 +104,6 @@ static int	rayqleft = 0;		/* rays left to queue before flush */
 
 static XEvent  currentevent;		/* current event */
 
-static int  mapped = 0;			/* window is mapped? */
 static unsigned long  ourblack=0, ourwhite=~0;
 
 static Display  *ourdisplay = NULL;	/* our display */
@@ -115,11 +121,7 @@ static double	dev_zrat;		/* (1. - dev_zmin/dev_zmax) */
 
 static int	inpresflags;		/* input result flags */
 
-static int	headlocked;		/* lock vertical motion */
-
-static int	isperspective;		/* perspective/ortho view */
-
-static int	viewsteady;		/* is view steady? */
+static int	viewflags;		/* what's happening with view */
 
 static int  resizewindow(), getevent(), getkey(), moveview(), wipeclean(),
 		xferdepth(), freedepth(), setglortho(),
@@ -263,9 +265,7 @@ char  *id;
 	checkglerr("setting rendering parameters");
 	copystruct(&odev.v, &stdview);
 	odev.v.type = VT_PER;
-	headlocked = 0;			/* free up head movement */
-	viewsteady = 1;			/* view starts static */
-	isperspective = -1;		/* but no view set, yet */
+	viewflags = VWSTEADY;		/* view starts static */
 					/* map the window */
 	XMapWindow(ourdisplay, gwind);
 	dev_input();			/* sets size and view angles */
@@ -355,6 +355,7 @@ register VIEW	*nv;
 		VSUM(vwright.vp, nv->vp, nv->hvec, d);
 		/* setview(&vwright);	-- Unnecessary */
 #endif
+		viewflags |= VWCHANGE;
 	}
 	wipeclean();
 	return(1);
@@ -451,7 +452,7 @@ dev_flush()			/* flush output as appropriate */
 {
 	int	ndrawn;
 
-	if (mapped && isperspective > 0) {
+	if ((viewflags&(VWMAPPED|VWPERSP)) == (VWMAPPED|VWPERSP)) {
 #ifdef STEREO
 		pushright();			/* draw right eye */
 		ndrawn = gmDrawGeom();
@@ -472,20 +473,25 @@ dev_flush()			/* flush output as appropriate */
 		glXSwapBuffers(ourdisplay, gwind);
 		checkglerr("rendering base view");
 	}
-	if (mapped && viewsteady)
-		if (isperspective > 0) {	/* first time after steady */
-			if (ndrawn)
-				xferdepth();	/* transfer and clear depth */
-			setglortho();		/* set orthographic view */
-		} else if (!isperspective) {
+	if ((viewflags&(VWMAPPED|VWSTEADY|VWPERSP|VWORTHO)) ==
+			(VWMAPPED|VWSTEADY|VWPERSP)) {
+					/* first time after steady */
+		if (ndrawn)
+			xferdepth();	/* transfer and clear depth */
+		setglortho();		/* set orthographic view */
+
+	}
+	if ((viewflags&(VWMAPPED|VWSTEADY|VWPERSP|VWORTHO)) ==
+			(VWMAPPED|VWSTEADY|VWORTHO)) {
+					/* else update cones */
 #ifdef STEREO
-			pushright();
-			odUpdate(1);		/* draw right eye */
-			popright();
+		pushright();
+		odUpdate(1);		/* draw right eye */
+		popright();
 #endif
-			odUpdate(0);		/* draw left eye */
-			glFlush();		/* flush OpenGL */
-		}
+		odUpdate(0);		/* draw left eye */
+		glFlush();		/* flush OpenGL */
+	}
 	rayqleft = RAYQLEN;
 					/* flush X11 and return # pending */
 	return(odev.inpready = XPending(ourdisplay));
@@ -613,7 +619,7 @@ pushright()			/* push on right view & buffer */
 	double	d;
 
 	setstereobuf(STEREO_BUFFER_RIGHT);
-	if (isperspective > 0) {
+	if (viewflags & VWPERSP) {
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 		d = -eyesepdist / sqrt(odev.v.hn2);
@@ -627,7 +633,7 @@ pushright()			/* push on right view & buffer */
 static
 popright()			/* pop off right view & buffer */
 {
-	if (isperspective > 0) {
+	if (viewflags & VWPERSP) {
 		glMatrixMode(GL_MODELVIEW);
 		glPopMatrix();
 	}
@@ -670,11 +676,11 @@ getevent()			/* get next event */
 		resizewindow(levptr(XConfigureEvent));
 		break;
 	case UnmapNotify:
-		mapped = 0;
+		viewflags &= ~VWMAPPED;
 		break;
 	case MapNotify:
 		odRemap(0);
-		mapped = 1;
+		viewflags |= VWMAPPED;
 		break;
 	case Expose:
 		fixwindow(levptr(XExposeEvent));
@@ -761,7 +767,7 @@ int	dx, dy, mov, orb;
 		d = MOVPCT/100. * mov;
 		VSUM(nv.vp, nv.vp, odir, d);
 	}
-	if (!mov ^ !orb && headlocked) {	/* restore head height */
+	if (!mov ^ !orb && viewflags&VWHEADLOCK) {	/* restore height */
 		VSUM(v1, odev.v.vp, nv.vp, -1.);
 		d = DOT(v1, nv.vup);
 		VSUM(nv.vp, nv.vp, odev.v.vup, d);
@@ -810,7 +816,7 @@ XButtonPressedEvent	*ebut;
 
 	XNoOp(ourdisplay);		/* makes sure we're not idle */
 
-	viewsteady = 0;			/* flag moving view */
+	viewflags &= ~VWSTEADY;		/* flag moving view */
 	setglpersp(&odev.v);		/* start us off in perspective */
 	while (!XCheckMaskEvent(ourdisplay,
 			ButtonReleaseMask, levptr(XEvent))) {
@@ -852,7 +858,7 @@ XButtonPressedEvent	*ebut;
 		wy = levptr(XButtonReleasedEvent)->y;
 		moveview(wx, odev.vres-1-wy, movdir, movorb);
 	}
-	viewsteady = 1;			/* done goofing around */
+	viewflags |= VWSTEADY;		/* done goofing around */
 }
 
 
@@ -899,7 +905,6 @@ register VIEW	*vp;
 		odev.v.vp[2] + odev.v.vdir[2],
 		odev.v.vup[0], odev.v.vup[1], odev.v.vup[2]);
 	checkglerr("setting perspective view");
-	isperspective = 1;
 	vec[0] = vec[1] = vec[2] = 0.; vec[3] = 1.;
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, vec);
 	vec[0] = -odev.v.vdir[0];
@@ -915,6 +920,8 @@ register VIEW	*vp;
 	glEnable(GL_LIGHT0);
 	glEnable(GL_LIGHTING);		/* light our GL objects */
 	glShadeModel(GL_SMOOTH);
+	viewflags &= ~VWORTHO;
+	viewflags |= VWPERSP;
 }
 
 
@@ -928,9 +935,10 @@ setglortho()			/* set up orthographic view for cone drawing */
 	glOrtho(0., (double)odev.hres, 0., (double)odev.vres,
 			0.001*OMAXDEPTH, 1.001*(-OMAXDEPTH));
 	checkglerr("setting orthographic view");
-	isperspective = 0;
 	glDisable(GL_LIGHTING);		/* cones are constant color */
 	glShadeModel(GL_FLAT);
+	viewflags &= ~VWPERSP;
+	viewflags |= VWORTHO;
 }
 
 
@@ -946,8 +954,11 @@ wipeclean()			/* prepare for redraw */
 #endif
 	glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
 	freedepth();
-	if (viewsteady)			/* clear samples if steady */
+	if ((viewflags&(VWCHANGE|VWSTEADY)) ==
+			(VWCHANGE|VWSTEADY)) {	/* clear samples if new */
 		odClean();
+		viewflags &= ~VWCHANGE;		/* change noted */
+	}
 	setglpersp(&odev.v);		/* reset view & clipping planes */
 }
 
@@ -967,10 +978,10 @@ register XKeyPressedEvent  *ekey;
 		return;
 	switch (buf[0]) {
 	case 'h':			/* turn on height motion lock */
-		headlocked = 1;
+		viewflags |= VWHEADLOCK;
 		return;
 	case 'H':			/* turn off height motion lock */
-		headlocked = 0;
+		viewflags &= ~VWHEADLOCK;
 		return;
 	case 'l':			/* retrieve last view */
 		inpresflags |= DFL(DC_LASTVIEW);
@@ -1091,4 +1102,5 @@ register XConfigureEvent  *ersz;
 	odev.v.vert = 2.*180./PI * atan(0.5/VIEWDIST*pheight*odev.vres);
 
 	inpresflags |= DFL(DC_SETVIEW);
+	viewflags |= VWCHANGE;
 }
