@@ -26,12 +26,11 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
-#include  <stdio.h>
-#include  <string.h>
 #include  <time.h>
 #include  <ctype.h>
 
-#include "resolu.h"
+#include  "rtio.h"
+#include  "resolu.h"
 
 #define	 MAXLINE	512
 
@@ -40,8 +39,6 @@ char  HDRSTR[] = "#?";		/* information header magic number */
 char  FMTSTR[] = "FORMAT=";	/* format identifier */
 
 char  TMSTR[] = "CAPDATE=";	/* capture date identifier */
-
-extern void	fputword(char *s, FILE *fp);
 
 static int mycheck();
 
