@@ -234,6 +234,8 @@ ximage.o xraster.o:	xraster.h
 
 x11image.o x11raster.o:	x11raster.h
 
+x11image.o:	../common/tonemap.h ../common/color.h
+
 ra_t8.o:	../common/targa.h
 
 aedimage.o ximage.o ra_t8.o ra_pr.o:	pic.h
