@@ -310,7 +310,7 @@ register int	n;
 {
 	register char	*cp;
 
-	if (vp == NULL || n < 0 || n >= vp->nass)
+	if (vp == NULL | n < 0 | n >= vp->nass)
 		return(NULL);
 	cp = vp->value;
 	while (n--)
@@ -970,8 +970,7 @@ getview(n, vn)				/* get view n, or NULL if none */
 int	n;
 char	*vn;		/* returned view name */
 {
-	register char	*mv = NULL;
-	register int	i;
+	register char	*mv;
 
 	if (viewselect != NULL) {		/* command-line selected */
 		if (n)				/* only do one */
@@ -986,6 +985,9 @@ char	*vn;		/* returned view name */
 				;
 			*vn = '\0';
 		}
+						/* view number? */
+		if (isdigit(viewselect[0]))
+			return(specview(nvalue(vv+VIEW, atoi(viewselect)-1)));
 						/* check list */
 		while ((mv = nvalue(vv+VIEW, n++)) != NULL)
 			if (matchword(viewselect, mv))
@@ -994,9 +996,10 @@ char	*vn;		/* returned view name */
 	}
 	mv = nvalue(vv+VIEW, n);		/* use view n */
 	if (vn != NULL & mv != NULL) {
-		if (mv[i=0] != '-')
-			while (mv[i] && !isspace(mv[i]))
-				*vn++ = mv[i++];
+		register char	*mv2 = mv;
+		if (*mv2 != '-')
+			while (*mv2 && !isspace(*mv2))
+				*vn++ = *mv2++;
 		*vn = '\0';
 	}
 	return(specview(mv));
