@@ -25,7 +25,7 @@ static const char RCSid[] = "$Id$";
 
 #define  isblnk(c)      (igneol ? isspace(c) : (c)==' '||(c)=='\t')
 
-#define  INBSIZ         4096    /* longest record */
+#define  INBSIZ         16384	/* longest record */
 #define  MAXCOL         32      /* number of columns recorded */
 
 				/* field type specifications */
