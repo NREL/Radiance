@@ -170,7 +170,7 @@ int  xres, yres;
 	} else						/* just clear */
 		XClear(gwind);
 						/* reinitialize color table */
-	if (ncolors == 0 && getpixels() == 0)
+	if (getpixels() == 0)
 		stderr_v("cannot allocate colors\n");
 	else
 		new_ctab(ncolors);
@@ -285,7 +285,8 @@ getpixels()				/* get the color map */
 {
 	int  planes;
 
-	freepixels();
+	if (ncolors > 0)
+		return(ncolors);
 	for (ncolors=(1<<DisplayPlanes())-3; ncolors>12; ncolors=ncolors*.937){
 		pixval = (int *)malloc(ncolors*sizeof(int));
 		if (pixval == NULL)
@@ -361,7 +362,7 @@ register XExposeEvent  *eexp;
 		return;
 	}
 					/* remap colors */
-	if (ncolors == 0 && getpixels() == 0) {
+	if (getpixels() == 0) {
 		stderr_v("cannot allocate colors\n");
 		return;
 	}
