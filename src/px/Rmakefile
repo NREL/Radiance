@@ -11,7 +11,7 @@ INSTDIR = /usr/local/ray
 CALDEFS = -DIEEE -DFUNCTION -DVARIABLE -DRCONST -DBIGLIB
 
 PROGS = pfilt ttyimage aedimage oki20c mt160r getinfo psign \
-greyscale pvalue psum pcompos colorscale ra_pr ximage prot \
+greyscale pvalue pcompos colorscale ra_pr ximage prot \
 panim ra_t8 ra_bn ra_t16 pcomb
 
 all:	$(PROGS)
