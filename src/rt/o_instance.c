@@ -19,7 +19,7 @@ o_instance(o, r)		/* compute ray intersection with octree */
 OBJREC  *o;
 register RAY  *r;
 {
-	extern long  nrays;
+	extern long  raynum;
 	RAY  rcont;
 	register INSTANCE  *in;
 	register int  i;
@@ -28,7 +28,7 @@ register RAY  *r;
 					/* copy old ray */
 	copystruct(&rcont, r);
 					/* transform it */
-	rcont.rno = nrays;
+	rcont.rno = raynum++;
 	rcont.ro = NULL;
 	rcont.rot = FHUGE;
 	multp3(rcont.rorg, r->rorg, in->x.b.xfm);
