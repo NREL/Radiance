@@ -195,9 +195,12 @@ register RAY  *r;
 	if (nd.tspec > FTINY && nd.alpha2 <= FTINY) {
 		RAY  lr;
 		if (rayorigin(&lr, r, TRANS, nd.tspec) == 0) {
-			VCOPY(lr.rdir, r->rdir);
+			for (i = 0; i < 3; i++)		/* perturb direction */
+				lr.rdir[i] = r->rdir[i] - .75*r->pert[i];
+			normalize(lr.rdir);
 			rayvalue(&lr);
 			scalecolor(lr.rcol, nd.tspec);
+			multcolor(lr.rcol, nd.mcolor);	/* modified by color */
 			addcolor(r->rcol, lr.rcol);
 			if (nd.tspec > .5)
 				r->rt = r->rot + lr.rt;

@@ -66,7 +66,6 @@ typedef struct {
 	RAY  *pr;		/* intersected ray */
 	DATARRAY  *dp;		/* data array for PDATA, MDATA or TDATA */
 	COLOR  mcolor;		/* color of this material */
-	COLOR  scolor;		/* color of specular reflection */
 	double  rspec;		/* specular reflection */
 	double	rdiff;		/* diffuse reflection */
 	double  trans;		/* transmissivity */
@@ -162,14 +161,17 @@ double  omega;			/* light source size */
 		/*
 		 *  Compute reflected non-diffuse component.
 		 */
-		multcolor(ctmp, np->scolor);
-		dtmp = ldot * omega;
+		if (np->mp->otype == MAT_MFUNC || np->mp->otype == MAT_MDATA)
+			multcolor(ctmp, np->mcolor);
+		dtmp = ldot * omega * np->rspec;
 		scalecolor(ctmp, dtmp);
 		addcolor(cval, ctmp);
 	} else {
 		/*
 		 *  Compute transmitted non-diffuse component.
 		 */
+		if (np->mp->otype == MAT_TFUNC || np->mp->otype == MAT_TDATA)
+			multcolor(ctmp, np->mcolor);
 		dtmp = -ldot * omega * np->tspec;
 		scalecolor(ctmp, dtmp);
 		addcolor(cval, ctmp);
@@ -287,32 +289,24 @@ register RAY  *r;
 	}
 	if (r->crtype & SHADOW)			/* the rest is shadow */
 		return;
-	if (nd.rspec > FTINY) {			/* has specular component */
-						/* compute specular color */
-		if (m->otype == MAT_MFUNC || m->otype == MAT_MDATA)
-			copycolor(nd.scolor, nd.mcolor);
-		else
-			setcolor(nd.scolor, 1.0, 1.0, 1.0);
-		scalecolor(nd.scolor, nd.rspec);
 						/* compute reflected ray */
-		if (m->otype == MAT_BRTDF) {
-			RAY  sr;
-			errno = 0;
-			setcolor(ctmp, varvalue(m->oargs.sarg[3]),
-					varvalue(m->oargs.sarg[4]),
-					varvalue(m->oargs.sarg[5]));
-			scalecolor(ctmp, nd.rspec);
-			if (errno)
-				objerror(m, WARNING, "compute error");
-			else if ((dtmp = bright(ctmp)) > FTINY &&
+	if (m->otype == MAT_BRTDF && nd.rspec > FTINY) {
+		RAY  sr;
+		errno = 0;
+		setcolor(ctmp, varvalue(m->oargs.sarg[3]),
+				varvalue(m->oargs.sarg[4]),
+				varvalue(m->oargs.sarg[5]));
+		scalecolor(ctmp, nd.rspec);
+		if (errno)
+			objerror(m, WARNING, "compute error");
+		else if ((dtmp = bright(ctmp)) > FTINY &&
 				rayorigin(&sr, r, REFLECTED, dtmp) == 0) {
-				for (i = 0; i < 3; i++)
-					sr.rdir[i] = r->rdir[i] +
+			for (i = 0; i < 3; i++)
+				sr.rdir[i] = r->rdir[i] +
 						2.0*nd.pdot*nd.pnorm[i];
-				rayvalue(&sr);
-				multcolor(sr.rcol, ctmp);
-				addcolor(r->rcol, sr.rcol);
-			}
+			rayvalue(&sr);
+			multcolor(sr.rcol, ctmp);
+			addcolor(r->rcol, sr.rcol);
 		}
 	}
 						/* compute ambient */
