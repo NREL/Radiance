@@ -479,6 +479,11 @@ register XKeyPressedEvent  *ekey;
 	case '\n':
 	case '\r':			/* release */
 		return;
+	case CTRL('R'):			/* redraw */
+		if (ncolors > 0)
+			new_ctab(ncolors);
+		qtRedraw(0, 0, odev.hres, odev.vres);
+		return;
 	case CTRL('D'):
 	case 'Q':
 	case 'q':			/* quit the program */
