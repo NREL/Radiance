@@ -262,11 +262,11 @@ char	*fname;
 		returnErr(TM_E_BADFILE);
 	}
 					/* allocate arrays */
+	scan = (COLR *)malloc(sizeof(COLR) * *xp);
 	if (flags & TM_F_BW)
 		rp = (BYTE *)malloc(sizeof(BYTE) * *xp * *yp);
 	else
 		rp = (BYTE *)malloc(3*sizeof(BYTE) * *xp * *yp);
-	scan = (COLR *)malloc(sizeof(COLR) * *xp);
 	if ((*psp = rp) == NULL | scan == NULL) {
 		pclose(infp);
 		returnErr(TM_E_NOMEM);
@@ -275,6 +275,9 @@ char	*fname;
 	for (y = 0; y < *yp; y++) {
 		if (freadcolrs(scan, *xp, infp) < 0) {
 			pclose(infp);
+			free((char *)scan);
+			free((char *)*psp);
+			*psp = NULL;
 			returnErr(TM_E_BADFILE);
 		}
 		colrs_gambs(scan, *xp);
@@ -335,8 +338,11 @@ FILE	*fp;
 						/* allocate space for result */
 	if (flags & TM_F_BW) {
 		*psp = (BYTE *)malloc(sizeof(BYTE) * *xp * *yp);
-		if (*psp == NULL)
+		if (*psp == NULL) {
+			free((char *)lp);
+			tmDone(NULL);
 			returnErr(TM_E_NOMEM);
+		}
 		cp = TM_NOCHROM;
 	} else
 		*psp = cp;

@@ -500,6 +500,40 @@ register struct tmStruct	*tms;
 }
 
 
+struct tmStruct *
+tmDup()				/* duplicate top tone mapping */
+{
+	int	len;
+	register int	i;
+	register struct tmStruct	*tmnew;
+
+	if (tmTop == NULL)		/* anything to duplicate? */
+		return(NULL);
+	tmnew = (struct tmStruct *)malloc(sizeof(struct tmStruct));
+	if (tmnew == NULL)
+		return(NULL);
+	*tmnew = *tmTop;		/* copy everything */
+	if (tmnew->histo != NULL) {	/* duplicate histogram */
+		len = (tmnew->brmax-MINBRT)/HISTEP + 1 -
+				(tmnew->brmin-MINBRT)/HISTEP;
+		tmnew->histo = (int *)malloc(len*sizeof(int));
+		if (tmnew->histo != NULL)
+			for (i = len; i--; )
+				tmnew->histo[i] = tmTop->histo[i];
+	}
+	if (tmnew->lumap != NULL) {	/* duplicate luminance mapping */
+		len = tmnew->brmax-tmnew->brmin+1;
+		tmnew->lumap = (unsigned short *)malloc(
+						len*sizeof(unsigned short) );
+		if (tmnew->lumap != NULL)
+			for (i = len; i--; )
+				tmnew->lumap[i] = tmTop->lumap[i];
+	}
+	tmnew->tmprev = tmTop;		/* make copy current */
+	return(tmTop = tmnew);
+}
+
+
 int
 tmPush(tms)			/* push tone mapping on top of stack */
 register struct tmStruct	*tms;

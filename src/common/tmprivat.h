@@ -9,6 +9,14 @@
 #undef	NOPROTO
 #define	NOPROTO		1
 #include	"tonemap.h"
+
+				/* required constants */
+#ifndef M_LN2
+#define M_LN2		0.69314718055994530942
+#endif
+#ifndef M_LN10
+#define M_LN10		2.30258509299404568402
+#endif
 				/* minimum values and defaults */
 #define	MINGAM		0.75
 #define DEFGAM		2.2
@@ -29,9 +37,9 @@
 #define MINLUM		(1.125352e-7)		/* tmLuminance(MINBRT) */
 
 #define LMESLOWER	(5.62e-3)		/* lower mesopic limit */
-#define BMESLOWER	((int)(-5.18*TM_BRTSCALE-.5))
+#define BMESLOWER	(-663)			/* encoded LMESLOWER */
 #define	LMESUPPER	(5.62)			/* upper mesopic limit */
-#define BMESUPPER	((int)(1.73*TM_BRTSCALE+.5))
+#define BMESUPPER	(221)			/* encoded LMESUPPER */
 
 #ifndef	int4
 #define	int4		int			/* assume 32-bit integers */
