@@ -1,4 +1,4 @@
-	$Id: help.hlp,v 2.2 1994/11/28 15:16:01 greg Exp $
+	$Id: help.hlp,v 2.3 1996/03/18 09:48:23 greg Exp $
 
 This help file is for the gethelp.tcl utility itself, and explains
 the various buttons and windows it uses.
@@ -103,8 +103,7 @@ any) may be accessed with the "Forward" button.
 
 Each time a new topic is selected, matching words will be highlighted
 in bold, whether or not <return> or the "Grep" button has been pressed.
-To prevent new matches from being highlighted, clear the search entry
-with <control-U>.
+To prevent new matches from being highlighted, clear the search entry.
 
 Matches are insensitive to case and word boundaries.
 
