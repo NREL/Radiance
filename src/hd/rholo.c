@@ -363,12 +363,14 @@ register HDGRID	*gp;
 	if (gp == NULL)		/* already initialized? */
 		return;
 				/* set grid parameters */
+	gp->grid[0] = gp->grid[1] = gp->grid[2] = 0;
 	if (sscanf(vval(SECTION),
-			"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
+		"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %hd %hd %hd",
 			&gp->orig[0], &gp->orig[1], &gp->orig[2],
 			&gp->xv[0][0], &gp->xv[0][1], &gp->xv[0][2],
 			&gp->xv[1][0], &gp->xv[1][1], &gp->xv[1][2],
-			&gp->xv[2][0], &gp->xv[2][1], &gp->xv[2][2]) != 12)
+			&gp->xv[2][0], &gp->xv[2][1], &gp->xv[2][2],
+			&gp->grid[0], &gp->grid[1], &gp->grid[2]) < 12)
 		badvalue(SECTION);
 	maxlen = 0.;
 	for (i = 0; i < 3; i++)
@@ -382,7 +384,8 @@ register HDGRID	*gp;
 	if ((d = vflt(GRID)) <= FTINY)
 		badvalue(GRID);
 	for (i = 0; i < 3; i++)
-		gp->grid[i] = len[i]/d + (1.-FTINY);
+		if (gp->grid[i] <= 0)
+			gp->grid[i] = len[i]/d + (1.-FTINY);
 }
 
 
