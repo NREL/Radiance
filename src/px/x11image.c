@@ -614,6 +614,13 @@ XKeyPressedEvent  *ekey;
 			make_rpixmap(ourras, wind);
 		redraw(0, 0, width, height);
 		return(0);
+	case '0':				/* recenter origin */
+		if (xoff == 0 & yoff == 0)
+			return(0);
+		xoff = yoff = 0;
+		XClearWindow(thedisplay, wind);
+		redraw(0, 0, width, height);
+		return(0);
 	case ' ':				/* clear */
 		redraw(box.xmin, box.ymin, box.xsiz, box.ysiz);
 		return(0);
