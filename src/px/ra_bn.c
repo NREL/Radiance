@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -17,6 +17,8 @@ static char SCCSid[] = "$SunId$ LBL";
 extern double  atof(), pow();
 
 double	gamma = 2.0;			/* gamma correction */
+
+int  bradj = 0;				/* brightness adjustment */
 
 char  *progname;
 
@@ -44,6 +46,11 @@ char  *argv[];
 				break;
 			case 'r':
 				reverse = !reverse;
+				break;
+			case 'e':
+				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
+					goto userr;
+				bradj = atoi(argv[++i]);
 				break;
 			default:
 				goto userr;
@@ -97,8 +104,9 @@ char  *argv[];
 	}
 	quiterr(NULL);
 userr:
-	fprintf(stderr, "Usage: %s [-g gamma] {input|-} output\n", progname);
-	fprintf(stderr, "   or: %s -r [-g gamma] input [output|-]\n",
+	fprintf(stderr, "Usage: %s [-g gamma][-e +/-stops] {input|-} output\n",
+			progname);
+	fprintf(stderr, "   or: %s -r [-g gamma][-e +/-stops] input [output|-]\n",
 			progname);
 	exit(1);
 }
@@ -177,6 +185,8 @@ ra2bn()					/* convert radiance to barneyscan */
 	for (j = 0; j < ymax; j++) {
 		if (freadcolrs(inl, xmax, rafp) < 0)
 			quiterr("error reading RADIANCE file");
+		if (bradj)
+			shiftcolrs(inl, xmax, bradj);
 		colrs_gambs(inl, xmax);
 		for (i = 0; i < xmax; i++) {
 			putc(inl[i][RED], bnfp[0]);
@@ -207,6 +217,8 @@ bn2ra()					/* convert barneyscan to radiance */
 		if (feof(bnfp[0]) || feof(bnfp[1]) || feof(bnfp[2]))
 			quiterr("error reading barney file");
 		gambs_colrs(outline, xmax);
+		if (bradj)
+			shiftcolrs(outline, xmax, bradj);
 		if (fwritecolrs(outline, xmax, rafp) < 0)
 			quiterr("error writing RADIANCE file");
 	}

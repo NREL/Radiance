@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -17,6 +17,8 @@ static char SCCSid[] = "$SunId$ LBL";
 extern double  atof(), pow();
 
 double	gamma = 2.0;			/* gamma correction */
+
+int  bradj = 0;				/* brightness adjustment */
 
 char  *progname;
 
@@ -38,6 +40,11 @@ char  *argv[];
 			switch (argv[i][1]) {
 			case 'g':
 				gamma = atof(argv[++i]);
+				break;
+			case 'e':
+				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
+					goto userr;
+				bradj = atoi(argv[++i]);
 				break;
 			case 'r':
 				reverse = !reverse;
@@ -101,7 +108,7 @@ char  *argv[];
 	}
 	exit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-r][-g gamma] [input [output]]\n",
+	fprintf(stderr, "Usage: %s [-r][-g gamma][-e +/-stops] [input [output]]\n",
 			progname);
 	exit(1);
 }
@@ -143,6 +150,8 @@ int	rf;
 		if (feof(stdin) || ferror(stdin))
 			quiterr("error reading rasterfile");
 		gambs_colrs(scanout, xmax);
+		if (bradj)
+			shiftcolrs(scanout, xmax, bradj);
 		if (fwritecolrs(scanout, xmax, stdout) < 0)
 			quiterr("error writing Radiance picture");
 	}
@@ -164,6 +173,8 @@ ra2pr()			/* convert Radiance scanlines to 24-bit rasterfile */
 	for (y = ymax-1; y >= 0; y--) {
 		if (freadcolrs(scanin, xmax, stdin) < 0)
 			quiterr("error reading Radiance picture");
+		if (bradj)
+			shiftcolrs(scanin, xmax, bradj);
 		colrs_gambs(scanin, xmax);
 		for (x = 0; x < xmax; x++) {
 			putc(scanin[x][BLU], stdout);

@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -41,6 +41,8 @@ extern double  atof(), pow();
 
 double	gamma = 2.0;			/* gamma correction */
 
+int  bradj = 0;				/* brightness adjustment */
+
 pic	*inpic, *outpic;
 
 char  *progname;
@@ -77,6 +79,11 @@ char  *argv[];
 				break;
 			case 'b':
 				greyscale = !greyscale;
+				break;
+			case 'e':
+				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
+					goto userr;
+				bradj = atoi(argv[++i]);
 				break;
 			case 'r':
 				reverse = !reverse;
@@ -120,7 +127,7 @@ char  *argv[];
 					/* convert file */
 		pr2ra(&head);
 	} else {
-		if (i > argc-1 || i < argc-2)
+		if (i < argc-2 || (!greyscale && i > argc-1))
 			goto userr;
 		if ((inpic = openinput(argv[i], &head)) == NULL) {
 			sprintf(errmsg, "can't open input \"%s\"", argv[i]);
@@ -140,9 +147,9 @@ char  *argv[];
 	quiterr(NULL);
 userr:
 	fprintf(stderr,
-	"Usage: %s [-d][-c ncolors][-b][-g gamma] input [output]\n",
+	"Usage: %s [-d][-c ncolors][-b][-g gamma][-e +/-stops] input [output]\n",
 			progname);
-	fprintf(stderr, "   Or: %s -r [-g gamma] [input [output]]\n",
+	fprintf(stderr, "   Or: %s -r [-g gamma][-e +/-stops] [input [output]]\n",
 			progname);
 	exit(1);
 }
@@ -252,6 +259,8 @@ struct rasterfile  *h;
 				pow((cmap[0][i]+.5)/256.,gamma),
 				pow((cmap[1][i]+.5)/256.,gamma),
 				pow((cmap[2][i]+.5)/256.,gamma));
+	if (bradj)
+		shiftcolrs(ctab, 256, bradj);
 					/* convert file */
 	for (i = 0; i < ymax; i++) {
 		for (j = 0; j < xmax; j++) {
@@ -292,7 +301,7 @@ register rgbpixel  *l3;
 		quiterr("read error in picreadline3");
 	inpic->nexty = y+1;
 							/* convert scanline */
-	normcolrs(inl, xmax, 0);
+	normcolrs(inl, xmax, bradj);
 	for (i = 0; i < xmax; i++) {
 		l3[i].r = inl[i][RED];
 		l3[i].g = inl[i][GRN];
