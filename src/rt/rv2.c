@@ -455,7 +455,7 @@ register char  *s;
 	case 'a':			/* ambient */
 		switch (s[1]) {
 		case 'v':			/* value */
-			getparam(s+2, "ambient value", 'C', ambval);
+			getparam(s+2, "ambient value", 'C', (COLOR *)ambval);
 			break;
 		case 'a':			/* accuracy */
 			getparam(s+2, "ambient accuracy", 'r', &ambacc);
