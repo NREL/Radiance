@@ -26,8 +26,6 @@ char	*progname;		/* our program name */
 char	*hdkfile;		/* holodeck file name */
 char	froot[256];		/* root file name */
 
-int	nowarn = 0;		/* turn warnings off? */
-
 int	ncprocs = 0;		/* desired number of compute processes */
 
 char	*outdev = NULL;		/* output device name */
@@ -54,6 +52,8 @@ PACKET	*freepacks;		/* available packets */
 int	totqlen;		/* maximum queue length when full */
 
 char  *sigerr[NSIG];		/* signal error messages */
+
+extern int	nowarn;		/* turn warnings off? */
 
 extern time_t	time();
 
@@ -550,14 +550,6 @@ register char  *s;
 		fflush(stderr);
 		midline = 0;
 	}
-}
-
-
-wputs(s)			/* put warning string to stderr */
-char	*s;
-{
-	if (!nowarn)
-		eputs(s);
 }
 
 
