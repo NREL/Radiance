@@ -10,7 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "color.h"
 
-#define MAXGSHIFT	2		/* maximum shift for gamma table */
+#define MAXGSHIFT	4		/* maximum shift for gamma table */
 
 static BYTE	g_mant[256], g_nexp[256];
 
@@ -32,16 +32,15 @@ double	g;
 					/* compute gamb -> colr mapping */
 	i = 0;
 	mult = 256.0;
-	for (j = 255; j >= 0; j--) {
-	rept:
-		g_mant[j] = mult * pow((j+.5)/256.0, g);
-		if (g_mant[j] < 128) {
+	for (j = 255; j > 0; j--) {
+		while ((g_mant[j] = mult * pow(j/256.0, g)) < 128) {
 			i++;
 			mult *= 2.0;
-			goto rept;
 		}
 		g_nexp[j] = i;
 	}
+	g_mant[0] = 0;
+	g_nexp[0] = COLXS;
 }
 
 
