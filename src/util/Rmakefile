@@ -14,11 +14,12 @@ PROGS = makedist swaprasheader findglare xglaresrc glarendx
 
 all:	$(PROGS)
 
-install:	all objview.csh objpict.csh proj.csh
+install:	all objview.csh objpict.csh proj.csh glare.csh
 	cp $(PROGS) $(INSTDIR)
 	cp objview.csh $(INSTDIR)/objview
 	cp objpict.csh $(INSTDIR)/objpict
-	chmod 755 $(INSTDIR)/objview $(INSTDIR)/objpict
+	cp glare.csh $(INSTDIR)/glare
+	chmod 755 $(INSTDIR)/objview $(INSTDIR)/objpict $(INSTDIR)/glare
 
 clean:
 	set nonomatch; rm -f *.o $(PROGS) core
