@@ -27,6 +27,7 @@ char  *fname;
 	char  buf[16];
 	FILE  *fp;
 	char  *pathname, *err;
+	unsigned  wsum, hsum, ngly;
 	int  gn, ngv;
 	register int  gv;
 	register GLYPH  *g;
@@ -50,11 +51,12 @@ char  *fname;
 				pathname);
 		error(SYSTEM, errmsg);
 	}
+	wsum = hsum = ngly = 0;
 	while (fgetword(buf,sizeof(buf),fp) != NULL) {	/* get each glyph */
 		if (!isint(buf))
 			goto nonint;
 		gn = atoi(buf);
-		if (gn < 0 || gn > 255) {
+		if (gn < 1 || gn > 255) {
 			err = "illegal";
 			goto fonterr;
 		}
@@ -94,9 +96,18 @@ char  *fname;
 					g->top = gv;
 			}
 		}
+		if (g->right - g->left && g->top - g->bottom) {
+			ngly++;
+			wsum += g->right - g->left;
+			hsum += g->top - g->bottom;
+		}
 		f->fg[gn] = g;
 	}
 	fclose(fp);
+	if (ngly) {
+		f->mwidth = wsum / ngly;
+		f->mheight = hsum / ngly;
+	}
 	f->next = fontlist;
 	return(fontlist = f);
 nonint:
@@ -108,6 +119,24 @@ fonterr:
 	error(USER, errmsg);
 memerr:
 	error(SYSTEM, "out of memory in fontglyph");
+}
+
+
+int
+uniftext(sp, tp, f)			/* uniformly space text line */
+register short  *sp;		/* returned character spacing */
+register char  *tp;		/* text line */
+register FONT  *f;		/* font */
+{
+	int  linelen;
+
+	linelen = *sp++ = 0;
+	while (*tp)
+		if (f->fg[*tp++&0xff] == NULL)
+			*sp++ = 0;
+		else
+			linelen += *sp++ = 256;
+	return(linelen);
 }
 
 
@@ -125,14 +154,14 @@ int  cis;			/* intercharacter spacing */
 	while (*tp && (gp = f->fg[*tp++&0xff]) == NULL)
 		*sp++ = 0;
 	cis /= 2;
-	linelen = *sp = 0;
+	linelen = *sp = cis;
 	while (gp != NULL) {
 		if (gp->nverts) {		/* regular character */
 			linelen += *sp++ += cis - gp->left;
 			*sp = gp->right + cis;
 		} else {			/* space */
 			linelen += *sp++;
-			*sp = 256;
+			*sp = f->mwidth;
 		}
 		gp = NULL;
 		while (*tp && (gp = f->fg[*tp++&0xff]) == NULL) {
@@ -140,11 +169,12 @@ int  cis;			/* intercharacter spacing */
 			*sp = 0;
 		}
 	}
-	linelen += *sp;
+	linelen += *sp += cis;
 	return(linelen);
 }
 
 
+int
 proptext(sp, tp, f, cis, nsi)		/* space line proportionally */
 short  *sp;			/* returned character spacing */
 char  *tp;			/* text line */
@@ -152,6 +182,42 @@ FONT  *f;			/* font */
 int  cis;			/* target intercharacter spacing */
 int  nsi;			/* minimum number of spaces for indent */
 {
+	register char  *end, *tab;
+	GLYPH  *gp;
+	short  *nsp;
+	int  alen, len, width;
+					/* start by squeezing it */
+	squeeztext(sp, tp, f, cis);
+					/* now, realign spacing */
+	len = 0;
+	width = alen = *sp++;
+	while (*tp) {
+		nsp = sp;
+		for (end = tp; *end; end = tab) {
+			tab = end + 1;
+			alen += *nsp++;
+			if (f->fg[*end&0xff]) {
+				while ((gp = f->fg[*tab&0xff]) != NULL &&
+						gp->nverts == 0) { /* tab in */
+					alen += *nsp++;
+					tab++;
+				}
+				len += tab - end;
+			}
+			if (tab - end > nsi)
+				break;
+		}
+		len *= f->mwidth + cis;		/* compute target length */
+		width += len;
+		len -= alen;			/* necessary adjustment */
+		while (sp < nsp) {
+			alen = len/(nsp-sp);
+			*sp++ += alen;
+			len -= alen;
+		}
+		len = 0;
+		alen = 0;
+		tp = tab;
+	}
+	return(width);
 }
-
-
