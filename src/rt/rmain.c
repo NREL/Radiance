@@ -391,7 +391,7 @@ badopt:
 					/* open error file */
 	if (errfile != NULL) {
 		if (freopen(errfile, "a", stderr) == NULL)
-			quit(1);
+			quit(2);
 		fprintf(stderr, "**************\n*** PID %5d: ",
 				getpid());
 		printargs(argc, argv, stderr);
@@ -499,7 +499,7 @@ int  signo;
 	eputs("signal - ");
 	eputs(sigerr[signo]);
 	eputs("\n");
-	quit(1);
+	quit(3);
 }
 
 
