@@ -91,10 +91,10 @@ linterp(t,p0,p1) : (1-t)*p0 + t*p1;
 
 noop(v) = v;
 clip(v) = bound(0,v,1);
-noneg(v) = max(0,v);
-red(r,g,b) = r;
-green(r,g,b) = g;
-blue(r,g,b) = b;
+noneg(v) = if(v,v,0);
+red(r,g,b) = if(r,r,0);
+green(r,g,b) = if(g,g,0);
+blue(r,g,b) = if(b,b,0);
 grey(r,g,b) = .3*r + .59*g + .11*b;
 clip_r(r,g,b) = bound(0,r,1);
 clip_g(r,g,b) = bound(0,g,1);
