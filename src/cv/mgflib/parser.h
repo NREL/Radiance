@@ -330,8 +330,8 @@ extern MAT4  m4ident;
 
 				/* regular transformation */
 typedef struct {
-	MAT4  xfm;				/* transform matrix */
-	FLOAT  sca;				/* scalefactor */
+	MAT4	xfm;				/* transform matrix */
+	FLOAT	sca;				/* scalefactor */
 }  XF;
 
 #define identxf(xp)		(void)(setident4((xp)->xfm),(xp)->sca=1.0)
@@ -351,6 +351,7 @@ typedef struct xf_spec {
 	long	xid;			/* unique transform id */
 	short	xav0;			/* zeroeth argument in xf_argv array */
 	short	xac;			/* transform argument count */
+	short	rev;			/* boolean true if vertices reversed */
 	XF	xf;			/* cumulative transformation */
 	struct xf_array	*xarr;		/* transformation array pointer */
 	struct xf_spec	*prev;		/* previous transformation context */
