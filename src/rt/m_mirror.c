@@ -40,14 +40,16 @@ register RAY  *r;
 					/* check arguments */
 	if (m->oargs.nfargs != 3 || m->oargs.nsargs > 1)
 		objerror(m, USER, "bad number of arguments");
-					/* check if source ray */
-	if (r->rsrc >= 0) {			/* aiming for somebody */
-		if (source[r->rsrc].so != r->ro)
-			return;				/* but not us */
-	} else if (m->oargs.nsargs > 0) {	/* else call substitute? */
+					/* check for substitute material */
+	if (m->oargs.nsargs > 0 &&
+			(r->rsrc < 0 || source[r->rsrc].so != r->ro)) {
 		rayshade(r, modifier(m->oargs.sarg[0]));
 		return;
 	}
+					/* check for bad source ray */
+	if (r->rsrc >= 0 && source[r->rsrc].so != r->ro)
+		return;
+
 	if (r->rod < 0.)		/* back is black */
 		return;
 					/* get modifiers */
