@@ -189,16 +189,13 @@ rayparticipate(r)			/* compute ray medium participation */
 register RAY  *r;
 {
 	COLOR	ce, ca;
-	double	dist;
 	double	re, ge, be;
 
 	if (intens(r->cext) <= 1./FHUGE)
 		return;				/* no medium */
-	if ((dist = r->rot) >= FHUGE)
-		dist = 2.*thescene.cusize;	/* what to use for infinity? */
-	re = dist*colval(r->cext,RED);
-	ge = dist*colval(r->cext,GRN);
-	be = dist*colval(r->cext,BLU);
+	re = r->rot*colval(r->cext,RED);
+	ge = r->rot*colval(r->cext,GRN);
+	be = r->rot*colval(r->cext,BLU);
 	if (r->crtype & SHADOW) {		/* no scattering for sources */
 		re *= 1. - colval(r->albedo,RED);
 		ge *= 1. - colval(r->albedo,GRN);
