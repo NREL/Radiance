@@ -20,8 +20,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "random.h"
 
 
-#define  DISKTFRAC	0.25		/* disk area pretest fraction */
-
 double  getdisk();
 
 static OBJECT  *vobject;		/* virtual source objects */
@@ -235,6 +233,8 @@ register int  sn;	/* target source number */
 	FVECT  onorm;
 	FVECT  offsdir;
 	double  or, d;
+	int  infront;
+	int  ssn;
 	int  nok, nhit;
 	register int  i, n;
 				/* return if pretesting disabled */
@@ -243,27 +243,46 @@ register int  sn;	/* target source number */
 				/* get surface normal */
 	(*sfun[o->otype].of->getpleq)(onorm, o);
 				/* set number of rays to sample */
-	if (source[sn].sflags & SDISTANT)
+	if (source[sn].sflags & SDISTANT) {
 		n = (2./3.*PI*PI)*or2/(thescene.cusize*thescene.cusize)*
 				vspretest + .5;
-	else
+		infront = DOT(onorm, source[sn].sloc) > 0.;
+	} else {
 		n = or2/dist2(oc,source[sn].sloc)*vspretest + .5;
+		for (i = 0; i < 3; i++)
+			offsdir[i] = source[sn].sloc[i] - oc[i];
+		infront = DOT(onorm, offsdir) > 0.;
+	}
 	if (n < 1) n = 1;
-				/* limit tests to central region */
-	or = DISKTFRAC*sqrt(or2);
 				/* sample */
+	or = sqrt(or2);
+	ssn = 7*n;
 	nhit = nok = 0;
 	while (n-- > 0) {
-		samplendx++;
-		/*
-		 * We're being real sloppy with our sample locations here.
-		 */
-		for (i = 0; i < 3; i++)
-			offsdir[i] = or*(1. - 2.*urand(931*i+5821+n));
-		d = DOT(offsdir,onorm);
-		for (i = 0; i < 3; i++)
-			sr.rorg[i] = oc[i] + (1.-d)*offsdir[i];
+					/* get sample point */
+		do {
+			if (--ssn < 0)
+				return(f);	/* too small a target! */
+			for (i = 0; i < 3; i++)
+				offsdir[i] = or*(1. -
+						2.*urand(931*i+5827+ssn));
+			for (i = 0; i < 3; i++)
+				sr.rorg[i] = oc[i] + offsdir[i];
+			d = DOT(offsdir,onorm);
+			if (infront)
+				for (i = 0; i < 3; i++) {
+					sr.rorg[i] -= (d-.0001)*onorm[i];
+					sr.rdir[i] = -onorm[i];
+				}
+			else
+				for (i = 0; i < 3; i++) {
+					sr.rorg[i] -= (d+.0001)*onorm[i];
+					sr.rdir[i] = onorm[i];
+				}
+			rayorigin(&sr, NULL, PRIMARY, 1.0);
+		} while (!(*ofun[o->otype].funp)(o, &sr));
 					/* check against source */
+		samplendx++;
 		if (srcray(&sr, NULL, sn) == 0.0)
 			continue;
 		sr.revf = srcvalue;
