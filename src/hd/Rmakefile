@@ -153,30 +153,26 @@ sm_ogl.o sm_usets.o sm.o dircode.o rhdobj.o \
 -lrgl -lrt -lGLU -lGL -lX11 -lXext -lm
 
 $(DEVDIR)/ogl.hdi:	rhd_ogl0.o rhdisp.o rhdisp2.o rhdisp3.o \
-rhd_odraw.o rhd_octree.o holo.o
-	rm -f $(DEVDIR)/ogl.hdi
+rhd_odraw.o rhd_geom.o holo.o
 	$(CC) $(CFLAGS) -o $(DEVDIR)/ogl.hdi rhd_ogl0.o rhdisp.o rhdisp2.o \
-rhdisp3.o holo.o rhd_odraw.o rhd_octree.o -lrgl -lrt -lGLU -lGL -lX11 -lm
+rhdisp3.o holo.o rhd_odraw.o rhd_geom.o -lrgl -lrt -lGLU -lGL -lX11 -lm
 
 $(DEVDIR)/oglo.hdi:	rhd_oglo.o rhdisp.o rhdisp2.o rhdisp3.o \
-rhd_odraw.o rhd_octree.o holo.o rhdobj.o
-	rm -f $(DEVDIR)/oglo.hdi
+rhd_odraw.o rhd_geom.o holo.o rhdobj.o
 	$(CC) $(CFLAGS) -o $(DEVDIR)/oglo.hdi rhd_oglo.o rhdisp.o \
-rhdisp2.o rhdisp3.o holo.o rhd_odraw.o rhd_octree.o rhdobj.o \
+rhdisp2.o rhdisp3.o holo.o rhd_odraw.o rhd_geom.o rhdobj.o \
 -lrgl -lrt -lGLU -lGL -lX11 -lm
 
 $(DEVDIR)/ogls.hdi:	rhd_ogls.o rhdisp.o rhdisp2.o rhdisp3.o \
-rhd_odraw.o rhd_octree.o holo.o
-	rm -f $(DEVDIR)/ogls.hdi
+rhd_odraw.o rhd_geom.o holo.o
 	$(CC) $(CFLAGS) -o $(DEVDIR)/ogls.hdi rhd_ogls.o rhdisp.o rhdisp2.o \
-rhdisp3.o holo.o rhd_odraw.o rhd_octree.o \
+rhdisp3.o holo.o rhd_odraw.o rhd_geom.o \
 -lrgl -lrt -lGLU -lGL -lX11 -lXext -lm
 
 $(DEVDIR)/oglso.hdi:	rhd_oglso.o rhdisp.o rhdisp2.o rhdisp3.o \
-rhd_odraw.o rhd_octree.o holo.o rhdobj.o
-	rm -f $(DEVDIR)/oglso.hdi
+rhd_odraw.o rhd_geom.o holo.o rhdobj.o
 	$(CC) $(CFLAGS) -o $(DEVDIR)/oglso.hdi rhd_oglso.o rhdisp.o rhdisp2.o \
-rhdisp3.o holo.o rhd_odraw.o rhd_octree.o rhdobj.o \
+rhdisp3.o holo.o rhd_odraw.o rhd_geom.o rhdobj.o \
 -lrgl -lrt -lGLU -lGL -lX11 -lXext -lm
 
 rhd_glx0.o:	rhd_glx.c
@@ -289,3 +285,7 @@ rhdriver.h ../common/view.h ../common/color.h ../common/tonemap.h
 rhd_ogl0.o rhd_oglo.o rhd_ogls.o rhd_oglso.o:	x11icon.h
 
 rhd_oglo.o rhd_oglso.o:	rhdobj.h
+
+rhd_geom.o:	rhdriver.h ../common/view.h \
+../common/radogl.h ../common/standard.h ../common/fvect.h \
+../common/mat4.h ../common/object.h ../common/otypes.h ../common/lookup.h
