@@ -50,8 +50,7 @@ main(argc, argv)		/* convert object files to an octree */
 int  argc;
 char  **argv;
 {
-	char  *getenv();
-	double  atof();
+	extern char  *getenv();
 	FVECT  bbmin, bbmax;
 	char  *infile = NULL;
 	int  outflags = IO_ALL;

@@ -15,7 +15,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #define PI	3.14159265358979323846
 
 extern char	*gets(), *strcpy();
+#ifndef atof
 extern double	atof();
+#endif
 extern float	*matchlamp();
 
 				/* lamp parameters */

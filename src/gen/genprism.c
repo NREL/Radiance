@@ -20,6 +20,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  MAXVERT	1024		/* maximum # vertices */
 
+#ifndef atof
+extern double  atof();
+#endif
+
 char  *pmtype;		/* material type */
 char  *pname;		/* name */
 
@@ -36,7 +40,6 @@ main(argc, argv)
 int  argc;
 char  **argv;
 {
-	double  atof();
 	int  an;
 	
 	if (argc < 4)

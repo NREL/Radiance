@@ -14,6 +14,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "random.h"
 
+#ifndef atof
+extern double  atof();
+#endif
 
 #define  PI	3.14159265359
 
@@ -26,7 +29,6 @@ main(argc, argv)
 int  argc;
 char  **argv;
 {
-	double  atof();
 	char  *cmtype, *cname;
 	FVECT  cent;
 	double  rad;

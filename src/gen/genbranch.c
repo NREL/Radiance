@@ -16,6 +16,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  errf()		(var*(0.5-frandom()))
 
+#ifndef atof
+extern double  atof();
+#endif
+
 double  bstart[3] = {0.0, 0.0, 0.0};	/* start of branch */
 double  bend[3] = {28.0, 8.0, 0.0};	/* end of branch */
 double  bthick = .6;			/* branch radius at base */
@@ -35,7 +39,6 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-	double  atof();
 	int  i, j;
 
 	for (i = 1; i < argc && argv[i][0] == '-'; i++)
