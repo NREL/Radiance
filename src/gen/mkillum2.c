@@ -67,9 +67,10 @@ char  *nm;
 	if (distarr == NULL)
 		error(SYSTEM, "out of memory in o_face");
 				/* take first edge longer than sqrt(area) */
-	for (i = 1; i < fa->nv; i++) {
-		for (j = 0; j < 3; j++)
-			u[j] = VERTEX(fa,i)[j] - VERTEX(fa,i-1)[j];
+	for (j = fa->nv-1, i = 0; i < fa->nv; j = i++) {
+		u[0] = VERTEX(fa,i)[0] - VERTEX(fa,j)[0];
+		u[1] = VERTEX(fa,i)[1] - VERTEX(fa,j)[1];
+		u[2] = VERTEX(fa,i)[2] - VERTEX(fa,j)[2];
 		if (DOT(u,u) >= fa->area-FTINY)
 			break;
 	}
