@@ -128,9 +128,11 @@ register EPNODE  *epar;
 
     switch (epar->type) {
 
+#if  defined(VARIABLE) || defined(FUNCTION)
 	case VAR:
 	    varfree(epar->v.ln);
 	    break;
+#endif
 	    
 	case SYM:
 	    freestr(epar->v.name);
