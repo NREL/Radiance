@@ -100,7 +100,7 @@ extern HOLO	*hdinit(), *hdalloc();
 extern BEAM	*hdgetbeam();
 extern RAYVAL	*hdnewrays();
 extern unsigned	hdmemuse();
-extern long	hdfiluse(), hdfilen();
+extern long	hdfiluse(), hdfilen(), hdallocfrag();
 extern double	hdray(), hdinter();
 extern unsigned	hdcode();
 
