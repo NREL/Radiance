@@ -75,8 +75,6 @@ RAY  *r;
 		mxf = (XF *)malloc(sizeof(XF));
 		if (mxf == NULL)
 			goto memerr;
-		mxf->sca = 1.0;
-		setident4(mxf->xfm);
 		if (invxf(mxf->xfm, &mxf->sca, n, sa) != n)
 			objerror(m, USER, "bad transform");
 		if (mxf->sca < 0.0)

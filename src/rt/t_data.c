@@ -65,15 +65,11 @@ RAY  *r;
 		mxf = (XFORM *)malloc(sizeof(XFORM));
 		if (mxf == NULL)
 			goto memerr;
-		mxf->fore.sca = 1.0;
-		setident4(mxf->fore.xfm);
 		if (xf(mxf->fore.xfm, &mxf->fore.sca,
 			m->oargs.nsargs-i, sa+i) != m->oargs.nsargs-i)
 			objerror(m, USER, "bad transform");
 		if (mxf->fore.sca < 0.0)
 			mxf->fore.sca = -mxf->fore.sca;
-		mxf->back.sca = 1.0;
-		setident4(mxf->back.xfm);
 		invxf(mxf->back.xfm, &mxf->back.sca,
 				m->oargs.nsargs-i, sa+i);
 		if (mxf->back.sca < 0.0)
