@@ -33,6 +33,7 @@ int	nfiles;				/* number of input files */
 
 char	ourfmt[LPICFMT+1] = PICFMT;	/* input picture format */
 
+char	StandardInput[] = "<stdin>";
 char	Command[] = "<Command>";
 char	vcolin[3][4] = {"ri", "gi", "bi"};
 char	vcolout[3][4] = {"ro", "go", "bo"};
@@ -124,7 +125,7 @@ char	*argv[];
 		if (argv[a][0] == '-')
 			switch (argv[a][1]) {
 			case '\0':
-				input[nfiles].name = "<stdin>";
+				input[nfiles].name = StandardInput;
 				input[nfiles].fp = stdin;
 				break;
 			case 'o':

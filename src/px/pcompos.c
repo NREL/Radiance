@@ -39,6 +39,7 @@ int  labelht = 24;			/* label height */
 
 int  checkthresh = 0;			/* check threshold value */
 
+char  StandardInput[] = "<stdin>";
 char  Command[] = "<Command>";
 char  Label[] = "<Label>";
 
@@ -207,7 +208,7 @@ getfile:
 		if (autolabel && thislabel == NULL)
 			thislabel = argv[an];
 		if (!strcmp(argv[an], "-")) {
-			input[nfile].name = "<stdin>";
+			input[nfile].name = StandardInput;
 			input[nfile].fp = stdin;
 		} else {
 			if (argv[an][0] == '!') {
@@ -372,6 +373,11 @@ compos()				/* composite pictures */
 			quit(1);
 		}
 	}
+					/* read remainders from streams */
+	for (i = 0; i < nfile; i++)
+		if (input[i].name[0] == '<')
+			while (getc(input[i].fp) != EOF)
+				;
 	return;
 memerr:
 	perror(progname);
