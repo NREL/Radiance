@@ -45,7 +45,7 @@ o_instance(o, cu)			/* determine if cubes intersect */
 OBJREC  *o;
 CUBE  *cu;
 {
-	static char  vstart[4] = {0, 3, 5, 6};
+	static int  vstart[4] = {0, 3, 5, 6};
 	FVECT  cumin, cumax;
 	FVECT  vert[8];
 	FVECT  v1, v2;
