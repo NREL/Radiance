@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -36,11 +36,15 @@ int  header = 1;		/* do header */
 
 int  wrongformat = 0;		/* wrong input format? */
 
+double  gamma = 1.0;		/* gamma correction */
+
 COLOR  exposure = WHTCOLOR;
 
 char  *progname;
 
 FILE  *fin;
+
+extern double  atof(), pow();
 
 int  (*getval)(), (*putval)();
 
@@ -49,7 +53,6 @@ main(argc, argv)
 int  argc;
 char  **argv;
 {
-	extern double  atof();
 	extern int  checkhead();
 	int  i;
 
@@ -66,6 +69,9 @@ char  **argv;
 				break;
 			case 'o':		/* original values */
 				original = 1;
+				break;
+			case 'g':		/* gamma correction */
+				gamma = atof(argv[++i]);
 				break;
 			case 'r':		/* reverse conversion */
 				reverse = 1;
@@ -198,9 +204,9 @@ char  *line;
 		scalecolor(exposure, d);
 	} else if (original && iscolcor(line)) {
 		colcorval(ctmp, line);
-		colval(exposure,RED) /= colval(ctmp,RED);
-		colval(exposure,GRN) /= colval(ctmp,GRN);
-		colval(exposure,BLU) /= colval(ctmp,BLU);
+		setcolor(exposure, colval(exposure,RED)/colval(ctmp,RED),
+				colval(exposure,GRN)/colval(ctmp,GRN),
+				colval(exposure,BLU)/colval(ctmp,BLU));
 	} else if (header)
 		fputs(line, stdout);
 }
@@ -208,7 +214,8 @@ char  *line;
 
 pixtoval()				/* convert picture to values */
 {
-	COLOR  *scanln;
+	register COLOR  *scanln;
+	int  dogamma;
 	COLOR  lastc;
 	int  y;
 	register int  x;
@@ -218,6 +225,7 @@ pixtoval()				/* convert picture to values */
 		fprintf(stderr, "%s: out of memory\n", progname);
 		quit(1);
 	}
+	dogamma = gamma < .95 || gamma > 1.05;
 	setcolor(lastc, 0.0, 0.0, 0.0);
 	for (y = yres-1; y >= 0; y--) {
 		if (freadscan(scanln, xres, fin) < 0) {
@@ -226,14 +234,22 @@ pixtoval()				/* convert picture to values */
 		}
 		for (x = 0; x < xres; x++) {
 			if (uniq)
-				if (	scanln[x][RED] == lastc[RED] &&
-					scanln[x][GRN] == lastc[GRN] &&
-					scanln[x][BLU] == lastc[BLU]	)
+				if (	colval(scanln[x],RED) ==
+						colval(lastc,RED) &&
+					colval(scanln[x],GRN) ==
+						colval(lastc,GRN) &&
+					colval(scanln[x],BLU) ==
+						colval(lastc,BLU)	)
 					continue;
 				else
 					copycolor(lastc, scanln[x]);
 			if (original)
 				multcolor(scanln[x], exposure);
+			if (dogamma)
+				setcolor(scanln[x],
+					pow(colval(scanln[x],RED), 1.0/gamma),
+					pow(colval(scanln[x],GRN), 1.0/gamma),
+					pow(colval(scanln[x],BLU), 1.0/gamma));
 			if (!dataonly)
 				printf("%7d %7d ", x, y);
 			if ((*putval)(scanln[x], stdout) < 0) {
@@ -248,7 +264,8 @@ pixtoval()				/* convert picture to values */
 
 valtopix()			/* convert values to a pixel file */
 {
-	COLOR  *scanln;
+	int  dogamma;
+	register COLOR  *scanln;
 	int  y;
 	register int  x;
 
@@ -257,6 +274,7 @@ valtopix()			/* convert values to a pixel file */
 		fprintf(stderr, "%s: out of memory\n", progname);
 		quit(1);
 	}
+	dogamma = gamma < .95 || gamma > 1.05;
 	for (y = yres-1; y >= 0; y--) {
 		for (x = 0; x < xres; x++) {
 			if (!dataonly)
@@ -265,9 +283,13 @@ valtopix()			/* convert values to a pixel file */
 				fprintf(stderr, "%s: read error\n", progname);
 				quit(1);
 			}
+			if (dogamma)
+				setcolor(scanln[x],
+					pow(colval(scanln[x],RED), gamma),
+					pow(colval(scanln[x],GRN), gamma),
+					pow(colval(scanln[x],BLU), gamma));
 		}
-		if (fwritescan(scanln, xres, stdout) < 0
-				|| fflush(stdout) < 0) {
+		if (fwritescan(scanln, xres, stdout) < 0) {
 			fprintf(stderr, "%s: write error\n", progname);
 			quit(1);
 		}
