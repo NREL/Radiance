@@ -121,8 +121,7 @@ register RAY  *r;
 	if (m->oargs.nfargs > 5)
 		objerror(m, USER, "bad arguments");
 					/* get source indices */
-	if (!(r->crtype & SHADOW) && m->oargs.nsargs > 0 &&
-			(myslist = (int *)m->os) == NULL) {
+	if (m->oargs.nsargs > 0 && (myslist = (int *)m->os) == NULL) {
 		if (m->oargs.nsargs > MAXSLIST)
 			objerror(m, USER, "too many sources in list");
 		myslist = (int *)malloc((m->oargs.nsargs+1)*sizeof(int));
