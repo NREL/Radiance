@@ -16,7 +16,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "resolu.h"
 
-#define  MAXFILE	32
+#define  MAXFILE	64
 
 					/* output picture size */
 int  xsiz = 0;
