@@ -112,6 +112,7 @@ init(ac, av)			/* set up output file and start rpict */
 int  ac;
 char  **av;
 {
+	extern char  VersionID[];
 	char  *err;
 	FILE  *fp;
 	int  hr, vr;
@@ -126,6 +127,7 @@ char  **av;
 		if ((fp = fdopen(dup(outfd), "w")) == NULL)
 			goto filerr;
 		printargs(ac, av, fp);		/* write header */
+		fprintf(fp, "SOFTWARE= %s\n", VersionID);
 		fputs(VIEWSTR, fp);
 		fprintview(&ourview, fp);
 		putc('\n', fp);

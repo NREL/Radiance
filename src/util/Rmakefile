@@ -46,8 +46,8 @@ xglaresrc:	xglaresrc.o x11findwind.o
 	$(CC) $(CFLAGS) -o xglaresrc xglaresrc.o \
 x11findwind.o -lrt -lX11 -lm
 
-rpiece:	rpiece.o
-	$(CC) $(CFLAGS) -o rpiece rpiece.o -lrt -lm
+rpiece:	rpiece.o Version.o
+	$(CC) $(CFLAGS) -o rpiece rpiece.o Version.o -lrt -lm
 
 contour:	contour.o
 	$(CC) $(CFLAGS) -o contour contour.o -lm
