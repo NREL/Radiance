@@ -77,6 +77,7 @@ register char  **av;
 	putchar('\n');
 }
 
+int
 main (argc, argv)
 int argc;
 char *argv[];
@@ -135,5 +136,6 @@ char *argv[];
       }
       h += delh;
    }
+   return 0;
 }
 

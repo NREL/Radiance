@@ -103,6 +103,7 @@ int  lvl;
 }
 
 
+void
 printhead(ac, av)		/* print command header */
 register int  ac;
 register char  **av;
@@ -116,6 +117,7 @@ register char  **av;
 }
 
 
+int
 main(argc, argv)
 int  argc;
 char  *argv[];

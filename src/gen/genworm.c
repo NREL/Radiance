@@ -11,8 +11,11 @@ static const char	RCSid[] = "$Id$";
  *	9/24/87
  */
 
+#include  <stdlib.h>
 #include  <stdio.h>
 #include  <math.h>
+#include  <string.h>
+
 #include  "calcomp.h"
 #include  "fvect.h"
 
@@ -26,16 +29,20 @@ static const char	RCSid[] = "$Id$";
 #define  max(a,b)	((a) > (b) ? (a) : (b))
 
 
+/* XXX redundant, move to library */
 double  l_hermite(char *), l_bezier(char *), l_bspline(char *);
-void  quit();
 
 
+static void printhead(int  ac, char  **av);
+
+
+int
 main(argc, argv)
 int  argc;
 char  *argv[];
 {
 	char  stmp[256];
-	double  t, f, lastr, r;
+	double  t, f, lastr = 0, r;
 	FVECT  lastp, p;
 	int  i, nseg;
 
@@ -110,13 +117,13 @@ char  *argv[];
 		VCOPY(lastp, p);
 		lastr = r;
 	}
-	quit(0);
+	return 0;
 
 userror:
 	fprintf(stderr,
 "Usage: %s material name x(t) y(t) z(t) r(t) nseg [-e expr] [-f file]\n",
 			argv[0]);
-	quit(1);
+	return 1;
 }
 
 
@@ -144,9 +151,11 @@ int  code;
 }
 
 
-printhead(ac, av)		/* print command header */
-register int  ac;
-register char  **av;
+void
+printhead(		/* print command header */
+	register int  ac,
+	register char  **av
+)
 {
 	putchar('#');
 	while (ac--) {

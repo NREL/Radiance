@@ -15,6 +15,8 @@ static const char	RCSid[] = "$Id$";
 #include  <stdio.h>
 #include  <string.h>
 #include  <math.h>
+
+#include  "rterror.h"
 #include  "calcomp.h"
 
 #define  ZNAME		"Z`SYS`"		/* z function name */
@@ -29,9 +31,8 @@ static const char	RCSid[] = "$Id$";
 #define  UP		04
 #define  DOWN		010
 
-void	quit(), eputs(), wputs();
 
-
+void
 computen(nzp, nrp, z0, r0, z1, r1)		/* compute normal */
 double  *nzp, *nrp, z0, r0, z1, r1;
 {
@@ -69,6 +70,7 @@ int  code;
 }
 
 
+void
 printhead(ac, av)		/* print command header */
 register int  ac;
 register char  **av;
@@ -121,6 +123,7 @@ l_bspline(char *nm)
 }
 
 
+int
 main(argc, argv)
 int  argc;
 char  *argv[];
@@ -236,13 +239,13 @@ char  *argv[];
 		lastnz = nz; lastnr = nr;
 		nz = nextnz; nr = nextnr;
 	}
-	quit(0);
+	return 0;
 
 userror:
 	fprintf(stderr,
 	"Usage: %s material name z(t) r(t) nseg [-e expr] [-f file] [-s]\n",
 			argv[0]);
-	quit(1);
+	return 1;
 }
 
 

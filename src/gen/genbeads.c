@@ -14,7 +14,7 @@ static const char	RCSid[] = "$Id$";
 
 void hermite3(double hp[3], double p0[3], double p1[3],
 		double r0[3], double r1[3], double t);
-htan3(double ht[3], double p0[3], double p1[3],
+void htan3(double ht[3], double p0[3], double p1[3],
 		double r0[3], double r1[3], double t);
 
 static void genstring(

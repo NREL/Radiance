@@ -22,7 +22,7 @@ typedef double  FVECT[3];
 static double  bubble();	/* pretty cute, huh? */
 static void sphere_cart();
 
-
+int
 main(argc, argv)
 int  argc;
 char  **argv;

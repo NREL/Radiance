@@ -33,6 +33,7 @@ double  t		/* position parameter */
 }
 
 
+void
 htan3(		/* compute tangent on hermite curve */
 double  ht[3],		/* returned hermite tangent */
 double  p0[3],		/* first endpoint */

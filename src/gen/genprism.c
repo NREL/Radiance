@@ -302,6 +302,7 @@ register char  **av;
 }
 
 
+int
 main(argc, argv)
 int  argc;
 char  **argv;

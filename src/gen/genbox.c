@@ -99,6 +99,7 @@ int  v0, v1;
 }
 
 
+static void
 sphere(v0)			/* generate a sphere */
 int  v0;
 {
@@ -109,6 +110,7 @@ int  v0;
 }
 
 
+static void
 printhead(ac, av)		/* print command header */
 register int  ac;
 register char  **av;
@@ -122,6 +124,7 @@ register char  **av;
 }
 
 
+int
 main(argc, argv)
 int  argc;
 char  **argv;
