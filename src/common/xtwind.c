@@ -16,6 +16,11 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "xtwind.h"
 
+#ifndef  BSD
+#define  bzero(d,n)		(void)memset(d,0,n)
+extern char  *memset();
+#endif
+
 #define checkcurs(t)		if ((t)->cursor) togglecurs(t)
 
 #define restorecurs		checkcurs
