@@ -49,6 +49,9 @@ char  *argv[];
 		dofilter++;
 		argv++; argc--;
 	}
+#ifdef _IOLBF
+	stdout->_flag &= ~_IOLBF;
+#endif
 	if (argc < 2)
 		status = printp(NULL) == -1;
 	else
@@ -101,9 +104,6 @@ char  *fname;
 	fputs("\0333\042", stdout);
 				/* clear line buffer */
 	clearlbuf();
-#ifdef _IOLBF
-	stdout->_flag &= ~_IOLBF;
-#endif
 				/* put out scanlines */
 	for (i = yres-1; i >= 0; i--) {
 		if (freadcolrs(scanline, xres, input) < 0) {
