@@ -48,18 +48,36 @@ static struct fraglist {
 static int	nhdfragls;	/* size of hdfragl array */
 
 
+char *
+hdrealloc(ptr, siz, rout)	/* (re)allocate memory, retry then error */
+char	*ptr;
+unsigned	siz;
+char	*rout;
+{
+	register char	*newp;
+					/* call malloc/realloc */
+	if (ptr == NULL) newp = (char *)malloc(siz);
+	else newp = (char *)realloc(ptr, siz);
+					/* check success */
+	if (newp == NULL && rout != NULL) {
+		hdfreecache(25, NULL);	/* free some memory */
+		errno = 0;		/* retry */
+		newp = hdrealloc(ptr, siz, NULL);
+		if (newp == NULL) {	/* give up and report error */
+			sprintf(errmsg, "out of memory in %s", rout);
+			error(SYSTEM, errmsg);
+		}
+	}
+	return(newp);
+}
+
+
 hdattach(fd)		/* start tracking file fragments for some section */
 register int	fd;
 {
 	if (fd >= nhdfragls) {
-		if (nhdfragls)
-			hdfragl = (struct fraglist *)realloc((char *)hdfragl,
-					(fd+1)*sizeof(struct fraglist));
-		else
-			hdfragl = (struct fraglist *)malloc(
-					(fd+1)*sizeof(struct fraglist));
-		if (hdfragl == NULL)
-			error(SYSTEM, "out of memory in hdattach");
+		hdfragl = (struct fraglist *)hdrealloc((char *)hdfragl,
+				(fd+1)*sizeof(struct fraglist), "hdattach");
 		bzero((char *)(hdfragl+nhdfragls),
 				(fd+1-nhdfragls)*sizeof(struct fraglist));
 		nhdfragls = fd+1;
@@ -292,13 +310,12 @@ int	nr;			/* number of new rays desired */
 		hp->bl[i]->tick = hdclock;	/* preempt swap */
 	if (hdcachesize > 0 && hdmemuse(0) >= hdcachesize)
 		hdfreecache(PCTFREE, NULL);	/* free some space */
-	errno = 0;
 	if (hp->bl[i] == NULL) {		/* allocate (and load) */
 		n = hp->bi[i].nrd + nr;
-		if ((hp->bl[i] = (BEAM *)malloc(hdbsiz(n))) == NULL)
-			goto memerr;
+		hp->bl[i] = (BEAM *)hdrealloc(NULL, hdbsiz(n), "hdnewrays");
 		blglob(hp)->nrm += n;
 		if (n = hp->bl[i]->nrm = hp->bi[i].nrd) {
+			errno = 0;
 			if (lseek(hp->fd, hp->bi[i].fo, 0) < 0)
 				error(SYSTEM, "seek error on holodeck file");
 			n *= sizeof(RAYVAL);
@@ -307,10 +324,8 @@ int	nr;			/* number of new rays desired */
 				"error reading beam from holodeck file");
 		}
 	} else {				/* just grow in memory */
-		hp->bl[i] = (BEAM *)realloc( (char *)hp->bl[i],
-				hdbsiz(hp->bl[i]->nrm + nr) );
-		if (hp->bl[i] == NULL)
-			goto memerr;
+		hp->bl[i] = (BEAM *)hdrealloc((char *)hp->bl[i],
+				hdbsiz(hp->bl[i]->nrm + nr), "hdnewrays");
 		blglob(hp)->nrm += nr;
 	}
 	p = hdbray(hp->bl[i]) + hp->bl[i]->nrm;
@@ -318,8 +333,6 @@ int	nr;			/* number of new rays desired */
 	bzero((char *)p, nr*sizeof(RAYVAL));
 	blglob(hp)->tick = hp->bl[i]->tick = hdclock++;	/* update LRU clock */
 	return(p);				/* point to new rays */
-memerr:
-	error(SYSTEM, "out of memory in hdnewrays");
 }
 
 
@@ -337,10 +350,9 @@ register int	i;
 			return(NULL);
 		if (hdcachesize > 0 && hdmemuse(0) >= hdcachesize)
 			hdfreecache(PCTFREE, NULL);	/* get free space */
-		errno = 0;
-		if ((hp->bl[i] = (BEAM *)malloc(hdbsiz(n))) == NULL)
-			error(SYSTEM, "cannot allocate memory for beam");
+		hp->bl[i] = (BEAM *)hdrealloc(NULL, hdbsiz(n), "hdgetbeam");
 		blglob(hp)->nrm += hp->bl[i]->nrm = n;
+		errno = 0;
 		if (lseek(hp->fd, hp->bi[i].fo, 0) < 0)
 			error(SYSTEM, "seek error on holodeck file");
 		n *= sizeof(RAYVAL);
@@ -447,13 +459,17 @@ register BEAMI	*bi;
 		f->nfrags--;
 #endif
 	if (j % FRAGBLK == 0) {		/* more free list space */
+		register BEAMI	*newp;
 		if (f->fi == NULL)
-			f->fi = (BEAMI *)malloc(FRAGBLK*sizeof(BEAMI));
+			newp = (BEAMI *)malloc((j+FRAGBLK)*sizeof(BEAMI));
 		else
-			f->fi = (BEAMI *)realloc((char *)f->fi,
+			newp = (BEAMI *)realloc((char *)f->fi,
 					(j+FRAGBLK)*sizeof(BEAMI));
-		if (f->fi == NULL)
-			error(SYSTEM, "out of memory in hdfreefrag");
+		if (newp == NULL) {
+			f->nfrags--;	/* graceful failure */
+			return;
+		}
+		f->fi = newp;
 	}
 	for ( ; ; j--) {		/* insert in descending list */
 		if (!j || bi->fo < f->fi[j-1].fo) {
