@@ -151,11 +151,7 @@ char  *nm;
 	dim[0] = random();
 				/* sample sphere */
 	for (dim[1] = 0; dim[1] < nalt; dim[1]++)
-	    for (dim[2] = 0; dim[2] < nazi; dim[2]++) {
-		if (il->nsamps > 2 && nazi > 20) {
-		    rounddir(dir, (dim[1]+.5)/nalt, (dim[2]+.5)/nazi);
-		    mkaxes(u, v, dir);
-		}
+	    for (dim[2] = 0; dim[2] < nazi; dim[2]++)
 		for (i = 0; i < il->nsamps; i++) {
 					/* random direction */
 		    dim[3] = 1;
@@ -164,8 +160,7 @@ char  *nm;
 		    r2 = (dim[2]+urand(urind(ilhash(dim,4),i)))/nazi;
 		    rounddir(dir, r1, r2);
 					/* random location */
-		    if (il->nsamps <= 2 || nazi <= 20)
-			mkaxes(u, v, dir);		/* yuck! */
+		    mkaxes(u, v, dir);		/* yuck! */
 		    dim[3] = 3;
 		    r3 = sqrt(urand(urind(ilhash(dim,4),i)));
 		    dim[3] = 4;
@@ -181,7 +176,6 @@ char  *nm;
 					/* send sample */
 		    raysamp(distarr+3*(dim[1]*nazi+dim[2]), org, dir, rt);
 		}
-	    }
 	rayflush(rt);
 				/* write out the sphere w/ distribution */
 	roundout(il, distarr, nalt, nazi);
