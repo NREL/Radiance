@@ -106,11 +106,11 @@ pfhold()		/* holding pattern for idle rendering process */
 	if (mknod(mktemp(strcpy(outpname,TEMPLATE)), S_IFIFO|0600) < 0)
 		goto createrr;
 	sprintf(buf, "%d\n%s\n%s\n", getpid(), inpname, outpname);
-	if (lseek(persistfd, 0L, 0) < 0)
-		error(SYSTEM, "seek error on persist file in pfhold");
+	if (lseek(persistfd, 0L, 0) < 0 || ftruncate(persistfd, 0L) < 0)
+		error(SYSTEM, "seek/truncate error on persist file");
 	n = strlen(buf);
 	if (write(persistfd, buf, n) < n)
-		error(SYSTEM, "error writing persist file in pfhold");
+		error(SYSTEM, "error writing persist file");
 				/* wait TIMELIM for someone to signal us */
 	signal(SIGIO, sig_noop);
 	alarm(TIMELIM);
