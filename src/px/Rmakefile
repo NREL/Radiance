@@ -17,7 +17,7 @@ PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar -lm
 
 PROGS = pfilt ttyimage aedimage oki20c paintjet mt160r getinfo psign \
 greyscale pvalue pcompos colorscale ra_pr ximage prot \
-panim ra_t8 ra_bn ra_t16 pcomb pinterp
+panim ra_t8 ra_bn ra_t16 pcomb pinterp x11image
 
 all:	$(PROGS)
 
@@ -95,6 +95,11 @@ xraster.o header.o biq.o image.o fvect.o
 	cc $(CFLAGS) -o ximage ximage.o color.o xraster.o \
 header.o ciq.o cut.o closest.o ealloc.o biq.o image.o fvect.o -lX -lm
 
+x11image:	x11image.o color.o ciq.o cut.o closest.o ealloc.o \
+x11raster.o header.o biq.o image.o fvect.o
+	cc $(CFLAGS) -o x11image x11image.o color.o x11raster.o \
+header.o ciq.o cut.o closest.o ealloc.o biq.o image.o fvect.o -lX11 -lm
+
 prot:		prot.o color.o header.o
 	cc $(CFLAGS) -o prot prot.o color.o header.o
 
@@ -141,7 +146,9 @@ ra_bn.o ra_t16.o ra_pr.o pvalue.o pcomb.o pinterp.o ximage.o:	color.h
 
 pinterp.o ximage.o image.o:	standard.h fvect.h
 
-ximage.o:	xraster.h
+ximage.o x11raster.o:	xraster.h
+
+x11image.o x11raster.o:	x11raster.h
 
 ra_t8.o:	targa.h
 
