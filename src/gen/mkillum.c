@@ -76,11 +76,27 @@ char	*argv[];
 	gargv = argv;
 				/* set up rtrace command */
 	for (i = 1; i < argc; i++) {
-		if (argv[i][0] == '<' && !argv[i][1])
+		if (argv[i][0] == '<' && argv[i][1] == '\0')
 			break;
 		rtargv[rtargc++] = argv[i];
 		if (argv[i][0] == '-' && argv[i][1] == 'w')
-			warnings = !warnings;
+			switch (argv[i][2]) {
+			case '\0':
+				warnings = !warnings;
+				break;
+			case '+':
+			case 'T': case 't':
+			case 'Y': case 'y':
+			case '1':
+				warnings = 1;
+				break;
+			case '-':
+			case 'F': case 'f':
+			case 'N': case 'n':
+			case '0':
+				warnings = 0;
+				break;
+			}
 	}
 	gargc = i;
 	rtargc--;
