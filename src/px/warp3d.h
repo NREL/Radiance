@@ -26,15 +26,14 @@ typedef unsigned char	GNDX[3];	/* grid index type */
 typedef float	W3VEC[3];	/* vector type for 3D warp maps */
 
 struct grid3d {
-	W3VEC	gmin, gmax;		/* grid boundaries */
-	GNDX	gn;			/* grid dimensions */
-	W3VEC	gstep;			/* grid voxel size */
 	unsigned char	flags;		/* interpolation flags */
+	GNDX	gn;			/* grid dimensions */
+	W3VEC	gmin, gstep;		/* grid corner and voxel size */
 	LUTAB	gtab;			/* grid lookup table */
 };				/* a regular, sparse warping grid */
 
 typedef struct {
-	W3VEC	*ip, *op;		/* discrete input/output pairs */
+	W3VEC	*ip, *ov;		/* discrete input/displ. pairs */
 	int	npts;			/* number of point pairs */
 	W3VEC	llim, ulim;		/* lower and upper input limits */
 	double	d2min, d2max;		/* min. and max. point distance^2 */
