@@ -104,11 +104,9 @@ char  *argv[];
 				break;
 			case 'c':
 				skytype = S_OVER;
-				dosun = 0;
 				break;
 			case 'u':
 				skytype = S_UNIF;
-				dosun = 0;
 				break;
 			case 'i':
 				skytype = S_INTER;
@@ -221,7 +219,7 @@ computesky()			/* compute sky parameters */
 					/* Compute horizontal radiance */
 	groundbr = zenithbr*normfactor;
 	printf("# Ground ambient level: %.1f\n", groundbr);
-	if (sundir[2] > 0.0 && (!u_solar || solarbr > 0.0)) {
+	if (!overcast && sundir[2] > 0.0 && (!u_solar || solarbr > 0.0)) {
 		if (u_solar == -1)
 			solarbr /= 6e-5*sundir[2];
 		else if (u_solar == 0) {
