@@ -59,8 +59,8 @@ ROBJS = $(OCTOBJS) $(RAYOBJS) $(SURFOBJS) $(MATOBJS) \
 RSRC = $(OCTSRC) $(RAYSRC) $(SURFSRC) $(MATSRC) \
 	$(MODSRC) $(SUPPSRC) $(MISCSRC)
 
-OCTOBJS = octree.o readobj.o readoct.o objset.o otypes.o
-OCTSRC = octree.c readobj.c readoct.c objset.c otypes.c
+OCTOBJS = octree.o readobj.o readoct.o objset.o otypes.o initotypes.o
+OCTSRC = octree.c readobj.c readoct.c objset.c otypes.c initotypes.c
 
 RAYOBJS = raytrace.o ambient.o
 RAYSRC = raytrace.c ambient.c
@@ -209,8 +209,8 @@ rpmain.o rtmain.o rtrace.o rvmain.o rv2.o rv3.o source.o:	octree.h
 
 o_instance.o instance.o:	instance.h octree.h
 
-ambient.o cone.o dielectric.o func.o normal.o o_cone.o objset.o \
-otypes.o text.o raytrace.o readobj.o readoct.o rtrace.o \
+ambient.o cone.o dielectric.o func.o initotypes.o normal.o o_cone.o \
+objset.o otypes.o text.o raytrace.o readobj.o readoct.o rtrace.o \
 rv2.o source.o sphere.o:	otypes.h
 
 ambient.o rpict.o rv3.o source.o:	random.h
@@ -225,8 +225,8 @@ rv2.o rv3.o rview.o:	rpaint.h driver.h view.h
 
 source.o:	source.h
 
-cone.o data.o devcomm.o face.o image.o misc.o objset.o octree.o otypes.o \
-readobj.o readoct.o rview.o:	standard.h fvect.h
+cone.o data.o devcomm.o face.o image.o initotypes.o misc.o objset.o \
+octree.o otypes.o readobj.o readoct.o rview.o:	standard.h fvect.h
 
 sundev.o:	suntools.icon
 

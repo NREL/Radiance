@@ -116,6 +116,8 @@ char  *argv[];
 					/* get library path */
 	if ((libpath = getenv(ULIBVAR)) == NULL)
 		libpath = DEFPATH;
+					/* initialize object types */
+	initotypes();
 					/* option city */
 	for (i = 1; i < argc && argv[i][0] == '-'; i++) {
 		if (!strcmp(argv[i], "-defaults") ||
