@@ -98,10 +98,10 @@ compveil()				/* compute veiling image */
 							rdirscan(y)[x]);
 					if (t2 <= FTINY) continue;
 					/*	use approximation instead
-					t2 = acos(t2);
-					t2 = 1./(t2*t2);
+					t3 = acos(t2);
+					t2 = t2/(t3*t3);
 					*/
-					t2 = .5 / (1. - t2);
+					t2 *= .5 / (1. - t2);
 					copycolor(ctmp, fovscan(y)[x]);
 					scalecolor(ctmp, t2);
 					addcolor(vsum, ctmp);
