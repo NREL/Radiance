@@ -21,11 +21,9 @@ MAT4  m4ident = MAT4IDENT;
 
 static MAT4  m4tmp;		/* for efficiency */
 
-int	xf_argc;			/* total # transform args. */
-char	**xf_argv;			/* transform arguments */
-XF_SPEC	*xf_context;			/* current context */
-
-static int	xf_maxarg;		/* # allocated arguments */
+XF_SPEC	*xf_context;		/* current context */
+char	**xf_argend;		/* end of transform argument list */
+static char	**xf_argbeg;	/* beginning of transform argument list */
 
 static XF_SPEC	*new_xf();
 static long	comp_xfid();
@@ -65,7 +63,6 @@ char	**av;
 				free((MEM_PTR)ap);
 		}
 		if (n < 0) {			/* pop transform */
-			xf_argv[xf_argc=spec->xav0] = NULL;
 			xf_context = spec->prev;
 			free((MEM_PTR)spec);
 			return(MG_OK);
@@ -77,7 +74,10 @@ char	**av;
 		xf_context = spec;
 	}
 					/* translate new specification */
-	if (xf(&spec->xf, spec->xac, &xf_argv[spec->xav0]) != spec->xac)
+	n = xf_ac(spec);
+	if (spec->prev != NULL)		/* incremental comp. is more eff. */
+		n -= xf_ac(spec->prev);
+	if (xf(&spec->xf, n, xf_av(spec)) != n)
 		return(MG_ETYPE);
 					/* check for vertex reversal */
 	if ((spec->rev = (spec->xf.sca < 0.)))
@@ -124,33 +124,33 @@ char	**av;
 		spec->xarr->ndim = 0;		/* incremented below */
 	} else
 		spec->xarr = NULL;
-	spec->xav0 = xf_argc;
-	spec->xac = ac;
+	spec->xac = ac + xf_argc;
 					/* and store new xf arguments */
-	if (xf_argc+ac+1 > xf_maxarg) {
-		if (!xf_maxarg)
-			xf_argv = (char **)malloc(
-					(xf_maxarg=ac+1)*sizeof(char *));
-		else
-			xf_argv = (char **)realloc((MEM_PTR)xf_argv,
-				(xf_maxarg=xf_argc+ac+1)*sizeof(char *));
-		if (xf_argv == NULL)
+	if (xf_argbeg == NULL || xf_av(spec) < xf_argbeg) {
+		register char	**newav =
+				(char **)malloc((spec->xac+1)*sizeof(char *));
+		if (newav == NULL)
 			return(NULL);
+		for (i = xf_argc; i-- > 0; )
+			newav[ac+i] = xf_argend[i-xf_context->xac];
+		*(xf_argend = newav + spec->xac) = NULL;
+		if (xf_argbeg != NULL)
+			free((MEM_PTR)xf_argbeg);
+		xf_argbeg = newav;
 	}
 	cp = (char *)(spec + 1);	/* use memory allocated above */
 	for (i = 0; i < ac; i++)
 		if (!strcmp(av[i], "-a")) {
-			xf_argv[xf_argc++] = "-i";
-			xf_argv[xf_argc++] = strcpy(
+			xf_av(spec)[i++] = "-i";
+			xf_av(spec)[i] = strcpy(
 					spec->xarr->aarg[spec->xarr->ndim].arg,
 					"0");
 			spec->xarr->aarg[spec->xarr->ndim].i = 0;
-			spec->xarr->aarg[spec->xarr->ndim++].n = atoi(av[++i]);
+			spec->xarr->aarg[spec->xarr->ndim++].n = atoi(av[i]);
 		} else {
-			xf_argv[xf_argc++] = strcpy(cp, av[i]);
+			xf_av(spec)[i] = strcpy(cp, av[i]);
 			cp += strlen(av[i]) + 1;
 		}
-	xf_argv[xf_argc] = NULL;
 	if (spec->xarr != NULL)
 		(void)put_oname(spec->xarr);
 	return(spec);
@@ -206,12 +206,10 @@ xf_clear()			/* clear transform stack */
 {
 	register XF_SPEC	*spec;
 
-	if (xf_maxarg) {
-		free((MEM_PTR)xf_argv);
-		xf_argv = NULL;
-		xf_maxarg = 0;
+	if (xf_argbeg != NULL) {
+		free((MEM_PTR)xf_argbeg);
+		xf_argbeg = xf_argend = NULL;
 	}
-	xf_argc = 0;
 	while ((spec = xf_context) != NULL) {
 		xf_context = spec->prev;
 		if (spec->xarr != NULL)
