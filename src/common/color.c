@@ -313,7 +313,7 @@ register COLR  clr;
 	if (clr[EXP] == 0)
 		col[RED] = col[GRN] = col[BLU] = 0.0;
 	else {
-		f = ldexp(1.0, clr[EXP]-(COLXS+8));
+		f = ldexp(1.0, (int)clr[EXP]-(COLXS+8));
 		col[RED] = (clr[RED] + 0.5)*f;
 		col[GRN] = (clr[GRN] + 0.5)*f;
 		col[BLU] = (clr[BLU] + 0.5)*f;
