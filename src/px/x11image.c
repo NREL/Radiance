@@ -109,9 +109,8 @@ extern long  ftell();
 
 extern char  *malloc(), *calloc();
 
-extern double  pow(), log();
-
 Display  *thedisplay;
+
 
 main(argc, argv)
 int  argc;
@@ -305,20 +304,6 @@ char  *err;
 		exit(1);
 	}
 	exit(0);
-}
-
-
-eputs(s)
-char	*s;
-{
-	fputs(s, stderr);
-}
-
-
-quit(code)
-int  code;
-{
-	exit(code);
 }
 
 
@@ -896,7 +881,7 @@ getgrey()			/* get greyscale data */
 	}
 	for (x = 0; x < maxcolors; x++)
 		clrtab[x][RED] = clrtab[x][GRN] =
-			clrtab[x][BLU] = (x*256+maxcolors/2)/maxcolors;
+			clrtab[x][BLU] = ((long)x*256+maxcolors/2)/maxcolors;
 }
 
 
