@@ -37,7 +37,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  BORWIDTH	5		/* border width */
 
-#define  ICONSIZ	80		/* maximum icon dimension */
+#define  ICONSIZ	(8*10)		/* maximum icon dimension (even 8) */
 
 #define  ourscreen	DefaultScreen(thedisplay)
 #define  ourblack	BlackPixel(thedisplay,ourscreen)
@@ -92,7 +92,7 @@ struct {
 
 char  *geometry = NULL;			/* geometry specification */
 
-char  icondata[(ICONSIZ+7)/8*ICONSIZ];	/* icon bitmap data */
+char  icondata[ICONSIZ*ICONSIZ/8];	/* icon bitmap data */
 int  iconwidth = 0, iconheight = 0;
 
 char  *progname;
@@ -658,7 +658,7 @@ COLR  *scan;
 	register int	x, xi;
 
 	if (iconheight == 0) {		/* initialize */
-		if (xmax < ICONSIZ && ymax < ICONSIZ) {
+		if (xmax <= ICONSIZ && ymax <= ICONSIZ) {
 			iconwidth = xmax;
 			iconheight = ymax;
 		} else if (xmax > ymax) {
@@ -686,7 +686,7 @@ COLR  *scan;
 			*dp |= 1<<(x&07);
 		cerr[x] = err >>= 1;
 	}
-	if (y >= ymax-ymax/iconheight)	/* all done */
+	if (y >= ymax - ymax/iconheight)	/* all done */
 		dp = NULL;
 }
 
