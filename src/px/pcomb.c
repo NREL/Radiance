@@ -166,7 +166,6 @@ combine()			/* combine pictures */
 					colval(scanout[xpos],j) = 0.0;
 					for (i = 0; i < nfiles; i++)
 						colval(scanout[xpos],j) += colval(input[i].scan[xpos],j);
-					colval(scanout[xpos],j) /= (double)nfiles;
 				}
 		}
 		if (fwritescan(scanout, xres, stdout) < 0) {
