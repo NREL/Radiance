@@ -139,12 +139,11 @@ FVECT  pg, dg;
 			dp->n = 0;
 			if (divsample(dp, &hemi, r) < 0)
 				goto oopsy;
+			arad += dp->r;
 			if (div != NULL)
 				dp++;
-			else {
+			else
 				addcolor(acol, dp->v);
-				arad += dp->r;
-			}
 		}
 	if (ns > 0 && arad > FTINY && ndivs/arad < minarad)
 		ns = 0;			/* close enough */
@@ -170,6 +169,7 @@ FVECT  pg, dg;
 	}
 					/* compute returned values */
 	if (div != NULL) {
+		arad = 0.0;
 		for (i = ndivs, dp = div; i-- > 0; dp++) {
 			arad += dp->r;
 			if (dp->n > 1) {
