@@ -782,8 +782,7 @@ COLR  *scan;
 	static short  cerr[ICONSIZ];
 	static int  ynext;
 	static char  *dp;
-	double  sf;
-	COLOR  col;
+	COLR  clr;
 	register int  err;
 	register int	x, ti;
 	int  errp;
@@ -808,17 +807,15 @@ COLR  *scan;
 	}
 	if (y < ynext*ymax/iconheight)	/* skip this one */
 		return;
-	sf = pow(2.0, (double)(scale+8));
 	err = 0;
 	for (x = 0; x < iconwidth; x++) {
 		if (!(x&7))
 			*++dp = 0;
 		errp = err;
 		ti = x*xmax/iconwidth;
-		colr_color(col, scan[ti]);
-		ti = sf*bright(col);
-		if (ti > 255) ti = 255;
-		err += ti + cerr[x];
+		copycolr(clr, scan[ti]);
+		normcolrs(clr, 1, scale);
+		err += normbright(clr) + cerr[x];
 		if (err > 127)
 			err -= 255;
 		else
