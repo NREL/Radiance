@@ -400,7 +400,6 @@ ambsync()			/* flush ambient file */
 
 #else
 
-#include  <fcntl.h>
 #include  <sys/types.h>
 #include  <sys/stat.h>
 
@@ -410,8 +409,9 @@ ambsync()			/* synchronize ambient file */
 	static FILE  *ambinp = NULL;
 	struct flock  fls;
 	struct stat  sts;
+#define	flen	sts.st_size
 	AMBVAL	avs;
-	long  lastpos, flen;
+	long  lastpos;
 	register int  n;
 				/* gain exclusive access */
 	fls.l_type = F_WRLCK;
@@ -424,10 +424,12 @@ ambsync()			/* synchronize ambient file */
 	lastpos = lseek(fileno(ambfp), 0L, 1);	/* get previous position */
 	if (fstat(fileno(ambfp), &sts) < 0)	/* get current length */
 		error(SYSTEM, "cannot stat ambient file");
-	flen = sts.st_size;
 	if (n = (flen - lastpos)/AMBVALSIZ) {	/* file has grown */
-		if (ambinp == NULL)		/* use duplicate file */
+		if (ambinp == NULL) {		/* use duplicate file */
 			ambinp = fdopen(dup(fileno(ambfp)), "r");
+			if (ambinp == NULL)
+				error(SYSTEM, "fdopen failed in ambsync");
+		}
 		while (n--) {			/* load contributed values */
 			readambval(&avs, ambinp);
 			avinsert(&avs,&atrunk,thescene.cuorg,thescene.cusize);
