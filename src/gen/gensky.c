@@ -49,7 +49,7 @@ double  gprefl = 0.2;
 double  sundir[3];
 double  groundbr;
 double  F2;
-double  solarbr;
+double  solarbr = -1.0;
 
 char  *progname;
 char  errmsg[128];
@@ -90,6 +90,9 @@ char  *argv[];
 			case 's':
 				cloudy = 0;
 				dosun = argv[i][0] == '+';
+				break;
+			case 'r':
+				solarbr = atof(argv[++i]);
 				break;
 			case 'c':
 				cloudy = argv[i][0] == '+' ? 2 : 1;
@@ -175,12 +178,10 @@ computesky()			/* compute sky parameters */
 				0.45*sundir[2]*sundir[2]);
 		groundbr = zenithbr*normsc(altitude)/F2/PI;
 		printf("# Ground ambient level: %f\n", groundbr);
-		if (sundir[2] > 0.0) {
-			if (sundir[2] > .16)
-				solarbr = (1.5e9/SUNEFFICACY) *
-					(1.147 - .147/sundir[2]);
-			else
-				solarbr = 1.5e9/SUNEFFICACY*(1.147-.147/.16);
+		if (sundir[2] > 0.0 && solarbr != 0.0) {
+			if (solarbr < 0.0)
+				solarbr = 1.5e9/SUNEFFICACY *
+				(1.147 - .147/(sundir[2]>.16?sundir[2]:.16));
 			groundbr += solarbr*6e-5*sundir[2]/PI;
 		} else
 			dosun = 0;
