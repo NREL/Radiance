@@ -29,13 +29,13 @@ int  xfa;				/* start of xf arguments */
 XF  tot;				/* total transformation */
 int  reverse;				/* boolean true if scene mirrored */
 
-int  invert = 0;			/* boolean true to invert surfaces */
+int  invert;				/* boolean true to invert surfaces */
 
-int  expand = 1;			/* boolean true to expand commands */
+int  expand;				/* boolean true to expand commands */
 
-char  *newmod = NULL;			/* new modifier for surfaces */
+char  *newmod;				/* new modifier for surfaces */
 
-char  *idprefix = NULL;			/* prefix for object identifiers */
+char  *idprefix;			/* prefix for object identifiers */
 
 #define	 ALIAS		NUMOTYPE	/* put alias at end of array */
 
@@ -61,6 +61,7 @@ main(argc, argv)		/* get transform options and transform file */
 int  argc;
 char  *argv[];
 {
+	int  mal_prefix = 0;
 	char  *fname;
 	int  a;
 					/* check for argument list file */
@@ -72,20 +73,40 @@ char  *argv[];
 		if (!strcmp(argv[a], "-a"))
 			return(doarray(argc, argv, a));
 
-	initotypes();
+	initotypes();			/* initialize */
+	invert = 0;
+	expand = 1;
+	newmod = NULL;
+	idprefix = NULL;
 
 	for (a = 1; a < argc; a++) {
 		if (argv[a][0] == '-')
 			switch (argv[a][1]) {
 			case 'm':
-				if (argv[a][2] || a+1 >= argc)
+				if (argv[a][2] | a+1 >= argc)
 					break;
-				newmod = argv[++a];
+				a++;
+				if (newmod == NULL)
+					newmod = argv[a];
 				continue;
 			case 'n':
-				if (argv[a][2] || a+1 >= argc)
+				if (argv[a][2] | a+1 >= argc)
 					break;
-				idprefix = argv[++a];
+				a++;
+				if (idprefix == NULL)
+					idprefix = argv[a];
+				else {
+					register char	*newp;
+					newp = (char *)malloc(strlen(idprefix)+
+							strlen(argv[a])+2);
+					if (newp == NULL)
+						exit(2);
+					sprintf(newp, "%s.%s",
+							idprefix, argv[a]);
+					if (mal_prefix++)
+						free((char *)idprefix);
+					idprefix = newp;
+				}
 				continue;
 			case 'c':
 				if (argv[a][2])
@@ -100,7 +121,7 @@ char  *argv[];
 			case 'I':
 				if (argv[a][2])
 					break;
-				invert = 1;
+				invert = !invert;
 				continue;
 			}
 		break;
@@ -143,6 +164,8 @@ char  *argv[];
 			xform(mainfn, mainfp);
 		}
 
+	if (mal_prefix)
+		free((char *)idprefix);
 	return(0);
 }
 
