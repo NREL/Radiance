@@ -16,16 +16,11 @@ static char SCCSid[] = "$SunId$ LBL";
  *	4/3/87
  */
 
-#include  <stdio.h>
-#include  "fvect.h"
+#include  "standard.h"
 
 #define  XNAME		"X_"			/* x function name */
 #define  YNAME		"Y_"			/* y function name */
 #define  ZNAME		"Z_"			/* z function name */
-
-#define  PI		3.14159265358979323846
-
-#define  FTINY		1e-7
 
 #define  ABS(x)		((x)>=0 ? (x) : -(x))
 
@@ -334,7 +329,7 @@ double mat[4][4],inverse[4][4];
 	register int i,j,k;
 	register double temp;
 
-	bcopy(mat, m4tmp, sizeof(m4tmp));
+	bcopy((char *)mat, (char *)m4tmp, sizeof(m4tmp));
 					/* set inverse to identity */
 	for (i = 0; i < 4; i++)
 		for (j = 0; j < 4; j++)
