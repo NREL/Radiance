@@ -194,6 +194,7 @@ char  *s;
 
 init()			/* get data and open window */
 {
+	XSetWindowAttributes	ourwinattr;
 	XSizeHints  oursizhints;
 	register int  i;
 	
@@ -206,15 +207,21 @@ init()			/* get data and open window */
 	}
 	if ((thedisplay = XOpenDisplay(NULL)) == NULL)
 		quiterr("can't open display; DISPLAY variable set?");
-	wind = XCreateSimpleWindow(thedisplay, 
-		ourroot, 0, 0, xmax, ymax, BORWIDTH, ourblack, ourwhite);
-	if (wind == 0)
-		quiterr("can't create window");
 	if (maxcolors == 0) {		/* get number of available colors */
 		i = DisplayPlanes(thedisplay,ourscreen);
 		maxcolors = i > 8 ? 256 : 1<<i;
 		if (maxcolors > 4) maxcolors -= 2;
 	}
+				/* store image */
+	getras();
+				/* open window */
+	ourwinattr.border_pixel = ourblack;
+	ourwinattr.background_pixel = ourwhite;
+	wind = XCreateWindow(thedisplay, ourroot, 0, 0, xmax, ymax, BORWIDTH,
+			0, InputOutput, ourras->visual, 
+			CWBackPixel|CWBorderPixel, &ourwinattr);
+	if (wind == 0)
+		quiterr("can't create window");
 	fontid = XLoadFont(thedisplay, FONTNAME);
 	if (fontid == 0)
 		quiterr("can't get font");
@@ -244,8 +251,6 @@ init()			/* get data and open window */
 		}
 		XSetNormalHints(thedisplay, wind, &oursizhints);
 	}
-				/* store image */
-	getras();
 	XSelectInput(thedisplay, wind, ButtonPressMask|ButtonReleaseMask
 			|ButtonMotionMask|StructureNotifyMask
 			|KeyPressMask|ExposureMask);
