@@ -18,7 +18,7 @@ PIXAR_INCLUDE=	-I/usr/pixar/include
 PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar $(MLIB)
 
 PROGS = pfilt ttyimage oki20c oki20 paintjet mt160r psign \
-pvalue pcompos protate ra_pr ra_pr24 ra_avs ra_tiff ra_hexbit \
+pvalue pcompos protate ra_pr ra_pr24 ra_avs ra_tiff normtiff ra_hexbit \
 ra_t8 ra_bn ra_t16 pcomb pinterp ximage xshowtrace pflip ra_ppm \
 ra_rgbe ra_pict ra_ps pextrem ra_gif ra_xyze macbethcal pcond pcwarp
 
@@ -183,7 +183,11 @@ ra_xyze:	ra_xyze.o
 ra_tiff:	ra_tiff.o ../lib/libtiff.a
 	$(CC) $(CFLAGS) -o ra_tiff ra_tiff.o -lrt -ltiff $(MLIB)
 
-../common/tiff.h:	../lib/libtiff.a
+../common/tiff.h ../common/tiffio.h:	../lib/libtiff.a
+	@touch ../common/tiff.h ../common/tiffio.h
+
+normtiff:	normtiff.o tmaptiff.o ../lib/libtiff.a
+	$(CC) $(CFLAGS) -o normtiff normtiff.o tmaptiff.o -lrt -ltiff $(MLIB)
 
 ../lib/libtiff.a:	tiff/config.local
 	cd tiff ; ./configure -quiet -noninteractive -with-CC=$(CC) \
@@ -241,7 +245,7 @@ x11image.o:	../common/tonemap.h ../common/color.h
 
 ra_t8.o:	../common/targa.h
 
-ra_tiff.o:	../common/tiff.h
+ra_tiff.o normtiff.o tmaptiff.o:	../common/tiff.h ../common/tiffio.h
 
 aedimage.o ximage.o ra_t8.o ra_pr.o:	pic.h
 
@@ -263,3 +267,7 @@ psign.o:	../common/font.h
 pcond.o pcond2.o pcond3.o pcond4.o:	pcond.h ../common/standard.h \
 ../common/mat4.h ../common/fvect.h \
 ../common/color.h ../common/view.h ../common/resolu.h
+
+normtiff.o:	../common/color.h ../common/tonemap.h ../common/resolu.h
+
+tmaptiff.o:	../common/tmprivat.h ../common/color.h ../common/tonemap.h
