@@ -644,7 +644,7 @@ int  y;
 		if (fseek(fin, scanpos[y], 0) == -1)
 			quiterr("fseek error");
 		cury = y;
-	} else if (scanpos != NULL)
+	} else if (scanpos != NULL && scanpos[y] == -1)
 		scanpos[y] = ftell(fin);
 
 	if (freadcolrs(scanline, xmax, fin) < 0)
