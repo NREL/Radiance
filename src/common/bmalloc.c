@@ -30,7 +30,7 @@ static unsigned  nremain = 0;
 
 
 char *
-bmalloc(n)		/* allocate a block of n bytes, no refunds */
+bmalloc(n)		/* allocate a block of n bytes */
 register unsigned  n;
 {
 	if (n > nremain && (n > MBLKSIZ || nremain > MBLKSIZ/WASTEFRAC))
@@ -38,12 +38,9 @@ register unsigned  n;
 
 	n = (n+(BYTES_WORD-1))&~(BYTES_WORD-1);		/* word align */
 
-	if (n > nremain) {
-		if ((bposition = malloc((unsigned)MBLKSIZ)) == NULL) {
-			nremain = 0;
-			return(NULL);
-		}
-		nremain = MBLKSIZ;
+	if (n > nremain && (bposition = malloc(nremain = MBLKSIZ)) == NULL) {
+		nremain = 0;
+		return(NULL);
 	}
 	bposition += n;
 	nremain -= n;
