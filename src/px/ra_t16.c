@@ -15,6 +15,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 
+#include  "resolu.h"
+
 #include  "random.h"
 
 #include  "targa.h"
@@ -105,12 +107,12 @@ char  *argv[];
 		printargs(i, argv, stdout);
 		fputformat(COLRFMT, stdout);
 		putchar('\n');
-		fputresolu(YMAJOR|YDECR, head.x, head.y, stdout);
+		fprtresolu(head.x, head.y, stdout);
 					/* convert file */
 		tg2ra(&head);
 	} else {
 		if (checkheader(stdin, COLRFMT, NULL) < 0 ||
-			fgetresolu(&head.x, &head.y, stdin) != (YMAJOR|YDECR))
+				fgetresolu(&head.x, &head.y, stdin) < 0)
 			quiterr("bad picture file");
 					/* assign header */
 		head.textSize = 0;

@@ -12,15 +12,38 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "color.h"
 
-int	xres, yres;			/* input resolution */
+#include "resolu.h"
+
+int	order;				/* input orientation */
+int	xres, yres;			/* resolution (scanlen, nscans) */
 
 long	*scanpos;			/* scanline positions */
 
-int	fhoriz, fvert;			/* flip flags */
+int	fhoriz=0, fvert=0;		/* flip flags */
+
+int	correctorder = 0;		/* correcting orientation? */
 
 FILE	*fin;				/* input file */
 
 char	*progname;
+
+
+int
+neworder()			/* figure out new order from old */
+{
+	register int  no;
+
+	if (correctorder)
+		return(order);		/* just leave it */
+	if ((no = order) & YMAJOR) {
+		if (fhoriz) no ^= XDECR;
+		if (fvert) no ^= YDECR;
+	} else {
+		if (fhoriz) no ^= YDECR;
+		if (fvert) no ^= XDECR;
+	}
+	return(no);
+}
 
 
 main(argc, argv)
@@ -36,10 +59,12 @@ char	*argv[];
 			fhoriz++;
 		else if (!strcmp(argv[i], "-v"))
 			fvert++;
+		else if (!strcmp(argv[i], "-c"))
+			correctorder++;
 		else
 			break;
 	if (i >= argc || argv[i][0] == '-') {
-		fprintf(stderr, "Usage: %s [-h][-v] infile [outfile]\n",
+		fprintf(stderr, "Usage: %s [-h][-v][-c] infile [outfile]\n",
 				progname);
 		exit(1);
 	}
@@ -62,12 +87,12 @@ char	*argv[];
 	fputformat(COLRFMT, stdout);
 	putchar('\n');
 					/* get picture size */
-	if (fgetresolu(&xres, &yres, fin) != (YMAJOR|YDECR)) {
+	if ((order = fgetresolu(&xres, &yres, fin)) < 0) {
 		fprintf(stderr, "%s: bad picture size\n", progname);
 		exit(1);
 	}
 					/* write new picture size */
-	fputresolu(YMAJOR|YDECR, xres, yres, stdout);
+	fputresolu(neworder(), xres, yres, stdout);
 					/* goto end if vertical flip */
 	if (fvert)
 		scanfile();

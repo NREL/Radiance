@@ -1,3 +1,5 @@
+/* Copyright (c) 1991 Regents of the University of California */
+
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
@@ -29,7 +31,7 @@ FILE	*pin;				/* input stream */
 Display	*theDisplay = NULL;		/* connection to server */
 
 struct node {				/* ray tree node */
-	double	ipt[2];
+	FVECT	ipt;
 	struct node	*sister;
 	struct node	*daughter;
 };
@@ -151,14 +153,14 @@ struct node	*tp;
 
 
 strtoipt(ipt, str)		/* convert string x y z to image point */
-double	ipt[2];
+FVECT	ipt;
 char	*str;
 {
 	FVECT	pt;
 
 	if (sscanf(str, "%lf %lf %lf", &pt[0], &pt[1], &pt[2]) != 3)
 		return(-1);
-	viewpixel(&ipt[0], &ipt[1], NULL, &ourview, pt);
+	viewloc(ipt, &ourview, pt);
 	return(0);
 }
 

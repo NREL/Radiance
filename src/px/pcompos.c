@@ -14,6 +14,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 
+#include  "resolu.h"
 
 #define  MAXFILE	32
 
@@ -181,7 +182,7 @@ getfile:
 		}
 						/* get picture size */
 		if (fgetresolu(&input[nfile].xres, &input[nfile].yres,
-				input[nfile].fp) != (YMAJOR|YDECR)) {
+				input[nfile].fp) < 0) {
 			fprintf(stderr, "%s: bad picture size\n",
 					input[nfile].name);
 			quit(1);
@@ -229,7 +230,8 @@ getfile:
 					/* add new header info. */
 	printargs(argc, argv, stdout);
 	fputformat(COLRFMT, stdout);
-	printf("\n-Y %d +X %d\n", ysiz, xsiz);
+	putchar('\n');
+	fprtresolu(xsiz, ysiz, stdout);
 
 	compos();
 	
@@ -338,7 +340,7 @@ int  *xp, *yp;
 		return(NULL);
 	if (checkheader(fp, COLRFMT, NULL) < 0)
 		goto err;
-	if (fgetresolu(xp, yp, fp) != (YMAJOR|YDECR))
+	if (fgetresolu(xp, yp, fp) < 0)
 		goto err;
 	return(fp);
 err:

@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
 
@@ -71,11 +71,6 @@ typedef float  COLOR[3];	/* red, green, blue */
 #define  BLKCOLOR		{0.0,0.0,0.0}
 #define  WHTCOLR		{128,128,128,COLXS+1}
 #define  BLKCOLR		{0,0,0,0}
-
-				/* definitions for resolution header */
-#define  XDECR			1
-#define  YDECR			2
-#define  YMAJOR			4
 
 				/* picture format identifier */
 #define  COLRFMT		"32-bit_rle_rgbe"

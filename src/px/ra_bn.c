@@ -14,6 +14,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 
+#include  "resolu.h"
+
 extern double  atof(), pow();
 
 double	gamma = 2.0;			/* gamma correction */
@@ -78,7 +80,7 @@ char  *argv[];
 		printargs(i, argv, rafp);
 		fputformat(COLRFMT, rafp);
 		putc('\n', rafp);
-		fputresolu(YMAJOR|YDECR, xmax, ymax, rafp);
+		fprtresolu(xmax, ymax, rafp);
 					/* convert file */
 		bn2ra();
 	} else {
@@ -93,7 +95,7 @@ char  *argv[];
 		}
 					/* get header */
 		if (checkheader(rafp, COLRFMT, NULL) < 0 ||
-			fgetresolu(&xmax, &ymax, rafp) != (YMAJOR|YDECR))
+				fgetresolu(&xmax, &ymax, rafp) < 0)
 			quiterr("bad RADIANCE format");
 		if (openbarney(argv[i+1], "w") < 0) {
 			sprintf(errmsg, "cannot open output \"%s\"", argv[i+1]);

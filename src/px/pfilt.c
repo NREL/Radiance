@@ -16,6 +16,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 
+#include  "resolu.h"
+
 extern char  *malloc();
 extern float  *matchlamp();
 
@@ -49,6 +51,7 @@ char  *tfname = NULL;
 
 char  *lampdat = "lamp.tab";	/* lamp data file */
 
+int  order;			/* scanline ordering of input */
 int  xres, yres;		/* resolution of input */
 double  inpaspect = 1.0;	/* pixel aspect ratio of input */
 int  correctaspect = 0;		/* aspect ratio correction? */
@@ -238,10 +241,12 @@ char  **argv;
 					/* add new header info. */
 	printargs(i, argv, stdout);
 					/* get picture size */
-	if (fgetresolu(&xres, &yres, fin) != (YMAJOR|YDECR)) {
+	if ((order = fgetresolu(&xres, &yres, fin)) < 0) {
 		fprintf(stderr, "%s: bad picture size\n", progname);
 		quit(1);
 	}
+	if (!(order & YMAJOR))
+		inpaspect = 1.0/inpaspect;
 					/* compute output resolution */
 	if (ncols <= 0)
 		ncols = x_c*xres + .5;
@@ -419,7 +424,7 @@ scan2init()			/* prepare scanline arrays */
 	}
 					/* record pixel aspect ratio */
 	if (!correctaspect) {
-		d = x_c / y_r;
+		d = order & YMAJOR ? x_c/y_r : y_r/x_c ;
 		if (!FEQ(d,1.0))
 			fputaspect(d, stdout);
 	}
@@ -435,7 +440,7 @@ scan2init()			/* prepare scanline arrays */
 		fputcolcor(ctmp, stdout);
 	printf("\n");
 					/* write out resolution */
-	fputresolu(YMAJOR|YDECR, ncols, nrows, stdout);
+	fputresolu(order, ncols, nrows, stdout);
 }
 
 

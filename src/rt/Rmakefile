@@ -245,7 +245,8 @@ sphere.o t_data.o t_func.o:	ray.h ../common/standard.h \
 
 rv2.o rv3.o rview.o:	rpaint.h driver.h ../common/view.h
 
-mirror.o source.o srcsamp.o srcsupp.o virtuals.o:	source.h
+m_direct.o m_mirror.o \
+source.o srcsamp.o srcsupp.o virtuals.o:	source.h
 
 cone.o data.o devcomm.o initotypes.o \
 octree.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
@@ -263,3 +264,5 @@ x11.o x11twind.o: x11twind.h
 x11.o:	x11icon.h
 
 ambient.o ambcomp.o lookamb.o:	ambient.h
+
+data.o rmain.o rpict.o rv2.o:	../common/resolu.h

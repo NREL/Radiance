@@ -1,6 +1,9 @@
+/* Copyright (c) 1991 Regents of the University of California */
+
 #ifndef lint
-static char SCCSid[] = "$SunId$ AU";
+static char SCCSid[] = "$SunId$ LBL";
 #endif
+
 /*
     rad2pict - Convert an Radiance image to APPLE pict format.
 	
@@ -10,6 +13,7 @@ static char SCCSid[] = "$SunId$ AU";
 #include <stdio.h>
 #include "pict.h"
 #include "color.h"
+#include "resolu.h"
 
 extern char  *malloc();
 
@@ -103,7 +107,7 @@ char **argv;
     }
 
     if (checkheader(inf, COLRFMT, NULL) < 0 ||
-            fgetresolu(&xsize, &ysize, inf) != (YMAJOR|YDECR)) {
+            fgetresolu(&xsize, &ysize, inf) < 0) {
         fprintf(stderr, "%s: not a radiance picture\n", argv[1]);
         exit(1);
     }

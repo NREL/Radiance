@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -13,6 +13,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "standard.h"
 
 #include  "view.h"
+
+#include  "resolu.h"
 
 VIEW  stdview = STDVIEW;		/* default view parameters */
 
@@ -162,8 +164,8 @@ double  x, y;
 }
 
 
-viewpixel(xp, yp, zp, v, p)		/* find image location for point */
-double  *xp, *yp, *zp;
+viewloc(ip, v, p)		/* find image location for point */
+FVECT  ip;
 register VIEW  *v;
 FVECT  p;
 {
@@ -176,19 +178,15 @@ FVECT  p;
 
 	switch (v->type) {
 	case VT_PAR:			/* parallel view */
-		if (zp != NULL)
-			*zp = DOT(disp,v->vdir);
+		ip[2] = DOT(disp,v->vdir);
 		break;
 	case VT_PER:			/* perspective view */
 		d = DOT(disp,v->vdir);
-		if (zp != NULL) {
-			*zp = sqrt(DOT(disp,disp));
-			if (d < 0.0)
-				*zp = -*zp;
-		}
-		if (d < 0.0)		/* fold pyramid */
+		ip[2] = sqrt(DOT(disp,disp));
+		if (d < 0.0) {		/* fold pyramid */
+			ip[2] = -ip[2];
 			d = -d;
-		if (d > FTINY) {
+		} else if (d > FTINY) {
 			d = 1.0/d;
 			disp[0] *= d;
 			disp[1] *= d;
@@ -197,34 +195,76 @@ FVECT  p;
 		break;
 	case VT_HEM:			/* hemispherical fisheye */
 		d = normalize(disp);
-		if (zp != NULL) {
-			if (DOT(disp,v->vdir) < 0.0)
-				*zp = -d;
-			else
-				*zp = d;
-		}
+		if (DOT(disp,v->vdir) < 0.0)
+			ip[2] = -d;
+		else
+			ip[2] = d;
 		break;
 	case VT_ANG:			/* angular fisheye */
-		d = normalize(disp);
-		if (zp != NULL)
-			*zp = d;
-		*xp = 0.5 - v->hoff;
-		*yp = 0.5 - v->voff;
+		ip[0] = 0.5 - v->hoff;
+		ip[1] = 0.5 - v->voff;
+		ip[2] = normalize(disp);
 		d = DOT(disp,v->vdir);
 		if (d >= 1.0-FTINY)
 			return;
 		if (d <= -(1.0-FTINY)) {
-			*xp += 180.0/v->horiz;
-			*yp += 180.0/v->vert;
+			ip[1] += 180.0/v->horiz;
+			ip[2] += 180.0/v->vert;
 			return;
 		}
 		d = acos(d)/PI / sqrt(1.0 - d*d);
-		*xp += DOT(disp,v->hvec)*d*180.0/v->horiz;
-		*yp += DOT(disp,v->vvec)*d*180.0/v->vert;
+		ip[0] += DOT(disp,v->hvec)*d*180.0/v->horiz;
+		ip[1] += DOT(disp,v->vvec)*d*180.0/v->vert;
 		return;
 	}
-	*xp = DOT(disp,v->hvec)/v->hn2 + 0.5 - v->hoff;
-	*yp = DOT(disp,v->vvec)/v->vn2 + 0.5 - v->voff;
+	ip[0] = DOT(disp,v->hvec)/v->hn2 + 0.5 - v->hoff;
+	ip[1] = DOT(disp,v->vvec)/v->vn2 + 0.5 - v->voff;
+}
+
+
+pix2loc(loc, rp, px, py)	/* compute image location from pixel pos. */
+FLOAT  loc[2];
+register RESOLU  *rp;
+int  px, py;
+{
+	register int  x, y;
+
+	if (rp->or & YMAJOR) {
+		x = px;
+		y = py;
+	} else {
+		x = py;
+		y = px;
+	}
+	if (rp->or & XDECR)
+		x = rp->xr-1 - x;
+	if (rp->or & YDECR)
+		y = rp->yr-1 - y;
+	loc[0] = (x+.5)/rp->xr;
+	loc[1] = (y+.5)/rp->yr;
+}
+
+
+loc2pix(pp, rp, lx, ly)		/* compute pixel pos. from image location */
+int  pp[2];
+register RESOLU  *rp;
+double  lx, ly;
+{
+	register int  x, y;
+
+	x = lx * rp->xr;
+	y = ly * rp->yr;
+	if (rp->or & XDECR)
+		x = rp->xr-1 - x;
+	if (rp->or & YDECR)
+		y = rp->yr-1 - y;
+	if (rp->or & YMAJOR) {
+		pp[0] = x;
+		pp[1] = y;
+	} else {
+		pp[0] = y;
+		pp[1] = x;
+	}
 }
 
 
@@ -358,10 +398,10 @@ register struct myview  *v;
 
 
 int
-viewfile(fname, vp, xp, yp)		/* get view from file */
+viewfile(fname, vp, rp)			/* get view from file */
 char  *fname;
 VIEW  *vp;
-int  *xp, *yp;
+RESOLU  *rp;
 {
 	extern char  *progname;
 	struct myview	mvs;
@@ -376,8 +416,7 @@ int  *xp, *yp;
 
 	getheader(fp, gethview, &mvs);
 
-	if (xp != NULL && yp != NULL
-			&& fgetresolu(xp, yp, fp) == -1)
+	if (rp != NULL && !fgetsresolu(rp, fp))
 		mvs.ok = 0;
 
 	fclose(fp);

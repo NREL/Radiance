@@ -11,6 +11,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <stdio.h>
 
 #include  "color.h"
+#include  "resolu.h"
 
 int  bradj = 0;				/* brightness adjustment */
 
@@ -79,13 +80,14 @@ char  *err;
 transfer()		/* transfer Radiance picture */
 {
 	extern double	pow();
+	int	order;
 	int  	xmax, ymax;
 	COLR	*scanin;
 	register int	x;
 	int	y;
 				/* get header info. */
 	if (checkheader(stdin, COLRFMT, stdout) < 0 ||
-			fgetresolu(&xmax, &ymax, stdin) != (YMAJOR|YDECR))
+			(order = fgetresolu(&xmax, &ymax, stdin)) < 0)
 		quiterr("bad picture format");
 	if (bradj)
 		fputexpos(pow(2.0, (double)bradj), stdout);
@@ -94,7 +96,7 @@ transfer()		/* transfer Radiance picture */
 		printf("%s -r\n\n", progname);
 	} else
 		printf("%s\n\n", progname);
-	fputresolu(YMAJOR|YDECR, xmax, ymax, stdout);
+	fputresolu(order, xmax, ymax, stdout);
 						/* allocate scanline */
 	scanin = (COLR *)malloc(xmax*sizeof(COLR));
 	if (scanin == NULL)

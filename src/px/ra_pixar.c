@@ -1,11 +1,7 @@
+/* Copyright (c) 1991 Regents of the University of California */
+
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
-#endif
-
-/* Copyright 1989 Regents of the University of California */
-
-#ifndef lint
-static char SCCSid[] = "@(#)ra_pixar.c 1.2 9/12/89 LBL";
 #endif
 
 /* ra_pixar.c */
@@ -36,10 +32,6 @@ static char SCCSid[] = "@(#)ra_pixar.c 1.2 9/12/89 LBL";
 #ifdef undef
 #include "color.h"
 #else
-#define			XDECR			1
-#define			YDECR			2
-#define			YMAJOR			4
-
 #define			RED			0
 #define			GRN			1
 #define			BLU			2
@@ -49,6 +41,7 @@ static char SCCSid[] = "@(#)ra_pixar.c 1.2 9/12/89 LBL";
 	((col)[RED]=(r),(col)[GRN]=(g),(col)[BLU]=(b))
 typedef float  COLOR[3];	/* red, green, blue */
 #endif
+#include "resolu.h"
 
 
 char			*ProgramName;
@@ -170,7 +163,7 @@ int		*h;
       exit(1);
    }
    getheader(radiance_fp,NULL);
-   if (fgetresolu(w, h, radiance_fp) != (YMAJOR|YDECR))
+   if (fgetresolu(w, h, radiance_fp) < 0)
    {
       fprintf(stderr,"bad RADIANCE format\n");
       exit(1);
@@ -277,7 +270,7 @@ int		y;
 {
    printargs(global_argc,global_argv,fp);
    fputc('\n',fp);
-   fputresolu(YMAJOR|YDECR, x, y, fp);
+   fprtresolu(x, y, fp);
    fflush(fp);
 }
 
