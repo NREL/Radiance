@@ -27,10 +27,12 @@ extern int	headismine;	/* boolean true if header belongs to me */
 
 extern char	*progname;	/* global program name */
 
+extern char	*errfile;	/* global error file name */
+
 static char	*persistfname = NULL;	/* persist file name */
 static int	persistfd = -1;		/* persist file descriptor */
 
-static char	inpname[TEMPLEN+1], outpname[TEMPLEN+1];
+static char	inpname[TEMPLEN+1], outpname[TEMPLEN+1], errname[TEMPLEN+1];
 
 
 pfdetach()		/* release persist (and header) resources */
@@ -41,6 +43,7 @@ pfdetach()		/* release persist (and header) resources */
 	persistfname = NULL;
 	inpname[0] = '\0';
 	outpname[0] = '\0';
+	errname[0] = '\0';
 	headismine = 0;
 }
 
@@ -55,6 +58,8 @@ pfclean()		/* clean up persist files */
 		unlink(inpname);
 	if (outpname[0])
 		unlink(outpname);
+	if (errname[0])
+		unlink(errname);
 }
 
 
@@ -78,6 +83,8 @@ char	*pfn;
 	persistfd = open(pfn, O_WRONLY|O_CREAT|O_EXCL, 0644);
 	if (persistfd >= 0) {
 		persistfname = pfn;
+			/* put something there for faulty lock daemons */
+		write(persistfd, "Initializing...\n", 16);
 		pflock(1);
 		return;
 	}
@@ -112,12 +119,18 @@ pfhold()		/* holding pattern for idle rendering process */
 		goto createrr;
 	if (mknod(mktemp(strcpy(outpname,TEMPLATE)), S_IFIFO|0600, 0) < 0)
 		goto createrr;
-	sprintf(buf, "%s %d\n%s\n%s\n", progname, getpid(), inpname, outpname);
-	if (lseek(persistfd, 0L, 0) < 0 || ftruncate(persistfd, 0L) < 0)
-		error(SYSTEM, "seek/truncate error on persist file");
+	if (errfile == NULL &&
+		mknod(mktemp(strcpy(errname,TEMPLATE)), S_IFIFO|0600, 0) < 0)
+		goto createrr;
+	sprintf(buf, "%s %d\n%s\n%s\n%s\n", progname, getpid(),
+			inpname, outpname, errname);
+	if (lseek(persistfd, 0L, 0) < 0)
+		error(SYSTEM, "seek error on persist file");
 	n = strlen(buf);
 	if (write(persistfd, buf, n) < n)
 		error(SYSTEM, "error writing persist file");
+	ftruncate(persistfd, (long)n);
+	fsync(persistfd);	/* shouldn't be necessary, but.... */
 				/* wait TIMELIM for someone to signal us */
 	got_io = 0;
 	signal(SIGIO, sig_io);
@@ -135,6 +148,12 @@ pfhold()		/* holding pattern for idle rendering process */
 		goto openerr;
 	if (freopen(outpname, "w", stdout) == NULL)
 		goto openerr;
+	if (errname[0]) {
+		if (freopen(errname, "w", stderr) == NULL)
+			goto openerr;
+		unlink(errname);
+		errname[0] = '\0';
+	}
 	unlink(inpname);
 	inpname[0] = '\0';
 	unlink(outpname);
@@ -151,14 +170,14 @@ io_process()		/* just act as conduits to and from actual process */
 {
 	register char	*cp;
 	register int	nr, n;
-	char	buf[512], *pfin, *pfout;
-	int	pid;
+	char	buf[512], *pfin, *pfout, *pferr;
+	int	pid, pid2 = -1;
 				/* load and close persist file */
-	sleep(5);		/* helps synchronization */
+	errno = 0;
 	nr = read(persistfd, buf, sizeof(buf)-1);
 	pfdetach();
 	if (nr <= 0)
-		error(SYSTEM, "cannot read persist file");
+		error(SYSTEM, "error reading persist file");
 	buf[nr] = '\0';
 	if ((cp = index(buf, ' ')) == NULL)
 		goto formerr;
@@ -175,6 +194,10 @@ io_process()		/* just act as conduits to and from actual process */
 	if ((cp = index(cp, '\n')) == NULL)
 		goto formerr;
 	*cp++ = '\0';
+	pferr = cp;
+	if ((cp = index(cp, '\n')) == NULL)
+		goto formerr;
+	*cp++ = '\0';
 	if (cp-buf != nr)
 		goto formerr;
 	if (strcmp(buf, progname)) {
@@ -186,36 +209,51 @@ io_process()		/* just act as conduits to and from actual process */
 		error(SYSTEM, "cannot signal rendering process in io_process");
 	pid = fork();		/* fork i/o process */
 	if (pid < 0)
-		error(SYSTEM, "fork failed in io_process");
+		goto forkerr;
 				/* connect to appropriate pipe */
 	if (pid) {			/* parent passes renderer output */
 		close(0);
-		if (open(pfout, O_RDONLY) != 0)
-			error(SYSTEM, "cannot open input pipe in io_process");
+		if (pferr[0]) {
+			pid2 = fork();		/* fork another for stderr */
+			if (pid2 < 0)
+				goto forkerr;
+		}
+		if (pid2) {			/* parent is still stdout */
+			if (open(pfout, O_RDONLY) != 0)
+				error(SYSTEM,
+				"cannot open output pipe in io_process");
+		} else {			/* second child is stderr */
+			if (open(pferr, O_RDONLY) != 0)
+				error(SYSTEM,
+				"cannot open error pipe in io_process");
+			dup2(2, 1);		/* attach stdout to stderr */
+		}
 	} else {			/* child passes renderer input */
 		close(1);
 		if (open(pfin, O_WRONLY) != 1)
-			error(SYSTEM, "cannot open output pipe in io_process");
+			error(SYSTEM, "cannot open input pipe in io_process");
 	}
 				/* pass input to output */
 				/* read as much as we can, write all of it */
 	while ((nr = read(0, cp=buf, sizeof(buf))) > 0)
 		do {
 			if ((n = write(1, cp, nr)) <= 0)
-				goto writerr;
+				error(SYSTEM, "write error in io_process");
 			cp += n;
 		} while ((nr -= n) > 0);
 	if (nr < 0)
 		error(SYSTEM, "read error in io_process");
 	close(0);		/* close input */
 	close(1);		/* close output */
-	if (pid)		/* parent waits for child */
+	if (pid)		/* parent waits for stdin child */
 		wait(0);
-	exit(0);		/* all done, exit (not quit!) */
+	if (pid2 > 0)		/* wait for stderr child also */
+		wait(0);
+	_exit(0);		/* all done, exit (not quit!) */
 formerr:
 	error(USER, "format error in persist file");
-writerr:
-	error(SYSTEM, "write error in io_process");
+forkerr:
+	error(SYSTEM, "fork failed in io_process");
 }
 
 #else
