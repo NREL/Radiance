@@ -314,10 +314,10 @@ register AMBHEMI  *hp;
 posgradient(gv, da, hp)				/* compute position gradient */
 FVECT  gv;
 AMBSAMP  *da;			/* assumes standard ordering */
-AMBHEMI  *hp;
+register AMBHEMI  *hp;
 {
 	register int  i, j;
-	double  b, d;
+	double  nextsine, lastsine, b, d;
 	double  mag0, mag1;
 	double  phi, cosp, sinp, xd, yd;
 	register AMBSAMP  *dp;
@@ -326,6 +326,7 @@ AMBHEMI  *hp;
 	for (j = 0; j < hp->np; j++) {
 		dp = da + j;
 		mag0 = mag1 = 0.0;
+		lastsine = 0.0;
 		for (i = 0; i < hp->nt; i++) {
 #ifdef  DEBUG
 			if (dp->t != i || dp->p != j)
@@ -336,24 +337,26 @@ AMBHEMI  *hp;
 			if (i > 0) {
 				d = dp[-hp->np].r;
 				if (dp[0].r > d) d = dp[0].r;
-				d *= 1.0 - (double)i/hp->nt;	/* cos(t)^2 */
+							/* sin(t)*cos(t)^2 */
+				d *= lastsine * (1.0 - (double)i/hp->nt);
 				mag0 += d*(b - bright(dp[-hp->np].v));
 			}
+			nextsine = sqrt((double)(i+1)/hp->nt);
 			if (j > 0) {
 				d = dp[-1].r;
 				if (dp[0].r > d) d = dp[0].r;
-				mag1 += d*(b - bright(dp[-1].v));
+				mag1 += d * (nextsine - lastsine) *
+						(b - bright(dp[-1].v));
 			} else {
 				d = dp[hp->np-1].r;
 				if (dp[0].r > d) d = dp[0].r;
-				mag1 += d*(b - bright(dp[hp->np-1].v));
+				mag1 += d * (nextsine - lastsine) *
+						(b - bright(dp[hp->np-1].v));
 			}
 			dp += hp->np;
+			lastsine = nextsine;
 		}
-		if (hp->nt > 1) {
-			mag0 /= (double)hp->np;
-			mag1 /= (double)hp->nt;
-		}
+		mag0 *= 2.0*PI / hp->np;
 		phi = 2.0*PI * (double)j/hp->np;
 		cosp = cos(phi); sinp = sin(phi);
 		xd += mag0*cosp - mag1*sinp;
@@ -367,7 +370,7 @@ AMBHEMI  *hp;
 dirgradient(gv, da, hp)				/* compute direction gradient */
 FVECT  gv;
 AMBSAMP  *da;			/* assumes standard ordering */
-AMBHEMI  *hp;
+register AMBHEMI  *hp;
 {
 	register int  i, j;
 	double  mag;
@@ -384,7 +387,8 @@ AMBHEMI  *hp;
 				error(CONSISTENCY,
 					"division order in dirgradient");
 #endif
-			mag += sqrt((i+.5)/hp->nt)*bright(dp->v);  /* sin(t) */
+							/* tan(t) */
+			mag += bright(dp->v)/sqrt(hp->nt/(i+.5) - 1.0);
 			dp += hp->np;
 		}
 		phi = 2.0*PI * (j+.5)/hp->np + PI/2.0;
@@ -392,5 +396,5 @@ AMBHEMI  *hp;
 		yd += mag * sin(phi);
 	}
 	for (i = 0; i < 3; i++)
-		gv[i] = (xd*hp->ux[i] + yd*hp->uy[i])*PI/(hp->nt*hp->np);
+		gv[i] = (xd*hp->ux[i] + yd*hp->uy[i])/(hp->nt*hp->np);
 }
