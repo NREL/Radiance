@@ -43,10 +43,8 @@ static unsigned	m_nwasted = 0;
 #endif
 #define  BYTES_WORD	sizeof(ALIGN)
 
+#ifndef  MAXINCR
 #define  MAXINCR	(1<<16)			/* largest sbrk(2) increment */
-
-#ifdef  NOVMEM
-#define  getpagesize()	1024
 #endif
 					/* malloc free lists */
 typedef union m_head {
@@ -394,21 +392,6 @@ char	*p;
 #endif
 	return(1);
 }
-
-
-#ifndef NOVMEM
-#ifndef BSD
-#include <sys/var.h>
-int
-getpagesize()			/* use SYSV var structure to get page size */
-{
-	struct var  v;
-
-	uvar(&v);
-	return(1 << v.v_pageshift);
-}
-#endif
-#endif
 
 
 #ifdef MSTATS
