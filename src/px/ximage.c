@@ -79,6 +79,8 @@ char  *progname;
 
 char  errmsg[128];
 
+static gethfunc headline;
+
 
 main(argc, argv)
 int  argc;
@@ -86,7 +88,6 @@ char  *argv[];
 {
 	extern char  *getenv();
 	char  *gv;
-	int  headline();
 	int  i;
 	
 	progname = argv[0];
@@ -158,9 +159,11 @@ userr:
 }
 
 
-int
-headline(s)		/* get relevant info from header */
-char  *s;
+static int
+headline(		/* get relevant info from header */
+	char	*s,
+	void	*p
+)
 {
 	char  fmt[32];
 

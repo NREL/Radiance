@@ -15,8 +15,6 @@ static const char	RCSid[] = "$Id$";
 #include  "color.h"
 #include  "resolu.h"
 
-extern int	addhline();
-
 #define dumpheader(fp)	fwrite(headlines, 1, headlen, fp)
 
 int  bradj = 0;				/* brightness adjustment */
@@ -33,6 +31,8 @@ char  *headlines;			/* current header info. */
 int  headlen;				/* current header length */
 
 char  *progname;
+
+static gethfunc addhline;
 
 
 main(argc, argv)
@@ -192,9 +192,11 @@ char	*ospec;
 }
 
 
-int
-addhline(s)			/* add a line to our info. header */
-char	*s;
+static int
+addhline(			/* add a line to our info. header */
+	char	*s,
+	void	*p
+)
 {
 	char	fmt[32];
 	int	n;

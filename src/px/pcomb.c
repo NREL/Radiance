@@ -73,6 +73,7 @@ int	gotview;
 
 extern char	*emalloc();
 
+static gethfunc tabputs;
 
 main(argc, argv)
 int	argc;
@@ -219,8 +220,11 @@ usage:
 }
 
 
-tabputs(s)			/* put out string preceded by a tab */
-char	*s;
+static int
+tabputs(			/* put out string preceded by a tab */
+	char	*s,
+	void	*p
+)
 {
 	char	fmt[32];
 	double	d;

@@ -83,12 +83,13 @@ int  orad = 0;			/* output window radius */
 
 char  *progname;
 
+static gethfunc headline;
+
 
 main(argc, argv)
 int  argc;
 char  **argv;
 {
-	extern int  headline();
 	FILE  *fin;
 	float  *lampcolor;
 	char  *lamptype = NULL;
@@ -328,9 +329,11 @@ COLOR  clr;
 double	(*ourbright)() = rgb_bright;
 
 
-int
-headline(s)				/* process line from header */
-char  *s;
+static int
+headline(				/* process line from header */
+	char	*s,
+	void	*p
+)
 {
 	char  fmt[32];
 

@@ -61,9 +61,14 @@ int  wrongformat = 0;
 FILE  *lblopen();
 void  quit();
 
+static gethfunc tabputs;
 
-tabputs(s)			/* print line preceded by a tab */
-char  *s;
+
+static int
+tabputs(			/* print line preceded by a tab */
+	char	*s,
+	void	*p
+)
 {
 	char  fmt[32];
 

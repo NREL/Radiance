@@ -94,6 +94,8 @@ int	queuesiz = 0;			/* number of pixels pending */
 
 extern double	movepixel();
 
+static gethfunc headline;
+
 
 main(argc, argv)			/* interpolate pictures */
 int	argc;
@@ -327,9 +329,11 @@ userr:
 }
 
 
-int
-headline(s)				/* process header string */
-char	*s;
+static int
+headline(				/* process header string */
+	char	*s,
+	void	*p
+)
 {
 	char	fmt[32];
 

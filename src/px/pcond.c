@@ -44,6 +44,8 @@ double	bwavg;				/* mean brightness */
 
 double	scalef = 0.;			/* linear scaling factor */
 
+static gethfunc headline;
+
 
 main(argc, argv)
 int	argc;
@@ -198,8 +200,11 @@ char	*s;
 }
 
 
-headline(s)				/* process header line */
-char	*s;
+static int
+headline(				/* process header line */
+	char	*s,
+	void	*p
+)
 {
 	static RGBPRIMS	inprimS;
 	char	fmt[32];

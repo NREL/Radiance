@@ -29,10 +29,14 @@ int  doflat = -1;			/* produce flat file? */
 
 char  *progname;
 
+static gethfunc headline;
 
-int
-headline(s)				/* process header line */
-char	*s;
+
+static int
+headline(				/* process header line */
+	char	*s,
+	void	*p
+)
 {
 	char	fmt[32];
 

@@ -9,15 +9,12 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include  <stdio.h>
-
 #include  <math.h>
-
 #include  <signal.h>
-
 #include  <sys/ioctl.h>
 
 #include  "pic.h"
-
+#include  "resolu.h"
 #include  "color.h"
 
 
@@ -99,12 +96,14 @@ long  scanpos[NROWS];
 double  exposure = 1.0;
 int  wrong_fmt = 0;
 
+static gethfunc checkhead;
+
 
 main(argc, argv)
 int  argc;
 char  *argv[];
 {
-	int  onintr(), checkhead();
+	int  onintr();
 	char  sbuf[256];
 	register int  i;
 	
@@ -167,9 +166,11 @@ userr:
 }
 
 
-int
-checkhead(line)				/* deal with line from header */
-char  *line;
+static int
+checkhead(				/* deal with line from header */
+	char  *line,
+	void	*p
+)
 {
 	char	fmt[32];
 

@@ -11,6 +11,7 @@ static const char	RCSid[] = "$Id$";
 
 #include  "platform.h"
 #include  "color.h"
+#include  "resolu.h"
 
 
 int  orig = 0;
@@ -19,9 +20,14 @@ int  wrongformat = 0;
 
 COLOR  expos = WHTCOLOR;
 
+static gethfunc headline;
 
-headline(s)			/* check header line */
-char  *s;
+
+static int
+headline(			/* check header line */
+	char  *s,
+	void	*p
+)
 {
 	char	fmt[32];
 	double	d;

@@ -26,10 +26,14 @@ FILE  *fptr[MAXFILE];			/* the file pointers */
 COLOR  scale[MAXFILE];			/* scaling factors */
 int  nfile;				/* number of files */
 
+static gethfunc tabputs;
 
-int
-tabputs(s)			/* print line preceded by a tab */
-char  *s;
+
+static int
+tabputs(			/* print line preceded by a tab */
+	char	*s,
+	void	*p
+)
 {
 	putc('\t', stdout);
 	return(fputs(s, stdout));
