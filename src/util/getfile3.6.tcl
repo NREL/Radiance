@@ -61,12 +61,12 @@ proc getfile args {		# get filename interactively
 	# Create widgets
 	catch {destroy $w}
 	if $topwin {
-		toplevel $w -geometry 400x410
+		toplevel $w -width 400 -height 410
 		wm title $w "File Picker"
 		wm iconname $w "Files"
 		wm minsize $w 400 300
 	} else {
-		frame $w -geometry 400x410
+		frame $w -width 400 -height 410
 		pack $w
 	}
 	if $dograb { grab $w }
