@@ -1,4 +1,4 @@
-/* Copyright (c) 1994 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -63,6 +63,11 @@ int  directrelay = 1;			/* number of source relays */
 int  vspretest = 512;			/* virtual source pretest density */
 int  directvis = 1;			/* sources visible? */
 double	srcsizerat = .25;		/* maximum ratio source size/dist. */
+
+COLOR  cextinction = BLKCOLOR;		/* global extinction coefficient */
+double  salbedo = 0.;			/* global scattering albedo */
+double  seccg = 0.;			/* global scattering eccentricity */
+double  ssampdist = 0.;			/* scatter sampling distance */
 
 double	specthresh = .15;		/* specular sampling threshold */
 double	specjitter = 1.;		/* specular sampling jitter */

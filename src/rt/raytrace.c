@@ -24,6 +24,12 @@ extern CUBE  thescene;			/* our scene */
 extern int  maxdepth;			/* maximum recursion depth */
 extern double  minweight;		/* minimum ray weight */
 extern int  do_irrad;			/* compute irradiance? */
+extern COLOR  ambval;			/* ambient value */
+
+extern COLOR  cextinction;		/* global extinction coefficient */
+extern double  salbedo;			/* global scattering albedo */
+extern double  seccg;			/* global scattering eccentricity */
+extern double  ssampdist;		/* scatter sampling distance */
 
 unsigned long  raynum = 0;		/* next unique ray number */
 unsigned long  nrays = 0;		/* number of calls to localhit */
@@ -55,6 +61,10 @@ double  rw;
 		r->rsrc = -1;
 		r->clipset = NULL;
 		r->revf = raytrace;
+		copycolor(r->cext, cextinction);
+		r->albedo = salbedo;
+		r->gecc = seccg;
+		r->slights = NULL;
 	} else {				/* spawned ray */
 		r->rlvl = ro->rlvl;
 		if (rt & RAYREFL) {
@@ -68,6 +78,10 @@ double  rw;
 			r->rmax = ro->rmax <= FTINY ? 0.0 : ro->rmax - ro->rot;
 		}
 		r->revf = ro->revf;
+		copycolor(r->cext, ro->cext);
+		r->albedo = ro->albedo;
+		r->gecc = ro->gecc;
+		r->slights = ro->slights;
 		r->rweight = ro->rweight * rw;
 		r->crtype = ro->crtype | (r->rtype = rt);
 		VCOPY(r->rorg, ro->rop);
@@ -98,15 +112,17 @@ RAY  *r;
 	int  gotmat;
 
 	if (localhit(r, &thescene))
-		gotmat = raycont(r);
+		gotmat = raycont(r);	/* hit local surface, evaluate */
 	else if (r->ro == &Aftplane) {
-		r->ro = NULL;
+		r->ro = NULL;		/* hit aft clipping plane */
 		r->rot = FHUGE;
 	} else if (sourcehit(r))
-		gotmat = rayshade(r, r->ro->omod);
+		gotmat = rayshade(r, r->ro->omod);	/* distant source */
 
 	if (r->ro != NULL && !gotmat)
 		objerror(r->ro, USER, "material not found");
+
+	rayparticipate(r);		/* for participating medium */
 
 	if (trace != NULL)
 		(*trace)(r);		/* trace execution */
@@ -173,6 +189,38 @@ int  mod;
 	}
 	depth--;
 	return(gotmat);
+}
+
+
+rayparticipate(r)			/* compute ray medium participation */
+register RAY  *r;
+{
+	COLOR	ce, ca;
+	double	dist;
+	double	re, ge, be;
+
+	if (intens(r->cext) <= 1./FHUGE)
+		return;				/* no medium */
+	if ((dist = r->rot) >= FHUGE)
+		dist = 2.*thescene.cusize;	/* what to use for infinity? */
+	if (r->crtype & SHADOW)
+		dist *= 1. - salbedo;		/* no scattering for sources */
+	if (dist <= FTINY)
+		return;				/* no effective ray travel */
+	re = dist*colval(r->cext,RED);
+	ge = dist*colval(r->cext,GRN);
+	be = dist*colval(r->cext,BLU);
+	setcolor(ce,	re>92. ? 0. : exp(-re),
+			ge>92. ? 0. : exp(-ge),
+			be>92. ? 0. : exp(-be));
+	multcolor(r->rcol, ce);			/* path absorption */
+	if (r->albedo <= FTINY || r->crtype & SHADOW)
+		return;				/* no scattering */
+	setcolor(ca,	salbedo*colval(ambval,RED)*(1.-colval(ce,RED)),
+			salbedo*colval(ambval,GRN)*(1.-colval(ce,GRN)),
+			salbedo*colval(ambval,BLU)*(1.-colval(ce,BLU)));
+	addcolor(r->rcol, ca);			/* ambient in scattering */
+	srcscatter(r);				/* source in scattering */
 }
 
 
