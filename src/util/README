@@ -7,22 +7,23 @@ that combine functions and do not fit under the usual catagories.
 glare.h		common data structures for glare source finding routines
 setscan.h	defines for programs using setscan()
 Version.c	symbolic link to ../rt/Version.c (current Radiance version)
-dayfact.csh	compute and plot daylight factors on user-specified workplane
-debugcal.csh	C-shell script for debugging .cal files
 findglare.c	find glare sources in a scene or image
-glare.csh	interactive script to run findglare, glarendx, xglaresrc
 glarendx.c	compute Glare Index given by program name or -t option
 glaresrc.c	gather samples and compute glare sources
 glareval.c	compute pixels for glare calculation
 makedist.c	program to make a source distribution (obsolete with mkillum)
-objpict.csh	script to compute 4-view picture of an object
-objview.csh	script to run rview on an object
 rad.c		executive program to run oconv, rpict and pfilt (and rview)
 rpiece.c	program to control parallel generation of a picture
 setscan.c	convert angle ranges of the form a-b:s,c to discrete values
 vwright.c	short program to read in and modify views
 x11findwind.c	find an X11 window from its name
 xglaresrc.c	circle glare sources in a displayed image
+dayfact.csh	compute and plot daylight factors on user-specified workplane
+debugcal.csh	C-shell script for debugging .cal files
+objpict.csh	script to compute 4-view picture of an object
+objview.csh	script to run rview on an object
+glare.csh	interactive script to run findglare, glarendx, xglaresrc
+tradinstall.csh	script called by make to install trad on systems running wish
 trad.wsh	graphical user interface to "rad" based on Tcl/Tk (wish script)
 do_action.tcl	action submenu for trad
 do_file.tcl	file submenu for trad
@@ -34,6 +35,11 @@ do_zone.tcl	zone submenu for trad
 getfile.tcl	file browsing utility
 gethelp.tcl	help utility
 util.tcl	miscellaneous utilities
+do_results3.6.tcl	version of do_results.tcl for wish3.6
+do_scene3.6.tcl	version of do_results.tcl for wish3.6
+do_views3.6.tcl	version of do_views.tcl for wish3.6
+getfile3.6.tcl	version of getfile.tcl for wish3.6
+gethelp3.6.tcl	version of gethelp.tcl for wish3.6
 tclIndex	procedure index for Tcl/Tk library directory
 file.hlp	help file for getfile.tcl
 help.hlp	help file for gethelp.tcl
