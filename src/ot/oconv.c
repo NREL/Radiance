@@ -211,7 +211,7 @@ OBJECT  obj;
 	CUBE  cukid;
 	OCTREE  ot;
 	OBJECT  oset[MAXSET+1];
-	unsigned char  inflg[MAXSET/8], volflg[MAXSET/8];
+	unsigned char  inflg[(MAXSET+7)/8], volflg[(MAXSET+7)/8];
 	int  in;
 	register int  i, j;
 
@@ -248,8 +248,7 @@ OBJECT  obj;
 	if (in==O_IN || oset[0] < objlim || cukid.cusize < mincusize) {
 						/* add to set */
 		if (oset[0] >= MAXSET) {
-			sprintf(errmsg,
-				"set overflow in addobject (%s)",
+			sprintf(errmsg, "set overflow in addobject (%s)",
 					objptr(obj)->oname);
 			error(INTERNAL, errmsg);
 		}
@@ -268,7 +267,7 @@ OBJECT  obj;
 		if (isvolume(objptr(oset[j])->otype)) {
 			setbit(volflg,j-1);
 			if ((*ofun[objptr(oset[j])->otype].funp)
-					(objptr(oset[j]),cu) == O_IN)
+					(objptr(oset[j]), cu) == O_IN)
 				setbit(inflg,j-1);
 		}
 					/* assign subcubes */
@@ -285,12 +284,12 @@ OBJECT  obj;
 				addobject(&cukid, oset[j]);
 					/* then this object */
 		addobject(&cukid, obj);
-					/* partial volumes */
+					/* then partial volumes */
 		for (j = 1; j <= oset[0]; j++)
 			if (tstbit(volflg,j-1) &&
 					!tstbit(inflg,j-1))
 				addobject(&cukid, oset[j]);
-					/* full volumes */
+					/* full volumes last */
 		for (j = 1; j <= oset[0]; j++)
 			if (tstbit(inflg,j-1))
 				addobject(&cukid, oset[j]);
