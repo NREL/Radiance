@@ -426,13 +426,12 @@ char  *id;
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
 	glEnable(GL_LIGHTING);
+	glFrontFace(GL_CCW);
+	glCullFace(GL_BACK);
 	if (backvis)
 		glDisable(GL_CULL_FACE);
-	else {
-		glFrontFace(GL_CCW);
-		glCullFace(GL_BACK);
+	else
 		glEnable(GL_CULL_FACE);
-	}
 	glDrawBuffer(GL_BACK);
 					/* figure out sensible view */
 	pwidth = (double)DisplayWidthMM(ourdisplay, ourscreen) /
