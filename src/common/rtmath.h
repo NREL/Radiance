@@ -50,7 +50,7 @@ extern int	xf(XF *ret, int ac, char *av[]);
 extern int	invxf(XF *ret, int ac, char *av[]);
 extern int	fullxf(FULLXF *fx, int ac, char *av[]);
 					/* defined in zeroes.c */
-extern int	quadtratic(double *r, double a, double b, double c);
+extern int	quadratic(double *r, double a, double b, double c);
 					/* defined in dircode.c */
 extern int32	encodedir(FVECT dv);
 extern void	decodedir(FVECT dv, int32 dc);
