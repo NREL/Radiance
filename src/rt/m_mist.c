@@ -36,7 +36,8 @@ static char SCCSid[] = "$SunId$ LBL";
  *	[ext_r  ext_g  ext_b  [albedo [gecc]]]
  *
  *  The primaries indicate medium extinction per unit length (absorption
- *  plus scattering).  The albedo is the ratio of scattering to extinction,
+ *  plus scattering), which is added to the global extinction coefficient, set
+ *  by the -me option.  The albedo is the ratio of scattering to extinction,
  *  and is set globally by the -ma option (salbedo) and overridden here.
  *  The Heyney-Greenstein eccentricity parameter (-mg seccg) indicates how much
  *  scattering favors the forward direction.  A value of 0 means isotropic
@@ -188,12 +189,16 @@ register RAY  *r;
 			}
 			p.slights[0] = i;
 		}
-		re = colval(r->cext,RED) - colval(mext,RED);
-		ge = colval(r->cext,GRN) - colval(mext,GRN);
-		be = colval(r->cext,BLU) - colval(mext,BLU);
-		setcolor(p.cext, re<0. ? 0. : re,
-				ge<0. ? 0. : ge,
-				be<0. ? 0. : be);
+		if ((re = colval(r->cext,RED) - colval(mext,RED)) <
+				colval(cextinction,RED))
+			re = colval(cextinction,RED);
+		if ((ge = colval(r->cext,GRN) - colval(mext,GRN)) <
+				colval(cextinction,GRN))
+			ge = colval(cextinction,GRN);
+		if ((be = colval(r->cext,BLU) - colval(mext,BLU)) <
+				colval(cextinction,BLU))
+			be = colval(cextinction,BLU);
+		setcolor(p.cext, re, ge, be);
 		if (m->oargs.nfargs > 3)
 			p.albedo = salbedo;
 		if (m->oargs.nfargs > 4)
