@@ -33,6 +33,8 @@ aed:	aedimage
 sgi:	glimage
 	cp glimage $(INSTDIR)
 
+ogl:
+
 sun:
 
 install:	$(PROGS) $(SPECIAL) normpat.csh falsecolor.csh \
@@ -48,8 +50,9 @@ pdfblur.csh pmblur.csh xyzimage.csh
 $(INSTDIR)/pdfblur $(INSTDIR)/pmblur $(INSTDIR)/xyzimage $(INSTDIR)/phisto
 
 clean:
-	set nonomatch; rm -f x10image aedimage glimage ra_tiff \
+	set nonomatch; rm -f x10image aedimage glimage \
 $(PROGS) *.o core
+	cd tiff; make distclean
 
 pfilt:	pfilt.o pf2.o pf3.o
 	$(CC) $(CFLAGS) -o pfilt pfilt.o pf2.o pf3.o -lrt $(MLIB)
@@ -181,9 +184,8 @@ ra_tiff:	ra_tiff.o ../lib/libtiff.a
 ../common/tiff.h:	../lib/libtiff.a
 
 ../lib/libtiff.a:	tiff/config.local
-	cd tiff ; ./configure -quiet -noninteractive ; \
-	cd libtiff ; make install ;
-#	cd .. ; make distclean
+	cd tiff ; ./configure -quiet -noninteractive -with-CC=$(CC) ; \
+	cd libtiff ; make install
 
 ra_pixar:	ra_pixar.o ra_pixar.c
 	$(CC) $(CFLAGS) $(PIXAR_INCLUDE) -o $@ ra_pixar.o -lrt \
