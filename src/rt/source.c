@@ -299,8 +299,10 @@ char  *p;			/* data for f */
 						/* modify threshold */
 	ourthresh = shadthresh / r->rweight;
 						/* test for shadows */
-	nhits = 0;
-	for (sn = 0; sn < ncnts; sn++) {
+	for (nhits = 0, hwt = 0.0, sn = 0; sn < ncnts;
+			hwt += (double)source[scp->sno].nhits /
+				(double)source[scp->sno].ntests,
+			sn++) {
 						/* check threshold */
 		if ((sn+nshadcheck>=ncnts ? cntord[sn].brt :
 				cntord[sn].brt-cntord[sn+nshadcheck].brt)
@@ -329,13 +331,13 @@ char  *p;			/* data for f */
 		nhits++;
 		source[scp->sno].nhits++;
 	}
-					/* surface hit rate */
-	if (sn > 0)
-		hwt = (double)nhits / (double)sn;
+					/* source hit rate */
+	if (hwt > FTINY)
+		hwt = (double)nhits / hwt;
 	else
 		hwt = 0.5;
 #ifdef DEBUG
-	sprintf(errmsg, "%d tested, %d untested, %f hit rate\n",
+	sprintf(errmsg, "%d tested, %d untested, %f conditional hit rate\n",
 			sn, ncnts-sn, hwt);
 	eputs(errmsg);
 #endif
@@ -344,6 +346,8 @@ char  *p;			/* data for f */
 		scp = srccnt + cntord[sn].sndx;
 		prob = hwt * (double)source[scp->sno].nhits /
 				(double)source[scp->sno].ntests;
+		if (prob > 1.0)
+			prob = 1.0;
 		scalecolor(scp->val, prob);
 		addcolor(r->rcol, scp->val);
 	}
