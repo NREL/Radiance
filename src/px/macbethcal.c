@@ -214,7 +214,7 @@ char	**argv;
 
 		printf("# Color correspondence produced by:\n#\t\t");
 		printargs(argc, argv, stdout);
-		printf("#\tUsage: pcwarp -m %s uncorrected.pic > corrected.pic\n",
+		printf("#\tUsage: pcwarp %s uncorrected.pic > corrected.pic\n",
 				i+1 < argc ? argv[i+1] : "{this_file}");
 		printf("#\t   Or: pcond [options] -m %s orig.pic > output.pic\n",
 				i+1 < argc ? argv[i+1] : "{this_file}");
