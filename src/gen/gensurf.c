@@ -375,7 +375,6 @@ register POINT  *r0, *r1, *r2;
 int  siz;
 {
 	FVECT  v1, v2;
-	register int  i;
 
 	if (!smooth)			/* not needed if no smoothing */
 		return;
@@ -519,6 +518,7 @@ char  *msg;
 
 
 quit(code)
+int  code;
 {
 	exit(code);
 }
