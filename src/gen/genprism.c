@@ -102,7 +102,7 @@ userr:
 
 
 readverts(fname)		/* read vertices from a file */
-FILE  *fname;
+char  *fname;
 {
 	FILE  *fp;
 
