@@ -39,15 +39,22 @@ char	*argv[];
 					/* enter main loop */
 	do {
 		rdy = disp_wait();
-		if (rdy & DEV_READY) {
+		while (rdy & DEV_READY) {
 			inp = dev_input();	/* take residual action here */
+			if (inp & DEV_NEWVIEW)
+				new_view(&odev.v);
 			if (inp & DEV_SHUTDOWN)
 				serv_request(DR_SHUTDOWN, 0, NULL);
-			else if (inp & DEV_NEWVIEW)
-				new_view(&odev.v);
+			if (inp & DEV_WAIT)
+				serv_request(DR_ATTEN, 0, NULL);
+			else
+				rdy &= ~DEV_READY;
 		}
-		if (rdy & SERV_READY)
+		if (rdy & SERV_READY) {
 			res = serv_result();	/* processes result, also */
+			if (res == DS_ACKNOW)
+				serv_request(DR_NOOP, 0, NULL);
+		}
 	} while (res != DS_SHUTDOWN);
 					/* all done */
 	quit(0);
@@ -229,6 +236,25 @@ char	*p;
 		fwrite(p, 1, nbytes, stdout);
 	if (fflush(stdout) < 0)
 		error(SYSTEM, "write error in serv_request");
+}
+
+
+eputs(s)			/* put error message to stderr */
+register char  *s;
+{
+	static int  midline = 0;
+
+	if (!*s)
+		return;
+	if (!midline++) {	/* prepend line with program name */
+		fputs(progname, stderr);
+		fputs(": ", stderr);
+	}
+	fputs(s, stderr);
+	if (s[strlen(s)-1] == '\n') {
+		fflush(stderr);
+		midline = 0;
+	}
 }
 
 
