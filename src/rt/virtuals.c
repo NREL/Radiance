@@ -287,7 +287,8 @@ register int  sn;	/* target source number */
 	getplaneq(onorm, o);
 				/* set number of rays to sample */
 	if (source[sn].sflags & SDISTANT) {
-		n = 4.*or2/(thescene.cusize*thescene.cusize)*vspretest + .5;
+					/* 32. == heuristic constant */
+		n = 32.*or2/(thescene.cusize*thescene.cusize)*vspretest + .5;
 		infront = DOT(onorm, source[sn].sloc) > 0.;
 	} else {
 		for (i = 0; i < 3; i++)
