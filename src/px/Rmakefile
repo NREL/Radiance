@@ -195,6 +195,8 @@ ximage.o x11raster.o:	xraster.h
 
 x11image.o x11raster.o:	x11raster.h
 
+x11image.o:	x11icon.h
+
 ra_t8.o:	targa.h
 
 fvect.o:	fvect.h
