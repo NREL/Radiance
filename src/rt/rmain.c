@@ -135,7 +135,7 @@ char  *argv[];
 					/* record start time */
 	tstart = time((long *)0);
 					/* global program name */
-	progname = argv[0];
+	progname = argv[0] = fixargv0(argv[0]);
 					/* get library path */
 	if ((libpath = getenv(ULIBVAR)) == NULL)
 		libpath = DEFPATH;
@@ -637,9 +637,9 @@ printdefaults()			/* print default values to stdout */
 			"unknown");
 	printf("-vp %f %f %f\t# view point\n",
 			ourview.vp[0], ourview.vp[1], ourview.vp[2]);
-	printf("-vd %f %f %f\t# view direction\n", 
+	printf("-vd %f %f %f\t# view direction\n",
 			ourview.vdir[0], ourview.vdir[1], ourview.vdir[2]);
-	printf("-vu %f %f %f\t# view up\n", 
+	printf("-vu %f %f %f\t# view up\n",
 			ourview.vup[0], ourview.vup[1], ourview.vup[2]);
 	printf("-vh %f\t\t\t# view horizontal size\n", ourview.horiz);
 	printf("-vv %f\t\t\t# view vertical size\n", ourview.vert);

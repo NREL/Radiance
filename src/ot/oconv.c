@@ -54,8 +54,8 @@ char  **argv;
 	int  outflags = IO_ALL;
 	OBJECT	startobj;
 	int  i;
-	
-	progname = argv[0];
+
+	progname = argv[0] = fixargv0(argv[0]);
 
 	if ((libpath = getenv(ULIBVAR)) == NULL)
 		libpath = DEFPATH;
@@ -111,7 +111,7 @@ breakopt:
 	printf("\n");
 
 	startobj = nobjects;		/* previous objects already converted */
-	
+
 	for ( ; i < argc; i++)		/* read new scene descriptions */
 		if (!strcmp(argv[i], "-")) {	/* from stdin */
 			readobj(NULL);
@@ -150,10 +150,10 @@ breakopt:
 	}
 
 	mincusize = thescene.cusize / resolu - FTINY;
-		
+
 	for (i = startobj; i < nobjects; i++)		/* add new objects */
 		addobject(&thescene, i);
-	
+
 	thescene.cutree = combine(thescene.cutree);	/* optimize */
 
 	writeoct(outflags, &thescene, ofname);	/* write structures to stdout */
@@ -220,7 +220,7 @@ OBJECT	obj;
 
 	if (in == O_MISS)
 		return;				/* no intersection */
-	
+
 	if (istree(cu->cutree)) {
 						/* do children */
 		cukid.cusize = cu->cusize * 0.5;
@@ -245,7 +245,7 @@ OBJECT	obj;
 					/* add to full node */
 	objset(oset, cu->cutree);
 	cukid.cusize = cu->cusize * 0.5;
-	
+
 	if (in==O_IN || oset[0] < objlim || cukid.cusize < mincusize) {
 						/* add to set */
 		if (oset[0] >= MAXSET) {
