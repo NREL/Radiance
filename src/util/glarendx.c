@@ -289,6 +289,8 @@ FVECT	sd, vd, vu;
 	d = DOT(sd,vu)/sqrt(1.0-d*d);
 	if (d >= 1.0)
 		tau = 0.0;
+	else if (d <= -1.0)
+		tau = 180.0;
 	else
 		tau = acos(d) * (180./PI);
 	return( exp( sigma*( (35.2 - tau*.31889 - 1.22*exp(-.22222*tau))*1e-3
