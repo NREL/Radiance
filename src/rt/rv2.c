@@ -63,6 +63,7 @@ char  *s;
 		}
 		fputs(progname, fp);
 		fprintview(&ourview, fp);
+		fputs(sskip(s), fp);
 		fputs("\n", fp);
 		fclose(fp);
 		return;
