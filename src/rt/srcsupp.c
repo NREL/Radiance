@@ -288,10 +288,10 @@ FVECT  nrm;		/* source surface normal */
 
 	d = DOT(sp->aim, nrm);
 	if (d > FTINY)			/* center in front? */
-		return(0);
+		return(1);
 					/* else check horizon */
 	d1 = 1. - sp->siz/(2.*PI);
-	return(1.-FTINY-d*d > d1*d1);
+	return(1.-FTINY-d*d < d1*d1);
 }
 
 

@@ -179,7 +179,7 @@ MAT4  pm;
 		}
 		if (source[sn].sflags & SFLAT) {	/* behind source? */
 			multv3(nsnorm, source[sn].snorm, pm);
-			if (checkspot(&ourspot, nsnorm) < 0)
+			if (!checkspot(&ourspot, nsnorm))
 				return(-1);
 		}
 	}
