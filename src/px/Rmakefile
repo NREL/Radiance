@@ -17,107 +17,107 @@ PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar -lm
 
 PROGS = pfilt ttyimage aedimage oki20c paintjet mt160r getinfo psign \
 greyscale pvalue pcompos colorscale ra_pr ximage prot \
-panim ra_t8 ra_bn ra_t16 pcomb pinterp x11image
+ra_t8 ra_bn ra_t16 pcomb pinterp x11image xshowtrace
 
 all:	$(PROGS)
 
 install:	$(PROGS)
 	cp $(PROGS) $(INSTDIR)
 
-pfilt:	pfilt.o pf2.o pf3.o color.o header.o
-	cc $(CFLAGS) -o pfilt pfilt.o pf2.o pf3.o color.o header.o -lm
+pfilt:	pfilt.o pf2.o pf3.o resolu.o color.o header.o
+	cc $(CFLAGS) -o pfilt pfilt.o pf2.o pf3.o resolu.o color.o header.o -lm
 
-ttyimage:	ttyimage.o color.o header.o
-	cc $(CFLAGS) -o ttyimage ttyimage.o color.o header.o
+ttyimage:	ttyimage.o resolu.o color.o header.o
+	cc $(CFLAGS) -o ttyimage ttyimage.o resolu.o color.o header.o
 
-t4027:	t4027.o color.o
-	cc $(CFLAGS) -o t4027 t4027.o color.o
+t4027:	t4027.o color.o resolu.o
+	cc $(CFLAGS) -o t4027 t4027.o color.o resolu.o
 
-glimage:	glimage.o color.o header.o
-	cc $(CFLAGS) -o glimage glimage.o color.o header.o -lgl_s
+glimage:	glimage.o color.o resolu.o header.o
+	cc $(CFLAGS) -o glimage glimage.o color.o resolu.o header.o -lgl_s
 
-aedimage:	aedimage.o color.o ciq.o cut.o closest.o ealloc.o biq.o header.o
-	cc $(CFLAGS) -o aedimage aedimage.o color.o ciq.o cut.o \
+aedimage:	aedimage.o color.o resolu.o ciq.o cut.o closest.o ealloc.o biq.o header.o
+	cc $(CFLAGS) -o aedimage aedimage.o color.o resolu.o ciq.o cut.o \
 closest.o ealloc.o biq.o header.o -lm
 
-oki20c:	oki20c.o color.o header.o
-	cc $(CFLAGS) -o oki20c oki20c.o color.o header.o
+oki20c:	oki20c.o color.o resolu.o header.o
+	cc $(CFLAGS) -o oki20c oki20c.o color.o resolu.o header.o
 
-paintjet:	paintjet.o color.o header.o
-	cc $(CFLAGS) -o paintjet paintjet.o color.o header.o
+paintjet:	paintjet.o color.o resolu.o header.o
+	cc $(CFLAGS) -o paintjet paintjet.o color.o resolu.o header.o
 
-mt160r:	mt160r.o color.o header.o
-	cc $(CFLAGS) -o mt160r mt160r.o color.o header.o
+mt160r:	mt160r.o color.o resolu.o header.o
+	cc $(CFLAGS) -o mt160r mt160r.o color.o resolu.o header.o
 
 getinfo:	getinfo.o header.o
 	cc $(CFLAGS) -n -o getinfo getinfo.o header.o
 
-greyscale:	greyscale.o color.o
-	cc $(CFLAGS) -o greyscale greyscale.o color.o -lm
+greyscale:	greyscale.o color.o resolu.o
+	cc $(CFLAGS) -o greyscale greyscale.o color.o resolu.o -lm
 
-colorscale:	colorscale.o color.o
-	cc $(CFLAGS) -o colorscale colorscale.o color.o
+colorscale:	colorscale.o color.o resolu.o
+	cc $(CFLAGS) -o colorscale colorscale.o color.o resolu.o
 
-pvalue:	pvalue.o color.o header.o
-	cc $(CFLAGS) -o pvalue pvalue.o color.o header.o
+pvalue:	pvalue.o color.o resolu.o header.o
+	cc $(CFLAGS) -o pvalue pvalue.o color.o resolu.o header.o
 
-psum:	psum.o color.o header.o
-	cc $(CFLAGS) -o psum psum.o color.o header.o
+psum:	psum.o color.o resolu.o header.o
+	cc $(CFLAGS) -o psum psum.o color.o resolu.o header.o
 
-pcompos:	pcompos.o color.o header.o
-	cc $(CFLAGS) -o pcompos pcompos.o color.o header.o
+pcompos:	pcompos.o color.o resolu.o header.o
+	cc $(CFLAGS) -o pcompos pcompos.o color.o resolu.o header.o
 
-psign:	psign.o color.o
-	cc $(CFLAGS) -o psign psign.o color.o
+psign:	psign.o color.o resolu.o
+	cc $(CFLAGS) -o psign psign.o color.o resolu.o
 
-d48c:	d48c.o color.o
-	cc $(CFLAGS) -o d48c d48c.o color.o
+d48c:	d48c.o color.o resolu.o
+	cc $(CFLAGS) -o d48c d48c.o color.o resolu.o
 
-ra_pr: ra_pr.o ciq.o cut.o closest.o color.o ealloc.o header.o biq.o
+ra_pr: ra_pr.o ciq.o cut.o closest.o color.o resolu.o ealloc.o header.o biq.o
 	cc $(CFLAGS) -o ra_pr ra_pr.o ciq.o cut.o closest.o \
-color.o ealloc.o header.o biq.o -lm
+color.o resolu.o ealloc.o header.o biq.o -lm
 
-ra_t8: ra_t8.o ciq.o cut.o closest.o color.o ealloc.o header.o biq.o
+ra_t8: ra_t8.o ciq.o cut.o closest.o color.o resolu.o ealloc.o header.o biq.o
 	cc $(CFLAGS) -o ra_t8 ra_t8.o ciq.o cut.o closest.o \
-color.o ealloc.o header.o biq.o -lm
+color.o resolu.o ealloc.o header.o biq.o -lm
 
-ra_t16: ra_t16.o color.o ealloc.o header.o
-	cc $(CFLAGS) -o ra_t16 ra_t16.o color.o ealloc.o header.o -lm
+ra_t16: ra_t16.o color.o resolu.o ealloc.o header.o
+	cc $(CFLAGS) -o ra_t16 ra_t16.o color.o resolu.o ealloc.o header.o -lm
 
 ra_im: ra_im.o
 	cc $(CFLAGS) -n -o ra_im ra_im.o
 
-ra_bn: ra_bn.o color.o header.o
-	cc $(CFLAGS) -o ra_bn ra_bn.o color.o header.o -lm
+ra_bn: ra_bn.o color.o resolu.o header.o
+	cc $(CFLAGS) -o ra_bn ra_bn.o color.o resolu.o header.o -lm
 
-ximage:	ximage.o color.o ciq.o cut.o closest.o ealloc.o \
+ximage:	ximage.o color.o resolu.o ciq.o cut.o closest.o ealloc.o \
 xraster.o header.o biq.o image.o fvect.o
-	cc $(CFLAGS) -o ximage ximage.o color.o xraster.o \
+	cc $(CFLAGS) -o ximage ximage.o color.o resolu.o xraster.o \
 header.o ciq.o cut.o closest.o ealloc.o biq.o image.o fvect.o -lX -lm
 
-x11image:	x11image.o color.o ciq.o cut.o closest.o ealloc.o \
+x11image:	x11image.o color.o resolu.o ciq.o cut.o closest.o ealloc.o \
 x11raster.o header.o biq.o image.o fvect.o
-	cc $(CFLAGS) -o x11image x11image.o color.o x11raster.o \
+	cc $(CFLAGS) -o x11image x11image.o color.o resolu.o x11raster.o \
 header.o ciq.o cut.o closest.o ealloc.o biq.o image.o fvect.o -lX11 -lm
 
-prot:		prot.o color.o header.o
-	cc $(CFLAGS) -o prot prot.o color.o header.o
+prot:		prot.o color.o resolu.o header.o
+	cc $(CFLAGS) -o prot prot.o color.o resolu.o header.o
 
-panim:	panim.o color.o header.o libclient.a
-	cc $(CFLAGS) -o panim panim.o color.o header.o \
-libclient.a -lrpcsvc -lm
+panim:	panim.o color.o resolu.o header.o client/libclient.a
+	cc $(CFLAGS) -o panim panim.o color.o resolu.o header.o \
+client/libclient.a -lrpcsvc -lm
 
-pcomb:	pcomb.o calexpr.o calfunc.o caldefn.o color.o \
+pcomb:	pcomb.o calexpr.o calfunc.o caldefn.o color.o resolu.o \
 header.o ealloc.o savestr.o
 	cc $(CFLAGS) -o pcomb pcomb.o calexpr.o calfunc.o caldefn.o \
-color.o header.o ealloc.o savestr.o -lm
+color.o resolu.o header.o ealloc.o savestr.o -lm
 
-pinterp:	pinterp.o image.o header.o color.o fvect.o mat4.o
+pinterp:	pinterp.o image.o header.o color.o resolu.o fvect.o mat4.o
 	cc $(CFLAGS) -o pinterp pinterp.o image.o header.o mat4.o \
-fvect.o color.o -lm
+fvect.o color.o resolu.o -lm
 
-ra_pixar:	ra_pixar.o ra_pixar.c color.o header.o
-	cc $(CFLAGS) $(PIXAR_INCLUDE) -o $@ ra_pixar.o color.o header.o \
+ra_pixar:	ra_pixar.o ra_pixar.c color.o resolu.o header.o
+	cc $(CFLAGS) $(PIXAR_INCLUDE) -o $@ ra_pixar.o color.o resolu.o header.o \
 $(PIXAR_LIB)
 
 calexpr.o:	calexpr.c
@@ -132,16 +132,22 @@ caldefn.o:	caldefn.c
 ra_pixar.o:	ra_pixar.c
 	cc $(CFLAGS) $(PIXAR_INCLUDE) -c ra_pixar.c
 
+xshowtrace:	xshowtrace.o image.o resolu.o header.o fvect.o
+	cc $(CFLAGS) -o xshowtrace xshowtrace.o image.o resolu.o header.o \
+fvect.o -lm -lX11
+
+xshowtrace.o:	view.h standard.h fvect.h
+
 pcomb.o calexpr.o calfunc.o caldefn.o:	calcomp.h
 
-panim.o:	scan.h clntrpc.h color.h random.h
+panim.o:	client/scan.h color.h random.h
 
 pf2.o bnoise.o:	random.h
 
 ra_t16.o:	random.h
 
 pfilt.o pf2.o ttyimage.o t4027.o mt160r.o psum.o psign.o prot.o \
-d48c.o aedimage.o pcompos.o color.o greyscale.o ra_t8.o glimage.o \
+d48c.o aedimage.o pcompos.o color.o resolu.o greyscale.o ra_t8.o glimage.o \
 ra_bn.o ra_t16.o ra_pr.o pvalue.o pcomb.o pinterp.o ximage.o:	color.h
 
 pinterp.o ximage.o image.o:	standard.h fvect.h
