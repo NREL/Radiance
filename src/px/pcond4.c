@@ -285,11 +285,8 @@ SCANBAR	*sb;
 					/* get scanlines */
 	sl0 = getascan(sb, iy);
 #ifdef DEBUG
-	if (sl0 == NULL) {
-		fprintf(stderr, "%s: internal - cannot backspace in ascanval\n",
-				progname);
-		abort();
-	}
+	if (sl0 == NULL)
+		error(INTERNAL, "cannot backspace in ascanval");
 #endif
 	sl1 = getascan(sb, iy+1);
 					/* 2D linear interpolation */
