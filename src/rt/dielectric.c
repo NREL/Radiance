@@ -129,6 +129,7 @@ register RAY  *r;
 			if (m->otype != MAT_DIELECTRIC
 					|| r->rod > 0.0
 					|| r->crtype & SHADOW
+					|| directinvis
 					|| m->oargs.farg[4] == 0.0
 					|| !disperse(m, r, p.rdir, trans))
 #endif
