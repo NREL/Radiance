@@ -10,6 +10,7 @@ static const char	RCSid[] = "$Id$";
 #include <string.h>
 #include <math.h>
 
+#include "meta.h"
 #include "random.h"
 #include "mgflib/parser.h"
 #include "plocate.h" /* XXX shouldn't this rather be in rtmath.h? */

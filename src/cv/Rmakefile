@@ -8,6 +8,7 @@ OPT = -O
 MACH = -DBSD
 
 CFLAGS = -I../common -L../lib $(OPT) $(MACH)
+METACFLAGS = -I../meta
 
 CC = cc
 
@@ -87,7 +88,7 @@ mgf2rad.o:	mgf2rad.c mgflib/parser.h ../common/tmesh.h ../common/color.h
 	$(CC) $(CFLAGS) -c mgf2rad.c
 
 mgf2meta.o:	mgf2meta.c mgflib/parser.h
-	$(CC) $(CFLAGS) -c mgf2meta.c
+	$(CC) $(CFLAGS) $(METACFLAGS) -c mgf2meta.c
 
 arch2rad.o trans.o:	trans.h
 
