@@ -56,5 +56,7 @@ extern RTREE	qtrunk;		/* trunk of quadtree */
 extern double	qtDepthEps;	/* epsilon to compare depths (z fraction) */
 extern int	qtMinNodesiz;	/* minimum node dimension (pixels) */
 
+extern int	rayqleft;	/* number of rays to queue before flush */
+
 extern int4	encodedir();
 extern double	fdir2diff(), dir2diff();

@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -164,68 +164,6 @@ int	adopt;
 }
 
 
-cbeamadj(v, hr, vr)		/* adjust our beam list */
-VIEW	*v;
-int	hr, vr;
-{
-	PACKHEAD	*pa, *pa2;
-	register PACKHEAD	*pp;
-	int	n, n2;
-	FVECT	gp;
-	int	igp[3], vcflgs;
-	register int	i;
-					/* figure out center voxel(s) */
-	n = -1; vcflgs = 0;
-	for (i = 0; i < 8 && voxel[i].hd >= 0; i++) {
-		if (voxel[i].hd != n) {
-			hdgrid(gp, hdlist[n=voxel[i].hd], v->vp);
-			igp[0] = gp[0]; igp[1] = gp[1]; igp[2] = gp[2];
-		}
-		if (voxel[i].i[0] == igp[0] && voxel[i].i[1] == igp[1] &&
-				voxel[i].i[2] == igp[2])
-			vcflgs |= 1<<i;
-	}
-					/* get additions */
-	pa2 = (PACKHEAD *)malloc(xcbeams*sizeof(PACKHEAD));
-	if (xcbeams && pa2 == NULL)
-		goto memerr;
-	pa = pa2 + xcbeams; n2 = 0;
-	for (i = xcbeams; i--; ) {
-		if (cbeam[ncbeams+i].wants & vcflgs)
-			pp = --pa;		/* priority list */
-		else
-			pp = pa2 + n2++;	/* secondary list */
-		pp->hd = cbeam[ncbeams+i].hd;
-		pp->bi = cbeam[ncbeams+i].bi;
-		pp->nr = npixels(v, hr, vr, hdlist[pp->hd], pp->bi) + 1;
-		pp->nc = 0;
-	}
-	n = xcbeams - n2;
-					/* now sort list for deletions */
-	cbeamsort(0);
-	pa2 = (PACKHEAD *)realloc((char *)pa2, (n+n2+xcbeams)*sizeof(PACKHEAD));
-	if (n+n2+xcbeams && pa2 == NULL)
-		goto memerr;
-	pa = pa2 + n2;
-	for (i = xcbeams; i--; ) {
-		pp = pa + n++;
-		pp->hd = cbeam[ncbeams+i].hd;
-		pp->bi = cbeam[ncbeams+i].bi;
-		pp->nr = 0;
-		pp->nc = 0;
-	}
-	if (n)				/* adjust the set */
-		serv_request(DR_ADJSET, n*sizeof(PACKHEAD), (char *)pa);
-	if (n2)				/* make secondary additions */
-		serv_request(DR_ADDSET, n2*sizeof(PACKHEAD), (char *)pa2);
-	xcbeams = 0;			/* clean up */
-	free((char *)pa2);
-	return;
-memerr:
-	error(SYSTEM, "out of memory in cbeamadj");
-}
-
-
 cbeamop(op, bl, n, v, hr, vr)	/* update beams on server list */
 int	op;
 register struct beamcomp	*bl;
@@ -297,7 +235,6 @@ get_voxels(vl, vp)	/* find voxels corresponding to view point */
 VOXL	vl[8];
 FVECT	vp;
 {
-	static int	lastn = 0, lastd = -1;
 	int	n = 0;
 	FVECT	gp;
 	double	d;
@@ -333,13 +270,7 @@ FVECT	vp;
 		error(COMMAND, "move past outer limits");
 		return(0);
 	}
-					/* warn of dangerous moves */
-	if (n < lastn && bestd >= lastd)
-		error(WARNING, "moving outside holodeck section");
-	else if (n > lastn && bestd <= lastd)
-		error(WARNING, "moving inside holodeck section");
-	lastd = bestd;
-	return(lastn = n);
+	return(n);
 }
 
 
@@ -536,9 +467,6 @@ VIEW	*vn;
 			mvview(ca.vi, &dvw, vn);
 		else			/* else add all new cells */
 			doview(&ca, vn);
-#if 1
-	cbeamadj(vn, odev.hres, odev.vres);
-#else
 					/* inform server of new beams */
 	cbeamop(DR_ADDSET, cbeam+ncbeams, xcbeams, vn, odev.hres, odev.vres);
 					/* sort list to put orphans at end */
@@ -546,7 +474,6 @@ VIEW	*vn;
 					/* tell server to delete orphans */
 	cbeamop(DR_DELSET, cbeam+ncbeams, xcbeams, NULL, 0, 0);
 	xcbeams = 0;			/* truncate our list */
-#endif
 	copystruct(&dvw, vn);		/* record new view */
 	return(1);
 }
