@@ -431,7 +431,7 @@ XKeyEvent  *ekey;
 		XFlush();
 		free_raster(ourras);
 		getras();
-		return(redraw(0, 0, width, height));
+	/* fall through */
 	case CTRL(R):				/* redraw */
 		XClear(wind);
 		return(redraw(0, 0, width, height));
