@@ -142,7 +142,6 @@ char  *s;
 	if ((tl=(TLINE *)malloc(sizeof(TLINE)+siz)) == NULL ||
 			(tl->spc=(short *)malloc(siz*sizeof(short))) == NULL)
 		error(SYSTEM, "out of memory in tlalloc");
-	tl->spc = NULL;
 	tl->next = NULL;
 	strcpy(TLSTR(tl), s);
 	return(tl);
@@ -171,7 +170,7 @@ register OBJREC  *tm;
 	if (tm->oargs.nsargs - tndx(tm) < 1 || tm->oargs.nfargs < sndx(tm))
 		objerror(tm, USER, "bad # arguments");
 	if ((t = (TEXT *)malloc(sizeof(TEXT))) == NULL)
-		goto memerr;
+		error(SYSTEM, "out of memory in gettext");
 						/* compute vectors */
 	fcross(DxR, D, R);
 	fcross(t->right, DxR, D);
@@ -223,9 +222,6 @@ register OBJREC  *tm;
 	i = d * 256.0;
 	t->tl.width = 0;
 	for (tlp = t->tl.next; tlp != NULL; tlp = tlp->next) {
-		if ((tlp->spc = (short *)malloc(
-				(strlen(TLSTR(tlp))+1)*sizeof(short))) == NULL)
-			goto memerr;
 		if (i < 0)
 			tlp->width = squeeztext(tlp->spc, TLSTR(tlp), t->f, -i);
 		else if (i > 0)
@@ -238,8 +234,6 @@ register OBJREC  *tm;
 						/* we're done */
 	tm->os = (char *)t;
 	return(t);
-memerr:
-	error(SYSTEM, "out of memory in gettext");
 #undef  R
 #undef  D
 }
