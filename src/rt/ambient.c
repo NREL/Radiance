@@ -46,6 +46,9 @@ static int  nunflshed = 0;	/* number of unflushed ambient values */
 
 extern long  ftell(), lseek();
 static int  initambfile(), avsave(), avinsert();
+#ifdef  F_SETLKW
+static  aflock();
+#endif
 
 
 setambres(ar)				/* set ambient resolution */
@@ -73,26 +76,25 @@ char  *afile;
 	AMBVAL	amb;
 						/* init ambient limits */
 	setambres(ambres);
+	if (afile == NULL)
+		return;
 						/* open ambient file */
-	if (afile != NULL) {
-		if ((ambfp = fopen(afile, "r+")) != NULL) {
-			initambfile(0);
-			headlen = ftell(ambfp);
-			while (readambval(&amb, ambfp))
-				avinsert(&amb, &atrunk, thescene.cuorg,
-						thescene.cusize);
-							/* align */
-			fseek(ambfp, -((ftell(ambfp)-headlen)%AMBVALSIZ), 1);
-		} else if ((ambfp = fopen(afile, "w+")) != NULL)
-			initambfile(1);
-		else {
-			sprintf(errmsg, "cannot open ambient file \"%s\"",
-					afile);
-			error(SYSTEM, errmsg);
-		}
-		nunflshed++;	/* lie */
-		ambsync();
+	if ((ambfp = fopen(afile, "r+")) != NULL) {
+		initambfile(0);
+		headlen = ftell(ambfp);
+		while (readambval(&amb, ambfp))
+			avinsert(&amb, &atrunk, thescene.cuorg,
+					thescene.cusize);
+						/* align */
+		fseek(ambfp, -((ftell(ambfp)-headlen)%AMBVALSIZ), 1);
+	} else if ((ambfp = fopen(afile, "w+")) != NULL)
+		initambfile(1);
+	else {
+		sprintf(errmsg, "cannot open ambient file \"%s\"", afile);
+		error(SYSTEM, errmsg);
 	}
+	nunflshed++;	/* lie */
+	ambsync();
 }
 
 
@@ -308,6 +310,9 @@ int  creat;
 {
 	extern char  *progname, *octname, VersionID[];
 
+#ifdef	F_SETLKW
+	aflock(creat ? F_WRLCK : F_RDLCK);
+#endif
 #ifdef MSDOS
 	setmode(fileno(ambfp), O_BINARY);
 #endif
@@ -386,27 +391,33 @@ memerr:
 
 #ifdef	F_SETLKW
 
+static
+aflock(typ)			/* lock/unlock ambient file */
+int  typ;
+{
+	static struct flock  fls;	/* static so initialized to zeroes */
+
+	fls.l_type = typ;
+	if (fcntl(fileno(ambfp), F_SETLKW, &fls) < 0)
+		error(SYSTEM, "cannot (un)lock ambient file");
+}
+
+
 int
 ambsync()			/* synchronize ambient file */
 {
 	static FILE  *ambinp = NULL;
 	static long  lastpos = -1;
-	struct flock  fls;
 	long  flen;
 	AMBVAL	avs;
 	register int  n;
 
 	if (nunflshed == 0)
 		return(0);
-				/* gain exclusive access */
-	fls.l_type = F_WRLCK;
-	fls.l_whence = 0;
-	fls.l_start = 0L;
-	fls.l_len = 0L;
-	if (fcntl(fileno(ambfp), F_SETLKW, &fls) < 0)
-		error(SYSTEM, "cannot lock ambient file");
-	if (lastpos < 0)	/* initializing */
+	if (lastpos < 0)	/* initializing (locked in initambfile) */
 		goto syncend;
+				/* gain exclusive access */
+	aflock(F_WRLCK);
 				/* see if file has grown */
 	if ((flen = lseek(fileno(ambfp), 0L, 2)) < 0)
 		error(SYSTEM, "cannot seek on ambient file");
@@ -429,8 +440,7 @@ ambsync()			/* synchronize ambient file */
 syncend:
 	n = fflush(ambfp);			/* calls write() at last */
 	lastpos = lseek(fileno(ambfp), 0L, 1);
-	fls.l_type = F_UNLCK;			/* release file */
-	fcntl(fileno(ambfp), F_SETLKW, &fls);
+	aflock(F_UNLCK);			/* release file */
 	nunflshed = 0;
 	return(n);
 }
