@@ -34,8 +34,6 @@ extern double  specjitter;		/* specular sampling jitter */
  *  8  red 	grn	blu	rspec	u-rough	v-rough	trans	tspec
  */
 
-#define  BSPEC(m)	(6.0)		/* specularity parameter b */
-
 				/* specularity flags */
 #define  SP_REFL	01		/* has reflected specular component */
 #define  SP_TRAN	02		/* has transmitted specular */
@@ -198,15 +196,10 @@ register RAY  *r;
 		else
 			setcolor(nd.scolor, 1.0, 1.0, 1.0);
 		scalecolor(nd.scolor, nd.rspec);
-						/* improved model */
-		dtmp = exp(-BSPEC(m)*nd.pdot);
-		for (i = 0; i < 3; i++)
-			colval(nd.scolor,i) += (1.0-colval(nd.scolor,i))*dtmp;
-		nd.rspec += (1.0-nd.rspec)*dtmp;
 						/* check threshold */
 		if (specthresh > FTINY &&
-				((specthresh >= 1.-FTINY ||
-				specthresh + (.05 - .1*frandom()) > nd.rspec)))
+				(specthresh >= 1.-FTINY ||
+				specthresh > nd.rspec))
 			nd.specfl |= SP_RBLT;
 						/* compute refl. direction */
 		for (i = 0; i < 3; i++)
@@ -224,9 +217,8 @@ register RAY  *r;
 			nd.specfl |= SP_TRAN;
 							/* check threshold */
 			if (specthresh > FTINY &&
-					((specthresh >= 1.-FTINY ||
-					specthresh +
-					    (.05 - .1*frandom()) > nd.tspec)))
+					(specthresh >= 1.-FTINY ||
+					specthresh > nd.tspec))
 				nd.specfl |= SP_TBLT;
 			if (DOT(r->pert,r->pert) <= FTINY*FTINY) {
 				VCOPY(nd.prdir, r->rdir);

@@ -186,15 +186,15 @@ register RAY  *r;
 		else
 			setcolor(nd.scolor, 1.0, 1.0, 1.0);
 		scalecolor(nd.scolor, nd.rspec);
-						/* improved model */
-		dtmp = exp(-BSPEC(m)*nd.pdot);
-		for (i = 0; i < 3; i++)
-			colval(nd.scolor,i) += (1.0-colval(nd.scolor,i))*dtmp;
-		nd.rspec += (1.0-nd.rspec)*dtmp;
-						/* check threshold */
-		if (specthresh > FTINY &&
-				((specthresh >= 1.-FTINY ||
-				specthresh + (.05 - .1*frandom()) > nd.rspec)))
+		if (nd.specfl & SP_PURE) {		/* improved model */
+			dtmp = exp(-BSPEC(m)*nd.pdot);
+			for (i = 0; i < 3; i++)
+				colval(nd.scolor,i) +=
+						(1.0-colval(nd.scolor,i))*dtmp;
+			nd.rspec += (1.0-nd.rspec)*dtmp;
+		} else if (specthresh > FTINY &&	/* check threshold */
+				(specthresh >= 1.-FTINY ||
+				specthresh > nd.rspec))
 			nd.specfl |= SP_RBLT;
 						/* compute reflected ray */
 		for (i = 0; i < 3; i++)
@@ -221,10 +221,9 @@ register RAY  *r;
 		if (nd.tspec > FTINY) {
 			nd.specfl |= SP_TRAN;
 							/* check threshold */
-			if (specthresh > FTINY &&
-					((specthresh >= 1.-FTINY ||
-					specthresh +
-					    (.05 - .1*frandom()) > nd.tspec)))
+			if (!(nd.specfl & SP_PURE) && specthresh > FTINY &&
+					(specthresh >= 1.-FTINY ||
+					specthresh > nd.tspec))
 				nd.specfl |= SP_TBLT;
 			if (r->crtype & SHADOW ||
 					DOT(r->pert,r->pert) <= FTINY*FTINY) {
@@ -310,6 +309,10 @@ register NORMDAT  *np;
 	double  rv[2];
 	double  d, sinp, cosp;
 	register int  i;
+					/* quick test */
+	if ((np->specfl & (SP_REFL|SP_RBLT)) != SP_REFL &&
+			(np->specfl & (SP_TRAN|SP_TBLT)) != SP_TRAN)
+		return;
 					/* set up sample coordinates */
 	v[0] = v[1] = v[2] = 0.0;
 	for (i = 0; i < 3; i++)
