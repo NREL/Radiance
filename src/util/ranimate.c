@@ -300,6 +300,7 @@ checkdir()			/* make sure we have our directory */
 setdefaults()			/* set default values */
 {
 	extern char	*atos();
+	int	decades;
 	char	buf[256];
 
 	if (vdef(ANIMATE)) {
@@ -333,7 +334,9 @@ setdefaults()			/* set default values */
 		quit(1);
 	}
 	if (!vdef(BASENAME)) {
-		sprintf(buf, "%s/frame%%03d", vval(DIRECTORY));
+		decades = (int)log10((double)vint(END)) + 1;
+		if (decades < 3) decades = 3;
+		sprintf(buf, "%s/frame%%0%dd", vval(DIRECTORY), decades);
 		vval(BASENAME) = savqstr(buf);
 		vdef(BASENAME)++;
 	}
