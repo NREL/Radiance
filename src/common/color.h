@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1997 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
 
@@ -188,11 +188,12 @@ extern RGBPRIMS  stdprims;		/* standard primary chromaticities */
 extern COLORMAT  rgb2xyzmat;		/* RGB to XYZ conversion matrix */
 extern COLORMAT  xyz2rgbmat;		/* XYZ to RGB conversion matrix */
 
-#define  cie_rgb(rgb,xyz)	colortrans(rgb,xyz2rgbmat,xyz)
-#define  rgb_cie(xyz,rgb)	colortrans(xyz,rgb2xyzmat,rgb)
+#define  cie_rgb(rgb,xyz)	colortrans(rgb,xyz2rgbmat,xyz,1)
+#define  rgb_cie(xyz,rgb)	colortrans(xyz,rgb2xyzmat,rgb,1)
 
 #ifdef BSD
 #define  cpcolormat(md,ms)	bcopy((char *)ms,(char *)md,sizeof(COLORMAT))
 #else
+extern char  *memcpy();
 #define  cpcolormat(md,ms)	(void)memcpy((char *)md,(char *)ms,sizeof(COLORMAT))
 #endif
