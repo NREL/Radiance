@@ -2697,8 +2697,7 @@ Greg Ward
 SEE ALSO
 .LP
 ies2rad(1), mgf2meta(1), obj2rad(1), oconv(1), rad2mgf(1), xform(1)
-.ds RH
-RAD2MGF
+.ds RH RAD2MGF
 .bp
 .SH
 NAME
@@ -3269,7 +3268,7 @@ and return one of the non-zero values from "parser.h" listed below:
 #define MG_EUNK		1		/* unknown entity */
 #define MG_EARGC		2		/* wrong number of arguments */
 #define MG_ETYPE		3		/* argument type error */
-#define MG_EILL		4		/* illegal argument value */
+#define MG_EILL			4		/* illegal argument value */
 #define MG_EUNDEF		5		/* undefined reference */
 #define MG_ENOFILE		6		/* cannot open input file */
 #define MG_EINCL		7		/* error in included file */
@@ -4277,7 +4276,7 @@ mg_init, mg_load, obj_handler, xf_xfmpoint
 .SH
 NAME
 .LP
-xf_xfmpoint xf_xfmvect, xf_rotvect, xf_scale - apply current
+xf_xfmpoint, xf_xfmvect, xf_rotvect, xf_scale - apply current
 transformation
 .SH
 SYNOPSIS
