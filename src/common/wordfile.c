@@ -13,7 +13,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define NULL		0
 
-#define MAXFLEN		10240		/* file must be smaller than this */
+#define MAXFLEN		8192		/* file must be smaller than this */
 
 extern char	*bmalloc();
 
@@ -23,42 +23,47 @@ wordfile(words, fname)		/* get words from fname, put in words */
 char	**words;
 char	*fname;
 {
-	char	**wp = words;
 	int	fd;
-	char	*buf;
+	char	buf[MAXFLEN];
 	register int	n;
-	register char	*cp;
-					/* allocate memory */
-	if ((cp = buf = bmalloc(MAXFLEN)) == NULL)
-		return(-1);
+					/* load file into buffer */
 	if ((fd = open(fname, 0)) < 0)
-		goto err;
+		return(-1);			/* open error */
 	n = read(fd, buf, MAXFLEN);
 	close(fd);
-	if (n < 0)
-		goto err;
+	if (n < 0)				/* read error */
+		return(-1);
 	if (n == MAXFLEN)		/* file too big, take what we can */
 		while (!isspace(buf[--n]))
-			if (n <= 0)
-				goto err;
-	bfree(buf+n+1, MAXFLEN-n-1);	/* return unneeded memory */
-	while (n > 0) {			/* break buffer into words */
-		while (isspace(*cp)) {
+			if (n <= 0)		/* one long word! */
+				return(-1);
+	buf[n] = '\0';			/* terminate */
+	return(wordstring(words, buf));	/* wordstring does the rest */
+}
+
+
+int
+wordstring(avl, str)			/* allocate and load argument list */
+char	**avl;
+char	*str;
+{
+	register char	*cp, **ap;
+	
+	if (str == NULL)
+		return(-1);
+	cp = bmalloc(strlen(str)+1);
+	if (cp == NULL)			/* ENOMEM */
+		return(-1);
+	strcpy(cp, str);
+	for (ap = avl; *cp; *cp++ = '\0') {
+		while (isspace(*cp))	/* skip leading space */
 			cp++;
-			if (--n <= 0)
-				return(wp - words);
+		if (*cp) {		/* add argument to list */
+			*ap++ = cp;
+			while (*cp && !isspace(*cp))
+				cp++;
 		}
-		*wp++ = cp;
-		while (!isspace(*cp)) {
-			cp++;
-			if (--n <= 0)
-				break;
-		}
-		*cp++ = '\0'; n--;
 	}
-	*wp = NULL;			/* null terminator */
-	return(wp - words);
-err:
-	bfree(buf, MAXFLEN);
-	return(-1);
+	*ap = NULL;
+	return(ap - avl);
 }
