@@ -194,23 +194,22 @@ FILE	*fp;
 {
 	char	buf[MAXSTR];
 	int	i, n;
+	register int	c;
 					/* get file name */
 	if (fgets(buf, MAXSTR, fp) == NULL)
 		goto readerr;
-	if ((n = strlen(buf)) < 1)
-		goto readerr;
-	buf[n-1] = '\0';
+	buf[strlen(buf)-1] = '\0';
 	fhead.filename = savestr(buf);
 					/* get layers */
 	fhead.layer[0] = "Worksheet";
 	for (i = 1; i <= 8; i++) {
-		if (fscanf(fp, "Layer No.%d", &n) != 1 || n != i)
+		if (fscanf(fp, "L%*[^0-8]%d", &n) != 1 || n != i)
 			goto readerr;
-		while ((n = getc(fp)) != EOF && (n == ' ' || n == '\t'))
+		while ((c = getc(fp)) != EOF && (c == ' ' || c == '\t'))
 			;
-		if (n == EOF)
+		if (c == EOF)
 			goto readerr;
-		ungetc(n, fp);
+		ungetc(c, fp);
 		if (fgets(buf, MAXSTR, fp) == NULL)
 			goto readerr;
 		buf[strlen(buf)-1] = '\0';
