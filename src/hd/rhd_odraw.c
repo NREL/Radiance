@@ -591,15 +591,15 @@ register struct ODview	*vp;
 	n = rise + run;
 	while (n--)			/* run out arm, checking depth */
 		if (run2 > rise2) {
-			if (depthchange(vp, x, y, x+xstep, y))
-				break;
 			x += xstep;
 			rise2 += rise;
-		} else {
-			if (depthchange(vp, x, y, x, y+ystep))
+			if (depthchange(vp, x-xstep, y, x, y))
 				break;
+		} else {
 			y += ystep;
 			run2 += run;
+			if (depthchange(vp, x, y-ystep, x, y))
+				break;
 		}
 	if (n < 0)			/* found something? */
 		return;
