@@ -19,6 +19,8 @@ static const char	RCSid[] = "$Id$";
 
 VIEW  stdview = STDVIEW;		/* default view parameters */
 
+static gethfunc gethview;
+
 
 char *
 setview(v)		/* set hvec and vvec, return message on error */
@@ -522,12 +524,13 @@ struct myview {
 
 
 static int
-gethview(s, v)				/* get view from header */
-char  *s;
-register struct myview  *v;
+gethview(				/* get view from header */
+	char  *s,
+	void  *v
+)
 {
-	if (isview(s) && sscanview(v->hv, s) > 0)
-		v->ok++;
+	if (isview(s) && sscanview(((struct myview*)v)->hv, s) > 0)
+		((struct myview*)v)->ok++;
 	return(0);
 }
 
@@ -549,7 +552,7 @@ RESOLU  *rp;
 	mvs.hv = vp;
 	mvs.ok = 0;
 
-	getheader(fp, (int (*)(char *, char *))&gethview, (char *)&mvs);
+	getheader(fp, gethview, &mvs);
 
 	if (rp != NULL && !fgetsresolu(rp, fp))
 		mvs.ok = 0;

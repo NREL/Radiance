@@ -72,7 +72,8 @@ extern void	printargs(int ac, char **av, FILE *fp);
 extern int	isformat(char *s);
 extern int	formatval(char *r, char *s);
 extern void	fputformat(char *s, FILE *fp);
-extern int	getheader(FILE *fp, int (*f)(), char *p);
+typedef int gethfunc(char *s, void *p); /* callback to process header lines */
+extern int	getheader(FILE *fp, gethfunc *f, void *p);
 extern int	globmatch(char *pat, char *str);
 extern int	checkheader(FILE *fin, char *fmt, FILE *fout);
 

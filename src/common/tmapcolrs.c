@@ -28,13 +28,10 @@ typedef struct {
 	TMbright	inpsfb;		/* encoded tm->inpsf */
 } COLRDATA;
 
-#ifdef NOPROTO
-static MEM_PTR	colrInit();
-static void	colrNewSpace();
-#else
 static MEM_PTR	colrInit(struct tmStruct *);
 static void	colrNewSpace(struct tmStruct *);
-#endif
+static gethfunc headline;
+
 static struct tmPackage	colrPkg = {	/* our package functions */
 	colrInit, colrNewSpace, free
 };
@@ -142,11 +139,13 @@ static struct radhead {
 
 
 static int
-headline(s, rh)			/* grok a header line */
-register char	*s;
-register struct radhead	*rh;
+headline(			/* grok a header line */
+	register char	*s,
+	void	*vrh
+)
 {
 	char	fmt[32];
+	register struct radhead	*rh = vrh;
 
 	if (formatval(fmt, s)) {
 		if (!strcmp(fmt, COLRFMT))
@@ -196,7 +195,7 @@ FILE	*fp;
 	*lpp = NULL;
 	if (cpp != TM_NOCHROMP) *cpp = NULL;
 	info = rhdefault;			/* get our header */
-	getheader(inpf, headline, (char *)&info);
+	getheader(inpf, headline, &info);
 	if ((info.format == FMTBAD) | (info.expos <= 0.) ||
 			fgetresolu(xp, yp, inpf) < 0) {
 		err = TM_E_BADFILE; goto done;
