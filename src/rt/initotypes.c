@@ -48,7 +48,6 @@ initotypes()			/* initialize ofun array */
 	ofun[MAT_ILLUM].funp =
 	ofun[MAT_GLOW].funp =
 	ofun[MAT_SPOT].funp = m_light;
-	ofun[MAT_ILLUM].flags |= T_IRR_IGN;
 	ofun[MAT_PLASTIC].funp =
 	ofun[MAT_METAL].funp =
 	ofun[MAT_TRANS].funp = m_normal;
