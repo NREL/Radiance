@@ -79,7 +79,6 @@ char	**gargv;			/* global argv */
 
 extern char	*strcpy(), *strcat(), *stradd(), *tailtrunc(), *filetrunc(),
 		*filename(), *libname(), *fullname(), *malloc();
-extern double	atof();
 extern float	*matchlamp();
 
 

@@ -14,6 +14,10 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <stdio.h>
 
 
+#ifndef atof
+extern double atof();
+#endif
+
 char  *mtype;		/* material type */
 
 char  *name;		/* name */
@@ -23,7 +27,6 @@ main(argc, argv)
 int  argc;
 char  **argv;
 {
-	double  atof();
 	double  p0[3], p1[3], r0[3], r1[3];
 	double  rad, inc;
 	

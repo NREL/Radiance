@@ -41,8 +41,7 @@ main(argc, argv)		/* read object files and compute bounds */
 int  argc;
 char  **argv;
 {
-	char  *getenv();
-	double  atof();
+	extern char  *getenv();
 	int  nohead = 0;
 	int  i;
 

@@ -12,6 +12,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+#ifndef atof
+extern double  atof();
+#endif
 
 char  let[]="0123456789._ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
@@ -32,7 +35,6 @@ main(argc, argv)
 int  argc;
 char  **argv;
 {
-	double  atof();
 	int  i;
 	
 	if (argc < 6)
