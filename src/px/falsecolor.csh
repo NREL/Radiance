@@ -81,6 +81,8 @@ scale : $scale ;
 mult : $mult ;
 ndivs : $ndivs ;
 
+norm : if(nfiles-.5, mult/scale/le(1), 0);
+
 or(a,b) : if(a,a,b);
 EPS : 1e-7;
 neq(a,b) : if(a-b-EPS,1,b-a-EPS);
@@ -93,11 +95,11 @@ red = $redv;
 grn = $grnv;
 blu = $bluv;
 
-v = map(li(1)*(mult/scale));
-vleft = map(li(1,-1,0)*(mult/scale));
-vright = map(li(1,1,0)*(mult/scale));
-vabove = map(li(1,0,1)*(mult/scale));
-vbelow = map(li(1,0,-1)*(mult/scale));
+v = map(li(1)*norm);
+vleft = map(li(1,-1,0)*norm);
+vright = map(li(1,1,0)*norm);
+vabove = map(li(1,0,1)*norm);
+vbelow = map(li(1,0,-1)*norm);
 isconta = or(boundary(vleft,vright),boundary(vabove,vbelow));
 iscontb = if(btwn(0,v,1),btwn(.4,frac(ndivs*v),.6),0); 
 
@@ -111,7 +113,7 @@ ba = bi(nfiles);
 
 in = 1;
 _EOF_
-set pcargs=(-o -f $tempdir/pc.cal)
+set pcargs=(-f $tempdir/pc.cal)
 if ($?docont) then
 	set pcargs=($pcargs -e "in=iscont$docont")
 endif
