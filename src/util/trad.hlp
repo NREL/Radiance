@@ -1270,6 +1270,8 @@ has completed since the Results screen was brought up.
 
 The "Delete" button on the Results screen is used to remove the
 selected picture files from the filesystem.
+Associated raw picture and z-buffer files
+will also be deleted if they exist.
 Verification is required before any action is taken.
 
 .Results.Display
