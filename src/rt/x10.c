@@ -44,8 +44,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  levptr(etype)	((etype *)&thisevent)
 
-static char  *clientname;		/* calling client's name */
-
 static XEvent  thisevent;		/* current event */
 
 static int  ncolors = 0;		/* color table size */
@@ -81,6 +79,9 @@ struct driver *
 x_init(name, id)		/* initialize driver */
 char  *name, *id;
 {
+	char  defgeom[32];
+	OpaqueFrame  mainframe;
+
 	ourdisplay = XOpenDisplay(NULL);
 	if (ourdisplay == NULL) {
 		stderr_v("cannot open X-windows; DISPLAY variable set?\n");
@@ -96,9 +97,23 @@ char  *name, *id;
 			bcross_bits, bcross_mask_bits,
 			bcross_x_hot, bcross_y_hot,
 			BlackPixel, WhitePixel, GXcopy);
-	clientname = id;
-	x_driver.xsiz = DisplayWidth()-(2*BORWIDTH);
-	x_driver.ysiz = DisplayHeight()-(COMHEIGHT+2*BORWIDTH);
+	mainframe.bdrwidth = BORWIDTH;
+	mainframe.border = BlackPixmap;
+	mainframe.background = BlackPixmap;
+	sprintf(defgeom, "=%dx%d+0+22", DisplayWidth()-(2*BORWIDTH),
+			DisplayHeight()-(2*BORWIDTH+22));
+	gwind = XCreate("X10 driver", name, NULL, defgeom,
+			&mainframe, MINWIDTH, MINHEIGHT+COMHEIGHT);
+	if (gwind == 0) {
+		stderr_v("can't create window\n");
+		return(NULL);
+	}
+	XStoreName(gwind, id);
+	XMapWindow(gwind);
+	XSelectInput(gwind, KeyPressed|ButtonPressed|
+			ExposeWindow|ExposeRegion|UnmapWindow);
+	x_driver.xsiz = mainframe.width;
+	x_driver.ysiz = mainframe.height-COMHEIGHT;
 	x_driver.inpready = 0;
 	cmdvec = x_comout;			/* set error vectors */
 	if (wrnvec != NULL)
@@ -142,21 +157,12 @@ int  xres, yres;
 	if (xres != gwidth || yres != gheight) {	/* new window */
 		if (comline != NULL)
 			xt_close(comline);
-		if (gwind == 0) {
-			gwind = XCreateWindow(RootWindow, 0, 0,
-					xres, yres+COMHEIGHT, BORWIDTH,
-					BlackPixmap, BlackPixmap);
-			if (gwind == 0)
-				goto fail;
-			XStoreName(gwind, clientname);
-			XSelectInput(gwind, KeyPressed|ButtonPressed|
-					ExposeWindow|ExposeRegion|UnmapWindow);
-			XMapWindow(gwind);
-		} else
-			XChangeWindow(gwind, xres, yres+COMHEIGHT);
+		XChangeWindow(gwind, xres, yres+COMHEIGHT);
 		comline = xt_open(gwind, 0, yres, xres, COMHEIGHT, 0, COMFN);
-		if (comline == NULL)
-			goto fail;
+		if (comline == NULL) {
+			stderr_v("Cannot open command line window\n");
+			quit(1);
+		}
 		gwidth = xres;
 		gheight = yres;
 	} else						/* just clear */
@@ -168,9 +174,6 @@ int  xres, yres;
 		new_ctab(ncolors);
 	XSync(1);				/* discard input */
 	return;
-fail:
-	stderr_v("Failure opening window in x_clear\n");
-	quit(1);
 }
 
 
@@ -349,9 +352,9 @@ register XExposeEvent  *eexp;
 		return;
 	}
 					/* check for change in size */
-	if (eexp->width != gwidth || eexp->height != gheight+COMHEIGHT) {
+	if (eexp->width != gwidth || eexp->height-COMHEIGHT != gheight) {
 		x_driver.xsiz = eexp->width;
-		x_driver.ysiz = eexp->height;
+		x_driver.ysiz = eexp->height-COMHEIGHT;
 		strcpy(getcombuf(&x_driver), "new\n");
 		return;
 	}
