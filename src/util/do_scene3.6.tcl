@@ -25,7 +25,7 @@ proc lbgetf nm {		# get list box files
 	global myglob radvar mybox myvar curpat curmess
 	set myvar $nm
 	set oldnum [llength $radvar($nm)]
-	if [getfile -perm -glob $myglob($nm) -view view_txt -send newfent] {
+	if [getfile -grab -perm -glob $myglob($nm) -view view_txt -send newfent] {
 		set curmess "Added [expr [llength $radvar($nm)] - $oldnum] entries."
 	} elseif {[llength $radvar($nm)] > $oldnum} {
 		set radvar($nm) [lreplace $radvar($nm) $oldnum end]
@@ -216,7 +216,7 @@ proc do_scene w {		# Create scene screen
 	place $w.revert -relwidth .1071 -relheight .0610 -relx .98 -rely .98 \
 			-anchor se
 	helplink $w.revert trad scene revert
-	button $w.copy -text Copy -relief raised -command {getfile \
+	button $w.copy -text Copy -relief raised -command {getfile -grab \
 			-send copyscene -view view_txt -glob $rif_glob}
 	place $w.copy -relwidth .1071 -relheight .0610 -relx .98 -rely .90 \
 			-anchor se
