@@ -1,4 +1,4 @@
-	$Id: trad.hlp,v 2.13 1995/08/28 10:12:35 greg Exp $
+	$Id: trad.hlp,v 2.14 1995/09/13 13:15:29 greg Exp $
 
 This help file is associated with the trad interface to the Radiance
 rad(1) program.  Trad consists of trad.wsh and one do_*.tcl file for
@@ -1270,6 +1270,8 @@ has completed since the Results screen was brought up.
 
 The "Delete" button on the Results screen is used to remove the
 selected picture files from the filesystem.
+Associated raw picture and z-buffer files
+will also be deleted if they exist.
 Verification is required before any action is taken.
 
 .Results.Display
