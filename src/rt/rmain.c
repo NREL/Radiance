@@ -87,10 +87,10 @@ extern double  shadthresh;		/* shadow threshold */
 extern double  shadcert;		/* shadow testing certainty */
 extern int  directrelay;		/* number of source relays */
 extern int  vspretest;			/* virtual source pretest density */
+extern int  directinvis;		/* light sources invisible to eye? */
 
 extern int  maxdepth;			/* maximum recursion depth */
 extern double  minweight;		/* minimum ray weight */
-extern long  nrays;			/* number of rays traced */
 
 extern COLOR  ambval;			/* ambient value */
 extern double  ambacc;			/* ambient accuracy */
@@ -192,6 +192,10 @@ char  *argv[];
 			case 'p':
 				check(3,1);
 				vspretest = atoi(argv[++i]);
+				break;
+			case 'i':
+				check(3,0);
+				directinvis = !directinvis;
 				break;
 			default:
 				goto badopt;
