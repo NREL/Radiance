@@ -157,7 +157,7 @@ MAT4  pm;
 		normalize(nsloc);
 		VCOPY(ourspot.aim, ocent);
 		ourspot.siz = PI*maxrad2;
-		ourspot.flen = 0.;
+		ourspot.flen = -1.;
 		if (source[sn].sflags & SSPOT) {
 			multp3(theirspot.aim, source[sn].sl.s->aim, pm);
 						/* adjust for source size */

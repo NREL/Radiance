@@ -251,17 +251,16 @@ register OBJREC  *m;
 }
 
 
-spotout(r, s, dist)		/* check if we're outside spot region */
+spotout(r, s)			/* check if we're outside spot region */
 register RAY  *r;
 register SPOT  *s;
-int  dist;
 {
 	double  d;
 	FVECT  vd;
 	
 	if (s == NULL)
 		return(0);
-	if (dist) {			/* distant source */
+	if (s->flen < -FTINY) {		/* distant source */
 		vd[0] = s->aim[0] - r->rorg[0];
 		vd[1] = s->aim[1] - r->rorg[1];
 		vd[2] = s->aim[2] - r->rorg[2];

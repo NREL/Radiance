@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
 
@@ -22,7 +22,7 @@
 typedef struct {
 	FVECT  aim;		/* aim direction or center */
 	float  siz;		/* output solid angle or area */
-	float  flen;		/* focal length */
+	float  flen;		/* focal length (negative if distant source) */
 } SPOT;			/* spotlight */
 
 typedef struct {

@@ -131,7 +131,7 @@ SRCINDEX  *si;			/* source sample index */
 	sr->rsrc = si->sn;			/* remember source */
 	srcp = source + si->sn;
 	if (srcp->sflags & SDISTANT) {
-		if (srcp->sflags & SSPOT && spotout(sr, srcp->sl.s, 1))
+		if (srcp->sflags & SSPOT && spotout(sr, srcp->sl.s))
 			continue;
 		return(1);		/* sample OK */
 	}
@@ -141,7 +141,7 @@ SRCINDEX  *si;			/* source sample index */
 		continue;
 						/* check angle */
 	if (srcp->sflags & SSPOT) {
-		if (spotout(sr, srcp->sl.s, 0))
+		if (spotout(sr, srcp->sl.s))
 			continue;
 					/* adjust solid angle */
 		si->dom *= d*d;
@@ -466,7 +466,7 @@ register RAY  *r;
 	if (srcignore(m, r))
 		return(1);
 						/* check for outside spot */
-	if (m->otype==MAT_SPOT && spotout(r, makespot(m), r->rot>=FHUGE))
+	if (m->otype==MAT_SPOT && spotout(r, makespot(m)))
 		return(1);
 						/* get distribution pattern */
 	raytexture(r, m->omod);
