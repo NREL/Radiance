@@ -30,11 +30,13 @@ SYSOBJ = ealloc.o fdate.o portio.o myhostname.o $(COMPAT)
 
 OGLOBJ = rglfile.o rglmat.o rgldomat.o rglsurf.o rglinst.o rglsrc.o
 
+all:	librt.a $(SPECIAL)
+
 librt.a:	$(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 	ar rc librt.a $(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 	-ranlib librt.a
 
-install:	librt.a
+install:	all
 	mv librt.a ../lib/librt.a
 
 clean:
@@ -44,6 +46,14 @@ ogl:	$(OGLOBJ)
 	ar rc librgl.a $(OGLOBJ)
 	-ranlib librgl.a
 	mv librgl.a ../lib/librgl.a
+
+x10:
+
+aed:
+
+sgi:
+
+sun:
 
 calexpr.o:	calexpr.c calcomp.h
 	$(CC) $(CFLAGS) -DVARIABLE -DFUNCTION -DRCONST -c calexpr.c

@@ -11,13 +11,15 @@ CFLAGS = $(MACH) $(OPT) -I../common -L../lib
 
 CC = cc
 
+SPECIAL =
+
 INSTDIR = /usr/local/bin
 
 LIBDIR = /usr/local/lib/ray
 
 PROGS = findglare xglaresrc glarendx rpiece rad ranimate vwright getinfo vwrays
 
-all:	$(PROGS)
+all:	$(PROGS) $(SPECIAL)
 
 install:	all objview.csh objpict.csh glare.csh dayfact.csh rlux.csh \
 raddepend.csh trad.wsh objline.csh compamb.csh
@@ -42,6 +44,14 @@ clean:
 
 ogl:	glrad
 	cp glrad $(INSTDIR)
+
+x10:
+
+aed:
+
+sgi:
+
+sun:
 
 scanner:	scanner.o
 	$(CC) $(CFLAGS) -o scanner scanner.o -lm
