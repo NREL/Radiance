@@ -139,16 +139,18 @@ register int  siz;
 	register int  c;
 	register long  r;
 
-	c = getc(infp);
-	r = c&0x80 ? -1L : 0L;		/* sign extend */
-	ungetc(c, infp);
-	while (siz--) {
+	if ((c = getc(infp)) == EOF)
+		goto end_file;
+	r = 0x80&c ? -1<<8|c : c;		/* sign extend */
+	while (--siz > 0) {
 		if ((c = getc(infp)) == EOF)
-			octerror(USER, "truncated octree");
+			goto end_file;
 		r <<= 8;
 		r |= c;
 	}
 	return(r);
+end_file:
+	octerror(USER, "truncated octree");
 }
 
 
