@@ -31,7 +31,7 @@ colormap cm;		/* quantization colormap */
 
     draw_grey(ocm);
 
-    bcopy(color,cm,sizeof color);
+    bcopy((char *)color,(char *)cm,sizeof color);
 }
 
 /*----------------------------------------------------------------------*/

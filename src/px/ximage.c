@@ -673,7 +673,7 @@ picwriteline(y, l)		/* add 8-bit scanline to image */
 int  y;
 pixel  *l;
 {
-	bcopy(l, ourras->data.bz+BZPixmapSize(xmax,y), BZPixmapSize(xmax,1));
+	bcopy((char *)l, (char *)ourras->data.bz+BZPixmapSize(xmax,y), BZPixmapSize(xmax,1));
 }
 
 

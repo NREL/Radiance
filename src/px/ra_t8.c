@@ -19,6 +19,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "targa.h"
 
+#ifndef  BSD
+#define  bcopy(s,d,n)		(void)memcpy(d,s,n)
+extern char  *memcpy();
+#endif
 			/* descriptor for a picture file or frame buffer */
 typedef struct {
 	char	*name;			/* file name */
@@ -227,7 +231,7 @@ register FILE  *fp;
 
 	if (ip != NULL)
 		if (nidbytes)
-			fread(ip, nidbytes, 1, fp);
+			fread((char *)ip, nidbytes, 1, fp);
 		else
 			*ip = '\0';
 	else if (nidbytes)
@@ -320,8 +324,8 @@ struct hdStruct  *hp;
 	register int  i, j;
 
 					/* get color table */
-	if ((hp->CMapBits==24 ? fread(map.c3, sizeof(map.c3), 1, stdin) :
-			fread(map.c4, sizeof(map.c4), 1, stdin)) != 1)
+	if ((hp->CMapBits==24 ? fread((char *)map.c3,sizeof(map.c3),1,stdin) :
+			fread((char *)map.c4,sizeof(map.c4),1,stdin)) != 1)
 		quiterr("error reading color table");
 					/* convert table */
 	for (i = hp->mapOrig; i < hp->mapOrig+hp->mapLength; i++)
@@ -391,7 +395,7 @@ picwriteline(y, l)			/* save output scanline */
 int  y;
 pixel  *l;
 {
-	bcopy(l, &tarData[(ymax-1-y)*xmax], xmax*sizeof(pixel));
+	bcopy((char *)l, (char *)&tarData[(ymax-1-y)*xmax], xmax*sizeof(pixel));
 }
 
 
@@ -401,7 +405,7 @@ pixel  *d;
 FILE  *fp;
 {
 	if (h->dataType == IM_CMAP) {		/* uncompressed */
-		if (fwrite(d, h->x*sizeof(pixel), h->y, fp) != h->y)
+		if (fwrite((char *)d,h->x*sizeof(pixel),h->y,fp) != h->y)
 			quiterr("error writing targa file");
 		return;
 	}
@@ -418,7 +422,7 @@ FILE  *fp;
 	register pixel	*dp;
 
 	if (h->dataType == IM_CMAP) {		/* uncompressed */
-		if (fread(data, h->x*sizeof(pixel), h->y, fp) != h->y)
+		if (fread((char *)data,h->x*sizeof(pixel),h->y,fp) != h->y)
 			goto readerr;
 		return;
 	}

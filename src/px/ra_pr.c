@@ -102,7 +102,7 @@ char  *argv[];
 			quiterr(errmsg);
 		}
 					/* get header */
-		if (fread(&head, sizeof(head), 1, stdin) != 1)
+		if (fread((char *)&head, sizeof(head), 1, stdin) != 1)
 			quiterr("missing header");
 		if (head.ras_magic != RAS_MAGIC)
 			quiterr("bad raster format");
@@ -223,7 +223,7 @@ register struct rasterfile  *h;
 	else if ((p->fp = fopen(fname, "w")) == NULL)
 		return(NULL);
 					/* write header */
-	fwrite(h, sizeof(*h), 1, p->fp);
+	fwrite((char *)h, sizeof(*h), 1, p->fp);
 	p->nexty = -1;			/* needs color map */
 	p->bytes_line = h->ras_width;
 	p->pos.b = 0;
@@ -243,7 +243,7 @@ struct rasterfile  *h;
 	scanline = (COLR *)emalloc(xmax*sizeof(COLR));
 					/* get color table */
 	for (i = 0; i < 3; i ++)
-		if (fread(cmap[i], h->ras_maplength/3, 1, stdin) != 1)
+		if (fread((char *)cmap[i], h->ras_maplength/3, 1, stdin) != 1)
 			quiterr("error reading color table");
 					/* convert table */
 	for (i = 0; i < h->ras_maplength/3; i++)
@@ -314,7 +314,7 @@ register pixel  *l;
 			quiterr("seek error in picwriteline");
 	}
 						/* write scanline */
-	if (fwrite(l, sizeof(pixel), xmax, outpic->fp) != xmax)
+	if (fwrite((char *)l, sizeof(pixel), xmax, outpic->fp) != xmax)
 		quiterr("write error in picwriteline");
 	if (xmax&1)				/* on 16-bit boundary */
 		putc(l[xmax-1], outpic->fp);

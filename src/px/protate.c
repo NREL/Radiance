@@ -86,7 +86,8 @@ FILE	*fp;
 				exit(1);
 			}
 			for (inx = 0; inx < nrows && xoff+inx < xres; inx++)
-				bcopy(inline[xoff+inx], scanbar[inx*yres+iny],
+				bcopy((char *)inline[xoff+inx],
+						(char *)scanbar[inx*yres+iny],
 						sizeof(COLR));
 		}
 		for (inx = 0; inx < nrows && xoff+inx < xres; inx++)

@@ -189,7 +189,7 @@ register FILE  *fp;
 
 	if (ip != NULL)
 		if (nidbytes)
-			fread(ip, nidbytes, 1, fp);
+			fread((char *)ip, nidbytes, 1, fp);
 		else
 			*ip = '\0';
 	else if (nidbytes)
@@ -331,7 +331,7 @@ unsigned char  *d;
 FILE  *fp;
 {
 	if (h->dataType == IM_RGB) {		/* uncompressed */
-		if (fwrite(d, 3*h->x, h->y, fp) != h->y)
+		if (fwrite((char *)d, 3*h->x, h->y, fp) != h->y)
 			quiterr("error writing targa file");
 		return;
 	}
@@ -367,7 +367,7 @@ FILE  *fp;
 	int  r, g, b;
 
 	if (h->dataType == IM_RGB) {		/* uncompressed */
-		if (fread(data, 3*h->x, h->y, fp) != h->y)
+		if (fread((char *)data, 3*h->x, h->y, fp) != h->y)
 			goto readerr;
 		return;
 	}
