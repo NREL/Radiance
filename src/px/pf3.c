@@ -14,7 +14,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 
-#define  TEPS		0.25	/* threshold proximity goal */
+#define  TEPS		0.2	/* threshold proximity goal */
 
 extern double  CHECKRAD;	/* radius over which gaussian is summed */
 
@@ -223,7 +223,7 @@ double  p0;
 {
 	double  m = 1.0;
 	double  t, avg, wsum;
-	int  ilimit = 5/TEPS;
+	int  ilimit = 4/TEPS;
 	register int  i;
 				/* iterative search for m */
 	do {
