@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -18,6 +18,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <sys/conf.h>
 #include  <sys/file.h>
 #include  <sys/filio.h>
+#endif
+#if  !defined(FNDELAY) && defined(O_NONBLOCK)
+#define  FNDELAY  O_NONBLOCK
 #endif
 
 #include  <X11/Xlib.h>
@@ -148,8 +151,12 @@ char  *name, *id;
 					/* X11 command line or no? */
 	if (!strcmp(name, "x11"))
 		comheight = COMHEIGHT;
-	else /* "x11d" */
+	else /* "x11d" */ {
 		comheight = 0;
+#ifndef  FNDELAY
+		stderr_v("warning: x11d driver not fully functional on this machine\n");
+#endif
+	}
 					/* open window */
 	ourwinattr.background_pixel = ourblack;
 	ourwinattr.border_pixel = ourblack;
@@ -261,7 +268,7 @@ int  xres, yres;
 		comline = xt_open(ourdisplay, gwind, 0, gheight, gwidth,
 				comheight, 0, ourblack, ourwhite, COMFN);
 		if (comline == NULL) {
-			stderr_v("Cannot open command line window\n");
+			stderr_v("cannot open command line window\n");
 			quit(1);
 		}
 		XSelectInput(ourdisplay, comline->w, ExposureMask);
@@ -311,7 +318,7 @@ x11_flush()			/* flush output */
 		if (1) {
 #endif
 			if (fcntl(fileno(stdin), F_SETFL, FNDELAY) < 0) {
-				stderr_v("Cannot change input mode\n");
+				stderr_v("cannot change input mode\n");
 				quit(1);
 			}
 			inpcheck = IC_READ;
@@ -376,12 +383,12 @@ char  *inp, *prompt;
 		if (fromcombuf(inp, &x11_driver))
 			return;
 		if (!x11_driver.inpready)
-			fputs(prompt, stdout);
+			std_comout(prompt);
 	}
 #ifdef FNDELAY
 	if (inpcheck == IC_READ) {	/* turn off FNDELAY */
 		if (fcntl(fileno(stdin), F_SETFL, 0) < 0) {
-			stderr_v("Cannot change input mode\n");
+			stderr_v("cannot change input mode\n");
 			quit(1);
 		}
 		inpcheck = IC_IOCTL;
@@ -562,7 +569,7 @@ getevent()			/* get next event */
 		if (ourvinfo.class == PseudoColor ||
 				ourvinfo.class == GrayScale)
 			if (getpixels() == 0)
-				stderr_v("Cannot allocate colors\n");
+				stderr_v("cannot allocate colors\n");
 			else
 				new_ctab(ncolors);
 		mapped = 1;
