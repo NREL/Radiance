@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -68,8 +68,10 @@ int  getxf;
 		} else {
 			if (o->oargs.nfargs != 8)
 				goto argcerr;
-			if (co->ca[6] < 0.0 || co->ca[7] < 0.0)
+			if (co->ca[6] < -FTINY || co->ca[7] < -FTINY)
 				goto raderr;
+			if (co->ca[6] < 0.0) co->ca[6] = 0.0;
+			if (co->ca[7] < 0.0) co->ca[7] = 0.0;
 			if (fabs(co->ca[7] - co->ca[6]) <= FTINY)
 				goto raderr;
 			co->r0 = 6;
