@@ -191,7 +191,7 @@ register RAY  *r;
 	BRDFDAT  nd;
 	double  transtest, transdist;
 	COLOR  ctmp;
-	double  dtmp;
+	double  dtmp, tspect, rspecr;
 	register int  i;
 						/* check arguments */
 	switch (m->otype) {
@@ -260,6 +260,7 @@ register RAY  *r;
 						/* set special variables */
 	setbrdfunc(&nd);
 						/* compute transmitted ray */
+	tspect = 0.;
 	if (m->otype == MAT_BRTDF && nd.tspec > FTINY) {
 		RAY  sr;
 		errno = 0;
@@ -269,8 +270,8 @@ register RAY  *r;
 		scalecolor(ctmp, nd.tspec);
 		if (errno)
 			objerror(m, WARNING, "compute error");
-		else if ((dtmp = bright(ctmp)) > FTINY &&
-				rayorigin(&sr, r, TRANS, dtmp) == 0) {
+		else if ((tspect = bright(ctmp)) > FTINY &&
+				rayorigin(&sr, r, TRANS, tspect) == 0) {
 			if (DOT(r->pert,r->pert) > FTINY*FTINY) {
 				for (i = 0; i < 3; i++)	/* perturb direction */
 					sr.rdir[i] = r->rdir[i] -
@@ -290,6 +291,7 @@ register RAY  *r;
 	if (r->crtype & SHADOW)			/* the rest is shadow */
 		return;
 						/* compute reflected ray */
+	rspecr = 0.;
 	if (m->otype == MAT_BRTDF && nd.rspec > FTINY) {
 		RAY  sr;
 		errno = 0;
@@ -299,8 +301,8 @@ register RAY  *r;
 		scalecolor(ctmp, nd.rspec);
 		if (errno)
 			objerror(m, WARNING, "compute error");
-		else if ((dtmp = bright(ctmp)) > FTINY &&
-				rayorigin(&sr, r, REFLECTED, dtmp) == 0) {
+		else if ((rspecr = bright(ctmp)) > FTINY &&
+				rayorigin(&sr, r, REFLECTED, rspecr) == 0) {
 			for (i = 0; i < 3; i++)
 				sr.rdir[i] = r->rdir[i] +
 						2.0*nd.pdot*nd.pnorm[i];
@@ -310,22 +312,16 @@ register RAY  *r;
 		}
 	}
 						/* compute ambient */
-	if (nd.rdiff > FTINY) {
+	if ((dtmp = 1.0-nd.trans-rspecr) > FTINY) {
 		ambient(ctmp, r);
-		if (m->otype == MAT_BRTDF)
-			scalecolor(ctmp, nd.rdiff);
-		else
-			scalecolor(ctmp, 1.0-nd.trans);
+		scalecolor(ctmp, dtmp);
 		multcolor(ctmp, nd.mcolor);	/* modified by material color */
 		addcolor(r->rcol, ctmp);	/* add to returned color */
 	}
-	if (nd.tdiff > FTINY) {			/* from other side */
+	if ((dtmp = nd.trans-tspect) > FTINY) {	/* from other side */
 		flipsurface(r);
 		ambient(ctmp, r);
-		if (m->otype == MAT_BRTDF)
-			scalecolor(ctmp, nd.tdiff);
-		else
-			scalecolor(ctmp, nd.trans);
+		scalecolor(ctmp, dtmp);
 		multcolor(ctmp, nd.mcolor);
 		addcolor(r->rcol, ctmp);
 		flipsurface(r);
