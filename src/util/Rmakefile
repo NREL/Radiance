@@ -16,8 +16,7 @@ PROGS = findglare xglaresrc glarendx rpiece rad
 
 all:	$(PROGS)
 
-install:	all objview.csh objpict.csh proj.csh glare.csh dayfact.csh \
-rlux.csh
+install:	all objview.csh objpict.csh glare.csh dayfact.csh rlux.csh
 	cp $(PROGS) $(INSTDIR)
 	cp objview.csh $(INSTDIR)/objview
 	cp objpict.csh $(INSTDIR)/objpict
