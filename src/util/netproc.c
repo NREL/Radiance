@@ -75,7 +75,7 @@ int	np;
 		register char	*cp;
 		register int	len;
 
-		gethostname(ourhost, sizeof(ourhost));
+		strcpy(ourhost, myhostname());
 		getcwd(dirtmp, sizeof(dirtmp));
 		if ((cp = getenv("HOME")) != NULL) {
 			if (!strcmp(cp, dirtmp))
