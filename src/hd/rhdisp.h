@@ -51,20 +51,8 @@ typedef struct {
  * of the display process are used for normal communication with the server,
  * and are connected to pipes going each way.  It is entirely appropriate
  * for the display process to borrow the server's stdin and stdout for reading
- * and writing user commands from the following list.  If the standard input
+ * and writing user commands from the list in rhdriver.h.  If standard input
  * is not available for reading, then a descriptor of -1 will be passed.
  * The standard output will always be available for writing, though it
  * may go to /dev/null.
  */
-
-				/* user commands */
-#define	DC_SETVIEW	0		/* set the view */
-#define	DC_GETVIEW	1		/* print the current view */
-#define	DC_LASTVIEW	2		/* restore previous view */
-#define	DC_PAUSE	3		/* pause the current calculation */
-#define	DC_RESUME	4		/* resume the calculation */
-#define	DC_QUIT		5		/* quit the program */
-
-#define	DC_NCMDS	6		/* number of commands */
-
-#define	DC_INIT		{"VIEW=","where","last","pause","resume","quit"}

@@ -22,8 +22,6 @@ static char SCCSid[] = "$SunId$ SGI";
 #define FEQ(a,b)	((a)-(b) <= FTINY && (a)-(b) >= -FTINY)
 #endif
 
-#define	CTRL(c)		((c)-'@')
-
 #define GAMMA		2.2		/* default gamma correction */
 
 #define MOVPCT		7		/* percent distance to move /frame */
@@ -510,7 +508,7 @@ int	dx, dy, mov, orb;
 	if (setview(&nv) != NULL)
 		return(0);	/* illegal view */
 	dev_view(&nv);
-	inpresflags |= DEV_NEWVIEW;
+	inpresflags |= DFL(DC_SETVIEW);
 	return(1);
 }
 
@@ -544,7 +542,7 @@ XButtonPressedEvent	*ebut;
 		qtUpdate();
 		draw_grids();
 	}
-	if (!(inpresflags & DEV_NEWVIEW)) {	/* do final motion */
+	if (!(inpresflags & DFL(DC_SETVIEW))) {	/* do final motion */
 		movdir = MOVDIR(levptr(XButtonReleasedEvent)->button);
 		wx = levptr(XButtonReleasedEvent)->x;
 		wy = levptr(XButtonReleasedEvent)->y;
@@ -574,19 +572,17 @@ register XKeyPressedEvent  *ekey;
 		headlocked = 0;
 		return;
 	case 'l':			/* retrieve last view */
-		inpresflags |= DEV_LASTVIEW;
+		inpresflags |= DFL(DC_LASTVIEW);
 		return;
-	case CTRL('S'):
 	case 'p':			/* pause computation */
-		inpresflags |= DEV_WAIT;
+		inpresflags |= DFL(DC_PAUSE);
 		return;
 	case 'v':			/* spit out view */
-		inpresflags |= DEV_PUTVIEW;
+		inpresflags |= DFL(DC_GETVIEW);
 		return;
-	case CTRL('Q'):
 	case '\n':
 	case '\r':			/* resume computation */
-		inpresflags |= DEV_RESUME;
+		inpresflags |= DFL(DC_RESUME);
 		return;
 	case CTRL('R'):			/* redraw screen */
 		if (ncolors > 0)
@@ -594,7 +590,7 @@ register XKeyPressedEvent  *ekey;
 		qtRedraw(0, 0, odev.hres, odev.vres);
 		return;
 	case CTRL('L'):			/* refresh from server */
-		if (inpresflags & DEV_REDRAW)
+		if (inpresflags & DFL(DC_REDRAW))
 			return;
 		XClearWindow(ourdisplay, gwind);
 		draw_grids();
@@ -602,12 +598,10 @@ register XKeyPressedEvent  *ekey;
 		qtCompost(100);			/* unload the old tree */
 		if (ncolors > 0)
 			new_ctab(ncolors);
-		inpresflags |= DEV_REDRAW;	/* resend values from server */
+		inpresflags |= DFL(DC_REDRAW);	/* resend values from server */
 		return;
-	case CTRL('D'):
-	case 'Q':
 	case 'q':			/* quit the program */
-		inpresflags |= DEV_SHUTDOWN;
+		inpresflags |= DFL(DC_QUIT);
 		return;
 	default:
 		XBell(ourdisplay, 0);
@@ -623,7 +617,6 @@ register XExposeEvent  *eexp;
 	if (odev.hres == 0 || odev.vres == 0) {	/* first exposure */
 		odev.hres = eexp->width;
 		odev.vres = eexp->height;
-		inpresflags |= DEV_NEWSIZE;
 	}
 	qtRedraw(eexp->x, odev.vres - eexp->y - eexp->height,
 			eexp->x + eexp->width, odev.vres - eexp->y);
@@ -643,5 +636,5 @@ register XConfigureEvent  *ersz;
 	odev.v.horiz = 2.*180./PI * atan(0.5/VIEWDIST*pwidth*odev.hres);
 	odev.v.vert = 2.*180./PI * atan(0.5/VIEWDIST*pheight*odev.vres);
 
-	inpresflags |= DEV_NEWSIZE|DEV_NEWVIEW;
+	inpresflags |= DFL(DC_SETVIEW);
 }
