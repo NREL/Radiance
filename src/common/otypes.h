@@ -84,7 +84,7 @@ extern FUN  ofun[];			/* our type list */
 
 #define  issurface(t)	(ofun[t].flags & T_S)
 #define  isvolume(t)	(ofun[t].flags & T_V)
-#define  ismodifier(t)	(!issurface(t))
+#define  ismodifier(t)	(!(ofun[t].flags & (T_S|T_V)))
 #define  ismaterial(t)	(ofun[t].flags & T_M)
 #define  istexture(t)	(ofun[t].flags & (T_P|T_T|T_X))
 #define  islight(t)	(ofun[t].flags & T_L)
@@ -101,7 +101,7 @@ extern int  o_default();
 				{ "texfunc",	T_T|T_F,	o_default }, \
 				{ "ring",	T_S,		o_default }, \
 				{ "cylinder",	T_S,		o_default }, \
-				{ "instance",	T_S|T_V,	o_default }, \
+				{ "instance",	T_V,		o_default }, \
 				{ "cup",	T_S,		o_default }, \
 				{ "bubble",	T_S,		o_default }, \
 				{ "tube",	T_S,		o_default }, \
