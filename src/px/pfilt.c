@@ -326,6 +326,12 @@ FILE  *in;
 			quit(1);
 		}
 	}
+					/* skip leftovers */
+	while (yread < yres) {
+		if (freadscan(scanin[0], xres, in) < 0)
+			break;
+		yread++;
+	}
 }
 
 
