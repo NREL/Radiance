@@ -14,6 +14,8 @@ static char SCCSid[] = "$SunId$ SGI";
 
 extern GCOORD	*getviewcells();
 
+static VIEW	dvw;		/* current view corresponding to beam list */
+
 typedef struct {
 	int	hd;		/* holodeck section number (-1 if inactive) */
 	int	i[3];		/* voxel index (may be outside section) */
@@ -361,10 +363,11 @@ VIEW	*vold, *vnew;
 	struct cellact	oca, nca;
 	int	ocnt, ncnt;
 	int	c;
+	GCOORD	*ogcl, *ngcl;
 	register GCOORD	*ogcp, *ngcp;
 				/* get old and new cell lists */
-	ogcp = getviewcells(&ocnt, hdlist[voxel[voxi].hd], vold);
-	ngcp = getviewcells(&ncnt, hdlist[voxel[voxi].hd], vnew);
+	ogcp = ogcl = getviewcells(&ocnt, hdlist[voxel[voxi].hd], vold);
+	ngcp = ngcl = getviewcells(&ncnt, hdlist[voxel[voxi].hd], vnew);
 				/* set up actions */
 	oca.vi = nca.vi = voxi;
 	oca.rev = nca.rev = 0;
@@ -391,8 +394,8 @@ VIEW	*vold, *vnew;
 	for ( ; ocnt > 0; ocnt--)
 		netchange -= docell(ogcp++, &oca);
 				/* clean up */
-	if (ogcp != NULL) free((char *)ogcp);
-	if (ngcp != NULL) free((char *)ngcp);
+	if (ogcl != NULL) free((char *)ogcl);
+	if (ngcl != NULL) free((char *)ngcl);
 	return(netchange);
 }
 
@@ -403,8 +406,8 @@ beam_sync()		/* synchronize beams on server */
 }
 
 
-beam_view(vo, vn)	/* change beam view */
-VIEW	*vo, *vn;
+beam_view(vn)			/* change beam view */
+VIEW	*vn;
 {
 	struct cellact	ca;
 	VOXL	vlnew[8];
@@ -414,18 +417,19 @@ VIEW	*vo, *vn;
 		set_voxels(vlnew, 0);
 		cbeamop(DR_DELSET, cbeam, ncbeams, NULL, 0, 0);
 		ncbeams = 0;
+		copystruct(&dvw, vn);
 		return;
 	}
 					/* find our new voxels */
 	n = get_voxels(vlnew, vn->vp);
 					/* set the new voxels */
 	comn = set_voxels(vlnew, n);
-	if (!vo->type)
+	if (!dvw.type)
 		comn = 0;
 	ca.add = 1;			/* update our beam list */
 	for (ca.vi = n; ca.vi--; )
 		if (comn & 1<<ca.vi)	/* change which cells we see */
-			mvview(ca.vi, vo, vn);
+			mvview(ca.vi, &dvw, vn);
 		else			/* else add all new cells */
 			doview(&ca, vn);
 					/* inform server of new beams */
@@ -435,4 +439,5 @@ VIEW	*vo, *vn;
 					/* tell server to delete orphans */
 	cbeamop(DR_DELSET, cbeam+ncbeams, xcbeams, NULL, 0, 0);
 	xcbeams = 0;			/* truncate our list */
+	copystruct(&dvw, vn);		/* record new view */
 }
