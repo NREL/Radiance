@@ -20,7 +20,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #include <ctype.h>
 
 #define TCALNAME	"tmesh.cal"	/* triangle interp. file */
-#define QCALNAME	"surf.cal"	/* quad interp. file */
 #define PATNAME		"M-pat"		/* mesh pattern name (reused) */
 #define TEXNAME		"M-nor"		/* mesh texture name (reused) */
 #define DEFOBJ		"unnamed"	/* default object name */
@@ -239,11 +238,6 @@ FILE	*fp;
 			case 3:
 				if (!puttri(argv[1], argv[2], argv[3]))
 					syntax("Bad triangle");
-				break;
-			case 4:
-				if (!putquad(argv[1], argv[2],
-						argv[3], argv[4]))
-					syntax("Bad quad");
 				break;
 			default:
 				if (!putface(argc-1, argv+1))
@@ -539,18 +533,16 @@ register char	**av;
 	char	*cp;
 	register int	i;
 
-	if (nonplanar(ac, av)) {	/* break into quads and triangles */
-		while (ac > 3) {
-			if (!putquad(av[0], av[1], av[2], av[3]))
+	if (nonplanar(ac, av)) {	/* break into triangles */
+		while (ac > 2) {
+			if (!puttri(av[0], av[1], av[2]))
 				return(0);
-			ac -= 2;	/* remove two vertices & rotate */
+			ac--;		/* remove vertex & rotate */
 			cp = av[0];
 			for (i = 0; i < ac-1; i++)
-				av[i] = av[i+3];
+				av[i] = av[i+2];
 			av[i] = cp;
 		}
-		if (ac == 3 && !puttri(av[0], av[1], av[2]))
-			return(0);
 		return(1);
 	}
 	if ((cp = getmtl()) == NULL)
@@ -687,170 +679,6 @@ register BARYCCM	*bcm;
 				bcm->tm[0][0], bcm->tm[0][1], bcm->tm[0][2]);
 	printf("%14.8f %14.8f %14.8f\n",
 				bcm->tm[1][0], bcm->tm[1][1], bcm->tm[1][2]);
-}
-
-
-putquad(p0, p1, p3, p2)			/* put out a quadrilateral */
-char  *p0, *p1, *p3, *p2;		/* names correspond to binary pos. */
-{
-	VNDX  p0i, p1i, p2i, p3i;
-	FVECT  norm[4];
-	char  *mod, *name;
-	int  axis;
-	FVECT  v1, v2, vc1, vc2;
-	int  ok1, ok2;
-
-#ifdef TEXMAPS
-	/* also should output texture index coordinates,
-	 * which will require new .cal file
-	 */
-#endif
-	if ((mod = getmtl()) == NULL)
-		return(-1);
-	name = getonm();
-					/* get actual indices */
-	if (!cvtndx(p0i,p0) || !cvtndx(p1i,p1) ||
-			!cvtndx(p2i,p2) || !cvtndx(p3i,p3))
-		return(0);
-					/* compute exact normals */
-	fvsum(v1, vlist[p1i[0]], vlist[p0i[0]], -1.0);
-	fvsum(v2, vlist[p2i[0]], vlist[p0i[0]], -1.0);
-	fcross(vc1, v1, v2);
-	ok1 = normalize(vc1) != 0.0;
-	fvsum(v1, vlist[p2i[0]], vlist[p3i[0]], -1.0);
-	fvsum(v2, vlist[p1i[0]], vlist[p3i[0]], -1.0);
-	fcross(vc2, v1, v2);
-	ok2 = normalize(vc2) != 0.0;
-	if (!(ok1 | ok2))
-		return(-1);
-					/* compute normal interpolation */
-	axis = norminterp(norm, p0i, p1i, p2i, p3i);
-
-					/* put out quadrilateral? */
-	if (ok1 & ok2 && fabs(fdot(vc1,vc2)) >= 1.0-FTINY) {
-		printf("\n%s ", mod);
-		if (axis != -1) {
-			printf("texfunc %s\n", TEXNAME);
-			printf("4 surf_dx surf_dy surf_dz %s\n", QCALNAME);
-			printf("0\n13\t%d\n", axis);
-			pvect(norm[0]);
-			pvect(norm[1]);
-			pvect(norm[2]);
-			fvsum(v1, norm[3], vc1, -0.5);
-			fvsum(v1, v1, vc2, -0.5);
-			pvect(v1);
-			printf("\n%s ", TEXNAME);
-		}
-		printf("polygon %s.%d\n", name, faceno);
-		printf("0\n0\n12\n");
-		pvect(vlist[p0i[0]]);
-		pvect(vlist[p1i[0]]);
-		pvect(vlist[p3i[0]]);
-		pvect(vlist[p2i[0]]);
-		return(1);
-	}
-					/* put out triangles? */
-	if (ok1) {
-		printf("\n%s ", mod);
-		if (axis != -1) {
-			printf("texfunc %s\n", TEXNAME);
-			printf("4 surf_dx surf_dy surf_dz %s\n", QCALNAME);
-			printf("0\n13\t%d\n", axis);
-			pvect(norm[0]);
-			pvect(norm[1]);
-			pvect(norm[2]);
-			fvsum(v1, norm[3], vc1, -1.0);
-			pvect(v1);
-			printf("\n%s ", TEXNAME);
-		}
-		printf("polygon %s.%da\n", name, faceno);
-		printf("0\n0\n9\n");
-		pvect(vlist[p0i[0]]);
-		pvect(vlist[p1i[0]]);
-		pvect(vlist[p2i[0]]);
-	}
-	if (ok2) {
-		printf("\n%s ", mod);
-		if (axis != -1) {
-			printf("texfunc %s\n", TEXNAME);
-			printf("4 surf_dx surf_dy surf_dz %s\n", QCALNAME);
-			printf("0\n13\t%d\n", axis);
-			pvect(norm[0]);
-			pvect(norm[1]);
-			pvect(norm[2]);
-			fvsum(v2, norm[3], vc2, -1.0);
-			pvect(v2);
-			printf("\n%s ", TEXNAME);
-		}
-		printf("polygon %s.%db\n", name, faceno);
-		printf("0\n0\n9\n");
-		pvect(vlist[p2i[0]]);
-		pvect(vlist[p1i[0]]);
-		pvect(vlist[p3i[0]]);
-	}
-	return(1);
-}
-
-
-int
-norminterp(resmat, p0i, p1i, p2i, p3i)	/* compute normal interpolation */
-register FVECT  resmat[4];
-register VNDX  p0i, p1i, p2i, p3i;
-{
-#define u  ((ax+1)%3)
-#define v  ((ax+2)%3)
-
-	register int  ax;
-	MAT4  eqnmat;
-	FVECT  v1;
-	register int  i, j;
-
-#ifdef TEXMAPS
-	/* also check for texture indices */
-#endif
-	if (flatten || !(p0i[2]>=0 && p1i[2]>=0 && p2i[2]>=0 && p3i[2]>=0))
-		return(-1);
-					/* find dominant axis */
-	VCOPY(v1, vnlist[p0i[2]]);
-	fvsum(v1, v1, vnlist[p1i[2]], 1.0);
-	fvsum(v1, v1, vnlist[p2i[2]], 1.0);
-	fvsum(v1, v1, vnlist[p3i[2]], 1.0);
-	ax = ABS(v1[0]) > ABS(v1[1]) ? 0 : 1;
-	ax = ABS(v1[ax]) > ABS(v1[2]) ? ax : 2;
-					/* assign equation matrix */
-	eqnmat[0][0] = vlist[p0i[0]][u]*vlist[p0i[0]][v];
-	eqnmat[0][1] = vlist[p0i[0]][u];
-	eqnmat[0][2] = vlist[p0i[0]][v];
-	eqnmat[0][3] = 1.0;
-	eqnmat[1][0] = vlist[p1i[0]][u]*vlist[p1i[0]][v];
-	eqnmat[1][1] = vlist[p1i[0]][u];
-	eqnmat[1][2] = vlist[p1i[0]][v];
-	eqnmat[1][3] = 1.0;
-	eqnmat[2][0] = vlist[p2i[0]][u]*vlist[p2i[0]][v];
-	eqnmat[2][1] = vlist[p2i[0]][u];
-	eqnmat[2][2] = vlist[p2i[0]][v];
-	eqnmat[2][3] = 1.0;
-	eqnmat[3][0] = vlist[p3i[0]][u]*vlist[p3i[0]][v];
-	eqnmat[3][1] = vlist[p3i[0]][u];
-	eqnmat[3][2] = vlist[p3i[0]][v];
-	eqnmat[3][3] = 1.0;
-					/* invert matrix (solve system) */
-	if (!invmat4(eqnmat, eqnmat))
-		return(-1);			/* no solution */
-					/* compute result matrix */
-	for (j = 0; j < 4; j++)
-		for (i = 0; i < 3; i++)
-			resmat[j][i] =	eqnmat[j][0]*vnlist[p0i[2]][i] +
-					eqnmat[j][1]*vnlist[p1i[2]][i] +
-					eqnmat[j][2]*vnlist[p2i[2]][i] +
-					eqnmat[j][3]*vnlist[p3i[2]][i];
-#ifdef TEXMAPS
-	/* compute result matrix for texture indices */
-#endif
-	return(ax);
-
-#undef u
-#undef v
 }
 
 
