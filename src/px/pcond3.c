@@ -13,7 +13,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define CVRATIO		0.025		/* fraction of samples allowed > env. */
 
-#define exp10(x)	exp(2.302585093*(x))
+#define LN_10		2.30258509299404568402
+#define exp10(x)	exp(LN_10*(x))
 
 float	modhist[HISTRES];		/* modified histogram */
 double	mhistot;			/* modified histogram total */
@@ -81,6 +82,69 @@ FILE	*fp;
 }
 
 
+gethisto(fp)			/* load precomputed luminance histogram */
+FILE	*fp;
+{
+	float	histo[MAXPREHIST];
+	double	histart, histep;
+	double	l, b, lastb, w;
+	int	n;
+	register int	i;
+					/* load data */
+	for (i = 0; i < MAXPREHIST &&
+			fscanf(fp, "%lf %f", &b, &histo[i]) == 2; i++) {
+		if (i > 1 && fabs(b - lastb - histep) > 1e-3) {
+			fprintf(stderr,
+				"%s: uneven step size in histogram data\n",
+					progname);
+			exit(1);
+		}
+		if (i == 1)
+			histep = b - (histart = lastb);
+		lastb = b;
+	}
+	if (i < 2 || !feof(fp)) {
+		fprintf(stderr,
+		"%s: format/length error loading histogram (log10L %f at %d)\n",
+				progname, b, i);
+		exit(1);
+	}
+	n = i;
+	histart *= LN_10;
+	histep *= LN_10;
+					/* find extrema */
+	for (i = 0; i < n && histo[i] <= FTINY; i++)
+		;
+	bwmin = histart + i*histep;
+	for (i = n; i-- && histo[i] <= FTINY; )
+		;
+	bwmax = histart + i*histep;
+	if (bwmax > Bl(LMAX))
+		bwmax = Bl(LMAX);
+	if (bwmin < Bl(LMIN))
+		bwmin = Bl(LMIN);
+	else				/* duplicate bottom bin */
+		bwmin = bwmax - (bwmax-bwmin)*HISTRES/(HISTRES-1);
+					/* convert histogram */
+	bwavg = 0.; histot = 0.;
+	for (i = 0; i < HISTRES; i++)
+		bwhist[i] = 0.;
+	for (i = 0, b = histart; i < n; i++, b += histep) {
+		if (b < bwmin) continue;
+		if (b > bwmax) break;
+		w = histo[i];
+		bwavg += w*b;
+		bwhist[bwhi(b)] += w;
+		histot += w;
+	}
+	bwavg /= histot;
+	if (bwmin > Bl(LMIN)+FTINY) {	/* add false samples at bottom */
+		bwhist[1] *= 0.5;
+		bwhist[0] += bwhist[1];
+	}
+}
+
+
 double
 centprob(x, y)			/* center-weighting probability function */
 int	x, y;
@@ -98,7 +162,9 @@ comphist()			/* create foveal sampling histogram */
 {
 	double	l, b, w, lwmin, lwmax;
 	register int	x, y;
-
+					/* check for precalculated histogram */
+	if (what2do&DO_PREHIST)
+		return;
 	lwmin = 1e10;			/* find extrema */
 	lwmax = 0.;
 	for (y = 0; y < fvyr; y++)
@@ -131,8 +197,8 @@ comphist()			/* create foveal sampling histogram */
 				if (l < lwmin) continue;
 				if (l > lwmax) continue;
 				b = Bl(l);
-				bwavg += b;
 				w = what2do&DO_CWEIGHT ? centprob(x,y) : 1.;
+				bwavg += w*b;
 				bwhist[bwhi(b)] += w;
 				histot += w;
 			}
@@ -147,7 +213,7 @@ comphist()			/* create foveal sampling histogram */
 			if (l < lwmin) continue;
 			if (l > lwmax) continue;
 			b = Bl(l);
-			bwavg += b;
+			bwavg += w*b;
 			bwhist[bwhi(b)] += w;
 			histot += w;
 		}
