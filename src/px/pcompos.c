@@ -146,7 +146,8 @@ dofiles:
 			case 'l':
 				if (strcmp(argv[an], "-l"))
 					goto userr;
-				thislabel = argv[++an];
+				thislabel = argv[an+1];
+				an += 2;
 				break;
 			case '\0':
 				if (argv[an][0] == '-')
