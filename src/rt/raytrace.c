@@ -22,7 +22,7 @@ extern double  minweight;		/* minimum ray weight */
 
 long  nrays = 0L;			/* number of rays traced */
 
-#define  MAXLOOP	32		/* modifier loop detection */
+#define  MAXLOOP	1024		/* modifier loop detection */
 
 #define  RAYHIT		(-1)		/* return value for intercepted ray */
 
@@ -102,13 +102,15 @@ int  mod;
 	register OBJREC  *m;
 					/* check for infinite loop */
 	if (depth++ >= MAXLOOP)
-		objerror(r->ro, USER, "material loop");
+		objerror(r->ro, USER, "possible modifier loop");
 	for ( ; mod != OVOID; mod = m->omod) {
 		m = objptr(mod);
+		/****** unnecessary test since modifier() is always called
 		if (!ismodifier(m->otype)) {
 			sprintf(errmsg, "illegal modifier \"%s\"", m->oname);
 			error(USER, errmsg);
 		}
+		******/
 		(*ofun[m->otype].funp)(m, r);	/* execute function */
 		m->lastrno = r->rno;
 		if (ismaterial(m->otype)) {	/* materials call raytexture */
