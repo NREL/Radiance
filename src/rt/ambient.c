@@ -99,7 +99,7 @@ char  *afile;
 initambfile(creat)		/* initialize ambient file */
 int  creat;
 {
-	extern char  *progname, *octname;
+	extern char  *progname, *octname, VersionID[];
 
 	setbuf(ambfp, bmalloc(BUFSIZ));
 	if (creat) {			/* new file */
@@ -110,6 +110,7 @@ int  creat;
 		fprintf(ambfp, "-ad %d -as %d -ar %d %s\n",
 				ambdiv, ambssamp, ambres,
 				octname==NULL ? "" : octname);
+		fprintf(ambfp, "SOFTWARE= %s\n", VersionID);
 		fputformat(AMBFMT, ambfp);
 		putc('\n', ambfp);
 		putambmagic(ambfp);
@@ -117,7 +118,7 @@ int  creat;
 	} else if (checkheader(ambfp, AMBFMT, NULL) < 0
 			|| !hasambmagic(ambfp)) {
 		sprintf(errmsg, "\"%s\" is not an ambient file", afname);
-		error(USER, afname);
+		error(USER, errmsg);
 	}
 	ambheadlen = ftell(ambfp);
 }
