@@ -27,6 +27,7 @@ set oct=`rad -w -s -e -v 0 $argv[1] QUA=High AMB=$tf.amb OPT=$tf.opt | sed -n 's
 rad -n -s -V $argv[1] \
 	| rpict @$tf.opt -av 0 0 0 -aw 16 -dv- -S 1 -x 16 -y 16 -ps 1 $oct \
 	| ra_rgbe - '\!pvalue -h -H -d' > $tf.dat
+echo \# Rad input file modified by $0 `date` >> $argv[1]
 if ( $?doexpos ) then
 	(echo -n 'EXPOSURE= '; \
 		total -u $tf.dat | rcalc -e '$1=1/(.265*$1+.670*$2+.065*$3)') \
