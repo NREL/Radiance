@@ -97,7 +97,6 @@ int  (*f)();
 		objerror(&thisobj, USER, errmsg);
 	}
 	thisobj.os = NULL;
-	thisobj.lastrno = -1;
 					/* call function */
 	(*f)(&thisobj);
 					/* free memory */
