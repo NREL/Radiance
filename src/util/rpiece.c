@@ -124,7 +124,7 @@ char  *argv[];
 			case 'p':		/* pixel aspect ratio? */
 				if (argv[i][2] != 'a' || argv[i][3])
 					break;
-				pixaspect = atof(argv[i+1]);
+				pixaspect = atof(argv[++i]);
 				continue;
 			case 'T':		/* time limit (hours) */
 				if (argv[i][2])
