@@ -14,6 +14,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
+#include "color.h"
 #include "x11raster.h"
 
 
@@ -59,14 +60,14 @@ int	bm_pad;
 
 
 int
-init_rcolors(xr, rmap, gmap, bmap)		/* initialize colors */
+init_rcolors(xr, cmap)			/* initialize colors */
 register XRASTER	*xr;
-int	rmap[256], gmap[256], bmap[256];
+BYTE	cmap[][3];
 {
 	register unsigned char	*p;
 	register int	i;
 
-	if (xr->image->depth > 8 || xr->ncolors != 0)
+	if (xr->image->depth > 8 | xr->ncolors != 0)
 		return(xr->ncolors);
 	xr->pmap = (short *)malloc(256*sizeof(short));
 	if (xr->pmap == NULL)
@@ -80,9 +81,9 @@ int	rmap[256], gmap[256], bmap[256];
 			i = xr->image->width*xr->image->height;
 			i--; p++)
 		if (xr->pmap[*p] == -1) {
-			xr->cdefs[xr->ncolors].red = rmap[*p] << 8;
-			xr->cdefs[xr->ncolors].green = gmap[*p] << 8;
-			xr->cdefs[xr->ncolors].blue = bmap[*p] << 8;
+			xr->cdefs[xr->ncolors].red = cmap[*p][RED] << 8;
+			xr->cdefs[xr->ncolors].green = cmap[*p][GRN] << 8;
+			xr->cdefs[xr->ncolors].blue = cmap[*p][BLU] << 8;
 			xr->cdefs[xr->ncolors].pixel = *p;
 			xr->cdefs[xr->ncolors].flags = DoRed|DoGreen|DoBlue;
 			xr->pmap[*p] = xr->ncolors++;
