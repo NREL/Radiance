@@ -199,13 +199,11 @@ int  orig, nobjs;
 		if ((os = ostable[n]) == NULL)
 			continue;
 		while ((i = *os++) > 0)
-			while (i--) {
-				s = *os;
-				if (s >= orig && s < orig+nobjs &&
+			do
+				if ((s = *os++) >= orig && s < orig+nobjs &&
 						ismodifier(objptr(s)->otype))
 					return(1);
-				os++;
-			}
+			while (--i);
 	}
 	return(0);
 }
