@@ -10,7 +10,7 @@ CFLAGS = $(MACH) $(OPT)
 LIBDIR = /usr/local/lib/ray
 
 RTOBJ = cone.o face.o instance.o readobj.o readoct.o otypes.o objset.o \
-	octree.o
+	octree.o readfargs.o
 
 PICOBJ = color.o header.o image.o lamps.o resolu.o rexpr.o spec_rgb.o \
 	colrops.o 
@@ -24,6 +24,11 @@ SYSOBJ = ealloc.o bmalloc.o # erf.o frexp.o fwrite.o random.o bcopy.o
 librt.a:	$(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 	ar rc librt.a $(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 	@ ranlib librt.a
+
+install:	librt.a
+
+clean:
+	rm -f $(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 
 fropen.o:	fropen.c
 	cc $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c fropen.c
