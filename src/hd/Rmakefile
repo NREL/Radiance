@@ -40,9 +40,9 @@ $(DEVDIR)/x11h.hdi:	$(DEVDIR)/x11.hdi
 	ln $(DEVDIR)/x11.hdi $(DEVDIR)/x11h.hdi
 
 $(DEVDIR)/x11.hdi:	rhdisp.o rhdisp2.o rhdisp3.o rhd_x11.o rhd_qtree.o \
-rhd_qtree2r.o rhd_ctab.o holo.o
+rhd_qtree2r.o rhd_ctab.o dircode.o holo.o
 	$(CC) $(CFLAGS) -o $(DEVDIR)/x11.hdi rhdisp.o rhdisp2.o rhdisp3.o \
-rhd_x11.o rhd_qtree.o rhd_qtree2r.o rhd_ctab.o holo.o -lrt -lX11 -lm
+rhd_x11.o rhd_qtree.o rhd_qtree2r.o rhd_ctab.o holo.o dircode.o -lrt -lX11 -lm
 
 rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o \
 rhdisp.o rhdisp2.o rhdisp3.o:	rholo.h
@@ -72,3 +72,5 @@ rhd_x11.o rhd_qtree.o rhd_qtree2r.o:	rhd_qtree.h rhdriver.h \
 ../common/tonemap.h ../common/color.h
 
 rhd_x11.o:	x11icon.h
+
+dircode.o:	../common/fvect.h
