@@ -385,7 +385,7 @@ int	fl;
 
 	if (clr->flags & fl)		/* already done */
 		return;
-	if (!(clr->flags & (C_SXY|C_SSPEC))	/* nothing set */
+	if (!(clr->flags & (C_CSXY|C_CSSPEC)))	/* nothing set */
 		*clr = c_dfcolor;
 	else if (fl & C_CSXY) {		/* cspec -> cxy */
 		x = y = z = 0.;
