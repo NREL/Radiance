@@ -110,8 +110,6 @@ int	nents;
 					lastin = -1;	/* flag full sort */
 					break;
 				}
-		if (lastin < 0)		/* sort updated list */
-			sortcomplist();
 		return;			/* no display */
 	default:
 		error(CONSISTENCY, "bundle_set called with unknown operation");
@@ -291,12 +289,6 @@ sortcomplist()			/* fix our list order */
 				complist+listpos, complen-listpos);
 		free((char *)list2);
 	}
-					/* check for all finished */
-	if (complist[0].nr <= bnrays(hdlist[complist[0].hd],complist[0].bi)) {
-		free((char *)complist);
-		complist = NULL;
-		complen = 0;
-	}
 					/* drop satisfied requests */
 	for (i = complen; i-- && complist[i].nr <=
 			bnrays(hdlist[complist[i].hd],complist[i].bi); )
@@ -336,10 +328,10 @@ register PACKET	*p;
 	int	ncomp;
 	register int	i;
 
-	if (complen <= 0)
-		return(0);
 	if (listpos > lastin)		/* time to sort the list */
 		sortcomplist();
+	if (complen <= 0)
+		return(0);
 	p->hd = complist[listpos].hd;
 	p->bi = complist[listpos].bi;
 	ncomp = bnrays(hdlist[p->hd],p->bi);
