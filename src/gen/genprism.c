@@ -1,4 +1,4 @@
-/* Copyright (c) 1987 Regents of the University of California */
+/* Copyright (c) 1996 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -20,6 +20,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  MAXVERT	1024		/* maximum # vertices */
 
+#define  FTINY		1e-6
+
 #ifdef  DCL_ATOF
 extern double  atof();
 #endif
@@ -28,12 +30,19 @@ char  *pmtype;		/* material type */
 char  *pname;		/* name */
 
 double  lvect[3] = {0.0, 0.0, 1.0};
+double	llen = 1.0;
 
 double  vert[MAXVERT][2];
 int  nverts = 0;
 
+double	u[MAXVERT][2];		/* edge unit vectors */
+double	a[MAXVERT];		/* corner trim sizes */
+
 int  do_ends = 1;		/* include end caps */
 int  iscomplete = 0;		/* polygon is already completed */
+double  crad = 0.0;		/* radius for corners */
+
+#define rounding	(crad > FTINY)
 
 
 main(argc, argv)
@@ -53,11 +62,6 @@ char  **argv;
 		an = 4;
 	} else if (isdigit(argv[3][0])) {
 		nverts = atoi(argv[3]);
-		if (nverts > MAXVERT) {
-			fprintf(stderr, "%s: too many vertices (%d limit)\n",
-					argv[0], MAXVERT);
-			exit(1);
-		}
 		if (argc-3 < 2*nverts)
 			goto userr;
 		for (an = 0; an < nverts; an++) {
@@ -82,6 +86,16 @@ char  **argv;
 			lvect[0] = atof(argv[++an]);
 			lvect[1] = atof(argv[++an]);
 			lvect[2] = atof(argv[++an]);
+			llen = sqrt(lvect[0]*lvect[0] + lvect[1]*lvect[1] +
+					lvect[2]*lvect[2]);
+			if (llen <= FTINY) {
+				fprintf(stderr, "%s: zero extrusion vector\n",
+						argv[0]);
+				exit(1);
+			}
+			break;
+		case 'r':				/* radius */
+			crad = atof(argv[++an]);
 			break;
 		case 'e':				/* ends */
 			do_ends = !do_ends;
@@ -93,18 +107,29 @@ char  **argv;
 			goto userr;
 		}
 	}
-
+	if (rounding) {
+		if (crad > fabs(lvect[2])) {
+			fprintf(stderr, "%s: rounding greater than height\n",
+					argv[0]);
+			exit(1);
+		}
+		compute_rounding();
+	}
 	printhead(argc, argv);
 
 	if (do_ends)
-		printends();
-	printsides();
+		if (rounding)
+			printrends();
+		else
+			printends();
 
-	return(0);
+	printsides(rounding);
+
+	exit(0);
 userr:
 	fprintf(stderr, "Usage: %s material name ", argv[0]);
 	fprintf(stderr, "{ - | vfile | N v1 v2 .. vN } ");
-	fprintf(stderr, "[-l lvect][-c][-e]\n");
+	fprintf(stderr, "[-l lvect][-r radius][-c][-e]\n");
 	exit(1);
 }
 
@@ -114,78 +139,236 @@ char  *fname;
 {
 	FILE  *fp;
 
-	if (fname == NULL) {
+	if (fname == NULL)
 		fp = stdin;
-		fname = "<stdin>";
-	} else if ((fp = fopen(fname, "r")) == NULL) {
+	else if ((fp = fopen(fname, "r")) == NULL) {
 		fprintf(stderr, "%s: cannot open\n", fname);
 		exit(1);
 	}
 	while (fscanf(fp, "%lf %lf", &vert[nverts][0], &vert[nverts][1]) == 2)
-		if (++nverts >= MAXVERT) {
-			fprintf(stderr, "%s: too many vertices (%d limit)\n",
-					fname, MAXVERT-1);
+		nverts++;
+	fclose(fp);
+}
+
+
+compute_rounding()		/* compute vectors for rounding operations */
+{
+	register int  i;
+	register double	*v0, *v1;
+	double  l;
+
+	v0 = vert[nverts-1];
+	for (i = 0; i < nverts; i++) {		/* compute u[*] */
+		v1 = vert[i];
+		u[i][0] = v0[0] - v1[0];
+		u[i][1] = v0[1] - v1[1];
+		l = sqrt(u[i][0]*u[i][0] + u[i][1]*u[i][1]);
+		if (l <= FTINY) {
+			fprintf(stderr, "Degenerate side in prism\n");
 			exit(1);
 		}
-	fclose(fp);
+		u[i][0] /= l;
+		u[i][1] /= l;
+		v0 = v1;
+	}
+	v1 = u[0];
+	for (i = nverts; i--; ) {		/* compute a[*] */
+		v0 = u[i];
+		l = v0[0]*v1[0] + v0[1]*v1[1];
+		if (1+l <= FTINY) {
+			fprintf(stderr, "Overlapping sides in prism\n");
+			exit(1);
+		}
+		if (1-l <= 0.)
+			a[i] = 0.;
+		else {
+			a[i] = sqrt((1-l)/(1+l));
+			if ((v1[0]*v0[1]-v1[1]*v0[0] > 0.) != (lvect[2] > 0.))
+				a[i] = -a[i];
+		}
+		v1 = v0;
+	}
 }
 
 
 printends()			/* print ends of prism */
 {
 	register int  i;
+						/* bottom face */
+	printf("\n%s polygon %s.b\n", pmtype, pname);
+	printf("0\n0\n%d\n", nverts*3);
+	for (i = 0; i < nverts; i++)
+		printf("\t%18.12g\t%18.12g\t%18.12g\n", vert[i][0],
+				vert[i][1], 0.0);
+						/* top face */
+	printf("\n%s polygon %s.t\n", pmtype, pname);
+	printf("0\n0\n%d\n", nverts*3);
+	for (i = nverts; i--; )
+		printf("\t%18.12g\t%18.12g\t%18.12g\n", vert[i][0]+lvect[0],
+				vert[i][1]+lvect[1], lvect[2]);
+}
 
+
+printrends()			/* print ends of prism with rounding */
+{
+	register int  i;
+	double	c0[3], c1[3], cl[3];
+						/* bottom face */
 	printf("\n%s polygon %s.b\n", pmtype, pname);
 	printf("0\n0\n%d\n", nverts*3);
 	for (i = 0; i < nverts; i++) {
 		printf("\t%18.12g\t%18.12g\t%18.12g\n",
-				vert[i][0],
-				vert[i][1],
-				0.0);
+			vert[i][0] + crad*(a[i]*u[i][0] - u[i][1]),
+			vert[i][1] + crad*(a[i]*u[i][1] + u[i][0]),
+			0.0);
 	}
-	printf("\n%s polygon %s.e\n", pmtype, pname);
+						/* bottom corners and edges */
+	c0[0] = cl[0] = vert[nverts-1][0] +
+			crad*(a[nverts-1]*u[nverts-1][0] - u[nverts-1][1]);
+	c0[1] = cl[1] = vert[nverts-1][1] +
+			crad*(a[nverts-1]*u[nverts-1][1] + u[nverts-1][0]);
+	c0[2] = cl[2] = crad;
+	for (i = 0; i < nverts; i++) {
+		if (i < nverts-1) {
+			c1[0] = vert[i][0] + crad*(a[i]*u[i][0] - u[i][1]);
+			c1[1] = vert[i][1] + crad*(a[i]*u[i][1] + u[i][0]);
+			c1[2] = crad;
+		} else {
+			c1[0] = cl[0]; c1[1] = cl[1]; c1[2] = cl[2];
+		}
+		if (a[i] > 0.) {
+			printf("\n%s sphere %s.bc%d\n", pmtype, pname, i+1);
+			printf("0\n0\n4 %18.12g %18.12g %18.12g %18.12g\n",
+				c1[0], c1[1], c1[2], crad);
+		}
+		printf("\n%s cylinder %s.be%d\n", pmtype, pname, i+1);
+		printf("0\n0\n7\n");
+		printf("\t%18.12g\t%18.12g\t%18.12g\n", c0[0], c0[1], c0[2]);
+		printf("\t%18.12g\t%18.12g\t%18.12g\n", c1[0], c1[1], c1[2]);
+		printf("\t%18.12g\n", crad);
+		c0[0] = c1[0]; c0[1] = c1[1]; c0[2] = c1[2];
+	}
+						/* top face */
+	printf("\n%s polygon %s.t\n", pmtype, pname);
 	printf("0\n0\n%d\n", nverts*3);
-	for (i = nverts-1; i >= 0; i--) {
+	for (i = nverts; i--; ) {
 		printf("\t%18.12g\t%18.12g\t%18.12g\n",
-				vert[i][0]+lvect[0],
-				vert[i][1]+lvect[1],
-				lvect[2]);
+		vert[i][0] + lvect[0] + crad*(a[i]*u[i][0] - u[i][1]),
+		vert[i][1] + lvect[1] + crad*(a[i]*u[i][1] + u[i][0]),
+		lvect[2]);
+	}
+						/* top corners and edges */
+	c0[0] = cl[0] = vert[nverts-1][0] + lvect[0] +
+			crad*(a[nverts-1]*u[nverts-1][0] - u[nverts-1][1]);
+	c0[1] = cl[1] = vert[nverts-1][1] + lvect[1] +
+			crad*(a[nverts-1]*u[nverts-1][1] + u[nverts-1][0]);
+	c0[2] = cl[2] = lvect[2] - crad;
+	for (i = 0; i < nverts; i++) {
+		if (i < nverts-1) {
+			c1[0] = vert[i][0] + lvect[0] +
+					crad*(a[i]*u[i][0] - u[i][1]);
+			c1[1] = vert[i][1] + lvect[1] +
+					crad*(a[i]*u[i][1] + u[i][0]);
+			c1[2] = lvect[2] - crad;
+		} else {
+			c1[0] = cl[0]; c1[1] = cl[1]; c1[2] = cl[2];
+		}
+		if (a[i] > 0.) {
+			printf("\n%s sphere %s.tc%d\n", pmtype, pname, i+1);
+			printf("0\n0\n4 %18.12g %18.12g %18.12g %18.12g\n",
+				c1[0], c1[1], c1[2], crad);
+		}
+		printf("\n%s cylinder %s.te%d\n", pmtype, pname, i+1);
+		printf("0\n0\n7\n");
+		printf("\t%18.12g\t%18.12g\t%18.12g\n", c0[0], c0[1], c0[2]);
+		printf("\t%18.12g\t%18.12g\t%18.12g\n", c1[0], c1[1], c1[2]);
+		printf("\t%18.12g\n", crad);
+		c0[0] = c1[0]; c0[1] = c1[1]; c0[2] = c1[2];
 	}
 }
 
 
-printsides()			/* print prism sides */
+printsides(round)		/* print prism sides */
+int  round;
 {
 	register int  i;
 
 	for (i = 0; i < nverts-1; i++)
-		side(i, i+1);
+		if (round)
+			rside(i, i+1);
+		else
+			side(i, i+1);
 	if (!iscomplete)
-		side(nverts-1, 0);
+		if (round)
+			rside(nverts-1, 0);
+		else
+			side(nverts-1, 0);
 }
 
 
-side(n1, n2)			/* print single side */
-register int  n1, n2;
+side(n0, n1)			/* print single side */
+register int  n0, n1;
 {
-	printf("\n%s polygon %s.%d\n", pmtype, pname, n1+1);
+	printf("\n%s polygon %s.%d\n", pmtype, pname, n0+1);
+	printf("0\n0\n12\n");
+	printf("\t%18.12g\t%18.12g\t%18.12g\n", vert[n0][0],
+			vert[n0][1], 0.0);
+	printf("\t%18.12g\t%18.12g\t%18.12g\n", vert[n0][0]+lvect[0],
+			vert[n0][1]+lvect[1], lvect[2]);
+	printf("\t%18.12g\t%18.12g\t%18.12g\n", vert[n1][0]+lvect[0],
+			vert[n1][1]+lvect[1], lvect[2]);
+	printf("\t%18.12g\t%18.12g\t%18.12g\n", vert[n1][0],
+			vert[n1][1], 0.0);
+}
+
+
+rside(n0, n1)			/* print side with rounded edge */
+register int  n0, n1;
+{
+	double  s, c, t[3];
+
+					/* compute tanget offset vector */
+	s = (lvect[1]*u[n1][0] - lvect[0]*u[n1][1])/llen;
+	if (s < -FTINY || s > FTINY) {
+		c = sqrt(1. - s*s);
+		t[0] = (c - 1.)*u[n1][1];
+		t[1] = (1. - c)*u[n1][0];
+		t[2] = s;
+	} else
+		t[0] = t[1] = t[2] = 0.;
+					/* output side */
+	printf("\n%s polygon %s.%d\n", pmtype, pname, n0+1);
 	printf("0\n0\n12\n");
 	printf("\t%18.12g\t%18.12g\t%18.12g\n",
-			vert[n1][0],
-			vert[n1][1],
-			0.0);
+			vert[n0][0] + crad*(t[0] - a[n0]*u[n1][0]),
+			vert[n0][1] + crad*(t[1] - a[n0]*u[n1][1]),
+			crad*(t[2] + 1.));
 	printf("\t%18.12g\t%18.12g\t%18.12g\n",
-			vert[n1][0]+lvect[0],
-			vert[n1][1]+lvect[1],
-			lvect[2]);
+			vert[n0][0] + lvect[0] + crad*(t[0] - a[n0]*u[n1][0]),
+			vert[n0][1] + lvect[1] + crad*(t[1] - a[n0]*u[n1][1]),
+			lvect[2] + crad*(t[2] - 1.));
 	printf("\t%18.12g\t%18.12g\t%18.12g\n",
-			vert[n2][0]+lvect[0],
-			vert[n2][1]+lvect[1],
-			lvect[2]);
+			vert[n1][0] + lvect[0] + crad*(t[0] + a[n1]*u[n1][0]),
+			vert[n1][1] + lvect[1] + crad*(t[1] + a[n1]*u[n1][1]),
+			lvect[2] + crad*(t[2] - 1.));
 	printf("\t%18.12g\t%18.12g\t%18.12g\n",
-			vert[n2][0],
-			vert[n2][1],
-			0.0);
+			vert[n1][0] + crad*(t[0] + a[n1]*u[n1][0]),
+			vert[n1][1] + crad*(t[1] + a[n1]*u[n1][1]),
+			crad*(t[2] + 1.));
+					/* output joining edge */
+	if (a[n1] < 0.)
+		return;
+	printf("\n%s cylinder %s.e%d\n", pmtype, pname, n0+1);
+	printf("0\n0\n7\n");
+	printf("\t%18.12g\t%18.12g\t%18.12g\n",
+		vert[n1][0] + crad*(a[n1]*u[n1][0] - u[n1][1]),
+		vert[n1][1] + crad*(a[n1]*u[n1][1] + u[n1][0]),
+		crad);
+	printf("\t%18.12g\t%18.12g\t%18.12g\n",
+		vert[n1][0] + lvect[0] + crad*(a[n1]*u[n1][0] - u[n1][1]),
+		vert[n1][1] + lvect[1] + crad*(a[n1]*u[n1][1] + u[n1][0]),
+		lvect[2] - crad);
+	printf("\t%18.12g\n", crad);
 }
 
 
