@@ -1,7 +1,7 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -539,18 +539,22 @@ getnum()			/* scan a positive float */
     if (lnext == '.' && i < MAXWORD) {
 	str[i++] = lnext;
 	lnext = scan();
+	if (i == 1 && !isdigit(lnext))
+	    syntax("badly formed number");
 	while (isdigit(lnext) && i < MAXWORD) {
 	    str[i++] = lnext;
 	    lnext = scan();
 	}
     }
-    if ((lnext == 'e' || lnext == 'E') && i < MAXWORD) {
+    if ((lnext == 'e' | lnext == 'E') && i < MAXWORD) {
 	str[i++] = lnext;
 	lnext = scan();
-	if ((lnext == '-' || lnext == '+') && i < MAXWORD) {
+	if ((lnext == '-' | lnext == '+') && i < MAXWORD) {
 	    str[i++] = lnext;
 	    lnext = scan();
 	}
+	if (!isdigit(lnext))
+	    syntax("missing exponent");
 	while (isdigit(lnext) && i < MAXWORD) {
 	    str[i++] = lnext;
 	    lnext = scan();
