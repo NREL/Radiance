@@ -5,7 +5,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #endif
 
 /*
- * Uncorrelated (anticorrelated) random function
+ * Anticorrelated random function due to Christophe Schlick
  */
 
 #include  "random.h"
