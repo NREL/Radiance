@@ -26,7 +26,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *	modifier glass id
  *	0
  *	0
- *	3 red grn blu
+ *	3+ red grn blu [refractive_index]
  *
  *  The color is used for the transmission at normal incidence.
  *  To compute transmissivity (tn) from transmittance (Tn) use:
