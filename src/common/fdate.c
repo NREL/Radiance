@@ -12,14 +12,14 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <sys/stat.h>
 
 
-long
+unsigned long
 fdate(fname)				/* get file date */
 char  *fname;
 {
 	struct stat  sbuf;
 
 	if (stat(fname, &sbuf) == -1)
-		return(-1);
+		return(0);
 
 	return(sbuf.st_mtime);
 }
