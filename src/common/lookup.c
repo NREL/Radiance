@@ -160,6 +160,24 @@ char	*key;
 }
 
 
+int
+lu_doall(tbl, f)		/* loop through all valid table entries */
+register LUTAB	*tbl;
+int	(*f)();
+{
+	int	rval = 0;
+	register LUENT	*tp;
+
+	for (tp = tbl->tabl + tbl->tsiz; tp-- > tbl->tabl; )
+		if (tp->data != NULL)
+			if (f != NULL)
+				rval += (*f)(tp);
+			else
+				rval++;
+	return(rval);
+}
+
+
 void
 lu_done(tbl)			/* free table and contents */
 register LUTAB	*tbl;

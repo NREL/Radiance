@@ -60,6 +60,12 @@ typedef struct {
  * It is therefore an error to reuse or do anything with the key
  * field after calling lu_delete.
  *
+ * The lu_doall routine loops through every filled table entry, calling
+ * the given function once on each entry.  If a NULL pointer is passed
+ * for this function, then lu_doall simply returns the total number of
+ * active entries.  Otherwise, it returns the sum of all the function
+ * evaluations.
+ *
  * The lu_done routine calls the given free function once for each
  * assigned table entry (i.e. each entry with an assigned key value).
  * The user must define these routines to free the key and the data
@@ -70,6 +76,7 @@ typedef struct {
 extern int	lu_init();
 extern LUENT	*lu_find();
 extern void	lu_delete();
+extern int	lu_doall();
 extern void	lu_done();
 extern long	lu_shash();
 
