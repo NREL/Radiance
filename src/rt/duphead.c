@@ -31,7 +31,9 @@ headclean()			/* remove header temp file (if one) */
 
 openheader()			/* save standard output to header file */
 {
-	headfname = mktemp(TEMPLATE);
+	static char  template[] = TEMPLATE;
+
+	headfname = mktemp(template);
 	if (freopen(headfname, "w", stdout) == NULL) {
 		sprintf(errmsg, "cannot open header file \"%s\"", headfname);
 		error(SYSTEM, errmsg);
