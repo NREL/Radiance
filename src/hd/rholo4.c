@@ -13,7 +13,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #include <sys/uio.h>
 
 #ifndef HDSUF
-#define HDSUF	".hdisp"
+#define HDSUF	".hdi"
 #endif
 
 static int	inp_flags;
