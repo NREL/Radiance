@@ -26,7 +26,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define GAMMA		2.2		/* default exponent correction */
 
 #define MINWIDTH	(32*COMCW)	/* minimum graphics window width */
-#define MINHEIGHT	MINWIDTH	/* minimum graphics window height */
+#define MINHEIGHT	(MINWIDTH/2)	/* minimum graphics window height */
 
 #define BORWIDTH	5		/* border width */
 #define COMHEIGHT	(COMLH*COMCH)	/* command line height (pixels) */
