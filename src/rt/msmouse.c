@@ -8,6 +8,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #include <graph.h>
 #include "driver.h"
 
+#define  NULL		0
+
 #define	 M_RIGHTBUTT	0x8
 #define	 M_LEFTBUTT	0x2
 #define	 M_MOTION	0x1
