@@ -86,7 +86,7 @@ char  *buf;
 {
 	int  getch();
 
-	editline(buf, getch, ttydev->comout, ttymode.sg_erase, ttymode.sg_kill);
+	editline(buf, getch, ttydev->comout);
 }
 
 

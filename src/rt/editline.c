@@ -10,13 +10,16 @@ static char SCCSid[] = "$SunId$ LBL";
  *	10/5/88
  */
 
-#include  <ctype.h>
+#define iscntrl(c)	((c) < ' ')
+#define isblank(c)	((c) == ' ')
+#define iserase(c)	((c) == '\b' || (c) == 127)
+#define iswerase(c)	((c) == 'W'-'@')
+#define iskill(c)	((c) == 'U'-'@' || (c) == 'X'-'@')
 
 
-editline(buf, c_get, s_put, c_erase, c_kill)	/* edit input line */
+editline(buf, c_get, s_put)	/* edit input line */
 char  *buf;
 int  (*c_get)(), (*s_put)();
-int  c_erase, c_kill;
 {
 	static char  erases[] = "\b \b";
 	static char  obuf[4];
@@ -25,12 +28,21 @@ int  c_erase, c_kill;
 	
 	i = 0;
 	while ((c = (*c_get)()&0177) != '\n' && c != '\r')
-		if (c == c_erase) {		/* single char erase */
+		if (iserase(c)) {		/* single char erase */
 			if (i > 0) {
 				(*s_put)(erases);
 				--i;
 			}
-		} else if (c == c_kill) {	/* kill line */
+		} else if (iswerase(c)) {	/* word erase */
+			while (i > 0 && isblank(buf[i-1])) {
+				(*s_put)(erases);
+				--i;
+			}
+			while (i > 0 && !isblank(buf[i-1])) {
+				(*s_put)(erases);
+				--i;
+			}
+		} else if (iskill(c)) {		/* kill line */
 			while (i > 0) {
 				(*s_put)(erases);
 				--i;
