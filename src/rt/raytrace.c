@@ -252,7 +252,7 @@ RAY  *r;
 		if (rp->rox == &xp->xf) {		/* xp in use */
 			xp = xp->next;			/* move to next */
 			if (xp == xflast) {		/* need new one */
-				xp = (struct xfn *)malloc(sizeof(struct xfn));
+				xp = (struct xfn *)bmalloc(sizeof(struct xfn));
 				if (xp == NULL)
 					error(SYSTEM,
 						"out of memory in newrayxf");
