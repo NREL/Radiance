@@ -75,6 +75,7 @@ userr:
 #define H_OBST	02
 #define H_OBSF	04
 
+int
 holheadline(s, hf)		/* check holodeck header line */
 register char	*s;
 int	*hf;
@@ -86,7 +87,7 @@ int	*hf;
 			*hf |= H_BADF;
 		else
 			*hf &= ~H_BADF;
-		return;
+		return(0);
 	}
 	if (!strncmp(s, "OBSTRUCTIONS=", 13)) {
 		s += 13;
@@ -97,8 +98,9 @@ int	*hf;
 			*hf |= H_OBSF;
 		else
 			error(WARNING, "bad OBSTRUCTIONS value in holodeck");
-		return;
+		return(0);
 	}
+	return(0);
 }
 
 int
@@ -247,6 +249,7 @@ struct phead {
 };
 
 
+int
 picheadline(s, ph)		/* process picture header line */
 char	*s;
 struct phead	*ph;
@@ -255,20 +258,21 @@ struct phead	*ph;
 
 	if (formatval(fmt, s)) {
 		ph->badfmt = strcmp(fmt, COLRFMT);
-		return;
+		return(0);
 	}
 	if (isprims(s)) {
 		ph->altprims++;		/* don't want to deal with this */
-		return;
+		return(0);
 	}
 	if (isexpos(s)) {
 		ph->expos *= exposval(s);
-		return;
+		return(0);
 	}
 	if (isview(s)) {
 		ph->gotview += sscanview(&ph->vw, s);
-		return;
+		return(0);
 	}
+	return(0);
 }
 
 

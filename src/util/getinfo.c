@@ -20,6 +20,7 @@ extern int  _fmode;
 extern int  fputs();
 
 
+int
 tabstr(s)				/* put out line followed by tab */
 register char  *s;
 {
@@ -29,6 +30,7 @@ register char  *s;
 	}
 	if (*--s == '\n')
 		putchar('\t');
+	return(0);
 }
 
 

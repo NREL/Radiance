@@ -127,6 +127,7 @@ userr:
 }
  
  
+int
 headline(s)			/* get line from header */
 char	*s;
 {
@@ -140,6 +141,7 @@ char	*s;
 		formatval(fmt, s);
 		wrongformat = strcmp(fmt, "ascii");
 	}
+	return(0);
 }
  
  
