@@ -23,20 +23,23 @@ int	depth;
 {
 	char	*nr;
 	Window	rr, pr, *cl;
+	Window	wr;
 	unsigned int	nc;
+	register int	i;
 
-	if (XFetchName(dpy, win, &nr)) {
-		register int	succ = !strcmp(nr, name);
-		free(nr);
-		if (succ) return(win);
-	}
 	if (depth == 0)		/* negative depths search all */
 		return(None);
 	if (!XQueryTree(dpy, win, &rr, &pr, &cl, &nc) || nc == 0)
 		return(None);
-	while (nc--)
-		if ((rr = xfindwind(dpy, cl[nc], name, depth-1)) != None)
-			break;
+	wr = None;		/* breadth first search */
+	for (i = 0; wr == None && i < nc; i++)
+		if (XFetchName(dpy, cl[i], &nr)) {
+			if (!strcmp(nr, name))
+				wr = cl[i];
+			free(nr);
+		}
+	for (i = 0; wr == None && i < nc; i++)
+		wr = xfindwind(dpy, cl[i], name, depth-1);
 	XFree((char *)cl);
-	return(rr);
+	return(wr);
 }
