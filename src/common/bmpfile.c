@@ -143,10 +143,10 @@ BMPopenReader(int (*cget)(void *), int (*seek)(uint32, void *), void *c_data)
 	BMPReader       *br;
 	uint32		bmPos, hdrSiz;
 	int		palLen;
+	int     magic[2];		/* check magic number */
 
 	if (cget == NULL)
 		return NULL;
-	int     magic[2];		/* check magic number */
 	magic[0] = (*cget)(c_data);
 	if (magic[0] != 'B')
 		return NULL;
