@@ -50,10 +50,10 @@ static int  nunflshed = 0;	/* number of unflushed ambient values */
 #endif
 #endif
 #ifndef SORT_INTVL
-#define SORT_INTVL	(SORT_THRESH*256)
+#define SORT_INTVL	(SORT_THRESH<<4)
 #endif
 #ifndef MAX_SORT_INTVL
-#define MAX_SORT_INTVL	(SORT_INTVL<<4)
+#define MAX_SORT_INTVL	(SORT_INTVL<<8)
 #endif
 
 static COLOR  avsum = BLKCOLOR;		/* computed ambient value sum */
@@ -77,7 +77,7 @@ static long  sortintvl = SORT_INTVL;	/* time until next sort */
 #define	 newambval()	(AMBVAL *)bmalloc(sizeof(AMBVAL))
 
 extern long  ftell(), lseek();
-static int  initambfile(), avsave(), avinsert(), sortambvals();
+static int  initambfile(), avsave(), avinsert(), sortambvals(), avlmemi();
 static AMBVAL  *avstore();
 #ifdef  F_SETLKW
 static  aflock();
@@ -210,8 +210,9 @@ FVECT  nrm;
 			goto dumbamb;
 		return;
 	}
-						/* resort memory? */
-	sortambvals(0);
+
+	if (tracktime)				/* sort to minimize thrashing */
+		sortambvals(0);
 						/* get ambient value */
 	setcolor(acol, 0.0, 0.0, 0.0);
 	d = sumambient(acol, r, nrm, rdepth,
@@ -257,7 +258,7 @@ double	s;
 					/* do this node */
 	for (av = at->alist; av != NULL; av = av->next) {
 		if (tracktime)
-			av->latick = ambclock++;
+			av->latick = ambclock;
 		/*
 		 *  Ambient level test.
 		 */
@@ -616,7 +617,7 @@ int	always;
 	AMBVAL	tav, *tap, *pnext;
 	register int	i, j;
 					/* see if it's time yet */
-	if (!always && (ambclock < lastsort+sortintvl ||
+	if (!always && (ambclock++ < lastsort+sortintvl ||
 			nambvals < SORT_THRESH))
 		return;
 	/*
