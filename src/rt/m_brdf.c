@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -132,13 +132,13 @@ double  omega;			/* light source size */
 					/* compute BRTDF */
 	if (np->mp->otype == MAT_BRTDF) {
 		colval(ctmp,RED) = funvalue(sa[6], 3, ldx);
-		if (sa[7] == sa[6])
+		if (!strcmp(sa[7],sa[6]))
 			colval(ctmp,GRN) = colval(ctmp,RED);
 		else
 			colval(ctmp,GRN) = funvalue(sa[7], 3, ldx);
-		if (sa[8] == sa[6])
+		if (!strcmp(sa[8],sa[6]))
 			colval(ctmp,BLU) = colval(ctmp,RED);
-		else if (sa[8] == sa[7])
+		else if (!strcmp(sa[8],sa[7]))
 			colval(ctmp,BLU) = colval(ctmp,GRN);
 		else
 			colval(ctmp,BLU) = funvalue(sa[8], 3, ldx);
@@ -189,6 +189,7 @@ register RAY  *r;
 {
 	int  minsa, minfa;
 	BRDFDAT  nd;
+	double  transtest, transdist;
 	COLOR  ctmp;
 	double  dtmp;
 	FVECT  vec;
@@ -237,6 +238,7 @@ register RAY  *r;
 	nd.pdot = raynormal(nd.pnorm, r);	/* perturb normal */
 	multcolor(nd.mcolor, r->pcol);		/* modify material color */
 	r->rt = r->rot;				/* default ray length */
+	transtest = 0;
 						/* load auxiliary files */
 	if (m->otype == MAT_PDATA || m->otype == MAT_MDATA
 			|| m->otype == MAT_TDATA) {
@@ -279,12 +281,18 @@ register RAY  *r;
 			objerror(m, WARNING, "compute error");
 		else if ((dtmp = bright(ctmp)) > FTINY &&
 				rayorigin(&sr, r, TRANS, dtmp) == 0) {
-			VCOPY(sr.rdir, r->rdir);
+			if (DOT(r->pert,r->pert) > FTINY*FTINY) {
+				for (i = 0; i < 3; i++)	/* perturb direction */
+					sr.rdir[i] = r->rdir[i] -
+							.75*r->pert[i];
+				normalize(sr.rdir);
+			} else
+				transtest = 2;
 			rayvalue(&sr);
 			multcolor(sr.rcol, ctmp);
 			addcolor(r->rcol, sr.rcol);
-			if (dtmp > .5)
-				r->rt = r->rot + sr.rt;
+			transtest *= bright(sr.rcol);
+			transdist = r->rot + sr.rt;
 		}
 	}
 	if (r->crtype & SHADOW)			/* the rest is shadow */
@@ -332,4 +340,7 @@ register RAY  *r;
 	}
 						/* add direct component */
 	direct(r, dirbrdf, &nd);
+						/* check distance */
+	if (transtest > bright(r->rcol))
+		r->rt = transdist;
 }
