@@ -301,6 +301,65 @@ char  *s;
 }
 
 
+getparam(str, dsc, typ, ptr)		/* get variable from user */
+char  *str, *dsc;
+int  typ;
+register union {int i; double d; COLOR C;}  *ptr;
+{
+	int  i0;
+	double  d0, d1, d2;
+	char  buf[48];
+
+	switch (typ) {
+	case 'i':			/* integer */
+		if (sscanf(str, "%d", &i0) != 1) {
+			(*dev->comout)(dsc);
+			sprintf(buf, " (%d): ", ptr->i);
+			(*dev->comout)(buf);
+			(*dev->comin)(buf, NULL);
+			if (sscanf(buf, "%d", &i0) != 1)
+				break;
+		}
+		ptr->i = i0;
+		break;
+	case 'r':			/* real */
+		if (sscanf(str, "%lf", &d0) != 1) {
+			(*dev->comout)(dsc);
+			sprintf(buf, " (%.6g): ", ptr->d);
+			(*dev->comout)(buf);
+			(*dev->comin)(buf, NULL);
+			if (sscanf(buf, "%lf", &d0) != 1)
+				break;
+		}
+		ptr->d = d0;
+		break;
+	case 'b':			/* boolean */
+		if (sscanf(str, "%1s", buf) != 1) {
+			(*dev->comout)(dsc);
+			sprintf(buf, " (%c): ", ptr->i ? 'y' : 'n');
+			(*dev->comout)(buf);
+			(*dev->comin)(buf, NULL);
+		}
+		ptr->i = tolower(buf[0]) == 'y';
+		break;
+	case 'C':			/* color */
+		if (sscanf(str, "%lf %lf %lf", &d0, &d1, &d2) != 3) {
+			(*dev->comout)(dsc);
+			sprintf(buf, " (%.6g %.6g %.6g): ",
+					colval(ptr->C,RED),
+					colval(ptr->C,GRN),
+					colval(ptr->C,BLU));
+			(*dev->comout)(buf);
+			(*dev->comin)(buf, NULL);
+			if (sscanf(buf, "%lf %lf %lf", &d0, &d1, &d2) != 3)
+				break;
+		}
+		setcolor(ptr->C, d0, d1, d2);
+		break;
+	}
+}
+
+
 setparam(s)				/* get/set program parameter */
 register char  *s;
 {
@@ -320,13 +379,11 @@ register char  *s;
 	extern int  ambounce;
 	extern int  directinvis;
 	extern int  do_irrad;
-	int  i0;
-	double  d0, d1, d2;
-	char  buf[128], ans[4];
+	char  buf[128];
 	
 	if (s[0] == '\0') {
 		(*dev->comout)(
-			"aa ab ad ar as av b dc dj di dt i lr lw sp st: ");
+			"aa ab ad ar as av b dc di dj dt i lr lw sp st: ");
 		(*dev->comin)(buf, NULL);
 		s = buf;
 	}
@@ -334,26 +391,10 @@ register char  *s;
 	case 'l':			/* limit */
 		switch (s[1]) {
 		case 'w':			/* weight */
-			if (sscanf(s+2, "%lf", &d0) != 1) {
-				sprintf(buf, "limit weight (%.6g): ",
-						minweight);
-				(*dev->comout)(buf);
-				(*dev->comin)(buf, NULL);
-				if (sscanf(buf, "%lf", &d0) != 1)
-					break;
-			}
-			minweight = d0;
+			getparam(s+2, "limit weight", 'r', &minweight);
 			break;
 		case 'r':			/* reflection */
-			if (sscanf(s+2, "%d", &i0) != 1) {
-				sprintf(buf, "limit reflection (%d): ",
-						maxdepth);
-				(*dev->comout)(buf);
-				(*dev->comin)(buf, NULL);
-				if (sscanf(buf, "%d", &i0) != 1)
-					break;
-			}
-			maxdepth = i0;
+			getparam(s+2, "limit reflection", 'i', &maxdepth);
 			break;
 		default:
 			goto badparam;
@@ -362,146 +403,47 @@ register char  *s;
 	case 'd':			/* direct */
 		switch (s[1]) {
 		case 'j':			/* jitter */
-			if (sscanf(s+2, "%lf", &d0) != 1) {
-				sprintf(buf, "direct jitter (%.6g): ",
-						dstrsrc);
-				(*dev->comout)(buf);
-				(*dev->comin)(buf, NULL);
-				if (sscanf(buf, "%lf", &d0) != 1)
-					break;
-			}
-			dstrsrc = d0;
+			getparam(s+2, "direct jitter", 'r', &dstrsrc);
 			break;
 		case 'c':			/* certainty */
-			if (sscanf(s+2, "%lf", &d0) != 1) {
-				sprintf(buf, "direct certainty (%.6g): ",
-						shadcert);
-				(*dev->comout)(buf);
-				(*dev->comin)(buf, NULL);
-				if (sscanf(buf, "%lf", &d0) != 1)
-					break;
-			}
-			shadcert = d0;
+			getparam(s+2, "direct certainty", 'r', &shadcert);
 			break;
 		case 't':			/* threshold */
-			if (sscanf(s+2, "%lf", &d0) != 1) {
-				sprintf(buf, "direct threshold (%.6g): ",
-						shadthresh);
-				(*dev->comout)(buf);
-				(*dev->comin)(buf, NULL);
-				if (sscanf(buf, "%lf", &d0) != 1)
-					break;
-			}
-			shadthresh = d0;
+			getparam(s+2, "direct threshold", 'r', &shadthresh);
 			break;
 		case 'i':			/* invisibility */
-			if (sscanf(s+2, "%1s", ans) != 1) {
-				sprintf(buf, "direct invisibility (%c): ",
-						directinvis ? 'y' : 'n');
-				(*dev->comout)(buf);
-				(*dev->comin)(buf, NULL);
-				if (sscanf(buf, "%1s", ans) != 1)
-					break;
-			}
-			directinvis = tolower(ans[0]) == 'y';
+			getparam(s+2, "direct invisibility",
+					'b', &directinvis);
 			break;
 		default:
 			goto badparam;
 		}
 		break;
 	case 'b':			/* black and white */
-		if (sscanf(s+1, "%1s", ans) != 1) {
-			sprintf(buf, "black and white (%c): ",
-					greyscale ? 'y' : 'n');
-			(*dev->comout)(buf);
-			(*dev->comin)(buf, NULL);
-			if (sscanf(buf, "%1s", ans) != 1)
-				break;
-		}
-		greyscale = tolower(ans[0]) == 'y';
+		getparam(s+1, "black and white", 'b', &greyscale);
 		break;
 	case 'i':			/* irradiance */
-		if (sscanf(s+1, "%1s", ans) != 1) {
-			sprintf(buf, "irradiance (%c): ",
-					do_irrad ? 'y' : 'n');
-			(*dev->comout)(buf);
-			(*dev->comin)(buf, NULL);
-			if (sscanf(buf, "%1s", ans) != 1)
-				break;
-		}
-		do_irrad = tolower(ans[0]) == 'y';
+		getparam(s+1, "irradiance", 'b', &do_irrad);
 		break;
 	case 'a':			/* ambient */
 		switch (s[1]) {
 		case 'v':			/* value */
-			if (sscanf(s+2, "%lf %lf %lf", &d0, &d1, &d2) != 3) {
-				sprintf(buf,
-					"ambient value (%.6g %.6g %.6g): ",
-						colval(ambval,RED),
-						colval(ambval,GRN),
-						colval(ambval,BLU));
-				(*dev->comout)(buf);
-				(*dev->comin)(buf, NULL);
-				if (sscanf(buf, "%lf %lf %lf",
-						&d0, &d1, &d2) != 3)
-					break;
-			}
-			setcolor(ambval, d0, d1, d2);
+			getparam(s+2, "ambient value", 'C', ambval);
 			break;
 		case 'a':			/* accuracy */
-			if (sscanf(s+2, "%lf", &d0) != 1) {
-				sprintf(buf, "ambient accuracy (%.6g): ",
-						ambacc);
-				(*dev->comout)(buf);
-				(*dev->comin)(buf, NULL);
-				if (sscanf(buf, "%lf", &d0) != 1)
-					break;
-			}
-			ambacc = d0;
+			getparam(s+2, "ambient accuracy", 'r', &ambacc);
 			break;
 		case 'd':			/* divisions */
-			if (sscanf(s+2, "%d", &i0) != 1) {
-				sprintf(buf, "ambient divisions (%d): ",
-						ambdiv);
-				(*dev->comout)(buf);
-				(*dev->comin)(buf, NULL);
-				if (sscanf(buf, "%d", &i0) != 1)
-					break;
-			}
-			ambdiv = i0;
+			getparam(s+2, "ambient divisions", 'i', &ambdiv);
 			break;
 		case 's':			/* samples */
-			if (sscanf(s+2, "%d", &i0) != 1) {
-				sprintf(buf, "ambient super-samples (%d): ",
-						ambssamp);
-				(*dev->comout)(buf);
-				(*dev->comin)(buf, NULL);
-				if (sscanf(buf, "%d", &i0) != 1)
-					break;
-			}
-			ambssamp = i0;
+			getparam(s+2, "ambient super-samples", 'i', &ambssamp);
 			break;
 		case 'b':			/* bounces */
-			if (sscanf(s+2, "%d", &i0) != 1) {
-				sprintf(buf, "ambient bounces (%d): ",
-						ambounce);
-				(*dev->comout)(buf);
-				(*dev->comin)(buf, NULL);
-				if (sscanf(buf, "%d", &i0) != 1)
-					break;
-			}
-			ambounce = i0;
+			getparam(s+2, "ambient bounces", 'i', &ambounce);
 			break;
 		case 'r':
-			if (sscanf(s+2, "%d", &i0) != 1) {
-				sprintf(buf, "ambient resolution (%d): ",
-						ambres);
-				(*dev->comout)(buf);
-				(*dev->comin)(buf, NULL);
-				if (sscanf(buf, "%d", &i0) != 1)
-					break;
-			}
-			ambres = i0;
+			getparam(s+2, "ambient resolution", 'i', &ambres);
 			minarad = ambres > 0 ? thescene.cusize/ambres : 0.0;
 			break;
 		default:
@@ -511,26 +453,11 @@ register char  *s;
 	case 's':			/* sample */
 		switch (s[1]) {
 		case 'p':			/* pixel */
-			if (sscanf(s+2, "%d", &i0) != 1) {
-				sprintf(buf, "sample pixel (%d): ", psample);
-				(*dev->comout)(buf);
-				(*dev->comin)(buf, NULL);
-				if (sscanf(buf, "%d", &i0) != 1)
-					break;
-			}
-			psample = i0;
+			getparam(s+2, "sample pixel", 'i', &psample);
 			pdepth = 0;
 			break;
 		case 't':			/* threshold */
-			if (sscanf(s+2, "%lf", &d0) != 1) {
-				sprintf(buf, "sample threshold (%.6g): ",
-						maxdiff);
-				(*dev->comout)(buf);
-				(*dev->comin)(buf, NULL);
-				if (sscanf(buf, "%lf", &d0) != 1)
-					break;
-			}
-			maxdiff = d0;
+			getparam(s+2, "sample threshold", 'r', &maxdiff);
 			pdepth = 0;
 			break;
 		default:
