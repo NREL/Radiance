@@ -452,5 +452,11 @@ char	*msg;
 quit(code)
 int	code;
 {
+	int  status;
+
+	if (code == 0)			/* reap any children */
+		while (wait(&status) != -1)
+			if (code == 0)
+				code = status>>8 & 0xff;
 	exit(code);
 }
