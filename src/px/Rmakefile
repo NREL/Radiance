@@ -93,7 +93,7 @@ greyscale:	greyscale.o
 	$(CC) $(CFLAGS) -o greyscale greyscale.o -lrt $(MLIB)
 
 colorscale:	colorscale.o
-	$(CC) $(CFLAGS) -o colorscale colorscale.o -lrt -lm
+	$(CC) $(CFLAGS) -o colorscale colorscale.o -lrt $(MLIB)
 
 pvalue:	pvalue.o
 	$(CC) $(CFLAGS) -o pvalue pvalue.o -lrt $(MLIB)
@@ -102,10 +102,10 @@ psum:	psum.o
 	$(CC) $(CFLAGS) -o psum psum.o -lrt
 
 pcompos:	pcompos.o
-	$(CC) $(CFLAGS) -o pcompos pcompos.o -lrt
+	$(CC) $(CFLAGS) -o pcompos pcompos.o -lrt $(MLIB)
 
 psign:	psign.o
-	$(CC) $(CFLAGS) -o psign psign.o -lrt -lm
+	$(CC) $(CFLAGS) -o psign psign.o -lrt $(MLIB)
 
 d48c:	d48c.o
 	$(CC) $(CFLAGS) -o d48c d48c.o -lrt
@@ -159,13 +159,13 @@ ximage:	x11image.o x11raster.o clrtab.o
 clrtab.o -lX11 -lrt $(MLIB)
 
 protate:		protate.o
-	$(CC) $(CFLAGS) -o protate protate.o -lrt -lm
+	$(CC) $(CFLAGS) -o protate protate.o -lrt $(MLIB)
 
 pextrem:	pextrem.o
-	$(CC) $(CFLAGS) -o pextrem pextrem.o -lrt -lm
+	$(CC) $(CFLAGS) -o pextrem pextrem.o -lrt $(MLIB)
 
 pflip:		pflip.o
-	$(CC) $(CFLAGS) -o pflip pflip.o -lrt -lm
+	$(CC) $(CFLAGS) -o pflip pflip.o -lrt $(MLIB)
 
 panim:	panim.o client/libclient.a
 	$(CC) $(CFLAGS) -o panim panim.o \
