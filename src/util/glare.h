@@ -13,7 +13,7 @@
 
 #define GLAREBR		10.0		/* glare source is this * avg. lum. */
 
-#define SAMPDENS	50		/* samples per unit in image */
+#define SAMPDENS	50		/* default samples per unit in image */
 #define TSAMPSTEP	10		/* sample step to compute threshold */
 
 #define SEPS		2		/* sources this close ==> contig. */
@@ -25,6 +25,7 @@ extern VIEW	leftview, rightview;	/* leftmost and rightmost views */
 extern int	verbose;		/* verbose reporting */
 extern char	*progname;		/* global argv[0] */
 
+extern int	sampdens;		/* sample density */
 extern ANGLE	glarang[];		/* glare calculation angles */
 extern int	nglarangs;
 extern double	maxtheta;		/* maximum glare angle (in radians) */
@@ -32,8 +33,8 @@ extern int	hsize;			/* horizontal size */
 extern int	hlim;			/* horizontal limit of central view */
 
 #define nglardirs	(2*nglarangs+1)
-#define vsize		SAMPDENS
-#define h_theta(h)	((double)(h)/-(double)SAMPDENS)
+#define vsize		sampdens
+#define h_theta(h)	(-(double)(h)/(double)sampdens)
 
 extern struct illum {
 	float	theta;		/* glare direction */

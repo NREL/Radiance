@@ -88,7 +88,7 @@ double	br;
 	register int	i;
 
 	if (h <= -hlim) {			/* left region */
-		d = (double)(h+hlim)/SAMPDENS;
+		d = (double)(h+hlim)/sampdens;
 		if (d <= -1.0+FTINY)
 			return;
 		tanb = d/sqrt(1.0-d*d);
@@ -102,7 +102,7 @@ double	br;
 		return;
 	}
 	if (h >= hlim) {			/* right region */
-		d = (double)(h-hlim)/SAMPDENS;
+		d = (double)(h-hlim)/sampdens;
 		if (d >= 1.0-FTINY)
 			return;
 		tanb = d/sqrt(1.0-d*d);
@@ -265,6 +265,7 @@ register struct source	*sp;
 	sp->dom = 0.0;
 	sp->dir[0] = sp->dir[1] = sp->dir[1] = 0.0;
 	sp->brt = 0.0;
+	n = 0;
 	for (ss = sp->first; ss != NULL; ss = ss->next) {
 		sp->brt += ss->brsum;
 		n += ss->r - ss->l;
