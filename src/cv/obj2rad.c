@@ -130,7 +130,7 @@ char	*argv[];
 	}
 	exit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-o obj][-m mapping][-n] [file.obj]\n",
+	fprintf(stderr, "Usage: %s [-o obj][-m mapping][-n][-f] [file.obj]\n",
 			argv[0]);
 	exit(1);
 }
@@ -440,7 +440,7 @@ register char	*vs;
 		if (vi[0]-- > nvs)
 			return(0);
 	} else if (vi[0] < 0) {
-		vi[0] = nvs + vi[0];
+		vi[0] += nvs;
 		if (vi[0] < 0)
 			return(0);
 	} else
@@ -454,7 +454,7 @@ register char	*vs;
 		if (vi[1]-- > nvts)
 			return(0);
 	} else if (vi[1] < 0) {
-		vi[1] = nvts + vi[1];
+		vi[1] += nvts;
 		if (vi[1] < 0)
 			return(0);
 	} else
@@ -468,7 +468,7 @@ register char	*vs;
 		if (vi[2]-- > nvns)
 			return(0);
 	} else if (vi[2] < 0) {
-		vi[2] = nvns + vi[2];
+		vi[2] += nvns;
 		if (vi[2] < 0)
 			return(0);
 	} else
@@ -477,7 +477,7 @@ register char	*vs;
 }
 
 
-nonplanar(ac, av)			/* are vertices are non-planar? */
+nonplanar(ac, av)			/* are vertices non-planar? */
 register int	ac;
 register char	**av;
 {
