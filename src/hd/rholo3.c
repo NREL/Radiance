@@ -9,6 +9,7 @@ static char SCCSid[] = "$SunId$ SGI";
  */
 
 #include "rholo.h"
+#include <sys/types.h>
 
 #ifndef NFRAG2CHUNK
 #define NFRAG2CHUNK	4096	/* number of fragments to start chunking */
@@ -22,6 +23,8 @@ static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 #define rchunk(n)	(((n)+(RPACKSIZ/2))/RPACKSIZ)
+
+extern time_t	time();
 
 static PACKHEAD	*complist=NULL;	/* list of beams to compute */
 static int	complen=0;	/* length of complist */
@@ -38,11 +41,12 @@ register PACKHEAD	*b0, *b1;
 	register long	c;
 					/* first check desired quantities */
 	if (chunky)
-		c = rchunk(b1->nr)*(rchunk(b0->nc)+1) -
-				rchunk(b0->nr)*(rchunk(b1->nc)+1);
+		c = rchunk(b1->nr)*(rchunk(b0->nc)+1L) -
+				rchunk(b0->nr)*(rchunk(b1->nc)+1L);
 	else
-		c = b1->nr*(b0->nc+1) - b0->nr*(b1->nc+1);
-	if (c) return(c);
+		c = b1->nr*(b0->nc+1L) - b0->nr*(b1->nc+1L);
+	if (c > 0) return(1);
+	if (c < 0) return(-1);
 				/* only one file, so skip the following: */
 #if 0
 					/* next, check file descriptors */
@@ -258,6 +262,8 @@ init_global()			/* initialize global ray computation */
 		free((char *)complist);
 		done_packets(flush_queue());
 	}
+					/* reseed random number generator */
+	srandom(time(NULL));
 					/* allocate beam list */
 	complen = 0;
 	for (j = 0; hdlist[j] != NULL; j++)
@@ -336,6 +342,11 @@ sortcomplist()			/* fix our list order */
 			chunky++;	/* use "chunky" comparison */
 			lastin = -1;	/* need to re-sort list */
 		}
+#ifdef DEBUG
+			else
+				fprintf(stderr, "sortcomplist: %d fragments\n",
+						listlen);
+#endif
 	if (lastin < 0 || listpos*4 >= complen*3)
 		qsort((char *)complist, complen, sizeof(PACKHEAD), beamcmp);
 	else if (listpos) {	/* else sort and merge sublist */
@@ -391,10 +402,8 @@ int	n;
 	p->nr = complist[listpos].nr - p->nc;
 	if (p->nr <= 0)
 		return(0);
-#ifdef DEBUG
-	if (n < 1 | n > RPACKSIZ)
-		error(CONSISTENCY, "next_packet called with bad n value");
-#endif
+	DCHECK(n < 1 | n > RPACKSIZ,
+			CONSISTENCY, "next_packet called with bad n value");
 	if (p->nr > n)
 		p->nr = n;
 	complist[listpos].nc += p->nr;	/* find where this one would go */
