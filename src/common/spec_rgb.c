@@ -39,19 +39,17 @@ static BYTE  chroma[3][NINC] = {
 	}
 };
 
-#ifdef  NTSC
-static float  xyz2rgbmat[3][3] = {	/* XYZ to RGB (NTSC) */
-	{1.73, -.48, -.26},
-	{-.81, 1.65, -.02},
-	 {.08, -.17, 1.28}
+static float  xyz2rgbmat[3][3] = {	/* XYZ to RGB */
+	{(CIE_y_g - CIE_y_b - CIE_x_b*CIE_y_g + CIE_y_b*CIE_x_g)/CIE_C_rD,
+	 (CIE_x_b - CIE_x_g - CIE_x_b*CIE_y_g + CIE_x_g*CIE_y_b)/CIE_C_rD,
+	 (CIE_x_g*CIE_y_b - CIE_x_b*CIE_y_g)/CIE_C_rD},
+	{(CIE_y_b - CIE_y_r - CIE_y_b*CIE_x_r + CIE_y_r*CIE_x_b)/CIE_C_gD,
+	 (CIE_x_r - CIE_x_b - CIE_x_r*CIE_y_b + CIE_x_b*CIE_y_r)/CIE_C_gD,
+	 (CIE_x_b*CIE_y_r - CIE_x_r*CIE_y_b)/CIE_C_gD},
+	{(CIE_y_r - CIE_y_g - CIE_y_r*CIE_x_g + CIE_y_g*CIE_x_r)/CIE_C_bD,
+	 (CIE_x_g - CIE_x_r - CIE_x_g*CIE_y_r + CIE_x_r*CIE_y_g)/CIE_C_bD,
+	 (CIE_x_r*CIE_y_g - CIE_x_g*CIE_y_r)/CIE_C_bD}
 };
-#else
-static float xyz2rgbmat[3][3] = {	/* XYZ to RGB (color monitor) */
-	 {2.739, -1.145, -.424},
-	{-1.119,  2.029,  .033},
-	  {.138,  -.333, 1.105}
-};
-#endif
 
 
 
