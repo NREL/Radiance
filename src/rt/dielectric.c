@@ -73,6 +73,7 @@ register RAY  *r;
 	double  cos1, cos2, nratio;
 	COLOR  ctrans;
 	COLOR  talb;
+	int  hastexture;
 	double  refl, trans;
 	FVECT  dnorm;
 	double  d1, d2;
@@ -84,7 +85,12 @@ register RAY  *r;
 
 	raytexture(r, m->omod);			/* get modifiers */
 
-	cos1 = raynormal(dnorm, r);		/* cosine of theta1 */
+	if (hastexture = DOT(r->pert,r->pert) > FTINY*FTINY)
+		cos1 = raynormal(dnorm, r);	/* perturb normal */
+	else {
+		VCOPY(dnorm, r->ron);
+		cos1 = r->rod;
+	}
 						/* index of refraction */
 	if (m->otype == MAT_DIELECTRIC)
 		nratio = m->oargs.farg[3] + m->oargs.farg[4]/MLAMBDA;
@@ -92,6 +98,7 @@ register RAY  *r;
 		nratio = m->oargs.farg[3] / m->oargs.farg[7];
 	
 	if (cos1 < 0.0) {			/* inside */
+		hastexture = -hastexture;
 		cos1 = -cos1;
 		dnorm[0] = -dnorm[0];
 		dnorm[1] = -dnorm[1];
@@ -156,7 +163,15 @@ register RAY  *r;
 			d1 = nratio*cos1 - cos2;
 			for (i = 0; i < 3; i++)
 				p.rdir[i] = nratio*r->rdir[i] + d1*dnorm[i];
-
+						/* accidental reflection? */
+			if (hastexture &&
+				DOT(p.rdir,r->ron)*hastexture >= -FTINY) {
+				d1 *= (double)hastexture;
+				for (i = 0; i < 3; i++)	/* ignore texture */
+					p.rdir[i] = nratio*r->rdir[i] +
+							d1*r->ron[i];
+				normalize(p.rdir);	/* not exact */
+			}
 #ifdef  DISPERSE
 			if (m->otype != MAT_DIELECTRIC
 					|| r->rod > 0.0
@@ -184,6 +199,10 @@ register RAY  *r;
 					/* compute reflected ray */
 		for (i = 0; i < 3; i++)
 			p.rdir[i] = r->rdir[i] + 2.0*cos1*dnorm[i];
+					/* accidental penetration? */
+		if (hastexture && DOT(p.rdir,r->ron)*hastexture <= FTINY)
+			for (i = 0; i < 3; i++)		/* ignore texture */
+				p.rdir[i] = r->rdir[i] + 2.0*r->rod*r->ron[i];
 
 		rayvalue(&p);			/* reflected ray value */
 
