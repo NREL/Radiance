@@ -39,7 +39,7 @@ VIEW	theirview = STDVIEW(512);	/* input view */
 int	gotview;			/* got input view? */
 
 int	fill = F_FORE|F_BACK;		/* selected fill algorithm */
-extern int	backfill(), calfill();	/* fill functions */
+extern int	backfill(), rcalfill();	/* fill functions */
 int	(*deffill)() = backfill;	/* selected fill function */
 COLR	backcolr = BLKCOLR;		/* background color */
 double	backz = 0.0;			/* background z value */
@@ -47,8 +47,8 @@ double	backz = 0.0;			/* background z value */
 double	theirs2ours[4][4];		/* transformation matrix */
 int	normdist = 1;			/* normalized distance? */
 
+int	childpid = -1;			/* id of fill process */
 FILE	*psend, *precv;			/* pipes to/from fill calculation */
-int	childpid;			/* child's process id */
 int	queue[PACKSIZ][2];		/* pending pixels */
 int	queuesiz;			/* number of pixels pending */
 
@@ -108,7 +108,7 @@ char	*argv[];
 				break;
 			case 'r':				/* rtrace */
 				check(3,1);
-				deffill = calfill;
+				deffill = rcalfill;
 				calstart(RTCOM, argv[++i]);
 				break;
 			default:
@@ -205,8 +205,7 @@ char	*argv[];
 	else
 		fillpicture();
 							/* close calculation */
-	if (deffill == calfill)
-		caldone();
+	caldone();
 							/* add to header */
 	printargs(argc, argv, stdout);
 	if (gotvfile) {
@@ -620,9 +619,13 @@ char	*prog, *args;
 	char	combuf[512];
 	int	p0[2], p1[2];
 
+	if (childpid != -1) {
+		fprintf(stderr, "%s: too many calculations\n", progname);
+		exit(1);
+	}
 	sprintf(combuf, prog, PACKSIZ, args);
 	if (pipe(p0) < 0 || pipe(p1) < 0)
-		goto syserr;
+		syserror();
 	if ((childpid = vfork()) == 0) {	/* fork calculation */
 		close(p0[1]);
 		close(p1[0]);
@@ -638,19 +641,15 @@ char	*prog, *args;
 		perror("/bin/sh");
 		_exit(127);
 	}
-	if (childpid < 0)
-		goto syserr;
+	if (childpid == -1)
+		syserror();
 	close(p0[0]);
 	close(p1[1]);
 	if ((psend = fdopen(p0[1], "w")) == NULL)
-		goto syserr;
+		syserror();
 	if ((precv = fdopen(p1[0], "r")) == NULL)
-		goto syserr;
+		syserror();
 	queuesiz = 0;
-	return;
-syserr:
-	perror(progname);
-	exit(1);
 }
 
 
@@ -658,29 +657,35 @@ caldone()				/* done with calculation */
 {
 	int	pid;
 
-	fclose(psend);
+	if (childpid == -1)
+		return;
+	if (fclose(psend) == EOF)
+		syserror();
 	clearqueue();
 	fclose(precv);
 	while ((pid = wait(0)) != -1 && pid != childpid)
 		;
+	childpid = -1;
 }
 
 
-calfill(x, y)				/* fill with calculated pixel */
+rcalfill(x, y)				/* fill with ray-calculated pixel */
 int	x, y;
 {
 	FVECT	orig, dir;
 	float	outbuf[6];
 
 	if (queuesiz >= PACKSIZ) {	/* flush queue */
-		fflush(psend);
+		if (fflush(psend) == EOF)
+			syserror();
 		clearqueue();
 	}
 					/* send new ray */
 	rayview(orig, dir, &ourview, x+.5, y+.5);
 	outbuf[0] = orig[0]; outbuf[1] = orig[1]; outbuf[2] = orig[2];
 	outbuf[3] = dir[0]; outbuf[4] = dir[1]; outbuf[5] = dir[2];
-	fwrite(outbuf, sizeof(float), 6, psend);
+	if (fwrite(outbuf, sizeof(float), 6, psend) < 6)
+		syserror();
 					/* remember it */
 	queue[queuesiz][0] = x;
 	queue[queuesiz][1] = y;
@@ -694,10 +699,21 @@ clearqueue()				/* get results from queue */
 	register int	i;
 
 	for (i = 0; i < queuesiz; i++) {
-		fread(inbuf, sizeof(float), 4, precv);
+		if (fread(inbuf, sizeof(float), 4, precv) < 4) {
+			fprintf(stderr, "%s: read error in clearqueue\n",
+					progname);
+			exit(1);
+		}
 		setcolr(pscan(queue[i][1])[queue[i][0]],
 				inbuf[0], inbuf[1], inbuf[2]);
 		zscan(queue[i][1])[queue[i][0]] = inbuf[3];
 	}
 	queuesiz = 0;
+}
+
+
+syserror()			/* report error and exit */
+{
+	perror(progname);
+	exit(1);
 }
