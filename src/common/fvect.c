@@ -103,16 +103,15 @@ register FVECT  v;
 	if (len <= 0.0)
 		return(0.0);
 	
-	/****** problematic
-	if (len >= (1.0-FTINY)*(1.0-FTINY) &&
-			len <= (1.0+FTINY)*(1.0+FTINY))
-		return(1.0);
-	******/
+	if (len <= 1.0+FTINY && len >= 1.0-FTINY)
+		len = 0.5 + 0.5*len;	/* first order approximation */
+	else
+		len = sqrt(len);
 
-	len = sqrt(len);
 	v[0] /= len;
 	v[1] /= len;
 	v[2] /= len;
+
 	return(len);
 }
 
