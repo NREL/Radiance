@@ -109,6 +109,7 @@ register OBJREC  *so;
 	register int  i;
 	
 	src->sflags = 0;
+	src->aimsuccess = 2*AIMREQT-1;		/* bitch on second failure */
 	src->nhits = 1; src->ntests = 2;	/* start probability = 1/2 */
 	src->so = so;
 
@@ -337,15 +338,23 @@ char  *p;			/* data for f */
 		if (cntord[sn].brt <= 0.0)
 			continue;
 						/* compute intersection */
-		if (!( source[sn].sflags & SDISTANT ?
+		if (source[sn].sflags & SDISTANT ?
 				sourcehit(&sr) :
 				(*ofun[source[sn].so->otype].funp)
-				(source[sn].so, &sr) )) {
+				(source[sn].so, &sr)) {
+			if (source[sn].aimsuccess >= 0)
+				source[sn].aimsuccess++;
+		} else {
+			cntord[sn].brt = 0.0;
+			if (source[sn].aimsuccess < 0)
+				continue;	/* bitched already */
+			source[sn].aimsuccess -= AIMREQT;
+			if (source[sn].aimsuccess >= 0)
+				continue;	/* leniency */
 			sprintf(errmsg,
 				"aiming failure for light source \"%s\"",
 					source[sn].so->oname);
 			error(WARNING, errmsg);
-			cntord[sn].brt = 0.0;
 			continue;
 		}
 						/* compute contribution */

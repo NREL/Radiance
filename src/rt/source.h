@@ -13,6 +13,8 @@
 #define  SPROX		04		/* source proximity flag */
 #define  SSPOT		010		/* source spotlight flag */
 
+#define  AIMREQT	100		/* required aim success/failure */
+
 typedef struct {
 	float  siz;		/* output solid angle */
 	float  flen;		/* focal length */
@@ -28,6 +30,7 @@ typedef struct {
 		float  prox;		/* proximity */
 		SPOT  *s;		/* spot */
 	} sl;			/* localized source information */
+	int  aimsuccess;	/* aim successes - AIMREQT*failures */
 	long  ntests, nhits;	/* shadow tests and hits */
 	OBJREC  *so;		/* source object */
 }  SRCREC;		/* light source */
