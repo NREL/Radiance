@@ -19,12 +19,13 @@ static char SCCSid[] = "$SunId$ SGI";
 static int	inp_flags;
 static int	dpd[3];
 static int	pipesiz;
+static FILE	*dpout;
 
 
 disp_open(dname)		/* open the named display driver */
 char	*dname;
 {
-	char	dpath[128], *com[2];
+	char	dpath[128], *com[3];
 	int	i;
 
 #ifdef DEVPATH
@@ -32,14 +33,17 @@ char	*dname;
 #else
 	sprintf(dpath, "dev/%s%s", dname, HDSUF);
 #endif
-	com[0] = dpath; com[1] = NULL;
+	com[0] = dpath; com[1] = froot; com[2] = NULL;
 	pipesiz = open_process(dpd, com);
 	if (pipesiz <= 0)
 		error(USER, "cannot start display process");
+	if ((dpout = fdopen(dup(dpd[1]), "w")) == NULL)
+		error(SYSTEM, "cannot associate FILE with display pipe");
 	inp_flags = 0;
 				/* write out hologram grids */
 	for (i = 0; hdlist[i] != NULL; i++)
 		disp_result(DS_ADDHOLO, sizeof(HDGRID), (char *)hdlist[i]);
+	disp_flush();
 }
 
 
@@ -59,6 +63,8 @@ int	block;
 
 	if (pipesiz <= 0)
 		return(-1);
+					/* flush display output */
+	disp_flush();
 					/* check read blocking */
 	if (block != (inp_flags == 0)) {
 		inp_flags = block ? 0 : FNONBLK;
@@ -95,6 +101,7 @@ int	block;
 		disp_result(DS_STARTIMM, 0, NULL);
 		bundle_set(BS_NEW, (PACKHEAD *)buf, msg.nbytes/sizeof(PACKHEAD));
 		disp_result(DS_ENDIMM, 0, NULL);
+		disp_flush();
 		break;
 	case DR_ADDSET:
 		if (msg.nbytes % sizeof(PACKHEAD))
@@ -102,6 +109,7 @@ int	block;
 		disp_result(DS_STARTIMM, 0, NULL);
 		bundle_set(BS_ADD, (PACKHEAD *)buf, msg.nbytes/sizeof(PACKHEAD));
 		disp_result(DS_ENDIMM, 0, NULL);
+		disp_flush();
 		break;
 	case DR_DELSET:
 		if (msg.nbytes % sizeof(PACKHEAD))
@@ -139,42 +147,29 @@ disp_close()			/* close our display process */
 	if (pipesiz <= 0)
 		return(-1);
 	disp_result(DS_SHUTDOWN, 0, NULL);
+	fclose(dpout);
+	dpout = NULL;
 	pipesiz = 0;
 	return(close_process(dpd));
 }
 
 
-disp_result(type, nbytes, p)	/* send result message to display process */
+disp_result(type, nbytes, p)	/* queue result message to display process */
 int	type, nbytes;
 char	*p;
 {
-	struct iovec	iov[2];
 	MSGHEAD	msg;
-	int	n;
 
-	if (pipesiz <= 0)
-		return;
 	msg.type = type;
 	msg.nbytes = nbytes;
-	if (nbytes == 0 || sizeof(MSGHEAD)+nbytes > pipesiz) {
-		do
-			n = write(dpd[1], (char *)&msg, sizeof(MSGHEAD));
-		while (n < 0 && errno == EINTR);
-		if (n != sizeof(MSGHEAD))
-			goto writerr;
-		if (nbytes > 0 && writebuf(dpd[1], p, nbytes) != nbytes)
-			goto writerr;
-		return;
-	}
-	iov[0].iov_base = (char *)&msg;
-	iov[0].iov_len = sizeof(MSGHEAD);
-	iov[1].iov_base = p;
-	iov[1].iov_len = nbytes;
-	do
-		n = writev(dpd[1], iov, 2);
-	while (n < 0 && errno == EINTR);
-	if (n == sizeof(MSGHEAD)+nbytes)
-		return;
-writerr:
-	error(SYSTEM, "write error in disp_result");
+	fwrite((char *)&msg, sizeof(MSGHEAD), 1, dpout);
+	if (nbytes > 0)
+		fwrite(p, 1, nbytes, dpout);
+}
+
+
+disp_flush()			/* flush output to display */
+{
+	if (fflush(dpout) < 0)
+		error(SYSTEM, "error writing to the display process");
 }
