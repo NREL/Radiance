@@ -77,6 +77,7 @@ start_rtrace()			/* start rtrace process */
 			if (!(maxqlen = n))
 				error(INTERNAL,
 					"bad pipe buffer size assumption");
+			sleep(2);
 		} else if (n != maxqlen)
 			error(INTERNAL, "varying pipe buffer size!");
 		rmaxpack += n;
