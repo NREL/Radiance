@@ -49,8 +49,9 @@ int	onevalue(), catvalues(), boolvalue(),
 #define PENUMBRAS	20		/* shadow penumbras are desired */
 #define VARIABILITY	21		/* level of light variability */
 #define REPORT		22		/* report frequency and errfile */
+#define RAWSAVE		23		/* save raw picture file */
 				/* total number of variables */
-#define NVARS		23
+#define NVARS		24
 
 VARIABLE	vv[NVARS] = {		/* variable-value pairs */
 	{"objects",	3,	0,	NULL,	catvalues},
@@ -76,6 +77,7 @@ VARIABLE	vv[NVARS] = {		/* variable-value pairs */
 	{"PENUMBRAS",	3,	0,	NULL,	boolvalue},
 	{"VARIABILITY",	3,	0,	NULL,	qualvalue},
 	{"REPORT",	3,	0,	NULL,	onevalue},
+	{"RAWSAVE",	3,	0,	NULL,	boolvalue},
 };
 
 VARIABLE	*matchvar();
@@ -646,6 +648,10 @@ setdefaults()			/* set default values for unassigned var's */
 	if (!vdef(VARIABILITY)) {
 		vval(VARIABILITY) = "L";
 		vdef(VARIABILITY)++;
+	}
+	if (!vdef(RAWSAVE)) {
+		vval(RAWSAVE) = "F";
+		vdef(RAWSAVE)++;
 	}
 }
 
@@ -1493,8 +1499,12 @@ char	*opts, *po;
 			unlink(picfile);
 			exit(1);
 		}
-						/* remove raw file */
-		rmfile(rawfile);
+						/* remove/rename raw file */
+		if (vbool(RAWSAVE)) {
+			sprintf(combuf, "%s_%s.rwp", vval(PICTURE), vs);
+			mvfile(rawfile, combuf);
+		} else
+			rmfile(rawfile);
 	}
 }
 
@@ -1539,6 +1549,21 @@ char	*fn;
 	if (noaction)
 		return(0);
 	return(unlink(fn));
+}
+
+
+mvfile(fold, fnew)		/* move a file */
+char	*fold, *fnew;
+{
+	if (!silent)
+#ifdef MSDOS
+		printf("\trename %s %s\n", fold, fnew);
+#else
+		printf("\tmv %s %s\n", fold, fnew);
+#endif
+	if (noaction)
+		return(0);
+	return(rename(fold, fnew));
 }
 
 

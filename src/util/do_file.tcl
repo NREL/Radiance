@@ -66,6 +66,11 @@ proc preen {} {			# clean up radvar
 	} else {
 		set radvar(PENUMBRAS) False
 	}
+	if [info exists radvar(RAWSAVE)] {
+		cardval radvar(RAWSAVE) {True False}
+	} else {
+		set radvar(RAWSAVE) False
+	}
 	if [info exists radvar(VARIABILITY)] {
 		cardval radvar(VARIABILITY) {High Medium Low}
 	} else {
@@ -98,6 +103,7 @@ proc setradvar stmt {		# assign a rad variable
 		IND* { set radvar(INDIRECT) $vval }
 		DET* { set radvar(DETAIL) $vval }
 		PEN* { set radvar(PENUMBRAS) $vval }
+		RAW* { set radvar(RAWSAVE) $vval }
 		VAR* { set radvar(VARIABILITY) $vval }
 		REP* { set radvar(REPORT) $vval }
 	}
@@ -119,7 +125,7 @@ proc putradvar {fi vn} {	# print out a rad variable
 	}
 	if {[lsearch -exact {ZONE QUALITY OCTREE PICTURE AMBFILE OPTFILE
 			EXPOSURE RESOLUTION UP INDIRECT DETAIL PENUMBRAS
-			VARIABILITY REPORT} $vn] >= 0} {
+			RAWSAVE VARIABILITY REPORT} $vn] >= 0} {
 		puts $fi "$vn= $radvar($vn)"
 		return
 	}
