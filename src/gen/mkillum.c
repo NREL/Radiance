@@ -379,7 +379,8 @@ char	*nm;
 			return;
 		}
 	opterr:					/* skip faulty option */
-		cp = sskip(cp);
+		while (*cp && !isspace(*cp))
+			cp++;
 		nerrs++;
 	}
 						/* print header? */
