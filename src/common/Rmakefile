@@ -9,7 +9,7 @@ CFLAGS = $(MACH) $(OPT)
 CC = cc
 SPECIAL =
 
-COMPAT = bmalloc.o erf.o strcmp.o # frexp.o fwrite.o random.o
+COMPAT = bmalloc.o erf.o strcmp.o
 
 LIBDIR = /usr/local/lib/ray
 
