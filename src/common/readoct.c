@@ -104,10 +104,10 @@ char  *ofn[];
 	if (load & IO_SCENE) {
 					/* check object count */
 		if (nobjects != objorig+fnobjects)
-			octerror(USER, "bad object count -- stale octree?");
+			octerror(USER, "bad object count; octree stale?");
 					/* check for non-surfaces */
 		if (nonsurfinset(objorig, fnobjects))
-			octerror(USER, "non-surface in set -- stale octree?");
+			octerror(USER, "non-surface in set; octree stale?");
 	}
 	return(nf);
 }
