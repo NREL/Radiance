@@ -9,6 +9,7 @@ static char SCCSid[] = "$SunId$ SGI";
  */
 
 #include "rholo.h"
+#include "random.h"
 #include "paths.h"
 #include <signal.h>
 #include <sys/types.h>
@@ -61,6 +62,7 @@ char	*argv[];
 	int	force = 0;
 						/* mark start time */
 	starttime = time(NULL);
+	initurand(10240);			/* initialize urand */
 	progname = argv[0];			/* get arguments */
 	for (i = 1; i < argc && argv[i][0] == '-'; i++)
 		switch (argv[i][1]) {
@@ -368,6 +370,10 @@ register HDGRID	*gp;
 	if (!vdef(OBSTRUCTIONS)) {
 		vval(OBSTRUCTIONS) = "T";
 		vdef(OBSTRUCTIONS)++;
+	}
+	if (!vdef(VDIST)) {
+		vval(VDIST) = "F";
+		vdef(VDIST)++;
 	}
 	if (!vdef(OCCUPANCY)) {
 		vval(OCCUPANCY) = "U";
