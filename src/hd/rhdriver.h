@@ -77,13 +77,14 @@ the screen is optional.
 
 
 void
-dev_value(c, p, v)	: register new point of light
+dev_value(c, d, p)	: register new point of light
 COLR	c;		: pixel color (RGBE)
+FVECT	d;		: ray direction vector
 FVECT	p;		: world intersection point
-FVECT	v;		: ray direction vector
 
 Add the given color point to the display output queue.  If imm_mode is
-non-zero, then values are being sent in rapid succession.
+non-zero, then values are being sent in rapid succession.  If p is NULL,
+then the point is at infinity.
 
 
 int

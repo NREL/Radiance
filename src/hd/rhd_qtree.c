@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -332,9 +332,9 @@ dropit:
 }
 
 
-dev_value(c, p, v)		/* add a pixel value to our quadtree */
+dev_value(c, d, p)		/* add a pixel value to our quadtree */
 COLR	c;
-FVECT	p, v;
+FVECT	d, p;
 {
 	register int	li;
 	int	mapit;
@@ -353,8 +353,11 @@ FVECT	p, v;
 			qtCompost(LFREEPCT);
 		mapit = 0;			/* we'll map it later */
 	}
-	VCOPY(qtL.wp[li], p);
-	qtL.wd[li] = encodedir(v);
+	if (p == NULL)
+		VSUM(qtL.wp[li], odev.v.vp, d, FHUGE);
+	else
+		VCOPY(qtL.wp[li], p);
+	qtL.wd[li] = encodedir(d);
 	tmCvColrs(&qtL.brt[li], qtL.chr[li], c, 1);
 	if (putleaf(li, 1)) {
 		if (mapit)
