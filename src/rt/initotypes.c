@@ -33,7 +33,7 @@ extern int  t_func(), t_data();
 extern int  p_cfunc(), p_bfunc();
 extern int  p_pdata(), p_cdata(), p_bdata();
 extern int  mx_func(), mx_data();
-extern int  text();
+extern int  do_text();
 
 FUN  ofun[NUMOTYPE] = INIT_OTYPE;
 
@@ -89,7 +89,7 @@ initotypes()			/* initialize ofun array */
 	ofun[PAT_BDATA].funp = p_bdata;
 	ofun[PAT_CTEXT].funp =
 	ofun[PAT_BTEXT].funp =
-	ofun[MIX_TEXT].funp = text;
+	ofun[MIX_TEXT].funp = do_text;
 	ofun[MIX_FUNC].funp = mx_func;
 	ofun[MIX_DATA].funp = mx_data;
 }
