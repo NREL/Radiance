@@ -648,7 +648,7 @@ In particular, make sure that each option and each argument has a
 space between it and whatever follows.
 
 Hitting return in the "Options" window is equivalent to pressing the
-"Add" button.
+"Add" button followed by the "Clear" button.
 
 .Views.Add
 

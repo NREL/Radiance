@@ -186,7 +186,7 @@ proc do_views w {			# create views screen
 	helplink $w.copy trad views copy
 	# Assign focus
 	bind $w.vne <Return> "focus $w.vo.e"
-	bind $w.vo.e <Return> addview
+	bind $w.vo.e <Return> "addview ; $w.vclr invoke"
 	bind $w.vo.e <B2-Motion> {}
 	bind $w.vo.e <Button-2> "$w.vo.e insert insert \[selection get\]"
 	$w.vclr invoke
