@@ -52,9 +52,10 @@ RAY  *r;
 	bval = evalue(mf->ep[0]);
 	if (errno) {
 		objerror(m, WARNING, "compute error");
-		return;
+		return(0);
 	}
 	scalecolor(r->pcol, bval);
+	return(0);
 }
 
 
@@ -75,7 +76,8 @@ RAY  *r;
 			evalue(mf->ep[2]));
 	if (errno) {
 		objerror(m, WARNING, "compute error");
-		return;
+		return(0);
 	}
 	multcolor(r->pcol, cval);
+	return(0);
 }

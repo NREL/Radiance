@@ -47,7 +47,7 @@ register RAY  *r;
 {
 					/* check if source ray */
 	if (r->rsrc >= 0 && source[r->rsrc].so != r->ro)
-		return;				/* got the wrong guy */
+		return(1);			/* got the wrong guy */
 					/* compute first projection */
 	if (m->otype == MAT_DIRECT1 ||
 			(r->rsrc < 0 || source[r->rsrc].sa.sv.pn == 0))
@@ -56,6 +56,7 @@ register RAY  *r;
 	if (m->otype == MAT_DIRECT2 &&
 			(r->rsrc < 0 || source[r->rsrc].sa.sv.pn == 1))
 		redirect(m, r, 1);
+	return(1);
 }
 
 

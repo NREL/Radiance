@@ -185,7 +185,7 @@ register RAY  *r;
 	register int  i;
 						/* easy shadow test */
 	if (r->crtype & SHADOW)
-		return;
+		return(1);
 
 	if (m->oargs.nfargs != (m->otype == MAT_TRANS2 ? 8 : 6))
 		objerror(m, USER, "bad number of real arguments");
@@ -287,6 +287,8 @@ register RAY  *r;
 	}
 					/* add direct component */
 	direct(r, diraniso, &nd);
+
+	return(1);
 }
 
 

@@ -49,7 +49,7 @@ register RAY  *r;
 		disp[i] = evalue(mf->ep[i]);
 		if (errno) {
 			objerror(m, WARNING, "compute error");
-			return;
+			return(0);
 		}
 	}
 	if (mf->f != &unitxf)
@@ -61,4 +61,5 @@ register RAY  *r;
 		d = 1.0 / mf->f->sca;
 	for (i = 0; i < 3; i++)
 		r->pert[i] += disp[i] * d;
+	return(0);
 }

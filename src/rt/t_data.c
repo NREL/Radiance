@@ -78,8 +78,8 @@ RAY  *r;
 		d = 1.0 / mf->f->sca;
 	for (i = 0; i < 3; i++)
 		r->pert[i] += disp[i] * d;
-	return;
+	return(0);
 computerr:
 	objerror(m, WARNING, "compute error");
-	return;
+	return(0);
 }

@@ -54,7 +54,12 @@ RAY  *r;
 	coef = evalue(mf->ep[0]);
 	if (errno) {
 		objerror(m, WARNING, "compute error");
-		return;
+		return(0);
 	}
-	raymixture(r, mod[0], mod[1], coef);
+	if (raymixture(r, mod[0], mod[1], coef)) {
+		if (m->omod != OVOID)
+			objerror(m, USER, "inappropriate modifier");
+		return(1);
+	}
+	return(0);
 }

@@ -71,8 +71,13 @@ RAY  *r;
 	coef = funvalue(m->oargs.sarg[2], 1, &coef);
 	if (errno)
 		goto computerr;
-	raymixture(r, mod[0], mod[1], coef);
-	return;
+	if (raymixture(r, mod[0], mod[1], coef)) {
+		if (m->omod != OVOID)
+			objerror(m, USER, "inappropriate modifier");
+		return(1);
+	}
+	return(0);
 computerr:
 	objerror(m, WARNING, "compute error");
+	return(0);
 }

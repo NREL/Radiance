@@ -158,7 +158,7 @@ register RAY  *r;
 	register int  i;
 						/* easy shadow test */
 	if (r->crtype & SHADOW && m->otype != MAT_TRANS)
-		return;
+		return(1);
 
 	if (m->oargs.nfargs != (m->otype == MAT_TRANS ? 7 : 5))
 		objerror(m, USER, "bad number of arguments");
@@ -255,12 +255,12 @@ register RAY  *r;
 		transtest = 0;
 
 	if (r->crtype & SHADOW)			/* the rest is shadow */
-		return;
+		return(1);
 						/* diffuse reflection */
 	nd.rdiff = 1.0 - nd.trans - nd.rspec;
 
 	if (nd.specfl & SP_PURE && nd.rdiff <= FTINY && nd.tdiff <= FTINY)
-		return;				/* 100% pure specular */
+		return(1);			/* 100% pure specular */
 
 	if (r->ro != NULL && (r->ro->otype == OBJ_FACE ||
 			r->ro->otype == OBJ_RING))
@@ -294,6 +294,8 @@ register RAY  *r;
 					/* check distance */
 	if (transtest > bright(r->rcol))
 		r->rt = transdist;
+
+	return(1);
 }
 
 

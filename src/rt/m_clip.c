@@ -89,9 +89,9 @@ register RAY  *r;
 					inside--;
 		if (inside > 0) {	/* we just hit the object */
 			flipsurface(r);
-			rayshade(r, modifier(m->oargs.sarg[0]));
-			return;
+			return(rayshade(r, modifier(m->oargs.sarg[0])));
 		}
 	}
 	raytrans(r);			/* else transfer ray */
+	return(1);
 }
