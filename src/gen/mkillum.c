@@ -180,7 +180,7 @@ init()				/* start rtrace and set up buffers */
 		error(SYSTEM, "out of memory in init");
 	rt.nrays = 0;
 					/* set up urand */
-	initurand(2048);
+	initurand(16384);
 }
 
 
