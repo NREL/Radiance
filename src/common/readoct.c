@@ -43,6 +43,7 @@ char  *ofn[];
 	int  nf;
 	OBJECT  fnobjects;
 	register int  i;
+	long  m;
 	
 	if (fname == NULL) {
 		infn = "standard input";
@@ -83,7 +84,9 @@ char  *ofn[];
 	if (load & IO_FILES)
 		ofn[nf] = NULL;
 					/* get number of objects */
-	fnobjects = getint(objsize);
+	fnobjects = m = getint(objsize);
+	if (fnobjects != m)
+		octerror(USER, "too many objects");
 
 	if (load & IO_TREE) {
 						/* get the octree */
@@ -135,15 +138,12 @@ getfullnode()			/* get a set, return fullnode */
 	register int  i;
 	register long  m;
 
-	m = getint(objsize);
-	if (m > MAXSET)
+	if ((set[0] = getint(objsize)) > MAXSET)
 		octerror(USER, "bad set in getfullnode");
-	set[0] = m;
 	for (i = 1; i <= set[0]; i++) {
 		m = getint(objsize) + objorig;
-		if ((OBJECT)m != m)
+		if ((set[i] = m) != m)
 			octerror(USER, "too many objects");
-		set[i] = m;
 	}
 	return(fullnode(set));
 }	
@@ -252,8 +252,8 @@ getobj()				/* get next object */
 		objp->oargs.iarg = NULL;
 #endif
 	if (objp->oargs.nfargs = getint(2)) {
-		objp->oargs.farg = (double *)bmalloc
-				(objp->oargs.nfargs*sizeof(double));
+		objp->oargs.farg = (FLOAT *)bmalloc
+				(objp->oargs.nfargs*sizeof(FLOAT));
 		if (objp->oargs.farg == NULL)
 			goto memerr;
 		for (i = 0; i < objp->oargs.nfargs; i++)
