@@ -628,7 +628,7 @@ XKeyPressedEvent  *ekey;
 		if (avgbox(cval) == -1)
 			return(-1);
 		comp = com=='@'
-		? 59.2/pow(1.219+pow(luminance(cval)/exposure,.4),2.5)/exposure
+		? 106./pow(1.219+pow(luminance(cval)/exposure,.4),2.5)/exposure
 		: .5/bright(cval) ;
 		comp = log(comp)/.69315 - scale;
 		n = comp < 0 ? comp-.5 : comp+.5 ;	/* round */
