@@ -229,7 +229,7 @@ FILE  *fp;
 		len = strlen(buf);
 		curl->s = (char *)malloc(len);
 		curl->sp = (short *)malloc(sizeof(short)*len--);
-		if (curl->s == NULL | curl->sp == NULL)
+		if ((curl->s == NULL) | (curl->sp == NULL))
 			goto memerr;
 		if (len > maxline)
 			maxline = len;

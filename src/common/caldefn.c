@@ -259,7 +259,7 @@ popcontext(void)			/* pop off top context */
     while (*++cp2 && *cp2 != CNTXMARK)
 	;
     cp1 = context;			/* copy tail to front */
-    while (*cp1++ = *cp2++)
+    while ( (*cp1++ = *cp2++) )
 	;
     return(context);
 }
@@ -707,7 +707,7 @@ dvalue(char  *name, EPNODE	*d)
     if (eclock >= MAXCLOCK)
 	eclock = 1;				/* wrap clock counter */
     if (ep2->v.tick < MAXCLOCK &&
-		ep2->v.tick == 0 | ep2->v.tick != eclock) {
+		(ep2->v.tick == 0) | (ep2->v.tick != eclock)) {
 	ep2->v.tick = d->type == ':' ? MAXCLOCK : eclock;
 	ep2 = ep2->sibling;
 	ep2->v.num = evalue(ep1);		/* needs new value */

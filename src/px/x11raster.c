@@ -64,7 +64,7 @@ BYTE	cmap[][3];
 	register unsigned char	*p;
 	register int	i;
 
-	if (xr->image->depth > 8 | xr->ncolors != 0)
+	if ((xr->image->depth > 8) | (xr->ncolors != 0))
 		return(xr->ncolors);
 	xr->pmap = (short *)malloc(256*sizeof(short));
 	if (xr->pmap == NULL)

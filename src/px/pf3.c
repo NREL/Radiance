@@ -101,7 +101,7 @@ initmask()			/* initialize gaussian lookup table */
 	ringsum = (float *)malloc((orad+1)*sizeof(float));
 	ringwt = (short *)malloc((orad+1)*sizeof(short));
 	warr = (float *)malloc(obarsize*obarsize*sizeof(float));
-	if (ringsum == NULL | ringwt == 0 | warr == NULL)
+	if ((ringsum == NULL) | (ringwt == 0) | (warr == NULL))
 		goto memerr;
 	return;
 memerr:

@@ -257,7 +257,7 @@ char	*ps;
 		height = atof(++s);
 		width *= d;
 		height *= d;
-		if (width >= 1. & height >= 1.)
+		if ((width >= 1.) & (height >= 1.))
 			return;
 	} else				/* check for match to standard size */
 		for (pp = p; pp->n[0]; pp++)
@@ -300,18 +300,18 @@ char  **av;
 	printf("%%%%Title: "); printargs(ac, av, stdout);
 	printf("%%%%Creator: %s\n", progname);
 	printf("%%%%Pages: %d\n", ncopies);
-	if (landscape = xmax > pixaspect*ymax)
+	if ( (landscape = xmax > pixaspect*ymax) )
 		puts("%%Orientation: Landscape");
 	else
 		puts("%%Orientation: Portrait");
-	if (rotate = PWIDTH > PHEIGHT ^ landscape) {
+	if ( (rotate = (PWIDTH > PHEIGHT) ^ landscape) ) {
 		pwidth = PHEIGHT;
 		pheight = PWIDTH;
 	} else {
 		pwidth = PWIDTH;
 		pheight = PHEIGHT;
 	}
-	if (dpi > 100 && pixaspect >= 0.99 & pixaspect <= 1.01)
+	if (dpi > 100 && (pixaspect >= 0.99) & (pixaspect <= 1.01))
 		if (pheight/pwidth > ymax/xmax) {
 			n = pwidth*dpi/xmax;	/* floor */
 			iwidth = n > 0 ? (double)(n*xmax)/dpi : pwidth;

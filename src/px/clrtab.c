@@ -257,7 +257,7 @@ register int	box[3][2];
 	for (r = box[RED][0]; r < box[RED][1]; r++)
 	    for (g = box[GRN][0]; g < box[GRN][1]; g++)
 	    	for (b = box[BLU][0]; b < box[BLU][1]; b++) {
-	    	    if (c = histo[r][g][b]) {
+	    	    if ( (c = histo[r][g][b]) ) {
 			n += c;
 			sum[RED] += (long)c*r;
 			sum[GRN] += (long)c*g;

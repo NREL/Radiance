@@ -15,6 +15,7 @@ static const char RCSid[] = "$Id$";
 
 #include  "platform.h"
 #include  "calcomp.h"
+#include  "rterror.h"
 
 #ifdef  CPM
 #define  getc           agetc   /* text files only, right? */

@@ -125,7 +125,7 @@ int  y;
 	register long  c;
 	register int  i, j;
 
-	if (bpos = y % 23) {
+	if ( (bpos = y % 23) ) {
 
 		for (j = 0; j < 3; j++)
 			for (i = 0; i < len; i++)

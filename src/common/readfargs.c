@@ -26,7 +26,7 @@ FILE  *fp;
 
 	if (!getint(sbuf) || (n = atoi(sbuf)) < 0)
 		return(0);
-	if (fa->nsargs = n) {
+	if ( (fa->nsargs = n) ) {
 		fa->sarg = (char **)malloc(n*sizeof(char *));
 		if (fa->sarg == NULL)
 			return(-1);
@@ -57,7 +57,7 @@ FILE  *fp;
 #endif
 	if (!getint(sbuf) || (n = atoi(sbuf)) < 0)
 		return(0);
-	if (fa->nfargs = n) {
+	if ( (fa->nfargs = n) ) {
 		fa->farg = (RREAL *)malloc(n*sizeof(RREAL));
 		if (fa->farg == NULL)
 			return(-1);

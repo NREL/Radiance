@@ -30,7 +30,7 @@ register char  *s;
 		eputs("out of memory in savqstr");
 		quit(1);
 	}
-	for (cp = newp; *cp++ = *s++; )		/* inline strcpy() */
+	for (cp = newp; (*cp++ = *s++); )		/* inline strcpy() */
 		;
 	return(newp);				/* return new location */
 }

@@ -59,7 +59,7 @@ CUBE  *cu;
 
 	vloc = ABOVE | BELOW;		/* check vertices */
 	for (i = 0; i < f->nv; i++)
-		if (j = plocate(VERTEX(f,i), cumin, cumax))
+		if ( (j = plocate(VERTEX(f,i), cumin, cumax)) )
 			vloc &= j;
 		else
 			return(O_HIT);	/* vertex inside */

@@ -20,7 +20,7 @@ char	*argv[];
 	int	sect;
 
 	progname = argv[0];
-	if (argc < 5 | argc > 6)
+	if ((argc < 5) | (argc > 6))
 		goto userr;
 	mat = argv[1];
 	name = argv[2];
@@ -62,7 +62,7 @@ int	sect;
 	for (n = 0; nextloc > 0L; n++) {	/* get the section(s) */
 		lseek(fd, (off_t)nextloc, 0);
 		read(fd, (char *)&nextloc, sizeof(nextloc));
-		if (sect < 0 | n == sect) {
+		if ((sect < 0) | (n == sect)) {
 			read(fd, (char *)&hdsect, sizeof(HDGRID));
 			hdcompgrid(&hdsect);
 			putgrid(&hdsect);	/* print grid */

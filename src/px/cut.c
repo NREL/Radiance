@@ -120,6 +120,6 @@ struct index *ii,*io;	/* box ii will go into io, the other half into io+1 */
     }
     io[0].o = o1;
     io[0].freq = (freq>>1)-count;
-    io[1].freq = (freq+1>>1)+count;
+    io[1].freq = ((freq+1)>>1)+count;
     /* printf(" at %3d %d=%d+%d\n",io[1].o-off,freq,io[0].freq,io[1].freq); */
 }

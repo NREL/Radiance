@@ -187,7 +187,7 @@ char	*xe
 
 	xelen = strlen(xe);
 	for (i = 0; i < nfuncs; i++) {
-		if (func[i][0] == '\0' | func[i][0] == '0')
+		if ((func[i][0] == '\0') | (func[i][0] == '0'))
 			continue;
 		if (interpolate) {
 			printf("%s`%s(i):select(i,", func[i], locID);

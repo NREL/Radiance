@@ -490,12 +490,12 @@ scan2init()			/* prepare scanline arrays */
 	if (obarsize > 0) {
 		scoutbar = (COLOR **)malloc(obarsize*sizeof(COLOR *));
 		greybar = (float **)malloc(obarsize*sizeof(float *));
-		if (scoutbar == NULL | greybar == NULL)
+		if ((scoutbar == NULL) | (greybar == NULL))
 			goto memerr;
 		for (i = 0; i < obarsize; i++) {
 			scoutbar[i] = (COLOR *)malloc(ncols*sizeof(COLOR));
 			greybar[i] = (float *)malloc(ncols*sizeof(float));
-			if (scoutbar[i] == NULL | greybar[i] == NULL)
+			if ((scoutbar[i] == NULL) | (greybar[i] == NULL))
 				goto memerr;
 		}
 	} else {

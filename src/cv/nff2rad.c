@@ -427,7 +427,7 @@ cone()
 				progname);
 		exit(1);
 	}
-	if (invert = r0 < 0.) {
+	if ( (invert = r0 < 0.) ) {
 		r0 = -r0;
 		r1 = -r1;
 	}
@@ -547,7 +547,12 @@ fmterr:
  * $Author$ (Mark VandeWettering, drizzle.cs.uoregon.edu)
  * $Revision$
  * $Date$
- * $Log:	color.c,v $
+ * $Log: nff2rad.c,v $
+ * Revision 2.5  2003/02/22 02:07:23  greg
+ * Changes and check-in for 3.5 release
+ * Includes new source files and modifications not recorded for many years
+ * See ray/doc/notes/ReleaseNotes for notes between 3.1 and 3.5 release
+ *
  * Revision 1.2  88/09/12  12:53:47  markv
  * Fixed problem in LookupColorbyName, had return ; and return(0).
  * [ Thank you lint! ]

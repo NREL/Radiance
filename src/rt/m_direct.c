@@ -203,7 +203,7 @@ int  n;
 			pm[i][j] += nv[i]*h[j];
 		pm[3][j] = -od*h[j];
 	}
-	if (newdot > 0.0 ^ olddot > 0.0)	/* add mirroring */
+	if ((newdot > 0.0) ^ (olddot > 0.0))	/* add mirroring */
 		for (j = 0; j < 3; j++) {
 			for (i = 0; i < 3; i++)
 				pm[i][j] -= 2.*nv[i]*nv[j];

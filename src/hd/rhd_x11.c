@@ -595,7 +595,7 @@ XButtonPressedEvent	*ebut;
 	XMaskEvent(ourdisplay, ButtonReleaseMask, levptr(XEvent));
 	endx = levptr(XButtonReleasedEvent)->x;
 	endy = levptr(XButtonReleasedEvent)->y;
-	if (endx == startx | endy == starty) {
+	if ((endx == startx) | (endy == starty)) {
 		XBell(ourdisplay, 0);
 		return;
 	}

@@ -38,7 +38,7 @@ char	*argv[];
 		dupchecking++;
 		argv++; argc--;
 	}
-	if (argc < 1 | argc > 2) {
+	if ((argc < 1) | (argc > 2)) {
 		fprintf(stderr, "Usage: %s [-u] input.hdk [output.hdk]\n",
 				progname);
 		exit(1);

@@ -325,7 +325,7 @@ register GLYPH  *gl;
 					/* positive x axis cross test */
 	while (n--) {
 		if ((p0[1]<<1 > ylb) ^ (p1[1]<<1 > ylb)) {
-			tv = p0[0]<<1 > xlb | (p1[0]<<1 > xlb) << 1;
+			tv = (p0[0]<<1 > xlb) | ((p1[0]<<1 > xlb) << 1);
 			if (tv == 03)
 				ncross++;
 			else if (tv)

@@ -191,7 +191,7 @@ int	poll;
 		n = read(rtpd[pn].r, (char *)rtbuf,
 				4*sizeof(float)*RPACKSIZ*pqlen[pn]);
 		if (n < 0) {
-			if (errno == EINTR | errno == EAGAIN)
+			if ((errno == EINTR) | (errno == EAGAIN))
 				goto reread;
 			error(SYSTEM, "read error in get_packets");
 		}

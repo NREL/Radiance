@@ -129,12 +129,12 @@ FONT *fnt;
 	register FONT  *fl, *f;
 	register int  i;
 					/* check reference count */
-	if (fnt != NULL && (fnt->nref-- > 1 | retainfonts))
+	if (fnt != NULL && ((fnt->nref-- > 1) | retainfonts))
 		return;
 	head.next = fontlist;
 	fl = &head;
 	while ((f = fl->next) != NULL)
-		if ((fnt == NULL | fnt == f)) {
+		if ((fnt == NULL) | (fnt == f)) {
 			fl->next = f->next;
 			for (i = 0; i < 256; i++)
 				if (f->fg[i] != NULL)

@@ -421,7 +421,7 @@ register char	*kwd, *hdl;
 	while (islower(*hdl) ? toupper(*hdl) == *kwd++ : *hdl == *kwd++)
 		if (!*hdl++)
 			return(0);
-	return(!*kwd & *hdl == ']');
+	return((!*kwd) & (*hdl == ']'));
 }
 
 
@@ -985,7 +985,7 @@ register FILE	*fp;
 		if (isspace(c) || c == ',') {
 			while (isspace(c))
 				c = getc(fp);
-			if (c != EOF & c != ',')
+			if ((c != EOF) & (c != ','))
 				ungetc(c, fp);
 			*cp = '\0';
 			return(wrd);

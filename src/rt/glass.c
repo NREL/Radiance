@@ -73,7 +73,7 @@ register RAY  *r;
 	mirtest = transtest = 0;
 	mirdist = transdist = r->rot;
 						/* perturb normal */
-	if (hastexture = (DOT(r->pert,r->pert) > FTINY*FTINY)) {
+	if ( (hastexture = (DOT(r->pert,r->pert) > FTINY*FTINY)) ) {
 		pdot = raynormal(pnorm, r);
 	} else {
 		VCOPY(pnorm, r->ron);

@@ -87,7 +87,7 @@ double  omega;			/* light source size */
 
 				/* Fresnel estimate */
 	ldiff = np->rdiff;
-	if (np->specfl & SP_PURE && (np->rspec > FTINY & ldiff > FTINY))
+	if (np->specfl & SP_PURE && (np->rspec > FTINY) & (ldiff > FTINY))
 		ldiff *= 1. - FRESNE(fabs(ldot));
 
 	if (ldot > FTINY && ldiff > FTINY) {
@@ -198,7 +198,7 @@ register RAY  *r;
 	if ((nd.alpha2 *= nd.alpha2) <= FTINY)
 		nd.specfl |= SP_PURE;
 
-	if (hastexture = (DOT(r->pert,r->pert) > FTINY*FTINY)) {
+	if ( (hastexture = (DOT(r->pert,r->pert) > FTINY*FTINY)) ) {
 		nd.pdot = raynormal(nd.pnorm, r);	/* perturb normal */
 	} else {
 		VCOPY(nd.pnorm, r->ron);

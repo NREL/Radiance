@@ -52,7 +52,7 @@ typedef struct {
 VERTEX	*vlist = NULL;		/* our vertex list */
 int	nverts = 0;		/* number of vertices in our list */
 
-#define novert(i)	((i)<0|(i)>=nverts || !(vlist[i].flags&V_DEFINED))
+#define novert(i)	(((i)<0)|((i)>=nverts) || !(vlist[i].flags&V_DEFINED))
 
 #define CHUNKSIZ	128	/* vertex allocation chunk size */
 

@@ -459,7 +459,7 @@ char	**av;
 	if (put_material() < 0)
 		return(MG_EBADMAT);
 				/* get endpoints */
-	if ((v1 = c_getvert(av[1])) == NULL | (v2 = c_getvert(av[3])) == NULL)
+	if (((v1 = c_getvert(av[1])) == NULL) | ((v2 = c_getvert(av[3])) == NULL))
 		return(MG_EUNDEF);
 				/* get radius */
 	if (!isflt(av[2]))

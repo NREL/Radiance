@@ -249,7 +249,7 @@ register PACKHEAD	*p;
 	double	d;
 	register int	i;
 					/* get beam coordinates */
-	if (p->hd < 0 | p->hd >= HDMAX || hdlist[p->hd] == NULL)
+	if ((p->hd < 0) | (p->hd >= HDMAX) || hdlist[p->hd] == NULL)
 		error(INTERNAL, "bad holodeck number in disp_bundle");
 	if (!hdbcoord(gc, hdlist[p->hd], p->bi))
 		error(INTERNAL, "bad beam index in disp_bundle");

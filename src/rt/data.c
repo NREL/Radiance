@@ -78,7 +78,7 @@ char  *dname;
 							/* get dimensions */
 	if (fgetval(fp, 'i', (char *)&asize) <= 0)
 		goto scanerr;
-	if (asize <= 0 | asize > MAXDDIM) {
+	if ((asize <= 0) | (asize > MAXDDIM)) {
 		sprintf(errmsg, "bad number of dimensions for \"%s\"", dname);
 		error(USER, errmsg);
 	}
@@ -267,7 +267,7 @@ DATARRAY  *dta;
 		head.next = dtab[hval];
 		dpl = &head;
 		while ((dp = dpl->next) != NULL)
-			if ((dta == NULL | dta == dp)) {
+			if ((dta == NULL) | (dta == dp)) {
 				dpl->next = dp->next;
 				if (dp->type == DATATY)
 					free((void *)dp->arr.d);

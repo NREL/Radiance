@@ -66,7 +66,7 @@ char	*objfn;
 	group[0] = '\0';
 	lineno = 0; faceno = 0;
 					/* scan until EOF */
-	while (argc = getstmt(argv, fp)) {
+	while ( (argc = getstmt(argv, fp)) ) {
 		switch (argv[0][0]) {
 		case 'v':		/* vertex */
 			switch (argv[0][1]) {

@@ -285,9 +285,9 @@ RREAL	sp[MAXVERT][2];
 		for (j = 0; j < 4; j++) {	/* four corners */
 			for (i = 0; i < 3; i++) {
 				ap[i] = s->sloc[i];
-				if (j==1|j==2) ap[i] += s->ss[SU][i];
+				if ((j==1)|(j==2)) ap[i] += s->ss[SU][i];
 				else ap[i] -= s->ss[SU][i];
-				if (j==2|j==3) ap[i] += s->ss[SV][i];
+				if ((j==2)|(j==3)) ap[i] += s->ss[SV][i];
 				else ap[i] -= s->ss[SV][i];
 				if (s->sflags & SDISTANT) {
 					ap[i] *= 1. + ourview.vfore;

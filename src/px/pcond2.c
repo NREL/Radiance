@@ -87,7 +87,7 @@ nextscan()				/* read and condition next scanline */
 		mbscan(scanbuf, scanlen(&inpres), &mbcond);
 	else if (cwarpfile != NULL)		/* device color space warp */
 		cwscan(scanbuf, scanlen(&inpres), cwarp);
-	else if (lumf == cielum | inprims != outprims)
+	else if ((lumf == cielum) | (inprims != outprims))
 		matscan(scanbuf, scanlen(&inpres), mbcond.cmat);
 	nread++;
 	return(scanbuf);

@@ -112,8 +112,8 @@ int	x0, y0, x1, y1;
 
 	if (is_stump(&qtrunk))
 		return;
-	if (!qtMapLeaves((lim[0][0]=x0) <= 0 & (lim[1][0]=y0) <= 0 &
-		(lim[0][1]=x1) >= odev.hres-1 & (lim[1][1]=y1) >= odev.vres-1))
+	if (!qtMapLeaves(((lim[0][0]=x0) <= 0) & ((lim[1][0]=y0) <= 0) &
+		((lim[0][1]=x1) >= odev.hres-1) & ((lim[1][1]=y1) >= odev.vres-1)))
 		return;
 	redraw(&qtrunk, 0, 0, odev.hres, odev.vres, lim);
 }

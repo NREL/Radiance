@@ -136,7 +136,7 @@ int	len;
 					/* check arguments */
 	if (tmTop == NULL)
 		returnErr(TM_E_TMINVAL);
-	if (ls == NULL | luvs == NULL | len < 0)
+	if ((ls == NULL) | (luvs == NULL) | (len < 0))
 		returnErr(TM_E_ILLEGAL);
 					/* check package registration */
 	if (luv32Reg < 0) {
@@ -196,7 +196,7 @@ int	len;
 					/* check arguments */
 	if (tmTop == NULL)
 		returnErr(TM_E_TMINVAL);
-	if (ls == NULL | luvs == NULL | len < 0)
+	if ((ls == NULL) | (luvs == NULL) | (len < 0))
 		returnErr(TM_E_ILLEGAL);
 					/* check package registration */
 	if (luv24Reg < 0) {
@@ -256,7 +256,7 @@ int	len;
 					/* check arguments */
 	if (tmTop == NULL)
 		returnErr(TM_E_TMINVAL);
-	if (ls == NULL | l16s == NULL | len < 0)
+	if ((ls == NULL) | (l16s == NULL) | (len < 0))
 		returnErr(TM_E_ILLEGAL);
 					/* check scaling offset */
 	if (!FEQ(tmTop->inpsf, lastsf)) {

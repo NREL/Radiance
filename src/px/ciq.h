@@ -11,9 +11,9 @@
 extern "C" {
 #endif
 
-#define red(i) ((i)>>7&0xf8|4)	/* 5 bits red, 5 bits green, 5 bits blue */
-#define gre(i) ((i)>>2&0xf8|4)
-#define blu(i) ((i)<<3&0xf8|4)
+#define red(i) (((i)>>7&0xf8)|4)	/* 5 bits red, 5 bits green, 5 bits blue */
+#define gre(i) (((i)>>2&0xf8)|4)
+#define blu(i) (((i)<<3&0xf8)|4)
 #define len 32768
 
 extern int hist[len];	/* list of frequencies or pixelvalues for coded color */

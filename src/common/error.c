@@ -28,7 +28,7 @@ char  *emsg;
 {
 	register struct erract	*ep;
 
-	if (etype < 0 | etype >= NERRS)
+	if ((etype < 0) | (etype >= NERRS))
 		return;
 	ep = erract + etype;
 	if (ep->pf != NULL) {

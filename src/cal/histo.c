@@ -113,7 +113,7 @@ char	*argv[]
 		minv -= 0.5;
 		ndiv = maxv - minv + 0.5;
 	}
-	if (minv >= maxv | ndiv <= 0)
+	if ((minv >= maxv) | (ndiv <= 0))
 		goto userr;
 	if (ndiv > MAXDIV) {
 		fprintf(stderr, "%s: maximum number of divisions: %d\n",

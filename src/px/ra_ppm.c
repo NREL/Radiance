@@ -269,7 +269,7 @@ int  (*getscan)();
 	for (y = ymax-1; y >= 0; y--) {
 		if ((*getscan)(scanout, xmax, stdin) < 0)
 			quiterr("error reading Pixmap");
-		for (x = gamcor>1.01|gamcor<0.99?xmax:0; x--; ) {
+		for (x = (gamcor>1.01)|(gamcor<0.99)?xmax:0; x--; ) {
 			colval(scanout[x],RED) =
 					pow(colval(scanout[x],RED), gamcor);
 			colval(scanout[x],GRN) =
@@ -309,7 +309,7 @@ int  binary, grey;
 		for (x = grey?xmax:0; x--; )
 			colval(scanin[x],GRN) = bright(scanin[x]);
 		d = 1./gamcor;
-		for (x = d>1.01|d<0.99?xmax:0; x--; ) {
+		for (x = (d>1.01)|(d<0.99)?xmax:0; x--; ) {
 			colval(scanin[x],GRN) = pow(colval(scanin[x],GRN), d);
 			if (!grey) {
 				colval(scanin[x],RED) =

@@ -28,7 +28,7 @@ register FILE  *fp;
 		c = getc(fp);
 	while (isspace(c));
 					/* check for quote */
-	if ((c == '"' | c == '\'')) {
+	if ((c == '"') | (c == '\'')) {
 		quote = c;
 		c = getc(fp);
 	}
@@ -44,7 +44,7 @@ register FILE  *fp;
 		c = getc(fp);
 	} while (c != EOF && !(quote ? c==quote : isspace(c)));
 	*cp = '\0';
-	if ((c != EOF & !quote))	/* replace space */
+	if ((c != EOF) & (!quote))	/* replace space */
 		ungetc(c, fp);
 	return(s);
 }

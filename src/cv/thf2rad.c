@@ -78,7 +78,7 @@ char	*name, *file;
 		if (name == NULL)
 			name = file;
 	}
-	for (cp = nambuf; *cp = *name++; cp++)
+	for (cp = nambuf; (*cp = *name++); cp++)
 		;
 				/* get objects from file */
 	on = 0;

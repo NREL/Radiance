@@ -84,7 +84,7 @@ register struct driver  *d;
 	for (cp = mybuf; *cp; cp++)
 		;
 	comstart = cp;
-	while (*cp++ = *b)
+	while ( (*cp++ = *b) )
 		if (cp >= mybuf+sizeof(mybuf)) {
 			*comstart = '\0';
 			return;		/* what should I do about this? */

@@ -79,7 +79,7 @@ register RAY  *r;
 
 	raytexture(r, m->omod);			/* get modifiers */
 
-	if (hastexture = DOT(r->pert,r->pert) > FTINY*FTINY)
+	if ( (hastexture = DOT(r->pert,r->pert) > FTINY*FTINY) )
 		cos1 = raynormal(dnorm, r);	/* perturb normal */
 	else {
 		VCOPY(dnorm, r->ron);

@@ -263,7 +263,7 @@ char	*id;
 		*cp2++ = 'O';
 	}
 	for (cp = id; cp < end; *cp2++ = *cp++) {
-		if (*cp < '!' | *cp > '~')	/* limit to visible chars */
+		if ((*cp < '!') | (*cp > '~'))	/* limit to visible chars */
 			*cp = '?';
 		diff += *cp != *cp2;
 	}
@@ -428,7 +428,7 @@ FUNARGS	*fa;
 	register char	*cp;
 	register int	i;
 
-	if (fa->nfargs < 9 | fa->nfargs % 3)
+	if ((fa->nfargs < 9) | (fa->nfargs % 3))
 		return(-1);
 	setmat(mod);
 	setobj(id);

@@ -170,7 +170,7 @@ double  omega;			/* light source size */
 		/*
 		 *  Compute reflected non-diffuse component.
 		 */
-		if (np->mp->otype == MAT_MFUNC | np->mp->otype == MAT_MDATA)
+		if ((np->mp->otype == MAT_MFUNC) | (np->mp->otype == MAT_MDATA))
 			multcolor(ctmp, np->mcolor);
 		dtmp = ldot * omega * np->rspec;
 		scalecolor(ctmp, dtmp);
@@ -179,7 +179,7 @@ double  omega;			/* light source size */
 		/*
 		 *  Compute transmitted non-diffuse component.
 		 */
-		if (np->mp->otype == MAT_TFUNC | np->mp->otype == MAT_TDATA)
+		if ((np->mp->otype == MAT_TFUNC) | (np->mp->otype == MAT_TDATA))
 			multcolor(ctmp, np->mcolor);
 		dtmp = -ldot * omega * np->tspec;
 		scalecolor(ctmp, dtmp);
@@ -204,7 +204,7 @@ register RAY  *r;
 	register MFUNC  *mf;
 	register int  i;
 						/* check arguments */
-	if (m->oargs.nsargs < 10 | m->oargs.nfargs < 9)
+	if ((m->oargs.nsargs < 10) | (m->oargs.nfargs < 9))
 		objerror(m, USER, "bad # arguments");
 	nd.mp = m;
 	nd.pr = r;
@@ -335,8 +335,8 @@ register RAY  *r;
 	if (r->crtype & SHADOW)
 		return(1);
 						/* check arguments */
-	if (m->oargs.nsargs < (hasdata(m->otype)?4:2) | m->oargs.nfargs <
-			(m->otype==MAT_TFUNC|m->otype==MAT_TDATA?6:4))
+	if ((m->oargs.nsargs < (hasdata(m->otype)?4:2)) | (m->oargs.nfargs <
+			((m->otype==MAT_TFUNC)|(m->otype==MAT_TDATA)?6:4)))
 		objerror(m, USER, "bad # arguments");
 						/* check for back side */
 	if (r->rod < 0.0) {
@@ -359,7 +359,7 @@ register RAY  *r;
 						/* get specular component */
 	nd.rspec = m->oargs.farg[3];
 						/* compute transmittance */
-	if (m->otype == MAT_TFUNC | m->otype == MAT_TDATA) {
+	if ((m->otype == MAT_TFUNC) | (m->otype == MAT_TDATA)) {
 		nd.trans = m->oargs.farg[4]*(1.0 - nd.rspec);
 		nd.tspec = nd.trans * m->oargs.farg[5];
 		dtmp = nd.trans - nd.tspec;

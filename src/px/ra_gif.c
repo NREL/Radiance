@@ -118,7 +118,7 @@ char  *argv[];
 				/* set up gamma correction */
 	setcolrgam(gamv);
 				/* figure out the bits per pixel */
-	if (ncolors < 2 | ncolors > MAXCOLORS)
+	if ((ncolors < 2) | (ncolors > MAXCOLORS))
 		ncolors = MAXCOLORS;
 	for (bitsperpix = 1; ncolors > 1<<bitsperpix; bitsperpix++)
 		;

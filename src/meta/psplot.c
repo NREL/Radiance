@@ -318,7 +318,7 @@ register PRIMITIVE	*p;
 		printf("%d %d lineto\n", curx = p->xy[XMX], cury = y2);
 	} else if (curx == p->xy[XMX] && cury == y2) {
 		printf("%d %d lineto\n", curx = p->xy[XMN], cury = y1);
-	} else if (right = !right) {
+	} else if ( (right = !right) ) {
 		printf("%d %d moveto ", p->xy[XMN], y1);
 		printf("%d %d lineto\n", curx = p->xy[XMX], cury = y2);
 	} else {

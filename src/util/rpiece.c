@@ -452,7 +452,7 @@ int  xpos, ypos;
 	int  hr, vr;
 	register int  y;
 				/* check bounds */
-	if (xpos < 0 | ypos < 0 | xpos >= hmult | ypos >= vmult) {
+	if ((xpos < 0) | (ypos < 0) | (xpos >= hmult) | (ypos >= vmult)) {
 		fprintf(stderr, "%s: requested piece (%d,%d) out of range\n",
 				progname, xpos, ypos);
 		exit(cleanup(1));
@@ -460,7 +460,7 @@ int  xpos, ypos;
 				/* check header from rpict */
 	guard_io();
 	getheader(fromrp, NULL, NULL);
-	if (!fscnresolu(&hr, &vr, fromrp) || hr != hres | vr != vres) {
+	if (!fscnresolu(&hr, &vr, fromrp) || (hr != hres) | (vr != vres)) {
 		fprintf(stderr, "%s: resolution mismatch from %s\n",
 				progname, rpargv[0]);
 		exit(cleanup(1));

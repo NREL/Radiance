@@ -381,7 +381,7 @@ register COLR  c1, c2;
 
 	j = 4;				/* check exponents first! */
 	while (j--)
-		if (i = c1[j] - c2[j])
+		if ( (i = c1[j] - c2[j]) )
 			return(i);
 	return(0);
 }

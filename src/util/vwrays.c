@@ -100,7 +100,7 @@ char	*argv[];
 		default:
 			goto userr;
 		}
-	if (i > argc | i+2 < argc)
+	if ((i > argc) | (i+2 < argc))
 		goto userr;
 	if (i < argc) {
 		rval = viewfile(argv[i], &vw, &rs);

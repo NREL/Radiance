@@ -41,7 +41,7 @@ char	*argv[];
 	}
 	if (isint(argv[1])) {
 		i = atoi(argv[1]);
-		if (i < 1 | i > MG_VMAJOR) {
+		if ((i < 1) | (i > MG_VMAJOR)) {
 			fprintf(stderr, "%s: bad version number: %d\n",
 					argv[0], i);
 			exit(1);

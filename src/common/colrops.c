@@ -135,7 +135,7 @@ int	len;
 {
 	register int	nexpo;
 
-	if (g_mant == NULL | g_nexp == NULL)
+	if ((g_mant == NULL) | (g_nexp == NULL))
 		return(-1);
 	while (len-- > 0) {
 		nexpo = g_nexp[scan[0][RED]];

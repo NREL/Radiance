@@ -488,7 +488,7 @@ register CUBE  *scene;
 	}
 	cxset[0] = 0;
 	raymove(curpos, cxset, sflags, r, scene);
-	return(r->ro != NULL & r->ro != &Aftplane);
+	return((r->ro != NULL) & (r->ro != &Aftplane));
 }
 
 

@@ -888,7 +888,7 @@ int	rvr;
 		quit(1);
 	}
 	usepinterp = (nblur > 1);
-	usepfilt = pfiltalways | ep==NULL;
+	usepfilt = pfiltalways | (ep==NULL);
 	if (ep != NULL && !strcmp(ep, "1"))
 		ep = "+0";
 	nora_rgbe = strcmp(vval(OVERSAMP),"1") || ep==NULL ||

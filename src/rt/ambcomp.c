@@ -34,7 +34,7 @@ AMBSAMP  *d1, *d2;
 {
 	register int  c;
 
-	if (c = d1->t - d2->t)
+	if ( (c = d1->t - d2->t) )
 		return(c);
 	return(d1->p - d2->p);
 }

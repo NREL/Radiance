@@ -33,7 +33,7 @@ char  *argv[];
 	for (cp = format; isdigit(*cp); cp++)
 		left = left*10 + *cp - '0';
 	right = 0;
-	if (anchor = *cp)
+	if ( (anchor = *cp) )
 		for (cp++; isdigit(*cp); cp++)
 			right = right*10 + *cp - '0';
 	if (*cp)

@@ -76,7 +76,7 @@ int	b;
 	bneighrem = 0;
 	for (i = 9; i--; )
 		for (j = 9; j--; ) {
-			if (i == 4 & j == 4)	/* don't copy starting beam */
+			if ((i == 4) & (j == 4))	/* don't copy starting beam */
 				continue;
 			if (wg0[i].w == wg1[j].w)
 				continue;
@@ -112,7 +112,7 @@ int	(*cf)();
 	bqueue = (int *)malloc(maxcnt*sizeof(int));
 	bflags = (uint32 *)calloc((nbeams(hp)>>5)+1,
 			sizeof(uint32));
-	if (bqueue == NULL | bflags == NULL)
+	if ((bqueue == NULL) | (bflags == NULL))
 		error(SYSTEM, "out of memory in clumpbeams");
 					/* mark empty beams as done */
 	for (i = nbeams(hp); i > 0; i--)

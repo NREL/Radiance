@@ -106,7 +106,7 @@ int	tight;
 				d*(c*d-b*e) + f*b*b);
 		while (n-- > 0) {
 			if (gc->w>>1 == gi[i] &&
-					(gc->w&1) ^ root[n] < gp[gc->w>>1]) {
+					(gc->w&1) ^ (root[n] < gp[gc->w>>1])) {
 				if (gc->w&1)
 					gcl->gmin[i] = -FHUGE;
 				else
@@ -132,7 +132,7 @@ int	tight;
 			n = quadratic(root, a, b*yex+d, yex*(yex*c+e)+f);
 			while (n-- > 0) {
 				if (gc->w>>1 == gi[i] &&
-					(gc->w&1) ^ root[n] < gp[gc->w>>1])
+					(gc->w&1) ^ (root[n] < gp[gc->w>>1]))
 					continue;
 				if (root[n] < gcl->gmin[i])
 					gcl->gmin[i] = root[n];

@@ -90,7 +90,7 @@ VARIABLE	*(*mv)();
 	if (vp == NULL)
 		return(-1);
 					/* assign new value */
-	if (i = vp->nass) {
+	if ( (i = vp->nass) ) {
 		cp = vp->value;
 		while (i--)
 			while (*cp++)
@@ -140,7 +140,7 @@ register int	n;
 {
 	register char	*cp;
 
-	if (vval(vn) == NULL | n < 0 | n >= vdef(vn))
+	if ((vval(vn) == NULL) | (n < 0) | (n >= vdef(vn)))
 		return(NULL);
 	cp = vval(vn);
 	while (n--)

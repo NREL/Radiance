@@ -72,14 +72,14 @@ char  *argv[];
 		if (argv[a][0] == '-')
 			switch (argv[a][1]) {
 			case 'm':
-				if (argv[a][2] | a+1 >= argc)
+				if (argv[a][2] | (a+1 >= argc))
 					break;
 				a++;
 				if (newmod == NULL)
 					newmod = argv[a];
 				continue;
 			case 'n':
-				if (argv[a][2] | a+1 >= argc)
+				if (argv[a][2] | (a+1 >= argc))
 					break;
 				a++;
 				if (idprefix == NULL)
@@ -121,7 +121,7 @@ char  *argv[];
 
 	a += xf(&tot, argc-a, argv+a);
 
-	if (reverse = tot.sca < 0.0)
+	if ( (reverse = tot.sca < 0.0) )
 		tot.sca = -tot.sca;
 	if (invert)
 		reverse = !reverse;
@@ -220,7 +220,7 @@ int  ac, fi;
 		skipspaces:
 			while (isspace(*cp))	/* nullify spaces */
 				*cp++ = '\0';
-			if ((*cp == '"' | *cp == '\''))
+			if ((*cp == '"') | (*cp == '\''))
 				inquote = *cp++;
 			if (!*cp)		/* all done? */
 				break;

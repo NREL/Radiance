@@ -64,7 +64,7 @@ CUBE  *cu;
 				v1[j] += cu->cusize;
 		}
 		multp3(v2, v1, fxf->b.xfm);
-		if (j = plocate(v2, cumin, cumax))
+		if ( (j = plocate(v2, cumin, cumax)) )
 			vout++;
 		vloc &= j;
 	}
@@ -85,7 +85,7 @@ CUBE  *cu;
 				v1[j] += cu1->cusize;
 		}
 		multp3(vert[i], v1, fxf->f.xfm);
-		if (j = plocate(vert[i], cumin, cumax))
+		if ( (j = plocate(vert[i], cumin, cumax)) )
 			vloc &= j;
 		else
 			return(O_HIT);	/* vertex inside */
