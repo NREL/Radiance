@@ -664,8 +664,10 @@ register char	*op;
 	else
 		op = addarg(op, "-ds .3");
 	op = addarg(op, "-dt .1 -dc .5 -dr 1 -sj .7 -st .15");
-	sprintf(op, " -ab %d", overture=vint(INDIRECT));
-	op += strlen(op);
+	if (overture = vint(INDIRECT)) {
+		sprintf(op, " -ab %d", overture);
+		op += strlen(op);
+	}
 	if (vdef(AMBFILE)) {
 		sprintf(op, " -af %s", vval(AMBFILE));
 		op += strlen(op);
