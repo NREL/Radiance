@@ -107,7 +107,7 @@ char  *s, *ds;
 	register char  *cp;
 
 	cp = iskip(s);
-	return(cp != NULL && strchr(*cp, ds) != NULL);
+	return(cp != NULL && strchr(ds, *cp) != NULL);
 }
 
 
@@ -127,5 +127,5 @@ char  *s, *ds;
 	register char  *cp;
 
 	cp = fskip(s);
-	return(cp != NULL && strchr(*cp, ds) != NULL);
+	return(cp != NULL && strchr(ds, *cp) != NULL);
 }
