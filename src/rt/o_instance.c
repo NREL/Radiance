@@ -25,21 +25,19 @@ register RAY  *r;
 	register int  i;
 					/* get the octree */
 	in = getinstance(o, IO_ALL);
-					/* copy old ray */
+					/* duplicate and clear ray */
 	copystruct(&rcont, r);
-					/* transform it */
-	rcont.rno = raynum++;
-	rcont.ro = NULL;
-	rcont.rot = FHUGE;
+	rayclear(&rcont);
+					/* transform ray to new space */
 	multp3(rcont.rorg, r->rorg, in->x.b.xfm);
 	multv3(rcont.rdir, r->rdir, in->x.b.xfm);
 	for (i = 0; i < 3; i++)
 		rcont.rdir[i] /= in->x.b.sca;
 					/* trace it */
 	if (!localhit(&rcont, &in->obj->scube))
-		return(0);		/* missed */
+		return(0);			/* missed */
 	if (rcont.rot * in->x.f.sca >= r->rot)
-		return(0);		/* not close enough */
+		return(0);			/* not close enough */
 
 	if (o->omod != OVOID) {		/* if we have modifier, use it */
 		r->ro = o;

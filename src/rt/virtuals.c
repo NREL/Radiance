@@ -338,7 +338,8 @@ register int  sn;	/* target source number */
 			continue;
 		nok++;
 					/* check against obstructions */
-		srcray(&sr, NULL, sn);
+		rayclear(&sr);
+		sr.revf = raytrace;
 		rayvalue(&sr);
 		if (bright(sr.rcol) > FTINY)
 			nhit++;
