@@ -61,6 +61,8 @@ octdone()			/* free EVERYTHING */
 	register int	i;
 
 	for (i = 0; i < MAXOBLK; i++) {
+		if (octblock[i] == NULL)
+			break;
 		bfree((char *)octblock[i], (unsigned)256*8*sizeof(OCTREE));
 		octblock[i] = NULL;
 	}
