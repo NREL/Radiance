@@ -58,7 +58,7 @@ $21=$5*4*cx*cy; $22=$5*4*cx*sy; $23=$5*4*sx*cy; $24=$5*4*sx*sy;
 $25=$3; $26=$4; $27=$5;
 cx=cos(wx); cy=cos(wy);
 sx=sin(wx); sy=sin(wy);
-wx=2*PI*($1+.5)/xres; wy=2*PI*($2+.5)/yres;
+wx=2*PI/xres*($1+.5); wy=2*PI/yres*($2+.5);
 '_EOF_'
 cat > $td/fsub.cal << '_EOF_'
 PI:3.14159265358979323846;
@@ -70,7 +70,7 @@ bo=bi(1)*bm/(bm+bcx*cx+bcy*cy+bsx*sx+bsy*sy
 		+bcxcy*cx*cy+bcxsy*cx*sy+bsxcy*sx*cy+bsxsy*sx*sy);
 cx=cos(wx); cy=cos(wy);
 sx=sin(wx); sy=sin(wy);
-wx=2*PI*(x+.5)/xres; wy=2*PI*(y+.5)/yres;
+wx=2*PI/xres*(x+.5); wy=2*PI/yres*(y+.5);
 '_EOF_'
 foreach f ($*)
 	if ( $?verb ) then
@@ -95,16 +95,14 @@ _EOF_
 		echo computing Fourier coefficients...
 	endif
 	pfilt -1 -x 32 -y 32 $td/pf | pvalue -h \
-		| rcalc -f $td/coef.cal -e 'xres=32;yres=32' \
+		| rcalc -e 'xres:32;yres:32' -f $td/coef.cal \
 		| total -m | rcalc -o $td/coef.fmt \
 		> $td/coef
 	if ( $?verb ) then
 		cat $td/coef
 		echo removing low frequencies...
 	endif
-	pcomb -f $td/coef -f $td/fsub.cal \
-		-e "xres=$resolu[1];yres=$resolu[2]" \
-		$td/pf > $td/hf
+	pcomb -f $td/coef -f $td/fsub.cal $td/pf > $td/hf
 	donefsub:
 	if ( $?blend ) then
 		if ( $?verb ) then
