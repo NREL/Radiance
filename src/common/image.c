@@ -205,7 +205,7 @@ FVECT  ip;
 register VIEW  *v;
 FVECT  p;
 {
-	double  d;
+	double  d, d2;
 	FVECT  disp;
 
 	disp[0] = p[0] - v->vp[0];
@@ -218,7 +218,7 @@ FVECT  p;
 		break;
 	case VT_PER:			/* perspective view */
 		d = DOT(disp,v->vdir);
-		ip[2] = sqrt(DOT(disp,disp));
+		ip[2] = VLEN(disp);
 		if (d < 0.0) {		/* fold pyramid */
 			ip[2] = -ip[2];
 			d = -d;
@@ -240,15 +240,14 @@ FVECT  p;
 		ip[2] -= v->vfore;
 		break;
 	case VT_CYL:			/* cylindrical panorama */
-		ip[2] = DOT(disp,v->vdir);
 		d = DOT(disp,v->hvec);
-		ip[0] = 180.0/PI * atan2(d,ip[2]) / v->horiz + 0.5 - v->hoff;
-		ip[1] = DOT(disp,v->vvec)/v->vn2 + 0.5 - v->voff;
+		d2 = DOT(disp,v->vdir);
+		ip[0] = 180.0/PI * atan2(d,d2) / v->horiz + 0.5 - v->hoff;
+		d = 1.0/sqrt(d*d + d2*d2);
+		ip[1] = DOT(disp,v->vvec)*d/v->vn2 + 0.5 - v->voff;
+		ip[2] = VLEN(disp);
 		if (v->vfore > FTINY)
-			ip[2] = sqrt(DOT(disp,disp)) *
-				(1.0 - v->vfore/sqrt(d*d + ip[2]*ip[2]));
-		else
-			ip[2] = sqrt(DOT(disp,disp));
+			ip[2] *= (1.0 - v->vfore*d);
 		return;
 	case VT_ANG:			/* angular fisheye */
 		ip[0] = 0.5 - v->hoff;
