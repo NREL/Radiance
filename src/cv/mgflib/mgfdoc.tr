@@ -5,8 +5,9 @@
 .vs 12
 .nr PD .5v
 .ds LF MGF
-.ds RF Version 1.0
-.DA May 1995
+.ds RF Version 1.1
+.\" !Remember to update date on each modification!
+.DA February 1996
 .TL
 The Materials and Geometry Format
 .AU
@@ -42,7 +43,7 @@ and sample scenes and objects at the web site,
 "http://radsite.lbl.gov/mgf/HOME.html".
 .RE
 .LP
-The standard parser provides both immediate and a long-term
+The standard parser provides both immediate and long-term
 benefits, since it presents a programming interface that is more
 stable even than the language itself.
 Unlike AutoCAD DXF and other de facto standards, a change to the
@@ -2501,11 +2502,12 @@ SEE ALSO
 .NH
 MGF Translators
 .LP
-Initially, there are five translators for MGF data, but only
-two of these are distributed with the MGF parser itself,
-.I mgfilt
+Initially, there are six translators for MGF data, and
+three of these are distributed with the MGF parser itself,
+.I mgfilt,
+.I mgf2inv
 and
-.I mgf2inv.
+.I 3ds2mgf.
 Two of the other translators,
 .I mgf2rad
 and
@@ -2518,7 +2520,7 @@ package\(dg.
 nestor.epfl.ch, or by WWW from
 "http://radsite.lbl.gov/radiance/HOME.html"
 .FE
-The fifth translator,
+The sixth translator,
 .I mgf2meta,
 converts to a 2-dimensional line plot, and is also
 distributed with Radiance.
@@ -2539,6 +2541,10 @@ translators that have not yet been updated properly.
 Mgf2inv converts from MGF to Inventor or VRML format.
 Some information is lost, because these formats do not support
 physical light sources or materials.
+.LP
+3ds2mgf converts from 3D Studio binary format to MGF.
+Care must be taken to correct for errors in the material descriptions,
+since 3D Studio is completely non-physical.
 .ds LH Translators
 .ds RH MGFILT
 .bp
@@ -2649,7 +2655,111 @@ mgf2inv -vrml myscene.mgf > myscene.iv
 .SH
 SEE ALSO
 .LP
-mgf2rad, mgfilt, rad2mgf
+mgf2rad(1), mgfilt(1), 3ds2mgf(1), rad2mgf(1)
+.ds RH 3DS2MGF
+.bp
+.SH
+NAME
+.LP
+3ds2mgf - convert 3D Studio binary file to Materials and Geometry Format
+.SH
+SYNOPSIS
+.LP
+.B 3ds2mgf
+.B input
+[
+.B output
+]
+[
+.B -lMatlib
+][
+.B -xObjname
+][
+.B -sAngle
+][
+.B -aAnimfile
+][
+.B -fN
+]
+.SH
+DESCRIPTION
+.LP
+.I 3ds2mgf
+converts a 3D Studio binary scene description
+to the Materials and Geometry Format (MGF).
+If no output file name is given, the input root name
+will be taken as the output root, and an "mgf" extension
+will be added.
+This file will contain any light sources and materials, and an include
+statement for a similarly named file ending in "inc", which will contain
+the MGF geometry of all the translated 3DS meshes.
+.LP
+The MGF material names and properties
+for the surfaces will be those assigned in 3D Studio,
+unless they are named in one or more MGF material libraries given in a
+.I -l
+option.
+.LP
+The
+.I -x
+option may be used to exclude a named object from the output.
+.LP
+The
+.I -s
+option may be used to adjust automatic mesh smoothing such that adjacent
+triangle faces with less than the given angle between them (in degrees)
+will be smoothed.
+A value of zero turns smoothing off.
+The default value is 60 degrees.
+.LP
+The
+.I -a
+option may be used to specify a 3D Studio animation file, and together with the
+.I -f
+option,
+.I 3ds2mgf
+will generate a scene description for the specified frame.
+.LP
+Note that there are no spaces between the options and their arguments.
+.SH
+LIMITATIONS
+.LP
+Obviously, since 3D Studio has no notion of physical materials, the
+translation to MGF material descriptions is very ad hoc, and it will
+usually be necessary to edit the materials and light sources in
+the output file or replace materials with proper entries from a material
+library using the
+.I -l
+option.
+.LP
+With smoothing turned on (i.e., a non-zero value for the
+.I -s
+option), vertices in the MGF output will not be linked in a proper
+mesh for each object.
+This is due to the way the automatic smoothing code was originally
+written, and is too difficult to repair.
+If a good mesh is needed, then smoothing must be turned off.
+.SH
+EXAMPLES
+.LP
+To convert a 3D Studio robot model to MGF without smoothing.
+(Output will be put into "robot.mgf" and "robot.inc".)
+.IP
+3ds2mgf robot.3ds -s0
+.LP
+To convert a DC10 jet model to MGF using a hand-created material library:
+.IP
+3ds2mgf dc10.3ds -ldc10mat.mgf
+.SH
+AUTHORS
+.LP
+Steve Anger, Jeff Bowermaster and Greg Ward
+.br
+Extended from 3ds2pov 1.8.
+.SH
+SEE ALSO
+.LP
+mgf2inv(1), mgf2meta(1), mgf2rad(1)
 .ds RH MGF2RAD
 .bp
 .SH
