@@ -51,6 +51,14 @@ static float  xyz2rgbmat[3][3] = {	/* XYZ to RGB */
 	 (CIE_x_r*CIE_y_g - CIE_x_g*CIE_y_r)/CIE_C_bD}
 };
 
+static float  rgb2xyzmat[3][3] = {	/* RGB to XYZ */
+	{CIE_x_r*CIE_C_rD/CIE_D,CIE_x_g*CIE_C_gD/CIE_D,CIE_x_b*CIE_C_bD/CIE_D},
+	{CIE_y_r*CIE_C_rD/CIE_D,CIE_y_g*CIE_C_gD/CIE_D,CIE_y_b*CIE_C_bD/CIE_D},
+	{(1.-CIE_x_r-CIE_y_r)*CIE_C_rD/CIE_D,
+	 (1.-CIE_x_g-CIE_y_g)*CIE_C_gD/CIE_D,
+	 (1.-CIE_x_b-CIE_y_b)*CIE_C_bD/CIE_D}
+};
+
 
 
 spec_rgb(col, s, e)		/* compute RGB color from spectral range */
@@ -110,4 +118,16 @@ register COLOR  rgbcolor, ciecolor;
 		if (rgbcolor[i] < 0.0)
 			rgbcolor[i] = 0.0;
 	}
+}
+
+
+rgb_cie(ciecolor, rgbcolor)		/* convert RGB to CIE */
+register COLOR  ciecolor, rgbcolor;
+{
+	register int  i;
+
+	for (i = 0; i < 3; i++)
+		ciecolor[i] =	rgb2xyzmat[i][0]*rgbcolor[0] +
+				rgb2xyzmat[i][1]*rgbcolor[1] +
+				rgb2xyzmat[i][2]*rgbcolor[2] ;
 }
