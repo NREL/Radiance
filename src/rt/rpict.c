@@ -12,19 +12,20 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "ray.h"
 
+#include  <sys/types.h>
+
 #ifndef NIX
 #ifdef BSD
 #include  <sys/time.h>
 #include  <sys/resource.h>
 #else
-#include  <sys/types.h>
 #include  <sys/times.h>
+#include  <sys/utsname.h>
 #include  <limits.h>
+#endif
+#endif
+
 extern time_t	time();
-#endif
-#else
-extern unsigned long	time();
-#endif
 
 #include  <signal.h>
 
@@ -86,9 +87,9 @@ int  ralrm = 0;				/* seconds between reports */
 
 double	pctdone = 0.0;			/* percentage done */
 
-unsigned long  tlastrept = 0L;		/* time at last report */
+time_t  tlastrept = 0L;			/* time at last report */
 
-extern unsigned long  tstart;		/* starting time */
+extern time_t  tstart;			/* starting time */
 
 extern unsigned long  nrays;		/* number of rays traced */
 
@@ -132,15 +133,17 @@ int  code;
 #ifndef NIX
 report()		/* report progress */
 {
-	char  hostname[128];
 	double  u, s;
 #ifdef BSD
+	char  hostname[257];
 	struct rusage  rubuf;
 #else
 	struct tms  tbuf;
+	struct utsname  nambuf;
+#define hostname  nambuf.sysname
 #endif
 
-	tlastrept = time((unsigned long *)NULL);
+	tlastrept = time((time_t *)NULL);
 #ifdef BSD
 	getrusage(RUSAGE_SELF, &rubuf);
 	u = rubuf.ru_utime.tv_sec + rubuf.ru_utime.tv_usec/1e6;
@@ -148,23 +151,25 @@ report()		/* report progress */
 	getrusage(RUSAGE_CHILDREN, &rubuf);
 	u += rubuf.ru_utime.tv_sec + rubuf.ru_utime.tv_usec/1e6;
 	s += rubuf.ru_stime.tv_sec + rubuf.ru_stime.tv_usec/1e6;
+	gethostname(hostname, sizeof(hostname));
 #else
 	times(&tbuf);
 	u = ( tbuf.tms_utime + tbuf.tms_cutime ) / CLK_TCK;
 	s = ( tbuf.tms_stime + tbuf.tms_cstime ) / CLK_TCK;
+	uname(&nambuf);
 #endif
-	gethostname(hostname, sizeof(hostname));
 
 	sprintf(errmsg,
 		"%lu rays, %4.2f%% after %.3fu %.3fs %.3fr hours on %s\n",
 			nrays, pctdone, u/3600., s/3600.,
 			(tlastrept-tstart)/3600., hostname);
 	eputs(errmsg);
+#undef hostname
 }
 #else
 report()		/* report progress */
 {
-	tlastrept = time((unsigned long *)NULL);
+	tlastrept = time((time_t *)NULL);
 	sprintf(errmsg, "%lu rays, %4.2f%% after %5.4f hours\n",
 			nrays, pctdone, (tlastrept-tstart)/3600.0);
 	eputs(errmsg);
@@ -424,7 +429,7 @@ char  *zfile, *oldfile;
 			goto writerr;
 							/* record progress */
 		pctdone = 100.0*(vres-1-ypos)/vres;
-		if (ralrm > 0 && time((unsigned long *)NULL) >= tlastrept+ralrm)
+		if (ralrm > 0 && time((time_t *)NULL) >= tlastrept+ralrm)
 			report();
 #ifndef	 BSD
 		else
