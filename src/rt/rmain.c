@@ -587,21 +587,24 @@ char  *argv[];
 #endif
 			octname == NULL)
 		error(USER, "missing octree argument");
+					/* set up output */
 #ifdef  PERSIST
 	if (persist) {
 #if  RPICT
-		if (outfile != NULL | zfile != NULL | recover != NULL)
-			error(USER, "persist option used with -o, -r or -z");
+		if (recover != NULL)
+			error(USER, "persist option used with recover file");
 		if (seqstart <= 0)
 			error(USER, "persist option only for sequences");
+		if (outfile == NULL)
 #endif
 		duped1 = dup(fileno(stdout));	/* don't lose our output */
 		openheader();
 	}
-#endif
+#else
 #if  RPICT
 	if (outfile != NULL)
 		openheader();
+#endif
 #endif
 #ifdef	MSDOS
 #if  RTRACE
@@ -629,9 +632,11 @@ char  *argv[];
 
 #ifdef  PERSIST
 	if (persist) {
-		fflush(stdout);			/* reconnect stdout */
-		dup2(duped1, fileno(stdout));
-		close(duped1);
+		fflush(stdout);
+		if (outfile == NULL) {		/* reconnect stdout */
+			dup2(duped1, fileno(stdout));
+			close(duped1);
+		}
 		if (persist == 2) {	/* multiprocessing */
 			preload_objs();		/* preload scene */
 			while ((rval=fork()) == 0) {	/* keep on forkin' */
@@ -643,10 +648,15 @@ char  *argv[];
 				error(SYSTEM, "cannot fork child for persist function");
 			pfdetach();
 			persist = 0;		/* parent shan't persist */
+			if (outfile == NULL)
+				dupheader();
+			else			/* keep open so attach waits */
+				duped1 = dup(fileno(stdout));
 		}
-		dupheader();
 	}
 runagain:
+	if (persist && outfile == NULL)
+		dupheader();
 #endif
 #if  RPICT
 	rpict(seqstart, outfile, zfile, recover);
@@ -674,7 +684,6 @@ runagain:
 		pfhold();
 		tstart = time(0);		/* reinitialize counters */
 		raynum = nrays = 0;
-		dupheader();			/* reproduce header */
 		goto runagain;
 	}
 #endif
