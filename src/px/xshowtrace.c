@@ -189,6 +189,7 @@ int	xoff, yoff;
 setvec(ipt)			/* set up vector drawing for pick */
 int	ipt[2];
 {
+	extern Window	xfindwind();
 	XWindowAttributes	wa;
 	XColor	xc;
 	XGCValues	gcv;
@@ -197,7 +198,7 @@ int	ipt[2];
 	unsigned int	pm;
 					/* compute pointer location */
 	if (gwind == 0 &&
-		(gwind = xfindwind(theDisplay, rwind, picture, 2)) == 0) {
+		(gwind = xfindwind(theDisplay, rwind, picture, 4)) == 0) {
 		fprintf(stderr, "%s: cannot find display window!\n", progname);
 		exit(1);
 	}
