@@ -1,0 +1,157 @@
+	$Id$
+
+This help file is for the gethelp.tcl utility itself, and explains
+the various buttons and windows it uses.
+
+All help files have the same general format.  Each help section is
+named by its category and topic, and its position in the file is
+indicated with a line beginning with ".Category.Topic", where
+"Category" and "Topic" are replaced by the appropriate names.
+These names must begin with letters and may contain letters and/or
+numbers, but no special characters.  They will appear on the menus
+of the help utility when that file is open.
+
+The file is unformatted, and will be filled by the help utility
+dynamically based on the current window size.  The formatting code
+is very simple, placing a single space between adjacent lines,
+except when a line ends a sentence, when two spaces are used.
+Regular expression searches will not cross newline boundaries in the
+original file, so some care should be used not to break lines at
+likely search strings.  (This is a pain, I know.)
+
+The first section of the file, which you are now reading, is
+generally reserved for comments such as this, and is not accessed
+directly by the user.
+
+.Help.Intro
+
+While holding down the control key,
+press and release the left mouse button on any object of curiosity,
+and if there is something to say about it, that
+something will appear in this window.
+
+Typically, a program will access multiple help files
+through this help interface.
+The particular file being viewed is indicated by the text at the
+top right of this window.
+It is not possible through this interface to switch from one help
+file to another, as the particular file being viewed is controlled by
+the calling program.
+
+The help window itself offers the ability to search through the
+available topics in the selected file via the "Category" and "Topic" menus.
+Each general category consists of an introduction (such as this
+one), followed by zero or more topics.
+Selecting a new topic starts automatically at the introduction page.
+From there, various topics within that category may be selected
+using the "Topic" menu.
+
+.Help.Category
+
+Help information is divided logically into categories, then
+into topics within each category.
+Changing categories via the "Category" menu immediately selects the
+default topic for the new category, which is always called "intro."
+
+Other topics for the new category will be listed by the (new) topic
+menu for that category.
+Some categories may have only an intro topic.
+
+The current category and topic are given as the title in the
+displayed help window.
+
+.Help.Topic
+
+The topic menu allows you to select which subtopic in this category
+you wish to display.
+
+The next logical topic is available via the "Next" button,
+unless the end of the help file has been reached.
+
+The current category and topic are given as the title in the
+displayed help window.
+
+.Navigate.Intro
+
+Besides accessing the category and topic menus, you can navigate
+forward and backward in the history list for the current help file,
+go directly to the next help topic, and search for regular
+expressions.
+
+The history list is filled in one of two ways.
+The first way is by running a search which results in multiple topic
+matches, in which case the additional matches are put in the future
+history of this file.
+
+The second way is by selecting additional topics, either explicitly
+via the "Category" and "Topic" menus, or implicitly by getting more
+help from the calling application without quitting the help window
+in between.
+
+.Navigate.Search
+
+To search for a particular pattern, type a regular expression
+in the text entry field.
+Hitting <return> causes all matches in the current topic to be
+highlighted.
+Hitting the "Grep" button causes all categories and topics to be
+searched.
+The first matching topic is displayed, and other matching topics (if
+any) may be accessed with the "Forward" button.
+
+Each time a new topic is selected, matching words will be highlighted
+in bold, whether or not <return> or the "Grep" button has been pressed.
+To prevent new matches from being highlighted, clear the search entry
+with <control-U>.
+
+Matches are insensitive to case and word boundaries.
+
+.Navigate.Forward
+
+The "Forward" button moves from the current topic to the next one in
+the history list, if any.
+In most cases, the "Forward" button will not be activated unless
+a search has been conducted with the "Grep" button or
+the "Back" button has been pressed one or more times.
+
+.Navigate.Back
+
+Use the "Back" button to go to previously accessed topics in the
+history list.
+
+If this button is disabled, it simply means that you are already at
+the beginning of the help file history.
+
+.Navigate.Next
+
+The "Next" button moves to the next sequential topic in the help file,
+which is named at the bottom of the current text.
+
+If this button is disabled, it means that the end of the help file
+has been reached.
+
+.Helpwin.Intro
+
+The help window displays the contents of the current help category and
+topic.
+The category and topic are given in bold at the top of the text in
+the window.
+The next category and topic are given at the end of the text in the
+window.
+
+Scrolling is accomplished with the scrollbar on the right.
+
+.Helpwin.Scroll
+
+Grab the bar with the mouse and drag it up and down to scroll
+the text in the help window.
+Click below or above the bar to jump a page forward or backward,
+respectively.
+Click on the little triangle at the bottom or top to move down or up
+a line at a time.
+
+.Help.Done
+
+The "Done" button simply dismisses the help window.
+(It is sometimes better to iconify the window, if frequent help is
+needed.)

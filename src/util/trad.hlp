@@ -1,0 +1,1318 @@
+	$Id$
+
+This help file is associated with the trad interface to the Radiance
+rad(1) program.  Trad consists of trad.wsh and one do_*.tcl file for
+each screen.  There are currently seven such screens:  Action, File,
+Options, Results, Scene, Views and Zone.
+
+.Trad.Intro
+
+Trad is a graphical user interface (GUI) to the
+rad(1) program, which controls the operation of the basic
+Radiance scene compiling, rendering and picture filtering programs.
+Trad also includes links to a few utilities for displaying and
+converting results, but most of what it does can be done by editing a
+small text file, called the "rad input file".
+Scene creation still requires the use of a text or graphical editor,
+or translation from some external CAD format.
+
+Trad interaction is broken into seven screens.
+Each screen is accessed by pressing its associated radio
+button along the right-hand side of the main window.
+If trad is started with no file name, the File screen is displayed,
+and you must pick a valid rad input file before any other screen may
+be accessed.
+If a name is given for a file that doesn't exist, trad goes to the
+Scene screen and prompts you to enter the names of one or more
+Radiance scene description files.
+If a rad input file exists already, trad determines if there are
+renderings still to be done or if everything is finished.
+If there is still work to be done, trad opens first with the Action
+screen.
+If all renderings are complete and up-to-date, trad opens right to
+Results screen.
+
+For additional guidance on Radiance in general, consult the Radiance
+Tutorial, Reference Manual, and man pages.
+In particular, it is a good idea to read through the rad(1) man page
+before using this interface.
+
+To find out how to get more help, press the "Next" button to the
+right.
+
+.Trad.Help
+
+If you have specific questions about trad, search through the
+category and topic menus on this help window, or press and release
+the left mouse button while holding the control key over the object of
+curiosity in the main trad window.
+(In general, only active windows are given help file links -- click
+on these rather than the text labels.)
+
+For help on the help facility itself, Control-click on the problem
+help widget or on the window title in the upper right corner for
+more general information.
+(To get back to trad-specific help, press the "HELP" button in the
+main trad window or Control-click on a trad widget.)
+
+Once the help window has been displayed, it is usually best to
+lower or iconify it rather than dismissing it if further help is
+needed.
+This way, you will not have to wait for the help file to be read in
+all over again every time you have a question.
+
+.Trad.Messages
+
+Informative messages, commands executed by rad, and errors 
+appear in the message window at the bottom of the trad frame.
+Growing the trad window means growing this message window, and 
+not much else.
+This is not really necessary, since the window will be grown
+automatically if the message requires it.
+
+Serious errors will be accompanied by the sounding of the bell.
+
+.Trad.Quit
+
+To quit the trad application, press the "Quit" button at any time.
+If you have made changes to the rad input variables, you will be
+asked prior to program exit if you want to save your changes first.
+
+Any batch process running in the background will continue to run,
+and the associated error messages will be viewable by
+trad later when you open the same rad input file.
+
+.File.Intro
+
+This button selects the trad File screen, which allows rad input
+files to be loaded and saved, and new files to be created.
+
+.File.Load
+
+This button loads the selected file into trad.
+If the current file has been changed and these changes have not been
+saved, you will be given first the opportunity to save your changes.
+
+The actual load operation may take several seconds or even minutes,
+depending on the status of the rendering process.
+This is because the rad program itself is used to interpret the
+input file, and if there is no up-to-date octree associated with the
+file, it is necessary to run getbbox on the entire scene
+before the variable values can be set.
+It is possible to eliminate this delay in future loads by going to
+the Action screen and running oconv.
+
+If the opened file has read-only mode set (see chmod(1)), then the
+"Read Only" check box will be lit.
+Unchecking this box means that it will be possible to save the file
+later, though the actual mode on the file will not be changed until
+it is saved.
+Loading a writable file always clears the "Read Only" check box.
+
+If an error is encountered while trying to load the file, a message
+will be printed in the box at the bottom and it will be necessary to
+load another file.
+(I.e. any previous information will be lost.)
+
+.File.Save
+
+The "Save" button in the File screen saves any changes to the
+current file.
+This information is saved in the original file by default, but may
+be saved in another file by entering a new name in the "File" field.
+If this new file already exists, a dialogue box will ask if you really
+want to overwrite it.
+If the file name is different than the original
+one loaded, the "Read Only" check box will be ignored.
+
+.File.New
+
+The "New" button clears all rad variables in preparation for
+writing a new rad input file.
+If the file selected already exists, a warning box will ask if you
+really want to ignore the previous file contents.
+If you agree, then no warning will be given when the file is later
+overwritten.
+
+.File.ReadOnly
+
+The "Read Only" check box permits you to indicate that the opened
+file should not be overwritten.
+This box will be checked automatically if the permissions on the
+edited file do not allow writing by the user.
+If the box is subsequently unchecked, trad will attempt to change
+permissions and write to the file when a save is requested.
+If this fails, an error message will indicate the problem.
+
+.Scene.Intro
+
+This button selects the trad Scene screen.
+On this screen, you may enter the octree file and the scene files
+that go into it, as well as any mkillum or other files on which the
+scene depends.
+These files are generally produced by hand in a text editor or by
+conversion from an external CAD format, such as DXF.
+(See the Radiance Reference Manual and Radiance Tutorial for details on the
+information contained in these files.)
+
+To enter a file of a particular type, press the corresponding button
+to get a dialogue box that allows you to pick existing files from any
+directory.
+
+Use the "Discard" button to remove one or more files from a specific
+list.
+The actual file is untouched.
+
+.Scene.Octree
+
+The "Octree" entry in the Scene screen names the octree file to be
+compiled by oconv from the materials and scene files.
+(See the oconv(1) man page for more details.)
+
+If make(1) is being used to build the octree, you should leave all
+other windows on this screen empty.
+The octree can still be rebuilt from trad by pressing the "oconv"
+or "Force" buttons on the Action screen, but normally it is
+expected to be current.
+In particular, an unsupported octree must exist before loading
+a rad input file on which it depends.
+
+The default octree name is the root name from the render input file
+plus ".oct".
+If mkillum is being used (i.e. one or more illum files is given),
+then two additional octrees will be created, named the same except
+for an additional "0" or "1" immediately before the file suffix
+(normally ".oct").
+
+To delete the named octree, and therefore force the scene to be
+recompiled and all the pictures to be rerendered, use the "Delete"
+button next to the octree window.
+
+.Scene.OctDelete
+
+The "Delete" button next to the octree window removes the named
+octree from the filesystem, forcing the scene to be later recompiled
+and all the pictures to be rerendered (if desired).
+This is appropriate if you add or remove materials, scene or illum
+files from one or more lists, or make some change to a materials file
+that requires the octree to be rebuilt (such as adding or removing
+individual materials).
+
+Verification is required before the octree will be deleted.
+
+You can achieve the same effect as manually removing the octree by
+pressing the "Force" button on the scene compilation section
+of the Action screen.
+(See the "Force" topic under the "Action" help category for more
+information.)
+
+.Scene.Materials
+
+Materials files generally contain Radiance material descriptions
+only, not geometry.
+The purpose of listing them separately is so that minor changes to
+material parameters will not force the octree to be rebuilt,
+incurring an additional delay that is unnecessary.
+
+The "Materials" button is used to add materials files to the list.
+A dialogue box appears when you press this button and allows you to
+select files to be included.
+Each new selection is added to the end of the materials list.
+The default matching pattern for material files is "*.mat".
+This may of course be reassigned within the file selection window.
+
+The list box showing the current materials may be edited in three
+ways besides the dialogue for adding files.
+First, entries may be removed from the list
+using the "Discard" button.
+Second, entries may be moved within the box by selecting them with
+the left mouse button and clicking the middle mouse button over the
+entry you wish to place the selected items above.
+If you wish to put the selected items at the very end of the list,
+click the middle mouse button below the last entry.
+Third, entries may be moved from other windows by
+selecting them and pressing the middle button.
+This works for the list boxes on this screen as well as selections
+in other windows on the display.
+
+The order of materials files is usually unimportant, but sometimes
+there are definitions in later files that depend on prerequisites in
+earlier files.
+An example of this is a window illum source that depends on a sky
+description file, which must appear before it.
+The order of files shown in the list is the order they will be given
+to oconv and therefore to the rendering programs.
+
+.Scene.Illum
+
+Illum files are Radiance scene descriptions that contain surfaces
+to be converted into illum sources by mkillum(1).
+Please consult the manual page for mkillum and understand the
+Radiance Tutorial before using this box, since these files differ slightly
+from standard Radiance scene descriptions.
+
+The "Illum" button is used to add illum files to the list.
+A dialogue box appears when you press this button and allows you to
+select files to be included.
+Each new selection is added to the end of the illum list.
+The default matching pattern for material files is "*.rad".
+This may of course be reassigned within the file selection window.
+
+The list box showing the current illum files may be edited in three
+ways besides the dialogue for adding files.
+First, entries may be removed from the list
+using the "Discard" button.
+Second, entries may be moved within the box by selecting them with
+the left mouse button and clicking the middle mouse button over the
+entry you wish to place the selected items above.
+If you wish to put the selected items at the very end of the list,
+click the middle mouse button below the last entry.
+Third, entries may be moved from other windows by
+selecting them and pressing the middle button.
+This works for the list boxes on this screen as well as selections
+in other windows on the display.
+
+.Scene.Scene
+
+Scene files give the geometry and (perhaps) some of the materials
+used in a particular Radiance model.
+These files are given to oconv(1) in the order specified.
+The ordering of files is usually not important, unless some later
+files use materials or other modifiers defined in earlier files.
+
+The "Scene" button is used to add scene files to the list.
+A dialogue box appears when you press this button and allows you to
+select files to be included.
+Each new selection is added to the end of the scene list.
+The default matching pattern for material files is "*.rad".
+This may of course be reassigned within the file selection window.
+
+The list box showing the current scene files may be edited in three
+ways besides the dialogue for adding files.
+First, entries may be removed from the list
+using the "Discard" button.
+Second, entries may be moved within the box by selecting them with
+the left mouse button and clicking the middle mouse button over the
+entry you wish to place the selected items above.
+If you wish to put the selected items at the very end of the list,
+click the middle mouse button below the last entry.
+Third, entries may be moved from other windows by
+selecting them and pressing the middle button.
+This works for the list boxes on this screen as well as selections
+in other windows on the display.
+
+.Scene.Objects
+
+Object files are files on which the given octree depends, but which
+are not included directly on the oconv command line.
+If any of these files is modified, then it is assumed that the
+octree must be rebuilt.
+
+To automatically determine which files in the working directory
+affect the octree, press the "Auto" button just below the "Objects"
+button.
+Note that this will only add files to the object list.
+If you wish to completely replace what is already there, you must
+therefore select all the files and use the "Discard" button before
+pressing "Auto".
+
+.Scene.Discard
+
+The "Discard" button removes the selected file names from a list.
+The actual files are untouched, of course.
+(Some care should be taken here, since there is no undo
+function associated with this window other than reloading the
+original information with the "Revert" button.)
+
+.Scene.Edit
+
+Use the "Edit" button to open a text editor on the selected file(s).
+This is a convenient way to look at and change the contents of the
+Radiance input files.
+
+.Scene.Copy
+
+The "Copy" button may be used to selectively copy the scene file
+information from another rad input file.
+Specifically, the variables "OCTREE, materials, illum, scene and
+objects" will be read in to replace the current values.
+
+All other variables will be unaffected.
+
+.Scene.Revert
+
+The "Revert" button is a convenient way to revert to the original 
+values in the rad input file.
+Only the variables on the Scene screen will be affected, but any changes
+to these variables since the last save will be lost.
+
+.Zone.Intro
+
+This button selects the trad Zone screen.
+On this screen, the user should enter the maximum and minimum
+coordinates of the zone of interest for this set of renderings.
+This zone need not correspond exactly to any interior or exterior
+walls, as it is used primarily to set rendering parameters and
+standard viewpoints.
+
+An interior zone means that standard viewpoints will be selected 
+from the inside of this box.
+An exterior zone means that standard viewpoints will be selected
+from the outside of this box.
+The default zone is an exterior one computed from the bounding box 
+of the entire scene.
+(Note that this is not usually desirable.)
+
+In addition to the ZONE variable, this screen offers the ability
+to set four other rad variables that are generally associated with a
+particular scene and a particular zone.
+These are the rad DETAIL, INDIRECT, VARIABILITY and EXPOSURE
+variables.
+For more information on these topics, use the Topic menu or consult
+the rad manual page.
+
+.Zone.Type
+
+There are two types of zones understood by rad, "Interior" and 
+"Exterior".
+An interior zone is indicated when renderings generally take place 
+inside a specified 3-d box.
+A typical example might be a single room or auditorium.
+An exterior zone is indicated when renderings generally take place
+outside a specified 3-d box, which is the focus of attention.
+A typical example might be a building exterior or a single object,
+such as a chair.
+
+.Zone.Zone
+
+A zone is specified by six real numbers, corresponding to the world
+coordinates of the box's corners.
+Zone boxes are always axis-aligned, therefore one need only specify
+the minimum and maximum X, Y, and Z coordinates.
+
+The exact values of these coordinates is not terribly important, as
+they are only used to guide the setting of certain rendering
+parameters and standard view positions.
+It does not matter for instance whether the values lie on the inside
+or the outside of walls, or if there are non-rectilinear geometries
+defining the space perimeter.
+In fact, the whole space may not even be aligned with the X, Y, and Z
+axes, and a very approximate box may be given.
+In this case, the standard views may not be very intelligent or
+useful, but the rendering parameters will still be satisfactory so
+long as the overall size of the given box is close to the overall
+size of the space.
+
+The Zone entry windows may be manipulated in the following ways.
+Control-U clears the current window.
+Control-V pastes the contents of the current selection at the
+insertion point.
+Return moves the focus to the next window in the chain.
+
+.Zone.Detail
+
+The "Detail" setting indicates the relative level
+of geometric detail in this zone.
+If the zone is empty except for a few large pieces of furniture, a
+"Low" setting is indicated.
+(For an exterior zone, low detail would mean that the object is
+relatively simple.)
+If the zone contains a usual amount of furniture and clutter, a
+"Medium" setting is appropriate.
+If the zone contains a great many small objects or protrusions, a
+setting of "High" is indicated.
+
+This variable is used by rad to set rendering parameters that are
+affected by the sizes of objects relative to the overall size of the
+space.
+
+.Zone.Indirect
+
+The "Indirect" setting indicates how important indirect illumination
+is in this space.
+A setting of "0" means that most light falls directly on visible
+surfaces, and this setting can be used in most cases.
+A setting of "1" means that most objects are not directly
+illuminated by light sources, but receive light only after it has
+bounced once off some other surface, such as the ceiling.
+Likewise, a setting of "2" means that light must reflect twice off
+other surfaces before reaching most objects of interest.
+
+Keep in mind that the rendering calculation increases substantially
+with each increment to this variable, so it is a good idea to use
+the smallest reasonable value.
+
+.Zone.Variability
+
+The "Variability" setting gives a qualitative indication of how
+light varies in magnitude over surfaces in this zone.
+In a typical direct or indirect lighting situation, this variable
+would be set to "Low", indicating that light is fairly uniform
+throughout the space.
+If there are some areas that are much better lit than others, such
+as desks with powerful tasks lights in a room with dimmer ambient
+lighting, a "Medium" setting is appropriate.
+If there is direct sunlight entering the room, casting bright
+patches on some surfaces and not others, then a setting of "High" is
+indicated.
+
+Note that this variable speaks to the magnitude of light variations
+more than the patterns of light.
+It may well be that the light is casting interesting patterns such
+as scallops on the walls or something, but as long as the variations
+in brightness are less than an order of magnitude or so, it is a low
+variability situation.
+The high variability
+example given above of direct sun entering a space corresponds to a
+a variation in brightness of about three orders of magnitude, or
+1,000 to 1!
+
+.Zone.Exposure
+
+The "Exposure" setting gives the multiplier between the initial
+radiance values at each pixel (in watts/steradian/meter^2) to the
+display pixel values (in the range of 0-1, where 0 is black and 1 is
+the maximum monitor output).
+This setting also determines the average "ambient level," which is
+an important parameter for rendering accuracy.
+
+There are two basic ways to compute the exposure value.
+The first is by trial and error, where the value is adjusted up and
+down within rview using the "e = value" command.
+Though it sounds flaky, this is the most reliable way to set the
+exposure (and ambient level) in general lighting situations.
+
+The second method is using a zonal cavity approximation.
+For this, you must estimate the total light flux entering the zone
+from light sources and windows, and the total illuminated area.
+(This applies to interior zones, only.  For exterior zones, use the
+value suggested by gensky in its output.)
+In addition, you must approximate the area-weighted average
+reflectance of the illuminated surfaces.
+The formula then for the exposure multiplier using this information
+is:  pi*tot_area*(1-avg_refl)/(2*tot_flux*avg_refl)
+where pi is 3.1416, tot_area is given in square meters and
+tot_flux is given in watts.
+(Divide total lumens by 179 lumens/watt to get watts.)
+
+The exposure value may either be given as a positive real value, or
+as a real value preceeded by a '+' or '-' indicating a positive or
+negative number of f-stops (powers of two) from the original value.
+
+If no exposure is given, pfilt will automatically compute the
+average for each image, and a default ambient level of 10 will be
+used for exterior zones and 0.01 for interior zones.
+
+.Zone.Copy
+
+The "Copy" button on the Zone screen takes all values for this
+screen from another rad input file, replacing the current values.
+Specifically, the rad variables "ZONE, DETAIL, INDIRECT, 
+VARIABILITY and EXPOSURE" will be copied from the named file.
+
+All other variables will be left untouched.
+
+.Zone.Revert
+
+The "Revert" button is a convenient way to revert to the original 
+values in the rad input file.
+Only the variables on the Zone screen will be affected, but any changes
+to these variables since the last save will be lost.
+
+.Views.Intro
+
+This button selects the trad Views screen.
+This screen provides a means of setting the multi-valued
+"view" variable.
+Each view setting is listed by name, or by number if no name has
+been assigned.
+To add a new view, enter a unique name and specify the view 
+options,
+then press the "Add" or "Set Default" button.
+If a view with the same name already exists, it is unconditionally
+overwritten.
+To modify a particular view, simply select it, change its name
+and/or parameters, and press the "Change" button.
+To remove an unwanted view, select it and press the "Delete" button.
+To undo this action, simply press the "Add" button again.
+
+The first view in the list is the default given to rview during 
+interactive rendering, and is the first view rendered in a batch run.
+To change the default view, select the newly desired view and press
+the "Set Default" button.
+This button also acts like the "Add" button inasmuch as a new view
+may be entered and this button will add it and make it the default
+at the same time.
+
+The Views screen also allows the standard view up vector to be
+changed, as well as the root picture name and the output resolution.
+
+.Views.List
+
+The list box on the far left of the Views screen shows the
+currently defined view names.
+Clicking on any of these with the left mouse button shows the view
+parameters and allows the view to be edited.
+
+To change the name or options, edit the "Name" or "Options"
+entry and click on the "Change" button.
+
+Use the "Add" button to add a new view, which may be modified from
+an old one by changing the name and options.
+
+Use the "Delete" button to delete the selected view from the list.
+
+Views are listed in the order in which they appear in
+the rad input file.
+
+The standard view is "X" is used if no views are specified.
+
+.Views.Name
+
+Each view has a unique name, which may be chosen at the user's
+discretion or taken from a list of standard views, described below.
+An invented name should be kept as short as possible, since it is 
+added to the picture file name along with the standard ".pic" suffix.
+
+The standard views are specified by strings of the form
+"[Xx]?[Yy]?[Zz]?[vlah]?".
+(That is, an optional upper or lower case X followed by an optional
+upper or lower case Y followed by an optional upper or lower case Z
+followed by an optional lower case V, L, A or H.)
+The letters indicate the desired view position, where upper case "X"
+means maximum X, lower case "y" means minimum Y and so on.
+The final letter is the view type, where 'v' is perspective (the
+default), 'l' is parallel, 'a' is angular fisheye, and 'h' is
+hemispherical fisheye.
+A perspective view from maximum X, minimum Y would be "Xy" or 
+"Xyv".
+A parallel view from maximum Z would be "Zl".
+If "ZONE" is an interior zone, the standard views will
+be inside the perimeter.
+If it is an exterior zone, the standard views will be outside.
+Note that the standard views are best used as starting points,
+and additional arguments may be given after the
+identifier to modify a standard view to suit a particular model.
+
+.Views.Options
+
+The "Options" entry window is where the Radiance view
+corresponding to the selected name is given.
+If the view is one of the standard names (described in the "Views
+Name" section), then the options are truly optional, and will
+modify the standard view.
+Otherwise, it is usually necessary to specify a set of options to
+define a view.
+
+The simplest view specification is of the form "-vf viewfile", where
+"viewfile" is a file created with the rview "view" command, or a
+Radiance picture.
+This method of naming views, although convenient, is not the best
+since it is difficult to know exactly where such a view is by
+seeing only its file name.
+Also, the file may change or be moved or removed, and then the view
+may be different than expected or gone altogether.
+
+To add view options selected from another X11 window, select the
+text from another window in the normal fashion, use the left mouse
+button to click on the insertion point in the options string, then
+use Control-V to insert the text at that point.
+For convenience, the middle mouse button has been made
+equivalent to Control-V in this window, but it is not the normal
+interaction mode for trad.
+
+Consult the rpict(1) manual page for a full description of the various
+view options, all of which begin with "-v".
+Just briefly, the "-vt?" option sets the view type, where "?" is
+replaced by one of the letters "v, l, a or h", corresponding to
+perspective, parallel, angular and hemispherical fisheye, respectively.
+The "-vp x y z" option sets the view position (eyepoint), where "x y z" 
+is replaced by the position in 3-space.
+The "-vd xd yd zd" option sets the view direction, where "xd yd zd"
+is a vector pointing in the desired direction.
+(To compute this direction from a "look-at" point, simply subtract
+the eyepoint from the look-at point.  Vector normalization is
+unnecessary.)
+The "-vh horiz" and "-vv vert" options set the horizontal and
+vertical view sizes, respectively.
+For perspective views, these correspond to full camera angles in 
+degrees.
+For parallel views (using the "-vtl" option), they correspond to
+image plane size in world coordinates.
+The lesser used "-vu xd yd zd", "-vs vs" and "-vl vl" options
+will not be discussed here.
+
+The order of the view options is irrelevant, unless the same option
+is given twice, in which case the last one is used.
+Trad does not check the syntax of the view options strings, so be
+careful!
+In particular, make sure that each option and each argument has a
+space between it and whatever follows.
+
+Hitting return in the "Options" window is equivalent to pressing the
+"Add" button.
+
+.Views.Add
+
+The view "Add" button takes the currently defined view given by the
+"Name" and "Options" windows and appends it to the list of views.
+If another view by the same name exists, it is removed first.
+
+Since the view is added to the end of the "Views" list, the "Add"
+button is a convenient way to move views to a lower-priority
+position.
+Simply select the view you wish to be last and press "Add".
+
+To add a view as the first (i.e. the default) view instead of the
+last, use the "Set Default" button.
+
+.Views.Change
+
+The view "Change" button deletes the currently selected view and
+adds the currently defined view in its place, changing the name
+and/or view options in the process.
+
+.Views.Delete
+
+The view "Delete" button removes the currently selected view from
+the view list.
+
+To undo this action, simply press the "Add" button immediately
+afterwards, while the deleted view is still present in the edit
+window.
+
+.Views.Clear
+
+The "Clear" button simply clears the "Name" and "Options" windows
+for the convenience of entering a new view.
+It has no effect on the rad input variables.
+
+Note that Control-U will always clear an entry box whose cursor is
+active.
+
+.Views.Default
+
+The "Set Default" button may be used to make the selected view the
+default view for rendering.
+This simply moves the view to the top of the list in the rad input file.
+The default view will be the one normally rendered by rview when rad
+is started interactively, and is the first view rendered in a batch
+process.
+
+A new view may be added as the default view by pressing the "Set
+Default" button rather than the "Add" button.
+It is never necessary to press both.
+
+If the selected view is already the default, this button will be
+disabled and will read "Is Default" instead of "Set Default".
+
+.Views.Up
+
+The standard view up vector may be set to the positive X axis (+X),
+the positive Y axis (+Y), the positive Z axis (+Z), the negative
+X axis (-X), the negative Y axis (-Y), or the negative Z axis (-Z).
+
+This setting may always be overriden by the "-vu xd yd zd" option,
+and will be altered for a particular view if it happens to be
+parallel to the view direction.
+
+.Views.Picture
+
+The root picture file name is given in the "Picture" entry window.
+To this will be added an underscore, followed by the name of
+the particular view being rendered, followed by the ".pic" suffix.
+
+To render pictures into a different directory than the one
+containing the rad input file, simply precede the file name by a
+relative or absolute directory.
+(Do not use the tilde shorthand for home directories,
+as it is not guaranteed to work on all systems.)
+
+The default picture name is the root name of the rad input file.
+
+.Views.Resolution
+
+The final picture resolution is set in the "Resolution" entry
+window.
+The first entry is the X resolution (in pixels), and the second
+(optional) entry is the Y resolution.
+If there is only one entry, the maximum X and Y resolution will be
+equal.
+If a third entry is given, it is taken as the aspect ratio of the
+destination pixels.
+A number greater than one means that the pixels on the destination
+device are taller than they are wide (and therefore there are more
+of them horizontally than vertically spanning a like distance), and
+a number less than one means the opposite.
+An aspect ratio of zero means that the exact given X and Y
+dimensions are to be honored, whatever the resulting pixel ratio.
+Normally, either the X or the Y resolution is reduced as necessary
+to maintain a specific pixel aspect ratio (1 by default).
+
+The default value for this variable is "512".
+
+.Views.Copy
+
+The "Copy" button in the Views screen permits those variables
+represented on this screen to be copied from another rad input file.
+Specifically, the affected variables are "view, UP, PICTURE, and
+RESOLUTION".
+
+The original values will be lost, and all other variables will be
+untouched.
+
+.Views.Revert
+
+The "Revert" button is a convenient way to revert to the original 
+values in the rad input file.
+Only the variables on the Views screen will be affected, but any changes
+to these variables since the last save will be lost.
+
+.Options.Intro
+
+This button selects the trad Options screen.
+This screen allows the setting of various options for
+controlling the rendering process.
+The most general option is rendering "Quality", which determines the
+overall accuracy and beauty of the pictures produced.
+A separate "Penumbras" option indicates the importance of soft
+shadows in this scene.
+The "Ambfile" variable allows you to specify a file for sharing
+ambient files between runs, and it is recommended that you set
+this variable for high quality renderings.
+The "Optfile" variable allows you to specify a separate file for
+storing rendering options, which reduces the size of the command
+line and makes it easier to run programs such as rtrace(1).
+The "Report" variable may be used to specify a time interval (in
+minutes) between progress reports.
+
+Other windows allow the user to customize the options to oconv(1),
+mkillum(1), rview(1) and rpict(1), and pfilt(1).
+
+.Options.Quality
+
+The "Quality" setting affects the overall accuracy and beauty of the
+renderings produced.
+
+A "Low" setting is appropriate for quick checks of scene geometry and
+crude lighting studies.
+No interreflection calculation will take place, regardless of the
+setting of the "INDIRECT" variable, and other options are tuned for
+speed over accuracy.
+The computed picture size will exactly equal the final picture
+size, thus some aliasing may be apparent.
+
+A "Medium" quality setting is most often used for draft renderings, as
+it provides a good balance between rendering time and accuracy.
+The number of interreflections calculated will be equal to the
+setting of the "INDIRECT" variable.
+The computed picture size will be twice the final size, for a modest
+degree of anti-aliasing.
+
+A "High" quality setting is usually reserved for final renderings.
+The number of interreflections computed will equal the value of the
+"INDIRECT" variable plus one, to guarantee accuracy.
+The computed picture size will be three times the final size, so
+aliasing artifacts should be negligible.
+
+When increasing the value of the "Quality" setting, it is usually a
+good idea to delete the old "Ambfile", if there is one.
+(See the "AmbDelete" topic under the current help category for
+details.)
+
+.Options.Penumbras
+
+The "Penumbras" setting determines whether or not Radiance will 
+make a special effort to generate soft shadows from area light sources.
+Since this is a potentially expensive calculation, penumbras should
+only be switched "On" when they are really needed.
+
+Leaving this setting "Off" does not mean that area light sources
+will be treated as points.
+It only means that some accuracy and possibly some smoothness
+will be traded for speed in the shadow calculations.
+
+.Options.Ambfile
+
+The "Ambfile" is the file used to store Radiance ambient values for
+later reuse in other renderings.
+This can greatly reduce the time required to generate multiple
+views, as well as improve the quality of a single view whenever
+interreflections are computed.
+
+It is strongly recommended that the user set this variable, especially
+when the "QUALITY" variable is set to "High".
+The usual convention is to use the root name of the rad input file,
+followed with the ".amb" suffix.
+It is generally not a good idea to share ambient files between
+different zones, as the placement and accuracy of these values will
+vary according to the location and characteristics of each zone.
+
+.Options.AmbDelete
+
+The "Delete" button next to the "Ambfile" window on the Options 
+screens allows you to remove the named ambient file.
+This is usually done when a change to one or more rad variables
+casts doubt on the accuracy of the values stored in this file.
+In particular, increases in the variables, "DETAIL, INDIRECT,
+VARIABILITY, EXPOSURE or QUALITY" generally invalidate this file.
+
+If the ambient file is not empty, you will be asked to verify this
+operation since the values may represent a significant computational
+effort.
+
+.Options.Optfile
+
+The "Optfile" setting assigns a file to hold rendering options,
+which may be a convenience when these options are reused for
+rtrace(1) or rpiece(1), or manual invocations of rview or rpict.
+Using an options file also reduces the size of the command line,
+making it a little easier on the eye.
+
+To assure that the "Optfile" contents are up-to-date, you should press
+the "oconv" or "Script" button on the Action screen.
+
+.Options.Report
+
+The "Report" setting indicates the time interval (in minutes)
+between rpict progress reports.
+Normally, rpict runs silently, but it is often nice to know how far
+a given rendering has progressed.
+Normally, progress reports and errors during batch renderings
+are sent to the error file given by the root of the rad input
+file name followed by the ".err" suffix.
+(See the "Errors" topic under the "Action" screen category.)
+If you wish these reports and errors to be directed to a different
+file, follow the time interval by a space and a file name.
+
+No setting on this variable means do not report rendering progress.
+A zero setting means the same thing, and may be used when a 
+separate error file is desired but progress reports are not.
+
+.Options.Oconv
+
+The "oconv opts" window may be used to specify any additional
+options to the oconv(1) command used to compile the scene
+description.
+
+In particular, the "-f" option for creating a "frozen" octree may
+speed rendering start-up substantially, although it makes it
+impossible to change even material properties without
+recompiling the scene again.
+(The "-f" option is technically incompatible with naming
+"materials" files on the Scene screen.)
+
+If oconv generates a "set overflow" error, it may mean that the "-r
+res" option is needed to increase the octree resolution.
+See the oconv(1) man page for details.
+
+The "-i octree" option should be used with extreme caution, as incremental
+building of octrees is not very well supported by rad.
+You may do it this way if you specify the input octree as one of the
+"Objects" files on the Scene screen, but it is preferable to use the
+UNIX make(1) utility to incrementally build the octree instead, and
+indicate this by not specifying any illum or scene files.
+
+.Options.Mkillum
+
+The "mkillum opts" window may be used to specify options to the
+mkillum(1) command, whose options are actually passed to rtrace(1).
+These options apply only if there are one or more "Illum" files
+named on the Scene screen.
+
+It is very important to set mkillum options sensibly,
+since rad does not have the intelligence to do it for you.
+
+.Options.Render
+
+The "render opts" window is used to specify additional options to
+the rview(1) and rpict(1) rendering programs.
+Most of the important parameters are computed by rad, so this 
+window is usually used to override specific parameters or to give
+additional information, such as which materials to exclude from the
+interreflection calculation.
+
+.Options.Pfilt
+
+The "pfilt opts" window is used to specify additional options to
+the pfilt(1) picture filtering program.
+
+Note that the "-e expval", "-x xres" and "-y yres" options are
+already dictated by the settings of the "EXPOSURE" and "RESOLUTION"
+variables, and should therefore be used with caution.
+
+Also note that the setting of some pfilt options require a
+two-pass filtering process, rather than the default single pass.
+If no "EXPOSURE" setting is given, this is not a problem, but if a
+value for the "EXPOSURE" variable is set as recommended, then it is
+necessary to manually specify the "-2" option to pfilt, followed by
+an exposure that undoes the "EXPOSURE" setting.
+An equivalent workaround is to unset the EXPOSURE variable and
+manually set the render option "-av V V V", where "V" is equal to
+0.5/old_EXPOSURE.
+
+.Options.Copy
+
+The "Copy" button in the Options screen permits those variables
+represented on this screen to be copied from another rad input file.
+Specifically, the affected variables are "QUALITY, PENUMBRAS,
+AMBFILE, OPTFILE, REPORT, oconv, mkillum, render and pfilt".
+
+The original values will be lost, and all other variables will be
+untouched.
+
+.Options.Revert
+
+The "Revert" button is a convenient way to revert to the original values
+in the rad input file.
+Only the variables on the Options screen will be affected, but any changes
+to these variables since the last save will be lost.
+
+.Action.Intro
+
+This button selects the trad Action screen.
+This screen is where the actual Radiance programs are
+run, usually via rad(1).
+The top row of buttons is used to update the octree following a
+change to one or more input files.
+The "rview" button starts an interactive rendering in the
+foreground.
+The next set of buttons provides for the control of a batch
+rendering process, taking place in the background.
+Finally, the bottom set of buttons allows you to preview what would
+happen during a batch rendering, or (equivalently) make a script of 
+UNIX commands for later execution.
+
+When the Action screen is first brought up, the message window
+displays the current status of any batch rendering process.
+The status must either be "No batch rendering in progress," which
+means that as far as trad can tell a batch rendering was never
+started, "Batch rendering stopped," meaning that there is no current
+process but at least some views have not been rendered or are
+out-of-date, or "Batch rendering finished," meaning that everything
+is done.
+
+.Action.Oconv
+
+The "oconv" button on the Action screen may be used to manually
+compile the scene description and bring the octree up to date.
+It is normally not necessary to use this button, since the octree
+will be rebuilt if appropriate prior to rendering.
+However, if the octree is maintained by make(1) rather than rad, or
+the octree was never created and you want trad to start a little
+faster next time, or you just need the octree for some reason other
+than rendering, this is the button for you.
+
+If you have made changes to the rad variables or the Radiance
+material files that invalidate the current octree or renderings but
+would not automatically rebuild the octree because the scene files
+themselves were not changed, it may be wise to use the "Force"
+button.
+In contrast, if you have made some insignificant changes to the
+scene files that should not make any difference to the octree or the
+renderings, you may want to use the "Touch" button.
+
+Pressing the "oconv" button also updates the contents of the
+"Optfile" if one is given on the Options screen.
+This may be useful for computing rendering parameters for rtrace(1)
+or rpiece(1).
+
+.Action.Force
+
+The "Force" button on the Action screen
+causes the octree to be unconditionally rebuilt,
+by removing it first.
+This will also require all pictures to be rerendered, so only use
+this button if it is really necessary, i.e. if you have made
+some important changes to the rad
+variables on the Scene, Zone or Options screens, but have not
+changed any scene file on which the octree depends.
+
+If the octree itself should not be affected by these changes, only
+the renderings, you may delete the faulty picture files instead from
+the Results screen and the ambient file (if it exists) from the
+Options screen.
+
+.Action.Touch
+
+The "Touch" button on the Action screen
+should be used when some insignificant change has
+been made to the Radiance input files, which might otherwise cause
+the octree to be rebuilt and the picture files to be rerendered.
+
+Care should be exercised in using this button since you may have
+made a change that really does affect the octree in an important
+way.
+Even something as seemingly trivial as deleting an unused material
+will cause an unfrozen octree to become invalid and unusable.
+
+Therefore, if you know the octree should be rebuilt, but you do not
+want to cause any of the currently rendered pictures to be redone,
+press the "oconv" button to bring the octree up to date, followed
+by the "Touch" button.
+(This will still cause the ambient file to be removed,
+unfortunately.)
+
+.Action.Rview
+
+The "rview" button on the Action screen starts an interactive 
+rendering for the selected view, indicated by the menu button 
+just to the right.
+Other views may be accessed within rview using the "L name" 
+command, and new views can be added with the "V name" 
+command.
+(See the rview(1) man page and the "View" topic in the current 
+help category for more information.)
+
+If the octree is out-of-date, it will be rebuilt before rendering 
+begins.
+
+.Action.View
+
+The Action screen contains two menus for selecting views.
+The top menu, next to the "rview" button, sets the view to start 
+with in rview, and is selected from the current view list.
+The second view menu, next to the "Start" button for batch 
+rendering, selects the view or views to render in batch mode.
+If the special entry "ALL" is selected, then every view in the 
+current list will be rendered if it hasn't been already.
+
+The batch rendering view menu also selects the view or views 
+to use in producing a script during a dry run.
+
+.Action.Start
+
+The "Start" button for batch rendering on the Action screen 
+initiates a rad rendering process in the background using the 
+selected view or views shown on the menu button to the right.
+
+If any of the rad variables have been changed since the
+file was last saved, you will first be asked if you wish to save
+your changes before starting a background process.
+If you discard these changes, then the batch rendering will be
+conducted using the previously saved values.
+
+Once a background process is going, the "Start" button is 
+disabled, and rendering progress can be monitored by checking 
+the error file periodically.
+(This file is named by the root of the rad input file followed by 
+".err".)
+When a batch process is started or already running, this button 
+will be disabled.
+
+The background process can be killed during this or later 
+invocations of trad using the "Kill" button.
+
+.Action.Kill
+
+The batch rendering "Kill" button kills the 
+background process started earlier with the "Start" button.
+The rad process id is taken from the first line of the error file, 
+and this process and all its children are killed when the
+button is pressed.
+
+So long as there is an ambient file specified in the Options 
+screen, no data is lost by killing and restarting a batch 
+rendering, though some new startup costs will be incurred.
+
+The "Kill" button is disabled if no running batch process is 
+detected.
+
+.Action.CheckErr
+
+Pressing the "Check errors" button
+displays the contents of the batch rendering error file, named 
+by the root of the current rad input file followed by the ".err" 
+suffix.
+This file will contain the command lines executed by rad so far, 
+and may or may not contain additional progress reports from 
+rpict, depending on the initial setting of the "REPORT" variable.
+
+If no error file exists, this button will be disabled.
+
+.Action.Script
+
+The dry run "Script" button runs rad with the
+"-n" option so that you may see the commands that would be 
+executed during a batch run without actually executing them.
+If a file is named in the window next to this button, the output 
+will simply be written to that file.
+If no file is named, a temporary file is created and an editor 
+window is opened on it.
+
+Producing a dry run also writes the "Optfile" if one is specified
+on the Options screen.
+This may be useful for computing rendering parameters for rtrace(1)
+or rpiece(1).
+
+The view or views are selected by the same menu used for 
+batch rendering.
+(See the "View" topic under the current help category for more 
+information.)
+
+.Action.Edit
+
+The dry run "Edit" button is used to edit the named script file 
+created by pressing the "Script" button.
+If no file is named, this button is ineffective.
+
+.Action.Delete
+
+The "Delete" button removes the named script file, created by the 
+"Script" button.
+If no file is named, or the named file does not exist, this button has 
+no effect.
+
+.Results.Intro
+
+This button selects the trad Results screen.
+This screen permits rendered pictures to be displayed, 
+converted to other image formats, and printed.
+Only finished pictures may be converted or printed, but 
+incomplete pictures (i.e. aborted renderings or renderings in 
+progress) may be displayed interactively.
+
+The left-hand window shows a list of completed views, and the
+right-hand window shows views that have been started but not 
+finished.
+Note that other views may not even be started, thus may not 
+appear in either list.
+Also, just because a view appears on the Results screen, it does 
+not mean that view is up-to-date with respect to the Radiance 
+input files.
+(The best way currently to tell which pictures are out-of-date 
+is to press the "Script" button on the Action screen and examine 
+the output.)
+
+.Results.Finished
+
+The "Finished views" list box on the Results screen shows those
+renderings which have completed, whether or not they are up-to-date
+with respect to the Radiance input files.
+Select pictures in this box for display, conversion to other image
+formats, and/or printing.
+Selected pictures may also be deleted with the "Delete" button.
+
+To select one or more pictures from this box, click the left mouse
+button on a view name, and drag it up or down to select multiple
+views.
+Shift-click also allows views to be added to the selection.
+
+.Results.Unfinished
+
+The "Unfinished views" list box on the Results screen shows those
+renderings which have not yet completed.
+These partial pictures may or may not be out-of-date
+with respect to the Radiance input files.
+Select pictures in this box for display or deletion.
+It is not possible to convert or print an unfinished picture.
+
+To select one or more pictures from this box, click the left mouse
+button on a view name, and drag it up or down to select multiple
+views.
+Shift-click also allows views to be added to the selection.
+
+.Results.Rescan
+
+The "Rescan" button on the Results screen is used to update the 
+finished and unfinished view lists, in case one or more pictures 
+has completed since the Results screen was brought up.
+
+.Results.Delete
+
+The "Delete" button on the Results screen is used to remove the
+selected picture files from the filesystem.
+Verification is required before any action is taken.
+
+.Results.Display
+
+The "Display" button on the Results screen may be used to display
+the selected images using ximage(1) or any other Radiance picture
+display program.
+
+The current display command is shown in the adjacent command window,
+and may be customized if necessary.
+(See the "DispCommand" topic in the current help category for
+details.)
+
+.Results.DispCommand
+
+The current display command in the Results screen determines how
+finished and unfinished Radiance pictures will be displayed.
+This command contains two variable fields.
+The first field is a signed integer, indicated by the "%+d" format.
+The second field is a string, indicated by the "%s" format.
+Both fields must appear in any display command used, and must be in
+this order on the command line.
+The first field is used to adjust the exposure of an unfinished
+picture, and the second field is the file name.
+The rest of the command is arbitrary, so long as it is understood by
+the system.
+
+The default command is "ximage -e %+d %s >& /dev/null &", which
+executes ximage in the background and sends any output (including
+error messages) to the null device.
+If you don't wish ximage to run in the background, you may remove
+the last part of the command (" >& /dev/null &").
+
+.Results.Convert
+
+The "Convert" button on the Results screen converts the selected
+pictures to the format indicated on the menu button to the right.
+(See the "ConvType" topic under the current help category for
+details.)
+
+Each finished picture is converted to the selected format and given
+the name indicated by the adjacent window labeled "File".
+(See the "ConvFile" topic under the current help category for
+details.)
+
+.Results.ConvType
+
+The image type button on the Results screen determines the
+destination format for converted Radiance pictures.
+You may choose from the list that pops up when you press this
+button.
+Often, a given format may have more than one subtype.
+In general, 8-bit means 8-bit color with a lookup table,
+B&W means 8-bit greyscale with no lookup, and 24-bit means 24-bit
+true color.
+
+The file suffix is determined by the basic conversion type, but may
+be changed along with the rest of the name by editing the file name
+window.
+(See the "ConvFile" topic under the current help category for
+details.)
+
+.Results.ConvFile
+
+The image conversion file name window on the Results screen should contain
+a single "%s" format field, which will be replaced by the view name
+being converted.
+
+The default name is the same as the value of the rad "PICTURE"
+variable, followed by a suffix appropriate to the selected file type.
+
+.Results.Print
+
+The "Print" button on the Results screen executes the given
+system command to print one copy each of the selected picture(s).
+This button does not work on unfinished pictures.
+
+The actual command used for printing may be edited in the adjacent
+window.
+(See the "PrintCommand" topic under the current help category for
+details.)
+
+.Results.PrintCommand
+
+The print command window on the Results screen contains the system
+command to use in printing out finished Radiance pictures.
+The "%s" format field, which must appear somewhere in the command,
+is replaced by the selected Radiance picture file name(s).
+
+The default command is "ra_ps %s | lpr", which converts the Radiance
+picture to a black and white PostScript file and sends it to the lpr
+print spooler.
+If your printer does not understand PostScript, or your system does
+not support lpr, this command must obviously be changed.
