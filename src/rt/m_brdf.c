@@ -8,13 +8,11 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  "ray.h"
-
 #include  "ambient.h"
-
 #include  "data.h"
-
+#include  "source.h"
 #include  "otypes.h"
-
+#include  "rtotypes.h"
 #include  "func.h"
 
 /*
@@ -79,13 +77,19 @@ typedef struct {
 }  BRDFDAT;		/* BRDF material data */
 
 
+static srcdirf_t dirbrdf;
+static int setbrdfunc(BRDFDAT  *np);
+
+
 static void
-dirbrdf(cval, np, ldir, omega)		/* compute source contribution */
-COLOR  cval;			/* returned coefficient */
-register BRDFDAT  *np;		/* material data */
-FVECT  ldir;			/* light source direction */
-double  omega;			/* light source size */
+dirbrdf(		/* compute source contribution */
+	COLOR  cval,			/* returned coefficient */
+	void  *nnp,		/* material data */
+	FVECT  ldir,			/* light source direction */
+	double  omega			/* light source size */
+)
 {
+	register BRDFDAT *np = nnp;
 	double  ldot;
 	double  dtmp;
 	COLOR  ctmp;
@@ -191,10 +195,11 @@ double  omega;			/* light source size */
 }
 
 
-int
-m_brdf(m, r)			/* color a ray that hit a BRDTfunc material */
-register OBJREC  *m;
-register RAY  *r;
+extern int
+m_brdf(			/* color a ray that hit a BRDTfunc material */
+	register OBJREC  *m,
+	register RAY  *r
+)
 {
 	int  hitfront = 1;
 	BRDFDAT  nd;
@@ -324,10 +329,11 @@ register RAY  *r;
 
 
 
-int
-m_brdf2(m, r)			/* color a ray that hit a BRDF material */
-register OBJREC  *m;
-register RAY  *r;
+extern int
+m_brdf2(			/* color a ray that hit a BRDF material */
+	register OBJREC  *m,
+	register RAY  *r
+)
 {
 	BRDFDAT  nd;
 	COLOR  ctmp;
@@ -410,9 +416,10 @@ register RAY  *r;
 }
 
 
-int
-setbrdfunc(np)			/* set up brdf function and variables */
-register BRDFDAT  *np;
+static int
+setbrdfunc(			/* set up brdf function and variables */
+	register BRDFDAT  *np
+)
 {
 	FVECT  vec;
 

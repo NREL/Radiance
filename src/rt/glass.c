@@ -8,8 +8,8 @@ static const char RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  "ray.h"
-
 #include  "otypes.h"
+#include  "rtotypes.h"
 
 /*
  *  This definition of glass provides for a quick calculation
@@ -41,9 +41,11 @@ static const char RCSid[] = "$Id$";
 #define  RINDEX		1.52		/* refractive index of glass */
 
 
-m_glass(m, r)		/* color a ray which hit a thin glass surface */
-OBJREC  *m;
-register RAY  *r;
+extern int
+m_glass(		/* color a ray which hit a thin glass surface */
+	OBJREC  *m,
+	register RAY  *r
+)
 {
 	COLOR  mcolor;
 	double  pdot;

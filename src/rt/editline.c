@@ -10,6 +10,7 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #include "color.h"
 
@@ -22,11 +23,12 @@ static const char	RCSid[] = "$Id$";
 #define iskill(c)	((c) == 'U'-'@' || (c) == 'X'-'@')
 
 
-void
-editline(buf, c_get, s_put)	/* edit input line */
-char  *buf;
-int  (*c_get)();
-void  (*s_put)();
+extern void
+editline(	/* edit input line */
+	char  *buf,
+	dr_getchf_t *c_get,
+	dr_comoutf_t *s_put
+)
 {
 	static char  erases[] = "\b \b";
 	static char  obuf[4];

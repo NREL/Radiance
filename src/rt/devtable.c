@@ -10,12 +10,11 @@ static const char	RCSid[] = "$Id$";
 #include  <stdio.h>
 
 #include  "color.h"
-
 #include  "driver.h"
 
 char  dev_default[] = "x11";
 
-extern struct driver  *x11_init();
+extern dr_initf_t x11_init; /* XXX this should be in a seperate header file */
 
 struct device  devtable[] = {			/* supported devices */
 	{"slave", "Slave driver", slave_init},

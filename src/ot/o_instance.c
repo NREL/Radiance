@@ -110,7 +110,6 @@ o_cube(			/* determine if cubes intersect */
 }
 
 
-/* XXX o_instance() is extern, but not declared in any header file */
 int
 o_instance(			/* determine if instance intersects */
 	OBJREC  *o,
@@ -125,7 +124,6 @@ o_instance(			/* determine if instance intersects */
 }
 
 
-/* XXX o_mesh() is extern, but not declared in any header file */
 int
 o_mesh(				/* determine if mesh intersects */
 	OBJREC  *o,

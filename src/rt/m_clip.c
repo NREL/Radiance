@@ -8,6 +8,7 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  "ray.h"
+#include  "rtotypes.h"
 
 /*
  *  Clipping objects permit holes and sections to be taken out
@@ -18,10 +19,11 @@ static const char	RCSid[] = "$Id$";
  */
 
 
-int
-m_clip(m, r)			/* clip objects from ray */
-register OBJREC  *m;
-register RAY  *r;
+extern int
+m_clip(			/* clip objects from ray */
+	register OBJREC  *m,
+	register RAY  *r
+)
 {
 	OBJECT  cset[MAXSET+1], *modset;
 	OBJECT  obj, mod;

@@ -26,6 +26,7 @@ static const char RCSid[] = "$Id$";
 #include  "ray.h"
 #include  "mesh.h"
 #include  "tmesh.h"
+#include  "rtotypes.h"
 
 
 #define  EDGE_CACHE_SIZ		251	/* length of mesh edge cache */
@@ -144,10 +145,11 @@ RAY	*r;
 }
 
 
-int
-o_mesh(o, r)			/* compute ray intersection with a mesh */
-OBJREC		*o;
-register RAY	*r;
+extern int
+o_mesh(			/* compute ray intersection with a mesh */
+	OBJREC		*o,
+	register RAY	*r
+)
 {
 	RAY		rcont;
 	int		flags;

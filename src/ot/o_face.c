@@ -37,9 +37,8 @@ static const char	RCSid[] = "$Id$";
  *	5) If test 4 fails, we have no intersection.
  */
 
-/* XXX this is extern, but not declared in any header file yet */
 int
-o_face(			/* determine if face intersects cube */
+o_face(		/* determine if face intersects cube */
 	OBJREC  *o,
 	CUBE  *cu
 )

@@ -14,11 +14,10 @@ static const char RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  "ray.h"
-
 #include  "ambient.h"
-
+#include  "source.h"
 #include  "otypes.h"
-
+#include  "rtotypes.h"
 #include  "random.h"
 
 #ifndef  MAXITER
@@ -27,7 +26,6 @@ static const char RCSid[] = "$Id$";
 					/* estimate of Fresnel function */
 #define  FRESNE(ci)	(exp(-5.85*(ci)) - 0.00287989916)
 
-static void  gaussamp();
 
 /*
  *	This routine implements the isotropic Gaussian
@@ -66,14 +64,19 @@ typedef struct {
 	double  pdot;		/* perturbed dot product */
 }  NORMDAT;		/* normal material data */
 
+static srcdirf_t dirnorm;
+static void gaussamp(RAY  *r, NORMDAT  *np);
+
 
 static void
-dirnorm(cval, np, ldir, omega)		/* compute source contribution */
-COLOR  cval;			/* returned coefficient */
-register NORMDAT  *np;		/* material data */
-FVECT  ldir;			/* light source direction */
-double  omega;			/* light source size */
+dirnorm(		/* compute source contribution */
+	COLOR  cval,			/* returned coefficient */
+	void  *nnp,		/* material data */
+	FVECT  ldir,			/* light source direction */
+	double  omega			/* light source size */
+)
 {
+	register NORMDAT *np = nnp;
 	double  ldot;
 	double  ldiff;
 	double  dtmp, d2;
@@ -159,10 +162,11 @@ double  omega;			/* light source size */
 }
 
 
-int
-m_normal(m, r)			/* color a ray that hit something normal */
-register OBJREC  *m;
-register RAY  *r;
+extern int
+m_normal(			/* color a ray that hit something normal */
+	register OBJREC  *m,
+	register RAY  *r
+)
 {
 	NORMDAT  nd;
 	double  fest;
@@ -353,9 +357,10 @@ register RAY  *r;
 
 
 static void
-gaussamp(r, np)			/* sample gaussian specular */
-RAY  *r;
-register NORMDAT  *np;
+gaussamp(			/* sample gaussian specular */
+	RAY  *r,
+	register NORMDAT  *np
+)
 {
 	RAY  sr;
 	FVECT  u, v, h;

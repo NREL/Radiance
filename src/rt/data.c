@@ -13,6 +13,7 @@ static const char	RCSid[] = "$Id$";
 #include  "standard.h"
 #include  "color.h"
 #include  "resolu.h"
+#include  "view.h"
 #include  "data.h"
 
 				/* picture memory usage before warning */
@@ -36,9 +37,10 @@ static DATARRAY	 *dtab[TABSIZ];		/* data array list */
 static gethfunc headaspect;
 
 
-DATARRAY *
-getdata(dname)				/* get data array dname */
-char  *dname;
+extern DATARRAY *
+getdata(				/* get data array dname */
+	char  *dname
+)
 {
 	char  *dfname;
 	FILE  *fp;
@@ -136,6 +138,7 @@ scanerr:
 	sprintf(errmsg, "%s in data file \"%s\"",
 			feof(fp) ? "unexpected EOF" : "bad format", dfname);
 	error(USER, errmsg);
+	return NULL; /* pro forma return */
 }
 
 
@@ -155,9 +158,10 @@ headaspect(			/* check string for aspect ratio */
 }
 
 
-DATARRAY *
-getpict(pname)				/* get picture pname */
-char  *pname;
+extern DATARRAY *
+getpict(				/* get picture pname */
+	char  *pname
+)
 {
 	double  inpaspect;
 	char  *pfname;
@@ -249,12 +253,14 @@ memerr:
 readerr:
 	sprintf(errmsg, "bad picture file \"%s\"", pfname);
 	error(USER, errmsg);
+	return NULL; /* pro forma return */
 }
 
 
-void
-freedata(dta)			/* release data array reference */
-DATARRAY  *dta;
+extern void
+freedata(			/* release data array reference */
+	DATARRAY  *dta
+)
 {
 	DATARRAY  head;
 	int  hval, nents;
@@ -288,10 +294,11 @@ DATARRAY  *dta;
 }
 
 
-double
-datavalue(dp, pt)		/* interpolate data value at a point */
-register DATARRAY  *dp;
-double	*pt;
+extern double
+datavalue(		/* interpolate data value at a point */
+	register DATARRAY  *dp,
+	double	*pt
+)
 {
 	DATARRAY  sd;
 	int  asize;

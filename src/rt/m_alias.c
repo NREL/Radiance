@@ -6,8 +6,10 @@ static const char RCSid[] = "$Id$";
  */
 
 #include "copyright.h"
+
 #include "ray.h"
 #include "otypes.h"
+#include "rtotypes.h"
 #include "otspecial.h"
 
 /*
@@ -21,10 +23,11 @@ static const char RCSid[] = "$Id$";
  *  chain at all.
  */
 
-int
-m_alias(m, r)			/* transfer shading to alias target */
-OBJREC	*m;
-RAY	*r;
+extern int
+m_alias(			/* transfer shading to alias target */
+	OBJREC	*m,
+	RAY	*r
+)
 {
 	OBJECT	aobj;
 	OBJREC	*aop;

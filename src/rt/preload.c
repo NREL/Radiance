@@ -18,14 +18,17 @@ static const char	RCSid[] = "$Id$";
 #include "instance.h"
 #include "color.h"
 #include "data.h"
+#include "func.h"
+#include "ray.h"
 
 
 /* KEEP THIS ROUTINE CONSISTENT WITH THE DIFFERENT OBJECT FUNCTIONS! */
 
 
-int
-load_os(op)			/* load associated data for object */
-register OBJREC	*op;
+extern int
+load_os(			/* load associated data for object */
+	register OBJREC	*op
+)
 {
 	DATARRAY  *dp;
 
@@ -120,11 +123,12 @@ register OBJREC	*op;
 	return(0);
 sargerr:
 	objerror(op, USER, "too few string arguments");
+	return 0; /* pro forma return */
 }
 
 
-void
-preload_objs()		/* preload object data structures */
+extern void
+preload_objs(void)		/* preload object data structures */
 {
 	register OBJECT on;
 				/* note that nobjects may change during loop */

@@ -8,10 +8,9 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  "ray.h"
-
 #include  "data.h"
-
 #include  "func.h"
+#include  "rtotypes.h"
 
 /*
  *	A stored pattern can either be brightness or
@@ -47,9 +46,11 @@ static const char	RCSid[] = "$Id$";
  */
 
 
-p_bdata(m, r)			/* interpolate brightness data */
-register OBJREC  *m;
-RAY  *r;
+extern int
+p_bdata(			/* interpolate brightness data */
+	register OBJREC  *m,
+	RAY  *r
+)
 {
 	double  bval;
 	double  pt[MAXDIM];
@@ -82,9 +83,11 @@ computerr:
 }
 
 
-p_cdata(m, r)			/* interpolate color data */
-register OBJREC  *m;
-RAY  *r;
+extern int
+p_cdata(			/* interpolate color data */
+	register OBJREC  *m,
+	RAY  *r
+)
 {
 	double  col[3];
 	COLOR  cval;
@@ -129,9 +132,11 @@ computerr:
 }
 
 
-p_pdata(m, r)			/* interpolate picture data */
-register OBJREC  *m;
-RAY  *r;
+extern int
+p_pdata(			/* interpolate picture data */
+	register OBJREC  *m,
+	RAY  *r
+)
 {
 	double  col[3];
 	COLOR  cval;

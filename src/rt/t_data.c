@@ -8,10 +8,9 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  "ray.h"
-
 #include  "data.h"
-
 #include  "func.h"
+#include  "rtotypes.h"
 
 /*
  *	A stored texture is specified as follows:
@@ -31,9 +30,11 @@ static const char	RCSid[] = "$Id$";
  */
 
 
-t_data(m, r)			/* interpolate texture data */
-register OBJREC  *m;
-RAY  *r;
+extern int
+t_data(			/* interpolate texture data */
+	register OBJREC  *m,
+	RAY  *r
+)
 {
 	int  nv;
 	FVECT  disp;

@@ -50,7 +50,6 @@ static const char	RCSid[] = "$Id$";
  */
 
 
-/* XXX o_sphere() is extern, but not declared in any header file */
 int
 o_sphere(			/* determine if sphere intersects cube */
 	OBJREC  *o,

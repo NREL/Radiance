@@ -8,13 +8,15 @@ static const char RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  "ray.h"
-
 #include  "instance.h"
+#include  "rtotypes.h"
 
 
-o_instance(o, r)		/* compute ray intersection with octree */
-OBJREC  *o;
-register RAY  *r;
+extern int
+o_instance(		/* compute ray intersection with octree */
+	OBJREC  *o,
+	register RAY  *r
+)
 {
 	RAY  rcont;
 	double  d;

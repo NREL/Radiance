@@ -21,6 +21,7 @@ static const char	RCSid[] = "$Id$";
 
 #include "standard.h"
 #include "color.h"
+#include "driver.h"
 
 				/* histogram resolution */
 #define NRED		24
@@ -92,10 +93,11 @@ int	ncolors;
 }
 
 
-int
-get_pixel(col, set_pixel)	/* get pixel for color */
-COLOR	col;
-void	(*set_pixel)();
+extern int
+get_pixel(	/* get pixel for color */
+	COLOR	col,
+	dr_newcolrf_t *newcolr
+)
 {
 	int	r, g, b;
 	int	cv[3];
@@ -140,7 +142,7 @@ void	(*set_pixel)();
 				h, r, g, b, clrtab[h].n);
 		eputs(errmsg);
 #endif
-		(*set_pixel)(h, r, g, b);
+		(*newcolr)(h, r, g, b);
 	}
 	return(h);				/* return pixel value */
 }

@@ -33,9 +33,8 @@ static double findcseg(FVECT ep0, FVECT ep1, CONE *co, FVECT p);
 
 
 
-/* XXX o_cone() is extern, but not declared in any header file */
-int
-o_cone(			/* determine if cone intersects cube */
+extern int
+o_cone(		/* determine if cone intersects cube */
 	OBJREC  *o,
 	register CUBE  *cu
 )

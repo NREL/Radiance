@@ -8,15 +8,16 @@ static const char RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  "ray.h"
-
 #include  "otypes.h"
-
+#include  "rtotypes.h"
 #include  "cone.h"
 
 
-o_cone(o, r)			/* intersect ray with cone */
-OBJREC  *o;
-register RAY  *r;
+extern int
+o_cone(			/* intersect ray with cone */
+	OBJREC  *o,
+	register RAY  *r
+)
 {
 	FVECT  rox, rdx;
 	double  a, b, c;

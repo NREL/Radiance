@@ -8,10 +8,9 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  "ray.h"
-
 #include  "data.h"
-
 #include  "func.h"
+#include  "rtotypes.h"
 
 /*
  *  A stored mixture is specified:
@@ -42,9 +41,11 @@ static const char	RCSid[] = "$Id$";
  */
 
 
-mx_data(m, r)			/* interpolate mixture data */
-register OBJREC  *m;
-RAY  *r;
+extern int
+mx_data(			/* interpolate mixture data */
+	register OBJREC  *m,
+	RAY  *r
+)
 {
 	OBJECT	obj;
 	double  coef;
@@ -92,9 +93,11 @@ computerr:
 }
 
 
-mx_pdata(m, r)			/* interpolate mixture picture */
-register OBJREC  *m;
-RAY  *r;
+extern int
+mx_pdata(			/* interpolate mixture picture */
+	register OBJREC  *m,
+	RAY  *r
+)
 {
 	OBJECT	obj;
 	double	col[3], coef;

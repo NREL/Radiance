@@ -8,8 +8,8 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  "ray.h"
-
 #include  "func.h"
+#include  "rtotypes.h"
 
 /*
  *	A procedural texture perturbs the surface normal
@@ -28,9 +28,11 @@ static const char	RCSid[] = "$Id$";
  */
 
 
-t_func(m, r)			/* compute texture for ray */
-register OBJREC  *m;
-register RAY  *r;
+extern int
+t_func(			/* compute texture for ray */
+	register OBJREC  *m,
+	register RAY  *r
+)
 {
 	FVECT  disp;
 	double  d;

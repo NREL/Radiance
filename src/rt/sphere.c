@@ -8,13 +8,15 @@ static const char RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  "ray.h"
-
 #include  "otypes.h"
+#include  "rtotypes.h"
 
 
-o_sphere(so, r)			/* compute intersection with sphere */
-OBJREC  *so;
-register RAY  *r;
+extern int
+o_sphere(			/* compute intersection with sphere */
+	OBJREC  *so,
+	register RAY  *r
+)
 {
 	double  a, b, c;	/* coefficients for quadratic equation */
 	double  root[2];	/* quadratic roots */

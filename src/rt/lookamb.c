@@ -10,6 +10,7 @@ static const char	RCSid[] = "$Id$";
 #include  "platform.h"
 #include  "ray.h"
 #include  "ambient.h"
+#include  "resolu.h"
 
 
 int  dataonly = 0;
@@ -19,9 +20,11 @@ int  reverse = 0;
 AMBVAL  av;
 
 
-main(argc, argv)		/* load ambient values from a file */
-int  argc;
-char  *argv[];
+int
+main(		/* load ambient values from a file */
+	int  argc,
+	char  *argv[]
+)
 {
 	FILE  *fp;
 	int  i;
@@ -85,9 +88,10 @@ formaterr:
 }
 
 
-void
-lookamb(fp)			/* get ambient values from a file */
-FILE  *fp;
+extern void
+lookamb(			/* get ambient values from a file */
+	FILE  *fp
+)
 {
 	while (readambval(&av, fp)) {
 		if (dataonly) {
@@ -121,9 +125,10 @@ FILE  *fp;
 }
 
 
-void
-writamb(fp)			/* write binary ambient values */
-FILE  *fp;
+extern void
+writamb(			/* write binary ambient values */
+	FILE  *fp
+)
 {
 	for ( ; ; ) {
 		if (!dataonly)
