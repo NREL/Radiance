@@ -343,7 +343,7 @@ scan2init()			/* prepare scanline arrays */
 	}
 	e = bright(exposure);
 	if (e < 1-1e-7 || e > 1+1e-7)		/* record exposure */
-		printf("EXPOSURE=%e\n", e);
+		fputexpos(e, stdout);
 	printf("\n");
 	fputresolu(YMAJOR|YDECR, ncols, nrows, stdout);	/* resolution */
 }

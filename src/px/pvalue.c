@@ -158,8 +158,8 @@ char  *line;
 {
 	if (header)
 		fputs(line, stdout);
-	if (!strncmp(line, "EXPOSURE=", 9))
-		exposure *= atof(line+9);
+	if (isexpos(line))
+		exposure *= exposval(line);
 }
 
 
