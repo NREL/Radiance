@@ -121,13 +121,11 @@ char  *dname;
 				error(USER, errmsg);
 			} else
 				return;
-#ifndef RHAS_FORK_EXEC /* XXX otherwise we do nothing? */
 						/* not there, try exec */
 	if ((dev = comm_init(dname, id)) == NULL) {
 		sprintf(errmsg, "cannot start device \"%s\"", dname);
 		error(USER, errmsg);
 	}
-#endif
 }
 
 

@@ -78,6 +78,7 @@ char	*dname, *id;
 		eputs(": not found\n");
 		return(NULL);
 	}
+#ifdef RHAS_FORK_EXEC
 						/* open communication pipes */
 	if (pipe(p1) == -1 || pipe(p2) == -1)
 		goto syserr;
@@ -102,6 +103,14 @@ char	*dname, *id;
 syserr:
 	perror(dname);
 	return(NULL);
+
+#else	/* ! RHAS_FORK_EXEC */
+
+	eputs(dname);
+	eputs(": no fork/exec\n");
+	return(NULL);
+
+#endif	/* ! RHAS_FORK_EXEC */
 }
 
 
