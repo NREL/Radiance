@@ -88,14 +88,6 @@ char	*argv[];
 				printview();
 			if (inp & DFL(DC_LASTVIEW))
 				new_view(NULL);
-			if (inp & DFL(DC_RESUME)) {
-				serv_request(DR_NOOP, 0, NULL);
-				pause = 0;
-			}
-			if (inp & DFL(DC_PAUSE))
-				pause = 1;
-			if (inp & DFL(DC_REDRAW))
-				imm_mode = beam_sync(1) > 0;
 			if (inp & DFL(DC_KILL)) {
 				serv_request(DR_KILL, 0, NULL);
 				pause = 0;
@@ -106,6 +98,14 @@ char	*argv[];
 				serv_request(DR_RESTART, 0, NULL);
 				pause = 0;
 			}
+			if (inp & DFL(DC_RESUME)) {
+				serv_request(DR_NOOP, 0, NULL);
+				pause = 0;
+			}
+			if (inp & DFL(DC_PAUSE))
+				pause = 1;
+			if (inp & DFL(DC_REDRAW))
+				imm_mode = beam_sync(1) > 0;
 			if (inp & DFL(DC_QUIT))
 				serv_request(DR_SHUTDOWN, 0, NULL);
 		}
