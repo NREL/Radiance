@@ -64,6 +64,11 @@ typedef struct {
 	{"REPORT",	3,	0,	NULL,	onevalue}, \
 }
 
+				/* bundle set requests */
+#define BS_NEW		0		/* replace current set with new one */
+#define BS_ADD		1		/* add to current set */
+#define BS_DEL		2		/* delete from current set */
+
 extern char	*progname;	/* our program name */
 extern char	*hdkfile;	/* holodeck file name */
 extern char	froot[];	/* root file name */

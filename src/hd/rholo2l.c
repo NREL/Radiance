@@ -253,7 +253,7 @@ flush_queue()			/* empty all rtrace queues */
 		if (pqlen[i]) {
 			if (rpdone == NULL) {		/* tack on queue */
 				rpdone = rpl = pqueue[i];
-				nr = rpl->nr;
+				if ((nr = rpl->nr) < RPACKSIZ) nr++;
 			} else {
 				rpl->next = pqueue[i];
 				nr = 0;
