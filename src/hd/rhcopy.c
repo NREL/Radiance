@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -12,8 +12,8 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "view.h"
 #include "resolu.h"
 
-#ifndef BLOADSIZE
-#define BLOADSIZE	1024	/* number of input beams to load at a time */
+#ifndef BKBSIZE
+#define BKBSIZE		256		/* beam clump size (kilobytes) */
 #endif
 
 int	checkdepth = 1;		/* check depth (!-f option)? */
@@ -55,17 +55,20 @@ char	*argv[];
 	if (frompicz && (argc-i)%2)
 		goto userr;
 	noutsects = openholo(argv[1], 1);
-	if (frompicz)
+	if (frompicz) {
 		for ( ; i < argc; i += 2)
 			addpicz(argv[i], argv[i+1]);
-	else
+	} else {
+		if (BKBSIZE*1024*1.5 > hdcachesize)
+			hdcachesize = BKBSIZE*1024*1.5;
 		for ( ; i < argc; i++)
 			addholo(argv[i]);
+	}
 	quit(0);
 userr:
 	fprintf(stderr, "Usage: %s output.hdk [-u][-d] -h inp1.hdk ..\n",
 			progname);
-	fprintf(stderr, "   Or: %s output.hdk [-u][-d] -pz inp1.pic inp1.zbf ..\n",
+	fprintf(stderr, "   Or: %s output.hdk [-u][-d] -p inp1.pic inp1.zbf ..\n",
 			progname);
 	exit(1);
 }
@@ -190,53 +193,43 @@ COLR	cv;
 }
 
 
-addholo(hdf)			/* add a holodeck file */
-char	*hdf;
+addbeam(bp, hb)			/* add a beam to our output holodeck */
+register BEAM	*bp;
+register HDBEAMI	*hb;
 {
-	HDBEAMI	hbl[BLOADSIZE];
-	int	fd;
-	register HOLO	*hp;
-	register BEAM	*bp;
 	GCOORD	gc[2];
 	FVECT	ro, rd;
 	double	d;
-	int	i, j, n, li;
 	register int	k;
+					/* get beam coordinates */
+	hdbcoord(gc, hb->h, hb->b);
+					/* add each ray to output */
+	for (k = bp->nrm; k--; ) {
+		d = hdray(ro, rd, hb->h, gc, hdbray(bp)[k].r);
+		if (hb->h->priv == &unobstr)
+			VSUM(ro, ro, rd, d);
+		else
+			d = 0.;
+		d = hddepth(hb->h, hdbray(bp)[k].d) - d;
+		addray(ro, rd, d, hdbray(bp)[k].v);
+	}
+	hdfreebeam(hb->h, hb->b);	/* free the beam */
+}
+
+
+addholo(hdf)			/* add a holodeck file */
+char	*hdf;
+{
+	int	fd;
 					/* open the holodeck for reading */
 	openholo(hdf, 0);
 	fd = hdlist[noutsects]->fd;	/* remember the file handle */
-	while ((hp = hdlist[noutsects]) != NULL) {	/* load each section */
-		for (j = 0; j < nbeams(hp); j++) {	/* load each beam */
-			if (!(li = j % BLOADSIZE)) {	/* optimize order */
-				if (j+BLOADSIZE > nbeams(hp))
-					k = n = nbeams(hp) - j;
-				else
-					k = n = BLOADSIZE;
-				while (k--) {
-					hbl[k].h = hp;
-					hbl[k].b = j+k+1;
-				}
-				qsort((char *)hbl, n,
-						sizeof(HDBEAMI), hdfilord);
-			}
-			if ((bp = hdgetbeam(hp, hbl[li].b)) != NULL) {
-				hdbcoord(gc, hp, hbl[li].b);
-				for (k = bp->nrm; k--; ) {
-					d = hdray(ro, rd,
-						hp, gc, hdbray(bp)[k].r);
-					if (hp->priv == &unobstr)
-						VSUM(ro, ro, rd, d);
-					else
-						d = 0.;
-					d = hddepth(hp, hdbray(bp)[k].d) - d;
-					addray(ro, rd, d, hdbray(bp)[k].v);
-				}
-				hdfreebeam(hp, hbl[li].b);	/* free beam */
-			}
-		}
-		hddone(hp);				/* free the section */
+	while (hdlist[noutsects] != NULL) {	/* load each section */
+							/* clump the beams */
+		clumpbeams(hdlist[noutsects], 0, BKBSIZE*1024, addbeam);
+		hddone(hdlist[noutsects]);		/* free the section */
 	}
-	close(fd);			/* close the file */
+	close(fd);			/* close input file */
 }
 
 
@@ -371,6 +364,8 @@ char	*pcf, *zbf;
 			addray(ro, rd, (double)zscn[i], cscn[i]);
 		}
 	}
+				/* write output */
+	hdsync(NULL, 1);
 				/* clean up */
 	free((char *)cscn);
 	free((char *)zscn);
