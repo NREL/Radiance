@@ -197,7 +197,6 @@ register RAY  *r;
 	double  transtest, transdist;
 	int  hasrefl, hastrans;
 	COLOR  ctmp;
-	double  dtmp;
 	register MFUNC  *mf;
 	register int  i;
 						/* check arguments */

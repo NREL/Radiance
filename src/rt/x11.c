@@ -78,8 +78,8 @@ static struct driver  x11_driver = {
 	x11_comout, x11_comin, x11_flush, 1.0
 };
 
-static int  getpixels(), xnewcolr(), freepixels(),
-		getevent(), getkey(), fixwindow();
+static int  getpixels(), xnewcolr(), freepixels(), resizewindow(),
+		getevent(), getkey(), fixwindow(), x11_getc();
 static unsigned long  true_pixel();
 
 
@@ -270,8 +270,6 @@ static
 x11_comin(inp, prompt)		/* read in a command line */
 char  *inp, *prompt;
 {
-	extern int  x11_getc();
-
 	if (prompt != NULL)
 		if (fromcombuf(inp, &x11_driver))
 			return;
