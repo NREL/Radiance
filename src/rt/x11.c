@@ -86,6 +86,7 @@ char  *name, *id;
 	XVisualInfo  ourvinfo;
 	XSetWindowAttributes	ourwinattr;
 	XWMHints  ourxwmhints;
+	XSizeHints	oursizhints;
 
 	ourdisplay = XOpenDisplay(NULL);
 	if (ourdisplay == NULL) {
@@ -110,7 +111,7 @@ char  *name, *id;
 	ourvisual = ourvinfo.visual;
 	make_gmap(GAMMA);
 	/* open window */
-	ourwinattr.background_pixel = ourwhite;
+	ourwinattr.background_pixel = ourblack;
 	ourwinattr.border_pixel = ourblack;
 	gwind = XCreateWindow(ourdisplay, ourroot, 0, 0,
 		DisplayWidth(ourdisplay,ourscreen)-2*BORWIDTH,
@@ -128,6 +129,10 @@ char  *name, *id;
 	ourxwmhints.flags = InputHint;
 	ourxwmhints.input = True;
 	XSetWMHints(ourdisplay, gwind, &ourxwmhints);
+	oursizhints.min_width = MINWIDTH;
+	oursizhints.min_height = MINHEIGHT+COMHEIGHT;
+	oursizhints.flags = PMinSize;
+	XSetNormalHints(ourdisplay, gwind, &oursizhints);
 	XSelectInput(ourdisplay, gwind, ExposureMask);
 	XMapWindow(ourdisplay, gwind);
 	XWindowEvent(ourdisplay, gwind, ExposureMask, levptr(XExposeEvent));
@@ -170,32 +175,42 @@ static
 x11_clear(xres, yres)			/* clear our display */
 int  xres, yres;
 {
-	if (xres != gwidth || yres != gheight) {	/* change window */
-		if (comline != NULL)
-			xt_close(comline);
+						/* destroy command line */
+	if (comline != NULL)
+		xt_close(comline);
+						/* check limits */
+	if (xres < MINWIDTH)
+		xres = MINWIDTH;
+	if (yres < MINHEIGHT)
+		yres = MINHEIGHT;
+						/* resize window */
+	if (xres != gwidth || yres != gheight) {
 		XSelectInput(ourdisplay, gwind, 0);
 		XResizeWindow(ourdisplay, gwind, xres, yres+COMHEIGHT);
-		comline = xt_open(ourdisplay,
-				DefaultGC(ourdisplay,ourscreen),
-				gwind, 0, yres, xres, COMHEIGHT, 0, COMFN);
-		if (comline == NULL) {
-			stderr_v("Cannot open command line window\n");
-			quit(1);
-		}
-		XSelectInput(ourdisplay, comline->w, ExposureMask);
 		gwidth = xres;
 		gheight = yres;
 		XFlush(ourdisplay);
 		sleep(2);			/* wait for window manager */
 		XSync(ourdisplay, 1);		/* discard input */
 	}
+						/* get new command line */
+	comline = xt_open(ourdisplay,
+			DefaultGC(ourdisplay,ourscreen),
+			gwind, 0, gheight, gwidth, COMHEIGHT, 0, COMFN);
+	if (comline == NULL) {
+		stderr_v("Cannot open command line window\n");
+		quit(1);
+	}
+	XSelectInput(ourdisplay, comline->w, ExposureMask);
+						/* clear graphics window */
 	XClearWindow(ourdisplay, gwind);
-	if (ourvisual->class == PseudoColor)	/* reinitialize color table */
+						/* reinitialize color table */
+	if (ourvisual->class == PseudoColor)
 		if (getpixels() == 0)
 			stderr_v("cannot allocate colors\n");
 		else
 			new_ctab(ncolors);
-
+						/* remove earmuffs */
 	XSelectInput(ourdisplay, gwind,
 		StructureNotifyMask|ExposureMask|KeyPressMask|ButtonPressMask);
 }
