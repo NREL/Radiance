@@ -57,6 +57,7 @@ char	*argv[];
 	if ((dev = dinit(argv[0], argv[3])) == NULL)
 		quit(1);
 	putw(COM_RECVM, devout);		/* verify initialization */
+	sendstate();
 	fflush(devout);
 						/* loop on requests */
 	while ((com = getc(devin)) != EOF) {
@@ -106,10 +107,7 @@ r_flush()				/* flush output */
 	if (dev->flush != NULL)
 		(*dev->flush)();
 	putc(COM_FLUSH, devout);
-	fwrite((char *)&dev->pixaspect, sizeof(dev->pixaspect), 1, devout);
-	putw(dev->xsiz, devout);
-	putw(dev->ysiz, devout);
-	putw(dev->inpready, devout);
+	sendstate();
 	fflush(devout);
 }
 
@@ -156,7 +154,7 @@ r_comin()				/* read string from command line */
 					/* reply */
 	putc(COM_COMIN, devout);
 	myputs(buf, devout);
-	putw(dev->inpready, devout);
+	sendstate();
 	fflush(devout);
 }
 
@@ -198,4 +196,13 @@ register char  *s;
 		fflush(stderr);
 		inline = 0;
 	}
+}
+
+
+sendstate()				/* send driver state variables */
+{
+	fwrite((char *)&dev->pixaspect, sizeof(dev->pixaspect), 1, devout);
+	putw(dev->xsiz, devout);
+	putw(dev->ysiz, devout);
+	putw(dev->inpready, devout);
 }
