@@ -12,7 +12,10 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "view.h"
 
 #ifndef DEPS
-#define DEPS		0.01	/* depth epsilon */
+#define DEPS		0.02	/* depth epsilon */
+#endif
+#ifndef PEPS
+#define PEPS		0.04	/* pixel value epsilon */
 #endif
 #ifndef MAXRAD
 #define MAXRAD		64	/* maximum kernel radius */
@@ -39,6 +42,9 @@ static char SCCSid[] = "$SunId$ SGI";
 
 static int4	*pixFlags;	/* pixel occupancy flags */
 static float	pixWeight[MAXRAD2];	/* pixel weighting function */
+static short	isqrttab[MAXRAD2];	/* integer square root table */
+
+#define isqrt(i2)	((int)isqrttab[(int)(i2)])
 
 extern VIEW	myview;		/* current output view */
 extern COLOR	*mypixel;	/* pixels being rendered */
@@ -107,26 +113,26 @@ register HDBEAMI	*hb;
 int
 kill_occl(h, v, nl, n)		/* check for occlusion errors */
 int	h, v;
-short	nl[NNEIGH][2];
+register short	nl[NNEIGH][2];
 int	n;
 {
 	short	forequad[2][2];
 	int	d;
-	register int4	i;
+	register int4	i, p;
 
 	if (n <= 0)
 		return(1);
+	p = v*hres + h;
 	forequad[0][0] = forequad[0][1] = forequad[1][0] = forequad[1][1] = 0;
 	for (i = n; i--; ) {
 		d = (h-nl[i][0])*(h-nl[i][0]) + (v-nl[i][1])*(v-nl[i][1]);
-		if (mydepth[nl[i][1]*hres+nl[i][0]] <
-				mydepth[v*hres+h]*(1.-DEPS*d))
+		d = isqrt(d);
+		if (mydepth[nl[i][1]*hres+nl[i][0]]*(1.+DEPS*d) < mydepth[p])
 			forequad[nl[i][0]<h][nl[i][1]<v] = 1;
 	}
-	if (forequad[0][0]+forequad[0][1]+forequad[1][0]+forequad[1][1] > 1) {
-		i = v*hres + h;
-		setcolor(mypixel[i], 0., 0., 0.);
-		myweight[i] = 0.;	/* occupancy reset afterwards */
+	if (forequad[0][0]+forequad[0][1]+forequad[1][0]+forequad[1][1] > 2) {
+		setcolor(mypixel[p], 0., 0., 0.);
+		myweight[p] = 0.;	/* occupancy reset afterwards */
 	}
 	return(1);
 }
@@ -138,38 +144,56 @@ int	h, v;
 register short	nl[NNEIGH][2];
 int	n;
 {
+	int	dis[NNEIGH], ndis;
 	COLOR	mykern[MAXRAD2];
-	float	mykw[MAXRAD2];
 	int4	maxr2;
-	double	w;
+	double	w, d;
 	register int4	p, r2;
-	int	maxr, h2, v2;
+	int	i, r, maxr, h2, v2;
 
 	if (n <= 0)
 		return(1);
 	p = v*hres + h;				/* build kernel values */
 	maxr2 = (h-nl[n-1][0])*(h-nl[n-1][0]) + (v-nl[n-1][1])*(v-nl[n-1][1]);
 	DCHECK(maxr2>=MAXRAD2, CONSISTENCY, "out of range neighbor");
-	for (r2 = maxr2+1; --r2; ) {
-		copycolor(mykern[r2], mypixel[p]);
-		mykw[r2] = pixWeight[r2];
-		if (2*r2 >= maxr2)		/* soften skirt */
-			mykw[r2] *= (2*(maxr2-r2)+1.0)/maxr2;
-		scalecolor(mykern[r2], mykw[r2]);
+	maxr = isqrt(maxr2);
+	for (v2 = 1; v2 <= maxr; v2++)
+		for (h2 = 0; h2 <= v2; h2++) {
+			r2 = h2*h2 + v2*v2;
+			if (r2 > maxr2) break;
+			copycolor(mykern[r2], mypixel[p]);
+			scalecolor(mykern[r2], pixWeight[r2]);
+		}
+	ndis = 0;				/* find discontinuities */
+	for (i = n; i--; ) {
+		r2 = (h-nl[i][0])*(h-nl[i][0]) + (v-nl[i][1])*(v-nl[i][1]);
+		r = isqrt(r2);
+		d = mydepth[nl[i][1]*hres+nl[i][0]] / mydepth[p];
+		d = d>=1. ? d-1. : 1.-d;
+		if (d > r*DEPS || bigdiff(mypixel[p],
+				mypixel[nl[i][1]*hres+nl[i][0]], r*PEPS))
+			dis[ndis++] = i;
 	}
-	maxr = sqrt((double)maxr2) + .99;	/* stamp out that kernel */
+						/* stamp out that kernel */
 	for (v2 = v-maxr; v2 <= v+maxr; v2++) {
-		if (v2 < 0) continue;
-		if (v2 >= vres) break;
+		if (v2 < 0) v2 = 0;
+		else if (v2 >= vres) break;
 		for (h2 = h-maxr; h2 <= h+maxr; h2++) {
-			if (h2 < 0) continue;
-			if (h2 >= hres) break;
-			r2 = (v2-v)*(v2-v) + (h2-h)*(h2-h);
+			if (h2 < 0) h2 = 0;
+			else if (h2 >= hres) break;
+			r2 = (h2-h)*(h2-h) + (v2-v)*(v2-v);
 			if (r2 > maxr2) continue;
 			if (CHK4(pixFlags, v2*hres+h2))
 				continue;	/* occupied */
+			for (i = ndis; i--; ) {
+				r = (h2-nl[dis[i]][0])*(h2-nl[dis[i]][0]) +
+					(v2-nl[dis[i]][1])*(v2-nl[dis[i]][1]);
+				if (r < r2) break;
+			}
+			if (i >= 0) continue;	/* outside edge */
 			addcolor(mypixel[v2*hres+h2], mykern[r2]);
-			myweight[v2*hres+h2] += mykw[r2]*myweight[v*hres+h];
+			myweight[v2*hres+h2] += pixWeight[r2] *
+							myweight[v*hres+h];
 		}
 	}
 	return(1);
@@ -182,10 +206,18 @@ pixFlush()			/* done with beams -- flush pixel values */
 	meet_neighbors(kill_occl);	/* eliminate occlusion errors */
 	reset_flags();			/* reset occupancy flags */
 	if (pixWeight[0] <= FTINY) {	/* initialize weighting function */
-		register int	r;
-		for (r = MAXRAD2; --r; )
-			pixWeight[r] = G0NORM/sqrt((double)r);
+		register int	i, j, r2;
+		double	d;
+		for (i = 1; i <= MAXRAD; i++)
+			for (j = 0; j <= i; j++) {
+				r2 = i*i + j*j;
+				if (r2 >= MAXRAD2) break;
+				d = sqrt((double)r2);
+				pixWeight[r2] = G0NORM/d;
+				isqrttab[r2] = d + 0.99;
+			}
 		pixWeight[0] = 1.;
+		isqrttab[0] = 0;
 	}
 	meet_neighbors(grow_samp);	/* grow valid samples over image */
 	free((char *)pixFlags);		/* free pixel flags */
@@ -215,22 +247,24 @@ int	h, v;
 register short	(*rnl)[NNEIGH];
 {
 	int	nn = 0;
-	int4	d, ld, nd[NNEIGH+1];
+	int4	d, nd[NNEIGH];
 	int	n, hoff;
 	register int	h2, n2;
 
-	ld = MAXRAD2;
+	nd[NNEIGH-1] = MAXRAD2;
 	for (hoff = 1; hoff < hres; hoff = (hoff<0) - hoff) {
 		h2 = h + hoff;
 		if (h2 < 0 | h2 >= hres)
 			continue;
-		if ((h2-h)*(h2-h) >= ld)
+		if ((h2-h)*(h2-h) >= nd[NNEIGH-1])
 			break;
 		for (n = 0; n < NNEIGH && rnl[h2][n] < NINF; n++) {
 			d = (h2-h)*(h2-h) + (v-rnl[h2][n])*(v-rnl[h2][n]);
-			if (d >= ld)
+			if (d >= nd[NNEIGH-1])
 				continue;
-			for (n2 = nn; ; n2--) 	{	/* insert neighbor */
+			if (nn < NNEIGH)	/* insert neighbor */
+				nn++;
+			for (n2 = nn; n2--; ) 	{
 				if (!n2 || d >= nd[n2-1]) {
 					nd[n2] = d;
 					nl[n2][0] = h2;
@@ -241,10 +275,6 @@ register short	(*rnl)[NNEIGH];
 				nl[n2][0] = nl[n2-1][0];
 				nl[n2][1] = nl[n2-1][1];
 			}
-			if (nn < NNEIGH)
-				nn++;
-			else
-				ld = nd[NNEIGH-1];
 		}
 	}
 	return(nn);
