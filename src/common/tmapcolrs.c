@@ -52,7 +52,7 @@ COLR	*scan,
 int	len
 )
 {
-	static char	funcName[] = "tmCvColrs";
+	static const char	funcName[] = "tmCvColrs";
 	COLR	cmon;
 	register COLRDATA	*cd;
 	register int	i, bi, li;

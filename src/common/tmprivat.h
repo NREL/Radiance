@@ -59,7 +59,7 @@ extern "C" {
 MEM_PTR		malloc();
 MEM_PTR		calloc();
 #endif
-extern int	tmErrorReturn(char *, TMstruct *, int);
+extern int	tmErrorReturn(const char *, TMstruct *, int);
 
 						/* lookup for mesopic scaling */
 extern BYTE	tmMesofact[BMESUPPER-BMESLOWER];

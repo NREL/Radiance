@@ -131,7 +131,7 @@ uint32	*luvs,
 int	len
 )
 {
-	static char	funcName[] = "tmCvLuv32";
+	static const char	funcName[] = "tmCvLuv32";
 	double	uvp[2];
 	register LUV32DATA	*ld;
 	register int	i, j;
@@ -255,7 +255,7 @@ uint16	*l16s,
 int	len
 )
 {
-	static char	funcName[] = "tmCvL16";
+	static const char	funcName[] = "tmCvL16";
 	static double	lastsf;
 	static int	offset;
 	register int	i;
