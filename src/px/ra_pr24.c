@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -10,6 +10,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+#ifdef MSDOS
+#include  <fcntl.h>
+#endif
+
 #include  "rasterfile.h"
 
 #include  "color.h"
@@ -17,6 +21,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "resolu.h"
 
 extern double  pow();
+
+extern char  *malloc();
 
 double	gamma = 2.2;			/* gamma correction */
 
@@ -34,7 +40,12 @@ char  *argv[];
 	struct rasterfile  head;
 	int  reverse = 0;
 	int  i;
-	
+#ifdef MSDOS
+	extern int  _fmode;
+	_fmode = O_BINARY;
+	setmode(fileno(stdin), O_BINARY);
+	setmode(fileno(stdout), O_BINARY);
+#endif
 	progname = argv[0];
 
 	head.ras_type = RT_STANDARD;

@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -35,9 +35,9 @@ char  *newmod = NULL;			/* new modifier for surfaces */
 
 char  *idprefix = NULL;			/* prefix for object identifiers */
 
-#define  ALIAS		NUMOTYPE	/* put alias at end of array */
+#define	 ALIAS		NUMOTYPE	/* put alias at end of array */
 
-#define  NUMTYPES	(NUMOTYPE+1)	/* total number of object types */
+#define	 NUMTYPES	(NUMOTYPE+1)	/* total number of object types */
 
 FUN  ofun[NUMTYPES] = INIT_OTYPE;	/* default types and actions */
 
@@ -45,7 +45,7 @@ short  tinvers[NUMOTYPE];		/* inverse types for surfaces */
 
 extern char  *malloc(), *fgetword();
 
-#define  progname  (xav[0])
+#define	 progname  (xav[0])
 
 
 main(argc, argv)		/* get transform options and transform file */
@@ -197,6 +197,7 @@ register FILE  *fin;
 
 
 xfcomm(fname, fin)			/* transform a command */
+char  *fname;
 FILE  *fin;
 {
 	FILE  *popen();
@@ -266,7 +267,7 @@ o_default(fin)			/* pass on arguments unchanged */
 FILE  *fin;
 {
 	register int  i;
-	FUNARGS  fa;
+	FUNARGS	 fa;
 
 	if (readfargs(&fa, fin) != 1)
 		return(-1);
@@ -275,7 +276,7 @@ FILE  *fin;
 	for (i = 0; i < fa.nsargs; i++)
 		printf(" %s", fa.sarg[i]);
 	printf("\n");
-#ifdef  IARGS
+#ifdef	IARGS
 					/* integer arguments */
 	printf("%d", fa.niargs);
 	for (i = 0; i < fa.niargs; i++)
@@ -299,7 +300,7 @@ FILE  *fin;
 {
 	register int  i;
 	int  resetarr = 0;
-	FUNARGS  fa;
+	FUNARGS	 fa;
 
 	if (readfargs(&fa, fin) != 1)
 		return(-1);
@@ -314,7 +315,7 @@ FILE  *fin;
 	for (i = xfa; i < xac; i++)	/* add xf arguments */
 		printf(" %s", xav[i]);
 	printf("\n");
-#ifdef  IARGS
+#ifdef	IARGS
 					/* integer arguments */
 	printf("%d", fa.niargs);
 	for (i = 0; i < fa.niargs; i++)
@@ -362,7 +363,7 @@ FILE  *fin;
 m_glow(fin)			/* transform arguments for proximity light */
 FILE  *fin;
 {
-	FUNARGS  fa;
+	FUNARGS	 fa;
 
 	if (readfargs(&fa, fin) != 1)
 		return(-1);
@@ -381,7 +382,7 @@ m_spot(fin)			/* transform arguments for spotlight */
 FILE  *fin;
 {
 	FVECT  v;
-	FUNARGS  fa;
+	FUNARGS	 fa;
 
 	if (readfargs(&fa, fin) != 1)
 		return(-1);
@@ -400,8 +401,8 @@ FILE  *fin;
 m_dielectric(fin)		/* transform arguments for dielectric */
 FILE  *fin;
 {
-	double  pow();
-	FUNARGS  fa;
+	double	pow();
+	FUNARGS	 fa;
 
 	if (readfargs(&fa, fin) != 1)
 		return(-1);
@@ -421,8 +422,8 @@ FILE  *fin;
 m_interface(fin)		/* transform arguments for interface */
 FILE  *fin;
 {
-	double  pow();
-	FUNARGS  fa;
+	double	pow();
+	FUNARGS	 fa;
 
 	if (readfargs(&fa, fin) != 1)
 		return(-1);
@@ -449,7 +450,7 @@ FILE  *fin;
 {
 	int  i;
 	FVECT  v;
-	FUNARGS  fa;
+	FUNARGS	 fa;
 
 	if (readfargs(&fa, fin) != 1)
 		return(-1);
@@ -485,7 +486,7 @@ o_source(fin)			/* transform source arguments */
 FILE  *fin;
 {
 	FVECT  dv;
-	FUNARGS  fa;
+	FUNARGS	 fa;
 
 	if (readfargs(&fa, fin) != 1)
 		return(-1);
@@ -506,15 +507,15 @@ o_sphere(fin)			/* transform sphere arguments */
 FILE  *fin;
 {
 	FVECT  cent;
-	double  rad;
-	FUNARGS  fa;
+	double	rad;
+	FUNARGS	 fa;
 
 	if (readfargs(&fa, fin) != 1)
 		return(-1);
 	if (fa.nsargs != 0  || fa.nfargs != 4)
 		return(-1);
 	
-	multp3(cent, fa.farg, tot.xfm);	/* transform center */
+	multp3(cent, fa.farg, tot.xfm); /* transform center */
 	
 	rad = fa.farg[3] * tot.sca;		/* scale radius */
 	
@@ -531,7 +532,7 @@ FILE  *fin;
 {
 	FVECT  p;
 	register int  i;
-	FUNARGS  fa;
+	FUNARGS	 fa;
 
 	if (readfargs(&fa, fin) != 1)
 		return(-1);
@@ -556,8 +557,8 @@ o_cone(fin)			/* transform cone and cup arguments */
 FILE  *fin;
 {
 	FVECT  p0, p1;
-	double  r0, r1;
-	FUNARGS  fa;
+	double	r0, r1;
+	FUNARGS	 fa;
 
 	if (readfargs(&fa, fin) != 1)
 		return(-1);
@@ -583,8 +584,8 @@ o_cylinder(fin)			/* transform cylinder and tube arguments */
 FILE  *fin;
 {
 	FVECT  p0, p1;
-	double  rad;
-	FUNARGS  fa;
+	double	rad;
+	FUNARGS	 fa;
 
 	if (readfargs(&fa, fin) != 1)
 		return(-1);
@@ -608,8 +609,8 @@ o_ring(fin)			/* transform ring arguments */
 FILE  *fin;
 {
 	FVECT  p0, pd;
-	double  r0, r1;
-	FUNARGS  fa;
+	double	r0, r1;
+	FUNARGS	 fa;
 
 	if (readfargs(&fa, fin) != 1)
 		return(-1);

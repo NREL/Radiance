@@ -9,6 +9,9 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include  <stdio.h>
+#ifdef MSDOS
+#include  <fcntl.h>
+#endif
 #include  "color.h"
 #include  "random.h"
 
@@ -21,7 +24,7 @@ char  code[] =			/* 6-bit code lookup table */
 	"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@+";
 
 int  wrongformat = 0;			/* input in wrong format? */
-double  pixaspect = 1.0;		/* pixel aspect ratio */
+double	pixaspect = 1.0;		/* pixel aspect ratio */
 
 int  bradj = 0;				/* brightness adjustment */
 int  ncopies = 1;			/* number of copies */
@@ -29,6 +32,8 @@ int  ncopies = 1;			/* number of copies */
 char  *progname;
 
 int  xmax, ymax;
+
+extern char  *malloc();
 
 
 headline(s)		/* check header line */
@@ -81,6 +86,9 @@ char  *argv[];
 				progname, argv[i+1]);
 		exit(1);
 	}
+#ifdef MSDOS
+	setmode(fileno(stdin), O_BINARY);
+#endif
 				/* get our header */
 	getheader(stdin, headline, NULL);
 	if (wrongformat || fgetresolu(&xmax, &ymax, stdin) < 0)
@@ -113,8 +121,8 @@ PSheader(name)			/* print PostScript header */
 char  *name;
 {
 	int  landscape = 0;
-	double  pwidth, pheight;
-	double  iwidth, iheight;
+	double	pwidth, pheight;
+	double	iwidth, iheight;
 
 	printf("%%!\n");
 	printf("%%%%Title: %s\n", name);
@@ -209,7 +217,7 @@ ra2ps()				/* convert Radiance scanlines to 6-bit */
 	for (y = ymax-1; y >= 0; y--) {
 		if (freadcolrs(scanin, xmax, stdin) < 0)
 			quiterr("error reading Radiance picture");
-		normcolrs(scanin, xmax, bradj);	/* normalize */
+		normcolrs(scanin, xmax, bradj); /* normalize */
 		for (x = 0; x < xmax; x++) {
 			if (!(col++ & 0x3f))
 				putchar('\n');

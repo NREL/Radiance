@@ -12,11 +12,15 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+#ifdef MSDOS
+#include  <fcntl.h>
+#endif
+
 #include  "color.h"
 
 #include  "resolu.h"
 
-#define  MAXFILE	64
+#define	 MAXFILE	64
 
 					/* output picture size */
 int  xsiz = 0;
@@ -53,6 +57,8 @@ int  wrongformat = 0;
 
 FILE  *popen(), *lblopen();
 
+extern char  *malloc();
+
 
 tabputs(s)			/* print line preceded by a tab */
 char  *s;
@@ -78,7 +84,12 @@ char  *argv[];
 	int  curcol = 0, x0 = 0, curx = 0, cury = 0, spacing = 0;
 	char  *thislabel;
 	int  an;
-
+#ifdef MSDOS
+	extern int  _fmode;
+	_fmode = O_BINARY;
+	setmode(fileno(stdin), O_BINARY);
+	setmode(fileno(stdout), O_BINARY);
+#endif
 	progname = argv[0];
 
 	for (an = 1; an < argc && argv[an][0] == '-'; an++)

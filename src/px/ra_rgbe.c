@@ -9,9 +9,14 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include  <stdio.h>
+#ifdef MSDOS
+#include  <fcntl.h>
+#endif
 
 #include  "color.h"
 #include  "resolu.h"
+
+extern char  *malloc();
 
 int  bradj = 0;				/* brightness adjustment */
 
@@ -25,7 +30,12 @@ int  argc;
 char  *argv[];
 {
 	int  i;
-	
+#ifdef MSDOS
+	extern int  _fmode;
+	_fmode = O_BINARY;
+	setmode(fileno(stdin), O_BINARY);
+	setmode(fileno(stdout), O_BINARY);
+#endif
 	progname = argv[0];
 
 	for (i = 1; i < argc; i++)
@@ -81,7 +91,7 @@ transfer()		/* transfer Radiance picture */
 {
 	extern double	pow();
 	int	order;
-	int  	xmax, ymax;
+	int	xmax, ymax;
 	COLR	*scanin;
 	register int	x;
 	int	y;

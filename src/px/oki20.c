@@ -9,20 +9,25 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include  <stdio.h>
+#ifdef MSDOS
+#include  <fcntl.h>
+#endif
 
 #include  "color.h"
 #include  "resolu.h"
 
-#define  NROWS		1440		/* 10" at 144 dpi */
-#define  NCOLS		960		/* 8" at 120 dpi */
+#define	 NROWS		1440		/* 10" at 144 dpi */
+#define	 NCOLS		960		/* 8" at 120 dpi */
 
-#define  ASPECT		(120./144.)	/* pixel aspect ratio */
+#define	 ASPECT		(120./144.)	/* pixel aspect ratio */
 
-#define  FILTER		"pfilt -1 -x %d -y %d -p %f %s",NCOLS,NROWS,ASPECT
+#define	 FILTER		"pfilt -1 -x %d -y %d -p %f %s",NCOLS,NROWS,ASPECT
 
 long  lpat[NCOLS];
 
 int  dofilter = 0;		/* filter through pfilt first? */
+
+extern FILE  *popen();
 
 
 main(argc, argv)
@@ -30,7 +35,12 @@ int  argc;
 char  *argv[];
 {
 	int  i, status = 0;
-	
+#ifdef MSDOS
+	extern int  _fmode;
+	_fmode = O_BINARY;
+	setmode(fileno(stdin), O_BINARY);
+	setmode(fileno(stdout), O_BINARY);
+#endif
 	if (argc > 1 && !strcmp(argv[1], "-p")) {
 		dofilter++;
 		argv++; argc--;
@@ -146,9 +156,9 @@ int  y;
 	putchar(i >> 8);
 	for (i = start; i <= end; i++) {
 		c = lpat[i];
-		putchar(c>>16);
-		putchar(c>>8 & 255);
-		putchar(c & 255);
+		putchar((int)(c>>16));
+		putchar((int)(c>>8 & 255));
+		putchar((int)(c & 255));
 		if (y)			/* repeat this row next time */
 			lpat[i] = (c & 1) << 23;
 		else			/* or clear for next image */

@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -10,6 +10,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+#ifdef MSDOS
+#include  <fcntl.h>
+#endif
+
 #include  <ctype.h>
 
 #include  "color.h"
@@ -17,6 +21,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "resolu.h"
 
 extern double  pow();
+
+extern char  *malloc();
 
 int  agryscan(), bgryscan(), aclrscan(), bclrscan();
 
@@ -33,6 +39,7 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
+	char  inpbuf[2];
 	double	gamma = 2.2;
 	int  binflag = 1;
 	int  reverse = 0;
@@ -79,9 +86,14 @@ char  *argv[];
 	setcolrgam(gamma);
 	if (reverse) {
 					/* get header */
-		if (getc(stdin) != 'P')
+		if (read(fileno(stdin), inpbuf, 2) != 2 || inpbuf[0] != 'P')
 			quiterr("input not a Poskanzer Pixmap");
-		ptype = getc(stdin);
+		ptype = inpbuf[1];
+#ifdef MSDOS
+		if (ptype > 4)
+			setmode(fileno(stdin), O_BINARY);
+		setmode(fileno(stdout), O_BINARY);
+#endif
 		xmax = scanint(stdin);
 		ymax = scanint(stdin);
 		maxval = scanint(stdin);
@@ -108,6 +120,11 @@ char  *argv[];
 			quiterr("unsupported Pixmap type");
 		}
 	} else {
+#ifdef MSDOS
+		setmode(fileno(stdin), O_BINARY);
+		if (binflag)
+			setmode(fileno(stdout), O_BINARY);
+#endif
 					/* get header info. */
 		if (checkheader(stdin, COLRFMT, NULL) < 0 ||
 				fgetresolu(&xmax, &ymax, stdin) < 0)

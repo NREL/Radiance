@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -16,9 +16,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 
-#define  PI		3.14159265359
+#define	 PI		3.14159265359
 
-#define  FTINY		(1e-6)
+#define	 FTINY		(1e-6)
 
 extern int  nrows, ncols;	/* number of rows and columns for output */
 
@@ -36,20 +36,20 @@ extern char  *progname;
 
 extern COLOR  exposure;		/* exposure for frame */
 
-#define  AVGLVL		0.5	/* target mean brightness */
+#define	 AVGLVL		0.5	/* target mean brightness */
 
-double  avgbrt;			/* average picture brightness */
+double	avgbrt;			/* average picture brightness */
 
-typedef struct  hotpix {	/* structure for avgbrt pixels */
+typedef struct	hotpix {	/* structure for avgbrt pixels */
 	struct hotpix  *next;	/* next in list */
 	COLOR  val;		/* pixel color */
 	short  x, y;		/* pixel position */
 	float  slope;		/* random slope for diffraction */
 }  HOTPIX;
 
-HOTPIX  *head;			/* head of avgbrt pixel list */
+HOTPIX	*head;			/* head of avgbrt pixel list */
 
-double  sprdfact;		/* computed spread factor */
+double	sprdfact;		/* computed spread factor */
 
 
 pass1init()			/* prepare for first pass */
@@ -67,14 +67,14 @@ pass1default()			/* for single pass */
 
 
 pass1scan(scan, y)		/* process first pass scanline */
-register COLOR  *scan;
+register COLOR	*scan;
 int  y;
 {
 	extern char  *malloc();
 	extern double  tan(), sqrt();
-	double  cbrt;
+	double	cbrt;
 	register int  x;
-	register HOTPIX  *hp;
+	register HOTPIX	 *hp;
 
 	for (x = 0; x < xres; x++) {
 	
@@ -118,12 +118,12 @@ pass2init()			/* prepare for final pass */
 
 
 pass2scan(scan, y)		/* process final pass scanline */
-register COLOR  *scan;
+register COLOR	*scan;
 int  y;
 {
 	int  xmin, xmax;
 	register int  x;
-	register HOTPIX  *hp;
+	register HOTPIX	 *hp;
 	
 	for (hp = head; hp != NULL; hp = hp->next) {
 		if (hp->slope > FTINY) {
@@ -154,10 +154,10 @@ int  y;
 starpoint(fcol, x, y, hp)		/* pixel is on the star's point */
 COLOR  fcol;
 int  x, y;
-register HOTPIX  *hp;
+register HOTPIX	 *hp;
 {
 	COLOR  ctmp;
-	double  d2;
+	double	d2;
 	
 	d2 = (double)(x - hp->x)*(x - hp->x) + (double)(y - hp->y)*(y - hp->y);
 	if (d2 > sprdfact) {

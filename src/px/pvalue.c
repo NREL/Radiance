@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -16,9 +16,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "resolu.h"
 
-#define  min(a,b)		((a)<(b)?(a):(b))
+#define	 min(a,b)		((a)<(b)?(a):(b))
 
-RESOLU  picres;			/* resolution of picture */
+RESOLU	picres;			/* resolution of picture */
 
 int  uniq = 0;			/* print only unique values? */
 
@@ -39,7 +39,7 @@ int  resolution = 1;		/* put/get resolution string? */
 
 int  wrongformat = 0;		/* wrong input format? */
 
-double  gamcor = 1.0;		/* gamma correction */
+double	gamcor = 1.0;		/* gamma correction */
 
 int  ord[3] = {RED, GRN, BLU};	/* RGB ordering */
 int  rord[4];			/* reverse ordering */
@@ -176,6 +176,11 @@ unkopt:
 	set_io();
 
 	if (reverse) {
+#ifdef MSDOS
+		setmode(fileno(stdout), O_BINARY);
+		if (format != 'a' && format != 'i')
+			setmode(fileno(fin), O_BINARY);
+#endif
 					/* get header */
 		if (header && checkheader(fin, fmtid, stdout) < 0) {
 			fprintf(stderr, "%s: wrong input format\n", progname);
@@ -194,6 +199,11 @@ unkopt:
 		fputsresolu(&picres, stdout);	/* always put resolution */
 		valtopix();
 	} else {
+#ifdef MSDOS
+		setmode(fileno(fin), O_BINARY);
+		if (format != 'a' && format != 'i')
+			setmode(fileno(stdout), O_BINARY);
+#endif
 						/* get header */
 		getheader(fin, checkhead, NULL);
 		if (wrongformat) {
@@ -244,7 +254,7 @@ char  *line;
 
 pixtoval()				/* convert picture to values */
 {
-	register COLOR  *scanln;
+	register COLOR	*scanln;
 	int  dogamma;
 	COLOR  lastc;
 	FLOAT  hv[2];
@@ -299,7 +309,7 @@ pixtoval()				/* convert picture to values */
 valtopix()			/* convert values to a pixel file */
 {
 	int  dogamma;
-	register COLOR  *scanln;
+	register COLOR	*scanln;
 	int  y;
 	register int  x;
 
@@ -343,7 +353,7 @@ getcascii(col, fp)		/* get an ascii color value from fp */
 COLOR  col;
 FILE  *fp;
 {
-	double  vd[3];
+	double	vd[3];
 
 	if (fscanf(fp, "%lf %lf %lf", &vd[0], &vd[1], &vd[2]) != 3)
 		return(-1);
@@ -356,7 +366,7 @@ getcdouble(col, fp)		/* get a double color value from fp */
 COLOR  col;
 FILE  *fp;
 {
-	double  vd[3];
+	double	vd[3];
 
 	if (fread((char *)vd, sizeof(double), 3, fp) != 3)
 		return(-1);
@@ -410,7 +420,7 @@ getbascii(col, fp)		/* get an ascii brightness value from fp */
 COLOR  col;
 FILE  *fp;
 {
-	double  vd;
+	double	vd;
 
 	if (fscanf(fp, "%lf", &vd) != 1)
 		return(-1);
@@ -423,7 +433,7 @@ getbdouble(col, fp)		/* get a double brightness value from fp */
 COLOR  col;
 FILE  *fp;
 {
-	double  vd;
+	double	vd;
 
 	if (fread((char *)&vd, sizeof(double), 1, fp) != 1)
 		return(-1);
@@ -450,7 +460,7 @@ COLOR  col;
 FILE  *fp;
 {
 	int  vi;
-	double  d;
+	double	d;
 
 	if (fscanf(fp, "%d", &vi) != 1)
 		return(-1);
@@ -465,7 +475,7 @@ COLOR  col;
 FILE  *fp;
 {
 	BYTE  vb;
-	double  d;
+	double	d;
 
 	if (fread((char *)&vb, sizeof(BYTE), 1, fp) != 1)
 		return(-1);
@@ -507,7 +517,7 @@ putcdouble(col, fp)			/* put a double color to fp */
 COLOR  col;
 FILE  *fp;
 {
-	double  vd[3];
+	double	vd[3];
 
 	vd[0] = colval(col,ord[0]);
 	vd[1] = colval(col,ord[1]);
@@ -577,7 +587,7 @@ putbdouble(col, fp)			/* put a double brightness to fp */
 COLOR  col;
 FILE  *fp;
 {
-	double  vd;
+	double	vd;
 
 	vd = bright(col);
 	fwrite((char *)&vd, sizeof(double), 1, fp);

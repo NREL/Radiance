@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -14,7 +14,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 
-#define  FTINY		1e-7
+#define	 FTINY		1e-7
 
 extern double  rad;		/* output pixel radius for filtering */
 
@@ -38,7 +38,7 @@ extern char  *progname;
 
 float  *exptable;		/* exponent table */
 
-#define  lookexp(x)		exptable[(int)(-10.*(x)+.5)]
+#define	 lookexp(x)		exptable[(int)(-10.*(x)+.5)]
 
 
 initmask()			/* initialize gaussian lookup table */
@@ -66,7 +66,7 @@ int  c, r;
 	static double  d;
 	static int  y;
 	register int  x;
-	register COLOR  *scan;
+	register COLOR	*scan;
 
 	wsum = 0;
 	setcolor(csum, 0.0, 0.0, 0.0);
@@ -101,7 +101,7 @@ int  c, r;
 	static COLOR  ctmp;
 	static int  y;
 	register int  x;
-	register COLOR  *scan;
+	register COLOR	*scan;
 
 	wsum = FTINY;
 	setcolor(csum, 0.0, 0.0, 0.0);
