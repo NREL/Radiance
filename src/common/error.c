@@ -14,6 +14,8 @@ static char SCCSid[] = "$SunId$ LBL";
 extern char  *sys_errlist[];	/* system error list */
 extern int  sys_nerr;		/* number of system errors */
 #endif
+				/* global list of error actions */
+struct erract	erract[NERRS] = ERRACT_INIT;
 
 char  errmsg[512];		/* global error message buffer */
 
@@ -22,42 +24,26 @@ error(etype, emsg)		/* report error, quit if necessary */
 int  etype;
 char  *emsg;
 {
-	switch (etype) {
-	case WARNING:
-		wputs("warning - ");
-		wputs(emsg);
-		wputs("\n");
+	register struct erract	*ep;
+
+	if (etype < 0 | etype >= NERRS)
 		return;
-	case COMMAND:
-		cputs(emsg);
-		cputs("\n");
-		return;
-	case USER:
-		eputs("fatal - ");
-		eputs(emsg);
-		eputs("\n");
-		quit(1);
-	case INTERNAL:
-		eputs("internal - ");
-		eputs(emsg);
-		eputs("\n");
-		quit(1);
-	case SYSTEM:
-		eputs("system - ");
-		eputs(emsg);
-		if (errno > 0) {
-			eputs(": ");
+	ep = erract + etype;
+	if (ep->pf != NULL) {
+		(*ep->pf)(ep->pre);
+		(*ep->pf)(emsg);
+		if (etype == SYSTEM && errno > 0) {
+			(*ep->pf)(": ");
 			if (errno <= sys_nerr)
-				eputs(sys_errlist[errno]);
+				(*ep->pf)(sys_errlist[errno]);
 			else
-				eputs("Unknown error");
+				(*ep->pf)("Unknown error");
 		}
-		eputs("\n");
-		quit(2);
-	case CONSISTENCY:
-		eputs("consistency - ");
-		eputs(emsg);
-		eputs("\n");
-		abort();
+		(*ep->pf)("\n");
 	}
+	if (!ep->ec)		/* non-fatal */
+		return;
+	if (ep->ec < 0)		/* dump core */
+		abort();
+	quit(ep->ec);		/* quit calls exit after cleanup */
 }
