@@ -26,6 +26,8 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #define GAMMA		2.2		/* default gamma correction */
 
+#define FRAMESTATE(s)	(((s)&(ShiftMask|ControlMask))==(ShiftMask|ControlMask))
+
 #define MOVPCT		7		/* percent distance to move /frame */
 #define MOVDIR(b)	((b)==Button1 ? 1 : (b)==Button2 ? 0 : -1)
 #define MOVDEG		(-5)		/* degrees to orbit CW/down /frame */
@@ -47,6 +49,8 @@ static char SCCSid[] = "$SunId$ SGI";
 
 struct driver	odev;			/* global device driver structure */
 
+char odev_args[64];			/* command arguments */
+
 static XEvent  currentevent;		/* current event */
 
 static int  ncolors = 0;		/* color table size */
@@ -66,7 +70,7 @@ static int	inpresflags;		/* input result flags */
 
 static int	headlocked = 0;		/* lock vertical motion */
 
-static int  getpixels(), xnewcolr(), freepixels(), resizewindow(),
+static int  getpixels(), xnewcolr(), freepixels(), resizewindow(), getframe(),
 		getevent(), getkey(), moveview(), getmove(), fixwindow();
 static unsigned long  true_pixel();
 
@@ -451,7 +455,10 @@ getevent()			/* get next event */
 		getkey(levptr(XKeyPressedEvent));
 		break;
 	case ButtonPress:
-		getmove(levptr(XButtonPressedEvent));
+		if (FRAMESTATE(levptr(XButtonPressedEvent)->state))
+			getframe(levptr(XButtonPressedEvent));
+		else
+			getmove(levptr(XButtonPressedEvent));
 		break;
 	}
 }
@@ -574,6 +581,29 @@ int	dx, dy, mov, orb;
 
 
 static
+getframe(ebut)				/* get focus frame */
+XButtonPressedEvent	*ebut;
+{
+	int	startx = ebut->x, starty = ebut->y;
+	int	endx, endy;
+
+	XMaskEvent(ourdisplay, ButtonReleaseMask, levptr(XEvent));
+	endx = levptr(XButtonReleasedEvent)->x;
+	endy = levptr(XButtonReleasedEvent)->y;
+	if (endx == startx | endy == starty) {
+		XBell(ourdisplay, 0);
+		return;
+	}
+	if (endx < startx) {register int c = endx; endx = startx; startx = c;}
+	if (endy < starty) {register int c = endy; endy = starty; starty = c;}
+	sprintf(odev_args, "%.3f %.3f %.3f %.3f",
+			(startx+.5)/odev.hres, 1.-(endy+.5)/odev.vres,
+			(endx+.5)/odev.hres, 1.-(starty+.5)/odev.vres);
+	inpresflags |= DFL(DC_FOCUS);
+}
+
+
+static
 getmove(ebut)				/* get view change */
 XButtonPressedEvent	*ebut;
 {
@@ -618,6 +648,9 @@ static
 getkey(ekey)				/* get input key */
 register XKeyPressedEvent  *ekey;
 {
+	Window	rootw, childw;
+	int	rootx, rooty, wx, wy;
+	unsigned int	statemask;
 	int  n;
 	char	buf[8];
 
@@ -633,6 +666,18 @@ register XKeyPressedEvent  *ekey;
 		return;
 	case 'l':			/* retrieve last view */
 		inpresflags |= DFL(DC_LASTVIEW);
+		return;
+	case 'f':			/* frame view position */
+		if (!XQueryPointer(ourdisplay, gwind, &rootw, &childw,
+				&rootx, &rooty, &wx, &wy, &statemask))
+			return;		/* on another screen */
+		sprintf(odev_args, "%.4f %.4f", (wx+.5)/odev.hres,
+				1.-(wy+.5)/odev.vres);
+		inpresflags |= DFL(DC_FOCUS);
+		return;
+	case 'F':			/* unfocus */
+		odev_args[0] = '\0';
+		inpresflags |= DFL(DC_FOCUS);
 		return;
 	case 'p':			/* pause computation */
 		inpresflags |= DFL(DC_PAUSE);

@@ -16,6 +16,8 @@ extern struct driver {
 	int	inpready;	/* number of unprocessed input events */
 } odev;			/* our open device */
 
+extern char	odev_args[];	/* command arguments, if any */
+
 extern int	imm_mode;	/* bundles are being delivered immediately */
 
 extern double	eyesepdist;	/* world eye separation distance */
@@ -24,25 +26,26 @@ extern double	eyesepdist;	/* world eye separation distance */
 #define	DC_SETVIEW	0		/* set the base view */
 #define	DC_GETVIEW	1		/* print the current base view */
 #define	DC_LASTVIEW	2		/* restore previous view */
-#define	DC_PAUSE	3		/* pause the current calculation */
-#define	DC_RESUME	4		/* resume the calculation */
-#define	DC_REDRAW	5		/* redraw from server */
-#define	DC_KILL		6		/* kill rtrace process(es) */
-#define	DC_RESTART	7		/* restart rtrace process(es) */
-#define DC_CLOBBER	8		/* clobber holodeck file */
-#define	DC_QUIT		9		/* quit the program */
+#define DC_FOCUS	3		/* view focus */
+#define	DC_PAUSE	4		/* pause the current calculation */
+#define	DC_RESUME	5		/* resume the calculation */
+#define	DC_REDRAW	6		/* redraw from server */
+#define	DC_KILL		7		/* kill rtrace process(es) */
+#define	DC_RESTART	8		/* restart rtrace process(es) */
+#define DC_CLOBBER	9		/* clobber holodeck file */
+#define	DC_QUIT		10		/* quit the program */
 
-#define	DC_NCMDS	10		/* number of commands */
+#define	DC_NCMDS	11		/* number of commands */
 
 				/* dev_input() returns flags from above */
 #define DFL(dc)		(1<<(dc))
 
 #define	CTRL(c)		((c)-'@')
 				/* commands entered in display window */
-#define DV_INIT		{'\0','v','l','p','\r',CTRL('L'),'K','R','C','q'}
+#define DV_INIT		{'\0','v','l','f','p','\r',CTRL('L'),'K','R','C','q'}
 				/* commands entered on stdin */
-#define	DC_INIT		{"VIEW=","where","last","pause","resume","redraw",\
-				"kill","restart","clobber","quit"}
+#define	DC_INIT		{"VIEW=","where","last","frame","pause","resume",\
+				"redraw","kill","restart","clobber","quit"}
 
 
 /************************************************************************
@@ -101,8 +104,10 @@ dev_input()		: process pending display input
 Called when odev struct file descriptor shows input is ready.
 Returns flags indicating actions to take in the control process.
 If the DC_VIEW or DC_RESIZE flag is returned, the odev
-structure must be updated beforehand.  No events will be
-ready when this function returns, and odev.inpready will be 0.
+structure must be updated beforehand.  If the DC_FOCUS
+flag is set, then odev_args contains the frame dimensions.
+No events shall remain when this function returns,
+and odev.inpready will therefore be 0.
 
 void
 dev_auxcom(cmd, args)	: process auxiliary command

@@ -17,10 +17,10 @@ static char SCCSid[] = "$SunId$ SGI";
 #define MAXDIST		42	/* maximum distance outside section */
 #endif
 #ifndef NVSAMPS
-#define NVSAMPS		4096	/* number of ray samples per view */
+#define NVSAMPS		16384	/* number of ray samples per view */
 #endif
 #ifndef MEYERNG
-#define MEYERNG		0.2	/* target mean eye range (rel. to grid) */
+#define MEYERNG		0.1	/* target mean eye range (rel. to grid) */
 #endif
 #ifndef MAXTODO
 #define MAXTODO		3	/* maximum sections to look at */

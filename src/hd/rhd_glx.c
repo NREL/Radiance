@@ -21,7 +21,6 @@ static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 #include "standard.h"
-#include "rhd_sample.h"
 
 #include <sys/types.h>
 #include <GL/glx.h>
@@ -29,6 +28,8 @@ static char SCCSid[] = "$SunId$ SGI";
 #ifdef STEREO
 #include <X11/extensions/SGIStereo.h>
 #endif
+
+#include "rhd_sample.h"
 #ifdef DOBJ
 #include "rhdobj.h"
 #endif
@@ -36,7 +37,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "x11icon.h"
 
 #ifndef RAYQLEN
-#define RAYQLEN		250		/* max. rays to queue before flush */
+#define RAYQLEN		1024		/* max. rays to queue before flush */
 #endif
 
 #ifndef FEQ
@@ -44,6 +45,8 @@ static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 #define GAMMA		1.4		/* default gamma correction */
+
+#define FRAMESTATE(s)	(((s)&(ShiftMask|ControlMask))==(ShiftMask|ControlMask))
 
 #define MOVPCT		7		/* percent distance to move /frame */
 #define MOVDIR(b)	((b)==Button1 ? 1 : (b)==Button2 ? 0 : -1)
@@ -74,6 +77,8 @@ static char SCCSid[] = "$SunId$ SGI";
 
 struct driver	odev;			/* global device driver structure */
 
+char odev_args[64];			/* command arguments */
+
 #ifdef STEREO
 static VIEW	vwright;		/* right eye view */
 #endif
@@ -101,7 +106,7 @@ static int	inpresflags;		/* input result flags */
 static int	headlocked = 0;		/* lock vertical motion */
 
 static int  resizewindow(), getevent(), getkey(), moveview(), wipeclean(),
-		setglpersp(), getmove(), fixwindow(), mytmflags();
+		setglpersp(), getframe(), getmove(), fixwindow(), mytmflags();
 
 #ifdef STEREO
 static int  pushright(), popright();
@@ -489,7 +494,10 @@ getevent()			/* get next event */
 		getkey(levptr(XKeyPressedEvent));
 		break;
 	case ButtonPress:
-		getmove(levptr(XButtonPressedEvent));
+ 		if (FRAMESTATE(levptr(XButtonPressedEvent)->state))
+ 			getframe(levptr(XButtonPressedEvent));
+ 		else
+ 			getmove(levptr(XButtonPressedEvent));
 		break;
 	}
 }
@@ -550,6 +558,14 @@ int	dx, dy, mov, orb;
 			return(0);	/* not on window */
 		VCOPY(wip, rsL.wp[li]);
 #endif
+#ifdef DEBUG
+		fprintf(stderr, "moveview: hit %s at (%f,%f,%f) (t=%f)\n",
+				li < 0 ? "object" : "mesh",
+				wip[0], wip[1], wip[2],
+				(wip[0]-odev.v.vp[0])*odir[0] +
+				(wip[1]-odev.v.vp[1])*odir[1] +
+				(wip[2]-odev.v.vp[2])*odir[2]);
+#endif
 		VSUM(odir, wip, odev.v.vp, -1.);
 	} else			/* panning with constant viewpoint */
 		VCOPY(nv.vdir, odir);
@@ -578,6 +594,29 @@ int	dx, dy, mov, orb;
 	dev_view(&nv);
 	inpresflags |= DFL(DC_SETVIEW);
 	return(1);
+}
+
+
+static
+getframe(ebut)				/* get focus frame */
+XButtonPressedEvent	*ebut;
+{
+	int	startx = ebut->x, starty = ebut->y;
+	int	endx, endy;
+
+	XMaskEvent(ourdisplay, ButtonReleaseMask, levptr(XEvent));
+	endx = levptr(XButtonReleasedEvent)->x;
+	endy = levptr(XButtonReleasedEvent)->y;
+	if (endx == startx | endy == starty) {
+		XBell(ourdisplay, 0);
+		return;
+	}
+	if (endx < startx) {register int c = endx; endx = startx; startx = c;}
+	if (endy < starty) {register int c = endy; endy = starty; starty = c;}
+	sprintf(odev_args, "%.3f %.3f %.3f %.3f",
+			(startx+.5)/odev.hres, 1.-(endy+.5)/odev.vres,
+			(endx+.5)/odev.hres, 1.-(starty+.5)/odev.vres);
+	inpresflags |= DFL(DC_FOCUS);
 }
 
 
@@ -718,6 +757,9 @@ static
 getkey(ekey)				/* get input key */
 register XKeyPressedEvent  *ekey;
 {
+	Window	rootw, childw;
+	int	rootx, rooty, wx, wy;
+	unsigned int	statemask;
 	int  n;
 	char	buf[8];
 
@@ -739,6 +781,18 @@ register XKeyPressedEvent  *ekey;
 		return;
 	case 'v':			/* spit out view */
 		inpresflags |= DFL(DC_GETVIEW);
+		return;
+	case 'f':			/* frame view position */
+		if (!XQueryPointer(ourdisplay, gwind, &rootw, &childw,
+				&rootx, &rooty, &wx, &wy, &statemask))
+			return;		/* on another screen */
+		sprintf(odev_args, "%.4f %.4f", (wx+.5)/odev.hres,
+				1.-(wy+.5)/odev.vres);
+		inpresflags |= DFL(DC_FOCUS);
+		return;
+	case 'F':			/* unfocus */
+		odev_args[0] = '\0';
+		inpresflags |= DFL(DC_FOCUS);
 		return;
 	case '\n':
 	case '\r':			/* resume computation */

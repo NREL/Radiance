@@ -18,6 +18,10 @@ static char SCCSid[] = "$SunId$ SGI";
 #define VIEWHISTLEN	4	/* number of remembered views */
 #endif
 
+#ifndef FSIZDEF
+#define FSIZDEF		0.125	/* default focus frame size */
+#endif
+
 HOLO	*hdlist[HDMAX+1];	/* global holodeck list */
 
 char	cmdlist[DC_NCMDS][8] = DC_INIT;
@@ -88,6 +92,8 @@ char	*argv[];
 				printview();
 			if (inp & DFL(DC_LASTVIEW))
 				new_view(NULL);
+			if (inp & DFL(DC_FOCUS))
+				set_focus(odev_args);
 			if (inp & DFL(DC_KILL)) {
 				serv_request(DR_KILL, 0, NULL);
 				pause = 0;
@@ -300,6 +306,66 @@ again:
 }
 
 
+set_focus(args)			/* set focus frame */
+char	*args;
+{
+	double	hcent, vcent, hsiz, vsiz;
+	VIEW	*dv, vwfocus;
+	int	i, res[2];
+
+	i = sscanf(args, "%lf %lf %lf %lf", &hcent, &vcent, &hsiz, &vsiz);
+	if (i < 2 || hcent < 0 || hcent > 1 || vcent < 0 || vcent > 1) {
+		beam_init(0);				/* restore view */
+		for (i = 0; (dv = dev_auxview(i, res)) != NULL; i++)
+			beam_view(dv, res[0], res[1]);
+		beam_sync(0);				/* update server */
+		return;
+	}
+	if (i < 4 || hsiz <= hcent || hsiz > 1 || vsiz <= vcent || vsiz > 1)
+		hsiz = vsiz = FSIZDEF;			/* gave center only */
+	else {
+		hsiz -= hcent; hcent += 0.5*hsiz;	/* gave min and max */
+		vsiz -= vcent; vcent += 0.5*vsiz;
+	}
+	beam_init(0);					/* add basic views */
+	for (i = 0; (dv = dev_auxview(i, res)) != NULL; i++)
+		beam_view(dv, res[0]>>4, res[1]>>4);
+	copystruct(&vwfocus, &odev.v);			/* add focus view */
+	switch (odev.v.type) {
+	case VT_PER:
+		vwfocus.horiz = 2.*180./PI*atan(
+				hsiz * tan(PI/180./2.*odev.v.horiz) );
+		vwfocus.vert = 2.*180./PI*atan(
+				vsiz * tan(PI/180./2.*odev.v.vert) );
+		break;
+	case VT_PAR:
+	case VT_ANG:
+		vwfocus.horiz = hsiz * odev.v.horiz;
+		vwfocus.vert = vsiz * odev.v.vert;
+		break;
+	case VT_HEM:
+		vwfocus.horiz = 2.*180./PI*asin(
+				hsiz * sin(PI/180./2.*odev.v.horiz) );
+		vwfocus.vert = 2.*180./PI*asin(
+				vsiz * sin(PI/180./2.*odev.v.vert) );
+		break;
+	case VT_CYL:
+		vwfocus.horiz = hsiz * odev.v.horiz;
+		vwfocus.vert = 2.*180./PI*atan(
+				vsiz * tan(PI/180./2.*odev.v.vert) );
+		break;
+	default:
+		error(INTERNAL, "bad view type in set_focus");
+	}
+	vwfocus.hoff = (odev.v.hoff + hcent - 0.5)/hsiz;
+	vwfocus.voff = (odev.v.voff + vcent - 0.5)/vsiz;
+	setview(&vwfocus);
+	beam_view(&vwfocus, (int)(3*odev.hres*hsiz)+100,
+			(int)(3*odev.vres*vsiz)+100);
+	beam_sync(0);					/* update server */
+}
+
+
 int
 usr_input()			/* get user input and process it */
 {
@@ -341,6 +407,9 @@ usr_input()			/* get user input and process it */
 		break;
 	case DC_LASTVIEW:		/* restore previous view */
 		new_view(NULL);
+		break;
+	case DC_FOCUS:			/* set focus frame */
+		set_focus(args);
 		break;
 	case DC_PAUSE:			/* pause the current calculation */
 	case DC_RESUME:			/* resume the calculation */
