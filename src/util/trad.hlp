@@ -745,6 +745,17 @@ to maintain a specific pixel aspect ratio (1 by default).
 
 The default value for this variable is "512".
 
+.Views.Rawsave
+
+The "Rawsave" check box determines whether or not the raw output picture
+from rpict will be saved.
+The default action (box unchecked) is to remove this file, since it
+takes up disk space and is not generally useful.
+However, if you wish to perform some special filtering function on
+the file, this file can be renamed instead of removed by checking this box.
+The final name in this case will be the same as the finished
+picture, except with a ".rwp" suffix.
+
 .Views.Copy
 
 The "Copy" button in the Views screen permits those variables
