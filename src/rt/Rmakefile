@@ -166,7 +166,8 @@ cone.o o_cone.o source.o:	cone.h
 
 data.o mx_data.o p_data.o t_data.o:	data.h
 
-aed.o devcomm.o devmain.o devtable.o sundev.o tty.o x10.o:	driver.h
+aed.o devcomm.o devmain.o devtable.o \
+editline.o sundev.o tty.o x10.o:	driver.h
 
 face.o o_face.o source.o:	face.h
 
