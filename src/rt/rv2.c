@@ -552,6 +552,7 @@ register char  *s;
 			getparam(s+2, "back face visibility", 'b', &backvis);
 			break;
 		case '\0':			/* black and white */
+		case ' ':
 		case 'y': case 'Y': case 't': case 'T': case '1': case '+':
 		case 'n': case 'N': case 'f': case 'F': case '0': case '-':
 			getparam(s+1, "black and white", 'b', &greyscale);
