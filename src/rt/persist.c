@@ -335,6 +335,7 @@ io_process(void)		/* just act as go-between for actual process */
 				} while ((nr -= n) > 0);
 		}
 	}
+	kill(pid, SIGTERM);	/* no more process to feed, so... */
 	waitpid(pid, 0, 0);	/* wait for feeder process */
 	_exit(status);
 formerr:
