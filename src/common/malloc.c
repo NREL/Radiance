@@ -27,7 +27,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #ifndef  BSD
 #define  bcopy(s,d,n)		(void)memcpy(d,s,n)
 #define  bzero(d,n)		(void)memset(d,0,n)
-extern char  *memcpy(), *memset();
 #endif
 
 #ifdef MSTATS

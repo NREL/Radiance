@@ -14,7 +14,6 @@ typedef FLOAT  MAT4[4][4];
 #define  copymat4(m4a,m4b)	bcopy((char *)m4b,(char *)m4a,sizeof(MAT4))
 #else
 #define  copymat4(m4a,m4b)	(void)memcpy((char *)m4a,(char *)m4b,sizeof(MAT4))
-extern char  *memcpy();
 #endif
 
 #define  MAT4IDENT		{ {1.,0.,0.,0.}, {0.,1.,0.,0.}, \
