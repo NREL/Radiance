@@ -27,7 +27,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #endif
 
 #ifndef WFLUSH
-#define WFLUSH		50		/* flush after this many rays */
+#define WFLUSH		30		/* flush after this many rays */
 #endif
 
 extern char	*getpath(), *getenv();
