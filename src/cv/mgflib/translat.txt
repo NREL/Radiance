@@ -1,5 +1,5 @@
 		TRANSLATING TO MGF FROM OTHER FORMATS
-		SCCSid "$SunId$ LBL"
+		RCSid "$Id$"
 
 The description of the parser and the MGF specification should provide
 enough information to get you started using MGF scene files, but we

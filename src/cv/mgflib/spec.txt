@@ -1,5 +1,5 @@
 		MATERIALS AND GEOMETRY FORMAT
-		SCCSid "$SunId$ LBL"
+		RCSid "$Id$"
 
 Introduction
 ============

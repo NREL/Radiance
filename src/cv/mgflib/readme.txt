@@ -1,5 +1,5 @@
 		MGF PACKAGE DESCRIPTION
-		SCCSid "$SunId$ LBL"
+		RCSid "$Id$"
 
 This package includes a description and parser for a new scene
 description standard, called for the lack of a better name, MGF
