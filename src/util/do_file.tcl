@@ -3,8 +3,6 @@
 # Choose the Rad Input File to work on.
 #
 
-set rif_glob *.rif
-
 proc preen {} {			# clean up radvar
 	global radvar rifname
 	foreach n {objects scene materials illum mkillum render oconv pfilt
@@ -290,10 +288,10 @@ proc newnew f {			# create a new RIF
 }
 
 proc do_file w {
-	global rifname readonly rif_glob curfile curpat
+	global rifname readonly myglob curfile curpat
 	if {"$w" == "done"} {
 		cd [file dirname $rifname]
-		set rif_glob $curpat
+		set myglob(rif) $curpat
 		return
 	}
 	frame $w
@@ -314,6 +312,6 @@ proc do_file w {
 	helplink $w.left.new trad file new
 	helplink $w.left.ro trad file readonly
 	getfile -view view_txt -perm \
-			-win $w.right -glob [file dirname $rifname]/$rif_glob
+			-win $w.right -glob [file dirname $rifname]/$myglob(rif)
 	set curfile [file tail $rifname]
 }

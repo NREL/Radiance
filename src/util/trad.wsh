@@ -11,6 +11,14 @@ set helplib $radlib
 
 set auto_path [linsert $auto_path 0 $radlib]
 
+# Assign global globbing variables
+
+set myglob(rif) *.rif
+set myglob(materials) *.mat
+set myglob(illum) *.rad
+set myglob(scene) *.rad
+set myglob(objects) *
+
 # Create required procedures
 
 proc modified {} {	# check for radvar modification
