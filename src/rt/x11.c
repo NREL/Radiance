@@ -58,6 +58,7 @@ static Cursor  pickcursor = 0;		/* cursor used for picking */
 
 static int  gwidth, gheight;		/* graphics window size */
 
+static int  comheight;			/* desired comline height */
 static TEXTWIND  *comline = NULL;	/* our command line */
 
 static char  c_queue[64];		/* input queue */
@@ -73,9 +74,11 @@ extern char  *malloc(), *getcombuf();
 static int  x11_close(), x11_clear(), x11_paintr(), x11_errout(),
 		x11_getcur(), x11_comout(), x11_comin(), x11_flush();
 
+static int  std_comin(), std_comout();
+
 static struct driver  x11_driver = {
 	x11_close, x11_clear, x11_paintr, x11_getcur,
-	x11_comout, x11_comin, x11_flush, 1.0
+	NULL, NULL, x11_flush, 1.0
 };
 
 static int  getpixels(), xnewcolr(), freepixels(), resizewindow(),
@@ -93,7 +96,7 @@ char  *name, *id;
 	XSetWindowAttributes	ourwinattr;
 	XWMHints  ourxwmhints;
 	XSizeHints	oursizhints;
-
+					/* open display server */
 	ourdisplay = XOpenDisplay(NULL);
 	if (ourdisplay == NULL) {
 		stderr_v("cannot open X-windows; DISPLAY variable set?\n");
@@ -130,6 +133,11 @@ char  *name, *id;
 		make_gmap(atof(gv));
 	else
 		make_gmap(GAMMA);
+					/* X11 command line or no? */
+	if (!strcmp(name, "x11"))
+		comheight = COMHEIGHT;
+	else /* "x11d" */
+		comheight = 0;
 					/* open window */
 	ourwinattr.background_pixel = ourblack;
 	ourwinattr.border_pixel = ourblack;
@@ -155,21 +163,30 @@ char  *name, *id;
 			gwind, x11icon_bits, x11icon_width, x11icon_height);
 	XSetWMHints(ourdisplay, gwind, &ourxwmhints);
 	oursizhints.min_width = MINWIDTH;
-	oursizhints.min_height = MINHEIGHT+COMHEIGHT;
+	oursizhints.min_height = MINHEIGHT+comheight;
 	oursizhints.flags = PMinSize;
 	XSetNormalHints(ourdisplay, gwind, &oursizhints);
 	XSelectInput(ourdisplay, gwind, ExposureMask);
 	XMapWindow(ourdisplay, gwind);
 	XWindowEvent(ourdisplay, gwind, ExposureMask, levptr(XEvent));
 	gwidth = levptr(XExposeEvent)->width;
-	gheight = levptr(XExposeEvent)->height - COMHEIGHT;
+	gheight = levptr(XExposeEvent)->height - comheight;
 	x11_driver.xsiz = gwidth < MINWIDTH ? MINWIDTH : gwidth;
 	x11_driver.ysiz = gheight < MINHEIGHT ? MINHEIGHT : gheight;
 	x11_driver.inpready = 0;
 	mapped = 1;
-	cmdvec = x11_comout;			/* set error vectors */
-	if (wrnvec != NULL)
-		wrnvec = x11_errout;
+					/* set i/o vectors */
+	if (comheight) {
+		x11_driver.comin = x11_comin;
+		x11_driver.comout = x11_comout;
+		cmdvec = x11_comout;
+		if (wrnvec != NULL)
+			wrnvec = x11_errout;
+	} else {
+		x11_driver.comin = std_comin;
+		x11_driver.comout = std_comout;
+		cmdvec = std_comout;
+	}
 	return(&x11_driver);
 }
 
@@ -209,7 +226,7 @@ int  xres, yres;
 						/* resize window */
 	if (xres != gwidth || yres != gheight) {
 		XSelectInput(ourdisplay, gwind, 0);
-		XResizeWindow(ourdisplay, gwind, xres, yres+COMHEIGHT);
+		XResizeWindow(ourdisplay, gwind, xres, yres+comheight);
 		gwidth = xres;
 		gheight = yres;
 		XFlush(ourdisplay);
@@ -226,16 +243,20 @@ int  xres, yres;
 						/* get new command line */
 	if (comline != NULL)
 		xt_close(comline);
-	comline = xt_open(ourdisplay, gwind, 0, gheight,
-			gwidth, COMHEIGHT, 0, ourblack, ourwhite, COMFN);
-	if (comline == NULL) {
-		stderr_v("Cannot open command line window\n");
-		quit(1);
-	}
-	XSelectInput(ourdisplay, comline->w, ExposureMask);
+	if (comheight) {
+		comline = xt_open(ourdisplay, gwind, 0, gheight, gwidth,
+				comheight, 0, ourblack, ourwhite, COMFN);
+		if (comline == NULL) {
+			stderr_v("Cannot open command line window\n");
+			quit(1);
+		}
+		XSelectInput(ourdisplay, comline->w, ExposureMask);
 						/* remove earmuffs */
-	XSelectInput(ourdisplay, gwind,
+		XSelectInput(ourdisplay, gwind,
 		StructureNotifyMask|ExposureMask|KeyPressMask|ButtonPressMask);
+	} else					/* remove earmuffs */
+		XSelectInput(ourdisplay, gwind,
+			StructureNotifyMask|ExposureMask|ButtonPressMask);
 }
 
 
@@ -262,17 +283,17 @@ static
 x11_flush()			/* flush output */
 {
 	int	n;
-	char	*buf;
 						/* check for input */
 	XNoOp(ourdisplay);
 	n = XPending(ourdisplay);			/* from X server */
 	while (n-- > 0)
 		getevent();
-	if (ioctl(0, FIONREAD, &n) == 0 && n > 0) {	/* from stdin */
-		buf = getcombuf(&x11_driver);
-		n = read(0, buf, n);
-		if (n > 0)
-			buf[n] = '\0';
+	if (x11_driver.comin == std_comin) {		/* from stdin */
+		if (ioctl(fileno(stdin), FIONREAD, &n) < 0) {
+			stderr_v("ioctl error on stdin\n");
+			quit(1);
+		}
+		x11_driver.inpready += n;
 	}
 }
 
@@ -294,13 +315,13 @@ char  *inp, *prompt;
 
 
 static
-x11_comout(out)			/* output a string to command line */
-char  *out;
+x11_comout(outp)		/* output a string to command line */
+char  *outp;
 {
 	if (comline == NULL)
 		return;
-	xt_puts(out, comline);
-	if (out[strlen(out)-1] == '\n')
+	xt_puts(outp, comline);
+	if (outp[strlen(outp)-1] == '\n')
 		XFlush(ourdisplay);
 }
 
@@ -311,6 +332,36 @@ char  *msg;
 {
 	stderr_v(msg);		/* send to stderr also! */
 	x11_comout(msg);
+}
+
+
+static
+std_comin(inp, prompt)		/* read in command line from stdin */
+char  *inp, *prompt;
+{
+	extern char	*gets();
+
+	if (prompt != NULL) {
+		if (fromcombuf(inp, &x11_driver))
+			return;
+		if (!x11_driver.inpready)
+			fputs(prompt, stdout);
+	}
+	if (gets(inp) == NULL) {
+		strcpy(inp, "quit");
+		return;
+	}
+	x11_driver.inpready -= strlen(inp) + 1;
+	if (x11_driver.inpready < 0)
+		x11_driver.inpready = 0;
+}
+
+
+static
+std_comout(outp)		/* write out string to stdout */
+char	*outp;
+{
+	fputs(outp, stdout);
 }
 
 
@@ -519,11 +570,11 @@ static
 resizewindow(ersz)			/* resize window */
 register XConfigureEvent  *ersz;
 {
-	if (ersz->width == gwidth && ersz->height-COMHEIGHT == gheight)
+	if (ersz->width == gwidth && ersz->height-comheight == gheight)
 		return;
 
 	gwidth = ersz->width;
-	gheight = ersz->height-COMHEIGHT;
+	gheight = ersz->height-comheight;
 	x11_driver.xsiz = gwidth < MINWIDTH ? MINWIDTH : gwidth;
 	x11_driver.ysiz = gheight < MINHEIGHT ? MINHEIGHT : gheight;
 
