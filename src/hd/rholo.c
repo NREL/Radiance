@@ -138,7 +138,10 @@ initrholo()			/* get our holodeck running */
 	else
 		endtime = starttime + vflt(TIME)*3600.;
 						/* set up memory cache */
-	hdcachesize = 1024.*1024.*vflt(CACHE);
+	if (outdev == NULL)
+		hdcachesize = 0;	/* manual flushing */
+	else if (vdef(CACHE))
+		hdcachesize = 1024.*1024.*vflt(CACHE);
 						/* open report file */
 	if (vdef(REPORT)) {
 		register char	*s = sskip2(vval(REPORT), 1);
@@ -295,14 +298,6 @@ register HDGRID	*gp;
 		vval(DISKSPACE) = "100";
 		vdef(DISKSPACE)++;
 	}
-	if (!vdef(CACHE)) {
-		sprintf(errmsg,
-			"no %s setting, assuming 10 Mbytes available",
-				vnam(CACHE));
-		error(WARNING, errmsg);
-		vval(CACHE) = "10";
-		vdef(CACHE)++;
-	}
 	if (!vdef(OBSTRUCTIONS)) {
 		vval(OBSTRUCTIONS) = "T";
 		vdef(OBSTRUCTIONS)++;
@@ -394,6 +389,7 @@ loadholo()			/* start loading a holodeck from fname */
 done_packets(pl)		/* handle finished packets */
 PACKET	*pl;
 {
+	static int	nunflushed = 0;
 	register PACKET	*p;
 
 	while (pl != NULL) {
@@ -404,12 +400,18 @@ PACKET	*pl;
 				p->nr*sizeof(RAYVAL));
 			if (outdev != NULL)	/* display it */
 				disp_packet(p);
+			else
+				nunflushed += p->nr;
 		}
 		nraysdone += p->nr;
 		npacksdone++;
 		p->nr = 0;			/* push onto free list */
 		p->next = freepacks;
 		freepacks = p;
+	}
+	if (nunflushed >= 256*RPACKSIZ) {
+		hdflush(NULL);			/* flush holodeck buffers */
+		nunflushed = 0;
 	}
 }
 
