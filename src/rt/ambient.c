@@ -35,7 +35,6 @@ double	minarad;		/* minimum ambient radius */
 
 static AMBTREE	atrunk;		/* our ambient trunk node */
 
-static char  *ambfname = NULL;	/* ambient file name */
 static FILE  *ambfp = NULL;	/* ambient file pointer */
 static int  nunflshed = 0;	/* number of unflushed ambient values */
 
@@ -75,7 +74,7 @@ char  *afile;
 						/* init ambient limits */
 	setambres(ambres);
 						/* open ambient file */
-	if ((ambfname = afile) != NULL) {
+	if (afile != NULL) {
 		if ((ambfp = fopen(afile, "r+")) != NULL) {
 			initambfile(0);
 			headlen = ftell(ambfp);
@@ -325,10 +324,8 @@ int  creat;
 		fputformat(AMBFMT, ambfp);
 		putc('\n', ambfp);
 		putambmagic(ambfp);
-	} else if (checkheader(ambfp, AMBFMT, NULL) < 0 || !hasambmagic(ambfp)) {
-		sprintf(errmsg, "bad ambient file \"%s\"", ambfname);
-		error(USER, errmsg);
-	}
+	} else if (checkheader(ambfp, AMBFMT, NULL) < 0 || !hasambmagic(ambfp))
+		error(USER, "bad ambient file");
 }
 
 
@@ -346,8 +343,7 @@ AMBVAL	*av;
 			goto writerr;
 	return;
 writerr:
-	sprintf(errmsg, "error writing ambient file \"%s\"", ambfname);
-	error(SYSTEM, errmsg);
+	error(SYSTEM, "error writing ambient file");
 }
 
 
@@ -426,10 +422,10 @@ ambsync()			/* synchronize ambient file */
 	if ((flen = lseek(fileno(ambfp), 0L, 2)) < 0)
 		error(SYSTEM, "cannot seek on ambient file");
 	if (n = flen - lastpos) {		/* file has grown */
-		if (ambinp == NULL) {
-			ambinp = fopen(ambfname, "r");
+		if (ambinp == NULL) {		/* use duplicate filedes */
+			ambinp = fdopen(dup(fileno(ambfp)), "r");
 			if (ambinp == NULL)
-				error(SYSTEM, "fopen failed in ambsync");
+				error(SYSTEM, "fdopen failed in ambsync");
 		}
 		if (fseek(ambinp, lastpos, 0) < 0)
 			error(SYSTEM, "fseek failed in ambsync");
