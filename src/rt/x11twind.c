@@ -22,7 +22,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #ifndef  BSD
 #define  bzero(d,n)		(void)memset(d,0,n)
-extern char  *memset();
 #endif
 
 #define checkcurs(t)		if ((t)->cursor) togglecurs(t)
