@@ -62,7 +62,10 @@ initotypes()			/* initialize ofun array */
 	ofun[MAT_PFUNC].funp =
 	ofun[MAT_MFUNC].funp =
 	ofun[MAT_PDATA].funp =
-	ofun[MAT_MDATA].funp = m_brdf;
+	ofun[MAT_MDATA].funp = 
+	ofun[MAT_TFUNC].funp =
+	ofun[MAT_BRTDF].funp = 
+	ofun[MAT_TDATA].funp = m_brdf;
 	ofun[TEX_FUNC].funp = t_func;
 	ofun[TEX_DATA].funp = t_data;
 	ofun[PAT_CFUNC].funp = p_cfunc;
