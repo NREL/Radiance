@@ -22,12 +22,12 @@ norm_rad(r) : if( r, r, r+2*PI );
 il_alt = Dz;
 il_azi = norm_rad(atan2(Dy, Dx));
 
-s_val(v, vN, vS) = noneg(if( il_alt-A7,
+s_val(v, vN, vS) = if( il_alt-A7,
 			linterp((il_alt-A7)/(1-A7), v, vN),
 			if ( -il_alt-A7,
 				linterp((-il_alt-A7)/(1-A7), v, vS),
 				v ),
-			v ));
+			v );
 					{ sphere values }
 s_red(r,g,b) = s_val(r, A1, A4);
 s_grn(r,g,b) = s_val(g, A2, A5);
@@ -39,7 +39,7 @@ il_alth = sq(-Dx*arg(11)-Dy*arg(12)-Dz*arg(13));
 il_azih = norm_rad(atan2(-Dx*arg(8)-Dy*arg(9)-Dz*arg(10),
 			-Dx*arg(5)-Dy*arg(6)-Dz*arg(7)));
 
-h_val(v, vN) = noneg(if( il_alth-A4, linterp((il_alth-A4)/(1-A4), v, vN), v ));
+h_val(v, vN) = if( il_alth-A4, linterp((il_alth-A4)/(1-A4), v, vN), v );
 					{ hemisphere values }
 h_red(r,g,b) = h_val(r, A1);
 h_grn(r,g,b) = h_val(g, A2);
