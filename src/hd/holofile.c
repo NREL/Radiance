@@ -712,6 +712,8 @@ register HOLO	*hp;		/* NULL means clean up all */
 	if (hp == NULL) {		/* NULL means clean up everything */
 		while (hdlist[0] != NULL)
 			hddone(hdlist[0]);
+		free((char *)hdfragl);
+		hdfragl = NULL; nhdfragls = 0;
 		return;
 	}
 					/* flush all data and free memory */
