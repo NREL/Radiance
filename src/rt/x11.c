@@ -5,7 +5,7 @@ static char SCCSid[] = "$SunId$ LBL";
 /* Copyright (c) 1989 Regents of the University of California */
 
 /*
- *  x11.c - driver for X-windows version 11R4
+ *  x11.c - driver for X-windows version 10.4
  *
  *     1989
  */
@@ -17,21 +17,14 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <X11/Xlib.h>
 #include <X11/cursorfont.h>
 #include <X11/Xutil.h>
-#ifdef notdef
-#include  "bcross.cursor"
-#include  "bcross_mask.cu"
-#endif
 
 #include  "color.h"
-
 #include  "driver.h"
-
 #include  "x11twind.h"
 
 #define GAMMA		2.2		/* exponent for color correction */
 
 #define BORWIDTH	5		/* border width */
-#define BARHEIGHT	25		/* menu bar size */
 #define COMHEIGHT	(COMLH*COMCH)	/* command line height (pixels) */
 
 #define COMFN		"8x13"		/* command line font name */
@@ -80,8 +73,7 @@ int  x11_close(), x11_clear(), x11_paintr(), x11_errout(),
 
 static struct driver  x11_driver = {
 	x11_close, x11_clear, x11_paintr, x11_getcur,
-	x11_comout, x11_comin,
-	MAXRES, MAXRES
+	x11_comout, x11_comin, 1.0
 };
 
 
@@ -124,6 +116,10 @@ char  *name, *id;
 	pickcursor = XCreateFontCursor (ourdisplay, XC_diamond_cross);
 	/*  new */
 	clientname = id; 
+	x11_driver.xsiz = DisplayWidth(ourdisplay,DefaultScreen(ourdisplay))
+			- 2*BORWIDTH;
+	x11_driver.ysiz = DisplayHeight(ourdisplay,DefaultScreen(ourdisplay))
+			- (COMHEIGHT + 2*BORWIDTH);
 	x11_driver.inpready = 0;
 	cmdvec = x11_comout;			/* set error vectors */
 	if (wrnvec != NULL)
@@ -200,8 +196,6 @@ int  xres, yres;
 			goto fail;
 		gwidth = xres;
 		gheight = yres;
-		XFlush(ourdisplay);
-		sleep(10);
 	} else						/* just clear */
 		XClearWindow(ourdisplay, gwind);
 						/* reinitialize color table */
