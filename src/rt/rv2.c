@@ -28,46 +28,20 @@ extern char  *progname;
 getframe(s)				/* get a new frame */
 char  *s;
 {
-	int  x0, y0, x1, y1;
-
-	if (!strcmp("all", s)) {
-		pframe.l = pframe.d = 0;
-		pframe.r = ourview.hresolu;
-		pframe.u = ourview.vresolu;
-		pdepth = 0;
+	if (getrect(s, &pframe) < 0)
 		return;
-	}
-	if (sscanf(s, "%d %d %d %d", &x0, &y0, &x1, &y1) != 4) {
-		if (dev->getcur == NULL)
-			return;
-		(*dev->comout)("Pick first corner\n");
-		if ((*dev->getcur)(&x0, &y0) == ABORT)
-			return;
-		(*dev->comout)("Pick second corner\n");
-		if ((*dev->getcur)(&x1, &y1) == ABORT)
-			return;
-	}
-	if (x0 < x1) {
-		pframe.l = x0;
-		pframe.r = x1;
-	} else {
-		pframe.l = x1;
-		pframe.r = x0;
-	}
-	if (y0 < y1) {
-		pframe.d = y0;
-		pframe.u = y1;
-	} else {
-		pframe.d = y1;
-		pframe.u = y0;
-	}
-	if (pframe.l < 0) pframe.l = 0;
-	if (pframe.d < 0) pframe.d = 0;
-	if (pframe.r > ourview.hresolu) pframe.r = ourview.hresolu;
-	if (pframe.u > ourview.vresolu) pframe.u = ourview.vresolu;
-	if (pframe.l > pframe.r) pframe.l = pframe.r;
-	if (pframe.d > pframe.u) pframe.d = pframe.u;
 	pdepth = 0;
+}
+
+
+getrepaint(s)				/* get area and repaint */
+char  *s;
+{
+	RECT  box;
+
+	if (getrect(s, &box) < 0)
+		return;
+	paintrect(&ptrunk, 0, 0, ourview.hresolu, ourview.vresolu, &box);
 }
 
 
@@ -184,53 +158,6 @@ char  *s;
 	bcopy(&oldview, &ourview, sizeof(VIEW));
 	bcopy(&nv, &oldview, sizeof(VIEW));
 	newimage();
-}
-
-
-getinterest(s, direc, vec, mp)		/* get area of interest */
-char  *s;
-int  direc;
-FVECT  vec;
-double  *mp;
-{
-	int  x, y;
-	RAY  thisray;
-	register int  i;
-
-	if (sscanf(s, "%lf", mp) != 1)
-		*mp = 1.0;
-	else if (*mp < -FTINY)		/* negative zoom is reduction */
-		*mp = -1.0 / *mp;
-	else if (*mp <= FTINY) {	/* too small */
-		error(COMMAND, "illegal magnification");
-		return(-1);
-	}
-	if (sscanf(s, "%*lf %lf %lf %lf", &vec[0], &vec[1], &vec[2]) != 3) {
-		if (dev->getcur == NULL)
-			return(-1);
-		(*dev->comout)("Pick view center\n");
-		if ((*dev->getcur)(&x, &y) == ABORT)
-			return(-1);
-		rayview(thisray.rorg, thisray.rdir, &ourview, x+.5, y+.5);
-		if (!direc || ourview.type == VT_PAR) {
-			rayorigin(&thisray, NULL, PRIMARY, 1.0);
-			if (!localhit(&thisray, &thescene)) {
-				error(COMMAND, "not a local object");
-				return(-1);
-			}
-		}
-		if (direc)
-			if (ourview.type == VT_PAR)
-				for (i = 0; i < 3; i++)
-					vec[i] = thisray.rop[i] - ourview.vp[i];
-			else
-				VCOPY(vec, thisray.rdir);
-		else
-			VCOPY(vec, thisray.rop);
-	} else if (direc)
-			for (i = 0; i < 3; i++)
-				vec[i] -= ourview.vp[i];
-	return(0);
 }
 
 

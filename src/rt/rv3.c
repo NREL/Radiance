@@ -12,9 +12,104 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "ray.h"
 
+#include  "octree.h"
+
 #include  "rpaint.h"
 
 #include  "random.h"
+
+
+getrect(s, r)				/* get a box */
+char  *s;
+register RECT  *r;
+{
+	int  x0, y0, x1, y1;
+
+	if (*s && !strncmp(s, "all", strlen(s))) {
+		r->l = r->d = 0;
+		r->r = ourview.hresolu;
+		r->u = ourview.vresolu;
+		return(0);
+	}
+	if (sscanf(s, "%d %d %d %d", &x0, &y0, &x1, &y1) != 4) {
+		if (dev->getcur == NULL)
+			return(-1);
+		(*dev->comout)("Pick first corner\n");
+		if ((*dev->getcur)(&x0, &y0) == ABORT)
+			return(-1);
+		(*dev->comout)("Pick second corner\n");
+		if ((*dev->getcur)(&x1, &y1) == ABORT)
+			return(-1);
+	}
+	if (x0 < x1) {
+		r->l = x0;
+		r->r = x1;
+	} else {
+		r->l = x1;
+		r->r = x0;
+	}
+	if (y0 < y1) {
+		r->d = y0;
+		r->u = y1;
+	} else {
+		r->d = y1;
+		r->u = y0;
+	}
+	if (r->l < 0) r->l = 0;
+	if (r->d < 0) r->d = 0;
+	if (r->r > ourview.hresolu) r->r = ourview.hresolu;
+	if (r->u > ourview.vresolu) r->u = ourview.vresolu;
+	if (r->l > r->r) r->l = r->r;
+	if (r->d > r->u) r->d = r->u;
+	return(0);
+}
+
+
+getinterest(s, direc, vec, mp)		/* get area of interest */
+char  *s;
+int  direc;
+FVECT  vec;
+double  *mp;
+{
+	int  x, y;
+	RAY  thisray;
+	register int  i;
+
+	if (sscanf(s, "%lf", mp) != 1)
+		*mp = 1.0;
+	else if (*mp < -FTINY)		/* negative zoom is reduction */
+		*mp = -1.0 / *mp;
+	else if (*mp <= FTINY) {	/* too small */
+		error(COMMAND, "illegal magnification");
+		return(-1);
+	}
+	if (sscanf(s, "%*lf %lf %lf %lf", &vec[0], &vec[1], &vec[2]) != 3) {
+		if (dev->getcur == NULL)
+			return(-1);
+		(*dev->comout)("Pick view center\n");
+		if ((*dev->getcur)(&x, &y) == ABORT)
+			return(-1);
+		rayview(thisray.rorg, thisray.rdir, &ourview, x+.5, y+.5);
+		if (!direc || ourview.type == VT_PAR) {
+			rayorigin(&thisray, NULL, PRIMARY, 1.0);
+			if (!localhit(&thisray, &thescene)) {
+				error(COMMAND, "not a local object");
+				return(-1);
+			}
+		}
+		if (direc)
+			if (ourview.type == VT_PAR)
+				for (i = 0; i < 3; i++)
+					vec[i] = thisray.rop[i] - ourview.vp[i];
+			else
+				VCOPY(vec, thisray.rdir);
+		else
+			VCOPY(vec, thisray.rop);
+	} else if (direc)
+			for (i = 0; i < 3; i++)
+				vec[i] -= ourview.vp[i];
+	return(0);
+}
 
 
 float *		/* keep consistent with COLOR typedef */

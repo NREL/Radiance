@@ -198,9 +198,13 @@ again:
 			goto commerr;
 		getmove(args);
 		break;
-	case 'r':				/* rotate camera */
-		if (badcom("rotate"))
-			goto commerr;
+	case 'r':				/* rotate/repaint */
+		if (badcom("rotate")) {
+			if (badcom("repaint"))
+				goto commerr;
+			getrepaint(args);
+			break;
+		}
 		getrotate(args);
 		break;
 	case 'p':				/* pivot view */
