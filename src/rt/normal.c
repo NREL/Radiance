@@ -102,12 +102,13 @@ double  omega;			/* light source size */
 						/* + source if flat */
 		if (np->specfl & SP_FLAT)
 			dtmp += omega/(4.0*PI);
-						/* delta */
+						/* half vector */
 		vtmp[0] = ldir[0] - np->rp->rdir[0];
 		vtmp[1] = ldir[1] - np->rp->rdir[1];
 		vtmp[2] = ldir[2] - np->rp->rdir[2];
 		d2 = DOT(vtmp, np->pnorm);
-		d2 = 2.0 - 2.0*d2/sqrt(DOT(vtmp,vtmp));
+		d2 *= d2;
+		d2 = (DOT(vtmp,vtmp) - d2) / d2;
 						/* gaussian */
 		dtmp = exp(-d2/dtmp)/(4.*PI*dtmp);
 						/* worth using? */
