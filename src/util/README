@@ -1,0 +1,22 @@
+		RADIANCE UTILITY PROGRAMS
+		SCCSid "$SunId$ LBL"
+
+This directory contains glare calculation programs and other utilites
+that combine functions and do not fit under the usual catagories.
+
+glare.h		common data structures for glare source finding routines
+setscan.h	defines for programs using setscan()
+dayfact.csh	compute and plot daylight factors on user-specified workplane
+debugcal.csh	C-shell script for debugging .cal files
+findglare.c	find glare sources in a scene or image
+glare.csh	interactive script to run findglare, glarendx, xglaresrc
+glarendx.c	compute Glare Index given by program name or -t option
+glaresrc.c	gather samples and compute glare sources
+glareval.c	compute pixels for glare calculation
+makedist.c	program to make a source distribution (obsolete with mkillum)
+objpict.csh	script to compute 4-view picture of an object
+objview.csh	script to run rview on an object
+pranim.c	send Sun rasterfiles to PC animation system
+setscan.c	convert angle ranges of the form a-b:s,c to discrete values
+t16anim.c	send Targa 16-bit files to PC animation system
+xglaresrc.c	circle glare sources in a displayed image
