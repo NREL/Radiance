@@ -9,6 +9,7 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include "glare.h"
+#include "linregr.h"
 
 #define vcont(vd,vu)	((vu)-(vd)<=SEPS)
 #define hcont(s1,s2)	((s1)->r-(s2)->l>=-SEPS&&(s2)->r-(s1)->l>=-SEPS)
@@ -275,13 +276,96 @@ close_allsrcs()			/* done with everything */
 }
 
 
+struct srcspan *
+splitspan(sso, h, v, m)		/* divide source span at point */
+register struct srcspan	*sso;
+double	h, v, m;
+{
+	register struct srcspan	*ssn;
+	double	d;
+	int	hs;
+
+	d = h - m*(sso->v - v);
+	hs = d < 0. ? d-.5 : d+.5;
+	if (sso->l >= hs)
+		return(NULL);
+	if (sso->r <= hs)
+		return(sso);
+				/* need to split it */
+	ssn = (struct srcspan *)malloc(sizeof(struct srcspan));
+	if (ssn == NULL)
+		memerr("source spans in splitspan");
+	ssn->brsum = (double)(hs - sso->l)/(sso->r - sso->l) * sso->brsum;
+	sso->brsum -= ssn->brsum;
+	ssn->v = sso->v;
+	ssn->l = sso->l;
+	ssn->r = sso->l = hs;
+	return(ssn);
+}
+
+
+struct source *
+splitsource(so)			/* divide source in two if it's big and long */
+struct source	*so;
+{
+	LRSUM	lr;
+	LRLIN	fit;
+	register struct srcspan	*ss, *ssn;
+	struct srcspan	*ssl, *ssnl, head;
+	int	h;
+	double	mh, mv;
+	struct source	*sn;
+
+	lrclear(&lr);
+	for (ss = so->first; ss != NULL; ss = ss->next)
+		for (h = ss->l; h < ss->r; h++)
+			lrpoint(h, ss->v, &lr);
+	if ((double)lr.n/(sampdens*sampdens) < SABIG)
+		return(NULL);			/* too small */
+	if (lrfit(&fit, &lr) < 0)
+		return(NULL);			/* can't fit a line */
+	if (fit.correlation < LCORR && fit.correlation > -LCORR)
+		return(NULL);
+	if (verbose)
+		fprintf(stderr, "%s: splitting large source\n", progname);
+	mh = lrxavg(&lr);
+	mv = lryavg(&lr);
+	sn = (struct source *)malloc(sizeof(struct source));
+	if (sn == NULL)
+		memerr("source records in splitsource");
+	sn->dom = 0.0;
+	sn->first = NULL;
+	ssnl = NULL;
+	head.next = so->first;
+	ssl = &head;
+	for (ss = so->first; ss != NULL; ssl = ss, ss = ss->next)
+		if ((ssn = splitspan(ss, mh, mv, fit.slope)) != NULL) {
+			if (ssn == ss) {	/* remove from old */
+				ssl->next = ss->next;
+				ss = ssl;
+			}
+			if (ssnl == NULL)	/* add to new */
+				sn->first = ssn;
+			else
+				ssnl->next = ssn;
+			ssn->next = NULL;
+			ssnl = ssn;
+		}
+	so->first = head.next;
+	return(sn);
+}
+
+
 donesource(sp)			/* finished with this source */
 register struct source	*sp;
 {
+	struct source	*newsrc;
 	register struct srcspan	*ss;
 	int	h, n;
 	double	hsum, vsum, d;
 
+	while ((newsrc = splitsource(sp)) != NULL)	/* split it? */
+		donesource(newsrc);
 	sp->dom = 0.0;
 	hsum = vsum = 0.0;
 	sp->brt = 0.0;
@@ -295,11 +379,10 @@ register struct source	*sp;
 			vsum += d*ss->v;
 			sp->dom += d;
 		}
-		free((char *)ss);
 	}
-	sp->first = NULL;
 	sp->brt /= (double)n;
 	compdir(sp->dir, (int)(hsum/sp->dom), (int)(vsum/sp->dom));
+	freespans(sp);
 	sp->next = donelist;
 	donelist = sp;
 	if (verbose)
@@ -368,7 +451,17 @@ register struct source	*s;
 		indirect[i].sum += d * s->brt;
 		indirect[i].n += d;
 	}
-	for ( ; s->first != NULL; s->first = s->first->next)
-		free((char *)s->first);
+	freespans(s);
 	free((char *)s);
+}
+
+
+freespans(sp)			/* free spans associated with source */
+struct source	*sp;
+{
+	register struct srcspan	*ss;
+
+	for (ss = sp->first; ss != NULL; ss = ss->next)
+		free((char *)ss);
+	sp->first = NULL;
 }
