@@ -85,10 +85,7 @@ char  *argv[];
 		day = atoi(argv[2]);
 		if (day < 1 || day > 31)
 			userror("bad day");
-		hour = atof(argv[3]);
-		if (hour < 0 || hour >= 24)
-			userror("bad hour");
-		tsolar = argv[3][0] == '+';
+		cvthour(argv[3]);
 	}
 	for (i = 4; i < argc; i++)
 		if (argv[i][0] == '-' || argv[i][0] == '+')
@@ -325,6 +322,21 @@ normsc()			/* compute normalization factor (E0*F2/L0) */
 		nsc = nsc*x + nf[i];
 
 	return(nsc);
+}
+
+
+cvthour(hs)			/* convert hour string */
+char  *hs;
+{
+	register char  *cp = hs;
+
+	while (*cp && *cp++ != ':')
+		;
+	if (*cp)
+		hour = atoi(hs) + atoi(cp)/60.0;
+	else
+		hour = atof(hs);
+	tsolar = *hs == '+';
 }
 
 
