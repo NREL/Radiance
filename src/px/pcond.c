@@ -85,6 +85,9 @@ char	*argv[];
 			if (fixfrac > FTINY) what2do |= DO_FIXHIST;
 			else what2do &= ~DO_FIXHIST;
 			break;
+		case 'I':
+			bool(DO_PREHIST);
+			break;
 		case 'l':
 			bool(DO_LINEAR);
 			break;
@@ -137,6 +140,10 @@ char	*argv[];
 		default:
 			goto userr;
 		}
+	if ((what2do & (DO_FIXHIST|DO_PREHIST)) == (DO_FIXHIST|DO_PREHIST)) {
+		fprintf(stderr, "%s: only one of -i or -I option\n", progname);
+		exit(1);
+	}
 	if ((mbcalfile != NULL) + (cwarpfile != NULL) +
 			(outprims != stdprims) > 1) {
 		fprintf(stderr,
@@ -164,15 +171,18 @@ char	*argv[];
 	printargs(argc, argv, stdout);	/* add to output header */
 	if (mbcalfile == NULL & outprims != stdprims)
 		fputprims(outprims, stdout);
-	getfovimg();			/* get foveal sample image */
-	if (what2do&DO_FIXHIST)		/* get fixation history? */
+	if ((what2do & (DO_PREHIST|DO_VEIL|DO_ACUITY)) != DO_PREHIST)
+		getfovimg();		/* get foveal sample image? */
+	if (what2do&DO_PREHIST)		/* get histogram? */
+		gethisto(stdin);
+	else if (what2do&DO_FIXHIST)	/* get fixation history? */
 		getfixations(stdin);
 	mapimage();			/* map the picture */
 	if (mapfp != NULL)		/* write out basic mapping */
 		putmapping(mapfp);
 	exit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-{h|a|v|s|c|l|w}[+-]][-i ffrac][-e ev][-p xr yr xg yg xb yb xw yw|-f mbf.cal|-m rgb.cwp][-u Ldmax][-d Lddyn][-x mapfile] inpic [outpic]\n",
+	fprintf(stderr, "Usage: %s [-{h|a|v|s|c|l|w}[+-]][-I|-i ffrac][-e ev][-p xr yr xg yg xb yb xw yw|-f mbf.cal|-m rgb.cwp][-u Ldmax][-d Lddyn][-x mapfile] inpic [outpic]\n",
 			progname);
 	exit(1);
 #undef bool

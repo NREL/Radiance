@@ -24,6 +24,7 @@
 #define FOVDIA		(1.0*PI/180.)	/* foveal diameter (radians) */
 
 #define	HISTRES		100		/* histogram resolution */
+#define MAXPREHIST	1024		/* maximum precomputed histogram */
 
 #define LMIN		1e-7		/* minimum visible world luminance */
 #define LMAX		1e5		/* maximum visible world luminance */
@@ -40,7 +41,8 @@
 #define DO_COLOR	010
 #define DO_CWEIGHT	020
 #define DO_FIXHIST	040
-#define DO_LINEAR	0100
+#define DO_PREHIST	0100
+#define DO_LINEAR	0200
 
 #define DO_HUMAN	(DO_ACUITY|DO_VEIL|DO_HSENS|DO_COLOR)
 
