@@ -23,6 +23,7 @@ extern int  m_normal();
 extern int  m_dielectric();
 extern int  m_glass();
 extern int  m_clip();
+extern int  m_mirror();
 extern int  m_brdf();
 extern int  t_func(), t_data();
 extern int  p_cfunc(), p_bfunc();
@@ -58,6 +59,7 @@ initotypes()			/* initialize ofun array */
 	ofun[MAT_INTERFACE].flags |= T_IRR_IGN;
 	ofun[MAT_GLASS].funp = m_glass;
 	ofun[MAT_GLASS].flags |= T_IRR_IGN;
+	ofun[MAT_MIRROR].funp = m_mirror;
 	ofun[MAT_CLIP].funp = m_clip;
 	ofun[MAT_PFUNC].funp =
 	ofun[MAT_MFUNC].funp =
