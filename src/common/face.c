@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -58,6 +58,9 @@ OBJREC  *o;
 
 	f->va = o->oargs.farg;
 	f->nv = o->oargs.nfargs / 3;
+						/* check for last==first */
+	if (dist2(VERTEX(f,0),VERTEX(f,f->nv-1)) <= FTINY*FTINY)
+		f->nv--;
 						/* compute area and normal */
 	f->norm[0] = f->norm[1] = f->norm[2] = 0.0;
 	v1[0] = v1[1] = v1[2] = 0.0;
