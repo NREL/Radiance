@@ -220,11 +220,12 @@ register VIEW	*v;
 			while (nhist < VIEWHISTLEN && viewhist[nhist].type)
 				nhist++;
 		v = viewhist + ((nhist-1)%VIEWHISTLEN);
-	} else if ((err = setview(v)) != NULL) {
+	} else
+again:
+	if ((err = setview(v)) != NULL) {
 		error(COMMAND, err);
 		return;
 	}
-again:
 	if (v->type == VT_PAR) {
 		error(COMMAND, "cannot handle parallel views");
 		return;
