@@ -1266,7 +1266,8 @@ corresponds to the measurement at
 Values in between are separated by
 .I "(l_max-l_min)/(N-1)"
 nanometers.
-All values must be non-negative, and the spectrum outside of the
+All values should be non-negative unless defining a component for
+complementary color mixing, and the spectrum outside of the
 specified range is assumed to be zero.
 (The visible range is 380 to 780 nm.)\0
 The actual units and scale of the measurements do not matter,
