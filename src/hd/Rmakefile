@@ -16,7 +16,7 @@ DEVDIR = $(INSTDIR)/dev
 
 LIBDIR = /usr/local/lib/ray
 
-PROGS = rholo
+PROGS = rholo rhcopy
 
 DEVS = $(DEVDIR)/x11.hdisp $(DEVDIR)/x11h.hdisp
 
@@ -31,6 +31,9 @@ clean:
 rholo:	rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o holo.o holofile.o Version.o
 	$(CC) $(CFLAGS) -o rholo rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o \
 holo.o holofile.o Version.o -lrt -lm
+
+rhcopy:	rhcopy.o holo.o holofile.o
+	$(CC) $(CFLAGS) -o rhcopy rhcopy.o holo.o holofile.o -lrt -lm
 
 $(DEVDIR)/x11h.hdisp:	$(DEVDIR)/x11.hdisp
 	rm -f $(DEVDIR)/x11h.hdisp
@@ -54,9 +57,13 @@ rhdisp.o rhdisp2.o:	rhdisp.h rhdriver.h ../common/view.h
 rhdisp3.o:	rhdisp.h ../common/view.h
 
 holo.o holofile.o rhdisp.o rhdisp2.o rhdisp3.o \
-rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o:	holo.h \
+rhcopy.o rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o:	holo.h \
 ../common/vars.h ../common/color.h \
 ../common/standard.h ../common/mat4.h ../common/fvect.h
+
+rhcopy.o:	../common/resolu.h
+
+rhcopy.o:	../common/view.h
 
 rhd_x11.o rhd_qtree.o rhd_qtree2r.o:	../common/standard.h \
 ../common/mat4.h ../common/fvect.h
