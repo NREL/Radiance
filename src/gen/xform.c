@@ -151,17 +151,18 @@ char  *argv[];
 				argv[0], argv[a]);
 		exit(1);
 	}
-	xac = a;
 
-	putchar('#');				/* simple header */
+	xac = a;
+					/* simple header */
+	putchar('#');
 	for (a = 0; a < xac; a++)
 		printf(" %s", xav[a]);
 	putchar('\n');
-
-	if (a == argc)
+					/* transform input */
+	if (xac == argc)
 		xform("standard input", stdin);
 	else
-		for ( ; a < argc; a++) {
+		for (a = xac; a < argc; a++) {
 			if ((fp = fopen(argv[a], "r")) == NULL) {
 				fprintf(stderr, "%s: cannot open \"%s\"\n",
 						progname, argv[a]);
@@ -253,17 +254,26 @@ FILE  *fin;
 
 	fgetline(buf, sizeof(buf), fin);
 	if (expand) {
-		if ((pin = popen(buf+1, "r")) == NULL) {
-			fprintf(stderr, "%s: (%s): cannot execute \"%s\"\n",
-					progname, fname, buf);
-			exit(1);
+		if (xac > 2) {
+			if ((pin = popen(buf+1, "r")) == NULL) {
+				fprintf(stderr,
+				"%s: (%s): cannot execute \"%s\"\n",
+						progname, fname, buf);
+				exit(1);
+			}
+			xform(buf, pin);
+			pclose(pin);
+		} else {
+			fflush(stdout);
+			system(buf+1);
 		}
-		xform(buf, pin);
-		pclose(pin);
 	} else {
-		printf("\n%s | %s -e", buf, xav[0]);
-		for (i = 1; i < xac; i++)
-			printf(" %s", xav[i]);
+		printf("\n%s", buf);
+		if (xac > 1) {
+			printf(" | %s -e", xav[0]);
+			for (i = 1; i < xac; i++)
+				printf(" %s", xav[i]);
+		}
 		putchar('\n');
 	}
 }
