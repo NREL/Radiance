@@ -637,7 +637,8 @@ char  *s;
 		(*dev->comout)("ray hit nothing");
 	else {
 		sprintf(buf, "ray hit %s %s \"%s\"",
-				objptr(thisray.ro->omod)->oname,
+				thisray.ro->omod == OVOID ? VOIDID :
+					objptr(thisray.ro->omod)->oname,
 				ofun[thisray.ro->otype].funame,
 				thisray.ro->oname);
 		(*dev->comout)(buf);
