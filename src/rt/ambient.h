@@ -37,3 +37,5 @@ extern double  minarad;		/* minimum ambient radius */
 extern double  sumambient(), doambient(), makeambient();
 
 #define  AVGREFL	0.5	/* assumed average reflectance */
+
+#define  AMBVALSIZ	75	/* number of bytes in portable AMBVAL struct */
