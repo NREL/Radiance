@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -580,6 +580,8 @@ int  x0, y0, x1, y1;
 avgbox(clr)				/* average color over current box */
 COLOR  clr;
 {
+	static COLOR  lc;
+	static int  ll, lr, lt, lb;
 	int  left, right, top, bottom;
 	int  y;
 	double  d;
@@ -603,6 +605,10 @@ COLOR  clr;
 		bottom = ymax;
 	if (top >= bottom)
 		return(-1);
+	if (left == ll && right == lr && top == lt && bottom == lb) {
+		copycolor(clr, lc);
+		return;
+	}
 	for (y = top; y < bottom; y++) {
 		if (getscan(y) == -1)
 			return(-1);
@@ -613,6 +619,8 @@ COLOR  clr;
 	}
 	d = 1.0/((right-left)*(bottom-top));
 	scalecolor(clr, d);
+	ll = left; lr = right; lt = top; lb = bottom;
+	copycolor(lc, clr);
 	return(0);
 }
 
