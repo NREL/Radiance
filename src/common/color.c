@@ -174,14 +174,19 @@ register FILE  *fp;
 		    code &= 127;
 		    if ((val = getc(fp)) == EOF)
 			return -1;
+		    if (j + code > len)
+		    	return -1;	/* overrun */
 		    while (code--)
 			scanline[j++][i] = val;
-		} else			/* non-run */
+		} else {		/* non-run */
+		    if (j + code > len)
+		    	return -1;	/* overrun */
 		    while (code--) {
 			if ((val = getc(fp)) == EOF)
 			    return -1;
 			scanline[j++][i] = val;
 		    }
+		}
 	    }
 	return(0);
 }
