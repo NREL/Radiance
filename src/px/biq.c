@@ -41,6 +41,8 @@ colormap ocm;
 {
     register rgbpixel *linin;
     register pixel *linout;
+    rgbpixel intmp;
+    int outtmp;
     int y;
     register int x;
 
@@ -50,11 +52,11 @@ colormap ocm;
     for (y = 0; y < ymax; y++) {
 	picreadline3(y, linin);
 	for (x = 0; x < xmax; x++) {
-		linin[x].r = ocm[0][linin[x].r];
-		linin[x].g = ocm[1][linin[x].g];
-		linin[x].b = ocm[2][linin[x].b];
-		linout[x] = rgb_bright(&linin[x]);
-		linout[x] = (linout[x]*n+n/2)/256;
+		intmp.r = ocm[0][linin[x].r];
+		intmp.g = ocm[1][linin[x].g];
+		intmp.b = ocm[2][linin[x].b];
+		outtmp = rgb_bright(&intmp);
+		linout[x] = (outtmp*n+n/2)/256;
 	}
 	picwriteline(y, linout);
     }
