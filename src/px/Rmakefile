@@ -13,7 +13,7 @@ CALDEFS = -DIEEE -DFUNCTION -DVARIABLE -DRCONST -DBIGLIB
 PIXAR_INCLUDE=	-I/usr/pixar/include
 PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar -lm
 
-PROGS = pfilt ttyimage aedimage oki20c mt160r getinfo psign \
+PROGS = pfilt ttyimage aedimage oki20c paintjet mt160r getinfo psign \
 greyscale pvalue pcompos colorscale ra_pr ximage prot \
 panim ra_t8 ra_bn ra_t16 pcomb
 
@@ -37,6 +37,9 @@ closest.o ealloc.o biq.o header.o -lm
 
 oki20c:	oki20c.o color.o header.o
 	cc $(CFLAGS) -o oki20c oki20c.o color.o header.o
+
+paintjet:	paintjet.o color.o header.o
+	cc $(CFLAGS) -o paintjet paintjet.o color.o header.o
 
 mt160r:	mt160r.o color.o
 	cc $(CFLAGS) -o mt160r mt160r.o color.o
