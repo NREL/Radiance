@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1993 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -355,31 +355,39 @@ char  *p;			/* data for f */
  * because they are very nasty and difficult to understand.
  */
 
-/* wrongillum *
+/* illumblock *
  *
  * We cannot allow an illum to pass to another illum, because that
  * would almost certainly constitute overcounting.
  * However, we do allow an illum to pass to another illum
  * that is actually going to relay to a virtual light source.
+ * We also prevent an illum from passing to a glow; this provides a
+ * convenient mechanism for defining detailed light source
+ * geometry behind (or inside) an effective radiator.
  */
 
-#define  wrongillum(m, r)	(!(source[r->rsrc].sflags&SVIRTUAL) && \
-			objptr(source[r->rsrc].so->omod)->otype==MAT_ILLUM)
+static int weaksrcmod(obj) int obj;	/* efficiency booster function */
+{register OBJREC *o = objptr(obj);
+return(o->otype==MAT_ILLUM|o->otype==MAT_GLOW);}
+
+#define  illumblock(m, r)	(!(source[r->rsrc].sflags&SVIRTUAL) && \
+				weaksrcmod(source[r->rsrc].so->omod))
 
 /* wrongsource *
  *
  * This source is the wrong source (ie. overcounted) if we are
  * aimed to a different source than the one we hit and the one
- * we hit is not an illum which should be passed.
+ * we hit is not an illum that should be passed.
  */
 
 #define  wrongsource(m, r)	(r->rsrc>=0 && source[r->rsrc].so!=r->ro && \
-				(m->otype!=MAT_ILLUM || wrongillum(m,r)))
+				(m->otype!=MAT_ILLUM || illumblock(m,r)))
 
 /* distglow *
  *
  * A distant glow is an object that sometimes acts as a light source,
  * but is too far away from the test point to be one in this case.
+ * (Glows with negative radii should NEVER participate in illumination.)
  */
 
 #define  distglow(m, r)		(m->otype==MAT_GLOW && \
