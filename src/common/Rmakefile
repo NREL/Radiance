@@ -31,7 +31,7 @@ librt.a:	$(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 	-ranlib librt.a
 
 install:	librt.a
-	mv librt.a ../lib
+	mv librt.a ../lib/librt.a
 
 clean:
 	rm -f *.o librt.a
