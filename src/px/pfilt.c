@@ -85,8 +85,10 @@ int  orad = 0;			/* output window radius */
 char  *progname;
 
 static gethfunc headline;
-static double rgb_bright(COLOR  clr);
-static double xyz_bright(COLOR  clr);
+static brightfunc_t rgb_bright;
+static brightfunc_t xyz_bright;
+//static double rgb_bright(COLOR  clr);
+//static double xyz_bright(COLOR  clr);
 static void copyfile(FILE  *in, FILE  *out);
 static void pass1(FILE  *in);
 static void pass2(FILE  *in);
@@ -340,8 +342,7 @@ xyz_bright(
 }
 
 
-double	(*ourbright)() = rgb_bright;
-
+brightfunc_t *ourbright = rgb_bright;
 
 static int
 headline(				/* process line from header */
