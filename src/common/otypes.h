@@ -39,7 +39,11 @@ typedef struct {
 #define  MAT_INTERFACE	(MAT_MIN+8)	/* dielectric interface */
 #define  MAT_GLASS	(MAT_MIN+9)	/* thin glass surface */
 #define  MAT_CLIP	(MAT_MIN+10)	/* clipping surface */
-#define  MAT_CNT	11
+#define  MAT_PFUNC	(MAT_MIN+11)	/* plastic brdf function */
+#define  MAT_MFUNC	(MAT_MIN+12)	/* metal brdf function */
+#define  MAT_PDATA	(MAT_MIN+13)	/* plastic brdf data */
+#define  MAT_MDATA	(MAT_MIN+14)	/* metal brdf data */
+#define  MAT_CNT	15
 				/* textures and patterns */
 #define  TP_MIN		(MAT_MIN+MAT_CNT)
 #define  TEX_FUNC	(TP_MIN+0)	/* surface texture function */
@@ -75,6 +79,7 @@ extern int  m_normal();
 extern int  m_dielectric();
 extern int  m_glass();
 extern int  m_clip();
+extern int  m_brdf();
 extern int  t_func(), t_data();
 extern int  p_cfunc(), p_bfunc();
 extern int  p_pdata(), p_cdata(), p_bdata();
@@ -102,6 +107,10 @@ extern int  text();
 			{ "interface", m_dielectric }, \
 			{ "glass", m_glass }, \
 			{ "antimatter", m_clip }, \
+			{ "plasfunc", m_brdf }, \
+			{ "metfunc", m_brdf }, \
+			{ "plasdata", m_brdf }, \
+			{ "metdata", m_brdf }, \
 			{ "texfunc", t_func }, \
 			{ "texdata", t_data }, \
 			{ "colorfunc", p_cfunc }, \
