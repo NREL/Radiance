@@ -27,6 +27,7 @@ extern struct ODview {
 		float	pthresh;	/* proximity threshold */
 	}	*bmap;		/* low resolution image map */
 	int4	*emap;		/* low resolution edge presence map */
+	int4	*pmap;		/* high resolution presence map */
 	GLfloat	*dmap;		/* high resolution depth map */
 } *odView;		/* our view list */
 
