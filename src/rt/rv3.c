@@ -425,15 +425,28 @@ FVECT  vc;
 }
 
 
-zoomview(vp, zf)			/* zoom in our out */
+zoomview(vp, zf)			/* zoom in or out */
 register VIEW  *vp;
 double  zf;
 {
 	switch (vp->type) {
 	case VT_PAR:				/* parallel view */
-	case VT_ANG:				/* angular fisheye */
 		vp->horiz /= zf;
 		vp->vert /= zf;
+		return;
+	case VT_ANG:				/* angular fisheye */
+		vp->horiz /= zf;
+		if (vp->horiz > 360.)
+			vp->horiz = 360.;
+		vp->vert /= zf;
+		if (vp->vert > 360.)
+			vp->vert = 360.;
+		return;
+	case VT_CYL:				/* cylindrical panorama */
+		vp->horiz /= zf;
+		if (vp->horiz > 360.)
+			vp->horiz = 360.;
+		vp->vert = atan(tan(vp->vert*(PI/180./2.))/zf) / (PI/180./2.);
 		return;
 	case VT_PER:				/* perspective view */
 		vp->horiz = atan(tan(vp->horiz*(PI/180./2.))/zf) /

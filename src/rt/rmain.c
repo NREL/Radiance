@@ -823,6 +823,7 @@ printdefaults()			/* print default values to stdout */
 			ourview.type==VT_PAR ? "parallel" :
 			ourview.type==VT_HEM ? "hemispherical" :
 			ourview.type==VT_ANG ? "angular" :
+			ourview.type==VT_CYL ? "cylindrical" :
 			"unknown");
 	printf("-vp %f %f %f\t# view point\n",
 			ourview.vp[0], ourview.vp[1], ourview.vp[2]);
