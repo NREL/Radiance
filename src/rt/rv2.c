@@ -607,6 +607,8 @@ char  *s;
 	putc('\n', fp);
 	if (exposure != 1.0)
 		fputexpos(exposure, fp);
+	if (dev->pixaspect != 1.0)
+		fputaspect(dev->pixaspect, fp);
 	putc('\n', fp);
 	fputresolu(YMAJOR|YDECR, hresolu, vresolu, fp);
 
