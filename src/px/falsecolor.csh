@@ -64,11 +64,11 @@ while ($#argv > 0)
 		breaksw
 	case -cl:
 		set docont=a
-		set loff=20
+		set loff=12
 		breaksw
 	case -cb:
 		set docont=b
-		set loff=14
+		set loff=13
 		breaksw
 	case -e:
 		set doextrem
