@@ -421,7 +421,7 @@ char  *p;			/* data for f */
  * The -di flag renders light sources invisible, and here is the test.
  */
 
-#define  srcignore(m, r)	(directinvis && !(r->crtype&SHADOW) && \
+#define  srcignore(m, r)	(!directvis && !(r->crtype&SHADOW) && \
 				!distglow(m, r))
 
 
