@@ -38,10 +38,10 @@ extern double  exp();
 
 typedef struct {
 	OBJREC  *mp;		/* material pointer */
-	RAY  *pr;		/* intersected ray */
 	COLOR  mcolor;		/* color of this material */
 	COLOR  scolor;		/* color of specular component */
 	FVECT  vrefl;		/* vector in direction of reflected ray */
+	FVECT  prdir;		/* vector in transmitted direction */
 	double  alpha2;		/* roughness squared times 2 */
 	double  rdiff, rspec;	/* reflected specular, diffuse */
 	double  trans;		/* transmissivity */
@@ -113,7 +113,7 @@ double  omega;			/* light source size */
 						/* roughness + source */
 		dtmp = np->alpha2 + omega/(2.0*PI);
 						/* gaussian */
-		dtmp = exp((DOT(np->pr->rdir,ldir)-1.)/dtmp)/(2.*PI)/dtmp;
+		dtmp = exp((DOT(np->prdir,ldir)-1.)/dtmp)/(2.*PI)/dtmp;
 						/* worth using? */
 		if (dtmp > FTINY) {
 			copycolor(ctmp, np->mcolor);
@@ -141,7 +141,6 @@ register RAY  *r;
 	if (r->crtype & SHADOW && m->otype != MAT_TRANS)
 		return;
 	nd.mp = m;
-	nd.pr = r;
 						/* get material color */
 	setcolor(nd.mcolor, m->oargs.farg[0],
 			   m->oargs.farg[1],
@@ -193,22 +192,21 @@ register RAY  *r;
 		nd.trans = m->oargs.farg[5]*(1.0 - nd.rspec);
 		nd.tspec = nd.trans * m->oargs.farg[6];
 		nd.tdiff = nd.trans - nd.tspec;
+		if (r->crtype & SHADOW || DOT(r->pert,r->pert) <= FTINY*FTINY) {
+			VCOPY(nd.prdir, r->rdir);
+			transtest = 2;
+		} else {
+			for (i = 0; i < 3; i++)		/* perturb direction */
+				nd.prdir[i] = r->rdir[i] - .75*r->pert[i];
+			normalize(nd.prdir);
+		}
 	} else
 		nd.tdiff = nd.tspec = nd.trans = 0.0;
 						/* transmitted ray */
 	if (nd.tspec > FTINY && nd.alpha2 <= FTINY) {
 		RAY  lr;
 		if (rayorigin(&lr, r, TRANS, nd.tspec) == 0) {
-			if (!(r->crtype & SHADOW) &&
-					DOT(r->pert,r->pert) > FTINY*FTINY) {
-				for (i = 0; i < 3; i++)	/* perturb direction */
-					lr.rdir[i] = r->rdir[i] -
-							.75*r->pert[i];
-				normalize(lr.rdir);
-			} else {
-				VCOPY(lr.rdir, r->rdir);
-				transtest = 2;
-			}
+			VCOPY(lr.rdir, nd.prdir);
 			rayvalue(&lr);
 			scalecolor(lr.rcol, nd.tspec);
 			multcolor(lr.rcol, nd.mcolor);	/* modified by color */
