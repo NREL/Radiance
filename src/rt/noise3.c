@@ -46,7 +46,7 @@ static  interpolate();
 static long  xlim[3][2];
 static double  xarg[3];
 
-#define  EPSILON	.0001		/* error allowed in fractal */
+#define  EPSILON	.001		/* error allowed in fractal */
 
 #define  frand3(x,y,z)	frand(17*(x)+23*(y)+29*(z))
 
