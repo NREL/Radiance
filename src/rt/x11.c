@@ -258,8 +258,9 @@ static
 x11_errout(msg)			/* output an error message */
 char  *msg;
 {
-	x11_comout(msg);
 	stderr_v(msg);		/* send to stderr also! */
+	x11_comout(msg);
+	x11_flush();
 }
 
 
