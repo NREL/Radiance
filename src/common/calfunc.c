@@ -104,17 +104,16 @@ int
 fundefined(fname)		/* return # of arguments for function */
 char  *fname;
 {
-    LIBR  *lp;
+    register LIBR  *lp;
     register VARDEF  *vp;
 
-    if ((vp = varlookup(fname)) == NULL || vp->def == NULL
-		|| vp->def->v.kid->type != FUNC)
-	if ((lp = liblookup(fname)) == NULL)
-	    return(0);
-	else
-	    return(lp->nargs);
-    else
+    if ((vp = varlookup(fname)) != NULL && vp->def != NULL
+		&& vp->def->v.kid->type == FUNC)
 	return(nekids(vp->def->v.kid) - 1);
+    lp = vp != NULL ? vp->lib : liblookup(fname);
+    if (lp == NULL)
+	return(0);
+    return(lp->nargs);
 }
 
 
