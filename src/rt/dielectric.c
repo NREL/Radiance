@@ -65,8 +65,6 @@ register RAY  *r;
 	if (m->oargs.nfargs != (m->otype==MAT_DIELECTRIC ? 5 : 8))
 		objerror(m, USER, "bad arguments");
 
-	r->rt = r->rot;				/* just use ray length */
-
 	raytexture(r, m->omod);			/* get modifiers */
 
 	cos1 = raynormal(dnorm, r);		/* cosine of theta1 */
@@ -137,6 +135,8 @@ register RAY  *r;
 				multcolor(mcolor, r->pcol);	/* modify */
 				scalecolor(p.rcol, trans);
 				addcolor(r->rcol, p.rcol);
+				if (nratio >= 1.0-FTINY && nratio <= 1.0+FTINY)
+					r->rt = r->rot + p.rt;
 			}
 		}
 	}
