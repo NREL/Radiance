@@ -428,9 +428,6 @@ m_light(m, r)			/* ray hit a light source */
 register OBJREC  *m;
 register RAY  *r;
 {
-						/* check for behind */
-	if (r->rod < 0.0)
-		return;
 						/* check for over-counting */
 	if (wrongsource(m, r) || badambient(m, r))
 		return;
@@ -444,6 +441,9 @@ register RAY  *r;
 
 						/* otherwise treat as source */
 	} else {
+						/* check for behind */
+		if (r->rod < 0.0)
+			return;
 						/* get distribution pattern */
 		raytexture(r, m->omod);
 						/* get source color */
