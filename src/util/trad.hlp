@@ -1,4 +1,4 @@
-	$Id: trad.hlp,v 2.4 1994/11/05 09:31:49 greg Exp $
+	$Id: trad.hlp,v 2.5 1994/11/06 09:39:09 greg Exp $
 
 This help file is associated with the trad interface to the Radiance
 rad(1) program.  Trad consists of trad.wsh and one do_*.tcl file for
@@ -48,18 +48,14 @@ the left mouse button while holding the control key over the object of
 curiosity in the main trad window.
 (In general, only active windows are given help file links -- click
 on these rather than the text labels.)
+Additional search capabilities are available over all topics using
+the "Grep" button.
 
 For help on the help facility itself, Control-click on the problem
 help widget or on the window title in the upper right corner for
 more general information.
 (To get back to trad-specific help, press the "HELP" button in the
 main trad window or Control-click on a trad widget.)
-
-Once the help window has been displayed, it is usually best to
-lower or iconify it rather than dismissing it if further help is
-needed.
-This way, you will not have to wait for the help file to be read in
-all over again every time you have a question.
 
 .Trad.Messages
 
