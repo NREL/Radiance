@@ -11,8 +11,7 @@
 #define  MAXDDIM	8		/* maximum dimensions for data array */
 
 #define  DATATYPE	float		/* single precision to save space */
-
-#define  DSCANF		"%f"		/* scan format for DATATYPE */
+#define  DATATY		'f'		/* format for DATATYPE */
 
 typedef struct datarray {
 	char  *name;			/* name of our data */
