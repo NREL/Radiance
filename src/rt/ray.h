@@ -42,8 +42,8 @@ typedef struct ray {
 	OBJECT  *clipset;	/* set of objects currently clipped */
 	OBJECT  *newcset;	/* next clipset, used for transmission */
 	int  (*revf)();		/* evaluation function for this ray */
-	OBJECT	robj;		/* object number from octree */
- 	OBJREC  *ro;		/* intersected object (for material) */
+	OBJECT	robj;		/* intersected object number */
+ 	OBJREC  *ro;		/* intersected object (one with material) */
 	double  rot;		/* distance to object */
 	FVECT  rop;		/* intersection point */
 	FVECT  ron;		/* intersection surface normal */
