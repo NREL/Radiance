@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -444,6 +444,8 @@ getname()			/* scan an identifier */
     for (i = 0; i < MAXWORD && isid(lnext); i++, lnext = scan())
 	str[i] = lnext;
     str[i] = '\0';
+    while (isid(lnext))		/* skip rest of name */
+	lnext = scan();
 
     return(str);
 }
@@ -627,7 +629,7 @@ getE5()				/* E5 -> (E1) */
 #endif
 
 #if  defined(VARIABLE) || defined(FUNCTION)
-    if (isalpha(nextc)) {
+    if (isalpha(nextc) || nextc == CNTXMARK) {
 	nam = getname();
 #if  defined(VARIABLE) && defined(FUNCTION)
 	ep1 = NULL;
