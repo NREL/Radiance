@@ -80,7 +80,6 @@ static long  sortintvl = SORT_INTVL;	/* time until next sort */
 
 #define	 newambval()	(AMBVAL *)bmalloc(sizeof(AMBVAL))
 
-extern long  ftell(), lseek();
 static int  initambfile(), avsave(), avinsert(), sortambvals(), avlmemi();
 static AMBVAL  *avstore();
 #ifdef  F_SETLKW

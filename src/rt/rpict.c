@@ -348,7 +348,6 @@ FILE  *fp;
 render(zfile, oldfile)				/* render the scene */
 char  *zfile, *oldfile;
 {
-	extern long  lseek();
 	COLOR  *scanbar[MAXDIV+1];	/* scanline arrays of pixel values */
 	float  *zbar[MAXDIV+1];		/* z values */
 	char  *sampdens;		/* previous sample density */
@@ -401,7 +400,7 @@ char  *zfile, *oldfile;
 	if (i >= vres)
 		goto alldone;
 	if (zfd != -1 && i > 0 &&
-			lseek(zfd, (long)i*hres*sizeof(float), 0) == -1)
+			lseek(zfd, (long)i*hres*sizeof(float), 0) < 0)
 		error(SYSTEM, "z-file seek error in render");
 	pctdone = 100.0*i/vres;
 	if (ralrm > 0)			/* report init stats */
