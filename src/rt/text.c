@@ -160,7 +160,7 @@ int  col;
 			txt[1] = NULL;
 		} else {				/* text file */
 			if ((s = getpath(tm->oargs.sarg[tndx(tm)],
-					libpath)) == NULL) {
+					libpath, R_OK)) == NULL) {
 				sprintf(errmsg, "cannot find text file \"%s\"",
 						tm->oargs.sarg[tndx(tm)]);
 				error(USER, errmsg);
@@ -211,7 +211,7 @@ char  *fname;
 		if (!strcmp(f->name, fname))
 			return(f);
 						/* load the font file */
-	if ((pathname = getpath(fname, libpath)) == NULL) {
+	if ((pathname = getpath(fname, libpath, R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find font file \"%s\"", fname);
 		error(USER, errmsg);
 	}

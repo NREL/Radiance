@@ -55,7 +55,7 @@ char	*argv[];
 	char	*devname;
 	int	p1[2], p2[2];
 
-	if ((devname = getpath(argv[0], DEVPATH)) == NULL) {
+	if ((devname = getpath(argv[0], DEVPATH, 1)) == NULL) {
 		stderr_v(argv[0]);
 		stderr_v(": not found\n");
 		return(NULL);

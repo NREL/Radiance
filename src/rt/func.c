@@ -97,7 +97,7 @@ char  *fname;
 	extern char  *libpath;		/* library search path */
 	char  *ffname;
 
-	if ((ffname = getpath(fname, libpath)) == NULL) {
+	if ((ffname = getpath(fname, libpath, R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find function file \"%s\"", fname);
 		error(USER, errmsg);
 	}
