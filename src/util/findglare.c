@@ -75,7 +75,7 @@ char	*argv[];
 			}
 			if (argv[i][2] != 'f')
 				goto userr;
-			rval = viewfile(argv[++i], &ourview, 0, 0);
+			rval = viewfile(argv[++i], &ourview, NULL);
 			if (rval < 0) {
 				fprintf(stderr,
 				"%s: cannot open view file \"%s\"\n",
@@ -131,7 +131,7 @@ char	*argv[];
 	}
 						/* get view */
 	if (picture != NULL) {
-		rval = viewfile(picture, &pictview, 0, 0);
+		rval = viewfile(picture, &pictview, NULL);
 		if (rval < 0) {
 			fprintf(stderr, "%s: cannot open picture file \"%s\"\n",
 					progname, picture);
@@ -306,8 +306,8 @@ cleanup()				/* close files, wait for children */
 	if (octree != NULL)
 		done_rtrace();
 	if (npixinvw < 100*npixmiss)
-		fprintf(stderr, "%s: warning -- missing %ld%% of samples\n",
-				progname, 100L*npixmiss/npixinvw);
+		fprintf(stderr, "%s: warning -- missing %d%% of samples\n",
+				progname, (int)(100L*npixmiss/npixinvw));
 }
 
 
