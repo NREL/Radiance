@@ -595,8 +595,8 @@ register BARYCCM	bcm;
 }
 
 
-putquad(p0, p1, p2, p3)			/* put out a quadrilateral */
-char  *p0, *p1, *p2, *p3;
+putquad(p0, p1, p3, p2)			/* put out a quadrilateral */
+char  *p0, *p1, *p3, *p2;		/* names correspond to binary pos. */
 {
 	VNDX  p0i, p1i, p2i, p3i;
 	FVECT  norm[4];
