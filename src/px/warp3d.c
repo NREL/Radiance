@@ -1,7 +1,7 @@
-/* Copyright (c) 1997 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -334,7 +334,7 @@ register WARP3D	*wp;
 }
 
 
-long
+unsigned long
 gridhash(gp)			/* hash a grid point index */
 GNDX	gp;
 {

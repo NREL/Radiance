@@ -35,7 +35,7 @@ static FILE  *infp;			/* input file stream */
 static int  objsize;			/* size of stored OBJECT's */
 static short  otypmap[NUMOTYPE+8];	/* object type map */
 
-static long	imhash(mod) char *mod; {return((long)mod);}
+static unsigned long	imhash(mod) char *mod; {return((unsigned long)mod);}
 static LUTAB	imtab = {imhash,NULL,NULL,NULL,0,NULL,0};
 
 static LUTAB	ottab = LU_SINIT(free,free);

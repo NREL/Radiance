@@ -1,25 +1,25 @@
-/* Copyright (c) 1994 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
-/* SCCSid "$SunId$ LBL" */
+/* SCCSid "$SunId$ SGI" */
 
 /*
  * Header file for general associative table lookup routines
  */
 
 typedef struct {
-	char	*key;		/* key name */
-	long	hval;		/* key hash value (for efficiency) */
-	char	*data;		/* pointer to client data */
+	char	*key;			/* key name */
+	unsigned long	hval;		/* key hash value (for efficiency) */
+	char	*data;			/* pointer to client data */
 } LUENT;
 
 typedef struct {
-	long	(*hashf)();	/* key hash function */
-	int	(*keycmp)();	/* key comparison function */
-	void	(*freek)();	/* free a key */
-	void	(*freed)();	/* free the data */
-	int	tsiz;		/* current table size */
-	LUENT	*tabl;		/* table, if allocated */
-	int	ndel;		/* number of deleted entries */
+	unsigned long	(*hashf)();	/* key hash function */
+	int	(*keycmp)();		/* key comparison function */
+	void	(*freek)();		/* free a key */
+	void	(*freed)();		/* free the data */
+	int	tsiz;			/* current table size */
+	LUENT	*tabl;			/* table, if allocated */
+	int	ndel;			/* number of deleted entries */
 } LUTAB;
 
 #undef strcmp
@@ -78,6 +78,6 @@ extern LUENT	*lu_find();
 extern void	lu_delete();
 extern int	lu_doall();
 extern void	lu_done();
-extern long	lu_shash();
+extern unsigned long	lu_shash();
 
 extern int	strcmp();
