@@ -232,9 +232,9 @@ char  *p;			/* data for f */
 				error(SYSTEM, "out of memory in direct");
 		}
 		cntord[sn].sndx = sn;
-		cntord[sn].brt = 0.0;
+		srccnt[sn].sno = sr.rsrc;
 						/* compute coefficient */
-		(*f)(srccnt[sn].coef, p, srccnt[sn].dir, si.dom);
+		(*f)(srccnt[sn].coef, p, sr.rdir, si.dom);
 		cntord[sn].brt = bright(srccnt[sn].coef);
 		if (cntord[sn].brt <= 0.0)
 			continue;
