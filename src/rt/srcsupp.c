@@ -105,7 +105,7 @@ register OBJREC  *so;
 	theta = PI/180.0/2.0 * so->oargs.farg[3];
 	if (theta <= FTINY)
 		objerror(so, USER, "zero size");
-	src->ss = theta >= PI/4 ? 1.0 : tan(theta);
+	src->ss = theta >= PI/4.0 ? 1.0 : tan(theta);
 	src->ss2 = 2.0*PI * (1.0 - cos(theta));
 }
 
