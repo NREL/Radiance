@@ -61,7 +61,14 @@ extern long  time();
 long  tstart;				/* start time */
 
 extern int  ambnotify();		/* new object notify functions */
+#if  RTRACE
+extern int  tranotify();
+int  (*addobjnotify[])() = {ambnotify, tranotify, NULL};
+extern char  *tralist[];		/* trace include/exclude list */
+extern int  traincl;			/* include == 1, exclude == 0 */
+#else
 int  (*addobjnotify[])() = {ambnotify, NULL};
+#endif
 
 CUBE  thescene;				/* our scene */
 OBJECT	nsceneobjs;			/* number of objects in our scene */
@@ -134,10 +141,11 @@ char  *argv[];
 	char  *zfile = NULL;
 	char  *errfile = NULL;
 	char  *ambfile = NULL;
-	char  **amblp = amblist;
 	int  loadflags = ~IO_FILES;
 	int  seqstart = 0;
 	int  persist = 0;
+	char  **amblp;
+	char  **tralp;
 	int  duped1;
 	int  rval;
 	int  i;
@@ -386,8 +394,10 @@ char  *argv[];
 						error(SYSTEM, errmsg);
 					}
 					amblp += rval;
-				} else
+				} else {
 					*amblp++ = argv[++i];
+					*amblp = NULL;
+				}
 				break;
 			case 'e':				/* exclude */
 			case 'E':
@@ -406,8 +416,10 @@ char  *argv[];
 						error(SYSTEM, errmsg);
 					}
 					amblp += rval;
-				} else
+				} else {
 					*amblp++ = argv[++i];
+					*amblp = NULL;
+				}
 				break;
 			case 'f':				/* file */
 				check(3,"s");
@@ -455,6 +467,56 @@ char  *argv[];
 			loadflags = rval ? loadflags | IO_INFO :
 					loadflags & ~IO_INFO;
 			break;
+		case 't':				/* trace */
+			switch (argv[i][2]) {
+			case 'i':				/* include */
+			case 'I':
+				check(3,"s");
+				if (traincl != 1) {
+					traincl = 1;
+					tralp = tralist;
+				}
+				if (argv[i][2] == 'I') {	/* file */
+					rval = wordfile(tralp,
+					getpath(argv[++i],libpath,R_OK));
+					if (rval < 0) {
+						sprintf(errmsg,
+				"cannot open trace include file \"%s\"",
+								argv[i]);
+						error(SYSTEM, errmsg);
+					}
+					tralp += rval;
+				} else {
+					*tralp++ = argv[++i];
+					*tralp = NULL;
+				}
+				break;
+			case 'e':				/* exclude */
+			case 'E':
+				check(3,"s");
+				if (traincl != 0) {
+					traincl = 0;
+					tralp = tralist;
+				}
+				if (argv[i][2] == 'E') {	/* file */
+					rval = wordfile(tralp,
+					getpath(argv[++i],libpath,R_OK));
+					if (rval < 0) {
+						sprintf(errmsg,
+				"cannot open trace exclude file \"%s\"",
+								argv[i]);
+						error(SYSTEM, errmsg);
+					}
+					tralp += rval;
+				} else {
+					*tralp++ = argv[++i];
+					*tralp = NULL;
+				}
+				break;
+			default:
+				goto badopt;
+			}
+			break;
 #endif
 #if  RVIEW
 		case 'b':				/* black and white */
@@ -481,7 +543,6 @@ char  *argv[];
 			goto badopt;
 		}
 	}
-	*amblp = NULL;
 #if  RPICT|RVIEW
 	err = setview(&ourview);	/* set viewing parameters */
 	if (err != NULL)
