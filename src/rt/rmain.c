@@ -70,6 +70,7 @@ extern double  dstrpix;			/* square pixel distribution */
 
 extern double  dstrsrc;			/* square source distribution */
 extern double  shadthresh;		/* shadow threshold */
+extern double  shadcert;		/* shadow testing certainty */
 
 extern int  maxdepth;			/* maximum recursion depth */
 extern double  minweight;		/* minimum ray weight */
@@ -178,6 +179,10 @@ char  *argv[];
 			case 't':				/* threshold */
 				check(3,1);
 				shadthresh = atof(argv[++i]);
+				break;
+			case 'c':				/* certainty */
+				check(3,1);
+				shadcert = atof(argv[++i]);
 				break;
 			case 'j':				/* jitter */
 				check(3,1);
@@ -538,6 +543,7 @@ printdefaults()			/* print default values to stdout */
 	printf("-y  %-9d\t\t\t# y resolution\n", vresolu);
 #endif
 	printf("-dt %f\t\t\t# direct threshold\n", shadthresh);
+	printf("-dc %f\t\t\t# direct certainty\n", shadcert);
 	printf("-dj %f\t\t\t# direct jitter\n", dstrsrc);
 #if  RPICT|RVIEW
 	printf("-sp %-9d\t\t\t# sample pixel\n", psample);

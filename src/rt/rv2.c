@@ -65,6 +65,8 @@ char  *s;
 	if (pframe.d < 0) pframe.d = 0;
 	if (pframe.r > ourview.hresolu) pframe.r = ourview.hresolu;
 	if (pframe.u > ourview.vresolu) pframe.u = ourview.vresolu;
+	if (pframe.l > pframe.r) pframe.l = pframe.r;
+	if (pframe.d > pframe.u) pframe.d = pframe.u;
 	pdepth = 0;
 }
 
@@ -392,6 +394,7 @@ register char  *s;
 	extern int  maxdepth;
 	extern double  dstrsrc;
 	extern double  shadthresh;
+	extern double  shadcert;
 	extern COLOR  ambval;
 	extern double  ambacc;
 	extern double  minarad;
@@ -404,7 +407,7 @@ register char  *s;
 	char  buf[128];
 	
 	if (s[0] == '\0') {
-		(*dev->comout)("aa ab ad ar as av dj dt lr lw sp st: ");
+		(*dev->comout)("aa ab ad ar as av dc dj dt lr lw sp st: ");
 		(*dev->comin)(buf);
 		s = buf;
 	}
@@ -449,6 +452,17 @@ register char  *s;
 					break;
 			}
 			dstrsrc = d0;
+			break;
+		case 'c':			/* certainty */
+			if (sscanf(s+2, "%lf", &d0) != 1) {
+				sprintf(buf, "direct certainty (%.6g): ",
+						shadcert);
+				(*dev->comout)(buf);
+				(*dev->comin)(buf);
+				if (sscanf(buf, "%lf", &d0) != 1)
+					break;
+			}
+			shadcert = d0;
 			break;
 		case 't':			/* threshold */
 			if (sscanf(s+2, "%lf", &d0) != 1) {

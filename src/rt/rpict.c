@@ -29,6 +29,7 @@ double  dstrpix = 0.67;			/* square pixel distribution */
 
 double  dstrsrc = 0.0;			/* square source distribution */
 double  shadthresh = .05;		/* shadow threshold */
+double  shadcert = .5;			/* shadow certainty */
 
 int  maxdepth = 6;			/* maximum recursion depth */
 double  minweight = 5e-3;		/* minimum ray weight */
