@@ -8,6 +8,18 @@
  *     10/1/85
  */
 
+#ifdef  BSD
+
 extern long  random();
 
 #define  frandom()	(random()*(1./2147483648.))
+
+#else
+
+extern long  lrand48();
+extern double  drand48();
+
+#define  random()	lrand48()
+#define  frandom()	drand48()
+
+#endif
