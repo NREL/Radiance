@@ -68,7 +68,7 @@ char  *fname;
 	eputs(": cannot open\n");
 	quit(1);
     }
-    initfile(fname, fp);
+    initfile(fp, fname, 0);
     while (nextc != EOF)
 	loaddefn();
     if (fname != NULL)
@@ -76,11 +76,12 @@ char  *fname;
 }
 
 
-scompile(file, str)		/* get definitions from a string */
-char  *file;
+scompile(str, fn, ln)		/* get definitions from a string */
 char  *str;
+char  *fn;
+int  ln;
 {
-    initstr(file, str);
+    initstr(str, fn, ln);
     while (nextc != EOF)
 	loaddefn();
 }
