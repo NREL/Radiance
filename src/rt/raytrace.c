@@ -55,6 +55,9 @@ rayorigin(		/* start new ray from old one */
 		copycolor(r->albedo, salbedo);
 		r->gecc = seccg;
 		r->slights = NULL;
+	} else if (ro->rot >= FHUGE) {		/* illegal continuation */
+		memset(r, 0, sizeof(RAY));
+		return(-1);
 	} else {				/* spawned ray */
 		r->rlvl = ro->rlvl;
 		if (rt & RAYREFL) {
