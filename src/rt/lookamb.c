@@ -12,6 +12,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+#ifdef MSDOS
+#include  <fcntl.h>
+#endif
+
 #include  "color.h"
 
 #include  "ambient.h"
@@ -64,9 +68,15 @@ char  *argv[];
 			printargs(argc, argv, stdout);
 		fputformat(AMBFMT, stdout);
 		putchar('\n');
+#ifdef MSDOS
+		setmode(fileno(stdout), O_BINARY);
+#endif
 		putambmagic(stdout);
 		writamb(fp);
 	} else {
+#ifdef MSDOS
+		setmode(fileno(fp), O_BINARY);
+#endif
 		if (checkheader(fp, AMBFMT, header ? stdout : (FILE *)NULL) < 0)
 			goto formaterr;
 		if (!hasambmagic(fp))
