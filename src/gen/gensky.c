@@ -159,8 +159,6 @@ computesky()			/* compute sky parameters */
 
 printsky()			/* print out sky */
 {
-	register int  i;
-
 	if (dosun) {
 		printf("\nvoid light solar\n");
 		printf("0\n0\n");
