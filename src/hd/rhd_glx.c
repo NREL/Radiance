@@ -10,8 +10,7 @@ static char SCCSid[] = "$SunId$ SGI";
  */
 
 #include "standard.h"
-#include "tonemap.h"
-#include "rhdriver.h"
+#include "rhd_qtree.h"
 
 #include  <GL/glx.h>
 
@@ -21,28 +20,17 @@ static char SCCSid[] = "$SunId$ SGI";
 #define FEQ(a,b)	((a)-(b) <= FTINY && (a)-(b) >= -FTINY)
 #endif
 
-#ifndef int4
-#define int4	int
+#ifndef MAXCONE
+#define MAXCONE		16		/* number of different cone sizes */
 #endif
-
-#ifndef FREEPCT
-#define FREEPCT		10		/* percentage of values to free */
+#ifndef MAXVERT
+#define MAXVERT		32		/* maximum number of cone vertices */
 #endif
-
-#ifndef NCONEV
-#define NCONEV		7		/* number of cone base vertices */
+#ifndef MINVERT
+#define MINVERT		4		/* minimum number of cone vertices */
 #endif
-#ifndef CONEH
-#define CONEH		3.		/* cone height (fraction of depth) */
-#endif
-#ifndef CONEW
-#define CONEW		0.05		/* cone width (fraction of screen) */
-#endif
-#ifndef DIRPEN
-#define DIRPEN		0.001		/* direction penalty factor */
-#endif
-#ifndef VALUA
-#define VALUA		16		/* target value area (pixels) */
+#ifndef DEPTHFACT
+#define DEPTHFACT	16.		/* multiplier for depth tests */
 #endif
 
 #define GAMMA		1.4		/* default gamma correction */
@@ -78,47 +66,24 @@ static XVisualInfo  *ourvinf;		/* our visual information */
 static Window  gwind = 0;		/* our graphics window */
 static GLXContext	gctx;		/* our GLX context */
 
-static double	mindepth = FHUGE;	/* minimum depth value so far */
-static double	maxdepth = 0.;		/* maximum depth value so far */
-
 static double	pwidth, pheight;	/* pixel dimensions (mm) */
 
-static FVECT	conev[NCONEV];		/* drawing cone */
-static double	coneh;			/* cone height */
+static double	curzmax = 1e4;		/* current depth upper limit */
+static double	nxtzmax = 0.;		/* maximum (finite) depth so far */
+
+static struct {
+	double	rad;		/* cone radius */
+	int	nverts;		/* number of vertices */
+	FVECT	*va;		/* allocated vertex array */
+} cone[MAXCONE];	/* precomputed cones for drawing */
 
 static int	inpresflags;		/* input result flags */
 
 static int	headlocked = 0;		/* lock vertical motion */
 
-static int	quicken = 0;		/* quicker, sloppier update rate? */
-
-static struct {
-	float		(*wp)[3];	/* world intersection point array */
-	int4		*wd;		/* world direction array */
-	TMbright	*brt;		/* encoded brightness array */
-	BYTE		(*chr)[3];	/* encoded chrominance array */
-	BYTE		(*rgb)[3];	/* tone-mapped color array */
-	BYTE		*alpha;		/* alpha values */
-	int		nl;		/* count of values */
-	int		bl, tl;		/* bottom and top (next) value index */
-	int		tml;		/* next value needing tone-mapping */
-	int		drl;		/* next value in need of drawing */
-	char		*base;		/* base of allocated memory */
-}	rV;			/* our collection of values */
-
-static int	*valmap = NULL;		/* sorted map of screen values */
-static int	vmaplen = 0;		/* value map length */
-
-#define redraw()	(rV.drl = rV.bl)
-
 static int  resizewindow(), getevent(), getkey(), moveview(),
-		setGLview(), getmove(), fixwindow(), mytmflags(),
-		drawvalue(), valcmp(), clralphas(), setalphas(), mergalphas(),
-		IndexValue(), Compost(), FindValue(), TMapValues(),
-		AllocValues(), FreeValues();
-
-extern int4	encodedir();
-extern double	fdir2diff(), dir2diff();
+		initcones(), freecones(),
+		getmove(), fixwindow(), mytmflags();
 
 
 dev_open(id)			/* initialize X11 driver */
@@ -127,13 +92,14 @@ char  *id;
 	extern char	*getenv();
 	static int	atlBest[] = {GLX_RGBA, GLX_RED_SIZE,8,
 				GLX_GREEN_SIZE,8, GLX_BLUE_SIZE,8,
-				GLX_ALPHA_SIZE,8, GLX_DEPTH_SIZE,15,
-				None};
+				GLX_DEPTH_SIZE,15, None};
 	char	*gv;
 	double	gamval = GAMMA;
 	XSetWindowAttributes	ourwinattr;
 	XWMHints	ourxwmhints;
 	XSizeHints	oursizhints;
+					/* set quadtree globals */
+	qtMinNodesiz = 3;
 					/* open display server */
 	ourdisplay = XOpenDisplay(NULL);
 	if (ourdisplay == NULL)
@@ -181,6 +147,10 @@ char  *id;
 	glDepthFunc(GL_LEQUAL);
 	glShadeModel(GL_FLAT);
 	glDisable(GL_DITHER);
+	glDisable(GL_CULL_FACE);
+	glMatrixMode(GL_PROJECTION);
+	glOrtho(0., 1., 0., 1., -.01, 1.01);
+	glTranslated(0., 0., -1.01);
 					/* figure out sensible view */
 	pwidth = (double)DisplayWidthMM(ourdisplay, ourscreen) /
 			DisplayWidth(ourdisplay, ourscreen);
@@ -192,12 +162,15 @@ char  *id;
 	XMapWindow(ourdisplay, gwind);
 	dev_input();			/* sets size and view angles */
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-					/* allocate our value list */
-	if (!AllocValues(DisplayWidth(ourdisplay,ourscreen) *
-			DisplayHeight(ourdisplay,ourscreen) / VALUA))
+					/* allocate our leaf pile */
+	if (!qtAllocLeaves(2 * DisplayWidth(ourdisplay,ourscreen) *
+			DisplayHeight(ourdisplay,ourscreen) /
+			(qtMinNodesiz*qtMinNodesiz)))
 		error(SYSTEM, "insufficient memory for value storage");
 	odev.name = id;
 	odev.ifd = ConnectionNumber(ourdisplay);
+					/* initialize cone array */
+	initcones();
 }
 
 
@@ -209,8 +182,9 @@ dev_close()			/* close our display and free resources */
 	gwind = 0;
 	XCloseDisplay(ourdisplay);
 	ourdisplay = NULL;
+	qtFreeLeaves();
 	tmDone(NULL);
-	FreeValues();
+	freecones();
 	odev.v.type = 0;
 	odev.hres = odev.vres = 0;
 	odev.ifd = -1;
@@ -221,12 +195,17 @@ int
 dev_view(nv)			/* assign new driver view */
 register VIEW	*nv;
 {
-	if (nv->type != VT_PER ||		/* check view legality */
-			nv->horiz > 120. || nv->vert > 120.) {
+	if (nv->type == VT_PAR ||		/* check view legality */
+			nv->horiz > 160. || nv->vert > 160.) {
 		error(COMMAND, "illegal view type/angle");
-		nv->type = VT_PER;
+		nv->type = odev.v.type;
 		nv->horiz = odev.v.horiz;
 		nv->vert = odev.v.vert;
+		return(0);
+	}
+	if (nv->vfore > FTINY) {
+		error(COMMAND, "cannot handle fore clipping");
+		nv->vfore = 0.;
 		return(0);
 	}
 	if (nv != &odev.v) {
@@ -253,10 +232,13 @@ register VIEW	*nv;
 			dev_input();	/* get resize event */
 		}
 		copystruct(&odev.v, nv);
-		setGLview();
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		redraw();
 	}
+	if (nxtzmax > FTINY) {
+		curzmax = nxtzmax;
+		nxtzmax = 0.;
+	}
+	glClear(GL_DEPTH_BUFFER_BIT);
+	qtReplant();
 	return(1);
 }
 
@@ -275,36 +257,48 @@ dev_input()			/* get X11 input */
 }
 
 
-dev_value(c, p, v)		/* add a pixel value to our list */
-COLR	c;
-FVECT	p, v;
-{
-	register int	li;
-
-	li = rV.tl++;
-	if (rV.tl >= rV.nl)	/* get next leaf in ring */
-		rV.tl = 0;
-	if (rV.tl == rV.bl)	/* need to shake some free */
-		Compost(FREEPCT);
-	VCOPY(rV.wp[li], p);
-	rV.wd[li] = encodedir(v);
-	tmCvColrs(&rV.brt[li], rV.chr[li], c, 1);
-}
-
-
 int
 dev_flush()			/* flush output */
 {
-	if (mapped) {
-		TMapValues(0);
-		while (rV.drl != rV.tl) {
-			drawvalue(rV.drl);
-			if (++rV.drl >= rV.nl)
-				rV.drl = 0;
-		}
-		glFlush();
-	}
+	qtUpdate();
+	glFlush();
 	return(XPending(ourdisplay));
+}
+
+
+dev_cone(rgb, ip, rad)		/* render a cone in view coordinates */
+BYTE	rgb[3];
+FVECT	ip;
+double	rad;
+{
+	register int	ci, j;
+	double	apexh, basez;
+					/* compute apex height (0. to 1.) */
+	if (ip[2] > 1e6)
+		apexh = 1. - 1./DEPTHFACT;
+	else {
+		if (ip[2] > nxtzmax)
+			nxtzmax = ip[2];
+		if (ip[2] >= curzmax)
+			apexh = 1. - 1./DEPTHFACT;
+		else
+			apexh = 1. - ip[2]/(curzmax*DEPTHFACT);
+	}
+					/* find closest cone match */
+	for (ci = 0; ci < MAXCONE-1; ci++)
+		if (cone[ci].rad >= rad)
+			break;
+					/* draw it */
+	glColor3ub(rgb[0], rgb[1], rgb[2]);
+	glBegin(GL_TRIANGLE_FAN);
+	glVertex3d(ip[0], ip[1], apexh);	/* start with apex */
+	basez = apexh*cone[ci].va[0][2];	/* base z's all the same */
+	for (j = 0; j < cone[ci].nverts; j++)	/* draw each face */
+		glVertex3d(ip[0]+cone[ci].va[j][0], ip[1]+cone[ci].va[j][1],
+				basez);
+						/* connect last to first */
+	glVertex3d(ip[0]+cone[ci].va[0][0], ip[1]+cone[ci].va[0][1], basez);
+	glEnd();				/* all done */
 }
 
 
@@ -328,360 +322,43 @@ mytmflags()			/* figure out tone mapping flags */
 
 
 static
-setGLview()			/* set our GL view */
+initcones()			/* initialize cone vertices */
 {
-	double	xmin, xmax, ymin, ymax, zmin, zmax;
-	double	d, cx, sx, crad;
-	FVECT	vx, vy;
 	register int	i, j;
-					/* compute view frustum */
-	if (normalize(odev.v.vdir) == 0.0)
-		return;
-	if (mindepth < maxdepth) {
-		zmin = 0.25*mindepth;
-		zmax = 4.0*(1.+CONEH)*maxdepth;
-	} else {
-		zmin = 0.01;
-		zmax = 1000.;
-	}
-	if (odev.v.vfore > FTINY)
-		zmin = odev.v.vfore;
-	if (odev.v.vaft > FTINY)
-		zmax = odev.v.vaft;
-	xmax = zmin * tan(PI/180./2. * odev.v.horiz);
-	xmin = -xmax;
-	d = odev.v.hoff * (xmax - xmin);
-	xmin += d; xmax += d;
-	ymax = zmin * tan(PI/180./2. * odev.v.vert);
-	ymin = -ymax;
-	d = odev.v.voff * (ymax - ymin);
-	ymin += d; ymax += d;
-					/* set view matrix */
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glFrustum(xmin, xmax, ymin, ymax, zmin, zmax);
-	gluLookAt(odev.v.vp[0], odev.v.vp[1], odev.v.vp[2],
-		odev.v.vp[0] + odev.v.vdir[0],
-		odev.v.vp[1] + odev.v.vdir[1],
-		odev.v.vp[2] + odev.v.vdir[2],
-		odev.v.vup[0], odev.v.vup[1], odev.v.vup[2]);
-					/* set viewport */
-	glViewport(0, 0, odev.hres, odev.vres);
-					/* initialize cone for Vornoi polys */
-	coneh = CONEH*(zmax - zmin);
-	crad = 0.5 * CONEW * 0.5*(xmax-xmin + ymax-ymin) * (zmin+coneh)/zmin;
-	vy[0] = vy[1] = vy[2] = 0.;
-	for (i = 0; i < 3; i++)
-		if (odev.v.vdir[i] < 0.6 && odev.v.vdir[i] > -0.6)
-			break;
-	vy[i] = 1.;
-	fcross(vx, vy, odev.v.vdir);
-	normalize(vx);
-	fcross(vy, odev.v.vdir, vx);
-	for (j = 0, d = 0.; j < NCONEV; j++, d += 2.*PI/NCONEV) {
-		cx = crad*cos(d); sx = crad*sin(d);
-		for (i = 0; i < 3; i++)
-			conev[j][i] = coneh*odev.v.vdir[i] +
-					cx*vx[i] + sx*vy[i];
+	double	minrad, d;
+
+	if (cone[0].nverts)
+		freecones();
+	minrad = 2.*qtMinNodesiz/(double)(DisplayWidth(ourdisplay,ourscreen) +
+					DisplayHeight(ourdisplay,ourscreen));
+	for (i = 0; i < MAXCONE; i++) {
+		d = (double)i/(MAXCONE-1); d *= d;	/* x^2 distribution */
+		cone[i].rad = minrad + (1.-minrad)*d;
+		cone[i].nverts = MINVERT + (MAXVERT-MINVERT)*d;
+		cone[i].va = (FVECT *)malloc(cone[i].nverts*sizeof(FVECT));
+		if (cone[i].va == NULL)
+			error(SYSTEM, "out of memory in initcones");
+		for (j = cone[i].nverts; j--; ) {
+			d = 2.*PI * (j+.5) / (cone[i].nverts);
+			cone[i].va[j][0] = cos(d) * cone[i].rad;
+			cone[i].va[j][1] = sin(d) * cone[i].rad;
+			cone[i].va[j][2] = 1. - cone[i].rad;
+		}
 	}
 }
 
 
-#define SUCCSTEP	8	/* skip step when successful */
-#define MAXSTEP		64
-
 static
-drawvalue(li)			/* draw a pixel value as a cone */
-register int	li;
+freecones()			/* free cone vertices */
 {
-	static int	skipstep = 1;
-	static FVECT	disp;
-	FVECT	apex;
-	double	d, dorg, dnew, h, v;
 	register int	i;
-				/* check for quicker update */
-	if (quicken) {
-		if (li % skipstep)
-			return;
-		if (skipstep < MAXSTEP)
-			skipstep++;
-	}
-				/* compute cone coordinates */
-	disp[0] = rV.wp[li][0] - odev.v.vp[0];
-	disp[1] = rV.wp[li][1] - odev.v.vp[1];
-	disp[2] = rV.wp[li][2] - odev.v.vp[2];
-	dorg = DOT(disp,odev.v.vdir);
-	if (dorg <= odev.v.vfore)
-		return;		/* clipped too near */
-	if (odev.v.vaft > FTINY && dorg > odev.v.vaft)
-		return;		/* clipped too far */
-	if (dorg > 1e5) {	/* background pixel */
-		dnew = maxdepth;
-		d = dnew/dorg;
-		dorg = maxdepth;
-	} else {		/* foreground pixel, compute penalty */
-		normalize(disp);
-		d = dnew = dorg + coneh*fdir2diff(rV.wd[li],disp)*DIRPEN;
-	}
-				/* compute adjusted apex position */
-	disp[0] *= d; disp[1] *= d; disp[2] *= d;
-	apex[0] = odev.v.vp[0] + disp[0];
-	apex[1] = odev.v.vp[1] + disp[1];
-	apex[2] = odev.v.vp[2] + disp[2];
-				/* compute view position and base offset */
-	h = DOT(disp,odev.v.hvec)/(dnew*odev.v.hn2);
-	v = DOT(disp,odev.v.vvec)/(dnew*odev.v.vn2);
-	if (fabs(h - odev.v.hoff) > 0.5 || fabs(v - odev.v.voff) > 0.5)
-		return;		/* clipped off screen */
-	if (dorg < mindepth)
-		mindepth = dorg;
-	if (dorg > maxdepth)
-		maxdepth = dorg;
-	for (i = 0; i < 3; i++)
-		disp[i] = apex[i] + coneh*(h*odev.v.hvec[i] + v*odev.v.vvec[i]);
-				/* draw cone (pyramid approx.) */
-	glColor4ub(rV.rgb[li][0], rV.rgb[li][1], rV.rgb[li][2], rV.alpha[li]);
-	glBegin(GL_TRIANGLE_FAN);
-	glVertex3f(apex[0], apex[1], apex[2]);
-	for (i = 0; i < NCONEV; i++)
-		glVertex3d(conev[i][0] + disp[0], conev[i][1] + disp[1],
-				conev[i][2] + disp[2]);
-				/* connect last face to first */
-	glVertex3d(conev[0][0] + disp[0], conev[0][1] + disp[1],
-			conev[0][2] + disp[2]);
-	glEnd();		/* done */
-	skipstep = SUCCSTEP;
-}
 
-#undef SUCCSTEP
-#undef MAXSTEP
-
-
-#define	LEAFSIZ		(3*sizeof(float)+sizeof(int4)+\
-			sizeof(TMbright)+7*sizeof(BYTE))
-
-static
-AllocValues(n)			/* allocate space for n values */
-register int	n;
-{
-	unsigned	nbytes;
-	register unsigned	i;
-
-	if (n <= 0)
-		return(0);
-	if (rV.nl >= n)
-		return(rV.nl);
-	else if (rV.nl > 0)
-		free(rV.base);
-				/* round space up to nearest power of 2 */
-	nbytes = n*LEAFSIZ + 8;
-	for (i = 1024; nbytes > i; i <<= 1)
-		;
-	n = (i - 8) / LEAFSIZ;	/* should we make sure n is even? */
-	rV.base = (char *)malloc(n*LEAFSIZ);
-	if (rV.base == NULL)
-		return(0);
-				/* assign larger alignment types earlier */
-	rV.wp = (float (*)[3])rV.base;
-	rV.wd = (int4 *)(rV.wp + n);
-	rV.brt = (TMbright *)(rV.wd + n);
-	rV.chr = (BYTE (*)[3])(rV.brt + n);
-	rV.rgb = (BYTE (*)[3])(rV.chr + n);
-	rV.alpha = (BYTE *)(rV.rgb + n);
-	rV.nl = n;
-	rV.drl = rV.tml = rV.bl = rV.tl = 0;
-	return(n);
-}
-
-#undef	LEAFSIZ
-
-
-static
-FreeValues()			/* free our allocated values */
-{
-	if (rV.nl <= 0)
-		return;
-	free(rV.base);
-	rV.base = NULL;
-	rV.nl = 0;
-}
-
-
-static
-clralphas()			/* prepare for new alpha values */
-{
-	if (!vmaplen)
-		return;
-	free((char *)valmap);
-	valmap = NULL;
-	vmaplen = 0;
-}
-
-
-static int
-valcmp(v1p, v2p)		/* compare two pixel values */
-int	*v1p, *v2p;
-{
-	register int	v1 = *v1p, v2 = *v2p;
-	register int	c;
-
-	if ((c = rV.rgb[v1][0] - rV.rgb[v2][0])) return(c);
-	if ((c = rV.rgb[v1][1] - rV.rgb[v2][1])) return(c);
-	if ((c = rV.rgb[v1][2] - rV.rgb[v2][2])) return(c);
-	return(rV.alpha[v1] - rV.alpha[v2]);
-}
-
-
-static
-mergalphas(adest, al1, n1, al2, n2)	/* merge two sorted alpha lists */
-register int	*adest, *al1, *al2;
-int	n1, n2;
-{
-	register int	cmp;
-
-	while (n1 | n2) {
-		if (!n1) cmp = 1;
-		else if (!n2) cmp = -1;
-		else cmp = valcmp(al1, al2);
-		if (cmp > 0) {
-			*adest++ = *al2++;
-			n2--;
-		} else {
-			*adest++ = *al1++;
-			n1--;
+	for (i = MAXCONE; i--; )
+		if (cone[i].nverts) {
+			free((char *)cone[i].va);
+			cone[i].va = NULL;
+			cone[i].nverts = 0;
 		}
-	}
-}
-
-
-static
-setalphas(vbeg, nvals)		/* add values to our map and set alphas */
-int	vbeg, nvals;
-{
-	register int	*newmap;
-	short	ccmp[3], lastalpha;
-	int	newmaplen;
-
-	if (nvals <= 0)
-		return;
-	newmaplen = vmaplen + nvals;	/* allocate new map */
-	newmap = (int *)malloc(newmaplen*sizeof(int));
-	if (newmap == NULL)
-		error(SYSTEM, "out of memory in setalphas");
-	while (nvals--) {		/* add new values to end */
-		rV.alpha[vbeg] = 255;
-		newmap[vmaplen+nvals] = vbeg++;
-	}
-	if (nvals >= 3*vmaplen) {	/* resort the combined array */
-		while (vmaplen--)
-			newmap[vmaplen] = valmap[vmaplen];
-		qsort((char *)newmap, newmaplen, sizeof(int), valcmp);
-	} else {			/* perform merge sort */
-		qsort((char *)(newmap+vmaplen), newmaplen-vmaplen,
-				sizeof(int), valcmp);
-		mergalphas(newmap, valmap, vmaplen,
-				newmap+vmaplen, newmaplen-vmaplen);
-	}
-	if (valmap != NULL)		/* free old map and assign new one */
-		free((char *)valmap);
-	valmap = newmap;
-	vmaplen = newmaplen;
-	lastalpha = 0;			/* set new alpha values */
-	ccmp[0] = ccmp[1] = ccmp[2] = 256;
-	while (newmaplen--)
-		if (rV.rgb[*newmap][0] == ccmp[0] &&
-				rV.rgb[*newmap][1] == ccmp[1] &&
-				rV.rgb[*newmap][2] == ccmp[2]) {
-			if (lastalpha >= 255)
-				newmap++;
-			else if (rV.alpha[*newmap] < 255)
-				lastalpha = rV.alpha[*newmap++];
-			else
-				rV.alpha[*newmap++] = ++lastalpha;
-		} else {
-			ccmp[0] = rV.rgb[*newmap][0];
-			ccmp[1] = rV.rgb[*newmap][1];
-			ccmp[2] = rV.rgb[*newmap][2];
-			if (rV.alpha[*newmap] < 255)
-				lastalpha = rV.alpha[*newmap++];
-			else
-				rV.alpha[*newmap++] = lastalpha = 1;
-		}
-}
-
-
-static
-TMapValues(redo)		/* map our values to RGB */
-int	redo;
-{
-	int	aorg, alen, borg, blen;
-					/* recompute mapping? */
-	if (redo)
-		rV.tml = rV.bl;
-					/* already done? */
-	if (rV.tml == rV.tl)
-		return(1);
-					/* compute segments */
-	aorg = rV.tml;
-	if (rV.tl >= aorg) {
-		alen = rV.tl - aorg;
-		blen = 0;
-	} else {
-		alen = rV.nl - aorg;
-		borg = 0;
-		blen = rV.tl;
-	}
-					/* (re)compute tone mapping? */
-	if (rV.tml == rV.bl) {
-		tmClearHisto();
-		tmAddHisto(rV.brt+aorg, alen, 1);
-		if (blen > 0)
-			tmAddHisto(rV.brt+borg, blen, 1);
-		if (tmComputeMapping(0., 0., 0.) != TM_E_OK)
-			return(0);
-		clralphas();		/* restart value list */
-		rV.drl = rV.bl;		/* need to redraw */
-	}
-	if (tmMapPixels(rV.rgb+aorg, rV.brt+aorg,
-			rV.chr+aorg, alen) != TM_E_OK)
-		return(0);
-	if (blen > 0)
-		tmMapPixels(rV.rgb+borg, rV.brt+borg,
-				rV.chr+borg, blen);
-	setalphas(aorg, alen);		/* compute add'l alpha values */
-	if (blen > 0)
-		setalphas(borg, blen);
-	rV.tml = rV.tl;			/* we're all up to date */
-	return(1);
-}
-
-
-static int
-Compost(pct)			/* free up some values */
-int	pct;
-{
-	int	nused, nclear, nmapped, ndrawn;
-				/* figure out how many values to clear */
-	nclear = rV.nl * pct / 100;
-	nused = rV.tl - rV.bl;
-	if (nused <= 0) nused += rV.nl;
-	nclear -= rV.nl - nused;
-	if (nclear <= 0)
-		return(0);
-	if (nclear >= nused) {	/* clear them all? */
-		rV.drl = rV.tml = rV.bl = rV.tl = 0;
-		return(nused);
-	}
-				/* else clear values from bottom */
-	ndrawn = rV.drl - rV.bl;
-	if (ndrawn < 0) ndrawn += rV.nl;
-	nmapped = rV.tml - rV.bl;
-	if (nmapped < 0) nmapped += rV.nl;
-	rV.bl += nclear;
-	if (rV.bl >= rV.nl) rV.bl -= rV.nl;
-	if (ndrawn < nclear) rV.drl = rV.bl;
-	if (nmapped < nclear) rV.tml = rV.bl;
-	return(nclear);
 }
 
 
@@ -725,49 +402,47 @@ static
 draw_grids()			/* draw holodeck section grids */
 {
 	static BYTE	gridrgba[4] = {0x0, 0xff, 0xff, 0x00};
-
-	if (!mapped)
+	double	xmin, xmax, ymin, ymax, zmin, zmax;
+	double	d, cx, sx, crad;
+	FVECT	vx, vy;
+	register int	i, j;
+					/* can we even do it? */
+	if (!mapped || odev.v.type != VT_PER)
 		return;
+					/* compute view frustum */
+	if (normalize(odev.v.vdir) == 0.0)
+		return;
+	zmin = 0.01;
+	zmax = 10000.;
+	if (odev.v.vfore > FTINY)
+		zmin = odev.v.vfore;
+	if (odev.v.vaft > FTINY)
+		zmax = odev.v.vaft;
+	xmax = zmin * tan(PI/180./2. * odev.v.horiz);
+	xmin = -xmax;
+	d = odev.v.hoff * (xmax - xmin);
+	xmin += d; xmax += d;
+	ymax = zmin * tan(PI/180./2. * odev.v.vert);
+	ymin = -ymax;
+	d = odev.v.voff * (ymax - ymin);
+	ymin += d; ymax += d;
+					/* set view matrix */
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glFrustum(xmin, xmax, ymin, ymax, zmin, zmax);
+	gluLookAt(odev.v.vp[0], odev.v.vp[1], odev.v.vp[2],
+		odev.v.vp[0] + odev.v.vdir[0],
+		odev.v.vp[1] + odev.v.vdir[1],
+		odev.v.vp[2] + odev.v.vdir[2],
+		odev.v.vup[0], odev.v.vup[1], odev.v.vup[2]);
+	glDisable(GL_DEPTH_TEST);	/* write no depth values */
 	glColor4ub(gridrgba[0], gridrgba[1], gridrgba[2], gridrgba[3]);
-					/* draw each grid line */
-	glBegin(GL_LINES);
+	glBegin(GL_LINES);		/* draw each grid line */
 	gridlines(draw3dline);
 	glEnd();
-}
-
-
-static int
-IndexValue(rgba)		/* locate a pixel by it's framebuffer value */
-register BYTE	rgba[4];
-{
-	register int	*vp;
-					/* check legality */
-	if (rgba[3] == 0 || rgba[3] == 255)
-		return(-1);
-					/* borrow a value slot */
-	rV.rgb[rV.tl][0] = rgba[0];
-	rV.rgb[rV.tl][1] = rgba[1];
-	rV.rgb[rV.tl][2] = rgba[2];
-	rV.alpha[rV.tl] = rgba[3];
-					/* find it */
-	vp = (int *)bsearch((char *)&rV.tl, (char *)valmap, vmaplen,
-			sizeof(int), valcmp);
-	if (vp == NULL)
-		return(-1);
-	return(*vp);
-}
-
-
-static int
-FindValue(dx, dy)		/* find a value on the display */
-int	dx, dy;
-{
-	BYTE	rgba[4];
-
-	if (dx < 0 || dy < 0 || dx >= odev.hres || dy >= odev.vres)
-		return(-1);
-	glReadPixels(dx, dy, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
-	return(IndexValue(rgba));
+	glEnable(GL_DEPTH_TEST);	/* restore rendering params */
+	glPopMatrix();
 }
 
 
@@ -783,9 +458,9 @@ int	dx, dy, mov, orb;
 	copystruct(&nv, &odev.v);
 				/* change view direction */
 	if (mov | orb) {
-		if ((li = FindValue(dx, dy)) < 0)
+		if ((li = qtFindLeaf(dx, dy)) < 0)
 			return(0);	/* not on window */
-		VSUM(odir, rV.wp[li], nv.vp, -1.);
+		VSUM(odir, qtL.wp[li], nv.vp, -1.);
 	} else {
 		if (viewray(nv.vp, nv.vdir, &odev.v,
 				(dx+.5)/odev.hres, (dy+.5)/odev.vres) < -FTINY)
@@ -793,14 +468,14 @@ int	dx, dy, mov, orb;
 	}
 	if (orb && mov) {		/* orbit left/right */
 		spinvector(odir, odir, nv.vup, d=MOVDEG*PI/180.*mov);
-		VSUM(nv.vp, rV.wp[li], odir, -1.);
+		VSUM(nv.vp, qtL.wp[li], odir, -1.);
 		spinvector(nv.vdir, nv.vdir, nv.vup, d);
 	} else if (orb) {		/* orbit up/down */
 		fcross(v1, odir, nv.vup);
 		if (normalize(v1) == 0.)
 			return(0);
 		spinvector(odir, odir, v1, d=MOVDEG*PI/180.*orb);
-		VSUM(nv.vp, rV.wp[li], odir, -1.);
+		VSUM(nv.vp, qtL.wp[li], odir, -1.);
 		spinvector(nv.vdir, nv.vdir, v1, d);
 	} else if (mov) {		/* move forward/backward */
 		d = MOVPCT/100. * mov;
@@ -825,11 +500,12 @@ XButtonPressedEvent	*ebut;
 {
 	int	movdir = MOVDIR(ebut->button);
 	int	movorb = MOVORB(ebut->state);
+	int	oldnodesiz = qtMinNodesiz;
 	Window	rootw, childw;
 	int	rootx, rooty, wx, wy;
 	unsigned int	statemask;
 
-	quicken = 1;			/* accelerate update rate */
+	qtMinNodesiz = 24;		/* accelerate update rate */
 	XNoOp(ourdisplay);
 
 	while (!XCheckMaskEvent(ourdisplay,
@@ -843,20 +519,20 @@ XButtonPressedEvent	*ebut;
 			sleep(1);
 			continue;
 		}
+		glClear(GL_COLOR_BUFFER_BIT);
+		qtUpdate();
 		draw_grids();
-		dev_flush();
+		glFlush();
 	}
 	if (!(inpresflags & DFL(DC_SETVIEW))) {	/* do final motion */
 		movdir = MOVDIR(levptr(XButtonReleasedEvent)->button);
 		wx = levptr(XButtonReleasedEvent)->x;
 		wy = levptr(XButtonReleasedEvent)->y;
 		moveview(wx, odev.vres-1-wy, movdir, movorb);
-	} else {
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		redraw();
 	}
-	quicken = 0;
 	dev_flush();
+
+	qtMinNodesiz = oldnodesiz;	/* restore quadtree resolution */
 }
 
 
@@ -891,19 +567,16 @@ register XKeyPressedEvent  *ekey;
 		inpresflags |= DFL(DC_RESUME);
 		return;
 	case CTRL('R'):			/* redraw screen */
-		TMapValues(1);
 		glClear(GL_DEPTH_BUFFER_BIT);
-		redraw();
+		qtRedraw(0, 0, odev.hres, odev.vres);
 		return;
 	case CTRL('L'):			/* refresh from server */
 		if (inpresflags & DFL(DC_REDRAW))
 			return;
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glDisable(GL_DEPTH_TEST);
 		draw_grids();
-		glEnable(GL_DEPTH_TEST);
 		glFlush();
-		Compost(100);			/* get rid of old values */
+		qtCompost(100);			/* get rid of old values */
 		inpresflags |= DFL(DC_REDRAW);	/* resend values from server */
 		return;
 	case 'K':			/* kill rtrace process(es) */
@@ -929,14 +602,24 @@ static
 fixwindow(eexp)				/* repair damage to window */
 register XExposeEvent  *eexp;
 {
+	int	xmin, xmax, ymin, ymax;
+
 	if (odev.hres == 0 || odev.vres == 0)	/* first exposure */
 		resizewindow((XConfigureEvent *)eexp);
-	if (eexp->width == odev.hres && eexp->height == odev.vres)
-		TMapValues(1);
-	if (!eexp->count) {
-		glClear(GL_DEPTH_BUFFER_BIT);
-		redraw();
-	}
+	xmin = eexp->x; xmax = eexp->x + eexp->width;
+	ymin = odev.vres - eexp->y - eexp->height; ymax = odev.vres - eexp->y;
+						/* clear portion of depth */
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	glDepthFunc(GL_ALWAYS);
+	glBegin(GL_POLYGON);
+	glVertex3d((double)xmin/odev.hres, (double)ymin/odev.vres, 0.);
+	glVertex3d((double)xmax/odev.hres, (double)ymin/odev.vres, 0.);
+	glVertex3d((double)xmax/odev.hres, (double)ymax/odev.vres, 0.);
+	glVertex3d((double)xmin/odev.hres, (double)ymax/odev.vres, 0.);
+	glEnd();
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glDepthFunc(GL_LEQUAL);
+	qtRedraw(xmin, ymin, xmax, ymax);
 }
 
 
@@ -953,7 +636,7 @@ register XConfigureEvent  *ersz;
 	odev.v.horiz = 2.*180./PI * atan(0.5/VIEWDIST*pwidth*odev.hres);
 	odev.v.vert = 2.*180./PI * atan(0.5/VIEWDIST*pheight*odev.vres);
 
-	setGLview();
+	glViewport(0, 0, odev.hres, odev.vres);
 
 	inpresflags |= DFL(DC_SETVIEW);
 }
