@@ -20,9 +20,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define NULL		0
 				/* histogram resolution */
-#define NRED		24
+#define NRED		28
 #define NGRN		32
-#define NBLU		18
+#define NBLU		22
 #define HMAX		NGRN
 				/* minimum box count for adaptive partition */
 #define MINSAMP		7

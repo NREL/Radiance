@@ -24,7 +24,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "xtwind.h"
 
-#define GAMMA		2.0		/* exponent for color correction */
+#define GAMMA		2.2		/* exponent for color correction */
 
 #define BORWIDTH	5		/* border width */
 #define BARHEIGHT	25		/* menu bar size */
@@ -39,8 +39,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #define WFLUSH		30		/* flush after this many rays */
 #endif
 
-#define  hashcolr(c)	((67*(c)[RED]+59*(c)[GRN]+71*(c)[BLU])%ncolors)
-
 #define  checkinp()	while (XPending() > 0) getevent()
 
 #define  levptr(etype)	((etype *)&thisevent)
@@ -49,12 +47,8 @@ static char  *clientname;		/* calling client's name */
 
 static XEvent  thisevent;		/* current event */
 
-static int  colres = 128;		/* color resolution */
-static COLR  colrmap[256];		/* our color mapping */
-
 static int  ncolors = 0;		/* color table size */
-static COLR  *colrtbl;			/* our color table */
-static int  *pixval;			/* associated pixel values */
+static int  *pixval;			/* allocated pixel values */
 
 static Display  *ourdisplay = NULL;	/* our display */
 
@@ -96,7 +90,8 @@ char  *name;
 		stderr_v("not enough colors\n");
 		return(NULL);
 	}
-	if (getmap() < 0)			/* not fatal */
+	make_cmap(GAMMA);			/* make color map */
+	if (getpixels() < 0)			/* get pixels */
 		stderr_v("cannot allocate colors\n");
 
 	pickcursor = XCreateCursor(bcross_width, bcross_height,
@@ -130,7 +125,7 @@ x_close()			/* close our display */
 		gwidth = gheight = 0;
 	}
 	XFreeCursor(pickcursor);
-	freemap();
+	freepixels();
 	XCloseDisplay(ourdisplay);
 	ourdisplay = NULL;
 }
@@ -161,7 +156,10 @@ int  xres, yres;
 		gheight = yres;
 	} else						/* just clear */
 		XClear(gwind);
-	newmap();
+	if (newtab() < 0) {
+		stderr_v("Color allocation error\n");
+		quit(1);
+	}
 	checkinp();
 	return;
 fail:
@@ -177,16 +175,10 @@ int  xmin, ymin, xmax, ymax;
 {
 	extern long  nrays;		/* global ray count */
 	static long  lastflush = 0;	/* ray count at last flush */
-	int  ndx;
 
 	if (ncolors > 0) {
-		if ((ndx = colindex(col)) < 0) {
-			colres >>= 1;
-			redraw();
-			return;
-		}
 		XPixSet(gwind, xmin, gheight-ymax, xmax-xmin, ymax-ymin,
-				pixval[ndx]);
+				pixval[get_pixel(col)]);
 	}
 	if (nrays - lastflush >= WFLUSH) {
 		if (ncolors <= 0)	/* output necessary for death */
@@ -258,37 +250,6 @@ int  *xp, *yp;
 }
 
 
-static int
-colindex(col)			/* return index for color */
-COLOR  col;
-{
-	static COLR  clr;
-	int  hval;
-	register int  ndx, i;
-
-	mapcolor(clr, col);
-
-	hval = ndx = hashcolr(clr);
-	
-	for (i = 1; i < ncolors; i++) {
-		if (colrtbl[ndx][EXP] == 0) {
-			colrtbl[ndx][RED] = clr[RED];
-			colrtbl[ndx][GRN] = clr[GRN];
-			colrtbl[ndx][BLU] = clr[BLU];
-			colrtbl[ndx][EXP] = COLXS;
-			newcolr(ndx, clr);
-			return(ndx);
-		}
-		if (		colrtbl[ndx][RED] == clr[RED] &&
-				colrtbl[ndx][GRN] == clr[GRN] &&
-				colrtbl[ndx][BLU] == clr[BLU]	)
-			return(ndx);
-		ndx = (hval + i*i) % ncolors;
-	}
-	return(-1);
-}
-
-
 static
 newcolr(ndx, clr)		/* enter a color into hardware table */
 int  ndx;
@@ -306,35 +267,40 @@ COLR  clr;
 
 
 static
-mapcolor(clr, col)			/* map to our color space */
-COLR  clr;
-COLOR  col;
+newtab()			/* assign new color table */
 {
-	register int  i, p;
-					/* compute color table value */
-	for (i = 0; i < 3; i++) {
-		p = colval(col,i) * 255.0 + 0.5;
-		if (p < 0) p = 0;
-		else if (p > 255) p = 255;
-		clr[i] = colrmap[p][i];
+	extern COLR	*get_ctab();
+	COLR	*ctab;
+	Color	*defs;
+	register int	i;
+
+	if ((ctab = get_ctab(ncolors)) == NULL)
+		return(-1);
+	if ((defs = (Color *)malloc(ncolors*sizeof(Color))) == NULL)
+		return(-1);
+	for (i = 0; i < ncolors; i++) {
+		defs[i].pixel = pixval[i];
+		defs[i].red = ctab[i][RED] << 8;
+		defs[i].green = ctab[i][GRN] << 8;
+		defs[i].blue = ctab[i][BLU] << 8;
 	}
-	clr[EXP] = COLXS;
+	XStoreColors(ncolors, defs);
+	free((char *)defs);
+	return(0);
 }
 
 
 static
-getmap()				/* get the color map */
+getpixels()				/* get the color map */
 {
 	int  planes;
 
 	for (ncolors=(1<<DisplayPlanes())-3; ncolors>12; ncolors=ncolors*.937){
-		colrtbl = (COLR *)malloc(ncolors*sizeof(COLR));
 		pixval = (int *)malloc(ncolors*sizeof(int));
-		if (colrtbl == NULL || pixval == NULL)
-			return(-1);
+		if (pixval == NULL)
+			break;
 		if (XGetColorCells(0,ncolors,0,&planes,pixval) != 0)
 			return(0);
-		free((char *)colrtbl);
 		free((char *)pixval);
 	}
 	ncolors = 0;
@@ -343,32 +309,13 @@ getmap()				/* get the color map */
 
 
 static
-freemap()				/* free our color map */
+freepixels()				/* free our pixels */
 {
 	if (ncolors == 0)
 		return;
 	XFreeColors(pixval, ncolors, 0);
-	free((char *)colrtbl);
 	free((char *)pixval);
 	ncolors = 0;
-}
-
-
-static
-newmap()				/* initialize the color map */
-{
-	double  pow();
-	int  val;
-	register int  i;
-
-	for (i = 0; i < 256; i++) {
-		val = pow(i/256.0, 1.0/GAMMA) * colres;
-		val = (val*256 + 128) / colres;
-		colrmap[i][RED] = colrmap[i][GRN] = colrmap[i][BLU] = val;
-		colrmap[i][EXP] = COLXS;
-	}
-	for (i = 0; i < ncolors; i++)
-		colrtbl[i][EXP] = 0;
 }
 
 
@@ -394,17 +341,17 @@ getevent()			/* get next event */
 		break;
 	case ExposeWindow:
 		if (ncolors == 0 && levptr(XExposeEvent)->subwindow == 0)
-			if (getmap() < 0)
+			if (getpixels() < 0)
 				stderr_v("cannot grab colors\n");
 			else
-				newmap();
+				newtab();
 		/* fall through */
 	case ExposeRegion:
 		fixwindow(levptr(XExposeEvent));
 		break;
 	case UnmapWindow:
 		if (levptr(XUnmapEvent)->subwindow == 0)
-			freemap();
+			freepixels();
 		break;
 	case ButtonPressed:		/* handled in x_getcur() */
 		break;
