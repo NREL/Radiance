@@ -354,7 +354,7 @@ static
 x11_comout(outp)		/* output a string to command line */
 char  *outp;
 {
-	if (comline == NULL)
+	if (comline == NULL || outp == NULL || !outp[0])
 		return;
 	xt_puts(outp, comline);
 	if (outp[strlen(outp)-1] == '\n')
