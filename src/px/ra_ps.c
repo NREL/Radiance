@@ -10,20 +10,26 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #include  <stdio.h>
 #include  <math.h>
+#include  <ctype.h>
 #ifdef MSDOS
 #include  <fcntl.h>
 #endif
 #include  "color.h"
+
+#define UPPER(c)	((c)&~0x20)		/* ASCII trick */
 
 #define CODE6GAM	1.47			/* gamma for 6-bit codes */
 #define DEFDGAM		1.0			/* default device gamma */
 
 #define GRY		-1			/* artificial index for grey */
 
-#define HMARGIN		(.5*72)			/* horizontal margin */
-#define VMARGIN		(.5*72)			/* vertical margin */
-#define PWIDTH		(8.5*72-2*HMARGIN)	/* width of device */
-#define PHEIGHT		(11*72-2*VMARGIN)	/* height of device */
+#define DEFMARG		0.5			/* default margin (inches) */
+#define DEFWIDTH	8.5			/* default page width */
+#define DEFHEIGHT	11			/* default page height */
+#define HMARGIN		(hmarg*72)		/* horizontal margin */
+#define VMARGIN		(vmarg*72)		/* vertical margin */
+#define PWIDTH		(width*72-2*HMARGIN)	/* width of device */
+#define PHEIGHT		(height*72-2*VMARGIN)	/* height of device */
 
 #define RUNCHR		'*'			/* character to start rle */
 #define MINRUN		4			/* minimum run-length */
@@ -37,6 +43,10 @@ int  wrongformat = 0;			/* input in wrong format? */
 double	pixaspect = 1.0;		/* pixel aspect ratio */
 
 double  devgam = DEFDGAM;		/* device gamma response */
+double  hmarg = DEFMARG,
+	vmarg = DEFMARG;		/* horizontal and vertical margins */
+double	width = DEFWIDTH,
+	height = DEFHEIGHT;		/* default paper width and height */
 int  docolor = 0;			/* produce color image? */
 int  bradj = 0;				/* brightness adjustment */
 int  ncopies = 1;			/* number of copies */
@@ -50,6 +60,7 @@ char  *progname;
 int  xmax, ymax;
 
 extern char  *malloc();
+extern double	unit2inch();
 
 
 headline(s)		/* check header line */
@@ -70,6 +81,7 @@ int  argc;
 char  *argv[];
 {
 	int  i;
+	double	d;
 	
 	progname = argv[0];
 
@@ -91,8 +103,29 @@ char  *argv[];
 			case 'C':		/* compressed ASCII encoding */
 				putprim = Cputprim;
 				break;
-			case 'g':
+			case 'g':		/* device gamma adjustment */
 				devgam = atof(argv[++i]);
+				break;
+			case 'p':		/* paper size */
+				parsepaper(argv[++i]);
+				break;
+			case 'm':		/* margin */
+				d = atof(argv[i+1]);
+				d *= unit2inch(argv[i+1]);
+				switch (argv[i][2]) {
+				case '\0':
+					hmarg = vmarg = d;
+					break;
+				case 'h':
+					hmarg = d;
+					break;
+				case 'v':
+					vmarg = d;
+					break;
+				default:
+					goto userr;
+				}
+				i++;
 				break;
 			case 'e':		/* exposure adjustment */
 				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
@@ -140,8 +173,99 @@ char  *argv[];
 	PStrailer();
 	exit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-b|c][-A|B|C][-e +/-stops][-g gamma] [input [output]]\n",
+	fprintf(stderr,
+"Usage: %s [-b|c][-A|B|C][-e +/-stops][-p paper][-m[h|v] margin][-g gamma] [input [output]]\n",
 			progname);
+	exit(1);
+}
+
+
+double
+unit2inch(s)		/* determine unit */
+register char	*s;
+{
+	static struct unit {char n; float f} u[] = {
+		'i', 1.,
+		'm', 1./25.4,
+		'c', 1./2.54,
+		'\0' };
+	register struct unit	*up;
+
+	while (*s && !isalpha(*s))
+		s++;
+	for (up = u; up->n; up++)
+		if (up->n == *s)
+			return(up->f);
+	return(1.);
+}
+
+
+int
+matchid(name, id)	/* see if name matches id (case insensitive) */
+char	*name;
+register char	*id;
+{
+	register char	*s = name;
+
+	while (*s) {
+		if (isalpha(*s)) {
+			if (!isalpha(*id) || UPPER(*s) != UPPER(*id))
+				return(0);
+		} else if (*s != *id)
+			return(0);
+		s++; id++;
+	}
+	return(!*id || s-name >= 3);	/* substrings >= 3 chars OK */
+}
+
+
+parsepaper(ps)		/* determine paper size from name */
+char	*ps;
+{
+	static struct psize {char n[12]; float w,h;} p[] = {
+		"letter", 8.5, 11.,
+		"legal", 8.5, 14.,
+		"executive", 7.25, 10.5,
+		"envelope", 4.12, 9.5,
+		"monarch", 3.87, 7.5,
+		"tabloid", 11., 17.,
+		"A3", 11.69, 16.54,
+		"A4", 8.27, 11.69,
+		"A5", 6.00, 8.27,
+		"A6", 4.13, 6.00,
+		"B4", 10.12, 14.33,
+		"B5", 7.17, 10.12,
+		"DL", 4.33, 8.66,
+		"C5", 6.38, 9.01,
+		"C6", 4.49, 6.38,
+		"hagaki", 3.94, 5.83,
+		"" };
+	register struct psize	*pp;
+	register char	*s = ps;
+	double	d;
+
+	if (isdigit(*s)) {		/* check for WWxHH specification */
+		width = atof(s);
+		while (*s && !isalpha(*s))
+			s++;
+		d = unit2inch(s);
+		height = atof(++s);
+		width *= d;
+		height *= d;
+		if (width >= 1. & height >= 1.)
+			return;
+	} else				/* check for match to standard size */
+		for (pp = p; pp->n[0]; pp++)
+			if (matchid(s, pp->n)) {
+				width = pp->w;
+				height = pp->h;
+				return;
+			}
+	fprintf(stderr, "%s: unknown paper size \"%s\" -- known sizes:\n",
+			progname, ps);
+	fprintf(stderr, "_Name________Width_Height_(inches)\n");
+	for (pp = p; pp->n[0]; pp++)
+		fprintf(stderr, "%-11s  %5.2f  %5.2f\n", pp->n, pp->w, pp->h);
 	exit(1);
 }
 
