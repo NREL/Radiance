@@ -125,7 +125,6 @@ char  *name;
 	else
 		printf("%%%%Portrait\n");
 	printf("%%%%EndComments\n");
-	printf("gsave\n");
 	printf("64 dict begin\n");
 					/* define image reader */
 	PSprocdef("read6bit");
@@ -172,11 +171,13 @@ char  *nam;
 {
 	short  itab[128];
 	register int  i;
-	
-	for (i = 0; i < 128; i++)
+				/* assign code values */
+	for (i = 0; i < 128; i++)	/* clear */
 		itab[i] = -1;
-	for (i = 0; i < 64; i++)
+	for (i = 1; i < 63; i++)	/* assign greys */
 		itab[code[i]] = i<<2 | 2;
+	itab[code[0]] = 0;		/* black is black */
+	itab[code[63]] = 255;		/* and white is white */
 	printf("/decode [");
 	for (i = 0; i < 128; i++) {
 		if (!(i & 0xf))
