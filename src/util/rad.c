@@ -135,6 +135,7 @@ int	argc;
 char	*argv[];
 {
 	char	ropts[512];
+	char	popts[64];
 	int	i;
 
 	progname = argv[0];
@@ -189,12 +190,12 @@ char	*argv[];
 				/* check date on ambient file */
 	checkambfile();
 				/* run simulation */
-	renderopts(ropts);
+	renderopts(ropts, popts);
 	xferopts(ropts);
 	if (rvdevice != NULL)
-		rview(ropts);
+		rview(ropts, popts);
 	else
-		rpict(ropts);
+		rpict(ropts, popts);
 	exit(0);
 userr:
 	fprintf(stderr,
@@ -820,29 +821,31 @@ ambval()				/* compute ambient value */
 }
 
 
-renderopts(op)				/* set rendering options */
-char	*op;
+renderopts(op, po)			/* set rendering options */
+char	*op, *po;
 {
 	switch(vscale(QUALITY)) {
 	case LOW:
-		lowqopts(op);
+		lowqopts(op, po);
 		break;
 	case MEDIUM:
-		medqopts(op);
+		medqopts(op, po);
 		break;
 	case HIGH:
-		hiqopts(op);
+		hiqopts(op, po);
 		break;
 	}
 }
 
 
-lowqopts(op)				/* low quality rendering options */
+lowqopts(op, po)			/* low quality rendering options */
 register char	*op;
+char	*po;
 {
 	double	d, org[3], siz[3];
 
 	*op = '\0';
+	*po = '\0';
 	if (sscanf(vval(ZONE), "%*s %lf %lf %lf %lf %lf %lf", &org[0],
 			&siz[0], &org[1], &siz[1], &org[2], &siz[2]) != 6)
 		badvalue(ZONE);
@@ -851,22 +854,25 @@ register char	*op;
 	d *= 3./(siz[0]+siz[1]+siz[2]);
 	switch (vscale(DETAIL)) {
 	case LOW:
-		op = addarg(op, "-ps 16 -dp 64");
+		po = addarg(po, "-ps 16");
+		op = addarg(op, "-dp 64");
 		sprintf(op, " -ar %d", (int)(4*d));
 		op += strlen(op);
 		break;
 	case MEDIUM:
-		op = addarg(op, "-ps 8 -dp 128");
+		po = addarg(po, "-ps 8");
+		op = addarg(op, "-dp 128");
 		sprintf(op, " -ar %d", (int)(8*d));
 		op += strlen(op);
 		break;
 	case HIGH:
-		op = addarg(op, "-ps 4 -dp 256");
+		po = addarg(po, "-ps 4");
+		op = addarg(op, "-dp 256");
 		sprintf(op, " -ar %d", (int)(16*d));
 		op += strlen(op);
 		break;
 	}
-	op = addarg(op, "-pt .16");
+	po = addarg(po, "-pt .16");
 	if (vbool(PENUMBRAS))
 		op = addarg(op, "-ds .4");
 	else
@@ -898,12 +904,14 @@ register char	*op;
 }
 
 
-medqopts(op)				/* medium quality rendering options */
+medqopts(op, po)			/* medium quality rendering options */
 register char	*op;
+char	*po;
 {
 	double	d, org[3], siz[3];
 
 	*op = '\0';
+	*po = '\0';
 	if (sscanf(vval(ZONE), "%*s %lf %lf %lf %lf %lf %lf", &org[0],
 			&siz[0], &org[1], &siz[1], &org[2], &siz[2]) != 6)
 		badvalue(ZONE);
@@ -912,25 +920,25 @@ register char	*op;
 	d *= 3./(siz[0]+siz[1]+siz[2]);
 	switch (vscale(DETAIL)) {
 	case LOW:
-		op = addarg(op, vbool(PENUMBRAS) ? "-ps 4" : "-ps 8");
+		po = addarg(po, vbool(PENUMBRAS) ? "-ps 4" : "-ps 8");
 		op = addarg(op, "-dp 256");
 		sprintf(op, " -ar %d", (int)(8*d));
 		op += strlen(op);
 		break;
 	case MEDIUM:
-		op = addarg(op, vbool(PENUMBRAS) ? "-ps 3" : "-ps 6");
+		po = addarg(po, vbool(PENUMBRAS) ? "-ps 3" : "-ps 6");
 		op = addarg(op, "-dp 512");
 		sprintf(op, " -ar %d", (int)(16*d));
 		op += strlen(op);
 		break;
 	case HIGH:
-		op = addarg(op, vbool(PENUMBRAS) ? "-ps 2" : "-ps 4");
+		po = addarg(po, vbool(PENUMBRAS) ? "-ps 2" : "-ps 4");
 		op = addarg(op, "-dp 1024");
 		sprintf(op, " -ar %d", (int)(32*d));
 		op += strlen(op);
 		break;
 	}
-	op = addarg(op, "-pt .08");
+	po = addarg(po, "-pt .08");
 	if (vbool(PENUMBRAS))
 		op = addarg(op, "-ds .2 -dj .5");
 	else
@@ -965,12 +973,14 @@ register char	*op;
 }
 
 
-hiqopts(op)				/* high quality rendering options */
+hiqopts(op, po)				/* high quality rendering options */
 register char	*op;
+char	*po;
 {
 	double	d, org[3], siz[3];
 
 	*op = '\0';
+	*po = '\0';
 	if (sscanf(vval(ZONE), "%*s %lf %lf %lf %lf %lf %lf", &org[0],
 			&siz[0], &org[1], &siz[1], &org[2], &siz[2]) != 6)
 		badvalue(ZONE);
@@ -979,25 +989,25 @@ register char	*op;
 	d *= 3./(siz[0]+siz[1]+siz[2]);
 	switch (vscale(DETAIL)) {
 	case LOW:
-		op = addarg(op, vbool(PENUMBRAS) ? "-ps 1" : "-ps 8");
+		po = addarg(po, vbool(PENUMBRAS) ? "-ps 1" : "-ps 8");
 		op = addarg(op, "-dp 1024");
 		sprintf(op, " -ar %d", (int)(16*d));
 		op += strlen(op);
 		break;
 	case MEDIUM:
-		op = addarg(op, vbool(PENUMBRAS) ? "-ps 1" : "-ps 5");
+		po = addarg(po, vbool(PENUMBRAS) ? "-ps 1" : "-ps 5");
 		op = addarg(op, "-dp 2048");
 		sprintf(op, " -ar %d", (int)(32*d));
 		op += strlen(op);
 		break;
 	case HIGH:
-		op = addarg(op, vbool(PENUMBRAS) ? "-ps 1" : "-ps 3");
+		po = addarg(po, vbool(PENUMBRAS) ? "-ps 1" : "-ps 3");
 		op = addarg(op, "-dp 4096");
 		sprintf(op, " -ar %d", (int)(64*d));
 		op += strlen(op);
 		break;
 	}
-	op = addarg(op, "-pt .04");
+	po = addarg(po, "-pt .04");
 	if (vbool(PENUMBRAS))
 		op = addarg(op, "-ds .1 -dj .7");
 	else
@@ -1310,8 +1320,8 @@ register char	*vopts;
 }
 
 
-rview(opts)				/* run rview with first view */
-char	*opts;
+rview(opts, po)				/* run rview with first view */
+char	*opts, *po;
 {
 	char	*vw;
 	char	combuf[512];
@@ -1320,7 +1330,7 @@ char	*opts;
 		return;
 	if (sayview)
 		printview(vw);
-	sprintf(combuf, "rview %s%s -R %s ", vw, opts, rifname);
+	sprintf(combuf, "rview %s%s%s -R %s ", vw, po, opts, rifname);
 	if (rvdevice != NULL)
 		sprintf(combuf+strlen(combuf), "-o %s ", rvdevice);
 	if (vdef(EXPOSURE))
@@ -1333,8 +1343,8 @@ char	*opts;
 }
 
 
-rpict(opts)				/* run rpict and pfilt for each view */
-char	*opts;
+rpict(opts, po)				/* run rpict and pfilt for each view */
+char	*opts, *po;
 {
 	char	combuf[1024];
 	char	rawfile[MAXPATH], picfile[MAXPATH], rep[MAXPATH+16], res[32];
@@ -1395,8 +1405,8 @@ char	*opts;
 						/* build rpict command */
 		sprintf(rawfile, "%s_%s.raw", vval(PICTURE), vs);
 		if (fdate(rawfile) >= oct1date)		/* recover */
-			sprintf(combuf, "rpict%s%s -ro %s %s",
-					rep, opts, rawfile, oct1name);
+			sprintf(combuf, "rpict%s%s%s -ro %s %s",
+					rep, po, opts, rawfile, oct1name);
 		else {
 			if (overture) {		/* run overture calculation */
 				sprintf(combuf,
@@ -1413,8 +1423,8 @@ char	*opts;
 				rmfile(overfile);
 #endif
 			}
-			sprintf(combuf, "rpict%s %s %s%s %s > %s",
-					rep, vw, res, opts,
+			sprintf(combuf, "rpict%s %s %s%s%s %s > %s",
+					rep, vw, res, po, opts,
 				oct1name, rawfile);
 		}
 		if (runcom(combuf)) {		/* run rpict */
