@@ -179,10 +179,21 @@ FVECT  pg, dg;
 			}
 			addcolor(acol, dp->v);
 		}
-		if (pg != NULL)
+		b = bright(acol);
+		if (b > FTINY)
+			b = ndivs/b;
+		else
+			b = 0.0;
+		if (pg != NULL) {
 			posgradient(pg, div, &hemi);
-		if (dg != NULL)
+			for (i = 0; i < 3; i++)
+				pg[i] *= b;
+		}
+		if (dg != NULL) {
 			dirgradient(dg, div, &hemi);
+			for (i = 0; i < 3; i++)
+				dg[i] *= b;
+		}
 		free((char *)div);
 	}
 	b = 1.0/ndivs;
@@ -321,7 +332,7 @@ AMBHEMI  *hp;
 		yd += mag0*sinp + mag1*cosp;
 	}
 	for (i = 0; i < 3; i++)
-		gv[i] = xd*hp->ux[i] + yd*hp->uy[i];
+		gv[i] = (xd*hp->ux[i] + yd*hp->uy[i])/PI;
 }
 
 
@@ -353,5 +364,5 @@ AMBHEMI  *hp;
 		yd += mag * sin(phi);
 	}
 	for (i = 0; i < 3; i++)
-		gv[i] = (xd*hp->ux[i] + yd*hp->uy[i])/(hp->nt*hp->np);
+		gv[i] = (xd*hp->ux[i] + yd*hp->uy[i])*PI/(hp->nt*hp->np);
 }

@@ -197,7 +197,7 @@ double  s;
 		else
 			wt = 1.0 / wt;
 		wsum += wt;
-		copycolor(ct, av->val);
+		extambient(ct, av, r->rop, r->ron);
 		scalecolor(ct, wt);
 		addcolor(acol, ct);
 	}
@@ -245,6 +245,32 @@ register RAY  *r;
 	avinsert(&amb, &atrunk, thescene.cuorg, thescene.cusize);
 	avsave(&amb);				/* write to file */
 	return(amb.rad);
+}
+
+
+extambient(cr, ap, pv, nv)		/* extrapolate value at pv, nv */
+COLOR  cr;
+register AMBVAL  *ap;
+FVECT  pv, nv;
+{
+	FVECT  v1, v2;
+	register int  i;
+	double  d;
+
+	d = 1.0;			/* zeroeth order */
+					/* gradient due to translation */
+	for (i = 0; i < 3; i++)
+		d += ap->gpos[i]*(pv[i]-ap->pos[i]);
+					/* gradient due to rotation */
+	VCOPY(v1, ap->dir);
+	fcross(v2, v1, nv);
+	d += DOT(ap->gdir, v2);
+	if (d <= 0.0) {
+		setcolor(cr, 0.0, 0.0, 0.0);
+		return;
+	}
+	copycolor(cr, ap->val);
+	scalecolor(cr, d);
 }
 
 
