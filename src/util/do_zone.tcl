@@ -36,7 +36,7 @@ proc zonechange {nm el op} {		# record change in ZONE
 		return
 	}
 	trace vdelete radvar(ZONE) wu zonechange
-	set radvar(ZONE) "$zonevar(IE)  $zonevar(xmin) $zonevar(xmax)  $zonevar(ymin) $zonevar(ymax)  $zonevar(zmin) $zonevar(zmax)"
+	set radvar(ZONE) "$zonevar(IE) $zonevar(xmin) $zonevar(xmax) $zonevar(ymin) $zonevar(ymax) $zonevar(zmin) $zonevar(zmax)"
 	trace variable radvar(ZONE) wu zonechange
 }
 
