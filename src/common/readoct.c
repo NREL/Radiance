@@ -193,8 +193,8 @@ getobj()				/* get next object */
 	register int  i;
 	register OBJREC  *objp;
 
-	i = (char)getint(1);		/* sign extend */
-	if (i < 0)
+	i = getint(1);
+	if (i & 0x80)
 		return(OVOID);		/* terminator */
 	if ((obj = newobject()) == OVOID)
 		error(SYSTEM, "out of object space");

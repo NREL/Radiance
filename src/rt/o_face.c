@@ -41,7 +41,7 @@ register RAY  *r;
 	if (rdot <= FTINY && rdot >= -FTINY)	/* ray parallels plane */
 		t = FHUGE;
 	else
-		t = (DOT(r->rorg, f->norm) - f->const) / rdot;
+		t = (DOT(r->rorg, f->norm) - f->offset) / rdot;
 	
 	if (t <= FTINY || t >= r->rot)		/* not good enough */
 		return(0);

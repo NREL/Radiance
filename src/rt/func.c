@@ -63,9 +63,9 @@ setfunc(m, r)				/* simplified interface to setmap */
 register OBJREC  *m;
 RAY  *r;
 {
-#define  mxf	((XF *)m->os)
+	register XF  *mxf;
 
-	if (mxf == NULL) {
+	if ((mxf = (XF *)m->os) == NULL) {
 		register int  n = m->oargs.nsargs;
 		register char  **sa = m->oargs.sarg;
 
@@ -82,6 +82,7 @@ RAY  *r;
 			objerror(m, USER, "bad transform");
 		if (mxf->sca < 0.0)
 			mxf->sca = -mxf->sca;
+		m->os = (char *)mxf;
 	}
 	setmap(m, r, mxf->sca, mxf->xfm);
 	return;
