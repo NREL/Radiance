@@ -82,8 +82,7 @@ char	*argv[];
 		if (argv[i][0] == '-' && argv[i][1] == 'w')
 			warnings = !warnings;
 	}
-	if ((gargc = i) < 2)
-		error(USER, "too few arguments");
+	gargc = i;
 	rtargc--;
 	for (i = 0; myrtopts[i] != NULL; i++)
 		rtargv[rtargc++] = myrtopts[i];
@@ -102,6 +101,8 @@ char	*argv[];
 		perror(rtpath);
 		exit(1);
 	}
+	if (gargc < 2 || argv[gargc-1][0] == '-')
+		error(USER, "missing octree argument");
 				/* else initialize and run our calculation */
 	init();
 	if (gargc+1 < argc)
