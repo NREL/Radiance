@@ -1,4 +1,4 @@
-/* Copyright (c) 1993 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -69,6 +69,7 @@ int  nforked = 0;
 
 char  *progname;
 int  verbose = 0;
+unsigned  timelim = 0;
 int  rvrlim = -1;
 
 extern long  lseek(), ftell();
@@ -120,6 +121,11 @@ char  *argv[];
 					break;
 				pixaspect = atof(argv[i+1]);
 				continue;
+			case 'T':		/* time limit (hours) */
+				if (argv[i][2])
+					break;
+				timelim = atof(argv[++i])*3600. + .5;
+				break;
 			case 'x':		/* overall x resolution */
 				if (argv[i][2])
 					break;
@@ -280,6 +286,8 @@ char  **av;
 		exit(1);
 	}
 	signal(SIGALRM, onalrm);
+	if (timelim)
+		alarm(timelim);
 	return;
 filerr:
 	fprintf(stderr, "%s: i/o error on file \"%s\"\n", progname, outfile);
