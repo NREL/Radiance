@@ -100,7 +100,7 @@ set margin=`ev "floor($totcount*$cvratio+.5)"`
 while ( 1 )
 	# Compute mapping function
 	sed 's/^.*[ 	]//' $tf1 | total -1 -r \
-		| rcalc -e '$1=$1/'$totcount | lam $tf1 - \
+		| rcalc -e '$1=$1/'$totcount | rlam $tf1 - \
 		| tabfunc -i 0 cf > $tf4
 	# Compute difference with visible envelope
 	rcalc -f $tf4 -f $tf3 -e "T:$totcount*Stepsiz" \
@@ -149,7 +149,7 @@ while ( 1 )
 		endif
 	end
 	# Mung histogram
-	echo $diffs | tr ' ' '\012' | lam $tf1 - \
+	echo $diffs | tr ' ' '\012' | rlam $tf1 - \
 		| rcalc -f $tf4 -f $tf3 -e "T:$totcount*Stepsiz" \
 			-e 'clfq=floor(T*clamp(Lb($1))+.5)' \
 			-e '$1=$1;$2=$3+clfq' > $tf1b
