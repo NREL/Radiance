@@ -41,8 +41,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  ICONSIZ	(8*10)		/* maximum icon dimension (even 8) */
 
 #define  ourscreen	DefaultScreen(thedisplay)
-#define  ourblack	BlackPixel(thedisplay,ourscreen)
-#define  ourwhite	WhitePixel(thedisplay,ourscreen)
 #define  ourroot	RootWindow(thedisplay,ourscreen)
 
 #define  revline(x0,y0,x1,y1)	XDrawLine(thedisplay,wind,revgc,x0,y0,x1,y1)
@@ -57,6 +55,7 @@ int  fast = 0;				/* keep picture in Pixmap? */
 char	*dispname = NULL;		/* our display name */
 
 Window  wind = 0;			/* our output window */
+unsigned long  ourblack=1, ourwhite=0;	/* black and white for this visual */
 Font  fontid;				/* our font */
 
 int  maxcolors = 0;			/* maximum colors */
@@ -244,8 +243,7 @@ init()			/* get data and open window */
 	width = xmax;
 	height = ymax;
 	ourgc = XCreateGC(thedisplay, wind, 0, 0);
-	XSetState(thedisplay, ourgc, BlackPixel(thedisplay,ourscreen),
-			WhitePixel(thedisplay,ourscreen), GXcopy, AllPlanes);
+	XSetState(thedisplay, ourgc, ourblack, ourwhite, GXcopy, AllPlanes);
 	revgc = XCreateGC(thedisplay, wind, 0, 0);
 	XSetFunction(thedisplay, revgc, GXinvert);
 	fontid = XLoadFont(thedisplay, FONTNAME);
@@ -416,12 +414,23 @@ static char  vistype[][12] = {
 	fprintf(stderr, "Selected visual type %s, depth %d\n",
 			vistype[ourvis.class], ourvis.depth);
 #endif
+					/* make appropriate adjustments */
 	if (ourvis.class == GrayScale || ourvis.class == StaticGray)
 		greyscale = 1;
 	if (ourvis.depth <= 8 && ourvis.colormap_size < maxcolors)
 		maxcolors = ourvis.colormap_size;
 	if (maxcolors > 4)
 		maxcolors -= 2;
+	if (ourvis.class == StaticGray) {
+		ourblack = 0;
+		ourwhite = 255;
+	} else if (ourvis.class == PseudoColor) {
+		ourblack = BlackPixel(thedisplay,ourscreen);
+		ourwhite = WhitePixel(thedisplay,ourscreen);
+	} else {
+		ourblack = 0;
+		ourwhite = ~0;
+	}
 	XFree((char *)xvi);
 }
 
