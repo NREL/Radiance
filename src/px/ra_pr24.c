@@ -104,7 +104,7 @@ char  *argv[];
 		putchar('\n');
 		fprtresolu(xmax, ymax, stdout);
 					/* convert file */
-		pr2ra(head.ras_type);
+		pr2ra(head.ras_type, head.ras_length/ymax - xmax*3);
 	} else {
 					/* get header info. */
 		if (checkheader(stdin, COLRFMT, NULL) < 0 ||
@@ -112,15 +112,15 @@ char  *argv[];
 			quiterr("bad picture format");
 					/* write rasterfile header */
 		head.ras_magic = RAS_MAGIC;
-		head.ras_width = xmax;
+		head.ras_width = xmax + (xmax&1);
 		head.ras_height = ymax;
 		head.ras_depth = 24;
-		head.ras_length = xmax*ymax*3;
+		head.ras_length = head.ras_width*head.ras_height*3;
 		head.ras_maptype = RMT_NONE;
 		head.ras_maplength = 0;
 		fwrite((char *)&head, sizeof(head), 1, stdout);
 					/* convert file */
-		ra2pr(head.ras_type);
+		ra2pr(head.ras_type, head.ras_length/ymax - xmax*3);
 	}
 	exit(0);
 userr:
@@ -141,8 +141,9 @@ char  *err;
 }
 
 
-pr2ra(rf)		/* convert 24-bit scanlines to Radiance picture */
+pr2ra(rf, pad)		/* convert 24-bit scanlines to Radiance picture */
 int	rf;
+int	pad;
 {
 	COLR	*scanout;
 	register int	x;
@@ -165,6 +166,7 @@ int	rf;
 				scanout[x][GRN] = getc(stdin);
 				scanout[x][RED] = getc(stdin);
 			}
+		for (x = pad; x--; getc(stdin));
 		if (feof(stdin) || ferror(stdin))
 			quiterr("error reading rasterfile");
 		gambs_colrs(scanout, xmax);
@@ -178,9 +180,11 @@ int	rf;
 }
 
 
-ra2pr(rf)		/* convert Radiance scanlines to 24-bit rasterfile */
-int  rf;
+ra2pr(rf, pad)		/* convert Radiance scanlines to 24-bit rasterfile */
+int	rf;
+int	pad;
 {
+	int	ord[3];
 	COLR	*scanin;
 	register int	x;
 	int	y;
@@ -188,6 +192,11 @@ int  rf;
 	scanin = (COLR *)malloc(xmax*sizeof(COLR));
 	if (scanin == NULL)
 		quiterr("out of memory in ra2pr");
+	if (rf == RT_FORMAT_RGB) {
+		ord[0] = RED; ord[1] = GRN; ord[2] = BLU;
+	} else {
+		ord[0] = BLU; ord[1] = GRN; ord[2] = RED;
+	}
 						/* convert image */
 	for (y = ymax-1; y >= 0; y--) {
 		if (freadcolrs(scanin, xmax, stdin) < 0)
@@ -207,6 +216,8 @@ int  rf;
 				putc(scanin[x][GRN], stdout);
 				putc(scanin[x][RED], stdout);
 			}
+		for (x = 0; x < pad; x++)
+			putc(scanin[xmax-1][ord[x%3]], stdout);
 		if (ferror(stdout))
 			quiterr("error writing rasterfile");
 	}
