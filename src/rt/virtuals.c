@@ -124,6 +124,8 @@ OBJREC  *o;
 
 	i = o->omod;
 	m = findmaterial(objptr(i));
+	if (m == NULL)
+		return(objptr(i));
 	if (m->otype != MAT_ILLUM || m->oargs.nsargs < 1 ||
 			!strcmp(m->oargs.sarg[0], VOIDID) ||
 			(i = lastmod(objndx(m), m->oargs.sarg[0])) == OVOID)
