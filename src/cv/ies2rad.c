@@ -407,8 +407,11 @@ char	*inpname, *outname;
 	}
 	if (lampcolor == NULL) {
 		fprintf(stderr, "%s: warning - no lamp type\n", inpname);
+		fputs("# Unknown lamp type (used default)\n", outfp);
 		lampcolor = defcolor;
-	}
+	} else if (lamptype == NULL)
+		fprintf(outfp,"# CIE(x,y) = (%f,%f)\n# Depreciation = %.1f%%\n",
+				lampcolor[3], lampcolor[4], 100.*lampcolor[5]);
 	if (feof(inpfp)) {
 		fprintf(stderr, "%s: not in IES format\n", inpname);
 		goto readerr;
