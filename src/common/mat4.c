@@ -12,20 +12,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "mat4.h"
 
+MAT4  m4ident = MAT4IDENT;
+
 static MAT4  m4tmp;		/* for efficiency */
-
-
-setident4(m4)
-MAT4  m4;
-{
-	static MAT4  ident = {
-		1.,0.,0.,0.,
-		0.,1.,0.,0.,
-		0.,0.,1.,0.,
-		0.,0.,0.,1.,
-	};
-	copymat4(m4, ident);
-}
 
 
 multmat4(m4a, m4b, m4c)		/* multiply m4b X m4c and put into m4a */
