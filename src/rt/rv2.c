@@ -76,12 +76,12 @@ char  *s;
 {
 	FILE  *fp;
 	char  buf[128];
-	char  *fname, *getpath();
+	char  *fname;
 	int  change = 0;
 	VIEW  nv;
 
 	if (sscanf(s, "%s", buf) == 1) {	/* write parameters to a file */
-		if ((fname = getpath(buf, NULL)) == NULL ||
+		if ((fname = getpath(buf, NULL, 0)) == NULL ||
 				(fp = fopen(fname, "a")) == NULL) {
 			sprintf(errmsg, "cannot open \"%s\"", buf);
 			error(COMMAND, errmsg);
@@ -158,13 +158,13 @@ lastview(s)				/* return to a previous view */
 char  *s;
 {
 	char  buf[128];
-	char  *fname, *getpath();
+	char  *fname;
 	int  success;
 	VIEW  nv;
 
 	if (sscanf(s, "%s", buf) == 1) {	/* get parameters from a file */
 		bcopy(&stdview, &nv, sizeof(VIEW));
-		if ((fname = getpath(buf, NULL)) == NULL ||
+		if ((fname = getpath(buf, NULL, 0)) == NULL ||
 				(success = viewfile(fname, &nv)) == -1) {
 			sprintf(errmsg, "cannot open \"%s\"", buf);
 			error(COMMAND, errmsg);
@@ -655,7 +655,7 @@ writepict(s)				/* write the picture to a file */
 char  *s;
 {
 	static char  buf[128];
-	char  *fname, *getpath();
+	char  *fname;
 	FILE  *fp;
 	COLR  *scanline;
 	int  y;
@@ -664,7 +664,7 @@ char  *s;
 		error(COMMAND, "no file");
 		return;
 	}
-	if ((fname = getpath(buf, NULL)) == NULL ||
+	if ((fname = getpath(buf, NULL, 0)) == NULL ||
 			(fp = fopen(fname, "w")) == NULL) {
 		sprintf(errmsg, "cannot open \"%s\"", buf);
 		error(COMMAND, errmsg);
