@@ -235,12 +235,20 @@ register FVECT  vec;
 int  fmt;
 FILE  *fp;
 {
+	extern char  *fgetword();
+	extern double  atof();
 	static float  vf[3];
+	char  buf[32];
+	register int  i;
 
 	switch (fmt) {
 	case 'a':					/* ascii */
-		if (fscanf(fp, "%lf %lf %lf", vec, vec+1, vec+2) != 3)
-			return(-1);
+		for (i = 0; i < 3; i++) {
+			if (fgetword(buf, sizeof(buf), fp) == NULL ||
+					!isflt(buf))
+				return(-1);
+			vec[i] = atof(buf);
+		}
 		break;
 	case 'f':					/* binary float */
 		if (fread((char *)vf, sizeof(float), 3, fp) != 3)
