@@ -22,7 +22,7 @@ pvalue pcompos protate ra_pr ra_pr24 ra_avs ra_tiff ra_hexbit \
 ra_t8 ra_bn ra_t16 pcomb pinterp ximage xshowtrace pflip ra_ppm \
 ra_rgbe ra_pict ra_ps pextrem ra_gif ra_xyze macbethcal pcond pcwarp
 
-all:	$(PROGS)
+all:	$(PROGS) $(SPECIAL)
 
 x10:	x10image
 	cp x10image $(INSTDIR)
@@ -186,7 +186,8 @@ ra_tiff:	ra_tiff.o ../lib/libtiff.a
 ../common/tiff.h:	../lib/libtiff.a
 
 ../lib/libtiff.a:	tiff/config.local
-	cd tiff ; ./configure -quiet -noninteractive -with-CC=$(CC) ; \
+	cd tiff ; ./configure -quiet -noninteractive -with-CC=$(CC) \
+		"-with-ENVOPTS=$(OPT)" ; \
 	cd libtiff ; make install
 
 ra_pixar:	ra_pixar.o ra_pixar.c
