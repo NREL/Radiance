@@ -118,9 +118,9 @@ register char	**av;
 	case MG_E_CSPEC:	/* assign spectral values */
 		if (ac < 5)
 			return(MG_EARGC);
-		if (!isint(av[1]) || !isint(av[2]))
+		if (!isflt(av[1]) || !isflt(av[2]))
 			return(MG_ETYPE);
-		return(setspectrum(c_ccolor, atoi(av[1]), atoi(av[2]),
+		return(setspectrum(c_ccolor, atof(av[1]), atof(av[2]),
 				ac-3, av+3));
 	case MG_E_CMIX:		/* mix colors */
 		if (ac < 5 || (ac-1)%2)
@@ -457,6 +457,9 @@ int	fl;
 			y += cie_yf.ssamp[i] * clr->ssamp[i];
 			z += cie_zf.ssamp[i] * clr->ssamp[i];
 		}
+		x /= (double)cie_xf.ssum;
+		y /= (double)cie_yf.ssum;
+		z /= (double)cie_zf.ssum;
 		z += x + y;
 		clr->cx = x / z;
 		clr->cy = y / z;
@@ -492,25 +495,47 @@ int	fl;
 static int
 setspectrum(clr, wlmin, wlmax, ac, av)	/* convert a spectrum */
 register C_COLOR	*clr;
-int	wlmin, wlmax;
+double	wlmin, wlmax;
 int	ac;
 char	**av;
 {
 	double	scale;
-	float	*va;
-	register int	i;
-	int	wl, pos;
+	float	va[C_CNSS];
+	register int	i, pos;
+	int	n, imax;
+	int	wl;
 	double	wl0, wlstep;
-
-	if (wlmin < C_CMINWL || wlmin >= wlmax || wlmax > C_CMAXWL)
+					/* check bounds */
+	if (wlmax <= C_CMINWL | wlmax <= wlmin | wlmin >= C_CMAXWL)
 		return(MG_EILL);
-	if ((va = (float *)malloc(ac*sizeof(float))) == NULL)
-		return(MG_EMEM);
+	wlstep = (wlmax - wlmin)/(ac-1);
+	while (wlmin < C_CMINWL) {
+		wlmin += wlstep;
+		ac--; av++;
+	}
+	while (wlmax > C_CMAXWL) {
+		wlmax -= wlstep;
+		ac--;
+	}
+	if (ac < 2)
+		return(MG_EILL);
+	imax = ac;			/* box filter if necessary */
+	if (wlstep < C_CWLI) {
+		wlstep = C_CWLI;
+		imax = (wlmax - wlmin)/wlstep;
+	}
 	scale = 0.;			/* get values and maximum */
-	for (i = 0; i < ac; i++) {
-		if (!isflt(av[i]))
-			return(MG_ETYPE);
-		va[i] = atof(av[i]);
+	pos = 0;
+	for (i = 0; i < imax; i++) {
+		va[i] = 0.; n = 0;
+		while (pos < (i+.5)*ac/imax) {
+			if (!isflt(av[pos]))
+				return(MG_ETYPE);
+			va[i] += atof(av[pos++]);
+			n++;
+		}
+		if (n > 1)
+			va[i] /= (double)n;
 		if (va[i] < 0.)
 			return(MG_EILL);
 		if (va[i] > scale)
@@ -521,17 +546,16 @@ char	**av;
 	scale = C_CMAXV / scale;
 	clr->ssum = 0;			/* convert to our spacing */
 	wl0 = wlmin;
-	wlstep = (double)(wlmax - wlmin)/(ac-1);
 	pos = 0;
 	for (i = 0, wl = C_CMINWL; i < C_CNSS; i++, wl += C_CWLI)
-		if (wl < wlmin || wl > wlmax)
+		if (wl < wlmin | wl > wlmax)
 			clr->ssamp[i] = 0;
 		else {
 			while (wl0 + wlstep < wl+FTINY) {
 				wl0 += wlstep;
 				pos++;
 			}
-			if (wl+FTINY >= wl0 && wl-FTINY <= wl0)
+			if (wl+FTINY >= wl0 & wl-FTINY <= wl0)
 				clr->ssamp[i] = scale*va[pos];
 			else		/* interpolate if necessary */
 				clr->ssamp[i] = scale / wlstep *
@@ -541,7 +565,6 @@ char	**av;
 		}
 	clr->flags = C_CDSPEC|C_CSSPEC;
 	clr->clock++;
-	free((MEM_PTR)va);
 	return(MG_OK);
 }
 
@@ -559,7 +582,7 @@ double	w1, w2;
 		c_ccvt(c1, C_CSSPEC|C_CSEFF);
 		c_ccvt(c2, C_CSSPEC|C_CSEFF);
 		w1 /= c1->eff*c1->ssum;
-		w2 /= c1->eff*c2->ssum;
+		w2 /= c2->eff*c2->ssum;
 		scale = 0.;
 		for (i = 0; i < C_CNSS; i++) {
 			cmix[i] = w1*c1->ssamp[i] + w2*c2->ssamp[i];
