@@ -222,7 +222,7 @@ VIEW	*nv;
 			int	dh = DisplayHeight(ourdisplay,ourscreen);
 
 			dw -= 25;	/* for window frame */
-			dh -= 100;
+			dh -= 50;
 			odev.hres = 2.*VIEWDIST/pwidth *
 					tan(PI/180./2.*nv->horiz);
 			odev.vres = 2.*VIEWDIST/pheight *
