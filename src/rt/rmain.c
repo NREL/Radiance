@@ -142,7 +142,7 @@ char  *argv[];
 			if (argv[i][2] != 'f')
 				goto badopt;
 			check(3,1);
-			rval = viewfile(argv[++i], &ourview);
+			rval = viewfile(argv[++i], &ourview, 0, 0);
 			if (rval < 0) {
 				sprintf(errmsg,
 				"cannot open view file \"%s\"",
@@ -243,13 +243,15 @@ char  *argv[];
 		case 'r':				/* recover file */
 			check(2,1);
 			recover = argv[++i];
-			rval = viewfile(recover, &ourview);
+			rval = viewfile(recover, &ourview, &hresolu, &vresolu);
 			if (rval <= 0) {
 				sprintf(errmsg,
 			"cannot recover view parameters from \"%s\"", recover);
 				error(WARNING, errmsg);
-			} else
+			} else {
 				gotvfile += rval;
+				pixaspect = 0.0;
+			}
 			break;
 		case 't':				/* timer */
 			check(2,1);

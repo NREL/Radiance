@@ -18,6 +18,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #else
 #include  <signal.h>
 #endif
+#include  <sys/fcntl.h>
 
 #include  "view.h"
 
@@ -100,11 +101,12 @@ report()		/* report progress */
 render(zfile, oldfile)				/* render the scene */
 char  *zfile, *oldfile;
 {
+	extern long  lseek();
 	COLOR  *scanbar[MAXDIV+1];	/* scanline arrays of pixel values */
 	float  *zbar[MAXDIV+1];		/* z values */
 	int  ypos;			/* current scanline */
 	int  ystep;			/* current y step size */
-	FILE  *zfp;
+	int  zfd;
 	COLOR  *colptr;
 	float  *zptr;
 	register int  i;
@@ -121,7 +123,7 @@ char  *zfile, *oldfile;
 	}
 					/* open z file */
 	if (zfile != NULL) {
-		if ((zfp = fopen(zfile, "a+")) == NULL) {
+		if ((zfd = open(zfile, O_WRONLY|O_CREAT, 0666)) == -1) {
 			sprintf(errmsg, "cannot open z file \"%s\"", zfile);
 			error(SYSTEM, errmsg);
 		}
@@ -131,7 +133,7 @@ char  *zfile, *oldfile;
 				goto memerr;
 		}
 	} else {
-		zfp = NULL;
+		zfd = -1;
 		for (i = 0; i <= psample; i++)
 			zbar[i] = NULL;
 	}
@@ -139,7 +141,7 @@ char  *zfile, *oldfile;
 	fputresolu(YMAJOR|YDECR, hresolu, vresolu, stdout);
 					/* recover file and compute first */
 	i = salvage(oldfile);
-	if (zfp != NULL && fseek(zfp, (long)i*hresolu*sizeof(float), 0) == EOF)
+	if (zfd != -1 && lseek(zfd, (long)i*hresolu*sizeof(float), 0) == -1)
 		error(SYSTEM, "z file seek error in render");
 	ypos = vresolu-1 - i;
 	fillscanline(scanbar[0], zbar[0], hresolu, ypos, psample);
@@ -165,21 +167,21 @@ char  *zfile, *oldfile;
 		fillscanbar(scanbar, zbar, hresolu, ypos, ystep);
 							/* write it out */
 		for (i = ystep; i > 0; i--) {
-			if (zfp != NULL && fwrite(zbar[i],sizeof(float),hresolu,zfp) != hresolu)
+			if (zfd!=-1 && write(zfd,zbar[i],hresolu*sizeof(float))
+					< hresolu*sizeof(float))
 				goto writerr;
 			if (fwritescan(scanbar[i],hresolu,stdout) < 0)
 				goto writerr;
 		}
-		if (zfp != NULL && fflush(zfp) == EOF)
-			goto writerr;
 		if (fflush(stdout) == EOF)
 			goto writerr;
 	}
 						/* clean up */
-	if (zfp != NULL) {
-		fwrite(zbar[0], sizeof(float), hresolu, zfp);
-		if (fclose(zfp) == EOF)
+	if (zfd != -1) {
+		if (write(zfd,zbar[0],hresolu*sizeof(float))
+				< hresolu*sizeof(float))
 			goto writerr;
+		close(zfd);
 		for (i = 0; i <= psample; i++)
 			free((char *)zbar[i]);
 	}
