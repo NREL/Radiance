@@ -5,7 +5,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
- * Routines for loading and displaying Radiance objects under OpenGL in rholo.
+ * Routines for loading and displaying Radiance objects in rholo with GLX.
  */
 
 #include "radogl.h"
@@ -460,7 +460,7 @@ register char	*args;
 		else
 			return(cmderror(cn, "need octree [name]"));
 		break;
-	case DO_UNLOAD:				/* unload an object */
+	case DO_UNLOAD:				/* clear an object */
 		if (na > 1) goto toomany;
 		if (na && alist[0][0] == '*')
 			dobj_cleanup();
@@ -483,8 +483,8 @@ register char	*args;
 		break;
 	case DO_OBJECT:				/* print object statistics */
 		if (dobj_putstats(na ? alist[0] : curname, sstdout))
-			if (na && alist[0][0] != '*' &&
-					strcmp(alist[0], curname))
+			if (na && alist[0][0] != '*' && (curobj == NULL ||
+					strcmp(alist[0], curobj->name)))
 				savedxf(curobj = getdobj(alist[0]));
 		break;
 	case DO_DUP:				/* duplicate object */
@@ -547,7 +547,7 @@ char	*oct, *nam;
 		return(0);
 	}
 	if (getdobj(nam) != NULL) {
-		error(COMMAND, "name already taken (unload first)");
+		error(COMMAND, "name already taken (clear first)");
 		return(0);
 	}
 					/* get octree path */
@@ -732,7 +732,7 @@ char	*oldnm, *nam;
 		return(0);
 	}
 	if (getdobj(nam) != NULL) {
-		error(COMMAND, "name already taken (unload first)");
+		error(COMMAND, "name already taken (clear first)");
 		return(0);
 	}
 					/* allocate and copy struct */
