@@ -26,7 +26,7 @@ struct illum_args {
 	char	altmat[MAXSTR];		/* alternate material name */
 	int	sampdens;		/* point sample density */
 	int	nsamps;			/* # of samples in each direction */
-	float	col[3];			/* average color */
+	float	col[3];			/* computed average color */
 };				/* illum options */
 
 struct rtproc {

@@ -58,7 +58,7 @@ int	doneheader = 0;		/* printed header yet? */
 int	warnings = 1;		/* print warnings? */
 
 extern char	*fgetline(), *fgetword(), *sskip(), 
-		*atos(), *iskip(), *fskip();
+		*atos(), *iskip(), *fskip(), *strcpy();
 extern FILE	*popen();
 
 
@@ -158,6 +158,8 @@ init()				/* start rtrace and set up buffers */
 	if (rt.buf == NULL || rt.dest == NULL)
 		error(SYSTEM, "out of memory in init");
 	rt.nrays = 0;
+					/* set up urand */
+	initurand(2048);
 }
 
 
@@ -253,6 +255,7 @@ char	*nm;
 			if (*++cp != '=')
 				break;
 			if (!*++cp) {
+				strcpy(thisillum.datafile,thisillum.matname);
 				thisillum.flags &= ~IL_DATCLB;
 				continue;
 			}
@@ -263,9 +266,9 @@ char	*nm;
 			continue;
 		case 'i':			/* include material */
 		case 'e':			/* exclude material */
-			matselect = (*cp == 'i') ? S_ELEM : S_COMPL;
-			if (*++cp != '=')
+			if (cp[1] != '=')
 				break;
+			matselect = (*++cp == 'i') ? S_ELEM : S_COMPL;
 			atos(matcheck, MAXSTR, ++cp);
 			cp = sskip(cp);
 			continue;
@@ -282,8 +285,8 @@ char	*nm;
 				break;
 			switch (*++cp) {
 			case 'a':			/* average */
-				thisillum.flags |= IL_COLAVG;
-				thisillum.flags &= ~IL_COLDST;
+				thisillum.flags = (thisillum.flags|IL_COLAVG)
+							& ~IL_COLDST;
 				break;
 			case 'd':			/* distribution */
 				thisillum.flags |= (IL_COLDST|IL_COLAVG);
@@ -336,6 +339,11 @@ char	*nm;
 			}
 			doneheader = 0;
 			continue;
+		case '!':			/* processed file! */
+			sprintf(errmsg, "(%s): processed by mkillum already!",
+					nm);
+			error(WARNING, errmsg);
+			return;
 		}
 	opterr:					/* skip faulty option */
 		cp = sskip(cp);
@@ -366,7 +374,7 @@ register char  **av;
 		putchar(' ');
 		fputs(*av++, stdout);
 	}
-	putchar('\n');
+	fputs("\n#@mkillum !\n", stdout);
 }
 
 

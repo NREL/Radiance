@@ -87,35 +87,6 @@ int  c;
 }
 
 
-illumout(il, ob)		/* print illum object */
-register struct illum_args  *il;
-OBJREC  *ob;
-{
-	double  cout[3];
-
-	printf("\n%s%s %s %s", il->matname, DSTSUF,
-			ofun[il->flags&IL_LIGHT?MAT_LIGHT:MAT_ILLUM].funame,
-			il->matname);
-	if (il->flags & IL_LIGHT || !strcmp(il->altmat,VOIDID))
-		printf("\n0");
-	else
-		printf("\n1 %s", il->altmat);
-	if (il->flags & IL_COLAVG) {
-		cout[0] = il->col[0];
-		cout[1] = il->col[1];
-		cout[2] = il->col[2];
-	} else {
-		cout[0] = cout[1] = cout[2] = brt(il->col);
-	}
-	if (il->flags & IL_LIGHT)
-		printf("\n3 %f %f %f\n", cout[0], cout[1], cout[2]);
-	else
-		printf("\n4 %f %f %f 0\n", cout[0], cout[1], cout[2]);
-
-	printobj(il->matname, ob);
-}
-
-
 flatout(il, da, n, m, u, v, w)		/* write hemispherical distribution */
 struct illum_args  *il;
 float  *da;
@@ -189,6 +160,35 @@ int  n, m;
 	printf("\n\t%s il_alt il_azi", FNCFNM);
 	printf("\n0\n0\n");
 	il->dfnum++;
+}
+
+
+illumout(il, ob)		/* print illum object */
+register struct illum_args  *il;
+OBJREC  *ob;
+{
+	double  cout[3];
+
+	printf("\n%s%s %s %s", il->matname, DSTSUF,
+			ofun[il->flags&IL_LIGHT?MAT_LIGHT:MAT_ILLUM].funame,
+			il->matname);
+	if (il->flags & IL_LIGHT || !strcmp(il->altmat,VOIDID))
+		printf("\n0");
+	else
+		printf("\n1 %s", il->altmat);
+	if (il->flags & IL_COLAVG) {
+		cout[0] = il->col[0];
+		cout[1] = il->col[1];
+		cout[2] = il->col[2];
+	} else {
+		cout[0] = cout[1] = cout[2] = brt(il->col);
+	}
+	if (il->flags & IL_LIGHT)
+		printf("\n3 %f %f %f\n", cout[0], cout[1], cout[2]);
+	else
+		printf("\n4 %f %f %f 0\n", cout[0], cout[1], cout[2]);
+
+	printobj(il->matname, ob);
 }
 
 
