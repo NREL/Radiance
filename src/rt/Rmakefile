@@ -249,3 +249,5 @@ image.o rpmain.o rtmain.o rvmain.o rpict.o:	view.h
 x10.o xtwind.o:	xtwind.h
 
 x11.o x11twind.o: x11twind.h
+
+x11.o:	x11icon.h

@@ -21,6 +21,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "color.h"
 #include  "driver.h"
 #include  "x11twind.h"
+#include  "x11icon.h"
 
 #define GAMMA		2.2		/* exponent for color correction */
 
@@ -129,8 +130,10 @@ char  *name, *id;
 	/* create a cursor */
 	pickcursor = XCreateFontCursor(ourdisplay, XC_diamond_cross);
 	ourgc = XCreateGC(ourdisplay, gwind, 0, NULL);
-	ourxwmhints.flags = InputHint;
+	ourxwmhints.flags = InputHint|IconPixmapHint;
 	ourxwmhints.input = True;
+	ourxwmhints.icon_pixmap = XCreateBitmapFromData(ourdisplay,
+			gwind, x11icon_bits, x11icon_width, x11icon_height);
 	XSetWMHints(ourdisplay, gwind, &ourxwmhints);
 	oursizhints.min_width = MINWIDTH;
 	oursizhints.min_height = MINHEIGHT+COMHEIGHT;
