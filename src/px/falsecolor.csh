@@ -90,7 +90,7 @@ neq(a,b) : if(a-b-EPS,1,b-a-EPS);
 btwn(a,x,b) : if(a-x,-1,b-x);
 clip(x) : if(x-1,1,if(x,x,0));
 frac(x) : x - floor(x);
-boundary(a,b) : neq(floor(ndivs*a),floor(ndivs*b));
+boundary(a,b) : neq(floor(ndivs*a+.5),floor(ndivs*b+.5));
 
 isconta = if(btwn(0,v,1),or(boundary(vleft,vright),boundary(vabove,vbelow)),-1);
 iscontb = if(btwn(0,v,1),btwn(.4,frac(ndivs*v),.6),-1); 
