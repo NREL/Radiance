@@ -18,16 +18,17 @@ Paul Heckbert
 #include "ciq.h"
 
 #define inf 3*256*256
-#define key ((r&0xe0)<<1|(g&0xe0)>>2|(b&0xe0)>>5)    /* hash key: rrrgggbbb */
+#define key(r,g,b) (((r)&0xe0)<<1|((g)&0xe0)>>2|((b)&0xe0)>>5)   
+    /* 9-bit hash key: rrrgggbbb */
 
-static struct thing {int mindist,pv;} space[512*257],*next=space,*bucket[512];
+static struct thing {int mindist,pv;} space[512*257],*next,*bucket[512];
 					/* sorted lists of colors */
 
-static int nfill=0,tests=0,calls=0;
+static int nfill,tests,calls;
 static char filled[512];		/* has bucket[key] been filled yet? */
 static int sq[511];
 
-initialize() {				/* reset the buckets */
+initializeclosest() {			/* reset the buckets */
     int k;
     nfill = tests = calls = 0;
     for (k=0; k<512; k++) filled[k] = 0;
@@ -38,17 +39,19 @@ closest(r,g,b)		/* find pv of colormap color closest to (r,g,b) */
 int r,g,b;
 {
     register struct thing *p;
-    register int *rsq,*gsq,*bsq,dist,min,best;
+    register int *rsq,*gsq,*bsq,dist,min;
+    int best,k;
     struct thing *p0;
 
-    if (!filled[key]) fillbucket(key);
+    k = key(r,g,b);
+    if (!filled[k]) fillbucket(k);
     min = inf;
     rsq = sq+255-r;
     gsq = sq+255-g;
     bsq = sq+255-b;
 
     /* stop looking when best is closer than next could be */
-    for (p0=p=bucket[key]; min>p->mindist; p++) {
+    for (p0=p=bucket[k]; min>p->mindist; p++) {
 	dist = rsq[color[0][p->pv]] + gsq[color[1][p->pv]] +
 	    bsq[color[2][p->pv]];
 	if (dist<min) {
