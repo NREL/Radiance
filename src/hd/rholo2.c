@@ -48,56 +48,100 @@ GCOORD	*gc;
 
 
 static
-groweyelim(gcl, gc, r0, r1)	/* grow grid limits about eye point */
+groweyelim(gcl, gc, r0, r1, tight)	/* grow grid limits about eye point */
 register struct gclim	*gcl;
 GCOORD	*gc;
 double	r0, r1;
+int	tight;
 {
 	FVECT	gp, ab;
-	double	vlen, plen, dv0, dv1;
-	double	rd2, dwall, gpos;
-	int	eyeout;
-	register int	i, g0, g1;
-
+	double	ab2, od, cfact;
+	double	sqcoef[3], ctcoef[3], licoef[3], cnst;
+	int	gw, gi[2];
+	double	wallpos, a, b, c, d, e, f;
+	double	root[2], yex;
+	int	n, i, j, nex;
+						/* point/view cone */
 	i = gc->w>>1;
-	if (gc->w&1)
-		eyeout = (gp[i] = gcl->hp->grid[i]) < gcl->egp[i];
-	else
-		eyeout = (gp[i] = 0) > gcl->egp[i];
+	gp[i] = gc->w&1 ? gcl->hp->grid[i] : 0;
 	gp[hdwg0[gc->w]] = gc->i[0] + r0;
 	gp[hdwg1[gc->w]] = gc->i[1] + r1;
 	VSUB(ab, gcl->egp, gp);
-	rd2 = DOT(ab,ab);
-	if (rd2 <= gcl->erg2) {
+	ab2 = DOT(ab, ab);
+	gw = gcl->gc.w>>1;
+	if ((i==gw ? ab[gw]*ab[gw] : ab2)  <= gcl->erg2 + FTINY) {
 		gcl->gmin[0] = gcl->gmin[1] = -FHUGE;
 		gcl->gmax[0] = gcl->gmax[1] = FHUGE;
-		return;
+		return;			/* too close (to wall) */
 	}
-	rd2 = gcl->erg2 / rd2;
-	vlen = 1. - rd2;
-	plen = sqrt(rd2 * vlen);
-	g0 = gcl->gc.w>>1;
-	dwall = (gcl->gc.w&1 ? gcl->hp->grid[g0] : 0) - gp[g0];
-	for (i = 0; i < 4; i++) {
-		if (i == 2)
-			plen = -plen;
-		g1 = (g0+(i&1)+1)%3;
-		dv0 = vlen*ab[g0] + plen*ab[g1];
-		dv1 = vlen*ab[g1] - plen*ab[g0];
-		if ((dv0 < 0 ^ dwall < 0 ^ eyeout) ||
-				(dv0 <= FTINY && dv0 >= -FTINY)) {
-			if (eyeout)
-				dv1 = -dv1;
-			if (dv1 > FTINY)
-				gcl->gmax[i&1] = FHUGE;
-			else if (dv1 < -FTINY)
-				gcl->gmin[i&1] = -FHUGE;
-		} else {
-			gpos = gp[g1] + dv1*dwall/dv0;
-			if (gpos < gcl->gmin[i&1])
-				gcl->gmin[i&1] = gpos;
-			if (gpos > gcl->gmax[i&1])
-				gcl->gmax[i&1] = gpos;
+	ab2 = 1./ab2;				/* 1/norm2(ab) */
+	od = DOT(gp, ab);			/* origin dot direction */
+	cfact = 1./(1. - ab2*gcl->erg2);	/* tan^2 + 1 of cone angle */
+	for (i = 0; i < 3; i++) {		/* compute cone equation */
+		sqcoef[i] = ab[i]*ab[i]*cfact*ab2 - 1.;
+		ctcoef[i] = 2.*ab[i]*ab[(i+1)%3]*cfact*ab2;
+		licoef[i] = 2.*(gp[i] - ab[i]*cfact*od*ab2);
+	}
+	cnst = cfact*od*od*ab2 - DOT(gp,gp);
+	/*
+	 * CONE:	sqcoef[0]*x*x + sqcoef[1]*y*y + sqcoef[2]*z*z
+	 *		+ ctcoef[0]*x*y + ctcoef[1]*y*z + ctcoef[2]*z*x
+	 *		+ licoef[0]*x + licoef[1]*y + licoef[2]*z + cnst == 0
+	 */
+				/* equation for conic section in plane */
+	gi[0] = hdwg0[gcl->gc.w];
+	gi[1] = hdwg1[gcl->gc.w];
+	wallpos = gcl->gc.w&1 ? gcl->hp->grid[gw] : 0;
+	a = sqcoef[gi[0]];					/* x2 */
+	b = ctcoef[gi[0]];					/* xy */
+	c = sqcoef[gi[1]];					/* y2 */
+	d = ctcoef[gw]*wallpos + licoef[gi[0]];			/* x */
+	e = ctcoef[gi[1]]*wallpos + licoef[gi[1]];		/* y */
+	f = wallpos*(wallpos*sqcoef[gw] + licoef[gw]) + cnst;
+	for (i = 0; i < 2; i++) {
+		if (i) {		/* swap x and y coefficients */
+			register double	t;
+			t = a; a = c; c = t;
+			t = d; d = e; e = t;
+		}
+		nex = 0;		/* check global extrema */
+		n = quadratic(root, a*(4.*a*c-b*b), 2.*a*(2.*c*d-b*e),
+				d*(c*d-b*e) + f*b*b);
+		while (n-- > 0) {
+			if (gc->w>>1 == gi[i] &&
+					(gc->w&1) ^ root[n] < gp[gc->w>>1]) {
+				if (gc->w&1)
+					gcl->gmin[i] = -FHUGE;
+				else
+					gcl->gmax[i] = FHUGE;
+				nex++;
+				continue;		/* hyperbolic */
+			}
+			if (tight) {
+				yex = (-2.*a*root[n] - d)/b;
+				if (yex < gcl->gc.i[1-i] ||
+						yex > gcl->gc.i[1-i]+1)
+					continue;	/* outside cell */
+			}
+			if (root[n] < gcl->gmin[i])
+				gcl->gmin[i] = root[n];
+			if (root[n] > gcl->gmax[i])
+				gcl->gmax[i] = root[n];
+			nex++;
+		}
+					/* check local extrema */
+		for (j = nex < 2 ? 2 : 0; j--; ) {
+			yex = gcl->gc.i[1-i] + j;
+			n = quadratic(root, a, b*yex+d, yex*(yex*c+e)+f);
+			while (n-- > 0) {
+				if (gc->w>>1 == gi[i] &&
+					(gc->w&1) ^ root[n] < gp[gc->w>>1])
+					continue;
+				if (root[n] < gcl->gmin[i])
+					gcl->gmin[i] = root[n];
+				if (root[n] > gcl->gmax[i])
+					gcl->gmax[i] = root[n];
+			}
 		}
 	}
 }
@@ -133,6 +177,10 @@ packrays(rod, p)		/* pack ray origins and directions */
 register float	*rod;
 register PACKET	*p;
 {
+#if 0
+	double	dist2sum = 0.;
+	FVECT	vt;
+#endif
 	int	nretries = p->nr + 2;
 	struct gclim	eyelim;
 	short	rrng0[2][2], rrng1[2][2];
@@ -146,9 +194,13 @@ register PACKET	*p;
 		error(CONSISTENCY, "bad beam index in packrays");
 	if ((useyelim = myeye.rng > FTINY)) {
 		initeyelim(&eyelim, hdlist[p->hd], gc);
-		groweyelim(&eyelim, gc+1, 0., 0.);
-		groweyelim(&eyelim, gc+1, 1., 1.);
-		useyelim &= clipeyelim(rrng0, &eyelim);
+		groweyelim(&eyelim, gc+1, 0., 0., 0);
+		groweyelim(&eyelim, gc+1, 1., 1., 0);
+		useyelim = clipeyelim(rrng0, &eyelim);
+#ifdef DEBUG
+		if (!useyelim)
+			error(WARNING, "no eye overlap in packrays");
+#endif
 	}
 	for (i = 0; i < p->nr; i++) {
 	retry:
@@ -160,9 +212,14 @@ register PACKET	*p;
 						+ rrng0[1][0];
 			groweyelim(&eyelim, gc,
 					(1./256.)*(p->ra[i].r[0][0]+.5),
-					(1./256.)*(p->ra[i].r[0][1]+.5));
+					(1./256.)*(p->ra[i].r[0][1]+.5), 1);
 			if (!clipeyelim(rrng1, &eyelim)) {
-				useyelim &= nretries-- > 0;
+				useyelim = nretries-- > 0;
+#ifdef DEBUG
+				if (!useyelim)
+					error(WARNING,
+					"exceeded retry limit in packrays");
+#endif
 				goto retry;
 			}
 			p->ra[i].r[1][0] = (int)(frandom()*rrng1[0][1])
@@ -176,6 +233,10 @@ register PACKET	*p;
 			p->ra[i].r[1][1] = frandom() * 256.;
 		}
 		d = hdray(ro, rd, hdlist[p->hd], gc, p->ra[i].r);
+#if 0
+		VSUM(vt, ro, rd, d);
+		dist2sum += dist2line(myeye.vpt, ro, vt);
+#endif
 		if (p->offset != NULL) {
 			if (!vdef(OBSTRUCTIONS))
 				d *= frandom();		/* random offset */
@@ -187,6 +248,10 @@ register PACKET	*p;
 		VCOPY(rod, rd);
 		rod += 3;
 	}
+#if 0
+	fprintf(stderr, "%f RMS (%d retries)\t", sqrt(dist2sum/p->nr),
+			p->nr + 2 - nretries);
+#endif
 }
 
 
