@@ -188,7 +188,7 @@ int	len;
 	for (i = len; i--; ) {
 		j = luvs[i] >> 16;		/* get luminance */
 		if (j & 0x8000)			/* negative luminance */
-			ls[i] = MINBRT-1;	/* assign bogus value */
+			ls[i] = TM_NOBRT;	/* assign bogus value */
 		else				/* else convert to lnL */
 			ls[i] = (BRT2SCALE*j >> 8) - ld->offset;
 		if (cs == TM_NOCHROM)		/* no color? */
@@ -302,7 +302,7 @@ int	len;
 					/* convert each pixel */
 	for (i = len; i--; ) {
 		if (l16s[i] & 0x8000)		/* negative luminance */
-			ls[i] = MINBRT-1;	/* assign bogus value */
+			ls[i] = TM_NOBRT;	/* assign bogus value */
 		else				/* else convert to lnL */
 			ls[i] = (BRT2SCALE*l16s[i] >> 8) - offset;
 	}
