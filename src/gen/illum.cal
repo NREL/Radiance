@@ -32,16 +32,16 @@ s_val(v, vN, vS) = if( il_alt-A7,
 s_red(r,g,b) = s_val(r, A1, A4);
 s_grn(r,g,b) = s_val(g, A2, A5);
 s_blu(r,g,b) = s_val(b, A3, A6);
-s_gry(r,g,b) = s_val(grey(r,g,b), grey(A1,A2,A3), grey(A4,A5,A6));
+s_gry(v) = s_val(v, grey(A1,A2,A3), grey(A4,A5,A6));
 
 					{ hemisphere coordinates }
 il_alth = sq(-Dx*arg(11)-Dy*arg(12)-Dz*arg(13));
 il_azih = norm_rad(atan2(-Dx*arg(8)-Dy*arg(9)-Dz*arg(10),
 			-Dx*arg(5)-Dy*arg(6)-Dz*arg(7)));
 
-h_val(v, vN) = if( il_alth-A4, linterp((il_alth-A4)/(1-A4), v, vN), v );
+h_val(v, vN) = if( il_alth-A4, linterp((il_alth-A4)/(1-A4), v, vN), noneg(v) );
 					{ hemisphere values }
 h_red(r,g,b) = h_val(r, A1);
 h_grn(r,g,b) = h_val(g, A2);
 h_blu(r,g,b) = h_val(b, A3);
-h_gry(r,g,b) = h_val(grey(r,g,b), grey(A1,A2,A3));
+h_gry(v) = h_val(v, grey(A1,A2,A3));
