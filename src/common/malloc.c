@@ -41,7 +41,7 @@ static unsigned	m_nwasted = 0;
 #define  MAXINCR	(1<<16)			/* largest sbrk(2) increment */
 
 #ifdef  NOVMEM
-#define  getpagesize()	BYTES_WORD
+#define  getpagesize()	1024
 #endif
 					/* malloc free lists */
 typedef union m_head {
