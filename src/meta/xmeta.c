@@ -100,6 +100,7 @@ char  **argv;
 
 
 
+void
 plot(infp)		/* plot meta-file */
 
 FILE  *infp;
@@ -147,7 +148,7 @@ PRIMITIVE  *p;
 
     if ((pnew = palloc()) == NULL)
 	    error(SYSTEM, "out of memory in save");
-    mcopy(pnew, p, sizeof(PRIMITIVE));
+    mcopy((char *)pnew, (char *)p, sizeof(PRIMITIVE));
     add(pnew, &recording);
 }
 

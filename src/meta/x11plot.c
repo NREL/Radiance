@@ -172,6 +172,7 @@ adjustsize()
 		dysize = dxsize;
 	}
 
+void
 endpage()		/* end of this graph */
 {
     XEvent  evnt;
@@ -204,6 +205,7 @@ endpage()		/* end of this graph */
 
 
 
+void
 printstr(p)		/* output a string */
 
 register PRIMITIVE  *p;
@@ -243,6 +245,7 @@ register PRIMITIVE  *p;
 
 
 
+void
 plotlseg(p)		/* plot a line segment */
 
 register PRIMITIVE  *p;
@@ -295,6 +298,19 @@ register PRIMITIVE  *p;
 
 
 #ifdef  nyet
+
+static void
+fill(xmin,ymin,xmax,ymax,pm)
+int xmin,ymin,xmax,ymax;
+Pixmap pm;
+	{
+	if (pm != 0 && curpat != pm)
+		{
+		XSetTile(dpy, gc, pm);
+		curpat = pm;
+		}
+	XFillRectangle(dpy, wind, gc, xmin, ymin, xmax-xmin+1, ymax-ymin+1);
+	}
 
 fillrect(p)			/* fill a rectangle */
 
@@ -449,23 +465,10 @@ register PRIMITIVE  *p;
 
 }
 
-fill(xmin,ymin,xmax,ymax,pm)
-int xmin,ymin,xmax,ymax;
-Pixmap pm;
-	{
-	if (pm != 0 && curpat != pm)
-		{
-		XSetTile(dpy, gc, pm);
-		curpat = pm;
-		}
-	XFillRectangle(dpy, wind, gc, xmin, ymin, xmax-xmin+1, ymax-ymin+1);
-	}
-
 #else
 
-filltri() {}
-fillpoly() {}
-fillrect() {}
-
+void filltri(PRIMITIVE *p) {}
+void fillpoly(PRIMITIVE *p) {}
+void fillrect(PRIMITIVE *p) {}
 
 #endif
