@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1993 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -32,7 +32,13 @@ static int	CLRCUBE[3][2] = {0,NRED,0,NGRN,0,NBLU};
 				/* maximum propagated error during dithering */
 #define MAXERR		20
 				/* define CLOSEST to get closest colors */
-#define CLOSEST		1
+#ifndef CLOSEST
+#ifdef SPEED
+#if  SPEED > 8
+#define CLOSEST		1	/* this step takes a little longer */
+#endif
+#endif
+#endif
 
 
 new_histo()		/* clear our histogram */
@@ -335,7 +341,7 @@ dist(col, r, g, b)		/* find distance from clrtab entry to r,g,b */
 register BYTE	col[3];
 int	r, g, b;
 {
-	register unsigned	tmp;
+	register int	tmp;
 	register unsigned	sum;
 	
 	tmp = col[RED]*NRED/256 - r;
