@@ -151,12 +151,6 @@ FVECT  pg, dg;
 	if (ns > 0) {			/* perform super-sampling */
 		comperrs(div, hemi);			/* compute errors */
 		qsort(div, ndivs, sizeof(AMBSAMP), ambcmp);	/* sort divs */
-		dp = div + ndivs;			/* skim excess */
-		for (i = ndivs; i > ns; i--) {
-			dp--;
-			addcolor(acol, dp->v);
-			arad += dp->r;
-		}
 						/* super-sample */
 		for (i = ns; i > 0; i--) {
 			copystruct(&dnew, div);
@@ -172,29 +166,28 @@ FVECT  pg, dg;
 				dp++;
 			}
 			copystruct(dp, &dnew);
-							/* extract darkest */
-			if (i <= ndivs) {
-				dp = div + i-1;
-				arad += dp->r;
-				if (dp->n > 1) {
-					b = 1.0/dp->n;
-					scalecolor(dp->v, b);
-					dp->r *= b;
-					dp->n = 1;
-				}
-				addcolor(acol, dp->v);
-			}
 		}
 		if (pg != NULL || dg != NULL)	/* restore order */
 			qsort(div, ndivs, sizeof(AMBSAMP), ambnorm);
 	}
 					/* compute returned values */
-	if (pg != NULL)
-		posgradient(pg, div, &hemi);
-	if (dg != NULL)
-		dirgradient(dg, div, &hemi);
-	if (div != NULL)
+	if (div != NULL) {
+		for (i = ndivs, dp = div; i-- > 0; dp++) {
+			arad += dp->r;
+			if (dp->n > 1) {
+				b = 1.0/dp->n;
+				scalecolor(dp->v, b);
+				dp->r *= b;
+				dp->n = 1;
+			}
+			addcolor(acol, dp->v);
+		}
+		if (pg != NULL)
+			posgradient(pg, div, &hemi);
+		if (dg != NULL)
+			dirgradient(dg, div, &hemi);
 		free((char *)div);
+	}
 	b = 1.0/ndivs;
 	scalecolor(acol, b);
 	if (arad <= FTINY)
@@ -231,9 +224,9 @@ RAY  *r;
 	if (i >= 3)
 		error(CONSISTENCY, "bad ray direction in inithemi");
 	hp->uy[i] = 1.0;
-	fcross(hp->ux, hp->uz, hp->uy);
+	fcross(hp->ux, hp->uy, hp->uz);
 	normalize(hp->ux);
-	fcross(hp->uy, hp->ux, hp->uz);
+	fcross(hp->uy, hp->uz, hp->ux);
 }
 
 
