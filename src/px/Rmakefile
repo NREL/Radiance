@@ -178,7 +178,7 @@ pf2.o bnoise.o ra_t16.o:	../common/random.h
 
 pfilt.o pf2.o ttyimage.o t4027.o mt160r.o psum.o psign.o prot.o ra_pr24.o \
 d48c.o aedimage.o pcompos.o color.o resolu.o colrops.o pflip.o \
-greyscale.o ra_t8.o glimage.o ra_bn.o ra_t16.o \
+greyscale.o ra_t8.o glimage.o ra_bn.o ra_t16.o ra_tiff.o ra_pict.o \
 ra_pr.o pvalue.o pcomb.o pinterp.o ximage.o:	../common/color.h
 
 prot.o biq.o ciq.o pinterp.o ximage.o \
