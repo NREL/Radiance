@@ -214,7 +214,9 @@ double	s;
 		/*
 		 *  Ambient level test.
 		 */
-		if (av->lvl > al || av->weight < r->rweight-FTINY)
+		if (av->lvl > al)	/* list sorted, so this works */
+			break;
+		if (av->weight < r->rweight-FTINY)
 			continue;
 		/*
 		 *  Ambient radius test.
@@ -401,6 +403,8 @@ avinsert(av)				/* insert ambient value in our tree */
 register AMBVAL	 *av;
 {
 	register AMBTREE  *at;
+	register AMBVAL  *ap;
+	AMBVAL  avh;
 	FVECT  ck0;
 	double	s;
 	int  branch;
@@ -424,8 +428,13 @@ register AMBVAL	 *av;
 			}
 		at = at->kid + branch;
 	}
-	av->next = at->alist;
-	at->alist = av;
+	avh.next = at->alist;		/* order by increasing level */
+	for (ap = &avh; ap->next != NULL; ap = ap->next)
+		if (ap->next->lvl >= av->lvl)
+			break;
+	av->next = ap->next;
+	ap->next = av;
+	at->alist = avh.next;
 }
 
 
