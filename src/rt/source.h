@@ -152,7 +152,7 @@ typedef void srcdirf_t(COLOR cv, void *np, FVECT ldir, double omega);
 extern void	direct(RAY *r, srcdirf_t *f, void *p);
 extern void	srcscatter(RAY *r);
 extern int	m_light(OBJREC *m, RAY *r);
-extern void     srcblocker(RAY *r);
+extern int	srcblocker(RAY *r);
 extern int      srcblocked(RAY *r);
 extern void     freeobscache(SRCREC *s);
 					/* defined in srcsamp.c */
