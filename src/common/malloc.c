@@ -24,9 +24,11 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <errno.h>
 
+extern int	errno;
+
 #ifdef MSTATS
 #include  <stdio.h>
-static unsigned b_nsbrked = 0;
+static unsigned	b_nsbrked = 0;
 static unsigned	b_nalloced = 0;
 static unsigned	b_nfreed = 0;
 static unsigned	b_nscrounged = 0;
@@ -65,7 +67,11 @@ static M_HEAD	*free_list[NBUCKETS];
 
 static ALIGN	dummy_mem;
 
+static char	*memlim[2];
+
 #define DUMMYLOC	((char *)&dummy_mem)
+
+#define BADPTR(p)	((p) < memlim[0] | (p) >= memlim[1])
 
 #ifdef  MCOMP			/* memory compaction routines */
 static char	seedtab[1024];		/* seed for compaction table */
@@ -241,6 +247,8 @@ register unsigned  n;
 #endif
 		bpos += nrem & (BYTES_WORD-1);		/* align pointer */
 		nrem &= ~(BYTES_WORD-1);
+		memlim[0] = bpos;
+		memlim[1] = bpos + nrem;
 	}
 
 	n = (n+(BYTES_WORD-1))&~(BYTES_WORD-1);		/* word align rqst. */
@@ -268,6 +276,10 @@ register unsigned  n;
 			nrem = thisamnt;
 		} else					/* otherwise tack on */
 			nrem += thisamnt;
+		if (bpos < memlim[0])
+			memlim[0] = bpos;
+		if (bpos + nrem > memlim[1])
+			memlim[1] = bpos + nrem;
 	}
 	p = bpos;
 	bpos += n;					/* advance */
@@ -297,6 +309,10 @@ register unsigned  n;
 		p += bsiz;
 		n -= bsiz;
 	}
+	if (p < memlim[0])
+		memlim[0] = p;
+	if (p + n > memlim[1])
+		memlim[1] = p + n;
 					/* fill big buckets first */
 	for (bucket = NBUCKETS-1, bsiz = 1<<(NBUCKETS-1);
 			bucket >= FIRSTBUCKET; bucket--, bsiz >>= 1)
@@ -313,7 +329,6 @@ char *
 malloc(n)			/* allocate n bytes of memory */
 unsigned	n;
 {
-	extern int  errno;
 	register M_HEAD	*mp;
 	register int	bucket;
 	register unsigned	bsiz;
@@ -355,7 +370,8 @@ unsigned	n;
 	char	*p;
 	register unsigned	on;
 					/* get old size */
-	if (op != NULL && op != DUMMYLOC && ((M_HEAD *)op-1)->a.magic == MAGIC)
+	if (op != DUMMYLOC && !BADPTR(op) &&
+			((M_HEAD *)op-1)->a.magic == MAGIC)
 		on = 1 << ((M_HEAD *)op-1)->a.bucket;
 	else
 		on = 0;
@@ -381,20 +397,25 @@ char	*p;
 	register M_HEAD	*mp;
 	register int	bucket;
 
-	if (p == NULL | p == DUMMYLOC)
+	if (p == DUMMYLOC)
 		return(1);
+	if (BADPTR(p))
+		goto invalid;
 	mp = (M_HEAD *)p - 1;
 	if (mp->a.magic != MAGIC)		/* sanity check */
-		return(0);
+		goto invalid;
 	bucket = mp->a.bucket;
 	if (bucket < FIRSTBUCKET | bucket >= NBUCKETS)
-		return(0);
+		goto invalid;
 	mp->next = free_list[bucket];
 	free_list[bucket] = mp;
 #ifdef MSTATS
 	m_nfreed += (1 << bucket) + sizeof(M_HEAD);
 #endif
 	return(1);
+invalid:
+	errno = EINVAL;
+	return(0);
 }
 
 
