@@ -142,7 +142,7 @@ proc do_scene w {		# Create scene screen
 	place $w.oct -relwidth .5714 -relheight .0610 -relx .2143 -rely .0610
 	helplink $w.oct trad scene octree
 	button $w.odel -text Delete -relief raised -command oct_delete
-	place $w.odel -relwidth .1071 -relheight .0610 -relx .8214 -rely .0610
+	place $w.odel -relwidth .1071 -relheight .0610 -relx .8000 -rely .0610
 	helplink $w.odel trad scene octdelete
 	# Materials listbox
 	button $w.matb -text Materials -relief raised \
