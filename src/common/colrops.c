@@ -10,7 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "color.h"
 
-#define MAXGSHIFT	4		/* maximum shift for gamma table */
+#define MAXGSHIFT	15		/* maximum shift for gamma table */
 
 static BYTE	g_mant[256], g_nexp[256];
 
