@@ -21,20 +21,23 @@ extern struct driver {
 #define	DC_LASTVIEW	2		/* restore previous view */
 #define	DC_PAUSE	3		/* pause the current calculation */
 #define	DC_RESUME	4		/* resume the calculation */
-#define DC_REDRAW	5		/* redraw from server */
-#define	DC_QUIT		6		/* quit the program */
+#define	DC_REDRAW	5		/* redraw from server */
+#define	DC_KILL		6		/* kill rtrace process(es) */
+#define	DC_RESTART	7		/* restart rtrace process(es) */
+#define DC_CLOBBER	8		/* clobber holodeck file */
+#define	DC_QUIT		9		/* quit the program */
 
-#define	DC_NCMDS	7		/* number of commands */
+#define	DC_NCMDS	10		/* number of commands */
 
 				/* dev_input() returns flags from above */
 #define DFL(dc)		(1<<(dc))
 
 #define	CTRL(c)		((c)-'@')
 				/* commands entered in display window */
-#define DV_INIT		{'\0','v','l','p','\r',CTRL('R'),'q'}
+#define DV_INIT		{'\0','v','l','p','\r',CTRL('R'),'K','R','C','q'}
 				/* commands entered on stdin */
 #define	DC_INIT		{"VIEW=","where","last","pause","resume","redraw",\
-				"quit"}
+				"kill","restart","clobber","quit"}
 
 
 /************************************************************************

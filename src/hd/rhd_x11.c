@@ -600,6 +600,15 @@ register XKeyPressedEvent  *ekey;
 			new_ctab(ncolors);
 		inpresflags |= DFL(DC_REDRAW);	/* resend values from server */
 		return;
+	case 'K':			/* kill rtrace process(es) */
+		inpresflags |= DFL(DC_KILL);
+		break;
+	case 'R':			/* restart rtrace */
+		inpresflags |= DFL(DC_RESTART);
+		break;
+	case 'C':			/* clobber holodeck */
+		inpresflags |= DFL(DC_CLOBBER);
+		break;
 	case 'q':			/* quit the program */
 		inpresflags |= DFL(DC_QUIT);
 		return;

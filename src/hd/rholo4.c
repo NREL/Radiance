@@ -145,6 +145,38 @@ int	block;
 					/* send acknowledgement */
 		disp_result(DS_ACKNOW, 0, NULL);
 		return(disp_check(1));	/* block on following request */
+	case DR_KILL:		/* kill computation process(es) */
+		if (msg.nbytes)
+			error(INTERNAL, "bad DR_KILL from display process");
+		if (nprocs > 0) {
+			done_packets(flush_queue());
+			if (end_rtrace())
+				error(WARNING, "bad status returned by rtrace");
+		} else
+			error(WARNING, "no rtrace process to kill");
+		break;
+	case DR_RESTART:	/* restart computation process(es) */
+		if (msg.nbytes)
+			error(INTERNAL, "bad DR_RESTART from display process");
+		if (ncprocs > nprocs) {
+			checkrad();
+			if (start_rtrace() < 1)
+				error(WARNING, "cannot restart rtrace");
+		} else if (nprocs > 0)
+			error(WARNING, "rtrace already runnning");
+		else
+			error(WARNING, "holodeck not open for writing");
+		break;
+	case DR_CLOBBER:	/* clobber holodeck */
+		if (msg.nbytes)
+			error(INTERNAL, "bad DR_CLOBBER from display process");
+		if (!force || !ncprocs)
+			error(WARNING, "request to clobber holodeck denied");
+		else {
+			error(WARNING, "clobbering holodeck contents");
+			hdclobber(NULL);
+		}
+		break;
 	case DR_SHUTDOWN:	/* shut down program */
 		if (msg.nbytes)
 			error(INTERNAL, "bad DR_SHUTDOWN from display process");

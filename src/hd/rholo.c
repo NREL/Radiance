@@ -32,6 +32,8 @@ char	*outdev = NULL;		/* output device name */
 
 int	readinp = 0;		/* read commands from stdin */
 
+int	force = 0;		/* allow overwrite of holodeck */
+
 time_t	starttime;		/* time we got started */
 time_t	endtime;		/* time we should end by */
 time_t	reporttime;		/* time for next report */
@@ -59,7 +61,6 @@ char	*argv[];
 {
 	HDGRID	hdg;
 	int	i;
-	int	force = 0;
 						/* mark start time */
 	starttime = time(NULL);
 	initurand(16384);			/* initialize urand */
@@ -224,7 +225,7 @@ initrholo()			/* get our holodeck running */
 	if (ncprocs > 0) {
 		i = start_rtrace();
 		if (i < 1)
-			error(USER, "cannot start rtrace process");
+			error(USER, "cannot start rtrace process(es)");
 		if (vdef(REPORT)) {		/* make first report */
 			printargs(rtargc, rtargv, stderr);
 			report(0);
@@ -507,6 +508,18 @@ PACKET	*pl;
 }
 
 
+checkrad()			/* check to make sure octree is up to date */
+{
+	char	combuf[128];
+
+	if (!vdef(RIF))
+		return;
+	sprintf(combuf, "rad -v 0 -s -w %s", vval(RIF));
+	if (system(combuf))
+		error(WARNING, "error running rad");
+}
+
+
 getradfile(rfargs)		/* run rad and get needed variables */
 char	*rfargs;
 {
@@ -540,10 +553,9 @@ char	*rfargs;
 	else
 		sprintf(cp, ")[ \t]*=' > %s", tf2);
 	if (system(combuf)) {
-		error(SYSTEM, "cannot execute rad command");
 		unlink(tf2);			/* clean up */
 		unlink(tf1);
-		quit(1);
+		error(SYSTEM, "cannot execute rad command");
 	}
 	if (pippt == NULL) {
 		loadvars(tf2);			/* load variables */
