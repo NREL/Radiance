@@ -19,6 +19,8 @@ bright source sun2 0 0 4 .3 1 1 5
 bright source sun3 0 0 4 -1 -.7 1 5
 _EOF_
 
+if ( $status ) goto quit
+
 set vp=`getinfo -d <$octree|rcalc -e '$1=$1-3.5*$4;$2=$2-3.5*$4;$3=$3+2.5*$4'`
 
 $RVIEW -av .2 .2 .2 -vp $vp -vd 1 1 -.5 -vv 15 -vh 15 $octree
