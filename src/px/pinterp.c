@@ -186,11 +186,7 @@ char	*argv[];
 	if (fillsamp == 1)
 		fillo &= ~F_BACK;
 						/* set view */
-	if (ourview.vaft > FTINY)
-		err = "no aft clipping plane allowed";
-	else
-		err = setview(&ourview);
-	if (err != NULL) {
+	if ((err = setview(&ourview)) != NULL) {
 		fprintf(stderr, "%s: %s\n", progname, err);
 		exit(1);
 	}
@@ -213,6 +209,8 @@ char	*argv[];
 		fillpicture(fillfunc);
 							/* close calculation */
 	caldone();
+							/* aft clipping */
+	clipaft();
 							/* add to header */
 	printargs(argc, argv, stdout);
 	if (gotvfile) {
@@ -472,18 +470,20 @@ double	z;
 movepixel(pos)				/* reposition image point */
 FVECT	pos;
 {
+	double	d0, d1;
 	FVECT	pt, direc;
 	
 	if (pos[2] <= 0)		/* empty pixel */
 		return(-1);
+	if (normdist && theirview.type == VT_PER) {	/* adjust distance */
+		d0 = pos[0] + theirview.hoff - .5;
+		d1 = pos[1] + theirview.voff - .5;
+		pos[2] /= sqrt(1. + d0*d0*theirview.hn2 + d1*d1*theirview.vn2);
+	}
 	if (hasmatrix) {
 		pos[0] += theirview.hoff - .5;
 		pos[1] += theirview.voff - .5;
 		if (theirview.type == VT_PER) {
-			if (normdist)	/* adjust for eye-ray distance */
-				pos[2] /= sqrt( 1.
-					+ pos[0]*pos[0]*theirview.hn2
-					+ pos[1]*pos[1]*theirview.vn2 );
 			pos[0] *= pos[2];
 			pos[1] *= pos[2];
 		}
@@ -614,6 +614,36 @@ int	(*fill)();
 		for (x = 0; x < hresolu; x++)
 			if (zscan(y)[x] <= 0)
 				(*fill)(x,y);
+}
+
+
+clipaft()			/* perform aft clipping as indicated */
+{
+	register int	x, y;
+	double	tstdist;
+	double	yzn2, vx;
+
+	if (ourview.vaft <= FTINY)
+		return;
+	tstdist = ourview.vaft;
+	for (y = 0; y < vresolu; y++) {
+		if (ourview.type == VT_PER) {		/* adjust distance */
+			yzn2 = (y+.5)/vresolu + ourview.voff - .5;
+			yzn2 = 1. + yzn2*yzn2*ourview.vn2;
+			tstdist = ourview.vaft * sqrt(yzn2);
+		}
+		for (x = 0; x < hresolu; x++)
+			if (zscan(y)[x] > tstdist) {
+				if (ourview.type == VT_PER) {
+					vx = (x+.5)/hresolu + ourview.hoff - .5;
+					if (zscan(y)[x] <= ourview.vaft *
+						sqrt(vx*vx*ourview.hn2 + yzn2))
+						continue;
+				}
+				bzero(pscan(y)[x], sizeof(COLR));
+				zscan(y)[x] = 0.0;
+			}
+	}
 }
 
 
