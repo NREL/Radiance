@@ -60,8 +60,8 @@ FILE	*fout;
 	for (n = 0; nextloc > 0L; n++) {	/* get the section(s) */
 		lseek(fd, (long)nextloc, 0);
 		read(fd, (char *)&nextloc, sizeof(nextloc));
+		fprintf(fout, "Section %d:\n", n);
 		hdsect = hdinit(fd, NULL);	/* load section directory */
-		fprintf(fout,"Section %d:\n",n);
 		psectstats(hdsect, fout);	/* print section statistics */
 	}
 	nextloc = hdfilen(fd);			/* print global statistics */
