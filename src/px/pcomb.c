@@ -160,12 +160,16 @@ eputs(" [-w][-x xr][-y yr][-e expr][-f file] [ [-s f][-c r g b] picture ..]\n");
 
 combine()			/* combine pictures */
 {
-	int	coldef[3];
+	EPNODE	*coldef[3];
 	COLOR	*scanout;
 	register int	i, j;
 						/* check defined variables */
-	for (j = 0; j < 3; j++)
-		coldef[j] = vardefined(vcolout[j]);
+	for (j = 0; j < 3; j++) {
+		if (vardefined(vcolout[j]))
+			coldef[j] = eparse(vcolout[j]);
+		else
+			coldef[j] = NULL;
+	}
 						/* allocate scanline */
 	scanout = (COLOR *)emalloc(xres*sizeof(COLOR));
 						/* combine files */
@@ -180,12 +184,10 @@ combine()			/* combine pictures */
 		for (xpos = 0; xpos < xres; xpos++) {
 			varset(vxpos, (double)xpos);
 			eclock++;
-			for (j = 0; j < 3; j++)
-				if (coldef[j]) {
+			for (j = 0; j < 3; j++) {
+				if (coldef[j] != NULL) {
 					colval(scanout[xpos],j) =
-						varvalue(vcolout[j]);
-					if (colval(scanout[xpos],j) < 0.0)
-						colval(scanout[xpos],j) = 0.0;
+						evalue(coldef[j]);
 				} else {
 					colval(scanout[xpos],j) = 0.0;
 					for (i = 0; i < nfiles; i++)
@@ -193,6 +195,9 @@ combine()			/* combine pictures */
 						colval(input[i].coef,j) *
 						colval(input[i].scan[xpos],j);
 				}
+				if (colval(scanout[xpos],j) < 0.0)
+					colval(scanout[xpos],j) = 0.0;
+			}
 		}
 		if (fwritescan(scanout, xres, stdout) < 0) {
 			eputs("write error\n");
