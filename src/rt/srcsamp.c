@@ -88,7 +88,7 @@ tryagain:
 	if (source[si->sn].sflags & SFLAT) {
 		si->dom *= sflatform(si->sn, dir);
 		if (si->dom <= FTINY) {		/* behind source */
-			si->sp = si->np;
+			si->np = 0;
 			goto tryagain;
 		}
 		si->dom *= (double)(size[SU]*size[SV])/(MAXSPART*MAXSPART);
@@ -158,7 +158,7 @@ FVECT  ro;
 					/* first check point location */
 	clrpart(si->spt);
 	sp = &source[si->sn];
-	rad2 = 1.273 * DOT(sp->ss[SV],sp->ss[SV]);
+	rad2 = 1.365 * DOT(sp->ss[SV],sp->ss[SV]);
 	v[0] = ro[0] - sp->sloc[0];
 	v[1] = ro[1] - sp->sloc[1];
 	v[2] = ro[2] - sp->sloc[2];
