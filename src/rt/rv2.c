@@ -350,12 +350,13 @@ char  *s;
 	register PNODE  *p = &ptrunk;
 	int  adapt = 0;
 	double  e = 1.0;
-start:
+
 	for (cp = s; isspace(*cp); cp++)
 		;
 	if (*cp == '@') {
 		adapt++;
-		goto start;
+		while (isspace(*++cp))
+			;
 	}
 	if (*cp == '\0') {		/* normalize to point */
 		if (dev->getcur == NULL)
