@@ -30,9 +30,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 extern char	*getpath(), *getenv();
 
-int	onsigio();
-
-int	comm_close(), comm_clear(), comm_paintr(), comm_errout(),
+static int	comm_close(), comm_clear(), comm_paintr(), comm_errout(),
 		comm_getcur(), comm_comout(), comm_comin(), comm_flush();
 
 struct driver	comm_driver = {

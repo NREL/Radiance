@@ -67,9 +67,9 @@ static GC  ourgc = 0;			/* our graphics context for drawing */
 
 static Colormap ourmap = 0;		/* our color map */
 
-extern char  *malloc();
+extern char  *malloc(), *getcombuf();
 
-int  x11_close(), x11_clear(), x11_paintr(), x11_errout(),
+static int  x11_close(), x11_clear(), x11_paintr(), x11_errout(),
 		x11_getcur(), x11_comout(), x11_comin(), x11_flush();
 
 static struct driver  x11_driver = {
@@ -248,7 +248,7 @@ static
 x11_comin(inp, prompt)		/* read in a command line */
 char  *inp, *prompt;
 {
-	int  x11_getc(), x11_comout();
+	extern int  x11_getc();
 
 	if (prompt != NULL)
 		if (fromcombuf(inp, &x11_driver))
