@@ -82,7 +82,7 @@ char	*dname, *id;
 	if (getw(devin) != COM_RECVM)
 		return(NULL);
 						/* get driver parameters */
-	comm_flush();
+	getstate();
 						/* set error vectors */
 	cmdvec = comm_comout;
 	if (wrnvec != NULL)
@@ -141,11 +141,7 @@ comm_flush()				/* flush output to driver */
 	fflush(devout);
 	if (getc(devin) != COM_FLUSH)
 		reply_error("flush");
-	fread((char *)&comm_driver.pixaspect,
-			sizeof(comm_driver.pixaspect), 1, devin);
-	comm_driver.xsiz = getw(devin);
-	comm_driver.ysiz = getw(devin);
-	comm_driver.inpready = getw(devin);
+	getstate();
 }
 
 
@@ -191,7 +187,7 @@ char	*prompt;
 	if (getc(devin) != COM_COMIN)
 		reply_error("comin");
 	mygets(buf, devin);
-	comm_driver.inpready = getw(devin);
+	getstate();
 }
 
 
@@ -236,4 +232,15 @@ char	*routine;
 	stderr_v(routine);
 	stderr_v(": driver reply error\n");
 	quit(1);
+}
+
+
+static
+getstate()				/* get driver state variables */
+{
+	fread((char *)&comm_driver.pixaspect,
+			sizeof(comm_driver.pixaspect), 1, devin);
+	comm_driver.xsiz = getw(devin);
+	comm_driver.ysiz = getw(devin);
+	comm_driver.inpready = getw(devin);
 }
