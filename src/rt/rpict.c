@@ -1,4 +1,4 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1996 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -102,7 +102,7 @@ extern unsigned long  nrays;		/* number of rays traced */
 
 #define	 pixjitter()	(.5+dstrpix*(.5-frandom()))
 
-static int  hres, vres;			/* resolution for this frame */
+int  hres, vres;			/* resolution for this frame */
 
 extern char  *mktemp();
 
@@ -403,7 +403,8 @@ char  *zfile, *oldfile;
 	else
 #endif
 	signal(SIGCONT, report);
-	ypos = vres-1 - i;
+	ypos = vres-1 - i;			/* initialize sampling */
+	init_drawsources(psample);
 	fillscanline(scanbar[0], zbar[0], sampdens, hres, ypos, hstep);
 						/* compute scanlines */
 	for (ypos -= ystep; ypos > -ystep; ypos -= ystep) {
@@ -424,8 +425,7 @@ char  *zfile, *oldfile;
 							/* fill bar */
 		fillscanbar(scanbar, zbar, hres, ypos, ystep);
 							/* add bitty sources */
-		drawsources(&ourview, hres, vres, scanbar, zbar,
-				0, hres, ypos, ystep, psample);
+		drawsources(scanbar, zbar, 0, hres, ypos, ystep);
 							/* write it out */
 #ifndef	 BSD
 		signal(SIGCONT, SIG_IGN);	/* don't interrupt writes */
