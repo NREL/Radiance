@@ -36,7 +36,8 @@ extern double  s_longitude;
 extern double  s_meridian;
 					/* required values */
 int  month, day;				/* date */
-double  hour;					/* standard time */
+double  hour;					/* time */
+int  tsolar;					/* 0=standard, 1=solar */
 double  altitude, azimuth;			/* or solar angles */
 					/* default values */
 int  cloudy = 0;				/* 1=standard, 2=uniform */
@@ -76,6 +77,7 @@ char  *argv[];
 		month = atoi(argv[1]);
 		day = atoi(argv[2]);
 		hour = atof(argv[3]);
+		tsolar = argv[3][0] == '+';
 	}
 	for (i = 4; i < argc; i++)
 		if (argv[i][0] == '-' || argv[i][0] == '+')
@@ -134,7 +136,10 @@ computesky()			/* compute sky parameters */
 
 		jd = jdate(month, day);		/* Julian date */
 		sd = sdec(jd);			/* solar declination */
-		st = hour + stadj(jd);		/* solar time */
+		if (tsolar)			/* solar time */
+			st = hour;
+		else
+			st = hour + stadj(jd);
 		altitude = salt(sd, st);
 		azimuth = sazi(sd, st);
 	}
