@@ -49,7 +49,7 @@ typedef struct {
  *
  * The lu_done routine calls the given free function once for each
  * assigned table entry (i.e. each entry with an assigned key value).
- * The user must define this routines to free the key and the data
+ * The user must define these routines to free the key and the data
  * in the LU_TAB structure.  The final action of lu_done is to free the
  * allocated table itself.
  */
