@@ -173,7 +173,8 @@ char	*argv[];
 					/* all done */
 	quit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-w][-b][-v view] rfile [VAR=value]..\n",
+	fprintf(stderr,
+		"Usage: %s [-w][-s][-b][-S][-v view] rfile [VAR=value]..\n",
 			argv[0]);
 	quit(1);
 }
