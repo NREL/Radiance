@@ -170,8 +170,6 @@ userr:
 headline(s)		/* get relevant info from header */
 char  *s;
 {
-	static char  *altname[] = {"rview","rpict",VIEWSTR,NULL};
-	register char  **an;
 	char  fmt[32];
 
 	if (isexpos(s))
@@ -179,13 +177,8 @@ char  *s;
 	else if (isformat(s)) {
 		formatval(fmt, s);
 		wrongformat = strcmp(fmt, COLRFMT);
-	} else
-		for (an = altname; *an != NULL; an++)
-			if (!strncmp(*an, s, strlen(*an))) {
-				if (sscanview(&ourview, s+strlen(*an)) > 0)
-					gotview++;
-				return;
-			}
+	} else if (isview(s) && sscanview(&ourview, s) > 0)
+		gotview++;
 }
 
 
