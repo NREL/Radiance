@@ -22,7 +22,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define	 OMARGIN	(10*FTINY)	/* margin around global cube */
 
-#define	 MAXOBJFIL	63		/* maximum number of scene files */
+#define	 MAXOBJFIL	127		/* maximum number of scene files */
 
 char  *progname;			/* argv[0] */
 
