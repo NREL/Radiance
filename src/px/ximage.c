@@ -689,7 +689,7 @@ pixel  *l;
 }
 
 
-picreadcm(map)			/* do gamcor correction */
+picreadcm(map)			/* do gamma correction */
 colormap  map;
 {
 	extern double  pow();
