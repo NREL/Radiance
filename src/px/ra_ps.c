@@ -14,6 +14,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #endif
 #include  "color.h"
 
+#define GRY		-1			/* artificial index for grey */
+
 #define HMARGIN		(.5*72)			/* horizontal margin */
 #define VMARGIN		(.5*72)			/* vertical margin */
 #define PWIDTH		(8.5*72-2*HMARGIN)	/* width of device */
@@ -30,6 +32,7 @@ char  code[] =			/* 6-bit code lookup table */
 int  wrongformat = 0;			/* input in wrong format? */
 double	pixaspect = 1.0;		/* pixel aspect ratio */
 
+int  docolor = 0;			/* produce color image? */
 int  bradj = 0;				/* brightness adjustment */
 int  ncopies = 1;			/* number of copies */
 
@@ -64,6 +67,9 @@ char  *argv[];
 	for (i = 1; i < argc; i++)
 		if (argv[i][0] == '-')
 			switch (argv[i][1]) {
+			case 'c':		/* produce color PostScript */
+				docolor++;
+				break;
 			case 'e':		/* exposure adjustment */
 				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
 					goto userr;
@@ -105,7 +111,8 @@ char  *argv[];
 	PStrailer();
 	exit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-e +/-stops] [input [output]]\n", progname);
+	fprintf(stderr, "Usage: %s [-c][-e +/-stops] [input [output]]\n",
+			progname);
 	exit(1);
 }
 
@@ -128,7 +135,7 @@ char  *name;
 	double	pwidth, pheight;
 	double	iwidth, iheight;
 					/* EPS comments */
-	puts("%%!PS-Adobe-2.0 EPSF-2.0");
+	puts("%!PS-Adobe-2.0 EPSF-2.0");
 	printf("%%%%Title: %s\n", name);
 	printf("%%%%Creator: %s = %s\n", progname, SCCSid);
 	printf("%%%%Pages: %d\n", ncopies);
@@ -166,7 +173,16 @@ char  *name;
 	puts("save");
 	puts("64 dict begin");
 					/* define image reader */
-	PSprocdef("read6bitRLE");
+	if (docolor) {
+		printf("/redline %d string def\n", xmax);
+		printf("/grnline %d string def\n", xmax);
+		printf("/bluline %d string def\n", xmax);
+		printf("/rgbline %d string def\n", 3*xmax);
+		PSprocdef("read6bitRLE", "interleave");
+	} else {
+		printf("/greyline %d string def\n", xmax);
+		PSprocdef("read6bitRLE", NULL);
+	}
 					/* set up transformation matrix */
 	printf("%f %f translate\n", HMARGIN, VMARGIN);
 	if (pwidth == PHEIGHT) {
@@ -177,8 +193,12 @@ char  *name;
 	printf("%f %f scale\n", iwidth, iheight);
 	puts("%%%%EndProlog");
 					/* start image procedure */
-	printf("%d %d 8 [%d 0 0 %d 0 %d] {read6bitRLE} image\n", xmax, ymax,
-			xmax, -ymax, ymax);
+	printf("%d %d 8 [%d 0 0 %d 0 %d] ", xmax, ymax, xmax, -ymax, ymax);
+	if (docolor) {
+		puts("{redline read6bitRLE grnline read6bitRLE");
+		puts("\tbluline read6bitRLE rgbline interleave} false 3 colorimage");
+	} else
+		puts("{greyline read6bitRLE} image");
 }
 
 
@@ -194,8 +214,8 @@ PStrailer()			/* print PostScript trailer */
 }
 
 
-PSprocdef(nam)			/* define PS procedure to read image */
-char  *nam;
+PSprocdef(nam, inam)		/* define PS procedure to read image */
+char  *nam, *inam;
 {
 	short  itab[128];
 	register int  i;
@@ -213,11 +233,11 @@ char  *nam;
 		printf(" %3d", itab[i]);
 	}
 	printf("\n] def\n");
-	printf("/scanline %d string def\n", xmax);
 	printf("/nrept 0 def\n");
-	printf("/readbyte { currentfile read not {stop} if } def\n");
-	printf("/decode { codetab exch get } def\n");
-	printf("/%s {\n", nam);
+	printf("/readbyte { currentfile read not {stop} if } bind def\n");
+	printf("/decode { codetab exch get } bind def\n");
+	printf("/%s {\t%% scanbuffer\n", nam);
+	printf("\t/scanline exch def\n");
 	printf("\t{ 0 1 %d { scanline exch\n", xmax-1);
 	printf("\t\tnrept 0 le\n");
 	printf("\t\t\t{ { readbyte dup %d eq\n", RUNCHR);
@@ -231,15 +251,27 @@ char  *nam;
 	printf("\t\t} for\n");
 	printf("\t} stopped {pop pop 0 string} {scanline} ifelse\n");
 	printf("} bind def\n");
+	if (inam == NULL)
+		return;
+					/* define interleaving procedure */
+	printf("/%s {\t%% redscn grnscn bluscn rgbscn\n", inam);
+	printf("\t/rgbscan exch def /bscan exch def\n");
+	printf("\t/gscan exch def /rscan exch def\n");
+	printf("\trscan length %d eq gscan length %d eq and ", xmax, xmax);
+	printf("bscan length %d eq and \n", xmax);
+	printf("\t{ 0 1 %d { /ndx exch def\n", xmax-1);
+	printf("\t\trgbscan ndx 3 mul rscan ndx get put\n");
+	printf("\t\trgbscan ndx 3 mul 1 add gscan ndx get put\n");
+	printf("\t\trgbscan ndx 3 mul 2 add bscan ndx get put\n");
+	printf("\t\t} for rgbscan }\n");
+	printf("\t{0 string} ifelse\n");
+	printf("} bind def\n");
 }
 
 
 ra2ps()				/* convert Radiance scanlines to 6-bit */
 {
 	register COLR	*scanin;
-	register int	c;
-	int	lastc, cnt;
-	register int	x;
 	int	y;
 						/* allocate scanline */
 	scanin = (COLR *)malloc(xmax*sizeof(COLR));
@@ -250,26 +282,46 @@ ra2ps()				/* convert Radiance scanlines to 6-bit */
 		if (freadcolrs(scanin, xmax, stdin) < 0)
 			quiterr("error reading Radiance picture");
 		normcolrs(scanin, xmax, bradj); /* normalize */
-		lastc = -1; cnt = 0;
-		for (x = 0; x < xmax; x++) {
-			c = normbright(scanin[x]) + 2;
-			if (c > 255) c = 255;
-			c = code[c>>2];
-			if (c == lastc && cnt < MAXRUN)
-				cnt++;
-			else {
-				putrle(cnt, lastc);
-				lastc = c;
-				cnt = 1;
-			}
-		}
-		putrle(cnt, lastc);
+		if (docolor) {
+			putprim(scanin, RED);
+			putprim(scanin, GRN);
+			putprim(scanin, BLU);
+		} else
+			putprim(scanin, GRY);
 		if (ferror(stdout))
 			quiterr("error writing PostScript file");
 	}
 	putchar('\n');
 						/* free scanline */
 	free((char *)scanin);
+}
+
+
+putprim(scn, pri)		/* put out one primary from scanline */
+COLR	*scn;
+int	pri;
+{
+	register int	c;
+	register int	x;
+	int	lastc, cnt;
+
+	lastc = -1; cnt = 0;
+	for (x = 0; x < xmax; x++) {
+		if (pri == GRY)
+			c = normbright(scn[x]) + 2;
+		else
+			c = scn[x][pri] + 2;
+		if (c > 255) c = 255;
+		c = code[c>>2];
+		if (c == lastc && cnt < MAXRUN)
+			cnt++;
+		else {
+			putrle(cnt, lastc);
+			lastc = c;
+			cnt = 1;
+		}
+	}
+	putrle(cnt, lastc);
 }
 
 
