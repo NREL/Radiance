@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -6,8 +6,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 /*
  *  oki20c.c - program to dump pixel file to OkiMate 20 color printer.
- *
- *     6/10/87
  */
 
 #include  <stdio.h>
@@ -27,12 +25,6 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #define  sub_add(sub)	(2-(sub))	/* map subtractive to additive pri. */
-
-#ifdef  BSD
-#define  clearlbuf()	bzero((char *)lpat, sizeof(lpat))
-#else
-#define  clearlbuf()	(void)memset((char *)lpat, 0, sizeof(lpat))
-#endif
 
 long  lpat[NCOLS][3];
 
@@ -103,8 +95,6 @@ char  *fname;
 	}
 				/* set line spacing (overlap for knitting) */
 	fputs("\0333\042", stdout);
-				/* clear line buffer */
-	clearlbuf();
 				/* put out scanlines */
 	for (i = yres-1; i >= 0; i--) {
 		if (freadcolrs(scanline, xres, input) < 0) {
@@ -140,34 +130,34 @@ int  y;
 		for (j = 0; j < 3; j++)
 			for (i = 0; i < len; i++)
 				lpat[i][j] |= (long)colbit(scan[i],i,j) << bpos;
-
-	} else {
-
-		fputs("\033\031", stdout);
-
-		for (j = 0; j < 3; j++) {
-			i = (NCOLS + len)/2;		/* center image */
-			fputs("\033%O", stdout);
-			putchar(i & 255);
-			putchar(i >> 8);
-			while (i-- > len) {
-				putchar(0);
-				putchar(0);
-				putchar(0);
-			}
-			for (i = 0; i < len; i++) {
-				c = lpat[i][j] | colbit(scan[i],i,j);
-							/* repeat this row */
-				lpat[i][j] = (c & 1) << 23;
-				putchar(c>>16);
-				putchar(c>>8 & 255);
-				putchar(c & 255);
-			}
-			putchar('\r');
-		}
-		putchar('\n');
-		fflush(stdout);
+		return;
 	}
+	fputs("\033\031", stdout);
+
+	for (j = 0; j < 3; j++) {
+		i = (NCOLS + len)/2;		/* center image */
+		fputs("\033%O", stdout);
+		putchar(i & 255);
+		putchar(i >> 8);
+		while (i-- > len) {
+			putchar(0);
+			putchar(0);
+			putchar(0);
+		}
+		for (i = 0; i < len; i++) {
+			c = lpat[i][j] | colbit(scan[i],i,j);
+			putchar(c>>16);
+			putchar(c>>8 & 255);
+			putchar(c & 255);
+			if (y)			/* repeat this row */
+				lpat[i][j] = (c & 1) << 23;
+			else			/* or clear for next image */
+				lpat[i][j] = 0L;
+		}
+		putchar('\r');
+	}
+	putchar('\n');
+	fflush(stdout);
 }
 
 
