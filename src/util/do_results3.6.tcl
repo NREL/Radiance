@@ -127,19 +127,14 @@ proc dsppic {} {		# Display selected pictures
 		set ev 0
 	} else {
 		if [regexp {^[+-]} $radvar(EXPOSURE)] {
-			set ev $radvar(EXPOSURE)
+			set ev [expr {round($radvar(EXPOSURE))}]
 		} else {
-			set ev [expr {log($radvar(EXPOSURE))/log(2)}]
-		}
-		if {$ev < 0} {
-			set ev [expr {int($ev - .5)}]
-		} else {
-			set ev [expr {int($ev + .5)}]
+			set ev [expr {round(log($radvar(EXPOSURE))/log(2))}]
 		}
 	}
 	foreach p $selected_pics {
 		if {[string match *.unf $p] ||
-				$radvar(PICTURE) == "$radvar(RAWFILE)"} {
+				$radvar(PICTURE) == $radvar(RAWFILE)} {
 			set dc [format $dispcom $ev $p]
 		} else {
 			set dc [format $dispcom 0 $p]
@@ -264,6 +259,9 @@ proc do_results w {		# Results screen
 	# Fill in views
 	if {$radvar(RAWFILE) != {}} {
 		set rawfroot $radvar(RAWFILE)
+		if {$radvar(RAWFILE) == $radvar(PICTURE)} {
+			set curmess "Warning: finished views are unfiltered"
+		}
 	} else {
 		set rawfroot $radvar(PICTURE)
 	}
