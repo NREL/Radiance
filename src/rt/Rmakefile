@@ -16,7 +16,7 @@ INSTALL = cp
 #
 # The following paths must exist and be relative to root:
 #
-DEVDIR = $(LIBDIR)/lib
+DEVDIR = $(INSTDIR)
 LIBDIR = /usr/local/lib/ray
 
 #
@@ -125,10 +125,10 @@ rvmain.o:	rmain.c
 # end of dispersion compiles.
 
 sundev.o:	sundev.c
-	cc $(CFLAGS) -DTTYPROG=\"$(DEVDIR)/sun.com\" -c sundev.c
+	cc $(CFLAGS) -c sundev.c
 
 devcomm.o:	devcomm.c
-	cc $(CFLAGS) -DDEVPATH=\"$(DEVDIR)\" -c devcomm.c
+	cc $(CFLAGS) -c devcomm.c
 
 ambient.o:	ambient.c
 	cc $(CFLAGS) -DAMBFLUSH=16 -c ambient.c
