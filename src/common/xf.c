@@ -26,13 +26,11 @@ char  *av[];
 	double  atof(), sin(), cos();
 	double  xfmat[4][4], m4[4][4];
 	double  xfsca, theta;
-	int  i, j;
-	int  rept;
+	int  i, icnt;
 
 	setident4(retmat);
 	*retsca = 1.0;
 
-	rept = 1;
 	setident4(xfmat);
 	xfsca = 1.0;
 
@@ -106,11 +104,11 @@ char  *av[];
 
 		case 'i':			/* iterate */
 			checkarg("-i",1);
-			for (j = 0; j < rept; j++) {
+			icnt = atoi(av[++i]);
+			while (icnt-- > 0) {
 				multmat4(retmat, retmat, xfmat);
 				*retsca *= xfsca;
 			}
-			rept = atoi(av[++i]);
 			setident4(xfmat);
 			xfsca = 1.0;
 			break;
@@ -122,10 +120,8 @@ char  *av[];
 		multmat4(xfmat, xfmat, m4);
 	}
 done:
-	for (j = 0; j < rept; j++) {
-		multmat4(retmat, retmat, xfmat);
-		*retsca *= xfsca;
-	}
+	multmat4(retmat, retmat, xfmat);
+	*retsca *= xfsca;
 	return(i);
 }
 
@@ -141,13 +137,11 @@ char  *av[];
 	double  atof(), sin(), cos();
 	double  xfmat[4][4], m4[4][4];
 	double  xfsca, theta;
-	int  i, j;
-	int  rept;
+	int  i, icnt;
 
 	setident4(retmat);
 	*retsca = 1.0;
 
-	rept = 1;
 	setident4(xfmat);
 	xfsca = 1.0;
 
@@ -191,7 +185,7 @@ char  *av[];
 
 		case 's':			/* scale */
 			checkarg("-s",1);
-			*xfsca *=
+			xfsca *=
 			m4[0][0] = 
 			m4[1][1] = 
 			m4[2][2] = 1.0 / atof(av[++i]);
@@ -201,17 +195,17 @@ char  *av[];
 			switch (av[i][2]) {
 			case 'x':
 				checkarg("-mx",0);
-				*xfsca *=
+				xfsca *=
 				m4[0][0] = -1.0;
 				break;
 			case 'y':
 				checkarg("-my",0);
-				*xfsca *=
+				xfsca *=
 				m4[1][1] = -1.0;
 				break;
 			case 'z':
 				checkarg("-mz",0);
-				*xfsca *=
+				xfsca *=
 				m4[2][2] = -1.0;
 				break;
 			default:
@@ -221,11 +215,11 @@ char  *av[];
 
 		case 'i':			/* iterate */
 			checkarg("-i",1);
-			for (j = 0; j < rept; j++) {
+			icnt = atoi(av[++i]);
+			while (icnt-- > 0) {
 				multmat4(retmat, xfmat, retmat);
 				*retsca *= xfsca;
 			}
-			rept = atoi(av[++i]);
 			setident4(xfmat);
 			xfsca = 1.0;
 			break;
@@ -237,10 +231,8 @@ char  *av[];
 		multmat4(xfmat, m4, xfmat);	/* left multiply */
 	}
 done:
-	for (j = 0; j < rept; j++) {
-		multmat4(retmat, xfmat, retmat);
-		*retsca *= xfsca;
-	}
+	multmat4(retmat, xfmat, retmat);
+	*retsca *= xfsca;
 	return(i);
 }
 #endif
