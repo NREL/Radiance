@@ -60,7 +60,8 @@ static int  nunflshed = 0;	/* number of unflushed ambient values */
 #endif
 
 static COLOR  avsum = BLKCOLOR;		/* computed ambient value sum */
-static unsigned int  nambvals = 0;	/* number of computed ambient values */
+static unsigned int  nambvals = 0;	/* total number of indirect values */
+static unsigned int  nambshare = 0;	/* number of values from file */
 static unsigned long  ambclock = 0;	/* ambient access clock */
 static unsigned long  lastsort = 0;	/* time of last value sort */
 static long  sortintvl = SORT_INTVL;	/* time until next sort */
@@ -69,9 +70,10 @@ static long  sortintvl = SORT_INTVL;	/* time until next sort */
 	/*
 	 * Track access times unless we are sharing ambient values
 	 * through memory on a multiprocessor, when we want to avoid
-	 * claiming our own memory (copy on write).
+	 * claiming our own memory (copy on write).  Go ahead anyway
+	 * if more than two thirds of our values are unshared.
 	 */
-#define tracktime	(shm_boundary == NULL || ambfp == NULL)
+#define tracktime	(shm_boundary == NULL || nambvals > 3*nambshare)
 
 #define	 AMBFLUSH	(BUFSIZ/AMBVALSIZ)
 
@@ -143,6 +145,7 @@ char  *afile;
 			avinsert(avstore(&amb));
 						/* align */
 		fseek(ambfp, -((ftell(ambfp)-headlen)%AMBVALSIZ), 1);
+		nambshare = nambvals;
 	} else if ((ambfp = fopen(afile, "w+")) != NULL)
 		initambfile(1);
 	else {
