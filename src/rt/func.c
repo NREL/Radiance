@@ -59,7 +59,7 @@ int  dofwd;
 		scompile("Dx=$1;Dy=$2;Dz=$3;", NULL, 0);
 		scompile("Nx=$4;Ny=$5;Nz=$6;", NULL, 0);
 		scompile("Px=$7;Py=$8;Pz=$9;", NULL, 0);
-		scompile("T=$10;Rdot=$11;", NULL, 0);
+		scompile("T=$10;Ts=$25;Rdot=$11;", NULL, 0);
 		scompile("S=$12;Tx=$13;Ty=$14;Tz=$15;", NULL, 0);
 		scompile("Ix=$16;Iy=$17;Iz=$18;", NULL, 0);
 		scompile("Jx=$19;Jy=$20;Jz=$21;", NULL, 0);
@@ -273,14 +273,14 @@ register int  n;
 				fray->rop[2]*funcxf.xfm[2][n-6] +
 					     funcxf.xfm[3][n-6] );
 
-	if (n == 9) {			/* distance */
-
+	if (n == 9) {			/* total distance */
 		sum = fray->rot;
 		for (r = fray->parent; r != NULL; r = r->parent)
 			sum += r->rot;
 		return(sum * funcxf.sca);
 
 	}
+
 	if (n == 10)			/* dot product (range [-1,1]) */
 		return(	fray->rod <= -1.0 ? -1.0 :
 			fray->rod >= 1.0 ? 1.0 :
@@ -300,6 +300,14 @@ register int  n;
 
 	if (n < 24)			/* k unit vector */
 		return(funcxf.xfm[2][n-21] / funcxf.sca);
+
+	if (n == 24) {			/* single ray (shadow) distance */
+		sum = fray->rot;
+		for (r = fray->parent; r != NULL && r->crtype&SHADOW;
+				r = r->parent)
+			sum += r->rot;
+		return(sum * funcxf.sca);
+	}
 badchan:
 	error(USER, "illegal channel number");
 }
