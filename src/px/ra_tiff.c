@@ -278,6 +278,7 @@ initfromtif()		/* initialize conversion from TIFF input */
 		break;
 	case PHOTOMETRIC_MINISBLACK:
 		SET(C_GRY|C_GAMMA|C_GAMUT);
+		setcolrgam(cvts.gamcor);
 		cvts.pconf = PLANARCONFIG_CONTIG;
 		if (!TIFFGetField(cvts.tif, TIFFTAG_SAMPLESPERPIXEL, &hi) ||
 				hi != 1)
