@@ -300,14 +300,20 @@ int	x, y;
 	FVECT	org;			/* dummy variable */
 
 	hl = hlim(y);
-	if (x <= -hl)			/* left region */
+	if (x <= -hl) {			/* left region */
+		if (x <= -hl-sampdens)
+			return(-1);
 		return(viewray(org, vd, &leftview,
 				(double)(x+hl)/(2*sampdens)+.5,
 				(double)y/(2*sampdens)+.5));
-	if (x >= hl)			/* right region */
+	}
+	if (x >= hl) {			/* right region */
+		if (x >= hl+sampdens)
+			return(-1);
 		return(viewray(org, vd, &rightview,
 				(double)(x-hl)/(2*sampdens)+.5,
 				(double)y/(2*sampdens)+.5));
+	}
 					/* central region */
 	if (viewray(org, vd, &ourview, .5, (double)y/(2*sampdens)+.5) < 0)
 		return(-1);
