@@ -59,7 +59,7 @@ char  *ofn[];
 	setmode(fileno(infp), O_BINARY);
 #endif
 					/* get header */
-	if (checkheader(infp, OCTFMT, load&IO_INFO ? stdout : NULL) < 0)
+	if (checkheader(infp, OCTFMT, load&IO_INFO ? stdout : (FILE *)NULL) < 0)
 		octerror(USER, "not an octree");
 					/* check format */
 	if ((objsize = ogetint(2)-OCTMAGIC) <= 0 ||
