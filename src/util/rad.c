@@ -799,16 +799,7 @@ char	*ro;
 	}
 #ifdef MSDOS
 	else if (n > 50) {
-		register char	*evp = bmalloc(n+6);
-		if (evp == NULL)
-			syserr(progname);
-		strcpy(evp, "ROPT=");
-		strcat(evp, ro);
-		if (putenv(evp) != 0) {
-			fprintf(stderr, "%s: out of environment space\n",
-					progname);
-			exit(1);
-		}
+		setenv("ROPT", ro+1);
 		strcpy(ro, " $ROPT");
 	}
 #endif
@@ -854,7 +845,7 @@ register char	*vs;
 	register int	i;
 	double	cent[3], dim[3], mult, d;
 
-	if (vs == NULL || *vs == '-')
+	if (*vs == '-')
 		return(vs);
 	upax = 0;			/* get the up vector */
 	if (vdef(UP)) {
@@ -948,8 +939,13 @@ register char	*vs;
 			cp += strlen(cp);
 		}
 	}
-					/* append any additional options */
-	strcpy(cp, vs);
+	strcpy(cp, vs);			/* append any additional options */
+#ifdef MSDOS
+	if (strlen(viewopts) > 40) {
+		setenv("VIEW", viewopts);
+		return("$VIEW");
+	}
+#endif
 	return(viewopts);
 }
 
@@ -957,11 +953,11 @@ register char	*vs;
 char *
 getview(n, vn)				/* get view n, or NULL if none */
 int	n;
-char	*vn;
+char	*vn;		/* returned view name */
 {
-	register char	*mv;
+	register char	*mv = NULL;
 
-	if (viewselect != NULL) {
+	if (viewselect != NULL) {		/* command-line selected */
 		if (n)				/* only do one */
 			return(NULL);
 		if (viewselect[0] == '-') {	/* already specified */
@@ -980,13 +976,14 @@ char	*vn;
 				return(specview(mv));
 		return(specview(viewselect));	/* standard view? */
 	}
-	if (vn != NULL && (mv = nvalue(vv+VIEW, n)) != NULL) {
+	mv = nvalue(vv+VIEW, n);		/* use view n */
+	if (vn != NULL & mv != NULL) {
 		if (*mv != '-')
 			while (*mv && !isspace(*mv))
 				*vn++ = *mv++;
 		*vn = '\0';
 	}
-	return(specview(nvalue(vv+VIEW, n)));	/* use view n */
+	return(specview(mv));
 }
 
 
@@ -1128,6 +1125,26 @@ char	*fn;
 		return(0);
 	return(unlink(fn));
 }
+
+
+#ifdef MSDOS
+setenv(vname, value)		/* set an environment variable */
+char	*vname, *value;
+{
+	register char	*evp;
+
+	evp = bmalloc(strlen(vname)+strlen(value)+2);
+	if (evp == NULL)
+		syserr(progname);
+	sprintf(evp, "%s=%s", vname, value);
+	if (putenv(evp) != 0) {
+		fprintf(stderr, "%s: out of environment space\n", progname);
+		exit(1);
+	}
+	if (!silent)
+		printf("set %s\n", evp);
+}
+#endif
 
 
 badvalue(vc)			/* report bad variable value and exit */
