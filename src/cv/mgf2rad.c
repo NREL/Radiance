@@ -1,4 +1,4 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1996 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -539,8 +539,7 @@ material()			/* get (and print) current material */
 		return(mname);
 	}
 					/* check for plastic */
-	if (c_cmaterial->rs < .1 && (c_cmaterial->rs < .01 ||
-					c_isgrey(&c_cmaterial->rs_c))) {
+	if (c_cmaterial->rs < .1) {
 		cvtcolor(radrgb, &c_cmaterial->rd_c,
 					c_cmaterial->rd/(1.-c_cmaterial->rs));
 		fprintf(matfp, "\nvoid plastic %s\n0\n0\n", mname);
