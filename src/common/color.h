@@ -46,12 +46,20 @@ typedef float  COLOR[3];	/* red, green, blue */
 				? (col)[0] > (col)[2] ? (col)[0] : (col)[2] \
 				: (col)[1] > (col)[2] ? (col)[1] : (col)[2] )
 
+#define  colrval(c,p)		( (c)[EXP] ? \
+				ldexp((c)[p]+.5,(int)(c)[EXP]-(COLXS+8)) : \
+				0. )
+
+#define  norm_bright(c)		(int)((77L*(c)[RED]+151L*(c)[GRN]+28L*(c)[BLU])/256)
+
 #define  WHTCOLOR		{1.0,1.0,1.0}
 #define  BLKCOLOR		{0.0,0.0,0.0}
 #define  WHTCOLR		{128,128,128,COLXS+1}
 #define  BLKCOLR		{0,0,0,0}
 
-				/* defines for resolution header */
+				/* definitions for resolution header */
 #define  XDECR			1
 #define  YDECR			2
 #define  YMAJOR			4
+
+extern double  ldexp();
