@@ -20,12 +20,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  FILTER		"pfilt -1 -x %d -y %d -p %f %s",NCOLS,NROWS,ASPECT
 
-#ifdef  BSD
-#define  clearlbuf()	bzero((char *)lpat, sizeof(lpat))
-#else
-#define  clearlbuf()	(void)memset((char *)lpat, 0, sizeof(lpat))
-#endif
-
 long  lpat[NCOLS];
 
 int  dofilter = 0;		/* filter through pfilt first? */
@@ -95,8 +89,6 @@ char  *fname;
 	}
 				/* set line spacing (overlap for knitting) */
 	fputs("\0333\042\022", stdout);
-				/* clear line buffer */
-	clearlbuf();
 				/* put out scanlines */
 	for (i = yres-1; i >= 0; i--) {
 		if (freadcolrs(scanline, xres, input) < 0) {
@@ -157,8 +149,10 @@ int  y;
 		putchar(c>>16);
 		putchar(c>>8 & 255);
 		putchar(c & 255);
-					/* repeat this row next time */
-		lpat[i] = (c & 1) << 23;
+		if (y)			/* repeat this row next time */
+			lpat[i] = (c & 1) << 23;
+		else			/* or clear for next image */
+			lpat[i] = 0L;
 	}
 	putchar('\r');
 	putchar('\n');
