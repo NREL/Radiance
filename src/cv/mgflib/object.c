@@ -18,7 +18,7 @@ char	**obj_name;			/* name list */
 
 static int	obj_maxname;		/* allocated list size */
 
-#define ALLOC_INC	16		/* list increment */
+#define ALLOC_INC	16		/* list increment ( > 1 ) */
 
 
 int
@@ -35,7 +35,7 @@ char	**av;
 	}
 	if (ac != 2)
 		return(MG_EARGC);
-	if (obj_nnames >= obj_maxname) {	/* enlarge array */
+	if (obj_nnames >= obj_maxname-1) {	/* enlarge array */
 		if (!obj_maxname)
 			obj_name = (char **)malloc(
 				(obj_maxname=ALLOC_INC)*sizeof(char *));
