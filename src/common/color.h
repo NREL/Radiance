@@ -187,9 +187,13 @@ extern double  atof(), ldexp(), frexp();
 extern RGBPRIMS  stdprims;		/* standard primary chromaticities */
 extern COLORMAT  rgb2xyzmat;		/* RGB to XYZ conversion matrix */
 extern COLORMAT  xyz2rgbmat;		/* XYZ to RGB conversion matrix */
+extern COLOR  cblack, cwhite;		/* black (0,0,0) and white (1,1,1) */
 
-#define  cie_rgb(rgb,xyz)	colortrans(rgb,xyz2rgbmat,xyz,1)
-#define  rgb_cie(xyz,rgb)	colortrans(xyz,rgb2xyzmat,rgb,1)
+#define  CGAMUT_LOWER		01
+#define  CGAMUT_UPPER		02
+#define  CGAMUT			(CGAMUT_LOWER|CGAMUT_UPPER)
+
+#define  rgb_cie(xyz,rgb)	colortrans(xyz,rgb2xyzmat,rgb)
 
 #ifdef BSD
 #define  cpcolormat(md,ms)	bcopy((char *)ms,(char *)md,sizeof(COLORMAT))
