@@ -36,8 +36,8 @@ genblinds:	genblinds.o
 genprism:	genprism.o
 	cc $(CFLAGS) -o genprism genprism.o
 
-xform:	xform.o xf.o mat4.o
-	cc $(CFLAGS) -o xform xform.o xf.o mat4.o -lm
+xform:	xform.o xf.o mat4.o fgetline.o
+	cc $(CFLAGS) -o xform xform.o xf.o mat4.o fgetline.o -lm
 
 genrev:	genrev.o calexpr.o caldefn.o calfunc.o \
 ealloc.o savestr.o
