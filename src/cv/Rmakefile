@@ -26,4 +26,4 @@ $(DESTDIR)/nff2rad:	nff2rad.o
 
 arch2rad.o trans.o:	trans.h
 
-spec_rgb.o:	color.h
+ies2rad.o spec_rgb.o:	color.h
