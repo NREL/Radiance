@@ -37,7 +37,6 @@ proc make_oct args {		# Make octree file ($args is {-t} or {})
 		set fi [open "|make $radvar(OCTREE) $args" r]
 		while {[gets $fi curmess] >= 0} { update ; after 1000 }
 		catch {close $fi} curmess
-		if {"$args" == {}} {return}
 	}
 	if {"$args" == {}} {
 		run_rad -v 0
