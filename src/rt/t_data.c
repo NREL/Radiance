@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -39,8 +39,8 @@ register OBJREC  *m;
 RAY  *r;
 {
 	int  nv;
-	FVECT  dval, disp;
-	double  pt[MAXDIM];
+	FVECT  disp;
+	double  dval[3], pt[MAXDIM];
 	double  d;
 	DATARRAY  *dp;
 	register MFUNC  *mf;
@@ -53,11 +53,10 @@ RAY  *r;
 	mf = getfunc(m, 6, i<<7, 1);
 	setfunc(m, r);
 	errno = 0;
-	for (i = 0; i < nv; i++) {
+	for (i = 0; i < nv; i++)
 		pt[i] = evalue(mf->ep[i]);
-		if (errno)
-			goto computerr;
-	}
+	if (errno)
+		goto computerr;
 	dval[0] = datavalue(dp, pt);
 	for (i = 1; i < 3; i++) {
 		dp = getdata(m->oargs.sarg[i+3]);
@@ -66,11 +65,10 @@ RAY  *r;
 		dval[i] = datavalue(dp, pt);
 	}
 	errno = 0;
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < 3; i++)
 		disp[i] = funvalue(m->oargs.sarg[i], 3, dval);
-		if (errno)
-			goto computerr;
-	}
+	if (errno)
+		goto computerr;
 	if (mf->f != &unitxf)
 		multv3(disp, disp, mf->f->xfm);
 	if (r->rox != NULL) {
