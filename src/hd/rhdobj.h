@@ -21,7 +21,7 @@
 #define DO_NCMDS	10		/* number of object display commands */
 
 					/* commands entered on stdin only */
-#define DO_INIT		{"load","unload","xform","move","unmove","dup",\
+#define DO_INIT		{"load","clear","xform","move","unmove","dup",\
 				"show","light","hide","object"}
 
 /*******************************************************************
