@@ -133,7 +133,7 @@ register struct ohtab  *tab;
 		tab->hsiz = nexthsiz(tab->hsiz);
 		tab->htab = (OBJECT *)malloc(tab->hsiz*sizeof(OBJECT));
 		if (tab->htab == NULL)
-			error(SYSTEM, "out of memory in tputo");
+			error(SYSTEM, "out of memory in otndx");
 		ndx = tab->hsiz;
 		while (ndx--)			/* empty it */
 			tab->htab[ndx] = OVOID;
