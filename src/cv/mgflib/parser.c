@@ -348,14 +348,15 @@ mg_load(fn)			/* load an MGF file */
 char	*fn;
 {
 	MG_FCTXT	cntxt;
-	register int	rval;
+	int	rval;
+	register int	nbr;
 
 	if ((rval = mg_open(&cntxt, fn)) != MG_OK) {
 		fprintf(stderr, "%s: %s\n", fn, mg_err[rval]);
 		return(rval);
 	}
-	while ((rval = mg_read()) > 0) {	/* parse each line */
-		if (rval >= MG_MAXLINE-1 && cntxt.inpline[rval-1] != '\n') {
+	while ((nbr = mg_read()) > 0) {	/* parse each line */
+		if (nbr >= MG_MAXLINE-1 && cntxt.inpline[nbr-1] != '\n') {
 			fprintf(stderr, "%s: %d: %s\n", cntxt.fname,
 					cntxt.lineno, mg_err[rval=MG_ELINE]);
 			break;
@@ -427,8 +428,10 @@ char	**av;
 		for (i = 1; i < ac-1; i++)
 			xfarg[i] = av[i+1];
 		xfarg[ac-1] = NULL;
-		if ((rv = mg_handle(MG_E_XF, ac-1, xfarg)) != MG_OK)
+		if ((rv = mg_handle(MG_E_XF, ac-1, xfarg)) != MG_OK) {
+			mg_close();
 			return(rv);
+		}
 	}
 	do {
 		while ((rv = mg_read()) > 0) {
@@ -447,8 +450,10 @@ char	**av;
 			}
 		}
 		if (ac > 2)
-			if ((rv = mg_handle(MG_E_XF, 1, xfarg)) != MG_OK)
+			if ((rv = mg_handle(MG_E_XF, 1, xfarg)) != MG_OK) {
+				mg_close();
 				return(rv);
+			}
 	} while (xf_context != xf_orig);
 	mg_close();
 	return(MG_OK);
