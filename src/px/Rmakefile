@@ -1,6 +1,5 @@
-# SCCSid "$SunId$ LBL"
-
 #
+# SCCSid "$SunId$ LBL"
 #  Compiles for image processing and display programs
 #
 
@@ -10,7 +9,7 @@ CFLAGS = $(OPT) $(MACH) -I../common
 
 INSTDIR = /lumen/lumen/ray/bin.sun3
 
-LIBDIR = /lumen/lumen/ray/lib
+LIBDIR = /usr/local/lib/ray
 
 PIXAR_INCLUDE=	-I/usr/pixar/include
 PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar -lm
@@ -36,7 +35,7 @@ install:	$(PROGS) normpat.csh falsecolor.csh
 	chmod 755 $(INSTDIR)/normpat $(INSTDIR)/falsecolor
 
 clean:
-	set nonomatch; rm -f $(PROGS) aedimage x10image *.o core
+	set nonomatch; rm -f $(PROGS) *.o core
 
 pfilt:	pfilt.o pf2.o pf3.o
 	cc $(CFLAGS) -o pfilt pfilt.o pf2.o pf3.o ../common/librt.a -lm
@@ -159,7 +158,7 @@ ra_pr.o pvalue.o pcomb.o pinterp.o ximage.o:	../common/color.h
 prot.o biq.o ciq.o pinterp.o ximage.o \
 image.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
 
-ximage.o x11raster.o:	xraster.h
+ximage.o xraster.o:	xraster.h
 
 x11image.o x11raster.o:	x11raster.h
 
