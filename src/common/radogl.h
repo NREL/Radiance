@@ -7,11 +7,11 @@
  */
 
 #include "standard.h"
+#include <GL/glu.h>
 #include "color.h"
 #include "object.h"
 #include "otypes.h"
 #include "lookup.h"
-#include <GL/glu.h>
 
 #define MAXLIGHTS	8	/* number of OGL light sources */
 

@@ -1,11 +1,11 @@
-/* Copyright (c) 1997 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
-/* SCCSid "$SunId$ LBL" */
+/* SCCSid "$SunId$ SGI" */
 
 /*
  *  color.h - header for routines using pixel color values.
  *
- *     12/31/85
+ *  Must be included after X11 headers, since they declare a BYTE type.
  *
  *  Two color representations are used, one for calculation and
  *  another for storage.  Calculation is done with three floats
@@ -23,7 +23,8 @@
 #define  COLXS		128	/* excess used for exponent */
 #define  WHT		3	/* used for RGBPRIMS type */
 
-typedef unsigned char  BYTE;	/* 8-bit unsigned integer */
+#undef  BYTE
+#define  BYTE 	unsigned char	/* 8-bit unsigned integer */
 
 typedef BYTE  COLR[4];		/* red, green, blue (or X,Y,Z), exponent */
 
