@@ -995,14 +995,14 @@ char	*vn;		/* returned view name */
 		}
 						/* view number? */
 		if (isint(viewselect))
-			return(specview(nvalue(vv+VIEW, atoi(viewselect)-1)));
+			return(specview(nvalue(VIEW, atoi(viewselect)-1)));
 						/* check list */
-		while ((mv = nvalue(vv+VIEW, n++)) != NULL)
+		while ((mv = nvalue(VIEW, n++)) != NULL)
 			if (matchword(viewselect, mv))
 				return(specview(mv));
 		return(specview(viewselect));	/* standard view? */
 	}
-	mv = nvalue(vv+VIEW, n);		/* use view n */
+	mv = nvalue(VIEW, n);		/* use view n */
 	if (vn != NULL & mv != NULL) {
 		register char	*mv2 = mv;
 		if (*mv2 != '-')
