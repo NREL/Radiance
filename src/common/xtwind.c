@@ -88,7 +88,7 @@ register TEXTWIND  *t;
 	case '\n':
 		if (t->r >= t->nr - 1)
 			xt_delete(t, 0);	/* scroll up 1 line */
-		else if (t->r < t->nr - 1)
+		else
 			t->r++;
 	/* fall through */
 	case '\r':
