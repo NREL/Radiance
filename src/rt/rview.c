@@ -67,7 +67,7 @@ int  ambres = 32;			/* ambient resolution */
 int  ambdiv = 256;			/* ambient divisions */
 int  ambssamp = 64;			/* ambient super-samples */
 int  ambounce = 0;			/* ambient bounces */
-char  *amblist[128];			/* ambient include/exclude list */
+char  *amblist[AMBLLEN];		/* ambient include/exclude list */
 int  ambincl = -1;			/* include == 1, exclude == 0 */
 
 int  greyscale = 0;			/* map colors to brightness? */

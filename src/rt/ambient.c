@@ -24,7 +24,9 @@ static const char	RCSid[] = "$Id$";
 
 extern char  *shm_boundary;	/* memory sharing boundary */
 
-#define	 MAXASET	511	/* maximum number of elements in ambient set */
+#ifndef  MAXASET
+#define	 MAXASET	2047	/* maximum number of elements in ambient set */
+#endif
 OBJECT	ambset[MAXASET+1]={0};	/* ambient include/exclude set */
 
 double	maxarad;		/* maximum ambient radius */

@@ -85,7 +85,7 @@ int  ambres = 256;			/* ambient resolution */
 int  ambdiv = 1024;			/* ambient divisions */
 int  ambssamp = 512;			/* ambient super-samples */
 int  ambounce = 0;			/* ambient bounces */
-char  *amblist[128];			/* ambient include/exclude list */
+char  *amblist[AMBLLEN];		/* ambient include/exclude list */
 int  ambincl = -1;			/* include == 1, exclude == 0 */
 
 static int  castonly = 0;

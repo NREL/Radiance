@@ -119,8 +119,10 @@ extern int	ambincl;	/* include == 1, exclude == 0 */
 extern int	ray_pnprocs;	/* number of child processes */
 extern int	ray_pnidle;	/* number of idle processes */
 
-#define AMBLLEN		128	/* max. ambient list length */
-#define AMBWORD		8	/* average word length */
+#ifndef AMBLLEN
+#define AMBLLEN		512	/* max. ambient list length */
+#endif
+#define AMBWORD		12	/* average word length */
 
 typedef struct {		/* rendering parameter holder */
 	int	do_irrad;
