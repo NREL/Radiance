@@ -14,7 +14,8 @@ COMPAT = bmalloc.o erf.o strcmp.o # frexp.o fwrite.o random.o
 LIBDIR = /usr/local/lib/ray
 
 RTOBJ = cone.o face.o instance.o readobj.o readoct.o otypes.o objset.o \
-	octree.o readfargs.o modobject.o getlibpath.o addobjnotify.o
+	octree.o readfargs.o modobject.o getlibpath.o addobjnotify.o \
+	zeroes.o
 
 PICOBJ = color.o header.o image.o lamps.o resolu.o rexpr.o spec_rgb.o \
 	colrops.o font.o tonemap.o tmapcolrs.o tmapluv.o
