@@ -1,6 +1,5 @@
-#
-# SCCSid "$SunId$ LBL"
 #  Compiles for image processing and display programs
+# SCCSid "$SunId$ LBL"
 #
 
 ARCH = sun
@@ -29,6 +28,9 @@ x10:	x10image
 aed:	aedimage
 	cp aedimage $(INSTDIR)
 
+sgi:	glimage
+	cp glimage $(INSTDIR)
+
 tiff:	ra_tiff
 	cp ra_tiff $(INSTDIR)
 
@@ -41,7 +43,8 @@ install:	$(PROGS) $(SPECIAL) normpat.csh falsecolor.csh
 	chmod 755 $(INSTDIR)/normpat $(INSTDIR)/falsecolor
 
 clean:
-	set nonomatch; rm -f $(PROGS) *.o core
+	set nonomatch; rm -f x10image aedimage glimage ra_tiff \
+$(PROGS) *.o core
 
 pfilt:	pfilt.o pf2.o pf3.o
 	cc $(CFLAGS) -o pfilt pfilt.o pf2.o pf3.o -lrt -lm
