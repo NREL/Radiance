@@ -382,6 +382,7 @@ std_comout(outp)		/* write out string to stdout */
 char	*outp;
 {
 	fputs(outp, stdout);
+	fflush(stdout);
 }
 
 
