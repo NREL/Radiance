@@ -81,7 +81,7 @@ genworm.o replmarks.o:	../common/fvect.h
 gensurf.o xform.o:	../common/standard.h \
 ../common/rtmisc.h ../common/rtio.h \
 ../common/rtmath.h ../common/rterror.h \
-../common/mat4.h ../common/fvect.h
+../common/mat4.h ../common/fvect.h ../common/tifftypes.h
 
 genworm.o genrev.o gensurf.o:	../common/resolu.h ../common/rterror.h
 

@@ -230,7 +230,7 @@ rhinfo.o clumpbeams.o rhoptimize.o rhpict.o rhpict2.o:	holo.h \
 ../common/vars.h ../common/color.h \
 ../common/standard.h ../common/rtmisc.h ../common/rtio.h \
 ../common/rtmath.h ../common/mat4.h ../common/fvect.h \
-../common/rterror.h
+../common/rterror.h ../common/tifftypes.h
 
 rhcopy.o:	../common/resolu.h ../common/view.h
 
