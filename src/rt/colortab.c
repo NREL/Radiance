@@ -37,6 +37,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define CNODE		short
 #define set_branch(p,c)	((c)<<2|(p))
 #define set_pval(pv)	((pv)<<2|3)
+#define is_branch(cn)	(((cn)&3)!=3)
 #define is_pval(cn)	(((cn)&3)==3)
 #define part(cn)	((cn)>>2)
 #define prim(cn)	((cn)&3)
@@ -68,7 +69,7 @@ int	ncolors;
 				/* clear color table */
 	bzero(clrtab, sizeof(clrtab));
 				/* partition color space */
-	cut(ctree, FBDEPTH, CLRCUBE, 0, ncolors);
+	cut(ctree, 0, CLRCUBE, 0, ncolors);
 				/* clear histogram */
 	bzero(histo, sizeof(histo));
 				/* return number of colors used */
@@ -96,15 +97,11 @@ int	(*set_pixel)();
 						/* add to histogram */
 	histo[cv[RED]][cv[GRN]][cv[BLU]]++;
 						/* find pixel in tree */
-	p.t = ctree;
-	for (h = FBDEPTH; h > 0; h--) {
-		if (is_pval(*p.t))
-			break;
+	for (p.t = ctree, h = 0; is_branch(*p.t); h++)
 		if (cv[prim(*p.t)] < part(*p.t))
-			p.t++;		/* left branch */
+			p.t += 1<<h;		/* left branch */
 		else
-			p.t += 1<<h;	/* right branch */
-	}
+			p.t += 1<<(h+1);	/* right branch */
 	h = pval(*p.t);
 						/* add to color table */
 	p.e = clrtab + h;
@@ -158,9 +155,9 @@ BYTE	*rmap, *gmap, *bmap;
 
 
 static
-cut(tree, height, box, c0, c1)		/* partition color space */
+cut(tree, level, box, c0, c1)		/* partition color space */
 register CNODE	*tree;
-int	height;
+int	level;
 register int	box[3][2];
 int	c0, c1;
 {
@@ -175,11 +172,11 @@ int	c0, c1;
 	bcopy(box, kb, sizeof(kb));
 						/* do left (lesser) branch */
 	kb[prim(*tree)][1] = part(*tree);
-	cut(tree+1, height-1, kb, c0, (c0+c1)>>1);
+	cut(tree+(1<<level), level+1, kb, c0, (c0+c1)>>1);
 						/* do right branch */
 	kb[prim(*tree)][0] = part(*tree);
 	kb[prim(*tree)][1] = box[prim(*tree)][1];
-	cut(tree+(1<<height), height-1, kb, (c0+c1)>>1, c1);
+	cut(tree+(1<<(level+1)), level+1, kb, (c0+c1)>>1, c1);
 }
 
 
