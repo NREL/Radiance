@@ -51,19 +51,19 @@ char  *s;
  *  large blocks to optimize paging in VM environments.
  */
 
-#ifdef  BIGMEM
-#ifndef  MINBLOCK
-#define  MINBLOCK	(1<<12)		/* minimum allocation block size */
-#endif
-#ifndef  MAXBLOCK
-#define  MAXBLOCK	(1<<16)		/* maximum allocation block size */
-#endif
-#else
+#ifdef  SMLMEM
 #ifndef  MINBLOCK
 #define  MINBLOCK	(1<<10)		/* minimum allocation block size */
 #endif
 #ifndef  MAXBLOCK
 #define  MAXBLOCK	(1<<14)		/* maximum allocation block size */
+#endif
+#else
+#ifndef  MINBLOCK
+#define  MINBLOCK	(1<<12)		/* minimum allocation block size */
+#endif
+#ifndef  MAXBLOCK
+#define  MAXBLOCK	(1<<16)		/* maximum allocation block size */
 #endif
 #endif
 

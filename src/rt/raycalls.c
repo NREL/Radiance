@@ -78,7 +78,7 @@ static const char	RCSid[] = "$Id$";
  *  restarted at any point by calling ray_init() on a new
  *  octree.
  *
- *  The call ray_save(rp) allocates and returns a buffer
+ *  The call ray_save(rp) fills a parameter structure
  *  with the current global parameter settings, which may be
  *  restored at any time with a call to ray_restore(rp).
  *  This buffer contains no linked information, and thus
@@ -179,9 +179,9 @@ char	*otnm;
 					/* ready to go... */
 }
 
-
 void
-ray_trace(RAY *r)		/* trace a primary ray */
+ray_trace(r)			/* trace a primary ray */
+RAY	*r;
 {
 	rayorigin(r, NULL, PRIMARY, 1.0);
 	samplendx++;

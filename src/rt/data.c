@@ -17,10 +17,10 @@ static const char	RCSid[] = "$Id$";
 
 				/* picture memory usage before warning */
 #ifndef PSIZWARN
-#ifdef BIGMEM
-#define PSIZWARN	5000000
-#else
+#ifdef SMLMEM
 #define PSIZWARN	1500000
+#else
+#define PSIZWARN	5000000
 #endif
 #endif
 

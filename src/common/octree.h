@@ -33,10 +33,10 @@
 #define  octti(ot)	(((ot)&03777)<<3)/* octree index in block */
 
 #ifndef  MAXOBLK
-#ifdef  BIGMEM
-#define  MAXOBLK	32767		/* maximum octree block */
-#else
+#ifdef  SMLMEM
 #define  MAXOBLK	4095		/* maximum octree block */
+#else
+#define  MAXOBLK	32767		/* maximum octree block */
 #endif
 #endif
 

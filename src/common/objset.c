@@ -16,10 +16,10 @@ static const char	RCSid[] = "$Id$";
 #include  "object.h"
 
 #ifndef  OSTSIZ
-#ifdef  BIGMEM
-#define  OSTSIZ		262139		/* object table size (a prime!) */
-#else
+#ifdef  SMLMEM
 #define  OSTSIZ		32749		/* object table size (a prime!) */
+#else
+#define  OSTSIZ		262139		/* object table size (a prime!) */
 #endif
 #endif
 

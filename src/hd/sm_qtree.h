@@ -42,10 +42,10 @@ typedef struct _FUNC {
 
 
 #ifndef  QT_MAX_BLK
-#ifdef  BIGMEM
-#define  QT_MAX_BLK	16383		/* maximum quadtree block */
-#else
+#ifdef  SMLMEM
 #define  QT_MAX_BLK	2047		/* maximum quadtree block */
+#else
+#define  QT_MAX_BLK	16383		/* maximum quadtree block */
 #endif
 #endif
 

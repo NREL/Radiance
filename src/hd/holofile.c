@@ -10,10 +10,10 @@ static const char	RCSid[] = "$Id$";
 #include "holo.h"
 
 #ifndef CACHESIZE
-#ifdef BIGMEM
-#define CACHESIZE	17	/* default cache size (Mbytes, 0==inf) */
-#else
+#ifdef SMLMEM
 #define CACHESIZE	5
+#else
+#define CACHESIZE	17	/* default cache size (Mbytes, 0==inf) */
 #endif
 #endif
 #ifndef FREEBEAMS

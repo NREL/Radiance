@@ -21,10 +21,10 @@ int	xres, yres;			/* input resolution */
 int	correctorder = 0;		/* order correction? */
 int	ccw = 0;			/* rotate CCW? */
 
-#ifdef BIGMEM
-char	buf[1<<22];			/* output buffer */
-#else
+#ifdef SMLMEM
 char	buf[1<<20];			/* output buffer */
+#else
+char	buf[1<<22];			/* output buffer */
 #endif
 
 int	nrows;				/* number of rows output at once */
