@@ -51,7 +51,7 @@ int  (*callback)();
 		} else if (c == '!') {			/* command */
 			ungetc(c, infp);
 			fgetline(buf, sizeof(buf), infp);
-			readobj(buf);
+			readobj(buf, callback);
 		} else {				/* object */
 			ungetc(c, infp);
 			getobject(input, infp, callback);
@@ -72,8 +72,8 @@ int  (*f)();
 	char  sbuf[MAXSTR];
 	OBJREC  thisobj;
 					/* get modifier */
-	fscanf(fp, "%s", sbuf);
-	thisobj.omod = modifier(sbuf);
+	fscanf(fp, "%*s");
+	thisobj.omod = OVOID;
 					/* get type */
 	fscanf(fp, "%s", sbuf);
 	if (!strcmp(sbuf, ALIASID))
