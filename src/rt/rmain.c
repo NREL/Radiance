@@ -129,7 +129,7 @@ char  *argv[];
 					/* initialize object types */
 	initotypes();
 					/* initialize urand */
-	initurand(512);
+	initurand(2048);
 					/* option city */
 	for (i = 1; i < argc && argv[i][0] == '-'; i++) {
 		if (!strcmp(argv[i], "-defaults") ||
