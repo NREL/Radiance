@@ -18,7 +18,7 @@ typedef struct packet {
 	int4	bi;		/* beam index (second) */
 	int4	nr;		/* number of rays (third) */
 	int4	nc;		/* number calculated (fourth) */
-	RAYVAL	ra[RPACKSIZ];	/* ray values (fourth) */
+	RAYVAL	ra[RPACKSIZ];	/* ray values (fifth) */
 	float	*offset;	/* offset array if !vbool(OBSTRUCTIONS) */
 	struct packet	*next;	/* next in packet list */
 } PACKET;		/* a beam packet */
