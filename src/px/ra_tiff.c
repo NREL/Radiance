@@ -18,6 +18,8 @@ extern double  atof();
 
 extern char  *malloc(), *realloc();
 
+int  lzcomp = 0;			/* use Lempel-Ziv compression? */
+
 double	gamma = 2.2;			/* gamma correction */
 
 int  bradj = 0;				/* brightness adjustment */
@@ -39,6 +41,9 @@ char  *argv[];
 			switch (argv[i][1]) {
 			case 'g':
 				gamma = atof(argv[++i]);
+				break;
+			case 'z':
+				lzcomp = !lzcomp;
 				break;
 			case 'e':
 				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
@@ -71,7 +76,8 @@ doneopts:
 
 	exit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-r][-e +/-stops] input output\n",
+	fprintf(stderr,
+		"Usage: %s [-r][-z][-e +/-stops][-g gamma] input output\n",
 			progname);
 	exit(1);
 }
@@ -194,6 +200,8 @@ char	*inpf, *outf;
 	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8);
 	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, 2);
 	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, 1);
+	if (lzcomp)
+		TIFFSetField(tif, TIFFTAG_COMPRESSION, (unsigned short)5);
 						/* allocate scanlines */
 	scanin = (COLR *)malloc(xmax*sizeof(COLR));
 	scanout = (BYTE *)malloc(TIFFScanlineSize(tif));
