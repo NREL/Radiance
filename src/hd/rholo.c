@@ -453,8 +453,8 @@ loadholo()			/* start loading a holodeck from fname */
 	int4	nextloc;
 					/* open holodeck file */
 	if ((fp = fopen(hdkfile, ncprocs>0 ? "r+" : "r")) == NULL) {
-		sprintf(errmsg, "cannot open \"%s\" for %s", hdkfile,
-				ncprocs>0 ? "appending" : "reading");
+		sprintf(errmsg, "cannot %s \"%s\"",
+				ncprocs>0 ? "append" : "read", hdkfile);
 		error(SYSTEM, errmsg);
 	}
 					/* load variables from header */
