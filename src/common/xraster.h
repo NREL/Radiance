@@ -1,6 +1,8 @@
-/*
+/* Copyright 1988 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
+
+/*
  * xraster.h - header file for X routines using Sun rasterfiles.
  *
  *	2/18/88
