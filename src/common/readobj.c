@@ -18,6 +18,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <ctype.h>
 
+extern char  *fgetword(), *strcpy();
+
 OBJREC  *objblock[MAXOBJBLK];		/* our objects */
 OBJECT  nobjects = 0;			/* # of objects */
 
@@ -77,7 +79,8 @@ FILE  *fp;
 		error(SYSTEM, "out of object space");
 	objp = objptr(obj);
 					/* get modifier */
-	fscanf(fp, "%s", sbuf);
+	strcpy(sbuf, "EOF");
+	fgetword(sbuf, MAXSTR, fp);
 	if (!strcmp(sbuf, VOIDID))
 		objp->omod = OVOID;
 	else if ((objp->omod = modifier(sbuf)) == OVOID) {
@@ -85,7 +88,8 @@ FILE  *fp;
 		error(USER, errmsg);
 	}
 					/* get type */
-	fscanf(fp, "%s", sbuf);
+	strcpy(sbuf, "EOF");
+	fgetword(sbuf, MAXSTR, fp);
 	if (!strcmp(sbuf, ALIASID))
 		objp->otype = -1;
 	else if ((objp->otype = otype(sbuf)) < 0) {
@@ -93,12 +97,14 @@ FILE  *fp;
 		error(USER, errmsg);
 	}
 					/* get identifier */
-	fscanf(fp, "%s", sbuf);
+	sbuf[0] = '\0';
+	fgetword(sbuf, MAXSTR, fp);
 	objp->oname = savqstr(sbuf);
 					/* get arguments */
 	if (objp->otype == -1) {
 		register OBJECT  alias;
-		fscanf(fp, "%s", sbuf);
+		strcpy(sbuf, "EOF");
+		fgetword(sbuf, MAXSTR, fp);
 		if ((alias = modifier(sbuf)) == OVOID) {
 			sprintf(errmsg,
 			"(%s): bad reference \"%s\" for %s \"%s\"",
