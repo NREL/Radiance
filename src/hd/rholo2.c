@@ -17,7 +17,7 @@ register float	*rod;
 register PACKET	*p;
 {
 	static FVECT	ro, rd;
-	BCOORD	gc;
+	GCOORD	gc[2];
 	double	d;
 	long	r1, r2;
 	register int	i;

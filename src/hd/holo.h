@@ -45,7 +45,7 @@ typedef struct {
 typedef struct {
 	short	w;		/* wall number */
 	short	i[2];		/* index on wall grid */
-} BCOORD[2];		/* beam grid coordinates */
+} GCOORD;		/* grid coordinates (two for beam) */
 
 typedef struct {
 	unsigned int4	nrd;	/* number of beam rays bundled on disk */
