@@ -527,8 +527,8 @@ char  *argv[];
 #ifdef  PERSIST
 	if (persist) {
 #if  RPICT
-		if (outfile != NULL)
-			error(USER, "output file cannot be used with persist option");
+		if (outfile != NULL | zfile != NULL | recover != NULL)
+			error(USER, "persist option used with -o, -r or -z");
 		if (seqstart <= 0)
 			error(USER, "persist option only for sequences");
 #endif
