@@ -185,16 +185,6 @@ char  *s;
 }
 
 
-char *
-sskip(s)		/* skip a word */
-register char  *s;
-{
-	while (isspace(*s)) s++;
-	while (*s && !isspace(*s)) s++;
-	return(s);
-}
-
-
 init()			/* get data and open window */
 {
 	register int  i;
