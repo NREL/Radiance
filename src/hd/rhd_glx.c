@@ -627,6 +627,8 @@ static
 resizewindow(ersz)			/* resize window */
 register XConfigureEvent  *ersz;
 {
+	glViewport(0, 0, ersz->width, ersz->height);
+
 	if (ersz->width == odev.hres && ersz->height == odev.vres)
 		return;
 
@@ -635,8 +637,6 @@ register XConfigureEvent  *ersz;
 
 	odev.v.horiz = 2.*180./PI * atan(0.5/VIEWDIST*pwidth*odev.hres);
 	odev.v.vert = 2.*180./PI * atan(0.5/VIEWDIST*pheight*odev.vres);
-
-	glViewport(0, 0, odev.hres, odev.vres);
 
 	inpresflags |= DFL(DC_SETVIEW);
 }
