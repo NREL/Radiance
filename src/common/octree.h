@@ -31,14 +31,15 @@
 #define  istree(ot)	((ot) > EMPTY)
 
 #define  oseti(ot)	(-(ot)-2)	/* object set index */
-#define  octbi(ot)	((ot)>>8)	/* octree block index */
-#define  octti(ot)	(((ot)&0377)<<3)/* octree index in block */
+#define  OCTBLKSIZ	04000		/* octree block size */
+#define  octbi(ot)	((ot)>>11)	/* octree block index */
+#define  octti(ot)	(((ot)&03777)<<3)/* octree index in block */
 
 #ifndef  MAXOBLK
 #ifdef  BIGMEM
-#define  MAXOBLK	65535		/* maximum octree block */
+#define  MAXOBLK	32767		/* maximum octree block */
 #else
-#define  MAXOBLK	8191		/* maximum octree block */
+#define  MAXOBLK	4095		/* maximum octree block */
 #endif
 #endif
 

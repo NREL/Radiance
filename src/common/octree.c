@@ -34,7 +34,7 @@ octalloc()			/* allocate an octree */
 		if (octbi(freet) >= MAXOBLK)
 			return(EMPTY);
 		if ((octblock[octbi(freet)] = (OCTREE *)bmalloc(
-				(unsigned)256*8*sizeof(OCTREE))) == NULL)
+				(unsigned)OCTBLKSIZ*8*sizeof(OCTREE))) == NULL)
 			return(EMPTY);
 	}
 	treetop += 8;
