@@ -135,11 +135,10 @@ char  *argv[];
 				maxcolors = 2;
 				break;
 			case 'd':
-				if (argv[i][2] == 'i') {
+				if (argv[i][2] == 'i')
 					dispname = argv[++i];
-					break;
-				}
-				dither = !dither;
+				else
+					dither = !dither;
 				break;
 			case 'f':
 				fast = !fast;
@@ -150,7 +149,7 @@ char  *argv[];
 				scale = atoi(argv[++i]);
 				break;
 			case 'g':
-				if (!strcmp(argv[i], "-geometry"))
+				if (argv[i][2] == 'e')
 					geometry = argv[++i];
 				else
 					gamcor = atof(argv[++i]);
@@ -191,7 +190,7 @@ char  *argv[];
 		getevent();		/* main loop */
 userr:
 	fprintf(stderr,
-	"Usage: %s [-geometry spec][-b][-m][-d][-f][-c ncolors][-e +/-stops] file\n",
+	"Usage: %s [-display disp][-geometry spec][-b][-m][-d][-f][-c ncolors][-e +/-stops] file\n",
 			progname);
 	quit(1);
 }
@@ -362,6 +361,7 @@ register XVisualInfo	*v1, *v2;
 
 getbestvis()			/* get the best visual for this screen */
 {
+#ifdef DEBUG
 static char  vistype[][12] = {
 		"StaticGray",
 		"GrayScale",
@@ -370,10 +370,11 @@ static char  vistype[][12] = {
 		"TrueColor",
 		"DirectColor"
 };
+#endif
 	static int	rankings[3][6] = {
 		{TrueColor,DirectColor,PseudoColor,GrayScale,StaticGray,-1},
-		{PseudoColor,GrayScale,-1},
-		{PseudoColor,GrayScale,-1}
+		{PseudoColor,GrayScale,StaticGray,-1},
+		{PseudoColor,GrayScale,StaticGray,-1}
 	};
 	XVisualInfo	*xvi;
 	int	vismatched;
@@ -393,8 +394,12 @@ static char  vistype[][12] = {
 	xvi = XGetVisualInfo(thedisplay,VisualScreenMask,&ourvis,&vismatched);
 	if (xvi == NULL)
 		quiterr("no visuals for this screen!");
-for (i = 0; i < vismatched; i++)
-fprintf(stderr, "Type %s, depth %d\n", vistype[xvi[i].class], xvi[i].depth);
+#ifdef DEBUG
+	fprintf(stderr, "Supported visuals:\n");
+	for (i = 0; i < vismatched; i++)
+		fprintf(stderr, "\ttype %s, depth %d\n",
+				vistype[xvi[i].class], xvi[i].depth);
+#endif
 	for (i = 0, j = 1; j < vismatched; j++)
 		if (viscmp(&xvi[i],&xvi[j]) > 0)
 			i = j;
@@ -407,12 +412,14 @@ fprintf(stderr, "Type %s, depth %d\n", vistype[xvi[i].class], xvi[i].depth);
 		quiterr("inadequate visuals on this screen");
 					/* OK, we'll use it */
 	copystruct(&ourvis, &xvi[i]);
-fprintf(stderr, "Selected visual type %s, depth %d\n", vistype[ourvis.class],
-ourvis.depth);
+#ifdef DEBUG
+	fprintf(stderr, "Selected visual type %s, depth %d\n",
+			vistype[ourvis.class], ourvis.depth);
+#endif
 	if (ourvis.class == GrayScale || ourvis.class == StaticGray)
 		greyscale = 1;
-	if (1<<ourvis.depth < maxcolors)
-		maxcolors = 1<<ourvis.depth;
+	if (ourvis.depth <= 8 && ourvis.colormap_size < maxcolors)
+		maxcolors = ourvis.colormap_size;
 	if (maxcolors > 4)
 		maxcolors -= 2;
 	XFree((char *)xvi);
@@ -450,14 +457,19 @@ getras()				/* get raster file */
 				xmax, ymax, 8);
 		if (ourras == NULL)
 			goto fail;
-		if (greyscale)
-			biq(dither,maxcolors,1,ourmap);
-		else
-			ciq(dither,maxcolors,1,ourmap);
-		if (init_rcolors(ourras, ourmap[0], ourmap[1], ourmap[2]) == 0)
-			goto fail;
+		if (ourvis.class == StaticGray)
+			getgrey();
+		else {
+			if (greyscale)
+				biq(dither,maxcolors,1,ourmap);
+			else
+				ciq(dither,maxcolors,1,ourmap);
+			if (init_rcolors(ourras, ourmap[0],
+					ourmap[1], ourmap[2]) == 0)
+				goto fail;
+		}
 	}
-	return;
+		return;
 fail:
 	quiterr("could not create raster image");
 }
@@ -488,7 +500,8 @@ getevent()				/* process the next event */
 			make_rpixmap(ourras, wind);
 		break;
 	case UnmapNotify:
-		unmap_rcolors(ourras);
+		if (!fast)
+			unmap_rcolors(ourras);
 		break;
 	case Expose:
 		redraw(e.e.x, e.e.y, e.e.width, e.e.height);
@@ -844,6 +857,33 @@ getfull()			/* get full (24-bit) data */
 }
 
 
+getgrey()			/* get greyscale data */
+{
+	int	y;
+	register unsigned char	*dp;
+	register int	x;
+					/* set gamma correction */
+	setcolrgam(gamcor);
+					/* read and convert file */
+	dp = ourdata;
+	for (y = 0; y < ymax; y++) {
+		if (getscan(y) < 0)
+			quiterr("seek error in getfull");
+		if (scale)
+			shiftcolrs(scanline, xmax, scale);
+		colrs_gambs(scanline, xmax);
+		add2icon(y, scanline);
+		if (ourvis.colormap_size < 256)
+			for (x = 0; x < xmax; x++)
+				*dp++ =	((long)normbright(scanline[x]) *
+					ourvis.colormap_size + 128) >> 8;
+		else
+			for (x = 0; x < xmax; x++)
+				*dp++ =	normbright(scanline[x]);
+	}
+}
+
+
 scale_rcolors(xr, sf)			/* scale color map */
 register XRASTER	*xr;
 double	sf;
@@ -935,7 +975,7 @@ colormap  map;
 picwritecm(map)			/* handled elsewhere */
 colormap  map;
 {
-#ifdef DEBUG
+#if 0
 	register int i;
 
 	for (i = 0; i < 256; i++)
