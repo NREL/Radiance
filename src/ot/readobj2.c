@@ -29,7 +29,7 @@ readobj2(	/* read in an object file or stream */
 {
 	char  *fgetline();
 	FILE  *infp;
-	char  buf[512];
+	char  buf[2048];
 	register int  c;
 
 	if (input == NULL) {
