@@ -1,5 +1,5 @@
 #ifndef lint
-static const char	RCSid[] = "$Id$";
+static const char RCSid[] = "$Id$";
 #endif
 /*
  *  rcalc.c - record calculator program.
@@ -92,7 +92,8 @@ char  *argv[];
 {
 	int  i;
 
-	esupport |= (E_VARIABLE|E_FUNCTION|E_INCHAN|E_OUTCHAN|E_RCONST);
+	esupport |= E_VARIABLE|E_FUNCTION|E_INCHAN|E_OUTCHAN|E_RCONST;
+	esupport &= ~(E_REDEFW);
 
 #ifdef  BIGGERLIB
 	biggerlib();
