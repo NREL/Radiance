@@ -125,7 +125,8 @@ char  *name, *id;
 		ourwhite = WhitePixel(ourdisplay,ourscreen);
 	}
 					/* set gamma */
-	if ((gv = getenv("GAMMA")) != NULL)
+	if ((gv = XGetDefault(ourdisplay, "radiance", "gamma")) != NULL
+			|| (gv = getenv("GAMMA")) != NULL)
 		make_gmap(atof(gv));
 	else
 		make_gmap(GAMMA);
