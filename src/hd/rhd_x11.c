@@ -100,7 +100,7 @@ char  *id;
 	XSizeHints	oursizhints;
 					/* set quadtree globals */
 	qtDepthEps = 0.02;
-	qtMinNodesiz = 1;
+	qtMinNodesiz = 2;
 					/* open display server */
 	ourdisplay = XOpenDisplay(NULL);
 	if (ourdisplay == NULL)
@@ -384,16 +384,15 @@ int	dx, dy, move;
 {
 	VIEW	nv;
 	double	d;
-	register int	i;
+	register int	i, li;
 				/* start with old view */
 	copystruct(&nv, &odev.v);
 				/* change view direction */
 	if (move) {
-		register RLEAF	*lp;
-		if ((lp = qtFindLeaf(dx, dy)) == NULL)
+		if ((li = qtFindLeaf(dx, dy)) < 0)
 			return(0);	/* not on window */
 		for (i = 0; i < 3; i++)
-			nv.vdir[i] = lp->wp[i] - nv.vp[i];
+			nv.vdir[i] = qtL.wp[li][i] - nv.vp[i];
 	} else {
 		if (viewray(nv.vp, nv.vdir, &odev.v,
 				(dx+.5)/odev.hres, (dy+.5)/odev.vres) < -FTINY)
@@ -432,6 +431,7 @@ XButtonPressedEvent	*ebut;
 	unsigned int	statemask;
 
 	qtMinNodesiz = 16;		/* for quicker update */
+	qtCompost(50);
 
 	do {
 		if (!XQueryPointer(ourdisplay, gwind, &rootw, &childw,
@@ -440,6 +440,8 @@ XButtonPressedEvent	*ebut;
 
 		if (!moveview(wx, odev.vres-1-wy, MOVDIR(whichbutton)))
 			sleep(1);
+		else
+			qtUpdate();
 
 	} while (!XCheckMaskEvent(ourdisplay,
 			ButtonReleaseMask, levptr(XEvent)));
