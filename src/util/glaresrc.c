@@ -246,10 +246,12 @@ int	v;
 
 close_allsrcs()			/* done with everything */
 {
-	register struct source	*this;
+	register struct source	*this, *nsrc;
 
-	for (this = curlist; this != NULL; this = this->next)
+	for (this = curlist; this != NULL; this = nsrc) {
+		nsrc = this->next;
 		donesource(this);
+	}
 	curlist = NULL;
 }
 
@@ -288,7 +290,7 @@ register struct source	*sp;
 	donelist = sp;
 	if (verbose)
 		fprintf(stderr,
-	"%s: found source at (%f,%f,%f), solid angle %f, brightness %f\n",
+	"%s: found source at (%f,%f,%f), dw %f, br %f\n",
 			progname, sp->dir[0], sp->dir[1], sp->dir[2], 
 			sp->dom, sp->brt);
 }
