@@ -306,6 +306,7 @@ char  *str, *dsc;
 int  typ;
 register union {int i; double d; COLOR C;}  *ptr;
 {
+	extern char  *index();
 	int  i0;
 	double  d0, d1, d2;
 	char  buf[48];
@@ -339,8 +340,11 @@ register union {int i; double d; COLOR C;}  *ptr;
 			sprintf(buf, " (%c): ", ptr->i ? 'y' : 'n');
 			(*dev->comout)(buf);
 			(*dev->comin)(buf, NULL);
+			if (buf[0] == '\0' ||
+					index("yY+1tTnN-0fF", buf[0]) == NULL)
+				break;
 		}
-		ptr->i = tolower(buf[0]) == 'y';
+		ptr->i = index("yY+1tT", buf[0]) != NULL;
 		break;
 	case 'C':			/* color */
 		if (sscanf(str, "%lf %lf %lf", &d0, &d1, &d2) != 3) {
