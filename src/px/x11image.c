@@ -944,7 +944,7 @@ COLOR  clr;
 
 make_tonemap()			/* initialize tone mapping */
 {
-	int  y;
+	int  flags, y;
 
 	if (tmflags != -1 && fname == NULL) {
 		fprintf(stderr, "%s: cannot adjust tone of standard input\n",
@@ -955,17 +955,19 @@ make_tonemap()			/* initialize tone mapping */
 		setcolrcor(pow, 1.0/gamcor);
 		return;
 	}
-	if (greyscale)
-		tmflags |= TM_F_BW;
+	if (tmTop != NULL)		/* already initialized? */
+		return;
+	flags = tmflags;
+	if (greyscale) flags |= TM_F_BW;
 					/* initialize tm library */
-	if (tmInit(tmflags, stdprims, gamcor) == NULL)
+	if (tmInit(flags, stdprims, gamcor) == NULL)
 		goto memerr;
 	if (tmSetSpace(stdprims, WHTEFFICACY/exposure))
 		goto tmerr;
 					/* allocate encoding buffers */
 	if ((lscan = (TMbright *)malloc(xmax*sizeof(TMbright))) == NULL)
 		goto memerr;
-	if (tmflags & TM_F_BW) {
+	if (greyscale) {
 		cscan = TM_NOCHROM;
 		if ((pscan = (BYTE *)malloc(sizeof(BYTE)*xmax)) == NULL)
 			goto memerr;
@@ -982,7 +984,6 @@ make_tonemap()			/* initialize tone mapping */
 					/* compute tone mapping */
 	if (tmComputeMapping(gamcor, 0., 0.))
 		goto tmerr;
-	free((char *)lscan);
 	return;
 memerr:
 	quiterr("out of memory in make_tonemap");
@@ -1010,7 +1011,7 @@ int  len;
 	if (tmMapPixels(pscan, lscan, cscan, len))
 		goto tmerr;
 	ps = pscan;
-	if (tmflags & TM_F_BW)
+	if (greyscale)
 		while (len--) {
 			scn[0][RED] = scn[0][GRN] = scn[0][BLU] = *ps++;
 			scn[0][EXP] = COLXS;
@@ -1027,16 +1028,6 @@ int  len;
 	return;
 tmerr:
 	quiterr("tone mapping error");
-}
-
-
-done_tonemap()			/* clean up after tone mapping is done */
-{
-	if (tmflags == -1 || tmTop == NULL)
-		return;
-	tmDone(tmTop);			/* clear old mapping */
-	free((char *)lscan);		/* free memory */
-	free((char *)pscan);
 }
 
 
@@ -1148,7 +1139,6 @@ getfull()			/* get full (24-bit) data */
 					(unsigned int4)scanline[x][GRN] << 8 |
 					(unsigned int4)scanline[x][BLU] << 16 ;
 	}
-	done_tonemap();
 }
 
 
@@ -1176,7 +1166,6 @@ getgrey()			/* get greyscale data */
 	for (x = 0; x < maxcolors; x++)
 		clrtab[x][RED] = clrtab[x][GRN] =
 			clrtab[x][BLU] = ((int4)x*256 + 128)/maxcolors;
-	done_tonemap();
 }
 
 
@@ -1209,7 +1198,6 @@ getmapped()			/* get color-mapped data */
 		else
 			map_colrs(ourdata+y*xmax, scanline, xmax);
 	}
-	done_tonemap();
 }
 
 
