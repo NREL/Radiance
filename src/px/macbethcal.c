@@ -90,11 +90,18 @@ short	mbsat[NMBSAT] = {
 		Orange,Purple
 	};
 
+#define  REQFLGS	(1L<<White|1L<<Neutral8|1L<<Neutral65| \
+				1L<<Neutral5|1L<<Neutral35|1L<<Black)
+
+#define  CENTCVG	0.3	/* measured coverage of square sample */
+#define  FULLCVG	0.9	/* coverage of entire square */
+
 int	xmax, ymax;		/* input image dimensions */
 int	bounds[4][2];		/* image coordinates of chart corners */
 double	imgxfm[3][3];		/* coordinate transformation matrix */
 
-COLOR	picRGB[24];		/* picture colors */
+COLOR	inpRGB[24];		/* measured or scanned input colors */
+long	inpflags = 0;		/* flags of which colors were input */
 
 COLOR	bramp[NMBNEU][2];	/* brightness ramp (per primary) */
 double	solmat[3][3];		/* color mapping matrix */
@@ -109,65 +116,95 @@ main(argc, argv)
 int	argc;
 char	**argv;
 {
+	int	inpispic = 1;
 	int	i;
 
 	progname = argv[0];
-	if (argc > 2 && !strcmp(argv[1], "-d")) {	/* debug output */
-		if ((debugfp = fopen(argv[2], "w")) == NULL) {
-			perror(argv[2]);
-			exit(1);
-		}
+	for (i = 1; i < argc && argv[i][0] == '-'; i++)
+		switch (argv[i][1]) {
+		case 'd':				/* debug output */
+			i++;
+			if (badarg(argc-i, argv+i, "s"))
+				goto userr;
+			if ((debugfp = fopen(argv[i], "w")) == NULL) {
+				perror(argv[i]);
+				exit(1);
+			}
 #ifdef MSDOS
-		setmode(fileno(debugfp), O_BINARY);
+			setmode(fileno(debugfp), O_BINARY);
 #endif
-		newheader("RADIANCE", debugfp);
-		printargs(argc, argv, debugfp);
-		argv += 2;
-		argc -= 2;
-	}
-	if (argc != 3 && argc != 11)
-		goto userr;
-	if (strcmp(argv[1], "-") && freopen(argv[1], "r", stdin) == NULL) {
+			newheader("RADIANCE", debugfp);		/* start */
+			printargs(argc, argv, debugfp);		/* header */
+			break;
+		case 'p':				/* picture position */
+			if (badarg(argc-i-1, argv+i+1, "iiiiiiii"))
+				goto userr;
+			bounds[0][0] = atoi(argv[++i]);
+			bounds[0][1] = atoi(argv[++i]);
+			bounds[1][0] = atoi(argv[++i]);
+			bounds[1][1] = atoi(argv[++i]);
+			bounds[2][0] = atoi(argv[++i]);
+			bounds[2][1] = atoi(argv[++i]);
+			bounds[3][0] = atoi(argv[++i]);
+			bounds[3][1] = atoi(argv[++i]);
+			inpispic = 2;
+			break;
+		case 'c':				/* color input */
+			inpispic = 0;
+			break;
+		default:
+			goto userr;
+		}
+							/* open files */
+	if (i < argc && freopen(argv[i], "r", stdin) == NULL) {
 		perror(argv[1]);
 		exit(1);
 	}
-	if (strcmp(argv[2], "-") && freopen(argv[2], "w", stdout) == NULL) {
+	if (i+1 < argc && freopen(argv[i+1], "w", stdout) == NULL) {
 		perror(argv[2]);
 		exit(1);
 	}
+	if (inpispic) {			/* load input picture header */
 #ifdef MSDOS
-	setmode(fileno(stdin), O_BINARY);
+		setmode(fileno(stdin), O_BINARY);
 #endif
-	if (checkheader(stdin, COLRFMT, NULL) < 0 ||
-			fgetresolu(&xmax, &ymax, stdin) < 0) {
-		fprintf(stderr, "%s: bad input picture\n", progname);
-		exit(1);
-	}
-					/* get chart boundaries */
-	if (argc == 11) {
-		for (i = 0; i < 4; i++) {
-			if (!isint(argv[2*i+3]) | !isint(argv[2*i+4]))
-				goto userr;
-			bounds[i][0] = atoi(argv[2*i+3]);
-			bounds[i][1] = atoi(argv[2*i+4]);
+		if (checkheader(stdin, COLRFMT, NULL) < 0 ||
+				fgetresolu(&xmax, &ymax, stdin) < 0) {
+			fprintf(stderr, "%s: bad input picture\n", progname);
+			exit(1);
 		}
-	} else {
+	} else {			/* else set default xmax and ymax */
+		xmax = 512;
+		ymax = 2*512/3;
+	}
+	if (inpispic != 2) {		/* use default boundaries */
 		bounds[0][0] = bounds[2][0] = .029*xmax + .5;
 		bounds[0][1] = bounds[1][1] = .956*ymax + .5;
 		bounds[1][0] = bounds[3][0] = .971*xmax + .5;
 		bounds[2][1] = bounds[3][1] = .056*ymax + .5;
 	}
 	init();				/* initialize */
-	getcolors();			/* get picture colors */
+	if (inpispic)			/* get picture colors */
+		getpicture();
+	else
+		getcolors();
 	compute();			/* compute color mapping */
 					/* print comment */
-	printf("{ Color correction file computed by %s }\n", progname);
-	printf("{ from scanned MacBetch color chart %s }\n", argv[1]);
+	printf("{ Color correction file computed by:\n\t");
+	printargs(argc, argv, stdout);
+	printf("}\n");
 	putmapping();			/* put out color mapping */
-	putdebug();			/* put out debug picture */
+	if (debugfp != NULL)		/* put out debug picture */
+		if (inpispic)
+			picdebug();
+		else
+			clrdebug();
 	exit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-d dbg.pic] input.pic output.cal [xul yul xur yur xll yll xlr ylr]\n",
+	fprintf(stderr,
+"Usage: %s [-d dbg.pic][-p xul yul xur yur xll yll xlr ylr] input.pic [output.cal]\n",
+			progname);
+	fprintf(stderr, "   or: %s [-d dbg.pic] -c [xyY.dat [output.cal]]\n",
 			progname);
 	exit(1);
 }
@@ -176,6 +213,7 @@ userr:
 init()				/* initialize */
 {
 	double	quad[4][2];
+	register int	i;
 					/* make coordinate transformation */
 	quad[0][0] = bounds[0][0];
 	quad[0][1] = bounds[0][1];
@@ -190,16 +228,21 @@ init()				/* initialize */
 		fprintf(stderr, "%s: bad chart boundaries\n", progname);
 		exit(1);
 	}
+					/* map MacBeth colors to RGB space */
+	for (i = 0; i < 24; i++)
+		xyY2RGB(mbRGB[i], mbxyY[i]);
 }
 
 
 int
-chartndx(x, y)				/* find color number for position */
+chartndx(x, y, cvg)			/* find color number for position */
 int	x, y;
+double	cvg;
 {
 	double	ipos[3], cpos[3];
 	int	ix, iy;
 	double	fx, fy;
+	double  cmin, cmax;
 
 	ipos[0] = x;
 	ipos[1] = y;
@@ -213,13 +256,15 @@ int	x, y;
 	iy = cpos[1];
 	fx = cpos[0] - ix;
 	fy = cpos[1] - iy;
-	if (fx < .35 || fx >= .65 || fy < .35 || fy >= .65)
+	cmin = .5*(1.-cvg);
+	cmax = 1. - cmin;
+	if (fx < cmin || fx >= cmax || fy < cmin || fy >= cmax)
 		return(-1);
 	return(iy*6 + ix);
 }
 
 
-getcolors()				/* load in picture colors */
+getpicture()				/* load in picture colors */
 {
 	COLR	*scanln;
 	COLOR	pval;
@@ -234,7 +279,7 @@ getcolors()				/* load in picture colors */
 		exit(1);
 	}
 	for (i = 0; i < 24; i++) {
-		setcolor(picRGB[i], 0., 0., 0.);
+		setcolor(inpRGB[i], 0., 0., 0.);
 		ccount[i] = 0;
 	}
 	for (y = ymax-1; y >= 0; y--) {
@@ -244,24 +289,70 @@ getcolors()				/* load in picture colors */
 			exit(1);
 		}
 		for (x = 0; x < xmax; x++) {
-			i = chartndx(x, y);
+			i = chartndx(x, y, CENTCVG);
 			if (i >= 0) {
 				colr_color(pval, scanln[x]);
-				addcolor(picRGB[i], pval);
+				addcolor(inpRGB[i], pval);
 				ccount[i]++;
 			}
 		}
 	}
-	for (i = 0; i < 24; i++) {
-		if (ccount[i] == 0) {
-			fprintf(stderr, "%s: bad chart boundaries\n",
+	for (i = 0; i < 24; i++) {		/* compute averages */
+		if (ccount[i] == 0)
+			continue;
+		d = 1./ccount[i];
+		scalecolor(inpRGB[i], d);
+		inpflags |= 1L<<i;
+	}
+	free((char *)scanln);
+}
+
+
+getcolors()			/* get xyY colors from standard input */
+{
+	int	gotwhite = 0;
+	COLOR	whiteclr;
+	int	n;
+	float	xyYin[3];
+
+	while (fgetval(stdin, 'i', &n) == 1) {		/* read colors */
+		if (n < 0 | n > 24 ||
+				fgetval(stdin, 'f', &xyYin[0]) != 1 ||
+				fgetval(stdin, 'f', &xyYin[1]) != 1 ||
+				fgetval(stdin, 'f', &xyYin[2]) != 1 ||
+				xyYin[0] < 0. | xyYin[0] > 1. |
+				xyYin[1] < 0. | xyYin[1] > 1.) {
+			fprintf(stderr, "%s: bad color input data\n",
 					progname);
 			exit(1);
 		}
-		d = 1.0/ccount[i];
-		scalecolor(picRGB[i], d);
+		if (n == 0) {				/* calibration white */
+			xyY2RGB(whiteclr, xyYin);
+			gotwhite++;
+		} else {				/* standard color */
+			n--;
+			xyY2RGB(inpRGB[n], xyYin);
+			inpflags |= 1L<<n;
+		}
 	}
-	free((char *)scanln);
+					/* normalize colors */
+	if (!gotwhite) {
+		if (!(inpflags & 1L<<White)) {
+			fprintf(stderr, "%s: missing input for White\n",
+					progname);
+			exit(1);
+		}
+		setcolor(whiteclr,
+			colval(inpRGB[White],RED)/colval(mbRGB[White],RED),
+			colval(inpRGB[White],GRN)/colval(mbRGB[White],GRN),
+			colval(inpRGB[White],BLU)/colval(mbRGB[White],BLU));
+	}
+	for (n = 0; n < 24; n++)
+		if (inpflags & 1L<<n)
+			setcolor(inpRGB[n],
+				colval(inpRGB[n],RED)/colval(whiteclr,RED),
+				colval(inpRGB[n],GRN)/colval(whiteclr,GRN),
+				colval(inpRGB[n],BLU)/colval(whiteclr,BLU));
 }
 
 
@@ -289,28 +380,26 @@ COLOR	y, x;
 compute()			/* compute color mapping */
 {
 	COLOR	clrin[NMBMOD], clrout[NMBMOD];
-	COLOR	ctmp;
-	double	d;
-	register int	i;
-					/* map MacBeth colors to RGB space */
-	for (i = 0; i < 24; i++) {
-		d = mbxyY[i][2] / mbxyY[i][1];
-		ctmp[0] = mbxyY[i][0] * d;
-		ctmp[1] = mbxyY[i][2];
-		ctmp[2] = (1. - mbxyY[i][0] - mbxyY[i][1]) * d;
-		cie_rgb(mbRGB[i], ctmp);
+	register int	i, n;
+					/* did we get what we need? */
+	if ((inpflags & REQFLGS) != REQFLGS) {
+		fprintf(stderr, "%s: missing required input colors\n",
+				progname);
+		exit(1);
 	}
 					/* compute piecewise luminance curve */
 	for (i = 0; i < NMBNEU; i++) {
-		copycolor(bramp[i][0], picRGB[mbneu[i]]);
+		copycolor(bramp[i][0], inpRGB[mbneu[i]]);
 		copycolor(bramp[i][1], mbRGB[mbneu[i]]);
 	}
 					/* compute color matrix */
-	for (i = 0; i < NMBMOD; i++) {
-		bresp(clrin[i], picRGB[mbmod[i]]);
-		copycolor(clrout[i], mbRGB[mbmod[i]]);
-	}
-	compsoln(clrin, clrout, NMBMOD);
+	for (n = 0, i = 0; i < NMBMOD; i++)
+		if (inpflags & 1L<<mbmod[i]) {
+			bresp(clrin[n], inpRGB[mbmod[i]]);
+			copycolor(clrout[n], mbRGB[mbmod[i]]);
+			n++;
+		}
+	compsoln(clrin, clrout, n);
 }
 
 
@@ -363,7 +452,7 @@ int	n;
 	register int	i, j, k;
 
 	if (n < 3 | n > NMBMOD) {
-		fprintf(stderr, "%s: inconsistent code!\n", progname);
+		fprintf(stderr, "%s: bad number of colors to match\n", progname);
 		exit(1);
 	}
 	if (n == 3)
@@ -431,14 +520,27 @@ COLOR	cout, cin;
 }
 
 
-putdebug()			/* put out debugging picture */
+xyY2RGB(rgbout, xyYin)		/* convert xyY to RGB */
+COLOR	rgbout;
+register float	xyYin[3];
+{
+	COLOR	ctmp;
+	double	d;
+
+	d = xyYin[2] / xyYin[1];
+	ctmp[0] = xyYin[0] * d;
+	ctmp[1] = xyYin[2];
+	ctmp[2] = (1. - xyYin[0] - xyYin[1]) * d;
+	cie_rgb(rgbout, ctmp);
+}
+
+
+picdebug()			/* put out debugging picture */
 {
 	COLOR	*scan;
 	int	y;
 	register int	x, i;
 
-	if (debugfp == NULL)
-		return;
 	if (fseek(stdin, 0L, 0) == EOF) {
 		fprintf(stderr, "%s: cannot seek on input picture\n", progname);
 		exit(1);
@@ -455,6 +557,7 @@ putdebug()			/* put out debugging picture */
 	fputformat(COLRFMT, debugfp);
 	putc('\n', debugfp);
 	fprtresolu(xmax, ymax, debugfp);
+						/* write debug picture */
 	for (y = ymax-1; y >= 0; y--) {
 		if (freadscan(scan, xmax, stdin) < 0) {
 			fprintf(stderr, "%s: error rereading input picture\n",
@@ -462,7 +565,7 @@ putdebug()			/* put out debugging picture */
 			exit(1);
 		}
 		for (x = 0; x < xmax; x++) {
-			i = chartndx(x, y);
+			i = chartndx(x, y, CENTCVG);
 			if (i < 0)
 				cvtcolor(scan[x], scan[x]);
 			else
@@ -474,5 +577,57 @@ putdebug()			/* put out debugging picture */
 			exit(1);
 		}
 	}
+						/* clean up */
+	fclose(debugfp);
+	free((char *)scan);
+}
+
+
+clrdebug()			/* put out debug picture from color input */
+{
+	static COLR	blkclr = BLKCOLR;
+	COLR	mbclr[24], cvclr[24];
+	COLR	*scan;
+	COLOR	ctmp;
+	int	y;
+	register int	i, x;
+						/* convert colors */
+	for (i = 0; i < 24; i++) {
+		setcolr(mbclr[i], colval(mbRGB[i],RED),
+				colval(mbRGB[i],GRN), colval(mbRGB[i],BLU));
+		if (inpflags & 1L<<i) {
+			cvtcolor(ctmp, inpRGB[i]);
+			setcolr(cvclr[i], colval(ctmp,RED),
+					colval(ctmp,GRN), colval(ctmp,BLU));
+		}
+	}
+						/* allocate scanline */
+	scan = (COLR *)malloc(xmax*sizeof(COLR));
+	if (scan == NULL) {
+		perror(progname);
+		exit(1);
+	}
+						/* finish debug header */
+	fputformat(COLRFMT, debugfp);
+	putc('\n', debugfp);
+	fprtresolu(xmax, ymax, debugfp);
+						/* write debug picture */
+	for (y = ymax-1; y >= 0; y--) {
+		for (x = 0; x < xmax; x++)
+			if ((i = chartndx(x, y, CENTCVG)) >= 0)
+				copycolr(scan[x], mbclr[i]);
+			else if ((i = chartndx(x, y, FULLCVG)) >= 0 &&
+					inpflags & 1L<<i)
+				copycolr(scan[x], cvclr[i]);
+			else
+				copycolr(scan[x], blkclr);
+		if (fwritecolrs(scan, xmax, debugfp) < 0) {
+			fprintf(stderr, "%s: error writing debugging picture\n",
+					progname);
+			exit(1);
+		}
+	}
+						/* clean up */
+	fclose(debugfp);
 	free((char *)scan);
 }
