@@ -1,7 +1,7 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -19,35 +19,37 @@ static char SCCSid[] = "$SunId$ LBL";
 #define AMBFILE		0		/* ambient file name */
 #define DETAIL		1		/* level of scene detail */
 #define EXPOSURE	2		/* picture exposure setting */
-#define ILLUM		3		/* mkillum input files */
-#define INDIRECT	4		/* indirection in lighting */
-#define MATERIAL	5		/* material files */
-#define MKILLUM		6		/* mkillum options */
-#define OBJECT		7		/* object files */
-#define OCONV		8		/* oconv options */
-#define OCTREE		9		/* octree file name */
-#define OPTFILE		10		/* rendering options file */
-#define PENUMBRAS	11		/* shadow penumbras are desired */
-#define PFILT		12		/* pfilt options */
-#define PICTURE		13		/* picture file root name */
-#define QUALITY		14		/* desired rendering quality */
-#define RAWFILE		15		/* raw picture file root name */
-#define RENDER		16		/* rendering options */
-#define REPORT		17		/* report frequency and errfile */
-#define RESOLUTION	18		/* maximum picture resolution */
-#define SCENE		19		/* scene files */
-#define UP		20		/* view up (X, Y or Z) */
-#define VARIABILITY	21		/* level of light variability */
-#define VIEWS		22		/* view(s) for picture(s) */
-#define ZFILE		23		/* distance file root name */
-#define ZONE		24		/* simulation zone */
+#define EYESEP		3		/* interocular distance */
+#define ILLUM		4		/* mkillum input files */
+#define INDIRECT	5		/* indirection in lighting */
+#define MATERIAL	6		/* material files */
+#define MKILLUM		7		/* mkillum options */
+#define OBJECT		8		/* object files */
+#define OCONV		9		/* oconv options */
+#define OCTREE		10		/* octree file name */
+#define OPTFILE		11		/* rendering options file */
+#define PENUMBRAS	12		/* shadow penumbras are desired */
+#define PFILT		13		/* pfilt options */
+#define PICTURE		14		/* picture file root name */
+#define QUALITY		15		/* desired rendering quality */
+#define RAWFILE		16		/* raw picture file root name */
+#define RENDER		17		/* rendering options */
+#define REPORT		18		/* report frequency and errfile */
+#define RESOLUTION	19		/* maximum picture resolution */
+#define SCENE		20		/* scene files */
+#define UP		21		/* view up (X, Y or Z) */
+#define VARIABILITY	22		/* level of light variability */
+#define VIEWS		23		/* view(s) for picture(s) */
+#define ZFILE		24		/* distance file root name */
+#define ZONE		25		/* simulation zone */
 				/* total number of variables */
-int NVARS = 25;
+int NVARS = 26;
 
 VARIABLE	vv[] = {		/* variable-value pairs */
 	{"AMBFILE",	3,	0,	NULL,	onevalue},
 	{"DETAIL",	3,	0,	NULL,	qualvalue},
 	{"EXPOSURE",	3,	0,	NULL,	fltvalue},
+	{"EYESEP",	3,	0,	NULL,	fltvalue},
 	{"illum",	3,	0,	NULL,	catvalues},
 	{"INDIRECT",	3,	0,	NULL,	intvalue},
 	{"materials",	3,	0,	NULL,	catvalues},
@@ -184,7 +186,7 @@ char	*argv[];
 	quit(0);
 userr:
 	fprintf(stderr,
-"Usage: %s [-s][-n][-t][-e][-V][-v view][-o dev] rfile [VAR=value ..]\n",
+"Usage: %s [-w][-s][-n][-t][-e][-V][-v view][-o dev] rfile [VAR=value ..]\n",
 			progname);
 	quit(1);
 }
