@@ -14,14 +14,19 @@ static char SCCSid[] = "$SunId$ SGI";
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#ifndef RTFLUSH
-#define RTFLUSH		0		/* flush one at a time in batch */
-#endif
 #ifndef FRAGWARN
 #define FRAGWARN	20		/* fragmentation for warning (%) */
 #endif
 #ifndef MAXQTIME
 #define MAXQTIME	5		/* target maximum seconds in queue */
+#endif
+					/* manual cache flushing frequency */
+#ifndef RTFLUSH
+#if MAXQTIME
+#define RTFLUSH		(300/MAXQTIME*totqlen)	/* <= 5 minutes */
+#else
+#define RTFLUSH		(50*totqlen)		/* just guess */
+#endif
 #endif
 			/* the following must be consistent with rholo.h */
 int	NVARS = NRHVARS;		/* total number of variables */
@@ -55,7 +60,7 @@ long	nraysdone = 0L;		/* number of rays done */
 long	npacksdone = 0L;	/* number of packets done */
 
 PACKET	*freepacks;		/* available packets */
-int	totqlen;		/* maximum queue length when full */
+int	totqlen;		/* maximum queue length (number of packets) */
 
 char  *sigerr[NSIG];		/* signal error messages */
 
@@ -517,13 +522,8 @@ PACKET	*pl;
 				p->nr*sizeof(RAYVAL));
 			if (outdev != NULL)	/* display it */
 				disp_packet((PACKHEAD *)p);
-			if (hdcachesize <= 0) {
-#if RTFLUSH
-				if (outdev == NULL)
-					hdfreebeam(hdlist[p->hd], p->bi);
-#endif
+			if (hdcachesize <= 0)
 				n2flush++;
-			}
 			nraysdone += p->nr;
 			npacksdone++;
 			p->nr = 0;
@@ -531,19 +531,11 @@ PACKET	*pl;
 		p->next = freepacks;		/* push onto free list */
 		freepacks = p;
 	}
-#if MAXQTIME
-	if (n2flush > 300/MAXQTIME*totqlen) {
-#else
-	if (n2flush > 50*totqlen) {
-#endif
-#if RTFLUSH
-		hdsync(NULL, outdev!=NULL);	/* sync beams & directories */
-#else
+	if (n2flush > RTFLUSH) {
 		if (outdev != NULL)
 			hdsync(NULL, 1);
 		else
 			hdflush(NULL);
-#endif
 		n2flush = 0;
 	}
 }
