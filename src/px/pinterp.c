@@ -17,8 +17,12 @@ static char SCCSid[] = "$SunId$ LBL";
 #define pscan(y)	(ourpict+(y)*ourview.hresolu)
 #define zscan(y)	(ourzbuf+(y)*ourview.hresolu)
 
-#define F_FORE	1			/* fill foreground */
-#define F_BACK	2			/* fill background */
+#define F_FORE		1		/* fill foreground */
+#define F_BACK		2		/* fill background */
+
+#define PACKSIZ		42		/* calculation packet size */
+
+#define RTCOM		"rtrace -h -ovl -fff -x %d %s"
 
 #define ABS(x)		((x)>0?(x):-(x))
 
@@ -35,12 +39,18 @@ VIEW	theirview = STDVIEW(512);	/* input view */
 int	gotview;			/* got input view? */
 
 int	fill = F_FORE|F_BACK;		/* selected fill algorithm */
-extern int	backfill();		/* fill functions */
+extern int	backfill(), calfill();	/* fill functions */
 int	(*deffill)() = backfill;	/* selected fill function */
 COLR	backcolr = BLKCOLR;		/* background color */
+double	backz = 0.0;			/* background z value */
 
 double	theirs2ours[4][4];		/* transformation matrix */
 int	normdist = 1;			/* normalized distance? */
+
+FILE	*psend, *precv;			/* pipes to/from fill calculation */
+int	childpid;			/* child's process id */
+int	queue[PACKSIZ][2];		/* pending pixels */
+int	queuesiz;			/* number of pixels pending */
 
 
 main(argc, argv)			/* interpolate pictures */
@@ -90,6 +100,16 @@ char	*argv[];
 				setcolr(backcolr, atof(argv[i+1]),
 					atof(argv[i+2]), atof(argv[i+3]));
 				i += 3;
+				break;
+			case 'z':				/* z value */
+				check(3,1);
+				deffill = backfill;
+				backz = atof(argv[++i]);
+				break;
+			case 'r':				/* rtrace */
+				check(3,1);
+				deffill = calfill;
+				calstart(RTCOM, argv[++i]);
 				break;
 			default:
 				goto badopt;
@@ -162,7 +182,7 @@ char	*argv[];
 			goto userr;
 		}
 						/* check arguments */
-	if (argc-i < 2 || (argc-i)%2)
+	if ((argc-i)%2)
 		goto userr;
 						/* set view */
 	if (err = setview(&ourview)) {
@@ -184,6 +204,9 @@ char	*argv[];
 		backpicture();
 	else
 		fillpicture();
+							/* close calculation */
+	if (deffill == calfill)
+		caldone();
 							/* add to header */
 	printargs(argc, argv, stdout);
 	if (gotvfile) {
@@ -487,10 +510,13 @@ backpicture()				/* background fill algorithm */
 					|| (xback >= 0 && ABS(x-xback) <= 1)
 					|| ( ABS(y-yback[x]) > 1
 						&& zscan(yback[x])[x]
-						< zscan(y)[xback] ) )
+						< zscan(y)[xback] ) ) {
 					copycolr(pscan(y)[x],pscan(y)[xback]);
-				else
+					zscan(y)[x] = zscan(y)[xback];
+				} else {
 					copycolr(pscan(y)[x],pscan(yback[x])[x]);
+					zscan(y)[x] = zscan(yback[x])[x];
+				}
 			} else {				/* full pixel */
 				yback[x] = -2;
 				xback = -2;
@@ -584,4 +610,94 @@ int	x, y;
 	register BYTE	*dest = pscan(y)[x];
 
 	copycolr(dest, backcolr);
+	zscan(y)[x] = backz;
+}
+
+
+calstart(prog, args)			/* start fill calculation */
+char	*prog, *args;
+{
+	char	combuf[512];
+	int	p0[2], p1[2];
+
+	sprintf(combuf, prog, PACKSIZ, args);
+	if (pipe(p0) < 0 || pipe(p1) < 0)
+		goto syserr;
+	if ((childpid = vfork()) == 0) {	/* fork calculation */
+		close(p0[1]);
+		close(p1[0]);
+		if (p0[0] != 0) {
+			dup2(p0[0], 0);
+			close(p0[0]);
+		}
+		if (p1[1] != 1) {
+			dup2(p1[1], 1);
+			close(p1[1]);
+		}
+		execl("/bin/sh", "sh", "-c", combuf, 0);
+		perror("/bin/sh");
+		_exit(127);
+	}
+	if (childpid < 0)
+		goto syserr;
+	close(p0[0]);
+	close(p1[1]);
+	if ((psend = fdopen(p0[1], "w")) == NULL)
+		goto syserr;
+	if ((precv = fdopen(p1[0], "r")) == NULL)
+		goto syserr;
+	queuesiz = 0;
+	return;
+syserr:
+	perror(progname);
+	exit(1);
+}
+
+
+caldone()				/* done with calculation */
+{
+	int	pid;
+
+	fclose(psend);
+	clearqueue();
+	fclose(precv);
+	while ((pid = wait(0)) != -1 && pid != childpid)
+		;
+}
+
+
+calfill(x, y)				/* fill with calculated pixel */
+int	x, y;
+{
+	FVECT	orig, dir;
+	float	outbuf[6];
+
+	if (queuesiz >= PACKSIZ) {	/* flush queue */
+		fflush(psend);
+		clearqueue();
+	}
+					/* send new ray */
+	rayview(orig, dir, &ourview, x+.5, y+.5);
+	outbuf[0] = orig[0]; outbuf[1] = orig[1]; outbuf[2] = orig[2];
+	outbuf[3] = dir[0]; outbuf[4] = dir[1]; outbuf[5] = dir[2];
+	fwrite(outbuf, sizeof(float), 6, psend);
+					/* remember it */
+	queue[queuesiz][0] = x;
+	queue[queuesiz][1] = y;
+	queuesiz++;
+}
+
+
+clearqueue()				/* get results from queue */
+{
+	float	inbuf[4];
+	register int	i;
+
+	for (i = 0; i < queuesiz; i++) {
+		fread(inbuf, sizeof(float), 4, precv);
+		setcolr(pscan(queue[i][1])[queue[i][0]],
+				inbuf[0], inbuf[1], inbuf[2]);
+		zscan(queue[i][1])[queue[i][0]] = inbuf[3];
+	}
+	queuesiz = 0;
 }
