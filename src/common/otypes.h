@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
 
@@ -29,36 +29,39 @@ typedef struct {
 #define  MAT_GLASS	12		/* thin glass surface */
 #define  MAT_TRANS	13		/* translucent material */
 #define  MAT_DIELECTRIC	14		/* dielectric material */
-#define  MAT_INTERFACE	15		/* dielectric interface */
-#define  MAT_PFUNC	16		/* plastic brdf function */
-#define  MAT_MFUNC	17		/* metal brdf function */
-#define  PAT_BFUNC	18		/* brightness function */
-#define  PAT_BDATA	19		/* brightness data */
-#define  PAT_BTEXT	20		/* monochromatic text */
-#define  PAT_CPICT	21		/* color picture */
-#define  MAT_GLOW	22		/* proximity light source */
-#define  OBJ_SOURCE	23		/* distant source */
-#define  MAT_LIGHT	24		/* primary light source */
-#define  MAT_ILLUM	25		/* secondary light source */
-#define  MAT_SPOT	26		/* spot light source */
-#define  MAT_MIRROR	27		/* mirror (secondary source) */
-#define  MAT_TFUNC	28		/* trans brdf function */
-#define  MAT_BRTDF	29		/* brtd function */
-#define  MAT_PDATA	30		/* plastic brdf data */
-#define  MAT_MDATA	31		/* metal brdf data */
-#define  MAT_TDATA	32		/* trans brdf data */
-#define  PAT_CFUNC	33		/* color function */
-#define  MAT_CLIP	34		/* clipping surface */
-#define  PAT_CDATA	35		/* color data */
-#define  PAT_CTEXT	36		/* colored text */
-#define  TEX_DATA	37		/* surface texture data */
-#define  MIX_FUNC	38		/* mixing function */
-#define  MIX_DATA	39		/* mixing data */
-#define  MIX_TEXT	40		/* mixing text */
-#define  MAT_DIRECT1	41		/* unidirecting material */
-#define  MAT_DIRECT2	42		/* bidirecting material */
+#define  MAT_PLASTIC2	15		/* anisotropic plastic */
+#define  MAT_METAL2	16		/* anisotropic metal */
+#define  MAT_TRANS2	17		/* anisotropic translucent material */
+#define  MAT_INTERFACE	18		/* dielectric interface */
+#define  MAT_PFUNC	19		/* plastic brdf function */
+#define  MAT_MFUNC	20		/* metal brdf function */
+#define  PAT_BFUNC	21		/* brightness function */
+#define  PAT_BDATA	22		/* brightness data */
+#define  PAT_BTEXT	23		/* monochromatic text */
+#define  PAT_CPICT	24		/* color picture */
+#define  MAT_GLOW	25		/* proximity light source */
+#define  OBJ_SOURCE	26		/* distant source */
+#define  MAT_LIGHT	27		/* primary light source */
+#define  MAT_ILLUM	28		/* secondary light source */
+#define  MAT_SPOT	29		/* spot light source */
+#define  MAT_MIRROR	30		/* mirror (secondary source) */
+#define  MAT_TFUNC	31		/* trans brdf function */
+#define  MAT_BRTDF	32		/* brtd function */
+#define  MAT_PDATA	33		/* plastic brdf data */
+#define  MAT_MDATA	34		/* metal brdf data */
+#define  MAT_TDATA	35		/* trans brdf data */
+#define  PAT_CFUNC	36		/* color function */
+#define  MAT_CLIP	37		/* clipping surface */
+#define  PAT_CDATA	38		/* color data */
+#define  PAT_CTEXT	39		/* colored text */
+#define  TEX_DATA	40		/* surface texture data */
+#define  MIX_FUNC	41		/* mixing function */
+#define  MIX_DATA	42		/* mixing data */
+#define  MIX_TEXT	43		/* mixing text */
+#define  MAT_DIRECT1	44		/* unidirecting material */
+#define  MAT_DIRECT2	45		/* bidirecting material */
 				/* number of object types */
-#define  NUMOTYPE	43
+#define  NUMOTYPE	46
 				/* type flags */
 #define  T_S		01		/* surface (object) */
 #define  T_M		02		/* material */
@@ -107,6 +110,9 @@ extern int  o_default();
 				{ "glass",	T_M,		o_default }, \
 				{ "trans",	T_M,		o_default }, \
 				{ "dielectric",	T_M,		o_default }, \
+				{ "plastic2",	T_M|T_F,	o_default }, \
+				{ "metal2",	T_M|T_F,	o_default }, \
+				{ "trans2",	T_M|T_F,	o_default }, \
 				{ "interface",	T_M,		o_default }, \
 				{ "plasfunc",	T_M|T_F,	o_default }, \
 				{ "metfunc",	T_M|T_F,	o_default }, \
