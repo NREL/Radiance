@@ -40,6 +40,10 @@ static int	CLRCUBE[3][2] = {0,NRED,0,NGRN,0,NBLU};
 #endif
 #endif
 
+static	cut(), mktabent(), closest(), addneigh(), setclosest();
+static int	split();
+static unsigned	dist();
+
 
 new_histo(n)		/* clear our histogram */
 int	n;
