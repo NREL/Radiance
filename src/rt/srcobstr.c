@@ -291,7 +291,7 @@ srcblocked(RAY *r)
 	if (obs == OVOID)
 		return(0);
 	op = objptr(obs);		/* check for intersection */
-	return ((*ofun[op->otype].funp)(op, r));
+	return((*ofun[op->otype].funp)(op, r));
 }
 
 

@@ -61,8 +61,8 @@ mkillum:	mkillum.o mkillum2.o mkillum3.o
 genrev:	genrev.o 
 	$(CC) $(CFLAGS) -o genrev genrev.o -lrt $(MLIB)
 
-gencat: gencat.o
-	$(CC) $(CFLAGS) -o gencat gencat.o -lrt $(MLIB)
+gencatenary: gencat.o
+	$(CC) $(CFLAGS) -o gencatenary gencat.o -lrt $(MLIB)
 
 genworm:	genworm.o
 	$(CC) $(CFLAGS) -o genworm genworm.o -lrt $(MLIB)
