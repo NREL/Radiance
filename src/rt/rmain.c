@@ -354,20 +354,42 @@ char  *argv[];
 				ambounce = atoi(argv[++i]);
 				break;
 			case 'i':				/* include */
+			case 'I':
 				check(3,"s");
 				if (ambincl != 1) {
 					ambincl = 1;
 					amblp = amblist;
 				}
-				*amblp++ = argv[++i];
+				if (argv[i][2] == 'I') {	/* file */
+					rval = wordfile(amblp, argv[++i]);
+					if (rval < 0) {
+						sprintf(errmsg,
+				"cannot open ambient include file \"%s\"",
+								argv[i]);
+						error(SYSTEM, errmsg);
+					}
+					amblp += rval;
+				} else
+					*amblp++ = argv[++i];
 				break;
 			case 'e':				/* exclude */
+			case 'E':
 				check(3,"s");
 				if (ambincl != 0) {
 					ambincl = 0;
 					amblp = amblist;
 				}
-				*amblp++ = argv[++i];
+				if (argv[i][2] == 'E') {	/* file */
+					rval = wordfile(amblp, argv[++i]);
+					if (rval < 0) {
+						sprintf(errmsg,
+				"cannot open ambient exclude file \"%s\"",
+								argv[i]);
+						error(SYSTEM, errmsg);
+					}
+					amblp += rval;
+				} else
+					*amblp++ = argv[++i];
 				break;
 			case 'f':				/* file */
 				check(3,"s");
