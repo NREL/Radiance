@@ -109,18 +109,14 @@ raytrace(r)			/* trace a ray and compute its value */
 RAY  *r;
 {
 	extern int  (*trace)();
-	int  gotmat;
 
 	if (localhit(r, &thescene))
-		gotmat = raycont(r);	/* hit local surface, evaluate */
+		raycont(r);		/* hit local surface, evaluate */
 	else if (r->ro == &Aftplane) {
 		r->ro = NULL;		/* hit aft clipping plane */
 		r->rot = FHUGE;
 	} else if (sourcehit(r))
-		gotmat = rayshade(r, r->ro->omod);	/* distant source */
-
-	if (r->ro != NULL && !gotmat)
-		objerror(r->ro, USER, "material not found");
+		rayshade(r, r->ro->omod);	/* distant source */
 
 	rayparticipate(r);		/* for participating medium */
 
@@ -133,11 +129,8 @@ raycont(r)			/* check for clipped object and continue */
 register RAY  *r;
 {
 	if ((r->clipset != NULL && inset(r->clipset, r->ro->omod)) ||
-			r->ro->omod == OVOID) {
+			!rayshade(r, r->ro->omod))
 		raytrans(r);
-		return(1);
-	}
-	return(rayshade(r, r->ro->omod));
 }
 
 
@@ -260,31 +253,27 @@ double  coef;
 	RAY  fr, br;
 	int  foremat, backmat;
 	register int  i;
-					/* clip coefficient */
+					/* bound coefficient */
 	if (coef > 1.0)
 		coef = 1.0;
 	else if (coef < 0.0)
 		coef = 0.0;
 					/* compute foreground and background */
-	foremat = backmat = -1;
+	foremat = backmat = 0;
 					/* foreground */
 	copystruct(&fr, r);
-	if (fore != OVOID && coef > FTINY)
+	if (coef > FTINY)
 		foremat = rayshade(&fr, fore);
 					/* background */
 	copystruct(&br, r);
-	if (back != OVOID && coef < 1.0-FTINY)
+	if (coef < 1.0-FTINY)
 		backmat = rayshade(&br, back);
-					/* check */
-	if (foremat < 0)
-		if (backmat < 0)
-			foremat = backmat = 0;
+					/* check for transparency */
+	if (backmat ^ foremat)
+		if (backmat)
+			raytrans(&fr);
 		else
-			foremat = backmat;
-	else if (backmat < 0)
-		backmat = foremat;
-	if ((foremat==0) != (backmat==0))
-		objerror(r->ro, USER, "mixing material with non-material");
+			raytrans(&br);
 					/* mix perturbations */
 	for (i = 0; i < 3; i++)
 		r->pert[i] = coef*fr.pert[i] + (1.0-coef)*br.pert[i];
@@ -293,16 +282,16 @@ double  coef;
 	scalecolor(br.pcol, 1.0-coef);
 	copycolor(r->pcol, fr.pcol);
 	addcolor(r->pcol, br.pcol);
-					/* mix returned ray values */
-	if (foremat) {
-		scalecolor(fr.rcol, coef);
-		scalecolor(br.rcol, 1.0-coef);
-		copycolor(r->rcol, fr.rcol);
-		addcolor(r->rcol, br.rcol);
-		r->rt = bright(fr.rcol) > bright(br.rcol) ? fr.rt : br.rt;
-	}
 					/* return value tells if material */
-	return(foremat);
+	if (!foremat & !backmat)
+		return(0);
+					/* mix returned ray values */
+	scalecolor(fr.rcol, coef);
+	scalecolor(br.rcol, 1.0-coef);
+	copycolor(r->rcol, fr.rcol);
+	addcolor(r->rcol, br.rcol);
+	r->rt = bright(fr.rcol) > bright(br.rcol) ? fr.rt : br.rt;
+	return(1);
 }
 
 
