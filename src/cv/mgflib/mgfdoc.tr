@@ -2567,6 +2567,10 @@ In the first form, a single integer is given for the
 of MGF that is to be produced.
 Since MGF is in its first major release, this is not yet a useful
 form, but it will be when the second major release comes out.
+This has the necessary side-effect of expanding all included files.
+(See the
+.UL i
+entity.)\0
 .LP
 In the second form,
 .I mgfilt
@@ -2591,7 +2595,7 @@ mgfilt f,v,p,xf input.mgf > flatpoly.mgf
 .SH
 SEE ALSO
 .LP
-mgf2rad, rad2mgf
+i, mgf2rad, rad2mgf
 .ds RH MGF2RAD
 .bp
 .SH
