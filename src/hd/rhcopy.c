@@ -14,7 +14,7 @@ static char SCCSid[] = "$SunId$ SGI";
 
 int	frompicz;		/* input from pictures & depth-buffers? */
 int	noutsects;		/* number of output sections */
-int	obstructions = -1;	/* interior obstructions allowed? */
+char	obstr, unobstr;		/* flag pointer values */
 
 char	*progname;		/* global argv[0] */
 
@@ -52,29 +52,35 @@ userr:
 }
 
 
-holheadline(s, bf)		/* check holodeck header line */
+#define H_BADF	01
+#define H_OBST	02
+#define H_OBSF	04
+
+holheadline(s, hf)		/* check holodeck header line */
 register char	*s;
-int	*bf;
+int	*hf;
 {
 	char	fmt[32];
 
 	if (formatval(fmt, s)) {
-		*bf = strcmp(fmt, HOLOFMT);
+		if (strcmp(fmt, HOLOFMT))
+			*hf |= H_BADF;
+		else
+			*hf &= ~H_BADF;
 		return;
 	}
 	if (!strncmp(s, "OBSTRUCTIONS=", 13)) {
 		s += 13;
 		while (*s == ' ') s++;
 		if (*s == 't' | *s == 'T')
-			obstructions = 1;
+			*hf |= H_OBST;
 		else if (*s == 'f' | *s == 'F')
-			obstructions = 0;
+			*hf |= H_OBSF;
 		else
 			error(WARNING, "bad OBSTRUCTIONS value in holodeck");
 		return;
 	}
 }
-
 
 int
 openholo(fname, append)		/* open existing holodeck file for i/o */
@@ -84,7 +90,7 @@ int	append;
 	extern long	ftell();
 	FILE	*fp;
 	int	fd;
-	int	badfmt = 0;
+	int	hflags = 0;
 	int4	nextloc;
 	int	n;
 					/* open holodeck file */
@@ -94,11 +100,8 @@ int	append;
 		error(SYSTEM, errmsg);
 	}
 					/* check header and magic number */
-	if (append)
-		badfmt |= getheader(fp, holheadline, &badfmt) < 0;
-	else
-		badfmt = checkheader(fp, HOLOFMT, NULL) < 0;
-	if (badfmt || getw(fp) != HOLOMAGIC) {
+	if (getheader(fp, holheadline, &hflags) < 0 ||
+			hflags&H_BADF || getw(fp) != HOLOMAGIC) {
 		sprintf(errmsg, "file \"%s\" not in holodeck format", fname);
 		error(USER, errmsg);
 	}
@@ -108,10 +111,15 @@ int	append;
 	for (n = 0; nextloc > 0L; n++) {	/* initialize each section */
 		lseek(fd, (long)nextloc, 0);
 		read(fd, (char *)&nextloc, sizeof(nextloc));
-		hdinit(fd, NULL);
+		hdinit(fd, NULL)->priv = hflags&H_OBST ? &obstr :
+				hflags&H_OBSF ? &unobstr : (char *)NULL;
 	}
 	return(n);
 }
+
+#undef H_BADF
+#undef H_OBST
+#undef H_OBSF
 
 
 addray(ro, rd, d, cv)		/* add a ray to our output holodeck */
@@ -131,9 +139,9 @@ COLR	cv;
 		d0 = hdinter(gc, rr, &d1, hp, ro, rd);
 		if (d <= d0 || d1 < -0.001)
 			continue;	/* missed section */
-		if (obstructions > 0 && d0 < -0.001)
+		if (hp->priv == &obstr && d0 < -0.001)
 			continue;	/* ray starts too late */
-		if (!obstructions && d < 0.999*d1)
+		if (hp->priv == &unobstr && d < 0.999*d1)
 			continue;	/* ray ends too soon */
 					/* should we check for duplicates? */
 		rv = hdnewrays(hp, hdbindex(hp, gc), 1);
@@ -164,8 +172,13 @@ char	*hdf;
 			if ((bp = hdgetbeam(hp, j)) != NULL) {
 				hdbcoord(gc, hp, j);
 				for (k = bp->nrm; k--; ) {
-					hdray(ro, rd, hp, gc, hdbray(bp)[k].r);
-					d = hddepth(hp, hdbray(bp)[k].d);
+					d = hdray(ro, rd,
+						hp, gc, hdbray(bp)[k].r);
+					if (hp->priv == &unobstr)
+						VSUM(ro, ro, rd, d);
+					else
+						d = 0.;
+					d = hddepth(hp, hdbray(bp)[k].d) - d;
 					addray(ro, rd, d, hdbray(bp)[k].v);
 				}
 				hdfreebeam(hp, j);	/* free the beam */
