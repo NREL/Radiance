@@ -49,6 +49,8 @@
 
 #define	TM_BRTSCALE	128		/* brightness scale factor (integer) */
 
+#define TM_NOBRT	(-1<<15)	/* bogus brightness value */
+
 #define	TM_MAXPKG	8		/* maximum number of color formats */
 
 
