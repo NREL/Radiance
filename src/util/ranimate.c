@@ -946,6 +946,8 @@ int	n;
 			quit(1);
 		}
 	} else if (n < viewnum) {	/* rewind file */
+		if (viewnum == 1 && feof(viewfp))
+			return(&curview);		/* just one view */
 		if (fseek(viewfp, 0L, 0) == EOF) {
 			perror(vval(VIEWFILE));
 			quit(1);
@@ -955,7 +957,7 @@ int	n;
 	}
 	while (n > viewnum) {		/* scan to desired view */
 		if (fgets(linebuf, sizeof(linebuf), viewfp) == NULL)
-			return(NULL);
+			return(viewnum==1 ? &curview : NULL);
 		if (isview(linebuf) && sscanview(&curview, linebuf) > 0)
 			viewnum++;
 	}
