@@ -128,14 +128,6 @@ register int  sn;		/* source number */
 	sr->rsrc = sn;				/* remember source */
 						/* get source direction */
 	if (source[sn].sflags & SDISTANT) {
-		if (source[sn].sflags & SSPOT) {	/* check location */
-			for (i = 0; i < 3; i++)
-				vd[i] = sr->rorg[i] - source[sn].sl.s->aim[i];
-			d = DOT(source[sn].sloc,vd);
-			d = DOT(vd,vd) - d*d;
-			if (PI*d > source[sn].sl.s->siz)
-				return(0.0);
-		}
 						/* constant direction */
 		VCOPY(sr->rdir, source[sn].sloc);
 	} else {				/* compute direction */
@@ -162,19 +154,27 @@ register int  sn;		/* source number */
 		}
 		for (i = 0; i < 3; i++)		/* offset source direction */
 			sr->rdir[i] += vd[i];
+						/* normalize */
+		d = normalize(sr->rdir);
 
-	} else if (source[sn].sflags & SDISTANT)
-						/* already normalized */
-		return(source[sn].ss2);
+	} else if (!(source[sn].sflags & SDISTANT))
+						/* normalize direction */
+		d = normalize(sr->rdir);
 
-	if ((d = normalize(sr->rdir)) == 0.0)
-						/* at source! */
+	if (source[sn].sflags & SDISTANT) {
+		if (source[sn].sflags & SSPOT) {	/* check location */
+			for (i = 0; i < 3; i++)
+				vd[i] = sr->rorg[i] - source[sn].sl.s->aim[i];
+			d = DOT(sr->rdir,vd);
+			d = DOT(vd,vd) - d*d;
+			if (PI*d > source[sn].sl.s->siz)
+				return(0.0);
+		}
+		return(source[sn].ss2);		/* domega constant */
+	}
+						/* check direction */
+	if (d == 0.0)
 		return(0.0);
-	
-	if (source[sn].sflags & SDISTANT)
-						/* domega constant */
-		return(source[sn].ss2);
-
 						/* check proximity */
 	if (source[sn].sflags & SPROX &&
 			d > source[sn].sl.prox)
