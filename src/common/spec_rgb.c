@@ -145,6 +145,10 @@ register RGBPRIMS  pr;
 {
 	double  C_rD, C_gD, C_bD;
 
+	if (pr == stdprims) {	/* can use xyz2rgbmat */
+		cpcolormat(mat, xyz2rgbmat);
+		return;
+	}
 	C_rD = (1./pr[WHT][CIEY]) *
 			( pr[WHT][CIEX]*(pr[GRN][CIEY] - pr[BLU][CIEY]) -
 			  pr[WHT][CIEY]*(pr[GRN][CIEX] - pr[BLU][CIEX]) +
@@ -191,6 +195,10 @@ register RGBPRIMS  pr;
 {
 	double  C_rD, C_gD, C_bD, D;
 
+	if (pr == stdprims) {	/* can use rgb2xyzmat */
+		cpcolormat(mat, rgb2xyzmat);
+		return;
+	}
 	C_rD = (1./pr[WHT][CIEY]) *
 			( pr[WHT][CIEX]*(pr[GRN][CIEY] - pr[BLU][CIEY]) -
 			  pr[WHT][CIEY]*(pr[GRN][CIEX] - pr[BLU][CIEX]) +
@@ -224,14 +232,14 @@ RGBPRIMS  pr1, pr2;
 {
 	COLORMAT  pr1toxyz, xyztopr2;
 
-	if (pr1 == stdprims)	/* can use rgb2xyzmat */
-		cpcolormat(pr1toxyz, rgb2xyzmat);
-	else			/* otherwise compute it */
-		comprgb2xyzmat(pr1toxyz, pr1);
-	if (pr2 == stdprims)	/* can use xyz2rgbmat */
-		cpcolormat(xyztopr2, xyz2rgbmat);
-	else			/* otherwise compute it */
-		compxyz2rgbmat(xyztopr2, pr2);
+	if (pr1 == pr2) {
+		mat[0][0] = mat[1][1] = mat[2][2] = 1.0;
+		mat[0][1] = mat[0][2] = mat[1][0] =
+		mat[1][2] = mat[2][0] = mat[2][1] = 0.0;
+		return;
+	}
+	comprgb2xyzmat(pr1toxyz, pr1);
+	compxyz2rgbmat(xyztopr2, pr2);
 				/* combine transforms */
 	multcolormat(mat, pr1toxyz, xyztopr2);
 }
