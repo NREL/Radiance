@@ -624,9 +624,14 @@ XKeyPressedEvent  *ekey;
 	case 't':				/* trace */
 		return(traceray(ekey->x, ekey->y));
 	case '=':				/* adjust exposure */
+	case '@':				/* adaptation level */
 		if (avgbox(cval) == -1)
 			return(-1);
-		n = log(.5/bright(cval))/.69315 - scale;	/* truncate */
+		comp = com=='@'
+		? 59.2/pow(1.219+pow(luminance(cval)/exposure,.4),2.5)/exposure
+		: .5/bright(cval) ;
+		comp = log(comp)/.69315 - scale;
+		n = comp < 0 ? comp-.5 : comp+.5 ;	/* round */
 		if (n == 0)
 			return(0);
 		scale_rcolors(ourras, pow(2.0, (double)n));
