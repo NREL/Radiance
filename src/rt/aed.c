@@ -71,7 +71,7 @@ aed_init(name, id)			/* open AED */
 char  *name, *id;
 {
 	if (ttyset(&aed_driver, fileno(stdin)) < 0) {	/* set tty driver */
-		stderr_v("cannot access terminal\n");
+		eputs("cannot access terminal\n");
 		return(NULL);
 	}
 	command(RST);					/* reset AED */
@@ -87,10 +87,13 @@ char  *name, *id;
 	command(SCP);
 	byte('+'); byte(0); byte(1);
 	make_gmap(GAMMA);				/* make color map */
-	errvec = aed_errout;				/* set error vector */
-	cmdvec = aed_errout;
-	if (wrnvec != NULL)
-		wrnvec = aed_errout;
+	erract[USER].pf =				/* set error vector */
+	erract[SYSTEM].pf =
+	erract[INTERNAL].pf =
+	erract[CONSISTENCY].pf = aed_errout;
+	erract[COMMAND].pf = aed_errout;
+	if (erract[WARNING].pf != NULL)
+		erract[WARNING].pf = aed_errout;
 	return(&aed_driver);
 }
 
@@ -98,10 +101,13 @@ char  *name, *id;
 static
 aed_close()					/* close AED */
 {
-	errvec = stderr_v;			/* reset error vector */
-	cmdvec = NULL;
-	if (wrnvec != NULL)
-		wrnvec = stderr_v;
+	erract[USER].pf = 			/* reset error vector */
+	erract[SYSTEM].pf =
+	erract[INTERNAL].pf =
+	erract[CONSISTENCY].pf = eputs;
+	erract[COMMAND].pf = NULL;
+	if (erract[WARNING].pf != NULL)
+		erract[WARNING].pf = wputs;
 	aedsetcap(0, 0);			/* go to bottom */
 	command(SEC);
 	byte(WHT);				/* white text */
