@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -159,6 +159,7 @@ disp_wait()			/* wait for more input */
 	n = odev.ifd+1;
 	if (sstdin != NULL) {
 		FD_SET(fileno(sstdin), &readset);
+		FD_SET(fileno(sstdin), &errset);
 		if (fileno(sstdin) >= n)
 			n = fileno(sstdin) + 1;
 	}
@@ -173,7 +174,8 @@ disp_wait()			/* wait for more input */
 		flgs |= RDY_SRV;
 	if (FD_ISSET(odev.ifd, &readset) || FD_ISSET(odev.ifd, &errset))
 		flgs |= RDY_DEV;
-	if (sstdin != NULL && FD_ISSET(fileno(sstdin), &readset))
+	if (sstdin != NULL && (FD_ISSET(fileno(sstdin), &readset) ||
+				FD_ISSET(fileno(sstdin), &errset)))
 		flgs |= RDY_SIN;
 	return(flgs);
 }
@@ -281,12 +283,15 @@ int
 usr_input()			/* get user input and process it */
 {
 	VIEW	vparams;
-	char	cmd[128];
+	char	cmd[256];
 	register char	*args;
 	register int	i;
 
-	if (fgets(cmd, sizeof(cmd), sstdin) == NULL)
-		return(DC_QUIT);
+	if (fgets(cmd, sizeof(cmd), sstdin) == NULL) {
+		fclose(sstdin);
+		sstdin = NULL;
+		return(0);
+	}
 	for (args = cmd; *args && !isspace(*args); args++)
 		;
 	while (isspace(*args))
