@@ -66,19 +66,19 @@ mgf2meta:	MGF_LIB mgf2meta.o
 mgfilt:
 	cd mgflib ; rm -f mgfilt ; \
 	make mgfilt CC=$(CC) \
-		CFLAGS="$(OPT) $(MACH) '-DMEM_PTR=char *' -DNOPROTO" ; \
+		CFLAGS="$(OPT) $(MACH) -DNOPROTO" ; \
 	mv mgfilt ..
 
 mgf2inv:
 	cd mgflib ; rm -f mgf2inv ; \
 	make mgf2inv CC=$(CC) \
-		CFLAGS="$(OPT) $(MACH) '-DMEM_PTR=char *' -DNOPROTO" ; \
+		CFLAGS="$(OPT) $(MACH) -DNOPROTO" ; \
 	mv mgf2inv ..
 
 MGF_LIB:
 	cd mgflib ; rm -f libmgf.a ; \
 	make libmgf.a CC=$(CC) \
-		CFLAGS="$(OPT) $(MACH) '-DMEM_PTR=char *' -DNOPROTO" ; \
+		CFLAGS="$(OPT) $(MACH) -DNOPROTO" ; \
 	cp libmgf.a ../../lib
 
 mgf2rad.o:	mgflib/parser.h tmesh.h ../common/color.h
