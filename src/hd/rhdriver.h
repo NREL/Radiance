@@ -34,7 +34,7 @@ extern struct driver {
 
 #define	CTRL(c)		((c)-'@')
 				/* commands entered in display window */
-#define DV_INIT		{'\0','v','l','p','\r',CTRL('R'),'K','R','C','q'}
+#define DV_INIT		{'\0','v','l','p','\r',CTRL('L'),'K','R','C','q'}
 				/* commands entered on stdin */
 #define	DC_INIT		{"VIEW=","where","last","pause","resume","redraw",\
 				"kill","restart","clobber","quit"}
