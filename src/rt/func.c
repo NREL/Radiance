@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -15,6 +15,14 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "otypes.h"
 
 
+XF  unitxf = {			/* identity transform */
+	1.0, 0.0, 0.0, 0.0,
+	0.0, 1.0, 0.0, 0.0,
+	0.0, 0.0, 1.0, 0.0,
+	0.0, 0.0, 0.0, 1.0,
+	1.0
+};
+
 XF  funcxf;			/* current transformation */
 static OBJREC  *fobj = NULL;	/* current function object */
 static RAY  *fray = NULL;	/* current function ray */
@@ -29,10 +37,6 @@ XF  *bx;
 	extern double  l_hermite(), l_fnoise3(), l_arg();
 	extern long  eclock;
 	static char  *initfile = "rayinit.cal";
-	static long  lastrno = -1;
-					/* check to see if already set */
-	if (m == fobj && r->rno == lastrno)
-		return;
 					/* initialize if first call */
 	if (initfile != NULL) {
 		loadfunc(initfile);
@@ -55,11 +59,13 @@ XF  *bx;
 	}
 	fobj = m;
 	fray = r;
-	lastrno = r->rno;
-	if (r->rox != NULL) {
-		funcxf.sca = r->rox->b.sca * bx->sca;
-		multmat4(funcxf.xfm, r->rox->b.xfm, bx->xfm);
-	} else
+	if (r->rox != NULL)
+		if (bx != &unitxf) {
+			funcxf.sca = r->rox->b.sca * bx->sca;
+			multmat4(funcxf.xfm, r->rox->b.xfm, bx->xfm);
+		} else
+			copystruct(&funcxf, &r->rox->b);
+	else
 		copystruct(&funcxf, bx);
 	eclock++;		/* notify expression evaluator */
 }
@@ -78,13 +84,17 @@ RAY  *r;
 		for (n = m->oargs.nsargs, sa = m->oargs.sarg;
 				n > 0 && **sa != '-'; n--, sa++)
 			;
-		mxf = (XF *)malloc(sizeof(XF));
-		if (mxf == NULL)
-			goto memerr;
-		if (invxf(mxf, n, sa) != n)
-			objerror(m, USER, "bad transform");
-		if (mxf->sca < 0.0)
-			mxf->sca = -mxf->sca;
+		if (n == 0)
+			mxf = &unitxf;
+		else {
+			mxf = (XF *)malloc(sizeof(XF));
+			if (mxf == NULL)
+				goto memerr;
+			if (invxf(mxf, n, sa) != n)
+				objerror(m, USER, "bad transform");
+			if (mxf->sca < 0.0)
+				mxf->sca = -mxf->sca;
+		}
 		m->os = (char *)mxf;
 	}
 	setmap(m, r, mxf);
