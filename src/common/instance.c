@@ -16,6 +16,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "instance.h"
 
+#define  IO_ILLEGAL	(IO_FILES|IO_INFO)
+
 static SCENE  *slist = NULL;		/* list of loaded octrees */
 
 
@@ -28,7 +30,7 @@ int  flags;
 	char  *pathname;
 	register SCENE  *sc;
 
-	flags &= ~(IO_FILES|IO_INFO);		/* not allowed */
+	flags &= ~IO_ILLEGAL;		/* not allowed */
 	for (sc = slist; sc != NULL; sc = sc->next)
 		if (!strcmp(sname, sc->name)) {
 			if ((sc->ldflags & flags) == flags)
@@ -53,10 +55,11 @@ int  flags;
 		sprintf(errmsg, "cannot find octree file \"%s\"", sname);
 		error(USER, errmsg);
 	}
-	if (flags & ~sc->ldflags & IO_SCENE)
+	flags &= ~sc->ldflags;		/* skip what's already loaded */
+	if (flags & IO_SCENE)
 		sc->firstobj = nobjects;
-	readoct(pathname, flags & ~sc->ldflags, &sc->scube, NULL);
-	if (flags & ~sc->ldflags & IO_SCENE)
+	readoct(pathname, flags, &sc->scube, NULL);
+	if (flags & IO_SCENE)
 		sc->nobjs = nobjects - sc->firstobj;
 	sc->ldflags |= flags;
 	return(sc);
@@ -70,6 +73,7 @@ int  flags;
 {
 	register INSTANCE  *in;
 
+	flags &= ~IO_ILLEGAL;		/* not allowed */
 	if ((in = (INSTANCE *)o->os) == NULL) {
 		if ((in = (INSTANCE *)malloc(sizeof(INSTANCE))) == NULL)
 			error(SYSTEM, "out of memory in getinstance");
