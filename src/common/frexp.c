@@ -1,10 +1,10 @@
 #ifndef lint
 static const char	RCSid[] = "$Id$";
 #endif
-#include "copyright.h"
 
+double
 frexp(x, ip)		/* call it paranoia, I've seen the lib version */
-register double  x;
+double  x;
 int  *ip;
 {
 	int  neg;
@@ -21,10 +21,7 @@ int  *ip;
 			x *= 2.0;
 	else
 		for (i = 0; x >= 1.0; i++)
-			x /= 2.0;
+			x *= 0.5;
 	*ip = i;
-	if (neg)
-		return(-x);
-	else
-		return(x);
+	return (neg ? -x : x);
 }
