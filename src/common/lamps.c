@@ -92,17 +92,17 @@ char	*file;
 				goto fmterr;
 			}
 		} else {			/* or read specificaion */
-			if ((lp->color=(float *)malloc(3*sizeof(float)))==NULL)
+			if ((lp->color=(float *)malloc(6*sizeof(float)))==NULL)
 				goto memerr;
-			if (sscanf(cp1, "%f %f %f", &lp->color[0], &
-					lp->color[1], &lp->color[2]) != 3) {
+			if (sscanf(cp1, "%f %f %f", &lp->color[3], &
+					lp->color[4], &lp->color[5]) != 3) {
 				cp1 = "bad lamp data";
 				goto fmterr;
 			}
 						/* convert xyY to XYZ */
-			xyz[1] = lp->color[2];
-			xyz[0] = lp->color[0]/lp->color[1] * xyz[1];
-			xyz[2] = xyz[1]*(1./lp->color[1] - 1.) - xyz[0];
+			xyz[1] = lp->color[5];
+			xyz[0] = lp->color[3]/lp->color[4] * xyz[1];
+			xyz[2] = xyz[1]*(1./lp->color[4] - 1.) - xyz[0];
 						/* XYZ to RGB */
 			cie_rgb(lp->color, xyz);
 		}
