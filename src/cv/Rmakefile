@@ -50,8 +50,8 @@ lampcolor:	lampcolor.o
 tmesh2rad:	tmesh2rad.o
 	$(CC) $(CFLAGS) -o tmesh2rad tmesh2rad.o -lrt $(MLIB)
 
-obj2rad:	obj2rad.o
-	$(CC) $(CFLAGS) -o obj2rad obj2rad.o -lrt $(MLIB)
+obj2rad:	obj2rad.o trans.o
+	$(CC) $(CFLAGS) -o obj2rad obj2rad.o trans.o -lrt $(MLIB)
 
 arch2rad.o trans.o:	trans.h
 

@@ -9,20 +9,22 @@ static char SCCSid[] = "$SunId$ LBL";
  *
  * Currently, we support only polygonal geometry, and faces
  * must be either quads or triangles for smoothing to work.
- * Also, texture indices only work for triangles, though
+ * Also, texture map indices only work for triangles, though
  * I'm not sure they work correctly.
  */
 
 #include "standard.h"
 
-#include <ctype.h>
+#include "trans.h"
 
-#define VOIDID		"void"		/* this is defined in object.h */
+#include <ctype.h>
 
 #define TCALNAME	"tmesh.cal"	/* triangle interp. file */
 #define QCALNAME	"surf.cal"	/* quad interp. file */
 #define PATNAME		"M-pat"		/* mesh pattern name (reused) */
 #define TEXNAME		"M-nor"		/* mesh texture name (reused) */
+#define DEFOBJ		"unnamed"	/* default object name */
+#define DEFMAT		"white"		/* default material name */
 
 #define  ABS(x)		((x)>=0 ? (x) : -(x))
 
@@ -32,34 +34,58 @@ FVECT	*vlist;			/* our vertex list */
 int	nvs;			/* number of vertices in our list */
 FVECT	*vnlist;		/* vertex normal list */
 int	nvns;
-FLOAT	(*vtlist)[2];		/* texture vertex list */
+FLOAT	(*vtlist)[2];		/* map vertex list */
 int	nvts;
 
 typedef FLOAT	BARYCCM[3][4];	/* barycentric coordinate system */
 
-typedef int	VNDX[3];	/* vertex index (point,texture,normal) */
+typedef int	VNDX[3];	/* vertex index (point,map,normal) */
 
-#define CHUNKSIZ	128	/* vertex allocation chunk size */
+#define CHUNKSIZ	256	/* vertex allocation chunk size */
 
 #define MAXARG		64	/* maximum # arguments in a statement */
 
-char	*defmat = VOIDID;	/* default (starting) material name */
-char	*defpat = "";		/* default (starting) picture name */
-char	*defobj = "F";		/* default (starting) object name */
+				/* qualifiers */
+#define Q_MTL		0
+#define Q_MAP		1
+#define Q_GRP		2
+#define Q_OBJ		3
+#define Q_FAC		4
+#define NQUALS		5
 
-char	picfile[128];		/* current picture file */
+char	*qname[NQUALS] = {
+	"Material",
+	"Map",
+	"Group",
+	"Object",
+	"Face",
+};
+
+QLIST	qlist = {NQUALS, qname};
+				/* valid qualifier ids */
+IDLIST	qual[NQUALS];
+				/* mapping rules */
+RULEHD	*ourmapping = NULL;
+
+char	*defmat = DEFMAT;	/* default (starting) material name */
+char	*defobj = DEFOBJ;	/* default (starting) object name */
+int	donames = 0;		/* only get qualifier names */
+
+char	*getmtl(), *getonm();
+
+char	mapname[128];		/* current picture file */
 char	matname[64];		/* current material name */
+char	group[16][32];		/* current group names */
 char	objname[128];		/* current object name */
 int	lineno;			/* current line number */
+int	faceno;			/* number of faces read */
 
-int	nfaces;			/* total number of faces output */
 
-
-main(argc, argv)		/* read in T-mesh files and convert */
+main(argc, argv)		/* read in .obj file and convert */
 int	argc;
 char	*argv[];
 {
-	FILE	*fp;
+	char	*fname;
 	int	i;
 
 	for (i = 1; i < argc && argv[i][0] == '-'; i++)
@@ -67,30 +93,90 @@ char	*argv[];
 		case 'o':		/* object name */
 			defobj = argv[++i];
 			break;
-		case 'm':		/* default material */
-			defmat = argv[++i];
+		case 'n':		/* just produce name list */
+			donames++;
 			break;
-		case 'p':		/* default picture */
-			defpat = argv[++i];
+		case 'm':		/* use custom mapfile */
+			ourmapping = getmapping(argv[++i], &qlist);
 			break;
 		default:
-			fprintf(stderr,
-			"Usage: %s [-o obj][-m mat][-p pic] [file ..]\n",
-					argv[0]);
-			exit(1);
+			goto userr;
 		}
-	if (i >= argc)
-		convert("<stdin>", stdin);
-	else
-		for ( ; i < argc; i++) {
-			if ((fp = fopen(argv[i], "r")) == NULL) {
-				perror(argv[i]);
-				exit(1);
-			}
-			convert(argv[i], fp);
-			fclose(fp);
-		}
+	if (i > argc | i < argc-1)
+		goto userr;
+	if (i == argc)
+		fname = "<stdin>";
+	else if (freopen(fname=argv[i], "r", stdin) == NULL) {
+		fprintf(stderr, "%s: cannot open\n", fname);
+		exit(1);
+	}
+	if (donames) {				/* scan for ids */
+		getnames(stdin);
+		printf("filename \"%s\"\n", fname);
+		printf("filetype \"Wavefront\"\n");
+		write_quals(&qlist, qual, stdout);
+		printf("qualifier %s begin\n", qlist.qual[Q_FAC]);
+		printf("[%d:%d]\n", 1, faceno);
+		printf("end\n");
+	} else {				/* translate file */
+		printf("# ");
+		printargs(argc, argv, stdout);
+		convert(fname, stdin);
+	}
 	exit(0);
+userr:
+	fprintf(stderr, "Usage: %s [-o obj][-m mapping][-n] [file.obj]\n",
+			argv[0]);
+	exit(1);
+}
+
+
+getnames(fp)			/* get valid qualifier names */
+FILE	*fp;
+{
+	char	*argv[MAXARG];
+	int	argc;
+	ID	tmpid;
+	register int	i;
+
+	while (argc = getstmt(argv, fp))
+		switch (argv[0][0]) {
+		case 'f':				/* face */
+			if (!argv[0][1])
+				faceno++;
+			break;
+		case 'u':
+			if (!strcmp(argv[0], "usemtl")) {	/* material */
+				if (argc < 2)
+					break;		/* not fatal */
+				tmpid.number = 0;
+				tmpid.name = argv[1];
+				findid(&qual[Q_MTL], &tmpid, 1);
+			} else if (!strcmp(argv[0], "usemap")) {/* map */
+				if (argc < 2 || !strcmp(argv[1], "off"))
+					break;		/* not fatal */
+				tmpid.number = 0;
+				tmpid.name = argv[1];
+				findid(&qual[Q_MAP], &tmpid, 1);
+			}
+			break;
+		case 'o':		/* object name */
+			if (argv[0][1] || argc < 2)
+				break;
+			tmpid.number = 0;
+			tmpid.name = argv[1];
+			findid(&qual[Q_OBJ], &tmpid, 1);
+			break;
+		case 'g':		/* group name(s) */
+			if (argv[0][1])
+				break;
+			tmpid.number = 0;
+			for (i = 1; i < argc; i++) {
+				tmpid.name = argv[i];
+				findid(&qual[Q_GRP], &tmpid, 1);
+			}
+			break;
+		}
 }
 
 
@@ -104,13 +190,11 @@ FILE	*fp;
 	register int	i;
 					/* start fresh */
 	freeverts();
-	strcpy(picfile, defpat);
+	mapname[0] = '\0';
 	strcpy(matname, defmat);
 	strcpy(objname, defobj);
 	lineno = 0;
 	nstats = nunknown = 0;
-
-	printf("\n# Wavefront file read from: %s\n", fname);
 					/* scan until EOF */
 	while (argc = getstmt(argv, fp)) {
 		switch (argv[0][0]) {
@@ -131,7 +215,7 @@ FILE	*fp;
 						atof(argv[3])))
 					syntax(fname, lineno, "Zero normal");
 				break;
-			case 't':			/* texture */
+			case 't':			/* texture map */
 				if (argv[0][2])
 					goto unknown;
 				if (badarg(argc-1,argv+1,"ff"))
@@ -145,6 +229,7 @@ FILE	*fp;
 		case 'f':				/* face */
 			if (argv[0][1])
 				goto unknown;
+			faceno++;
 			switch (argc-1) {
 			case 0: case 1: case 2:
 				syntax(fname, lineno, "Too few vertices");
@@ -173,9 +258,9 @@ FILE	*fp;
 				if (argc < 2)
 					break;		/* not fatal */
 				if (!strcmp(argv[1], "off"))
-					picfile[0] = '\0';
+					mapname[0] = '\0';
 				else
-					strcpy(picfile, argv[1]);
+					strcpy(mapname, argv[1]);
 			} else
 				goto unknown;
 			break;
@@ -189,15 +274,9 @@ FILE	*fp;
 		case 'g':		/* group name(s) */
 			if (argv[0][1])
 				goto unknown;
-			if (argc < 2)
-				break;		/* not fatal */
-			objname[0] = '\0';
 			for (i = 1; i < argc; i++)
-				if (objname[0])
-					sprintf(objname+strlen(objname),
-						".%s", argv[i]);
-				else
-					strcpy(objname, argv[i]);
+				strcpy(group[i-1], argv[i]);
+			group[i-1][0] = '\0';
 			break;
 		case '#':		/* comment */
 			break;
@@ -246,7 +325,98 @@ FILE	*fp;
 
 	return(i);
 }
-		
+
+
+char *
+getmtl()				/* figure material for this face */
+{
+	register RULEHD	*rp = ourmapping;
+
+	if (rp == NULL)			/* no rule set */
+		return(matname);
+					/* check for match */
+	do {
+		if (matchrule(rp)) {
+			if (!strcmp(rp->mnam, VOIDID))
+				return(NULL);	/* match is null */
+			return(rp->mnam);
+		}
+		rp = rp->next;
+	} while (rp != NULL);
+					/* no match found */
+	return(NULL);
+}
+
+
+char *
+getonm()				/* invent a good name for object */
+{
+	static char	name[64];
+	register char	*cp1, *cp2;
+	register int	i;
+
+	if (!group[0][0] || strcmp(objname, DEFOBJ))
+		return(objname);	/* good enough for us */
+
+	cp1 = name;			/* else make name out of groups */
+	for (i = 0; group[i][0]; i++) {
+		cp2 = group[i];
+		if (cp1 > name)
+			*cp1++ = '.';
+		while (*cp1 = *cp2++)
+			if (++cp1 >= name+sizeof(name)-2) {
+				*cp1 = '\0';
+				return(name);
+			}
+	}
+	return(name);
+}
+
+
+matchrule(rp)				/* check for a match on this rule */
+register RULEHD	*rp;
+{
+	ID	tmpid;
+	int	gotmatch;
+	register int	i;
+
+	if (rp->qflg & FL(Q_MTL)) {
+		tmpid.number = 0;
+		tmpid.name = matname;
+		if (!matchid(&tmpid, &idm(rp)[Q_MTL]))
+			return(0);
+	}
+	if (rp->qflg & FL(Q_MAP)) {
+		tmpid.number = 0;
+		tmpid.name = mapname;
+		if (!matchid(&tmpid, &idm(rp)[Q_MAP]))
+			return(0);
+	}
+	if (rp->qflg & FL(Q_GRP)) {
+		tmpid.number = 0;
+		gotmatch = 0;
+		for (i = 0; group[i][0]; i++) {
+			tmpid.name = group[i];
+			gotmatch |= matchid(&tmpid, &idm(rp)[Q_GRP]);
+		}
+		if (!gotmatch)
+			return(0);
+	}
+	if (rp->qflg & FL(Q_OBJ)) {
+		tmpid.number = 0;
+		tmpid.name = objname;
+		if (!matchid(&tmpid, &idm(rp)[Q_OBJ]))
+			return(0);
+	}
+	if (rp->qflg & FL(Q_FAC)) {
+		tmpid.name = NULL;
+		tmpid.number = faceno;
+		if (!matchid(&tmpid, &idm(rp)[Q_FAC]))
+			return(0);
+	}
+	return(1);
+}
+
 
 cvtndx(vi, vs)				/* convert vertex string to index */
 register VNDX	vi;
@@ -263,7 +433,7 @@ register char	*vs;
 			return(0);
 	} else
 		return(0);
-					/* get texture */
+					/* get map */
 	while (*vs)
 		if (*vs++ == '/')
 			break;
@@ -300,8 +470,11 @@ register int	ac;
 register char	**av;
 {
 	VNDX	vi;
+	char	*mod;
 
-	printf("\n%s polygon %s.%d\n", matname, objname, ++nfaces);
+	if ((mod = getmtl()) == NULL)
+		return(-1);
+	printf("\n%s polygon %s.%d\n", mod, getonm(), faceno);
 	printf("0\n0\n%d\n", 3*ac);
 	while (ac--) {
 		if (!cvtndx(vi, *av++))
@@ -315,16 +488,19 @@ register char	**av;
 puttri(v1, v2, v3)			/* put out a triangle */
 char	*v1, *v2, *v3;
 {
-	char	*mod = matname;
+	char	*mod;
 	VNDX	v1i, v2i, v3i;
 	BARYCCM	bvecs;
 	int	texOK, patOK;
+
+	if ((mod = getmtl()) == NULL)
+		return(-1);
 
 	if (!cvtndx(v1i, v1) || !cvtndx(v2i, v2) || !cvtndx(v3i, v3))
 		return(0);
 					/* compute barycentric coordinates */
 	texOK = (v1i[2]>=0 && v2i[2]>=0 && v3i[2]>=0);
-	patOK = picfile[0] && (v1i[1]>=0 && v2i[1]>=0 && v3i[1]>=0);
+	patOK = mapname[0] && (v1i[1]>=0 && v2i[1]>=0 && v3i[1]>=0);
 	if (texOK | patOK)
 		if (comp_baryc(bvecs, vlist[v1i[0]], vlist[v2i[0]],
 				vlist[v3i[0]]) < 0)
@@ -350,7 +526,7 @@ char	*v1, *v2, *v3;
 	if (patOK) {
 		printf("\n%s colorpict %s\n", mod, PATNAME);
 		mod = PATNAME;
-		printf("7 noneg noneg noneg %s %s u v\n", picfile, TCALNAME);
+		printf("7 noneg noneg noneg %s %s u v\n", mapname, TCALNAME);
 		printf("0\n18\n");
 		put_baryc(bvecs);
 		printf("\t%f %f %f\n", vtlist[v1i[1]][0],
@@ -359,7 +535,7 @@ char	*v1, *v2, *v3;
 				vtlist[v2i[1]][1], vtlist[v3i[1]][1]);
 	}
 					/* put out triangle */
-	printf("\n%s polygon %s.%d\n", mod, objname, ++nfaces);
+	printf("\n%s polygon %s.%d\n", mod, getonm(), faceno);
 	printf("0\n0\n9\n");
 	pvect(vlist[v1i[0]]);
 	pvect(vlist[v2i[0]]);
@@ -424,9 +600,14 @@ char  *p0, *p1, *p2, *p3;
 {
 	VNDX  p0i, p1i, p2i, p3i;
 	FVECT  norm[4];
+	char  *mod, *name;
 	int  axis;
 	FVECT  v1, v2, vc1, vc2;
 	int  ok1, ok2;
+
+	if ((mod = getmtl()) == NULL)
+		return(-1);
+	name = getonm();
 					/* get actual indices */
 	if (!cvtndx(p0i,p0) || !cvtndx(p1i,p1) ||
 			!cvtndx(p2i,p2) || !cvtndx(p3i,p3))
@@ -447,7 +628,7 @@ char  *p0, *p1, *p2, *p3;
 
 					/* put out quadrilateral? */
 	if (ok1 & ok2 && fdot(vc1,vc2) >= 1.0-FTINY*FTINY) {
-		printf("\n%s ", matname);
+		printf("\n%s ", mod);
 		if (axis != -1) {
 			printf("texfunc %s\n", TEXNAME);
 			printf("4 surf_dx surf_dy surf_dz %s\n", QCALNAME);
@@ -460,7 +641,7 @@ char  *p0, *p1, *p2, *p3;
 			pvect(v1);
 			printf("\n%s ", TEXNAME);
 		}
-		printf("polygon %s.%d\n", objname, ++nfaces);
+		printf("polygon %s.%d\n", name, faceno);
 		printf("0\n0\n12\n");
 		pvect(vlist[p0i[0]]);
 		pvect(vlist[p1i[0]]);
@@ -470,7 +651,7 @@ char  *p0, *p1, *p2, *p3;
 	}
 					/* put out triangles? */
 	if (ok1) {
-		printf("\n%s ", matname);
+		printf("\n%s ", mod);
 		if (axis != -1) {
 			printf("texfunc %s\n", TEXNAME);
 			printf("4 surf_dx surf_dy surf_dz %s\n", QCALNAME);
@@ -482,14 +663,14 @@ char  *p0, *p1, *p2, *p3;
 			pvect(v1);
 			printf("\n%s ", TEXNAME);
 		}
-		printf("polygon %s.%d\n", objname, ++nfaces);
+		printf("polygon %s.%da\n", name, faceno);
 		printf("0\n0\n9\n");
 		pvect(vlist[p0i[0]]);
 		pvect(vlist[p1i[0]]);
 		pvect(vlist[p2i[0]]);
 	}
 	if (ok2) {
-		printf("\n%s ", matname);
+		printf("\n%s ", mod);
 		if (axis != -1) {
 			printf("texfunc %s\n", TEXNAME);
 			printf("4 surf_dx surf_dy surf_dz %s\n", QCALNAME);
@@ -501,7 +682,7 @@ char  *p0, *p1, *p2, *p3;
 			pvect(v2);
 			printf("\n%s ", TEXNAME);
 		}
-		printf("polygon %s.%d\n", objname, ++nfaces);
+		printf("polygon %s.%db\n", name, faceno);
 		printf("0\n0\n9\n");
 		pvect(vlist[p2i[0]]);
 		pvect(vlist[p1i[0]]);
@@ -635,7 +816,7 @@ double	x, y, z;
 
 
 int
-newvt(x, y)			/* create a new texture vertex */
+newvt(x, y)			/* create a new texture map vertex */
 double	x, y;
 {
 	if (!(nvts%CHUNKSIZ)) {		/* allocate next block */
@@ -651,7 +832,7 @@ double	x, y;
 			exit(1);
 		}
 	}
-					/* assign new texture vertex */
+					/* assign new vertex */
 	vtlist[nvts][0] = x;
 	vtlist[nvts][1] = y;
 	return(++nvts);
