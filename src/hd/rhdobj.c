@@ -22,7 +22,7 @@ int	(*dobj_lightsamp)() = NULL;	/* pointer to function to get lights */
 
 #define	AVGREFL		0.5		/* assumed average reflectance */
 
-#define	MAXAC		64		/* maximum number of args */
+#define	MAXAC		512		/* maximum number of args */
 
 #ifndef MINTHRESH
 #define MINTHRESH	5.0		/* source threshold w.r.t. mean */
@@ -320,9 +320,11 @@ ssph_compute()			/* compute source set from sphere samples */
 				continue;		/* too dim */
 			ssph_direc(v, alt, azi);	/* else add it in */
 			VSUM(ls->direc, ls->direc, v, d);
-			ls->omega++;
+			ls->omega += 1.;
 			addcolor(ls->val, ssamp[alt][azi].val);
+							/* remove from list */
 			setcolor(ssamp[alt][azi].val, 0., 0., 0.);
+			ssamp[alt][azi].nsamp = 0;
 		}
 		d = 1./ls->omega;			/* avg. brightness */
 		scalecolor(ls->val, d);
@@ -612,28 +614,55 @@ dobj_cleanup()				/* free all resources */
 }
 
 
-dobj_xform(nam, add, ac, av)		/* set/add transform for nam */
+dobj_xform(nam, rel, ac, av)		/* set/add transform for nam */
 char	*nam;
-int	add, ac;
+int	rel, ac;
 char	**av;
 {
 	register DOBJECT	*op;
+	FVECT	cent;
+	double	rad;
+	char	scoord[16];
+	int	i;
 
 	if ((op = getdobj(nam)) == NULL) {
 		error(COMMAND, "no object");
 		return(0);
 	}
-	if (add) add = op->xfac;
-	if (ac + add > MAXAC) {
+	if (rel)
+		rel = op->xfac + 8;
+	if (ac + rel > MAXAC) {
 		error(COMMAND, "too many transform arguments");
 		return(0);
 	}
-	savedxf(curobj = op);
-	if (!add)
+	savedxf(curobj = op);		/* remember current transform */
+	if (rel && ac == 4 && !strcmp(av[0], "-t"))
+		rel = -1;			/* don't move for translate */
+	else {
+		getdcent(cent, op);		/* don't move if near orig. */
+		rad = getdrad(op);
+		if (DOT(cent,cent) < rad*rad)
+			rel = -1;
+	}
+	if (!rel) {				/* remove old transform */
 		while (op->xfac)
 			freestr(op->xfav[--op->xfac]);
+	} else if (rel > 0) {			/* relative move */
+		op->xfav[op->xfac++] = savestr("-t");
+		for (i = 0; i < 3; i++) {
+			sprintf(scoord, "%.4e", -cent[i]);
+			op->xfav[op->xfac++] = savestr(scoord);
+		}
+	}
 	while (ac--)
 		op->xfav[op->xfac++] = savestr(*av++);
+	if (rel > 0) {				/* move back */
+		op->xfav[op->xfac++] = savestr("-t");
+		for (i = 0; i < 3; i++) {
+			sprintf(scoord, "%.4e", cent[i]);
+			op->xfav[op->xfac++] = savestr(scoord);
+		}
+	}
 	op->xfav[op->xfac] = NULL;
 	if (fullxf(&op->xfb, op->xfac, op->xfav) != op->xfac) {
 		error(COMMAND, "bad transform arguments");
@@ -670,7 +699,7 @@ FILE	*fp;
 		return(0);
 	}
 	getdcent(ocent, op);
-	fprintf(fp, "%s: %s, center [%f %f %f], radius %f", op->name,
+	fprintf(fp, "%s: %s, center [%g %g %g], radius %g", op->name,
 			op->drawcode==DO_HIDE ? "hidden" :
 			op->drawcode==DO_LIGHT && op->ol!=NULL ? "lighted" :
 			"shown",
