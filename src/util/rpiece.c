@@ -28,6 +28,7 @@ int  hres = 512, vres = 512, hmult = 2, vmult = 2;
 char  *outfile = NULL;
 int  outfd;
 long  scanorig;
+int  syncfd = -1;		/* lock file descriptor */
 
 char  *progname;
 int  verbose = 0;
@@ -88,6 +89,15 @@ char  *argv[];
 					break;
 				vmult = atoi(argv[++i]);
 				continue;
+			case 'F':		/* syncronization file */
+				if (argv[i][2])
+					break;
+				if ((syncfd = open(argv[++i], O_RDWR)) < 0) {
+					fprintf(stderr, "%s: cannot open\n",
+							argv[i]);
+					exit(1);
+				}
+				continue;
 			case 'o':		/* output file */
 				if (argv[i][2])
 					break;
@@ -121,6 +131,11 @@ char  **av;
 		fprintf(stderr, "%s: %s\n", progname, err);
 		exit(1);
 	}
+	if (syncfd != -1) {
+		char  buf[32];
+		buf[read(syncfd, buf, sizeof(buf)-1)] = '\0';
+		sscanf(buf, "%d %d", &hmult, &vmult);
+	}
 	normaspect(viewaspect(&ourview)*hmult/vmult, &pixaspect, &hres, &vres);
 					/* open output file */
 	if ((outfd = open(outfile, O_WRONLY|O_CREAT|O_EXCL, 0666)) >= 0) {
@@ -137,7 +152,6 @@ char  **av;
 		putc('\n', fp);
 		fprtresolu(hres*hmult, vres*vmult, fp);
 	} else if ((outfd = open(outfile, O_RDWR)) >= 0) {
-		sleep(30);			/* wait for header */
 		if ((fp = fdopen(dup(outfd), "r+")) == NULL)
 			goto filerr;
 		getheader(fp, NULL);		/* skip header */
@@ -154,6 +168,7 @@ char  **av;
 	scanorig = ftell(fp);		/* record position of first scanline */
 	if (fclose(fp) == -1)		/* done with stream i/o */
 		goto filerr;
+	sync();				/* avoid NFS buffering */
 					/* start rpict process */
 	if (open_process(rpd, rpargv) <= 0) {
 		fprintf(stderr, "%s: cannot start %s\n", progname, rpargv[0]);
@@ -177,6 +192,49 @@ filerr:
 
 
 int
+nextpiece(xp, yp)		/* get next piece assignment */
+int  *xp, *yp;
+{
+	extern char  *fgets();
+	struct flock  fls;
+	char  buf[64];
+
+	if (syncfd != -1) {		/* using sync file */
+		fls.l_type = F_WRLCK;		/* gain exclusive access */
+		fls.l_whence = 0;
+		fls.l_start = 0L;
+		fls.l_len = 0L;
+		fcntl(syncfd, F_SETLKW, &fls);
+		lseek(syncfd, 0L, 0);
+		buf[read(syncfd, buf, sizeof(buf)-1)] = '\0';
+		if (sscanf(buf, "%*d %*d %d %d", xp, yp) < 2) {
+			*xp = hmult;
+			*yp = vmult-1;
+		}
+		if (--(*xp) < 0) {		/* decrement position */
+			*xp = hmult-1;
+			if (--(*yp) < 0) {	/* all done! */
+				close(syncfd);
+				return(0);
+			}
+		}
+		sprintf(buf, "%d %d\n%d %d\n", hmult, vmult, *xp, *yp);
+		lseek(syncfd, 0L, 0);		/* write new position */
+		write(syncfd, buf, strlen(buf));
+		fls.l_type = F_UNLCK;		/* release sync file */
+		fcntl(syncfd, F_SETLKW, &fls);
+		return(1);
+	}
+	if (fgets(buf, sizeof(buf), stdin) == NULL)	/* using stdin */
+		return(0);
+	if (sscanf(buf, "%d %d", xp, yp) == 2)
+		return(1);
+	fprintf(stderr, "%s: input format error\n", progname);
+	exit(1);
+}
+
+
+int
 cleanup()			/* close rpict process and clean up */
 {
 	register int  rpstat;
@@ -193,16 +251,10 @@ cleanup()			/* close rpict process and clean up */
 
 rpiece()			/* render picture piece by piece */
 {
-	extern char  *gets(), *strcat();
 	VIEW  pview;
-	char  buf[48];
 	int  xorg, yorg;
 	
-	while (gets(buf) != NULL) {
-		if (sscanf(buf, "%d %d", &xorg, &yorg) != 2) {
-			fprintf(stderr, "%s: input format error\n", progname);
-			exit(1);
-		}
+	while (nextpiece(&xorg, &yorg)) {
 		copystruct(&pview, &ourview);	/* compute view for piece */
 		switch (ourview.type) {
 		case VT_PER:
@@ -235,8 +287,8 @@ rpiece()			/* render picture piece by piece */
 		fflush(torp);			/* assign piece to rpict */
 		putpiece(xorg, yorg);		/* place piece in output */
 		if (verbose) {			/* notify caller */
-			strcat(buf, " done\n");
-			writebuf(fileno(stdout), buf, strlen(buf));
+			printf("%d %d done\n", xorg, yorg);
+			fflush(stdout);
 		}
 	}
 }
@@ -248,6 +300,11 @@ int  xpos, ypos;
 	int  hr, vr;
 	int  y;
 
+	if (xpos < 0 | ypos < 0 | xpos >= hmult | ypos >= vmult) {
+		fprintf(stderr, "%s: requested piece (%d,%d) out of range\n",
+				progname, xpos, ypos);
+		exit(1);
+	}
 	getheader(fromrp, NULL);	/* discard header info. */
 	if (fscnresolu(&hr, &vr, fromrp) < 0 ||	/* check resolution */
 			hr != hres || vr != vres) {
