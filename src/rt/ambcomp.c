@@ -146,7 +146,9 @@ FVECT  pg, dg;
 				arad += dp->r;
 			}
 		}
-	if (ns > 0) {			/* perform super-sampling */
+	if (ns > 0 && arad > FTINY && ndivs/arad < minarad)
+		ns = 0;			/* close enough */
+	else if (ns > 0) {		/* else perform super-sampling */
 		comperrs(div, &hemi);			/* compute errors */
 		qsort(div, ndivs, sizeof(AMBSAMP), ambcmp);	/* sort divs */
 						/* super-sample */
