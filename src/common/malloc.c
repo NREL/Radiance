@@ -26,6 +26,12 @@ static char SCCSid[] = "$SunId$ LBL";
 
 extern int	errno;
 
+#ifndef  BSD
+#define  bcopy(s,d,n)		(void)memcpy(d,s,n)
+#define  bzero(d,n)		(void)memset(d,0,n)
+extern char  *memcpy(), *memset();
+#endif
+
 #ifdef MSTATS
 #include  <stdio.h>
 static unsigned	b_nsbrked = 0;
@@ -169,7 +175,7 @@ unsigned	*np;
 			big->siz = 0;		/* remove from table */
 			return(big->ptr);	/* return it */
 		}
-		if (mtablen(big) < tablen+1) {
+		if (mtablen(big) <= tablen) {
 			*np = 0;		/* cannot grow table */
 			return(NULL);		/* report failure */
 		}
@@ -179,17 +185,10 @@ unsigned	*np;
 		cptab.ptr = big->ptr;
 		cptab.siz = big->siz;
 		big->siz = 0;			/* clear and copy */
-#ifdef BSD
 		bcopy((char *)tab, (char *)(mtab(&cptab)+1),
 				tablen*sizeof(struct mblk));
 		bzero((char *)(mtab(&cptab)+tablen+1),
 			(mtablen(&cptab)-tablen-1)*sizeof(struct mblk));
-#else
-		(void)memcpy((char *)(mtab(&cptab)+1), (char *)tab,
-				tablen*sizeof(struct mblk));
-		memset((char *)(mtab(&cptab)+tablen+1), 0,
-			(mtablen(&cptab)-tablen-1)*sizeof(struct mblk));
-#endif
 	}			/* next round */
 }
 #endif		/* MCOMP */
@@ -380,11 +379,7 @@ unsigned	n;
 	if ((p = malloc(n)) == NULL)
 		return(n<=on ? op : NULL);
 	if (on) {
-#ifdef  BSD
 		bcopy(op, p, n>on ? on : n);
-#else
-		(void)memcpy(p, op, n>on ? on : n);
-#endif
 		free(op);
 	}
 	return(p);
