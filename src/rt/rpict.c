@@ -94,54 +94,60 @@ char  *oldfile;
 {
 	COLOR  *scanbar[MAXDIV+1];	/* scanline arrays of pixel values */
 	int  ypos;			/* current scanline */
-	int  xres, yres;		/* rendered x and y resolution */
 	COLOR  *colptr;
 	register int  i;
-					/* set rendered resolution */
-	xres = ourview.hresolu;
-	yres = ourview.vresolu;
-					/* adjust for sampling */
-	if (psample <= 1)
+					/* check sampling */
+	if (psample < 1)
 		psample = 1;
-	else {
-		if (psample > MAXDIV)
-			psample = MAXDIV;
-					/* rendered resolution may be larger */
-		xres += psample-1 - ((ourview.hresolu-2)%psample);
-		yres += psample-1 - ((ourview.vresolu-2)%psample);
-	}
+	else if (psample > MAXDIV)
+		psample = MAXDIV;
 					/* allocate scanlines */
 	for (i = 0; i <= psample; i++) {
-		scanbar[i] = (COLOR *)malloc(xres*sizeof(COLOR));
+		scanbar[i] = (COLOR *)malloc(ourview.hresolu*sizeof(COLOR));
 		if (scanbar[i] == NULL)
 			error(SYSTEM, "out of memory in render");
 	}
 					/* write out boundaries */
 	fputresolu(YMAJOR|YDECR, ourview.hresolu, ourview.vresolu, stdout);
-
-	ypos = ourview.vresolu-1 - salvage(oldfile);	/* find top line */
-	fillscanline(scanbar[0], xres, ypos, psample);	/* top scan */
-
-	for (ypos -= psample; ypos > -psample; ypos -= psample) {
+					/* recover file and compute first */
+	ypos = ourview.vresolu-1 - salvage(oldfile);
+	fillscanline(scanbar[0], ourview.hresolu, ypos, psample);
+						/* compute scanlines */
+	for (ypos -= psample; ypos >= 0; ypos -= psample) {
 	
-		pctdone = 100.0*(ourview.vresolu-ypos+psample)/ourview.vresolu;
+		pctdone = 100.0*(ourview.vresolu-ypos-psample)/ourview.vresolu;
 
 		colptr = scanbar[psample];		/* move base to top */
 		scanbar[psample] = scanbar[0];
 		scanbar[0] = colptr;
-
-		fillscanline(scanbar[0], xres, ypos, psample);	/* fill base */
-	
-		fillscanbar(scanbar, xres, ypos, psample);	/* fill bar */
-		
-		for (i = psample; (ypos>0) ? i > 0 : ypos+i >= 0; i--)
+							/* fill base line */
+		fillscanline(scanbar[0], ourview.hresolu, ypos, psample);
+							/* fill bar */
+		fillscanbar(scanbar, ourview.hresolu, ypos, psample);
+							/* write it out */
+		for (i = psample; i > 0; i--)
 			if (fwritescan(scanbar[i], ourview.hresolu, stdout) < 0)
 				goto writerr;
 		if (fflush(stdout) == EOF)
 			goto writerr;
 	}
+						/* compute residual */
+	colptr = scanbar[psample];
+	scanbar[psample] = scanbar[0];
+	scanbar[0] = colptr;
+	if (ypos > -psample) {
+		fillscanline(scanbar[-ypos], ourview.hresolu,
+				0, psample);
+		fillscanbar(scanbar-ypos, ourview.hresolu,
+				0, psample+ypos);
+	}
+	for (i = psample; i+ypos >= 0; i--)
+		if (fwritescan(scanbar[i], ourview.hresolu, stdout) < 0)
+			goto writerr;
+	if (fflush(stdout) == EOF)
+		goto writerr;
 	pctdone = 100.0;
-		
+						/* free scanlines */
 	for (i = 0; i <= psample; i++)
 		free((char *)scanbar[i]);
 	return;
@@ -164,6 +170,11 @@ int  xres, y, xstep;
 		pixvalue(scanline[i], i, y);
 		
 		b = fillsample(scanline+i-xstep, i-xstep, y, xstep, 0, b/2);
+	}
+	if (i-xstep < xres-1) {
+		pixvalue(scanline[xres-1], xres-1, y);
+		fillsample(scanline+i-xstep, i-xstep, y,
+				xres-1-(i-xstep), 0, b/2);
 	}
 }
 
