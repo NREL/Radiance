@@ -50,7 +50,7 @@ typedef float  COLOR[3];	/* red, green, blue */
 				ldexp((c)[p]+.5,(int)(c)[EXP]-(COLXS+8)) : \
 				0. )
 
-#define  norm_bright(c)		(int)((77L*(c)[RED]+151L*(c)[GRN]+28L*(c)[BLU])/256)
+#define  normbright(c)		(int)((77L*(c)[RED]+151L*(c)[GRN]+28L*(c)[BLU])/256)
 
 #define  WHTCOLOR		{1.0,1.0,1.0}
 #define  BLKCOLOR		{0.0,0.0,0.0}

@@ -367,39 +367,42 @@ register COLR  clr;
 }
 
 
-int
-colr_norm(clr, nclr)		/* normalize a short color, return shift */
-COLR  clr, nclr;
+normcolrs(scan, len)		/* normalize a scanline of colrs */
+register COLR  *scan;
+int  len;
 {
 	register int  c;
-	register int  shift = clr[EXP]-COLXS;
+	register int  shift;
 
-	if (shift > 0) {
-		if (shift >= 8) {
-			nclr[RED] = nclr[GRN] = nclr[BLU] = 255;
-		} else {
-			c = clr[RED] << shift;
-			nclr[RED] = c > 255 ? 255 : c;
-			c = clr[GRN] << shift;
-			nclr[GRN] = c > 255 ? 255 : c;
-			c = clr[BLU] << shift;
-			nclr[BLU] = c > 255 ? 255 : c;
+	while (len-- > 0) {
+		shift = scan[0][EXP] - COLXS;
+		if (shift > 0) {
+			if (shift >= 8) {
+				scan[0][RED] =
+				scan[0][GRN] =
+				scan[0][BLU] = 255;
+			} else {
+				c = scan[0][RED] << shift;
+				scan[0][RED] = c > 255 ? 255 : c;
+				c = scan[0][GRN] << shift;
+				scan[0][GRN] = c > 255 ? 255 : c;
+				c = scan[0][BLU] << shift;
+				scan[0][BLU] = c > 255 ? 255 : c;
+			}
+		} else if (shift < 0) {
+			if (shift <= -8) {
+				scan[0][RED] =
+				scan[0][GRN] =
+				scan[0][BLU] = 0;
+			} else {
+				scan[0][RED] = scan[0][RED] >> -shift;
+				scan[0][GRN] = scan[0][GRN] >> -shift;
+				scan[0][BLU] = scan[0][BLU] >> -shift;
+			}
 		}
-	} else if (shift < 0) {
-		if (shift <= -8) {
-			nclr[RED] = nclr[GRN] = nclr[BLU] = 0;
-		} else {
-			nclr[RED] = clr[RED] >> -shift;
-			nclr[GRN] = clr[GRN] >> -shift;
-			nclr[BLU] = clr[BLU] >> -shift;
-		}
-	} else {
-		nclr[RED] = clr[RED];
-		nclr[GRN] = clr[GRN];
-		nclr[BLU] = clr[BLU];
+		scan[0][EXP] = COLXS;
+		scan++;
 	}
-	nclr[EXP] = COLXS;
-	return(shift);
 }
 
 
