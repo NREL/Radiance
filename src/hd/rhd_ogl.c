@@ -37,7 +37,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "x11icon.h"
 
 #ifndef RAYQLEN
-#define RAYQLEN		50000		/* max. rays to queue before flush */
+#define RAYQLEN		0		/* max. rays to queue before flush */
 #endif
 
 #ifndef FEQ
@@ -250,7 +250,7 @@ char  *id;
 	XMapWindow(ourdisplay, gwind);
 	dev_input();			/* sets size and view angles */
 	if (!odInit(DisplayWidth(ourdisplay,ourscreen) *
-			DisplayHeight(ourdisplay,ourscreen) / 4))
+			DisplayHeight(ourdisplay,ourscreen) / 3))
 		error(SYSTEM, "insufficient memory for value storage");
 	odev.name = id;
 	odev.firstuse = 1;		/* can't recycle samples */
@@ -795,7 +795,7 @@ XButtonPressedEvent	*ebut;
 	XNoOp(ourdisplay);		/* makes sure we're not idle */
 
 	viewflags &= ~VWSTEADY;		/* flag moving view */
-	setglpersp(&odev.v);		/* start us off in perspective */
+	setglpersp();			/* start us off in perspective */
 	while (!XCheckMaskEvent(ourdisplay,
 			ButtonReleaseMask, levptr(XEvent))) {
 					/* get cursor position */
@@ -837,8 +837,7 @@ XButtonPressedEvent	*ebut;
 
 
 static
-setglpersp(vp)			/* set perspective view in GL */
-register VIEW	*vp;
+setglpersp()			/* set perspective view in GL */
 {
 	double	d, xmin, xmax, ymin, ymax;
 	GLfloat	vec[4];
@@ -997,11 +996,12 @@ register XKeyPressedEvent  *ekey;
 		if (inpresflags & DFL(DC_REDRAW))
 			return;
 		XRaiseWindow(ourdisplay, gwind);
-		XFlush(ourdisplay);
+		XFlush(ourdisplay);		/* raise up window */
 		sleep(1);			/* wait for restacking */
-		dev_clear();			/* clear display and samples */
-		dev_flush();			/* draw octrees */
+		dev_clear();			/* clear buffer and samples */
 		odRemap(1);			/* start fresh histogram */
+		dev_flush();			/* redraw geometry */
+		rayqleft = 0;			/* hold off update */
 		inpresflags |= DFL(DC_REDRAW);	/* resend values from server */
 		return;
 	case 'K':			/* kill rtrace process(es) */
@@ -1039,15 +1039,7 @@ register XExposeEvent  *eexp;
 	if (xmin <= 0 && xmax >= odev.hres-1 &&
 			ymin <= 0 && ymax >= odev.vres) {
 		DCHECK(eexp->count, WARNING, "multiple clear in fixwindow");
-		if (viewflags & VWORTHO)	/* workaround for... */
-			glDrawBuffer(GL_FRONT);	/* ...GLX window mapping bug */
-		glClear(GL_DEPTH_BUFFER_BIT);	/* clear the entire buffer */
-#ifdef STEREO
-		setstereobuf(STEREO_BUFFER_RIGHT);
-		glClear(GL_DEPTH_BUFFER_BIT);
-		setstereobuf(STEREO_BUFFER_LEFT);
-#endif
-		odRedrawAll();
+		wipeclean();			/* make sure we're go */
 		return;
 	}
 						/* clear portion of depth */
