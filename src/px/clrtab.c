@@ -31,6 +31,8 @@ static unsigned	histo[NRED][NGRN][NBLU];
 static int	CLRCUBE[3][2] = {0,NRED,0,NGRN,0,NBLU};
 				/* maximum propagated error during dithering */
 #define MAXERR		20
+				/* define CLOSEST to get closest colors */
+#define CLOSEST		1
 
 
 new_histo()		/* clear our histogram */
@@ -66,6 +68,9 @@ int	ncolors;
 		ncolors = 256;
 				/* partition color space */
 	cut(CLRCUBE, 0, ncolors);
+#ifdef CLOSEST
+	closest(ncolors);	/* ensure colors picked are closest */
+#endif
 				/* return new color table size */
 	return(ncolors);
 }
@@ -253,3 +258,112 @@ register int	box[3][2];
 		clrtab[p][BLU] = (box[BLU][0]+box[BLU][1])*256/NBLU/2;
 	}
 }
+
+
+#ifdef CLOSEST
+#define NBSIZ		32
+static
+closest(n)			/* make sure we have the closest colors */
+int	n;
+{
+	BYTE	*neigh[256];
+	register int	r, g, b;
+#define i r
+					/* get space for neighbor lists */
+	for (i = 0; i < n; i++) {
+		if ((neigh[i] = (BYTE *)malloc(NBSIZ)) == NULL) {
+			while (i--)
+				free(neigh[i]);
+			return;			/* ENOMEM -- abandon effort */
+		}
+		neigh[i][0] = i;		/* identity is terminator */
+	}
+					/* make neighbor lists */
+	for (r = 0; r < NRED-1; r++)
+	    for (g = 0; g < NGRN-1; g++)
+		for (b = 0; b < NBLU-1; b++) {
+		    if (histo[r][g][b] != histo[r+1][g][b])
+			addneigh(neigh, histo[r][g][b], histo[r+1][g][b]);
+		    if (histo[r][g][b] != histo[r][g+1][b])
+			addneigh(neigh, histo[r][g][b], histo[r][g+1][b]);
+		    if (histo[r][g][b] != histo[r][g][b+1])
+			addneigh(neigh, histo[r][g][b], histo[r][g][b+1]);
+		}
+					/* assign closest values */
+	for (r = 0; r < NRED; r++)
+	    for (g = 0; g < NGRN; g++)
+		for (b = 0; b < NBLU; b++)
+		    setclosest(neigh, r, g, b);
+					/* free neighbor lists */
+	for (i = 0; i < n; i++)
+		free(neigh[i]);
+#undef i
+}
+
+
+static
+addneigh(nl, i, j)		/* i and j are neighbors; add them to list */
+register BYTE	*nl[];
+register int	i;
+int	j;
+{
+	int	nc;
+	char	*nnl;
+	register int	t;
+	
+	for (nc = 0; nc < 2; nc++) {		/* do both neighbors */
+		for (t = 0; nl[i][t] != i; t++)
+			if (nl[i][t] == j)
+				break;		/* in list already */
+		if (nl[i][t] == i) {		/* add to list */
+			nl[i][t++] = j;
+			if (t % NBSIZ == 0) {	/* enlarge list */
+				if ((nnl = realloc(nl[i], t+NBSIZ)) == NULL)
+					t--;
+				else
+					nl[i] = (BYTE *)nnl;
+			}
+			nl[i][t] = i;		/* terminator */
+		}
+		t = i; i = j; j = t;		/* swap and do it again */
+	}
+}
+
+
+static unsigned
+dist(col, r, g, b)		/* find distance from clrtab entry to r,g,b */
+register BYTE	col[3];
+int	r, g, b;
+{
+	register unsigned	tmp;
+	register unsigned	sum;
+	
+	tmp = col[RED]*NRED/256 - r;
+	sum = tmp*tmp;
+	tmp = col[GRN]*NGRN/256 - g;
+	sum += tmp*tmp;
+	tmp = col[BLU]*NBLU/256 - b;
+	sum += tmp*tmp;
+	return(sum);
+}
+
+
+static
+setclosest(nl, r, g, b)		/* find index closest to color and assign */
+BYTE	*nl[];
+int	r, g, b;
+{
+	int	ident;
+	unsigned	min;
+	register unsigned	d;
+	register BYTE	*p;
+					/* get starting value */
+	min = dist(clrtab[ident=histo[r][g][b]], r, g, b);
+					/* find minimum */
+	for (p = nl[ident]; *p != ident; p++)
+		if ((d = dist(clrtab[*p], r, g, b)) < min) {
+			min = d;
+			histo[r][g][b] = *p;
+		}
+}
+#endif
