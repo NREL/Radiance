@@ -27,7 +27,7 @@ static void _loadds far mouse_handler (int max, int mcx, int mdx)
 #pragma aux mouse_handler parm [EAX] [ECX] [EDX]
 	mouse_event = max;
 	mouse_xpos = mcx;
-	mouse_ypos = mdx * (long)ydispsize / 200;	/* kludge */
+	mouse_ypos = mdx;
 }
 #pragma on (check_stack)
 
@@ -152,6 +152,17 @@ struct driver  *dp;
     xdispsize = dp->xsiz;
     ydispsize = dp->ysiz;
     crad = dp->ysiz/40;
+
+    /* set screen limits */
+
+    inregs.w.ax = 0x7;		/* horizontal resolution */
+    inregs.w.cx = 0;
+    inregs.w.dx = xdispsize-1;
+    int386x( 0x33, &inregs, &outregs, &sregs );
+    inregs.w.ax = 0x8;		/* vertical resolution */
+    inregs.w.cx = 0;
+    inregs.w.dx = ydispsize-1;
+    int386x( 0x33, &inregs, &outregs, &sregs );
 
     /* install watcher */
 
