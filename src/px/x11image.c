@@ -733,6 +733,18 @@ XKeyPressedEvent  *ekey;
 		return(0);
 	case 't':				/* trace */
 		return(traceray(ekey->x, ekey->y));
+	case 'a':				/* auto exposure */
+		if (tmflags == TM_F_CAMERA)
+			return(0);
+		tmflags = TM_F_CAMERA;
+		strcpy(buf, "auto exposure...");
+		goto remap;
+	case 'h':				/* human response */
+		if (tmflags == TM_F_HUMAN)
+			return(0);
+		tmflags = TM_F_HUMAN;
+		strcpy(buf, "human exposure...");
+		goto remap;
 	case '=':				/* adjust exposure */
 	case '@':				/* adaptation level */
 		if (avgbox(cval) == -1)
@@ -758,6 +770,7 @@ XKeyPressedEvent  *ekey;
 		}
 		scale += n;
 		sprintf(buf, "%+d", scale);
+	remap:
 		XDrawImageString(thedisplay, wind, ourgc,
 				box.xmin, box.ymin+box.ysiz, buf, strlen(buf));
 		XFlush(thedisplay);
