@@ -221,6 +221,7 @@ register OBJREC  *tm;
 	i = sndx(tm);
 	d = i < tm->oargs.nfargs ? tm->oargs.farg[i] : 0.0;
 	i = d * 256.0;
+	t->tl.width = 0;
 	for (tlp = t->tl.next; tlp != NULL; tlp = tlp->next) {
 		if ((tlp->spc = (short *)malloc(
 				(strlen(TLSTR(tlp))+1)*sizeof(short))) == NULL)
@@ -231,6 +232,8 @@ register OBJREC  *tm;
 			tlp->width = proptext(tlp->spc, TLSTR(tlp), t->f, i, 3);
 		else
 			tlp->width = uniftext(tlp->spc, TLSTR(tlp), t->f);
+		if (tlp->width > t->tl.width)
+			t->tl.width = tlp->width;
 	}
 						/* we're done */
 	tm->os = (char *)t;
@@ -264,6 +267,7 @@ intext(p, m)			/* check to see if p is in text glyph */
 FVECT  p;
 OBJREC  *m;
 {
+	extern double  fabs();
 	register TEXT  *tp;
 	register TLINE  *tlp;
 	FVECT  v;
@@ -274,7 +278,13 @@ OBJREC  *m;
 	v[0] = p[0] - m->oargs.farg[0];
 	v[1] = p[1] - m->oargs.farg[1];
 	v[2] = p[2] - m->oargs.farg[2];
-	h = x = DOT(v, tp->right)*256.;
+	x = DOT(v, tp->right);
+	i = sndx(m);
+	if (i < m->oargs.nfargs)
+		x *= tp->f->mwidth + 256.*fabs(m->oargs.farg[i]);
+	else
+		x *= 256.;
+	h = x;
 	i = y = DOT(v, tp->down);
 	if (x < 0.0 || y < 0.0)
 		return(0);
