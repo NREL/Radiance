@@ -5,8 +5,8 @@ static const char	RCSid[] = "$Id$";
  * Generate renderable grids from a holodeck file
  */
 
-#include "holo.h"
 #include "platform.h"
+#include "holo.h"
 
 char	*progname;		/* global argv[0] */
 

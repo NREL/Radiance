@@ -10,9 +10,9 @@ static const char	RCSid[] = "$Id$";
 #include <signal.h>
 #include <string.h>
 
+#include "platform.h"
 #include "rtprocess.h" /* getpid() */
 #include "holo.h"
-#include "platform.h"
 
 #ifndef BKBSIZE
 #define BKBSIZE		256		/* beam clump size (kilobytes) */

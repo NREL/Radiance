@@ -5,8 +5,8 @@ static const char	RCSid[] = "$Id$";
  * Create a closed environment from a holodeck section
  */
 
-#include "holo.h"
 #include "platform.h"
+#include "holo.h"
 
 #define	ourhp		(hdlist[0])
 

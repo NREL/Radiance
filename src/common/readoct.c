@@ -10,8 +10,8 @@ static const char	RCSid[] = "$Id$";
 #include  <stdio.h>
 #include  <time.h>
 
-#include  "standard.h"
 #include  "platform.h"
+#include  "standard.h"
 #include  "octree.h"
 #include  "object.h"
 #include  "otypes.h"

@@ -13,9 +13,9 @@ static const char	RCSid[] = "$Id$";
 #include <signal.h>
 #include <sys/stat.h>
 
+#include "platform.h"
 #include "rtprocess.h" /* getpid() */
 #include "standard.h"
-#include "platform.h"
 #include "random.h"
 
 #ifdef F_SETLKW

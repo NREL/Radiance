@@ -5,8 +5,8 @@ static const char	RCSid[] = "$Id$";
  * Get general information on holodeck file
  */
 
-#include "holo.h"
 #include "platform.h"
+#include "holo.h"
 
 #ifndef NHBINS
 #define NHBINS		12	/* number of histogram bins to use for stats */

@@ -5,8 +5,8 @@ static const char	RCSid[] = "$Id$";
  * Copy data into a holodeck file
  */
 
-#include "holo.h"
 #include "platform.h"
+#include "holo.h"
 #include "view.h"
 
 #ifndef BKBSIZE

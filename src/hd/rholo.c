@@ -9,8 +9,8 @@ static const char	RCSid[] = "$Id$";
 #include <sys/stat.h>
 #include <string.h>
 
-#include "rholo.h"
 #include "platform.h"
+#include "rholo.h"
 #include "random.h"
 
 #ifndef FRAGWARN

@@ -11,9 +11,9 @@ static const char	RCSid[] = "$Id$";
 
 #include <string.h>
 
-#include "holo.h"
-
 #include "platform.h"
+
+#include "holo.h"
 
 #ifndef CACHESIZE
 #ifdef SMLMEM

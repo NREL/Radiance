@@ -7,8 +7,8 @@ static const char RCSid[] = "$Id$";
  *     7/29/85
  */
 
-#include  "standard.h"
 #include  "platform.h"
+#include  "standard.h"
 #include  "octree.h"
 #include  "object.h"
 #include  "otypes.h"

@@ -5,10 +5,8 @@ static const char	RCSid[] = "$Id$";
  * Compute rays corresponding to a given picture or view.
  */
 
-
-#include "standard.h"
-
 #include "platform.h"
+#include "standard.h"
 #include "view.h"
 
 extern int	putf(), putd(), puta();

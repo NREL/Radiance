@@ -7,8 +7,8 @@ static const char	RCSid[] = "$Id$";
 
 #include <string.h>
 
-#include "rholo.h"
 #include "platform.h"
+#include "rholo.h"
 #include "view.h"
 
 char	*progname;		/* our program name */
