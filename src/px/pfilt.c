@@ -329,13 +329,13 @@ FILE  *in;
 	}
 	for (i = 0; i < yres; i++) {
 		if (freadscan(scan, xres, in) < 0) {
-			nrows = nrows * i / yres;	/* adjust frame */
+			nrows = (long)nrows * i / yres;	/* adjust frame */
 			if (nrows <= 0) {
 				fprintf(stderr, "%s: empty frame\n", progname);
 				quit(1);
 			}
 			fprintf(stderr, "%s: warning - partial frame (%d%%)\n",
-					progname, 100*i/yres);
+					progname, (int)(100L*i/yres));
 			yres = i;
 			y_r = (double)nrows/yres;
 			break;
