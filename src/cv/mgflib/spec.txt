@@ -1,0 +1,422 @@
+		MATERIALS AND GEOMETRY FORMAT
+		SCCSid "$SunId$ LBL"
+
+Introduction
+============
+The following file format is a simple ASCII representation of surface
+geometry and materials for the purpose of visible-light simulation
+and rendering.  The overall objective of this format is to provide
+a very simple yet fairly complete modeling language that does not
+place unreasonable demands on the applications programmer or the
+object library creator.
+
+Similar to Wavefront's .OBJ file format, our format utilizes a
+number of object entities, one per line, some of which establish
+a context for the entities that follow.  Specifically, there is
+a context for the current vertex, the current color, and the
+current material.  The current vertex is used only for setting
+values related to that vertex.  The current color is used for
+setting values related to that color, as well as by certain
+material attributes which take an optional color setting.
+The current material is used for setting material-related
+parameters, and for establishing the material for the following
+geometric entities.  In addition to these three named contexts,
+there are two hierarchical (i.e. cumulative) contexts, the
+current transform and the current object name.
+
+Each entity is given by a short keyword, followed by space- or tab-
+delimited arguments on a single line.  A single entity may be extended
+over multiple lines using a backslash ('\') character right before the
+end of line, though no extended line may exceed 512 characters in total
+length.  (Given the current set of entities, even approaching 80
+characters would be highly unusual.)
+
+Entities and Contexts
+=====================
+There are three contexts in effect at all times, current vertex,
+current color and current material.  Initially, these contexts are
+unnamed, and have specific default values.  The unnamed vertex is the
+origin.  The unnamed color is neutral gray.  The unnamed material is a
+perfect absorber.  The unnamed contexts may be modified, but those
+modifications will not be saved.  Thus, reestablishing an unnamed
+context always gets its initial default value.  To save a new context
+or modify an old one, it must first be named.  Entities associated with
+named contexts (i.e. "v", "c" and "m") may be followed by an identifier
+and an equals sign ('='), indicating a new context.  If there is no
+equals, then the context must already be defined, and the appearance of
+the entity merely reestablishes this context.  If the context id is
+followed by an equals, then a new context is defined, destroying any
+previous instance of that context name.  Redefining or changing values
+of a context does not affect earlier uses of the same name, however.
+Contexts are always associated with a name id, which is any non-blank
+sequence of printing ASCII characters.  An optional template may be
+given following the equals, which is a previously defined context to
+use as a source of default values for this definition.  If no template
+is given, then the unnamed context of that type is used to set initial
+values.  Named contexts continue until the next context definition of
+the same type.
+
+Hierarchical Contexts
+=====================
+Two entities define a second type of context, which is hierarchical.
+These are the transform ("xf") entity and the object ("o") entity.
+The object entity is used simply for naming collections of surfaces.
+An object entity with a name applies to the following surfaces up
+until an object entity with no name, which signifies the end of this
+object's scope.  Object entities may be nested to any level, and
+can be thought of as parts and subparts of an enclosing global object.
+Note that this is strictly for ease of identification, and has no
+real meaning as far as the geometric description goes.  In contrast,
+the transform entity is very significant as it determines how enclosing
+objects are to be scaled and placed in the final description.
+
+Without further ado, here are the proposed entities and their interpretations:
+
+Keyword	Arguments		Meaning
+-------	---------		-------
+#	anything		a comment
+i	filename [xform]	include file (with transformation)
+ies	filename [-m f][xform]	include IES luminaire (with transformation)
+v	[id [= [template]]]	get/set vertex context
+p	x y z			set point position for current vertex
+n	dx dy dz		set surface normal for current vertex
+c	[id [= [template]]]	get/set color context
+cxy	x y			set CIE (x,y) chromaticity for current color
+cspec	l_min l_max v1 v2 ..	set relative spectrum for current color
+cmix	w1 c1 w2 c2 ..		mix named colors to make current color
+m	[id [= [template]]]	get/set material context
+rd	rho_d			set diffuse reflectance for current material
+td	tau_d			set diffuse transmittance for current material
+ed	epsilon_d		set diffuse emittance for current material
+rs	rho_s alpha_r		set specular reflectance for current material
+ts	tau_s alpha_t		set specular transmittance for current material
+o	[name]			begin/end object context
+f	v1 v2 v3 ..		polygon using current material, spec. vertices
+sph	vc radius		sphere
+cyl	v1 radius v2		truncated right cylinder (open-ended)
+cone	v1 rad1 v2 rad2		truncated right cone (open-ended)
+prism	v1 v2 v3 .. length	right prism (closed solid)
+ring	vc rmin rmax		circular ring with inner and outer radii
+torus	vc rmin rmax		circular torus with inner and outer radii
+xf	[xform]			begin/end transformation context
+
+These are the context dependencies of each entity:
+
+Entities				Contexts
+--------				--------
+p, n					vertex
+cxy, cspec, cmix			color
+rd, td, ed, rs, ts			color, material
+f, sph, cyl, cone, ring, torus, prism	material, object, transformation
+
+Transformations
+===============
+A rigid body transformation is given with the transform entity, or as
+part of an included file.  The following transformation flags and
+arguments are defined:
+
+	-t dx dy dz		translate objects along the given vector
+	-rx degrees		rotate objects about the X-axis
+	-ry degrees		rotate objects about the Y-axis
+	-rz degrees		rotate objects about the Z-axis
+	-s scalefactor		scale objects by the given factor
+	-mx			mirror objects about the Y-Z plane
+	-my			mirror objects about the X-Z plane
+	-mz			mirror objects about the X-Y plane
+	-i N			repeat the following arguments N times
+	-a N			make an array of N geometric instances
+
+Transform arguments have a cumulative effect.  That is, a rotation
+about X of 20 degrees followed by a rotation about X of -50 degrees
+results in a total rotation of -30 degrees.  However, if the two
+rotations are separated by some translation vector, the cumulative
+effect is quite different.  It is best to think of each argument as
+acting on the included geometric objects, and each subsequent transformation
+argument affects the objects relative to their new position/orientation.
+
+For example, rotating an object about its center requires translating
+the object back to the origin, applying the desired rotation, and translating
+it again back to its original position.
+
+Rotations are given in degrees counter-clockwise about a principal axis.
+That is, with the thumb of the right hand pointing in the direction
+of the axis, rotation follows the curl of the fingers.
+
+The transform command itself is also cumulative, and a transform
+command with no arguments is used to return to the previous
+condition.  It is best if transforms and their end statements
+("xf" by itself) are balanced in a file, so that later or enclosing
+files are not affected.
+
+Transformations apply only to geometric types, e.g. polygons, spheres, etc.
+Vertices and the components that go into geometry are not directly affected.
+This is to avoid confusion and the inadvertent multiple application of a
+given transformation.
+
+Arrays
+======
+The -a N transform specification causes the following transform
+arguments to be repeated along with the contents of the included
+file N times.  (Note that this option is supported only for included
+files.)  The first instance of the geometry will be in its initial
+location; the second instance will be repositioned according to the
+named transformation; the third instance will be repositioned by
+applying this transformation twice, and so on up to N-1 applications.
+
+Multi-dimensional arrays may be specified with a single include
+entity by giving multiple array commands separated by their
+corresponding transforms.  A final transformation may be given
+by preceeding it with a -i 1 specification.  In other words, the
+scope of an array command continues until the next -i or -a option.
+
+Other Details
+=============
+End of line may be any one of the sequences:  linefeed ('\n'), carriage-
+return ('\r'), or a carriage return followed by a linefeed.
+
+Blank lines are ignored on the input, as are any blanks preceeding
+a keyword on a line.  Indentation may improve readability, especially
+in context definitions.
+
+The comment character ('#') must be followed by at least one blank
+character (space or tab) for easy parsing.  Like any other line,
+a comment may be extended to multiple lines using a backslash ('\').
+
+Include filename paths are relative to the current file.  Absolute
+paths are expressly forbidden.  UNIX conventions should be used for the
+path separator ('/') and disk names should not be used (i.e. no
+"C:\file").  To further enhance portability across systems, directory
+names should be 8 characters or fewer with no suffix, filenames should
+fit within an 8.3 format, and all characters should be lower case.
+(They will be automatically promoted to upper case by DOS systems.)
+We suggest the standard suffix ".mgf" for "materials and geometry format".
+
+The XYZ coordinate system is right-handed, and lengths are always in
+SI meters.  This is not really a limitation as the first statement
+in the file can always be a transform with the -s option to convert
+to a more convenient set of units.  Included IES files will also start
+out in meters, and it is important to specify a transform into the
+local coordinate system.  The -m option (preceeding any transform)
+may be used to specify an output multiplication factor.
+
+Vertex normals need not be normalized, and a normal equal to (0,0,0) indicates
+that the exact surface normal should be used.  (This is the default.)
+
+Color in this system does not include intensity, only hue and
+saturation.  Intensity, such as reflectance or emittance, is explicitly
+included in the other material parameters.  All colors are absolute,
+e.g. spectral reflectance or transmittance under uniform white light.
+
+A CIE xy chromaticity pair is the most basic color specification.
+A full spectrum is the most general specification, and the starting
+(i.e. minimum) and ending (i.e. maximum) wavelengths are given along
+with a set of evenly spaced values.  Wavelengths are given in nanometers,
+and must be within the range of 380-780.  The spectral values themselves
+are located starting at the first wavelength and proceeding at even
+increments to the ending wavelength.  The values in between will be
+interpolated as necessary, so there must be at least two specified points.
+The color mixing entity is intended not only for the mixing of named
+colors, but also for color specifications  using an arbitrary set
+of basis functions.  The actual totals for spectral and mixing
+coefficients is irrelevant, since the results will be normalized.
+
+Diffuse emittance is always given in SI units of lumens/meter^2.  Note that
+this is emittance, not exitance, and does not include light reflected or
+transmitted by the surface.
+
+The roughness associated with specular reflectance and transmittance
+is the RMS surface facet slope.  A value of 0 indicates a perfectly
+smooth surface, meaning that reflected or transmitted rays will not
+be scattered.
+
+The sum of the diffuse and specular reflectances and transmittances
+must be strictly less than one (with no negative values, obviously).
+
+The object entity establishes a hierarchical context, consisting of
+this identifier and all those preceding.  It has no real meaning except
+to group the following surfaces up until an empty object statement
+under a descriptive name for improved file readability.
+
+Surfaces are one-sided, and appear invisible when viewed from the
+back side.  This means that a transmitting object will affect the
+light coming in through the front surface and ignore the characteristics
+of the back surface.  As long as the characteristics are the same,
+the results should be correct.  If the rendering technique does not
+allow for one-sided surfaces, an approximately correct result can
+be obtained for transmitting surfaces by using the square root of
+the given tau_s and half the given alpha_t.
+
+The surface normal of a face is oriented by the right-hand rule.
+Specifically, the surface normal faces towards the viewer when the
+vertices circulate counter-clockwise.  Faces may be concave or convex,
+but must be planar.  Holes may be represented as concave polygons with
+coincident sides (i.e. seams).
+
+A prism consists of a set of coplanar vertices specifying an end-face,
+and a length value.  The prism will be extruded so that the end-face
+points outward, unless the length value is negative, in which case the
+object is extruded in the opposite direction, resulting in inward-
+directed surface normals.
+
+A sphere, cylinder or cone with negative radii is interpreted as having
+an inward facing surface normal.  Otherwise, the normal is assumed
+to face outwards.  (It is illegal for a cone to have one positive and
+one negative radius.)
+
+The central vertex for a ring or torus must have an associated normal,
+which serves to orient the ring.  The inner radius must be given first,
+and must be strictly less than the outer radius.  The inner radius may
+be zero but not negative.  There is an exception for a torus with
+inward-pointing normal, which is identified by a negative outer radius
+and a non-positive inner radius.
+
+Examples
+========
+The following is a complete example input file (don't ask me what it is):
+
+	# Define some materials:
+	m red_plastic =
+		c red =
+			cxy .8 .1
+		rd 0.5
+		# reestablish unnamed (neutral) color context:
+		c
+		rs 0.04 0.02
+	m green_plastic =
+		c green =
+			cxy .2 .6
+		rd 0.4
+		c
+		rs .05 0
+	m bright_emitter =
+		c
+		ed 1000
+	m dark =
+		c
+		rd .08
+	# Define some vertices:
+	v v1 =
+		p 10 5 7
+	v v2 =
+		p 15 3 9
+	v v3 =
+		p 20 -7 6
+	v v4 =
+		p 20 10 6
+	v v5 =
+		p 10 10 6
+	v v6 =
+		p 10 -7 6
+	v cv1 =
+		p -5 3 8
+		n 0 0 -1
+	v cv2 =
+		p -3 3 8
+		n 0 0 1
+	# make some faces:
+	m green_plastic
+	f v1 v3 v4
+	m red_plastic
+	f v3 v4 v5
+	f v5 v6 v7
+	m bright_emitter
+	f v3 v4 v5 v6
+	# make a cylindrical source with dark end caps:
+	m bright_emitter
+	cyl cv1 .15 cv2
+	m dark
+	ring cv1 0 .15
+	ring cv2 0 .15
+
+The following is a more typical example, which relies on a material library:
+
+	# Include our materials:
+	i material.mgf
+	# Modify red_plastic to have no specular component:
+	m red_plastic
+		rs 0 0
+	# Make an alias for blue_plastic:
+	m outer_material = blue_plastic
+	# Make a new material based on brass, with greater roughness:
+	m rough_brass = brass
+		c brass_color
+		rs 0.9 0.15
+	# Load our vertices:
+	i lum1vert.mgf
+	# Modify appropriate vertices to make luminaire longer:
+	v v10
+		p 5 -2 -.1
+	v v11
+		p 5 2 -.1
+	v v8
+		p 5 2 0
+	v v9
+		p 5 -2 0
+	# Load our surfaces, rotating them -90 degrees about Z:
+	i lum1face.mgf -rz -90
+	# Make a 2-D array of sequins covering the face of the fixture:
+	m silver
+	i sequin.mgf -a 5 -t .5 0 0 -a 4 -t 0 .75 0
+
+Note that by using libraries and modifying values, it is possible to create
+a variety of fixtures without requiring large files to describe each one.
+
+Interpretation
+==============
+Interpretation of this language will be simplified by the creation
+of a general parser that will be able to express the defined entities
+in simpler forms and remove entities that would not be understood by
+the caller.
+
+For example, a caller may ask the standard parser to produce only
+the entities for diffuse uncolored materials, vertices without normals,
+and polygons.  The parser would then expand all include statements,
+remove all color statements, convert spheres and cones to polygonal
+approximations, and so forth.
+
+This way, a single general parser can permit software to operate
+at whatever level it is capable, with a minimal loss of generality.
+Furthermore, distribution of a standard parser will improve
+both forward and backward compatibility as new entities are added
+to the specification.
+
+Rationale
+=========
+Why create yet another file format for geometric data, when so many
+others already exist?  The main answer to this question is that we
+are not merely defining geometry, but materials as well.  Though the
+number of committee and de facto standards for geometric data is large,
+the number of standards for geometry + materials is small.  Of these,
+almost all are non-physical in origin, i.e. they are based on common,
+ad hoc computer graphics rendering practices and cannot be used to create
+physical simulations.  Of the one or two formats that were intended
+for or could be adapted to physical simulation, the syntax and semantics
+are at the same time too complex and too limiting to serve as a suitable
+standard.
+
+Specifically, establishing the above, new standard has the following
+advantages:
+
+	o It is easy to parse.
+	o It is easy to support, at least as a least common denominator.
+	o It is ASCII and fairly easy for a person to read and understand.
+	o It supports simple color, material and vertex libraries.
+	o It includes a simple yet fairly complete material specification.
+	o It is easy to skip unsupported entities (e.g. color, vertex normals)
+	o It supports transformations and instances.
+	o It is easy to add new entities, and as long as these entities can
+		be approximated by the original set, backwards compatibility
+		can be maintained through a standard parsing library.
+
+Most of the disadvantages of this format relate to its simplicity, but
+since simplicity was our most essential goal, this could not be helped.
+Specifically:
+
+	o There is no general representation of curved surfaces (though
+		vertex normals make approximations straightforward).
+	o There are no general surface scattering functions.
+	o There are no textures or bump-maps.
+
+If any of these seems particularly important, I will look into adding them,
+though they will tend to complicate the specification and make it more
+difficult to support.
