@@ -586,6 +586,10 @@ getE4()				/* E4 -> ADDOP E5 */
 		ep2->v.num = -ep2->v.num;
 		return(ep2);
 	}
+	if (ep2->type == UMINUS) {	/* don't generate -(-E5) */
+	    efree((char *)ep2);
+	    return(ep2->v.kid);
+	}
 	ep1 = newnode();
 	ep1->type = UMINUS;
 	addekid(ep1, ep2);
