@@ -3,17 +3,16 @@
 #
 # Do depth-of-field blurring on picture
 #
-if ($#argv < 5) then
-	echo "Usage: $0 aperture distance nsamp picfile zfile [pinterp opts]" >/dev/tty
+if ($#argv != 4) then
+	echo "Usage: $0 aperture distance nsamp viewfile" >/dev/tty
 	exit 1
 endif
 set a = "$1"
 set d = "$2"
 set n = "$3"
-set pict = "$4"
-set zbf = "$5"
+set vf = "$4"
 set piopt = ($argv[6-]:q)
-cnt $n | rcalc -e `vwright i < $pict` \
+cnt $n | rcalc -e `vwright i < $vf` \
 -e "M:$n/5+1;a:$a/2;d:$d;N:$n;" -e 'tmax:PI*a*(M+1)' \
 -e 't=tmax/N*($1+rand($1))' \
 -e 'theta=2*M*PI/(M-1)*(M-sqrt(M*M-(M-1)/(PI*a)*t))' \
@@ -23,5 +22,4 @@ cnt $n | rcalc -e `vwright i < $pict` \
 -e 'opy=ipy+rcost*ihy+rsint*ivy' \
 -e 'opz=ipz+rcost*ihz+rsint*ivz' \
 -e 'os=is-rcost/(d*ihn);ol=il-rsint/(d*ivn)' \
--o 'VIEW= -vp ${opx} ${opy} ${opz} -vs ${os} -vl ${ol}' \
-| pinterp -vf $pict $piopt -B $pict $zbf
+-o 'VIEW= -vp ${opx} ${opy} ${opz} -vs ${os} -vl ${ol}'
