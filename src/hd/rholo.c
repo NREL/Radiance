@@ -420,6 +420,7 @@ HDGRID	*gp;
 }
 
 
+int
 headline(s)			/* process information header line */
 char	*s;
 {
@@ -433,7 +434,7 @@ char	*s;
 					HOLOFMT, hdkfile, FMTSTR, fmt);
 			error(USER, errmsg);
 		}
-		return;
+		return(0);
 	}
 	for (cp = s; *cp; cp++)		/* take off any comments */
 		if (*cp == '#') {
@@ -441,6 +442,7 @@ char	*s;
 			break;
 		}
 	setvariable(s, matchvar);	/* don't flag errors */
+	return(0);
 }
 
 
