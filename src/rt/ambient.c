@@ -50,10 +50,10 @@ static int  nunflshed = 0;	/* number of unflushed ambient values */
 #endif
 #endif
 #ifndef SORT_INTVL
-#define SORT_INTVL	(SORT_THRESH<<4)
+#define SORT_INTVL	(SORT_THRESH<<1)
 #endif
 #ifndef MAX_SORT_INTVL
-#define MAX_SORT_INTVL	(SORT_INTVL<<8)
+#define MAX_SORT_INTVL	(SORT_INTVL<<6)
 #endif
 
 static COLOR  avsum = BLKCOLOR;		/* computed ambient value sum */
@@ -403,10 +403,10 @@ int  creat;
 	setbuf(ambfp, bmalloc(BUFSIZ+8));
 	if (creat) {			/* new file */
 		newheader("RADIANCE", ambfp);
-		fprintf(ambfp, "%s -av %g %g %g -ab %d -aa %g ",
+		fprintf(ambfp, "%s -av %g %g %g -aw %d -ab %d -aa %g ",
 				progname, colval(ambval,RED),
 				colval(ambval,GRN), colval(ambval,BLU),
-				ambounce, ambacc);
+				ambvwt, ambounce, ambacc);
 		fprintf(ambfp, "-ad %d -as %d -ar %d %s\n",
 				ambdiv, ambssamp, ambres,
 				octname==NULL ? "" : octname);
