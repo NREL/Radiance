@@ -1,0 +1,67 @@
+# SCCSid "$SunId$ LBL"
+
+#
+# Makefile for object generation programs
+#
+
+CFLAGS = -O -f68881 /usr/lib/f68881.il -DIEEE
+
+INSTDIR = /usr/local/ray
+
+PROGS = genbox gensky xform genblinds genrev genworm \
+		gensurf genprism genwindow genpine
+
+all:	$(PROGS)
+
+install:	$(PROGS)
+	cp $(PROGS) $(INSTDIR)
+
+genbeads:	genbeads.o hermite3.o
+	cc $(CFLAGS) -o genbeads genbeads.o hermite3.o -lm
+
+genbox:	genbox.o
+	cc $(CFLAGS) -o genbox genbox.o
+
+genmarble:	genmarble.o random.h
+	cc $(CFLAGS) -o genmarble genmarble.o -lm
+
+gensky:	gensky.o sun.o
+	cc $(CFLAGS) -o gensky gensky.o sun.o -lm
+
+genblinds:	genblinds.o
+	cc $(CFLAGS) -o genblinds genblinds.o -lm
+
+genprism:	genprism.o
+	cc $(CFLAGS) -o genprism genprism.o
+
+xform:	xform.o xf.o mat4.o
+	cc $(CFLAGS) -o xform xform.o xf.o mat4.o -lm
+
+genrev:	genrev.o calexpr.o caldefn.o calfunc.o \
+ealloc.o savestr.o
+	cc $(CFLAGS) -o genrev genrev.o caldefn.o calexpr.o \
+calfunc.o ealloc.o savestr.o -lm
+
+genworm:	genworm.o calexpr.o caldefn.o calfunc.o \
+ealloc.o savestr.o fvect.o
+	cc $(CFLAGS) -o genworm genworm.o caldefn.o calexpr.o \
+calfunc.o ealloc.o savestr.o fvect.o -lm
+
+gensurf:	gensurf.o fvect.o calexpr.o caldefn.o calfunc.o \
+ealloc.o savestr.o
+	cc $(CFLAGS) -o gensurf gensurf.o caldefn.o calexpr.o \
+calfunc.o ealloc.o savestr.o fvect.o -lm
+
+genbranch:	genbranch.o
+	cc $(CFLAGS) -o genbranch genbranch.o -lm
+
+calexpr.o:	calexpr.c calcomp.h
+	cc $(CFLAGS) -c -DVARIABLE -DFUNCTION -DRCONST calexpr.c
+
+caldefn.o:	caldefn.c calcomp.h
+	cc $(CFLAGS) -c -DFUNCTION caldefn.c
+
+calfunc.o:	calfunc.c calcomp.h
+	cc $(CFLAGS) -c -DVARIABLE -DBIGLIB calfunc.c
+
+fvect.o genworm.o:	fvect.h
