@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -40,11 +40,8 @@ register HOLO	*hp;
 		d = DOT(hp->wg[i],hp->xv[i]);
 		if (d <= FTINY & d >= -FTINY)
 			error(USER, "degenerate holodeck section");
-		d = (double)hp->grid[i] / d;
+		d = hp->grid[i] / d;
 		hp->wg[i][0] *= d; hp->wg[i][1] *= d; hp->wg[i][2] *= d;
-		hp->wo[i<<1] = DOT(hp->wg[i],hp->orig);
-		d = DOT(hp->wg[i],hp->xv[i]);
-		hp->wo[i<<1|1] = hp->wo[i<<1] + d;
 	}
 				/* compute linear depth range */
 	hp->tlin = VLEN(hp->xv[0]) + VLEN(hp->xv[1]) + VLEN(hp->xv[2]);
@@ -308,14 +305,15 @@ FVECT	ro, rd;		/* normalization of rd affects distances */
 					/* first, intersect walls */
 	gc[0].w = gc[1].w = -1;
 	t0 = -FHUGE; t1 = FHUGE;
+	VSUB(vt, ro, hp->orig);
 	for (i = 0; i < 3; i++) {		/* for each wall pair */
 		d = -DOT(rd, hp->wg[i]);	/* plane distance */
 		if (d <= FTINY && d >= -FTINY)	/* check for parallel */
 			continue;
-		d1 = DOT(ro, hp->wg[i]);	/* ray distances */
-		d0 = (d1 - hp->wo[i<<1]) / d;
-		d1 = (d1 - hp->wo[i<<1|1]) / d;
-		if (d0 < d1) {		/* check against best */
+		d1 = DOT(vt, hp->wg[i]);	/* ray distances */
+		d0 = d1 / d;
+		d1 = (d1 - hp->grid[i]) / d;
+		if (d < 0) {			/* check against best */
 			if (d0 > t0) {
 				t0 = d0;
 				gc[0].w = i<<1;
@@ -345,14 +343,16 @@ FVECT	ro, rd;		/* normalization of rd affects distances */
 		VSUB(vt, p[i], hp->orig);
 		v = hp->wg[hdwg0[gc[i].w]];
 		d = DOT(vt, v);
-		if (d < 0. || (gc[i].i[0] = d) >= hp->grid[hdwg0[gc[i].w]])
+		if (d < 0 || d >= hp->grid[hdwg0[gc[i].w]])
 			return(FHUGE);		/* outside wall */
+		gc[i].i[0] = d;
 		if (r != NULL)
 			r[i][0] = 256. * (d - gc[i].i[0]);
 		v = hp->wg[hdwg1[gc[i].w]];
 		d = DOT(vt, v);
-		if (d < 0. || (gc[i].i[1] = d) >= hp->grid[hdwg1[gc[i].w]])
+		if (d < 0 || d >= hp->grid[hdwg1[gc[i].w]])
 			return(FHUGE);		/* outside wall */
+		gc[i].i[1] = d;
 		if (r != NULL)
 			r[i][1] = 256. * (d - gc[i].i[1]);
 	}
