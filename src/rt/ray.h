@@ -37,6 +37,7 @@ typedef struct ray {
 	int  rsrc;		/* source we're aiming for */
 	OBJECT  *clipset;	/* set of objects currently clipped */
 	OBJECT  *newcset;	/* next clipset, used for transmission */
+	int  (*revf)();		/* evaluation function for this ray */
  	OBJREC  *ro;		/* intersected object */
 	double  rot;		/* distance to object */
 	FVECT  rop;		/* intersection point */
@@ -49,6 +50,8 @@ typedef struct ray {
 	double  rt;		/* returned effective ray length */
 }  RAY;
 
+extern int  raytrace();
+
 extern double  raynormal();
 
 extern int  dimlist[];		/* dimension list for distribution */
@@ -56,3 +59,5 @@ extern int  ndims;		/* number of dimensions so far */
 extern int  samplendx;		/* index for this sample */
 
 #define  MAXDIM		16	/* maximum number of dimensions */
+
+#define  rayvalue(r)	(*(r)->revf)(r)
