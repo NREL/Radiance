@@ -54,6 +54,18 @@ extern COLOR  cextinction;		/* global coefficient of extinction */
 extern double  salbedo;			/* global scattering albedo */
 
 
+static double
+mylog(x)		/* special log for extinction coefficients */
+double  x;
+{
+	if (x < 1e-40)
+		return(-100.);
+	if (x >= 1.)
+		return(0.);
+	return(log(x));
+}
+
+
 m_dielectric(m, r)	/* color a ray which hit a dielectric interface */
 OBJREC  *m;
 register RAY  *r;
@@ -85,16 +97,16 @@ register RAY  *r;
 		dnorm[0] = -dnorm[0];
 		dnorm[1] = -dnorm[1];
 		dnorm[2] = -dnorm[2];
-		setcolor(r->cext, -log(m->oargs.farg[0]*colval(r->pcol,RED)),
-				 -log(m->oargs.farg[1]*colval(r->pcol,GRN)),
-				 -log(m->oargs.farg[2]*colval(r->pcol,BLU)));
+		setcolor(r->cext, -mylog(m->oargs.farg[0]*colval(r->pcol,RED)),
+				 -mylog(m->oargs.farg[1]*colval(r->pcol,GRN)),
+				 -mylog(m->oargs.farg[2]*colval(r->pcol,BLU)));
 		r->albedo = 0.;
 		r->gecc = 0.;
 		if (m->otype == MAT_INTERFACE) {
 			setcolor(ctrans,
-				-log(m->oargs.farg[4]*colval(r->pcol,RED)),
-				-log(m->oargs.farg[5]*colval(r->pcol,GRN)),
-				-log(m->oargs.farg[6]*colval(r->pcol,BLU)));
+				-mylog(m->oargs.farg[4]*colval(r->pcol,RED)),
+				-mylog(m->oargs.farg[5]*colval(r->pcol,GRN)),
+				-mylog(m->oargs.farg[6]*colval(r->pcol,BLU)));
 			talb = 0.;
 		} else {
 			copycolor(ctrans, cextinction);
@@ -103,15 +115,15 @@ register RAY  *r;
 	} else {				/* outside */
 		nratio = 1.0 / nratio;
 
-		setcolor(ctrans, -log(m->oargs.farg[0]*colval(r->pcol,RED)),
-				 -log(m->oargs.farg[1]*colval(r->pcol,GRN)),
-				 -log(m->oargs.farg[2]*colval(r->pcol,BLU)));
+		setcolor(ctrans, -mylog(m->oargs.farg[0]*colval(r->pcol,RED)),
+				 -mylog(m->oargs.farg[1]*colval(r->pcol,GRN)),
+				 -mylog(m->oargs.farg[2]*colval(r->pcol,BLU)));
 		talb = 0.;
 		if (m->otype == MAT_INTERFACE) {
 			setcolor(r->cext,
-				-log(m->oargs.farg[4]*colval(r->pcol,RED)),
-				-log(m->oargs.farg[5]*colval(r->pcol,GRN)),
-				-log(m->oargs.farg[6]*colval(r->pcol,BLU)));
+				-mylog(m->oargs.farg[4]*colval(r->pcol,RED)),
+				-mylog(m->oargs.farg[5]*colval(r->pcol,GRN)),
+				-mylog(m->oargs.farg[6]*colval(r->pcol,BLU)));
 			r->albedo = 0.;
 			r->gecc = 0.;
 		}
