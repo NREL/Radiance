@@ -653,6 +653,14 @@ XKeyPressedEvent  *ekey;
 			make_rpixmap(ourras, wind);
 		redraw(0, 0, width, height);
 		return(0);
+	case 'f':				/* turn on fast redraw */
+		fast = 1;
+		make_rpixmap(ourras, wind);
+		return(0);
+	case 'F':				/* turn off fast redraw */
+		fast = 0;
+		free_rpixmap(ourras);
+		return(0);
 	case '0':				/* recenter origin */
 		if (xoff == 0 & yoff == 0)
 			return(0);
