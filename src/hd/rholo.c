@@ -58,7 +58,6 @@ main(argc, argv)
 int	argc;
 char	*argv[];
 {
-	HDGRID	hdg;
 	int	i;
 						/* mark start time */
 	starttime = time(NULL);
@@ -109,14 +108,15 @@ char	*argv[];
 	getradfile();
 
 	if (hdlist[0] == NULL) {		/* create new holodeck */
+		HDGRID	hdg[HDMAX];
 							/* set defaults */
-		setdefaults(&hdg);
+		setdefaults(hdg);
 							/* holodeck exists? */
 		if (!force && access(hdkfile, R_OK|W_OK) == 0)
 			error(USER,
 				"holodeck file exists -- use -f to overwrite");
 							/* create holodeck */
-		creatholo(&hdg);
+		creatholo(hdg);
 	} else					/* else just set defaults */
 		setdefaults(NULL);
 						/* initialize */
@@ -315,16 +315,13 @@ register HDGRID	*gp;
 {
 	extern char	*atos();
 	register int	i;
+	int	n;
 	double	len[3], maxlen, d;
 	char	buf[64];
 
 	if (!vdef(SECTION)) {
 		sprintf(errmsg, "%s must be defined", vnam(SECTION));
 		error(USER, errmsg);
-	}
-	if (vdef(SECTION) > 1) {
-		sprintf(errmsg, "ignoring all but first %s", vnam(SECTION));
-		error(WARNING, errmsg);
 	}
 	if (!vdef(OCTREE)) {
 		if ((vval(OCTREE) = bmalloc(strlen(froot)+5)) == NULL)
@@ -343,29 +340,28 @@ register HDGRID	*gp;
 	if (gp == NULL)		/* already initialized? */
 		return;
 				/* set grid parameters */
-	gp->grid[0] = gp->grid[1] = gp->grid[2] = 0;
-	if (sscanf(vval(SECTION),
+	for (n = 0; n < vdef(SECTION); n++, gp++) {
+		gp->grid[0] = gp->grid[1] = gp->grid[2] = 0;
+		if (sscanf(nvalue(SECTION, n),
 		"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %hd %hd %hd",
-			&gp->orig[0], &gp->orig[1], &gp->orig[2],
-			&gp->xv[0][0], &gp->xv[0][1], &gp->xv[0][2],
-			&gp->xv[1][0], &gp->xv[1][1], &gp->xv[1][2],
-			&gp->xv[2][0], &gp->xv[2][1], &gp->xv[2][2],
-			&gp->grid[0], &gp->grid[1], &gp->grid[2]) < 12)
-		badvalue(SECTION);
-	maxlen = 0.;
-	for (i = 0; i < 3; i++)
-		if ((len[i] = VLEN(gp->xv[i])) > maxlen)
-			maxlen = len[i];
-	if (!vdef(GRID)) {
-		sprintf(buf, "%.4f", maxlen/8.);
-		vval(GRID) = savqstr(buf);
-		vdef(GRID)++;
+				&gp->orig[0], &gp->orig[1], &gp->orig[2],
+				&gp->xv[0][0], &gp->xv[0][1], &gp->xv[0][2],
+				&gp->xv[1][0], &gp->xv[1][1], &gp->xv[1][2],
+				&gp->xv[2][0], &gp->xv[2][1], &gp->xv[2][2],
+				&gp->grid[0], &gp->grid[1], &gp->grid[2]) < 12)
+			badvalue(SECTION);
+		maxlen = 0.;
+		for (i = 0; i < 3; i++)
+			if ((len[i] = VLEN(gp->xv[i])) > maxlen)
+				maxlen = len[i];
+		if (!vdef(GRID))
+			d = 0.125*maxlen;
+		else if ((d = vflt(GRID)) <= FTINY)
+			badvalue(GRID);
+		for (i = 0; i < 3; i++)
+			if (gp->grid[i] <= 0)
+				gp->grid[i] = len[i]/d + (1.-FTINY);
 	}
-	if ((d = vflt(GRID)) <= FTINY)
-		badvalue(GRID);
-	for (i = 0; i < 3; i++)
-		if (gp->grid[i] <= 0)
-			gp->grid[i] = len[i]/d + (1.-FTINY);
 }
 
 
@@ -373,7 +369,8 @@ creatholo(gp)			/* create a holodeck output file */
 HDGRID	*gp;
 {
 	extern char	VersionID[];
-	long	endloc = 0;
+	int4	lastloc, nextloc;
+	int	n;
 	int	fd;
 	FILE	*fp;
 					/* open & truncate file */
@@ -387,11 +384,23 @@ HDGRID	*gp;
 	printvars(fp);
 	fputformat(HOLOFMT, fp);
 	fputc('\n', fp);
-	putw(HOLOMAGIC, fp);		/* put magic number & terminus */
-	fwrite(&endloc, sizeof(long), 1, fp);
+	putw(HOLOMAGIC, fp);		/* put magic number */
 	fd = dup(fileno(fp));
 	fclose(fp);			/* flush and close stdio stream */
-	hdinit(fd, gp);			/* allocate and initialize index */
+	lastloc = lseek(fd, 0L, 2);
+	for (n = vdef(SECTION); n--; gp++) {	/* initialize each section */
+		nextloc = 0L;
+		write(fd, (char *)&nextloc, sizeof(nextloc));
+		hdinit(fd, gp);			/* writes beam index */
+		if (!n)
+			break;
+		nextloc = hdfilen(fd);		/* write section pointer */
+		if (lseek(fd, (long)lastloc, 0) < 0)
+			error(SYSTEM,
+				"cannot seek on holodeck file in creatholo");
+		write(fd, (char *)&nextloc, sizeof(nextloc));
+		lseek(fd, (long)(lastloc=nextloc), 0);
+	}
 }
 
 
@@ -424,7 +433,8 @@ loadholo()			/* start loading a holodeck from fname */
 	extern long	ftell();
 	FILE	*fp;
 	int	fd;
-	long	fpos;
+	int	n;
+	int4	nextloc;
 					/* open holodeck file */
 	if ((fp = fopen(hdkfile, ncprocs>0 ? "r+" : "r")) == NULL) {
 		sprintf(errmsg, "cannot open \"%s\" for %s", hdkfile,
@@ -439,14 +449,19 @@ loadholo()			/* start loading a holodeck from fname */
 				hdkfile);
 		error(USER, errmsg);
 	}
-	fread(&fpos, sizeof(long), 1, fp);
-	if (fpos != 0)
-		error(WARNING, "ignoring multiple sections in holodeck file");
-	fpos = ftell(fp);			/* get stdio position */
+	nextloc = ftell(fp);			/* get stdio position */
 	fd = dup(fileno(fp));
 	fclose(fp);				/* done with stdio */
-	lseek(fd, fpos, 0);			/* align system file pointer */
-	hdinit(fd, NULL);			/* allocate and load index */
+	for (n = 0; nextloc > 0L; n++) {	/* initialize each section */
+		lseek(fd, (long)nextloc, 0);
+		read(fd, (char *)&nextloc, sizeof(nextloc));
+		hdinit(fd, NULL);
+	}
+	if (n != vdef(SECTION)) {
+		sprintf(errmsg, "number of sections does not match %s setting",
+				vnam(SECTION));
+		error(WARNING, errmsg);
+	}
 }
 
 
