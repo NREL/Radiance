@@ -22,6 +22,7 @@ extern int  m_light();
 extern int  m_normal();
 extern int  m_aniso();
 extern int  m_dielectric();
+extern int  m_mist();
 extern int  m_glass();
 extern int  m_clip();
 extern int  m_mirror();
@@ -64,6 +65,8 @@ initotypes()			/* initialize ofun array */
 	ofun[MAT_INTERFACE].funp = m_dielectric;
 	ofun[MAT_DIELECTRIC].flags |= T_IRR_IGN;
 	ofun[MAT_INTERFACE].flags |= T_IRR_IGN;
+	ofun[MAT_MIST].funp = m_mist;
+	ofun[MAT_MIST].flags |= T_IRR_IGN;
 	ofun[MAT_GLASS].funp = m_glass;
 	ofun[MAT_GLASS].flags |= T_IRR_IGN;
 	ofun[MAT_MIRROR].funp = m_mirror;

@@ -18,6 +18,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "source.h"
 
+#include  "random.h"
+
+extern double  ssampdist;		/* scatter sampling distance */
+
 /*
  * Structures used by direct()
  */
@@ -166,6 +170,7 @@ register RAY  *r;
 			return;
 		if (!rayshade(r, r->ro->omod))	/* compute contribution */
 			goto nomat;
+		rayparticipate(r);
 		return;
 	}
 					/* compute intersection */
@@ -175,6 +180,7 @@ register RAY  *r;
 			sp->sa.success++;
 		if (!rayshade(r, r->ro->omod))	/* compute contribution */
 			goto nomat;
+		rayparticipate(r);
 		return;
 	}
 					/* we missed our mark! */
@@ -329,6 +335,7 @@ char  *p;			/* data for f */
 						/* follow entire path */
 			if (!raycont(&sr))
 				objerror(sr.ro, USER, "material not found");
+			rayparticipate(&sr);
 			if (trace != NULL)
 				(*trace)(&sr);	/* trace execution */
 			if (bright(sr.rcol) <= FTINY)
@@ -360,6 +367,76 @@ char  *p;			/* data for f */
 			prob = 1.0;
 		scalecolor(scp->val, prob);
 		addcolor(r->rcol, scp->val);
+	}
+}
+
+
+srcscatter(r)			/* compute source scattering into ray */
+register RAY  *r;
+{
+	int  nsamps;
+	RAY  sr;
+	SRCINDEX  si;
+	double  t, lastt, d;
+	COLOR  cumval, ctmp;
+	int  i, j;
+
+	if (r->slights == NULL || r->slights[0] == 0 || r->gecc >= 1.-FTINY)
+		return;
+	if (ssampdist <= FTINY || (nsamps = r->rot/ssampdist + .5) < 1)
+		nsamps = 1;
+	initsrcindex(&si);
+	for (i = r->slights[0]; i > 0; i--) {	/* for each source */
+		setcolor(cumval, 0., 0., 0.);
+		lastt = r->rot;
+		for (j = nsamps; j-- > 0; ) {	/* for each sample position */
+			samplendx++;
+			t = r->rot * (j+frandom())/nsamps;
+			sr.rorg[0] = r->rorg[0] + r->rdir[0]*t;
+			sr.rorg[1] = r->rorg[1] + r->rdir[1]*t;
+			sr.rorg[2] = r->rorg[2] + r->rdir[2]*t;
+			sr.rmax = 0.;
+						/* sample ray to this source */
+			if (si.sp >= si.np-1 || !srcray(&sr, NULL, &si) ||
+					sr.rsrc != r->slights[i]) {
+				si.sn = r->slights[i]-1;	/* reset */
+				si.np = 0;
+				if (!srcray(&sr, NULL, &si) ||
+						sr.rsrc != r->slights[i])
+					continue;		/* no path */
+			}
+			copycolor(sr.cext, r->cext);
+			sr.albedo = r->albedo;
+			sr.gecc = r->gecc;
+			rayvalue(&sr);			/* eval. source ray */
+			if (bright(sr.rcol) <= FTINY)
+				continue;
+							/* compute fall-off */
+			d = lastt - t;
+			setcolor(ctmp,	1.-d*colval(r->cext,RED),
+					1.-d*colval(r->cext,GRN),
+					1.-d*colval(r->cext,BLU));
+			multcolor(cumval, ctmp);
+			lastt = t;
+			if (r->gecc <= FTINY)		/* compute P(theta) */
+				d = 1.;
+			else {
+				d = DOT(r->rdir, sr.rdir);
+				d = sqrt(1. + r->gecc*r->gecc - 2.*r->gecc*d);
+				d = (1. - r->gecc*r->gecc) / (d*d*d);
+			}
+							/* other factors */
+			d *= si.dom * r->albedo * r->rot / (4.*PI*nsamps);
+			multcolor(sr.rcol, r->cext);
+			scalecolor(sr.rcol, d);
+			addcolor(cumval, sr.rcol);
+		}
+						/* final fall-off */
+		setcolor(ctmp,	1.-lastt*colval(r->cext,RED),
+				1.-lastt*colval(r->cext,GRN),
+				1.-lastt*colval(r->cext,BLU));
+		multcolor(cumval, ctmp);
+		addcolor(r->rcol, cumval);	/* sum into ray result */
 	}
 }
 

@@ -50,13 +50,17 @@ static int  lambda();
 
 #define  MINCOS		0.997		/* minimum dot product for dispersion */
 
+extern COLOR  cextinction;		/* global coefficient of extinction */
+extern double  salbedo;			/* global scattering albedo */
 
-m_dielectric(m, r)	/* color a ray which hit something transparent */
+
+m_dielectric(m, r)	/* color a ray which hit a dielectric interface */
 OBJREC  *m;
 register RAY  *r;
 {
 	double  cos1, cos2, nratio;
-	COLOR  mcolor;
+	COLOR  ctrans;
+	double  talb;
 	double  mabsorp;
 	double  refl, trans;
 	FVECT  dnorm;
@@ -81,20 +85,38 @@ register RAY  *r;
 		dnorm[0] = -dnorm[0];
 		dnorm[1] = -dnorm[1];
 		dnorm[2] = -dnorm[2];
-		setcolor(mcolor, pow(m->oargs.farg[0], r->rot),
-				 pow(m->oargs.farg[1], r->rot),
-				 pow(m->oargs.farg[2], r->rot));
-		multcolor(mcolor, r->pcol);	/* modify */
+		setcolor(r->cext, -log(m->oargs.farg[0]*colval(r->pcol,RED)),
+				 -log(m->oargs.farg[1]*colval(r->pcol,GRN)),
+				 -log(m->oargs.farg[2]*colval(r->pcol,BLU)));
+		r->albedo = 0.;
+		r->gecc = 0.;
+		if (m->otype == MAT_INTERFACE) {
+			setcolor(ctrans,
+				-log(m->oargs.farg[4]*colval(r->pcol,RED)),
+				-log(m->oargs.farg[5]*colval(r->pcol,GRN)),
+				-log(m->oargs.farg[6]*colval(r->pcol,BLU)));
+			talb = 0.;
+		} else {
+			copycolor(ctrans, cextinction);
+			talb = salbedo;
+		}
 	} else {				/* outside */
 		nratio = 1.0 / nratio;
-		if (m->otype == MAT_INTERFACE)
-			setcolor(mcolor, pow(m->oargs.farg[4], r->rot),
-					 pow(m->oargs.farg[5], r->rot),
-					 pow(m->oargs.farg[6], r->rot));
-		else
-			setcolor(mcolor, 1.0, 1.0, 1.0);
+
+		setcolor(ctrans, -log(m->oargs.farg[0]*colval(r->pcol,RED)),
+				 -log(m->oargs.farg[1]*colval(r->pcol,GRN)),
+				 -log(m->oargs.farg[2]*colval(r->pcol,BLU)));
+		talb = 0.;
+		if (m->otype == MAT_INTERFACE) {
+			setcolor(r->cext,
+				-log(m->oargs.farg[4]*colval(r->pcol,RED)),
+				-log(m->oargs.farg[5]*colval(r->pcol,GRN)),
+				-log(m->oargs.farg[6]*colval(r->pcol,BLU)));
+			r->albedo = 0.;
+			r->gecc = 0.;
+		}
 	}
-	mabsorp = bright(mcolor);
+	mabsorp = exp(-bright(r->cext)*r->rot);		/* approximate */
 
 	d2 = 1.0 - nratio*nratio*(1.0 - cos1*cos1);	/* compute cos theta2 */
 
@@ -115,7 +137,7 @@ register RAY  *r;
 		d1 = (d1 - d2) / (d1 + d2);
 		refl += d1 * d1;
 
-		refl /= 2.0;
+		refl *= 0.5;
 		trans = 1.0 - refl;
 
 		if (rayorigin(&p, r, REFRACTED, mabsorp*trans) == 0) {
@@ -134,6 +156,8 @@ register RAY  *r;
 					|| !disperse(m, r, p.rdir, trans))
 #endif
 			{
+				copycolor(p.cext, ctrans);
+				p.albedo = talb;
 				rayvalue(&p);
 				scalecolor(p.rcol, trans);
 				addcolor(r->rcol, p.rcol);
@@ -155,9 +179,7 @@ register RAY  *r;
 		scalecolor(p.rcol, refl);	/* color contribution */
 		addcolor(r->rcol, p.rcol);
 	}
-
-	multcolor(r->rcol, mcolor);		/* multiply by transmittance */
-
+				/* rayvalue() computes absorption */
 	return(1);
 }
 
