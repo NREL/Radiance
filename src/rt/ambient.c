@@ -56,7 +56,8 @@ static int  nunflshed = 0;	/* number of unflushed ambient values */
 #define MAX_SORT_INTVL	(SORT_INTVL<<6)
 #endif
 
-static COLOR  avsum = BLKCOLOR;		/* computed ambient value sum */
+static double  avsum = 0.;		/* computed ambient value sum (log) */
+static unsigned int  navsum = 0;	/* number of values in avsum */
 static unsigned int  nambvals = 0;	/* total number of indirect values */
 static unsigned int  nambshare = 0;	/* number of values from file */
 static unsigned long  ambclock = 0;	/* ambient access clock */
@@ -69,8 +70,11 @@ static long  sortintvl = SORT_INTVL;	/* time until next sort */
 	 * through memory on a multiprocessor, when we want to avoid
 	 * claiming our own memory (copy on write).  Go ahead anyway
 	 * if more than two thirds of our values are unshared.
+	 * Compile with -Dtracktime=0 to turn this code off.
 	 */
+#ifndef tracktime
 #define tracktime	(shm_boundary == NULL || nambvals > 3*nambshare)
+#endif
 
 #define	 AMBFLUSH	(BUFSIZ/AMBVALSIZ)
 
@@ -191,7 +195,7 @@ register RAY  *r;
 FVECT  nrm;
 {
 	static int  rdepth = 0;			/* ambient recursion */
-	double	d;
+	double	d, l;
 
 	if (ambdiv <= 0)			/* no ambient calculation */
 		goto dumbamb;
@@ -229,12 +233,18 @@ FVECT  nrm;
 		return;
 dumbamb:					/* return global value */
 	copycolor(acol, ambval);
-	if (ambvwt <= 0 | nambvals == 0)
+	if (ambvwt <= 0 | navsum == 0)
 		return;
-	scalecolor(acol, (double)ambvwt);
-	addcolor(acol, avsum);			/* average in computations */
-	d = 1.0/(ambvwt+nambvals);
-	scalecolor(acol, d);
+	l = bright(ambval);			/* average in computations */
+	if (l > FTINY) {
+		d = (log(l)*(double)ambvwt + avsum) /
+				(double)(ambvwt + navsum);
+		d = exp(d) / l;
+		scalecolor(acol, d);		/* apply color of ambval */
+	} else {
+		d = exp( avsum / (double)navsum );
+		setcolor(acol, d, d, d);	/* neutral color */
+	}
 }
 
 
@@ -443,14 +453,19 @@ avstore(aval)				/* allocate memory and store aval */
 register AMBVAL  *aval;
 {
 	register AMBVAL  *av;
+	double	d;
 
 	if ((av = newambval()) == NULL)
 		error(SYSTEM, "out of memory in avstore");
 	copystruct(av, aval);
 	av->latick = ambclock;
 	av->next = NULL;
-	addcolor(avsum, av->val);	/* add to sum for averaging */
 	nambvals++;
+	d = bright(av->val);
+	if (d > FTINY) {		/* add to log sum for averaging */
+		avsum += log(d);
+		navsum++;
+	}
 	return(av);
 }
 
