@@ -18,10 +18,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "fvect.h"
 
-#define  XNAME		"X_"			/* x function name */
-#define  YNAME		"Y_"			/* y function name */
-#define  ZNAME		"Z_"			/* z function name */
-#define  RNAME		"R_"			/* r function name */
+#define  XNAME		"X`SYS`"		/* x function name */
+#define  YNAME		"Y`SYS`"		/* y function name */
+#define  ZNAME		"Z`SYS`"		/* z function name */
+#define  RNAME		"R`SYS`"		/* r function name */
 
 #define  PI		3.14159265358979323846
 

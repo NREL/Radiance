@@ -16,8 +16,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
-#define  ZNAME		"Z_"			/* z function name */
-#define  RNAME		"R_"			/* r function name */
+#define  ZNAME		"Z`SYS`"		/* z function name */
+#define  RNAME		"R`SYS`"		/* r function name */
 
 #define  PI		3.14159265358979323846
 
