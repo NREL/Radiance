@@ -19,7 +19,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *
  *  5/31/90  Added conditional compile (REDEFW) for redefinition warning.
  *
- *  4/23/91  Added ':' defines for constant expressions (RCONST)
+ *  4/23/91  Added ':' assignment for constant expressions
  */
 
 #include  <stdio.h>
@@ -185,8 +185,8 @@ int  (*cs)();
 #endif
 
 
-dcleanup(cons, ochans)		/* clear definitions */
-int  cons, ochans;
+dcleanup(lvl)			/* clear definitions (0->vars,1->consts,2->output) */
+int  lvl;
 {
     register int  i;
     register VARDEF  *vp;
@@ -194,12 +194,12 @@ int  cons, ochans;
 
     for (i = 0; i < NHASH; i++)
 	for (vp = hashtbl[i]; vp != NULL; vp = vp->next)
-	    if (cons)
+	    if (lvl >= 1)
 		dremove(vp->name);
 	    else
 		dclear(vp->name);
 #ifdef  OUTCHAN
-    if (ochans) {
+    if (lvl >= 2) {
 	for (ep = outchan; ep != NULL; ep = ep->sibling)
 	    epfree(ep);
 	outchan = NULL;
@@ -378,6 +378,7 @@ EPNODE  *sp;
 loaddefn()			/* load next definition */
 {
     register EPNODE  *ep;
+    EPNODE  *lastdef;
 
     if (nextc == ';') {		/* empty statement */
 	scan();
@@ -392,13 +393,12 @@ loaddefn()			/* load next definition */
     {				/* ordinary definition */
 	ep = getdefn();
 #ifdef  REDEFW
-	if (dlookup(dname(ep)) != NULL) {
-	    dclear(dname(ep));
+	if ((lastdef = dlookup(dname(ep))) != NULL) {
 	    wputs(dname(ep));
-	    if (dlookup(dname(ep)) == NULL)
-		wputs(": redefined\n");
-	    else
+	    if (lastdef->type == ':')
 		wputs(": redefined constant expression\n");
+	    else
+		wputs(": redefined\n");
 	}
 #ifdef  FUNCTION
 	else if (ep->v.kid->type == FUNC &&
@@ -407,9 +407,11 @@ loaddefn()			/* load next definition */
 	    wputs(": redefined library function\n");
 	}
 #endif
-#else
-	dclear(dname(ep));
 #endif
+	if (ep->type == ':')
+	    dremove(dname(ep));
+	else
+	    dclear(dname(ep));
 	dpush(ep);
     }
     if (nextc != EOF) {
@@ -465,15 +467,6 @@ getdefn()			/* A -> SYM = E1 */
     ep2->type = nextc;
     scan();
     addekid(ep2, ep1);
-#ifdef  RCONST
-    if (
-#ifdef  FUNCTION
-	    ep1->type == SYM &&
-#endif
-	    ep2->type == ':')
-	addekid(ep2, rconst(getE1()));
-    else
-#endif
     addekid(ep2, getE1());
 
     if (
