@@ -875,7 +875,7 @@ a given rendering has progressed.
 Normally, progress reports and errors during batch renderings
 are sent to the error file given by the root of the rad input
 file name followed by the ".err" suffix.
-(See the "Errors" topic under the "Action" screen category.)
+(See the "CheckErr" topic under the "Action" screen category.)
 If you wish these reports and errors to be directed to a different
 file, follow the time interval by a space and a file name.
 
