@@ -551,7 +551,7 @@ char	*mod, *name;
 		perror(buf);
 		return(-1);
 	}
-	if (cvdata(in, datout, 2, nangles, 1./470., bounds) != 0) {
+	if (cvdata(in, datout, 2, nangles, 1./WHTEFFICACY, bounds) != 0) {
 		fprintf(stderr, "dosource: bad distribution data\n");
 		fclose(datout);
 		unlink(fullname(buf,name,T_DST));

@@ -10,6 +10,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include <stdio.h>
 
+#include "color.h"
+
 #define PI	3.14159265358979323846
 
 extern char	*gets(), *strcpy();
@@ -173,7 +175,7 @@ compute()			/* compute lamp radiance */
 {
 	double	whiteval;
 
-	whiteval = lumens/470./PI/area;
+	whiteval = lumens/area/(WHTEFFICACY*PI);
 
 	printf("Lamp color (RGB) = %f %f %f\n",
 			lampcolor[0]*whiteval,
