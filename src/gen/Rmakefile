@@ -77,3 +77,5 @@ xform.o:	../common/standard.h ../common/mat4.h ../common/fvect.h \
 
 mkillum.o mkillum2.o mkillum3.o:	mkillum.h ../common/standard.h \
 ../common/mat4.h ../common/fvect.h ../common/otypes.h ../common/object.h
+
+gensky.o:	../common/color.h
