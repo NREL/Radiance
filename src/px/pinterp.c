@@ -16,18 +16,12 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "color.h"
 
-#include "random.h"
-
 #ifndef BSD
 #define vfork		fork
 #endif
 
 #define pscan(y)	(ourpict+(y)*hresolu)
 #define zscan(y)	(ourzbuf+(y)*hresolu)
-
-#define PMASK		0xfffffff	/* probability mask */
-#define sampval(x)	(long)((x)*(PMASK+1)+.5)
-#define samp(p)		((p) > (random()&PMASK))
 
 #define F_FORE		1		/* fill foreground */
 #define F_BACK		2		/* fill background */
@@ -53,7 +47,7 @@ float	*ourzbuf;			/* corresponding z-buffer */
 char	*progname;
 
 int	fillo = F_FORE|F_BACK;		/* selected fill options */
-long	sampprob = 0;			/* sample probability */
+int	fillsamp = 0;			/* sample separation (0 == inf) */
 extern int	backfill(), rcalfill();	/* fill functions */
 int	(*fillfunc)() = backfill;	/* selected fill function */
 COLR	backcolr = BLKCOLR;		/* background color */
@@ -121,7 +115,7 @@ char	*argv[];
 				break;
 			case 's':				/* sample */
 				check(3,1);
-				sampprob = sampval(atof(argv[++i]));
+				fillsamp = atoi(argv[++i]);
 				break;
 			case 'c':				/* color */
 				check(3,3);
@@ -200,7 +194,7 @@ char	*argv[];
 		addpicture(argv[i], argv[i+1]);
 							/* fill in spaces */
 	if (fillo&F_BACK)
-		backpicture(fillfunc, sampprob);
+		backpicture(fillfunc, fillsamp);
 	else
 		fillpicture(fillfunc);
 							/* close calculation */
@@ -471,9 +465,9 @@ double	z;
 }
 
 
-backpicture(fill, prob)			/* background fill algorithm */
+backpicture(fill, samp)			/* background fill algorithm */
 int	(*fill)();
-long	prob;
+int	samp;
 {
 	int	*yback, xback;
 	int	y;
@@ -524,12 +518,19 @@ long	prob;
 						xback = x-1;
 				}
 				/*
-				 * Check to see if we have no background for
-				 * this pixel.  If not, or sampling was
-				 * requested, use the given fill function.
+				 * If we have no background for this pixel,
+				 * or if the background is too distant,
+				 * use the given fill function.
 				 */
-				if ((xback < 0 && yback[x] < 0) || samp(prob)) {
+				if ((xback < 0 && yback[x] < 0)
+					|| (samp > 0
+						&& ABS(x-xback) >= samp
+						&& ABS(y-yback[y]) >= samp)) {
 					(*fill)(x,y);
+					if (fill != backfill) {	/* reuse */
+						yback[x] = -2;
+						xback = -2;
+					}
 					continue;
 				}
 				/*
