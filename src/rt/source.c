@@ -344,6 +344,7 @@ char  *p;			/* data for f */
 				"aiming failure for light source \"%s\"",
 					source[sn].so->oname);
 			error(WARNING, errmsg);
+			cntord[sn].brt = 0.0;
 			continue;
 		}
 						/* compute contribution */
