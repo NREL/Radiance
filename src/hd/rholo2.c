@@ -34,8 +34,10 @@ register PACKET	*p;
 		p->ra[i].r[1][0] = sl[2] * 256.;
 		p->ra[i].r[1][1] = sl[3] * 256.;
 		d = hdray(ro, rd, hdlist[p->hd], gc, p->ra[i].r);
+		if (!vdef(OBSTRUCTIONS))
+			d *= frandom();			/* random offset */
 		if (p->offset != NULL) {
-			VSUM(ro, ro, rd, d);		/* exterior only */
+			VSUM(ro, ro, rd, d);		/* advance ray */
 			p->offset[i] = d;
 		}
 		VCOPY(rod, ro);

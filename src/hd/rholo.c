@@ -233,7 +233,7 @@ initrholo()			/* get our holodeck running */
 			goto memerr;
 		freepacks[--i].nr = 0;
 		freepacks[i].next = NULL;
-		if (!vbool(OBSTRUCTIONS)) {
+		if (!vdef(OBSTRUCTIONS) || !vbool(OBSTRUCTIONS)) {
 			freepacks[i].offset = (float *)bmalloc(
 					RPACKSIZ*sizeof(float)*(i+1) );
 			if (freepacks[i].offset == NULL)
@@ -336,10 +336,6 @@ register HDGRID	*gp;
 			error(SYSTEM, "out of memory");
 		sprintf(vval(OCTREE), "%s.oct", froot);
 		vdef(OCTREE)++;
-	}
-	if (!vdef(OBSTRUCTIONS)) {
-		vval(OBSTRUCTIONS) = "T";
-		vdef(OBSTRUCTIONS)++;
 	}
 	if (!vdef(VDIST)) {
 		vval(VDIST) = "F";
