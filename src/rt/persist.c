@@ -138,9 +138,9 @@ pfhold()		/* holding pattern for idle rendering process */
 	sprintf(buf, "%s %d\n%s\n%s\n%s\n", progname, getpid(),
 			inpname, outpname, errname);
 	n = strlen(buf);
-	lseek(persistfd, 0L, 0);
 	if (write(persistfd, buf, n) < n)
 		error(SYSTEM, "error writing persist file");
+	lseek(persistfd, 0L, 0);
 				/* wait TIMELIM for someone to signal us */
 	got_io = 0;
 	signal(SIGIO, sig_io);
@@ -265,7 +265,7 @@ io_process()		/* just act as go-between for actual process */
 				goto readerr;
 			if (nr == 0) {
 				close(fderr);
-				close(2);
+				/* close(2);	don't close stderr! */
 				fderr = -1;
 			} else
 				do {		/* write it all */
