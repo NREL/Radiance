@@ -58,6 +58,9 @@ char  *argv[];
 			error(USER, errmsg);
 			break;
 		}
+
+	if (i < argc-2)
+		error(USER, "too many file arguments");
 					/* initialize mesh */
 	cvinit(i==argc-2 ? argv[i+1] : "<stdout>");
 					/* load material input */
