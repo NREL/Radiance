@@ -51,12 +51,9 @@ double  v3a[3];
 register double  v3b[3];
 register double  m4[4][4];
 {
-	register int  i;
-	
-	for (i = 0; i < 3; i++)
-		m4tmp[0][i] = v3b[0]*m4[0][i] +
-			      v3b[1]*m4[1][i] +
-			      v3b[2]*m4[2][i];
+	m4tmp[0][0] = v3b[0]*m4[0][0] + v3b[1]*m4[1][0] + v3b[2]*m4[2][0];
+	m4tmp[0][1] = v3b[0]*m4[0][1] + v3b[1]*m4[1][1] + v3b[2]*m4[2][1];
+	m4tmp[0][2] = v3b[0]*m4[0][2] + v3b[1]*m4[1][2] + v3b[2]*m4[2][2];
 	
 	v3a[0] = m4tmp[0][0];
 	v3a[1] = m4tmp[0][1];
