@@ -3364,10 +3364,10 @@ The
 function reads the next input line from the current file,
 returning the number of characters in the line, or zero if the
 end of file is reached or there is a file error.
-If the last character read in the input line is not a newline,
+If the value returned equals MG_MAXLINE-1,
 then the input line was too long, and you
 should return an MG_ELINE error.
-The function skips over escaped newlines, and keeps track of the
+The function keeps track of the
 line number in the current file context
 .I mg_file,
 which also contains the line that was read.
