@@ -108,12 +108,11 @@ struct pslot {
 }	*pslot;			/* process slots */
 int	npslots;		/* number of process slots */
 
-int	lastpid;		/* ID of last completed background process */
-PSERVER	*lastpserver;		/* last process server used */
-
 #define phostname(ps)	((ps)->hostname[0] ? (ps)->hostname : astat.host)
 
 struct pslot	*findpslot();
+
+PSERVER	*lastpserver;		/* last process server with error */
 
 VIEW	*getview();
 char	*getexp();
@@ -1101,6 +1100,7 @@ int	pn;
 int	status;
 {
 	register PROC	*pp;
+	register struct pslot	*psl;
 
 	pp = ps->proc + pn;
 	if (pp->elen) {			/* pass errors */
@@ -1112,9 +1112,24 @@ int	status;
 		if (ps->hostname[0])
 			status = 1;	/* because rsh doesn't return status */
 	}
+	lastpserver = NULL;
+	psl = findpslot(pp->pid);	/* check for bruncom() slot */
+	if (psl->pid) {
+		if (status) {
+			if (psl->rcvf != NULL)	/* attempt recovery */
+				status = (*psl->rcvf)(psl->fout);
+			if (status) {
+				fprintf(stderr,
+					"%s: error rendering frame %d\n",
+						progname, psl->fout);
+				quit(1);
+			}
+			lastpserver = ps;
+		}
+		psl->pid = 0;			/* free process slot */
+	} else if (status)
+		lastpserver = ps;
 	freestr(pp->com);		/* free command string */
-	lastpid = pp->pid;		/* record PID for bwait() */
-	lastpserver = ps;		/* record server for serverdown() */
 	return(status);
 }
 
@@ -1122,6 +1137,8 @@ int	status;
 int
 serverdown()			/* check status of last process server */
 {
+	if (lastpserver == NULL || !lastpserver->hostname[0])
+		return(0);
 	if (pserverOK(lastpserver))	/* server still up? */
 		return(0);
 	delpserver(lastpserver);	/* else delete it */
@@ -1148,8 +1165,8 @@ int	(*rf)();
 			printf("\t%s\n", com);	/* echo command */
 		return(0);
 	}
-					/* else start it when we can */
-	while ((pid = startjob(NULL, savestr(com), donecom)) == -1)
+	com = savestr(com);		/* else start it when we can */
+	while ((pid = startjob(NULL, com, donecom)) == -1)
 		bwait(1);
 	if (!silent) {				/* echo command */
 		PSERVER	*ps;
@@ -1171,24 +1188,13 @@ bwait(ncoms)				/* wait for batch job(s) to finish */
 int	ncoms;
 {
 	int	status;
-	register struct pslot	*psl;
 
 	if (noaction)
 		return;
 	while ((status = wait4job(NULL, -1)) != -1) {
-		psl = findpslot(lastpid);
-		if (status) {		/* attempt recovery */
-			serverdown();	/* check server */
-			if (psl->rcvf == NULL || (*psl->rcvf)(psl->fout)) {
-				fprintf(stderr,
-					"%s: error rendering frame %d\n",
-						progname, psl->fout);
-				quit(1);
-			}
-		}
-		psl->pid = 0;		/* free process slot */
-		if (!--ncoms)
-			return;		/* done enough */
+		serverdown();		/* update server status */
+		if (--ncoms == 0)
+			break;		/* done enough */
 	}
 }
 
@@ -1200,9 +1206,7 @@ int	maxcopies;
 {
 	int	retstatus = 0;
 	int	hostcopies;
-	char	buf[10240], *com1;
-	PSERVER	*mps[64];
-	int	nmps = 0;
+	char	buf[10240], *com1, *s;
 	int	status;
 	int	pfd;
 	register int	n;
@@ -1221,14 +1225,18 @@ int	maxcopies;
 			sprintf(com1+(ppins-com), " -PP %s/%s.persist",
 					vval(DIRECTORY), phostname(ps));
 			strcat(com1, ppins);
-			mps[nmps++] = ps;
 		} else
 			com1 = com;
-		while (maxcopies > 0 &&
-				startjob(ps, savestr(com1), donecom) != -1) {
-			sleep(60);
-			hostcopies++;
-			maxcopies--;
+		while (maxcopies > 0) {
+			s = savestr(com1);
+			if (startjob(ps, s, donecom) != -1) {
+				sleep(20);
+				hostcopies++;
+				maxcopies--;
+			} else {
+				freestr(s);
+				break;
+			}
 		}
 		if (!silent && hostcopies) {
 			if (hostcopies > 1)
@@ -1241,12 +1249,10 @@ int	maxcopies;
 	}
 					/* wait for jobs to finish */
 	while ((status = wait4job(NULL, -1)) != -1)
-		if (status)
-			retstatus += !serverdown();	/* check server */
+		retstatus += status && !serverdown();
 					/* terminate parallel rpict's */
-	while (nmps--) {
-		sprintf(buf, "%s/%s.persist",
-				vval(DIRECTORY), phostname(mps[nmps]));
+	for (ps = pslist; ps != NULL; ps = ps->next) {
+		sprintf(buf, "%s/%s.persist", vval(DIRECTORY), phostname(ps));
 		if ((pfd = open(buf, O_RDONLY)) >= 0) {
 			n = read(pfd, buf, sizeof(buf)-1);	/* get PID */
 			buf[n] = '\0';
@@ -1255,7 +1261,7 @@ int	maxcopies;
 				;
 								/* terminate */
 			sprintf(buf, "kill -ALRM %d", atoi(buf+n));
-			wait4job(mps[nmps], startjob(mps[nmps], buf, NULL));
+			wait4job(ps, startjob(ps, buf, NULL));
 		}
 	}
 	return(retstatus);
