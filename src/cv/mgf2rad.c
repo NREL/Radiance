@@ -41,6 +41,7 @@ char	*argv[];
 	mg_ehand[MG_E_CMIX] = c_hcolor;
 	mg_ehand[MG_E_CSPEC] = c_hcolor;
 	mg_ehand[MG_E_CXY] = c_hcolor;
+	mg_ehand[MG_E_CCT] = c_hcolor;
 	mg_ehand[MG_E_CYL] = r_cyl;
 	mg_ehand[MG_E_ED] = c_hmaterial;
 	mg_ehand[MG_E_FACE] = r_face;
