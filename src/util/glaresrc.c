@@ -80,7 +80,6 @@ analyze()			/* analyze our scene */
 	}
 	free((char *)spanbr);
 	close_allsrcs();
-	absorb_specks();
 }
 
 
@@ -340,10 +339,10 @@ absorb_specks()			/* eliminate too-small sources */
 		fprintf(stderr, "%s: absorbing small sources...\n", progname);
 	head.next = donelist;
 	last = &head;
-	for (this = donelist; this != NULL; this = this->next)
+	for (this = head.next; this != NULL; this = this->next)
 		if (TOOSMALL(this)) {
 			last->next = this->next;
-			buddy = findbuddy(this, donelist);
+			buddy = findbuddy(this, head.next);
 			if (buddy != NULL)
 				mergesource(buddy, this);
 			else

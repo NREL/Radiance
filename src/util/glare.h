@@ -16,7 +16,7 @@
 #define SAMPDENS	50		/* default samples per unit in image */
 #define TSAMPSTEP	10		/* sample step to compute threshold */
 
-#define SEPS		2		/* sources this close ==> contig. */
+#define SEPS		1		/* sources this close ==> contig. */
 
 #define SAMIN		.005		/* minimum solid angle for source */
 #define MAXBUDDY	(4.*sqrt(SAMIN/PI))	/* max separation for pairing */
