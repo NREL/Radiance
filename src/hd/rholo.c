@@ -318,6 +318,7 @@ creatholo(gp)			/* create a holodeck output file */
 HDGRID	*gp;
 {
 	long	endloc = 0;
+	int	fd;
 	FILE	*fp;
 					/* open & truncate file */
 	if ((fp = fopen(hdkfile, "w+")) == NULL) {
@@ -331,9 +332,9 @@ HDGRID	*gp;
 	fputc('\n', fp);
 	putw(HOLOMAGIC, fp);		/* put magic number & terminus */
 	fwrite(&endloc, sizeof(long), 1, fp);
-	fflush(fp);			/* flush buffer */
-	hdinit(fileno(fp), gp);		/* allocate and initialize index */
-			/* we're dropping fp here.... */
+	fd = dup(fileno(fp));
+	fclose(fp);			/* flush and close stdio stream */
+	hdinit(fd, gp);			/* allocate and initialize index */
 }
 
 
@@ -363,8 +364,10 @@ char	*s;
 
 loadholo()			/* start loading a holodeck from fname */
 {
+	extern long	ftell();
 	FILE	*fp;
-	long	endloc;
+	int	fd;
+	long	fpos;
 					/* open holodeck file */
 	if ((fp = fopen(hdkfile, ncprocs>0 ? "r+" : "r")) == NULL) {
 		sprintf(errmsg, "cannot open \"%s\" for %s", hdkfile,
@@ -379,12 +382,14 @@ loadholo()			/* start loading a holodeck from fname */
 				hdkfile);
 		error(USER, errmsg);
 	}
-	fread(&endloc, sizeof(long), 1, fp);
-	if (endloc != 0)
+	fread(&fpos, sizeof(long), 1, fp);
+	if (fpos != 0)
 		error(WARNING, "ignoring multiple sections in holodeck file");
-	fseek(fp, 0L, 1);			/* align system file pointer */
-	hdinit(fileno(fp), NULL);		/* allocate and load index */
-			/* we're dropping fp here.... */
+	fpos = ftell(fp);			/* get stdio position */
+	fd = dup(fileno(fp));
+	fclose(fp);				/* done with stdio */
+	lseek(fd, fpos, 0);			/* align system file pointer */
+	hdinit(fd, NULL);			/* allocate and load index */
 }
 
 
