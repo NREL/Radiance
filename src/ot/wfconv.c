@@ -15,7 +15,7 @@ typedef int	VNDX[3];	/* vertex index (point,map,normal) */
 
 #define CHUNKSIZ	1024	/* vertex allocation chunk size */
 
-#define MAXARG		64	/* maximum # arguments in a statement */
+#define MAXARG		512	/* maximum # arguments in a statement */
 
 static FVECT	*vlist;		/* our vertex list */
 static int	nvs;		/* number of vertices in our list */
@@ -176,8 +176,14 @@ getstmt(				/* read the next statement from fp */
 					lineno++;
 				*cp++ = '\0';
 			}
-			if (!*cp || i >= MAXARG-1)
+			if (!*cp)
 				break;
+			if (i >= MAXARG-1) {
+				sprintf(errmsg,
+			"%s: too many arguments near line %d (limit %d)\n",
+					inpfile, lineno+1, MAXARG-1);
+				break;
+			}
 			av[i++] = cp;
 			while (*++cp && !isspace(*cp))
 				;
