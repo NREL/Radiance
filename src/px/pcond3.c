@@ -107,12 +107,17 @@ comphist()			/* create foveal sampling histogram */
 			if (l < lwmin) lwmin = l;
 			if (l > lwmax) lwmax = l;
 		}
-	lwmin -= FTINY;
-	lwmax += FTINY;
-	if (lwmin < LMIN) lwmin = LMIN;
-	if (lwmax > LMAX) lwmax = LMAX;
-	bwmin = Bl(lwmin);
+	lwmax *= 1.01;
+	if (lwmax > LMAX)
+		lwmax = LMAX;
 	bwmax = Bl(lwmax);
+	if (lwmin < LMIN) {
+		lwmin = LMIN;
+		bwmin = Bl(LMIN);
+	} else {			/* duplicate bottom bin */
+		bwmin = bwmax - (bwmax-Bl(lwmin))*HISTRES/(HISTRES-1);
+		lwmin = Lb(bwmin);
+	}
 					/* (re)compute histogram */
 	bwavg = 0.;
 	histot = 0.;
@@ -148,6 +153,10 @@ comphist()			/* create foveal sampling histogram */
 		}
 	}
 	bwavg /= histot;
+	if (lwmin > LMIN+FTINY) {	/* add false samples at bottom */
+		bwhist[1] *= 0.5;
+		bwhist[0] += bwhist[1];
+	}
 }
 
 
