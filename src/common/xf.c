@@ -13,20 +13,28 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  PI		3.14159265358979323846
 
-#define  checkarg(a,n)	if (strcmp(av[i],a) || i+n >= ac) return(i)
+#define  checkarg(a,n)	if (strcmp(av[i],a) || i+n >= ac) goto done
 
 
 int
-xf(xfmat, xfsca, ac, av)		/* get transform specification */
-double  xfmat[4][4];
-double  *xfsca;
+xf(retmat, retsca, ac, av)		/* get transform specification */
+double  retmat[4][4];
+double  *retsca;
 int  ac;
 char  *av[];
 {
 	double  atof(), sin(), cos();
-	double  m4[4][4];
-	double  theta;
-	int  i;
+	double  xfmat[4][4], m4[4][4];
+	double  xfsca, theta;
+	int  i, j;
+	int  rept;
+
+	setident4(retmat);
+	*retsca = 1.0;
+
+	rept = 1;
+	setident4(xfmat);
+	xfsca = 1.0;
 
 	for (i = 0; i < ac && av[i][0] == '-'; i++) {
 	
@@ -68,7 +76,7 @@ char  *av[];
 
 		case 's':			/* scale */
 			checkarg("-s",1);
-			*xfsca *=
+			xfsca *=
 			m4[0][0] = 
 			m4[1][1] = 
 			m4[2][2] = atof(av[++i]);
@@ -78,22 +86,33 @@ char  *av[];
 			switch (av[i][2]) {
 			case 'x':
 				checkarg("-mx",0);
-				*xfsca *=
+				xfsca *=
 				m4[0][0] = -1.0;
 				break;
 			case 'y':
 				checkarg("-my",0);
-				*xfsca *=
+				xfsca *=
 				m4[1][1] = -1.0;
 				break;
 			case 'z':
 				checkarg("-mz",0);
-				*xfsca *=
+				xfsca *=
 				m4[2][2] = -1.0;
 				break;
 			default:
 				return(i);
 			}
+			break;
+
+		case 'i':			/* iterate */
+			checkarg("-i",1);
+			for (j = 0; j < rept; j++) {
+				multmat4(retmat, retmat, xfmat);
+				*retsca *= xfsca;
+			}
+			rept = atoi(av[++i]);
+			setident4(xfmat);
+			xfsca = 1.0;
 			break;
 
 		default:
@@ -102,22 +121,35 @@ char  *av[];
 		}
 		multmat4(xfmat, xfmat, m4);
 	}
+done:
+	for (j = 0; j < rept; j++) {
+		multmat4(retmat, retmat, xfmat);
+		*retsca *= xfsca;
+	}
 	return(i);
 }
 
 
 #ifdef  INVXF
 int
-invxf(xfmat, xfsca, ac, av)		/* invert transform specification */
-double  xfmat[4][4];
-double  *xfsca;
+invxf(retmat, retsca, ac, av)		/* invert transform specification */
+double  retmat[4][4];
+double  *retsca;
 int  ac;
 char  *av[];
 {
 	double  atof(), sin(), cos();
-	double  m4[4][4];
-	double  theta;
-	int  i;
+	double  xfmat[4][4], m4[4][4];
+	double  xfsca, theta;
+	int  i, j;
+	int  rept;
+
+	setident4(retmat);
+	*retsca = 1.0;
+
+	rept = 1;
+	setident4(xfmat);
+	xfsca = 1.0;
 
 	for (i = 0; i < ac && av[i][0] == '-'; i++) {
 	
@@ -187,11 +219,27 @@ char  *av[];
 			}
 			break;
 
+		case 'i':			/* iterate */
+			checkarg("-i",1);
+			for (j = 0; j < rept; j++) {
+				multmat4(retmat, xfmat, retmat);
+				*retsca *= xfsca;
+			}
+			rept = atoi(av[++i]);
+			setident4(xfmat);
+			xfsca = 1.0;
+			break;
+
 		default:
 			return(i);
 
 		}
 		multmat4(xfmat, m4, xfmat);	/* left multiply */
+	}
+done:
+	for (j = 0; j < rept; j++) {
+		multmat4(retmat, xfmat, retmat);
+		*retsca *= xfsca;
 	}
 	return(i);
 }
