@@ -335,21 +335,26 @@ register int	i;
 
 
 int
-hdgetbi(hp, i)			/* allocate a file fragment */
+hdsyncbi(hp, i)			/* sync beam in memory with beam on disk */
 register HOLO	*hp;
 register int	i;
 {
-	int	nrays = hp->bl[i]->nrm;
-
-	if (hp->bi[i].nrd == nrays)	/* current one will do? */
+	unsigned int	nrays = hp->bl[i]->nrm;
+	long	nfo;
+	unsigned int	n;
+					/* is current fragment OK? */
+	if (nrays == hp->bi[i].nrd)
 		return(0);
+					/* check file status */
+	if (hp->dirty < 0)
+		return(-1);
 
 	if (hp->fd >= nhdfrags || !hdfrag[hp->fd].nlinks) /* untracked */
 		hp->bi[i].fo = lseek(hp->fd, 0L, 2);
 
 	else if (hp->bi[i].fo + hp->bi[i].nrd*sizeof(RAYVAL) ==
 			hdfrag[hp->fd].flen)		/* EOF special case */
-		hdfrag[hp->fd].flen = hp->bi[i].fo + nrays*sizeof(RAYVAL);
+		hdfrag[hp->fd].flen = (nfo=hp->bi[i].fo) + nrays*sizeof(RAYVAL);
 
 	else {						/* general case */
 		register struct fragment	*f = &hdfrag[hp->fd];
@@ -370,7 +375,7 @@ register int	i;
 						(j+FRAGBLK)*sizeof(BEAMI));
 				if (f->fi == NULL)
 					error(SYSTEM,
-						"out of memory in hdgetbi");
+						"out of memory in hdsyncbi");
 			}
 			for ( ; ; j--) {	/* insert in descending list */
 				if (!j || hp->bi[i].fo < f->fi[j-1].fo) {
@@ -395,16 +400,16 @@ register int	i;
 			f->nfrags = j;
 		}
 		k = -1;			/* find closest-sized fragment */
-		for (j = f->nfrags; j-- > 0; )
+		for (j = nrays ? f->nfrags : 0; j-- > 0; )
 			if (f->fi[j].nrd >= nrays &&
 					(k < 0 || f->fi[j].nrd < f->fi[k].nrd))
 				if (f->fi[k=j].nrd == nrays)
 					break;
 		if (k < 0) {		/* no fragment -- extend file */
-			hp->bi[i].fo = f->flen;
+			nfo = f->flen;
 			f->flen += nrays*sizeof(RAYVAL);
 		} else {		/* else use fragment */
-			hp->bi[i].fo = f->fi[k].fo;
+			nfo = f->fi[k].fo;
 			if (f->fi[k].nrd == nrays) {	/* delete fragment */
 				f->nfrags--;
 				for (j = k; j < f->nfrags; j++)
@@ -415,8 +420,19 @@ register int	i;
 			}
 		}
 	}
+	if (nrays) {		/* write the new fragment */
+		errno = 0;
+		if (lseek(hp->fd, nfo, 0) < 0)
+			error(SYSTEM, "cannot seek on holodeck file");
+		n = hp->bl[i]->nrm * sizeof(RAYVAL);
+		if (write(hp->fd, (char *)hdbray(hp->bl[i]), n) != n) {
+			hp->dirty = -1;		/* avoid recursive error */
+			error(SYSTEM, "write error in hdsyncbi");
+		}
+	}
 	biglob(hp)->nrd += nrays - hp->bi[i].nrd;
 	hp->bi[i].nrd = nrays;
+	hp->bi[i].fo = nfo;
 	markdirty(hp);		/* section directory now out of date */
 	return(1);
 }
@@ -427,7 +443,7 @@ hdfreebeam(hp, i)		/* free beam, writing if dirty */
 register HOLO	*hp;
 register int	i;
 {
-	int	nchanged, n;
+	int	nchanged;
 
 	if (hp == NULL) {		/* clear all holodecks */
 		nchanged = 0;
@@ -435,8 +451,6 @@ register int	i;
 			nchanged += hdfreebeam(hdlist[i], 0);
 		return(nchanged);
 	}
-	if (hp->fd < 0)			/* check for recursive error */
-		return(-1);
 	if (i == 0) {			/* clear entire holodeck */
 		nchanged = 0;
 		for (i = nbeams(hp); i > 0; i--)
@@ -450,17 +464,8 @@ register int	i;
 		return(0);
 					/* check for additions */
 	nchanged = hp->bl[i]->nrm - hp->bi[i].nrd;
-	if (nchanged) {
-		hdgetbi(hp, i);			/* allocate a file position */
-		errno = 0;
-		if (lseek(hp->fd, hp->bi[i].fo, 0) < 0)
-			error(SYSTEM, "cannot seek on holodeck file");
-		n = hp->bl[i]->nrm * sizeof(RAYVAL);
-		if (write(hp->fd, (char *)hdbray(hp->bl[i]), n) != n) {
-			hp->fd = -1;		/* avoid recursive error */
-			error(SYSTEM, "write error in hdfreebeam");
-		}
-	}
+	if (nchanged)
+		hdsyncbi(hp, i);			/* write new fragment */
 	blglob(hp)->nrm -= hp->bl[i]->nrm;
 	free((char *)hp->bl[i]);		/* free memory */
 	hp->bl[i] = NULL;
@@ -474,7 +479,7 @@ register HOLO	*hp;
 register int	i;
 {
 	static BEAM	emptybeam;
-	int	nchanged, n;
+	int	nchanged;
 
 	if (hp == NULL) {		/* clobber all holodecks */
 		nchanged = 0;
@@ -502,7 +507,7 @@ register int	i;
 		nchanged = hp->bi[i].nrd;
 	if (hp->bi[i].nrd) {		/* free file fragment */
 		hp->bl[i] = &emptybeam;
-		hdgetbi(hp, i);
+		hdsyncbi(hp, i);
 	}
 	hp->bl[i] = NULL;
 	return(nchanged);
