@@ -53,6 +53,8 @@ double	spread = 1e-4;		/* spread for star points */
 
 char  *tfname = NULL;
 
+char  template[] = TEMPLATE;
+
 char  *lampdat = "lamp.tab";	/* lamp data file */
 
 int  order;			/* scanline ordering of input */
@@ -100,7 +102,7 @@ char  **argv;
 	if (signal(SIGINT, quit) == SIG_IGN)
 		signal(SIGINT, SIG_IGN);
 	if (signal(SIGHUP, quit) == SIG_IGN)
-		signal(SIGINT, SIG_IGN);
+		signal(SIGHUP, SIG_IGN);
 	signal(SIGTERM, quit);
 	signal(SIGPIPE, quit);
 #ifdef	SIGXCPU
@@ -227,7 +229,7 @@ char  **argv;
 		if (singlepass)
 			fin = stdin;
 		else {
-			tfname = mktemp(TEMPLATE);
+			tfname = mktemp(template);
 			if ((fin = fopen(tfname, "w+")) == NULL) {
 				fprintf(stderr, "%s: can't create ", progname);
 				fprintf(stderr, "temp file \"%s\"\n", tfname);
