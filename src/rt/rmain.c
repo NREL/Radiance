@@ -229,7 +229,11 @@ char  *argv[];
 		case 'r':				/* recover file */
 			recover = argv[++i];
 			rval = viewfile(recover, &ourview);
-			if (rval > 0)
+			if (rval <= 0) {
+				sprintf(errmsg,
+			"cannot recover view parameters from \"%s\"", recover);
+				error(WARNING, errmsg);
+			} else
 				gotvfile += rval;
 			break;
 		case 't':				/* timer */
