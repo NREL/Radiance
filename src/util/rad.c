@@ -11,6 +11,7 @@ static const char	RCSid[] = "$Id$";
 #include <time.h>
 
 #include "platform.h"
+#include "rtprocess.h"
 #include "view.h"
 #include "paths.h"
 #include "vars.h"
@@ -311,7 +312,6 @@ checkfiles()			/* check for existence and modified times */
 getoctcube(org, sizp)		/* get octree bounding cube */
 double	org[3], *sizp;
 {
-	extern FILE	*popen();
 	static double	oorg[3], osiz = 0.;
 	double	min[3], max[3];
 	char	buf[1024];

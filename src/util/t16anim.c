@@ -9,14 +9,13 @@ static const char	RCSid[] = "$Id$";
 
 #include <stdio.h>
 
+#include "rtprocess.h"
 #include "client/clnt.h"
-
 #include  "targa.h"
 
 #define  goodpic(h)	(((h)->dataType==IM_RGB || (h)->dataType==IM_CRGB) \
 				&& (h)->dataBits==16)
 
-FILE	*popen();
 
 char	*pcom = NULL;			/* uncompress command */
 

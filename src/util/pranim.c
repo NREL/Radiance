@@ -10,9 +10,9 @@ static const char	RCSid[] = "$Id$";
 #include <stdio.h>
 #include <rasterfile.h>
 
+#include "rtprocess.h"
 #include "client/clnt.h"
 
-FILE	*popen();
 
 char	*pcom = NULL;			/* uncompress command */
 

@@ -16,7 +16,7 @@ typedef struct {
 	char	*errs;		/* error output */
 	int	elen;		/* error output length */
 	int	(*cf)();	/* completion callback function */
-} PROC;			/* process slot */
+} NETPROC;			/* process slot (name PROC conflicts with Windows) */
 
 /* Callback function cf above passed process server, slot number and status */
 
@@ -26,7 +26,7 @@ typedef struct pserver {
 	char	directory[128];	/* remote execution directory */
 	char	username[32];	/* remote user ID */
 	short	nprocs;		/* number of allocated process slots */
-	PROC	proc[1];	/* process slot(s) (must be last in struct) */
+	NETPROC	proc[1];	/* process slot(s) (must be last in struct) */
 } PSERVER;		/* process server */
 
 extern PSERVER	*pslist;	/* global process server list */
