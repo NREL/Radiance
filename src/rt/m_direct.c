@@ -122,7 +122,7 @@ int  n;
 	else {
 		for (i = 0; i < 3; i++) {
 			tr.rdir[i] = cent[i] - s->sloc[i];
-			tr.rorg[i] = cent[i] - .05*tr.rdir[i];
+			tr.rorg[i] = s->sloc[i];
 		}
 		if (normalize(tr.rdir) == 0.0)
 			return(0);		/* at source! */

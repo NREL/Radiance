@@ -27,7 +27,7 @@ SRCFUNC  sfun[NUMOTYPE];		/* source dispatch table */
 
 initstypes()			/* initialize source dispatch table */
 {
-	extern VSMATERIAL  mirror_vs;
+	extern VSMATERIAL  mirror_vs, direct1_vs, direct2_vs;
 	extern int  fsetsrc(), ssetsrc(), sphsetsrc(), rsetsrc();
 	extern double  fgetplaneq(), rgetplaneq();
 	extern double  fgetmaxdisk(), rgetmaxdisk();
@@ -37,6 +37,8 @@ initstypes()			/* initialize source dispatch table */
 	static SOBJECT  rsobj = {rsetsrc, rgetplaneq, rgetmaxdisk};
 
 	sfun[MAT_MIRROR].mf = &mirror_vs;
+	sfun[MAT_DIRECT1].mf = &direct1_vs;
+	sfun[MAT_DIRECT2].mf = &direct2_vs;
 	sfun[OBJ_FACE].of = &fsobj;
 	sfun[OBJ_SOURCE].of = &ssobj;
 	sfun[OBJ_SPHERE].of = &sphsobj;
