@@ -915,12 +915,6 @@ int	rvr
 		                          progname, frame);
 		quit(1);
 	}
-	if (ep == NULL) {
-		 fprintf(stderr,
-			"%s: unexpected error reading exposure for frame %d\n",
-		                          progname, frame);
-		quit(1);
-	}
 	usepinterp = (nblur > 1);
 	usepfilt = pfiltalways | (ep==NULL);
 	if (ep != NULL && !strcmp(ep, "1"))
