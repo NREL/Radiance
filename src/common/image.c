@@ -234,7 +234,8 @@ register VIEW  *v;
 int  ac;
 register char  *av[];
 {
-#define check(c,n)	if ((av[0][c]&&av[0][c]!=' ') || n>=ac) return(-1)
+#define check(c,l)	if ((av[0][c]&&av[0][c]!=' ') || \
+			badarg(ac-1,av+1,l)) return(-1)
 	extern double  atof();
 
 	if (ac <= 0 || av[0][0] != '-' || av[0][1] != 'v')
@@ -243,41 +244,41 @@ register char  *av[];
 	case 't':			/* type */
 		if (!av[0][3] || av[0][3]==' ')
 			return(-1);
-		check(4,0);
+		check(4,"");
 		v->type = av[0][3];
 		return(0);
 	case 'p':			/* point */
-		check(3,3);
+		check(3,"fff");
 		v->vp[0] = atof(av[1]);
 		v->vp[1] = atof(av[2]);
 		v->vp[2] = atof(av[3]);
 		return(3);
 	case 'd':			/* direction */
-		check(3,3);
+		check(3,"fff");
 		v->vdir[0] = atof(av[1]);
 		v->vdir[1] = atof(av[2]);
 		v->vdir[2] = atof(av[3]);
 		return(3);
 	case 'u':			/* up */
-		check(3,3);
+		check(3,"fff");
 		v->vup[0] = atof(av[1]);
 		v->vup[1] = atof(av[2]);
 		v->vup[2] = atof(av[3]);
 		return(3);
 	case 'h':			/* horizontal size */
-		check(3,1);
+		check(3,"f");
 		v->horiz = atof(av[1]);
 		return(1);
 	case 'v':			/* vertical size */
-		check(3,1);
+		check(3,"f");
 		v->vert = atof(av[1]);
 		return(1);
 	case 's':			/* shift */
-		check(3,1);
+		check(3,"f");
 		v->hoff = atof(av[1]);
 		return(1);
 	case 'l':			/* lift */
-		check(3,1);
+		check(3,"f");
 		v->voff = atof(av[1]);
 		return(1);
 	default:
