@@ -43,7 +43,7 @@ static double  eadd(), esubtr(), emult(), edivi(), epow();
 static double  ebotch();
 
 unsigned int  esupport =		/* what to support */
-		E_VARIABLE | E_FUNCTION | E_REDEFW;
+		E_VARIABLE | E_FUNCTION ;
 
 int  nextc;				/* lookahead character */
 
