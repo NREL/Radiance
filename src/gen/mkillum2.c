@@ -272,8 +272,7 @@ register struct rtproc  *rt;
 
 	if (rt->nrays <= 0)
 		return;
-	i = 6*rt->nrays + 3;
-	rt->buf[i++] = 0.; rt->buf[i++] = 0.; rt->buf[i] = 0.;
+	bzero(rt->buf+6*rt->nrays, 6*sizeof(float));
 	if ( process(rt->pd, (char *)rt->buf, (char *)rt->buf,
 			3*sizeof(float)*rt->nrays,
 			6*sizeof(float)*(rt->nrays+1)) <
