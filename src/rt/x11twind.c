@@ -38,14 +38,14 @@ extern	char  *calloc(), *malloc();
 
 
 TEXTWIND *
-xt_open(dpy, gc, parent, x, y, width, height, bw, fontname)
-Display *dpy;
-GC gc;
-Window parent;
-int x, y;
-int width, height;
-int bw;
-char *fontname;
+xt_open(dpy, parent, x, y, width, height, bw, fore, back, fontname)
+Display  *dpy;
+Window  parent;
+int  x, y;
+int  width, height;
+int  bw;
+unsigned long  fore, back;
+char  *fontname;
 {
 	register int  i;
 	register TEXTWIND  *t;
@@ -54,14 +54,8 @@ char *fontname;
 		return(NULL);
 
 	t->dpy = dpy;
-	t->w = XCreateSimpleWindow(dpy, parent, x, y, width, height, bw,
-					BlackPixel(dpy,DefaultScreen(dpy)),
-					WhitePixel(dpy,DefaultScreen(dpy)));
-	/*
-	t->w = XCreateWindow(dpy, parent, x, y, width, height, bw, 0,
-				CopyFromParent, CopyFromParent, 0, 0);
-	*/
-
+	t->w = XCreateSimpleWindow(dpy, parent, x, y, width, height,
+					bw, fore, back);
 	if (t->w == 0)
 		return(NULL);
 	XMapWindow(dpy, t->w);
@@ -71,12 +65,10 @@ char *fontname;
 
 	/* if (!t->f.fixedwidth)   check for fixedwidth later 
 		return(NULL); */
+
 	t->gc = XCreateGC(dpy,t->w,0,NULL);
-
-	XCopyGC(dpy, gc, ~0L, t->gc);
-
+	XSetState(dpy, t->gc, fore, back, GXcopy, AllPlanes);
 	XSetFont(dpy, t->gc, t->f->fid);
-	XSetFunction(dpy, t->gc, GXcopy);
 
 	t->nc = (width - LEFTMAR) / 
 		Width(t->f);		/* number of columns */
