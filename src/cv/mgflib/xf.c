@@ -41,7 +41,7 @@ char	**av;
 
 	if (ac == 1) {			/* something with existing transform */
 		if ((spec = xf_context) == NULL)
-			return(MG_OK);		/* should be error? */
+			return(MG_ECNTXT);
 		n = -1;
 		if (spec->xarr != NULL) {	/* check for iteration */
 			register struct xf_array	*ap = spec->xarr;

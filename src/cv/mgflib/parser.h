@@ -80,8 +80,9 @@ extern unsigned	mg_nunknown;		/* count of unknown entities */
 #define MG_ESEEK	9		/* file seek error */
 #define MG_EBADMAT	10		/* bad material specification */
 #define MG_ELINE	11		/* input line too long */
+#define MG_ECNTXT	12		/* unmatched context close */
 
-#define MG_NERRS	12
+#define MG_NERRS	13
 
 extern char	*mg_err[MG_NERRS];	/* list of error messages */
 
