@@ -8,11 +8,8 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  "standard.h"
-
 #include  "color.h"
-
 #include  "resolu.h"
-
 #include  "data.h"
 
 				/* picture memory usage before warning */
@@ -184,9 +181,7 @@ char  *pname;
 		sprintf(errmsg, "cannot open picture file \"%s\"", pfname);
 		error(SYSTEM, errmsg);
 	}
-#ifdef MSDOS
-	setmode(fileno(fp), O_BINARY);
-#endif
+	SET_FILE_BINARY(fp);
 						/* get dimensions */
 	inpaspect = 1.0;
 	getheader(fp, headaspect, (char *)&inpaspect);

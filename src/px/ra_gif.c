@@ -7,18 +7,12 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include  <stdio.h>
-
 #include  <time.h>
-
-#include  "color.h"
-
-#include  "resolu.h"
-
-#ifdef MSDOS
-#include  <fcntl.h>
-#endif
-
 #include  <math.h>
+
+#include  "platform.h"
+#include  "color.h"
+#include  "resolu.h"
 
 #define MAXCOLORS		256
 
@@ -62,12 +56,9 @@ char  *argv[];
 {
 	int  bitsperpix;
 	int  i;
-#ifdef MSDOS
-	extern int  _fmode;
-	_fmode = O_BINARY;
-	setmode(fileno(stdin), O_BINARY);
-	setmode(fileno(stdout), O_BINARY);
-#endif
+	SET_DEFAULT_BINARY();
+	SET_FILE_BINARY(stdin);
+	SET_FILE_BINARY(stdout);
 	progname = argv[0];
 	samplefac = 0;
 

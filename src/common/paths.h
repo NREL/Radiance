@@ -5,7 +5,7 @@
 
 #include "copyright.h"
 
-#ifdef MSDOS
+#ifdef _WIN32
 
 #define DIRSEP		'/'
 #define ISDIRSEP(c)	((c)=='/' || (c)=='\\')

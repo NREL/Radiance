@@ -8,12 +8,10 @@ static const char	RCSid[] = "$Id$";
 #include  <stdio.h>
 #include  <math.h>
 #include  <time.h>
+
+#include  "platform.h"
 #include  "color.h"
 #include  "resolu.h"
-
-#ifdef MSDOS
-#include  <fcntl.h>
-#endif
 
 extern int	addhline();
 
@@ -77,9 +75,7 @@ gotfile:
 				progname, argv[i]);
 		exit(1);
 	}
-#ifdef MSDOS
-	setmode(fileno(stdin), O_BINARY);
-#endif
+	SET_FILE_BINARY(stdin);
 	ospec = i==argc-2 ? argv[i+1] : (char *)NULL;
 	while (transfer(ospec))
 		;
@@ -154,9 +150,7 @@ char	*ospec;
 			}
 		}
 	}
-#ifdef MSDOS
-	setmode(fileno(fp), O_BINARY);
-#endif
+	SET_FILE_BINARY(fp);
 	dumpheader(fp);			/* put out header */
 	fputs(progname, fp);
 	if (bradj)

@@ -8,11 +8,8 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include "standard.h"
-
 #include "color.h"
-
 #include "calcomp.h"
-
 #include "view.h"
 
 #define MAXINP		32		/* maximum number of input files */
@@ -83,12 +80,9 @@ char	*argv[];
 	int	original;
 	double	f;
 	int	a, i;
-#ifdef MSDOS
-	extern int  _fmode;
-	_fmode = O_BINARY;
-	setmode(fileno(stdin), O_BINARY);
-	setmode(fileno(stdout), O_BINARY);
-#endif
+	SET_DEFAULT_BINARY();
+	SET_FILE_BINARY(stdin);
+	SET_FILE_BINARY(stdout);
 	progname = argv[0];
 						/* scan options */
 	for (a = 1; a < argc; a++) {

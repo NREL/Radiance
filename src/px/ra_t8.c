@@ -9,24 +9,14 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include  <stdio.h>
-
 #include  <time.h>
-
-#include  "color.h"
-
-#include  "resolu.h"
-
-#include  "targa.h"
-
-#ifdef MSDOS
-#include  <fcntl.h>
-#endif
-
 #include  <math.h>
 
-#ifndef	 BSD
-#define	 bcopy(s,d,n)		(void)memcpy(d,s,n)
-#endif
+#include  "platform.h"
+#include  "color.h"
+#include  "resolu.h"
+#include  "targa.h"
+
 
 #define	 goodpic(h)	(my_imType(h) && my_mapType(h))
 #define	 my_imType(h)	(((h)->dataType==IM_CMAP || (h)->dataType==IM_CCMAP) \
@@ -69,12 +59,9 @@ char  *argv[];
 	int  ncolors = 256;
 	int  greyscale = 0;
 	int  i;
-#ifdef MSDOS
-	extern int  _fmode;
-	_fmode = O_BINARY;
-	setmode(fileno(stdin), O_BINARY);
-	setmode(fileno(stdout), O_BINARY);
-#endif
+	SET_DEFAULT_BINARY();
+	SET_FILE_BINARY(stdin);
+	SET_FILE_BINARY(stdout);
 	progname = argv[0];
 	samplefac = 0;
 

@@ -52,9 +52,7 @@ dupheader()			/* repeat header on standard output */
 	if (headfp == NULL) {
 		if ((headfp = fopen(headfname, "r")) == NULL)
 			error(SYSTEM, "error reopening header file");
-#ifdef MSDOS
-		setmode(fileno(headfp), O_BINARY);
-#endif
+		SET_FILE_BINARY(headfp);
 	} else if (fseek(headfp, 0L, 0) < 0)
 		error(SYSTEM, "seek error on header file");
 	while ((c = getc(headfp)) != EOF)

@@ -7,9 +7,8 @@ static const char	RCSid[] = "$Id$";
 
 #include  <stdio.h>
 #include  <math.h>
-#ifdef MSDOS
-#include  <fcntl.h>
-#endif
+
+#include  "platform.h"
 #include  "color.h"
 
 
@@ -55,11 +54,8 @@ char  *argv[];
 	COLR  *scan;
 	COLR  cmin, cmax;
 	int  xmin, ymin, xmax, ymax;
-#ifdef MSDOS
-	extern int  _fmode;
-	_fmode = O_BINARY;
-	setmode(fileno(stdin), O_BINARY);
-#endif
+	SET_DEFAULT_BINARY()
+	SET_FILE_BINARY(stdin);
 	for (i = 1; i < argc; i++)	/* get options */
 		if (!strcmp(argv[i], "-o"))
 			orig++;

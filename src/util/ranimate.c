@@ -1361,7 +1361,7 @@ rmfile(fn)			/* remove a file */
 char	*fn;
 {
 	if (!silent)
-#ifdef MSDOS
+#ifdef _WIN32
 		printf("\tdel %s\n", fn);
 #else
 		printf("\trm -f %s\n", fn);

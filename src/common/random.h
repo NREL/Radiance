@@ -17,7 +17,7 @@
 
 #else
 
-#ifdef	MSDOS
+#ifdef	_WIN32
 
 #if (RAND_MAX <= 65536)
 #define random()	((long)rand()<<16^(long)rand()<<6^(long)rand()>>4)

@@ -9,12 +9,8 @@ static const char	RCSid[] = "$Id$";
 
 #include  <stdio.h>
 
-#ifdef MSDOS
-#include <fcntl.h>
-extern int  _fmode;
-#endif
+#include  "platform.h"
 
-extern int  fputs();
 
 
 int
@@ -42,14 +38,11 @@ char  **argv;
 	if (argc > 1 && !strcmp(argv[1], "-d")) {
 		argc--; argv++;
 		dim = 1;
-#ifdef MSDOS
-		setmode(fileno(stdin), _fmode = O_BINARY);
-#endif
+		SET_DEFAULT_BINARY(); /* for output file */
+		SET_FILE_BINARY(stdin);
 	} else if (argc == 2 && !strcmp(argv[1], "-")) {
-#ifdef MSDOS
-		setmode(fileno(stdin), O_BINARY);
-		setmode(fileno(stdout), O_BINARY);
-#endif
+		SET_FILE_BINARY(stdin);
+		SET_FILE_BINARY(stdout);
 		getheader(stdin, NULL, NULL);
 		copycat();
 		exit(0);

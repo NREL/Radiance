@@ -10,12 +10,10 @@ static const char	RCSid[] = "$Id$";
 #include  <string.h>
 #include  <math.h>
 #include  <time.h>
+
+#include  "platform.h"
 #include  "color.h"
 #include  "resolu.h"
-
-#ifdef MSDOS
-#include  <fcntl.h>
-#endif
 
 int  rgbinp = -1;			/* input is RGBE? */
 
@@ -61,12 +59,9 @@ int  argc;
 char  *argv[];
 {
 	int  i;
-#ifdef MSDOS
-	extern int  _fmode;
-	_fmode = O_BINARY;
-	setmode(fileno(stdin), O_BINARY);
-	setmode(fileno(stdout), O_BINARY);
-#endif
+	SET_DEFAULT_BINARY();
+	SET_FILE_BINARY(stdin);
+	SET_FILE_BINARY(stdout);
 	progname = argv[0];
 
 	for (i = 1; i < argc; i++)

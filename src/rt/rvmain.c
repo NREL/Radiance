@@ -7,18 +7,14 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
-#include  "ray.h"
-
-#include  "source.h"
-
-#include  "ambient.h"
-
-#include  "random.h"
-
-#include  "paths.h"
-
 #include  <signal.h>
 
+#include  "platform.h"
+#include  "ray.h"
+#include  "source.h"
+#include  "ambient.h"
+#include  "random.h"
+#include  "paths.h"
 #include  "view.h"
 
 char  *progname;			/* argv[0] */
@@ -207,9 +203,7 @@ char  *argv[];
 	if (octname == NULL)
 		error(USER, "missing octree argument");
 					/* set up output */
-#ifdef	MSDOS
-	setmode(fileno(stdout), O_BINARY);
-#endif
+	SET_FILE_BINARY(stdout);
 	readoct(octname, ~(IO_FILES|IO_INFO), &thescene, NULL);
 	nsceneobjs = nobjects;
 

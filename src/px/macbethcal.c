@@ -12,10 +12,9 @@ static const char	RCSid[] = "$Id$";
 
 #include <stdio.h>
 #include <math.h>
-#ifdef MSDOS
-#include <fcntl.h>
-#endif
-#include  <time.h>
+#include <time.h>
+
+#include "platform.h"
 #include "color.h"
 #include "resolu.h"
 #include "pmap.h"
@@ -141,9 +140,7 @@ char	**argv;
 				perror(argv[i]);
 				exit(1);
 			}
-#ifdef MSDOS
-			setmode(fileno(debugfp), O_BINARY);
-#endif
+			SET_FILE_BINARY(debugfp);
 			newheader("RADIANCE", debugfp);		/* start */
 			printargs(argc, argv, debugfp);		/* header */
 			break;
@@ -188,9 +185,7 @@ char	**argv;
 		exit(1);
 	}
 	if (scanning) {			/* load input picture header */
-#ifdef MSDOS
-		setmode(fileno(stdin), O_BINARY);
-#endif
+		SET_FILE_BINARY(stdin);
 		if (checkheader(stdin, COLRFMT, NULL) < 0 ||
 				fgetresolu(&xmax, &ymax, stdin) < 0) {
 			fprintf(stderr, "%s: bad input picture\n", progname);

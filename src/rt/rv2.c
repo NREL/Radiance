@@ -7,15 +7,14 @@ static const char	RCSid[] = "$Id$";
  *  External symbols declared in rpaint.h
  */
 
+#include  <ctype.h>
+
 #include "copyright.h"
 
+#include  "platform.h"
 #include  "ray.h"
-
 #include  "otypes.h"
-
 #include  "rpaint.h"
-
-#include  <ctype.h>
 
 extern int  psample;			/* pixel sample size */
 extern double  maxdiff;			/* max. sample difference */
@@ -754,9 +753,7 @@ char  *s;
 		error(COMMAND, errmsg);
 		return;
 	}
-#ifdef MSDOS
-	setmode(fileno(fp), O_BINARY);
-#endif
+	SET_FILE_BINARY(fp);
 	(*dev->comout)("writing \"");
 	(*dev->comout)(fname);
 	(*dev->comout)("\"...\n");

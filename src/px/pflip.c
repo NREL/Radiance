@@ -6,15 +6,10 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include <stdio.h>
-
-#ifdef MSDOS
-#include  <fcntl.h>
-#endif
-
 #include  <time.h>
 
+#include "platform.h"
 #include "color.h"
-
 #include "resolu.h"
 
 int	order;				/* input orientation */
@@ -55,11 +50,8 @@ char	*argv[];
 {
 	static char	picfmt[LPICFMT+1] = PICFMT;
 	int	i, rval;
-#ifdef MSDOS
-	extern int  _fmode;
-	_fmode = O_BINARY;
-	setmode(fileno(stdout), O_BINARY);
-#endif
+	SET_DEFAULT_BINARY();
+	SET_FILE_BINARY(stdout);
 	progname = argv[0];
 
 	for (i = 1; i < argc; i++)

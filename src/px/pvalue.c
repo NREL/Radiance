@@ -7,12 +7,10 @@ static const char RCSid[] = "$Id$";
  *     4/23/86
  */
 
-#include  "standard.h"
-
-#include  "color.h"
-
 #include  <time.h>
 
+#include  "standard.h"
+#include  "color.h"
 #include  "resolu.h"
 
 typedef	unsigned short uint16;	/* sizeof (uint16) must == 2 */
@@ -271,10 +269,10 @@ unkopt:
 	}
 
 	if (reverse) {
-#ifdef MSDOS
-		setmode(fileno(stdout), O_BINARY);
+#ifdef _WIN32
+		SET_FILE_BINARY(stdout);
 		if (format != 'a' && format != 'i')
-			setmode(fileno(fin), O_BINARY);
+			SET_FILE_BINARY(fin);
 #endif
 					/* get header */
 		if (header) {
@@ -319,10 +317,10 @@ unkopt:
 		fputsresolu(&picres, stdout);	/* always put resolution */
 		valtopix();
 	} else {
-#ifdef MSDOS
-		setmode(fileno(fin), O_BINARY);
+#ifdef _WIN32
+		SET_FILE_BINARY(fin);
 		if (format != 'a' && format != 'i')
-			setmode(fileno(stdout), O_BINARY);
+			SET_FILE_BINARY(stdout);
 #endif
 						/* get header */
 		getheader(fin, checkhead, NULL);

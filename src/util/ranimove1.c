@@ -11,6 +11,7 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
+#include "platform.h"
 #include "ranimove.h"
 #include "otypes.h"
 #include "random.h"
@@ -873,9 +874,7 @@ send_frame()			/* send frame to destination */
 		sprintf(errmsg, "cannot open output frame \"%s\"", pfname);
 		error(SYSTEM, errmsg);
 	}
-#ifdef MSDOS
-	setmode(fileno(fp), O_BINARY);
-#endif
+	SET_FILE_BINARY(fp);
 	if (!silent) {
 		printf("\tWriting to \"%s\"\n", pfname);
 		fflush(stdout);

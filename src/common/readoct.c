@@ -58,9 +58,7 @@ char  *ofn[];
 			error(SYSTEM, errmsg);
 		}
 	}
-#ifdef MSDOS
-	setmode(fileno(infp), O_BINARY);
-#endif
+	SET_FILE_BINARY(infp);
 					/* get header */
 	if (checkheader(infp, OCTFMT, load&IO_INFO ? stdout : (FILE *)NULL) < 0)
 		octerror(USER, "not an octree");

@@ -85,9 +85,7 @@ char  *argv[];
 			break;
 		}
 breakopt:
-#ifdef MSDOS
-	setmode(fileno(stdout), O_BINARY);
-#endif
+	SET_FILE_BINARY(stdout);
 	if (infile != NULL) {		/* get old octree & objects */
 		if (thescene.cusize > FTINY)
 			error(USER, "only one of '-b' or '-i'");

@@ -1,4 +1,4 @@
-/* RCSid: $Id$ */
+/* $Header$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

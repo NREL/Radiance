@@ -9,12 +9,10 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
+#include  "platform.h"
 #include  "ray.h"
-
 #include  "otypes.h"
-
 #include  "ambient.h"
-
 #include  "random.h"
 
 #ifndef  OCTSCALE
@@ -474,9 +472,7 @@ int  creat;
 #ifdef	F_SETLKW
 	aflock(creat ? F_WRLCK : F_RDLCK);
 #endif
-#ifdef MSDOS
-	setmode(fileno(ambfp), O_BINARY);
-#endif
+	SET_FILE_BINARY(ambfp);
 	if (mybuf == NULL)
 		mybuf = (char *)bmalloc(BUFSIZ+8);
 	setbuf(ambfp, mybuf);

@@ -8,11 +8,9 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include  <stdio.h>
-#ifdef MSDOS
-#include  <fcntl.h>
-#endif
 #include  <time.h>
 
+#include  "platform.h"
 #include  "color.h"
 #include  "resolu.h"
 
@@ -24,12 +22,9 @@ int  argc;
 char  *argv[];
 {
 	int  i, status = 0;
-#ifdef MSDOS
-	extern int  _fmode;
-	_fmode = O_BINARY;
-	setmode(fileno(stdin), O_BINARY);
-	setmode(fileno(stdout), O_BINARY);
-#endif
+	SET_DEFAULT_BINARY();
+	SET_FILE_BINARY(stdin);
+	SET_FILE_BINARY(stdout);
 	if (argc < 2)
 		status = printp(NULL) == -1;
 	else

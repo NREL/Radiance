@@ -244,9 +244,7 @@ int	flags;
 		sprintf(errmsg, "cannot open mesh file \"%s\"", path);
 		error(SYSTEM, errmsg);
 	}
-#ifdef MSDOS
-	setmode(fileno(meshfp), O_BINARY);
-#endif
+	SET_FILE_BINARY(meshfp);
 					/* read header */
 	checkheader(meshfp, MESHFMT, flags&IO_INFO ? stdout : (FILE *)NULL);
 					/* read format number */

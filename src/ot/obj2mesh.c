@@ -73,9 +73,7 @@ char  *argv[];
 	if (i == argc-2)		/* open output file */
 		if (freopen(argv[i+1], "w", stdout) == NULL)
 			error(SYSTEM, "cannot open output file");
-#ifdef MSDOS
-	setmode(fileno(stdout), O_BINARY);
-#endif
+	SET_FILE_BINARY(stdout);
 	newheader("RADIANCE", stdout);	/* new binary file header */
 	printargs(i<argc ? i+1 : argc, argv, stdout);
 	fputformat(MESHFMT, stdout);

@@ -8,9 +8,8 @@ static const char	RCSid[] = "$Id$";
 #include  <stdio.h>
 #include  <math.h>
 #include  <ctype.h>
-#ifdef MSDOS
-#include  <fcntl.h>
-#endif
+
+#include  "platform.h"
 #include  "color.h"
 
 #define UPPER(c)	((c)&~0x20)		/* ASCII trick */
@@ -156,9 +155,7 @@ char  *argv[];
 				progname, argv[i+1]);
 		exit(1);
 	}
-#ifdef MSDOS
-	setmode(fileno(stdin), O_BINARY);
-#endif
+	SET_FILE_BINARY(stdin);
 				/* get our header */
 	getheader(stdin, headline, NULL);
 	if (wrongformat || fgetresolu(&xmax, &ymax, stdin) < 0)

@@ -8,9 +8,7 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include  "standard.h"
-
 #include  "color.h"
-
 #include  "font.h"
 
 #ifndef	 SSS
@@ -59,9 +57,7 @@ int  argc;
 char  *argv[];
 {
 	int  an;
-#ifdef MSDOS
-	setmode(fileno(stdout), O_BINARY);
-#endif
+	SET_FILE_BINARY(stdout);
 	for (an = 1; an < argc && argv[an][0] == '-'; an++)
 		switch (argv[an][1]) {
 		case 'c':			/* color */

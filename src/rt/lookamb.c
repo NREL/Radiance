@@ -7,8 +7,8 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
+#include  "platform.h"
 #include  "ray.h"
-
 #include  "ambient.h"
 
 
@@ -62,15 +62,11 @@ char  *argv[];
 		}
 		fputformat(AMBFMT, stdout);
 		putchar('\n');
-#ifdef MSDOS
-		setmode(fileno(stdout), O_BINARY);
-#endif
+		SET_FILE_BINARY(stdout);
 		putambmagic(stdout);
 		writamb(fp);
 	} else {
-#ifdef MSDOS
-		setmode(fileno(fp), O_BINARY);
-#endif
+		SET_FILE_BINARY(fp);
 		if (checkheader(fp, AMBFMT, header ? stdout : (FILE *)NULL) < 0)
 			goto formaterr;
 		if (!hasambmagic(fp))

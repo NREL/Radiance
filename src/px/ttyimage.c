@@ -8,11 +8,9 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include  <stdio.h>
-#ifdef MSDOS
-#include  <fcntl.h>
-#endif
 #include  <time.h>
 
+#include  "platform.h"
 #include  "color.h"
 #include  "resolu.h"
 
@@ -35,9 +33,7 @@ char  **argv;
 		fprintf(stderr, "%s: can't open file \"%s\"\n", argv[0], argv[1]);
 		exit(1);
 	}
-#ifdef MSDOS
-	setmode(fileno(input), O_BINARY);
-#endif
+	SET_FILE_BINARY(input);
 				/* get picture dimensions */
 	if (checkheader(input, COLRFMT, NULL) < 0 ||
 			fgetresolu(&xres, &yres, input) < 0) {

@@ -6,19 +6,12 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include  <stdio.h>
-
-#ifdef MSDOS
-#include  <fcntl.h>
-#endif
-
 #include  <math.h>
-
 #include  <ctype.h>
-
 #include  <time.h>
 
+#include  "platform.h"
 #include  "color.h"
-
 #include  "resolu.h"
 
 
@@ -101,10 +94,10 @@ char  *argv[];
 		if (read(fileno(stdin), inpbuf, 2) != 2 || inpbuf[0] != 'P')
 			quiterr("input not a Poskanzer Pixmap");
 		ptype = inpbuf[1];
-#ifdef MSDOS
+#ifdef _WIN32
 		if (ptype > 4)
-			setmode(fileno(stdin), O_BINARY);
-		setmode(fileno(stdout), O_BINARY);
+			SET_FILE_BINARY(stdin);
+		SET_FILE_BINARY(stdout);
 #endif
 		xmax = scanint(stdin);
 		ymax = scanint(stdin);
@@ -151,10 +144,10 @@ char  *argv[];
 				quiterr("unsupported Pixmap type");
 			}
 	} else {
-#ifdef MSDOS
-		setmode(fileno(stdin), O_BINARY);
+#ifdef _WIN32
+		SET_FILE_BINARY(stdin);
 		if (binflag)
-			setmode(fileno(stdout), O_BINARY);
+			SET_FILE_BINARY(stdout);
 #endif
 					/* get header info. */
 		if (checkheader(stdin, COLRFMT, NULL) < 0 ||

@@ -21,10 +21,9 @@ static const char	RCSid[] = "$Id$";
  *  irradiance values are desired.
  */
 
+#include  "platform.h"
 #include  "ray.h"
-
 #include  "otypes.h"
-
 #include  "resolu.h"
 
 CUBE  thescene;				/* our scene */
@@ -146,9 +145,9 @@ char  *fname;
 		sprintf(errmsg, "cannot open input file \"%s\"", fname);
 		error(SYSTEM, errmsg);
 	}
-#ifdef MSDOS
+#ifdef _WIN32
 	if (inform != 'a')
-		setmode(fileno(fp), O_BINARY);
+		SET_FILE_BINARY(fp);
 #endif
 					/* set up output */
 	setoutput(outvals);

@@ -9,6 +9,7 @@ static const char	RCSid[] = "$Id$";
 
 #include "radogl.h"
 #include "octree.h"
+#include "platform.h"
 
 #define MAXLEVEL	16		/* maximum instance hierarchy level */
 
@@ -168,9 +169,7 @@ FVECT	cent;
 		sprintf(errmsg, "cannot open octree file \"%s\"", fname);
 		error(SYSTEM, errmsg);
 	}
-#ifdef MSDOS
-	setmode(fileno(infp), O_BINARY);
-#endif
+	SET_FILE_BINARY(infp);
 					/* get header */
 	if (checkheader(infp, OCTFMT, NULL) < 0)
 		octerror(USER, "not an octree");
@@ -207,9 +206,7 @@ char  *fname;
 	
 	infn = fname;
 	infp = fopen(fname, "r");	/* assume already checked */
-#ifdef MSDOS
-	setmode(fileno(infp), O_BINARY);
-#endif
+	SET_FILE_BINARY(infp);
 					/* skip header */
 	getheader(infp, NULL, NULL);
 					/* get format */
