@@ -24,6 +24,7 @@ static char SCCSid[] = "$SunId$ LBL";
 VIEW  ourview = STDVIEW;		/* view parameters */
 int  hresolu = 512;			/* horizontal resolution */
 int  vresolu = 512;			/* vertical resolution */
+double  pixaspect = 1.0;		/* pixel aspect ratio */
 
 int  psample = 4;			/* pixel sample size */
 double  maxdiff = .05;			/* max. difference for interpolation */
