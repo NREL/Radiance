@@ -53,8 +53,8 @@ double  sca;
 	}
 	fobj = m;
 	fray = r;
-	fxf.sca = r->ros * sca;
-	multmat4(fxf.xfm, r->rox, xfm);
+	fxf.sca = r->robs * sca;
+	multmat4(fxf.xfm, r->robx, xfm);
 	eclock++;		/* notify expression evaluator */
 }
 
