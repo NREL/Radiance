@@ -85,6 +85,8 @@ char  *argv[];
 		sprintf(msg, "can't open output \"%s\"", argv[i+1]);
 		quiterr(msg);
 	}
+					/* set gamma */
+	setcolrgam(gamma);
 					/* convert */
 	if (reverse) {
 					/* get header */
@@ -230,13 +232,9 @@ register FILE  *fp;
 tg2ra(hp)			/* targa file to RADIANCE file */
 struct hdStruct  *hp;
 {
-	float  gmap[256];
-	COLOR  *scanline;
+	COLR  *scanline;
 	unsigned char  *tarData;
 	register int  i, j;
-					/* set up gamma correction */
-	for (i = 0; i < 256; i++)
-		gmap[i] = pow((i+.5)/256., gamma);
 					/* skip color table */
 	if (hp->mapType == CM_HASMAP)
 		fseek(stdin, (long)hp->mapLength*hp->CMapBits/8, 1);
@@ -245,29 +243,30 @@ struct hdStruct  *hp;
 					/* get data */
 	readtarga(hp, tarData, stdin);
 					/* allocate input scanline */
-	scanline = (COLOR *)emalloc(hp->x*sizeof(COLOR));
+	scanline = (COLR *)emalloc(hp->x*sizeof(COLR));
 					/* convert file */
 	for (i = hp->y-1; i >= 0; i--) {
 		if (hp->dataBits == 16) {
 			register unsigned short  *dp;
 			dp = (unsigned short *)tarData + i*hp->x;
 			for (j = 0; j < hp->x; j++) {
-				setcolor(scanline[j], gmap[*dp>>7 & 0xf8],
-						gmap[*dp>>2 & 0xf8],
-						gmap[*dp<<3 & 0xf8]);
+				scanline[j][RED] = *dp>>7 & 0xf8;
+				scanline[j][GRN] = *dp>>2 & 0xf8;
+				scanline[j][BLU] = *dp<<3 & 0xf8;
 				dp++;
 			}
 		} else {	/* hp->dataBits == 24 */
 			register unsigned char  *dp;
 			dp = (unsigned char *)tarData + i*3*hp->x;
 			for (j = 0; j < hp->x; j++) {
-				setcolor(scanline[j], gmap[dp[2]],
-						gmap[dp[1]],
-						gmap[dp[0]]);
+				scanline[j][RED] = dp[2];
+				scanline[j][GRN] = dp[1];
+				scanline[j][BLU] = dp[0];
 				dp += 3;
 			}
 		}
-		if (fwritescan(scanline, hp->x, stdout) < 0)
+		gambs_colrs(scanline, hp->x);
+		if (fwritecolrs(scanline, hp->x, stdout) < 0)
 			quiterr("error writing RADIANCE file");
 	}
 	free((char *)scanline);
@@ -278,41 +277,32 @@ struct hdStruct  *hp;
 ra2tg(hp)			/* convert radiance to targa file */
 struct hdStruct  *hp;
 {
-#define  map(v)		(v >= 1.0 ? 1023 : (int)(v*1023.+.5))
-	unsigned char	gmap[1024];
 	register int	i, j;
 	unsigned char  *tarData;
-	COLOR	*inl;
-					/* set up gamma correction */
-	for (i = 0; i < 1024; i++) {
-		j = 256.*pow((i+.5)/1024., 1./gamma);
-		gmap[i] = hp->dataBits == 16 && j > 248 ? 248 : j;
-	}
+	COLR	*inl;
 					/* allocate space for data */
-	inl = (COLOR *)emalloc(hp->x*sizeof(COLOR));
+	inl = (COLR *)emalloc(hp->x*sizeof(COLR));
 	tarData = taralloc(hp);
 					/* convert file */
 	for (j = hp->y-1; j >= 0; j--) {
-		if (freadscan(inl, hp->x, stdin) < 0)
+		if (freadcolrs(inl, hp->x, stdin) < 0)
 			quiterr("error reading RADIANCE file");
+		colrs_gambs(inl, hp->x);
 		if (hp->dataBits == 16) {
 			register unsigned short  *dp;
 			dp = (unsigned short *)tarData + j*hp->x;
 			for (i = 0; i < hp->x; i++) {
-				*dp = ((gmap[map(colval(inl[i],RED))]
-						+(random()&7)) & 0xf8)<<7;
-				*dp |= ((gmap[map(colval(inl[i],GRN))]
-						+(random()&7)) & 0xf8)<<2;
-				*dp++ |= (gmap[map(colval(inl[i],BLU))]
-						+(random()&7))>>3;
+				*dp = ((inl[i][RED]+(random()&7)) & 0xf8)<<7;
+				*dp |= ((inl[i][GRN]+(random()&7)) & 0xf8)<<2;
+				*dp++ |= (inl[i][BLU]+(random()&7))>>3;
 			}
 		} else {	/* hp->dataBits == 24 */
 			register unsigned char  *dp;
 			dp = (unsigned char *)tarData + j*3*hp->x;
 			for (i = 0; i < hp->x; i++) {
-				*dp++ = gmap[map(colval(inl[i],BLU))];
-				*dp++ = gmap[map(colval(inl[i],GRN))];
-				*dp++ = gmap[map(colval(inl[i],RED))];
+				*dp++ = inl[i][RED];
+				*dp++ = inl[i][GRN];
+				*dp++ = inl[i][BLU];
 			}
 		}
 	}
@@ -321,7 +311,6 @@ struct hdStruct  *hp;
 
 	free((char *)inl);
 	free((char *)tarData);
-#undef  map
 }
 
 
