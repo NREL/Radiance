@@ -20,7 +20,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *  All values default to ascii representation of real
  *  numbers.  Binary representations can be selected
  *  with '-ff' for float or '-fd' for double.  By default,
- *  radiance is computed.  The '-oi' or '-oI' options indicate that
+ *  radiance is computed.  The '-i' or '-I' options indicate that
  *  irradiance values are desired.
  */
 
@@ -29,6 +29,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "octree.h"
 
 #include  "otypes.h"
+
+int  imm_irrad = 0;			/* compute immediate irradiance? */
 
 int  inform = 'a';			/* input format */
 int  outform = 'a';			/* output format */
@@ -53,6 +55,8 @@ int  ambounce = 0;			/* ambient bounces */
 char  *amblist[128];			/* ambient include/exclude list */
 int  ambincl = -1;			/* include == 1, exclude == 0 */
 
+extern OBJREC  Lamb;			/* a Lambertian surface */
+
 static RAY  thisray;			/* for our convenience */
 
 static int  oputo(), oputd(), oputv(), oputl(), 
@@ -64,12 +68,6 @@ static int  castonly;
 static int  puta(), putf(), putd();
 
 static int  (*putreal)();
-
-static double  Lambfa[5] = {PI, PI, PI, 0.0, 0.0};
-static OBJREC  Lamb = {
-	OVOID, MAT_PLASTIC, "Lambertian",
-	{0, 5, NULL, Lambfa}, NULL, -1,
-};					/* a Lambertian surface */
 
 
 quit(code)			/* quit program */
@@ -109,12 +107,10 @@ char  *fname;
 			continue;
 		}
 							/* compute and print */
-		if (outvals[0] == 'i')
+		if (imm_irrad)
 			irrad(orig, direc);
-		else if (outvals[0] == 'I')
-			Irrad(orig, direc);
 		else
-			radiance(orig, direc);
+			traceray(orig, direc);
 							/* flush if time */
 		if (--nextflush == 0) {
 			fflush(stdout);
@@ -180,7 +176,7 @@ register char  *vs;
 }
 
 
-radiance(org, dir)		/* compute radiance value */
+traceray(org, dir)		/* compute and print ray value(s) */
 FVECT  org, dir;
 {
 	register int  (**tp)();
@@ -202,7 +198,7 @@ FVECT  org, dir;
 }
 
 
-irrad(org, dir)			/* compute irradiance value */
+irrad(org, dir)			/* compute immediate irradiance value */
 FVECT  org, dir;
 {
 	register int  i;
@@ -220,22 +216,6 @@ FVECT  org, dir;
 		thisray.rop[i] = org[i] + 1e-4*dir[i];
 					/* compute and print */
 	(*ofun[Lamb.otype].funp)(&Lamb, &thisray);
-	oputv(&thisray);
-	if (outform == 'a')
-		putchar('\n');
-}
-
-
-Irrad(org, dir)		/* compute irradiance value after intersection */
-FVECT  org, dir;
-{
-					/* compute intersection */
-	VCOPY(thisray.rorg, org);
-	VCOPY(thisray.rdir, dir);
-	rayorigin(&thisray, NULL, PRIMARY, 1.0);
-	localhit(&thisray, &thescene);
-	if (thisray.ro != NULL)		/* pretend we hit Lambertian surf. */
-		(*ofun[Lamb.otype].funp)(&Lamb, &thisray);
 	oputv(&thisray);
 	if (outform == 'a')
 		putchar('\n');

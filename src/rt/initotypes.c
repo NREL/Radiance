@@ -12,6 +12,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "otypes.h"
 
+#include  "otspecial.h"
+
 extern int  o_sphere();
 extern int  o_face();
 extern int  o_cone();
@@ -46,12 +48,17 @@ initotypes()			/* initialize ofun array */
 	ofun[MAT_ILLUM].funp =
 	ofun[MAT_GLOW].funp =
 	ofun[MAT_SPOT].funp = m_light;
+	ofun[MAT_ILLUM].flags |= T_IRR_IGN;
 	ofun[MAT_PLASTIC].funp =
 	ofun[MAT_METAL].funp =
 	ofun[MAT_TRANS].funp = m_normal;
+	ofun[MAT_TRANS].flags |= T_IRR_IGN;
 	ofun[MAT_DIELECTRIC].funp =
 	ofun[MAT_INTERFACE].funp = m_dielectric;
+	ofun[MAT_DIELECTRIC].flags |= T_IRR_IGN;
+	ofun[MAT_INTERFACE].flags |= T_IRR_IGN;
 	ofun[MAT_GLASS].funp = m_glass;
+	ofun[MAT_GLASS].flags |= T_IRR_IGN;
 	ofun[MAT_CLIP].funp = m_clip;
 	ofun[MAT_PFUNC].funp =
 	ofun[MAT_MFUNC].funp =

@@ -50,6 +50,7 @@ int  (*wrnvec)() = stderr_v;		/* warning output vector */
 int  (*cmdvec)() = NULL;		/* command error vector */
 
 int  (*trace)() = NULL;			/* trace call */
+int  do_irrad = 0;			/* compute irradiance? */
 
 extern long  time();
 long  tstart;				/* start time */
@@ -58,6 +59,8 @@ extern int  ambnotify();		/* new object notify functions */
 int  (*addobjnotify[])() = {ambnotify, NULL};
 
 CUBE  thescene;				/* our scene */
+
+extern int  imm_irrad;			/* calculate immediate irradiance? */
 
 extern int  ralrm;			/* seconds between reports */
 extern float  pctdone;			/* percentage done */
@@ -245,6 +248,9 @@ char  *argv[];
 				goto badopt;
 			}
 			break;
+		case 'i':				/* irradiance */
+			do_irrad = !do_irrad;
+			break;
 #if  RPICT
 		case 'z':				/* z file */
 			check(2,1);
@@ -322,6 +328,9 @@ char  *argv[];
 			}
 			break;
 #if  RTRACE
+		case 'I':				/* immed. irradiance */
+			imm_irrad = !imm_irrad;
+			break;
 		case 'f':				/* format i/o */
 			switch (argv[i][2]) {
 			case 'a':				/* ascii */
@@ -595,7 +604,6 @@ printdefaults()			/* print default values to stdout */
 	printf("-o%s\t\t\t\t# output", outvals);
 	for (cp = outvals; *cp; cp++)
 		switch (*cp) {
-		case 'i': printf(" irradiance"); break;
 		case 't': printf(" trace"); break;
 		case 'o': printf(" origin"); break;
 		case 'd': printf(" direction"); break;

@@ -16,11 +16,20 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "otypes.h"
 
+#include  "otspecial.h"
+
 extern CUBE  thescene;			/* our scene */
 extern int  maxdepth;			/* maximum recursion depth */
 extern double  minweight;		/* minimum ray weight */
+extern int  do_irrad;			/* compute irradiance? */
 
 long  nrays = 0L;			/* number of rays traced */
+
+static double  Lambfa[5] = {PI, PI, PI, 0.0, 0.0};
+OBJREC  Lamb = {
+	OVOID, MAT_PLASTIC, "Lambertian",
+	{0, 5, NULL, Lambfa}, NULL, -1,
+};					/* a Lambertian surface */
 
 #define  MAXLOOP	128		/* modifier loop detection */
 
@@ -69,8 +78,10 @@ RAY  *r;
 {
 	extern int  (*trace)();
 
-	if (localhit(r, &thescene) || sourcehit(r))
+	if (localhit(r, &thescene))
 		raycont(r);
+	else if (sourcehit(r))
+		rayshade(r, r->ro->omod);
 
 	if (trace != NULL)
 		(*trace)(r);		/* trace execution */
@@ -107,6 +118,14 @@ int  mod;
 {
 	static int  depth = 0;
 	register OBJREC  *m;
+					/* check for irradiance calc. */
+	if (do_irrad && !(r->crtype & ~(PRIMARY|TRANS))) {
+		if (irr_ignore(objptr(mod)->otype))
+			raytrans(r);
+		else
+			(*ofun[Lamb.otype].funp)(&Lamb, r);
+		return;
+	}
 					/* check for infinite loop */
 	if (depth++ >= MAXLOOP)
 		objerror(r->ro, USER, "possible modifier loop");
