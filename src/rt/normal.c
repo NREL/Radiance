@@ -108,7 +108,7 @@ double  omega;			/* light source size */
 						/* worth using? */
 		if (dtmp > FTINY) {
 			copycolor(ctmp, np->scolor);
-			dtmp *= omega / np->pdot;
+			dtmp *= omega * sqrt(ldot/np->pdot);
 			scalecolor(ctmp, dtmp);
 			addcolor(cval, ctmp);
 		}
@@ -134,7 +134,7 @@ double  omega;			/* light source size */
 						/* worth using? */
 		if (dtmp > FTINY) {
 			copycolor(ctmp, np->mcolor);
-			dtmp *= np->tspec * omega / np->pdot;
+			dtmp *= np->tspec * omega * sqrt(ldot/np->pdot);
 			scalecolor(ctmp, dtmp);
 			addcolor(cval, ctmp);
 		}
