@@ -90,7 +90,7 @@ initotypes(void)			/* initialize ofun array */
 extern int
 o_default(OBJREC *o, RAY *r)			/* default action is error */
 {
-	error(INTERNAL, "unexpected object call");
+	error(CONSISTENCY, "unexpected object call");
 				/* call to pull in freeobjmem.o */ /* XXX ? */
 	free_objs(0, 0);
 }
