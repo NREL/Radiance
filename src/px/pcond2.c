@@ -253,19 +253,19 @@ register struct mbc	*mb;
 			inpflags |= 040;
 		else if (!(inpflags & 0100) &&
 				sscanf(buf,
-				"r = %f*r1 + %f*g1 + %f*b1",
+				"ro = %f*rn + %f*gn + %f*bn",
 				&mb->cmat[0][0], &mb->cmat[0][1],
 				&mb->cmat[0][2]) == 3)
 			inpflags |= 0100;
 		else if (!(inpflags & 0200) &&
 				sscanf(buf,
-				"g = %f*r1 + %f*g1 + %f*b1",
+				"go = %f*rn + %f*gn + %f*bn",
 				&mb->cmat[1][0], &mb->cmat[1][1],
 				&mb->cmat[1][2]) == 3)
 			inpflags |= 0200;
 		else if (!(inpflags & 0400) &&
 				sscanf(buf,
-				"b = %f*r1 + %f*g1 + %f*b1",
+				"bo = %f*rn + %f*gn + %f*bn",
 				&mb->cmat[2][0], &mb->cmat[2][1],
 				&mb->cmat[2][2]) == 3)
 			inpflags |= 0400;
