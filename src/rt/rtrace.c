@@ -299,10 +299,7 @@ static
 oputl(r)				/* print length */
 register RAY  *r;
 {
-	if (r->rot < FHUGE)
-		(*putreal)(r->rot);
-	else
-		(*putreal)(0.0);
+	(*putreal)(r->rt);
 }
 
 

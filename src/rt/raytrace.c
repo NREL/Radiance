@@ -59,6 +59,7 @@ double  rw;
 	r->pert[0] = r->pert[1] = r->pert[2] = 0.0;
 	setcolor(r->pcol, 1.0, 1.0, 1.0);
 	setcolor(r->rcol, 0.0, 0.0, 0.0);
+	r->rt = 0.0;
 	return(r->rlvl <= maxdepth && r->rweight >= minweight ? 0 : -1);
 }
 
@@ -95,6 +96,7 @@ register RAY  *r;
 		VCOPY(tr.rdir, r->rdir);
 		rayvalue(&tr);
 		copycolor(r->rcol, tr.rcol);
+		r->rt = r->rot + tr.rt;
 	}
 }
 

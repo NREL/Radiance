@@ -86,7 +86,9 @@ register RAY  *r;
 		multcolor(p.rcol, r->pcol);	/* modify */
 		multcolor(p.rcol, trans);
 		addcolor(r->rcol, p.rcol);
+		r->rt = r->rot + p.rt;
 	}
+
 	if (r->crtype & SHADOW)			/* skip reflected ray */
 		return;
 						/* compute reflectance */
@@ -102,5 +104,7 @@ register RAY  *r;
 		rayvalue(&p);
 		multcolor(p.rcol, refl);
 		addcolor(r->rcol, p.rcol);
+		if (bright(refl) > bright(trans))
+			r->rt = r->rot + p.rt;
 	}
 }
