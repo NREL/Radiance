@@ -35,8 +35,9 @@ extern double  s_latitude;
 extern double  s_longitude;
 extern double  s_meridian;
 					/* required values */
-int  month, day;
-double  hour;
+int  month, day;				/* date */
+double  hour;					/* standard time */
+double  altitude, azimuth;			/* or solar angles */
 					/* default values */
 int  cloudy = 0;
 int  dosun = 1;
@@ -67,9 +68,15 @@ char  *argv[];
 	}
 	if (argc < 4)
 		userror("arg count");
-	month = atoi(argv[1]);
-	day = atoi(argv[2]);
-	hour = atof(argv[3]);
+	if (!strcmp(argv[1], "-ang")) {
+		altitude = atof(argv[2]) * (PI/180);
+		azimuth = atof(argv[3]) * (PI/180);
+		month = 0;
+	} else {
+		month = atoi(argv[1]);
+		day = atoi(argv[2]);
+		hour = atof(argv[3]);
+	}
 	for (i = 4; i < argc; i++)
 		if (argv[i][0] == '-' || argv[i][0] == '+')
 			switch (argv[i][1]) {
@@ -120,15 +127,17 @@ char  *argv[];
 
 computesky()			/* compute sky parameters */
 {
-	int  jd;
-	double  sd, st;
-	double  altitude, azimuth;
 					/* compute solar direction */
-	jd = jdate(month, day);			/* Julian date */
-	sd = sdec(jd);				/* solar declination */
-	st = hour + stadj(jd);			/* solar time */
-	altitude = salt(sd, st);
-	azimuth = sazi(sd, st);
+	if (month) {			/* from date and time */
+		int  jd;
+		double  sd, st;
+
+		jd = jdate(month, day);		/* Julian date */
+		sd = sdec(jd);			/* solar declination */
+		st = hour + stadj(jd);		/* solar time */
+		altitude = salt(sd, st);
+		azimuth = sazi(sd, st);
+	}
 	sundir[0] = -sin(azimuth)*cos(altitude);
 	sundir[1] = -cos(azimuth)*cos(altitude);
 	sundir[2] = sin(altitude);
@@ -214,6 +223,7 @@ char  *msg;
 	if (msg != NULL)
 		fprintf(stderr, "%s: Use error - %s\n", progname, msg);
 	fprintf(stderr, "Usage: %s month day hour [options]\n", progname);
+	fprintf(stderr, "   Or: %s -ang altitude azimuth [options]\n", progname);
 	fprintf(stderr, "   Or: %s -defaults\n", progname);
 	exit(1);
 }
