@@ -49,10 +49,10 @@ extern char  errmsg[];			/* global buffer for error messages */
 extern int  errno;			/* system error number */
 
 					/* memory operations */
-#ifdef  STRUCTASSIGN
-#define  copystruct(d,s)	(*(d) = *(s))
-#else
+#ifdef  NOSTRUCTASS
 #define  copystruct(d,s)	bcopy((char *)(s),(char *)(d),sizeof(*(d)))
+#else
+#define  copystruct(d,s)	(*(d) = *(s))
 #endif
 
 #ifndef  BSD
