@@ -361,9 +361,10 @@ FILE  *fin;
 	} else {
 		printf("\n%s", buf);
 		if (xac > 1) {
-			printf(" | %s", xav[0]);
+			printf(" | %s -e", xav[0]);	/* expand next time */
 			for (i = 1; i < xac; i++)
-				printf(" %s", xav[i]);
+				if (i >= xfa || strcmp(xav[i], "-c"))
+					printf(" %s", xav[i]);
 		}
 		putchar('\n');
 	}
