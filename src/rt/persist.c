@@ -170,6 +170,7 @@ io_process()		/* just act as go-between for actual process */
 	char	buf[BUFSIZ], *pfin, *pfout, *pferr;
 	int	pid, nfds;
 	int	fdout, fderr = -1;
+	int	status = 0;
 	fd_set	readfds, excepfds;
 					/* load persist file */
 	n = 40;
@@ -269,7 +270,22 @@ io_process()		/* just act as go-between for actual process */
 				/* close(2);	don't close stderr! */
 				fderr = -1;
 			} else
-				do {		/* write it all */
+				cp[nr] = '\0';	/* deduce status if we can */
+				n = strlen(progname);
+				if (!strncmp(cp, progname, n) &&
+						cp[n++] == ':' &&
+						cp[n++] == ' ') {
+					register struct erract	*ep;
+					for (ep = erract; ep < erract+NERRS;
+							ep++)
+						if (ep->pre[0] &&
+							!strncmp(cp+n, ep->pre,
+							    strlen(ep->pre))) {
+							status = ep->ec;
+							break;
+						}
+				}
+				do {		/* write message */
 					if ((n = write(2, cp, nr)) <= 0)
 						goto writerr;
 					cp += n;
@@ -293,7 +309,8 @@ io_process()		/* just act as go-between for actual process */
 				} while ((nr -= n) > 0);
 		}
 	}
-	_exit(0);		/* we ought to return renderer error status! */
+	wait(0);		/* wait for feeder process */
+	_exit(status);
 formerr:
 	error(USER, "format error in persist file");
 readerr:
