@@ -9,32 +9,12 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include <stdio.h>
-#include <sys/types.h>
-#ifdef INCL_SEL_H
-#include <sys/select.h>
-#endif
 #include <signal.h>
 #include <fcntl.h>
+#include "selcall.h"
 #include "netproc.h"
 #include "paths.h"
 #include "vfork.h"
-					/* select call compatibility stuff */
-#ifndef FD_SETSIZE
-#include <sys/param.h>
-#define FD_SETSIZE	NOFILE		/* maximum # select file descriptors */
-#endif
-#ifndef FD_SET
-#ifndef NFDBITS
-#define NFDBITS		(8*sizeof(int))	/* number of bits per fd_mask */
-#endif
-#define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
-#define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
-#define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
-#ifndef BSD
-#define	bzero(d,n)	(void)memset(d,0,n)
-#endif
-#define FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
-#endif
 
 PSERVER	*pslist = NULL;		/* global process server list */
 
