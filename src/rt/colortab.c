@@ -93,7 +93,7 @@ int	(*set_pixel)();
 {
 	int	r, g, b;
 	int	cv[3];
-	register union { CNODE *t; struct tabent *e; }	p;
+	register CNODE	*tp;
 	register int	h;
 						/* map color */
 	r = map_col(col,RED);
@@ -106,34 +106,32 @@ int	(*set_pixel)();
 						/* add to histogram */
 	histo[cv[RED]][cv[GRN]][cv[BLU]]++;
 						/* find pixel in tree */
-	for (p.t = ctree, h = 0; is_branch(*p.t); h++)
-		if (cv[prim(*p.t)] < part(*p.t))
-			p.t += 1<<h;		/* left branch */
+	for (tp = ctree, h = 0; is_branch(*tp); h++)
+		if (cv[prim(*tp)] < part(*tp))
+			tp += 1<<h;		/* left branch */
 		else
-			p.t += 1<<(h+1);	/* right branch */
-	h = pval(*p.t);
+			tp += 1<<(h+1);	/* right branch */
+	h = pval(*tp);
 						/* add to color table */
-	p.e = clrtab + h;
-					/* add to sum */
-	p.e->sum[RED] += r;
-	p.e->sum[GRN] += g;
-	p.e->sum[BLU] += b;
-	p.e->n++;
+	clrtab[h].sum[RED] += r;
+	clrtab[h].sum[GRN] += g;
+	clrtab[h].sum[BLU] += b;
+	clrtab[h].n++;
 					/* recompute average */
-	r = p.e->sum[RED] / p.e->n;
-	g = p.e->sum[GRN] / p.e->n;
-	b = p.e->sum[BLU] / p.e->n;
+	r = clrtab[h].sum[RED] / clrtab[h].n;
+	g = clrtab[h].sum[GRN] / clrtab[h].n;
+	b = clrtab[h].sum[BLU] / clrtab[h].n;
 					/* check for movement */
-	if (p.e->n == 1 ||
-			(r-p.e->ent[RED])*(r-p.e->ent[RED]) +
-			(g-p.e->ent[GRN])*(g-p.e->ent[GRN]) +
-			(b-p.e->ent[BLU])*(b-p.e->ent[BLU]) > MAXDST2) {
-		p.e->ent[RED] = r;
-		p.e->ent[GRN] = g;	/* reassign pixel */
-		p.e->ent[BLU] = b;
+	if (clrtab[h].n == 1 ||
+			(r-clrtab[h].ent[RED])*(r-clrtab[h].ent[RED]) +
+			(g-clrtab[h].ent[GRN])*(g-clrtab[h].ent[GRN]) +
+			(b-clrtab[h].ent[BLU])*(b-clrtab[h].ent[BLU]) > MAXDST2) {
+		clrtab[h].ent[RED] = r;
+		clrtab[h].ent[GRN] = g;	/* reassign pixel */
+		clrtab[h].ent[BLU] = b;
 #ifdef notdef
 		printf("pixel %d = (%d,%d,%d) (%d refs)\n",
-				h, r, g, b, p.e->n);
+				h, r, g, b, clrtab[h].n);
 #endif
 		(*set_pixel)(h, r, g, b);
 	}
