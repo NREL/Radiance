@@ -1,6 +1,5 @@
 #
 # SCCSid "$SunId$ LBL"
-#
 # Radiance makefile for utility programs
 #
 
@@ -19,7 +18,7 @@ PROGS = findglare xglaresrc glarendx rpiece rad
 all:	$(PROGS)
 
 install:	all objview.csh objpict.csh glare.csh dayfact.csh rlux.csh \
-raddepend.csh
+raddepend.csh ivprep.csh ivpict.csh
 	cp $(PROGS) $(INSTDIR)
 	cp objview.csh $(INSTDIR)/objview
 	cp objpict.csh $(INSTDIR)/objpict
@@ -28,9 +27,12 @@ raddepend.csh
 	cp debugcal.csh $(INSTDIR)/debugcal
 	cp rlux.csh $(INSTDIR)/rlux
 	cp raddepend.csh $(INSTDIR)/raddepend
+	cp ivprep.csh $(INSTDIR)/ivprep
+	cp ivpict.csh $(INSTDIR)/ivpict
 	chmod 755 $(INSTDIR)/objview $(INSTDIR)/objpict \
 		$(INSTDIR)/glare $(INSTDIR)/dayfact $(INSTDIR)/debugcal \
-		$(INSTDIR)/rlux $(INSTDIR)/raddepend
+		$(INSTDIR)/rlux $(INSTDIR)/raddepend $(INSTDIR)/ivprep \
+		$(INSTDIR)/ivpict
 
 clean:
 	set nonomatch; rm -f *.o $(PROGS) core
