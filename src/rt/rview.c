@@ -62,10 +62,10 @@ double	minweight = 1e-2;		/* minimum ray weight */
 char  *ambfile = NULL;			/* ambient file name */
 COLOR  ambval = BLKCOLOR;		/* ambient value */
 int  ambvwt = 0;			/* initial weight for ambient value */
-double	ambacc = 0.2;			/* ambient accuracy */
+double	ambacc = 0.3;			/* ambient accuracy */
 int  ambres = 32;			/* ambient resolution */
-int  ambdiv = 128;			/* ambient divisions */
-int  ambssamp = 32;			/* ambient super-samples */
+int  ambdiv = 256;			/* ambient divisions */
+int  ambssamp = 64;			/* ambient super-samples */
 int  ambounce = 0;			/* ambient bounces */
 char  *amblist[128];			/* ambient include/exclude list */
 int  ambincl = -1;			/* include == 1, exclude == 0 */
