@@ -21,6 +21,11 @@ extern "C" {
 #include  "platform.h"
 #include  "mat4.h"
 
+
+#ifndef NULL
+#define NULL 0
+#endif
+
 				/* regular transformation */
 typedef struct {
 	MAT4  xfm;				/* transform matrix */

@@ -10,6 +10,8 @@ static const char	RCSid[] = "$Id$";
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+
+#include "standard.h"
 #include "vars.h"
 
 #define NOCHAR	127		/* constant for character to delete */

@@ -10,16 +10,12 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  <stdio.h>
-
 #include  <math.h>
-
 #include  <stdlib.h>
-
 #include  <string.h>
-
 #include  <ctype.h>
 
-
+#include  "standard.h"
 
 int
 fgetval(fp, ty, vp)			/* get specified data word */

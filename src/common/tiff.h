@@ -26,9 +26,6 @@
 
 #ifndef _TIFF_
 #define	_TIFF_
-#ifdef __cplusplus
-extern "C" {
-#endif
 /*
  * Tag Image File Format (TIFF)
  *
@@ -444,7 +441,4 @@ typedef	enum {
 #define TIFFTAG_SGILOGENCODE		65561	/* SGILog data encoding control */
 #define     SGILOGENCODE_NODITHER	0	/* do not dither encoded values */
 #define     SGILOGENCODE_RANDITHER	1	/* randomly dither encoded values */ 
-#ifdef __cplusplus
-}
-#endif
 #endif /* _TIFF_ */

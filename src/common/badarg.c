@@ -11,7 +11,8 @@ static const char	RCSid[] = "$Id$";
 
 #include <ctype.h>
 
-#define NULL		0
+#include "standard.h"
+
 
 int
 badarg(ac, av, fl)		/* check argument list */

@@ -25,9 +25,6 @@
 
 #ifndef _TIFFCONF_
 #define	_TIFFCONF_
-#ifdef __cplusplus
-extern "C" {
-#endif
 /*
  * Library Configuration Definitions.
  *
@@ -142,8 +139,5 @@ extern "C" {
 #endif
 #ifndef SUBIFD_SUPPORT
 #define	SUBIFD_SUPPORT		1	/* enable SubIFD tag (330) support */
-#endif
-#ifdef __cplusplus
-}
 #endif
 #endif /* _TIFFCONF_ */

@@ -143,6 +143,7 @@ argcerr:
 	objerror(o, USER, "bad # arguments");
 raderr:
 	objerror(o, USER, "illegal radii");
+	return NULL; /* pro forma return */
 }
 
 

@@ -81,6 +81,7 @@ int	objsiz;
 	return(obj);
 memerr:
 	error(SYSTEM, "out of memory in getobj");
+	return 0; /* pro forma return */
 }
 
 

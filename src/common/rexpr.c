@@ -12,6 +12,8 @@ static const char	RCSid[] = "$Id$";
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
+
 /*
  * rexpr.c - regular expression parser (ala grep)
  */

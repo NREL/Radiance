@@ -20,6 +20,11 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
+#include <string.h>
+#include <stdlib.h>
+
+#include "standard.h"
+
 #ifndef  NHASH
 #define  NHASH		509		/* hash table size (prime!) */
 #endif
@@ -32,10 +37,6 @@ typedef struct s_head {
 static S_HEAD  *stab[NHASH];
 
 #define  hash(s)	(shash(s)%NHASH)
-
-extern char  *savestr(), *strcpy(), *malloc();
-
-#define  NULL		0
 
 #define  string(sp)	((char *)((sp)+1))
 

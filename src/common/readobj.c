@@ -9,13 +9,17 @@ static const char RCSid[] = "$Id$";
 
 #include "copyright.h"
 
+#include  <ctype.h>
+#include  <stdio.h>
+#ifdef _WIN32
+ #define popen _popen
+ #define pclose _pclose
+#endif
+
 #include  "standard.h"
-
 #include  "object.h"
-
 #include  "otypes.h"
 
-#include  <ctype.h>
 
 OBJREC  *objblock[MAXOBJBLK];		/* our objects */
 OBJECT  nobjects = 0;			/* # of objects */

@@ -10,6 +10,8 @@ extern "C" {
 
 #include "copyright.h"
 
+#include  <string.h>
+
 #include  "fvect.h"
 
 typedef FLOAT  MAT4[4][4];

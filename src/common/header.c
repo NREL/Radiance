@@ -31,6 +31,8 @@ static const char	RCSid[] = "$Id$";
 #include  <time.h>
 #include  <ctype.h>
 
+#include  "standard.h"
+
 #define	 MAXLINE	512
 
 char  HDRSTR[] = "#?";		/* information header magic number */
@@ -138,8 +140,6 @@ int  ac;
 char  **av;
 FILE  *fp;
 {
-	int  quote;
-
 	while (ac-- > 0) {
 		fputword(*av++, fp);
 		fputc(ac ? ' ' : '\n', fp);

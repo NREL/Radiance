@@ -229,6 +229,7 @@ tryagain:
 	return(ot);
 memerr:
 	error(SYSTEM, "out of memory in fullnode");
+	return NULL; /* pro forma return */
 }
 
 

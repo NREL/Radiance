@@ -117,6 +117,7 @@ fonterr:
 	error(USER, errmsg);
 memerr:
 	error(SYSTEM, "out of memory in fontglyph");
+	return NULL; /* pro forma return */
 }
 
 

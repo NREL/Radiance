@@ -9,6 +9,8 @@ static const char	RCSid[] = "$Id$";
 
 #include <math.h>
 
+#include "calcomp.h"
+
 double  argument();
 static double  l_j0(), l_j1(), l_jn(), l_y0(), l_y1(), l_yn();
 static double  l_erf(), l_erfc();

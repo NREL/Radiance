@@ -29,10 +29,10 @@ FVECT	dv;
 
 	for (i = 0; i < 3; i++)
 		if (dv[i] < 0.) {
-			cd[i] = dv[i] * -DCSCALE;
+			cd[i] = (int)(dv[i] * -DCSCALE);
 			dc |= FXNEG<<i;
 		} else
-			cd[i] = dv[i] * DCSCALE;
+			cd[i] = (int)(dv[i] * DCSCALE);
 	if (cd[0] <= cd[1]) {
 		dc |= F1X | cd[0] << F1SFT;
 		cm = cd[1];

@@ -9,6 +9,8 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
+#include <stdlib.h>
+
 #include "random.h"
 
 void

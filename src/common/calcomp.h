@@ -11,6 +11,8 @@ extern "C" {
 
 #include "copyright.h"
 
+#include <stdio.h>
+
 #define	 VAR		1
 #define	 NUM		2
 #define	 UMINUS		3

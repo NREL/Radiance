@@ -9,6 +9,7 @@ static const char RCSid[] = "$Id$";
 #include  "octree.h"
 #include  "object.h"
 #include  "mesh.h"
+#include  "resolu.h"
 
 static char	*meshfn;	/* input file name */
 static FILE	*meshfp;	/* mesh file pointer */
@@ -73,21 +74,22 @@ gettree()				/* get a pre-ordered octree */
 	register int  i;
 	
 	switch (getc(meshfp)) {
-	case OT_EMPTY:
-		return(EMPTY);
-	case OT_FULL:
-		return(getfullnode());
-	case OT_TREE:
-		if ((ot = octalloc()) == EMPTY)
-			mesherror(SYSTEM, "out of tree space in readmesh");
-		for (i = 0; i < 8; i++)
-			octkid(ot, i) = gettree();
-		return(ot);
-	case EOF:
-		mesherror(USER, "truncated mesh octree");
-	default:
-		mesherror(USER, "damaged mesh octree");
+		case OT_EMPTY:
+			return(EMPTY);
+		case OT_FULL:
+			return(getfullnode());
+		case OT_TREE:
+			if ((ot = octalloc()) == EMPTY)
+				mesherror(SYSTEM, "out of tree space in readmesh");
+			for (i = 0; i < 8; i++)
+				octkid(ot, i) = gettree();
+			return(ot);
+		case EOF:
+			mesherror(USER, "truncated mesh octree");
+		default:
+			mesherror(USER, "damaged mesh octree");
 	}
+	return NULL; /* pro forma return */
 }
 
 

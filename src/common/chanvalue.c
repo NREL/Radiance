@@ -5,9 +5,12 @@ static const char	RCSid[] = "$Id$";
  * Dummy definition of chanvalue() for calcomp routines.
  */
 
+#include "standard.h"
+
 double
 chanvalue(int n)
 {
 	eputs("Call to unsupported chanvalue routine\n");
 	quit(1);
+	return 0.0; /* pro forma return */
 }
