@@ -9,6 +9,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *
  *	guth_dgr -	Guth discomfort glare rating
  *	guth_vcp -	Guth visual comfort probability
+ *	cie_cgi -	CIE Glare Index (1983)
  *
  *		12 April 1991	Greg Ward	EPFL
  */
@@ -21,7 +22,7 @@ extern double	erfc();
 double	posindex();
 int	headline();
 
-double	direct(), guth_dgr(), guth_vcp();
+double	direct(), guth_dgr(), guth_vcp(), cie_cgi();
 
 struct named_func {
 	char	*name;
@@ -30,6 +31,7 @@ struct named_func {
 	{"direct", direct},
 	{"guth_dgr", guth_dgr},
 	{"guth_vcp", guth_vcp},
+	{"cie_cgi", cie_cgi},
 	{NULL}
 };
 
@@ -292,9 +294,8 @@ struct glare_dir	*gd;
 	}
 	if (n == 0)
 		return(0.0);
-	else
-		return( pow(
-			.5*sum/pow((brsum+(5.-wtot)*gd->indirect/PI)/5.,.44),
+
+	return( pow(.5*sum/pow((brsum+(5.-wtot)*gd->indirect/PI)/5.,.44),
 			pow((double)n, -.0914) ) );
 #undef q
 }
@@ -319,4 +320,29 @@ struct glare_dir	*gd;
 	if (dgr <= FTINY)
 		return(100.0);
 	return(100.*norm_integral(6.374-1.3227*log(dgr)));
+}
+
+
+double
+cie_cgi(gd)		/* compute CIE Glare Index */
+struct glare_dir	*gd;
+{
+	register struct glare_src	*gs;
+	FVECT	mydir;
+	double	dillum;
+	double	p;
+	double	sum;
+
+	spinvector(mydir, midview.vdir, midview.vup, gd->ang);
+	sum = 0.0;
+	for (gs = all_srcs; gs != NULL; gs = gs->next) {
+		p = posindex(gs->dir, mydir, midview.vup);
+		if (p <= FTINY)
+			continue;
+		sum += gs->lum*gs->lum * gs->dom / (p*p);
+	}
+	if (sum <= FTINY)
+		return(0.0);
+	dillum = direct(gd);
+	return(8.*log10(2.*sum*(1.+dillum/500.)/(dillum+gd->indirect)));
 }
