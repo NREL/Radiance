@@ -19,7 +19,11 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "random.h"
 
 #ifndef WFLUSH
-#define WFLUSH		30		/* flush after this many rays */
+#ifdef SPEED
+#define WFLUSH		(5*SPEED)
+#else
+#define WFLUSH		100		/* flush after this many rays */
+#endif
 #endif
 
 #ifdef  SMLFLT
