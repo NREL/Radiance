@@ -9,7 +9,7 @@
 # Input is a ray origin and direction, such as that produced by ximage.
 #
 if ( $#argv < 2 ) then
-	echo "Usage: $0 octree rcalc options..."
+	echo "Usage: $0 octree [rcalc options]"
 	exit 1
 endif
 if ( ! $?RAYPATH ) then
@@ -23,6 +23,8 @@ foreach d (`echo $RAYPATH | sed 's/:/ /g'`)
 	endif
 end
 
-rtrace -h -x 1 -odnp $1 | rcalc -e 'Dx=$1;Dy=$2;Dz=$3' \
+rtrace -h- -x 1 -odnpl $1 | rcalc -e 'Dx=$1;Dy=$2;Dz=$3' \
 		-e 'Nx=$4;Ny=$5;Nz=$6;Px=$7;Py=$8;Pz=$9' \
+		-e 'T=$10;Ts=T' -e 'S:1;Tx:0;Ty:0;Tz:0' \
+		-e 'Ix:1;Iy:0;Iz:0;Jx:0;Jy:1;Jz:0;Kx:0;Ky:0;Kz:1' \
 		-e 'Rdot=-Dx*Nx-Dy*Ny-Dz*Nz' $initfile $argv[2-]:q
