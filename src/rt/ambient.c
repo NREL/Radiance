@@ -186,7 +186,7 @@ double  s;
 		for (j = 0; j < 3; j++)
 			d += (r->rop[j] - av->pos[j]) *
 					(av->dir[j] + r->ron[j]);
-		if (d*0.5 < -minarad*ambacc)
+		if (d*0.5 < -minarad*ambacc-.001)
 			continue;
 		/*
 		 *  Jittering final test reduces image artifacts.
