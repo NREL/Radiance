@@ -228,9 +228,10 @@ rtrace.o rvmain.o rv2.o rv3.o source.o:	../common/octree.h
 
 o_instance.o:	../common/instance.h ../common/octree.h
 
-ambient.o aniso.o dielectric.o func.o initotypes.o m_brdf.o \
-normal.o o_cone.o text.o raytrace.o rtrace.o freeobjmem.o \
-rv2.o source.o srcsupp.o virtuals.o sphere.o:	../common/otypes.h
+ambient.c aniso.c dielectric.c freeobjmem.c func.c initotypes.c \
+m_brdf.c m_direct.c m_mirror.c normal.c o_cone.c preload.c \
+raytrace.c rtrace.c rv2.c source.c sphere.c srcsupp.c text.c \
+virtuals.c:	../common/otypes.h
 
 ambient.o ambcomp.o aniso.o normal.o rpict.o \
 rv3.o srcsamp.o virtuals.o:	../common/random.h
