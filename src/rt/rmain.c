@@ -120,7 +120,6 @@ char  *argv[];
 				case 'n': case 'N': case 'f': case 'F': \
 				case '-': case '0': var = 0; break; \
 				default: goto badopt; }
-	extern char  *getenv();
 	char  *err;
 	char  *recover = NULL;
 	char  *outfile = NULL;
@@ -145,13 +144,13 @@ char  *argv[];
 	initurand(2048);
 					/* option city */
 	for (i = 1; i < argc; i++) {
-		if (argv[i][0] == '+' || argv[i][0] == '$') {
-						/* options from file/environ */
-			if (getopts(&argc, &argv, i) < 0)
-				goto badopt;
-			i--;
-			continue;
-		} else if (argv[i][0] != '-')
+						/* expand arguments */
+		while (rval = expandarg(&argc, &argv, i))
+			if (rval < 0) {
+				sprintf(errmsg, "cannot expand '%s'", argv[i]);
+				error(SYSTEM, errmsg);
+			}
+		if (argv[i][0] != '-')
 			break;			/* break from options */
 		if (!strcmp(argv[i], "-version")) {
 			puts(VersionID);
@@ -364,7 +363,8 @@ char  *argv[];
 					amblp = amblist;
 				}
 				if (argv[i][2] == 'I') {	/* file */
-					rval = wordfile(amblp, argv[++i]);
+					rval = wordfile(amblp,
+					getpath(argv[++i],libpath,R_OK));
 					if (rval < 0) {
 						sprintf(errmsg,
 				"cannot open ambient include file \"%s\"",
@@ -383,7 +383,8 @@ char  *argv[];
 					amblp = amblist;
 				}
 				if (argv[i][2] == 'E') {	/* file */
-					rval = wordfile(amblp, argv[++i]);
+					rval = wordfile(amblp,
+					getpath(argv[++i],libpath,R_OK));
 					if (rval < 0) {
 						sprintf(errmsg,
 				"cannot open ambient exclude file \"%s\"",
