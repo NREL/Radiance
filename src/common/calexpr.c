@@ -34,9 +34,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define	 isdecimal(c)	(isdigit(c) || (c) == '.')
 
-#ifndef atof
-extern double  atof();
-#endif
 extern char  *fgets(), *savestr();
 extern char  *emalloc(), *ecalloc();
 extern EPNODE  *curfunc;

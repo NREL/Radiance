@@ -12,9 +12,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
-#ifndef atof
-extern double  atof();
-#endif
+#include  <math.h>
+
 
 char  let[]="0123456789._ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 

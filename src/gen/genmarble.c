@@ -12,11 +12,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
-#include  "random.h"
+#include  <math.h>
 
-#ifndef atof
-extern double  atof();
-#endif
+#include  "random.h"
 
 #define  PI	3.14159265359
 
@@ -75,7 +73,6 @@ bubble(v, cent, rad, bubrad)	/* compute location of random bubble */
 FVECT  v, cent;
 double  rad, bubrad;
 {
-	double  sqrt();
 	double  r, ro, theta, phi;
 
 	r = frandom()*bubrad;
@@ -92,7 +89,6 @@ sphere_cart(v, ro, theta, phi)	/* spherical to cartesian coord. conversion */
 FVECT  v;
 double  ro, theta, phi;
 {
-	double  sin(), cos();
 	double  d;
 	
 	d = sin(phi);

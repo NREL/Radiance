@@ -19,9 +19,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 
-#ifndef atof
-extern double  atof();
-#endif
 extern char  *strcpy(), *strcat(), *malloc();
 extern double  stadj(), sdec(), sazi(), salt();
 
