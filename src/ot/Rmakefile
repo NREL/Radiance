@@ -18,14 +18,14 @@ INSTALL = install
 
 COMPAT = malloc.o
 
-oconv:	dummy.o misc.o objset.o oconv.o octree.o readobj.o \
+oconv:	misc.o objset.o oconv.o octree.o readobj.o \
 readoct.o sphere.o fvect.o otypes.o writeoct.o o_face.o face.o plocate.o xf.o \
 clip.o cone.o o_cone.o instance.o o_instance.o bbox.o savestr.o header.o \
-mat4.o fgetline.o $(COMPAT)
+mat4.o fgetline.o initotypes.o $(COMPAT)
 	cc $(CFLAGS) -o oconv oconv.o readoct.o octree.o objset.o \
-readobj.o writeoct.o fvect.o otypes.o sphere.o dummy.o misc.o o_face.o \
+readobj.o writeoct.o fvect.o otypes.o sphere.o misc.o o_face.o \
 face.o plocate.o clip.o cone.o o_cone.o instance.o o_instance.o mat4.o xf.o \
-bbox.o savestr.o header.o fgetline.o $(COMPAT) -lm
+bbox.o savestr.o header.o fgetline.o initotypes.o $(COMPAT) -lm
 
 install:	oconv
 	$(INSTALL) oconv $(INSTDIR)
@@ -33,17 +33,17 @@ install:	oconv
 xf.o:	xf.c
 	cc $(CFLAGS) -DINVXF -c xf.c
 
-bbox.o cone.o face.o misc.o o_cone.o o_face.o \
+bbox.o cone.o face.o initotypes.o misc.o o_cone.o o_face.o \
 o_instance.o objset.o oconv.o instance.o octree.o \
 otypes.o readobj.o readoct.o sphere.o writeoct.o:	standard.h fvect.h
 
-o_cone.o o_face.o objset.o oconv.o octree.o \
+initotypes.o o_cone.o o_face.o objset.o oconv.o octree.o \
 readoct.o sphere.o writeoct.o:	octree.h
 
 bbox.o cone.o face.o o_cone.o o_face.o o_instance.o objset.o oconv.o \
 instance.o otypes.o readobj.o readoct.o sphere.o writeoct.o:	object.h
 
-bbox.o cone.o objset.o oconv.o otypes.o \
+bbox.o cone.o initotypes.o objset.o oconv.o otypes.o \
 readobj.o readoct.o sphere.o writeoct.o:	otypes.h
 
 fvect.o:	fvect.h
