@@ -14,6 +14,8 @@ static char SCCSid[] = "$SunId$ SGI";
 
 char	*progname;		/* our program name */
 char	*hdkfile;		/* holodeck file name */
+char	gargc;			/* global argc */
+char	**gargv;		/* global argv */
 
 VIEW	myview = STDVIEW;	/* current output view */
 int	xres = 512, yres = 512;	/* max. horizontal and vertical resolution */
@@ -37,6 +39,7 @@ char	*argv[];
 {
 	int	i, rval;
 
+	gargc = argc; gargv = argv;
 	progname = argv[0];			/* get arguments */
 	for (i = 1; i < argc && argv[i][0] == '-'; i++) {
 		rval = getviewopt(&myview, argc-i, argv+i);
@@ -205,7 +208,7 @@ int	fn;
 				/* write header */
 	newheader("RADIANCE", stdout);
 	printf("SOFTWARE= %s\n", VersionID);
-	printf("%s %s\n", progname, hdkfile);
+	printargs(gargc, gargv, stdout);
 	if (fn)
 		printf("FRAME=%d\n", fn);
 	fputs(VIEWSTR, stdout);
