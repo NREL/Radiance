@@ -69,8 +69,8 @@ typedef float  COLORMAT[3][3];	/* color coordinate conversion matrix */
 #define  CIE_y_w		0.3333
 #endif
 
-#define  STDPRIMS	{CIE_x_r,CIE_y_r,CIE_x_g,CIE_y_g, \
-				CIE_x_b,CIE_y_b,CIE_x_w,CIE_y_w}
+#define  STDPRIMS	{{CIE_x_r,CIE_y_r},{CIE_x_g,CIE_y_g}, \
+				{CIE_x_b,CIE_y_b},{CIE_x_w,CIE_y_w}}
 
 #define CIE_D		(	CIE_x_r*(CIE_y_g - CIE_y_b) + \
 				CIE_x_g*(CIE_y_b - CIE_y_r) + \
