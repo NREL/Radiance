@@ -288,6 +288,7 @@ init()			/* initialize dispatch table and output */
 	add2dispatch("tube", o_cylinder);
 	add2dispatch("ring", o_ring);
 	add2dispatch("instance", o_instance);
+	add2dispatch("mesh", o_instance);
 	add2dispatch("plastic", o_plastic);
 	add2dispatch("plastic2", o_plastic);
 	add2dispatch("metal", o_metal);
@@ -533,7 +534,7 @@ register FUNARGS	*fa;
 
 
 int
-o_instance(mod, typ, id, fa)	/* convert an instance */
+o_instance(mod, typ, id, fa)	/* convert an instance (or mesh) */
 char	*mod, *typ, *id;
 FUNARGS	*fa;
 {
