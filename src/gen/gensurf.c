@@ -18,9 +18,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "standard.h"
 
-#define  XNAME		"X_"			/* x function name */
-#define  YNAME		"Y_"			/* y function name */
-#define  ZNAME		"Z_"			/* z function name */
+#define  XNAME		"X`SYS`"		/* x function name */
+#define  YNAME		"Y`SYS`"		/* y function name */
+#define  ZNAME		"Z`SYS`"		/* z function name */
 
 #define  ABS(x)		((x)>=0 ? (x) : -(x))
 
