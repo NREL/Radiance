@@ -16,12 +16,14 @@ LIBDIR = /lumen/lumen/ray/lib
 
 PROGS = thf2rad ies2rad arch2rad nff2rad lampcolor
 
+LIBFILES = source.cal tilt.cal lamp.tab
+
 all:	$(PROGS)
 
-install:	$(PROGS) source.cal tilt.cal
+install:	$(PROGS) $(LIBFILES)
 	cp $(PROGS) $(INSTDIR)
-	rm -f $(LIBDIR)/source.cal $(LIBDIR)/tilt.cal
-	cp source.cal tilt.cal $(LIBDIR)
+	cd $(LIBDIR) ; rm -f $(LIBFILES)
+	cp $(LIBFILES) $(LIBDIR)
 
 clean:
 	set nonomatch; rm -f $(PROGS) *.o core
