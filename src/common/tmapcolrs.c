@@ -1,7 +1,7 @@
-/* Copyright (c) 1997 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -52,7 +52,7 @@ int	len;
 
 	if (tmTop == NULL)
 		returnErr(TM_E_TMINVAL);
-	if (ls == NULL | scan == NULL | len <= 0)
+	if (ls == NULL | scan == NULL | len < 0)
 		returnErr(TM_E_ILLEGAL);
 	if (tmNeedMatrix(tmTop)) {		/* need floating point */
 		register COLOR	*newscan;

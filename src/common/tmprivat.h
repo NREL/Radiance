@@ -1,6 +1,6 @@
-/* Copyright (c) 1997 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
-/* SCCSid "$SunId$ LBL" */
+/* SCCSid "$SunId$ SGI" */
 
 /*
  * Private header file for tone mapping routines.
@@ -11,6 +11,7 @@
 #ifndef	MEM_PTR
 #define	MEM_PTR		char *
 #endif
+#include	"color.h"
 #include	"tonemap.h"
 
 				/* required constants */
