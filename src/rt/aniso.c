@@ -143,8 +143,8 @@ double  omega;			/* light source size */
 		 */
 						/* roughness + source */
 		au2 = av2 = omega / PI;
-		au2 += .25 * np->u_alpha2;
-		av2 += .25 * np->v_alpha2;
+		au2 += np->u_alpha2;
+		av2 += np->v_alpha2;
 						/* "half vector" */
 		h[0] = ldir[0] - np->prdir[0];
 		h[1] = ldir[1] - np->prdir[1];
@@ -253,8 +253,7 @@ register RAY  *r;
 				VCOPY(nd.prdir, r->rdir);
 			} else {
 				for (i = 0; i < 3; i++)		/* perturb */
-					nd.prdir[i] = r->rdir[i] -
-							0.5*r->pert[i];
+					nd.prdir[i] = r->rdir[i] - r->pert[i];
 				if (DOT(nd.prdir, r->ron) < -FTINY)
 					normalize(nd.prdir);	/* OK */
 				else
