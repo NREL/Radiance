@@ -1,0 +1,52 @@
+#
+# SCCSid "$SunId$ LBL"
+# Makefile for ray tracing library routines
+#
+
+OPT = -O -pipe
+MACH = -DSTRUCTASSIGN -DBSD -DIEEE -f68881 /usr/lib/libm.il
+CFLAGS = $(MACH) $(OPT)
+CC = cc
+
+RTOBJ = cone.o face.o instance.o readobj.o readoct.o otypes.o objset.o \
+	octree.o
+
+PICOBJ = color.o header.o image.o lamps.o resolu.o rexpr.o spec_rgb.o \
+	colrops.o 
+
+STDOBJ = fgetline.o linregr.o xf.o mat4.o misc.o fvect.o \
+	savestr.o urand.o cputs.o wputs.o eputs.o quit.o
+
+SYSOBJ = ealloc.o bmalloc.o # erf.o frexp.o fwrite.o random.o bcopy.o
+
+librt.a:	$(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
+	ar rc librt.a $(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
+	@ ranlib librt.a
+
+color.o colrops.o resolu.o spec_rgb.o:	color.h
+
+cone.o:		cone.h
+
+face.o:		face.h
+
+fvect.o:	fvect.h
+
+instance.o:	instance.h
+
+linregr.o:	linregr.h
+
+mat4.o:		mat4.h
+
+cone.o face.o instance.o objset.o otypes.o \
+readobj.o readoct.o:	object.h
+
+objset.o octree.o readoct.o:	octree.h
+
+cone.o objset.o otypes.o readobj.o readoct.o:	otypes.h
+
+urand.o:	random.h
+
+cone.o face.o image.o instance.o misc.o objset.o octree.o \
+otypes.o readobj.o readoct.o xf.o:	standard.h mat4.h fvect.h
+
+image.o:	view.h
