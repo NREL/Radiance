@@ -56,9 +56,13 @@ char  *nm;
 		return;
 	}
 				/* set up sampling */
-	n = PI * il->sampdens;
-	nalt = sqrt(n/PI) + .5;
-	nazi = PI*nalt + .5;
+	if (il->sampdens <= 0)
+		nalt = nazi = 1;
+	else {
+		n = PI * il->sampdens;
+		nalt = sqrt(n/PI) + .5;
+		nazi = PI*nalt + .5;
+	}
 	n = nalt*nazi;
 	distarr = (float *)calloc(n, 3*sizeof(float));
 	if (distarr == NULL)
@@ -82,7 +86,7 @@ char  *nm;
 		for (i = 0; i < il->nsamps; i++) {
 					/* random direction */
 		    h = ilhash(dim, 3) + i;
-		    peano(sp, 2, urand(h), .02);
+		    multisamp(sp, 2, urand(h));
 		    r1 = (dim[1] + sp[0])/nalt;
 		    r2 = (dim[2] + sp[1])/nazi;
 		    flatdir(dn, r1, r2);
@@ -90,7 +94,7 @@ char  *nm;
 			dir[j] = -dn[0]*u[j] - dn[1]*v[j] - dn[2]*fa->norm[j];
 					/* random location */
 		    do {
-			peano(sp, 2, urand(h+nmisses), .01);
+			multisamp(sp, 2, urand(h+4862+nmisses));
 			r1 = ur[0] + (ur[1]-ur[0]) * sp[0];
 			r2 = vr[0] + (vr[1]-vr[0]) * sp[1];
 			for (j = 0; j < 3; j++)
@@ -111,8 +115,10 @@ char  *nm;
 		    raysamp(distarr+3*(dim[1]*nazi+dim[2]), org, dir, rt);
 		}
 	rayflush(rt);
-				/* write out the face w/ distribution */
-	flatout(il, distarr, nalt, nazi, u, v, fa->norm);
+				/* write out the face and its distribution */
+	average(il, distarr, nalt*nazi);
+	if (il->sampdens > 0)
+		flatout(il, distarr, nalt, nazi, u, v, fa->norm);
 	illumout(il, ob);
 				/* clean up */
 	freeface(ob);
@@ -138,9 +144,13 @@ char  *nm;
 	if (ob->oargs.nfargs != 4)
 		objerror(ob, USER, "bad # of arguments");
 				/* set up sampling */
-	n = 4.*PI * il->sampdens;
-	nalt = sqrt(n/PI) + .5;
-	nazi = PI*nalt + .5;
+	if (il->sampdens <= 0)
+		nalt = nazi = 1;
+	else {
+		n = 4.*PI * il->sampdens;
+		nalt = sqrt(n/PI) + .5;
+		nazi = PI*nalt + .5;
+	}
 	n = nalt*nazi;
 	distarr = (float *)calloc(n, 3*sizeof(float));
 	if (distarr == NULL)
@@ -151,7 +161,7 @@ char  *nm;
 	    for (dim[2] = 0; dim[2] < nazi; dim[2]++)
 		for (i = 0; i < il->nsamps; i++) {
 					/* next sample point */
-		    peano(sp, 4, urand(ilhash(dim,3)+i), .02);
+		    multisamp(sp, 4, urand(ilhash(dim,3)+i));
 					/* random direction */
 		    r1 = (dim[1] + sp[0])/nalt;
 		    r2 = (dim[2] + sp[1])/nazi;
@@ -172,8 +182,12 @@ char  *nm;
 		    raysamp(distarr+3*(dim[1]*nazi+dim[2]), org, dir, rt);
 		}
 	rayflush(rt);
-				/* write out the sphere w/ distribution */
-	roundout(il, distarr, nalt, nazi);
+				/* write out the sphere and its distribution */
+	average(il, distarr, nalt*nazi);
+	if (il->sampdens > 0)
+		roundout(il, distarr, nalt, nazi);
+	else
+		objerror(ob, WARNING, "diffuse distribution");
 	illumout(il, ob);
 				/* clean up */
 	free((char *)distarr);
@@ -197,9 +211,13 @@ char  *nm;
 				/* get/check arguments */
 	co = getcone(ob, 0);
 				/* set up sampling */
-	n = PI * il->sampdens;
-	nalt = sqrt(n/PI) + .5;
-	nazi = PI*nalt + .5;
+	if (il->sampdens <= 0)
+		nalt = nazi = 1;
+	else {
+		n = PI * il->sampdens;
+		nalt = sqrt(n/PI) + .5;
+		nazi = PI*nalt + .5;
+	}
 	n = nalt*nazi;
 	distarr = (float *)calloc(n, 3*sizeof(float));
 	if (distarr == NULL)
@@ -211,7 +229,7 @@ char  *nm;
 	    for (dim[2] = 0; dim[2] < nazi; dim[2]++)
 		for (i = 0; i < il->nsamps; i++) {
 					/* next sample point */
-		    peano(sp, 4, urand(ilhash(dim,3)+i), .02);
+		    multisamp(sp, 4, urand(ilhash(dim,3)+i));
 					/* random direction */
 		    r1 = (dim[1] + sp[0])/nalt;
 		    r2 = (dim[2] + sp[1])/nalt;
@@ -232,8 +250,10 @@ char  *nm;
 		    raysamp(distarr+3*(dim[1]*nazi+dim[2]), org, dir, rt);
 		}
 	rayflush(rt);
-				/* write out the ring w/ distribution */
-	flatout(il, distarr, nalt, nazi, u, v, co->ad);
+				/* write out the ring and its distribution */
+	average(il, distarr, nalt*nazi);
+	if (il->sampdens > 0)
+		flatout(il, distarr, nalt, nazi, u, v, co->ad);
 	illumout(il, ob);
 				/* clean up */
 	freecone(ob);
