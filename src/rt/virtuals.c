@@ -19,7 +19,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "random.h"
 
-#define  MINSAMPLES	3		/* minimum number of pretest samples */
+#define  MINSAMPLES	5		/* minimum number of pretest samples */
 #define  STESTMAX	30		/* maximum seeks per sample */
 
 
