@@ -12,26 +12,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #ifdef F_SETLKW
 #include "paths.h"
+#include "selcall.h"
 #include <signal.h>
-#include <sys/types.h>
-#ifdef INCL_SEL_H
-#include <sys/select.h>
-#endif
 #include <sys/stat.h>
-					/* select call compatibility stuff */
-#ifndef FD_SETSIZE
-#include <sys/param.h>
-#define FD_SETSIZE	NOFILE		/* maximum # select file descriptors */
-#endif
-#ifndef FD_SET
-#ifndef NFDBITS
-#define NFDBITS		(8*sizeof(int))	/* number of bits per fd_mask */
-#endif
-#define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
-#define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
-#define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
-#define FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
-#endif
 
 #ifndef TIMELIM
 #define TIMELIM		(8*3600)	/* time limit for holding pattern */
