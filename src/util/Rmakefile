@@ -20,21 +20,19 @@ PROGS = findglare xglaresrc glarendx rpiece rad vwright
 all:	$(PROGS)
 
 install:	all objview.csh objpict.csh glare.csh dayfact.csh rlux.csh \
-raddepend.csh ivprep.csh ivpict.csh trad.wsh
+raddepend.csh trad.wsh objline.csh
 	cp $(PROGS) $(INSTDIR)
 	cp objview.csh $(INSTDIR)/objview
+	cp objline.csh $(INSTDIR)/objline
 	cp objpict.csh $(INSTDIR)/objpict
 	cp glare.csh $(INSTDIR)/glare
 	cp dayfact.csh $(INSTDIR)/dayfact
 	cp debugcal.csh $(INSTDIR)/debugcal
 	cp rlux.csh $(INSTDIR)/rlux
 	cp raddepend.csh $(INSTDIR)/raddepend
-	cp ivprep.csh $(INSTDIR)/ivprep
-	cp ivpict.csh $(INSTDIR)/ivpict
 	chmod 755 $(INSTDIR)/objview $(INSTDIR)/objpict \
 		$(INSTDIR)/glare $(INSTDIR)/dayfact $(INSTDIR)/debugcal \
-		$(INSTDIR)/rlux $(INSTDIR)/raddepend $(INSTDIR)/ivprep \
-		$(INSTDIR)/ivpict
+		$(INSTDIR)/rlux $(INSTDIR)/raddepend $(INSTDIR)/objline
 	csh -f tradinstall.csh $(INSTDIR) $(LIBDIR)/tcl
 
 clean:
