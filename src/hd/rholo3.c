@@ -102,6 +102,10 @@ register HDBEAMI	*hb;
 			error(CONSISTENCY, "unregistered holodeck in dispbeam");
 	p->bi = hb->b;
 	disp_packet(p);			/* display it */
+	if (n >= 1024) {		/* free ridiculous packets */
+		free((char *)p);
+		p = NULL; n = 0;
+	}
 }
 
 
