@@ -20,7 +20,9 @@
  *		< -1:	it is an index to a set of objects
  */
 
-typedef int  OCTREE;
+#ifndef  OCTREE
+#define  OCTREE		int
+#endif
 
 #define  EMPTY		(-1)
 
@@ -32,7 +34,13 @@ typedef int  OCTREE;
 #define  octbi(ot)	((ot)>>8)	/* octree block index */
 #define  octti(ot)	(((ot)&0377)<<3)/* octree index in block */
 
+#ifndef  MAXOBLK
+#ifdef  BIGMEM
+#define  MAXOBLK	8191		/* maximum octree block */
+#else
 #define  MAXOBLK	4095		/* maximum octree block */
+#endif
+#endif
 
 extern OCTREE  *octblock[MAXOBLK];	/* octree blocks */
 
@@ -64,7 +72,8 @@ extern CUBE  thescene;			/* the main scene */
 				/* octree format identifier */
 #define  OCTFMT		"Radiance_octree"
 				/* magic number for octree files */
-#define  OCTMAGIC	(283+sizeof(OBJECT))
+#define  MAXOBJSIZ	8		/* maximum sizeof(OBJECT) */
+#define  OCTMAGIC	( 4 *MAXOBJSIZ+251)	/* increment first value */
 				/* octree node types */
 #define  OT_EMPTY	0
 #define  OT_FULL	1
