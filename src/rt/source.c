@@ -303,11 +303,14 @@ char  *p;			/* data for f */
 {
 	register int  sn;
 	register CONTRIB  *srccnt;
-	double  dtmp, hwt, test2, hit2;
+	int  ncnts;
+	double  ourthresh, prob, hwt, test2, hit2;
 	RAY  sr;
 
 	if ((srccnt = (CONTRIB *)malloc(nsources*sizeof(CONTRIB))) == NULL)
 		error(SYSTEM, "out of memory in direct");
+						/* modify threshold */
+	ourthresh = shadthresh / r->rweight;
 						/* potential contributions */
 	for (sn = 0; sn < nsources; sn++) {
 		srccnt[sn].sno = sn;
@@ -336,10 +339,23 @@ char  *p;			/* data for f */
 						/* sort contributions */
 	qsort(srccnt, nsources, sizeof(CONTRIB), cntcmp);
 	hit2 = 0.0; test2 = FTINY;
-						/* test for shadows */
-	for (sn = 0; sn < nsources; sn++) {
-						/* check threshold */
-		if (srccnt[sn].brt <= shadthresh*bright(r->rcol)/r->rweight)
+						/* find last */
+	sn = 0; ncnts = nsources;
+	while (sn < ncnts-1) {
+		register int  m;
+		m = (sn + ncnts) >> 1;
+		if (srccnt[m].brt > 0.0)
+			sn = m;
+		else
+			ncnts = m;
+	}
+						/* accumulate tail */
+	for (sn = ncnts-1; sn > 0; sn--)
+		srccnt[sn-1].brt += srccnt[sn].brt;
+						/* shadow testing */
+	for (sn = 0; sn < ncnts; sn++) {
+						/* tail below threshold? */
+		if (srccnt[sn].brt < ourthresh*bright(r->rcol))
 			break;
 						/* get statistics */
 		hwt = (double)source[srccnt[sn].sno].nhits /
@@ -369,24 +385,16 @@ char  *p;			/* data for f */
 					/* weighted hit rate */
 	hwt = hit2 / test2;
 #ifdef DEBUG
-	{
-		int  ntested = sn;
+	fprintf(stderr, "%d tested, %d untested, %f hit rate\n",
+			sn, ncnts-sn, hwt);
 #endif
 					/* add in untested sources */
-	for ( ; sn < nsources; sn++) {
-		if (srccnt[sn].brt <= 0.0)
-			break;
-		dtmp = hwt * (double)source[srccnt[sn].sno].nhits /
+	for ( ; sn < ncnts; sn++) {
+		prob = hwt * (double)source[srccnt[sn].sno].nhits /
 				(double)source[srccnt[sn].sno].ntests;
-		scalecolor(srccnt[sn].val, dtmp);
+		scalecolor(srccnt[sn].val, prob);
 		addcolor(r->rcol, srccnt[sn].val);
 	}
-#ifdef DEBUG
-	fprintf(stderr, "%d tested, %d untested, %f hit rate\n",
-			ntested, sn-ntested, hwt);
-	}
-#endif
-		
 	free(srccnt);
 }
 
