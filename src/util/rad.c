@@ -155,7 +155,11 @@ char	*argv[];
 	loadvars(rifname);
 				/* get any additional assignments */
 	for (i++; i < argc; i++)
-		setvariable(argv[i]);
+		if (setvariable(argv[i], matchvar) < 0) {
+			fprintf(stderr, "%s: unknown variable: %s\n",
+					progname, argv[i]);
+			quit(1);
+		}
 				/* check assignments */
 	checkvalues();
 				/* check files and dates */
@@ -176,12 +180,12 @@ char	*argv[];
 		rview(ropts, popts);
 	else
 		rpict(ropts, popts);
-	exit(0);
+	quit(0);
 userr:
 	fprintf(stderr,
 "Usage: %s [-s][-n][-t][-e][-V][-v view][-o dev] rfile [VAR=value ..]\n",
 			progname);
-	exit(1);
+	quit(1);
 }
 
 
@@ -276,7 +280,7 @@ checkfiles()			/* check for existence and modified times */
 	if (!octreedate & !scenedate & !illumdate) {
 		fprintf(stderr, "%s: need '%s' or '%s' or '%s'\n", progname,
 				vnam(OCTREE), vnam(SCENE), vnam(ILLUM));
-		exit(1);
+		quit(1);
 	}
 	matdate = checklast(vval(MATERIAL));
 }	
@@ -306,7 +310,7 @@ double	org[3], *sizp;
 				fprintf(stderr,
 			"%s: error reading bounding box from getbbox\n",
 						progname);
-				exit(1);
+				quit(1);
 			}
 			for (i = 0; i < 3; i++)
 				if (max[i] - min[i] > osiz)
@@ -324,7 +328,7 @@ double	org[3], *sizp;
 				fprintf(stderr,
 			"%s: error reading bounding cube from getinfo\n",
 						progname);
-				exit(1);
+				quit(1);
 			}
 			pclose(fp);
 		}
@@ -402,7 +406,7 @@ oconv()				/* run oconv and mkillum if necessary */
 				"%s: error generating octree\n\t%s removed\n",
 						progname, vval(OCTREE));
 				unlink(vval(OCTREE));
-				exit(1);
+				quit(1);
 			}
 		}
 		octreedate = time((time_t *)NULL);
@@ -433,7 +437,7 @@ oconv()				/* run oconv and mkillum if necessary */
 				"%s: error generating octree\n\t%s removed\n",
 						progname, oct0name);
 				unlink(oct0name);
-				exit(1);
+				quit(1);
 			}
 		}
 		oct0date = time((time_t *)NULL);
@@ -453,7 +457,7 @@ oconv()				/* run oconv and mkillum if necessary */
 			fprintf(stderr, "%s: error running mkillum\n",
 					progname);
 			unlink(illumtmp);
-			exit(1);
+			quit(1);
 		}
 						/* make octree1 (frozen) */
 		if (octreedate)
@@ -471,7 +475,7 @@ oconv()				/* run oconv and mkillum if necessary */
 					progname, oct1name);
 			unlink(oct1name);
 			unlink(illumtmp);
-			exit(1);
+			quit(1);
 		}
 		rmfile(illumtmp);
 	}
@@ -1089,7 +1093,7 @@ char	*opts, *po;
 	strcat(combuf, oct1name);
 	if (runcom(combuf)) {		/* run it */
 		fprintf(stderr, "%s: error running rview\n", progname);
-		exit(1);
+		quit(1);
 	}
 }
 
@@ -1186,7 +1190,7 @@ char	*opts, *po;
 					fprintf(stderr,
 					"%s: error in overture for view %s\n",
 						progname, vs);
-					exit(1);
+					quit(1);
 				}
 #ifdef NIX
 				rmfile(overfile);
@@ -1199,7 +1203,7 @@ char	*opts, *po;
 		if (runcom(combuf)) {		/* run rpict */
 			fprintf(stderr, "%s: error rendering view %s\n",
 					progname, vs);
-			exit(1);
+			quit(1);
 		}
 		if (!vdef(RAWFILE) || strcmp(vval(RAWFILE),vval(PICTURE))) {
 						/* build pfilt command */
@@ -1214,7 +1218,7 @@ char	*opts, *po;
 				"%s: error filtering view %s\n\t%s removed\n",
 						progname, vs, picfile);
 				unlink(picfile);
-				exit(1);
+				quit(1);
 			}
 		}
 						/* remove/rename raw file */
@@ -1297,7 +1301,7 @@ char	*vname, *value;
 	sprintf(evp, "%s=%s", vname, value);
 	if (putenv(evp) != 0) {
 		fprintf(stderr, "%s: out of environment space\n", progname);
-		exit(1);
+		quit(1);
 	}
 	if (!silent)
 		printf("set %s\n", evp);
@@ -1310,7 +1314,7 @@ int	vc;
 {
 	fprintf(stderr, "%s: bad value for variable '%s'\n",
 			progname, vnam(vc));
-	exit(1);
+	quit(1);
 }
 
 
@@ -1318,5 +1322,12 @@ syserr(s)			/* report a system error and exit */
 char	*s;
 {
 	perror(s);
-	exit(1);
+	quit(1);
+}
+
+
+quit(ec)			/* exit program */
+int	ec;
+{
+	exit(ec);
 }
