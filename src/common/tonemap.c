@@ -162,7 +162,7 @@ COLOR	*scan;
 int	len;
 {
 	static char	funcName[] = "tmCvColors";
-	static COLOR	csmall = {1e-6, 1e-6, 1e-6};
+	static COLOR	csmall = {.5*MINLUM, .5*MINLUM, .5*MINLUM};
 	COLOR	cmon;
 	double	lum, slum;
 	register double	d;
