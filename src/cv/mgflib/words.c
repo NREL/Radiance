@@ -8,12 +8,6 @@ static const char	RCSid[] = "$Id$";
 #include  <string.h>
 #include  <ctype.h>
 
-#ifdef  BSD
-#define  strchr		index
-#endif
-
-#define  NULL		0
-
 
 char *
 iskip(s)			/* skip integer in string */

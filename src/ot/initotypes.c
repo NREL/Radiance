@@ -15,6 +15,7 @@ extern int  o_sphere();
 extern int  o_face();
 extern int  o_cone();
 extern int  o_instance();
+extern int  o_mesh();
 
 FUN  ofun[NUMOTYPE] = INIT_OTYPE;
 
@@ -30,6 +31,7 @@ initotypes()			/* initialize ofun array */
 	ofun[OBJ_TUBE].funp =
 	ofun[OBJ_RING].funp = o_cone;
 	ofun[OBJ_INSTANCE].funp = o_instance;
+	ofun[OBJ_MESH].funp = o_mesh;
 }
 
 

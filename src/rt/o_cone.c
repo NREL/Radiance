@@ -1,5 +1,5 @@
 #ifndef lint
-static const char	RCSid[] = "$Id$";
+static const char RCSid[] = "$Id$";
 #endif
 /*
  *  o_cone.c - routine to determine ray intersection with cones.
@@ -127,6 +127,8 @@ register RAY  *r;
 				r->ron[i] = (co->al*r->ron[i] - c*co->ad[i])
 						/co->sl;
 		r->rod = -DOT(r->rdir, r->ron);
+		r->pert[0] = r->pert[1] = r->pert[2] = 0.0;
+		r->uv[0] = r->uv[1] = 0.0;
 		r->rox = NULL;
 		return(1);			/* good */
 	}

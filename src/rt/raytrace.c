@@ -101,6 +101,7 @@ register RAY  *r;
 	r->rox = NULL;
 	r->rt = r->rot = FHUGE;
 	r->pert[0] = r->pert[1] = r->pert[2] = 0.0;
+	r->uv[0] = r->uv[1] = 0.0;
 	setcolor(r->pcol, 1.0, 1.0, 1.0);
 	setcolor(r->rcol, 0.0, 0.0, 0.0);
 }

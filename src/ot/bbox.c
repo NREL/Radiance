@@ -1,11 +1,11 @@
 #ifndef lint
-static const char	RCSid[] = "$Id$";
+static const char RCSid[] = "$Id$";
 #endif
 /*
  *  bbox.c - routines for bounding box computation.
  */
 
-#include "copyright.h"
+#include  "copyright.h"
 
 #include  "standard.h"
 
@@ -21,6 +21,8 @@ static const char	RCSid[] = "$Id$";
 
 #include  "instance.h"
 
+#include  "mesh.h"
+
 
 add2bbox(o, bbmin, bbmax)		/* expand bounding box to fit object */
 register OBJREC  *o;
@@ -29,6 +31,7 @@ FVECT  bbmin, bbmax;
 	CONE  *co;
 	FACE  *fo;
 	INSTANCE  *io;
+	MESHINST  *mi;
 	FVECT  v;
 	register int  i, j;
 
@@ -70,6 +73,18 @@ FVECT  bbmin, bbmax;
 					v[i] += io->obj->scube.cusize;
 			}
 			multp3(v, v, io->x.f.xfm);
+			point2bbox(v, bbmin, bbmax);
+		}
+		break;
+	case OBJ_MESH:
+		mi = getmeshinst(o, IO_BOUNDS);
+		for (j = 0; j < 8; j++) {
+			for (i = 0; i < 3; i++) {
+				v[i] = mi->msh->mcube.cuorg[i];
+				if (j & 1<<i)
+					v[i] += mi->msh->mcube.cusize;
+			}
+			multp3(v, v, mi->x.f.xfm);
 			point2bbox(v, bbmin, bbmax);
 		}
 		break;

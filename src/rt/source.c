@@ -1,5 +1,5 @@
 #ifndef lint
-static const char	RCSid[] = "$Id$";
+static const char RCSid[] = "$Id$";
 #endif
 /*
  *  source.c - routines dealing with illumination sources.
@@ -250,6 +250,8 @@ register RAY  *r;
 		for (i = 0; i < 3; i++)
 			r->ron[i] = -r->rdir[i];
 		r->rod = 1.0;
+		r->pert[0] = r->pert[1] = r->pert[2] = 0.0;
+		r->uv[0] = r->uv[1] = 0.0;
 		r->rox = NULL;
 		return(1);
 	}
