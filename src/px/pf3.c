@@ -40,7 +40,7 @@ extern char  *progname;
 
 float  *gausstable;		/* gauss lookup table */
 
-#define	 lookgauss(x)		gausstable[(int)(-10.*(x)+.5)]
+#define	 lookgauss(x)		gausstable[(int)(10.*(x)+.5)]
 
 
 initmask()			/* initialize gaussian lookup table */
@@ -67,9 +67,9 @@ COLOR  csum;
 int  xcent, ycent;
 int  c, r;
 {
-	static int  wsum;
-	static double  d;
-	static int  y;
+	int  wsum;
+	double  d;
+	int  y;
 	register int  x;
 	register COLOR	*scan;
 
@@ -102,9 +102,9 @@ COLOR  csum;
 int  xcent, ycent;
 int  c, r;
 {
-	static double  dy, dx, weight, wsum;
-	static COLOR  ctmp;
-	static int  y;
+	double  dy, dx, weight, wsum;
+	COLOR  ctmp;
+	int  y;
 	register int  x;
 	register COLOR	*scan;
 
@@ -119,7 +119,7 @@ int  c, r;
 			if (x < 0) continue;
 			if (x >= xres) break;
 			dx = (x_c*(x+.5) - (c+.5))/rad;
-			weight = lookgauss(-(dx*dx + dy*dy));
+			weight = lookgauss(dx*dx + dy*dy);
 			wsum += weight;
 			copycolor(ctmp, scan[x]);
 			scalecolor(ctmp, weight);
