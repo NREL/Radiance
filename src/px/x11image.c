@@ -631,7 +631,7 @@ XKeyPressedEvent  *ekey;
 		XClearWindow(thedisplay, wind);
 		map_rcolors(ourras, wind);
 		if (fast)
-			make_rpixmap(ourras);
+			make_rpixmap(ourras, wind);
 		redraw(0, 0, width, height);
 		return(0);
 	case ' ':				/* clear */
