@@ -488,12 +488,12 @@ FILE	*fp;
 	}
 						/* put out faces */
 	sprintf(buf, "op%d", ++nopens);
-	putface(openmod, buf, "ref", &newp, 0, 4, 7, 3, fp);
-	putface(openmod, buf, "opp", &newp, 1, 2, 6, 5, fp);
-	putface(openmod, buf, "end1", &newp, 3, 7, 6, 2, fp);
-	putface(openmod, buf, "end2", &newp, 0, 1, 5, 4, fp);
-	putface(openmod, buf, "bot", &newp, 0, 3, 2, 1, fp);
-	putface(openmod, buf, "top", &newp, 4, 5, 6, 7, fp);
+	putface(openmod, buf, "ref", &newp, 3, 7, 4, 0, fp);
+	putface(openmod, buf, "opp", &newp, 5, 6, 2, 1, fp);
+	putface(openmod, buf, "end1", &newp, 2, 6, 7, 3, fp);
+	putface(openmod, buf, "end2", &newp, 4, 5, 1, 0, fp);
+	putface(openmod, buf, "bot", &newp, 1, 2, 3, 0, fp);
+	putface(openmod, buf, "top", &newp, 7, 6, 5, 4, fp);
 }
 
 
