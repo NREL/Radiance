@@ -604,20 +604,20 @@ getmono()			/* get monochrome data */
 	register unsigned char	*dp;
 	register int	x, err;
 	int	y;
-	rgbpixel	*inl;
 	short	*cerr;
 
-	if ((inl = (rgbpixel *)malloc(xmax*sizeof(rgbpixel))) == NULL
-			|| (cerr = (short *)calloc(xmax,sizeof(short))) == NULL)
+	if ((cerr = (short *)calloc(xmax,sizeof(short))) == NULL)
 		quiterr("out of memory in getmono");
 	dp = ourdata - 1;
 	for (y = 0; y < ymax; y++) {
-		picreadline3(y, inl);
+		if (getscan(y) < 0)
+			quiterr("seek error in getmono");
+		normcolrs(scanline, xmax, scale);
 		err = 0;
 		for (x = 0; x < xmax; x++) {
 			if (!(x&7))
 				*++dp = 0;
-			err += rgb_bright(&inl[x]) + cerr[x];
+			err += normbright(scanline[x]) + cerr[x];
 			if (err > 127)
 				err -= 255;
 			else
@@ -625,7 +625,6 @@ getmono()			/* get monochrome data */
 			cerr[x] = err >>= 1;
 		}
 	}
-	free((char *)inl);
 	free((char *)cerr);
 }
 
@@ -633,9 +632,24 @@ getmono()			/* get monochrome data */
 getfull()			/* get full (24-bit) data */
 {
 	int	y;
-
-	for (y = 0; y < ymax; y++)
-		picreadline3(y, (rgbpixel *)(ourdata+y*xmax*3));
+	register unsigned char	*dp;
+	register int	x;
+					/* set gamma correction */
+	setcolrgam(gamcor);
+					/* read and convert file */
+	dp = ourdata;
+	for (y = 0; y < ymax; y++) {
+		if (getscan(y) < 0)
+			quiterr("seek error in getfull");
+		if (scale)
+			shiftcolrs(scanline, xmax, scale);
+		colrs_gambs(scanline, xmax);
+		for (x = 0; x < xmax; x++) {
+			*dp++ = scanline[x][RED];
+			*dp++ = scanline[x][GRN];
+			*dp++ = scanline[x][BLU];
+		}
+	}
 }
 
 
