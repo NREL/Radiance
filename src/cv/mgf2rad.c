@@ -34,6 +34,8 @@ char	*argv[];
 	mg_ehand[MG_E_COMMENT] = r_comment;
 	mg_ehand[MG_E_COLOR] = c_hcolor;
 	mg_ehand[MG_E_CONE] = r_cone;
+	mg_ehand[MG_E_CMIX] = c_hcolor;
+	mg_ehand[MG_E_CSPEC] = c_hcolor;
 	mg_ehand[MG_E_CXY] = c_hcolor;
 	mg_ehand[MG_E_CYL] = r_cyl;
 	mg_ehand[MG_E_ED] = c_hmaterial;
@@ -337,8 +339,11 @@ char	**av;
 					/* put out xform command */
 	printf("\n!xform");
 	oname = object();
-	if (*oname)
-		printf(" -n %s", oname);
+	if (*oname) {
+		printf(" -n ");
+		for (op = oname; op[1]; op++)	/* remove trailing separator */
+			putchar(*op);
+	}
 	for (i = xa0; i < ac; i++)
 		printf(" %s", av[i]);
 	if (ac > xa0 && xf_argc > 0)
@@ -488,6 +493,7 @@ double	intensity;
 {
 	static COLOR	ciexyz;
 
+	c_ccvt(ciec, C_CSXY);		/* get xy representation */
 	ciexyz[1] = intensity;
 	ciexyz[0] = ciec->cx/ciec->cy*ciexyz[1];
 	ciexyz[2] = ciexyz[1]*(1./ciec->cy - 1.) - ciexyz[0];
