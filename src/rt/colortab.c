@@ -16,9 +16,9 @@ static char SCCSid[] = "$SunId$ LBL";
  *	distribution is correlated to the last.
  */
 
-#include "color.h"
+#include "standard.h"
 
-#define NULL		0
+#include "color.h"
 				/* histogram resolution */
 #define NRED		24
 #define NGRN		32
@@ -43,8 +43,8 @@ static char SCCSid[] = "$SunId$ LBL";
 				/* our color table */
 static struct tabent {
 	long	sum[3];		/* sum of colors using this entry */
-	long	n;		/* number of colors */
-	short	ent[3];		/* current table value */
+	int	n;		/* number of colors */
+	BYTE	ent[3];		/* current table value */
 }	*clrtab = NULL;
 				/* color cube partition */
 static CNODE	*ctree = NULL;
@@ -111,7 +111,7 @@ int	(*set_pixel)();
 		if (cv[prim(*tp)] < part(*tp))
 			tp += 1<<h;		/* left branch */
 		else
-			tp += 1<<(h+1);	/* right branch */
+			tp += 1<<(h+1);		/* right branch */
 	h = pval(*tp);
 						/* add to color table */
 	clrtab[h].sum[RED] += r;
@@ -150,7 +150,7 @@ double  gam;
 	for (i = 0; i < 256; i++)
 		clrmap[RED][i] =
 		clrmap[GRN][i] =
-		clrmap[BLU][i] = 256.0 * pow(i/256.0, 1.0/gam);
+		clrmap[BLU][i] = 256.0 * pow((i+0.5)/256.0, 1.0/gam);
 }
 
 
