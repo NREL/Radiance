@@ -16,7 +16,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #define CACHESIZE	16	/* default cache size (Mbytes, 0==inf) */
 #endif
 #ifndef FREEBEAMS
-#define FREEBEAMS	1024	/* maximum beams to free at a time */
+#define FREEBEAMS	1500	/* maximum beams to free at a time */
 #endif
 #ifndef PCTFREE
 #define PCTFREE		15	/* maximum fraction to free (%) */
@@ -316,8 +316,7 @@ int	nr;			/* number of new rays desired */
 	p = hdbray(hp->bl[i]) + hp->bl[i]->nrm;
 	hp->bl[i]->nrm += nr;			/* update in-core structure */
 	bzero((char *)p, nr*sizeof(RAYVAL));
-	hp->bl[i]->tick = hdclock;		/* update LRU clock */
-	blglob(hp)->tick = hdclock++;
+	blglob(hp)->tick = hp->bl[i]->tick = hdclock++;	/* update LRU clock */
 	return(p);				/* point to new rays */
 memerr:
 	error(SYSTEM, "out of memory in hdnewrays");
@@ -348,8 +347,7 @@ register int	i;
 		if (read(hp->fd, (char *)hdbray(hp->bl[i]), n) != n)
 			error(SYSTEM, "error reading beam from holodeck file");
 	}
-	hp->bl[i]->tick = hdclock;	/* update LRU clock */
-	blglob(hp)->tick = hdclock++;
+	blglob(hp)->tick = hp->bl[i]->tick = hdclock++;	/* update LRU clock */
 	return(hp->bl[i]);
 }
 
@@ -383,6 +381,7 @@ int	(*bf)();		/* callback function (optional) */
 	register BEAM	*bp;
 	register int	i;
 					/* precheck consistency */
+	if (n <= 0) return;
 	for (i = n; i--; )
 		if (hb[i].h == NULL || hb[i].b < 1 | hb[i].b > nbeams(hb[i].h))
 			error(CONSISTENCY, "bad beam in hdloadbeams");
@@ -680,6 +679,11 @@ register HOLO	*honly;			/* NULL means check all */
 	int	freetarget;
 	int	n;
 	register int	i;
+#ifdef DEBUG
+	unsigned	membefore;
+
+	membefore = hdmemuse(0);
+#endif
 						/* compute free target */
 	freetarget = (honly != NULL) ? blglob(honly)->nrm :
 			hdmemuse(0)/sizeof(RAYVAL) ;
@@ -700,6 +704,12 @@ register HOLO	*honly;			/* NULL means check all */
 			break;
 	}
 	hdsync(honly, 0);	/* synchronize directories as necessary */
+#ifdef DEBUG
+	sprintf(errmsg,
+	"%dK before, %dK after hdfreecache (%dK total), %d rays short\n",
+		membefore>>10, hdmemuse(0)>>10, hdmemuse(1)>>10, freetarget);
+	wputs(errmsg);
+#endif
 	return(-freetarget);	/* return how far past goal we went */
 }
 
