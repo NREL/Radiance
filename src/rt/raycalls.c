@@ -23,10 +23,9 @@ static const char	RCSid[] = "$Id$";
  *  sort of context, so it is impossible to simultaneously run
  *  this library on multiple scenes or in multiple threads.
  *  You get one scene and one thread, and if you want more, you
- *  will have to go with the process model used by the programs
- *  gen/mkillum, hd/rholo, and px/pinterp.  Finally, unrecoverable
- *  errors result in a call to the application-defined function
- *  quit().  The usual thing to do is to call exit().
+ *  will have to go with the process model defined in raypcalls.c.
+ *  Finally, unrecoverable errors result in a call to the application-
+ *  defined function quit().  The usual thing to do is to call exit().
  *  You might want to do something else instead, like
  *  call setjmp()/longjmp() to bring you back to the calling
  *  function for recovery.  You may also wish to define your own
@@ -363,7 +362,7 @@ ray_defaults(		/* get default parameter values */
 	memset(rp->ambfile, '\0', sizeof(rp->ambfile));
 	rp->ambvwt = 0;
 	rp->ambres = 256;
-	rp->ambacc = 0.1;
+	rp->ambacc = 0.15;
 	rp->ambdiv = 1024;
 	rp->ambssamp = 512;
 	rp->ambounce = 0;
