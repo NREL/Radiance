@@ -143,7 +143,7 @@ FILE  *fp;
 		return(-1);
 #ifdef  IARGS
 	if (fa->niargs = n) {
-		fa->iarg = (long *)bmalloc(n*sizeof(int));
+		fa->iarg = (long *)bmalloc(n*sizeof(long));
 		if (fa->iarg == NULL)
 			goto memerr;
 		for (i = 0; i < n; i++)
@@ -182,7 +182,7 @@ newobject()				/* get a new object */
 		i = nobjects >> 6;
 		if (i >= MAXOBJBLK)
 			return(OVOID);
-		objblock[i] = (OBJREC *)malloc(0100*sizeof(OBJREC));
+		objblock[i] = (OBJREC *)bmalloc(0100*sizeof(OBJREC));
 		if (objblock[i] == NULL)
 			return(OVOID);
 	}
