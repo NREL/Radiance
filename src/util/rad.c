@@ -784,17 +784,21 @@ xferopts(ro)				/* transfer options if indicated */
 char	*ro;
 {
 	int	fd, n;
+	register char	*cp;
 	
 	n = strlen(ro);
 	if (n < 2)
 		return;
 	if (vdef(OPTFILE)) {
-		if ((fd = open(vval(OPTFILE), O_WRONLY|O_CREAT|O_TRUNC, 0666)) == -1)
+		for (cp = ro; cp[1]; cp++)
+			if (isspace(cp[1]) && cp[2] == '-' && isalpha(cp[3]))
+				*cp = '\n';
+			else
+				*cp = cp[1];
+		*cp = '\n';
+		fd = open(vval(OPTFILE), O_WRONLY|O_CREAT|O_TRUNC, 0666);
+		if (fd < 0 || write(fd, ro, n) != n || close(fd) < 0)
 			syserr(vval(OPTFILE));
-		if (write(fd, ro+1, n-1) != n-1)
-			syserr(vval(OPTFILE));
-		write(fd, "\n", 1);
-		close(fd);
 		sprintf(ro, " \"^%s\"", vval(OPTFILE));
 	}
 #ifdef MSDOS
