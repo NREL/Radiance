@@ -345,6 +345,10 @@ register int  *xp, *yp;
 		return(0);		/* only check if asked */
 	if (pdone == NULL)		/* first call */
 		pdone = calloc(hmult*vmult, sizeof(char));
+	if (pdone == NULL) {
+		fprintf(stderr, "%s: out of memory\n", progname);
+		exit(1);
+	}
 	if (readpos != -1)		/* mark what's been done */
 		fseek(syncfp, readpos, 0);
 	while (fscanf(syncfp, "%d %d", xp, yp) == 2)
