@@ -178,11 +178,11 @@ char  *argv[];
 				break;
 			case 'e':			/* exposure comp. */
 				i++;
-				if (!strcmp(argv[i], "auto")) {
+				if (argv[i][0] == 'a') {
 					tmflags = TM_F_CAMERA;
 					break;
 				}
-				if (!strcmp(argv[i], "human")) {
+				if (argv[i][0] == 'h') {
 					tmflags = TM_F_HUMAN;
 					break;
 				}
