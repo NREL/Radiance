@@ -92,6 +92,7 @@ td	tau_d			set diffuse transmittance for current material
 ed	epsilon_d		set diffuse emittance for current material
 rs	rho_s alpha_r		set specular reflectance for current material
 ts	tau_s alpha_t		set specular transmittance for current material
+ir	n_real n_imag		set index of refraction for current material
 o	[name]			begin/end object context
 f	v1 v2 v3 ..		polygon using current material, spec. vertices
 sph	vc radius		sphere
@@ -238,6 +239,17 @@ be scattered.
 
 The sum of the diffuse and specular reflectances and transmittances
 must be strictly less than one (with no negative values, obviously).
+These values are assumed to be measured at normal incidence.  If an
+index of refraction is given, this may modify the balance between
+diffuse and specular reflectance at other incident angles.  If the
+material is one-sided (see below), then it may be a dielectric interface.
+In this case, the specular transmittance given is that which would be
+measured at normal incidence for a pane of the material 5 mm thick.
+This is important for figuring the actual transmittance for non-planar
+geometries assuming a uniformly absorbing medium.  If the index of
+refraction has an imaginary part, then the surface is a metal and this
+implies other properties according to physics.  The default index of
+refraction is that of a vacuum, i.e. (1,0).
 
 The object entity establishes a hierarchical context, consisting of
 this identifier and all those preceding.  It has no real meaning except
@@ -245,12 +257,12 @@ to group the following surfaces up until an empty object statement
 under a descriptive name for improved file readability.
 
 Surfaces are two-sided unless the "sides" entity is used to set the
-number of sides for a material to one.  If a surfaces is one-sided,
+number of sides for a material to one.  If a surface is one-sided,
 then it appears invisible when viewed from the back side.  This means
 that a transmitting object will affect the light coming in through the
 front surface and ignore the characteristics of the back surface.  As
-long as the characteristics are the same, the results should be
-correct.  If the rendering technique does not allow for one-sided
+long as the transmission characteristics are the same, the results should
+be correct.  If the rendering technique does not allow for one-sided
 surfaces, an approximately correct result can be obtained for one-sided
 transmitting surfaces by using the square root of the given tau_s and
 half the given alpha_t.  If a rendering technique does not permit
