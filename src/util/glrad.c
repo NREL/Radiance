@@ -33,9 +33,6 @@ static char SCCSid[] = "$SunId$ SGI";
 #define MOVDEG		(-5)		/* degrees to orbit CW/down /frame */
 #define MOVORB(s)	((s)&ShiftMask ? 1 : (s)&ControlMask ? -1 : 0)
 
-#define MINWIDTH	480		/* minimum graphics window width */
-#define MINHEIGHT	400		/* minimum graphics window height */
-
 #define BORWIDTH	5		/* border width */
 
 #define  ourscreen	DefaultScreen(ourdisplay)
@@ -93,7 +90,7 @@ int	stereo = 0;			/* do stereo? */
 
 int	displist;			/* our scene display list */
 
-int	in_dev_view = 0;		/* currently in dev_view() */
+int	no_render = 0;			/* don't rerender */
 
 #ifdef BSD
 #define strchr		index
@@ -374,7 +371,6 @@ char  *id;
 				GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE,15, None};
 	XSetWindowAttributes	ourwinattr;
 	XWMHints	ourxwmhints;
-	XSizeHints	oursizhints;
 					/* open display server */
 	ourdisplay = XOpenDisplay(NULL);
 	if (ourdisplay == NULL)
@@ -421,10 +417,6 @@ char  *id;
 	ourxwmhints.icon_pixmap = XCreateBitmapFromData(ourdisplay,
 		gwind, glradicon_bits, glradicon_width, glradicon_height);
 	XSetWMHints(ourdisplay, gwind, &ourxwmhints);
-	oursizhints.min_width = MINWIDTH;
-	oursizhints.min_height = stereo ? MINHEIGHT/2 : MINHEIGHT;
-	oursizhints.flags = PMinSize;
-	XSetNormalHints(ourdisplay, gwind, &oursizhints);
 					/* set GLX context */
 	glXMakeCurrent(ourdisplay, gwind, gctx);
 	glEnable(GL_DEPTH_TEST);
@@ -452,9 +444,11 @@ char  *id;
 	}
 					/* map the window */
 	XMapWindow(ourdisplay, gwind);
+	no_render++;
 	do
 		dev_input(0);		/* get resize event */
 	while (hres == 0 & vres == 0);
+	no_render--;
 	rgl_checkerr("initializing GLX");
 }
 
@@ -505,12 +499,12 @@ register VIEW	*nv;
 			}
 		}
 		if (newhres != hres | newvres != vres) {
-			in_dev_view++;
+			no_render++;
 			XResizeWindow(ourdisplay, gwind, newhres, newvres);
 			do
 				dev_input(0);		/* get resize event */
 			while (newhres != hres | newvres != vres);
-			in_dev_view--;
+			no_render--;
 		}
 	}
 	copystruct(&thisview, nv);
@@ -564,7 +558,7 @@ render()			/* render our display list and swap buffers */
 {
 	double	d;
 
-	if (!mapped)
+	if (!mapped | no_render)
 		return;
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	glCallList(displist);
@@ -890,7 +884,7 @@ register XConfigureEvent  *ersz;
 	glViewport(0, 0, hres=ersz->width, vres=ersz->height);
 	if (hres > maxhres) maxhres = hres;
 	if (vres > maxvres) maxvres = vres;
-	if (in_dev_view)
+	if (no_render)
 		return;
 	wa = (vres*pheight)/(hres*pwidth);
 	va = viewaspect(&thisview);
