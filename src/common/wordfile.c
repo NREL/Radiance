@@ -62,8 +62,8 @@ char	*str;
 		if (!*cp)		/* all done? */
 			break;
 		*ap++ = cp;		/* add argument to list */
-		while (*cp && !isspace(*cp++))
-			;
+		while (*cp && !isspace(*cp))
+			cp++;
 	}
 	*ap = NULL;
 	return(ap - avl);
