@@ -1,21 +1,17 @@
-/* Copyright (c) 1994 Regents of the University of California */
-
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static const char	RCSid[] = "$Id$";
 #endif
-
 /*
  * Table lookup routines
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "lookup.h"
 
 #ifndef MEM_PTR
 #define MEM_PTR		void *
 #endif
-
-extern MEM_PTR	calloc();
 
 
 int

@@ -1,14 +1,12 @@
-/* Copyright (c) 1995 Regents of the University of California */
-
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static const char	RCSid[] = "$Id$";
 #endif
-
 /*
  * Convert MGF color to RGB representation defined below.
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "parser.h"
 

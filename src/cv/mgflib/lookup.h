@@ -1,7 +1,4 @@
-/* Copyright (c) 1994 Regents of the University of California */
-
-/* SCCSid "$SunId$ LBL" */
-
+/* RCSid: $Id$ */
 /*
  * Header file for general associative table lookup routines
  */

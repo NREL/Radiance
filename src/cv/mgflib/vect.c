@@ -1,7 +1,6 @@
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static const char	RCSid[] = "$Id$";
 #endif
-
 #include <math.h>
 #include <string.h>
 #include "vect.h"

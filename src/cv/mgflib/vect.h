@@ -1,7 +1,4 @@
-/* Copyright (c) 1996 Regents of the University of California */
-
-/* SCCSid "$SunId$ LBL" */
-
+/* RCSid: $Id$ */
 #ifndef __VECT_H
 #define __VECT_H
 
