@@ -13,7 +13,7 @@ static const char	RCSid[] = "$Id$";
 #include  "rast.h"
 #include  "targa.h"
 
-#define  MAXALLOC  5000
+#define  MAXALLOC  30000
 #define  DXSIZE  400		/* default x resolution */
 #define  DYSIZE  400		/* default y resolution */
 #define  XCOM  "pexpand +vOCImsp -DP %s | psort +y"
