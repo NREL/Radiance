@@ -5,7 +5,7 @@
 }
 
 tilt_ang = Acos(Kz) / DEGREE;
-tilt_xang = Asin(Jy/sqrt(Jy*Jy+Jz*Jz)) / DEGREE;
+tilt_xang = if(Jy*Jy-FTINY, Asin(Jy/sqrt(Jy*Jy+Jz*Jz))/DEGREE, 0);
 
 tilt_ang2 = tri(tilt_ang, 90);
 tilt_xang2 = tri(tilt_xang, 90);
