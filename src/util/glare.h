@@ -33,7 +33,7 @@ extern int	hlim;			/* horizontal limit of central view */
 
 #define nglardirs	(2*nglarangs+1)
 #define vsize		SAMPDENS
-#define h_theta(h)	((double)(h)/(double)SAMPDENS)
+#define h_theta(h)	((double)(h)/-(double)SAMPDENS)
 
 extern struct illum {
 	float	theta;		/* glare direction */
