@@ -5,7 +5,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #endif
 
 /*
- *  oki20c.c - program to dump pixel file to OkiMate 20 color printer.
+ *  oki20.c - program to dump pixel file to OkiMate 20 printer.
  */
 
 #include  <stdio.h>
