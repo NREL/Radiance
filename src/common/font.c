@@ -15,7 +15,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define galloc(nv)	(GLYPH *)malloc(sizeof(GLYPH)+2*sizeof(GORD)*(nv))
 
 
-extern char  *fgetword(), *getlibpath();
+extern char  *getlibpath();
 
 static FONT	*fontlist = NULL;	/* list of loaded fonts */
 
@@ -24,12 +24,10 @@ FONT *
 getfont(fname)				/* return font fname */
 char  *fname;
 {
-	char  buf[16];
 	FILE  *fp;
 	char  *pathname, *err;
 	unsigned  wsum, hsum, ngly;
-	int  gn, ngv;
-	register int  gv;
+	int  gn, ngv, gv;
 	register GLYPH	*g;
 	GORD  *gp;
 	register FONT  *f;
@@ -52,10 +50,9 @@ char  *fname;
 		error(SYSTEM, errmsg);
 	}
 	wsum = hsum = ngly = 0;
-	while (fgetword(buf,sizeof(buf),fp) != NULL) {	/* get each glyph */
-		if (!isint(buf))
+	while ((ngv = fgetval(fp, 'i', &gn)) != EOF) {	/* get each glyph */
+		if (ngv == 0)
 			goto nonint;
-		gn = atoi(buf);
 		if (gn < 1 || gn > 255) {
 			err = "illegal";
 			goto fonterr;
@@ -64,8 +61,7 @@ char  *fname;
 			err = "duplicate";
 			goto fonterr;
 		}
-		if (fgetword(buf,sizeof(buf),fp) == NULL || !isint(buf) ||
-				(ngv = atoi(buf)) < 0 || ngv > 32000) {
+		if (fgetval(fp, 'i', &ngv) <= 0 || ngv < 0 || ngv > 32000) {
 			err = "bad # vertices for";
 			goto fonterr;
 		}
@@ -77,9 +73,7 @@ char  *fname;
 		ngv *= 2;
 		gp = gvlist(g);
 		while (ngv--) {
-			if (fgetword(buf,sizeof(buf),fp) == NULL ||
-					!isint(buf) ||
-					(gv = atoi(buf)) < 0 || gv > 255) {
+			if (fgetval(fp, 'i', &gv) <= 0 || gv < 0 || gv > 255) {
 				err = "bad vertex for";
 				goto fonterr;
 			}
