@@ -8,11 +8,7 @@ static char SCCSid[] = "$SunId$ LBL";
  * Allocate, read and free object arguments
  */
 
-#include <stdio.h>
-
-#include <math.h>
-
-#include "fvect.h"
+#include "standard.h"
 
 #include "object.h"
 
@@ -21,11 +17,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  bmalloc	malloc
 #endif
 
-#ifdef  DCL_ATOF
-extern double  atof();
-#endif
-
-extern char  *bmalloc(), *savestr(), *fgetword();
+extern char  *fgetword();
 extern int  atoi();
 extern long  atol();
 
