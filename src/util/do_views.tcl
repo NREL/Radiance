@@ -196,7 +196,7 @@ proc do_views w {			# create views screen
 			-anchor se
 	helplink $w.revert trad views revert
 	button $w.copy -text Copy -relief raised -command {getfile -grab \
-			-send copyviews -view view_txt -glob $rif_glob}
+			-send copyviews -view view_txt -glob $myglob(rif)}
 	place $w.copy -relwidth .1071 -relheight .0610 -relx .98 -rely .90 \
 			-anchor se
 	helplink $w.copy trad views copy
