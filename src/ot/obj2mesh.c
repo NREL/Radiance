@@ -97,7 +97,7 @@ char  *argv[];
 
 	writemesh(ourmesh, stdout);	/* write mesh to output */
 	
-printmeshstats(ourmesh, stderr);
+	/* printmeshstats(ourmesh, stderr); */
 
 	quit(0);
 }
