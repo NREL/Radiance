@@ -72,7 +72,7 @@ char  *argv[];
 {
 	int  ncolumns = 0;
 	int  autolabel = 0;
-	int  curcol = 0, curx = 0, cury = 0;
+	int  curcol = 0, x0 = 0, curx = 0, cury = 0, spacing = 0;
 	char  *thislabel;
 	int  an;
 
@@ -81,10 +81,10 @@ char  *argv[];
 	for (an = 1; an < argc && argv[an][0] == '-'; an++)
 		switch (argv[an][1]) {
 		case 'x':
-			xmax = xsiz = atoi(argv[++an]);
+			xsiz = atoi(argv[++an]);
 			break;
 		case 'y':
-			ymax = ysiz = atoi(argv[++an]);
+			ysiz = atoi(argv[++an]);
 			break;
 		case 'b':
 			setcolr(bgcolr, atof(argv[an+1]),
@@ -94,6 +94,13 @@ char  *argv[];
 			break;
 		case 'a':
 			ncolumns = atoi(argv[++an]);
+			break;
+		case 's':
+			spacing = atoi(argv[++an]);
+			break;
+		case 'o':
+			curx = x0 = atoi(argv[++an]);
+			cury = atoi(argv[++an]);
 			break;
 		case 'l':
 			switch (argv[an][2]) {
@@ -116,11 +123,6 @@ char  *argv[];
 			goto userr;
 		}
 dofiles:
-	if (ysiz > 0 & ncolumns > 0) {
-		fprintf(stderr, "%s: -a option incompatible with -y\n",
-				progname);
-		quit(1);
-	}
 	for (nfile = 0; an < argc; nfile++) {
 		if (nfile >= MAXFILE)
 			goto toomany;
@@ -197,13 +199,13 @@ getfile:
 		}
 		if (ncolumns > 0) {
 			if (curcol >= ncolumns) {
-				cury = ymax;
-				curx = 0;
+				cury = ymax + spacing;
+				curx = x0;
 				curcol = 0;
 			}
 			input[nfile].xloc = curx;
 			input[nfile].yloc = cury;
-			curx += input[nfile].xres;
+			curx += input[nfile].xres + spacing;
 			curcol++;
 		} else {
 			input[nfile].xloc = atoi(argv[an++]);
@@ -235,8 +237,12 @@ getfile:
 	}
 	if (xsiz <= 0)
 		xsiz = xmax;
+	else if (xsiz > xmax)
+		xmax = xsiz;
 	if (ysiz <= 0)
 		ysiz = ymax;
+	else if (ysiz > ymax)
+		ymax = ysiz;
 					/* add new header info. */
 	printargs(argc, argv, stdout);
 	fputformat(COLRFMT, stdout);
@@ -247,7 +253,8 @@ getfile:
 	
 	quit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-x xr][-y yr][-b r g b][-a n][-la][-lh h] ",
+	fprintf(stderr,
+	"Usage: %s [-x xr][-y yr][-b r g b][-a n][-s p][-o x0 y0][-la][-lh h] ",
 			progname);
 	fprintf(stderr, "[-t min1][+t max1][-l lab] pic1 x1 y1 ..\n");
 	quit(1);
