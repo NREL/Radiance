@@ -8,7 +8,10 @@
 
 /* must include stdio.h before us */
 
-			/* Entities (order doesn't really matter) */
+#define MG_VMAJOR	1		/* major version number */
+#define MG_VMINOR	0		/* minor version number */
+
+			/* Entities (list is only appended, never modified) */
 #define MG_E_COMMENT	0		/* #		*/
 #define MG_E_COLOR	1		/* c		*/
 #define MG_E_CCT	2		/* cct		*/
@@ -37,8 +40,11 @@
 #define MG_E_TS		25		/* ts		*/
 #define MG_E_VERTEX	26		/* v		*/
 #define MG_E_XF		27		/* xf		*/
+			/* end of Version 1 entities */
 
 #define MG_NENTITIES	28		/* total # entities */
+
+#define MG_NELIST	{28}		/* entity count for version 1 and up */
 
 #define MG_NAMELIST	{"#","c","cct","cone","cmix","cspec","cxy","cyl","ed",\
 			"f","i","ies","ir","m","n","o","p","prism","rd",\
@@ -49,7 +55,6 @@
 extern char	mg_ename[MG_NENTITIES][MG_MAXELEN];
 
 			/* Handler routines for each entity and unknown ones */
-
 #ifdef NOPROTO
 extern int	(*mg_ehand[MG_NENTITIES])();
 extern int	(*mg_uhand)();

@@ -11,6 +11,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #include <stdio.h>
 #include "parser.h"
 
+				/* Number of entities for major versions */
+short	nentlist[MG_VMAJOR] = MG_NELIST;
+
 
 int
 put_entity(ac, av)		/* general output routine */
@@ -33,25 +36,37 @@ char	*argv[];
 	int	i, en;
 
 	if (argc < 2) {
-		fprintf(stderr, "Usage: %s entity,list [file ..]\n", argv[0]);
+		fprintf(stderr,
+			"Usage: %s { version | entity,list } [file ..]\n",
+				argv[0]);
 		exit(1);
 	}
-	for (cp1 = cp2 = argv[1]; *cp1; cp1 = cp2) {
-		while (*cp2) {
-			if (*cp2 == ',') {
-				*cp2++ = '\0';
-				break;
-			}
-			cp2++;
-		}
-		en = mg_entity(cp1);
-		if (en < 0) {
-			fprintf(stderr, "%s: %s: no such entity\n",
-					argv[0], cp1);
+	if (isint(argv[1])) {
+		i = atoi(argv[1]);
+		if (i < 1 | i > MG_VMAJOR) {
+			fprintf(stderr, "%s: bad version number: %d\n",
+					argv[0], i);
 			exit(1);
 		}
-		mg_ehand[en] = put_entity;
-	}
+		for (en = nentlist[i-1]; en--; )
+			mg_ehand[en] = put_entity;
+	} else
+		for (cp1 = cp2 = argv[1]; *cp1; cp1 = cp2) {
+			while (*cp2) {
+				if (*cp2 == ',') {
+					*cp2++ = '\0';
+					break;
+				}
+				cp2++;
+			}
+			en = mg_entity(cp1);
+			if (en < 0) {
+				fprintf(stderr, "%s: %s: no such entity\n",
+						argv[0], cp1);
+				exit(1);
+			}
+			mg_ehand[en] = put_entity;
+		}
 	mg_init();
 	if (argc < 3) {
 		if (mg_load((char *)NULL) != MG_OK)

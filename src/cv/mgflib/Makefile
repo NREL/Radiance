@@ -3,7 +3,7 @@
 # Makefile for MGF parser library
 #
 
-OPT = -g
+OPT = -O
 MACH = 
 CFLAGS = $(MACH) $(OPT)
 CC = cc
