@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 /* SCCSid "$SunId$ SGI" */
 
@@ -32,6 +32,11 @@ typedef struct {
 
 #define packsiz(nr)	(sizeof(PACKHEAD)+(nr)*sizeof(RAYVAL))
 #define packra(p)	((RAYVAL *)((p)+1))
+
+typedef struct {
+	FVECT	vpt;		/* view (eye point) position */
+	double	rng;		/* desired mean radius for sample rays */
+} VIEWPOINT;		/* target eye position */
 
 				/* input variables */
 #define CACHE		0		/* amount of memory to use as cache */
@@ -86,6 +91,8 @@ extern int	ncprocs;	/* number of requested compute processes */
 extern int	nprocs;		/* number of running compute processes */
 
 extern double	expval;		/* global exposure value */
+
+extern VIEWPOINT	myeye;	/* target view position */
 
 extern time_t	starttime;	/* time we got started */
 extern time_t	endtime;	/* time we should end by */
