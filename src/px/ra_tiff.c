@@ -515,9 +515,9 @@ uint32	y;
 		quiterr("error reading TIFF input");
 	
 	for (x = cvts.xmax; x--; ) {
-		cvts.r.colors[x][RED] = cvts.t.fp[3*x];
-		cvts.r.colors[x][GRN] = cvts.t.fp[3*x + 1];
-		cvts.r.colors[x][BLU] = cvts.t.fp[3*x + 2];
+		colval(cvts.r.colors[x],CIEX) = cvts.t.fp[3*x];
+		colval(cvts.r.colors[x],CIEY) = cvts.t.fp[3*x + 1];
+		colval(cvts.r.colors[x],CIEZ) = cvts.t.fp[3*x + 2];
 		if (CHK(C_CXFM))
 			colortrans(cvts.r.colors[x], cvts.cmat,
 					cvts.r.colors[x]);
@@ -549,9 +549,10 @@ uint32	y;
 		quiterr("error reading TIFF input");
 	
 	for (x = cvts.xmax; x--; )
-		cvts.r.colors[x][RED] =
-		cvts.r.colors[x][GRN] =
-		cvts.r.colors[x][BLU] = cvts.t.fp[x] > 0. ? cvts.t.fp[x] : 0.;
+		colval(cvts.r.colors[x],RED) =
+		colval(cvts.r.colors[x],GRN) =
+		colval(cvts.r.colors[x],BLU) =
+				cvts.t.fp[x] > 0. ? cvts.t.fp[x] : 0.;
 
 	if (fwritescan(cvts.r.colors, cvts.xmax, cvts.rfp) < 0)
 		quiterr("error writing Radiance picture");
@@ -685,9 +686,9 @@ uint32	y;
 	}
 
 	for (x = cvts.xmax; x--; ) {
-		cvts.t.fp[3*x] = colval(cvts.r.colors[x],RED);
-		cvts.t.fp[3*x+1] = colval(cvts.r.colors[x],GRN);
-		cvts.t.fp[3*x+2] = colval(cvts.r.colors[x],BLU);
+		cvts.t.fp[3*x] = colval(cvts.r.colors[x],CIEX);
+		cvts.t.fp[3*x+1] = colval(cvts.r.colors[x],CIEY);
+		cvts.t.fp[3*x+2] = colval(cvts.r.colors[x],CIEZ);
 	}
 
 	if (TIFFWriteScanline(cvts.tif, cvts.t.p, y, 0) < 0)
