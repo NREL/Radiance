@@ -297,7 +297,7 @@ char  *s;
 			e *= atof(cp);
 	}
 	if (p != NULL) {		/* relative setting */
-		if (bright(p->v) <= FTINY) {
+		if (bright(p->v) < 1e-25) {
 			error(COMMAND, "cannot normalize to zero");
 			return;
 		}
