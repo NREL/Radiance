@@ -236,7 +236,7 @@ int	*bq, nb;
 		}
 		hdfreebeam(hp, bq[i]);		/* free the beam */
 	}
-	hdflush(NULL);			/* write & free clump */
+	hdfreebeam(NULL, 0);			/* write & free clump */
 	return(0);
 }
 
@@ -253,6 +253,7 @@ char	*hdf;
 		hddone(hdlist[noutsects]);		/* free the section */
 	}
 	close(fd);			/* close input file */
+	hdflush(NULL);			/* flush output */
 }
 
 
