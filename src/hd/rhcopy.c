@@ -91,7 +91,7 @@ int	append;
 	FILE	*fp;
 	int	fd;
 	int	hflags = 0;
-	int4	nextloc;
+	long	nextloc;
 	int	n;
 					/* open holodeck file */
 	if ((fp = fopen(fname, append ? "r+" : "r")) == NULL) {
@@ -109,7 +109,7 @@ int	append;
 	nextloc = ftell(fp);			/* get stdio position */
 	fclose(fp);				/* done with stdio */
 	for (n = 0; nextloc > 0L; n++) {	/* initialize each section */
-		lseek(fd, (long)nextloc, 0);
+		lseek(fd, nextloc, 0);
 		read(fd, (char *)&nextloc, sizeof(nextloc));
 		hdinit(fd, NULL)->priv = hflags&H_OBST ? &obstr :
 				hflags&H_OBSF ? &unobstr : (char *)NULL;
