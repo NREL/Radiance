@@ -10,6 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 #include "parser.h"
@@ -266,8 +267,6 @@ void
 mg_fgetpos(pos)			/* get current position in input file */
 register MG_FPOS	*pos;
 {
-	extern long	ftell();
-
 	pos->fid = mg_file->fid;
 	pos->lineno = mg_file->lineno;
 	pos->offset = ftell(mg_file->fp);
