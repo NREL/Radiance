@@ -61,51 +61,59 @@ int	op;
 register PACKHEAD	*clist;
 int	nents;
 {
+	int	oldnr;
 	register int	i, n;
-
+				/* look for common members */
+	for (n = 0; n < nents; n++) {
+		for (i = 0; i < complen; i++)
+			if (clist[n].bi == complist[i].bi &&
+					clist[n].hd == complist[i].hd) {
+				oldnr = complist[i].nr;
+				clist[n].nc = complist[i].nc;
+				switch (op) {
+				case BS_ADD:		/* add to count */
+					complist[i].nr += clist[n].nr;
+					clist[n].nr = 0;
+					break;
+				case BS_ADJ:		/* reset count */
+					complist[i].nr = clist[n].nr;
+					clist[n].nr = 0;
+					break;
+				case BS_DEL:		/* delete count */
+					if (clist[n].nr == 0 ||
+						clist[n].nr >= complist[i].nr)
+						complist[i].nr = 0;
+					else
+						complist[i].nr -= clist[n].nr;
+					break;
+				}
+				if (complist[i].nr != oldnr)
+					lastin = -1;	/* flag sort */
+				break;
+			}
+		if (i >= complen)
+			clist[n].nc = bnrays(hdlist[clist[n].hd], clist[n].bi);
+	}
+				/* complete list operations */
 	switch (op) {
 	case BS_NEW:			/* new computation set */
-		if (complen)
+		listpos = 0;
+		lastin = -1;
+		if (complen)		/* free old list */
 			free((char *)complist);
-		if (nents <= 0) {
-			complist = NULL;
-			listpos = complen = 0;
-			lastin = -1;
+		complist = NULL;
+		if (!(complen = nents))
 			return;
-		}
 		complist = (PACKHEAD *)malloc(nents*sizeof(PACKHEAD));
 		if (complist == NULL)
 			goto memerr;
 		bcopy((char *)clist, (char *)complist, nents*sizeof(PACKHEAD));
-		complen = nents;	/* finish initialization below */
 		break;
 	case BS_ADD:			/* add to computation set */
 	case BS_ADJ:			/* adjust set quantities */
 		if (nents <= 0)
 			return;
-					/* merge any common members */
-		for (n = 0; n < nents; n++) {
-			for (i = 0; i < complen; i++)
-				if (clist[n].bi == complist[i].bi &&
-						clist[n].hd == complist[i].hd) {
-					int	oldnr = complist[i].nr;
-					if (op == BS_ADD)
-						complist[i].nr += clist[n].nr;
-					else /* op == BS_ADJ */
-						complist[i].nr = clist[n].nr;
-					clist[n].nr = 0;
-					clist[n].nc = complist[i].nc;
-					if (complist[i].nr != oldnr)
-						lastin = -1;	/* flag sort */
-					break;
-				}
-			if (i >= complen)
-				clist[n].nc = bnrays(hdlist[clist[n].hd],
-						clist[n].bi);
-		}
-					/* sort updated list */
-		sortcomplist();
-					/* sort new entries */
+		sortcomplist();		/* sort updated list & new entries */
 		qsort((char *)clist, nents, sizeof(PACKHEAD), beamcmp);
 					/* what can't we satisfy? */
 		for (n = 0; n < nents && clist[n].nr > clist[n].nc; n++)
@@ -129,22 +137,7 @@ int	nents;
 		lastin = complen-1;	/* list is now sorted */
 		break;
 	case BS_DEL:			/* delete from computation set */
-		if (nents <= 0)
-			return;
-					/* find each member */
-		for (i = 0; i < complen; i++)
-			for (n = 0; n < nents; n++)
-				if (clist[n].bi == complist[i].bi &&
-						clist[n].hd == complist[i].hd) {
-					if (clist[n].nr == 0 ||
-						clist[n].nr >= complist[i].nr)
-						complist[i].nr = 0;
-					else
-						complist[i].nr -= clist[n].nr;
-					lastin = -1;	/* flag full sort */
-					break;
-				}
-		return;			/* no display */
+		return;			/* already done */
 	default:
 		error(CONSISTENCY, "bundle_set called with unknown operation");
 	}
@@ -158,14 +151,6 @@ int	nents;
 		}
 		hdloadbeams(hb, nents, dispbeam);
 		free((char *)hb);
-	}
-	if (op == BS_NEW) {
-		done_packets(flush_queue());	/* empty queue, so we can... */
-		for (i = 0; i < complen; i++)	/* ...get number computed */
-			complist[i].nc = bnrays(hdlist[complist[i].hd],
-						complist[i].bi);
-		listpos = 0;
-		lastin = -1;		/* flag for initial sort */
 	}
 	return;
 memerr:
