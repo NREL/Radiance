@@ -16,6 +16,8 @@ static char SCCSid[] = "$SunId$ LBL";
  *  1/15/88  Added clock for caching of variable values.
  *
  *  11/16/88  Added VARDEF structure for hard linking.
+ *
+ *  5/31/90  Added conditional compile (REDEFW) for redefinition warning.
  */
 
 #include  <stdio.h>
@@ -370,7 +372,15 @@ loaddefn()			/* load next definition */
 #endif
     {				/* ordinary definition */
 	ep = getdefn();
+#ifdef  REDEFW
+	if (dlookup(dname(ep)) != NULL) {
+		dclear(dname(ep));
+		wputs(dname(ep));
+		wputs(": redefined\n");
+	}
+#else
 	dclear(dname(ep));
+#endif
 	dpush(ep);
     }
     if (nextc != EOF) {
