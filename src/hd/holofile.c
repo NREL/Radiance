@@ -22,7 +22,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #define PCTFREE		20	/* maximum fraction to free (%) */
 #endif
 #ifndef MAXFRAG
-#define MAXFRAG		131000	/* maximum fragments/file to track (0==inf) */
+#define MAXFRAG		32767	/* maximum fragments/file to track (0==inf) */
 #endif
 
 #ifndef BSD
@@ -30,42 +30,42 @@ static char SCCSid[] = "$SunId$ SGI";
 #define read	readbuf
 #endif
 
-#define FRAGBLK		64	/* number of fragments to allocate at a time */
+#define FRAGBLK		256	/* number of fragments to allocate at a time */
 
 unsigned	hdcachesize = CACHESIZE*1024*1024;	/* target cache size */
 unsigned long	hdclock;	/* clock value */
 
 HOLO	*hdlist[HDMAX+1];	/* holodeck pointers (NULL term.) */
 
-static struct fragment {
+static struct fraglist {
 	short	nlinks;		/* number of holodeck sections using us */
 	short	writerr;	/* write error encountered */
 	int	nfrags;		/* number of known fragments */
 	BEAMI	*fi;		/* fragments, descending file position */
 	long	flen;		/* last known file length */
-} *hdfrag;		/* fragment lists, indexed by file descriptor */
+} *hdfragl;		/* fragment lists, indexed by file descriptor */
 
-static int	nhdfrags;	/* size of hdfrag array */
+static int	nhdfragls;	/* size of hdfragl array */
 
 
 hdattach(fd)		/* start tracking file fragments for some section */
 register int	fd;
 {
-	if (fd >= nhdfrags) {
-		if (nhdfrags)
-			hdfrag = (struct fragment *)realloc((char *)hdfrag,
-					(fd+1)*sizeof(struct fragment));
+	if (fd >= nhdfragls) {
+		if (nhdfragls)
+			hdfragl = (struct fraglist *)realloc((char *)hdfragl,
+					(fd+1)*sizeof(struct fraglist));
 		else
-			hdfrag = (struct fragment *)malloc(
-					(fd+1)*sizeof(struct fragment));
-		if (hdfrag == NULL)
+			hdfragl = (struct fraglist *)malloc(
+					(fd+1)*sizeof(struct fraglist));
+		if (hdfragl == NULL)
 			error(SYSTEM, "out of memory in hdattach");
-		bzero((char *)(hdfrag+nhdfrags),
-				(fd+1-nhdfrags)*sizeof(struct fragment));
-		nhdfrags = fd+1;
+		bzero((char *)(hdfragl+nhdfragls),
+				(fd+1-nhdfragls)*sizeof(struct fraglist));
+		nhdfragls = fd+1;
 	}
-	hdfrag[fd].nlinks++;
-	hdfrag[fd].flen = lseek(fd, 0L, 2);	/* get file length */
+	hdfragl[fd].nlinks++;
+	hdfragl[fd].flen = lseek(fd, 0L, 2);	/* get file length */
 }
 
 
@@ -75,12 +75,12 @@ register int	fd;
 hdrelease(fd)		/* stop tracking file fragments for some section */
 register int	fd;
 {
-	if (fd < 0 | fd >= nhdfrags || !hdfrag[fd].nlinks)
+	if (fd < 0 | fd >= nhdfragls || !hdfragl[fd].nlinks)
 		return;
-	if (!--hdfrag[fd].nlinks && hdfrag[fd].nfrags) {
-		free((char *)hdfrag[fd].fi);
-		hdfrag[fd].fi = NULL;
-		hdfrag[fd].nfrags = 0;
+	if (!--hdfragl[fd].nlinks && hdfragl[fd].nfrags) {
+		free((char *)hdfragl[fd].fi);
+		hdfragl[fd].fi = NULL;
+		hdfragl[fd].nfrags = 0;
 	}
 }
 
@@ -213,11 +213,11 @@ int	all;			/* include overhead (painful) */
 		}
 	}
 	if (all)
-		for (j = 0; j < nhdfrags; j++) {
-			total += sizeof(struct fragment);
-			if (hdfrag[j].nfrags)
+		for (j = 0; j < nhdfragls; j++) {
+			total += sizeof(struct fraglist);
+			if (hdfragl[j].nfrags)
 				total += FRAGBLK*sizeof(BEAMI) *
-					((hdfrag[j].nfrags-1)/FRAGBLK + 1) ;
+					((hdfragl[j].nfrags-1)/FRAGBLK + 1) ;
 		}
 	return(total);
 }
@@ -231,14 +231,14 @@ int	fd;
 
 	if (fd < 0)
 		return(-1);
-	if (fd >= nhdfrags || !hdfrag[fd].nlinks) {
+	if (fd >= nhdfragls || !hdfragl[fd].nlinks) {
 		if ((fpos = lseek(fd, 0L, 1)) < 0)
 			return(-1);
 		flen = lseek(fd, 0L, 2);
 		lseek(fd, fpos, 0);
 		return(flen);
 	}
-	return(hdfrag[fd].flen);
+	return(hdfragl[fd].flen);
 }
 
 
@@ -410,7 +410,7 @@ register int	i;
 	long	nfo;
 	unsigned int	n;
 					/* check file status */
-	if (hdfrag[hp->fd].writerr)
+	if (hdfragl[hp->fd].writerr)
 		return(-1);
 #ifdef DEBUG
 	if (i < 1 | i > nbeams(hp))
@@ -420,17 +420,17 @@ register int	i;
 	if (hp->bl[i] == NULL || (nrays = hp->bl[i]->nrm) == hp->bi[i].nrd)
 		return(0);
 					/* locate fragment */
-	if (hp->fd >= nhdfrags || !hdfrag[hp->fd].nlinks) /* untracked */
+	if (hp->fd >= nhdfragls || !hdfragl[hp->fd].nlinks) /* untracked */
 		hp->bi[i].fo = lseek(hp->fd, 0L, 2);
 
 	else if (hp->bi[i].fo + hp->bi[i].nrd*sizeof(RAYVAL) ==
-			hdfrag[hp->fd].flen)		/* EOF special case */
-		hdfrag[hp->fd].flen = (nfo=hp->bi[i].fo) + nrays*sizeof(RAYVAL);
+			hdfragl[hp->fd].flen)		/* EOF special case */
+		hdfragl[hp->fd].flen = (nfo=hp->bi[i].fo) + nrays*sizeof(RAYVAL);
 
 	else {						/* general case */
-		register struct fragment	*f = &hdfrag[hp->fd];
+		register struct fraglist	*f = &hdfragl[hp->fd];
 		register int	j, k;
-					/* relinquish old fragment */
+		n = f->nfrags;		/* relinquish old fragment */
 		if (hp->bi[i].nrd) {
 			j = f->nfrags++;
 #if MAXFRAG
@@ -461,11 +461,13 @@ register int	i;
 					f->fi[j].nrd*sizeof(RAYVAL)) {
 				f->fi[j].nrd += f->fi[j-1].nrd;
 				f->fi[j-1].nrd = 0;
+				n = j-1;
 			}
 			if (j+1 < f->nfrags && f->fi[j].fo == f->fi[j+1].fo +
 					f->fi[j+1].nrd*sizeof(RAYVAL)) {
 				f->fi[j+1].nrd += f->fi[j].nrd;
 				f->fi[j].nrd = 0;
+				if (j < n) n = j;
 			}
 		}
 		k = -1;			/* find closest-sized fragment */
@@ -480,10 +482,11 @@ register int	i;
 		} else {		/* else use fragment */
 			nfo = f->fi[k].fo;
 			f->fi[k].fo += nrays*sizeof(RAYVAL);
-			f->fi[k].nrd -= nrays;
+			if (!(f->fi[k].nrd -= nrays) && k < n)
+				n = k;
 		}
 					/* delete empty remnants */
-		for (j = k = 0; k < f->nfrags; j++, k++) {
+		for (j = k = n; k < f->nfrags; j++, k++) {
 			while (f->fi[k].nrd == 0)
 				if (++k >= f->nfrags)
 					goto endloop;
@@ -499,7 +502,7 @@ register int	i;
 			error(SYSTEM, "cannot seek on holodeck file");
 		n = hp->bl[i]->nrm * sizeof(RAYVAL);
 		if (write(hp->fd, (char *)hdbray(hp->bl[i]), n) != n) {
-			hdfrag[hp->fd].writerr++;
+			hdfragl[hp->fd].writerr++;
 			hdsync(hp, 0);		/* sync directory */
 			error(SYSTEM, "write error in hdsyncbeam");
 		}
@@ -525,7 +528,7 @@ register int	i;
 			nchanged += hdfreebeam(hdlist[i], 0);
 		return(nchanged);
 	}
-	if (hdfrag[hp->fd].writerr)	/* check for file error */
+	if (hdfragl[hp->fd].writerr)	/* check for file error */
 		return(0);
 	if (i == 0) {			/* clear entire holodeck */
 		nchanged = 0;
