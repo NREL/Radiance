@@ -73,23 +73,23 @@ typedef float  COLOR[3];	/* red, green, blue */
 
 				/* macros for exposures */
 #define  EXPOSSTR		"EXPOSURE="
-#define  EXPOSSTRL		9
-#define  isexpos(hl)		(!strncmp(hl,EXPOSSTR,EXPOSSTRL))
-#define  exposval(hl)		atof((hl)+EXPOSSTRL)
+#define  LEXPOSSTR		9
+#define  isexpos(hl)		(!strncmp(hl,EXPOSSTR,LEXPOSSTR))
+#define  exposval(hl)		atof((hl)+LEXPOSSTR)
 #define  fputexpos(ex,fp)	fprintf(fp,"%s%e\n",EXPOSSTR,ex)
 
 				/* macros for pixel aspect ratios */
 #define  ASPECTSTR		"PIXASPECT="
-#define  ASPECTSTRL		10
-#define  isaspect(hl)		(!strncmp(hl,ASPECTSTR,ASPECTSTRL))
-#define  aspectval(hl)		atof((hl)+ASPECTSTRL)
+#define  LASPECTSTR		10
+#define  isaspect(hl)		(!strncmp(hl,ASPECTSTR,LASPECTSTR))
+#define  aspectval(hl)		atof((hl)+LASPECTSTR)
 #define  fputaspect(pa,fp)	fprintf(fp,"%s%f\n",ASPECTSTR,pa)
 
 				/* macros for color correction */
 #define  COLCORSTR		"COLORCORR="
-#define  COLCORSTRL		10
-#define  iscolcor(hl)		(!strncmp(hl,COLCORSTR,COLCORSTRL))
-#define  colcorval(cc,hl)	sscanf(hl+COLCORSTRL,"%f %f %f", \
+#define  LCOLCORSTR		10
+#define  iscolcor(hl)		(!strncmp(hl,COLCORSTR,LCOLCORSTR))
+#define  colcorval(cc,hl)	sscanf(hl+LCOLCORSTR,"%f %f %f", \
 					&(cc)[RED],&(cc)[GRN],&(cc)[BLU])
 #define  fputcolcor(cc,fp)	fprintf(fp,"%s %f %f %f\n",COLCORSTR, \
 					(cc)[RED],(cc)[GRN],(cc)[BLU])
