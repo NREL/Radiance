@@ -14,19 +14,14 @@ static char SCCSid[] = "$SunId$ SGI";
 RTREE	qtrunk;			/* our quadtree trunk */
 double	qtDepthEps = .02;	/* epsilon to compare depths (z fraction) */
 int	qtMinNodesiz = 2;	/* minimum node dimension (pixels) */
-
-static RLEAF	*leafpile;	/* our collection of leaf values */
-static int	nleaves;	/* count of leaves in our pile */
-static int	bleaf, tleaf;	/* bottom and top (next) leaf index (ring) */
+struct rleaves	qtL;		/* our pile of leaves */
 
 #define	TBUNDLESIZ	409	/* number of twigs in a bundle */
 
 static RTREE	**twigbundle;	/* free twig blocks (NULL term.) */
 static int	nexttwig;	/* next free twig */
 
-static RTREE	emptytree;	/* empty tree for test below */
-
-#define	is_stump(t)	(!bcmp((char *)(t), (char *)&emptytree, sizeof(RTREE)))
+#define	is_stump(t)	(!((t)->flgs & (BR_ANY|LF_ANY)))
 
 
 static RTREE *
@@ -63,8 +58,7 @@ int	really;
 {
 	register int	i;
 
-	tmClearHisto();
-	bzero((char *)&qtrunk, sizeof(RTREE));
+	qtrunk.flgs = 0;
 	nexttwig = 0;
 	if (twigbundle == NULL)
 		return;
@@ -81,23 +75,25 @@ int	really;
 }
 
 
-static RLEAF *
+static int
 newleaf()			/* allocate a leaf from our pile */
 {
-	RLEAF	*lp;
+	int	li;
 	
-	lp = leafpile + tleaf++;
-	if (tleaf >= nleaves)		/* get next leaf in ring */
-		tleaf = 0;
-	if (tleaf == bleaf)		/* need to shake some free */
+	li = qtL.tl++;
+	if (qtL.tl >= qtL.nl)	/* get next leaf in ring */
+		qtL.tl = 0;
+	if (qtL.tl == qtL.bl)	/* need to shake some free */
 		qtCompost(LFREEPCT);
-	return(lp);
+	return(li);
 }
 
 
+#define	LEAFSIZ		(3*sizeof(float)+sizeof(TMbright)+6*sizeof(BYTE))
+
 int
 qtAllocLeaves(n)		/* allocate space for n leaves */
-int	n;
+register int	n;
 {
 	unsigned	nbytes;
 	register unsigned	i;
@@ -105,32 +101,39 @@ int	n;
 	qtFreeTree(0);		/* make sure tree is empty */
 	if (n <= 0)
 		return(0);
-	if (nleaves >= n)
-		return(nleaves);
-	else if (nleaves > 0)
-		free((char *)leafpile);
+	if (qtL.nl >= n)
+		return(qtL.nl);
+	else if (qtL.nl > 0)
+		free(qtL.base);
 				/* round space up to nearest power of 2 */
-	nbytes = n*sizeof(RLEAF) + 8;
+	nbytes = n*LEAFSIZ + 8;
 	for (i = 1024; nbytes > i; i <<= 1)
 		;
-	n = (i - 8) / sizeof(RLEAF);
-	leafpile = (RLEAF *)malloc(n*sizeof(RLEAF));
-	if (leafpile == NULL)
-		return(-1);
-	nleaves = n;
-	bleaf = tleaf = 0;
-	return(nleaves);
+	n = (i - 8) / LEAFSIZ;	/* should we make sure n is even? */
+	qtL.base = (char *)malloc(n*LEAFSIZ);
+	if (qtL.base == NULL)
+		return(0);
+				/* assign larger alignment types earlier */
+	qtL.wp = (float (*)[3])qtL.base;
+	qtL.brt = (TMbright *)(qtL.wp + n);
+	qtL.chr = (BYTE (*)[3])(qtL.brt + n);
+	qtL.rgb = (BYTE (*)[3])(qtL.chr + n);
+	qtL.nl = n;
+	qtL.tml = qtL.bl = qtL.tl = 0;
+	return(n);
 }
+
+#undef	LEAFSIZ
 
 
 qtFreeLeaves()			/* free our allocated leaves and twigs */
 {
 	qtFreeTree(1);		/* free tree also */
-	if (nleaves <= 0)
+	if (qtL.nl <= 0)
 		return;
-	free((char *)leafpile);
-	leafpile = NULL;
-	nleaves = 0;
+	free(qtL.base);
+	qtL.base = NULL;
+	qtL.nl = 0;
 }
 
 
@@ -141,15 +144,16 @@ register RTREE	*tp;
 	register int	i, li;
 
 	for (i = 0; i < 4; i++)
-		if (tp->flgs & BRF(i))
+		if (tp->flgs & BRF(i)) {
 			shaketree(tp->k[i].b);
-		else if (tp->k[i].l != NULL) {
-			li = tp->k[i].l - leafpile;
-			if (bleaf < tleaf ? (li < bleaf || li >= tleaf) :
-					(li < bleaf && li >= tleaf)) {
-				tmAddHisto(&tp->k[i].l->brt, 1, -1);
-				tp->k[i].l = NULL;
-			}
+			if (is_stump(tp->k[i].b))
+				tp->flgs &= ~BRF(i);
+		} else if (tp->flgs & LFF(i)) {
+			li = tp->k[i].li;
+			if (qtL.bl < qtL.tl ?
+				(li < qtL.bl || li >= qtL.tl) :
+				(li < qtL.bl && li >= qtL.tl))
+				tp->flgs &= ~LFF(i);
 		}
 }
 
@@ -158,46 +162,48 @@ int
 qtCompost(pct)			/* free up some leaves */
 int	pct;
 {
-	int	nused, nclear;
+	int	nused, nclear, nmapped;
 
-	if (is_stump(&qtrunk))
-		return(0);
 				/* figure out how many leaves to clear */
-	nclear = nleaves * pct / 100;
-	nused = tleaf > bleaf ? tleaf-bleaf : tleaf+nleaves-bleaf;
-	nclear -= nleaves - nused;	/* less what's already free */
+	nclear = qtL.nl * pct / 100;
+	nused = qtL.tl - qtL.bl;
+	if (nused <= 0) nused += qtL.nl;
+	nclear -= qtL.nl - nused;
 	if (nclear <= 0)
 		return(0);
 	if (nclear >= nused) {	/* clear them all */
 		qtFreeTree(0);
-		bleaf = tleaf = 0;
+		qtL.tml = qtL.bl = qtL.tl = 0;
 		return(nused);
 	}
 				/* else clear leaves from bottom */
-	bleaf += nclear;
-	if (bleaf >= nleaves) bleaf -= nleaves;
+	nmapped = qtL.tml - qtL.bl;
+	if (nmapped < 0) nmapped += qtL.nl;
+	qtL.bl += nclear;
+	if (qtL.bl >= qtL.nl) qtL.bl -= qtL.nl;
+	if (nmapped <= nclear) qtL.tml = qtL.bl;
 	shaketree(&qtrunk);
 	return(nclear);
 }
 
 
-RLEAF *
+int
 qtFindLeaf(x, y)		/* find closest leaf to (x,y) */
 int	x, y;
 {
 	register RTREE	*tp = &qtrunk;
-	RLEAF	*lp = NULL;
+	int	li = -1;
 	int	x0=0, y0=0, x1=odev.hres, y1=odev.vres;
 	int	mx, my;
 	register int	q;
 					/* check limits */
 	if (x < 0 || x >= odev.hres || y < 0 || y >= odev.vres)
-		return(NULL);
+		return(-1);
 					/* find nearby leaf in our tree */
 	for ( ; ; ) {
 		for (q = 0; q < 4; q++)		/* find any leaf this level */
-			if (!(tp->flgs & BRF(q)) && tp->k[q].l != NULL) {
-				lp = tp->k[q].l;
+			if (tp->flgs & LFF(q)) {
+				li = tp->k[q].li;
 				break;
 			}
 		q = 0;				/* which quadrant are we? */
@@ -211,26 +217,26 @@ int	x, y;
 			tp = tp->k[q].b;
 			continue;
 		}
-		if (tp->k[q].l != NULL)		/* good shot! */
-			return(tp->k[q].l);
-		return(lp);			/* else return what we have */
+		if (tp->flgs & LFF(q))		/* good shot! */
+			return(tp->k[q].li);
+		return(li);			/* else return what we have */
 	}
 }
 
 
 static
-addleaf(lp)			/* add a leaf to our tree */
-RLEAF	*lp;
+addleaf(li)			/* add a leaf to our tree */
+int	li;
 {
 	register RTREE	*tp = &qtrunk;
 	int	x0=0, y0=0, x1=odev.hres, y1=odev.vres;
-	RLEAF	*lo = NULL;
+	int	lo = -1;
 	int	x, y, mx, my;
 	double	z;
 	FVECT	ip, wp;
 	register int	q;
 					/* compute leaf location */
-	VCOPY(wp, lp->wp);
+	VCOPY(wp, qtL.wp[li]);
 	viewloc(ip, &odev.v, wp);
 	if (ip[2] <= 0. || ip[0] < 0. || ip[0] >= 1.
 			|| ip[1] < 0. || ip[1] >= 1.)
@@ -252,37 +258,36 @@ RLEAF	*lp;
 			tp = tp->k[q].b;
 			continue;
 		}
-		if (tp->k[q].l == NULL) {	/* found stem for leaf */
-			tp->k[q].l = lp;
-			tp->flgs |= CHF(q);
+		if (!(tp->flgs & LFF(q))) {	/* found stem for leaf */
+			tp->k[q].li = li;
+			tp->flgs |= CHLFF(q);
 			break;
 		}	
 						/* check existing leaf */
-		if (lo != tp->k[q].l) {
-			lo = tp->k[q].l;
-			VCOPY(wp, lo->wp);
+		if (lo != tp->k[q].li) {
+			lo = tp->k[q].li;
+			VCOPY(wp, qtL.wp[lo]);
 			viewloc(ip, &odev.v, wp);
 		}
 						/* is node minimum size? */
 		if (x1-x0 <= qtMinNodesiz || y1-y0 <= qtMinNodesiz) {
 			if (z > (1.-qtDepthEps)*ip[2])	/* who is closer? */
 				return;			/* old one is */
-			tp->k[q].l = lp;		/* new one is */
+			tp->k[q].li = li;		/* new one is */
 			tp->flgs |= CHF(q);
-			tmAddHisto(&lo->brt, 1, -1);	/* drop old one */
 			break;
 		}
-		tp->flgs |= CHBRF(q);		/* else grow tree */
+		tp->flgs &= ~LFF(q);		/* else grow tree */
+		tp->flgs |= CHBRF(q);
 		tp = tp->k[q].b = newtwig();
-		tp->flgs |= CH_ANY;		/* all new */
 		q = 0;				/* old leaf -> new branch */
 		mx = ip[0] * odev.hres;
 		my = ip[1] * odev.vres;
 		if (mx >= (x0 + x1) >> 1) q |= 01;
 		if (my >= (y0 + y1) >> 1) q |= 02;
-		tp->k[q].l = lo;
+		tp->k[q].li = lo;
+		tp->flgs |= LFF(q)|CH_ANY;	/* all new */
 	}
-	tmAddHisto(&lp->brt, 1, 1);	/* add leaf to histogram */
 }
 
 
@@ -290,29 +295,66 @@ dev_value(c, p)			/* add a pixel value to our output queue */
 COLR	c;
 FVECT	p;
 {
-	register RLEAF	*lp;
+	register int	li;
 
-	lp = newleaf();
-	VCOPY(lp->wp, p);
-	tmCvColrs(&lp->brt, lp->chr, c, 1);
-	addleaf(lp);
+	li = newleaf();
+	VCOPY(qtL.wp[li], p);
+	tmCvColrs(&qtL.brt[li], qtL.chr[li], c, 1);
+	addleaf(li);
 }
 
 
 qtReplant()			/* replant our tree using new view */
 {
 	register int	i;
-
-	if (bleaf == tleaf)		/* anything to replant? */
+					/* anything to replant? */
+	if (qtL.bl == qtL.tl)
 		return;
-	qtFreeTree(0);			/* blow the tree away */
-					/* now rebuild it */
-	for (i = bleaf; i != tleaf; ) {
-		addleaf(leafpile+i);
-		if (++i >= nleaves) i = 0;
+	qtFreeTree(0);			/* blow the old tree away */
+					/* regrow it in new place */
+	for (i = qtL.bl; i != qtL.tl; ) {
+		addleaf(i);
+		if (++i >= qtL.nl) i = 0;
 	}
-	tmComputeMapping(0., 0., 0.);	/* update the display */
-	qtUpdate();
+}
+
+
+qtMapLeaves(redo)		/* map our leaves to RGB */
+int	redo;
+{
+	int	aorg, alen, borg, blen;
+					/* already done? */
+	if (qtL.tml == qtL.tl)
+		return(1);
+	if (redo)
+		qtL.tml = qtL.bl;
+					/* compute segments */
+	aorg = qtL.tml;
+	if (qtL.tl >= aorg) {
+		alen = qtL.tl - aorg;
+		blen = 0;
+	} else {
+		alen = qtL.nl - aorg;
+		borg = 0;
+		blen = qtL.tl;
+	}
+					/* (re)compute tone mapping? */
+	if (qtL.tml == qtL.bl) {
+		tmClearHisto();
+		tmAddHisto(qtL.brt+aorg, alen, 1);
+		if (blen > 0)
+			tmAddHisto(qtL.brt+borg, blen, 1);
+		if (tmComputeMapping(0., 0., 0.) != TM_E_OK)
+			return(0);
+	}
+	if (tmMapPixels(qtL.rgb+aorg, qtL.brt+aorg,
+			qtL.chr+aorg, alen) != TM_E_OK)
+		return(0);
+	if (blen > 0)
+		tmMapPixels(qtL.rgb+borg, qtL.brt+borg,
+				qtL.chr+borg, blen);
+	qtL.tml = qtL.tl;
+	return(1);
 }
 
 
@@ -324,6 +366,7 @@ int	x0, y0, x1, y1;
 int	l[2][2];
 {
 	int	csm[3], nc;
+	register BYTE	*cp;
 	BYTE	rgb[3];
 	int	quads = CH_ANY;
 	int	mx, my;
@@ -344,12 +387,11 @@ int	l[2][2];
 	csm[0] = csm[1] = csm[2] = nc = 0;
 					/* do leaves first */
 	for (i = 0; i < 4; i++)
-		if (quads & CHF(i) && !(tp->flgs & BRF(i)) &&
-				tp->k[i].l != NULL) {
-			tmMapPixels(rgb, &tp->k[i].l->brt, tp->k[i].l->chr, 1);
-			dev_paintr(rgb, i&01 ? mx : x0, i&02 ? my : y0,
+		if (quads & CHF(i) && tp->flgs & LFF(i)) {
+			dev_paintr(cp=qtL.rgb[tp->k[i].li],
+					i&01 ? mx : x0, i&02 ? my : y0,
 					i&01 ? x1 : mx, i&02 ? y1 : my);
-			csm[0] += rgb[0]; csm[1] += rgb[1]; csm[2] += rgb[2];
+			csm[0] += cp[0]; csm[1] += cp[1]; csm[2] += cp[2];
 			nc++;
 			quads &= ~CHF(i);
 		}
@@ -383,6 +425,7 @@ register RTREE	*tp;
 int	x0, y0, x1, y1;
 {
 	int	csm[3], nc;
+	register BYTE	*cp;
 	BYTE	rgb[3];
 	int	gaps = 0;
 	int	mx, my;
@@ -392,18 +435,18 @@ int	x0, y0, x1, y1;
 	my = (y0 + y1) >> 1;
 	csm[0] = csm[1] = csm[2] = nc = 0;
 					/* do leaves first */
-	for (i = 0; i < 4; i++)
-		if ((tp->flgs & CHBRF(i)) == CHF(i)) {
-			if (tp->k[i].l == NULL) {
-				gaps |= 1<<i;	/* empty stem */
-				continue;
-			}
-			tmMapPixels(rgb, &tp->k[i].l->brt, tp->k[i].l->chr, 1);
-			dev_paintr(rgb, i&01 ? mx : x0, i&02 ? my : y0,
+	for (i = 0; i < 4; i++) {
+		if (!(tp->flgs & CHF(i)))
+			continue;
+		if (tp->flgs & LFF(i)) {
+			dev_paintr(cp=qtL.rgb[tp->k[i].li],
+					i&01 ? mx : x0, i&02 ? my : y0,
 					i&01 ? x1 : mx, i&02 ? y1 : my);
-			csm[0] += rgb[0]; csm[1] += rgb[1]; csm[2] += rgb[2];
+			csm[0] += cp[0]; csm[1] += cp[1]; csm[2] += cp[2];
 			nc++;
-		}
+		} else if (!(tp->flgs & BRF(i)))
+			gaps |= 1<<i;	/* empty stem */
+	}
 					/* now do branches */
 	for (i = 0; i < 4; i++)
 		if ((tp->flgs & CHBRF(i)) == CHBRF(i)) {
@@ -426,7 +469,7 @@ int	x0, y0, x1, y1;
 }
 
 
-qtRedraw(x0, y0, x1, y1)	/* redraw part of our screen */
+qtRedraw(x0, y0, x1, y1)	/* redraw part or all of our screen */
 int	x0, y0, x1, y1;
 {
 	int	lim[2][2];
@@ -434,11 +477,9 @@ int	x0, y0, x1, y1;
 
 	if (is_stump(&qtrunk))
 		return;
-	if ((lim[0][0]=x0) <= 0 & (lim[1][0]=y0) <= 0 &
-		(lim[0][1]=x1) >= odev.hres-1 & (lim[1][1]=y1) >= odev.vres-1
-			|| tmTop->lumap == NULL)
-		if (tmComputeMapping(0., 0., 0.) != TM_E_OK)
-			return;
+	if (!qtMapLeaves((lim[0][0]=x0) <= 0 & (lim[1][0]=y0) <= 0 &
+		(lim[0][1]=x1) >= odev.hres-1 & (lim[1][1]=y1) >= odev.vres-1))
+		return;
 	redraw(ca, &qtrunk, 0, 0, odev.hres, odev.vres, lim);
 }
 
@@ -449,7 +490,7 @@ qtUpdate()			/* update our tree display */
 
 	if (is_stump(&qtrunk))
 		return;
-	if (tmTop->lumap == NULL)
-		tmComputeMapping(0., 0., 0.);
+	if (!qtMapLeaves(0))
+		return;
 	update(ca, &qtrunk, 0, 0, odev.hres, odev.vres);
 }
