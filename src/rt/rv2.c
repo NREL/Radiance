@@ -693,6 +693,7 @@ char  *s;
 	(*dev->comout)(fname);
 	(*dev->comout)("\"...\n");
 						/* write header */
+	newheader("RADIANCE", fp);
 	fputs(progname, fp);
 	fprintview(&ourview, fp);
 	if (octname != NULL)

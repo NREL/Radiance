@@ -140,6 +140,7 @@ unkopt:
 					/* convert text to bitmap */
 	maptext();
 					/* print header */
+	newheader("RADIANCE", stdout);
 	printargs(argc, argv, stdout);
 	fputformat(COLRFMT, stdout);
 	putchar('\n');

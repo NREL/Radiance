@@ -233,7 +233,8 @@ char  **av;
 		dolock(outfd, F_WRLCK);
 		if ((fp = fdopen(dup(outfd), "w")) == NULL)
 			goto filerr;
-		printargs(ac, av, fp);		/* write header */
+		newheader("RADIANCE", fp);	/* create header */
+		printargs(ac, av, fp);
 		fprintf(fp, "SOFTWARE= %s\n", VersionID);
 		fputs(VIEWSTR, fp);
 		fprintview(&ourview, fp);
