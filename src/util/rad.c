@@ -166,8 +166,11 @@ char	*argv[];
 				/* print all values if requested */
 	if (explicate)
 		printvals();
-				/* run simulation */
+				/* build octree */
 	oconv();
+				/* check date on ambient file */
+	checkambfile();
+				/* run simulation */
 	renderopts(ropts);
 	xferopts(ropts);
 	if (rvdevice != NULL)
@@ -551,6 +554,18 @@ register char	*oo;
 	*oo = '\0';
 	if (vdef(OCONV))
 		addarg(oo, vval(OCONV));
+}
+
+
+checkambfile()			/* check date on ambient file */
+{
+	long	afdate;
+
+	if (vdef(AMBFILE)) {
+		afdate = fdate(vval(AMBFILE));
+		if (afdate >= 0 & octreedate > afdate)
+			rmfile(vval(AMBFILE));
+	}
 }
 
 
@@ -1028,12 +1043,6 @@ char	*opts;
 			sprintf(rep, " -t %d", (int)(minutes*60));
 		else
 			badvalue(REPORT);
-	}
-					/* check date on ambient file */
-	if (vdef(AMBFILE)) {
-		long	afdate = fdate(vval(AMBFILE));
-		if (afdate >= 0 & octreedate > afdate)
-			rmfile(vval(AMBFILE));
 	}
 					/* do each view */
 	vn = 0;
