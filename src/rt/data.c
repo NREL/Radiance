@@ -136,7 +136,7 @@ char  *pname;
 	}
 						/* get dimensions */
 	getheader(fp, NULL);
-	if (fscanf(fp, "-Y %d +X %d\n", &height, &width) != 2)
+	if (fgetresolu(&width, &height, fp) != (YMAJOR|YDECR))
 		goto readerr;
 	for (i = 0; i < 3; i++) {
 		pp[i].nd = 2;
