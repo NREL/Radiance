@@ -738,18 +738,19 @@ clipaft()			/* perform aft clipping as indicated */
 
 	if (ourview.vaft <= FTINY)
 		return;
-	tstdist = ourview.vaft;
+	tstdist = ourview.vaft - ourview.vfore;
 	for (y = 0; y < vresolu; y++) {
 		if (ourview.type == VT_PER) {		/* adjust distance */
 			yzn2 = (y+.5)/vresolu + ourview.voff - .5;
 			yzn2 = 1. + yzn2*yzn2*ourview.vn2;
-			tstdist = ourview.vaft * sqrt(yzn2);
+			tstdist = (ourview.vaft - ourview.vfore)*sqrt(yzn2);
 		}
 		for (x = 0; x < hresolu; x++)
 			if (zscan(y)[x] > tstdist) {
 				if (ourview.type == VT_PER) {
 					vx = (x+.5)/hresolu + ourview.hoff - .5;
-					if (zscan(y)[x] <= ourview.vaft *
+					if (zscan(y)[x] <= (ourview.vaft -
+							ourview.vfore) *
 						sqrt(vx*vx*ourview.hn2 + yzn2))
 						continue;
 				}
