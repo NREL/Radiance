@@ -53,6 +53,7 @@ If the viewpoint is not the same as the picture, an error will result.
 If no view is specified, the view parameters are taken from the picture,
 so the view specification is optional unless you are starting from an
 octree.
+
 _EOF_
 	readvar picture
 	readvar octree
@@ -130,7 +131,7 @@ endif
 if ($?DISPLAY && $picture != $nofile) then
 	echo ""
 	echo "Displaying glare sources in '$picture'..."
-	xglaresrc $picture $glarefile
+	xglaresrc $picture $glarefile >& /dev/null
 	if ($status) then
 		x11image =+0+0 -g 2.6 $picture &
 		sleep 40
@@ -172,7 +173,11 @@ while ( 1 )
 			else if ($octree != $nofile) then
 				set subtitle="$subtitle $octree"
 			endif
+			if ( "$subtitle" == "" ) then
+				set subtitle="`getinfo < $glarefile | grep findglare`"
+			endif
 			cat <<_EOF_ > $plotfile
+include=line.plt
 include=polar.plt
 title="$ndxnam[$choice]"
 subtitle="$subtitle"
