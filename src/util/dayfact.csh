@@ -89,13 +89,13 @@ set maxval=`getinfo < $iltemp | rcalc -i 'EXPOSURE=${e}' -e '$1=3/e'`
 psign -h 50 " $title " | pfilt -1 -x /2 -y /2 > $tltemp
 '_EOF_'
 if ( "$ilpict" != "$nofile" ) then
-	echo 'falsecolor -cb -l Lux $fcopts \\
-		-s "$maxval*470" -m 470 -ip $iltemp \\
+	echo 'falsecolor -cb -l Lux -s "$maxval*470" \\
+		$fcopts -m 470 -ip $iltemp \\
 		| pcompos -a 1 - $tltemp > $ilpict' >> $sctemp
 endif
 if ( "$dfpict" != "$nofile" ) then
-	echo 'falsecolor -cb -l DF $fcopts \\
-		-s "100/PI*$maxval/$extamb" -m "100/PI/$extamb" -ip $iltemp \\
+	echo 'falsecolor -cb -l DF -s 100 \\
+		$fcopts -m "100/PI/$extamb" -ip $iltemp \\
 		| pcompos -a 1 - $tltemp > $dfpict' >> $sctemp
 endif
 echo 'rm -f $tempfiles' >> $sctemp
