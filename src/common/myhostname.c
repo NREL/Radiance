@@ -7,7 +7,11 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
-#include <unistd.h>
+#ifdef _WIN32
+  #include <winsock.h>
+#else
+  #include <unistd.h>
+#endif
 
 #include "rtmisc.h"
 
