@@ -24,6 +24,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define NSEG		30		/* number of segments per circle */
 
+#define  FONTNAME	"8x13"		/* text font we'll use */
+
+float	col[3] = {1.,0.,0.};		/* color */
+
 VIEW	ourview = STDVIEW;		/* view for picture */
 int	xres, yres;			/* picture resolution */
 
@@ -34,37 +38,45 @@ Display	*theDisplay = NULL;		/* connection to server */
 #define rwind		RootWindow(theDisplay,ourScreen)
 #define ourScreen	DefaultScreen(theDisplay)
 
-GC	vecGC;
+GC	vecGC, strGC;
 Window	gwind;
-Cursor	pickcursor;
 
 
 main(argc, argv)
 int	argc;
 char	*argv[];
 {
-	char	*windowname;
+	extern double	atof();
+	char	*windowname = NULL;
 	FILE	*fp;
 
-	progname = argv[0];
-	if (argc > 2 && !strcmp(argv[1], "-n")) {
-		windowname = argv[2];
-		argv += 2;
-		argc -= 2;
-	} else
-		windowname = argv[1];
-	if (argc < 2 || argc > 3) {
+	progname = *argv++; argc--;
+	while (argc > 0 && argv[0][0] == '-') {
+		switch (argv[0][1]) {
+		case 'n':
+			windowname = *++argv;
+			argc--;
+			break;
+		case 'c':
+			col[0] = atof(*++argv);
+			col[1] = atof(*++argv);
+			col[2] = atof(*++argv);
+			argc -= 3;
+			break;
+		}
+		argv++; argc--;
+	}
+	if (argc < 1 || argc > 2) {
 		fprintf(stderr,
-			"Usage: %s [-n windowname] picture [glaresrc]\n",
+		"Usage: %s [-n windowname][-c color] picture [glaresrc]\n",
 				progname);
 		exit(1);
 	}
-	init(argv[1], windowname);
-	if (argc < 3)
+	init(argv[0], windowname);
+	if (argc < 2)
 		fp = stdin;
-	else if ((fp = fopen(argv[2], "r")) == NULL) {
-		fprintf(stderr, "%s: cannot open \"%s\"\n",
-				progname, argv[2]);
+	else if ((fp = fopen(argv[1], "r")) == NULL) {
+		fprintf(stderr, "%s: cannot open \"%s\"\n", progname, argv[1]);
 		exit(1);
 	}
 	circle_sources(fp);
@@ -94,6 +106,8 @@ char	*pname, *wname;
 		exit(1);
 	}
 					/* find our window */
+	if (wname == NULL)
+		wname = pname;
 	gwind = xfindwind(theDisplay, rwind, wname, 2);
 	if (gwind == None) {
 		if (wname != pname) {
@@ -117,7 +131,7 @@ char	*pname, *wname;
 		XMapRaised(theDisplay, gwind);
 	do {
 		XGetWindowAttributes(theDisplay, gwind, &wa);
-		sleep(4);
+		sleep(6);
 	} while (wa.map_state != IsViewable);
 	if (wa.width != xres || wa.height != yres) {
 		fprintf(stderr,
@@ -127,14 +141,32 @@ char	*pname, *wname;
 		yres = wa.height;
 	}
 					/* set graphics context */
-	xc.red = 65535; xc.green = 0; xc.blue = 0;
+	gcv.font = XLoadFont(theDisplay, FONTNAME);
+	if (gcv.font == 0) {
+		fprintf(stderr, "%s: cannot load font \"%s\"\n",
+				progname, FONTNAME);
+		exit(1);
+	}
+	xc.red = col[0] >= 1.0 ? 65535 : (unsigned)(65536*col[0]);
+	xc.green = col[1] >= 1.0 ? 65535 : (unsigned)(65536*col[1]);
+	xc.blue = col[2] >= 1.0 ? 65535 : (unsigned)(65536*col[2]);
 	xc.flags = DoRed|DoGreen|DoBlue;
+	gcv.background = xc.green >= 32768 ?
+			BlackPixel(theDisplay,DefaultScreen(theDisplay)) :
+			WhitePixel(theDisplay,DefaultScreen(theDisplay)) ;
 	if (XAllocColor(theDisplay, wa.colormap, &xc)) {
 		gcv.foreground = xc.pixel;
-		vecGC = XCreateGC(theDisplay,gwind,GCForeground,&gcv);
+		vecGC = XCreateGC(theDisplay,gwind,
+				GCForeground|GCBackground|GCFont,&gcv);
+		strGC = vecGC;
 	} else {
 		gcv.function = GXinvert;
 		vecGC = XCreateGC(theDisplay,gwind,GCFunction,&gcv);
+		gcv.foreground = xc.green < 32768 ?
+			BlackPixel(theDisplay,DefaultScreen(theDisplay)) :
+			WhitePixel(theDisplay,DefaultScreen(theDisplay)) ;
+		strGC = XCreateGC(theDisplay,gwind,
+				GCForeground|GCBackground|GCFont,&gcv);
 	}
 }
 
@@ -145,7 +177,7 @@ FILE	*fp;
 	char	linbuf[256];
 	int	reading = 0;
 	FVECT	dir;
-	double	dom;
+	double	dom, lum;
 
 	while (fgets(linbuf, sizeof(linbuf), fp) != NULL)
 		if (reading) {
@@ -153,11 +185,12 @@ FILE	*fp;
 				XFlush(theDisplay);
 				return;
 			}
-			if (sscanf(linbuf, "%lf %lf %lf %lf",
+			if (sscanf(linbuf, "%lf %lf %lf %lf %lf",
 					&dir[0], &dir[1], &dir[2],
-					&dom) != 4)
+					&dom, &lum) != 5)
 				break;
 			circle(dir, dom);
+			value(dir, lum);
 		} else if (!strcmp(linbuf, "BEGIN glare source\n"))
 			reading++;
 
@@ -195,4 +228,25 @@ double	dom;
 fail:
 	fprintf(stderr, "%s: cannot draw source at (%f,%f,%f)\n",
 			progname, dir[0], dir[1], dir[2]);
+}
+
+
+value(dir, v)			/* print value on image */
+FVECT	dir;
+double	v;
+{
+	FVECT	pos;
+	double	px, py, pz;
+	char	buf[32];
+
+	pos[0] = ourview.vp[0] + dir[0];
+	pos[1] = ourview.vp[1] + dir[1];
+	pos[2] = ourview.vp[2] + dir[2];
+	viewpixel(&px, &py, &pz, &ourview, pos);
+	if (pz <= 0.0)
+		return;
+	sprintf(buf, "%.0f", v);
+	XDrawImageString(theDisplay, gwind, strGC,
+			(int)(px*xres), yres-1-(int)(py*yres),
+			buf, strlen(buf)); 
 }
