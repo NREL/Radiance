@@ -8,6 +8,7 @@
 				/* required non-system header files */
 #include	"color.h"
 
+
 /****    Argument Macros    ****/
 				/* Flags of what to do */
 #define	TM_F_HCONTR	01		/* human contrast sensitivity */
@@ -39,14 +40,22 @@
 #define	TM_E_TMINVAL	3		/* no valid tone mapping */
 #define	TM_E_TMFAIL	4		/* cannot compute tone mapping */
 #define	TM_E_BADFILE	5		/* cannot open or understand file */
+#define TM_E_CODERR1	6		/* code consistency error 1 */
+#define TM_E_CODERR2	7		/* code consistency error 2 */
+
 
 /****    Conversion Constants and Table Sizes    ****/
 
 #define	TM_BRTSCALE	128		/* brightness scale factor (integer) */
 
-#define TM_GAMTSZ	1024		/* gamma lookup table size */
+#define	TM_MAXPKG	8		/* maximum number of color formats */
 
-/****    Global Data Structures    ****/
+
+/****    Global Data Types and Structures    ****/
+
+#ifndef	MEM_PTR
+#define	MEM_PTR		void *
+#endif
 
 extern char	*tmErrorMessage[];	/* error messages */
 
@@ -57,26 +66,56 @@ extern struct tmStruct {
 	int		flags;		/* flags of what to do */
 	RGBPRIMP	monpri;		/* monitor RGB primaries */
 	double		mongam;		/* monitor gamma value (approx.) */
-	BYTE		gamb[TM_GAMTSZ];/* gamma lookup table from mongam */
 	COLOR		clf;		/* computed luminance coefficients */
-	COLR		clfb;		/* normalized version of clf */
+	int		cdiv[3];	/* computed color divisors */
 	RGBPRIMP	inppri;		/* current input primaries */
 	double		inpsf;		/* current input scalefactor */
-	TMbright	inpsfb;		/* encoded version of inpsf */
 	COLORMAT	cmat;		/* color conversion matrix */
 	TMbright	brmin, brmax;	/* input brightness limits */	
 	int		*histo;		/* input histogram */
 	unsigned short	*lumap;		/* computed luminance map */
 	struct tmStruct	*tmprev;	/* previous tone mapping */
+	MEM_PTR		pd[TM_MAXPKG];	/* pointers to private data */
 }	*tmTop;			/* current tone mapping stack */
-
+
+				/* conversion package functions */
+#ifdef	NOPROTO
+struct tmPackage {
+	MEM_PTR		(*Init)();	/* initialize private data */
+	void		(*NewSpace)();	/* new input color space (optional) */
+	void		(*Free)();	/* free private data */
+};
+#else
+struct tmPackage {
+	MEM_PTR		(*Init)(struct tmStruct *tms);
+	int		(*NewSpace)(struct tmStruct *tms);
+	void		(*Free)(MEM_PTR pp);
+};
+#endif
+				/* our list of conversion packages */
+extern struct tmPackage	*tmPkg[TM_MAXPKG];
+extern int	tmNumPkgs;	/* number of registered packages */
+
+
 /****    Useful Macros    ****/
 
+				/* compute luminance from encoded value */
 #define	tmLuminance(li)	exp((li)/(double)TM_BRTSCALE)
+
+				/* does tone mapping need color matrix? */
+#define tmNeedMatrix(t)	((t)->monpri != (t)->inppri)
+
+				/* register a conversion package */
+#define tmRegPkg(pf)	( tmNumPkgs >= TM_MAXPKG ? -1 : \
+				(tmPkg[tmNumPkgs] = (pf), tmNumPkgs++) )
+
+				/* get the specific package's data */
+#define tmPkgData(t,i)	((t)->pd[i]!=NULL ? (t)->pd[i] : (*tmPkg[i]->Init)(t))
+
 
 /****    Library Function Calls    ****/
 
-#ifdef NOPROTO
+#ifdef	NOPROTO
 
 extern struct tmStruct	*tmInit(), *tmPop(), *tmDup();
 extern void	tmClearHisto(), tmDone();
@@ -267,7 +306,8 @@ tmDone(struct tmStruct *tms);
 */
 
 #endif
-
+
+
 /****    Notes    ****/
 /*
 	General:

@@ -18,6 +18,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 struct tmStruct	*tmTop = NULL;		/* current tone mapping stack */
 
+					/* our list of conversion packages */
+struct tmPackage	*tmPkg[TM_MAXPKG];
+int	tmNumPkgs = 0;			/* number of registered packages */
+
 
 int
 tmErrorReturn(func, err)		/* error return (with message) */
@@ -62,32 +66,28 @@ double	gamval;
 		tmnew->clf[GRN] = cmat[1][1];
 		tmnew->clf[BLU] = cmat[1][2];
 	}
-	tmnew->clfb[RED] = 256.*tmnew->clf[RED] + .5;
-	tmnew->clfb[GRN] = 256.*tmnew->clf[GRN] + .5;
-	tmnew->clfb[BLU] = 256.*tmnew->clf[BLU] + .5;
-	tmnew->clfb[EXP] = COLXS;
 						/* set gamma value */
 	if (gamval < MINGAM)
 		tmnew->mongam = DEFGAM;
 	else
 		tmnew->mongam = gamval;
-	for (i = TM_GAMTSZ; i--; )
-		tmnew->gamb[i] = 256.*pow((i+.5)/TM_GAMTSZ, 1./tmnew->mongam);
+						/* set color divisors */
+	for (i = 0; i < 3; i++)
+		tmnew->cdiv[i] = 256.*pow(tmnew->clf[i], 1./tmnew->mongam);
+
 						/* set input transform */
 	tmnew->inppri = tmnew->monpri;
 	tmnew->cmat[0][0] = tmnew->cmat[1][1] = tmnew->cmat[2][2] =
 			tmnew->inpsf = WHTEFFICACY;
-	tmnew->inpsfb = TM_BRTSCALE*log(tmnew->inpsf) + .5;
 	tmnew->cmat[0][1] = tmnew->cmat[0][2] = tmnew->cmat[1][0] =
 	tmnew->cmat[1][2] = tmnew->cmat[2][0] = tmnew->cmat[2][1] = 0.;
-	tmnew->flags &= ~TM_F_NEEDMAT;
 	tmnew->brmin = tmnew->brmax = 0;
 	tmnew->histo = NULL;
 	tmnew->lumap = NULL;
-	tmnew->tmprev = NULL;
-
-	tmnew->flags |= TM_F_INITED;
-						/* make it current */
+						/* zero private data */
+	for (i = TM_MAXPKG; i--; )
+		tmnew->pd[i] = NULL;
+						/* make tmnew current */
 	tmnew->tmprev = tmTop;
 	return(tmTop = tmnew);
 }
@@ -110,15 +110,12 @@ double	sf;
 		returnOK;
 	tmTop->inppri = pri;			/* let's set it */
 	tmTop->inpsf = sf;
-	tmTop->inpsfb = TM_BRTSCALE*log(sf) + (sf>=1. ? .5 : -.5);
 
 	if (tmTop->flags & TM_F_BW) {		/* color doesn't matter */
 		tmTop->monpri = tmTop->inppri;		/* eliminate xform */
 		if (tmTop->inppri == TM_XYZPRIM) {
 			tmTop->clf[CIEX] = tmTop->clf[CIEZ] = 0.;
 			tmTop->clf[CIEY] = 1.;
-			tmTop->clfb[CIEX] = tmTop->clfb[CIEZ] = 0;
-			tmTop->clfb[CIEY] = 255;
 		} else {
 			comprgb2xyzmat(tmTop->cmat, tmTop->monpri);
 			tmTop->clf[RED] = tmTop->cmat[1][0];
@@ -142,10 +139,17 @@ double	sf;
 	for (i = 0; i < 3; i++)
 		for (j = 0; j < 3; j++)
 			tmTop->cmat[i][j] *= tmTop->inpsf;
-	if (tmTop->inppri != tmTop->monpri)
-		tmTop->flags |= TM_F_NEEDMAT;
-	else
-		tmTop->flags &= ~TM_F_NEEDMAT;
+						/* set color divisors */
+	for (i = 0; i < 3; i++)
+		if (tmTop->clf[i] > .001)
+			tmTop->cdiv[i] =
+				256.*pow(tmTop->clf[i], 1./tmTop->mongam);
+		else
+			tmTop->cdiv[i] = 1;
+						/* notify packages */
+	for (i = tmNumPkgs; i--; )
+		if (tmTop->pd[i] != NULL && tmPkg[i]->NewSpace != NULL)
+			(*tmPkg[i]->NewSpace)(tmTop);
 	returnOK;
 }
 
@@ -155,7 +159,7 @@ tmClearHisto()			/* clear current histogram */
 {
 	if (tmTop == NULL || tmTop->histo == NULL)
 		return;
-	free((char *)tmTop->histo);
+	free((MEM_PTR)tmTop->histo);
 	tmTop->histo = NULL;
 }
 
@@ -168,6 +172,7 @@ COLOR	*scan;
 int	len;
 {
 	static char	funcName[] = "tmCvColors";
+	static COLOR	csmall = {1e-6, 1e-6, 1e-6};
 	COLOR	cmon;
 	double	lum, slum;
 	register double	d;
@@ -178,7 +183,7 @@ int	len;
 	if (ls == NULL | scan == NULL | len <= 0)
 		returnErr(TM_E_ILLEGAL);
 	for (i = len; i--; ) {
-		if (tmTop->flags & TM_F_NEEDMAT)	/* get monitor RGB */
+		if (tmNeedMatrix(tmTop))		/* get monitor RGB */
 			colortrans(cmon, tmTop->cmat, scan[i]);
 		else {
 			cmon[RED] = tmTop->inpsf*scan[i][RED];
@@ -190,7 +195,7 @@ int	len;
 			tmTop->clf[GRN]*cmon[GRN] +
 			tmTop->clf[BLU]*cmon[BLU] ;
 							/* check range */
-		if (clipgamut(cmon, lum, CGAMUT_LOWER, cblack, cwhite))
+		if (clipgamut(cmon, lum, CGAMUT_LOWER, csmall, cwhite))
 			lum =	tmTop->clf[RED]*cmon[RED] +
 				tmTop->clf[GRN]*cmon[GRN] +
 				tmTop->clf[BLU]*cmon[BLU] ;
@@ -223,14 +228,14 @@ int	len;
 			cmon[RED] = cmon[GRN] = cmon[BLU] = lum;
 		}
 		d = tmTop->clf[RED]*cmon[RED]/lum;
-		/* cs[3*i  ] = d>.999 ? 255 : 256.*pow(d, 1./tmTop->mongam); */
-		cs[3*i  ] = d>.999 ? 255 : tmTop->gamb[(int)(d*TM_GAMTSZ)];
+		cs[3*i  ] = d>=.999 ? 255 :
+				(int)(256.*pow(d, 1./tmTop->mongam));
 		d = tmTop->clf[GRN]*cmon[GRN]/lum;
-		/* cs[3*i+1] = d>.999 ? 255 : 256.*pow(d, 1./tmTop->mongam); */
-		cs[3*i+1] = d>.999 ? 255 : tmTop->gamb[(int)(d*TM_GAMTSZ)];
+		cs[3*i+1] = d>=.999 ? 255 :
+				(int)(256.*pow(d, 1./tmTop->mongam));
 		d = tmTop->clf[BLU]*cmon[BLU]/lum;
-		/* cs[3*i+2] = d>.999 ? 255 : 256.*pow(d, 1./tmTop->mongam); */
-		cs[3*i+2] = d>.999 ? 255 : tmTop->gamb[(int)(d*TM_GAMTSZ)];
+		cs[3*i+2] = d>=.999 ? 255 :
+				(int)(256.*pow(d, 1./tmTop->mongam));
 	}
 	returnOK;
 }
@@ -279,11 +284,11 @@ int	wt;
 		if (oldlen) {			/* copy and free old */
 			for (i = oldlen, j = i+oldorig-horig; i; )
 				newhist[--j] = tmTop->histo[--i];
-			free((char *)tmTop->histo);
+			free((MEM_PTR)tmTop->histo);
 		}
 		tmTop->histo = newhist;
 		if (tmTop->lumap != NULL) {	/* invalid tone map */
-			free((char *)tmTop->lumap);
+			free((MEM_PTR)tmTop->lumap);
 			tmTop->lumap = NULL;
 		}
 	}
@@ -420,8 +425,8 @@ double	Ldmax;
 		}
 	}
 	if (!(tmTop->flags & TM_F_LINEAR)) {
-		free((char *)histo);
-		free((char *)cumf);
+		free((MEM_PTR)histo);
+		free((MEM_PTR)cumf);
 	}
 	returnOK;
 }
@@ -435,16 +440,12 @@ register BYTE	*cs;
 int	len;
 {
 	static char	funcName[] = "tmMapPixels";
-	int	rdiv, gdiv, bdiv;
-	register int	li, pv;
+	register int4	li, pv;
 
 	if (tmTop == NULL || tmTop->lumap == NULL)
 		returnErr(TM_E_TMINVAL);
 	if (ps == NULL | ls == NULL | len <= 0)
 		returnErr(TM_E_ILLEGAL);
-	rdiv = tmTop->gamb[((int4)TM_GAMTSZ*tmTop->clfb[RED])>>8];
-	gdiv = tmTop->gamb[((int4)TM_GAMTSZ*tmTop->clfb[GRN])>>8];
-	bdiv = tmTop->gamb[((int4)TM_GAMTSZ*tmTop->clfb[BLU])>>8];
 	while (len--) {
 		if ((li = *ls++) < tmTop->brmin)
 			li = tmTop->brmin;
@@ -454,11 +455,11 @@ int	len;
 		if (cs == TM_NOCHROM)
 			*ps++ = li>255 ? 255 : li;
 		else {
-			pv = *cs++ * li / rdiv;
+			pv = *cs++ * li / tmTop->cdiv[RED];
 			*ps++ = pv>255 ? 255 : pv;
-			pv = *cs++ * li / gdiv;
+			pv = *cs++ * li / tmTop->cdiv[GRN];
 			*ps++ = pv>255 ? 255 : pv;
-			pv = *cs++ * li / bdiv;
+			pv = *cs++ * li / tmTop->cdiv[BLU];
 			*ps++ = pv>255 ? 255 : pv;
 		}
 	}
@@ -529,6 +530,9 @@ tmDup()				/* duplicate top tone mapping */
 			for (i = len; i--; )
 				tmnew->lumap[i] = tmTop->lumap[i];
 	}
+					/* clear package data */
+	for (i = tmNumPkgs; i--; )
+		tmnew->pd[i] = NULL;
 	tmnew->tmprev = tmTop;		/* make copy current */
 	return(tmTop = tmnew);
 }
@@ -540,7 +544,7 @@ register struct tmStruct	*tms;
 {
 	static char	funcName[] = "tmPush";
 					/* check validity */
-	if (tms == NULL || !(tms->flags & TM_F_INITED))
+	if (tms == NULL)
 		returnErr(TM_E_ILLEGAL);
 	if (tms == tmTop)		/* check necessity */
 		returnOK;
@@ -557,6 +561,7 @@ void
 tmDone(tms)			/* done with tone mapping -- destroy it */
 register struct tmStruct	*tms;
 {
+	register int	i;
 					/* NULL arg. is equiv. to tmTop */
 	if (tms == NULL && (tms = tmTop) == NULL)
 		return;
@@ -564,9 +569,12 @@ register struct tmStruct	*tms;
 	(void)tmPull(tms);
 					/* free tables */
 	if (tms->histo != NULL)
-		free((char *)tms->histo);
+		free((MEM_PTR)tms->histo);
 	if (tms->lumap != NULL)
-		free((char *)tms->lumap);
-	tms->flags = 0;
-	free((char *)tms);		/* free basic structure */
+		free((MEM_PTR)tms->lumap);
+					/* free private data */
+	for (i = tmNumPkgs; i--; )
+		if (tms->pd[i] != NULL)
+			(*tmPkg[i]->Free)(tms->pd[i]);
+	free((MEM_PTR)tms);		/* free basic structure */
 }
