@@ -5,7 +5,7 @@
 #
 
 OPT = -O
-MACH = -f68881 /usr/lib/f68881.il -DIEEE
+MACH = -DBSD -DSTRUCTASSIGN -f68881 /usr/lib/f68881.il -DIEEE
 CFLAGS = $(MACH) $(OPT)
 
 INSTDIR = /usr/local/ray
@@ -68,4 +68,6 @@ caldefn.o:	caldefn.c calcomp.h
 calfunc.o:	calfunc.c calcomp.h
 	cc $(CFLAGS) -c -DVARIABLE -DBIGLIB calfunc.c
 
-fvect.o gensurf.o genworm.o:	fvect.h
+gensurf.o:	standard.h fvect.h
+
+fvect.o genworm.o:	fvect.h
