@@ -21,7 +21,8 @@ typedef struct {
 	int	(*fixval)();	/* assignment checking function */
 } VARIABLE;
 
-int	onevalue(), catvalues();
+int	onevalue(), catvalues(), boolvalue(),
+	qualvalue(), fltvalue(), intvalue();
 
 				/* variables */
 #define OBJECT		0		/* object files */
@@ -61,24 +62,23 @@ VARIABLE	vv[NVARS] = {		/* variable-value pairs */
 	{"pfilt",	2,	0,	NULL,	catvalues},
 	{"view",	2,	0,	NULL,	NULL},
 	{"ZONE",	2,	0,	NULL,	onevalue},
-	{"QUALITY",	3,	0,	NULL,	onevalue},
+	{"QUALITY",	3,	0,	NULL,	qualvalue},
 	{"OCTREE",	3,	0,	NULL,	onevalue},
 	{"PICTURE",	3,	0,	NULL,	onevalue},
 	{"AMBFILE",	3,	0,	NULL,	onevalue},
 	{"OPTFILE",	3,	0,	NULL,	onevalue},
-	{"EXPOSURE",	3,	0,	NULL,	onevalue},
+	{"EXPOSURE",	3,	0,	NULL,	fltvalue},
 	{"RESOLUTION",	3,	0,	NULL,	onevalue},
 	{"UP",		2,	0,	NULL,	onevalue},
-	{"INDIRECT",	3,	0,	NULL,	onevalue},
-	{"DETAIL",	3,	0,	NULL,	onevalue},
-	{"PENUMBRAS",	3,	0,	NULL,	onevalue},
-	{"VARIABILITY",	3,	0,	NULL,	onevalue},
+	{"INDIRECT",	3,	0,	NULL,	intvalue},
+	{"DETAIL",	3,	0,	NULL,	qualvalue},
+	{"PENUMBRAS",	3,	0,	NULL,	boolvalue},
+	{"VARIABILITY",	3,	0,	NULL,	qualvalue},
 	{"REPORT",	3,	0,	NULL,	onevalue},
 };
 
 VARIABLE	*matchvar();
 char	*nvalue();
-int	vscale();
 
 #define UPPER(c)	((c)&~0x20)	/* ASCII trick */
 
@@ -87,16 +87,12 @@ int	vscale();
 #define vval(vc)	(vv[vc].value)
 #define vint(vc)	atoi(vval(vc))
 #define vlet(vc)	UPPER(vval(vc)[0])
+#define vscale		vlet
 #define vbool(vc)	(vlet(vc)=='T')
 
-#define HIGH		2
-#define MEDIUM		1
-#define LOW		0
-
-int	lowqopts(), medqopts(), hiqopts();
-int	(*setqopts[3])() = {lowqopts, medqopts, hiqopts};
-
-#define renderopts	(*setqopts[vscale(QUALITY)])
+#define HIGH		'H'
+#define MEDIUM		'M'
+#define LOW		'L'
 
 				/* overture calculation file */
 #ifdef NIX
@@ -348,22 +344,6 @@ register int	n;
 }
 
 
-int
-vscale(vc)			/* return scale for variable vc */
-int	vc;
-{
-	switch(vlet(vc)) {
-	case 'H':
-		return(HIGH);
-	case 'M':
-		return(MEDIUM);
-	case 'L':
-		return(LOW);
-	}
-	badvalue(vc);
-}
-
-
 checkvalues()			/* check assignments */
 {
 	register int	i;
@@ -399,6 +379,84 @@ register VARIABLE	*vp;
 			cp++;
 		*cp++ = ' ';
 	}
+}
+
+
+int
+badmatch(tv, cv)		/* case insensitive truncated comparison */
+register char	*tv, *cv;
+{
+	if (!*tv) return(1);		/* null string cannot match */
+	do
+		if (UPPER(*tv) != *cv++)
+			return(1);
+	while (*++tv);
+	return(0);		/* OK */
+}
+
+
+boolvalue(vp)			/* check boolean for legal values */
+register VARIABLE	*vp;
+{
+	if (!vp->nass) return;
+	onevalue(vp);
+	switch (UPPER(vp->value[0])) {
+	case 'T':
+		if (badmatch(vp->value, "TRUE")) break;
+		return;
+	case 'F':
+		if (badmatch(vp->value, "FALSE")) break;
+		return;
+	}
+	fprintf(stderr, "%s: illegal value for boolean variable '%s'\n",
+			progname, vp->name);
+	exit(1);
+}
+
+
+qualvalue(vp)			/* check qualitative var. for legal values */
+register VARIABLE	*vp;
+{
+	if (!vp->nass) return;
+	onevalue(vp);
+	switch (UPPER(vp->value[0])) {
+	case 'L':
+		if (badmatch(vp->value, "LOW")) break;
+		return;
+	case 'M':
+		if (badmatch(vp->value, "MEDIUM")) break;
+		return;
+	case 'H':
+		if (badmatch(vp->value, "HIGH")) break;
+		return;
+	}
+	fprintf(stderr, "%s: illegal value for qualitative variable '%s'\n",
+			progname, vp->name);
+	exit(1);
+}
+
+
+intvalue(vp)			/* check integer variable for legal values */
+register VARIABLE	*vp;
+{
+	if (!vp->nass) return;
+	onevalue(vp);
+	if (isint(vp->value)) return;
+	fprintf(stderr, "%s: illegal value for integer variable '%s'\n",
+			progname, vp->name);
+	exit(1);
+}
+
+
+fltvalue(vp)			/* check float variable for legal values */
+register VARIABLE	*vp;
+{
+	if (!vp->nass) return;
+	onevalue(vp);
+	if (isflt(vp->value)) return;
+	fprintf(stderr, "%s: illegal value for real variable '%s'\n",
+			progname, vp->name);
+	exit(1);
 }
 
 
@@ -723,8 +781,6 @@ double
 ambval()				/* compute ambient value */
 {
 	if (vdef(EXPOSURE)) {
-		if (!isflt(vval(EXPOSURE)))
-			badvalue(EXPOSURE);
 		if (vval(EXPOSURE)[0] == '+' || vval(EXPOSURE)[0] == '-')
 			return(.5/pow(2.,atof(vval(EXPOSURE))));
 		return(.5/atof(vval(EXPOSURE)));
@@ -734,6 +790,23 @@ ambval()				/* compute ambient value */
 	if (vlet(ZONE) == 'I')
 		return(.01);
 	badvalue(ZONE);
+}
+
+
+renderopts(op)				/* set rendering options */
+char	*op;
+{
+	switch(vscale(QUALITY)) {
+	case LOW:
+		lowqopts(op);
+		break;
+	case MEDIUM:
+		medqopts(op);
+		break;
+	case HIGH:
+		lowqopts(op);
+		break;
+	}
 }
 
 
