@@ -12,6 +12,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "object.h"
 
+#include  "otypes.h"
+
 
 extern int  (*addobjnotify[])();	/* people to notify of new objects */
 
