@@ -89,8 +89,9 @@ register OBJREC	*o;
 
 
 static int
-buildoctlist(lp)			/* build octree list */
+buildoctlist(lp, p)			/* build octree list */
 LUENT	*lp;
+void	*p;
 {
 	int	old_dolights = dolights, old_domats = domats;
 	register OCTINST	*op = (OCTINST *)lp->data;
@@ -119,7 +120,7 @@ loadoctrees()				/* load octrees we've saved up */
 			error(USER, "too many octree levels -- instance loop?");
 		looptab = ottab;
 		ottab.tsiz = 0;
-		nocts += lu_doall(&looptab, buildoctlist);
+		nocts += lu_doall(&looptab, buildoctlist, NULL);
 		lu_done(&looptab);
 	}
 	return(nocts);
