@@ -16,8 +16,8 @@ static char SCCSid[] = "$SunId$ SGI";
 #define BKBSIZE		256		/* beam clump size (kilobytes) */
 #endif
 
-int	checkdepth = 1;		/* check depth (!-f option)? */
-int	checkrepeats = 0;	/* check for repeats (-c option)? */
+int	checkdepth = 1;		/* check depth (!-d option)? */
+int	checkrepeats = 0;	/* check for repeats (-u option)? */
 int	frompicz;		/* input from pictures & depth-buffers? */
 int	noutsects;		/* number of output sections */
 char	obstr, unobstr;		/* flag pointer values */
@@ -236,7 +236,6 @@ int	*bq, nb;
 		}
 		hdfreebeam(hp, bq[i]);		/* free the beam */
 	}
-	hdfreebeam(NULL, 0);			/* write & free clump */
 	return(0);
 }
 
