@@ -393,6 +393,7 @@ char  *zfile, *oldfile;
 	pctdone = 100.0;
 	if (ralrm > 0)
 		report();
+	signal(SIGCONT, SIG_DFL);
 	return;
 writerr:
 	error(SYSTEM, "write error in render");
