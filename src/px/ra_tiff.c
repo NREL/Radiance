@@ -33,6 +33,7 @@ extern char  *malloc();
 struct {
 	uint16	flags;		/* conversion flags (defined above) */
 	uint16	comp;		/* TIFF compression type */
+	uint16	phot;		/* TIFF photometric type */
 	uint16	pconf;		/* TIFF planar configuration */
 	float	gamcor;		/* gamma correction value */
 	short	bradj;		/* Radiance exposure adjustment (stops) */
@@ -56,7 +57,8 @@ struct {
 	} t;			/* TIFF scanline */
 	int	(*tf)();	/* translation procedure */
 }	cvts = {	/* conversion structure */
-	0, COMPRESSION_NONE, PLANARCONFIG_CONTIG, GAMCOR, 0,
+	0, COMPRESSION_NONE, PHOTOMETRIC_RGB,
+	PLANARCONFIG_CONTIG, GAMCOR, 0, 1, 1., 1.,
 };
 
 #define CHK(f)		(cvts.flags & (f))
@@ -105,10 +107,12 @@ char  *argv[];
 				cvts.comp = COMPRESSION_LZW;
 				break;
 			case 'L':		/* LogLuv 32-bit output */
-				cvts.comp = COMPRESSION_LOGLUV32;
+				cvts.comp = COMPRESSION_SGILOG;
+				cvts.phot = PHOTOMETRIC_LOGLUV;
 				break;
 			case 'l':		/* LogLuv 24-bit output */
-				cvts.comp = COMPRESSION_LOGLUV24;
+				cvts.comp = COMPRESSION_SGILOG24;
+				cvts.phot = PHOTOMETRIC_LOGLUV;
 				break;
 			case 'b':		/* greyscale output? */
 				TGL(C_GRY);
@@ -141,9 +145,13 @@ doneopts:
 		if (i != argc-2)
 			goto userr;
 
-		if (CHK(C_GRY) && (cvts.comp == COMPRESSION_LOGLUV24 ||
-					cvts.comp == COMPRESSION_LOGLUV32))
-			cvts.comp = COMPRESSION_LOGL16;
+		if (CHK(C_GRY))		/* consistency corrections */
+			if (cvts.phot == PHOTOMETRIC_RGB)
+				cvts.phot = PHOTOMETRIC_MINISBLACK;
+			else {
+				cvts.phot = PHOTOMETRIC_LOGL;
+				cvts.comp = COMPRESSION_SGILOG;
+			}
 
 		ra2tiff(i, argv);
 	}
@@ -216,39 +224,34 @@ initfromtif()		/* initialize conversion from TIFF input */
 	if (TIFFGetField(cvts.tif, TIFFTAG_XRESOLUTION, &f1) &&
 			TIFFGetField(cvts.tif, TIFFTAG_YRESOLUTION, &f2))
 		cvts.pixrat = f1/f2;
-	else
-		cvts.pixrat = 1.;
 
-	if (!TIFFGetFieldDefaulted(cvts.tif, TIFFTAG_ORIENTATION, &cvts.orient))
-		cvts.orient = 1;
+	TIFFGetFieldDefaulted(cvts.tif, TIFFTAG_ORIENTATION, &cvts.orient);
 
-	switch (cvts.comp) {
-	case COMPRESSION_LOGL16:
-		SET(C_GRY|C_RFLT|C_TFLT|C_GAMUT);
-		cvts.pconf = PLANARCONFIG_CONTIG;
-		TIFFSetField(cvts.tif, TIFFTAG_LOGLUVDATAFMT,
-				LOGLUVDATAFMT_FLTY);
-		TIFFSetField(cvts.tif, TIFFTAG_SAMPLEFORMAT,
-				SAMPLEFORMAT_IEEEFP);
-		cvts.tf = L2Color;
-		break;
-	case COMPRESSION_LOGLUV24:
-	case COMPRESSION_LOGLUV32:
+	if (!TIFFGetFieldDefaulted(cvts.tif, TIFFTAG_PHOTOMETRIC, &cvts.phot))
+		quiterr("TIFF has unspecified photometric type");
+
+	switch (cvts.phot) {
+	case PHOTOMETRIC_LOGLUV:
 		SET(C_RFLT|C_TFLT);
 		if (!CHK(C_XYZE)) {
 			cpcolormat(cvts.cmat, xyz2rgbmat);
 			SET(C_CXFM|C_GAMUT);
-		} else if (cvts.comp == COMPRESSION_LOGLUV32)
+		} else if (cvts.comp == COMPRESSION_SGILOG)
 			SET(C_GAMUT);
 		if (cvts.pconf != PLANARCONFIG_CONTIG)
 			quiterr("cannot handle separate Luv planes");
-		TIFFSetField(cvts.tif, TIFFTAG_LOGLUVDATAFMT,
-				LOGLUVDATAFMT_FLTXYZ);
-		TIFFSetField(cvts.tif, TIFFTAG_SAMPLEFORMAT,
-				SAMPLEFORMAT_IEEEFP);
+		TIFFSetField(cvts.tif, TIFFTAG_SGILOGDATAFMT,
+				SGILOGDATAFMT_FLTXYZ);
 		cvts.tf = Luv2Color;
 		break;
-	default:
+	case PHOTOMETRIC_LOGL:
+		SET(C_GRY|C_RFLT|C_TFLT|C_GAMUT);
+		cvts.pconf = PLANARCONFIG_CONTIG;
+		TIFFSetField(cvts.tif, TIFFTAG_SGILOGDATAFMT,
+				SGILOGDATAFMT_FLTY);
+		cvts.tf = L2Color;
+		break;
+	case PHOTOMETRIC_RGB:
 		SET(C_GAMMA|C_GAMUT);
 		setcolrgam(cvts.gamcor);
 		if (CHK(C_XYZE)) {
@@ -257,23 +260,28 @@ initfromtif()		/* initialize conversion from TIFF input */
 			SET(C_CXFM);
 		}
 		if (!TIFFGetField(cvts.tif, TIFFTAG_SAMPLESPERPIXEL, &hi) ||
-				(hi != 1 && hi != 3))
-			quiterr("unsupported samples per pixel");
-		if (hi == 1) {
-			SET(C_GRY);
-			cvts.pconf = PLANARCONFIG_CONTIG;
-			cvts.tf = Gry2Colr;
-		} else
-			cvts.tf = RGB2Colr;
+				hi != 3)
+			quiterr("unsupported samples per pixel for RGB");
 		if (!TIFFGetField(cvts.tif, TIFFTAG_BITSPERSAMPLE, &hi) ||
 				hi != 8)
-			quiterr("unsupported bits per sample");
+			quiterr("unsupported bits per sample for RGB");
+		cvts.tf = RGB2Colr;
+		break;
+	case PHOTOMETRIC_MINISBLACK:
+		SET(C_GRY|C_GAMMA|C_GAMUT);
+		cvts.pconf = PLANARCONFIG_CONTIG;
+		if (!TIFFGetField(cvts.tif, TIFFTAG_SAMPLESPERPIXEL, &hi) ||
+				hi != 1)
+			quiterr("unsupported samples per pixel for greyscale");
+		if (!TIFFGetField(cvts.tif, TIFFTAG_BITSPERSAMPLE, &hi) ||
+				hi != 8)
+			quiterr("unsupported bits per sample for greyscale");
+		cvts.tf = Gry2Colr;
+		break;
+	default:
+		quiterr("unsupported photometric type");
 		break;
 	}
-
-	if (TIFFGetField(cvts.tif, TIFFTAG_PHOTOMETRIC, &hi) &&
-		hi != (CHK(C_GRY) ? PHOTOMETRIC_MINISBLACK : PHOTOMETRIC_RGB))
-		quiterr("unsupported photometric interpretation");
 
 	if (!TIFFGetField(cvts.tif, TIFFTAG_IMAGEWIDTH, &cvts.xmax) ||
 		!TIFFGetField(cvts.tif, TIFFTAG_IMAGELENGTH, &cvts.ymax))
@@ -385,48 +393,55 @@ initfromrad()			/* initialize input from a Radiance picture */
 		cvts.stonits *= WHTEFFICACY;
 						/* set up conversion */
 	TIFFSetField(cvts.tif, TIFFTAG_COMPRESSION, cvts.comp);
+	TIFFSetField(cvts.tif, TIFFTAG_PHOTOMETRIC, cvts.phot);
 
-	switch (cvts.comp) {
-	case COMPRESSION_LOGL16:
-		SET(C_GRY|C_RFLT|C_TFLT);
-		TIFFSetField(cvts.tif, TIFFTAG_LOGLUVDATAFMT,
-				LOGLUVDATAFMT_FLTY);
-		TIFFSetField(cvts.tif, TIFFTAG_SAMPLEFORMAT,
-				SAMPLEFORMAT_IEEEFP);
-		cvts.tf = Color2L;
-		break;
-	case COMPRESSION_LOGLUV24:
-	case COMPRESSION_LOGLUV32:
+	switch (cvts.phot) {
+	case PHOTOMETRIC_LOGLUV:
 		SET(C_RFLT|C_TFLT);
 		CLR(C_GRY);
 		if (!CHK(C_XYZE)) {
 			cpcolormat(cvts.cmat, rgb2xyzmat);
 			SET(C_CXFM);
 		}
-		TIFFSetField(cvts.tif, TIFFTAG_LOGLUVDATAFMT,
-				LOGLUVDATAFMT_FLTXYZ);
-		TIFFSetField(cvts.tif, TIFFTAG_SAMPLEFORMAT,
-				SAMPLEFORMAT_IEEEFP);
+		if (cvts.comp != COMPRESSION_SGILOG &&
+				cvts.comp != COMPRESSION_SGILOG24)
+			quiterr("internal error 2 in initfromrad");
+		TIFFSetField(cvts.tif, TIFFTAG_SGILOGDATAFMT,
+				SGILOGDATAFMT_FLTXYZ);
 		cvts.tf = Color2Luv;
 		break;
-	default:
+	case PHOTOMETRIC_LOGL:
+		SET(C_GRY|C_RFLT|C_TFLT);
+		if (cvts.comp != COMPRESSION_SGILOG)	
+			quiterr("internal error 3 in initfromrad");
+		TIFFSetField(cvts.tif, TIFFTAG_SGILOGDATAFMT,
+				SGILOGDATAFMT_FLTY);
+		cvts.tf = Color2L;
+		break;
+	case PHOTOMETRIC_RGB:
 		SET(C_GAMMA|C_GAMUT);
+		CLR(C_GRY);
 		setcolrgam(cvts.gamcor);
 		if (CHK(C_XYZE)) {
 			compxyz2rgbmat(cvts.cmat,
 					CHK(C_PRIM) ? cvts.prims : stdprims);
 			SET(C_CXFM);
 		}
-		if (CHK(C_GRY))
-			cvts.tf = Colr2Gry;
-		else
-			cvts.tf = Colr2RGB;
 		if (CHK(C_PRIM)) {
 			TIFFSetField(cvts.tif, TIFFTAG_PRIMARYCHROMATICITIES,
 					(float *)cvts.prims);
 			TIFFSetField(cvts.tif, TIFFTAG_WHITEPOINT,
 					(float *)cvts.prims[WHT]);
 		}
+		cvts.tf = Colr2RGB;
+		break;
+	case PHOTOMETRIC_MINISBLACK:
+		SET(C_GRY|C_GAMMA|C_GAMUT);
+		setcolrgam(cvts.gamcor);
+		cvts.tf = Colr2Gry;
+		break;
+	default:
+		quiterr("internal error 4 in initfromrad");
 		break;
 	}
 						/* set other TIFF fields */
@@ -434,8 +449,6 @@ initfromrad()			/* initialize input from a Radiance picture */
 	TIFFSetField(cvts.tif, TIFFTAG_IMAGELENGTH, cvts.ymax);
 	TIFFSetField(cvts.tif, TIFFTAG_SAMPLESPERPIXEL, CHK(C_GRY) ? 1 : 3);
 	TIFFSetField(cvts.tif, TIFFTAG_BITSPERSAMPLE, CHK(C_TFLT) ? 32 : 8);
-	TIFFSetField(cvts.tif, TIFFTAG_PHOTOMETRIC,
-			CHK(C_GRY) ? PHOTOMETRIC_MINISBLACK : PHOTOMETRIC_RGB);
 	TIFFSetField(cvts.tif, TIFFTAG_XRESOLUTION, 72.);
 	TIFFSetField(cvts.tif, TIFFTAG_YRESOLUTION, 72./cvts.pixrat);
 	TIFFSetField(cvts.tif, TIFFTAG_ORIENTATION, cvts.orient);
@@ -443,7 +456,10 @@ initfromrad()			/* initialize input from a Radiance picture */
 	TIFFSetField(cvts.tif, TIFFTAG_PLANARCONFIG, cvts.pconf);
 	TIFFSetField(cvts.tif, TIFFTAG_STONITS,
 			cvts.stonits/pow(2.,(double)cvts.bradj));
-	i1 = TIFFScanlineSize(cvts.tif);
+	if (cvts.comp == COMPRESSION_NONE)
+		i1 = TIFFScanlineSize(cvts.tif);
+	else
+		i1 = 3*cvts.xmax;	/* conservative guess */
 	i2 = 8192/i1;				/* compute good strip size */
 	if (i2 < 1) i2 = 1;
 	TIFFSetField(cvts.tif, TIFFTAG_ROWSPERSTRIP, (uint32)i2);
