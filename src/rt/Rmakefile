@@ -92,6 +92,8 @@ x10:	$(DEVDIR)/x10
 
 aed:	$(DEVDIR)/aed
 
+tiff:	
+
 clean:
 	set nonomatch; rm -f $(PROGS) *.o core
 
