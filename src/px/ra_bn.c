@@ -94,7 +94,7 @@ char  *argv[];
 	}
 	quiterr(NULL);
 userr:
-	fprintf(stderr, "Usage: %s {input|-} output\n", progname);
+	fprintf(stderr, "Usage: %s [-g gamma] {input|-} output\n", progname);
 	fprintf(stderr, "   or: %s -r [-g gamma] input [output|-]\n",
 			progname);
 	exit(1);
