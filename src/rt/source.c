@@ -125,7 +125,7 @@ marksources(void)			/* find and mark source objects */
 			}
 		}
 #if  SHADCACHE
-		source[ns].obscache = NULL;
+		initobscache(ns);
 #endif
 		if (!(source[ns].sflags & SSKIP))
 			foundsource++;
