@@ -8,7 +8,7 @@ OPT = -O
 
 MACH = -f68881 /usr/lib/libm.il -DBSD
 
-CFLAGS = $(OPT) $(MACH) -I../common
+CFLAGS = $(OPT) $(MACH) -I../common -L../lib
 
 INSTDIR = /lumen/lumen/ray/bin.sun3
 
@@ -30,16 +30,16 @@ thf2rad:	thf2rad.o
 	cc $(CFLAGS) -o thf2rad thf2rad.o
 
 ies2rad:	ies2rad.o
-	cc $(CFLAGS) -o ies2rad ies2rad.o ../common/librt.a
+	cc $(CFLAGS) -o ies2rad ies2rad.o -lrt
 
 arch2rad:	arch2rad.o trans.o
-	cc $(CFLAGS) -o arch2rad arch2rad.o trans.o ../common/librt.a
+	cc $(CFLAGS) -o arch2rad arch2rad.o trans.o -lrt
 
 nff2rad:	nff2rad.o
 	cc $(CFLAGS) -o nff2rad nff2rad.o
 
 lampcolor:	lampcolor.o
-	cc $(CFLAGS) -o lampcolor lampcolor.o ../common/librt.a
+	cc $(CFLAGS) -o lampcolor lampcolor.o -lrt
 
 arch2rad.o trans.o:	trans.h
 
