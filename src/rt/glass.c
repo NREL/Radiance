@@ -95,7 +95,8 @@ register RAY  *r;
 		if (!(r->crtype & SHADOW) &&
 				DOT(r->pert,r->pert) > FTINY*FTINY) {
 			for (i = 0; i < 3; i++)		/* perturb direction */
-				p.rdir[i] = r->rdir[i] - r->pert[i]/rindex;
+				p.rdir[i] = r->rdir[i] +
+						2.*(1.-rindex)*r->pert[i];
 			normalize(p.rdir);
 		} else {
 			VCOPY(p.rdir, r->rdir);
