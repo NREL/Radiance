@@ -19,7 +19,7 @@ proc preen {} {			# clean up radvar
 		set n 1
 		foreach v $oldval {
 			if {"[string index $v 0]" == "-"} {
-				lappend radvar(view) "$n $v"
+				lappend radvar(view) "u$n $v"
 			} elseif {[lsearch -glob $radvar(view) \
 					"[lindex $v 0] *"] >= 0} {
 				continue
