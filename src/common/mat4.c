@@ -79,35 +79,37 @@ register double  m4[4][4];
 #ifdef  INVMAT
 /*
  * invmat - computes the inverse of mat into inverse.  Returns 1
- * if there exists an inverse, 0 otherwise.  It uses Gause Elimination
- * method.
+ * if there exists an inverse, 0 otherwise.  It uses Gaussian Elimination
+ * method with partial pivoting.
  */
 
 invmat(inverse,mat)
 double mat[4][4],inverse[4][4];
 {
 #define SWAP(a,b,t) (t=a,a=b,b=t)
+#define ABS(x) (x>=0?x:-(x))
 
 	register int i,j,k;
 	register double temp;
 
-	setident4(inverse);
 	copymat4(m4tmp, mat);
+	setident(inverse);
 
 	for(i = 0; i < 4; i++) {
-		if(m4tmp[i][i] == 0) {    /* Pivot is zero */
-			/* Look for a raw with pivot != 0 and swap raws */
-			for(j = i + 1; j < 4; j++)
-				if(m4tmp[j][i] != 0) {
-					for( k = 0; k < 4; k++) {
-						SWAP(m4tmp[i][k],m4tmp[j][k],temp);
-						SWAP(inverse[i][k],inverse[j][k],temp);
-						}
-					break;
-					}
-			if(j == 4)	/* No replacing raw -> no inverse */
-				return(0);
-			}
+		/* Look for row with largest pivot and swap rows */
+		temp = 0; j = -1;
+		for(k = i; k < 4; k++)
+			if(ABS(m4tmp[k][i]) > temp) {
+				temp = ABS(m4tmp[k][i]);
+				j = k;
+				}
+		if(j == -1)	/* No replacing row -> no inverse */
+			return(0);
+		if (j != i)
+			for(k = 0; k < 4; k++) {
+				SWAP(m4tmp[i][k],m4tmp[j][k],temp);
+				SWAP(inverse[i][k],inverse[j][k],temp);
+				}
 
 		temp = m4tmp[i][i];
 		for(k = 0; k < 4; k++) {
@@ -125,5 +127,8 @@ double mat[4][4],inverse[4][4];
 			}
 		}
 	return(1);
+
+#undef ABS
+#undef SWAP
 }
 #endif
