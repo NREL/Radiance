@@ -5,15 +5,15 @@ static char SCCSid[] = "$SunId$ LBL";
 #endif
 
 /*
- * Convert MGF (Materials and Geometry Format) to Metafile graphics
+ * Convert MGF (Materials and Geometry Format) to Metafile 2-d graphics
  */
 
 #include <stdio.h>
 #include <math.h>
 #include "mgflib/parser.h"
 
-#define	MX(v)	(int)((1<<14)*(v)[(proj_axis+1)%3])
-#define	MY(v)	(int)((1<<14)*(v)[(proj_axis+2)%3])
+#define	MX(v)	(int)(((1<<14)-1)*(v)[(proj_axis+1)%3])
+#define	MY(v)	(int)(((1<<14)-1)*(v)[(proj_axis+2)%3])
 
 int	r_face();
 int	proj_axis;
@@ -44,12 +44,14 @@ char	*argv[];
 	if (argc == 8) {		/* convert stdin */
 		if (mg_load(NULL) != MG_OK)
 			exit(1);
+		mendpage();
 	} else				/* convert each file */
-		for (i = 8; i < argc; i++)
+		for (i = 8; i < argc; i++) {
 			if (mg_load(argv[i]) != MG_OK)
 				exit(1);
-	mendpage();			/* close output */
-	mdone();
+			mendpage();
+		}
+	mdone();			/* close output */
 	exit(0);
 userr:
 	fprintf(stderr, "Usage: %s {x|y|z} xmin xmax ymin ymax zmin zmax [file.mgf] ..\n",
