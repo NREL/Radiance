@@ -16,6 +16,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "font.h"
 
+#define  SSS			2	/* super-sample size */
+
 #define  MAXLINE		512	/* longest allowable line */
 
 #ifndef  DEFPATH
@@ -46,19 +48,19 @@ int  xdim;				/* size of horizontal scan (bytes) */
 #define  clrbit(x,y)		bitop(x,y,&=~)
 #define  tglbit(x,y)		bitop(x,y,^=)
 
-typedef unsigned char  GLYPH;
-
 FONT  *ourfont;				/* our font */
 
 char  *libpath;				/* library search path */
 
 typedef struct line {
 	char  *s;		/* line w/o LF */
+	short  *sp;		/* character spacing */
 	struct line  *next;	/* next line up */
 } LINE;
 
 LINE  *ourtext;				/* our text */
 int  nlines, maxline;			/* text dimensions */
+int  maxwidth;				/* maximum line width (dvi) */
 
 extern char  *getenv();
 extern char  *malloc(), *calloc();
@@ -117,6 +119,10 @@ unkopt:
 					argv[0], argv[an]);
 			exit(1);
 		}
+					/* load font file */
+	if ((libpath = getenv(ULIBVAR)) == NULL)
+		libpath = DEFPATH;
+	ourfont = getfont(fontfile);
 					/* get text */
 	if (an == argc)
 		gettext(stdin);
@@ -125,10 +131,6 @@ unkopt:
 
 					/* create bit map */
 	makemap();
-					/* load font file */
-	if ((libpath = getenv(ULIBVAR)) == NULL)
-		libpath = DEFPATH;
-	ourfont = getfont(fontfile);
 					/* convert text to bitmap */
 	maptext();
 					/* print header */
@@ -170,21 +172,26 @@ FILE  *fp;
 	int  len;
 
 	maxline = 0;
+	maxwidth = 0;
 	nlines = 0;
 	while (fgets(buf, MAXLINE, fp) != NULL) {
 		curl = (LINE *)malloc(sizeof(LINE));
 		if (curl == NULL)
 			goto memerr;
 		len = strlen(buf);
-		curl->s = malloc(len--);
-		if (curl->s == NULL)
+		curl->s = malloc(len);
+		curl->sp = (short *)malloc(sizeof(short)*len--);
+		if (curl->s == NULL | curl->sp == NULL)
 			goto memerr;
-		strncpy(curl->s, buf, len);
-		curl->s[len] = '\0';
-		curl->next = ourtext;
-		ourtext = curl;
 		if (len > maxline)
 			maxline = len;
+		strncpy(curl->s, buf, len);
+		curl->s[len] = '\0';
+len = uniftext(curl->sp, curl->s, ourfont);
+		if (len > maxwidth)
+			maxwidth = len;
+		curl->next = ourtext;
+		ourtext = curl;
 		nlines++;
 	}
 	return;
@@ -214,6 +221,10 @@ char  *av[];
 	*--cp = '\0';
 	ourtext->next = NULL;
 	maxline = strlen(ourtext->s);
+	ourtext->sp = (short *)malloc(sizeof(short)*(maxline+1));
+	if (ourtext->sp == NULL)
+		goto memerr;
+maxwidth = uniftext(ourtext->sp, ourtext->s, ourfont);
 	nlines = 1;
 	return;
 memerr:
@@ -225,12 +236,16 @@ memerr:
 maptext()			/* map our text */
 {
 	register LINE  *curl;
-	int  l;
-	register int  c;
+	int  l, len;
+	register int  i, c;
 
-	for (l = 0, curl = ourtext; curl != NULL; l++, curl = curl->next)
-		for (c = strlen(curl->s)-1; c >= 0; c--)
-			mapglyph(ourfont->fg[curl->s[c]&0xff], c, l);
+	for (l = 0, curl = ourtext; curl != NULL; l += 256, curl = curl->next) {
+		len = strlen(curl->s); c = 0;
+		for (i = 0; i < len; i++) {
+			c += curl->sp[i];
+			mapglyph(ourfont->fg[curl->s[i]&0xff], c, l);
+		}
+	}
 }
 
 
@@ -245,7 +260,6 @@ int  tx0, ty0;
 	if (gl == NULL)
 		return;
 
-	tx0 <<= 8; ty0 <<= 8;
 	n = gl->nverts;
 	gp = gvlist(gl);
 	mapcoord(p0, gp[2*n-2]+tx0, gp[2*n-1]+ty0);
