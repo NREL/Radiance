@@ -1,4 +1,4 @@
-/* Copyright (c) 1994 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -396,8 +396,8 @@ register CUBE  *scene;
 			return(0);
 	}
 	cxset[0] = 0;
-	return(raymove(curpos, cxset, sflags, r, scene) == RAYHIT &&
-			r->ro != &Aftplane);
+	raymove(curpos, cxset, sflags, r, scene);
+	return(r->ro != NULL & r->ro != &Aftplane);
 }
 
 
