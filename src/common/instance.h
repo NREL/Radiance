@@ -14,6 +14,7 @@ typedef struct scene {
 	char  *name;			/* octree name */
 	int  ldflags;			/* what was loaded */
 	CUBE  scube;			/* scene cube */
+	OBJECT  firstobj, nobjs;	/* first object and count */
 	struct scene  *next;		/* next in list */
 }  SCENE;			/* loaded octree */
 
