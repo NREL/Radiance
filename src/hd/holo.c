@@ -16,6 +16,9 @@ float	hd_depthmap[DCINF-DCLIN];
 
 static double	logstep;
 
+static int	wg0[6] = {1,1,2,2,0,0};
+static int	wg1[6] = {2,2,0,0,1,1};
+
 
 hdcompgrid(hp)			/* compute derived grid vector and index */
 register HOLO	*hp;
@@ -59,10 +62,8 @@ register HOLO	*hp;
 	for (i = 1; i < 6; i++) {
 		hp->wi[i] = 0;
 		for (j = i; j < 6; j++)
-			hp->wi[i] += hp->grid[((j>>1)+1)%3] *
-					hp->grid[((j>>1)+2)%3];
-		hp->wi[i] *= hp->grid[(((i-1)>>1)+1)%3] *
-				hp->grid[(((i-1)>>1)+2)%3];
+			hp->wi[i] += hp->grid[wg0[j]] * hp->grid[wg1[j]];
+		hp->wi[i] *= hp->grid[wg0[i-1]] * hp->grid[wg1[i-1]];
 		hp->wi[i] += hp->wi[i-1];
 	}
 }
@@ -120,23 +121,23 @@ register int	i;
 			break;
 	i -= hp->wi[gc[0].w=j];
 					/* find w1 */
-	n2 = hp->grid[((j>>1)+1)%3] * hp->grid[((j>>1)+2)%3];
+	n2 = hp->grid[wg0[j]] * hp->grid[wg1[j]];
 	while (++j < 5)	{
-		n = n2 * hp->grid[((j>>1)+1)%3] * hp->grid[((j>>1)+2)%3];
+		n = n2 * hp->grid[wg0[j]] * hp->grid[wg1[j]];
 		if (n > i)
 			break;
 		i -= n;
 	}
 	gc[1].w = j;
 					/* find position on w0 */
-	n2 = hp->grid[((j>>1)+1)%3] * hp->grid[((j>>1)+2)%3];
+	n2 = hp->grid[wg0[j]] * hp->grid[wg1[j]];
 	n = i / n2;
-	gc[0].i[1] = n / hp->grid[((gc[0].w>>1)+1)%3];
-	gc[0].i[0] = n - gc[0].i[1]*hp->grid[((gc[0].w>>1)+1)%3];
+	gc[0].i[1] = n / hp->grid[wg0[gc[0].w]];
+	gc[0].i[0] = n - gc[0].i[1]*hp->grid[wg0[gc[0].w]];
 	i -= n*n2;
 					/* find position on w1 */
-	gc[1].i[1] = i / hp->grid[((gc[1].w>>1)+1)%3];
-	gc[1].i[0] = i - gc[1].i[1]*hp->grid[((gc[1].w>>1)+1)%3];
+	gc[1].i[1] = i / hp->grid[wg0[gc[1].w]];
+	gc[1].i[0] = i - gc[1].i[1]*hp->grid[wg0[gc[1].w]];
 	if (reverse) {
 		copystruct(g2, gc+1);
 		copystruct(gc+1, gc);
@@ -165,13 +166,12 @@ register BCOORD	gc;
 		return(0);
 	i = 0;				/* compute index */
 	for (j = gc[0].w+1; j < gc[1].w; j++)
-		i += hp->grid[((j>>1)+1)%3] * hp->grid[((j>>1)+2)%3];
-	i *= hp->grid[((gc[0].w>>1)+1)%3] * hp->grid[((gc[0].w>>1)+2)%3];
+		i += hp->grid[wg0[j]] * hp->grid[wg1[j]];
+	i *= hp->grid[wg0[gc[0].w]] * hp->grid[wg1[gc[0].w]];
 	i += hp->wi[gc[0].w];
-	i += (hp->grid[((gc[0].w>>1)+1)%3]*gc[0].i[1] + gc[0].i[0]) *
-			hp->grid[((gc[1].w>>1)+1)%3] *
-			hp->grid[((gc[1].w>>1)+2)%3] ;
-	i += hp->grid[((gc[1].w>>1)+1)%3]*gc[1].i[1] + gc[1].i[0];
+	i += (hp->grid[wg0[gc[0].w]]*gc[0].i[1] + gc[0].i[0]) *
+			hp->grid[wg0[gc[1].w]] * hp->grid[wg1[gc[1].w]] ;
+	i += hp->grid[wg0[gc[1].w]]*gc[1].i[1] + gc[1].i[0];
 	if (reverse)
 		i += hp->wi[5] - 1;
 	return(i);
@@ -179,33 +179,20 @@ register BCOORD	gc;
 
 
 hdlseg(lseg, hp, i)			/* compute line segment for beam */
-int	lseg[2][3];
+register int	lseg[2][3];
 register HOLO	*hp;
 int	i;
 {
 	BCOORD	gc;
 	register int	k;
 
-	if (!hdbcoord(gc, hp, i))
+	if (!hdbcoord(gc, hp, i))		/* compute grid coordinates */
 		return(0);
-	for (k = 0; k < 2; k++)		/* compute line segment */
-		switch (gc[k].w>>1) {
-		case 0:
-			lseg[k][0] = (gc[k].w & 1) * (hp->grid[0]-1);
-			lseg[k][1] = gc[k].i[0];
-			lseg[k][2] = gc[k].i[1];
-			break;
-		case 1:
-			lseg[k][0] = gc[k].i[1];
-			lseg[k][1] = (gc[k].w & 1) * (hp->grid[1]-1);
-			lseg[k][2] = gc[k].i[0];
-			break;
-		case 2:
-			lseg[k][0] = gc[k].i[0];
-			lseg[k][1] = gc[k].i[1];
-			lseg[k][2] = (gc[k].w & 1) * (hp->grid[2]-1);
-			break;
-		}
+	for (k = 0; k < 2; k++) {		/* compute end points */
+		lseg[k][gc[k].w>>1] = gc[k].w&1	? hp->grid[gc[k].w>>1]-1 : 0 ;
+		lseg[k][wg0[gc[k].w]] = gc[k].i[0];
+		lseg[k][wg1[gc[k].w]] = gc[k].i[1];
+	}
 	return(1);
 }
 
@@ -248,12 +235,12 @@ BYTE	r[2][2];
 			p[i][0] += *v++; p[i][1] += *v++; p[i][2] += *v;
 		}
 		d = ( gc[i].i[0] + (1./256.)*(r[i][0]+.5) ) /
-				hp->grid[((gc[i].w>>1)+1)%3];
-		v = hp->xv[((gc[i].w>>1)+1)%3];
+				hp->grid[wg0[gc[i].w]];
+		v = hp->xv[wg0[gc[i].w]];
 		p[i][0] += d * *v++; p[i][1] += d * *v++; p[i][2] += d * *v;
 		d = (gc[i].i[1] + (1./256.)*(r[i][1]+.5)) /
-				hp->grid[((gc[i].w>>1)+2)%3];
-		v = hp->xv[((gc[i].w>>1)+2)%3];
+				hp->grid[wg1[gc[i].w]];
+		v = hp->xv[wg1[gc[i].w]];
 		p[i][0] += d * *v++; p[i][1] += d * *v++; p[i][2] += d * *v;
 	}
 	VCOPY(ro, p[0]);		/* assign ray origin and direction */
@@ -323,12 +310,12 @@ FVECT	ro, rd;		/* rd should be normalized */
 		}
 		v = hp->gv[gc[i].w>>1][0];
 		d = DOT(vt, v);
-		if (d < 0. || (gc[i].i[0] = d) >= hp->grid[((gc[i].w>>1)+1)%3])
+		if (d < 0. || (gc[i].i[0] = d) >= hp->grid[wg0[gc[i].w]])
 			return(FHUGE);		/* outside wall */
 		r[i][0] = 256. * (d - gc[i].i[0]);
 		v = hp->gv[gc[i].w>>1][1];
 		d = DOT(vt, v);
-		if (d < 0. || (gc[i].i[1] = d) >= hp->grid[((gc[i].w>>1)+2)%3])
+		if (d < 0. || (gc[i].i[1] = d) >= hp->grid[wg1[gc[i].w]])
 			return(FHUGE);		/* outside wall */
 		r[i][1] = 256. * (d - gc[i].i[1]);
 	}
