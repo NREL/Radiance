@@ -551,28 +551,32 @@ int	(*f)();
 }
 
 
-static AMBVAL	**avlist1, **avlist2;	/* ambient value lists for sorting */
+static struct avl {
+	AMBVAL	*p;
+	unsigned long	t;
+}	*avlist1;			/* ambient value list with ticks */
+static AMBVAL	**avlist2;		/* memory positions for sorting */
 static int	i_avlist;		/* index for lists */
 
 
 static
 av2list(av)
-AMBVAL	*av;
+register AMBVAL	*av;
 {
 #ifdef DEBUG
 	if (i_avlist >= nambvals)
 		error(CONSISTENCY, "too many ambient values in av2list1");
 #endif
-	avlist1[i_avlist] = avlist2[i_avlist] = av;
-	i_avlist++;
+	avlist1[i_avlist].p = avlist2[i_avlist] = av;
+	avlist1[i_avlist++].t = av->latick;
 }
 
 
 static int
-alatcmp(avp1, avp2)			/* compare ambient values for MRA */
-AMBVAL	**avp1, **avp2;
+alatcmp(av1, av2)			/* compare ambient values for MRA */
+struct avl	*av1, *av2;
 {
-	register long  lc = (**avp2).latick - (**avp1).latick;
+	register long  lc = av2->t - av1->t;
 	return(lc<0 ? -1 : lc>0 ? 1 : 0);
 }
 
@@ -585,7 +589,7 @@ AMBVAL	**avp1, **avp2;
 }
 
 
-#if  1
+#if 1
 static int
 avlmemi(avaddr)				/* find list position from address */
 AMBVAL	*avaddr;
@@ -631,13 +635,15 @@ int	always;
 	 * tree will be rebuilt with the new accuracy parameter.
 	 */
 	if (tracktime) {		/* allocate pointer arrays to sort */
-		avlist1 = (AMBVAL **)malloc(nambvals*sizeof(AMBVAL *));
 		avlist2 = (AMBVAL **)malloc(nambvals*sizeof(AMBVAL *));
-	} else
-		avlist1 = avlist2 = NULL;
-	if (avlist2 == NULL) {		/* no time tracking -- rebuild tree? */
-		if (avlist1 != NULL)
-			free((char *)avlist1);
+		avlist1 = (struct avl *)malloc(nambvals*sizeof(struct avl));
+	} else {
+		avlist2 = NULL;
+		avlist1 = NULL;
+	}
+	if (avlist1 == NULL) {		/* no time tracking -- rebuild tree? */
+		if (avlist2 != NULL)
+			free((char *)avlist2);
 		if (always) {		/* rebuild without sorting */
 			copystruct(&oldatrunk, &atrunk);
 			atrunk.alist = NULL;
@@ -664,22 +670,22 @@ int	always;
 		if (i_avlist < nambvals)
 			error(CONSISTENCY, "missing ambient values in sortambvals");
 #endif
-		qsort((char *)avlist1, nambvals, sizeof(AMBVAL *), alatcmp);
+		qsort((char *)avlist1, nambvals, sizeof(struct avl), alatcmp);
 		qsort((char *)avlist2, nambvals, sizeof(AMBVAL *), aposcmp);
 		for (i = 0; i < nambvals; i++) {
-			if (avlist1[i] == NULL)
+			if (avlist1[i].p == NULL)
 				continue;
 			tap = avlist2[i];
 			copystruct(&tav, tap);
-			for (j = i; (pnext = avlist1[j]) != tap;
+			for (j = i; (pnext = avlist1[j].p) != tap;
 					j = avlmemi(pnext)) {
 				copystruct(avlist2[j], pnext);
 				avinsert(avlist2[j]);
-				avlist1[j] = NULL;
+				avlist1[j].p = NULL;
 			}
 			copystruct(avlist2[j], &tav);
 			avinsert(avlist2[j]);
-			avlist1[j] = NULL;
+			avlist1[j].p = NULL;
 		}
 		free((char *)avlist1);
 		free((char *)avlist2);
