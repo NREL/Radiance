@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -50,6 +50,9 @@ int  (*wrnvec)() = stderr_v;		/* warning output vector */
 int  (*cmdvec)() = NULL;		/* command error vector */
 
 int  (*trace)() = NULL;			/* trace call */
+
+extern long  time();
+long  tstart;				/* start time */
 
 extern int  ambnotify();		/* new object notify functions */
 int  (*addobjnotify[])() = {ambnotify, NULL};
@@ -111,6 +114,8 @@ char  *argv[];
 	int  loadflags = ~IO_FILES;
 	int  rval, gotvfile = 0;
 	int  i;
+					/* record start time */
+	tstart = time((long *)0);
 					/* global program name */
 	progname = argv[0];
 					/* get library path */
@@ -434,8 +439,6 @@ char  *argv[];
 	setambient(ambfile);		/* initialize ambient calculation */
 
 #if  RPICT
-	if (ralrm > 0)			/* report init time */
-		report();
 	render(zfile, recover);		/* render the scene */
 #endif
 #if  RTRACE
