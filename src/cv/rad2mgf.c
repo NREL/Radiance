@@ -8,16 +8,12 @@ static char SCCSid[] = "$SunId$ LBL";
  * Convert Radiance scene description to MGF
  */
 
-#include <stdio.h>
-#include <math.h>
+#include "standard.h"
 #include <ctype.h>
 #include <string.h>
-#include "fvect.h"
 #include "object.h"
 #include "color.h"
 #include "lookup.h"
-
-#define PI	3.14159265358979323846
 
 #define C_1SIDEDTHICK	0.005
 
@@ -26,8 +22,7 @@ int	o_instance(), o_illum();
 int	o_plastic(), o_metal(), o_glass(), o_dielectric(),
 	o_mirror(), o_trans(), o_light();
 
-extern void	free();
-extern char	*malloc();
+extern int	free();
 
 LUTAB	rmats = LU_SINIT(free,NULL);		/* defined material table */
 

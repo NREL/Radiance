@@ -100,5 +100,5 @@ obj2rad.o:	trans.h
 
 tmesh.o:	tmesh.h ../common/fvect.h
 
-rad2mgf.o:	../common/fvect.h ../common/object.h ../common/color.h \
-../common/lookup.h
+rad2mgf.o:	../common/standard.h ../common/mat4.h ../common/fvect.h \
+../common/object.h ../common/color.h ../common/lookup.h
