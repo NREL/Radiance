@@ -89,6 +89,7 @@ char	*argv[];
 	rtargv[rtargc] = NULL;
 				/* just asking for defaults? */
 	if (!strcmp(argv[gargc-1], "-defaults")) {
+		printopts(); fflush(stdout);
 		rtpath = getpath(rtargv[0], getenv("PATH"), X_OK);
 		if (rtpath == NULL) {
 			eputs(rtargv[0]);
@@ -363,6 +364,16 @@ char	*nm;
 	}
 						/* print pure comment */
 	printf("# %s", s+2);
+}
+
+
+printopts()			/* print out option default values */
+{
+	printf("m=%s\t\t\t# material name\n", thisillum.matname);
+	printf("f=%s\t\t\t# data file name\n", thisillum.datafile);
+	printf("c=n\t\t\t\t# color none\n");
+	printf("d=%d\t\t\t\t# density of points\n", thisillum.sampdens);
+	printf("s=%d\t\t\t\t# samples per point\n", thisillum.nsamps);
 }
 
 
