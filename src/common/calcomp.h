@@ -158,7 +158,7 @@ extern char	*pushcontext(char *ctx);
 extern char	*popcontext(void);
 extern char	*qualname(char *nam, int lvl);
 extern int	incontext(char *qn);
-extern void	chanout(int (*cs)());
+extern void	chanout(void (*cs)(int n, double v));
 extern void	dcleanup(int lvl);
 extern EPNODE	*dlookup(char *name);
 extern VARDEF	*varlookup(char *name);

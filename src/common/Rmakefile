@@ -97,7 +97,7 @@ readmesh.o readobj.o readoct.o sceneio.o xf.o:	standard.h mat4.h fvect.h
 
 image.o:	view.h
 
-calprnt.o:	calcomp.h
+caldefn.o calexpr.o calfunc.o calprnt.o:	calcomp.h
 
 process.o:	vfork.h
 

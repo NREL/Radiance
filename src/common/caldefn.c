@@ -316,7 +316,7 @@ register char  *qn;
 
 void
 chanout(cs)			/* set output channels */
-int  (*cs)();
+void  (*cs)();
 {
     register EPNODE  *ep;
 
