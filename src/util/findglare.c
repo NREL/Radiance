@@ -106,6 +106,7 @@ char	*argv[];
 			break;
 		case 'd':
 		case 'l':
+		case 's':
 			rtargv[rtargc++] = argv[i];
 			rtargv[rtargc++] = argv[++i];
 			break;
