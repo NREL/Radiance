@@ -172,20 +172,23 @@ realloc(op, n)			/* reallocate memory using malloc() */
 char	*op;
 unsigned	n;
 {
-	extern char	*memcpy();
 	register char	*p;
 	register unsigned	on;
 
-	free(op);			/* free it first */
-	p = malloc(n);			/* p==op if same bucket */
-	if (p == NULL)
-		return(NULL);
-	if (p != op)			/* different bucket, do copy */
+	if (op != NULL)
+		on = 1 << ((M_HEAD *)op-1)->bucket;
+	else
+		on = 0;
+	if (n <= on && n > on>>1)
+		return(op);		/* same bucket */
+	p = malloc(n);
+	if (p != NULL)
 #ifdef  BSD
 		bcopy(op, p, n>on ? on : n);
 #else
 		(void)memcpy(p, op, n>on ? on : n);
 #endif
+	free(op);
 	return(p);
 }
 
