@@ -65,6 +65,8 @@ char  *name, *id;
 {
 	extern Notify_value	newinput(), my_destroy_func();
 	extern int	canvas_resize();
+	extern char	*getenv();
+	char	*gv;
 	char	*ttyargv[3], arg1[16];
 	int	pd[2];
 	int	com;
@@ -119,7 +121,10 @@ char  *name, *id;
 		stderr_v("not a color screen\n");
 		return(NULL);
 	}
-	make_gmap(GAMMA);
+	if ((gv = getenv("GAMMA")) != NULL)
+		make_gmap(atof(gv));
+	else
+		make_gmap(GAMMA);
 	window_set(canvas, CANVAS_RETAINED, TRUE, 0);
 
 	notify_interpose_destroy_func(frame, my_destroy_func);
