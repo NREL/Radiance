@@ -23,6 +23,9 @@ extern int  stderr_v();			/* error vectors */
 extern int  (*wrnvec)(), (*errvec)(), (*cmdvec)();
 
 extern struct driver  *comm_init();	/* stream interface */
+					/* magic numbers for verification */
+#define COM_SENDM		0x6f37
+#define COM_RECVM		0x51da
 					/* stream commands */
 #define COM_CLEAR		0
 #define COM_PAINTR		1
@@ -48,12 +51,13 @@ extern struct device  devtable[];	/* supported devices */
 
 /*
  *  struct driver *
- *  dname_init(name)
- *  char  *name;
+ *  dname_init(name, id)
+ *  char  *name, *id;
  *  {
  *	Initialize device and return pointer to driver
  *	functions.  Returns NULL if an error occurred.
- *	The name string is used to identify the client.
+ *	The name string identifies the driver,
+ *	and the id string identifies the client.
  *	A device can be open by at most one client.
  *	Be verbose in error reports; call stderr_v().
  *	If device has its own error output, set errvec,

@@ -67,8 +67,8 @@ static struct driver  aed_driver = {
 
 
 struct driver *
-aed_init(name)				/* open AED */
-char  *name;
+aed_init(name, id)			/* open AED */
+char  *name, *id;
 {
 	if (ttyset(&aed_driver, fileno(stdin)) < 0) {	/* set tty driver */
 		stderr_v("cannot access terminal\n");

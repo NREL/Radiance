@@ -30,10 +30,10 @@ COMPAT = malloc.o
 #
 # Device drivers for rview (see also devtable.c):
 #
-DOBJS = devtable.o devcomm.o aed.o tty.o editline.o sun.o x10.o xtwind.o \
+DOBJS = devtable.o devcomm.o aed.o tty.o editline.o x10.o xtwind.o \
 	colortab.o
 DLIBS = -lX
-DRIVERS = $(DEVDIR)/sun.dev $(DEVDIR)/sun.com
+DRIVERS = $(DEVDIR)/sundev $(DEVDIR)/sun.com
 
 #
 # Standard object files:
@@ -94,8 +94,8 @@ $(DESTDIR)/rview:	$(RVOBJS)
 $(DESTDIR)/lookamb:	lookamb.o
 	cc $(CFLAGS) -o $(DESTDIR)/lookamb lookamb.o
 
-$(DEVDIR)/sun.dev:	sundev.o colortab.o
-	cc $(CFLAGS) -o $(DEVDIR)/sun.dev sundev.o colortab.o \
+$(DEVDIR)/sundev:	sundev.o devmain.o colortab.o
+	cc $(CFLAGS) -o $(DEVDIR)/sundev devmain.o sundev.o colortab.o \
 -lsuntool -lsunwindow -lpixrect $(LIBS)
 
 $(DEVDIR)/sun.com:	suncom.o editline.o
@@ -162,7 +162,7 @@ cone.o o_cone.o source.o:	cone.h
 
 data.o mx_data.o p_data.o t_data.o:	data.h
 
-aed.o devcomm.o devtable.o sun.o sundev.o tty.o x10.o:	driver.h
+aed.o devcomm.o devtable.o sundev.o tty.o x10.o:	driver.h
 
 face.o o_face.o source.o:	face.h
 
