@@ -19,7 +19,7 @@ static char SCCSid[] = "$SunId$ LBL";
 char	*rtargv[32] = {"rtrace", "-h", "-ov", "-fff"};
 int	rtargc = 4;
 
-VIEW	ourview;			/* our view */
+VIEW	ourview = STDVIEW;		/* our view */
 VIEW	pictview = STDVIEW;		/* picture view */
 VIEW	leftview, rightview;		/* leftmost and rightmost views */
 
