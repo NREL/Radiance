@@ -278,32 +278,47 @@ int	(*f)();
 {
 	register int	hd, w, i;
 	int	g0, g1;
-	FVECT	wp[2];
+	FVECT	wp[2], mov;
 	double	d;
 					/* do each wall on each section */
 	for (hd = 0; hdlist[hd] != NULL; hd++)
 		for (w = 0; w < 6; w++) {
 			g0 = ((w>>1)+1)%3;
 			g1 = ((w>>1)+2)%3;
-			for (i = hdlist[hd]->grid[g0]; i--; ) {	/* g0 lines */
-				d = (double)i/hdlist[hd]->grid[g0];
+			d = 1.0/hdlist[hd]->grid[g0];
+			mov[0] = d * hdlist[hd]->xv[g0][0];
+			mov[1] = d * hdlist[hd]->xv[g0][1];
+			mov[2] = d * hdlist[hd]->xv[g0][2];
+			if (w & 1) {
 				VSUM(wp[0], hdlist[hd]->orig,
-						hdlist[hd]->xv[g0], d);
-				if (w & 1)
-				    VSUM(wp[0], wp[0],
 						hdlist[hd]->xv[w>>1], 1.);
-				VSUM(wp[1], wp[0], hdlist[hd]->xv[g1], 1.);
+				VSUM(wp[0], wp[0], mov, 1.);
+			} else
+				VCOPY(wp[0], hdlist[hd]->orig);
+			VSUM(wp[1], wp[0], hdlist[hd]->xv[g1], 1.);
+			for (i = hdlist[hd]->grid[g0]; ; ) {	/* g0 lines */
 				(*f)(wp);
+				if (!--i) break;
+				wp[0][0] += mov[0]; wp[0][1] += mov[1];
+				wp[0][2] += mov[2]; wp[1][0] += mov[0];
+				wp[1][1] += mov[1]; wp[1][2] += mov[2];
 			}
-			for (i = hdlist[hd]->grid[g1]; i--; ) {	/* g1 lines */
-				d = (double)i/hdlist[hd]->grid[g1];
+			d = 1.0/hdlist[hd]->grid[g1];
+			mov[0] = d * hdlist[hd]->xv[g1][0];
+			mov[1] = d * hdlist[hd]->xv[g1][1];
+			mov[2] = d * hdlist[hd]->xv[g1][2];
+			if (w & 1)
 				VSUM(wp[0], hdlist[hd]->orig,
-						hdlist[hd]->xv[g1], d);
-				if (w & 1)
-				    VSUM(wp[0], wp[0],
 						hdlist[hd]->xv[w>>1], 1.);
-				VSUM(wp[1], wp[0], hdlist[hd]->xv[g0], 1.);
+			else
+				VSUM(wp[0], hdlist[hd]->orig, mov, 1.);
+			VSUM(wp[1], wp[0], hdlist[hd]->xv[g0], 1.);
+			for (i = hdlist[hd]->grid[g1]; ; ) {	/* g1 lines */
 				(*f)(wp);
+				if (!--i) break;
+				wp[0][0] += mov[0]; wp[0][1] += mov[1];
+				wp[0][2] += mov[2]; wp[1][0] += mov[0];
+				wp[1][1] += mov[1]; wp[1][2] += mov[2];
 			}
 		}
 }
