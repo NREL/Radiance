@@ -10,11 +10,16 @@
 	srcB_vert and srcB_horiz are angles
 	used in type B photometry.
 
-	A1	- optional multipier
+	A1		- optional multipier
+	A2,A3,A4	- X,Y,Z dimensions of axis-aligned box
 }
+					{ local definitions }
+norm_deg(d) : if( d, d, d+360 );
+boxprojection = abs(Dx)*A3*A4 + abs(Dy)*A2*A4 + abs(Dz)*A2*A3;
 
 flatcorr(v) = corr(v) / Rdot;		{ correction for flat sources }
 corr(v) = if(AC-.5, A1*v, v);		{ multiplier correction }
+boxcorr(v) = A1 * v / boxprojection;	{ correction for emitting box }
 
 src_theta = Acos(Dz) / DEGREE;			{ 0-180 }
 src_phi = norm_deg( atan2(Dy, Dx) / DEGREE );	{ 0-360 }
@@ -22,8 +27,6 @@ src_phi = norm_deg( atan2(Dy, Dx) / DEGREE );	{ 0-360 }
 src_phi2 = tri( src_phi, 180 );		{ 0-180 }
 				{ quadrilateral symmetry }
 src_phi4 = tri( src_phi, 90 );		{ 0-90 }
-
-norm_deg(d) : if( d, d, d+360 );
 
 				{ Type B photometry coordinates }
 srcB_vert = atan( -Dx/Dz ) / DEGREE;
