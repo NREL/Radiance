@@ -25,7 +25,7 @@ int  lzcomp = 0;			/* use Lempel-Ziv compression? */
 
 int  greyscale = 0;			/* produce greyscale image? */
 
-double	gamma = 2.2;			/* gamma correction */
+double	gamcor = 2.2;			/* gamma correction */
 
 int  bradj = 0;				/* brightness adjustment */
 
@@ -45,7 +45,7 @@ char  *argv[];
 		if (argv[i][0] == '-')
 			switch (argv[i][1]) {
 			case 'g':
-				gamma = atof(argv[++i]);
+				gamcor = atof(argv[++i]);
 				break;
 			case 'z':
 				lzcomp = !lzcomp;
@@ -69,7 +69,7 @@ char  *argv[];
 		else
 			break;
 doneopts:
-	setcolrgam(gamma);
+	setcolrgam(gamcor);
 
 	if (reverse)
 		if (i != argc-2 && i != argc-1)

@@ -41,7 +41,7 @@ int  argc;
 char  *argv[];
 {
 	char  inpbuf[2];
-	double	gamma = 2.2;
+	double	gamcor = 2.2;
 	int  binflag = 1;
 	int  reverse = 0;
 	int  ptype;
@@ -53,7 +53,7 @@ char  *argv[];
 		if (argv[i][0] == '-')
 			switch (argv[i][1]) {
 			case 'g':
-				gamma = atof(argv[++i]);
+				gamcor = atof(argv[++i]);
 				break;
 			case 'e':
 				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
@@ -84,7 +84,7 @@ char  *argv[];
 				progname, argv[i+1]);
 		exit(1);
 	}
-	setcolrgam(gamma);
+	setcolrgam(gamcor);
 	if (reverse) {
 					/* get header */
 		if (read(fileno(stdin), inpbuf, 2) != 2 || inpbuf[0] != 'P')
