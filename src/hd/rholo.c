@@ -76,7 +76,7 @@ static void initrholo(void);
 static int rholo(void);
 static void setdefaults(HDGRID	*gp);
 static void creatholo(HDGRID	*gp);
-static int headline(char	*s);
+static gethfunc headline;
 static void loadholo(void);
 static void rootname(char	*rn, char	*fn);
 static void badvalue(int	vc);
@@ -488,7 +488,8 @@ creatholo(			/* create a holodeck output file */
 
 static int
 headline(			/* process information header line */
-	char	*s
+	char	*s,
+	void	*p
 )
 {
 	extern char	FMTSTR[];
