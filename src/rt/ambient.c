@@ -59,16 +59,18 @@ int  ar;
 	ambres = ar < 0 ? 0 : ar;		/* may be done already */
 						/* set min & max radii */
 	if (ar <= 0) {
-		minarad = 0.0;
+		minarad = 0;
 		maxarad = thescene.cusize / 2.0;
 	} else {
 		minarad = thescene.cusize / ar;
-		maxarad = 16.0 * minarad;		/* heuristic */
+		maxarad = 16 * minarad;			/* heuristic */
 		if (maxarad > thescene.cusize / 2.0)
 			maxarad = thescene.cusize / 2.0;
 	}
-	if (maxarad <= FTINY)
-		maxarad = .001;
+	if (minarad <= FTINY)
+		minarad = 10*FTINY;
+	if (maxarad <= minarad)
+		maxarad = 64 * minarad;
 }
 
 
