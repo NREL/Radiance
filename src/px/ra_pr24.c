@@ -60,6 +60,7 @@ char  *argv[];
 				progname, argv[i+1]);
 		exit(1);
 	}
+	setcolrgam(gamma);
 	if (reverse) {
 					/* get header */
 		if (fread((char *)&head, sizeof(head), 1, stdin) != 1)
@@ -118,27 +119,24 @@ char  *err;
 
 pr2ra()			/* convert 24-bit scanlines to Radiance picture */
 {
-	float	gmap[256];
-	int	r, g, b;
-	COLOR	*scanout;
+	COLR	*scanout;
 	register int	x;
 	int	y;
 						/* allocate scanline */
-	scanout = (COLOR *)malloc(xmax*sizeof(COLOR));
+	scanout = (COLR *)malloc(xmax*sizeof(COLR));
 	if (scanout == NULL)
 		quiterr("out of memory in pr2ra");
-						/* compute gamma correction */
-	for (x = 0; x < 256; x++)
-		gmap[x] = pow((x+.5)/256., gamma);
 						/* convert image */
 	for (y = ymax-1; y >= 0; y--) {
 		for (x = 0; x < xmax; x++) {
-			r = getc(stdin); g = getc(stdin);
-			if ((b = getc(stdin)) == EOF)
-				quiterr("error reading rasterfile");
-			setcolor(scanout[x], gmap[r], gmap[g], gmap[b]);
+			scanout[x][RED] = getc(stdin);
+			scanout[x][GRN] = getc(stdin);
+			scanout[x][BLU] = getc(stdin);
 		}
-		if (fwritescan(scanout, xmax, stdout) < 0)
+		if (feof(stdin) || ferror(stdin))
+			quiterr("error reading rasterfile");
+		gambs_colrs(scanout, xmax);
+		if (fwritecolrs(scanout, xmax, stdout) < 0)
 			quiterr("error writing Radiance picture");
 	}
 						/* free scanline */
@@ -148,35 +146,26 @@ pr2ra()			/* convert 24-bit scanlines to Radiance picture */
 
 ra2pr()			/* convert Radiance scanlines to 24-bit rasterfile */
 {
-#define map(v)	((v)>=1.0 ? 255 : gmap[(int)(1024.*(v))])
-	unsigned char	gmap[1024];
-	COLOR	*scanin;
+	COLR	*scanin;
 	register int	x;
-	register int	c;
 	int	y;
 						/* allocate scanline */
-	scanin = (COLOR *)malloc(xmax*sizeof(COLOR));
+	scanin = (COLR *)malloc(xmax*sizeof(COLR));
 	if (scanin == NULL)
 		quiterr("out of memory in pr2ra");
-						/* compute gamma correction */
-	for (x = 0; x < 1024; x++)
-		gmap[x] = 256.*pow((x+.5)/1024., 1./gamma);
 						/* convert image */
 	for (y = ymax-1; y >= 0; y--) {
-		if (freadscan(scanin, xmax, stdin) < 0)
+		if (freadcolrs(scanin, xmax, stdin) < 0)
 			quiterr("error reading Radiance picture");
+		colrs_gambs(scanin, xmax);
 		for (x = 0; x < xmax; x++) {
-			c = map(colval(scanin[x],RED));
-			putc(c, stdout);
-			c = map(colval(scanin[x],GRN));
-			putc(c, stdout);
-			c = map(colval(scanin[x],BLU));
-			putc(c, stdout);
+			putc(scanin[x][RED], stdout);
+			putc(scanin[x][GRN], stdout);
+			putc(scanin[x][BLU], stdout);
 		}
 		if (ferror(stdout))
 			quiterr("error writing rasterfile");
 	}
 						/* free scanline */
 	free((char *)scanin);
-#undef map
 }
