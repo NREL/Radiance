@@ -18,15 +18,45 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "parser.h"
 
+#include "lookup.h"
+
 #define O_INV1		1	/* Inventor 1.0 output */
 #define O_INV2		2	/* Inventor 2.0 output */
 #define O_VRML		3	/* VRML output */
+
+#define MAXID		48	/* maximum identifier length */
+
+#define VERTFMT		"%+16.9e %+16.9e %+16.9e\n%+6.3f %+6.3f %+6.3f"
+#define VZVECT		"+0.000 +0.000 +0.000"
+#define VFSEPPOS	50	/* position of newline in above */
+#define VFLEN		72	/* total vertex string length */
+#define MAXVERT		10240	/* maximum cached vertices */
+
+#define setvkey(k,v)	sprintf(k,VERTFMT,(v)->p[0],(v)->p[1],(v)->p[2],\
+					(v)->n[0],(v)->n[1],(v)->n[2]);
+
+char	vlist[MAXVERT][VFLEN];	/* our vertex cache */
+int	nverts;			/* current cache size */
+
+LUTAB	vert_tab = LU_SINIT(NULL,NULL);
+
+struct face {
+	struct face	*next;		/* next face in list */
+	short		nv;		/* number of vertices */
+	short		vl[3];		/* vertex index list (variable) */
+}	*flist, *flast;		/* our face cache */
+
+#define newface(n)	(struct face *)malloc(sizeof(struct face) + \
+				((n) > 3 ? (n)-3 : 0)*sizeof(short))
+#define freeface(f)	free((MEM_PTR)f)
 
 #define	TABSTOP		8	/* assumed number of characters per tab */
 #define	SHIFTW		2	/* nesting shift width */
 #define MAXIND		15	/* maximum indent level */
 
 char	tabs[MAXIND*SHIFTW+1];	/* current tab-in string */
+
+#define curmatname	(c_cmname == NULL ? "mat" : to_id(c_cmname))
 
 int	outtype = O_INV2;	/* output format */
 
@@ -114,7 +144,8 @@ char	*argv[];
 			printf("## %s %s: %u unknown entities\n",
 					argv[0], argv[i], mg_nunknown);
 	}
-	printf("}\n");				/* close root node */
+	flush_cache();		/* flush face cache, just in case */
+	printf("}\n");		/* close root node */
 	exit(0);
 userr:
 	fprintf(stderr, "%s: [-1|-2|-vrml] [file] ..\n", argv[0]);
@@ -165,6 +196,7 @@ char	**av;
 {
 	static int	objnest;
 
+	flush_cache();			/* flush cached objects */
 	if (ac == 2) {				/* start group */
 		printf("%sDEF %s Group {\n", tabs, to_id(av[1]));
 		indent(1);
@@ -191,6 +223,7 @@ char	**av;
 	static long	xfid;
 	register XF_SPEC	*spec;
 
+	flush_cache();			/* flush cached objects */
 	if (ac == 1) {			/* end of transform */
 		if ((spec = xf_context) == NULL)
 			return(MG_ECNTXT);
@@ -284,17 +317,15 @@ register XF_SPEC	*spec;
 int
 put_material()			/* put out current material */
 {
-	char	*mname = "mat";
+	char	*mname = curmatname;
 	float	rgbval[3];
 
-	if (c_cmname != NULL)
-		mname = c_cmname;
 	if (!c_cmaterial->clock) {	/* current, just use it */
-		printf("%sUSE %s\n", tabs, to_id(mname));
+		printf("%sUSE %s\n", tabs, mname);
 		return(0);
 	}
 				/* else update definition */
-	printf("%sDEF %s Group {\n", tabs, to_id(mname));
+	printf("%sDEF %s Group {\n", tabs, mname);
 	indent(1);
 	printf("%sMaterial {\n", tabs);
 	indent(1);
@@ -334,65 +365,48 @@ i_face(ac, av)			/* translate an N-sided face */
 int	ac;
 char	**av;
 {
-	C_VERTEX	*vl[MG_MAXARGC-1];
-	int	donorms = 1;
+	static char	lastmat[MAXID];
+	struct face	*newf;
+	register C_VERTEX	*vp;
+	register LUENT	*lp;
 	register int	i;
 
 	if (ac < 4)
 		return(MG_EARGC);
-	printf("%sSeparator {\n", tabs);
-	indent(1);
-				/* put out current material */
-	if (put_material() < 0)
-		return(MG_EBADMAT);
-				/* get vertex references */
-	for (i = 0; i < ac-1; i++) {
-		if ((vl[i] = c_getvert(av[i+1])) == NULL)
-			return(MG_EUNDEF);
-		if (is0vect(vl[i]->n))
-			donorms = 0;
-	}
-				/* put out normal coordinates */
-	if (donorms) {
-		printf("%sNormal {\n", tabs);
+	if ( strcmp(lastmat, curmatname) || c_cmaterial->clock ||
+			nverts == 0 || nverts+ac-1 >= MAXVERT) {
+		flush_cache();			/* new cache */
+		lu_init(&vert_tab, MAXVERT);
+		printf("%sSeparator {\n", tabs);
 		indent(1);
-		printf("%svector [ %5.3g %5.3g %5.3g", tabs,
-			vl[0]->n[0], vl[0]->n[1], vl[0]->n[2]);
-		for (i = 1; i < ac-1; i++)
-			printf(",\n%s         %5.3g %5.3g %5.3g", tabs,
-					vl[i]->n[0], vl[i]->n[1], vl[i]->n[2]);
-		indent(0);
-		printf(" ]\n%s}\n", tabs);
-	} else
-		printf("%sNormal { }\n", tabs);
-				/* put out vertex coordinates */
-	printf("%sCoordinate3 {\n", tabs);
-	indent(1);
-	printf("%spoint [ %13.9g %13.9g %13.9g", tabs,
-			vl[0]->p[0], vl[0]->p[1], vl[0]->p[2]);
-	for (i = 1; i < ac-1; i++)
-		printf(",\n%s        %13.9g %13.9g %13.9g", tabs,
-			vl[i]->p[0], vl[i]->p[1], vl[i]->p[2]);
-	indent(0);
-	printf(" ]\n%s}\n", tabs);
-				/* put out actual face */
-	printf("%sIndexedFaceSet {\n", tabs);
-	indent(1);
-	if (donorms) {
-		printf("%snormalIndex [ 0", tabs);
-		for (i = 1; i < ac-1; i++)
-			printf(", %d", i);
-		printf(" ]\n");
+		if (put_material() < 0)		/* put out material */
+			return(MG_EBADMAT);
+		(void)strcpy(lastmat, curmatname);
 	}
-	printf("%scoordIndex [ 0", tabs);
-	for (i = 1; i < ac-1; i++)
-		printf(", %d", i);
-	printf(" ]\n");
-	indent(0);
-	printf("%s}\n", tabs);
-	indent(0);
-	printf("%s}\n", tabs);
-	return(MG_OK);
+				/* allocate new face */
+	if ((newf = newface(ac-1)) == NULL)
+		return(MG_EMEM);
+	newf->nv = ac-1;
+				/* get vertex references */
+	for (i = 0; i < newf->nv; i++) {
+		if ((vp = c_getvert(av[i+1])) == NULL)
+			return(MG_EUNDEF);
+		setvkey(vlist[nverts], vp);
+		lp = lu_find(&vert_tab, vlist[nverts]);
+		if (lp == NULL)
+			return(MG_EMEM);
+		if (lp->key == NULL)
+			lp->key = (char *)vlist[nverts++];
+		newf->vl[i] = ((char (*)[VFLEN])lp->key - vlist);
+	}
+				/* add to face list */
+	newf->next = NULL;
+	if (flist == NULL)
+		flist = newf;
+	else
+		flast->next = newf;
+	flast = newf;
+	return(MG_OK);		/* we'll actually put it out later */
 }
 
 
@@ -405,6 +419,7 @@ char	**av;
 
 	if (ac != 3)
 		return(MG_EARGC);
+	flush_cache();		/* flush vertex cache */
 	printf("%sSeparator {\n", tabs);
 	indent(1);
 				/* put out current material */
@@ -436,6 +451,7 @@ char	**av;
 
 	if (ac != 4)
 		return(MG_EARGC);
+	flush_cache();		/* flush vertex cache */
 	printf("%sSeparator {\n", tabs);
 	indent(1);
 				/* put out current material */
@@ -471,14 +487,82 @@ char *
 to_id(name)			/* make sure a name is a valid Inventor ID */
 register char	*name;
 {
-	static char	id[32];
+	static char	id[MAXID];
 	register char	*cp;
 
-	for (cp = id; cp < id+sizeof(id)-1 && *name; name++)
+	for (cp = id; *name && cp < MAXID-1+id; name++)
 		if (isalnum(*name) || *name == '_')
 			*cp++ = *name;
 		else
 			*cp++ = '_';
 	*cp = '\0';
 	return(id);
+}
+
+
+flush_cache()			/* put out cached faces */
+{
+	int	donorms = 0;
+	register struct face	*f;
+	register int	i;
+
+	if (nverts == 0)
+		return;
+					/* put out coordinates */
+	printf("%sCoordinate3 {\n", tabs);
+	indent(1);
+	vlist[0][VFSEPPOS] = '\0';
+	printf("%spoint [ %s", tabs, vlist[0]);
+	for (i = 1; i < nverts; i++) {
+		vlist[i][VFSEPPOS] = '\0';
+		printf(",\n%s        %s", tabs, vlist[i]);
+		if (strcmp(VFSEPPOS+1+vlist[i], VZVECT))
+			donorms++;
+	}
+	indent(0);
+	printf(" ]\n%s}\n", tabs);
+	if (donorms) {			/* put out normals */
+		printf("%sNormal {\n", tabs);
+		indent(1);
+		printf("%svector [ %s", tabs, VFSEPPOS+1+vlist[0]);
+		for (i = 1; i < nverts; i++)
+			printf(",\n%s         %s", tabs, VFSEPPOS+1+vlist[i]);
+		indent(0);
+		printf(" ]\n%s}\n", tabs);
+	}
+					/* put out faces */
+	printf("%sIndexedFaceSet {\n", tabs);
+	indent(1);
+	f = flist;			/* coordinate indices */
+	printf("%scoordIndex [ %d", tabs, f->vl[0]);
+	for (i = 1; i < f->nv; i++)
+		printf(", %d", f->vl[i]);
+	for (f = f->next; f != NULL; f = f->next) {
+		printf(", -1,\n%s             %d", tabs, f->vl[0]);
+		for (i = 1; i < f->nv; i++)
+			printf(", %d", f->vl[i]);
+	}
+	printf(" ]\n");
+	if (donorms) {
+		f = flist;			/* normal indices */
+		printf("%snormalIndex [ %d", tabs, f->vl[0]);
+		for (i = 1; i < f->nv; i++)
+			printf(", %d", f->vl[i]);
+		for (f = f->next; f != NULL; f = f->next) {
+			printf(", -1,\n%s              %d", tabs, f->vl[0]);
+			for (i = 1; i < f->nv; i++)
+				printf(", %d", f->vl[i]);
+		}
+		printf(" ]\n");
+	}
+	indent(0);			/* close IndexedFaceSet */
+	printf("%s}\n", tabs);
+	indent(0);			/* close face group */
+	printf("%s}\n", tabs);
+	while ((f = flist) != NULL) {	/* free face list */
+		flist = f->next;
+		freeface(f);
+	}
+	lu_done(&vert_tab);		/* clear lookup table */
+	nverts = 0;
 }
