@@ -14,9 +14,12 @@
 	with a rectangular box.  lboxcorr provides a more
 	accurate calculation for nearby surfaces, but requires
 	that the source box be centered at the origin.
+	The dimensions of the box, which must be aligned with
+	the x,y,z axes, are given in meters regardless of the
+	units being used in the scene file.
 
 	A1		- optional multipier
-	A2,A3,A4	- X,Y,Z dimensions of axis-aligned box
+	A2,A3,A4	- X,Y,Z dimensions of axis-aligned box (in meters!)
 }
 					{ local definitions }
 boxprojection = abs(Dx)*A3*A4 + abs(Dy)*A2*A4 + abs(Dz)*A2*A3;
