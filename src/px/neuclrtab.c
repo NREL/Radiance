@@ -51,6 +51,8 @@ static long	skipcount;
 
 #define setskip(sp,n)	((sp)[0]=(n)>>16,(sp)[1]=((n)>>8)&255,(sp)[2]=(n)&255)
 
+static	cpyclrtab();
+
 
 neu_init(npixels)		/* initialize our sample array */
 long	npixels;
