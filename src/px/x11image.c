@@ -240,7 +240,8 @@ init()			/* get data and open window */
 	if (geometry != NULL) {
 		bzero((char *)&oursizhints, sizeof(oursizhints));
 		i = XParseGeometry(geometry, &oursizhints.x, &oursizhints.y,
-				&oursizhints.width, &oursizhints.height);
+				(unsigned *)&oursizhints.width,
+				(unsigned *)&oursizhints.height);
 		if ((i&(WidthValue|HeightValue)) == (WidthValue|HeightValue))
 			oursizhints.flags |= USSize;
 		else {

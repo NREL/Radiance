@@ -505,7 +505,6 @@ int	samp;
 {
 	int	*yback, xback;
 	int	y;
-	COLR	pfill;
 	register int	x, i;
 							/* get back buffer */
 	yback = (int *)malloc(hresolu*sizeof(int));
