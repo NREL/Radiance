@@ -24,6 +24,14 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  sub_add(sub)	(2-(sub))	/* map subtractive to additive pri. */
 
+#ifdef  BSD
+#define  clearlbuf()	bzero((char *)lpat, sizeof(lpat))
+#else
+#define  clearlbuf()	(void)memset((char *)lpat, 0, sizeof(lpat))
+#endif
+
+long  lpat[NCOLS][3];
+
 
 main(argc, argv)
 int  argc;
@@ -68,6 +76,8 @@ char  *fname;
 	}
 				/* set line spacing (overlap for knitting) */
 	fputs("\0333\042", stdout);
+				/* clear line buffer */
+	clearlbuf();
 				/* put out scanlines */
 	for (i = yres-1; i >= 0; i--) {
 		if (freadcolrs(scanline, xres, input) < 0) {
@@ -91,7 +101,6 @@ COLR  scan[];
 int  len;
 int  y;
 {
-	static long  pat[NCOLS][3];
 	int  bpos;
 	register long  c;
 	register int  i, j;
@@ -100,7 +109,7 @@ int  y;
 
 		for (j = 0; j < 3; j++)
 			for (i = 0; i < len; i++)
-				pat[i][j] |= (long)colbit(scan[i],i,j) << bpos;
+				lpat[i][j] |= (long)colbit(scan[i],i,j) << bpos;
 
 	} else {
 
@@ -111,9 +120,9 @@ int  y;
 			putchar(len & 255);
 			putchar(len >> 8);
 			for (i = 0; i < len; i++) {
-				c = pat[i][j] | colbit(scan[i],i,j);
+				c = lpat[i][j] | colbit(scan[i],i,j);
 							/* repeat this row */
-				pat[i][j] = (c & 1) << 23;
+				lpat[i][j] = (c & 1) << 23;
 				putchar(c>>16);
 				putchar(c>>8 & 255);
 				putchar(c & 255);
