@@ -240,7 +240,7 @@ FVECT  p;
 	case VT_CYL:			/* cylindrical panorama */
 		ip[2] = DOT(disp,v->vdir);
 		d = DOT(disp,v->hvec);
-		ip[0] = 180.0/PI * atan2(ip[2],d) / v->horiz + 0.5 - v->hoff;
+		ip[0] = 180.0/PI * atan2(d,ip[2]) / v->horiz + 0.5 - v->hoff;
 		ip[1] = DOT(disp,v->vvec)/v->vn2 + 0.5 - v->voff;
 		if (v->vfore > FTINY)
 			ip[2] = sqrt(DOT(disp,disp)) *
