@@ -74,6 +74,10 @@ static char  *reserve_mem = NULL;	/* pre-allocated reserve memory */
 quit(code)			/* quit program */
 int  code;
 {
+#ifdef MSTATS
+	if (code == 2 && errno == ENOMEM)
+		printmemstats(stderr);
+#endif
 	devclose();
 	exit(code);
 }
@@ -185,9 +189,13 @@ again:
 	else *++args = '\0';
 	
 	switch (inpbuf[0]) {
-	case 'f':				/* new frame */
-		if (badcom("frame"))
-			goto commerr;
+	case 'f':				/* new frame (or free mem.) */
+		if (badcom("frame")) {
+			if (badcom("free"))
+				goto commerr;
+			free_objmem();
+			break;
+		}
 		getframe(args);
 		break;
 	case 'v':				/* view */
@@ -225,7 +233,7 @@ again:
 			goto commerr;
 		getaim(args);
 		break;
-	case 'm':				/* move camera */
+	case 'm':				/* move camera (or memstats) */
 		if (badcom("move"))
 #ifdef	MSTATS
 		{
