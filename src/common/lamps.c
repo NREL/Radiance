@@ -12,7 +12,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <ctype.h>
 
 extern char	*eindex(), *expsave(), *malloc();
-extern FILE	*fropen();
+extern FILE	*frlibopen();
 
 typedef struct lamp {
 	char	*pattern;			/* search pattern */
@@ -48,7 +48,7 @@ char	*file;
 	char	buf[128], str[128];
 	register char	*cp1, *cp2;
 
-	if ((fp = fropen(file)) == NULL)
+	if ((fp = frlibopen(file)) == NULL)
 		return(0);
 	lastp = NULL;
 	while (fgets(buf, sizeof(buf), fp) != NULL) {
