@@ -169,13 +169,19 @@ initobscache(int sn)
 static OBJECT *			/* return occluder cache entry */
 srcobstructp(register RAY *r)
 {
+	static unsigned long	lastrno = ~0;
 	static OBJECT   noobs;
+	static OBJECT	*lastobjp;
 	SRCREC		*srcp;
 	int		ondx;
 
+	noobs = OVOID;
+	if (r->rno == lastrno)
+		return lastobjp;	/* just recall last pointer */
 	DCHECK(r->rsrc < 0, CONSISTENCY,
 			"srcobstructp() called with unaimed ray");
-	noobs = OVOID;
+	lastrno = r->rno;
+	lastobjp = &noobs;
 	srcp = &source[r->rsrc];
 	if (srcp->sflags & (SSKIP|SPROX|SSPOT|SVIRTUAL))
 		return(&noobs);		/* don't cache these */
@@ -232,8 +238,8 @@ srcobstructp(register RAY *r)
 			ondx += (int)(SHADCACHE*(.5-FTINY) *
 					(1. + sd[0]/sd1m));
 		}
-		DCHECK(ondx < 0 | ondx >= SHADCACHE*SHADCACHE*3 +
-				(SHADCACHE&1)*SHADCACHE*4, CONSISTENCY,
+		DCHECK((ondx < 0) | (ondx >= SHADCACHE*SHADCACHE*3 +
+				(SHADCACHE&1)*SHADCACHE*4), CONSISTENCY,
 				"flat source cache index out of bounds");
 	} else /* spherical distribution */ {
 		int     ax, ax1, ax2;
@@ -252,11 +258,11 @@ srcobstructp(register RAY *r)
 					(1. + r->rdir[ax1]/amax));
 		ondx += (int)(SHADCACHE*(.5-FTINY) *
 				(1. + r->rdir[ax2]/amax));
-		DCHECK(ondx < 0 | ondx >= SHADCACHE*SHADCACHE*6, CONSISTENCY,
+		DCHECK((ondx < 0) | (ondx >= SHADCACHE*SHADCACHE*6), CONSISTENCY,
 				"radial source cache index out of bounds");
 	}
 					/* return cache pointer */
-	return(&srcp->obscache->obs[ondx]);
+	return(lastobjp = &srcp->obscache->obs[ondx]);
 }
 
 
