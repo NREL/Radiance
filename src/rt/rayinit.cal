@@ -24,6 +24,10 @@
  	RdotP				- perturbed ray dot product
  	CrP, CgP, CbP			- perturbed material color
 
+	For prism1 and prism2 types, the following are available:
+
+	DxA, DyA, DzA			- direction to target light source
+
 	Library functions:
 
 	if(a, b, c)			- if a positive, return b, else c
