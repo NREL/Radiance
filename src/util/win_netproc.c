@@ -27,7 +27,14 @@ static char	*ourshell;
 static char	ouruser[32];
 PSERVER	*pslist = NULL;
 
-PSERVER* addpserver(char* host, char* dir, char* usr, int np) {
+PSERVER*
+addpserver(
+	char* host,
+	char* dir,
+	char* usr,
+	int np
+)
+{
 	PSERVER* ps;
 	if (np < 1)
 		return(NULL);

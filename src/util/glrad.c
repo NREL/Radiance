@@ -203,8 +203,9 @@ userr:
 
 
 void
-quit(code)				/* exit gracefully */
-int	code;
+quit(				/* exit gracefully */
+	int	code
+)
 {
 	if (ourdisplay != NULL)
 		dev_close();

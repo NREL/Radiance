@@ -5,6 +5,7 @@ static const char	RCSid[] = "$Id$";
  * Convert angle ranges of the form a-b:s,c to discrete values
  */
 
+#include <stdlib.h>
 #include <ctype.h>
 
 #include "setscan.h"

@@ -17,9 +17,11 @@ VIEW	vw = STDVIEW;
 char	*progname;
 
 
-main(argc, argv)
-int	argc;
-char	*argv[];
+int
+main(
+	int	argc,
+	char	*argv[]
+)
 {
 	char	linebuf[256];
 	char	*err;
