@@ -116,7 +116,7 @@ int	nents;
 	default:
 		error(CONSISTENCY, "bundle_set called with unknown operation");
 	}
-	n = 0;				/* allocate packet holder */
+	n = RPACKSIZ;				/* allocate packet holder */
 	for (i = 0; i < nents; i++)
 		if (clist[i].nr > n)
 			n = clist[i].nr;
@@ -126,8 +126,16 @@ int	nents;
 					/* display what we have */
 	for (i = 0; i < nents; i++)
 		if ((b = hdgetbeam(hdlist[clist[i].hd], clist[i].bi)) != NULL) {
+			if (b->nrm > n) {
+				n = b->nrm;
+				p = (PACKHEAD *)realloc((char *)p, packsiz(n));
+				if (p == NULL)
+					goto memerr;
+			}
 			bcopy((char *)hdbray(b), (char *)packra(p),
 					(p->nr=b->nrm)*sizeof(RAYVAL));
+			p->hd = clist[i].hd;
+			p->bi = clist[i].bi;
 			disp_packet(p);
 		}
 	free((char *)p);		/* clean up */
