@@ -53,8 +53,8 @@ struct srcspan {
 
 extern struct source {
 	FVECT	dir;		/* source direction */
-	float	dom;		/* solid angle of source */
-	float	brt;		/* average source brightness */
+	double	dom;		/* solid angle of source */
+	double	brt;		/* average source brightness */
 	struct srcspan	*first;	/* first span for this source */
 	struct source	*next;	/* next source in list */
 } *donelist;			/* finished sources */
