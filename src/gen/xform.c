@@ -31,7 +31,7 @@ int  reverse;				/* boolean true if scene mirrored */
 
 int  invert = 0;			/* boolean true to invert surfaces */
 
-int  expand = 0;			/* boolean true to expand commands */
+int  expand = 1;			/* boolean true to expand commands */
 
 char  *newmod = NULL;			/* new modifier for surfaces */
 
@@ -80,6 +80,11 @@ char  *argv[];
 				if (argv[a][2] || a+1 >= argc)
 					break;
 				idprefix = argv[++a];
+				continue;
+			case 'c':
+				if (argv[a][2])
+					break;
+				expand = 0;
 				continue;
 			case 'e':
 				if (argv[a][2])
@@ -227,7 +232,7 @@ FILE  *fin;
 	} else {
 		printf("\n%s", buf);
 		if (xac > 1) {
-			printf(" | %s -e", xav[0]);
+			printf(" | %s", xav[0]);
 			for (i = 1; i < xac; i++)
 				printf(" %s", xav[i]);
 		}
@@ -764,8 +769,9 @@ char  *fname;
 	extern FILE  *tmpfile();
 	extern char  *getlibpath(), *getpath();
 	static char  origdir[MAXPATH];
-	static char  curdir[MAXPATH];
-	char  newdir[MAXPATH], *cp;
+	static char  curfn[MAXPATH];
+	static int  diffdir;
+	register char  *fpath;
 
 	if (fname == NULL) {			/* standard input */
 		if (mainfp == NULL) {
@@ -789,48 +795,56 @@ char  *fname;
 		rewind(mainfp);			/* rewind copy */
 		return;
 	}
+	if (mainfp == NULL) {			/* first call, initialize */
+		getwd(origdir);
+	} else if (!strcmp(fname, curfn)) {	/* just need to rewind? */
+		rewind(mainfp);
+		return;
+	} else {				/* else close old stream */
+		fclose(mainfp);
+		if (diffdir) {
+			chdir(origdir);
+			diffdir = 0;
+		}
+	}
+	strcpy(curfn, fname);			/* remember file name */
 						/* get full path */
-	if ((cp = getpath(fname, getlibpath(), R_OK)) == NULL) {
+	if ((fpath = getpath(fname, getlibpath(), R_OK)) == NULL) {
 		fprintf(stderr, "%s: cannot find file \"%s\"\n",
 				progname, fname);
 		exit(1);
 	}
-	if (cp[0] == '.' && ISDIRSEP(cp[1]))	/* remove leading ./ */
-		cp += 2;
-	if (mainfp == NULL) {			/* first call, initialize */
-		getwd(origdir);
-		strcpy(curdir, origdir);
-	} else if (!strcmp(cp, mainfn)) {	/* just need to rewind? */
-		rewind(mainfp);
-		return;
-	} else					/* else close old stream */
-		fclose(mainfp);
+	if (fpath[0] == '.' && ISDIRSEP(fpath[1]))	/* remove leading ./ */
+		fpath += 2;
 						/* record path name */
-	strcpy(mainfn, cp);
-	if (expand) {				/* get directory component */
-		if (ISDIRSEP(cp[0]))
-			strcpy(newdir, cp);
-		else
-			sprintf(newdir, "%s%c%s", origdir, DIRSEP, cp);
-		for (cp = newdir+strlen(newdir); !ISDIRSEP(cp[-1]); cp--)
-			;
+	strcpy(mainfn, fpath);
+	if (expand) {				/* change to local directory */
+		register char  *cp = fpath + strlen(fpath);	/* get dir. */
+		while (cp > fpath) {
+			cp--;
+			if (ISDIRSEP(*cp)) {
+				if (cp == fpath)
+					cp++;	/* root special case */
+				break;
+			}
+		}
 		*cp = '\0';
-		if (strcmp(newdir, curdir)) {	/* change to new directory? */
-			if (chdir(newdir) < 0) {
+		if (fpath[0]) {			/* change to new directory? */
+			if (chdir(fpath) < 0) {
 				fprintf(stderr,
 				"%s: cannot change directory to \"%s\"\n",
-						progname, newdir);
+						progname, fpath);
 				exit(1);
 			}
-			strcpy(curdir, newdir);
+			diffdir++;
 		}
 						/* get final path component */
-		for (cp = fname+strlen(fname);
-				cp > fname && !ISDIRSEP(cp[-1]); cp--)
+		for (fpath = fname+strlen(fname);
+				fpath > fname && !ISDIRSEP(fpath[-1]); fpath--)
 			;
 	}
 						/* open the file */
-	if ((mainfp = fopen(cp, "r")) == NULL) {
+	if ((mainfp = fopen(fpath, "r")) == NULL) {
 		fprintf(stderr, "%s: cannot open file \"%s\"\n",
 				progname, mainfn);
 		exit(1);
