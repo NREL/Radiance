@@ -18,7 +18,7 @@
 #define	TM_F_CWEIGHT	040		/* center weighting */
 #define	TM_F_FOVEAL	0100		/* use foveal sample size */
 #define	TM_F_BW		0200		/* luminance only */
-#define	TM_F_NOERRS	0400		/* don't report errors to stderr */
+#define	TM_F_NOSTDERR	0400		/* don't report errors to stderr */
 				/* combined modes */
 #define	TM_F_CAMERA	0
 #define	TM_F_HUMAN	(TM_F_HCONTR|TM_F_MESOPIC|TM_F_VEIL|\

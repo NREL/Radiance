@@ -24,7 +24,7 @@ tmErrorReturn(func, err)		/* error return (with message) */
 char	*func;
 int	err;
 {
-	if (tmTop != NULL && tmTop->flags & TM_F_NOERRS)
+	if (tmTop != NULL && tmTop->flags & TM_F_NOSTDERR)
 		return(err);
 	fputs(func, stderr);
 	fputs(": ", stderr);
@@ -277,8 +277,8 @@ int	wt;
 		if (newhist == NULL)
 			returnErr(TM_E_NOMEM);
 		if (oldlen) {			/* copy and free old */
-			for (i = oldlen, j = i+oldorig-horig; i--; )
-				newhist[--j] = tmTop->histo[i];
+			for (i = oldlen, j = i+oldorig-horig; i; )
+				newhist[--j] = tmTop->histo[--i];
 			free((char *)tmTop->histo);
 		}
 		tmTop->histo = newhist;
@@ -346,49 +346,53 @@ double	Ldmax;
 	i = (tmTop->brmin-MINBRT)/HISTEP;
 	brt0 = MINBRT + HISTEP/2 + i*HISTEP;
 	histlen = (tmTop->brmax-MINBRT)/HISTEP + 1 - i;
-					/* allocate temporary tables */
-	histo = (int *)malloc(histlen*sizeof(int));
-	cumf = (float *)malloc((histlen+1)*sizeof(float));
-	if (histo == NULL | cumf == NULL)
-		returnErr(TM_E_NOMEM);
 					/* histogram total and mean */
 	histot = 0; sum = 0;
 	j = brt0 + histlen*HISTEP;
 	for (i = histlen; i--; ) {
-		histot += (histo[i] = tmTop->histo[i]);
-		sum += (j -= HISTEP) * histo[i];
+		histot += tmTop->histo[i];
+		sum += (j -= HISTEP) * tmTop->histo[i];
 	}
 	threshold = histot*.025 + .5;
 	if (threshold < 4)
 		returnErr(TM_E_TMFAIL);
 	Lwavg = tmLuminance( (double)sum / histot );
-	do {				/* iterate to solution */
-		sum = 0;		/* compute cumulative probability */
-		for (i = 0; i < histlen; i++) {
-			cumf[i] = (double)sum/histot;
-			sum += histo[i];
-		}
-		cumf[i] = 1.;
-		Tr = histot * (double)(tmTop->brmax - tmTop->brmin) /
+	if (!(tmTop->flags & TM_F_LINEAR)) {	/* clamp histogram */
+		histo = (int *)malloc(histlen*sizeof(int));
+		cumf = (float *)malloc((histlen+1)*sizeof(float));
+		if (histo == NULL | cumf == NULL)
+			returnErr(TM_E_NOMEM);
+		for (i = histlen; i--; )	/* make malleable copy */
+			histo[i] = tmTop->histo[i];
+		do {				/* iterate to solution */
+			sum = 0;		/* cumulative probability */
+			for (i = 0; i < histlen; i++) {
+				cumf[i] = (double)sum/histot;
+				sum += histo[i];
+			}
+			cumf[i] = 1.;
+			Tr = histot * (double)(tmTop->brmax - tmTop->brmin) /
 				((double)histlen*TM_BRTSCALE) / logLddyn;
-		ceiling = Tr + 1.;
-		trimmings = 0;			/* clip to envelope */
-		for (i = histlen; i--; ) {
-			if (tmTop->flags & TM_F_HCONTR) {
-				Lw = tmLuminance(brt0 + i*HISTEP);
-				Ld = Ldmin * exp( logLddyn *
+			ceiling = Tr + 1.;
+			trimmings = 0;			/* clip to envelope */
+			for (i = histlen; i--; ) {
+				if (tmTop->flags & TM_F_HCONTR) {
+					Lw = tmLuminance(brt0 + i*HISTEP);
+					Ld = Ldmin * exp( logLddyn *
 						.5*(cumf[i]+cumf[i+1]) );
-				ceiling = Tr * (htcontrs(Ld) * Lw) /
+					ceiling = Tr * (htcontrs(Ld) * Lw) /
 						(htcontrs(Lw) * Ld) + 1.;
+				}
+				if (histo[i] > ceiling) {
+					trimmings += histo[i] - ceiling;
+					histo[i] = ceiling;
+				}
 			}
-			if (histo[i] > ceiling) {
-				trimmings += histo[i] - ceiling;
-				histo[i] = ceiling;
-			}
-		}
-	} while ((histot -= trimmings) > threshold && trimmings > threshold);
-
-	if (tmTop->lumap == NULL) {		/* allocate luminance map */
+		} while ((histot -= trimmings) > threshold &&
+						trimmings > threshold);
+	}
+						/* allocate luminance map */
+	if (tmTop->lumap == NULL) {
 		tmTop->lumap = (unsigned short *)malloc(
 			(tmTop->brmax-tmTop->brmin+1)*sizeof(unsigned short) );
 		if (tmTop->lumap == NULL)
@@ -415,8 +419,10 @@ double	Ldmax;
 			tmTop->lumap[i] = 256.*pow(d, 1./gamval);
 		}
 	}
-	free((char *)histo);
-	free((char *)cumf);
+	if (!(tmTop->flags & TM_F_LINEAR)) {
+		free((char *)histo);
+		free((char *)cumf);
+	}
 	returnOK;
 }
 
