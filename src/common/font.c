@@ -124,6 +124,29 @@ memerr:
 }
 
 
+freefont(fname)			/* free a font (free all if fname==NULL) */
+char  *fname;
+{
+	FONT  head;
+	register FONT  *fl, *f;
+	register int  i;
+
+	head.next = fontlist;
+	fl = &head;
+	while ((f = fl->next) != NULL)
+		if (fname == NULL || !strcmp(fname, f->name)) {
+			fl->next = f->next;
+			for (i = 0; i < 256; i++)
+				if (f->fg[i] != NULL)
+					free((char *)f->fg[i]);
+			freestr(f->name);
+			free((char *)f);
+		} else
+			fl = f;
+	fontlist = head.next;
+}
+
+
 int
 uniftext(sp, tp, f)			/* uniformly space text line */
 register short	*sp;		/* returned character spacing */
