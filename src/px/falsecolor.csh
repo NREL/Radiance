@@ -86,7 +86,7 @@ ndivs : $ndivs ;
 or(a,b) : if(a,a,b);
 EPS : 1e-7;
 neq(a,b) : if(a-b-EPS,1,b-a-EPS);
-btwn(a,b) : if(a-x,-1,b-x);
+btwn(a,x,b) : if(a-x,-1,b-x);
 clip(x) : if(x-1,1,if(x,x,0));
 frac(x) : x - floor(x);
 boundary(a,b) : neq(floor(ndivs*a),floor(ndivs*b));
