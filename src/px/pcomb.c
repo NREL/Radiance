@@ -46,12 +46,14 @@ char	vbrtin[] = "li";
 char	vbrtout[] = "lo";
 char	vcolexp[3][4] = {"re", "ge", "be"};
 char	vbrtexp[] = "le";
+char	vpixaspect[] = "pa";
 
-char	vray[6][4] = {"Ox", "Oy", "Oz", "Dx", "Dy", "Dz"};
+char	vray[7][4] = {"Ox", "Oy", "Oz", "Dx", "Dy", "Dz", "T"};
 
 char	vpsize[] = "S";
 
 char	vnfiles[] = "nfiles";
+char	vwhteff[] = "WE";
 char	vxmax[] = "xmax";
 char	vymax[] = "ymax";
 char	vxres[] = "xres";
@@ -248,9 +250,9 @@ char	*s;
 	} else if (iscolcor(s)) {		/* color correction */
 		colcorval(ctmp, s);
 		multcolor(input[nfiles].expos, ctmp);
-	} else if (isaspect(s)) {
+	} else if (isaspect(s))
 		input[nfiles].pa *= aspectval(s);
-	} else if (isview(s) && sscanview(&input[nfiles].vw, s) > 0)
+	else if (isview(s) && sscanview(&input[nfiles].vw, s) > 0)
 		gotview++;
 						/* echo line */
 	putchar('\t');
@@ -314,7 +316,7 @@ double	(*ourbright)() = rgb_bright;
 
 init()					/* perform final setup */
 {
-	double	l_colin(), l_expos(), l_ray(), l_psize();
+	double	l_colin(), l_expos(), l_pixaspect(), l_ray(), l_psize();
 	register int	i;
 						/* define constants */
 	varset(vnfiles, ':', (double)nfiles);
@@ -327,12 +329,16 @@ init()					/* perform final setup */
 	}
 	funset(vbrtexp, 1, ':', l_expos);
 	funset(vbrtin, 1, '=', l_colin);
-	for (i = 0; i < 6; i++)
+	funset(vpixaspect, 1, ':', l_pixaspect);
+	for (i = 0; i < 7; i++)
 		funset(vray[i], 1, '=', l_ray);
 	funset(vpsize, 1, '=', l_psize);
 						/* set brightness function */
-	if (!strcmp(ourfmt, CIEFMT))
+	if (!strcmp(ourfmt, CIEFMT)) {
+		varset(vwhteff, ':', 1.0);
 		ourbright = xyz_bright;
+	} else
+		varset(vwhteff, ':', WHTEFFICACY);
 }
 
 
@@ -443,6 +449,18 @@ register char	*nam;
 
 
 double
+l_pixaspect()			/* return pixel aspect ratio */
+{
+	register int	fn;
+
+	fn = argument(1) - .5;
+	if (fn < 0 || fn >= nfiles)
+		return(1.0);
+	return(input[fn].pa);
+}
+
+
+double
 l_colin(nam)			/* return color value for picture */
 register char	*nam;
 {
@@ -450,10 +468,7 @@ register char	*nam;
 	register int	n, xoff, yoff;
 	double	d;
 
-	d = argument(1);
-	if (d > -.5 && d < .5)
-		return((double)nfiles);
-	fn = d - .5;
+	fn = argument(1) - .5;
 	if (fn < 0 || fn >= nfiles) {
 		errno = EDOM;
 		return(0.0);
@@ -505,15 +520,12 @@ register char	*nam;
 {
 	static unsigned long	ltick[MAXINP];
 	static FVECT	lorg[MAXINP], ldir[MAXINP];
+	static double	ldist[MAXINP];
 	FLOAT	loc[2];
-	double	d;
 	int	fn;
 	register int	i;
 
-	d = argument(1);
-	if (d > -.5 && d < .5)
-		return((double)nfiles);
-	fn = d - .5;
+	fn = argument(1) - .5;
 	if (fn < 0 || fn >= nfiles) {
 		errno = EDOM;
 		return(0.0);
@@ -525,13 +537,13 @@ register char	*nam;
 			errno = EDOM;
 		else {
 			pix2loc(loc, &input[fn].rs, xscan, ymax-1-yscan);
-			if (viewray(lorg[fn], ldir[fn],
-					&input[fn].vw, loc[0], loc[1]) < 0)
-				errno = ERANGE;
-			ltick[fn] = eclock;
+			ldist[fn] = viewray(lorg[fn], ldir[fn],
+					&input[fn].vw, loc[0], loc[1]);
 		}
+		ltick[fn] = eclock;
 	}
-	i = 6;
+	if (nam == vray[i=6])
+		return(ldist[fn]);
 	while (i--)
 		if (nam == vray[i])
 			return(i < 3 ? lorg[fn][i] : ldir[fn][i-3]);
@@ -545,45 +557,43 @@ l_psize()			/* compute pixel size in steradians */
 {
 	static unsigned long	ltick[MAXINP];
 	static double	psize[MAXINP];
-	FVECT	dir0, org1, dir1;
-	FLOAT	loc[2];
+	FVECT	dir0, org, dirx, diry;
+	FLOAT	locx[2], locy[2];
 	double	d;
 	int	fn;
+	register int	i;
 
 	d = argument(1);
-	if (d > -.5 && d < .5)
-		return((double)nfiles);
-	fn = d - .5;
-	if (fn < 0 || fn >= nfiles) {
+	if (d < .5 || d >= nfiles+.5) {
 		errno = EDOM;
 		return(0.0);
 	}
-	if (ltick[fn] < eclock)			/* need to compute? */
-		if (input[fn].vw.type == 0 || input[fn].vw.type == VT_PAR)
+	fn = d - .5;
+	if (ltick[fn] < eclock) {		/* need to compute? */
+		psize[fn] = 0.0;
+		if (input[fn].vw.type == 0)
 			errno = EDOM;
-		else {
-			errno = 0;
-			dir0[0] = funvalue(vray[3], 1, &d);
-			if (errno)
-				return(0.0);
-			dir0[1] = funvalue(vray[4], 1, &d);
-			if (errno)
-				return(0.0);
-			dir0[2] = funvalue(vray[5], 1, &d);
-			if (errno)
-				return(0.0);
-			pix2loc(loc, &input[fn].rs, xscan+1, ymax-yscan);
-			psize[fn] = 0.0;
-			if (viewray(org1, dir1,
-					&input[fn].vw, loc[0], loc[1]) < 0)
-				errno = ERANGE;
-			else {
+		else if (input[fn].vw.type != VT_PAR &&
+				funvalue(vray[6], 1, &d) >= 0) {
+			for (i = 0; i < 3; i++)
+				dir0[i] = funvalue(vray[3+i], 1, &d);
+			pix2loc(locx, &input[fn].rs, xscan+1, ymax-1-yscan);
+			pix2loc(locy, &input[fn].rs, xscan, ymax-yscan);
+			if (viewray(org, dirx, &input[fn].vw,
+					locx[0], locx[1]) >= 0 &&
+					viewray(org, diry, &input[fn].vw,
+					locy[0], locy[1]) >= 0) {
 						/* approximate solid angle */
-				psize[fn] = dist2(dir0, dir1) * input[fn].pa /
-					(1.0 + input[fn].pa*input[fn].pa);
-				ltick[fn] = eclock;
+				for (i = 0; i < 3; i++) {
+					dirx[i] -= dir0[i];
+					diry[i] -= dir0[i];
+				}
+				fcross(dir0, dirx, diry);
+				psize[fn] = 0.5 * sqrt(DOT(dir0,dir0));
 			}
 		}
+		ltick[fn] = eclock;
+	}
 	return(psize[fn]);
 }
 
