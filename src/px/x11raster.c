@@ -99,10 +99,9 @@ BYTE	cmap[][3];
 
 
 Colormap
-newcmap(disp, scrn, w, vis)		/* get colormap and fix b & w */
+newcmap(disp, scrn, vis)		/* get colormap and fix b & w */
 Display	*disp;
 int	scrn;
-Window	w;
 Visual	*vis;
 {
 	XColor	thiscolor;
@@ -111,9 +110,9 @@ Visual	*vis;
 	int	n;
 	register int	i, j;
 
-	cmap = XCreateColormap(disp, w, vis, AllocNone);
-	if (cmap == 0)
-		return(0);
+	cmap = XCreateColormap(disp, RootWindow(disp,scrn), vis, AllocNone);
+	if (cmap == 0 || vis->class != PseudoColor)
+		return(cmap);
 	pixels=(unsigned long *)malloc(vis->map_entries*sizeof(unsigned long));
 	if (pixels == NULL)
 		return(0);
@@ -143,7 +142,7 @@ Visual	*vis;
 
 
 unsigned long *
-map_rcolors(xr, w)				/* get and assign pixels */
+map_rcolors(xr, w)			/* get and assign pixels */
 register XRASTER	*xr;
 Window	w;
 {
@@ -160,11 +159,11 @@ Window	w;
 	if (xr->visual == DefaultVisual(xr->disp, xr->screen))
 		xr->cmap = DefaultColormap(xr->disp, xr->screen);
 	else
-		xr->cmap = newcmap(xr->disp, xr->screen, w, xr->visual);
+		xr->cmap = newcmap(xr->disp, xr->screen, xr->visual);
 	while (XAllocColorCells(xr->disp, xr->cmap, 0,
 			NULL, 0, xr->pixels, xr->ncolors) == 0)
 		if (xr->cmap == DefaultColormap(xr->disp, xr->screen))
-			xr->cmap = newcmap(xr->disp, xr->screen, w, xr->visual);
+			xr->cmap = newcmap(xr->disp, xr->screen, xr->visual);
 		else {
 			free((char *)xr->pixels);
 			xr->pixels = NULL;

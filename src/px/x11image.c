@@ -147,6 +147,7 @@ char  *argv[];
 				greyscale = !greyscale;
 				break;
 			case 'm':
+				greyscale = 1;
 				maxcolors = 2;
 				break;
 			case 'd':
@@ -301,17 +302,20 @@ char **argv;
 		}
 	}
 	/* open window */
+	i = CWEventMask|CWCursor|CWBackPixel|CWBorderPixel;
 	ourwinattr.border_pixel = ourwhite;
 	ourwinattr.background_pixel = ourblack;
-	ourwinattr.colormap = XCreateColormap(thedisplay, ourroot,
-			ourvis.visual, AllocNone);
+	if (ourvis.visual != DefaultVisual(thedisplay,ourscreen)) {
+		ourwinattr.colormap = newcmap(thedisplay, ourscreen, ourvis.visual);
+		i |= CWColormap;
+	}
 	ourwinattr.event_mask = ExposureMask|KeyPressMask|ButtonPressMask|
 			ButtonReleaseMask|ButtonMotionMask|StructureNotifyMask;
 	ourwinattr.cursor = XCreateFontCursor(thedisplay, XC_diamond_cross);
 	wind = XCreateWindow(thedisplay, ourroot, xszhints.x, xszhints.y,
 			xszhints.width, xszhints.height, BORWIDTH,
-			ourvis.depth, InputOutput, ourvis.visual, CWEventMask|
-			CWCursor|CWBackPixel|CWBorderPixel|CWColormap, &ourwinattr);
+			ourvis.depth, InputOutput, ourvis.visual,
+			i, &ourwinattr);
 	if (wind == 0)
 		quiterr("cannot create window");
 	width = xmax;
