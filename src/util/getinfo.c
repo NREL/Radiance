@@ -36,6 +36,10 @@ char  *argv[];
 	if (argc > 1 && !strcmp(argv[1], "-d")) {
 		argc--; argv++;
 		dim = 1;
+	} else if (argc == 2 && !strcmp(argv[1], "-")) {
+		getheader(stdin, NULL);
+		copycat();
+		exit(0);
 	}
 	for (i = 1; i < argc; i++) {
 		fputs(argv[i], stdout);
@@ -96,4 +100,13 @@ register FILE  *fp;
 		fputs("unknown file type\n", stdout);
 		break;
 	}
+}
+
+
+copycat()			/* copy input to output */
+{
+	register int	c;
+
+	while ((c = getchar()) != EOF)
+		putchar(c);
 }
