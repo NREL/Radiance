@@ -39,14 +39,15 @@ tiff:	ra_tiff
 sun:
 
 install:	$(PROGS) $(SPECIAL) normpat.csh falsecolor.csh \
-pdfblur.csh pmblur.csh
+pdfblur.csh pmblur.csh xyzimage.csh
 	cp $(PROGS) $(INSTDIR)
 	cp normpat.csh $(INSTDIR)/normpat
 	cp falsecolor.csh $(INSTDIR)/falsecolor
 	cp pdfblur.csh $(INSTDIR)/pdfblur
 	cp pmblur.csh $(INSTDIR)/pmblur
+	cp xyzimage.csh $(INSTDIR)/xyzimage
 	chmod 755 $(INSTDIR)/normpat $(INSTDIR)/falsecolor \
-$(INSTDIR)/pdfblur $(INSTDIR)/pmblur
+$(INSTDIR)/pdfblur $(INSTDIR)/pmblur $(INSTDIR)/xyzimage
 
 clean:
 	set nonomatch; rm -f x10image aedimage glimage ra_tiff \
