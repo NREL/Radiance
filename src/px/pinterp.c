@@ -34,6 +34,11 @@ static char SCCSid[] = "$SunId$ LBL";
 
 struct position {int x,y; float z;};
 
+#define NSTEPS		64		/* number steps in overlap prescan */
+#define MINSTEP		4		/* minimum worthwhile preview step */
+
+struct bound {int min,max;};
+
 VIEW	ourview = STDVIEW;		/* desired view */
 int	hresolu = 512;			/* horizontal resolution */
 int	vresolu = 512;			/* vertical resolution */
@@ -272,6 +277,7 @@ char	*pfile, *zspec;
 	COLR	*scanin;
 	float	*zin;
 	struct position	*plast;
+	struct bound	*xlim, ylim;
 	int	y;
 					/* open picture file */
 	if ((pfp = fopen(pfile, "r")) == NULL)
@@ -295,14 +301,10 @@ char	*pfile, *zspec;
 	}
 					/* compute transformation */
 	hasmatrix = pixform(theirs2ours, &theirview, &ourview);
-					/* allocate scanlines */
-	scanin = (COLR *)malloc(scanlen(&tresolu)*sizeof(COLR));
-	zin = (float *)malloc(scanlen(&tresolu)*sizeof(float));
-	plast = (struct position *)calloc(scanlen(&tresolu),
-			sizeof(struct position));
-	if (scanin == NULL || zin == NULL || plast == NULL)
-		syserror(progname);
 					/* get z specification or file */
+	zin = (float *)malloc(scanlen(&tresolu)*sizeof(float));
+	if (zin == NULL)
+		syserror(progname);
 	if ((zfd = open(zspec, O_RDONLY)) == -1) {
 		double	zvalue;
 		register int	x;
@@ -311,21 +313,47 @@ char	*pfile, *zspec;
 		for (x = scanlen(&tresolu); x-- > 0; )
 			zin[x] = zvalue;
 	}
-					/* load image */
-	for (y = 0; y < numscans(&tresolu); y++) {
+					/* compute transferrable perimeter */
+	xlim = (struct bound *)malloc(numscans(&tresolu)*sizeof(struct bound));
+	if (xlim == NULL)
+		syserror(progname);
+	if (!getperim(xlim, &ylim, zin, zfd)) {	/* overlapping area? */
+		free((char *)zin);
+		free((char *)xlim);
+		if (zfd != -1)
+			close(zfd);
+		fclose(pfp);
+		return;
+	}
+					/* allocate scanlines */
+	scanin = (COLR *)malloc(scanlen(&tresolu)*sizeof(COLR));
+	plast = (struct position *)calloc(scanlen(&tresolu),
+			sizeof(struct position));
+	if (scanin == NULL | plast == NULL)
+		syserror(progname);
+					/* skip to starting point */
+	for (y = 0; y < ylim.min; y++)
 		if (freadcolrs(scanin, scanlen(&tresolu), pfp) < 0) {
 			fprintf(stderr, "%s: read error\n", pfile);
 			exit(1);
 		}
-		if (zfd != -1 && read(zfd,(char *)zin,
-				scanlen(&tresolu)*sizeof(float))
-				< scanlen(&tresolu)*sizeof(float)) {
-			fprintf(stderr, "%s: read error\n", zspec);
+	if (zfd != -1 && lseek(zfd,
+			(long)ylim.min*scanlen(&tresolu)*sizeof(float), 0) < 0)
+		syserror(zspec);
+					/* load image */
+	for (y = ylim.min; y <= ylim.max; y++) {
+		if (freadcolrs(scanin, scanlen(&tresolu), pfp) < 0) {
+			fprintf(stderr, "%s: read error\n", pfile);
 			exit(1);
 		}
-		addscanline(y, scanin, zin, plast);
+		if (zfd != -1 && read(zfd, (char *)zin,
+				scanlen(&tresolu)*sizeof(float))
+				< scanlen(&tresolu)*sizeof(float))
+			syserror(zspec);
+		addscanline(xlim+y, y, scanin, zin, plast);
 	}
 					/* clean up */
+	free((char *)xlim);
 	free((char *)scanin);
 	free((char *)zin);
 	free((char *)plast);
@@ -376,7 +404,8 @@ register VIEW	*vw1, *vw2;
 }
 
 
-addscanline(y, pline, zline, lasty)	/* add scanline to output */
+addscanline(xl, y, pline, zline, lasty)	/* add scanline to output */
+struct bound	*xl;
 int	y;
 COLR	*pline;
 float	*zline;
@@ -387,7 +416,7 @@ struct position	*lasty;		/* input/output */
 	register int	x;
 
 	lastx.z = 0;
-	for (x = scanlen(&tresolu); x-- > 0; ) {
+	for (x = xl->max; x >= xl->min; x--) {
 		pix2loc(pos, &tresolu, x, y);
 		pos[2] = zline[x];
 		if (movepixel(pos) < 0) {
@@ -464,6 +493,90 @@ double	z;
 			}
 		}
 	}
+}
+
+
+getperim(xl, yl, zline, zfd)		/* compute overlapping image area */
+register struct bound	*xl;
+struct bound	*yl;
+float	*zline;
+int	zfd;
+{
+	int	step;
+	FVECT	pos;
+	register int	x, y;
+						/* set up step size */
+	if (scanlen(&tresolu) < numscans(&tresolu))
+		step = scanlen(&tresolu)/NSTEPS;
+	else
+		step = numscans(&tresolu)/NSTEPS;
+	if (step < MINSTEP) {			/* not worth cropping? */
+		yl->min = 0;
+		yl->max = numscans(&tresolu) - 1;
+		x = scanlen(&tresolu) - 1;
+		for (y = numscans(&tresolu); y--; ) {
+			xl[y].min = 0;
+			xl[y].max = x;
+		}
+		return(1);
+	}
+	yl->min = 32000; yl->max = 0;		/* search for points on image */
+	for (y = step - 1; y < numscans(&tresolu); y += step) {
+		if (zfd != -1) {
+			if (lseek(zfd, (long)y*scanlen(&tresolu)*sizeof(float),
+					0) < 0)
+				syserror("lseek");
+			if (read(zfd, (char *)zline,
+					scanlen(&tresolu)*sizeof(float))
+					< scanlen(&tresolu)*sizeof(float))
+				syserror("read");
+		}
+		xl[y].min = 32000; xl[y].max = 0;		/* x max */
+		for (x = scanlen(&tresolu); (x -= step) > 0; ) {
+			pix2loc(pos, &tresolu, x, y);
+			pos[2] = zline[x];
+			if (movepixel(pos) == 0 && pos[0] >= 0 &&
+					pos[0] < 1 && pos[1] >= 0 &&
+					pos[1] < 1) {
+				xl[y].max = x + step - 1;
+				xl[y].min = x - step + 1;	/* x min */
+				if (xl[y].min < 0)
+					xl[y].min = 0;
+				for (x = step - 1; x < xl[y].max; x += step) {
+					pix2loc(pos, &tresolu, x, y);
+					pos[2] = zline[x];
+					if (movepixel(pos) == 0 &&
+							pos[0] >= 0 &&
+							pos[0] < 1 &&
+							pos[1] >= 0 &&
+							pos[1] < 1) {
+						xl[y].min = x - step + 1;
+						break;
+					}
+				}
+				if (y < yl->min)		/* y limits */
+					yl->min = y - step + 1;
+				yl->max = y + step - 1;
+				break;
+			}
+		}
+							/* fill in between */
+		if (xl[y].min < xl[y-step].min)
+			xl[y-1].min = xl[y].min;
+		else
+			xl[y-1].min = xl[y-step].min;
+		if (xl[y].max > xl[y-step].max)
+			xl[y-1].max = xl[y].max;
+		else
+			xl[y-1].max = xl[y-step].max;
+		for (x = 2; x < step; x++)
+			copystruct(xl+y-x, xl+y-1);
+	}
+	if (yl->max >= numscans(&tresolu))
+		yl->max = numscans(&tresolu) - 1;
+	for (x = numscans(&tresolu) - 1; x > y; x--)	/* fill bottom rows */
+		copystruct(xl+x, xl+y);
+	return(yl->max >= yl->min);
 }
 
 
