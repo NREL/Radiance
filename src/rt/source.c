@@ -410,8 +410,8 @@ char  *p;			/* data for f */
 		addcolor(r->rcol, srccnt[cntord[sn].sno].val);
 	}
 		
-	free(srccnt);
-	free(cntord);
+	free((char *)srccnt);
+	free((char *)cntord);
 }
 
 
