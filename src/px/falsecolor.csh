@@ -91,7 +91,7 @@ clip(x) : if(x-1,1,if(x,x,0));
 frac(x) : x - floor(x);
 boundary(a,b) : neq(floor(ndivs*a),floor(ndivs*b));
 
-isconta = or(boundary(vleft,vright),boundary(vabove,vbelow));
+isconta = if(btwn(0,v,1),or(boundary(vleft,vright),boundary(vabove,vbelow)),-1);
 iscontb = if(btwn(0,v,1),btwn(.4,frac(ndivs*v),.6),-1); 
 
 ro = if(in,clip($redv),ra);
