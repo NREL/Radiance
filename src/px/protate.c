@@ -65,11 +65,11 @@ char	*argv[];
 rotate(fp)			/* rotate picture */
 FILE	*fp;
 {
-	register COLR	*inline;
+	register COLR	*inln;
 	register int	xoff, inx, iny;
 	long	start, ftell();
 
-	if ((inline = (COLR *)malloc(xres*sizeof(COLR))) == NULL) {
+	if ((inln = (COLR *)malloc(xres*sizeof(COLR))) == NULL) {
 		fprintf(stderr, "%s: out of memory\n", progname);
 		exit(1);
 	}
@@ -80,12 +80,12 @@ FILE	*fp;
 			exit(1);
 		}
 		for (iny = yres-1; iny >= 0; iny--) {
-			if (freadcolrs(inline, xres, fp) < 0) {
+			if (freadcolrs(inln, xres, fp) < 0) {
 				fprintf(stderr, "%s: read error\n", progname);
 				exit(1);
 			}
 			for (inx = 0; inx < nrows && xoff+inx < xres; inx++)
-				bcopy((char *)inline[xoff+inx],
+				bcopy((char *)inln[xoff+inx],
 						(char *)scanbar[inx*yres+iny],
 						sizeof(COLR));
 		}
@@ -95,5 +95,5 @@ FILE	*fp;
 				exit(1);
 			}
 	}
-	free((char *)inline);
+	free((char *)inln);
 }
