@@ -149,7 +149,7 @@ char  *zfile, *oldfile;
 						/* compute scanlines */
 	for (ypos -= ystep; ypos > -ystep; ypos -= ystep) {
 							/* record progress */
-		pctdone = 100.0*(vresolu-ypos-ystep)/vresolu;
+		pctdone = 100.0*(vresolu-1-ypos-ystep)/vresolu;
 							/* bottom adjust? */
 		if (ypos < 0) {
 			ystep += ypos;
