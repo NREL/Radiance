@@ -163,10 +163,14 @@ getfile:
 			input[nfile].name = "<stdin>";
 			input[nfile].fp = stdin;
 		} else {
-			input[nfile].name = argv[an];
-			if ((input[nfile].fp = argv[an][0] == '!' ?
-					popen(argv[an]+1, "r") :
-					fopen(argv[an], "r")) == NULL) {
+			if (argv[an][0] == '!') {
+				input[nfile].name = "<Command>";
+				input[nfile].fp = popen(argv[an]+1, "r");
+			} else {
+				input[nfile].name = argv[an];
+				input[nfile].fp = fopen(argv[an], "r");
+			}
+			if (input[nfile].fp == NULL) {
 				perror(argv[an]);
 				quit(1);
 			}
