@@ -35,17 +35,17 @@ typedef struct activation {
 
 static ACTIVATION  *curact = NULL;
 
-extern double  libfunc();
+static double  libfunc();
 
 #define  MAXLIB		64	/* maximum number of library functions */
 
-extern double  l_if(), l_select(), l_rand();
-extern double  l_floor(), l_ceil();
+static double  l_if(), l_select(), l_rand();
+static double  l_floor(), l_ceil();
 #ifdef  BIGLIB
-extern double  l_sqrt();
-extern double  l_sin(), l_cos(), l_tan();
-extern double  l_asin(), l_acos(), l_atan(), l_atan2();
-extern double  l_exp(), l_log(), l_log10();
+static double  l_sqrt();
+static double  l_sin(), l_cos(), l_tan();
+static double  l_asin(), l_acos(), l_atan(), l_atan2();
+static double  l_exp(), l_log(), l_log10();
 #endif
 
 #ifdef  BIGLIB

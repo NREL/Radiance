@@ -39,9 +39,10 @@ extern double  atof(), pow();
 extern char  *fgets(), *savestr();
 extern char  *emalloc(), *ecalloc();
 extern EPNODE  *curfunc;
-extern double  efunc(), evariable(), enumber(), euminus(), echannel();
-extern double  eargument(), eadd(), esubtr(), emult(), edivi(), epow();
-extern double  ebotch();
+extern double  efunc(), evariable();
+static double  euminus(), echannel(), eargument(), enumber();
+static double  eadd(), esubtr(), emult(), edivi(), epow();
+static double  ebotch();
 extern int  errno;
 
 int  nextc;				/* lookahead character */
