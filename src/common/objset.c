@@ -68,8 +68,15 @@ OBJECT  obj;
 	int  upper, lower;
 	register int  cm, i;
 
+	if ((i = os[0]) <= 6) {		/* linear search algorithm */
+		cm = obj;
+		while (i-- > 0)
+			if (*++os == cm)
+				return(1);
+		return(0);
+	}
 	lower = 1;
-	upper = cm = os[0] + 1;
+	upper = cm = i + 1;
 					/* binary search algorithm */
 	while ((i = (lower + upper) >> 1) != cm) {
 		cm = obj - os[i];
