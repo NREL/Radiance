@@ -58,9 +58,10 @@ int	n;
 	int	nbytes, i, j, k, nextsamp, count, blockdiv;
 	int	res[2];
 
-	if (odNViews) {			/* deallocate view structures */
-		for (i = 0; i < odNViews; i++) {
+	if (odNViews > 0) {		/* deallocate view structures */
+		for (i = odNViews; i--; ) {
 			free((char *)odView[i].bmap);
+			free((char *)odView[i].pmap);
 			if (odView[i].emap != NULL)
 				free((char *)odView[i].emap);
 		}
@@ -109,8 +110,6 @@ int	n;
 	if (blockdiv < 8) blockdiv = 8;
 	nextsamp = 0; count /= blockdiv*blockdiv;	/* # blocks */
 	while (i--) {			/* initialize each view */
-		odView[i].emap = NULL;
-		odView[i].dmap = NULL;
 		dev_auxview(i, res);
 		odView[i].hhi = res[0];
 		odView[i].hlow = (res[0] + blockdiv/2) / blockdiv;
@@ -118,6 +117,12 @@ int	n;
 		odView[i].vhi = res[1];
 		odView[i].vlow = (res[1] + blockdiv/2) / blockdiv;
 		if (odView[i].vlow < 1) odView[i].vlow = 1;
+		odView[i].emap = NULL;
+		odView[i].dmap = NULL;
+		odView[i].pmap = (int4 *)calloc(FL4NELS(res[0]*res[1]),
+				sizeof(int4));
+		if (odView[i].pmap == NULL)
+			return(0);
 		j = odView[i].hlow*odView[i].vlow;
 		odView[i].bmap = (struct ODblock *)malloc(
 				j * sizeof(struct ODblock));
@@ -179,7 +184,11 @@ double	prox;
 	if (prox > bp->pthresh)
 		return(-1);		/* worse than free list occupants */
 					/* check for duplicate pixel */
-	for (i = bp->first+bp->nsamp; i-- > bp->first; )
+	if (CHK4(odView[vn].pmap, vh*odView[vn].hhi + hh))
+		i = bp->first + bp->nsamp;
+	else
+		i = -1;
+	while (i-- > bp->first)
 		if (hh == odS.ip[i][0] && vh == odS.ip[i][1]) {	/* found it! */
 						/* search free list for it */
 			if (i == bp->free)
@@ -197,8 +206,12 @@ double	prox;
 				return(-1);	/* previous sample is fine */
 			goto gotit;
 		}
+	DCHECK(i>=-1, WARNING, "pixel in presence map not found in block");
 	if (bp->free != ENDFREE) {	/* allocate from free list */
 		i = bp->free;
+		if (odS.ip[i][0] >= 0 & odS.ip[i][1] >= 0)
+			CLR4(odView[vn].pmap, odS.ip[i][1]*odView[vn].hhi +
+							odS.ip[i][0]);
 		bp->free = odS.nextfree(i);
 		bp->nused++;
 		goto gotit;
@@ -222,10 +235,12 @@ double	prox;
 		bp->nused--;
 	}
 	i = si[0];			/* use worst sample */
+	CLR4(odView[vn].pmap, odS.ip[i][1]*odView[vn].hhi + odS.ip[i][0]);
 gotit:
 	odS.ip[i][0] = hh;
 	odS.ip[i][1] = vh;
 	odS.closeness(i) = prox;
+	SET4(odView[vn].pmap, vh*odView[vn].hhi + hh);
 	return(i);
 }
 
