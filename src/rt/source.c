@@ -41,6 +41,7 @@ static int  maxcntr = 0;		/* size of contribution arrays */
 
 marksources()			/* find and mark source objects */
 {
+	int  foundsource = 0;
 	int  i;
 	register OBJREC  *o, *m;
 	register int  ns;
@@ -93,8 +94,10 @@ marksources()			/* find and mark source objects */
 				source[ns].sflags |= SSKIP;
 			}
 		}
+		if (!(source[ns].sflags & SSKIP))
+			foundsource++;
 	}
-	if (nsources <= 0) {
+	if (!foundsource) {
 		error(WARNING, "no light sources found");
 		return;
 	}
