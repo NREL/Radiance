@@ -435,6 +435,8 @@ register int	i;
 			nchanged += hdfreebeam(hdlist[i], 0);
 		return(nchanged);
 	}
+	if (hp->fd < 0)			/* check for recursive error */
+		return(-1);
 	if (i == 0) {			/* clear entire holodeck */
 		nchanged = 0;
 		for (i = 1; i <= nbeams(hp); i++)
@@ -453,8 +455,10 @@ register int	i;
 		if (lseek(hp->fd, hp->bi[i].fo, 0) < 0)
 			error(SYSTEM, "cannot seek on holodeck file");
 		n = hp->bl[i]->nrm * sizeof(RAYVAL);
-		if (write(hp->fd, (char *)hdbray(hp->bl[i]), n) != n)
+		if (write(hp->fd, (char *)hdbray(hp->bl[i]), n) != n) {
+			hp->fd = -1;		/* avoid recursive error */
 			error(SYSTEM, "write error in hdfreebeam");
+		}
 	}
 	blglob(hp)->nrm -= hp->bl[i]->nrm;
 	free((char *)hp->bl[i]);		/* free memory */
