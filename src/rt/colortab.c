@@ -91,6 +91,7 @@ get_pixel(col, set_pixel)	/* get pixel for color */
 COLOR	col;
 int	(*set_pixel)();
 {
+	extern char	errmsg[];
 	int	r, g, b;
 	int	cv[3];
 	register CNODE	*tp;
