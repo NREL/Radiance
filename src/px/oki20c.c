@@ -67,7 +67,7 @@ char  *fname;
 		return(-1);
 	}
 				/* set line spacing (overlap for knitting) */
-	fputs("\0333\042", stdout);
+	fputs("\0333\036", stdout);
 				/* put out scanlines */
 	for (i = yres-1; i >= 0; i--) {
 		if (freadscan(scanline, xres, input) < 0) {
@@ -95,11 +95,18 @@ int  y;
 	register long  c;
 	register int  i, j;
 
-	if (bpos = y % 23) {
+	if (bpos = y % 20) {
 
-		for (j = 0; j < 3; j++)
-			for (i = 0; i < len; i++)
-				pat[i][j] |= (long)colbit(scan[i],i,j) << bpos;
+		if (y > 20 & bpos < 4)			/* knit bits */
+			for (j = 0; j < 3; j++)
+				for (i = 0; i < len; i++)
+					pat[i][j] |= (long)colbit(scan[i],i,j)
+						<< (i+j & 4 ? bpos+24 : bpos);
+		else
+			for (j = 0; j < 3; j++)
+				for (i = 0; i < len; i++)
+					pat[i][j] |= (long)colbit(scan[i],i,j)
+							<< bpos;
 
 	} else {
 
@@ -107,19 +114,18 @@ int  y;
 
 		for (j = 0; j < 3; j++) {
 			fputs("\033%O", stdout);
-			putchar(len & 255);
+			putchar(len & 0xff);
 			putchar(len >> 8);
 			for (i = 0; i < len; i++) {
-				if (y!=0 & i+j) {	/* knit bit */
-					c = pat[i][j];
-					pat[i][j] = colbit(scan[i],i,j) << 23;
-				} else {
-					c = pat[i][j] | colbit(scan[i],i,j);
-					pat[i][j] = 0;
-				}
-				putchar(c>>16);
-				putchar(c>>8 & 255);
-				putchar(c & 255);
+				c = pat[i][j];
+				pat[i][j] = c>>4 & 0xf00000;
+				if (i+j & 4)		/* knit last bit */
+					pat[i][j] |= colbit(scan[i],i,j) << 20;
+				else
+					c |= colbit(scan[i],i,j);
+				putchar(c>>16 & 0xff);
+				putchar(c>>8 & 0xff);
+				putchar(c & 0xff);
 			}
 			putchar('\r');
 		}
