@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -11,6 +11,8 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include  "ray.h"
+
+#include  "func.h"
 
 /*
  *	A procedural texture perturbs the surface normal
@@ -33,50 +35,30 @@ t_func(m, r)			/* compute texture for ray */
 register OBJREC  *m;
 register RAY  *r;
 {
-	extern double  varvalue();
-	extern int  errno;
 	FVECT  disp;
 	double  d;
-	register FULLXF  *mxf;
+	register MFUNC  *mf;
 	register int  i;
-	register char  **sa;
 
 	if (m->oargs.nsargs < 4)
 		objerror(m, USER, "bad # arguments");
-	sa = m->oargs.sarg;
-
-	if ((mxf = (FULLXF *)m->os) == NULL) {
-		mxf = (FULLXF *)malloc(sizeof(FULLXF));
-		if (mxf == NULL)
-			goto memerr;
-		if (fullxf(mxf, m->oargs.nsargs-4, sa+4) != m->oargs.nsargs-4)
-			objerror(m, USER, "bad transform");
-		if (mxf->f.sca < 0.0)
-			mxf->f.sca = -mxf->f.sca;
-		if (mxf->b.sca < 0.0)
-			mxf->b.sca = -mxf->b.sca;
-		m->os = (char *)mxf;
-	}
-
-	setmap(m, r, &mxf->b);
-
-	funcfile(sa[3]);
+	mf = getfunc(m, 3, 0x7, 1);
+	setfunc(m, r);
 	errno = 0;
-	for (i = 0; i < 3; i++)
-		disp[i] = varvalue(sa[i]);
-	if (errno) {
-		objerror(m, WARNING, "compute error");
-		return;
+	for (i = 0; i < 3; i++) {
+		disp[i] = evalue(mf->ep[i]);
+		if (errno) {
+			objerror(m, WARNING, "compute error");
+			return;
+		}
 	}
-	multv3(disp, disp, mxf->f.xfm);
+	if (mf->f != &unitxf)
+		multv3(disp, disp, mf->f->xfm);
 	if (r->rox != NULL) {
 		multv3(disp, disp, r->rox->f.xfm);
-		d = 1.0 / (mxf->f.sca * r->rox->f.sca);
+		d = 1.0 / (mf->f->sca * r->rox->f.sca);
 	} else
-		d = 1.0 / mxf->f.sca;
+		d = 1.0 / mf->f->sca;
 	for (i = 0; i < 3; i++)
 		r->pert[i] += disp[i] * d;
-	return;
-memerr:
-	error(SYSTEM, "out of memory in t_func");
 }

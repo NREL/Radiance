@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -13,6 +13,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "ray.h"
 
 #include  "data.h"
+
+#include  "func.h"
 
 /*
  *	A stored texture is specified as follows:
@@ -36,72 +38,49 @@ t_data(m, r)			/* interpolate texture data */
 register OBJREC  *m;
 RAY  *r;
 {
-	extern double  varvalue(), funvalue(), datavalue();
-	extern int  errno;
 	int  nv;
 	FVECT  dval, disp;
 	double  pt[MAXDIM];
 	double  d;
 	DATARRAY  *dp;
-	register FULLXF  *mxf;
-	register char  **sa;
+	register MFUNC  *mf;
 	register int  i;
 
 	if (m->oargs.nsargs < 8)
 		objerror(m, USER, "bad # arguments");
-	sa = m->oargs.sarg;
-
-	for (i = 7; i < m->oargs.nsargs && sa[i][0] != '-'; i++)
-		;
-	nv = i-7;
-	if ((mxf = (FULLXF *)m->os) == NULL) {
-		mxf = (FULLXF *)malloc(sizeof(FULLXF));
-		if (mxf == NULL)
-			goto memerr;
-		if (fullxf(mxf, m->oargs.nsargs-i, sa+i) != m->oargs.nsargs-i)
-			objerror(m, USER, "bad transform");
-		if (mxf->f.sca < 0.0)
-			mxf->f.sca = -mxf->f.sca;
-		if (mxf->b.sca < 0.0)
-			mxf->b.sca = -mxf->b.sca;
-		m->os = (char *)mxf;
-	}
-
-	setmap(m, r, &mxf->b);
-
-	if (nv > MAXDIM)
-		goto dimerr;
-	funcfile(sa[6]);
+	dp = getdata(m->oargs.sarg[3]);
+	i = (1 << (nv = dp->nd)) - 1;
+	mf = getfunc(m, 6, i<<7, 1);
+	setfunc(m, r);
 	errno = 0;
-	for (i = 0; i < nv; i++)
-		pt[i] = varvalue(sa[i+7]);
-	if (errno)
-		goto computerr;
-	for (i = 0; i < 3; i++) {
-		dp = getdata(sa[i+3]);
+	for (i = 0; i < nv; i++) {
+		pt[i] = evalue(mf->ep[i]);
+		if (errno)
+			goto computerr;
+	}
+	dval[0] = datavalue(dp, pt);
+	for (i = 1; i < 3; i++) {
+		dp = getdata(m->oargs.sarg[i+3]);
 		if (dp->nd != nv)
-			goto dimerr;
+			objerror(m, USER, "dimension error");
 		dval[i] = datavalue(dp, pt);
 	}
 	errno = 0;
-	for (i = 0; i < 3; i++)
-		disp[i] = funvalue(sa[i], 3, dval);
-	if (errno)
-		goto computerr;
-
-	multv3(disp, disp, mxf->f.xfm);
+	for (i = 0; i < 3; i++) {
+		disp[i] = funvalue(m->oargs.sarg[i], 3, dval);
+		if (errno)
+			goto computerr;
+	}
+	if (mf->f != &unitxf)
+		multv3(disp, disp, mf->f->xfm);
 	if (r->rox != NULL) {
 		multv3(disp, disp, r->rox->f.xfm);
-		d = 1.0 / (mxf->f.sca * r->rox->f.sca);
+		d = 1.0 / (mf->f->sca * r->rox->f.sca);
 	} else
-		d = 1.0 / mxf->f.sca;
+		d = 1.0 / mf->f->sca;
 	for (i = 0; i < 3; i++)
 		r->pert[i] += disp[i] * d;
 	return;
-dimerr:
-	objerror(m, USER, "dimension error");
-memerr:
-	error(SYSTEM, "out of memory in t_data");
 computerr:
 	objerror(m, WARNING, "compute error");
 	return;
