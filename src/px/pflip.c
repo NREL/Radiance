@@ -54,7 +54,7 @@ char	*argv[];
 					/* transfer header */
 	copyheader(fin, stdout);
 					/* add new header info. */
-	printargs(argc, argv, stdout);
+	printargs(i, argv, stdout);
 	putchar('\n');
 					/* get picture size */
 	if (fgetresolu(&xres, &yres, fin) != (YMAJOR|YDECR)) {
