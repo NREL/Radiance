@@ -179,7 +179,10 @@ register OBJREC  *tm;
 						/* compute vectors */
 	fcross(DxR, D, R);
 	fcross(t->right, DxR, D);
-	d = DOT(D,D)/DOT(t->right,t->right);
+	d = DOT(t->right,t->right);
+	if (d <= FTINY*FTINY)
+		objerror(tm, USER, "illegal motion vector");
+	d = DOT(D,D)/d;
 	for (i = 0; i < 3; i++)
 		t->right[i] *= d;
 	fcross(t->down, R, DxR);
