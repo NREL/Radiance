@@ -69,7 +69,7 @@ RAYSRC = ambcomp.c ambient.c ambio.c freeobjmem.c initotypes.c \
 
 SURFOBJS = source.o sphere.o srcobstr.o srcsupp.o srcsamp.o virtuals.o \
 	o_face.o o_cone.o o_instance.o o_mesh.o
-SURFSRC = sphere.c source.c srcobstr.o srcsupp.c srcsamp.c virtuals.c \
+SURFSRC = sphere.c source.c srcobstr.c srcsupp.c srcsamp.c virtuals.c \
 	o_face.c srcsamp.c o_cone.c o_instance.c o_mesh.c
 
 MATOBJS = aniso.o normal.o dielectric.o m_clip.o glass.o m_brdf.o \
