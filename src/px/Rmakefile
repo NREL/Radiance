@@ -177,6 +177,8 @@ ra_xyze:	ra_xyze.o
 ra_tiff:	ra_tiff.o ../lib/libtiff.a
 	$(CC) $(CFLAGS) -o ra_tiff ra_tiff.o -lrt -ltiff $(MLIB)
 
+../common/tiff.h:	../lib/libtiff.a
+
 ../lib/libtiff.a:	tiff/config.local
 	cd tiff ; ./configure -quiet -noninteractive ; \
 	cd libtiff ; make install ;
