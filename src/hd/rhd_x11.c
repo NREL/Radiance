@@ -26,8 +26,10 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #define GAMMA		2.2		/* default gamma correction */
 
-#define MOVPCT		10		/* percent distance to move */
+#define MOVPCT		7		/* percent distance to move /frame */
 #define MOVDIR(b)	((b)==Button1 ? 1 : (b)==Button2 ? 0 : -1)
+#define MOVDEG		(-5)		/* degrees to orbit CW/down /frame */
+#define MOVORB(s)	((s)&ShiftMask ? 1 : (s)&ControlMask ? -1 : 0)
 
 #define MINWIDTH	480		/* minimum graphics window width */
 #define MINHEIGHT	400		/* minimum graphics window height */
@@ -198,21 +200,49 @@ dev_close()			/* close our display */
 }
 
 
+int
 dev_view(nv)			/* assign new driver view */
 VIEW	*nv;
 {
+	if (nv->type == VT_PAR ||		/* check view legality */
+		nv->horiz > 160. || nv->vert > 160.) {
+		error(COMMAND, "illegal view type/angle");
+		nv->type = VT_PER;
+		nv->horiz = odev.v.horiz;
+		nv->vert = odev.v.vert;
+		return(0);
+	}
+	if (nv->vfore > FTINY) {
+		error(COMMAND, "cannot handle fore clipping");
+		nv->vfore = 0.;
+		return(0);
+	}
 	if (nv != &odev.v) {
 		if (!FEQ(nv->horiz,odev.v.horiz) ||	/* resize window? */
 				!FEQ(nv->vert,odev.v.vert)) {
+			int	dw = DisplayWidth(ourdisplay,ourscreen);
+			int	dh = DisplayHeight(ourdisplay,ourscreen);
+
+			dw -= 25;	/* for window frame */
+			dh -= 100;
 			odev.hres = 2.*VIEWDIST/pwidth *
 					tan(PI/180./2.*nv->horiz);
 			odev.vres = 2.*VIEWDIST/pheight *
 					tan(PI/180./2.*nv->vert);
+			if (odev.hres > dw) {
+				odev.vres = dw * odev.vres / odev.hres;
+				odev.hres = dw;
+			}
+			if (odev.vres > dh) {
+				odev.hres = dh * odev.hres / odev.vres;
+				odev.vres = dh;
+			}
 			XResizeWindow(ourdisplay, gwind, odev.hres, odev.vres);
 		}
 		copystruct(&odev.v, nv);
 	}
 	qtReplant();
+	return(1);
 }
 
 
@@ -440,38 +470,42 @@ draw_grids()			/* draw holodeck section grids */
 
 
 static
-moveview(dx, dy, move)		/* move our view */
-int	dx, dy, move;
+moveview(dx, dy, mov, orb)	/* move our view */
+int	dx, dy, mov, orb;
 {
 	VIEW	nv;
+	FVECT	v1;
 	double	d;
-	register int	i, li;
+	register int	li;
 				/* start with old view */
 	copystruct(&nv, &odev.v);
 				/* change view direction */
-	if (move) {
+	if (mov | orb) {
 		if ((li = qtFindLeaf(dx, dy)) < 0)
 			return(0);	/* not on window */
-		for (i = 0; i < 3; i++)
-			nv.vdir[i] = qtL.wp[li][i] - nv.vp[i];
+		VSUM(nv.vdir, qtL.wp[li], nv.vp, -1.);
 	} else {
 		if (viewray(nv.vp, nv.vdir, &odev.v,
 				(dx+.5)/odev.hres, (dy+.5)/odev.vres) < -FTINY)
 			return(0);	/* outside view */
 	}
-				/* move viewpoint */
-	if (move > 0)
-		for (i = 0; i < 3; i++)
-			nv.vp[i] += MOVPCT/100. * nv.vdir[i];
-	else if (move < 0)
-		for (i = 0; i < 3; i++)
-			nv.vp[i] -= MOVPCT/100. * nv.vdir[i];
-	if (move && headlocked) {
-		d = 0;		/* bring head back to same height */
-		for (i = 0; i < 3; i++)
-			d += odev.v.vup[i] * (odev.v.vp[i] - nv.vp[i]);
-		for (i = 0; i < 3; i++)
-			nv.vp[i] += d * odev.v.vup[i];
+	if (orb && mov) {		/* orbit left/right */
+		spinvector(nv.vdir, nv.vdir, nv.vup, MOVDEG*PI/180.*mov);
+		VSUM(nv.vp, qtL.wp[li], nv.vdir, -1.);
+	} else if (orb) {		/* orbit up/down */
+		fcross(v1, nv.vdir, nv.vup);
+		if (normalize(v1) == 0.)
+			return(0);
+		spinvector(nv.vdir, nv.vdir, v1, MOVDEG*PI/180.*orb);
+		VSUM(nv.vp, qtL.wp[li], nv.vdir, -1.);
+	} else if (mov) {		/* move forward/backward */
+		d = MOVPCT/100. * mov;
+		VSUM(nv.vp, nv.vp, nv.vdir, d);
+	}
+	if (!mov ^ !orb && headlocked) {	/* restore head height */
+		VSUM(v1, odev.v.vp, nv.vp, -1.);
+		d = DOT(v1, odev.v.vup);
+		VSUM(nv.vp, nv.vp, odev.v.vup, d);
 	}
 	if (setview(&nv) != NULL)
 		return(0);	/* illegal view */
@@ -485,7 +519,8 @@ static
 getmove(ebut)				/* get view change */
 XButtonPressedEvent	*ebut;
 {
-	int	whichbutton = ebut->button;
+	int	movdir = MOVDIR(ebut->button);
+	int	movorb = MOVORB(ebut->state);
 	int	oldnodesiz = qtMinNodesiz;
 	Window	rootw, childw;
 	int	rootx, rooty, wx, wy;
@@ -501,7 +536,7 @@ XButtonPressedEvent	*ebut;
 				&rootx, &rooty, &wx, &wy, &statemask))
 			break;		/* on another screen */
 
-		if (!moveview(wx, odev.vres-1-wy, MOVDIR(whichbutton))) {
+		if (!moveview(wx, odev.vres-1-wy, movdir, movorb)) {
 			sleep(1);
 			continue;
 		}
@@ -510,10 +545,10 @@ XButtonPressedEvent	*ebut;
 		draw_grids();
 	}
 	if (!(inpresflags & DEV_NEWVIEW)) {	/* do final motion */
-		whichbutton = levptr(XButtonReleasedEvent)->button;
+		movdir = MOVDIR(levptr(XButtonReleasedEvent)->button);
 		wx = levptr(XButtonReleasedEvent)->x;
 		wy = levptr(XButtonReleasedEvent)->y;
-		moveview(wx, odev.vres-1-wy, MOVDIR(whichbutton));
+		moveview(wx, odev.vres-1-wy, movdir, movorb);
 	}
 	dev_flush();
 
@@ -537,6 +572,9 @@ register XKeyPressedEvent  *ekey;
 		return;
 	case 'H':			/* turn off height motion lock */
 		headlocked = 0;
+		return;
+	case 'l':			/* retrieve last view */
+		inpresflags |= DEV_LASTVIEW;
 		return;
 	case CTRL('S'):
 	case 'p':			/* pause computation */
