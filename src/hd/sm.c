@@ -19,15 +19,204 @@ static char SCCSid[] = "$SunId$ SGI";
 SM *smMesh = NULL;
 double smDist_sum=0;
 int smNew_tri_cnt=0;
-double smMinSampDiff = 1.7e-3;	/* min edge length in radians */
+double smMinSampDiff = 4.25e-4;	/* min edge length in radians */
 
-static FVECT smDefault_base[4] = { {SQRT3_INV, SQRT3_INV, SQRT3_INV},
-			  {-SQRT3_INV, -SQRT3_INV, SQRT3_INV},
-			  {-SQRT3_INV, SQRT3_INV, -SQRT3_INV},
-			  {SQRT3_INV, -SQRT3_INV, -SQRT3_INV}};
-static int smTri_verts[4][3] = { {0,1,2},{0,2,3},{0,3,1},{1,3,2}};
+/* Each edge extends .5536 radians - 31.72 degrees */
+static FVECT icosa_verts[162] = 
+{{-0.018096,0.495400,0.868477},{0.018614,-0.554780,0.831789},
+{0.850436,0.011329,0.525956},{0.850116,0.048016,-0.524402},
+{-0.850116,-0.048016,0.524402},{-0.850436,-0.011329,-0.525956},
+{0.495955,0.867825,0.030147},{-0.555329,0.831118,0.029186},
+{0.555329,-0.831118,-0.029186},{-0.495955,-0.867825,-0.030147},
+{-0.018614,0.554780,-0.831789},{0.018096,-0.495400,-0.868477},
+{0.000305,-0.034906,0.999391},{0.489330,0.297837,0.819664},
+{0.510900,-0.319418,0.798094},{-0.488835,-0.354308,0.797186},
+{-0.510409,0.262947,0.818744},{0.999391,0.034875,0.000914},
+{0.791335,0.516672,0.326862},{0.791142,0.538234,-0.290513},
+{0.826031,-0.460219,-0.325378},{0.826216,-0.481780,0.291985},
+{-0.999391,-0.034875,-0.000914},{-0.826216,0.481780,-0.291985},
+{-0.826031,0.460219,0.325378},{-0.791142,-0.538234,0.290513},
+{-0.791335,-0.516672,-0.326862},{-0.034911,0.998782,0.034881},
+{0.280899,0.801316,0.528194},{-0.337075,0.779739,0.527624},
+{-0.337377,0.814637,-0.471746},{0.280592,0.836213,-0.471186},
+{0.034911,-0.998782,-0.034881},{-0.280592,-0.836213,0.471186},
+{0.337377,-0.814637,0.471746},{0.337075,-0.779739,-0.527624},
+{-0.280899,-0.801316,-0.528194},{-0.000305,0.034906,-0.999391},
+{0.510409,-0.262947,-0.818744},{0.488835,0.354308,-0.797186},
+{-0.510900,0.319418,-0.798094},{-0.489330,-0.297837,-0.819664},
+{0.009834,-0.306509,0.951817},{0.268764,-0.186284,0.945021},
+{0.275239,-0.454405,0.847207},{-0.009247,0.239357,0.970888},
+{0.244947,0.412323,0.877491},{0.257423,0.138235,0.956360},
+{0.525850,-0.011345,0.850502},{0.696394,0.160701,0.699436},
+{0.707604,-0.160141,0.688223},{-0.268186,0.119892,0.955878},
+{-0.274715,0.394186,0.877011},{-0.244420,-0.472542,0.846737},
+{-0.256843,-0.204627,0.944542},{-0.525332,-0.048031,0.849541},
+{-0.695970,-0.209123,0.686945},{-0.707182,0.111718,0.698149},
+{0.961307,0.043084,-0.272090},{0.941300,0.301289,-0.152245},
+{0.853076,0.304715,-0.423568},{0.961473,0.024015,0.273848},
+{0.853344,0.274439,0.443269},{0.941400,0.289953,0.172315},
+{0.831918,0.554570,0.019109},{0.669103,0.719629,0.185565},
+{0.669003,0.730836,-0.135332},{0.959736,-0.234941,0.153979},
+{0.871472,-0.244526,0.425140},{0.871210,-0.214250,-0.441690},
+{0.959638,-0.223606,-0.170573},{0.868594,-0.495213,-0.017555},
+{0.717997,-0.671205,-0.184294},{0.718092,-0.682411,0.136596},
+{-0.961307,-0.043084,0.272090},{-0.959638,0.223606,0.170573},
+{-0.871210,0.214250,0.441690},{-0.961473,-0.024015,-0.273848},
+{-0.871472,0.244526,-0.425140},{-0.959736,0.234941,-0.153979},
+{-0.868594,0.495213,0.017555},{-0.718092,0.682411,-0.136596},
+{-0.717997,0.671205,0.184294},{-0.941400,-0.289953,-0.172315},
+{-0.853344,-0.274439,-0.443269},{-0.853076,-0.304715,0.423568},
+{-0.941300,-0.301289,0.152245},{-0.831918,-0.554570,-0.019109},
+{-0.669003,-0.730836,0.135332},{-0.669103,-0.719629,-0.185565},
+{-0.306809,0.951188,0.033302},{-0.195568,0.935038,0.295731},
+{-0.463858,0.837300,0.289421},{0.239653,0.970270,0.033802},
+{0.403798,0.867595,0.290218},{0.129326,0.946383,0.296031},
+{-0.029535,0.831255,0.555106},{0.136603,0.674019,0.725974},
+{-0.184614,0.662804,0.725678},{0.129164,0.964728,-0.229382},
+{0.403637,0.885733,-0.229245},{-0.464015,0.855438,-0.230036},
+{-0.195726,0.953383,-0.229677},{-0.029855,0.867949,-0.495755},
+{-0.185040,0.711807,-0.677562},{0.136173,0.723022,-0.677271},
+{0.306809,-0.951188,-0.033302},{0.195726,-0.953383,0.229677},
+{0.464015,-0.855438,0.230036},{-0.239653,-0.970270,-0.033802},
+{-0.403637,-0.885733,0.229245},{-0.129164,-0.964728,0.229382},
+{0.029855,-0.867949,0.495755},{-0.136173,-0.723022,0.677271},
+{0.185040,-0.711807,0.677562},{-0.129326,-0.946383,-0.296031},
+{-0.403798,-0.867595,-0.290218},{0.463858,-0.837300,-0.289421}
+,{0.195568,-0.935038,-0.295731},{0.029535,-0.831255,-0.555106},
+{0.184614,-0.662804,-0.725678},{-0.136603,-0.674019,-0.725974},
+{-0.009834,0.306509,-0.951817},{0.256843,0.204627,-0.944542},
+{0.244420,0.472542,-0.846737},{0.009247,-0.239357,-0.970888},
+{0.274715,-0.394186,-0.877011},{0.268186,-0.119892,-0.955878},
+{0.525332,0.048031,-0.849541},{0.707182,-0.111718,-0.698149},
+{0.695970,0.209123,-0.686945},{-0.257423,-0.138235,-0.956360},
+{-0.244947,-0.412323,-0.877491},{-0.275239,0.454405,-0.847207},
+{-0.268764,0.186284,-0.945021},{-0.525850,0.011345,-0.850502},
+{-0.707604,0.160141,-0.688223},{-0.696394,-0.160701,-0.699436},
+{0.563717,0.692920,0.449538},{0.673284,0.428212,0.602763},
+{0.404929,0.577853,0.708603},{0.445959,-0.596198,0.667584},
+{0.702960,-0.421213,0.573086},{0.611746,-0.681577,0.401523},
+{-0.445543,0.548166,0.707818},{-0.702606,0.380190,0.601498},
+{-0.611490,0.651895,0.448456},{-0.563454,-0.722602,0.400456},
+{-0.672921,-0.469235,0.571835},{-0.404507,-0.625886,0.666814},
+{0.404507,0.625886,-0.666814},{0.672921,0.469235,-0.571835},
+{0.563454,0.722602,-0.400456},{0.611490,-0.651895,-0.448456},
+{0.702606,-0.380190,-0.601498},{0.445543,-0.548166,-0.707818},
+{-0.611746,0.681577,-0.401523},{-0.702960,0.421213,-0.573086},
+{-0.445959,0.596198,-0.667584},{-0.404929,-0.577853,-0.708603},
+{-0.673284,-0.428212,-0.602763},{-0.563717,-0.692920,-0.449538}};
+static int icosa_tris[320][3] =
+{ {1,42,44},{42,12,43},{44,43,14},{42,43,44},{12,45,47},{45,0,46},{47,46,13},
+{45,46,47},{14,48,50},{48,13,49},{50,49,2},{48,49,50},{12,47,43},{47,13,48},
+{43,48,14},{47,48,43},{0,45,52},{45,12,51},{52,51,16},{45,51,52},{12,42,54},
+{42,1,53},{54,53,15},{42,53,54},{16,55,57},{55,15,56},{57,56,4},{55,56,57},
+{12,54,51},{54,15,55},{51,55,16},{54,55,51},{3,58,60},{58,17,59},{60,59,19},
+{58,59,60},{17,61,63},{61,2,62},{63,62,18},{61,62,63},{19,64,66},{64,18,65},
+{66,65,6},{64,65,66},{17,63,59},{63,18,64},{59,64,19},{63,64,59},{2,61,68},
+{61,17,67},{68,67,21},{61,67,68},{17,58,70},{58,3,69},{70,69,20},{58,69,70},
+{21,71,73},{71,20,72},{73,72,8},{71,72,73},{17,70,67},{70,20,71},{67,71,21},
+{70,71,67},{4,74,76},{74,22,75},{76,75,24},{74,75,76},{22,77,79},{77,5,78},
+{79,78,23},{77,78,79},{24,80,82},{80,23,81},{82,81,7},{80,81,82},{22,79,75},
+{79,23,80},{75,80,24},{79,80,75},{5,77,84},{77,22,83},{84,83,26},{77,83,84},
+{22,74,86},{74,4,85},{86,85,25},{74,85,86},{26,87,89},{87,25,88},{89,88,9},
+{87,88,89},{22,86,83},{86,25,87},{83,87,26},{86,87,83},{7,90,92},{90,27,91},
+{92,91,29},{90,91,92},{27,93,95},{93,6,94},{95,94,28},{93,94,95},{29,96,98},
+{96,28,97},{98,97,0},{96,97,98},{27,95,91},{95,28,96},{91,96,29},{95,96,91},
+{6,93,100},{93,27,99},{100,99,31},{93,99,100},{27,90,102},{90,7,101},
+{102,101,30},{90,101,102},{31,103,105},{103,30,104},{105,104,10},{103,104,105},
+{27,102,99},{102,30,103},{99,103,31},{102,103,99},{8,106,108},{106,32,107},
+{108,107,34},{106,107,108},{32,109,111},{109,9,110},{111,110,33},{109,110,111},
+{34,112,114},{112,33,113},{114,113,1},{112,113,114},{32,111,107},{111,33,112},
+{107,112,34},{111,112,107},{9,109,116},{109,32,115},{116,115,36},{109,115,116},
+{32,106,118},{106,8,117},{118,117,35},{106,117,118},{36,119,121},{119,35,120},
+{121,120,11},{119,120,121},{32,118,115},{118,35,119},{115,119,36},{118,119,115},
+{10,122,124},{122,37,123},{124,123,39},{122,123,124},{37,125,127},{125,11,126},
+{127,126,38},{125,126,127},{39,128,130},{128,38,129},{130,129,3},{128,129,130},
+{37,127,123},{127,38,128},{123,128,39},{127,128,123},{11,125,132},{125,37,131},
+{132,131,41},{125,131,132},{37,122,134},{122,10,133},{134,133,40},{122,133,134},
+{41,135,137},{135,40,136},{137,136,5},{135,136,137},{37,134,131},{134,40,135},
+{131,135,41},{134,135,131},{6,65,94},{65,18,138},{94,138,28},{65,138,94},
+{18,62,139},{62,2,49},{139,49,13},{62,49,139},{28,140,97},{140,13,46},{97,46,0},
+{140,46,97},{18,139,138},{139,13,140},{138,140,28},{139,140,138},{1,44,114},
+{44,14,141},{114,141,34},{44,141,114},{14,50,142},{50,2,68},{142,68,21},
+{50,68,142},{34,143,108},{143,21,73},{108,73,8},{143,73,108},{14,142,141},
+{142,21,143},{141,143,34},{142,143,141},{0,52,98},{52,16,144},{98,144,29},
+{52,144,98},{16,57,145},{57,4,76},{145,76,24},{57,76,145},{29,146,92},
+{146,24,82},{92,82,7},{146,82,92},{16,145,144},{145,24,146},{144,146,29},
+{145,146,144},{9,88,110},{88,25,147},{110,147,33},{88,147,110},{25,85,148},
+{85,4,56},{148,56,15},{85,56,148},{33,149,113},{149,15,53},{113,53,1},
+{149,53,113},{25,148,147},{148,15,149},{147,149,33},{148,149,147},{10,124,105},
+{124,39,150},{105,150,31},{124,150,105},{39,130,151},{130,3,60},{151,60,19},
+{130,60,151},{31,152,100},{152,19,66},{100,66,6},{152,66,100},{39,151,150},
+{151,19,152},{150,152,31},{151,152,150},{8,72,117},{72,20,153},{117,153,35},
+{72,153,117},{20,69,154},{69,3,129},{154,129,38},{69,129,154},{35,155,120},
+{155,38,126},{120,126,11},{155,126,120},{20,154,153},{154,38,155},{153,155,35},
+{154,155,153},{7,81,101},{81,23,156},{101,156,30},{81,156,101},{23,78,157},
+{78,5,136},{157,136,40},{78,136,157},{30,158,104},{158,40,133},{104,133,10},
+{158,133,104},{23,157,156},{157,40,158},{156,158,30},{157,158,156},{11,132,121},
+{132,41,159},{121,159,36},{132,159,121},{41,137,160},{137,5,84},{160,84,26},
+{137,84,160},{36,161,116},{161,26,89},{116,89,9},{161,89,116},{41,160,159},
+{160,26,161},{159,161,36},{160,161,159}};
+static int icosa_nbrs[320][3] =
+{{3,208,21},{12,3,20},{14,209,3},{2,0,1},{7,12,17},{202,7,16},{201,13,7},
+{6,4,5},{11,212,14},{198,11,13},{197,213,11},{10,8,9},{15,1,4},{9,15,6},
+{8,2,15},{14,12,13},{19,224,5},{28,19,4},{30,225,19},{18,16,17},{23,28,1},
+{250,23,0},{249,29,23},{22,20,21},{27,228,30},{246,27,29},{245,229,27},
+{26,24,25},{31,17,20},{25,31,22},{24,18,31},{30,28,29},{35,261,53},{44,35,52},
+{46,262,35},{34,32,33},{39,44,49},{197,39,48},{196,45,39},{38,36,37},
+{43,265,46},{193,43,45},{192,266,43},{42,40,41},{47,33,36},{41,47,38},
+{40,34,47},{46,44,45},{51,213,37},{60,51,36},{62,214,51},{50,48,49},{55,60,33},
+{277,55,32},{276,61,55},{54,52,53},{59,217,62},{273,59,61},{272,218,59},
+{58,56,57},{63,49,52},{57,63,54},{56,50,63},{62,60,61},{67,229,85},{76,67,84},
+{78,230,67},{66,64,65},{71,76,81},{293,71,80},{292,77,71},{70,68,69},
+{75,233,78},{289,75,77},{288,234,75},{74,72,73},{79,65,68},{73,79,70},
+{72,66,79},{78,76,77},{83,309,69},{92,83,68},{94,310,83},{82,80,81},{87,92,65},
+{245,87,64},{244,93,87},{86,84,85},{91,313,94},{241,91,93},{240,314,91},
+{90,88,89},{95,81,84},{89,95,86},{88,82,95},{94,92,93},{99,234,117},
+{108,99,116},{110,232,99},{98,96,97},{103,108,113},{192,103,112},{194,109,103},
+{102,100,101},{107,226,110},{200,107,109},{202,224,107},{106,104,105},
+{111,97,100},{105,111,102},{104,98,111},{110,108,109},{115,266,101},
+{124,115,100},{126,264,115},{114,112,113},{119,124,97},{288,119,96},
+{290,125,119},{118,116,117},{123,258,126},{296,123,125},{298,256,123},
+{122,120,121},{127,113,116},{121,127,118},{120,114,127},{126,124,125},
+{131,218,149},{140,131,148},{142,216,131},{130,128,129},{135,140,145},
+{240,135,144},{242,141,135},{134,132,133},{139,210,142},{248,139,141},
+{250,208,139},{138,136,137},{143,129,132},{137,143,134},{136,130,143},
+{142,140,141},{147,314,133},{156,147,132},{158,312,147},{146,144,145},
+{151,156,129},{272,151,128},{274,157,151},{150,148,149},{155,306,158},
+{280,155,157},{282,304,155},{154,152,153},{159,145,148},{153,159,150},
+{152,146,159},{158,156,157},{163,256,181},{172,163,180},{174,257,163},
+{162,160,161},{167,172,177},{282,167,176},{281,173,167},{166,164,165},
+{171,260,174},{278,171,173},{277,261,171},{170,168,169},{175,161,164},
+{169,175,166},{168,162,175},{174,172,173},{179,304,165},{188,179,164},
+{190,305,179},{178,176,177},{183,188,161},{298,183,160},{297,189,183},
+{182,180,181},{187,308,190},{294,187,189},{293,309,187},{186,184,185},
+{191,177,180},{185,191,182},{184,178,191},{190,188,189},{195,101,42},
+{204,195,41},{206,102,195},{194,192,193},{199,204,38},{10,199,37},{9,205,199},
+{198,196,197},{203,105,206},{6,203,205},{5,106,203},{202,200,201},{207,193,196},
+{201,207,198},{200,194,207},{206,204,205},{211,138,0},{220,211,2},{222,136,211},
+{210,208,209},{215,220,8},{48,215,10},{50,221,215},{214,212,213},{219,130,222},
+{56,219,221},{58,128,219},{218,216,217},{223,209,212},{217,223,214},
+{216,210,223},{222,220,221},{227,106,16},{236,227,18},{238,104,227},
+{226,224,225},{231,236,24},{64,231,26},{66,237,231},{230,228,229},{235,98,238},
+{72,235,237},{74,96,235},{234,232,233},{239,225,228},{233,239,230},
+{232,226,239},{238,236,237},{243,133,90},{252,243,89},{254,134,243},
+{242,240,241},{247,252,86},{26,247,85},{25,253,247},{246,244,245},{251,137,254},
+{22,251,253},{21,138,251},{250,248,249},{255,241,244},{249,255,246},
+{248,242,255},{254,252,253},{259,122,160},{268,259,162},{270,120,259},
+{258,256,257},{263,268,168},{32,263,170},{34,269,263},{262,260,261},
+{267,114,270},{40,267,269},{42,112,267},{266,264,265},{271,257,260},
+{265,271,262},{264,258,271},{270,268,269},{275,149,58},{284,275,57},
+{286,150,275},{274,272,273},{279,284,54},{170,279,53},{169,285,279},
+{278,276,277},{283,153,286},{166,283,285},{165,154,283},{282,280,281},
+{287,273,276},{281,287,278},{280,274,287},{286,284,285},{291,117,74},
+{300,291,73},{302,118,291},{290,288,289},{295,300,70},{186,295,69},
+{185,301,295},{294,292,293},{299,121,302},{182,299,301},{181,122,299},
+{298,296,297},{303,289,292},{297,303,294},{296,290,303},{302,300,301},
+{307,154,176},{316,307,178},{318,152,307},{306,304,305},{311,316,184},
+{80,311,186},{82,317,311},{310,308,309},{315,146,318},{88,315,317},
+{90,144,315},{314,312,313},{319,305,308},{313,319,310},{312,306,319},
+{318,316,317}};
 
-static int smBase_nbrs[4][3] =  { {3,1,2},{3,2,0},{3,0,1},{1,0,2}};
 
 #ifdef TEST_DRIVER
 VIEW  Current_View = {0,{0,0,0},{0,0,-1},{0,1,0},60,60,0};
@@ -81,6 +270,7 @@ smInit_mesh(sm)
     SM_NUM_TRI(sm) = 0;
     SM_SAMPLE_TRIS(sm) = 0;
     SM_FREE_TRIS(sm) = -1;
+    SM_AVAILABLE_TRIS(sm) = -1;
     smClear_flags(sm,-1);
 }
 
@@ -157,6 +347,31 @@ memerr:
 }
 
 
+int 
+compress_set(os)
+OBJECT *os;
+{
+  int i,j;
+
+  for (i = 1, j = os[0]; i <= j; i++)
+  {
+    if(SM_T_ID_VALID(smMesh,os[i]))
+      continue;
+    if(i==j)
+      break;
+    while(!SM_T_ID_VALID(smMesh,os[j]) && (i < j))
+	    j--;
+    if(i==j)
+      break;
+    os[i] = os[j--];
+  }
+  i--;
+	
+  os[0] = i;
+  return(i);
+
+}
+
 int
 smAlloc_tri(sm)
 SM *sm;
@@ -167,13 +382,18 @@ SM *sm;
   /* Otherwise, have we reached the end of the list yet?*/
   if(SM_NUM_TRI(sm) < SM_MAX_TRIS(sm))
     return(SM_NUM_TRI(sm)++);
-
-  if((id = SM_FREE_TRIS(sm)) != -1)
+  if((id = SM_AVAILABLE_TRIS(sm)) != -1)
   {
-    SM_FREE_TRIS(sm) =  T_NEXT_FREE(SM_NTH_TRI(sm,id));
+    SM_AVAILABLE_TRIS(sm) =  T_NEXT_AVAILABLE(SM_NTH_TRI(sm,id));
     return(id);
   }
-
+  if((id = SM_FREE_TRIS(sm)) != -1)
+  {
+    dosets(compress_set);
+    SM_AVAILABLE_TRIS(sm) = T_NEXT_FREE(SM_NTH_TRI(sm,id));
+    SM_FREE_TRIS(sm) = -1;
+    return(id);
+  }
   /*Else: realloc */
   smRealloc_mesh(sm);
   return(SM_NUM_TRI(sm)++);
@@ -297,102 +517,114 @@ smInit(n)
 }
 
 
-smLocator_apply_func(sm,v0,v1,v2,edge_func,tri_func,argptr)
+smLocator_apply(sm,v0,v1,v2,func)
    SM *sm;
    FVECT v0,v1,v2;
-   int (*edge_func)();
-   int (*tri_func)();
-   int *argptr;
+   FUNC func;
 {
   STREE *st;
-  FVECT p0,p1,p2;
+  FVECT tri[3];
 
   st = SM_LOCATOR(sm);
 
-  VSUB(p0,v0,SM_VIEW_CENTER(sm));
-  VSUB(p1,v1,SM_VIEW_CENTER(sm));
-  VSUB(p2,v2,SM_VIEW_CENTER(sm));
-
-  stApply_to_tri(st,p0,p1,p2,edge_func,tri_func,argptr);
+  VSUB(tri[0],v0,SM_VIEW_CENTER(sm));
+  VSUB(tri[1],v1,SM_VIEW_CENTER(sm));
+  VSUB(tri[2],v2,SM_VIEW_CENTER(sm));
+  stVisit(st,tri,func);
 
 }
 
-QUADTREE 
-delete_tri_set(qt,optr,del_set)
-QUADTREE qt;
-OBJECT *optr,*del_set;
-{
 
-  int set_size,i,t_id;
-  OBJECT *rptr,r_set[QT_MAXSET+1];
-  OBJECT *tptr,t_set[QT_MAXSET+1],*sptr;
-
-  /* First need to check if set size larger than QT_MAXSET: if so
-     need to allocate larger array
-     */
-  if((set_size = MAX(QT_SET_CNT(optr),QT_SET_CNT(del_set))) >QT_MAXSET)
-    rptr = (OBJECT *)malloc((set_size+1)*sizeof(OBJECT));
-  else
-    rptr = r_set;
-  if(!rptr)
-    goto memerr;
-  setintersect(rptr,del_set,optr);
-	  
-  if(QT_SET_CNT(rptr) > 0)
-  {
-    /* First need to check if set size larger than QT_MAXSET: if so
-       need to allocate larger array
-       */
-    sptr = QT_SET_PTR(rptr);
-    for(i = QT_SET_CNT(rptr); i > 0; i--)
-      {
-	t_id = QT_SET_NEXT_ELEM(sptr);
-	qt = qtdelelem(qt,t_id);
-      }
-  }
-  /* If we allocated memory: free it */
-  if(rptr != r_set)
-    free(rptr);
-
-  return(qt);
-memerr:
-    error(SYSTEM,"delete_tri_set():Unable to allocate memory");
-}
-
+/* NEW INSERTION!!! ******************************************************/
 QUADTREE
-expand_node(qt,q0,q1,q2,optr,n)
-QUADTREE qt;
-FVECT q0,q1,q2;
-OBJECT *optr;
-int n;
+insert_tri(argptr,root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,scale,
+               s0,s1,s2,sq0,sq1,sq2,rev,f,n)
+     int *argptr;
+     int root;
+     QUADTREE qt;
+     BCOORD q0[3],q1[3],q2[3];
+     BCOORD t0[3],t1[3],t2[3];
+     BCOORD dt10[3],dt21[3],dt02[3];
+     unsigned int scale,s0,s1,s2,sq0,sq1,sq2,rev;
+     FUNC f; 
+     int n;
 {
-  OBJECT *tptr,t_set[QT_MAXSET+1];
-  int i,t_id,found;
+  OBJECT *optr,*tptr,t_set[QT_MAXSET+1];
+  int i,t_id;
   TRI *t;
-  FVECT v0,v1,v2;
+  FVECT tri[3];
+  BCOORD b0[3],b1[3],b2[3];
+  BCOORD tb0[3],tb1[3],tb2[3];
+  BCOORD db10[3],db21[3],db02[3];
+  BCOORD a,b,c,qa,qb,qc;
+  FUNC tfunc;
 
-  if(QT_SET_CNT(optr) > QT_MAXSET)
-    tptr = (OBJECT *)malloc((QT_SET_CNT(optr)+1)*sizeof(OBJECT));
-  else
-    tptr = t_set;
-  if(!tptr)
-    goto memerr;
+  t_id = *argptr;
 
-  qtgetset(tptr,qt);
-  /* If set size exceeds threshold: subdivide cell and reinsert tris*/
+  /* If the set is empty - just add */
+  if(QT_IS_EMPTY(qt))
+    return(qtadduelem(qt,t_id));
+
+  /* If the set size is below expansion threshold,or at maximum
+     number of quadtree levels : just add */
+  optr = qtqueryset(qt);
+  if(QT_SET_CNT(optr) < QT_SET_THRESHOLD || (n >= QT_MAX_LEVELS))
+    return(qtadduelem(qt,t_id));
+  /* otherwise: expand node- and insert tri, and reinsert existing tris
+     in set to children of new node
+  */
+  /* First tri compressing set */
+#ifdef NEWSETS0
+  if(qtcompressuelem(qt,compress_set) < QT_SET_THRESHOLD)
+    /* Get set: If greater than standard size: allocate memory to hold */
+    return(qtadduelem(qt,t_id));
+#endif
+    if(QT_SET_CNT(optr) > QT_MAXSET)
+    { 
+       if(!(tptr = (OBJECT *)malloc((QT_SET_CNT(optr)+1)*sizeof(OBJECT))))
+        goto memerr;
+    }
+    else
+     tptr = t_set;
+    qtgetset(tptr,qt);
+
+  /* subdivide node */
   qtfreeleaf(qt);
   qtSubdivide(qt);
 
+  a = q1[0];  b = q0[1]; c = q0[2];
+  qa = q0[0]; qb = q1[1];  qc = q2[2];
+  /* First add current tri: have all of the information */
+  if(rev)
+    qt = qtInsert_tri_rev(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,scale,
+               s0,s1,s2,sq0,sq1,sq2,f,n);
+  else
+    qt = qtInsert_tri(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,scale,
+               s0,s1,s2,sq0,sq1,sq2,f,n);
+
+  /* Now add in all of the rest; */
+  F_FUNC(tfunc) = F_FUNC(f);
   for(optr = QT_SET_PTR(tptr),i=QT_SET_CNT(tptr); i > 0; i--)
   {
     t_id = QT_SET_NEXT_ELEM(optr);
     t = SM_NTH_TRI(smMesh,t_id);
     if(!T_IS_VALID(t))
       continue;
-    VSUB(v0,SM_T_NTH_WV(smMesh,t,0),SM_VIEW_CENTER(smMesh));
-    VSUB(v1,SM_T_NTH_WV(smMesh,t,1),SM_VIEW_CENTER(smMesh));
-    VSUB(v2,SM_T_NTH_WV(smMesh,t,2),SM_VIEW_CENTER(smMesh));
-    qt = qtAdd_tri(qt,q0,q1,q2,v0,v1,v2,t_id,n);
+    F_ARGS(tfunc) = &t_id;
+    VSUB(tri[0],SM_T_NTH_WV(smMesh,t,0),SM_VIEW_CENTER(smMesh));
+    VSUB(tri[1],SM_T_NTH_WV(smMesh,t,1),SM_VIEW_CENTER(smMesh));
+    VSUB(tri[2],SM_T_NTH_WV(smMesh,t,2),SM_VIEW_CENTER(smMesh));
+    convert_tri_to_frame(root,tri,b0,b1,b2,db10,db21,db02);
+
+    /* Calculate appropriate sidedness values */
+    SIDES_GTR(b0,b1,b2,s0,s1,s2,a,b,c);
+    SIDES_GTR(b0,b1,b2,sq0,sq1,sq2,qa,qb,qc);
+    if(rev)
+      qt = qtInsert_tri_rev(root,qt,q0,q1,q2,b0,b1,b2,db10,db21,db02,scale,
+               s0,s1,s2,sq0,sq1,sq2,tfunc,n);
+    else
+      qt = qtInsert_tri(root,qt,q0,q1,q2,b0,b1,b2,db10,db21,db02,scale,
+               s0,s1,s2,sq0,sq1,sq2,tfunc,n);
   }
   /* If we allocated memory: free it */
   if( tptr != t_set)
@@ -401,111 +633,38 @@ int n;
   return(qt);
 memerr:
     error(SYSTEM,"expand_node():Unable to allocate memory");
-}
 
-add_tri_expand(qtptr,f,argptr,q0,q1,q2,t0,t1,t2,n)
-QUADTREE *qtptr;
-int *f;
-ADD_ARGS *argptr;
-FVECT q0,q1,q2;
-FVECT t0,t1,t2;
-int n;
-{
-  int t_id;
-  OBJECT *optr,*del_set;
-
-  t_id = argptr->t_id;
-
-  if(QT_IS_EMPTY(*qtptr))
-  {
-    *qtptr = qtaddelem(*qtptr,t_id);
-    return;
-  }
-  if(!QT_LEAF_IS_FLAG(*qtptr))
-  {
-    optr = qtqueryset(*qtptr);
-
-    if(del_set=argptr->del_set)
-      *qtptr = delete_tri_set(*qtptr,optr,del_set);
-    *qtptr = qtaddelem(*qtptr,t_id);
-  }
-  if (n >= QT_MAX_LEVELS)
-    return;
-  optr = qtqueryset(*qtptr);
-  if(QT_SET_CNT(optr) < QT_SET_THRESHOLD)
-    return;
-  *qtptr = expand_node(*qtptr,q0,q1,q2,optr,n);    
 }
 
 
 
-add_tri(qtptr,fptr,argptr)
-   QUADTREE *qtptr;
-   int *fptr;
-   ADD_ARGS *argptr;
-{
-
-  OBJECT *optr,*del_set;
-  int t_id;
-
-  t_id = argptr->t_id;
-
-
-  if(QT_IS_EMPTY(*qtptr))
-  {
-    *qtptr = qtaddelem(*qtptr,t_id);
-    if(!QT_FLAG_FILL_TRI(*fptr))
-      (*fptr)++;
-    return;
-  }
-  if(QT_LEAF_IS_FLAG(*qtptr))
-    return;
-  
-  optr = qtqueryset(*qtptr);
-  
-  if(del_set = argptr->del_set)
-    *qtptr = delete_tri_set(*qtptr,optr,del_set);
-
-  if(!QT_IS_EMPTY(*qtptr))
-    {
-      optr = qtqueryset(*qtptr);
-      if(QT_SET_CNT(optr) >= QT_SET_THRESHOLD)
-	(*fptr) |= QT_EXPAND;
-    }
-  if(!QT_FLAG_FILL_TRI(*fptr))
-    (*fptr)++;
-  *qtptr = qtaddelem(*qtptr,t_id);
-  
-}
-
-
-smLocator_add_tri(sm,t_id,v0_id,v1_id,v2_id,del_set)
+smLocator_add_tri(sm,t_id,v0_id,v1_id,v2_id)
 SM *sm;
 int t_id;
 int v0_id,v1_id,v2_id;
-OBJECT *del_set;
 {
-  STREE *st;
-  FVECT v0,v1,v2;
-  ADD_ARGS args;
-
-  st = SM_LOCATOR(sm);
+  FVECT tri[3];
+  FUNC f;
 
 #ifdef DEBUG
-  if((v0_id == INVALID) || (v1_id == INVALID) || (v2_id == INVALID))
-    error(CONSISTENCY,"Invalid ids 1\n");
+if(T_NTH_NBR(SM_NTH_TRI(sm,t_id),0)== -1 ||
+   T_NTH_NBR(SM_NTH_TRI(sm,t_id),1)== -1 ||
+   T_NTH_NBR(SM_NTH_TRI(sm,t_id),2)== -1)
+  error("Invalid tri: smLocator_add_tri()\n");
+
+if(!T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(SM_NTH_TRI(sm,t_id),0))) ||
+   !T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(SM_NTH_TRI(sm,t_id),1))) ||
+   !T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(SM_NTH_TRI(sm,t_id),2))))
+  error("Invalid tri: smLocator_add_tri()\n");
 #endif
 
-  VSUB(v0,SM_NTH_WV(sm,v0_id),SM_VIEW_CENTER(sm));
-  VSUB(v1,SM_NTH_WV(sm,v1_id),SM_VIEW_CENTER(sm));
-  VSUB(v2,SM_NTH_WV(sm,v2_id),SM_VIEW_CENTER(sm));
+  VSUB(tri[0],SM_NTH_WV(sm,v0_id),SM_VIEW_CENTER(sm));
+  VSUB(tri[1],SM_NTH_WV(sm,v1_id),SM_VIEW_CENTER(sm));
+  VSUB(tri[2],SM_NTH_WV(sm,v2_id),SM_VIEW_CENTER(sm));
 
-  qtClearAllFlags();
-  args.t_id = t_id;
-  args.del_set = del_set;
-
-  stApply_to_tri(st,v0,v1,v2,add_tri,add_tri_expand,&args);
-
+  F_FUNC(f) = insert_tri;
+  F_ARGS(f) = &t_id;
+  stInsert_tri(SM_LOCATOR(sm),tri,f);
 }
 
 /* Add a triangle to the base array with vertices v1-v2-v3 */
@@ -518,10 +677,7 @@ int v0_id,v1_id,v2_id;
     TRI *t;
 #ifdef DEBUG
     if(v0_id==v1_id || v0_id==v2_id || v1_id==v2_id)
-    {
-	eputs("smAdd_tri: invalid vertex ids\n");
-	return(INVALID);
-	}
+      error(CONSISTENCY,"smAdd_tri: invalid vertex ids\n");
 #endif    
     t_id = smAlloc_tri(sm);
 
@@ -563,14 +719,12 @@ int v0_id,v1_id,v2_id;
 
 
 void
-smTris_swap_edge(sm,t_id,t1_id,e,e1,tn_id,tn1_id,add_ptr,delptr)
+smTris_swap_edge(sm,t_id,t1_id,e,e1,tn_id,tn1_id,add_ptr)
    SM *sm;
    int t_id,t1_id;
    int e,e1;
    int *tn_id,*tn1_id;
    LIST **add_ptr;
-   QUADTREE *delptr;
-
 {
     int verts[3],enext,eprev,e1next,e1prev;
     TRI *n,*ta,*tb,*t,*t1;
@@ -592,8 +746,8 @@ smTris_swap_edge(sm,t_id,t1_id,e,e1,tn_id,tn1_id,add_ptr,delptr)
     verts[e1next] = T_NTH_V(SM_NTH_TRI(sm,t1_id),e1next);
     verts[e1prev] = T_NTH_V(SM_NTH_TRI(sm,t_id),e);
     tb_id = smAdd_tri(sm,verts[0],verts[1],verts[2]);
-    *add_ptr = push_data(*add_ptr,tb_id);
 
+    *add_ptr = push_data(*add_ptr,tb_id);
     ta = SM_NTH_TRI(sm,ta_id);
     tb = SM_NTH_TRI(sm,tb_id);
     t = SM_NTH_TRI(sm,t_id);
@@ -606,36 +760,95 @@ smTris_swap_edge(sm,t_id,t1_id,e,e1,tn_id,tn1_id,add_ptr,delptr)
     T_NTH_NBR(ta,eprev)=T_NTH_NBR(t,eprev);
     T_NTH_NBR(tb,e1prev)=T_NTH_NBR(t1,e1prev);    
 
+  
+#ifdef DEBUG
+	if(!T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(ta,0))) || 
+		       !T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(ta,1))) || 
+		       !T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(ta,2))) || 
+		       !T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(tb,0))) || 
+		       !T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(tb,1))) || 
+		       !T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(tb,2))))
+	  goto Ltri_error;
+	if(SM_NTH_TRI(sm,T_NTH_NBR(ta,0))==SM_NTH_TRI(sm,T_NTH_NBR(ta,1)) ||
+	   SM_NTH_TRI(sm,T_NTH_NBR(ta,0))==SM_NTH_TRI(sm,T_NTH_NBR(ta,2)) ||
+	   SM_NTH_TRI(sm,T_NTH_NBR(ta,1))==SM_NTH_TRI(sm,T_NTH_NBR(ta,2)) ||
+	   SM_NTH_TRI(sm,T_NTH_NBR(tb,0))==SM_NTH_TRI(sm,T_NTH_NBR(tb,1)) ||
+	   SM_NTH_TRI(sm,T_NTH_NBR(tb,0))==SM_NTH_TRI(sm,T_NTH_NBR(tb,2)) ||
+	   SM_NTH_TRI(sm,T_NTH_NBR(tb,1))==SM_NTH_TRI(sm,T_NTH_NBR(tb,2)) )
+	  goto Ltri_error;
+#endif
     /* Reset neighbor pointers of original neighbors */
     n = SM_NTH_TRI(sm,T_NTH_NBR(t,enext));
+#ifdef DEBUG
+	if(!T_IS_VALID(n))
+	  goto Ltri_error;
+#endif
     T_NTH_NBR(n,T_NTH_NBR_PTR(t_id,n)) = tb_id;
     n = SM_NTH_TRI(sm,T_NTH_NBR(t,eprev));
+#ifdef DEBUG
+	if(!T_IS_VALID(n))
+	  goto Ltri_error;
+#endif
     T_NTH_NBR(n,T_NTH_NBR_PTR(t_id,n)) = ta_id;
 
     n = SM_NTH_TRI(sm,T_NTH_NBR(t1,e1next));
+#ifdef DEBUG
+	if(!T_IS_VALID(n))
+	  goto Ltri_error;
+#endif
     T_NTH_NBR(n,T_NTH_NBR_PTR(t1_id,n)) = ta_id;
     n = SM_NTH_TRI(sm,T_NTH_NBR(t1,e1prev));
+#ifdef DEBUG
+	if(!T_IS_VALID(n))
+	  goto Ltri_error;
+#endif
     T_NTH_NBR(n,T_NTH_NBR_PTR(t1_id,n)) = tb_id;
 
-    /* Delete two parent triangles */
-    if(remove_from_list(t_id,add_ptr))
-       smDelete_tri(sm,t_id); 
-    else
-      *delptr = qtaddelem(*delptr,t_id);
+#ifdef DEBUG
+    T_VALID_FLAG(SM_NTH_TRI(sm,t_id))=-1;
+    T_VALID_FLAG(SM_NTH_TRI(sm,t1_id))=-1;
+#endif
 
-    if(remove_from_list(t1_id,add_ptr))
-       smDelete_tri(sm,t1_id); 
-    else
-      *delptr = qtaddelem(*delptr,t1_id);
+    remove_from_list(t_id,add_ptr);
+    remove_from_list(t1_id,add_ptr);
+#if 1
+    smDelete_tri(sm,t_id); 
+    smDelete_tri(sm,t1_id); 
+#else
+    *del_ptr = push_data(*del_ptr,t_id);
+    *del_ptr = push_data(*del_ptr,t1_id);
+#endif
+
+
 
     *tn_id = ta_id;
     *tn1_id = tb_id;
+    
+#ifdef DEBUG
+    if(T_NTH_NBR(SM_NTH_TRI(sm,ta_id),0)== -1 ||
+       T_NTH_NBR(SM_NTH_TRI(sm,ta_id),1)== -1 ||
+       T_NTH_NBR(SM_NTH_TRI(sm,ta_id),2)== -1 ||
+       T_NTH_NBR(SM_NTH_TRI(sm,tb_id),0)== -1 ||
+       T_NTH_NBR(SM_NTH_TRI(sm,tb_id),1)== -1 ||
+       T_NTH_NBR(SM_NTH_TRI(sm,tb_id),2)== -1)
+      goto Ltri_error;
+  if(!T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(SM_NTH_TRI(sm,ta_id),0))) ||
+     !T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(SM_NTH_TRI(sm,ta_id),1))) ||
+     !T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(SM_NTH_TRI(sm,ta_id),2))))
+      goto Ltri_error;
+  if(!T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(SM_NTH_TRI(sm,tb_id),0))) ||
+     !T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(SM_NTH_TRI(sm,tb_id),1))) ||
+     !T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(SM_NTH_TRI(sm,tb_id),2))))
+      goto Ltri_error;
+#endif
+    return;
+Ltri_error:
+    error(CONSISTENCY,"Invalid tri: smTris_swap_edge()\n");
 }
 
-smUpdate_locator(sm,add_list,del_set)
+smUpdate_locator(sm,add_list)
 SM *sm;
 LIST *add_list;
-OBJECT *del_set;
 {
   int t_id,i;
   TRI *t;
@@ -645,32 +858,21 @@ OBJECT *del_set;
   {
     t_id = pop_list(&add_list);
     t = SM_NTH_TRI(sm,t_id);
-    smLocator_add_tri(sm,t_id,T_NTH_V(t,0),T_NTH_V(t,1),T_NTH_V(t,2),del_set);
-  }
-
-  optr = QT_SET_PTR(del_set);
-  for(i = QT_SET_CNT(del_set); i > 0; i--)
-  {
-      t_id = QT_SET_NEXT_ELEM(optr);
-#if 0
-      t = SM_NTH_TRI(sm,t_id);
-      smLocator_remove_tri(sm,t_id,T_NTH_V(t,0),T_NTH_V(t,1),T_NTH_V(t,2));
-#endif
-      smDelete_tri(sm,t_id); 
+    smLocator_add_tri(sm,t_id,T_NTH_V(t,0),T_NTH_V(t,1),T_NTH_V(t,2));
   }
 }
-/* MUST add check for constrained edges */
+
 int
-smFix_tris(sm,id,tlist,add_list,delptr)
+smFix_tris(sm,id,tlist,add_list)
 SM *sm;
 int id;
 LIST *tlist,*add_list;
-QUADTREE *delptr;
 {
     TRI *t,*t_opp;
     FVECT p,p0,p1,p2;
     int e,e1,swapped = 0;
     int t_id,t_opp_id;
+    LIST *del_list=NULL;
 
     VSUB(p,SM_NTH_WV(sm,id),SM_VIEW_CENTER(sm));
     while(tlist)
@@ -688,7 +890,10 @@ QUADTREE *delptr;
 	  error(CONSISTENCY,"Invalid tri id smFix_tris()\n");
 #endif
 	t_opp = SM_NTH_TRI(sm,t_opp_id);
-
+#ifdef DEBUG
+	if(!T_IS_VALID(t_opp))
+	  error(CONSISTENCY,"Invalid trismFix_tris()\n");
+#endif
 	smDir_in_cone(sm,p0,T_NTH_V(t_opp,0));
 	smDir_in_cone(sm,p1,T_NTH_V(t_opp,1));
 	smDir_in_cone(sm,p2,T_NTH_V(t_opp,2));
@@ -699,12 +904,20 @@ QUADTREE *delptr;
 	    /* check list for t_opp and Remove if there */
 	    remove_from_list(t_opp_id,&tlist);
 	    smTris_swap_edge(sm,t_id,t_opp_id,e,e1,&t_id,&t_opp_id,
-			     &add_list,delptr);
+			     &add_list);
 	    tlist = push_data(tlist,t_id);
 	    tlist = push_data(tlist,t_opp_id);
 	}
     }
-    smUpdate_locator(sm,add_list,qtqueryset(*delptr));
+#if 0
+    while(del_list)
+    {
+      t_id = pop_list(&del_list);
+      smDelete_tri(sm,t_id);
+    }
+#endif
+    smUpdate_locator(sm,add_list);
+
     return(swapped);
 }
 
@@ -717,12 +930,15 @@ SM *sm;
 TRI *t;
 int id;
 {
-  int t_id;
+  int which;
   int nbr_id;
-
+  
   /* Want the edge for which "id" is the destination */
-  t_id = (T_WHICH_V(t,id)+ 1)% 3;
-  nbr_id = T_NTH_NBR(t,t_id);
+  which = T_WHICH_V(t,id);
+  if(which== INVALID)
+    return(which);
+
+  nbr_id = T_NTH_NBR(t,(which + 1)% 3);
   return(nbr_id);
 }
 
@@ -739,83 +955,159 @@ int id;
 
 /* Locate the point-id in the point location structure: */
 int
-smInsert_samp(sm,s_id,tri_id)
+smInsert_samp(sm,s_id,tri_id,on,which)
    SM *sm;
    int s_id,tri_id;
+   int on,which;
 {
-    int v0_id,v1_id,v2_id;
-    int t0_id,t1_id,t2_id,replaced;
+    int v_id[3],topp_id,i;
+    int t0_id,t1_id,t2_id,t3_id,replaced;
+    int e0,e1,e2,opp0,opp1,opp2,opp_id;
     LIST *tlist,*add_list;
-    OBJECT del_set[2];
-    QUADTREE delnode;
     FVECT npt;
-    TRI *tri,*nbr;
+    TRI *tri,*nbr,*topp;
+
 
     add_list = NULL;
+    for(i=0; i<3;i++)
+      v_id[i] = T_NTH_V(SM_NTH_TRI(sm,tri_id),i);
 
-    v0_id = T_NTH_V(SM_NTH_TRI(sm,tri_id),0);
-    v1_id = T_NTH_V(SM_NTH_TRI(sm,tri_id),1);
-    v2_id = T_NTH_V(SM_NTH_TRI(sm,tri_id),2);
+    /* If falls on existing edge */
+    if(on == ON_E)
+    {
+      tri = SM_NTH_TRI(sm,tri_id);
+      topp_id = T_NTH_NBR(tri,which);
+      e0 = which;
+      e1 = (which+1)%3;
+      e2 = (which+2)%3;
+      topp = SM_NTH_TRI(sm,topp_id);
+      opp0 = T_NTH_NBR_PTR(tri_id,topp);
+      opp_id = T_NTH_V(topp,opp0);
+      opp1 = (opp0+1)%3;
+      opp2 = (opp0+2)%3;
+      
+      /* Create 4 triangles */
+      /*      /|\             /|\
+             / | \           / | \
+	    /  *  \  ---->  /__|__\
+            \  |  /         \  |  /
+	     \ | /           \ | /
+	      \|/             \|/
+     */
+	t0_id = smAdd_tri(sm,s_id,v_id[e0],v_id[e1]);
+	add_list = push_data(add_list,t0_id);
+	t1_id = smAdd_tri(sm,s_id,v_id[e2],v_id[e0]);
+	add_list = push_data(add_list,t1_id);
+	t2_id = smAdd_tri(sm,s_id,v_id[e1],opp_id);
+	add_list = push_data(add_list,t2_id);
+	t3_id = smAdd_tri(sm,s_id,opp_id,v_id[e2]);
+	add_list = push_data(add_list,t3_id);
+	/* CAUTION: tri must be assigned after Add_tri: pointers may change*/
+	tri = SM_NTH_TRI(sm,tri_id);
+	topp =SM_NTH_TRI(sm,topp_id);
 
-    t0_id = smAdd_tri(sm,s_id,v0_id,v1_id);
-    /* Add triangle to the locator */
-    
-    add_list = push_data(add_list,t0_id);
+	/* Set the neighbor pointers for the new tris */
+	T_NTH_NBR(SM_NTH_TRI(sm,t0_id),0) = T_NTH_NBR(tri,e2);
+	T_NTH_NBR(SM_NTH_TRI(sm,t0_id),1) = t2_id;
+	T_NTH_NBR(SM_NTH_TRI(sm,t0_id),2) = t1_id;
+	T_NTH_NBR(SM_NTH_TRI(sm,t1_id),0) = T_NTH_NBR(tri,e1);
+	T_NTH_NBR(SM_NTH_TRI(sm,t1_id),1) = t0_id;
+	T_NTH_NBR(SM_NTH_TRI(sm,t1_id),2) = t3_id;
+	T_NTH_NBR(SM_NTH_TRI(sm,t2_id),0) = T_NTH_NBR(topp,opp1);
+	T_NTH_NBR(SM_NTH_TRI(sm,t2_id),1) = t3_id;
+	T_NTH_NBR(SM_NTH_TRI(sm,t2_id),2) = t0_id;
+	T_NTH_NBR(SM_NTH_TRI(sm,t3_id),0) = T_NTH_NBR(topp,opp2);
+	T_NTH_NBR(SM_NTH_TRI(sm,t3_id),1) = t1_id;
+	T_NTH_NBR(SM_NTH_TRI(sm,t3_id),2) = t2_id;
 
-    t1_id = smAdd_tri(sm,s_id,v1_id,v2_id);
-    add_list = push_data(add_list,t1_id);
+	/* Reset the neigbor pointers for the neighbors of the original */
+	nbr = SM_NTH_TRI(sm,T_NTH_NBR(tri,e1));
+	T_NTH_NBR(nbr,T_NTH_NBR_PTR(tri_id,nbr)) = t1_id;
+	nbr = SM_NTH_TRI(sm,T_NTH_NBR(tri,e2));
+	T_NTH_NBR(nbr,T_NTH_NBR_PTR(tri_id,nbr)) = t0_id;
+	nbr = SM_NTH_TRI(sm,T_NTH_NBR(topp,opp1));
+	T_NTH_NBR(nbr,T_NTH_NBR_PTR(topp_id,nbr)) = t2_id;
+	nbr = SM_NTH_TRI(sm,T_NTH_NBR(topp,opp2));
+	T_NTH_NBR(nbr,T_NTH_NBR_PTR(topp_id,nbr)) = t3_id;
+#ifdef DEBUG
+    T_VALID_FLAG(SM_NTH_TRI(sm,tri_id))=-1;
+    T_VALID_FLAG(SM_NTH_TRI(sm,topp_id))=-1;
+#endif
+	tlist = push_data(NULL,t0_id);
+	tlist = push_data(tlist,t1_id);
+	tlist = push_data(tlist,t2_id);
+	tlist = push_data(tlist,t3_id);
+    }
+    else
+      {
+	/* Create 3 triangles */
+      /*      / \             /|\
+             /   \           / | \
+	    /  *  \  ---->  /  |  \
+           /       \       /  / \  \
+	  /         \ 	  / /     \ \ 
+	 /___________\   //_________\\ 
+      */
 
-    t2_id = smAdd_tri(sm,s_id,v2_id,v0_id);
-    add_list = push_data(add_list,t2_id);
+	t0_id = smAdd_tri(sm,s_id,v_id[0],v_id[1]);
+	add_list = push_data(add_list,t0_id);
+	t1_id = smAdd_tri(sm,s_id,v_id[1],v_id[2]);
+	add_list = push_data(add_list,t1_id);
+	t2_id = smAdd_tri(sm,s_id,v_id[2],v_id[0]);
+	add_list = push_data(add_list,t2_id);
 
-    /* CAUTION: tri must be assigned after Add_tri: pointers may change*/
-    tri = SM_NTH_TRI(sm,tri_id);
-
-    /* Set the neighbor pointers for the new tris */
-    T_NTH_NBR(SM_NTH_TRI(sm,t0_id),0) = T_NTH_NBR(tri,2);
-    T_NTH_NBR(SM_NTH_TRI(sm,t0_id),1) = t1_id;
-    T_NTH_NBR(SM_NTH_TRI(sm,t0_id),2) = t2_id;
-    T_NTH_NBR(SM_NTH_TRI(sm,t1_id),0) = T_NTH_NBR(tri,0);
-    T_NTH_NBR(SM_NTH_TRI(sm,t1_id),1) = t2_id;
-    T_NTH_NBR(SM_NTH_TRI(sm,t1_id),2) = t0_id;
-    T_NTH_NBR(SM_NTH_TRI(sm,t2_id),0) = T_NTH_NBR(tri,1);
-    T_NTH_NBR(SM_NTH_TRI(sm,t2_id),1) = t0_id;
-    T_NTH_NBR(SM_NTH_TRI(sm,t2_id),2) = t1_id;
-
-    /* Reset the neigbor pointers for the neighbors of the original */
-    nbr = SM_NTH_TRI(sm,T_NTH_NBR(tri,0));
-    T_NTH_NBR(nbr,T_NTH_NBR_PTR(tri_id,nbr)) = t1_id;
-    nbr = SM_NTH_TRI(sm,T_NTH_NBR(tri,1));
-    T_NTH_NBR(nbr,T_NTH_NBR_PTR(tri_id,nbr)) = t2_id;
-    nbr = SM_NTH_TRI(sm,T_NTH_NBR(tri,2));
-    T_NTH_NBR(nbr,T_NTH_NBR_PTR(tri_id,nbr)) = t0_id;
+	/* CAUTION: tri must be assigned after Add_tri: pointers may change*/
+	tri = SM_NTH_TRI(sm,tri_id);
+	/* Set the neighbor pointers for the new tris */
+	T_NTH_NBR(SM_NTH_TRI(sm,t0_id),0) = T_NTH_NBR(tri,2);
+	T_NTH_NBR(SM_NTH_TRI(sm,t0_id),1) = t1_id;
+	T_NTH_NBR(SM_NTH_TRI(sm,t0_id),2) = t2_id;
+	T_NTH_NBR(SM_NTH_TRI(sm,t1_id),0) = T_NTH_NBR(tri,0);
+	T_NTH_NBR(SM_NTH_TRI(sm,t1_id),1) = t2_id;
+	T_NTH_NBR(SM_NTH_TRI(sm,t1_id),2) = t0_id;
+	T_NTH_NBR(SM_NTH_TRI(sm,t2_id),0) = T_NTH_NBR(tri,1);
+	T_NTH_NBR(SM_NTH_TRI(sm,t2_id),1) = t0_id;
+	T_NTH_NBR(SM_NTH_TRI(sm,t2_id),2) = t1_id;
 	
-    del_set[0] = 1; del_set[1] = tri_id;
-    delnode = qtnewleaf(del_set);
+	/* Reset the neigbor pointers for the neighbors of the original */
+	nbr = SM_NTH_TRI(sm,T_NTH_NBR(tri,0));
+	T_NTH_NBR(nbr,T_NTH_NBR_PTR(tri_id,nbr)) = t1_id;
+	nbr = SM_NTH_TRI(sm,T_NTH_NBR(tri,1));
+	T_NTH_NBR(nbr,T_NTH_NBR_PTR(tri_id,nbr)) = t2_id;
+	nbr = SM_NTH_TRI(sm,T_NTH_NBR(tri,2));
+	T_NTH_NBR(nbr,T_NTH_NBR_PTR(tri_id,nbr)) = t0_id;
 
+	tlist = push_data(NULL,t0_id);
+	tlist = push_data(tlist,t1_id);
+	tlist = push_data(tlist,t2_id);
+      }
     /* Fix up the new triangles*/
-    tlist = push_data(NULL,t0_id);
-    tlist = push_data(tlist,t1_id);
-    tlist = push_data(tlist,t2_id);
+    smFix_tris(sm,s_id,tlist,add_list);
 
-    smFix_tris(sm,s_id,tlist,add_list,&delnode);
-
-    qtfreeleaf(delnode);
+    smDelete_tri(sm,tri_id);
+    if(on==ON_E)
+      smDelete_tri(sm,topp_id);
 
     return(TRUE);
-}
-    
+
+#ifdef DEBUG
+Ladderror:
+        error(CONSISTENCY,"Invalid tri: smInsert_samp()\n");
+#endif
+}    
 
 int
-smTri_in_set(sm,p,optr)
+smTri_in_set(sm,p,optr,onptr,whichptr)
 SM *sm;
 FVECT p;
 OBJECT *optr;
+int *onptr,*whichptr;
 {
-  int i,t_id;
+  int i,t_id,on0,on1,on2;
   FVECT n,v0,v1,v2;
   TRI *t;
-  
+  double side;
+
   for (i = QT_SET_CNT(optr),optr = QT_SET_PTR(optr);i > 0; i--)
   {
     /* Find the first triangle that pt falls */
@@ -827,32 +1119,104 @@ OBJECT *optr;
     VSUB(v1,SM_T_NTH_WV(sm,t,1),SM_VIEW_CENTER(sm));
     VSUB(v2,SM_T_NTH_WV(sm,t,2),SM_VIEW_CENTER(sm));
 
-    if(EQUAL_VEC3(v0,p) || EQUAL_VEC3(v1,p) || EQUAL_VEC3(v2,p))
-       return(t_id);
+    if(EQUAL_VEC3(v0,p))
+    {
+      *onptr = ON_V;
+      *whichptr = 0;
+      return(t_id);
+    }
+    if(EQUAL_VEC3(v1,p))
+    {
+      *onptr = ON_V;
+      *whichptr = 1;
+      return(t_id);
+    }
+    if(EQUAL_VEC3(v2,p))
+    {
+      *onptr = ON_V;
+      *whichptr = 2;
+      return(t_id);
+    }
     
+    on0 = on1 =on2 = 0;
     VCROSS(n,v0,v1);
-    if(DOT(n,p) >0.0)
-      continue;
+    side = DOT(n,p);
+    if(ZERO(side))
+      on2 = TRUE;
+    else 
+      if(side >0.0)
+	continue;
+
     VCROSS(n,v1,v2);
-    if(DOT(n,p) > 0.0)
-      continue;
+    side = DOT(n,p);
+    if(ZERO(side))
+      on0 = TRUE;
+    else 
+      if(side >0.0)
+	continue;
 
     VCROSS(n,v2,v0);
-    if(DOT(n,p) > 0.0)
-      continue;
-
+    side = DOT(n,p);
+    if(ZERO(side))
+      on1 = TRUE;
+    else 
+      if(side >0.0)
+	continue;
+    if(on0)
+    {
+      if(on1)
+      {
+	*onptr = ON_P;
+	*whichptr = 2;
+      }
+      else 
+	if(on2)
+       {
+	 *onptr = ON_P;
+	 *whichptr = 1;
+       }
+	else
+	  {
+	    *onptr = ON_E;
+	    *whichptr = 0;
+	  }
+      return(t_id);
+    }
+   if(on1)
+    {
+      if(on2)
+      {
+	*onptr = ON_P;
+	*whichptr = 0;
+      }
+      else
+      {
+	*onptr = ON_E;
+	*whichptr = 1;
+      }
+      return(t_id);
+    }
+   if(on2)
+   {
+     *onptr = ON_E;
+     *whichptr = 2;
+      return(t_id);
+   }
+    *onptr = IN_T;
     return(t_id);
   }
   return(INVALID);
 }
 
 int
-smPointLocateTri(sm,p)
+smPointLocateTri(sm,p,onptr,whichptr)
 SM *sm;
 FVECT p;
+int *onptr,*whichptr;
 {
   QUADTREE qt,*optr;
   FVECT tpt;
+  int tri_id;
 
   VSUB(tpt,p,SM_VIEW_CENTER(sm));
   qt = smPointLocateCell(sm,tpt);
@@ -860,7 +1224,15 @@ FVECT p;
     return(INVALID);  
  
   optr = qtqueryset(qt);
-  return(smTri_in_set(sm,tpt,optr));
+  tri_id = smTri_in_set(sm,tpt,optr,onptr,whichptr);
+
+#ifdef DEBUG
+  if(!T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(SM_NTH_TRI(sm,tri_id),0))) ||
+     !T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(SM_NTH_TRI(sm,tri_id),1))) ||
+     !T_IS_VALID(SM_NTH_TRI(sm,T_NTH_NBR(SM_NTH_TRI(sm,tri_id),2))))
+    eputs("Invalid tri nbrs smPointLocateTri()\n");
+#endif
+  return(tri_id);
 }
 
 
@@ -881,34 +1253,28 @@ FVECT p;
    The following tests are performed (in order) to determine the fate
    of the sample:
 
-   1) If the world space point of the sample coincides with one of the
-      triangle vertex samples: The values of the triangle sample are
-      replaced with the new values and FALSE is returned
-   2) If the new sample is close in ws, and close in the spherical projection
+   1) If the new sample is close in ws, and close in the spherical projection
       to one of the triangle vertex samples:
          pick the point with dir closest to that of the canonical view
 	 If it is the new point: mark existing point for deletion,and return
 	 TRUE,else return FALSE
-   3) If the spherical projection of new is < REPLACE_EPS from a base point:
+   2) If the spherical projection of new is < REPLACE_EPS from a base point:
       add new and mark the base for deletion: return TRUE
-   4) If the addition of the new sample point would introduce a "puncture"
+   3) If the addition of the new sample point would introduce a "puncture"
       or cause new triangles with large depth differences:return FALSE
      This attempts to throw out points that should be occluded   
 */
 int
-smTest_sample(sm,tri_id,c,dir,p,o_id,rptr)
+smTest_sample(sm,tri_id,dir,p,rptr)
    SM *sm;
    int tri_id;
-   COLR c;
    FVECT dir,p;
-   int o_id;
    int *rptr;
 {
     TRI *tri;
     double d,d2,dnear,dspt,d01,d12,d20,s0,s1,s2,ds,dv;
     int vid[3],i,nearid,norm,dcnt,bcnt;
     FVECT diff[3],spt,npt;
-    int tonemap;
 
     *rptr = INVALID;
     bcnt = dcnt = 0;
@@ -917,9 +1283,6 @@ smTest_sample(sm,tri_id,c,dir,p,o_id,rptr)
     vid[1] = T_NTH_V(tri,1);
     vid[2] = T_NTH_V(tri,2);
 
-    /* TEST 1: Test if the new point has the same world space point as
-       one of the existing triangle vertices
-     */
     for(i=0; i<3; i++)
     {
 	if(SM_BASE_ID(sm,vid[i]))
@@ -931,16 +1294,8 @@ smTest_sample(sm,tri_id,c,dir,p,o_id,rptr)
 	   dcnt++;
 	VSUB(diff[i],SM_NTH_WV(sm,vid[i]),p);
 	/* If same world point: replace */
-	if(FZERO_VEC3(diff[i]))
-	{
-	  tonemap = (SM_TONE_MAP(sm) > vid[i]);
-	  sInit_samp(SM_SAMP(sm),vid[i],c,dir,p,o_id,tonemap);
-	  return(FALSE);
-	}
     }
-    if(!dir)
-      return(TRUE);
-    /* TEST 2: If the new sample is close in ws, and close in the spherical
+    /* TEST 1: If the new sample is close in ws, and close in the spherical
        projection to one of the triangle vertex samples
     */
     norm = FALSE;
@@ -985,7 +1340,9 @@ smTest_sample(sm,tri_id,c,dir,p,o_id,rptr)
 	}
     }
   /* TEST 3: If the spherical projection of new is < S_REPLACE_EPS
-     from a base point
+     from a base point: Edge length is constrained to subtend <45 degrees:
+     original base mesh edges are approx 32 degrees- so have about 13 degrees
+     to work in: S_REPLACE_EPS is the square of the radian value
   */
     if(bcnt)
     {   
@@ -1052,17 +1409,14 @@ smTest_sample(sm,tri_id,c,dir,p,o_id,rptr)
     dv *= DIST_SQ(SM_NTH_WV(sm,vid[2]),SM_VIEW_CENTER(sm));
     if (d01*d12*d20/dv > S_REPLACE_TRI)
 	return(TRUE);
-
+	    
     return(FALSE);
 }
 
 
 int
-smAlloc_samp(sm,c,dir,pt,o_id)
+smAlloc_samp(sm)
 SM *sm;
-COLR c;
-FVECT dir,pt;
-int o_id;
 {
   int s_id,replaced,cnt;
   SAMP *s;
@@ -1081,16 +1435,90 @@ int o_id;
     if(cnt > S_MAX_SAMP(s))
       error(CONSISTENCY,"smAlloc_samp():unable to find free samp\n");
   }
-  
-  /* If sample is being added in the middle of the sample array: tone 
-     map individually
-   */
-  /* Initialize sample */
-  sInit_samp(s,s_id,c,dir,pt,o_id,(SM_TONE_MAP(sm)>s_id));	  
-  
   return(s_id);
 }
 
+int
+smReplace_samp(sm,c,dir,p,s_id,t_id,o_id,on,which)
+     SM *sm;
+     COLR c;
+     FVECT dir,p;
+     int s_id,t_id,o_id,on,which;
+{
+  int tonemap,v_id;
+  TRI *t,*tri;
+
+  tri = SM_NTH_TRI(sm,t_id);
+  v_id = T_NTH_V(tri,which);
+
+  /* If it is a base id, need new sample */
+  if(SM_BASE_ID(sm,v_id))
+  {
+    tonemap = (SM_TONE_MAP(sm) > s_id);
+    sInit_samp(SM_SAMP(sm),s_id,c,dir,p,o_id,tonemap);
+    SM_NTH_VERT(sm,s_id) = t_id;
+    T_NTH_V(tri,which) = s_id;
+    if(!(SM_BASE_ID(sm,T_NTH_V(tri,(which+1)%3)) || 
+	 SM_BASE_ID(sm,T_NTH_V(tri,(which+2)%3)))) 
+      SM_CLR_NTH_T_BASE(sm,t_id);
+    t_id = smTri_next_ccw_nbr(sm,tri,v_id);
+    while(t_id != INVALID)
+    {
+      t = SM_NTH_TRI(sm,t_id);
+      which = T_WHICH_V(t,v_id);
+      T_NTH_V(t,which) = s_id;
+      /* Check if still a base triangle */
+      if(!(SM_BASE_ID(sm,T_NTH_V(t,(which+1)%3)) || 
+	   SM_BASE_ID(sm,T_NTH_V(t,(which+2)%3)))) 
+	SM_CLR_NTH_T_BASE(sm,t_id);
+      t_id = smTri_next_ccw_nbr(sm,t,v_id);
+    }
+    return(s_id);
+  }
+  else
+    if(on == ON_V || !p)
+    {
+      tonemap = (SM_TONE_MAP(sm) > v_id);
+      sInit_samp(SM_SAMP(sm),v_id,c,dir,p,o_id,tonemap);
+      return(v_id);
+    }
+  else /* on == ON_P */
+    {
+      FVECT spt,npt;
+      double d,d2;
+
+      /* Need to check which sample is preferable */
+      VSUB(spt,p,SM_VIEW_CENTER(sm));
+      normalize(spt);
+	
+      VSUB(npt,SM_NTH_WV(sm,v_id),SM_VIEW_CENTER(sm));
+      normalize(npt);
+      d = fdir2diff(SM_NTH_W_DIR(sm,v_id), npt);
+      d2 = 2. - 2.*DOT(dir,spt);
+      /* The existing sample is a better sample:punt */
+      if(d2 < d)
+      {
+	/* The new sample has better information- replace values */
+	tonemap = (SM_TONE_MAP(sm) > v_id);
+	sInit_samp(SM_SAMP(sm),v_id,c,dir,p,o_id,tonemap);
+      }
+      return(v_id);
+    }
+}
+
+/* Add sample to the mesh:
+
+   the sample can be a world space or directional point. If o_id !=INVALID,
+   then we have an existing sample containing the appropriate information
+   already converted into storage format.
+   The spherical projection of the point/ray can:
+        a) coincide with existing vertex
+	        i) conincides with existing sample
+	       ii) projects same as existing sample
+	      iii) hits a base vertex
+	b) coincide with existing edge
+	c) Fall in existing triangle
+*/
 int
 smAdd_samp(sm,c,dir,p,o_id)
    SM *sm;
@@ -1098,59 +1526,75 @@ smAdd_samp(sm,c,dir,p,o_id)
    FVECT dir,p;
    int o_id;
 {
-  int t_id,s_id,r_id;
+  int t_id,s_id,r_id,on,which,n_id;
   double d;
   FVECT wpt;
 
   r_id = INVALID;
+
+  /* Must do this first-as may change mesh */
+  s_id = smAlloc_samp(sm);
   /* If sample is a world space point */
   if(p)
   {
-    t_id = smPointLocateTri(sm,p);
+    t_id = smPointLocateTri(sm,p,&on,&which);
     if(t_id == INVALID)
       {
 #ifdef DEBUG
 	eputs("smAddSamp(): unable to locate tri containing sample \n");
 #endif
+	smUnalloc_samp(sm,s_id);
 	return(INVALID);
       }
-      /* if not a base id, Test to see if this sample should be added */
-    if(!SM_BASE_ID(sm,o_id))
+    /* If spherical projection coincides with existing sample: replace */
+    if((on == ON_V || on == ON_P))
     {
-      if(!smTest_sample(sm,t_id,c,dir,p,o_id,&r_id))
-	return(INVALID);
-      /* Allocate space for a sample and initialize */
-      s_id = smAlloc_samp(smMesh,c,dir,p,o_id);
+      if((n_id = smReplace_samp(sm,c,dir,p,s_id,t_id,o_id,on,which))!= s_id)
+	smUnalloc_samp(sm,s_id);
+	return(n_id);
     }
-    else
-      s_id = o_id;
+    if((!(smTest_sample(sm,t_id,dir,p,&r_id))))
+    {
+      smUnalloc_samp(sm,s_id);
+      return(INVALID);
+    }
+    /* If sample is being added in the middle of the sample array: tone 
+       map individually
+       */
+    /* Initialize sample */
+    sInit_samp(SM_SAMP(sm),s_id,c,dir,p,o_id,(SM_TONE_MAP(sm)>s_id));	  
+    
   }
     /* If sample is a direction vector */
     else
     {
-      VADD(wpt,dir,SM_VIEW_CENTER(smMesh));
-      t_id = smPointLocateTri(sm,wpt);
+      VADD(wpt,dir,SM_VIEW_CENTER(sm));
+      t_id = smPointLocateTri(sm,wpt,&on,&which);
       if(t_id == INVALID)
 	{
 #ifdef DEBUG
 	  eputs("smAddSamp(): unable to locate tri containing sample \n");
 #endif
+	  smUnalloc_samp(sm,s_id);
 	  return(INVALID);
 	}
-      /* Test to see if this sample should be added */
-      if(!smTest_sample(sm,t_id,c,NULL,wpt,o_id,&r_id))
-	return(INVALID);
-      /* Allocate space for a sample and initialize */
-      s_id = smAlloc_samp(smMesh,c,NULL,wpt,o_id);
+    if(on == ON_V || on == ON_P)
+    {
+      if((n_id = smReplace_samp(sm,c,wpt,NULL,s_id,t_id,o_id,on,which))!= s_id)
+	smUnalloc_samp(sm,s_id);
+	return(n_id);
     }
-  if(!SM_BASE_ID(sm,s_id) && !SM_DIR_ID(sm,s_id))
+      /* Allocate space for a sample and initialize */
+      sInit_samp(SM_SAMP(sm),s_id,c,wpt,NULL,o_id,(SM_TONE_MAP(sm)>s_id));
+    }
+  if(!SM_DIR_ID(sm,s_id))
     {
       /* If not a base or sky point, add distance from the 
 	 viewcenter to average*/
-      d = DIST(SM_NTH_WV(sm,s_id),SM_VIEW_CENTER(smMesh));
+      d = DIST(SM_NTH_WV(sm,s_id),SM_VIEW_CENTER(sm));
       smDist_sum += 1.0/d;
     }
-    smInsert_samp(smMesh,s_id,t_id);
+    smInsert_samp(sm,s_id,t_id,on,which);
 
     /* If new sample replaces existing one- remove that vertex now */
     if(r_id != INVALID)
@@ -1180,7 +1624,9 @@ FVECT p;
 {
     int s_id;
 
+
     /* First check if this the first sample: if so initialize mesh */
+
     if(SM_NUM_SAMP(smMesh) == 0)
     {
       smInit_sm(smMesh,odev.v.vp);
@@ -1221,49 +1667,34 @@ SM *sm;
 int type;
 {
   int i,s_id,tri_id,nbr_id;
-  int p[4],ids[4];
+  int p[SM_EXTRA_POINTS],ids[SM_BASE_TRIS];
   int v0_id,v1_id,v2_id;
   FVECT d,pt,cntr,v0,v1,v2;
-  
+  TRI *t;
+
   /* First insert the base vertices into the sample point array */
 
-  for(i=0; i < 4; i++)
+  for(i=0; i < SM_EXTRA_POINTS; i++)
   {
-    VCOPY(cntr,smDefault_base[i]);
-    cntr[0] += .01;
-    cntr[1] += .02;
-    cntr[2] += .03;
-    VADD(cntr,cntr,SM_VIEW_CENTER(sm));
+    VADD(cntr,icosa_verts[i],SM_VIEW_CENTER(sm));
     p[i]  = smAdd_base_vertex(sm,cntr);
   }
   /* Create the base triangles */
-  for(i=0;i < 4; i++)
+  for(i=0;i < SM_BASE_TRIS; i++)
   {
-    v0_id = p[smTri_verts[i][0]];
-    v1_id = p[smTri_verts[i][1]];
-    v2_id = p[smTri_verts[i][2]];
+    v0_id = p[icosa_tris[i][0]];
+    v1_id = p[icosa_tris[i][1]];
+    v2_id = p[icosa_tris[i][2]];
     ids[i] = smAdd_tri(sm, v0_id,v1_id,v2_id);
-    smLocator_add_tri(sm,ids[i],v0_id,v1_id,v2_id,NULL);
+    /* Set neighbors */
+    for(nbr_id=0; nbr_id < 3; nbr_id++)
+      T_NTH_NBR(SM_NTH_TRI(sm,ids[i]),nbr_id) = icosa_nbrs[i][nbr_id];
+
   }
-  
-  /* Set neighbors */
-
-  for(tri_id=0;tri_id < 4; tri_id++)
-   for(nbr_id=0; nbr_id < 3; nbr_id++)
-    T_NTH_NBR(SM_NTH_TRI(sm,ids[tri_id]),nbr_id) = smBase_nbrs[tri_id][nbr_id];
-
-  /* Now add the centroids of the faces */
-  for(tri_id=0;tri_id < 4; tri_id++)
+  for(i=0;i < SM_BASE_TRIS; i++)
   {
-      VCOPY(v0,SM_T_NTH_WV(sm,SM_NTH_TRI(sm,ids[tri_id]),0));
-      VCOPY(v1,SM_T_NTH_WV(sm,SM_NTH_TRI(sm,ids[tri_id]),1));
-      VCOPY(v2,SM_T_NTH_WV(sm,SM_NTH_TRI(sm,ids[tri_id]),2));
-      tri_centroid(v0,v1,v2,cntr);
-      VSUB(cntr,cntr,SM_VIEW_CENTER(sm));
-      normalize(cntr);
-      VADD(cntr,cntr,SM_VIEW_CENTER(sm));
-      s_id = smAdd_base_vertex(sm,cntr);
-      smAdd_samp(sm,NULL,NULL,cntr,s_id);
+    t = SM_NTH_TRI(sm,ids[i]);
+    smLocator_add_tri(sm,ids[i],T_NTH_V(t,0),T_NTH_V(t,1),T_NTH_V(t,2));
   }
  return(1);
 
@@ -1335,7 +1766,7 @@ smRebuild_mesh(sm,v)
     double d;
 
 #ifdef DEBUG
-    eputs("smRebuild_mesh(): rebuilding....");
+    fprintf(stderr,"smRebuild_mesh(): rebuilding....");
 #endif
     /* Clear the mesh- and rebuild using the current sample array */
     /* Remember the current number of samples */
@@ -1371,13 +1802,15 @@ smRebuild_mesh(sm,v)
 	else
 	{
 	  VSUB(dir,SM_NTH_WV(sm,i),ov);
+	  VADD(SM_NTH_WV(sm,i),dir,SM_VIEW_CENTER(sm));
 	  smAdd_samp(sm,NULL,dir,NULL,i);
 	}
 
     }
+
    smNew_tri_cnt = SM_SAMPLE_TRIS(sm);
 #ifdef DEBUG
-    eputs("smRebuild_mesh():done\n");
+    fprintf(stderr,"smRebuild_mesh():done\n");
 #endif
 }
 
@@ -1387,33 +1820,95 @@ intersect_tri_set(t_set,orig,dir,pt)
    FVECT orig,dir,pt;
 {
     OBJECT *optr;
-    int i,t_id,id;
+    int i,t_id,id,base;
     int pid0,pid1,pid2;
     FVECT p0,p1,p2,p;
     TRI *t;
+    double d,d1;
     
     optr = QT_SET_PTR(t_set);
     for(i = QT_SET_CNT(t_set); i > 0; i--)
     {
 	t_id = QT_SET_NEXT_ELEM(optr);
-	if(SM_IS_NTH_T_BASE(smMesh,t_id))
-	   continue;
 	t = SM_NTH_TRI(smMesh,t_id);
 	if(!T_IS_VALID(t))
 	  continue;
 	pid0 = T_NTH_V(t,0);
 	pid1 = T_NTH_V(t,1);
 	pid2 = T_NTH_V(t,2);
+	if(base = SM_IS_NTH_T_BASE(smMesh,t_id))
+	  if(SM_BASE_ID(smMesh,pid0) && SM_BASE_ID(smMesh,pid1) &&
+	     SM_BASE_ID(smMesh,pid2))
+	    continue;
 	VCOPY(p0,SM_NTH_WV(smMesh,pid0));
 	VCOPY(p1,SM_NTH_WV(smMesh,pid1));
 	VCOPY(p2,SM_NTH_WV(smMesh,pid2));
 	if(ray_intersect_tri(orig,dir,p0,p1,p2,p))
         {
-	  id = closest_point_in_tri(p0,p1,p2,p,pid0,pid1,pid2);
-
+	  if(!base)
+	  {
+	    d =  DIST_SQ(p,p0);
+	    d1 = DIST_SQ(p,p1);
+	    if(d < d1)
+	      {
+		d1 = DIST_SQ(p,p2);
+		id = (d1 < d)?pid2:pid0;
+	      }
+	    else
+	      {
+		d = DIST_SQ(p,p2);
+		id = (d < d1)? pid2:pid1;
+	      }
+	  }
+	  else
+	    {
+	      if(SM_BASE_ID(smMesh,pid0))
+	      {
+		if(SM_BASE_ID(smMesh,pid1))
+		  id = pid2;
+		else
+		  if(SM_BASE_ID(smMesh,pid2))
+		    id = pid1;
+		  else
+		  {
+		    d =  DIST_SQ(p,p1);
+		    d1 = DIST_SQ(p,p2);
+		    if(d < d1)
+		      id = pid1;
+		    else
+		      id = pid2;
+		  }
+	      }
+	      else
+	      {
+		if(SM_BASE_ID(smMesh,pid1))
+		{
+		  if(SM_BASE_ID(smMesh,pid2))
+		    id = pid0;
+		  else
+		  {
+		    d =  DIST_SQ(p,p0);
+		    d1 = DIST_SQ(p,p2);
+		    if(d < d1)
+		      id = pid0;
+		    else
+		      id = pid2;
+		  }
+		}
+		else
+		{
+		  d =  DIST_SQ(p,p0);
+		  d1 = DIST_SQ(p,p1);
+		  if(d < d1)
+		    id = pid0;
+		  else
+		    id = pid1;
+		}
+	      }
+	    }
 	  if(pt)
-	     VCOPY(pt,p);
-#ifdef DEBUG_TEST_DRIVER
+	    VCOPY(pt,p);
+#ifdef TEST_DRIVER
 	  Pick_tri = t_id;
 	  Pick_samp = id;
 	  VCOPY(Pick_point[0],p);
@@ -1427,51 +1922,70 @@ intersect_tri_set(t_set,orig,dir,pt)
 /* OS is constrained to be <= QT_MAXCSET : if the set exceeds this, the
  results of check_set are conservative
 */
+int
+compare_ids(id1,id2)
+OBJECT *id1,*id2;
+{
+  int d;
 
-ray_trace_check_set(qtptr,fptr,argptr)
-   QUADTREE *qtptr;
-   int *fptr;
+  d = *id2-*id1;
+  
+  if(d > 0)
+    return(-1);
+  if(d < 0)
+    return(1);
+  
+  return(0);
+}
+
+ray_trace_check_set(qt,argptr,fptr)
+   QUADTREE qt;
    RT_ARGS *argptr;
+   int *fptr;
 {
     OBJECT tset[QT_MAXSET+1],*tptr;	
     double dt,t;
     int found;
-    
-    if(QT_LEAF_IS_FLAG(*qtptr))
-      {
-	QT_FLAG_SET_DONE(*fptr);
-#if DEBUG
-	eputs("ray_trace_check_set():Already visited this node:aborting\n");
-#endif
-	return;
-      }
-    if(!QT_IS_EMPTY(*qtptr))
-      {
-	tptr = qtqueryset(*qtptr);
-	if(QT_SET_CNT(tptr) > QT_MAXSET)
-	  tptr = (OBJECT *)malloc((QT_SET_CNT(tptr)+1)*sizeof(OBJECT));
-	else
-	  tptr = tset;
-	if(!tptr)
-	  goto memerr;
-    
-	qtgetset(tptr,*qtptr);
-	 /* Check triangles in set against those seen so far(os):only
-	    check new triangles for intersection (t_set') 
-	    */
-       check_set_large(tptr,argptr->os);
-       if((found = intersect_tri_set(tptr,argptr->orig,argptr->dir,NULL))!= -1)
-       {
-	     argptr->t_id = found;
-	     if(tptr != tset)
-	       free(tptr);
-	     QT_FLAG_SET_DONE(*fptr);
-	     return;
-       }
-       if(tptr != tset)
-	 free(tptr);
-     }
+  if(QT_IS_EMPTY(qt)) 
     return;
+  if(QT_LEAF_IS_FLAG(qt)) 
+  { 
+    QT_FLAG_SET_DONE(*fptr); 
+#if DEBUG 
+       eputs("ray_trace_check_set():Already visited this node:aborting\n"); 
+#endif 
+       return;
+  } 
+  else
+    QT_LEAF_SET_FLAG(qt);
+
+  tptr = qtqueryset(qt); 
+  if(QT_SET_CNT(tptr) > QT_MAXSET) 
+    tptr = (OBJECT *)malloc((QT_SET_CNT(tptr)+1)*sizeof(OBJECT)); 
+  else 
+    tptr = tset; 
+  if(!tptr) 
+    goto memerr; 
+    
+  qtgetset(tptr,qt); 
+  /* Must sort */ 
+  qsort((void *)(&(tptr[1])),tptr[0],sizeof(OBJECT),compare_ids); 
+  /* Check triangles in set against those seen so far(os):only 
+     check new triangles for intersection (t_set')  
+     */ 
+  check_set_large(tptr,argptr->os); 
+
+  if(!QT_SET_CNT(tptr))
+    return;
+  found = intersect_tri_set(tptr,argptr->orig,argptr->dir,NULL);
+  if(tptr != tset) 
+    free(tptr); 
+  if(found != INVALID)
+  { 
+    argptr->t_id = found; 
+    QT_FLAG_SET_DONE(*fptr); 
+  } 
+  return;
 memerr:
     error(SYSTEM,"ray_trace_check_set():Unable to allocate memory");
 }
@@ -1492,7 +2006,7 @@ FVECT orig,dir;
   FVECT b,p,o;
   OBJECT *ts;
   QUADTREE qt;
-  int s_id;
+  int s_id,test;
   double d;
 
  /*  r is the normalized vector from the view center to the current
@@ -1516,31 +2030,73 @@ FVECT orig,dir;
 #ifdef TEST_DRIVER
   Picking= TRUE;
 #endif  
-  point_on_sphere(b,orig,SM_VIEW_CENTER(smMesh));
-  d = -DOT(b,dir);
-  if(EQUAL_VEC3(orig,SM_VIEW_CENTER(smMesh)) || EQUAL(fabs(d),1.0))
+
+  if(EQUAL_VEC3(orig,SM_VIEW_CENTER(smMesh)))
   {
-      qt = smPointLocateCell(smMesh,dir);
-      /* Test triangles in the set for intersection with Ray:returns
-	 first found
-      */
-#ifdef DEBUG
-      if(QT_IS_EMPTY(qt))
-      {
-	eputs("smFindSamp(): point not found");
-	return;
-      }
-#endif
-      ts = qtqueryset(qt);
-      s_id = intersect_tri_set(ts,orig,dir,p);
+    qt = smPointLocateCell(smMesh,dir);
+    if(QT_IS_EMPTY(qt))
+      goto Lerror;
+    ts = qtqueryset(qt);
+    s_id = intersect_tri_set(ts,orig,dir,p);
 #ifdef DEBUG_TEST_DRIVER
-      VCOPY(Pick_point[0],p);
+    VCOPY(Pick_point[0],p);
 #endif
+#ifdef DEBUG
+    fprintf(stderr,"Simple pick returning %d\n",s_id);
+#endif
+
+    return(s_id);
   }
-  else
+  d = point_on_sphere(b,orig,SM_VIEW_CENTER(smMesh));
+  if(EQUAL_VEC3(b,dir))
+  {
+    qt = smPointLocateCell(smMesh,dir);
+    if(QT_IS_EMPTY(qt))
+      goto Lerror;
+    ts = qtqueryset(qt);
+    s_id = intersect_tri_set(ts,orig,dir,p);
+#ifdef DEBUG_TEST_DRIVER
+	VCOPY(Pick_point[0],p);
+#endif
+#ifdef DEBUG
+    fprintf(stderr,"Simple pick2 returning %d\n",s_id);
+#endif
+	return(s_id);
+  }
+  if(OPP_EQUAL_VEC3(b,dir))
+  {
+    qt = smPointLocateCell(smMesh,orig);
+    if(QT_IS_EMPTY(qt))
+      goto Lerror;
+    ts = qtqueryset(qt);
+    s_id = intersect_tri_set(ts,orig,dir,p);
+#ifdef DEBUG_TEST_DRIVER
+	VCOPY(Pick_point[0],p);
+#endif
+	if(s_id != INVALID)
+	{
+#ifdef DEBUG
+    fprintf(stderr,"Front pick returning %d\n",s_id);
+#endif
+	  return(s_id);
+	}
+	qt = smPointLocateCell(smMesh,dir);
+	if(QT_IS_EMPTY(qt))
+	  goto Lerror;
+	ts = qtqueryset(qt);
+	s_id = intersect_tri_set(ts,orig,dir,p);
+#ifdef DEBUG_TEST_DRIVER
+	VCOPY(Pick_point[0],p);
+#endif
+#ifdef DEBUG
+    fprintf(stderr,"Back pick returning %d\n",s_id);
+#endif
+	return(s_id);
+  }
   {
     OBJECT t_set[QT_MAXCSET + 1];
     RT_ARGS rt;
+    FUNC func;
 
     /* Test each of the root triangles against point id */
     QT_CLEAR_SET(t_set);
@@ -1550,12 +2106,179 @@ FVECT orig,dir;
     rt.os = t_set;
     VCOPY(rt.orig,orig);
     VCOPY(rt.dir,dir);
-    stTrace_ray(SM_LOCATOR(smMesh),o,dir,ray_trace_check_set,&rt);
+    F_FUNC(func) = ray_trace_check_set;
+    F_ARGS(func) = (int *)(&rt);
+    stTrace_ray(SM_LOCATOR(smMesh),o,dir,func);
     s_id = rt.t_id;
- }    
+  }    
+#ifdef DEBUG
+    fprintf(stderr,"Trace pick returning %d\n",s_id);
+#endif
   return(s_id);
+
+Lerror:
+#ifdef DEBUG
+  eputs("smFindSamp(): point not found");
+#endif  
+  return(INVALID);
+
 }
 
+
+mark_active_tris(argptr,root,qt)
+     int *argptr;
+     int root;
+     QUADTREE qt;
+{
+  OBJECT *os,*optr;
+  register int i,t_id;
+  TRI *tri;
+
+  if(QT_IS_EMPTY(qt) || QT_LEAF_IS_FLAG(qt))
+    return;
+  
+  /* For each triangle in the set, set the which flag*/
+  os = qtqueryset(qt);
+
+  for (i = QT_SET_CNT(os), optr = QT_SET_PTR(os); i > 0; i--)
+  {
+    t_id = QT_SET_NEXT_ELEM(optr);
+    /* Set the render flag */
+     tri = SM_NTH_TRI(smMesh,t_id);
+     if(!T_IS_VALID(tri) ||  SM_IS_NTH_T_BASE(smMesh,t_id))
+	    continue;
+     SM_SET_NTH_T_ACTIVE(smMesh,t_id);
+     /* Set the Active bits of the Vertices */
+     S_SET_FLAG(T_NTH_V(tri,0));
+     S_SET_FLAG(T_NTH_V(tri,1));
+     S_SET_FLAG(T_NTH_V(tri,2));
+   }
+ }
+
+
+mark_tris_in_frustum(view)
+ VIEW *view;
+ {
+     FVECT nr[4],far[4];
+     FPEQ peq;
+     int debug=0;
+     FUNC f;
+
+     F_FUNC(f) = mark_active_tris;
+     F_ARGS(f) = NULL;
+
+     /* Mark triangles in approx. view frustum as being active:set
+	LRU counter: for use in discarding samples when out
+	of space
+	Radiance often has no far clipping plane: but driver will set
+	dev_zmin,dev_zmax to satisfy OGL
+     */
+
+     /* First clear all the quadtree node and triangle active flags */
+     qtClearAllFlags();
+     smClear_flags(smMesh,T_ACTIVE_FLAG);
+     /* Clear all of the active sample flags*/
+     sClear_all_flags(SM_SAMP(smMesh));
+
+
+     /* calculate the world space coordinates of the view frustum */
+     calculate_view_frustum(view->vp,view->hvec,view->vvec,view->horiz,
+			    view->vert, dev_zmin,dev_zmax,nr,far);
+
+#ifdef TEST_DRIVER
+     VCOPY(FrustumFar[0],far[0]);
+     VCOPY(FrustumFar[1],far[1]);
+     VCOPY(FrustumFar[2],far[2]);
+     VCOPY(FrustumFar[3],far[3]);
+     VCOPY(FrustumNear[0],nr[0]);
+     VCOPY(FrustumNear[1],nr[1]);
+     VCOPY(FrustumNear[2],nr[2]);
+     VCOPY(FrustumNear[3],nr[3]);
+#endif
+     /* Project the view frustum onto the spherical quadtree */
+     /* For every cell intersected by the projection of the faces
+
+	of the frustum: mark all triangles in the cell as ACTIVE-
+	Also set the triangles LRU clock counter
+	*/
+
+     if(EQUAL_VEC3(view->vp,SM_VIEW_CENTER(smMesh)))
+     {/* Near face triangles */
+
+       smLocator_apply(smMesh,nr[0],nr[2],nr[3],f);
+       smLocator_apply(smMesh,nr[2],nr[0],nr[1],f); 
+       return;
+     }
+     /* Test the view against the planes: and swap orientation if inside:*/
+     tri_plane_equation(nr[0],nr[2],nr[3], &peq,FALSE);
+     if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
+     {/* Near face triangles */
+       smLocator_apply(smMesh,nr[3],nr[2],nr[0],f);
+       smLocator_apply(smMesh,nr[1],nr[0],nr[2],f);
+     }
+     else
+     {/* Near face triangles */
+       smLocator_apply(smMesh,nr[0],nr[2],nr[3],f);
+       smLocator_apply(smMesh,nr[2],nr[0],nr[1],f);
+     }
+     tri_plane_equation(nr[0],far[3],far[0], &peq,FALSE);
+     if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
+     { /* Right face triangles */
+       smLocator_apply(smMesh,far[0],far[3],nr[0],f);
+       smLocator_apply(smMesh,nr[3],nr[0],far[3],f);
+     }
+     else
+     {/* Right face triangles */
+       smLocator_apply(smMesh,nr[0],far[3],far[0],f);
+       smLocator_apply(smMesh,far[3],nr[0],nr[3],f);
+     }
+
+     tri_plane_equation(nr[1],far[2],nr[2], &peq,FALSE);
+     if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
+     { /* Left face triangles */
+       smLocator_apply(smMesh,nr[2],far[2],nr[1],f);
+       smLocator_apply(smMesh,far[1],nr[1],far[2],f);
+     }
+     else
+     { /* Left face triangles */
+       smLocator_apply(smMesh,nr[1],far[2],nr[2],f);
+       smLocator_apply(smMesh,far[2],nr[1],far[1],f);
+     }
+     tri_plane_equation(nr[0],far[0],nr[1], &peq,FALSE);
+     if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
+     {/* Top face triangles */
+       smLocator_apply(smMesh,nr[1],far[0],nr[0],f);
+       smLocator_apply(smMesh,far[1],far[0],nr[1],f);
+     }
+     else
+     {/* Top face triangles */
+       smLocator_apply(smMesh,nr[0],far[0],nr[1],f);
+       smLocator_apply(smMesh,nr[1],far[0],far[1],f);
+     }
+     tri_plane_equation(nr[3],nr[2],far[3], &peq,FALSE);
+     if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
+     {/* Bottom face triangles */
+       smLocator_apply(smMesh,far[3],nr[2],nr[3],f);
+       smLocator_apply(smMesh,far[3],far[2],nr[2],f);
+     }
+     else
+     { /* Bottom face triangles */
+       smLocator_apply(smMesh,nr[3],nr[2],far[3],f);
+       smLocator_apply(smMesh,nr[2],far[2],far[3],f);
+     }
+      tri_plane_equation(far[2],far[0],far[1], &peq,FALSE);
+     if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
+     {/* Far face triangles */
+       smLocator_apply(smMesh,far[0],far[2],far[1],f);
+       smLocator_apply(smMesh,far[2],far[0],far[3],f);
+     }
+     else
+     {/* Far face triangles */
+       smLocator_apply(smMesh,far[1],far[2],far[0],f);
+       smLocator_apply(smMesh,far[3],far[0],far[2],f);
+     }
+
+ }
 
 
 
