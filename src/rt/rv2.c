@@ -369,11 +369,11 @@ char  *s;
 			e *= atof(cp);
 	}
 	if (p != NULL) {		/* relative setting */
-		if (intens(p->v) <= FTINY) {
+		if (bright(p->v) <= FTINY) {
 			error(COMMAND, "cannot normalize to zero");
 			return;
 		}
-		e *= 0.5 / intens(p->v);
+		e *= 0.5 / bright(p->v);
 	}
 	if (e <= FTINY || fabs(1.0 - e) <= FTINY)
 		return;
