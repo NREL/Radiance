@@ -1,0 +1,22 @@
+		GENERATOR PROGRAMS
+		SCCSid "$SunId$ LBL"
+
+This directory contains programs for generating and transforming
+Radiance scene descriptions.
+
+mkillum.h	common definitions for mkillum
+genbeads.c	generate a string of spheres using Hermite
+genblinds.c	make some curved or flat venetian blinds
+genbox.c	generate a parallelepiped
+genprism.c	generate a prism
+genrev.c	program to generate functions of rotation about z
+gensky.c	program to generate sky functions
+gensurf.c	program to generate functional surfaces
+genworm.c	program to generate worms (strings with varying thickness)
+hermite3.c	routines for 3D hermite curves
+mkillum.c	make illum sources for optimizing rendering process
+mkillum2.c	routines to do the actual calculation for mkillum
+mkillum3.c	routines to print mkillum objects
+replmarks.c	replace markers with objects or instances
+sun.c		solar postion calculations
+xform.c		program to transform object files

@@ -1,0 +1,71 @@
+		RENDERING PROGRAMS
+		SCCSid "$SunId$ LBL"
+
+This directory contains the RADIANCE renderers "rpict", "rtrace" and "rview".
+
+ambient.h	common definitions for interreflection routines
+data.h		header file for routines which interpolate data
+driver.h	header file for interactive device drivers
+nwsdev.h	header file for NeWS driver
+otspecial.h	special type flags for objects used in rendering
+ray.h		header file for routines using rays
+rpaint.h	header file for image painting (rview)
+source.h	header file for ray tracing sources
+x11icon.h	icon for rview under X11
+x11twind.h	header for X11 text window routines
+xtwind.h	header for X10 text window routines
+Version.c	program version
+aed.c		driver for AED 512 terminal
+ambcomp.c	routines to compute "ambient" values using Monte Carlo
+ambient.c	routines dealing with ambient (inter-reflected) component
+caldefn.c	store variable definitions
+calexpr.c	compute data values using expression parser
+colortab.c	allocate and control dynamic color table
+data.c		routines dealing with interpolated data
+devcomm.c	communication routines for separate drivers
+devmain.c	main for independent drivers
+devtable.c	device table for rview
+dielectric.c	shading function for transparent materials
+editline.c	routine for editing raw input for rview
+func.c		interface to calcomp functions
+glass.c		simpler shading function for thin glass surfaces
+initotypes.c	initialize ofun[] list for renderers
+lookamb.c	program to examine ambient components
+m_brdf.c	shading for materials with arbitrary BRDF's
+m_clip.c	routine for clipped (cut) objects
+m_direct.c	routines for prism material types
+m_mirror.c	routines for mirror material supporting virtual light sources
+mx_data.c	routine for stored mixtures
+mx_func.c	routine for mixture functions
+noise3.c	noise functions for random textures
+normal.c	shading function for normal materials
+nwsdev.c	NeWS driver, by Isaac Kwo
+o_cone.c	routine to determine ray intersection with cones
+o_face.c	compute ray intersection with faces
+o_instance.c	routines for computing ray intersections with octrees
+p_data.c	routine for stored patterns
+p_func.c	routine for procedural patterns
+raytrace.c	routines for tracing and shading rays
+readfargs.c	allocate, read and free object arguments
+rmain.c		main for ray tracing programs
+rpict.c		routines and variables for picture generation
+rtrace.c	program and variables for individual ray tracing
+rv2.c		command routines used in tracing a view
+rv3.c		miscellaneous routines for rview
+rview.c		routines and variables for interactive view generation
+source.c	routines dealing with illumination sources
+sphere.c	compute ray intersection with spheres
+srcsamp.c	source sampling routines
+srcsupp.c	support routines for source objects and materials
+suncom.c	program to read and edit raw tty input
+sundev.c	standalone driver for Sunwindows
+t_data.c	routine for stored textures
+t_func.c	routine for procedural textures
+text.c		functions for text patterns and mixtures
+tty.c		i/o for terminal drivers
+virtuals.c	routines for simulating virtual light sources
+x10.c		driver for X-windows version 10R4
+x11.c		driver for X-windows version 11R3
+x11twind.c	routines for X11 text windows
+xtwind.c	routines for X text windows
+zeroes.c	compute roots for various equations
