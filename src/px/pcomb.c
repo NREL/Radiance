@@ -463,18 +463,15 @@ int  code;
 
 #else
 
-#include  <signal.h>
-
 quit(code)		/* exit gracefully */
 int  code;
 {
 	int  status;
-
-	if (code) {		/* abnormal exit -- kill children */
-		signal(SIGPIPE, SIG_IGN);
-		kill(0, SIGPIPE);
-	}
-				/* reap any children */
+	register int  i;
+				/* close input files */
+	for (i = 0; i < nfiles; i++)
+		fclose(input[i].fp);
+				/* reap children */
 	while (wait(&status) != -1)
 		if (code == 0)
 			code = status>>8 & 0xff;
