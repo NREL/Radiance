@@ -214,10 +214,6 @@ char  *argv[];
 
 	init(argc, argv);			/* get file and open window */
 
-	if (parent < 0) {
-		kill(getppid(), SIGCONT);	/* signal parent if child */
-		sigrecv--;
-	}
 	for ( ; ; )
 		getevent();		/* main loop */
 userr:
@@ -353,7 +349,6 @@ char **argv;
 	XSetWMProtocols(thedisplay, wind, &closedownAtom, 1);
 
 	XMapWindow(thedisplay, wind);
-	return;
 } /* end of init */
 
 
@@ -562,6 +557,10 @@ getevent()				/* process the next event */
 		map_rcolors(ourras, wind);
 		if (fast)
 			make_rpixmap(ourras, wind);
+		if (parent < 0 & sigrecv == 0) {	/* notify parent */
+			kill(getppid(), SIGCONT);
+			sigrecv--;
+		}
 		break;
 	case UnmapNotify:
 		if (!fast)
