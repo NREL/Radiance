@@ -338,7 +338,7 @@ char  *p;			/* data for f */
 				(source[sn].so, &sr) ))
 			continue;
 						/* compute contribution */
-		rayshade(&sr, sr.ro->omod);
+		raycont(&sr);
 		multcolor(srccnt[sn].val, sr.rcol);
 		cntord[sn].brt = bright(srccnt[sn].val);
 	}
@@ -376,13 +376,11 @@ char  *p;			/* data for f */
 						/* test for hit */
 		rayorigin(&sr, r, SHADOW, 1.0);
 		VCOPY(sr.rdir, srccnt[cntord[sn].sno].dir);
+		sr.rsrc = cntord[sn].sno;
 		if (localhit(&sr, &thescene) &&
 				sr.ro != source[cntord[sn].sno].so) {
 						/* check for transmission */
-			if (sr.clipset != NULL && inset(sr.clipset, sr.ro->omod))
-				raytrans(&sr);
-			else
-				rayshade(&sr, sr.ro->omod);
+			raycont(&sr);
 			if (bright(sr.rcol) <= FTINY)
 				continue;	/* missed! */
 			(*f)(srccnt[cntord[sn].sno].val, p,
