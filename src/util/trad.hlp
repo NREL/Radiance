@@ -398,10 +398,25 @@ long as the overall size of the given box is close to the overall
 size of the space.
 
 The Zone entry windows may be manipulated in the following ways.
-Control-U clears the current window.
 Control-V pastes the contents of the current selection at the
 insertion point.
 Return moves the focus to the next window in the chain.
+
+The "Auto" button may be used to set these values based on the bounding
+box of one or more Radiance scene files.
+
+.Zone.Auto
+
+Use this button to automatically determine the bounding box for this
+zone, based on the output of the "getbbox" command run on one or
+more Radiance scene files.
+The appropriate scene files are entered via a file
+selection dialogue box, which comes up after the button is pressed.
+
+The reason for selecting specific files rather than running getbbox
+on the entire scene is that a zone usually does not include large
+external objects, which may be present in the complete scene
+description.
 
 .Zone.Detail
 
@@ -681,9 +696,6 @@ window.
 The "Clear" button simply clears the "Name" and "Options" windows
 for the convenience of entering a new view.
 It has no effect on the rad input variables.
-
-Note that Control-U will always clear an entry box whose cursor is
-active.
 
 .Views.Default
 

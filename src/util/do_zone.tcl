@@ -49,8 +49,29 @@ proc copyzone rf {		# copy ZONE settings from another RIF
 	load_vars [file tail $rf] {ZONE DETAIL INDIRECT VARIABILITY EXPOSURE}
 }
 
+proc add2bb f {
+	global bbargs
+	lappend bbargs $f
+}
+
+proc get_bbox {} {
+	global radvar zonevar myglob bbargs curmess curpat
+	set bbargs {}
+	if [getfile -grab -perm -glob $myglob(scene) -view view_txt -send add2bb] {
+		set curmess "Running getbbox..."
+		update idletasks
+		if [catch {eval exec getbbox -h $bbargs} bbout] {
+			set curmess $bbout
+		} else {
+			set curmess {}
+			set radvar(ZONE) "$zonevar(IE) $bbout"
+		}
+	}
+	set myglob(scene) $curpat
+}
+
 proc do_zone w {		# set up ZONE screen
-	global radvar zonevar rifname rif_glob
+	global radvar zonevar rifname
 	if {"$w" == "done"} {
 		trace vdelete radvar(ZONE) wu zonechange
 		trace vdelete zonevar w zonechange
@@ -72,6 +93,9 @@ proc do_zone w {		# set up ZONE screen
 	place $w.maxl -relx .0714 -rely .1829
 	label $w.minl -text Minimum
 	place $w.minl -relx .0714 -rely .3049
+	button $w.bbox -text Auto -relief raised -command get_bbox
+	place $w.bbox -relwidth .1071 -relheight .0610 -relx .0714 -rely .237
+	helplink $w.bbox trad zone auto
 	label $w.xl -text X:
 	place $w.xl -relx .2500 -rely .2439
 	entry $w.xmax -textvariable zonevar(xmax) -relief sunken
@@ -139,7 +163,7 @@ proc do_zone w {		# set up ZONE screen
 			-anchor se
 	helplink $w.revert trad zone revert
 	button $w.copy -text Copy -relief raised -command {getfile -grab \
-			-send copyzone -view view_txt -glob $rif_glob}
+			-send copyzone -view view_txt -glob $myglob(rif)}
 	place $w.copy -relwidth .1071 -relheight .0610 -relx .98 -rely .90 \
 			-anchor se
 	helplink $w.copy trad zone copy
