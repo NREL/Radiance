@@ -28,7 +28,7 @@ double  maxdiff = .15;			/* max. sample difference */
 double  exposure = 1.0;			/* exposure for scene */
 
 double  dstrsrc = 0.0;			/* square source distribution */
-double  shadthresh = .05;		/* shadow threshold */
+double  shadthresh = .1;		/* shadow threshold */
 
 int  maxdepth = 4;			/* maximum recursion depth */
 double  minweight = 1e-2;		/* minimum ray weight */
