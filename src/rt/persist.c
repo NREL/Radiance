@@ -11,11 +11,24 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "standard.h"
 
 #ifdef F_SETLKW
-
 #include "paths.h"
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+					/* select call compatibility stuff */
+#ifndef FD_SETSIZE
+#include <sys/param.h>
+#define FD_SETSIZE	NOFILE		/* maximum # select file descriptors */
+#endif
+#ifndef FD_SET
+#ifndef NFDBITS
+#define NFDBITS		(8*sizeof(int))	/* number of bits per fd_mask */
+#endif
+#define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
+#define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
+#define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
+#define FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
+#endif
 
 #ifndef TIMELIM
 #define TIMELIM		(8*3600)	/* time limit for holding pattern */
@@ -112,6 +125,8 @@ pfhold()		/* holding pattern for idle rendering process */
 				/* close input and output descriptors */
 	close(fileno(stdin));
 	close(fileno(stdout));
+	if (errfile == NULL)
+		close(fileno(stderr));
 				/* create named pipes for input and output */
 	if (mknod(mktemp(strcpy(inpname,TEMPLATE)), S_IFIFO|0600, 0) < 0)
 		goto createrr;
@@ -162,12 +177,14 @@ openerr:
 }
 
 
-io_process()		/* just act as conduits to and from actual process */
+io_process()		/* just act as go-between for actual process */
 {
 	register char	*cp;
 	register int	nr, n;
-	char	buf[512], *pfin, *pfout, *pferr;
-	int	pid, pid2 = -1;
+	char	buf[BUFSIZ], *pfin, *pfout, *pferr;
+	int	pid, nfds;
+	int	fdin, fdout, fderr = -1;
+	fd_set	readfds, writefds, excepfds;
 					/* load persist file */
 	while ((nr = read(persistfd, buf, sizeof(buf)-1)) == 0) {
 		pflock(0);
@@ -203,56 +220,95 @@ io_process()		/* just act as conduits to and from actual process */
 		sprintf(errmsg, "persist file for %s, not %s", buf, progname);
 		error(USER, errmsg);
 	}
-				/* wake up rendering process */
+					/* wake up rendering process */
 	if (kill(pid, SIGIO) < 0)
 		error(SYSTEM, "cannot signal rendering process in io_process");
-	pid = fork();		/* fork i/o process */
-	if (pid < 0)
-		goto forkerr;
-				/* connect to appropriate pipe */
-	if (pid) {			/* parent passes renderer output */
-		close(0);
-		if (pferr[0]) {
-			pid2 = fork();		/* fork another for stderr */
-			if (pid2 < 0)
-				goto forkerr;
+					/* open named pipes, in order */
+	if ((fdin = open(pfin, O_WRONLY)) < 0)
+		error(SYSTEM, "cannot open input pipe in io_process");
+	if ((fdout = open(pfout, O_RDONLY)) < 0)
+		error(SYSTEM, "cannot open output pipe in io_process");
+	if (pferr[0] && (fderr = open(pferr, O_RDONLY)) < 0)
+		error(SYSTEM, "cannot open error pipe in io_process");
+	for ( ; ; ) {			/* loop on select call */
+		FD_ZERO(&readfds);
+		FD_ZERO(&writefds);
+		FD_ZERO(&excepfds);
+		nfds = 0;
+		if (fdin >= 0) {
+			FD_SET(fdin, &writefds);
+			FD_SET(fdin, &excepfds);
+			nfds = fdin+1;
 		}
-		if (pid2) {			/* parent is still stdout */
-			if (open(pfout, O_RDONLY) != 0)
-				error(SYSTEM,
-				"cannot open output pipe in io_process");
-		} else {			/* second child is stderr */
-			if (open(pferr, O_RDONLY) != 0)
-				error(SYSTEM,
-				"cannot open error pipe in io_process");
-			dup2(2, 1);		/* attach stdout to stderr */
+		if (fdout >= 0) {
+			FD_SET(fdout, &readfds);
+			FD_SET(fdout, &excepfds);
+			nfds = fdout+1;
 		}
-	} else {			/* child passes renderer input */
-		close(1);
-		if (open(pfin, O_WRONLY) != 1)
-			error(SYSTEM, "cannot open input pipe in io_process");
+		if (fderr >= 0) {
+			FD_SET(fderr, &readfds);
+			FD_SET(fderr, &excepfds);
+			nfds = fderr+1;
+		}
+		if (nfds == 0)
+			break;			/* all done, exit */
+		if (select(nfds, &readfds, &writefds, &excepfds, NULL) < 0)
+			error(SYSTEM, "error in select call in io_process");
+						/* renderer stderr */
+		if (fderr >= 0 && (FD_ISSET(fderr, &readfds) ||
+				FD_ISSET(fderr, &excepfds))) {
+			nr = read(fderr, cp=buf, sizeof(buf));
+			if (nr < 0)
+				goto readerr;
+			if (nr == 0) {
+				close(fderr);
+				close(2);
+				fderr = -1;
+			} else
+				do {		/* write it all */
+					if ((n = write(2, cp, nr)) <= 0)
+						goto writerr;
+					cp += n;
+				} while ((nr -= n) > 0);
+		}
+						/* renderer stdout */
+		if (fdout >= 0 && (FD_ISSET(fdout, &readfds) ||
+				FD_ISSET(fdout, &excepfds))) {
+			nr = read(fdout, cp=buf, sizeof(buf));
+			if (nr < 0)
+				goto readerr;
+			if (nr == 0) {		/* EOF */
+				close(fdout);
+				close(1);
+				fdout = -1;
+			} else
+				do {		/* write it all */
+					if ((n = write(1, cp, nr)) <= 0)
+						goto writerr;
+					cp += n;
+				} while ((nr -= n) > 0);
+		}
+						/* renderer stdin */
+		if (fdin >= 0 && (FD_ISSET(fdin, &writefds) ||
+				FD_ISSET(fdin, &excepfds))) {
+			nr = read(0, buf, 512);	/* use minimal buffer */
+			if (nr < 0)
+				goto readerr;
+			if (nr == 0) {
+				close(0);
+				close(fdin);
+				fdin = -1;
+			} else if (write(fdin, buf, nr) < nr)
+				goto writerr;	/* what else to do? */
+		}
 	}
-				/* pass input to output */
-				/* read as much as we can, write all of it */
-	while ((nr = read(0, cp=buf, sizeof(buf))) > 0)
-		do {
-			if ((n = write(1, cp, nr)) <= 0)
-				error(SYSTEM, "write error in io_process");
-			cp += n;
-		} while ((nr -= n) > 0);
-	if (nr < 0)
-		error(SYSTEM, "read error in io_process");
-	close(0);		/* close input */
-	close(1);		/* close output */
-	if (pid)		/* parent waits for stdin child */
-		wait(0);
-	if (pid2 > 0)		/* wait for stderr child also */
-		wait(0);
-	_exit(0);		/* all done, exit (not quit!) */
+	_exit(0);		/* we ought to return renderer error status! */
 formerr:
 	error(USER, "format error in persist file");
-forkerr:
-	error(SYSTEM, "fork failed in io_process");
+readerr:
+	error(SYSTEM, "read error in io_process");
+writerr:
+	error(SYSTEM, "write error in io_process");
 }
 
 #else
