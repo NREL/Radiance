@@ -27,7 +27,7 @@
 #define  RAYREFL	(SHADOW|REFLECTED|AMBIENT|SPECULAR)
 
 typedef struct ray {
-	long  rno;		/* unique ray number */
+	unsigned long  rno;	/* unique ray number */
 	int  rlvl;		/* number of reflections for this ray */
 	float  rweight;		/* cumulative weight of this ray */
 	short  rtype;		/* ray type */
