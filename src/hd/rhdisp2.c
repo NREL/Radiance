@@ -158,6 +158,42 @@ int	adopt;
 }
 
 
+cbeamadj(v, hr, vr)		/* adjust our beam list */
+VIEW	*v;
+int	hr, vr;
+{
+	register PACKHEAD	*pa;
+	register int	i;
+	int	n;
+					/* first handle additions */
+	pa = (PACKHEAD *)malloc(xcbeams*sizeof(PACKHEAD));
+	if (xcbeams && pa == NULL)
+		goto memerr;
+	for (i = xcbeams; i--; ) {
+		pa[i].hd = cbeam[ncbeams+i].hd;
+		pa[i].bi = cbeam[ncbeams+i].bi;
+		pa[i].nr = npixels(v, hr, vr, hdlist[pa[i].hd], pa[i].bi);
+	}
+	n = xcbeams;			/* now sort list for deletions */
+	cbeamsort(0);
+	pa = (PACKHEAD *)realloc((char *)pa, (n+xcbeams)*sizeof(PACKHEAD));
+	if (n+xcbeams && pa == NULL)
+		goto memerr;
+	for (i = xcbeams; i--; ) {
+		pa[n+i].hd = cbeam[ncbeams+i].hd;
+		pa[n+i].bi = cbeam[ncbeams+i].bi;
+		pa[n+i].nr = 0;
+	}
+	n += xcbeams;
+	xcbeams = 0;			/* delete orphans */
+	serv_request(DR_ADJSET, n*sizeof(PACKHEAD), (char *)pa);
+	free((char *)pa);
+	return;
+memerr:
+	error(SYSTEM, "out of memory in cbeamadj");
+}
+
+
 cbeamop(op, bl, n, v, hr, vr)	/* update beams on server list */
 int	op;
 register struct beamcomp	*bl;
@@ -432,6 +468,9 @@ VIEW	*vn;
 			mvview(ca.vi, &dvw, vn);
 		else			/* else add all new cells */
 			doview(&ca, vn);
+#if 1
+	cbeamadj(vn, odev.hres, odev.vres);
+#else
 					/* inform server of new beams */
 	cbeamop(DR_ADDSET, cbeam+ncbeams, xcbeams, vn, odev.hres, odev.vres);
 					/* sort list to put orphans at end */
@@ -439,5 +478,6 @@ VIEW	*vn;
 					/* tell server to delete orphans */
 	cbeamop(DR_DELSET, cbeam+ncbeams, xcbeams, NULL, 0, 0);
 	xcbeams = 0;			/* truncate our list */
+#endif
 	copystruct(&dvw, vn);		/* record new view */
 }
