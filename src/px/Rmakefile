@@ -6,7 +6,7 @@
 ARCH = sun
 OPT = -O
 MACH = -DSTRUCTASSIGN -f68881 /usr/lib/libm.il -DIEEE -DBSD
-CFLAGS = $(OPT) $(MACH) -I../common
+CFLAGS = $(OPT) $(MACH) -I../common -L../lib
 
 INSTDIR = /lumen/lumen/ray/bin.sun3
 
@@ -42,113 +42,113 @@ clean:
 	set nonomatch; rm -f $(PROGS) *.o core
 
 pfilt:	pfilt.o pf2.o pf3.o
-	cc $(CFLAGS) -o pfilt pfilt.o pf2.o pf3.o ../common/librt.a -lm
+	cc $(CFLAGS) -o pfilt pfilt.o pf2.o pf3.o -lrt -lm
 
 ttyimage:	ttyimage.o
-	cc $(CFLAGS) -o ttyimage ttyimage.o ../common/librt.a -lm
+	cc $(CFLAGS) -o ttyimage ttyimage.o -lrt -lm
 
 t4027:	t4027.o
-	cc $(CFLAGS) -o t4027 t4027.o ../common/librt.a
+	cc $(CFLAGS) -o t4027 t4027.o -lrt
 
 glimage:	glimage.o
-	cc $(CFLAGS) -o glimage glimage.o ../common/librt.a -lgl_s -lm
+	cc $(CFLAGS) -o glimage glimage.o -lrt -lgl_s -lm
 
 aedimage:	aedimage.o ciq.o cut.o closest.o biq.o
 	cc $(CFLAGS) -o aedimage aedimage.o ciq.o cut.o closest.o \
-biq.o ../common/librt.a -lm
+biq.o -lrt -lm
 
 oki20c:	oki20c.o
-	cc $(CFLAGS) -o oki20c oki20c.o ../common/librt.a -lm
+	cc $(CFLAGS) -o oki20c oki20c.o -lrt -lm
 
 paintjet:	paintjet.o
-	cc $(CFLAGS) -o paintjet paintjet.o ../common/librt.a -lm
+	cc $(CFLAGS) -o paintjet paintjet.o -lrt -lm
 
 mt160r:	mt160r.o
-	cc $(CFLAGS) -o mt160r mt160r.o ../common/librt.a -lm
+	cc $(CFLAGS) -o mt160r mt160r.o -lrt -lm
 
 getinfo:	getinfo.o
-	cc $(CFLAGS) -n -o getinfo getinfo.o ../common/librt.a
+	cc $(CFLAGS) -n -o getinfo getinfo.o -lrt
 
 greyscale:	greyscale.o
-	cc $(CFLAGS) -o greyscale greyscale.o ../common/librt.a -lm
+	cc $(CFLAGS) -o greyscale greyscale.o -lrt -lm
 
 colorscale:	colorscale.o
-	cc $(CFLAGS) -o colorscale colorscale.o ../common/librt.a
+	cc $(CFLAGS) -o colorscale colorscale.o -lrt
 
 pvalue:	pvalue.o
-	cc $(CFLAGS) -o pvalue pvalue.o ../common/librt.a -lm
+	cc $(CFLAGS) -o pvalue pvalue.o -lrt -lm
 
 psum:	psum.o
-	cc $(CFLAGS) -o psum psum.o ../common/librt.a
+	cc $(CFLAGS) -o psum psum.o -lrt
 
 pcompos:	pcompos.o
-	cc $(CFLAGS) -o pcompos pcompos.o ../common/librt.a
+	cc $(CFLAGS) -o pcompos pcompos.o -lrt
 
 psign:	psign.o
-	cc $(CFLAGS) -o psign psign.o ../common/librt.a
+	cc $(CFLAGS) -o psign psign.o -lrt
 
 d48c:	d48c.o
-	cc $(CFLAGS) -o d48c d48c.o ../common/librt.a
+	cc $(CFLAGS) -o d48c d48c.o -lrt
 
 ra_pr:	ra_pr.o ciq.o cut.o closest.o biq.o
 	cc $(CFLAGS) -o ra_pr ra_pr.o ciq.o cut.o closest.o \
-biq.o ../common/librt.a -lm
+biq.o -lrt -lm
 
 ra_pr24:	ra_pr24.o
-	cc $(CFLAGS) -o ra_pr24 ra_pr24.o ../common/librt.a -lm
+	cc $(CFLAGS) -o ra_pr24 ra_pr24.o -lrt -lm
 
 ra_ppm:		ra_ppm.o
-	cc $(CFLAGS) -o ra_ppm ra_ppm.o ../common/librt.a -lm
+	cc $(CFLAGS) -o ra_ppm ra_ppm.o -lrt -lm
 
 ra_t8:	ra_t8.o ciq.o cut.o closest.o biq.o
 	cc $(CFLAGS) -o ra_t8 ra_t8.o ciq.o cut.o closest.o \
-biq.o ../common/librt.a -lm
+biq.o -lrt -lm
 
 ra_t16: ra_t16.o
-	cc $(CFLAGS) -o ra_t16 ra_t16.o ../common/librt.a -lm
+	cc $(CFLAGS) -o ra_t16 ra_t16.o -lrt -lm
 
 ra_im: ra_im.o
 	cc $(CFLAGS) -n -o ra_im ra_im.o
 
 ra_bn: ra_bn.o
-	cc $(CFLAGS) -o ra_bn ra_bn.o ../common/librt.a -lm
+	cc $(CFLAGS) -o ra_bn ra_bn.o -lrt -lm
 
 x10image:	ximage.o ciq.o cut.o closest.o xraster.o biq.o
 	cc $(CFLAGS) -o x10image ximage.o xraster.o \
-ciq.o cut.o closest.o biq.o -lX ../common/librt.a -lm
+ciq.o cut.o closest.o biq.o -lX -lrt -lm
 
 ximage:	x11image.o ciq.o cut.o closest.o x11raster.o biq.o
 	cc $(CFLAGS) -o ximage x11image.o x11raster.o \
-ciq.o cut.o closest.o biq.o -lX11 ../common/librt.a -lm
+ciq.o cut.o closest.o biq.o -lX11 -lrt -lm
 
 prot:		prot.o
-	cc $(CFLAGS) -o prot prot.o ../common/librt.a
+	cc $(CFLAGS) -o prot prot.o -lrt
 
 pflip:		pflip.o
-	cc $(CFLAGS) -o pflip pflip.o ../common/librt.a
+	cc $(CFLAGS) -o pflip pflip.o -lrt
 
 panim:	panim.o client/libclient.a
 	cc $(CFLAGS) -o panim panim.o \
-../common/librt.a client/libclient.a -lrpcsvc -lm
+-lrt client/libclient.a -lrpcsvc -lm
 
 pcomb:	pcomb.o
-	cc $(CFLAGS) -o pcomb pcomb.o ../common/librt.a -lm
+	cc $(CFLAGS) -o pcomb pcomb.o -lrt -lm
 
 pinterp:	pinterp.o
-	cc $(CFLAGS) -o pinterp pinterp.o ../common/librt.a -lm
+	cc $(CFLAGS) -o pinterp pinterp.o -lrt -lm
 
-ra_tiff:	ra_tiff.o libtiff.a
-	cc $(CFLAGS) -o ra_tiff ra_tiff.o ../common/librt.a \
-libtiff.a -lm
+ra_tiff:	ra_tiff.o ../lib/libtiff.a
+	cc $(CFLAGS) -o ra_tiff ra_tiff.o -lrt -ltiff -lm
 
 ra_tiff.o:	ra_tiff.c
 	cc $(CFLAGS) -Ilibtiff -c ra_tiff.c
 
-libtiff.a:
-	cd libtiff ; make -f Makefile.$(ARCH) ; mv libtiff.a .. ; make clean
+../lib/libtiff.a:
+	cd libtiff ; make -f Makefile.$(ARCH) ; \
+	mv libtiff.a ../../lib ; make clean
 
 ra_pixar:	ra_pixar.o ra_pixar.c
-	cc $(CFLAGS) $(PIXAR_INCLUDE) -o $@ ra_pixar.o ../common/librt.a \
+	cc $(CFLAGS) $(PIXAR_INCLUDE) -o $@ ra_pixar.o -lrt \
 $(PIXAR_LIB)
 
 ra_pixar.o:	ra_pixar.c
@@ -156,7 +156,7 @@ ra_pixar.o:	ra_pixar.c
 
 xshowtrace:	xshowtrace.o x11findwind.o
 	cc $(CFLAGS) -o xshowtrace xshowtrace.o \
-x11findwind.o ../common/librt.a -lm -lX11
+x11findwind.o -lrt -lm -lX11
 
 xshowtrace.o:	../common/view.h ../common/standard.h \
 ../common/mat4.h ../common/fvect.h
