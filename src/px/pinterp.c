@@ -31,6 +31,7 @@ struct position {int x,y; float z;};
 VIEW	ourview = STDVIEW;		/* desired view */
 int	hresolu = 512;			/* horizontal resolution */
 int	vresolu = 512;			/* vertical resolution */
+double	pixaspect = 1.0;		/* pixel aspect ratio */
 
 double	zeps = .02;			/* allowed z epsilon */
 
@@ -138,6 +139,10 @@ char	*argv[];
 			check(2,1);
 			vresolu = atoi(argv[++i]);
 			break;
+		case 'p':				/* pixel aspect */
+			check(2,1);
+			pixaspect = atof(argv[++i]);
+			break;
 		case 'v':				/* view file */
 			if (argv[i][2] != 'f')
 				goto badopt;
@@ -167,6 +172,7 @@ char	*argv[];
 		fprintf(stderr, "%s: %s\n", progname, err);
 		exit(1);
 	}
+	normaspect(viewaspect(&ourview), &pixaspect, &hresolu, &vresolu);
 						/* allocate frame */
 	ourpict = (COLR *)malloc(hresolu*vresolu*sizeof(COLR));
 	ourzbuf = (float *)calloc(hresolu*vresolu,sizeof(float));
@@ -189,7 +195,9 @@ char	*argv[];
 		fprintview(&ourview, stdout);
 		printf("\n");
 	}
-	if (ourexp > 0 && ourexp != 1.0)
+	if (pixaspect < .99 || pixaspect > 1.01)
+		fputaspect(pixaspect, stdout);
+	if (ourexp > 0 && (ourexp < .995 || ourexp > 1.005))
 		fputexpos(ourexp, stdout);
 	printf("\n");
 							/* write picture */
