@@ -69,7 +69,7 @@ char  *s;
 	}
 	sprintf(buf, "view type (%c): ", ourview.type);
 	(*dev->comout)(buf);
-	(*dev->comin)(buf);
+	(*dev->comin)(buf, NULL);
 	if (buf[0] == CTRL(C)) return;
 	if (buf[0] && buf[0] != ourview.type) {
 		nv.type = buf[0];
@@ -79,7 +79,7 @@ char  *s;
 	sprintf(buf, "view point (%.6g %.6g %.6g): ",
 			ourview.vp[0], ourview.vp[1], ourview.vp[2]);
 	(*dev->comout)(buf);
-	(*dev->comin)(buf);
+	(*dev->comin)(buf, NULL);
 	if (buf[0] == CTRL(C)) return;
 	if (sscanf(buf, "%lf %lf %lf", &nv.vp[0], &nv.vp[1], &nv.vp[2]) == 3)
 		change++;
@@ -88,7 +88,7 @@ char  *s;
 	sprintf(buf, "view direction (%.6g %.6g %.6g): ",
 			ourview.vdir[0], ourview.vdir[1], ourview.vdir[2]);
 	(*dev->comout)(buf);
-	(*dev->comin)(buf);
+	(*dev->comin)(buf, NULL);
 	if (buf[0] == CTRL(C)) return;
 	if (sscanf(buf,"%lf %lf %lf",&nv.vdir[0],&nv.vdir[1],&nv.vdir[2]) == 3)
 		change++;
@@ -97,7 +97,7 @@ char  *s;
 	sprintf(buf, "view up (%.6g %.6g %.6g): ",
 			ourview.vup[0], ourview.vup[1], ourview.vup[2]);
 	(*dev->comout)(buf);
-	(*dev->comin)(buf);
+	(*dev->comin)(buf, NULL);
 	if (buf[0] == CTRL(C)) return;
 	if (sscanf(buf,"%lf %lf %lf",&nv.vup[0],&nv.vup[1],&nv.vup[2]) == 3)
 		change++;
@@ -106,7 +106,7 @@ char  *s;
 	sprintf(buf, "view horiz and vert size (%.6g %.6g): ",
 			ourview.horiz, ourview.vert);
 	(*dev->comout)(buf);
-	(*dev->comin)(buf);
+	(*dev->comin)(buf, NULL);
 	if (buf[0] == CTRL(C)) return;
 	if (sscanf(buf, "%lf %lf", &nv.horiz, &nv.vert) == 2)
 		change++;
@@ -116,7 +116,7 @@ char  *s;
 	sprintf(buf, "view shift and lift (%.6g %.6g): ",
 			ourview.hoff, ourview.voff);
 	(*dev->comout)(buf);
-	(*dev->comin)(buf);
+	(*dev->comin)(buf, NULL);
 	if (buf[0] == CTRL(C)) return;
 	if (sscanf(buf, "%lf %lf", &nv.hoff, &nv.voff) == 2)
 		change++;
@@ -282,7 +282,7 @@ char  *s;
 			if (*cp == '\0') {	/* interactive */
 				sprintf(buf, "exposure (%lf): ", exposure);
 				(*dev->comout)(buf);
-				(*dev->comin)(buf);
+				(*dev->comin)(buf, NULL);
 				for (cp = buf; isspace(*cp); cp++)
 					;
 				if (*cp == '\0')
@@ -335,7 +335,7 @@ register char  *s;
 	
 	if (s[0] == '\0') {
 		(*dev->comout)("aa ab ad ar as av dc dj dt lr lw sp st: ");
-		(*dev->comin)(buf);
+		(*dev->comin)(buf, NULL);
 		s = buf;
 	}
 	switch (s[0]) {
@@ -346,7 +346,7 @@ register char  *s;
 				sprintf(buf, "limit weight (%.6g): ",
 						minweight);
 				(*dev->comout)(buf);
-				(*dev->comin)(buf);
+				(*dev->comin)(buf, NULL);
 				if (sscanf(buf, "%lf", &d0) != 1)
 					break;
 			}
@@ -357,7 +357,7 @@ register char  *s;
 				sprintf(buf, "limit reflection (%d): ",
 						maxdepth);
 				(*dev->comout)(buf);
-				(*dev->comin)(buf);
+				(*dev->comin)(buf, NULL);
 				if (sscanf(buf, "%d", &i0) != 1)
 					break;
 			}
@@ -374,7 +374,7 @@ register char  *s;
 				sprintf(buf, "direct jitter (%.6g): ",
 						dstrsrc);
 				(*dev->comout)(buf);
-				(*dev->comin)(buf);
+				(*dev->comin)(buf, NULL);
 				if (sscanf(buf, "%lf", &d0) != 1)
 					break;
 			}
@@ -385,7 +385,7 @@ register char  *s;
 				sprintf(buf, "direct certainty (%.6g): ",
 						shadcert);
 				(*dev->comout)(buf);
-				(*dev->comin)(buf);
+				(*dev->comin)(buf, NULL);
 				if (sscanf(buf, "%lf", &d0) != 1)
 					break;
 			}
@@ -396,7 +396,7 @@ register char  *s;
 				sprintf(buf, "direct threshold (%.6g): ",
 						shadthresh);
 				(*dev->comout)(buf);
-				(*dev->comin)(buf);
+				(*dev->comin)(buf, NULL);
 				if (sscanf(buf, "%lf", &d0) != 1)
 					break;
 			}
@@ -416,7 +416,7 @@ register char  *s;
 						colval(ambval,GRN),
 						colval(ambval,BLU));
 				(*dev->comout)(buf);
-				(*dev->comin)(buf);
+				(*dev->comin)(buf, NULL);
 				if (sscanf(buf, "%lf %lf %lf",
 						&d0, &d1, &d2) != 3)
 					break;
@@ -428,7 +428,7 @@ register char  *s;
 				sprintf(buf, "ambient accuracy (%.6g): ",
 						ambacc);
 				(*dev->comout)(buf);
-				(*dev->comin)(buf);
+				(*dev->comin)(buf, NULL);
 				if (sscanf(buf, "%lf", &d0) != 1)
 					break;
 			}
@@ -439,7 +439,7 @@ register char  *s;
 				sprintf(buf, "ambient divisions (%d): ",
 						ambdiv);
 				(*dev->comout)(buf);
-				(*dev->comin)(buf);
+				(*dev->comin)(buf, NULL);
 				if (sscanf(buf, "%d", &i0) != 1)
 					break;
 			}
@@ -450,7 +450,7 @@ register char  *s;
 				sprintf(buf, "ambient super-samples (%d): ",
 						ambssamp);
 				(*dev->comout)(buf);
-				(*dev->comin)(buf);
+				(*dev->comin)(buf, NULL);
 				if (sscanf(buf, "%d", &i0) != 1)
 					break;
 			}
@@ -461,7 +461,7 @@ register char  *s;
 				sprintf(buf, "ambient bounces (%d): ",
 						ambounce);
 				(*dev->comout)(buf);
-				(*dev->comin)(buf);
+				(*dev->comin)(buf, NULL);
 				if (sscanf(buf, "%d", &i0) != 1)
 					break;
 			}
@@ -472,7 +472,7 @@ register char  *s;
 				sprintf(buf, "ambient resolution (%d): ",
 						ambres);
 				(*dev->comout)(buf);
-				(*dev->comin)(buf);
+				(*dev->comin)(buf, NULL);
 				if (sscanf(buf, "%d", &i0) != 1)
 					break;
 			}
@@ -489,7 +489,7 @@ register char  *s;
 			if (sscanf(s+2, "%d", &i0) != 1) {
 				sprintf(buf, "sample pixel (%d): ", psample);
 				(*dev->comout)(buf);
-				(*dev->comin)(buf);
+				(*dev->comin)(buf, NULL);
 				if (sscanf(buf, "%d", &i0) != 1)
 					break;
 			}
@@ -501,7 +501,7 @@ register char  *s;
 				sprintf(buf, "sample threshold (%.6g): ",
 						maxdiff);
 				(*dev->comout)(buf);
-				(*dev->comin)(buf);
+				(*dev->comin)(buf, NULL);
 				if (sscanf(buf, "%lf", &d0) != 1)
 					break;
 			}
@@ -560,7 +560,7 @@ char  *s;
 				ofun[thisray.ro->otype].funame,
 				thisray.ro->oname);
 		(*dev->comout)(buf);
-		(*dev->comin)(buf);
+		(*dev->comin)(buf, NULL);
 		if (thisray.rot >= FHUGE)
 			(*dev->comout)("at infinity");
 		else {
@@ -568,14 +568,14 @@ char  *s;
 					thisray.rop[1], thisray.rop[2]);
 			(*dev->comout)(buf);
 		}
-		(*dev->comin)(buf);
+		(*dev->comin)(buf, NULL);
 		sprintf(buf, "with value (%.6g %.6g %.6g)",
 				colval(thisray.rcol,RED),
 				colval(thisray.rcol,GRN),
 				colval(thisray.rcol,BLU));
 		(*dev->comout)(buf);
 	}
-	(*dev->comin)(buf);
+	(*dev->comin)(buf, NULL);
 }
 
 

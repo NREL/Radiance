@@ -145,8 +145,7 @@ char  *prompt;
 	char  inpbuf[256];
 	char  *args;
 again:
-	(*dev->comout)(prompt);			/* get command + arguments */
-	(*dev->comin)(inpbuf);
+	(*dev->comin)(inpbuf, prompt);		/* get command + arguments */
 	for (args = inpbuf; *args && *args != ' '; args++)
 		;
 	if (*args) *args++ = '\0';

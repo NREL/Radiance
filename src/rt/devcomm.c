@@ -179,10 +179,17 @@ char	*str;
 
 
 static
-comm_comin(buf)				/* read string from command line */
+comm_comin(buf, prompt)			/* read string from command line */
 char	*buf;
+char	*prompt;
 {
 	putc(COM_COMIN, devout);
+	if (prompt == NULL)
+		putc(0, devout);
+	else {
+		putc(1, devout);
+		myputs(prompt, devout);
+	}
 	fflush(devout);
 	if (getc(devin) != COM_COMIN)
 		reply_error("comin");
