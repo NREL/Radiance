@@ -34,11 +34,11 @@ static char SCCSid[] = "$SunId$ LBL";
 #define	 NHASH		521		/* hash size (a prime!) */
 #endif
 
+#define  hash(s)	(shash(s)%NHASH)
+
 #define	 newnode()	(EPNODE *)ecalloc(1, sizeof(EPNODE))
 
 extern char  *ecalloc(), *emalloc(), *savestr(), *strcpy();
-
-static int  hash();
 
 static double  dvalue();
 
@@ -667,17 +667,4 @@ EPNODE	*d;
 	ep2 = ep2->sibling;			/* else reuse old value */
 
     return(ep2->v.num);
-}
-
-
-static int
-hash(s)				/* hash a string */
-register char  *s;
-{
-    register int  rval = 0;
-
-    while (*s)
-	rval += *s++;
-    
-    return(rval % NHASH);
 }
