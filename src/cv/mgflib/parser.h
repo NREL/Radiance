@@ -79,8 +79,9 @@ extern unsigned	mg_nunknown;		/* count of unknown entities */
 #define MG_EMEM		8		/* out of memory */
 #define MG_ESEEK	9		/* file seek error */
 #define MG_EBADMAT	10		/* bad material specification */
+#define MG_ELINE	11		/* input line too long */
 
-#define MG_NERRS	11
+#define MG_NERRS	12
 
 extern char	*mg_err[MG_NERRS];	/* list of error messages */
 
