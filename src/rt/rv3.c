@@ -274,7 +274,7 @@ FVECT  vc;
 	nv.hresolu = ourview.hresolu; nv.vresolu = ourview.vresolu;
 	spinvector(nv.vdir, ourview.vdir, ourview.vup, angle*(PI/180.));
 	if (elev != 0.0) {
-		fcross(v1, nv.vdir, ourview.vup);
+		fcross(v1, ourview.vup, nv.vdir);
 		normalize(v1);
 		spinvector(nv.vdir, nv.vdir, v1, elev*(PI/180.));
 	}
