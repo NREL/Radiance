@@ -18,7 +18,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 
 int  dataonly = 0;
-
+int  header = 1;
 int  reverse = 0;
 
 AMBVAL  av;
@@ -39,6 +39,9 @@ char  *argv[];
 			case 'r':
 				reverse = 1;
 				break;
+			case 'h':
+				header = 0;
+				break;
 			default:
 				fprintf(stderr, "%s: unknown option '%s'\n",
 						argv[0], argv[i]);
@@ -53,12 +56,32 @@ char  *argv[];
 		fprintf(stderr, "%s: file not found\n", argv[i]);
 		return(1);
 	}
-	if (reverse)
+	if (reverse) {
+		if (header) {
+			if (checkheader(fp, "ascii", stdout) < 0)
+				goto formaterr;
+		} else
+			printargs(argc, argv, stdout);
+		fputformat(AMBFMT, stdout);
+		putchar('\n');
+		putambmagic(stdout);
 		writamb(fp);
-	else
+	} else {
+		if (checkheader(fp, AMBFMT, header ? stdout : (FILE *)NULL) < 0)
+			goto formaterr;
+		if (!hasambmagic(fp))
+			goto formaterr;
+		if (header) {
+			fputformat("ascii", stdout);
+			putchar('\n');
+		}
 		lookamb(fp);
+	}
 	fclose(fp);
 	return(0);
+formaterr:
+	fprintf(stderr, "%s: format error on input\n", argv[0]);
+	exit(1);
 }
 
 

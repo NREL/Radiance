@@ -39,3 +39,5 @@ extern double  sumambient(), doambient(), makeambient();
 #define  AVGREFL	0.5	/* assumed average reflectance */
 
 #define  AMBVALSIZ	75	/* number of bytes in portable AMBVAL struct */
+#define  AMBMAGIC	357	/* magic number for ambient value files */
+#define  AMBFMT		"Radiance_ambval"	/* format id string */

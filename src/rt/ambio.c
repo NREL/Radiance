@@ -24,6 +24,25 @@ extern double  getflt();
 extern long  getint();
 
 
+putambmagic(fp)			/* write out ambient value magic number */
+FILE  *fp;
+{
+	putint((long)AMBMAGIC, 2, fp);
+}
+
+
+hasambmagic(fp)			/* read in and check validity of magic # */
+FILE  *fp;
+{
+	register int  magic;
+
+	magic = getint(2, fp);
+	if (feof(fp))
+		return(0);
+	return(magic == AMBMAGIC);
+}
+
+
 writambval(av, fp)		/* write ambient value to stream */
 register AMBVAL  *av;
 FILE  *fp;

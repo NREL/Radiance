@@ -186,9 +186,6 @@ x10.o:	x10.c
 aed.o:	aed.c
 	$(CC) $(CFLAGS) -Daed_init=dinit -c aed.c
 
-ambient.o:	ambient.c
-	$(CC) $(CFLAGS) -DAMBFLUSH=16 -c ambient.c
-
 calexpr.o:	calexpr.c ../common/calcomp.h
 	$(CC) $(CFLAGS) -DVARIABLE -DFUNCTION -DINCHAN -DRCONST -c calexpr.c
 
