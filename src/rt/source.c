@@ -152,7 +152,7 @@ SRCINDEX  *si;			/* source sample index */
 
 
 srcvalue(r)			/* punch ray to source and compute value */
-RAY  *r;
+register RAY  *r;
 {
 	register SRCREC  *sp;
 
@@ -161,7 +161,8 @@ RAY  *r;
 					/* check intersection */
 		if (!(*ofun[sp->so->otype].funp)(sp->so, r))
 			return;
-		raycont(r);		/* compute contribution */
+		if (!rayshade(r, r->ro->omod))	/* compute contribution */
+			goto nomat;
 		return;
 	}
 					/* compute intersection */
@@ -169,9 +170,11 @@ RAY  *r;
 			(*ofun[sp->so->otype].funp)(sp->so, r)) {
 		if (sp->sa.success >= 0)
 			sp->sa.success++;
-		raycont(r);		/* compute contribution */
+		if (!rayshade(r, r->ro->omod))	/* compute contribution */
+			goto nomat;
 		return;
 	}
+					/* we missed our mark! */
 	if (sp->sa.success < 0)
 		return;			/* bitched already */
 	sp->sa.success -= AIMREQT;
@@ -180,6 +183,9 @@ RAY  *r;
 	sprintf(errmsg, "aiming failure for light source \"%s\"",
 			sp->so->oname);
 	error(WARNING, errmsg);		/* issue warning */
+	return;
+nomat:
+	objerror(r->ro, USER, "material not found");
 }
 
 
@@ -318,7 +324,8 @@ char  *p;			/* data for f */
 				( sr.ro != source[scp->sno].so ||
 				source[scp->sno].sflags & SFOLLOW )) {
 						/* follow entire path */
-			raycont(&sr);
+			if (!raycont(&sr))
+				objerror(sr.ro, USER, "material not found");
 			if (trace != NULL)
 				(*trace)(&sr);	/* trace execution */
 			if (bright(sr.rcol) <= FTINY)
