@@ -114,6 +114,13 @@ needs to be redrawn in the next call to odUpdate().
 
 
 void
+odRedrawAll()			: everything needs to be redrawn
+
+Redraw everything in all views on the next call to odUpdate().
+Unless odRemap() is called, no new tone mapping will be done.
+
+
+void
 odUpdate(vn)			: update the current view
 int	vn;			: view number
 
