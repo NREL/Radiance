@@ -22,6 +22,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 extern double  ssampdist;		/* scatter sampling distance */
 
+#ifndef MAXSSAMP
+#define MAXSSAMP	16		/* maximum samples per ray */
+#endif
+
 /*
  * Structures used by direct()
  */
@@ -382,10 +386,15 @@ register RAY  *r;
 	COLOR  cumval, ctmp;
 	int  i, j;
 
-	if (r->slights == NULL || r->slights[0] == 0 || r->gecc >= 1.-FTINY)
+	if (r->slights == NULL || r->slights[0] == 0
+			|| r->gecc >= 1.-FTINY || r->rot >= FHUGE)
 		return;
 	if (ssampdist <= FTINY || (nsamps = r->rot/ssampdist + .5) < 1)
 		nsamps = 1;
+#if MAXSSAMP
+	else if (nsamps > MAXSSAMP)
+		nsamps = MAXSSAMP;
+#endif
 	oldsampndx = samplendx;
 	samplendx = random()&0x7fff;		/* randomize */
 	for (i = r->slights[0]; i > 0; i--) {	/* for each source */
