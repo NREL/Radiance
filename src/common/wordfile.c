@@ -55,14 +55,15 @@ char	*str;
 	if (cp == NULL)			/* ENOMEM */
 		return(-1);
 	strcpy(cp, str);
-	for (ap = avl; *cp; *cp++ = '\0') {
-		while (isspace(*cp))	/* skip leading space */
-			cp++;
-		if (*cp) {		/* add argument to list */
-			*ap++ = cp;
-			while (*cp && !isspace(*cp))
-				cp++;
-		}
+	ap = avl;		/* parse into words */
+	for ( ; ; ) {
+		while (isspace(*cp))	/* nullify spaces */
+			*cp++ = '\0';
+		if (!*cp)		/* all done? */
+			break;
+		*ap++ = cp;		/* add argument to list */
+		while (*cp && !isspace(*cp++))
+			;
 	}
 	*ap = NULL;
 	return(ap - avl);
