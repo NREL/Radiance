@@ -202,7 +202,7 @@ int  orig, nobjs;
 			while (i--) {
 				s = *os;
 				if (s >= orig && s < orig+nobjs &&
-						!issurface(objptr(s)->otype))
+						ismodifier(objptr(s)->otype))
 					return(1);
 				os++;
 			}
