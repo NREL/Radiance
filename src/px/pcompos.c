@@ -193,8 +193,9 @@ compos()				/* composite pictures */
 				continue;
 			if (freadcolrs(scanin+input[i].xloc,
 					input[i].xres, input[i].fp) < 0) {
-				fprintf(stderr, "%s: read error\n",
-						input[i].name);
+				fprintf(stderr, "%s: read error (y==%d)\n",
+						input[i].name,
+						y-input[i].yloc);
 				quit(1);
 			}
 			if (y >= ysiz)
