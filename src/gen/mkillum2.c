@@ -116,10 +116,12 @@ char  *nm;
 		}
 	rayflush(rt);
 				/* write out the face and its distribution */
-	average(il, distarr, nalt*nazi);
-	if (il->sampdens > 0)
-		flatout(il, distarr, nalt, nazi, u, v, fa->norm);
-	illumout(il, ob);
+	if (average(il, distarr, nalt*nazi)) {
+		if (il->sampdens > 0)
+			flatout(il, distarr, nalt, nazi, u, v, fa->norm);
+		illumout(il, ob);
+	} else if (!(il->flags & IL_LIGHT))
+		printobj(il->altmat, ob);
 				/* clean up */
 	freeface(ob);
 	free((char *)distarr);
@@ -183,12 +185,14 @@ char  *nm;
 		}
 	rayflush(rt);
 				/* write out the sphere and its distribution */
-	average(il, distarr, nalt*nazi);
-	if (il->sampdens > 0)
-		roundout(il, distarr, nalt, nazi);
-	else
-		objerror(ob, WARNING, "diffuse distribution");
-	illumout(il, ob);
+	if (average(il, distarr, nalt*nazi)) {
+		if (il->sampdens > 0)
+			roundout(il, distarr, nalt, nazi);
+		else
+			objerror(ob, WARNING, "diffuse distribution");
+		illumout(il, ob);
+	} else if (!(il->flags & IL_LIGHT))
+		printobj(il->altmat, ob);
 				/* clean up */
 	free((char *)distarr);
 }
@@ -251,10 +255,12 @@ char  *nm;
 		}
 	rayflush(rt);
 				/* write out the ring and its distribution */
-	average(il, distarr, nalt*nazi);
-	if (il->sampdens > 0)
-		flatout(il, distarr, nalt, nazi, u, v, co->ad);
-	illumout(il, ob);
+	if (average(il, distarr, nalt*nazi)) {
+		if (il->sampdens > 0)
+			flatout(il, distarr, nalt, nazi, u, v, co->ad);
+		illumout(il, ob);
+	} else if (!(il->flags & IL_LIGHT))
+		printobj(il->altmat, ob);
 				/* clean up */
 	freecone(ob);
 	free((char *)distarr);

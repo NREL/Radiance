@@ -42,6 +42,7 @@ struct illum_args  thisillum = {	/* our illum and default values */
 		VOIDID,
 		SAMPDENS,
 		NSAMPS,
+		0.,
 	};
 
 char	matcheck[MAXSTR];	/* current material to include or exclude */
@@ -329,6 +330,14 @@ char	*nm;
 				break;
 			cp++;
 			continue;
+		case 'b':			/* brightness */
+			if (*++cp != '=')
+				break;
+			if (!isfltd(++cp, " \t\n"))
+				break;
+			thisillum.minbrt = atof(cp);
+			cp = sskip(cp);
+			continue;
 		case 'o':			/* output file */
 			if (*++cp != '=')
 				break;
@@ -376,6 +385,7 @@ printopts()			/* print out option default values */
 	printf("c=n\t\t\t\t# color none\n");
 	printf("d=%d\t\t\t\t# density of points\n", thisillum.sampdens);
 	printf("s=%d\t\t\t\t# samples per point\n", thisillum.nsamps);
+	printf("b=%f\t\t\t# minimum average brightness\n", thisillum.minbrt);
 }
 
 
