@@ -352,7 +352,8 @@ put_material()			/* put out current material */
 	indent(0);
 	printf("%s}\n", tabs);
 	if (outtype != O_INV1)
-		printf("%sShapeHints { shapeType %s }\n", tabs,
+		printf("%sShapeHints { shapeType %s faceType UNKNOWN_FACE_TYPE }\n",
+			tabs,
 			c_cmaterial->sided ? "SOLID" : "UNKNOWN_SHAPE_TYPE");
 	indent(0);
 	printf("%s}\n", tabs);
