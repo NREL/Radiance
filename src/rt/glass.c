@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -50,6 +50,7 @@ register RAY  *r;
 	double  cos2;
 	COLOR  trans, refl;
 	double  d, r1;
+	double  transtest, transdist;
 	RAY  p;
 	register int  i;
 
@@ -61,6 +62,7 @@ register RAY  *r;
 	if (r->rod < 0.0)			/* reorient if necessary */
 		flipsurface(r);
 	r->rt = r->rot;				/* default ray length */
+	transtest = 0;
 						/* get modifiers */
 	raytexture(r, m->omod);
 	pdot = raynormal(pnorm, r);
@@ -82,15 +84,18 @@ register RAY  *r;
 	}
 						/* transmitted ray */
 	if (rayorigin(&p, r, TRANS, bright(trans)) == 0) {
-		for (i = 0; i < 3; i++)		/* perturb direction */
-			p.rdir[i] = r->rdir[i] - r->pert[i]/RINDEX;
-		normalize(p.rdir);
+		if (DOT(r->pert,r->pert) > FTINY*FTINY) {
+			for (i = 0; i < 3; i++)		/* perturb direction */
+				p.rdir[i] = r->rdir[i] - r->pert[i]/RINDEX;
+			normalize(p.rdir);
+		} else
+			transtest = 2;
 		rayvalue(&p);
 		multcolor(p.rcol, r->pcol);	/* modify */
 		multcolor(p.rcol, trans);
 		addcolor(r->rcol, p.rcol);
-		if (bright(p.rcol) > .5)
-			r->rt = r->rot + p.rt;
+		transtest *= bright(p.rcol);
+		transdist = r->rot + p.rt;
 	}
 
 	if (r->crtype & SHADOW)			/* skip reflected ray */
@@ -109,4 +114,6 @@ register RAY  *r;
 		multcolor(p.rcol, refl);
 		addcolor(r->rcol, p.rcol);
 	}
+	if (transtest > bright(r->rcol))
+		r->rt = transdist;
 }

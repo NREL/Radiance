@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -129,6 +129,7 @@ register OBJREC  *m;
 register RAY  *r;
 {
 	NORMDAT  nd;
+	double  transtest, transdist;
 	double  dtmp;
 	COLOR  ctmp;
 	register int  i;
@@ -155,6 +156,7 @@ register RAY  *r;
 	nd.pdot = raynormal(nd.pnorm, r);	/* perturb normal */
 	multcolor(nd.mcolor, r->pcol);		/* modify material color */
 	r->rt = r->rot;				/* default ray length */
+	transtest = 0;
 						/* get specular component */
 	nd.rspec = m->oargs.farg[3];
 
@@ -195,15 +197,19 @@ register RAY  *r;
 	if (nd.tspec > FTINY && nd.alpha2 <= FTINY) {
 		RAY  lr;
 		if (rayorigin(&lr, r, TRANS, nd.tspec) == 0) {
-			for (i = 0; i < 3; i++)		/* perturb direction */
-				lr.rdir[i] = r->rdir[i] - .75*r->pert[i];
-			normalize(lr.rdir);
+			if (DOT(r->pert,r->pert) > FTINY*FTINY) {
+				for (i = 0; i < 3; i++)	/* perturb direction */
+					lr.rdir[i] = r->rdir[i] -
+							.75*r->pert[i];
+				normalize(lr.rdir);
+			} else
+				transtest = 2;
 			rayvalue(&lr);
 			scalecolor(lr.rcol, nd.tspec);
 			multcolor(lr.rcol, nd.mcolor);	/* modified by color */
 			addcolor(r->rcol, lr.rcol);
-			if (nd.tspec > .5)
-				r->rt = r->rot + lr.rt;
+			transtest *= bright(lr.rcol);
+			transdist = r->rot + lr.rt;
 		}
 	}
 	if (r->crtype & SHADOW)			/* the rest is shadow */
@@ -236,4 +242,7 @@ register RAY  *r;
 	}
 					/* add direct component */
 	direct(r, dirnorm, &nd);
+					/* check distance */
+	if (transtest > bright(r->rcol))
+		r->rt = transdist;
 }
