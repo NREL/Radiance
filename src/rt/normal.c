@@ -200,6 +200,9 @@ register RAY  *r;
 						/* compute reflected ray */
 		for (i = 0; i < 3; i++)
 			nd.vrefl[i] = r->rdir[i] + 2.0*nd.pdot*nd.pnorm[i];
+		if (DOT(nd.vrefl, r->ron) <= FTINY)	/* penetration? */
+			for (i = 0; i < 3; i++)		/* safety measure */
+				nd.vrefl[i] = r->rdir[i] + 2.*r->rod*r->ron[i];
 
 		if (!(r->crtype & SHADOW) && nd.specfl & SP_PURE) {
 			RAY  lr;
@@ -233,7 +236,10 @@ register RAY  *r;
 				for (i = 0; i < 3; i++)		/* perturb */
 					nd.prdir[i] = r->rdir[i] -
 							.75*r->pert[i];
-				normalize(nd.prdir);
+				if (DOT(nd.prdir, r->ron) < -FTINY)
+					normalize(nd.prdir);	/* OK */
+				else
+					VCOPY(nd.prdir, r->rdir);
 			}
 		}
 	} else
@@ -303,7 +309,6 @@ register NORMDAT  *np;
 	FVECT  u, v, h;
 	double  rv[2];
 	double  d, sinp, cosp;
-	int  ntries;
 	register int  i;
 					/* set up sample coordinates */
 	v[0] = v[1] = v[2] = 0.0;
@@ -318,30 +323,26 @@ register NORMDAT  *np;
 	if ((np->specfl & (SP_REFL|SP_RBLT)) == SP_REFL &&
 			rayorigin(&sr, r, SPECULAR, np->rspec) == 0) {
 		dimlist[ndims++] = (int)np->mp;
-		for (ntries = 0; ntries < 10; ntries++) {
-			dimlist[ndims] = ntries * 8912;
-			d = urand(ilhash(dimlist,ndims+1)+samplendx);
-			multisamp(rv, 2, d);
-			d = 2.0*PI * rv[0];
-			cosp = cos(d);
-			sinp = sin(d);
-			rv[1] = 1.0 - specjitter*rv[1];
-			if (rv[1] <= FTINY)
-				d = 1.0;
-			else
-				d = sqrt( np->alpha2 * -log(rv[1]) );
-			for (i = 0; i < 3; i++)
-				h[i] = np->pnorm[i] + d*(cosp*u[i] + sinp*v[i]);
-			d = -2.0 * DOT(h, r->rdir) / (1.0 + d*d);
-			for (i = 0; i < 3; i++)
-				sr.rdir[i] = r->rdir[i] + d*h[i];
-			if (DOT(sr.rdir, r->ron) > FTINY) {
-				rayvalue(&sr);
-				multcolor(sr.rcol, np->scolor);
-				addcolor(r->rcol, sr.rcol);
-				break;
-			}
-		}
+		d = urand(ilhash(dimlist,ndims)+samplendx);
+		multisamp(rv, 2, d);
+		d = 2.0*PI * rv[0];
+		cosp = cos(d);
+		sinp = sin(d);
+		rv[1] = 1.0 - specjitter*rv[1];
+		if (rv[1] <= FTINY)
+			d = 1.0;
+		else
+			d = sqrt( np->alpha2 * -log(rv[1]) );
+		for (i = 0; i < 3; i++)
+			h[i] = np->pnorm[i] + d*(cosp*u[i] + sinp*v[i]);
+		d = -2.0 * DOT(h, r->rdir) / (1.0 + d*d);
+		for (i = 0; i < 3; i++)
+			sr.rdir[i] = r->rdir[i] + d*h[i];
+		if (DOT(sr.rdir, r->ron) <= FTINY)
+			VCOPY(sr.rdir, np->vrefl);	/* jitter no good */
+		rayvalue(&sr);
+		multcolor(sr.rcol, np->scolor);
+		addcolor(r->rcol, sr.rcol);
 		ndims--;
 	}
 					/* compute transmission */

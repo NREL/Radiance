@@ -51,6 +51,7 @@ typedef struct {
 	short  specfl;		/* specularity flags, defined above */
 	COLOR  mcolor;		/* color of this material */
 	COLOR  scolor;		/* color of specular component */
+	FVECT  vrefl;		/* vector in reflected direction */
 	FVECT  prdir;		/* vector in transmitted direction */
 	FVECT  u, v;		/* u and v vectors orienting anisotropy */
 	double  u_alpha;	/* u roughness */
@@ -211,13 +212,17 @@ register RAY  *r;
 				specthresh + (.1 - .2*urand(8199+samplendx))
 					> nd.rspec)))
 			nd.specfl |= SP_RBLT;
+						/* compute refl. direction */
+		for (i = 0; i < 3; i++)
+			nd.vrefl[i] = r->rdir[i] + 2.0*nd.pdot*nd.pnorm[i];
+		if (DOT(nd.vrefl, r->ron) <= FTINY)	/* penetration? */
+			for (i = 0; i < 3; i++)		/* safety measure */
+				nd.vrefl[i] = r->rdir[i] + 2.*r->rod*r->ron[i];
 
 		if (!(r->crtype & SHADOW) && nd.specfl & SP_PURE) {
 			RAY  lr;
 			if (rayorigin(&lr, r, REFLECTED, nd.rspec) == 0) {
-				for (i = 0; i < 3; i++)
-					lr.rdir[i] = r->rdir[i] +
-						2.0*nd.pdot*nd.pnorm[i];
+				VCOPY(lr.rdir, nd.vrefl);
 				rayvalue(&lr);
 				multcolor(lr.rcol, nd.scolor);
 				addcolor(r->rcol, lr.rcol);
@@ -246,7 +251,10 @@ register RAY  *r;
 				for (i = 0; i < 3; i++)		/* perturb */
 					nd.prdir[i] = r->rdir[i] -
 							.75*r->pert[i];
-				normalize(nd.prdir);
+				if (DOT(nd.prdir, r->ron) < -FTINY)
+					normalize(nd.prdir);	/* OK */
+				else
+					VCOPY(nd.prdir, r->rdir);
 			}
 		}
 	} else
@@ -347,42 +355,37 @@ register ANISODAT  *np;
 	FVECT  h;
 	double  rv[2];
 	double  d, sinp, cosp;
-	int  ntries;
 	register int  i;
 					/* compute reflection */
 	if ((np->specfl & (SP_REFL|SP_RBLT)) == SP_REFL &&
 			rayorigin(&sr, r, SPECULAR, np->rspec) == 0) {
 		dimlist[ndims++] = (int)np->mp;
-		for (ntries = 0; ntries < 10; ntries++) {
-			dimlist[ndims] = ntries * 3601;
-			d = urand(ilhash(dimlist,ndims+1)+samplendx);
-			multisamp(rv, 2, d);
-			d = 2.0*PI * rv[0];
-			cosp = np->u_alpha * cos(d);
-			sinp = np->v_alpha * sin(d);
-			d = sqrt(cosp*cosp + sinp*sinp);
-			cosp /= d;
-			sinp /= d;
-			rv[1] = 1.0 - specjitter*rv[1];
-			if (rv[1] <= FTINY)
-				d = 1.0;
-			else
-				d = sqrt(-log(rv[1]) /
-					(cosp*cosp/(np->u_alpha*np->u_alpha) +
-					 sinp*sinp/(np->v_alpha*np->v_alpha)));
-			for (i = 0; i < 3; i++)
-				h[i] = np->pnorm[i] +
-					d*(cosp*np->u[i] + sinp*np->v[i]);
-			d = -2.0 * DOT(h, r->rdir) / (1.0 + d*d);
-			for (i = 0; i < 3; i++)
-				sr.rdir[i] = r->rdir[i] + d*h[i];
-			if (DOT(sr.rdir, r->ron) > FTINY) {
-				rayvalue(&sr);
-				multcolor(sr.rcol, np->scolor);
-				addcolor(r->rcol, sr.rcol);
-				break;
-			}
-		}
+		d = urand(ilhash(dimlist,ndims)+samplendx);
+		multisamp(rv, 2, d);
+		d = 2.0*PI * rv[0];
+		cosp = np->u_alpha * cos(d);
+		sinp = np->v_alpha * sin(d);
+		d = sqrt(cosp*cosp + sinp*sinp);
+		cosp /= d;
+		sinp /= d;
+		rv[1] = 1.0 - specjitter*rv[1];
+		if (rv[1] <= FTINY)
+			d = 1.0;
+		else
+			d = sqrt(-log(rv[1]) /
+				(cosp*cosp/(np->u_alpha*np->u_alpha) +
+				 sinp*sinp/(np->v_alpha*np->v_alpha)));
+		for (i = 0; i < 3; i++)
+			h[i] = np->pnorm[i] +
+				d*(cosp*np->u[i] + sinp*np->v[i]);
+		d = -2.0 * DOT(h, r->rdir) / (1.0 + d*d);
+		for (i = 0; i < 3; i++)
+			sr.rdir[i] = r->rdir[i] + d*h[i];
+		if (DOT(sr.rdir, r->ron) <= FTINY)	/* penetration? */
+			VCOPY(sr.rdir, np->vrefl);	/* jitter no good */
+		rayvalue(&sr);
+		multcolor(sr.rcol, np->scolor);
+		addcolor(r->rcol, sr.rcol);
 		ndims--;
 	}
 					/* compute transmission */
