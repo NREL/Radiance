@@ -696,14 +696,14 @@ char	*prog, *args;
 	cp = combuf;
 	wp = argv;
 	for ( ; ; ) {
-		while (isspace(*cp)) cp++;
-		if (!*cp) break;
-		*wp++ = cp;
-		while (!isspace(*cp))
-			if (!*cp++) goto done;
-		*cp++ = '\0';
+		while (isspace(*cp))	/* nullify spaces */
+			*cp++ = '\0';
+		if (!*cp)		/* all done? */
+			break;
+		*wp++ = cp;		/* add argument to list */
+		while (*++cp && !isspace(*cp))
+			;
 	}
-done:
 	*wp = NULL;
 						/* start process */
 	if ((rval = open_process(PDesc, argv)) < 0)
