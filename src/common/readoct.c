@@ -201,7 +201,7 @@ gettree()			/* get a pre-ordered octree */
 	default:
 		octerror(USER, "damaged octree");
 	}
-	return NULL; /* pro forma return */
+	return EMPTY; /* pro forma return */
 }
 
 
