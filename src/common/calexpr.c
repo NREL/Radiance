@@ -685,8 +685,9 @@ register EPNODE  *ep;
 {
 #ifdef  VARIABLE
     register EPNODE  *ep1;
-    
 #ifdef  FUNCTION
+    LIBR  *lp;
+
     if (ep->type == FUNC) {
 	if (ep->v.kid->type != VAR)
 	    return(0);
@@ -694,7 +695,8 @@ register EPNODE  *ep;
 	if (ep1 != NULL && ep1->type != ':')
 	    return(0);
 	if ((ep1 == NULL || ep1->v.kid->type != FUNC)
-		&& liblookup(ep->v.kid->v.ln->name) == NULL)
+		&& ((lp = liblookup(ep->v.kid->v.ln->name)) == NULL
+			|| lp->atyp != ':'))
 	    return(0);
 	for (ep1 = ep->v.kid->sibling; ep1 != NULL; ep1 = ep1->sibling)
 	    if (ep1->type != NUM)
