@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -77,15 +77,28 @@ extern long  nrays;			/* number of rays traced */
 
 #define  pixjitter()	(.5+dstrpix*(.5-frandom()))
 
+#define  HFTEMPLATE	"/tmp/hfXXXXXX"
+
+static char  *hfname = NULL;		/* header file name */
+static FILE  *hfp = NULL;		/* header file pointer */
+
+static int  hres, vres;			/* resolution for this frame */
+
+extern char  *mktemp();
+
 double  pixvalue();
 
 
 quit(code)			/* quit program */
 int  code;
 {
-	if (code || ralrm > 0)		/* report status */
+	if (code)			/* report status */
 		report();
-
+	if (hfname != NULL) {		/* delete header file */
+		if (hfp != NULL)
+			fclose(hfp);
+		unlink(hfname);
+	}
 	exit(code);
 }
 
@@ -120,6 +133,164 @@ report()		/* report progress */
 #endif
 
 
+openheader()			/* save standard output to header file */
+{
+	hfname = mktemp(HFTEMPLATE);
+	if (freopen(hfname, "w", stdout) == NULL) {
+		sprintf(errmsg, "cannot open header file \"%s\"", hfname);
+		error(SYSTEM, errmsg);
+	}
+}
+
+
+closeheader()			/* done with header output */
+{
+	if (hfname == NULL)
+		return;
+	if (fflush(stdout) == EOF || (hfp = fopen(hfname, "r")) == NULL)
+		error(SYSTEM, "error reopening header file");
+}
+
+
+dupheader()			/* repeat header on standard output */
+{
+	register int  c;
+
+	if (fseek(hfp, 0L, 0) < 0)
+		error(SYSTEM, "seek error on header file");
+	while ((c = getc(hfp)) != EOF)
+		putchar(c);
+}
+
+
+rpict(seq, pout, zout, prvr)			/* generate image(s) */
+int  seq;
+char  *pout, *zout, *prvr;
+/*
+ * If seq is greater than zero, then we will render a sequence of
+ * images based on view parameter strings read from the standard input.
+ * If pout is NULL, then all images will be sent to the standard ouput.
+ * If seq is greater than zero and prvr is an integer, then it is the
+ * frame number at which rendering should begin.  Preceeding view parameter
+ * strings will be skipped in the input.
+ * If pout and prvr are the same, prvr is renamed to avoid overwriting.
+ * Note that pout and zout should contain %d format specifications for
+ * sequenced file naming.
+ */
+{
+	extern char  *rindex(), *strncpy(), *strcat();
+	char  fbuf[128], fbuf2[128], *zf;
+	RESOLU  rs;
+	double  pa;
+					/* finished writing header */
+	closeheader();
+					/* check sampling */
+	if (psample < 1)
+		psample = 1;
+	else if (psample > MAXDIV) {
+		sprintf(errmsg, "pixel sampling reduced from %d to %d",
+				psample, MAXDIV);
+		error(WARNING, errmsg);
+		psample = MAXDIV;
+	}
+					/* get starting frame */
+	if (seq <= 0)
+		seq = 0;
+	else if (prvr != NULL && isint(prvr)) {
+		int  rn;			/* skip to specified view */
+		if ((rn = atoi(prvr)) < seq)
+			error(USER, "recover frame less than start frame");
+		if (pout == NULL)
+			error(USER, "missing output file specification");
+		for ( ; seq < rn; seq++)
+			if (nextview(stdin) == EOF)
+				error(USER, "unexpected EOF on view input");
+		prvr = fbuf;			/* mark for renaming */
+	}
+	if (pout != NULL) {
+		sprintf(fbuf, pout, seq);
+		if (!strcmp(prvr, fbuf)) {	/* rename recover file */
+			fbuf2[0] = '\0';
+			if ((prvr = rindex(fbuf, '/')) != NULL)
+				strncpy(fbuf2, fbuf, prvr-fbuf+1);
+			strcat(fbuf2, "rfXXXXXX");
+			prvr = mktemp(fbuf2);
+			if (rename(fbuf, prvr) < 0 && errno != ENOENT) {
+				sprintf(errmsg,
+					"cannot rename \"%s\" to \"%s\"",
+						fbuf, prvr);
+				error(SYSTEM, errmsg);
+			}
+		}
+	}
+					/* render sequence */
+	do {
+		if (seq && nextview(stdin) == EOF)
+			break;
+		if (pout != NULL) {
+			sprintf(fbuf, pout, seq);
+			if (freopen(fbuf, "w", stdout) == NULL) {
+				sprintf(errmsg,
+					"cannot open output file \"%s\"", fbuf);
+				error(SYSTEM, errmsg);
+			}
+			dupheader();
+		}
+		hres = hresolu; vres = vresolu; pa = pixaspect;
+		if (prvr != NULL)
+			if (viewfile(prvr, &ourview, &rs) <= 0
+					|| rs.or != PIXSTANDARD) {
+				sprintf(errmsg,
+			"cannot recover view parameters from \"%s\"", prvr);
+				error(WARNING, errmsg);
+			} else {
+				char  *err;
+				if ((err = setview(&ourview)) != NULL)
+					error(USER, err);
+				pa = 0.0;
+				hres = scanlen(&rs);
+				vres = numscans(&rs);
+			}
+		normaspect(viewaspect(&ourview), &pa, &hres, &vres);
+		if (seq) {
+			if (ralrm > 0) {
+				sprintf(errmsg, "starting frame %d\n", seq);
+				eputs(errmsg);
+			}
+			printf("FRAME=%d\n", seq);
+		}
+		fputs(VIEWSTR, stdout);
+		fprintview(&ourview, stdout);
+		putchar('\n');
+		if (pa < .99 || pa > 1.01)
+			fputaspect(pa, stdout);
+		fputformat(COLRFMT, stdout);
+		putchar('\n');
+		if (zout != NULL)
+			sprintf(zf=fbuf, zout, seq);
+		else
+			zf = NULL;
+		render(zf, prvr);
+		prvr = NULL;
+	} while (seq++);
+}
+
+
+nextview(fp)				/* get next view from fp */
+FILE  *fp;
+{
+	char  linebuf[256], *err;
+
+	while (fgets(linebuf, sizeof(linebuf), fp) != NULL)
+		if (isview(linebuf) && sscanview(&ourview, linebuf) > 0) {
+			if ((err = setview(&ourview)) != NULL)
+				error(USER, err);
+			return(0);
+		}
+	return(EOF);
+}	
+
+
 render(zfile, oldfile)				/* render the scene */
 char  *zfile, *oldfile;
 {
@@ -134,25 +305,16 @@ char  *zfile, *oldfile;
 	COLOR  *colptr;
 	float  *zptr;
 	register int  i;
-					/* check sampling */
-	if (psample < 1)
-		psample = 1;
-	else if (psample > MAXDIV) {
-		sprintf(errmsg, "pixel sampling reduced from %d to %d",
-				psample, MAXDIV);
-		error(WARNING, errmsg);
-		psample = MAXDIV;
-	}
 					/* allocate scanlines */
 	for (i = 0; i <= psample; i++) {
-		scanbar[i] = (COLOR *)malloc(hresolu*sizeof(COLOR));
+		scanbar[i] = (COLOR *)malloc(hres*sizeof(COLOR));
 		if (scanbar[i] == NULL)
 			goto memerr;
 	}
 	hstep = (psample*140+49)/99;		/* quincunx sampling */
 	ystep = (psample*99+70)/140;
 	if (hstep > 2) {
-		i = hresolu/hstep + 2;
+		i = hres/hstep + 2;
 		if ((sampdens = malloc(i)) == NULL)
 			goto memerr;
 		while (i--)
@@ -166,7 +328,7 @@ char  *zfile, *oldfile;
 			error(SYSTEM, errmsg);
 		}
 		for (i = 0; i <= psample; i++) {
-			zbar[i] = (float *)malloc(hresolu*sizeof(float));
+			zbar[i] = (float *)malloc(hres*sizeof(float));
 			if (zbar[i] == NULL)
 				goto memerr;
 		}
@@ -176,21 +338,21 @@ char  *zfile, *oldfile;
 			zbar[i] = NULL;
 	}
 					/* write out boundaries */
-	fprtresolu(hresolu, vresolu, stdout);
+	fprtresolu(hres, vres, stdout);
 					/* recover file and compute first */
 	i = salvage(oldfile);
 	if (zfd != -1 && i > 0 &&
-			lseek(zfd, (long)i*hresolu*sizeof(float), 0) == -1)
+			lseek(zfd, (long)i*hres*sizeof(float), 0) == -1)
 		error(SYSTEM, "z file seek error in render");
-	pctdone = 100.0*i/vresolu;
+	pctdone = 100.0*i/vres;
 	if (ralrm > 0)			/* report init stats */
 		report();
 #ifndef  BSD
 	else
 #endif
 	signal(SIGALRM, report);
-	ypos = vresolu-1 - i;
-	fillscanline(scanbar[0], zbar[0], sampdens, hresolu, ypos, hstep);
+	ypos = vres-1 - i;
+	fillscanline(scanbar[0], zbar[0], sampdens, hres, ypos, hstep);
 						/* compute scanlines */
 	for (ypos -= ystep; ypos > -ystep; ypos -= ystep) {
 							/* bottom adjust? */
@@ -206,25 +368,25 @@ char  *zfile, *oldfile;
 		zbar[0] = zptr;
 							/* fill base line */
 		fillscanline(scanbar[0], zbar[0], sampdens,
-				hresolu, ypos, hstep);
+				hres, ypos, hstep);
 							/* fill bar */
-		fillscanbar(scanbar, zbar, hresolu, ypos, ystep);
+		fillscanbar(scanbar, zbar, hres, ypos, ystep);
 							/* write it out */
 #ifndef  BSD
 		signal(SIGALRM, SIG_IGN);	/* don't interrupt writes */
 #endif
 		for (i = ystep; i > 0; i--) {
 			if (zfd != -1 && write(zfd, (char *)zbar[i],
-					hresolu*sizeof(float))
-					< hresolu*sizeof(float))
+					hres*sizeof(float))
+					< hres*sizeof(float))
 				goto writerr;
-			if (fwritescan(scanbar[i], hresolu, stdout) < 0)
+			if (fwritescan(scanbar[i], hres, stdout) < 0)
 				goto writerr;
 		}
 		if (fflush(stdout) == EOF)
 			goto writerr;
 							/* record progress */
-		pctdone = 100.0*(vresolu-1-ypos)/vresolu;
+		pctdone = 100.0*(vres-1-ypos)/vres;
 		if (ralrm > 0 && time((long *)0) >= tlastrept+ralrm)
 			report();
 #ifndef  BSD
@@ -235,15 +397,15 @@ char  *zfile, *oldfile;
 						/* clean up */
 	signal(SIGALRM, SIG_IGN);
 	if (zfd != -1) {
-		if (write(zfd, (char *)zbar[0], hresolu*sizeof(float))
-				< hresolu*sizeof(float))
+		if (write(zfd, (char *)zbar[0], hres*sizeof(float))
+				< hres*sizeof(float))
 			goto writerr;
 		if (close(zfd) == -1)
 			goto writerr;
 		for (i = 0; i <= psample; i++)
 			free((char *)zbar[i]);
 	}
-	fwritescan(scanbar[0], hresolu, stdout);
+	fwritescan(scanbar[0], hres, stdout);
 	if (fflush(stdout) == EOF)
 		goto writerr;
 	for (i = 0; i <= psample; i++)
@@ -388,14 +550,14 @@ int  x, y;			/* pixel position */
 	static RAY  thisray;
 
 	if (viewray(thisray.rorg, thisray.rdir, &ourview,
-			(x+pixjitter())/hresolu, (y+pixjitter())/vresolu) < 0) {
+			(x+pixjitter())/hres, (y+pixjitter())/vres) < 0) {
 		setcolor(col, 0.0, 0.0, 0.0);
 		return(0.0);
 	}
 
 	rayorigin(&thisray, NULL, PRIMARY, 1.0);
 
-	samplendx = pixnumber(x,y,hresolu,vresolu);	/* set pixel index */
+	samplendx = pixnumber(x,y,hres,vres);	/* set pixel index */
 
 	rayvalue(&thisray);			/* trace ray */
 
@@ -431,19 +593,19 @@ char  *oldfile;
 		return(0);
 	}
 
-	if (x != hresolu || y != vresolu) {
+	if (x != hres || y != vres) {
 		sprintf(errmsg, "resolution mismatch in recover file \"%s\"",
 				oldfile);
 		error(USER, errmsg);
 	}
 
-	scanline = (COLR *)malloc(hresolu*sizeof(COLR));
+	scanline = (COLR *)malloc(hres*sizeof(COLR));
 	if (scanline == NULL)
 		error(SYSTEM, "out of memory in salvage");
-	for (y = 0; y < vresolu; y++) {
-		if (freadcolrs(scanline, hresolu, fp) < 0)
+	for (y = 0; y < vres; y++) {
+		if (freadcolrs(scanline, hres, fp) < 0)
 			break;
-		if (fwritecolrs(scanline, hresolu, stdout) < 0)
+		if (fwritecolrs(scanline, hres, stdout) < 0)
 			goto writerr;
 	}
 	if (fflush(stdout) == EOF)
