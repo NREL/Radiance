@@ -81,7 +81,7 @@ marksources()			/* find and mark source objects */
 		if (m->otype == MAT_GLOW) {
 			source[ns].sflags |= SPROX;
 			source[ns].sl.prox = m->oargs.farg[3];
-			if (o->otype == OBJ_SOURCE)
+			if (source[ns].sflags & SDISTANT)
 				source[ns].sflags |= SSKIP;
 		} else if (m->otype == MAT_SPOT) {
 			source[ns].sflags |= SSPOT;
@@ -448,7 +448,7 @@ register RAY  *r;
 	if (srcignore(m, r))
 		return;
 						/* check for outside spot */
-	if (m->otype==MAT_SPOT && spotout(r, (SPOT *)m->os, r->rot>=FHUGE))
+	if (m->otype==MAT_SPOT && spotout(r, makespot(m), r->rot>=FHUGE))
 		return;
 						/* get distribution pattern */
 	raytexture(r, m->omod);
