@@ -124,7 +124,7 @@ char  *argv[];
 			quiterr(errmsg);
 		}
 					/* put header */
-		printargs(argc, argv, stdout);
+		printargs(i, argv, stdout);
 		putchar('\n');
 		fputresolu(YMAJOR|YDECR, xmax, ymax, stdout);
 					/* convert file */

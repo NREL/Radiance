@@ -93,7 +93,7 @@ char  *argv[];
 		if (!goodpic(&head))
 			quiterr("incompatible format");
 					/* put header */
-		printargs(argc, argv, stdout);
+		printargs(i, argv, stdout);
 		putchar('\n');
 		fputresolu(YMAJOR|YDECR, head.x, head.y, stdout);
 					/* convert file */

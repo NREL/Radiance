@@ -113,7 +113,7 @@ char  *argv[];
 				head.ras_depth != 8)
 			quiterr("incompatible format");
 					/* put header */
-		printargs(argc, argv, stdout);
+		printargs(i, argv, stdout);
 		putchar('\n');
 		fputresolu(YMAJOR|YDECR, xmax, ymax, stdout);
 					/* convert file */

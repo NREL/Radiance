@@ -66,7 +66,7 @@ char  *argv[];
 			quiterr(errmsg);
 		}
 					/* put header */
-		printargs(argc, argv, rafp);
+		printargs(i, argv, rafp);
 		putc('\n', rafp);
 		fputresolu(YMAJOR|YDECR, xmax, ymax, rafp);
 					/* convert file */
