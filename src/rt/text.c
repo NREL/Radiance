@@ -278,8 +278,10 @@ GLYPH  *gl;
 
 	if (x < 0.0 || y < 0.0)
 		return(0);
-	xlb = x *= 255.0;		/* get glyph coordinates */
-	ylb = y *= 255.0;
+	x *= 256.0;			/* get glyph coordinates */
+	y *= 256.0;
+	xlb = x + 0.5;
+	ylb = y + 0.5;
 	n = *gl++;			/* get # of vertices */
 	p0 = gl + 2*(n-1);		/* connect last to first */
 	p1 = gl;
