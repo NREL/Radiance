@@ -69,7 +69,6 @@ RULEHD	*ourmapping = NULL;
 
 char	*defmat = DEFMAT;	/* default (starting) material name */
 char	*defobj = DEFOBJ;	/* default (starting) object name */
-int	donames = 0;		/* only get qualifier names */
 
 char	*getmtl(), *getonm();
 
@@ -77,15 +76,16 @@ char	mapname[128];		/* current picture file */
 char	matname[64];		/* current material name */
 char	group[16][32];		/* current group names */
 char	objname[128];		/* current object name */
+char	*inpfile;		/* input file name */
 int	lineno;			/* current line number */
-int	faceno;			/* number of faces read */
+int	faceno;			/* current face number */
 
 
 main(argc, argv)		/* read in .obj file and convert */
 int	argc;
 char	*argv[];
 {
-	char	*fname;
+	int	donames = 0;
 	int	i;
 
 	for (i = 1; i < argc && argv[i][0] == '-'; i++)
@@ -105,14 +105,14 @@ char	*argv[];
 	if (i > argc | i < argc-1)
 		goto userr;
 	if (i == argc)
-		fname = "<stdin>";
-	else if (freopen(fname=argv[i], "r", stdin) == NULL) {
-		fprintf(stderr, "%s: cannot open\n", fname);
+		inpfile = "<stdin>";
+	else if (freopen(inpfile=argv[i], "r", stdin) == NULL) {
+		fprintf(stderr, "%s: cannot open\n", inpfile);
 		exit(1);
 	}
 	if (donames) {				/* scan for ids */
 		getnames(stdin);
-		printf("filename \"%s\"\n", fname);
+		printf("filename \"%s\"\n", inpfile);
 		printf("filetype \"Wavefront\"\n");
 		write_quals(&qlist, qual, stdout);
 		printf("qualifier %s begin\n", qlist.qual[Q_FAC]);
@@ -121,7 +121,7 @@ char	*argv[];
 	} else {				/* translate file */
 		printf("# ");
 		printargs(argc, argv, stdout);
-		convert(fname, stdin);
+		convert(stdin);
 	}
 	exit(0);
 userr:
@@ -180,20 +180,14 @@ FILE	*fp;
 }
 
 
-convert(fname, fp)		/* convert a T-mesh */
-char	*fname;
+convert(fp)			/* convert a T-mesh */
 FILE	*fp;
 {
 	char	*argv[MAXARG];
 	int	argc;
 	int	nstats, nunknown;
 	register int	i;
-					/* start fresh */
-	freeverts();
-	mapname[0] = '\0';
-	strcpy(matname, defmat);
-	strcpy(objname, defobj);
-	lineno = 0;
+
 	nstats = nunknown = 0;
 					/* scan until EOF */
 	while (argc = getstmt(argv, fp)) {
@@ -202,7 +196,7 @@ FILE	*fp;
 			switch (argv[0][1]) {
 			case '\0':			/* point */
 				if (badarg(argc-1,argv+1,"fff"))
-					syntax(fname, lineno, "Bad vertex");
+					syntax("Bad vertex");
 				newv(atof(argv[1]), atof(argv[2]),
 						atof(argv[3]));
 				break;
@@ -210,10 +204,10 @@ FILE	*fp;
 				if (argv[0][2])
 					goto unknown;
 				if (badarg(argc-1,argv+1,"fff"))
-					syntax(fname, lineno, "Bad normal");
+					syntax("Bad normal");
 				if (!newvn(atof(argv[1]), atof(argv[2]),
 						atof(argv[3])))
-					syntax(fname, lineno, "Zero normal");
+					syntax("Zero normal");
 				break;
 			case 't':			/* texture map */
 				if (argv[0][2])
@@ -232,20 +226,20 @@ FILE	*fp;
 			faceno++;
 			switch (argc-1) {
 			case 0: case 1: case 2:
-				syntax(fname, lineno, "Too few vertices");
+				syntax("Too few vertices");
 				break;
 			case 3:
 				if (!puttri(argv[1], argv[2], argv[3]))
-					syntax(fname, lineno, "Bad triangle");
+					syntax("Bad triangle");
 				break;
 			case 4:
 				if (!putquad(argv[1], argv[2],
 						argv[3], argv[4]))
-					syntax(fname, lineno, "Bad quad");
+					syntax("Bad quad");
 				break;
 			default:
 				if (!putface(argc-1, argv+1))
-					syntax(fname, lineno, "Bad face");
+					syntax("Bad face");
 				break;
 			}
 			break;
@@ -287,7 +281,7 @@ FILE	*fp;
 		}
 		nstats++;
 	}
-	printf("\n# Done processing file: %s\n", fname);
+	printf("\n# Done processing file: %s\n", inpfile);
 	printf("# %d lines, %d statements, %d unrecognized\n",
 			lineno, nstats, nunknown);
 }
@@ -332,8 +326,13 @@ getmtl()				/* figure material for this face */
 {
 	register RULEHD	*rp = ourmapping;
 
-	if (rp == NULL)			/* no rule set */
-		return(matname);
+	if (rp == NULL) {		/* no rule set */
+		if (matname[0])
+			return(matname);
+		if (group[0][0])
+			return(group[0]);
+		return(defmat);
+	}
 					/* check for match */
 	do {
 		if (matchrule(rp)) {
@@ -354,10 +353,11 @@ getonm()				/* invent a good name for object */
 	static char	name[64];
 	register char	*cp1, *cp2;
 	register int	i;
-
-	if (!group[0][0] || strcmp(objname, DEFOBJ))
-		return(objname);	/* good enough for us */
-
+					/* check for preset */
+	if (objname[0])
+		return(objname);
+	if (!group[0][0])
+		return(defobj);
 	cp1 = name;			/* else make name out of groups */
 	for (i = 0; group[i][0]; i++) {
 		cp2 = group[i];
@@ -381,12 +381,16 @@ register RULEHD	*rp;
 	register int	i;
 
 	if (rp->qflg & FL(Q_MTL)) {
+		if (!matname[0])
+			return(0);
 		tmpid.number = 0;
 		tmpid.name = matname;
 		if (!matchid(&tmpid, &idm(rp)[Q_MTL]))
 			return(0);
 	}
 	if (rp->qflg & FL(Q_MAP)) {
+		if (!mapname[0])
+			return(0);
 		tmpid.number = 0;
 		tmpid.name = mapname;
 		if (!matchid(&tmpid, &idm(rp)[Q_MAP]))
@@ -403,6 +407,8 @@ register RULEHD	*rp;
 			return(0);
 	}
 	if (rp->qflg & FL(Q_OBJ)) {
+		if (!objname[0])
+			return(0);
 		tmpid.number = 0;
 		tmpid.name = objname;
 		if (!matchid(&tmpid, &idm(rp)[Q_OBJ]))
@@ -528,8 +534,9 @@ register char	**av;
 		while (ac > 3) {
 			if (!putquad(av[0], av[1], av[2], av[3]))
 				return(0);
-			ac -= 2;		/* remove two vertices */
-			for (i = 1; i < ac; i++)
+					/* remove two vertices & rotate */
+			av[ac -= 2] = av[0];
+			for (i = 0; i <= ac; i++)
 				av[i] = av[i+2];
 		}
 		if (ac == 3 && !puttri(av[0], av[1], av[2]))
@@ -903,12 +910,10 @@ double	x, y;
 }
 
 
-syntax(fn, ln, er)			/* report syntax error and exit */
-char	*fn;
-int	ln;
+syntax(er)			/* report syntax error and exit */
 char	*er;
 {
 	fprintf(stderr, "%s: Wavefront syntax error near line %d: %s\n",
-			fn, ln, er);
+			inpfile, lineno, er);
 	exit(1);
 }
