@@ -131,11 +131,25 @@ char  *name, *id;
 static
 sun_close()				/* all done */
 {
-	if (frame != 0) {
-		window_set(frame, FRAME_NO_CONFIRM, TRUE, 0);
-		window_destroy(frame);
+	Frame	fr;
+
+	fr = frame;
+	frame = 0;		/* death cry */
+	if (fr != 0) {
+		window_set(fr, FRAME_NO_CONFIRM, TRUE, 0);
+		window_destroy(fr);
 	}
-	frame = 0;
+}
+
+
+static Notify_value
+my_destroy_func(fr, st)			/* say bye-bye */
+Frame	fr;
+Destroy_status	st;
+{
+	if (st != DESTROY_CHECKING && frame != 0)
+		quit(1);		/* how rude! */
+	return(notify_next_destroy_func(fr, st));
 }
 
 
@@ -148,19 +162,6 @@ int  fd;
 	getc(ttyin);
 	sun_driver.inpready++;
 	return(NOTIFY_DONE);
-}
-
-
-static Notify_value
-my_destroy_func(dest_frame, status)	/* say bye-bye */
-Frame	dest_frame;
-Destroy_status	status;
-{
-	if (status != DESTROY_CHECKING) {
-		frame = 0;		/* coordinate with sun_close() */
-		quit(1);
-	}
-	return(notify_next_destroy_func(dest_frame, status));
 }
 
 
