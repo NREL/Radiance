@@ -137,7 +137,7 @@ char  *s;
 	VIEW  nv;
 
 	if (sscanf(s, "%s", buf) == 1) {	/* get parameters from a file */
-		copyview(&nv, &stdview);
+		copystruct(&nv, &stdview);
 		if ((fname = getpath(buf, NULL, 0)) == NULL ||
 				(success = viewfile(fname, &nv, 0, 0)) == -1) {
 			sprintf(errmsg, "cannot open \"%s\"", buf);
@@ -154,9 +154,9 @@ char  *s;
 		error(COMMAND, "no previous view");
 		return;
 	}
-	copyview(&nv, &ourview);
-	copyview(&ourview, &oldview);
-	copyview(&oldview, &nv);
+	copystruct(&nv, &ourview);
+	copystruct(&ourview, &oldview);
+	copystruct(&oldview, &nv);
 	newimage();
 }
 

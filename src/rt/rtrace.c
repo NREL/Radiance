@@ -226,12 +226,12 @@ FILE  *fp;
 			return(-1);
 		break;
 	case 'f':					/* binary float */
-		if (fread(vf, sizeof(float), 3, fp) != 3)
+		if (fread((char *)vf, sizeof(float), 3, fp) != 3)
 			return(-1);
 		vec[0] = vf[0]; vec[1] = vf[1]; vec[2] = vf[2];
 		break;
 	case 'd':					/* binary double */
-		if (fread(vec, sizeof(double), 3, fp) != 3)
+		if (fread((char *)vec, sizeof(double), 3, fp) != 3)
 			return(-1);
 		break;
 	}
@@ -382,7 +382,7 @@ static
 putd(v)				/* print binary double */
 double  v;
 {
-	fwrite(&v, sizeof(v), 1, stdout);
+	fwrite((char *)&v, sizeof(v), 1, stdout);
 }
 
 
@@ -392,5 +392,5 @@ double  v;
 {
 	float f = v;
 
-	fwrite(&f, sizeof(f), 1, stdout);
+	fwrite((char *)&f, sizeof(f), 1, stdout);
 }

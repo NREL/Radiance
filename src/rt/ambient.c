@@ -86,7 +86,7 @@ char  *afile;
 					/* open ambient file */
 	if (afile != NULL)
 		if ((ambfp = fopen(afile, "r+")) != NULL) {
-			while (fread(&amb, sizeof(AMBVAL), 1, ambfp) == 1)
+			while (fread((char *)&amb,sizeof(AMBVAL),1,ambfp) == 1)
 				avinsert(&amb, &atrunk, thescene.cuorg,
 						thescene.cusize);
 							/* align */
@@ -392,8 +392,8 @@ register RAY  *r;
 		dnew.k = b2/(dnew.n*dnew.n);
 						/* reinsert */
 		for (k = 0; k < ne-1 && dnew.k < div[k+1].k; k++)
-			bcopy(&div[k+1], &div[k], sizeof(AMBSAMP));
-		bcopy(&dnew, &div[k], sizeof(AMBSAMP));
+			copystruct(&div[k], &div[k+1]);
+		copystruct(&div[k], &dnew);
 
 		if (ne >= i) {		/* extract darkest division */
 			ne--;
@@ -438,7 +438,7 @@ AMBVAL  *av;
 #endif
 	if (ambfp == NULL)
 		return;
-	if (fwrite(av, sizeof(AMBVAL), 1, ambfp) != 1)
+	if (fwrite((char *)av, sizeof(AMBVAL), 1, ambfp) != 1)
 		goto writerr;
 #ifdef  AMBFLUSH
 	if (++nunflshed >= AMBFLUSH) {
@@ -467,7 +467,7 @@ double  s;
 
 	if ((av = newambval()) == NULL)
 		goto memerr;
-	bcopy(aval, av, sizeof(AMBVAL));
+	copystruct(av, aval);
 	VCOPY(ck0, c0);
 	while (s*(OCTSCALE/2) > av->rad*ambacc) {
 		if (at->kid == NULL)
