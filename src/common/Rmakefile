@@ -22,7 +22,7 @@ STDOBJ = fgetline.o fropen.o linregr.o xf.o mat4.o invmat4.o fvect.o urand.o \
 	urind.o peano.o calexpr.o caldefn.o calfunc.o calprnt.o \
 	multisamp.o process.o getpath.o error.o savestr.o savqstr.o \
 	badarg.o fgetword.o words.o expandarg.o wordfile.o fgetval.o \
-	clip.o plocate.o cputs.o wputs.o eputs.o quit.o lookup.o \
+	clip.o plocate.o eputs.o wputs.o quit.o lookup.o \
 	loadvars.o
 
 SYSOBJ = ealloc.o fdate.o portio.o myhostname.o $(COMPAT)

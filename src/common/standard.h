@@ -1,6 +1,6 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1997 Silicon Graphics, Inc. */
 
-/* SCCSid "$SunId$ LBL" */
+/* SCCSid "$SunId$ SGI" */
 
 /*
  *	Miscellaneous definitions required by many routines.
@@ -40,6 +40,9 @@ typedef struct {
 #define	 X_OK		1		/* executable */
 #define	 F_OK		0		/* exists */
 #endif
+
+extern int  eputs(), wputs();	/* standard error output functions */
+
 				/* error codes */
 #define	 WARNING	1		/* non-fatal error */
 #define	 USER		2		/* fatal user-caused error */
@@ -47,6 +50,20 @@ typedef struct {
 #define	 INTERNAL	4		/* fatal program-related error */
 #define	 CONSISTENCY	5		/* bad consistency check, abort */
 #define	 COMMAND	6		/* interactive error */
+#define  NERRS		7
+				/* error struct */
+extern struct erract {
+	char	pre[16];		/* prefix message */
+	int	(*pf)();		/* put function (resettable) */
+	int	ec;			/* exit code (0 means non-fatal) */
+} erract[NERRS];	/* list of error actions */
+
+#define  ERRACT_INIT	{	{"warning - ", wputs, 0}, \
+				{"fatal - ", eputs, 1}, \
+				{"system - ", eputs, 2}, \
+				{"internal - ", eputs, 1}, \
+				{"consistency - ", eputs, -1}, \
+				{"", NULL, 0}	}
 
 extern char  errmsg[];			/* global buffer for error messages */
 

@@ -47,9 +47,9 @@ final_connect()				/* verify and initialize connection */
 						/* get driver parameters */
 	getstate();
 						/* set error vectors */
-	cmdvec = comm_comout;
-	if (wrnvec != NULL)
-		wrnvec = comm_comout;
+	erract[COMMAND].pf = comm_comout;
+	if (erract[WARNING].pf != NULL)
+		erract[WARNING].pf = comm_comout;
 	return(&comm_driver);
 }
 
@@ -74,8 +74,8 @@ char	*dname, *id;
 	char	pin[16], pout[16];
 						/* find driver program */
 	if ((devname = getpath(dname, DEVPATH, X_OK)) == NULL) {
-		stderr_v(dname);
-		stderr_v(": not found\n");
+		eputs(dname);
+		eputs(": not found\n");
 		return(NULL);
 	}
 						/* open communication pipes */
@@ -110,9 +110,9 @@ comm_close()			/* done with driver */
 {
 	int	pid;
 
-	cmdvec = NULL;				/* reset error vectors */
-	if (wrnvec != NULL)
-		wrnvec = stderr_v;
+	erract[COMMAND].pf = NULL;		/* reset error vectors */
+	if (erract[WARNING].pf != NULL)
+		erract[WARNING].pf = wputs;
 	fclose(devout);
 	fclose(devin);
 	if (devchild < 0)
@@ -235,8 +235,8 @@ static
 reply_error(routine)			/* what should we do here? */
 char	*routine;
 {
-	stderr_v(routine);
-	stderr_v(": driver reply error\n");
+	eputs(routine);
+	eputs(": driver reply error\n");
 	quit(1);
 }
 

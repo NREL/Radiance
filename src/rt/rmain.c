@@ -55,11 +55,6 @@ char  *shm_boundary = NULL;		/* boundary of shared memory */
 
 extern char  VersionID[];		/* version ID string */
 
-extern int  stderr_v();			/* standard error output */
-int  (*errvec)() = stderr_v;		/* error output vector */
-int  (*wrnvec)() = stderr_v;		/* warning output vector */
-int  (*cmdvec)() = NULL;		/* command error vector */
-
 int  (*trace)() = NULL;			/* trace call */
 int  do_irrad = 0;			/* compute irradiance? */
 
@@ -331,10 +326,10 @@ char  *argv[];
 			break;
 #endif
 		case 'w':				/* warnings */
-			rval = wrnvec != NULL;
+			rval = erract[WARNING].pf != NULL;
 			bool(2,rval);
-			if (rval) wrnvec = stderr_v;
-			else wrnvec = NULL;
+			if (rval) erract[WARNING].pf = wputs;
+			else erract[WARNING].pf = NULL;
 			break;
 		case 'e':				/* error file */
 			check(2,"s");
@@ -773,35 +768,16 @@ badopt:
 }
 
 
-eputs(s)				/* error output */
-char  *s;
+wputs(s)				/* warning output function */
+char	*s;
 {
-	if (errvec != NULL)
-		(*errvec)(s);
-}
-
-
-wputs(s)				/* warning output */
-char  *s;
-{
-	int  lasterrno = errno;		/* save errno */
-
-	if (wrnvec != NULL)
-		(*wrnvec)(s);
-
+	int  lasterrno = errno;
+	eputs(s);
 	errno = lasterrno;
 }
 
 
-cputs(s)				/* command error output */
-char  *s;
-{
-	if (cmdvec != NULL)
-		(*cmdvec)(s);
-}
-
-
-stderr_v(s)				/* put string to stderr */
+eputs(s)				/* put string to stderr */
 register char  *s;
 {
 	static int  midline = 0;
@@ -959,6 +935,7 @@ printdefaults()			/* print default values to stdout */
 		}
 	putchar('\n');
 #endif
-	printf(wrnvec != NULL ? "-w+\t\t\t\t# warning messages on\n" :
+	printf(erract[WARNING].pf != NULL ?
+			"-w+\t\t\t\t# warning messages on\n" :
 			"-w-\t\t\t\t# warning messages off\n");
 }
