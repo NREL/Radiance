@@ -19,8 +19,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 extern int  (*addobjnotify[])();	/* people to notify of new objects */
 
-FUN  ofun[NUMOTYPE] = INIT_OTYPE;	/* our object function table */
-
 static struct ohtab {
 	int  hsiz;			/* current table size */
 	OBJECT  *htab;			/* table, if allocated */
