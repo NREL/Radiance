@@ -78,7 +78,9 @@ double  (*eoper[])() = {		/* expression operations */
 	esubtr,
 	0,
 	edivi,
-	0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,
+	ebotch,
+	0,0,
 	ebotch,
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -641,6 +643,10 @@ getE5()				/* E5 -> (E1) */
 	    syntax("'(' expected");
 #endif
 #endif
+#ifdef  RCONST
+	if (isconstvar(ep1))
+	    ep1 = rconst(ep1);
+#endif
 	return(ep1);
     }
 #endif
@@ -671,5 +677,43 @@ register EPNODE  *epar;
     epfree(epar);
  
     return(ep);
+}
+
+
+isconstvar(ep)			/* is ep linked to a constant? */
+register EPNODE  *ep;
+{
+#ifdef  VARIABLE
+    register EPNODE  *ep1;
+    
+#ifdef  FUNCTION
+    if (ep->type == FUNC) {
+	if (ep->v.kid->type != VAR)
+	    return(0);
+	ep1 = ep->v.kid->v.ln->def;
+	if (ep1 != NULL && ep1->type != ':')
+	    return(0);
+	if ((ep1 == NULL || ep1->v.kid->type != FUNC)
+		&& liblookup(ep->v.kid->v.ln->name) == NULL)
+	    return(0);
+	for (ep1 = ep->v.kid->sibling; ep1 != NULL; ep1 = ep1->sibling)
+	    if (ep1->type != NUM)
+		return(0);
+	return(1);
+    }
+#endif
+    if (ep->type != VAR)
+	return(0);
+    ep1 = ep->v.ln->def;
+    if (ep1 == NULL || ep1->type != ':')
+	return(0);
+#ifdef  FUNCTION
+    if (ep1->v.kid->type != SYM)
+	return(0);
+#endif
+    return(1);
+#else
+    return(ep->type == FUNC);
+#endif
 }
 #endif
