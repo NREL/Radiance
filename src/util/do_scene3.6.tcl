@@ -6,7 +6,7 @@
 set myglob(materials) *.mat
 set myglob(illum) *.rad
 set myglob(scene) *.rad
-set myglob(objects) *.rad
+set myglob(objects) *
 
 proc newfent f {		# add file to our list
 	global rifname radvar mybox myvar
