@@ -204,11 +204,8 @@ int	y;
 	register COLOR	*sl0, *sl1, *mysl;
 	register int	i;
 
-	if (y < sb->nread - sb->nscans) {
-		fprintf(stderr, "%s: internal - cannot backspace in getascan\n",
-				progname);
-		exit(1);
-	}
+	if (y < sb->nread - sb->nscans)			/* too far back? */
+		return(NULL);
 	for ( ; y >= sb->nread; sb->nread++) {		/* read as necessary */
 		mysl = bscan(sb, sb->nread);
 		if (sb->sampr == 1) {
@@ -219,6 +216,8 @@ int	y;
 			}
 		} else {
 			sl0 = getascan(sb->next, 2*y);
+			if (sl0 == NULL)
+				return(NULL);
 			sl1 = getascan(sb->next, 2*y+1);
 			for (i = 0; i < sb->len; i++) {
 				copycolor(mysl[i], sl0[2*i]);
@@ -291,6 +290,12 @@ SCANBAR	*sb;
 	double	dx, dy;
 	int	ix, iy;
 
+	if (sb->sampr == 1) {		/* no need to interpolate */
+		sl0 = getascan(sb, y);
+		copycolor(col, sl0[x]);
+		return;
+	}
+					/* compute coordinates for sb */
 	ix = dx = (x+.5)/sb->sampr - .5;
 	if (ix >= sb->len-1) ix--;
 	dx -= (double)ix;
@@ -299,6 +304,11 @@ SCANBAR	*sb;
 	dy -= (double)iy;
 					/* get scanlines */
 	sl0 = getascan(sb, iy);
+	if (sl0 == NULL) {
+		fprintf(stderr, "%s: internal - cannot backspace in ascanval\n",
+				progname);
+		exit(1);
+	}
 	sl1 = getascan(sb, iy+1);
 					/* 2D linear interpolation */
 	copycolor(col, sl0[ix]);
