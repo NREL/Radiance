@@ -53,10 +53,10 @@ int  vresolu = 0;			/* vertical resolution */
 double  dstrsrc = 0.0;			/* square source distribution */
 double  shadthresh = .05;		/* shadow threshold */
 double  shadcert = .5;			/* shadow certainty */
-int  directrelay = 1;			/* number of source relays */
+int  directrelay = 2;			/* number of source relays */
 int  vspretest = 512;			/* virtual source pretest density */
 int  directvis = 1;			/* sources visible? */
-double  srcsizerat = .25;		/* maximum ratio source size/dist. */
+double  srcsizerat = .2;		/* maximum ratio source size/dist. */
 
 double  specthresh = .15;		/* specular sampling threshold */
 double  specjitter = 1.;		/* specular sampling jitter */
@@ -68,8 +68,8 @@ double  minweight = 4e-3;		/* minimum ray weight */
 
 COLOR  ambval = BLKCOLOR;		/* ambient value */
 double  ambacc = 0.2;			/* ambient accuracy */
-int  ambres = 32;			/* ambient resolution */
-int  ambdiv = 128;			/* ambient divisions */
+int  ambres = 128;			/* ambient resolution */
+int  ambdiv = 512;			/* ambient divisions */
 int  ambssamp = 0;			/* ambient super-samples */
 int  ambounce = 0;			/* ambient bounces */
 char  *amblist[128];			/* ambient include/exclude list */
