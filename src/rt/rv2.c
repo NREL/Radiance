@@ -1,4 +1,4 @@
-/* Copyright (c) 1993 Regents of the University of California */
+/* Copyright (c) 1994 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -139,6 +139,16 @@ char  *s;
 		change++;
 	else {
 		nv.horiz = ourview.horiz; nv.vert = ourview.vert;
+	}
+	sprintf(buf, "fore and aft clipping plane (%.6g %.6g): ",
+			ourview.vfore, ourview.vaft);
+	(*dev->comout)(buf);
+	(*dev->comin)(buf, NULL);
+	if (buf[0] == CTRL('C')) return;
+	if (sscanf(buf, "%lf %lf", &nv.vfore, &nv.vaft) == 2)
+		change++;
+	else {
+		nv.vfore = ourview.vfore; nv.vaft = ourview.vaft;
 	}
 	sprintf(buf, "view shift and lift (%.6g %.6g): ",
 			ourview.hoff, ourview.voff);
@@ -610,6 +620,8 @@ char  *s;
 	int  x, y;
 	RAY  thisray;
 
+	thisray.rmax = 0.0;
+
 	if (!sscanvec(s, thisray.rorg) ||
 			!sscanvec(sskip(sskip(sskip(s))), thisray.rdir)) {
 
@@ -619,8 +631,8 @@ char  *s;
 		if ((*dev->getcur)(&x, &y) == ABORT)
 			return;
 
-		if (viewray(thisray.rorg, thisray.rdir, &ourview,
-				(x+.5)/hresolu, (y+.5)/vresolu) < 0) {
+		if ((thisray.rmax = viewray(thisray.rorg, thisray.rdir,
+			&ourview, (x+.5)/hresolu, (y+.5)/vresolu)) < -FTINY) {
 			error(COMMAND, "not on image");
 			return;
 		}

@@ -1,4 +1,4 @@
-/* Copyright (c) 1993 Regents of the University of California */
+/* Copyright (c) 1994 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -602,8 +602,8 @@ int  x, y;			/* pixel position */
 {
 	static RAY  thisray;
 
-	if (viewray(thisray.rorg, thisray.rdir, &ourview,
-			(x+pixjitter())/hres, (y+pixjitter())/vres) < 0) {
+	if ((thisray.rmax = viewray(thisray.rorg, thisray.rdir, &ourview,
+			(x+pixjitter())/hres, (y+pixjitter())/vres)) < -FTINY) {
 		setcolor(col, 0.0, 0.0, 0.0);
 		return(0.0);
 	}

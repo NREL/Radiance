@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1994 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -159,6 +159,7 @@ int  n;
 	olddot = DOT(tr.rdir, nv);
 	if (olddot <= FTINY && olddot >= -FTINY)
 		return(0);		/* old dir parallels plane */
+	tr.rmax = 0.0;
 	rayorigin(&tr, NULL, PRIMARY, 1.0);
 	if (!(*ofun[o->otype].funp)(o, &tr))
 		return(0);		/* no intersection! */

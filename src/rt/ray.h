@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1994 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
 
@@ -35,6 +35,7 @@ typedef struct ray {
 	struct ray  *parent;	/* ray this originated from */
 	FVECT  rorg;		/* origin of ray */
 	FVECT  rdir;		/* normalized direction of ray */
+	double  rmax;		/* maximum distance (aft clipping plane) */
 	int  rsrc;		/* source we're aiming for */
 	OBJECT  *clipset;	/* set of objects currently clipped */
 	OBJECT  *newcset;	/* next clipset, used for transmission */

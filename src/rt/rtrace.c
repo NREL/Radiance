@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1994 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -243,6 +243,7 @@ FVECT  org, dir;
 {
 	VCOPY(thisray.rorg, org);
 	VCOPY(thisray.rdir, dir);
+	thisray.rmax = 0.0;
 	rayorigin(&thisray, NULL, PRIMARY, 1.0);
 	if (castonly)
 		localhit(&thisray, &thescene) || sourcehit(&thisray);
