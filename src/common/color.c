@@ -63,7 +63,17 @@ register FILE  *fp;
 		    if (cnt >= MINRUN)
 			break;			/* long enough */
 		}
-		while (j < beg) {		/* write out non-run(s) */
+		if (beg-j > 1 && beg-j < MINRUN) {
+		    c2 = j+1;
+		    while (scanline[c2++][i] == scanline[j][i])
+			if (c2 == beg) {	/* short run */
+			    putc(128+beg-j, fp);
+			    putc(scanline[j][i], fp);
+			    j = beg;
+			    break;
+			}
+		}
+		while (j < beg) {		/* write out non-run */
 		    if ((c2 = beg-j) > 128) c2 = 128;
 		    putc(c2, fp);
 		    while (c2--)
