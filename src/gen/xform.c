@@ -1,4 +1,4 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1996 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -13,6 +13,8 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include  "standard.h"
+
+#include  "paths.h"
 
 #include  <ctype.h>
 
@@ -43,7 +45,12 @@ FUN  ofun[NUMTYPES] = INIT_OTYPE;	/* default types and actions */
 
 short  tinvers[NUMOTYPE];		/* inverse types for surfaces */
 
+int  nrept = 1;				/* number of array repetitions */
+
 extern char  *malloc(), *fgetword();
+
+char  *mainfn[MAXPATH];			/* main file name */
+FILE  *mainfp = NULL;			/* main file pointer */
 
 #define	 progname  (xav[0])
 
@@ -52,8 +59,7 @@ main(argc, argv)		/* get transform options and transform file */
 int  argc;
 char  *argv[];
 {
-	FILE  *fopen();
-	FILE  *fp;
+	char  *fname;
 	int  a;
 					/* check for array */
 	for (a = 1; a < argc; a++)
@@ -112,17 +118,13 @@ char  *argv[];
 		printf(" %s", xav[a]);
 	putchar('\n');
 					/* transform input */
-	if (xac == argc)
-		xform("standard input", stdin);
-	else
+	if (xac == argc) {
+		openmain(NULL);
+		xform(mainfn, mainfp);
+	} else
 		for (a = xac; a < argc; a++) {
-			if ((fp = fopen(argv[a], "r")) == NULL) {
-				fprintf(stderr, "%s: cannot open \"%s\"\n",
-						progname, argv[a]);
-				exit(1);
-			}
-			xform(argv[a], fp);
-			fclose(fp);
+			openmain(argv[a]);
+			xform(mainfn, mainfp);
 		}
 
 	return(0);
@@ -136,7 +138,7 @@ int  ac, ai;
 	char  *newav[256], **avp;
 	char  newid[128], repts[32];
 	char  *oldid = NULL;
-	int  i, err;
+	int  n, i, err;
 	
 	avp = newav+2;
 	avp[0] = av[0];
@@ -156,8 +158,9 @@ int  ac, ai;
 		avp = newav;
 		ac += 2;
 	}
+	nrept *= n = atoi(av[ai+1]);
 	err = 0;
-	for (i = 0; i < atoi(av[ai+1]); i++) {
+	for (i = 0; i < n; i++) {
 		if (oldid == NULL)
 			sprintf(newid, "a%d", i);
 		else
@@ -206,8 +209,8 @@ xfcomm(fname, fin)			/* transform a command */
 char  *fname;
 FILE  *fin;
 {
-	FILE  *popen();
-	char  *fgetline();
+	extern FILE  *popen();
+	extern char  *fgetline();
 	FILE  *pin;
 	char  buf[512];
 	int  i;
@@ -729,3 +732,108 @@ initotypes()			/* initialize ofun[] array */
 	tinvers[OBJ_TUBE] = OBJ_CYLINDER;
 	tinvers[OBJ_INSTANCE] = OBJ_INSTANCE;	/* oh, well */
 }
+
+
+#ifdef  OLDXFORM
+openmain(fname)
+char  *fname;
+{
+	if (fname == NULL) {
+		strcpy(mainfn, "standard input");
+		mainfp = stdin;
+		return;
+	}
+	if (mainfp != NULL) {
+		if (!strcmp(fname, mainfn)) {
+			rewind(mainfp);
+			return;
+		}
+		fclose(mainfp);
+	}
+	if ((mainfp = fopen(fname, "r")) == NULL) {
+		fprintf(stderr, "%s: cannot open file \"%s\"\n",
+				progname, fname);
+		exit(1);
+	}
+	strcpy(mainfn, fname);
+}
+#else
+openmain(fname)		/* open fname for input, changing to its directory */
+char  *fname;
+{
+	extern FILE  *tmpfile();
+	extern char  *getlibpath(), *getpath();
+	static char  origdir[MAXPATH];
+	static char  curdir[MAXPATH];
+	char  newdir[MAXPATH], *cp;
+
+	if (fname == NULL) {			/* standard input */
+		if (mainfp == NULL) {
+			register int  c;
+			strcpy(mainfn, "standard input");
+			if (nrept <= 1) {
+				mainfp = stdin;
+				return;			/* just read once */
+			}
+							/* else copy */
+			if ((mainfp = tmpfile()) == NULL) {
+				fprintf(stderr,
+					"%s: cannot create temporary file\n",
+						progname);
+				exit(1);
+			}
+			while ((c = getc(stdin)) != EOF)
+				putc(c, mainfp);
+			fclose(stdin);
+		}
+		rewind(mainfp);			/* rewind copy */
+		return;
+	}
+						/* get full path */
+	if ((cp = getpath(fname, getlibpath(), R_OK)) == NULL) {
+		fprintf(stderr, "%s: cannot find file \"%s\"\n",
+				progname, fname);
+		exit(1);
+	}
+	if (cp[0] == '.' && ISDIRSEP(cp[1]))	/* remove leading ./ */
+		cp += 2;
+	if (mainfp == NULL) {			/* first call, initialize */
+		getwd(origdir);
+		strcpy(curdir, origdir);
+	} else if (!strcmp(cp, mainfn)) {	/* just need to rewind? */
+		rewind(mainfp);
+		return;
+	} else					/* else close old stream */
+		fclose(mainfp);
+						/* record path name */
+	strcpy(mainfn, cp);
+	if (expand) {				/* get directory component */
+		if (ISDIRSEP(cp[0]))
+			strcpy(newdir, cp);
+		else
+			sprintf(newdir, "%s%c%s", origdir, DIRSEP, cp);
+		for (cp = newdir+strlen(newdir); !ISDIRSEP(cp[-1]); cp--)
+			;
+		*cp = '\0';
+		if (strcmp(newdir, curdir)) {	/* change to new directory? */
+			if (chdir(newdir) < 0) {
+				fprintf(stderr,
+				"%s: cannot change directory to \"%s\"\n",
+						progname, newdir);
+				exit(1);
+			}
+			strcpy(curdir, newdir);
+		}
+						/* get final path component */
+		for (cp = fname+strlen(fname);
+				cp > fname && !ISDIRSEP(cp[-1]); cp--)
+			;
+	}
+						/* open the file */
+	if ((mainfp = fopen(cp, "r")) == NULL) {
+		fprintf(stderr, "%s: cannot open file \"%s\"\n",
+				progname, mainfn);
+		exit(1);
+	}
+}
+#endif
