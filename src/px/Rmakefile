@@ -163,7 +163,7 @@ d48c.o aedimage.o pcompos.o color.o resolu.o colrops.o \
 greyscale.o ra_t8.o glimage.o \
 ra_bn.o ra_t16.o ra_pr.o pvalue.o pcomb.o pinterp.o ximage.o:	color.h
 
-pinterp.o ximage.o image.o:	standard.h fvect.h
+prot.o biq.o ciq.o pinterp.o ximage.o image.o:	standard.h fvect.h
 
 ximage.o x11raster.o:	xraster.h
 

@@ -13,6 +13,7 @@ Paul Heckbert	16 April 82, cleaned up 8 June 86
 Greg Ward	1 March 88, modified for arbitrary picture sizes
 */
 
+#include "standard.h"
 #include "ciq.h"
 
 #define table(m,r,g,b) hist[m[0][r]|m[1][g]|m[2][b]]  /* histogram/pvtable */
