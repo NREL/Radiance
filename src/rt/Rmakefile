@@ -176,7 +176,7 @@ fvect.o:	fvect.h
 cone.o face.o objset.o otypes.o readobj.o readoct.o:	object.h
 
 ambient.o objset.o octree.o raytrace.o \
-readoct.o rmain.o rv2.o rv3.o source.o:	octree.h
+readoct.o rpmain.o rtmain.o rvmain.o rv2.o rv3.o source.o:	octree.h
 
 o_instance.o instance.o:	instance.h octree.h
 
@@ -188,7 +188,7 @@ ambient.o rpict.o rv3.o source.o:	random.h
 
 ambient.o dielectric.o func.o glass.o m_clip.o \
 mx_data.o mx_func.o normal.o o_cone.o o_face.o o_instance.o \
-p_data.o p_func.o text.o raytrace.o rmain.o rpict.o \
+p_data.o p_func.o text.o raytrace.o rpmain.o rtmain.o rvmain.o rpict.o \
 rtrace.o rv2.o rv3.o source.o \
 sphere.o t_data.o t_func.o:	ray.h standard.h fvect.h object.h color.h
 
@@ -201,7 +201,7 @@ readobj.o readoct.o rview.o:	standard.h fvect.h
 
 sundev.o:	suntools.icon
 
-image.o rmain.o rpict.o:	view.h
+image.o rpmain.o rtmain.o rvmain.o rpict.o:	view.h
 
 x10.o xtwind.o:	xtwind.h
 
