@@ -5,7 +5,6 @@ pdfblur - generate views for depth-of-field blurring
 .SH SYNOPSIS
 .B pdfblur
 .B aperture
-.B distance
 .B nsamp
 .B viewfile
 .SH DESCRIPTION
@@ -14,11 +13,11 @@ takes the given
 .I viewfile
 and computes
 .I nsamp
-views based on a focus distance of
-.I distance
-and an aperture diameter of
+views based on an aperture diameter of
 .I aperture
-(both in world coordinate units).
+(in world coordinate units) and a focal distance equal to the length of the
+.I \-vd
+view direction vector.
 When rendered and averaged together, these views will result in
 a picture with the specified depth of field.
 Either
@@ -87,6 +86,22 @@ We have found a
 .I nsamp
 setting somewhere between 5 and 10 to be adequate for most images.
 Relatively larger values are appropriate for larger aperatures.
+.PP
+The
+.I \-pd
+option of
+.I rpict
+may be used instead or in combination with or instead of
+.I pdfblur
+to blur depth-of-field.
+If used in combination,
+it is best to set the
+.I \-pd
+option to the overall
+.I aperture
+divided by
+.I nsamp
+to minimize ghosting in the output.
 .SH EXAMPLES
 To use
 .I pinterp
