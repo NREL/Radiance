@@ -213,6 +213,14 @@ FVECT  pg, dg;
 	else if (arad < minarad)
 		arad = minarad;
 	arad /= sqrt(r->rweight);
+	if (pg != NULL) {		/* clip pos. gradient if too large */
+		d = 4.0*DOT(pg,pg)*arad*arad;
+		if (d > 1.0) {
+			d = 1.0/sqrt(d);
+			for (i = 0; i < 3; i++)
+				pg[i] *= d;
+		}
+	}
 	return(arad);
 oopsy:
 	if (div != NULL)
