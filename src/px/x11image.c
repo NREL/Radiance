@@ -1,7 +1,7 @@
-/* Copyright (c) 1997 Regents of the University of California */
+/* Copyright (c) 1997 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -47,6 +47,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  ICONSIZ	(8*10)		/* maximum icon dimension (even 8) */
 
+#define  FIXWEIGHT	20		/* weight to add for fixation points */
+
 #define  ourscreen	DefaultScreen(thedisplay)
 #define  ourroot	RootWindow(thedisplay,ourscreen)
 
@@ -78,7 +80,7 @@ int  sequential = 0;			/* display images in sequence */
 char  *tout = "od";			/* output of 't' command */
 int  tinterv = 0;			/* interval between mouse reports */
 
-int  tmflags = -1;			/* tone mapping flags (-1 for none) */
+int  tmflags = TM_F_LINEAR;		/* tone mapping flags */
 
 VIEW  ourview = STDVIEW;		/* image view parameters */
 int  gotview = 0;			/* got parameters from file */
@@ -691,7 +693,7 @@ XKeyPressedEvent  *ekey;
 	case '\r':
 	case 'l':
 	case 'c':				/* value */
-		if (avgbox(cval) == -1)
+		if (!avgbox(cval))
 			return(-1);
 		switch (com) {
 		case '\n':
@@ -734,20 +736,16 @@ XKeyPressedEvent  *ekey;
 	case 't':				/* trace */
 		return(traceray(ekey->x, ekey->y));
 	case 'a':				/* auto exposure */
-		if (tmflags == TM_F_CAMERA)
-			return(0);
 		tmflags = TM_F_CAMERA;
 		strcpy(buf, "auto exposure...");
 		goto remap;
 	case 'h':				/* human response */
-		if (tmflags == TM_F_HUMAN)
-			return(0);
 		tmflags = TM_F_HUMAN;
 		strcpy(buf, "human exposure...");
 		goto remap;
 	case '=':				/* adjust exposure */
 	case '@':				/* adaptation level */
-		if (avgbox(cval) == -1)
+		if (!avgbox(cval))
 			return(-1);
 		comp = bright(cval);
 		if (comp < 1e-20) {
@@ -761,8 +759,8 @@ XKeyPressedEvent  *ekey;
 			comp = .5/comp;
 		comp = log(comp)/.69315 - scale;
 		n = comp < 0 ? comp-.5 : comp+.5 ;	/* round */
-		if (tmflags != -1)
-			tmflags = -1;		/* turn off tone mapping */
+		if (tmflags != TM_F_LINEAR)
+			tmflags = TM_F_LINEAR;	/* turn off tone mapping */
 		else {
 			if (n == 0)		/* else check if any change */
 				return(0);
@@ -894,18 +892,46 @@ int  x0, y0, x1, y1;
 }
 
 
-avgbox(clr)				/* average color over current box */
-COLOR  clr;
+int
+colavg(scn, n, cavg)
+register COLR	*scn;
+register int	n;
+COLOR	cavg;
 {
-	static COLOR  lc;
-	static int  ll, lr, lt, lb;
+	COLOR	col;
+
+	while (n--) {
+		colr_color(col, scn++);
+		addcolor(cavg, col);
+	}
+}
+
+
+int
+avgbox(cavg)				/* average color over current box */
+COLOR	cavg;
+{
+	double	d;
+	register int	rval;
+
+	setcolor(cavg, 0., 0., 0.);
+	rval = dobox(colavg, (char *)cavg);
+	if (rval > 0) {
+		d = 1./rval;
+		scalecolor(cavg, d);
+	}
+	return(rval);
+}
+
+
+int
+dobox(f, p)				/* run function over box */
+int	(*f)();			/* function to call for each subscan */
+char	*p;			/* pointer to private data */
+{
 	int  left, right, top, bottom;
 	int  y;
-	double  d;
-	COLOR  ctmp;
-	register int  x;
 
-	setcolor(clr, 0.0, 0.0, 0.0);
 	left = box.xmin - xoff;
 	right = left + box.xsiz;
 	if (left < 0)
@@ -913,7 +939,7 @@ COLOR  clr;
 	if (right > xmax)
 		right = xmax;
 	if (left >= right)
-		return(-1);
+		return(0);
 	top = box.ymin - yoff;
 	bottom = top + box.ysiz;
 	if (top < 0)
@@ -921,24 +947,28 @@ COLOR  clr;
 	if (bottom > ymax)
 		bottom = ymax;
 	if (top >= bottom)
-		return(-1);
-	if (left == ll && right == lr && top == lt && bottom == lb) {
-		copycolor(clr, lc);
 		return(0);
-	}
 	for (y = top; y < bottom; y++) {
 		if (getscan(y) == -1)
 			return(-1);
-		for (x = left; x < right; x++) {
-			colr_color(ctmp, scanline[x]);
-			addcolor(clr, ctmp);
-		}
+		(*f)(scanline+left, right-left, p);
 	}
-	d = 1.0/((right-left)*(bottom-top));
-	scalecolor(clr, d);
-	ll = left; lr = right; lt = top; lb = bottom;
-	copycolor(lc, clr);
-	return(0);
+	return((right-left)*(bottom-top));
+}
+
+
+int
+addfix(scn, n)			/* add fixation points to histogram */
+COLR	*scn;
+int	n;
+{
+	if (tmCvColrs(lscan, TM_NOCHROM, scn, n))
+		goto tmerr;
+	if (tmAddHisto(lscan, n, FIXWEIGHT))
+		goto tmerr;
+	return;
+tmerr:
+	quiterr("tone mapping error");
 }
 
 
@@ -946,18 +976,19 @@ make_tonemap()			/* initialize tone mapping */
 {
 	int  flags, y;
 
-	if (tmflags != -1 && fname == NULL) {
+	if (tmflags != TM_F_LINEAR && fname == NULL) {
 		fprintf(stderr, "%s: cannot adjust tone of standard input\n",
 				progname);
-		tmflags = -1;
+		tmflags = TM_F_LINEAR;
 	}
-	if (tmflags == -1) {		/* linear with clamping */
+	if (tmflags == TM_F_LINEAR) {	/* linear with clamping */
 		setcolrcor(pow, 1.0/gamcor);
 		return;
 	}
 	flags = tmflags;		/* histogram adjustment */
 	if (greyscale) flags |= TM_F_BW;
 	if (tmTop != NULL) {		/* reuse old histogram if one */
+		tmDone(tmTop);
 		tmTop->flags = flags;
 	} else {			/* else initialize */
 		if ((lscan = (TMbright *)malloc(xmax*sizeof(TMbright))) == NULL)
@@ -983,6 +1014,8 @@ make_tonemap()			/* initialize tone mapping */
 				goto tmerr;
 		}
 	}
+	tmDup();			/* add fixations to duplicate map */
+	dobox(addfix, NULL);
 					/* (re)compute tone mapping */
 	if (tmComputeMapping(gamcor, 0., 0.))
 		goto tmerr;
@@ -1000,7 +1033,7 @@ int  len;
 {
 	register BYTE  *ps;
 
-	if (tmflags == -1) {
+	if (tmflags == TM_F_LINEAR) {
 		if (scale)
 			shiftcolrs(scn, len, scale);
 		colrs_gambs(scn, len);
