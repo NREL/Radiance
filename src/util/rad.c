@@ -117,6 +117,7 @@ time_t	oct1date;		/* date of post-mkillum octree (>= matdate) */
 int	nowarn = 0;		/* no warnings */
 int	explicate = 0;		/* explicate variables */
 int	silent = 0;		/* do work silently */
+int	touchonly = 0;		/* touch files only */
 int	noaction = 0;		/* don't do anything */
 int	sayview = 0;		/* print view out */
 char	*rvdevice = NULL;	/* rview output device */
@@ -147,6 +148,9 @@ char	*argv[];
 			break;
 		case 'n':
 			noaction++;
+			break;
+		case 't':
+			touchonly++;
 			break;
 		case 'e':
 			explicate++;
@@ -199,7 +203,7 @@ char	*argv[];
 	exit(0);
 userr:
 	fprintf(stderr,
-	"Usage: %s [-s][-n][-e][-V][-v view][-o dev] rfile [VAR=value ..]\n",
+"Usage: %s [-s][-n][-t][-e][-V][-v view][-o dev] rfile [VAR=value ..]\n",
 			progname);
 	exit(1);
 }
@@ -685,20 +689,24 @@ oconv()				/* run oconv and mkillum if necessary */
 
 	oconvopts(ocopts);		/* get options */
 	if (octreedate < scenedate) {	/* check date on original octree */
-						/* build command */
-		if (vdef(MATERIAL))
-			sprintf(combuf, "oconv%s %s %s > %s", ocopts,
-				vval(MATERIAL), vval(SCENE), vval(OCTREE));
-		else
-			sprintf(combuf, "oconv%s %s > %s", ocopts,
-					vval(SCENE), vval(OCTREE));
-		
-		if (runcom(combuf)) {		/* run it */
-			fprintf(stderr,
+		if (touchonly && octreedate)
+			touch(vval(OCTREE));
+		else {				/* build command */
+			if (vdef(MATERIAL))
+				sprintf(combuf, "oconv%s %s %s > %s", ocopts,
+						vval(MATERIAL), vval(SCENE),
+						vval(OCTREE));
+			else
+				sprintf(combuf, "oconv%s %s > %s", ocopts,
+						vval(SCENE), vval(OCTREE));
+			
+			if (runcom(combuf)) {		/* run it */
+				fprintf(stderr,
 				"%s: error generating octree\n\t%s removed\n",
-					progname, vval(OCTREE));
-			unlink(vval(OCTREE));
-			exit(1);
+						progname, vval(OCTREE));
+				unlink(vval(OCTREE));
+				exit(1);
+			}
 		}
 		octreedate = time((time_t *)NULL);
 		if (octreedate < scenedate)	/* in case clock is off */
@@ -711,59 +719,67 @@ oconv()				/* run oconv and mkillum if necessary */
 		return;
 						/* make octree0 */
 	if (oct0date < scenedate | oct0date < illumdate) {
-						/* build command */
-		if (octreedate)
-			sprintf(combuf, "oconv%s -i %s %s > %s", ocopts,
-				vval(OCTREE), vval(ILLUM), oct0name);
-		else if (vdef(MATERIAL))
-			sprintf(combuf, "oconv%s %s %s > %s", ocopts,
-				vval(MATERIAL), vval(ILLUM), oct0name);
-		else
-			sprintf(combuf, "oconv%s %s > %s", ocopts,
-				vval(ILLUM), oct0name);
-		if (runcom(combuf)) {		/* run it */
-			fprintf(stderr,
+		if (touchonly && oct0date)
+			touch(oct0name);
+		else {				/* build command */
+			if (octreedate)
+				sprintf(combuf, "oconv%s -i %s %s > %s", ocopts,
+					vval(OCTREE), vval(ILLUM), oct0name);
+			else if (vdef(MATERIAL))
+				sprintf(combuf, "oconv%s %s %s > %s", ocopts,
+					vval(MATERIAL), vval(ILLUM), oct0name);
+			else
+				sprintf(combuf, "oconv%s %s > %s", ocopts,
+					vval(ILLUM), oct0name);
+			if (runcom(combuf)) {		/* run it */
+				fprintf(stderr,
 				"%s: error generating octree\n\t%s removed\n",
-					progname, oct0name);
-			unlink(oct0name);
-			exit(1);
+						progname, oct0name);
+				unlink(oct0name);
+				exit(1);
+			}
 		}
 		oct0date = time((time_t *)NULL);
 		if (oct0date < octreedate)	/* in case clock is off */
 			oct0date = octreedate;
 		if (oct0date < illumdate)	/* ditto */
 			oct0date = illumdate;
-	}
-	mkillumopts(mkopts);			/* build mkillum command */
-	mktemp(illumtmp);
-	sprintf(combuf, "mkillum%s %s \"<\" %s > %s", mkopts,
-			oct0name, vval(ILLUM), illumtmp);
-	if (runcom(combuf)) {			/* run it */
-		fprintf(stderr, "%s: error running mkillum\n", progname);
-		unlink(illumtmp);
-		exit(1);
-	}
+		}
+	if (touchonly && oct1date)
+		touch(oct1name);
+	else {
+		mkillumopts(mkopts);		/* build mkillum command */
+		mktemp(illumtmp);
+		sprintf(combuf, "mkillum%s %s \"<\" %s > %s", mkopts,
+				oct0name, vval(ILLUM), illumtmp);
+		if (runcom(combuf)) {			/* run it */
+			fprintf(stderr, "%s: error running mkillum\n",
+					progname);
+			unlink(illumtmp);
+			exit(1);
+		}
 						/* make octree1 (frozen) */
-	if (octreedate)
-		sprintf(combuf, "oconv%s -f -i %s %s > %s", ocopts,
-			vval(OCTREE), illumtmp, oct1name);
-	else if (vdef(MATERIAL))
-		sprintf(combuf, "oconv%s -f %s %s > %s", ocopts,
-			vval(MATERIAL), illumtmp, oct1name);
-	else
-		sprintf(combuf, "oconv%s -f %s > %s", ocopts,
-			illumtmp, oct1name);
-	if (runcom(combuf)) {		/* run it */
-		fprintf(stderr,
-			"%s: error generating octree\n\t%s removed\n",
-				progname, oct1name);
-		unlink(oct1name);
-		exit(1);
+		if (octreedate)
+			sprintf(combuf, "oconv%s -f -i %s %s > %s", ocopts,
+				vval(OCTREE), illumtmp, oct1name);
+		else if (vdef(MATERIAL))
+			sprintf(combuf, "oconv%s -f %s %s > %s", ocopts,
+				vval(MATERIAL), illumtmp, oct1name);
+		else
+			sprintf(combuf, "oconv%s -f %s > %s", ocopts,
+				illumtmp, oct1name);
+		if (runcom(combuf)) {		/* run it */
+			fprintf(stderr,
+				"%s: error generating octree\n\t%s removed\n",
+					progname, oct1name);
+			unlink(oct1name);
+			exit(1);
+		}
+		rmfile(illumtmp);
 	}
 	oct1date = time((time_t *)NULL);
 	if (oct1date < oct0date)	/* in case clock is off */
 		oct1date = oct0date;
-	rmfile(illumtmp);
 }
 
 
@@ -809,7 +825,10 @@ checkambfile()			/* check date on ambient file */
 	if (!(afdate = fdate(vval(AMBFILE))))
 		return;
 	if (oct1date > afdate)
-		rmfile(vval(AMBFILE));
+		if (touchonly)
+			touch(vval(AMBFILE));
+		else
+			rmfile(vval(AMBFILE));
 }
 
 
@@ -1342,7 +1361,7 @@ char	*opts, *po;
 	char	*vw;
 	char	combuf[512];
 					/* build command */
-	if ((vw = getview(0, NULL)) == NULL)
+	if (touchonly || (vw = getview(0, NULL)) == NULL)
 		return;
 	if (sayview)
 		printview(vw);
@@ -1367,6 +1386,7 @@ char	*opts, *po;
 	char	pfopts[128];
 	char	vs[32], *vw;
 	int	vn, mult;
+	time_t	rfdt, pfdt;
 					/* get pfilt options */
 	pfiltopts(pfopts);
 					/* get resolution, reporting */
@@ -1416,11 +1436,22 @@ char	*opts, *po;
 			sprintf(vs, "%d", vn);
 		sprintf(picfile, "%s_%s.pic", vval(PICTURE), vs);
 						/* check date on picture */
-		if (fdate(picfile) >= oct1date)
+		pfdt = fdate(picfile);
+		if (pfdt >= oct1date)
 			continue;
-						/* build rpict command */
+						/* get raw file name */
 		sprintf(rawfile, "%s_%s.raw", vval(PICTURE), vs);
-		if (fdate(rawfile) >= oct1date)		/* recover */
+		rfdt = fdate(rawfile);
+		if (touchonly) {		/* update times only */
+			if (rfdt) {
+				if (rfdt < oct1date)
+					touch(rawfile);
+			} else if (pfdt && pfdt < oct1date)
+				touch(picfile);
+			continue;
+		}
+						/* build rpict command */
+		if (rfdt >= oct1date)		/* recover */
 			sprintf(combuf, "rpict%s%s%s -ro %s %s",
 					rep, po, opts, rawfile, oct1name);
 		else {
@@ -1465,6 +1496,22 @@ char	*opts, *po;
 						/* remove raw file */
 		rmfile(rawfile);
 	}
+}
+
+
+touch(fn)			/* update a file */
+char	*fn;
+{
+	if (!silent)
+		printf("\ttouch %s\n", fn);
+	if (noaction)
+		return(0);
+#ifdef notused
+	if (access(fn, F_OK) == -1)		/* create it */
+		if (close(open(fn, O_WRONLY|O_CREAT, 0666)) == -1)
+			return(-1);
+#endif
+	return(setfdate(fn, time((time_t *)NULL)));
 }
 
 
