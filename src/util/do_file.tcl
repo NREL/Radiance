@@ -167,7 +167,11 @@ proc load_vars {f {vl all}} {	# load RIF variables
 		set curmess {Project loaded.}
 	} else {
 		foreach n $vl {
-			catch {unset radvar($n)}
+			if [regexp {[a-z][a-z]*} $n] {
+				set radvar($n) {}
+			} else {
+				catch {unset radvar($n)}
+			}
 		}
 		while {[gets $fi curli] != -1} {
 			if [regexp {^[a-zA-Z][a-zA-Z0-9]* *=} $curli] {
