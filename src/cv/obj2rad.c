@@ -564,7 +564,9 @@ char	*v1, *v2, *v3;
 	char	*mod;
 	VNDX	v1i, v2i, v3i;
 	BARYCCM	bvecs;
+	FVECT	bcoor[3];
 	int	texOK, patOK;
+	register int	i;
 
 	if ((mod = getmtl()) == NULL)
 		return(-1);
@@ -587,17 +589,13 @@ char	*v1, *v2, *v3;
 		printf("\n%s texfunc %s\n", mod, TEXNAME);
 		mod = TEXNAME;
 		printf("4 dx dy dz %s\n", TCALNAME);
-		printf("0\n16 ");
-		put_baryc(&bvecs);
-		printf("\t%14.12g %14.12g %14.12g\n",
-				vnlist[v1i[2]][0], vnlist[v2i[2]][0],
-				vnlist[v3i[2]][0]);
-		printf("\t%14.12g %14.12g %14.12g\n",
-				vnlist[v1i[2]][1], vnlist[v2i[2]][1],
-				vnlist[v3i[2]][1]);
-		printf("\t%14.12g %14.12g %14.12g\n",
-				vnlist[v1i[2]][2], vnlist[v2i[2]][2],
-				vnlist[v3i[2]][2]);
+		printf("0\n");
+		for (i = 0; i < 3; i++) {
+			bcoor[i][0] = vnlist[v1i[2]][i];
+			bcoor[i][1] = vnlist[v2i[2]][i];
+			bcoor[i][2] = vnlist[v3i[2]][i];
+		}
+		put_baryc(&bvecs, bcoor, 3);
 	}
 #ifdef TEXMAPS
 					/* put out pattern (if any) */
@@ -605,12 +603,13 @@ char	*v1, *v2, *v3;
 		printf("\n%s colorpict %s\n", mod, PATNAME);
 		mod = PATNAME;
 		printf("7 noneg noneg noneg %s %s u v\n", mapname, TCALNAME);
-		printf("0\n13 ");
-		put_baryc(&bvecs);
-		printf("\t%f %f %f\n", vtlist[v1i[1]][0],
-				vtlist[v2i[1]][0], vtlist[v3i[1]][0]);
-		printf("\t%f %f %f\n", vtlist[v1i[1]][1],
-				vtlist[v2i[1]][1], vtlist[v3i[1]][1]);
+		printf("0\n");
+		for (i = 0; i < 2; i++) {
+			bcoor[i][0] = vtlist[v1i[1]][i];
+			bcoor[i][1] = vtlist[v2i[1]][i];
+			bcoor[i][2] = vtlist[v3i[1]][i];
+		}
+		put_baryc(&bvecs, bcoor, 2);
 	}
 #endif
 					/* put out triangle */
@@ -671,14 +670,23 @@ FLOAT	*v1, *v2, *v3;
 }
 
 
-put_baryc(bcm)				/* put barycentric coord. vectors */
+put_baryc(bcm, com, n)			/* put barycentric coord. vectors */
 register BARYCCM	*bcm;
+register FVECT	com[];
+int	n;
 {
-	printf("\t%d\n", bcm->ax);
-	printf("%14.8f %14.8f %14.8f\n",
-				bcm->tm[0][0], bcm->tm[0][1], bcm->tm[0][2]);
-	printf("%14.8f %14.8f %14.8f\n",
-				bcm->tm[1][0], bcm->tm[1][1], bcm->tm[1][2]);
+	double	a, b;
+	register int	i, j;
+
+	printf("%d\t%d\n", 1+3*n, bcm->ax);
+	for (i = 0; i < n; i++) {
+		a = com[i][0] - com[i][2];
+		b = com[i][1] - com[i][2];
+		printf("%14.8f %14.8f %14.8f\n",
+			bcm->tm[0][0]*a + bcm->tm[1][0]*b,
+			bcm->tm[0][1]*a + bcm->tm[1][1]*b,
+			bcm->tm[0][2]*a + bcm->tm[1][2]*b + com[i][2]);
+	}
 }
 
 
