@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1990 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -31,6 +31,9 @@ extern double  shadcert;		/* shadow testing certainty */
 
 SRCREC  *source = NULL;			/* our list of sources */
 int  nsources = 0;			/* the number of sources */
+
+static CONTRIB  *srccnt;		/* source contributions in direct() */
+static CNTPTR  *cntord;			/* source ordering in direct() */
 
 
 marksources()			/* find and mark source objects */
@@ -65,7 +68,7 @@ marksources()			/* find and mark source objects */
 			source = (SRCREC *)realloc((char *)source,
 					(unsigned)(nsources+1)*sizeof(SRCREC));
 		if (source == NULL)
-			error(SYSTEM, "out of memory in marksources");
+			goto memerr;
 
 		newsource(&source[nsources], o);
 
@@ -80,6 +83,17 @@ marksources()			/* find and mark source objects */
 		}
 		nsources++;
 	}
+	if (nsources <= 0) {
+		error(WARNING, "no light sources found");
+		return;
+	}
+	srccnt = (CONTRIB *)malloc(nsources*sizeof(CONTRIB));
+	cntord = (CNTPTR *)malloc(nsources*sizeof(CNTPTR));
+	if (srccnt != NULL && cntord != NULL)
+		return;
+	/* fall through */
+memerr:
+	error(SYSTEM, "out of memory in marksources");
 }
 
 
@@ -301,18 +315,12 @@ char  *p;			/* data for f */
 {
 	extern double  pow();
 	register int  sn;
-	register CONTRIB  *srccnt;
-	register CNTPTR  *cntord;
 	int  nshadcheck, ncnts;
 	double  prob, ourthresh, hwt, test2, hit2;
 	RAY  sr;
-
+			/* NOTE: srccnt and cntord global so no recursion */
 	if (nsources <= 0)
-		return;
-	srccnt = (CONTRIB *)malloc(nsources*sizeof(CONTRIB));
-	cntord = (CNTPTR *)malloc(nsources*sizeof(CNTPTR));
-	if (srccnt == NULL || cntord == NULL)
-		error(SYSTEM, "out of memory in direct");
+		return;		/* no sources?! */
 						/* compute number to check */
 	nshadcheck = pow((double)nsources, shadcert) + .5;
 						/* modify threshold */
@@ -334,8 +342,13 @@ char  *p;			/* data for f */
 		if (!( source[sn].sflags & SDISTANT ?
 				sourcehit(&sr) :
 				(*ofun[source[sn].so->otype].funp)
-				(source[sn].so, &sr) ))
+				(source[sn].so, &sr) )) {
+			sprintf(errmsg,
+				"aiming failure for light source \"%s\"",
+					source[sn].so->oname);
+			error(WARNING, errmsg);
 			continue;
+		}
 						/* compute contribution */
 		raycont(&sr);
 		multcolor(srccnt[sn].val, sr.rcol);
@@ -406,9 +419,6 @@ char  *p;			/* data for f */
 		scalecolor(srccnt[cntord[sn].sno].val, prob);
 		addcolor(r->rcol, srccnt[cntord[sn].sno].val);
 	}
-		
-	free((char *)srccnt);
-	free((char *)cntord);
 }
 
 
