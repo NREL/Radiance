@@ -38,7 +38,8 @@ HOLO	*hdlist[HDMAX+1];	/* holodeck pointers (NULL term.) */
 
 static struct fragment {
 	short	nlinks;		/* number of holodeck sections using us */
-	short	nfrags;		/* number of known fragments */
+	short	writerr;	/* write error encountered */
+	int	nfrags;		/* number of known fragments */
 	BEAMI	*fi;		/* fragments, descending file position */
 	long	flen;		/* last known file length */
 } *hdfrag;		/* fragment lists, indexed by file descriptor */
@@ -138,17 +139,23 @@ HDGRID	*hproto;		/* holodeck section grid */
 	hp->fd = fd;	
 	hp->dirty = 0;
 	biglob(hp)->fo = fpos + sizeof(HDGRID);
-	biglob(hp)->nrd = 0;		/* count rays on disk */
-	for (n = nbeams(hp); n > 0; n--)
-		biglob(hp)->nrd += hp->bi[n].nrd;
+					/* start tracking fragments */
+	hdattach(fd);
+					/* check rays on disk */
+	fpos = hdfilen(fd);
+	biglob(hp)->nrd = 0;
+	for (n = hproto == NULL ? nbeams(hp) : 0; n > 0; n--)
+		if (hp->bi[n].nrd)
+			if (hp->bi[n].fo + hp->bi[n].nrd > fpos)
+				hp->bi[n].nrd = 0;	/* off end */
+			else
+				biglob(hp)->nrd += hp->bi[n].nrd;
 					/* add to holodeck list */
 	for (n = 0; n < HDMAX; n++)
 		if (hdlist[n] == NULL) {
 			hdlist[n] = hp;
 			break;
 		}
-					/* start tracking fragments (last) */
-	hdattach(fd);
 					/* all done */
 	return(hp);
 memerr:
@@ -173,7 +180,7 @@ int	all;
 	for (j = all ? nbeams(hp) : 0; j > 0; j--)
 		if (hp->bl[j] != NULL)
 			hdsyncbeam(hp, j);
-	if (!hp->dirty)			/* directory dirty? */
+	if (!hp->dirty)			/* directory clean? */
 		return(0);
 	errno = 0;
 	if (lseek(hp->fd, biglob(hp)->fo, 0) < 0)
@@ -347,6 +354,9 @@ register int	i;
 	unsigned int	nrays;
 	long	nfo;
 	unsigned int	n;
+					/* check file status */
+	if (hdfrag[hp->fd].writerr)
+		return(-1);
 #ifdef DEBUG
 	if (i < 1 | i > nbeams(hp))
 		error(CONSISTENCY, "bad beam index in hdsyncbeam");
@@ -354,10 +364,7 @@ register int	i;
 					/* is current fragment OK? */
 	if (hp->bl[i] == NULL || (nrays = hp->bl[i]->nrm) == hp->bi[i].nrd)
 		return(0);
-					/* check file status */
-	if (hp->dirty < 0)
-		return(-1);
-
+					/* locate fragment */
 	if (hp->fd >= nhdfrags || !hdfrag[hp->fd].nlinks) /* untracked */
 		hp->bi[i].fo = lseek(hp->fd, 0L, 2);
 
@@ -435,7 +442,8 @@ register int	i;
 			error(SYSTEM, "cannot seek on holodeck file");
 		n = hp->bl[i]->nrm * sizeof(RAYVAL);
 		if (write(hp->fd, (char *)hdbray(hp->bl[i]), n) != n) {
-			hp->dirty = -1;		/* avoid recursive error */
+			hdfrag[hp->fd].writerr++;
+			hdsync(hp, 0);		/* sync directory */
 			error(SYSTEM, "write error in hdsyncbeam");
 		}
 	}
@@ -460,6 +468,8 @@ register int	i;
 			nchanged += hdfreebeam(hdlist[i], 0);
 		return(nchanged);
 	}
+	if (hdfrag[hp->fd].writerr)	/* check for file error */
+		return(0);
 	if (i == 0) {			/* clear entire holodeck */
 		nchanged = 0;
 		for (i = nbeams(hp); i > 0; i--)
