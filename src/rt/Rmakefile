@@ -126,7 +126,7 @@ $(DESTDIR)/rview:	$(RVOBJS)
 	$(CC) $(CFLAGS) -o $(DESTDIR)/rview $(RVOBJS) $(DLIBS) $(LIBS)
 
 $(DESTDIR)/lookamb:	lookamb.o ambio.o
-	$(CC) $(CFLAGS) -o $(DESTDIR)/lookamb lookamb.o ambio.o -lrt
+	$(CC) $(CFLAGS) -o $(DESTDIR)/lookamb lookamb.o ambio.o $(LIBS)
 
 $(DEVDIR)/sun:	sundev.o devmain.o colortab.o editline.o
 	$(CC) $(CFLAGS) -s -o $(DEVDIR)/sun devmain.o sundev.o colortab.o \
