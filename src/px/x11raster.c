@@ -41,6 +41,7 @@ int	bm_pad;
 		xr->image = XCreateImage(disp,vis->visual,vis->depth,
 				ZPixmap,0,data,width,height,bm_pad,0);
 	xr->image->bitmap_bit_order = MSBFirst;
+	xr->image->bitmap_unit = bm_pad;
 	xr->image->byte_order = *(char *)&swaptest ? LSBFirst : MSBFirst;
 	if (vis->depth >= 24 && (xr->image->red_mask != 0xff ||
 			xr->image->green_mask != 0xff00 ||
@@ -65,7 +66,7 @@ int	rmap[256], gmap[256], bmap[256];
 	register unsigned char	*p;
 	register int	i;
 
-	if (xr->image->depth != 8 || xr->ncolors != 0)
+	if (xr->image->depth > 8 || xr->ncolors != 0)
 		return(xr->ncolors);
 	xr->pmap = (short *)malloc(256*sizeof(short));
 	if (xr->pmap == NULL)
@@ -146,7 +147,7 @@ Window	w;
 	register int	i;
 	register unsigned char	*p;
 
-	if (xr->ncolors == 0 || xr->image->depth != 8)
+	if (xr->ncolors == 0 || xr->image->depth > 8)
 		return(NULL);
 	if (xr->pixels != NULL)
 		return(xr->pixels);
@@ -189,17 +190,19 @@ Window	w;
 
 
 Pixmap
-make_rpixmap(xr, d)			/* make pixmap for raster */
+make_rpixmap(xr, w)			/* make pixmap for raster */
 register XRASTER	*xr;
-Drawable	d;
+Window	w;
 {
+	XWindowAttributes	xwattr;
 	Pixmap	pm;
 
 	if (xr->pm != 0)
 		return(xr->pm);
-	pm = XCreatePixmap(xr->disp, d,
+	XGetWindowAttributes(xr->disp, w, &xwattr);
+	pm = XCreatePixmap(xr->disp, w,
 			xr->image->width, xr->image->height,
-			xr->image->depth);
+			xwattr.depth);
 	if (pm == 0)
 		return(0);
 	put_raster(pm, 0, 0, xr);
