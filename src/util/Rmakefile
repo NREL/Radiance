@@ -17,11 +17,6 @@ LIBDIR = /usr/local/lib/ray
 
 PROGS = findglare xglaresrc glarendx rpiece rad vwright
 
-TLIBFILES = do_action.tcl do_file.tcl do_options.tcl do_results.tcl \
-		do_scene.tcl do_views.tcl do_zone.tcl \
-		getfile.tcl gethelp.tcl util.tcl tclIndex \
-		trad.hlp help.hlp file.hlp trad.icon
-
 all:	$(PROGS)
 
 install:	all objview.csh objpict.csh glare.csh dayfact.csh rlux.csh \
@@ -40,12 +35,7 @@ raddepend.csh ivprep.csh ivpict.csh trad.wsh
 		$(INSTDIR)/glare $(INSTDIR)/dayfact $(INSTDIR)/debugcal \
 		$(INSTDIR)/rlux $(INSTDIR)/raddepend $(INSTDIR)/ivprep \
 		$(INSTDIR)/ivpict
-	sed -e "1s|/usr/local/bin/wish|`which wish`|" \
-		-e "s|^set radlib .*|set radlib $(LIBDIR)/tcl|" \
-		trad.wsh > $(INSTDIR)/trad
-	chmod 755 $(INSTDIR)/trad
-	cd $(LIBDIR)/tcl ; rm -f $(TLIBFILES)
-	cp $(TLIBFILES) $(LIBDIR)/tcl
+	csh -f tradinstall.csh $(INSTDIR) $(LIBDIR)/tcl
 
 clean:
 	set nonomatch; rm -f *.o $(PROGS) core
