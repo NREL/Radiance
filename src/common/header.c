@@ -17,7 +17,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *  formatval(r,s)	copy the format value in s to r
  *  fputformat(s,fp)	write "FORMAT=%s" to fp
  *  getheader(fp,f,p)	read header from fp, calling f(s,p) on each line
- *  copymatch(pat, str)	copy str into pat if glob match
+ *  globmatch(pat, str)	check for glob match of str against pat
  *  checkheader(i,p,o)	check header format from i against p and copy to o
  *
  *  To copy header from input to output, use getheader(fin, fputs, fout)
@@ -176,16 +176,10 @@ register struct check  *cp;
 }
 
 
-/*
- * Copymatch(pat,str) checks pat for wildcards, and
- * copies str into pat if there is a match (returning true).
- */
-
 int
-copymatch(pat, str)
+globmatch(pat, str)		/* check for glob match of str against pat */
 char	*pat, *str;
 {
-	int	docopy = 0;
 	register char	*p = pat, *s = str;
 
 	do {
@@ -193,16 +187,13 @@ char	*pat, *str;
 		case '?':			/* match any character */
 			if (!*s++)
 				return(0);
-			docopy++;
 			break;
 		case '*':			/* match any string */
 			while (p[1] == '*') p++;
 			do
-				if ( (p[1]=='?' || p[1]==*s)
-						&& copymatch(p+1,s) ) {
-					strcpy(pat, str);
+				if ( (p[1]=='?' || p[1]==*s) &&
+						globmatch(p+1,s) )
 					return(1);
-				}
 			while (*s++);
 			return(0);
 		case '\\':			/* literal next */
@@ -215,8 +206,6 @@ char	*pat, *str;
 			break;
 		}
 	} while (*p++);
-	if (docopy)
-		strcpy(pat, str);
 	return(1);
 }
 
@@ -246,7 +235,11 @@ FILE  *fout;
 	cdat.fs[0] = '\0';
 	if (getheader(fin, mycheck, &cdat) < 0)
 		return(-1);
-	if (cdat.fs[0] != '\0')
-		return(copymatch(fmt, cdat.fs) ? 1 : -1);
-	return(0);
+	if (!cdat.fs[0])
+		return(0);
+	if (globmatch(fmt, cdat.fs)) {
+		strcpy(fmt, cdat.fs);
+		return(1);
+	}
+	return(-1);
 }
