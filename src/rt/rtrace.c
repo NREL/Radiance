@@ -73,7 +73,7 @@ extern OBJREC  Lamb;			/* a Lambertian surface */
 static RAY  thisray;			/* for our convenience */
 
 static int  oputo(), oputd(), oputv(), oputl(), oputL(),
-		oputp(), oputn(), oputs(), oputw(), oputm();
+		oputp(), oputn(), oputN(), oputs(), oputw(), oputm();
 
 static int  (*ray_out[10])(), (*every_out[10])();
 static int  castonly;
@@ -202,8 +202,12 @@ register char  *vs;
 		case 'p':				/* point */
 			*table++ = oputp;
 			break;
-		case 'n':				/* normal */
+		case 'n':				/* perturbed normal */
 			*table++ = oputn;
+			castonly = 0;
+			break;
+		case 'N':				/* unperturbed normal */
+			*table++ = oputN;
 			break;
 		case 's':				/* surface */
 			*table++ = oputs;
@@ -400,7 +404,7 @@ register RAY  *r;
 
 
 static
-oputn(r)				/* print normal */
+oputN(r)				/* print unperturbed normal */
 register RAY  *r;
 {
 	if (r->rot < FHUGE) {
@@ -412,6 +416,25 @@ register RAY  *r;
 		(*putreal)(0.0);
 		(*putreal)(0.0);
 	}
+}
+
+
+static
+oputn(r)				/* print perturbed normal */
+RAY  *r;
+{
+	FVECT  pnorm;
+
+	if (r->rot >= FHUGE) {
+		(*putreal)(0.0);
+		(*putreal)(0.0);
+		(*putreal)(0.0);
+		return;
+	}
+	raynormal(pnorm, r);
+	(*putreal)(pnorm[0]);
+	(*putreal)(pnorm[1]);
+	(*putreal)(pnorm[2]);
 }
 
 
