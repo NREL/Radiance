@@ -23,7 +23,8 @@ extern int  maxdepth;			/* maximum recursion depth */
 extern double  minweight;		/* minimum ray weight */
 extern int  do_irrad;			/* compute irradiance? */
 
-long  nrays = 0L;			/* number of rays traced */
+long  raynum = 0L;			/* next unique ray number */
+long  nrays = 0L;			/* number of calls to rayvalue */
 
 static double  Lambfa[5] = {PI, PI, PI, 0.0, 0.0};
 OBJREC  Lamb = {
@@ -61,7 +62,7 @@ double  rw;
 		r->crtype = ro->crtype | (r->rtype = rt);
 		VCOPY(r->rorg, ro->rop);
 	}
-	r->rno = nrays;
+	r->rno = raynum++;
 	r->newcset = r->clipset;
 	r->ro = NULL;
 	r->rot = FHUGE;
@@ -78,6 +79,7 @@ RAY  *r;
 {
 	extern int  (*trace)();
 
+	nrays++;			/* increment trace counter */
 	if (localhit(r, &thescene))
 		raycont(r);
 	else if (sourcehit(r))
@@ -312,8 +314,6 @@ register CUBE  *scene;
 	int  sflags;			/* sign flags */
 	double  t, dt;
 	register int  i;
-
-	nrays++;			/* increment trace counter */
 
 	sflags = 0;
 	for (i = 0; i < 3; i++) {
