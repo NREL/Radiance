@@ -1,4 +1,4 @@
-/* Copyright (c) 1988 Regents of the University of California */
+/* Copyright (c) 1990 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -66,7 +66,7 @@ CUBE  *cu;
 			if (i & 1<<j)
 				v1[j] += cu->cusize;
 		}
-		multp3(v2, v1, in->b.xfm);
+		multp3(v2, v1, in->x.b.xfm);
 		if (j = plocate(v2, cumin, cumax))
 			vout++;
 		vloc &= j;
@@ -87,7 +87,7 @@ CUBE  *cu;
 			if (i & 1<<j)
 				v1[j] += in->obj->scube.cusize;
 		}
-		multp3(vert[i], v1, in->f.xfm);
+		multp3(vert[i], v1, in->x.f.xfm);
 		if (j = plocate(vert[i], cumin, cumax))
 			vloc &= j;
 		else
