@@ -804,7 +804,7 @@ char	*ro;
 		fd = open(vval(OPTFILE), O_WRONLY|O_CREAT|O_TRUNC, 0666);
 		if (fd < 0 || write(fd, ro, n) != n || close(fd) < 0)
 			syserr(vval(OPTFILE));
-		sprintf(ro, " \"^%s\"", vval(OPTFILE));
+		sprintf(ro, " @%s", vval(OPTFILE));
 	}
 #ifdef MSDOS
 	else if (n > 50) {
