@@ -97,7 +97,7 @@ char  *fname;
 		fprintf(stderr, "%s: bad picture size\n", fname);
 		return(-1);
 	}
-	if (xres > NCOLS || yres > NROWS) {
+	if (xres > NCOLS) {
 		fprintf(stderr, "%s: resolution mismatch\n", fname);
 		return(-1);
 	}
