@@ -281,8 +281,11 @@ checklast(			/* check files and find most recent */
 		return(0);
 	while ((fnames = nextword(thisfile, PATH_MAX, fnames)) != NULL) {
 		if (thisfile[0] == '!' ||
-				(thisfile[0] == '\\' && thisfile[1] == '!'))
+				(thisfile[0] == '\\' && thisfile[1] == '!')) {
+			if (!lastdate)
+				lastdate = 1;
 			continue;
+		}
 		if (!(thisdate = fdate(thisfile)))
 			syserr(thisfile);
 		if (thisdate > lastdate)
