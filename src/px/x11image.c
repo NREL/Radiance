@@ -30,13 +30,14 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "pic.h"
 #include  "x11raster.h"
 #include  "random.h"
-#include  "x11icon.h"
 
 #define  FONTNAME	"8x13"		/* text font we'll use */
 
 #define  CTRL(c)	('c'-'@')
 
 #define  BORWIDTH	5		/* border width */
+
+#define  ICONSIZ	80		/* maximum icon dimension */
 
 #define  ourscreen	DefaultScreen(thedisplay)
 #define  ourblack	BlackPixel(thedisplay,ourscreen)
@@ -90,6 +91,9 @@ struct {
 }  box = {0, 0, 0, 0};			/* current box */
 
 char  *geometry = NULL;			/* geometry specification */
+
+char  icondata[(ICONSIZ+7)/8*ICONSIZ];	/* icon bitmap data */
+int  iconwidth = 0, iconheight = 0;
 
 char  *progname;
 
@@ -271,7 +275,7 @@ init()			/* get data and open window */
 	ourxwmhints.flags = InputHint|IconPixmapHint;
 	ourxwmhints.input = True;
 	ourxwmhints.icon_pixmap = XCreateBitmapFromData(thedisplay,
-			wind, x11icon_bits, x11icon_width, x11icon_height);
+			wind, icondata, iconwidth, iconheight);
 	XSetWMHints(thedisplay, wind, &ourxwmhints);
 	XSelectInput(thedisplay, wind, ButtonPressMask|ButtonReleaseMask
 			|ButtonMotionMask|StructureNotifyMask
@@ -627,6 +631,7 @@ getmono()			/* get monochrome data */
 		if (getscan(y) < 0)
 			quiterr("seek error in getmono");
 		normcolrs(scanline, xmax, scale);
+		add2icon(y, scanline);
 		err = 0;
 		for (x = 0; x < xmax; x++) {
 			if (!(x&7))
@@ -640,6 +645,49 @@ getmono()			/* get monochrome data */
 		}
 	}
 	free((char *)cerr);
+}
+
+
+add2icon(y, scan)		/* add a scanline to our icon data */
+int  y;
+COLR  *scan;
+{
+	static char  *dp = NULL;
+	static short  cerr[ICONSIZ];
+	register int  err;
+	register int	x, xi;
+
+	if (iconheight == 0) {		/* initialize */
+		if (xmax < ICONSIZ && ymax < ICONSIZ) {
+			iconwidth = xmax;
+			iconheight = ymax;
+		} else if (xmax > ymax) {
+			iconwidth = ICONSIZ;
+			iconheight = ICONSIZ*ymax/xmax;
+		} else {
+			iconwidth = ICONSIZ*xmax/ymax;
+			iconheight = ICONSIZ;
+		}
+		dp = icondata - 1;
+	}
+	if (dp == NULL)			/* done already */
+		return;
+	if (y % (ymax/iconheight))	/* skip this one */
+		return;
+	err = 0;
+	for (x = 0; x < iconwidth; x++) {
+		if (!(x&7))
+			*++dp = 0;
+		xi = x*xmax/iconwidth;
+		err += normbright(scan[xi]) + cerr[x];
+		if (err > 127)
+			err -= 255;
+		else
+			*dp |= 1<<(x&07);
+		cerr[x] = err >>= 1;
+	}
+	if (y >= ymax-ymax/iconheight)	/* all done */
+		dp = NULL;
 }
 
 
@@ -658,6 +706,7 @@ getfull()			/* get full (24-bit) data */
 		if (scale)
 			shiftcolrs(scanline, xmax, scale);
 		colrs_gambs(scanline, xmax);
+		add2icon(y, scanline);
 		for (x = 0; x < xmax; x++) {
 			*dp++ = scanline[x][RED];
 			*dp++ = scanline[x][GRN];
@@ -725,6 +774,7 @@ register rgbpixel  *l3;
 		quiterr("cannot seek for picreadline");
 							/* convert scanline */
 	normcolrs(scanline, xmax, scale);
+	add2icon(y, scanline);
 	for (i = 0; i < xmax; i++) {
 		l3[i].r = scanline[i][RED];
 		l3[i].g = scanline[i][GRN];
