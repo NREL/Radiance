@@ -16,6 +16,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "color.h"
 
+#ifndef BSD
+#define vfork		fork
+#endif
+
 #define pscan(y)	(ourpict+(y)*hresolu)
 #define zscan(y)	(ourzbuf+(y)*hresolu)
 

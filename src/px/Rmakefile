@@ -5,7 +5,7 @@
 #
 
 OPT = -O
-MACH = -f68881 /usr/lib/f68881.il -DIEEE
+MACH = -DBSD -f68881 /usr/lib/f68881.il -DIEEE
 CFLAGS = $(OPT) $(MACH)
 
 INSTDIR = /usr/local/ray
