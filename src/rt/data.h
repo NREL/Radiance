@@ -20,6 +20,7 @@ typedef struct datarray {
 	struct {
 		double  org, siz;		/* coordinate domain */
 		int  ne;			/* number of elements */
+		double  *p;			/* point locations */
 	} dim[MAXDIM];			/* dimension specifications */
 	DATATYPE  *arr;			/* the data */
 	struct datarray  *next;		/* next array in list */
