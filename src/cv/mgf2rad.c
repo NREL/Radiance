@@ -23,7 +23,7 @@ double	glowdist = FHUGE;		/* glow test distance */
 
 double  emult = 1.;			/* emitter multiplier */
 
-FILE	*matfp = stdout;		/* material output file */
+FILE	*matfp;				/* material output file */
 
 int	r_comment(), r_cone(), r_cyl(), r_face(), r_ies(), r_ring(), r_sph();
 char	*material(), *object(), *addarg();
@@ -34,6 +34,8 @@ int	argc;
 char	*argv[];
 {
 	int	i;
+
+	matfp = stdout;
 				/* print out parser version */
 	printf("## Translated from MGF Version %d.%d\n", MG_VMAJOR, MG_VMINOR);
 				/* initialize dispatch table */
