@@ -545,7 +545,8 @@ register RAY  *r;
  */
 
 #define  badcomponent(m, r)	(r->crtype&(AMBIENT|SPECULAR) && \
-				!(r->crtype&SHADOW || distglow(m, r)))
+				!(r->crtype&SHADOW || r->rod < 0.0 || \
+					distglow(m, r)))
 
 /* overcount *
  *
