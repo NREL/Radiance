@@ -18,7 +18,7 @@ PIXAR_INCLUDE=	-I/usr/pixar/include
 PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar $(MLIB)
 
 PROGS = pfilt ttyimage oki20c oki20 paintjet mt160r psign \
-pvalue pcompos protate ra_pr ra_pr24 ra_avs \
+pvalue pcompos protate ra_pr ra_pr24 ra_avs ra_tiff \
 ra_t8 ra_bn ra_t16 pcomb pinterp ximage xshowtrace pflip ra_ppm \
 ra_rgbe ra_pict ra_ps pextrem ra_gif ra_xyze macbethcal pcond pcwarp
 
