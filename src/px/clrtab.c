@@ -1,0 +1,255 @@
+/* Copyright (c) 1992 Regents of the University of California */
+
+#ifndef lint
+static char SCCSid[] = "$SunId$ LBL";
+#endif
+
+/*
+ * Simple median-cut color quantization based on colortab.c
+ */
+
+#include "standard.h"
+
+#include "color.h"
+				/* histogram resolution */
+#define NRED		36
+#define NGRN		48
+#define NBLU		24
+#define HMAX		NGRN
+				/* minimum box count for adaptive partition */
+#define MINSAMP		7
+				/* color partition */
+#define set_branch(p,c) ((c)<<2|(p))
+#define part(cn)	((cn)>>2)
+#define prim(cn)	((cn)&3)
+				/* our color table (global) */
+BYTE	clrtab[256][3];
+				/* histogram of colors / color assignments */
+static unsigned	histo[NRED][NGRN][NBLU];
+#define cndx(c)		histo[((c)[RED]*NRED)>>8][((c)[GRN]*NGRN)>>8][((c)[BLU]*NBLU)>>8]
+				/* initial color cube boundary */
+static int	CLRCUBE[3][2] = {0,NRED,0,NGRN,0,NBLU};
+				/* maximum propagated error during dithering */
+#define MAXERR		20
+
+
+new_histo()		/* clear our histogram */
+{
+	bzero((char *)histo, sizeof(histo));
+}
+
+
+cnt_pixel(col)		/* add pixel to our histogram */
+register BYTE	col[];
+{
+	cndx(col)++;
+}
+
+
+cnt_colrs(cs, n)		/* add a scanline to our histogram */
+register COLR	*cs;
+register int	n;
+{
+	while (n-- > 0) {
+		cndx(cs[0])++;
+		cs++;
+	}
+}
+
+
+new_clrtab(ncolors)		/* make new color table using ncolors */
+int	ncolors;
+{
+	if (ncolors < 1)
+		return(0);
+	if (ncolors > 256)
+		ncolors = 256;
+				/* partition color space */
+	cut(CLRCUBE, 0, ncolors);
+				/* return new color table size */
+	return(ncolors);
+}
+
+
+int
+map_pixel(col)			/* get pixel for color */
+register BYTE	col[];
+{
+    return(cndx(col));
+}
+
+
+map_colrs(bs, cs, n)		/* convert a scanline to color index values */
+register BYTE	*bs;
+register COLR	*cs;
+register int	n;
+{
+	while (n-- > 0) {
+		*bs++ = cndx(cs[0]);
+		cs++;
+	}
+}
+
+
+dith_colrs(bs, cs, n)		/* convert scanline to dithered index values */
+register BYTE	*bs;
+register COLR	*cs;
+int	n;
+{
+	static short	(*cerr)[3];
+	static int	N = 0;
+	int	err[3], errp[3];
+	register int	x, i;
+
+	if (n != N) {		/* get error propogation array */
+		if (N)
+			cerr = (short (*)[3])realloc((char *)cerr,
+					3*n*sizeof(short));
+		else
+			cerr = (short (*)[3])malloc(3*n*sizeof(short));
+		if (cerr == NULL) {
+			N = 0;
+			map_colrs(bs, cs, n);
+			return;
+		}
+		N = n;
+		bzero((char *)cerr, 3*N*sizeof(short));
+	}
+	err[0] = err[1] = err[2] = 0;
+	for (x = 0; x < n; x++) {
+		for (i = 0; i < 3; i++) {	/* dither value */
+			errp[i] = err[i];
+			err[i] += cerr[x][i];
+#ifdef MAXERR
+			if (err[i] > MAXERR) err[i] = MAXERR;
+			else if (err[i] < -MAXERR) err[i] = -MAXERR;
+#endif
+			err[i] += cs[x][i];
+			if (err[i] < 0) err[i] = 0;
+			else if (err[i] > 255) err[i] = 255;
+		}
+		bs[x] = cndx(err);
+		for (i = 0; i < 3; i++) {	/* propagate error */
+			err[i] -= clrtab[bs[x]][i];
+			err[i] /= 3;
+			cerr[x][i] = err[i] + errp[i];
+		}
+	}
+}
+
+
+static
+cut(box, c0, c1)			/* partition color space */
+register int	box[3][2];
+int	c0, c1;
+{
+	register int	branch;
+	int	kb[3][2];
+	
+	if (c1-c0 <= 1) {		/* assign pixel */
+		mktabent(c0, box);
+		return;
+	}
+					/* split box */
+	branch = split(box);
+	bcopy((char *)box, (char *)kb, sizeof(kb));
+						/* do left (lesser) branch */
+	kb[prim(branch)][1] = part(branch);
+	cut(kb, c0, (c0+c1)>>1);
+						/* do right branch */
+	kb[prim(branch)][0] = part(branch);
+	kb[prim(branch)][1] = box[prim(branch)][1];
+	cut(kb, (c0+c1)>>1, c1);
+}
+
+
+static int
+split(box)				/* find median cut for box */
+register int	box[3][2];
+{
+#define c0	r
+	register int	r, g, b;
+	int	pri;
+	int	t[HMAX], med;
+					/* find dominant axis */
+	pri = RED;
+	if (box[GRN][1]-box[GRN][0] > box[pri][1]-box[pri][0])
+		pri = GRN;
+	if (box[BLU][1]-box[BLU][0] > box[pri][1]-box[pri][0])
+		pri = BLU;
+					/* sum histogram over box */
+	med = 0;
+	switch (pri) {
+	case RED:
+		for (r = box[RED][0]; r < box[RED][1]; r++) {
+			t[r] = 0;
+			for (g = box[GRN][0]; g < box[GRN][1]; g++)
+				for (b = box[BLU][0]; b < box[BLU][1]; b++)
+					t[r] += histo[r][g][b];
+			med += t[r];
+		}
+		break;
+	case GRN:
+		for (g = box[GRN][0]; g < box[GRN][1]; g++) {
+			t[g] = 0;
+			for (b = box[BLU][0]; b < box[BLU][1]; b++)
+				for (r = box[RED][0]; r < box[RED][1]; r++)
+					t[g] += histo[r][g][b];
+			med += t[g];
+		}
+		break;
+	case BLU:
+		for (b = box[BLU][0]; b < box[BLU][1]; b++) {
+			t[b] = 0;
+			for (r = box[RED][0]; r < box[RED][1]; r++)
+				for (g = box[GRN][0]; g < box[GRN][1]; g++)
+					t[b] += histo[r][g][b];
+			med += t[b];
+		}
+		break;
+	}
+	if (med < MINSAMP)		/* if too sparse, split at midpoint */
+		return(set_branch(pri,(box[pri][0]+box[pri][1])>>1));
+					/* find median position */
+	med >>= 1;
+	for (c0 = box[pri][0]; med > 0; c0++)
+		med -= t[c0];
+	if (c0 > (box[pri][0]+box[pri][1])>>1)	/* if past the midpoint */
+		c0--;				/* part left of median */
+	return(set_branch(pri,c0));
+#undef c0
+}
+
+
+static
+mktabent(p, box)	/* compute average color for box and assign */
+int	p;
+register int	box[3][2];
+{
+	long	sum[3];
+	int	r, g, n;
+	register int	b, c;
+						/* sum pixels in box */
+	n = 0;
+	sum[RED] = sum[GRN] = sum[BLU] = 0;
+	for (r = box[RED][0]; r < box[RED][1]; r++)
+	    for (g = box[GRN][0]; g < box[GRN][1]; g++)
+	    	for (b = box[BLU][0]; b < box[BLU][1]; b++) {
+	    	    if (c = histo[r][g][b]) {
+			n += c;
+			sum[RED] += (long)c*r;
+			sum[GRN] += (long)c*g;
+			sum[BLU] += (long)c*b;
+		    }
+		    histo[r][g][b] = p;		/* assign pixel */
+		}
+	if (n) {				/* compute average */
+		clrtab[p][RED] = sum[RED]*256/NRED/n;
+		clrtab[p][GRN] = sum[GRN]*256/NGRN/n;
+		clrtab[p][BLU] = sum[BLU]*256/NBLU/n;
+	} else {				/* empty box -- use midpoint */
+		clrtab[p][RED] = (box[RED][0]+box[RED][1])*256/NRED/2;
+		clrtab[p][GRN] = (box[GRN][0]+box[GRN][1])*256/NGRN/2;
+		clrtab[p][BLU] = (box[BLU][0]+box[BLU][1])*256/NBLU/2;
+	}
+}
