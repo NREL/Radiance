@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -46,16 +46,23 @@ static unsigned	m_nwasted = 0;
 					/* malloc free lists */
 typedef union m_head {
 	union m_head	*next;
-	int		bucket;
+	struct {
+		short		magic;
+		short		bucket;
+	}	a;
 	ALIGN		dummy;
 } M_HEAD;
+
+#define MAGIC		0x1a2		/* magic number for allocated memory */
 
 #define FIRSTBUCKET	3
 #define NBUCKETS	30
 
 static M_HEAD	*free_list[NBUCKETS];
 
-static char	DUMMYLOC[BYTES_WORD];
+static ALIGN	dummy_mem;
+
+#define DUMMYLOC	((char *)&dummy_mem)
 
 
 char *
@@ -196,7 +203,8 @@ unsigned	n;
 		mp = free_list[bucket];
 		free_list[bucket] = mp->next;
 	}
-	mp->bucket = bucket;			/* tag block */
+	mp->a.magic = MAGIC;			/* tag block */
+	mp->a.bucket = bucket;
 	return((char *)(mp+1));
 }
 
@@ -209,8 +217,8 @@ unsigned	n;
 	char	*p;
 	register unsigned	on;
 					/* get old size */
-	if (op != NULL && op != DUMMYLOC)
-		on = 1 << ((M_HEAD *)op-1)->bucket;
+	if (op != NULL && op != DUMMYLOC && ((M_HEAD *)op-1)->a.magic == MAGIC)
+		on = 1 << ((M_HEAD *)op-1)->a.bucket;
 	else
 		on = 0;
 	if (n <= on && (n > on>>1 || on == 1<<FIRSTBUCKET))
@@ -236,7 +244,9 @@ char	*p;
 	if (p == NULL || p == DUMMYLOC)
 		return;
 	mp = (M_HEAD *)p - 1;
-	bucket = mp->bucket;
+	if (mp->a.magic != MAGIC)		/* sanity check */
+		return;
+	bucket = mp->a.bucket;
 	mp->next = free_list[bucket];
 	free_list[bucket] = mp;
 #ifdef MSTATS
