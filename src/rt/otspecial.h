@@ -17,6 +17,8 @@ extern "C" {
 
 #define  irr_ignore(t)	(ofun[t].flags & T_IRR_IGN)
 
+#define  isopaque(t)    (ofun[t].flags & T_OPAQUE)
+
 
 #ifdef __cplusplus
 }

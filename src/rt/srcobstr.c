@@ -281,7 +281,7 @@ srcblocker(register RAY *r)
 	m = findmaterial(r->ro);
 	if (m == NULL)
 		return;			/* no material?! */
-	if (!(ofun[m->otype].flags & T_OPAQUE))
+	if (!isopaque(m->otype))
 		return;			/* material not a reliable blocker */
 	*srcobstructp(r) = r->robj;     /* else record obstructor */
 }
