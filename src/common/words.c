@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1996 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -43,6 +43,8 @@ register char  *s;
 	while (isspace(*s))
 		s++;
 	while (*s && !isspace(*s))
+		s++;
+	while (isspace(*s))
 		s++;
 	return(s);
 }
