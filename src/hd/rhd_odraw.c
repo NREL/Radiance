@@ -38,6 +38,7 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #define NEWMAP		01		/* need to recompute mapping */
 #define NEWRGB		02		/* need to remap RGB values */
+#define NEWHIST		04		/* clear histogram as well */
 
 struct ODview	*odView;	/* our view list */
 int	odNViews;		/* number of views in our list */
@@ -73,7 +74,7 @@ int	n;
 		for (i = 1024; nbytes > i-8; i <<= 1)
 			;
 		n = (i-8)/SAMP32 * 32;
-		needmapping = NEWMAP;
+		needmapping = NEWHIST;
 	}
 	if (n != odS.nsamp) {	/* (re)allocate sample array */
 		if (odS.nsamp)
@@ -125,7 +126,8 @@ int	n;
 		DCHECK(count<=0 | nextsamp>=n,
 				CONSISTENCY, "counter botch in odInit");
 		if (!i) count = j;
-		while (j--) {
+		while (j--) {		/* initialize blocks & free lists */
+			odView[i].bmap[j].pthresh = FHUGE;
 			odView[i].bmap[j].first = k = nextsamp;
 			nextsamp += odView[i].bmap[j].nsamp = 
 				(n - nextsamp)/count--;
@@ -137,8 +139,11 @@ int	n;
 		}
 	}
 	CLR4ALL(odS.redraw, odS.nsamp);		/* clear redraw flags */
-	for (i = odS.nsamp; i--; )		/* clear values */
+	for (i = odS.nsamp; i--; ) {		/* clear values */
 		odS.ip[i][0] = odS.ip[i][1] = -1;
+		odS.brt[i] = TM_NOBRT;
+	}
+	needmapping |= NEWMAP;			/* compute new map on update */
 	return(odS.nsamp);			/* return number of samples */
 }
 
@@ -156,22 +161,47 @@ int	*s0, *s1;
 
 
 int
-odAllocBlockSamp(vn, hl, vl)		/* allocate sample from block */
-int	vn, hl, vl;
+odAllocBlockSamp(vn, hh, vh, prox)	/* allocate sample from block */
+int	vn, hh, vh;
+double	prox;
 {
 	int	si[SAMPSPERBLOCK+SAMPSPERBLOCK/4];
+	int	hl, vl;
 	VIEW	*vw;
 	FVECT	ro, rd;
 	int	res[2];
 	register struct ODblock	*bp;
-	register int	i;
-
+	register int	i, j;
+					/* get block */
+	hl = hh*odView[vn].hlow/odView[vn].hhi;
+	vl = vh*odView[vn].vlow/odView[vn].vhi;
 	bp = odView[vn].bmap + vl*odView[vn].hlow + hl;
-	if (bp->free != ENDFREE) {	/* check free list first */
+	if (prox > bp->pthresh)
+		return(-1);		/* worse than free list occupants */
+					/* check for duplicate pixel */
+	for (i = bp->first+bp->nsamp; i-- > bp->first; )
+		if (hh == odS.ip[i][0] && vh == odS.ip[i][1]) {	/* found it! */
+						/* search free list for it */
+			if (i == bp->free)
+				break;		/* special case */
+			if (bp->free != ENDFREE)
+				for (j = bp->free; odS.nextfree(j) != ENDFREE;
+						j = odS.nextfree(j))
+					if (odS.nextfree(j) == i) {
+						odS.nextfree(j) =
+							odS.nextfree(i);
+						bp->nused++;
+						goto gotit;
+					}
+			if (prox >= 0.999*odS.closeness(i))
+				return(-1);	/* previous sample is fine */
+			goto gotit;
+		}
+	if (bp->free != ENDFREE) {	/* allocate from free list */
 		i = bp->free;
 		bp->free = odS.nextfree(i);
 		bp->nused++;
-		return(i);
+		goto gotit;
 	}
 	DCHECK(bp->nsamp<=0, CONSISTENCY,
 			"no available samples in odAllocBlockSamp");
@@ -183,13 +213,20 @@ int	vn, hl, vl;
 	for (i = bp->nsamp; i--; )	/* figure out which are worse */
 		si[i] = bp->first + i;
 	qsort((char *)si, bp->nsamp, sizeof(int), sampcmp);
-	i = bp->nsamp*SFREEFRAC + .5;	/* put them in a list */
+	i = bp->nsamp*SFREEFRAC + .5;	/* put them into free list */
+	if (i >= bp->nsamp) i = bp->nsamp-1;	/* paranoia */
+	bp->pthresh = odS.closeness(si[i]);	/* new proximity threshold */
 	while (--i > 0) {
 		odS.nextfree(si[i]) = bp->free;
 		bp->free = si[i];
 		bp->nused--;
 	}
-	return(si[0]);			/* return first free sample */
+	i = si[0];			/* use worst sample */
+gotit:
+	odS.ip[i][0] = hh;
+	odS.ip[i][1] = vh;
+	odS.closeness(i) = prox;
+	return(i);
 }
 
 
@@ -198,9 +235,9 @@ COLR	c;
 FVECT	d, p;
 {
 	FVECT	disp;
-	double	d0, d1, h, v;
+	double	d0, d1, h, v, prox;
 	register VIEW	*vw;
-	int	hl, vl, hh, vh;
+	int	hh, vh;
 	int	res[2];
 	register int	i, id;
 
@@ -235,17 +272,15 @@ FVECT	d, p;
 						(1.+DEPTHEPS)*d0 < d1))
 			continue;			/* occlusion error */
 		}
-		hl = hh*odView[i].hlow/res[0];
-		vl = vh*odView[i].vlow/res[1];
-						/* may duplicate samples */
-		id = odAllocBlockSamp(i, hl, vl);
-		odS.ip[id][0] = hh;
-		odS.ip[id][1] = vh;
 		if (p != NULL) {		/* compute closeness (sin^2) */
 			d1 = DOT(disp, d);
-			odS.closeness(id) = 1. - d1*d1/DOT(disp,disp);
+			prox = 1. - d1*d1/DOT(disp,disp);
 		} else
-			odS.closeness(id) = 0.;
+			prox = 0.;
+						/* allocate sample */
+		id = odAllocBlockSamp(i, hh, vh, prox);
+		if (id < 0)
+			continue;		/* not good enough */
 							/* convert color */
 		tmCvColrs(&odS.brt[id], odS.chr[id], c, 1);
 		if (imm_mode | needmapping)		/* if immediate mode */
@@ -257,9 +292,12 @@ FVECT	d, p;
 }
 
 
-odRemap()				/* recompute tone mapping */
+odRemap(newhist)			/* recompute tone mapping */
+int	newhist;
 {
 	needmapping |= NEWMAP|NEWRGB;
+	if (newhist)
+		needmapping |= NEWHIST;
 }
 
 
@@ -303,15 +341,17 @@ GLfloat	*dm;
 	int	i, j, hmin, hmax, vmin, vmax;
 	register int	k, l;
 
-	DCHECK(vn<0 | vn>=odNViews, CONSISTENCY,
-			"bad view number in odDepthMap");
 	if (dm == NULL) {			/* free edge map */
+		if (vn<0 | vn>=odNViews)
+			return;			/* too late -- they're gone! */
 		if (odView[vn].emap != NULL)
 			free((char *)odView[vn].emap);
 		odView[vn].emap = NULL;
 		odView[vn].dmap = NULL;
 		return;
 	}
+	DCHECK(vn<0 | vn>=odNViews, CONSISTENCY,
+			"bad view number in odDepthMap");
 	odView[vn].dmap = dm;			/* initialize edge map */
 	if (odView[vn].emap == NULL) {
 		odView[vn].emap = (int4 *)malloc(
@@ -378,7 +418,8 @@ int	vn;
 					/* need to do some tone mapping? */
 	if (needmapping & NEWRGB) {
 		if (needmapping & NEWMAP) {
-			tmClearHisto();
+			if (needmapping & NEWHIST)
+				tmClearHisto();
 			if (tmAddHisto(odS.brt,odS.nsamp,1) != TM_E_OK)
 				return;
 			if (tmComputeMapping(0.,0.,0.) != TM_E_OK)
@@ -392,8 +433,8 @@ int	vn;
 		needmapping = 0;		/* reset flag */
 	}
 					/* draw each block in view */
-	for (i = odView[vn].hlow; i--; )
-		for (j = odView[vn].vlow; j--; ) {
+	for (j = odView[vn].vlow; j--; )
+		for (i = 0; i < odView[vn].hlow; i++) {
 					/* get block */
 			bp = odView[vn].bmap + j*odView[vn].hlow + i;
 					/* do quick, conservative flag check */
