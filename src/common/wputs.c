@@ -8,8 +8,11 @@ static char SCCSid[] = "$SunId$ SGI";
  * Default warning output function.
  */
 
+int	nowarn = 0;		/* don't print warnings? */
+
 wputs(s)
 char	*s;
 {
-	eputs(s);
+	if (!nowarn)
+		eputs(s);
 }
