@@ -45,8 +45,7 @@ char	*argv[];
 		exit(1);
 	}
 					/* copy header */
-	while (fgets(buf, sizeof(buf), fin) != NULL && buf[0] != '\n')
-		fputs(buf, stdout);
+	copyheader(fin, stdout);
 					/* add new header info. */
 	printf("%s\n\n", progname);
 					/* get picture size */

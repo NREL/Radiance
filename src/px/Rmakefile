@@ -27,8 +27,8 @@ install:	$(PROGS)
 pfilt:	pfilt.o pf2.o pf3.o color.o header.o
 	cc $(CFLAGS) -o pfilt pfilt.o pf2.o pf3.o color.o header.o -lm
 
-ttyimage:	ttyimage.o color.o
-	cc $(CFLAGS) -o ttyimage ttyimage.o color.o
+ttyimage:	ttyimage.o color.o header.o
+	cc $(CFLAGS) -o ttyimage ttyimage.o color.o header.o
 
 t4027:	t4027.o color.o
 	cc $(CFLAGS) -o t4027 t4027.o color.o
@@ -43,8 +43,8 @@ oki20c:	oki20c.o color.o header.o
 paintjet:	paintjet.o color.o header.o
 	cc $(CFLAGS) -o paintjet paintjet.o color.o header.o
 
-mt160r:	mt160r.o color.o
-	cc $(CFLAGS) -o mt160r mt160r.o color.o
+mt160r:	mt160r.o color.o header.o
+	cc $(CFLAGS) -o mt160r mt160r.o color.o header.o
 
 getinfo:	getinfo.o header.o
 	cc $(CFLAGS) -n -o getinfo getinfo.o header.o
@@ -92,8 +92,8 @@ xraster.o header.o biq.o image.o fvect.o
 	cc $(CFLAGS) -o ximage ximage.o color.o xraster.o \
 header.o ciq.o cut.o closest.o ealloc.o biq.o image.o fvect.o -lX -lm
 
-prot:		prot.o color.o
-	cc $(CFLAGS) -o prot prot.o color.o
+prot:		prot.o color.o header.o
+	cc $(CFLAGS) -o prot prot.o color.o header.o
 
 panim:	panim.o color.o header.o libclient.a
 	cc $(CFLAGS) -o panim panim.o color.o header.o \
