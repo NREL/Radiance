@@ -17,8 +17,17 @@
 #define FALSE 0
 #endif
 
-#define S_REPLACE_EPS 0.06
-#define S_REPLACE_SCALE 10.0
+#define S_REPLACE_EPS 0.06        /* if (distance on sphere between sample
+				     and a base point) < S_REPLACE_EPS,
+				     replace base
+				     */
+#define S_REPLACE_SCALE (5.*5.)   /* if (distance to new point squared) is
+				     > (triangle edge length squared*
+				     S_REPLACE_SCALE):for all edges/triangle
+				     vertices: new point is puncture
+				     point: dont add
+				   */
+#define S_REPLACE_TRI 2e-8		/* .052 radians to the sixth power */
 
 #define SQRT3_2 0.8660254
 
@@ -26,7 +35,12 @@
 #define SM_EXTRA_POINTS 8
 #define SM_EXTRA_VERTS  SM_EXTRA_POINTS
 
-#define SM_INC_PERCENT 0.60
+#define SM_INC_PERCENT 0.60            /* If number of new triangles added 
+					  since last full redraw is > 
+					  (SM_INC_PERCENT * total triangles)
+					  do full redraw instead of incremental
+					  */
+
 #define SM_VIEW_FRAC   0.1
 
 
@@ -217,6 +231,7 @@ extern VIEW Current_View;
 extern int Pick_tri,Picking,Pick_samp;
 extern FVECT Pick_point[500],Pick_origin,Pick_dir;
 extern FVECT Pick_v0[500],Pick_v1[500],Pick_v2[500];
+extern int Pick_q[500];
 extern FVECT P0,P1,P2;
 extern int Pick_cnt;
 extern FVECT FrustumNear[4],FrustumFar[4];

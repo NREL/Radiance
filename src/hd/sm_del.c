@@ -121,311 +121,62 @@ memerr:
   error(SYSTEM,"eNew_edge(): Unable to allocate memory");
 }
 
+/* Return list of edges defining polygon formed by boundary of triangles 
+adjacent to id. Return set of triangles adjacent to id to delete in delptr
+*/
 LIST 
-*smVertex_star_polygon(sm,id,delptr)
+*smVertexPolygon(sm,id,delptr)
 SM *sm;
 int id;
 QUADTREE *delptr;
 {
     TRI *tri,*t_next;
     LIST *elist,*end;
-    int t_id,v_next,t_next_id;
-    int e;
+    int e,t_id,v_next,t_next_id,b_id,v_id;
     OBJECT del_set[2];
 
+    eClear_edges();
     elist = end =  NULL;
+
     /* Get the first triangle adjacent to vertex id */
     t_id = SM_NTH_VERT(sm,id);
     tri = SM_NTH_TRI(sm,t_id);
 
-    if((e = eNew_edge()) == INVALID)
-      return(NULL);
-
-    v_next = (T_WHICH_V(tri,id)+1)%3;
-    SET_E_NTH_VERT(e,0,T_NTH_V(tri,v_next));
+    e = eNew_edge();
+    /* Get the  next vertex on the polygon boundary */
+    v_id = T_WHICH_V(tri,id);
+    b_id = (v_id + 1)%3;
+    /* Create an edge */
+    SET_E_NTH_VERT(e,0,T_NTH_V(tri,b_id));
     SET_E_NTH_TRI(e,0,INVALID);
-    SET_E_NTH_TRI(e,1,T_NTH_NBR(tri,v_next));
-    v_next = (T_WHICH_V(tri,id)+2)%3;
-    SET_E_NTH_VERT(e,1,T_NTH_V(tri,v_next));
+    SET_E_NTH_TRI(e,1,T_NTH_NBR(tri,v_id));
+    v_next = T_NTH_V(tri,(b_id+1)%3);
+    SET_E_NTH_VERT(e,1,v_next);
     elist = add_data_to_circular_list(elist,&end,e);
-
     t_next_id = t_id;
     t_next = tri;
 
-    del_set[0] =1; del_set[1] = t_id;
+    /* Create a set to hold all of the triangles for deletion later */
+    del_set[0] = 1; del_set[1] = t_id;
     *delptr = qtnewleaf(del_set);
 
-    while((t_next_id = T_NTH_NBR(t_next,v_next)) != t_id)
-    {	
-      if((e = eNew_edge()) == INVALID)
-	return(NULL);
-
+    while((t_next_id = T_NTH_NBR(t_next,b_id)) != t_id)
+    {
+      e = eNew_edge();
       t_next = SM_NTH_TRI(sm,t_next_id);
-      v_next = (T_WHICH_V(t_next,id)+1)%3;
-
-      SET_E_NTH_VERT(e,0,T_NTH_V(t_next,v_next));
+      SET_E_NTH_VERT(e,0,v_next);
       SET_E_NTH_TRI(e,0,INVALID);
-      SET_E_NTH_TRI(e,1,T_NTH_NBR(t_next,v_next));
-      v_next = (T_WHICH_V(t_next,id)+2)%3;
-      SET_E_NTH_VERT(e,1,T_NTH_V(t_next,v_next));
+      v_id = T_WHICH_V(t_next,id);
+      b_id = (v_id + 1)%3;
+      SET_E_NTH_TRI(e,1,T_NTH_NBR(t_next,v_id));
+      v_next = T_NTH_V(t_next,(b_id+1)%3);
+      SET_E_NTH_VERT(e,1,v_next);
       elist = add_data_to_circular_list(elist,&end,e);
-
-
-      if(qtinset(*delptr,t_next_id))
-	{
-#ifdef DEBUG
-	  eputs("smVertex_star_polygon(): id already in set\n");
-#endif	  
-	  free_list(elist);
-	  return(NULL);
-	}
-      else
-	qtaddelem(*delptr,t_next_id);
+      qtaddelem(*delptr,t_next_id);
     }
     return(elist);
 }
 
-int
-smEdge_intersect_polygon(sm,v0,v1,l)
-SM *sm;
-FVECT v0,v1;
-LIST *l;
-{
-    FVECT e0,e1;
-    int e,id_e0,id_e1;
-    LIST *el,*eptr;
-    
-    /* Test the edges in l against v0v1 to see if v0v1 intersects
-       any other edges
-     */
-    
-    el = l;
-
-    while(el)
-    {
-      e = (int)LIST_DATA(el);
-      id_e0 = E_NTH_VERT(e,0);
-      id_e1 = E_NTH_VERT(e,1);
-
-      VSUB(e0,SM_NTH_WV(sm,id_e0),SM_VIEW_CENTER(sm));
-      VSUB(e1,SM_NTH_WV(sm,id_e1),SM_VIEW_CENTER(sm));
-      if(sedge_intersect(v0,v1,e0,e1))
-	return(TRUE);
-
-      el = LIST_NEXT(el);
-      if(el == l)
-	break;
-    }
-    return(FALSE);
-}
-
-int
-smFind_next_convex_vertex(sm,id0,id1,v0,v1,l)
-   SM *sm;
-   int id0,id1;
-   FVECT v0,v1;
-   LIST *l;
-{
-    int e,id;
-    LIST *el;
-    FVECT v;
-
-    /* starting with the end of edge at head of l, search sequentially for
-      vertex v such that v0v1v is a convex angle, and the edge v1v does
-      not intersect any other edges
-   */
-    id = INVALID;
-    el = l;
-    while(id != id0)
-    {
-	e = (int)LIST_DATA(el);
-	id = E_NTH_VERT(e,1);
-
-	smDir(sm,v,id); 
-
-	if(convex_angle(v0,v1,v) && !smEdge_intersect_polygon(sm,v1,v,l))
-	   return(id);
-	      
-	el = LIST_NEXT(el);
-	if(el == l)
-	   break;
-    }
-    return(INVALID);
-}
-
-int
-split_edge_list(id0,id_new,l,lnew)
-int id0,id_new;
-LIST **l,**lnew;
-{
-    LIST *list,*lptr,*end;
-    int e,e1,e2,new_e;
-
-    e2 = INVALID;
-    list = lptr = *l;
-
-    if((new_e = eNew_edge())==INVALID)
-     {
-#ifdef DEBUG
-	    eputs("split_edge_list():Too many edges\n");
-#endif
-	 return(FALSE);
-     }
-    SET_E_NTH_VERT(new_e,0,id0);
-    SET_E_NTH_VERT(new_e,1,id_new);
-    SET_E_NTH_TRI(new_e,0,INVALID);
-    SET_E_NTH_TRI(new_e,1,INVALID);
-    
-    while(e2 != id_new)
-    {
-	lptr = LIST_NEXT(lptr);
-	e = (int)LIST_DATA(lptr);
-	e2 = E_NTH_VERT(e,1);
-	if(lptr == list)
-	{
-#ifdef DEBUG	    
-	  eputs("split_edge_list():cant find vertex\n");
-#endif
-	  *lnew = NULL;
-	  return(FALSE);
-	}
-
-    }
-    end = lptr;
-    lptr =  LIST_NEXT(lptr);
-    list = add_data_to_circular_list(list,&end,-new_e);
-    *lnew = list;
-
-    /* now follow other cycle */
-
-    list = lptr;
-    e2 = INVALID;
-    while(e2 != id0)
-    {
-	lptr = LIST_NEXT(lptr);
-	e = (int)LIST_DATA(lptr);
-	e2 = E_NTH_VERT(e,1);
-	if(lptr == list)
-	{
-#ifdef DEBUG	    
-	  eputs("split_edge_list():cant find intial vertex\n");
-#endif
-	  *l = NULL;
-	  return(FALSE);
-	}
-
-    }
-    end = lptr;
-    list = add_data_to_circular_list(list,&end,new_e);
-    *l = list;
-    return(TRUE);
-}
-
-
-int
-smTriangulate_convex(sm,plist,add_ptr)
-SM *sm;
-LIST *plist,**add_ptr;
-{
-    int t_id,e_id0,e_id1,e_id2;
-    int v_id0,v_id1,v_id2;
-    LIST *lptr;
-    int cnt;
-
-    lptr = plist;
-    e_id0 = (int)LIST_DATA(lptr);
-    v_id0 = E_NTH_VERT(e_id0,0);
-    lptr = LIST_NEXT(lptr);
-    while(LIST_NEXT(lptr) != plist)
-    {
-	e_id1 = (int)LIST_DATA(lptr);
-	v_id1 = E_NTH_VERT(e_id1,0);
-	v_id2 = E_NTH_VERT(e_id1,1);
-	/* form a triangle for each triple of with v0 as base of star */
-	t_id = smAdd_tri(sm,v_id0,v_id1,v_id2);
-	*add_ptr = push_data(*add_ptr,t_id);
-
-	/* add which pointer?*/
-
-	lptr = LIST_NEXT(lptr);
-
-	if(LIST_NEXT(lptr) != plist)
-	{
-	    e_id2 = eNew_edge();
-	    SET_E_NTH_VERT(e_id2,0,v_id2);
-	    SET_E_NTH_VERT(e_id2,1,v_id0);
-	}
-	else
-	   e_id2 = (int)LIST_DATA(lptr);
-	 
-	/* set appropriate tri for each edge*/ 
-	SET_E_NTH_TRI(e_id0,0,t_id);
-	SET_E_NTH_TRI(e_id1,0,t_id);
-	SET_E_NTH_TRI(e_id2,0,t_id);
-
-	e_id0 = -e_id2;
-    }
-    free_list(plist);
-    return(TRUE);
-}
-int
-smTriangulate_elist(sm,plist,add_ptr)
-SM *sm;
-LIST *plist,**add_ptr;
-{
-    LIST *l,*el1;
-    FVECT v0,v1,v2;
-    int id0,id1,id2,e,id_next;
-    char flipped;
-    int done;
-
-    l = plist;
-    
-    while(l)
-    {
-	/* get v0,v1,v2 */
-      e = (int)LIST_DATA(l);
-      id0 = E_NTH_VERT(e,0);
-      id1 = E_NTH_VERT(e,1);
-      l = LIST_NEXT(l);
-      e = (int)LIST_DATA(l);
-      id2 = E_NTH_VERT(e,1);
-
-      smDir(sm,v0,id0);
-      smDir(sm,v1,id1);
-      smDir(sm,v2,id2);
-      /* determine if convex (left turn), or concave(right turn) angle */
-      if(convex_angle(v0,v1,v2))
-      {
-	if(l == plist)
-	  break;
-	else
-	  continue;
-      }
-      /* if concave: add edge and recurse on two sub polygons */
-      id_next = smFind_next_convex_vertex(sm,id0,id1,v0,v1,LIST_NEXT(l));
-      if(id_next == INVALID)
-      {
-#ifdef DEBUG
-	  eputs("smTriangulate_elist():Unable to find convex vertex\n");
-#endif
-	  return(FALSE);
-      }
-      /* add edge */
-      el1 = NULL;
-      /* Split edge list l into two lists: one from id1-id_next-id1,
-	 and the next from id2-id_next-id2
-      */
-      split_edge_list(id1,id_next,&l,&el1);
-      /* Recurse and triangulate the two edge lists */
-      done = smTriangulate_elist(sm,l,add_ptr);
-      if(done)
-	done = smTriangulate_elist(sm,el1,add_ptr);
-      return(done);
-    }
-    done = smTriangulate_convex(sm,plist,add_ptr);
-    return(done);
-}
 
 int
 smTriangulate_add_tri(sm,id0,id1,id2,e0,e1,e2ptr)
@@ -435,6 +186,10 @@ int id0,id1,id2,e0,e1,*e2ptr;
   int t_id;
   int e2;
 
+#ifdef DEBUG 
+  if(id0 == INVALID || id1==INVALID || id2==INVALID)
+    error(CONSISTENCY,"bad id- smTriangulate_add_tri()\n");
+#endif
   t_id = smAdd_tri(sm,id0,id1,id2);
   if(*e2ptr == 0)
   {
@@ -452,141 +207,191 @@ int id0,id1,id2,e0,e1,*e2ptr;
   *e2ptr = e2;
   return(t_id);
 }
+
 int
-smTriangulate_elist_new(sm,id,plist,add_ptr)
+smTriangulateConvex(sm,plist,add_ptr)
+SM *sm;
+LIST *plist,**add_ptr;
+{
+    int t_id,e_id0,e_id1,e_id2;
+    int v_id0,v_id1,v_id2;
+    LIST *lptr;
+
+    lptr = plist;
+    e_id0 = (int)LIST_DATA(lptr);
+    v_id0 = E_NTH_VERT(e_id0,0);
+    lptr = LIST_NEXT(lptr);
+    while(LIST_NEXT(lptr) != plist)
+    {
+	e_id1 = (int)LIST_DATA(lptr);
+	v_id1 = E_NTH_VERT(e_id1,0);
+	v_id2 = E_NTH_VERT(e_id1,1);
+	lptr = LIST_NEXT(lptr);
+
+	if(LIST_NEXT(lptr) != plist)	
+	  e_id2 = 0;
+	else
+	   e_id2 = (int)LIST_DATA(lptr);
+	t_id = smTriangulate_add_tri(sm,v_id0,v_id1,v_id2,e_id0,e_id1,&e_id2);
+	*add_ptr = push_data(*add_ptr,t_id);
+	e_id0 = -e_id2;
+    }
+    free_list(plist);
+    return(TRUE);
+}
+#ifdef TEST_DRIVER
+FVECT Norm[500],B_V[500];
+int Ncnt,Bcnt,Del=0;
+#endif
+
+
+/* Triangulate the polygon defined by plist, and generating vertex p_id.
+   Return list of added triangles in list add_ptr. Returns TRUE if 
+   successful, FALSE otherwise. This is NOT a general triangulation routine,
+   assumes polygon star relative to id
+*/
+
+int
+smTriangulate(sm,id,plist,add_ptr)
 SM *sm;
 int id;
 LIST *plist,**add_ptr;
 {
     LIST *l,*prev,*t;
     FVECT v0,v1,v2,n,p;
-    int is_tri,loop,t_id,id0,id1,id2,e2,eprev,enext;
+    int is_tri,is_convex,cut,t_id,id0,id1,id2,e2,e1,enew;
     double dp;
 
-    smDir(sm,p,id);
-    enext=0;
-    is_tri= loop = FALSE;
+    VSUB(p,SM_NTH_WV(sm,id),SM_VIEW_CENTER(sm));
+    enew = 0;
+    is_convex = TRUE;
+    cut = is_tri= FALSE;
     l = prev = plist;
-    /* get v0,v1,v2 */
-    eprev = (int)LIST_DATA(l);
-    id0 = E_NTH_VERT(eprev,0);
-    id1 = E_NTH_VERT(eprev,1);
-    smDir(sm,v0,id0);
-    smDir(sm,v1,id1);   
+
+    /* get v0,v1 */
+    e1 = (int)LIST_DATA(l);
+    id0 = E_NTH_VERT(e1,0);
+    id1 = E_NTH_VERT(e1,1);
+    VSUB(v0,SM_NTH_WV(sm,id0),SM_VIEW_CENTER(sm));
+    VSUB(v1,SM_NTH_WV(sm,id1),SM_VIEW_CENTER(sm));   
+#ifdef TEST_DRIVER
+    Del = TRUE;
+    VCOPY(B_V[0],v0);
+    VCOPY(B_V[1],v1);
+    Bcnt = 2;
+    Ncnt = 0;
+#endif
     while(l)
     {
       l = LIST_NEXT(l);
+      /* Get v2 */
       e2 = (int)LIST_DATA(l);
       id2 = E_NTH_VERT(e2,1);
-      /* Check if have a triangle */
+      VSUB(v2,SM_NTH_WV(sm,id2),SM_VIEW_CENTER(sm));
+#ifdef TEST_DRIVER
+      VCOPY(B_V[Bcnt++],v2);
+#endif
       if(LIST_NEXT(LIST_NEXT(l)) == prev)
-      {
-	is_tri = TRUE;
-	break;
+      {/* Check if have a triangle */
+	   is_tri = TRUE;	
+	   break;
       }
-      if(LIST_NEXT(l) == plist)
-      {
-	if(!loop)
-	  loop = 1;
-	else
-	  loop++;
-	if(loop > 3)
-	  break;
-      }
-      smDir(sm,v2,id2);
-      /* determine if convex (left turn), or concave(right turn) angle */
-      if(!convex_angle(v0,v1,v2))
-      {
-	VCOPY(v0,v1);
-	VCOPY(v1,v2);
-	id0 = id1;
-	id1 = id2;
-	prev = l;
-	eprev = e2;
-	continue;
-      }
-      VCROSS(n,v0,v2);
-      dp = DOT(n,p);
-      if(loop <=1 && (!ZERO(dp) && dp  < 0.0))
-      {
-	VCOPY(v0,v1);
-	VCOPY(v1,v2);
-	id0 = id1;
-	id1 = id2;
-	eprev = e2;
-	prev = l;
-	continue;
-      }
-      loop = FALSE;
 
-      enext = 0;
-      t_id = smTriangulate_add_tri(sm,id0,id1,id2,eprev,e2,&enext);
-      *add_ptr = push_data(*add_ptr,t_id);
-
-      LIST_NEXT(prev) = LIST_NEXT(l);
-      LIST_DATA(prev) = eprev = -enext;
-      LIST_NEXT(l)=NULL;
-      if(l== plist)
-	plist = prev;
-      free_list(l);
-      l = prev;
+      /* determine if v0-v1-v2 is convex:defined clockwise on the sphere-
+       so switch orientation
+       */
+      if(convex_angle(v2,v1,v0))
+      {
+	  /* test if safe to cut off v0-v1-v2 by testing if p lies outside of
+         triangle v0-v1-v2: if so, because plist is the star polygon around p,
+          the new edge v2-v0 cannot intersect any existing edges
+        */
+	VCROSS(n,v0,v2);
+        dp = DOT(n,p);
+        if(dp  <= 0.0)
+	{
+	    /* remove edges e1,e2 and add triangle id0,id1,id2 */
+          enew = 0;
+          t_id = smTriangulate_add_tri(sm,id0,id1,id2,e1,e2,&enew);
+	  cut = TRUE;
+          *add_ptr = push_data(*add_ptr,t_id);
+           /* Insert edge enew into the list, reuse prev list element */
+	  LIST_NEXT(prev) = LIST_NEXT(l);
+	  LIST_DATA(prev) = e1 = -enew;
+           /* If removing head of list- reset plist pointer */
+          if(l== plist)
+	    plist = prev;
+	  /* free list element for e2 */
+	  LIST_NEXT(l)=NULL;
+	  free_list(l);
+	  l = prev;
+	  VCOPY(v1,v2);
+	  id1 = id2;
+	  continue;
+	}
+      }
+      else
+	is_convex = FALSE;
+      VCOPY(v0,v1);
       VCOPY(v1,v2);
+      id0 = id1;
       id1 = id2;
+      e1 = e2;	
+      /* check if gone around circular list without adding any
+	 triangles: prevent infinite loop */
+      if(l == plist)
+      {
+	if(LIST_NEXT(LIST_NEXT(l)) == prev)
+	  {/* Check if have a triangle */
+	    is_tri = TRUE;	
+	    break;
+	  }
+
+	if(is_convex)
+	  break;
+	if(!cut)
+	{
+#ifdef DEBUG
+	  eputs("smTriangulate():Unable to triangulate\n");
+#endif
+	  free_list(l);
+	  while(*add_ptr)
+	  {
+	    t_id = pop_list(add_ptr);
+	    smDelete_tri(sm,t_id);
+	  }
+	  return(FALSE);
+        }
+        cut = FALSE;
+	is_convex = TRUE;
+      }
+      prev = l;
     }
     if(is_tri)
     {
       l = LIST_NEXT(l);
-      enext = (int)LIST_DATA(l);
-      t_id = smTriangulate_add_tri(sm,id0,id1,id2,eprev,e2,&enext);
+      enew = (int)LIST_DATA(l);
+      t_id = smTriangulate_add_tri(sm,id0,id1,id2,e1,e2,&enew);
       *add_ptr = push_data(*add_ptr,t_id);
       free_list(l);
-     }
-    else
-      {
-#ifdef DEBUG       
-	eputs("smTriangulate_elist()Unable to triangulate\n");
-#endif
-	return(FALSE);
-      }
-    return(TRUE);
-}
-
-int
-smTriangulate(sm,p_id,plist,add_ptr)
-SM *sm;
-int p_id;
-LIST *plist,**add_ptr;
-{
-    int e,id_t0,id_t1,e0,e1;
-    int test;
-
-    test = smTriangulate_elist_new(sm,p_id,plist,add_ptr);
-#if 0
-    test = smTriangulate_elist(sm,plist,add_ptr);
-#endif
-
-    if(!test)
-       return(test);
-
-    FOR_ALL_EDGES(e)
-    {
-	id_t0 = E_NTH_TRI(e,0);
-	id_t1 = E_NTH_TRI(e,1);
-	if((id_t0==INVALID) || (id_t1==INVALID))
-	{
-#ifdef DEBUG
-	   eputs("smTriangulate(): Unassigned edge neighbor\n");
-#endif
-	    continue;
-	}
-	
-	e0 = T_WHICH_V(SM_NTH_TRI(sm,id_t0),E_NTH_VERT(e,0));
-	T_NTH_NBR(SM_NTH_TRI(sm,id_t0),e0) = id_t1;
-
-	e1 = T_WHICH_V(SM_NTH_TRI(sm,id_t1),E_NTH_VERT(e,1));
-	T_NTH_NBR(SM_NTH_TRI(sm,id_t1),e1) = id_t0;
     }
-    return(test);
+    else
+      if(!smTriangulateConvex(sm,l,add_ptr))
+	return(FALSE);
+
+    /* Set triangle adjacencies based on edge adjacencies */ 
+    FOR_ALL_EDGES(enew)
+    {
+      id0 = E_NTH_TRI(enew,0);
+      id1 = E_NTH_TRI(enew,1);
+	
+      e1 = (T_WHICH_V(SM_NTH_TRI(sm,id0),E_NTH_VERT(enew,0))+2)%3;
+      T_NTH_NBR(SM_NTH_TRI(sm,id0),e1) = id1;
+      
+      e2 = (T_WHICH_V(SM_NTH_TRI(sm,id1),E_NTH_VERT(enew,1))+2)%3;
+      T_NTH_NBR(SM_NTH_TRI(sm,id1),e2) = id0;
+    }
+    return(TRUE);
 }
 
 eIn_tri(e,t)
@@ -601,10 +406,17 @@ TRI *t;
       return(T_NTH_V(t,0)==E_NTH_VERT(e,1)||T_NTH_V(t,2)==E_NTH_VERT(e,1));
     else if(T_NTH_V(t,2)==E_NTH_VERT(e,0))
       return(T_NTH_V(t,0)==E_NTH_VERT(e,1)||T_NTH_V(t,1)==E_NTH_VERT(e,1));
+
   return(FALSE);
 }
 
-smFix_edges(sm,add_list,delptr)
+/* Test the new set of triangles for Delaunay condition. 'Edges' contains
+   all of the new edges added. The CCW triangle assoc with each edge is
+   tested against the opposite vertex of the CW triangle. If the vertex
+   lies inside the circle defined by the CCW triangle- the edge is swapped 
+   for the opposite diagonal
+*/
+smFixEdges(sm,add_list,delptr)
    SM *sm;
    LIST *add_list;
    QUADTREE *delptr;
@@ -613,6 +425,7 @@ smFix_edges(sm,add_list,delptr)
     int e,t0_id,t1_id,e_new,e0,e1,e0_next,e1_next;
     int i,v0_id,v1_id,v2_id,p_id,t0_nid,t1_nid;
     FVECT v0,v1,v2,p,np,v;
+    TRI *t0,*t1;
 
     FOR_ALL_EDGES(e)
     {
@@ -621,18 +434,18 @@ smFix_edges(sm,add_list,delptr)
 	if((t0_id==INVALID) || (t1_id==INVALID))
 	{
 #ifdef DEBUG
-	    eputs("smFix_edges: Unassigned edge nbr\n");
+	    error(CONSISTENCY,"smFix_edges: Unassigned edge nbr\n");
 #endif
-	    continue;
 	}
-	e0 = T_WHICH_V(SM_NTH_TRI(sm,t0_id),E_NTH_VERT(e,0));
-	e1 = T_WHICH_V(SM_NTH_TRI(sm,t1_id),E_NTH_VERT(-e,0));
-	e0_next = (e0+2)%3;
-	e1_next = (e1+2)%3;
+	t0 = SM_NTH_TRI(sm,t0_id);
+	t1 = SM_NTH_TRI(sm,t1_id);
+	e0 = T_NTH_NBR_PTR(t1_id,t0);
+	e1 = T_NTH_NBR_PTR(t0_id,t1);
+
 	v0_id = E_NTH_VERT(e,0);
 	v1_id = E_NTH_VERT(e,1);
-	v2_id = T_NTH_V(SM_NTH_TRI(sm,t0_id),e0_next);
-	p_id = T_NTH_V(SM_NTH_TRI(sm,t1_id),e1_next);
+	v2_id = T_NTH_V(t0,e0);
+	p_id = T_NTH_V(t1,e1);
 
 	smDir_in_cone(sm,v0,v0_id);
 	smDir_in_cone(sm,v1,v1_id);
@@ -645,6 +458,9 @@ smFix_edges(sm,add_list,delptr)
 	   smTris_swap_edge(sm,t0_id,t1_id,e0,e1,&t0_nid,&t1_nid,&add_list,
 			    delptr);
 	    
+	   /* Adjust the triangle pointers of the remaining edges to be
+	      processed
+            */
 	    FOR_ALL_EDGES_FROM(e,i)
 	    {
 	      if(E_NTH_TRI(i,0)==t0_id || E_NTH_TRI(i,0)==t1_id)
@@ -672,47 +488,40 @@ smFix_edges(sm,add_list,delptr)
 	    SET_E_NTH_TRI(e_new,1,t1_id);
 	}
     }
+    /* Add/Delete the appropriate triangles from the stree */
     smUpdate_locator(sm,add_list,qtqueryset(*delptr));
+
 }
 
+/* Remove vertex "id" from the mesh- and retriangulate the resulting
+   hole: Returns TRUE if successful, FALSE otherwise.
+ */
 int
-smMesh_remove_vertex(sm,id)
+smRemoveVertex(sm,id)
    SM *sm;
    int id;
 {
+    LIST *b_list,*add_list;
+    QUADTREE delnode=-1;
     int t_id;
-    LIST *elist,*add_list;
-    int cnt,debug;
-    QUADTREE delnode;
-    /* generate list of vertices that form the boundary of the
-       star polygon formed by vertex id and all of its adjacent
-       triangles
-     */
-    eClear_edges();
-    elist = smVertex_star_polygon(sm,id,&delnode);
 
-    if(!elist)
-    {
-#ifdef DEBUG
-      eputs("smMesh_remove_vertex(): Unable to remove vertex");
-#endif
-      qtfreeleaf(delnode);
-      return(FALSE);
-    }
+    /* generate list of edges that form the boundary of the
+       polygon formed by the triangles adjacent to vertex 'id'
+     */
+    b_list = smVertexPolygon(sm,id,&delnode);
+
     add_list = NULL;
-    /* Triangulate spherical polygon */
-    if(!smTriangulate(sm,id,elist,&add_list))
+    /* Triangulate polygonal hole  */
+    if(!smTriangulate(sm,id,b_list,&add_list))
     {
-      while(add_list)
-      {
-	t_id = pop_list(&add_list);
-	smDelete_tri(sm,t_id);
-      }
       qtfreeleaf(delnode);
       return(FALSE);
     }
-    /* Fix up new triangles to be Delaunay */
-    smFix_edges(sm,add_list,&delnode);
+    /* Fix up new triangles to be Delaunay-delnode contains set of
+     triangles to delete,add_list is the set of new triangles to add
+     */
+    smFixEdges(sm,add_list,&delnode);
+
 
     qtfreeleaf(delnode);
     return(TRUE);

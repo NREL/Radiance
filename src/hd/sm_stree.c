@@ -26,11 +26,11 @@ extern int Pick_cnt;
 FVECT stDefault_base[6] = {  {1.,0.,0.},{0.,1.,0.}, {0.,0.,1.},
 			    {-1.,0.,0.},{0.,-1.,0.},{0.,0.,-1.}};
 /* octahedron triangle vertices */
-int stBase_verts[8][3] = { {0,1,2},{0,5,1},{3,1,5},{3,2,1},
-			  {0,2,4},{5,0,4},{5,4,3},{2,3,4}};
+int stBase_verts[8][3] = { {2,1,0},{1,5,0},{5,1,3},{1,2,3},
+			  {4,2,0},{4,0,5},{3,4,5},{4,3,2}};
 /* octahedron triangle nbrs ; nbr i is the face opposite vertex i*/
-int stBase_nbrs[8][3] =  { {3,4,1},{2,0,5},{1,6,3},{0,2,7},
-			  {7,5,0},{4,6,1},{7,2,5},{6,4,3}};
+int stBase_nbrs[8][3] =  { {1,4,3},{5,0,2},{3,6,1},{7,2,0},
+			  {0,5,7},{1,6,4},{5,2,7},{3,4,6}};
 /* look up table for octahedron point location */
 int stlocatetbl[8] = {6,7,2,3,5,4,1,0};
 
@@ -86,9 +86,9 @@ STREE *st;
       FP_X(ST_NTH_PLANE(st,i)) = (m+1)%3; 
       FP_Y(ST_NTH_PLANE(st,i)) = (m+2)%3;
       FP_Z(ST_NTH_PLANE(st,i)) = m;
-      VCROSS(ST_EDGE_NORM(st,i,0),v1,v0);
-      VCROSS(ST_EDGE_NORM(st,i,1),v2,v1);
-      VCROSS(ST_EDGE_NORM(st,i,2),v0,v2);
+      VCROSS(ST_EDGE_NORM(st,i,0),v0,v1);
+      VCROSS(ST_EDGE_NORM(st,i,1),v1,v2);
+      VCROSS(ST_EDGE_NORM(st,i,2),v2,v0);
   }
   return(st);
 }
@@ -211,11 +211,13 @@ stTrace_ray(st,orig,dir,func,argptr)
 {
     int next,last,i,f=0;
     QUADTREE root;
-    FVECT o,n;
-    double pd,t;
+    FVECT o,n,v;
+    double pd,t,d;
 
     VCOPY(o,orig);
-
+#ifdef TEST_DRIVER
+       Pick_cnt=0;
+#endif;
     /* Find the root node that o falls in */
     i = stPoint_in_root(o);
     root = ST_NTH_ROOT(st,i);
@@ -226,7 +228,9 @@ stTrace_ray(st,orig,dir,func,argptr)
 
     if(QT_FLAG_IS_DONE(f))
       return(TRUE);
-	
+    
+    d = DOT(orig,dir)/sqrt(DOT(orig,orig));
+    VSUM(v,orig,dir,-d);
     /* Crossed over to next cell: id = nbr */
     while(1) 
       {
@@ -236,8 +240,10 @@ stTrace_ray(st,orig,dir,func,argptr)
 	   */
 	if(next == INVALID)
 	  return(FALSE);
-	if(!intersect_ray_oplane(orig,dir,
-				 ST_EDGE_NORM(st,i,(next+1)%3),NULL,o))
+#if 0
+	if(!intersect_ray_oplane(o,dir,ST_EDGE_NORM(st,i,(next+1)%3),NULL,o))
+#endif
+	   if(DOT(o,v) < 0.0)
 	   /* Ray does not cross into next cell: done and tri not found*/
 	   return(FALSE);
 
@@ -269,9 +275,9 @@ stVisit_tri(st,t0,t1,t2,func,f,argptr)
   FVECT n0,n1,n2;
 
   /* Calcuate the edge normals for tri */
-  VCROSS(n0,t1,t0);
-  VCROSS(n1,t2,t1);
-  VCROSS(n2,t0,t2);
+  VCROSS(n0,t0,t1);
+  VCROSS(n1,t1,t2);
+  VCROSS(n2,t2,t0);
 
   for(i=0; i < ST_NUM_ROOT_NODES; i++)
   {
@@ -295,7 +301,10 @@ stApply_to_tri(st,t0,t1,t2,edge_func,tri_func,argptr)
 {
     int f;
     FVECT dir;
-    
+
+#ifdef TEST_DRIVER
+    Pick_cnt=0;
+#endif;
   /* First add all of the leaf cells lying on the triangle perimeter:
      mark all cells seen on the way
    */
@@ -307,6 +316,10 @@ stApply_to_tri(st,t0,t1,t2,edge_func,tri_func,argptr)
     if(QT_FLAG_FILL_TRI(f) || QT_FLAG_UPDATE(f))
        stVisit_tri(st,t0,t1,t2,tri_func,&f,argptr);
 }
+
+
+
+
 
 
 

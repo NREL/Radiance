@@ -29,26 +29,26 @@ QUADTREE
 qtnewleaf(oset)			/* return new leaf node for object set */
 OBJECT  *oset;
 {
-	register QUADTREE  osi;
+  register QUADTREE  osi;
 
-	if (*oset <= 0)
-		return(EMPTY);		/* should be error? */
-	if (qtfreesets != EMPTY) {
-		osi = qtfreesets;
-		qtfreesets = (int)qtsettab[osi];
-	} else if ((osi = qtnumsets++) % QTSETIBLK == 0) {
-		qtsettab = (OBJECT **)realloc((char *)qtsettab,
-				(unsigned)(osi+QTSETIBLK)*sizeof(OBJECT *));
-		if (qtsettab == NULL)
-			goto memerr;
-	}
-	qtsettab[osi] = (OBJECT *)malloc(QTNODESIZ(*oset)*sizeof(OBJECT));
-	if (qtsettab[osi] == NULL)
-		goto memerr;
-	setcopy(qtsettab[osi], oset);
-	return(QT_INDEX(osi));
+  if (*oset <= 0)
+    return(EMPTY);		/* should be error? */
+  if (qtfreesets != EMPTY) {
+    osi = qtfreesets;
+    qtfreesets = (int)qtsettab[osi];
+  } else if ((osi = qtnumsets++) % QTSETIBLK == 0) {
+    qtsettab = (OBJECT **)realloc((char *)qtsettab,
+				  (unsigned)(osi+QTSETIBLK)*sizeof(OBJECT *));
+    if (qtsettab == NULL)
+      goto memerr;
+  }
+  qtsettab[osi] = (OBJECT *)malloc(QTNODESIZ(*oset)*sizeof(OBJECT));
+  if (qtsettab[osi] == NULL)
+    goto memerr;
+  setcopy(qtsettab[osi], oset);
+  return(QT_INDEX(osi));
 memerr:
-	error(SYSTEM, "out of memory in qtnewleaf");
+  error(SYSTEM, "out of memory in qtnewleaf");
 }
 
 
@@ -195,4 +195,12 @@ register OBJECT  *cs;                   /* cs' = cs + os */
     for (i = os[0]; i-- >= 0; )
        *cs++ = *os++;
 }
+
+
+
+
+
+
+
+
 

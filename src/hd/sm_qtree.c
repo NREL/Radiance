@@ -27,7 +27,7 @@ int4 *quad_flag= NULL;
 extern FVECT Pick_v0[500],Pick_v1[500],Pick_v2[500];
 extern int Pick_cnt,Pick_tri,Pick_samp;
 extern FVECT Pick_point[500];
-
+extern int Pick_q[500];
 
 #endif
 int Incnt=0;
@@ -578,7 +578,11 @@ qtVisit_tri_edges(qt,b,db0,db1,db2,db,wptr,nextptr,t,sign,sfactor,func,f,argptr)
     }
     else
    {
-     func(&qt,f,argptr);
+#ifdef TEST_DRIVER
+       if(Pick_cnt < 500)
+	  Pick_q[Pick_cnt++]=qt;
+#endif;
+       func(&qt,f,argptr);
      if(QT_FLAG_IS_DONE(*f))
      {
        if(!QT_IS_EMPTY(qt))
@@ -799,7 +803,7 @@ qtRoot_trace_ray(qt,q0,q1,q2,peq,orig,dir,nextptr,func,f,argptr)
    VSUB(db,b[1],b[0]);
   t[0] = HUGET;
   convert_dtol(b[0],bi);
-   if(et[1]<0.0 || (fabs(b[1][0])>(FTINY+1.0)) ||(fabs(b[1][1])>(FTINY+1.0)) ||
+   if(et[1]<0.0 ||(fabs(b[1][0])>(FTINY+1.0))||(fabs(b[1][1])>(FTINY+1.0)) ||
       (fabs(b[1][2])>(FTINY+1.0))||(b[1][0] <-FTINY) ||
       (b[1][1]<-FTINY) ||(b[1][2]<-FTINY))
      {
