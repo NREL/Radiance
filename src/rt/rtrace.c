@@ -57,8 +57,8 @@ int  hresolu = 0;			/* horizontal (scan) size */
 int  vresolu = 0;			/* vertical resolution */
 
 double  dstrsrc = 0.0;			/* square source distribution */
-double  shadthresh = .05;		/* shadow threshold */
-double  shadcert = .5;			/* shadow certainty */
+double  shadthresh = .03;		/* shadow threshold */
+double  shadcert = .75;			/* shadow certainty */
 int  directrelay = 2;			/* number of source relays */
 int  vspretest = 512;			/* virtual source pretest density */
 int  directvis = 1;			/* sources visible? */
