@@ -20,8 +20,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #define vfork		fork
 #endif
 
-#define MAXSBUF		409580	/* maximum total size of scanline buffer */
-#define HSIZE		227	/* size of scanline hash table */
+#define MAXSBUF		1023980	/* maximum total size of scanline buffer */
+#define HSIZE		317	/* size of scanline hash table */
 #define NRETIRE		16	/* number of scanlines to retire at once */
 
 int	rt_pid = -1;		/* process id for rtrace */
@@ -426,9 +426,11 @@ scanretire()			/* retire old scanlines to free list */
 					register int	oh;
 					oh = shash(sold[NRETIRE-1]->y);
 					sold[NRETIRE-1]->next = hashtab[oh];
-					if (h == oh && sl == &head)
-						head.next = sl = sold[NRETIRE-1];
-					else
+					if (h == oh) {
+						head.next = sold[NRETIRE-1];
+						if (sl == &head)
+							sl = head.next;
+					} else
 						hashtab[oh] = sold[NRETIRE-1];
 				} else			/* else bubble up */
 					sold[i] = sold[i-1];
