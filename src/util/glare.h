@@ -69,3 +69,6 @@ extern struct source {
 } *donelist;			/* finished sources */
 
 extern double	getviewpix();
+
+extern long	npixinvw;	/* number of samples in view */
+extern long	npixmiss;	/* number of samples missing */
