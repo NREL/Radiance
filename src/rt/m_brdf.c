@@ -191,7 +191,7 @@ double  omega;			/* light source size */
 }
 
 
-m_brdf(m, r)			/* color a ray which hit a BRDTF material */
+m_brdf(m, r)			/* color a ray which hit a BRDTfunc material */
 register OBJREC  *m;
 register RAY  *r;
 {
@@ -291,7 +291,7 @@ register RAY  *r;
 	if (hasrefl) {
 		if (nd.pdot < 0.0)
 			flipsurface(r);
-		ambient(ctmp, r);
+		ambient(ctmp, r, nd.pnorm);
 		multcolor(ctmp, nd.rdiff);
 		addcolor(r->rcol, ctmp);	/* add to returned color */
 		if (nd.pdot < 0.0)
@@ -300,7 +300,7 @@ register RAY  *r;
 	if (hastrans) {				/* from other side */
 		if (nd.pdot > 0.0)
 			flipsurface(r);
-		ambient(ctmp, r);
+		ambient(ctmp, r, nd.pnorm);
 		multcolor(ctmp, nd.tdiff);
 		addcolor(r->rcol, ctmp);
 		if (nd.pdot > 0.0)
@@ -377,14 +377,14 @@ register RAY  *r;
 	}
 						/* compute ambient */
 	if (nd.trans < 1.0-FTINY) {
-		ambient(ctmp, r);
+		ambient(ctmp, r, nd.pnorm);
 		scalecolor(ctmp, 1.0-nd.trans);
 		multcolor(ctmp, nd.mcolor);	/* modified by material color */
 		addcolor(r->rcol, ctmp);	/* add to returned color */
 	}
 	if (nd.trans > FTINY) {		/* from other side */
 		flipsurface(r);
-		ambient(ctmp, r);
+		ambient(ctmp, r, nd.pnorm);
 		scalecolor(ctmp, nd.trans);
 		multcolor(ctmp, nd.mcolor);
 		addcolor(r->rcol, ctmp);

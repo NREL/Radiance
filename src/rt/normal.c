@@ -290,7 +290,7 @@ register RAY  *r;
 		gaussamp(r, &nd);
 
 	if (nd.rdiff > FTINY) {		/* ambient from this side */
-		ambient(ctmp, r);
+		ambient(ctmp, r, hastexture?nd.pnorm:r->ron);
 		if (nd.specfl & SP_RBLT)
 			scalecolor(ctmp, 1.0-nd.trans);
 		else
@@ -300,7 +300,7 @@ register RAY  *r;
 	}
 	if (nd.tdiff > FTINY) {		/* ambient from other side */
 		flipsurface(r);
-		ambient(ctmp, r);
+		ambient(ctmp, r, hastexture?nd.pnorm:r->ron);
 		if (nd.specfl & SP_TBLT)
 			scalecolor(ctmp, nd.trans);
 		else
