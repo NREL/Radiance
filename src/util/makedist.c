@@ -39,6 +39,9 @@ int  rtargc = 2;
 
 #define  passarg(s)	(rtargv[rtargc++] = s)
 
+#ifdef  DCL_ATOF
+extern double  atof();
+#endif
 					/* default angles */
 ANGLE  alpha[181] = {10, 25, 40, 55, 70, 85, AEND};
 ANGLE  beta[361] = {0,30,60,90,120,150,180,210,240,270,300,330,AEND};
