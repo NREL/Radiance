@@ -12,6 +12,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "glare.h"
 
+#include "random.h"
+
 #define FEQ(a,b)	((a)-(b)<=FTINY&&(a)-(b)<=FTINY)
 #define VEQ(v1,v2)	(FEQ((v1)[0],(v2)[0])&&FEQ((v1)[1],(v2)[1]) \
 				&&FEQ((v1)[2],(v2)[2]))
@@ -290,6 +292,7 @@ compdir(vd, x, y)			/* compute direction for x,y */
 FVECT	vd;
 int	x, y;
 {
+	long	t;
 	FVECT	org;			/* dummy variable */
 
 	if (x <= -hlim)			/* left region */
@@ -300,7 +303,11 @@ int	x, y;
 		return(viewray(org, vd, &rightview,
 				(double)(x-hlim)/(2*sampdens)+.5,
 				(double)y/(2*sampdens)+.5));
-						/* central region */
+					/* central region */
+				/* avoid over-counting of poles */
+	t = random() % vsize;
+	if (t*t >= (long)vsize*vsize - (long)y*y)
+		return(-1);
 	if (viewray(org, vd, &ourview, .5, (double)y/(2*sampdens)+.5) < 0)
 		return(-1);
 	spinvector(vd, vd, ourview.vup, h_theta(x));
