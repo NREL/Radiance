@@ -426,18 +426,19 @@ FILE	*fp;
 					/* check for repeats */
 	rept = 0; nrepts = 0;
 	for (i = 0; i < nm; i++) {
-		if (ml[i] == sm) {
+		if (ml[i] == sm || !strcmp(ml[i], VOIDID)) {
 			rept |= 1<<i;
 			nrepts++;
+			continue;
 		}
 		for (j = 0; j < i; j++)
-			if (ml[j] == ml[i]) {
+			if (!(rept & 1<<j) && ml[j] == ml[i]) {
 				rept |= 1<<j;
 				nrepts++;
 			}
 	}
 					/* print antimatter and modlist */
-	fprintf(fp, "\nvoid antimatter %s\n", openmod);
+	fprintf(fp, "\n%s antimatter %s\n", VOIDID, openmod);
 	fprintf(fp, "%d %s", 1+nm-nrepts, sm);
 	for (i = 0; i < nm; i++)
 		if (!(rept & 1<<i))
