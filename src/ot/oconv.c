@@ -103,6 +103,7 @@ breakopt:
 	}
 
 	printargs(argc, argv, stdout);	/* info. header */
+	fputformat(OCTFMT, stdout);
 	printf("\n");
 
 	startobj = nobjects;		/* previous objects already converted */
