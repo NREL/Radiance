@@ -180,27 +180,33 @@ register GCOORD	gc[2];
 
 hdcell(cp, hp, gc)		/* compute cell coordinates */
 register FVECT	cp[4];	/* returned (may be passed as FVECT cp[2][2]) */
-HOLO	*hp;
+register HOLO	*hp;
 register GCOORD	*gc;
 {
-	register int	i;
 	register FLOAT	*v;
 	double	d;
-					/* compute each corner */
-	for (i = 0; i < 4; i++) {
-		VCOPY(cp[i], hp->orig);
-		if (gc->w & 1) {
-			v = hp->xv[gc->w>>1];
-			cp[i][0] += *v++; cp[i][1] += *v++; cp[i][2] += *v;
-		}
-		d = (double)( gc->i[0] + (i&1) ) / hp->grid[wg0[gc->w]];
-		v = hp->xv[wg0[gc->w]];
-		cp[i][0] += d * *v++; cp[i][1] += d * *v++; cp[i][2] += d * *v;
-
-		d = (double)( gc->i[1] + (i>>1) ) / hp->grid[wg1[gc->w]];
-		v = hp->xv[wg1[gc->w]];
-		cp[i][0] += d * *v++; cp[i][1] += d * *v++; cp[i][2] += d * *v;
+					/* compute common component */
+	VCOPY(cp[0], hp->orig);
+	if (gc->w & 1) {
+		v = hp->xv[gc->w>>1];
+		cp[0][0] += v[0]; cp[0][1] += v[1]; cp[0][2] += v[2];
 	}
+	v = hp->xv[wg0[gc->w]];
+	d = (double)gc->i[0] / hp->grid[wg0[gc->w]];
+	VSUM(cp[0], cp[0], v, d);
+	v = hp->xv[wg1[gc->w]];
+	d = (double)gc->i[1] / hp->grid[wg1[gc->w]];
+	VSUM(cp[0], cp[0], v, d);
+					/* compute x1 sums */
+	v = hp->xv[wg0[gc->w]];
+	d = 1.0 / hp->grid[wg0[gc->w]];
+	VSUM(cp[1], cp[0], v, d);
+	VSUM(cp[3], cp[0], v, d);
+					/* compute y1 sums */
+	v = hp->xv[wg1[gc->w]];
+	d = 1.0 / hp->grid[wg1[gc->w]];
+	VSUM(cp[2], cp[0], v, d);
+	VSUM(cp[3], cp[3], v, d);
 }
 
 
@@ -245,29 +251,21 @@ double	d;
 double
 hdray(ro, rd, hp, gc, r)	/* compute ray within a beam */
 FVECT	ro, rd;		/* returned */
-register HOLO	*hp;
-register GCOORD	gc[2];
+HOLO	*hp;
+GCOORD	gc[2];
 BYTE	r[2][2];
 {
-	FVECT	p[2];
-	register int	i;
-	register FLOAT	*v;
-	double	d;
+	FVECT	cp[4], p[2];
+	register int	i, j;
+	double	d0, d1;
 					/* compute entry and exit points */
 	for (i = 0; i < 2; i++) {
-		VCOPY(p[i], hp->orig);
-		if (gc[i].w & 1) {
-			v = hp->xv[gc[i].w>>1];
-			p[i][0] += *v++; p[i][1] += *v++; p[i][2] += *v;
-		}
-		d = ( gc[i].i[0] + (1./256.)*(r[i][0]+.5) ) /
-				hp->grid[wg0[gc[i].w]];
-		v = hp->xv[wg0[gc[i].w]];
-		p[i][0] += d * *v++; p[i][1] += d * *v++; p[i][2] += d * *v;
-		d = ( gc[i].i[1] + (1./256.)*(r[i][1]+.5) ) /
-				hp->grid[wg1[gc[i].w]];
-		v = hp->xv[wg1[gc[i].w]];
-		p[i][0] += d * *v++; p[i][1] += d * *v++; p[i][2] += d * *v;
+		hdcell(cp, hp, gc+i);
+		d0 = (1./256.)*(r[i][0]+.5);
+		d1 = (1./256.)*(r[i][1]+.5);
+		for (j = 0; j < 3; j++)
+			p[i][j] = (1.-d0-d1)*cp[0][j] +
+					d0*cp[1][j] + d1*cp[2][j];
 	}
 	VCOPY(ro, p[0]);		/* assign ray origin and direction */
 	rd[0] = p[1][0] - p[0][0];
