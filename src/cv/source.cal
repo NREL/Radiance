@@ -39,5 +39,6 @@ src_phi4 = tri( src_phi, 90 );		{ 0-90 }
 				{ Type B photometry coordinates }
 srcB_vert = atan( -Dx/Dz ) / DEGREE;
 srcB_horiz = Asin(Dy) / DEGREE;
-				{ w/ bilateral symmetry }
+				{ w/ symmetry }
+srcB_vert2 = abs( srcB_vert );
 srcB_horiz2 = abs( srcB_horiz );
