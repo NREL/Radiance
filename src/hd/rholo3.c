@@ -118,10 +118,7 @@ int	nents;
 	}
 	if (outdev == NULL)
 		return;
-	n = RPACKSIZ;				/* allocate packet holder */
-	for (i = 0; i < nents; i++)
-		if (clist[i].nr > n)
-			n = clist[i].nr;
+	n = 8*RPACKSIZ;				/* allocate packet holder */
 	p = (PACKHEAD *)malloc(packsiz(n));
 	if (p == NULL)
 		goto memerr;
