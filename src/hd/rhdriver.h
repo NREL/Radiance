@@ -47,9 +47,10 @@ returns DEV_NEWVIEW flag.
 
 
 void
-dev_value(c, p)		: register new point of light
+dev_value(c, p, v)	: register new point of light
 COLR	c;		: pixel color (RGBE)
 FVECT	p;		: world intersection point
+FVECT	v;		: ray direction vector
 
 Add the given color point to the display output queue.
 
