@@ -15,6 +15,11 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "view.h"
 #include "resolu.h"
 
+				/* set the following to 0 to forgo forking */
+#ifndef MAXFORK
+#define  MAXFORK		2	/* max. unreaped child processes */
+#endif
+
 				/* rpict command */
 char  *rpargv[128] = {"rpict", "-S", "1", "-x", "512", "-y", "512", "-pa", "1"};
 int  rpargc = 9;
@@ -30,6 +35,7 @@ char  *outfile = NULL;
 int  outfd;
 long  scanorig;
 int  syncfd = -1;		/* lock file descriptor */
+int  nforked = 0;
 
 char  *progname;
 int  verbose = 0;
@@ -245,15 +251,16 @@ int  *xp, *yp;
 int
 cleanup()			/* close rpict process and clean up */
 {
-	register int  rpstat;
+	register int  pid;
+	int  status, rstat = 0;
 
 	free((char *)pbuf);
 	fclose(torp);
 	fclose(fromrp);
-	rpstat = close_process(rpd);
-	if (rpstat == -1)
-		rpstat = 0;
-	return(rpstat);
+	while ((pid = wait(&status)) != -1)
+		if (rstat == 0)
+			rstat = status>>8 & 0xff;
+	return(rstat);
 }
 
 
@@ -302,10 +309,12 @@ rpiece()			/* render picture piece by piece */
 }
 
 
+int
 putpiece(xpos, ypos)		/* get next piece from rpict */
 int  xpos, ypos;
 {
 	struct flock  fls;
+	int  pid, status;
 	int  hr, vr;
 	register int  y;
 				/* check bounds */
@@ -328,6 +337,20 @@ int  xpos, ypos;
 					progname, rpargv[0]);
 			exit(1);
 		}
+#if MAXFORK
+				/* fork so we don't slow rpict down */
+	if ((pid = fork()) > 0) {
+		if (++nforked > MAXFORK) {
+			wait(&status);		/* reap a child */
+			if (status)
+				exit(status>>8 & 0xff);
+			nforked--;
+		}
+		return(pid);
+	}
+#else
+	pid = -1;		/* no forking */
+#endif
 				/* lock file section so NFS doesn't mess up */
 	fls.l_whence = 0;
 	fls.l_len = (long)vres*hmult*hres*sizeof(COLR);
@@ -337,22 +360,30 @@ int  xpos, ypos;
 				/* write new piece to file */
 	if (lseek(outfd, fls.l_start+(long)xpos*hres*sizeof(COLR), 0) == -1)
 		goto seekerr;
-	for (y = 0; y < vr; y++) {
-		if (writebuf(outfd, (char *)(pbuf+y*hr), hr*sizeof(COLR)) !=
-				hr*sizeof(COLR)) {
-			fprintf(stderr, "%s: write error on file \"%s\"\n",
-					progname, outfile);
-			exit(1);
+	if (hmult == 1) {
+		if (writebuf(outfd, (char *)pbuf,
+				vr*hr*sizeof(COLR)) != vr*hr*sizeof(COLR))
+			goto writerr;
+	} else
+		for (y = 0; y < vr; y++) {
+			if (writebuf(outfd, (char *)(pbuf+y*hr),
+					hr*sizeof(COLR)) != hr*sizeof(COLR))
+				goto writerr;
+			if (y < vr-1 && lseek(outfd,
+					(long)(hmult-1)*hr*sizeof(COLR),
+					1) == -1)
+				goto seekerr;
 		}
-		if (hmult != 1 && y < vr-1 && lseek(outfd,
-				(long)(hmult-1)*hr*sizeof(COLR), 1) == -1)
-			goto seekerr;
+	if (pid == -1) {	/* fork failed */
+		fls.l_type = F_UNLCK;		/* release lock */
+		fcntl(outfd, F_SETLKW, &fls);
+		return(0);
 	}
-				/* unlock file section */
-	fls.l_type = F_UNLCK;
-	fcntl(outfd, F_SETLKW, &fls);
-	return;
+	_exit(0);		/* else exit child process (releasing lock) */
 seekerr:
 	fprintf(stderr, "%s: seek error on file \"%s\"\n", progname, outfile);
-	exit(1);
+	_exit(1);
+writerr:
+	fprintf(stderr, "%s: write error on file \"%s\"\n", progname, outfile);
+	_exit(1);
 }
