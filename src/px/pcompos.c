@@ -119,10 +119,7 @@ dofiles:
 	for (nfile = 0; an < argc; nfile++) {
 		if (nfile >= MAXFILE)
 			goto toomany;
-		if (autolabel)
-			thislabel = argv[an];
-		else
-			thislabel = NULL;
+		thislabel = NULL;
 		input[nfile].hasmin = input[nfile].hasmax = 0;
 		while (an < argc && (argv[an][0] == '-' || argv[an][0] == '+'))
 			switch (argv[an][1]) {
@@ -159,6 +156,8 @@ dofiles:
 getfile:
 		if (argc-an < (ncolumns ? 1 : 3))
 			goto userr;
+		if (autolabel && thislabel == NULL)
+			thislabel = argv[an];
 		if (!strcmp(argv[an], "-")) {
 			input[nfile].name = "<stdin>";
 			input[nfile].fp = stdin;
