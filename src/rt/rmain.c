@@ -483,7 +483,7 @@ printdefaults()			/* print default values to stdout */
 	register char  *cp;
 
 #if  RPICT|RVIEW
-	printf("-vt%c\t\t\t\t# view type is %s\n", ourview.type,
+	printf("-vt%c\t\t\t\t# view type %s\n", ourview.type,
 			ourview.type==VT_PER ? "perspective" :
 			ourview.type==VT_PAR ? "parallel" :
 			"unknown");
