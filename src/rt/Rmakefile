@@ -151,9 +151,9 @@ rvmain.o:	rmain.c
 #
 # Uncomment the following to model dispersion:
 #
-#dielectric.o:	dielectric.c source.h
-#	$(CC) $(CFLAGS) -DDISPERSE -c dielectric.c
-#
+dielectric.o:	dielectric.c source.h
+	$(CC) $(CFLAGS) -DDISPERSE -c dielectric.c
+
 # end of dispersion compiles.
 
 devcomm.o:	devcomm.c
