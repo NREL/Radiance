@@ -159,7 +159,7 @@ getflt()			/* get a floating point number */
 	double  d;
 
 	d = (double)getint(4)/0x7fffffff;
-	return(ldexp(d, getint(1)));	/* sign extend */
+	return(ldexp(d, getint(1)));
 }
 	
 
