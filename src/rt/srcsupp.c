@@ -168,24 +168,27 @@ FVECT  ocent;
 OBJREC  *op;
 {
 	double  maxrad2;
-	double  d2;
+	double  d;
 	register int  i, j;
 	register FACE  *f;
 	
 	f = getface(op);
+	if (f->area == 0.)
+		return(0.);
 	for (i = 0; i < 3; i++) {
 		ocent[i] = 0.;
 		for (j = 0; j < f->nv; j++)
 			ocent[i] += VERTEX(f,j)[i];
 		ocent[i] /= (double)f->nv;
 	}
-	if (f->area == 0.)
-		return(0.);
+	d = DOT(ocent,f->norm);
+	for (i = 0; i < 3; i++)
+		ocent[i] += (f->offset - d)*f->norm[i];
 	maxrad2 = 0.;
 	for (j = 0; j < f->nv; j++) {
-		d2 = dist2(VERTEX(f,j), ocent);
-		if (d2 > maxrad2)
-			maxrad2 = d2;
+		d = dist2(VERTEX(f,j), ocent);
+		if (d > maxrad2)
+			maxrad2 = d;
 	}
 	return(maxrad2);
 }
