@@ -1,4 +1,4 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
+/* Copyright (c) 1999 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -419,19 +419,20 @@ register XVisualInfo	*v1, *v2;
 				return(-1);
 			if (v1->depth == 32 && v2->depth == 24)
 				return(1);
-			return(0);
+					/* go for maximum depth otherwise */
+			return(v2->depth - v1->depth);
 		}
 					/* don't be too greedy */
 		if (maxcolors <= 1<<v1->depth && maxcolors <= 1<<v2->depth)
 			return(v1->depth - v2->depth);
 		return(v2->depth - v1->depth);
 	}
-					/* prefer Pseudo when < 24-bit */
+					/* prefer Pseudo when < 15-bit */
 	if ((v1->class == TrueColor || v1->class == DirectColor) &&
-			v1->depth < 24)
+			v1->depth < 15)
 		bad1 = 1;
 	if ((v2->class == TrueColor || v2->class == DirectColor) &&
-			v2->depth < 24)
+			v2->depth < 15)
 		bad2 = -1;
 	if (bad1 | bad2)
 		return(bad1+bad2);
@@ -542,11 +543,12 @@ getras()				/* get raster file */
 			goto fail;
 		getmono();
 	} else if (ourvis.class == TrueColor | ourvis.class == DirectColor) {
-		ourdata = (unsigned char *)malloc(sizeof(int4)*xmax*ymax);
+		int  datsiz = ourvis.depth>16 ? sizeof(int4) : sizeof(int2);
+		ourdata = (unsigned char *)malloc(datsiz*xmax*ymax);
 		if (ourdata == NULL)
 			goto fail;
-		ourras = make_raster(thedisplay, &ourvis, sizeof(int4)*8,
-				ourdata, xmax, ymax, 32);
+		ourras = make_raster(thedisplay, &ourvis, datsiz*8,
+				ourdata, xmax, ymax, datsiz*8);
 		if (ourras == NULL)
 			goto fail;
 		getfull();
@@ -1158,25 +1160,65 @@ getfull()			/* get full (24-bit) data */
 {
 	int	y;
 	register unsigned int4	*dp;
+	register unsigned int2	*dph;
 	register int	x;
 					/* initialize tone mapping */
 	make_tonemap();
 					/* read and convert file */
 	dp = (unsigned int4 *)ourdata;
+	dph = (unsigned int2 *)ourdata;
 	for (y = 0; y < ymax; y++) {
 		getscan(y);
 		add2icon(y, scanline);
 		tmap_colrs(scanline, xmax);
-		if (ourras->image->blue_mask & 1)
+		switch (ourras->image->blue_mask) {
+		case 0xff:		/* 24-bit RGB */
 			for (x = 0; x < xmax; x++)
 				*dp++ =	(unsigned int4)scanline[x][RED] << 16 |
 					(unsigned int4)scanline[x][GRN] << 8 |
 					(unsigned int4)scanline[x][BLU] ;
-		else
+			break;
+		case 0xff0000:		/* 24-bit BGR */
 			for (x = 0; x < xmax; x++)
 				*dp++ =	(unsigned int4)scanline[x][RED] |
 					(unsigned int4)scanline[x][GRN] << 8 |
 					(unsigned int4)scanline[x][BLU] << 16 ;
+			break;
+#if 0
+		case 0x1f:		/* 15-bit RGB */
+			for (x = 0; x < xmax; x++)
+				*dph++ =	(scanline[x][RED] << 7 & 0x7c00) |
+					(scanline[x][GRN] << 2 & 0x3e0) |
+					(unsigned)scanline[x][BLU] >> 3 ;
+			break;
+		case 0x7c00:		/* 15-bit BGR */
+			for (x = 0; x < xmax; x++)
+				*dph++ =	(unsigned)scanline[x][RED] >> 3 |
+					(scanline[x][GRN] << 2 & 0x3e0) |
+					(scanline[x][BLU] << 7 & 0x7c00) ;
+			break;
+#endif
+		default:		/* unknown */
+			if (ourvis.depth > 16)
+				for (x = 0; x < xmax; x++) {
+					*dp = ourras->image->red_mask &
+						ourras->image->red_mask*scanline[x][RED]/255;
+					*dp |= ourras->image->green_mask &
+						ourras->image->green_mask*scanline[x][GRN]/255;
+					*dp++ |= ourras->image->blue_mask &
+						ourras->image->blue_mask*scanline[x][BLU]/255;
+				}
+			else
+				for (x = 0; x < xmax; x++) {
+					*dph = ourras->image->red_mask &
+						ourras->image->red_mask*scanline[x][RED]/255;
+					*dph |= ourras->image->green_mask &
+						ourras->image->green_mask*scanline[x][GRN]/255;
+					*dph++ |= ourras->image->blue_mask &
+						ourras->image->blue_mask*scanline[x][BLU]/255;
+				}
+			break;
+		}
 	}
 }
 
