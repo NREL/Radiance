@@ -143,15 +143,17 @@ register int  x;
 int  s;
 {
 	static int  cerr[NCOLS][3];
-	static int  err[3];
+	static int  err[3], errp[3];
 	int  b;
 	register int  a, ison;
 
 	a = sub_add(s);			/* use additive primary */
 	b = col[a];
+	errp[a] = err[a];
 	err[a] += b + cerr[x][a];
 	ison = err[a] < 128;
 	if (!ison) err[a] -= 256;
-	cerr[x][a] = err[a] /= 2;
+	err[a] /= 3;
+	cerr[x][a] = err[a] + errp[a];
 	return(ison);
 }
