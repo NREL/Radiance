@@ -29,6 +29,8 @@ char	*octree = NULL;			/* octree file name */
 int	verbose = 0;			/* verbose reporting */
 char	*progname;			/* global argv[0] */
 
+double	threshold = 0.;			/* glare threshold */
+
 int	sampdens = SAMPDENS;		/* sample density */
 ANGLE	glarang[180] = {AEND};		/* glare calculation angles */
 int	nglarangs = 0;
@@ -57,6 +59,9 @@ char	*argv[];
 			continue;
 		}
 		switch (argv[i][1]) {
+		case 't':
+			threshold = atof(argv[++i]);
+			break;
 		case 'r':
 			sampdens = atoi(argv[++i])/2;
 			break;
@@ -168,7 +173,8 @@ char	*argv[];
 		exit(1);
 	}
 	init();					/* initialize program */
-	comp_thresh();				/* compute glare threshold */
+	if (threshold <= FTINY)
+		comp_thresh();			/* compute glare threshold */
 	analyze();				/* analyze view */
 	cleanup();				/* tidy up */
 						/* print header */
