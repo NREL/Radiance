@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -108,7 +108,7 @@ int	block;
 		buf = (char *)malloc(msg.nbytes);
 		if (buf == NULL)
 			error(SYSTEM, "out of memory in disp_check");
-		if (fcntl(dpd[0], F_SETFL, inp_flags=0) < 0)
+		if (inp_flags != 0 && fcntl(dpd[0], F_SETFL, inp_flags=0) < 0)
 			goto fcntlerr;
 		if (readbuf(dpd[0], buf, msg.nbytes) != msg.nbytes)
 			goto readerr;
@@ -122,12 +122,17 @@ int	block;
 	case DR_NEWSET:		/* new calculation set */
 		if (msg.nbytes % sizeof(PACKHEAD))
 			error(INTERNAL, "bad DR_NEWSET from display process");
-		disp_result(DS_STARTIMM, 0, NULL);
+		if (msg.nbytes)
+			disp_result(DS_STARTIMM, 0, NULL);
 		bundle_set(BS_NEW, (PACKHEAD *)buf, msg.nbytes/sizeof(PACKHEAD));
-		disp_result(DS_ENDIMM, 0, NULL);
-		disp_flush();
+		if (msg.nbytes) {
+			disp_result(DS_ENDIMM, 0, NULL);
+			disp_flush();
+		}
 		break;
 	case DR_ADDSET:		/* add to calculation set */
+		if (!msg.nbytes)
+			break;
 		if (msg.nbytes % sizeof(PACKHEAD))
 			error(INTERNAL, "bad DR_ADDSET from display process");
 		disp_result(DS_STARTIMM, 0, NULL);
@@ -136,6 +141,8 @@ int	block;
 		disp_flush();
 		break;
 	case DR_ADJSET:		/* adjust calculation set members */
+		if (!msg.nbytes)
+			break;
 		if (msg.nbytes % sizeof(PACKHEAD))
 			error(INTERNAL, "bad DR_ADJSET from display process");
 		disp_result(DS_STARTIMM, 0, NULL);
@@ -144,6 +151,8 @@ int	block;
 		disp_flush();
 		break;
 	case DR_DELSET:		/* delete from calculation set */
+		if (!msg.nbytes)
+			break;
 		if (msg.nbytes % sizeof(PACKHEAD))
 			error(INTERNAL, "bad DR_DELSET from display process");
 		bundle_set(BS_DEL, (PACKHEAD *)buf, msg.nbytes/sizeof(PACKHEAD));
