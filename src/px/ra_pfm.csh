@@ -44,9 +44,9 @@ if ($?reverse) then
 	endif
 	set res=($hl[2])
 	if ($?out) then
-		tail +4 $inp:q | pvalue -r -h $opt -y $res[2] +x $res[1] > $out:q
+		tail +4 $inp:q | pvalue -r -h $opt +y $res[2] +x $res[1] > $out:q
 	else
-		tail +4 $inp:q | pvalue -r -h $opt -y $res[2] +x $res[1]
+		tail +4 $inp:q | pvalue -r -h $opt +y $res[2] +x $res[1]
 	endif
 	exit $status
 endif
@@ -61,7 +61,11 @@ if ($?out) then
 	else
 		echo "1.000000" >> $out:q
 	endif
-	pvalue -h -H -df $inp:q >> $out:q
+	if ("$res[1]" == "-Y") then
+		pflip -v $inp:q | pvalue -h -H -df >> $out:q
+	else
+		pvalue -h -H -df $inp:q >> $out:q
+	endif
 else
 	echo PF
 	echo $res[4] $res[2]
@@ -70,7 +74,11 @@ else
 	else
 		echo "1.000000"
 	endif
-	pvalue -h -H -df $inp:q
+	if ("$res[1]" == "-Y") then
+		pflip -v $inp:q | pvalue -h -H -df
+	else
+		pvalue -h -H -df $inp:q
+	endif
 endif
 exit $status
 userr:
