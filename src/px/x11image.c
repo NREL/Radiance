@@ -193,9 +193,9 @@ char  *argv[];
 		getevent();		/* main loop */
 userr:
 	fprintf(stderr,
-	"Usage: %s [-display disp][-geometry spec][-b][-m][-d][-f][-c ncolors][-e +/-stops] file\n",
+"Usage: %s [-di disp][[-ge] spec][-b][-m][-d][-f][-c nclrs][-e +/-stops] pic\n",
 			progname);
-	quit(1);
+	exit(1);
 }
 
 
@@ -533,7 +533,7 @@ XKeyPressedEvent  *ekey;
 	switch (com) {			/* interpret command */
 	case 'q':
 	case CTRL('D'):				/* quit */
-		quit(0);
+		quiterr(NULL);
 	case '\n':
 	case '\r':
 	case 'l':
