@@ -20,18 +20,20 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define NULL		0
 				/* histogram resolution */
-#define NRED		28
+#define NRED		24
 #define NGRN		32
-#define NBLU		22
+#define NBLU		16
 #define HMAX		NGRN
 				/* minimum box count for adaptive partition */
 #define MINSAMP		7
+				/* maximum distance^2 before color reassign */
+#define MAXDST2		5
 				/* maximum frame buffer depth */
 #define FBDEPTH		8
 				/* color map resolution */
-#define MAPSIZ		128
+#define MAPSIZ		256
 				/* map a color */
-#define map_col(c,p)	clrmap[p][ colval(c,p)<1. ? \
+#define map_col(c,p)	clrmap[ colval(c,p)<1. ? \
 				(int)(colval(c,p)*MAPSIZ) : MAPSIZ-1 ]
 				/* color partition tree */
 #define CNODE		short
@@ -42,29 +44,40 @@ static char SCCSid[] = "$SunId$ LBL";
 #define prim(cn)	((cn)&3)
 #define pval(cn)	((cn)>>2)
 				/* our color table */
-COLR	clrtab[1<<FBDEPTH];
+struct tabent {
+	long	sum[3];		/* sum of colors using this entry */
+	long	n;		/* number of colors */
+	short	ent[3];		/* current table value */
+}	clrtab[1<<FBDEPTH];
 				/* our color correction map */
-static BYTE	clrmap[3][MAPSIZ];
+static BYTE	clrmap[MAPSIZ];
 				/* histogram of colors used */
 static unsigned	histo[NRED][NGRN][NBLU];
 				/* initial color cube boundaries */
 static int	CLRCUBE[3][2] = {0,NRED,0,NGRN,0,NBLU};
 				/* color cube partition */
 static CNODE	ctree[1<<(FBDEPTH+1)];
+				/* callback for pixel assignment */
+static int	(*set_pixel)();
 
 
-COLR *
-get_ctab(ncolors)	/* assign a color table with max ncolors */
+int
+new_ctab(ncolors, cset)		/* start new color table with max ncolors */
 int	ncolors;
+int	(*cset)();
 {
-	if (ncolors < 1 || ncolors > 1<<FBDEPTH)
-		return(NULL);
-				/* partition color table */
+	if (ncolors < 1 || ncolors > 1<<FBDEPTH || cset == NULL)
+		return(0);
+				/* assign pixel callback routine */
+	set_pixel = cset;
+				/* clear color table */
+	bzero(clrtab, sizeof(clrtab));
+				/* partition color space */
 	cut(ctree, FBDEPTH, CLRCUBE, 0, ncolors);
 				/* clear histogram */
 	bzero(histo, sizeof(histo));
-				/* return color table */
-	return(clrtab);
+				/* return number of colors used */
+	return(ncolors);
 }
 
 
@@ -72,32 +85,57 @@ int
 get_pixel(col)			/* get pixel for color */
 COLOR	col;
 {
+	int	r, g, b;
 	int	cv[3];
-	register CNODE	*tp;
+	register union { CNODE *t; struct tabent *e; }	p;
 	register int	h;
-					/* map color */
-	cv[RED] = map_col(col,RED);
-	cv[GRN] = map_col(col,GRN);
-	cv[BLU] = map_col(col,BLU);
-					/* add to histogram */
+						/* map color */
+	r = map_col(col,RED);
+	g = map_col(col,GRN);
+	b = map_col(col,BLU);
+						/* reduce resolution */
+	cv[RED] = (r*NRED)>>8;
+	cv[GRN] = (g*NGRN)>>8;
+	cv[BLU] = (b*NBLU)>>8;
+						/* add to histogram */
 	histo[cv[RED]][cv[GRN]][cv[BLU]]++;
-					/* find pixel value in tree */
-	tp = ctree;
+						/* find pixel in tree */
+	p.t = ctree;
 	for (h = FBDEPTH; h > 0; h--) {
-		if (is_pval(*tp))
+		if (is_pval(*p.t))
 			break;
-		if (cv[prim(*tp)] < part(*tp))
-			tp++;			/* left branch */
+		if (cv[prim(*p.t)] < part(*p.t))
+			p.t++;		/* left branch */
 		else
-			tp += 1<<h;		/* right branch */
+			p.t += 1<<h;	/* right branch */
 	}
+	h = pval(*p.t);
+						/* add to color table */
+	p.e = clrtab + h;
+					/* add to sum */
+	p.e->sum[RED] += r;
+	p.e->sum[GRN] += g;
+	p.e->sum[BLU] += b;
+	p.e->n++;
+					/* recompute average */
+	r = p.e->sum[RED] / p.e->n;
+	g = p.e->sum[GRN] / p.e->n;
+	b = p.e->sum[BLU] / p.e->n;
+					/* check for movement */
+	if (p.e->n == 1 ||
+			(r-p.e->ent[RED])*(r-p.e->ent[RED]) +
+			(g-p.e->ent[GRN])*(g-p.e->ent[GRN]) +
+			(b-p.e->ent[BLU])*(b-p.e->ent[BLU]) > MAXDST2) {
+		p.e->ent[RED] = r;
+		p.e->ent[GRN] = g;	/* reassign pixel */
+		p.e->ent[BLU] = b;
 #ifdef notdef
-	printf("distance (%d,%d,%d)\n",
-		cv[RED] - clrtab[pval(*tp)][RED]*NRED/256, 
-		cv[GRN] - clrtab[pval(*tp)][GRN]*NGRN/256,
-		cv[BLU] - clrtab[pval(*tp)][BLU]*NBLU/256);
+		printf("pixel %d = (%d,%d,%d) (%d refs)\n",
+				h, r, g, b, p.e->n);
 #endif
-	return(pval(*tp));
+		(*set_pixel)(h, r, g, b);
+	}
+	return(h);				/* return pixel value */
 }
 
 
@@ -105,15 +143,10 @@ make_cmap(gam)			/* make gamma correction map */
 double  gam;
 {
 	extern double	pow();
-	double	d;
 	register int	i;
 	
-	for (i = 0; i < MAPSIZ; i++) {
-		d = pow(i/(double)MAPSIZ, 1.0/gam);
-		clrmap[RED][i] = d * NRED;
-		clrmap[GRN][i] = d * NGRN;
-		clrmap[BLU][i] = d * NBLU;
-	}
+	for (i = 0; i < MAPSIZ; i++)
+		clrmap[i] = 256.0 * pow(i/(double)MAPSIZ, 1.0/gam);
 }
 
 
@@ -126,28 +159,20 @@ int	c0, c1;
 {
 	int	kb[3][2];
 	
-	if (c1-c0 == 1) {		/* assign color */
-		clrtab[c0][RED] = ((box[RED][0]+box[RED][1])<<7)/NRED;
-		clrtab[c0][GRN] = ((box[GRN][0]+box[GRN][1])<<7)/NGRN;
-		clrtab[c0][BLU] = ((box[BLU][0]+box[BLU][1])<<7)/NBLU;
-		clrtab[c0][EXP] = COLXS;
+	if (c1-c0 <= 1) {		/* assign pixel */
 		*tree = set_pval(c0);
-#ifdef notdef
-		printf("final box size = (%d,%d,%d)\n",
-			box[RED][1] - box[RED][0],
-			box[GRN][1] - box[GRN][0],
-			box[BLU][1] - box[BLU][0]);
-#endif
 		return;
 	}
 					/* split box */
 	*tree = split(box);
 	bcopy(box, kb, sizeof(kb));
+						/* do left (lesser) branch */
 	kb[prim(*tree)][1] = part(*tree);
-	cut(tree+1, height-1, kb, c0, (c0+c1)>>1);		/* lesser */
+	cut(tree+1, height-1, kb, c0, (c0+c1)>>1);
+						/* do right branch */
 	kb[prim(*tree)][0] = part(*tree);
 	kb[prim(*tree)][1] = box[prim(*tree)][1];
-	cut(tree+(1<<height), height-1, kb, (c0+c1)>>1, c1);	/* greater */
+	cut(tree+(1<<height), height-1, kb, (c0+c1)>>1, c1);
 }
 
 

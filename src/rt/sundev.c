@@ -34,6 +34,9 @@ DEFINE_ICON_FROM_IMAGE(sun_icon, icon_image);
 #define COMLH		3		/* number of command lines */
 
 #define FIRSTCOLOR	2		/* first usable entry */
+#define NCOLORS		251		/* number of usable colors */
+
+int  newcolr();
 
 int  sun_clear(), sun_paintr(), sun_getcur(),
 		sun_comout(), sun_comin();
@@ -100,9 +103,9 @@ char	*argv[];
 			0);
 	if (canvas == 0)
 		quit("cannot create canvas");
-	make_cmap(GAMMA);
 	if (getmap() < 0)
 		quit("not a color screen");
+	make_cmap(GAMMA);
 	window_set(canvas, CANVAS_RETAINED, TRUE, 0);
 	notify_interpose_destroy_func(frame, my_notice_destroy);
 
@@ -162,7 +165,7 @@ sun_clear()				/* clear our canvas */
 		yres = nheight;
 	}
 	pw_writebackground(pw, 0, 0, xres, xres, PIX_SRC);
-	newmap();
+	new_ctab(NCOLORS, newcolr);
 }
 
 
@@ -294,7 +297,17 @@ register char	*s;
 getmap()				/* allocate color map segments */
 {
 	char  cmsname[20];
+	unsigned char  red[256], green[256], blue[256];
 	register Pixwin  *pw;
+	register int  i;
+
+	for (i = 0; i < 256; i++)
+		red[i] = green[i] = blue[i] = 128;
+	red[0] = green[0] = blue[0] = 255;
+	red[1] = green[1] = blue[1] = 0;
+	red[255] = green[255] = blue[255] = 0;
+	red[254] = green[254] = blue[254] = 255;
+	red[253] = green[253] = blue[253] = 0;
 						/* name shared segment */
 	sprintf(cmsname, "rv%d", getpid());
 						/* set canvas */
@@ -302,43 +315,30 @@ getmap()				/* allocate color map segments */
 	if (pw->pw_pixrect->pr_depth < 8)
 		return(-1);
 	pw_setcmsname(pw, cmsname);
+	pw_putcolormap(pw, 0, 256, red, green, blue);
 						/* set tty subwindow */
 	pw = (Pixwin *)window_get(tty, WIN_PIXWIN);
 	pw_setcmsname(pw, cmsname);
+	pw_putcolormap(pw, 0, 256, red, green, blue);
 						/* set frame */
 	pw = (Pixwin *)window_get(frame, WIN_PIXWIN);
 	pw_setcmsname(pw, cmsname);
+	pw_putcolormap(pw, 0, 256, red, green, blue);
 
 	return(0);
 }
 
 
-newmap()				/* reinitialize color map segments */
+newcolr(ndx, r, g, b)		/* enter a color into hardware table */
+int  ndx;
+unsigned char  r, g, b;
 {
-	unsigned char  red[256], green[256], blue[256];
-	COLR  *get_ctab(), *ctab;
 	register Pixwin  *pw;
-	register int  i;
-						/* assign constant pixels */
-	red[0] = green[0] = blue[0] = 255;
-	red[1] = green[1] = blue[1] = 0;
-	red[255] = green[255] = blue[255] = 0;
-	red[254] = green[254] = blue[254] = 255;
-	red[253] = green[253] = blue[253] = 0;
-						/* assign color table */
-	ctab = get_ctab(251);
-	for (i = 0; i < 251; i++) {
-		red[i+FIRSTCOLOR] = ctab[i][RED];
-		green[i+FIRSTCOLOR] = ctab[i][GRN];
-		blue[i+FIRSTCOLOR] = ctab[i][BLU];
-	}
-						/* set canvas */
+	
 	pw = canvas_pixwin(canvas);
-	pw_putcolormap(pw, 0, 256, red, green, blue);
-						/* set tty subwindow */
+	pw_putcolormap(pw, ndx+FIRSTCOLOR, 1,
+			&r, &g, &b);
 	pw = (Pixwin *)window_get(tty, WIN_PIXWIN);
-	pw_putcolormap(pw, 0, 256, red, green, blue);
-						/* set frame */
-	pw = (Pixwin *)window_get(frame, WIN_PIXWIN);
-	pw_putcolormap(pw, 0, 256, red, green, blue);
+	pw_putcolormap(pw, ndx+FIRSTCOLOR, 1,
+			&r, &g, &b);
 }

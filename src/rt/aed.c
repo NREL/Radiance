@@ -46,9 +46,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #define string(s)	fputs(s, stdout)
 #define flush()		fflush(stdout)
 
-#define  GAMMA		2.2		/* exponent for color correction */
+#define  GAMMA		2.5		/* exponent for color correction */
 
-#define  NCOLORS	244		/* our color table size */
+#define  NCOLORS	248		/* our color table size */
 #define  MINPIX		8		/* minimum hardware color */
 
 #define  NCOLS		512		/* maximum # columns for output */
@@ -56,11 +56,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  COMHT		16		/* height of command line */
 #define  COMCW		63		/* maximum chars on command line */
 
-static COLR  colrmap[256];		/* our color map */
-
-static COLR  colrtbl[NCOLORS];		/* our color table */
-
-static int  colres = 64;		/* color resolution */
+int  anewcolr();
 
 int  aed_close(), aed_clear(), aed_paintr(),
 		aed_getcur(), aed_comout(), aed_errout();
@@ -123,8 +119,8 @@ aed_clear(x, y)					/* clear AED */
 int  x, y;
 {
 	command(FFD);
-	maketab();				/* init color table */
-	longwait(1);
+	new_ctab(NCOLORS, anewcolr);		/* init color table */
+	flush();
 }
 
 
@@ -133,8 +129,11 @@ aed_paintr(col, xmin, ymin, xmax, ymax)		/* paint a rectangle */
 COLOR  col;
 int  xmin, ymin, xmax, ymax;
 {
-	command(SEC);					/* draw rectangle */
-	byte(get_pixel(col)+MINPIX);
+	int  ndx;
+
+	ndx = get_pixel(col);			/* may call anewcolr() */
+	command(SEC);				/* draw rectangle */
+	byte(ndx+MINPIX);
 	aedsetcap(xmin, ymin+COMHT);
 	command(DFR);
 	aedcoord(xmax-1, ymax+(-1+COMHT));
@@ -253,21 +252,17 @@ int  *xp, *yp;
 
 
 static
-maketab()				/* reinitialize the color table */
+anewcolr(index, r, g, b)		/* enter a color into our table */
+int  index;
+int  r, g, b;
 {
-	extern COLR  *get_ctab();
-	register COLR  *ctab;
-	register int  i;
-
-	ctab = get_ctab(NCOLORS);	/* get colors */
-	command(SCT);			/* set color table */
-	byte(MINPIX);			/* starting index */
-	byte(NCOLORS&255);		/* number of colors (0==256) */
-	for (i = 0; i < NCOLORS; i++) {
-		byte(ctab[i][RED]);
-		byte(ctab[i][GRN]);
-		byte(ctab[i][BLU]);
-	}
+	command(SCT);
+	byte((index+MINPIX)&255);
+	byte(1);
+	byte(r);
+	byte(g);
+	byte(b);
+	flush();
 }
 
 
