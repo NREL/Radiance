@@ -73,7 +73,7 @@ register int	fd;
 hdrelease(fd)		/* stop tracking file fragments for some section */
 register int	fd;
 {
-	if (fd >= nhdfrags || !hdfrag[fd].nlinks)
+	if (fd < 0 | fd >= nhdfrags || !hdfrag[fd].nlinks)
 		return;
 	if (!--hdfrag[fd].nlinks && hdfrag[fd].nfrags) {
 		free((char *)hdfrag[fd].fi);
@@ -207,6 +207,25 @@ int	all;			/* include overhead (painful) */
 					((hdfrag[j].nfrags-1)/FRAGBLK + 1) ;
 		}
 	return(total);
+}
+
+
+long
+hdfilen(fd)		/* return file length for fd */
+int	fd;
+{
+	long	fpos, flen;
+
+	if (fd < 0)
+		return(-1);
+	if (fd >= nhdfrags || !hdfrag[fd].nlinks) {
+		if ((fpos = lseek(fd, 0L, 1)) < 0)
+			return(-1);
+		flen = lseek(fd, 0L, 2);
+		lseek(fd, fpos, 0);
+		return(flen);
+	}
+	return(hdfrag[fd].flen);
 }
 
 
