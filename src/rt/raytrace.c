@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1994 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -91,11 +91,15 @@ raytrace(r)			/* trace a ray and compute its value */
 RAY  *r;
 {
 	extern int  (*trace)();
+	int  gotmat;
 
 	if (localhit(r, &thescene))
-		raycont(r);
+		gotmat = raycont(r);
 	else if (sourcehit(r))
-		rayshade(r, r->ro->omod);
+		gotmat = rayshade(r, r->ro->omod);
+
+	if (!gotmat)
+		objerror(r->ro, USER, "material not found");
 
 	if (trace != NULL)
 		(*trace)(r);		/* trace execution */
@@ -106,10 +110,11 @@ raycont(r)			/* check for clipped object and continue */
 register RAY  *r;
 {
 	if ((r->clipset != NULL && inset(r->clipset, r->ro->omod)) ||
-			r->ro->omod == OVOID)
+			r->ro->omod == OVOID) {
 		raytrans(r);
-	else
-		rayshade(r, r->ro->omod);
+		return(1);
+	}
+	return(rayshade(r, r->ro->omod));
 }
 
 
@@ -132,12 +137,13 @@ register RAY  *r;
 int  mod;
 {
 	static int  depth = 0;
+	int  gotmat;
 	register OBJREC  *m;
 					/* check for infinite loop */
 	if (depth++ >= MAXLOOP)
 		objerror(r->ro, USER, "possible modifier loop");
 	r->rt = r->rot;			/* set effective ray length */
-	for ( ; mod != OVOID; mod = m->omod) {
+	for (gotmat = 0; !gotmat && mod != OVOID; mod = m->omod) {
 		m = objptr(mod);
 		/****** unnecessary test since modifier() is always called
 		if (!ismodifier(m->otype)) {
@@ -155,13 +161,11 @@ int  mod;
 			if (!islight(m->otype))
 				m = &Lamb;
 		}
-		(*ofun[m->otype].funp)(m, r);	/* execute function */
-		if (ismaterial(m->otype)) {	/* materials call raytexture */
-			depth--;
-			return;		/* we're done */
-		}
+					/* materials call raytexture */
+		gotmat = (*ofun[m->otype].funp)(m, r);
 	}
-	objerror(r->ro, USER, "material not found");
+	depth--;
+	return(gotmat);
 }
 
 
@@ -177,11 +181,14 @@ int  mod;
 					/* execute textures and patterns */
 	for ( ; mod != OVOID; mod = m->omod) {
 		m = objptr(mod);
-		if (!istexture(m->otype)) {
+		/****** unnecessary test since modifier() is always called
+		if (!ismodifier(m->otype)) {
 			sprintf(errmsg, "illegal modifier \"%s\"", m->oname);
 			error(USER, errmsg);
 		}
-		(*ofun[m->otype].funp)(m, r);
+		******/
+		if ((*ofun[m->otype].funp)(m, r))
+			objerror(USER, r->ro, "conflicting materials");
 	}
 	depth--;			/* end here */
 }
@@ -192,44 +199,52 @@ register RAY  *r;
 OBJECT  fore, back;
 double  coef;
 {
-	FVECT  curpert, forepert, backpert;
-	COLOR  curpcol, forepcol, backpcol;
+	RAY  fr, br;
+	COLOR  ctmp;
+	int  foremat, backmat;
 	register int  i;
 					/* clip coefficient */
 	if (coef > 1.0)
 		coef = 1.0;
 	else if (coef < 0.0)
 		coef = 0.0;
-					/* save current mods */
-	VCOPY(curpert, r->pert);
-	copycolor(curpcol, r->pcol);
-					/* compute new mods */
-						/* foreground */
-	r->pert[0] = r->pert[1] = r->pert[2] = 0.0;
-	setcolor(r->pcol, 1.0, 1.0, 1.0);
+					/* foreground */
+	copystruct(&fr, r);
+	fr.pert[0] = fr.pert[1] = fr.pert[2] = 0.0;
+	setcolor(fr.pcol, 1.0, 1.0, 1.0);
+	setcolor(fr.rcol, 0.0, 0.0, 0.0);
 	if (fore != OVOID && coef > FTINY)
-		raytexture(r, fore);
-	VCOPY(forepert, r->pert);
-	copycolor(forepcol, r->pcol);
-						/* background */
-	r->pert[0] = r->pert[1] = r->pert[2] = 0.0;
-	setcolor(r->pcol, 1.0, 1.0, 1.0);
+		foremat = rayshade(&fr, fore);
+	else
+		foremat = 0;
+					/* background */
+	copystruct(&br, r);
+	br.pert[0] = br.pert[1] = br.pert[2] = 0.0;
+	setcolor(br.pcol, 1.0, 1.0, 1.0);
+	setcolor(br.rcol, 0.0, 0.0, 0.0);
 	if (back != OVOID && coef < 1.0-FTINY)
-		raytexture(r, back);
-	VCOPY(backpert, r->pert);
-	copycolor(backpcol, r->pcol);
+		backmat = rayshade(&br, back);
+	else
+		backmat = foremat;
+					/* check */
+	if (backmat != foremat)
+		objerror(USER, r->ro, "mixing material with non-material");
 					/* sum perturbations */
 	for (i = 0; i < 3; i++)
-		r->pert[i] = curpert[i] + coef*forepert[i] +
-				(1.0-coef)*backpert[i];
-					/* multiply colors */
-	setcolor(r->pcol, coef*colval(forepcol,RED) +
-				(1.0-coef)*colval(backpcol,RED),
-			coef*colval(forepcol,GRN) +
-				(1.0-coef)*colval(backpcol,GRN),
-			coef*colval(forepcol,BLU) +
-				(1.0-coef)*colval(backpcol,BLU));
-	multcolor(r->pcol, curpcol);
+		r->pert[i] += coef*fr.pert[i] + (1.0-coef)*br.pert[i];
+					/* multiply pattern colors */
+	scalecolor(fr.pcol, coef);
+	scalecolor(br.pcol, 1.0-coef);
+	copycolor(ctmp, fr.pcol);
+	addcolor(ctmp, br.pcol);
+	multcolor(r->pcol, ctmp);
+					/* sum returned ray values */
+	scalecolor(fr.rcol, coef);
+	scalecolor(br.rcol, 1.0-coef);
+	addcolor(r->rcol, fr.rcol);
+	addcolor(r->rcol, br.rcol);
+					/* return value tells if material */
+	return(foremat);
 }
 
 
