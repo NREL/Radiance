@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -155,6 +155,7 @@ int  nargs;
 int  assign;
 double  (*fptr)();
 {
+    int  oldlibsize = libsize;
     register LIBR  *lp;
 
     if ((lp = liblookup(fname)) == NULL) {	/* insert */
@@ -187,7 +188,8 @@ double  (*fptr)();
 	lp[0].atyp = assign;
 	lp[0].f = fptr;
     }
-    libupdate(fname);			/* relink library */
+    if (libsize != oldlibsize)
+	libupdate(fname);			/* relink library */
 }
 
 
