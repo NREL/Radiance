@@ -53,3 +53,15 @@ char	**av;
 	obj_name[obj_nnames] = NULL;
 	return(MG_OK);
 }
+
+
+void
+obj_clear()			/* clear object stack */
+{
+	while (obj_nnames)
+		free((MEM_PTR)obj_name[--obj_nnames]);
+	if (obj_maxname) {
+		free((MEM_PTR)obj_name);
+		obj_maxname = 0;
+	}
+}

@@ -56,7 +56,7 @@ int	mg_nqcdivs = MG_NQCD;	/* number of divisions per quarter circle */
 				/* alternate handler routines */
 
 static int	e_any_toss(),		/* discard unneeded entity */
-		e_ies();		/* IES luminaire file */
+		e_ies(),		/* IES luminaire file */
 		e_include(),		/* include file */
 		e_sph(),		/* sphere */
 		e_cyl(),		/* cylinder */
@@ -300,7 +300,7 @@ char	*fn;
 	int	rval;
 
 	if ((rval = mg_open(&cntxt, fn)) != MG_OK) {
-		fprintf("%s: %s\n", fn, mg_err[rval]);
+		fprintf(stderr, "%s: %s\n", fn, mg_err[rval]);
 		return(rval);
 	}
 	while (mg_read())		/* parse each line */
@@ -349,14 +349,20 @@ int	(*f)();
 		if (i+1 >= ac || !isint(av[i+1]))
 			return(MG_ETYPE);
 		niter = atoi(av[i+1]);
-		argv[0] = "-i";
+		argv[0] = mg_ename[MG_E_OBJECT];
 		argv[1] = cntbuf;
 		for (j = 2; j+i < ac; j++)
 			argv[j] = av[j+i];
 		argv[j] = NULL;
 		for (j = 0; j < niter; j++) {
 			sprintf(cntbuf, "%d", j);
+			if ((rval = handle_it(MG_E_OBJECT, 2, argv)) != MG_OK)
+				return(rval);
+			argv[0] = "-i";
 			if ((rval = mg_iterate(ac-i, argv, f)) != MG_OK)
+				return(rval);
+			argv[0] = mg_ename[MG_E_OBJECT];
+			if ((rval = handle_it(MG_E_OBJECT, 1, argv)) != MG_OK)
 				return(rval);
 		}
 	} else if ((rval = (*f)()) != MG_OK)	/* else do this instance */

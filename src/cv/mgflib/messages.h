@@ -18,4 +18,5 @@
 			"Error in included file",\
 			"Out of memory",\
 			"Seek failure",\
+			"Illegal material specification",\
 			}

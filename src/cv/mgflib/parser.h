@@ -60,8 +60,9 @@ extern int	(*mg_ehand[MG_NENTITIES])(int argc, char **argv);
 #define MG_EINCL	7		/* error in included file */
 #define MG_EMEM		8		/* out of memory */
 #define MG_ESEEK	9		/* file seek error */
+#define MG_EBADMAT	10		/* bad material specification */
 
-#define MG_NERRS	10
+#define MG_NERRS	11
 
 extern char	*mg_err[MG_NERRS];
 
@@ -140,7 +141,13 @@ extern int isflt(char *);		/* non-zero if floating point format */
  *	Definitions for 3-d vector manipulation functions
  */
 
-typedef double  FVECT[3];
+#ifdef SMLFLT
+#define FLOAT	float
+#else
+#define FLOAT	double
+#endif
+
+typedef FLOAT  FVECT[3];
 
 #ifdef NOPROTO
 extern double	normalize();		/* normalize a vector */
@@ -154,22 +161,24 @@ extern double	normalize(FVECT);	/* normalize a vector */
  */
 
 typedef struct {
-	double	cx, cy;		/* XY chromaticity coordinates */
+	float	cx, cy;		/* XY chromaticity coordinates */
 } C_COLOR;		/* color context */
 
 typedef struct {
-	double	rd;		/* diffuse reflectance */
+	char	*name;		/* material name */
+	int	clock;		/* incremented each change -- resettable */
+	float	rd;		/* diffuse reflectance */
 	C_COLOR	rd_c;		/* diffuse reflectance color */
-	double	td;		/* diffuse transmittance */
+	float	td;		/* diffuse transmittance */
 	C_COLOR	td_c;		/* diffuse transmittance color */
-	double	ed;		/* diffuse emittance */
+	float	ed;		/* diffuse emittance */
 	C_COLOR	ed_c;		/* diffuse emittance color */
-	double	rs;		/* specular reflectance */
+	float	rs;		/* specular reflectance */
 	C_COLOR	rs_c;		/* specular reflectance color */
-	double	rs_a;		/* specular reflectance roughness */
-	double	ts;		/* specular transmittance */
+	float	rs_a;		/* specular reflectance roughness */
+	float	ts;		/* specular transmittance */
 	C_COLOR	ts_c;		/* specular transmittance color */
-	double	ts_a;		/* specular transmittance roughness */
+	float	ts_a;		/* specular transmittance roughness */
 } C_MATERIAL;		/* material context */
 
 typedef struct {
@@ -177,8 +186,8 @@ typedef struct {
 } C_VERTEX;		/* vertex context */
 
 #define C_DEFCOLOR	{.333,.333}
-#define C_DEFMATERIAL	{0.,C_DEFCOLOR,0.,C_DEFCOLOR,0.,C_DEFCOLOR,\
-			0.,C_DEFCOLOR,0.,0.,C_DEFCOLOR,0.}
+#define C_DEFMATERIAL	{NULL,1,0.,C_DEFCOLOR,0.,C_DEFCOLOR,0.,C_DEFCOLOR,\
+					0.,C_DEFCOLOR,0.,0.,C_DEFCOLOR,0.}
 #define C_DEFVERTEX	{{0.,0.,0.},{0.,0.,0.}}
 
 extern C_COLOR		*c_ccolor;	/* the current color */
@@ -208,15 +217,17 @@ extern char	**obj_name;		/* names in hierarchy */
 
 #ifdef NOPROTO
 extern int	obj_handler();			/* handle an object entity */
+extern void	obj_clear();			/* clear object stack */
 #else
 extern int	obj_handler(int, char **);	/* handle an object entity */
+extern void	obj_clear(void);		/* clear object stack */
 #endif
 
 /**************************************************************************
  *	Definitions for hierarchical transformation handler
  */
 
-typedef double  MAT4[4][4];
+typedef FLOAT  MAT4[4][4];
 
 #ifdef  BSD
 #define  copymat4(m4a,m4b)	bcopy((char *)m4b,(char *)m4a,sizeof(MAT4))
@@ -235,7 +246,7 @@ extern MAT4  m4ident;
 				/* regular transformation */
 typedef struct {
 	MAT4  xfm;				/* transform matrix */
-	double  sca;				/* scalefactor */
+	FLOAT  sca;				/* scalefactor */
 }  XF;
 
 #define identxf(xp)		(void)(setident4((xp)->xfm),(xp)->sca=1.0)
@@ -270,6 +281,7 @@ extern void	xf_xfmpoint();		/* transform point */
 extern void	xf_xfmvect();		/* transform vector */
 extern void	xf_rotvect();		/* rotate vector */
 extern double	xf_scale();		/* scale a value */
+extern void	xf_clear();		/* clear xf stack */
 
 /* The following are support routines you probably won't call directly */
 
@@ -280,11 +292,12 @@ extern int	xf();			/* interpret transform spec. */
 
 #else
 
-extern int	xf_handler();		/* handle xf entity */
-extern void	xf_xfmpoint();		/* transform point */
-extern void	xf_xfmvect();		/* transform vector */
-extern void	xf_rotvect();		/* rotate vector */
-extern double	xf_scale();		/* scale a value */
+extern int	xf_handler(int, char **);	/* handle xf entity */
+extern void	xf_xfmpoint(FVECT, FVECT);	/* transform point */
+extern void	xf_xfmvect(FVECT, FVECT);	/* transform vector */
+extern void	xf_rotvect(FVECT, FVECT);	/* rotate vector */
+extern double	xf_scale(double);		/* scale a value */
+extern void	xf_clear(void);			/* clear xf stack */
 
 /* The following are support routines you probably won't call directly */
 
