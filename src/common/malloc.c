@@ -160,7 +160,8 @@ unsigned	*np;
 
 	for ( ; ; ) {
 					/* compact free lists */
-		compactfree();
+		while (compactfree())
+			;
 					/* find largest block */
 		tab = mtab(&cptab); tablen = mtablen(&cptab);
 		big = tab;
