@@ -168,32 +168,58 @@ cbeamadj(v, hr, vr)		/* adjust our beam list */
 VIEW	*v;
 int	hr, vr;
 {
-	register PACKHEAD	*pa;
+	PACKHEAD	*pa, *pa2;
+	register PACKHEAD	*pp;
+	int	n, n2;
+	FVECT	gp;
+	int	igp[3], vcflgs;
 	register int	i;
-	int	n;
-					/* first handle additions */
-	pa = (PACKHEAD *)malloc(xcbeams*sizeof(PACKHEAD));
-	if (xcbeams && pa == NULL)
-		goto memerr;
-	for (i = xcbeams; i--; ) {
-		pa[i].hd = cbeam[ncbeams+i].hd;
-		pa[i].bi = cbeam[ncbeams+i].bi;
-		pa[i].nr = npixels(v, hr, vr, hdlist[pa[i].hd], pa[i].bi) + 1;
+					/* figure out center voxel(s) */
+	n = -1; vcflgs = 0;
+	for (i = 0; i < 8 && voxel[i].hd >= 0; i++) {
+		if (voxel[i].hd != n) {
+			hdgrid(gp, hdlist[n=voxel[i].hd], v->vp);
+			igp[0] = gp[0]; igp[1] = gp[1]; igp[2] = gp[2];
+		}
+		if (voxel[i].i[0] == igp[0] && voxel[i].i[1] == igp[1] &&
+				voxel[i].i[2] == igp[2])
+			vcflgs |= 1<<i;
 	}
-	n = xcbeams;			/* now sort list for deletions */
+					/* get additions */
+	pa2 = (PACKHEAD *)malloc(xcbeams*sizeof(PACKHEAD));
+	if (xcbeams && pa2 == NULL)
+		goto memerr;
+	pa = pa2 + xcbeams; n2 = 0;
+	for (i = xcbeams; i--; ) {
+		if (cbeam[ncbeams+i].wants & vcflgs)
+			pp = --pa;		/* priority list */
+		else
+			pp = pa2 + n2++;	/* secondary list */
+		pp->hd = cbeam[ncbeams+i].hd;
+		pp->bi = cbeam[ncbeams+i].bi;
+		pp->nr = npixels(v, hr, vr, hdlist[pp->hd], pp->bi) + 1;
+		pp->nc = 0;
+	}
+	n = xcbeams - n2;
+					/* now sort list for deletions */
 	cbeamsort(0);
-	pa = (PACKHEAD *)realloc((char *)pa, (n+xcbeams)*sizeof(PACKHEAD));
-	if (n+xcbeams && pa == NULL)
+	pa2 = (PACKHEAD *)realloc((char *)pa2, (n+n2+xcbeams)*sizeof(PACKHEAD));
+	if (n+n2+xcbeams && pa2 == NULL)
 		goto memerr;
+	pa = pa2 + n2;
 	for (i = xcbeams; i--; ) {
-		pa[n+i].hd = cbeam[ncbeams+i].hd;
-		pa[n+i].bi = cbeam[ncbeams+i].bi;
-		pa[n+i].nr = 0;
+		pp = pa + n++;
+		pp->hd = cbeam[ncbeams+i].hd;
+		pp->bi = cbeam[ncbeams+i].bi;
+		pp->nr = 0;
+		pp->nc = 0;
 	}
-	n += xcbeams;
-	xcbeams = 0;			/* delete orphans */
-	serv_request(DR_ADJSET, n*sizeof(PACKHEAD), (char *)pa);
-	free((char *)pa);
+	if (n)				/* adjust the set */
+		serv_request(DR_ADJSET, n*sizeof(PACKHEAD), (char *)pa);
+	if (n2)				/* make secondary additions */
+		serv_request(DR_ADDSET, n2*sizeof(PACKHEAD), (char *)pa2);
+	xcbeams = 0;			/* clean up */
+	free((char *)pa2);
 	return;
 memerr:
 	error(SYSTEM, "out of memory in cbeamadj");
@@ -220,6 +246,7 @@ int	hr, vr;
 		pa[i].bi = bl[i].bi;
 		pa[i].nr = v==NULL ? 0 :
 				npixels(v, hr, vr, hdlist[bl[i].hd], bl[i].bi);
+		pa[i].nc = 0;
 	}
 	serv_request(op, n*sizeof(PACKHEAD), (char *)pa);
 	free((char *)pa);
