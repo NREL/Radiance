@@ -20,6 +20,8 @@ static char SCCSid[] = "$SunId$ LBL";
  *  5/31/90  Added conditional compile (REDEFW) for redefinition warning.
  *
  *  4/23/91  Added ':' assignment for constant expressions
+ *
+ *  8/7/91  Added optional context path to append to variable names
  */
 
 #include  <stdio.h>
@@ -34,11 +36,13 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  newnode()	(EPNODE *)ecalloc(1, sizeof(EPNODE))
 
-extern char  *ecalloc(), *savestr();
+extern char  *ecalloc(), *savestr(), *strcpy();
 
 static double  dvalue();
 
 long  eclock = -1;			/* value storage timer */
+
+static char  context[MAXWORD];		/* current context path */
 
 static VARDEF  *hashtbl[NHASH];		/* definition list */
 static int  htndx;			/* index for */		
@@ -72,7 +76,7 @@ char  *fname;
     }
     initfile(fp, fname, 0);
     while (nextc != EOF)
-	loaddefn();
+	getstatement();
     if (fname != NULL)
 	fclose(fp);
 }
@@ -85,7 +89,7 @@ int  ln;
 {
     initstr(str, fn, ln);
     while (nextc != EOF)
-	loaddefn();
+	getstatement();
 }
 
 
@@ -112,9 +116,12 @@ char  *vname;
 int  assign;
 double  val;
 {
+    char  *qname;
     register EPNODE  *ep1, *ep2;
+					/* get qualified name */
+    qname = qualname(vname, 0);
 					/* check for quick set */
-    if ((ep1 = dlookup(vname)) != NULL && ep1->v.kid->type == SYM) {
+    if ((ep1 = dlookup(qname)) != NULL && ep1->v.kid->type == SYM) {
 	ep2 = ep1->v.kid->sibling;
 	if (ep2->type == NUM) {
 	    ep2->v.num = val;
@@ -133,8 +140,8 @@ double  val;
     ep2->type = NUM;
     ep2->v.num = val;
     addekid(ep1, ep2);
-    dremove(vname);
-    dpush(ep1);
+    dremove(qname);
+    dpush(qname, ep1);
 }
 
 
@@ -145,7 +152,7 @@ char  *name;
 
     while ((ep = dpop(name)) != NULL) {
 	if (ep->type == ':') {
-	    dpush(ep);		/* don't clear constants */
+	    dpush(name, ep);		/* don't clear constants */
 	    return;
 	}
 	epfree(ep);
@@ -169,6 +176,85 @@ char  *name;
     register EPNODE  *dp;
 
     return((dp = dlookup(name)) != NULL && dp->v.kid->type == SYM);
+}
+
+
+char *
+setcontext(ctx)			/* set a new context path */
+register char  *ctx;
+{
+    register char  *cpp;
+
+    if (ctx == NULL)
+	return(context);		/* just asking */
+    if (!*ctx) {
+	context[0] = '\0';		/* clear context */
+	return(context);
+    }
+    cpp = context;			/* else copy it (carefully!) */
+    if (*ctx != CNTXMARK)
+	*cpp++ = CNTXMARK;		/* make sure there's a mark */
+    do {
+	if (cpp >= context+MAXWORD-1) {
+	    *cpp = '\0';
+	    wputs(context);
+	    wputs(": context path too long\n");
+	    return(NULL);
+	}
+	if (isid(*ctx))
+	    *cpp++ = *ctx++;
+	else {
+	    *cpp++ = '_'; ctx++;
+	}
+    } while (*ctx);
+    *cpp = '\0';
+    return(context);
+}
+
+
+char *
+qualname(nam, lvl)		/* get qualified name */
+register char  *nam;
+int  lvl;
+{
+    static char  nambuf[MAXWORD];
+    register char  *cp = nambuf, *cpp = context;
+				/* check for repeat call */
+    if (nam == nambuf)
+	return(lvl > 0 ? NULL : nambuf);
+				/* copy name to static buffer */
+    while (*nam) {
+	if (cp >= nambuf+MAXWORD-1)
+		goto toolong;
+	if ((*cp++ = *nam++) == CNTXMARK)
+	    cpp = NULL;		/* flag a qualified name */
+    }
+    if (cpp == NULL) {
+	if (lvl > 0)
+	    return(NULL);		/* no higher level */
+	if (cp[-1] == CNTXMARK) {
+	    cp--; cpp = context;	/* current context explicitly */
+	} else
+	    cpp = "";			/* else fully qualified */
+    } else			/* else skip the requested levels */
+	while (lvl-- > 0) {
+	    if (!*cpp)
+		return(NULL);	/* return NULL if past global level */
+	    while (*++cpp && *cpp != CNTXMARK)
+		;
+	}
+    while (*cpp) {		/* copy context to static buffer */
+	if (cp >= nambuf+MAXWORD-1)
+	    goto toolong;
+	*cp++ = *cpp++;
+    }
+    *cp = '\0';
+    return(nambuf);		/* return qualified name */
+toolong:
+    *cp = '\0';
+    wputs(nambuf);
+    wputs(": name too long\n");
+    return(NULL);
 }
 
 
@@ -224,11 +310,14 @@ VARDEF *
 varlookup(name)			/* look up a variable */
 char  *name;
 {
+    int  lvl = 0;
+    register char  *qname;
     register VARDEF  *vp;
-    
-    for (vp = hashtbl[hash(name)]; vp != NULL; vp = vp->next)
-    	if (!strcmp(vp->name, name))
-    	    return(vp);
+    				/* find most qualified match */
+    while ((qname = qualname(name, lvl++)) != NULL)
+	for (vp = hashtbl[hash(qname)]; vp != NULL; vp = vp->next)
+	    if (!strcmp(vp->name, qname))
+		return(vp);
     return(NULL);
 }
 
@@ -240,12 +329,12 @@ char  *name;
     register VARDEF  *vp;
     int  hv;
     
+    if ((vp = varlookup(name)) != NULL) {
+	vp->nlinks++;
+	return(vp);
+    }
+    name = qualname(name, 0);		/* use fully qualified name */
     hv = hash(name);
-    for (vp = hashtbl[hv]; vp != NULL; vp = vp->next)
-    	if (!strcmp(vp->name, name)) {
-    	    vp->nlinks++;
-    	    return(vp);
-    	}
     vp = (VARDEF *)emalloc(sizeof(VARDEF));
     vp->name = savestr(name);
     vp->nlinks = 1;
@@ -333,12 +422,13 @@ char  *name;
 }
 
 
-dpush(ep)			/* push on a definition */
+dpush(nm, ep)			/* push on a definition */
+char  *nm;
 register EPNODE  *ep;
 {
     register VARDEF  *vp;
 
-    vp = varinsert(dname(ep));
+    vp = varinsert(nm);
     ep->sibling = vp->def;
     vp->def = ep;
 }
@@ -375,9 +465,10 @@ EPNODE  *sp;
 #endif
 
 
-loaddefn()			/* load next definition */
+getstatement()			/* get next statement */
 {
     register EPNODE  *ep;
+    char  *qname;
     EPNODE  *lastdef;
 
     if (nextc == ';') {		/* empty statement */
@@ -392,27 +483,27 @@ loaddefn()			/* load next definition */
 #endif
     {				/* ordinary definition */
 	ep = getdefn();
+	qname = qualname(dname(ep), 0);
 #ifdef  REDEFW
-	if ((lastdef = dlookup(dname(ep))) != NULL) {
-	    wputs(dname(ep));
+	if ((lastdef = dlookup(qname)) != NULL) {
+	    wputs(qname);
 	    if (lastdef->type == ':')
 		wputs(": redefined constant expression\n");
 	    else
 		wputs(": redefined\n");
 	}
 #ifdef  FUNCTION
-	else if (ep->v.kid->type == FUNC &&
-			liblookup(ep->v.kid->v.kid->v.name) != NULL) {
-	    wputs(ep->v.kid->v.kid->v.name);
+	else if (ep->v.kid->type == FUNC && liblookup(qname) != NULL) {
+	    wputs(qname);
 	    wputs(": definition hides library function\n");
 	}
 #endif
 #endif
 	if (ep->type == ':')
-	    dremove(dname(ep));
+	    dremove(qname);
 	else
-	    dclear(dname(ep));
-	dpush(ep);
+	    dclear(qname);
+	dpush(qname, ep);
     }
     if (nextc != EOF) {
 	if (nextc != ';')

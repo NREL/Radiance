@@ -45,11 +45,17 @@ typedef struct epnode {
 
 typedef struct vardef  VARDEF;	/* a variable definition */
 
+#define  MAXWORD	64		/* maximum word/id length */
+#define  CNTXMARK	'`'		/* context mark */
+
+#define  isid(c)	(isalnum(c) || (c) == '_' || \
+			(c) == '.' || (c) == CNTXMARK)
+
 extern double  eval(), varvalue(), chanvalue(), funvalue();
 extern double  argument(), getnum();
 extern double  (*eoper[])();
 extern int  getinum();
-extern char  *getname(), *argfun();
+extern char  *getname(), *qualname(), *setcontext(), *argfun();
 extern EPNODE  *eparse(), *ekid(), *dlookup(), *dpop(), *dfirst(), *dnext();
 extern EPNODE  *getdefn(), *getchan();
 extern EPNODE  *getE1(), *getE2(), *getE3(), *getE4(), *getE5(), *rconst();

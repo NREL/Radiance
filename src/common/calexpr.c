@@ -27,11 +27,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "calcomp.h"
 
 #define  MAXLINE	256		/* maximum line length */
-#define  MAXWORD	64		/* maximum word length */
 
 #define  newnode()	(EPNODE *)ecalloc(1, sizeof(EPNODE))
-
-#define  isid(c)	(isalnum(c) || (c) == '_' || (c) == '.')
 
 #define  isdecimal(c)	(isdigit(c) || (c) == '.')
 
@@ -326,8 +323,11 @@ int  ln;
 }
 
 
-scan()				/* scan next character */
+int
+scan()				/* scan next character, return literal next */
 {
+    register int  lnext = 0;
+
     do {
 	if (linbuf[linepos] == '\0')
 	    if (infp == NULL || fgets(linbuf, MAXLINE, infp) == NULL)
@@ -339,6 +339,8 @@ scan()				/* scan next character */
 	    }
 	else
 	    nextc = linbuf[linepos++];
+	if (!lnext)
+		lnext = nextc;
 	if (nextc == '{') {
 	    scan();
 	    while (nextc != '}')
@@ -349,6 +351,7 @@ scan()				/* scan next character */
 	    scan();
 	}
     } while (isspace(nextc));
+    return(lnext);
 }
 
 
@@ -422,10 +425,11 @@ char *
 getname()			/* scan an identifier */
 {
     static char  str[MAXWORD+1];
-    register int  i;
+    register int  i, lnext;
 
-    for (i = 0; i < MAXWORD && isid(nextc); i++, scan())
-	str[i] = nextc;
+    lnext = nextc;
+    for (i = 0; i < MAXWORD && isid(lnext); i++, lnext = scan())
+	str[i] = lnext;
     str[i] = '\0';
 
     return(str);
@@ -435,12 +439,13 @@ getname()			/* scan an identifier */
 int
 getinum()			/* scan a positive integer */
 {
-    register int  n;
+    register int  n, lnext;
 
     n = 0;
-    while (isdigit(nextc)) {
-	n = n * 10 + nextc - '0';
-	scan();
+    lnext = nextc;
+    while (isdigit(lnext)) {
+	n = n * 10 + lnext - '0';
+	lnext = scan();
     }
     return(n);
 }
@@ -449,32 +454,33 @@ getinum()			/* scan a positive integer */
 double
 getnum()			/* scan a positive float */
 {
-    register int  i;
+    register int  i, lnext;
     char  str[MAXWORD+1];
 
     i = 0;
-    while (isdigit(nextc) && i < MAXWORD) {
-	str[i++] = nextc;
-	scan();
+    lnext = nextc;
+    while (isdigit(lnext) && i < MAXWORD) {
+	str[i++] = lnext;
+	lnext = scan();
     }
-    if (nextc == '.' && i < MAXWORD) {
-    	str[i++] = nextc;
-    	scan();
-	while (isdigit(nextc) && i < MAXWORD) {
-	    str[i++] = nextc;
-	    scan();
+    if (lnext == '.' && i < MAXWORD) {
+    	str[i++] = lnext;
+    	lnext = scan();
+	while (isdigit(lnext) && i < MAXWORD) {
+	    str[i++] = lnext;
+	    lnext = scan();
 	}
     }
-    if ((nextc == 'e' || nextc == 'E') && i < MAXWORD) {
-    	str[i++] = nextc;
-    	scan();
-	if ((nextc == '-' || nextc == '+') && i < MAXWORD) {
-	    str[i++] = nextc;
-	    scan();
+    if ((lnext == 'e' || lnext == 'E') && i < MAXWORD) {
+    	str[i++] = lnext;
+    	lnext = scan();
+	if ((lnext == '-' || lnext == '+') && i < MAXWORD) {
+	    str[i++] = lnext;
+	    lnext = scan();
 	}
-	while (isdigit(nextc) && i < MAXWORD) {
-	    str[i++] = nextc;
-	    scan();
+	while (isdigit(lnext) && i < MAXWORD) {
+	    str[i++] = lnext;
+	    lnext = scan();
 	}
     }
     str[i] = '\0';
