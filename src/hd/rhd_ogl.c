@@ -22,7 +22,6 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #include "standard.h"
 
-#include <sys/types.h>
 #include <GL/glx.h>
 #include <GL/glu.h>
 #ifdef STEREO

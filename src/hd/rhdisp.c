@@ -1,4 +1,4 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
+/* Copyright (c) 1999 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -40,7 +40,6 @@ char	*progname;		/* global argv[0] */
 FILE	*sstdin, *sstdout;	/* server's standard input and output */
 
 #ifdef DEBUG
-#include <sys/types.h>
 extern time_t	time();
 static time_t	tmodesw;
 static time_t	timm, tadd;

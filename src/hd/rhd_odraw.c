@@ -1,4 +1,4 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
+/* Copyright (c) 1999 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -10,7 +10,6 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #include "standard.h"
 
-#include <sys/types.h>
 #include <GL/glx.h>
 #include <GL/glu.h>
 

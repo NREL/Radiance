@@ -1,4 +1,4 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
+/* Copyright (c) 1999 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -10,7 +10,6 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #include "rholo.h"
 #include "view.h"
-#include <sys/types.h>
 
 #ifndef NFRAG2CHUNK
 #define NFRAG2CHUNK	4096	/* number of fragments to start chunking */
