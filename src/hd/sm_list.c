@@ -20,6 +20,7 @@ static LIST *free_lists = NULL;
 extern int Malloc_cnt;   
 #endif
 LIST
+/* NOTE: Memory is not initialized */
 *new_list()
 {
     LIST *l;
@@ -36,9 +37,6 @@ LIST
       if( !(l = (LIST *)malloc(sizeof(LIST))))
 	  error(SYSTEM,"new_list():Unable to allocate memory");
     }
-    /* clear the memory */
-    bzero(l, sizeof(LIST));
-
     return(l);
 }
 
@@ -74,7 +72,7 @@ LIST **end;
 
     list = new_list();
     SET_LIST_DATA(list,d);
-
+    SET_LIST_NEXT(list,NULL);
     if(!l)
     {
       if(end)
@@ -210,6 +208,10 @@ LIST **list;
     }
     return(FALSE);
 }
+
+
+
+
 
 
 

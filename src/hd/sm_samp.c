@@ -14,19 +14,15 @@ static char SCCSid[] = "$SunId$ SGI";
 SAMP rsL;
 int4 *samp_flag=NULL;
 
-
 /* Each sample has a world coord point, and direction, brightness,chrominance,
    and RGB triples
  */
-#ifndef HP_VERSION
-#define TMSIZE sizeof(TMbright)
-#else
-#define TMSIZE 0
-#endif
-#define SAMPSIZ (3*sizeof(float)+sizeof(int4)+ 6*sizeof(BYTE) + TMSIZE)
 
- /* Extra points just need direction and world space point */
-#define POINTSIZ (3*sizeof(float))
+#define TMSIZE sizeof(TMbright)
+#define SAMPSIZ (3*sizeof(SFLOAT)+sizeof(int4)+ 6*sizeof(BYTE) + TMSIZE + 2*sizeof(int))
+
+ /* Extra points world space point, vert flag and qt flag */
+#define POINTSIZ (3*sizeof(SFLOAT) + 2*sizeof(int))
 
 /* Clear the flags for all samples */ 
 sClear_all_flags(s)
@@ -84,18 +80,19 @@ int *nptr,extra_points;
     error(SYSTEM,"sAlloc(): Unable to allocate memory");
 
   /* assign larger alignment types earlier */
-  S_W_PT(s) = (float (*)[3])S_BASE(s);
+  S_W_PT(s) = (SFLOAT(*)[3])S_BASE(s);
   S_W_DIR(s) = (int4 *)(S_W_PT(s) + n + extra_points);
   S_BRT(s) = (TMbright *)(S_W_DIR(s) + n);
   S_CHR(s) = (BYTE (*)[3])(S_BRT(s) + n);
   S_RGB(s) = (BYTE (*)[3])(S_CHR(s) + n);
+  S_INFO(s) = (int *)(S_RGB(s)+n);
+  S_INFO1(s) = (int *)(S_INFO(s)+n+extra_points);
   S_MAX_SAMP(s) = n;
   S_MAX_BASE_PT(s) = n + extra_points;
 
   /* Allocate memory for a per/sample bit flag */
   if(!(samp_flag = (int4 *)malloc(FLAG_BYTES(n+extra_points))))
     error(SYSTEM,"sAlloc(): Unable to allocate flag memory");
-
   sInit(s);
   sClear_all_flags(s);
 
@@ -190,27 +187,12 @@ sInit_samp(s,id,c,d,p,o_id)
        */
 #ifndef TEST_DRIVER
     tmCvColrs(&S_NTH_BRT(s,id),S_NTH_CHR(s,id),c,1);
-#else
-    if(c)
-    {
-      S_NTH_RGB(s,id)[0] = c[0];
-      S_NTH_RGB(s,id)[1] = c[1];
-      S_NTH_RGB(s,id)[2] = c[2];
-    }
-    else
-    { 
-	S_NTH_RGB(s,id)[0] = 100;
-       S_NTH_RGB(s,id)[1] = 0;
-       S_NTH_RGB(s,id)[2] = 0;
-    }
 #endif
   }
     /* Set ACTIVE bit upon creation */
-    S_SET_FLAG(id);
-#ifndef TEST_DRIVER
+  S_SET_FLAG(id);
   if(id < S_TONE_MAP(s))
     tmMapPixels(S_NTH_RGB(s,id),&S_NTH_BRT(s,id),S_NTH_CHR(s,id),1);
-#endif
 }
 
 
@@ -223,55 +205,51 @@ sAlloc_samp(s,replaced)
 {
     int id;
 
-    if(replaced)
-       *replaced = 0;
-
     /* First check if there are any freed sample available */
     if((id = S_FREE_SAMP(s)) != INVALID)
     {
+      *replaced = 0;
+#if 0
+      fprintf(stderr,"allocating previously freed sample %d\n",id);
+#endif
       S_FREE_SAMP(s) = S_NTH_NEXT(s,id);
       return(id);
     }
     /* If havn't reached end of sample array:return next sample */
     if(S_NUM_SAMP(s) < S_MAX_SAMP(s))
-	id = S_NUM_SAMP(s)++;
-    else
     {
-      /* CLOCKED LRU replacement policy: Search through samples starting 
-	 with S_REPLACE_SAMP for a sample that does not have its active 
-	 bit set. Clear bit along the way 
-       */
-      id = S_REPLACE_SAMP(s);
-      while(S_IS_FLAG(id))
-      {
-	S_CLR_FLAG(id);
-	id = (id +1)% S_MAX_SAMP(s);
-      }
-      S_REPLACE_SAMP(s) = (id +1)% S_MAX_SAMP(s);
-      if(replaced)
-	*replaced = 1;
-    }
-    return(id);
-}
-
-/* Set the sample flag to be unused- so will get replaced on next LRU
-   iteration
-   */
-int
-sDelete_samp(s,id)
-SAMP *s;
-int id;
-{
-#ifdef DEBUG
-    /* Fist check for a valid id */
-    if(id >= S_MAX_SAMP(s) || id < 0)
-       return(0);
+      id = S_NUM_SAMP(s)++;
+#if 0
+      fprintf(stderr,"allocating sample %d\n",id);
 #endif
-    /* Add sample to the free list */
-    sUnalloc_samp(s,id);
+      *replaced = 0;
+      return(id);
+    }
 
-    S_CLR_FLAG(id);
-    return(1);
+#ifdef DEBUG 
+{
+  static int replace = 0;
+  if(replace == 0)
+  {
+    eputs("Out of samples: using replacement strategy\n");
+    replace =1 ;
+  }
+}
+#endif
+    
+    /* CLOCKED LRU replacement policy: Search through samples starting 
+       with S_REPLACE_SAMP for a sample that does not have its active 
+       bit set. Clear bit along the way 
+     */
+    id = S_REPLACE_SAMP(s);
+    while(S_IS_FLAG(id))
+    {
+      S_CLR_FLAG(id);
+      id = (id +1)% S_MAX_SAMP(s);
+    }
+    S_REPLACE_SAMP(s) = (id +1)% S_MAX_SAMP(s);
+    *replaced = 1;
+    return(id);
 }
 
 

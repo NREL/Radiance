@@ -1,4 +1,4 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
+/* Copyright (c) 1999 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -22,7 +22,6 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #include "standard.h"
 
-#include <sys/types.h>
 #include <GL/glx.h>
 #include <GL/glu.h>
 #ifdef STEREO
@@ -54,7 +53,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #define MOVORB(s)	((s)&ShiftMask ? 1 : (s)&ControlMask ? -1 : 0)
 
 #ifndef TARGETFPS
-#define TARGETFPS	4.0		/* target frames/sec during motion */
+#define TARGETFPS	2.0		/* target frames/sec during motion */
 #endif
 
 #define MINWIDTH	480		/* minimum graphics window width */
@@ -111,6 +110,9 @@ static int  resizewindow(), getevent(), getkey(), moveview(), wipeclean(),
 #ifdef STEREO
 static int  pushright(), popright();
 #endif
+static double	getdistance();
+#define mapdepth(d) ((d)> 0.9995 ? FHUGE: dev_zmin/ \
+		     (1.-(d)*(1.-dev_zmin/dev_zmax)))
 
 extern time_t	time();
 
@@ -261,7 +263,7 @@ dev_close()			/* close our display and free resources */
 dev_clear()			/* clear our representation */
 {
 	smInit(rsL.max_samp);
-	wipeclean();
+	wipeclean(1);
 	rayqleft = 0;			/* hold off update */
 }
 
@@ -315,7 +317,7 @@ register VIEW	*nv;
 	VSUM(vwright.vp, nv->vp, nv->hvec, d);
 	/* setview(&vwright);	-- Unnecessary */
 #endif
-	wipeclean();
+	wipeclean(0);
 	return(1);
 }
 
@@ -405,13 +407,13 @@ dev_flush()			/* flush output */
 	if (mapped) {
 #ifdef STEREO
 		pushright();			/* update right eye */
-		smUpdate(&vwright, 100);
+		smUpdate(&vwright, MAXQUALITY);
 #ifdef DOBJ
 		dobj_render();			/* usually in foreground */
 #endif
 		popright();			/* update left eye */
 #endif
-		smUpdate(&odev.v, 100);
+		smUpdate(&odev.v, MAXQUALITY);
 		checkglerr("rendering mesh");
 #ifdef DOBJ
 		dobj_render();
@@ -533,6 +535,23 @@ int	fore;
 	checkglerr("drawing grid lines");
 }
 
+static double
+getdistance(dx, dy, direc)	/* distance from fore plane along view ray */
+int	dx, dy;
+FVECT	direc;
+{
+	GLfloat	gldepth;
+	double	dist;
+
+	if (dx<0 | dx>=odev.hres | dy<0 | dy>=odev.vres)
+		return(FHUGE);
+	glReadPixels(dx,dy, 1,1, GL_DEPTH_COMPONENT,GL_FLOAT, &gldepth);
+	dist = mapdepth(gldepth);
+	if (dist >= .99*FHUGE)
+		return(FHUGE);
+	return((dist-odev.v.vfore)/DOT(direc,odev.v.vdir));
+}
+
 
 static
 moveview(dx, dy, mov, orb)	/* move our view */
@@ -540,7 +559,7 @@ int	dx, dy, mov, orb;
 {
 	VIEW	nv;
 	FVECT	odir, v1, wip;
-	double	d;
+	double	d,d1;
 	register int	li;
 				/* start with old view */
 	copystruct(&nv, &odev.v);
@@ -549,23 +568,18 @@ int	dx, dy, mov, orb;
 			(dx+.5)/odev.hres, (dy+.5)/odev.vres) < -FTINY)
 		return(0);		/* outside view */
 	if (mov | orb) {	/* moving relative to geometry */
+	        d = getdistance(dx, dy, odir);/*distance from front plane */
 #ifdef DOBJ
-		d = dobj_trace(NULL, v1, odir);	/* check objects */
+		d1 = dobj_trace(NULL, v1, odir);	/* check objects */
 						/* check holodeck */
-		if ((li = smFindSamp(v1, odir)) >= 0) {
-			VCOPY(wip, rsL.wp[li]);
-			if (d < .99*FHUGE && d*d <= dist2(v1, wip))
-				li = -1;	/* object is closer */
-		} else if (d >= .99*FHUGE)
-			return(0);		/* nothing visible */
-		if (li < 0)
-			VSUM(wip, v1, odir, d);	/* else get object point */
-#else
-		if ((li = smFindSamp(v1, odir)) < 0)
-			return(0);	/* not on window */
-		VCOPY(wip, rsL.wp[li]);
+		if (d1 < d)
+			d = d1;
 #endif
-#ifdef DEBUG
+		if (d >= .99*FHUGE)
+			d = 0.5*(dev_zmax+dev_zmin);	/* just guess */
+		VSUM(wip, v1, odir, d);
+		VSUB(odir, wip, odev.v.vp);
+#if 0
 		fprintf(stderr, "moveview: hit %s at (%f,%f,%f) (t=%f)\n",
 				li < 0 ? "object" : "mesh",
 				wip[0], wip[1], wip[2],
@@ -573,7 +587,6 @@ int	dx, dy, mov, orb;
 				(wip[1]-odev.v.vp[1])*odir[1] +
 				(wip[2]-odev.v.vp[2])*odir[2]);
 #endif
-		VSUM(odir, wip, odev.v.vp, -1.);
 	} else			/* panning with constant viewpoint */
 		VCOPY(nv.vdir, odir);
 	if (orb && mov) {		/* orbit left/right */
@@ -633,7 +646,7 @@ XButtonPressedEvent	*ebut;
 {
 	int	movdir = MOVDIR(ebut->button);
 	int	movorb = MOVORB(ebut->state);
-	int	qlevel = 99;
+	int	qlevel = MAXQUALITY-1;
 	time_t	lasttime, thistime;
 	int	nframes;
 	Window	rootw, childw;
@@ -642,7 +655,7 @@ XButtonPressedEvent	*ebut;
 
 	XNoOp(ourdisplay);		/* makes sure we're not idle */
 
-	lasttime = time(0); nframes = 0;
+	nframes = 0;
 	while (!XCheckMaskEvent(ourdisplay,
 			ButtonReleaseMask, levptr(XEvent))) {
 					/* get cursor position */
@@ -676,20 +689,24 @@ XButtonPressedEvent	*ebut;
 		dobj_render();		/* redraw object */
 #endif
 		glFlush();
-		nframes++;		/* figure out good quality level */
+					/* figure out good quality level */
+		if (!nframes++) {		/* ignore first frame */
+			lasttime = time(0);
+			continue;
+		}
 		thistime = time(0);
-		if (thistime - lasttime >= 3 ||
+		if (thistime - lasttime >= 6 ||
 				nframes > (int)(3*3*TARGETFPS)) {
-			qlevel = thistime<=lasttime ? 1000 :
+			qlevel = thistime<=lasttime ? 3*MAXQUALITY :
 				(int)((double)nframes/(thistime-lasttime)
 					/ TARGETFPS * qlevel + 0.5);
-			lasttime = thistime; nframes = 0;
-			if (qlevel > 99) {
-				if (qlevel > 300) {	/* put on the brakes */
+			nframes = 0;
+			if (qlevel >= MAXQUALITY) {
+				if (qlevel >= 3*MAXQUALITY) {	/* brakes!! */
 					sleep(1);
 					lasttime++;
 				}
-				qlevel = 99;
+				qlevel = MAXQUALITY-1;
 			} else if (qlevel < 1)
 				qlevel = 1;
 		}
@@ -713,15 +730,15 @@ register VIEW	*vp;
 		dev_zmin = 1.;
 		dev_zmax = 100.;
 	} else {
-		dev_zmin = 0.5*mindpth;
+		dev_zmin = 0.1*mindpth;
 		dev_zmax = 5.0*maxdpth;
 	}
 	if (odev.v.vfore > FTINY)
 		dev_zmin = odev.v.vfore;
 	if (odev.v.vaft > FTINY)
 		dev_zmax = odev.v.vaft;
-	if (dev_zmin < dev_zmax/100.)
-		dev_zmin = dev_zmax/100.;
+	if (dev_zmin < dev_zmax/500.)
+		dev_zmin = dev_zmax/500.;
 	xmax = dev_zmin * tan(PI/180./2. * odev.v.horiz);
 	xmin = -xmax;
 	d = odev.v.hoff * (xmax - xmin);
@@ -744,7 +761,8 @@ register VIEW	*vp;
 
 
 static
-wipeclean()			/* prepare for redraw */
+wipeclean(tmflag)			/* prepare for redraw */
+int	tmflag;
 {
 					/* clear depth buffer */
 #ifdef STEREO
@@ -753,7 +771,7 @@ wipeclean()			/* prepare for redraw */
 	setstereobuf(STEREO_BUFFER_LEFT);
 #endif
 	glClear(GL_DEPTH_BUFFER_BIT);
-	smClean();			/* reset drawing routines */
+	smClean(tmflag);		/* reset drawing routines */
 	setglpersp(&odev.v);		/* reset view & clipping planes */
 }
 
@@ -804,7 +822,7 @@ register XKeyPressedEvent  *ekey;
 		inpresflags |= DFL(DC_RESUME);
 		return;
 	case CTRL('R'):			/* redraw screen */
-		wipeclean();
+		wipeclean(1);
 		return;
 	case CTRL('L'):			/* refresh from server */
 		if (inpresflags & DFL(DC_REDRAW))
@@ -854,7 +872,7 @@ register XExposeEvent  *eexp;
 	}
 	if (eexp->count)		/* wait for final exposure */
 		return;
-	wipeclean();			/* clear depth */
+	wipeclean(0);			/* clear depth */
 }
 
 

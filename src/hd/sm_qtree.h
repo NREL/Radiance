@@ -22,10 +22,12 @@
 #include "object.h"
 typedef struct _FUNC {
     int (*func)();
+    int (*func_after)();
     int *argptr;
 }FUNC;
 
 #define F_FUNC(f) (f.func)
+#define F_FUNC2(f) (f.func_after)
 #define F_ARGS(f) (f.argptr)
 #define  QUADTREE		int
 
@@ -70,7 +72,7 @@ typedef struct _FUNC {
 #define QT_SET_NTH_ELEM(s,n)   ((s)[(n)])   
 
 #define QT_CLEAR_SET(s)        ((s)[0] = 0)
-#define QT_SET_NEXT_ELEM(p)    (*(p)++)
+#define QT_SET_NEXT_ELEM(p)    (*(++p))
 #define QT_SET_PTR(s)          (&((s)[1]))
 
 
@@ -78,7 +80,7 @@ typedef struct _FUNC {
 #define MAXCSET          2*QT_MAXSET
 #define QT_MAXCSET       MAXCSET
 #ifndef QT_SET_THRESHOLD
-#define QT_SET_THRESHOLD 64  
+#define QT_SET_THRESHOLD 32  
 #endif
 
 #ifndef QT_MAX_LEVELS
@@ -116,7 +118,9 @@ extern OBJECT	*qtqueryset();
 #else
 #define qtqueryset(qt)	(qtsettab[QT_SET_INDEX(qt)])
 #endif
-
+#if 0
+#define qtremovelast(qt) ((*(qtqueryset(qt)))--)
+#endif
 #define qtinset(qt,id)	inset(qtqueryset(qt),id)
 #define qtgetset(os,qt)	setcopy(os,qtqueryset(qt))
 
@@ -150,3 +154,9 @@ extern QUADTREE qtRoot_remove_tri();
 extern QUADTREE qtAdd_tri();
 extern QUADTREE qtRoot_visit_tri_edges();
 extern QUADTREE qtRoot_trace_ray();
+
+
+
+
+
+

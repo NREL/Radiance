@@ -19,6 +19,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "sm_qtree.h"
 #include "sm_stree.h"
 
+
 #ifdef TEST_DRIVER
 extern FVECT Pick_point[500],Pick_v0[500],Pick_v1[500],Pick_v2[500];
 extern int Pick_cnt;
@@ -63,22 +64,21 @@ STREE *st;
 {
   int i,j;
 
-    ST_TOP_QT(st) = qtAlloc();
-    ST_BOTTOM_QT(st) = qtAlloc();
-    /* Clear the children */
+  qtDone();
+
+  ST_TOP_QT(st) = qtAlloc();
+  ST_BOTTOM_QT(st) = qtAlloc();
+  /* Clear the children */
 
    QT_CLEAR_CHILDREN(ST_TOP_QT(st));
    QT_CLEAR_CHILDREN(ST_BOTTOM_QT(st));
 }
 
-/* Frees the children of the 2 quadtrees rooted at st,
-   Does not free root nodes: just clears
-*/
-stClear(st)
-   STREE *st;
+stFree(st)
+STREE *st;
 {
-    qtDone();
-    stInit(st);
+  qtDone();
+  free(st);
 }
 
 /* Allocates a stree structure  and creates octahedron base */
@@ -97,28 +97,6 @@ STREE *st;
   /* Allocate the top and bottom quadtree root nodes */
   stInit(st);
   
-  
-  /* will go ********************************************/
-  /* Set the octahedron base */
-  ST_SET_BASE(st,stDefault_base);
-
-  /* Calculate octahedron face and edge normals */
-  for(i=0; i < ST_NUM_ROOT_NODES; i++)
-  {
-      VCOPY(v0,ST_NTH_V(st,i,0));
-      VCOPY(v1,ST_NTH_V(st,i,1));
-      VCOPY(v2,ST_NTH_V(st,i,2));
-      tri_plane_equation(v0,v1,v2, &ST_NTH_PLANE(st,i),FALSE);
-      m = max_index(FP_N(ST_NTH_PLANE(st,i)),NULL);
-      FP_X(ST_NTH_PLANE(st,i)) = (m+1)%3; 
-      FP_Y(ST_NTH_PLANE(st,i)) = (m+2)%3;
-      FP_Z(ST_NTH_PLANE(st,i)) = m;
-      VCROSS(ST_EDGE_NORM(st,i,0),v0,v1);
-      VCROSS(ST_EDGE_NORM(st,i,1),v1,v2);
-      VCROSS(ST_EDGE_NORM(st,i,2),v2,v0);
-  }
-
-  /*****************************************************************/
   return(st);
 }
 
@@ -745,6 +723,30 @@ stInsert_tri(st,tri,f)
   }
 }
 
+stInsert_samp(st,p,f)
+   STREE *st;
+   FVECT p;
+   FUNC f;
+{
+
+    QUADTREE qt;
+    BCOORD bcoordi[3];
+    int i,done;
+
+    /* Find root quadtree that contains p */
+    i = stLocate_root(p);
+    qt = ST_ROOT_QT(st,i);
+    
+     /* Will return lowest level triangle containing point: It the
+       point is on an edge or vertex: will return first associated
+       triangle encountered in the child traversal- the others can
+       be derived using triangle adjacency information
+    */
+    vert_to_qt_frame(i,p,bcoordi);
+    ST_ROOT_QT(st,i) =  qtInsert_point(i,qt,EMPTY,qtRoot[0],qtRoot[1],
+			  qtRoot[2],bcoordi,MAXBCOORD2>>1,f,0,&done);
+
+}
 
 
 

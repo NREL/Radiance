@@ -21,16 +21,6 @@
 
 typedef struct _STREE {
   QUADTREE   qt[2];  /* root[0]= top four faces, root[1]=bottom 4 faces*/
-  FVECT      center;   /* sphere center */
-
-  /* will go **************************************************/
-  FVECT      base[6];  /* 6 vertices on sphere that define base octahedron:
-			  in canonical form: origin(0,0,0) points (1,0,0),
-			  (0,1,0),(0,0,1),(-1,0,0),(0,-1,0),(0,0,-1) */
-  FPEQ      fplane[8];     /* Face plane equations */
-        
-  FVECT enorms[8][3];  /* Edge normals: For plane through edge and origin*/
-  /* gone ****************************************************************/
 
 }STREE;
 
@@ -44,40 +34,18 @@ typedef struct _STREE {
 #define ST_TOP_QT_PTR(s)     (&ST_TOP_QT(s)) /* ptr to top qt */
 #define ST_BOTTOM_QT_PTR(s)  (&ST_BOTTOM_QT(s)) /* ptr to bottom qt*/
 
-
+#define ST_NTH_V(s,n,w)        (stDefault_base[stBase_verts[n][w]])
 #define ST_ROOT_QT(s,n)        QT_NTH_CHILD(ST_QT(s,n),ST_INDEX(n))
 
 #define ST_CLEAR_QT(st)      (ST_TOP_QT(st)=EMPTY,ST_BOTTOM_QT(st)=EMPTY)
 #define ST_INIT_QT(st)      (QT_CLEAR_CHILDREN(ST_TOP_QT(st)), \
 				QT_CLEAR_CHILDREN(ST_BOTTOM_QT(st)))
 
-
-
-     /* Will go *****************************************************/
-#define ST_BASE(s)             ((s)->base)
-#define ST_NTH_BASE(s,n)       ((s)->base[(n)])
-#define ST_NTH_V(s,n,i)        ST_NTH_BASE(s,stBase_verts[(n)][(i)])
-#define ST_SET_NTH_BASE(s,n,b) VCOPY(ST_NTH_BASE(s,n),b)
-#define ST_SET_BASE(s,b)       (VCOPY(ST_NTH_BASE(s,0),(b)[0]), \
-				VCOPY(ST_NTH_BASE(s,1),(b)[1]), \
-				VCOPY(ST_NTH_BASE(s,2),(b)[2]), \
-				VCOPY(ST_NTH_BASE(s,3),(b)[3]), \
-				VCOPY(ST_NTH_BASE(s,4),(b)[4]), \
-				VCOPY(ST_NTH_BASE(s,5),(b)[5]))
-#define ST_NTH_PLANE(s,i)        ((s)->fplane[(i)])
-#define ST_NTH_NORM(s,i)         (ST_NTH_PLANE(s,i).n)
-#define ST_NTH_D(s,i)            (ST_NTH_PLANE(s,i).d)
-#define ST_EDGE_NORM(s,i,n)      ((s)->enorms[(i)][(n)])
-/* gone *****************************************************/
-
-#define ST_CENTER(s)           ((s)->center)
-#define ST_SET_CENTER(s,b)     VCOPY(ST_CENTER(s),b)
-
-#define ST_COORD(s,p,r)         VSUB(r,p,ST_CENTER(s))
 #define ST_CLEAR_FLAGS(s)       qtClearAllFlags()
 
 /* Point location based on coordinate signs */ 
 #define stLocate_root(p) (((p)[2]>0.0?0:4)|((p)[1]>0.0?0:2)|((p)[0]>0.0?0:1))
+#define stClear(st)    stInit(st)
 
 #define ST_CLIP_VERTS 16
 /* STREE functions
@@ -88,8 +56,6 @@ void stInit(STREE *st,FVECT  center)
 STREE *stAlloc(STREE *st)
          Allocates a stree structure  and creates octahedron base 
 
-void stClear(STREE *st)
-         Frees any existing root children and clears roots
 	 
 QUADTREE stPoint_locate(STREE *st,FVECT p)
          Returns quadtree leaf node containing point 'p'. 
@@ -114,6 +80,7 @@ int stApply_to_tri(STREE *st,FVECT t0,t1,t2,int (*edge_func)(),
 */
 
 extern int stBase_verts[8][3];
+extern FVECT stDefault_base[6];
 extern STREE *stAlloc();
 extern QUADTREE stPoint_locate();
 
