@@ -140,8 +140,11 @@ MAT4  pm;
 		ourspot.siz = PI*maxrad2;
 		ourspot.flen = 0.;
 		if (source[sn].sflags & SSPOT) {
-			copystruct(&theirspot, source[sn].sl.s);
 			multp3(theirspot.aim, source[sn].sl.s->aim, pm);
+			d = sqrt(dist2(ourspot.aim, theirspot.aim));
+			d = sqrt(source[sn].sl.s->siz/PI) + d*source[sn].ss;
+			theirspot.siz = PI*d*d;
+			ourspot.flen = theirspot.flen = source[sn].sl.s->flen;
 			d = ourspot.siz;
 			if (!commonbeam(&ourspot, &theirspot, nsloc))
 				return(-1);	/* no overlap */
@@ -164,8 +167,9 @@ MAT4  pm;
 		if (source[sn].sflags & SPROX && d > source[sn].sl.prox)
 			return(-1);		/* too far away */
 		ourspot.flen = 0.;
-		if (d*d > maxrad2)
-			ourspot.siz = 2.*PI*(1. - sqrt(1.-maxrad2/(d*d)));
+		d = (sqrt(maxrad2) + source[sn].ss) / d;
+		if (d < 1.-FTINY)
+			ourspot.siz = 2.*PI*(1. - sqrt(1.-d*d));
 		else
 			nsflags &= ~SSPOT;
 		if (source[sn].sflags & SSPOT) {
