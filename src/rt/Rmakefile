@@ -4,7 +4,9 @@
 #  Compiles for ray tracing programs.
 #
 
-CFLAGS = -DBSD -O -DIEEE -f68881 /usr/lib/f68881.il
+OPT = -O
+MACH = -DBSD -DIEEE -f68881 /usr/lib/f68881.il
+CFLAGS = $(MACH) $(OPT)
 
 #
 # The following are user-definable:
