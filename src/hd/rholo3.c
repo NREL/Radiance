@@ -316,8 +316,9 @@ sortcomplist()			/* fix our list order */
  * list and start again from the beginning.  Since
  * a merge sort is used, the sorting costs are minimal.
  */
-next_packet(p)			/* prepare packet for computation */
+next_packet(p, n)		/* prepare packet for computation */
 register PACKET	*p;
+int	n;
 {
 	register int	i;
 
@@ -331,8 +332,12 @@ register PACKET	*p;
 	p->nr = complist[listpos].nr - p->nc;
 	if (p->nr <= 0)
 		return(0);
-	if (p->nr > RPACKSIZ)
-		p->nr = RPACKSIZ;
+#ifdef DEBUG
+	if (n < 1 | n > RPACKSIZ)
+		error(CONSISTENCY, "next_packet called with bad n value");
+#endif
+	if (p->nr > n)
+		p->nr = n;
 	complist[listpos].nc += p->nr;	/* find where this one would go */
 	while (lastin > listpos && 
 			beamcmp(complist+lastin, complist+listpos) > 0)
