@@ -241,7 +241,7 @@ register RAY  *r;
 	v[1] = r->rorg[1] - vp[1];
 	v[2] = r->rorg[2] - vp[2];
 	vp = source[si->sn].snorm;
-	if (DOT(v,vp) <= FTINY) {	/* behind source */
+	if (DOT(v,vp) <= 0.) {		/* behind source */
 		si->np = 0;
 		return;
 	}
