@@ -43,6 +43,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  ourroot	RootWindow(thedisplay,ourscreen)
 #define  ourgc		DefaultGC(thedisplay,ourscreen)
 
+#define  revline(x0,y0,x1,y1)	XDrawLine(thedisplay,wind,revgc,x0,y0,x1,y1)
+
 #define  redraw(x,y,w,h) patch_raster(wind,(x)-xoff,(y)-yoff,x,y,w,h,ourras)
 
 double  gamcor = 2.2;			/* gamma correction */
@@ -74,6 +76,8 @@ long  *scanpos = NULL;			/* scan line positions in file */
 int  cury = 0;				/* current scan location */
 
 double  exposure = 1.0;			/* exposure compensation used */
+
+GC	revgc;				/* graphics context with GXinvert */
 
 XRASTER	*ourras;			/* our stored image */
 unsigned char	*ourdata;		/* our image data */
@@ -222,10 +226,14 @@ init()			/* get data and open window */
 			CWBackPixel|CWBorderPixel, &ourwinattr);
 	if (wind == 0)
 		quiterr("can't create window");
+	width = xmax;
+	height = ymax;
 	fontid = XLoadFont(thedisplay, FONTNAME);
 	if (fontid == 0)
 		quiterr("can't get font");
 	XSetFont(thedisplay, ourgc, fontid);
+	revgc = XCreateGC(thedisplay, wind, 0, 0);
+	XSetFunction(thedisplay, revgc, GXinvert);
 	XStoreName(thedisplay, wind, fname == NULL ? progname : fname);
 	XDefineCursor(thedisplay, wind, XCreateFontCursor(thedisplay, 
 			XC_diamond_cross));
@@ -485,15 +493,19 @@ XButtonPressedEvent  *ebut;
 		XButtonReleasedEvent  b;
 		XPointerMovedEvent  m;
 	}  e;
-	int	nxo, nyo;
+	int	mxo, myo;
 
 	XMaskEvent(thedisplay, ButtonReleaseMask|ButtonMotionMask, &e.u);
 	while (e.u.type == MotionNotify) {
-		nxo = xoff + e.m.x - ebut->x;
-		nyo = yoff + e.m.y - ebut->y;
-		revbox(nxo, nyo, nxo+xmax, nyo+ymax);
+		mxo = e.m.x;
+		myo = e.m.y;
+		revline(ebut->x, ebut->y, mxo, myo);
+		revbox(xoff+mxo-ebut->x, yoff+myo-ebut->y,
+				xoff+mxo-ebut->x+xmax, yoff+myo-ebut->y+ymax);
 		XMaskEvent(thedisplay,ButtonReleaseMask|ButtonMotionMask,&e.u);
-		revbox(nxo, nyo, nxo+xmax, nyo+ymax);
+		revline(ebut->x, ebut->y, mxo, myo);
+		revbox(xoff+mxo-ebut->x, yoff+myo-ebut->y,
+				xoff+mxo-ebut->x+xmax, yoff+myo-ebut->y+ymax);
 	}
 	xoff += e.b.x - ebut->x;
 	yoff += e.b.y - ebut->y;
@@ -537,17 +549,11 @@ XButtonPressedEvent  *ebut;
 revbox(x0, y0, x1, y1)			/* draw box with reversed lines */
 int  x0, y0, x1, y1;
 {
-	static GC	mygc = 0;
-
-	if (mygc == 0) {
-		mygc = XCreateGC(thedisplay, wind, 0, 0);
-		XSetFunction(thedisplay, mygc, GXinvert);
-	}
-	XDrawLine(thedisplay, wind, mygc, x0, y0, x1, y0);
-	XDrawLine(thedisplay, wind, mygc, x0, y1, x1, y1);
-	XDrawLine(thedisplay, wind, mygc, x0, y0, x0, y1);
-	XDrawLine(thedisplay, wind, mygc, x1, y0, x1, y1);
-} /* end of revbox */
+	revline(x0, y0, x1, y0);
+	revline(x0, y1, x1, y1);
+	revline(x0, y0, x0, y1);
+	revline(x1, y0, x1, y1);
+}
 
 
 avgbox(clr)				/* average color over current box */
