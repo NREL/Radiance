@@ -55,7 +55,7 @@ typedef struct ray {
 	COLOR  rcol;		/* returned ray value */
 	double  rt;		/* returned effective ray length */
 	COLOR  cext;		/* medium extinction coefficient */
-	float  albedo;		/* medium scattering albedo */
+	COLOR  albedo;		/* medium scattering albedo */
 	float  gecc;		/* scattering eccentricity coefficient */
 	int  *slights;		/* list of lights to test for scattering */
 }  RAY;

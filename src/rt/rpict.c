@@ -62,7 +62,7 @@ int  directvis = 1;			/* sources visible? */
 double	srcsizerat = .25;		/* maximum ratio source size/dist. */
 
 COLOR  cextinction = BLKCOLOR;		/* global extinction coefficient */
-double  salbedo = 0.;			/* global scattering albedo */
+COLOR  salbedo = BLKCOLOR;		/* global scattering albedo */
 double  seccg = 0.;			/* global scattering eccentricity */
 double  ssampdist = 0.;			/* scatter sampling distance */
 

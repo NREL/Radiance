@@ -499,7 +499,7 @@ register char  *s;
 	extern int  ambssamp;
 	extern int  ambounce;
 	extern COLOR  cextinction;
-	extern double  salbedo;
+	extern COLOR  salbedo;
 	extern double  seccg;
 	extern double  ssampdist;
 	extern int  directvis;
@@ -605,7 +605,8 @@ register char  *s;
 					(COLOR *)cextinction);
 			break;
 		case 'a':			/* scattering albedo */
-			getparam(s+2, "scattering albedo", 'r', &salbedo);
+			getparam(s+2, "scattering albedo", 'C',
+					(COLOR *)salbedo);
 			break;
 		case 'g':			/* scattering eccentricity */
 			getparam(s+2, "scattering eccentricity", 'r', &seccg);

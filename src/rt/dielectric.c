@@ -51,7 +51,7 @@ static int  lambda();
 #define  MINCOS		0.997		/* minimum dot product for dispersion */
 
 extern COLOR  cextinction;		/* global coefficient of extinction */
-extern double  salbedo;			/* global scattering albedo */
+extern COLOR  salbedo;			/* global scattering albedo */
 
 
 static double
@@ -72,7 +72,7 @@ register RAY  *r;
 {
 	double  cos1, cos2, nratio;
 	COLOR  ctrans;
-	double  talb;
+	COLOR  talb;
 	double  mabsorp;
 	double  refl, trans;
 	FVECT  dnorm;
@@ -100,17 +100,17 @@ register RAY  *r;
 		setcolor(r->cext, -mylog(m->oargs.farg[0]*colval(r->pcol,RED)),
 				 -mylog(m->oargs.farg[1]*colval(r->pcol,GRN)),
 				 -mylog(m->oargs.farg[2]*colval(r->pcol,BLU)));
-		r->albedo = 0.;
+		setcolor(r->albedo, 0., 0., 0.);
 		r->gecc = 0.;
 		if (m->otype == MAT_INTERFACE) {
 			setcolor(ctrans,
 				-mylog(m->oargs.farg[4]*colval(r->pcol,RED)),
 				-mylog(m->oargs.farg[5]*colval(r->pcol,GRN)),
 				-mylog(m->oargs.farg[6]*colval(r->pcol,BLU)));
-			talb = 0.;
+			setcolor(talb, 0., 0., 0.);
 		} else {
 			copycolor(ctrans, cextinction);
-			talb = salbedo;
+			copycolor(talb, salbedo);
 		}
 	} else {				/* outside */
 		nratio = 1.0 / nratio;
@@ -118,13 +118,13 @@ register RAY  *r;
 		setcolor(ctrans, -mylog(m->oargs.farg[0]*colval(r->pcol,RED)),
 				 -mylog(m->oargs.farg[1]*colval(r->pcol,GRN)),
 				 -mylog(m->oargs.farg[2]*colval(r->pcol,BLU)));
-		talb = 0.;
+		setcolor(talb, 0., 0., 0.);
 		if (m->otype == MAT_INTERFACE) {
 			setcolor(r->cext,
 				-mylog(m->oargs.farg[4]*colval(r->pcol,RED)),
 				-mylog(m->oargs.farg[5]*colval(r->pcol,GRN)),
 				-mylog(m->oargs.farg[6]*colval(r->pcol,BLU)));
-			r->albedo = 0.;
+			setcolor(r->albedo, 0., 0., 0.);
 			r->gecc = 0.;
 		}
 	}
@@ -169,7 +169,7 @@ register RAY  *r;
 #endif
 			{
 				copycolor(p.cext, ctrans);
-				p.albedo = talb;
+				copycolor(p.albedo, talb);
 				rayvalue(&p);
 				scalecolor(p.rcol, trans);
 				addcolor(r->rcol, p.rcol);
