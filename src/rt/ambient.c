@@ -1,4 +1,4 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1996 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -572,7 +572,8 @@ static int
 alatcmp(avp1, avp2)			/* compare ambient values for MRA */
 AMBVAL	**avp1, **avp2;
 {
-	return((**avp2).latick - (**avp1).latick);
+	register long  lc = (**avp2).latick - (**avp1).latick;
+	return(lc<0 ? -1 : lc>0 ? 1 : 0);
 }
 
 
@@ -584,7 +585,7 @@ AMBVAL	**avp1, **avp2;
 }
 
 
-#ifdef DEBUG
+#if  1
 static int
 avlmemi(avaddr)				/* find list position from address */
 AMBVAL	*avaddr;
