@@ -1,3 +1,5 @@
+/* Copyright (c) 1990 Regents of the University of California */
+
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
@@ -37,6 +39,21 @@ static BYTE  chroma[3][NINC] = {
 	}
 };
 
+#ifdef  NTSC
+static float  xyz2rgbmat[3][3] = {	/* XYZ to RGB (NTSC */
+	1.73, -.48, -.26,
+	-.81, 1.65, -.02,
+	 .08, -.17, 1.28,
+};
+#else
+static float xyz2rgbmat[3][3] = {	/* XYZ to RGB (color monitor) */
+	 2.739, -1.145, -.424,
+	-1.119,  2.029,  .033,
+	  .138,  -.333, 1.105,
+};
+#endif
+
+
 
 spec_rgb(col, s, e)		/* compute RGB color from spectral range */
 COLOR  col;
@@ -60,6 +77,10 @@ int  s, e;		/* starting and ending wavelengths */
 		s = 0;
 
 	e -= STARTWL;
+	if (e <= s) {
+		col[RED] = col[GRN] = col[BLU] = 0.0;
+		return;
+	}
 	if (e >= INCWL*(NINC - 1))
 		e = INCWL*(NINC - 1) - 1;
 
@@ -82,17 +103,12 @@ int  s, e;		/* starting and ending wavelengths */
 cie_rgb(rgbcolor, ciecolor)		/* convert CIE to RGB (NTSC) */
 register COLOR  rgbcolor, ciecolor;
 {
-	static float  cmat[3][3] = {
-		1.73, -.48, -.26,
-		-.81, 1.65, -.02,
-		 .08, -.17, 1.28,
-	};
 	register int  i;
 
 	for (i = 0; i < 3; i++) {
-		rgbcolor[i] =	cmat[i][0]*ciecolor[0] +
-				cmat[i][1]*ciecolor[1] +
-				cmat[i][2]*ciecolor[2] ;
+		rgbcolor[i] =	xyz2rgbmat[i][0]*ciecolor[0] +
+				xyz2rgbmat[i][1]*ciecolor[1] +
+				xyz2rgbmat[i][2]*ciecolor[2] ;
 		if (rgbcolor[i] < 0.0)
 			rgbcolor[i] = 0.0;
 	}
