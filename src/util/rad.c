@@ -823,8 +823,14 @@ register char	*po;
 		po = addarg(po, "-1 -e");
 		po = addarg(po, vval(EXPOSURE));
 	}
-	if (vscale(QUALITY) == HIGH)
-		po = addarg(po, "-r .65");
+	switch (vscale(QUALITY)) {
+	case MEDIUM:
+		po = addarg(po, "-r 1");
+		break;
+	case HIGH:
+		po = addarg(po, "-m .15");
+		break;
+	}
 	if (vdef(PFILT))
 		po = addarg(po, vval(PFILT));
 }
