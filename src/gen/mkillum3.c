@@ -96,7 +96,6 @@ FVECT  u, v, w;
 	FILE  *dfp;
 	int  i;
 
-	average(il, da, n*m);
 	if (il->flags & IL_COLDST) {
 		printf("\n%s %s %s%s", VOIDID, ofun[PAT_CDATA].funame,
 				il->matname, DSTSUF);
@@ -135,7 +134,6 @@ int  n, m;
 	FILE  *dfp;
 	int  i;
 
-	average(il, da, n*m);
 	if (il->flags & IL_COLDST) {
 		printf("\n%s %s %s%s", VOIDID, ofun[PAT_CDATA].funame,
 				il->matname, DSTSUF);
@@ -169,8 +167,11 @@ OBJREC  *ob;
 {
 	double  cout[3];
 
-	printf("\n%s%s %s %s", il->matname, DSTSUF,
-			ofun[il->flags&IL_LIGHT?MAT_LIGHT:MAT_ILLUM].funame,
+	if (il->sampdens <= 0)
+		printf("\n%s ", VOIDID);
+	else
+		printf("\n%s%s ", il->matname, DSTSUF);
+	printf("%s %s", ofun[il->flags&IL_LIGHT?MAT_LIGHT:MAT_ILLUM].funame,
 			il->matname);
 	if (il->flags & IL_LIGHT || !strcmp(il->altmat,VOIDID))
 		printf("\n0");
