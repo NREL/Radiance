@@ -24,7 +24,7 @@ TIFF	*tp;
 	char	*funcName = fname==NULL ? "tmLoadTIFF" : fname;
 	TIFF	*tif;
 	int	err;
-	union {uint16 *w; uint32 *l; MEM_PTR p} sl;
+	union {uint16 *w; uint32 *l; MEM_PTR p;} sl;
 	uint16	comp, phot, pconf;
 	uint32	width, height;
 	double	stonits;
