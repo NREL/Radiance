@@ -10,6 +10,8 @@ CFLAGS = $(MACH) $(OPT) -I../common -L../lib
 
 CC = cc
 
+MLIB = -lm
+
 INSTDIR = /usr/local/bin
 
 PROGS = findglare xglaresrc glarendx rpiece rad
@@ -32,30 +34,30 @@ clean:
 	set nonomatch; rm -f *.o $(PROGS) core
 
 scanner:	scanner.o
-	$(CC) $(CFLAGS) -o scanner scanner.o -lm
+	$(CC) $(CFLAGS) -o scanner scanner.o $(MLIB)
 
 makedist:	makedist.o setscan.o
-	$(CC) $(CFLAGS) -o makedist makedist.o setscan.o -lrt -lm
+	$(CC) $(CFLAGS) -o makedist makedist.o setscan.o -lrt $(MLIB)
 
 findglare:	findglare.o glareval.o glaresrc.o setscan.o
 	$(CC) $(CFLAGS) -o findglare findglare.o glareval.o glaresrc.o \
-setscan.o -lrt -lm
+setscan.o -lrt $(MLIB)
 
 glarendx:	glarendx.o
-	$(CC) $(CFLAGS) -o glarendx glarendx.o -lrt -lm
+	$(CC) $(CFLAGS) -o glarendx glarendx.o -lrt $(MLIB)
 
 xglaresrc:	xglaresrc.o x11findwind.o
 	$(CC) $(CFLAGS) -o xglaresrc xglaresrc.o \
-x11findwind.o -lrt -lX11 -lm
+x11findwind.o -lrt -lX11 $(MLIB)
 
 rad:	rad.o
-	$(CC) $(CFLAGS) -o rad rad.o -lrt -lm
+	$(CC) $(CFLAGS) -o rad rad.o -lrt $(MLIB)
 
 rpiece:	rpiece.o Version.o
-	$(CC) $(CFLAGS) -o rpiece rpiece.o Version.o -lrt -lm
+	$(CC) $(CFLAGS) -o rpiece rpiece.o Version.o -lrt $(MLIB)
 
 contour:	contour.o
-	$(CC) $(CFLAGS) -o contour contour.o -lm
+	$(CC) $(CFLAGS) -o contour contour.o $(MLIB)
 
 pranim:	pranim.o client/libclient.a
 	$(CC) $(CFLAGS) -o pranim pranim.o \
