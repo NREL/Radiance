@@ -1069,7 +1069,7 @@ make_tonemap(void)			/* initialize tone mapping */
 		tmGlobal = tmInit(flags, stdprims, gamcor);
 		if (tmGlobal == NULL)
 			goto memerr;
-		if (tmSetSpace(tmGlobal, stdprims, WHTEFFICACY/exposure))
+		if (tmSetSpace(tmGlobal, stdprims, WHTEFFICACY/exposure, NULL))
 			goto tmerr;
 						/* compute picture histogram */
 		for (y = 0; y < ymax; y++) {

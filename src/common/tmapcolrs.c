@@ -214,7 +214,7 @@ FILE	*fp
 	else if (info.format == FMTCIE)
 		info.primp = TM_XYZPRIM;
 						/* prepare library */
-	if ((err = tmSetSpace(tms, info.primp, 1./info.expos)) != TM_E_OK)
+	if ((err = tmSetSpace(tms, info.primp, 1./info.expos, NULL)) != TM_E_OK)
 		goto done;
 	err = TM_E_NOMEM;			/* allocate arrays */
 	*lpp = (TMbright *)malloc(sizeof(TMbright) * *xp * *yp);
