@@ -116,6 +116,8 @@ int	nents;
 	default:
 		error(CONSISTENCY, "bundle_set called with unknown operation");
 	}
+	if (outdev == NULL)
+		return;
 	n = RPACKSIZ;				/* allocate packet holder */
 	for (i = 0; i < nents; i++)
 		if (clist[i].nr > n)
