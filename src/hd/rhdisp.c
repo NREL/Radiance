@@ -17,8 +17,6 @@ HOLO	*hdlist[HDMAX+1];	/* global holodeck list */
 
 int	imm_mode = 0;		/* bundles are being delivered immediately */
 
-VIEW	dvw;			/* our current display view */
-
 char	*progname;		/* global argv[0] */
 
 #define RDY_SRV	01
@@ -163,8 +161,8 @@ VIEW	*v;
 	if ((err = setview(v)) != NULL)
 		error(INTERNAL, err);
 	dev_view(v);			/* update display driver */
-	beam_view(&dvw, v);		/* update beam list */
-	copystruct(&dvw, v);		/* record new view */
+	dev_flush();			/* update screen */
+	beam_view(v);			/* update beam list */
 }
 
 
