@@ -42,7 +42,10 @@ typedef struct ray {
 	FVECT  rop;		/* intersection point */
 	FVECT  ron;		/* intersection surface normal */
 	double  rod;		/* -DOT(rdir, ron) */
-	double  ros, rox[4][4];	/* transform back to object space */
+	double  rofx[4][4];	/* transform from object space */
+	double  rofs;		/* scaling factor from object */
+	double  robx[4][4];	/* transform back to object space */
+	double  robs;		/* back scaling factor */
 	FVECT  pert;		/* surface normal perturbation */
 	COLOR  pcol;		/* pattern color */
 	COLOR  rcol;		/* returned ray value */
