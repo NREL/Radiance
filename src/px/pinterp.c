@@ -302,7 +302,7 @@ char	*pfile, *zspec;
 			fprintf(stderr, "%s: read error\n", pfile);
 			exit(1);
 		}
-		if (zfd != -1 && read(zfd,zin,thresolu*sizeof(float))
+		if (zfd != -1 && read(zfd,(char *)zin,thresolu*sizeof(float))
 				< thresolu*sizeof(float)) {
 			fprintf(stderr, "%s: read error\n", zspec);
 			exit(1);
@@ -592,7 +592,7 @@ char	*fname;
 			}
 		} else
 			zout = zscan(y);
-		if (write(fd, zout, hresolu*sizeof(float))
+		if (write(fd, (char *)zout, hresolu*sizeof(float))
 				< hresolu*sizeof(float)) {
 			perror(fname);
 			exit(1);
@@ -703,12 +703,12 @@ int	done;
 				(queue[i][1]+.5)/vresolu);
 		fbuf[0] = orig[0]; fbuf[1] = orig[1]; fbuf[2] = orig[2];
 		fbuf[3] = dir[0]; fbuf[4] = dir[1]; fbuf[5] = dir[2];
-		fwrite(fbuf, sizeof(float), 6, psend);
+		fwrite((char *)fbuf, sizeof(float), 6, psend);
 	}
 	if ((done ? fclose(psend) : fflush(psend)) == EOF)
 		syserror();
 	for (i = 0; i < queuesiz; i++) {
-		if (fread(fbuf, sizeof(float), 4, precv) < 4) {
+		if (fread((char *)fbuf, sizeof(float), 4, precv) < 4) {
 			fprintf(stderr, "%s: read error in clearqueue\n",
 					progname);
 			exit(1);

@@ -259,7 +259,7 @@ FILE  *fp;
 {
 	double  vd[3];
 
-	if (fread(vd, sizeof(double), 3, fp) != 3)
+	if (fread((char *)vd, sizeof(double), 3, fp) != 3)
 		return(-1);
 	setcolor(col, vd[0], vd[1], vd[2]);
 	return(0);
@@ -272,7 +272,7 @@ FILE  *fp;
 {
 	float  vf[3];
 
-	if (fread(vf, sizeof(float), 3, fp) != 3)
+	if (fread((char *)vf, sizeof(float), 3, fp) != 3)
 		return(-1);
 	setcolor(col, vf[0], vf[1], vf[2]);
 	return(0);
@@ -298,7 +298,7 @@ FILE  *fp;
 {
 	BYTE  vb[3];
 
-	if (fread(vb, sizeof(BYTE), 3, fp) != 3)
+	if (fread((char *)vb, sizeof(BYTE), 3, fp) != 3)
 		return(-1);
 	setcolor(col,(vb[0]+.5)/256.,(vb[1]+.5)/256.,(vb[2]+.5)/256.);
 	return(0);
@@ -324,7 +324,7 @@ FILE  *fp;
 {
 	double  vd;
 
-	if (fread(&vd, sizeof(double), 1, fp) != 1)
+	if (fread((char *)&vd, sizeof(double), 1, fp) != 1)
 		return(-1);
 	setcolor(col, vd, vd, vd);
 	return(0);
@@ -337,7 +337,7 @@ FILE  *fp;
 {
 	float  vf;
 
-	if (fread(&vf, sizeof(float), 1, fp) != 1)
+	if (fread((char *)&vf, sizeof(float), 1, fp) != 1)
 		return(-1);
 	setcolor(col, vf, vf, vf);
 	return(0);
@@ -366,7 +366,7 @@ FILE  *fp;
 	BYTE  vb;
 	double  d;
 
-	if (fread(&vb, sizeof(BYTE), 1, fp) != 1)
+	if (fread((char *)&vb, sizeof(BYTE), 1, fp) != 1)
 		return(-1);
 	d = (vb+.5)/256.;
 	setcolor(col, d, d, d);
@@ -396,7 +396,7 @@ FILE  *fp;
 	vf[0] = colval(col,RED);
 	vf[1] = colval(col,GRN);
 	vf[2] = colval(col,BLU);
-	fwrite(vf, sizeof(float), 3, fp);
+	fwrite((char *)vf, sizeof(float), 3, fp);
 
 	return(ferror(fp) ? -1 : 0);
 }
@@ -411,7 +411,7 @@ FILE  *fp;
 	vd[0] = colval(col,RED);
 	vd[1] = colval(col,GRN);
 	vd[2] = colval(col,BLU);
-	fwrite(vd, sizeof(double), 3, fp);
+	fwrite((char *)vd, sizeof(double), 3, fp);
 
 	return(ferror(fp) ? -1 : 0);
 }
@@ -443,7 +443,7 @@ FILE  *fp;
 	vb[1] = min(i,255);
 	i = colval(col,BLU)*256.;
 	vb[2] = min(i,255);
-	fwrite(vb, sizeof(BYTE), 3, fp);
+	fwrite((char *)vb, sizeof(BYTE), 3, fp);
 
 	return(ferror(fp) ? -1 : 0);
 }
@@ -466,7 +466,7 @@ FILE  *fp;
 	float  vf;
 
 	vf = bright(col);
-	fwrite(&vf, sizeof(float), 1, fp);
+	fwrite((char *)&vf, sizeof(float), 1, fp);
 
 	return(ferror(fp) ? -1 : 0);
 }
@@ -479,7 +479,7 @@ FILE  *fp;
 	double  vd;
 
 	vd = bright(col);
-	fwrite(&vd, sizeof(double), 1, fp);
+	fwrite((char *)&vd, sizeof(double), 1, fp);
 
 	return(ferror(fp) ? -1 : 0);
 }
@@ -504,7 +504,7 @@ FILE  *fp;
 
 	i = bright(col)*256.;
 	vb = min(i,255);
-	fwrite(&vb, sizeof(BYTE), 1, fp);
+	fwrite((char *)&vb, sizeof(BYTE), 1, fp);
 
 	return(ferror(fp) ? -1 : 0);
 }
