@@ -32,7 +32,9 @@ static const char RCSid[] = "$Id$";
 #define DEF_NBLUR	5
 #endif
 				/* default remote shell */
-#define REMSH		"rsh"
+#ifndef REMSH
+#define REMSH		"ssh"
+#endif
 				/* input variables (alphabetical by name) */
 #define ANIMATE		0		/* animation command */
 #define ARCHIVE		1		/* archiving command */
