@@ -52,6 +52,8 @@ int  dither = 1;			/* dither colors? */
 
 int  bradj = 0;				/* brightness adjustment */
 
+int  ncolors = 0;			/* number of colors requested */
+
 char  *progname;
 
 
@@ -59,7 +61,6 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-	int  ncolors = 0;
 	int  bitsperpix;
 	int  i;
 #ifdef MSDOS
@@ -228,7 +229,7 @@ int  x, y;
 
 	getrow(y);
 	if (greyscale)
-		return(normbright(scanln[x]));
+		return((normbright(scanln[x])*ncolors)>>8);
 	if (pixscan != NULL)
 		return(pixscan[x]);
 	return(samplefac ? neu_map_pixel(scanln[x]) : map_pixel(scanln[x]));
