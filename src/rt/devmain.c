@@ -39,10 +39,6 @@ int	(*dev_func[NREQUESTS])() = {		/* request handlers */
 		r_getcur, r_comout, r_comin
 	};
 
-char	mybuf[512] = "";
-
-char	*mybufp();
-
 
 main(argc, argv)		/* set up communications and main loop */
 int	argc;
@@ -68,6 +64,7 @@ char	*argv[];
 	putw(COM_RECVM, devout);		/* verify initialization */
 	putw(dev->xsiz, devout);
 	putw(dev->ysiz, devout);
+	fwrite(dev->pixaspect, sizeof(dev->pixaspect), 1, devout);
 	fflush(devout);
 						/* loop on requests */
 	while ((com = getc(devin)) != EOF) {
@@ -183,28 +180,6 @@ register FILE	*fp;
 }
 
 
-r_mycomin()				/* get command from my buffer */
-{
-	register char	*cp;
-						/* get next command */
-	for (cp = mybuf; *cp != '\n'; cp++)
-		;
-	*cp++ = '\0';
-	(*dev->comout)(mybuf);			/* echo my command */
-						/* send it as reply */
-	putc(COM_COMIN, devout);
-	myputs(mybuf, devout);
-	fflush(devout);
-						/* get next command */
-	(*dev->comout)("\n");
-	strcpy(mybuf, cp);
-	if (mybuf[0])
-		kill(getppid(), SIGIO);			/* signal more */
-	else
-		dev_func[COM_COMIN] = r_comin;		/* else reset */
-}
-
-
 stderr_v(s)				/* put string to stderr */
 register char  *s;
 {
@@ -219,23 +194,4 @@ register char  *s;
 		fflush(stderr);
 		inline = 0;
 	}
-}
-
-
-char *
-mybufp()				/* return buffer for my command */
-{
-	if (dev_func[COM_COMIN] != r_mycomin) {
-		dev_func[COM_COMIN] = r_mycomin;
-		kill(getppid(), SIGIO);
-	}
-	return(mybuf+strlen(mybuf));
-}
-
-
-repaint(xmin, ymin, xmax, ymax)		/* repaint section of display */
-int	xmin, ymin, xmax, ymax;
-{
-	sprintf(mybufp(), "repaint %d %d %d %d\n",
-			xmin, ymin, xmax, ymax);
 }

@@ -21,7 +21,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "random.h"
 
-VIEW  ourview = STDVIEW(512);		/* view parameters */
+VIEW  ourview = STDVIEW;		/* view parameters */
+int  hresolu = 512;			/* horizontal resolution */
+int  vresolu = 512;			/* vertical resolution */
 
 int  psample = 4;			/* pixel sample size */
 double  maxdiff = .05;			/* max. difference for interpolation */
@@ -108,7 +110,7 @@ char  *zfile, *oldfile;
 		psample = MAXDIV;
 					/* allocate scanlines */
 	for (i = 0; i <= psample; i++) {
-		scanbar[i] = (COLOR *)malloc(ourview.hresolu*sizeof(COLOR));
+		scanbar[i] = (COLOR *)malloc(hresolu*sizeof(COLOR));
 		if (scanbar[i] == NULL)
 			goto memerr;
 	}
@@ -119,7 +121,7 @@ char  *zfile, *oldfile;
 			error(SYSTEM, errmsg);
 		}
 		for (i = 0; i <= psample; i++) {
-			zbar[i] = (float *)malloc(ourview.hresolu*sizeof(float));
+			zbar[i] = (float *)malloc(hresolu*sizeof(float));
 			if (zbar[i] == NULL)
 				goto memerr;
 		}
@@ -129,17 +131,17 @@ char  *zfile, *oldfile;
 			zbar[i] = NULL;
 	}
 					/* write out boundaries */
-	fputresolu(YMAJOR|YDECR, ourview.hresolu, ourview.vresolu, stdout);
+	fputresolu(YMAJOR|YDECR, hresolu, vresolu, stdout);
 					/* recover file and compute first */
 	i = salvage(oldfile);
-	if (zfp != NULL && fseek(zfp, (long)i*ourview.hresolu*sizeof(float), 0) == EOF)
+	if (zfp != NULL && fseek(zfp, (long)i*hresolu*sizeof(float), 0) == EOF)
 		error(SYSTEM, "z file seek error in render");
-	ypos = ourview.vresolu-1 - i;
-	fillscanline(scanbar[0], zbar[0], ourview.hresolu, ypos, psample);
+	ypos = vresolu-1 - i;
+	fillscanline(scanbar[0], zbar[0], hresolu, ypos, psample);
 						/* compute scanlines */
 	for (ypos -= psample; ypos >= 0; ypos -= psample) {
 	
-		pctdone = 100.0*(ourview.vresolu-ypos-psample)/ourview.vresolu;
+		pctdone = 100.0*(vresolu-ypos-psample)/vresolu;
 
 		colptr = scanbar[psample];		/* move base to top */
 		scanbar[psample] = scanbar[0];
@@ -148,14 +150,14 @@ char  *zfile, *oldfile;
 		zbar[psample] = zbar[0];
 		zbar[0] = zptr;
 							/* fill base line */
-		fillscanline(scanbar[0], zbar[0], ourview.hresolu, ypos, psample);
+		fillscanline(scanbar[0], zbar[0], hresolu, ypos, psample);
 							/* fill bar */
-		fillscanbar(scanbar, zbar, ourview.hresolu, ypos, psample);
+		fillscanbar(scanbar, zbar, hresolu, ypos, psample);
 							/* write it out */
 		for (i = psample; i > 0; i--) {
-			if (zfp != NULL && fwrite(zbar[i],sizeof(float),ourview.hresolu,zfp) != ourview.hresolu)
+			if (zfp != NULL && fwrite(zbar[i],sizeof(float),hresolu,zfp) != hresolu)
 				goto writerr;
-			if (fwritescan(scanbar[i],ourview.hresolu,stdout) < 0)
+			if (fwritescan(scanbar[i],hresolu,stdout) < 0)
 				goto writerr;
 		}
 		if (zfp != NULL && fflush(zfp) == EOF)
@@ -171,15 +173,13 @@ char  *zfile, *oldfile;
 	zbar[psample] = zbar[0];
 	zbar[0] = zptr;
 	if (ypos > -psample) {
-		fillscanline(scanbar[-ypos], zbar[-ypos], ourview.hresolu,
-				0, psample);
-		fillscanbar(scanbar-ypos, zbar-ypos, ourview.hresolu,
-				0, psample+ypos);
+		fillscanline(scanbar[-ypos], zbar[-ypos], hresolu, 0, psample);
+		fillscanbar(scanbar-ypos, zbar-ypos, hresolu, 0, psample+ypos);
 	}
 	for (i = psample; i+ypos >= 0; i--) {
-		if (zfp != NULL && fwrite(zbar[i],sizeof(float),ourview.hresolu,zfp) != ourview.hresolu)
+		if (zfp != NULL && fwrite(zbar[i],sizeof(float),hresolu,zfp) != hresolu)
 			goto writerr;
-		if (fwritescan(scanbar[i], ourview.hresolu, stdout) < 0)
+		if (fwritescan(scanbar[i], hresolu, stdout) < 0)
 			goto writerr;
 	}
 						/* clean up */
@@ -325,8 +325,8 @@ int  x, y;			/* pixel position */
 {
 	static RAY  thisray;	/* our ray for this pixel */
 
-	rayview(thisray.rorg, thisray.rdir, &ourview,
-			x + pixjitter(), y + pixjitter());
+	viewray(thisray.rorg, thisray.rdir, &ourview,
+			(x+pixjitter())/hresolu, (y+pixjitter())/vresolu);
 
 	rayorigin(&thisray, NULL, PRIMARY, 1.0);
 	
@@ -364,19 +364,19 @@ char  *oldfile;
 		return(0);
 	}
 
-	if (x != ourview.hresolu || y != ourview.vresolu) {
+	if (x != hresolu || y != vresolu) {
 		sprintf(errmsg, "resolution mismatch in recover file \"%s\"",
 				oldfile);
 		error(USER, errmsg);
 	}
 
-	scanline = (COLR *)malloc(ourview.hresolu*sizeof(COLR));
+	scanline = (COLR *)malloc(hresolu*sizeof(COLR));
 	if (scanline == NULL)
 		error(SYSTEM, "out of memory in salvage");
-	for (y = 0; y < ourview.vresolu; y++) {
-		if (freadcolrs(scanline, ourview.hresolu, fp) < 0)
+	for (y = 0; y < vresolu; y++) {
+		if (freadcolrs(scanline, hresolu, fp) < 0)
 			break;
-		if (fwritecolrs(scanline, ourview.hresolu, stdout) < 0)
+		if (fwritecolrs(scanline, hresolu, stdout) < 0)
 			goto writerr;
 	}
 	if (fflush(stdout) == EOF)

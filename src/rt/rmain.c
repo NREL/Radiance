@@ -125,59 +125,32 @@ char  *argv[];
 			quit(0);
 		}
 #endif
+#if  RPICT|RVIEW
+		rval = getviewopt(&ourview, argc-i, argv+i);
+		if (rval >= 0) {
+			i += rval;
+			continue;
+		}
+#endif
 		switch (argv[i][1]) {
 #if  RPICT|RVIEW
-		case 'v':				/* view */
-			switch (argv[i][2]) {
-			case 't':				/* type */
-				check(4,0);
-				ourview.type = argv[i][3];
-				break;
-			case 'p':				/* point */
-				check(3,3);
-				ourview.vp[0] = atof(argv[++i]);
-				ourview.vp[1] = atof(argv[++i]);
-				ourview.vp[2] = atof(argv[++i]);
-				break;
-			case 'd':				/* direction */
-				check(3,3);
-				ourview.vdir[0] = atof(argv[++i]);
-				ourview.vdir[1] = atof(argv[++i]);
-				ourview.vdir[2] = atof(argv[++i]);
-				break;
-			case 'u':				/* up */
-				check(3,3);
-				ourview.vup[0] = atof(argv[++i]);
-				ourview.vup[1] = atof(argv[++i]);
-				ourview.vup[2] = atof(argv[++i]);
-				break;
-			case 'h':				/* horizontal */
-				check(3,1);
-				ourview.horiz = atof(argv[++i]);
-				break;
-			case 'v':				/* vertical */
-				check(3,1);
-				ourview.vert = atof(argv[++i]);
-				break;
-			case 'f':				/* file */
-				check(3,1);
-				rval = viewfile(argv[++i], &ourview);
-				if (rval < 0) {
-					sprintf(errmsg,
-					"cannot open view file \"%s\"",
-							argv[i]);
-					error(SYSTEM, errmsg);
-				} else if (rval == 0) {
-					sprintf(errmsg,
-						"bad view file \"%s\"",
-							argv[i]);
-					error(USER, errmsg);
-				} else
-					gotvfile += rval;
-				break;
-			default:
+		case 'v':				/* view file */
+			if (argv[i][2] != 'f')
 				goto badopt;
-			}
+			check(3,1);
+			rval = viewfile(argv[++i], &ourview);
+			if (rval < 0) {
+				sprintf(errmsg,
+				"cannot open view file \"%s\"",
+						argv[i]);
+				error(SYSTEM, errmsg);
+			} else if (rval == 0) {
+				sprintf(errmsg,
+					"bad view file \"%s\"",
+						argv[i]);
+				error(USER, errmsg);
+			} else
+				gotvfile += rval;
 			break;
 #endif
 		case 'd':				/* direct */
@@ -219,16 +192,7 @@ char  *argv[];
 				goto badopt;
 			}
 			break;
-		case 'x':				/* x resolution */
-			check(2,1);
-			ourview.hresolu = atoi(argv[++i]);
-			break;
-		case 'y':				/* y resolution */
-			check(2,1);
-			ourview.vresolu = atoi(argv[++i]);
-			break;
 #endif
-#if  RTRACE
 		case 'x':				/* x resolution */
 			check(2,1);
 			hresolu = atoi(argv[++i]);
@@ -237,7 +201,6 @@ char  *argv[];
 			check(2,1);
 			vresolu = atoi(argv[++i]);
 			break;
-#endif
 		case 'w':				/* warnings */
 			check(2,0);
 			wrnvec = wrnvec==NULL ? stderr_v : NULL;
@@ -550,13 +513,11 @@ printdefaults()			/* print default values to stdout */
 			ourview.vup[0], ourview.vup[1], ourview.vup[2]);
 	printf("-vh %f\t\t\t# view horizontal size\n", ourview.horiz);
 	printf("-vv %f\t\t\t# view vertical size\n", ourview.vert);
-	printf("-x  %-9d\t\t\t# x resolution\n", ourview.hresolu);
-	printf("-y  %-9d\t\t\t# y resolution\n", ourview.vresolu);
+	printf("-vs  %f\t\t\t# view shift\n", ourview.hoff);
+	printf("-vl  %f\t\t\t# view lift\n", ourview.voff);
 #endif
-#if  RTRACE
 	printf("-x  %-9d\t\t\t# x resolution\n", hresolu);
 	printf("-y  %-9d\t\t\t# y resolution\n", vresolu);
-#endif
 	printf("-dt %f\t\t\t# direct threshold\n", shadthresh);
 	printf("-dc %f\t\t\t# direct certainty\n", shadcert);
 	printf("-dj %f\t\t\t# direct jitter\n", dstrsrc);

@@ -15,6 +15,7 @@ struct driver {				/* driver functions */
 	int  (*getcur)();			/* get cursor position */
 	int  (*comout)();			/* command line output */
 	int  (*comin)();			/* command line input */
+	double  pixaspect;			/* pixel aspect ratio */
 	int  xsiz, ysiz;			/* device size */
 	int  inpready;				/* input ready on device */
 };
@@ -34,20 +35,16 @@ extern struct driver  *comm_init();	/* stream interface */
 #define COM_COMIN		4
 #define NREQUESTS		5	/* number of valid requests */
 
-struct device {				/* interactive device */
+extern struct device {			/* interactive device */
 	char  *name;				/* device name */
 	char  *descrip;				/* description */
 	struct driver  *(*init)();		/* initialize device */
-};
-
-extern struct device  devtable[];	/* supported devices */
+}  devtable[];				/* supported devices */
 
 #define  MB1		('\n')		/* mouse button 1 */
 #define  MB2		('\r')		/* mouse button 2 */
 #define  MB3		(' ')		/* mouse button 3 */
 #define  ABORT		('C'-'@')	/* abort key */
-
-#define  MAXRES		4000		/* preposterous display resolution */
 
 /*
  *  struct driver *

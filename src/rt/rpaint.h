@@ -36,6 +36,7 @@ extern PNODE  ptrunk;		/* the base of the image tree */
 
 extern VIEW  ourview;		/* current view parameters */
 extern VIEW  oldview;		/* previous view parameters */
+extern int  hresolu, vresolu;	/* image resolution */
 
 extern int  greyscale;		/* map colors to brightness? */
 
