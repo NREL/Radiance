@@ -77,17 +77,17 @@ COLOR	mbRGB[24];		/* MacBeth RGB values */
 #define	NMBNEU		6	/* Number of MacBeth neutral colors */
 short	mbneu[NMBNEU] = {Black,Neutral35,Neutral5,Neutral65,Neutral8,White};
 
-#define NMBMOD		17	/* Number of MacBeth unsaturated colors */
+#define NMBMOD		16	/* Number of MacBeth unsaturated colors */
 short	mbmod[NMBMOD] = {
 		DarkSkin,LightSkin,BlueSky,Foliage,BlueFlower,BluishGreen,
-		Orange,PurplishBlue,ModerateRed,Purple,YellowGreen,
+		PurplishBlue,ModerateRed,YellowGreen,OrangeYellow,
 		Black,Neutral35,Neutral5,Neutral65,Neutral8,White
 	};
 
 #define NMBSAT		8	/* Number of MacBeth saturated colors */
 short	mbsat[NMBSAT] = {
 		Red,Green,Blue,Magenta,Yellow,Cyan,
-		Orange,OrangeYellow
+		Orange,Purple
 	};
 
 int	xmax, ymax;		/* input image dimensions */
