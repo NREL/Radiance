@@ -9,7 +9,6 @@ static char SCCSid[] = "$SunId$ LBL";
  */
  
 #include "standard.h"
-#include <fcntl.h>
 
 #ifndef F_SETLKW
 
@@ -62,11 +61,15 @@ int  hres = 1024, vres = 1024, hmult = 4, vmult = 4;
 char  *outfile = NULL;
 int  outfd;
 long  scanorig;
-int  syncfd = -1;		/* lock file descriptor */
+FILE  *syncfp = NULL;		/* synchronization file pointer */
+int  synclst = F_UNLCK;		/* synchronization file lock status */
 int  nforked = 0;
+
+#define  sflock(t)	if ((t)!=synclst) dolock(fileno(syncfp),synclst=t)
 
 char  *progname;
 int  verbose = 0;
+int  rvrlim = -1;
 
 extern long  lseek(), ftell();
 
@@ -137,11 +140,15 @@ char  *argv[];
 					break;
 				vmult = atoi(argv[++i]);
 				continue;
+			case 'R':		/* recover */
+				if (argv[i][2])
+					break;
+				rvrlim = 0;
+			/* fall through */
 			case 'F':		/* syncronization file */
 				if (argv[i][2])
 					break;
-				if ((syncfd = open(argv[++i],
-						O_RDWR|O_CREAT, 0666)) < 0) {
+				if ((syncfp = fopen(argv[++i],"r+")) == NULL) {
 					fprintf(stderr, "%s: cannot open\n",
 							argv[i]);
 					exit(1);
@@ -174,6 +181,20 @@ char  *argv[];
 }
 
 
+dolock(fd, ltyp)		/* lock or unlock a file */
+int  fd;
+int  ltyp;
+{
+	static struct flock  fls;	/* static so initialized to zeroes */
+
+	fls.l_type = ltyp;
+	if (fcntl(fd, F_SETLKW, &fls) < 0) {
+		fprintf(stderr, "%s: cannot lock/unlock file\n", progname);
+		exit(1);
+	}
+}
+
+
 init(ac, av)			/* set up output file and start rpict */
 int  ac;
 char  **av;
@@ -188,10 +209,10 @@ char  **av;
 		fprintf(stderr, "%s: %s\n", progname, err);
 		exit(1);
 	}
-	if (syncfd != -1) {
-		char  buf[32];
-		buf[read(syncfd, buf, sizeof(buf)-1)] = '\0';
-		sscanf(buf, "%d %d", &hmult, &vmult);
+	if (syncfp != NULL) {
+		sflock(F_RDLCK);
+		fscanf(syncfp, "%d %d", &hmult, &vmult);
+		sflock(F_UNLCK);
 	}
 					/* compute piece size */
 	hres /= hmult;
@@ -206,6 +227,7 @@ char  **av;
 	rpargv[rpargc] = NULL;
 					/* open output file */
 	if ((outfd = open(outfile, O_WRONLY|O_CREAT|O_EXCL, 0666)) >= 0) {
+		dolock(outfd, F_WRLCK);
 		if ((fp = fdopen(dup(outfd), "w")) == NULL)
 			goto filerr;
 		printargs(ac, av, fp);		/* write header */
@@ -219,6 +241,7 @@ char  **av;
 		putc('\n', fp);
 		fprtresolu(hres*hmult, vres*vmult, fp);
 	} else if ((outfd = open(outfile, O_RDWR)) >= 0) {
+		dolock(outfd, F_RDLCK);
 		if ((fp = fdopen(dup(outfd), "r+")) == NULL)
 			goto filerr;
 		getheader(fp, NULL, NULL);	/* skip header */
@@ -236,9 +259,7 @@ char  **av;
 	scanorig = ftell(fp);		/* record position of first scanline */
 	if (fclose(fp) == -1)		/* done with stream i/o */
 		goto filerr;
-#if NFS
-	sync();				/* flush NFS buffers */
-#endif
+	dolock(outfd, F_UNLCK);
 					/* start rpict process */
 	if (open_process(rpd, rpargv) <= 0) {
 		fprintf(stderr, "%s: cannot start %s\n", progname, rpargv[0]);
@@ -266,43 +287,84 @@ int
 nextpiece(xp, yp)		/* get next piece assignment */
 int  *xp, *yp;
 {
-	struct flock  fls;
-	char  buf[64];
-
 	if (gotalrm)			/* someone wants us to quit */
 		return(0);
-	if (syncfd != -1) {		/* use sync file */
-		fls.l_type = F_WRLCK;		/* gain exclusive access */
-		fls.l_whence = 0;
-		fls.l_start = 0L;
-		fls.l_len = 0L;
-		fcntl(syncfd, F_SETLKW, &fls);
-		lseek(syncfd, 0L, 0);
-		buf[read(syncfd, buf, sizeof(buf)-1)] = '\0';
-		if (sscanf(buf, "%*d %*d %d %d", xp, yp) < 2) {
+	if (syncfp != NULL) {		/* use sync file */
+		/*
+		 * So we don't necessarily have to lock and unlock the file
+		 * multiple times (very slow), we establish an exclusive
+		 * lock at the beginning on our synchronization file and
+		 * maintain it in the subroutine rvrpiece().
+		 */
+		sflock(F_WRLCK);
+		fseek(syncfp, 0L, 0);		/* read position */
+		if (fscanf(syncfp, "%*d %*d %d %d", xp, yp) < 2) {
 			*xp = hmult-1;
 			*yp = vmult;
 		}
+		if (rvrlim == 0)		/* initialize recovery limit */
+			rvrlim = *xp*vmult + *yp;
+		if (rvrpiece(xp, yp)) {		/* do stragglers first */
+			sflock(F_UNLCK);
+			return(1);
+		}
 		if (--(*yp) < 0) {		/* decrement position */
 			*yp = vmult-1;
-			if (--(*xp) < 0) {	/* all done! */
-				close(syncfd);
+			if (--(*xp) < 0) {	/* all done */
+				sflock(F_UNLCK);
 				return(0);
 			}
 		}
-		sprintf(buf, "%4d %4d\n%4d %4d\n", hmult, vmult, *xp, *yp);
-		lseek(syncfd, 0L, 0);		/* write new position */
-		write(syncfd, buf, strlen(buf));
-		fls.l_type = F_UNLCK;		/* release sync file */
-		fcntl(syncfd, F_SETLKW, &fls);
+		fseek(syncfp, 0L, 0);		/* write new position */
+		fprintf(syncfp, "%4d %4d\n%4d %4d\n\n", hmult, vmult, *xp, *yp);
+		fflush(syncfp);
+		sflock(F_UNLCK);		/* release sync file */
 		return(1);
 	}
-	if (fgets(buf, sizeof(buf), stdin) == NULL)	/* use stdin */
-		return(0);
-	if (sscanf(buf, "%d %d", xp, yp) == 2)
+	if (scanf("%d %d", xp, yp) == 2)	/* use stdin */
 		return(1);
 	fprintf(stderr, "%s: input format error\n", progname);
 	exit(cleanup(1));
+}
+
+
+int
+rvrpiece(xp, yp)		/* check for recoverable pieces */
+register int  *xp, *yp;
+{
+	static char  *pdone = NULL;	/* which pieces are done */
+	static long  readpos = -1;	/* how far we've read */
+	register int  i;
+	/*
+	 * This routine is called by nextpiece() with an
+	 * exclusive lock on syncfp and the file pointer at the
+	 * appropriate position to read in the finished pieces.
+	 */
+	if (rvrlim < 0)
+		return(0);		/* only check if asked */
+	if (pdone == NULL)		/* first call */
+		pdone = calloc(hmult*vmult, sizeof(char));
+	if (readpos != -1)		/* mark what's been done */
+		fseek(syncfp, readpos, 0);
+	while (fscanf(syncfp, "%d %d", xp, yp) == 2)
+		pdone[*xp*vmult+*yp] = 1;
+	if (!feof(syncfp)) {
+		fprintf(stderr, "%s: format error in sync file\n", progname);
+		exit(1);
+	}
+	readpos = ftell(syncfp);
+	i = hmult*vmult;		/* find an unaccounted for piece */
+	while (i-- > rvrlim)
+		if (!pdone[i]) {
+			*xp = i / vmult;
+			*yp = i % vmult;
+			pdone[i] = 1;	/* consider it done */
+			return(1);
+		}
+	rvrlim = -1;			/* nothing left to recover */
+	free(pdone);
+	pdone = NULL;
+	return(0);
 }
 
 
@@ -441,18 +503,25 @@ int  xpos, ypos;
 					1) == -1)
 				goto seekerr;
 		}
+#if NFS
+	fls.l_type = F_UNLCK;		/* release lock */
+	fcntl(outfd, F_SETLKW, &fls);
+#endif
+	if (syncfp != NULL) {			/* record what's been done */
+		sflock(F_WRLCK);
+		fseek(syncfp, 0L, 2);		/* append index */
+		fprintf(syncfp, "%4d %4d\n", xpos, ypos);
+		fflush(syncfp);
+				/*** Unlock not necessary, since
+		sflock(F_UNLCK);	_exit() or nextpiece() is next ***/
+	}
 	if (verbose) {				/* notify caller */
 		printf("%d %d done\n", xpos, ypos);
 		fflush(stdout);
 	}
-	if (pid == -1) {	/* didn't fork or fork failed */
-#if NFS
-		fls.l_type = F_UNLCK;		/* release lock */
-		fcntl(outfd, F_SETLKW, &fls);
-#endif
+	if (pid == -1)		/* didn't fork or fork failed */
 		return(0);
-	}
-	_exit(0);		/* else exit child process (releasing lock) */
+	_exit(0);		/* else exit child process (releasing locks) */
 seekerr:
 	fprintf(stderr, "%s: seek error on file \"%s\"\n", progname, outfile);
 	_exit(1);
