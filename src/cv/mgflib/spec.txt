@@ -37,24 +37,24 @@ There are three contexts in effect at all times, current vertex,
 current color and current material.  Initially, these contexts are
 unnamed, and have specific default values.  The unnamed vertex is the
 origin.  The unnamed color is neutral gray.  The unnamed material is a
-perfect absorber.  The unnamed contexts may be modified, but those
-modifications will not be saved.  Thus, reestablishing an unnamed
-context always gets its initial default value.  To save a new context
-or modify an old one, it must first be named.  Entities associated with
-named contexts (i.e. "v", "c" and "m") may be followed by an identifier
-and an equals sign ('='), indicating a new context.  If there is no
-equals, then the context must already be defined, and the appearance of
-the entity merely reestablishes this context.  If the context id is
-followed by an equals, then a new context is defined, destroying any
-previous instance of that context name.  Redefining or changing values
-of a context does not affect earlier uses of the same name, however.
-Contexts are always associated with a name id, which is any non-blank
-sequence of printing ASCII characters.  An optional template may be
-given following the equals, which is a previously defined context to
-use as a source of default values for this definition.  If no template
-is given, then the unnamed context of that type is used to set initial
-values.  Named contexts continue until the next context definition of
-the same type.
+perfect (two-sided) absorber.  The unnamed contexts may be modified,
+but those modifications will not be saved.  Thus, reestablishing an
+unnamed context always gets its initial default value.  To save a new
+context or modify an old one, it must first be named.  Entities
+associated with named contexts (i.e. "v", "c" and "m") may be followed
+by an identifier and an equals sign ('='), indicating a new context.
+If there is no equals, then the context must already be defined, and
+the appearance of the entity merely reestablishes this context.  If the
+context id is followed by an equals, then a new context is defined,
+destroying any previous instance of that context name.  Redefining or
+changing values of a context does not affect earlier uses of the same
+name, however.  Contexts are always associated with a name id, which is
+any non-blank sequence of printing ASCII characters.  An optional
+template may be given following the equals, which is a previously
+defined context to use as a source of default values for this
+definition.  If no template is given, then the unnamed context of that
+type is used to set initial values.  Named contexts continue until the
+next context definition of the same type.
 
 Hierarchical Contexts
 =====================
@@ -85,6 +85,7 @@ cxy	x y			set CIE (x,y) chromaticity for current color
 cspec	l_min l_max v1 v2 ..	set relative spectrum for current color
 cmix	w1 c1 w2 c2 ..		mix named colors to make current color
 m	[id [= [template]]]	get/set material context
+sides	{1|2}			set number of sides for current material
 rd	rho_d			set diffuse reflectance for current material
 td	tau_d			set diffuse transmittance for current material
 ed	epsilon_d		set diffuse emittance for current material
@@ -106,6 +107,7 @@ Entities				Contexts
 --------				--------
 p, n					vertex
 cxy, cspec, cmix			color
+sides					material
 rd, td, ed, rs, ts			color, material
 f, sph, cyl, cone, ring, torus, prism	material, object, transformation
 
@@ -236,14 +238,18 @@ this identifier and all those preceding.  It has no real meaning except
 to group the following surfaces up until an empty object statement
 under a descriptive name for improved file readability.
 
-Surfaces are one-sided, and appear invisible when viewed from the
-back side.  This means that a transmitting object will affect the
-light coming in through the front surface and ignore the characteristics
-of the back surface.  As long as the characteristics are the same,
-the results should be correct.  If the rendering technique does not
-allow for one-sided surfaces, an approximately correct result can
-be obtained for transmitting surfaces by using the square root of
-the given tau_s and half the given alpha_t.
+Surfaces are two-sided unless the "sides" entity is used to set the
+number of sides for a material to one.  If a surfaces is one-sided,
+then it appears invisible when viewed from the back side.  This means
+that a transmitting object will affect the light coming in through the
+front surface and ignore the characteristics of the back surface.  As
+long as the characteristics are the same, the results should be
+correct.  If the rendering technique does not allow for one-sided
+surfaces, an approximately correct result can be obtained for one-sided
+transmitting surfaces by using the square root of the given tau_s and
+half the given alpha_t.  If a rendering technique does not permit
+two-sided surfaces, then each surface must be made into two for
+full compliance if "sides" is set to 2 (the default).
 
 The surface normal of a face is oriented by the right-hand rule.
 Specifically, the surface normal faces towards the viewer when the

@@ -135,7 +135,8 @@ mg_init()			/* initialize alternate entity handlers */
 	if (mg_ehand[MG_E_RD] != NULL || mg_ehand[MG_E_TD] != NULL ||
 			mg_ehand[MG_E_ED] != NULL || 
 			mg_ehand[MG_E_RS] != NULL ||
-			mg_ehand[MG_E_TS] != NULL)
+			mg_ehand[MG_E_TS] != NULL ||
+			mg_ehand[MG_E_SIDES] != NULL)
 		uneed |= 1<<MG_E_MATERIAL;
 	for (i = 0; i < MG_NENTITIES; i++)
 		if (uneed & 1<<i && mg_ehand[i] == NULL) {
