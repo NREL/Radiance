@@ -5,181 +5,210 @@ static char SCCSid[] = "$SunId$ LBL";
 #endif
 
 /*
- * Handle data stream to and from GL display process.
+ * I/O routines for GL display process.
  */
 
 #include "standard.h"
-#include <string.h>
+#include <sys/uio.h>
 #include "gldisp.h"
+#include "gderrs.h"
 
 
-#define GD_TYPELEN	1		/* a type is 1 byte in length */
-
-				/* argument types */
-#define GD_TY_END	0		/* argument list terminator */
-#define GD_TY_NAM	1		/* 8-byte (max.) identifier */
-#define	GD_TY_INT	2		/* 4-byte integer */
-#define GD_TY_FLT	3		/* 4-byte IEEE float */
-#define GD_TY_DBL	4		/* 8-byte IEEE double */
-#define GD_TY_CLR	5		/* 4-byte RGBE color value */
-#define GD_TY_ARR	6		/* 5-byte array prefix */
-#define GD_TY_STR	7		/* nul-terminated string */
-#define GD_TY_ARG	8		/* 1-byte argument list prefix */
-#define GD_TY_ERR	9		/* 1-byte error code */
-
-#define	GD_NTYPES	10		/* number of argument types */
-
-				/* argument lengths */
-#define	GD_ARGLEN	{0,8,4,4,8,4,5,-1,1,1}
-
-#define GD_MAXID	8		/* maximum id. length (must be 8) */
-
-/*
- * A request consists of an argument list, the first of
- * which is always the request name as an 8-char (max.) string.
- * The types of the following arguments must match the required
- * arguments of the display request, or an error will result.
- *
- * Only functions return values, and they return them as a argument
- * list on the client's receiving connection.  It is up to the client
- * program to keep track of its function calls and which values correspond
- * to which request functions.
- *
- * An error is indicated with a special GD_TY_ERR code on the receiving
- * connection, and usually indicates something fatal.
- */
-
-				/* error codes */
-#define GD_ER_UNRECOG	0		/* unrecognized request */
-#define GD_ER_ARGTYPE	1		/* argument type mismatch */
-#define GD_ER_ARGMISS	2		/* argument(s) missing */
-
-#define GD_NERRS	3		/* number of errors */
-
-				/* request argument */
-typedef struct {
-	BYTE		typ;		/* argument type */
-	BYTE		atyp;		/* array subtype if typ==GD_TY_ARR */
-	union {
-		char		n[GD_MAXID];	/* 8-char (max.) id. */
-		int4		n1, n2;		/* used for ID comparison */
-		int4		i;		/* 4-byte integer */
-		float		f;		/* 4-byte IEEE float */
-		double		d;		/* 8-byte IEEE double */
-		COLR		c;		/* RGBE */
-		struct array {	
-			int4		l;		/* length */
-			MEM_PTR		p;		/* values */
-		}		a;		/* array */
-		char		*s;		/* nul-terminated string */
-	}		v;		/* argument value */
-}	GDarg;
-
-				/* a request and its arguments */
-typedef struct gdreq {
-	struct gdreq	*next;		/* next request in list */
-	short		argc;		/* number of arguments */
-	GDarg		argv[1];	/* argument list (expandable) */
-}	GDrequest;
-
-GDrequest	*gdProTab[GD_HSIZ];	/* registered prototypes */
-
-
-gdRegProto(r)			/* register a request prototype */
-register GDrequest	*r;
+gdSendRequest(d, r)	/* send a request across a connection */
+GDconnect	*d;
+GDrequest	*r;
 {
-	register int4	hval;
-
-	hval = gdHash(r->argv);
-	r->next = gdProTab[hval];
-	gdProTab[hval] = r;
-}
-
-
-GDrequest *
-gdReqAlloc(nm, ac)		/* allocate a request and its arguments */
-char	*nm;
-int	ac;
-{
-	register GDrequest	*nr;
-
-	if (ac < 1)
-		return(NULL);
-	nr = (GDrequest *)malloc(sizeof(GDrequest)+(ac-1)*sizeof(GDarg));
-	if (nr == NULL)
-		return(NULL);
-	nr->next = NULL;
-	nr->argc = ac;
-	if (nm != NULL)
-		(void)strncmp(rn->argv[0].v.n, nm, GD_MAXID);
-	return(nr);
-}
-
-
-char *
-gdStrAlloc(a, str)		/* allocate and save a string value */
-register GDarg	*a;
-char	*str;
-{
-	a->typ = GD_TY_STR;
-	a->v.s = (char *)malloc(strlen(str)+1);
-	if (a->v.s == NULL)
-		return(NULL);
-	return(strcpy(a->v.s, str));
-}
-
-
-MEM_PTR
-gdArrAlloc(a, typ, len, arr)	/* allocate and assign an array */
-register GDarg	*a;
-int	typ, len;
-MEM_PTR	arr;
-{
-	static short	esiz[GD_NTYPES] = GD_ELELEN;
-
-	if (esiz[typ] <= 0)
-		return(NULL);
-	a->v.a.p = (MEM_PTR)malloc(len*esiz[typ]);
-	if (a->v.a.p == NULL)
-		return(NULL);
-	a->typ = GD_TY_ARR;
-	a->atyp = typ;
-	a->v.a.l = len;
-	if (arr != NULL)
-		(void)memcpy((char *)a->v.a.p, (char *)arr, len*esiz[typ]);
-	return(a->v.a.p);
-}
-
-
-gdDoneArg(a)			/* free any argument data */
-register GDarg	*a;
-{
-	register int	j;
-					/* free allocated arrays */
-	switch (a->typ) {
-	case GD_TY_ARR:				/* array of... */
-		if (a->atyp == GD_TY_ARR) {		/* arrays */
-			for (j = a->v.a.l; j--; )
-				gdDoneArg((GDarg *)a->v.a.p + j);
-		} else if (a->atyp == GD_TY_STR) {	/* strings */
-			for (j = r->v.a.l; j--; )
-				gdFree((char **)r->v.a.p + j);
-		}
-		gdFree(r->argv[i].v.a.p);
-		break;
-	case GD_TY_STR:				/* string value */
-		gdFree(a->v.s);
-		break;
+	unsigned char	rbuf[10];
+	struct iovec	iov[2];
+					/* encode header */
+	gdPutInt(rbuf, (int4)r->type, 2);
+	gdPutInt(rbuf+2, r->id, 4);
+	gdPutInt(rbuf+6, r->alen, 4);
+	if (r->alen == 0)		/* write header, null body */
+		write(d->fdout, rbuf, 10);
+	else {				/* write header and body */
+		iov[0].iov_base = (MEM_PTR)rbuf;
+		iov[0].iov_len = 10;
+		iov[1].iov_base = (MEM_PTR)r->args;
+		iov[1].iov_len = r->alen;
+		writev(d->fdout, iov, 2);
 	}
 }
 
 
-gdFreeReq(r)			/* free a request */
-register GDrequest	*r;
+GDrequest *
+gdRecvRequest(d)	/* receive a request across a connection */
+register GDconnect	*d;
 {
-	register int	i;
-					/* free any argument data */
-	for (i = r->argc; i--; )
-		gdDoneArg(r->argv + i);
-	gdFree(r);			/* free basic structure */
+	register GDrequest	*r;
+	int	type;
+	int4	id, alen;
+	unsigned char	rbuf[10];
+					/* read header */
+	fread(rbuf, 1, 10, d->fpin);
+	if (feof(d->fpin))
+		return(NULL);
+	type = gdGetInt(rbuf, 2);
+	id = gdGetInt(rbuf+2, 4);
+	if (type < 0 | type > GD_NREQ) {
+		gdSendError(d, GD_E_UNRECOG, id);
+		return(NULL);
+	}
+	alen = gdGetInt(rbuf+6, 4);
+	r = (GDrequest *)malloc(sizeof(GDrequest)-GD_ARG0+alen);
+	if (r == NULL) {
+		gdSendError(d, GD_E_NOMEMOR, id);
+		return(NULL);
+	}
+	r->type = type;
+	r->id = id;
+	if ((r->alen = alen) > 0) {	/* read arguments */
+		fread(r->args, 1, alen, d->fpin);
+		if (feof(d->fpin)) {
+			gdSendError(d, GD_E_ARGMISS, id);
+			gdFree(r);
+			return(NULL);
+		}
+	}
+	if (type == GD_R_Error) {	/* our error */
+		gdReportError(d, (int)gdGetInt(r->args, 2), id);
+		gdFree(r);
+		return(NULL);
+	}
+	return(r);			/* success! */
+}
+
+
+gdSendError(d, ec, id)	/* send fatal error associated with a request */
+GDconnect	*d;
+int	ec;
+int4	id;
+{
+	GDrequest	rq;
+				/* build error request */
+	rq.type = GD_R_Error;
+	rq.id = id;
+	gdPutInt(rq.args, (int4)ec, rq.alen=2);
+	gdSendRequest(d, &rq);	/* send it */
+	gdClose(d);		/* all errors are fatal */
+}
+
+
+gdReportError(d, ec, id)	/* report fatal error to stderr */
+GDconnect	*d;
+int	ec;
+int4	id;
+{
+	fprintf(stderr, "RequestId %d: %s\nConnection %d closed.\n",
+			id, gdErrMsg[ec], d->cno);
+	gdClose(d);		/* all errors are fatal */
+}
+
+
+GDconnect *
+gdOpen(inp, outp, x, y)	/* establish a client/server connection */
+char	*inp, *outp;		/* named pipes, currently */
+int	x, y;			/* (0,0) for client */
+{
+	static int	nconnections = 0;
+	register GDrequest	*rp;
+	GDrequest	rq;
+	register GDconnect	*dp;
+
+	dp = (GDconnect *)malloc(sizeof(GDconnect));
+	if (dp == NULL) {
+		gdReportError(dp, GD_E_NOMEMOR, 0);
+		return(NULL);
+	}
+	dp->cno = ++nconnections;
+	if (!x)				/* client opens to write first */
+		dp->fdout = open(outp, O_WRONLY);
+	dp->fpin = fopen(inp, "r");
+	if (dp->fpin == NULL)
+		goto connecterr;
+	if (x)				/* server opens to write second */
+		dp->fdout = open(outp, O_WRONLY);
+	if (dp->fdout < 0)
+		goto connecterr;
+	if (x) {			/* server sends resolution */
+		dp->xres = x; dp->yres = y;
+		rq.type = GD_R_Init;
+		rq.id = dp->cno;
+		rq.alen = 4;
+		gdPutInt(rq.args, (int4)x, 2);
+		gdPutInt(rq.args+2, (int4)y, 2);
+		gdSendRequest(dp, &rq);
+	} else {			/* client receives resolution */
+		rp = gdRecvRequest(dp);
+		if (rp == NULL)
+			return(NULL);
+		if (rp->type != GD_R_Init)
+			goto connecterr;
+		dp->cno = rp->id;
+		dp->xres = gdGetInt(rp->args, 2);
+		dp->yres = gdGetInt(rp->args+2, 2);
+		gdFree(rp);
+	}
+	return(dp);			/* success! */
+connecterr:
+	gdReportError(dp, GD_E_CONNECT, 0);
+	return(NULL);
+}
+
+
+gdClose(d)		/* close a display server/client connection */
+register GDconnect	*d;
+{
+	if (d == NULL) return;
+	close(d->fdout);
+	fclose(d->fpin);
+	gdFree(d);		/* free associated memory */
+}
+
+
+int4
+gdGetInt(ab, n)		/* get an n-byte integer from buffer ab */
+register unsigned char	*ab;
+register int	n;			/* maximum length 4 */
+{
+	register int4	res;
+
+	res = *ab&0x80 ? -1 : 0;	/* sign extend */
+	while (n--)
+		res = res<<8 | *ab++;
+	return(res);
+}
+
+
+gdPutInt(ab, i, n)	/* put an n-byte integer into buffer ab */
+register unsigned char	*ab;
+register int4	i;
+register int	n;
+{
+	while (n--)
+		*ab++ = i>>(n<<3) & 0xff;
+}
+
+
+double
+gdGetReal(ab)		/* get a 5-byte real value from buffer ab */
+char	*ab;
+{
+	register int4	i;
+	register double	d;
+
+	i = gdGetInt(ab, 4);
+	d = (i + (i>0 ? .5 : -.5)) * (1./0x7fffffff);
+	return(ldexp(d, (int)gdGetInt(ab+4,1)));
+}
+
+
+gdPutReal(ab, d)	/* put a 5-byte real value to buffer ab */
+unsigned char	*ab;
+double	d;
+{
+	int	e;
+
+	gdPutInt(ab, (int4)(frexp(d,&e)*0x7fffffff), 4);
+	gdPutInt(ab+4, (int4)e, 1);
 }
