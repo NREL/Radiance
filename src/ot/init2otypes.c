@@ -14,7 +14,8 @@ static const char	RCSid[] = "$Id$";
 FUN  ofun[NUMOTYPE] = INIT_OTYPE;
 
 
-o_default()			/* default action is no intersection */
+int
+o_default(void)			/* default action is no intersection */
 {
 	return(O_MISS);
 }

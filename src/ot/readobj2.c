@@ -15,13 +15,17 @@ static const char	RCSid[] = "$Id$";
 #include  "rterror.h"
 #include  "object.h"
 #include  "otypes.h"
+#include  "oconv.h"
 
 
-static void getobject2(char  *name, FILE  *fp, int  (*f)());
+static void getobject2(char  *name, FILE  *fp, ro_cbfunc f);
 
-readobj2(input, callback)	/* read in an object file or stream */
-char  *input;
-int  (*callback)();
+
+void
+readobj2(	/* read in an object file or stream */
+	char  *input,
+	ro_cbfunc callback
+)
 {
 	char  *fgetline();
 	FILE  *infp;
@@ -63,9 +67,9 @@ int  (*callback)();
 
 static void
 getobject2(			/* read the next object */
-char  *name,
-FILE  *fp,
-int  (*f)()
+	char  *name,
+	FILE  *fp,
+	ro_cbfunc f
 )
 {
 	char  sbuf[MAXSTR];

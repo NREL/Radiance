@@ -6,12 +6,11 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include  "standard.h"
-
 #include  "octree.h"
-
 #include  "otypes.h"
+#include  "oconv.h"
 
-extern int  o_sphere();
+extern int  o_sphere(); /* XXX way too much linker magic involved here */ 
 extern int  o_face();
 extern int  o_cone();
 extern int  o_instance();
@@ -19,8 +18,8 @@ extern int  o_mesh();
 
 FUN  ofun[NUMOTYPE] = INIT_OTYPE;
 
-
-initotypes()			/* initialize ofun array */
+void
+ot_initotypes(void)			/* initialize ofun array */
 {
 	ofun[OBJ_SPHERE].funp =
 	ofun[OBJ_BUBBLE].funp = o_sphere;
@@ -35,7 +34,8 @@ initotypes()			/* initialize ofun array */
 }
 
 
-o_default()			/* default action is no intersection */
+int
+o_default(void)			/* default action is no intersection */
 {
 	return(O_MISS);
 }

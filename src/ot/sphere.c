@@ -50,9 +50,12 @@ static const char	RCSid[] = "$Id$";
  */
 
 
-o_sphere(o, cu)			/* determine if sphere intersects cube */
-OBJREC  *o;
-register CUBE  *cu;
+/* XXX o_sphere() is extern, but not declared in any header file */
+int
+o_sphere(			/* determine if sphere intersects cube */
+	OBJREC  *o,
+	register CUBE  *cu
+)
 {
 	FVECT  v1;
 	double  d1, d2;
