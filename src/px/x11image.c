@@ -508,6 +508,8 @@ getevent()				/* process the next event */
 	case ButtonPress:
 		if (e.b.state & (ShiftMask|ControlMask))
 			moveimage(&e.b);
+		else if (e.b.button == Button2)
+			traceray(e.b.x, e.b.y);
 		else
 			getbox(&e.b);
 		break;
@@ -515,7 +517,27 @@ getevent()				/* process the next event */
 }
 
 
-docom(ekey)					/* execute command */
+traceray(xpos, ypos)			/* print ray corresponding to pixel */
+int  xpos, ypos;
+{
+	FLOAT  hv[2];
+	FVECT  rorg, rdir;
+
+	if (!gotview) {		/* no view, no can do */
+		XBell(thedisplay, 0);
+		return(-1);
+	}
+	pix2loc(hv, &inpres, xpos-xoff, ypos-yoff);
+	if (viewray(rorg, rdir, &ourview, hv[0], hv[1]) < 0)
+		return(-1);
+	printf("%e %e %e ", rorg[0], rorg[1], rorg[2]);
+	printf("%e %e %e\n", rdir[0], rdir[1], rdir[2]);
+	fflush(stdout);
+	return(0);
+}
+
+
+docom(ekey)				/* execute command */
 XKeyPressedEvent  *ekey;
 {
 	char  buf[80];
@@ -524,7 +546,6 @@ XKeyPressedEvent  *ekey;
 	int  com, n;
 	double  comp;
 	FLOAT  hv[2];
-	FVECT  rorg, rdir;
 
 	n = XLookupString(ekey, buf, sizeof(buf), NULL, NULL); 
 	if (n == 0)
@@ -532,6 +553,7 @@ XKeyPressedEvent  *ekey;
 	com = buf[0];
 	switch (com) {			/* interpret command */
 	case 'q':
+	case 'Q':
 	case CTRL('D'):				/* quit */
 		quiterr(NULL);
 	case '\n':
@@ -579,17 +601,7 @@ XKeyPressedEvent  *ekey;
 					buf, strlen(buf));
 		return(0);
 	case 't':				/* trace */
-		if (!gotview) {
-			XBell(thedisplay, 0);
-			return(-1);
-		}
-		pix2loc(hv, &inpres, ekey->x-xoff, ekey->y-yoff);
-		if (viewray(rorg, rdir, &ourview, hv[0], hv[1]) < 0)
-			return(-1);
-		printf("%e %e %e ", rorg[0], rorg[1], rorg[2]);
-		printf("%e %e %e\n", rdir[0], rdir[1], rdir[2]);
-		fflush(stdout);
-		return(0);
+		return(traceray(ekey->x, ekey->y));
 	case '=':				/* adjust exposure */
 		if (avgbox(cval) == -1)
 			return(-1);
