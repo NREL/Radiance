@@ -1,7 +1,7 @@
 #!/bin/csh -f
 # SCCSid "$SunId$ LBL"
 #
-# Do depth-of-field blurring on picture
+# Generate views for depth-of-field blurring on picture
 #
 if ($#argv != 4) then
 	echo "Usage: $0 aperture distance nsamp viewfile" >/dev/tty
@@ -11,7 +11,6 @@ set a = "$1"
 set d = "$2"
 set n = "$3"
 set vf = "$4"
-set piopt = ($argv[6-]:q)
 cnt $n | rcalc -e `vwright i < $vf` \
 -e "M:$n/5+1;a:$a/2;d:$d;N:$n;" -e 'tmax:PI*a*(M+1)' \
 -e 't=tmax/N*($1+rand($1))' \
