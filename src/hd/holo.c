@@ -221,7 +221,7 @@ HOLO	*hp;
 double	d;
 {
 	double	tl = hp->tlin;
-	register unsigned	c;
+	register long	c;
 
 	if (d <= 0.)
 		return(0);
@@ -229,8 +229,8 @@ double	d;
 		return(DCINF);
 	if (d < tl)
 		return((unsigned)(d*DCLIN/tl));
-	c = (unsigned)(log(d/tl)/logstep) + DCLIN;
-	return(c > DCINF ? DCINF : c);
+	c = (long)(log(d/tl)/logstep) + DCLIN;
+	return(c > DCINF ? (unsigned)DCINF : (unsigned)c);
 }
 
 
