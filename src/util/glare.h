@@ -24,7 +24,7 @@
 #define TOOSMALL(s)	((s)->brt*(s)->dom < threshold*SAMIN)
 
 #define SABIG		.025		/* solid angle of splittable source */
-#define LCORR		.8		/* linearity of splittable source */
+#define LCORR		.12		/* linearity of splittable source */
 
 extern VIEW	ourview;		/* our view */
 extern VIEW	pictview;		/* picture view */
