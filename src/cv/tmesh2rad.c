@@ -5,18 +5,19 @@ static char SCCSid[] = "$SunId$ LBL";
 #endif
 
 /*
- * Convert a triangle mesh into a Radiance description.
+ * Convert a trianglular mesh into a Radiance description.
  *
  * Unlike most other converters, we have defined a file
- * format for the mesh ourselves.  It contains eight types,
+ * format for the input ourselves.  The format contains eight types,
  * each of which is identified by a single letter.  These are:
  *
  *	# comment		= a comment.  Continues until end of line.
  *	v id Px Py Pz		= a vertex.  The id must be an integer.
  *	n Nx Ny Nz		= a normal.  Corresponds to most recent vertex.
  *	i Iu Iv			= an index.  Corresponds to most recent vertex.
- *	p picture		= a picture.  Used as a pattern what follows.
+ *	p picture		= a picture.  Used as a pattern for following.
  *	m material		= a material name.  Used for what follows.
+ *	o object		= an object name.  Used for what follows.
  *	t id1 id2 id3		= a triangle.
  *
  * Only the 't' type results in any output.  The others merely set values
@@ -26,13 +27,18 @@ static char SCCSid[] = "$SunId$ LBL";
  * only makes sense for a mesh which is to be put into an octree for
  * instancing.)  Using a pattern requires that each vertex have an
  * associated index value for generating the colorpict primitive.
+ * Likewise, an interpolated surface normal also requires that each
+ * vertex of the triangle have an associated normal vector.
+ * It is not necessary for the normal vectors to have unit length.
  */
 
 #include "standard.h"
 
+#define VOIDID		"void"		/* this is defined in object.h */
+
 #define CALNAME		"tmesh.cal"	/* the name of our auxiliary file */
-#define PATNAME		"tpat"		/* triangle pattern name (reused) */
-#define TEXNAME		"tnor"		/* triangle texture name (reused) */
+#define PATNAME		"T-pat"		/* triangle pattern name (reused) */
+#define TEXNAME		"T-nor"		/* triangle texture name (reused) */
 
 #define V_DEFINED	01		/* this vertex is defined */
 #define V_HASNORM	02		/* vertex has surface normal */
@@ -50,11 +56,15 @@ int	nverts = 0;		/* number of vertices in our list */
 
 typedef FLOAT	BARYCCM[3][4];
 
-#define novert(i)	((i)<0|(i)>=nverts||!(vlist[i].flags&V_DEFINED))
+#define novert(i)	((i)<0|(i)>=nverts || !(vlist[i].flags&V_DEFINED))
 
 #define CHUNKSIZ	128	/* vertex allocation chunk size */
 
 extern VERTEX	*vnew();	/* allocate a vertex (never freed) */
+
+char	*defmat = VOIDID;	/* default (starting) material name */
+char	*defpat = "";		/* default (starting) picture name */
+char	*defobj = "T";		/* default (starting) object name */
 
 
 main(argc, argv)		/* read in T-mesh files and convert */
@@ -64,10 +74,27 @@ char	*argv[];
 	FILE	*fp;
 	int	i;
 
-	if (argc == 1)
+	for (i = 1; i < argc && argv[i][0] == '-'; i++)
+		switch (argv[i][1]) {
+		case 'o':		/* object name */
+			defobj = argv[++i];
+			break;
+		case 'm':		/* default material */
+			defmat = argv[++i];
+			break;
+		case 'p':		/* default picture */
+			defpat = argv[++i];
+			break;
+		default:
+			fprintf(stderr,
+			"Usage: %s [-o obj][-m mat][-p pic] [file ..]\n",
+					argv[0]);
+			exit(1);
+		}
+	if (i >= argc)
 		convert("<stdin>", stdin);
 	else
-		for (i = 1; i < argc; i++) {
+		for ( ; i < argc; i++) {
 			if ((fp = fopen(argv[i], "r")) == NULL) {
 				perror(argv[i]);
 				exit(1);
@@ -83,20 +110,26 @@ convert(fname, fp)		/* convert a T-mesh */
 char	*fname;
 FILE	*fp;
 {
-	char	typ[2];
+	char	typ[4];
 	int	id[3];
 	double	vec[3];
 	char	picfile[128];
 	char	matname[64];
-	char	*err;
-	register int	c;
-	register VERTEX	*lastv = NULL;
+	char	objname[64];
+	register int	i;
+	register VERTEX	*lastv;
+					/* start fresh */
+	i = nverts;
+	lastv = vlist;
+	while (i--)
+		(lastv++)->flags = 0;
+	lastv = NULL;
+	strcpy(picfile, defpat);
+	strcpy(matname, defmat);
+	strcpy(objname, defobj);
 
-	printf("# T-mesh from: %s\n", fname);
-
-	picfile[0] = '\0';
-	strcpy(matname, "void");
-
+	printf("\n## T-mesh read from: %s\n", fname);
+					/* scan until EOF */
 	while (fscanf(fp, "%1s", typ) == 1)
 		switch (typ[0]) {
 		case 'v':		/* vertex */
@@ -110,7 +143,7 @@ FILE	*fp;
 				syntax(fname, fp, "Bad triangle");
 			if (novert(id[0]) | novert(id[1]) | novert(id[2]))
 				syntax(fname, fp, "Undefined triangle vertex");
-			triangle(picfile, matname, &vlist[id[0]],
+			triangle(picfile, matname, objname, &vlist[id[0]],
 					&vlist[id[1]], &vlist[id[2]]);
 			break;
 		case 'n':		/* surface normal */
@@ -135,11 +168,15 @@ FILE	*fp;
 			lastv->ndx[1] = vec[1];
 			lastv->flags |= V_HASINDX;
 			break;
+		case 'o':		/* object name */
+			if (fscanf(fp, "%s", objname) != 1)
+				syntax(fname, fp, "Bad object name");
+			break;
 		case 'm':		/* material */
 			if (fscanf(fp, "%s", matname) != 1)
 				syntax(fname, fp, "Bad material");
 			if (matname[0] == '-' && !matname[1])
-				strcpy(matname, "void");
+				strcpy(matname, VOIDID);
 			break;
 		case 'p':		/* picture */
 			if (fscanf(fp, "%s", picfile) != 1)
@@ -148,8 +185,12 @@ FILE	*fp;
 				picfile[0] = '\0';
 			break;
 		case '#':		/* comment */
-			while ((c = getc(fp)) != EOF && c != '\n')
-				;
+			fputs("\n#", stdout);
+			while ((i = getc(fp)) != EOF) {
+				putchar(i);
+				if (i == '\n')
+					break;
+			}
 			break;
 		default:
 			syntax(fname, fp, "Unknown type");
@@ -158,12 +199,11 @@ FILE	*fp;
 }
 
 
-triangle(pn, mn, v1, v2, v3)		/* put out a triangle */
-char	*pn, *mn;
+triangle(pn, mod, obj, v1, v2, v3)	/* put out a triangle */
+char	*pn, *mod, *obj;
 register VERTEX	*v1, *v2, *v3;
 {
 	static int	ntri = 0;
-	char	*mod = mn;
 	BARYCCM	bvecs;
 					/* compute barycentric coordinates */
 	if (v1->flags & v2->flags & v3->flags & (V_HASINDX|V_HASNORM))
@@ -194,7 +234,7 @@ register VERTEX	*v1, *v2, *v3;
 		printf("\t%f %f %f\n", v1->ndx[1], v2->ndx[1], v3->ndx[1]);
 	}
 					/* put out triangle */
-	printf("\n%s polygon t%d\n", mod, ++ntri);
+	printf("\n%s polygon %s.%d\n", mod, obj, ++ntri);
 	printf("0\n0\n9\n");
 	printf("%18.12g %18.12g %18.12g\n", v1->pos[0],v1->pos[1],v1->pos[2]);
 	printf("%18.12g %18.12g %18.12g\n", v2->pos[0],v2->pos[1],v2->pos[2]);
@@ -205,7 +245,7 @@ register VERTEX	*v1, *v2, *v3;
 int
 comp_baryc(bcm, v1, v2, v3)		/* compute barycentric vectors */
 register BARYCCM	bcm;
-FVECT	v1, v2, v3;
+FLOAT	*v1, *v2, *v3;
 {
 	FLOAT	*vt;
 	FVECT	va, vab, vcb;
@@ -272,10 +312,10 @@ double	x, y, z;
 			"Out of memory while allocating vertex %d\n", id);
 			exit(1);
 		}
-		while (i < nverts)		/* clear them */
+		while (i < nverts)		/* clear what's new */
 			vlist[i++].flags = 0;
 	}
-					/* assign it */
+					/* assign new vertex */
 	vlist[id].pos[0] = x;
 	vlist[id].pos[1] = y;
 	vlist[id].pos[2] = z;
@@ -296,7 +336,7 @@ char	*er;
 	int	lineno;
 
 	if (fp == stdin)
-		fprintf(stderr, "%s: syntax error: %s\n", fn, er);
+		fprintf(stderr, "%s: T-mesh format error: %s\n", fn, er);
 	else {
 		cpos = ftell(fp);
 		fseek(fp, 0L, 0);
@@ -307,7 +347,7 @@ char	*er;
 			if (c == '\n')
 				lineno++;
 		}
-		fprintf(stderr, "%s: syntax error at line %d: %s\n",
+		fprintf(stderr, "%s: T-mesh format error at line %d: %s\n",
 				fn, lineno, er);
 	}
 	exit(1);
