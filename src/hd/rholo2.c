@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -115,7 +115,7 @@ new_rtrace()			/* restart rtrace calculation */
 
 getradfile()			/* run rad and get needed variables */
 {
-	static short	mvar[] = {OCTREE,-1};
+	static short	mvar[] = {OCTREE,EYESEP,-1};
 	static char	tf1[] = TEMPLATE;
 	char	tf2[64];
 	char	combuf[256];
