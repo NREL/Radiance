@@ -15,10 +15,10 @@ static char SCCSid[] = "$SunId$ SGI";
 #define sgn(x)		((x) > 0 ? 1 : (x) < 0 ? -1 : 0)
 
 
-static PACKHEAD	*complist;	/* list of beams to compute */
-static int	complen;	/* length of complist */
-static int	listpos;	/* current list position for next_packet */
-static int	lastin = -1;	/* last ordered position in list */
+static PACKHEAD	*complist=NULL;	/* list of beams to compute */
+static int	complen=0;	/* length of complist */
+static int	listpos=0;	/* current list position for next_packet */
+static int	lastin= -1;	/* last ordered position in list */
 
 
 int
@@ -236,7 +236,7 @@ init_global()			/* initialize global ray computation */
 			while (k--)
 				complist[k].nr = frac * complist[k].nr;
 	}
-	listpos = 0; lastin = -1;
+	listpos = 0; lastin = -1;	/* flag initial sort */
 }
 
 
@@ -294,7 +294,11 @@ sortcomplist()			/* fix our list order */
 	for (i = complen; i-- && complist[i].nr <=
 			bnrays(hdlist[complist[i].hd],complist[i].bi); )
 		;
-	if (i < complen-1) {
+	if (i < 0) {
+		free((char *)complist);
+		complist = NULL;
+		complen = 0;
+	} else if (i < complen-1) {
 		list2 = (PACKHEAD *)realloc((char *)complist,
 				(i+1)*sizeof(PACKHEAD));
 		if (list2 != NULL) {
