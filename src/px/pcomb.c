@@ -19,11 +19,15 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "calcomp.h"
 
 #define MAXINP		32		/* maximum number of input files */
+#define WINSIZ		9		/* scanline window size */
+#define MIDSCN		4		/* current scan position */
+
+#define BRT		(-1)		/* special index for brightness */
 
 struct {
 	char	*name;		/* file name */
 	FILE	*fp;		/* stream pointer */
-	COLOR	*scan;		/* input scanline */
+	COLOR	*scan[WINSIZ];	/* input scanline window */
 	COLOR	coef;		/* coefficient */
 }	input[MAXINP];			/* input pictures */
 
@@ -83,7 +87,7 @@ char	*argv[];
 {
 	extern double	l_redin(), l_grnin(), l_bluin(), l_brtin(), atof();
 	double	f;
-	int	a;
+	int	a, i;
 	
 	funset(vcolin[RED], 1, '=', l_redin);
 	funset(vcolin[GRN], 1, '=', l_grnin);
@@ -178,7 +182,9 @@ getfiles:
 			eputs(": resolution mismatch\n");
 			quit(1);
 		}
-		input[nfiles].scan = (COLOR *)emalloc(xres*sizeof(COLOR));
+		for (i = 0; i < WINSIZ; i++)
+			input[nfiles].scan[i] =
+					(COLOR *)emalloc(xres*sizeof(COLOR));
 		nfiles++;
 	}
 	printargs(argc, argv, stdout);
@@ -213,24 +219,19 @@ combine()			/* combine pictures */
 		brtdef = eparse(vbrtout);
 	else
 		brtdef = NULL;
-						/* predefine variables */
-	varset(vnfiles, '=', (double)nfiles);
-	varset(vxres, '=', (double)xres);
-	varset(vyres, '=', (double)yres);
+						/* define constants */
+	varset(vnfiles, ':', (double)nfiles);
+	varset(vxres, ':', (double)xres);
+	varset(vyres, ':', (double)yres);
 						/* allocate scanline */
 	scanout = (COLOR *)emalloc(xres*sizeof(COLOR));
+						/* initialize input */
+	initinp();
 						/* combine files */
 	for (ypos = yres-1; ypos >= 0; ypos--) {
-	    for (i = 0; i < nfiles; i++)
-		    if (freadscan(input[i].scan, xres, input[i].fp) < 0) {
-			    eputs(input[i].name);
-			    eputs(": read error\n");
-			    quit(1);
-		    }
+	    advance();
 	    varset(vypos, '=', (double)ypos);
 	    for (xpos = 0; xpos < xres; xpos++) {
-		for (i = 0; i < nfiles; i++)
-			multcolor(input[i].scan[xpos],input[i].coef);
 		varset(vxpos, '=', (double)xpos);
 		eclock++;
 		if (brtdef != NULL) {
@@ -245,7 +246,7 @@ combine()			/* combine pictures */
 			} else {
 			    d = 0.0;
 			    for (i = 0; i < nfiles; i++)
-				d += colval(input[i].scan[xpos],j);
+				d += colval(input[i].scan[MIDSCN][xpos],j);
 			}
 			if (d < 0.0)
 			    d = 0.0;
@@ -262,54 +263,112 @@ combine()			/* combine pictures */
 }
 
 
-double
-colin(fn, ci)			/* return color value for picture */
-register int	fn, ci;
+initinp()			/* initilize scan windows */
 {
-	if (fn == 0)
-		return((double)nfiles);
-	if (fn < 1 || fn > nfiles) {
+	for (ypos = yres+(MIDSCN-1); ypos >= yres; ypos--)
+		advance();
+}
+
+
+advance()			/* read in next scanline */
+{
+	register COLOR	*st;
+	register int	i, j;
+
+	for (i = 0; i < nfiles; i++) {
+		st = input[i].scan[WINSIZ-1];
+		for (j = WINSIZ-1; j > 0; j--)	/* rotate window */
+			input[i].scan[j] = input[i].scan[j-1];
+		input[i].scan[0] = st;
+		if (ypos < MIDSCN)		/* hit bottom */
+			continue;
+		if (freadscan(st, xres, input[i].fp) < 0) {
+			eputs(input[i].name);
+			eputs(": read error\n");
+			quit(1);
+		}
+		for (j = 0; j < xres; j++)	/* adjust color */
+			multcolor(st[j], input[i].coef);
+	}
+}
+
+
+double
+colin(ci)			/* return color value for picture */
+register int	ci;
+{
+	int	n, fn;
+	register int	xoff, yoff;
+	double	d;
+
+	fn = (d = argument(1)) - .5;
+	if (d <= -.5 || fn >= nfiles) {
 		errno = EDOM;
 		return(0.0);
 	}
-	return(colval(input[fn-1].scan[xpos],ci));
+	if (d < .5)
+		return((double)nfiles);
+	xoff = yoff = 0;
+	n = nargum();
+	if (n >= 2) {
+		d = argument(2);
+		if (d < 0.0) {
+			xoff = d-.5;
+			if (xpos+xoff < 0)
+				xoff = -xpos;
+		} else {
+			xoff = d+.5;
+			if (xpos+xoff >= xres)
+				xoff = xres-1-xpos;
+		}
+	}
+	if (n >= 3) {
+		d = argument(3);
+		if (d < 0.0) {
+			yoff = d-.5;
+			if (yoff+MIDSCN < 0)
+				yoff = -MIDSCN;
+			if (ypos+yoff < 0)
+				yoff = -ypos;
+		} else {
+			yoff = d+.5;
+			if (yoff+MIDSCN >= WINSIZ)
+				yoff = WINSIZ-1-MIDSCN;
+			if (ypos+yoff >= yres)
+				yoff = yres-1-ypos;
+		}
+	}
+	if (ci == BRT)
+		return(bright(input[fn].scan[MIDSCN+yoff][xpos+xoff]));
+	return(colval(input[fn].scan[MIDSCN+yoff][xpos+xoff],ci));
 }
 
 
 double
 l_redin()			/* get red color */
 {
-	return(colin((int)(argument(1)+.5), RED));
+	return(colin(RED));
 }
 
 
 double
 l_grnin()			/* get green color */
 {
-	return(colin((int)(argument(1)+.5), GRN));
+	return(colin(GRN));
 }
 
 
 double
 l_bluin()			/* get blue color */
 {
-	return(colin((int)(argument(1)+.5), BLU));
+	return(colin(BLU));
 }
 
 
 double
 l_brtin()			/* get brightness value */
 {
-	register int	fn;
-
-	fn = argument(1)+.5;
-	if (fn == 0)
-		return((double)nfiles);
-	if (fn < 1 || fn > nfiles) {
-		errno = EDOM;
-		return(0.0);
-	}
-	return(bright(input[fn-1].scan[xpos]));
+	return(colin(BRT));
 }
 
 
