@@ -48,7 +48,10 @@ char  *mname;
 	register OBJREC  *op;
 	register int  i;
 
-	for (i = obj; i-- > 0; ) {
+	i = modifier(mname);		/* try hash table first */
+	if (i < obj)
+		return(i);
+	for (i = obj; i-- > 0; ) {	/* need to search */
 		op = objptr(i);
 		if (ismodifier(op->otype) && !strcmp(op->oname, mname))
 			return(i);
