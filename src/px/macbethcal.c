@@ -77,21 +77,18 @@ COLOR	mbRGB[24];		/* MacBeth RGB values */
 #define	NMBNEU		6	/* Number of MacBeth neutral colors */
 short	mbneu[NMBNEU] = {Black,Neutral35,Neutral5,Neutral65,Neutral8,White};
 
-#define NMBMOD		16	/* Number of MacBeth unsaturated colors */
-short	mbmod[NMBMOD] = {
-		DarkSkin,LightSkin,BlueSky,Foliage,BlueFlower,BluishGreen,
-		PurplishBlue,ModerateRed,YellowGreen,OrangeYellow,
-		Black,Neutral35,Neutral5,Neutral65,Neutral8,White
-	};
-
-#define NMBSAT		8	/* Number of MacBeth saturated colors */
-short	mbsat[NMBSAT] = {
-		Red,Green,Blue,Magenta,Yellow,Cyan,
-		Orange,Purple
-	};
-
-#define  REQFLGS	(1L<<White|1L<<Neutral8|1L<<Neutral65| \
+#define  NEUFLGS	(1L<<White|1L<<Neutral8|1L<<Neutral65| \
 				1L<<Neutral5|1L<<Neutral35|1L<<Black)
+
+#define  SATFLGS	(1L<<Red|1L<<Green|1L<<Blue|1L<<Magenta|1L<<Yellow| \
+			1L<<Cyan|1L<<Orange|1L<<Purple|1L<<PurplishBlue| \
+			1L<<YellowGreen|1<<OrangeYellow|1L<<BlueFlower)
+
+#define  UNSFLGS	(1L<<DarkSkin|1L<<LightSkin|1L<<BlueSky|1L<<Foliage| \
+			1L<<BluishGreen|1L<<ModerateRed)
+
+#define  REQFLGS	NEUFLGS			/* need these colors */
+#define  MODFLGS	(NEUFLGS|UNSFLGS)	/* should be in gamut */
 
 #define  CENTCVG	0.3	/* measured coverage of square sample */
 #define  FULLCVG	0.9	/* coverage of entire square */
@@ -102,6 +99,7 @@ double	imgxfm[3][3];		/* coordinate transformation matrix */
 
 COLOR	inpRGB[24];		/* measured or scanned input colors */
 long	inpflags = 0;		/* flags of which colors were input */
+long	gmtflags = 0;		/* flags of out-of-gamut colors */
 
 COLOR	bramp[NMBNEU][2];	/* brightness ramp (per primary) */
 double	solmat[3][3];		/* color mapping matrix */
@@ -359,28 +357,27 @@ getcolors()			/* get xyY colors from standard input */
 bresp(y, x)		/* piecewise linear interpolation of primaries */
 COLOR	y, x;
 {
-	double	cv[3];
 	register int	i, n;
 
 	for (i = 0; i < 3; i++) {
 		for (n = 0; n < NMBNEU-2; n++)
 			if (colval(x,i) < colval(bramp[n+1][0],i))
 				break;
-		cv[i] = ((colval(bramp[n+1][0],i) - colval(x,i)) *
+		colval(y,i) = ((colval(bramp[n+1][0],i) - colval(x,i)) *
 						colval(bramp[n][1],i) +
 				(colval(x,i) - colval(bramp[n][0],i)) *
 						colval(bramp[n+1][1],i)) /
 			(colval(bramp[n+1][0],i) - colval(bramp[n][0],i));
-		if (cv[i] < 0.) cv[i] = 0.;
 	}
-	setcolor(y, cv[0], cv[1], cv[2]);
 }
 
 
 compute()			/* compute color mapping */
 {
-	COLOR	clrin[NMBMOD], clrout[NMBMOD];
-	register int	i, n;
+	COLOR	clrin[24], clrout[24];
+	long	cflags;
+	COLOR	ctmp;
+	register int	i, j, n;
 					/* did we get what we need? */
 	if ((inpflags & REQFLGS) != REQFLGS) {
 		fprintf(stderr, "%s: missing required input colors\n",
@@ -392,14 +389,33 @@ compute()			/* compute color mapping */
 		copycolor(bramp[i][0], inpRGB[mbneu[i]]);
 		copycolor(bramp[i][1], mbRGB[mbneu[i]]);
 	}
-					/* compute color matrix */
-	for (n = 0, i = 0; i < NMBMOD; i++)
-		if (inpflags & 1L<<mbmod[i]) {
-			bresp(clrin[n], inpRGB[mbmod[i]]);
-			copycolor(clrout[n], mbRGB[mbmod[i]]);
-			n++;
-		}
-	compsoln(clrin, clrout, n);
+					/* compute color mapping */
+	do {
+		cflags = inpflags & ~gmtflags;
+		n = 0;				/* compute transform matrix */
+		for (i = 0; i < 24; i++)
+			if (cflags & 1L<<i) {
+				bresp(clrin[n], inpRGB[i]);
+				copycolor(clrout[n], mbRGB[i]);
+				n++;
+			}
+		compsoln(clrin, clrout, n);
+						/* check out-of-gamut colors */
+		for (i = 0; i < 24; i++)
+			if (cflags & 1L<<i) {
+				cresp(ctmp, mbRGB[i]);
+				for (j = 0; j < 3; j++)
+					if (colval(ctmp,j) <= 0. ||
+						colval(ctmp,j) >= 1.) {
+						gmtflags |= 1L<<i;
+						break;
+					}
+			}
+	} while (cflags & gmtflags);
+	if (gmtflags & MODFLGS)
+		fprintf(stderr,
+		"%s: warning - some moderate colors are out of gamut\n",
+				progname);
 }
 
 
@@ -451,8 +467,8 @@ int	n;
 	double	colv[3], rowv[3];
 	register int	i, j, k;
 
-	if (n < 3 | n > NMBMOD) {
-		fprintf(stderr, "%s: bad number of colors to match\n", progname);
+	if (n < 3) {
+		fprintf(stderr, "%s: too few colors to match!\n", progname);
 		exit(1);
 	}
 	if (n == 3)
@@ -504,18 +520,30 @@ int	n;
 cvtcolor(cout, cin)		/* convert color according to our mapping */
 COLOR	cout, cin;
 {
+	COLOR	ctmp;
+
+	bresp(ctmp, cin);
+	cresp(cout, ctmp);
+	if (colval(cout,RED) < 0.)
+		colval(cout,RED) = 0.;
+	if (colval(cout,GRN) < 0.)
+		colval(cout,GRN) = 0.;
+	if (colval(cout,BLU) < 0.)
+		colval(cout,BLU) = 0.;
+}
+
+
+cresp(cout, cin)		/* transform color according to matrix */
+COLOR	cout, cin;
+{
 	double	r, g, b;
 
-	bresp(cout, cin);
-	r = colval(cout,0)*solmat[0][0] + colval(cout,1)*solmat[0][1]
-			+ colval(cout,2)*solmat[0][2];
-	if (r < 0) r = 0;
-	g = colval(cout,0)*solmat[1][0] + colval(cout,1)*solmat[1][1]
-			+ colval(cout,2)*solmat[1][2];
-	if (g < 0) g = 0;
-	b = colval(cout,0)*solmat[2][0] + colval(cout,1)*solmat[2][1]
-			+ colval(cout,2)*solmat[2][2];
-	if (b < 0) b = 0;
+	r = colval(cin,0)*solmat[0][0] + colval(cin,1)*solmat[0][1]
+			+ colval(cin,2)*solmat[0][2];
+	g = colval(cin,0)*solmat[1][0] + colval(cin,1)*solmat[1][1]
+			+ colval(cin,2)*solmat[1][2];
+	b = colval(cin,0)*solmat[2][0] + colval(cin,1)*solmat[2][1]
+			+ colval(cin,2)*solmat[2][2];
 	setcolor(cout, r, g, b);
 }
 
@@ -537,6 +565,7 @@ register float	xyYin[3];
 
 picdebug()			/* put out debugging picture */
 {
+	static COLOR	blkcol = BLKCOLOR;
 	COLOR	*scan;
 	int	y;
 	register int	x, i;
@@ -568,8 +597,10 @@ picdebug()			/* put out debugging picture */
 			i = chartndx(x, y, CENTCVG);
 			if (i < 0)
 				cvtcolor(scan[x], scan[x]);
-			else
+			else if (!(1L<<i & gmtflags) || (x+y)&07)
 				copycolor(scan[x], mbRGB[i]);
+			else
+				copycolor(scan[x], blkcol);
 		}
 		if (fwritescan(scan, xmax, debugfp) < 0) {
 			fprintf(stderr, "%s: error writing debugging picture\n",
@@ -614,9 +645,12 @@ clrdebug()			/* put out debug picture from color input */
 						/* write debug picture */
 	for (y = ymax-1; y >= 0; y--) {
 		for (x = 0; x < xmax; x++)
-			if ((i = chartndx(x, y, CENTCVG)) >= 0)
-				copycolr(scan[x], mbclr[i]);
-			else if ((i = chartndx(x, y, FULLCVG)) >= 0 &&
+			if ((i = chartndx(x, y, CENTCVG)) >= 0) {
+				if (!(1L<<i & gmtflags) || (x+y)&07)
+					copycolr(scan[x], mbclr[i]);
+				else
+					copycolr(scan[x], blkclr);
+			} else if ((i = chartndx(x, y, FULLCVG)) >= 0 &&
 					inpflags & 1L<<i)
 				copycolr(scan[x], cvclr[i]);
 			else
