@@ -9,6 +9,7 @@ static char SCCSid[] = "$SunId$ SGI";
  */
 
 #include "standard.h"
+#include "random.h"
 
 #ifdef F_SETLKW
 #include "paths.h"
@@ -178,7 +179,7 @@ io_process()		/* just act as go-between for actual process */
 		if (!n--)
 			error(USER, "unattended persist file?");
 		pflock(0);
-		sleep(15);		/* wait until ready */
+		sleep(3+(3*getpid()+random())%13);	/* wait until ready */
 		pflock(1);
 	}
 	if (nr < 0)
