@@ -377,7 +377,7 @@ COLOR  cr;
 register AMBVAL	 *ap;
 FVECT  pv, nv;
 {
-	FVECT  v1, v2;
+	FVECT  v1;
 	register int  i;
 	double	d;
 
@@ -386,9 +386,8 @@ FVECT  pv, nv;
 	for (i = 0; i < 3; i++)
 		d += ap->gpos[i]*(pv[i]-ap->pos[i]);
 					/* gradient due to rotation */
-	VCOPY(v1, ap->dir);
-	fcross(v2, v1, nv);
-	d += DOT(ap->gdir, v2);
+	VCROSS(v1, ap->dir, nv);
+	d += DOT(ap->gdir, v1);
 	if (d <= 0.0) {
 		setcolor(cr, 0.0, 0.0, 0.0);
 		return;
