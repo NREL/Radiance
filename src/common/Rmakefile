@@ -3,8 +3,8 @@
 # Makefile for ray tracing library routines
 #
 
-OPT = -O -pipe
-MACH = -DSTRUCTASSIGN -DBSD -DIEEE -f68881 /usr/lib/libm.il
+OPT = -O
+MACH = -DSTRUCTASSIGN -DBSD
 CFLAGS = $(MACH) $(OPT)
 
 COMPAT = bmalloc.o erf.o # frexp.o fwrite.o random.o

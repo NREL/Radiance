@@ -5,12 +5,12 @@
 #
 
 OPT = -O
-MACH = -DBSD -DSTRUCTASSIGN -f68881 /usr/lib/libm.il -DIEEE
+MACH = -DBSD -DSTRUCTASSIGN
 CFLAGS = $(MACH) $(OPT) -I../common -L../lib
 
-INSTDIR = /lumen/lumen/ray/bin.sun3
+INSTDIR = /usr/local/bin
 
-LIBDIR = /lumen/lumen/ray/lib
+LIBDIR = /usr/local/lib/ray
 
 PROGS = genbox gensky xform genblinds genrev genworm \
 		gensurf genprism replmarks mkillum

@@ -3,8 +3,8 @@
 #  Compiles for ray tracing programs.
 #
 
-OPT = -O -pipe
-MACH = -DSTRUCTASSIGN -DBSD -DIEEE -f68881 /usr/lib/libm.il
+OPT = -O
+MACH = -DSTRUCTASSIGN -DBSD
 CFLAGS = $(MACH) $(OPT) -I../common -L../lib
 CC = cc
 LINT = lint
@@ -15,7 +15,7 @@ LINTFLAGS = -DSTRUCTASSIGN -DBSD -DIEEE -DVARIABLE -DFUNCTION \
 # The following are user-definable:
 #
 DESTDIR = .
-INSTDIR = /lumen/lumen/ray/bin.sun3
+INSTDIR = /usr/local/bin
 INSTALL = cp
 
 #

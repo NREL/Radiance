@@ -2,15 +2,15 @@
 # SCCSid "$SunId$ LBL"
 #
 
-MACH = -f68881 /usr/lib/libm.il -DIEEE -DBSD -DSTRUCTASSIGN
+MACH = -DBSD -DSTRUCTASSIGN
 
 OPT = -O
 
 CFLAGS = $(MACH) $(OPT) -I../common -L../lib
 
-INSTDIR = /lumen/lumen/ray/bin.sun3
+INSTDIR = /usr/local/bin
 
-PROGS = makedist swaprasheader findglare xglaresrc glarendx
+PROGS = findglare xglaresrc glarendx
 
 all:	$(PROGS)
 

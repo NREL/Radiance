@@ -9,12 +9,12 @@
 #
 
 OPT = -O
-MACH = -DBSD -DSTRUCTASSIGN -f68881 /usr/lib/libm.il
+MACH = -DBSD -DSTRUCTASSIGN
 CFLAGS = -DSTRICT $(OPT) $(MACH) -I../common -L../lib
 
 LIBDIR = /usr/local/lib/ray
 
-INSTDIR = /lumen/lumen/ray/bin.sun3
+INSTDIR = /usr/local/bin
 
 all:	oconv getbbox
 

@@ -6,13 +6,13 @@
 
 OPT = -O
 
-MACH = -f68881 /usr/lib/libm.il -DBSD
+MACH = -DBSD
 
 CFLAGS = $(OPT) $(MACH) -I../common -L../lib
 
-INSTDIR = /lumen/lumen/ray/bin.sun3
+INSTDIR = /usr/local/bin
 
-LIBDIR = /lumen/lumen/ray/lib
+LIBDIR = /usr/local/lib/ray
 
 PROGS = thf2rad ies2rad arch2rad nff2rad lampcolor
 
