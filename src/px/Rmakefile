@@ -20,7 +20,7 @@ PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar $(MLIB)
 PROGS = pfilt ttyimage oki20c oki20 paintjet mt160r psign \
 greyscale pvalue pcompos colorscale protate ra_pr ra_pr24 ra_avs \
 ra_t8 ra_bn ra_t16 pcomb pinterp ximage xshowtrace pflip ra_ppm \
-ra_rgbe ra_pict ra_ps pextrem ra_gif ra_xyze macbethcal
+ra_rgbe ra_pict ra_ps pextrem ra_gif ra_xyze macbethcal pcond
 
 all:	$(PROGS) $(SPECIAL)
 
@@ -59,6 +59,9 @@ $(PROGS) *.o core
 
 pfilt:	pfilt.o pf2.o pf3.o
 	$(CC) $(CFLAGS) -o pfilt pfilt.o pf2.o pf3.o -lrt $(MLIB)
+
+pcond:	pcond.o pcond2.o pcond3.o pcond4.o
+	$(CC) $(CFLAGS) -o pcond pcond.o pcond2.o pcond3.o pcond4.o -lrt $(MLIB)
 
 ttyimage:	ttyimage.o
 	$(CC) $(CFLAGS) -o ttyimage ttyimage.o -lrt $(MLIB)
@@ -246,3 +249,9 @@ ra_tiff.o ttyimage.o ximage.o x11image.o:	../common/resolu.h
 pfilt.o:	../common/paths.h ../common/view.h
 
 psign.o:	../common/font.h
+
+pcond.o pcond2.o pcond3.o pcond4.o:	pcond.h ../common/standard.h \
+../common/mat4.h ../common/fvect.h \
+../common/color.h ../common/view.h ../common/resolu.h
+
+pcond.o:	../common/random.h
