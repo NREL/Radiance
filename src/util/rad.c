@@ -1,4 +1,4 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
+/* Copyright (c) 1999 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -1048,11 +1048,12 @@ again:
 	}
 #endif
 	copystruct(&vwr, &stdview);
-	cp = vopts;				/* get -vf files first */
+	sscanview(&vwr, cp=vopts);		/* set initial options */
 	while ((cp = strstr(cp, "-vf ")) != NULL &&
-			*atos(buf, sizeof(buf), cp += 4))
-		viewfile(buf, &vwr, NULL);
-	sscanview(&vwr, vopts);			/* get the rest */
+			*atos(buf, sizeof(buf), cp += 4)) {
+		viewfile(buf, &vwr, NULL);	/* load -vf file */
+		sscanview(&vwr, cp);		/* reset tail */
+	}
 	fputs(VIEWSTR, stdout);
 	fprintview(&vwr, stdout);		/* print full spec. */
 	fputc('\n', stdout);
