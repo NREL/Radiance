@@ -16,8 +16,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "font.h"
 
-#include  "paths.h"
-
 #ifndef	 SSS
 #define	 SSS			3	/* super-sample size */
 #endif
@@ -47,8 +45,6 @@ int  xdim;				/* size of horizontal scan (bytes) */
 #define	 tglbit(x,y)		bitop(x,y,^=)
 
 FONT  *ourfont;				/* our font */
-
-char  *libpath;				/* library search path */
 
 typedef struct line {
 	char  *s;		/* line w/o LF */
@@ -126,8 +122,6 @@ unkopt:
 			exit(1);
 		}
 					/* load font file */
-	if ((libpath = getenv(ULIBVAR)) == NULL)
-		libpath = DEFPATH;
 	ourfont = getfont(fontfile);
 					/* get text */
 	if (an == argc)

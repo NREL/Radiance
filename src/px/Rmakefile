@@ -168,9 +168,6 @@ pinterp:	pinterp.o
 ra_tiff:	ra_tiff.o ../lib/libtiff.a
 	$(CC) $(CFLAGS) -o ra_tiff ra_tiff.o -lrt -ltiff $(MLIB)
 
-psign.o:	psign.c ../common/font.h
-	$(CC) $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c psign.c
-
 ra_tiff.o:	ra_tiff.c
 	$(CC) $(CFLAGS) -Ilibtiff -c ra_tiff.c
 
@@ -223,4 +220,6 @@ pinterp.o protate.o pvalue.o ra_bn.o ra_pict.o ra_pixar.o \
 ra_ppm.o ra_pr.o ra_pr24.o ra_rgbe.o ra_t16.o ra_t8.o glimage.o \
 ra_tiff.o ttyimage.o ximage.o x11image.o:	../common/resolu.h
 
-pfilt.o psign.o:	../common/paths.h
+pfilt.o:	../common/paths.h
+
+psign.o:	../common/font.h

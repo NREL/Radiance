@@ -16,13 +16,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "object.h"
 
-#ifndef  DEFPATH
-#define  DEFPATH	":/usr/local/lib/ray"
-#endif
-
 char  *progname;			/* argv[0] */
-
-char  *libpath;				/* library search path */
 
 int  nowarn = 0;			/* supress warnings? */
 
@@ -46,9 +40,6 @@ char  **argv;
 	int  i;
 
 	progname = argv[0];
-
-	if ((libpath = getenv("RAYPATH")) == NULL)
-		libpath = DEFPATH;
 
 	for (i = 1; i < argc && argv[i][0] == '-'; i++) {
 		switch (argv[i][1]) {
