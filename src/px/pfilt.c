@@ -28,6 +28,9 @@ double  rad = 0.0;		/* output pixel radius for filtering */
 int  nrows = 0;			/* number of rows for output */
 int  ncols = 0;			/* number of columns for output */
 
+double  xrat = 1.0;		/* ratio of input x size to output */
+double  yrat = 1.0;		/* ratio of input y size to output */
+
 int  singlepass = 0;		/* true means skip first pass */
 
 int  avghot = 0;		/* true means average in bright spots */
@@ -86,10 +89,16 @@ char  **argv;
 		if (argv[i][0] == '-')
 			switch (argv[i][1]) {
 			case 'x':
-				ncols = atoi(argv[++i]);
+				if (argv[i][2] == '/')
+					xrat = atof(argv[++i]);
+				else
+					ncols = atoi(argv[++i]);
 				break;
 			case 'y':
-				nrows = atoi(argv[++i]);
+				if (argv[i][2] == '/')
+					yrat = atof(argv[++i]);
+				else
+					nrows = atoi(argv[++i]);
 				break;
 			case 'e':
 				if (argv[i+1][0] == '+' || argv[i+1][0] == '-')
@@ -180,10 +189,14 @@ char  **argv;
 		fprintf(stderr, "%s: bad picture size\n", progname);
 		quit(1);
 	}
-	if (ncols <= 0)
-		ncols = xres;
-	if (nrows <= 0)
-		nrows = yres;
+	if (ncols > 0)
+		xrat = (double)xres/ncols;
+	else
+		ncols = xres/xrat + .5;
+	if (nrows > 0)
+		yrat = (double)yres/nrows;
+	else
+		nrows = yres/yrat + .5;
 
 	if (singlepass) {
 					/* skip exposure, etc. */
