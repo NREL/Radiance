@@ -42,20 +42,8 @@ extern struct rleaves {
 	char		*base;		/* base of allocated memory */
 }	qtL;			/* our pile of leaves */
 
+#define	is_stump(t)	(!((t)->flgs & (BR_ANY|LF_ANY)))
+
 extern RTREE	qtrunk;		/* trunk of quadtree */
 extern double	qtDepthEps;	/* epsilon to compare depths (z fraction) */
 extern int	qtMinNodesiz;	/* minimum node dimension (pixels) */
-
-
-/************************************************************************
- * These driver support routines implement the dev_value() call, but
- * require the following callbacks:
-
-dev_paintr(rgb, x0, y0, x1, y1)	: paint a rectangle
-BYTE	rgb[3];			: rectangle color
-int	x0, y0, x1, y1;		: rectangle boundaries
-
-Draws an open rectangle between [x0,x1) and [y0,y1) with the color rgb.
-This function is called many times by qtUpdate(), qtRedraw() and qtReplant().
-
- ************************************************************************/
