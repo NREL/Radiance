@@ -23,6 +23,8 @@ static char SCCSid[] = "$SunId$ LBL";
 extern double  specthresh;		/* specular sampling threshold */
 extern double  specjitter;		/* specular sampling jitter */
 
+static  gaussamp();
+
 /*
  *	This routine implements the isotropic Gaussian
  *  model described by Ward in Siggraph `92 article.

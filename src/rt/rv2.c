@@ -287,7 +287,7 @@ char  *s;
 			for (cp++; isspace(*cp); cp++)
 				;
 			if (*cp == '\0') {	/* interactive */
-				sprintf(buf, "exposure (%lf): ", exposure);
+				sprintf(buf, "exposure (%f): ", exposure);
 				(*dev->comout)(buf);
 				(*dev->comin)(buf, NULL);
 				for (cp = buf; isspace(*cp); cp++)

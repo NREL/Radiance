@@ -75,6 +75,7 @@ static RAY  thisray;			/* for our convenience */
 static int  oputo(), oputd(), oputv(), oputl(), oputL(),
 		oputp(), oputn(), oputN(), oputs(), oputw(), oputm();
 
+static int  ourtrace(), tabin();
 static int  (*ray_out[10])(), (*every_out[10])();
 static int  castonly;
 
@@ -179,7 +180,7 @@ char  *fname;
 setoutput(vs)				/* set up output tables */
 register char  *vs;
 {
-	extern int  ourtrace(), (*trace)();
+	extern int  (*trace)();
 	register int (**table)() = ray_out;
 
 	castonly = 1;

@@ -53,7 +53,9 @@ static BYTE	clrmap[3][256];
 				/* histogram of colors used */
 static unsigned short	histo[NRED][NGRN][NBLU];
 				/* initial color cube boundary */
-static int	CLRCUBE[3][2] = {0,NRED,0,NGRN,0,NBLU};
+static int	CLRCUBE[3][2] = {{0,NRED},{0,NGRN},{0,NBLU}};
+
+static int	split(), cut();
 
 
 int

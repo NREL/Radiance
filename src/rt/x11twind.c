@@ -36,6 +36,8 @@ extern char  *memset();
 
 extern	char  *calloc(), *malloc();
 
+static  togglecurs();
+
 
 TEXTWIND *
 xt_open(dpy, parent, x, y, width, height, bw, fore, back, fontname)
