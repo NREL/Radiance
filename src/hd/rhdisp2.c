@@ -392,8 +392,9 @@ VIEW	*vold, *vnew;
 	int	netchange = 0;
 	struct cellact	oca, nca;
 	int	ocnt, ncnt;
-	int	c;
+	int	nmatch = 0;
 	GCOORD	*ogcl, *ngcl;
+	register int	c;
 	register GCOORD	*ogcp, *ngcp;
 				/* get old and new cell lists */
 	ogcp = ogcl = getviewcells(&ocnt, hdlist[voxel[voxi].hd], vold);
@@ -405,18 +406,37 @@ VIEW	*vold, *vnew;
 		ocnt = -ocnt;
 	if ((nca.rev = ncnt < 0))
 		ncnt = -ncnt;
-	if (nca.rev == oca.rev)		/* add and delete cells in order */
-		while (ocnt > 0 & ncnt > 0)
-			if ((c = cellcmp(ogcp, ngcp)) > 0) {	/* new cell */
-				netchange += docell(ngcp++, &nca);
-				ncnt--;
-			} else if (c < 0) {			/* old cell */
-				netchange -= docell(ogcp++, &oca);
-				ocnt--;
-			} else {				/* same cell */
-				ogcp++; ocnt--;
-				ngcp++; ncnt--;
+	if (oca.rev == nca.rev) {	/* count matches */
+		int	oc = ocnt, nc = ncnt;
+		while (oc > 0 & nc > 0) {
+			c = cellcmp(ogcp, ngcp);
+			if (c >= 0) { ngcp++; nc--; }
+			if (c <= 0) { ogcp++; oc--; }
+			nmatch += c==0;
+		}
+		ogcp = ogcl; ngcp = ngcl;
+	}
+	if (nmatch < ocnt>>1) {		/* faster to just delete old cells? */
+		for (c = ncbeams; c--; )
+			if (cbeam[c].wants & 1<<voxi) {
+				cbeam[c].wants &= ~(1<<voxi);
+				netchange--;
 			}
+		free((char *)ogcl);
+		ogcl = NULL; ocnt = 0;
+	}
+				/* add and delete cells in order */
+	while (ocnt > 0 & ncnt > 0)
+		if ((c = cellcmp(ogcp, ngcp)) > 0) {	/* new cell */
+			netchange += docell(ngcp++, &nca);
+			ncnt--;
+		} else if (c < 0) {			/* old cell */
+			netchange -= docell(ogcp++, &oca);
+			ocnt--;
+		} else {				/* same cell */
+			ogcp++; ocnt--;
+			ngcp++; ncnt--;
+		}
 				/* take care of list tails */
 	for ( ; ncnt > 0; ncnt--)
 		netchange += docell(ngcp++, &nca);
