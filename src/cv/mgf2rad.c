@@ -63,13 +63,13 @@ char	*argv[];
 		printf(" %s", argv[i]);
 		switch (argv[i][1]) {
 		case 'g':			/* glow distance (meters) */
-			if (argv[i][2] || badarg(argc-i, argv+i, "f"))
+			if (argv[i][2] || badarg(argc-i-1, argv+i+1, "f"))
 				goto userr;
 			glowdist = atof(argv[++i]);
 			printf(" %s", argv[i]);
 			break;
 		case 'e':			/* emitter multiplier */
-			if (argv[i][2] || badarg(argc-i, argv+i, "f"))
+			if (argv[i][2] || badarg(argc-i-1, argv+i+1, "f"))
 				goto userr;
 			emult = atof(argv[++i]);
 			printf(" %s", argv[i]);
