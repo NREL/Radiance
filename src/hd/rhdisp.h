@@ -4,7 +4,6 @@
 
 /*
  * Header for holodeck display drivers.
- * Include after "rholo.h".
  */
 
 				/* display requests */
@@ -16,12 +15,12 @@
 #define DR_DELSET	6		/* delete from current set */
 
 				/* server responses */
-#define DS_BUNDLE	1		/* computed bundle */
-#define DS_ACKNOW	2		/* acknowledge request for attention */
-#define DS_SHUTDOWN	3		/* end process and close connection */
-#define DS_ADDHOLO	4		/* register new holodeck */
-#define DS_STARTIMM	5		/* begin immediate bundle set */
-#define DS_ENDIMM	6		/* end immediate bundle set */
+#define DS_BUNDLE	7		/* computed bundle */
+#define DS_ACKNOW	8		/* acknowledge request for attention */
+#define DS_SHUTDOWN	9		/* end process and close connection */
+#define DS_ADDHOLO	10		/* register new holodeck */
+#define DS_STARTIMM	11		/* begin immediate bundle set */
+#define DS_ENDIMM	12		/* end immediate bundle set */
 
 /*
  * Normally, the server channel has priority, with the display process
@@ -33,37 +32,11 @@
  * Priority returns to normal after the following request.
  */
 
+#ifndef BIGREQSIZ
+#define BIGREQSIZ	512		/* big request size (bytes) */
+#endif
+
 typedef struct {
 	int2	type;		/* message type */
 	int4	nbytes;		/* number of additional bytes */
 } MSGHEAD;		/* message head */
-
-	/* display request message bodies */
-
-			/* DR_BUNDLE */
-#define BUNDLE_REQ	PACKHEAD
-			/* DR_ATTEN */
-/* no body */
-			/* DR_SHUTDOWN */
-/* no body */
-			/* DR_NEWSET */
-/* body is nbytes/sizeof(BUNDLE_REQ) BUNDLE_REQ bodies */
-			/* DR_ADDSET */
-/* body is nbytes/sizeof(PACKHEAD) BUNDLE_REQ bodies */
-			/* DR_DELSET */
-/* body is nbytes/sizeof(PACKHEAD) BUNDLE_REQ bodies */
-
-	/* server response message bodies */
-
-			/* DS_BUNDLE */
-#define BUNDLE_RES	PACKHEAD	/* followed by nr RAYVAL structs */
-			/* DS_ACKNOW */
-/* no body */
-			/* DS_SHUTDOWN */
-/* no body */
-			/* DS_ADDHOLO */
-#define HOLO_RES	HDGRID
-			/* DS_STARTIMM */
-/* no body */
-			/* DS_ENDIMM */
-/* no body */
