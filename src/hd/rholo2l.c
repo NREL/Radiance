@@ -54,7 +54,7 @@ start_rtrace()			/* start rtrace process */
 	rtargv[rtargc++] = "-x"; rtargv[rtargc++] = buf1;
 	rtargv[rtargc++] = "-y"; rtargv[rtargc++] = "0";
 	rtargv[rtargc++] = "-fff";
-	rtargv[rtargc++] = "-ovl";
+	rtargv[rtargc++] = "-ovL";
 	rtargv[rtargc++] = nowarn ? "-w-" : "-w+";
 	if (npt > 1) {
 		rtargv[rtargc++] = "-PP"; rtargv[rtargc++] = PFILE;
