@@ -248,25 +248,16 @@ compnorms(r0, r1, r2, siz)		/* compute row of averaged normals */
 register POINT  *r0, *r1, *r2;
 int  siz;
 {
-	FVECT  v1, v2, vc;
+	FVECT  v1, v2;
 	register int  i;
 
 	if (!smooth)			/* not needed if no smoothing */
 		return;
 					/* compute middle points */
 	while (siz-- >= 0) {
-		fvsum(v1, r2[0].p, r1[0].p, -1.0);
-		fvsum(v2, r1[1].p, r1[0].p, -1.0);
+		fvsum(v1, r2[0].p, r0[0].p, -1.0);
+		fvsum(v2, r1[1].p, r1[-1].p, -1.0);
 		fcross(r1[0].n, v1, v2);
-		fvsum(v1, r0[0].p, r1[0].p, -1.0);
-		fcross(vc, v2, v1);
-		fvsum(r1[0].n, r1[0].n, vc, 1.0);
-		fvsum(v2, r1[-1].p, r1[0].p, -1.0);
-		fcross(vc, v1, v2);
-		fvsum(r1[0].n, r1[0].n, vc, 1.0);
-		fvsum(v1, r2[0].p, r1[0].p, -1.0);
-		fcross(vc, v2, v1);
-		fvsum(r1[0].n, r1[0].n, vc, 1.0);
 		normalize(r1[0].n);
 		r0++; r1++; r2++;
 	}
@@ -351,14 +342,14 @@ double mat[4][4],inverse[4][4];
 			inverse[i][j] = i==j ? 1.0 : 0.0;
 
 	for(i = 0; i < 4; i++) {
-		/* Look for raw with largest pivot and swap raws */
+		/* Look for row with largest pivot and swap rows */
 		temp = FTINY; j = -1;
 		for(k = i; k < 4; k++)
 			if(ABS(m4tmp[k][i]) > temp) {
 				temp = ABS(m4tmp[k][i]);
 				j = k;
 				}
-		if(j == -1)	/* No replacing raw -> no inverse */
+		if(j == -1)	/* No replacing row -> no inverse */
 			return(0);
 		if (j != i)
 			for(k = 0; k < 4; k++) {
