@@ -11,6 +11,8 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "radogl.h"
 #include "octree.h"
 
+#define MAXLEVEL	16		/* maximum instance hierarchy level */
+
 typedef struct {
 	int	listid;				/* our list id */
 	short	localmatl;			/* uses local material only */
@@ -101,10 +103,13 @@ LUENT	*lp;
 int
 loadoctrees()				/* load octrees we've saved up */
 {
+	int	levelsleft = MAXLEVEL;
 	int	nocts = 0;
 	LUTAB	looptab;
 				/* loop through new octree references */
 	while (ottab.tsiz) {
+		if (!levelsleft--)
+			error(USER, "too many octree levels -- instance loop?");
 		copystruct(&looptab, &ottab);
 		ottab.tsiz = 0;
 		nocts += lu_doall(&looptab, buildoctlist);
