@@ -183,7 +183,7 @@ sphere.o t_data.o t_func.o:	ray.h standard.h fvect.h object.h color.h
 
 rv2.o rv3.o rview.o:	rpaint.h driver.h view.h
 
-dielectric.o normal.o source.o:	source.h
+normal.o source.o:	source.h
 
 cone.o data.o face.o misc.o objset.o octree.o otypes.o \
 readobj.o readoct.o rview.o:	standard.h fvect.h
