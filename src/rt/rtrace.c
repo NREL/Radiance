@@ -16,6 +16,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *	xorg	yorg	zorg	xdir	ydir	zdir
  *
  *  The direction need not be normalized.  Output is flexible.
+ *  If the direction vector is (0,0,0), then the output is flushed.
  *  All values default to ascii representation of real
  *  numbers.  Binary representations can be selected
  *  with '-ff' for float or '-fd' for double.  By default,
@@ -94,14 +95,16 @@ char  *fname;
 	while (getvec(orig, inform, fp) == 0 &&
 			getvec(direc, inform, fp) == 0) {
 
-		if (normalize(direc) == 0.0)
-			error(USER, "zero direction vector");
+		if (normalize(direc) == 0.0) {		/* zero ==> flush */
+			fflush(stdout);
+			continue;
+		}
 							/* compute and print */
 		if (outvals[0] == 'i')
 			irrad(orig, direc);
 		else
 			radiance(orig, direc);
-							/* flush if requested */
+							/* flush if time */
 		if (--nextflush == 0) {
 			fflush(stdout);
 			nextflush = hresolu;
