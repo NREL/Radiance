@@ -25,6 +25,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "vfork.h"
 
+#ifndef BSD
+#include  <errno.h>
+#endif
+
 
 int
 open_process(pd, av)		/* open communication to separate process */
@@ -101,13 +105,18 @@ char	*bpos;
 int	siz;
 {
 	register int	cc = 0, nrem = siz;
-
+retry:
 	while (nrem > 0 && (cc = read(fd, bpos, nrem)) > 0) {
 		bpos += cc;
 		nrem -= cc;
 	}
-	if (cc < 0)
+	if (cc < 0) {
+#ifndef BSD
+		if (errno == EINTR)	/* we were interrupted! */
+			goto retry;
+#endif
 		return(cc);
+	}
 	return(siz-nrem);
 }
 
@@ -119,12 +128,17 @@ char	*bpos;
 int	siz;
 {
 	register int	cc = 0, nrem = siz;
-
+retry:
 	while (nrem > 0 && (cc = write(fd, bpos, nrem)) > 0) {
 		bpos += cc;
 		nrem -= cc;
 	}
-	if (cc < 0)
+	if (cc < 0) {
+#ifndef BSD
+		if (errno == EINTR)	/* we were interrupted! */
+			goto retry;
+#endif
 		return(cc);
+	}
 	return(siz-nrem);
 }
