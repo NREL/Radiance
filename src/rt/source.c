@@ -140,13 +140,10 @@ register int  sn;		/* source number */
 	}
 	if (dstrsrc > FTINY) {
 					/* distribute source direction */
-		dimlist[ndims++] = sn;
-		for (i = 0; i < 3; i++) {
-			dimlist[ndims] = i + 8831;
-			vd[i] = dstrsrc * source[sn].ss *
-		(1.0 - 2.0*urand(urind(ilhash(dimlist,ndims+1),samplendx)));
-		}
-		ndims--;
+		dimlist[ndims] = sn + 8831;
+		peano(vd, 3, urand(ilhash(dimlist,ndims+1)+samplendx), .01);
+		for (i = 0; i < 3; i++)
+			vd[i] = dstrsrc * source[sn].ss * (1. - 2.*vd[i]);
 		if (source[sn].sflags & SFLAT) {	/* project offset */
 			d = DOT(vd, source[sn].snorm);
 			for (i = 0; i < 3; i++)

@@ -318,9 +318,9 @@ register int  sn;	/* target source number */
 #endif
 				return(f);	/* too small a target! */
 			}
+			peano(offsdir, 3, urand(931*i+5827+ssn), .005);
 			for (i = 0; i < 3; i++)
-				offsdir[i] = or*(1. -
-					2.*urand(urind(931*i+5827,ssn)));
+				offsdir[i] = or*(1. - 2.*offsdir[i]);
 			ssn++;
 			for (i = 0; i < 3; i++)
 				sr.rorg[i] = oc[i] + offsdir[i];
