@@ -122,23 +122,34 @@ proc helpopen fname {			# open the named help file
 	wm title .helpwin $fname
 	set curhelp(title) "[string toupper\
 			[file rootname [file tail $fname]]]  HELP"
+	set ifile [file rootname $fname].ndx
 	wm iconname .helpwin [string tolower $curhelp(title)]
 	.helpwin.txt configure -state normal
 	.helpwin.txt delete 1.0 end
 	.helpwin.txt insert end "Loading $fname..."
 	update
 	set curhelp(fid) [open $fname r]
-	set curhelp(catlist) {}
-	while {[gets $curhelp(fid) li] >= 0} {
-		if [regexp -nocase {^\.([A-Z][A-Z0-9]*)\.([A-Z][A-Z0-9]*)$} \
-				$li dummy cat top] {
-			lappend helpindex([string toupper $cat]) $top
-			set helpindex([string toupper $cat,$top]) \
-					[tell $curhelp(fid)]
-			if {[lsearch -exact $curhelp(catlist) $cat] < 0} {
-				lappend curhelp(catlist) $cat
+	if {! [file exists $ifile] ||
+			[file mtime $fname] > [file mtime $ifile]} {
+		set curhelp(catlist) {}
+		while {[gets $curhelp(fid) li] >= 0} {
+			if [regexp -nocase {^\.([A-Z][A-Z0-9]*)\.([A-Z][A-Z0-9]*)$} \
+					$li dummy cat top] {
+				lappend helpindex([string toupper $cat]) $top
+				set helpindex([string toupper $cat,$top]) \
+						[tell $curhelp(fid)]
+				if {[lsearch -exact $curhelp(catlist) $cat] < 0} {
+					lappend curhelp(catlist) $cat
+				}
 			}
 		}
+		if {! [catch {set fi [open $ifile w]}]} {
+			writevars $fi {curhelp(catlist) helpindex}
+			close $fi
+			catch {exec chmod 666 $ifile}
+		}
+	} else {
+		source $ifile
 	}
 	.helpwin.but.catb.m delete 0 last
 	foreach cat $curhelp(catlist) {
