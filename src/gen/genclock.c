@@ -107,7 +107,7 @@ genclock()				/* put out clock body */
 	printf("\n%s ring %s.case_front\n", casemat, name);
 	printf("0\n0\n8\t.12\t0\t0\n\t1\t0\t0\n\t1\t1.1\n");
 	printf("\n%s cylinder %s.case_inner\n", casemat, name);
-	printf("0\n0\n7\t.05\t0\t0\n\t.15\t0\t0\n\t1\n");
+	printf("0\n0\n7\t.05\t0\t0\n\t.12\t0\t0\n\t1\n");
 	printf("\nclock_crystal ring %s.crystal\n", name);
 	printf("0\n0\n8\t.10\t0\t0\n\t1\t0\t0\n\t0\t1\n");
 	printf("\nclock_face_paint ring %s.face\n", name);
