@@ -222,6 +222,8 @@ tmLoadPicture(TMbright **lpp, BYTE **cpp, int *xp, int *yp,
 		char *fname, FILE *fp);
 /*
 	Load Radiance picture and convert to tone mapping representation.
+	Memory for the luminance and chroma arrays is allocated using
+	malloc(3), and should be freed with free(3) when no longer needed.
 	Calls tmSetSpace() to calibrate input color space.
 
 	lpp	-	returned array of encoded luminances, English ordering.
@@ -243,6 +245,8 @@ tmMapPicture(BYTE **psp, int *xp, int *yp, int flags,
 	If fp is TM_GETFILE and (flags&TM_F_UNIMPL)!=0, tmMapPicture()
 	calls pcond to perform the actual conversion, which takes
 	longer but gives access to all the TM_F_* features.
+	Memory for the final pixel array is allocated using malloc(3),
+	and should be freed with free(3) when it is no longer needed.
 
 	psp	-	returned array of tone mapped pixels, English ordering.
 	xp, yp	-	returned picture dimensions.
@@ -316,7 +320,7 @@ tmDone(struct tmStruct *tms);
 	pixel values to chroma and luminance encodings, which can
 	be passed to tmAddHisto() to put into the tone mapping histogram.
 	This histogram is then used along with the display parameters
-	by tmComputMapping() to compute the luminance mapping function.
+	by tmComputeMapping() to compute the luminance mapping function.
 	(Colors are tone-mapped as they are converted if TM_F_MESOPIC
 	is set.)  The encoded chroma and luminance values may then be
 	passed to tmMapPixels() to apply the computed tone mapping in
