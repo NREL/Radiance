@@ -8,7 +8,7 @@
 #define textcursor (_)
 #define textshadowgray .85
 #define minfrac .1
-#define gammacorrection 2.12
+#define gammacorrection 1.77
 
 #define inputbuffer nws_inputbuffer
 #define pos nws_pos
