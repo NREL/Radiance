@@ -722,10 +722,10 @@ getfull()			/* get full (24-bit) data */
 			shiftcolrs(scanline, xmax, scale);
 		colrs_gambs(scanline, xmax);
 		add2icon(y, scanline);
-		for (x = 0; x < xmax; x++) {
-			*dp++ = scanline[x][RED];
-			*dp++ = scanline[x][GRN];
+		for (x = 0; x < xmax; x++) {	/* BGR byte ordering */
 			*dp++ = scanline[x][BLU];
+			*dp++ = scanline[x][GRN];
+			*dp++ = scanline[x][RED];
 		}
 	}
 }
