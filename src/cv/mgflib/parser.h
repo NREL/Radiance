@@ -79,6 +79,9 @@ extern char	*mg_err[MG_NERRS];
  * To read from standard input, use NULL as the file name.
  * For additional control over error reporting and file management,
  * use mg_open, mg_read, mg_parse and mg_close instead of mg_load.
+ * To pass an entity of your own construction to the parser, use
+ * the mg_handle function rather than the mg_ehand routines directly.
+ * (The first argument to mg_handle is the entity #, or -1.)
  * To free any data structures and clear the parser, use mg_clear.
  * If there is an error, mg_load, mg_open, mg_parse, and mg_rewind
  * will return an error from the list above.  In addition, mg_load
@@ -92,10 +95,17 @@ extern char	*mg_err[MG_NERRS];
 typedef struct mg_fctxt {
 	char	fname[96];			/* file name */
 	FILE	*fp;				/* stream pointer */
+	int	fid;				/* unique file context id */
 	char	inpline[MG_MAXLINE];		/* input line */
 	int	lineno;				/* line number */
 	struct mg_fctxt	*prev;			/* previous context */
 } MG_FCTXT;
+
+typedef struct {
+	int	fid;				/* file this position is for */
+	int	lineno;				/* line number in file */
+	long	offset;				/* offset from beginning */
+} MG_FPOS;
 
 extern MG_FCTXT	*mg_file;		/* current file context */
 
@@ -105,20 +115,22 @@ extern int	mg_load();		/* parse a file */
 extern int	mg_open();		/* open new input file */
 extern int	mg_read();		/* read next line */
 extern int	mg_parse();		/* parse current line */
-extern int	mg_rewind();		/* rewind input file */
+extern void	mg_fgetpos();		/* get position on input file */
+extern int	mg_fgoto();		/* go to position on input file */
 extern void	mg_close();		/* close input file */
 extern void	mg_clear();		/* clear parser */
-extern int	mg_iterate();
+extern int	mg_handle();		/* handle an entity */
 #else
 extern void	mg_init(void);		/* fill in mg_ehand array */
 extern int	mg_load(char *);	/* parse a file */
 extern int	mg_open(MG_FCTXT *, char *);	/* open new input file */
 extern int	mg_read(void);		/* read next line */
 extern int	mg_parse(void);		/* parse current line */
-extern int	mg_rewind(void);	/* rewind input file */
+extern void	mg_fgetpos(MG_FPOS *);	/* get position on input file */
+extern int	mg_fgoto(MG_FPOS *);	/* go to position on input file */
 extern void	mg_close(void);		/* close input file */
 extern void	mg_clear(void);		/* clear parser */
-extern int	mg_iterate(int, char **, int (*)(void));
+extern int	mg_handle(int, int, char **);	/* handle an entity */
 #endif
 
 #ifndef MG_NQCD
@@ -320,13 +332,25 @@ typedef struct {
 
 #define identxf(xp)		(void)(setident4((xp)->xfm),(xp)->sca=1.0)
 
+#define XF_MAXDIM	8		/* maximum array dimensions */
+
+struct xf_array {
+	MG_FPOS	spos;			/* starting position on input */
+	int	ndim;			/* number of array dimensions */
+	struct {
+		short	i, n;		/* current count and maximum */
+		char	arg[8];		/* string argument value */
+	} aarg[XF_MAXDIM];
+};
+
 typedef struct xf_spec {
-	long	xid;		/* unique transform id */
-	short	xac;		/* transform argument count */
-	short	xav0;		/* zeroeth argument in xf_argv array */
-	XF	xf;		/* cumulative transformation */
-	struct xf_spec	*prev;	/* previous transformation context */
-} XF_SPEC;
+	long	xid;			/* unique transform id */
+	short	xav0;			/* zeroeth argument in xf_argv array */
+	short	xac;			/* transform argument count */
+	XF	xf;			/* cumulative transformation */
+	struct xf_array	*xarr;		/* transformation array pointer */
+	struct xf_spec	*prev;		/* previous transformation context */
+} XF_SPEC;			/* followed by argument buffer */
 
 extern int	xf_argc;			/* total # transform args. */
 extern char	**xf_argv;			/* transform arguments */

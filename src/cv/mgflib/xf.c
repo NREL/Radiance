@@ -27,13 +27,161 @@ XF_SPEC	*xf_context;			/* current context */
 
 static int	xf_maxarg;		/* # allocated arguments */
 
+static XF_SPEC	*new_xf();
+static long	comp_xfid();
+static int	put_oname();
+
 
 int
 xf_handler(ac, av)		/* handle xf entity */
 int	ac;
 char	**av;
 {
-#define randshift(x,n)	((long)(x) << shifttab[(n)&63])
+	register XF_SPEC	*spec;
+	register int	n;
+	int	rv;
+	XF	thisxf;
+
+	if (ac == 1) {			/* something with existing transform */
+		if ((spec = xf_context) == NULL)
+			return(MG_OK);		/* should be error? */
+		n = -1;
+		if (spec->xarr != NULL) {	/* check for iteration */
+			register struct xf_array	*ap = spec->xarr;
+
+			(void)put_oname((struct xf_array *)NULL);
+			n = ap->ndim;
+			while (n--) {
+				if (++ap->aarg[n].i < ap->aarg[n].n)
+					break;
+				(void)strcpy(ap->aarg[n].arg, "0");
+				ap->aarg[n].i = 0;
+			}
+			if (n >= 0) {
+				if ((rv = mg_fgoto(&ap->spos)) != MG_OK)
+					return(rv);
+				sprintf(ap->aarg[n].arg, "%d", ap->aarg[n].i);
+				(void)put_oname(ap);
+			} else
+				free((MEM_PTR)ap);
+		}
+		if (n < 0) {			/* pop transform */
+			xf_argv[xf_argc=spec->xav0] = NULL;
+			xf_context = spec->prev;
+			free((MEM_PTR)spec);
+			return(MG_OK);
+		}
+	} else {			/* else allocate transform */
+		if ((spec = new_xf(ac-1, av+1)) == NULL)
+			return(MG_EMEM);
+		spec->prev = xf_context;	/* push onto stack */
+		xf_context = spec;
+	}
+					/* translate new specification */
+	if (xf(&thisxf, spec->xac, &xf_argv[spec->xav0]) != spec->xac)
+		return(MG_ETYPE);
+					/* compute total transformation */
+	if (spec->prev != NULL) {
+		multmat4(spec->xf.xfm, spec->prev->xf.xfm, thisxf.xfm);
+		spec->xf.sca = spec->prev->xf.sca * thisxf.sca;
+	} else
+		spec->xf = thisxf;
+	spec->xid = comp_xfid(spec->xf.xfm);	/* compute unique ID */
+	return(MG_OK);
+}
+
+
+static XF_SPEC *
+new_xf(ac, av)			/* allocate new transform structure */
+int	ac;
+char	**av;
+{
+	register XF_SPEC	*spec;
+	register int	i;
+	char	*cp;
+	int	n, ndim;
+
+	ndim = 0;
+	n = 0;				/* compute space req'd by arguments */
+	for (i = 0; i < ac; i++)
+		if (!strcmp(av[i], "-a")) {
+			ndim++;
+			i++;
+		} else
+			n += strlen(av[i]) + 1;
+	if (ndim > XF_MAXDIM)
+		return(NULL);
+	spec = (XF_SPEC *)malloc(sizeof(XF_SPEC) + n);
+	if (spec == NULL)
+		return(NULL);
+	if (ndim) {
+		spec->xarr = (struct xf_array *)malloc(sizeof(struct xf_array));
+		if (spec->xarr == NULL)
+			return(NULL);
+		mg_fgetpos(&spec->xarr->spos);
+		spec->xarr->ndim = 0;		/* incremented below */
+	} else
+		spec->xarr = NULL;
+	spec->xav0 = xf_argc;
+	spec->xac = ac;
+					/* and store new xf arguments */
+	if (xf_argc+ac+1 > xf_maxarg) {
+		if (!xf_maxarg)
+			xf_argv = (char **)malloc(
+					(xf_maxarg=ac+1)*sizeof(char *));
+		else
+			xf_argv = (char **)realloc((MEM_PTR)xf_argv,
+				(xf_maxarg=xf_argc+ac+1)*sizeof(char *));
+		if (xf_argv == NULL)
+			return(NULL);
+	}
+	cp = (char *)(spec + 1);	/* use memory allocated above */
+	for (i = 0; i < ac; i++)
+		if (!strcmp(av[i], "-a")) {
+			xf_argv[xf_argc++] = "-i";
+			xf_argv[xf_argc++] = strcpy(
+					spec->xarr->aarg[spec->xarr->ndim].arg,
+					"0");
+			spec->xarr->aarg[spec->xarr->ndim].i = 0;
+			spec->xarr->aarg[spec->xarr->ndim++].n = atoi(av[++i]);
+		} else {
+			xf_argv[xf_argc++] = strcpy(cp, av[i]);
+			cp += strlen(av[i]) + 1;
+		}
+	xf_argv[xf_argc] = NULL;
+	if (spec->xarr != NULL)
+		(void)put_oname(spec->xarr);
+	return(spec);
+}
+
+
+static int
+put_oname(ap)			/* put out name for this instance */
+register struct xf_array	*ap;
+{
+	static char	oname[10*XF_MAXDIM];
+	static char	*oav[3] = {mg_ename[MG_E_OBJECT], oname};
+	register int	i;
+	register char	*cp1, *cp2;
+
+	if (ap == NULL)
+		return(mg_handle(MG_E_OBJECT, 1, oav));
+	cp1 = oname;
+	*cp1 = 'a';
+	for (i = 0; i < ap->ndim; i++) {
+		for (cp2 = ap->aarg[i].arg; *cp2; )
+			*++cp1 = *cp2++;
+		*++cp1 = '.';
+	}
+	*cp1 = '\0';
+	return(mg_handle(MG_E_OBJECT, 2, oav));
+}
+
+
+static long
+comp_xfid(xfm)			/* compute unique ID from matrix */
+register MAT4	xfm;
+{
 	static char	shifttab[64] = { 15, 5, 11, 5, 6, 3,
 				9, 15, 13, 2, 13, 5, 2, 12, 14, 11,
 				11, 12, 12, 3, 2, 11, 8, 12, 1, 12,
@@ -42,60 +190,12 @@ char	**av;
 				13, 9, 12, 8, 1, 6, 5, 12, 7, 13,
 				15, 8, 9, 2, 6, 11, 9, 11 };
 	register int	i;
-	register XF_SPEC	*spec;
-	XF	thisxf;
+	register long	xid;
 
-	if (ac == 1) {			/* pop top transform */
-		if ((spec = xf_context) == NULL)
-			return(MG_OK);		/* should be error? */
-		while (xf_argc > spec->xav0)
-			free((MEM_PTR)xf_argv[--xf_argc]);
-		xf_argv[xf_argc] = NULL;
-		xf_context = spec->prev;
-		free((MEM_PTR)spec);
-		return(MG_OK);
-	}
-					/* translate new specification */
-	if (xf(&thisxf, ac-1, av+1) != ac-1)
-		return(MG_ETYPE);
-					/* allocate space for new transform */
-	spec = (XF_SPEC *)malloc(sizeof(XF_SPEC));
-	if (spec == NULL)
-		return(MG_EMEM);
-	spec->xav0 = xf_argc;
-	spec->xac = ac-1;
-					/* and store new xf arguments */
-	if (xf_argc+ac > xf_maxarg) {
-		if (!xf_maxarg)
-			xf_argv = (char **)malloc(
-					(xf_maxarg=ac)*sizeof(char *));
-		else
-			xf_argv = (char **)realloc((MEM_PTR)xf_argv,
-					(xf_maxarg+=ac)*sizeof(char *));
-		if (xf_argv == NULL)
-			return(MG_EMEM);
-	}
-	for (i = 0; i < ac-1; i++) {
-		xf_argv[xf_argc] = (char *)malloc(strlen(av[i+1])+1);
-		if (xf_argv[xf_argc] == NULL)
-			return(MG_EMEM);
-		strcpy(xf_argv[xf_argc++], av[i+1]);
-	}
-	xf_argv[xf_argc] = NULL;
-					/* compute total transformation */
-	if (xf_context != NULL) {
-		multmat4(spec->xf.xfm, xf_context->xf.xfm, thisxf.xfm);
-		spec->xf.sca = xf_context->xf.sca * thisxf.sca;
-	} else
-		spec->xf = thisxf;
-	spec->xid = 0;			/* compute unique transform id */
+	xid = 0;			/* compute unique transform id */
 	for (i = 0; i < sizeof(MAT4)/sizeof(unsigned short); i++)
-		spec->xid ^= randshift(((unsigned short *)&spec->xf.xfm)[i],i);
-
-	spec->prev = xf_context;	/* push new transform onto stack */
-	xf_context = spec;
-	return(MG_OK);
-#undef randshift
+		xid ^= (long)(((unsigned short *)xfm)[i]) << shifttab[i&63];
+	return(xid);
 }
 
 
@@ -104,15 +204,16 @@ xf_clear()			/* clear transform stack */
 {
 	register XF_SPEC	*spec;
 
-	while (xf_argc)
-		free((MEM_PTR)xf_argv[--xf_argc]);
 	if (xf_maxarg) {
 		free((MEM_PTR)xf_argv);
 		xf_argv = NULL;
 		xf_maxarg = 0;
 	}
+	xf_argc = 0;
 	while ((spec = xf_context) != NULL) {
 		xf_context = spec->prev;
+		if (spec->xarr != NULL)
+			free((MEM_PTR)spec->xarr);
 		free((MEM_PTR)spec);
 	}
 }

@@ -187,8 +187,8 @@ char	*name;
 }
 
 
-static int
-handle_it(en, ac, av)		/* pass entity to appropriate handler */
+int
+mg_handle(en, ac, av)		/* pass entity to appropriate handler */
 register int	en;
 int	ac;
 char	**av;
@@ -210,9 +210,11 @@ mg_open(ctx, fn)			/* open new input file */
 register MG_FCTXT	*ctx;
 char	*fn;
 {
+	static int	nfids;
 	int	olen;
 	register char	*cp;
 
+	ctx->fid = ++nfids;
 	ctx->lineno = 0;
 	if (fn == NULL) {
 		strcpy(ctx->fname, "<stdin>");
@@ -251,16 +253,31 @@ mg_close()			/* close input file */
 }
 
 
-int
-mg_rewind()			/* rewind input file */
+void
+mg_fgetpos(pos)			/* get current position in input file */
+register MG_FPOS	*pos;
 {
-	if (mg_file->lineno == 0)
+	extern long	ftell();
+
+	pos->fid = mg_file->fid;
+	pos->lineno = mg_file->lineno;
+	pos->offset = ftell(mg_file->fp);
+}
+
+
+int
+mg_fgoto(pos)			/* reposition input file pointer */
+register MG_FPOS	*pos;
+{
+	if (pos->fid != mg_file->fid)
+		return(MG_ESEEK);
+	if (pos->lineno == mg_file->lineno)
 		return(MG_OK);
 	if (mg_file->fp == stdin)
 		return(MG_ESEEK);	/* cannot seek on standard input */
-	if (fseek(mg_file->fp, 0L, 0) == EOF)
+	if (fseek(mg_file->fp, pos->offset, 0) == EOF)
 		return(MG_ESEEK);
-	mg_file->lineno = 0;
+	mg_file->lineno = pos->lineno;
 	return(MG_OK);
 }
 
@@ -309,7 +326,7 @@ mg_parse()			/* parse current input line */
 		return(MG_OK);		/* no words in line */
 	*ap = NULL;
 					/* else handle it */
-	return(handle_it(-1, ap-argv, argv));
+	return(mg_handle(-1, ap-argv, argv));
 }
 
 
@@ -344,59 +361,6 @@ mg_clear()			/* clear parser history */
 }
 
 
-int
-mg_iterate(ac, av, f)		/* iterate on statement */
-int	ac;
-register char	**av;
-int	(*f)();
-{
-	int	niter, rval;
-	register int	i, j;
-	char	*argv[MG_MAXARGC];
-	char	cntbuf[10];
-					/* build partial transformation */
-	for (i = 0; i < ac; i++) {
-		if (av[i][0] == '-' && av[i][1] == 'a' && av[i][2] == '\0')
-			break;
-		argv[i+1] = av[i];
-	}
-	argv[i+1] = NULL;
-	if (i) {			/* handle transformation */
-		argv[0] = mg_ename[MG_E_XF];
-		if ((rval = handle_it(MG_E_XF, i+1, argv)) != MG_OK)
-			return(rval);
-	}
-	if (i < ac) {			/* run array */
-		if (i+1 >= ac || !isint(av[i+1]))
-			return(MG_ETYPE);
-		niter = atoi(av[i+1]);
-		argv[0] = mg_ename[MG_E_OBJECT];
-		argv[1] = cntbuf;
-		for (j = 2; j+i < ac; j++)
-			argv[j] = av[j+i];
-		argv[j] = NULL;
-		for (j = 0; j < niter; j++) {
-			sprintf(cntbuf, "%d", j);
-			if ((rval = handle_it(MG_E_OBJECT, 2, argv)) != MG_OK)
-				return(rval);
-			argv[0] = "-i";
-			if ((rval = mg_iterate(ac-i, argv, f)) != MG_OK)
-				return(rval);
-			argv[0] = mg_ename[MG_E_OBJECT];
-			if ((rval = handle_it(MG_E_OBJECT, 1, argv)) != MG_OK)
-				return(rval);
-		}
-	} else if ((rval = (*f)()) != MG_OK)	/* else do this instance */
-			return(rval);
-	if (i) {			/* reset the transform */
-		argv[0] = mg_ename[MG_E_XF];
-		argv[1] = NULL;
-		(void)handle_it(MG_E_XF, 1, argv);
-	}
-	return(MG_OK);
-}
-
-
 /****************************************************************************
  *	The following routines handle unsupported entities
  */
@@ -412,24 +376,11 @@ char	**av;
 
 
 static int
-reload_file()			/* reload current MGF file */
-{
-	register int	rval;
-
-	if ((rval = mg_rewind()) != MG_OK)
-		return(rval);
-	while (mg_read())
-		if ((rval = mg_parse()) != MG_OK)
-			return(rval);
-	return(MG_OK);
-}
-
-
-static int
 e_include(ac, av)		/* include file */
 int	ac;
 char	**av;
 {
+	char	*xfarg[MG_MAXARGC];
 	MG_FCTXT	ictx;
 	int	rv;
 
@@ -437,11 +388,28 @@ char	**av;
 		return(MG_EARGC);
 	if ((rv = mg_open(&ictx, av[1])) != MG_OK)
 		return(rv);
-	if ((rv = mg_iterate(ac-2, av+2, reload_file)) != MG_OK) {
-		fprintf(stderr, "%s: %d: %s:\n%s", ictx.fname,
-				ictx.lineno, mg_err[rv], ictx.inpline);
-		mg_close();
-		return(MG_EINCL);
+	if (ac > 2) {
+		register int	i;
+
+		xfarg[0] = mg_ename[MG_E_XF];
+		for (i = 1; i < ac-1; i++)
+			xfarg[i] = av[i+1];
+		xfarg[ac-1] = NULL;
+		if ((rv = mg_handle(MG_E_XF, ac-1, xfarg)) != MG_OK)
+			return(rv);
+	}
+	while (!feof(mg_file->fp)) {
+		while (mg_read())
+			if ((rv = mg_parse()) != MG_OK) {
+				fprintf(stderr, "%s: %d: %s:\n%s", ictx.fname,
+						ictx.lineno, mg_err[rv],
+						ictx.inpline);
+				mg_close();
+				return(MG_EINCL);
+			}
+		if (ac > 2)
+			if ((rv = mg_handle(MG_E_XF, 1, xfarg)) != MG_OK)
+				return(rv);
 	}
 	mg_close();
 	return(MG_OK);
@@ -490,26 +458,26 @@ char	**av;
 	rad = atof(av[2]);
 					/* initialize */
 	warpconends = 1;
-	if ((rval = handle_it(MG_E_VERTEX, 3, v2ent)) != MG_OK)
+	if ((rval = mg_handle(MG_E_VERTEX, 3, v2ent)) != MG_OK)
 		return(rval);
 	sprintf(p2x, FLTFMT, cv->p[0]);
 	sprintf(p2y, FLTFMT, cv->p[1]);
 	sprintf(p2z, FLTFMT, cv->p[2]+rad);
-	if ((rval = handle_it(MG_E_POINT, 4, p2ent)) != MG_OK)
+	if ((rval = mg_handle(MG_E_POINT, 4, p2ent)) != MG_OK)
 		return(rval);
 	r2[0] = '0'; r2[1] = '\0';
 	for (i = 1; i <= 2*mg_nqcdivs; i++) {
 		theta = i*(PI/2)/mg_nqcdivs;
-		if ((rval = handle_it(MG_E_VERTEX, 4, v1ent)) != MG_OK)
+		if ((rval = mg_handle(MG_E_VERTEX, 4, v1ent)) != MG_OK)
 			return(rval);
 		sprintf(p2z, FLTFMT, cv->p[2]+rad*cos(theta));
-		if ((rval = handle_it(MG_E_VERTEX, 2, v2ent)) != MG_OK)
+		if ((rval = mg_handle(MG_E_VERTEX, 2, v2ent)) != MG_OK)
 			return(rval);
-		if ((rval = handle_it(MG_E_POINT, 4, p2ent)) != MG_OK)
+		if ((rval = mg_handle(MG_E_POINT, 4, p2ent)) != MG_OK)
 			return(rval);
 		strcpy(r1, r2);
 		sprintf(r2, FLTFMT, rad*sin(theta));
-		if ((rval = handle_it(MG_E_CONE, 5, conent)) != MG_OK)
+		if ((rval = mg_handle(MG_E_CONE, 5, conent)) != MG_OK)
 			return(rval);
 	}
 	warpconends = 0;
@@ -564,26 +532,26 @@ char	**av;
 	for (j = 0; j < 3; j++)
 		sprintf(p2[j], FLTFMT, cv->p[j] +
 				.5*sgn*(maxrad-minrad)*cv->n[j]);
-	if ((rval = handle_it(MG_E_VERTEX, 4, v2ent)) != MG_OK)
+	if ((rval = mg_handle(MG_E_VERTEX, 4, v2ent)) != MG_OK)
 		return(rval);
-	if ((rval = handle_it(MG_E_POINT, 4, p2ent)) != MG_OK)
+	if ((rval = mg_handle(MG_E_POINT, 4, p2ent)) != MG_OK)
 		return(rval);
 	sprintf(r2, FLTFMT, avgrad=.5*(minrad+maxrad));
 					/* run outer section */
 	for (i = 1; i <= 2*mg_nqcdivs; i++) {
 		theta = i*(PI/2)/mg_nqcdivs;
-		if ((rval = handle_it(MG_E_VERTEX, 4, v1ent)) != MG_OK)
+		if ((rval = mg_handle(MG_E_VERTEX, 4, v1ent)) != MG_OK)
 			return(rval);
 		for (j = 0; j < 3; j++)
 			sprintf(p2[j], FLTFMT, cv->p[j] +
 				.5*sgn*(maxrad-minrad)*cos(theta)*cv->n[j]);
-		if ((rval = handle_it(MG_E_VERTEX, 2, v2ent)) != MG_OK)
+		if ((rval = mg_handle(MG_E_VERTEX, 2, v2ent)) != MG_OK)
 			return(rval);
-		if ((rval = handle_it(MG_E_POINT, 4, p2ent)) != MG_OK)
+		if ((rval = mg_handle(MG_E_POINT, 4, p2ent)) != MG_OK)
 			return(rval);
 		strcpy(r1, r2);
 		sprintf(r2, FLTFMT, avgrad + .5*(maxrad-minrad)*sin(theta));
-		if ((rval = handle_it(MG_E_CONE, 5, conent)) != MG_OK)
+		if ((rval = mg_handle(MG_E_CONE, 5, conent)) != MG_OK)
 			return(rval);
 	}
 					/* run inner section */
@@ -593,15 +561,15 @@ char	**av;
 		for (j = 0; j < 3; j++)
 			sprintf(p2[j], FLTFMT, cv->p[j] +
 				.5*sgn*(maxrad-minrad)*cos(theta)*cv->n[j]);
-		if ((rval = handle_it(MG_E_VERTEX, 4, v1ent)) != MG_OK)
+		if ((rval = mg_handle(MG_E_VERTEX, 4, v1ent)) != MG_OK)
 			return(rval);
-		if ((rval = handle_it(MG_E_VERTEX, 2, v2ent)) != MG_OK)
+		if ((rval = mg_handle(MG_E_VERTEX, 2, v2ent)) != MG_OK)
 			return(rval);
-		if ((rval = handle_it(MG_E_POINT, 4, p2ent)) != MG_OK)
+		if ((rval = mg_handle(MG_E_POINT, 4, p2ent)) != MG_OK)
 			return(rval);
 		strcpy(r1, r2);
 		sprintf(r2, FLTFMT, -avgrad - .5*(maxrad-minrad)*sin(theta));
-		if ((rval = handle_it(MG_E_CONE, 5, conent)) != MG_OK)
+		if ((rval = mg_handle(MG_E_CONE, 5, conent)) != MG_OK)
 			return(rval);
 	}
 	warpconends = 0;
@@ -622,7 +590,7 @@ char	**av;
 	avnew[2] = av[2];
 	avnew[3] = av[3];
 	avnew[4] = av[2];
-	return(handle_it(MG_E_CONE, 5, avnew));
+	return(mg_handle(MG_E_CONE, 5, avnew));
 }
 
 
@@ -664,59 +632,59 @@ char	**av;
 	make_axes(u, v, cv->n);
 	for (j = 0; j < 3; j++)
 		sprintf(p3[j], FLTFMT, cv->p[j] + maxrad*u[j]);
-	if ((rv = handle_it(MG_E_VERTEX, 3, v3ent)) != MG_OK)
+	if ((rv = mg_handle(MG_E_VERTEX, 3, v3ent)) != MG_OK)
 		return(rv);
-	if ((rv = handle_it(MG_E_POINT, 4, p3ent)) != MG_OK)
+	if ((rv = mg_handle(MG_E_POINT, 4, p3ent)) != MG_OK)
 		return(rv);
 	if (minrad == 0.) {		/* closed */
 		v1ent[3] = av[1];
-		if ((rv = handle_it(MG_E_VERTEX, 4, v1ent)) != MG_OK)
+		if ((rv = mg_handle(MG_E_VERTEX, 4, v1ent)) != MG_OK)
 			return(rv);
-		if ((rv = handle_it(MG_E_NORMAL, 4, nzent)) != MG_OK)
+		if ((rv = mg_handle(MG_E_NORMAL, 4, nzent)) != MG_OK)
 			return(rv);
 		for (i = 1; i <= 4*mg_nqcdivs; i++) {
 			theta = i*(PI/2)/mg_nqcdivs;
-			if ((rv = handle_it(MG_E_VERTEX, 4, v2ent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_VERTEX, 4, v2ent)) != MG_OK)
 				return(rv);
 			for (j = 0; j < 3; j++)
 				sprintf(p3[j], FLTFMT, cv->p[j] +
 						maxrad*u[j]*cos(theta) +
 						maxrad*v[j]*sin(theta));
-			if ((rv = handle_it(MG_E_VERTEX, 2, v3ent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_VERTEX, 2, v3ent)) != MG_OK)
 				return(rv);
-			if ((rv = handle_it(MG_E_POINT, 4, p3ent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_POINT, 4, p3ent)) != MG_OK)
 				return(rv);
-			if ((rv = handle_it(MG_E_FACE, 4, fent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_FACE, 4, fent)) != MG_OK)
 				return(rv);
 		}
 	} else {			/* open */
-		if ((rv = handle_it(MG_E_VERTEX, 3, v4ent)) != MG_OK)
+		if ((rv = mg_handle(MG_E_VERTEX, 3, v4ent)) != MG_OK)
 			return(rv);
 		for (j = 0; j < 3; j++)
 			sprintf(p4[j], FLTFMT, cv->p[j] + minrad*u[j]);
-		if ((rv = handle_it(MG_E_POINT, 4, p4ent)) != MG_OK)
+		if ((rv = mg_handle(MG_E_POINT, 4, p4ent)) != MG_OK)
 			return(rv);
 		v1ent[3] = "_rv4";
 		for (i = 1; i <= 4*mg_nqcdivs; i++) {
 			theta = i*(PI/2)/mg_nqcdivs;
-			if ((rv = handle_it(MG_E_VERTEX, 4, v1ent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_VERTEX, 4, v1ent)) != MG_OK)
 				return(rv);
-			if ((rv = handle_it(MG_E_VERTEX, 4, v2ent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_VERTEX, 4, v2ent)) != MG_OK)
 				return(rv);
 			for (j = 0; j < 3; j++) {
 				d = u[j]*cos(theta) + v[j]*sin(theta);
 				sprintf(p3[j], FLTFMT, cv->p[j] + maxrad*d);
 				sprintf(p4[j], FLTFMT, cv->p[j] + minrad*d);
 			}
-			if ((rv = handle_it(MG_E_VERTEX, 2, v3ent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_VERTEX, 2, v3ent)) != MG_OK)
 				return(rv);
-			if ((rv = handle_it(MG_E_POINT, 4, p3ent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_POINT, 4, p3ent)) != MG_OK)
 				return(rv);
-			if ((rv = handle_it(MG_E_VERTEX, 2, v4ent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_VERTEX, 2, v4ent)) != MG_OK)
 				return(rv);
-			if ((rv = handle_it(MG_E_POINT, 4, p4ent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_POINT, 4, p4ent)) != MG_OK)
 				return(rv);
-			if ((rv = handle_it(MG_E_FACE, 5, fent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_FACE, 5, fent)) != MG_OK)
 				return(rv);
 		}
 	}
@@ -798,23 +766,23 @@ char	**av;
 		else
 			sprintf(n3[j], FLTFMT, u[j] + w[j]*n2off);
 	}
-	if ((rv = handle_it(MG_E_VERTEX, 3, v3ent)) != MG_OK)
+	if ((rv = mg_handle(MG_E_VERTEX, 3, v3ent)) != MG_OK)
 		return(rv);
-	if ((rv = handle_it(MG_E_POINT, 4, p3ent)) != MG_OK)
+	if ((rv = mg_handle(MG_E_POINT, 4, p3ent)) != MG_OK)
 		return(rv);
-	if ((rv = handle_it(MG_E_NORMAL, 4, n3ent)) != MG_OK)
+	if ((rv = mg_handle(MG_E_NORMAL, 4, n3ent)) != MG_OK)
 		return(rv);
 	if (rad1 == 0.) {		/* triangles */
 		v1ent[3] = av[1];
-		if ((rv = handle_it(MG_E_VERTEX, 4, v1ent)) != MG_OK)
+		if ((rv = mg_handle(MG_E_VERTEX, 4, v1ent)) != MG_OK)
 			return(rv);
 		for (j = 0; j < 3; j++)
 			sprintf(n4[j], FLTFMT, w[j]);
-		if ((rv = handle_it(MG_E_NORMAL, 4, n4ent)) != MG_OK)
+		if ((rv = mg_handle(MG_E_NORMAL, 4, n4ent)) != MG_OK)
 			return(rv);
 		for (i = 1; i <= 4*mg_nqcdivs; i++) {
 			theta = sgn*i*(PI/2)/mg_nqcdivs;
-			if ((rv = handle_it(MG_E_VERTEX, 4, v2ent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_VERTEX, 4, v2ent)) != MG_OK)
 				return(rv);
 			for (j = 0; j < 3; j++) {
 				d = u[j]*cos(theta) + v[j]*sin(theta);
@@ -822,14 +790,14 @@ char	**av;
 				if (n2off > -FHUGE)
 					sprintf(n3[j], FLTFMT, d + w[j]*n2off);
 			}
-			if ((rv = handle_it(MG_E_VERTEX, 2, v3ent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_VERTEX, 2, v3ent)) != MG_OK)
 				return(rv);
-			if ((rv = handle_it(MG_E_POINT, 4, p3ent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_POINT, 4, p3ent)) != MG_OK)
 				return(rv);
 			if (n2off > -FHUGE &&
-			(rv = handle_it(MG_E_NORMAL, 4, n3ent)) != MG_OK)
+			(rv = mg_handle(MG_E_NORMAL, 4, n3ent)) != MG_OK)
 				return(rv);
-			if ((rv = handle_it(MG_E_FACE, 4, fent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_FACE, 4, fent)) != MG_OK)
 				return(rv);
 		}
 	} else {			/* quads */
@@ -848,17 +816,17 @@ char	**av;
 			else
 				sprintf(n4[j], FLTFMT, u[j] + w[j]*n1off);
 		}
-		if ((rv = handle_it(MG_E_VERTEX, 3, v4ent)) != MG_OK)
+		if ((rv = mg_handle(MG_E_VERTEX, 3, v4ent)) != MG_OK)
 			return(rv);
-		if ((rv = handle_it(MG_E_POINT, 4, p4ent)) != MG_OK)
+		if ((rv = mg_handle(MG_E_POINT, 4, p4ent)) != MG_OK)
 			return(rv);
-		if ((rv = handle_it(MG_E_NORMAL, 4, n4ent)) != MG_OK)
+		if ((rv = mg_handle(MG_E_NORMAL, 4, n4ent)) != MG_OK)
 			return(rv);
 		for (i = 1; i <= 4*mg_nqcdivs; i++) {
 			theta = sgn*i*(PI/2)/mg_nqcdivs;
-			if ((rv = handle_it(MG_E_VERTEX, 4, v1ent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_VERTEX, 4, v1ent)) != MG_OK)
 				return(rv);
-			if ((rv = handle_it(MG_E_VERTEX, 4, v2ent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_VERTEX, 4, v2ent)) != MG_OK)
 				return(rv);
 			for (j = 0; j < 3; j++) {
 				d = u[j]*cos(theta) + v[j]*sin(theta);
@@ -869,21 +837,21 @@ char	**av;
 				if (n1off < FHUGE)
 					sprintf(n4[j], FLTFMT, d + w[j]*n1off);
 			}
-			if ((rv = handle_it(MG_E_VERTEX, 2, v3ent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_VERTEX, 2, v3ent)) != MG_OK)
 				return(rv);
-			if ((rv = handle_it(MG_E_POINT, 4, p3ent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_POINT, 4, p3ent)) != MG_OK)
 				return(rv);
 			if (n2off > -FHUGE &&
-			(rv = handle_it(MG_E_NORMAL, 4, n3ent)) != MG_OK)
+			(rv = mg_handle(MG_E_NORMAL, 4, n3ent)) != MG_OK)
 				return(rv);
-			if ((rv = handle_it(MG_E_VERTEX, 2, v4ent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_VERTEX, 2, v4ent)) != MG_OK)
 				return(rv);
-			if ((rv = handle_it(MG_E_POINT, 4, p4ent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_POINT, 4, p4ent)) != MG_OK)
 				return(rv);
 			if (n1off < FHUGE &&
-			(rv = handle_it(MG_E_NORMAL, 4, n4ent)) != MG_OK)
+			(rv = mg_handle(MG_E_NORMAL, 4, n4ent)) != MG_OK)
 				return(rv);
-			if ((rv = handle_it(MG_E_FACE, 5, fent)) != MG_OK)
+			if ((rv = mg_handle(MG_E_FACE, 5, fent)) != MG_OK)
 				return(rv);
 		}
 	}
@@ -919,7 +887,7 @@ char	**av;
 	for (i = 1; i < ac-1; i++)
 		newav[i] = av[i];
 	newav[i] = NULL;
-	if ((rv = handle_it(MG_E_FACE, i, newav)) != MG_OK)
+	if ((rv = mg_handle(MG_E_FACE, i, newav)) != MG_OK)
 		return(rv);
 					/* compute face normal */
 	if ((cv0 = c_getvert(av[1])) == NULL)
@@ -944,17 +912,17 @@ char	**av;
 	for (i = 1; i < ac-1; i++) {
 		sprintf(nvn[i-1], "_pv%d", i);
 		vent[1] = nvn[i-1];
-		if ((rv = handle_it(MG_E_VERTEX, 3, vent)) != MG_OK)
+		if ((rv = mg_handle(MG_E_VERTEX, 3, vent)) != MG_OK)
 			return(rv);
 		cv = c_getvert(av[i]);		/* checked above */
 		for (j = 0; j < 3; j++)
 			sprintf(p[j], FLTFMT, cv->p[j] - length*norm[j]);
-		if ((rv = handle_it(MG_E_POINT, 4, pent)) != MG_OK)
+		if ((rv = mg_handle(MG_E_POINT, 4, pent)) != MG_OK)
 			return(rv);
 		newav[ac-1-i] = nvn[i-1];	/* reverse */
 	}
 						/* do top face */
-	if ((rv = handle_it(MG_E_FACE, ac-1, newav)) != MG_OK)
+	if ((rv = mg_handle(MG_E_FACE, ac-1, newav)) != MG_OK)
 		return(rv);
 						/* do the side faces */
 	newav[5] = NULL;
@@ -963,7 +931,7 @@ char	**av;
 	for (i = 1; i < ac-1; i++) {
 		newav[1] = nvn[i-1];
 		newav[2] = av[i];
-		if ((rv = handle_it(MG_E_FACE, 5, newav)) != MG_OK)
+		if ((rv = mg_handle(MG_E_FACE, 5, newav)) != MG_OK)
 			return(rv);
 		newav[3] = newav[2];
 		newav[4] = newav[1];
@@ -986,7 +954,7 @@ char	**av;
 	if (mg_ehand[MG_E_CXY] != c_hcolor) {
 		sprintf(xbuf, "%.4f", c_ccolor->cx);
 		sprintf(ybuf, "%.4f", c_ccolor->cy);
-		if ((rv = handle_it(MG_E_CXY, 3, ccom)) != MG_OK)
+		if ((rv = mg_handle(MG_E_CXY, 3, ccom)) != MG_OK)
 			return(rv);
 	}
 	return(MG_OK);
@@ -1026,7 +994,7 @@ char	**av;
 				newav[i+3] = vbuf[i];
 			}
 			newav[C_CNSS+3] = NULL;
-			if ((rv = handle_it(MG_E_CSPEC, C_CNSS+3, newav)) != MG_OK)
+			if ((rv = mg_handle(MG_E_CSPEC, C_CNSS+3, newav)) != MG_OK)
 				return(rv);
 		}
 		return(MG_OK);
@@ -1038,7 +1006,7 @@ char	**av;
 		newav[1] = vbuf[0];
 		newav[2] = vbuf[1];
 		newav[3] = NULL;
-		if ((rv = handle_it(MG_E_CXY, 3, newav)) != MG_OK)
+		if ((rv = mg_handle(MG_E_CXY, 3, newav)) != MG_OK)
 			return(rv);
 	}
 	return(MG_OK);
