@@ -128,6 +128,9 @@ char  **argv;
 			case '1':
 				singlepass = 1;
 				break;
+			case '2':
+				singlepass = 0;
+				break;
 			case 'p':
 				npts = atoi(argv[++i]) / 2;
 				break;
