@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -322,6 +322,8 @@ register CUBE  *scene;
 		else if (r->rdir[i] < -FTINY)
 			sflags |= 0x10 << i;
 	}
+	if (sflags == 0)
+		error(CONSISTENCY, "zero ray direction in localhit");
 	t = 0.0;
 	if (!incube(scene, curpos)) {
 					/* find distance to entry */

@@ -88,8 +88,10 @@ register RAY  *r;
 			for (i = 0; i < 3; i++)		/* perturb direction */
 				p.rdir[i] = r->rdir[i] - r->pert[i]/RINDEX;
 			normalize(p.rdir);
-		} else
+		} else {
+			VCOPY(p.rdir, r->rdir);
 			transtest = 2;
+		}
 		rayvalue(&p);
 		multcolor(p.rcol, r->pcol);	/* modify */
 		multcolor(p.rcol, trans);
