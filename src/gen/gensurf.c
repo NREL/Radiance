@@ -18,9 +18,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "standard.h"
 
-#define  XNAME		"X`SYS`"		/* x function name */
-#define  YNAME		"Y`SYS`"		/* y function name */
-#define  ZNAME		"Z`SYS`"		/* z function name */
+char  XNAME[] =		"X`SYS`";		/* x function name */
+char  YNAME[] =		"Y`SYS`";		/* y function name */
+char  ZNAME[] =		"Z`SYS`";		/* z function name */
 
 #define  ABS(x)		((x)>=0 ? (x) : -(x))
 
@@ -34,7 +34,18 @@ int  smooth = 0;		/* apply smoothing? */
 
 char  *modname, *surfname;
 
-double  funvalue(), l_hermite(), l_bezier(), l_bspline(), argument();
+				/* recorded data flags */
+#define  HASBORDER	01
+#define  TRIPLETS	02
+				/* a data structure */
+struct {
+	int	flags;			/* data type */
+	short	m, n;			/* number of s and t values */
+	FLOAT	*data;			/* the data itself, s major sort */
+} datarec;			/* our recorded data */
+
+double  l_hermite(), l_bezier(), l_bspline(), l_dataval();
+extern double  funvalue(), argument();
 
 typedef struct {
 	FVECT  p;	/* vertex position */
@@ -71,17 +82,31 @@ char  *argv[];
 
 	modname = argv[1];
 	surfname = argv[2];
-	sprintf(stmp, "%s(s,t)=%s;", XNAME, argv[3]);
-	scompile(stmp, NULL, 0);
-	sprintf(stmp, "%s(s,t)=%s;", YNAME, argv[4]);
-	scompile(stmp, NULL, 0);
-	sprintf(stmp, "%s(s,t)=%s;", ZNAME, argv[5]);
-	scompile(stmp, NULL, 0);
 	m = atoi(argv[6]);
 	n = atoi(argv[7]);
 	if (m <= 0 || n <= 0)
 		goto userror;
-
+	if (!strcmp(argv[5], "-") || access(argv[5], 4) == 0) {	/* file? */
+		funset(ZNAME, 2, ':', l_dataval);
+		if (!strcmp(argv[5],argv[3]) && !strcmp(argv[5],argv[4])) {
+			loaddata(argv[5], m, n, 3);
+			funset(XNAME, 2, ':', l_dataval);
+			funset(YNAME, 2, ':', l_dataval);
+		} else {
+			loaddata(argv[5], m, n, 1);
+			sprintf(stmp, "%s(s,t)=%s;", XNAME, argv[3]);
+			scompile(stmp, NULL, 0);
+			sprintf(stmp, "%s(s,t)=%s;", YNAME, argv[4]);
+			scompile(stmp, NULL, 0);
+		}
+	} else {
+		sprintf(stmp, "%s(s,t)=%s;", XNAME, argv[3]);
+		scompile(stmp, NULL, 0);
+		sprintf(stmp, "%s(s,t)=%s;", YNAME, argv[4]);
+		scompile(stmp, NULL, 0);
+		sprintf(stmp, "%s(s,t)=%s;", ZNAME, argv[5]);
+		scompile(stmp, NULL, 0);
+	}
 	row0 = (POINT *)malloc((n+3)*sizeof(POINT));
 	row1 = (POINT *)malloc((n+3)*sizeof(POINT));
 	row2 = (POINT *)malloc((n+3)*sizeof(POINT));
@@ -125,6 +150,102 @@ userror:
 	fprintf(stderr, "Usage: %s material name ", argv[0]);
 	fprintf(stderr, "x(s,t) y(s,t) z(s,t) m n [-s][-e expr][-f file]\n");
 	quit(1);
+}
+
+
+loaddata(file, m, n, pointsize)		/* load point data from file */
+char  *file;
+int  m, n;
+int  pointsize;
+{
+	extern char  *fgetword();
+	FILE  *fp;
+	char  word[64];
+	register int  size;
+	register FLOAT  *dp;
+
+	datarec.flags = HASBORDER;		/* assume border values */
+	size = (m+1)*(n+1)*pointsize;
+	if (pointsize == 3)
+		datarec.flags |= TRIPLETS;
+	dp = (FLOAT *)malloc(size*sizeof(FLOAT));
+	if ((datarec.data = dp) == NULL) {
+		fputs("Out of memory\n", stderr);
+		exit(1);
+	}
+	if (!strcmp(file, "-")) {
+		file = "<stdin>";
+		fp = stdin;
+	} else if ((fp = fopen(file, "r")) == NULL) {
+		fputs(file, stderr);
+		fputs(": cannot open\n", stderr);
+		exit(1);
+	}
+	while (size > 0 && fgetword(word, sizeof(word), fp) != NULL) {
+		if (!isflt(word)) {
+			fprintf(stderr, "%s: garbled data value: %s\n",
+					file, word);
+			exit(1);
+		}
+		*dp++ = atof(word);
+		size--;
+	}
+	if (size == (m+n+1)*pointsize) {	/* no border after all */
+		dp = (FLOAT *)realloc((char *)datarec.data,
+				m*n*pointsize*sizeof(FLOAT));
+		if (dp != NULL)
+			datarec.data = dp;
+		datarec.flags &= ~HASBORDER;
+		size = 0;
+	}
+	if (size || fgetword(word, sizeof(word), fp) != NULL) {
+		fputs(file, stderr);
+		fputs(": bad number of data points\n", stderr);
+		exit(1);
+	}
+	fclose(fp);
+}
+
+
+double
+l_dataval(nam)				/* return recorded data value */
+char  *nam;
+{
+	double  u, v;
+	register int  i, j;
+	register FLOAT  *dp;
+	double  d00, d01, d10, d11;
+						/* compute coordinates */
+	u = argument(1); v = argument(2);
+	if (datarec.flags & HASBORDER) {
+		i = u *= datarec.m;
+		j = v *= datarec.n;
+	} else {
+		i = u = u*(datarec.m+1) - .5;
+		j = v = v*(datarec.n+1) - .5;
+	}
+	if (i < 0) i = 0;
+	else if (i > datarec.m-2) i = datarec.m-2;
+	if (j < 0) j = 0;
+	else if (j > datarec.n-2) j = datarec.n-2;
+						/* compute value */
+	if (datarec.flags & TRIPLETS) {
+		dp = datarec.data + 3*(j*datarec.n + i);
+		if (nam == YNAME)
+			dp++;
+		else if (nam == ZNAME)
+			dp += 2;
+		d00 = dp[0]; d01 = dp[3];
+		dp += 3*datarec.n;
+		d10 = dp[0]; d11 = dp[3];
+	} else {
+		dp = datarec.data + j*datarec.n + i;
+		d00 = dp[0]; d01 = dp[1];
+		dp += datarec.n;
+		d10 = dp[0]; d11 = dp[1];
+	}
+						/* bilinear interpolation */
+	return((j+1-v)*((i+1-u)*d00+(u-i)*d01)+(v-j)*((i+1-u)*d10+(u-i)*d11));
 }
 
 
