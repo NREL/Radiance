@@ -173,6 +173,7 @@ extern int isfltd();			/* same with delimiter set */
 extern int isname();			/* non-zero if legal identifier name */
 extern int badarg();			/* check argument format */
 extern int e_include();			/* expand include entity */
+extern int e_pipe();			/* expand piped command */
 extern int e_sph();			/* expand sphere as other entities */
 extern int e_torus();			/* expand torus as other entities */
 extern int e_cyl();			/* expand cylinder as other entities */
@@ -189,6 +190,7 @@ extern int isfltd(char *, char *);	/* same with delimiter set */
 extern int isname(char *);		/* non-zero if legal identifier name */
 extern int badarg(int, char **, char *);/* check argument format */
 extern int e_include(int, char **);	/* expand include entity */
+extern int e_pipe(int, char **);	/* expand piped command */
 extern int e_sph(int, char **);		/* expand sphere as other entities */
 extern int e_torus(int, char **);	/* expand torus as other entities */
 extern int e_cyl(int, char **);		/* expand cylinder as other entities */
@@ -249,15 +251,16 @@ extern void	fcross(FVECT,FVECT,FVECT);/* cross product of two vectors */
 #define C_CSEFF		020		/* flag if efficacy set */
 
 typedef struct {
-	int	clock;			/* incremented each change */
-	short	flags;			/* what's been set */
-	short	ssamp[C_CNSS];		/* spectral samples, min wl to max */
-	long	ssum;			/* straight sum of spectral values */
-	float	cx, cy;			/* xy chromaticity value */
-	float	eff;			/* efficacy (lumens/watt) */
+	int	clock;		/* incremented each change */
+	char	*client_data;	/* pointer to private client-owned data */
+	short	flags;		/* what's been set */
+	short	ssamp[C_CNSS];	/* spectral samples, min wl to max */
+	long	ssum;		/* straight sum of spectral values */
+	float	cx, cy;		/* xy chromaticity value */
+	float	eff;		/* efficacy (lumens/watt) */
 } C_COLOR;
 
-#define C_DEFCOLOR	{ 1, C_CDXY|C_CSXY|C_CSSPEC|C_CSEFF,\
+#define C_DEFCOLOR	{ 1, NULL, C_CDXY|C_CSXY|C_CSSPEC|C_CSEFF,\
 			{C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,\
 			C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,\
 			C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,\
@@ -273,6 +276,7 @@ typedef struct {
 
 typedef struct {
 	int	clock;		/* incremented each change -- resettable */
+	char	*client_data;	/* pointer to private client-owned data */
 	int	sided;		/* 1 if surface is 1-sided, 0 for 2-sided */
 	float	nr, ni;		/* index of refraction, real and imaginary */
 	float	rd;		/* diffuse reflectance */
@@ -291,12 +295,13 @@ typedef struct {
 
 typedef struct {
 	int	clock;		/* incremented each change -- resettable */
+	char	*client_data;	/* pointer to private client-owned data */
 	FVECT	p, n;		/* point and normal */
 } C_VERTEX;		/* vertex context */
 
-#define C_DEFMATERIAL	{1,0,1.,0.,0.,C_DEFCOLOR,0.,C_DEFCOLOR,0.,C_DEFCOLOR,\
-					0.,C_DEFCOLOR,0.,0.,C_DEFCOLOR,0.}
-#define C_DEFVERTEX	{1,{0.,0.,0.},{0.,0.,0.}}
+#define C_DEFMATERIAL	{1,NULL,0,1.,0.,0.,C_DEFCOLOR,0.,C_DEFCOLOR,0.,\
+				C_DEFCOLOR,0.,C_DEFCOLOR,0.,0.,C_DEFCOLOR,0.}
+#define C_DEFVERTEX	{1,NULL,{0.,0.,0.},{0.,0.,0.}}
 
 extern C_COLOR		*c_ccolor;	/* the current color */
 extern char		*c_ccname;	/* current color name */
