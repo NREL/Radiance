@@ -30,6 +30,14 @@ char	*progname;		/* global argv[0] */
 
 FILE	*sstdin, *sstdout;	/* server's standard input and output */
 
+#ifdef DEBUG
+#include <sys/types.h>
+extern time_t	time();
+static time_t	tmodesw;
+static time_t	timm, tadd;
+static long	nimmrays, naddrays;
+#endif
+
 #define RDY_SRV		01
 #define RDY_DEV		02
 #define RDY_SIN		04
@@ -55,6 +63,9 @@ char	*argv[];
 		sstdin = fdopen(inp, "r");
 					/* set command error vector */
 	erract[COMMAND].pf = eputs;
+#ifdef DEBUG
+	tmodesw = time(NULL);
+#endif
 					/* enter main loop */
 	do {
 		rdy = disp_wait();
@@ -110,6 +121,16 @@ char	*argv[];
 				break;
 			}
 	} while (res != DS_SHUTDOWN);
+#ifdef DEBUG
+	if (timm && nimmrays)
+		fprintf(stderr,
+			"%s: %.1f rays recalled/second (%ld rays total)\n",
+				progname, (double)nimmrays/timm, nimmrays);
+	if (tadd && naddrays)
+		fprintf(stderr,
+			"%s: %.1f rays calculated/second (%ld rays total)\n",
+				progname, (double)naddrays/tadd, naddrays);
+#endif
 					/* all done */
 	quit(0);
 }
@@ -212,6 +233,10 @@ register PACKHEAD	*p;
 		VSUM(wp, ro, rd, d);		/* might be behind viewpoint */
 		dev_value(packra(p)[i].v, wp, rd);
 	}
+#ifdef DEBUG
+	if (imm_mode) nimmrays += p->nr;
+	else naddrays += p->nr;
+#endif
 }
 
 
@@ -366,6 +391,14 @@ serv_result()			/* get next server result and process it */
 		break;
 	case DS_STARTIMM:
 	case DS_ENDIMM:
+#ifdef DEBUG
+		if (imm_mode != (msg.type==DS_STARTIMM)) {
+			time_t	tnow = time(NULL);
+			if (imm_mode) timm += tnow - tmodesw;
+			else tadd += tnow - tmodesw;
+			tmodesw = tnow;
+		}
+#endif
 		imm_mode = msg.type==DS_STARTIMM;
 		/* fall through */
 	case DS_ACKNOW:
