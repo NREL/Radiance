@@ -241,15 +241,15 @@ combine()			/* combine pictures */
 		} else {
 		    for (j = 0; j < 3; j++) {
 			if (coldef[j] != NULL) {
-				colval(scanout[xpos],j) = evalue(coldef[j]);
+				d = evalue(coldef[j]);
 			} else {
-			    colval(scanout[xpos],j) = 0.0;
+			    d = 0.0;
 			    for (i = 0; i < nfiles; i++)
-				colval(scanout[xpos],j) +=
-					colval(input[i].scan[xpos],j);
+				d += colval(input[i].scan[xpos],j);
 			}
-			if (colval(scanout[xpos],j) < 0.0)
-			    colval(scanout[xpos],j) = 0.0;
+			if (d < 0.0)
+			    d = 0.0;
+			colval(scanout[xpos],j) = d;
 		    }
 		}
 	    }
