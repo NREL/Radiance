@@ -8,6 +8,7 @@ MACH = -DBSD
 CFLAGS = $(MACH) $(OPT) -I../common -L../lib
 SPECIAL = aed
 CC = cc
+MLIB = -lm
 LINT = lint
 LINTFLAGS = -DBSD -DVARIABLE -DFUNCTION \
 -DINCHAN -DRCONST -DREDEFW
@@ -28,7 +29,7 @@ LIBDIR = /usr/local/lib/ray
 #
 # Library routines:
 #
-LIBS = -lrt -lm
+LIBS = -lrt $(MLIB)
 
 #
 # Device drivers for rview (see also devtable.c):
