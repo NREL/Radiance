@@ -16,6 +16,10 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #include  "x11icon.h"
 
+#ifndef RAYQLEN
+#define RAYQLEN		50000		/* max. rays to queue before flush */
+#endif
+
 #ifndef FEQ
 #define FEQ(a,b)	((a)-(b) <= FTINY && (a)-(b) >= -FTINY)
 #endif
@@ -262,6 +266,7 @@ dev_flush()			/* flush output */
 {
 	qtUpdate();
 	glFlush();
+	rayqleft = RAYQLEN;
 	return(XPending(ourdisplay));
 }
 
@@ -314,9 +319,9 @@ mytmflags()			/* figure out tone mapping flags */
 	for (cp = tail; *cp && *cp != '.'; cp++)
 		;
 	if (cp-tail == 3 && !strncmp(tail, "glx", 3))
-		return(TM_F_CAMERA);
+		return(TM_F_CAMERA|TM_F_NOSTDERR);
 	if (cp-tail == 4 && !strncmp(tail, "glxh", 4))
-		return(TM_F_HUMAN);
+		return(TM_F_HUMAN|TM_F_NOSTDERR);
 	error(USER, "illegal driver name");
 }
 

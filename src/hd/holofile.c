@@ -348,15 +348,21 @@ register int	i;
 
 
 int
-hdfilord(hb1, hb2)	/* order beams for optimal loading */
+hdfilord(hb1, hb2)	/* order beams for quick loading */
 register HDBEAMI	*hb1, *hb2;
 {
-	register int	c;
-				/* sort by file descriptor first */
+	register long	c;
+				/* residents go first */
+	if (hb2->h->bl[hb2->b] != NULL)
+		return(hb1->h->bl[hb1->b] == NULL);
+	if (hb1->h->bl[hb1->b] != NULL)
+		return(-1);
+				/* otherwise sort by file descriptor */
 	if ((c = hb1->h->fd - hb2->h->fd))
 		return(c);
 				/* then by position in file */
-	return(hb1->h->bi[hb1->b].fo - hb2->h->bi[hb2->b].fo);
+	c = hb1->h->bi[hb1->b].fo - hb2->h->bi[hb2->b].fo;
+	return(c > 0 ? 1 : c < 0 ? -1 : 0);
 }
 
 
@@ -375,25 +381,28 @@ int	(*bf)();		/* callback function (optional) */
 			error(CONSISTENCY, "bad beam in hdloadbeams");
 					/* sort list for optimal access */
 	qsort((char *)hb, n, sizeof(HDBEAMI), hdfilord);
-	bytesloaded = needbytes = 0;	/* figure out memory needs */
+	bytesloaded = 0;		/* run through loaded beams */
+	for ( ; n && (bp = hb->h->bl[hb->b]) != NULL; n--, hb++) {
+		bp->tick = hdclock;		/* preempt swap */
+		bytesloaded += bp->nrm;
+		if (bf != NULL)
+			(*bf)(bp, hb->h, hb->b);
+	}
+	bytesloaded *= sizeof(RAYVAL);
 	if ((origcachesize = hdcachesize) > 0) {
+		needbytes = 0;		/* figure out memory needs */
 		for (i = n; i--; )
-			if ((bp = hb[i].h->bl[hb[i].b]) != NULL) {
-				bp->tick = hdclock;	/* preempt swap */
-				bytesloaded += bp->nrm;
-			} else				/* prepare to load */
-				needbytes += hb[i].h->bi[hb[i].b].nrd;
-		bytesloaded *= sizeof(RAYVAL);
+			needbytes += hb[i].h->bi[hb[i].b].nrd;
 		needbytes *= sizeof(RAYVAL);
 		do {				/* free enough memory */
 			memuse = hdmemuse(0);
-			bytes2free = needbytes - (signed)(hdcachesize-memuse);
-			if (bytes2free > (signed)(memuse - bytesloaded))
+			bytes2free = needbytes - (int)(hdcachesize-memuse);
+			if (bytes2free > (int)(memuse - bytesloaded))
 				bytes2free = memuse - bytesloaded;
 		} while (bytes2free > 0 &&
 				hdfreecache(100*bytes2free/memuse, NULL) < 0);
+		hdcachesize = 0;		/* load beams w/o swap */
 	}
-	hdcachesize = 0;		/* load the ordered beams w/o swap */
 	for (i = 0; i < n; i++)
 		if ((bp = hdgetbeam(hb[i].h, hb[i].b)) != NULL && bf != NULL)
 			(*bf)(bp, hb[i].h, hb[i].b);

@@ -29,6 +29,8 @@ double	qtDepthEps = .05;	/* epsilon to compare depths (z fraction) */
 int	qtMinNodesiz = 2;	/* minimum node dimension (pixels) */
 struct rleaves	qtL;		/* our pile of leaves */
 
+int	rayqleft = 0;		/* rays left to queue before flush */
+
 static int4	falleaves;	/* our list of fallen leaves */
 
 #define composted(li)	(qtL.bl <= qtL.tl ? \
@@ -354,8 +356,12 @@ FVECT	p, v;
 	VCOPY(qtL.wp[li], p);
 	qtL.wd[li] = encodedir(v);
 	tmCvColrs(&qtL.brt[li], qtL.chr[li], c, 1);
-	if (putleaf(li, 1) && mapit)
-		tmMapPixels(qtL.rgb+li, qtL.brt+li, qtL.chr+li, 1);
+	if (putleaf(li, 1)) {
+		if (mapit)
+			tmMapPixels(qtL.rgb+li, qtL.brt+li, qtL.chr+li, 1);
+		if (--rayqleft == 0)
+			dev_flush();		/* flush output */
+	}
 }
 
 
