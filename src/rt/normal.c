@@ -232,7 +232,7 @@ register RAY  *r;
 	} else
 		nd.tdiff = nd.tspec = nd.trans = 0.0;
 						/* transmitted ray */
-	if ((nd.specfl&(SP_TRAN|SP_PURE)) == (SP_TRAN|SP_PURE)) {
+	if ((nd.specfl&(SP_TRAN|SP_PURE|SP_TBLT)) == (SP_TRAN|SP_PURE)) {
 		RAY  lr;
 		if (rayorigin(&lr, r, TRANS, nd.tspec) == 0) {
 			VCOPY(lr.rdir, nd.prdir);
@@ -269,18 +269,18 @@ register RAY  *r;
 		if (hastexture && DOT(nd.vrefl, r->ron) <= FTINY)
 			for (i = 0; i < 3; i++)		/* safety measure */
 				nd.vrefl[i] = r->rdir[i] + 2.*r->rod*r->ron[i];
-
-		if (!(r->crtype & SHADOW) && nd.specfl & SP_PURE) {
-			RAY  lr;
-			if (rayorigin(&lr, r, REFLECTED, nd.rspec) == 0) {
-				VCOPY(lr.rdir, nd.vrefl);
-				rayvalue(&lr);
-				multcolor(lr.rcol, nd.scolor);
-				addcolor(r->rcol, lr.rcol);
-				if (!hastexture && nd.specfl & SP_FLAT) {
-					mirtest = 2.*bright(lr.rcol);
-					mirdist = r->rot + lr.rt;
-				}
+	}
+						/* reflected ray */
+	if ((nd.specfl&(SP_REFL|SP_PURE|SP_RBLT)) == (SP_REFL|SP_PURE)) {
+		RAY  lr;
+		if (rayorigin(&lr, r, REFLECTED, nd.rspec) == 0) {
+			VCOPY(lr.rdir, nd.vrefl);
+			rayvalue(&lr);
+			multcolor(lr.rcol, nd.scolor);
+			addcolor(r->rcol, lr.rcol);
+			if (!hastexture && nd.specfl & SP_FLAT) {
+				mirtest = 2.*bright(lr.rcol);
+				mirdist = r->rot + lr.rt;
 			}
 		}
 	}
@@ -290,8 +290,8 @@ register RAY  *r;
 	if (nd.specfl & SP_PURE && nd.rdiff <= FTINY && nd.tdiff <= FTINY)
 		return(1);			/* 100% pure specular */
 
-	if (nd.specfl & (SP_REFL|SP_TRAN) && !(nd.specfl & SP_PURE))
-		gaussamp(r, &nd);
+	if (!(nd.specfl & SP_PURE))
+		gaussamp(r, &nd);		/* checks *BLT flags */
 
 	if (nd.rdiff > FTINY) {		/* ambient from this side */
 		ambient(ctmp, r, hastexture?nd.pnorm:r->ron);
