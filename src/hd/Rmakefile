@@ -18,7 +18,7 @@ DEVDIR = $(INSTDIR)/dev
 
 LIBDIR = /usr/local/lib/ray
 
-PROGS = rholo rhcopy genrhgrid rhoptimize rhinfo
+PROGS = rholo rhpict rhcopy genrhgrid rhoptimize rhinfo
 
 DEVS = $(DEVDIR)/x11.hdi $(DEVDIR)/x11h.hdi
 
@@ -49,9 +49,13 @@ sgi:
 sun:
 
 rholo:	rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o holo.o holofile.o \
-malloc.o Version.o
+viewbeams.o malloc.o Version.o
 	$(CC) $(CFLAGS) -o rholo rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o \
-holo.o holofile.o malloc.o Version.o -lrt -lm
+holo.o holofile.o viewbeams.o malloc.o Version.o -lrt -lm
+
+rhpict:	rhpict.o rhpict2.o holo.o holofile.o viewbeams.o malloc.o Version.o
+	$(CC) $(CFLAGS) -o rhpict rhpict.o rhpict2.o holo.o holofile.o \
+viewbeams.o malloc.o Version.o -lrt -lm
 
 rhcopy:	rhcopy.o clumpbeams.o holo.o holofile.o
 	$(CC) $(CFLAGS) -o rhcopy rhcopy.o clumpbeams.o \
@@ -74,9 +78,9 @@ $(DEVDIR)/x11h.hdi:	$(DEVDIR)/x11.hdi
 	rm -f $(DEVDIR)/x11h.hdi
 	ln $(DEVDIR)/x11.hdi $(DEVDIR)/x11h.hdi
 
-$(DEVDIR)/x11.hdi:	rhdisp.o rhdisp2.o rhdisp3.o rhd_x11.o rhd_qtree.o \
+$(DEVDIR)/x11.hdi:	rhdisp.o rhdisp2.o viewbeams.o rhd_x11.o rhd_qtree.o \
 rhd_qtree2r.o rhd_ctab.o dircode.o holo.o
-	$(CC) $(CFLAGS) -o $(DEVDIR)/x11.hdi rhdisp.o rhdisp2.o rhdisp3.o \
+	$(CC) $(CFLAGS) -o $(DEVDIR)/x11.hdi rhdisp.o rhdisp2.o viewbeams.o \
 rhd_x11.o rhd_qtree.o rhd_qtree2r.o rhd_ctab.o holo.o dircode.o -lrt -lX11 -lm
 
 $(DEVDIR)/glx1h.hdi:	$(DEVDIR)/glx1.hdi
@@ -115,66 +119,66 @@ $(DEVDIR)/oglsoh.hdi:	$(DEVDIR)/oglso.hdi
 	rm -f $(DEVDIR)/oglsoh.hdi
 	ln $(DEVDIR)/oglso.hdi $(DEVDIR)/oglsoh.hdi
 
-$(DEVDIR)/glx1.hdi:	rhd_glx1.o rhdisp.o rhdisp2.o rhdisp3.o \
+$(DEVDIR)/glx1.hdi:	rhd_glx1.o rhdisp.o rhdisp2.o viewbeams.o \
 rhd_qtree.o rhd_qtree2c.o dircode.o holo.o
 	rm -f $(DEVDIR)/glx1.hdi
 	$(CC) $(CFLAGS) -o $(DEVDIR)/glx1.hdi rhd_glx1.o rhdisp.o rhdisp2.o \
-rhdisp3.o holo.o  rhd_qtree.o rhd_qtree2c.o dircode.o -lrt -lGLU -lGL -lX11 -lm
+viewbeams.o holo.o  rhd_qtree.o rhd_qtree2c.o dircode.o -lrt -lGLU -lGL -lX11 -lm
 
-$(DEVDIR)/glx.hdi:	rhd_glx0.o rhdisp.o rhdisp2.o rhdisp3.o \
+$(DEVDIR)/glx.hdi:	rhd_glx0.o rhdisp.o rhdisp2.o viewbeams.o \
 sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
 sm_ogl.o sm.o sm_usets.o dircode.o holo.o
 	rm -f $(DEVDIR)/glx.hdi
 	$(CC) $(CFLAGS) -o $(DEVDIR)/glx.hdi rhd_glx0.o rhdisp.o rhdisp2.o \
-rhdisp3.o holo.o sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
+viewbeams.o holo.o sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
 sm_ogl.o sm.o sm_usets.o dircode.o -lrt -lGLU -lGL -lX11 -lm
 
-$(DEVDIR)/glxo.hdi:	rhd_glxo.o rhdisp.o rhdisp2.o rhdisp3.o \
+$(DEVDIR)/glxo.hdi:	rhd_glxo.o rhdisp.o rhdisp2.o viewbeams.o \
 sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
 sm_ogl.o sm_usets.o sm.o dircode.o holo.o rhdobj.o 
 	rm -f $(DEVDIR)/glxo.hdi
 	$(CC) $(CFLAGS) -o $(DEVDIR)/glxo.hdi rhd_glxo.o rhdisp.o rhdisp2.o \
-rhdisp3.o holo.o sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
+viewbeams.o holo.o sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
 sm_ogl.o sm_usets.o sm.o dircode.o rhdobj.o -lrgl -lrt -lGLU -lGL -lX11 -lm
 
-$(DEVDIR)/glxs.hdi:	rhd_glxs.o rhdisp.o rhdisp2.o rhdisp3.o \
+$(DEVDIR)/glxs.hdi:	rhd_glxs.o rhdisp.o rhdisp2.o viewbeams.o \
 sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
 sm_ogl.o sm_usets.o sm.o dircode.o holo.o
 	rm -f $(DEVDIR)/glxs.hdi
 	$(CC) $(CFLAGS) -o $(DEVDIR)/glxs.hdi rhd_glxs.o rhdisp.o rhdisp2.o \
-rhdisp3.o holo.o sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
+viewbeams.o holo.o sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
 sm_ogl.o sm_usets.o sm.o dircode.o -lrt -lGLU -lGL -lX11 -lXext -lm
 
-$(DEVDIR)/glxso.hdi:	rhd_glxso.o rhdisp.o rhdisp2.o rhdisp3.o \
+$(DEVDIR)/glxso.hdi:	rhd_glxso.o rhdisp.o rhdisp2.o viewbeams.o \
 sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
 sm_ogl.o sm_usets.o sm.o dircode.o holo.o rhdobj.o
 	rm -f $(DEVDIR)/glxso.hdi
 	$(CC) $(CFLAGS) -o $(DEVDIR)/glxso.hdi rhd_glxso.o rhdisp.o rhdisp2.o \
-rhdisp3.o holo.o sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
+viewbeams.o holo.o sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
 sm_ogl.o sm_usets.o sm.o dircode.o rhdobj.o \
 -lrgl -lrt -lGLU -lGL -lX11 -lXext -lm
 
-$(DEVDIR)/ogl.hdi:	rhd_ogl0.o rhdisp.o rhdisp2.o rhdisp3.o \
+$(DEVDIR)/ogl.hdi:	rhd_ogl0.o rhdisp.o rhdisp2.o viewbeams.o \
 rhd_odraw.o rhd_geom.o holo.o
 	$(CC) $(CFLAGS) -o $(DEVDIR)/ogl.hdi rhd_ogl0.o rhdisp.o rhdisp2.o \
-rhdisp3.o holo.o rhd_odraw.o rhd_geom.o -lrgl -lrt -lGLU -lGL -lX11 -lm
+viewbeams.o holo.o rhd_odraw.o rhd_geom.o -lrgl -lrt -lGLU -lGL -lX11 -lm
 
-$(DEVDIR)/oglo.hdi:	rhd_oglo.o rhdisp.o rhdisp2.o rhdisp3.o \
+$(DEVDIR)/oglo.hdi:	rhd_oglo.o rhdisp.o rhdisp2.o viewbeams.o \
 rhd_odraw.o rhd_geom.o holo.o rhdobj.o
 	$(CC) $(CFLAGS) -o $(DEVDIR)/oglo.hdi rhd_oglo.o rhdisp.o \
-rhdisp2.o rhdisp3.o holo.o rhd_odraw.o rhd_geom.o rhdobj.o \
+rhdisp2.o viewbeams.o holo.o rhd_odraw.o rhd_geom.o rhdobj.o \
 -lrgl -lrt -lGLU -lGL -lX11 -lm
 
-$(DEVDIR)/ogls.hdi:	rhd_ogls.o rhdisp.o rhdisp2.o rhdisp3.o \
+$(DEVDIR)/ogls.hdi:	rhd_ogls.o rhdisp.o rhdisp2.o viewbeams.o \
 rhd_odraw.o rhd_geom.o holo.o
 	$(CC) $(CFLAGS) -o $(DEVDIR)/ogls.hdi rhd_ogls.o rhdisp.o rhdisp2.o \
-rhdisp3.o holo.o rhd_odraw.o rhd_geom.o \
+viewbeams.o holo.o rhd_odraw.o rhd_geom.o \
 -lrgl -lrt -lGLU -lGL -lX11 -lXext -lm
 
-$(DEVDIR)/oglso.hdi:	rhd_oglso.o rhdisp.o rhdisp2.o rhdisp3.o \
+$(DEVDIR)/oglso.hdi:	rhd_oglso.o rhdisp.o rhdisp2.o viewbeams.o \
 rhd_odraw.o rhd_geom.o holo.o rhdobj.o
 	$(CC) $(CFLAGS) -o $(DEVDIR)/oglso.hdi rhd_oglso.o rhdisp.o rhdisp2.o \
-rhdisp3.o holo.o rhd_odraw.o rhd_geom.o rhdobj.o \
+viewbeams.o holo.o rhd_odraw.o rhd_geom.o rhdobj.o \
 -lrgl -lrt -lGLU -lGL -lX11 -lXext -lm
 
 rhd_glx0.o:	rhd_glx.c
@@ -213,20 +217,23 @@ malloc.o:	malloc.c
 	$(CC) $(CFLAGS) -DMCOMP -c malloc.c
 
 rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o \
-rhdisp.o rhdisp2.o rhdisp3.o:	rholo.h
+rhdisp.o rhdisp2.o rhpict.o viewbeams.o:	rholo.h
 
 rholo2l.o:	../common/paths.h
 
-rholo4.o:	rhdisp.h rholo4.c
-	$(CC) $(CFLAGS) -c rholo4.c
+rhpict2.o rholo3.o:	../common/view.h
+
+rholo4.o:	rhdisp.h
 
 rhdisp.o rhdisp2.o:	rhdisp.h rhdriver.h ../common/view.h
 
-rhdisp3.o:	rhdisp.h ../common/view.h
+viewbeams.o:	../common/view.h ../common/random.h
 
-holo.o holofile.o rhdisp.o rhdisp2.o rhdisp3.o genrhenv.o genrhgrid.o \
+rhpict.o:	../common/view.h ../common/resolu.h
+
+holo.o holofile.o rhdisp.o rhdisp2.o viewbeams.o genrhenv.o genrhgrid.o \
 rhcopy.o rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o \
-rhinfo.o clumpbeams.o rhoptimize.o:	holo.h \
+rhinfo.o clumpbeams.o rhoptimize.o rhpict.o rhpict2.o:	holo.h \
 ../common/vars.h ../common/color.h \
 ../common/standard.h ../common/mat4.h ../common/fvect.h
 
@@ -278,8 +285,6 @@ dircode.o:	../common/fvect.h
 rhd_glx1.o:	rhd_qtree.h rhdriver.h x11icon.h ../common/view.h \
 ../common/color.h ../common/tonemap.h ../common/standard.h ../common/fvect.h \
 ../common/mat4.h
-
-rhdisp2.o:	../common/random.h
 
 rhd_odraw.o rhd_ogl0.o rhd_oglo.o rhd_ogls.o rhd_oglso.o:	rhd_odraw.h \
 rhdriver.h ../common/view.h ../common/color.h ../common/tonemap.h

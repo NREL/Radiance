@@ -34,6 +34,11 @@ typedef struct {
 #define packra(p)	((RAYVAL *)((p)+1))
 
 typedef struct {
+	int	nb;		/* number of beams in list */
+	PACKHEAD	*bl;	/* allocated beam list */
+} BEAMLIST;		/* a list of beam requests */
+
+typedef struct {
 	FVECT	vpt;		/* view (eye point) position */
 	double	rng;		/* desired mean radius for sample rays */
 } VIEWPOINT;		/* target eye position */
@@ -78,6 +83,7 @@ typedef struct {
 #define BS_ADD		2		/* add to current set */
 #define BS_ADJ		3		/* adjust current set quantities */
 #define BS_DEL		4		/* delete from current set */
+#define BS_MAX		5		/* set to max of old and new */
 
 extern char	*progname;	/* our program name */
 extern char	*hdkfile;	/* holodeck file name */
@@ -109,3 +115,5 @@ extern int	rtargc;		/* rtrace command */
 extern char	*rtargv[];
 
 extern PACKET	*do_packets(), *get_packets(), *flush_queue();
+
+extern int2	*viewbeams();

@@ -11,37 +11,19 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "rholo.h"
 #include "rhdisp.h"
 #include "rhdriver.h"
-#include "random.h"
 
-#ifndef MAXDIST
-#define MAXDIST		42	/* maximum distance outside section */
-#endif
-#ifndef NVSAMPS
-#define NVSAMPS		16384	/* number of ray samples per view */
-#endif
 #ifndef MEYERNG
 #define MEYERNG		0.2	/* target mean eye range (rel. to grid) */
-#endif
-#ifndef MAXTODO
-#define MAXTODO		3	/* maximum sections to look at */
-#endif
-#ifndef MAXDRAT
-#define MAXDRAT		3.0	/* maximum distance ratio btwn. cand. sect. */
 #endif
 
 #define CBEAMBLK	1024	/* cbeam allocation block size */
 
-static struct beamcomp {
-	int	hd;		/* holodeck section number */
-	int	bi;		/* beam index */
-	int4	nr;		/* number of samples desired */
-} *cbeam = NULL;	/* current beam list */
-
-VIEWPOINT	cureye;		/* current eye position */
-
+static PACKHEAD	*cbeam = NULL;	/* current beam list */
 static int	ncbeams = 0;	/* number of sorted beams in cbeam */
 static int	xcbeams = 0;	/* extra (unregistered) beams past ncbeams */
 static int	maxcbeam = 0;	/* size of cbeam array */
+
+VIEWPOINT	cureye;		/* current eye position */
 
 
 int
@@ -52,11 +34,11 @@ newcbeam()		/* allocate new entry at end of cbeam array */
 	if ((i = ncbeams + xcbeams++) >= maxcbeam) {	/* grow array */
 		maxcbeam += CBEAMBLK;
 		if (cbeam == NULL)
-			cbeam = (struct beamcomp *)malloc(
-					maxcbeam*sizeof(struct beamcomp) );
+			cbeam = (PACKHEAD *)malloc(
+					maxcbeam*sizeof(PACKHEAD) );
 		else
-			cbeam = (struct beamcomp *)realloc( (char *)cbeam,
-					maxcbeam*sizeof(struct beamcomp) );
+			cbeam = (PACKHEAD *)realloc( (char *)cbeam,
+					maxcbeam*sizeof(PACKHEAD) );
 		if (cbeam == NULL)
 			error(SYSTEM, "out of memory in newcbeam");
 	}
@@ -66,7 +48,7 @@ newcbeam()		/* allocate new entry at end of cbeam array */
 
 int
 cbeamcmp(cb1, cb2)	/* compare two cbeam entries for sort: keep orphans */
-register struct beamcomp	*cb1, *cb2;
+register PACKHEAD	*cb1, *cb2;
 {
 	register int	c;
 
@@ -78,7 +60,7 @@ register struct beamcomp	*cb1, *cb2;
 
 int
 cbeamcmp2(cb1, cb2)	/* compare two cbeam entries for sort: no orphans */
-register struct beamcomp	*cb1, *cb2;
+register PACKHEAD	*cb1, *cb2;
 {
 	register int	c;
 
@@ -96,14 +78,14 @@ int
 findcbeam(hd, bi)	/* find the specified beam in our sorted list */
 int	hd, bi;
 {
-	struct beamcomp	cb;
-	register struct beamcomp	*p;
+	PACKHEAD	cb;
+	register PACKHEAD	*p;
 
 	if (ncbeams <= 0)
 		return(-1);
-	cb.hd = hd; cb.bi = bi; cb.nr = 0;
-	p = (struct beamcomp *)bsearch((char *)&cb, (char *)cbeam, ncbeams,
-			sizeof(struct beamcomp), cbeamcmp);
+	cb.hd = hd; cb.bi = bi; cb.nr = cb.nc = 0;
+	p = (PACKHEAD *)bsearch((char *)&cb, (char *)cbeam, ncbeams,
+			sizeof(PACKHEAD), cbeamcmp);
 	if (p == NULL)
 		return(-1);
 	return(p - cbeam);
@@ -129,7 +111,7 @@ int	bi;
 	if (bi < 1 | bi > nbeams(hdlist[hd]))
 		error(INTERNAL, "illegal beam index in getcbeam");
 	n = newcbeam();		/* allocate and assign */
-	cbeam[n].nr = 0; cbeam[n].hd = hd; cbeam[n].bi = bi;
+	cbeam[n].hd = hd; cbeam[n].bi = bi; cbeam[n].nr = cbeam[n].nc = 0;
 	return(n);
 }
 
@@ -142,7 +124,7 @@ int	adopt;
 	if (!(ncbeams += xcbeams))
 		return;
 	xcbeams = 0;
-	qsort((char *)cbeam, ncbeams, sizeof(struct beamcomp),
+	qsort((char *)cbeam, ncbeams, sizeof(PACKHEAD),
 			adopt ? cbeamcmp : cbeamcmp2);
 	if (adopt)
 		return;
@@ -151,115 +133,6 @@ int	adopt;
 			break;
 	xcbeams = ncbeams - ++i;	/* put orphans after ncbeams */
 	ncbeams = i;
-}
-
-
-cbeamop(op, bl, n)		/* update beams on server list */
-int	op;
-register struct beamcomp	*bl;
-int	n;
-{
-	register PACKHEAD	*pa;
-	register int	i;
-
-	if (n <= 0)
-		return;
-	pa = (PACKHEAD *)malloc(n*sizeof(PACKHEAD));
-	if (pa == NULL)
-		error(SYSTEM, "out of memory in cbeamop");
-	for (i = 0; i < n; i++) {
-		pa[i].hd = bl[i].hd;
-		pa[i].bi = bl[i].bi;
-		pa[i].nr = bl[i].nr;
-		pa[i].nc = 0;
-	}
-	serv_request(op, n*sizeof(PACKHEAD), (char *)pa);
-	free((char *)pa);
-}
-
-
-static int
-comptodo(tdl, vw)		/* compute holodeck sections in view */
-int	tdl[MAXTODO+1];
-VIEW	*vw;
-{
-	int	n = 0;
-	FVECT	gp, dv;
-	double	dist2[MAXTODO+1], thisdist2;
-	register int	i, j;
-					/* find closest MAXTODO sections */
-	for (i = 0; hdlist[i]; i++) {
-		hdgrid(gp, hdlist[i], vw->vp);
-		for (j = 0; j < 3; j++)
-			if (gp[j] < 0.)
-				dv[j] = -gp[j];
-			else if (gp[j] > hdlist[i]->grid[j])
-				dv[j] = gp[j] - hdlist[i]->grid[j];
-			else
-				dv[j] = 0.;
-		thisdist2 = DOT(dv,dv);
-		for (j = n; j > 0 && thisdist2 < dist2[j-1]; j--) {
-			tdl[j] = tdl[j-1];
-			dist2[j] = dist2[j-1];
-		}
-		tdl[j] = i;
-		dist2[j] = thisdist2;
-		if (n < MAXTODO)
-			n++;
-	}
-					/* watch for bad move */
-	if (n && dist2[0] > MAXDIST*MAXDIST) {
-		error(COMMAND, "move past outer limits");
-		return(0);
-	}
-					/* avoid big differences */
-	for (j = 1; j < n; j++)
-		if (dist2[j] > MAXDRAT*MAXDRAT*dist2[j-1])
-			n = j;
-	tdl[n] = -1;
-	return(n);
-}
-
-
-int
-addview(hd, vw, rad, hres, vres)	/* add view for section */
-int	hd;
-VIEW	*vw;
-double	rad;
-int	hres, vres;
-{
-	int	sampquant, samptot = 0;
-	int	h, v, shr, svr;
-	GCOORD	gc[2];
-	FVECT	rorg, rdir;
-				/* compute sampling grid */
-	if (hres|vres && hres*vres <= NVSAMPS) {
-		shr = hres; svr = vres;
-		sampquant = 1;
-	} else {
-		shr = sqrt(NVSAMPS/viewaspect(vw)) + .5;
-		svr = (NVSAMPS + shr/2)/shr;
-		sampquant = (hres*vres + shr*svr/2)/(shr*svr);
-	}
-				/* intersect sample rays with section */
-	for (v = svr; v--; )
-		for (h = shr; h--; ) {
-			if (viewray(rorg, rdir, vw, (h+frandom())/shr,
-						(v+frandom())/svr) < -FTINY)
-				continue;
-			if (rad > FTINY) {
-				rorg[0] += (1.-2.*frandom())*rad;
-				rorg[1] += (1.-2.*frandom())*rad;
-				rorg[2] += (1.-2.*frandom())*rad;
-			}
-			if (hdinter(gc, NULL, NULL, hdlist[hd], rorg, rdir)
-						>= 0.99*FHUGE)
-				continue;
-			cbeam[getcbeam(hd,hdbindex(hdlist[hd],gc))].nr +=
-					sampquant;
-			samptot += sampquant;
-		}
-	return(samptot);
 }
 
 
@@ -277,42 +150,41 @@ int	fresh;
 }
 
 
-int *
+int2 *
 beam_view(vn, hr, vr)		/* add beam view (if advisable) */
 VIEW	*vn;
 int	hr, vr;
 {
-	static int	todo[MAXTODO+1];
-	int	n;
-	double	er, eravg, d;
+	int2	*slist;
+	BEAMLIST	blist;
+	double	eravg, d;
 	register HOLO	*hp;
-	register int	i;
-					/* find nearby sections */
-	if (!(n = comptodo(todo, vn)))
+	register int	i, n;
+					/* compute beams for view */
+	slist = viewbeams(vn, hr, vr, &blist);
+	if (*slist < 0) {
+		error(COMMAND, "no sections visible from this view");
 		return(NULL);
+	}
 					/* sort current beam list */
 	cbeamsort(1);
-					/* add view to nearby sections */
+					/* add new beams to list */
+	for (i = blist.nb; i--; ) {
+		n = getcbeam(blist.bl[i].hd, blist.bl[i].bi);
+		if (blist.bl[i].nr > cbeam[n].nr)
+			cbeam[n].nr = blist.bl[i].nr;
+	}
+	free((char *)blist.bl);		/* free list */
+	if (MEYERNG <= FTINY)
+		return(slist);
+					/* compute average eye range */
 	eravg = 0.;
-	for (i = 0; i < n; i++) {
-		hp = hdlist[todo[i]];
-		if (MEYERNG > FTINY)
-			er = 	MEYERNG/3. / VLEN(hp->wg[0]) +
+	for (n = 0; slist[n] >= 0; n++) {
+		hp = hdlist[slist[n]];
+		eravg += 	MEYERNG/3. / VLEN(hp->wg[0]) +
 				MEYERNG/3. / VLEN(hp->wg[1]) +
 				MEYERNG/3. / VLEN(hp->wg[2]) ;
-		else
-			er = 0.;
-		if (!addview(todo[i], vn, 0.25*er, hr, vr)) {
-			register int	j;		/* whoops! */
-			n--;				/* delete from list */
-			for (j = i--; j <= n; j++)
-				todo[j] = todo[j+1];
-		} else
-			eravg += er;
 	}
-	if (eravg <= FTINY)
-		return(todo);
-					/* compute average eye range */
 	eravg /= (double)n;
 					/* add to current eye position */
 	if (cureye.rng <= FTINY) {
@@ -323,7 +195,7 @@ int	hr, vr;
 			cureye.vpt[i] = 0.5*(cureye.vpt[i] + vn->vp[i]);
 		cureye.rng = 0.5*(cureye.rng + eravg + d);
 	}
-	return(todo);
+	return(slist);
 }
 
 
@@ -336,10 +208,66 @@ int	all;
 					/* sort list (put orphans at end) */
 	cbeamsort(all < 0);
 					/* send beam request */
-	if (all)
-		cbeamop(DR_NEWSET, cbeam, ncbeams);
-	else
-		cbeamop(DR_ADJSET, cbeam, ncbeams+xcbeams);
+	if (all) {
+		if (ncbeams > 0)
+			serv_request(DR_NEWSET,
+					ncbeams*sizeof(PACKHEAD), cbeam);
+	} else {
+		if (ncbeams+xcbeams > 0)
+			serv_request(DR_ADJSET,
+				(ncbeams+xcbeams)*sizeof(PACKHEAD), cbeam);
+	}
 	xcbeams = 0;			/* truncate our list */
 	return(ncbeams);
+}
+
+
+gridlines(f)			/* run through holodeck section grid lines */
+int	(*f)();
+{
+	register int	hd, w, i;
+	int	g0, g1;
+	FVECT	wp[2], mov;
+	double	d;
+					/* do each wall on each section */
+	for (hd = 0; hdlist[hd] != NULL; hd++)
+		for (w = 0; w < 6; w++) {
+			g0 = hdwg0[w];
+			g1 = hdwg1[w];
+			d = 1.0/hdlist[hd]->grid[g0];
+			mov[0] = d * hdlist[hd]->xv[g0][0];
+			mov[1] = d * hdlist[hd]->xv[g0][1];
+			mov[2] = d * hdlist[hd]->xv[g0][2];
+			if (w & 1) {
+				VSUM(wp[0], hdlist[hd]->orig,
+						hdlist[hd]->xv[w>>1], 1.);
+				VSUM(wp[0], wp[0], mov, 1.);
+			} else
+				VCOPY(wp[0], hdlist[hd]->orig);
+			VSUM(wp[1], wp[0], hdlist[hd]->xv[g1], 1.);
+			for (i = hdlist[hd]->grid[g0]; ; ) {	/* g0 lines */
+				(*f)(wp);
+				if (!--i) break;
+				wp[0][0] += mov[0]; wp[0][1] += mov[1];
+				wp[0][2] += mov[2]; wp[1][0] += mov[0];
+				wp[1][1] += mov[1]; wp[1][2] += mov[2];
+			}
+			d = 1.0/hdlist[hd]->grid[g1];
+			mov[0] = d * hdlist[hd]->xv[g1][0];
+			mov[1] = d * hdlist[hd]->xv[g1][1];
+			mov[2] = d * hdlist[hd]->xv[g1][2];
+			if (w & 1)
+				VSUM(wp[0], hdlist[hd]->orig,
+						hdlist[hd]->xv[w>>1], 1.);
+			else
+				VSUM(wp[0], hdlist[hd]->orig, mov, 1.);
+			VSUM(wp[1], wp[0], hdlist[hd]->xv[g0], 1.);
+			for (i = hdlist[hd]->grid[g1]; ; ) {	/* g1 lines */
+				(*f)(wp);
+				if (!--i) break;
+				wp[0][0] += mov[0]; wp[0][1] += mov[1];
+				wp[0][2] += mov[2]; wp[1][0] += mov[0];
+				wp[1][1] += mov[1]; wp[1][2] += mov[2];
+			}
+		}
 }
