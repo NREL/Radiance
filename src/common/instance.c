@@ -66,15 +66,11 @@ int  flags;
 			error(SYSTEM, "out of memory in getinstance");
 		if (o->oargs.nsargs < 1)
 			objerror(o, USER, "bad # of arguments");
-		in->f.sca = 1.0;
-		setident4(in->f.xfm);
 		if (xf(in->f.xfm, &in->f.sca, o->oargs.nsargs-1,
 				o->oargs.sarg+1) != o->oargs.nsargs-1)
 			objerror(o, USER, "bad transform");
 		if (in->f.sca < 0.0)
 			in->f.sca = -in->f.sca;
-		in->b.sca = 1.0;
-		setident4(in->b.xfm);
 		invxf(in->b.xfm, &in->b.sca,o->oargs.nsargs-1,o->oargs.sarg+1);
 		if (in->b.sca < 0.0)
 			in->b.sca = -in->b.sca;
