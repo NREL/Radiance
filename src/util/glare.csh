@@ -7,10 +7,15 @@ set fgargs=(-v)
 set nofile="none"
 set octree=$nofile
 set picture=$nofile
+set glarefile=$nofile
 if ($#argv >= 1) then
 	set glarefile=$argv[1]
-else
-	set glarefile=$nofile
+	if ($#argv >= 2) then
+		set picture=$argv[2]
+		if ($#argv >= 3) then
+			set octree=$argv[3]
+		endif
+	endif
 endif
 set rtargs=
 set view=
@@ -55,8 +60,12 @@ so the view specification is optional unless you are starting from an
 octree.
 
 _EOF_
-	readvar picture
-	readvar octree
+	if ( $picture == $nofile ) then
+		readvar picture
+	endif
+	if ( $octree == $nofile ) then
+		readvar octree
+	endif
 	readvar view
 	if ( $picture == $nofile && $octree == $nofile ) then
 		echo "You must specify a picture or an octree"
