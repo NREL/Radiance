@@ -33,7 +33,8 @@ extern "C" {
 
 typedef BYTE  COLR[4];		/* red, green, blue (or X,Y,Z), exponent */
 
-typedef float  COLOR[3];	/* red, green, blue (or X,Y,Z) */
+typedef float COLORV;
+typedef COLORV  COLOR[3];	/* red, green, blue (or X,Y,Z) */
 
 typedef float  RGBPRIMS[4][2];	/* (x,y) chromaticities for RGBW */
 typedef float  (*RGBPRIMP)[2];	/* pointer to RGBPRIMS array */

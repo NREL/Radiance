@@ -26,13 +26,13 @@ static const char	RCSid[] = "$Id$";
 #endif
 #define  BYTES_WORD	sizeof(ALIGNT)
 
-static char  *bposition = NULL;
-static unsigned int  nremain = 0;
+static void  *bposition = NULL;
+static size_t  nremain = 0;
 
 
-char *
+void *
 bmalloc(		/* allocate a block of n bytes */
-register unsigned int  n
+register size_t  n
 )
 {
 	if (n > nremain && (n > MBLKSIZ || nremain > MBLKSIZ/WASTEFRAC))
@@ -40,7 +40,7 @@ register unsigned int  n
 
 	n = (n+(BYTES_WORD-1))&~(BYTES_WORD-1);		/* word align */
 
-	if (n > nremain && (bposition = (char *)malloc(nremain = MBLKSIZ)) == NULL) {
+	if (n > nremain && (bposition = malloc(nremain = MBLKSIZ)) == NULL) {
 		nremain = 0;
 		return(NULL);
 	}
@@ -52,13 +52,13 @@ register unsigned int  n
 
 void
 bfree(			/* free random memory */
-register char	*p,
-register unsigned int	n
+register void	*p,
+register size_t	n
 )
 {
-	register unsigned int	bsiz;
+	register size_t	bsiz;
 					/* check alignment */
-	bsiz = BYTES_WORD - ((unsigned int)p&(BYTES_WORD-1));
+	bsiz = BYTES_WORD - ((size_t)p&(BYTES_WORD-1));
 	if (bsiz < BYTES_WORD) {
 		p += bsiz;
 		n -= bsiz;

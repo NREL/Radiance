@@ -19,9 +19,11 @@ static const char	RCSid[] = "$Id$";
 extern FILE	*freopen();
 
 
-main(argc, argv)
-int	argc;
-char	*argv[];
+int
+main(
+	int	argc,
+	char	*argv[]
+)
 {
 	register int	c;
 	register FILE	*fp;

@@ -17,7 +17,7 @@ int
 fgetval(fp, ty, vp)			/* get specified data word */
 register FILE	*fp;
 int	ty;
-char	*vp;
+void	*vp;	/* type depends on ty */
 {
 	char	wrd[64];
 	register char	*cp;

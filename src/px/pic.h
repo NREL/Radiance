@@ -21,6 +21,26 @@ typedef struct {
 /* image resolution */
 extern int	xmax,ymax;
 
+	/* defined in closest.c */
+extern void initializeclosest(void);
+extern int closest(int r, int g, int b);
+
+	/* defined in cut.c */
+extern int makecm(int nw, int *na);
+
+	/* defined in ciq.c */
+extern void ciq(int dith, int nw, int synth, colormap cm);
+
+	/* defined in biq.c */
+extern void biq(int dith, int nw, int synth, colormap cm);
+
+	/* defined in in the calling program */
+extern void picreadcm(colormap  map);
+extern void picwritecm(colormap  cm);
+extern void picwriteline(int  y, pixel  *l);
+extern void picreadline3(int  y, rgbpixel  *l3);
+
+
 #ifdef __cplusplus
 }
 #endif

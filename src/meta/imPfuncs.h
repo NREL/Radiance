@@ -83,8 +83,8 @@ extern FILE *imout;
 extern void im_w(int code, unsigned int w);
 extern void im_223(int code,unsigned int b2a,unsigned int b2b,unsigned int b3);
 extern void im_77(int code, unsigned int b7a, unsigned int b7b);
-/*extern void imCreateFamilyTable(...); */
-/*extern void imCreatePath(...); */
+/* extern void imCreateFamilyTable(char *s, ...); */ /* XXX */
+/* extern void imCreatePath(char *s, ...); */ /* XXX */
 extern void imCreatePathV(unsigned int count, unsigned int *vec);
 extern void imInit(void);
 

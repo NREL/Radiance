@@ -325,7 +325,7 @@ again:
 				return;
 			}
 			*v = *(viewhist + ((nhist-1)%VIEWHISTLEN));
-			goto again;	/* poss. overloading dev_section()? */
+			goto again;	/* XXX overloading dev_section()? */
 		}
 		DCHECK(*slist < 0, WARNING, "no visible sections in new_view");
 		for ( ; *slist >= 0; slist++)

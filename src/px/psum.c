@@ -27,6 +27,8 @@ COLOR  scale[MAXFILE];			/* scaling factors */
 int  nfile;				/* number of files */
 
 static gethfunc tabputs;
+static void psum(void);
+
 
 
 static int
@@ -40,9 +42,11 @@ tabputs(			/* print line preceded by a tab */
 }
 
 
-main(argc, argv)
-int  argc;
-char  *argv[];
+int
+main(
+	int  argc,
+	char  *argv[]
+)
 {
 	double  d;
 	int  xres, yres;
@@ -123,10 +127,12 @@ char  *argv[];
 	psum();
 	
 	quit(0);
+	return 0; /* pro forma return */
 }
 
 
-psum()				/* sum the files */
+static void
+psum(void)				/* sum the files */
 {
 	COLOR  *scanin, *scanout;
 	int  y, i;
@@ -163,8 +169,9 @@ psum()				/* sum the files */
 
 
 void
-quit(code)		/* exit gracefully */
-int  code;
+quit(		/* exit gracefully */
+	int  code
+)
 {
 	exit(code);
 }

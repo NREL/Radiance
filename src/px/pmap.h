@@ -16,6 +16,12 @@ extern "C" {
  */
 #define DET2(a,b, c,d) ((a)*(d) - (b)*(c))
 
+
+	/* defined in pmapgen.c */
+extern int pmap_quad_rect(double u0, double v0, double u1, double v1,
+		double qdrl[4][2], double QR[3][3]);
+extern int pmap_square_quad(double qdrl[4][2], double SQ[3][3]);
+
 #ifdef __cplusplus
 }
 #endif

@@ -30,11 +30,16 @@ typedef struct {
 
 static MESH	*mlist = NULL;		/* list of loaded meshes */
 
+static lut_keycmpf_t cvcmp;
+static lut_hashf_t cvhash;
+
 
 static unsigned long
-cvhash(cvp)				/* hash an encoded vertex */
-MCVERT	*cvp;
+cvhash(p)				/* hash an encoded vertex */
+//MCVERT	*cvp;
+void	*p;
 {
+	MCVERT	*cvp = p;
 	unsigned long	hval;
 	
 	if (!(cvp->fl & MT_V))
@@ -49,9 +54,11 @@ MCVERT	*cvp;
 
 
 static int
-cvcmp(v1, v2)				/* compare encoded vertices */
-register MCVERT	*v1, *v2;
+cvcmp(vv1, vv2)				/* compare encoded vertices */
+//register MCVERT	*v1, *v2;
+const void	*vv1, *vv2;
 {
+	const MCVERT	*v1 = vv1, *v2 = vv2;
 	if (v1->fl != v2->fl)
 		return(1);
 	if (v1->xyz[0] != v2->xyz[0])

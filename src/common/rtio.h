@@ -24,7 +24,7 @@ extern int	setfdate(char *fname, long ftim);
 					/* defined in fgetline.c */
 extern char	*fgetline(char *s, int n, FILE *fp);
 					/* defined in fgetval.c */
-extern int	fgetval(FILE *fp, int ty, char *vp);
+extern int	fgetval(FILE *fp, int ty, void *vp);
 					/* defined in fgetword.c */
 extern char	*fgetword(char *s, int n, FILE *fp);
 					/* defined in fputword.c */

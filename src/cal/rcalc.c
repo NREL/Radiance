@@ -15,8 +15,10 @@ static const char RCSid[] = "$Id$";
 #include  <ctype.h>
 
 #include  "platform.h"
-#include  "calcomp.h"
 #include  "rterror.h"
+#include  "rtmisc.h"
+#include  "rtio.h"
+#include  "calcomp.h"
 
 #define  isnum(c)       (isdigit(c) || (c)=='-' || (c)=='.' \
 				|| (c)=='+' || (c)=='e' || (c)=='E')

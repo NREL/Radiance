@@ -34,7 +34,7 @@ cont(
 	hiy=(y>>7) & 037;
 	lox = (x>>2)&037;
 	loy=(y>>2)&037;
-	extra=x&03+(y<<2)&014;
+	extra=x&(03+(y<<2))&014;
 	n = (abs(hix-ohix) + abs(hiy-ohiy) + 6) / 12;
 	if(hiy != ohiy){
 		putch(hiy|040);

@@ -24,8 +24,6 @@ extern int n;		/* number of colors in it */
 #define linealloc(xdim)		(pixel *)emalloc(sizeof(pixel)*xdim)
 #define line3alloc(xdim)	(rgbpixel *)emalloc(sizeof(rgbpixel)*xdim)
 
-extern char	*emalloc();
-
 
 #ifdef __cplusplus
 }

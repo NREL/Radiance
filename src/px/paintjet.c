@@ -16,10 +16,16 @@ static const char	RCSid[] = "$Id$";
 
 #define	 NCOLS		1440		/* 8" at 180 dpi */
 
+static int printp(char  *fname);
+static void plotscan(COLR  scan[], int  len, int  y);
+static int colbit(COLR  col, int  x, int  a);
 
-main(argc, argv)
-int  argc;
-char  *argv[];
+
+int
+main(
+	int  argc,
+	char  *argv[]
+)
 {
 	int  i, status = 0;
 	SET_DEFAULT_BINARY();
@@ -34,8 +40,10 @@ char  *argv[];
 }
 
 
-printp(fname)				/* print a picture */
-char  *fname;
+static int
+printp(				/* print a picture */
+	char  *fname
+)
 {
 	FILE  *input;
 	int  xres, yres;
@@ -84,10 +92,12 @@ char  *fname;
 }
 
 
-plotscan(scan, len, y)			/* plot a scanline */
-COLR  scan[];
-int  len;
-int  y;
+static void
+plotscan(			/* plot a scanline */
+	COLR  scan[],
+	int  len,
+	int  y
+)
 {
 	int  c;
 	register int  x, b;
@@ -108,10 +118,12 @@ int  y;
 }
 
 
-colbit(col, x, a)		/* determine bit value for primary at x */
-COLR  col;
-register int  x;
-register int  a;
+static int
+colbit(		/* determine bit value for primary at x */
+	COLR  col,
+	register int  x,
+	register int  a
+)
 {
 	static int  cerr[NCOLS][3];
 	static int  err[3];

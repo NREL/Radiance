@@ -21,8 +21,11 @@ typedef struct {
 #ifdef FUN_ARGLIST
 extern int  o_default(FUN_ARGLIST);
 #else
-extern int  o_default();
+extern int  o_default(); /* XXX conflict with radogl.h */
 #endif
+
+/* extern void initotypes(void);*/ /* XXX don't mess with the linker... */
+
 				/* object types in decreasing frequency */
 #define  OBJ_FACE	0		/* polygon */
 #define  OBJ_CONE	1		/* cone */

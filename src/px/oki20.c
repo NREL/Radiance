@@ -25,10 +25,16 @@ long  lpat[NCOLS];
 
 int  dofilter = 0;		/* filter through pfilt first? */
 
+static int printp(char  *fname);
+static void plotscan(COLR  scan[], int  len, int  y);
+static int bit(COLR  col, int  x);
 
-main(argc, argv)
-int  argc;
-char  *argv[];
+
+int
+main(
+	int  argc,
+	char  *argv[]
+)
 {
 	int  i, status = 0;
 	SET_DEFAULT_BINARY();
@@ -47,8 +53,10 @@ char  *argv[];
 }
 
 
-printp(fname)				/* print a picture */
-char  *fname;
+static int
+printp(				/* print a picture */
+	char  *fname
+)
 {
 	char  buf[PATH_MAX];
 	FILE  *input;
@@ -110,10 +118,12 @@ char  *fname;
 }
 
 
-plotscan(scan, len, y)			/* plot a scanline */
-COLR  scan[];
-int  len;
-int  y;
+static void
+plotscan(			/* plot a scanline */
+	COLR  scan[],
+	int  len,
+	int  y
+)
 {
 	int  bpos, start, end;
 	register long  c;
@@ -160,9 +170,11 @@ int  y;
 }
 
 
-bit(col, x)		/* determine bit value for pixel at x */
-COLR  col;
-register int  x;
+static int
+bit(		/* determine bit value for pixel at x */
+	COLR  col,
+	register int  x
+)
 {
 	static int  cerr[NCOLS];
 	static int  err;

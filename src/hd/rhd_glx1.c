@@ -11,6 +11,7 @@ static const char	RCSid[] = "$Id$";
 #include  <GL/glx.h>
 #include  <GL/glu.h>
 
+#include "platform.h"
 #include "rhd_qtree.h"
 #include "rhdriver.h"
 #include "rhdisp.h"

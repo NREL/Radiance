@@ -26,6 +26,8 @@ static const char	RCSid[] = "$Id$";
 #include  <math.h>
 #include  <stdlib.h>
 
+#include  "rtmisc.h"
+#include  "rtio.h"
 #include  "rterror.h"
 #include  "calcomp.h"
 

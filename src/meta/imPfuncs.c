@@ -123,7 +123,7 @@ im_putstring(
 }
 
 
-void
+extern void
 imCreateFamilyTable(va_alist)
 
 va_dcl
@@ -159,7 +159,7 @@ va_dcl
 }
 
 
-void
+extern void
 imCreatePath(va_alist)
 
 va_dcl

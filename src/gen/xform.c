@@ -54,7 +54,7 @@ static void xfcomm(char *fname, FILE *fin);
 static void xfobject(char *fname, FILE *fin);
 static int addxform(FILE *fin);
 static int alias(FILE *fin);
-static void initotypes(void);
+void initotypes(void); /* XXX conflict with otypes.h */
 static void openmain(char *iname);
 
 

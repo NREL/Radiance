@@ -16,17 +16,17 @@ static const char	RCSid[] = "$Id$";
 #include  "resolu.h"
 
 double	gamcor = 2.2;			/* gamma correction */
-
 int  bradj = 0;				/* brightness adjustment */
-
 char  *progname;
-
 int  xmax, ymax;
 
+static void quiterr(char  *err);
+static void pr2ra(int	rf, int	pad);
+static void ra2pr(int	rf, int	pad);
 
-main(argc, argv)
-int  argc;
-char  *argv[];
+
+int
+main(int  argc, char  *argv[])
 {
 	struct rasterfile  head;
 	int  reverse = 0;
@@ -119,8 +119,10 @@ userr:
 }
 
 
-quiterr(err)		/* print message and exit */
-char  *err;
+static void
+quiterr(		/* print message and exit */
+	char  *err
+)
 {
 	if (err != NULL) {
 		fprintf(stderr, "%s: %s\n", progname, err);
@@ -130,9 +132,11 @@ char  *err;
 }
 
 
-pr2ra(rf, pad)		/* convert 24-bit scanlines to Radiance picture */
-int	rf;
-int	pad;
+static void
+pr2ra(		/* convert 24-bit scanlines to Radiance picture */
+	int	rf,
+	int	pad
+)
 {
 	COLR	*scanout;
 	register int	x;
@@ -169,9 +173,11 @@ int	pad;
 }
 
 
-ra2pr(rf, pad)		/* convert Radiance scanlines to 24-bit rasterfile */
-int	rf;
-int	pad;
+static void
+ra2pr(		/* convert Radiance scanlines to 24-bit rasterfile */
+	int	rf,
+	int	pad
+)
 {
 	int	ord[3];
 	COLR	*scanin;

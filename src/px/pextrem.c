@@ -50,9 +50,11 @@ headline(			/* check header line */
 }
 
 
-main(argc, argv)
-int  argc;
-char  *argv[];
+int
+main(
+	int  argc,
+	char  *argv[]
+)
 {
 	int  i;
 	int  xres, yres;

@@ -21,8 +21,8 @@ FUN  ofun[NUMOTYPE] = INIT_OTYPE;
 static int	nextlist, nlistleft = 0;
 
 
-static void
-initotypes()			/* initialize ofun array */
+void
+initotypes(void)			/* initialize ofun array */
 {
 	if (ofun[OBJ_SPHERE].funp == o_sphere)
 		return;			/* already done */

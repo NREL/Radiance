@@ -16,10 +16,15 @@ static const char	RCSid[] = "$Id$";
 int  primary = -1;
 double  prival = 0.0;
 
+static void colorscale(void);
+static void printargs(int  ac, char  **av, FILE  *fp);
 
-main(argc, argv)
-int  argc;
-char  *argv[];
+
+int
+main(
+	int  argc,
+	char  *argv[]
+)
 {
 	int  i;
 
@@ -53,7 +58,8 @@ userr:
 }
 
 
-colorscale()			/* output our color scale */
+static void
+colorscale(void)			/* output our color scale */
 {
 	COLOR  scanline[256];
 	int  j;
@@ -82,10 +88,12 @@ writerr:
 }
 
 
-printargs(ac, av, fp)		/* print arguments to a file */
-int  ac;
-char  **av;
-FILE  *fp;
+static void
+printargs(		/* print arguments to a file */
+	int  ac,
+	char  **av,
+	FILE  *fp
+)
 {
 	while (ac-- > 0) {
 		fputs(*av++, fp);

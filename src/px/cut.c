@@ -25,9 +25,14 @@ struct plum {struct plum *next; int code;};
 static short off[len];
 /* color codes: offsets of colors in hist array */
 
+static void splitbox(struct index *ii, struct index *io);
 
-makecm(nw,na)			/* subdivide colorspace to generate a colormap*/
-int nw,*na;			/* number of colors wanted, actual */
+
+int
+makecm(			/* subdivide colorspace to generate a colormap*/
+	int nw,
+	int *na			/* number of colors wanted, actual */
+)
 {
     int i,m,n,freq,weight,sr,sg,sb;
     short *o;
@@ -69,8 +74,11 @@ int nw,*na;			/* number of colors wanted, actual */
     return n;
 }
 
-splitbox(ii,io)		/* split a box in two: half of the pixels from */
-struct index *ii,*io;	/* box ii will go into io, the other half into io+1 */
+static void
+splitbox(		/* split a box in two: half of the pixels from */
+	struct index *ii,	/* box ii will go into io, the other half into io+1 */
+	struct index *io
+)
 {
     register short *o,*o1,*o2;
     register int shift,count,k,freq,r,g,b,r1,g1,b1,r2,g2,b2;

@@ -16,10 +16,16 @@ static const char	RCSid[] = "$Id$";
 
 #define	 NCOLS		880		/* for wide carriage */
 
+static int printp(char  *fname);
+static void plotscan(COLR  scan[], int  len, int  y);
+static int bit(COLR  clr, int  x);
 
-main(argc, argv)
-int  argc;
-char  *argv[];
+
+int
+main(
+	int  argc,
+	char  *argv[]
+)
 {
 	int  i;
 	int  status = 0;
@@ -35,8 +41,10 @@ char  *argv[];
 }
 
 
-printp(fname)				/* print a picture */
-char  *fname;
+static int
+printp(				/* print a picture */
+	char  *fname
+)
 {
 	FILE  *input;
 	int  xres, yres;
@@ -84,16 +92,18 @@ char  *fname;
 }
 
 
-plotscan(scan, len, y)			/* plot a scanline */
-COLR  scan[];
-int  len;
-int  y;
+static void
+plotscan(			/* plot a scanline */
+	COLR  scan[],
+	int  len,
+	int  y
+)
 {
 	static BYTE  pat[NCOLS];
 	int  bpos;
 	register int  i;
 
-	if (bpos = y & 7) {
+	if ((bpos = y & 7)) {
 
 		for (i = 0; i < len; i++)
 			pat[i] |= bit(scan[i], i) << bpos;
@@ -116,9 +126,11 @@ int  y;
 }
 
 
-bit(clr, x)				/* return bit for color at x */
-COLR  clr;
-register int  x;
+static int
+bit(				/* return bit for color at x */
+	COLR  clr,
+	register int  x
+)
 {
 	static int  cerr[NCOLS];
 	static int  err;

@@ -17,10 +17,11 @@ static const char	RCSid[] = "$Id$";
 
 #define	 NCOLS		133
 
+static int shade(COLR clr);
 
-main(argc, argv)
-int  argc;
-char  **argv;
+
+int
+main(int  argc, char  **argv)
 {
 	FILE  *input;
 	int  xres, yres;
@@ -60,9 +61,10 @@ char  **argv;
 }
 
 
-int
-shade(clr)			/* return character for color */
-COLR  clr;
+static int
+shade(			/* return character for color */
+	COLR  clr
+)
 {
 #define NSHADES	 13
 

@@ -23,8 +23,6 @@ static const char	RCSid[] = "$Id$";
 
 #define MAXFLEN		8192		/* file must be smaller than this */
 
-extern char	*bmalloc();
-
 
 int
 wordfile(words, fname)		/* get words from fname, put in words */

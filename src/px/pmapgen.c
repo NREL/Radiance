@@ -9,7 +9,6 @@ static const char	RCSid[] = "$Id$";
  * Paul Heckbert	5 Nov 85, 12 Dec 85
  */
 
-static char rcsid[] = "$Header$";
 #include <stdio.h>
 #include "pmap.h"
 #include "mx3.h"
@@ -33,10 +32,15 @@ static char rcsid[] = "$Header$";
  * computing it symbolically.
  */
 	
-pmap_quad_rect(u0, v0, u1, v1, qdrl, QR)
-double u0, v0, u1, v1;		/* bounds of rectangle */
-double qdrl[4][2];		/* vertices of quadrilateral */
-double QR[3][3];		/* qdrl->rect transform (returned) */
+extern int
+pmap_quad_rect(
+	double u0,		/* bounds of rectangle */
+	double v0,
+	double u1,
+	double v1,
+	double qdrl[4][2],		/* vertices of quadrilateral */
+	double QR[3][3]		/* qdrl->rect transform (returned) */
+)
 {
     int ret;
     double du, dv;
@@ -81,9 +85,11 @@ double QR[3][3];		/* qdrl->rect transform (returned) */
  *	(0,1) --> qdrl[3]
  */
 
-pmap_square_quad(qdrl, SQ)
-register double qdrl[4][2];	/* vertices of quadrilateral */
-register double SQ[3][3];	/* square->qdrl transform */
+extern int
+pmap_square_quad(
+	register double qdrl[4][2],	/* vertices of quadrilateral */
+	register double SQ[3][3]	/* square->qdrl transform */
+)
 {
     double px, py;
 
