@@ -260,7 +260,7 @@ int	np;
 		fprintf(stderr, "%s: sending %d samples to rtrace...\n",
 				progname, np);
 #endif
-	pb[6*np+3] = 0.; pb[6*np+4] = 0.; pb[6*np+5] = 0.;
+	bzero(pb+6*np, 6*sizeof(float));
 	if (process(rt_pd, pb, pb, 3*sizeof(float)*np,
 			6*sizeof(float)*(np+1)) < 3*sizeof(float)*np) {
 		fprintf(stderr, "%s: rtrace communication error\n",
