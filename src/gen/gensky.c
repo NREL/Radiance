@@ -75,8 +75,14 @@ char  *argv[];
 		month = 0;
 	} else {
 		month = atoi(argv[1]);
+		if (month < 1 || month > 12)
+			userror("bad month");
 		day = atoi(argv[2]);
+		if (day < 1 || day > 31)
+			userror("bad day");
 		hour = atof(argv[3]);
+		if (hour < 0 || hour >= 24)
+			userror("bad hour");
 		tsolar = argv[3][0] == '+';
 	}
 	for (i = 4; i < argc; i++)
@@ -151,7 +157,7 @@ computesky()			/* compute sky parameters */
 	if (zenithbr <= 0.0)
 		if (cloudy) {
 			zenithbr = 8.6*sundir[2] + .123;
-			zenithbr *= 1000.0/SKYEFFICACY;
+			zenithbr *= 1000.0/WHTEFFICACY;
 		} else {
 			zenithbr = (1.376*turbidity-1.81)*tan(altitude)+0.38;
 			zenithbr *= 1000.0/SKYEFFICACY;
@@ -168,7 +174,7 @@ computesky()			/* compute sky parameters */
 	} else {
 		F2 = 0.274*(0.91 + 10.0*exp(-3.0*(PI/2.0-altitude)) +
 				0.45*sundir[2]*sundir[2]);
-		groundbr = zenithbr*normsc(PI/2.0-altitude)/F2/PI;
+		groundbr = zenithbr*normsc(altitude)/F2/PI;
 		printf("# Ground ambient level: %f\n", groundbr);
 		if (sundir[2] > 0.0) {
 			if (sundir[2] > .16)
