@@ -83,7 +83,7 @@ marksources()			/* find and mark source objects */
 		if (!issurface(o->otype) || o->omod == OVOID)
 			continue;
 					/* find material */
-		m = findmaterial(o);
+		m = findmaterial(objptr(o->omod));
 		if (m == NULL || !islight(m->otype))
 			continue;	/* not source modifier */
 	
