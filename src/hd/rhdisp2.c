@@ -375,14 +375,14 @@ register struct cellact	*cap;
 	axmax = -1; avmax = 0;
 	for (i = 3; i--; ) {
 		d = vgp[i] - cgp[i];
-		if (d < 0) d = -d;
+		if (d < 0.) d = -d;
 		if (d > avmax) {
 			avmax = d;
 			axmax = i;
 		}
 	}
 #ifdef DEBUG
-	if (axmax < 0)
+	if (axmax < 0.)
 		error(CONSISTENCY, "botched axis computation in docell");
 #endif
 				/* compute offset vectors */
@@ -390,7 +390,7 @@ register struct cellact	*cap;
 	for (i = 3; i--; )
 		v1[i] = hp->xv[j][i] * d;
 	d = 0.5/hp->grid[j=(axmax+2)%3];
-	if (DOT(hp->wn[axmax], vc) < 0)
+	if (DOT(hp->wn[axmax], vc) < 0.)
 		d = -d;	/* reverse vertex ordering */
 	for (i = 3; i--; )
 		v2[i] = hp->xv[j][i] * d;
@@ -469,9 +469,11 @@ VIEW	*vold, *vnew;
 }
 
 
+int
 beam_sync()		/* synchronize beams on server */
 {
 	cbeamop(DR_NEWSET, cbeam, ncbeams, &odev.v, odev.hres, odev.vres);
+	return(ncbeams);
 }
 
 
