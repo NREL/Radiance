@@ -149,15 +149,17 @@ double  omega;			/* light source size */
 		h[0] = ldir[0] - np->prdir[0];
 		h[1] = ldir[1] - np->prdir[1];
 		h[2] = ldir[2] - np->prdir[2];
-		dtmp = DOT(h,np->pnorm);
-		dtmp = DOT(h,h) - dtmp*dtmp;
+		dtmp = DOT(h,h);
 		if (dtmp > FTINY*FTINY) {
-			dtmp1 = DOT(h,np->u);
-			dtmp1 = dtmp1*dtmp1 / (au2*dtmp);
-			dtmp2 = DOT(h,np->v);
-			dtmp2 = dtmp2*dtmp2 / (av2*dtmp);
-			dtmp = 2. - 2.*DOT(ldir,np->prdir);
-			dtmp *= dtmp1 + dtmp2;
+			dtmp1 = DOT(h,np->pnorm);
+			dtmp = 1.0 - dtmp1*dtmp1/dtmp;
+			if (dtmp > FTINY*FTINY) {
+				dtmp1 = DOT(h,np->u);
+				dtmp1 = dtmp1*dtmp1 / au2;
+				dtmp2 = DOT(h,np->v);
+				dtmp2 = dtmp2*dtmp2 / av2;
+				dtmp = (dtmp1 + dtmp2) / dtmp;
+			}
 		} else
 			dtmp = 0.0;
 						/* gaussian */
