@@ -26,7 +26,7 @@ char  *av[];
 {
 	double  atof(), sin(), cos();
 	double  xfmat[4][4], m4[4][4];
-	double  xfsca, theta;
+	double  xfsca, dtmp;
 	int  i, icnt;
 
 	setident4(retmat);
@@ -52,21 +52,21 @@ char  *av[];
 			switch (av[i][2]) {
 			case 'x':
 				checkarg(3,1);
-				theta = d2r(atof(av[++i]));
-				m4[1][1] = m4[2][2] = cos(theta);
-				m4[2][1] = -(m4[1][2] = sin(theta));
+				dtmp = d2r(atof(av[++i]));
+				m4[1][1] = m4[2][2] = cos(dtmp);
+				m4[2][1] = -(m4[1][2] = sin(dtmp));
 				break;
 			case 'y':
 				checkarg(3,1);
-				theta = d2r(atof(av[++i]));
-				m4[0][0] = m4[2][2] = cos(theta);
-				m4[0][2] = -(m4[2][0] = sin(theta));
+				dtmp = d2r(atof(av[++i]));
+				m4[0][0] = m4[2][2] = cos(dtmp);
+				m4[0][2] = -(m4[2][0] = sin(dtmp));
 				break;
 			case 'z':
 				checkarg(3,1);
-				theta = d2r(atof(av[++i]));
-				m4[0][0] = m4[1][1] = cos(theta);
-				m4[1][0] = -(m4[0][1] = sin(theta));
+				dtmp = d2r(atof(av[++i]));
+				m4[0][0] = m4[1][1] = cos(dtmp);
+				m4[1][0] = -(m4[0][1] = sin(dtmp));
 				break;
 			default:
 				return(i);
@@ -75,10 +75,13 @@ char  *av[];
 
 		case 's':			/* scale */
 			checkarg(2,1);
+			dtmp = atof(av[i+1]);
+			if (dtmp == 0.0) goto done;
+			i++;
 			xfsca *=
 			m4[0][0] = 
 			m4[1][1] = 
-			m4[2][2] = atof(av[++i]);
+			m4[2][2] = dtmp;
 			break;
 
 		case 'm':			/* mirror */
@@ -137,7 +140,7 @@ char  *av[];
 {
 	double  atof(), sin(), cos();
 	double  xfmat[4][4], m4[4][4];
-	double  xfsca, theta;
+	double  xfsca, dtmp;
 	int  i, icnt;
 
 	setident4(retmat);
@@ -163,21 +166,21 @@ char  *av[];
 			switch (av[i][2]) {
 			case 'x':
 				checkarg(3,1);
-				theta = -d2r(atof(av[++i]));
-				m4[1][1] = m4[2][2] = cos(theta);
-				m4[2][1] = -(m4[1][2] = sin(theta));
+				dtmp = -d2r(atof(av[++i]));
+				m4[1][1] = m4[2][2] = cos(dtmp);
+				m4[2][1] = -(m4[1][2] = sin(dtmp));
 				break;
 			case 'y':
 				checkarg(3,1);
-				theta = -d2r(atof(av[++i]));
-				m4[0][0] = m4[2][2] = cos(theta);
-				m4[0][2] = -(m4[2][0] = sin(theta));
+				dtmp = -d2r(atof(av[++i]));
+				m4[0][0] = m4[2][2] = cos(dtmp);
+				m4[0][2] = -(m4[2][0] = sin(dtmp));
 				break;
 			case 'z':
 				checkarg(3,1);
-				theta = -d2r(atof(av[++i]));
-				m4[0][0] = m4[1][1] = cos(theta);
-				m4[1][0] = -(m4[0][1] = sin(theta));
+				dtmp = -d2r(atof(av[++i]));
+				m4[0][0] = m4[1][1] = cos(dtmp);
+				m4[1][0] = -(m4[0][1] = sin(dtmp));
 				break;
 			default:
 				return(i);
@@ -186,10 +189,13 @@ char  *av[];
 
 		case 's':			/* scale */
 			checkarg(2,1);
+			dtmp = atof(av[i+1]);
+			if (dtmp == 0.0) goto done;
+			i++;
 			xfsca *=
 			m4[0][0] = 
 			m4[1][1] = 
-			m4[2][2] = 1.0 / atof(av[++i]);
+			m4[2][2] = 1.0 / dtmp;
 			break;
 
 		case 'm':			/* mirror */
