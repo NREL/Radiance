@@ -437,9 +437,13 @@ int	pred;
 	register int	n;
 	int	suffix;
 
-	suffix = n = strlen(orig);		/* find start of suffix */
-	if ((cp = rindex(orig, '.')) != NULL)
-		suffix = cp - orig;
+	n = 0; cp = orig; suffix = -1;		/* suffix position, length */
+	while (*cp) {
+		if (*cp == '.') suffix = n;
+		else if (ISDIRSEP(*cp)) suffix = -1;
+		cp++; n++;
+	}
+	if (suffix == -1) suffix = n;
 	if ((cp = bmalloc(n+2)) == NULL)
 		syserr(progname);
 	strncpy(cp, orig, suffix);
