@@ -24,7 +24,7 @@ register RAY  *r;
 	register INSTANCE  *in;
 	register int  i;
 					/* get the octree */
-	in = getinstance(o, GET_ALL);
+	in = getinstance(o, IO_ALL);
 					/* copy old ray */
 	bcopy(r, &rcont, sizeof(RAY));
 					/* transform it */

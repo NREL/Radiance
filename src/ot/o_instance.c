@@ -53,7 +53,7 @@ CUBE  *cu;
 	int  vloc, vout;
 	register int  i, j;
 					/* get octree arguments */
-	in = getinstance(o, GET_BOUNDS);
+	in = getinstance(o, IO_BOUNDS);
 					/* check if cube vertex in octree */
 	for (j = 0; j < 3; j++)
 		cumax[j] = (cumin[j] = in->obj->scube.cuorg[j]) +
