@@ -5,6 +5,11 @@
  *  Include after fvect.h
  *  Includes resolu.h
  */
+#ifndef _RAD_VIEW_H_
+#define _RAD_VIEW_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "copyright.h"
 
@@ -45,22 +50,6 @@ extern VIEW  stdview;
 #define  VIEWSTR	"VIEW="
 #define  VIEWSTRL	5
 
-#ifdef NOPROTO
-
-extern char	*setview();
-extern void	normaspect();
-extern double	viewray();
-extern void	viewloc();
-extern void	pix2loc();
-extern void	loc2pix();
-extern int	getviewopt();
-extern int	sscanview();
-extern void	fprintview();
-extern char	*viewopt();
-extern int	isview();
-extern int	viewfile();
-
-#else
 
 extern char	*setview(VIEW *v);
 extern void	normaspect(double va, double *ap, int *xp, int *yp);
@@ -75,4 +64,9 @@ extern char	*viewopt(VIEW *vp);
 extern int	isview(char *s);
 extern int	viewfile(char *fname, VIEW *vp, RESOLU *rp);
 
+
+#ifdef __cplusplus
+}
 #endif
+#endif /* _RAD_VIEW_H_ */
+

@@ -2,6 +2,11 @@
 /*
  * header file for select call compatibility
  */
+#ifndef _RAD_SELCALL_H_
+#define _RAD_SELCALL_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "copyright.h"
 
@@ -28,3 +33,9 @@
 #define FD_ZERO(p)	memset((char *)(p), 0, sizeof(*(p)))
 #endif
 #endif
+
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_SELCALL_H_ */

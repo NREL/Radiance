@@ -2,6 +2,11 @@
 /*
  *  face.h - header for routines using polygonal faces.
  */
+#ifndef _RAD_FACE_H_
+#define _RAD_FACE_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "copyright.h"
 
@@ -16,16 +21,14 @@ typedef struct {	/* a polygonal face */
 	short  ax;		/* axis closest to normal */
 } FACE;
 
-#ifdef NOPROTO
-
-extern FACE  *getface();
-extern void  freeface();
-extern int  inface();
-
-#else
 
 extern FACE  *getface(OBJREC *o);
 extern void  freeface(OBJREC *o);
 extern int  inface(FVECT p, FACE *f);
 
+
+#ifdef __cplusplus
+}
 #endif
+#endif /* _RAD_FACE_H_ */
+

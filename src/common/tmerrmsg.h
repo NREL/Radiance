@@ -4,6 +4,11 @@
  * Included exclusively in "tonemap.c".
  * English version.
  */
+#ifndef _RAD_TMERRMSG_H_
+#define _RAD_TMERRMSG_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "copyright.h"
 
@@ -17,3 +22,10 @@ char	*tmErrorMessage[] = {
 		"code consistency error 1",
 		"code consistency error 2",
 	};
+
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_TMERRMSG_H_ */
+

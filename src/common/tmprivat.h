@@ -2,6 +2,11 @@
 /*
  * Private header file for tone mapping routines.
  */
+#ifndef _RAD_TMPRIVAT_H_
+#define _RAD_TMPRIVAT_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "copyright.h"
 
@@ -10,10 +15,6 @@
 #endif
 #include	"color.h"
 #include	"tonemap.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 				/* required constants */
 #ifndef M_LN2
@@ -80,6 +81,9 @@ extern void	tmMkMesofact();			/* build tmMesofact */
 			&&FEQ((p1)[2][0],(p2)[2][0])&&FEQ((p1)[2][1],(p2)[2][1])\
 			&&FEQ((p1)[3][0],(p2)[3][0])&&FEQ((p1)[3][1],(p2)[3][1]))
 
+
 #ifdef __cplusplus
 }
 #endif
+#endif /* _RAD_TMPRIVAT_H_ */
+

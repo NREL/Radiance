@@ -4,6 +4,11 @@
  *
  *  Include after fvect.h
  */
+#ifndef _RAD_PLOCATE_H_
+#define _RAD_PLOCATE_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "copyright.h"
 
@@ -18,16 +23,13 @@
 #define  BELOW		025		/* below bits */
 #define  ABOVE		052		/* above bits */
 
-#ifdef NOPROTO
-
-extern int	clip();
-
-extern int	plocate();
-
-#else
 
 extern int	clip(FLOAT *ep1, FLOAT *ep2, FVECT min, FVECT max);
-
 extern int	plocate(FVECT p, FVECT min, FVECT max);
 
+
+#ifdef __cplusplus
+}
 #endif
+#endif /* _RAD_PLOCATE_H_ */
+

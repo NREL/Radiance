@@ -2,6 +2,11 @@
 /*
  * Definitions for paths on different machines
  */
+#ifndef _RAD_PATHS_H_
+#define _RAD_PATHS_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "copyright.h"
 
@@ -65,3 +70,10 @@ extern char  *getwd();
 extern char  *getcwd();
 #define  getwd(p)	getcwd(p, sizeof(p))
 #endif
+
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_PATHS_H_ */
+
