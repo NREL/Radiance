@@ -245,6 +245,7 @@ get_voxels(vl, vp)	/* find voxels corresponding to view point */
 VOXL	vl[8];
 FVECT	vp;
 {
+	static int	lastn = 0, lastd = -1;
 	int	n = 0;
 	FVECT	gp;
 	double	d;
@@ -275,7 +276,13 @@ FVECT	vp;
 			n++;
 		}
 	}
-	return(n);
+					/* warn of dangerous moves */
+	if (n < lastn && bestd >= lastd)
+		error(WARNING, "moving outside holodeck section");
+	else if (n > lastn && bestd <= lastd)
+		error(WARNING, "moving inside holodeck section");
+	lastd = bestd;
+	return(lastn = n);
 }
 
 
