@@ -33,7 +33,7 @@ octalloc()			/* allocate an octree */
 		errno = 0;
 		if (octbi(freet) >= MAXOBLK)
 			return(EMPTY);
-		if ((octblock[octbi(freet)] = (OCTREE *)malloc(
+		if ((octblock[octbi(freet)] = (OCTREE *)bmalloc(
 				(unsigned)256*8*sizeof(OCTREE))) == NULL)
 			return(EMPTY);
 	}
