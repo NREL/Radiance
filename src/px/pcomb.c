@@ -36,6 +36,8 @@ struct {
 
 int	nfiles;				/* number of input files */
 
+char	ourfmt[LPICFMT+1] = PICFMT;	/* input picture format */
+
 char	Command[] = "<Command>";
 char	vcolin[3][4] = {"ri", "gi", "bi"};
 char	vcolout[3][4] = {"ro", "go", "bo"};
@@ -203,7 +205,8 @@ char	*argv[];
 	}
 						/* complete header */
 	printargs(argc, argv, stdout);
-	fputformat(COLRFMT, stdout);
+	if (strcmp(ourfmt, PICFMT))
+		fputformat(ourfmt, stdout);	/* print format if known */
 	putchar('\n');
 	fprtresolu(xres, yres, stdout);
 						/* combine pictures */
@@ -228,7 +231,11 @@ char	*s;
 	if (isheadid(s))			/* header id */
 		return;		/* don't echo */
 	if (formatval(fmt, s)) {		/* check format */
-		wrongformat = strcmp(fmt, COLRFMT);
+		if (globmatch(ourfmt, fmt)) {
+			wrongformat = 0;
+			strcpy(ourfmt, fmt);
+		} else
+			wrongformat = 1;
 		return;		/* don't echo */
 	}
 	if (isexpos(s)) {			/* exposure */
@@ -280,6 +287,25 @@ checkfile()			/* ready a file */
 }
 
 
+double
+rgb_bright(clr)
+COLOR  clr;
+{
+	return(bright(clr));
+}
+
+
+double
+xyz_bright(clr)
+COLOR  clr;
+{
+	return(clr[CIEY]);
+}
+
+
+double	(*ourbright)() = rgb_bright;
+
+
 init()					/* perform final setup */
 {
 	double	l_colin(), l_expos(), l_ray();
@@ -297,6 +323,9 @@ init()					/* perform final setup */
 	funset(vbrtin, 1, '=', l_colin);
 	for (i = 0; i < 6; i++)
 		funset(vray[i], 1, '=', l_ray);
+						/* set brightness function */
+	if (!strcmp(ourfmt, CIEFMT))
+		ourbright = xyz_bright;
 }
 
 
@@ -396,7 +425,7 @@ register char	*nam;
 	if (fn < 0 || fn >= nfiles)
 		return(1.0);
 	if (nam == vbrtexp)
-		return(bright(input[fn].expos));
+		return((*ourbright)(input[fn].expos));
 	n = 3;
 	while (n--)
 		if (nam == vcolexp[n])
@@ -453,7 +482,7 @@ register char	*nam;
 		}
 	}
 	if (nam == vbrtin)
-		return(bright(input[fn].scan[MIDSCN+yoff][xscan+xoff]));
+		return((*ourbright)(input[fn].scan[MIDSCN+yoff][xscan+xoff]));
 	n = 3;
 	while (n--)
 	    if (nam == vcolin[n])
