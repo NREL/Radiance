@@ -16,7 +16,7 @@ PIXAR_INCLUDE=	-I/usr/pixar/include
 PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar -lm
 
 PROGS = pfilt ttyimage aedimage oki20c paintjet mt160r getinfo psign \
-greyscale pvalue pcompos colorscale ra_pr ximage prot \
+greyscale pvalue pcompos colorscale ra_pr ra_pr24 ximage prot \
 ra_t8 ra_bn ra_t16 pcomb pinterp x11image xshowtrace
 
 all:	$(PROGS)
@@ -76,6 +76,9 @@ d48c:	d48c.o color.o resolu.o
 ra_pr: ra_pr.o ciq.o cut.o closest.o color.o resolu.o ealloc.o header.o biq.o
 	cc $(CFLAGS) -o ra_pr ra_pr.o ciq.o cut.o closest.o \
 color.o resolu.o ealloc.o header.o biq.o -lm
+
+ra_pr24: ra_pr24.o color.o resolu.o header.o
+	cc $(CFLAGS) -o ra_pr24 ra_pr24.o color.o resolu.o header.o -lm
 
 ra_t8: ra_t8.o ciq.o cut.o closest.o color.o resolu.o ealloc.o header.o biq.o
 	cc $(CFLAGS) -o ra_t8 ra_t8.o ciq.o cut.o closest.o \
@@ -146,7 +149,7 @@ pf2.o bnoise.o:	random.h
 
 ra_t16.o:	random.h
 
-pfilt.o pf2.o ttyimage.o t4027.o mt160r.o psum.o psign.o prot.o \
+pfilt.o pf2.o ttyimage.o t4027.o mt160r.o psum.o psign.o prot.o ra_pr24.o \
 d48c.o aedimage.o pcompos.o color.o resolu.o greyscale.o ra_t8.o glimage.o \
 ra_bn.o ra_t16.o ra_pr.o pvalue.o pcomb.o pinterp.o ximage.o:	color.h
 
