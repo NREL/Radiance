@@ -57,7 +57,8 @@ CUBE  *cu;
 		return(O_MISS);
 					/* compute cube boundaries */
 	for (j = 0; j < 3; j++)
-		cumax[j] = (cumin[j] = cu->cuorg[j]) + cu->cusize;
+		cumax[j] = (cumin[j] = cu->cuorg[j]-FTINY)
+				+ cu->cusize + 2.0*FTINY;
 
 	vloc = ABOVE | BELOW;		/* check vertices */
 	for (i = 0; i < f->nv; i++)
