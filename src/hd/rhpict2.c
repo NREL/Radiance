@@ -211,7 +211,7 @@ register short	nl[NNEIGH][2];
 int	n;
 double	*rf;
 {
-	float	nwt[NNEIGH];
+	double	tv = *rf * (1.-1./NNEIGH);
 	int4	maxr2;
 	register int4	p, r2;
 	register int	i;
@@ -224,11 +224,6 @@ double	*rf;
 	maxr2 = (h-nl[n-1][0])*(h-nl[n-1][0]) + (v-nl[n-1][1])*(v-nl[n-1][1]);
 	DCHECK(maxr2>=MAXRAD2, CONSISTENCY, "out of range neighbor");
 	maxr = isqrt(maxr2);
-						/* compute neighbor weights */
-	for (i = n; i--; ) {
-		r2 = (nl[i][0]-h)*(nl[i][0]-h) + (nl[i][1]-v)*(nl[i][1]-v);
-		nwt[i] = pixWeight[r2];
-	}
 						/* sample kernel */
 	for (v2 = v-maxr; v2 <= v+maxr; v2++) {
 		if (v2 < 0) v2 = 0;
@@ -240,15 +235,21 @@ double	*rf;
 			if (r2 > maxr2) continue;
 			if (CHK4(pixFlags, v2*hres+h2))
 				continue;	/* occupied */
-			if (frandom() < *rf) {	/* pick neighbor instead */
+			if (frandom() < tv) {	/* use neighbor instead? */
 				i = random() % n;
 				r2 = nl[i][1]*hres + nl[i][0];
 				copycolor(ctmp, mypixel[r2]);
-				scalecolor(ctmp, nwt[i]);
-				addcolor(mypixel[v2*hres+h2], ctmp);
-				myweight[v2*hres+h2] += nwt[i] * myweight[r2];
-				continue;
+				r2 = (h2-nl[i][0])*(h2-nl[i][0]) +
+						(v2-nl[i][1])*(v2-nl[i][1]);
+				if (r2 < MAXRAD2) {
+					scalecolor(ctmp, pixWeight[r2]);
+					addcolor(mypixel[v2*hres+h2], ctmp);
+					myweight[v2*hres+h2] += pixWeight[r2] *
+					      myweight[nl[i][1]*hres+nl[i][0]];
+					continue;
+				}
 			}
+						/* use central sample */
 			copycolor(ctmp, mypixel[p]);
 			scalecolor(ctmp, pixWeight[r2]);
 			addcolor(mypixel[v2*hres+h2], ctmp);
