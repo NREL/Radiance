@@ -33,9 +33,12 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "paths.h"
 					/* persistent processes define */
+#define  NOPERS		0		/* do not persist (must be zero) */
 #ifdef  F_SETLKW
 #if  RPICT|RTRACE
-#define  PERSIST	1
+#define  PERSIST	1		/* normal persist */
+#define  PARALLEL	2		/* parallel persist */
+#define  PCHILD		3		/* child of normal persist */
 #endif
 #endif
 
@@ -143,7 +146,7 @@ char  *argv[];
 	char  *ambfile = NULL;
 	int  loadflags = ~IO_FILES;
 	int  seqstart = 0;
-	int  persist = 0;
+	int  persist = NOPERS;
 	char  **amblp;
 	char  **tralp;
 	int  duped1;
@@ -531,10 +534,10 @@ char  *argv[];
 		case 'P':				/* persist file */
 			if (argv[i][2] == 'P') {
 				check(3,"s");
-				persist = 2;
+				persist = PARALLEL;
 			} else {
 				check(2,"s");
-				persist = 1;
+				persist = PERSIST;
 			}
 			persistfile(argv[++i]);
 			break;
@@ -600,11 +603,13 @@ char  *argv[];
 		duped1 = dup(fileno(stdout));	/* don't lose our output */
 		openheader();
 	}
-#else
+#if  RPICT
+	else
+#endif
+#endif
 #if  RPICT
 	if (outfile != NULL)
 		openheader();
-#endif
 #endif
 #ifdef	MSDOS
 #if  RTRACE
@@ -637,7 +642,7 @@ char  *argv[];
 			dup2(duped1, fileno(stdout));
 			close(duped1);
 		}
-		if (persist == 2) {	/* multiprocessing */
+		if (persist == PARALLEL) {	/* multiprocessing */
 			preload_objs();		/* preload scene */
 			while ((rval=fork()) == 0) {	/* keep on forkin' */
 				pflock(1);
@@ -646,17 +651,15 @@ char  *argv[];
 			}
 			if (rval < 0)
 				error(SYSTEM, "cannot fork child for persist function");
-			pfdetach();
-			persist = 0;		/* parent shan't persist */
-			if (outfile == NULL)
-				dupheader();
-			else			/* keep open so attach waits */
-				duped1 = dup(fileno(stdout));
+			pfdetach();		/* parent exits */
 		}
 	}
 runagain:
-	if (persist && outfile == NULL)
-		dupheader();
+	if (persist)
+		if (outfile == NULL)			/* if out to stdout */
+			dupheader();			/* send header */
+		else					/* if out to file */
+			duped1 = dup(fileno(stdout));	/* hang onto pipe */
 #endif
 #if  RPICT
 	rpict(seqstart, outfile, zfile, recover);
@@ -669,18 +672,19 @@ runagain:
 #endif
 	ambsync();			/* flush ambient file */
 #ifdef  PERSIST
-	if (persist == 1) {		/* first run-through */
+	if (persist == PERSIST) {	/* first run-through */
 		if ((rval=fork()) == 0) {	/* child loops until killed */
 			pflock(1);
-			persist = -1;
+			persist = PCHILD;
 		} else {			/* original process exits */
 			if (rval < 0)
 				error(SYSTEM, "cannot fork child for persist function");
-			pfdetach();
-			persist = 0;
+			pfdetach();		/* parent exits */
 		}
 	}
-	if (persist) {			/* wait for a signal then go again */
+	if (persist == PCHILD) {	/* wait for a signal then go again */
+		if (outfile != NULL)
+			close(duped1);		/* release output handle */
 		pfhold();
 		tstart = time(0);		/* reinitialize counters */
 		raynum = nrays = 0;
