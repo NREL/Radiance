@@ -170,7 +170,6 @@ int  maxlen;
 
 {
     int  linwidt;
-    char  *strncpy();
     char  *slin;
     int  i, j;
     
