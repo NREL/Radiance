@@ -84,8 +84,9 @@ RAY  *r;
 	rayvalue(&ar);
 	ndims--;
 	addcolor(dp->v, ar.rcol);
-	if (ar.rt > FTINY && ar.rt < FHUGE)
-		dp->r += 1.0/ar.rt;
+					/* be conservative and use rot */
+	if (ar.rot > FTINY && ar.rot < FHUGE)
+		dp->r += 1.0/ar.rot;
 					/* (re)initialize error */
 	if (dp->n++) {
 		b2 = bright(dp->v)/dp->n - bright(ar.rcol);
