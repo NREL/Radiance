@@ -18,13 +18,13 @@ static char SCCSid[] = "$SunId$ LBL";
 /*
  * The arguments for MAT_DIRECT1 are:
  *
- *	4+ coef1 dx1 dy1 dz1 transform..
+ *	5+ coef1 dx1 dy1 dz1 funcfile transform..
  *	0
  *	n A1 A2 .. An
  *
  * The arguments for MAT_DIRECT2 are:
  *
- *	8+ coef1 dx1 dy1 dz1 coef2 dx2 dy2 dz2 transform..
+ *	9+ coef1 dx1 dy1 dz1 coef2 dx2 dy2 dz2 funcfile transform..
  *	0
  *	n A1 A2 .. An
  */
@@ -44,6 +44,7 @@ register RAY  *r;
 					/* check if source ray */
 	if (r->rsrc >= 0 && source[r->rsrc].so != r->ro)
 		return;				/* got the wrong guy */
+	dir_check(m);
 					/* compute first projection */
 	if (m->otype == MAT_DIRECT1 ||
 			(r->rsrc < 0 || source[r->rsrc].sa.sv.pn == 0))
@@ -66,8 +67,6 @@ int  n;
 	register int  j;
 					/* set up function */
 	setfunc(m, r);
-	if (m->oargs.nsargs < 4+4*n)
-		objerror(m, USER, "too few arguments");
 	sa = m->oargs.sarg + 4*n;
 					/* compute coefficient */
 	errno = 0;
@@ -109,8 +108,7 @@ int  n;
 	register int  i, j;
 				/* get material arguments */
 	m = objptr(o->omod);
-	if (m->oargs.nsargs < 4+4*n)
-		objerror(m, USER, "too few arguments");
+	dir_check(m);
 	sa = m->oargs.sarg + 4*n;
 				/* initialize test ray */
 	getmaxdisk(cent, o);
@@ -167,4 +165,18 @@ int  n;
 computerr:
 	objerror(m, WARNING, "projection compute error");
 	return(0);
+}
+
+
+static
+dir_check(m)			/* check arguments and load function file */
+register OBJREC  *m;
+{
+	register int  ff;
+
+	ff = m->otype == MAT_DIRECT1 ? 4 : 8;
+	if (ff >= m->oargs.nsargs)
+		objerror(m, USER, "too few arguments");
+	if (!vardefined(m->oargs.sarg[0]))
+		loadfunc(m->oargs.sarg[ff]);
 }
