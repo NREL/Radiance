@@ -59,6 +59,8 @@ char  **argv;
 	if ((libpath = getenv("RAYPATH")) == NULL)
 		libpath = ":/usr/local/lib/ray";
 
+	initotypes();
+
 	for (i = 1; i < argc && argv[i][0] == '-'; i++)
 		switch (argv[i][1]) {
 		case '\0':				/* scene from stdin */
