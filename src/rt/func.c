@@ -33,7 +33,7 @@ OBJREC  *m;
 register RAY  *r;
 XF  *bx;
 {
-	extern double  l_arg();
+	extern double  l_arg(), l_erf(), l_erfc();
 	extern long  eclock;
 	static char  *initfile = "rayinit.cal";
 	static long  lastrno = -1;
@@ -52,6 +52,8 @@ XF  *bx;
 		scompile("Jx=$19;Jy=$20;Jz=$21;", NULL, 0);
 		scompile("Kx=$22;Ky=$23;Kz=$24;", NULL, 0);
 		funset("arg", 1, '=', l_arg);
+		funset("erf", 1, ':', l_erf);
+		funset("erfc", 1, ':', l_erfc);
 		setnoisefuncs();
 		initfile = NULL;
 	}
@@ -133,6 +135,24 @@ l_arg()				/* return nth real argument */
 		objerror(fobj, USER, errmsg);
 	}
 	return(fobj->oargs.farg[n-1]);
+}
+
+
+double
+l_erf()				/* error function */
+{
+	extern double  erf();
+
+	return(erf(argument(1)));
+}
+
+
+double
+l_erfc()			/* cumulative error function */
+{
+	extern double  erfc();
+
+	return(erfc(argument(1)));
 }
 
 
