@@ -120,9 +120,9 @@ char  *name, *id;
 					/* find a usable visual */
 	nplanes = DisplayPlanes(ourdisplay, ourscreen);
 	if (XMatchVisualInfo(ourdisplay,ourscreen,
-				24,TrueColor,&ourvinfo) ||
+				nplanes>12?nplanes:24,TrueColor,&ourvinfo) ||
 			XMatchVisualInfo(ourdisplay,ourscreen,
-				24,DirectColor,&ourvinfo)) {
+				nplanes>12?nplanes:24,DirectColor,&ourvinfo)) {
 		ourblack = 0;
 		ourwhite = ourvinfo.red_mask |
 				ourvinfo.green_mask |
