@@ -22,6 +22,8 @@ extern int	m_normal(), m_glass(), m_aniso(), m_brdf(), m_brdf2(),
 
 FUN  ofun[NUMOTYPE] = INIT_OTYPE;
 
+static int	nextlist, nlistleft = 0;
+
 
 static
 initotypes()			/* initialize ofun array */
@@ -69,11 +71,11 @@ initotypes()			/* initialize ofun array */
 int
 newglist()			/* allocate an OGL list id */
 {
-	static int	nextlist, nleft = 0;
-
-	if (!nleft--) {
+	if (!nlistleft--) {
 		nextlist = glGenLists(NLIST2ALLOC);
-		nleft = NLIST2ALLOC-1;
+		if (!nextlist)
+			error(SYSTEM, "no list space left in newglist");
+		nlistleft = NLIST2ALLOC-1;
 	}
 	return(nextlist++);
 }
@@ -93,9 +95,10 @@ char	*where;
 
 
 int
-rgl_filelist(ic, inp)		/* load scene files into display list */
+rgl_filelist(ic, inp, nl)	/* load scene files into display list */
 int	ic;
 char	**inp;
+int	*nl;			/* returned number of lists (optional) */
 {
 	int	listid;
 
@@ -110,15 +113,18 @@ char	**inp;
 	glEndList();		/* end of top display list */
 	lightdefs();		/* define light sources */
 	loadoctrees();		/* load octrees (sublists) for instances */
+	if (nl != NULL)		/* return total number of lists allocated */
+		*nl = nextlist - listid;
 	return(listid);		/* all done -- return list id */
 }
 
 
 int
-rgl_octlist(fname, cent, radp)	/* load octree objects into display list */
+rgl_octlist(fname, cent, radp, nl)	/* load scen into display list */
 char	*fname;
 FVECT	cent;			/* returned octree center (optional) */
 FLOAT	*radp;			/* returned octree size (optional) */
+int	*nl;			/* returned number of lists (optional) */
 {
 	double	r;
 	int	listid;
@@ -137,6 +143,8 @@ FLOAT	*radp;			/* returned octree size (optional) */
 	glEndList();		/* close top list */
 	lightdefs();		/* define light sources */
 	loadoctrees();		/* load referenced octrees into sublists */
+	if (nl != NULL)		/* return total number of lists allocated */
+		*nl = nextlist - listid;
 	return(listid);
 }
 
