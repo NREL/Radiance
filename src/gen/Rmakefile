@@ -9,12 +9,15 @@ CFLAGS = -O -f68881 /usr/lib/f68881.il -DIEEE
 INSTDIR = /usr/local/ray
 
 PROGS = genbox gensky xform genblinds genrev genworm \
-		gensurf genprism genwindow genpine
+		gensurf genprism
 
 all:	$(PROGS)
 
-install:	$(PROGS)
+install:	$(PROGS) genpine.csh genwindow.csh
+	sccs check
 	cp $(PROGS) $(INSTDIR)
+	install genpine.csh $(INSTDIR)/genpine
+	install genwindow.csh $(INSTDIR)/genwindow
 
 genbeads:	genbeads.o hermite3.o
 	cc $(CFLAGS) -o genbeads genbeads.o hermite3.o -lm
