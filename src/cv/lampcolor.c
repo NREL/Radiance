@@ -182,13 +182,20 @@ compute()			/* compute lamp radiance */
 }
 
 
-getd(dp)			/* get a positive double from stdin */
+getd(name, dp, help)		/* get a positive double from stdin */
+char	*name;
 double	*dp;
+char	*help;
 {
 	char	buf[32];
-
+again:
+	printf("%s [%g]: ", name, *dp);
 	if (gets(buf) == NULL)
 		return(0);
+	if (buf[0] == '?') {
+		puts(help);
+		goto again;
+	}
 	if ((buf[0] < '0' || buf[0] > '9') && buf[0] != '.')
 		return(0);
 	*dp = atof(buf);
@@ -200,8 +207,8 @@ getpolygon()			/* get projected area for a polygon */
 {
 	static double	area = 1.0;
 
-	printf("Polygon area [%g]: ", area);
-	getd(&area);
+	getd("Polygon area", &area,
+		"Enter the total radiating area of the polygon.");
 	projarea = PI*unit2meter*unit2meter * area;
 	return(1);
 }
@@ -211,8 +218,8 @@ getsphere()			/* get projected area for a sphere */
 {
 	static double	radius = 1.0;
 
-	printf("Sphere radius [%g]: ", radius);
-	getd(&radius);
+	getd("Sphere radius", &radius,
+		"Enter the distance from the sphere's center to its surface.");
 	projarea = 4.*PI*PI*unit2meter*unit2meter * radius*radius;
 	return(1);
 }
@@ -222,10 +229,10 @@ getcylinder()			/* get projected area for a cylinder */
 {
 	static double	length = 1.0, radius = 0.1;
 
-	printf("Cylinder length [%g]: ", length);
-	getd(&length);
-	printf("Cylinder radius [%g]: ", radius);
-	getd(&radius);
+	getd("Cylinder length", &length,
+		"Enter the length of the cylinder.");
+	getd("Cylinder radius", &radius,
+		"Enter the distance from the cylinder's axis to its surface.");
 	projarea = PI*PI*2.*PI*unit2meter*unit2meter * radius*length;
 	return(1);
 }
@@ -235,8 +242,9 @@ getring()			/* get projected area for a ring */
 {
 	static double	radius = 1.0;
 
-	printf("Disk radius [%g]: ", radius);
-	getd(&radius);
+	getd("Disk radius", &radius,
+"Enter the distance from the ring's center to its outer edge.\n\
+The inner radius must be zero.");
 	projarea = PI*PI*unit2meter*unit2meter * radius*radius;
 	return(1);
 }
