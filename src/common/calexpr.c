@@ -372,7 +372,7 @@ scan()				/* scan next character, return literal next */
 
 
 char *
-ltoa(l)				/* convert long to ascii */
+long2ascii(l)			      /* convert long to ascii */
 long  l;
 {
     static char	 buf[16];
@@ -406,7 +406,7 @@ char  *err;
 	if (infile != NULL) eputs(infile);
 	if (lineno != 0) {
 	    eputs(infile != NULL ? ", line " : "line ");
-	    eputs(ltoa((long)lineno));
+	    eputs(long2ascii((long)lineno));
 	}
 	eputs(":\n");
     }
