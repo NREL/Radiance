@@ -14,7 +14,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "paths.h"
 #include <signal.h>
 #include <sys/types.h>
+#ifdef INCL_SEL_H
 #include <sys/select.h>
+#endif
 #include <sys/stat.h>
 					/* select call compatibility stuff */
 #ifndef FD_SETSIZE
