@@ -191,17 +191,22 @@ register char  *s;
 }
 
 
+#define  bitop(f,i,op)		(f[((i)>>3)] op (1<<((i)&7)))
+#define  tstbit(f,i)		bitop(f,i,&)
+#define  setbit(f,i)		bitop(f,i,|=)
+#define  clrbit(f,i)		bitop(f,i,&=~)
+#define  tglbit(f,i)		bitop(f,i,^=)
+
+
 addobject(cu, obj)			/* add an object to a cube */
 register CUBE  *cu;
 OBJECT  obj;
 {
-#define nexti(n)  ((ndx += cnt*cnt++)%(n))
-	static unsigned long  ndx;
-	static unsigned int  cnt;
 	CUBE  cukid;
 	OCTREE  ot;
 	OBJECT  oset[MAXSET+1];
-	int  in, k;
+	unsigned char  inflg[MAXSET/8], volflg[MAXSET/8];
+	int  in;
 	register int  i, j;
 
 	in = (*ofun[objptr(obj)->otype].funp)(objptr(obj), cu);
@@ -222,57 +227,69 @@ OBJECT  obj;
 			addobject(&cukid, obj);
 			octkid(cu->cutree, i) = cukid.cutree;
 		}
-		
-	} else if (isempty(cu->cutree)) {
+		return;
+	}
+	if (isempty(cu->cutree)) {
 						/* singular set */
 		oset[0] = 1; oset[1] = obj;
 		cu->cutree = fullnode(oset);
-		
-	} else {
-						/* add to full node */
-		objset(oset, cu->cutree);
-		cukid.cusize = cu->cusize * 0.5;
-		
-		if (in==O_IN || oset[0] < objlim || cukid.cusize < mincusize) {
-							/* add to set */
-			if (oset[0] >= MAXSET) {
-				sprintf(errmsg,
-					"set overflow in addobject (%s)",
-						objptr(obj)->oname);
-				error(INTERNAL, errmsg);
-			}
-			insertelem(oset, obj);
-			cu->cutree = fullnode(oset);
-
-		} else {
-							/* subdivide cube */
-			if ((ot = octalloc()) == EMPTY)
-				error(SYSTEM, "out of octree space");
-			for (i = 0; i < 8; i++) {
-				cukid.cutree = EMPTY;
-				for (j = 0; j < 3; j++) {
-					cukid.cuorg[j] = cu->cuorg[j];
-					if ((1<<j) & i)
-						cukid.cuorg[j] += cukid.cusize;
-				}
-							/* surfaces first */
-				for (j = 1; j <= oset[0]; j++)
-					if (!isvolume(objptr(oset[j])->otype))
-						addobject(&cukid, oset[j]);
-							/* then this object */
-				addobject(&cukid, obj);
-							/* volumes last */
-				k = nexti(oset[0]);	/* random start */
-				for (j = k+1; j <= oset[0]; j++)
-					if (isvolume(objptr(oset[j])->otype))
-						addobject(&cukid, oset[j]);
-				for (j = 1; j <= k; j++)
-					if (isvolume(objptr(oset[j])->otype))
-						addobject(&cukid, oset[j]);
-				octkid(ot, i) = cukid.cutree;
-			}
-			cu->cutree = ot;
-		}
+		return;
 	}
-#undef nexti
+					/* add to full node */
+	objset(oset, cu->cutree);
+	cukid.cusize = cu->cusize * 0.5;
+	
+	if (in==O_IN || oset[0] < objlim || cukid.cusize < mincusize) {
+						/* add to set */
+		if (oset[0] >= MAXSET) {
+			sprintf(errmsg,
+				"set overflow in addobject (%s)",
+					objptr(obj)->oname);
+			error(INTERNAL, errmsg);
+		}
+		insertelem(oset, obj);
+		cu->cutree = fullnode(oset);
+		return;
+	}
+					/* subdivide cube */
+	if ((ot = octalloc()) == EMPTY)
+		error(SYSTEM, "out of octree space");
+					/* mark volumes */
+	j = (oset[0]+7)>>3;
+	while (j--)
+		volflg[j] = inflg[j] = 0;
+	for (j = 1; j <= oset[0]; j++)
+		if (isvolume(objptr(oset[j])->otype)) {
+			setbit(volflg,j-1);
+			if ((*ofun[objptr(oset[j])->otype].funp)
+					(objptr(oset[j]),cu) == O_IN)
+				setbit(inflg,j-1);
+		}
+					/* assign subcubes */
+	for (i = 0; i < 8; i++) {
+		cukid.cutree = EMPTY;
+		for (j = 0; j < 3; j++) {
+			cukid.cuorg[j] = cu->cuorg[j];
+			if ((1<<j) & i)
+				cukid.cuorg[j] += cukid.cusize;
+		}
+					/* surfaces first */
+		for (j = 1; j <= oset[0]; j++)
+			if (!tstbit(volflg,j-1))
+				addobject(&cukid, oset[j]);
+					/* then this object */
+		addobject(&cukid, obj);
+					/* partial volumes */
+		for (j = 1; j <= oset[0]; j++)
+			if (tstbit(volflg,j-1) &&
+					!tstbit(inflg,j-1))
+				addobject(&cukid, oset[j]);
+					/* full volumes */
+		for (j = 1; j <= oset[0]; j++)
+			if (tstbit(inflg,j-1))
+				addobject(&cukid, oset[j]);
+					/* returned node */
+		octkid(ot, i) = cukid.cutree;
+	}
+	cu->cutree = ot;
 }
