@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -163,8 +163,8 @@ char  *nm;
 		nalt = nazi = 1;
 	else {
 		n = 4.*PI * il->sampdens;
-		nalt = sqrt(n/PI) + .5;
-		nazi = PI*nalt + .5;
+		nalt = sqrt(2./PI*n) + .5;
+		nazi = PI/2.*nalt + .5;
 	}
 	n = nalt*nazi;
 	distarr = (float *)calloc(n, 3*sizeof(float));
