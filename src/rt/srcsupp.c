@@ -49,17 +49,19 @@ initstypes()			/* initialize source dispatch table */
 int
 newsource()			/* allocate new source in our array */
 {
+#define SRCINC	4
 	if (nsources == 0)
-		source = (SRCREC *)malloc(sizeof(SRCREC));
-	else
+		source = (SRCREC *)malloc(SRCINC*sizeof(SRCREC));
+	else if (nsources%SRCINC == 0)
 		source = (SRCREC *)realloc((char *)source,
-				(unsigned)(nsources+1)*sizeof(SRCREC));
+				(unsigned)(nsources+SRCINC)*sizeof(SRCREC));
 	if (source == NULL)
 		return(-1);
 	source[nsources].sflags = 0;
 	source[nsources].nhits = 1;
 	source[nsources].ntests = 2;	/* initial hit probability = 1/2 */
 	return(nsources++);
+#undef SRCINC
 }
 
 
