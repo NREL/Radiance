@@ -14,7 +14,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 
 FILE *
-fropen(fname)			/* find file and open for reading */
+frlibopen(fname)		/* find file and open for reading */
 register char  *fname;
 {
 	extern char  *strcpy(), *getlibpath();
