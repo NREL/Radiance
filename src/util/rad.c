@@ -117,6 +117,7 @@ char	*viewselect = NULL;	/* specific view only */
 int	overture = 0;		/* overture calculation needed */
 
 char	*progname;		/* global argv[0] */
+char	*rifname;		/* global rad input file name */
 
 char	radname[MAXPATH];	/* root Radiance file name */
 
@@ -155,10 +156,11 @@ char	*argv[];
 		}
 	if (i >= argc)
 		goto userr;
+	rifname = argv[i];
 				/* assign Radiance root file name */
-	rootname(radname, argv[i]);
+	rootname(radname, rifname);
 				/* load variable values */
-	load(argv[i]);
+	load(rifname);
 				/* get any additional assignments */
 	for (i++; i < argc; i++)
 		setvariable(argv[i]);
@@ -1067,7 +1069,7 @@ char	*opts;
 		return;
 	if (sayview)
 		printview(vw);
-	sprintf(combuf, "rview %s%s ", vw, opts);
+	sprintf(combuf, "rview %s%s -R %s ", vw, opts, rifname);
 	if (rvdevice != NULL)
 		sprintf(combuf+strlen(combuf), "-o %s ", rvdevice);
 	strcat(combuf, vval(OCTREE));
