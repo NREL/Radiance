@@ -32,6 +32,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 extern char  *atos();
 
+extern FILE  *popen();
+
 extern char  rifname[128];		/* rad input file name */
 
 extern char  VersionID[];
