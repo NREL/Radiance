@@ -200,6 +200,7 @@ register RAY  *r;
 	double  transtest, transdist;
 	int  hasrefl, hastrans;
 	COLOR  ctmp;
+	FVECT  vtmp;
 	register MFUNC  *mf;
 	register int  i;
 						/* check arguments */
@@ -289,18 +290,28 @@ register RAY  *r;
 	}
 						/* compute ambient */
 	if (hasrefl) {
-		if (nd.pdot < 0.0)
+		if (nd.pdot < 0.0) {
 			flipsurface(r);
-		ambient(ctmp, r, nd.pnorm);
+			vtmp[0] = -nd.pnorm[0];
+			vtmp[1] = -nd.pnorm[1];
+			vtmp[2] = -nd.pnorm[2];
+		} else
+			VCOPY(vtmp, nd.pnorm);
+		ambient(ctmp, r, vtmp);
 		multcolor(ctmp, nd.rdiff);
 		addcolor(r->rcol, ctmp);	/* add to returned color */
 		if (nd.pdot < 0.0)
 			flipsurface(r);
 	}
 	if (hastrans) {				/* from other side */
-		if (nd.pdot > 0.0)
+		if (nd.pdot > 0.0) {
 			flipsurface(r);
-		ambient(ctmp, r, nd.pnorm);
+			vtmp[0] = -nd.pnorm[0];
+			vtmp[1] = -nd.pnorm[1];
+			vtmp[2] = -nd.pnorm[2];
+		} else
+			VCOPY(vtmp, nd.pnorm);
+		ambient(ctmp, r, vtmp);
 		multcolor(ctmp, nd.tdiff);
 		addcolor(r->rcol, ctmp);
 		if (nd.pdot > 0.0)
@@ -323,6 +334,7 @@ register RAY  *r;
 {
 	BRDFDAT  nd;
 	COLOR  ctmp;
+	FVECT  vtmp;
 	double  dtmp;
 						/* always a shadow */
 	if (r->crtype & SHADOW)
@@ -384,7 +396,10 @@ register RAY  *r;
 	}
 	if (nd.trans > FTINY) {		/* from other side */
 		flipsurface(r);
-		ambient(ctmp, r, nd.pnorm);
+		vtmp[0] = -nd.pnorm[0];
+		vtmp[1] = -nd.pnorm[1];
+		vtmp[2] = -nd.pnorm[2];
+		ambient(ctmp, r, vtmp);
 		scalecolor(ctmp, nd.trans);
 		multcolor(ctmp, nd.mcolor);
 		addcolor(r->rcol, ctmp);

@@ -300,7 +300,14 @@ register RAY  *r;
 	}
 	if (nd.tdiff > FTINY) {		/* ambient from other side */
 		flipsurface(r);
-		ambient(ctmp, r, hastexture?nd.pnorm:r->ron);
+		if (hastexture) {
+			FVECT  bnorm;
+			bnorm[0] = -nd.pnorm[0];
+			bnorm[1] = -nd.pnorm[1];
+			bnorm[2] = -nd.pnorm[2];
+			ambient(ctmp, r, bnorm);
+		} else
+			ambient(ctmp, r, r->ron);
 		if (nd.specfl & SP_TBLT)
 			scalecolor(ctmp, nd.trans);
 		else
