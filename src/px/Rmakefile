@@ -49,9 +49,8 @@ pdfblur.csh pmblur.csh xyzimage.csh pgblur.csh
 	cp phisto.csh $(INSTDIR)/phisto
 	cp pdelta.csh $(INSTDIR)/pdelta
 	cp pgblur.csh $(INSTDIR)/pgblur
-	cp pbilat.csh $(INSTDIR)/pbilat
 	cd $(INSTDIR) ; chmod 755 normpat falsecolor pdfblur \
-		pmblur xyzimage phisto pdelta pgblur pbilat
+		pmblur xyzimage phisto pdelta pgblur
 
 clean:
 	set nonomatch; rm -f x10image aedimage glimage \
