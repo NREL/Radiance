@@ -26,8 +26,11 @@ static C_VERTEX		c_unvertex = C_DEFVERTEX;
 
 				/* the current contexts */
 C_COLOR		*c_ccolor = &c_uncolor;
+char		*c_ccname = NULL;
 C_MATERIAL	*c_cmaterial = &c_unmaterial;
+char		*c_cmname = NULL;
 C_VERTEX	*c_cvertex = &c_unvertex;
+char		*c_cvname = NULL;
 
 static LUTAB	clr_tab = LU_SINIT(free,free);	/* color lookup table */
 static LUTAB	mat_tab = LU_SINIT(free,free);	/* material lookup table */
@@ -49,7 +52,6 @@ register char	**av;
 {
 	double	w, wsum;
 	register int	i;
-	char	*nm;
 	register LUENT	*lp;
 
 	switch (mg_entity(av[0])) {
@@ -59,6 +61,7 @@ register char	**av;
 		if (ac == 1) {		/* set unnamed color context */
 			c_uncolor = c_dfcolor;
 			c_ccolor = &c_uncolor;
+			c_ccname = NULL;
 			return(MG_OK);
 		}
 		lp = lu_find(&clr_tab, av[1]);	/* lookup context */
@@ -83,11 +86,10 @@ register char	**av;
 			c_ccolor = (C_COLOR *)lp->data;
 			c_ccolor->clock = 0;
 		}
-		nm = lp->key;
+		c_ccname = lp->key;
 		i = c_ccolor->clock;
 		if (ac == 3) {		/* use default template */
 			*c_ccolor = c_dfcolor;
-			c_ccolor->name = nm;
 			c_ccolor->clock = i + 1;
 			return(MG_OK);
 		}
@@ -97,7 +99,6 @@ register char	**av;
 		if (lp->data == NULL)
 			return(MG_EUNDEF);
 		*c_ccolor = *(C_COLOR *)lp->data;
-		c_ccolor->name = nm;
 		c_ccolor->clock = i + 1;
 		return(MG_OK);
 	case MG_E_CXY:		/* assign CIE XY value */
@@ -160,7 +161,6 @@ int	ac;
 register char	**av;
 {
 	int	i;
-	char	*nm;
 	register LUENT	*lp;
 
 	switch (mg_entity(av[0])) {
@@ -170,6 +170,7 @@ register char	**av;
 		if (ac == 1) {		/* set unnamed material context */
 			c_unmaterial = c_dfmaterial;
 			c_cmaterial = &c_unmaterial;
+			c_cmname = NULL;
 			return(MG_OK);
 		}
 		lp = lu_find(&mat_tab, av[1]);	/* lookup context */
@@ -194,11 +195,10 @@ register char	**av;
 			c_cmaterial = (C_MATERIAL *)lp->data;
 			c_cmaterial->clock = 0;
 		}
-		nm = lp->key;
+		c_cmname = lp->key;
 		i = c_cmaterial->clock;
 		if (ac == 3) {		/* use default template */
 			*c_cmaterial = c_dfmaterial;
-			c_cmaterial->name = nm;
 			c_cmaterial->clock = i + 1;
 			return(MG_OK);
 		}
@@ -208,7 +208,6 @@ register char	**av;
 		if (lp->data == NULL)
 			return(MG_EUNDEF);
 		*c_cmaterial = *(C_MATERIAL *)lp->data;
-		c_cmaterial->name = nm;
 		c_cmaterial->clock = i + 1;
 		return(MG_OK);
 	case MG_E_RD:		/* set diffuse reflectance */
@@ -281,7 +280,6 @@ int	ac;
 register char	**av;
 {
 	int	i;
-	char	*nm;
 	register LUENT	*lp;
 
 	switch (mg_entity(av[0])) {
@@ -291,6 +289,7 @@ register char	**av;
 		if (ac == 1) {		/* set unnamed vertex context */
 			c_unvertex = c_dfvertex;
 			c_cvertex = &c_unvertex;
+			c_cvname = NULL;
 			return(MG_OK);
 		}
 		lp = lu_find(&vtx_tab, av[1]);	/* lookup context */
@@ -314,11 +313,10 @@ register char	**av;
 				return(MG_EMEM);
 			c_cvertex = (C_VERTEX *)lp->data;
 		}
-		nm = lp->key;
+		c_cvname = lp->key;
 		i = c_cvertex->clock;
 		if (ac == 3) {		/* use default template */
 			*c_cvertex = c_dfvertex;
-			c_cvertex->name = nm;
 			c_cvertex->clock = i + 1;
 			return(MG_OK);
 		}
@@ -328,7 +326,6 @@ register char	**av;
 		if (lp->data == NULL)
 			return(MG_EUNDEF);
 		*c_cvertex = *(C_VERTEX *)lp->data;
-		c_cvertex->name = nm;
 		c_cvertex->clock = i + 1;
 		return(MG_OK);
 	case MG_E_POINT:	/* set point */
