@@ -310,6 +310,8 @@ char  *p;			/* data for f */
 	double  prob, ourthresh, hwt, test2, hit2;
 	RAY  sr;
 
+	if (nsources <= 0)
+		return;
 	srccnt = (CONTRIB *)malloc(nsources*sizeof(CONTRIB));
 	cntord = (CNTPTR *)malloc(nsources*sizeof(CNTPTR));
 	if (srccnt == NULL || cntord == NULL)
