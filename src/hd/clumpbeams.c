@@ -20,8 +20,6 @@ static int	bneighrem;
 
 #define nextneigh()	(bneighrem<=0 ? 0 : bneighlist[--bneighrem])
 
-static BEAMI	*beamdir;
-
 
 gcshifti(gc, ia, di, hp)	/* shift cell row or column */
 register GCOORD	*gc;
@@ -97,26 +95,12 @@ int	b;
 }
 
 
-static int
-bpcmp(b1p, b2p)			/* compare beam positions on disk */
-int	*b1p, *b2p;
-{
-	register long	pdif = beamdir[*b1p].fo - beamdir[*b2p].fo;
-
-	if (pdif > 0L) return(1);
-	if (pdif < 0L) return(-1);
-	return(0);
-}
-
-
-clumpbeams(hp, maxcnt, maxsiz, bf)	/* clump beams from hinp */
+clumpbeams(hp, maxcnt, maxsiz, cf)	/* clump beams from hinp */
 register HOLO	*hp;
 int	maxcnt, maxsiz;
-int	(*bf)();
+int	(*cf)();
 {
 	static short	primes[] = {9431,6803,4177,2659,1609,887,587,251,47,1};
-	HDBEAMI	bis;
-	BEAM	*bp;
 	unsigned int4	*bflags;
 	int	*bqueue;
 	int	bqlen;
@@ -169,16 +153,9 @@ int	(*bf)();
 			if (i > 0)
 				break;
 		}
-		beamdir = hp->bi;		/* sort queue */
-		qsort((char *)bqueue, bqlen, sizeof(*bqueue), bpcmp);
-						/* transfer each beam */
-		for (i = 0; i < bqlen; i++) {
-			bp = hdgetbeam(bis.h=hp, bis.b=bqueue[i]);
-			(*bf)(bp, &bis);
-		}
-		hdfreebeam(NULL, 0);		/* write & free clump */
+		(*cf)(hp, bqueue, bqlen);	/* transfer clump */
 	}
-	hdsync(NULL, 0);		/* we're done -- clean up */
+					/* all done; clean up */
 	free((char *)bqueue);
 	free((char *)bflags);
 }
