@@ -39,6 +39,7 @@ char  *ofn[];
 {
 	char  sbuf[128];
 	int  nf;
+	OBJECT  fnobjects;
 	register int  i;
 	
 	if (fname == NULL) {
@@ -80,6 +81,8 @@ char  *ofn[];
 	}
 	if (load & IO_FILES)
 		ofn[nf] = NULL;
+					/* get number of objects */
+	fnobjects = getint(sizeof(OBJECT));
 
 	if (load & IO_TREE) {
 						/* get the octree */
@@ -97,6 +100,15 @@ char  *ofn[];
 		}
 	}
 	fclose(infp);
+					/* consistency checks */
+	if (load & IO_SCENE) {
+					/* check object count */
+		if (nobjects != objorig+fnobjects)
+			octerror(USER, "bad object count -- stale octree?");
+					/* check for non-surfaces */
+		if (nonsurfinset(objorig, fnobjects))
+			octerror(USER, "non-surface in set -- stale octree?");
+	}
 	return(nf);
 }
 

@@ -19,7 +19,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <ctype.h>
 
 OBJREC  *objblock[MAXOBJBLK];		/* our objects */
-int  nobjects = 0;			/* # of objects */
+OBJECT  nobjects = 0;			/* # of objects */
 
 
 readobj(input)			/* read in an object file or stream */

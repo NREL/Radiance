@@ -62,7 +62,7 @@ extern CUBE  thescene;			/* the main scene */
 #define  IO_BOUNDS	020		/* octree boundary */
 #define  IO_ALL		(~0)		/* everything */
 				/* magic number for octree files */
-#define  OCTMAGIC	(275+sizeof(OBJECT))
+#define  OCTMAGIC	(283+sizeof(OBJECT))
 				/* octree node types */
 #define  OT_EMPTY	0
 #define  OT_FULL	1

@@ -48,7 +48,7 @@ typedef struct {
 #define  MAXOBJBLK	511		/* maximum number of object blocks */
 
 extern OBJREC  *objblock[MAXOBJBLK];	/* the object blocks */
-extern int  nobjects;			/* # of objects */
+extern OBJECT  nobjects;		/* # of objects */
 
 #define  objptr(obj)	(objblock[(obj)>>6]+((obj)&077))
 
