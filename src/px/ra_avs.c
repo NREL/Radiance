@@ -30,6 +30,7 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
+	extern long  getint();
 	int  reverse = 0;
 	int  i;
 	
@@ -74,8 +75,8 @@ char  *argv[];
 	setcolrgam(gamma);		/* set up gamma correction */
 	if (reverse) {
 					/* get their image resolution */
-		fread((char *)&xmax, sizeof(int), 1, stdin);
-		fread((char *)&ymax, sizeof(int), 1, stdin);
+		xmax = getint(4, stdin);
+		ymax = getint(4, stdin);
 					/* put our header */
 		printargs(i, argv, stdout);
 		fputformat(COLRFMT, stdout);
@@ -89,8 +90,8 @@ char  *argv[];
 				fgetresolu(&xmax, &ymax, stdin) < 0)
 			quiterr("bad picture format");
 					/* write their header */
-		fwrite((char *)&xmax, sizeof(int), 1, stdout);
-		fwrite((char *)&ymax, sizeof(int), 1, stdout);
+		putint((long)xmax, 4, stdout);
+		putint((long)ymax, 4, stdout);
 					/* convert file */
 		ra2avs();
 	}
