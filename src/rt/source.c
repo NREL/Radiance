@@ -415,7 +415,7 @@ char  *p			/* data for f */
 			if (bright(sr.rcol) <= FTINY) {
 #if SHADCACHE
 				if ((scp <= srccnt || scp[-1].sno != scp->sno)
-						&& (scp >= srccnt+ncnts ||
+						&& (scp >= srccnt+ncnts-1 ||
 						    scp[1].sno != scp->sno))
 					srcblocker(&sr);
 #endif
