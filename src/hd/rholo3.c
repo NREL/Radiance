@@ -97,8 +97,7 @@ int	nents;
 				/* complete list operations */
 	switch (op) {
 	case BS_NEW:			/* new computation set */
-		listpos = 0;
-		lastin = -1;
+		listpos = 0; lastin = -1;
 		if (complen)		/* free old list */
 			free((char *)complist);
 		complist = NULL;
@@ -230,7 +229,8 @@ init_global()			/* initialize global ray computation */
 		frac = 1024.*1024.*16384. / (wtotal*sizeof(RAYVAL));
 	while (k--)
 		complist[k].nr = frac * complist[k].nr;
-	listpos = 0; lastin = -1;	/* flag initial sort */
+	listpos = 0; lastin = -1;	/* perform initial sort */
+	sortcomplist();
 }
 
 
