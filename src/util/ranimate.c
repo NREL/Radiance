@@ -118,6 +118,8 @@ struct pslot	*findpslot();
 VIEW	*getview();
 char	*getexp();
 
+extern time_t	fdate(), time();
+
 
 main(argc, argv)
 int	argc;
@@ -190,13 +192,13 @@ userr:
 
 getastat()			/* check/set animation status */
 {
-	char	buf[256];
+	char	sfname[256];
 	FILE	*fp;
 
-	sprintf(buf, "%s/%s", vval(DIRECTORY), SFNAME);
-	if ((fp = fopen(buf, "r")) == NULL) {
+	sprintf(sfname, "%s/%s", vval(DIRECTORY), SFNAME);
+	if ((fp = fopen(sfname, "r")) == NULL) {
 		if (errno != ENOENT) {
-			perror(buf);
+			perror(sfname);
 			return(-1);
 		}
 		astat.rnext = astat.fnext = astat.tnext = 0;
@@ -234,6 +236,11 @@ getastat()			/* check/set animation status */
 				progname, astat.cfname);
 		return(-1);
 	}
+						/* check control file mods. */
+	if (!nowarn && fdate(cfname) > fdate(sfname))
+		fprintf(stderr,
+			"%s: warning - control file modified since last run\n",
+				progname);
 setours:					/* set our values */
 	strcpy(astat.host, myhostname());
 	astat.pid = getpid();
@@ -241,7 +248,7 @@ setours:					/* set our values */
 	return(0);
 fmterr:
 	fprintf(stderr, "%s: format error in status file \"%s\"\n",
-			progname, buf);
+			progname, sfname);
 	fclose(fp);
 	return(-1);
 }
