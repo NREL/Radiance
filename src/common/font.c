@@ -204,7 +204,7 @@ int  nsi;			/* minimum number of spaces for indent */
 				}
 				len += tab - end;
 			}
-			if (tab - end > nsi)
+			if (nsi && tab - end > nsi)
 				break;
 		}
 		len *= f->mwidth + cis;		/* compute target length */
