@@ -1,0 +1,901 @@
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
+
+#ifndef lint
+static char SCCSid[] = "$SunId$ SGI";
+#endif
+
+/*
+ * Routines for loading and displaying Radiance objects under OpenGL in rholo.
+ */
+
+#include "radogl.h"
+#include "tonemap.h"
+#include "rhdisp.h"
+#include "rhdriver.h"
+#include "rhdobj.h"
+
+extern FILE	*sstdout;		/* user standard output */
+
+char	rhdcmd[DO_NCMDS][8] = DO_INIT;	/* user command list */
+
+int	(*dobj_lightsamp)() = NULL;	/* pointer to function to get lights */
+
+#define	AVGREFL		0.5		/* assumed average reflectance */
+
+#define	MAXAC		64		/* maximum number of args */
+
+#ifndef MINTHRESH
+#define MINTHRESH	7.0		/* source threshold w.r.t. mean */
+#endif
+
+#ifndef NALT
+#define NALT		11		/* # sampling altitude angles */
+#endif
+#ifndef NAZI
+#define NAZI		((int)(PI/2.*NALT+.5))
+#endif
+
+typedef struct dlights {
+	struct dlights	*next;		/* next in lighting set list */
+	FVECT	lcent;			/* computed lighting center */
+	double	ravg;			/* harmonic mean free range radius */
+	TMbright	larb;		/* average reflected brightness */
+	COLOR	lamb;			/* local ambient value */
+	short	nl;			/* number of lights in this set */
+	struct lsource {
+		FVECT	direc;			/* source direction */
+		double	omega;			/* source solid angle */
+		COLOR	val;			/* source color */
+	} li[MAXLIGHTS];		/* light sources */
+} DLIGHTS;			/* a light source set */
+
+typedef struct dobject {
+	struct dobject	*next;		/* next object in list */
+	char	name[64];		/* object name */
+	FVECT	center;			/* orig. object center */
+	FLOAT	radius;			/* orig. object radius */
+	int	listid;			/* GL display list identifier */
+	int	rtp[3];			/* associated rtrace process */
+	DLIGHTS	*ol;			/* object lights */
+	FULLXF	xfb;			/* coordinate transform */
+	short	drawcode;		/* drawing code */
+	short	xfac;			/* transform argument count */
+	char	*xfav[MAXAC+1];		/* transform args */
+} DOBJECT;			/* a displayable object */
+
+static DLIGHTS	*dlightsets;		/* lighting sets */
+static DOBJECT	*dobjects;		/* display object list */
+static DOBJECT	*curobj;		/* current (last referred) object */
+static int	lastxfac;		/* last number of transform args */
+static char	*lastxfav[MAXAC+1];	/* saved transform arguments */
+
+#define	RTARGC	8
+static char	*rtargv[RTARGC+1] = {"rtrace", "-h-", "-w-", "-fdd",
+					"-x", "1", "-oL"};
+
+static struct {
+	int	nsamp;			/* number of ray samples */
+	COLOR	val;			/* value (sum) */
+} ssamp[NALT][NAZI];		/* current sphere samples */
+
+#define	curname		(curobj==NULL ? (char *)NULL : curobj->name)
+
+
+static DOBJECT *
+getdobj(nm)			/* get object from list by name */
+char	*nm;
+{
+	register DOBJECT	*op;
+
+	if (nm == NULL)
+		return(NULL);
+	if (nm == curname)
+		return(curobj);
+	for (op = dobjects; op != NULL; op = op->next)
+		if (!strcmp(op->name, nm))
+			break;
+	return(op);
+}
+
+
+static
+freedobj(op)			/* free resources and memory assoc. with op */
+register DOBJECT	*op;
+{
+	int	foundlink = 0;
+	DOBJECT	ohead;
+	register DOBJECT	*opl;
+
+	if (op == NULL)
+		return(0);
+	ohead.next = dobjects;
+	for (opl = &ohead; opl->next != NULL; opl = opl->next) {
+		if (opl->next == op && (opl->next = op->next) == NULL)
+			break;
+		foundlink += opl->next->listid == op->listid;
+	}
+	dobjects = ohead.next;
+	if (!foundlink) {
+		glDeleteLists(op->listid, 1);
+		close_process(op->rtp);
+	}
+	while (op->xfac)
+		freestr(op->xfav[--op->xfac]);
+	free((char *)op);
+	return(1);
+}
+
+
+static
+savedxf(op)			/* save transform for display object */
+register DOBJECT	*op;
+{
+					/* free old */
+	while (lastxfac)
+		freestr(lastxfav[--lastxfac]);
+					/* nothing to save? */
+	if (op == NULL) {
+		lastxfav[0] = NULL;
+		return(0);
+	}
+					/* else save new */
+	for (lastxfac = 0; lastxfac < op->xfac; lastxfac++)
+		lastxfav[lastxfac] = savestr(op->xfav[lastxfac]);
+	lastxfav[lastxfac] = NULL;
+	return(1);
+}
+
+
+static
+ssph_sample(clr, direc, pos)	/* add sample to current source sphere */
+COLR	clr;
+FVECT	direc, pos;
+{
+	COLOR	col;
+	double	d;
+	register int	alt, azi;
+
+	if (dlightsets == NULL)
+		return;
+	if (pos == NULL)
+		d = FHUGE;		/* sample is at infinity */
+	else if ((d = (pos[0] - dlightsets->lcent[0])*direc[0] +
+			(pos[1] - dlightsets->lcent[1])*direc[1] +
+			(pos[2] - dlightsets->lcent[2])*direc[2]) > FTINY)
+		dlightsets->ravg += 1./d;
+	else
+		return;			/* sample is behind us */
+	alt = NALT*(1.-FTINY)*(.5*(1.+FTINY) + direc[2]*.5);
+	azi = NAZI*(1.-FTINY)*(.5*(1.+FTINY) + .5/PI*atan2(direc[1],direc[0]));
+	colr_color(col, clr);
+	addcolor(ssamp[alt][azi].val, col);
+	ssamp[alt][azi].nsamp++;
+}
+
+
+static
+ssph_direc(direc, alt, azi)	/* compute sphere sampling direction */
+FVECT	direc;
+int	alt, azi;
+{
+	double	phi, d;
+
+	direc[2] = 2./NALT*(alt+.5) - 1.;
+	d = sqrt(1. - direc[2]*direc[2]);
+	phi = 2.*PI/NAZI*(azi+.5) - PI;
+	direc[0] = d*cos(phi);
+	direc[1] = d*sin(phi);
+}
+
+
+static int
+ssph_neigh(sp, next)		/* neighbor counter on sphere */
+register int	sp[2];
+int	next;
+{
+	static short	nneigh = 0;		/* neighbor count */
+	static short	neighlist[NAZI+6][2];	/* neighbor list (0 is home) */
+	register int	i;
+
+	if (next) {
+		if (nneigh <= 0)
+			return(0);
+		sp[0] = neighlist[--nneigh][0];
+		sp[1] = neighlist[nneigh][1];
+		return(1);
+	}
+	if (sp[0] < 0 | sp[0] >= NALT | sp[1] < 0 | sp[1] >= NAZI)
+		return(nneigh=0);
+	neighlist[0][0] = sp[0]; neighlist[0][1] = sp[1];
+	nneigh = 1;
+	if (sp[0] == 0) {
+		neighlist[nneigh][0] = 1;
+		neighlist[nneigh++][1] = (sp[1]+1)%NAZI;
+		neighlist[nneigh][0] = 1;
+		neighlist[nneigh++][1] = sp[1];
+		neighlist[nneigh][0] = 1;
+		neighlist[nneigh++][1] = (sp[1]+(NAZI-1))%NAZI;
+		for (i = 0; i < NAZI; i++)
+			if (i != sp[1]) {
+				neighlist[nneigh][0] = 0;
+				neighlist[nneigh++][1] = i;
+			}
+	} else if (sp[0] == NALT-1) {
+		neighlist[nneigh][0] = NALT-2;
+		neighlist[nneigh++][1] = (sp[1]+1)%NAZI;
+		neighlist[nneigh][0] = NALT-2;
+		neighlist[nneigh++][1] = sp[1];
+		neighlist[nneigh][0] = NALT-2;
+		neighlist[nneigh++][1] = (sp[1]+(NAZI-1))%NAZI;
+		for (i = 0; i < NAZI; i++)
+			if (i != sp[1]) {
+				neighlist[nneigh][0] = NALT-1;
+				neighlist[nneigh++][1] = i;
+			}
+	} else {
+		neighlist[nneigh][0] = sp[0]-1;
+		neighlist[nneigh++][1] = (sp[1]+1)%NAZI;
+		neighlist[nneigh][0] = sp[0]-1;
+		neighlist[nneigh++][1] = sp[1];
+		neighlist[nneigh][0] = sp[0]-1;
+		neighlist[nneigh++][1] = (sp[1]+(NAZI-1))%NAZI;
+		neighlist[nneigh][0] = sp[0];
+		neighlist[nneigh++][1] = (sp[1]+1)%NAZI;
+		neighlist[nneigh][0] = sp[0];
+		neighlist[nneigh++][1] = (sp[1]+(NAZI-1))%NAZI;
+		neighlist[nneigh][0] = sp[0]+1;
+		neighlist[nneigh++][1] = (sp[1]+1)%NAZI;
+		neighlist[nneigh][0] = sp[0]+1;
+		neighlist[nneigh++][1] = sp[1];
+		neighlist[nneigh][0] = sp[0]+1;
+		neighlist[nneigh++][1] = (sp[1]+(NAZI-1))%NAZI;
+	}
+	return(nneigh);
+}
+
+
+static
+ssph_compute()			/* compute source set from sphere samples */
+{
+	int	ncells, nsamps;
+	COLOR	csum;
+	FVECT	v;
+	double	d, thresh, maxbr;
+	int	maxalt, maxazi, spos[2];
+	register int	alt, azi;
+	register struct lsource	*ls;
+					/* count & average sampled cells */
+	setcolor(csum, 0., 0., 0.);
+	ncells = nsamps = 0;
+	for (alt = 0; alt < NALT; alt++)
+		for (azi = 0; azi < NAZI; azi++)
+			if (ssamp[alt][azi].nsamp) {
+				if (ssamp[alt][azi].nsamp > 1) {
+					d = 1.0/ssamp[alt][azi].nsamp;
+					scalecolor(ssamp[alt][azi].val, d);
+				}
+				addcolor(csum, ssamp[alt][azi].val);
+				nsamps += ssamp[alt][azi].nsamp;
+				ncells++;
+			}
+	if (dlightsets == NULL | ncells < NALT*NAZI/4) {
+		bzero((char *)ssamp, sizeof(ssamp));
+		return(0);
+	}
+						/* harmonic mean distance */
+	if (dlightsets->ravg > FTINY)
+		dlightsets->ravg = nsamps / dlightsets->ravg;
+	else
+		dlightsets->ravg = FHUGE;
+						/* light source threshold */
+	thresh = MINTHRESH*bright(csum)/ncells;
+						/* avg. reflected brightness */
+	d = AVGREFL / (double)ncells;	
+	scalecolor(csum, d);
+	if (tmCvColors(&dlightsets->larb, TM_NOCHROM, csum, 1) != TM_E_OK)
+		error(CONSISTENCY, "bad tone mapping in ssph_compute");
+					/* greedy light source clustering */
+	while (dlightsets->nl < MAXLIGHTS) {
+		maxbr = 0.;			/* find brightest cell */
+		for (alt = 0; alt < NALT; alt++)
+			for (azi = 0; azi < NAZI; azi++)
+				if ((d = bright(ssamp[alt][azi].val)) > maxbr) {
+					maxalt = alt; maxazi = azi;
+					maxbr = d;
+				}
+		if (maxbr < thresh)		/* below threshold? */
+			break;
+		ls = dlightsets->li + dlightsets->nl++;
+		spos[0] = maxalt; spos[1] = maxazi;	/* cluster */
+		for (ssph_neigh(spos, 0); ssph_neigh(spos, 1); ) {
+			alt = spos[0]; azi = spos[1];
+			if ((d = bright(ssamp[alt][azi].val)) < .75*thresh)
+				continue;		/* too dim */
+			ssph_direc(v, alt, azi);	/* else add it in */
+			VSUM(ls->direc, ls->direc, v, d);
+			ls->omega++;
+			addcolor(ls->val, ssamp[alt][azi].val);
+			setcolor(ssamp[alt][azi].val, 0., 0., 0.);
+		}
+		d = 1./ls->omega;			/* avg. brightness */
+		scalecolor(ls->val, d);
+		ls->omega *= 4.*PI/(NALT*NAZI);		/* solid angle */
+		normalize(ls->direc);			/* direction */
+	}
+					/* compute ambient remainder */
+	for (alt = 0; alt < NALT; alt++)
+		for (azi = 0; azi < NAZI; azi++)
+			if (ssamp[alt][azi].nsamp)
+				addcolor(dlightsets->lamb, ssamp[alt][azi].val);
+	d = 1.0/ncells;
+	scalecolor(dlightsets->lamb, d);
+					/* clear sphere sample array */
+	bzero((char *)ssamp, sizeof(ssamp));
+	return(ncells);
+}
+
+
+static
+getdlights(op, force)		/* get lights for display object */
+register DOBJECT	*op;
+int	force;
+{
+	double	d2, mind2 = FHUGE*FHUGE;
+	FVECT	ocent;
+	VIEW	cvw;
+	register DLIGHTS	*dl;
+
+	op->ol = NULL;
+	if (op->drawcode != DO_LIGHT)
+		return(0);
+					/* check for usable light set */
+	multp3(ocent, op->center, op->xfb.f.xfm);
+	for (dl = dlightsets; dl != NULL; dl = dl->next)
+		if ((d2 = dist2(dl->lcent, ocent)) < mind2) {
+			op->ol = dl;
+			mind2 = d2;
+		}
+					/* the following is heuristic */
+	d2 = 2.*op->radius*op->xfb.f.sca; d2 *= d2;
+	if ((dl = op->ol) != NULL && (mind2 < 0.0625*dl->ravg*dl->ravg ||
+		mind2 < 4.*op->radius*op->xfb.f.sca*op->radius*op->xfb.f.sca))
+		return(1);
+	if (!force)
+		return(0);
+					/* need to compute new light set */
+	copystruct(&cvw, &stdview);
+	cvw.type = VT_PER;
+	VCOPY(cvw.vp, ocent);
+	cvw.vup[0] = 1.; cvw.vup[1] = cvw.vup[2] = 0.;
+	cvw.horiz = 90; cvw.vert = 90.;
+	beam_init(1);			/* query beams through center */
+	cvw.vdir[0] = cvw.vdir[1] = 0.; cvw.vdir[2] = 1.;
+	setview(&cvw); beam_view(&cvw, 0, 0);
+	cvw.vdir[0] = cvw.vdir[1] = 0.; cvw.vdir[2] = -1.;
+	setview(&cvw); beam_view(&cvw, 0, 0);
+	cvw.vup[0] = cvw.vup[1] = 0.; cvw.vup[2] = 1.;
+	cvw.vdir[0] = cvw.vdir[2] = 0.; cvw.vdir[1] = 1.;
+	setview(&cvw); beam_view(&cvw, 0, 0);
+	cvw.vdir[0] = cvw.vdir[2] = 0.; cvw.vdir[1] = -1.;
+	setview(&cvw); beam_view(&cvw, 0, 0);
+	cvw.vdir[1] = cvw.vdir[2] = 0.; cvw.vdir[0] = 1.;
+	setview(&cvw); beam_view(&cvw, 0, 0);
+	cvw.vdir[1] = cvw.vdir[2] = 0.; cvw.vdir[0] = -1.;
+	setview(&cvw); beam_view(&cvw, 0, 0);
+					/* allocate new light set */
+	dl = (DLIGHTS *)calloc(1, sizeof(DLIGHTS));
+	if (dl == NULL)
+		goto memerr;
+	VCOPY(dl->lcent, ocent);
+					/* push onto our light set list */
+	dl->next = dlightsets;
+	dlightsets = dl;
+	dobj_lightsamp = ssph_sample;	/* get beams from server */
+	imm_mode = beam_sync(-1) > 0;
+	while (imm_mode)
+		if (serv_result() == DS_SHUTDOWN)
+			quit(0);
+	if (!ssph_compute()) {		/* compute light sources from sphere */
+		dlightsets = dl->next;
+		free((char *)dl);
+		return(0);
+	}
+	op->ol = dl;
+	return(1);
+memerr:
+	error(SYSTEM, "out of memory in getdlights");
+}
+
+
+static int
+cmderror(cn, err)		/* report command error */
+int	cn;
+char	*err;
+{
+	sprintf(errmsg, "%s: %s", rhdcmd[cn], err);
+	error(COMMAND, errmsg);
+	return(cn);
+}
+
+
+int
+dobj_command(cmd, args)		/* run object display command */
+char	*cmd;
+register char	*args;
+{
+	int	cn, na, doxfm;
+	register int	nn;
+	char	*alist[MAXAC+1], *nm;
+					/* find command */
+	for (cn = 0; cn < DO_NCMDS; cn++)
+		if (!strcmp(cmd, rhdcmd[cn]))
+			break;
+	if (cn >= DO_NCMDS)
+		return(-1);		/* not in our list */
+					/* make argument list */
+	for (na = 0; *args; na++) {
+		if (na > MAXAC)
+			goto toomany;
+		alist[na] = args;
+		while (*args && !isspace(*args))
+			args++;
+		while (isspace(*args))
+			*args++ = '\0';
+	}
+	alist[na] = NULL;
+					/* execute command */
+	switch (cn) {
+	case DO_LOAD:				/* load an octree */
+		if (na == 1)
+			dobj_load(alist[0], alist[0]);
+		else if (na == 2)
+			dobj_load(alist[0], alist[1]);
+		else
+			return(cmderror(cn, "need octree [name]"));
+		break;
+	case DO_UNLOAD:				/* unload an object */
+		if (na > 1) goto toomany;
+		if (na && alist[0][0] == '*')
+			dobj_cleanup();
+		else
+			dobj_unload(na ? alist[0] : curname);
+		break;
+	case DO_XFORM:				/* transform object */
+	case DO_MOVE:
+		if (na && alist[0][0] != '-') {
+			nm = alist[0]; nn = 1;
+		} else {
+			nm = curname; nn = 0;
+		}
+		if (cn == DO_MOVE && nn >= na)
+			return(cmderror(cn, "missing transform"));
+		dobj_xform(nm, cn==DO_MOVE, na-nn, alist+nn);
+		break;
+	case DO_UNMOVE:				/* undo last transform */
+		dobj_unmove();
+		break;
+	case DO_OBJECT:				/* print object statistics */
+		dobj_putstats(na ? alist[0] : curname, sstdout);
+		break;
+	case DO_DUP:				/* duplicate object */
+		for (nn = 0; nn < na; nn++)
+			if (alist[nn][0] == '-')
+				break;
+		switch (nn) {
+		case 0:
+			return(cmderror(cn, "need new object name"));
+		case 1:
+			nm = curname;
+			break;
+		case 2:
+			nm = alist[0];
+			break;
+		default:
+			goto toomany;
+		}
+		if (!dobj_dup(nm, alist[nn-1]))
+			break;
+		if (na > nn)
+			dobj_xform(curname, 1, na-nn, alist+nn);
+		else
+			curobj->drawcode = DO_HIDE;
+		break;
+	case DO_SHOW:				/* change rendering option */
+	case DO_LIGHT:
+	case DO_HIDE:
+		if (na > 1) goto toomany;
+		dobj_lighting(na ? alist[0] : curname, cn);
+		break;
+	default:
+		error(CONSISTENCY, "bad command id in dobj_command");
+	}
+	dev_view(&odev.v);			/* redraw */
+	return(cn);
+toomany:
+	return(cmderror(cn, "too many arguments"));
+}
+
+
+dobj_load(oct, nam)		/* create/load an octree object */
+char	*oct, *nam;
+{
+	extern char	*getlibpath(), *getpath();
+	char	*fpp, fpath[128];
+	register DOBJECT	*op;
+					/* check arguments */
+	if (oct == NULL) {
+		error(COMMAND, "missing octree");
+		return(0);
+	}
+	if (nam == NULL) {
+		error(COMMAND, "missing name");
+		return(0);
+	}
+	if (*nam == '*' | *nam == '-') {
+		error(COMMAND, "illegal name");
+		return(0);
+	}
+					/* get octree path */
+	if ((fpp = getpath(oct, getlibpath(), R_OK)) == NULL) {
+		sprintf(errmsg, "cannot find octree \"%s\"", oct);
+		error(COMMAND, errmsg);
+		return(0);
+	}
+	strcpy(fpath, fpp);
+	freedobj(getdobj(nam));		/* free previous use of nam */
+	op = (DOBJECT *)malloc(sizeof(DOBJECT));
+	if (op == NULL)
+		error(SYSTEM, "out of memory in dobj_load");
+					/* set struct fields */
+	strcpy(op->name, nam);
+	op->ol = NULL;
+	op->drawcode = DO_HIDE;
+	setident4(op->xfb.f.xfm); op->xfb.f.sca = 1.;
+	setident4(op->xfb.b.xfm); op->xfb.b.sca = 1.;
+	op->xfav[op->xfac=0] = NULL;
+					/* load octree into display list */
+	dolights = 0;
+	op->listid = rgl_octlist(fpath, op->center, &op->radius);
+					/* start rtrace */
+	rtargv[RTARGC-1] = fpath;
+	rtargv[RTARGC] = NULL;
+	open_process(op->rtp, rtargv);
+					/* insert into main list */
+	op->next = dobjects;
+	curobj = dobjects = op;
+	savedxf(NULL);
+	return(1);
+}
+
+
+dobj_unload(nam)			/* free the named object */
+char	*nam;
+{
+	register DOBJECT	*op;
+
+	if ((op = getdobj(nam)) == NULL) {
+		error(COMMAND, "no object");
+		return(0);
+	}
+	freedobj(op);
+	savedxf(curobj = NULL);
+	return(1);
+}
+
+
+dobj_cleanup()				/* free all resources */
+{
+	register DLIGHTS	*lp;
+
+	while (dobjects != NULL)
+		freedobj(dobjects);
+	savedxf(curobj = NULL);
+	while ((lp = dlightsets) != NULL) {
+		dlightsets = lp->next;
+		free((char *)lp);
+	}
+	return(1);
+}
+
+
+dobj_xform(nam, add, ac, av)		/* set/add transform for nam */
+char	*nam;
+int	add, ac;
+char	**av;
+{
+	register DOBJECT	*op;
+
+	if ((op = getdobj(nam)) == NULL) {
+		error(COMMAND, "no object");
+		return(0);
+	}
+	if (add) add = op->xfac;
+	if (ac + add > MAXAC) {
+		error(COMMAND, "too many transform arguments");
+		return(0);
+	}
+	savedxf(curobj = op);
+	if (!add)
+		while (op->xfac)
+			freestr(op->xfav[--op->xfac]);
+	while (ac--)
+		op->xfav[op->xfac++] = savestr(*av++);
+	op->xfav[op->xfac] = NULL;
+	if (fullxf(&op->xfb, op->xfac, op->xfav) != op->xfac) {
+		error(COMMAND, "bad transform arguments");
+		dobj_unmove();
+		savedxf(op);		/* save current transform instead */
+		return(0);
+	}
+					/* don't know local lights anymore */
+	getdlights(op, 0);
+	return(1);
+}
+
+
+dobj_putstats(nam, fp)			/* put out statistics for nam */
+char	*nam;
+FILE	*fp;
+{
+	FVECT	ocent;
+	register DOBJECT	*op;
+	register int	i;
+
+	if (nam == NULL) {
+		error(COMMAND, "no current object");
+		return(0);
+	}
+	if (nam[0] == '*') {
+		i = 0;
+		for (op = dobjects; op != NULL; op = op->next)
+			i += dobj_putstats(op->name, fp);
+		return(i);
+	}
+	if ((op = getdobj(nam)) == NULL) {
+		error(COMMAND, "unknown object");
+		return(0);
+	}
+	multp3(ocent, op->center, op->xfb.f.xfm);
+	fprintf(fp, "%s: %s, center [%f %f %f], radius %f", op->name,
+			op->drawcode==DO_HIDE ? "hid" :
+			op->drawcode==DO_LIGHT && op->ol!=NULL ? "lit" :
+			"shown",
+			ocent[0],ocent[1],ocent[2], op->radius*op->xfb.f.sca);
+	if (op->xfac)
+		fputs(", (xform", fp);
+	for (i = 0; i < op->xfac; i++) {
+		putc(' ', fp);
+		fputs(op->xfav[i], fp);
+	}
+	if (op->xfac)
+		fputc(')', fp);
+	fputc('\n', fp);
+	return(1);
+}
+
+
+dobj_unmove()				/* undo last transform change */
+{
+	int	txfac;
+	char	*txfav[MAXAC+1];
+
+	if (curobj == NULL) {
+		error(COMMAND, "no current object");
+		return(0);
+	}
+					/* hold last transform */
+	bcopy((char *)lastxfav, (char *)txfav,
+			(txfac=lastxfac)*sizeof(char *));
+					/* save this transform */
+	bcopy((char *)curobj->xfav, (char *)lastxfav,
+			(lastxfac=curobj->xfac)*sizeof(char *));
+					/* copy back last transform */
+	bcopy((char *)txfav, (char *)curobj->xfav,
+			(curobj->xfac=txfac)*sizeof(char *));
+					/* set matrices */
+	fullxf(&curobj->xfb, curobj->xfac, curobj->xfav);
+					/* don't know local lights anymore */
+	getdlights(curobj, 0);
+	return(1);
+}
+
+
+dobj_dup(oldnm, nam)			/* duplicate object oldnm as nam */
+char	*oldnm, *nam;
+{
+	register DOBJECT	*op, *opdup;
+					/* check arguments */
+	if ((op = getdobj(oldnm)) == NULL) {
+		error(COMMAND, "no object");
+		return(0);
+	}
+	if (nam == NULL) {
+		error(COMMAND, "missing name");
+		return(0);
+	}
+	if (*nam == '*' | *nam == '-') {
+		error(COMMAND, "illegal name");
+		return(0);
+	}
+					/* allocate and copy struct */
+	opdup = (DOBJECT *)malloc(sizeof(DOBJECT));
+	if (opdup == NULL)
+		error(SYSTEM, "out of memory in dobj_dup");
+	copystruct(opdup, op);
+					/* rename */
+	strcpy(opdup->name, nam);
+					/* get our own copy of transform */
+	for (opdup->xfac = 0; opdup->xfac < op->xfac; opdup->xfac++)
+		opdup->xfav[opdup->xfac] = savestr(op->xfav[opdup->xfac]);
+	opdup->xfav[opdup->xfac] = NULL;
+					/* insert it into our list */
+	opdup->next = dobjects;
+	curobj = dobjects = opdup;
+	return(1);
+}
+
+
+dobj_lighting(nam, cn)		/* set up lighting for display object */
+char	*nam;
+int	cn;
+{
+	int	i, res[2];
+	VIEW	*dv;
+	register DOBJECT	*op;
+
+	if (nam == NULL) {
+		error(COMMAND, "no current object");
+		return(0);
+	}
+	if (nam[0] == '*') {
+		for (op = dobjects; op != NULL; op = op->next)
+			if ((op->drawcode = cn) == DO_LIGHT)
+				getdlights(op, 1);
+			else
+				op->ol = NULL;
+	} else if ((op = getdobj(nam)) == NULL) {
+		error(COMMAND, "unknown object");
+		return(0);
+	} else if ((op->drawcode = cn) == DO_LIGHT)
+		getdlights(op, 1);
+	else
+		op->ol = NULL;
+
+	if (dobj_lightsamp != NULL) {		/* restore beam set */
+		dobj_lightsamp = NULL;
+		beam_init(1);
+		for (i = 0; (dv = dev_auxview(i, res)) != NULL; i++)
+			beam_view(dv, res[0], res[1]);
+		beam_sync(1);			/* update server */
+	}
+}
+
+
+double
+dobj_trace(rorg, rdir)		/* check for ray intersection with objects */
+FVECT   rorg, rdir;
+{
+	register DOBJECT	*op;
+	FVECT	xorg, xdir;
+	double	darr[6], mindist = FHUGE;
+					/* check each visible object */
+	for (op = dobjects; op != NULL; op = op->next) {
+		if (op->drawcode == DO_HIDE)
+			continue;
+		if (op->xfac) {		/* transform ray */
+			multp3(xorg, rorg, op->xfb.b.xfm);
+			multv3(xdir, rdir, op->xfb.b.xfm);
+			VCOPY(darr, xorg); VCOPY(darr+3, xdir);
+		} else {
+			VCOPY(darr, rorg); VCOPY(darr+3, rdir);
+		}
+					/* trace it */
+		if (process(op->rtp, darr, darr, sizeof(double),
+				6*sizeof(double)) != sizeof(double))
+			error(SYSTEM, "rtrace communication error");
+					/* get closest */
+		if ((darr[0] *= op->xfb.f.sca) < mindist)
+			mindist = darr[0];
+	}
+	return(mindist);
+}
+
+
+dobj_render()			/* render our objects in OpenGL */
+{
+	GLboolean	normalizing;
+	GLfloat	vec[4];
+	register DOBJECT	*op;
+	register int	i;
+					/* anything to render? */
+	for (op = dobjects; op != NULL; op = op->next)
+		if (op->drawcode != DO_HIDE)
+			break;
+	if (op == NULL)
+		return(1);
+					/* set up general rendering params */
+	glGetBooleanv(GL_NORMALIZE, &normalizing);
+	glPushAttrib(GL_LIGHTING_BIT|GL_TRANSFORM_BIT|
+			GL_DEPTH_BUFFER_BIT|GL_POLYGON_BIT);
+	glDepthFunc(GL_LESS);
+	glEnable(GL_DEPTH_TEST);
+	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glShadeModel(GL_SMOOTH);
+	glFrontFace(GL_CCW);
+	glDisable(GL_CULL_FACE);
+	for (i = MAXLIGHTS; i--; )
+		glDisable(glightid[i]);
+	glEnable(GL_LIGHTING);
+	rgl_checkerr("setting rendering modes in dobj_render");
+					/* render each object */
+	for (op = dobjects; op != NULL; op = op->next) {
+		if (op->drawcode == DO_HIDE)
+			continue;
+					/* set up lighting */
+		if (op->drawcode == DO_LIGHT && op->ol != NULL) {
+			BYTE	pval;
+			double	expval, d;
+
+			if (tmMapPixels(&pval, &op->ol->larb, TM_NOCHROM, 1)
+					!= TM_E_OK)
+				error(CONSISTENCY, "dobj_render w/o tone map");
+			expval = pval * (WHTEFFICACY/256.) /
+					tmLuminance(op->ol->larb);
+			vec[0] = expval * colval(op->ol->lamb,RED);
+			vec[1] = expval * colval(op->ol->lamb,GRN);
+			vec[2] = expval * colval(op->ol->lamb,BLU);
+			vec[3] = 1.;
+			glLightModelfv(GL_LIGHT_MODEL_AMBIENT, vec);
+			for (i = op->ol->nl; i--; ) {
+				VCOPY(vec, op->ol->li[i].direc);
+				vec[3] = 0.;
+				glLightfv(glightid[i], GL_POSITION, vec);
+				d = expval * op->ol->li[i].omega;
+				vec[0] = d * colval(op->ol->li[i].val,RED);
+				vec[1] = d * colval(op->ol->li[i].val,GRN);
+				vec[2] = d * colval(op->ol->li[i].val,BLU);
+				vec[3] = 1.;
+				glLightfv(glightid[i], GL_SPECULAR, vec);
+				glLightfv(glightid[i], GL_DIFFUSE, vec);
+				vec[0] = vec[1] = vec[2] = 0.; vec[3] = 1.;
+				glLightfv(glightid[i], GL_AMBIENT, vec);
+				glEnable(glightid[i]);
+			}
+		} else {
+			vec[0] = vec[1] = vec[2] = 1.; vec[3] = 1.;
+			glLightModelfv(GL_LIGHT_MODEL_AMBIENT, vec);
+		}
+					/* set up object transform */
+		if (op->xfac) {
+			if (!normalizing && op->xfb.f.sca < 1.-FTINY |
+						op->xfb.f.sca > 1.+FTINY)
+				glEnable(GL_NORMALIZE);
+			glMatrixMode(GL_MODELVIEW);
+			glPushMatrix();
+					/* matrix order works out to same */
+#ifdef SMLFLT
+			glMultMatrixf((GLfloat *)op->xfb.f.xfm);
+#else
+			glMultMatrixd((GLdouble *)op->xfb.f.xfm);
+#endif
+		}
+					/* render the display list */
+		glCallList(op->listid);
+					/* restore matrix */
+		if (op->xfac) {
+			glMatrixMode(GL_MODELVIEW);
+			glPopMatrix();
+			if (!normalizing)
+				glDisable(GL_NORMALIZE);
+		}
+					/* restore lighting */
+		if (op->drawcode == DO_LIGHT && op->ol != NULL)
+			for (i = op->ol->nl; i--; )
+				glDisable(glightid[i]);
+					/* check errors */
+		rgl_checkerr("rendering object in dobj_render");
+	}
+	glPopAttrib();			/* restore rendering params */
+	return(1);
+}
