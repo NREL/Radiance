@@ -84,7 +84,7 @@ char  *s;
 			error(COMMAND, errmsg);
 			return;
 		}
-		fputs(VIEWSTR, fp);
+		fputs(progname, fp);
 		fprintview(&ourview, fp);
 		fputs("\n", fp);
 		fclose(fp);
