@@ -182,8 +182,8 @@ fvect.o:	fvect.h
 
 cone.o face.o objset.o otypes.o readobj.o readoct.o:	object.h
 
-ambient.o objset.o octree.o raytrace.o \
-readoct.o rpmain.o rtmain.o rvmain.o rv2.o rv3.o source.o:	octree.h
+ambient.o objset.o octree.o raytrace.o readoct.o \
+rpmain.o rtmain.o rtrace.o rvmain.o rv2.o rv3.o source.o:	octree.h
 
 o_instance.o instance.o:	instance.h octree.h
 
