@@ -1,7 +1,7 @@
-/* Copyright (c) 1996 Regents of the University of California */
+/* Copyright (c) 1997 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -269,7 +269,7 @@ io_process()		/* just act as go-between for actual process */
 				close(fderr);
 				/* close(2);	don't close stderr! */
 				fderr = -1;
-			} else
+			} else {
 				cp[nr] = '\0';	/* deduce status if we can */
 				n = strlen(progname);
 				if (!strncmp(cp, progname, n) &&
@@ -290,6 +290,7 @@ io_process()		/* just act as go-between for actual process */
 						goto writerr;
 					cp += n;
 				} while ((nr -= n) > 0);
+			}
 		}
 						/* renderer stdout */
 		if (fdout >= 0 && (FD_ISSET(fdout, &readfds) ||
