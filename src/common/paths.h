@@ -41,7 +41,7 @@ extern char  *fixargv0();
 #define PATHSEP		':'
 #define MAXPATH		256
 #define TEMPLATE	"/usr/tmp/rtXXXXXX"
-#define TEMPLEN		13
+#define TEMPLEN		17
 #define ULIBVAR		"RAYPATH"
 #ifndef DEFPATH
 #define DEFPATH		":/usr/local/lib/ray"
