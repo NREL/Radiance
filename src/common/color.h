@@ -80,6 +80,8 @@ typedef float  COLOR[3];	/* red, green, blue */
 #define CIE_gf		(CIE_y_g*CIE_C_gD/CIE_D)
 #define CIE_bf		(CIE_y_b*CIE_C_bD/CIE_D)
 
+/* As of 9-94, CIE_rf=.265074126, CIE_gf=.670114631 and CIE_bf=.064811243 */
+
 #define  bright(col)	(CIE_rf*(col)[RED]+CIE_gf*(col)[GRN]+CIE_bf*(col)[BLU])
 #define  normbright(c)	( ( (long)(CIE_rf*256.+.5)*(c)[RED] + \
 			    (long)(CIE_gf*256.+.5)*(c)[GRN] + \
