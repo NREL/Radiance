@@ -165,12 +165,17 @@ makemap()			/* create the bit map */
 			cwidth = cheight/aspect + 0.5;
 			xsiz = (long)maxwidth*cwidth >> 8;
 			ysiz = nlines*cheight;
-		} else {
+		} else if (aspect > FTINY) {
 			pictaspect = 256*nlines*aspect/maxwidth;
 			if (pictaspect*xsiz < ysiz)
 				ysiz = pictaspect*xsiz + 0.5;
 			else
 				xsiz = ysiz/pictaspect + 0.5;
+			cheight = ysiz/nlines;
+			cwidth = cheight/aspect + 0.5;
+		} else {
+			pictaspect = (double)ysiz/xsiz;
+			aspect = pictaspect*maxwidth/(256*nlines);
 			cheight = ysiz/nlines;
 			cwidth = cheight/aspect + 0.5;
 		}
@@ -179,12 +184,17 @@ makemap()			/* create the bit map */
 			cwidth = cheight/aspect + 0.5;
 			xsiz = nlines*cheight;
 			ysiz = (long)maxwidth*cwidth >> 8;
-		} else {
+		} else if (aspect > FTINY) {
 			pictaspect = maxwidth/(256*nlines*aspect);
 			if (pictaspect*xsiz < ysiz)
 				ysiz = pictaspect*xsiz + 0.5;
 			else
 				xsiz = ysiz/pictaspect + 0.5;
+			cheight = xsiz/nlines;
+			cwidth = cheight/aspect + 0.5;
+		} else {
+			pictaspect = (double)ysiz/xsiz;
+			aspect = maxwidth/(256*nlines*pictaspect);
 			cheight = xsiz/nlines;
 			cwidth = cheight/aspect + 0.5;
 		}
