@@ -41,13 +41,16 @@ double  minarad;		/* minimum ambient radius */
 static AMBTREE  atrunk;		/* our ambient trunk node */
 
 static FILE  *ambfp = NULL;	/* ambient file pointer */
-static int  ambheadlen;		/* length of ambient file header */
+static char  *afname;		/* ambient file name */
+static long  ambheadlen;	/* length of ambient file header */
 
 #define  AMBFLUSH	(BUFSIZ/AMBVALSIZ)
 
 #define  newambval()	(AMBVAL *)bmalloc(sizeof(AMBVAL))
 
 #define  newambtree()	(AMBTREE *)calloc(8, sizeof(AMBTREE))
+
+extern long  ftell(), lseek();
 
 
 setambres(ar)				/* set ambient resolution */
@@ -71,12 +74,11 @@ int  ar;
 setambient(afile)			/* initialize calculation */
 char  *afile;
 {
-	extern long  ftell();
 	AMBVAL  amb;
 						/* init ambient limits */
 	setambres(ambres);
 						/* open ambient file */
-	if (afile != NULL)
+	if ((afname = afile) != NULL)
 		if ((ambfp = fopen(afile, "r+")) != NULL) {
 			initambfile(0);
 			while (readambval(&amb, ambfp))
@@ -112,8 +114,11 @@ int  creat;
 		putc('\n', ambfp);
 		putambmagic(ambfp);
 		fflush(ambfp);
-	} else if (checkheader(ambfp, AMBFMT, NULL) < 0 || !hasambmagic(ambfp))
-		error(USER, "ambient file format error");
+	} else if (checkheader(ambfp, AMBFMT, NULL) < 0
+			|| !hasambmagic(ambfp)) {
+		sprintf(errmsg, "\"%s\" is not an ambient file", afname);
+		error(USER, afname);
+	}
 	ambheadlen = ftell(ambfp);
 }
 
@@ -294,8 +299,7 @@ int  al;
 	VCOPY(amb.gpos, gp);
 	VCOPY(amb.gdir, gd);
 						/* insert into tree */
-	avinsert(&amb, &atrunk, thescene.cuorg, thescene.cusize);
-	avsave(&amb);				/* write to file */
+	avsave(&amb);				/* and save to file */
 	return(amb.rad);
 }
 
@@ -327,17 +331,18 @@ FVECT  pv, nv;
 
 
 static
-avsave(av)				/* save an ambient value */
+avsave(av)				/* insert and save an ambient value */
 AMBVAL  *av;
 {
 	static int  nunflshed = 0;
 
+	avinsert(av, &atrunk, thescene.cuorg, thescene.cusize);
 	if (ambfp == NULL)
 		return;
 	if (writambval(av, ambfp) < 0)
 		goto writerr;
 	if (++nunflshed >= AMBFLUSH) {
-		if (fflush(ambfp) == EOF)
+		if (ambsync() == EOF)
 			goto writerr;
 		nunflshed = 0;
 	}
@@ -381,4 +386,43 @@ double  s;
 	return;
 memerr:
 	error(SYSTEM, "out of memory in avinsert");
+}
+
+
+#include  <fcntl.h>
+
+
+static
+ambsync()			/* synchronize ambient file */
+{
+	static FILE  *ambinp = NULL;
+	struct flock  fls;
+	AMBVAL  avs;
+	long  lastpos, flen;
+	register int  n;
+				/* gain exclusive access */
+	fls.l_type = F_WRLCK;
+	fls.l_whence = 0;
+	fls.l_start = 0L;
+	fls.l_len = 0L;
+	if (fcntl(fileno(ambfp), F_SETLKW, &fls) < 0)
+		error(SYSTEM, "cannot lock ambient file");
+				/* see if file has grown */
+	lastpos = lseek(fileno(ambfp), 0L, 2);	/* may move pointer */
+	flen = lseek(fileno(ambfp), 0L, 1);	/* new(?) file length */
+	if (n = (flen - lastpos)%AMBVALSIZ)	/* assure alignment */
+		lseek(fileno(ambfp), flen -= n, 0);
+	if (n = (flen - lastpos)/AMBVALSIZ) {	/* file has grown */
+		if (ambinp == NULL && (ambinp = fopen(afname, "r")) == NULL)
+			error(SYSTEM, "cannot reopen ambient file");
+		fseek(ambinp, lastpos, 0);	/* go to previous position */
+		while (n--) {			/* load contributed values */
+			readambval(&avs, ambinp);
+			avinsert(&avs,&atrunk,thescene.cuorg,thescene.cusize);
+		}
+	}
+	n = fflush(ambfp);			/* calls write() at last */
+	fls.l_type = F_UNLCK;			/* release file */
+	fcntl(fileno(ambfp), F_SETLKW, &fls);
+	return(n);
 }
