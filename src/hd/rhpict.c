@@ -18,7 +18,7 @@ char	*hdkfile;		/* holodeck file name */
 VIEW	myview = STDVIEW;	/* current output view */
 int	xres = 512, yres = 512;	/* max. horizontal and vertical resolution */
 char	*outspec = NULL;	/* output file specification */
-int	randflag = 0;		/* random resampling algorithm? */
+double	randfrac = -1.;		/* random resampling fraction */
 double	pixaspect = 1.;		/* pixel aspect ratio */
 int	seqstart = 0;		/* sequence start frame */
 double	expval = 1.;		/* exposure value */
@@ -76,10 +76,12 @@ char	*argv[];
 			outspec = argv[++i];
 			break;
 		case 'r':			/* random sampling */
-			randflag = 1;
+			if (badarg(argc-i-1,argv+i+1,"f"))
+				goto userr;
+			randfrac = atof(argv[++i]);
 			break;
 		case 's':			/* smooth sampling */
-			randflag = 0;
+			randfrac = -1.;
 			break;
 		case 'S':			/* sequence start */
 			if (badarg(argc-i-1,argv+i+1,"i"))
@@ -118,7 +120,7 @@ char	*argv[];
 	quit(0);				/* all done! */
 userr:
 	fprintf(stderr,
-"Usage: %s [-w][-r|-s][-pa pa][-pe ex][-x hr][-y vr][-S stfn][-o outp][view] input.hdk\n",
+"Usage: %s [-w][-r rf][-pa pa][-pe ex][-x hr][-y vr][-S stfn][-o outp][view] input.hdk\n",
 			progname);
 	quit(1);
 }
@@ -178,7 +180,7 @@ int	nb;
 		bil[i].b = bl[i].bi;
 	}
 	hdloadbeams(bil, nb, pixBeam);
-	pixFinish(randflag);
+	pixFinish(randfrac);
 	free((char *)bil);
 }
 
