@@ -109,7 +109,7 @@ init()			/* spit out initial definitions */
 {
 	printf("# File created by %s\n", progname);
 	printf("\nvoid light light\n");
-	printf("0\n0\n3 1 1 1\n");
+	printf("0\n0\n3 1e6 1e6 1e6\n");
 	printf("\nvoid plastic fill\n");
 	printf("0\n0\n5 .5 .5 .5 0 0\n");
 }
@@ -290,7 +290,7 @@ light()
 	while ((c = getchar()) != EOF && c != '\n')
 		;
 	printf("\nlight sphere l%d \n", ++nlights);
-	printf("0\n0\n4 %g %g %g 1\n", x, y, z);
+	printf("0\n0\n4 %g %g %g .01\n", x, y, z);
 }
 
 
@@ -375,18 +375,20 @@ fill()
 		fprintf(stderr, "%s: fill material syntax error\n", progname);
 		exit(1);
 	}
-	d /= 1.-s-t;
-	r *= d;
-	g *= d;
-	b *= d;
 	if (p > 1.)
 		p = 1./p;
 	if (t > .001) {		/* has transmission */
-		printf("\nvoid trans fill\n");
-		printf("0\n0\n7 %g %g %g %g 0 %g 1\n", r, g, b, s, t);
+		if (n > 1.1) {		/* has index of refraction */
+			printf("\nvoid dielectric fill\n");
+			printf("0\n0\n5 %g %g %g %g 0\n", r, g, b, n);
+		} else {		/* transmits w/o refraction */
+			printf("\nvoid trans fill\n");
+			printf("0\n0\n7 %g %g %g %g 0 %g 1\n",
+					r*d, g*d, b*d, s, t);
+		}
 	} else {		/* no transmission */
 		printf("\nvoid plastic fill\n");
-		printf("0\n0\n5 %g %g %g %g %g\n", r, g, b, s, p);
+		printf("0\n0\n5 %g %g %g %g %g\n", r*d, g*d, b*d, s, p);
 	}
 }
 
