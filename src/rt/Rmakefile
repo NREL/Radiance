@@ -8,6 +8,9 @@ OPT = -O -pipe
 MACH = -DSTRUCTASSIGN -DBSD -DIEEE -f68881 /usr/lib/f68881.il
 CFLAGS = $(MACH) $(OPT)
 CC = cc
+LINT = lint
+LINTFLAGS = -DSTRUCTASSIGN -DBSD -DIEEE -DVARIABLE -DFUNCTION \
+-DINCHAN -DRCONST -DREDEFW -DBIGLIB -DINVXF 
 
 #
 # The following are user-definable:
@@ -33,6 +36,8 @@ COMPAT = malloc.o
 #
 DOBJS = devtable.o devcomm.o aed.o tty.o editline.o x10.o xtwind.o \
 	colortab.o nwsdev.o
+DSRC = devtable.c devcomm.c aed.c tty.c editline.c x10.c xtwind.c \
+	colortab.c nwsdev.c
 DLIBS = -lX -lcps
 DRIVERS = $(DEVDIR)/sun $(DEVDIR)/sun.com $(DEVDIR)/x11
 
@@ -41,29 +46,43 @@ DRIVERS = $(DEVDIR)/sun $(DEVDIR)/sun.com $(DEVDIR)/x11
 #
 
 RTOBJS = rtmain.o rtrace.o $(ROBJS)
+RTSRC = rmain.c rtrace.c $(RSRC)
 
 RPOBJS = rpmain.o rpict.o image.o $(ROBJS)
+RPSRC = rmain.c rpict.c image.c $(RSRC)
 
 RVOBJS = rvmain.o rview.o rv2.o rv3.o image.o $(DOBJS) $(ROBJS)
+RVSRC = rmain.c rview.c rv2.c rv3.c image.c $(DSRC) $(RSRC)
 
 ROBJS = $(OCTOBJS) $(RAYOBJS) $(SURFOBJS) $(MATOBJS) \
 	$(MODOBJS) $(SUPPOBJS) $(MISCOBJS) $(COMPAT)
+RSRC = $(OCTSRC) $(RAYSRC) $(SURFSRC) $(MATSRC) \
+	$(MODSRC) $(SUPPSRC) $(MISCSRC)
 
 OCTOBJS = octree.o readobj.o readoct.o objset.o otypes.o
+OCTSRC = octree.c readobj.c readoct.c objset.c otypes.c
 
 RAYOBJS = raytrace.o ambient.o
+RAYSRC = raytrace.c ambient.c
 
 SURFOBJS = face.o sphere.o source.o o_face.o cone.o \
 		o_cone.o o_instance.o instance.o
+SURFSRC = face.c sphere.c source.c o_face.c cone.c \
+		o_cone.c o_instance.c instance.c
 
 MATOBJS = normal.o dielectric.o m_clip.o glass.o m_brdf.o
+MATSRC = normal.c dielectric.c m_clip.c glass.c m_brdf.c
 
 MODOBJS = p_func.o t_func.o p_data.o t_data.o text.o mx_func.o mx_data.o
+MODSRC = p_func.c t_func.c p_data.c t_data.c text.c mx_func.c mx_data.c
 
 SUPPOBJS = zeroes.o calexpr.o caldefn.o calfunc.o func.o noise3.o data.o
+SUPPSRC = zeroes.c calexpr.c caldefn.c calfunc.c func.c noise3.c data.c
 
 MISCOBJS = misc.o header.o mat4.o xf.o fvect.o savestr.o fgetline.o ealloc.o \
 		color.o resolu.o
+MISCSRC = misc.c header.c mat4.c xf.c fvect.c savestr.c fgetline.c ealloc.c \
+		color.c resolu.c
 
 #
 # What this makefile produces:
@@ -78,6 +97,9 @@ install:	all
 
 clean:
 	rm -f *.o core
+
+lint:	$(RVSRC)
+	$(LINT) $(LINTFLAGS) -DRVIEW $(RVSRC) $(LIBS)
 
 #
 # Links:
