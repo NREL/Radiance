@@ -278,6 +278,7 @@ register RAY  *r;
 {
 	extern int  ambcmp();
 	extern double  sin(), cos(), sqrt();
+	int  hlist[4];
 	double  phi, xd, yd, zd;
 	double  b, b2;
 	register AMBSAMP  *div;
@@ -312,20 +313,28 @@ register RAY  *r;
 	fcross(ux, r->ron, uy);
 	normalize(ux);
 	fcross(uy, ux, r->ron);
+					/* set up urand */
+	hlist[0] = r->rno;
 						/* sample divisions */
 	arad = 0.0;
 	ne = 0;
-	for (i = 0; i < nt; i++)
+	for (i = 0; i < nt; i++) {
+		hlist[1] = i;
 		for (j = 0; j < np; j++) {
 			rayorigin(&ar, r, AMBIENT, 0.5);	/* pretested */
-			zd = sqrt((i+frandom())/nt);
-			phi = 2.0*PI * (j+frandom())/np;
+			hlist[2] = j;
+			hlist[3] = 0;
+			zd = sqrt((i+urand(ilhash(hlist,4)))/nt);
+			hlist[3] = 1;
+			phi = 2.0*PI * (j+urand(ilhash(hlist,4)))/np;
 			xd = cos(phi) * zd;
 			yd = sin(phi) * zd;
 			zd = sqrt(1.0 - zd*zd);
 			for (k = 0; k < 3; k++)
 				ar.rdir[k] = xd*ux[k]+yd*uy[k]+zd*r->ron[k];
+			dimlist[ndims++] = i*np + j + 38813;
 			rayvalue(&ar);
+			ndims--;
 			if (ar.rot < FHUGE)
 				arad += 1.0 / ar.rot;
 			if (ns > 0) {			/* save division */
@@ -363,6 +372,7 @@ register RAY  *r;
 			} else
 				addcolor(acol, ar.rcol);
 		}
+	}
 	for (k = 0; k < ne; k++) {		/* compute errors */
 		if (div[k].n > 1)
 			div[k].k /= div[k].n;
@@ -378,13 +388,20 @@ register RAY  *r;
 						/* super-sample */
 	for (i = ns; i > 0; i--) {
 		rayorigin(&ar, r, AMBIENT, 0.5);	/* pretested */
-		zd = sqrt((div[0].t+frandom())/nt);
-		phi = 2.0*PI * (div[0].p+frandom())/np;
+		hlist[1] = div[0].t;
+		hlist[2] = div[0].p;
+		hlist[3] = 0;
+		zd = sqrt((div[0].t+urand(ilhash(hlist,4)+div[0].n))/nt);
+		hlist[3] = 1;
+		phi = 2.0*PI * (div[0].p+urand(ilhash(hlist,4)+div[0].n))/np;
 		xd = cos(phi) * zd;
 		yd = sin(phi) * zd;
 		zd = sqrt(1.0 - zd*zd);
 		for (k = 0; k < 3; k++)
 			ar.rdir[k] = xd*ux[k]+yd*uy[k]+zd*r->ron[k];
+		dimlist[ndims++] = div[0].t*np + div[0].p + 38813;
+		rayvalue(&ar);
+		ndims--;
 		rayvalue(&ar);
 		if (ar.rot < FHUGE)
 			arad += 1.0 / ar.rot;
