@@ -20,20 +20,19 @@ packrays(rod, p)		/* pack ray origins and directions */
 register float	*rod;
 register PACKET	*p;
 {
-	short	packord[RPACKSIZ];
 	float	packdc2[RPACKSIZ];
-	int	iterleft = 3*p->nr;
+	int	iterleft = 3*p->nr + 9;
 	BYTE	rpos[2][2];
 	FVECT	ro, rd, rp1;
 	GCOORD	gc[2];
-	double	d, dc2, md2, td2;
+	double	d, dc2, md2, td2, dc2worst = FHUGE;
 	int	i;
 	register int	ii;
 
 	if (!hdbcoord(gc, hdlist[p->hd], p->bi))
 		error(CONSISTENCY, "bad beam index in packrays");
-	td2 = (myeye.rng+FTINY)*(myeye.rng+FTINY);
-	for (i = 0, md2 = 0.; i < p->nr || md2 > td2; ) {
+	td2 = myeye.rng + FTINY; td2 *= td2;
+	for (i = 0, md2 = 0.; i < p->nr || (md2 > td2 && iterleft--); ) {
 		rpos[0][0] = frandom() * 256.;
 		rpos[0][1] = frandom() * 256.;
 		rpos[1][0] = frandom() * 256.;
@@ -43,24 +42,20 @@ register PACKET	*p;
 			register int	nexti;
 
 			VSUM(rp1, ro, rd, d);
-			dc2 = dist2line(myeye.vpt, ro, rp1);
-			dc2 /= (double)(p->nr*p->nr);
+			dc2 = dist2line(myeye.vpt, ro, rp1) / p->nr;
 			if (i == p->nr) {		/* packet full */
-				nexti = packord[i-1];
-				if (!iterleft--)
-					break;		/* tried enough! */
-				if (dc2 >= packdc2[nexti])
+				if (dc2 >= dc2worst)	/* quick check */
+					continue;
+				nexti = 0;		/* find worst */
+				for (ii = i; --ii; )
+					if (packdc2[ii] > packdc2[nexti])
+						nexti = ii;
+				if (dc2 >= (dc2worst = packdc2[nexti]))
 					continue;	/* worse than worst */
-				md2 -= packdc2[nexti];
+				md2 -= dc2worst;
 			} else
 				nexti = i++;
 			md2 += packdc2[nexti] = dc2;	/* new distance */
-			for (ii = i; --ii; ) {		/* insertion sort */
-				if (dc2 > packdc2[packord[ii-1]])
-					break;
-				packord[ii] = packord[ii-1];
-			}
-			packord[ii] = nexti;
 			ii = nexti;			/* put it here */
 		} else
 			ii = i++;
