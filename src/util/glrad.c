@@ -423,7 +423,7 @@ char  *id;
 	glDepthFunc(GL_LESS);
 	glShadeModel(GL_SMOOTH);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
 	glEnable(GL_LIGHTING);
 	if (backvis)
 		glDisable(GL_CULL_FACE);
