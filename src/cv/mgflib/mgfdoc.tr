@@ -3927,6 +3927,7 @@ typedef FLOAT  FVECT[3];	/* a 3-d real vector */
 
 typedef struct {
 	int	clock;			/* incremented each change -- resettable */
+	char	*client_data;	/* pointer to private client data */
 	FVECT	p, n;		/* point and normal */
 } C_VERTEX;		/* vertex context */
 .DE
@@ -3948,8 +3949,14 @@ handler.
 (See the
 .I xf_handler
 page.)\0
+The
+.I client_data
+pointer may be used to index private application data for vertex
+linking, etc.
+This pointer is initialized to NULL when the context is created,
+and otherwise ignored by the parser library.
 .LP
-It is possible but not recommended to alter the contents of the
+It is possible but not recommended to alter the shared contents of the
 vertex structure returned by
 .I c_getvert.
 Normally it is read during the
@@ -4070,6 +4077,7 @@ structure, defined in "parser.h" as:
 
 typedef struct {
 	int	clock;			/* incremented each change */
+	char	*client_data;	/* pointer to private client data */
 	short	flags;			/* what's been set */
 	short	ssamp[C_CNSS];	/* spectral samples, min wl to max */
 	long	ssum;			/* straight sum of spectral values */
@@ -4084,6 +4092,11 @@ color field entity, and may be reset by the calling program if
 desired.
 This is a convenient way to keep track of whether or not a color has
 changed since its last use.
+The
+.I client_data
+pointer may be used to index private application data.
+This pointer is initialized to NULL when the context is created,
+and otherwise ignored by the parser library.
 The
 .I flags
 member indicates which color representations have been assigned,
@@ -4229,6 +4242,7 @@ structure, defined in "parser.h" as:
 
 typedef struct {
 	int	clock;		/* incremented each change -- resettable */
+	char	*client_data;	/* pointer to private client data */
 	int	sided;		/* 1 if surface is 1-sided, 0 for 2-sided */
 	float	nr, ni;		/* index of refraction, real and imaginary */
 	float	rd;		/* diffuse reflectance */
@@ -4252,6 +4266,11 @@ material field entity, and may be reset by the calling program if
 desired.
 This is a convenient way to keep track of whether or not a material has
 changed since its last use.
+The
+.I client_data
+pointer may be used to index private application data.
+This pointer is initialized to NULL when the context is created,
+and otherwise ignored by the parser library.
 .LP
 All reflectance and transmittance values correspond to normal
 incidence, and may vary as a function of angle depending on the
