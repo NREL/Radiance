@@ -18,6 +18,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "otypes.h"
 
+#ifndef  DEFPATH
+#define  DEFPATH	":/usr/local/lib/ray"
+#endif
+
 #define  OMARGIN	(10*FTINY)	/* margin around global cube */
 
 #define  MAXOBJFIL	63		/* maximum number of scene files */
@@ -57,7 +61,7 @@ char  **argv;
 	progname = argv[0];
 
 	if ((libpath = getenv("RAYPATH")) == NULL)
-		libpath = ":/usr/local/lib/ray";
+		libpath = DEFPATH;
 
 	initotypes();
 
