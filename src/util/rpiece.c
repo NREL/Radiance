@@ -39,7 +39,15 @@ char *argv[];
 #define  MAXFORK		0
 #endif
 #endif
-
+					/* protection from SYSV signals(!) */
+#if defined(sgi) || defined(hpux)
+#define guard_io()	sighold(SIGALRM)
+#define unguard()	sigrelse(SIGALRM)
+#endif
+#ifndef guard_io
+#define guard_io()	0
+#define unguard()	0
+#endif
 				/* rpict command */
 char  *rpargv[128] = {"rpict", "-S", "1", "-x", "512", "-y", "512", "-pa", "1"};
 int  rpargc = 9;
@@ -351,19 +359,24 @@ int  xpos, ypos;
 		exit(cleanup(1));
 	}
 				/* check header from rpict */
+	guard_io();
 	getheader(fromrp, NULL, NULL);
 	if (!fscnresolu(&hr, &vr, fromrp) || hr != hres | vr != vres) {
 		fprintf(stderr, "%s: resolution mismatch from %s\n",
 				progname, rpargv[0]);
 		exit(cleanup(1));
 	}
+	unguard();
 				/* load new piece into buffer */
-	for (y = 0; y < vr; y++)
+	for (y = 0; y < vr; y++) {
+		guard_io();
 		if (freadcolrs(pbuf+y*hr, hr, fromrp) < 0) {
 			fprintf(stderr, "%s: read error from %s\n",
 					progname, rpargv[0]);
 			exit(cleanup(1));
 		}
+		unguard();
+	}
 #if MAXFORK
 				/* fork so we don't slow rpict down */
 	if ((pid = fork()) > 0) {
