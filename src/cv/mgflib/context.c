@@ -33,12 +33,22 @@ static LUTAB	clr_tab = LU_SINIT(free,free);	/* color lookup table */
 static LUTAB	mat_tab = LU_SINIT(free,free);	/* material lookup table */
 static LUTAB	vtx_tab = LU_SINIT(free,free);	/* vertex lookup table */
 
+				/* CIE 1931 Standard Observer */
+static C_COLOR	cie_xf = C_CIEX;
+static C_COLOR	cie_yf = C_CIEY;
+static C_COLOR	cie_zf = C_CIEZ;
+
+static int	setspectrum();
+static void	mixcolors();
+
 
 int
 c_hcolor(ac, av)		/* handle color entity */
 int	ac;
 register char	**av;
 {
+	double	w, wsum;
+	register int	i;
 	register LUENT	*lp;
 
 	switch (mg_entity(av[0])) {
@@ -91,9 +101,45 @@ register char	**av;
 			return(MG_ETYPE);
 		c_ccolor->cx = atof(av[1]);
 		c_ccolor->cy = atof(av[2]);
+		c_ccolor->flags = C_CDXY|C_CSXY;
 		if (c_ccolor->cx < 0. | c_ccolor->cy < 0. |
 				c_ccolor->cx + c_ccolor->cy > 1.)
 			return(MG_EILL);
+		return(MG_OK);
+	case MG_E_CSPEC:	/* assign spectral values */
+		if (ac < 5)
+			return(MG_EARGC);
+		if (!isint(av[1]) || !isint(av[2]))
+			return(MG_ETYPE);
+		return(setspectrum(c_ccolor, atoi(av[1]), atoi(av[2]),
+				ac-3, av+3));
+	case MG_E_CMIX:		/* mix colors */
+		if (ac < 5 || (ac-1)%2)
+			return(MG_EARGC);
+		if (!isflt(av[1]))
+			return(MG_ETYPE);
+		wsum = atof(av[1]);
+		if (wsum < 0.)
+			return(MG_EILL);
+		if ((lp = lu_find(&clr_tab, av[2])) == NULL)
+			return(MG_EMEM);
+		if (lp->data == NULL)
+			return(MG_EUNDEF);
+		*c_ccolor = *(C_COLOR *)lp->data;
+		for (i = 3; i < ac; i += 2) {
+			if (!isflt(av[i]))
+				return(MG_ETYPE);
+			w = atof(av[i]);
+			if (w < 0.)
+				return(MG_EILL);
+			if ((lp = lu_find(&clr_tab, av[i+1])) == NULL)
+				return(MG_EMEM);
+			if (lp->data == NULL)
+				return(MG_EUNDEF);
+			mixcolors(c_ccolor, wsum, c_ccolor,
+					w, (C_COLOR *)lp->data);
+			wsum += w;
+		}
 		return(MG_OK);
 	}
 	return(MG_EUNK);
@@ -314,4 +360,147 @@ char	*name;
 	if ((lp = lu_find(&vtx_tab, name)) == NULL)
 		return(NULL);
 	return((C_VERTEX *)lp->data);
+}
+
+
+int
+c_isgrey(clr)			/* check if color is grey */
+register C_COLOR	*clr;
+{
+	if (!clr->flags)
+		return(1);		/* no settings == grey */
+	c_ccvt(clr, C_CSXY);
+	return(clr->cx >= .323 && clr->cx <= .343 &&
+			clr->cy >= .323 && clr->cy <= .343);
+}
+
+
+void
+c_ccvt(clr, fl)			/* convert color representations */
+register C_COLOR	*clr;
+int	fl;
+{
+	double	x, y, z;
+	register int	i;
+
+	if (clr->flags & fl)		/* already done */
+		return;
+	if (!(clr->flags & (C_SXY|C_SSPEC))	/* nothing set */
+		*clr = c_dfcolor;
+	else if (fl & C_CSXY) {		/* cspec -> cxy */
+		x = y = z = 0.;
+		for (i = 0; i < C_CNSS; i++) {
+			x += cie_xf.ssamp[i] * clr->ssamp[i];
+			y += cie_yf.ssamp[i] * clr->ssamp[i];
+			z += cie_zf.ssamp[i] * clr->ssamp[i];
+		}
+		z += x + y;
+		clr->cx = x / z;
+		clr->cy = y / z;
+		clr->flags |= C_CSXY;
+	} else {			/* cxy -> cspec */
+		z = (cie_xf.ssum + cie_yf.ssum + cie_zf.ssum) / 3.;
+		x = clr->cx * z / cie_xf.ssum;
+		y = clr->cy * z / cie_yf.ssum;
+		z = (1. - clr->cx - clr->cy) * z / cie_zf.ssum;
+		clr->ssum = 0;
+		for (i = 0; i < C_CNSS; i++)
+			clr->ssum += clr->ssamp[i] =
+					x * cie_xf.ssamp[i] +
+					y * cie_yf.ssamp[i] +
+					z * cie_zf.ssamp[i] ;
+		clr->flags |= C_CSSPEC;
+	}
+}
+
+
+static int
+setspectrum(clr, wlmin, wlmax, ac, av)	/* convert a spectrum */
+register C_COLOR	*clr;
+int	wlmin, wlmax;
+int	ac;
+char	**av;
+{
+	double	scale;
+	float	*va;
+	register int	i;
+	int	wl, pos;
+	double	wl0, wlstep;
+
+	if (wlmin < C_CMINWL || wlmin >= wlmax || wlmax > C_CMAXWL)
+		return(MG_EILL);
+	if ((va = (float *)malloc(ac*sizeof(float))) == NULL)
+		return(MG_EMEM);
+	scale = 0.;			/* get values and maximum */
+	for (i = 0; i < ac; i++) {
+		if (!isflt(av[i]))
+			return(MG_ETYPE);
+		va[i] = atof(av[i]);
+		if (va[i] < 0.)
+			return(MG_EILL);
+		if (va[i] > scale)
+			scale = va[i];
+	}
+	if (scale == 0.)
+		return(MG_EILL);
+	scale = C_CMAXV / scale;
+	clr->ssum = 0;			/* convert to our spacing */
+	wl0 = wlmin;
+	wlstep = (double)(wlmax - wlmin)/(ac-1);
+	pos = 0;
+	for (i = 0, wl = C_CMINWL; i < C_CNSS; i++, wl += C_CWLI)
+		if (wl < wlmin || wl > wlmax)
+			clr->ssamp[i] = 0;
+		else {
+			while (wl0 + wlstep < wl+FTINY) {
+				wl0 += wlstep;
+				pos++;
+			}
+			if (wl+FTINY >= wl0 && wl-FTINY <= wl0)
+				clr->ssamp[i] = scale*va[pos];
+			else		/* interpolate if necessary */
+				clr->ssamp[i] = scale / wlstep *
+						( va[pos]*(wl0+wlstep - wl) +
+							va[pos+1]*(wl - wl0) );
+			clr->ssum += clr->ssamp[i];
+		}
+	clr->flags = C_CDSPEC|C_CSSPEC;
+	free((MEM_PTR)va);
+	return(MG_OK);
+}
+
+
+static void
+mixcolors(cres, w1, c1, w2, c2)	/* mix two colors according to weights given */
+register C_COLOR	*cres, *c1, *c2;
+double	w1, w2;
+{
+	double	scale;
+	float	cmix[C_CNSS];
+	register int	i;
+
+	if ((c1->flags|c2->flags) & C_CDSPEC) {		/* spectral mixing */
+		c_ccvt(c1, C_CSSPEC);
+		c_ccvt(c2, C_CSSPEC);
+		w1 /= (double)c1->ssum;
+		w2 /= (double)c2->ssum;
+		scale = 0.;
+		for (i = 0; i < C_CNSS; i++) {
+			cmix[i] = w1*c1->ssamp[i] + w2*c2->ssamp[i];
+			if (cmix[i] > scale)
+				scale = cmix[i];
+		}
+		scale = C_CMAXV / scale;
+		cres->ssum = 0;
+		for (i = 0; i < C_CNSS; i++)
+			cres->ssum += cres->ssamp[i] = scale*cmix[i] + .5;
+		cres->flags = C_CDSPEC|C_CSSPEC;
+	} else {					/* CIE xy mixing */
+		c_ccvt(c1, C_CSXY);
+		c_ccvt(c2, C_CSXY);
+		scale = 1. / (w1/c1->cy + w2/c2->cy);
+		cres->cx = (c1->cx*w1/c1->cy + c2->cx*w2/c2->cy) * scale;
+		cres->cy = (w1 + w2) * scale;
+		cres->flags = C_CDXY|C_CSXY;
+	}
 }
