@@ -50,3 +50,8 @@ typedef float  COLOR[3];	/* red, green, blue */
 #define  BLKCOLOR		{0.0,0.0,0.0}
 #define  WHTCOLR		{128,128,128,COLXS+1}
 #define  BLKCOLR		{0,0,0,0}
+
+				/* defines for resolution header */
+#define  XDECR			1
+#define  YDECR			2
+#define  YMAJOR			4
