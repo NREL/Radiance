@@ -21,18 +21,19 @@ register float	*rod;
 register PACKET	*p;
 {
 	short	packord[RPACKSIZ];
-	float	packdc[RPACKSIZ];
+	float	packdc2[RPACKSIZ];
 	int	iterleft = 3*p->nr;
 	BYTE	rpos[2][2];
 	FVECT	ro, rd, rp1;
 	GCOORD	gc[2];
-	double	d, dc, meandist;
+	double	d, dc2, md2, td2;
 	int	i;
 	register int	ii;
 
 	if (!hdbcoord(gc, hdlist[p->hd], p->bi))
 		error(CONSISTENCY, "bad beam index in packrays");
-	for (i = 0, meandist = 0.; i < p->nr || meandist > myeye.rng+FTINY; ) {
+	td2 = (myeye.rng+FTINY)*(myeye.rng+FTINY);
+	for (i = 0, md2 = 0.; i < p->nr || md2 > td2; ) {
 		rpos[0][0] = frandom() * 256.;
 		rpos[0][1] = frandom() * 256.;
 		rpos[1][0] = frandom() * 256.;
@@ -42,19 +43,20 @@ register PACKET	*p;
 			register int	nexti;
 
 			VSUM(rp1, ro, rd, d);
-			dc = sqrt(dist2line(myeye.vpt, ro, rp1)) / p->nr;
+			dc2 = dist2line(myeye.vpt, ro, rp1);
+			dc2 /= (double)(p->nr*p->nr);
 			if (i == p->nr) {		/* packet full */
 				nexti = packord[i-1];
 				if (!iterleft--)
 					break;		/* tried enough! */
-				if (dc >= packdc[nexti])
+				if (dc2 >= packdc2[nexti])
 					continue;	/* worse than worst */
-				meandist -= packdc[nexti];
+				md2 -= packdc2[nexti];
 			} else
 				nexti = i++;
-			meandist += packdc[nexti] = dc;	/* new distance */
+			md2 += packdc2[nexti] = dc2;	/* new distance */
 			for (ii = i; --ii; ) {		/* insertion sort */
-				if (dc > packdc[packord[ii-1]])
+				if (dc2 > packdc2[packord[ii-1]])
 					break;
 				packord[ii] = packord[ii-1];
 			}
@@ -76,8 +78,8 @@ register PACKET	*p;
 		VCOPY(rod+6*ii+3, rd);
 	}
 #ifdef DEBUG
-	fprintf(stderr, "%f mean distance for target %f (%d iterations)\n",
-			meandist, myeye.rng, 3*p->nr - iterleft);
+	fprintf(stderr, "%f mean distance for target %f (%d iterations left)\n",
+			sqrt(md2), myeye.rng, iterleft);
 #endif
 }
 
