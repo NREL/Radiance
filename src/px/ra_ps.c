@@ -193,7 +193,7 @@ double
 unit2inch(s)		/* determine unit */
 register char	*s;
 {
-	static struct unit {char n; float f} u[] = {
+	static struct unit {char n; float f;} u[] = {
 		'i', 1.,
 		'm', 1./25.4,
 		'c', 1./2.54,
