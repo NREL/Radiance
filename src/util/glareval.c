@@ -41,6 +41,8 @@ static int	maxpix;		/* maximum number of pixels to buffer */
 static SCAN	*freelist;		/* scanline free list */
 static SCAN	*hashtab[HSIZE];	/* scanline hash table */
 
+static long	scanbufsiz;		/* size of allocated scanline buffer */
+
 static long	ncall = 0L;	/* number of calls to getpictscan */
 static long	nread = 0L;	/* number of scanlines read */
 static long	nrecl = 0L;	/* number of scanlines reclaimed */
@@ -398,7 +400,7 @@ initscans()				/* initialize scanline buffers */
 	register SCAN	*ptr;
 	register int	i;
 					/* initialize positions */
-	scanpos = (long *)malloc(pysiz*sizeof(long));
+	scanpos = (long *)bmalloc(pysiz*sizeof(long));
 	if (scanpos == NULL)
 		memerr("scanline positions");
 	for (i = pysiz-1; i >= 0; i--)
@@ -415,7 +417,8 @@ initscans()				/* initialize scanline buffers */
 	i = MAXSBUF / scansize;		/* compute number to allocate */
 	if (i > HSIZE)
 		i = HSIZE;
-	scan_buf = malloc(i*scansize);	/* get in one big chunk */
+	scanbufsiz = i*scansize;
+	scan_buf = bmalloc(scanbufsiz);	/* get in one big chunk */
 	if (scan_buf == NULL)
 		memerr("scanline buffers");
 	ptr = (SCAN *)scan_buf;
@@ -432,6 +435,6 @@ initscans()				/* initialize scanline buffers */
 
 donescans()				/* free up scanlines */
 {
-	free(scan_buf);
-	free((char *)scanpos);
+	bfree(scan_buf, scanbufsiz);
+	bfree((char *)scanpos, pysiz*sizeof(long));
 }
