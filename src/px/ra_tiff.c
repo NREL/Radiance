@@ -97,7 +97,6 @@ char	*inpf, *outf;
 	TIFF	*tif;
 	unsigned short	pconfig;
 	unsigned short	hi;
-	char	*cp;
 	register BYTE	*scanin;
 	register COLR	*scanout;
 	register int	x;
@@ -126,15 +125,6 @@ char	*inpf, *outf;
 	if (outf != NULL && strcmp(outf, "-") &&
 			freopen(outf, "w", stdout) == NULL)
 		quiterr("cannot open Radiance output file");
-	if (TIFFGetField(tif, TIFFTAG_IMAGEDESCRIPTION, &cp)) {
-		while (*cp && *cp == '\n')
-			cp++;
-		for (x = 0; cp[x]; x++)
-			if (cp[x] != '\n' || cp[x+1] != '\n')
-				putchar(cp[x]);
-		if (x && cp[x-1] != '\n')
-			putchar('\n');
-	}
 	fputs(progname, stdout);
 	if (bradj)
 		printf(" -e %+d", bradj);
@@ -182,42 +172,9 @@ readerr:
 }
 
 
-struct hdinfo {
-	char	*buf;		/* header buffer */
-	char	*pos;		/* buffer position */
-	char	fmt[64];	/* format type */
-};
-
-
-headline(s, hd)			/* add header line to buffer */
-register char	*s;
-register struct hdinfo	*hd;
-{
-	register int	i;
-
-	if (isformat(s)) {
-		formatval(hd->fmt, s);
-		return;
-	}
-	if (hd->buf == NULL)
-		hd->pos = hd->buf = malloc(strlen(s)+1);
-	else {
-		i = hd->pos - hd->buf;
-		hd->buf = realloc(hd->buf, i+strlen(s)+1);
-		hd->pos = hd->buf + i;
-	}
-	if (hd->buf == NULL)
-		quiterr("out of memory in headline");
-	while (*hd->pos++ = *s++)
-		;
-}
-
-
 ra2tiff(inpf, outf)		/* convert Radiance file to 24-bit TIFF */
 char	*inpf, *outf;
 {
-	char	buf[64];
-	struct hdinfo	hd;
 	TIFF	*tif;
 	int	xmax, ymax;
 	BYTE	*scanout;
@@ -227,16 +184,8 @@ char	*inpf, *outf;
 						/* open Radiance file */
 	if (strcmp(inpf, "-") && freopen(inpf, "r", stdin) == NULL)
 		quiterr("cannot open Radiance input file");
-	hd.buf = NULL; hd.fmt[0] = '\0';
-	getheader(stdin, headline, &hd);
-	if (bradj)
-		sprintf(buf, "%s -e %+d\n", progname, bradj);
-	else
-		sprintf(buf, "%s\n", progname);
-	headline(buf, &hd);
-	if (hd.fmt[0] && strcmp(hd.fmt, COLRFMT))
-		quiterr("input not a Radiance picture");
-	if (fgetresolu(&xmax, &ymax, stdin) != (YDECR|YMAJOR))
+	if (checkheader(stdin, COLRFMT, NULL) < 0 ||
+			fgetresolu(&xmax, &ymax, stdin) != (YDECR|YMAJOR))
 		quiterr("bad Radiance picture");
 						/* open TIFF file */
 	if ((tif = TIFFOpen(outf, "w")) == NULL)
@@ -247,7 +196,6 @@ char	*inpf, *outf;
 	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8);
 	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, 2);
 	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, 1);
-	TIFFSetField(tif, TIFFTAG_IMAGEDESCRIPTION, hd.buf);
 						/* allocate scanlines */
 	scanin = (COLR *)malloc(xmax*sizeof(COLR));
 	scanout = (BYTE *)malloc(TIFFScanlineSize(tif));
@@ -272,5 +220,4 @@ char	*inpf, *outf;
 	free((char *)scanin);
 	free((char *)scanout);
 	TIFFClose(tif);
-	free(hd.buf);
 }
