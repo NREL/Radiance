@@ -2,18 +2,25 @@
 # SCCSid "$SunId$ LBL"
 #
 # Make a nice view of an object
-# Standard input is description made to fit in unit cube in positive quadrant
+# Arguments are scene input files
 #
-set objdir=/usr/local/lib/ray/lib
 set tmpdir=/usr/tmp
-set vw="-vp 3 3 3 -vd -1 -1 -1 -vh 20 -vv 20"
-set rview="rview -av .2 .2 .2 $vw $*"
 set octree=$tmpdir/ov$$.oct
 set tmpfiles="$octree"
 onintr quit
 
-oconv $objdir/testroom - > $octree
-$rview $octree
+oconv - $* > $octree <<_EOF_
+void glow dim 0 0 4 .1 .1 .15 0
+dim source background 0 0 4 0 0 1 360
+void light bright 0 0 3 1000 1000 1000
+bright source sun1 0 0 4 1 .2 1 5
+bright source sun2 0 0 4 .3 1 1 5
+bright source sun3 0 0 4 -1 -.7 1 5
+_EOF_
+
+set vp=`getinfo -d <$octree|rcalc -e '$1=$1-3.5*$4;$2=$2-3.5*$4;$3=$3+2.5*$4'`
+
+rview -av .2 .2 .2 -vp $vp -vd 1 1 -.5 -vv 15 -vh 15 $octree
 
 quit:
 rm -f $tmpfiles
