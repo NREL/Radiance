@@ -9,7 +9,12 @@ static const char	RCSid[] = "$Id$";
  *     Greg Ward Larson
  */
 
+#include  <stdlib.h>
 #include  <stdio.h>
+
+#include "rterror.h"
+#include "meta.h"
+#include "mgvars.h"
 
 #define  istyp(s)	(s[0] == '-')
 
@@ -19,10 +24,13 @@ char  *progname;
 
 char  *libpath[4];
 
+static void dofile(int  optc, char  *optv[], char  *file);
 
-main(argc, argv)
-int  argc;
-char  *argv[];
+int
+main(
+	int  argc,
+	char  *argv[]
+)
 {
 	char  *getenv();
 	int  i, file0;
@@ -49,13 +57,16 @@ char  *argv[];
 			dofile(file0-1, argv+1, argv[i]);
 
 	quit(0);
+	return 0; /* pro forma return */
 }
 
 
-dofile(optc, optv, file)		/* plot a file */
-int  optc;
-char  *optv[];
-char  *file;
+void
+dofile(		/* plot a file */
+	int  optc,
+	char  *optv[],
+	char  *file
+)
 {
 	char  types[16], stmp[256], *strcat();
 	int  i;
@@ -78,15 +89,19 @@ char  *file;
 }
 
 
-eputs(msg)				/* print error message */
-char  *msg;
+void
+eputs(				/* print error message */
+	char  *msg
+)
 {
 	fputs(msg, stderr);
 }
 
 
-quit(code)				/* quit program */
-int  code;
+void
+quit(				/* quit program */
+	int  code
+)
 {
 	exit(code);
 }

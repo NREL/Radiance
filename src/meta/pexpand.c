@@ -11,18 +11,16 @@ static const char	RCSid[] = "$Id$";
 #include  "meta.h"
 
 
-
 char  *progname;
 
 int  maxalloc = 0;		/* no limit */
 
 
-
-main(argc, argv)
-
-int  argc;
-char  **argv;
-
+int
+main(
+	int  argc,
+	char  **argv
+)
 {
  FILE  *fp;
  int  i;

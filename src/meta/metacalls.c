@@ -8,6 +8,7 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include  "meta.h"
+#include  "plot.h"
 
 
 #define  RIGHT		0

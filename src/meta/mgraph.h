@@ -109,6 +109,8 @@ typedef struct {
 	double  min, max, step;
 }  BOUNDS;
 
+extern void mgraph(void);
+
 #ifdef __cplusplus
 }
 #endif

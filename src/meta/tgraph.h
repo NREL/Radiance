@@ -72,8 +72,21 @@ extern short  polar;			/* flag for polar coordiates */
 
 extern int    ncurves;			/* number of curves in file */
 
-extern char  *snagquo(), *instr();
-
+extern char *instr(char  *s, char  *t);
+extern char *snagquo(register char  *s);
+extern void normalize(FILE  *fp, FILE *fout);
+extern void initialize(void);
+extern void option(char *s);
+extern int istitle(char *s);
+extern int isdata(char *s);
+extern int islabel(char *s);
+extern int isdivlab(char *s);
+extern int isxlabel(char *s);
+extern int isylabel(char *s);
+extern void makeaxis(int flag);
+extern int getdata(char  *s, double  *xp, double  *yp);
+extern void boxstring(int a0, int xmn, int ymn, int xmx, int ymx, char  *s);
+extern void symout(int  a0, int  x, int  y, char  *sname);
 
 #ifdef __cplusplus
 }

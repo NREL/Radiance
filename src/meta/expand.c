@@ -6,9 +6,9 @@ static const char	RCSid[] = "$Id$";
  *   on simple drivers
  */
 
+#include  <string.h>
 
 #include  "meta.h"
-
 
 				/* vector characters file */
 #define  VINPUT  "vchars.mta"
@@ -41,7 +41,7 @@ FILE  *infp,
 short  *exlist
 )
 {
- static PRIMITIVE  pincl = {PINCL, 02, -1, -1, -1, -1, VINPUT};
+ static PRIMITIVE  pincl = {PINCL, 02, {-1, -1, -1, -1}, VINPUT, NULL};
  static short  vcloaded = FALSE;
 
  xlist = exlist;
@@ -171,7 +171,7 @@ register PRIMITIVE	*p
 )
 {
     PRIMITIVE  pout;
-    int  xadv, yadv;
+    int  xadv = 0, yadv = 0;
     char  s[3];
     register char  *cp;
 
@@ -242,7 +242,7 @@ int  code,
 char  *fname
 )
 {
-    register FILE  *fp;
+    register FILE  *fp = NULL;
 
     if (fname == NULL)
 	error(USER, "missing include file name in include");
@@ -268,8 +268,8 @@ polyfill(			/* expand polygon fill command */
 PRIMITIVE  *p
 )
 {
-    char  *nextscan();
-    int  firstx, firsty, lastx, lasty, x, y;
+    char  firstx, firsty, x, y;
+	int lastx, lasty;
     register char  *cp;
     
     if ((cp=nextscan(nextscan(p->args,"%d",&firstx),"%d",&firsty)) == NULL) {

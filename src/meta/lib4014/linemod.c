@@ -1,12 +1,14 @@
 #ifndef lint
 static const char	RCSid[] = "$Id$";
 #endif
-#ifndef lint
-static char sccsid[] = "@(#)linemod.c	4.1 (Berkeley) 6/27/83";
-#endif
 
-linemod(s)
-char *s;
+#include "local4014.h"
+#include "lib4014.h"
+
+extern void
+linemod(
+	char *s
+)
 {
 	char c;
 	putch(033);

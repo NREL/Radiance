@@ -10,6 +10,7 @@ static const char	RCSid[] = "$Id$";
 
 #include  "rtprocess.h"
 #include  "meta.h"
+#include  "plot.h"
 
 
 #define  OUTFILT  "pexpand +OCIms"	/* output filter */
@@ -21,10 +22,15 @@ extern FILE  *pout;			/* the output stream */
 
 char  *progname;
 
+static void plot4(FILE  *fp);
+static void doseg(int  n);
 
-main(argc, argv)
-int  argc;
-char  *argv[];
+
+int
+main(
+	int  argc,
+	char  *argv[]
+)
 {
 	FILE  *fp;
 	int  i;
@@ -48,8 +54,10 @@ char  *argv[];
 }
 
 
-plot4(fp)			/* put a file into its place on page */
-FILE  *fp;
+void
+plot4(			/* put a file into its place on page */
+	FILE  *fp
+)
 {
 	static int  nplts = 0;
 	PRIMITIVE  curp;
@@ -68,8 +76,10 @@ FILE  *fp;
 }
 
 
-doseg(n)		/* do segment number n */
-int  n;
+void
+doseg(		/* do segment number n */
+	int  n
+)
 {
 	switch (n) {
 	case 0:				/* upper left */

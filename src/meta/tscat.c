@@ -12,7 +12,7 @@ static const char	RCSid[] = "$Id$";
 
 #include  "tgraph.h"
 #include  "paths.h"
-
+#include  "plot.h"
 
 #define  XLEGEND  (XBEG+XSIZ+4*TSIZ)	/* x start of legend */
 
@@ -49,13 +49,11 @@ char  *progname;
 
 
 
-
-
-main(argc, argv)
-
-int  argc;
-char  **argv;
-
+int
+main(
+	int  argc,
+	char  **argv
+)
 /*
  *     Take Tel-A-Graf runnable files and convert them to
  *  metafile primitives to send to standard output
@@ -119,11 +117,10 @@ char  **argv;
 
 
 
-
-plot(fp)			/* read file and generate plot */
-
-FILE  *fp;
-
+void
+plot(			/* read file and generate plot */
+	FILE  *fp
+)
 {
  int  ncur = 0; 		/* curves seen so far */
  char  line[255], *s;

@@ -10,6 +10,7 @@ static const char	RCSid[] = "$Id$";
 
 
 #include  "meta.h"
+#include  "rtio.h"
 
 
 extern int  maxalloc;		/* number of prims to allocate */

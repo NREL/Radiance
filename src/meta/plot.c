@@ -6,8 +6,8 @@ static const char	RCSid[] = "$Id$";
  */
 
 
+#include  "rtio.h"
 #include  "meta.h"
-
 #include  "plot.h"
 
 
@@ -241,20 +241,19 @@ char  *patval
 )
 {
     int  n, i, j, v;
-    char  *nextscan();
     register char  *cp;
 
     if (patval == NULL) return(FALSE);
 
     if (patval[0] == 'P' || patval[0] == 'p') {
-	if (nextscan(patval+1, "%d", &n) == NULL || n < 0 || n >= NPATS)
+	if (nextscan(patval+1, "%d", (char*)&n) == NULL || n < 0 || n >= NPATS)
 	    return(FALSE);
     } else {
 	n = NPATS + pat - SPAT0;
 	cp = patval;
 	for (i = 0; i < PATSIZE>>3; i++)
 	    for (j = 0; j < PATSIZE; j++) {
-		if ((cp = nextscan(cp, "%o", &v)) == NULL || v < 0 || v > 0377)
+		if ((cp = nextscan(cp, "%o", (char*)&v)) == NULL || v < 0 || v > 0377)
 		    return(FALSE);
 		pattern[n][i][j] = v;
 	    }

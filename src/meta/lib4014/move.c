@@ -1,11 +1,16 @@
 #ifndef lint
 static const char	RCSid[] = "$Id$";
 #endif
-#ifndef lint
-static char sccsid[] = "@(#)move.c	4.1 (Berkeley) 6/27/83";
-#endif
 
-move(xi,yi){
+#include "local4014.h"
+#include "lib4014.h"
+
+extern void
+move(
+	int xi,
+	int yi
+)
+{
 	putch(035);
 	cont(xi,yi);
 }

@@ -1,10 +1,16 @@
 #ifndef lint
 static const char	RCSid[] = "$Id$";
 #endif
-#ifndef lint
-static char sccsid[] = "@(#)circle.c	4.1 (Berkeley) 6/27/83";
-#endif
 
-circle(x,y,r){
+#include "local4014.h"
+#include "lib4014.h"
+
+extern void
+circle(
+	int x,
+	int y,
+	int r
+)
+{
 	arc(x,y,x+r,y,x+r,y);
 }

@@ -116,7 +116,7 @@ extern void mgclearall(void);
 extern void mgload(char *file);
 extern void mgsave(char *file);
 extern void setmgvar(char *fname, FILE *fp, char *string);
-extern int mgcurve(int c, int (*f)());
+extern int mgcurve(int c, void (*f)(int c, double x, double y));
 extern void mgtoa(register char *s, VARIABLE *vp);
 
 

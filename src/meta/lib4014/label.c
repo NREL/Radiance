@@ -1,9 +1,9 @@
 #ifndef lint
 static const char	RCSid[] = "$Id$";
 #endif
-#ifndef lint
-static char sccsid[] = "@(#)label.c	4.1 (Berkeley) 6/27/83";
-#endif
+
+#include "local4014.h"
+#include "lib4014.h"
 
 #define N 0104
 #define E 0101
@@ -22,14 +22,17 @@ char lbl_mv[] = {
 char lbl_umv[] = {
 	036,040,N,N,N,N,N,N,NE,NE,NE,NE,NE,NE,NE,NE,NE,NE,037,0
 };
-label(s)
-char *s;
+
+extern void
+label(
+	char *s
+)
 {
-	register i,c;
-	for(i=0; c=lbl_mv[i]; i++)
+	register int i,c;
+	for(i=0; (c=lbl_mv[i]); i++)
 		putch(c);
-	for(i=0; c=s[i]; i++)
+	for(i=0; (c=s[i]); i++)
 		putch(c);
-	for(i=0; c=lbl_umv[i]; i++)
+	for(i=0; (c=lbl_umv[i]); i++)
 		putch(c);
 }

@@ -577,8 +577,8 @@ register char  **pathlist
 
 int
 mgcurve(			/* get a curve's (unmapped) values */
-int  c,
-int  (*f)()
+	int  c,
+	void (*f)(int c, double x, double y)
 )
 {
 	int  nargs;

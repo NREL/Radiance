@@ -1,16 +1,16 @@
 #ifndef lint
 static const char	RCSid[] = "$Id$";
 #endif
-#ifndef lint
-static char sccsid[] = "@(#)scale.c	4.1 (Berkeley) 6/27/83";
-#endif
 
-extern float scalex;
-extern float scaley;
-extern int scaleflag;
-scale(i,x,y)
-char i;
-float x,y;
+#include "local4014.h"
+#include "lib4014.h"
+
+extern void
+scale(
+	char i,
+	float x,
+	float y;
+)
 {
 	switch(i) {
 	default:

@@ -11,14 +11,14 @@ static const char	RCSid[] = "$Id$";
 #include  "meta.h"
 
 
-
 char  *progname;
 
 
-main(argc, argv)
-
-int  argc;
-char  **argv;
+int
+main(
+	int  argc,
+	char  **argv
+)
 
 {
  FILE  *fp;

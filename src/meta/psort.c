@@ -14,25 +14,24 @@ static const char	RCSid[] = "$Id$";
 #include  "meta.h"
 
 
-
 char  *progname;
 
 int  maxalloc = MAXALLOC;
 
-
-
 static int  val[5], extrema[5];
 
 
+static int pcompare(PRIMITIVE  **pp1, PRIMITIVE  **pp2);
 
-main(argc, argv)
 
-int  argc;
-char  **argv;
-
+int
+main(
+	int  argc,
+	char  **argv
+)
 {
  FILE  *fp;
- int  i, pcompare();
+ int  i;
 
  progname = *argv++;
  argc--;
@@ -82,11 +81,11 @@ char  **argv;
 
 
 
-
-pcompare(pp1, pp2)
-
-PRIMITIVE  **pp1, **pp2;
-
+int
+pcompare(
+	PRIMITIVE  **pp1,
+	PRIMITIVE  **pp2
+)
 {
  register PRIMITIVE  *p1 = *pp1, *p2 = *pp2;
  register int  i;

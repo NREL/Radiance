@@ -13,6 +13,7 @@ static const char	RCSid[] = "$Id$";
 #include  "meta.h"
 #include  "imPcodes.h"
 #include  "imPfuncs.h"
+#include  "plot.h"
 
 
 #define  XCOM  "pexpand +OCIsv -P %s"
@@ -24,12 +25,16 @@ FILE  *imout;
 
 static short  newpage = TRUE; 
 
+static void doprim(register PRIMITIVE  *p);
+static void doglobal(register PRIMITIVE  *g);
 
 
-main(argc, argv)
 
-int  argc;
-char  **argv;
+int
+main(
+	int  argc,
+	char  **argv
+)
 
 {
  FILE  *fp;
@@ -98,10 +103,10 @@ char  **argv;
  }
 
 
-
-plot(infp)		/* plot meta-file */
-
-register FILE  *infp;
+void
+plot(		/* plot meta-file */
+	register FILE  *infp
+)
 
 {
     PRIMITIVE  nextp;
@@ -121,16 +126,12 @@ register FILE  *infp;
 
 
 
-
-
-
-doglobal(g)			/* execute a global command */
-
-register PRIMITIVE  *g;
+void
+doglobal(			/* execute a global command */
+	register PRIMITIVE  *g
+)
 
 {
-    char  c;
-
     switch (g->com) {
 
 	case PEOF:
@@ -168,10 +169,10 @@ register PRIMITIVE  *g;
 
 
 
-
-doprim(p)		/* plot primitive */
-
-register PRIMITIVE  *p;
+void
+doprim(		/* plot primitive */
+	register PRIMITIVE  *p
+)
 
 {
 

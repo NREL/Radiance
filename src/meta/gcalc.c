@@ -19,11 +19,16 @@ static double  xmin, xmax, ymin, ymax;
 static double  lastx, lasty, rsum;
 static int  npts;
 
+static void gcheader(char  *types);
+static void calcpoint(int  c, double  x, double  y);
+static void gcvalue(int  c, char  *types);
 
-gcalc(types)			/* do a calculation */
-char  *types;
+void
+gcalc(			/* do a calculation */
+	char  *types
+)
 {
-	int  i, calcpoint();
+	int  i;
 
 	if (strchr(types, 'h') == NULL)
 		gcheader(types);
@@ -45,8 +50,10 @@ char  *types;
 }
 
 
-gcheader(types)			/* print header */
-register char  *types;
+void
+gcheader(			/* print header */
+	register char  *types
+)
 {
 	printf("__");
 	while (*types)
@@ -73,9 +80,11 @@ register char  *types;
 }
 
 
-gcvalue(c, types)		/* print the values for the curve */
-int  c;
-register char  *types;
+void
+gcvalue(		/* print the values for the curve */
+	int  c,
+	register char  *types
+)
 {
 	double  d1, d2, d3, sqrt();
 
@@ -113,9 +122,12 @@ register char  *types;
 }
 
 
-calcpoint(c, x, y)		/* add a point to our calculation */
-int  c;
-double  x, y;
+void
+calcpoint(		/* add a point to our calculation */
+	int  c,
+	double  x,
+	double  y
+)
 {
 	if (x < xmin || x > xmax)
 		return;

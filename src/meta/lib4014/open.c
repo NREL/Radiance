@@ -1,12 +1,17 @@
 #ifndef lint
 static const char	RCSid[] = "$Id$";
 #endif
-#ifndef lint
-static char sccsid[] = "@(#)open.c	4.1 (Berkeley) 6/27/83";
-#endif
 
-openvt ()
+#include "lib4014.h"
+#include "lib4014.h"
+
+extern void
+openvt(void)
 {
 }
-openpl(){
+
+extern void
+openpl(void)
+{
 }
+

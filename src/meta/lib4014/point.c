@@ -1,11 +1,16 @@
 #ifndef lint
 static const char	RCSid[] = "$Id$";
 #endif
-#ifndef lint
-static char sccsid[] = "@(#)point.c	4.1 (Berkeley) 6/27/83";
-#endif
 
-point(xi,yi){
+#include "local4014.h"
+#include "lib4014.h"
+
+extern void
+point(
+	int xi,
+	int yi
+)
+{
 	move(xi,yi);
 	cont(xi,yi);
 }

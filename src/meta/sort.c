@@ -92,7 +92,7 @@ FILE  *ofp		/* output file */
 {
     PRIMITIVE  *plp;		/* position in list */
     PRIMITIVE  *pp[NFILES];	/* input primitives */
-    int  minf;
+    int  minf = 0;
     PRIMITIVE  *minp;
     register int i;
 
@@ -201,7 +201,6 @@ int  (*pcmp)()
 {
     static int  nf = 0,
     		intree = FALSE;
-    FILE  *fp;
 
     if (isglob(pl->pbot->com)) {
 

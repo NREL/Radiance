@@ -1,17 +1,23 @@
 #ifndef lint
 static const char	RCSid[] = "$Id$";
 #endif
-#ifndef lint
-static char sccsid[] = "@(#)close.c	4.1 (Berkeley) 6/27/83";
-#endif
 
 #include <stdio.h>
-closevt(){
+
+#include "local4014.h"
+#include "lib4014.h"
+
+void
+closevt(void)
+{
 	putch(037);
 	putch(030);
 	fflush(stdout);
 }
-closepl(){
+
+void
+closepl(void)
+{
 	putch(037);
 	putch(030);
 	fflush(stdout);

@@ -10,14 +10,14 @@ static const char RCSid[] = "$Id$";
 
 
 
-static PRIMITIVE  peof = {PEOF, 0200, -1, -1, -1, -1, NULL};
+static PRIMITIVE  peof = {PEOF, 0200, {-1, -1, -1, -1}, NULL, NULL};
 
 
-readp(p, fp)		/* get human-readable primitive */
-
-PRIMITIVE  *p;
-FILE  *fp;
-
+int
+readp(		/* get human-readable primitive */
+	PRIMITIVE  *p,
+	FILE  *fp
+)
 {
  char  inbuf[MAXARGS];
  register int  c, nargs;
@@ -76,11 +76,11 @@ FILE  *fp;
 
 
 
-
-writep(p, fp)		/* print primitive in human-readable form */
-
-register PRIMITIVE  *p;
-FILE  *fp;
+void
+writep(		/* print primitive in human-readable form */
+	register PRIMITIVE  *p,
+	FILE  *fp
+)
 
 {
 
@@ -111,13 +111,14 @@ FILE  *fp;
 
 
 
-
-writeof(fp)		/* write end of file command to fp */
-
-FILE  *fp;
+void
+writeof(		/* write end of file command to fp */
+	FILE  *fp
+)
 
 {
 
  writep(&peof, fp);
 
- }
+}
+
