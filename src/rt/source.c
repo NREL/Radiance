@@ -267,6 +267,8 @@ register RAY  *r;
 		for (i = 0; i < 3; i++)
 			r->ron[i] = -r->rdir[i];
 		r->rod = 1.0;
+		r->rofs = 1.0; setident4(r->rofx);
+		r->robs = 1.0; setident4(r->robx);
 		return(1);
 	}
 	return(0);
