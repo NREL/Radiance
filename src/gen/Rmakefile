@@ -15,16 +15,16 @@ INSTDIR = /usr/local/bin
 LIBDIR = /usr/local/lib/ray
 
 PROGS = genbox gensky xform genblinds genrev genworm \
-		gensurf genprism replmarks mkillum
+		gensurf genprism replmarks mkillum genclock
 
-CALFILES = illum.cal rev.cal skybright.cal surf.cal
+LIBFILES = illum.cal rev.cal skybright.cal surf.cal clockface.hex
 
 all:	$(PROGS)
 
-install:	$(PROGS) $(CALFILES)
+install:	$(PROGS) $(LIBFILES)
 	cp $(PROGS) $(INSTDIR)
-	cd $(LIBDIR) ; rm -f $(CALFILES)
-	cp $(CALFILES) $(LIBDIR)
+	cd $(LIBDIR) ; rm -f $(LIBFILES)
+	cp $(LIBFILES) $(LIBDIR)
 
 clean:
 	set nonomatch; rm -f $(PROGS) *.o core
@@ -64,6 +64,9 @@ genworm:	genworm.o
 
 gensurf:	gensurf.o
 	$(CC) $(CFLAGS) -o gensurf gensurf.o -lrt $(MLIB)
+
+genclock:	genclock.o
+	$(CC) $(CFLAGS) -o genclock genclock.o $(MLIB)
 
 genbranch:	genbranch.o
 	$(CC) $(CFLAGS) -o genbranch genbranch.o $(MLIB)
