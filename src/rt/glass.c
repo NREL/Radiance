@@ -32,6 +32,9 @@ static char SCCSid[] = "$SunId$ LBL";
  *	tn = (sqrt(.8402528435+.0072522239*Tn*Tn)-.9166530661)/.0036261119/Tn
  *
  *  The transmission of standard 88% transmissivity glass is 0.96.
+ *  A refractive index other than the default can be used by giving
+ *  it as the fourth real argument.  The above formula no longer applies.
+ *
  *  If we appear to hit the back side of the surface, then we
  *  turn the normal around.
  */
@@ -47,14 +50,18 @@ register RAY  *r;
 	COLOR  mcolor;
 	double  pdot;
 	FVECT  pnorm;
-	double  cos2;
+	double  rindex, cos2;
 	COLOR  trans, refl;
 	double  d, r1e, r1m;
 	double  transtest, transdist;
 	RAY  p;
 	register int  i;
-
-	if (m->oargs.nfargs != 3)
+						/* check arguments */
+	if (m->oargs.nfargs == 3)
+		rindex = RINDEX;		/* default value of n */
+	else if (m->oargs.nfargs == 4)
+		rindex = m->oargs.farg[3];	/* use their value */
+	else
 		objerror(m, USER, "bad arguments");
 
 	setcolor(mcolor, m->oargs.farg[0], m->oargs.farg[1], m->oargs.farg[2]);
@@ -66,16 +73,16 @@ register RAY  *r;
 	raytexture(r, m->omod);
 	pdot = raynormal(pnorm, r);
 						/* angular transmission */
-	cos2 = sqrt( (1.0-1.0/RINDEX/RINDEX) +
-		     pdot*pdot/(RINDEX*RINDEX) );
+	cos2 = sqrt( (1.0-1.0/(rindex*rindex)) +
+		     pdot*pdot/(rindex*rindex) );
 	setcolor(mcolor, pow(colval(mcolor,RED), 1.0/cos2),
 			 pow(colval(mcolor,GRN), 1.0/cos2),
 			 pow(colval(mcolor,BLU), 1.0/cos2));
 
 						/* compute reflection */
-	r1e = (pdot - RINDEX*cos2) / (pdot + RINDEX*cos2);
+	r1e = (pdot - rindex*cos2) / (pdot + rindex*cos2);
 	r1e *= r1e;
-	r1m = (1.0/pdot - RINDEX/cos2) / (1.0/pdot + RINDEX/cos2);
+	r1m = (1.0/pdot - rindex/cos2) / (1.0/pdot + rindex/cos2);
 	r1m *= r1m;
 						/* compute transmittance */
 	for (i = 0; i < 3; i++) {
@@ -88,7 +95,7 @@ register RAY  *r;
 		if (!(r->crtype & SHADOW) &&
 				DOT(r->pert,r->pert) > FTINY*FTINY) {
 			for (i = 0; i < 3; i++)		/* perturb direction */
-				p.rdir[i] = r->rdir[i] - r->pert[i]/RINDEX;
+				p.rdir[i] = r->rdir[i] - r->pert[i]/rindex;
 			normalize(p.rdir);
 		} else {
 			VCOPY(p.rdir, r->rdir);
