@@ -321,10 +321,10 @@ register union {int i; double d; COLOR C;}  *ptr;
 			(*dev->comout)(buf);
 			(*dev->comin)(buf, NULL);
 			if (sscanf(buf, "%d", &i0) != 1)
-				break;
+				return(0);
 		}
 		ptr->i = i0;
-		break;
+		return(1);
 	case 'r':			/* real */
 		if (sscanf(str, "%lf", &d0) != 1) {
 			(*dev->comout)(dsc);
@@ -332,10 +332,10 @@ register union {int i; double d; COLOR C;}  *ptr;
 			(*dev->comout)(buf);
 			(*dev->comin)(buf, NULL);
 			if (sscanf(buf, "%lf", &d0) != 1)
-				break;
+				return(0);
 		}
 		ptr->d = d0;
-		break;
+		return(1);
 	case 'b':			/* boolean */
 		if (sscanf(str, "%1s", buf) != 1) {
 			(*dev->comout)(dsc);
@@ -344,10 +344,10 @@ register union {int i; double d; COLOR C;}  *ptr;
 			(*dev->comin)(buf, NULL);
 			if (buf[0] == '\0' ||
 					index("yY+1tTnN-0fF", buf[0]) == NULL)
-				break;
+				return(0);
 		}
 		ptr->i = index("yY+1tT", buf[0]) != NULL;
-		break;
+		return(1);
 	case 'C':			/* color */
 		if (sscanf(str, "%lf %lf %lf", &d0, &d1, &d2) != 3) {
 			(*dev->comout)(dsc);
@@ -358,10 +358,10 @@ register union {int i; double d; COLOR C;}  *ptr;
 			(*dev->comout)(buf);
 			(*dev->comin)(buf, NULL);
 			if (sscanf(buf, "%lf %lf %lf", &d0, &d1, &d2) != 3)
-				break;
+				return(0);
 		}
 		setcolor(ptr->C, d0, d1, d2);
-		break;
+		return(1);
 	}
 }
 
@@ -390,7 +390,7 @@ register char  *s;
 	
 	if (s[0] == '\0') {
 		(*dev->comout)(
-			"aa ab ad ar as av b dc di dj dt i lr lw sp st: ");
+			"aa ab ad ar as av b dc di dj ds dt i lr lw sp st: ");
 		(*dev->comin)(buf, NULL);
 		s = buf;
 	}
@@ -453,8 +453,9 @@ register char  *s;
 			getparam(s+2, "ambient bounces", 'i', &ambounce);
 			break;
 		case 'r':
-			getparam(s+2, "ambient resolution", 'i', &ambres);
-			minarad = ambres > 0 ? thescene.cusize/ambres : 0.0;
+			if (getparam(s+2, "ambient resolution", 'i', &ambres))
+				minarad = ambres > 0 ?
+						thescene.cusize/ambres : 0.0;
 			break;
 		default:
 			goto badparam;
@@ -463,12 +464,12 @@ register char  *s;
 	case 's':			/* sample */
 		switch (s[1]) {
 		case 'p':			/* pixel */
-			getparam(s+2, "sample pixel", 'i', &psample);
-			pdepth = 0;
+			if (getparam(s+2, "sample pixel", 'i', &psample))
+				pdepth = 0;
 			break;
 		case 't':			/* threshold */
-			getparam(s+2, "sample threshold", 'r', &maxdiff);
-			pdepth = 0;
+			if (getparam(s+2, "sample threshold", 'r', &maxdiff))
+				pdepth = 0;
 			break;
 		default:
 			goto badparam;
