@@ -15,10 +15,10 @@
 	il_azih		- Azimuth (0 to 2*PI) for hemisphere
 }
 
+norm_rad(r) : if( r, r, r+2*PI );
+
 il_alt = Dz;
 il_azi = norm_rad(Atan2(Dy, Dx));
 
 il_alth = sq(-Dx*A7-Dy*A8-Dz*A9);
 il_azih = norm_rad(Atan2(-Dx*A4-Dy*A5-Dz*A6, -Dx*A1-Dy*A2-Dz*A3));
-
-norm_rad(r) = if( r, r, r+2*PI );
