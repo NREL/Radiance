@@ -94,9 +94,11 @@ register FVECT  v;
 	if (len <= FTINY*FTINY)
 		return(0.0);
 	
+	/****** problematic
 	if (len >= (1.0-FTINY)*(1.0-FTINY) &&
 			len <= (1.0+FTINY)*(1.0+FTINY))
 		return(1.0);
+	******/
 
 	len = sqrt(len);
 	v[0] /= len;
