@@ -20,7 +20,7 @@ PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar $(MLIB)
 PROGS = pfilt ttyimage oki20c oki20 paintjet mt160r psign \
 greyscale pvalue pcompos colorscale protate ra_pr ra_pr24 ra_avs \
 ra_t8 ra_bn ra_t16 pcomb pinterp ximage xshowtrace pflip ra_ppm \
-ra_rgbe ra_pict ra_ps pextrem ra_gif ra_xyze macbethcal pcond
+ra_rgbe ra_pict ra_ps pextrem ra_gif ra_xyze macbethcal pcond pcwarp
 
 all:	$(PROGS) $(SPECIAL)
 
@@ -56,8 +56,12 @@ $(PROGS) *.o core
 pfilt:	pfilt.o pf2.o pf3.o
 	$(CC) $(CFLAGS) -o pfilt pfilt.o pf2.o pf3.o -lrt $(MLIB)
 
-pcond:	pcond.o pcond2.o pcond3.o pcond4.o
-	$(CC) $(CFLAGS) -o pcond pcond.o pcond2.o pcond3.o pcond4.o -lrt $(MLIB)
+pcond:	pcond.o pcond2.o pcond3.o pcond4.o warp3d.o
+	$(CC) $(CFLAGS) -o pcond pcond.o pcond2.o pcond3.o pcond4.o warp3d.o \
+-lrt $(MLIB)
+
+pcwarp:	pcwarp.o warp3d.o
+	$(CC) $(CFLAGS) -o pcwarp pcwarp.o warp3d.o -lrt $(MLIB)
 
 ttyimage:	ttyimage.o
 	$(CC) $(CFLAGS) -o ttyimage ttyimage.o -lrt $(MLIB)
@@ -194,11 +198,14 @@ xshowtrace:	xshowtrace.o x11findwind.o
 	$(CC) $(CFLAGS) -o xshowtrace xshowtrace.o \
 x11findwind.o -lrt $(MLIB) -lX11
 
-macbethcal:	macbethcal.o pmapgen.o mx3.o
-	$(CC) $(CFLAGS) -o macbethcal macbethcal.o pmapgen.o mx3.o -lrt $(MLIB)
+macbethcal:	macbethcal.o pmapgen.o mx3.o warp3d.o
+	$(CC) $(CFLAGS) -o macbethcal macbethcal.o pmapgen.o mx3.o warp3d.o \
+-lrt $(MLIB)
 
 
 macbethcal.o:	pmap.h ../common/color.h ../common/resolu.h
+
+macbethcal.o pcond2.o pcwarp.o warp3d.o:	warp3d.h ../common/lookup.h
 
 pmapgen.o:	mx3.h pmap.h
 
