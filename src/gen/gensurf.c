@@ -129,8 +129,10 @@ char  *argv[];
 	comprow(0.0, row1, n);
 	comprow(1.0/m, row2, n);
 	compnorms(row0, row1, row2, n);
-	if (objout)
+	if (objout) {
+		printf("\nusemtl %s\n\n", modname);
 		putobjrow(row1, n);
+	}
 						/* for each row */
 	for (i = 0; i < m; i++) {
 						/* compute next row */
