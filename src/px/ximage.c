@@ -137,9 +137,7 @@ char  *argv[];
 			sprintf(errmsg, "can't open file \"%s\"", fname);
 			quiterr(errmsg);
 		}
-	} else
-		goto userr;
-
+	}
 				/* get header */
 	getheader(fin, headline);
 				/* get picture dimensions */
@@ -431,6 +429,7 @@ XKeyEvent  *ekey;
 		getras();
 	/* fall through */
 	case CTRL(R):				/* redraw */
+	case CTRL(L):
 		XClear(wind);
 		return(redraw(0, 0, width, height));
 	case ' ':				/* clear */
