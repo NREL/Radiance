@@ -50,6 +50,7 @@ char	*argv[];
 		}
 		for (en = nentlist[i-1]; en--; )
 			mg_ehand[en] = put_entity;
+		mg_ehand[MG_E_INCLUDE] = NULL;		/* expand include's */
 	} else
 		for (cp1 = cp2 = argv[1]; *cp1; cp1 = cp2) {
 			while (*cp2) {
