@@ -1,14 +1,13 @@
-#define textareaheight 100
-#define textbottom 5
+#define textareaheight 150
+#define textbottom 10
 #define thefont /Times-Bold
-#define fontheight 15
-#define textbackgroundRED .80
+#define fontheight 18
+#define textbackgroundRED .85
 #define textbackgroundGREEN .85
 #define textbackgroundBLUE .75
-#define textcursor (_)
+#define textcursor (|)
 #define textshadowgray .85
-#define minfrac .1
-#define gammacorrection 1.77
+#define gammacorrection 2.2
 
 #define inputbuffer nws_inputbuffer
 #define pos nws_pos
