@@ -3,6 +3,9 @@
 # Action screen for trad
 #
 
+set batch_fmt "Process %d on %s started"
+set hostname [exec hostname]
+
 proc make_script {} {		# make run script
 	global scname rpview curmess
 	set rfn /usr/tmp/rf[pid]
@@ -64,13 +67,13 @@ proc run_rad args {		# Run rad command with given arguments
 }
 
 proc run_batch {} {		# start rendering in background
-	global rpview bfname batch_pid curmess rifname mywin
+	global rpview bfname batch_pid curmess rifname mywin batch_fmt hostname
 	if {! [chksave]} {return}
 	if [catch {set fo [open $bfname w]} curmess] {
 		return
 	}
 	# Make space for PID to be written later
-	puts $fo "        "
+	puts $fo "                                                            "
 	if {$rpview == " ALL"} {
 		set radcom "rad"
 	} else {
@@ -84,7 +87,8 @@ proc run_batch {} {		# start rendering in background
 	set batch_pid [eval exec $radcom >>& $bfname &]
 	# Now, write PID and close file
 	seek $fo 0
-	puts -nonewline $fo $batch_pid
+	puts -nonewline $fo "[format $batch_fmt $batch_pid $hostname]\
+				[exec date]"
 	close $fo
 	set curmess "Batch rendering process $batch_pid started."
 	# Correct button stati
@@ -167,7 +171,7 @@ proc make_vmenus {} {		# make/update view menus
 
 proc do_action w {		# Action screen
 	global rifname rvview rpview radvar bfname batch_pid \
-			curmess scname mywin alldone
+			curmess scname mywin alldone batch_fmt hostname
 	if {"$w" == "done"} {
 		unset rpview bfname batch_pid mywin
 		return
@@ -220,10 +224,27 @@ proc do_action w {		# Action screen
 	helplink $w.rbce trad action checkerr
 	if [file exists $bfname] {
 		set fi [open $bfname r]
-		eval set batch_pid [gets $fi]
+		scan [gets $fi] $batch_fmt batch_pid batch_host
 		gets $fi radcom
 		close $fi
-		if [catch {exec /bin/kill -0 $batch_pid}] {
+		if [string match "rad -v *" $radcom] {
+			set rpview [lindex $radcom 2]
+		} else {
+			set rpview " ALL"
+		}
+		if {"$hostname" != "$batch_host"} {
+			if $alldone {
+				set curmess "Batch rendering finished\
+						on host $batch_host."
+			} else {
+				set curmess "Unknown batch rendering status\
+						on host $batch_host."
+				$w.rbst configure -state disabled
+				$w.rbvmb configure -state disabled
+			}
+			set batch_pid 0
+			$w.rbki configure -state disabled
+		} elseif {[catch {exec /bin/kill -0 $batch_pid}]} {
 			if $alldone {
 				set curmess "Batch rendering finished."
 			} else {
@@ -234,11 +255,6 @@ proc do_action w {		# Action screen
 			$w.rbki configure -state disabled
 		} else {
 			set curmess "Batch rendering process $batch_pid running."
-			if [string match "rad -v *" $radcom] {
-				set rpview [lindex $radcom 2]
-			} else {
-				set rpview " ALL"
-			}
 			$w.rbst configure -state disabled
 			$w.rbvmb configure -state disabled
 		}
