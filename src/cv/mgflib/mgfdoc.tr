@@ -431,7 +431,8 @@ Since the arguments are concise and self-explanatory, this was thought
 sufficient.
 The following transformation flags and
 parameters are defined:
-.TS I
+.TS
+center;
 l l.
 -t dx dy dz	translate objects along the given vector
 -rx degrees	rotate objects about the X-axis
@@ -546,6 +547,7 @@ Detailed MGF Example
 The following example of a simple room with a single door
 and six file cabinets shows MGF in action, with copious comments to
 help explain what's going on.
+.LP
 .DS
 # "ceiling_tile" is a diffuse white surface with 75% reflectance:
 # Create new named material context and clear it
@@ -772,7 +774,7 @@ There are currently 28 entities in the MGF specification.
 For ease of reference we have broken these into five categories:
 .IP 1.
 General
-.TS I
+.TS
 lw(.75i) lw(1.75i) lw(3i).
 #	[anything ...]	a comment
 o	[name]	begin/end object context
@@ -782,7 +784,7 @@ ies	pathname [-m f][xform]	include IES luminaire (with transformation)
 .TE
 .IP 2.
 Color
-.TS I
+.TS
 lw(.75i) lw(1.75i) lw(3i).
 c	[id [= [template]]]	get/set color context
 cxy	x y	set CIE (x,y) chromaticity for current color
@@ -2985,15 +2987,15 @@ char	**av;
 
 	if (ac < 4)			/* check # arguments */
 		return(MG_EARGC);
-	printf("face\n");		/* begin face output */
+	printf("face\\\\n");		/* begin face output */
 	for (i = 1; i < ac; i++) {
 		if ((vp = c_getvert(av[i])) == NULL)	/* vertex from name */
 			return(MG_EUNDEF);
 		xf_xfmpoint(vert, vp->p);			/* apply transform */
-		printf("%15.9f %15.9f %15.9f\n",
+		printf("%15.9f %15.9f %15.9f\\\\n",
 			vert[0], vert[1], vert[2]);			/* output vertex */
 	}
-	printf(";\\n");			/* end of face output */
+	printf(";\\\\n");			/* end of face output */
 	return(MG_OK);			/* normal exit */
 }
 
@@ -3127,7 +3129,7 @@ following:
 #define MG_E_FACE		9		/* f		*/
 #define MG_E_INCLUDE	10		/* i		*/
 #define MG_E_IES		11		/* ies		*/
-#define MG_E_IR		12		/* ir		*/
+#define MG_E_IR			12		/* ir		*/
 #define MG_E_MATERIAL	13		/* m		*/
 #define MG_E_NORMAL	14		/* n		*/
 #define MG_E_OBJECT	15		/* o		*/
@@ -4304,7 +4306,11 @@ to the point
 .I pold,
 scaling, rotating and moving it to its proper location, which is put in
 .I pnew.
-(The two arguments may point to the same vector.)\0
+(As for
+.I xf_xfmvect
+and
+.I xf_rotvect,
+the two arguments may point to the same vector.)\0
 .LP
 The
 .I xf_xfmvect
@@ -4312,7 +4318,6 @@ routine applies the current transformation to the vector
 .I vold,
 scaling and rotating it to its proper location, which is put in
 .I vnew.
-(The two arguments may point to the same vector.)\0
 The only difference between
 .I xf_xfmpoint
 and
@@ -4325,7 +4330,6 @@ routine rotates the vector
 .I nold
 using the current transformation, and stores the result in
 .I nnew.
-(The two arguments may point to the same vector.)\0
 No translation or scaling is applied, which is the appropriate
 action for surface normal vectors for example.
 .LP
