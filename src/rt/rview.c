@@ -69,22 +69,20 @@ devopen(dname)				/* open device driver */
 char  *dname;
 {
 	extern char  *progname, *octname;
-	char  *devargv[3];
+	char  *id;
 	register int  i;
 
-	devargv[0] = dname;
-	devargv[1] = octname!=NULL ? octname : progname;
-	devargv[2] = NULL;
+	id = octname!=NULL ? octname : progname;
 						/* check device table */
 	for (i = 0; devtable[i].name; i++)
 		if (!strcmp(dname, devtable[i].name))
-			if ((dev = (*devtable[i].init)(devargv[1])) == NULL) {
+			if ((dev = (*devtable[i].init)(dname, id)) == NULL) {
 				sprintf(errmsg, "cannot initialize %s", dname);
 				error(USER, errmsg);
 			} else
 				return;
 						/* not there, try exec */
-	if ((dev = comm_init(devargv)) == NULL) {
+	if ((dev = comm_init(dname, id)) == NULL) {
 		sprintf(errmsg, "cannot start device \"%s\"", dname);
 		error(USER, errmsg);
 	}

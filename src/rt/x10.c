@@ -78,8 +78,8 @@ static struct driver  x_driver = {
 
 
 struct driver *
-x_init(name)			/* initialize driver */
-char  *name;
+x_init(name, id)		/* initialize driver */
+char  *name, *id;
 {
 	ourdisplay = XOpenDisplay(NULL);
 	if (ourdisplay == NULL) {
@@ -98,7 +98,7 @@ char  *name;
 			bcross_bits, bcross_mask_bits,
 			bcross_x_hot, bcross_y_hot,
 			BlackPixel, WhitePixel, GXcopy);
-	clientname = name;
+	clientname = id;
 	x_driver.inpready = 0;
 	cmdvec = x_comout;			/* set error vectors */
 	if (wrnvec != NULL)
