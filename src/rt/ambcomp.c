@@ -237,8 +237,12 @@ double  wt;
 {
 	register int  i;
 					/* set number of divisions */
+	if (wt < (.25*PI)/ambdiv+FTINY) {
+		hp->nt = hp->np = 0;
+		return;			/* zero samples */
+	}
 	hp->nt = sqrt(ambdiv * wt / PI) + 0.5;
-	hp->np = PI * hp->nt;
+	hp->np = PI * hp->nt + 0.5;
 					/* make axes */
 	VCOPY(hp->uz, r->ron);
 	hp->uy[0] = hp->uy[1] = hp->uy[2] = 0.0;
