@@ -5,7 +5,7 @@
 #
 set td=/usr/tmp/fc$$
 onintr quit
-set mult=470
+set mult=179
 set label=Nits
 set scale=1000
 set decades=0
