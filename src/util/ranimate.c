@@ -1020,10 +1020,12 @@ int	n;
 	if (n == 0) {				/* signal to close file */
 		if (expfp != NULL) {
 			fclose(expfp);
+			free((char *)exppos);
 			expfp = NULL;
 		}
 		return(NULL);
-	}
+	} else if (n > vint(END))		/* request past end (error?) */
+		return(NULL);
 	if (!vdef(EXPOSURE))			/* no setting (auto) */
 		return(NULL);
 	if (isflt(vval(EXPOSURE)))		/* always the same */
@@ -1061,13 +1063,15 @@ int	n;
 		}
 		curfrm++;
 		cp = fskip(expval);			/* check format */
-		if (cp == NULL || *cp != '\n') {
+		if (cp != NULL)
+			while (isspace(*cp))
+				*cp++ = '\0';
+		if (cp == NULL || *cp) {
 			fprintf(stderr,
 				"%s: exposure format error on line %d\n",
 					vval(EXPOSURE), curfrm);
 			quit(1);
 		}
-		*cp = '\0';
 	}
 	return(expval);				/* return value */
 }
