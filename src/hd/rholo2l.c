@@ -10,6 +10,7 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #include "rholo.h"
 #include "random.h"
+#include "selcall.h"
 #include <signal.h>
 #include <sys/time.h>
 
@@ -218,7 +219,7 @@ int	poll;
 	}
 	return(pldone);				/* return finished packets */
 eoferr:
-	error(USER, "unexpected EOF from rtrace process");
+	error(USER, "rtrace process died");
 }
 
 
