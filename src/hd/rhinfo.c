@@ -87,10 +87,13 @@ FILE	*fp;
 {
 	int	scount[NHBINS];
 	int	minsamp = 10000, maxsamp = 0;
+	FVECT	vt;
 	double	sqrtmaxp;
 	int	bmin, bmax, cnt;
 	register int	i;
 
+	fcross(vt, hp->xv[0], hp->xv[1]);
+	fprintf(fp, "\tWorld volume:            %g\n", fabs(DOT(vt,hp->xv[2])));
 	fprintf(fp, "\tGrid resolution:         %d x %d x %d\n",
 			hp->grid[0], hp->grid[1], hp->grid[2]);
 	fprintf(fp, "\tNumber of beams:         %ld\n", (long)nbeams(hp));
