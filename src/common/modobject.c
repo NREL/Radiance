@@ -33,7 +33,7 @@ register OBJREC  *op;
 
 	for (i = nobjects>>6; i >= 0; i--) {
 		j = op - objblock[i];
-		if (j >= 0 && j < 077)
+		if (j >= 0 && j < 0100)
 			return((i<<6) + j);
 	}
 	return(OVOID);
