@@ -278,8 +278,7 @@ mapimage()				/* map picture and send to stdout */
 		fprintf(stderr, "%s: linear scaling factor = %f\n",
 				progname, scalef);
 #endif
-		if (scalef < 0.99 | scalef > 1.01)
-			fputexpos(scalef, stdout);	/* write in header */
+		fputexpos(inpexp*scalef, stdout);	/* record exposure */
 		if (lumf == cielum) scalef /= WHTEFFICACY;
 	}
 	putchar('\n');			/* complete header */
