@@ -420,7 +420,7 @@ FILE  *fin;
 
 	if (readfargs(&fa, fin) != 1)
 		return(-1);
-	if (fa.nfargs > 5)
+	if (fa.nfargs > 7)
 		return(-1);
 	printf("%d", fa.nsargs);
 	if (idprefix == NULL)
@@ -446,10 +446,8 @@ FILE  *fin;
 	if (fa.nfargs > 2)
 		printf(" %12.6g %12.6g %12.6g", fa.farg[0]/tot.sca,
 				fa.farg[1]/tot.sca, fa.farg[2]/tot.sca);
-	if (fa.nfargs > 3)
-		printf(" %12.6g", fa.farg[3]);
-	if (fa.nfargs > 4)
-		printf(" %12.6g", fa.farg[4]);
+	for (i = 3; i < fa.nfargs; i++)
+		printf(" %12.6g", fa.farg[i]);
 	printf("\n");
 	freefargs(&fa);
 	return(0);
