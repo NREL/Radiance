@@ -67,3 +67,7 @@ extern CUBE  thescene;			/* the main scene */
 #define  OT_EMPTY	0
 #define  OT_FULL	1
 #define  OT_TREE	2
+				/* return values for surface functions */
+#define  O_MISS		0		/* no intersection */
+#define  O_HIT		1		/* intersection */
+#define  O_IN		2		/* cube contained entirely */
