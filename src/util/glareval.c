@@ -20,7 +20,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define vfork		fork
 #endif
 
-#define MAXSBUF		1023980	/* maximum total size of scanline buffer */
+#define MAXSBUF		524268	/* maximum total size of scanline buffer */
 #define HSIZE		317	/* size of scanline hash table */
 #define NRETIRE		16	/* number of scanlines to retire at once */
 
@@ -75,6 +75,12 @@ int	y;
 			if (sl->y == y) {		/* reclaim */
 				sl->next = hashtab[hi];
 				hashtab[hi] = sl;
+#ifdef DEBUG
+				if (verbose)
+					fprintf(stderr,
+						"%s: scanline %d reclaimed\n",
+							progname, y);
+#endif
 			}
 			return(sl);
 		}
