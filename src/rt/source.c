@@ -60,11 +60,16 @@ marksources()			/* find and mark source objects */
 
 		if (!issurface(o->otype) || o->omod == OVOID)
 			continue;
-
+					/* find material */
 		m = objptr(o->omod);
-
-		if (!islight(m->otype))
-			continue;
+		while (!ismaterial(m->otype))
+			if (ismixture(m->otype) || m->omod == OVOID) {
+				m = NULL;
+				break;
+			} else
+				m = objptr(m->omod);
+		if (m == NULL || !islight(m->otype))
+			continue;	/* not source modifier */
 	
 		if (m->oargs.nfargs != (m->otype == MAT_GLOW ? 4 :
 				m->otype == MAT_SPOT ? 7 : 3))
