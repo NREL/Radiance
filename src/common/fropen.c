@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1990 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -16,6 +16,12 @@ static char SCCSid[] = "$SunId$ LBL";
 #ifndef ULIBVAR
 #define ULIBVAR		"RAYPATH"
 #endif
+#ifndef DIRSEP
+#define DIRSEP		'/'
+#endif
+#ifndef PATHSEP
+#define PATHSEP		':'
+#endif
 
 char  *libpath = NULL;		/* library search path */
 
@@ -32,7 +38,7 @@ register char  *fname;
 	if (fname == NULL)
 		return(NULL);
 
-	if (fname[0] == '/' || fname[0] == '.')	/* absolute path */
+	if (fname[0] == DIRSEP || fname[0] == '.')	/* absolute path */
 		return(fopen(fname, "r"));
 		
 	if (libpath == NULL) {			/* get search path */
@@ -44,13 +50,10 @@ register char  *fname;
 	sp = libpath;
 	do {
 		cp = pname;
-		while (*sp && (*cp = *sp++) != ':')
-			if (*cp == '\\') {		/* escape */
-				if (*sp) *cp++ = *sp++;
-			} else
-				cp++;
-		if (cp > pname && cp[-1] != '/')
-			*cp++ = '/';
+		while (*sp && (*cp = *sp++) != PATHSEP)
+			cp++;
+		if (cp > pname && cp[-1] != DIRSEP)
+			*cp++ = DIRSEP;
 		strcpy(cp, fname);
 		if ((fp = fopen(pname, "r")) != NULL)
 			return(fp);			/* got it! */
