@@ -15,7 +15,7 @@ RTOBJ = cone.o face.o instance.o readobj.o readoct.o otypes.o objset.o \
 	octree.o readfargs.o modobject.o
 
 PICOBJ = color.o header.o image.o lamps.o resolu.o rexpr.o spec_rgb.o \
-	colrops.o 
+	colrops.o font.o
 
 STDOBJ = fgetline.o fropen.o linregr.o xf.o mat4.o fvect.o urand.o \
 	urind.o peano.o calexpr.o caldefn.o calfunc.o calprnt.o \
@@ -79,3 +79,5 @@ image.o:	view.h
 calprnt.o:	calcomp.h
 
 process.o:	vfork.h
+
+font.o:	font.h

@@ -18,6 +18,7 @@ typedef struct {
 
 typedef struct font {
 	GLYPH  *fg[256];		/* font glyphs */
+	short  mwidth, mheight;		/* mean glyph width and height */
 	char  *name;			/* font file name */
 	struct font  *next;		/* next font in list */
 }  FONT;
