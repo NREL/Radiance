@@ -180,7 +180,7 @@ register OBJREC  *tm;
 	fcross(DxR, D, R);
 	fcross(t->right, DxR, D);
 	d = DOT(t->right,t->right);
-	if (d <= FTINY*FTINY)
+	if (d <= FTINY*FTINY*FTINY*FTINY)
 		objerror(tm, USER, "illegal motion vector");
 	d = DOT(D,D)/d;
 	for (i = 0; i < 3; i++)
