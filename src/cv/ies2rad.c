@@ -660,9 +660,9 @@ makeshape(shp, width, length, height)		/* make source shape */
 register SHAPE	*shp;
 double	width, length, height;
 {
-	if (illumrad >= MINDIM/2.) {
+	if (illumrad/meters2out >= MINDIM/2.) {
 		shp->type = SPHERE;
-		shp->w = shp->l = shp->h = 2.*illumrad;
+		shp->w = shp->l = shp->h = 2.*illumrad / meters2out;
 	} else if (width < MINDIM) {
 		width = -width;
 		if (width < MINDIM) {
