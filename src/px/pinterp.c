@@ -519,34 +519,38 @@ int	samp;
 				}
 				/*
 				 * If we have no background for this pixel,
-				 * or if the background is too distant,
 				 * use the given fill function.
 				 */
-				if ((xback < 0 && yback[x] < 0)
-					|| (samp > 0
-						&& ABS(x-xback) >= samp
-						&& ABS(y-yback[y]) >= samp)) {
-					(*fill)(x,y);
-					if (fill != backfill) {	/* reuse */
-						yback[x] = -2;
-						xback = -2;
-					}
-					continue;
-				}
+				if (xback < 0 && yback[x] < 0)
+					goto fillit;
 				/*
 				 * Compare, and use the background that is
 				 * farther, unless one of them is next to us.
+				 * If the background is too distant, call
+				 * the fill function.
 				 */
 				if ( yback[x] < 0
 					|| (xback >= 0 && ABS(x-xback) <= 1)
 					|| ( ABS(y-yback[x]) > 1
 						&& zscan(yback[x])[x]
 						< zscan(y)[xback] ) ) {
+					if (samp > 0 && ABS(x-xback) >= samp)
+						goto fillit;
 					copycolr(pscan(y)[x],pscan(y)[xback]);
 					zscan(y)[x] = zscan(y)[xback];
 				} else {
+					if (samp > 0 && ABS(y-yback[x]) > samp)
+						goto fillit;
 					copycolr(pscan(y)[x],pscan(yback[x])[x]);
 					zscan(y)[x] = zscan(yback[x])[x];
+				}
+				continue;
+			fillit:
+				(*fill)(x,y);
+				if (fill == rcalfill) {		/* use it */
+					clearqueue();
+					xback = x;
+					yback[x] = y;
 				}
 			} else {				/* full pixel */
 				yback[x] = -2;
