@@ -151,7 +151,7 @@ if $smallscrn {
 }
 wm iconbitmap . @$radlib/trad.icon
 
-proc gotfile {{o 1}} {		# set file possession state
+proc gotfile o {		# set file possession state
 	global oldradvar radvar
 	catch {unset oldradvar}
 	if $o {
@@ -161,7 +161,6 @@ proc gotfile {{o 1}} {		# set file possession state
 		}
 	} else {
 		set mode disabled
-		.file invoke
 	}
 	foreach b {scene zone views options action results} {
 		.$b configure -state $mode
@@ -170,9 +169,10 @@ proc gotfile {{o 1}} {		# set file possession state
 
 # Decide where to go and start
 
+gotfile 0
 if {[llength $argv] == 0} {
 	set curmess "Choose a Radiance project file."
-	gotfile 0
+	.file invoke
 } elseif {[llength $argv] == 1} {
 	cd [file dirname $argv]
 	set curfile [file tail $argv]
