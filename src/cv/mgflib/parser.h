@@ -11,36 +11,37 @@
 			/* Entities (order doesn't really matter) */
 #define MG_E_COMMENT	0
 #define MG_E_COLOR	1
-#define MG_E_CONE	2
-#define MG_E_CMIX	3
-#define MG_E_CSPEC	4
-#define MG_E_CXY	5
-#define MG_E_CYL	6
-#define MG_E_ED		7
-#define MG_E_FACE	8
-#define MG_E_INCLUDE	9
-#define MG_E_IES	10
-#define MG_E_MATERIAL	11
-#define MG_E_NORMAL	12
-#define MG_E_OBJECT	13
-#define MG_E_POINT	14
-#define MG_E_PRISM	15
-#define MG_E_RD		16
-#define MG_E_RING	17
-#define MG_E_RS		18
-#define MG_E_SIDES	19
-#define MG_E_SPH	20
-#define MG_E_TD		21
-#define MG_E_TORUS	22
-#define MG_E_TS		23
-#define MG_E_VERTEX	24
-#define MG_E_XF		25
+#define MG_E_CCT	2
+#define MG_E_CONE	3
+#define MG_E_CMIX	4
+#define MG_E_CSPEC	5
+#define MG_E_CXY	6
+#define MG_E_CYL	7
+#define MG_E_ED		8
+#define MG_E_FACE	9
+#define MG_E_INCLUDE	10
+#define MG_E_IES	11
+#define MG_E_MATERIAL	12
+#define MG_E_NORMAL	13
+#define MG_E_OBJECT	14
+#define MG_E_POINT	15
+#define MG_E_PRISM	16
+#define MG_E_RD		17
+#define MG_E_RING	18
+#define MG_E_RS		19
+#define MG_E_SIDES	20
+#define MG_E_SPH	21
+#define MG_E_TD		22
+#define MG_E_TORUS	23
+#define MG_E_TS		24
+#define MG_E_VERTEX	25
+#define MG_E_XF		26
 
-#define MG_NENTITIES	26
+#define MG_NENTITIES	27
 
-#define MG_NAMELIST	{"#","c","cone","cmix","cspec","cxy","cyl","ed","f",\
-			"i","ies","m","n","o","p","prism","rd","ring","rs",\
-			"sides","sph","td","torus","ts","v","xf"}
+#define MG_NAMELIST	{"#","c","cct","cone","cmix","cspec","cxy","cyl","ed",\
+			"f","i","ies","m","n","o","p","prism","rd","ring",\
+			"rs","sides","sph","td","torus","ts","v","xf"}
 
 #define MG_MAXELEN	6
 

@@ -27,9 +27,8 @@ current transform and the current object name.
 Each entity is given by a short keyword, followed by space- or tab-
 delimited arguments on a single line.  A single entity may be extended
 over multiple lines using a backslash ('\') character right before the
-end of line, though no extended line may exceed 512 characters in total
-length.  (Given the current set of entities, even approaching 80
-characters would be highly unusual.)
+end of line, though no extended line may exceed 4096 characters in total
+length.
 
 Entities and Contexts
 =====================
@@ -84,6 +83,7 @@ n	dx dy dz		set surface normal for current vertex
 c	[id [= [template]]]	get/set color context
 cxy	x y			set CIE (x,y) chromaticity for current color
 cspec	l_min l_max v1 v2 ..	set relative spectrum for current color
+cct	temperature		set spectrum based on black body temperature
 cmix	w1 c1 w2 c2 ..		mix named colors to make current color
 m	[id [= [template]]]	get/set material context
 sides	{1|2}			set number of sides for current material
@@ -214,17 +214,18 @@ A CIE xy chromaticity pair is the most basic color specification.  A
 full spectrum is the most general specification, and the starting (i.e.
 minimum) and ending (i.e. maximum) wavelengths are given along with a
 set of evenly spaced values.  Wavelengths are given in nanometers, and
-must be within the range of 380-780.  The spectral values themselves,
+should be within the range of 380-780.  The spectral values themselves,
 which can be thought of as relative power density per nanometer, start
 at the first wavelength and proceed at even increments to the last
 wavelength.  The values in between will be interpolated as necessary,
-so there must be at least two specified points.  The color mixing
-entity is intended not only for the mixing of named colors, but also
-for color specifications  using an arbitrary set of basis functions.
-The mixing coefficients are in effect relative luminances for each
-color "primary."  The actual total of the mixing coefficients or
-spectral values is irrelevant, since the results will always be
-normalized.
+so there must be at least two specified points.  The color temperature
+entity corresponds to the spectrum of a black body at the specified
+temperature (in degrees Kelvin).  The color mixing entity is intended
+not only for the mixing of named colors, but also for color
+specifications  using an arbitrary set of basis functions.  The mixing
+coefficients are in effect relative luminances for each color
+"primary."  The actual total of the mixing coefficients or spectral
+values is irrelevant, since the results will always be normalized.
 
 Diffuse emittance is always given in SI units of lumens/meter^2.  Note that
 this is emittance, not exitance, and does not include light reflected or

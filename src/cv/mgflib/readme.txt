@@ -110,6 +110,7 @@ mg_ehand entries to c_hcolor if you intended to support color
 materials.)  A list of related mg_ehand assignments is given below:
 
 	mg_ehand[MG_E_COLOR] = c_hcolor;
+	mg_ehand[MG_E_CCT] = c_hcolor;
 	mg_ehand[MG_E_CMIX] = c_hcolor;
 	mg_ehand[MG_E_CSPEC] = c_hcolor;
 	mg_ehand[MG_E_CXY] = c_hcolor;
@@ -232,11 +233,11 @@ Two example translator programs are included with this package.
 
 The simplest is a translator from MGF to MGF called mgfilt.c, which
 produces on the standard output only those entities from the standard
-input that are supported according to the command line arguments.  For
-example, one could remove everything but the raw, flat polygonal
+input that are supported according to the first command line argument.
+For example, one could remove everything but the raw, flat polygonal
 geometry with the following command:
 
-	mgfilt v p f xf < any.mgf > faces.mgf
+	mgfilt v,p,f,xf any.mgf > faces.mgf
 
 Note that the xf entity must also be included, for its support is
 required by all geometric entities.
