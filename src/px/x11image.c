@@ -350,16 +350,22 @@ char **argv;
 quiterr(err)		/* print message and exit */
 char  *err;
 {
-	if (err != NULL)
+	register int  es;
+	int  cs;
+
+	if (es = err != NULL)
 		fprintf(stderr, "%s: %s: %s\n", progname, 
 				fname==NULL?"<stdin>":fname, err);
-	if (wind) {
+	if (parent > 0 & wind != 0) {
 		XDestroyWindow(thedisplay, wind);
 		XFlush(thedisplay);
 	}
-	while (parent > 0 && wait(0) != -1)	/* wait for any children */
+	while (parent > 0 && wait(&cs) != -1) {	/* wait for any children */
+		if (es == 0)
+			es = cs>>8 & 0xff;
 		parent--;
-	exit(err != NULL);
+	}
+	exit(es);
 }
 
 
