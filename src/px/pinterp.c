@@ -34,7 +34,9 @@ char	*progname;
 VIEW	theirview = STDVIEW(512);	/* input view */
 int	gotview;			/* got input view? */
 
-int	fill = F_FORE|F_BACK;		/* fill level */
+int	fill = F_FORE|F_BACK;		/* selected fill algorithm */
+extern int	backfill();		/* fill functions */
+int	(*deffill)() = backfill;	/* selected fill function */
 COLR	backcolr = BLKCOLR;		/* background color */
 
 double	theirs2ours[4][4];		/* transformation matrix */
@@ -84,6 +86,7 @@ char	*argv[];
 				break;
 			case 'c':				/* color */
 				check(3,3);
+				deffill = backfill;
 				setcolr(backcolr, atof(argv[i+1]),
 					atof(argv[i+2]), atof(argv[i+3]));
 				i += 3;
@@ -167,7 +170,7 @@ char	*argv[];
 		exit(1);
 	}
 						/* allocate frame */
-	ourpict = (COLR *)calloc(ourview.hresolu*ourview.vresolu,sizeof(COLR));
+	ourpict = (COLR *)malloc(ourview.hresolu*ourview.vresolu*sizeof(COLR));
 	ourzbuf = (float *)calloc(ourview.hresolu*ourview.vresolu,sizeof(float));
 	if (ourpict == NULL || ourzbuf == NULL) {
 		perror(progname);
@@ -178,9 +181,9 @@ char	*argv[];
 		addpicture(argv[i], argv[i+1]);
 							/* fill in spaces */
 	if (fill&F_BACK)
-		fillpicture();
-	else
 		backpicture();
+	else
+		fillpicture();
 							/* add to header */
 	printargs(argc, argv, stdout);
 	if (gotvfile) {
@@ -416,7 +419,7 @@ double	z;
 }
 
 
-fillpicture()				/* fill in empty spaces */
+backpicture()				/* background fill algorithm */
 {
 	int	*yback, xback;
 	int	y;
@@ -473,7 +476,7 @@ fillpicture()				/* fill in empty spaces */
 				 * this pixel.  If not, use background color.
 				 */
 				if (xback < 0 && yback[x] < 0) {
-					copycolr(pscan(y)[x], backcolr);
+					(*deffill)(x,y);
 					continue;
 				}
 				/*
@@ -497,14 +500,14 @@ fillpicture()				/* fill in empty spaces */
 }
 
 
-backpicture()				/* paint in empty pixels */
+fillpicture()				/* paint in empty pixels with default */
 {
 	register int	x, y;
 
 	for (y = 0; y < ourview.vresolu; y++)
 		for (x = 0; x < ourview.hresolu; x++)
 			if (zscan(y)[x] <= 0)
-				copycolr(pscan(y)[x], backcolr);
+				(*deffill)(x,y);
 }
 
 
@@ -572,4 +575,13 @@ register char	*s;
 				&& *s != 'e' && *s != 'E' && *s != '+')
 			return(0);
 	return(1);
+}
+
+
+backfill(x, y)				/* fill pixel with background */
+int	x, y;
+{
+	register BYTE	*dest = pscan(y)[x];
+
+	copycolr(dest, backcolr);
 }
