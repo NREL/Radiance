@@ -33,6 +33,9 @@ ttyimage:	ttyimage.o color.o header.o
 t4027:	t4027.o color.o
 	cc $(CFLAGS) -o t4027 t4027.o color.o
 
+glimage:	glimage.o color.o header.o
+	cc $(CFLAGS) -o glimage glimage.o color.o header.o -lgl_s
+
 aedimage:	aedimage.o color.o ciq.o cut.o closest.o ealloc.o biq.o header.o
 	cc $(CFLAGS) -o aedimage aedimage.o color.o ciq.o cut.o \
 closest.o ealloc.o biq.o header.o -lm
@@ -133,7 +136,7 @@ pf2.o bnoise.o:	random.h
 ra_t16.o:	random.h
 
 pfilt.o pf2.o ttyimage.o t4027.o mt160r.o psum.o psign.o prot.o \
-d48c.o aedimage.o pcompos.o color.o greyscale.o ra_t8.o \
+d48c.o aedimage.o pcompos.o color.o greyscale.o ra_t8.o glimage.o \
 ra_bn.o ra_t16.o ra_pr.o pvalue.o pcomb.o pinterp.o ximage.o:	color.h
 
 pinterp.o ximage.o image.o:	standard.h fvect.h
