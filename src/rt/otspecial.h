@@ -12,6 +12,9 @@ extern "C" {
 		/* flag for materials to ignore during irradiance comp. */
 #define  T_IRR_IGN	T_SP1
 
+		/* flag for completely opaque materials */
+#define  T_OPAQUE       T_SP2
+
 #define  irr_ignore(t)	(ofun[t].flags & T_IRR_IGN)
 
 

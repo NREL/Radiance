@@ -19,7 +19,7 @@ static const char	RCSid[] = "$Id$";
 
 #include  "face.h"
 
-#define SRCINC		4		/* realloc increment for array */
+#define SRCINC		8		/* realloc increment for array */
 
 SRCREC  *source = NULL;			/* our list of sources */
 int  nsources = 0;			/* the number of sources */
@@ -61,6 +61,9 @@ newsource()			/* allocate new source in our array */
 	source[nsources].sflags = 0;
 	source[nsources].nhits = 1;
 	source[nsources].ntests = 2;	/* initial hit probability = 1/2 */
+#if SHADCACHE
+	source[nsources].obscache = NULL;
+#endif
 	return(nsources++);
 }
 
