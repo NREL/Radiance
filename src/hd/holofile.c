@@ -22,6 +22,11 @@ static char SCCSid[] = "$SunId$ SGI";
 #define PCTFREE		20	/* maximum fraction to free (%) */
 #endif
 
+#ifndef BSD
+#define write	writebuf	/* safe i/o routines */
+#define read	readbuf
+#endif
+
 #define MAXFRAG		(128*FRAGBLK)	/* maximum fragments per file */
 
 #define FRAGBLK		64	/* number of fragments to allocate at a time */
@@ -78,6 +83,21 @@ register int	fd;
 }
 
 
+markdirty(hp)			/* mark holodeck section directory dirty */
+register HOLO	*hp;
+{
+	static BEAMI	smudge = {0, -1};
+
+	if (hp->dirty)		/* already marked? */
+		return;
+	hp->dirty = 1;
+	if (lseek(hp->fd, biglob(hp)->fo+(nbeams(hp)-1)*sizeof(BEAMI), 0) < 0
+			|| write(hp->fd, (char *)&smudge,
+					sizeof(BEAMI)) != sizeof(BEAMI))
+		error(SYSTEM, "seek/write error in markdirty");
+}
+
+
 HOLO *
 hdinit(fd, hproto)	/* initialize a holodeck section in a file */
 int	fd;			/* corresponding file descriptor */
@@ -102,6 +122,9 @@ HDGRID	*hproto;		/* holodeck section grid */
 		n = nbeams(hp)*sizeof(BEAMI);
 		if (read(fd, (char *)(hp->bi+1), n) != n)
 			error(SYSTEM, "failure loading holodeck directory");
+						/* check that it's clean */
+		if (hp->bi[nbeams(hp)].fo < 0)
+			error(USER, "dirty holodeck section");
 	} else {			/* assume we're creating it */
 		if ((hp = hdalloc(hproto)) == NULL)
 			goto memerr;
@@ -375,7 +398,7 @@ register int	i;
 	}
 	biglob(hp)->nrd += nrays - hp->bi[i].nrd;
 	hp->bi[i].nrd = nrays;
-	hp->dirty++;		/* section directory now out of date */
+	markdirty(hp);		/* section directory now out of date */
 	return(1);
 }
 
