@@ -127,7 +127,7 @@ transfer()		/* transfer Radiance picture */
 		else
 			fwritecolrs(scanin, xmax, stdout);
 		if (ferror(stdout))
-			quiterr("error writing rasterfile");
+			quiterr("error writing output picture");
 	}
 						/* free scanline */
 	free((char *)scanin);
