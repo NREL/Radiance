@@ -402,9 +402,9 @@ PACKET	*pl;
 				disp_packet(p);
 			else
 				nunflushed += p->nr;
+			nraysdone += p->nr;
+			npacksdone++;
 		}
-		nraysdone += p->nr;
-		npacksdone++;
 		p->nr = 0;			/* push onto free list */
 		p->next = freepacks;
 		freepacks = p;
