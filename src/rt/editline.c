@@ -87,8 +87,10 @@ struct driver  *d;
 		if (!*cp)
 			return(0);
 	*cp++ = '\0';
+#ifdef DEBUG
 	(*d->comout)(mybuf);			/* echo my command */
 	(*d->comout)("\n");
+#endif
 						/* send it as reply */
 	strcpy(b, mybuf);
 	d->inpready--;

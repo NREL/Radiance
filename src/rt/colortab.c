@@ -129,9 +129,10 @@ int	(*set_pixel)();
 		clrtab[h].ent[RED] = r;
 		clrtab[h].ent[GRN] = g;	/* reassign pixel */
 		clrtab[h].ent[BLU] = b;
-#ifdef notdef
-		printf("pixel %d = (%d,%d,%d) (%d refs)\n",
+#ifdef DEBUG
+		sprintf(errmsg, "pixel %d = (%d,%d,%d) (%d refs)\n",
 				h, r, g, b, clrtab[h].n);
+		eputs(errmsg);
 #endif
 		(*set_pixel)(h, r, g, b);
 	}

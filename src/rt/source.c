@@ -395,7 +395,7 @@ char  *p;			/* data for f */
 	}
 					/* weighted hit rate */
 	hwt = hit2 / test2;
-#ifdef notdef
+#ifdef DEBUG
 	sprintf(errmsg, "%d tested, %d untested, %f hit rate\n",
 			sn, ncnts-sn, hwt);
 	eputs(errmsg);
