@@ -178,6 +178,32 @@ register GCOORD	gc[2];
 }
 
 
+hdcell(cp, hp, gc)		/* compute cell coordinates */
+register FVECT	cp[4];	/* returned (may be passed as FVECT cp[2][2]) */
+HOLO	*hp;
+register GCOORD	*gc;
+{
+	register int	i;
+	register FLOAT	*v;
+	double	d;
+					/* compute each corner */
+	for (i = 0; i < 4; i++) {
+		VCOPY(cp[i], hp->orig);
+		if (gc->w & 1) {
+			v = hp->xv[gc->w>>1];
+			cp[i][0] += *v++; cp[i][1] += *v++; cp[i][2] += *v;
+		}
+		d = (double)( gc->i[0] + (i&1) ) / hp->grid[wg0[gc->w]];
+		v = hp->xv[wg0[gc->w]];
+		cp[i][0] += d * *v++; cp[i][1] += d * *v++; cp[i][2] += d * *v;
+
+		d = (double)( gc->i[1] + (i>>1) ) / hp->grid[wg1[gc->w]];
+		v = hp->xv[wg1[gc->w]];
+		cp[i][0] += d * *v++; cp[i][1] += d * *v++; cp[i][2] += d * *v;
+	}
+}
+
+
 hdlseg(lseg, hp, i)			/* compute line segment for beam */
 register int	lseg[2][3];
 register HOLO	*hp;
@@ -238,7 +264,7 @@ BYTE	r[2][2];
 				hp->grid[wg0[gc[i].w]];
 		v = hp->xv[wg0[gc[i].w]];
 		p[i][0] += d * *v++; p[i][1] += d * *v++; p[i][2] += d * *v;
-		d = (gc[i].i[1] + (1./256.)*(r[i][1]+.5)) /
+		d = ( gc[i].i[1] + (1./256.)*(r[i][1]+.5) ) /
 				hp->grid[wg1[gc[i].w]];
 		v = hp->xv[wg1[gc[i].w]];
 		p[i][0] += d * *v++; p[i][1] += d * *v++; p[i][2] += d * *v;
