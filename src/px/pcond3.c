@@ -100,16 +100,6 @@ double	Lw;
 
 
 int
-shiftdir(bw)		/* compute shift direction for histogram */
-double	bw;
-{
-	if (what2do&DO_HSENS && cf(bw) - (bw - bwmin)/(Bldmax - bwmin))
-		return(1);
-	return(-1);
-}
-
-
-int
 mkbrmap()			/* make dynamic range map */
 {
 	double	T, b, s;
