@@ -255,8 +255,10 @@ char  *pout, *zout, *prvr;
 		normaspect(viewaspect(&ourview), &pa, &hres, &vres);
 		if (seq) {
 			if (ralrm > 0) {
-				sprintf(errmsg, "starting frame %d\n", seq);
-				eputs(errmsg);
+				fprintf(stderr, "FRAME %d:", seq);
+				fprintview(&ourview, stderr);
+				putc('\n', stderr);
+				fflush(stderr);
 			}
 			printf("FRAME=%d\n", seq);
 		}
