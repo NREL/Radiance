@@ -19,15 +19,15 @@ FILE *
 fropen(fname)			/* find file and open for reading */
 register char  *fname;
 {
-	extern char  *strcpy();
+	extern char  *strcpy(), *getenv();
 	FILE  *fp;
-	char  pname[256];
+	char  pname[MAXPATH];
 	register char  *sp, *cp;
 
 	if (fname == NULL)
 		return(NULL);
 
-	if (fname[0] == DIRSEP || fname[0] == '.')	/* absolute path */
+	if (ISDIRSEP(fname[0]) || fname[0] == '.')	/* absolute path */
 		return(fopen(fname, "r"));
 		
 	if (libpath == NULL) {			/* get search path */
@@ -41,7 +41,7 @@ register char  *fname;
 		cp = pname;
 		while (*sp && (*cp = *sp++) != PATHSEP)
 			cp++;
-		if (cp > pname && cp[-1] != DIRSEP)
+		if (cp > pname && !ISDIRSEP(cp[-1]))
 			*cp++ = DIRSEP;
 		strcpy(cp, fname);
 		if ((fp = fopen(pname, "r")) != NULL)

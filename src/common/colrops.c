@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -10,30 +10,56 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "color.h"
 
-#define MAXGSHIFT	15		/* maximum shift for gamma table */
+#define NULL		0
 
-static BYTE	g_mant[256], g_nexp[256];
+extern char	*bmalloc();
 
-static BYTE	g_bval[MAXGSHIFT+1][256];
+#define MAXGSHIFT	31		/* maximum shift for gamma table */
+
+static BYTE	*g_mant = NULL, *g_nexp = NULL;
+
+static BYTE	(*g_bval)[256] = NULL;
+
+extern double	pow();
 
 
-setcolrgam(g)			/* set gamma conversion */
-double	g;
+setcolrcor(f, a2)		/* set brightness correction */
+double	(*f)();
+double	a2;
 {
-	extern double	pow();
 	double	mult;
 	register int	i, j;
+					/* allocate tables */
+	if (g_bval == NULL && (g_bval =
+			(BYTE (*)[256])bmalloc((MAXGSHIFT+1)*256)) == NULL)
+		return(-1);
 					/* compute colr -> gamb mapping */
+	mult = 1.0/256.0;
 	for (i = 0; i <= MAXGSHIFT; i++) {
-		mult = pow(0.5, (double)(i+8));
 		for (j = 0; j < 256; j++)
-			g_bval[i][j] = 256.0 * pow((j+.5)*mult, 1.0/g);
+			g_bval[i][j] = 256.0 * (*f)((j+.5)*mult, a2);
+		mult *= 0.5;
 	}
+	return(0);
+}
+
+
+setcolrinv(f, a2)		/* set inverse brightness correction */
+double	(*f)();
+double	a2;
+{
+	double	mult;
+	register int	i, j;
+					/* allocate tables */
+	if (g_mant == NULL && (g_mant = (BYTE *)bmalloc(256)) == NULL)
+		return(-1);
+	if (g_nexp == NULL && (g_nexp = (BYTE *)bmalloc(256)) == NULL)
+		return(-1);
 					/* compute gamb -> colr mapping */
 	i = 0;
 	mult = 256.0;
 	for (j = 255; j > 0; j--) {
-		while ((g_mant[j] = mult * pow(j/256.0, g)) < 128) {
+		while ((g_mant[j] = mult * (*f)(j/256.0, a2)) < 128) {
 			i++;
 			mult *= 2.0;
 		}
@@ -41,6 +67,16 @@ double	g;
 	}
 	g_mant[0] = 0;
 	g_nexp[0] = COLXS;
+	return(0);
+}
+
+
+setcolrgam(g)			/* set gamma conversion */
+double	g;
+{
+	if (setcolrcor(pow, 1.0/g) < 0)
+		return(-1);
+	return(setcolrinv(pow, g));
 }
 
 
@@ -50,6 +86,8 @@ int	len;
 {
 	register int	i, expo;
 
+	if (g_bval == NULL)
+		return(-1);
 	while (len-- > 0) {
 		expo = scan[0][EXP] - COLXS;
 		if (expo < -MAXGSHIFT) {
@@ -87,6 +125,7 @@ int	len;
 		scan[0][EXP] = COLXS;
 		scan++;
 	}
+	return(0);
 }
 
 
@@ -96,6 +135,8 @@ int	len;
 {
 	register int	nexpo;
 
+	if (g_mant == NULL | g_nexp == NULL)
+		return(-1);
 	while (len-- > 0) {
 		nexpo = g_nexp[scan[0][RED]];
 		if (g_nexp[scan[0][GRN]] < nexpo)
@@ -120,6 +161,7 @@ int	len;
 		scan[0][EXP] = COLXS - nexpo;
 		scan++;
 	}
+	return(0);
 }
 
 
