@@ -20,7 +20,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define vfork		fork
 #endif
 
-#define NSCANS		32		/* number of scanlines to buffer */
+#define NSCANS		64		/* number of scanlines to buffer */
 
 int	rt_pid = -1;		/* process id for rtrace */
 int	fd_tort, fd_fromrt;	/* pipe descriptors */
@@ -149,16 +149,15 @@ int	vv;
 float	*vb;
 {
 	float	rt_buf[6*MAXPIX];	/* rtrace send/receive buffer */
-	int	npix_tort;		/* number of pixels in buffer */
+	register int	n;		/* number of pixels in buffer */
 	short	buf_vh[MAXPIX];		/* pixel positions */
 	FVECT	dir;
 	register int	vh;
-	register int	i;
 
 	if (verbose)
 		fprintf(stderr, "%s: computing view span at %d...\n",
 				progname, vv);
-	npix_tort = 0;
+	n = 0;
 	for (vh = -hsize; vh <= hsize; vh++) {
 		if (compdir(dir, vh, vv) < 0) {	/* off viewable region */
 			vb[vh+hsize] = -1.0;
@@ -169,27 +168,26 @@ float	*vb;
 		if (rt_pid == -1)		/* missing information */
 			continue;
 						/* send to rtrace */
-		if (npix_tort >= MAXPIX) {		/* flush */
-			rt_compute(rt_buf, npix_tort);
-			for (i = 0; i < npix_tort; i++)
-				vb[buf_vh[i]+hsize] = luminance(rt_buf+3*i);
-			npix_tort = 0;
+		if (n >= MAXPIX) {			/* flush */
+			rt_compute(rt_buf, n);
+			while (n-- > 0)
+				vb[buf_vh[n]+hsize] = luminance(rt_buf+3*n);
 		}
-		rt_buf[6*npix_tort] = ourview.vp[0];
-		rt_buf[6*npix_tort+1] = ourview.vp[1];
-		rt_buf[6*npix_tort+2] = ourview.vp[2];
-		rt_buf[6*npix_tort+3] = dir[0];
-		rt_buf[6*npix_tort+4] = dir[1];
-		rt_buf[6*npix_tort+5] = dir[2];
-		buf_vh[npix_tort++] = vh;
-	}
-	if (npix_tort > 0) {			/* process pending buffer */
-		rt_compute(rt_buf, npix_tort);
-		for (i = 0; i < npix_tort; i++)
-			vb[buf_vh[i]+hsize] = luminance(rt_buf+3*i);
+		rt_buf[6*n] = ourview.vp[0];
+		rt_buf[6*n+1] = ourview.vp[1];
+		rt_buf[6*n+2] = ourview.vp[2];
+		rt_buf[6*n+3] = dir[0];
+		rt_buf[6*n+4] = dir[1];
+		rt_buf[6*n+5] = dir[2];
+		buf_vh[n++] = vh;
 	}
 	if (verbose)
 		pict_stats();
+	if (n > 0) {				/* process pending buffer */
+		rt_compute(rt_buf, n);
+		while (n-- > 0)
+			vb[buf_vh[n]+hsize] = luminance(rt_buf+3*n);
+	}
 }
 
 
@@ -298,6 +296,8 @@ char	*av[];
 		perror(progname);
 		exit(1);
 	}
+	close(p0[0]);
+	close(p1[1]);
 	fd_tort = p0[1];
 	fd_fromrt = p1[0];
 }

@@ -295,25 +295,6 @@ int	x, y;
 }
 
 
-spinvector(vres, vorig, vnorm, theta)	/* rotate vector around normal */
-FVECT  vres, vorig, vnorm;
-double  theta;
-{
-	extern double  sin(), cos();
-	double  sint, cost, dotp;
-	FVECT  vperp;
-	register int  i;
-	
-	sint = sin(theta);
-	cost = cos(theta);
-	dotp = DOT(vorig, vnorm);
-	fcross(vperp, vnorm, vorig);
-	for (i = 0; i < 3; i++)
-		vres[i] = vnorm[i]*dotp*(1.-cost) +
-				vorig[i]*cost + vperp[i]*sint;
-}
-
-
 memerr(s)			/* malloc failure */
 char	*s;
 {

@@ -50,6 +50,7 @@ analyze()			/* analyze our scene */
 	if (spanbr == NULL)
 		memerr("view span brightness buffer");
 	for (v = vsize; v >= -vsize; v--) {
+		close_sources(v);
 		getviewspan(v, spanbr);
 		left = hsize + 1;
 		for (h = -hsize; h <= hsize; h++) {
@@ -73,7 +74,6 @@ analyze()			/* analyze our scene */
 		}
 		if (left < h)
 			addsrcspan(newspan(left,h,v,spanbr));
-		close_sources(v);
 	}
 	close_allsrcs();
 	free((char *)spanbr);
@@ -167,7 +167,6 @@ struct srcspan	*nss;
 {
 	struct source	*last, *cs, *this;
 	register struct srcspan	*ss;
-	register int	res;
 
 	cs = NULL;
 	for (this = curlist; this != NULL; this = this->next) {
@@ -181,6 +180,7 @@ struct srcspan	*nss;
 					mergesource(cs, this);
 					last->next = this->next;
 					free((char *)this);
+					this = last;
 				}
 				break;
 			}
@@ -246,11 +246,13 @@ int	v;
 
 close_allsrcs()			/* done with everything */
 {
-	register struct source	*this, *nsrc;
+	register struct source	*this, *next;
 
-	for (this = curlist; this != NULL; this = nsrc) {
-		nsrc = this->next;
+	this = curlist;
+	while (this != NULL) {
+		next = this->next;
 		donesource(this);
+		this = next;
 	}
 	curlist = NULL;
 }
@@ -265,32 +267,31 @@ register struct source	*sp;
 	double	d;
 
 	sp->dom = 0.0;
-	sp->dir[0] = sp->dir[1] = sp->dir[1] = 0.0;
+	sp->dir[0] = sp->dir[1] = sp->dir[2] = 0.0;
 	sp->brt = 0.0;
 	n = 0;
 	for (ss = sp->first; ss != NULL; ss = ss->next) {
 		sp->brt += ss->brsum;
 		n += ss->r - ss->l;
-		compdir(dright, ss->r, ss->v);
-		for (h = ss->r-1; h >= ss->l; h--) {
-			compdir(dthis, h, ss->v);
-			d = dist2(dthis, dright);
-			fvsum(sp->dir, sp->dir, dthis, d);
-			sp->dom += d;
-			VCOPY(dright, dthis);
-		}
+		if (compdir(dright, ss->r, ss->v) < 0)
+			compdir(dright, ss->r-2, ss->v);
+		for (h = ss->r-1; h >= ss->l; h--)
+			if (compdir(dthis, h, ss->v) == 0) {
+				d = dist2(dthis, dright);
+				fvsum(sp->dir, sp->dir, dthis, d);
+				sp->dom += d;
+				VCOPY(dright, dthis);
+			}
 		free((char *)ss);
 	}
 	sp->first = NULL;
 	sp->brt /= (double)n;
-	sp->dir[0] /= sp->dom;
-	sp->dir[1] /= sp->dom;
-	sp->dir[2] /= sp->dom;
+	normalize(sp->dir);
 	sp->next = donelist;
 	donelist = sp;
 	if (verbose)
 		fprintf(stderr,
-	"%s: found source at (%f,%f,%f), dw %f, br %f\n",
+	"%s: found source at (%.3f,%.3f,%.3f), dw %.5f, br %.1f (%d samps)\n",
 			progname, sp->dir[0], sp->dir[1], sp->dir[2], 
-			sp->dom, sp->brt);
+			sp->dom, sp->brt, n);
 }
