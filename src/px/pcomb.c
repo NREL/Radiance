@@ -334,6 +334,7 @@ combine()			/* combine pictures */
 
 advance()			/* read in data for next scanline */
 {
+	extern double  fabs();
 	int	ytarget;
 	register COLOR	*st;
 	register int	i, j;
@@ -346,13 +347,16 @@ advance()			/* read in data for next scanline */
 			input[i].scan[0] = st;
 			if (yscan <= MIDSCN)		/* hit bottom? */
 				continue;
-			if (freadscan(st, xmax, input[i].fp) < 0) {	/* read */
+			if (freadscan(st, xmax, input[i].fp) < 0) {  /* read */
 				eputs(input[i].name);
 				eputs(": read error\n");
 				quit(1);
 			}
-			for (j = 0; j < xmax; j++)	/* adjust color */
-				multcolor(st[j], input[i].coef);
+			if (fabs(colval(input[i].coef,RED)-1.0) > 1e-3 ||
+				fabs(colval(input[i].coef,GRN)-1.0) > 1e-3 ||
+				fabs(colval(input[i].coef,BLU)-1.0) > 1e-3)
+				for (j = 0; j < xmax; j++)  /* adjust color */
+					multcolor(st[j], input[i].coef);
 		}
 }
 
@@ -449,14 +453,32 @@ char	*msg;
 }
 
 
+#ifdef  NIX
+
 quit(code)
-int	code;
+int  code;
+{
+	exit(code);
+}
+
+#else
+
+#include  <signal.h>
+
+quit(code)		/* exit gracefully */
+int  code;
 {
 	int  status;
 
-	if (code == 0)			/* reap any children */
-		while (wait(&status) != -1)
-			if (code == 0)
-				code = status>>8 & 0xff;
+	if (code) {		/* abnormal exit -- kill children */
+		signal(SIGPIPE, SIG_IGN);
+		kill(0, SIGPIPE);
+	}
+				/* reap any children */
+	while (wait(&status) != -1)
+		if (code == 0)
+			code = status>>8 & 0xff;
 	exit(code);
 }
+
+#endif
