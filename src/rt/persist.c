@@ -1,4 +1,4 @@
-/* Copyright (c) 1993 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -24,6 +24,8 @@ static char SCCSid[] = "$SunId$ LBL";
 extern char	*strcpy(), *index();
 
 extern int	headismine;	/* boolean true if header belongs to me */
+
+extern char	*progname;	/* global program name */
 
 static char	*persistfname = NULL;	/* persist file name */
 static int	persistfd = -1;		/* persist file descriptor */
@@ -95,7 +97,7 @@ int sig_noop() {}
 
 pfhold()		/* holding pattern for idle rendering process */
 {
-	char	buf[128];
+	char	buf[512];
 	register int	n;
 				/* close input and output descriptors */
 	close(fileno(stdin));
@@ -105,7 +107,7 @@ pfhold()		/* holding pattern for idle rendering process */
 		goto createrr;
 	if (mknod(mktemp(strcpy(outpname,TEMPLATE)), S_IFIFO|0600, 0) < 0)
 		goto createrr;
-	sprintf(buf, "%d\n%s\n%s\n", getpid(), inpname, outpname);
+	sprintf(buf, "%s %d\n%s\n%s\n", progname, getpid(), inpname, outpname);
 	if (lseek(persistfd, 0L, 0) < 0 || ftruncate(persistfd, 0L) < 0)
 		error(SYSTEM, "seek/truncate error on persist file");
 	n = strlen(buf);
@@ -140,20 +142,22 @@ io_process()		/* just act as conduits to and from actual process */
 {
 	register char	*cp;
 	register int	nr, n;
-	char	buf[4096], *pfin, *pfout;
+	char	buf[512], *pfin, *pfout;
 	int	pid;
 				/* load and close persist file */
-	nr = read(persistfd, buf, sizeof(buf));
+	nr = read(persistfd, buf, sizeof(buf)-1);
 	pfdetach();
 	if (nr < 0)
 		error(SYSTEM, "cannot read persist file");
 	buf[nr] = '\0';
-	if ((cp = index(buf, '\n')) == NULL)
+	if ((cp = index(buf, ' ')) == NULL)
 		goto formerr;
 	*cp++ = '\0';
-	if ((pid = atoi(buf)) <= 0)
+	if ((pid = atoi(cp)) <= 0)
 		goto formerr;
-	pfin = cp;
+	if ((cp = index(cp, '\n')) == NULL)
+		goto formerr;
+	pfin = ++cp;
 	if ((cp = index(cp, '\n')) == NULL)
 		goto formerr;
 	*cp++ = '\0';
@@ -163,6 +167,10 @@ io_process()		/* just act as conduits to and from actual process */
 	*cp++ = '\0';
 	if (cp-buf != nr)
 		goto formerr;
+	if (strcmp(buf, progname)) {
+		sprintf(errmsg, "persist file for %s, not %s", buf, progname);
+		error(USER, errmsg);
+	}
 				/* wake up rendering process */
 	if (kill(pid, SIGIO) < 0)
 		error(SYSTEM, "cannot signal rendering process in io_process");
