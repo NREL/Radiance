@@ -143,6 +143,7 @@ MAT4  pm;
 		ourspot.flen = 0.;
 		if (source[sn].sflags & SSPOT) {
 			multp3(theirspot.aim, source[sn].sl.s->aim, pm);
+						/* adjust for source size */
 			d = sqrt(dist2(ourspot.aim, theirspot.aim));
 			d = sqrt(source[sn].sl.s->siz/PI) + d*source[sn].srad;
 			theirspot.siz = PI*d*d;
@@ -169,6 +170,7 @@ MAT4  pm;
 		if (source[sn].sflags & SPROX && d > source[sn].sl.prox)
 			return(-1);		/* too far away */
 		ourspot.flen = 0.;
+						/* adjust for source size */
 		d = (sqrt(maxrad2) + source[sn].srad) / d;
 		if (d < 1.-FTINY)
 			ourspot.siz = 2.*PI*(1. - sqrt(1.-d*d));
@@ -220,6 +222,7 @@ MAT4  pm;
 		VCOPY(source[i].snorm, nsnorm);
 	else
 		multv3(source[i].ss[SW], source[sn].ss[SW], pm);
+	source[i].srad = source[sn].srad;
 	source[i].ss2 = source[sn].ss2;
 	if (nsflags & SSPOT) {
 		if ((source[i].sl.s = (SPOT *)malloc(sizeof(SPOT))) == NULL)

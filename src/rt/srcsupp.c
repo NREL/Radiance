@@ -174,7 +174,7 @@ register OBJREC  *so;
 	for (i = 0; i < 3; i++)
 		src->ss[SU][i] = src->ss[SV][i] = src->ss[SW][i] = 0.0;
 	for (i = 0; i < 3; i++)
-		src->ss[i][i] = .886227 * so->oargs.farg[3];
+		src->ss[i][i] = .7236 * so->oargs.farg[3];
 }
 
 
@@ -212,9 +212,10 @@ OBJREC  *so;
 	co = getcone(so, 0);
 	if (CO_R0(co) > .2*co->al)		/* heuristic constraint */
 		objerror(so, WARNING, "source aspect too small");
+	src->sflags |= SCYL;
 	for (i = 0; i < 3; i++)
 		src->sloc[i] = .5 * (CO_P1(co)[i] + CO_P0(co)[i]);
-	src->srad = co->al;
+	src->srad = .5*co->al;
 	src->ss2 = 2.*CO_R0(co)*co->al;
 						/* set sampling vectors */
 	for (i = 0; i < 3; i++)
@@ -227,7 +228,7 @@ OBJREC  *so;
 	fcross(src->ss[SW], src->ss[SV], co->ad);
 	normalize(src->ss[SW]);
 	for (i = 0; i < 3; i++)
-		src->ss[SW][i] *= .886227 * CO_R0(co);
+		src->ss[SW][i] *= .8559 * CO_R0(co);
 	fcross(src->ss[SV], src->ss[SW], co->ad);
 }
 
