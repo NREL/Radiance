@@ -49,6 +49,11 @@ analyze()			/* analyze our scene */
 		memerr("view span brightness buffer");
 	for (v = vsize; v >= -vsize; v--) {
 		close_sources(v);
+#ifndef DEBUG
+		if (verbose)
+			fprintf(stderr, "%s: analyzing... %3ld%%\r",
+				progname, 100L*(vsize-v)/(2*vsize));
+#endif
 		getviewspan(v, spanbr);
 		left = hsize + 1;
 		for (h = -hsize; h <= hsize; h++) {
@@ -153,7 +158,9 @@ comp_thresh()			/* compute glare threshold */
 		exit(1);
 	}
 	if (verbose) {
+#ifdef DEBUG
 		pict_stats();
+#endif
 		fprintf(stderr,
 			"%s: threshold set to %f cd/m2 from %d samples\n",
 				progname, threshold, nsamps);
