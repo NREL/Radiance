@@ -133,15 +133,15 @@ char	*nam;
 
 
 char *
-nvalue(vp, n)			/* return nth variable value */
-VARIABLE	*vp;
+nvalue(vn, n)			/* return nth variable value */
+register int	vn;
 register int	n;
 {
 	register char	*cp;
 
-	if (vp == NULL | n < 0 | n >= vp->nass)
+	if (vval(vn) == NULL | n < 0 | n >= vdef(vn))
 		return(NULL);
-	cp = vp->value;
+	cp = vval(vn);
 	while (n--)
 		while (*cp++)
 			;
@@ -279,7 +279,7 @@ register FILE	*fp;
 		fputs("= ", fp);
 		k = clipline = ( vv[i].fixval == catvalues ? 64 : 320 )
 				- strlen(vnam(i)) ;
-		cp = nvalue(vv+i, j);
+		cp = nvalue(i, j);
 		while (*cp) {
 		    putc(*cp++, fp);
 		    if (--k <= 0) {		/* line too long */
