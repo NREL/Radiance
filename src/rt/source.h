@@ -46,7 +46,7 @@ typedef struct {
 	OBJREC  *so;		/* source destination object */
 }  SRCREC;		/* light source */
 
-#define MAXSPART	32		/* maximum partitions per source */
+#define MAXSPART	64		/* maximum partitions per source */
 
 #define SU		0		/* U vector or partition */
 #define SV		1		/* V vector or partition */
