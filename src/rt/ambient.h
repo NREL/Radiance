@@ -25,6 +25,7 @@ typedef struct ambrec {
 }  AMBVAL;			/* ambient value */
 
 extern COLOR  ambval;		/* global ambient component */
+extern int  ambvwt;		/* initial weight for ambient value */
 extern double  ambacc;		/* ambient accuracy */
 extern int  ambres;		/* ambient resolution */
 extern int  ambdiv;		/* number of divisions for calculation */
