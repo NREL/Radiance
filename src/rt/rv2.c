@@ -318,12 +318,15 @@ register char  *s;
 	extern int  ambdiv;
 	extern int  ambssamp;
 	extern int  ambounce;
+	extern int  directinvis;
+	extern int  do_irrad;
 	int  i0;
 	double  d0, d1, d2;
-	char  buf[128];
+	char  buf[128], ans[4];
 	
 	if (s[0] == '\0') {
-		(*dev->comout)("aa ab ad ar as av dc dj dt lr lw sp st: ");
+		(*dev->comout)(
+			"aa ab ad ar as av b dc dj di dt i lr lw sp st: ");
 		(*dev->comin)(buf, NULL);
 		s = buf;
 	}
@@ -391,9 +394,42 @@ register char  *s;
 			}
 			shadthresh = d0;
 			break;
+		case 'i':			/* invisibility */
+			if (sscanf(s+2, "%1s", ans) != 1) {
+				sprintf(buf, "direct invisibility (%c): ",
+						directinvis ? 'y' : 'n');
+				(*dev->comout)(buf);
+				(*dev->comin)(buf, NULL);
+				if (sscanf(buf, "%1s", ans) != 1)
+					break;
+			}
+			directinvis = tolower(ans[0]) == 'y';
+			break;
 		default:
 			goto badparam;
 		}
+		break;
+	case 'b':			/* black and white */
+		if (sscanf(s+1, "%1s", ans) != 1) {
+			sprintf(buf, "black and white (%c): ",
+					greyscale ? 'y' : 'n');
+			(*dev->comout)(buf);
+			(*dev->comin)(buf, NULL);
+			if (sscanf(buf, "%1s", ans) != 1)
+				break;
+		}
+		greyscale = tolower(ans[0]) == 'y';
+		break;
+	case 'i':			/* irradiance */
+		if (sscanf(s+1, "%1s", ans) != 1) {
+			sprintf(buf, "irradiance (%c): ",
+					do_irrad ? 'y' : 'n');
+			(*dev->comout)(buf);
+			(*dev->comin)(buf, NULL);
+			if (sscanf(buf, "%1s", ans) != 1)
+				break;
+		}
+		do_irrad = tolower(ans[0]) == 'y';
 		break;
 	case 'a':			/* ambient */
 		switch (s[1]) {
