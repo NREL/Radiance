@@ -144,7 +144,15 @@ char  *argv[];
 					/* initialize urand */
 	initurand(2048);
 					/* option city */
-	for (i = 1; i < argc && argv[i][0] == '-'; i++) {
+	for (i = 1; i < argc; i++) {
+		if (argv[i][0] == '+' || argv[i][0] == '$') {
+						/* options from file/environ */
+			if (getopts(&argc, &argv, i) < 0)
+				goto badopt;
+			i--;
+			continue;
+		} else if (argv[i][0] != '-')
+			break;			/* break from options */
 		if (!strcmp(argv[i], "-version")) {
 			puts(VersionID);
 			quit(0);
@@ -469,7 +477,7 @@ char  *argv[];
 		fprintf(stderr, "**************\n*** PID %5d: ",
 				getpid());
 		printargs(argc, argv, stderr);
-		fputs("\n", stderr);
+		putc('\n', stderr);
 		fflush(stderr);
 	}
 #ifdef	NICE
