@@ -15,9 +15,10 @@ RTOBJ = cone.o face.o instance.o readobj.o readoct.o otypes.o objset.o \
 PICOBJ = color.o header.o image.o lamps.o resolu.o rexpr.o spec_rgb.o \
 	colrops.o 
 
-STDOBJ = fgetline.o fropen.o linregr.o xf.o mat4.o misc.o fvect.o \
+STDOBJ = fgetline.o fropen.o linregr.o xf.o mat4.o fvect.o urand.o \
 	calexpr.o caldefn.o calfunc.o calprnt.o \
-	savestr.o urand.o cputs.o wputs.o eputs.o quit.o
+	getpath.o error.o savestr.o strmisc.o \
+	cputs.o wputs.o eputs.o quit.o
 
 SYSOBJ = ealloc.o bmalloc.o # erf.o frexp.o fwrite.o random.o bcopy.o
 
@@ -65,7 +66,7 @@ cone.o objset.o otypes.o readobj.o readoct.o:	otypes.h
 
 urand.o:	random.h
 
-cone.o face.o image.o instance.o misc.o objset.o octree.o \
+cone.o face.o image.o instance.o error.o objset.o octree.o \
 otypes.o readobj.o readoct.o xf.o:	standard.h mat4.h fvect.h
 
 image.o:	view.h
