@@ -12,15 +12,17 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "newsconstants.h"
 #include "driver.h"
 #include "nwsdev.h"
+#include "color.h"
 char inputbuffer[256];
 int pos;
-float gamma[257];
+int gamma[257];
 
 static int nws_close(),nws_clear(),nws_painter(),nws_getclick(),
-           nws_printer(),nws_getinput(),nws_flush(),nws_errout();
+           nws_printer(),nws_getinput(),nws_flush(),nws_errout(),
+           nws_gpainter();
 static struct driver nws_driver =
  {
-  nws_close,nws_clear,nws_painter,nws_getclick,
+  nws_close,nws_clear,nws_gpainter,nws_getclick,
   nws_printer,nws_getinput,nws_flush,1.0
  };
 
@@ -47,8 +49,10 @@ char *name,*id;
   int wX,wY,wW,wH,i;
   gamma[256]=1;
   for(i=0;i<256;i++)
-   gamma[i]=minfrac+(1-minfrac)*pow(i/256.,1./gammacorrection);
+   gamma[i]=500*pow(i/256.,1./gammacorrection);
   ps_open_PostScript();
+  sgicheck(&i);
+  if(i)nws_driver.paintr=nws_painter;
   getthebox(&wX,&wY,&wW,&wH);
   if(wW<100)wW=100;
   if(wH<100+textareaheight)wH=100+textareaheight;
@@ -89,23 +93,28 @@ char *msg;         /* my comments are so bogus */
 
 static int
 nws_painter(col,xmin,ymin,xmax,ymax)
-float col[3];
+COLOR col;
+int xmin,ymin,xmax,ymax;
+ {
+  box(xmin,ymin+textareaheight,xmax,ymax+textareaheight
+      ,(int)(500*col[RED]),(int)(500*col[GRN]),(int)(500*col[BLU]));
+ }
+static int
+nws_gpainter(col,xmin,ymin,xmax,ymax)
+COLOR col;
 int xmin,ymin,xmax,ymax;
  {
   int i;
-  float col2[3];
-  /* NeWS trashes the window if a float value less than 1/256 is sent
-     to it.  Therefore, weed out all such values first */
+  int col2[3];
   for(i=0;i<3;i++)
    {
-    col2[i]=col[i];
-    if(col2[i]>1)col2[i]=1;
-    col2[i]=gamma[(int)(col2[i]*256)];
+    col2[i]=256.*col[i];
+    if(col2[i]>255)col2[i]=255;
+    col2[i]=gamma[col2[i]];
    }
   box(xmin,ymin+textareaheight,xmax,ymax+textareaheight
       ,col2[0],col2[1],col2[2]);
  }
-
 static int
 nws_printer(orig) /* printer recognises \n as a linefeed */
 char *orig;
