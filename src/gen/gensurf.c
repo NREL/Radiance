@@ -34,7 +34,7 @@ int  smooth = 0;		/* apply smoothing? */
 
 char  *modname, *surfname;
 
-double  funvalue(), l_hermite(), argument();
+double  funvalue(), l_hermite(), l_bezier(), argument();
 
 typedef struct {
 	FVECT  p;	/* vertex position */
@@ -52,6 +52,7 @@ char  *argv[];
 
 	varset("PI", PI);
 	funset("hermite", 5, l_hermite);
+	funset("bezier", 5, l_bezier);
 
 	if (argc < 8)
 		goto userror;
@@ -415,4 +416,17 @@ l_hermite()
 		argument(2)*(-2.0*t+3.0)*t*t +
 		argument(3)*((t-2.0)*t+1.0)*t +
 		argument(4)*(t-1.0)*t*t );
+}
+
+
+double
+l_bezier()
+{
+	double  t;
+
+	t = argument(5);
+	return(	argument(1) * (1.+t*(-3.+t*(3.-t))) +
+		argument(2) * 3.*t*(1.+t*(-2.+t)) +
+		argument(3) * 3.*t*t*(1.-t) +
+		argument(4) * t*t*t );
 }
