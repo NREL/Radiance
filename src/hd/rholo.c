@@ -11,7 +11,6 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "rholo.h"
 #include "random.h"
 #include <signal.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 
 #ifndef FRAGWARN
@@ -217,7 +216,7 @@ initrholo()			/* get our holodeck running */
 		maxdisk = 1024.*1024.*vflt(DISKSPACE);
 						/* set up memory cache */
 	if (outdev == NULL)
-		hdcachesize = 0;	/* manual flushing */
+		hdcachesize = 0;		/* manual flushing */
 	else if (vdef(CACHE))
 		hdcachesize = 1024.*1024.*vflt(CACHE);
 						/* open report file */
@@ -272,7 +271,7 @@ initrholo()			/* get our holodeck running */
 	sigdie(SIGXCPU, "CPU limit exceeded");
 	sigdie(SIGXFSZ, "File size exceeded");
 #endif
-						/* protect holodeck file */
+					/* protect holodeck file */
 	orig_mode = resfmode(hdlist[0]->fd, ncprocs>0 ? 0 : 0444);
 	return;
 memerr:
@@ -531,7 +530,7 @@ PACKET	*pl;
 		p->next = freepacks;		/* push onto free list */
 		freepacks = p;
 	}
-	if (n2flush > RTFLUSH) {
+	if (n2flush >= RTFLUSH) {
 		if (outdev != NULL)
 			hdsync(NULL, 1);
 		else
