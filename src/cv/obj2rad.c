@@ -486,7 +486,7 @@ register char	**av;
 
 	if (!cvtndx(vi, av[0]))
 		return(0);
-	if (vi[2] >= 0)
+	if (!flatten && vi[2] >= 0)
 		return(1);		/* has interpolated normals */
 	if (ac < 4)
 		return(0);		/* it's a triangle! */
