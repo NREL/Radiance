@@ -336,8 +336,11 @@ int  r, g, b;
 static int
 getpixels()				/* get the color map */
 {
+	XColor  thiscolor;
+	register int  i, j;
+
 	if (ncolors > 0)
-		return(ncolors);
+		goto donecolors;
 	if (ourvisual == DefaultVisual(ourdisplay,ourscreen)) {
 		ourmap = DefaultColormap(ourdisplay,ourscreen);
 		goto loop;
@@ -363,11 +366,8 @@ loop:
 		else
 			return(ncolors = 0);	/* failed */
 	}
-	if (ourmap != DefaultColormap(ourdisplay,ourscreen)) {
-		XColor  thiscolor;
-		register int  i, j;
-						/* reset black and white */
-		for (i = 0; i < ncolors; i++) {
+	if (ourmap != DefaultColormap(ourdisplay,ourscreen))
+		for (i = 0; i < ncolors; i++) {	/* reset black and white */
 			if (pixval[i] != ourblack && pixval[i] != ourwhite)
 				continue;
 			thiscolor.pixel = pixval[i];
@@ -381,8 +381,16 @@ loop:
 			ncolors--;
 			i--;
 		}
-	}
 	XSetWindowColormap(ourdisplay, gwind, ourmap);
+donecolors:
+#ifdef  DEBUG
+	thiscolor.flags = DoRed|DoGreen|DoBlue;
+	thiscolor.red = thiscolor.green = thiscolor.blue = 0;
+	for (i = 0; i < ncolors; i++) {
+		thiscolor.pixel = pixval[i];
+		XStoreColor(ourdisplay, ourmap, &thiscolor);
+	}
+#endif
 	return(ncolors);
 }
 
