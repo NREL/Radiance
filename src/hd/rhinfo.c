@@ -16,6 +16,8 @@ static char SCCSid[] = "$SunId$ SGI";
 
 char	*progname;		/* global argv[0] */
 
+long	beamtot, samptot;	/* total beams and samples */
+
 
 main(argc, argv)
 int	argc;
@@ -65,6 +67,9 @@ FILE	*fout;
 		psectstats(hdsect, fout);	/* print section statistics */
 	}
 	nextloc = hdfilen(fd);			/* print global statistics */
+	fputs("=====================================================\n", fout);
+	fprintf(fout, "Total samples/beams: %ld/%ld (%.2f samples/beam)\n",
+			samptot, beamtot, (double)samptot/beamtot);
 	fprintf(fout, "%.1f Mbyte file, %.1f%% fragmentation\n",
 			nextloc/(1024.*1024.),
 			100.*(nextloc-hdfiluse(fd,1))/nextloc);
@@ -88,8 +93,10 @@ FILE	*fp;
 
 	fprintf(fp, "\tGrid resolution:         %d x %d x %d\n",
 			hp->grid[0], hp->grid[1], hp->grid[2]);
-	fprintf(fp, "\tNumber of beams:         %d\n", nbeams(hp));
-	fprintf(fp, "\tNumber of ray samples:   %d\n", biglob(hp)->nrd);
+	fprintf(fp, "\tNumber of beams:         %ld\n", (long)nbeams(hp));
+	beamtot += nbeams(hp);
+	fprintf(fp, "\tNumber of ray samples:   %ld\n", (long)biglob(hp)->nrd);
+	samptot += biglob(hp)->nrd;
 	if (biglob(hp)->nrd <= 0)
 		return;				/* no samples to stat! */
 	for (i = nbeams(hp); i > 0; i--) {
