@@ -18,11 +18,11 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "paths.h"
 
-#ifndef  SSS
-#define  SSS			3	/* super-sample size */
+#ifndef	 SSS
+#define	 SSS			3	/* super-sample size */
 #endif
 
-#define  MAXLINE		512	/* longest allowable line */
+#define	 MAXLINE		512	/* longest allowable line */
 
 char  *fontfile = "helvet.fnt";		/* our font file */
 
@@ -32,19 +32,19 @@ COLOR  fgcolor = BLKCOLOR;		/* foreground color */
 int  direct = 'r';			/* direction (right, up, left, down) */
 
 int  cheight = 32*SSS;			/* character height */
-double  aspect = 1.67;			/* height/width character aspect */
-double  spacing = 0.0;			/* character spacing */
+double	aspect = 1.67;			/* height/width character aspect */
+double	spacing = 0.0;			/* character spacing */
 int  cwidth;				/* computed character width */
 
 unsigned char  *ourbitmap;		/* our output bitmap */
 int  xsiz, ysiz;			/* bitmap dimensions */
 int  xdim;				/* size of horizontal scan (bytes) */
 
-#define  bitop(x,y,op)		(ourbitmap[(y)*xdim+((x)>>3)] op (1<<((x)&7)))
-#define  tstbit(x,y)		bitop(x,y,&)
-#define  setbit(x,y)		bitop(x,y,|=)
-#define  clrbit(x,y)		bitop(x,y,&=~)
-#define  tglbit(x,y)		bitop(x,y,^=)
+#define	 bitop(x,y,op)		(ourbitmap[(y)*xdim+((x)>>3)] op (1<<((x)&7)))
+#define	 tstbit(x,y)		bitop(x,y,&)
+#define	 setbit(x,y)		bitop(x,y,|=)
+#define	 clrbit(x,y)		bitop(x,y,&=~)
+#define	 tglbit(x,y)		bitop(x,y,^=)
 
 FONT  *ourfont;				/* our font */
 
@@ -66,7 +66,9 @@ int  argc;
 char  *argv[];
 {
 	int  an;
-
+#ifdef MSDOS
+	setmode(fileno(stdout), O_BINARY);
+#endif
 	for (an = 1; an < argc && argv[an][0] == '-'; an++)
 		switch (argv[an][1]) {
 		case 'c':			/* color */
@@ -150,7 +152,7 @@ unkopt:
 
 makemap()			/* create the bit map */
 {
-	double  pictaspect;
+	double	pictaspect;
 	
 	if (direct == 'r' || direct == 'l') {
 		if (xsiz <= 0) {
@@ -401,7 +403,7 @@ FILE  *fp;
 {
 	COLR  pixval[SSS*SSS+1];	/* possible pixel values */
 	COLOR  ctmp0, ctmp1;
-	double  d;
+	double	d;
 	COLR  *scanout;
 	int  x, y;
 	register int  i, j;

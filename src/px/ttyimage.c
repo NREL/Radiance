@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -11,12 +11,15 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include  <stdio.h>
+#ifdef MSDOS
+#include  <fcntl.h>
+#endif
 
 #include  "color.h"
 #include  "resolu.h"
 
 
-#define  NCOLS		133
+#define	 NCOLS		133
 
 
 main(argc, argv)
@@ -34,7 +37,9 @@ char  **argv;
 		fprintf(stderr, "%s: can't open file \"%s\"\n", argv[0], argv[1]);
 		exit(1);
 	}
-	
+#ifdef MSDOS
+	setmode(fileno(input), O_BINARY);
+#endif
 				/* get picture dimensions */
 	if (checkheader(input, COLRFMT, NULL) < 0 ||
 			fgetresolu(&xres, &yres, input) < 0) {
@@ -65,7 +70,7 @@ int
 shade(clr)			/* return character for color */
 COLR  clr;
 {
-#define NSHADES  13
+#define NSHADES	 13
 
 	static char  shadech[NSHADES+1] = " .,:;+?%&*$@#";
 

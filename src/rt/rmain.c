@@ -11,14 +11,14 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 					/* for flaky pre-processors */
-#ifndef  RPICT
-#define  RPICT		0
+#ifndef	 RPICT
+#define	 RPICT		0
 #endif
-#ifndef  RTRACE
-#define  RTRACE		0
+#ifndef	 RTRACE
+#define	 RTRACE		0
 #endif
-#ifndef  RVIEW
-#define  RVIEW		0
+#ifndef	 RVIEW
+#define	 RVIEW		0
 #endif
 
 #include  "ray.h"
@@ -31,12 +31,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "view.h"
 
-#ifndef  DEFPATH
-#define  DEFPATH	":/usr/local/lib/ray"
-#endif
-#ifndef  ULIBVAR
-#define  ULIBVAR	"RAYPATH"
-#endif
+#include  "paths.h"
 
 char  *progname;			/* argv[0] */
 
@@ -63,7 +58,7 @@ extern int  ambnotify();		/* new object notify functions */
 int  (*addobjnotify[])() = {ambnotify, NULL};
 
 CUBE  thescene;				/* our scene */
-OBJECT  nsceneobjs;			/* number of objects in our scene */
+OBJECT	nsceneobjs;			/* number of objects in our scene */
 
 extern int  imm_irrad;			/* calculate immediate irradiance? */
 
@@ -115,10 +110,10 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-#define  check(ol,al)		if (argv[i][ol] || \
+#define	 check(ol,al)		if (argv[i][ol] || \
 				badarg(argc-i-1,argv+i+1,al)) \
 				goto badopt
-#define  bool(olen,var)		switch (argv[i][olen]) { \
+#define	 bool(olen,var)		switch (argv[i][olen]) { \
 				case '\0': var = !var; break; \
 				case 'y': case 'Y': case 't': case 'T': \
 				case '+': case '1': var = 1; break; \
@@ -463,7 +458,7 @@ char  *argv[];
 	sigdie(SIGTERM, "Terminate");
 	sigdie(SIGPIPE, "Broken pipe");
 	sigdie(SIGALRM, "Alarm clock");
-#ifdef  SIGXCPU
+#ifdef	SIGXCPU
 	sigdie(SIGXCPU, "CPU limit exceeded");
 	sigdie(SIGXFSZ, "File size exceeded");
 #endif
@@ -477,7 +472,7 @@ char  *argv[];
 		fputs("\n", stderr);
 		fflush(stderr);
 	}
-#ifdef  NICE
+#ifdef	NICE
 	nice(NICE);			/* lower priority */
 #endif
 					/* get octree */
@@ -499,6 +494,14 @@ char  *argv[];
 #if  RPICT
 	if (outfile != NULL)
 		openheader();
+#endif
+#ifdef	MSDOS
+#if  RTRACE
+	if (outform != 'a')
+#endif
+	setmode(fileno(stdout), O_BINARY);
+	if (octname == NULL)
+		setmode(fileno(stdin), O_BINARY);
 #endif
 	readoct(octname, loadflags, &thescene, NULL);
 	nsceneobjs = nobjects;
@@ -531,8 +534,8 @@ badopt:
 	sprintf(errmsg, "command line error at '%s'", argv[i]);
 	error(USER, errmsg);
 
-#undef  check
-#undef  bool
+#undef	check
+#undef	bool
 }
 
 

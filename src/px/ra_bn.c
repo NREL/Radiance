@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -12,11 +12,17 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+#ifdef MSDOS
+#include  <fcntl.h>
+#endif
+
 #include  "color.h"
 
 #include  "resolu.h"
 
 extern double  pow();
+
+extern char  *malloc();
 
 double	gamma = 2.0;			/* gamma correction */
 
@@ -37,7 +43,12 @@ char  *argv[];
 {
 	int  reverse = 0;
 	int  i;
-	
+#ifdef MSDOS
+	extern int  _fmode;
+	_fmode = O_BINARY;
+	setmode(fileno(stdin), O_BINARY);
+	setmode(fileno(stdout), O_BINARY);
+#endif
 	progname = argv[0];
 
 	for (i = 1; i < argc; i++)

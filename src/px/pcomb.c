@@ -12,6 +12,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include <stdio.h>
 
+#ifdef MSDOS
+#include <fcntl.h>
+#endif
+
 #include <errno.h>
 
 #include "color.h"
@@ -64,6 +68,8 @@ int	wrongformat = 0;
 
 FILE	*popen();
 
+extern char	*emalloc();
+
 
 main(argc, argv)
 int	argc;
@@ -72,6 +78,12 @@ char	*argv[];
 	int	original;
 	double	f;
 	int	a, i;
+#ifdef MSDOS
+	extern int  _fmode;
+	_fmode = O_BINARY;
+	setmode(fileno(stdin), O_BINARY);
+	setmode(fileno(stdout), O_BINARY);
+#endif
 						/* scan options */
 	for (a = 1; a < argc; a++) {
 		if (argv[a][0] == '-')

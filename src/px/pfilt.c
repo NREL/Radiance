@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -12,6 +12,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+#ifdef MSDOS
+#include  <fcntl.h>
+#endif
+
 #include  <signal.h>
 
 #include  "color.h"
@@ -23,29 +27,29 @@ static char SCCSid[] = "$SunId$ LBL";
 extern char  *malloc();
 extern float  *matchlamp();
 
-#define  FEQ(a,b)	((a) >= .98*(b) && (a) <= 1.02*(b))
+#define	 FEQ(a,b)	((a) >= .98*(b) && (a) <= 1.02*(b))
 
-#define  CHECKRAD	1.5	/* radius to check for filtering */
+#define	 CHECKRAD	1.5	/* radius to check for filtering */
 
 COLOR  exposure = WHTCOLOR;	/* exposure for the frame */
 
-double  rad = 0.0;		/* output pixel radius for filtering */
+double	rad = 0.0;		/* output pixel radius for filtering */
 
 int  nrows = 0;			/* number of rows for output */
 int  ncols = 0;			/* number of columns for output */
 
-double  x_c = 1.0;		/* ratio of output x size to input */
-double  y_r = 1.0;		/* ratio of output y size to input */
+double	x_c = 1.0;		/* ratio of output x size to input */
+double	y_r = 1.0;		/* ratio of output y size to input */
 
 int  singlepass = 0;		/* true means skip first pass */
 
 int  avghot = 0;		/* true means average in bright spots */
 
-double  hotlvl = 1000.0;	/* level considered "hot" */
+double	hotlvl = 1000.0;	/* level considered "hot" */
 
 int  npts = 0;			/* (half) number of points for stars */
 
-double  spread = 1e-4;		/* spread for star points */
+double	spread = 1e-4;		/* spread for star points */
 
 char  *tfname = NULL;
 
@@ -53,7 +57,7 @@ char  *lampdat = "lamp.tab";	/* lamp data file */
 
 int  order;			/* scanline ordering of input */
 int  xres, yres;		/* resolution of input */
-double  inpaspect = 1.0;	/* pixel aspect ratio of input */
+double	inpaspect = 1.0;	/* pixel aspect ratio of input */
 int  correctaspect = 0;		/* aspect ratio correction? */
 
 int  wrongformat = 0;
@@ -79,17 +83,22 @@ char  **argv;
 	float  *lampcolor;
 	char  *lamptype = NULL;
 	long  fpos;
-	double  outaspect = 0.0;
-	double  d;
+	double	outaspect = 0.0;
+	double	d;
 	int  i, j;
-
+#ifdef MSDOS
+	extern int  _fmode;
+	_fmode = O_BINARY;
+	setmode(fileno(stdin), O_BINARY);
+	setmode(fileno(stdout), O_BINARY);
+#endif
 	if (signal(SIGINT, quit) == SIG_IGN)
 		signal(SIGINT, SIG_IGN);
 	if (signal(SIGHUP, quit) == SIG_IGN)
 		signal(SIGINT, SIG_IGN);
 	signal(SIGTERM, quit);
 	signal(SIGPIPE, quit);
-#ifdef  SIGXCPU
+#ifdef	SIGXCPU
 	signal(SIGXCPU, quit);
 	signal(SIGXFSZ, quit);
 #endif
@@ -349,7 +358,7 @@ FILE  *in;
 	int  yread;
 	int  ycent, xcent;
 	int  r, c;
- 	
+	
 	pass2init();
 	scan2init();
 	yread = 0;
@@ -392,7 +401,7 @@ FILE  *in;
 scan2init()			/* prepare scanline arrays */
 {
 	COLOR	ctmp;
-	double  d;
+	double	d;
 	register int  i;
 
 	if (rad <= 0.0) {

@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -11,11 +11,14 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include  <stdio.h>
+#ifdef MSDOS
+#include  <fcntl.h>
+#endif
 
 #include  "color.h"
 #include  "resolu.h"
 
-#define  NCOLS		1440		/* 8" at 180 dpi */
+#define	 NCOLS		1440		/* 8" at 180 dpi */
 
 
 main(argc, argv)
@@ -23,7 +26,12 @@ int  argc;
 char  *argv[];
 {
 	int  i, status = 0;
-	
+#ifdef MSDOS
+	extern int  _fmode;
+	_fmode = O_BINARY;
+	setmode(fileno(stdin), O_BINARY);
+	setmode(fileno(stdout), O_BINARY);
+#endif
 	if (argc < 2)
 		status = printp(NULL) == -1;
 	else

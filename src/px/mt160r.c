@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -11,11 +11,14 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include  <stdio.h>
+#ifdef MSDOS
+#include  <fcntl.h>
+#endif
 
 #include  "color.h"
 #include  "resolu.h"
 
-#define  NCOLS		880		/* for wide carriage */
+#define	 NCOLS		880		/* for wide carriage */
 
 
 main(argc, argv)
@@ -24,7 +27,12 @@ char  *argv[];
 {
 	int  i;
 	int  status = 0;
-	
+#ifdef MSDOS
+	extern int  _fmode;
+	_fmode = O_BINARY;
+	setmode(fileno(stdin), O_BINARY);
+	setmode(fileno(stdout), O_BINARY);
+#endif
 	if (argc < 2)
 		status += printp(NULL) == -1;
 	else
@@ -41,7 +49,7 @@ char  *fname;
 	int  xres, yres;
 	COLR  scanline[NCOLS];
 	int  i;
-
+	
 	if (fname == NULL) {
 		input = stdin;
 		fname = "<stdin>";

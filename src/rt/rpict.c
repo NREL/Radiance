@@ -18,7 +18,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #endif
 
 #include  <signal.h>
-#include  <fcntl.h>
 
 #include  "view.h"
 
@@ -35,28 +34,28 @@ int  samplendx;				/* sample index number */
 VIEW  ourview = STDVIEW;		/* view parameters */
 int  hresolu = 512;			/* horizontal resolution */
 int  vresolu = 512;			/* vertical resolution */
-double  pixaspect = 1.0;		/* pixel aspect ratio */
+double	pixaspect = 1.0;		/* pixel aspect ratio */
 
 int  psample = 4;			/* pixel sample size */
-double  maxdiff = .05;			/* max. difference for interpolation */
-double  dstrpix = 0.67;			/* square pixel distribution */
+double	maxdiff = .05;			/* max. difference for interpolation */
+double	dstrpix = 0.67;			/* square pixel distribution */
 
-double  dstrsrc = 0.0;			/* square source distribution */
-double  shadthresh = .05;		/* shadow threshold */
-double  shadcert = .5;			/* shadow certainty */
+double	dstrsrc = 0.0;			/* square source distribution */
+double	shadthresh = .05;		/* shadow threshold */
+double	shadcert = .5;			/* shadow certainty */
 int  directrelay = 1;			/* number of source relays */
 int  vspretest = 512;			/* virtual source pretest density */
 int  directinvis = 0;			/* sources invisible? */
-double  srcsizerat = .25;		/* maximum ratio source size/dist. */
+double	srcsizerat = .25;		/* maximum ratio source size/dist. */
 
-double  specthresh = .15;		/* specular sampling threshold */
-double  specjitter = 1.;		/* specular sampling jitter */
+double	specthresh = .15;		/* specular sampling threshold */
+double	specjitter = 1.;		/* specular sampling jitter */
 
 int  maxdepth = 6;			/* maximum recursion depth */
-double  minweight = 5e-3;		/* minimum ray weight */
+double	minweight = 5e-3;		/* minimum ray weight */
 
 COLOR  ambval = BLKCOLOR;		/* ambient value */
-double  ambacc = 0.2;			/* ambient accuracy */
+double	ambacc = 0.2;			/* ambient accuracy */
 int  ambres = 32;			/* ambient resolution */
 int  ambdiv = 128;			/* ambient divisions */
 int  ambssamp = 0;			/* ambient super-samples */
@@ -66,7 +65,7 @@ int  ambincl = -1;			/* include == 1, exclude == 0 */
 
 int  ralrm = 0;				/* seconds between reports */
 
-double  pctdone = 0.0;			/* percentage done */
+double	pctdone = 0.0;			/* percentage done */
 
 long  tlastrept = 0L;			/* time at last report */
 
@@ -75,12 +74,12 @@ extern long  tstart;			/* starting time */
 
 extern long  nrays;			/* number of rays traced */
 
-#define  MAXDIV		16		/* maximum sample size */
+#define	 MAXDIV		16		/* maximum sample size */
 
-#define  pixjitter()	(.5+dstrpix*(.5-frandom()))
+#define	 pixjitter()	(.5+dstrpix*(.5-frandom()))
 
-#define  RFTEMPLATE	"rfXXXXXX"
-#define  HFTEMPLATE	TEMPLATE
+#define	 RFTEMPLATE	"rfXXXXXX"
+#define	 HFTEMPLATE	TEMPLATE
 
 static char  *hfname = NULL;		/* header file name */
 static FILE  *hfp = NULL;		/* header file pointer */
@@ -89,7 +88,7 @@ static int  hres, vres;			/* resolution for this frame */
 
 extern char  *mktemp();
 
-double  pixvalue();
+double	pixvalue();
 
 
 quit(code)			/* quit program */
@@ -110,7 +109,7 @@ int  code;
 report()		/* report progress */
 {
 	struct rusage  rubuf;
-	double  t;
+	double	t;
 
 	getrusage(RUSAGE_SELF, &rubuf);
 	t = (rubuf.ru_utime.tv_usec + rubuf.ru_stime.tv_usec) / 1e6;
@@ -184,8 +183,8 @@ char  *pout, *zout, *prvr;
 	extern char  *rindex(), *strncpy(), *strcat();
 	char  fbuf[128], fbuf2[128];
 	register char  *cp;
-	RESOLU  rs;
-	double  pa;
+	RESOLU	rs;
+	double	pa;
 					/* finished writing header */
 	closeheader();
 					/* check sampling */
@@ -349,7 +348,7 @@ char  *zfile, *oldfile;
 	pctdone = 100.0*i/vres;
 	if (ralrm > 0)			/* report init stats */
 		report();
-#ifndef  BSD
+#ifndef	 BSD
 	else
 #endif
 	signal(SIGALRM, report);
@@ -374,7 +373,7 @@ char  *zfile, *oldfile;
 							/* fill bar */
 		fillscanbar(scanbar, zbar, hres, ypos, ystep);
 							/* write it out */
-#ifndef  BSD
+#ifndef	 BSD
 		signal(SIGALRM, SIG_IGN);	/* don't interrupt writes */
 #endif
 		for (i = ystep; i > 0; i--) {
@@ -391,7 +390,7 @@ char  *zfile, *oldfile;
 		pctdone = 100.0*(vres-1-ypos)/vres;
 		if (ralrm > 0 && time((long *)0) >= tlastrept+ralrm)
 			report();
-#ifndef  BSD
+#ifndef	 BSD
 		else
 			signal(SIGALRM, report);
 #endif
@@ -426,14 +425,14 @@ memerr:
 
 
 fillscanline(scanline, zline, sd, xres, y, xstep)	/* fill scan at y */
-register COLOR  *scanline;
-register float  *zline;
+register COLOR	*scanline;
+register float	*zline;
 register char  *sd;
 int  xres, y, xstep;
 {
 	static int  nc = 0;		/* number of calls */
 	int  bl = xstep, b = xstep;
-	double  z;
+	double	z;
 	register int  i;
 	
 	z = pixvalue(scanline[0], 0, y);
@@ -461,8 +460,8 @@ int  xres, y, xstep;
 
 
 fillscanbar(scanbar, zbar, xres, y, ysize)	/* fill interior */
-register COLOR  *scanbar[];
-register float  *zbar[];
+register COLOR	*scanbar[];
+register float	*zbar[];
 int  xres, y, ysize;
 {
 	COLOR  vline[MAXDIV+1];
@@ -492,16 +491,16 @@ int  xres, y, ysize;
 
 
 int
-fillsample(colline, zline, x, y, xlen, ylen, b)	/* fill interior points */
-register COLOR  *colline;
-register float  *zline;
+fillsample(colline, zline, x, y, xlen, ylen, b) /* fill interior points */
+register COLOR	*colline;
+register float	*zline;
 int  x, y;
 int  xlen, ylen;
 int  b;
 {
 	extern double  fabs();
-	double  ratio;
-	double  z;
+	double	ratio;
+	double	z;
 	COLOR  ctmp;
 	int  ncut;
 	register int  len;

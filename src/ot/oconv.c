@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -18,13 +18,11 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "otypes.h"
 
-#ifndef  DEFPATH
-#define  DEFPATH	":/usr/local/lib/ray"
-#endif
+#include  "paths.h"
 
-#define  OMARGIN	(10*FTINY)	/* margin around global cube */
+#define	 OMARGIN	(10*FTINY)	/* margin around global cube */
 
-#define  MAXOBJFIL	63		/* maximum number of scene files */
+#define	 MAXOBJFIL	63		/* maximum number of scene files */
 
 char  *progname;			/* argv[0] */
 
@@ -41,7 +39,7 @@ CUBE  thescene = {EMPTY, {0.0, 0.0, 0.0}, 0.0};		/* our scene */
 char  *ofname[MAXOBJFIL+1];		/* object file names */
 int  nfiles = 0;			/* number of object files */
 
-double  mincusize;			/* minimum cube size from resolu */
+double	mincusize;			/* minimum cube size from resolu */
 
 int  (*addobjnotify[])() = {NULL};	/* new object notifier functions */
 
@@ -54,12 +52,12 @@ char  **argv;
 	FVECT  bbmin, bbmax;
 	char  *infile = NULL;
 	int  outflags = IO_ALL;
-	OBJECT  startobj;
+	OBJECT	startobj;
 	int  i;
-
+	
 	progname = argv[0];
 
-	if ((libpath = getenv("RAYPATH")) == NULL)
+	if ((libpath = getenv(ULIBVAR)) == NULL)
 		libpath = DEFPATH;
 
 	initotypes();
@@ -95,6 +93,9 @@ char  **argv;
 			break;
 		}
 breakopt:
+#ifdef MSDOS
+	setmode(fileno(stdout), O_BINARY);
+#endif
 	if (infile != NULL) {		/* get old octree & objects */
 		if (thescene.cusize > FTINY)
 			error(USER, "only one of '-b' or '-i'");
@@ -197,20 +198,20 @@ register char  *s;
 }
 
 
-#define  bitop(f,i,op)		(f[((i)>>3)] op (1<<((i)&7)))
-#define  tstbit(f,i)		bitop(f,i,&)
-#define  setbit(f,i)		bitop(f,i,|=)
-#define  clrbit(f,i)		bitop(f,i,&=~)
-#define  tglbit(f,i)		bitop(f,i,^=)
+#define	 bitop(f,i,op)		(f[((i)>>3)] op (1<<((i)&7)))
+#define	 tstbit(f,i)		bitop(f,i,&)
+#define	 setbit(f,i)		bitop(f,i,|=)
+#define	 clrbit(f,i)		bitop(f,i,&=~)
+#define	 tglbit(f,i)		bitop(f,i,^=)
 
 
 addobject(cu, obj)			/* add an object to a cube */
 register CUBE  *cu;
-OBJECT  obj;
+OBJECT	obj;
 {
 	CUBE  cukid;
-	OCTREE  ot;
-	OBJECT  oset[MAXSET+1];
+	OCTREE	ot;
+	OBJECT	oset[MAXSET+1];
 	unsigned char  inflg[(MAXSET+7)/8], volflg[(MAXSET+7)/8];
 	int  in;
 	register int  i, j;

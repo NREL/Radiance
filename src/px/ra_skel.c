@@ -1,9 +1,9 @@
+/* Copyright (c) 1992 Regents of the University of California */
+
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
 
-/*
- *  Skeletal 24-bit image conversion program.  Replace "skel"
  *  in this file with a more appropriate image type identifier.
  *
  *  The Makefile entry should look something like this:
@@ -17,9 +17,13 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include  <stdio.h>
+#ifdef MSDOS
+#include  <fcntl.h>
+#endif
 #include  "color.h"
 #include  "resolu.h"
 
+extern char  *malloc();
 
 double	gamma = 2.2;			/* gamma correction */
 
@@ -71,6 +75,10 @@ char  *argv[];
 				progname, argv[i+1]);
 		exit(1);
 	}
+#ifdef MSDOS
+	setmode(fileno(stdin), O_BINARY);
+	setmode(fileno(stdout), O_BINARY);
+#endif
 	setcolrgam(gamma);		/* set up gamma correction */
 	if (reverse) {
 					/* get their image resolution */

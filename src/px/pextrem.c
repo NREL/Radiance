@@ -9,6 +9,9 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include  <stdio.h>
+#ifdef MSDOS
+#include  <fcntl.h>
+#endif
 #include  "color.h"
 
 
@@ -17,6 +20,8 @@ int  orig = 0;
 int  wrongformat = 0;
 
 COLOR  expos = WHTCOLOR;
+
+extern char  *malloc();
 
 
 headline(s)			/* check header line */
@@ -53,7 +58,11 @@ char  *argv[];
 	COLR  *scan;
 	COLR  cmin, cmax;
 	int  xmin, ymin, xmax, ymax;
-	
+#ifdef MSDOS
+	extern int  _fmode;
+	_fmode = O_BINARY;
+	setmode(fileno(stdin), O_BINARY);
+#endif
 	for (i = 1; i < argc; i++)	/* get options */
 		if (!strcmp(argv[i], "-o"))
 			orig++;
