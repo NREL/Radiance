@@ -298,10 +298,10 @@ BYTE	r[2][2];
 double
 hdinter(gc, r, ed, hp, ro, rd)	/* compute ray intersection with section */
 register GCOORD	gc[2];	/* returned */
-BYTE	r[2][2];	/* returned */
+BYTE	r[2][2];	/* returned (optional) */
 double	*ed;		/* returned (optional) */
 register HOLO	*hp;
-FVECT	ro, rd;		/* rd should be normalized */
+FVECT	ro, rd;		/* normalization of rd affects distances */
 {
 	FVECT	p[2], vt;
 	double	d, t0, t1, d0, d1;
@@ -353,14 +353,15 @@ FVECT	ro, rd;		/* rd should be normalized */
 		d = DOT(vt, v) * hp->wg[wg0[gc[i].w]];
 		if (d < 0. || (gc[i].i[0] = d) >= hp->grid[wg0[gc[i].w]])
 			return(FHUGE);		/* outside wall */
-		r[i][0] = 256. * (d - gc[i].i[0]);
+		if (r != NULL)
+			r[i][0] = 256. * (d - gc[i].i[0]);
 		v = hp->wn[wg1[gc[i].w]];
 		d = DOT(vt, v) * hp->wg[wg1[gc[i].w]];
 		if (d < 0. || (gc[i].i[1] = d) >= hp->grid[wg1[gc[i].w]])
 			return(FHUGE);		/* outside wall */
-		r[i][1] = 256. * (d - gc[i].i[1]);
+		if (r != NULL)
+			r[i][1] = 256. * (d - gc[i].i[1]);
 	}
-
 	if (ed != NULL)			/* assign distance to exit point */
 		*ed = t1;
 	return(t0);			/* return distance to entry point */
