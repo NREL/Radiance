@@ -166,7 +166,10 @@ report()		/* report progress */
 			nrays, pctdone, u/3600., s/3600.,
 			(tlastrept-tstart)/3600., hostname);
 	eputs(errmsg);
+#ifndef BSD
+	signal(SIGCONT, report);
 #undef hostname
+#endif
 }
 #else
 report()		/* report progress */
@@ -175,7 +178,6 @@ report()		/* report progress */
 	sprintf(errmsg, "%lu rays, %4.2f%% after %5.4f hours\n",
 			nrays, pctdone, (tlastrept-tstart)/3600.0);
 	eputs(errmsg);
-	signal(SIGCONT, report);
 }
 #endif
 
