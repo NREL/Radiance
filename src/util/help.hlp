@@ -103,8 +103,7 @@ any) may be accessed with the "Forward" button.
 
 Each time a new topic is selected, matching words will be highlighted
 in bold, whether or not <return> or the "Grep" button has been pressed.
-To prevent new matches from being highlighted, clear the search entry
-with <control-U>.
+To prevent new matches from being highlighted, clear the search entry.
 
 Matches are insensitive to case and word boundaries.
 
