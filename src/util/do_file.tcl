@@ -273,6 +273,7 @@ proc newnew f {			# create a new RIF
 proc do_file w {
 	global rifname readonly rif_glob curfile curpat
 	if {"$w" == "done"} {
+		cd [file dirname $rifname]
 		set rif_glob $curpat
 		return
 	}
