@@ -117,8 +117,7 @@ char  *name;
 			BlackPixel, WhitePixel, GXcopy);
 	clientname = name;
 	x_driver.inpready = 0;
-	errvec = x_errout;			/* set error vectors */
-	cmdvec = x_comout;
+	cmdvec = x_comout;			/* set error vectors */
 	if (wrnvec != NULL)
 		wrnvec = x_errout;
 	return(&x_driver);
@@ -128,8 +127,7 @@ char  *name;
 static
 x_close()			/* close our display */
 {
-	errvec = stderr_v;			/* reset error vectors */
-	cmdvec = NULL;
+	cmdvec = NULL;				/* reset error vectors */
 	if (wrnvec != NULL)
 		wrnvec = stderr_v;
 	if (ourdisplay == NULL)
@@ -227,7 +225,6 @@ char  *out;
 {
 	if (comline != NULL)
 		xt_puts(out, comline);
-	XFlush();		/* don't process events! */
 }
 
 
