@@ -162,7 +162,7 @@ if ( $legwidth > 20 && $legheight > 40 ) then
 pcomb $pc0args -e 'v=(y+.5)/yres;vleft=v;vright=v' \
 		-e 'vbelow=(y-.5)/yres;vabove=(y+1.5)/yres' \
 		-x $legwidth -y $legheight > $td/scol.pic
-( echo $label; cnt $ndivs \
+( echo "$label"; cnt $ndivs \
 		| rcalc -e '$1='"($scale)*imap(($ndivs-.5-"'$1'")/$ndivs)" \
 		-e "$imap" | sed -e 's/\(\.[0-9][0-9][0-9]\)[0-9]*/\1/' ) \
 	| psign -s -.15 -cf 1 1 1 -cb 0 0 0 \
