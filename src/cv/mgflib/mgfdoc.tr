@@ -283,7 +283,7 @@ ring, torus, prism
 T}
 Material	m	2-sided black	T{
 sides, rd, td,
-ed, rs, ts
+ed, rs, ts, ir
 T}	T{
 f, sph, cyl, cone,
 ring, torus, prism
@@ -1675,7 +1675,7 @@ EXAMPLE
 # A 100-watt incandescent bulb (1600 lumens) modeled as a sphere
 m
 	c
-	cct 3000
+		cct 3000
 	ed 87712
 v cent =
 	p 0 0 0
@@ -3434,7 +3434,7 @@ and return one of the non-zero values from "parser.h" listed below:
 #define MG_EUNK		1		/* unknown entity */
 #define MG_EARGC		2		/* wrong number of arguments */
 #define MG_ETYPE		3		/* argument type error */
-#define MG_EILL				4		/* illegal argument value */
+#define MG_EILL			4		/* illegal argument value */
 #define MG_EUNDEF		5		/* undefined reference */
 #define MG_ENOFILE		6		/* cannot open input file */
 #define MG_EINCL		7		/* error in included file */
@@ -3444,7 +3444,7 @@ and return one of the non-zero values from "parser.h" listed below:
 #define MG_ELINE		11		/* input line too long */
 #define MG_ECNTXT		12		/* unmatched context close */
 
-#define MG_NERRS	13
+#define MG_NERRS		13
 .DE
 If it is inappropriate to send output to standard error, the calling
 program should use the routines listed under
@@ -3867,7 +3867,7 @@ To link identical vertices, one must also check that the current
 transform has not changed, which is uniquely identified by the
 global
 .I xf_context->xid
-variable, but only if one is using the parser libraries transform
+variable, but only if one is using the parser library's transform
 handler.
 (See the
 .I xf_handler
