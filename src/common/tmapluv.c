@@ -225,7 +225,8 @@ int	len;
 						SGILOGENCODE_NODITHER)) < 0)
 				j = uv14neu;
 		} else {
-			j = tmTop->flags&TM_F_BW ? uv14neu : luvs[i]&0x3fff;
+			j = tmTop->flags&TM_F_BW ? uv14neu :
+					(int)(luvs[i]&0x3fff);
 		}
 		if (!isuvset(ld, j)) {
 			if (uv_decode(&uvp[0], &uvp[1], j) < 0) {
