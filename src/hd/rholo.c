@@ -30,6 +30,8 @@ int	ncprocs = 0;		/* desired number of compute processes */
 
 char	*outdev = NULL;		/* output device name */
 
+int	readinp = 0;		/* read commands from stdin */
+
 time_t	starttime;		/* time we got started */
 time_t	endtime;		/* time we should end by */
 time_t	reporttime;		/* time for next report */
@@ -69,6 +71,9 @@ char	*argv[];
 			break;
 		case 'f':			/* force overwrite */
 			force++;
+			break;
+		case 'i':			/* read input from stdin */
+			readinp++;
 			break;
 		case 'n':			/* compute processes */
 			if (i >= argc-2)
@@ -187,6 +192,8 @@ initrholo()			/* get our holodeck running */
 {
 	extern int	global_packet();
 	register int	i;
+						/* close holodeck on exec() */
+	fcntl(hdlist[0]->fd, F_SETFD, FD_CLOEXEC);
 
 	if (outdev != NULL)			/* open output device */
 		disp_open(outdev);

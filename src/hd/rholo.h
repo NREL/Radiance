@@ -76,6 +76,8 @@ extern char	froot[];	/* root file name */
 
 extern char	*outdev;	/* output device name */
 
+extern int	readinp;	/* read input from stdin */
+
 extern int	nowarn;		/* turn warnings off? */
 
 extern int	ncprocs;	/* number of compute processes */

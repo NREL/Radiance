@@ -24,21 +24,35 @@ static FILE	*dpout;
 disp_open(dname)		/* open the named display driver */
 char	*dname;
 {
-	char	dpath[128], *com[3];
+	char	dpath[128], fd0[8], fd1[8], *cmd[5];
 	int	i;
-
+				/* get full display program name */
 #ifdef DEVPATH
 	sprintf(dpath, "%s/%s%s", DEVPATH, dname, HDSUF);
 #else
 	sprintf(dpath, "dev/%s%s", dname, HDSUF);
 #endif
-	com[0] = dpath; com[1] = froot; com[2] = NULL;
-	i = open_process(dpd, com);
+				/* dup stdin and stdout */
+	if (readinp)
+		sprintf(fd0, "%d", dup(0));
+	else
+		strcpy(fd0, "-1");
+	sprintf(fd1, "%d", dup(1));
+				/* start the display process */
+	cmd[0] = dpath;
+	cmd[1] = froot; cmd[2] = fd1; cmd[3] = fd0;
+	cmd[4] = NULL;
+	i = open_process(dpd, cmd);
 	if (i <= 0)
 		error(USER, "cannot start display process");
-	if ((dpout = fdopen(dup(dpd[1]), "w")) == NULL)
+	if ((dpout = fdopen(dpd[1], "w")) == NULL)
 		error(SYSTEM, "cannot associate FILE with display pipe");
+	dpd[1] = -1;		/* causes ignored error in close_process() */
 	inp_flags = 0;
+				/* close dup'ed stdin and stdout */
+	if (readinp)
+		close(atoi(fd0));
+	close(atoi(fd1));
 				/* write out hologram grids */
 	for (i = 0; hdlist[i] != NULL; i++)
 		disp_result(DS_ADDHOLO, sizeof(HDGRID), (char *)hdlist[i]);

@@ -12,33 +12,50 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "rhdisp.h"
 #include "rhdriver.h"
 #include "selcall.h"
+#include <ctype.h>
 
 HOLO	*hdlist[HDMAX+1];	/* global holodeck list */
+
+char	cmdlist[DC_NCMDS][8] = DC_INIT;
 
 int	imm_mode = 0;		/* bundles are being delivered immediately */
 
 char	*progname;		/* global argv[0] */
 
-#define RDY_SRV	01
-#define RDY_DEV	02
+FILE	*sstdin, *sstdout;	/* server's standard input and output */
+
+#define RDY_SRV		01
+#define RDY_DEV		02
+#define RDY_SIN		04
 
 
 main(argc, argv)
 int	argc;
 char	*argv[];
 {
+	extern int	eputs();
 	int	rdy, inp, res = 0, pause = 0;
 
 	progname = argv[0];
-	if (argc != 2)
+	if (argc < 3)
 		error(USER, "bad command line arguments");
 					/* open our device */
 	dev_open(argv[1]);
+					/* open server process i/o */
+	sstdout = fdopen(atoi(argv[2]), "w");
+	if (argc < 4 || (inp = atoi(argv[3])) < 0)
+		sstdin = NULL;
+	else
+		sstdin = fdopen(inp, "r");
+					/* set command error vector */
+	erract[COMMAND].pf = eputs;
 					/* enter main loop */
 	do {
 		rdy = disp_wait();
-		if (rdy & RDY_DEV) {		/* get user input */
+		if (rdy & RDY_DEV) {		/* user input from driver */
 			inp = dev_input();
+			if (inp & DEV_PUTVIEW)
+				printview();
 			if (inp & DEV_NEWVIEW)
 				new_view(&odev.v);
 			if (inp & DEV_SHUTDOWN)
@@ -54,7 +71,17 @@ char	*argv[];
 				pause = 0;
 			}
 		}
-		if (rdy & RDY_SRV) {		/* get server result */
+		if (rdy & RDY_SIN)		/* user input from sstdin */
+			switch (usr_input()) {
+			case DC_PAUSE:
+				pause = 1;
+				break;
+			case DC_RESUME:
+				serv_request(DR_NOOP, 0, NULL);
+				pause = 0;
+				break;
+			}
+		if (rdy & RDY_SRV) {		/* process server result */
 			res = serv_result();
 			if (pause && res != DS_SHUTDOWN) {
 				serv_request(DR_ATTEN, 0, NULL);
@@ -79,6 +106,8 @@ disp_wait()			/* wait for more input */
 				/* see if we can avoid select call */
 	if (imm_mode || stdin->_cnt > 0)
 		return(RDY_SRV);
+	if (sstdin != NULL && sstdin->_cnt > 0)
+		return(RDY_SIN);
 	if (dev_flush())
 		return(RDY_DEV);
 				/* make the call */
@@ -87,7 +116,12 @@ disp_wait()			/* wait for more input */
 	FD_SET(0, &errset);
 	FD_SET(odev.ifd, &readset);
 	FD_SET(odev.ifd, &errset);
-	n = odev.ifd + 1;
+	n = odev.ifd+1;
+	if (sstdin != NULL) {
+		FD_SET(fileno(sstdin), &readset);
+		if (fileno(sstdin) >= n)
+			n = fileno(sstdin) + 1;
+	}
 	n = select(n, &readset, NULL, &errset, NULL);
 	if (n < 0) {
 		if (errno == EINTR)
@@ -99,6 +133,8 @@ disp_wait()			/* wait for more input */
 		flgs |= RDY_SRV;
 	if (FD_ISSET(odev.ifd, &readset) || FD_ISSET(odev.ifd, &errset))
 		flgs |= RDY_DEV;
+	if (sstdin != NULL && FD_ISSET(fileno(sstdin), &readset))
+		flgs |= RDY_SIN;
 	return(flgs);
 }
 
@@ -159,11 +195,76 @@ VIEW	*v;
 	char	*err;
 
 	do {
-		if ((err = setview(v)) != NULL)
-			error(INTERNAL, err);
+		if ((err = setview(v)) != NULL) {
+			error(COMMAND, err);
+			return;
+		}
+		if (v->type == VT_PAR) {
+			error(COMMAND, "cannot handle parallel views");
+			return;
+		}
 		dev_view(v);		/* update display driver */
 		dev_flush();		/* update screen */
 	} while (!beam_view(v));	/* update beam list */
+}
+
+
+int
+usr_input()			/* get user input and process it */
+{
+	VIEW	vparams;
+	char	cmd[128];
+	register char	*args;
+	register int	cmdno;
+
+	if (fgets(cmd, sizeof(cmd), sstdin) == NULL)
+		return(DC_QUIT);
+	for (args = cmd; *args && !isspace(*args); args++)
+		;
+	while (isspace(*args))
+		*args++ = '\0';
+	if (!*cmd)
+		return(DC_RESUME);
+	for (cmdno = 0; cmdno < DC_NCMDS; cmdno++)
+		if (!strcmp(cmd, cmdlist[cmdno]))
+			break;
+	if (cmdno >= DC_NCMDS) {
+		sprintf(errmsg, "unknown command: %s", cmd);
+		error(COMMAND, errmsg);
+		return(-1);
+	}
+	switch (cmdno) {
+	case DC_SETVIEW:		/* set the view */
+		copystruct(&vparams, &odev.v);
+		if (!sscanview(&vparams, args))
+			error(COMMAND, "missing view options");
+		else
+			new_view(&vparams);
+		break;
+	case DC_GETVIEW:		/* print the current view */
+		printview();
+		break;
+	case DC_PAUSE:			/* pause the current calculation */
+	case DC_RESUME:			/* resume the calculation */
+		/* handled in main() */
+		break;
+	case DC_QUIT:			/* quit request */
+		serv_request(DR_SHUTDOWN, 0, NULL);
+		break;
+	default:
+		error(CONSISTENCY, "bad command id in usr_input");
+	}
+	return(cmdno);
+		
+}
+
+
+printview()			/* print our current view to server stdout */
+{
+	fputs(VIEWSTR, sstdout);
+	fprintview(&odev.v, sstdout);
+	fputc('\n', sstdout);
+	fflush(sstdout);
 }
 
 
