@@ -308,7 +308,9 @@ getras()				/* get raster file */
 		if (ourras == NULL)
 			goto fail;
 		getmono();
-	} else if (XMatchVisualInfo(thedisplay,ourscreen,24,TrueColor,&vinfo)) {
+	} else if (XMatchVisualInfo(thedisplay,ourscreen,24,TrueColor,&vinfo)
+						/* kludge for DirectColor */
+	|| XMatchVisualInfo(thedisplay,ourscreen,24,DirectColor,&vinfo)) {
 		ourdata = (unsigned char *)malloc(xmax*ymax*3);
 		if (ourdata == NULL)
 			goto fail;
