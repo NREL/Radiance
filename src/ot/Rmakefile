@@ -8,7 +8,9 @@
 #  Otherwise, a somewhat faster more lax approach is taken by certain routines.
 #
 
-CFLAGS = -DSTRICT -O -f68881 /usr/lib/f68881.il
+OPT = -O
+MACH = -f68881 /usr/lib/f68881.il
+CFLAGS = -DSTRICT $(OPT) $(MACH)
 
 INSTDIR = /usr/local/ray
 
