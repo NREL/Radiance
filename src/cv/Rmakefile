@@ -18,8 +18,10 @@ PROGS = thf2rad ies2rad arch2rad nff2rad lampcolor
 
 all:	$(PROGS)
 
-install:	$(PROGS)
+install:	$(PROGS) source.cal tilt.cal
 	cp $(PROGS) $(INSTDIR)
+	rm -f $(LIBDIR)/source.cal $(LIBDIR)/tilt.cal
+	cp source.cal tilt.cal $(LIBDIR)
 
 clean:
 	set nonomatch; rm -f $(PROGS) *.o core
