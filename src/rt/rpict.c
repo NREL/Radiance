@@ -500,7 +500,7 @@ int  xres, y, xstep;
 			b = fillsample(scanline, zline, 0, y, i, 0, b/2);
 		else
 			b = fillsample(scanline+i-xstep,
-					zline ? zline+i-xstep : NULL,
+					zline ? zline+i-xstep : (float *)NULL,
 					i-xstep, y, xstep, 0, b/2);
 		if (sd) *sd++ = nc & 1 ? bl : b;
 		bl = b;
@@ -528,7 +528,7 @@ int  xres, y, ysize;
 			zline[ysize] = zbar[ysize][i];
 		}
 		
-		b = fillsample(vline, zbar[0] ? zline : NULL,
+		b = fillsample(vline, zbar[0] ? zline : (float *)NULL,
 				i, y, 0, ysize, b/2);
 		
 		for (j = 1; j < ysize; j++)
@@ -586,7 +586,8 @@ int  b;
 							/* recurse */
 	ncut += fillsample(colline, zline, x, y, xlen>>1, ylen>>1, (b-1)/2);
 	
-	ncut += fillsample(colline+(len>>1), zline ? zline+(len>>1) : NULL,
+	ncut += fillsample(colline+(len>>1),
+			zline ? zline+(len>>1) : (float *)NULL,
 			x+(xlen>>1), y+(ylen>>1),
 			xlen-(xlen>>1), ylen-(ylen>>1), b/2);
 
