@@ -60,8 +60,6 @@ SM *sm;
 int t_id;
 {
 
-    /* first remove from point location structure */
-    smLocator_remove_tri(sm,t_id);
 
   /* NOTE: Assumes that a new triangle adjacent to each vertex
      has been added- before the deletion: replacing
@@ -142,6 +140,8 @@ int id;
     while(tlist)
     {
 	t_id = (int)pop_list(&tlist);
+	/* first remove from point location structure */
+	smLocator_remove_tri(sm,t_id);
 	smDelete_tri(sm,t_id);
     }
     return(elist);
@@ -307,6 +307,7 @@ LIST *plist;
 	v_id2 = E_NTH_VERT(e_id1,1);
 	/* form a triangle for each triple of with v0 as base of star */
 	t_id = smAdd_tri(sm,v_id0,v_id1,v_id2,&tri);
+	smLocator_add_tri(sm,t_id,v_id0,v_id1,v_id2);
 	/* add which pointer?*/
 
 	lptr = LIST_NEXT(lptr);
@@ -447,7 +448,9 @@ smFix_edges(sm)
     TRI *t0,*t1,*nt0,*nt1;
     int i,id_v0,id_v1,id_v2,id_p,nid_t0,nid_t1;
     FVECT v0,v1,v2,p,np,v;
-
+    LIST *add,*del;
+    
+    add = del = NULL;
     FOR_ALL_EDGES(e)
     {
 	id_t0 = E_NTH_TRI(e,0);
@@ -479,7 +482,7 @@ smFix_edges(sm)
 	VSUB(p,p,SM_VIEW_CENTER(sm));
 	if(point_in_cone(p,v0,v1,v2))
 	{
-	    smTris_swap_edge(sm,id_t0,id_t1,e0,e1,&nid_t0,&nid_t1);
+	    smTris_swap_edge(sm,id_t0,id_t1,e0,e1,&nid_t0,&nid_t1,&add,&del);
 	    
 	    nt0 = SM_NTH_TRI(sm,nid_t0);
 	    nt1 = SM_NTH_TRI(sm,nid_t1);
@@ -510,7 +513,7 @@ smFix_edges(sm)
 	    SET_E_NTH_TRI(e_new,1,id_t1);
 	}
     }
-
+    smUpdate_locator(sm,add,del);
 }
 
 int
