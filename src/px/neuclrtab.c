@@ -314,7 +314,7 @@ initnet()
 		p = network[i];
 		p[0] =
 		p[1] =
-		p[2] = (i<<8) / clrtabsiz;
+		p[2] = (i<<(netbiasshift+8))/clrtabsiz;
 		freq[i] = intbias/clrtabsiz;  /* 1/256 */
 		bias[i] = 0;
 	}
@@ -357,8 +357,8 @@ inxbuild()
 			start = i;
 		}
 	}
-	netindex[previous] = (start+clrtabsiz-1)>>1;
-	for (j=previous+1; j<clrtabsiz; j++) netindex[j] = clrtabsiz-1;
+	netindex[previous] = (start+255)>>1;
+        for (j=previous+1; j<256; j++) netindex[j] = 255;
 }
 
 
