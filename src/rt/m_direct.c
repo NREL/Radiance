@@ -66,12 +66,33 @@ int  n;
 {
 	MFUNC  *mf;
 	register EPNODE  **va;
+	FVECT  nsdir;
 	RAY  nr;
 	double  coef;
 	register int  j;
 					/* set up function */
 	mf = getdfunc(m);
 	setfunc(m, r);
+					/* assign direction variable */
+	if (r->rsrc >= 0) {
+		register SRCREC  *sp = source + source[r->rsrc].sa.sv.sn;
+
+		if (sp->sflags & SDISTANT)
+			VCOPY(nsdir, sp->sloc);
+		else {
+			for (j = 0; j < 3; j++)
+				nsdir[j] = sp->sloc[j] - r->rop[j];
+			normalize(nsdir);
+		}
+		if (r->rox != NULL)
+			multv3(nsdir, nsdir, r->rox->b.xfm);
+		if (mf->b != &unitxf)
+			multv3(nsdir, nsdir, mf->b->xfm);
+	} else
+		nsdir[0] = nsdir[1] = nsdir[2] = 0.0;
+	varset("DxA", '=', nsdir[0]);
+	varset("DyA", '=', nsdir[1]);
+	varset("DzA", '=', nsdir[2]);
 					/* compute coefficient */
 	errno = 0;
 	va = mf->ep + 4*n;
@@ -144,6 +165,9 @@ int  n;
 	m = vsmaterial(o);
 	mf = getdfunc(m);
 	setfunc(m, &tr);
+	varset("DxA", '=', 0.0);
+	varset("DyA", '=', 0.0);
+	varset("DzA", '=', 0.0);
 	errno = 0;
 	va = mf->ep + 4*n;
 	coef = evalue(va[0]);
