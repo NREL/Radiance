@@ -25,7 +25,6 @@ char  **argv;
 	FILE  *input;
 	int  xres, yres;
 	COLR  scanline[NCOLS];
-	char  sbuf[256];
 	register int  i, j;
 	
 	if (argc < 2)
@@ -36,8 +35,7 @@ char  **argv;
 	}
 	
 				/* discard header */
-	while (fgets(sbuf, sizeof(sbuf), input) != NULL && sbuf[0] != '\n')
-		;
+	getheader(input, NULL);
 				/* get picture dimensions */
 	if (fgetresolu(&xres, &yres, input) != (YMAJOR|YDECR)) {
 		fprintf(stderr, "%s: bad picture size\n", argv[0]);
