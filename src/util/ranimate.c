@@ -21,57 +21,57 @@ static char SCCSid[] = "$SunId$ LBL";
 #else
 #define REMSH		"rsh"
 #endif
-				/* input variables */
-#define HOST		0		/* rendering host machine */
-#define RENDER		1		/* rendering options */
-#define PFILT		2		/* pfilt options */
-#define PINTERP		3		/* pinterp options */
-#define OCTREE		4		/* octree file name */
-#define DIRECTORY	5		/* working (sub)directory */
-#define BASENAME	6		/* output image base name */
-#define VIEWFILE	7		/* animation frame views */
-#define START		8		/* starting frame number */
-#define END		9		/* ending frame number */
-#define RIF		10		/* rad input file */
-#define NEXTANIM	11		/* next animation file */
-#define ANIMATE		12		/* animation command */
-#define TRANSFER	13		/* frame transfer command */
-#define ARCHIVE		14		/* archiving command */
-#define INTERP		15		/* # frames to interpolate */
-#define OVERSAMP	16		/* # times to oversample image */
-#define MBLUR		17		/* samples for motion blur */
-#define RTRACE		18		/* use rtrace with pinterp? */
-#define DISKSPACE	19		/* how much disk space to use */
-#define RESOLUTION	20		/* desired final resolution */
-#define EXPOSURE	21		/* how to compute exposure */
-#define RSH		22		/* remote shell script or program */
+				/* input variables (alphabetical by name) */
+#define ANIMATE		0		/* animation command */
+#define ARCHIVE		1		/* archiving command */
+#define BASENAME	2		/* output image base name */
+#define DIRECTORY	3		/* working (sub)directory */
+#define DISKSPACE	4		/* how much disk space to use */
+#define END		5		/* ending frame number */
+#define EXPOSURE	6		/* how to compute exposure */
+#define HOST		7		/* rendering host machine */
+#define INTERP		8		/* # frames to interpolate */
+#define MBLUR		9		/* samples for motion blur */
+#define NEXTANIM	10		/* next animation file */
+#define OCTREE		11		/* octree file name */
+#define OVERSAMP	12		/* # times to oversample image */
+#define PFILT		13		/* pfilt options */
+#define PINTERP		14		/* pinterp options */
+#define RENDER		15		/* rendering options */
+#define RESOLUTION	16		/* desired final resolution */
+#define RIF		17		/* rad input file */
+#define RSH		18		/* remote shell script or program */
+#define RTRACE		19		/* use rtrace with pinterp? */
+#define START		20		/* starting frame number */
+#define TRANSFER	21		/* frame transfer command */
+#define VIEWFILE	22		/* animation frame views */
 
 int	NVARS = 23;		/* total number of variables */
 
 VARIABLE	vv[] = {		/* variable-value pairs */
+	{"ANIMATE",	2,	0,	NULL,	onevalue},
+	{"ARCHIVE",	2,	0,	NULL,	onevalue},
+	{"BASENAME",	3,	0,	NULL,	onevalue},
+	{"DIRECTORY",	3,	0,	NULL,	onevalue},
+	{"DISKSPACE",	3,	0,	NULL,	fltvalue},
+	{"END",		2,	0,	NULL,	intvalue},
+	{"EXPOSURE",	3,	0,	NULL,	onevalue},
 	{"host",	4,	0,	NULL,	NULL},
-	{"render",	3,	0,	NULL,	catvalues},
+	{"INTERPOLATE",	3,	0,	NULL,	intvalue},
+	{"MBLUR",	2,	0,	NULL,	onevalue},
+	{"NEXTANIM",	3,	0,	NULL,	onevalue},
+	{"OCTREE",	3,	0,	NULL,	onevalue},
+	{"OVERSAMPLE",	2,	0,	NULL,	fltvalue},
 	{"pfilt",	2,	0,	NULL,	catvalues},
 	{"pinterp",	2,	0,	NULL,	catvalues},
-	{"OCTREE",	3,	0,	NULL,	onevalue},
-	{"DIRECTORY",	3,	0,	NULL,	onevalue},
-	{"BASENAME",	3,	0,	NULL,	onevalue},
-	{"VIEWFILE",	2,	0,	NULL,	onevalue},
-	{"START",	2,	0,	NULL,	intvalue},
-	{"END",		2,	0,	NULL,	intvalue},
-	{"RIF",		3,	0,	NULL,	onevalue},
-	{"NEXTANIM",	3,	0,	NULL,	onevalue},
-	{"ANIMATE",	2,	0,	NULL,	onevalue},
-	{"TRANSFER",	2,	0,	NULL,	onevalue},
-	{"ARCHIVE",	2,	0,	NULL,	onevalue},
-	{"INTERPOLATE",	3,	0,	NULL,	intvalue},
-	{"OVERSAMPLE",	2,	0,	NULL,	fltvalue},
-	{"MBLUR",	2,	0,	NULL,	onevalue},
-	{"RTRACE",	2,	0,	NULL,	boolvalue},
-	{"DISKSPACE",	3,	0,	NULL,	fltvalue},
+	{"render",	3,	0,	NULL,	catvalues},
 	{"RESOLUTION",	3,	0,	NULL,	onevalue},
-	{"EXPOSURE",	3,	0,	NULL,	onevalue},
+	{"RIF",		3,	0,	NULL,	onevalue},
 	{"RSH",		3,	0,	NULL,	onevalue},
+	{"RTRACE",	2,	0,	NULL,	boolvalue},
+	{"START",	2,	0,	NULL,	intvalue},
+	{"TRANSFER",	2,	0,	NULL,	onevalue},
+	{"VIEWFILE",	2,	0,	NULL,	onevalue},
 };
 
 #define SFNAME	"STATUS"		/* status file name */

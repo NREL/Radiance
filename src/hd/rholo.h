@@ -34,34 +34,34 @@ typedef struct {
 #define packra(p)	((RAYVAL *)((p)+1))
 
 				/* input variables */
-#define RENDER		0		/* rendering options */
-#define SECTION		1		/* holodeck section boundaries */
-#define OCTREE		2		/* octree file name */
-#define RIF		3		/* rad input file */
-#define TIME		4		/* maximum rendering time */
-#define DISKSPACE	5		/* how much disk space to use */
-#define CACHE		6		/* amount of memory to use as cache */
-#define GRID		7		/* target grid size */
-#define OBSTRUCTIONS	8		/* shall we track obstructions? */
-#define VDIST		9		/* virtual distance calculation */
-#define REPORT		10		/* report interval and error file */
-#define EYESEP		11		/* eye separation distance */
+#define CACHE		0		/* amount of memory to use as cache */
+#define DISKSPACE	1		/* how much disk space to use */
+#define EYESEP		2		/* eye separation distance */
+#define GRID		3		/* target grid size */
+#define OBSTRUCTIONS	4		/* shall we track obstructions? */
+#define OCTREE		5		/* octree file name */
+#define RENDER		6		/* rendering options */
+#define REPORT		7		/* report interval and error file */
+#define RIF		8		/* rad input file */
+#define SECTION		9		/* holodeck section boundaries */
+#define TIME		10		/* maximum rendering time */
+#define VDIST		11		/* virtual distance calculation */
 
 #define NRHVARS		12		/* number of variables */
 
 #define RHVINIT { \
-	{"render",	3,	0,	NULL,	catvalues}, \
-	{"section",	3,	0,	NULL,	NULL}, \
-	{"OCTREE",	3,	0,	NULL,	onevalue}, \
-	{"RIF",		3,	0,	NULL,	onevalue}, \
-	{"TIME",	2,	0,	NULL,	fltvalue}, \
-	{"DISKSPACE",	3,	0,	NULL,	fltvalue}, \
 	{"CACHE",	2,	0,	NULL,	fltvalue}, \
+	{"DISKSPACE",	3,	0,	NULL,	fltvalue}, \
+	{"EYESEP",	3,	0,	NULL,	fltvalue}, \
 	{"GRID",	2,	0,	NULL,	fltvalue}, \
 	{"OBSTRUCTIONS",3,	0,	NULL,	boolvalue}, \
-	{"VDISTANCE",	2,	0,	NULL,	boolvalue}, \
+	{"OCTREE",	3,	0,	NULL,	onevalue}, \
+	{"render",	3,	0,	NULL,	catvalues}, \
 	{"REPORT",	3,	0,	NULL,	onevalue}, \
-	{"EYESEP",	3,	0,	NULL,	fltvalue}, \
+	{"RIF",		3,	0,	NULL,	onevalue}, \
+	{"section",	3,	0,	NULL,	NULL}, \
+	{"TIME",	2,	0,	NULL,	fltvalue}, \
+	{"VDISTANCE",	2,	0,	NULL,	boolvalue}, \
 }
 
 				/* bundle set requests */

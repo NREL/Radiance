@@ -15,61 +15,61 @@ static char SCCSid[] = "$SunId$ LBL";
 #include <ctype.h>
 #include <sys/types.h>
 
-				/* variables */
-#define OBJECT		0		/* object files */
-#define SCENE		1		/* scene files */
-#define MATERIAL	2		/* material files */
+				/* variables (alphabetical by name) */
+#define AMBFILE		0		/* ambient file name */
+#define DETAIL		1		/* level of scene detail */
+#define EXPOSURE	2		/* picture exposure setting */
 #define ILLUM		3		/* mkillum input files */
-#define MKILLUM		4		/* mkillum options */
-#define RENDER		5		/* rendering options */
-#define OCONV		6		/* oconv options */
-#define PFILT		7		/* pfilt options */
-#define VIEWS		8		/* view(s) for picture(s) */
-#define ZONE		9		/* simulation zone */
-#define QUALITY		10		/* desired rendering quality */
-#define OCTREE		11		/* octree file name */
-#define PICTURE		12		/* picture file root name */
-#define AMBFILE		13		/* ambient file name */
-#define OPTFILE		14		/* rendering options file */
-#define EXPOSURE	15		/* picture exposure setting */
-#define RESOLUTION	16		/* maximum picture resolution */
-#define UP		17		/* view up (X, Y or Z) */
-#define INDIRECT	18		/* indirection in lighting */
-#define DETAIL		19		/* level of scene detail */
-#define PENUMBRAS	20		/* shadow penumbras are desired */
+#define INDIRECT	4		/* indirection in lighting */
+#define MATERIAL	5		/* material files */
+#define MKILLUM		6		/* mkillum options */
+#define OBJECT		7		/* object files */
+#define OCONV		8		/* oconv options */
+#define OCTREE		9		/* octree file name */
+#define OPTFILE		10		/* rendering options file */
+#define PENUMBRAS	11		/* shadow penumbras are desired */
+#define PFILT		12		/* pfilt options */
+#define PICTURE		13		/* picture file root name */
+#define QUALITY		14		/* desired rendering quality */
+#define RAWFILE		15		/* raw picture file root name */
+#define RENDER		16		/* rendering options */
+#define REPORT		17		/* report frequency and errfile */
+#define RESOLUTION	18		/* maximum picture resolution */
+#define SCENE		19		/* scene files */
+#define UP		20		/* view up (X, Y or Z) */
 #define VARIABILITY	21		/* level of light variability */
-#define REPORT		22		/* report frequency and errfile */
-#define RAWFILE		23		/* raw picture file root name */
-#define ZFILE		24		/* distance file root name */
+#define VIEWS		22		/* view(s) for picture(s) */
+#define ZFILE		23		/* distance file root name */
+#define ZONE		24		/* simulation zone */
 				/* total number of variables */
 int NVARS = 25;
 
 VARIABLE	vv[] = {		/* variable-value pairs */
-	{"objects",	3,	0,	NULL,	catvalues},
-	{"scene",	3,	0,	NULL,	catvalues},
-	{"materials",	3,	0,	NULL,	catvalues},
-	{"illum",	3,	0,	NULL,	catvalues},
-	{"mkillum",	3,	0,	NULL,	catvalues},
-	{"render",	3,	0,	NULL,	catvalues},
-	{"oconv",	3,	0,	NULL,	catvalues},
-	{"pfilt",	2,	0,	NULL,	catvalues},
-	{"view",	2,	0,	NULL,	NULL},
-	{"ZONE",	2,	0,	NULL,	onevalue},
-	{"QUALITY",	3,	0,	NULL,	qualvalue},
-	{"OCTREE",	3,	0,	NULL,	onevalue},
-	{"PICTURE",	3,	0,	NULL,	onevalue},
 	{"AMBFILE",	3,	0,	NULL,	onevalue},
-	{"OPTFILE",	3,	0,	NULL,	onevalue},
-	{"EXPOSURE",	3,	0,	NULL,	fltvalue},
-	{"RESOLUTION",	3,	0,	NULL,	onevalue},
-	{"UP",		2,	0,	NULL,	onevalue},
-	{"INDIRECT",	3,	0,	NULL,	intvalue},
 	{"DETAIL",	3,	0,	NULL,	qualvalue},
+	{"EXPOSURE",	3,	0,	NULL,	fltvalue},
+	{"illum",	3,	0,	NULL,	catvalues},
+	{"INDIRECT",	3,	0,	NULL,	intvalue},
+	{"materials",	3,	0,	NULL,	catvalues},
+	{"mkillum",	3,	0,	NULL,	catvalues},
+	{"objects",	3,	0,	NULL,	catvalues},
+	{"oconv",	3,	0,	NULL,	catvalues},
+	{"OCTREE",	3,	0,	NULL,	onevalue},
+	{"OPTFILE",	3,	0,	NULL,	onevalue},
 	{"PENUMBRAS",	3,	0,	NULL,	boolvalue},
-	{"VARIABILITY",	3,	0,	NULL,	qualvalue},
-	{"REPORT",	3,	0,	NULL,	onevalue},
+	{"pfilt",	2,	0,	NULL,	catvalues},
+	{"PICTURE",	3,	0,	NULL,	onevalue},
+	{"QUALITY",	3,	0,	NULL,	qualvalue},
 	{"RAWFILE",	3,	0,	NULL,	onevalue},
+	{"render",	3,	0,	NULL,	catvalues},
+	{"REPORT",	3,	0,	NULL,	onevalue},
+	{"RESOLUTION",	3,	0,	NULL,	onevalue},
+	{"scene",	3,	0,	NULL,	catvalues},
+	{"UP",		2,	0,	NULL,	onevalue},
+	{"VARIABILITY",	3,	0,	NULL,	qualvalue},
+	{"view",	2,	0,	NULL,	NULL},
 	{"ZFILE",	2,	0,	NULL,	onevalue},
+	{"ZONE",	2,	0,	NULL,	onevalue},
 };
 
 				/* overture calculation file */
