@@ -918,13 +918,13 @@ printdefaults()			/* print default values to stdout */
 	printf("-ar %-9d\t\t\t# ambient resolution\n", ambres);
 	printf("-ad %-9d\t\t\t# ambient divisions\n", ambdiv);
 	printf("-as %-9d\t\t\t# ambient super-samples\n", ambssamp);
-	printf("-me %.2e %.2e %.2e\t# extinction coefficient\n",
+	printf("-me %.2e %.2e %.2e\t# mist extinction coefficient\n",
 			colval(cextinction,RED),
 			colval(cextinction,GRN),
 			colval(cextinction,BLU));
-	printf("-ma %f %f %f\t# scattering albedo\n", colval(salbedo,RED),
+	printf("-ma %f %f %f\t# mist scattering albedo\n", colval(salbedo,RED),
 			colval(salbedo,GRN), colval(salbedo,BLU));
-	printf("-mg %f\t\t\t# scattering eccentricity\n", seccg);
+	printf("-mg %f\t\t\t# mist scattering eccentricity\n", seccg);
 	printf("-ms %f\t\t\t# mist sampling distance\n", ssampdist);
 	printf("-lr %-9d\t\t\t# limit reflection\n", maxdepth);
 	printf("-lw %f\t\t\t# limit weight\n", minweight);
