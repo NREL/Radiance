@@ -25,17 +25,36 @@ static struct ohtab {
 static int  otndx();
 
 
-#ifdef  GETOBJ
 int
-object(oname)			/* get an object number from its name */
-char  *oname;
+objndx(op)			/* get object number from pointer */
+register OBJREC  *op;
 {
-	register int  ndx;
+	register int  i, j;
 
-	ndx = otndx(oname, &objtab);
-	return(objtab.htab[ndx]);
+	for (i = nobjects>>6; i >= 0; i--) {
+		j = op - objblock[i];
+		if (j >= 0 && j < 077)
+			return((i<<6) + j);
+	}
+	return(OVOID);
 }
-#endif
+
+
+int
+lastmod(obj, mname)		/* find modifier definition before obj */
+OBJECT  obj;
+char  *mname;
+{
+	register OBJREC  *op;
+	register int  i;
+
+	for (i = obj; i-- > 0; ) {
+		op = objptr(i);
+		if (ismodifier(op->otype) && !strcmp(op->oname, mname))
+			return(i);
+	}
+	return(OVOID);
+}
 
 
 int
@@ -49,19 +68,34 @@ char  *mname;
 }
 
 
+#ifdef  GETOBJ
+int
+object(oname)			/* get an object number from its name */
+char  *oname;
+{
+	register int  ndx;
+
+	ndx = otndx(oname, &objtab);
+	return(objtab.htab[ndx]);
+}
+#endif
+
+
 insertobject(obj)		/* insert new object into our list */
 register OBJECT  obj;
 {
 	register int  i;
 
-#ifdef  GETOBJ
-	i = otndx(objptr(obj)->oname, &objtab);
-	objtab.htab[i] = obj;
-#endif
 	if (ismodifier(objptr(obj)->otype)) {
 		i = otndx(objptr(obj)->oname, &modtab);
 		modtab.htab[i] = obj;
 	}
+#ifdef  GETOBJ
+	else {
+		i = otndx(objptr(obj)->oname, &objtab);
+		objtab.htab[i] = obj;
+	}
+#endif
 	for (i = 0; addobjnotify[i] != NULL; i++)
 		(*addobjnotify[i])(obj);
 }
