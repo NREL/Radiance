@@ -29,7 +29,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define BORWIDTH	5		/* border width */
 #define COMHEIGHT	(COMLH*COMCH)	/* command line height (pixels) */
 #define MINWIDTH	(32*COMCW)	/* minimum graphics window width */
-#define MINHEIGHT	64		/* minimum graphics window height */
+#define MINHEIGHT	MINWIDTH		/* minimum graphics window height */
 
 #define COMFN		"8x13"		/* command line font name */
 #define COMLH		3		/* number of command lines */
