@@ -12,8 +12,15 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "standard.h"
 #include "view.h"
+#include <signal.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+
+#ifndef BSD
+#define vfork	fork
+#endif
+
+#define XIM		"ximage"
 
 #define NSEG		30		/* number of segments per circle */
 
@@ -36,15 +43,23 @@ main(argc, argv)
 int	argc;
 char	*argv[];
 {
+	char	*windowname;
 	FILE	*fp;
 
 	progname = argv[0];
+	if (argc > 2 && !strcmp(argv[1], "-n")) {
+		windowname = argv[2];
+		argv += 2;
+		argc -= 2;
+	} else
+		windowname = argv[1];
 	if (argc < 2 || argc > 3) {
-		fprintf(stderr, "Usage: %s picture [glaresrc]\n",
+		fprintf(stderr,
+			"Usage: %s [-n windowname] picture [glaresrc]\n",
 				progname);
 		exit(1);
 	}
-	init(argv[1]);
+	init(argv[1], windowname);
 	if (argc < 3)
 		fp = stdin;
 	else if ((fp = fopen(argv[2], "r")) == NULL) {
@@ -57,18 +72,18 @@ char	*argv[];
 }
 
 
-init(name)			/* set up vector drawing from pick */
-char	*name;
+init(pname, wname)		/* get view and find window */
+char	*pname, *wname;
 {
 	extern Window	xfindwind();
 	XWindowAttributes	wa;
 	XColor	xc;
 	XGCValues	gcv;
 					/* get the viewing parameters */
-	if (viewfile(name, &ourview, &xres, &yres) <= 0 ||
+	if (viewfile(pname, &ourview, &xres, &yres) <= 0 ||
 			setview(&ourview) != NULL) {
 		fprintf(stderr, "%s: cannot get view from \"%s\"\n",
-				progname, name);
+				progname, pname);
 		exit(1);
 	}
 					/* open the display */
@@ -79,15 +94,31 @@ char	*name;
 		exit(1);
 	}
 					/* find our window */
-	gwind = xfindwind(theDisplay, rwind, name, 2);
+	gwind = xfindwind(theDisplay, rwind, wname, 2);
 	if (gwind == None) {
-		fprintf(stderr, "%s: cannot find \"%s\" window\n",
-				progname, name);
-		exit(2);
+		if (wname != pname) {
+			fprintf(stderr, "%s: cannot find \"%s\" window\n",
+					progname, wname);
+			exit(2);
+		}
+					/* start ximage */
+		if (vfork() == 0) {
+			execlp(XIM, XIM, pname, 0);
+			perror(XIM);
+			fprintf(stderr, "%s: cannot start %s\n",
+					progname, XIM);
+			kill(getppid(), SIGPIPE);
+			_exit(1);
+		}
+		do
+			sleep(8);
+		while ((gwind=xfindwind(theDisplay,rwind,pname,2)) == None);
+	} else {
+		XMapRaised(theDisplay, gwind);
+		XFlush(theDisplay);
+		sleep(4);
 	}
-	XMapRaised(theDisplay, gwind);
 	XGetWindowAttributes(theDisplay, gwind, &wa);
-	sleep(4);
 	if (wa.width != xres || wa.height != yres) {
 		fprintf(stderr,
 		"%s: warning -- window seems to be the wrong size!\n",
