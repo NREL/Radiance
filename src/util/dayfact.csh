@@ -136,8 +136,8 @@ if ( ! $?gotillumpic ) then
 	| rcalc -e '$1=($2+.5)/'"$wpres[1]*$wpsize[1]+$wporig[1]" \
 		-e '$2=(1-($1+.5)/'"$wpres[2])*$wpsize[2]+$wporig[2]" \
 		-e '$3='"$wporig[3]" -e '$4=0;$5=0;$6=1' \
-	| rtrace $rtargs -h+ -I+ -ov -faf $octree \
-	| pvalue -r -y $wpres[2] +x $wpres[1] -df > $temp1
+	| rtrace $rtargs -h+ -I+ -ov -fac -x $wpres[1] -y $wpres[2] $octree \
+	> $temp1
 	pfilt -h 20 -n 0 -x 300 -y 300 -p 1 -r 1 $temp1 > $illumpic
 endif
 set maxval=`getinfo < $illumpic | rcalc -i 'EXPOSURE=${e}' -e '$1=3/e'`
