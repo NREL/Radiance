@@ -45,8 +45,9 @@ typedef struct {
 #define OBSTRUCTIONS	8		/* shall we track obstructions? */
 #define VDIST		9		/* virtual distance calculation */
 #define REPORT		10		/* report interval and error file */
+#define EYESEP		11		/* eye separation distance */
 
-#define NRHVARS		11		/* number of variables */
+#define NRHVARS		12		/* number of variables */
 
 #define RHVINIT { \
 	{"render",	3,	0,	NULL,	catvalues}, \
@@ -60,6 +61,7 @@ typedef struct {
 	{"OBSTRUCTIONS",3,	0,	NULL,	boolvalue}, \
 	{"VDISTANCE",	2,	0,	NULL,	boolvalue}, \
 	{"REPORT",	3,	0,	NULL,	onevalue}, \
+	{"EYESEP",	3,	0,	NULL,	fltvalue}, \
 }
 
 				/* bundle set requests */
