@@ -31,7 +31,7 @@
 #define Lb1(Bw)		exp(Bw)		/* first derivative of Lb(Bw) */
 
 				/* Flags of what to do */
-#define	DO_ACUITY	01
+#define DO_ACUITY	01
 #define DO_VEIL		02
 #define DO_HSENS	04
 #define DO_COLOR	010
@@ -67,7 +67,6 @@ extern long	histot;			/* total count of histogram */
 extern double	bwmin, bwmax;		/* histogram limits */
 extern double	bwavg;			/* mean brightness */
 
-#define lwhc(L)		bwhc(Bl(L))
 #define bwhc(B)		bwhist[(int)(HISTRES*((B)-bwmin)/(bwmax-bwmin))]
 
 extern RGBPRIMP	inprims;		/* input primaries */
@@ -82,11 +81,6 @@ extern double	pixaspect;		/* pixel aspect ratio */
 extern RESOLU	inpres;			/* input picture resolution */
 
 extern char	*mbcalfile;		/* macbethcal mapping file */
-
-struct mbc {		/* data structure for macbethcal conditioning */
-	float	xa[3][6], ya[3][6];
-	COLORMAT	cmat;
-};
 
 extern double	hacuity();		/* human acuity func. (cycles/deg.) */
 extern double	htcontrs();		/* human contrast sens. func. */

@@ -20,7 +20,10 @@ double	inpexp = 1.0;			/* input exposure value */
 
 char	*mbcalfile = NULL;		/* macbethcal mapping file */
 
-static struct mbc	mbcond;		/* macbethcal conditioning struct */
+static struct mbc {
+	float	xa[3][6], ya[3][6];
+	COLORMAT	cmat;
+}	mbcond;				/* macbethcal conditioning struct */
 
 static COLOR	*scanbuf;		/* scanline processing buffer */
 static int	nread;			/* number of scanlines processed */
