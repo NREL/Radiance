@@ -25,7 +25,7 @@ static int  curx = 0;
 static int  cury = 0;
 static int  cura0 = 0;
 static int  inpoly = FALSE;
-static char  curargs[MAXARGS] = "";
+static char  curargs[6*MAXARGS] = "";
 static char  *cap;
 
 
