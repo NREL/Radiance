@@ -1,7 +1,7 @@
-/* SCCSid "$SunId$ AU" */
+/* SCCSid "$SunId$ Auckuni" */
 
 /*
-    Header files for PICTs
+    Header files for PICTs, for ra2pict.c
 
 */
 
@@ -12,4 +12,3 @@
 #define PICT_EndOfPicture   0x00FF
 #define PICT_PackBitsRect   0x0098
 #define PICT_Pack32BitsRect 0x009A
-
