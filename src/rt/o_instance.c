@@ -19,7 +19,6 @@ o_instance(o, r)		/* compute ray intersection with octree */
 OBJREC  *o;
 register RAY  *r;
 {
-	extern long  raynum;
 	RAY  rcont;
 	register INSTANCE  *in;
 	register int  i;
