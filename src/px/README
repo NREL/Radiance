@@ -4,6 +4,7 @@
 This directory contains special and general purpose filters for RADIANCE
 picture files and converters to and from other image formats.
 
+pcond.h		header file for picture conditioning program pcond
 pic.h		header file for reading and writing pictures
 ciq.h		header file for color quantization routines
 pict.h		header file defining Macintosh PICT format
@@ -28,6 +29,10 @@ oki20c.c	program to dump pixel file to OkiMate 20 color printer
 paintjet.c	program to dump pixel file to HP PaintJet color printer
 pcomb.c		combine picture files according to calcomp functions
 pcompos.c	program to composite pictures
+pcond.c		condition Radiance picture for display/output
+pcond2.c	pcond input and output conditioning routines for pcond.
+pcond3.c	pcond routines for computing and applying brightness mapping.
+pcond4.c	pcond routines for veiling glare and loss of acuity.
 pextrem.c	program to find min and max values in picture
 pf2.c		routines used by pfilt
 pf3.c		routines for gaussian and box filtering
