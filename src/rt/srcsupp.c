@@ -496,38 +496,3 @@ double  r1s, r2s;		/* radii squared */
 		cc[i] = c1[i] + l*disp[i];
 	return(a2);
 }
-
-
-sourcehit(r)			/* check to see if ray hit distant source */
-register RAY  *r;
-{
-	int  first, last;
-	register int  i;
-
-	if (r->rsrc >= 0) {		/* check only one if aimed */
-		first = last = r->rsrc;
-	} else {			/* otherwise check all */
-		first = 0; last = nsources-1;
-	}
-	for (i = first; i <= last; i++)
-		if ((source[i].sflags & (SDISTANT|SVIRTUAL)) == SDISTANT)
-			/*
-			 * Check to see if ray is within
-			 * solid angle of source.
-			 */
-			if (2.0*PI * (1.0 - DOT(source[i].sloc,r->rdir))
-					<= source[i].ss2) {
-				r->ro = source[i].so;
-				if (!(source[i].sflags & SSKIP))
-					break;
-			}
-
-	if (r->ro != NULL) {
-		for (i = 0; i < 3; i++)
-			r->ron[i] = -r->rdir[i];
-		r->rod = 1.0;
-		r->rox = NULL;
-		return(1);
-	}
-	return(0);
-}
