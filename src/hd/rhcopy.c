@@ -193,29 +193,52 @@ COLR	cv;
 }
 
 
-addbeam(bp, hb)			/* add a beam to our output holodeck */
-register BEAM	*bp;
-register HDBEAMI	*hb;
+static BEAMI	*beamdir;
+
+static int
+bpcmp(b1p, b2p)			/* compare beam positions on disk */
+int	*b1p, *b2p;
+{
+	register long	pdif = beamdir[*b1p].fo - beamdir[*b2p].fo;
+
+	if (pdif > 0L) return(1);
+	if (pdif < 0L) return(-1);
+	return(0);
+}
+
+static int
+addclump(hp, bq, nb)		/* transfer the given clump and free */
+HOLO	*hp;
+int	*bq, nb;
 {
 	GCOORD	gc[2];
 	FVECT	ro, rd;
 	double	d;
+	int	i;
 	register int	k;
-					/* get beam coordinates */
-	hdbcoord(gc, hb->h, hb->b);
-					/* add each ray to output */
-	for (k = bp->nrm; k--; ) {
-		d = hdray(ro, rd, hb->h, gc, hdbray(bp)[k].r);
-		if (hb->h->priv == &unobstr)
-			VSUM(ro, ro, rd, d);
-		else
-			d = 0.;
-		d = hddepth(hb->h, hdbray(bp)[k].d) - d;
-		addray(ro, rd, d, hdbray(bp)[k].v);
+	register BEAM	*bp;
+					/* sort based on file position */
+	beamdir = hp->bi;
+	qsort((char *)bq, nb, sizeof(*bq), bpcmp);
+					/* transfer each beam */
+	for (i = 0; i < nb; i++) {
+		bp = hdgetbeam(hp, bq[i]);
+		hdbcoord(gc, hp, bq[i]);
+						/* add each ray to output */
+		for (k = bp->nrm; k--; ) {
+			d = hdray(ro, rd, hp, gc, hdbray(bp)[k].r);
+			if (hp->priv == &unobstr)
+				VSUM(ro, ro, rd, d);
+			else
+				d = 0.;
+			d = hddepth(hp, hdbray(bp)[k].d) - d;
+			addray(ro, rd, d, hdbray(bp)[k].v);
+		}
+		hdfreebeam(hp, bq[i]);		/* free the beam */
 	}
-	hdfreebeam(hb->h, hb->b);	/* free the beam */
+	hdflush(NULL);			/* write & free clump */
+	return(0);
 }
-
 
 addholo(hdf)			/* add a holodeck file */
 char	*hdf;
@@ -226,7 +249,7 @@ char	*hdf;
 	fd = hdlist[noutsects]->fd;	/* remember the file handle */
 	while (hdlist[noutsects] != NULL) {	/* load each section */
 							/* clump the beams */
-		clumpbeams(hdlist[noutsects], 0, BKBSIZE*1024, addbeam);
+		clumpbeams(hdlist[noutsects], 0, BKBSIZE*1024, addclump);
 		hddone(hdlist[noutsects]);		/* free the section */
 	}
 	close(fd);			/* close input file */
@@ -364,8 +387,8 @@ char	*pcf, *zbf;
 			addray(ro, rd, (double)zscn[i], cscn[i]);
 		}
 	}
-				/* write output */
-	hdsync(NULL, 1);
+				/* write output and free beams */
+	hdflush(NULL);
 				/* clean up */
 	free((char *)cscn);
 	free((char *)zscn);
