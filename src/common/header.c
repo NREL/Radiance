@@ -12,6 +12,11 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+#define  MAXLINE	512
+
+char  FMTSTR[] = "FORMAT=";
+int  FMTSTRL = 7;
+
 
 printargs(ac, av, fp)		/* print arguments to a file */
 int  ac;
@@ -26,11 +31,38 @@ FILE  *fp;
 }
 
 
-#define  MAXLINE	512
+isformat(s)			/* is line a format line? */
+char  *s;
+{
+	return(!strncmp(s,FMTSTR,FMTSTRL));
+}
 
-getheader(fp, f)		/* get header from file */
+
+formatval(r, s)			/* return format value */
+register char  *r;
+register char  *s;
+{
+	s += FMTSTRL;
+	while (*s && *s != '\n')
+		*r++ = *s++;
+	*r = '\0';
+}
+
+
+fputformat(s, fp)		/* put out a format value */
+char  *s;
+FILE  *fp;
+{
+	fputs(FMTSTR, fp);
+	fputs(s, fp);
+	putc('\n', fp);
+}
+
+
+getheader(fp, f, p)		/* get header from file */
 FILE  *fp;
 int  (*f)();
+char  *p;
 {
 	char  buf[MAXLINE];
 
@@ -45,24 +77,41 @@ int  (*f)();
 			buf[MAXLINE-2] = '\0';
 		}
 		if (f != NULL)
-			(*f)(buf);
+			(*f)(buf, p);
 	}
 }
 
 
-static FILE	*outfp;
+struct check {
+	FILE	*fp;
+	char	fs[32];
+};
+
 
 static
-myputs(s)
+mycheck(s, cp)			/* check a header line for format info. */
 char  *s;
+register struct check  *cp;
 {
-	fputs(s, outfp);
+	if (!strncmp(s,FMTSTR,FMTSTRL))
+		formatval(cp->fs, s);
+	else if (cp->fp != NULL)	/* don't copy format info. */
+		fputs(s, cp->fp);
 }
 
 
-copyheader(fin, fout)		/* copy file header */
-FILE  *fin, *fout;
+checkheader(fin, fmt, fout)	/* check data format in header */
+FILE  *fin;
+char  *fmt;
+FILE  *fout;
 {
-	outfp = fout;
-	return(getheader(fin, myputs));
+	struct check	cdat;
+
+	cdat.fp = fout;
+	cdat.fs[0] = '\0';
+	if (getheader(fin, mycheck, &cdat) < 0)
+		return(-1);
+	if (fmt != NULL && cdat.fs[0] != '\0')
+		return(strcmp(fmt, cdat.fs) ? -1 : 1);
+	return(0);
 }
