@@ -14,6 +14,10 @@
 
 #include  "color.h"
 
+#define  MAXDIM		32	/* maximum number of dimensions */
+
+#define  MAXSLIST	32	/* maximum sources to check */
+
 				/* ray type flags */
 #define  PRIMARY	01		/* original ray */
 #define  SHADOW		02		/* ray to light source */
@@ -50,6 +54,10 @@ typedef struct ray {
 	COLOR  pcol;		/* pattern color */
 	COLOR  rcol;		/* returned ray value */
 	double  rt;		/* returned effective ray length */
+	COLOR  cext;		/* medium extinction coefficient */
+	float  albedo;		/* medium scattering albedo */
+	float  gecc;		/* scattering eccentricity coefficient */
+	int  *slights;		/* list of lights to test for scattering */
 }  RAY;
 
 extern int  raytrace();
@@ -61,7 +69,5 @@ extern double  raydistance();
 extern int  dimlist[];		/* dimension list for distribution */
 extern int  ndims;		/* number of dimensions so far */
 extern int  samplendx;		/* index for this sample */
-
-#define  MAXDIM		32	/* maximum number of dimensions */
 
 #define  rayvalue(r)	(*(r)->revf)(r)
