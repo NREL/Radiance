@@ -10,15 +10,21 @@ CFLAGS = $(MACH) $(OPT) -I../common
 
 INSTDIR = /lumen/lumen/ray/bin.sun3
 
+LIBDIR = /lumen/lumen/ray/lib
+
 PROGS = genbox gensky xform genblinds genrev genworm \
 		gensurf genprism replmarks mkillum
 
+CALFILES = illum.cal rev.cal skybright.cal surf.cal
+
 all:	$(PROGS)
 
-install:	$(PROGS) genpine.csh genwindow.csh
+install:	$(PROGS) genpine.csh genwindow.csh $(CALFILES)
 	cp $(PROGS) $(INSTDIR)
 	cp genwindow.csh $(INSTDIR)/genwindow
 	chmod 755 $(INSTDIR)/genwindow
+	cd $(LIBDIR) ; rm -f $(CALFILES)
+	cp $(CALFILES) $(LIBDIR)
 
 clean:
 	set nonomatch; rm -f $(PROGS) *.o core
