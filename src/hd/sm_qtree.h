@@ -52,13 +52,12 @@
 
 
 /* QUADTREE NODE FLAGS */
-#define QT_OFFSET(qt)		((qt)>>5)
-#define QT_F_BIT(qt)		((qt)&0x1f)
-#define QT_F_OP(f,qt,op)	((f)[QT_OFFSET(qt)] op (0x1<<QT_F_BIT(qt)))
-#define QT_IS_FLAG(qt)		QT_F_OP(quad_flag,qt,&)
-#define QT_SET_FLAG(qt)		QT_F_OP(quad_flag,qt,|=)
-#define QT_CLR_FLAG(qt)		QT_F_OP(quad_flag,qt,|=~)
-
+#define QT_IS_FLAG(qt)		IS_FLAG(quad_flag,qt)
+#define QT_SET_FLAG(qt)		SET_FLAG(quad_flag,qt)
+#define QT_CLR_FLAG(qt)		CLR_FLAG(quad_flag,qt)
+#define QT_LEAF_IS_FLAG(qt)	IS_FLAG(qtsetflag,QT_INDEX(qt))
+#define QT_LEAF_SET_FLAG(qt)	SET_FLAG(qtsetflag,QT_INDEX(qt))
+#define QT_LEAF_CLR_FLAG(qt)	CLR_FLAG(qtsetflag,QT_INDEX(qt))
 
 /* OBJECT SET CODE */
 #define QT_SET_CNT(s)          ((s)[0])
@@ -73,24 +72,31 @@
 #define MAXCSET          2*QT_MAXSET
 #define QT_MAXCSET       MAXCSET
 #ifndef QT_SET_THRESHOLD
-#define QT_SET_THRESHOLD  100  
+#define QT_SET_THRESHOLD 30  
 #endif
 
 #ifndef QT_MAX_LEVELS
 #define QT_MAX_LEVELS     12
 #endif
 
-#define QT_HIT  -2
-#define QT_DONE -4
-#define QT_MODIFIED -8
-
 #define QT_FILL_THRESHOLD 3
 #define QT_EXPAND   8
 #define QT_COMPRESS 16
+#define QT_DONE 32
+#define QT_MODIFIED 64
 
 #define QT_FLAG_FILL_TRI(f)  (((f)&0x7) == QT_FILL_THRESHOLD)
 #define QT_FLAG_UPDATE(f)    ((f)& (QT_EXPAND | QT_COMPRESS))
+#define QT_FLAG_IS_DONE(f)   ((f)& QT_DONE)
+#define QT_FLAG_SET_DONE(f)   ((f) |= QT_DONE)
+#define QT_FLAG_IS_MODIFIED(f)   ((f)& QT_MODIFIED)
+#define QT_FLAG_SET_MODIFIED(f)   ((f) |= QT_MODIFIED)
 
+#define qtSubdivide(qt) (qt = qtAlloc(),QT_CLEAR_CHILDREN(qt))
+#define qtSubdivide_tri(v0,v1,v2,a,b,c) (EDGE_MIDPOINT_VEC3(a,v0,v1), \
+					 EDGE_MIDPOINT_VEC3(b,v1,v2), \
+					 EDGE_MIDPOINT_VEC3(c,v2,v0))
+ 
 extern QUADTREE  qtnewleaf(), qtaddelem(), qtdelelem();
 
 extern QUADTREE  *quad_block[QT_MAX_BLK];	/* quadtree blocks */
@@ -98,7 +104,7 @@ extern int4  *quad_flag;			/* zeroeth quadtree flag */
 
 extern OBJECT	**qtsettab;		/* quadtree leaf node table */
 extern QUADTREE  qtnumsets;		/* number of used set indices */
-
+extern int4   *qtsetflag;
 #ifdef DEBUG
 extern OBJECT	*qtqueryset();
 #else
@@ -108,4 +114,22 @@ extern OBJECT	*qtqueryset();
 #define qtinset(qt,id)	inset(qtqueryset(qt),id)
 #define qtgetset(os,qt)	setcopy(os,qtqueryset(qt))
 
-extern QUADTREE *qtRoot_point_locate();
+/* 
+QUADTREE qtRoot_point_locate(qt,q0,q1,q2,peq,pt,r0,r1,r2)
+   QUADTREE qt;
+   FVECT q0,q1,q2;
+   FPEQ peq;
+   FVECT pt;
+   FVECT r0,r1,r2;
+
+   Return the quadtree node containing pt. It is assumed that pt is in
+   the root node qt with ws vertices q0,q1,q2 and plane equation peq.
+   If r0 != NULL will return coordinates of node in (r0,r1,r2). 
+*/
+
+extern QUADTREE qtRoot_point_locate();
+extern QUADTREE qtRoot_add_tri();
+extern QUADTREE qtRoot_remove_tri();
+extern QUADTREE qtAdd_tri();
+extern QUADTREE qtRoot_visit_tri_edges();
+extern QUADTREE qtRoot_trace_ray();
