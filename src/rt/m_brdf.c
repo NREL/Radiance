@@ -21,7 +21,8 @@ static char SCCSid[] = "$SunId$ LBL";
  *  String arguments include the reflection function and files.
  *  The BRDF is currently used just for the specular component to light
  *  sources.  Reflectance values or data coordinates are functions
- *  of the direction to the light source.
+ *  of the direction to the light source.  (Data modification functions
+ *  are passed the source direction as args 2-4.)
  *	We orient the surface towards the incoming ray, so a single
  *  surface can be used to represent an infinitely thin object.
  *
@@ -88,6 +89,7 @@ double  omega;			/* light source size */
 	COLOR  ctmp;
 	FVECT  ldx;
 	double  lddx[3], pt[MAXDIM];
+	double  vldx[4];
 	register char	**sa;
 	register int	i;
 
@@ -153,8 +155,9 @@ double  omega;			/* light source size */
 	} else {
 		for (i = 0; i < np->dp->nd; i++)
 			pt[i] = funvalue(sa[3+i], 3, lddx);
-		dtmp = datavalue(np->dp, pt);
-		dtmp = funvalue(sa[0], 1, &dtmp);
+		vldx[0] = datavalue(np->dp, pt);
+		vldx[1] = lddx[0]; vldx[2] = lddx[1]; vldx[3] = lddx[2];
+		dtmp = funvalue(sa[0], 4, vldx);
 		setcolor(ctmp, dtmp, dtmp, dtmp);
 	}
 	if (errno) {
