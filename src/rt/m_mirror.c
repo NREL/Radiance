@@ -76,6 +76,10 @@ register RAY  *r;
 		pdot = raynormal(pnorm, r);	/* use textures */
 		for (i = 0; i < 3; i++)
 			nr.rdir[i] = r->rdir[i] + 2.*pdot*pnorm[i];
+						/* check for penetration */
+		if (DOT(nr.rdir, r->ron) <= FTINY)
+			for (i = 0; i < 3; i++)
+				nr.rdir[i] = r->rdir[i] + 2.*r->rod*r->ron[i];
 	}
 	rayvalue(&nr);
 	multcolor(nr.rcol, mcolor);
