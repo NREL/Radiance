@@ -52,7 +52,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  MINPIX		8		/* minimum hardware color */
 
 #define  NCOLS		512		/* maximum # columns for output */
-#define  NROWS		512-COMHT	/* maximum # rows for output */
+#define  NROWS		483-COMHT	/* maximum # rows for output */
 #define  COMHT		16		/* height of command line */
 #define  COMCW		63		/* maximum chars on command line */
 
@@ -62,7 +62,7 @@ int  aed_close(), aed_clear(), aed_paintr(),
 static struct driver  aed_driver = {
 	aed_close, aed_clear, aed_paintr, aed_getcur,
 	aed_comout, NULL,
-	NCOLS, NROWS
+	1.0, NCOLS, NROWS
 };
 
 
