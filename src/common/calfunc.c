@@ -371,24 +371,24 @@ register VARDEF  *vp;
 static double
 libfunc(fname, vp)			/* execute library function */
 char  *fname;
-register VARDEF  *vp;
+VARDEF  *vp;
 {
-    VARDEF  dumdef;
+    register LIBR  *lp;
     double  d;
     int  lasterrno;
 
-    if (vp == NULL) {
-	vp = &dumdef;
-	vp->lib = liblookup(fname);
-    }
-    if (vp->lib == NULL) {
+    if (vp != NULL)
+	lp = vp->lib;
+    else
+	lp = liblookup(fname);
+    if (lp == NULL) {
 	eputs(fname);
 	eputs(": undefined function\n");
 	quit(1);
     }
     lasterrno = errno;
     errno = 0;
-    d = (*vp->lib->f)(vp->lib->fname);
+    d = (*lp->f)(lp->fname);
 #ifdef  IEEE
     if (errno == 0)
 	if (isnan(d))
