@@ -304,8 +304,10 @@ memerr:
 }
 
 
-gridlines(f)			/* run through holodeck section grid lines */
-int	(*f)();
+extern void
+gridlines(			/* run through holodeck section grid lines */
+	void	(*f)(FVECT wp[2])
+)
 {
 	register int	hd, w, i;
 	int	g0, g1;

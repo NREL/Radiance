@@ -137,6 +137,24 @@ is non-zero, then clear the previous sample history.
 
  **********************************************************************/
 
+	/* rhd_geom.c */
+void gmNewGeom( char *file);
+extern void gmEndGeom(void);
+extern int gmDrawGeom(void);
+extern void gmDrawPortals(int r, int g, int b, int a);
+extern void gmDepthLimit( double dl[2], FVECT vorg, FVECT vdir);
+extern void gmNewPortal(char *pflist);
+extern int gmEndPortal(void);
+	/* rhd_odraw.c */
+extern int odInit(int n);
+extern void odSample(COLR c, FVECT d, FVECT p);
+extern void odRemap(int newhist);
+extern void odRedrawAll(void);
+extern void odRedraw(int vn, int hmin, int vmin, int hmax, int vmax);
+extern void odDepthMap(int vn, GLfloat *dm);
+extern void odUpdate(int vn);
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -55,8 +55,21 @@ extern int	qtMinNodesiz;	/* minimum node dimension (pixels) */
 
 extern int	rayqleft;	/* number of rays to queue before flush */
 
+/*
 extern int32	encodedir();
 extern double	fdir2diff(), dir2diff();
+*/
+
+	/* rhd_qtree.c */
+extern int qtAllocLeaves(register int n);
+extern void qtFreeLeaves(void);
+extern int qtCompost(int pct);
+extern void qtReplant(void);
+extern int qtFindLeaf(int x, int y);
+extern int qtMapLeaves(int redo);
+	/* rhd_qtree2c.c rhd_qtree2r.c */
+extern void qtRedraw(int x0, int y0, int x1, int y1);
+extern void qtUpdate(void);
 
 #ifdef __cplusplus
 }
