@@ -398,6 +398,8 @@ char  *zfile, *oldfile;
 	fprtresolu(hres, vres, stdout);
 					/* recover file and compute first */
 	i = salvage(oldfile);
+	if (i >= vres)
+		goto alldone;
 	if (zfd != -1 && i > 0 &&
 			lseek(zfd, (long)i*hres*sizeof(float), 0) == -1)
 		error(SYSTEM, "z-file seek error in render");
@@ -453,18 +455,19 @@ char  *zfile, *oldfile;
 	}
 						/* clean up */
 	signal(SIGCONT, SIG_IGN);
-	if (zfd != -1) {
-		if (write(zfd, (char *)zbar[0], hres*sizeof(float))
+	if (zfd != -1 && write(zfd, (char *)zbar[0], hres*sizeof(float))
 				< hres*sizeof(float))
-			goto writerr;
+		goto writerr;
+	fwritescan(scanbar[0], hres, stdout);
+	if (fflush(stdout) == EOF)
+		goto writerr;
+alldone:
+	if (zfd != -1) {
 		if (close(zfd) == -1)
 			goto writerr;
 		for (i = 0; i <= psample; i++)
 			free((char *)zbar[i]);
 	}
-	fwritescan(scanbar[0], hres, stdout);
-	if (fflush(stdout) == EOF)
-		goto writerr;
 	for (i = 0; i <= psample; i++)
 		free((char *)scanbar[i]);
 	if (sampdens != NULL)
