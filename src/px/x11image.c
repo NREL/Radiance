@@ -668,8 +668,12 @@ COLR  *scan;
 		} else if (xmax > ymax) {
 			iconwidth = ICONSIZ;
 			iconheight = ICONSIZ*ymax/xmax;
+			if (iconheight < 1)
+				iconheight = 1;
 		} else {
 			iconwidth = ICONSIZ*xmax/ymax;
+			if (iconwidth < 1)
+				iconwidth = 1;
 			iconheight = ICONSIZ;
 		}
 		ynext = 0;
