@@ -10,6 +10,8 @@ MACH = -DBSD
 
 CFLAGS = $(OPT) $(MACH) -I../common -L../lib
 
+CC = cc
+
 INSTDIR = /usr/local/bin
 
 LIBDIR = /usr/local/lib/ray
@@ -29,19 +31,19 @@ clean:
 	set nonomatch; rm -f $(PROGS) *.o core
 
 thf2rad:	thf2rad.o
-	cc $(CFLAGS) -o thf2rad thf2rad.o
+	$(CC) $(CFLAGS) -o thf2rad thf2rad.o
 
 ies2rad:	ies2rad.o
-	cc $(CFLAGS) -o ies2rad ies2rad.o -lrt
+	$(CC) $(CFLAGS) -o ies2rad ies2rad.o -lrt
 
 arch2rad:	arch2rad.o trans.o
-	cc $(CFLAGS) -o arch2rad arch2rad.o trans.o -lrt
+	$(CC) $(CFLAGS) -o arch2rad arch2rad.o trans.o -lrt
 
 nff2rad:	nff2rad.o
-	cc $(CFLAGS) -o nff2rad nff2rad.o
+	$(CC) $(CFLAGS) -o nff2rad nff2rad.o
 
 lampcolor:	lampcolor.o
-	cc $(CFLAGS) -o lampcolor lampcolor.o -lrt
+	$(CC) $(CFLAGS) -o lampcolor lampcolor.o -lrt
 
 arch2rad.o trans.o:	trans.h
 

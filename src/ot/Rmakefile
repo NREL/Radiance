@@ -11,6 +11,7 @@
 OPT = -O
 MACH = -DBSD
 CFLAGS = -DSTRICT $(OPT) $(MACH) -I../common -L../lib
+CC = cc
 
 LIBDIR = /usr/local/lib/ray
 
@@ -20,12 +21,12 @@ all:	oconv getbbox
 
 oconv:	oconv.o sphere.o writeoct.o o_face.o plocate.o \
 clip.o o_cone.o o_instance.o bbox.o initotypes.o readfargs.o malloc.o
-	cc $(CFLAGS) -o oconv oconv.o writeoct.o sphere.o o_face.o \
+	$(CC) $(CFLAGS) -o oconv oconv.o writeoct.o sphere.o o_face.o \
 plocate.o clip.o o_cone.o o_instance.o bbox.o readfargs.o \
 initotypes.o malloc.o -lrt -lm
 
 getbbox:	getbbox.o readobj2.o bbox.o initotypes2.o
-	cc $(CFLAGS) -o getbbox getbbox.o readobj2.o \
+	$(CC) $(CFLAGS) -o getbbox getbbox.o readobj2.o \
 bbox.o initotypes2.o -lrt -lm
 
 install:	oconv getbbox
@@ -35,10 +36,10 @@ clean:
 	set nonomatch; rm -f oconv getbbox *.o core
 
 oconv.o:	oconv.c
-	cc $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c oconv.c
+	$(CC) $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c oconv.c
 
 readfargs.o:	readfargs.c ../common/object.h
-	cc $(CFLAGS) -DMEMHOG -c readfargs.c
+	$(CC) $(CFLAGS) -DMEMHOG -c readfargs.c
 
 bbox.o initotypes.o o_cone.o o_face.o \
 o_instance.o oconv.o sphere.o \

@@ -7,6 +7,7 @@
 OPT = -O
 MACH = -DBSD
 CFLAGS = $(MACH) $(OPT) -I../common -L../lib
+CC = cc
 
 INSTDIR = /usr/local/bin
 
@@ -30,43 +31,43 @@ clean:
 	set nonomatch; rm -f $(PROGS) *.o core
 
 genbeads:	genbeads.o hermite3.o
-	cc $(CFLAGS) -o genbeads genbeads.o hermite3.o -lm
+	$(CC) $(CFLAGS) -o genbeads genbeads.o hermite3.o -lm
 
 genbox:	genbox.o
-	cc $(CFLAGS) -o genbox genbox.o
+	$(CC) $(CFLAGS) -o genbox genbox.o
 
 genmarble:	genmarble.o ../common/random.h
-	cc $(CFLAGS) -o genmarble genmarble.o -lm
+	$(CC) $(CFLAGS) -o genmarble genmarble.o -lm
 
 gensky:	gensky.o sun.o
-	cc $(CFLAGS) -o gensky gensky.o sun.o -lm
+	$(CC) $(CFLAGS) -o gensky gensky.o sun.o -lm
 
 genblinds:	genblinds.o
-	cc $(CFLAGS) -o genblinds genblinds.o -lm
+	$(CC) $(CFLAGS) -o genblinds genblinds.o -lm
 
 genprism:	genprism.o
-	cc $(CFLAGS) -o genprism genprism.o
+	$(CC) $(CFLAGS) -o genprism genprism.o
 
 xform:	xform.o
-	cc $(CFLAGS) -o xform xform.o -lrt -lm
+	$(CC) $(CFLAGS) -o xform xform.o -lrt -lm
 
 replmarks:	replmarks.o
-	cc $(CFLAGS) -o replmarks replmarks.o -lrt -lm
+	$(CC) $(CFLAGS) -o replmarks replmarks.o -lrt -lm
 
 mkillum:	mkillum.o mkillum2.o mkillum3.o
-	cc $(CFLAGS) -o mkillum mkillum.o mkillum2.o mkillum3.o -lrt -lm
+	$(CC) $(CFLAGS) -o mkillum mkillum.o mkillum2.o mkillum3.o -lrt -lm
 
 genrev:	genrev.o 
-	cc $(CFLAGS) -o genrev genrev.o -lrt -lm
+	$(CC) $(CFLAGS) -o genrev genrev.o -lrt -lm
 
 genworm:	genworm.o
-	cc $(CFLAGS) -o genworm genworm.o -lrt -lm
+	$(CC) $(CFLAGS) -o genworm genworm.o -lrt -lm
 
 gensurf:	gensurf.o
-	cc $(CFLAGS) -o gensurf gensurf.o -lrt -lm
+	$(CC) $(CFLAGS) -o gensurf gensurf.o -lrt -lm
 
 genbranch:	genbranch.o
-	cc $(CFLAGS) -o genbranch genbranch.o -lm
+	$(CC) $(CFLAGS) -o genbranch genbranch.o -lm
 
 gensurf.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
 
