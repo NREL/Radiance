@@ -971,7 +971,7 @@ int	rvr;
 		if (usepfilt)
 			sprintf(combuf+strlen(combuf), " %s", rresopt);
 		else
-			sprintf(combuf+strlen(combuf), "-a %s -e %s",
+			sprintf(combuf+strlen(combuf), " -a %s -e %s",
 					fresopt, ep);
 		sprintf(combuf+strlen(combuf), " %s.unf %s.zbf",
 				fnbefore, fnbefore);
