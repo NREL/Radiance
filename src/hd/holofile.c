@@ -191,7 +191,7 @@ memerr:
 }
 
 
-markdirty(hp, i)		/* mark holodeck directory position dirty */
+hdmarkdirty(hp, i)		/* mark holodeck directory position dirty */
 register HOLO	*hp;
 int	i;
 {
@@ -203,7 +203,7 @@ int	i;
 		if (lseek(hp->fd, biglob(hp)->fo+(i-1)*sizeof(BEAMI), 0) < 0
 				|| write(hp->fd, (char *)&smudge,
 					sizeof(BEAMI)) != sizeof(BEAMI))
-			error(SYSTEM, "seek/write error in markdirty");
+			error(SYSTEM, "seek/write error in hdmarkdirty");
 		hp->dirseg[0].s = i;
 		hp->dirseg[0].n = 1;
 		return;
@@ -650,7 +650,7 @@ register int	i;
 		hp->bi[i].fo = 0L;
 	biglob(hp)->nrd += nrays - hp->bi[i].nrd;
 	hp->bi[i].nrd = nrays;
-	markdirty(hp, i);		/* section directory now out of date */
+	hdmarkdirty(hp, i);		/* section directory now out of date */
 	return(1);
 }
 
@@ -829,8 +829,7 @@ register HOLO	*hp;		/* NULL means clean up all */
 		return;
 	}
 					/* flush all data and free memory */
-	hdfreebeam(hp, 0);
-	hdsync(hp, 0);
+	hdflush(hp);
 					/* release fragment resources */
 	hdrelease(hp->fd);
 					/* remove hp from active list */
