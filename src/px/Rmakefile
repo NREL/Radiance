@@ -191,13 +191,13 @@ panim.o:	client/scan.h ../common/color.h ../common/random.h
 
 pf2.o bnoise.o ra_ps.o ra_t16.o:	../common/random.h
 
-pfilt.o pf2.o ttyimage.o t4027.o mt160r.o psum.o psign.o protate.o pextrem.o \
-ra_pr24.o d48c.o aedimage.o pcompos.o color.o resolu.o colrops.o pflip.o \
-greyscale.o ra_t8.o glimage.o ra_bn.o ra_t16.o ra_tiff.o ra_pict.o \
+pfilt.o pf2.o pf3.o ttyimage.o t4027.o mt160r.o psum.o psign.o protate.o \
+pextrem.o ra_pr24.o d48c.o aedimage.o pcompos.o color.o resolu.o colrops.o \
+pflip.o greyscale.o ra_t8.o glimage.o ra_bn.o ra_t16.o ra_tiff.o ra_pict.o \
 ra_ps.o ra_pr.o pvalue.o pcomb.o pinterp.o ximage.o:	../common/color.h
 
 pvalue.o protate.o biq.o ciq.o pinterp.o ximage.o psign.o xshowtrace.o \
-pcomb.o pfilt.o image.o:	../common/standard.h \
+pcomb.o pfilt.o pf3.o image.o:	../common/standard.h \
 ../common/mat4.h ../common/fvect.h
 
 ximage.o xraster.o:	xraster.h
