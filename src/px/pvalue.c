@@ -91,9 +91,8 @@ char  **argv;
 				if (argv[i+1][0] == '-' || argv[i+1][0] == '+')
 					d = pow(2.0, d);
 				if (argv[i][0] == '-')
-					doexposure = 100;
+					expval *= d;
 				scalecolor(exposure, d);
-				expval *= d;
 				doexposure++;
 				i++;
 				break;
@@ -215,7 +214,7 @@ unkopt:
 		}
 						/* add to header */
 		printargs(i, argv, stdout);
-		if (doexposure > 100)
+		if (expval < .99 || expval > 1.01)
 			fputexpos(expval, stdout);
 		fputformat(COLRFMT, stdout);
 		putchar('\n');
@@ -240,7 +239,7 @@ unkopt:
 		}
 		if (header) {
 			printargs(i, argv, stdout);
-			if (doexposure > 100)
+			if (expval < .99 || expval > 1.01)
 				fputexpos(expval, stdout);
 			fputformat(fmtid, stdout);
 			putchar('\n');
