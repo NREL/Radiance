@@ -267,7 +267,10 @@ register RAY  *r;
 				for (i = 0; i < 3; i++)	/* perturb direction */
 					sr.rdir[i] = r->rdir[i] -
 							.75*r->pert[i];
-				normalize(sr.rdir);
+				if (normalize(sr.rdir) == 0.0) {
+					objerror(m, WARNING, "illegal perturbation");
+					VCOPY(sr.rdir, r->rdir);
+				}
 			} else {
 				VCOPY(sr.rdir, r->rdir);
 				transtest = 2;
