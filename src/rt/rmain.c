@@ -517,8 +517,12 @@ char  *s;
 wputs(s)				/* warning output */
 char  *s;
 {
+	int  lasterrno = errno;		/* save errno */
+
 	if (wrnvec != NULL)
 		(*wrnvec)(s);
+
+	errno = lasterrno;
 }
 
 
