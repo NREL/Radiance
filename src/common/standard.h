@@ -65,7 +65,7 @@ extern char  errmsg[];			/* global buffer for error messages */
 #define	 rindex			strrchr
 #endif
 
-extern char  *sskip();
+extern char  *sskip(), *sskip2();
 extern char  *getpath(), *getenv();
 #ifndef malloc
 extern char  *malloc(), *calloc(), *realloc();

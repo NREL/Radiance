@@ -395,7 +395,7 @@ register char  *s;
 	int  nvopts = 0;
 
 	if (*s != '-')
-		s = sskip(s);
+		s = sskip2(s,1);
 	while (*s) {
 		ac = 0;
 		do {
