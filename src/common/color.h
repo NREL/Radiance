@@ -42,10 +42,10 @@ typedef float  COLOR[3];	/* red, green, blue */
 
 #ifdef  NTSC
 #define  bright(col)		(.295*(col)[RED]+.636*(col)[GRN]+.070*(col)[BLU])
-#define  normbright(c)		(int)((74L*(c)[RED]+164L*(c)[GRN]+18L*(c)[BLU])/256)
+#define  normbright(c)		(int)((74L*(c)[RED]+164L*(c)[GRN]+18L*(c)[BLU])>>8)
 #else
 #define  bright(col)		(.263*(col)[RED]+.655*(col)[GRN]+.082*(col)[BLU])
-#define  normbright(c)		(int)((67L*(c)[RED]+168L*(c)[GRN]+21L*(c)[BLU])/256)
+#define  normbright(c)		(int)((67L*(c)[RED]+168L*(c)[GRN]+21L*(c)[BLU])>>8)
 #endif
 
 				/* luminous efficacies over visible spectrum */
