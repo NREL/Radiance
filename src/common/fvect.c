@@ -91,7 +91,7 @@ register FVECT  v;
 	
 	len = DOT(v, v);
 	
-	if (len <= FTINY*FTINY)
+	if (len <= 0.0)
 		return(0.0);
 	
 	/****** problematic
