@@ -144,7 +144,7 @@ compgamma()				/* compute gamma correction map */
 	register int  i, val;
 
 	for (i = 0; i < 256; i++) {
-		val = pow(i/256.0, 1.0/GAMMA) * 256.0;
+		val = pow((i+0.5)/256.0, 1.0/GAMMA) * 256.0;
 		if (val > 248) val = 248;
 		gammamap[i] = val;
 	}
