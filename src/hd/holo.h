@@ -86,7 +86,7 @@ typedef struct {
 	int	b;		/* beam index */
 } HDBEAMI;		/* holodeck beam index */
 
-#define nbeams(hp)	(2*((hp)->wi[5]-1))
+#define nbeams(hp)	(((hp)->wi[5]-1)<<1)
 #define biglob(hp)	((hp)->bi)
 #define blglob(hp)	(*(hp)->bl)
 
@@ -102,6 +102,7 @@ extern unsigned	hdmemuse();
 extern long	hdfiluse(), hdfilen(), hdallocfrag();
 extern double	hdray(), hdinter();
 extern unsigned	hdcode();
+extern int	hdfilord();
 
 extern unsigned	hdcachesize;		/* target cache size (bytes) */
 extern unsigned long	hdclock;	/* holodeck system clock */
