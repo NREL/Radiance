@@ -260,18 +260,24 @@ register VIEW  *vp;
 }
 
 
-moveview(angle, mag, vc)			/* move viewpoint */
-double  angle, mag;
+moveview(angle, elev, mag, vc)			/* move viewpoint */
+double  angle, elev, mag;
 FVECT  vc;
 {
 	extern double  sqrt(), dist2();
 	double  d;
+	FVECT  v1;
 	VIEW  nv;
 	register int  i;
 
 	VCOPY(nv.vup, ourview.vup);
 	nv.hresolu = ourview.hresolu; nv.vresolu = ourview.vresolu;
 	spinvector(nv.vdir, ourview.vdir, ourview.vup, angle*(PI/180.));
+	if (elev != 0.0) {
+		fcross(v1, nv.vdir, ourview.vup);
+		normalize(v1);
+		spinvector(nv.vdir, nv.vdir, v1, elev*(PI/180.));
+	}
 	if ((nv.type = ourview.type) == VT_PAR) {
 		nv.horiz = ourview.horiz / mag;
 		nv.vert = ourview.vert / mag;
