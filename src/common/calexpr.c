@@ -381,21 +381,20 @@ char  *err;
 {
     register int  i;
 
+    if (infile != NULL || lineno != 0) {
+	if (infile != NULL) eputs(infile);
+	if (lineno != 0) {
+	    eputs(infile != NULL ? ", line " : "line ");
+	    eputs(ltoa((long)lineno));
+	}
+	eputs(": syntax error:\n");
+    }
     eputs(linbuf);
     if (linbuf[strlen(linbuf)-1] != '\n')
 	eputs("\n");
     for (i = 0; i < linepos-1; i++)
 	eputs(linbuf[i] == '\t' ? "\t" : " ");
     eputs("^ ");
-    if (infile != NULL || lineno != 0) {
-	eputs("\n");
-	if (infile != NULL) eputs(infile);
-	if (lineno != 0) {
-	    eputs(infile != NULL ? ", line " : "line ");
-	    eputs(ltoa((long)lineno));
-	}
-	eputs(": ");
-    }
     eputs(err);
     eputs("\n");
     quit(1);
