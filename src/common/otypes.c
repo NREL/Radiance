@@ -17,6 +17,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "otypes.h"
 
 
+extern int  (*addobjnotify[])();	/* people to notify of new objects */
+
 FUN  ofun[NUMOTYPE] = INIT_OTYPE;	/* our object function table */
 
 static struct ohtab {
@@ -66,16 +68,18 @@ char  *mname;
 insertobject(obj)		/* insert new object into our list */
 register OBJECT  obj;
 {
-	register int  ndx;
+	register int  i;
 
 #ifdef  GETOBJ
-	ndx = otndx(objptr(obj)->oname, &objtab);
-	objtab.htab[ndx] = obj;
+	i = otndx(objptr(obj)->oname, &objtab);
+	objtab.htab[i] = obj;
 #endif
 	if (ismodifier(objptr(obj)->otype)) {
-		ndx = otndx(objptr(obj)->oname, &modtab);
-		modtab.htab[ndx] = obj;
+		i = otndx(objptr(obj)->oname, &modtab);
+		modtab.htab[i] = obj;
 	}
+	for (i = 0; addobjnotify[i] != NULL; i++)
+		(*addobjnotify[i])(obj);
 }
 
 
