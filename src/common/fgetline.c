@@ -22,8 +22,10 @@ register FILE  *fp;
 	register int  c = EOF;
 
 	while (--n > 0 && (c = getc(fp)) != EOF) {
-		if (c == '\r')
-			continue;
+		if (c == '\r' && (c = getc(fp)) != '\n') {
+			ungetc(c, fp);		/* must be Apple file */
+			c = '\n';
+		}
 		if (c == '\n' && (cp == s || cp[-1] != '\\'))
 			break;
 		*cp++ = c;
