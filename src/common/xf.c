@@ -132,7 +132,6 @@ done:
 }
 
 
-#ifdef  INVXF
 int
 invxf(ret, ac, av)		/* invert transform specification */
 register XF  *ret;
@@ -257,4 +256,3 @@ char  *av[];
 	xf(&fx->f, ac, av);
 	return(invxf(&fx->b, ac, av));
 }
-#endif
