@@ -28,3 +28,4 @@
 #else
 #define FD_ZERO(p)	memset((char *)(p), 0, sizeof(*(p)))
 #endif
+#endif
