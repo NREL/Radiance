@@ -9,10 +9,12 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include "standard.h"
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "view.h"
 #include "vars.h"
+#include "netproc.h"
 				/* input variables */
 #define HOST		0		/* rendering host machine */
 #define RENDER		1		/* rendering options */
@@ -87,6 +89,18 @@ char	rresopt[32];		/* rendering resolution options */
 char	fresopt[32];		/* filter resolution options */
 int	pfiltalways;		/* always use pfilt? */
 
+struct pslot {
+	int	pid;			/* process ID (0 if empty) */
+	int	fout;			/* output frame number */
+	int	(*rcvf)();		/* recover function */
+}	*pslot;			/* process slots */
+int	npslots;		/* number of process slots */
+
+int	lastpid;		/* ID of last completed background process */
+PSERVER	*lastpserver;		/* last process server used */
+
+struct pslot	*findpslot();
+
 VIEW	*getview();
 char	*getexp();
 
@@ -138,6 +152,8 @@ char	*argv[];
 						/* print variables */
 	if (explicate)
 		printvars(stdout);
+						/* set up process servers */
+	sethosts();
 						/* run animation */
 	animate();
 						/* all done */
@@ -145,10 +161,8 @@ char	*argv[];
 		argv[i] = vval(NEXTANIM);	/* just change input file */
 		if (!silent)
 			printargs(argc, argv, stdout);
-		if (!noaction) {
-			execvp(progname, argv);		/* pass to next */
-			quit(1);			/* shouldn't return */
-		}
+		execvp(progname, argv);		/* pass to next */
+		quit(1);			/* shouldn't return */
 	}
 	quit(0);
 userr:
@@ -222,6 +236,8 @@ putastat()			/* put out current status */
 	char	buf[256];
 	FILE	*fp;
 
+	if (noaction)
+		return;
 	sprintf(buf, "%s/%s", vval(DIRECTORY), SFNAME);
 	if ((fp = fopen(buf, "w")) == NULL) {
 		perror(buf);
@@ -263,7 +279,10 @@ setdefaults()			/* set default values */
 {
 	char	buf[256];
 
-	if (vdef(OCTREE) == vdef(ANIMATE)) {
+	if (vdef(ANIMATE)) {
+		vval(OCTREE) = NULL;
+		vdef(OCTREE) = 0;
+	} else if (!vdef(OCTREE)) {
 		fprintf(stderr, "%s: either %s or %s must be defined\n",
 				progname, vnam(OCTREE), vnam(ANIMATE));
 		quit(1);
@@ -271,6 +290,10 @@ setdefaults()			/* set default values */
 	if (!vdef(VIEWFILE)) {
 		fprintf(stderr, "%s: %s undefined\n", progname, vnam(VIEWFILE));
 		quit(1);
+	}
+	if (!vdef(HOST)) {
+		vval(HOST) = LHOSTNAME;
+		vdef(HOST)++;
 	}
 	if (!vdef(START)) {
 		vval(START) = "1";
@@ -317,6 +340,62 @@ setdefaults()			/* set default values */
 				/* append rendering options */
 	if (vdef(RENDER))
 		sprintf(rendopt+strlen(rendopt), " %s", vval(RENDER));
+}
+
+
+sethosts()			/* set up process servers */
+{
+	extern char	*iskip();
+	char	buf[256], *dir, *uname;
+	int	np;
+	register char	*cp;
+	int	i;
+
+	npslots = 0;
+	if (noaction)
+		return;
+	for (i = 0; i < vdef(HOST); i++) {	/* add each host */
+		dir = uname = NULL;
+		np = 1;
+		strcpy(cp=buf, nvalue(HOST, i));	/* copy to buffer */
+		cp = sskip(cp);				/* skip host name */
+		while (isspace(*cp))
+			*cp++ = '\0';
+		if (*cp) {				/* has # processes? */
+			np = atoi(cp);
+			if ((cp = iskip(cp)) == NULL || (*cp && !isspace(*cp)))
+				badvalue(HOST);
+			while (isspace(*cp))
+				cp++;
+			if (*cp) {			/* has directory? */
+				dir = cp;
+				cp = sskip(cp);			/* skip dir. */
+				while (isspace(*cp))
+					*cp++ = '\0';
+				if (*cp) {			/* has user? */
+					uname = cp;
+					if (*sskip(cp))
+						badvalue(HOST);
+				}
+			}
+		}
+		if (addpserver(buf, dir, uname, np) == NULL) {
+			if (!nowarn)
+				fprintf(stderr,
+					"%s: cannot execute on host \"%s\"\n",
+						progname, buf);
+		} else
+			npslots += np;
+	}
+	if (npslots == 0) {
+		fprintf(stderr, "%s: no working process servers\n", progname);
+		quit(1);
+	}
+	pslot = (struct pslot *)calloc(npslots, sizeof(struct pslot));
+	if (pslot == NULL) {
+		perror("malloc");
+		quit(1);
+	}
 }
 
 
@@ -406,7 +485,7 @@ animate()			/* run animation */
 		astat.rnext = astat.fnext = astat.tnext = vint(START);
 	putastat();
 					/* render in batches */
-	while (astat.rnext <= vint(END)) {
+	while (astat.tnext <= vint(END)) {
 		renderframes(frames_batch);
 		filterframes();
 		transferframes();
@@ -466,14 +545,12 @@ int	nframes;
 		}
 	}
 	if (vdef(ANIMATE))		/* wait for renderings to finish */
-		animwait(0);
+		bwait(0);
 	else {				/* else if walk-through */
 		fclose(fp);		/* close view file */
 		walkwait(astat.rnext, lastframe, vfname);	/* walk it */
 		unlink(vfname);		/* remove view file */
 	}
-	if (vdef(ARCHIVE))		/* archive results */
-		archive(astat.rnext, lastframe);
 	astat.rnext = i;		/* update status */
 	putastat();
 }
@@ -494,9 +571,10 @@ filterframes()				/* catch up with filtering */
 					progname, i);
 			quit(1);
 		}
-		dofilt(i, vp, getexp(i));		/* filter frame */
+		dofilt(i, vp, getexp(i), 0);		/* filter frame */
 	}
-	filtwait(0);			/* wait for filter processes */
+	bwait(0);			/* wait for filter processes */
+	archive(astat.fnext, i-1);	/* archive originals */
 	astat.fnext = i;		/* update status */
 	putastat();
 }
@@ -539,6 +617,7 @@ animrend(frame, vp)			/* start animation frame */
 int	frame;
 VIEW	*vp;
 {
+	extern int	recover();
 	char	combuf[2048];
 	char	fname[128];
 
@@ -546,20 +625,9 @@ VIEW	*vp;
 	strcat(fname, ".unf");
 	if (access(fname, F_OK) == 0)
 		return;
-	sprintf(combuf, "%s %d | rpict%s%s %s > %s", vval(ANIMATE), frame,
+	sprintf(combuf, "%s %d | rpict%s%s -w0 %s > %s", vval(ANIMATE), frame,
 			rendopt, viewopt(vp), rresopt, fname);
-	if (runcom(combuf)) {
-		fprintf(stderr, "%s: error rendering frame %d\n",
-				progname, frame);
-		quit(1);
-	}
-}
-
-
-animwait(nwait)				/* wait for renderings to finish */
-int	nwait;
-{
-	/* currently does nothing since parallel rendering not working */
+	bruncom(combuf, frame, recover);	/* run in background */
 }
 
 
@@ -578,14 +646,14 @@ char	*vfn;
 				close(open(combuf, O_RDONLY|O_CREAT, 0666));
 			}
 					/* create command */
-	sprintf(combuf, "rpict%s ", rendopt);
+	sprintf(combuf, "rpict%s -w0 ", rendopt);
 	if (vint(INTERP) || atoi(vval(MBLUR)))
 		sprintf(combuf+strlen(combuf), "-z %s.zbf ", vval(BASENAME));
 	sprintf(combuf+strlen(combuf), "-o %s.unf %s -S %d %s < %s",
 			vval(BASENAME), rresopt, first, vval(OCTREE), vfn);
-	if (runcom(combuf)) {
-		fprintf(stderr,
-		"%s: error rendering walk-through frames %d through %d\n",
+					/* run in parallel */
+	if (pruncom(combuf, (last-first+1)/(vint(INTERP)+1))) {
+		fprintf(stderr, "%s: error rendering frames %d through %d\n",
 				progname, first, last);
 		quit(1);
 	}
@@ -599,19 +667,27 @@ char	*vfn;
 }
 
 
+int
 recover(frame)				/* recover the specified frame */
 int	frame;
 {
+	static int	*rfrm;		/* list of recovered frames */
+	static int	nrfrms = 0;
 	char	combuf[2048];
 	char	fname[128];
 	register char	*cp;
-
+	register int	i;
+					/* check to see if recovered already */
+	for (i = nrfrms; i--; )
+		if (rfrm[i] == frame)
+			return(0);
+					/* build command */
 	sprintf(fname, vval(BASENAME), frame);
 	if (vdef(ANIMATE))
-		sprintf(combuf, "%s %d | rpict%s",
+		sprintf(combuf, "%s %d | rpict%s -w0",
 				vval(ANIMATE), frame, rendopt);
 	else
-		sprintf(combuf, "rpict%s", rendopt);
+		sprintf(combuf, "rpict%s -w0", rendopt);
 	cp = combuf + strlen(combuf);
 	if (vint(INTERP) || atoi(vval(MBLUR))) {
 		sprintf(cp, " -z %s.zbf", fname);
@@ -623,26 +699,53 @@ int	frame;
 		*cp++ = ' ';
 		strcpy(cp, vval(OCTREE));
 	}
-	if (runcom(combuf)) {
-		fprintf(stderr, "%s: error recovering frame %d\n",
-				progname, frame);
+	if (runcom(combuf))		/* run command */
+		return(1);
+					/* add frame to recovered list */
+	if (nrfrms)
+		rfrm = (int *)realloc((char *)rfrm, (nrfrms+1)*sizeof(int));
+	else
+		rfrm = (int *)malloc(sizeof(int));
+	if (rfrm == NULL) {
+		perror("malloc");
 		quit(1);
 	}
+	rfrm[nrfrms++] = frame;
+	return(0);
 }
 
 
-archive(first, last)			/* archive finished renderings */
+int
+frecover(frame)				/* recover filtered frame */
+int	frame;
+{
+	VIEW	*vp;
+	char	*ex;
+
+	vp = getview(frame);
+	ex = getexp(frame);
+	if (dofilt(frame, vp, ex, 2) && dofilt(frame, vp, ex, 1))
+		return(1);
+	return(0);
+}
+
+
+archive(first, last)			/* archive and remove renderings */
 int	first, last;
 {
+#define RMCOML	(sizeof(rmcom)-1)
+	static char	rmcom[] = "rm -f";
+	int	offset = RMCOML;
 	char	combuf[10240];
-	int	offset;
 	struct stat	stb;
 	register char	*cp;
 	register int	i;
 
-	strcpy(cp=combuf, vval(ARCHIVE));
-	while (*cp) cp++;
-	offset = cp - combuf;
+	if (noaction)
+		return;
+	if (vdef(ARCHIVE) && strlen(vval(ARCHIVE)) > offset)
+		offset = strlen(vval(ARCHIVE));
+	cp = combuf + offset;
 	*cp++ = ' ';				/* make argument list */
 	for (i = first; i <= last; i++) {
 		sprintf(cp, vval(BASENAME), i);
@@ -661,64 +764,63 @@ int	first, last;
 	*--cp = '\0';
 	if (cp <= combuf + offset)		/* no files? */
 		return;
-	if (runcom(combuf)) {			/* run archive command */
-		fprintf(stderr,
+	if (vdef(ARCHIVE)) {			/* run archive command */
+		i = strlen(vval(ARCHIVE));
+		strncpy(combuf+offset-i, vval(ARCHIVE), i);
+		if (runcom(combuf+offset-i)) {
+			fprintf(stderr,
 		"%s: error running archive command on frames %d through %d\n",
-				progname, first, last);
-		quit(1);
+					progname, first, last);
+			quit(1);
+		}
 	}
+						/* run remove command */
+	strncpy(combuf+offset-RMCOML, rmcom, RMCOML);
+	runcom(combuf+offset-RMCOML);
+#undef RMCOML
 }
 
 
-dofilt(frame, vp, ep)				/* filter frame */
+int
+dofilt(frame, vp, ep, rvr)			/* filter frame */
 int	frame;
 VIEW	*vp;
 char	*ep;
+int	rvr;
 {
+	extern int	frecover();
 	char	fnbefore[128], fnafter[128];
 	char	combuf[1024], fname[128];
 	int	usepinterp, usepfilt;
-	int	frbefore, frafter, triesleft;
+	int	frseq[2];
 						/* check what is needed */
 	usepinterp = atoi(vval(MBLUR));
 	usepfilt = pfiltalways | ep==NULL;
 						/* compute rendered views */
-	frbefore = frame - ((frame-1) % (vint(INTERP)+1));
-	frafter = frbefore + vint(INTERP) + 1;
-	if (frafter > vint(END))
-		frafter = vint(END);
-	if (frafter == frame) {			/* pfilt only */
-		frbefore = frafter;
+	frseq[0] = frame - ((frame-1) % (vint(INTERP)+1));
+	frseq[1] = frseq[0] + vint(INTERP) + 1;
+	if (frseq[1] > vint(END))
+		frseq[1] = vint(END);
+	if (frseq[1] == frame) {			/* pfilt only */
+		frseq[0] = frseq[1];
 		usepinterp = 0;			/* update what's needed */
 		usepfilt |= vflt(OVERSAMP)>1.01 || strcmp(ep,"1");
-		triesleft = 2;
-	} else if (frbefore == frame) {		/* no interpolation */
-						/* remove unneeded files */
-		if (frbefore-vint(INTERP)-1 >= 1) {
-			sprintf(fname, vval(BASENAME), frbefore-vint(INTERP)-1);
-			sprintf(combuf, "rm -f %s.unf %s.zbf", fname, fname);
-			runcom(combuf);
-		}
+	} else if (frseq[0] == frame) {		/* no interpolation */
 						/* update what's needed */
-		if (usepinterp)
-			triesleft = 3;
-		else {
+		if (!usepinterp)
 			usepfilt |= vflt(OVERSAMP)>1.01 || strcmp(ep,"1");
-			triesleft = 2;
-		}
-	} else {				/* interpolation needed */
+	} else					/* interpolation needed */
 		usepinterp++;
-		triesleft = 3;
-	}
-	if (frafter >= astat.rnext) {		/* next batch unavailable */
-		frafter = frbefore;
-		if (triesleft > 2)
-			triesleft = 2;
-	}
-	sprintf(fnbefore, vval(BASENAME), frbefore);
-	sprintf(fnafter, vval(BASENAME), frafter);
-tryit:						/* generate command */
+	if (frseq[1] >= astat.rnext)		/* next batch unavailable */
+		frseq[1] = frseq[0];
+	sprintf(fnbefore, vval(BASENAME), frseq[0]);
+	sprintf(fnafter, vval(BASENAME), frseq[1]);
+	if (rvr == 1 && recover(frseq[0]))	/* recover before frame? */
+		return(1);
+						/* generate command */
 	if (usepinterp) {			/* using pinterp */
+		if (rvr == 2 && recover(frseq[1]))	/* recover after? */
+			return(1);
 		if (atoi(vval(MBLUR))) {
 			FILE	*fp;		/* motion blurring */
 			sprintf(fname, "%s/vw0", vval(DIRECTORY));
@@ -743,7 +845,7 @@ tryit:						/* generate command */
 			putc('\n', fp); fclose(fp);
 			sprintf(combuf,
 	"(pmblur %s %d %s/vw0 %s/vw1; rm -f %s/vw0 %s/vw1) | pinterp -B",
-				*sskip(vval(MBLUR)) ? sskip(vval(MBLUR)) : "1",
+			*sskip(vval(MBLUR)) ? sskip2(vval(MBLUR),1) : "1",
 					atoi(vval(MBLUR)), vval(DIRECTORY),
 					vval(DIRECTORY), vval(DIRECTORY),
 					vval(DIRECTORY), vval(DIRECTORY));
@@ -751,7 +853,7 @@ tryit:						/* generate command */
 			strcpy(combuf, "pinterp");
 		strcat(combuf, viewopt(vp));
 		if (vbool(RTRACE))
-			sprintf(combuf+strlen(combuf), " -ff -fr '%s %s'",
+			sprintf(combuf+strlen(combuf), " -ff -fr '%s -w0 %s'",
 					rendopt, vval(OCTREE));
 		if (vdef(PINTERP))
 			sprintf(combuf+strlen(combuf), " %s", vval(PINTERP));
@@ -762,7 +864,7 @@ tryit:						/* generate command */
 					fresopt, ep);
 		sprintf(combuf+strlen(combuf), " %s.unf %s.zbf",
 				fnbefore, fnbefore);
-		if (frafter != frbefore)
+		if (frseq[1] != frseq[0])
 			 sprintf(combuf+strlen(combuf), " %s.unf %s.zbf",
 					fnafter, fnafter);
 		if (usepfilt) {			/* also pfilt */
@@ -778,6 +880,8 @@ tryit:						/* generate command */
 				sprintf(combuf+strlen(combuf), " %s", fresopt);
 		}
 	} else if (usepfilt) {			/* pfilt only */
+		if (rvr == 2)
+			return(1);
 		if (vdef(PFILT))
 			sprintf(combuf, "pfilt %s", vval(PFILT));
 		else
@@ -789,32 +893,17 @@ tryit:						/* generate command */
 			sprintf(combuf+strlen(combuf), " %s %s.unf",
 					fresopt, fnbefore);
 	} else {				/* else just check it */
+		if (rvr == 2)
+			return(1);
 		sprintf(combuf, "ra_rgbe -r %s.unf", fnbefore);
 	}
 						/* output file name */
 	sprintf(fname, vval(BASENAME), frame);
 	sprintf(combuf+strlen(combuf), " > %s.pic", fname);
-	if (runcom(combuf))			/* run filter command */
-		switch (--triesleft) {
-		case 2:				/* try to recover frafter */
-			recover(frafter);
-			goto tryit;
-		case 1:				/* try to recover frbefore */
-			recover(frbefore);
-			goto tryit;
-		default:			/* we've really failed */
-			fprintf(stderr,
-			"%s: unrecoverable filtering error on frame %d\n",
-					progname, frame);
-			quit(1);
-		}
-}
-
-
-filtwait(nwait)			/* wait for filtering processes to finish */
-int	nwait;
-{
-	/* currently does nothing since parallel filtering not working */
+	if (rvr)				/* in recovery */
+		return(runcom(combuf));
+	bruncom(combuf, frame, frecover);	/* else run in background */
+	return(0);
 }
 
 
@@ -937,7 +1026,147 @@ int	n;
 }
 
 
-runcom(cs)			/* run command */
+struct pslot *
+findpslot(pid)			/* find or allocate a process slot */
+int	pid;
+{
+	register struct pslot	*psempty = NULL;
+	register int	i;
+
+	for (i = 0; i < npslots; i++) {		/* look for match */
+		if (pslot[i].pid == pid)
+			return(pslot+i);
+		if (psempty == NULL && pslot[i].pid == 0)
+			psempty = pslot+i;
+	}
+	return(psempty);		/* return emtpy slot (error if NULL) */
+}
+
+
+int
+donecom(ps, pn, status)		/* clean up after finished process */
+PSERVER	*ps;
+int	pn;
+int	status;
+{
+	register PROC	*pp;
+
+	pp = ps->proc + pn;
+	if (!silent) {			/* echo command */
+		if (ps->hostname[0])
+			printf("On %s:", ps->hostname);
+		printf("\t%s\n", pp->com);
+		fflush(stdout);
+	}
+	if (pp->elen) {			/* pass errors */
+		fputs(pp->errs, stderr);
+		fflush(stderr);
+		if (ps->hostname[0])
+			status = 1;	/* because rsh doesn't return status */
+	}
+	freestr(pp->com);		/* free command string */
+	lastpid = pp->pid;		/* record PID for bwait() */
+	lastpserver = ps;		/* record server for serverdown() */
+	return(status);
+}
+
+
+int
+serverdown()			/* check status of last process server */
+{
+	if (pserverOK(lastpserver))	/* server still up? */
+		return(0);
+	delpserver(lastpserver);	/* else delete it */
+	if (pslist == NULL) {
+		fprintf(stderr, "%s: all process servers are down\n",
+				progname);
+		quit(1);
+	}
+	return(1);
+}
+
+
+int
+bruncom(com, fout, rf)		/* run a command in the background */
+char	*com;
+int	fout;
+int	(*rf)();
+{
+	int	pid;
+	register struct pslot	*psl;
+
+	if (noaction) {
+		if (!silent)
+			printf("\t%s\n", com);	/* just echo it */
+		return(0);
+	}
+					/* else start it when we can */
+	while ((pid = startjob(NULL, savestr(com), donecom)) == -1)
+		bwait(1);
+	psl = findpslot(pid);		/* record info. in appropriate slot */
+	psl->pid = pid;
+	psl->fout = fout;
+	psl->rcvf = rf;
+	return(pid);
+}
+
+
+bwait(ncoms)				/* wait for batch job(s) to finish */
+int	ncoms;
+{
+	int	status;
+	register struct pslot	*psl;
+
+	if (noaction)
+		return;
+	while ((status = wait4job(NULL, -1)) != -1) {
+		psl = findpslot(lastpid);
+		if (status) {		/* attempt recovery */
+			serverdown();	/* check server */
+			if (psl->rcvf == NULL || (*psl->rcvf)(psl->fout)) {
+				fprintf(stderr,
+					"%s: error rendering frame %d\n",
+						progname, psl->fout);
+				quit(1);
+			}
+		}
+		psl->pid = 0;		/* free process slot */
+		if (!--ncoms)
+			return;		/* done enough */
+	}
+}
+
+
+int
+pruncom(com, maxcopies)		/* run a command in parallel over network */
+char	*com;
+int	maxcopies;
+{
+	int	retstatus = 0;
+	int	status;
+	register PSERVER	*ps;
+
+	if (noaction) {
+		if (!silent)
+			printf("\t%s\n", com);	/* just echo */
+		return(0);
+	}
+					/* start jobs on each server */
+	for (ps = pslist; ps != NULL; ps = ps->next)
+		while (maxcopies > 0 &&
+				startjob(ps, savestr(com), donecom) != -1) {
+			sleep(10);
+			maxcopies--;
+		}
+					/* wait for jobs to finish */
+	while ((status = wait4job(NULL, -1)) != -1)
+		if (status)
+			retstatus += !serverdown();	/* check server */
+	return(retstatus);
+}
+
+
+runcom(cs)			/* run a command locally and wait for it */
 char	*cs;
 {
 	if (!silent)		/* echo it */
