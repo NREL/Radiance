@@ -563,9 +563,9 @@ char	*mod, *name;
 	else if (pmtype == PM_B)
 		fprintf(out, "5 ");
 	else if (FEQ(bounds[1][0],90.) && FEQ(bounds[1][1],270.))
-		fprintf(out, "8 ");
+		fprintf(out, "7 ");
 	else
-		fprintf(out, "6 ");
+		fprintf(out, "5 ");
 	fprintf(out, "%s %s source.cal ",
 			srcshape.type==SPHERE ? "corr" : "flatcorr",
 			libname(buf,name,T_DST));
@@ -584,7 +584,7 @@ char	*mod, *name;
 				fprintf(out, "src_phi2 ");
 			else
 				fprintf(out, "src_phi ");
-			fprintf(out, "src_theta -my ");
+			fprintf(out, "src_theta ");
 			if (FEQ(bounds[1][0],90.) && FEQ(bounds[1][1],270.))
 				fprintf(out, "-rz -90 ");
 		} else
