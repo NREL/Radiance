@@ -11,7 +11,7 @@ CFLAGS = $(MACH) $(OPT)
 CC = cc
 
 OBJS = parser.o context.o xf.o object.o lookup.o badarg.o \
-words.o fvect.o cvrgb.o
+words.o fvect.o
 
 all:	libmgf.a mgfilt mgf2inv
 
@@ -22,8 +22,8 @@ libmgf.a:	$(OBJS)
 	ar rc libmgf.a $(OBJS)
 	-ranlib libmgf.a
 
-mgf2inv:	libmgf.a mgf2inv.o
-	$(CC) $(CFLAGS) -o mgf2inv mgf2inv.o libmgf.a -lm
+mgf2inv:	libmgf.a mgf2inv.o cvrgb.o
+	$(CC) $(CFLAGS) -o mgf2inv mgf2inv.o cvrgb.o libmgf.a -lm
 
 clean:
 	set nonomatch ; rm -f *.o libmgf.a mgfilt
