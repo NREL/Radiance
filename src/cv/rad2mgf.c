@@ -39,7 +39,7 @@ double	unit_mult = 1.;				/* units multiplier */
  * Stuff for tracking and reusing vertices:
  */
 
-char	VKFMT[] = "%+1.9e %+1.9e %+1.9e";
+char	VKFMT[] = "%+16.9e %+16.9e %+16.9e";
 #define VKLEN		64
 
 #define mkvkey(k,v)	sprintf(k, VKFMT, (v)[0], (v)[1], (v)[2])
@@ -343,7 +343,7 @@ getvertid(vname, vp)		/* get/set vertex ID for this point */
 char	*vname;
 FVECT	vp;
 {
-	char	vkey[VKLEN];
+	static char	vkey[VKLEN];
 	register LUENT	*lp;
 	register int	i, vndx;
 
