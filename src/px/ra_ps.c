@@ -218,8 +218,10 @@ char  *name;
 	printf("%d %d 8 [%d 0 0 %d 0 %d]\n", xmax, ymax, xmax, -ymax, ymax);
 	if (putprim == Cputprim) {
 		if (docolor) {
-			puts("{redline read6bitRLE grnline read6bitRLE");
-			puts("bluline read6bitRLE} true 3 colorimage");
+			puts("{redline read6bitRLE}");
+			puts("{grnline read6bitRLE}");
+			puts("{bluline read6bitRLE}");
+			puts("true 3 colorimage");
 		} else
 			puts("{gryline read6bitRLE} image");
 	} else {
