@@ -1,0 +1,56 @@
+/* Copyright (c) 1992 Regents of the University of California */
+
+#ifndef lint
+static char SCCSid[] = "$SunId$ LBL";
+#endif
+
+/*
+ * Get additional command arguments from file or environment.
+ */
+
+#include "standard.h"
+
+#define MAXARGEXP	512		/* maximum argument expansion */
+
+			/* set the following to suit, -1 to disable */
+int	envexpchr = '$';		/* environment expansion character */
+int	filexpchr = '^';		/* file expansion character */
+
+
+expandarg(acp, avp, n)		/* expand list at argument n */
+int	*acp;
+register char	***avp;
+int	n;
+{
+	int	ace;
+	char	*ave[MAXARGEXP];
+	char	**newav;
+					/* check argument */
+	errno = 0;	
+	if ((*avp)[n][0] == filexpchr) {		/* file name */
+		ace = wordfile(ave, (*avp)[n]+1);
+		if (ace < 0)
+			return(-1);	/* no such file */
+	} else if ((*avp)[n][0] == envexpchr) {		/* env. variable */
+		ace = wordstring(ave, getenv((*avp)[n]+1));
+		if (ace < 0)
+			return(-1);	/* no such variable */
+	} else						/* regular argument */
+		return(0);
+					/* allocate new pointer list */
+	newav = (char **)bmalloc((*acp+ace)*sizeof(char *));
+	if (newav == NULL)
+		return(-1);
+					/* copy preceeding arguments */
+	bcopy((char *)*avp, (char *)newav, n*sizeof(char *));
+					/* copy expanded argument */
+	bcopy((char *)ave, (char *)(newav+n), ace*sizeof(char *));
+					/* copy trailing arguments + NULL */
+	bcopy((char *)(*avp+n+1), (char *)(newav+n+ace), (*acp-n)*sizeof(char *));
+					/* free old list */
+	bfree((char *)*avp, (*acp+1)*sizeof(char *));
+					/* assign new list */
+	*acp += ace-1;
+	*avp = newav;
+	return(1);			/* return success */
+}
