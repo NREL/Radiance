@@ -680,26 +680,18 @@ register EPNODE  *epar;
 }
 
 
-isconstvar(ep)			/* is ep linked to a constant? */
+isconstvar(ep)			/* is ep linked to a constant expression? */
 register EPNODE  *ep;
 {
 #ifdef  VARIABLE
     register EPNODE  *ep1;
 #ifdef  FUNCTION
-    LIBR  *lp;
 
     if (ep->type == FUNC) {
-	if (ep->v.kid->type != VAR)
-	    return(0);
-	ep1 = ep->v.kid->v.ln->def;
-	if (ep1 != NULL && ep1->type != ':')
-	    return(0);
-	if ((ep1 == NULL || ep1->v.kid->type != FUNC)
-		&& ((lp = liblookup(ep->v.kid->v.ln->name)) == NULL
-			|| lp->atyp != ':'))
-	    return(0);
+	if (!isconstfun(ep->v.kid))
+		return(0);
 	for (ep1 = ep->v.kid->sibling; ep1 != NULL; ep1 = ep1->sibling)
-	    if (ep1->type != NUM)
+	    if (ep1->type != NUM && !isconstfun(ep1))
 		return(0);
 	return(1);
     }
@@ -718,4 +710,25 @@ register EPNODE  *ep;
     return(ep->type == FUNC);
 #endif
 }
+
+
+#if  defined(FUNCTION) && defined(VARIABLE)
+isconstfun(ep)			/* is ep linked to a constant function? */
+register EPNODE  *ep;
+{
+    register EPNODE  *dp;
+    register LIBR  *lp;
+
+    if (ep->type != VAR)
+	return(0);
+    dp = ep->v.ln->def;
+    if (dp != NULL && dp->type != ':')
+	return(0);
+    if ((dp == NULL || dp->v.kid->type != FUNC)
+	    && ((lp = liblookup(ep->v.ln->name)) == NULL
+		    || lp->atyp != ':'))
+	return(0);
+    return(1);
+}
+#endif
 #endif
