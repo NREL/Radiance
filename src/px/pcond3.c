@@ -57,7 +57,7 @@ double	Lw;
 		return(Bldmin);
 	if (b >= bwmax-FTINY)
 		return(Bldmax);
-	return(Bldmin + cf(Bl(Lw))*(Bldmax-Bldmin));
+	return(Bldmin + cf(b)*(Bldmax-Bldmin));
 }
 
 
@@ -207,6 +207,26 @@ int	xres;
 		mult = (Lb(b) - ldmin)/(ldmax - ldmin) / (Lw*inpexp);
 		if (lumf == rgblum) mult *= WHTEFFICACY;
 		scalecolor(scan[i], mult);
+	}
+}
+
+
+putmapping(fp)			/* put out mapping function */
+FILE	*fp;
+{
+	double	b, s;
+	register int	i;
+	double	wlum, sf;
+
+	sf = scalef*inpexp;
+	if (lumf == cielum) sf *= WHTEFFICACY;
+	s = (bwmax - bwmin)/HISTRES;
+	for (i = 0, b = bwmin + .5*s; i < HISTRES; i++, b += s) {
+		wlum = Lb(b);
+		if (what2do&DO_LINEAR)
+			fprintf(fp, "%e %e\n", wlum, sf*wlum);
+		else
+			fprintf(fp, "%e %e\n", wlum, Lb(BLw(wlum)));
 	}
 }
 
