@@ -23,7 +23,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #ifdef MSTATS
 #include  <stdio.h>
-
 static unsigned	b_nalloced = 0;
 static unsigned	b_nfreed = 0;
 static unsigned	b_nscrounged = 0;
@@ -55,6 +54,8 @@ typedef union m_head {
 #define NBUCKETS	30
 
 static M_HEAD	*free_list[NBUCKETS];
+
+static char	DUMMYLOC[BYTES_WORD];
 
 
 char *
@@ -171,6 +172,9 @@ unsigned	n;
 	register M_HEAD	*mp;
 	register int	bucket;
 	register unsigned	bsiz;
+					/* don't return NULL on 0 request */
+	if (n == 0)
+		return(DUMMYLOC);
 					/* find first bucket that fits */
 	for (bucket = FIRSTBUCKET, bsiz = 1<<FIRSTBUCKET;
 			bucket < NBUCKETS; bucket++, bsiz <<= 1)
@@ -205,7 +209,7 @@ unsigned	n;
 	char	*p;
 	register unsigned	on;
 					/* get old size */
-	if (op != NULL)
+	if (op != NULL && op != DUMMYLOC)
 		on = 1 << ((M_HEAD *)op-1)->bucket;
 	else
 		on = 0;
@@ -229,7 +233,7 @@ char	*p;
 	register M_HEAD	*mp;
 	register int	bucket;
 
-	if (p == NULL)
+	if (p == NULL || p == DUMMYLOC)
 		return;
 	mp = (M_HEAD *)p - 1;
 	bucket = mp->bucket;
