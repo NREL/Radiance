@@ -8,10 +8,13 @@ static char SCCSid[] = "$SunId$ LBL";
  * Fast malloc for memory hogs and VM environments.
  * Performs a minimum of searching through free lists.
  * bmalloc() doesn't keep track of free lists -- it's basically
- *	just a buffered call to sbrk().
- * bfree() puts memory from any source into malloc() free lists.
+ *	just a buffered call to sbrk(2).  However, bmalloc will
+ *	call mscrounge() if sbrk fails.
+ * bfree() puts memory from any source into malloc free lists.
  * malloc(), realloc() and free() use buckets
  *	containing blocks in powers of two, similar to CIT routines.
+ * mscrounge() returns whatever memory it can find to satisfy the
+ *	request along with the number of bytes (modified).
  *
  *	Greg Ward	Lawrence Berkeley Laboratory
  */
@@ -23,10 +26,11 @@ static char SCCSid[] = "$SunId$ LBL";
 #endif
 #define  BYTES_WORD	sizeof(ALIGN)
 
+#define  MAXINCR	(1<<18)			/* largest sbrk(2) increment */
+
 #ifdef  NOVMEM
 #define  getpagesize()	BYTES_WORD
 #endif
-
 					/* malloc free lists */
 typedef union m_head {
 	union m_head	*next;
@@ -41,14 +45,36 @@ static M_HEAD	*free_list[NBUCKETS];
 
 
 char *
+mscrounge(np)		/* search free lists trying to satisfy request */
+register unsigned	*np;
+{
+	char	*p;
+	register int	bucket;
+	register unsigned	bsiz;
+
+	for (bucket = FIRSTBUCKET, bsiz = 1<<FIRSTBUCKET;
+			bucket < NBUCKETS; bucket++, bsiz <<= 1)
+		if (free_list[bucket] != NULL && bsiz+sizeof(M_HEAD) >= *np) {
+			*np = bsiz+sizeof(M_HEAD);
+			p = (char *)free_list[bucket];
+			free_list[bucket] = free_list[bucket]->next;
+			return(p);
+		}
+	*np = 0;
+	return(NULL);
+}
+
+
+char *
 bmalloc(n)		/* allocate a block of n bytes, sans header */
 register unsigned  n;
 {
 	extern char  *sbrk();
-	static int  pagesz = 0;
-	static int  amnt;
+	static unsigned  pagesz = 0;
+	static unsigned  amnt;
 	static char  *bpos;
-	static int  nrem;
+	static unsigned  nrem;
+	unsigned  thisamnt;
 	register char	*p;
 
 	if (pagesz == 0) {				/* initialize */
@@ -63,17 +89,25 @@ register unsigned  n;
 	n = (n+(BYTES_WORD-1))&~(BYTES_WORD-1);		/* word align rqst. */
 
 	if (n > nrem) {					/* need more core */
-		if (n > amnt)			/* increase amount */
-			amnt = (n+(pagesz-1))&~(pagesz-1);
-		p = sbrk(amnt);
-		if ((int)p == -1)
-			return(NULL);
-		if (p != bpos+nrem) {		/* someone called sbrk()! */
+		if (n > amnt) {				/* big chunk */
+			thisamnt = (n+(pagesz-1))&~(pagesz-1);
+			if (thisamnt <= MAXINCR)	/* increase amnt */
+				amnt = thisamnt;
+		} else
+			thisamnt = amnt;
+		p = sbrk(thisamnt);
+		if ((int)p == -1) {			/* uh-oh */
+			thisamnt = n;			/* search free lists */
+			p = mscrounge(&thisamnt);
+			if (p == NULL)			/* we're really out */
+				return(NULL);
+		}
+		if (p != bpos+nrem) {			/* not an increment */
 			bfree(bpos, nrem);
 			bpos = p;
-			nrem = amnt;
+			nrem = thisamnt;
 		} else
-			nrem += amnt;
+			nrem += thisamnt;
 	}
 	p = bpos;
 	bpos += n;					/* advance */
