@@ -24,6 +24,7 @@ struct {
 	char	*name;		/* file name */
 	FILE	*fp;		/* stream pointer */
 	COLOR	*scan;		/* input scanline */
+	COLOR	coef;		/* coefficient */
 }	input[MAXINP];			/* input pictures */
 
 int	nfiles;				/* number of input files */
@@ -53,7 +54,8 @@ main(argc, argv)
 int	argc;
 char	*argv[];
 {
-	extern double	l_redin(), l_grnin(), l_bluin();
+	extern double	l_redin(), l_grnin(), l_bluin(), atof();
+	double	f;
 	int	a;
 	
 	funset(vcolin[RED], 1, l_redin);
@@ -64,6 +66,8 @@ char	*argv[];
 		if (argv[a][0] == '-')
 			switch (argv[a][1]) {
 			case '\0':
+			case 's':
+			case 'c':
 				goto getfiles;
 			case 'x':
 				xres = atoi(argv[++a]);
@@ -81,14 +85,13 @@ char	*argv[];
 				scompile(NULL, argv[++a]);
 				break;
  			default:
-				eputs("Usage: ");
-				eputs(argv[0]);
-	eputs(" [-w][-x xres][-y yres][-e expr][-f file] [picture ..]\n");
-				quit(1);
+				goto usage;
 			}
 		else
 			break;
 getfiles:
+	for (nfiles = 0; nfiles < MAXINP; nfiles++)
+		setcolor(input[nfiles].coef, 1.0, 1.0, 1.0);
 	nfiles = 0;
 	for ( ; a < argc; a++) {
 		if (nfiles >= MAXINP) {
@@ -96,10 +99,25 @@ getfiles:
 			eputs(": too many picture files\n");
 			quit(1);
 		}
-		if (argv[a][0] == '-') {
-			input[nfiles].name = "<stdin>";
-			input[nfiles].fp = stdin;
-		} else {
+		if (argv[a][0] == '-')
+			switch (argv[a][1]) {
+			case '\0':
+				input[nfiles].name = "<stdin>";
+				input[nfiles].fp = stdin;
+				break;
+			case 's':
+				f = atof(argv[++a]);
+				scalecolor(input[nfiles].coef, f);
+				continue;
+			case 'c':
+				colval(input[nfiles].coef,RED)*=atof(argv[++a]);
+				colval(input[nfiles].coef,GRN)*=atof(argv[++a]);
+				colval(input[nfiles].coef,BLU)*=atof(argv[++a]);
+				continue;
+			default:
+				goto usage;
+			}
+		else {
 			input[nfiles].name = argv[a];
 			input[nfiles].fp = fopen(argv[a], "r");
 			if (input[nfiles].fp == NULL) {
@@ -132,6 +150,11 @@ getfiles:
 	printf("-Y %d +X %d\n", yres, xres);
 	combine();
 	quit(0);
+usage:
+	eputs("Usage: ");
+	eputs(argv[0]);
+eputs(" [-w][-x xr][-y yr][-e expr][-f file] [ [-s f][-c r g b] picture ..]\n");
+	quit(1);
 }
 
 
@@ -159,13 +182,16 @@ combine()			/* combine pictures */
 			eclock++;
 			for (j = 0; j < 3; j++)
 				if (coldef[j]) {
-					colval(scanout[xpos],j) = varvalue(vcolout[j]);
+					colval(scanout[xpos],j) =
+						varvalue(vcolout[j]);
 					if (colval(scanout[xpos],j) < 0.0)
 						colval(scanout[xpos],j) = 0.0;
 				} else {
 					colval(scanout[xpos],j) = 0.0;
 					for (i = 0; i < nfiles; i++)
-						colval(scanout[xpos],j) += colval(input[i].scan[xpos],j);
+						colval(scanout[xpos],j) +=
+						colval(input[i].coef,j) *
+						colval(input[i].scan[xpos],j);
 				}
 		}
 		if (fwritescan(scanout, xres, stdout) < 0) {
