@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -117,9 +117,11 @@ RAY  *r;
 		col[i] = datavalue(dp, pt);
 	}
 	errno = 0;
-	setcolor(cval,	funvalue(m->oargs.sarg[0], 3, col),
-			funvalue(m->oargs.sarg[1], 3, col),
-			funvalue(m->oargs.sarg[2], 3, col));
+	for (i = 0; i < 3; i++)
+		if (fundefined(m->oargs.sarg[i]) < 3)
+			colval(cval,i) = funvalue(m->oargs.sarg[i], 1, col+i);
+		else
+			colval(cval,i) = funvalue(m->oargs.sarg[i], 3, col);
 	if (errno)
 		goto computerr;
 	multcolor(r->pcol, cval);
@@ -154,9 +156,11 @@ RAY  *r;
 	for (i = 0; i < 3; i++)
 		col[i] = datavalue(dp+i, pt);
 	errno = 0;
-	setcolor(cval,	funvalue(m->oargs.sarg[0], 3, col),
-			funvalue(m->oargs.sarg[1], 3, col),
-			funvalue(m->oargs.sarg[2], 3, col));
+	for (i = 0; i < 3; i++)
+		if (fundefined(m->oargs.sarg[i]) < 3)
+			colval(cval,i) = funvalue(m->oargs.sarg[i], 1, col+i);
+		else
+			colval(cval,i) = funvalue(m->oargs.sarg[i], 3, col);
 	if (errno)
 		goto computerr;
 	multcolor(r->pcol, cval);
