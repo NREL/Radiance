@@ -242,6 +242,7 @@ register RAY  *r;
 						/* compute transmitted ray */
 	setbrdfunc(&nd);
 	transtest = 0;
+	transdist = r->rot;
 	errno = 0;
 	setcolor(ctmp, evalue(mf->ep[3]),
 			evalue(mf->ep[4]),
