@@ -85,5 +85,8 @@ int  flags;
 freeinstance(o)		/* free memory associated with instance */
 OBJREC  *o;
 {
+	if (o->os == NULL)
+		return;
 	free(o->os);
+	o->os = NULL;
 }
