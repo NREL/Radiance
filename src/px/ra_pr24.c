@@ -69,9 +69,10 @@ char  *argv[];
 			quiterr("bad raster format");
 		xmax = head.ras_width;
 		ymax = head.ras_height;
-		if (head.ras_type != RT_STANDARD ||
-				head.ras_maptype != RMT_NONE ||
-				head.ras_depth != 24)
+		if ((head.ras_type != RT_STANDARD
+					&& head.ras_type != RT_FORMAT_RGB)
+				|| head.ras_maptype != RMT_NONE
+				|| head.ras_depth != 24)
 			quiterr("incompatible format");
 					/* put header */
 		printargs(i, argv, stdout);
@@ -79,7 +80,7 @@ char  *argv[];
 		putchar('\n');
 		fputresolu(YMAJOR|YDECR, xmax, ymax, stdout);
 					/* convert file */
-		pr2ra();
+		pr2ra(head.ras_type);
 	} else {
 					/* get header info. */
 		if (checkheader(stdin, COLRFMT, NULL) < 0 ||
@@ -117,7 +118,8 @@ char  *err;
 }
 
 
-pr2ra()			/* convert 24-bit scanlines to Radiance picture */
+pr2ra(rf)		/* convert 24-bit scanlines to Radiance picture */
+int	rf;
 {
 	COLR	*scanout;
 	register int	x;
@@ -128,11 +130,16 @@ pr2ra()			/* convert 24-bit scanlines to Radiance picture */
 		quiterr("out of memory in pr2ra");
 						/* convert image */
 	for (y = ymax-1; y >= 0; y--) {
-		for (x = 0; x < xmax; x++) {
-			scanout[x][BLU] = getc(stdin);
-			scanout[x][GRN] = getc(stdin);
-			scanout[x][RED] = getc(stdin);
-		}
+		for (x = 0; x < xmax; x++)
+			if (rf == RT_FORMAT_RGB) {
+				scanout[x][RED] = getc(stdin);
+				scanout[x][GRN] = getc(stdin);
+				scanout[x][BLU] = getc(stdin);
+			} else {
+				scanout[x][BLU] = getc(stdin);
+				scanout[x][GRN] = getc(stdin);
+				scanout[x][RED] = getc(stdin);
+			}
 		if (feof(stdin) || ferror(stdin))
 			quiterr("error reading rasterfile");
 		gambs_colrs(scanout, xmax);
