@@ -3,26 +3,37 @@
 {
      Sky brightness function for sunny and cloudy skies.
 
-	6/6/86
-
      Additional arguments required for calculation of skybright:
 
-	A1			- boolean, positive for cloudy sky
-				  (A1>=2 for uniform sky)
+	A1			- 1 for CIE clear, 2 for CIE overcast,
+				  3 for uniform, 4 for CIE intermediate
 	A2			- zenith brightness
 	A3			- ground plane brightness
 	A4			- normalization factor based on sun direction
 	A5,A6,A7		- sun direction
 }
 
-skybright = wmean((Dz+1.01)^10, if(A1, cloudysky, sunnysky),
+skybr = wmean((Dz+1.01)^10,
+		select(A1, sunnysky, cloudysky, unifsky, intersky),
 		(Dz+1.01)^-10, A3);
 
 wmean(a, x, b, y) = (a*x + b*y) / (a + b);
 
-cloudysky = A2 * if(A1-1.5, 1, (1 + 2*Dz)/3);
-
-sunnysky = A2 * (.91 + 10*exp(-3*Acos(cosgamma)) + .45*cosgamma*cosgamma)
+sunnysky = A2 * (.91 + 10*exp(-3*gamma) + .45*cosgamma*cosgamma)
 	      *  if( Dz - .01, 1.0 - exp(-.32/Dz), 1.0) / A4;
 
+cloudysky = A2 * (1 + 2*Dz)/3;
+
+unifsky = A2;
+
+intersky = A2 * ( (1.35*sin(5.631-3.59*eta)+3.12)*sin(4.396-2.6*zt)
+			+ 6.37 - eta ) / 2.326 *
+		exp(gamma*-.563*((2.629-eta)*(1.562-zt)+.812)) / A4;
+
 cosgamma = Dx*A5 + Dy*A6 + Dz*A7;
+
+gamma = Acos(cosgamma);		{ angle from sun to this point in sky }
+
+zt = Acos(A7);			{ angle from zenith to sun }
+
+eta = Acos(Dz);			{ angle from zenith to this point in sky }
