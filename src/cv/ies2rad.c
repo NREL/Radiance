@@ -40,7 +40,7 @@ static char SCCSid[] = "$SunId$ LBL";
 					/* file types */
 #define T_RAD		".rad"
 #define T_DST		".dat"
-#define T_TLT		"+.dat"
+#define T_TLT		"%.dat"
 					/* shape types */
 #define RECT		1
 #define DISK		2
