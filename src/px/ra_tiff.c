@@ -38,7 +38,7 @@ struct {
 	float	gamcor;		/* gamma correction value */
 	short	bradj;		/* Radiance exposure adjustment (stops) */
 	uint16	orient;		/* visual orientation (TIFF spec.) */
-	float	stonits;	/* input conversion to nits */
+	double	stonits;	/* input conversion to nits */
 	float	pixrat;		/* pixel aspect ratio */
 	FILE	*rfp;		/* Radiance stream pointer */
 	TIFF	*tif;		/* TIFF pointer */
@@ -251,6 +251,15 @@ initfromtif()		/* initialize conversion from TIFF input */
 				SGILOGDATAFMT_FLTY);
 		cvts.tf = L2Color;
 		break;
+	case PHOTOMETRIC_YCBCR:
+		if (cvts.comp == COMPRESSION_JPEG &&
+				cvts.pconf == PLANARCONFIG_CONTIG) {
+			TIFFSetField(cvts.tif, TIFFTAG_JPEGCOLORMODE,
+					JPEGCOLORMODE_RGB);
+			cvts.phot = PHOTOMETRIC_RGB;
+		} else
+			quiterr("unsupported photometric type");
+		/* fall through */
 	case PHOTOMETRIC_RGB:
 		SET(C_GAMMA|C_GAMUT);
 		setcolrgam(cvts.gamcor);
