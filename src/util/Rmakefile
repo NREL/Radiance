@@ -10,7 +10,7 @@ CFLAGS = $(MACH) $(OPT)
 
 INSTDIR = /lumen/lumen/ray/bin.sun3
 
-PROGS = makedist swaprasheader findglare xglaresrc
+PROGS = makedist swaprasheader findglare xglaresrc glarendx
 
 all:	$(PROGS)
 
@@ -33,6 +33,10 @@ findglare:	findglare.o glareval.o glaresrc.o color.o fvect.o image.o \
 header.o resolu.o setscan.o
 	cc $(CFLAGS) -o findglare findglare.o glareval.o glaresrc.o \
 color.o fvect.o image.o header.o resolu.o setscan.o -lm
+
+glarendx:	glarendx.o image.o header.o erf.o fvect.o resolu.o
+	cc $(CFLAGS) -o glarendx glarendx.o image.o header.o fvect.o \
+erf.o resolu.o -lm
 
 xglaresrc:	xglaresrc.o fvect.o image.o resolu.o header.o
 	cc $(CFLAGS) -o xglaresrc xglaresrc.o fvect.o image.o \
