@@ -47,7 +47,7 @@ short  tinvers[NUMOTYPE];		/* inverse types for surfaces */
 
 int  nrept = 1;				/* number of array repetitions */
 
-extern char  *malloc(), *fgetword();
+extern char  *malloc(), *fgets(), *fgetword();
 
 char  mainfn[MAXPATH];			/* main file name */
 FILE  *mainfp = NULL;			/* main file pointer */
@@ -61,7 +61,11 @@ char  *argv[];
 {
 	char  *fname;
 	int  a;
-					/* check for array */
+					/* check for argument list file */
+	for (a = 1; a < argc; a++)
+		if (!strcmp(argv[a], "-f"))
+			return(doargf(argc, argv, a));
+					/* check for regular array */
 	for (a = 1; a < argc; a++)
 		if (!strcmp(argv[a], "-a"))
 			return(doarray(argc, argv, a));
@@ -136,6 +140,83 @@ char  *argv[];
 }
 
 
+doargf(ac, av, fi)			/* take argument list from file */
+char  **av;
+int  ac, fi;
+{
+	char  *newav[256], **avp;
+	char  argbuf[2048];
+	char  newid[128];
+	char  *oldid;
+	register char	*cp;
+	FILE	*argfp;
+	int  n, i, k, newac, err;
+	
+	if (fi >= ac-1 || av[fi+1][0] == '-') {
+		fprintf(stderr, "%s: missing file for -f option\n", av[0]);
+		exit(1);
+	}
+	if ((argfp = fopen(av[fi+1], "r")) == NULL) {
+		fprintf(stderr, "%s: cannot open argument file \"%s\"\n",
+				av[0], av[fi+1]);
+		exit(1);
+	}
+	n = 0;			/* count number of lines in file */
+	while (fgets(argbuf, sizeof(argbuf), argfp) != NULL)
+		n++;
+	if (!n) {
+		fprintf(stderr, "%s: empty argument file \"%s\"\n",
+				av[0], av[fi+1]);
+		exit(1);
+	}
+	rewind(argfp);
+	nrept *= n;
+	err = 0;			/* read each arg list and call main */
+	for (k = 0; k < n; k++) {
+		fgets(argbuf, sizeof(argbuf), argfp);
+		avp = newav+2;
+		avp[0] = av[0];
+		for (i = 1; i < fi; i++)
+			avp[i] = av[i];
+		newac = i;
+		cp = argbuf;			/* parse new words */
+		for ( ; ; ) {
+			while (isspace(*cp))	/* nullify spaces */
+				*cp++ = '\0';
+			if (!*cp)		/* all done? */
+				break;
+			avp[newac++] = cp;	/* add argument to list */
+			while (*++cp && !isspace(*cp))
+				;
+		}
+		for (i = fi+2; i < ac; i++)
+			avp[newac++] = av[i];
+		avp[newac] = NULL;
+		oldid = NULL;
+		for (i = 2; i < newac; i++)
+			if (!strcmp(avp[i-1], "-n")) {
+				oldid = avp[i];
+				avp[i] = newid;
+				break;
+			}
+		if (oldid == NULL) {
+			newav[0] = av[0];
+			newav[1] = "-n";
+			newav[2] = newid;
+			avp = newav;
+			newac += 2;
+		}
+		if (oldid == NULL)
+			sprintf(newid, "i%d", k);
+		else
+			sprintf(newid, "%s.%d", oldid, k);
+		err |= main(newac, avp);
+	}
+	fclose(argfp);
+	return(err);
+}
+
+
 doarray(ac, av, ai)			/* make array */
 char  **av;
 int  ac, ai;
@@ -145,6 +226,11 @@ int  ac, ai;
 	char  *oldid = NULL;
 	int  n, i, err;
 	
+	if (ai >= ac-1 || (n = atoi(av[ai+1])) <= 0) {
+		fprintf(stderr, "%s: missing count for -a option\n", av[0]);
+		exit(1);
+	}
+	nrept *= n;
 	avp = newav+2;
 	avp[0] = av[0];
 	for (i = 1; i < ac; i++)
@@ -163,7 +249,6 @@ int  ac, ai;
 		avp = newav;
 		ac += 2;
 	}
-	nrept *= n = atoi(av[ai+1]);
 	err = 0;
 	for (i = 0; i < n; i++) {
 		if (oldid == NULL)
