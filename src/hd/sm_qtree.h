@@ -70,11 +70,11 @@ QT_NTH_CHILD(qt,1)=EMPTY,QT_NTH_CHILD(qt,2)=EMPTY,QT_NTH_CHILD(qt,3)=EMPTY)
 #define QT_MAX_SET        MAXSET
 #define MAXCSET           MAXSET*2
 #ifndef QT_SET_THRESHOLD
-#define QT_SET_THRESHOLD  40  
+#define QT_SET_THRESHOLD  30  
 #endif
 
 #ifndef QT_MAX_LEVELS
-#define QT_MAX_LEVELS     16
+#define QT_MAX_LEVELS     17
 #endif
 
 #define QT_BLOCK_SIZE 256

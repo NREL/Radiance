@@ -731,9 +731,9 @@ char norm;
 }
 
 QUADTREE
-smPointLocateCell(sm,pt,v0,v1,v2,type,which,norm)
+smPointLocateCell(sm,pt,type,which,norm)
 SM *sm;
-FVECT pt,v0,v1,v2;
+FVECT pt;
 char *type,*which;
 char norm;
 {
@@ -746,10 +746,10 @@ char norm;
   {
       point_on_sphere(npt,pt,SM_VIEW_CENTER(sm));
   
-      qt = stPoint_locate_cell(st,npt,v0,v1,v2,type,which);
+      qt = stPoint_locate_cell(st,npt,type,which);
   }
   else
-     qt = stPoint_locate_cell(st,pt,v0,v1,v2,type,which);
+     qt = stPoint_locate_cell(st,pt,type,which);
 
   return(qt);
 }
@@ -1184,7 +1184,7 @@ FVECT orig,dir;
   d = -DOT(b,dir);
   if(EQUAL_VEC3(orig,SM_VIEW_CENTER(smMesh)) || EQUAL(fabs(d),1.0))
   {
-      qt = smPointLocateCell(smMesh,dir,v0,v1,v2,NULL,NULL,FALSE);
+      qt = smPointLocateCell(smMesh,dir,NULL,NULL,FALSE);
       /* Test triangles in the set for intersection with Ray:returns
 	 first found
       */
@@ -1199,7 +1199,7 @@ FVECT orig,dir;
   {
       /* Starting with orig, Walk along projection of ray onto sphere */
       point_on_sphere(r,orig,SM_VIEW_CENTER(smMesh));
-      qt = smPointLocateCell(smMesh,r,v0,v1,v2,NULL,NULL,FALSE);
+      qt = smPointLocateCell(smMesh,r,NULL,NULL,FALSE);
       qtgetset(t_set,qt);
       /* os will contain all triangles seen thus far */
       setcopy(os,t_set);
@@ -1219,7 +1219,7 @@ FVECT orig,dir;
 	       return(s_id);
           /* Find next cell that projection of ray intersects */
 	  smTraceRay(smMesh,r,dir,v0,v1,v2,r);
-	  qt = smPointLocateCell(smMesh,r,v0,v1,v2,NULL,NULL,FALSE);
+	  qt = smPointLocateCell(smMesh,r,NULL,NULL,FALSE);
 	  qtgetset(t_set,qt);
 	  /* Check triangles in set against those seen so far(os):only
 	     check new triangles for intersection (t_set') 
