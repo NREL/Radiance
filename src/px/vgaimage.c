@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1993 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -168,10 +168,10 @@ init()			/* initialize and load display */
 		short	xsiz, ysiz;
 	} video[] = {
 		{_MRES256COLOR, 320, 200},
-		{_VRES256COLOR, 640, 400},
+		{_VRES256COLOR, 640, 480},
 		{_SVRES256COLOR, 800, 600},
 		{_XRES256COLOR, 1024, 768},
-		-1
+		{-1, 0, 0}
 	};
 	struct videoconfig	config;
 	register int	i;
