@@ -21,6 +21,7 @@ cut.c		color quantization - median cut algorithm
 getinfo.c	program to read info. header from file
 glimage.c	simple program to display image on SGI
 greyscale.c	program to produce grey test levels
+macbethcal.c	program to calibrate image conversion using Macbeth chart
 mt160r.c	program to dump pixel file to Mannesman-Tally 160
 neuclrtab.c	neural network color quantization code
 oki20.c		program to dump pixel file to OkiMate 20 monochrome printer
@@ -34,6 +35,7 @@ pf3.c		routines for gaussian and box filtering
 pfilt.c		program to post-process picture file
 pflip.c		flip picture file horizontally and/or vertically
 pinterp.c	interpolate and extrapolate pictures with different views
+pmapgen.c	affine transformation for image mapping used by macbethcal
 protate.c	program to rotate picture file 90 degrees clockwise
 psign.c		produce picture from text
 psum.c		program to sum pictures
@@ -65,5 +67,7 @@ xraster.c	routines to handle images for X10
 xshowtrace.c	display a picture under X11 and watch the rays get traced
 falsecolor.csh 	C-shell script to produce false color pictures
 normpat.csh	C-shell script to normalize pictures for tiling patterns
-pdfview.csh	post-process picture and depth map to simulate depth of field
+pdfblur.csh	compute views for depth of field blurring
+pmblur.csh	compute views for motion blurring
+xyzimage.csh	display images correctly for a particular monitor's primaries
 libtiff/	TIFF image library
