@@ -12,6 +12,10 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "view.h"
 #include "resolu.h"
 
+#ifndef BLOADSIZE
+#define BLOADSIZE	1024	/* number of input beams to load at a time */
+#endif
+
 int	checkdepth = 1;		/* check depth (!-f option)? */
 int	checkrepeats = 0;	/* check for repeats (-c option)? */
 int	frompicz;		/* input from pictures & depth-buffers? */
@@ -187,30 +191,34 @@ COLR	cv;
 addholo(hdf)			/* add a holodeck file */
 char	*hdf;
 {
+	HDBEAMI	hbl[BLOADSIZE];
 	int	fd;
 	register HOLO	*hp;
 	register BEAM	*bp;
-	register HDBEAMI	*hbl;
 	GCOORD	gc[2];
 	FVECT	ro, rd;
 	double	d;
-	int	i, j;
+	int	i, j, n, li;
 	register int	k;
 					/* open the holodeck for reading */
 	openholo(hdf, 0);
 	fd = hdlist[noutsects]->fd;	/* remember the file handle */
 	while ((hp = hdlist[noutsects]) != NULL) {	/* load each section */
-		hbl = (HDBEAMI *)malloc(nbeams(hp)*sizeof(HDBEAMI));
-		if (hbl == NULL)
-			error(SYSTEM, "out of memory in addholo");
-		for (j = nbeams(hp); j--; ) {	/* sort the beams */
-			hbl[j].h = hp;
-			hbl[j].b = j+1;
-		}
-		qsort((char *)hbl, nbeams(hp), sizeof(HDBEAMI), hdfilord);
-		for (j = 0; j < nbeams(hp); j++)	/* load each beam */
-			if ((bp = hdgetbeam(hp, hbl[j].b)) != NULL) {
-				hdbcoord(gc, hp, hbl[j].b);
+		for (j = 0; j < nbeams(hp); j++) {	/* load each beam */
+			if (!(li = j % BLOADSIZE)) {	/* optimize order */
+				if (j+BLOADSIZE > nbeams(hp))
+					k = n = nbeams(hp) - j;
+				else
+					k = n = BLOADSIZE;
+				while (k--) {
+					hbl[k].h = hp;
+					hbl[k].b = j+k+1;
+				}
+				qsort((char *)hbl, n,
+						sizeof(HDBEAMI), hdfilord);
+			}
+			if ((bp = hdgetbeam(hp, hbl[li].b)) != NULL) {
+				hdbcoord(gc, hp, hbl[li].b);
 				for (k = bp->nrm; k--; ) {
 					d = hdray(ro, rd,
 						hp, gc, hdbray(bp)[k].r);
@@ -221,9 +229,9 @@ char	*hdf;
 					d = hddepth(hp, hdbray(bp)[k].d) - d;
 					addray(ro, rd, d, hdbray(bp)[k].v);
 				}
-				hdfreebeam(hp, hbl[j].b);	/* free beam */
+				hdfreebeam(hp, hbl[li].b);	/* free beam */
 			}
-		free((char *)hbl);			/* free beam list */
+		}
 		hddone(hp);				/* free the section */
 	}
 	close(fd);			/* close the file */
