@@ -77,6 +77,8 @@ int  cury = 0;				/* current scan location */
 
 double  exposure = 1.0;			/* exposure compensation used */
 
+int  wrongformat = 0;			/* input in another format? */
+
 GC	revgc;				/* graphics context with GXinvert */
 
 XRASTER	*ourras;			/* our stored image */
@@ -156,10 +158,10 @@ char  *argv[];
 	} else if (i != argc)
 		goto userr;
 				/* get header */
-	getheader(fin, headline);
+	getheader(fin, headline, NULL);
 				/* get picture dimensions */
-	if (fgetresolu(&xmax, &ymax, fin) != (YMAJOR|YDECR))
-		quiterr("bad picture size");
+	if (wrongformat || fgetresolu(&xmax, &ymax, fin) != (YMAJOR|YDECR))
+		quiterr("bad picture format");
 				/* set view parameters */
 	if (gotview && setview(&ourview) != NULL)
 		gotview = 0;
@@ -183,10 +185,14 @@ char  *s;
 {
 	static char  *altname[] = {"rview","rpict","pinterp",VIEWSTR,NULL};
 	register char  **an;
+	char  fmt[32];
 
 	if (isexpos(s))
 		exposure *= exposval(s);
-	else
+	else if (isformat(s)) {
+		formatval(fmt, s);
+		wrongformat = strcmp(fmt, COLRFMT);
+	} else
 		for (an = altname; *an != NULL; an++)
 			if (!strncmp(*an, s, strlen(*an))) {
 				if (sscanview(&ourview, s+strlen(*an)) > 0)

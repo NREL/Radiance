@@ -57,6 +57,7 @@ double	ourexp = -1;			/* output picture exposure */
 
 VIEW	theirview = STDVIEW;		/* input view */
 int	gotview;			/* got input view? */
+int	wrongformat = 0;		/* input in another format? */
 int	thresolu, tvresolu;		/* input resolution */
 double	theirexp;			/* input picture exposure */
 double	theirs2ours[4][4];		/* transformation matrix */
@@ -211,6 +212,7 @@ char	*argv[];
 		fputaspect(pixaspect, stdout);
 	if (ourexp > 0 && (ourexp < .995 || ourexp > 1.005))
 		fputexpos(ourexp, stdout);
+	fputformat(COLRFMT, stdout);
 	putc('\n', stdout);
 							/* write picture */
 	writepicture();
@@ -233,7 +235,13 @@ char	*s;
 {
 	static char	*altname[] = {VIEWSTR,"rpict","rview","pinterp",NULL};
 	register char	**an;
+	char	fmt[32];
 
+	if (isformat(s)) {
+		formatval(fmt, s);
+		wrongformat = strcmp(fmt, COLRFMT);
+		return;
+	}
 	putc('\t', stdout);
 	fputs(s, stdout);
 
@@ -270,10 +278,11 @@ char	*pfile, *zspec;
 	theirexp = 1.0;
 	gotview = 0;
 	printf("%s:\n", pfile);
-	getheader(pfp, headline);
-	if (!gotview || fgetresolu(&thresolu, &tvresolu, pfp)
-			!= (YMAJOR|YDECR)) {
-		fprintf(stderr, "%s: picture view error\n", pfile);
+	getheader(pfp, headline, NULL);
+	if (wrongformat || !gotview ||
+		fgetresolu(&thresolu, &tvresolu, pfp) != (YMAJOR|YDECR)) {
+
+		fprintf(stderr, "%s: picture format error\n", pfile);
 		exit(1);
 	}
 	if (ourexp <= 0)

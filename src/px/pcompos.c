@@ -43,12 +43,21 @@ struct {
 
 int  nfile;			/* number of files */
 
+int  wrongformat = 0;
+
 
 tabputs(s)			/* print line preceded by a tab */
 char  *s;
 {
-	putc('\t', stdout);
-	fputs(s, stdout);
+	char  fmt[32];
+
+	if (isformat(s)) {
+		formatval(fmt, s);
+		wrongformat = strcmp(fmt, COLRFMT);
+	} else {
+		putc('\t', stdout);
+		fputs(s, stdout);
+	}
 }
 
 
@@ -130,7 +139,12 @@ getfile:
 		an++;
 						/* get header */
 		printf("%s:\n", input[nfile].name);
-		getheader(input[nfile].fp, tabputs);
+		getheader(input[nfile].fp, tabputs, NULL);
+		if (wrongformat) {
+			fprintf(stderr, "%s: not a Radiance picture\n",
+					input[nfile].name);
+			quit(1);
+		}
 						/* get picture size */
 		if (fgetresolu(&input[nfile].xres, &input[nfile].yres,
 				input[nfile].fp) != (YMAJOR|YDECR)) {
@@ -155,6 +169,7 @@ getfile:
 		ysiz = ymax;
 					/* add new header info. */
 	printargs(argc, argv, stdout);
+	fputformat(COLRFMT, stdout);
 	printf("\n-Y %d +X %d\n", ysiz, xsiz);
 
 	compos();

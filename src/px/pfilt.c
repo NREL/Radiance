@@ -53,6 +53,8 @@ int  xres, yres;		/* resolution of input */
 double  inpaspect = 1.0;	/* pixel aspect ratio of input */
 int  correctaspect = 0;		/* aspect ratio correction? */
 
+int  wrongformat = 0;
+
 int  xrad;			/* x window size */
 int  yrad;			/* y window size */
 
@@ -227,7 +229,12 @@ char  **argv;
 		quit(1);
 	}
 					/* get header */
-	getheader(fin, headline);
+	getheader(fin, headline, NULL);
+	if (wrongformat) {
+		fprintf(stderr, "%s: input must be a Radiance picture\n",
+				progname);
+		quit(1);
+	}
 					/* add new header info. */
 	printargs(i, argv, stdout);
 					/* get picture size */
@@ -273,9 +280,15 @@ char  **argv;
 headline(s)				/* process line from header */
 char  *s;
 {
+	char  fmt[32];
+
 	fputs(s, stdout);		/* copy to output */
 	if (isaspect(s))		/* get aspect ratio */
 		inpaspect *= aspectval(s);
+	else if (isformat(s)) {
+		formatval(fmt, s);
+		wrongformat = strcmp(fmt, COLRFMT);
+	}
 }
 
 

@@ -34,11 +34,10 @@ char  **argv;
 		exit(1);
 	}
 	
-				/* discard header */
-	getheader(input, NULL);
 				/* get picture dimensions */
-	if (fgetresolu(&xres, &yres, input) != (YMAJOR|YDECR)) {
-		fprintf(stderr, "%s: bad picture size\n", argv[0]);
+	if (checkheader(input, COLRFMT, NULL) < 0 ||
+			fgetresolu(&xres, &yres, input) != (YMAJOR|YDECR)) {
+		fprintf(stderr, "%s: bad picture format\n", argv[0]);
 		exit(1);
 	}
 	if (xres > NCOLS) {

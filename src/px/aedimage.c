@@ -99,6 +99,7 @@ long  scanpos[NROWS];
 
 extern double  atof();
 double  exposure = 1.0;
+int  wrong_fmt = 0;
 
 
 main(argc, argv)
@@ -140,7 +141,9 @@ char  *argv[];
 		quitmsg(errmsg);
 	}
 				/* get header */
-	getheader(fin, checkhead);
+	getheader(fin, checkhead, NULL);
+	if (wrong_fmt)
+		quitmsg("input must be a Radiance picture");
 				/* get picture dimensions */
 	if (fgetresolu(&xmax, &ymax, fin) != (YMAJOR|YDECR))
 		quitmsg("bad picture size");
@@ -169,8 +172,14 @@ userr:
 checkhead(line)				/* deal with line from header */
 char  *line;
 {
+	char	fmt[32];
+
 	if (isexpos(line))
 		exposure *= exposval(line);
+	else if (isformat(line)) {
+		formatval(fmt, line);
+		wrong_fmt = strcmp(fmt, COLRFMT);
+	}
 }
 
 
