@@ -382,9 +382,13 @@ register struct source	*sp;
 			sp->dom += d;
 		}
 	}
+	freespans(sp);
+	if (sp->dom <= FTINY) {		/* must be right at edge of image */
+		free((char *)sp);
+		return;
+	}
 	sp->brt /= (double)n;
 	compdir(sp->dir, (int)(hsum/sp->dom), (int)(vsum/sp->dom));
-	freespans(sp);
 	sp->next = donelist;
 	donelist = sp;
 	if (verbose)
@@ -463,7 +467,8 @@ struct source	*sp;
 {
 	register struct srcspan	*ss;
 
-	for (ss = sp->first; ss != NULL; ss = ss->next)
+	while ((ss = sp->first) != NULL) {
+		sp->first = ss->next;
 		free((char *)ss);
-	sp->first = NULL;
+	}
 }
