@@ -1,0 +1,535 @@
+/* Copyright (c) 1994 Regents of the University of California */
+
+#ifndef lint
+static char SCCSid[] = "$SunId$ LBL";
+#endif
+
+/*
+ * Convert MGF (Materials and Geometry Format) to Radiance
+ */
+
+#include <stdio.h>
+#include <math.h>
+#include <string.h>
+#include "mgflib/parser.h"
+#include "color.h"
+#include "tmesh.h"
+
+#define putv(v)		printf("%18.12g %18.12g %18.12g\n",(v)[0],(v)[1],(v)[2])
+
+#define isgrey(cxy)	((cxy)->cx > .31 && (cxy)->cx < .35 && \
+			(cxy)->cy > .31 && (cxy)->cy < .35)
+
+#define is0vect(v)	((v)[0] == 0. && (v)[1] == 0. && (v)[2] == 0.)
+
+#define BIGFLT		1e8
+
+double	glowdist = 1.5*BIGFLT;		/* glow test distance */
+
+double  emult = 1.;			/* emmitter multiplier */
+
+int	r_comment(), r_cone(), r_cyl(), r_face(), r_ies(), r_ring(), r_sph();
+char	*material(), *object(), *addarg();
+
+
+main(argc, argv)		/* convert files to stdout */
+int	argc;
+char	*argv[];
+{
+	int	i, rv;
+				/* initialize dispatch table */
+	mg_ehand[MG_E_COMMENT] = r_comment;
+	mg_ehand[MG_E_COLOR] = c_hcolor;
+	mg_ehand[MG_E_CONE] = r_cone;
+	mg_ehand[MG_E_CXY] = c_hcolor;
+	mg_ehand[MG_E_CYL] = r_cyl;
+	mg_ehand[MG_E_ED] = c_hmaterial;
+	mg_ehand[MG_E_FACE] = r_face;
+	mg_ehand[MG_E_IES] = r_ies;
+	mg_ehand[MG_E_MATERIAL] = c_hmaterial;
+	mg_ehand[MG_E_NORMAL] = c_hvertex;
+	mg_ehand[MG_E_OBJECT] = obj_handler;
+	mg_ehand[MG_E_POINT] = c_hvertex;
+	mg_ehand[MG_E_RD] = c_hmaterial;
+	mg_ehand[MG_E_RING] = r_ring;
+	mg_ehand[MG_E_RS] = c_hmaterial;
+	mg_ehand[MG_E_SPH] = r_sph;
+	mg_ehand[MG_E_TD] = c_hmaterial;
+	mg_ehand[MG_E_TS] = c_hmaterial;
+	mg_ehand[MG_E_VERTEX] = c_hvertex;
+	mg_ehand[MG_E_XF] = xf_handler;
+	mg_init();		/* initialize the parser */
+					/* get options & print header */
+	printf("## %s", argv[0]);
+	for (i = 1; i < argc && argv[i][0] == '-'; i++) {
+		printf(" %s", argv[i]);
+		switch (argv[i][1]) {
+		case 'g':			/* glow distance (meters) */
+			if (argv[i][2] || badarg(argc-i, argv+i, "f"))
+				goto userr;
+			glowdist = atof(argv[++i]);
+			printf(" %s", argv[i]);
+			break;
+		case 'e':			/* emitter multiplier */
+			if (argv[i][2] || badarg(argc-i, argv+i, "f"))
+				goto userr;
+			emult = atof(argv[++i]);
+			printf(" %s", argv[i]);
+			break;
+		default:
+			goto userr;
+		}
+	}
+	putchar('\n');
+	if (i == argc) {		/* convert stdin */
+		if ((rv = mg_load(NULL)) != MG_OK)
+			exit(1);
+	} else				/* convert each file */
+		for ( ; i < argc; i++) {
+			printf("## %s %s ##############################\n",
+					argv[0], argv[i]);
+			if ((rv = mg_load(argv[i])) != MG_OK)
+				exit(1);
+		}
+	exit(0);
+userr:
+	fprintf(stderr, "Usage: %s [-g dist][-m mult] [file.mgf] ..\n",
+			argv[0]);
+	exit(1);
+}
+
+
+int
+r_comment(ac, av)		/* repeat a comment verbatim */
+register int	ac;
+register char	**av;
+{
+	fputs("\n#", stdout);	/* use Radiance comment character */
+	while (--ac) {
+		putchar(' ');
+		fputs(*++av, stdout);
+	}
+	putchar('\n');
+	return(MG_OK);
+}
+
+
+int
+r_cone(ac, av)			/* put out a cone */
+int	ac;
+char	**av;
+{
+	static int	ncones;
+	char	*mat;
+	double	r1, r2;
+	C_VERTEX	*cv1, *cv2;
+	FVECT	p1, p2;
+	int	inv;
+
+	if (ac != 5)
+		return(MG_EARGC);
+	if (!isflt(av[2]) || !isflt(av[4]))
+		return(MG_ETYPE);
+	if ((cv1 = c_getvert(av[1])) == NULL ||
+			(cv2 = c_getvert(av[3])) == NULL)
+		return(MG_EUNDEF);
+	xf_xfmpoint(p1, cv1->p);
+	xf_xfmpoint(p2, cv2->p);
+	r1 = xf_scale(atof(av[2]));
+	r2 = xf_scale(atof(av[4]));
+	inv = r1 < 0.;
+	if (r1 == 0.) {
+		if (r2 == 0.)
+			return(MG_EILL);
+		inv = r2 < 0.;
+	} else if (r2 != 0. && inv ^ r2 < 0.)
+		return(MG_EILL);
+	if (inv) {
+		r1 = -r1;
+		r2 = -r2;
+	}
+	if ((mat = material()) == NULL)
+		return(MG_EBADMAT);
+	printf("\n%s %s %sc%d\n", mat, inv ? "cup" : "cone",
+			object(), ++ncones);
+	printf("0\n0\n8\n");
+	putv(p1);
+	putv(p2);
+	printf("%18.12g %18.12g\n", r1, r2);
+	return(MG_OK);
+}
+
+
+int
+r_cyl(ac, av)			/* put out a cylinder */
+int	ac;
+char	**av;
+{
+	static int	ncyls;
+	char	*mat;
+	double	rad;
+	C_VERTEX	*cv1, *cv2;
+	FVECT	p1, p2;
+	int	inv;
+
+	if (ac != 4)
+		return(MG_EARGC);
+	if (!isflt(av[2]))
+		return(MG_ETYPE);
+	if ((cv1 = c_getvert(av[1])) == NULL ||
+			(cv2 = c_getvert(av[3])) == NULL)
+		return(MG_EUNDEF);
+	xf_xfmpoint(p1, cv1->p);
+	xf_xfmpoint(p2, cv2->p);
+	rad = xf_scale(atof(av[2]));
+	if ((inv = rad < 0.))
+		rad = -rad;
+	if ((mat = material()) == NULL)
+		return(MG_EBADMAT);
+	printf("\n%s %s %scy%d\n", mat, inv ? "tube" : "cylinder",
+			object(), ++ncyls);
+	printf("0\n0\n7\n");
+	putv(p1);
+	putv(p2);
+	printf("%18.12g\n", rad);
+	return(MG_OK);
+}
+
+
+int
+r_sph(ac, av)			/* put out a sphere */
+int	ac;
+char	**av;
+{
+	static int	nsphs;
+	char	*mat;
+	double	rad;
+	C_VERTEX	*cv;
+	FVECT	cent;
+	int	inv;
+
+	if (ac != 3)
+		return(MG_EARGC);
+	if (!isflt(av[2]))
+		return(MG_ETYPE);
+	if ((cv = c_getvert(av[1])) == NULL)
+		return(MG_EUNDEF);
+	xf_xfmpoint(cent, cv->p);
+	rad = xf_scale(atof(av[2]));
+	if ((inv = rad < 0.))
+		rad = -rad;
+	if ((mat = material()) == NULL)
+		return(MG_EBADMAT);
+	printf("\n%s %s %ss%d\n", mat, inv ? "bubble" : "sphere",
+			object(), ++nsphs);
+	printf("0\n0\n4 %18.12g %18.12g %18.12g %18.12g\n",
+			cent[0], cent[1], cent[2], rad);
+	return(MG_OK);
+}
+
+
+int
+r_ring(ac, av)			/* put out a ring */
+int	ac;
+char	**av;
+{
+	static int	nrings;
+	char	*mat;
+	double	r1, r2;
+	C_VERTEX	*cv;
+	FVECT	cent, norm;
+
+	if (ac != 4)
+		return(MG_EARGC);
+	if (!isflt(av[2]) || !isflt(av[3]))
+		return(MG_ETYPE);
+	if ((cv = c_getvert(av[1])) == NULL)
+		return(MG_EUNDEF);
+	if (is0vect(cv->n))
+		return(MG_EILL);
+	xf_xfmpoint(cent, cv->p);
+	xf_rotvect(norm, cv->n);
+	r1 = xf_scale(atof(av[2]));
+	r2 = xf_scale(atof(av[3]));
+	if (r1 < 0. | r2 <= r1)
+		return(MG_EILL);
+	if ((mat = material()) == NULL)
+		return(MG_EBADMAT);
+	printf("\n%s ring %sr%d\n", mat, object(), ++nrings);
+	printf("0\n0\n8\n");
+	putv(cent);
+	putv(norm);
+	printf("%18.12g %18.12g\n", r1, r2);
+	return(MG_OK);
+}
+
+
+int
+r_face(ac, av)			/* convert a face */
+int	ac;
+char	**av;
+{
+	static int	nfaces;
+	char	*mat;
+	register int	i;
+	register C_VERTEX	*cv;
+	FVECT	v;
+	int	rv;
+
+	if (ac < 4)
+		return(MG_EARGC);
+	if ((mat = material()) == NULL)
+		return(MG_EBADMAT);
+	if (ac < 5) {				/* check for surface normals */
+		for (i = 1; i < ac; i++) {
+			if ((cv = c_getvert(av[i])) == NULL)
+				return(MG_EUNDEF);
+			if (is0vect(cv->n))
+				break;
+		}
+		if (i == ac) {			/* break into triangles */
+			do_tri(mat, av[1], av[2], av[3]);
+			if (ac == 5)
+				do_tri(mat, av[3], av[4], av[1]);
+			return(MG_OK);
+		}
+	}
+	printf("\n%s polygon %sf%d\n", mat, object(), ++nfaces);
+	printf("0\n0\n%d\n", 3*(ac-1));
+	for (i = 1; i < ac; i++) {
+		if ((cv = c_getvert(av[i])) == NULL)
+			return(MG_EUNDEF);
+		xf_xfmpoint(v, cv->p);
+		putv(v);
+	}
+	return(MG_OK);
+}
+
+
+r_ies(ac, av)				/* convert an IES luminaire file */
+int	ac;
+char	**av;
+{
+	int	xa0 = 2;
+	char	combuf[72];
+	char	fname[48];
+	char	*oname;
+	register char	*op;
+	register int	i;
+
+	if (ac < 2)
+		return(MG_EARGC);
+	(void)strcpy(combuf, "ies2rad");
+	op = combuf + 7;
+	if (ac-xa0 >= 2 && !strcmp(av[xa0], "-m")) {
+		if (!isflt(av[xa0+1]))
+			return(MG_ETYPE);
+		op = addarg(addarg(op, "-m"), av[xa0+1]);
+		xa0 += 2;
+	}
+	if (access(av[1], 0) == -1)
+		return(MG_ENOFILE);
+	*op++ = ' ';			/* IES filename goes last */
+	(void)strcpy(op, av[1]);
+	system(combuf);			/* run ies2rad */
+					/* now let's find the output file */
+	if ((op = strrchr(av[1], '/')) == NULL)
+		op = av[1];
+	(void)strcpy(fname, op);
+	if ((op = strrchr(fname, '.')) == NULL)
+		op = fname + strlen(fname);
+	(void)strcpy(op, ".rad");
+	if (access(fname, 0) == -1)
+		return(MG_EINCL);
+					/* put out xform command */
+	printf("\n!xform");
+	oname = object();
+	if (*oname)
+		printf(" -n %s", oname);
+	for (i = xa0; i < ac; i++)
+		printf(" %s", av[i]);
+	if (ac > xa0 && xf_argc > 0)
+		printf(" -i 1");
+	for (i = 0; i < xf_argc; i++)
+		printf(" %s", xf_argv[i]);
+	printf(" %s\n", fname);
+	return(MG_OK);
+}
+
+
+do_tri(mat, vn1, vn2, vn3)		/* put out smoothed triangle */
+char	*mat, *vn1, *vn2, *vn3;
+{
+	static int	ntris;
+	char	*mod = mat;
+	BARYCCM	bvecs;
+	FLOAT	bcoor[3][3];
+	C_VERTEX	*cv1, *cv2, *cv3;
+	FVECT	v1, v2, v3;
+	FVECT	n1, n2, n3;
+	register int	i;
+			/* the following is repeat code, so assume it's OK */
+	cv1 = c_getvert(vn1);
+	cv2 = c_getvert(vn2);
+	cv3 = c_getvert(vn3);
+	xf_xfmpoint(v1, cv1->p);
+	xf_xfmpoint(v2, cv2->p);
+	xf_xfmpoint(v3, cv3->p);
+	if (comp_baryc(&bvecs, v1, v2, v3) == 0) {
+		printf("\n%s texfunc T-nor\n", mod);
+		mod = "T-nor";
+		printf("4 dx dy dz %s\n0\n", TCALNAME);
+		xf_rotvect(n1, cv1->n);
+		xf_rotvect(n2, cv2->n);
+		xf_rotvect(n3, cv3->n);
+		for (i = 0; i < 3; i++) {
+			bcoor[i][0] = n1[i];
+			bcoor[i][1] = n2[i];
+			bcoor[i][2] = n3[i];
+		}
+		put_baryc(&bvecs, bcoor, 3);
+	}
+	printf("\n%s polygon %st%d\n", mod, object(), ++ntris);
+	printf("0\n0\n9\n");
+	putv(v1);
+	putv(v2);
+	putv(v3);
+}
+
+
+char *
+material()			/* get (and print) current material */
+{
+	char	*mname = "mat";
+	COLOR	radrgb, c2;
+	double	d;
+	register int	i;
+
+	if (c_cmaterial->name != NULL)
+		mname = c_cmaterial->name;
+	if (!c_cmaterial->clock)
+		return(mname);		/* already current */
+				/* else update output */
+	c_cmaterial->clock = 0;
+	if (c_cmaterial->ed > .1) {	/* emitter */
+		cvtcolor(radrgb, &c_cmaterial->ed_c,
+				emult*c_cmaterial->ed/WHTEFFICACY);
+		if (glowdist < BIGFLT) {	/* do a glow */
+			printf("\nvoid glow %s\n0\n0\n", mname);
+			printf("4 %f %f %f %f\n", colval(radrgb,RED),
+					colval(radrgb,GRN),
+					colval(radrgb,BLU), glowdist);
+		} else {
+			printf("\nvoid light %s\n0\n0\n", mname);
+			printf("3 %f %f %f\n", colval(radrgb,RED),
+					colval(radrgb,GRN),
+					colval(radrgb,BLU));
+		}
+		return(mname);
+	}
+	d = c_cmaterial->rd + c_cmaterial->td +
+			c_cmaterial->rs + c_cmaterial->ts;
+	if (d <= 0. | d >= 1.)
+		return(NULL);
+	if (c_cmaterial->td > .01 || c_cmaterial->ts > .01) {	/* trans */
+		double	ts, a5, a6;
+
+		ts = sqrt(c_cmaterial->ts);	/* because we use 2 sides */
+						/* average colors */
+		d = c_cmaterial->rd + c_cmaterial->td + ts;
+		cvtcolor(radrgb, &c_cmaterial->rd_c, c_cmaterial->rd/d);
+		cvtcolor(c2, &c_cmaterial->td_c, c_cmaterial->td/d);
+		addcolor(radrgb, c2);
+		cvtcolor(c2, &c_cmaterial->ts_c, ts/d);
+		addcolor(radrgb, c2);
+		if (c_cmaterial->rs + ts > .0001)
+			a5 = (c_cmaterial->rs*c_cmaterial->rs_a +
+					ts*.5*c_cmaterial->ts_a) /
+					(c_cmaterial->rs + ts);
+		a6 = (c_cmaterial->td + ts) /
+				(c_cmaterial->rd + c_cmaterial->td + ts);
+		if (a6 < .999) {
+			d = c_cmaterial->rd/(1. - c_cmaterial->rs)/(1. - a6);
+			scalecolor(radrgb, d);
+		}
+		printf("\nvoid trans %s\n0\n0\n", mname);
+		printf("7 %f %f %f\n", colval(radrgb,RED),
+				colval(radrgb,GRN), colval(radrgb,BLU));
+		printf("\t%f %f %f %f\n", c_cmaterial->rs, a5, a6,
+				ts/(ts + c_cmaterial->td));
+		return(mname);
+	}
+	if (c_cmaterial->rs < .01 || isgrey(&c_cmaterial->rs_c)) { /* plastic */
+		if (c_cmaterial->rs > .999)
+			cvtcolor(radrgb, &c_cmaterial->rd_c, 1.);
+		else
+			cvtcolor(radrgb, &c_cmaterial->rd_c,
+					c_cmaterial->rd/(1.-c_cmaterial->rs));
+		printf("\nvoid plastic %s\n0\n0\n", mname);
+		printf("5 %f %f %f %f %f\n", colval(radrgb,RED),
+				colval(radrgb,GRN), colval(radrgb,BLU),
+				c_cmaterial->rs, c_cmaterial->rs_a);
+		return(mname);
+	}
+					/* else it's metal */
+	d = c_cmaterial->rd + c_cmaterial->rs;	/* average colors */
+	cvtcolor(radrgb, &c_cmaterial->rd_c, c_cmaterial->rd/d);
+	cvtcolor(c2, &c_cmaterial->rs_c, c_cmaterial->rs/d);
+	addcolor(radrgb, c2);
+	if (c_cmaterial->rs < .999) {
+		d = c_cmaterial->rd/(1. - c_cmaterial->rs);
+		scalecolor(radrgb, d);
+	}
+	printf("\nvoid metal %s\n0\n0\n", mname);
+	printf("5 %f %f %f %f %f\n", colval(radrgb,RED),
+			colval(radrgb,GRN), colval(radrgb,BLU),
+			c_cmaterial->rs, c_cmaterial->rs_a);
+	return(mname);
+}
+
+
+cvtcolor(radrgb, ciec, intensity)	/* convert a CIE color to Radiance */
+COLOR	radrgb;
+register C_COLOR	*ciec;
+double	intensity;
+{
+	static COLOR	ciexyz;
+
+	ciexyz[1] = intensity;
+	ciexyz[0] = ciec->cx/ciec->cy*ciexyz[1];
+	ciexyz[2] = ciexyz[1]*(1./ciec->cy - 1.) - ciexyz[0];
+	cie_rgb(radrgb, ciexyz);
+}
+
+
+char *
+object()			/* return current object name */
+{
+	static char	objbuf[64];
+	register int	i;
+	register char	*cp;
+	int	len;
+
+	i = obj_nnames - sizeof(objbuf)/16;
+	if (i < 0)
+		i = 0;
+	for (cp = objbuf; i < obj_nnames &&
+		cp + (len=strlen(obj_name[i])) < objbuf+sizeof(objbuf)-1;
+			i++, *cp++ = '.') {
+		strcpy(cp, obj_name[i]);
+		cp += len;
+	}
+	*cp = '\0';
+	return(objbuf);
+}
+
+
+char *
+addarg(op, arg)				/* add argument and advance pointer */
+register char	*op, *arg;
+{
+	*op = ' ';
+	while (*++op = *arg++)
+		;
+	return(op);
+}
