@@ -89,7 +89,6 @@ RAY  *r;
 	return;
 memerr:
 	error(SYSTEM, "out of memory in setfunc");
-#undef  mxf
 }
 
 
