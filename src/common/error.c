@@ -10,8 +10,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "standard.h"
 
+#ifndef linux
 extern char  *sys_errlist[];	/* system error list */
 extern int  sys_nerr;		/* number of system errors */
+#endif
 
 char  errmsg[512];		/* global error message buffer */
 
