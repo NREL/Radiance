@@ -127,8 +127,8 @@ char	*s;
 
 	if (print_header)		/* copy to output */
 		fputs(s, stdout);
-	if (!strncmp(s, VIEWSTR, VIEWSTRL))
-		sscanview(&midview, s+VIEWSTRL);
+	if (isview(s))
+		sscanview(&midview, s);
 	else if (isformat(s)) {
 		formatval(fmt, s);
 		wrongformat = strcmp(fmt, "ascii");
