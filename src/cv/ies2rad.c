@@ -71,7 +71,7 @@ double	illumrad = 0.0;			/* radius for illum sphere */
 typedef struct {
 	int	type;				/* RECT, DISK, SPHERE */
 	double	w, l, h;			/* width, length, height */
-	double	area;				/* effective radiating area */
+	double	area;				/* max. projected area */
 } SHAPE;				/* a source shape */
 
 int	gargc;				/* global argc (minus filenames) */
@@ -696,10 +696,8 @@ double	width, length, height;
 		shp->area = shp->w * shp->l;
 		break;
 	case DISK:
-		shp->area = PI/4. * shp->w * shp->w;
-		break;
 	case SPHERE:
-		shp->area = PI * shp->w * shp->w;
+		shp->area = PI/4. * shp->w * shp->w;
 		break;
 	}
 	return(0);
