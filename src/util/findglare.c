@@ -203,6 +203,23 @@ userr:
 }
 
 
+int
+angcmp(ap1, ap2)		/* compare two angles */
+ANGLE	*ap1, *ap2;
+{
+	register int	a1, a2;
+
+	a1 = *ap1;
+	a2 = *ap2;
+	if (a1 == a2) {
+		fprintf(stderr, "%s: duplicate glare angle (%d)\n",
+				progname, a1);
+		exit(1);
+	}
+	return(a1-a2);
+}
+
+
 init()				/* initialize global variables */
 {
 	double	d;
@@ -214,8 +231,9 @@ init()				/* initialize global variables */
 						/* set direction vectors */
 	for (i = 0; glarang[i] != AEND; i++)
 		;
-	if (i > 0 && (glarang[0] <= 0 || glarang[i-1] >= 180)) {
-		fprintf(stderr, "%s: glare angles must be between 1 and 179\n",
+	qsort(glarang, i, sizeof(ANGLE), angcmp);
+	if (i > 0 && (glarang[0] <= 0 || glarang[i-1] > 180)) {
+		fprintf(stderr, "%s: glare angles must be between 1 and 180\n",
 				progname);
 		exit(1);
 	}
