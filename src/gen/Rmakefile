@@ -11,7 +11,7 @@ CFLAGS = $(MACH) $(OPT)
 INSTDIR = /usr/local/ray
 
 PROGS = genbox gensky xform genblinds genrev genworm \
-		gensurf genprism
+		gensurf genprism replmarks
 
 all:	$(PROGS)
 
@@ -40,6 +40,9 @@ genprism:	genprism.o
 
 xform:	xform.o xf.o mat4.o fgetline.o
 	cc $(CFLAGS) -o xform xform.o xf.o mat4.o fgetline.o -lm
+
+replmarks:	replmarks.o fvect.o fgetline.o
+	cc $(CFLAGS) -o replmarks replmarks.o fvect.o fgetline.o -lm
 
 genrev:	genrev.o calexpr.o caldefn.o calfunc.o \
 ealloc.o savestr.o
@@ -70,7 +73,7 @@ calfunc.o:	calfunc.c calcomp.h
 
 gensurf.o:	standard.h mat4.h fvect.h
 
-fvect.o genworm.o:	fvect.h
+fvect.o genworm.o replmarks.o:	fvect.h
 
 mat4.o:		mat4.h fvect.h
 
