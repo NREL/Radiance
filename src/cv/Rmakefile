@@ -62,7 +62,8 @@ rad2mgf:	rad2mgf.o
 
 MGF_LIB:
 	cd mgflib ; \
-	make libmgf.a CFLAGS="$(OPT) $(MACH) '-DMEM_PTR=char *' -DNOPROTO" ; \
+	make libmgf.a CC=$(CC) \
+		CFLAGS="$(OPT) $(MACH) '-DMEM_PTR=char *' -DNOPROTO" ; \
 	cp libmgf.a ../../lib
 
 mgf2rad.o:	mgflib/parser.h tmesh.h
