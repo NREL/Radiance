@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -89,13 +89,18 @@ transfer()		/* transfer Radiance picture */
 	if (checkheader(stdin, COLRFMT, stdout) < 0 ||
 			(order = fgetresolu(&xmax, &ymax, stdin)) < 0)
 		quiterr("bad picture format");
+	fputs(progname, stdout);
+	if (bradj)
+		printf(" -e %+d", bradj);
+	if (doflat)
+		fputs("\n", stdout);
+	else {
+		fputs(" -r\n", stdout);
+		fputformat(COLRFMT, stdout);
+	}
 	if (bradj)
 		fputexpos(pow(2.0, (double)bradj), stdout);
-	if (!doflat) {
-		fputformat(COLRFMT, stdout);
-		printf("%s -r\n\n", progname);
-	} else
-		printf("%s\n\n", progname);
+	fputs("\n", stdout);
 	fputresolu(order, xmax, ymax, stdout);
 						/* allocate scanline */
 	scanin = (COLR *)malloc(xmax*sizeof(COLR));
