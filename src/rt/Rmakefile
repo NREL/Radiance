@@ -83,8 +83,10 @@ PROGS = $(DESTDIR)/rtrace $(DESTDIR)/rpict $(DESTDIR)/rview $(DESTDIR)/lookamb
 
 all:	$(PROGS)
 
-install:	$(PROGS)
+install:	$(PROGS) rayinit.cal
 	$(INSTALL) $(PROGS) $(INSTDIR)
+	rm -f $(LIBDIR)/rayinit.cal
+	cp rayinit.cal $(LIBDIR)
 
 sun:	$(DEVDIR)/sun $(DEVDIR)/sun.com
 
