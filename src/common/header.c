@@ -1,4 +1,4 @@
-/* Copyright (c) 1988 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -134,7 +134,7 @@ char	*pat, *str;
 		case '*':			/* match any string */
 			while (p[1] == '*') p++;
 			do
-				if ( (p[1] == '?' || p[1] == *s)
+				if ( (p[1]=='?' || p[1]==*s)
 						&& copymatch(p+1,s) ) {
 					strcpy(pat, str);
 					return(1);
@@ -164,7 +164,7 @@ char	*pat, *str;
  * Checkheader(fin,fmt,fout) returns a value of 1 if the input format
  * matches the specification in fmt, 0 if no input format was found,
  * and -1 if the input format does not match or there is an
- * error reading the header.  If fmt is NULL, then -1 is returned
+ * error reading the header.  If fmt is empty, then -1 is returned
  * if any input format is found (or there is an error), and 0 otherwise.
  * If fmt contains any '*' or '?' characters, then checkheader
  * does wildcard expansion and copies a matching result into fmt.
@@ -183,8 +183,6 @@ FILE  *fout;
 	cdat.fp = fout;
 	cdat.fs[0] = '\0';
 	if (getheader(fin, mycheck, &cdat) < 0)
-		return(-1);
-	if (fmt == NULL && cdat.fs[0] != '\0')
 		return(-1);
 	if (cdat.fs[0] != '\0')
 		return(copymatch(fmt, cdat.fs) ? 1 : -1);
