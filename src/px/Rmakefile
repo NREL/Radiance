@@ -1,5 +1,5 @@
-#  Compiles for image processing and display programs
-# SCCSid "$SunId$ LBL"
+# Compiles for image processing and display programs
+# SCCSid "$SunId$ SGI"
 #
 
 ARCH = sun
@@ -32,9 +32,6 @@ aed:	aedimage
 
 sgi:	glimage
 	cp glimage $(INSTDIR)
-
-tiff:	ra_tiff
-	cp ra_tiff $(INSTDIR)
 
 sun:
 
@@ -180,12 +177,10 @@ ra_xyze:	ra_xyze.o
 ra_tiff:	ra_tiff.o ../lib/libtiff.a
 	$(CC) $(CFLAGS) -o ra_tiff ra_tiff.o -lrt -ltiff $(MLIB)
 
-ra_tiff.o:	ra_tiff.c
-	$(CC) $(CFLAGS) -Ilibtiff -c ra_tiff.c
-
-../lib/libtiff.a:
-	cd libtiff ; make -f Makefile.$(ARCH) ; \
-	mv libtiff.a ../../lib ; make clean
+../common/tiff.h ../lib/libtiff.a:	tiff/config.local
+	cd tiff ; ./configure -quiet -noninteractive ; \
+	cd libtiff ; make install ;
+#	cd .. ; make distclean
 
 ra_pixar:	ra_pixar.o ra_pixar.c
 	$(CC) $(CFLAGS) $(PIXAR_INCLUDE) -o $@ ra_pixar.o -lrt \
@@ -237,6 +232,8 @@ x11image.o x11raster.o:	x11raster.h
 x11image.o:	../common/tonemap.h ../common/color.h
 
 ra_t8.o:	../common/targa.h
+
+ra_tiff.o:	../common/tiff.h
 
 aedimage.o ximage.o ra_t8.o ra_pr.o:	pic.h
 
