@@ -15,6 +15,7 @@ set bluv='1-8/3*v'
 set ndivs=8
 set picture='-'
 set cpict=
+set loff=0
 set legwidth=100
 set legheight=200
 while ($#argv > 0)
@@ -63,9 +64,11 @@ while ($#argv > 0)
 		breaksw
 	case -cl:
 		set docont=a
+		set loff=20
 		breaksw
 	case -cb:
 		set docont=b
+		set loff=14
 		breaksw
 	case -e:
 		set doextrem
@@ -162,11 +165,11 @@ if ( $?doextrem ) then
 	psign -s -.15 -a 2 -h 16 $minval > $td/minv.pic
 	psign -s -.15 -a 2 -h 16 $maxval > $td/maxv.pic
 	pcomb $pc0args $pc1args $picture $cpict \
-		| pcompos $td/scol.pic 0 0 -t .2 $td/slab.pic 0 20 \
+		| pcompos $td/scol.pic 0 0 -t .2 $td/slab.pic 0 $loff \
 		  - $legwidth 0 $td/minv.pic $minpos $td/maxv.pic $maxpos
 else
 	pcomb $pc0args $pc1args $picture $cpict \
-		| pcompos $td/scol.pic 0 0 -t .2 $td/slab.pic 0 20 - $legwidth 0
+		| pcompos $td/scol.pic 0 0 -t .2 $td/slab.pic 0 $loff - $legwidth 0
 endif
 quit:
 rm -rf $td
