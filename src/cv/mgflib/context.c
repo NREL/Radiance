@@ -43,6 +43,8 @@ register char	**av;
 
 	switch (mg_entity(av[0])) {
 	case MG_E_COLOR:	/* get/set color context */
+		if (ac > 4)
+			return(MG_EARGC);
 		if (ac == 1) {		/* set unnamed color context */
 			c_uncolor = c_dfcolor;
 			c_ccolor = &c_uncolor;
@@ -107,6 +109,8 @@ register char	**av;
 
 	switch (mg_entity(av[0])) {
 	case MG_E_MATERIAL:	/* get/set material context */
+		if (ac > 4)
+			return(MG_EARGC);
 		if (ac == 1) {		/* set unnamed material context */
 			c_unmaterial = c_dfmaterial;
 			c_cmaterial = &c_unmaterial;
@@ -221,6 +225,8 @@ register char	**av;
 
 	switch (mg_entity(av[0])) {
 	case MG_E_VERTEX:	/* get/set vertex context */
+		if (ac > 4)
+			return(MG_EARGC);
 		if (ac == 1) {		/* set unnamed vertex context */
 			c_unvertex = c_dfvertex;
 			c_cvertex = &c_unvertex;
