@@ -8,6 +8,7 @@ static const char	RCSid[] = "$Id$";
 
 #include "standard.h"
 
+#include "platform.h"
 #include "view.h"
 
 extern int	putf(), putd(), puta();

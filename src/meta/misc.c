@@ -9,7 +9,6 @@ static const char	RCSid[] = "$Id$";
 #include  "meta.h"
 
 
-
 char  coms[] = COML;
 
 char  errmsg[128];

@@ -7,6 +7,7 @@ static const char	RCSid[] = "$Id$";
 
 #include <stdio.h>
 #include  <time.h>
+#include  <string.h>
 
 #include "platform.h"
 #include "color.h"

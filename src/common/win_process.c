@@ -270,7 +270,6 @@ open_process(SUBPROC *proc, char *av[])
 {
 	char *cmdpath;
 	char *cmdstr;
-	int res;
 
 	proc->running = 0;
 	cmdpath = getpath(av[0], getenv("PATH"), X_OK);

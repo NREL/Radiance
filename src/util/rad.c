@@ -1399,6 +1399,12 @@ int	all;
 {
 	(void)all;			/* no one to wait for */
 }
+int
+kill(pid, sig) /* win|unix_process.c should also wait and kill */
+int pid, sig;
+{
+	return 0;
+}
 #endif	/* ! RHAS_FORK_EXEC */
 
 finish_process()			/* exit a child process */

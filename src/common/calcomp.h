@@ -46,7 +46,7 @@ typedef struct epnode {
 
 typedef struct vardef  VARDEF;	/* a variable definition */
 
-#define	 MAXWORD	127		/* maximum word/id length */
+#define	 RMAXWORD	127		/* maximum word/id length */
 #define	 CNTXMARK	'`'		/* context mark */
 
 #define	 isid(c)	(isalnum(c) || (c) == '_' || \
