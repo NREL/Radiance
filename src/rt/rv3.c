@@ -22,6 +22,12 @@ static char SCCSid[] = "$SunId$ LBL";
 #define WFLUSH		30		/* flush after this many rays */
 #endif
 
+#ifdef  SMLFLT
+#define  sscanvec(s,v)	(sscanf(s,"%f %f %f",v,v+1,v+2)==3)
+#else
+#define  sscanvec(s,v)	(sscanf(s,"%lf %lf %lf",v,v+1,v+2)==3)
+#endif
+
 
 getrect(s, r)				/* get a box */
 char  *s;
@@ -87,7 +93,7 @@ double  *mp;
 		error(COMMAND, "illegal magnification");
 		return(-1);
 	}
-	if (sscanf(s, "%*lf %lf %lf %lf", &vec[0], &vec[1], &vec[2]) != 3) {
+	if (!sscanvec(sskip(s), vec)) {
 		if (dev->getcur == NULL)
 			return(-1);
 		(*dev->comout)("Pick view center\n");
