@@ -78,6 +78,8 @@ char  *argv[];
 					/* get their image resolution */
 		xmax = getint(4, stdin);
 		ymax = getint(4, stdin);
+		if (feof(stdin))
+			quiterr("empty input file");
 					/* put our header */
 		printargs(i, argv, stdout);
 		fputformat(COLRFMT, stdout);
