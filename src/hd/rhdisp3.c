@@ -30,6 +30,9 @@ int	bi;
 	FVECT	cp[4], ip[4], pf, pb;
 	double	af, ab, sf2, sb2, dfb2, df2, db2, penalty;
 	register int	i;
+					/* special case */
+	if (hr <= 0 | vr <= 0)
+		return(0);
 					/* compute cell corners in image */
 	if (!hdbcoord(gc, hp, bi))
 		error(CONSISTENCY, "bad beam index in npixels");
@@ -281,7 +284,7 @@ VIEW	*vp;
 	if (cl.cl == NULL)
 		goto memerr;
 	cl.n = 0;			/* add cells within pyramid */
-	visit_cells(org, dir, hp, addcell, &cl);
+	visit_cells(org, dir, hp, addcell, (char *)&cl);
 	if (!cl.n) {
 		free((char *)cl.cl);
 		return(NULL);
