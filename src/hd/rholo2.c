@@ -75,6 +75,8 @@ done_rtrace()			/* clean up and close rtrace calculation */
 	wputs("closing rtrace process...\n");
 					/* flush beam queue */
 	done_packets(flush_queue());
+					/* sync holodeck */
+	hdsync(NULL, 1);
 					/* close rtrace */
 	if ((status = end_rtrace()))
 		error(WARNING, "bad exit status from rtrace");

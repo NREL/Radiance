@@ -157,18 +157,23 @@ memerr:
 
 
 int
-hdsync(hp)			/* update directory on disk if necessary */
+hdsync(hp, all)			/* update beams and directory on disk */
 register HOLO	*hp;
+int	all;
 {
 	register int	j, n;
 
-	if (hp == NULL) {		/* do all */
+	if (hp == NULL) {		/* do all holodecks */
 		n = 0;
 		for (j = 0; hdlist[j] != NULL; j++)
-			n += hdsync(hdlist[j]);
+			n += hdsync(hdlist[j], all);
 		return(n);
 	}
-	if (!hp->dirty)			/* check first */
+					/* sync the beams */
+	for (j = all ? nbeams(hp) : 0; j > 0; j--)
+		if (hp->bl[j] != NULL)
+			hdsyncbeam(hp, j);
+	if (!hp->dirty)			/* directory dirty? */
 		return(0);
 	errno = 0;
 	if (lseek(hp->fd, biglob(hp)->fo, 0) < 0)
@@ -335,15 +340,19 @@ register int	i;
 
 
 int
-hdsyncbi(hp, i)			/* sync beam in memory with beam on disk */
+hdsyncbeam(hp, i)		/* sync beam in memory with beam on disk */
 register HOLO	*hp;
 register int	i;
 {
-	unsigned int	nrays = hp->bl[i]->nrm;
+	unsigned int	nrays;
 	long	nfo;
 	unsigned int	n;
+#ifdef DEBUG
+	if (i < 1 | i > nbeams(hp))
+		error(CONSISTENCY, "bad beam index in hdsyncbeam");
+#endif
 					/* is current fragment OK? */
-	if (nrays == hp->bi[i].nrd)
+	if (hp->bl[i] == NULL || (nrays = hp->bl[i]->nrm) == hp->bi[i].nrd)
 		return(0);
 					/* check file status */
 	if (hp->dirty < 0)
@@ -375,7 +384,7 @@ register int	i;
 						(j+FRAGBLK)*sizeof(BEAMI));
 				if (f->fi == NULL)
 					error(SYSTEM,
-						"out of memory in hdsyncbi");
+						"out of memory in hdsyncbeam");
 			}
 			for ( ; ; j--) {	/* insert in descending list */
 				if (!j || hp->bi[i].fo < f->fi[j-1].fo) {
@@ -427,7 +436,7 @@ register int	i;
 		n = hp->bl[i]->nrm * sizeof(RAYVAL);
 		if (write(hp->fd, (char *)hdbray(hp->bl[i]), n) != n) {
 			hp->dirty = -1;		/* avoid recursive error */
-			error(SYSTEM, "write error in hdsyncbi");
+			error(SYSTEM, "write error in hdsyncbeam");
 		}
 	}
 	biglob(hp)->nrd += nrays - hp->bi[i].nrd;
@@ -458,14 +467,16 @@ register int	i;
 				nchanged += hdfreebeam(hp, i);
 		return(nchanged);
 	}
+#ifdef DEBUG
 	if (i < 1 | i > nbeams(hp))
 		error(CONSISTENCY, "bad beam index to hdfreebeam");
+#endif
 	if (hp->bl[i] == NULL)
 		return(0);
 					/* check for additions */
 	nchanged = hp->bl[i]->nrm - hp->bi[i].nrd;
 	if (nchanged)
-		hdsyncbi(hp, i);			/* write new fragment */
+		hdsyncbeam(hp, i);		/* write new fragment */
 	blglob(hp)->nrm -= hp->bl[i]->nrm;
 	free((char *)hp->bl[i]);		/* free memory */
 	hp->bl[i] = NULL;
@@ -498,8 +509,10 @@ register int	i;
 #endif
 		return(nchanged);
 	}
+#ifdef DEBUG
 	if (i < 1 | i > nbeams(hp))
 		error(CONSISTENCY, "bad beam index to hdkillbeam");
+#endif
 	if (hp->bl[i] != NULL) {	/* free memory */
 		blglob(hp)->nrm -= nchanged = hp->bl[i]->nrm;
 		free((char *)hp->bl[i]);
@@ -507,7 +520,7 @@ register int	i;
 		nchanged = hp->bi[i].nrd;
 	if (hp->bi[i].nrd) {		/* free file fragment */
 		hp->bl[i] = &emptybeam;
-		hdsyncbi(hp, i);
+		hdsyncbeam(hp, i);
 	}
 	hp->bl[i] = NULL;
 	return(nchanged);
@@ -574,7 +587,7 @@ register HOLO	*honly;			/* NULL means check all */
 		if ((freetarget -= hp[i]->bi[bn[i]].nrd) <= 0)
 			break;
 	}
-	hdsync(honly);		/* synchronize directories as necessary */
+	hdsync(honly, 0);	/* synchronize directories as necessary */
 }
 
 

@@ -548,10 +548,9 @@ int	ec;
 {
 	int	status = 0;
 
-	if (hdlist[0] != NULL) {	/* flush holodeck */
+	if (hdlist[0] != NULL) {	/* close holodeck */
 		if (nprocs > 0)
-			status = done_rtrace();
-		hdflush(NULL);
+			status = done_rtrace();		/* calls hdsync() */
 		if (ncprocs > 0 && vdef(REPORT)) {
 			long	fsiz, fuse;
 			fsiz = hdfilen(hdlist[0]->fd);
