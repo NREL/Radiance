@@ -59,7 +59,8 @@ MODOBJS = p_func.o t_func.o p_data.o t_data.o text.o mx_func.o mx_data.o
 
 SUPPOBJS = zeroes.o calexpr.o caldefn.o calfunc.o func.o noise3.o data.o
 
-MISCOBJS = misc.o color.o header.o mat4.o xf.o fvect.o savestr.o ealloc.o
+MISCOBJS = misc.o color.o header.o mat4.o xf.o fvect.o savestr.o \
+		fgetline.o ealloc.o
 
 #
 # What this makefile produces:
