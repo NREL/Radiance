@@ -202,8 +202,10 @@ register RAY  *r;
 					lr.rdir[i] = r->rdir[i] -
 							.75*r->pert[i];
 				normalize(lr.rdir);
-			} else
+			} else {
+				VCOPY(lr.rdir, r->rdir);
 				transtest = 2;
+			}
 			rayvalue(&lr);
 			scalecolor(lr.rcol, nd.tspec);
 			multcolor(lr.rcol, nd.mcolor);	/* modified by color */
