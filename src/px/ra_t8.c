@@ -51,7 +51,7 @@ extern long  ftell();
 
 extern double  atof(), pow();
 
-double	gamma = 2.0;			/* gamma correction */
+double	gamma = 2.2;			/* gamma correction */
 
 int  bradj = 0;				/* brightness adjustment */
 
