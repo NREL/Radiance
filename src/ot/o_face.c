@@ -86,9 +86,9 @@ CUBE  *cu;
 			v1[j] = cumax[j];
 			v2[j] = cumin[j];
 		}
-	if ((d1 = DOT(v1, f->norm) - f->const) > FTINY)
+	if ((d1 = DOT(v1, f->norm) - f->offset) > FTINY)
 		return(0);
-	if ((d2 = DOT(v2, f->norm) - f->const) < -FTINY)
+	if ((d2 = DOT(v2, f->norm) - f->offset) < -FTINY)
 		return(0);
 					/* intersect face */
 	for (j = 0; j < 3; j++)

@@ -27,10 +27,9 @@ add2bbox(o, bbmin, bbmax)		/* expand bounding box to fit object */
 register OBJREC  *o;
 FVECT  bbmin, bbmax;
 {
-#define  co	((CONE *)osp)
-#define  fo	((FACE *)osp)
-#define  io	((INSTANCE *)osp)
-	register char  *osp;
+	CONE  *co;
+	FACE  *fo;
+	INSTANCE  *io;
 	FVECT  v;
 	register int  i, j;
 
@@ -76,9 +75,6 @@ FVECT  bbmin, bbmax;
 		}
 		break;
 	}
-#undef  co
-#undef  fo
-#undef  io
 }
 
 
