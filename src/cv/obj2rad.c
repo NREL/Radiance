@@ -10,7 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
  * Currently, we support only polygonal geometry.  Non-planar
  * faces are broken rather haphazardly into triangles.
  * Also, texture map indices only work for triangles, though
- * I'm not sure they work correctly.
+ * I'm not sure they work correctly.  (Taken out -- see TEXMAPS defines.)
  */
 
 #include "standard.h"
@@ -254,7 +254,7 @@ FILE	*fp;
 				if (!strcmp(argv[1], "off"))
 					mapname[0] = '\0';
 				else
-					strcpy(mapname, argv[1]);
+					sprintf(mapname, "%s.pic", argv[1]);
 			} else
 				goto unknown;
 			break;
@@ -273,6 +273,7 @@ FILE	*fp;
 			group[i-1][0] = '\0';
 			break;
 		case '#':		/* comment */
+			printargs(argc, argv, stdout);
 			break;
 		default:;		/* something we don't deal with */
 		unknown:
@@ -527,25 +528,26 @@ int	ac;
 register char	**av;
 {
 	VNDX	vi;
-	char	*mod;
+	char	*cp;
 	register int	i;
 
 	if (nonplanar(ac, av)) {	/* break into quads and triangles */
 		while (ac > 3) {
 			if (!putquad(av[0], av[1], av[2], av[3]))
 				return(0);
-					/* remove two vertices & rotate */
-			av[ac -= 2] = av[0];
-			for (i = 0; i <= ac; i++)
-				av[i] = av[i+2];
+			ac -= 2;	/* remove two vertices & rotate */
+			cp = av[0];
+			for (i = 0; i < ac-1; i++)
+				av[i] = av[i+3];
+			av[i] = cp;
 		}
 		if (ac == 3 && !puttri(av[0], av[1], av[2]))
 			return(0);
 		return(1);
 	}
-	if ((mod = getmtl()) == NULL)
+	if ((cp = getmtl()) == NULL)
 		return(-1);
-	printf("\n%s polygon %s.%d\n", mod, getonm(), faceno);
+	printf("\n%s polygon %s.%d\n", cp, getonm(), faceno);
 	printf("0\n0\n%d\n", 3*ac);
 	for (i = 0; i < ac; i++) {
 		if (!cvtndx(vi, av[i]))
@@ -571,7 +573,11 @@ char	*v1, *v2, *v3;
 		return(0);
 					/* compute barycentric coordinates */
 	texOK = (v1i[2]>=0 && v2i[2]>=0 && v3i[2]>=0);
+#ifdef TEXMAPS
 	patOK = mapname[0] && (v1i[1]>=0 && v2i[1]>=0 && v3i[1]>=0);
+#else
+	patOK = 0;
+#endif
 	if (texOK | patOK)
 		if (comp_baryc(bvecs, vlist[v1i[0]], vlist[v2i[0]],
 				vlist[v3i[0]]) < 0)
@@ -593,6 +599,7 @@ char	*v1, *v2, *v3;
 				vnlist[v1i[2]][2], vnlist[v2i[2]][2],
 				vnlist[v3i[2]][2]);
 	}
+#ifdef TEXMAPS
 					/* put out pattern (if any) */
 	if (patOK) {
 		printf("\n%s colorpict %s\n", mod, PATNAME);
@@ -605,6 +612,7 @@ char	*v1, *v2, *v3;
 		printf("\t%f %f %f\n", vtlist[v1i[1]][1],
 				vtlist[v2i[1]][1], vtlist[v3i[1]][1]);
 	}
+#endif
 					/* put out triangle */
 	printf("\n%s polygon %s.%d\n", mod, getonm(), faceno);
 	printf("0\n0\n9\n");
@@ -676,6 +684,11 @@ char  *p0, *p1, *p3, *p2;		/* names correspond to binary pos. */
 	FVECT  v1, v2, vc1, vc2;
 	int  ok1, ok2;
 
+#ifdef TEXMAPS
+	/* also should output texture index coordinates,
+	 * which will require new .cal file
+	 */
+#endif
 	if ((mod = getmtl()) == NULL)
 		return(-1);
 	name = getonm();
@@ -776,6 +789,9 @@ register VNDX  p0i, p1i, p2i, p3i;
 	FVECT  v1;
 	register int  i, j;
 
+#ifdef TEXMAPS
+	/* also check for texture indices */
+#endif
 	if (!(p0i[2]>=0 && p1i[2]>=0 && p2i[2]>=0 && p3i[2]>=0))
 		return(-1);
 					/* find dominant axis */
@@ -812,6 +828,9 @@ register VNDX  p0i, p1i, p2i, p3i;
 					eqnmat[j][1]*vnlist[p1i[2]][i] +
 					eqnmat[j][2]*vnlist[p2i[2]][i] +
 					eqnmat[j][3]*vnlist[p3i[2]][i];
+#ifdef TEXMAPS
+	/* compute result matrix for texture indices */
+#endif
 	return(ax);
 
 #undef u
