@@ -43,7 +43,7 @@ readoct.o sphere.o writeoct.o:	octree.h
 bbox.o cone.o face.o o_cone.o o_face.o o_instance.o objset.o oconv.o \
 instance.o otypes.o readobj.o readoct.o sphere.o writeoct.o:	object.h
 
-bbox.o cone.o oconv.o otypes.o \
+bbox.o cone.o objset.o oconv.o otypes.o \
 readobj.o readoct.o sphere.o writeoct.o:	otypes.h
 
 fvect.o:	fvect.h

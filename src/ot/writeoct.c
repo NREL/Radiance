@@ -43,6 +43,8 @@ char  *ofn[];
 		for (i = 0; ofn[i] != NULL; i++)
 			putstr(ofn[i]);
 	putstr("");
+					/* write number of objects */
+	putint((long)nobjects, sizeof(OBJECT));
 
 	if (!(store & IO_TREE))
 		return;
