@@ -128,8 +128,17 @@ register COLR	*scan;
 register int	len;
 register int	adjust;
 {
+	int	minexp;
+
+	if (adjust == 0)
+		return;
+	minexp = adjust < 0 ? -adjust : 0;
 	while (len-- > 0) {
-		scan[0][EXP] += adjust;
+		if (scan[0][EXP] <= minexp)
+			scan[0][RED] = scan[0][GRN] = scan[0][BLU] =
+			scan[0][EXP] = 0;
+		else
+			scan[0][EXP] += adjust;
 		scan++;
 	}
 }
