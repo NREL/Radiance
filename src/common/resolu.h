@@ -19,7 +19,6 @@
 extern "C" {
 #endif
 
-#include <stdio.h>
 			/* flags for scanline ordering */
 #define  XDECR			1
 #define  YDECR			2

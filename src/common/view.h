@@ -2,7 +2,7 @@
 /*
  *  view.h - header file for image generation.
  *
- *  Include after fvect.h
+ *  Include after stdio.h and fvect.h
  *  Includes resolu.h
  */
 #ifndef _RAD_VIEW_H_

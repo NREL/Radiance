@@ -10,8 +10,9 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
-#include "color.h"
+#include <stdio.h>
 #include <string.h>
+#include "color.h"
 
 #define CEPS	1e-4			/* color epsilon */
 

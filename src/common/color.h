@@ -15,7 +15,6 @@
 extern "C" {
 #endif
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #define  RED		0

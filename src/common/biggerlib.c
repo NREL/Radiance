@@ -7,6 +7,7 @@ static const char	RCSid[] = "$Id$";
  *   10/2/86
  */
 
+#include <stdio.h>
 #include <math.h>
 
 #include "calcomp.h"
