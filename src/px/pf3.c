@@ -224,12 +224,11 @@ double  p0;
 {
 	double  m = 1.0;
 	double  t, num, denom, avg, wsum;
-	double  maxm = orad/rad/CHECKRAD;
 	double  mlimit[2];
 	int  ilimit = 4/TEPS;
 	register int  i;
 				/* iterative search for m */
-	mlimit[0] = 1.0; mlimit[1] = maxm;
+	mlimit[0] = 1.0; mlimit[1] = orad/rad/CHECKRAD;
 	do {
 					/* compute grey weighted average */
 		i = 1.25*CHECKRAD*rad*m + .5;
@@ -246,8 +245,12 @@ double  p0;
 		avg /= wsum;
 					/* check threshold */
 		denom = m*m/gausstable[0] - p0/avg;
-		if (denom <= FTINY)		/* zero exclusive average */
-			return(maxm);
+		if (denom <= FTINY) {		/* zero exclusive average */
+			if (m >= mlimit[1]-REPS)
+				break;
+			m = mlimit[1];
+			continue;
+		}
 		num = p0/avg - 1.0;
 		if (num < 0.0) num = -num;
 		t = num/denom;
