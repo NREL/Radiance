@@ -45,9 +45,6 @@ char  *argv[];
 		dofilter++;
 		argv++; argc--;
 	}
-#ifdef _IOLBF
-	stdout->_flag &= ~_IOLBF;
-#endif
 	if (argc < 2)
 		status = printp(NULL) == -1;
 	else
