@@ -973,7 +973,7 @@ Color2RRGGBB(			/* read/convert/write COLOR->RGB16 scanline */
 			colortrans(cvts.r.colors[x], cvts.cmat,
 					cvts.r.colors[x]);
 		if (CHK(C_GAMUT))
-			clipgamut(cvts.r.colors[x], cvts.t.fp[3*x + 1],
+			clipgamut(cvts.r.colors[x], bright(cvts.r.colors[x]),
 					CGAMUT_LOWER, cblack, cwhite);
 	    }
 	    for (i = 3; i--; ) {
