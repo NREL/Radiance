@@ -1169,9 +1169,9 @@ clearqueue()				/* process queue */
 	}
 					/* mark end and get results */
 	bzero((char *)fbp, 6*sizeof(float));
-	if (process(PDesc, fbuf, fbuf, 4*sizeof(float)*queuesiz,
+	if (process(PDesc, fbuf, fbuf, 4*sizeof(float)*(queuesiz+1),
 			6*sizeof(float)*(queuesiz+1)) !=
-			4*sizeof(float)*queuesiz) {
+			4*sizeof(float)*(queuesiz+1)) {
 		fprintf(stderr, "%s: error reading from rtrace process\n",
 				progname);
 		exit(1);

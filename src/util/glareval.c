@@ -265,8 +265,8 @@ int	np;
 				progname, np);
 #endif
 	bzero(pb+6*np, 6*sizeof(float));
-	if (process(rt_pd, pb, pb, 3*sizeof(float)*np,
-			6*sizeof(float)*(np+1)) < 3*sizeof(float)*np) {
+	if (process(rt_pd, pb, pb, 3*sizeof(float)*(np+1),
+			6*sizeof(float)*(np+1)) < 3*sizeof(float)*(np+1)) {
 		fprintf(stderr, "%s: rtrace communication error\n",
 				progname);
 		exit(1);

@@ -1,7 +1,7 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1997 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -163,19 +163,23 @@ char  *fname;
 			getvec(direc, inform, fp) == 0) {
 
 		if (normalize(direc) == 0.0) {		/* zero ==> flush */
-			fflush(stdout);
-			continue;
-		}
-		samplendx++;
+			bogusray();
+			if (--nextflush <= 0) {
+				fflush(stdout);
+				nextflush = hresolu;
+			}
+		} else {
+			samplendx++;
 							/* compute and print */
-		if (imm_irrad)
-			irrad(orig, direc);
-		else
-			rad(orig, direc);
+			if (imm_irrad)
+				irrad(orig, direc);
+			else
+				rad(orig, direc);
 							/* flush if time */
-		if (--nextflush == 0) {
-			fflush(stdout);
-			nextflush = hresolu;
+			if (--nextflush == 0) {
+				fflush(stdout);
+				nextflush = hresolu;
+			}
 		}
 		if (ferror(stdout))
 			error(SYSTEM, "write error");
@@ -243,6 +247,15 @@ register char  *vs;
 			break;
 		}
 	*table = NULL;
+}
+
+
+bogusray()			/* print out empty record */
+{
+	thisray.rorg[0] = thisray.rorg[1] = thisray.rorg[2] =
+	thisray.rdir[0] = thisray.rdir[1] = thisray.rdir[2] = 0.0;
+	rayorigin(&thisray, NULL, PRIMARY, 1.0);
+	printvals(&thisray);
 }
 
 
