@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -25,22 +25,23 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  FEQ(a,b)	((a)-(b) <= 1e-7 && (b)-(a) <= 1e-7)
 
 #define  MAXVERT	6	/* maximum number of vertices for markers */
+#define  MAXMARK	32	/* maximum number of markers */
 
 typedef struct {
 	short	beg, end;		/* beginning and ending vertex */
 	float	len2;			/* length squared */
 }  EDGE;			/* a marker edge */
 
-int	expand = 0;		/* expand commands? */
+struct mrkr {
+	char	*modout;		/* output modifier */
+	double	mscale;			/* scale by this to get unit */
+	char	*modin;			/* input modifier indicating marker */
+	char	*objname;		/* output object file or octree */
+	int	doxform;		/* true if xform, false if instance */
+}  marker[MAXMARK];		/* array of markers */
+int	nmarkers = 0;		/* number of markers */
 
-char	*modout = NULL;		/* output modifier (for instances) */
-
-double	markscale = 0.0;	/* scale markers by this to get unit */
-
-char	*modin = NULL;		/* input modifier indicating marker */
-
-char	*objname = NULL;	/* output object file (octree if instance) */
-int	doxform;		/* true if xform, false if instance */
+int	expand;			/* expand commands? */
 
 char	*progname;
 
@@ -53,31 +54,41 @@ char	*argv[];
 	int	i, j;
 
 	progname = argv[0];
-	for (i = 1; i < argc && argv[i][0] == '-'; i++)
-		switch (argv[i][1]) {
-		case 'i':
-			doxform = 0;
-			objname = argv[++i];
-			break;
-		case 'x':
-			doxform = 1;
-			objname = argv[++i];
-			break;
-		case 'e':
-			expand = !expand;
-			break;
-		case 'm':
-			modout = argv[++i];
-			break;
-		case 's':
-			markscale = atof(argv[++i]);
-			break;
-		default:
+	i = 1;
+	while (i < argc && argv[i][0] == '-') {
+		do {
+			switch (argv[i][1]) {
+			case 'i':
+				marker[nmarkers].doxform = 0;
+				marker[nmarkers].objname = argv[++i];
+				break;
+			case 'x':
+				marker[nmarkers].doxform = 1;
+				marker[nmarkers].objname = argv[++i];
+				break;
+			case 'e':
+				expand = 1;
+				break;
+			case 'm':
+				marker[nmarkers].modout = argv[++i];
+				break;
+			case 's':
+				marker[nmarkers].mscale = atof(argv[++i]);
+				break;
+			default:
+				goto userr;
+			}
+			if (++i >= argc)
+				goto userr;
+		} while (argv[i][0] == '-');
+		if (marker[nmarkers].objname == NULL)
 			goto userr;
-		}
-	if (i < argc)
-		modin = argv[i++];
-	if (objname == NULL || modin == NULL)
+		marker[nmarkers++].modin = argv[i++];
+		if (nmarkers >= MAXMARK)
+			break;
+		marker[nmarkers].mscale = marker[nmarkers-1].mscale;
+	}
+	if (nmarkers == 0)
 		goto userr;
 					/* simple header */
 	putchar('#');
@@ -100,7 +111,7 @@ char	*argv[];
 	exit(0);
 userr:
 	fprintf(stderr,
-"Usage: %s [-e][-s size][-m modout] {-x objfile|-i octree} modname [file ..]\n",
+"Usage: %s [-e][-s size][-m modout] {-x objfile|-i octree} modname .. [file ..]\n",
 		progname);
 	exit(1);
 }
@@ -160,14 +171,17 @@ char	*fname;
 FILE	*fin;
 {
 	char	buf[128], typ[16], nam[128];
-	int	i, j, n;
+	int	i, n;
+	register int	j;
 
 	if (fscanf(fin, "%s %s %s", buf, typ, nam) != 3)
 		goto readerr;
-	if (!strcmp(buf, modin) && !strcmp(typ, "polygon")) {
-		replace(fname, nam, fin);
-		return;
-	}
+	if (!strcmp(typ, "polygon"))
+		for (j = 0; j < nmarkers; j++)
+			if (!strcmp(buf, marker[j].modin)) {
+				replace(fname, &marker[j], nam, fin);
+				return;
+			}
 	printf("\n%s %s %s\n", buf, typ, nam);
 	if (!strcmp(typ, "alias")) {		/* alias special case */
 		if (fscanf(fin, "%s", buf) != 1)
@@ -195,30 +209,33 @@ readerr:
 }
 
 
-replace(fname, mark, fin)		/* replace marker */
-char	*fname, *mark;
+replace(fname, m, mark, fin)		/* replace marker */
+char	*fname;
+register struct mrkr	*m;
+char	*mark;
 FILE	*fin;
 {
 	int	n;
 	char	buf[256];
 
-	if (doxform) {
+	if (m->doxform) {
 		sprintf(buf, "xform -e -n %s", mark);
-		if (modout != NULL)
-			sprintf(buf+strlen(buf), " -m %s", modout);
-		if (buildxf(buf+strlen(buf), fin) < 0)
+		if (m->modout != NULL)
+			sprintf(buf+strlen(buf), " -m %s", m->modout);
+		if (buildxf(buf+strlen(buf), m->mscale, fin) < 0)
 			goto badxf;
-		sprintf(buf+strlen(buf), " %s", objname);
+		sprintf(buf+strlen(buf), " %s", m->objname);
 		if (expand) {
 			fflush(stdout);
 			system(buf);
 		} else
 			printf("\n!%s\n", buf);
 	} else {
-		if ((n = buildxf(buf, fin)) < 0)
+		if ((n = buildxf(buf, m->mscale, fin)) < 0)
 			goto badxf;
-		printf("\n%s instance %s\n", modout==NULL?"void":modout, mark);
-		printf("%d %s%s\n0\n0\n", n+1, objname, buf);
+		printf("\n%s instance %s\n",
+				m->modout==NULL?"void":m->modout, mark);
+		printf("%d %s%s\n0\n0\n", n+1, m->objname, buf);
 	}
 	return;
 badxf:
@@ -240,8 +257,9 @@ EDGE	*e1, *e2;
 
 
 int
-buildxf(xf, fin)		/* build transform for marker */
+buildxf(xf, markscale, fin)		/* build transform for marker */
 char	*xf;
+double	markscale;
 FILE	*fin;
 {
 	static FVECT	vlist[MAXVERT];
