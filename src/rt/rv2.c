@@ -30,6 +30,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  sscanvec(s,v)	(sscanf(s,"%lf %lf %lf",v,v+1,v+2)==3)
 #endif
 
+extern char  *atos();
+
+extern char  rifname[];			/* rad input file name */
 
 extern char  VersionID[];
 extern char  *progname;
@@ -85,7 +88,7 @@ char  *s;
 		fputs(progname, fp);
 		fprintview(&ourview, fp);
 		fputs(sskip(s), fp);
-		fputs("\n", fp);
+		putc('\n', fp);
 		fclose(fp);
 		return;
 	}
@@ -180,6 +183,73 @@ char  *s;
 	copystruct(&ourview, &oldview);
 	copystruct(&oldview, &nv);
 	newimage();
+}
+
+
+saveview(s)				/* save view to rad file */
+char  *s;
+{
+	char  view[64];
+	char  *fname;
+	FILE  *fp;
+
+	if (*atos(view, sizeof(view), s))
+		s = sskip(s);
+	if (sscanf(s, "%s", rifname) != 1 && rifname[0] == '\0') {
+		error(COMMAND, "no previous rad file");
+		return;
+	}
+	if ((fname = getpath(rifname, NULL, 0)) == NULL ||
+			(fp = fopen(fname, "a")) == NULL) {
+		sprintf(errmsg, "cannot open \"%s\"", rifname);
+		error(COMMAND, errmsg);
+		return;
+	}
+	fputs("view= ", fp);
+	fputs(view, fp);
+	fprintview(&ourview, fp);
+	putc('\n', fp);
+	fclose(fp);
+}
+
+
+loadview(s)				/* load view from rad file */
+char  *s;
+{
+	char  buf[512];
+	char  *fname;
+	FILE  *fp;
+	VIEW  nv;
+
+	strcpy(buf, "rad -n -s -V -v ");
+	if (sscanf(s, "%s", buf+strlen(buf)) == 1)
+		s = sskip(s);
+	else
+		strcat(buf, "1");
+	if (sscanf(s, "%s", rifname) != 1 && rifname[0] == '\0') {
+		error(COMMAND, "no previous rad file");
+		return;
+	}
+	fname = getpath(rifname, NULL, 0);
+	if (fname == NULL || access(fname, R_OK) == -1) {
+		sprintf(errmsg, "cannot access \"%s\"", rifname);
+		error(COMMAND, errmsg);
+		return;
+	}
+	sprintf(buf+strlen(buf), " %s", fname);
+	if ((fp = popen(buf, "r")) == NULL) {
+		error(COMMAND, "cannot run rad");
+		return;
+	}
+	buf[0] = '\0';
+	fgets(buf, sizeof(buf), fp);
+	pclose(fp);
+	copystruct(&nv, &stdview);
+	if (!sscanview(&nv, buf)) {
+		error(COMMAND, "rad error -- no such view?");
+		return;
+	}
+	newview(&nv);
 }
 
 
