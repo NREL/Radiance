@@ -73,7 +73,7 @@ proc preen {} {			# clean up radvar
 
 proc setradvar stmt {		# assign a rad variable
 	global radvar
-	regexp {^([a-zA-Z][a-zA-Z0-9]*) *= *(.*)$} $stmt dummy vnam vval
+	regexp {^([a-zA-Z][a-zA-Z0-9]*) *=[ 	]*(.*)$} $stmt dummy vnam vval
 	switch -glob $vnam {
 		obj* { eval lappend radvar(objects) $vval }
 		sce* { eval lappend radvar(scene) $vval }
@@ -158,7 +158,7 @@ proc load_vars {f {vl all}} {	# load RIF variables
 	if {"$vl" == "all"} {
 		catch {unset radvar}
 		while {[gets $fi curli] != -1} {
-			if [regexp {^[a-zA-Z][a-zA-Z0-9]*= } $curli] {
+			if [regexp {^[a-zA-Z][a-zA-Z0-9]* *=} $curli] {
 				setradvar $curli
 			} else {
 				break
