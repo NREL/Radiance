@@ -206,7 +206,7 @@ register RAY  *r;
 						/* check threshold */
 		if (specthresh > FTINY &&
 				(specthresh >= 1.-FTINY ||
-				specthresh > nd.rspec))
+				specthresh + .05 - .1*frandom() > nd.rspec))
 			nd.specfl |= SP_RBLT;
 						/* compute refl. direction */
 		for (i = 0; i < 3; i++)
@@ -225,7 +225,7 @@ register RAY  *r;
 							/* check threshold */
 			if (specthresh > FTINY &&
 					(specthresh >= 1.-FTINY ||
-					specthresh > nd.tspec))
+				specthresh + .05 - .1*frandom() > nd.tspec))
 				nd.specfl |= SP_TBLT;
 			if (DOT(r->pert,r->pert) <= FTINY*FTINY) {
 				VCOPY(nd.prdir, r->rdir);
