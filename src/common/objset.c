@@ -189,15 +189,16 @@ int  orig, nobjs;
 {
 	int  n;
 	register OBJECT  *os;
-	register OBJECT  i;
+	register OBJECT  i, s;
 
 	for (n = 0; n < OSTSIZ; n++) {
 		if ((os = ostable[n]) == NULL)
 			continue;
 		while ((i = *os++) > 0)
 			while (i--) {
-				if (*os >= orig && *os < orig+nobjs &&
-						!issurface(objptr(*os)->otype))
+				s = *os;
+				if (s >= orig && s < orig+nobjs &&
+						!issurface(objptr(s)->otype))
 					return(1);
 				os++;
 			}
