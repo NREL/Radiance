@@ -68,8 +68,10 @@ caldefn.o:	caldefn.c calcomp.h
 calfunc.o:	calfunc.c calcomp.h
 	cc $(CFLAGS) -c -DVARIABLE -DBIGLIB calfunc.c
 
-gensurf.o:	standard.h fvect.h
+gensurf.o:	standard.h mat4.h fvect.h
 
 fvect.o genworm.o:	fvect.h
 
-xform.o:	otypes.h
+mat4.o:		mat4.h fvect.h
+
+xform.o:	standard.h mat4.h fvect.h otypes.h

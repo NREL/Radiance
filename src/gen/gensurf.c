@@ -273,7 +273,7 @@ POINT  *p0, *p1, *p2, *p3;
 #define v  ((ax+2)%3)
 
 	register int  ax;
-	double  eqnmat[4][4];
+	MAT4  eqnmat;
 	FVECT  v1;
 	register int  i, j;
 
@@ -327,15 +327,15 @@ POINT  *p0, *p1, *p2, *p3;
  */
 
 invmat(inverse,mat)
-double mat[4][4],inverse[4][4];
+MAT4  inverse, mat;
 {
 #define SWAP(a,b,t) (t=a,a=b,b=t)
 
-	double  m4tmp[4][4];
+	MAT4  m4tmp;
 	register int i,j,k;
 	register double temp;
 
-	bcopy((char *)mat, (char *)m4tmp, sizeof(m4tmp));
+	copymat4(m4tmp, mat);
 					/* set inverse to identity */
 	for (i = 0; i < 4; i++)
 		for (j = 0; j < 4; j++)
