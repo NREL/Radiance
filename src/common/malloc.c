@@ -15,6 +15,9 @@ static char SCCSid[] = "$SunId$ LBL";
  *	call mscrounge() if sbrk fails.
  * mscrounge() returns whatever free memory it can find to satisfy the
  *	request along with the number of bytes (modified).
+ * mcompact() takes the same arguments as mscrounge() (and is in fact
+ *	called by mscrounge() under dire circumstances), but it uses
+ *	memory compaction to return a larger block.  (MCOMP)
  *
  *	Greg Ward	Lawrence Berkeley Laboratory
  */
@@ -23,9 +26,11 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #ifdef MSTATS
 #include  <stdio.h>
+static unsigned b_nsbrked = 0;
 static unsigned	b_nalloced = 0;
 static unsigned	b_nfreed = 0;
 static unsigned	b_nscrounged = 0;
+static unsigned b_ncompacted = 0;
 static unsigned	m_nalloced = 0;
 static unsigned	m_nfreed = 0;
 static unsigned	m_nwasted = 0;
@@ -64,6 +69,127 @@ static ALIGN	dummy_mem;
 
 #define DUMMYLOC	((char *)&dummy_mem)
 
+#ifdef  MCOMP			/* memory compaction routines */
+static char	seedtab[1024];		/* seed for compaction table */
+
+static struct mblk {
+	char		*ptr;	/* pointer to memory block */
+	unsigned	siz;	/* size of memory block */
+}	cptab = {seedtab, sizeof(seedtab)};
+
+#define mtab(mb)	((struct mblk *)(mb)->ptr)
+#define mtablen(mb)	((mb)->siz/sizeof(struct mblk))
+
+
+static int
+mbcmp(m1, m2)		/* compare memory block locations */
+register struct mblk	*m1, *m2;
+{
+				/* put empty blocks at end */
+	if (m1->siz == 0)
+		return(m2->siz == 0 ? 0 : 1);
+	if (m2->siz == 0)
+		return(-1);
+				/* otherwise, ascending order */
+	return(m1->ptr - m2->ptr);
+}
+
+
+int
+compactfree()		/* compact free lists (moving to table) */
+{
+	register struct mblk	*tp;
+	register int	bucket;
+	unsigned	n, bsiz, ncomp;
+				/* fill table from free lists */
+	tp = mtab(&cptab); n = mtablen(&cptab);
+	bucket = NBUCKETS-1; bsiz = 1<<(NBUCKETS-1);
+	ncomp = 0;
+	for ( ; ; ) {
+		while (tp->siz) {	/* find empty slot */
+			if (--n == 0)
+				goto loopexit;
+			tp++;
+		}
+		while (free_list[bucket] == NULL) {	/* find block */
+			if (--bucket < FIRSTBUCKET)
+				goto loopexit;
+			bsiz >>= 1;
+		}
+		tp->ptr = (char *)free_list[bucket];
+		ncomp += (tp->siz = bsiz + sizeof(M_HEAD));
+		free_list[bucket] = free_list[bucket]->next;
+	}
+loopexit:
+	if (ncomp == 0)
+		return(0);		/* nothing new to compact */
+#ifdef MSTATS
+	b_ncompacted += ncomp;
+#endif
+	tp = mtab(&cptab); n = mtablen(&cptab);		/* sort table */
+	qsort((char *)tp, n, sizeof(struct mblk), mbcmp);
+	ncomp = 0;					/* collect blocks */
+	while (--n && tp[1].siz) {
+		if (tp[0].ptr + tp[0].siz == tp[1].ptr) {
+			tp[1].ptr = tp[0].ptr;
+			tp[1].siz += tp[0].siz;
+			ncomp += tp[0].siz;
+			tp[0].siz = 0;
+		}
+		tp++;
+	}
+	return(ncomp);
+}
+
+
+char *
+mcompact(np)		/* compact free lists to satisfy request */
+unsigned	*np;
+{
+	struct mblk	*tab;
+	unsigned	tablen;
+	register struct mblk	*bp, *big;
+
+	for ( ; ; ) {
+					/* compact free lists */
+		compactfree();
+					/* find largest block */
+		tab = mtab(&cptab); tablen = mtablen(&cptab);
+		big = tab;
+		bp = tab + tablen;
+		while (--bp > tab)
+			if (bp->siz > big->siz)
+				big = bp;
+		if (big->siz >= *np) {		/* big enough? */
+			*np = big->siz;
+			big->siz = 0;		/* remove from table */
+			return(big->ptr);	/* return it */
+		}
+		if (mtablen(big) < tablen+1) {
+			*np = 0;		/* cannot grow table */
+			return(NULL);		/* report failure */
+		}
+				/* enlarge table, free old one */
+		mtab(big)[0].ptr = cptab.ptr;
+		mtab(big)[0].siz = cptab.siz;
+		cptab.ptr = big->ptr;
+		cptab.siz = big->siz;
+		big->siz = 0;			/* clear and copy */
+#ifdef BSD
+		bcopy((char *)tab, (char *)(mtab(&cptab)+1),
+				tablen*sizeof(struct mblk));
+		bzero((char *)(mtab(&cptab)+tablen+1),
+			(mtablen(&cptab)-tablen-1)*sizeof(struct mblk));
+#else
+		(void)memcpy((char *)(mtab(&cptab)+1), (char *)tab,
+				tablen*sizeof(struct mblk));
+		memset((char *)(mtab(&cptab)+tablen+1), 0,
+			(mtablen(&cptab)-tablen-1)*sizeof(struct mblk));
+#endif
+	}			/* next round */
+}
+#endif		/* MCOMP */
+
 
 char *
 mscrounge(np)		/* search free lists to satisfy request */
@@ -84,8 +210,12 @@ register unsigned	*np;
 #endif
 			return(p);
 		}
+#ifdef MCOMP
+	return(mcompact(np));		/* try compaction */
+#else
 	*np = 0;
 	return(NULL);
+#endif
 }
 
 
@@ -108,6 +238,9 @@ register unsigned  n;
 		bpos = sbrk(nrem);			/* word aligned! */
 		if ((int)bpos == -1)
 			return(NULL);
+#ifdef MSTATS
+		b_nsbrked += nrem;
+#endif
 	}
 
 	n = (n+(BYTES_WORD-1))&~(BYTES_WORD-1);		/* word align rqst. */
@@ -126,6 +259,9 @@ register unsigned  n;
 			if (p == NULL)			/* we're really out */
 				return(NULL);
 		}
+#ifdef MSTATS
+		else b_nsbrked += thisamnt;
+#endif
 		if (p != bpos+nrem) {			/* not an increment */
 			bfree(bpos, nrem);		/* free what we have */
 			bpos = p;
@@ -283,9 +419,11 @@ FILE	*fp;
 	unsigned int	total = 0;
 
 	fprintf(fp, "Memory statistics:\n");
+	fprintf(fp, "\tbmalloc: %d bytes from sbrk\n", b_nsbrked);
 	fprintf(fp, "\tbmalloc: %d bytes allocated\n", b_nalloced);
 	fprintf(fp, "\tbmalloc: %d bytes freed\n", b_nfreed);
 	fprintf(fp, "\tbmalloc: %d bytes scrounged\n", b_nscrounged);
+	fprintf(fp, "\tbmalloc: %d bytes compacted\n", b_ncompacted);
 	fprintf(fp, "\tmalloc: %d bytes allocated\n", m_nalloced);
 	fprintf(fp, "\tmalloc: %d bytes wasted (%.1f%%)\n", m_nwasted,
 			100.0*m_nwasted/m_nalloced);
