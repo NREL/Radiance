@@ -369,7 +369,7 @@ register NORMDAT  *np;
 		if (rv[1] <= FTINY)
 			d = 1.0;
 		else
-			d = sqrt( np->alpha2/4.0 * -log(rv[1]) );
+			d = sqrt( -log(rv[1]) * np->alpha2 );
 		for (i = 0; i < 3; i++)
 			sr.rdir[i] = np->prdir[i] + d*(cosp*u[i] + sinp*v[i]);
 		if (DOT(sr.rdir, r->ron) < -FTINY)

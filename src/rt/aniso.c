@@ -53,8 +53,8 @@ typedef struct {
 	FVECT  vrefl;		/* vector in reflected direction */
 	FVECT  prdir;		/* vector in transmitted direction */
 	FVECT  u, v;		/* u and v vectors orienting anisotropy */
-	double  u_alpha2;	/* u roughness squared */
-	double  v_alpha2;	/* v roughness squared */
+	double  u_alpha;	/* u roughness */
+	double  v_alpha;	/* v roughness */
 	double  rdiff, rspec;	/* reflected specular, diffuse */
 	double  trans;		/* transmissivity */
 	double  tdiff, tspec;	/* transmitted specular, diffuse */
@@ -103,8 +103,8 @@ double  omega;			/* light source size */
 			au2 = av2 = omega/(4.0*PI);
 		else
 			au2 = av2 = 0.0;
-		au2 += np->u_alpha2;
-		av2 += np->v_alpha2;
+		au2 += np->u_alpha*np->u_alpha;
+		av2 += np->v_alpha*np->v_alpha;
 						/* half vector */
 		h[0] = ldir[0] - np->rp->rdir[0];
 		h[1] = ldir[1] - np->rp->rdir[1];
@@ -143,8 +143,8 @@ double  omega;			/* light source size */
 		 */
 						/* roughness + source */
 		au2 = av2 = omega / PI;
-		au2 += np->u_alpha2;
-		av2 += np->v_alpha2;
+		au2 += np->u_alpha*np->u_alpha;
+		av2 += np->v_alpha*np->v_alpha;
 						/* "half vector" */
 		h[0] = ldir[0] - np->prdir[0];
 		h[1] = ldir[1] - np->prdir[1];
@@ -196,11 +196,9 @@ register RAY  *r;
 			   m->oargs.farg[2]);
 						/* get roughness */
 	nd.specfl = 0;
-	nd.u_alpha2 = m->oargs.farg[4];
-	nd.u_alpha2 *= nd.u_alpha2;
-	nd.v_alpha2 = m->oargs.farg[5];
-	nd.v_alpha2 *= nd.v_alpha2;
-	if (nd.u_alpha2 < FTINY*FTINY || nd.v_alpha2 <= FTINY*FTINY)
+	nd.u_alpha = m->oargs.farg[4];
+	nd.v_alpha = m->oargs.farg[5];
+	if (nd.u_alpha < FTINY || nd.v_alpha <= FTINY)
 		objerror(m, USER, "roughness too small");
 						/* reorient if necessary */
 	if (r->rod < 0.0)
@@ -347,9 +345,9 @@ register ANISODAT  *np;
 		d = urand(ilhash(dimlist,ndims)+samplendx);
 		multisamp(rv, 2, d);
 		d = 2.0*PI * rv[0];
-		cosp = cos(d);
-		sinp = sin(d);
-		d = sqrt(np->u_alpha2*cosp*cosp + np->v_alpha2*sinp*sinp);
+		cosp = cos(d) * np->u_alpha;
+		sinp = sin(d) * np->v_alpha;
+		d = sqrt(cosp*cosp + sinp*sinp);
 		cosp /= d;
 		sinp /= d;
 		rv[1] = 1.0 - specjitter*rv[1];
@@ -357,8 +355,8 @@ register ANISODAT  *np;
 			d = 1.0;
 		else
 			d = sqrt(-log(rv[1]) /
-				(cosp*cosp/np->u_alpha2 +
-				 sinp*sinp/np->v_alpha2));
+				(cosp*cosp/(np->u_alpha*np->u_alpha) +
+				 sinp*sinp/(np->v_alpha*np->v_alpha)));
 		for (i = 0; i < 3; i++)
 			h[i] = np->pnorm[i] +
 				d*(cosp*np->u[i] + sinp*np->v[i]);
@@ -379,15 +377,18 @@ register ANISODAT  *np;
 		d = urand(ilhash(dimlist,ndims)+1823+samplendx);
 		multisamp(rv, 2, d);
 		d = 2.0*PI * rv[0];
-		cosp = cos(d);
-		sinp = sin(d);
+		cosp = cos(d) * np->u_alpha;
+		sinp = sin(d) * np->v_alpha;
+		d = sqrt(cosp*cosp + sinp*sinp);
+		cosp /= d;
+		sinp /= d;
 		rv[1] = 1.0 - specjitter*rv[1];
 		if (rv[1] <= FTINY)
 			d = 1.0;
 		else
 			d = sqrt(-log(rv[1]) /
-				(cosp*cosp*4./np->u_alpha2 +
-				 sinp*sinp*4./np->v_alpha2));
+				(cosp*cosp/(np->u_alpha*np->u_alpha) +
+				 sinp*sinp/(np->v_alpha*np->u_alpha)));
 		for (i = 0; i < 3; i++)
 			sr.rdir[i] = np->prdir[i] +
 					d*(cosp*np->u[i] + sinp*np->v[i]);
