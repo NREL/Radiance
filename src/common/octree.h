@@ -36,9 +36,9 @@
 
 #ifndef  MAXOBLK
 #ifdef  BIGMEM
-#define  MAXOBLK	16383		/* maximum octree block */
+#define  MAXOBLK	65535		/* maximum octree block */
 #else
-#define  MAXOBLK	4095		/* maximum octree block */
+#define  MAXOBLK	8191		/* maximum octree block */
 #endif
 #endif
 
