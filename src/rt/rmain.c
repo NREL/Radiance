@@ -1,4 +1,4 @@
-/* Copyright (c) 1994 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -116,6 +116,11 @@ extern double  srcsizerat;		/* maximum source size/dist. ratio */
 
 extern double  specthresh;		/* specular sampling threshold */
 extern double  specjitter;		/* specular sampling jitter */
+
+extern COLOR  cextinction;		/* global extinction coefficient */
+extern double  salbedo;			/* global scattering albedo */
+extern double  seccg;			/* global scattering eccentricity */
+extern double  ssampdist;		/* scatter sampling distance */
 
 extern int  backvis;			/* back face visibility */
 
@@ -451,6 +456,31 @@ char  *argv[];
 			case 'f':				/* file */
 				check(3,"s");
 				ambfile= argv[++i];
+				break;
+			default:
+				goto badopt;
+			}
+			break;
+		case 'm':				/* medium */
+			switch (argv[i][2]) {
+			case 'e':				/* extinction */
+				check(3,"fff");
+				setcolor(cextinction, atof(argv[i+1]),
+						atof(argv[i+2]),
+						atof(argv[i+3]));
+				i += 3;
+				break;
+			case 'a':				/* albedo */
+				check(3,"f");
+				salbedo = atof(argv[++i]);
+				break;
+			case 'g':				/* eccentr. */
+				check(3,"f");
+				seccg = atof(argv[++i]);
+				break;
+			case 's':				/* sampling */
+				check(3,"f");
+				ssampdist = atof(argv[++i]);
 				break;
 			default:
 				goto badopt;
@@ -872,6 +902,13 @@ printdefaults()			/* print default values to stdout */
 	printf("-ar %-9d\t\t\t# ambient resolution\n", ambres);
 	printf("-ad %-9d\t\t\t# ambient divisions\n", ambdiv);
 	printf("-as %-9d\t\t\t# ambient super-samples\n", ambssamp);
+	printf("-me %.2e %.2e %.2e\t# extinction coefficient\n",
+			colval(cextinction,RED),
+			colval(cextinction,GRN),
+			colval(cextinction,BLU));
+	printf("-ma %f\t\t\t# scattering albedo\n", salbedo);
+	printf("-mg %f\t\t\t# scattering eccentricity\n", seccg);
+	printf("-ms %f\t\t\t# mist sampling distance\n", ssampdist);
 	printf("-lr %-9d\t\t\t# limit reflection\n", maxdepth);
 	printf("-lw %f\t\t\t# limit weight\n", minweight);
 #if  RPICT
