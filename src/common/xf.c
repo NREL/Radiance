@@ -7,6 +7,7 @@ static const char	RCSid[] = "$Id$";
  *  External symbols declared in rtmath.h
  */
 
+#include  <stdlib.h>
 #include  "rtmath.h"
 #include  "rtio.h"
 
