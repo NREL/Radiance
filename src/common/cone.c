@@ -49,6 +49,7 @@ register OBJREC  *o;
 int  getxf;
 {
 	double  fabs(), sqrt();
+	int  sgn0, sgn1;
 	register CONE  *co;
 
 	if ((co = (CONE *)o->os) == NULL) {
@@ -62,20 +63,43 @@ int  getxf;
 		if (o->otype == OBJ_CYLINDER || o->otype == OBJ_TUBE) {
 			if (o->oargs.nfargs != 7)
 				goto argcerr;
-			if (co->ca[6] <= FTINY)
+			if (co->ca[6] < -FTINY) {
+				objerror(o, WARNING, "negative radius");
+				o->otype = o->otype == OBJ_CYLINDER ?
+						OBJ_TUBE : OBJ_CYLINDER;
+				co->ca[6] = -co->ca[6];
+			} else if (co->ca[6] <= FTINY)
 				goto raderr;
 			co->r0 = co->r1 = 6;
 		} else {
 			if (o->oargs.nfargs != 8)
 				goto argcerr;
-			if (co->ca[6] < -FTINY || co->ca[7] < -FTINY)
+			if (co->ca[6] < -FTINY) sgn0 = -1;
+			else if (co->ca[6] > FTINY) sgn0 = 1;
+			else sgn0 = 0;
+			if (co->ca[7] < -FTINY) sgn1 = -1;
+			else if (co->ca[7] > FTINY) sgn1 = 1;
+			else sgn1 = 0;
+			if (sgn0+sgn1 == 0)
 				goto raderr;
-			if (co->ca[6] < 0.0) co->ca[6] = 0.0;
-			if (co->ca[7] < 0.0) co->ca[7] = 0.0;
-			if (fabs(co->ca[7] - co->ca[6]) <= FTINY)
-				goto raderr;
+			if (sgn0 < 0 || sgn1 < 0) {
+				objerror(o, o->otype==OBJ_RING?USER:WARNING,
+					"negative radii");
+				o->otype = o->otype == OBJ_CONE ?
+						OBJ_CUP : OBJ_CONE;
+			}
+			co->ca[6] = co->ca[6]*sgn0;
+			co->ca[7] = co->ca[7]*sgn1;
 			co->r0 = 6;
 			co->r1 = 7;
+			if (fabs(co->ca[7] - co->ca[6]) <= FTINY) {
+				if (o->otype == OBJ_RING)
+					goto raderr;
+				o->otype = o->otype == OBJ_CONE ?
+						OBJ_CYLINDER : OBJ_TUBE;
+				o->oargs.nfargs = 7;
+				co->r1 = 6;
+			}
 		}
 						/* get axis orientation */
 		co->p0 = 0;
