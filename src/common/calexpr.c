@@ -323,6 +323,19 @@ int  ln;
 }
 
 
+getscanpos(fnp, lnp, spp, fpp)	/* return current scan position */
+char  **fnp;
+int  *lnp;
+char  **spp;
+FILE  **fpp;
+{
+    if (fnp != NULL) *fnp = infile;
+    if (lnp != NULL) *lnp = lineno;
+    if (spp != NULL) *spp = linbuf+linepos;
+    if (fpp != NULL) *fpp = infp;
+}
+
+
 int
 scan()				/* scan next character, return literal next */
 {
