@@ -19,9 +19,9 @@ static char SCCSid[] = "$SunId$ LBL";
 int  xres = 0;			/* resolution of input */
 int  yres = 0;
 
-int  uniq = 0;			/* unique values? */
+int  uniq = 0;			/* print only unique values? */
 
-int  original = 0;		/* original values? */
+int  original = 0;		/* convert back to original values? */
 
 int  dataonly = 0;		/* data only format? */
 
@@ -30,8 +30,11 @@ int  brightonly = 0;		/* only brightness values? */
 int  reverse = 0;		/* reverse conversion? */
 
 int  format = 'a';		/* input/output format */
+char  *fmtid = "ascii";		/* format identifier for header */
 
 int  header = 1;		/* do header */
+
+int  wrongformat = 0;		/* wrong input format? */
 
 COLOR  exposure = WHTCOLOR;
 
@@ -76,12 +79,23 @@ char  **argv;
 				case '\0':
 				case 'a':		/* ascii */
 					format = 'a';
+					fmtid = "ascii";
 					break;
 				case 'i':		/* integer */
+					format = 'i';
+					fmtid = "ascii";
+					break;
 				case 'b':		/* byte */
+					format = 'b';
+					fmtid = "byte";
+					break;
 				case 'f':		/* float */
+					format = 'f';
+					fmtid = "float";
+					break;
 				case 'd':		/* double */
-					format = argv[i][2];
+					format = 'd';
+					fmtid = "double";
 					break;
 				default:
 					goto unkopt;
@@ -102,7 +116,13 @@ unkopt:
 			}
 		else
 			break;
-			
+					/* recognize special formats */
+	if (dataonly && format == 'b')
+		if (brightonly)
+			fmtid = "8-bit_grey";
+		else
+			fmtid = "24-bit_rgb";
+
 	if (i == argc) {
 		fin = stdin;
 	} else if (i == argc-1) {
@@ -119,21 +139,30 @@ unkopt:
 	set_io();
 
 	if (reverse) {
-		if (header)			/* get header */
-			copyheader(fin, stdout);
-						/* add to header */
-		printargs(i, argv, stdout);
-		printf("\n");
 		if (yres <= 0 || xres <= 0) {
 			fprintf(stderr, "%s: missing x and y resolution\n",
 					progname);
 			quit(1);
 		}
+					/* get header */
+		if (header && checkheader(fin, fmtid, stdout) < 0) {
+			fprintf(stderr, "%s: wrong input format\n", progname);
+			quit(1);
+		}
+						/* add to header */
+		printargs(i, argv, stdout);
+		fputformat(COLRFMT, stdout);
+		printf("\n");
 		fputresolu(YMAJOR|YDECR, xres, yres, stdout);
 		valtopix();
 	} else {
 						/* get header */
-		getheader(fin, checkhead);
+		getheader(fin, checkhead, NULL);
+		if (wrongformat) {
+			fprintf(stderr, "%s: input not a Radiance picture\n",
+					progname);
+			quit(1);
+		}
 
 		if (xres <= 0 || yres <= 0)		/* get picture size */
 			if (fgetresolu(&xres, &yres, fin) != (YMAJOR|YDECR)) {
@@ -144,6 +173,7 @@ unkopt:
 			}
 		if (header) {
 			printargs(i, argv, stdout);
+			fputformat(fmtid, stdout);
 			printf("\n");
 		}
 		pixtoval();
@@ -156,20 +186,23 @@ unkopt:
 checkhead(line)				/* deal with line from header */
 char  *line;
 {
+	char	fmt[32];
 	double	d;
 	COLOR	ctmp;
 
-	if (header)
-		fputs(line, stdout);
-	if (isexpos(line)) {
+	if (isformat(line)) {
+		formatval(fmt, line);
+		wrongformat = strcmp(fmt, COLRFMT);
+	} else if (original && isexpos(line)) {
 		d = 1.0/exposval(line);
 		scalecolor(exposure, d);
-	} else if (iscolcor(line)) {
+	} else if (original && iscolcor(line)) {
 		colcorval(ctmp, line);
 		colval(exposure,RED) /= colval(ctmp,RED);
 		colval(exposure,GRN) /= colval(ctmp,GRN);
 		colval(exposure,BLU) /= colval(ctmp,BLU);
-	}
+	} else if (header)
+		fputs(line, stdout);
 }
 
 
