@@ -100,7 +100,7 @@ r_comment(ac, av)		/* repeat a comment verbatim */
 register int	ac;
 register char	**av;
 {
-	fputs("\n#", stdout);	/* use Radiance comment character */
+	putchar('#');		/* use Radiance comment character */
 	while (--ac) {
 		putchar(' ');
 		fputs(*++av, stdout);
@@ -426,7 +426,7 @@ material()			/* get (and print) current material */
 	}
 	d = c_cmaterial->rd + c_cmaterial->td +
 			c_cmaterial->rs + c_cmaterial->ts;
-	if (d <= 0. | d >= 1.)
+	if (d < 0. | d > 1.)
 		return(NULL);
 					/* check for trans */
 	if (c_cmaterial->td > .01 || c_cmaterial->ts > .01) {
@@ -435,8 +435,10 @@ material()			/* get (and print) current material */
 		if (c_cmaterial->sided) {
 			ts = sqrt(c_cmaterial->ts);	/* approximate */
 			a5 = .5;
-		} else
+		} else {
+			ts = c_cmaterial->ts;
 			a5 = 1.;
+		}
 						/* average colors */
 		d = c_cmaterial->rd + c_cmaterial->td + ts;
 		cvtcolor(radrgb, &c_cmaterial->rd_c, c_cmaterial->rd/d);
@@ -450,10 +452,11 @@ material()			/* get (and print) current material */
 					(c_cmaterial->rs + ts);
 		a6 = (c_cmaterial->td + ts) /
 				(c_cmaterial->rd + c_cmaterial->td + ts);
-		if (a6 < .999) {
+		if (a6 < .999)
 			d = c_cmaterial->rd/(1. - c_cmaterial->rs)/(1. - a6);
-			scalecolor(radrgb, d);
-		}
+		else
+			d = c_cmaterial->td + ts;
+		scalecolor(radrgb, d);
 		printf("\nvoid trans %s\n0\n0\n", mname);
 		printf("7 %f %f %f\n", colval(radrgb,RED),
 				colval(radrgb,GRN), colval(radrgb,BLU));
@@ -462,11 +465,9 @@ material()			/* get (and print) current material */
 		return(mname);
 	}
 					/* check for plastic */
-	if (c_cmaterial->rs < .01 || c_isgrey(&c_cmaterial->rs_c)) {
-		if (c_cmaterial->rs > .999)
-			cvtcolor(radrgb, &c_cmaterial->rd_c, 1.);
-		else
-			cvtcolor(radrgb, &c_cmaterial->rd_c,
+	if (c_cmaterial->rs < .1 && (c_cmaterial->rs < .01 ||
+					c_isgrey(&c_cmaterial->rs_c))) {
+		cvtcolor(radrgb, &c_cmaterial->rd_c,
 					c_cmaterial->rd/(1.-c_cmaterial->rs));
 		printf("\nvoid plastic %s\n0\n0\n", mname);
 		printf("5 %f %f %f %f %f\n", colval(radrgb,RED),
@@ -475,18 +476,15 @@ material()			/* get (and print) current material */
 		return(mname);
 	}
 					/* else it's metal */
-	d = c_cmaterial->rd + c_cmaterial->rs;	/* average colors */
-	cvtcolor(radrgb, &c_cmaterial->rd_c, c_cmaterial->rd/d);
-	cvtcolor(c2, &c_cmaterial->rs_c, c_cmaterial->rs/d);
+						/* average colors */
+	cvtcolor(radrgb, &c_cmaterial->rd_c, c_cmaterial->rd);
+	cvtcolor(c2, &c_cmaterial->rs_c, c_cmaterial->rs);
 	addcolor(radrgb, c2);
-	if (c_cmaterial->rs < .999) {
-		d = c_cmaterial->rd/(1. - c_cmaterial->rs);
-		scalecolor(radrgb, d);
-	}
 	printf("\nvoid metal %s\n0\n0\n", mname);
 	printf("5 %f %f %f %f %f\n", colval(radrgb,RED),
 			colval(radrgb,GRN), colval(radrgb,BLU),
-			c_cmaterial->rs, c_cmaterial->rs_a);
+			c_cmaterial->rs/(c_cmaterial->rd + c_cmaterial->rs),
+			c_cmaterial->rs_a);
 	return(mname);
 }
 
