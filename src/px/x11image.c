@@ -21,6 +21,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "standard.h"
 
+#include  <signal.h>
 #include  <X11/Xlib.h>
 #include  <X11/cursorfont.h>
 #include  <X11/Xutil.h>
@@ -71,6 +72,8 @@ int  scale = 0;				/* scalefactor; power of two */
 int  xoff = 0;				/* x image offset */
 int  yoff = 0;				/* y image offset */
 
+int  parent = 0;			/* number of children, -1 if child */
+
 VIEW  ourview = STDVIEW;		/* image view parameters */
 int  gotview = 0;			/* got parameters from file */
 
@@ -116,6 +119,8 @@ extern long  ftell();
 Display  *thedisplay;
 Atom  closedownAtom, wmProtocolsAtom;
 
+int  noop() {}
+
 
 main(argc, argv)
 int  argc;
@@ -125,6 +130,7 @@ char  *argv[];
 	char  *gv;
 	int  headline();
 	int  i;
+	int  pid;
 	
 	progname = argv[0];
 	if ((gv = getenv("GAMMA")) != NULL)
@@ -170,15 +176,28 @@ char  *argv[];
 		else
 			break;
 
-	if (i == argc-1) {
+	if (i > argc)
+		goto userr;
+	while (i < argc-1) {
+		if ((pid=fork()) == 0) {	/* a child for each picture */
+			parent = -1;
+			break;
+		}
+		if (pid < 0)
+			quiterr("fork failed");
+		parent++;
+		signal(SIGCONT, noop);
+		pause();		/* wait for wake-up call */
+		i++;
+	}
+	if (i < argc) {			/* open picture file */
 		fname = argv[i];
 		fin = fopen(fname, "r");
 		if (fin == NULL) {
 			sprintf(errmsg, "cannot open file \"%s\"", fname);
 			quiterr(errmsg);
 		}
-	} else if (i != argc)
-		goto userr;
+	}
 				/* get header */
 	getheader(fin, headline, NULL);
 				/* get picture dimensions */
@@ -194,11 +213,14 @@ char  *argv[];
 
 	init(argc, argv);			/* get file and open window */
 
+	if (parent < 0)
+		kill(getppid(), SIGCONT);	/* signal parent if child */
+
 	for ( ; ; )
 		getevent();		/* main loop */
 userr:
 	fprintf(stderr,
-"Usage: %s [-di disp][[-ge] spec][-b][-m][-d][-f][-c nclrs][-e +/-stops] pic\n",
+"Usage: %s [-di disp][[-ge] spec][-b][-m][-d][-f][-c nclrs][-e +/-stops] pic ..\n",
 			progname);
 	exit(1);
 }
@@ -328,11 +350,16 @@ char **argv;
 quiterr(err)		/* print message and exit */
 char  *err;
 {
-	if (err != NULL) {
-		fprintf(stderr, "%s: %s\n", progname, err);
-		exit(1);
+	if (err != NULL)
+		fprintf(stderr, "%s: %s: %s\n", progname, 
+				fname==NULL?"<stdin>":fname, err);
+	if (wind) {
+		XDestroyWindow(thedisplay, wind);
+		XFlush(thedisplay);
 	}
-	exit(0);
+	while (parent > 0 && wait(0) != -1)	/* wait for any children */
+		parent--;
+	exit(err != NULL);
 }
 
 
@@ -536,7 +563,7 @@ getevent()				/* process the next event */
 		else
 			getbox(&xev.xbutton);
 		break;
-   case ClientMessage:
+	case ClientMessage:
 		if ((xev.xclient.message_type == wmProtocolsAtom) &&
 				(xev.xclient.data.l[0] == closedownAtom))
 			quiterr(NULL);
