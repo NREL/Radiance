@@ -406,7 +406,7 @@ serv_result()			/* get next server result and process it */
 		break;
 	case DS_OUTSECT:
 		do_outside = 1;
-		break;
+		goto noargs;
 	case DS_EYESEP:
 		if (msg.nbytes <= 1 || (eyesepdist = atof(buf)) <= FTINY)
 			error(INTERNAL, "bad eye separation from server");
@@ -422,20 +422,21 @@ serv_result()			/* get next server result and process it */
 		}
 #endif
 		imm_mode = msg.type==DS_STARTIMM;
-		/* fall through */
+		goto noargs;
 	case DS_ACKNOW:
 	case DS_SHUTDOWN:
-		if (msg.nbytes) {
-			sprintf(errmsg,
-				"unexpected body with server message %d",
-					msg.type);
-			error(INTERNAL, errmsg);
-		}
-		break;
+		goto noargs;
 	default:
 		error(INTERNAL, "unrecognized result from server process");
 	}
 	return(msg.type);		/* return message type */
+noargs:
+	if (msg.nbytes) {
+		sprintf(errmsg, "unexpected body with server message %d",
+				msg.type);
+		error(INTERNAL, errmsg);
+	}
+	return(msg.type);
 readerr:
 	if (feof(stdin))
 		error(SYSTEM, "server process died");
