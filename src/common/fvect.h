@@ -2,9 +2,20 @@
 
 /* SCCSid "$SunId$ LBL" */
 
-typedef double  FVECT[3];
+#ifndef  FLOAT
+#ifdef  SMLMEM
+#define  FLOAT		float
+#else
+#define  FLOAT		double
+#endif
+#endif
+
+typedef FLOAT  FVECT[3];
 
 #define  VCOPY(v1,v2)	((v1)[0]=(v2)[0],(v1)[1]=(v2)[1],(v1)[2]=(v2)[2])
 #define  DOT(v1,v2)	((v1)[0]*(v2)[0]+(v1)[1]*(v2)[1]+(v1)[2]*(v2)[2])
+#define  VSUM(vr,v1,v2,f)	((vr)[0]=(v1)[0]+(f)*(v2)[0], \
+				(vr)[1]=(v1)[1]+(f)*(v2)[1], \
+				(vr)[2]=(v1)[2]+(f)*(v2)[2])
 
 extern double  sqrt(), fdot(), dist2(), dist2lseg(), dist2line(), normalize();

@@ -14,13 +14,13 @@
  */
 
 typedef struct cone {
-	double  *ca;		/* cone arguments (o->oargs.farg) */
+	FLOAT  *ca;		/* cone arguments (o->oargs.farg) */
 	char  p0, p1;		/* indices for endpoints */
 	char  r0, r1;		/* indices for radii */
 	FVECT  ad;		/* axis direction vector */
-	double  al;		/* axis length */
-	double  sl;		/* side length */
-	double  (*tm)[4];	/* pointer to transformation matrix */
+	FLOAT  al;		/* axis length */
+	FLOAT  sl;		/* side length */
+	FLOAT  (*tm)[4];	/* pointer to transformation matrix */
 }  CONE;
 
 #define  CO_R0(co)	((co)->ca[(co)->r0])
