@@ -219,14 +219,25 @@ register POINT  *row;
 int  siz;
 {
 	double  st[2];
+	int  end;
 	register int  i;
-					/* compute one past each end */
+	
+	if (smooth) {
+		i = -1;			/* compute one past each end */
+		end = siz+1;
+	} else {
+		if (s < -FTINY || s > 1.0+FTINY)
+			return;
+		i = 0;
+		end = siz;
+	}
 	st[0] = s;
-	for (i = -1; i <= siz+1; i++) {
+	while (i <= end) {
 		st[1] = (double)i/siz;
 		row[i].p[0] = funvalue(XNAME, 2, st);
 		row[i].p[1] = funvalue(YNAME, 2, st);
 		row[i].p[2] = funvalue(ZNAME, 2, st);
+		i++;
 	}
 }
 
