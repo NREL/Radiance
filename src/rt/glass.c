@@ -49,7 +49,7 @@ register RAY  *r;
 	FVECT  pnorm;
 	double  cos2;
 	COLOR  trans, refl;
-	double  d, r1;
+	double  d, r1e, r1m;
 	double  transtest, transdist;
 	RAY  p;
 	register int  i;
@@ -73,13 +73,15 @@ register RAY  *r;
 			 pow(colval(mcolor,BLU), 1.0/cos2));
 
 						/* compute reflection */
-	r1 = (pdot - RINDEX*cos2) / (pdot + RINDEX*cos2);
-	d = (1.0/pdot - RINDEX/cos2) / (1.0/pdot + RINDEX/cos2);
-	r1 = (r1*r1 + d*d) / 2.0;
+	r1e = (pdot - RINDEX*cos2) / (pdot + RINDEX*cos2);
+	r1e *= r1e;
+	r1m = (1.0/pdot - RINDEX/cos2) / (1.0/pdot + RINDEX/cos2);
+	r1m *= r1m;
 						/* compute transmittance */
 	for (i = 0; i < 3; i++) {
 		d = colval(mcolor, i);
-		colval(trans,i) = (1.0-r1)*(1.0-r1)*d / (1.0 - r1*r1*d*d);
+		colval(trans,i) = .5*(1.0-r1e)*(1.0-r1e)*d/(1.0-r1e*r1e*d*d);
+		colval(trans,i) += .5*(1.0-r1m)*(1.0-r1m)*d/(1.0-r1m*r1m*d*d);
 	}
 						/* transmitted ray */
 	if (rayorigin(&p, r, TRANS, bright(trans)) == 0) {
@@ -106,7 +108,8 @@ register RAY  *r;
 	for (i = 0; i < 3; i++) {
 		d = colval(mcolor, i);
 		d *= d;
-		colval(refl,i) = r1 * (1.0 + (1.0-2.0*r1)*d) / (1.0 - r1*r1*d);
+		colval(refl,i) = .5*r1e*(1.0+(1.0-2.0*r1e)*d)/(1.0-r1e*r1e*d);
+		colval(refl,i) += .5*r1m*(1.0+(1.0-2.0*r1m)*d)/(1.0-r1m*r1m*d);
 	}
 						/* reflected ray */
 	if (rayorigin(&p, r, REFLECTED, bright(refl)) == 0) {
