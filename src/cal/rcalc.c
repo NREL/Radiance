@@ -147,12 +147,22 @@ char  *argv[]
 					nbicols = atoi(argv[i]+3);
 				else
 					nbicols = 1;
+				if (nbicols*sizeof(double) > INBSIZ) {
+					eputs(argv[0]);
+					eputs(": too many input columns\n");
+					quit(1);
+				}
 				break;
 			case 'f':
 				if (isdigit(argv[i][3]))
 					nbicols = -atoi(argv[i]+3);
 				else
 					nbicols = -1;
+				if (-nbicols*sizeof(float) > INBSIZ) {
+					eputs(argv[0]);
+					eputs(": too many input columns\n");
+					quit(1);
+				}
 				break;
 			default:
 				goto userr;
@@ -646,7 +656,7 @@ register struct field  *f
 			delim = f->next->f.sl[0];
 		cp = buf;
 		do {
-			if (ipb.chr == EOF)
+			if (ipb.chr == EOF || ipb.chr == '\n')
 				inword = 0;
 			else if (blnkeq && delim != EOF)
 				inword = isblnk(delim) ?
