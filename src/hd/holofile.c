@@ -61,6 +61,40 @@ static struct fraglist {
 static int	nhdfragls;	/* size of hdfragl array */
 
 
+HOLO *
+hdalloc(hproto)		/* allocate and set holodeck section based on grid */
+HDGRID	*hproto;
+{
+	HOLO	hdhead;
+	register HOLO	*hp;
+	int	n;
+				/* copy grid to temporary header */
+	bcopy((char *)hproto, (char *)&hdhead, sizeof(HDGRID));
+				/* compute grid vectors and sizes */
+	hdcompgrid(&hdhead);
+				/* allocate header with directory */
+	n = sizeof(HOLO)+nbeams(&hdhead)*sizeof(BEAMI);
+	if ((hp = (HOLO *)malloc(n)) == NULL)
+		return(NULL);
+				/* copy header information */
+	copystruct(hp, &hdhead);
+				/* allocate and clear beam list */
+	hp->bl = (BEAM **)malloc((nbeams(hp)+1)*sizeof(BEAM *)+sizeof(BEAM));
+	if (hp->bl == NULL) {
+		free((char *)hp);
+		return(NULL);
+	}
+	bzero((char *)hp->bl, (nbeams(hp)+1)*sizeof(BEAM *)+sizeof(BEAM));
+	hp->bl[0] = (BEAM *)(hp->bl+nbeams(hp)+1);	/* set blglob(hp) */
+	hp->fd = -1;
+	hp->dirty = 0;
+	hp->priv = NULL;
+				/* clear beam directory */
+	bzero((char *)hp->bi, (nbeams(hp)+1)*sizeof(BEAMI));
+	return(hp);		/* all is well */
+}
+
+
 char *
 hdrealloc(ptr, siz, rout)	/* (re)allocate memory, retry then error */
 char	*ptr;
