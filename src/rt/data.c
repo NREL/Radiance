@@ -17,6 +17,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "data.h"
 
 
+extern char  *fgetword();
+extern double  atof();
+
 extern char  *libpath;			/* library search path */
 
 static DATARRAY  *dlist = NULL;		/* data array list */
@@ -28,6 +31,7 @@ DATARRAY *
 getdata(dname)				/* get data array dname */
 char  *dname;
 {
+	char  word[64];
 	char  *dfname;
 	FILE  *fp;
 	int  asize;
@@ -72,18 +76,24 @@ char  *dname;
 		error(SYSTEM, errmsg);
 	}
 							/* get dimensions */
-	if (fscanf(fp, "%d", &dp->nd) != 1)
+	if (fgetword(word, sizeof(word), fp) == NULL || !isint(word))
 		goto scanerr;
+	dp->nd = atoi(word);
 	if (dp->nd <= 0 || dp->nd > MAXDDIM) {
 		sprintf(errmsg, "bad number of dimensions for \"%s\"", dname);
 		error(USER, errmsg);
 	}
 	asize = 1;
 	for (i = 0; i < dp->nd; i++) {
-		if (fscanf(fp, "%lf %lf %d",
-				&dp->dim[i].org, &dp->dim[i].siz,
-				&dp->dim[i].ne) != 3)
+		if (fgetword(word, sizeof(word), fp) == NULL || !isflt(word))
 			goto scanerr;
+		dp->dim[i].org = atof(word);
+		if (fgetword(word, sizeof(word), fp) == NULL || !isflt(word))
+			goto scanerr;
+		dp->dim[i].siz = atof(word);
+		if (fgetword(word, sizeof(word), fp) == NULL || !isint(word))
+			goto scanerr;
+		dp->dim[i].ne = atoi(word);
 		if (dp->dim[i].ne < 2)
 			goto scanerr;
 		asize *= dp->dim[i].ne;
@@ -91,9 +101,12 @@ char  *dname;
 			dp->dim[i].p = (double *)malloc(dp->dim[i].ne*sizeof(double));
 			if (dp->dim[i].p == NULL)
 				goto memerr;
-			for (j = 0; j < dp->dim[i].ne; j++)
-				if (fscanf(fp, "%lf", &dp->dim[i].p[j]) != 1)
+			for (j = 0; j < dp->dim[i].ne; j++) {
+				if (fgetword(word, sizeof(word), fp) == NULL ||
+						!isflt(word))
 					goto scanerr;
+				dp->dim[i].p[j] = atof(word);
+			}
 			for (j = 1; j < dp->dim[i].ne-1; j++)
 				if ((dp->dim[i].p[j-1] < dp->dim[i].p[j]) !=
 					(dp->dim[i].p[j] < dp->dim[i].p[j+1]))
@@ -107,10 +120,11 @@ char  *dname;
 	if ((dp->arr = (DATATYPE *)malloc(asize*sizeof(DATATYPE))) == NULL)
 		goto memerr;
 	
-	for (i = 0; i < asize; i++)
-		if (fscanf(fp, DSCANF, &dp->arr[i]) != 1)
+	for (i = 0; i < asize; i++) {
+		if (fgetword(word, sizeof(word), fp) == NULL || !isflt(word))
 			goto scanerr;
-	
+		dp->arr[i] = atof(word);
+	}
 	fclose(fp);
 	dp->next = dlist;
 	return(dlist = dp);
