@@ -85,6 +85,10 @@ With an octree, you should give the same options for -av, -ab and
 so forth as are used to render the scene.  Please enter them below.
 
 _EOF_
+		if ($picture != $nofile) then
+			echo "These are the parameters from the picture:"
+			getinfo $picture
+		endif
 		readvar rtargs
 		set fgargs=($fgargs $rtargs $octree)
 	endif
