@@ -56,6 +56,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  redraw(x,y,w,h) patch_raster(wind,(x)-xoff,(y)-yoff,x,y,w,h,ourras)
 
 double  gamcor = 2.2;			/* gamma correction */
+char  *gamstr = NULL;			/* gamma value override */
 
 int  dither = 1;			/* dither colors? */
 int  fast = 0;				/* keep picture in Pixmap? */
@@ -116,6 +117,8 @@ extern BYTE  clrtab[256][3];		/* global color map */
 
 extern long  ftell();
 
+extern char  *getenv();
+
 Display  *thedisplay;
 Atom  closedownAtom, wmProtocolsAtom;
 
@@ -128,15 +131,11 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-	extern char  *getenv();
-	char  *gv;
 	int  headline();
 	int  i;
 	int  pid;
 	
 	progname = argv[0];
-	if ((gv = getenv("GAMMA")) != NULL)
-		gamcor = atof(gv);
 
 	for (i = 1; i < argc; i++)
 		if (argv[i][0] == '-')
@@ -168,7 +167,7 @@ char  *argv[];
 				if (argv[i][2] == 'e')
 					geometry = argv[++i];
 				else
-					gamcor = atof(argv[++i]);
+					gamstr = argv[++i];
 				break;
 			default:
 				goto userr;
@@ -223,7 +222,7 @@ char  *argv[];
 		getevent();		/* main loop */
 userr:
 	fprintf(stderr,
-"Usage: %s [-di disp][[-ge] spec][-b][-m][-d][-f][-c nclrs][-e +/-stops] pic ..\n",
+"Usage: %s [-di disp][[-ge] spec][-b][-m][-d][-f][-c nclrs][-e +/-stops][-g gamcor] pic ..\n",
 			progname);
 	exit(1);
 }
@@ -273,6 +272,13 @@ char **argv;
 	name += i+1;
 	if ((thedisplay = XOpenDisplay(dispname)) == NULL)
 		quiterr("cannot open display");
+				/* set gamma value */
+	if (gamstr == NULL)		/* get it from the X server */
+		gamstr = XGetDefault(thedisplay, "radiance", "gamma");
+	if (gamstr == NULL)		/* get it from the environment */
+		gamstr = getenv("GAMMA");
+	if (gamstr != NULL)
+		gamcor = atof(gamstr);
 				/* get best visual for default screen */
 	getbestvis();
 				/* store image */
@@ -942,14 +948,14 @@ getfull()			/* get full (24-bit) data */
 		colrs_gambs(scanline, xmax);
 		if (ourras->image->blue_mask & 1)
 			for (x = 0; x < xmax; x++)
-				*dp++ =	scanline[x][RED] << 16 |
-					scanline[x][GRN] << 8 |
-					scanline[x][BLU] ;
+				*dp++ =	(unsigned int4)scanline[x][RED] << 16 |
+					(unsigned int4)scanline[x][GRN] << 8 |
+					(unsigned int4)scanline[x][BLU] ;
 		else
 			for (x = 0; x < xmax; x++)
-				*dp++ =	scanline[x][RED] |
-					scanline[x][GRN] << 8 |
-					scanline[x][BLU] << 16 ;
+				*dp++ =	(unsigned int4)scanline[x][RED] |
+					(unsigned int4)scanline[x][GRN] << 8 |
+					(unsigned int4)scanline[x][BLU] << 16 ;
 	}
 }
 
