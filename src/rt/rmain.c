@@ -93,6 +93,9 @@ extern int  vspretest;			/* virtual source pretest density */
 extern int  directinvis;		/* light sources invisible to eye? */
 extern double  srcsizerat;		/* maximum source size/dist. ratio */
 
+extern double  specthresh;		/* specular sampling threshold */
+extern double  specjitter;		/* specular sampling jitter */
+
 extern int  maxdepth;			/* maximum recursion depth */
 extern double  minweight;		/* minimum ray weight */
 
@@ -220,10 +223,24 @@ char  *argv[];
 				goto badopt;
 			}
 			break;
-#if  RPICT|RVIEW
-		case 's':				/* sample */
+		case 's':				/* specular */
 			switch (argv[i][2]) {
-			case 'p':				/* pixel */
+			case 't':				/* threshold */
+				check(3,"f");
+				specthresh = atof(argv[++i]);
+				break;
+			case 'j':				/* jitter */
+				check(3,"f");
+				specjitter = atof(argv[++i]);
+				break;
+			default:
+				goto badopt;
+			}
+			break;
+#if  RPICT|RVIEW
+		case 'p':				/* pixel */
+			switch (argv[i][2]) {
+			case 's':				/* sample */
 				check(3,"i");
 				psample = atoi(argv[++i]);
 				break;
@@ -235,6 +252,10 @@ char  *argv[];
 			case 'j':				/* jitter */
 				check(3,"f");
 				dstrpix = atof(argv[++i]);
+				break;
+			case 'a':				/* aspect */
+				check(3,"f");
+				pixaspect = atof(argv[++i]);
 				break;
 #endif
 			default:
@@ -250,12 +271,6 @@ char  *argv[];
 		case 'y':				/* y resolution */
 			check(2,"i");
 			vresolu = atoi(argv[++i]);
-			break;
-#endif
-#if  RPICT	
-		case 'p':				/* pixel aspect */
-			check(2,"f");
-			pixaspect = atof(argv[++i]);
 			break;
 #endif
 		case 'w':				/* warnings */
@@ -618,14 +633,12 @@ printdefaults()			/* print default values to stdout */
 	printf("-y  %-9d\t\t\t# y resolution\n", vresolu);
 #endif
 #if  RPICT
-	printf("-p  %f\t\t\t# pixel aspect ratio\n", pixaspect);
+	printf("-pa %f\t\t\t# pixel aspect ratio\n", pixaspect);
+	printf("-pj %f\t\t\t# pixel jitter\n", dstrpix);
 #endif
 #if  RPICT|RVIEW
-	printf("-sp %-9d\t\t\t# sample pixel\n", psample);
-	printf("-st %f\t\t\t# sample threshold\n", maxdiff);
-#endif
-#if  RPICT
-	printf("-sj %f\t\t\t# sample jitter\n", dstrpix);
+	printf("-ps %-9d\t\t\t# pixel sample\n", psample);
+	printf("-pt %f\t\t\t# pixel threshold\n", maxdiff);
 #endif
 	printf("-dt %f\t\t\t# direct threshold\n", shadthresh);
 	printf("-dc %f\t\t\t# direct certainty\n", shadcert);
@@ -635,6 +648,8 @@ printdefaults()			/* print default values to stdout */
 	printf("-dp %-9d\t\t\t# direct pretest density\n", vspretest);
 	printf(directinvis ? "-di+\t\t\t\t# direct invisibility on\n" :
 			"-di-\t\t\t\t# direct invisibility off\n");
+	printf("-sj %f\t\t\t# specular jitter\n", specjitter);
+	printf("-st %f\t\t\t# specular threshold\n", specthresh);
 	printf("-av %f %f %f\t# ambient value\n", colval(ambval,RED),
 			colval(ambval,GRN), colval(ambval, BLU));
 	printf("-ab %-9d\t\t\t# ambient bounces\n", ambounce);
