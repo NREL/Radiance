@@ -103,6 +103,10 @@ FILE  *fp;
 	double	d;
 
 	l = getint(4, fp);
+	if (l == 0) {
+		getc(fp);		/* exactly zero -- ignore exponent */
+		return(0.0);
+	}
 	d = (l + (l > 0 ? .5 : -.5)) * (1./0x7fffffff);
 	return(ldexp(d, (int)getint(1, fp)));
 }
