@@ -13,6 +13,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  PI		3.14159265358979323846
 
+#define  checkarg(a,n)	if (strcmp(av[i],a) || i+n >= ac) return(i)
+
 
 int
 xf(xfmat, xfsca, ac, av)		/* get transform specification */
@@ -33,6 +35,7 @@ char  *av[];
 		switch (av[i][1]) {
 	
 		case 't':			/* translate */
+			checkarg("-t",3);
 			m4[3][0] = atof(av[++i]);
 			m4[3][1] = atof(av[++i]);
 			m4[3][2] = atof(av[++i]);
@@ -41,16 +44,19 @@ char  *av[];
 		case 'r':			/* rotate */
 			switch (av[i][2]) {
 			case 'x':
+				checkarg("-rx",1);
 				theta = PI/180.0 * atof(av[++i]);
 				m4[1][1] = m4[2][2] = cos(theta);
 				m4[2][1] = -(m4[1][2] = sin(theta));
 				break;
 			case 'y':
+				checkarg("-ry",1);
 				theta = PI/180 * atof(av[++i]);
 				m4[0][0] = m4[2][2] = cos(theta);
 				m4[0][2] = -(m4[2][0] = sin(theta));
 				break;
 			case 'z':
+				checkarg("-rz",1);
 				theta = PI/180 * atof(av[++i]);
 				m4[0][0] = m4[1][1] = cos(theta);
 				m4[1][0] = -(m4[0][1] = sin(theta));
@@ -61,6 +67,7 @@ char  *av[];
 			break;
 
 		case 's':			/* scale */
+			checkarg("-s",1);
 			*xfsca *=
 			m4[0][0] = 
 			m4[1][1] = 
@@ -70,14 +77,17 @@ char  *av[];
 		case 'm':			/* mirror */
 			switch (av[i][2]) {
 			case 'x':
+				checkarg("-mx",0);
 				*xfsca *=
 				m4[0][0] = -1.0;
 				break;
 			case 'y':
+				checkarg("-my",0);
 				*xfsca *=
 				m4[1][1] = -1.0;
 				break;
 			case 'z':
+				checkarg("-mz",0);
 				*xfsca *=
 				m4[2][2] = -1.0;
 				break;
@@ -116,6 +126,7 @@ char  *av[];
 		switch (av[i][1]) {
 	
 		case 't':			/* translate */
+			checkarg("-t",3);
 			m4[3][0] = -atof(av[++i]);
 			m4[3][1] = -atof(av[++i]);
 			m4[3][2] = -atof(av[++i]);
@@ -124,16 +135,19 @@ char  *av[];
 		case 'r':			/* rotate */
 			switch (av[i][2]) {
 			case 'x':
+				checkarg("-rx",1);
 				theta = -PI/180.0 * atof(av[++i]);
 				m4[1][1] = m4[2][2] = cos(theta);
 				m4[2][1] = -(m4[1][2] = sin(theta));
 				break;
 			case 'y':
+				checkarg("-ry",1);
 				theta = -PI/180.0 * atof(av[++i]);
 				m4[0][0] = m4[2][2] = cos(theta);
 				m4[0][2] = -(m4[2][0] = sin(theta));
 				break;
 			case 'z':
+				checkarg("-rz",1);
 				theta = -PI/180.0 * atof(av[++i]);
 				m4[0][0] = m4[1][1] = cos(theta);
 				m4[1][0] = -(m4[0][1] = sin(theta));
@@ -144,6 +158,7 @@ char  *av[];
 			break;
 
 		case 's':			/* scale */
+			checkarg("-s",1);
 			*xfsca *=
 			m4[0][0] = 
 			m4[1][1] = 
@@ -153,14 +168,17 @@ char  *av[];
 		case 'm':			/* mirror */
 			switch (av[i][2]) {
 			case 'x':
+				checkarg("-mx",0);
 				*xfsca *=
 				m4[0][0] = -1.0;
 				break;
 			case 'y':
+				checkarg("-my",0);
 				*xfsca *=
 				m4[1][1] = -1.0;
 				break;
 			case 'z':
+				checkarg("-mz",0);
 				*xfsca *=
 				m4[2][2] = -1.0;
 				break;
