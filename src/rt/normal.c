@@ -181,8 +181,6 @@ register RAY  *r;
 				rayvalue(&lr);
 				multcolor(lr.rcol, nd.scolor);
 				addcolor(r->rcol, lr.rcol);
-				if (nd.rspec > 0.5 && m->omod == OVOID)
-					r->rt = r->rot + lr.rt;
 			}
 		}
 	}

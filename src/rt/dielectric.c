@@ -57,7 +57,7 @@ register RAY  *r;
 	double  cos1, cos2, nratio;
 	COLOR  mcolor;
 	double  mabsorp;
-	double  refl, trans, transbright;
+	double  refl, trans;
 	FVECT  dnorm;
 	double  d1, d2;
 	RAY  p;
@@ -65,6 +65,8 @@ register RAY  *r;
 
 	if (m->oargs.nfargs != (m->otype==MAT_DIELECTRIC ? 5 : 8))
 		objerror(m, USER, "bad arguments");
+
+	r->rt = r->rot;				/* just use ray length */
 
 	raytexture(r, m->omod);			/* get modifiers */
 
@@ -115,7 +117,6 @@ register RAY  *r;
 
 		refl /= 2.0;
 		trans = 1.0 - refl;
-		transbright = -FTINY;
 
 		if (rayorigin(&p, r, REFRACTED, mabsorp*trans) == 0) {
 
@@ -136,8 +137,6 @@ register RAY  *r;
 				multcolor(mcolor, r->pcol);	/* modify */
 				scalecolor(p.rcol, trans);
 				addcolor(r->rcol, p.rcol);
-				transbright = bright(p.rcol);
-				r->rt = r->rot + p.rt;
 			}
 		}
 	}
@@ -153,8 +152,6 @@ register RAY  *r;
 
 		scalecolor(p.rcol, refl);	/* color contribution */
 		addcolor(r->rcol, p.rcol);
-		if (bright(p.rcol) > transbright)
-			r->rt = r->rot + p.rt;
 	}
 
 	multcolor(r->rcol, mcolor);		/* multiply by transmittance */
