@@ -493,7 +493,8 @@ ambsync()			/* synchronize ambient file */
 			avinsert(avstore(&avs));
 			n -= AMBVALSIZ;
 		}
-		if (n)				/* alignment */
+		/*** seek always as safety measure
+		if (n) ***/			/* alignment */
 			if (lseek(fileno(ambfp), flen-n, 0) < 0)
 				goto seekerr;
 	}
