@@ -11,6 +11,11 @@
 
 #################################################################
 #
+# The general assumption is that one surface is uncoated, and
+# reflectances and transmittances are computed from this fact.
+# If the user tries to enter two coated surfaces on the same
+# pane, the script complains and exits.
+#
 # Supported surface types:
 #
 set sn_arr=("clear glass" "VE1-2M low-E coating" "PVB laminated" "V-175 white frit" "V-933 warm gray frit")
@@ -59,9 +64,9 @@ while ($#argv > 0)
 		set rc_r_arr=($rc_r_arr $ln[5])
 		set rc_g_arr=($rc_g_arr $ln[6])
 		set rc_b_arr=($rc_b_arr $ln[7])
-		set rg_r_arr=($rc_r_arr $ln[8])
-		set rg_g_arr=($rc_g_arr $ln[9])
-		set rg_b_arr=($rc_b_arr $ln[10])
+		set rg_r_arr=($rg_r_arr $ln[8])
+		set rg_g_arr=($rg_g_arr $ln[9])
+		set rg_b_arr=($rg_b_arr $ln[10])
 		set part_arr=($part_arr $ln[11])
 		@ i++
 	end
