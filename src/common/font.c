@@ -158,7 +158,7 @@ register FONT  *f;		/* font */
 		if (f->fg[*tp++&0xff] == NULL)
 			*sp++ = 0;
 		else
-			linelen += *sp++ = 256;
+			linelen += *sp++ = 255;
 	return(linelen);
 }
 

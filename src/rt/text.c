@@ -225,7 +225,7 @@ register OBJREC  *tm;
 						/* compute character spacing */
 	i = sndx(tm);
 	d = i < tm->oargs.nfargs ? tm->oargs.farg[i] : 0.0;
-	i = d * 256.0;
+	i = d * 255.0;
 	t->tl.width = 0;
 	for (tlp = t->tl.next; tlp != NULL; tlp = tlp->next) {
 		if (i < 0)
@@ -281,15 +281,15 @@ OBJREC  *m;
 	x = DOT(v, tp->right);
 	i = sndx(m);
 	if (i < m->oargs.nfargs)
-		x *= tp->f->mwidth + 256.*fabs(m->oargs.farg[i]);
+		x *= tp->f->mwidth + 255.*fabs(m->oargs.farg[i]);
 	else
-		x *= 256.;
+		x *= 255.;
 	h = x;
 	i = y = DOT(v, tp->down);
 	if (x < 0.0 || y < 0.0)
 		return(0);
 	x -= (double)h;
-	y = ((i+1) - y)*256.;
+	y = ((i+1) - y)*255.;
 				/* find the line position */
 	for (tlp = tp->tl.next; tlp != NULL; tlp = tlp->next)
 		if (--i < 0)
@@ -297,7 +297,7 @@ OBJREC  *m;
 	if (tlp == NULL || h >= tlp->width)
 		return(0);
 	for (i = 0; (h -= tlp->spc[i]) >= 0; i++)
-		if (h < 256 && inglyph(h+x, y,
+		if (h < 255 && inglyph(h+x, y,
 				tp->f->fg[TLSTR(tlp)[i]&0xff]))
 			return(1);
 	return(0);
@@ -305,7 +305,7 @@ OBJREC  *m;
 
 
 inglyph(x, y, gl)		/* (x,y) within font glyph gl? */
-double  x, y;		/* real coordinates in range [0,256) */
+double  x, y;		/* real coordinates in range [0,255) */
 register GLYPH  *gl;
 {
 	int  n, ncross;
