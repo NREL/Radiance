@@ -1,14 +1,16 @@
 # SCCSid "$SunId$ LBL"
 
 #
-#  Compiles for pixel file plotters.
+#  Compiles for image processing and display programs
 #
 
 OPT = -O
 MACH = -DBSD -DSTRUCTASSIGN -f68881 /usr/lib/f68881.il -DIEEE
 CFLAGS = $(OPT) $(MACH)
 
-INSTDIR = /usr/local/ray
+INSTDIR = ../../bin
+
+LIBDIR = /usr/local/lib/ray
 
 CALDEFS = -DFUNCTION -DVARIABLE -DRCONST -DBIGLIB
 
@@ -21,10 +23,13 @@ ra_t8 ra_bn ra_t16 pcomb pinterp x11image xshowtrace pflip
 
 all:	$(PROGS)
 
-install:	$(PROGS)
+install:	$(PROGS) normpat.csh
 	cp $(PROGS) $(INSTDIR)
 	cp normpat.csh $(INSTDIR)/normpat
 	chmod 755 $(INSTDIR)/normpat
+
+clean:
+	rm -f $(PROGS) *.o core
 
 pfilt:	pfilt.o pf2.o pf3.o resolu.o color.o header.o lamps.o \
 rexpr.o fropen.o spec_rgb.o
@@ -154,6 +159,9 @@ ra_pixar.o:	ra_pixar.c
 xshowtrace:	xshowtrace.o image.o resolu.o header.o fvect.o
 	cc $(CFLAGS) -o xshowtrace xshowtrace.o image.o resolu.o header.o \
 fvect.o -lm -lX11
+
+fropen.o:	fropen.c
+	cc $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c fropen.c
 
 xshowtrace.o:	view.h standard.h mat4.h fvect.h
 
