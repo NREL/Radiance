@@ -178,7 +178,20 @@ char  **argv;
 			}
 		else
 			break;
-			
+					/* get lamp data (if necessary) */
+	if (lamptype != NULL) {
+		if (loadlamps(lampdat) < 0)
+			quit(1);
+		if ((lampcolor = matchlamp(lamptype)) == NULL) {
+			fprintf(stderr, "%s: unknown lamp type\n", lamptype);
+			quit(1);
+		}
+		colval(exposure,RED) /= lampcolor[0];
+		colval(exposure,GRN) /= lampcolor[1];
+		colval(exposure,BLU) /= lampcolor[2];
+		freelamps();
+	}
+					/* open input file */
 	if (i == argc) {
 		if (singlepass)
 			fin = stdin;
@@ -204,19 +217,6 @@ char  **argv;
 	} else {
 		fprintf(stderr, "%s: bad # file arguments\n", progname);
 		quit(1);
-	}
-					/* get lamp data (if necessary) */
-	if (lamptype != NULL) {
-		if (loadlamps(lampdat) < 0)
-			quit(1);
-		if ((lampcolor = matchlamp(lamptype)) == NULL) {
-			fprintf(stderr, "%s: unknown lamp type\n", lamptype);
-			quit(1);
-		}
-		colval(exposure,RED) /= lampcolor[0];
-		colval(exposure,GRN) /= lampcolor[1];
-		colval(exposure,BLU) /= lampcolor[2];
-		freelamps();
 	}
 					/* get header */
 	getheader(fin, headline);
