@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -127,7 +127,7 @@ int  dofwd;
 	m->os = (char *)f;
 	return(f);
 toofew:
-	objerror(m, USER, "too few arguments");
+	objerror(m, USER, "too few string arguments");
 memerr:
 	error(SYSTEM, "out of memory in getfunc");
 }
