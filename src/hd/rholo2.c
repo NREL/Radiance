@@ -19,12 +19,17 @@ register PACKET	*p;
 	static FVECT	ro, rd;
 	BCOORD	gc;
 	double	d;
+	long	r1, r2;
 	register int	i;
 
 	if (!hdbcoord(gc, hdlist[p->hd], p->bi))
 		error(CONSISTENCY, "bad beam index in packrays");
 	for (i = 0; i < p->nr; i++) {
-		*(long *)p->ra[i].r = random()<<16 ^ random();
+		r1 = random(); r2 = random();
+		p->ra[i].r[0][0] = r1 ^ r2>>7;
+		p->ra[i].r[0][1] = r1<<2 ^ r2;
+		p->ra[i].r[1][0] = r1<<4 ^ r2>>15;
+		p->ra[i].r[1][1] = r1<<6 ^ r2>>23;
 		d = hdray(ro, rd, hdlist[p->hd], gc, p->ra[i].r);
 		if (p->offset != NULL) {
 			VSUM(ro, ro, rd, d);		/* exterior only */
