@@ -80,7 +80,7 @@ proc delview {} {			# delete current view
 }
 
 proc copyviews rf {		# copy view settings from another RIF
-	load_vars [file tail $rf] {view UP PICTURE RESOLUTION}
+	load_vars [file tail $rf] {view UP PICTURE RESOLUTION RAWSAVE}
 	vnchange viewname {} w
 }
 
@@ -176,6 +176,11 @@ proc do_views w {			# create views screen
 	entry $w.rze -textvariable radvar(RESOLUTION) -relief sunken
 	place $w.rze -relwidth .2857 -relheight .0610 -relx .2857 -rely .7717
 	helplink $w.rze trad views resolution
+	# Rawsave
+	checkbutton $w.rawb -relief flat -text Rawsave \
+			-variable radvar(RAWSAVE) -onvalue True -offvalue False
+	place $w.rawb -relx .6429 -rely .7717
+	helplink $w.rawb trad views rawsave
 	# Revert and Copy buttons
 	button $w.revert -text Revert -relief raised \
 			-command "copyviews $rifname"

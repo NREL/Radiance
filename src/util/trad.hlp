@@ -1,4 +1,4 @@
-	$Id: trad.hlp,v 2.10 1995/02/21 14:27:06 greg Exp $
+	$Id: trad.hlp,v 2.11 1995/07/06 12:23:37 greg Exp $
 
 This help file is associated with the trad interface to the Radiance
 rad(1) program.  Trad consists of trad.wsh and one do_*.tcl file for
@@ -744,6 +744,17 @@ Normally, either the X or the Y resolution is reduced as necessary
 to maintain a specific pixel aspect ratio (1 by default).
 
 The default value for this variable is "512".
+
+.Views.Rawsave
+
+The "Rawsave" check box determines whether or not the raw output picture
+from rpict will be saved.
+The default action (box unchecked) is to remove this file, since it
+takes up disk space and is not generally useful.
+However, if you wish to perform some special filtering function on
+the file, this file can be renamed instead of removed by checking this box.
+The final name in this case will be the same as the finished
+picture, except with a ".rwp" suffix.
 
 .Views.Copy
 
