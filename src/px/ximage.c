@@ -38,9 +38,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  BORWIDTH	5		/* border width */
 #define  BARHEIGHT	25		/* menu bar size */
 
-double  gamcor = 2.0;			/* gamcor correction */
+double  gamcor = 2.0;			/* gamma correction */
 
-XRASTER  ourras;			/* our stored raster image */
+XRASTER  *ourras = NULL;		/* our stored raster image */
 
 int  dither = 1;			/* dither colors? */
 int  fast = 0;				/* keep picture in Pixmap? */
@@ -50,6 +50,8 @@ Font  fontid;				/* our font */
 
 int  maxcolors = 0;			/* maximum colors */
 int  greyscale = 0;			/* in grey */
+
+int  scale = 0;				/* scalefactor; power of two */
 
 int  xoff = 0;				/* x image offset */
 int  yoff = 0;				/* y image offset */
@@ -82,7 +84,7 @@ extern long  ftell();
 
 extern char  *malloc(), *calloc();
 
-extern double  atof();
+extern double  atof(), pow(), log();
 
 
 main(argc, argv)
@@ -111,6 +113,11 @@ char  *argv[];
 				break;
 			case 'f':
 				fast = !fast;
+				break;
+			case 'e':
+				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
+					goto userr;
+				scale = atoi(argv[++i]);
 				break;
 			case 'g':
 				gamcor = atof(argv[++i]);
@@ -154,7 +161,7 @@ char  *argv[];
 		getevent();		/* main loop */
 userr:
 	fprintf(stderr,
-	"Usage: %s [=geometry][-b][-m][-d][-f][-c ncolors] file\n",
+	"Usage: %s [=geometry][-b][-m][-d][-f][-c ncolors][-e +/-stops] file\n",
 			progname);
 	quit(1);
 }
@@ -191,7 +198,6 @@ register char  *s;
 init()			/* get data and open window */
 {
 	register int  i;
-	colormap  ourmap;
 	OpaqueFrame  mainframe;
 	char  defgeom[32];
 	
@@ -213,25 +219,9 @@ init()			/* get data and open window */
 		maxcolors = 1<<DisplayPlanes();
 		if (maxcolors > 4) maxcolors -= 2;
 	}
-	ourras.width = xmax;
-	ourras.height = ymax;
 				/* store image */
-	if (maxcolors <= 2) {		/* monochrome */
-		ourras.data.m = (unsigned short *)malloc(BitmapSize(xmax,ymax));
-		if (ourras.data.m == NULL)
-			goto memerr;
-		getmono();
-	} else {
-		ourras.data.bz = (unsigned char *)malloc(BZPixmapSize(xmax,ymax));
-		if (ourras.data.bz == NULL)
-			goto memerr;
-		if (greyscale)
-			biq(dither,maxcolors,1,ourmap);
-		else
-			ciq(dither,maxcolors,1,ourmap);
-		if (init_rcolors(&ourras, ourmap) == 0)
-			goto memerr;
-	}
+	getras();
+
 	mainframe.bdrwidth = BORWIDTH;
 	mainframe.border = WhitePixmap;
 	mainframe.background = BlackPixmap;
@@ -284,6 +274,37 @@ int  code;
 }
 
 
+getras()				/* get raster file */
+{
+	colormap	ourmap;
+
+	ourras = (XRASTER *)calloc(1, sizeof(XRASTER));
+	if (ourras == NULL)
+		goto memerr;
+	ourras->width = xmax;
+	ourras->height = ymax;
+	if (maxcolors <= 2) {		/* monochrome */
+		ourras->data.m = (unsigned short *)malloc(BitmapSize(xmax,ymax));
+		if (ourras->data.m == NULL)
+			goto memerr;
+		getmono();
+	} else {
+		ourras->data.bz = (unsigned char *)malloc(BZPixmapSize(xmax,ymax));
+		if (ourras->data.bz == NULL)
+			goto memerr;
+		if (greyscale)
+			biq(dither,maxcolors,1,ourmap);
+		else
+			ciq(dither,maxcolors,1,ourmap);
+		if (init_rcolors(ourras, ourmap) == 0)
+			goto memerr;
+	}
+	return;
+memerr:
+	quit("out of memory");
+}
+
+
 getevent()				/* process the next event */
 {
 	WindowInfo  info;
@@ -303,7 +324,7 @@ getevent()				/* process the next event */
 		fixwindow(&e);
 		break;
 	case UnmapWindow:
-		unmap_rcolors(&ourras);
+		unmap_rcolors(ourras);
 		break;
 	case ButtonPressed:
 		if (controlshift(&e))
@@ -326,10 +347,13 @@ redraw(x, y, w, h)			/* redraw section of window */
 int  x, y;
 int  w, h;
 {
-	map_rcolors(&ourras);
+	if (map_rcolors(ourras) == NULL) {
+		fprintf(stderr, "%s: cannot allocate colors\n", progname);
+		return(-1);
+	}
 	if (fast)
-		make_rpixmap(&ourras);
-	return(patch_raster(wind,x-xoff,y-yoff,x,y,w,h,&ourras) ? 0 : -1);
+		make_rpixmap(ourras);
+	return(patch_raster(wind,x-xoff,y-yoff,x,y,w,h,ourras) ? 0 : -1);
 }
 
 
@@ -340,6 +364,7 @@ XKeyEvent  *ekey;
 	COLOR  cval;
 	char  *cp;
 	int  n;
+	double  comp;
 	FVECT  rorg, rdir;
 
 	cp = XLookupMapping(ekey, &n);
@@ -364,10 +389,11 @@ XKeyEvent  *ekey;
 			sprintf(buf, "%-3gL", bright(cval)*683.0/exposure);
 			break;
 		case 'c':				/* color */
+			comp = pow(2.0, (double)scale);
 			sprintf(buf, "(%.2f,%.2f,%.2f)",
-					colval(cval,RED),
-					colval(cval,GRN),
-					colval(cval,BLU));
+					colval(cval,RED)*comp,
+					colval(cval,GRN)*comp,
+					colval(cval,BLU)*comp);
 			break;
 		}
 		XText(wind, box.xmin, box.ymin, buf, strlen(buf),
@@ -389,6 +415,23 @@ XKeyEvent  *ekey;
 		printf("%e %e %e\n", rdir[0], rdir[1], rdir[2]);
 		fflush(stdout);
 		return(0);
+	case '=':				/* adjust exposure */
+		if (avgbox(cval) == -1)
+			return(-1);
+		n = log(.5/bright(cval))/.69315 - scale;	/* truncate */
+		if (n == 0) {
+			XFeep(0);
+			return(0);
+		}
+		scale_rcolors(ourras, pow(2.0, (double)n));
+		scale += n;
+		sprintf(buf, "%+d", scale);
+		XText(wind, box.xmin, box.ymin, buf, strlen(buf),
+				fontid, BlackPixel, WhitePixel);
+		XFlush();
+		free_raster(ourras);
+		getras();
+		return(redraw(0, 0, width, height));
 	case CTRL(R):				/* redraw */
 		XClear(wind);
 		return(redraw(0, 0, width, height));
@@ -507,7 +550,7 @@ getmono()			/* get monochrome data */
 	if ((inline = (rgbpixel *)malloc(xmax*sizeof(rgbpixel))) == NULL
 			|| (cerr = (short *)calloc(xmax,sizeof(short))) == NULL)
 		quit("out of memory in getmono");
-	dp = ourras.data.m - 1;
+	dp = ourras->data.m - 1;
 	for (y = 0; y < ymax; y++) {
 		picreadline3(y, inline);
 		err = 0;
@@ -527,7 +570,7 @@ getmono()			/* get monochrome data */
 }
 
 
-init_rcolors(xr, cmap)				/* assign color values */
+init_rcolors(xr, cmap)				/* (re)assign color values */
 register XRASTER	*xr;
 colormap	cmap;
 {
@@ -555,6 +598,32 @@ colormap	cmap;
 	if (xr->cdefs == NULL)
 		return(0);
 	return(1);
+}
+
+
+scale_rcolors(xr, sf)			/* scale color map */
+register XRASTER	*xr;
+double	sf;
+{
+	register int	i;
+	int	maxv;
+
+	sf = pow(sf, 1.0/gamcor);
+	maxv = (1<<16) / sf;
+
+	for (i = xr->ncolors; i--; ) {
+		xr->cdefs[i].red = xr->cdefs[i].red >= maxv ?
+				(1<<16)-1 :
+				xr->cdefs[i].red * sf;
+		xr->cdefs[i].green = xr->cdefs[i].green >= maxv ?
+				(1<<16)-1 :
+				xr->cdefs[i].green * sf;
+		xr->cdefs[i].blue = xr->cdefs[i].blue >= maxv ?
+				(1<<16)-1 :
+				xr->cdefs[i].blue * sf;
+	}
+	if (xr->pixels != NULL)
+		XStoreColors(xr->ncolors, xr->cdefs);
 }
 
 
@@ -590,7 +659,7 @@ register rgbpixel  *l3;
 		quiterr("cannot seek for picreadline");
 							/* convert scanline */
 	for (l4=scanline[0], i=xmax; i--; l4+=4, l3++) {
-		shift = l4[EXP] - COLXS;
+		shift = l4[EXP] - COLXS + scale;
 		if (shift >= 8) {
 			l3->r = l3->g = l3->b = 255;
 		} else if (shift <= -8) {
@@ -619,7 +688,7 @@ picwriteline(y, l)		/* add 8-bit scanline to image */
 int  y;
 pixel  *l;
 {
-	bcopy(l, ourras.data.bz+BZPixmapSize(xmax,y), BZPixmapSize(xmax,1));
+	bcopy(l, ourras->data.bz+BZPixmapSize(xmax,y), BZPixmapSize(xmax,1));
 }
 
 
@@ -639,4 +708,10 @@ colormap  map;
 picwritecm(map)			/* handled elsewhere */
 colormap  map;
 {
+#ifdef DEBUG
+	register int i;
+
+	for (i = 0; i < 256; i++)
+		printf("%d %d %d\n", map[0][i],map[1][i],map[2][i]);
+#endif
 }
