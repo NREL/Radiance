@@ -245,7 +245,7 @@ register char *ep;
                 return(0);
 
         case CBRC:
-                if (lp == expbuf)
+                if (lp == alp)
                         continue;
                 if ((isalnum(*lp) || *lp == '_') && !(isalnum(lp[-1]) || lp[-1] == '_'))
                         continue;
