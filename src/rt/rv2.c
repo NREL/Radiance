@@ -507,7 +507,7 @@ register char  *s;
 	
 	if (s[0] == '\0') {
 		(*dev->comout)(
-		"aa ab ad ar as av b dc di dj ds dt i lr lw ps pt sj st bv: ");
+		"aa ab ad ar as av b dc dv dj ds dt i lr lw ps pt sj st bv: ");
 		(*dev->comin)(buf, NULL);
 		s = buf;
 	}
