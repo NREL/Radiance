@@ -150,11 +150,13 @@ int  signo;
 {
 	static int  gotsig = 0;
 
-	if (gotsig++)			/* two signals and we're gone! */
+	if (gotsig > 1)			/* we're going as fast as we can! */
+		return;
+	if (gotsig++) {			/* two signals and we split */
+		hdsync(NULL, 0);	/* don't leave w/o saying goodbye */
 		_exit(signo);
-
-	alarm(180);			/* allow 3 minutes to clean up */
-	signal(SIGALRM, SIG_DFL);	/* make certain we do die */
+	}
+	alarm(300);			/* allow 5 minutes to clean up */
 	eputs("signal - ");
 	eputs(sigerr[signo]);
 	eputs("\n");
