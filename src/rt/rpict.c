@@ -607,7 +607,8 @@ char  *oldfile;
 	getheader(fp, NULL, NULL);
 				/* get picture size */
 	if (!fscnresolu(&x, &y, fp)) {
-		sprintf(errmsg, "bad recover file \"%s\"", oldfile);
+		sprintf(errmsg, "bad recover file \"%s\" - not removed",
+				oldfile);
 		error(WARNING, errmsg);
 		fclose(fp);
 		return(0);
