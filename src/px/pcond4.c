@@ -22,20 +22,20 @@ static COLOR	*veilimg;		/* veiling image */
 
 #define veilscan(y)	(veilimg+(y)*fvxr)
 
-static FVECT	*raydir = NULL;		/* ray direction for each pixel */
+static float	(*raydir)[3] = NULL;	/* ray direction for each pixel */
 
 #define rdirscan(y)	(raydir+(y)*fvxr)
 
 
 compraydir()				/* compute ray directions */
 {
-	FVECT	rorg;
+	FVECT	rorg, rdir;
 	double	h, v;
 	register int	x, y;
 
 	if (raydir != NULL)		/* already done? */
 		return;
-	raydir = (FVECT *)malloc(fvxr*fvyr*sizeof(FVECT));
+	raydir = (float (*)[3])malloc(fvxr*fvyr*3*sizeof(float));
 	if (raydir == NULL)
 		syserror("malloc");
 
@@ -61,8 +61,12 @@ compraydir()				/* compute ray directions */
 			case YDECR: case YDECR|XDECR:
 				v = 1. - (x+.5)/fvxr; break;
 			}
-			if (viewray(rorg, rdirscan(y)[x], &ourview, h, v)
-					< -FTINY) {
+			if (viewray(rorg, rdir, &ourview, h, v)
+					>= -FTINY) {
+				rdirscan(y)[x][0] = rdir[0];
+				rdirscan(y)[x][1] = rdir[1];
+				rdirscan(y)[x][2] = rdir[2];
+			} else {
 				rdirscan(y)[x][0] =
 				rdirscan(y)[x][1] =
 				rdirscan(y)[x][2] = 0.0;
