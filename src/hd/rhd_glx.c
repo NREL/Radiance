@@ -161,7 +161,6 @@ char  *id;
 					/* map the window */
 	XMapWindow(ourdisplay, gwind);
 	dev_input();			/* sets size and view angles */
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 					/* allocate our leaf pile */
 	if (!qtAllocLeaves(2 * DisplayWidth(ourdisplay,ourscreen) *
 			DisplayHeight(ourdisplay,ourscreen) /
