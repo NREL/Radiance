@@ -86,8 +86,9 @@ double	gamval;
 			tmnew->inpsf = WHTEFFICACY;
 	tmnew->cmat[0][1] = tmnew->cmat[0][2] = tmnew->cmat[1][0] =
 	tmnew->cmat[1][2] = tmnew->cmat[2][0] = tmnew->cmat[2][1] = 0.;
-	tmnew->brmin = tmnew->brmax = 0;
+	tmnew->hbrmin = tmnew->hbrmax = 0;
 	tmnew->histo = NULL;
+	tmnew->mbrmin = tmnew->mbrmax = 0;
 	tmnew->lumap = NULL;
 						/* zero private data */
 	for (i = TM_MAXPKG; i--; )
@@ -266,22 +267,22 @@ int	wt;
 			;
 		if (i < 0)
 			returnOK;
-		tmTop->brmin = tmTop->brmax = ls[i];
+		tmTop->hbrmin = tmTop->hbrmax = ls[i];
 		oldlen = 0;
 	} else {
-		oldorig = (tmTop->brmin-MINBRT)/HISTEP;
-		oldlen = (tmTop->brmax-MINBRT)/HISTEP + 1 - oldorig;
+		oldorig = (tmTop->hbrmin-MINBRT)/HISTEP;
+		oldlen = (tmTop->hbrmax-MINBRT)/HISTEP + 1 - oldorig;
 	}
 	for (i = len; i--; ) {
 		if ((j = ls[i]) < MINBRT)
 			continue;
-		if (j < tmTop->brmin)
-			tmTop->brmin = j;
-		else if (j > tmTop->brmax)
-			tmTop->brmax = j;
+		if (j < tmTop->hbrmin)
+			tmTop->hbrmin = j;
+		else if (j > tmTop->hbrmax)
+			tmTop->hbrmax = j;
 	}
-	horig = (tmTop->brmin-MINBRT)/HISTEP;
-	hlen = (tmTop->brmax-MINBRT)/HISTEP + 1 - horig;
+	horig = (tmTop->hbrmin-MINBRT)/HISTEP;
+	hlen = (tmTop->hbrmax-MINBRT)/HISTEP + 1 - horig;
 	if (hlen > oldlen) {			/* (re)allocate histogram */
 		register int	*newhist = (int *)calloc(hlen, sizeof(int));
 		if (newhist == NULL)
@@ -292,10 +293,6 @@ int	wt;
 			free((MEM_PTR)tmTop->histo);
 		}
 		tmTop->histo = newhist;
-		if (tmTop->lumap != NULL) {	/* invalid tone map */
-			free((MEM_PTR)tmTop->lumap);
-			tmTop->lumap = NULL;
-		}
 	}
 	if (wt == 0)
 		returnOK;
@@ -353,9 +350,9 @@ double	Ldmax;
 	Ldmin = Ldmax/Lddyn;
 	logLddyn = log(Lddyn);
 	Ldavg = sqrt(Ldmax*Ldmin);
-	i = (tmTop->brmin-MINBRT)/HISTEP;
+	i = (tmTop->hbrmin-MINBRT)/HISTEP;
 	brt0 = MINBRT + HISTEP/2 + i*HISTEP;
-	histlen = (tmTop->brmax-MINBRT)/HISTEP + 1 - i;
+	histlen = (tmTop->hbrmax-MINBRT)/HISTEP + 1 - i;
 					/* histogram total and mean */
 	histot = 0; sum = 0;
 	j = brt0 + histlen*HISTEP;
@@ -381,7 +378,7 @@ double	Ldmax;
 				sum += histo[i];
 			}
 			cumf[i] = 1.;
-			Tr = histot * (double)(tmTop->brmax - tmTop->brmin) /
+			Tr = histot * (double)(tmTop->hbrmax - tmTop->hbrmin) /
 				((double)histlen*TM_BRTSCALE) / logLddyn;
 			ceiling = Tr + 1.;
 			trimmings = 0;			/* clip to envelope */
@@ -402,12 +399,14 @@ double	Ldmax;
 						trimmings > threshold);
 	}
 						/* allocate luminance map */
-	if (tmTop->lumap == NULL) {
-		tmTop->lumap = (unsigned short *)malloc(
-			(tmTop->brmax-tmTop->brmin+1)*sizeof(unsigned short) );
-		if (tmTop->lumap == NULL)
-			returnErr(TM_E_NOMEM);
-	}
+	if (tmTop->lumap != NULL)
+		free((MEM_PTR)tmTop->lumap);
+	tmTop->mbrmin = tmTop->hbrmin;
+	tmTop->mbrmax = tmTop->hbrmax;
+	tmTop->lumap = (unsigned short *)malloc(
+		(tmTop->mbrmax-tmTop->mbrmin+1)*sizeof(unsigned short) );
+	if (tmTop->lumap == NULL)
+		returnErr(TM_E_NOMEM);
 	if (tmTop->flags & TM_F_LINEAR || histot <= threshold) {
 						/* linear tone mapping */
 		if (tmTop->flags & TM_F_HCONTR)
@@ -415,14 +414,14 @@ double	Ldmax;
 		else
 			d = Ldavg / Lwavg;
 		d = log(d/Ldmax);
-		for (i = tmTop->brmax-tmTop->brmin+1; i--; )
+		for (i = tmTop->mbrmax-tmTop->mbrmin+1; i--; )
 			tmTop->lumap[i] = 256. * exp(
-				( d + (tmTop->brmin+i)/(double)TM_BRTSCALE )
+				( d + (tmTop->mbrmin+i)/(double)TM_BRTSCALE )
 				/ gamval );
 	} else {
 						/* histogram adjustment */
-		for (i = tmTop->brmax-tmTop->brmin+1; i--; ) {
-			j = d = (double)i/(tmTop->brmax-tmTop->brmin)*histlen;
+		for (i = tmTop->mbrmax-tmTop->mbrmin+1; i--; ) {
+			j = d = (double)i/(tmTop->mbrmax-tmTop->mbrmin)*histlen;
 			d -= (double)j;
 			Ld = Ldmin*exp(logLddyn*((1.-d)*cumf[j]+d*cumf[j+1]));
 			d = (Ld - Ldmin)/(Ldmax - Ldmin);
@@ -452,11 +451,11 @@ int	len;
 	if (ps == NULL | ls == NULL | len <= 0)
 		returnErr(TM_E_ILLEGAL);
 	while (len--) {
-		if ((li = *ls++) < tmTop->brmin)
-			li = tmTop->brmin;
-		else if (li > tmTop->brmax)
-			li = tmTop->brmax;
-		li = tmTop->lumap[li - tmTop->brmin];
+		if ((li = *ls++) < tmTop->mbrmin)
+			li = tmTop->mbrmin;
+		else if (li > tmTop->mbrmax)
+			li = tmTop->mbrmax;
+		li = tmTop->lumap[li - tmTop->mbrmin];
 		if (cs == TM_NOCHROM)
 			*ps++ = li>255 ? 255 : li;
 		else {
@@ -520,15 +519,15 @@ tmDup()				/* duplicate top tone mapping */
 		return(NULL);
 	*tmnew = *tmTop;		/* copy everything */
 	if (tmnew->histo != NULL) {	/* duplicate histogram */
-		len = (tmnew->brmax-MINBRT)/HISTEP + 1 -
-				(tmnew->brmin-MINBRT)/HISTEP;
+		len = (tmnew->hbrmax-MINBRT)/HISTEP + 1 -
+				(tmnew->hbrmin-MINBRT)/HISTEP;
 		tmnew->histo = (int *)malloc(len*sizeof(int));
 		if (tmnew->histo != NULL)
 			for (i = len; i--; )
 				tmnew->histo[i] = tmTop->histo[i];
 	}
 	if (tmnew->lumap != NULL) {	/* duplicate luminance mapping */
-		len = tmnew->brmax-tmnew->brmin+1;
+		len = tmnew->mbrmax-tmnew->mbrmin+1;
 		tmnew->lumap = (unsigned short *)malloc(
 						len*sizeof(unsigned short) );
 		if (tmnew->lumap != NULL)
