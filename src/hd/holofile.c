@@ -31,7 +31,7 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #define FRAGBLK		64	/* number of fragments to allocate at a time */
 
-int	hdcachesize = CACHESIZE*1024*1024;	/* target cache size (bytes) */
+unsigned	hdcachesize = CACHESIZE*1024*1024;	/* target cache size */
 unsigned long	hdclock;	/* clock value */
 
 HOLO	*hdlist[HDMAX+1];	/* holodeck pointers (NULL term.) */
@@ -193,7 +193,7 @@ int	all;
 }
 
 
-long
+unsigned
 hdmemuse(all)		/* return memory usage (in bytes) */
 int	all;			/* include overhead (painful) */
 {
@@ -308,8 +308,8 @@ int	nr;			/* number of new rays desired */
 	p = hdbray(hp->bl[i]) + hp->bl[i]->nrm;
 	hp->bl[i]->nrm += nr;			/* update in-core structure */
 	bzero((char *)p, nr*sizeof(RAYVAL));
-	hp->bl[i]->tick = ++hdclock;		/* update LRU clock */
-	blglob(hp)->tick = hdclock;
+	hp->bl[i]->tick = hdclock;		/* update LRU clock */
+	blglob(hp)->tick = hdclock++;
 	return(p);				/* point to new rays */
 memerr:
 	error(SYSTEM, "out of memory in hdnewrays");
@@ -340,9 +340,64 @@ register int	i;
 		if (read(hp->fd, (char *)hdbray(hp->bl[i]), n) != n)
 			error(SYSTEM, "error reading beam from holodeck file");
 	}
-	hp->bl[i]->tick = ++hdclock;	/* update LRU clock */
-	blglob(hp)->tick = hdclock;
+	hp->bl[i]->tick = hdclock;	/* update LRU clock */
+	blglob(hp)->tick = hdclock++;
 	return(hp->bl[i]);
+}
+
+
+int
+hdfilord(hb1, hb2)	/* order beams for optimal loading */
+register HDBEAMI	*hb1, *hb2;
+{
+	register int	c;
+				/* sort by file descriptor first */
+	if ((c = hb1->h->fd - hb2->h->fd))
+		return(c);
+				/* then by position in file */
+	return(hb1->h->bi[hb1->b].fo - hb2->h->bi[hb2->b].fo);
+}
+
+
+hdloadbeams(hb, n, bf)	/* load a list of beams in optimal order */
+register HDBEAMI	*hb;	/* list gets sorted by hdfilord() */
+int	n;			/* list length */
+int	(*bf)();		/* callback function (optional) */
+{
+	unsigned	origcachesize, memuse;
+	register BEAM	*bp;
+	int	bytesloaded, needbytes, bytes2free;
+	register int	i;
+					/* precheck consistency */
+	for (i = n; i--; )
+		if (hb[i].h == NULL || hb[i].b < 1 | hb[i].b > nbeams(hb[i].h))
+			error(CONSISTENCY, "bad beam in hdloadbeams");
+					/* sort list for optimal access */
+	qsort((char *)hb, n, sizeof(HDBEAMI), hdfilord);
+	if ((origcachesize = hdcachesize) == 0)
+		goto loadbeams;
+	bytesloaded = needbytes = 0;	/* figure out memory needs */
+	for (i = 0; i < n; i++)
+		if ((bp = hb[i].h->bl[hb[i].b]) != NULL) {
+			bp->tick = hdclock;		/* preempt swap */
+			bytesloaded += bp->nrm;
+		} else					/* prepare to load */
+			needbytes += hb[i].h->bi[hb[i].b].nrd;
+	bytesloaded *= sizeof(RAYVAL);
+	needbytes *= sizeof(RAYVAL);
+	do {				/* free enough memory */
+		memuse = hdmemuse(0);
+		bytes2free = needbytes - (signed)(hdcachesize-memuse);
+		if (bytes2free > (signed)(memuse - bytesloaded))
+			bytes2free = memuse - bytesloaded;
+	} while (bytes2free > 0 &&
+			hdfreecache(100*bytes2free/memuse, NULL) < 0);
+loadbeams:
+	hdcachesize = 0;		/* load the ordered beams w/o swap */
+	for (i = 0; i < n; i++)
+		if ((bp = hdgetbeam(hb[i].h, hb[i].b)) != NULL && bf != NULL)
+			(*bf)(bp, hb[i].h, hb[i].b);
+	hdcachesize = origcachesize;	/* resume dynamic swapping */
 }
 
 
@@ -399,7 +454,7 @@ register int	i;
 					f->fi[j].nrd = hp->bi[i].nrd;
 					break;
 				}
-				copystruct(f->fi+j, f->fi+j-1);
+				copystruct(f->fi+j, f->fi+(j-1));
 			}
 					/* coalesce adjacent fragments */
 			for (j = k = 0; k < f->nfrags; j++, k++) {
@@ -429,7 +484,7 @@ register int	i;
 			if (f->fi[k].nrd == nrays) {	/* delete fragment */
 				f->nfrags--;
 				for (j = k; j < f->nfrags; j++)
-					copystruct(f->fi+j, f->fi+j+1);
+					copystruct(f->fi+j, f->fi+(j+1));
 			} else {			/* else shrink it */
 				f->fi[k].fo += nrays*sizeof(RAYVAL);
 				f->fi[k].nrd -= nrays;
@@ -537,67 +592,68 @@ register int	i;
 }
 
 
-hdlrulist(ha, ba, n, hp)	/* add beams from holodeck to LRU list */
-register HOLO	*ha[];			/* section list (NULL terminated) */
-register int	ba[];			/* beam index to go with section */
-int	n;				/* length of arrays minus 1 */
+int
+hdlrulist(hb, nents, n, hp)	/* add beams from holodeck to LRU list */
+register HDBEAMI	*hb;		/* beam list */
+int	nents;				/* current list length */
+int	n;				/* maximum list length */
 register HOLO	*hp;			/* section we're adding from */
 {
 	register int	i, j;
-	int	nents;
-					/* find last entry in LRU list */
-	for (j = 0; ha[j] != NULL; j++)
-		;
-	nents = j;
 					/* insert each beam from hp */
 	for (i = nbeams(hp); i > 0; i--) {
 		if (hp->bl[i] == NULL)		/* check if loaded */
 			continue;
-		if ((j = ++nents) > n)		/* grow list if we can */
+#if 0
+		if (hp->bl[i]->tick == hdclock)	/* preempt swap? */
+			continue;
+#endif
+		if ((j = ++nents) >= n)		/* grow list if we can */
 			nents--;
 		for ( ; ; ) {			/* bubble into place */
 			if (!--j || hp->bl[i]->tick >=
-					ha[j-1]->bl[ba[j-1]]->tick) {
-				ha[j] = hp;
-				ba[j] = i;
+					hb[j-1].h->bl[hb[j-1].b]->tick) {
+				hb[j].h = hp;
+				hb[j].b = i;
 				break;
 			}
-			ha[j] = ha[j-1];
-			ba[j] = ba[j-1];
+			copystruct(hb+j, hb+(j-1));
 		}
 	}
-	ha[nents] = NULL;		/* all done */
-	ba[nents] = 0;
+	return(nents);			/* return new list length */
 }
 
 
+int
 hdfreecache(pct, honly)		/* free up cache space, writing changes */
 int	pct;				/* maximum percentage to free */
 register HOLO	*honly;			/* NULL means check all */
 {
-	HOLO	*hp[FREEBEAMS+1];
-	int	bn[FREEBEAMS+1];
+	HDBEAMI	hb[FREEBEAMS];
 	int	freetarget;
+	int	n;
 	register int	i;
 						/* compute free target */
 	freetarget = (honly != NULL) ? blglob(honly)->nrm :
 			hdmemuse(0)/sizeof(RAYVAL) ;
 	freetarget = freetarget*pct/100;
+	if (freetarget <= 0)
+		return(0);
 						/* find least recently used */
-	hp[0] = NULL;
-	bn[0] = 0;
+	n = 0;
 	if (honly != NULL)
-		hdlrulist(hp, bn, FREEBEAMS, honly);
+		n = hdlrulist(hb, n, FREEBEAMS, honly);
 	else
 		for (i = 0; hdlist[i] != NULL; i++)
-			hdlrulist(hp, bn, FREEBEAMS, hdlist[i]);
+			n = hdlrulist(hb, n, FREEBEAMS, hdlist[i]);
 						/* free LRU beams */
-	for (i = 0; hp[i] != NULL; i++) {
-		hdfreebeam(hp[i], bn[i]);
-		if ((freetarget -= hp[i]->bi[bn[i]].nrd) <= 0)
+	for (i = 0; i < n; i++) {
+		hdfreebeam(hb[i].h, hb[i].b);
+		if ((freetarget -= hb[i].h->bi[hb[i].b].nrd) <= 0)
 			break;
 	}
 	hdsync(honly, 0);	/* synchronize directories as necessary */
+	return(-freetarget);	/* return how far past goal we went */
 }
 
 
