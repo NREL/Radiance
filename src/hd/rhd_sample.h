@@ -20,13 +20,16 @@
 #define INVALID  -1
 #endif
 
+#ifndef LORES
+#define SFLOAT double
+#else
+#define SFLOAT float
+#endif
 
 typedef struct samp {
-	float		(*wp)[3];	/* world intersection point array */
+	SFLOAT		(*wp)[3];	/* world intersection point array */
 	int4		*wd;		/* world direction array */
-#ifndef HP_VERSION
 	TMbright	*brt;		/* encoded brightness array */
-#endif
 	BYTE		(*chr)[3];	/* encoded chrominance array */
 	BYTE		(*rgb)[3];	/* tone-mapped color array */
         int             *info;          /* Extra sample info */
