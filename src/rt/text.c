@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -248,14 +248,14 @@ memerr:
 freetext(m)			/* free text structures associated with m */
 OBJREC  *m;
 {
-	TEXT  *tp;
-	register TLINE  *tlp, *tln;
+	register TEXT  *tp;
+	register TLINE  *tlp;
 
 	tp = (TEXT *)m->os;
 	if (tp == NULL)
 		return;
-	for (tlp = tp->tl.next; tlp != NULL; tlp = tln) {
-		tln = tlp->next;
+	while ((tlp = tp->tl.next) != NULL) {
+		tp->tl.next = tlp->next;
 		free((char *)tlp->spc);
 		free((char *)tlp);
 	}
