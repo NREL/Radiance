@@ -107,4 +107,6 @@ rad.o:	../common/paths.h
 
 ranimate.o netproc.o:	netproc.h
 
+netproc.o:	../common/paths.h
+
 ranimate.o:	../common/view.h
