@@ -14,7 +14,7 @@ set pict = "$4"
 set zbf = "$5"
 set piopt = ($argv[6-]:q)
 cnt $n | rcalc -e `vwright i < $pict` \
--e "M:19;a:$a/2;d:$d;N:$n;" -e 'tmax:PI*a*(M+1)' \
+-e "M:$n/5+1;a:$a/2;d:$d;N:$n;" -e 'tmax:PI*a*(M+1)' \
 -e 't=tmax/N*($1+rand($1))' \
 -e 'theta=2*M*PI/(M-1)*(M-sqrt(M*M-(M-1)/(PI*a)*t))' \
 -e 'r=a*(1-(M-1)/(2*M*M*PI)*theta)' \
