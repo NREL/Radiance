@@ -354,7 +354,7 @@ int  x, y;			/* pixel position */
 
 	rayorigin(&thisray, NULL, PRIMARY, 1.0);
 
-	samplendx = 3*y + x;			/* set pixel index */
+	samplendx = pixnumber(x,y,hresolu,vresolu);	/* set pixel index */
 
 	rayvalue(&thisray);			/* trace ray */
 
@@ -413,4 +413,16 @@ char  *oldfile;
 	return(y);
 writerr:
 	error(SYSTEM, "write error in salvage");
+}
+
+
+int
+pixnumber(x, y, xres, yres)		/* compute pixel index (brushed) */
+register int  x, y;
+int  xres, yres;
+{
+	x -= y;
+	while (x < 0)
+		x += xres;
+	return((((x>>2)*yres + y) << 2) + (x & 3));
 }
