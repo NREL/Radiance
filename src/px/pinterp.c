@@ -328,20 +328,21 @@ userr:
 }
 
 
+int
 headline(s)				/* process header string */
 char	*s;
 {
 	char	fmt[32];
 
 	if (isheadid(s))
-		return;
+		return(0);
 	if (formatval(fmt, s)) {
 		if (globmatch(ourfmt, fmt)) {
 			wrongformat = 0;
 			strcpy(ourfmt, fmt);
 		} else
 			wrongformat = 1;
-		return;
+		return(0);
 	}
 	if (nvavg < 2) {
 		putc('\t', stdout);
@@ -349,10 +350,11 @@ char	*s;
 	}
 	if (isexpos(s)) {
 		theirexp *= exposval(s);
-		return;
+		return(0);
 	}
 	if (isview(s) && sscanview(&theirview, s) > 0)
 		gotview++;
+	return(0);
 }
 
 

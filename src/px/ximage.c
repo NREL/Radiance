@@ -171,6 +171,7 @@ userr:
 }
 
 
+int
 headline(s)		/* get relevant info from header */
 char  *s;
 {
@@ -183,6 +184,7 @@ char  *s;
 		wrongformat = strcmp(fmt, COLRFMT);
 	} else if (isview(s) && sscanview(&ourview, s) > 0)
 		gotview++;
+	return(0);
 }
 
 

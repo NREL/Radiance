@@ -208,22 +208,22 @@ char	*s;
 		if (!strcmp(fmt,COLRFMT)) lumf = rgblum;
 		else if (!strcmp(fmt,CIEFMT)) lumf = cielum;
 		else lumf = NULL;
-		return;			/* don't echo */
+		return(0);		/* don't echo */
 	}
 	if (isprims(s)) {		/* get input primaries */
 		primsval(inprimS, s);
 		inprims= inprimS;
-		return;			/* don't echo */
+		return(0);		/* don't echo */
 	}
 	if (isexpos(s)) {		/* picture exposure */
 		inpexp *= exposval(s);
-		return;			/* don't echo */
+		return(0);		/* don't echo */
 	}
 	if (isaspect(s))		/* pixel aspect ratio */
 		pixaspect *= aspectval(s);
 	if (isview(s))			/* image view */
 		gotview += sscanview(&ourview, s);
-	fputs(s, stdout);
+	return(fputs(s, stdout));
 }
 
 

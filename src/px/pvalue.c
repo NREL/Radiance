@@ -322,6 +322,7 @@ unkopt:
 }
 
 
+int
 checkhead(line)				/* deal with line from header */
 char  *line;
 {
@@ -343,6 +344,7 @@ char  *line;
 		doexposure++;
 	} else if (header)
 		fputs(line, stdout);
+	return(0);
 }
 
 

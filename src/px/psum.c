@@ -29,11 +29,12 @@ COLOR  scale[MAXFILE];			/* scaling factors */
 int  nfile;				/* number of files */
 
 
+int
 tabputs(s)			/* print line preceded by a tab */
 char  *s;
 {
 	putc('\t', stdout);
-	fputs(s, stdout);
+	return(fputs(s, stdout));
 }
 
 

@@ -360,21 +360,22 @@ char	*s;
 			SET(C_XYZE);
 		else
 			quiterr("unrecognized input picture format");
-		return;
+		return(1);
 	}
 	if (isexpos(s)) {
 		cvts.stonits /= exposval(s);
-		return;
+		return(1);
 	}
 	if (isaspect(s)) {
 		cvts.pixrat *= aspectval(s);
-		return;
+		return(1);
 	}
 	if (isprims(s)) {
 		primsval(cvts.prims, s);
 		SET(C_PRIM);
-		return;
+		return(1);
 	}
+	return(0);
 }
 
 
