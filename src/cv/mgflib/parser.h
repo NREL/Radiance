@@ -21,27 +21,28 @@
 #define MG_E_FACE	9
 #define MG_E_INCLUDE	10
 #define MG_E_IES	11
-#define MG_E_MATERIAL	12
-#define MG_E_NORMAL	13
-#define MG_E_OBJECT	14
-#define MG_E_POINT	15
-#define MG_E_PRISM	16
-#define MG_E_RD		17
-#define MG_E_RING	18
-#define MG_E_RS		19
-#define MG_E_SIDES	20
-#define MG_E_SPH	21
-#define MG_E_TD		22
-#define MG_E_TORUS	23
-#define MG_E_TS		24
-#define MG_E_VERTEX	25
-#define MG_E_XF		26
+#define MG_E_IR		12
+#define MG_E_MATERIAL	13
+#define MG_E_NORMAL	14
+#define MG_E_OBJECT	15
+#define MG_E_POINT	16
+#define MG_E_PRISM	17
+#define MG_E_RD		18
+#define MG_E_RING	19
+#define MG_E_RS		20
+#define MG_E_SIDES	21
+#define MG_E_SPH	22
+#define MG_E_TD		23
+#define MG_E_TORUS	24
+#define MG_E_TS		25
+#define MG_E_VERTEX	26
+#define MG_E_XF		27
 
-#define MG_NENTITIES	27
+#define MG_NENTITIES	28
 
 #define MG_NAMELIST	{"#","c","cct","cone","cmix","cspec","cxy","cyl","ed",\
-			"f","i","ies","m","n","o","p","prism","rd","ring",\
-			"rs","sides","sph","td","torus","ts","v","xf"}
+			"f","i","ies","ir","m","n","o","p","prism","rd",\
+			"ring","rs","sides","sph","td","torus","ts","v","xf"}
 
 #define MG_MAXELEN	6
 
@@ -225,9 +226,12 @@ typedef struct {
 
 #define c_cval(c,l)	((double)(c)->ssamp[((l)-C_MINWL)/C_CWLI] / (c)->ssum)
 
+#define C_1SIDEDTHICK	0.005		/* assumed thickness of 1-sided mat. */
+
 typedef struct {
 	int	clock;		/* incremented each change -- resettable */
 	int	sided;		/* 1 if surface is 1-sided, 0 for 2-sided */
+	float	nr, ni;		/* index of refraction, real and imaginary */
 	float	rd;		/* diffuse reflectance */
 	C_COLOR	rd_c;		/* diffuse reflectance color */
 	float	td;		/* diffuse transmittance */
@@ -247,7 +251,7 @@ typedef struct {
 	FVECT	p, n;		/* point and normal */
 } C_VERTEX;		/* vertex context */
 
-#define C_DEFMATERIAL	{1,0,0.,C_DEFCOLOR,0.,C_DEFCOLOR,0.,C_DEFCOLOR,\
+#define C_DEFMATERIAL	{1,0,1.,0.,0.,C_DEFCOLOR,0.,C_DEFCOLOR,0.,C_DEFCOLOR,\
 					0.,C_DEFCOLOR,0.,0.,C_DEFCOLOR,0.}
 #define C_DEFVERTEX	{1,{0.,0.,0.},{0.,0.,0.}}
 
