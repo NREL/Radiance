@@ -16,6 +16,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <ctype.h>
 
+extern char  *fgetword();
+
 OBJREC  *objblock[MAXOBJBLK];		/* our objects */
 OBJECT  nobjects = 0;			/* # of objects */
 int newobject() {return(0);}
@@ -72,10 +74,10 @@ int  (*f)();
 	char  sbuf[MAXSTR];
 	OBJREC  thisobj;
 					/* get modifier */
-	fscanf(fp, "%*s");
+	fgetword(sbuf, MAXSTR, fp);
 	thisobj.omod = OVOID;
 					/* get type */
-	fscanf(fp, "%s", sbuf);
+	fgetword(sbuf, MAXSTR, fp);
 	if (!strcmp(sbuf, ALIASID))
 		thisobj.otype = -1;
 	else if ((thisobj.otype = otype(sbuf)) < 0) {
@@ -83,7 +85,7 @@ int  (*f)();
 		error(USER, errmsg);
 	}
 					/* get identifier */
-	fscanf(fp, "%s", sbuf);
+	fgetword(sbuf, MAXSTR, fp);
 	thisobj.oname = sbuf;
 					/* get arguments */
 	if (thisobj.otype == -1) {
