@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -172,12 +172,11 @@ RAY  *r;
 		objerror(m, USER, "bad # arguments");
 	if (!vardefined(sa[5]))
 		loadfunc(sa[4]);
-	for (i = 0; i < 2; i++) {
-		errno = 0;
-		pt[1-i] = varvalue(sa[i+5]);	/* y major ordering */
-		if (errno)
-			goto computerr;
-	}
+	errno = 0;
+	pt[1] = varvalue(sa[5]);	/* y major ordering */
+	pt[0] = varvalue(sa[6]);
+	if (errno)
+		goto computerr;
 	dp = getpict(sa[3]);
 	for (i = 0; i < 3; i++)
 		col[i] = datavalue(dp+i, pt);
