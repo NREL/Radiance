@@ -9,24 +9,21 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include <stdio.h>
-
 #include <math.h>
-
 #include "fvect.h"
-
 #include "warp3d.h"
 
 #define MIND	1e-5		/* minimum distance between input points */
 
 typedef struct {
 	GNDX	n;		/* index must be first */
-	W3VEC	p;
+	W3VEC	v;
 } KEYDP;		/* key/data allocation pair */
 
-#define fgetvec(f,v)	(fgetval(f,'f',v) > 0 && fgetval(f,'f',v+1) > 0 \
-				&& fgetval(f,'f',v+2) > 0)
+#define fgetvec(p,v)	(fgetval(p,'f',v) > 0 && fgetval(p,'f',v+1) > 0 \
+				&& fgetval(p,'f',v+2) > 0)
 
-#define AHUNK	32		/* number of points to allocate at a time */
+#define AHUNK	24		/* number of points to allocate at a time */
 
 #ifndef malloc
 extern char	*malloc(), *realloc();
@@ -54,20 +51,20 @@ register WARP3D	*wp;
 {
 	int	rval = W3OK;
 	GNDX	gi;
-	W3VEC	gd;
+	W3VEC	gd, ov;
 
-	if (wp->grid.gn[0] == 0 && (rval = new3dwgrid(wp)) != W3OK)
+	if (wp->grid.gn[0] == 0 && (rval = new3dgrid(wp)) != W3OK)
 		return(rval);
 	rval |= gridpoint(gi, gd, pi, &wp->grid);
-	if (wp->grid.flags & W3EXACT) {
-		rval |= warp3dex(po, pi, wp);
-		return(rval);
-	}
-	if (wp->grid.flags & W3FAST) {
-		rval |= get3dgpt(po, gi, wp);
-		return(rval);
-	}
-	rval |= get3dgin(po, gi, gd, wp);
+	if (wp->grid.flags & W3EXACT)
+		rval |= warp3dex(ov, pi, wp);
+	else if (wp->grid.flags & W3FAST)
+		rval |= get3dgpt(ov, gi, wp);
+	else
+		rval |= get3dgin(ov, gi, gd, wp);
+	po[0] = pi[0] + ov[0];
+	po[1] = pi[1] + ov[1];
+	po[2] = pi[2] + ov[2];
 	return(rval);
 }
 
@@ -98,8 +95,8 @@ register struct grid3d	*gp;
 
 
 int
-get3dgpt(po, ndx, wp)		/* get value for voxel */
-W3VEC	po;
+get3dgpt(ov, ndx, wp)		/* get value for voxel */
+W3VEC	ov;
 GNDX	ndx;
 register WARP3D	*wp;
 {
@@ -109,7 +106,7 @@ register WARP3D	*wp;
 	int	rval = W3OK;
 	register int	i;
 
-	le = lu_find(&wp->grid.gtab, (char *)ndx);
+	le = lu_find(&wp->grid.gtab, ndx);
 	if (le == NULL)
 		return(W3ERROR);
 	if (le->data == NULL) {
@@ -123,24 +120,24 @@ register WARP3D	*wp;
 			if (wp->grid.flags & W3FAST)	/* on centers */
 				gpt[i] += .5*wp->grid.gstep[i];
 		}
-		rval |= warp3dex(kd->p, gpt, wp);
+		rval = warp3dex(kd->v, gpt, wp);
 		le->key = (char *)kd->n;
-		le->data = (char *)kd->p;
+		le->data = (char *)kd->v;
 	}
-	W3VCPY(po, (float *)le->data);
+	W3VCPY(ov, (float *)le->data);
 	return(rval);
 }
 
 
 int
-get3dgin(po, ndx, rem, wp)	/* interpolate from warp grid */
-W3VEC	po, rem;
+get3dgin(ov, ndx, rem, wp)	/* interpolate from warp grid */
+W3VEC	ov, rem;
 GNDX	ndx;
 WARP3D	*wp;
 {
 	W3VEC	cv[8];
-	int	rval;
 	GNDX	gi;
+	int	rval = 0;
 	register int	i;
 					/* get corner values */
 	for (i = 0; i < 8; i++) {
@@ -151,7 +148,7 @@ WARP3D	*wp;
 	}
 	if (rval & W3ERROR)
 		return(rval);
-	l3interp(po, cv, rem, 3);	/* perform trilinear interpolation */
+	l3interp(ov, cv, rem, 3);	/* perform trilinear interpolation */
 	return(rval);
 }
 
@@ -176,29 +173,29 @@ int	n;
 
 
 int
-warp3dex(po, pi, wp)		/* compute warp using 1/r^2 weighted avg. */
-W3VEC	po, pi;
+warp3dex(ov, pi, wp)		/* compute warp using 1/r^2 weighted avg. */
+W3VEC	ov, pi;
 register WARP3D	*wp;
 {
 	double	d2, w, wsum;
-	W3VEC	pt;
+	W3VEC	vt;
 	register int	i;
 
-	pt[0] = pt[1] = pt[2] = 0.;
+	vt[0] = vt[1] = vt[2] = 0.;
 	wsum = 0.;
 	for (i = wp->npts; i--; ) {
 		d2 = wpdist2(pi, wp->ip[i]);
 		if (d2 <= MIND*MIND) w = 1./(MIND*MIND);
 		else w = 1./d2;
-		pt[0] += w*wp->op[i][0];
-		pt[1] += w*wp->op[i][1];
-		pt[2] += w*wp->op[i][2];
+		vt[0] += w*wp->ov[i][0];
+		vt[1] += w*wp->ov[i][1];
+		vt[2] += w*wp->ov[i][2];
 		wsum += w;
 	}
 	if (wsum > 0.) {
-		po[0] = pt[0]/wsum;
-		po[1] = pt[1]/wsum;
-		po[2] = pt[2]/wsum;
+		ov[0] = vt[0]/wsum;
+		ov[1] = vt[1]/wsum;
+		ov[2] = vt[2]/wsum;
 	}
 	return(W3OK);
 }
@@ -218,7 +215,7 @@ int	flgs;
 		eputs("new3dw: no memory\n");
 		return(NULL);
 	}
-	wp->ip = wp->op = NULL;
+	wp->ip = wp->ov = NULL;
 	wp->npts = 0;
 	wp->grid.flags = flgs;
 	wp->grid.gn[0] = wp->grid.gn[1] = wp->grid.gn[2] = 0;
@@ -239,7 +236,7 @@ WARP3D	*wp;
 		eputs(": cannot open\n");
 		return(NULL);
 	}
-	if (wp == NULL && (wp = new3dw()) == NULL)
+	if (wp == NULL && (wp = new3dw(0)) == NULL)
 		goto memerr;
 	while (fgetvec(fp, inp) && fgetvec(fp, outp))
 		if (!add3dpt(wp, inp, outp))
@@ -258,6 +255,23 @@ cleanup:
 
 
 int
+set3dwfl(wp, flgs)		/* reset warp flags */
+register WARP3D	*wp;
+int	flgs;
+{
+	if (flgs == wp->grid.flags)
+		return(0);
+	if ((flgs & (W3EXACT|W3FAST)) == (W3EXACT|W3FAST)) {
+		eputs("set3dwfl: only one of W3EXACT or W3FAST\n");
+		return(-1);
+	}
+	wp->grid.flags = flgs;
+	done3dgrid(&wp->grid);		/* old grid is invalid */
+	return(0);
+}
+
+
+int
 add3dpt(wp, pti, pto)		/* add 3D point pair to warp structure */
 register WARP3D	*wp;
 W3VEC	pti, pto;
@@ -269,8 +283,8 @@ W3VEC	pti, pto;
 	if (wp->npts == 0) {			/* initialize */
 		wp->ip = (W3VEC *)malloc(AHUNK*sizeof(W3VEC));
 		if (wp->ip == NULL) return(0);
-		wp->op = (W3VEC *)malloc(AHUNK*sizeof(W3VEC));
-		if (wp->op == NULL) return(0);
+		wp->ov = (W3VEC *)malloc(AHUNK*sizeof(W3VEC));
+		if (wp->ov == NULL) return(0);
 		wp->d2min = 1e10;
 		wp->d2max = 0.;
 		W3VCPY(wp->llim, pti);
@@ -281,10 +295,10 @@ W3VEC	pti, pto;
 					(wp->npts+AHUNK)*sizeof(W3VEC));
 			if (na == NULL) return(0);
 			wp->ip = na;
-			na = (W3VEC *)realloc((char *)wp->op,
+			na = (W3VEC *)realloc((char *)wp->ov,
 					(wp->npts+AHUNK)*sizeof(W3VEC));
 			if (na == NULL) return(0);
-			wp->op = na;
+			wp->ov = na;
 		}
 		for (i = 0; i < 3; i++)		/* check boundaries */
 			if (pti[i] < wp->llim[i])
@@ -302,7 +316,9 @@ W3VEC	pti, pto;
 		}
 	}
 	W3VCPY(wp->ip[wp->npts], pti);	/* add new point */
-	W3VCPY(wp->op[wp->npts], pto);
+	wp->ov[wp->npts][0] = pto[0] - pti[0];
+	wp->ov[wp->npts][1] = pto[1] - pti[1];
+	wp->ov[wp->npts][2] = pto[2] - pti[2];
 	done3dgrid(&wp->grid);		/* old grid is invalid */
 	return(++wp->npts);
 }
@@ -313,7 +329,7 @@ register WARP3D	*wp;
 {
 	done3dgrid(&wp->grid);
 	free((char *)wp->ip);
-	free((char *)wp->op);
+	free((char *)wp->ov);
 	free((char *)wp);
 }
 
@@ -327,10 +343,12 @@ GNDX	gp;
 
 
 int
-new3dwgrid(wp)			/* initialize interpolating grid for warp */
+new3dgrid(wp)			/* initialize interpolating grid for warp */
 register WARP3D	*wp;
 {
+	W3VEC	gmax;
 	double	gridstep, d;
+	int	n;
 	register int	i;
 				/* free old grid (if any) */
 	done3dgrid(&wp->grid);
@@ -341,11 +359,11 @@ register WARP3D	*wp;
 		return(W3BADMAP);	/* not enough disparity */
 				/* compute gamut */
 	W3VCPY(wp->grid.gmin, wp->llim);
-	W3VCPY(wp->grid.gmax, wp->ulim);
+	W3VCPY(gmax, wp->ulim);
 	gridstep = sqrt(wp->d2min);
 	for (i = 0; i < 3; i++) {
 		wp->grid.gmin[i] -= .501*gridstep;
-		wp->grid.gmax[i] += .501*gridstep;
+		gmax[i] += .501*gridstep;
 	}
 	if (wp->grid.flags & W3EXACT) {
 		wp->grid.gn[0] = wp->grid.gn[1] = wp->grid.gn[2] = 1;
@@ -353,11 +371,12 @@ register WARP3D	*wp;
 	}
 				/* create grid */
 	for (i = 0; i < 3; i++) {
-		d = wp->grid.gmax[i] - wp->grid.gmin[i];
-		wp->grid.gn[i] = d/gridstep + .5;
-		if (wp->grid.gn[i] >= MAXGN)
-			wp->grid.gn[i] = MAXGN-1;
-		wp->grid.gstep[i] = d / wp->grid.gn[i];
+		d = gmax[i] - wp->grid.gmin[i];
+		n = d/gridstep + .5;
+		if (n >= MAXGN-1)
+			n = MAXGN-2;
+		wp->grid.gstep[i] = d / n;
+		wp->grid.gn[i] = n;
 	}
 				/* initialize lookup table */
 	wp->grid.gtab.hashf = gridhash;
