@@ -109,10 +109,9 @@ proc do_zone w {		# set up ZONE screen
 	label $w.indl -text Indirect:
 	place $w.indl -relx .0714 -rely .5488
 	scale $w.inds -showvalue yes -from 0 -to 5 \
-			-orient horizontal -command indscale \
-			-length 450 -width 25
+			-orient horizontal -command indscale
 	$w.inds set $radvar(INDIRECT)
-	place $w.inds -relx .2857 -rely .5488
+	place $w.inds -relx .2857 -rely .5488 -relwidth .6500 -relheight .1200
 	helplink $w.inds trad zone indirect
 	# Variability
 	label $w.varl -text Variability:

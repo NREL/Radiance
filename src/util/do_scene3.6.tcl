@@ -148,7 +148,7 @@ proc do_scene w {		# Create scene screen
 	button $w.matb -text Materials -relief raised \
 			-command "lbgetf materials"
 	set mybox(materials) $w.mat.lb
-	place $w.matb -relwidth .1071 -relheight .0610 -relx .0714 -rely .1463
+	place $w.matb -relwidth .1200 -relheight .0610 -relx .0714 -rely .1463
 	frame $w.mat
 	scrollbar $w.mat.sb -relief sunken -command "$w.mat.lb yview"
 	listbox $w.mat.lb -relief sunken -yscroll "$w.mat.sb set" -font $lbfont
@@ -162,7 +162,7 @@ proc do_scene w {		# Create scene screen
 	button $w.illb -text Illum -relief raised \
 			-command "lbgetf illum"
 	set mybox(illum) $w.ill.lb
-	place $w.illb -relwidth .1071 -relheight .0610 -relx .0714 -rely .2683
+	place $w.illb -relwidth .1200 -relheight .0610 -relx .0714 -rely .2683
 	frame $w.ill
 	scrollbar $w.ill.sb -relief sunken -command "$w.ill.lb yview"
 	listbox $w.ill.lb -relief sunken -yscroll "$w.ill.sb set" -font $lbfont
@@ -176,7 +176,7 @@ proc do_scene w {		# Create scene screen
 	button $w.sceb -text Scene -relief raised \
 			-command "lbgetf scene"
 	set mybox(scene) $w.sce.lb
-	place $w.sceb -relwidth .1071 -relheight .0610 -relx .0714 -rely .3902
+	place $w.sceb -relwidth .1200 -relheight .0610 -relx .0714 -rely .3902
 	frame $w.sce
 	scrollbar $w.sce.sb -relief sunken -command "$w.sce.lb yview"
 	listbox $w.sce.lb -relief sunken -yscroll "$w.sce.sb set" -font $lbfont
@@ -190,7 +190,7 @@ proc do_scene w {		# Create scene screen
 	button $w.objb -text Objects -relief raised \
 			-command "lbgetf objects"
 	set mybox(objects) $w.obj.lb
-	place $w.objb -relwidth .1071 -relheight .0610 -relx .0714 -rely .6829
+	place $w.objb -relwidth .1200 -relheight .0610 -relx .0714 -rely .6829
 	frame $w.obj
 	scrollbar $w.obj.sb -relief sunken -command "$w.obj.lb yview"
 	listbox $w.obj.lb -relief sunken -yscroll "$w.obj.sb set" -font $lbfont
@@ -200,7 +200,7 @@ proc do_scene w {		# Create scene screen
 	place $w.obj -relwidth .5714 -relheight .2683 -relx .2143 -rely .6829
 	eval $w.obj.lb insert end $radvar(objects)
 	button $w.autob -text Auto -relief raised -command getdepend
-	place $w.autob -relwidth .1071 -relheight .0610 -relx .0714 -rely .7927
+	place $w.autob -relwidth .1200 -relheight .0610 -relx .0714 -rely .7927
 	helplink "$w.obj.lb $w.objb $w.autob" trad scene objects
 	# View button
 	button $w.vwb -text Edit -relief raised -command vwselfil
