@@ -546,9 +546,6 @@ printdefaults()			/* print default values to stdout */
 #if  RPICT
 	printf("-p  %f\t\t\t# pixel aspect ratio\n", pixaspect);
 #endif
-	printf("-dt %f\t\t\t# direct threshold\n", shadthresh);
-	printf("-dc %f\t\t\t# direct certainty\n", shadcert);
-	printf("-dj %f\t\t\t# direct jitter\n", dstrsrc);
 #if  RPICT|RVIEW
 	printf("-sp %-9d\t\t\t# sample pixel\n", psample);
 	printf("-st %f\t\t\t# sample threshold\n", maxdiff);
@@ -556,6 +553,9 @@ printdefaults()			/* print default values to stdout */
 #if  RPICT
 	printf("-sj %f\t\t\t# sample jitter\n", dstrpix);
 #endif
+	printf("-dt %f\t\t\t# direct threshold\n", shadthresh);
+	printf("-dc %f\t\t\t# direct certainty\n", shadcert);
+	printf("-dj %f\t\t\t# direct jitter\n", dstrsrc);
 	printf("-av %f %f %f\t# ambient value\n", colval(ambval,RED),
 			colval(ambval,GRN), colval(ambval, BLU));
 	printf("-ab %-9d\t\t\t# ambient bounces\n", ambounce);
