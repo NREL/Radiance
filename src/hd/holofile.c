@@ -16,13 +16,13 @@ static char SCCSid[] = "$SunId$ SGI";
 #define CACHESIZE	16	/* default cache size (Mbytes, 0==inf) */
 #endif
 #ifndef FREEBEAMS
-#define FREEBEAMS	1024	/* maximum beams to free at a time */
+#define FREEBEAMS	512	/* maximum beams to free at a time */
 #endif
 #ifndef PCTFREE
-#define PCTFREE		12	/* maximum fraction to free (%) */
+#define PCTFREE		20	/* maximum fraction to free (%) */
 #endif
 
-#define MAXFRAG		8192	/* maximum fragments tracked per open file */
+#define MAXFRAG		(128*FRAGBLK)	/* maximum fragments per file */
 
 #define FRAGBLK		64	/* number of fragments to allocate at a time */
 
@@ -314,25 +314,24 @@ register int	i;
 		register int	j, k;
 					/* relinquish old fragment */
 		if (hp->bi[i].nrd) {
-			j = ++f->nfrags;
+			j = f->nfrags++;
 #ifdef MAXFRAG
-			if (j >= MAXFRAG)
+			if (j >= MAXFRAG-1)
 				f->nfrags--;
-			else
 #endif
-			if (j % FRAGBLK == 1) {		/* more frag. space */
+			if (j % FRAGBLK == 0) {		/* more frag. space */
 				if (f->fi == NULL)
 					f->fi = (BEAMI *)malloc(
 							FRAGBLK*sizeof(BEAMI));
 				else
 					f->fi = (BEAMI *)realloc((char *)f->fi,
-						(FRAGBLK-1+j)*sizeof(BEAMI));
+						(j+FRAGBLK)*sizeof(BEAMI));
 				if (f->fi == NULL)
 					error(SYSTEM,
 						"out of memory in hdgetbi");
 			}
-			for ( ; ; ) {	/* stick it in our descending list */
-				if (!--j || hp->bi[i].fo < f->fi[j-1].fo) {
+			for ( ; ; j--) {	/* insert in descending list */
+				if (!j || hp->bi[i].fo < f->fi[j-1].fo) {
 					f->fi[j].fo = hp->bi[i].fo;
 					f->fi[j].nrd = hp->bi[i].nrd;
 					break;
