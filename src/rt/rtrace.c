@@ -131,8 +131,6 @@ char  *fname;
 	default:
 		error(CONSISTENCY, "botched output format");
 	}
-	fputformat(formstr(outform), stdout);
-	putchar('\n');
 	if (hresolu > 0 && vresolu > 0)
 		fprtresolu(hresolu, vresolu, stdout);
 					/* process file */
