@@ -589,15 +589,19 @@ register FVECT	pos;
 	if (usematrix) {
 		pos[0] += theirview.hoff - .5;
 		pos[1] += theirview.voff - .5;
+		if (normdist && theirview.type == VT_PER)
+			d = sqrt(1. + pos[0]*pos[0]*theirview.hn2
+					+ pos[1]*pos[1]*theirview.vn2);
+		else
+			d = 1.;
+		pos[2] += d*theirview.vfore;
 		if (theirview.type == VT_PER) {
-			if (normdist)			/* adjust distance */
-				pos[2] /= sqrt(1. + pos[0]*pos[0]*theirview.hn2
-						+ pos[1]*pos[1]*theirview.vn2);
+			pos[2] /= d;
 			pos[0] *= pos[2];
 			pos[1] *= pos[2];
 		}
 		multp3(pos, pos, theirs2ours);
-		if (pos[2] <= 0)
+		if (pos[2] <= ourview.vfore)
 			return(0);
 		if (ourview.type == VT_PER) {
 			pos[0] /= pos[2];
@@ -605,6 +609,7 @@ register FVECT	pos;
 		}
 		pos[0] += .5 - ourview.hoff;
 		pos[1] += .5 - ourview.voff;
+		pos[2] -= ourview.vfore;
 	} else {
 		if (viewray(pt, tdir, &theirview, pos[0], pos[1]) < -FTINY)
 			return(0);
