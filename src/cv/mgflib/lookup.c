@@ -50,7 +50,7 @@ register char  *s;
 	register long	h = 0;
 
 	while (*s)
-		h ^= (long)(*s++ & 0xff) << (i++ & 15);
+		h ^= (long)(*s++ & 0xff) << (i++ & 0xf);
 	return(h);
 }
 
@@ -81,7 +81,7 @@ tryagain:
 	oldtabl = tbl->tabl;
 	ndx = tbl->tsiz;
 	i = tbl->ndel;
-	if (!lu_init(tbl, ndx-i)) {	/* no more memory! */
+	if (!lu_init(tbl, ndx-i+1)) {	/* no more memory! */
 		tbl->tabl = oldtabl;
 		tbl->tsiz = ndx;
 		tbl->ndel = i;
