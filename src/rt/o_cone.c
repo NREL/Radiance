@@ -127,6 +127,11 @@ o_cone(			/* intersect ray with cone */
 			for (i = 0; i < 3; i++)
 				r->ron[i] = (co->al*r->ron[i] - c*co->ad[i])
 						/co->sl;
+		a = DOT(r->ron, r->ron);
+		if (a > 1.+FTINY || a < 1.-FTINY) {
+			c = 1./(.5 + .5*a);     /* avoid numerical error */
+			r->ron[0] *= c; r->ron[1] *= c; r->ron[2] *= c;
+		}
 		r->rod = -DOT(r->rdir, r->ron);
 		r->pert[0] = r->pert[1] = r->pert[2] = 0.0;
 		r->uv[0] = r->uv[1] = 0.0;
