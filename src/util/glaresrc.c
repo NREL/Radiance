@@ -16,8 +16,6 @@ static char SCCSid[] = "$SunId$ LBL";
 struct source	*curlist = NULL;	/* current source list */
 struct source	*donelist = NULL;	/* finished sources */
 
-double	threshold;			/* glare threshold */
-
 
 struct srcspan *
 newspan(l, r, v, sb)		/* allocate a new source span */
