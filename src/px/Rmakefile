@@ -194,7 +194,8 @@ greyscale.o ra_t8.o glimage.o ra_bn.o ra_t16.o ra_tiff.o ra_pict.o \
 ra_ps.o ra_pr.o pvalue.o pcomb.o pinterp.o ximage.o:	../common/color.h
 
 pvalue.o protate.o biq.o ciq.o pinterp.o ximage.o psign.o xshowtrace.o \
-pfilt.o image.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
+pcomb.o pfilt.o image.o:	../common/standard.h \
+../common/mat4.h ../common/fvect.h
 
 ximage.o xraster.o:	xraster.h
 
