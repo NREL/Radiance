@@ -201,6 +201,7 @@ char  *pout, *zout, *prvr;
 	do {
 		if (seq && nextview(stdin) == EOF)
 			break;
+		pctdone = 0.0;
 		if (pout != NULL) {
 			sprintf(fbuf, pout, seq);
 			if (freopen(fbuf, "w", stdout) == NULL) {
