@@ -601,7 +601,7 @@ l_psize(char *nm)		/* compute pixel size in steradians */
 		if (input[fn].vw.type == 0)
 			errno = EDOM;
 		else if (input[fn].vw.type != VT_PAR &&
-				funvalue(vray[6], 1, &d) > FTINY) {
+				funvalue(vray[6], 1, &d) >= -FTINY) {
 			for (i = 0; i < 3; i++)
 				dir0[i] = funvalue(vray[3+i], 1, &d);
 			pix2loc(locx, &input[fn].rs, xscan+1, ymax-1-yscan);
