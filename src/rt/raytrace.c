@@ -251,28 +251,28 @@ register RAY  *r;
 register CUBE  *scene;
 {
 	FVECT  curpos;			/* current cube position */
-	int  mpos, mneg;		/* sign flags */
+	int  sflags;			/* sign flags */
 	double  t, dt;
 	register int  i;
 
 	nrays++;			/* increment trace counter */
 
-	mpos = mneg = 0;
+	sflags = 0;
 	for (i = 0; i < 3; i++) {
 		curpos[i] = r->rorg[i];
 		if (r->rdir[i] > FTINY)
-			mpos |= 1 << i;
+			sflags |= 1 << i;
 		else if (r->rdir[i] < -FTINY)
-			mneg |= 1 << i;
+			sflags |= 0x10 << i;
 	}
 	t = 0.0;
 	if (!incube(scene, curpos)) {
 					/* find distance to entry */
 		for (i = 0; i < 3; i++) {
 					/* plane in our direction */
-			if (mpos & 1<<i)
+			if (sflags & 1<<i)
 				dt = scene->cuorg[i];
-			else if (mneg & 1<<i)
+			else if (sflags & 0x10<<i)
 				dt = scene->cuorg[i] + scene->cusize;
 			else
 				continue;
@@ -289,24 +289,23 @@ register CUBE  *scene;
 		if (!incube(scene, curpos))	/* non-intersecting ray */
 			return(0);
 	}
-	return(raymove(curpos, mpos, mneg, r, scene) == RAYHIT);
+	return(raymove(curpos, sflags, r, scene) == RAYHIT);
 }
 
 
 static int
-raymove(pos, plus, minus, r, cu)	/* check for hit as we move */
+raymove(pos, dirf, r, cu)		/* check for hit as we move */
 FVECT  pos;			/* modified */
-int  plus, minus;		/* direction indicators to speed tests */
+int  dirf;			/* direction indicators to speed tests */
 register RAY  *r;
 register CUBE  *cu;
 {
 	int  ax;
 	double  dt, t;
-	register int  sgn;
 
 	if (istree(cu->cutree)) {		/* recurse on subcubes */
 		CUBE  cukid;
-		register int  br;
+		register int  br, sgn;
 
 		cukid.cusize = cu->cusize * 0.5;	/* find subcube */
 		VCOPY(cukid.cuorg, cu->cuorg);
@@ -325,45 +324,44 @@ register CUBE  *cu;
 		}
 		for ( ; ; ) {
 			cukid.cutree = octkid(cu->cutree, br);
-			if ((ax = raymove(pos,plus,minus,r,&cukid)) == RAYHIT)
+			if ((ax = raymove(pos,dirf,r,&cukid)) == RAYHIT)
 				return(RAYHIT);
 			sgn = 1 << ax;
-			if (sgn & minus)		/* negative axis? */
-				if (sgn & br) {
-					cukid.cuorg[ax] -= cukid.cusize;
-					br &= ~sgn;
-				} else
-					return(ax);	/* underflow */
-			else
+			if (sgn & dirf)			/* positive axis? */
 				if (sgn & br)
 					return(ax);	/* overflow */
 				else {
 					cukid.cuorg[ax] += cukid.cusize;
 					br |= sgn;
 				}
+			else
+				if (sgn & br) {
+					cukid.cuorg[ax] -= cukid.cusize;
+					br &= ~sgn;
+				} else
+					return(ax);	/* underflow */
 		}
 		/*NOTREACHED*/
 	}
 	if (isfull(cu->cutree) && checkhit(r, cu))
 		return(RAYHIT);
 					/* advance to next cube */
-	sgn = plus | minus;
-	if (sgn&1) {
-		dt = plus&1 ? cu->cuorg[0] + cu->cusize : cu->cuorg[0];
+	if (dirf&0x11) {
+		dt = dirf&1 ? cu->cuorg[0] + cu->cusize : cu->cuorg[0];
 		t = (dt - pos[0])/r->rdir[0];
 		ax = 0;
 	} else
 		t = FHUGE;
-	if (sgn&2) {
-		dt = plus&2 ? cu->cuorg[1] + cu->cusize : cu->cuorg[1];
+	if (dirf&0x22) {
+		dt = dirf&2 ? cu->cuorg[1] + cu->cusize : cu->cuorg[1];
 		dt = (dt - pos[1])/r->rdir[1];
 		if (dt < t) {
 			t = dt;
 			ax = 1;
 		}
 	}
-	if (sgn&4) {
-		dt = plus&4 ? cu->cuorg[2] + cu->cusize : cu->cuorg[2];
+	if (dirf&0x44) {
+		dt = dirf&4 ? cu->cuorg[2] + cu->cusize : cu->cuorg[2];
 		dt = (dt - pos[2])/r->rdir[2];
 		if (dt < t) {
 			t = dt;
