@@ -37,6 +37,7 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
+	extern long	eclock;
 	char  stmp[256];
 	double  t, f, lastr, r;
 	FVECT  lastp, p;
@@ -71,6 +72,7 @@ char  *argv[];
 		goto userror;
 
 	printhead(argc, argv);
+	eclock = 0;
 
 	for (i = 0; i <= nseg; i++) {
 		t = (double)i/nseg;

@@ -46,6 +46,7 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
+	extern long	eclock;
 	POINT  *row0, *row1, *row2, *rp;
 	int  i, j, m, n;
 	char  stmp[256];
@@ -91,6 +92,7 @@ char  *argv[];
 	row0++; row1++; row2++;
 						/* print header */
 	printhead(argc, argv);
+	eclock = 0;
 						/* initialize */
 	comprow(-1.0/m, row0, n);
 	comprow(0.0, row1, n);
