@@ -15,6 +15,7 @@ static const char	RCSid[] = "$Id$";
 #include  "rterror.h"
 
 
+int
 main(argc, argv)
 int  argc;
 char  *argv[];
@@ -33,6 +34,7 @@ char  *argv[];
 		printf("%.9g\n", eval(argv[i]));
 
 	quit(errno ? 2 : 0);
+	return (errno ? 2 : 0); /* pro forma return */
 }
 
 

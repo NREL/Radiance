@@ -8,6 +8,7 @@ static const char RCSid[] = "$Id$";
  */
 
 #include  <stdlib.h>
+#include  <fcntl.h>
 #include  <stdio.h>
 #include  <string.h>
 #include  <math.h>
@@ -218,6 +219,7 @@ eputs(" [-b][-l][-n][-w][-u][-tS][-s svar=sval][-e expr][-f source][-i infmt][-o
 			execute(argv[i]);
 	
 	quit(0);
+	return 0; /* pro forma return */
 }
 
 

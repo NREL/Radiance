@@ -16,6 +16,7 @@ static const char	RCSid[] = "$Id$";
 char  *format = "8.8";			/* default format */
 
 
+int
 main(argc, argv)
 int  argc;
 char  *argv[];

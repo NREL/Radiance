@@ -25,6 +25,7 @@ jmp_buf  env;
 int  recover = 0;
 
 
+int
 main(argc, argv)
 int  argc;
 char  *argv[];
@@ -116,6 +117,7 @@ char  *argv[];
 
 	recover = 0;
 	quit(0);
+	return 0; /* pro forma exit */
 }
 
 

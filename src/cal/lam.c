@@ -24,6 +24,7 @@ int	nfiles;
 
 char	buf[MAXLINE];
 
+int
 main(argc, argv)
 int	argc;
 char	*argv[];
