@@ -18,7 +18,7 @@ mgfilt:	libmgf.a mgfilt.o
 	$(CC) $(CFLAGS) -o mgfilt mgfilt.o libmgf.a -lm
 
 clean:
-	rm -f *.o
+	set nonomatch ; rm -f *.o
 
 parser.o context.o xf.o object.o fvect.o:	parser.h
 
