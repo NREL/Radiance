@@ -155,6 +155,9 @@ pinterp:	pinterp.o
 ra_tiff:	ra_tiff.o ../lib/libtiff.a
 	cc $(CFLAGS) -o ra_tiff ra_tiff.o -lrt -ltiff -lm
 
+psign.o:	psign.c ../common/font.h
+	cc $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c psign.c
+
 ra_tiff.o:	ra_tiff.c
 	cc $(CFLAGS) -Ilibtiff -c ra_tiff.c
 
@@ -173,9 +176,6 @@ xshowtrace:	xshowtrace.o x11findwind.o
 	cc $(CFLAGS) -o xshowtrace xshowtrace.o \
 x11findwind.o -lrt -lm -lX11
 
-xshowtrace.o:	../common/view.h ../common/standard.h \
-../common/mat4.h ../common/fvect.h
-
 pcomb.o:	../common/calcomp.h
 
 panim.o:	client/scan.h ../common/color.h ../common/random.h
@@ -187,7 +187,7 @@ ra_pr24.o d48c.o aedimage.o pcompos.o color.o resolu.o colrops.o pflip.o \
 greyscale.o ra_t8.o glimage.o ra_bn.o ra_t16.o ra_tiff.o ra_pict.o \
 ra_pr.o pvalue.o pcomb.o pinterp.o ximage.o:	../common/color.h
 
-pvalue.o protate.o biq.o ciq.o pinterp.o ximage.o \
+pvalue.o protate.o biq.o ciq.o pinterp.o ximage.o psign.o xshowtrace.o \
 image.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
 
 ximage.o xraster.o:	xraster.h
@@ -200,7 +200,7 @@ aedimage.o ximage.o ra_t8.o ra_pr.o:	pic.h
 
 ciq.o cut.o closest.o biq.o:	pic.h ciq.h
 
-pinterp.o ximage.o image.o:	../common/view.h
+pinterp.o ximage.o x11showtrace.o image.o:	../common/view.h
 
 ra_pict.o:	pict.h
 
