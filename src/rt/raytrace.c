@@ -34,7 +34,7 @@ OBJREC  Lamb = {
 	{0, 5, NULL, Lambfa}, NULL,
 };					/* a Lambertian surface */
 
-static OBJREC  Aftplane;		/* aft clipping plane object */
+OBJREC  Aftplane;			/* aft clipping plane object */
 
 static int  raymove(), checkset(), checkhit();
 
@@ -81,16 +81,8 @@ register RAY  *r;
 {
 	r->rno = raynum++;
 	r->newcset = r->clipset;
-	if (r->rmax > FTINY) {
-		r->ro = &Aftplane;
-		r->rot = r->rmax;
-		r->rop[0] = r->rorg[0] + r->rot*r->rdir[0];
-		r->rop[1] = r->rorg[1] + r->rot*r->rdir[1];
-		r->rop[2] = r->rorg[2] + r->rot*r->rdir[2];
-	} else {
-		r->ro = NULL;
-		r->rot = FHUGE;
-	}
+	r->ro = NULL;
+	r->rot = FHUGE;
 	r->pert[0] = r->pert[1] = r->pert[2] = 0.0;
 	setcolor(r->pcol, 1.0, 1.0, 1.0);
 	setcolor(r->rcol, 0.0, 0.0, 0.0);
@@ -139,6 +131,8 @@ register RAY  *r;
 
 	if (rayorigin(&tr, r, TRANS, 1.0) == 0) {
 		VCOPY(tr.rdir, r->rdir);
+		if (r->rmax > FTINY)
+			tr.rmax = r->rmax - r->rot;
 		rayvalue(&tr);
 		copycolor(r->rcol, tr.rcol);
 		r->rt = r->rot + tr.rt;
@@ -367,6 +361,14 @@ register CUBE  *scene;
 	}
 	if (sflags == 0)
 		error(CONSISTENCY, "zero ray direction in localhit");
+					/* start off assuming nothing hit */
+	if (r->rmax > FTINY) {		/* except aft plane if one */
+		r->ro = &Aftplane;
+		r->rot = r->rmax;
+		for (i = 0; i < 3; i++)
+			r->rop[i] = r->rorg[i] + r->rot*r->rdir[i];
+	}
+					/* find global cube entrance point */
 	t = 0.0;
 	if (!incube(scene, curpos)) {
 					/* find distance to entry */
@@ -384,6 +386,8 @@ register CUBE  *scene;
 				t = dt;	/* farthest face is the one */
 		}
 		t += FTINY;		/* fudge to get inside cube */
+		if (t >= r->rot)	/* clipped already */
+			return(0);
 					/* advance position */
 		for (i = 0; i < 3; i++)
 			curpos[i] += r->rdir[i]*t;
