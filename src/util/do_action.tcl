@@ -146,7 +146,6 @@ proc make_vmenus {} {		# make/update view menus
 	catch {destroy $mywin.rbvmb.m}
 	if {[llength $radvar(view)] < 2} {
 		$mywin.rivmb configure -state disabled
-		$mywin.rbvmb configure -state disabled
 		return
 	}
 	menu $mywin.rivmb.m
@@ -156,7 +155,7 @@ proc make_vmenus {} {		# make/update view menus
 				-variable rvview -value [lindex $v 0]
 	}
 	menu $mywin.rbvmb.m
-	$mywin.rbvmb configure -menu $mywin.rbvmb.m -state normal
+	$mywin.rbvmb configure -menu $mywin.rbvmb.m
 	$mywin.rbvmb.m add radiobutton -label ALL \
 			-variable rpview -value " ALL"
 	$mywin.rbvmb.m add separator
