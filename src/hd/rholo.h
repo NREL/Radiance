@@ -44,10 +44,11 @@ typedef struct {
 #define CACHE		7		/* amount of memory to use as cache */
 #define GRID		8		/* target grid size */
 #define OBSTRUCTIONS	9		/* shall we track obstructions? */
-#define OCCUPANCY	10		/* expected occupancy probability */
-#define REPORT		11		/* report interval and error file */
+#define VDIST		10		/* virtual distance calculation */
+#define OCCUPANCY	11		/* expected occupancy probability */
+#define REPORT		12		/* report interval and error file */
 
-#define NRHVARS		12		/* number of variables */
+#define NRHVARS		13		/* number of variables */
 
 #define RHVINIT { \
 	{"render",	3,	0,	NULL,	catvalues}, \
@@ -60,6 +61,7 @@ typedef struct {
 	{"CACHE",	2,	0,	NULL,	fltvalue}, \
 	{"GRID",	2,	0,	NULL,	fltvalue}, \
 	{"OBSTRUCTIONS",3,	0,	NULL,	boolvalue}, \
+	{"VDISTANCE",	2,	0,	NULL,	boolvalue}, \
 	{"OCCUPANCY",	3,	0,	NULL,	onevalue}, \
 	{"REPORT",	3,	0,	NULL,	onevalue}, \
 }
