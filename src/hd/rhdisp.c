@@ -148,7 +148,7 @@ register PACKHEAD	*p;
 		hdray(ro, rd, hdlist[p->hd], gc, packra(p)[i].r);
 		d = hddepth(hdlist[p->hd], packra(p)[i].d);
 		VSUM(wp, ro, rd, d);		/* might be behind viewpoint */
-		dev_value(packra(p)[i].v, wp);
+		dev_value(packra(p)[i].v, wp, rd);
 	}
 }
 
