@@ -30,6 +30,8 @@ int	nbr, int nbs
 {
 	if (nbs > PIPE_BUF)
 		return(-1);
+	if (!pd->running)
+		return(-1);
 	if (writebuf(pd->w, sendbuf, nbs) < nbs)
 		return(-1);
 	return(readbuf(pd->r, recvbuf, nbr));

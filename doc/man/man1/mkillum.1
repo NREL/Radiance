@@ -5,6 +5,8 @@ mkillum - compute illum sources for a RADIANCE scene
 .SH SYNOPSIS
 .B mkillum
 [
+.B "\-n nprocs"
+][
 .B "rtrace options"
 ]
 .B octree
@@ -27,7 +29,16 @@ directional distributions.
 These are best handled respectively by the ambient calculation
 and the secondary source types in RADIANCE.
 .PP
-The arguments to
+If the
+.I \-n
+option is specified with a value greater than 1, multiple
+.I rtrace(1)
+processes will be used to accelerate computation on a shared
+memory machine.
+Note that there is no benefit to using more processes
+than there are local CPUs available to do the work.
+.PP
+Remaining arguments to
 .I mkillum
 are passed directly to
 .I rtrace(1),

@@ -67,12 +67,13 @@ SUBPROC *pd
 {
 	int	pid, status;
 
+	if (!pd->running)
+		return(0);
 	close(pd->r);
 	close(pd->w);
 	pd->running = 0;
-	while ((pid = wait(&status)) != -1)
-		if (pid == pd->pid)
-			return(status>>8 & 0xff);
+	if (waitpid(pd->pid, &status, 0) == pd->pid)
+		return(status>>8 & 0xff);
 	return(-1);		/* ? unknown status */
 }
 

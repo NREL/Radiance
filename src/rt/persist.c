@@ -335,7 +335,7 @@ io_process(void)		/* just act as go-between for actual process */
 				} while ((nr -= n) > 0);
 		}
 	}
-	wait(0);		/* wait for feeder process */ /* XXX platform */
+	waitpid(pid, 0, 0);	/* wait for feeder process */
 	_exit(status);
 formerr:
 	error(USER, "format error in persist file");

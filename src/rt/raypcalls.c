@@ -500,8 +500,8 @@ ray_pclose(		/* close one or more child processes */
 		ray_pnprocs--;
 		close(r_proc[ray_pnprocs].fd_recv);
 		close(r_proc[ray_pnprocs].fd_send);
-		while (wait(&status) != r_proc[ray_pnprocs].pid)
-			;
+		if (waitpid(r_proc[ray_pnprocs].pid, &status, 0) < 0)
+			status = 127<<8;
 		if (status) {
 			sprintf(errmsg,
 				"rendering process %d exited with code %d",
