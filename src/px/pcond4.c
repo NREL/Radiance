@@ -146,16 +146,15 @@ int	y;
 
 /****************** ACUITY STUFF *******************/
 
-typedef struct scanbar {
-	short	sampr;		/* sample area size (power of 2) */
+typedef struct {
+	short	sampe;		/* sample area size (exponent of 2) */
 	short	nscans;		/* number of scanlines in this bar */
 	int	len;		/* individual scanline length */
-	struct scanbar	*next;	/* next higher resolution scanbar */
 	int	nread;		/* number of scanlines loaded */
-			/* followed by the scanline data */
+	COLOR	*sdata;		/* scanbar data */
 } SCANBAR;
 
-#define bscan(sb,y)	((COLOR *)((sb)+1)+((y)%(sb)->nscans)*(sb)->len)
+#define bscan(sb,y)	((COLOR *)(sb)->sdata+((y)%(sb)->nscans)*(sb)->len)
 
 SCANBAR	*rootbar;		/* root scan bar (lowest resolution) */
 
@@ -208,17 +207,17 @@ int	y;
 		return(NULL);
 	for ( ; y >= sb->nread; sb->nread++) {		/* read as necessary */
 		mysl = bscan(sb, sb->nread);
-		if (sb->sampr == 1) {
+		if (sb->sampe == 0) {
 			if (freadscan(mysl, sb->len, infp) < 0) {
 				fprintf(stderr, "%s: %s: scanline read error\n",
 						progname, infn);
 				exit(1);
 			}
 		} else {
-			sl0 = getascan(sb->next, 2*y);
+			sl0 = getascan(sb+1, 2*y);
 			if (sl0 == NULL)
 				return(NULL);
-			sl1 = getascan(sb->next, 2*y+1);
+			sl1 = getascan(sb+1, 2*y+1);
 			for (i = 0; i < sb->len; i++) {
 				copycolor(mysl[i], sl0[2*i]);
 				addcolor(mysl[i], sl0[2*i+1]);
@@ -267,14 +266,13 @@ double	sr;
 	double	d;
 	register SCANBAR	*sb0;
 
-	for (sb0 = rootbar; sb0->next != NULL && sb0->next->sampr > sr;
-			sb0 = sb0->next)
+	for (sb0 = rootbar; sb0->sampe != 0 && 1<<sb0[1].sampe > sr; sb0++)
 		;
 	ascanval(col, x, y, sb0);
-	if (sb0->next == NULL)		/* don't extrapolate highest */
+	if (sb0->sampe == 0)		/* don't extrapolate highest */
 		return;
-	ascanval(c1, x, y, sb0->next);
-	d = (sb0->sampr - sr)/(sb0->sampr - sb0->next->sampr);
+	ascanval(c1, x, y, sb0+1);
+	d = ((1<<sb0->sampe) - sr)/(1<<sb0[1].sampe);
 	scalecolor(col, 1.-d);
 	scalecolor(c1, d);
 	addcolor(col, c1);
@@ -290,17 +288,17 @@ SCANBAR	*sb;
 	double	dx, dy;
 	int	ix, iy;
 
-	if (sb->sampr == 1) {		/* no need to interpolate */
+	if (sb->sampe == 0) {		/* no need to interpolate */
 		sl0 = getascan(sb, y);
 		copycolor(col, sl0[x]);
 		return;
 	}
 					/* compute coordinates for sb */
-	ix = dx = (x+.5)/sb->sampr - .5;
+	ix = dx = (x+.5)/(1<<sb->sampe) - .5;
 	while (ix >= sb->len-1) ix--;
 	dx -= (double)ix;
-	iy = dy = (y+.5)/sb->sampr - .5;
-	while (iy >= numscans(&inpres)/sb->sampr-1) iy--;
+	iy = dy = (y+.5)/(1<<sb->sampe) - .5;
+	while (iy >= (numscans(&inpres)>>sb->sampe)-1) iy--;
 	dy -= (double)iy;
 					/* get scanlines */
 	sl0 = getascan(sb, iy);
@@ -333,19 +331,24 @@ int	sr;		/* sampling rate */
 int	ns;		/* number of scanlines */
 int	sl;		/* original scanline length */
 {
+	SCANBAR	*sbarr;
 	register SCANBAR	*sb;
 
-	sb = (SCANBAR *)malloc(sizeof(SCANBAR)+(sl/sr)*ns*sizeof(COLOR));
+	sbarr = sb = (SCANBAR *)malloc((sr+1)*sizeof(SCANBAR));
 	if (sb == NULL)
 		syserror("malloc");
-	sb->nscans = ns;
-	sb->len = sl/sr;
-	sb->nread = 0;
-	if ((sb->sampr = sr) > 1)
-		sb->next = sballoc(sr/2, ns*2, sl);
-	else
-		sb->next = NULL;
-	return(sb);
+	do {
+		sb->sdata = (COLOR *)malloc((sl>>sr)*ns*sizeof(COLOR));
+		if (sb->sdata == NULL)
+			syserror("malloc");
+		sb->sampe = sr;
+		sb->nscans = ns;
+		sb->len = sl>>sr;
+		sb->nread = 0;
+		ns <<= 1;
+		sb++;
+	} while (--sr >= 0);
+	return(sbarr);
 }
 
 
@@ -389,5 +392,5 @@ initacuity()			/* initialize variable acuity sampling */
 		tsampr(y,fvxr-1) = tsampr(y,fvxr-2);
 	}
 					/* initialize with next power of two */
-	rootbar = sballoc(2<<(int)(log(maxsr)/log(2.)), 2, scanlen(&inpres));
+	rootbar = sballoc((int)(log(maxsr)/log(2.))+1, 2, scanlen(&inpres));
 }
