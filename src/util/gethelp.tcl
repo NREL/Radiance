@@ -230,9 +230,9 @@ proc helpupdate {} {			# update help text window
 				if [regexp -nocase -indices \
 						$curhelp(search) $li mi] {
 					.helpwin.txt tag add highlight\
-							"end - 1 c - $ll c\
+							"end - 2 c - $ll c\
 							+ [lindex $mi 0] c"\
-							"end - $ll c\
+							"end - 1 c - $ll c\
 							+ [lindex $mi 1] c"
 				}
 			}
@@ -246,7 +246,7 @@ proc helpupdate {} {			# update help text window
 	# Highlight next category and topic
 	if {$ll > 0} {
 		.helpwin.txt insert end "Next:  $cat $top"
-		.helpwin.txt tag add highlight "end linestart" end
+		.helpwin.txt tag add highlight end-1lines end
 		set curhelp(next) "$cat $top"
 		.helpwin.but.next configure -state normal
 	} else {
