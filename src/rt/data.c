@@ -1,4 +1,4 @@
-/* Copyright (c) 1993 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -111,7 +111,7 @@ char  *dname;
 			if (dp->dim[i].p == NULL)
 				goto memerr;
 			for (j = 0; j < dp->dim[i].ne; j++)
-				if (fgetval(fp, 'd', &dp->dim[i].p[i]) <= 0)
+				if (fgetval(fp, 'd', &dp->dim[i].p[j]) <= 0)
 					goto scanerr;
 			for (j = 1; j < dp->dim[i].ne-1; j++)
 				if ((dp->dim[i].p[j-1] < dp->dim[i].p[j]) !=
