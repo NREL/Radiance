@@ -419,11 +419,17 @@ register RAY  *r;
 				r->rsrc>=0 && \
 				source[r->rsrc].so!=r->ro)
 
+#define  distglow(m, r)		(m->otype==MAT_GLOW && \
+				r->rot > m->oargs.farg[3])
+
 #define  badambient(m, r)	((r->crtype&(AMBIENT|SHADOW))==AMBIENT && \
-				!(m->otype==MAT_GLOW&&r->rot>m->oargs.farg[3]))
+				!distglow(m, r))
 
 #define  passillum(m, r)	(m->otype==MAT_ILLUM && \
 				!(r->rsrc>=0&&source[r->rsrc].so==r->ro))
+
+#define  srcignore(m, r)	(directinvis && !(r->crtype&SHADOW) && \
+				!distglow(m, r))
 
 
 m_light(m, r)			/* ray hit a light source */
@@ -435,24 +441,25 @@ register RAY  *r;
 		return;
 						/* check for passed illum */
 	if (passillum(m, r)) {
-
 		if (m->oargs.nsargs < 1 || !strcmp(m->oargs.sarg[0], VOIDID))
 			raytrans(r);
 		else
 			rayshade(r, modifier(m->oargs.sarg[0]));
-
-						/* otherwise treat as source */
-	} else {
-						/* check for behind */
-		if (r->rod < 0.0)
-			return;
-						/* get distribution pattern */
-		raytexture(r, m->omod);
-						/* get source color */
-		setcolor(r->rcol, m->oargs.farg[0],
-				  m->oargs.farg[1],
-				  m->oargs.farg[2]);
-						/* modify value */
-		multcolor(r->rcol, r->pcol);
+		return;
 	}
+					/* otherwise treat as source */
+						/* check for behind */
+	if (r->rod < 0.0)
+		return;
+						/* check for invisibility */
+	if (srcignore(m, r))
+		return;
+						/* get distribution pattern */
+	raytexture(r, m->omod);
+						/* get source color */
+	setcolor(r->rcol, m->oargs.farg[0],
+			  m->oargs.farg[1],
+			  m->oargs.farg[2]);
+						/* modify value */
+	multcolor(r->rcol, r->pcol);
 }
