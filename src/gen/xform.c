@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -27,6 +27,8 @@ int  reverse;				/* boolean true if scene inverted */
 
 int  expand = 0;			/* boolean true to expand commands */
 
+char  *newmod = NULL;			/* new modifier for surfaces */
+
 char  *idprefix = NULL;			/* prefix for object identifiers */
 
 #define  ALIAS		NUMOTYPE	/* put alias at end of array */
@@ -44,7 +46,7 @@ typedef struct {
 	double  *farg;			/* float arguments */
 }  FUNARGS;
 
-#define  MAXSTR		512		/* maximum string length */
+#define  MAXSTR		128		/* maximum string length */
 
 FUNARGS  *getfargs();
 char  *malloc();
@@ -69,6 +71,11 @@ char  *argv[];
 	for (a = 1; a < argc; a++) {
 		if (argv[a][0] == '-')
 			switch (argv[a][1]) {
+			case 'm':
+				if (argv[a][2] || a+1 >= argc)
+					break;
+				newmod = argv[++a];
+				continue;
 			case 'n':
 				if (argv[a][2] || a+1 >= argc)
 					break;
@@ -228,27 +235,26 @@ xfobject(fname, fin)				/* transform an object */
 char  *fname;
 FILE  *fin;
 {
-	char  stmp[MAXSTR];
+	char  typ[16], nam[MAXSTR];
 	int  fn;
-	
-	fscanf(fin, "%s", stmp);	/* modifier */
-	printf("\n%s ", stmp);
-	fscanf(fin, "%s", stmp);	/* object type */
-	if ((fn = otype(stmp)) < 0) {
+						/* modifier and type */
+	fscanf(fin, "%s %s", nam, typ);
+	if ((fn = otype(typ)) < 0) {
 		fprintf(stderr, "%s: (%s): unknown object type \"%s\"\n",
-				progname, fname, stmp);
+				progname, fname, typ);
 		exit(1);
 	}
-	printf("%s ", stmp);
-	fscanf(fin, "%s", stmp);	/* object name */
+	printf("\n%s %s ", newmod!=NULL && issurface(fn) ? newmod : nam, typ);
+						/* object name */
+	fscanf(fin, "%s", nam);
 	if (idprefix != NULL && issurface(fn))
-		printf("%s.%s\n", idprefix, stmp);
+		printf("%s.%s\n", idprefix, nam);
 	else
-		printf("%s\n", stmp);
-					/* transform arguments */
+		printf("%s\n", nam);
+						/* transform arguments */
 	if ((*ofun[fn].funp)(fin) < 0) {
 		fprintf(stderr, "%s: (%s): bad %s \"%s\"\n",
-				progname, fname, ofun[fn].funame, stmp);
+				progname, fname, ofun[fn].funame, nam);
 		exit(1);
 	}
 }

@@ -22,6 +22,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  PI		3.14159265358979323846
 #endif
 
+#define  FEQ(a,b)	((a)-(b) <= 1e-7 && (b)-(a) <= 1e-7)
+
 #define  MAXVERT	6	/* maximum number of vertices for markers */
 
 typedef struct {
@@ -31,7 +33,7 @@ typedef struct {
 
 int	expand = 0;		/* expand commands? */
 
-char	*modout = "void";	/* output modifier (for instances) */
+char	*modout = NULL;		/* output modifier (for instances) */
 
 double	markscale = 0.0;	/* scale markers by this to get unit */
 
@@ -202,6 +204,8 @@ FILE	*fin;
 
 	if (doxform) {
 		sprintf(buf, "xform -e -n %s", mark);
+		if (modout != NULL)
+			sprintf(buf+strlen(buf), " -m %s", modout);
 		if (buildxf(buf+strlen(buf), fin) < 0)
 			goto badxf;
 		sprintf(buf+strlen(buf), " %s", objname);
@@ -213,9 +217,8 @@ FILE	*fin;
 	} else {
 		if ((n = buildxf(buf, fin)) < 0)
 			goto badxf;
-		printf("\n%s instance %s\n", modout, mark);
-		printf("%d %s%s\n", n+1, objname, buf);
-		printf("\n0\n0\n");
+		printf("\n%s instance %s\n", modout==NULL?"void":modout, mark);
+		printf("%d %s%s\n0\n0\n", n+1, objname, buf);
 	}
 	return;
 badxf:
@@ -321,12 +324,27 @@ addrot(xf, xp, yp, zp)		/* compute rotation (x,y,z) => (xp,yp,zp) */
 char	*xf;
 FVECT	xp, yp, zp;
 {
-	double	tx, ty, tz;
+	int	n;
+	double	theta;
 
-	tx = atan2(yp[2], zp[2]);
-	ty = asin(-xp[2]);
-	tz = atan2(xp[1], xp[0]);
-	sprintf(xf, " -rx %f -ry %f -rz %f", tx*(180./PI),
-			ty*(180./PI), tz*(180./PI));
-	return(6);
+	n = 0;
+	theta = atan2(yp[2], zp[2]);
+	if (!FEQ(theta,0.0)) {
+		sprintf(xf, " -rx %f", theta*(180./PI));
+		xf += strlen(xf);
+		n += 2;
+	}
+	theta = asin(-xp[2]);
+	if (!FEQ(theta,0.0)) {
+		sprintf(xf, " -ry %f", theta*(180./PI));
+		xf += strlen(xf);
+		n += 2;
+	}
+	theta = atan2(xp[1], xp[0]);
+	if (!FEQ(theta,0.0)) {
+		sprintf(xf, " -rz %f", theta*(180./PI));
+		/* xf += strlen(xf); */
+		n += 2;
+	}
+	return(n);
 }
