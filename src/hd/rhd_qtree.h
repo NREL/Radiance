@@ -6,6 +6,7 @@
  * Quadtree data structures for holodeck display drivers.
  */
 
+#include "color.h"
 #include "tonemap.h"
 #include "rhdriver.h"
 

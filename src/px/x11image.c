@@ -29,15 +29,12 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #undef	NOPROTO
 #define	NOPROTO 1
+#include  "color.h"
 #include  "tonemap.h"
 #include  "view.h"
 #include  "x11raster.h"
 #include  "random.h"
 #include  "resolu.h"
-
-#ifndef  int4
-#define  int4		int		/* most int's are 32-bit */
-#endif
 
 #define  FONTNAME	"8x13"		/* text font we'll use */
 
