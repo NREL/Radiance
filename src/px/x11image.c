@@ -951,37 +951,39 @@ make_tonemap()			/* initialize tone mapping */
 				progname);
 		tmflags = -1;
 	}
-	if (tmflags == -1) {
+	if (tmflags == -1) {		/* linear with clamping */
 		setcolrcor(pow, 1.0/gamcor);
 		return;
 	}
-	if (tmTop != NULL)		/* already initialized? */
-		return;
-	flags = tmflags;
+	flags = tmflags;		/* histogram adjustment */
 	if (greyscale) flags |= TM_F_BW;
-					/* initialize tm library */
-	if (tmInit(flags, stdprims, gamcor) == NULL)
-		goto memerr;
-	if (tmSetSpace(stdprims, WHTEFFICACY/exposure))
-		goto tmerr;
-					/* allocate encoding buffers */
-	if ((lscan = (TMbright *)malloc(xmax*sizeof(TMbright))) == NULL)
-		goto memerr;
-	if (greyscale) {
-		cscan = TM_NOCHROM;
-		if ((pscan = (BYTE *)malloc(sizeof(BYTE)*xmax)) == NULL)
+	if (tmTop != NULL) {		/* reuse old histogram if one */
+		tmTop->flags = flags;
+	} else {			/* else initialize */
+		if ((lscan = (TMbright *)malloc(xmax*sizeof(TMbright))) == NULL)
 			goto memerr;
-	} else if ((pscan=cscan = (BYTE *)malloc(3*sizeof(BYTE)*xmax)) == NULL)
-		goto memerr;
-					/* compute picture histogram */
-	for (y = 0; y < ymax; y++) {
-		getscan(y);
-		if (tmCvColrs(lscan, TM_NOCHROM, scanline, xmax))
+		if (greyscale) {
+			cscan = TM_NOCHROM;
+			if ((pscan = (BYTE *)malloc(sizeof(BYTE)*xmax)) == NULL)
+				goto memerr;
+		} else if ((pscan=cscan = (BYTE *)malloc(3*sizeof(BYTE)*xmax))
+				== NULL)
+			goto memerr;
+						/* initialize tm library */
+		if (tmInit(flags, stdprims, gamcor) == NULL)
+			goto memerr;
+		if (tmSetSpace(stdprims, WHTEFFICACY/exposure))
 			goto tmerr;
-		if (tmAddHisto(lscan, xmax, 1))
-			goto tmerr;
+						/* compute picture histogram */
+		for (y = 0; y < ymax; y++) {
+			getscan(y);
+			if (tmCvColrs(lscan, TM_NOCHROM, scanline, xmax))
+				goto tmerr;
+			if (tmAddHisto(lscan, xmax, 1))
+				goto tmerr;
+		}
 	}
-					/* compute tone mapping */
+					/* (re)compute tone mapping */
 	if (tmComputeMapping(gamcor, 0., 0.))
 		goto tmerr;
 	return;
