@@ -38,23 +38,27 @@ extern COLOR  *scanout;		/* output scan line */
 
 extern char  *progname;
 
-float  *exptable;		/* exponent table */
+float  *gausstable;		/* gauss lookup table */
 
-#define	 lookexp(x)		exptable[(int)(-10.*(x)+.5)]
+#define	 lookgauss(x)		gausstable[(int)(-10.*(x)+.5)]
 
 
 initmask()			/* initialize gaussian lookup table */
 {
 	extern char  *malloc();
+	double  d;
 	register int  x;
 
-	exptable = (float *)malloc(100*sizeof(float));
-	if (exptable == NULL) {
+	gausstable = (float *)malloc(100*sizeof(float));
+	if (gausstable == NULL) {
 		fprintf(stderr, "%s: out of memory in initmask\n", progname);
 		quit(1);
 	}
-	for (x = 0; x < 100; x++)
-		exptable[x] = exp(-x*0.1);
+	d = x_c*y_r*0.25/rad/rad;
+	gausstable[0] = exp(-d)/sqrt(d);
+	for (x = 1; x < 100; x++)
+		if ((gausstable[x] = exp(-x*0.1)/sqrt(x*0.1)) > gausstable[0])
+			gausstable[x] = gausstable[0];
 }
 
 
@@ -115,7 +119,7 @@ int  c, r;
 			if (x < 0) continue;
 			if (x >= xres) break;
 			dx = (x_c*(x+.5) - (c+.5))/rad;
-			weight = lookexp(-(dx*dx + dy*dy));
+			weight = lookgauss(-(dx*dx + dy*dy));
 			wsum += weight;
 			copycolor(ctmp, scan[x]);
 			scalecolor(ctmp, weight);
