@@ -48,6 +48,7 @@ main(argc, argv)
 int	argc;
 char	*argv[];
 {
+	int	combine = 1;
 	int	gotview = 0;
 	int	rval, i;
 	char	*err;
@@ -100,6 +101,9 @@ char	*argv[];
 			break;
 		case 'p':
 			picture = argv[++i];
+			break;
+		case 'c':
+			combine = !combine;
 			break;
 		case 'd':
 		case 'l':
@@ -179,6 +183,8 @@ char	*argv[];
 	if (threshold <= FTINY)
 		comp_thresh();			/* compute glare threshold */
 	analyze();				/* analyze view */
+	if (combine)
+		absorb_specks();		/* eliminate tiny sources */
 	cleanup();				/* tidy up */
 						/* print header */
 	printargs(argc, argv, stdout);
