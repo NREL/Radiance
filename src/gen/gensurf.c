@@ -165,7 +165,9 @@ int  pointsize;
 	register FLOAT  *dp;
 
 	datarec.flags = HASBORDER;		/* assume border values */
-	size = (m+1)*(n+1)*pointsize;
+	datarec.m = m+1;
+	datarec.n = n+1;
+	size = datarec.m*datarec.n*pointsize;
 	if (pointsize == 3)
 		datarec.flags |= TRIPLETS;
 	dp = (FLOAT *)malloc(size*sizeof(FLOAT));
@@ -196,9 +198,12 @@ int  pointsize;
 		if (dp != NULL)
 			datarec.data = dp;
 		datarec.flags &= ~HASBORDER;
+		datarec.m = m;
+		datarec.n = n;
 		size = 0;
 	}
-	if (size || fgetword(word, sizeof(word), fp) != NULL) {
+	if (datarec.m < 2 || datarec.n < 2 || size != 0 ||
+			fgetword(word, sizeof(word), fp) != NULL) {
 		fputs(file, stderr);
 		fputs(": bad number of data points\n", stderr);
 		exit(1);
@@ -218,11 +223,11 @@ char  *nam;
 						/* compute coordinates */
 	u = argument(1); v = argument(2);
 	if (datarec.flags & HASBORDER) {
-		i = u *= datarec.m;
-		j = v *= datarec.n;
+		i = u *= datarec.m-1;
+		j = v *= datarec.n-1;
 	} else {
-		i = u = u*(datarec.m+1) - .5;
-		j = v = v*(datarec.n+1) - .5;
+		i = u = u*datarec.m - .5;
+		j = v = v*datarec.n - .5;
 	}
 	if (i < 0) i = 0;
 	else if (i > datarec.m-2) i = datarec.m-2;
@@ -230,18 +235,18 @@ char  *nam;
 	else if (j > datarec.n-2) j = datarec.n-2;
 						/* compute value */
 	if (datarec.flags & TRIPLETS) {
-		dp = datarec.data + 3*(j*datarec.n + i);
-		if (nam == YNAME)
-			dp++;
-		else if (nam == ZNAME)
+		dp = datarec.data + 3*(j*datarec.m + i);
+		if (nam == ZNAME)
 			dp += 2;
+		else if (nam == YNAME)
+			dp++;
 		d00 = dp[0]; d01 = dp[3];
-		dp += 3*datarec.n;
+		dp += 3*datarec.m;
 		d10 = dp[0]; d11 = dp[3];
 	} else {
-		dp = datarec.data + j*datarec.n + i;
+		dp = datarec.data + j*datarec.m + i;
 		d00 = dp[0]; d01 = dp[1];
-		dp += datarec.n;
+		dp += datarec.m;
 		d10 = dp[0]; d11 = dp[1];
 	}
 						/* bilinear interpolation */
