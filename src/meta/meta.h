@@ -12,7 +12,6 @@ extern "C" {
 
 #include  <stdio.h>
 #include  <stdlib.h>
-#include  <malloc.h>
 
 #include  <ctype.h>
 
@@ -153,7 +152,7 @@ extern void pfree(register PRIMITIVE *p);
 extern void plfree(register PLIST *pl);
 	/* sort.c */
 extern void sort(FILE *infp, int (*pcmp)());
-extern void mergesort(FILE *fi[], int nf, PLIST *pl, int (*pcmp)(), FILE *ofp);
+extern void pmergesort(FILE *fi[], int nf, PLIST *pl, int (*pcmp)(), FILE *ofp);
 	/* metacalls.c */
 extern void mdraw(int x, int y);
 extern void msegment(int xmin, int ymin, int xmax, int ymax, char *sname,

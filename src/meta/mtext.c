@@ -9,7 +9,6 @@ static const char	RCSid[] = "$Id$";
  *  cc mtext.c mfio.o syscalls.o misc.o
  */
 
-#include <malloc.h>
 #include <string.h>
 
 #include  "meta.h"
