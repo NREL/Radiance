@@ -115,7 +115,6 @@ double  val;
 	ep2 = ep1->v.kid->sibling;
 	if (ep2->type == NUM) {
 	    ep2->v.num = val;
-	    ep2->sibling->v.tick = -1;
 	    return;
 	}
     }
@@ -129,13 +128,6 @@ double  val;
     ep2 = newnode();
     ep2->type = NUM;
     ep2->v.num = val;
-    addekid(ep1, ep2);
-    ep2 = newnode();
-    ep2->type = TICK;
-    ep2->v.tick = -1;
-    addekid(ep1, ep2);
-    ep2 = newnode();
-    ep2->type = NUM;
     addekid(ep1, ep2);
     dclear(vname);
     dpush(ep1);
@@ -501,13 +493,15 @@ EPNODE  *d;
 	quit(1);
     }
     ep1 = d->v.kid->sibling;			/* get expression */
+    if (ep1->type == NUM)
+	return(ep1->v.num);			/* return if number */
     ep2 = ep1->sibling;				/* check time */
     if (ep2->v.tick < 0 || ep2->v.tick < eclock) {
 	ep2->v.tick = eclock;
 	ep2 = ep2->sibling;
-	ep2->v.num = evalue(ep1);		/* compute new value */
+	ep2->v.num = evalue(ep1);		/* needs new value */
     } else
-	ep2 = ep2->sibling;			/* reuse old value */
+	ep2 = ep2->sibling;			/* else reuse old value */
 
     return(ep2->v.num);
 }
