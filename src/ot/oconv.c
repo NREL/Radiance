@@ -252,9 +252,16 @@ OBJECT  obj;
 					if ((1<<j) & i)
 						cukid.cuorg[j] += cukid.cusize;
 				}
-				addobject(&cukid, obj);
+							/* surfaces first */
 				for (j = 1; j <= oset[0]; j++)
-					addobject(&cukid, oset[j]);
+					if (!isvolume(objptr(oset[j])->otype))
+						addobject(&cukid, oset[j]);
+							/* then this object */
+				addobject(&cukid, obj);
+							/* volumes last */
+				for (j = 1; j <= oset[0]; j++)
+					if (isvolume(objptr(oset[j])->otype))
+						addobject(&cukid, oset[j]);
 				octkid(ot, i) = cukid.cutree;
 			}
 			cu->cutree = ot;
