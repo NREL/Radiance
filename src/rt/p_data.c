@@ -66,8 +66,7 @@ RAY  *r;
 
 	if (m->oargs.nsargs < 4)
 		objerror(m, USER, "bad # arguments");
-	if (!vardefined(sa[3]))
-		loadfunc(sa[2]);
+	funcfile(sa[2]);
 	errno = 0;
 	for (nv = 0; nv+3 < m->oargs.nsargs &&
 			sa[nv+3][0] != '-'; nv++) {
@@ -116,8 +115,7 @@ RAY  *r;
 
 	if (m->oargs.nsargs < 8)
 		objerror(m, USER, "bad # arguments");
-	if (!vardefined(sa[7]))
-		loadfunc(sa[6]);
+	funcfile(sa[6]);
 	for (nv = 0; nv+7 < m->oargs.nsargs &&
 			sa[nv+7][0] != '-'; nv++) {
 		if (nv >= MAXDIM)
@@ -170,8 +168,7 @@ RAY  *r;
 
 	if (m->oargs.nsargs < 7)
 		objerror(m, USER, "bad # arguments");
-	if (!vardefined(sa[5]))
-		loadfunc(sa[4]);
+	funcfile(sa[4]);
 	errno = 0;
 	pt[1] = varvalue(sa[5]);	/* y major ordering */
 	pt[0] = varvalue(sa[6]);

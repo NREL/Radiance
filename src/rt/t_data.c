@@ -71,8 +71,7 @@ RAY  *r;
 
 	if (nv > MAXDIM)
 		goto dimerr;
-	if (!vardefined(sa[7]))
-		loadfunc(sa[6]);
+	funcfile(sa[6]);
 	errno = 0;
 	for (i = 0; i < nv; i++)
 		pt[i] = varvalue(sa[i+7]);

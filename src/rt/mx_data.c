@@ -59,8 +59,7 @@ RAY  *r;
 			sprintf(errmsg, "undefined modifier \"%s\"", sa[i]);
 			objerror(m, USER, errmsg);
 		}
-	if (!vardefined(sa[5]))
-		loadfunc(sa[4]);
+	funcfile(sa[4]);
 	for (i = 0; i+5 < m->oargs.nsargs &&
 			sa[i+5][0] != '-'; i++) {
 		if (i >= MAXDIM)

@@ -51,8 +51,7 @@ RAY  *r;
 			sprintf(errmsg, "undefined modifier \"%s\"", sa[i]);
 			objerror(m, USER, errmsg);
 		}
-	if (!vardefined(sa[2]))
-		loadfunc(sa[3]);
+	funcfile(sa[3]);
 	errno = 0;
 	coef = varvalue(sa[2]);
 	if (errno) {

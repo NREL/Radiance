@@ -60,8 +60,7 @@ register RAY  *r;
 
 	setmap(m, r, &mxf->b);
 
-	if (!vardefined(sa[0]))
-		loadfunc(sa[3]);
+	funcfile(sa[3]);
 	errno = 0;
 	for (i = 0; i < 3; i++)
 		disp[i] = varvalue(sa[i]);

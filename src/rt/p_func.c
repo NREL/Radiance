@@ -50,8 +50,7 @@ RAY  *r;
 
 	if (m->oargs.nsargs < 2)
 		objerror(m, USER, "bad # arguments");
-	if (!vardefined(sa[0]))
-		loadfunc(sa[1]);
+	funcfile(sa[1]);
 	errno = 0;
 	bval = varvalue(sa[0]);
 	if (errno) {
@@ -77,8 +76,7 @@ RAY  *r;
 
 	if (m->oargs.nsargs < 4)
 		objerror(m, USER, "bad # arguments");
-	if (!vardefined(sa[0]))
-		loadfunc(sa[3]);
+	funcfile(sa[3]);
 	errno = 0;
 	setcolor(cval, varvalue(sa[0]),
 			varvalue(sa[1]),
