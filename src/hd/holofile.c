@@ -142,6 +142,7 @@ register HOLO	*hp;
 	}
 	if (!hp->dirty)			/* check first */
 		return(0);
+	errno = 0;
 	if (lseek(hp->fd, biglob(hp)->fo, 0) < 0)
 		error(SYSTEM, "cannot seek on holodeck file");
 	n = nbeams(hp)*sizeof(BEAMI);
@@ -221,6 +222,7 @@ int	nr;			/* number of new rays desired */
 		hp->bl[i]->tick = hdclock;	/* preempt swap */
 	if (hdcachesize > 0 && hdmemuse(0) >= hdcachesize)
 		hdfreecache(PCTFREE, NULL);	/* free some space */
+	errno = 0;
 	if (hp->bl[i] == NULL) {		/* allocate (and load) */
 		n = hp->bi[i].nrd + nr;
 		if ((hp->bl[i] = (BEAM *)malloc(hdbsiz(n))) == NULL)
@@ -316,22 +318,24 @@ register int	i;
 			}
 					/* coalesce adjacent fragments */
 			for (j = k = 0; k < f->nfrags; j++, k++) {
-				if (j != k)
+				if (k > j)
 					copystruct(f->fi+j, f->fi+k);
-				while (k+1 < f->nfrags &&
-				f->fi[k+1].fo + f->fi[k+1].nrd*sizeof(RAYVAL)
-						== f->fi[j].fo)
+				while (k+1 < f->nfrags && f->fi[k+1].fo +
+						f->fi[k+1].nrd*sizeof(RAYVAL)
+							== f->fi[j].fo) {
 					f->fi[j].fo -=
 						f->fi[++k].nrd*sizeof(RAYVAL);
+					f->fi[j].nrd += f->fi[k].nrd;
+				}
 			}
 			f->nfrags = j;
 		}
 		k = -1;			/* find closest-sized fragment */
 		for (j = f->nfrags; j-- > 0; )
 			if (f->fi[j].nrd >= nrays &&
-					(k < 0 || f->fi[j].nrd < f->fi[k].nrd)
-					&& f->fi[k=j].nrd == nrays)
-				break;
+					(k < 0 || f->fi[j].nrd < f->fi[k].nrd))
+				if (f->fi[k=j].nrd == nrays)
+					break;
 		if (k < 0) {		/* no fragment -- extend file */
 			hp->bi[i].fo = f->flen;
 			f->flen += nrays*sizeof(RAYVAL);
