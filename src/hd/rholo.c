@@ -1,4 +1,4 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
+/* Copyright (c) 1999 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -14,6 +14,9 @@ static char SCCSid[] = "$SunId$ SGI";
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#ifndef RTFLUSH
+#define RTFLUSH		0		/* flush one at a time in batch */
+#endif
 #ifndef FRAGWARN
 #define FRAGWARN	20		/* fragmentation for warning (%) */
 #endif
@@ -150,7 +153,7 @@ int  signo;
 	if (gotsig++)			/* two signals and we're gone! */
 		_exit(signo);
 
-	alarm(120);			/* allow 2 minutes to clean up */
+	alarm(180);			/* allow 3 minutes to clean up */
 	signal(SIGALRM, SIG_DFL);	/* make certain we do die */
 	eputs("signal - ");
 	eputs(sigerr[signo]);
@@ -511,8 +514,13 @@ PACKET	*pl;
 				p->nr*sizeof(RAYVAL));
 			if (outdev != NULL)	/* display it */
 				disp_packet((PACKHEAD *)p);
-			if (hdcachesize <= 0)	/* manual flushing */
+			if (hdcachesize <= 0) {
+#if RTFLUSH
+				if (outdev == NULL)
+					hdfreebeam(hdlist[p->hd], p->bi);
+#endif
 				n2flush++;
+			}
 			nraysdone += p->nr;
 			npacksdone++;
 			p->nr = 0;
@@ -525,10 +533,14 @@ PACKET	*pl;
 #else
 	if (n2flush > 50*totqlen) {
 #endif
-		if (outdev == NULL)
-			hdflush(NULL);		/* flush holodeck buffers */
+#if RTFLUSH
+		hdsync(NULL, outdev!=NULL);	/* sync beams & directories */
+#else
+		if (outdev != NULL)
+			hdsync(NULL, 1);
 		else
-			hdsync(NULL, 1);	/* sync holodeck file */
+			hdflush(NULL);
+#endif
 		n2flush = 0;
 	}
 }
