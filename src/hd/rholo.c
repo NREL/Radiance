@@ -108,7 +108,7 @@ char	*argv[];
 						/* load RIF if any */
 	getradfile();
 
-	if (hdlist[i] == NULL) {		/* create new holodeck */
+	if (hdlist[0] == NULL) {		/* create new holodeck */
 							/* set defaults */
 		setdefaults(&hdg);
 							/* holodeck exists? */
@@ -142,7 +142,7 @@ int  signo;
 	if (gotsig++)			/* two signals and we're gone! */
 		_exit(signo);
 
-	alarm(30);			/* allow 30 seconds to clean up */
+	alarm(60);			/* allow 60 seconds to clean up */
 	signal(SIGALRM, SIG_DFL);	/* make certain we do die */
 	eputs("signal - ");
 	eputs(sigerr[signo]);
@@ -272,13 +272,14 @@ rholo()				/* holodeck main loop */
 		if (!disp_check(idle))
 			return(0);
 					/* display only? */
-	if (nprocs <= 0)
+	if (nprocs <= 0) {
+		idle = 1;
 		return(outdev != NULL);
+	}
 					/* check file size */
 	if (maxdisk > 0 && hdfilen(hdlist[0]->fd) >= maxdisk) {
 		error(WARNING, "file limit exceeded");
 		done_rtrace();
-		idle = 1;
 		return(1);	/* comes back */
 	}
 					/* check time */
@@ -287,12 +288,11 @@ rholo()				/* holodeck main loop */
 	if (endtime > 0 && t >= endtime) {
 		error(WARNING, "time limit exceeded");
 		done_rtrace();
-		idle = 1;
 		return(1);	/* comes back */
 	}
 	if (reporttime > 0 && t >= reporttime)
 		report(t);
-					/* get packets to process */
+	idle = 0;			/* get packets to process */
 	while (freepacks != NULL) {
 		p = freepacks; freepacks = p->next; p->next = NULL;
 		if (!next_packet(p)) {
@@ -335,10 +335,6 @@ register HDGRID	*gp;
 	if (!vdef(VDIST)) {
 		vval(VDIST) = "F";
 		vdef(VDIST)++;
-	}
-	if (!vdef(OCCUPANCY)) {
-		vval(OCCUPANCY) = "U";
-		vdef(OCCUPANCY)++;
 	}
 				/* append rendering options */
 	if (vdef(RENDER))
