@@ -22,6 +22,12 @@ static char SCCSid[] = "$SunId$ SGI";
 #define FSIZDEF		0.125	/* default focus frame size */
 #endif
 
+#ifdef linux
+#define fbufcnt(f)	((f)->_IO_read_end - (f)->_IO_read_ptr)
+#else
+#define fbufcnt(f)	((f)->_cnt)
+#endif
+
 HOLO	*hdlist[HDMAX+1];	/* global holodeck list */
 
 char	*hdgfn[HDMAX];		/* holodeck section geometry list */
@@ -157,9 +163,9 @@ disp_wait()			/* wait for more input */
 	if (hdlist[0] == NULL)
 		return(RDY_SRV);	/* initialize first */
 	flgs = 0;		/* flag what's ready already */
-	if (imm_mode || stdin->_cnt > 0)
+	if (imm_mode || fbufcnt(stdin) > 0)
 		flgs |= RDY_SRV;
-	if (sstdin != NULL && sstdin->_cnt > 0)
+	if (sstdin != NULL && fbufcnt(sstdin) > 0)
 		flgs |= RDY_SIN;
 	if (odev.inpready)
 		flgs |= RDY_DEV;
