@@ -1,0 +1,325 @@
+		TRANSLATING TO MGF FROM OTHER FORMATS
+		SCCSid "$SunId$ LBL"
+
+The description of the parser and the MGF specification should provide
+enough information to get you started using MGF scene files, but we
+thought it would be helpful to also provide some hints and
+suggestions for translating to MGF from other formats.
+Specifically, we will discuss several issues that come up repeatedly
+when converting from more usual computer graphics scene formats to
+MGF, most of them having to do with materials.  First, let's look at
+some geometry-related issues.
+
+Vertex Naming
+=============
+Many scene formats do not name vertices; many do not even share
+vertices.  Does it matter what names are given to vertices in MGF?
+Not a lot, but it can affect memory and file size.  In a way, vertex
+sharing is nothing more than a form of file compression, and the
+better you are at sharing vertex information, the smaller your file
+will be.  (Vertex sharing is also important for some rendering
+algorithms, which depend on it for computing surface adjacency.)
+
+If you are translating from a format that shares unnamed vertices,
+such as Wavefront's .OBJ format, you will want to name your MGF
+vertices according to some simple pattern.  In most cases, a name
+such as "v%d" will do, where %d is replaced by an incremented
+integer.
+
+If, on the other hand, you are translating from a format that does
+not share vertices, you should do one of two things.  You should
+either select your MGF vertex names from a small, recycled pool of
+names, or figure out some way to share vertices that were not shared
+before.  In the first case, you will just allocate as many vertex
+names as you need for any given object, then reuse these names and
+therefore the parsers memory for other objects.  In the second case,
+you will cache vertex names and values in some LRU table of
+predetermined size, and use this table to merge vertices in the
+file.  (See rad2mgf.c as an example of how this can be done.)
+
+For some objects, there may be little point in merging vertices, and
+you may want to treat these surfaces separately.  For example,
+putting out an MGF ring means putting out a central vertex, which
+must have both a position point and a normal direction.  It is somewhat
+unlikely that any other MGF entity will share this point, and quite
+unlikely that it will share the normal direction, so there is little
+sense in trying to merge or otherwise reuse it.
+
+Points and Lines
+================
+Although points and lines are really 3-d surfaces, many CAD
+systems include them in their models.  The question then is,
+what do we do with these in MGF?  If the idea is to produce a point
+or line on the final display that is one or two pixels wide, there
+is little one can do to guarantee such a thing will happen because
+the pixel size is dependent on view and display parameters as well
+as scene location.
+
+There are two ways of dealing with points and lines in MGF.  The
+first is to say, "Hey, these are 0 and 1 dimensional entities, so
+they won't appear in 3 dimensions," and get rid of them.  The second
+approach is to assign some user-specified dimension for the "width"
+of points and lines, and turn them into spheres and cylinders.  It
+might be best to instead create minimal polyhedron analogs, such as
+tetrahedra for points and triangular prisms for lines.  That way, an
+itty-bitty point won't be converted into 200 polygons because the
+translator reading in the MGF file can't handle curved surfaces.
+
+Polygons with Holes
+===================
+There is no explicit representation of holes in MGF.  A hole must be
+represented implicitly by connecting vertices to form "seams."  For
+example, a wall with a window in it might look like this:
+
+      v1.-----------------------------------------------.v4
+	|						|
+	|	      v8.---------------.v5		|
+	|		|		|		|
+	|		|		|		|
+	|	      v7.---------------.v6		|
+	|						|
+	|						|
+      v2.-----------------------------------------------.v3
+
+In many systems, the wall itself would be represented with the first
+list of vertices, (v1,v2,v3,v4) and the hole associated with that
+wall as a second set of vertices (v5,v6,v7,v8).  In MGF, we must
+give the whole thing as a single polygon, connecting the vertices so
+as to create a "seam," thus:
+
+      v1.----------------------<------------------------.v4
+	|				   _____--><---'|
+	|	      v8.------->-------.v5		|
+	|		|		v		|
+	v		^		|		^
+	|	      v7.-------<-------.v6		|
+	|						|
+	|						|
+      v2.---------------------->------------------------.v3
+
+which could be written in MGF as "f v1 v2 v3 v4 v5 v6 v7 v8 v5 v4".
+
+It is very important that the order of the hole be opposite to the
+order of the outer perimeter, otherwise the polygon will be
+"twisted" on top of itself.  Note also that the seam was traversed
+in both directions, once going from v4 to v5, and again returning
+from v5 to v4.  This is a necessary condition for a proper seam.
+(The final edge from v4 back to v1 is implied in MGF.)
+
+The choice of vertices to make into a seam is somewhat arbitrary, but
+some rendering systems may not give sane results if you cross over a
+hole with part of your seam.  If we had chosen to create the seam
+between v2 and v5 in the above example instead of v4 and v5, the seam
+would cross our hole and may not render correctly.  (For systems that
+are sensitive to this, it is probably necessary that their MGF
+loader/translator re-expresses seams in terms of holes again, which can
+be done easily so long as vertices are shared in the above fashion.)
+
+Non-planar Polygons
+===================
+Polygons in MGF should be planar.  There is nothing about the format
+that enforces this, but the rendering or modeling software on the other
+end may have real problems if this requirement is violated.  The parser
+itself does not test for non-planar polygons, so when in doubt about a
+model it is safest to test for planarity and break a polygon into triangles
+if it is even slightly non-planar.
+
+NURBS, CSG, Blobbies, Etc.
+==========================
+Sorry, folks, this is just plain hard.  If and until MGF supports these
+higher-order entities, it will be necessary for you to convert them to
+smoothed triangle meshes.  Fortunately, a lot of modeling software
+already knows how to do this, so if you wrote the modeler, you probably
+have access to the necessary code.  (By the way, if you ever want to see
+these primitives in MGF, you might just think about sharing the wealth,
+because the MGF parser needs to mesh every primitive it supports.)
+
+Materials
+=========
+The MGF material model was designed to accommodate most common
+physical surfaces.  Included are reasonable models for plastic
+and metal, thin glass and translucent surfaces.  Not included at
+this time are surfaces with anisotropic reflection, refraction and/or
+surface textures.  These were deemed either unnecessary or too
+difficult to standardize for the initial format.  Also, light
+sources are known only by the emissive nature of their surface(s),
+and MGF itself only provides for diffuse emission.  (As MGF is
+destined to be part of the IES luminaire data standard, it was
+assumed that this combined format would be used for such purposes as
+describing light source output and geometry.)
+
+The "sides" entity is used to control the number of sides a surface
+should have.  In the real world, a surface can have only one side,
+defining the interface between one volume and another.  Many
+object-space rendering packages (e.g. z-buffer algorithms) take
+advantage of this fact by culling back-facing polygons and thus saving
+roughly 50% of the calculation time.  However, many models rely on an
+approximation whereby a single surface is used to represent a very thin
+volume, such as a pane of glass, and this also can provide significant
+calculational savings in an image-space algorithm (such as
+ray-tracing).  Since both types of surfaces are useful and both types
+of rendering algorithms may ultimately be applied, MGF provides a way
+to specify sidedness rather than picking one model or the other.
+
+So-called specular reflection and transmission are modeled using a
+Gaussian distribution of surface normals.  The "alpha_r" and
+"alpha_t" parameters to the respective "rs" and "ts" entities specify
+the root-mean-squared (RMS) surface facet slope, which varies from 0
+for a perfectly smooth surface to around .2 for a fairly rough one.
+The effect this will have on the reflected component distribution is
+well-defined, but predicting the behavior of the transmitted
+component requires further assumptions.  We assume that the surface
+scatters light passing through it just as much as it scatters
+reflected light.  This assumption is approximately correct for a
+two-sided transparent material with an index of refraction of 1.5
+(about that of glass) and both sides having the given RMS facet
+slope.
+
+Oftentimes, one is translating from a Phong exponent on the cosine
+of the half-vector-to-normal angle to the more physical but less
+familiar Gaussian model of MGF.  The hardest part is translating
+the specular power to a roughness value.  For this, we recommend
+the following approximation:
+
+	roughness = 0.6/sqrt(specular_power)
+
+It's not a perfect correlation, but it's about as good as you can get.
+
+Colors
+======
+Unlike most graphics languages, MGF does not use an RGB color model,
+simply because there is no recognized definition for this model.
+It is based on computer monitor phosphors, which vary from one
+CRT to the next.  (There is an RGB standard defined in the TV
+industry, but this has a rather poor correlation to most graphics.)
+
+MGF uses two alternative, well-defined standards.  The first is the CIE
+standard for chromaticity coordinates.  With this standard, any viewable
+color may be exactly reproduced.  Unfortunately, the interaction between
+colors (i.e. colored light sources and interreflections) cannot be
+specified exactly with any finite coordinate set, including CIE
+chromaticities.  So, MGF offers the ability to give reflectance,
+transmittance or emittance as a function of wavelength over the visible
+spectrum.  This function is still discretized, but at a user-selectable
+resolution.  Furthermore, spectral colors may be mixed, providing (nearly)
+arbitrary basis functions, which can produce more accurate results in
+some cases and are a convenience in others.
+
+Conversion back and forth between CIE chromaticity coordinates and spectral
+samples is provided within the MGF parser.  Unfortunately, conversion
+to and from RGB values depends on a particular RGB definition, and as we
+have said, there is no recognized standard.  We therefore recommend that
+you decide yourself what chromaticity values to use for each RGB primary,
+and adopt the following code to convert between CIE and RGB coordinates.
+
+#ifdef  NTSC
+#define  CIE_x_r		0.670		/* standard NTSC primaries */
+#define  CIE_y_r		0.330
+#define  CIE_x_g		0.210
+#define  CIE_y_g		0.710
+#define  CIE_x_b		0.140
+#define  CIE_y_b		0.080
+#define  CIE_x_w		0.3333		/* monitor white point */
+#define  CIE_y_w		0.3333
+#else
+#define  CIE_x_r		0.640		/* nominal CRT primaries */
+#define  CIE_y_r		0.330
+#define  CIE_x_g		0.290
+#define  CIE_y_g		0.600
+#define  CIE_x_b		0.150
+#define  CIE_y_b		0.060
+#define  CIE_x_w		0.3333		/* monitor white point */
+#define  CIE_y_w		0.3333
+#endif
+
+#define CIE_D		(	CIE_x_r*(CIE_y_g - CIE_y_b) + \
+				CIE_x_g*(CIE_y_b - CIE_y_r) + \
+				CIE_x_b*(CIE_y_r - CIE_y_g)	)
+#define CIE_C_rD	( (1./CIE_y_w) * \
+				( CIE_x_w*(CIE_y_g - CIE_y_b) - \
+				  CIE_y_w*(CIE_x_g - CIE_x_b) + \
+				  CIE_x_g*CIE_y_b - CIE_x_b*CIE_y_g	) )
+#define CIE_C_gD	( (1./CIE_y_w) * \
+				( CIE_x_w*(CIE_y_b - CIE_y_r) - \
+				  CIE_y_w*(CIE_x_b - CIE_x_r) - \
+				  CIE_x_r*CIE_y_b + CIE_x_b*CIE_y_r	) )
+#define CIE_C_bD	( (1./CIE_y_w) * \
+				( CIE_x_w*(CIE_y_r - CIE_y_g) - \
+				  CIE_y_w*(CIE_x_r - CIE_x_g) + \
+				  CIE_x_r*CIE_y_g - CIE_x_g*CIE_y_r	) )
+
+#define CIE_rf		(CIE_y_r*CIE_C_rD/CIE_D)
+#define CIE_gf		(CIE_y_g*CIE_C_gD/CIE_D)
+#define CIE_bf		(CIE_y_b*CIE_C_bD/CIE_D)
+
+float  xyz2rgbmat[3][3] = {	/* XYZ to RGB */
+	{(CIE_y_g - CIE_y_b - CIE_x_b*CIE_y_g + CIE_y_b*CIE_x_g)/CIE_C_rD,
+	 (CIE_x_b - CIE_x_g - CIE_x_b*CIE_y_g + CIE_x_g*CIE_y_b)/CIE_C_rD,
+	 (CIE_x_g*CIE_y_b - CIE_x_b*CIE_y_g)/CIE_C_rD},
+	{(CIE_y_b - CIE_y_r - CIE_y_b*CIE_x_r + CIE_y_r*CIE_x_b)/CIE_C_gD,
+	 (CIE_x_r - CIE_x_b - CIE_x_r*CIE_y_b + CIE_x_b*CIE_y_r)/CIE_C_gD,
+	 (CIE_x_b*CIE_y_r - CIE_x_r*CIE_y_b)/CIE_C_gD},
+	{(CIE_y_r - CIE_y_g - CIE_y_r*CIE_x_g + CIE_y_g*CIE_x_r)/CIE_C_bD,
+	 (CIE_x_g - CIE_x_r - CIE_x_g*CIE_y_r + CIE_x_r*CIE_y_g)/CIE_C_bD,
+	 (CIE_x_r*CIE_y_g - CIE_x_g*CIE_y_r)/CIE_C_bD}
+};
+
+float  rgb2xyzmat[3][3] = {	/* RGB to XYZ */
+	{CIE_x_r*CIE_C_rD/CIE_D,CIE_x_g*CIE_C_gD/CIE_D,CIE_x_b*CIE_C_bD/CIE_D},
+	{CIE_y_r*CIE_C_rD/CIE_D,CIE_y_g*CIE_C_gD/CIE_D,CIE_y_b*CIE_C_bD/CIE_D},
+	{(1.-CIE_x_r-CIE_y_r)*CIE_C_rD/CIE_D,
+	 (1.-CIE_x_g-CIE_y_g)*CIE_C_gD/CIE_D,
+	 (1.-CIE_x_b-CIE_y_b)*CIE_C_bD/CIE_D}
+};
+
+
+cie_rgb(rgbcolor, ciecolor)		/* convert CIE to RGB */
+register float  *rgbcolor, *ciecolor;
+{
+	register int  i;
+
+	for (i = 0; i < 3; i++) {
+		rgbcolor[i] =	xyz2rgbmat[i][0]*ciecolor[0] +
+				xyz2rgbmat[i][1]*ciecolor[1] +
+				xyz2rgbmat[i][2]*ciecolor[2] ;
+		if (rgbcolor[i] < 0.0)
+			rgbcolor[i] = 0.0;
+	}
+}
+
+
+rgb_cie(ciecolor, rgbcolor)		/* convert RGB to CIE */
+register float  *ciecolor, *rgbcolor;
+{
+	register int  i;
+
+	for (i = 0; i < 3; i++)
+		ciecolor[i] =	rgb2xyzmat[i][0]*rgbcolor[0] +
+				rgb2xyzmat[i][1]*rgbcolor[1] +
+				rgb2xyzmat[i][2]*rgbcolor[2] ;
+}
+
+Another alternative is to use the MGF "cmix" entity to convert from RGB
+directly by naming the three primaries in terms of their chromaticities, e.g:
+
+	c r =
+		cxy 0.640 0.330
+	c g =
+		cxy 0.290 0.600
+	c b =
+		cxy 0.150 0.060
+
+Then, converting from RGB to MGF colors is as simple as multiplying each
+component by its relative luminance in a cmix statement, for instance:
+
+	c white =
+		cmix 0.265 r 0.670 g 0.065 b
+
+For the chosen RGB standard, the above specification would result a pure
+white.  The reason the coefficients are not all 1 as you might expect is
+that cmix uses relative luminance as the standard for its weights.  Since
+blue is less luminous for the same energy than red, which is in turn
+less luminous than green, the weights cannot be the same to achieve an
+even spectral balance.  Unfortunately, computing these relative weights
+is not straightforward, so it is given in the above macros as CIE_rf,
+CIE_gf and CIE_bf.
