@@ -69,9 +69,9 @@ if ( "$ilpict" == "$nofile" && "$dfpict" == "$nofile" ) then
 endif
 echo "Title for output picture"
 readvar title
+set sctemp=/usr/tmp/sc$$.csh
 cat <<'_EOF_' > $sctemp
 set iltemp=/usr/tmp/il$$.pic
-set sctemp=/usr/tmp/sc$$.csh
 set tltemp=/usr/tmp/tl$$.pic
 set tempfiles=($iltemp $sctemp $tltemp)
 echo "Your dayfact job is finished."
@@ -95,7 +95,7 @@ if ( "$ilpict" != "$nofile" ) then
 endif
 if ( "$dfpict" != "$nofile" ) then
 	echo 'falsecolor -cb -l DF $fcopts \\
-		-s "100*$maxval/PI/$extamb" -m "100/PI/$extamb" -ip $iltemp \\
+		-s "100/PI*$maxval/$extamb" -m "100/PI/$extamb" -ip $iltemp \\
 		| pcompos -a 1 - $tltemp > $dfpict' >> $sctemp
 endif
 echo 'rm -f $tempfiles' >> $sctemp
