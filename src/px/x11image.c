@@ -276,7 +276,7 @@ char **argv;
 	if (gamstr == NULL)		/* get it from the X server */
 		gamstr = XGetDefault(thedisplay, "radiance", "gamma");
 	if (gamstr == NULL)		/* get it from the environment */
-		gamstr = getenv("GAMMA");
+		gamstr = getenv("DISPLAY_GAMMA");
 	if (gamstr != NULL)
 		gamcor = atof(gamstr);
 				/* get best visual for default screen */

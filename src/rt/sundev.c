@@ -122,7 +122,7 @@ char  *name, *id;
 		stderr_v("not a color screen\n");
 		return(NULL);
 	}
-	if ((gv = getenv("GAMMA")) != NULL)
+	if ((gv = getenv("DISPLAY_GAMMA")) != NULL)
 		make_gmap(atof(gv));
 	else
 		make_gmap(GAMMA);
