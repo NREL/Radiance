@@ -4,12 +4,6 @@
 static char SCCSid[] = "$SunId$ LBL";
 #endif
 
-/* Copyright (c) 1992 Regents of the University of California */
-
-#ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
-#endif
-
 /*
  *  Radiance picture to PostScript file translator -- one way!
  */
@@ -116,6 +110,7 @@ char  *name;
 {
 	int  landscape = 0;
 	double  pwidth, pheight;
+	double  iwidth, iheight;
 
 	printf("%%!\n");
 	printf("%%%%Title: %s\n", name);
@@ -129,10 +124,10 @@ char  *name;
 	printf("gsave\n");
 	printf("64 dict begin\n");
 					/* set up transformation matrix */
-	printf("%f %f translate 1 -1 scale\n", HMARGIN, VMARGIN+PHEIGHT);
+	printf("%f %f translate\n", HMARGIN, VMARGIN);
 	if (PWIDTH > PHEIGHT ^ landscape) {
 		printf("0 %f translate\n", PHEIGHT);
-		printf("90 rotate\n");
+		printf("-90 rotate\n");
 		pwidth = PHEIGHT;
 		pheight = PWIDTH;
 	} else {
@@ -140,20 +135,18 @@ char  *name;
 		pheight = PHEIGHT;
 	}
 	if (pheight/pwidth > pixaspect*ymax/xmax) {
-		printf("%f %f matrix scale\n", pwidth/xmax,
-				pixaspect*pwidth/xmax);
-		printf("0 %f matrix translate\n",
-				.5*(pheight-pwidth*pixaspect*ymax/xmax));
+		iwidth = pwidth;
+		iheight = pwidth*pixaspect*ymax/xmax;
 	} else {
-		printf("%f %f matrix scale\n", pheight/(ymax*pixaspect),
-				pheight/ymax);
-		printf("%f 0 matrix translate\n",
-				.5*(pwidth-pheight*xmax/(ymax*pixaspect)));
+		iheight = pheight;
+		iwidth = pheight*xmax/(pixaspect*ymax);
 	}
-	printf("matrix concatmatrix /imat exch def\n");
+	printf("%f %f translate\n", (pwidth-iwidth)*.5, (pheight-iheight)*.5);
+	printf("%f %f scale\n", iwidth, iheight);
 	PSprocdef("read6bit");
 	printf("%%%%EndProlog\n");
-	printf("%d %d 8 imat {read6bit} image", xmax, ymax);
+	printf("%d %d 8 [%d 0 0 %d 0 %d] {read6bit} image", xmax, ymax,
+			xmax, -ymax, ymax);
 }
 
 
