@@ -172,7 +172,7 @@ int	(*compf)();
 		exit(1);
 	}
 					/* start child process */
-	if ((pid = vfork()) == 0) {
+	if ((pid = fork()) == 0) {
 		close(pfd[0]);			/* connect stderr to pipe */
 		if (pfd[1] != 2) {
 			dup2(pfd[1], 2);

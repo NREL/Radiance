@@ -33,7 +33,7 @@ char	*av[]
 		return(0);
 	if (pipe(p0) < 0 || pipe(p1) < 0)
 		return(-1);
-	if ((pd->pid = vfork()) == 0) {		/* if child */
+	if ((pd->pid = fork()) == 0) {		/* if child */
 		close(p0[1]);
 		close(p1[0]);
 		if (p0[0] != 0) {	/* connect p0 to stdin */

@@ -13,8 +13,6 @@ static const char	RCSid[] = "$Id$";
 
 #include "standard.h"
 
-#include "paths.h"
-
 #include "driver.h"
 
 #ifndef DEVPATH
@@ -82,7 +80,7 @@ char	*dname, *id;
 						/* open communication pipes */
 	if (pipe(p1) == -1 || pipe(p2) == -1)
 		goto syserr;
-	if ((devchild = vfork()) == 0) {	/* fork driver process */
+	if ((devchild = fork()) == 0) {	/* fork driver process */
 		close(p1[1]);
 		close(p2[0]);
 		sprintf(pin, "%d", p1[0]);

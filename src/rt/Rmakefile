@@ -244,8 +244,6 @@ p_func.o t_data.o t_func.o:	func.h ../common/calcomp.h
 preload.o:	../common/object.h ../common/face.h ../common/cone.h \
 ../common/instance.h ../common/mesh.h ../common/color.h data.h
 
-devcomm.o:	../common/paths.h
-
 rtmain.o rpmain.o rvmain.o persist.o duphead.o rpict.o:	../common/paths.h
 
 freeobjmem.o raycalls.o text.o:	../common/font.h

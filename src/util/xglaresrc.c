@@ -9,7 +9,6 @@ static const char	RCSid[] = "$Id$";
 
 #include "standard.h"
 #include "view.h"
-#include "paths.h"
 #include <signal.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -117,7 +116,7 @@ char	*pname, *wname;
 			exit(2);
 		}
 					/* start ximage */
-		if (vfork() == 0) {
+		if (fork() == 0) {
 			execlp(XIM, XIM, "-c", "256", pname, 0);
 			perror(XIM);
 			fprintf(stderr, "%s: cannot start %s\n",
