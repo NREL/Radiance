@@ -71,7 +71,7 @@ char  *fname;
 		if (g == NULL)
 			goto memerr;
 		g->nverts = ngv;
-		g->start = g->width = 128;
+		g->left = g->right = g->top = g->bottom = 128;
 		ngv *= 2;
 		gp = gvlist(g);
 		while (ngv--) {
@@ -82,13 +82,18 @@ char  *fname;
 				goto fonterr;
 			}
 			*gp++ = gv;
-			if (ngv & 1)		/* follow x limits */
-				if (gv < g->start)
-					g->start = gv;
-				else if (gv > g->width)
-					g->width = gv;
+			if (ngv & 1) {		/* follow x limits */
+				if (gv < g->left)
+					g->left = gv;
+				else if (gv > g->right)
+					g->right = gv;
+			} else {		/* follow y limits */
+				if (gv < g->bottom)
+					g->bottom = gv;
+				else if (gv > g->top)
+					g->top = gv;
+			}
 		}
-		g->width -= g->start;
 		f->fg[gn] = g;
 	}
 	fclose(fp);
@@ -104,3 +109,49 @@ fonterr:
 memerr:
 	error(SYSTEM, "out of memory in fontglyph");
 }
+
+
+int
+squeeztext(sp, tp, f, cis)		/* squeeze text line */
+short  *sp;			/* returned character spacing */
+char  *tp;			/* text line */
+FONT  *f;			/* font */
+int  cis;			/* intercharacter spacing */
+{
+	int  linelen;
+	register GLYPH  *gp;
+
+	gp = NULL;
+	while (*tp && (gp = f->fg[*tp++&0xff]) == NULL)
+		*sp++ = 0;
+	cis /= 2;
+	linelen = *sp = 0;
+	while (gp != NULL) {
+		if (gp->nverts) {		/* regular character */
+			linelen += *sp++ += cis - gp->left;
+			*sp = gp->right + cis;
+		} else {			/* space */
+			linelen += *sp++;
+			*sp = 256;
+		}
+		gp = NULL;
+		while (*tp && (gp = f->fg[*tp++&0xff]) == NULL) {
+			linelen += *sp++;
+			*sp = 0;
+		}
+	}
+	linelen += *sp;
+	return(linelen);
+}
+
+
+proptext(sp, tp, f, cis, nsi)		/* space line proportionally */
+short  *sp;			/* returned character spacing */
+char  *tp;			/* text line */
+FONT  *f;			/* font */
+int  cis;			/* target intercharacter spacing */
+int  nsi;			/* minimum number of spaces for indent */
+{
+}
+
+
