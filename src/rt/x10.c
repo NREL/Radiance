@@ -36,7 +36,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define COMCH		13		/* approx. character height (pixels) */
 
 #ifndef WFLUSH
-#define WFLUSH		30		/* flush after this many rays */
+#define WFLUSH		50		/* flush after this many rays */
 #endif
 
 #define  hashcolr(c)	((67*(c)[RED]+59*(c)[GRN]+71*(c)[BLU])%ncolors)
@@ -201,6 +201,8 @@ int  xmin, ymin, xmax, ymax;
 				pixval[ndx]);
 	}
 	if (nrays - lastflush >= WFLUSH) {
+		if (ncolors <= 0)	/* output necessary for death */
+			XPixSet(gwind,0,0,1,1,BlackPixel);
 		checkinp();
 		lastflush = nrays;
 	}
