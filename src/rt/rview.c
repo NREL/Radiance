@@ -18,8 +18,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <signal.h>
 
-#include  <setjmp.h>
-
 #include  <ctype.h>
 
 VIEW  ourview = STDVIEW;		/* viewing parameters */
@@ -57,7 +55,6 @@ PNODE  ptrunk;				/* the base of our image */
 RECT  pframe;				/* current frame boundaries */
 int  pdepth;				/* image depth in current frame */
 
-static jmp_buf  mainloop;		/* longjmp back to main loop */
 static char  *reserve_mem = NULL;	/* pre-allocated reserve memory */
 
 #define RESERVE_AMT	8192		/* amount of memory to reserve */
@@ -119,15 +116,15 @@ rview()				/* do a view */
 	char  buf[32];
 
 	devopen(devname);		/* open device */
-	newimage();			/* set up image */
-	setjmp(mainloop);
-	for ( ; ; ) {			/* quit in command() */
-		while (hresolu <= 1<<pdepth &&
-				vresolu <= 1<<pdepth)
-			command("done: ");
+	newimage();			/* start image (calls fillreserves) */
 
-		if (hresolu <= psample<<pdepth &&
-				vresolu <= psample<<pdepth) {
+	for ( ; ; ) {			/* quit in command() */
+		while (hresolu <= 1<<pdepth && vresolu <= 1<<pdepth)
+			command("done: ");
+		while (reserve_mem == NULL)
+			command("out of memory: ");
+		errno = 0;
+		if (hresolu <= psample<<pdepth && vresolu <= psample<<pdepth) {
 			sprintf(buf, "%d sampling...\n", 1<<pdepth);
 			(*dev->comout)(buf);
 			rsample();
@@ -136,35 +133,30 @@ rview()				/* do a view */
 			(*dev->comout)(buf);
 			refine(&ptrunk, 0, 0, hresolu, vresolu, pdepth+1);
 		}
-		if (dev->inpready)
+		if (errno == ENOMEM)		/* ran out of memory */
+			freereserves();
+		else if (dev->inpready)		/* noticed some input */
 			command(": ");
-		else
+		else				/* finished this depth */
 			pdepth++;
 	}
 }
 
 
-memreserve()			/* fill memory reserves */
+fillreserves()			/* fill memory reserves */
 {
 	if (reserve_mem != NULL)
-		return;			/* got some already */
+		return;
 	reserve_mem = malloc(RESERVE_AMT);
 }
 
 
-memerror(detail)		/* try and rescue a memory error */
-char	*detail;
+freereserves()			/* free memory reserves */
 {
-	if (reserve_mem == NULL) {
-		sprintf(errmsg, "out of memory %s", detail);
-		error(SYSTEM, errmsg);
-	}
+	if (reserve_mem == NULL)
+		return;
 	free(reserve_mem);
 	reserve_mem = NULL;
-	do
-		command("out of memory: ");
-	while (reserve_mem == NULL);
-	longjmp(mainloop, 1);
 }
 
 
@@ -300,10 +292,10 @@ rsample()			/* sample the image */
 	ysiz = (((pframe.u-pframe.d)<<pdepth)+vresolu-1) / vresolu;
 	rl = (RECT *)malloc(xsiz*sizeof(RECT));
 	if (rl == NULL)
-		memerror("in rsample");
+		return;
 	pl = (PNODE **)malloc(xsiz*sizeof(PNODE *));
 	if (pl == NULL)
-		memerror("in rsample");
+		return;
 	/*
 	 * Initialize the bottom row.
 	 */
@@ -390,7 +382,7 @@ int  pd;
 	if (p->kid == NULL) {			/* subdivide */
 
 		if ((p->kid = newptree()) == NULL)
-			memerror("in refine");
+			return(growth);
 		/*
 		 *  The following paint order can leave a black pixel
 		 *  when redraw() is called in (*dev->paintr)().

@@ -178,6 +178,8 @@ newimage()				/* start a new image */
 {
 						/* free old image */
 	freepkids(&ptrunk);
+						/* save reserve memory */
+	fillreserves();
 						/* compute resolution */
 	hresolu = dev->xsiz;
 	vresolu = dev->ysiz;
