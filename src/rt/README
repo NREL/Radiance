@@ -30,6 +30,7 @@ devmain.c	main for independent drivers
 devtable.c	device table for rview
 dielectric.c	shading function for transparent materials
 editline.c	routine for editing raw input for rview
+fprism.c	routines for prismatic glazing calculations
 freeobjmem.c	routines for freeing unneeded object structures
 func.c		interface to calcomp functions
 glass.c		simpler shading function for thin glass surfaces
@@ -51,6 +52,8 @@ o_face.c	compute ray intersection with faces
 o_instance.c	routines for computing ray intersections with octrees
 p_data.c	routine for stored patterns
 p_func.c	routine for procedural patterns
+persist.c	routines for persistent (& parallel) execution
+preload.c	routines for preloading (initializing) data structures
 rayinit.cal	initialization function file
 raytrace.c	routines for tracing and shading rays
 readfargs.c	allocate, read and free object arguments
