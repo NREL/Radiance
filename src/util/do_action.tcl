@@ -223,7 +223,7 @@ proc do_action w {		# Action screen
 			-command {view_txt $bfname}
 	place $w.rbce -relwidth .1786 -relheight .0610 -relx .6429 -rely .5488
 	helplink $w.rbce trad action checkerr
-	if [file exists $bfname] {
+	if [file isfile $bfname] {
 		set fi [open $bfname r]
 		if {[scan [gets $fi] $batch_fmt batch_pid batch_host] != 2} {
 			set batch_host unknown

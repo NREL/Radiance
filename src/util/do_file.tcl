@@ -143,7 +143,7 @@ proc putradvar {fi vn} {	# print out a rad variable
 proc load_vars {f {vl all}} {	# load RIF variables
 	global curmess radvar alldone
 	if {"$f" == ""} {return 0}
-	if {! [file exists $f]} {
+	if {! [file isfile $f]} {
 		beep
 		set curmess "$f: no such file."
 		return 0
@@ -238,13 +238,19 @@ proc newsave f {		# save a RIF
 			return 0
 		}
 	} elseif {[file exists $f]} {
+		set ftyp [file type $f]
+		if { $ftyp != "file" } {
+			beep
+			set curmess "Selected file $f is a $ftyp."
+			return 0
+		}
 		if [tk_dialog .dlg {Verification} \
 				"Overwrite existing file $f?" \
 				questhead 1 {Go Ahead} {Cancel}] {
 			return 0
 		}
 	}
-	if {[file exists $f] && ! [file writable $f] && 
+	if {[file isfile $f] && ! [file writable $f] && 
 			[catch {exec chmod u+w $f} curmess]} {
 		beep
 		return 0
@@ -261,6 +267,12 @@ proc newsave f {		# save a RIF
 proc newnew f {			# create a new RIF
 	global rifname readonly curmess radvar
 	if [file exists $f] {
+		set ftyp [file type $f]
+		if { $ftyp != "file" } {
+			beep
+			set curmess "Selected file $f is a $ftyp."
+			return 0
+		}
 		if [tk_dialog .dlg {Verification} \
 				"File $f exists -- disregard it?" \
 				questhead 1 {Yes} {Cancel}] {

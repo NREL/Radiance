@@ -39,7 +39,7 @@ proc lbgetf nm {		# get list box files
 
 proc oct_delete {} {		# delete octree file
 	global radvar curmess
-	if {"$radvar(OCTREE)" == {} || ! [file exists $radvar(OCTREE)]} {
+	if {"$radvar(OCTREE)" == {} || ! [file isfile $radvar(OCTREE)]} {
 		set curmess {No octree file.}
 		return
 	}

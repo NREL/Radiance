@@ -57,7 +57,7 @@ set conv(typ) tga-24
 
 proc testappend {flst tf} {	# test if tf exists and append to flst if so
 	upvar $flst mylist
-	if [file exists $tf] {
+	if [file isfile $tf] {
 		lappend mylist $tf
 	}
 }
@@ -67,9 +67,9 @@ proc list_views {} {		# List finished and unfinished pictures
 	set fpics {}
 	set ufpics {}
 	foreach vw $radvar(view) {
-		if [file exists ${rawfroot}_[lindex $vw 0].unf] {
+		if [file isfile ${rawfroot}_[lindex $vw 0].unf] {
 			lappend ufpics [lindex $vw 0]
-		} elseif {[file exists $radvar(PICTURE)_[lindex $vw 0].pic]} {
+		} elseif {[file isfile $radvar(PICTURE)_[lindex $vw 0].pic]} {
 			lappend fpics [lindex $vw 0]
 		}
 	}
