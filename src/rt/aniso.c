@@ -318,7 +318,7 @@ register ANISODAT  *np;
 	errno = 0;
 	for (i = 0; i < 3; i++)
 		np->u[i] = evalue(mf->ep[i]);
-	if (errno) {
+	if (errno == EDOM || errno == ERANGE) {
 		objerror(np->mp, WARNING, "compute error");
 		np->specfl |= SP_BADU;
 		return;

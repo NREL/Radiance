@@ -51,7 +51,7 @@ RAY  *r;
 	setfunc(m, r);
 	errno = 0;
 	coef = evalue(mf->ep[0]);
-	if (errno) {
+	if (errno == EDOM || errno == ERANGE) {
 		objerror(m, WARNING, "compute error");
 		return(0);
 	}

@@ -281,7 +281,7 @@ EPNODE	*ep;
     if (!finite(d))
 	errno = EDOM;
 #endif
-    if (errno) {
+    if (errno == EDOM || errno == ERANGE) {
 	wputs("Illegal power\n");
 	return(0.0);
     }
@@ -727,7 +727,7 @@ register EPNODE	 *epar;
     ep->type = NUM;
     errno = 0;
     ep->v.num = evalue(epar);
-    if (errno)
+    if (errno == EDOM || errno == ERANGE)
 	syntax("bad constant expression");
     epfree(epar);
  

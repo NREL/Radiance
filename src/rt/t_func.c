@@ -44,7 +44,7 @@ register RAY  *r;
 	errno = 0;
 	for (i = 0; i < 3; i++) {
 		disp[i] = evalue(mf->ep[i]);
-		if (errno) {
+		if (errno == EDOM || errno == ERANGE) {
 			objerror(m, WARNING, "compute error");
 			return(0);
 		}

@@ -350,7 +350,7 @@ VARDEF  *vp;
 	else if (isinf(d))
 	    errno = ERANGE;
 #endif
-    if (errno) {
+    if (errno == EDOM || errno == ERANGE) {
 	wputs(fname);
 	if (errno == EDOM)
 		wputs(": domain error\n");

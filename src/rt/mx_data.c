@@ -72,13 +72,13 @@ RAY  *r;
 	errno = 0;
 	for (i = 0; i < dp->nd; i++) {
 		pt[i] = evalue(mf->ep[i]);
-		if (errno)
+		if (errno == EDOM || errno == ERANGE)
 			goto computerr;
 	}
 	coef = datavalue(dp, pt);
 	errno = 0;
 	coef = funvalue(m->oargs.sarg[2], 1, &coef);
-	if (errno)
+	if (errno == EDOM || errno == ERANGE)
 		goto computerr;
 	if (raymixture(r, mod[0], mod[1], coef)) {
 		if (m->omod != OVOID)
@@ -121,13 +121,13 @@ RAY  *r;
 	errno = 0;
 	pt[1] = evalue(mf->ep[0]);	/* y major ordering */
 	pt[0] = evalue(mf->ep[1]);
-	if (errno)
+	if (errno == EDOM || errno == ERANGE)
 		goto computerr;
 	for (i = 0; i < 3; i++)		/* get pixel from picture */
 		col[i] = datavalue(dp+i, pt);
 	errno = 0;			/* evaluate function on pixel */
 	coef = funvalue(m->oargs.sarg[2], 3, col);
-	if (errno)
+	if (errno == EDOM || errno == ERANGE)
 		goto computerr;
 	if (raymixture(r, mod[0], mod[1], coef)) {
 		if (m->omod != OVOID)

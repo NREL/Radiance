@@ -47,7 +47,7 @@ RAY  *r;
 	setfunc(m, r);
 	errno = 0;
 	bval = evalue(mf->ep[0]);
-	if (errno) {
+	if (errno == EDOM || errno == ERANGE) {
 		objerror(m, WARNING, "compute error");
 		return(0);
 	}
@@ -71,7 +71,7 @@ RAY  *r;
 	setcolor(cval, evalue(mf->ep[0]),
 			evalue(mf->ep[1]),
 			evalue(mf->ep[2]));
-	if (errno) {
+	if (errno == EDOM || errno == ERANGE) {
 		objerror(m, WARNING, "compute error");
 		return(0);
 	}
