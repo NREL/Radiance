@@ -346,7 +346,7 @@ register char  *s;
 		error(COMMAND, "missing angle");
 		return;
 	}
-	if (getinterest(sskip(sskip(s)), 0, vc, &mag) < 0)
+	if (getinterest(sskip2(s,2), 0, vc, &mag) < 0)
 		return;
 	moveview(angle, elev, mag, vc);
 }
@@ -662,7 +662,7 @@ char  *s;
 	thisray.rmax = 0.0;
 
 	if (!sscanvec(s, thisray.rorg) ||
-			!sscanvec(sskip(sskip(sskip(s))), thisray.rdir)) {
+			!sscanvec(sskip2(s,3), thisray.rdir)) {
 
 		if (dev->getcur == NULL)
 			return;
