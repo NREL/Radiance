@@ -135,8 +135,6 @@ swaprasheader.o:	../common/rasterfile.h
 
 glareval.o xglaresrc.o:	../common/resolu.h
 
-xglaresrc.o:	../common/vfork.h
-
 rad.o ranimate.o:	../common/vars.h
 
 ranimove1.o ranimove2.o:	../common/random.h

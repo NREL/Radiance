@@ -15,7 +15,6 @@ static const char	RCSid[] = "$Id$";
 #include "selcall.h"
 #include "netproc.h"
 #include "paths.h"
-#include "vfork.h"
 
 PSERVER	*pslist = NULL;		/* global process server list */
 

@@ -9,15 +9,13 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
-#include  "platform.h"
+#include "platform.h"
 
 #include "standard.h"
 
-#include "color.h"
+#include "paths.h"
 
 #include "driver.h"
-
-#include "vfork.h"
 
 #ifndef DEVPATH
 #define DEVPATH		getenv("PATH")	/* device search path */
