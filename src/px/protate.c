@@ -14,6 +14,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "color.h"
 
 int	xres, yres;			/* input resolution */
+double	inpaspect = 1.0;		/* input aspect ratio */
 
 char	buf[1<<20];			/* output buffer */
 
@@ -22,6 +23,15 @@ int	nrows;				/* number of rows output at once */
 #define scanbar		((COLR *)buf)
 
 char	*progname;
+
+
+headline(s)				/* process line from header */
+char	*s;
+{
+	fputs(s, stdout);
+	if (isaspect(s))
+		inpaspect *= aspectval(s);
+}
 
 
 main(argc, argv)
@@ -44,9 +54,11 @@ char	*argv[];
 		fprintf(stderr, "%s: cannot open\n", argv[2]);
 		exit(1);
 	}
-					/* copy header */
-	copyheader(fin, stdout);
+					/* transfer header */
+	getheader(fin, headline);
 					/* add new header info. */
+	if (inpaspect < .99 || inpaspect > 1.01)
+		fputaspect(1./inpaspect/inpaspect, stdout);
 	printf("%s\n\n", progname);
 					/* get picture size */
 	if (fgetresolu(&xres, &yres, fin) != (YMAJOR|YDECR)) {
