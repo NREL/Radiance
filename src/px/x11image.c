@@ -91,7 +91,7 @@ RESOLU  inpres;				/* input resolution and ordering */
 int  xmax, ymax;			/* picture dimensions */
 int  width, height;			/* window size */
 char  *fname = NULL;			/* input file name */
-FILE  *fin = stdin;			/* input file */
+FILE  *fin = NULL;			/* input file */
 long  *scanpos = NULL;			/* scan line positions in file */
 int  cury = 0;				/* current scan location */
 
@@ -143,6 +143,7 @@ char  *argv[];
 	int  pid;
 	
 	progname = argv[0];
+	fin = stdin;
 
 	for (i = 1; i < argc; i++)
 		if (argv[i][0] == '-')
