@@ -267,7 +267,7 @@ register RAY  *r;
 		setcolor(ctmp, varvalue(m->oargs.sarg[3]),
 				varvalue(m->oargs.sarg[4]),
 				varvalue(m->oargs.sarg[5]));
-		scalecolor(ctmp, nd.tspec);
+		scalecolor(ctmp, nd.trans);
 		if (errno)
 			objerror(m, WARNING, "compute error");
 		else if ((tspect = bright(ctmp)) > FTINY &&
@@ -298,7 +298,6 @@ register RAY  *r;
 		setcolor(ctmp, varvalue(m->oargs.sarg[0]),
 				varvalue(m->oargs.sarg[1]),
 				varvalue(m->oargs.sarg[2]));
-		scalecolor(ctmp, nd.rspec);
 		if (errno)
 			objerror(m, WARNING, "compute error");
 		else if ((rspecr = bright(ctmp)) > FTINY &&
