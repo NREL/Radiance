@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1993 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -19,10 +19,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "color.h"
 
 #include "resolu.h"
-
-#ifndef BSD
-#define vfork		fork
-#endif
 
 #define pscan(y)	(ourpict+(y)*hresolu)
 #define zscan(y)	(ourzbuf+(y)*hresolu)
@@ -169,10 +165,9 @@ char	*argv[];
 				goto badopt;
 			check(3,"s");
 			gotvfile = viewfile(argv[++i], &ourview, 0, 0);
-			if (gotvfile < 0) {
-				perror(argv[i]);
-				exit(1);
-			} else if (gotvfile == 0) {
+			if (gotvfile < 0)
+				syserror(argv[i]);
+			else if (gotvfile == 0) {
 				fprintf(stderr, "%s: bad view file\n",
 						argv[i]);
 				exit(1);
@@ -200,7 +195,7 @@ char	*argv[];
 	ourpict = (COLR *)bmalloc(hresolu*vresolu*sizeof(COLR));
 	ourzbuf = (float *)bmalloc(hresolu*vresolu*sizeof(float));
 	if (ourpict == NULL || ourzbuf == NULL)
-		syserror();
+		syserror(progname);
 	bzero((char *)ourzbuf, hresolu*vresolu*sizeof(float));
 							/* get input */
 	for ( ; i < argc; i += 2)
@@ -274,10 +269,8 @@ char	*pfile, *zspec;
 	struct position	*plast;
 	int	y;
 					/* open picture file */
-	if ((pfp = fopen(pfile, "r")) == NULL) {
-		perror(pfile);
-		exit(1);
-	}
+	if ((pfp = fopen(pfile, "r")) == NULL)
+		syserror(pfile);
 					/* get header with exposure and view */
 	theirexp = 1.0;
 	gotview = 0;
@@ -303,15 +296,14 @@ char	*pfile, *zspec;
 	plast = (struct position *)calloc(scanlen(&tresolu),
 			sizeof(struct position));
 	if (scanin == NULL || zin == NULL || plast == NULL)
-		syserror();
+		syserror(progname);
 					/* get z specification or file */
 	if ((zfd = open(zspec, O_RDONLY)) == -1) {
 		double	zvalue;
 		register int	x;
-		if (!isfloat(zspec) || (zvalue = atof(zspec)) <= 0.0) {
-			perror(zspec);
+		if (!isfloat(zspec) || (zvalue = atof(zspec)) <= 0.0)
+			syserror(zspec);
 			exit(1);
-		}
 		for (x = scanlen(&tresolu); x-- > 0; )
 			zin[x] = zvalue;
 	}
@@ -522,7 +514,7 @@ int	samp;
 							/* get back buffer */
 	yback = (int *)malloc(hresolu*sizeof(int));
 	if (yback == NULL)
-		syserror();
+		syserror(progname);
 	for (x = 0; x < hresolu; x++)
 		yback[x] = -2;
 	/*
@@ -626,7 +618,7 @@ writepicture()				/* write out picture */
 	fprtresolu(hresolu, vresolu, stdout);
 	for (y = vresolu-1; y >= 0; y--)
 		if (fwritecolrs(pscan(y), hresolu, stdout) < 0)
-			syserror();
+			syserror(progname);
 }
 
 
@@ -638,13 +630,11 @@ char	*fname;
 	int	y;
 	float	*zout;
 
-	if ((fd = open(fname, O_WRONLY|O_CREAT|O_TRUNC, 0666)) == -1) {
-		perror(fname);
-		exit(1);
-	}
+	if ((fd = open(fname, O_WRONLY|O_CREAT|O_TRUNC, 0666)) == -1)
+		syserror(fname);
 	if (donorm
 	&& (zout = (float *)malloc(hresolu*sizeof(float))) == NULL)
-		syserror();
+		syserror(progname);
 	for (y = vresolu-1; y >= 0; y--) {
 		if (donorm) {
 			double	vx, yzn2;
@@ -659,10 +649,8 @@ char	*fname;
 		} else
 			zout = zscan(y);
 		if (write(fd, (char *)zout, hresolu*sizeof(float))
-				< hresolu*sizeof(float)) {
-			perror(fname);
-			exit(1);
-		}
+				< hresolu*sizeof(float))
+			syserror(fname);
 	}
 	if (donorm)
 		free((char *)zout);
@@ -719,7 +707,7 @@ done:
 	*wp = NULL;
 						/* start process */
 	if ((rval = open_process(PDesc, argv)) < 0)
-		syserror();
+		syserror(progname);
 	if (rval == 0) {
 		fprintf(stderr, "%s: command not found\n", argv[0]);
 		exit(1);
@@ -760,6 +748,8 @@ clearqueue()				/* process queue */
 	register float	*fbp;
 	register int	i;
 
+	if (queuesiz == 0)
+		return;
 	fbp = fbuf;
 	for (i = 0; i < queuesiz; i++) {
 		viewray(orig, dir, &ourview,
@@ -793,8 +783,9 @@ clearqueue()				/* process queue */
 }
 
 
-syserror()			/* report error and exit */
+syserror(s)			/* report error and exit */
+char	*s;
 {
-	perror(progname);
+	perror(s);
 	exit(1);
 }
