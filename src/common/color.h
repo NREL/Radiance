@@ -62,4 +62,11 @@ typedef float  COLOR[3];	/* red, green, blue */
 #define  YDECR			2
 #define  YMAJOR			4
 
-extern double  ldexp();
+				/* info. header string indicating exposure */
+#define  EXPOSSTR		"EXPOSURE="
+#define  EXPOSSTRL		9
+#define  isexpos(hl)		(!strncmp(hl,EXPOSSTR,EXPOSSTRL))
+#define  exposval(hl)		atof((hl)+EXPOSSTRL)
+#define  fputexpos(ex,fp)	fprintf(fp,"%s%e\n",EXPOSSTR,ex)
+
+extern double  ldexp(), atof();
