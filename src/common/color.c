@@ -289,7 +289,7 @@ double  r, g, b;
 	d = r > g ? r : g;
 	if (b > d) d = b;
 
-	if (d <= 0.0) {
+	if (d <= 1e-32) {
 		clr[RED] = clr[GRN] = clr[BLU] = 0;
 		clr[EXP] = 0;
 		return;
