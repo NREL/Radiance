@@ -25,8 +25,11 @@ libmgf.a:	$(OBJS)
 mgf2inv:	libmgf.a mgf2inv.o cvrgb.o
 	$(CC) $(CFLAGS) -o mgf2inv mgf2inv.o cvrgb.o libmgf.a -lm
 
+3ds2mgf:	3ds2mgf.o rayopt.o vect.o
+	$(CC) $(CFLAGS) -o 3ds2mgf 3ds2mgf.o rayopt.o vect.o -lm
+
 clean:
-	set nonomatch ; rm -f *.o libmgf.a mgfilt
+	set nonomatch ; rm -f *.o libmgf.a mgfilt mgf2inv 3ds2mgf
 
 parser.o context.o xf.o object.o fvect.o mgf2inv.o cvrgb.o:	parser.h
 
@@ -35,3 +38,7 @@ parser.o context.o lookup.o:	lookup.h
 parser.o:	messages.h
 
 mgfilt.o:	parser.h
+
+3ds2mgf.o rayopt.o:	rayopt.h
+
+3ds2mgf.o rayopt.o vect.o:	vect.h
