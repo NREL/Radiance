@@ -628,12 +628,12 @@ char  *oldfile;
 	int  x, y;
 
 	if (oldfile == NULL)
-		return(0);
-	
+		goto gotzip;
+
 	if ((fp = fopen(oldfile, "r")) == NULL) {
 		sprintf(errmsg, "cannot open recover file \"%s\"", oldfile);
 		error(WARNING, errmsg);
-		return(0);
+		goto gotzip;
 	}
 #ifdef MSDOS
 	setmode(fileno(fp), O_BINARY);
@@ -646,7 +646,7 @@ char  *oldfile;
 				oldfile);
 		error(WARNING, errmsg);
 		fclose(fp);
-		return(0);
+		goto gotzip;
 	}
 
 	if (x != hres || y != vres) {
@@ -670,6 +670,10 @@ char  *oldfile;
 	fclose(fp);
 	unlink(oldfile);
 	return(y);
+gotzip:
+	if (fflush(stdout) == EOF)
+		error(SYSTEM, "error writing picture header");
+	return(0);
 writerr:
 	sprintf(errmsg, "write error during recovery of \"%s\"", oldfile);
 	error(SYSTEM, errmsg);
