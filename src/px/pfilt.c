@@ -302,6 +302,25 @@ char  **argv;
 }
 
 
+double
+rgb_bright(clr)
+COLOR  clr;
+{
+	return(bright(clr));
+}
+
+
+double
+xyz_bright(clr)
+COLOR  clr;
+{
+	return(clr[CIEY]);
+}
+
+
+double	(*ourbright)() = rgb_bright;
+
+
 headline(s)				/* process line from header */
 char  *s;
 {
@@ -310,11 +329,16 @@ char  *s;
 	fputs(s, stdout);		/* copy to output */
 	if (isaspect(s))		/* get aspect ratio */
 		inpaspect *= aspectval(s);
-	else if (isexpos(s))
+	else if (isexpos(s))		/* get exposure */
 		hotlvl *= exposval(s);
-	else if (isformat(s)) {
-		formatval(fmt, s);
-		wrongformat = strcmp(fmt, COLRFMT);
+	else if (formatval(fmt, s)) {	/* get format */
+		wrongformat = 0;
+		if (!strcmp(COLRFMT, fmt))
+			ourbright = rgb_bright;
+		else if (!strcmp(CIEFMT, fmt))
+			ourbright = xyz_bright;
+		else
+			wrongformat = !globmatch(PICFMT, fmt);
 	}
 }
 
@@ -475,7 +499,7 @@ scan2init()			/* prepare scanline arrays */
 			fputaspect(d, stdout);
 	}
 					/* record exposure */
-	d = bright(exposure);
+	d = (*ourbright)(exposure);
 	if (!FEQ(d,1.0))
 		fputexpos(d, stdout);
 					/* record color correction */
@@ -506,7 +530,7 @@ int  r;
 		ybot = (long)nextrow*yres/nrows;
 		for (c = 0; c < ncols; c++) {
 			dobox(ctmp, (int)((long)c*xres/ncols),ybot, c,nextrow);
-			greybar[nextrow%obarsize][c] = bright(ctmp);
+			greybar[nextrow%obarsize][c] = (*ourbright)(ctmp);
 		}
 					/* and zero output scanline */
 		bzero((char *)scoutbar[nextrow%obarsize], ncols*sizeof(COLOR));
