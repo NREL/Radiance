@@ -1300,6 +1300,7 @@ int	maxcopies;
 			strcpy(com1=buf, com);	/* build -PP command */
 			sprintf(com1+(ppins-com), " -PP %s/%s.persist",
 					vval(DIRECTORY), phostname(ps));
+			unlink(com1+(ppins-com)+5);
 			strcat(com1, ppins);
 		} else
 			com1 = com;
