@@ -40,9 +40,13 @@ OBJECT  ambset[MAXASET+1]={0};	/* ambient include/exclude set */
 double  maxarad;		/* maximum ambient radius */
 double  minarad;		/* minimum ambient radius */
 
+/*
+ * Since we've defined our vectors as float below to save space,
+ * watch out for changes in the definitions of VCOPY() and DOT().
+ */
 typedef struct ambval {
-	FVECT  pos;		/* position in space */
-	FVECT  dir;		/* normal direction */
+	float  pos[3];		/* position in space */
+	float  dir[3];		/* normal direction */
 	int  lvl;		/* recursion level of parent ray */
 	float  weight;		/* weight of parent ray */
 	COLOR  val;		/* computed ambient value */
@@ -209,7 +213,7 @@ double  s;
 		for (j = 0; j < 3; j++)
 			d += (r->rop[j] - av->pos[j]) *
 					(av->dir[j] + r->ron[j]);
-		if (d < -minarad)
+		if (d*0.5 < -minarad*ambacc)
 			continue;
 		/*
 		 *  Jittering final test reduces image artifacts.
@@ -303,7 +307,8 @@ register RAY  *r;
 		div = (AMBSAMP *)malloc(ndivs*sizeof(AMBSAMP));
 		if (div == NULL)
 			error(SYSTEM, "out of memory in doambient");
-	}
+	} else
+		div = NULL;
 					/* make axes */
 	uy[0] = uy[1] = uy[2] = 0.0;
 	for (k = 0; k < 3; k++)
@@ -337,7 +342,7 @@ register RAY  *r;
 			ndims--;
 			if (ar.rot < FHUGE)
 				arad += 1.0 / ar.rot;
-			if (ns > 0) {			/* save division */
+			if (div != NULL) {		/* save division */
 				div[ne].k = 0.0;
 				copycolor(div[ne].v, ar.rcol);
 				div[ne].n = 0;
@@ -420,8 +425,11 @@ register RAY  *r;
 
 		if (ne >= i) {		/* extract darkest division */
 			ne--;
-			if (div[ne].n > 1)
-				scalecolor(div[ne].v, 1.0/div[ne].n);
+			if (div[ne].n > 1) {
+				b = 1.0/div[ne].n;
+				scalecolor(div[ne].v, b);
+				div[ne].n = 1;
+			}
 			addcolor(acol, div[ne].v);
 		}
 	}
@@ -434,7 +442,7 @@ register RAY  *r;
 		arad = maxarad;
 	else if (arad < minarad)
 		arad = minarad;
-	if (ns > 0)
+	if (div != NULL)
 		free((char *)div);
 	return(arad);
 }
