@@ -1,4 +1,4 @@
-/* Copyright (c) 1987 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -472,6 +472,7 @@ register char  *s;
 		break;
 	default:;
 badparam:
+		*sskip(s) = '\0';
 		sprintf(errmsg, "%s: unknown variable", s);
 		error(COMMAND, errmsg);
 		break;
