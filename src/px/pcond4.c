@@ -241,12 +241,12 @@ int	y;
 	register int	x;
 					/* compute foveal y position */
 	iy = dy = (y+.5)/numscans(&inpres)*fvyr - .5;
-	if (iy >= fvyr-1) iy--;
+	while (iy >= fvyr-1) iy--;
 	dy -= (double)iy;
 	for (x = 0; x < scanlen(&inpres); x++) {
 					/* compute foveal x position */
 		ix = dx = (x+.5)/scanlen(&inpres)*fvxr - .5;
-		if (ix >= fvxr-1) ix--;
+		while (ix >= fvxr-1) ix--;
 		dx -= (double)ix;
 					/* interpolate sample rate */
 		sr = (1.-dy)*((1.-dx)*tsampr(ix,iy) + dx*tsampr(ix+1,iy)) +
@@ -302,11 +302,13 @@ SCANBAR	*sb;
 	dy -= (double)iy;
 					/* get scanlines */
 	sl0 = getascan(sb, iy);
+#ifdef DEBUG
 	if (sl0 == NULL) {
 		fprintf(stderr, "%s: internal - cannot backspace in ascanval\n",
 				progname);
-		exit(1);
+		abort();
 	}
+#endif
 	sl1 = getascan(sb, iy+1);
 					/* 2D linear interpolation */
 	copycolor(col, sl0[ix]);
@@ -322,32 +324,35 @@ SCANBAR	*sb;
 	scalecolor(col, 1.-dy);
 	scalecolor(c1y, dy);
 	addcolor(col, c1y);
+	for (ix = 0; ix < 3; ix++)	/* make sure no negative */
+		if (colval(col,ix) < 0.)
+			colval(col,ix) = 0.;
 }
 
 
 SCANBAR	*
-sballoc(sr, ns, sl)		/* allocate scanbar */
-int	sr;		/* sampling rate */
+sballoc(se, ns, sl)		/* allocate scanbar */
+int	se;		/* sampling rate exponent */
 int	ns;		/* number of scanlines */
 int	sl;		/* original scanline length */
 {
 	SCANBAR	*sbarr;
 	register SCANBAR	*sb;
 
-	sbarr = sb = (SCANBAR *)malloc((sr+1)*sizeof(SCANBAR));
+	sbarr = sb = (SCANBAR *)malloc((se+1)*sizeof(SCANBAR));
 	if (sb == NULL)
 		syserror("malloc");
 	do {
-		sb->sdata = (COLOR *)malloc((sl>>sr)*ns*sizeof(COLOR));
+		sb->sampe = se;
+		sb->len = sl>>se;
+		sb->nscans = ns;
+		sb->sdata = (COLOR *)malloc(sb->len*ns*sizeof(COLOR));
 		if (sb->sdata == NULL)
 			syserror("malloc");
-		sb->sampe = sr;
-		sb->nscans = ns;
-		sb->len = sl>>sr;
 		sb->nread = 0;
 		ns <<= 1;
 		sb++;
-	} while (--sr >= 0);
+	} while (--se >= 0);
 	return(sbarr);
 }
 
@@ -388,8 +393,8 @@ initacuity()			/* initialize variable acuity sampling */
 		tsampr(x,fvyr-1) = tsampr(x,fvyr-2);
 	}
 	for (y = 0; y < fvyr; y++) {
-		tsampr(y,0) = tsampr(y,1);
-		tsampr(y,fvxr-1) = tsampr(y,fvxr-2);
+		tsampr(0,y) = tsampr(1,y);
+		tsampr(fvxr-1,y) = tsampr(fvxr-2,y);
 	}
 					/* initialize with next power of two */
 	rootbar = sballoc((int)(log(maxsr)/log(2.))+1, 2, scanlen(&inpres));
