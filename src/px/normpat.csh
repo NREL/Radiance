@@ -38,15 +38,15 @@ onintr quit
 set td=/usr/tmp/np$$
 mkdir $td
 cat > $td/coef.fmt << '_EOF_'
-   rm=${  $25   };    gm=${  $26   };    bm=${  $27   };
-  rcx=${   $1   };   gcx=${   $9   };   bcx=${  $17   };
-  rcy=${   $2   };   gcy=${  $10   };   bcy=${  $18   };
-  rsx=${   $3   };   gsx=${  $11   };   bsx=${  $19   };
-  rsy=${   $4   };   gsy=${  $12   };   bsy=${  $20   };
-rcxcy=${   $5   }; gcxcy=${  $13   }; bcxcy=${  $21   };
-rcxsy=${   $6   }; gcxsy=${  $14   }; bcxsy=${  $22   };
-rsxcy=${   $7   }; gsxcy=${  $15   }; bsxcy=${  $23   };
-rsxsy=${   $8   }; gsxsy=${  $16   }; bsxsy=${  $24   };
+   rm:${  $25   };    gm:${  $26   };    bm:${  $27   };
+  rcx:${   $1   };   gcx:${   $9   };   bcx:${  $17   };
+  rcy:${   $2   };   gcy:${  $10   };   bcy:${  $18   };
+  rsx:${   $3   };   gsx:${  $11   };   bsx:${  $19   };
+  rsy:${   $4   };   gsy:${  $12   };   bsy:${  $20   };
+rcxcy:${   $5   }; gcxcy:${  $13   }; bcxcy:${  $21   };
+rcxsy:${   $6   }; gcxsy:${  $14   }; bcxsy:${  $22   };
+rsxcy:${   $7   }; gsxcy:${  $15   }; bsxcy:${  $23   };
+rsxsy:${   $8   }; gsxsy:${  $16   }; bsxsy:${  $24   };
 '_EOF_'
 cat > $td/coef.cal << '_EOF_'
 $1=$3*2*cx; $2=$3*2*cy; $3=$3*2*sx; $4=$3*2*sy;
@@ -61,6 +61,7 @@ sx=sin(wx); sy=sin(wy);
 wx=2*PI*($1+.5)/xres; wy=2*PI*($2+.5)/yres;
 '_EOF_'
 cat > $td/fsub.cal << '_EOF_'
+PI:3.14159265358979323846;
 ro=ri(1)*rm/(rm+rcx*cx+rcy*cy+rsx*sx+rsy*sy
 		+rcxcy*cx*cy+rcxsy*cx*sy+rsxcy*sx*cy+rsxsy*sx*sy);
 go=gi(1)*gm/(gm+gcx*cx+gcy*cy+gsx*sx+gsy*sy
@@ -70,7 +71,6 @@ bo=bi(1)*bm/(bm+bcx*cx+bcy*cy+bsx*sx+bsy*sy
 cx=cos(wx); cy=cos(wy);
 sx=sin(wx); sy=sin(wy);
 wx=2*PI*(x+.5)/xres; wy=2*PI*(y+.5)/yres;
-PI=3.14159265358979323846;
 '_EOF_'
 foreach f ($*)
 	if ( $?verb ) then
@@ -102,7 +102,7 @@ _EOF_
 		cat $td/coef
 		echo removing low frequencies...
 	endif
-	pcomb -f $td/fsub.cal -f $td/coef \
+	pcomb -f $td/coef -f $td/fsub.cal \
 		-e "xres=$resolu[1];yres=$resolu[2]" \
 		$td/pf > $td/hf
 	donefsub:
