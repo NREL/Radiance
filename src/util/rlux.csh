@@ -3,7 +3,7 @@
 #
 # Compute illuminance from ray origin and direction
 #
-if ( $#argv < 2 ) then
+if ( $#argv < 1 ) then
 	echo "Usage: $0 [rtrace args] octree"
 	exit 1
 endif
