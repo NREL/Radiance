@@ -371,6 +371,7 @@ static int weaksrcmod(obj) int obj;	/* efficiency booster function */
 return(o->otype==MAT_ILLUM|o->otype==MAT_GLOW);}
 
 #define  illumblock(m, r)	(!(source[r->rsrc].sflags&SVIRTUAL) && \
+				r->rod > 0.0 && \
 				weaksrcmod(source[r->rsrc].so->omod))
 
 /* wrongsource *
@@ -407,13 +408,6 @@ return(o->otype==MAT_ILLUM|o->otype==MAT_GLOW);}
 				!(r->crtype&SHADOW || r->rod < 0.0 || \
 					distglow(m, r)))
 
-/* overcount *
- *
- * All overcounting possibilities are contained here.
- */
-
-#define  overcount(m, r)	(badcomponent(m,r) || wrongsource(m,r))
-
 /* passillum *
  *
  * An illum passes to another material type when we didn't hit it
@@ -439,7 +433,9 @@ register OBJREC  *m;
 register RAY  *r;
 {
 						/* check for over-counting */
-	if (overcount(m, r))
+	if (badcomponent(m, r))
+		return;
+	if (wrongsource(m,r))
 		return;
 						/* check for passed illum */
 	if (passillum(m, r)) {
