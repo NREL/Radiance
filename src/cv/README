@@ -4,16 +4,19 @@
 This directory contains translator programs between other scene modeling
 languages and Radiance.
 
+tmesh.h		triangle mesh (barycentric coordinate) definitions
 trans.h		translator definitions
 arch2rad.c	convert Architrion file to Radiance
 ies2rad.c	convert IES luminaire data to Radiance description
 lamp.tab	default lookup table associating lamp types with colors
 lampcolor.c	program to convert lamp color from table and compute radiance
+mgf2rad.c	convert Material and Geometry Format to Radiance scene
 nff2rad.c	convert Neutral File Format input to Radiance scene description
 obj2rad.c	convert from Wavefront's .obj format to Radiance
 source.cal	function file for light sources from ies2rad
 thf2rad.c	convert GDS things file to Radiance scene description
 thf2rad2.c	modified thf2rad with different cylinder end caps
 tilt.cal	computes tilt factor for ies2rad
+tmesh.c		triangle mesh (barycentric coordinate) routines
 tmesh2rad.c	converts from non-standard triangle mesh to Radiance
 trans.c		translator utilities
