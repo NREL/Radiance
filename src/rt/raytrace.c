@@ -188,7 +188,7 @@ int  mod;
 		}
 		******/
 		if ((*ofun[m->otype].funp)(m, r))
-			objerror(USER, r->ro, "conflicting materials");
+			objerror(r->ro, USER, "conflicting materials");
 	}
 	depth--;			/* end here */
 }
@@ -228,7 +228,7 @@ double  coef;
 		backmat = foremat;
 					/* check */
 	if (backmat != foremat)
-		objerror(USER, r->ro, "mixing material with non-material");
+		objerror(r->ro, USER, "mixing material with non-material");
 					/* sum perturbations */
 	for (i = 0; i < 3; i++)
 		r->pert[i] += coef*fr.pert[i] + (1.0-coef)*br.pert[i];
@@ -243,6 +243,8 @@ double  coef;
 	scalecolor(br.rcol, 1.0-coef);
 	addcolor(r->rcol, fr.rcol);
 	addcolor(r->rcol, br.rcol);
+	if (foremat)
+		r->rt = bright(fr.rcol) > bright(br.rcol) ? fr.rt : br.rt;
 					/* return value tells if material */
 	return(foremat);
 }
