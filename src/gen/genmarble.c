@@ -22,6 +22,10 @@ typedef double  FVECT[3];
 
 double  bubble();	/* pretty cute, huh? */
 
+#ifdef  DCL_ATOF
+extern double  atof();
+#endif
+
 
 main(argc, argv)
 int  argc;
