@@ -845,7 +845,7 @@ register char	*vs;
 	register int	i;
 	double	cent[3], dim[3], mult, d;
 
-	if (*vs == '-')
+	if (vs == NULL || *vs == '-')
 		return(vs);
 	upax = 0;			/* get the up vector */
 	if (vdef(UP)) {
