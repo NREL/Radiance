@@ -63,6 +63,7 @@ extern int  ambnotify();		/* new object notify functions */
 int  (*addobjnotify[])() = {ambnotify, NULL};
 
 CUBE  thescene;				/* our scene */
+OBJECT  nsceneobjs;			/* number of objects in our scene */
 
 extern int  imm_irrad;			/* calculate immediate irradiance? */
 
@@ -500,6 +501,7 @@ char  *argv[];
 		openheader();
 #endif
 	readoct(octname, loadflags, &thescene, NULL);
+	nsceneobjs = nobjects;
 
 	if (loadflags & IO_INFO) {	/* print header */
 		printargs(i, argv, stdout);
