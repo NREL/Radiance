@@ -21,9 +21,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #define C_1SIDEDTHICK	0.005
 
 int	o_face(), o_cone(), o_sphere(), o_ring(), o_cylinder();
-int	o_instance(), o_source(), o_illum();
+int	o_instance(), o_illum();
 int	o_plastic(), o_metal(), o_glass(), o_dielectric(),
-		o_mirror(), o_trans(), o_light();
+	o_mirror(), o_trans(), o_light();
 
 extern void	free();
 extern char	*malloc();
@@ -194,8 +194,11 @@ FUNARGS	*fa;
 			fprintf(stderr, "%s: bad %s \"%s\"\n", typ, id);
 			exit(1);
 		}
-	} else if (lu_find(&rmats, mod)->data != NULL)	/* make alias */
-		newmat(id, mod);
+	} else {					/* unsupported */
+		o_unsupported(mod, typ, id, fa);
+		if (lu_find(&rmats, mod)->data != NULL)	/* make alias */
+			newmat(id, mod);
+	}
 }
 
 
@@ -296,7 +299,7 @@ init()			/* initialize dispatch table and output */
 	add2dispatch("spotlight", o_light);
 	add2dispatch("glow", o_light);
 	add2dispatch("illum", o_illum);
-	puts("# The following was converted from Radiance scene input");
+	puts("# The following was converted from RADIANCE scene input");
 	if (hasmult)
 		printf("xf -s %.4e\n", unit_mult);
 	printf("o %s\n", curobj);
@@ -308,7 +311,7 @@ uninit()			/* mark end of MGF file */
 	puts("o");
 	if (hasmult)
 		puts("xf");
-	puts("# End of data converted from Radiance scene input");
+	puts("# End of data converted from RADIANCE scene input");
 	lu_done(&rdispatch);
 	lu_done(&rmats);
 	lu_done(&vertab);
@@ -384,6 +387,33 @@ FVECT	vp;
 memerr:
 	fputs("Out of memory in getvertid!\n", stderr);
 	exit(1);
+}
+
+
+int
+o_unsupported(mod, typ, id, fa)		/* mark unsupported primitive */
+char	*mod, *typ, *id;
+FUNARGS	*fa;
+{
+	register int	i;
+
+	fputs("\n# Unsupported RADIANCE primitive:\n", stdout);
+	printf("# %s %s %s", mod, typ, id);
+	printf("\n# %d", fa->nsargs);
+	for (i = 0; i < fa->nsargs; i++)
+		printf(" %s", fa->sarg[i]);
+#ifdef IARGS
+	printf("\n# %d", fa->niargs);
+	for (i = 0; i < fa->niargs; i++)
+		printf(" %ld", fa->iarg[i]);
+#else
+	fputs("\n# 0", stdout);
+#endif
+	printf("\n# %d", fa->nfargs);
+	for (i = 0; i < fa->nfargs; i++)
+		printf(" %g", fa->farg[i]);
+	fputs("\n\n", stdout);
+	return(0);
 }
 
 
@@ -533,15 +563,6 @@ FUNARGS	*fa;
 	putchar('\n');
 	clrverts();			/* vertex id's no longer reliable */
 	return(0);
-}
-
-
-int
-o_source(mod, typ, id, fa)	/* convert a source */
-char	*mod, *typ, *id;
-FUNARGS	*fa;
-{
-	return(0);		/* there is no MGF equivalent! */
 }
 
 
