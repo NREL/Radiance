@@ -33,26 +33,26 @@ int  size;
 		urmask = 0;
 		return(0);
 	}
-	for (i = 1; size >>= 1; i++)
-		;
-	order = i>MAXORDER ? MAXORDER : i;
-	urmask = (1<<i) - 1;
+	for (i = 1; (size >>= 1); i++)
+		if (i == MAXORDER)
+			break;
+	order = i;
+	urmask = (1<<order) - 1;
 	urperm = (unsigned short *)malloc((urmask+1)*sizeof(unsigned short));
 	if (urperm == NULL) {
 		eputs("out of memory in initurand\n");
 		quit(1);
 	}
-	urperm[0] = 0;
+	urperm[0] = (random() & 0x4000) != 0;
 	for (n = 1, offset = 1; n <= order; n++, offset <<= 1)
 		for (i = offset; i--; ) {
-			urperm[i] =
-			urperm[i+offset] = 2*urperm[i];
+			urperm[i+offset] = urperm[i] <<= 1;
 			if (random() & 0x4000)
 				urperm[i]++;
 			else
 				urperm[i+offset]++;
 		}
-	return(1<<order);
+	return(urmask+1);
 }
 
 
