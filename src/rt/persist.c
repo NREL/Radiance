@@ -1,4 +1,4 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1996 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -75,7 +75,7 @@ int	lf;
 persistfile(pfn)	/* open persist file and lock it */
 char	*pfn;
 {
-	persistfd = open(pfn, O_WRONLY|O_CREAT|O_EXCL, 0666);
+	persistfd = open(pfn, O_WRONLY|O_CREAT|O_EXCL, 0644);
 	if (persistfd >= 0) {
 		persistfname = pfn;
 		pflock(1);
@@ -92,11 +92,16 @@ char	*pfn;
 }
 
 
-int sig_noop() {}
+static int	got_io;
+
+static int sig_io() { got_io++; }
+
+static int sig_alrm() { quit(0); }
 
 
 pfhold()		/* holding pattern for idle rendering process */
 {
+	int	(*oldalrm)();
 	char	buf[512];
 	register int	n;
 				/* close input and output descriptors */
@@ -114,11 +119,15 @@ pfhold()		/* holding pattern for idle rendering process */
 	if (write(persistfd, buf, n) < n)
 		error(SYSTEM, "error writing persist file");
 				/* wait TIMELIM for someone to signal us */
-	signal(SIGIO, sig_noop);
+	got_io = 0;
+	signal(SIGIO, sig_io);
+	oldalrm = (int (*)())signal(SIGALRM, sig_alrm);
 	alarm(TIMELIM);
 	pflock(0);
-	pause();
+	while (!got_io)
+		pause();
 	alarm(0);
+	signal(SIGALRM, oldalrm);
 	signal(SIGIO, SIG_DFL);
 	pflock(1);
 				/* someone wants us; reopen stdin and stdout */
@@ -145,9 +154,10 @@ io_process()		/* just act as conduits to and from actual process */
 	char	buf[512], *pfin, *pfout;
 	int	pid;
 				/* load and close persist file */
+	sleep(5);		/* helps synchronization */
 	nr = read(persistfd, buf, sizeof(buf)-1);
 	pfdetach();
-	if (nr < 0)
+	if (nr <= 0)
 		error(SYSTEM, "cannot read persist file");
 	buf[nr] = '\0';
 	if ((cp = index(buf, ' ')) == NULL)
