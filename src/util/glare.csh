@@ -71,7 +71,10 @@ _EOF_
 			echo "Cannot read $picture"
 			exit 1
 		endif
-		set fgargs=($fgargs -p $picture -vf $picture)
+		set fgargs=($fgargs -p $picture)
+		if ( "$view" != "" ) then
+			set view=(-vf $picture $view)
+		endif
 	endif
 	set fgargs=($fgargs $view)
 	if ( $octree != $nofile ) then
@@ -135,6 +138,11 @@ _EOF_
 	echo "Starting calculation..."
 	echo findglare $fgargs
 	findglare $fgargs > $glarefile
+	if ($status) then
+		echo "Uh-oh.  Something went wrong with findglare\!"
+		rm $glarefile
+		exit 1
+	endif
 endif
 if ($?DISPLAY && $picture != $nofile) then
 	echo ""
