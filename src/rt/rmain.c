@@ -71,6 +71,7 @@ extern int  ralrm;			/* seconds between reports */
 extern int  greyscale;			/* map colors to brightness? */
 extern char  *devname;			/* output device name */
 
+extern char  *formstr();		/* string from format */
 extern int  inform;			/* input format */
 extern int  outform;			/* output format */
 extern char  *outvals;			/* output values */
@@ -503,6 +504,10 @@ char  *argv[];
 	if (loadflags & IO_INFO) {	/* print header */
 		printargs(i, argv, stdout);
 		printf("SOFTWARE= %s\n", VersionID);
+#if  RTRACE
+		fputformat(formstr(outform), stdout);
+		putchar('\n');
+#endif
 	}
 
 	marksources();			/* find and mark sources */
@@ -513,10 +518,10 @@ char  *argv[];
 	rpict(seqstart, outfile, zfile, recover);
 #endif
 #if  RTRACE
-	rtrace(NULL);			/* trace rays from stdin */
+	rtrace(NULL);
 #endif
 #if  RVIEW
-	rview();			/* go */
+	rview();
 #endif
 	quit(0);
 
@@ -605,7 +610,6 @@ char  *msg;
 
 printdefaults()			/* print default values to stdout */
 {
-	extern char  *formstr();
 	register char  *cp;
 
 #if  RTRACE
