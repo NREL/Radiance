@@ -144,6 +144,8 @@ proc helpopen fname {			# open the named help file
 			}
 		}
 		if {! [catch {set fi [open $ifile w]}]} {
+			puts $fi "# This is an automatically created index\
+					file -- DO NOT EDIT!"
 			writevars $fi helpindex
 			close $fi
 			catch {exec chmod 666 $ifile}
