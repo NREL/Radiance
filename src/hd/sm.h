@@ -148,14 +148,16 @@ typedef struct _SM {
 
 #define SM_T_ID_VALID(s,t_id) T_IS_VALID(SM_NTH_TRI(s,t_id))
  
+
 #define SM_MAX_SAMP(m)                S_MAX_SAMP(SM_SAMP(m))
 #define SM_MAX_POINTS(m)              S_MAX_POINTS(SM_SAMP(m))
 #define SM_SAMP_BASE(m)               S_BASE(SM_SAMP(m))
 #define SM_NTH_WV(m,i)                S_NTH_W_PT(SM_SAMP(m),i)
 #define SM_NTH_W_DIR(m,i)             S_NTH_W_DIR(SM_SAMP(m),i)
-#define SM_DIR_ID(m,i)                (SM_NTH_W_DIR(m,i)==-1)
+#define SM_DIR_ID(m,i)            (!SM_BASE_ID(m,i) && SM_NTH_W_DIR(m,i)==-1)
 #define SM_NTH_RGB(m,i)               S_NTH_RGB(SM_SAMP(m),i)
 #define SM_RGB(m)                    S_RGB(SM_SAMP(m))
+#define SM_WP(m)                    S_W_PT(SM_SAMP(m))
 #define SM_BRT(m)                     S_BRT(SM_SAMP(m))
 #define SM_NTH_BRT(m,i)               S_NTH_BRT(SM_SAMP(m),i)
 #define SM_CHR(m)                     S_CHR(SM_SAMP(m))
@@ -169,7 +171,11 @@ typedef struct _SM {
 i < SM_NUM_TRI(m); i=smNext_tri_flag_set(m,i+1,w,b))
 
 #define SM_FOR_ALL_ACTIVE_TRIS(m,i) SM_FOR_ALL_FLAGGED_TRIS(m,i,T_ACTIVE_FLAG,0)
+#if 0
 #define SM_FOR_ALL_NEW_TRIS(m,i) SM_FOR_ALL_FLAGGED_TRIS(m,i,T_NEW_FLAG,0)
+#else
+#define SM_FOR_ALL_NEW_TRIS(m,i) for(i=0; i < smNew_tri_cnt; i++)
+#endif
 #define SM_FOR_ALL_BASE_TRIS(m,i) SM_FOR_ALL_FLAGGED_TRIS(m,i,T_BASE_FLAG,0)
 #define SM_FOR_ALL_VALID_TRIS(m,i) for(i=smNext_valid_tri(m,0); \
 i < SM_NUM_TRI(m); i=smNext_valid_tri(m,i+1))
@@ -235,6 +241,9 @@ typedef struct _ADD_ARGS {
 
 extern SM *smMesh;
 extern int smNew_tri_cnt;
+extern int smNew_tri_size;
+extern T_DEPTH *smNew_tris;
+
 extern double smDist_sum;
 
 

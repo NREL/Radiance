@@ -309,45 +309,21 @@ int qual;
 }
 
 
-smRender_tri(sm,i,vp,clr)
-SM *sm;
-int i;
-FVECT vp;
-int clr;
-{
-  TRI *tri;
-  double ptr[3];
-  int j;
 
-  tri = SM_NTH_TRI(sm,i);
-  if (clr) SM_CLR_NTH_T_NEW(sm,i);
-  for(j=0; j <= 2; j++)
-  {
-#ifdef DEBUG
-    if(SM_BG_SAMPLE(sm,T_NTH_V(tri,j)))
-      eputs("SmRenderTri(): shouldnt have bg samples\n");
-#endif
-    glColor3ub(SM_NTH_RGB(sm,T_NTH_V(tri,j))[0],
-	       SM_NTH_RGB(sm,T_NTH_V(tri,j))[1],
-	       SM_NTH_RGB(sm,T_NTH_V(tri,j))[2]);
-    VCOPY(ptr,SM_T_NTH_WV(sm,tri,j));
-    glVertex3d(ptr[0],ptr[1],ptr[2]);
-  }
-}
+#define render_tri(v0,v1,v2,rgb0,rgb1,rgb2) \
+  {glColor3ub(rgb0[0],rgb0[1],rgb0[2]);  glVertex3fv(v0); \
+  glColor3ub(rgb1[0],rgb1[1],rgb1[2]);  glVertex3fv(v1); \
+  glColor3ub(rgb2[0],rgb2[1],rgb2[2]);  glVertex3fv(v2);} \
 
-smRender_mixed_tri(sm,i,vp,clr)
-SM *sm;
-int i;
-FVECT vp;
-int clr;
+render_mixed_tri(v0,v1,v2,rgb0,rgb1,rgb2,bg0,bg1,bg2,vp,vc)
+float v0[3],v1[3],v2[3];
+BYTE rgb0[3],rgb1[3],rgb2[3];
+int bg0,bg1,bg2;
+FVECT vp,vc;
 {
-  TRI *tri;
   double p[3],d;
   int j,ids[3],cnt;
   int rgb[3];
-
-  tri = SM_NTH_TRI(sm,i);
-  if (clr) SM_CLR_NTH_T_NEW(sm,i);
 
   /* NOTE:Triangles are defined clockwise:historical relative to spherical
      tris: could change
@@ -355,76 +331,129 @@ int clr;
   cnt = 0;
   d = 0.0;
   rgb[0] = rgb[1] = rgb[2] = 0;
-  for(j=0;j < 3;j++)
+
+  if(bg0 && bg1 && bg2)
+    return;
+
+  if(!bg0)
   {
-      ids[j] = T_NTH_V(tri,j);
-      if(!SM_BG_SAMPLE(sm,ids[j]))
-      {
-	  rgb[0] += SM_NTH_RGB(sm,ids[j])[0];
-	  rgb[1] += SM_NTH_RGB(sm,ids[j])[1];
-	  rgb[2] += SM_NTH_RGB(sm,ids[j])[2];
-	  cnt++;
-	  d += DIST(vp,SM_NTH_WV(sm,ids[j]));
-      }
+    rgb[0] += rgb0[0];
+    rgb[1] += rgb0[1];
+    rgb[2] += rgb0[2];
+    cnt++;
+    d += DIST(vp,v0);
+  }
+  if(!bg1)
+  {
+    rgb[0] += rgb1[0];
+    rgb[1] += rgb1[1];
+    rgb[2] += rgb1[2];
+    cnt++;
+    d += DIST(vp,v1);
+  }
+  if(!bg2)
+  {
+    rgb[0] += rgb2[0];
+    rgb[1] += rgb2[1];
+    rgb[2] += rgb2[2];
+    cnt++;
+    d += DIST(vp,v2);
   }
   if(cnt > 1)
   {
     rgb[0]/=cnt; rgb[1]/=cnt; rgb[2]/=cnt;
     d /= (double)cnt;
   } 
-  for(j=0; j <= 2; j++)
+  if(bg0)
   {
-    if(SM_BG_SAMPLE(sm,ids[j]))
-    {
-	glColor3ub(rgb[0],rgb[1],rgb[2]);
-	VSUB(p,SM_NTH_WV(sm,ids[j]),SM_VIEW_CENTER(sm));
-	p[0] *= d;
-	p[1] *= d;
-	p[2] *= d;
-	VADD(p,p,SM_VIEW_CENTER(sm));
-    }
-    else
-    {
-	glColor3ub(SM_NTH_RGB(sm,ids[j])[0],SM_NTH_RGB(sm,ids[j])[1],
-		   SM_NTH_RGB(sm,ids[j])[2]);
-	VCOPY(p,SM_NTH_WV(sm,ids[j]));
-    }
-    glVertex3d(p[0],p[1],p[2]);
+    glColor3ub(rgb[0],rgb[1],rgb[2]);
+    VSUB(p,v0,vc);
+    p[0] *= d;
+    p[1] *= d;
+    p[2] *= d;
+    VADD(p,p,vc);
+    glVertex3dv(p);
+  }
+  else
+  {
+    glColor3ub(rgb0[0],rgb0[1],rgb0[2]);
+    glVertex3fv(v0);
    }
+  if(bg1)
+  {
+    glColor3ub(rgb[0],rgb[1],rgb[2]);
+    VSUB(p,v1,vc);
+    p[0] *= d;
+    p[1] *= d;
+    p[2] *= d;
+    VADD(p,p,vc);
+    glVertex3dv(p);
+  }
+  else
+  {
+    glColor3ub(rgb1[0],rgb1[1],rgb1[2]);
+    glVertex3fv(v1);
+   }
+  if(bg2)
+  {
+    glColor3ub(rgb[0],rgb[1],rgb[2]);
+    VSUB(p,v2,vc);
+    p[0] *= d;
+    p[1] *= d;
+    p[2] *= d;
+    VADD(p,p,vc);
+    glVertex3dv(p);
+  }
+  else
+  {
+    glColor3ub(rgb2[0],rgb2[1],rgb2[2]);
+    glVertex3fv(v2);
+   }
+
 }
 
-smRender_bg_tri(sm,i,vp,d,clr)
-SM *sm;
-int i;
-FVECT vp;
+render_bg_tri(v0,v1,v2,rgb0,rgb1,rgb2,vp,vc,d)
+float v0[3],v1[3],v2[3];
+BYTE rgb0[3],rgb1[3],rgb2[3];
+FVECT vp,vc;
 double d;
-int clr;
 {
   double p[3];
-  int j,id;
-  TRI *tri;
   
-  tri = SM_NTH_TRI(sm,i);
-  if (clr) SM_CLR_NTH_T_NEW(sm,i);
-
-  /* NOTE:Triangles are defined clockwise:historical relative to spherical
-     tris: could change
-     */
-  for(j=0; j <= 2; j++)
+  glColor3ub(rgb0[0],rgb0[1],rgb0[2]);
+  VSUB(p,v0,vc);
+  if(dev_zmin >= 0.99)
   {
-      id = T_NTH_V(tri,j);
-      glColor3ub(SM_NTH_RGB(sm,id)[0],SM_NTH_RGB(sm,id)[1],
-	         SM_NTH_RGB(sm,id)[2]);
-      VSUB(p,SM_NTH_WV(sm,id),SM_VIEW_CENTER(sm));
-      if(dev_zmin >= 0.99)
-       {
-	   p[0] *= d;
-	   p[1] *= d;
-	   p[2] *= d;
-       }
-      VADD(p,p,vp);
-      glVertex3d(p[0],p[1],p[2]);
+    p[0] *= d;
+    p[1] *= d;
+    p[2] *= d;
   }
+  VADD(p,p,vp);
+  glVertex3dv(p);
+
+  glColor3ub(rgb1[0],rgb1[1],rgb1[2]);
+  VSUB(p,v1,vc);
+  if(dev_zmin >= 0.99)
+  {
+    p[0] *= d;
+    p[1] *= d;
+    p[2] *= d;
+  }
+  VADD(p,p,vp);
+  glVertex3dv(p);
+
+
+  glColor3ub(rgb2[0],rgb2[1],rgb2[2]);
+  VSUB(p,v2,vc);
+  if(dev_zmin >= 0.99)
+  {
+    p[0] *= d;
+    p[1] *= d;
+    p[2] *= d;
+  }
+  VADD(p,p,vp);
+  glVertex3dv(p);
+
 }
 
 smRender_mesh(sm,vp,clr)
@@ -432,56 +461,86 @@ SM *sm;
 FVECT vp;
 int clr;
 {
-  int i;
+  int i,bg0,bg1,bg2;
+  double d;
+  int v0_id,v1_id,v2_id;
   TRI *tri;
-  double ptr[3],d;
-  int j;
+  float (*wp)[3];
+  BYTE  (*rgb)[3];
 
+  wp = SM_WP(sm);
+  rgb =SM_RGB(sm);
   d = (dev_zmin+dev_zmax)/2.0;
   glPushAttrib(GL_DEPTH_BUFFER_BIT);
   
   /* First draw background polygons */
   glDisable(GL_DEPTH_TEST);
   glBegin(GL_TRIANGLES);
+  /* Maintain a list? */
   SM_FOR_ALL_ACTIVE_BG_TRIS(sm,i)
-     smRender_bg_tri(sm,i,vp,d,clr);
+  {
+    if (clr) 
+      SM_CLR_NTH_T_NEW(sm,i);
+    tri = SM_NTH_TRI(sm,i);
+    v0_id = T_NTH_V(tri,0);
+    v1_id = T_NTH_V(tri,1);
+    v2_id = T_NTH_V(tri,2);
+    render_bg_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
+		   rgb[v2_id],vp,SM_VIEW_CENTER(sm),d);
+  }
   glEnd();
   glEnable(GL_DEPTH_TEST);
   glBegin(GL_TRIANGLES);
   SM_FOR_ALL_ACTIVE_FG_TRIS(sm,i)
   {
-      if(!SM_MIXED_TRI(sm,i))
-	smRender_tri(sm,i,vp,clr);
+    if (clr) 
+      SM_CLR_NTH_T_NEW(sm,i);
+    tri = SM_NTH_TRI(sm,i);
+    v0_id = T_NTH_V(tri,0);
+    v1_id = T_NTH_V(tri,1);
+    v2_id = T_NTH_V(tri,2);
+    bg0 = SM_DIR_ID(sm,v0_id) || SM_BASE_ID(sm,v0_id);
+    bg1 = SM_DIR_ID(sm,v1_id) || SM_BASE_ID(sm,v1_id);
+    bg2 = SM_DIR_ID(sm,v2_id) || SM_BASE_ID(sm,v2_id);
+    if(!(bg0 || bg1 || bg2))
+	render_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
+		   rgb[v2_id])
    else
-	smRender_mixed_tri(sm,i,vp,clr);
+	render_mixed_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
+	   rgb[v2_id],bg0,bg1,bg2,vp,SM_VIEW_CENTER(sm));
   }
   glEnd();
 
   glPopAttrib();
 }
 
-smRender_tri_edges(sm,i)
-SM *sm;
-int i;
+int
+compare_tri_depths(T_DEPTH *td1,T_DEPTH *td2)
 {
-  TRI *tri;
-  int j;
-  double ptr[3];
+  double d;
 
+  if(td1->tri==-1)
+    {
+      if(td2->tri==-1)
+	return(0);
+      else 
+	return(-1);
+    }
+  if(td2->tri==-1)
+    return(1);
 
-  tri = SM_NTH_TRI(sm,i);
-
-  for(j=0; j <= 2; j++)
-  {
-    VCOPY(ptr,SM_NTH_WV(sm,T_NTH_V(tri,j)));
-    glVertex3d(ptr[0],ptr[1],ptr[2]);
-    VCOPY(ptr,SM_NTH_WV(sm,T_NTH_V(tri,(j+1)%3)));
-    glVertex3d(ptr[0],ptr[1],ptr[2]);
-  }
+  d = td2->depth-td1->depth;
+  
+  if(d > 0.0)
+    return(1);
+  if(d < 0.0)
+    return(-1);
+  
+  return(0);
 }
 
 int
-compare_tri_depths(T_DEPTH *td1,T_DEPTH *td2)
+compare_tri_depths_old(T_DEPTH *td1,T_DEPTH *td2)
 {
   double d;
 
@@ -505,6 +564,7 @@ T_DEPTH *td;
   TRI *tri;
   double d,min_d;
   LIST *tlist=NULL;
+  FVECT diff;
 
   i = 0;
   SM_FOR_ALL_NEW_TRIS(sm,t_id)
@@ -515,13 +575,6 @@ T_DEPTH *td;
 	continue;
     }
     tri = SM_NTH_TRI(sm,t_id);
-#ifdef DEBUG
-    if(i >= smNew_tri_cnt)
-    {
-      eputs("smDepth_sort_tris():More tris than reported by smNew_tri_cnt\n");
-      break;
-    }
-#endif
     td[i].tri = t_id;
     min_d = -1;
     for(j=0;j < 3;j++)
@@ -529,7 +582,8 @@ T_DEPTH *td;
 	v = T_NTH_V(tri,j);
 	if(!SM_BG_SAMPLE(sm,v))
 	{
-	    d = DIST(vp,SM_NTH_WV(sm,v));
+	    VSUB(diff,SM_NTH_WV(sm,v),vp);
+	    d = DOT(diff,diff);
 	    if(min_d == -1 || d < min_d)
 	       min_d = d;
 	}
@@ -544,6 +598,60 @@ T_DEPTH *td;
 }
 
 
+
+LIST
+*smOrder_new_tris(sm,vp,td,sort)
+SM *sm;
+FVECT vp;
+T_DEPTH *td;
+int sort;
+{
+  int i,j,t_id,v;
+  TRI *tri;
+  double d,min_d;
+  LIST *tlist=NULL;
+  FVECT diff;
+
+  i = 0;
+  for(i=0; i < smNew_tri_cnt;i++)
+  {
+    t_id = smNew_tris[i].tri;
+
+    tri = SM_NTH_TRI(sm,t_id);
+    if(!T_IS_VALID(tri))
+    {
+      smNew_tris[i].tri = -1;
+      continue;
+    }
+    if(SM_BG_TRI(sm,t_id))
+    {
+	tlist = push_data(tlist,t_id);
+	smNew_tris[i].tri = -1;
+	continue;
+    }
+    if(!sort)
+      continue;
+    min_d = -1;
+    for(j=0;j < 3;j++)
+    {
+	v = T_NTH_V(tri,j);
+	if(!SM_BG_SAMPLE(sm,v))
+	{
+	    VSUB(diff,SM_NTH_WV(sm,v),vp);
+	    d = DOT(diff,diff);
+	    if(min_d == -1 || d < min_d)
+	       min_d = d;
+	}
+    }
+    td[i].depth = min_d;
+  }
+  if(!sort)
+    return(tlist);
+  qsort((void *)td,smNew_tri_cnt,sizeof(T_DEPTH),compare_tri_depths);
+  return(tlist);
+}
+
+
 smUpdate_Rendered_mesh(sm,vp,clr)
 SM *sm;
 FVECT vp;
@@ -551,15 +659,20 @@ int clr;
 {
   static T_DEPTH *td= NULL;
   static int tsize = 0;
-  int i;
+  int i,v0_id,v1_id,v2_id,bg0,bg1,bg2;
   GLint depth_test;
   double d;
   LIST *bglist;
+  TRI *tri;
+  float (*wp)[3];
+  BYTE  (*rgb)[3];
+
   /* For all of the NEW triangles (since last update): assume
      ACTIVE. Go through and sort on depth value (from vp). Turn
      Depth Buffer test off and render back-front
      */
   /* NOTE: could malloc each time or hard code */
+#if 0
   if(smNew_tri_cnt > tsize)
   {
     if(td)
@@ -572,7 +685,15 @@ int clr;
     error(SYSTEM,"smUpdate_Rendered_mesh:Cannot allocate memory\n");
   }
   bglist = smDepth_sort_tris(sm,vp,td);
-
+#else
+  td = smNew_tris;
+  if(!EQUAL_VEC3(SM_VIEW_CENTER(sm),vp))
+    bglist = smOrder_new_tris(sm,vp,td,1);
+  else
+    bglist = smOrder_new_tris(sm,vp,td,0);
+#endif
+  wp = SM_WP(sm);
+  rgb =SM_RGB(sm);
   /* Turn Depth Test off -- using Painter's algorithm */
   glPushAttrib(GL_DEPTH_BUFFER_BIT);
   glDepthFunc(GL_ALWAYS);
@@ -581,17 +702,46 @@ int clr;
   /* First render bg triangles */
   glBegin(GL_TRIANGLES);
   while(bglist)
-     smRender_bg_tri(sm,pop_list(&bglist),vp,d,clr);
+  {
+    i = pop_list(&bglist);
+    if (clr) 
+      SM_CLR_NTH_T_NEW(sm,i);
+    tri = SM_NTH_TRI(sm,i);
+    v0_id = T_NTH_V(tri,0);
+    v1_id = T_NTH_V(tri,1);
+    v2_id = T_NTH_V(tri,2);
+    render_bg_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
+		   rgb[v2_id],vp,SM_VIEW_CENTER(sm),d);
+  }
   glEnd();
 
 
   glBegin(GL_TRIANGLES);
   i=0;
-  while(td[i].tri != -1)
-     if(!SM_MIXED_TRI(sm,td[i].tri))
-	smRender_tri(sm,td[i++].tri,vp,clr);
-     else
-	smRender_mixed_tri(sm,td[i++].tri,vp,clr);
+  while(i != smNew_tri_cnt)
+  {
+    if(td[i].tri == -1)
+      {
+	i++;
+	continue;
+      }
+    if (clr) 
+      SM_CLR_NTH_T_NEW(sm,td[i].tri);
+    tri = SM_NTH_TRI(sm,td[i].tri);
+    v0_id = T_NTH_V(tri,0);
+    v1_id = T_NTH_V(tri,1);
+    v2_id = T_NTH_V(tri,2);
+    bg0 = SM_DIR_ID(sm,v0_id) || SM_BASE_ID(sm,v0_id);
+    bg1 = SM_DIR_ID(sm,v1_id) || SM_BASE_ID(sm,v1_id);
+    bg2 = SM_DIR_ID(sm,v2_id) || SM_BASE_ID(sm,v2_id);
+    if(!(bg0 || bg1 || bg2))
+      render_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
+		 rgb[v2_id])
+   else
+     render_mixed_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
+		      rgb[v2_id],bg0,bg1,bg2,vp,SM_VIEW_CENTER(sm));
+    i++;
+  }
   glEnd();
 
   /* Restore Depth Test */
@@ -626,8 +776,6 @@ smUpdate(view,qual)
   if(!smMesh)
     return;
 
-
-
   d = DIST(view->vp,SM_VIEW_CENTER(smMesh));
   if(qual >= 100 && d > SM_ALLOWED_VIEW_CHANGE(smMesh))
   {
@@ -637,6 +785,7 @@ smUpdate(view,qual)
 #endif  
       mark_tris_in_frustum(view);
       smRebuild_mesh(smMesh,view);
+      smClean_notify = TRUE;
   }
   /* This is our final update iff qual==100 and view==&odev.v */
   last_update = qual>=100 && view==&(odev.v);
@@ -698,7 +847,9 @@ smUpdate(view,qual)
   {
     smClean_notify = FALSE;
     smNew_tri_cnt = 0;
+#if 0   
     smClear_flags(smMesh,T_NEW_FLAG);
+#endif
     qtCache_init(0);
   }
 

@@ -99,9 +99,9 @@ typedef struct _FUNC {
 #define QT_FLAG_SET_MODIFIED(f)   ((f) |= QT_MODIFIED)
 
 #define qtSubdivide(qt) (qt = qtAlloc(),QT_CLEAR_CHILDREN(qt))
-#define qtSubdivide_tri(v0,v1,v2,a,b,c) (EDGE_MIDPOINT(a,v0,v1), \
-					 EDGE_MIDPOINT(b,v1,v2), \
-					 EDGE_MIDPOINT(c,v2,v0))
+#define qtSubdivide_tri(v0,v1,v2,a,b,c) (EDGE_MIDPOINT(a,v1,v2), \
+					 EDGE_MIDPOINT(b,v2,v0), \
+					 EDGE_MIDPOINT(c,v0,v1))
  
 extern QUADTREE  qtnewleaf(), qtaddelem(), qtdelelem();
 

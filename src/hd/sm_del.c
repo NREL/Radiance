@@ -47,30 +47,18 @@ int t_id;
      to id because the vertices can no longer
      point to tri id as being the first triangle pointer
   */
+  SM_SAMPLE_TRIS(sm)--;
   if(!SM_IS_NTH_T_BASE(sm,t_id))
   {
-    SM_SAMPLE_TRIS(sm)--;
+
+#if 0
     if(SM_IS_NTH_T_NEW(sm,t_id))
       smNew_tri_cnt--;
+#endif
   }
   smClear_tri_flags(sm,t_id);
 
   smFree_tri(sm,t_id);
-
-#if 0
-  {
-    int i;
-    TRI *t;
-    for(i=0; i < SM_NUM_TRI(sm);i++)
-    {
-      t = SM_NTH_TRI(sm,i);
-      if(!T_IS_VALID(t))
-	continue;
-      if(T_NTH_NBR(t,0)==t_id || T_NTH_NBR(t,1)==t_id || T_NTH_NBR(t,2)==t_id)
-	eputs("Stale pointer: smDelete_tri()\n");
-    }
-  }
-#endif
 }
 
 

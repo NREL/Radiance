@@ -115,7 +115,7 @@ FVECT p0,p1;
 
     det = -dp0*CROSS_VEC2(p1,p) + dp1*CROSS_VEC2(p0,p) - dp*CROSS_VEC2(p0,p1);
     
-    return (det > 0);
+    return (det > (1e-10));
 }
 
 
