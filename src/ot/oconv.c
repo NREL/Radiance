@@ -57,7 +57,7 @@ char  **argv;
 	if ((libpath = getenv("RAYPATH")) == NULL)
 		libpath = ":/usr/local/lib/ray";
 
-	for (i = 1; i < argc && argv[i][0] == '-'; i++)
+	for (i = 1; i < argc && argv[i][0] == '-' && argv[i][1]; i++)
 		switch (argv[i][1]) {
 		case 'i':				/* input octree */
 			infile = argv[++i];
@@ -85,7 +85,7 @@ char  **argv;
 			error(USER, errmsg);
 			break;
 		}
-	
+
 	if (infile != NULL) {		/* get old octree & objects */
 		if (thescene.cusize > FTINY)
 			error(USER, "only one of '-b' or '-i'");
@@ -101,11 +101,16 @@ char  **argv;
 
 	startobj = nobjects;		/* previous objects already converted */
 	
-	for ( ; i < argc; i++) {		/* read new files */
-		if (nfiles >= MAXOBJFIL)
-			error(INTERNAL, "too many scene files");
-		readobj(ofname[nfiles++] = argv[i]);
-	}
+	for ( ; i < argc; i++)		/* read new scene descriptions */
+		if (!strcmp(argv[i], "-")) {	/* from stdin */
+			readobj(NULL);
+			outflags &= ~IO_FILES;
+		} else {			/* from file */
+			if (nfiles >= MAXOBJFIL)
+				error(INTERNAL, "too many scene files");
+			readobj(ofname[nfiles++] = argv[i]);
+		}
+
 	ofname[nfiles] = NULL;
 						/* find bounding box */
 	bbmin[0] = bbmin[1] = bbmin[2] = FHUGE;
