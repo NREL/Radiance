@@ -410,10 +410,14 @@ FVECT  vc;
 		nv.horiz = ourview.horiz;
 		nv.vert = ourview.vert;
 		d = sqrt(dist2(ourview.vp, vc)) / mag;
-		nv.vfore = ourview.vfore + d - d*mag;
-		if (nv.vfore < 0.0) nv.vfore = 0.0;
-		nv.vaft = ourview.vaft + d - d*mag;
-		if (nv.vaft < nv.vfore) nv.vaft = 0.0;
+		if ((nv.vfore = ourview.vfore) > FTINY) {
+			nv.vfore += d - d*mag;
+			if (nv.vfore < 0.0) nv.vfore = 0.0;
+		}
+		if ((nv.vaft = ourview.vaft) > FTINY) {
+			nv.vaft += d - d*mag;
+			if (nv.vaft <= nv.vfore) nv.vaft = 0.0;
+		}
 	}
 	for (i = 0; i < 3; i++)
 		nv.vp[i] = vc[i] - d*nv.vdir[i];
