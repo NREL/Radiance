@@ -47,6 +47,8 @@ short  tinvers[NUMOTYPE];		/* inverse types for surfaces */
 
 int  nrept = 1;				/* number of array repetitions */
 
+int stdinused = 0;			/* stdin has been used by -f option? */
+
 extern char  *malloc(), *fgets(), *fgetword();
 
 char  mainfn[MAXPATH];			/* main file name */
@@ -128,6 +130,11 @@ char  *argv[];
 	putchar('\n');
 					/* transform input */
 	if (xac == argc) {
+		if (stdinused) {
+			fprintf(stderr, "%s: cannot use stdin more than once\n",
+					argv[0]);
+			exit(1);
+		}
 		openmain(NULL);
 		xform(mainfn, mainfp);
 	} else
@@ -152,28 +159,37 @@ int  ac, fi;
 	FILE	*argfp;
 	int  n, i, k, newac, err;
 	
-	if (fi >= ac-1 || av[fi+1][0] == '-') {
+	if (fi >= ac-1 || (av[fi+1][0] == '-' && av[fi+1][1] != '\0')) {
 		fprintf(stderr, "%s: missing file for -f option\n", av[0]);
 		exit(1);
 	}
-	if ((argfp = fopen(av[fi+1], "r")) == NULL) {
-		fprintf(stderr, "%s: cannot open argument file \"%s\"\n",
-				av[0], av[fi+1]);
-		exit(1);
+	if (av[fi+1][0] == '-' && av[fi+1][1] == '\0') {
+		if (stdinused++) {
+			fprintf(stderr, "%s: cannot use stdin more than once\n",
+					av[0]);
+			exit(1);
+		}
+		argfp = stdin;
+		n = 100;		/* we just don't know! */
+	} else {
+		if ((argfp = fopen(av[fi+1], "r")) == NULL) {
+			fprintf(stderr, "%s: cannot open argument file \"%s\"\n",
+					av[0], av[fi+1]);
+			exit(1);
+		}
+		n = 0;			/* count number of lines in file */
+		while (fgets(argbuf,sizeof(argbuf),argfp) != NULL)
+			n++;
+		if (!n) {
+			fprintf(stderr, "%s: empty argument file \"%s\"\n",
+					av[0], av[fi+1]);
+			exit(1);
+		}
+		nrept *= n;
+		rewind(argfp);
 	}
-	n = 0;			/* count number of lines in file */
-	while (fgets(argbuf, sizeof(argbuf), argfp) != NULL)
-		n++;
-	if (!n) {
-		fprintf(stderr, "%s: empty argument file \"%s\"\n",
-				av[0], av[fi+1]);
-		exit(1);
-	}
-	rewind(argfp);
-	nrept *= n;
 	err = 0;			/* read each arg list and call main */
-	for (k = 0; k < n; k++) {
-		fgets(argbuf, sizeof(argbuf), argfp);
+	for (k = 0; fgets(argbuf,sizeof(argbuf),argfp) != NULL; k++) {
 		avp = newav+2;
 		avp[0] = av[0];
 		for (i = 1; i < fi; i++)
