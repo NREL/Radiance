@@ -35,10 +35,10 @@ char	*argv[];
 	frompicz = -1;
 	for (i = 2; i < argc && argv[i][0] == '-'; i++)
 		switch (argv[i][1]) {
-		case 'c':
+		case 'u':
 			checkrepeats = 1;
 			break;
-		case 'f':
+		case 'd':
 			checkdepth = 0;
 			break;
 		case 'h':
@@ -63,9 +63,9 @@ char	*argv[];
 			addholo(argv[i]);
 	quit(0);
 userr:
-	fprintf(stderr, "Usage: %s output.hdk [-c][-f] -h inp1.hdk ..\n",
+	fprintf(stderr, "Usage: %s output.hdk [-u][-d] -h inp1.hdk ..\n",
 			progname);
-	fprintf(stderr, "   Or: %s output.hdk [-c][-f] -pz inp1.pic inp1.zbf ..\n",
+	fprintf(stderr, "   Or: %s output.hdk [-u][-d] -pz inp1.pic inp1.zbf ..\n",
 			progname);
 	exit(1);
 }
