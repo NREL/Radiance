@@ -95,7 +95,6 @@ char  *id;
 	XWMHints  ourxwmhints;
 	XSizeHints	oursizhints;
 					/* set quadtree globals */
-	qtDepthEps = 0.02;
 	qtMinNodesiz = 2;
 					/* open display server */
 	ourdisplay = XOpenDisplay(NULL);
