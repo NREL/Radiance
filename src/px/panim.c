@@ -20,6 +20,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define GAMMA		2.0		/* gamma correction factor */
 
+FILE	*popen();
+
+char	*pcom = NULL;			/* pipe command */
+
 BYTE	gammamap[256];			/* gamma correction table */
 
 
@@ -35,12 +39,14 @@ char	*argv[];
 	for (progname = *argv++; --argc; argv++)
 		if (!strcmp(*argv, "-p") && argv[1]) {
 			port = atoi(*++argv); argc--;
+		} else if (!strcmp(*argv, "-u") && argv[1]) {
+			pcom = *++argv; argc--;
 		} else
 			break;
 	if (!argc) {
 		fputs("Usage: ", stderr);
 		fputs(progname, stderr);
-		fputs(" [-p port] hostname [-c copies][-r record] [frame] ..\n",
+		fputs(" [-p port] [-u uncompress] hostname [-c copies][-r record] [frame] ..\n",
 				stderr);
 		exit(1);
 	}
@@ -71,6 +77,7 @@ char	*argv[];
 sendframe(file)			/* convert and send a frame */
 char	*file;
 {
+	char	command[128];
 	COLR	scanin[SCANLINE];
 	int	xres, yres;
 	int	xbeg, ybeg;
@@ -79,9 +86,19 @@ char	*file;
 	register int	x;
 						/* open file */
 	if (file == NULL) {
-		fp = stdin;
+		if (pcom != NULL)
+			fp = popen(pcom, "r");
+		else
+			fp = stdin;
 		file = "<stdin>";
-	} else if ((fp = fopen(file, "r")) == NULL) {
+	} else {
+		if (pcom != NULL) {
+			sprintf(command, "( %s ) < %s", pcom, file);
+			fp = popen(command, "r");
+		} else
+			fp = fopen(file, "r");
+	}
+	if (fp == NULL) {
 		perror(file);
 		exit(1);
 	}
@@ -115,7 +132,10 @@ char	*file;
 						/* send frame */
 	scry_send_frame();
 						/* close file */
-	fclose(fp);
+	if (pcom != NULL)
+		pclose(fp);
+	else
+		fclose(fp);
 }
 
 
