@@ -218,7 +218,8 @@ char	*pat, *str;
  * if any input format is found (or there is an error), and 0 otherwise.
  * If fmt contains any '*' or '?' characters, then checkheader
  * does wildcard expansion and copies a matching result into fmt.
- * Be sure that fmt is big enough to hold the match in such cases!
+ * Be sure that fmt is big enough to hold the match in such cases,
+ * and that it is not a static, read-only string!
  * The input header (minus any format lines) is copied to fout
  * if fout is not NULL.
  */
@@ -230,6 +231,7 @@ char  *fmt;
 FILE  *fout;
 {
 	struct check	cdat;
+	register char	*cp;
 
 	cdat.fp = fout;
 	cdat.fs[0] = '\0';
@@ -237,9 +239,12 @@ FILE  *fout;
 		return(-1);
 	if (!cdat.fs[0])
 		return(0);
-	if (globmatch(fmt, cdat.fs)) {
-		strcpy(fmt, cdat.fs);
-		return(1);
-	}
-	return(-1);
+	for (cp = fmt; *cp; cp++)		/* check for globbing */
+		if (*cp == '?' | *cp == '*')
+			if (globmatch(fmt, cdat.fs)) {
+				strcpy(fmt, cdat.fs);
+				return(1);
+			} else
+				return(-1);
+	return(strcmp(fmt, cdat.fs) ? -1 : 1);	/* literal match */
 }
