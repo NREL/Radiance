@@ -21,8 +21,8 @@ static char SCCSid[] = "$SunId$ SGI";
 #ifndef PCTFREE
 #define PCTFREE		15	/* maximum fraction to free (%) */
 #endif
-#ifndef MAXFRAG
-#define MAXFRAG		8191	/* maximum fragments/file to track (0==inf) */
+#ifndef MAXFRAGB
+#define MAXFRAGB	16	/* fragment blocks/file to track (0==inf) */
 #endif
 #ifndef MINDIRSEL
 				/* minimum directory seek length */
@@ -34,7 +34,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #define read	readbuf
 #endif
 
-#define FRAGBLK		256	/* number of fragments to allocate at a time */
+#define FRAGBLK		512	/* number of fragments to allocate at a time */
 
 unsigned	hdcachesize = CACHESIZE*1024*1024;	/* target cache size */
 unsigned long	hdclock;	/* clock value */
@@ -501,9 +501,12 @@ register BEAMI	*bi;
 		f->nfrags = j;
 	}
 	j = f->nfrags++;		/* allocate a slot in free list */
-#if MAXFRAG
-	if (j >= MAXFRAG-1)
-		f->nfrags--;
+#if MAXFRAGB
+	if (j >= MAXFRAGB*FRAGBLK) {
+		f->nfrags = j--;	/* stop list growth */
+		if (bi->nrd <= f->fi[j].nrd)
+			return;		/* new one no better than discard */
+	}
 #endif
 	if (j % FRAGBLK == 0) {		/* more free list space */
 		register BEAMI	*newp;
