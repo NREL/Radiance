@@ -355,7 +355,11 @@ char  *p;			/* data for f */
 		rayorigin(&sr, r, SHADOW, 1.0);
 		VCOPY(sr.rdir, scp->dir);
 		sr.rsrc = scp->sno;
-		source[scp->sno].ntests++;	/* keep statistics */
+						/* keep statistics */
+		if (source[scp->sno].ntests++ > 0xfffffff0) {
+			source[scp->sno].ntests >>= 1;
+			source[scp->sno].nhits >>= 1;
+		}
 		if (localhit(&sr, &thescene) &&
 				( sr.ro != source[scp->sno].so ||
 				source[scp->sno].sflags & SFOLLOW )) {

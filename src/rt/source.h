@@ -47,7 +47,8 @@ typedef struct {
 			int  sn;		/* next source to aim for */
 		}  sv;			/* virtual source */
 	} sa;			/* source aiming information */
-	long  ntests, nhits;	/* shadow tests and hits */
+	unsigned long
+		ntests, nhits;	/* shadow tests and hits */
 	OBJREC  *so;		/* source destination object */
 }  SRCREC;		/* light source */
 
