@@ -53,10 +53,24 @@ char	*argv[];
 		mg_ehand[en] = put_entity;
 	}
 	mg_init();
-	if (argc < 3)
-		exit(mg_load((char *)NULL) != MG_OK);
-	for (i = 2; i < argc; i++)
+	if (argc < 3) {
+		if (mg_load((char *)NULL) != MG_OK)
+			exit(1);
+		if (mg_nunknown)
+			printf("%s %s: %u unknown entities on input\n",
+					mg_ename[MG_E_COMMENT],
+					argv[0], mg_nunknown);
+		exit(0);
+	}
+	for (i = 2; i < argc; i++) {
 		if (mg_load(argv[i]) != MG_OK)
 			exit(1);
+		if (mg_nunknown) {
+			printf("%s %s: %u unknown entities\n",
+					mg_ename[MG_E_COMMENT],
+					argv[i], mg_nunknown);
+			mg_nunknown = 0;
+		}
+	}
 	exit(0);
 }

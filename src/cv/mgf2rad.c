@@ -1,4 +1,4 @@
-/* Copyright (c) 1994 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -94,12 +94,20 @@ char	*argv[];
 	if (i == argc) {		/* convert stdin */
 		if ((rv = mg_load(NULL)) != MG_OK)
 			exit(1);
+		if (mg_nunknown)
+			printf("## %s: %u unknown entities\n",
+					argv[0], mg_nunknown);
 	} else				/* convert each file */
 		for ( ; i < argc; i++) {
 			printf("## %s %s ##############################\n",
 					argv[0], argv[i]);
 			if ((rv = mg_load(argv[i])) != MG_OK)
 				exit(1);
+			if (mg_nunknown) {
+				printf("## %s %s: %u unknown entities\n",
+						argv[0], argv[i], mg_nunknown);
+				mg_nunknown = 0;
+			}
 		}
 	exit(0);
 userr:

@@ -27,6 +27,12 @@ char	mg_ename[MG_NENTITIES][MG_MAXELEN] = MG_NAMELIST;
 
 int	(*mg_ehand[MG_NENTITIES])();
 
+			/* Handler routine for unknown entities */
+
+int	(*mg_uhand)() = mg_defuhand;
+
+unsigned	mg_nunknown;	/* count of unknown entities */
+
 			/* error messages */
 
 char	*mg_err[MG_NERRS] = MG_ERRLIST;
@@ -203,13 +209,16 @@ char	**av;
 {
 	int	rv;
 
-	if (en < 0 && (en = mg_entity(av[0])) < 0)
+	if (en < 0 && (en = mg_entity(av[0])) < 0) {	/* unknown entity */
+		if (mg_uhand != NULL)
+			return((*mg_uhand)(ac, av));
 		return(MG_EUNK);
-	if (e_supp[en] != NULL) {
+	}
+	if (e_supp[en] != NULL) {			/* support handler */
 		if ((rv = (*e_supp[en])(ac, av)) != MG_OK)
 			return(rv);
 	}
-	return((*mg_ehand[en])(ac, av));
+	return((*mg_ehand[en])(ac, av));		/* assigned handler */
 }
 
 
@@ -354,6 +363,18 @@ char	*fn;
 		}
 	mg_close();
 	return(rval);
+}
+
+
+int
+mg_defuhand(ac, av)		/* default handler for unknown entities */
+int	ac;
+char	**av;
+{
+	if (mg_nunknown++ == 0)		/* report first incident */
+		fprintf(stderr, "%s: %d: %s: %s\n", mg_file->fname,
+				mg_file->lineno, mg_err[MG_EUNK], av[0]);
+	return(MG_OK);
 }
 
 

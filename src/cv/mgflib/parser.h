@@ -48,13 +48,19 @@
 
 extern char	mg_ename[MG_NENTITIES][MG_MAXELEN];
 
-			/* Handler routines for each entity */
+			/* Handler routines for each entity and unknown ones */
 
 #ifdef NOPROTO
 extern int	(*mg_ehand[MG_NENTITIES])();
+extern int	(*mg_uhand)();
+extern int	mg_defuhand();
 #else
 extern int	(*mg_ehand[MG_NENTITIES])(int argc, char **argv);
+extern int	(*mg_uhand)(int argc, char **argv);
+extern int	mg_defuhand(int, char **);
 #endif
+
+extern unsigned	mg_nunknown;		/* count of unknown entities */
 
 			/* Error codes */
 #define MG_OK		0		/* normal return value */
@@ -71,7 +77,7 @@ extern int	(*mg_ehand[MG_NENTITIES])(int argc, char **argv);
 
 #define MG_NERRS	11
 
-extern char	*mg_err[MG_NERRS];
+extern char	*mg_err[MG_NERRS];	/* list of error messages */
 
 /*
  * The general process for running the parser is to fill in the mg_ehand
