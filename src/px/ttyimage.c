@@ -17,15 +17,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  NCOLS		133
 
-char  shadech[] = " .,:;+?%&*$@#";
-
-#define  NSHADES	(sizeof(shadech)-1)
-
-#define  shade(col)	( bright(col)>=1.0 ? NSHADES-1 : \
-				(int)(bright(col)*NSHADES) )
-
-char  *progname;
-
 
 main(argc, argv)
 int  argc;
@@ -33,16 +24,14 @@ char  **argv;
 {
 	FILE  *input;
 	int  xres, yres;
-	COLOR  scanline[NCOLS];
+	COLR  scanline[NCOLS];
 	char  sbuf[256];
 	register int  i, j;
 	
-	progname = argv[0];
-
 	if (argc < 2)
 		input = stdin;
 	else if ((input = fopen(argv[1], "r")) == NULL) {
-		fprintf(stderr, "%s: can't open file \"%s\"\n", progname, argv[1]);
+		fprintf(stderr, "%s: can't open file \"%s\"\n", argv[0], argv[1]);
 		exit(1);
 	}
 	
@@ -51,23 +40,42 @@ char  **argv;
 		;
 				/* get picture dimensions */
 	if (fgetresolu(&xres, &yres, input) != (YMAJOR|YDECR)) {
-		fprintf(stderr, "%s: bad picture size\n", progname);
+		fprintf(stderr, "%s: bad picture size\n", argv[0]);
 		exit(1);
 	}
 	if (xres > NCOLS) {
-		fprintf(stderr, "%s: resolution mismatch\n", progname);
+		fprintf(stderr, "%s: resolution mismatch\n", argv[0]);
 		exit(1);
 	}
 	
 	for (i = 0; i < yres; i++) {
-		if (freadscan(scanline, xres, input) < 0) {
-			fprintf(stderr, "%s: read error\n", progname);
+		if (freadcolrs(scanline, xres, input) < 0) {
+			fprintf(stderr, "%s: read error\n", argv[0]);
 			exit(1);
 		}
 		for (j = 0; j < xres; j++)
-			putchar(shadech[shade(scanline[j])]);
+			putchar(shade(scanline[j]));
 		putchar('\n');
 	}
 
 	exit(0);
+}
+
+
+int
+shade(clr)			/* return character for color */
+COLR  clr;
+{
+#define NSHADES  13
+
+	static char  shadech[NSHADES+1] = " .,:;+?%&*$@#";
+	COLR  nclr;
+	register int  b;
+
+	colr_norm(clr, nclr);
+	b = norm_bright(nclr);
+	b = b*NSHADES/256;
+	return(shadech[b]);
+
+#undef NSHADES
 }
