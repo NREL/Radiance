@@ -266,22 +266,26 @@ FVECT  vc;
 {
 	extern double  sqrt(), dist2();
 	double  d;
+	FVECT  v;
 	VIEW  nv;
 	register int  i;
 
 	VCOPY(nv.vup, ourview.vup);
 	nv.hresolu = ourview.hresolu; nv.vresolu = ourview.vresolu;
 	spinvector(nv.vdir, ourview.vdir, ourview.vup, angle*(PI/180.));
-	d = sqrt(dist2(ourview.vp, vc)) / mag;
-	for (i = 0; i < 3; i++)
-		nv.vp[i] = vc[i] - d*nv.vdir[i];
 	if ((nv.type = ourview.type) == VT_PAR) {
 		nv.horiz = ourview.horiz / mag;
 		nv.vert = ourview.vert / mag;
+		for (i = 0; i < 3; i++)
+			v[i] = vc[i] - ourview.vp[i];
+		d = DOT(v, ourview.vdir);	/* don't move closer */
 	} else {
 		nv.horiz = ourview.horiz;
 		nv.vert = ourview.vert;
+		d = sqrt(dist2(ourview.vp, vc)) / mag;
 	}
+	for (i = 0; i < 3; i++)
+		nv.vp[i] = vc[i] - d*nv.vdir[i];
 	newview(&nv);
 }
 
