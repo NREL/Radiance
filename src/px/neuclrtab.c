@@ -312,10 +312,10 @@ initnet()
 	
 	for (i=0; i<clrtabsiz; i++) {
 		p = network[i];
-		p[0] = i << netbiasshift;
-		p[1] = i << netbiasshift;
-		p[2] = i << netbiasshift;
-		freq[i] = intbias >> 8;  /* 1/256 */
+		p[0] =
+		p[1] =
+		p[2] = (i<<8) / clrtabsiz;
+		freq[i] = intbias/clrtabsiz;  /* 1/256 */
 		bias[i] = 0;
 	}
 }
