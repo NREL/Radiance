@@ -90,7 +90,7 @@ register OBJREC	*o;
 
 static int
 buildoctlist(lp, p)			/* build octree list */
-LUENT	*lp;
+const LUENT	*lp;
 void	*p;
 {
 	int	old_dolights = dolights, old_domats = domats;

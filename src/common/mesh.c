@@ -37,9 +37,9 @@ static lut_hashf_t cvhash;
 static unsigned long
 cvhash(p)				/* hash an encoded vertex */
 //MCVERT	*cvp;
-void	*p;
+const void	*p;
 {
-	MCVERT	*cvp = p;
+	const MCVERT	*cvp = (const MCVERT *)p;
 	unsigned long	hval;
 	
 	if (!(cvp->fl & MT_V))
