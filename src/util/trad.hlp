@@ -723,6 +723,15 @@ This setting may always be overridden by the "-vu xd yd zd" option,
 and will be altered for a particular view if it happens to be
 parallel to the view direction.
 
+.Views.Eyesep
+
+The eye separation is used for generating stereo views of
+the scene.
+It is the measured distance between a viewer's pupils in world
+coordinate units.
+It is not used directly by rad, but should be set for other programs
+that need it, such as rholo and glrad.
+
 .Views.Picture
 
 The root picture file name is given in the "Picture" entry window.

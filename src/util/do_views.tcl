@@ -80,7 +80,7 @@ proc delview {} {			# delete current view
 }
 
 proc copyviews rf {		# copy view settings from another RIF
-	load_vars [file tail $rf] {view UP PICTURE RESOLUTION RAWFILE ZFILE}
+	load_vars [file tail $rf] {view UP PICTURE EYESEP RESOLUTION RAWFILE ZFILE}
 	vnchange viewname {} w
 }
 
@@ -165,23 +165,29 @@ proc do_views w {			# create views screen
 	place $w.upzn -relx .5714 -rely .5244
 	helplink "$w.upxp $w.upxn $w.upyp $w.upyn $w.upzp $w.upzn" \
 			trad views up
+	# Eye separation distance
+	label $w.eyl -text Eyesep:
+	place $w.eyl -relx .0714 -rely .6000
+	entry $w.eye -textvariable radvar(EYESEP) -relief sunken
+	place $w.eye -relwidth .2857 -relheight .0610 -relx .2857 -rely .6000
+	helplink $w.eye trad views eyesep
 	# Picture file name
 	label $w.pfl -text Picture:
-	place $w.pfl -relx .0714 -rely .6345
+	place $w.pfl -relx .0714 -rely .6658
 	entry $w.pfe -textvariable radvar(PICTURE) -relief sunken
-	place $w.pfe -relwidth .5714 -relheight .0610 -relx .2857 -rely .6345
+	place $w.pfe -relwidth .5714 -relheight .0610 -relx .2857 -rely .6658
 	helplink $w.pfe trad views picture
 	# Resolution
 	label $w.rzl -text Resolution:
-	place $w.rzl -relx .0714 -rely .7107
+	place $w.rzl -relx .0714 -rely .7316
 	entry $w.rze -textvariable radvar(RESOLUTION) -relief sunken
-	place $w.rze -relwidth .2857 -relheight .0610 -relx .2857 -rely .7107
+	place $w.rze -relwidth .2857 -relheight .0610 -relx .2857 -rely .7316
 	helplink $w.rze trad views resolution
 	# Rawfile
 	label $w.rfl -text Rawfile:
-	place $w.rfl -relx .0714 -rely .7870
+	place $w.rfl -relx .0714 -rely .7974
 	entry $w.rfe -textvariable radvar(RAWFILE) -relief sunken
-	place $w.rfe -relwidth .5714 -relheight .0610 -relx .2857 -rely .7870
+	place $w.rfe -relwidth .5714 -relheight .0610 -relx .2857 -rely .7974
 	helplink $w.rfe trad views rawfile
 	# Zfile
 	label $w.zfl -text Zfile:

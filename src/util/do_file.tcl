@@ -43,6 +43,9 @@ proc preen {} {			# clean up radvar
 	if {! [info exists radvar(RESOLUTION)]} {
 		set radvar(RESOLUTION) 512
 	}
+	if {! [info exists radvar(EYESEP)]} {
+		set radvar(EYESEP) 1
+	}
 	if [info exists radvar(QUALITY)] {
 		cardval radvar(QUALITY) {High Medium Low}
 	} else {
@@ -91,6 +94,7 @@ proc setradvar stmt {		# assign a rad variable
 		AMB* { set radvar(AMBFILE) $vval }
 		OPT* { set radvar(OPTFILE) $vval }
 		EXP* { set radvar(EXPOSURE) $vval }
+		EYE* { set radvar(EYESEP) $vval }
 		RES* { set radvar(RESOLUTION) $vval }
 		UP { set radvar(UP) $vval }
 		IND* { set radvar(INDIRECT) $vval }
@@ -119,7 +123,7 @@ proc putradvar {fi vn} {	# print out a rad variable
 	}
 	if {[lsearch -exact {ZONE QUALITY OCTREE PICTURE AMBFILE OPTFILE
 			EXPOSURE RESOLUTION UP INDIRECT DETAIL PENUMBRAS
-			RAWFILE ZFILE VARIABILITY REPORT} $vn] >= 0} {
+			EYESEP RAWFILE ZFILE VARIABILITY REPORT} $vn] >= 0} {
 		puts $fi "$vn= $radvar($vn)"
 		return
 	}
