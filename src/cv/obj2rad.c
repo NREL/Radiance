@@ -70,6 +70,8 @@ RULEHD	*ourmapping = NULL;
 char	*defmat = DEFMAT;	/* default (starting) material name */
 char	*defobj = DEFOBJ;	/* default (starting) object name */
 
+int	flatten = 0;		/* discard surface normal information */
+
 char	*getmtl(), *getonm();
 
 char	mapname[128];		/* current picture file */
@@ -98,6 +100,9 @@ char	*argv[];
 			break;
 		case 'm':		/* use custom mapfile */
 			ourmapping = getmapping(argv[++i], &qlist);
+			break;
+		case 'f':		/* flatten surfaces */
+			flatten++;
 			break;
 		default:
 			goto userr;
@@ -572,7 +577,7 @@ char	*v1, *v2, *v3;
 	if (!cvtndx(v1i, v1) || !cvtndx(v2i, v2) || !cvtndx(v3i, v3))
 		return(0);
 					/* compute barycentric coordinates */
-	texOK = (v1i[2]>=0 && v2i[2]>=0 && v3i[2]>=0);
+	texOK = !flatten && (v1i[2]>=0 && v2i[2]>=0 && v3i[2]>=0);
 #ifdef TEXMAPS
 	patOK = mapname[0] && (v1i[1]>=0 && v2i[1]>=0 && v3i[1]>=0);
 #else
@@ -792,7 +797,7 @@ register VNDX  p0i, p1i, p2i, p3i;
 #ifdef TEXMAPS
 	/* also check for texture indices */
 #endif
-	if (!(p0i[2]>=0 && p1i[2]>=0 && p2i[2]>=0 && p3i[2]>=0))
+	if (flatten || !(p0i[2]>=0 && p1i[2]>=0 && p2i[2]>=0 && p3i[2]>=0))
 		return(-1);
 					/* find dominant axis */
 	VCOPY(v1, vnlist[p0i[2]]);
