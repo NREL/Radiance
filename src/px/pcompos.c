@@ -173,8 +173,7 @@ compos()				/* composite pictures */
 	int  y;
 	register int  x, i;
 
-	scanin = (COLR *)malloc((xmax-xmin)*sizeof(COLR)) - xmin;
-	scanin = (COLR *)malloc((xmax-xmin)*sizeof(COLR)) - xmin;
+	scanin = (COLR *)malloc((xmax-xmin)*sizeof(COLR));
 	if (scanin == NULL)
 		goto memerr;
 	scanin -= xmin;
