@@ -20,6 +20,23 @@ extern char  *strchr();
 
 
 char *
+atos(rs, nb, s)			/* get next word from string */
+char  *rs;
+register int  nb;
+register char  *s;
+{
+	register char  *cp = rs;
+
+	while (isspace(*s))
+		s++;
+	while (--nb > 0 && *s && !isspace(*s))
+		*cp++ = *s++;
+	*cp = '\0';
+	return(rs);
+}
+
+
+char *
 sskip(s)			/* skip word in string */
 register char  *s;
 {
@@ -33,23 +50,24 @@ register char  *s;
 
 char *
 iskip(s)			/* skip integer in string */
-char  *s;
+register char  *s;
 {
-	register char  *cp = s;
-
-	while (isspace(*cp))
-		cp++;
-	if (*cp == '-' || *cp == '+')
-		cp++;
-	while (isdigit(*cp))
-		cp++;
-	return(cp);
+	while (isspace(*s))
+		s++;
+	if (*s == '-' || *s == '+')
+		s++;
+	if (!isdigit(*s))
+		return(NULL);
+	do
+		s++;
+	while (isdigit(*s));
+	return(s);
 }
 
 
 char *
 fskip(s)			/* skip float in string */
-char  *s;
+register char  *s;
 {
 	register char  *cp = s;
 
@@ -57,13 +75,16 @@ char  *s;
 		cp++;
 	if (*cp == '-' || *cp == '+')
 		cp++;
+	s = cp;
 	while (isdigit(*cp))
 		cp++;
 	if (*cp == '.') {
-		cp++;
+		cp++; s++;
 		while (isdigit(*cp))
 			cp++;
 	}
+	if (cp == s)
+		return(NULL);
 	if (*cp == 'e' || *cp == 'E')
 		return(iskip(cp+1));
 	return(cp);
@@ -76,7 +97,7 @@ char  *s;
 	register char  *cp;
 
 	cp = iskip(s);
-	return(cp > s && *cp == '\0');
+	return(cp != NULL && *cp == '\0');
 }
 
 
@@ -86,7 +107,7 @@ char  *s, *ds;
 	register char  *cp;
 
 	cp = iskip(s);
-	return(cp > s && strchr(*cp, ds) != NULL);
+	return(cp != NULL && strchr(*cp, ds) != NULL);
 }
 
 
@@ -96,7 +117,7 @@ char  *s;
 	register char  *cp;
 
 	cp = fskip(s);
-	return(cp > s && *cp == '\0');
+	return(cp != NULL && *cp == '\0');
 }
 
 
@@ -106,5 +127,5 @@ char  *s, *ds;
 	register char  *cp;
 
 	cp = fskip(s);
-	return(cp > s && strchr(*cp, ds) != NULL);
+	return(cp != NULL && strchr(*cp, ds) != NULL);
 }
