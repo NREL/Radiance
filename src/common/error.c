@@ -13,7 +13,7 @@ static char SCCSid[] = "$SunId$ LBL";
 extern char  *sys_errlist[];	/* system error list */
 extern int  sys_nerr;		/* number of system errors */
 
-char  errmsg[128];		/* global error message buffer */
+char  errmsg[512];		/* global error message buffer */
 
 
 error(etype, emsg)		/* report error, quit if necessary */
