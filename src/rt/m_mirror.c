@@ -43,8 +43,11 @@ register RAY  *r;
 					/* check for substitute material */
 	if (m->oargs.nsargs > 0 &&
 			(r->rsrc < 0 || source[r->rsrc].so != r->ro)) {
-		rayshade(r, modifier(m->oargs.sarg[0]));
-		return(1);
+		if (!strcmp(m->oargs.sarg[0], VOIDID)) {
+			raytrans(r);
+			return(1);
+		}
+		return(rayshade(r, modifier(m->oargs.sarg[0])));
 	}
 					/* check for bad source ray */
 	if (r->rsrc >= 0 && source[r->rsrc].so != r->ro)
