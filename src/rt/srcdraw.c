@@ -22,6 +22,17 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define MAXVERT		10
 
+typedef struct splist {
+	struct splist	*next;			/* next source in list */
+	int	sn;				/* source number */
+	short	nv;				/* number of vertices */
+	FLOAT	vl[3][2];			/* vertex array (last) */
+} SPLIST;				/* source polygon list */
+
+extern VIEW	ourview;		/* our view parameters */
+extern int	hres, vres;		/* our image resolution */
+static SPLIST	*sphead = NULL;		/* our list of source polys */
+
 
 static int
 inregion(p, cv, crit)			/* check if vertex is in region */
@@ -220,9 +231,34 @@ FLOAT	vlo[][2];	/* return value */
 }
 
 
+static
+spinsert(sn, vl, nv)			/* insert new source polygon */
+int	sn;
+FLOAT	vl[][2];
+int	nv;
+{
+	register SPLIST	*spn;
+	register int	i;
+
+	if (nv < 3)
+		return;
+	if (nv > 3)
+		spn = (SPLIST *)malloc(sizeof(SPLIST)+sizeof(FLOAT)*2*(nv-3));
+	else
+		spn = (SPLIST *)malloc(sizeof(SPLIST));
+	if (spn == NULL)
+		error(SYSTEM, "out of memory in spinsert");
+	spn->sn = sn;
+	for (i = spn->nv = nv; i--; ) {
+		spn->vl[i][0] = vl[i][0]; spn->vl[i][1] = vl[i][1];
+	}
+	spn->next = sphead;		/* push onto global list */
+	sphead = spn;
+}
+
+
 int
-sourcepoly(vw, sn, sp)			/* compute image polygon for source */
-VIEW	*vw;
+sourcepoly(sn, sp)			/* compute image polygon for source */
 int	sn;
 FLOAT	sp[MAXVERT][2];
 {
@@ -237,11 +273,11 @@ FLOAT	sp[MAXVERT][2];
 	register int	i, j;
 
 	if (s->sflags & (SDISTANT|SFLAT)) {
-		if (s->sflags & SDISTANT && vw->type == VT_PAR)
+		if (s->sflags & SDISTANT && ourview.type == VT_PAR)
 			return(0);		/* all or nothing case */
 		if (s->sflags & SFLAT) {
 			for (i = 0; i < 3; i++)
-				ap[i] = s->sloc[i] - vw->vp[i];
+				ap[i] = s->sloc[i] - ourview.vp[i];
 			if (DOT(ap, s->snorm) >= 0.)
 				return(0);	/* source faces away */
 		}
@@ -253,11 +289,11 @@ FLOAT	sp[MAXVERT][2];
 				if (j==2|j==3) ap[i] += s->ss[SV][i];
 				else ap[i] -= s->ss[SV][i];
 				if (s->sflags & SDISTANT) {
-					ap[i] *= 1. + vw->vfore;
-					ap[i] += vw->vp[i];
+					ap[i] *= 1. + ourview.vfore;
+					ap[i] += ourview.vp[i];
 				}
 			}
-			viewloc(ip, vw, ap);		/* find image point */
+			viewloc(ip, &ourview, ap);	/* find image point */
 			if (ip[2] <= 0.)
 				return(0);		/* in front of view */
 			sp[j][0] = ip[0]; sp[j][1] = ip[1];
@@ -266,7 +302,7 @@ FLOAT	sp[MAXVERT][2];
 	}
 					/* identify furthest corner */
 	for (i = 0; i < 3; i++)
-		ap[i] = s->sloc[i] - vw->vp[i];
+		ap[i] = s->sloc[i] - ourview.vp[i];
 	dir =	(DOT(ap,s->ss[SU])>0.) |
 		(DOT(ap,s->ss[SV])>0.)<<1 |
 		(DOT(ap,s->ss[SW])>0.)<<2 ;
@@ -281,7 +317,7 @@ FLOAT	sp[MAXVERT][2];
 			if (cubeord[dir][j] & 4) ap[i] += s->ss[SW][i];
 			else ap[i] -= s->ss[SW][i];
 		}
-		viewloc(ip, vw, ap);		/* find image point */
+		viewloc(ip, &ourview, ap);	/* find image point */
 		if (ip[2] <= 0.)
 			return(0);		/* in front of view */
 		pt[j][0] = ip[0]; pt[j][1] = ip[1];
@@ -290,67 +326,90 @@ FLOAT	sp[MAXVERT][2];
 }
 
 
+			/* initialize by finding sources smaller than rad */
+init_drawsources(rad)
+int	rad;				/* source sample size */
+{
+	FLOAT	spoly[MAXVERT][2];
+	int	nsv;
+	register SPLIST	*sp;
+	register int	i;
+					/* free old source list if one */
+	for (sp = sphead; sp != NULL; sp = sphead) {
+		sphead = sp->next;
+		free((char *)sp);
+	}
+					/* loop through all sources */
+	for (i = nsources; i--; ) {
+					/* compute image polygon for source */
+		if (!(nsv = sourcepoly(i, spoly)))
+			continue;
+					/* clip to image boundaries */
+		if (!(nsv = box_clip_poly(spoly, nsv, 0., 1., 0., 1., spoly)))
+			continue;
+					/* big enough for standard sampling? */
+		if (minw2(spoly, nsv, ourview.vn2/ourview.hn2) >
+				(double)rad*rad/hres/hres)
+			continue;
+					/* OK, add to our list */
+		spinsert(i, spoly, nsv);
+	}
+}
+
 			/* add sources smaller than rad to computed subimage */
-drawsources(vw, xr, yr, pic, zbf, x0, xsiz, y0, ysiz, rad)
-VIEW	*vw;				/* full image view */
-int	xr, yr;				/* full image dimensions */
+drawsources(pic, zbf, x0, xsiz, y0, ysiz)
 COLOR	*pic[];				/* subimage pixel value array */
 float	*zbf[];				/* subimage distance array (opt.) */
 int	x0, xsiz, y0, ysiz;		/* origin and size of subimage */
-int	rad;				/* source sample size */
 {
-	int	sn;
 	FLOAT	spoly[MAXVERT][2], ppoly[MAXVERT][2];
 	int	nsv, npv;
-	int	xmin, xmax, ymin, ymax, x, y, i;
+	int	xmin, xmax, ymin, ymax, x, y;
 	FLOAT	cxy[2];
 	double	pa;
 	RAY	sr;
-					/* loop through all sources */
-	for (sn = 0; sn < nsources; sn++) {
-					/* compute image polygon for source */
-		if (!(nsv = sourcepoly(vw, sn, spoly)))
-			continue;
-					/* big enough for standard sampling? */
-		if (minw2(spoly, nsv, vw->vn2/vw->hn2) > (double)rad*rad/xr/xr)
-			continue;
+	register SPLIST	*sp;
+	register int	i;
+					/* check each source in our list */
+	for (sp = sphead; sp != NULL; sp = sp->next) {
 					/* clip source poly to subimage */
-		nsv = box_clip_poly(spoly, nsv,
-				(double)x0/xr, (double)(x0+xsiz)/xr,
-				(double)y0/yr, (double)(y0+ysiz)/yr, spoly);
+		nsv = box_clip_poly(sp->vl, sp->nv,
+				(double)x0/hres, (double)(x0+xsiz)/hres,
+				(double)y0/vres, (double)(y0+ysiz)/vres, spoly);
 		if (!nsv)
 			continue;
 					/* find common subimage (BBox) */
 		xmin = x0 + xsiz; xmax = x0;
 		ymin = y0 + ysiz; ymax = y0;
 		for (i = 0; i < nsv; i++) {
-			if ((double)xmin/xr > spoly[i][0])
-				xmin = spoly[i][0]*xr + FTINY;
-			if ((double)xmax/xr < spoly[i][0])
-				xmax = spoly[i][0]*xr - FTINY;
-			if ((double)ymin/yr > spoly[i][1])
-				ymin = spoly[i][1]*yr + FTINY;
-			if ((double)ymax/yr < spoly[i][1])
-				ymax = spoly[i][1]*yr - FTINY;
+			if ((double)xmin/hres > spoly[i][0])
+				xmin = spoly[i][0]*hres + FTINY;
+			if ((double)xmax/hres < spoly[i][0])
+				xmax = spoly[i][0]*hres - FTINY;
+			if ((double)ymin/vres > spoly[i][1])
+				ymin = spoly[i][1]*vres + FTINY;
+			if ((double)ymax/vres < spoly[i][1])
+				ymax = spoly[i][1]*vres - FTINY;
 		}
 					/* evaluate each pixel in BBox */
 		for (y = ymin; y <= ymax; y++)
 			for (x = xmin; x <= xmax; x++) {
 							/* subarea for pixel */
 				npv = box_clip_poly(spoly, nsv,
-						(double)x/xr, (x+1.)/xr,
-						(double)y/yr, (y+1.)/yr, ppoly);
+						(double)x/hres, (x+1.)/hres,
+						(double)y/vres, (y+1.)/vres,
+						ppoly);
 				if (!npv)
 					continue;	/* no overlap */
 				convex_center(ppoly, npv, cxy);
-				if ((sr.rmax = viewray(sr.rorg, sr.rdir, vw,
-						cxy[0], cxy[1])) < -FTINY)
+				if ((sr.rmax = viewray(sr.rorg,sr.rdir,&ourview,
+						cxy[0],cxy[1])) < -FTINY)
 					continue;	/* not in view */
-				if (source[sn].sflags & SSPOT &&
-						spotout(&sr, source[sn].sl.s))
+				if (source[sp->sn].sflags & SSPOT &&
+						spotout(&sr, source[sp->sn].sl.s))
 					continue;	/* outside spot */
 				rayorigin(&sr, NULL, SHADOW, 1.0);
-				sr.rsrc = sn;
+				sr.rsrc = sp->sn;
 				rayvalue(&sr);		/* compute value */
 				if (bright(sr.rcol) <= FTINY)
 					continue;	/* missed/blocked */
@@ -359,8 +418,8 @@ int	rad;				/* source sample size */
 						sr.rt < zbf[y-y0][x-x0])
 					zbf[y-y0][x-x0] = sr.rt;
 				pa = poly_area(ppoly, npv);
-				scalecolor(sr.rcol, pa*xr*yr);
-				scalecolor(pic[y-y0][x-x0], (1.-pa*xr*yr));
+				scalecolor(sr.rcol, pa*hres*vres);
+				scalecolor(pic[y-y0][x-x0], (1.-pa*hres*vres));
 				addcolor(pic[y-y0][x-x0], sr.rcol);
 			}
 	}
