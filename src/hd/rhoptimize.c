@@ -12,6 +12,8 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #include "holo.h"
 
+#include <signal.h>
+
 #ifndef BKBSIZE
 #define BKBSIZE		256		/* beam clump size (kilobytes) */
 #endif
@@ -22,7 +24,10 @@ static char SCCSid[] = "$SunId$ SGI";
 #define clrfl(p,i)		flgop(p,i,&=~)
 
 char	*progname;
+char	tempfile[128];
 
+extern char	*rindex();
+extern int	quit();
 extern long	rhinitcopy();
 
 
@@ -30,7 +35,6 @@ main(argc, argv)
 int	argc;
 char	*argv[];
 {
-	char	nambuf[128];
 	char	*inpname, *outname;
 	int	hdfd[2];
 	long	nextipos, lastopos, thisopos;
@@ -43,14 +47,18 @@ char	*argv[];
 	inpname = argv[1];
 	if (argc == 3)			/* use given output file */
 		outname = argv[2];
-	else {				/* else create temporary file */
-		strcpy(nambuf, inpname);
-		if ((outname = strrchr(nambuf, '/')) != NULL)
+	else {				/* else use temporary file */
+		if (access(inpname, R_OK|W_OK) < 0) {	/* check permissions */
+			sprintf(errmsg, "cannot access \"%s\"", inpname);
+			error(SYSTEM, errmsg);
+		}
+		strcpy(tempfile, inpname);
+		if ((outname = rindex(tempfile, '/')) != NULL)
 			outname++;
 		else
-			outname = nambuf;
+			outname = tempfile;
 		sprintf(outname, "rho%d.hdk", getpid());
-		outname = nambuf;
+		outname = tempfile;
 	}
 					/* copy holodeck file header */
 	nextipos = rhinitcopy(hdfd, inpname, outname);
@@ -75,7 +83,7 @@ char	*argv[];
 					/* clean up */
 	close(hdfd[0]);
 	close(hdfd[1]);
-	if (argc == 2 && rename(outname, inpname) < 0) {
+	if (outname == tempfile && rename(outname, inpname) < 0) {
 		sprintf(errmsg, "cannot rename \"%s\" to \"%s\"",
 				outname, inpname);
 		error(SYSTEM, errmsg);
@@ -100,9 +108,16 @@ char	*infn, *outfn;
 		sprintf(errmsg, "cannot open \"%s\" for writing", outfn);
 		error(SYSTEM, errmsg);
 	}
+					/* set up signal handling */
+	if (signal(SIGINT, quit) == SIG_IGN) signal(SIGINT, SIG_IGN);
+	if (signal(SIGHUP, quit) == SIG_IGN) signal(SIGHUP, SIG_IGN);
+	if (signal(SIGTERM, quit) == SIG_IGN) signal(SIGTERM, SIG_IGN);
+#ifdef SIGXCPU
+	if (signal(SIGXCPU, quit) == SIG_IGN) signal(SIGXCPU, SIG_IGN);
+	if (signal(SIGXFSZ, quit) == SIG_IGN) signal(SIGXFSZ, SIG_IGN);
+#endif
 					/* copy and verify header */
-	if (checkheader(infp, HOLOFMT, outfp) < 0 ||
-			getw(infp) != HOLOMAGIC)
+	if (checkheader(infp, HOLOFMT, outfp) < 0 || getw(infp) != HOLOMAGIC)
 		error(USER, "input not in holodeck format");
 	fputformat(HOLOFMT, outfp);
 	fputc('\n', outfp);
@@ -115,7 +130,7 @@ char	*infn, *outfn;
 	fclose(infp);
 	if (fclose(outfp) == EOF)
 		error(SYSTEM, "file flushing error in rhinitcopy");
-					/* we flush everything manually */
+					/* flush everything manually hence */
 	hdcachesize = 0;
 					/* return input position */
 	return(ifpos);
@@ -185,7 +200,7 @@ int	b;
 	bneighrem = 0;
 	for (i = 9; i--; )
 		for (j = 9; j--; ) {
-			if (i == 4 & j == 4)
+			if (i == 4 & j == 4)	/* don't copy starting beam */
 				continue;
 			if (wg0[i].w == wg1[j].w)
 				continue;
@@ -209,8 +224,8 @@ int	*b1p, *b2p;
 {
 	register long	pdif = beamdir[*b1p].fo - beamdir[*b2p].fo;
 
-	if (pdif > 0) return(1);
-	if (pdif < 0) return(-1);
+	if (pdif > 0L) return(1);
+	if (pdif < 0L) return(-1);
 	return(0);
 }
 
@@ -234,11 +249,12 @@ int	ifd, ofd;
 	hout = hdinit(ofd, (HDGRID *)hinp);
 					/* allocate beam queue */
 	bqueue = (int *)malloc(nbeams(hinp)*sizeof(int));
-	bflags = (int4 *)calloc((nbeams(hinp)>>3)+1, sizeof(int4));
+	bflags = (unsigned int4 *)calloc((nbeams(hinp)>>5)+1,
+			sizeof(unsigned int4));
 	if (bqueue == NULL | bflags == NULL)
 		error(SYSTEM, "out of memory in copysect");
 					/* mark empty beams as done */
-	for (i = nbeams(hinp); i-- > 0; )
+	for (i = nbeams(hinp); i > 0; i--)
 		if (!hinp->bi[i].nrd)
 			setfl(bflags, i);
 					/* pick a good prime step size */
@@ -254,7 +270,7 @@ int	ifd, ofd;
 			continue;
 		bqueue[0] = bci;		/* initialize queue */
 		bqlen = 1;
-		bqtotal = bnrays(hinp, bci);
+		bqtotal = hinp->bi[bci].nrd;
 		setfl(bflags, bci);
 						/* run through growing queue */
 		for (bqc = 0; bqc < bqlen; bqc++) {
@@ -264,7 +280,7 @@ int	ifd, ofd;
 				if (isset(bflags, i))	/* done already? */
 					continue;
 				bqueue[bqlen++] = i;	/* add it */
-				bqtotal += bnrays(hinp, i);
+				bqtotal += hinp->bi[i].nrd;
 				setfl(bflags, i);
 				if (bqtotal >= BKBSIZE*1024/sizeof(RAYVAL))
 					break;		/* queue full */
@@ -317,6 +333,7 @@ register char  *s;
 quit(code)			/* exit the program gracefully */
 int	code;
 {
-	hdsync(NULL, 1);	/* write out any buffered data */
+	if (tempfile[0])
+		unlink(tempfile);
 	exit(code);
 }
