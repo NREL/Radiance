@@ -337,6 +337,9 @@ char  *fname;
 
 
 #ifndef  VARIABLE
+static VARDEF  *varlist = NULL;		/* our list of dummy variables */
+
+
 VARDEF *
 varinsert(vname)		/* dummy variable insert */
 char  *vname;
@@ -347,8 +350,9 @@ char  *vname;
     vp->name = savestr(vname);
     vp->nlinks = 1;
     vp->def = NULL;
-    vp->lib = NULL;
-    vp->next = NULL;
+    vp->lib = liblookup(vname);
+    vp->next = varlist;
+    varlist = vp;
     return(vp);
 }
 
@@ -356,8 +360,27 @@ char  *vname;
 varfree(vp)			/* free dummy variable */
 register VARDEF  *vp;
 {
+    register VARDEF  *vp2;
+
+    if (vp == varlist)
+	varlist = vp->next;
+    else {
+	for (vp2 = varlist; vp2->next != vp; vp2 = vp2->next)
+		;
+	vp2->next = vp->next;
+    }
     freestr(vp->name);
     efree((char *)vp);
+}
+
+
+libupdate(nm)			/* update library */
+char  *nm;
+{
+    register VARDEF  *vp;
+
+    for (vp = varlist; vp != NULL; vp = vp->next)
+	vp->lib = liblookup(vp->name);
 }
 #endif
 
