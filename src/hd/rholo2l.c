@@ -207,7 +207,7 @@ int	poll;
 		if (n)					/* read past end? */
 			error(INTERNAL, "packet sync error in get_packets");
 							/* take from queue */
-		if (pldone = NULL)
+		if (pldone == NULL)
 			pldone = plend = pqueue[pn];
 		else
 			plend->next = pqueue[pn];
@@ -252,15 +252,18 @@ flush_queue()			/* empty all rtrace queues */
 		if (pqlen[i]) {
 			if (rpdone == NULL) {		/* tack on queue */
 				rpdone = rpl = pqueue[i];
-				n = rpl->nr;
+				nr = rpl->nr;
 			} else {
 				rpl->next = pqueue[i];
-				n = 0;
+				nr = 0;
 			}
-			while (rpl->next != NULL)
-				n += (rpl = rpl->next)->nr;
+			while (rpl->next != NULL) {
+				nr += (rpl = rpl->next)->nr;
+				if (rpl->nr < RPACKSIZ)
+					nr++;		/* add flush block */
+			}
 			n = readbuf(rtpd[i][0], (char *)rtbuf,
-					4*sizeof(float)*n);
+					4*sizeof(float)*nr);
 			if (n < 0)
 				error(SYSTEM, "read failure in flush_queue");
 			bp = rtbuf;			/* process packets */

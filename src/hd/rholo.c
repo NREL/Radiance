@@ -191,7 +191,7 @@ rholo()				/* holodeck main loop */
 	if (ncprocs <= 0)
 		return(1);
 					/* check file size */
-	if (l = 1024.*1024.*vflt(DISKSPACE) > 0 &&
+	if ((l = 1024.*1024.*vflt(DISKSPACE)) > 0 &&
 			hdfiluse(hdlist[0]->fd, 0) + hdmemuse(0) >= l)
 		return(0);
 					/* check time */
@@ -227,8 +227,10 @@ time_t	t;
 {
 	if (t == 0)
 		t = time(NULL);
-	fprintf(stderr, "%s: %ld packets done (%ld rays) after %.2f hours\n",
+	fprintf(stderr, "%s: %ld packets (%ld rays) done after %.2f hours\n",
 			progname, npacksdone, nraysdone, (t-starttime)/3600.);
+	fflush(stderr);
+	reporttime = t + (time_t)(vflt(REPORT)*60.);
 }
 
 
@@ -260,7 +262,7 @@ register HDGRID	*gp;
 		if ((len[i] = VLEN(gp->xv[i])) > maxlen)
 			maxlen = len[i];
 	if (!vdef(GRID)) {
-		sprintf(buf, "%.4f", maxlen/16.);
+		sprintf(buf, "%.4f", maxlen/8.);
 		vval(GRID) = savqstr(buf);
 		vdef(GRID)++;
 	}
@@ -328,7 +330,7 @@ HDGRID	*gp;
 	putw(HOLOMAGIC, fp);		/* put magic number & terminus */
 	fwrite(&endloc, sizeof(long), 1, fp);
 	fflush(fp);			/* flush buffer */
-	initholo(fileno(fp), gp);	/* allocate and initialize index */
+	hdinit(fileno(fp), gp);		/* allocate and initialize index */
 			/* we're dropping fp here.... */
 }
 
@@ -340,7 +342,7 @@ char	*s;
 	register char	*cp;
 	char	fmt[32];
 
-	if (headidval(fmt, s)) {
+	if (formatval(fmt, s)) {
 		if (strcmp(fmt, HOLOFMT)) {
 			sprintf(errmsg, "%s file \"%s\" has %s%s",
 					HOLOFMT, hdkfile, FMTSTR, fmt);
@@ -378,7 +380,7 @@ loadholo()			/* start loading a holodeck from fname */
 	if (endloc != 0)
 		error(WARNING, "ignoring multiple sections in holodeck file");
 	fseek(fp, 0L, 1);			/* align system file pointer */
-	initholo(fileno(fp), NULL);		/* allocate and load index */
+	hdinit(fileno(fp), NULL);		/* allocate and load index */
 			/* we're dropping fp here.... */
 }
 
@@ -409,7 +411,7 @@ PACKET	*pl;
 getradfile(rfargs)		/* run rad and get needed variables */
 char	*rfargs;
 {
-	static short	mvar[] = {VIEW,OCTREE,EXPOSURE,REPORT,-1};
+	static short	mvar[] = {VIEW,OCTREE,EXPOSURE,-1};
 	static char	tf1[] = TEMPLATE;
 	char	tf2[64];
 	char	combuf[256];
