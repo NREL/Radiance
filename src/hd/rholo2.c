@@ -15,67 +15,185 @@ static char SCCSid[] = "$SunId$ SGI";
 
 VIEWPOINT	myeye;		/* target view position */
 
+struct gclim {
+	HOLO	*hp;			/* holodeck pointer */
+	GCOORD	gc;			/* grid cell */
+	FVECT	egp;			/* eye grid point */
+	double	erg[2];			/* eye range in wall grid coords */
+	double	gmin[2], gmax[2];	/* grid coordinate limits */
+};				/* a grid coordinate range */
+
+
+static
+initeyelim(gcl, hd, gc)		/* initialize grid coordinate limits */
+register struct gclim	*gcl;
+int	hd;
+GCOORD	*gc;
+{
+	register FLOAT	*v;
+	register int	i;
+
+	gcl->hp = hdlist[hd];
+	copystruct(&gcl->gc, gc);
+	hdgrid(gcl->egp, gcl->hp, myeye.vpt);
+	for (i = 0; i < 2; i++) {
+		v = gcl->hp->wg[((gcl->gc.w>>1)+i+1)%3];
+		gcl->erg[i] = myeye.rng * VLEN(v);
+		gcl->gmin[i] = FHUGE; gcl->gmax[i] = -FHUGE;
+	}
+}
+
+
+static
+groweyelim(gcl, gp)		/* grow grid limits about eye point */
+register struct gclim	*gcl;
+FVECT	gp;
+{
+	FVECT	ab;
+	double	l2, d, mult, wg;
+	register int	i, g;
+
+	VSUB(ab, gcl->egp, gp);
+	l2 = DOT(ab,ab);
+	if (l2 <= gcl->erg[0]*gcl->erg[1]) {
+		gcl->gmin[0] = gcl->gmin[1] = -FHUGE;
+		gcl->gmax[0] = gcl->gmax[1] = FHUGE;
+		return;
+	}
+	mult = gp[g = gcl->gc.w>>1];
+	if (gcl->gc.w&1)
+		mult -= gcl->hp->grid[g];
+	if (ab[g]*ab[g] > gcl->erg[0]*gcl->erg[1])
+		mult /= -ab[g];
+	else if (fabs(ab[hdwg0[gcl->gc.w]]) > fabs(ab[hdwg1[gcl->gc.w]]))
+		mult = (gcl->gc.i[0] + .5 - gp[hdwg0[gcl->gc.w]]) /
+				ab[hdwg0[gcl->gc.w]];
+	else
+		mult = (gcl->gc.i[1] + .5 - gp[hdwg1[gcl->gc.w]]) /
+				ab[hdwg1[gcl->gc.w]];
+	for (i = 0; i < 2; i++) {
+		g = ((gcl->gc.w>>1)+i+1)%3;
+		wg = gp[g] + mult*ab[g];
+		d = mult*gcl->erg[i];
+		if (d < 0.) d = -d;
+		if (wg - d < gcl->gmin[i])
+			gcl->gmin[i] = wg - d;
+		if (wg + d > gcl->gmax[i])
+			gcl->gmax[i] = wg + d;
+	}
+}
+
+
+static int
+clipeyelim(rrng, gcl)		/* clip eye limits to grid cell */
+register short	rrng[2][2];
+register struct gclim	*gcl;
+{
+	int	incell = 1;
+	register int	i;
+
+	for (i = 0; i < 2; i++) {
+		if (gcl->gmin[i] < gcl->gc.i[i])
+			gcl->gmin[i] = gcl->gc.i[i];
+		if (gcl->gmax[i] > gcl->gc.i[i]+1)
+			gcl->gmax[i] = gcl->gc.i[i]+1;
+		if ((incell &= gcl->gmax[i] > gcl->gmin[i])) {
+			rrng[i][0] = 256.*(gcl->gmin[i] - gcl->gc.i[i]) +
+					(1.-FTINY);
+			rrng[i][1] = 256.*(gcl->gmax[i] - gcl->gc.i[i]) +
+					(1.-FTINY) - rrng[i][0];
+			incell &= rrng[i][1] > 0;
+		}
+	}
+	return(incell);
+}
+
 
 packrays(rod, p)		/* pack ray origins and directions */
 register float	*rod;
 register PACKET	*p;
 {
-	float	packdc2[RPACKSIZ];
-	int	iterleft = 3*p->nr + 9;
-	BYTE	rpos[2][2];
-	FVECT	ro, rd, rp1;
+#define gp	ro
+#ifdef DEBUG
+	double dist2sum = 0.;
+	FVECT	vt;
+#endif
+	int	nretries = p->nr + 2;
+	struct gclim	eyelim;
+	short	rrng0[2][2], rrng1[2][2];
+	int	useyelim;
 	GCOORD	gc[2];
-	double	d, dc2, md2, td2, dc2worst = FHUGE;
-	int	i;
-	register int	ii;
+	FVECT	ro, rd;
+	double	d;
+	register int	i;
 
 	if (!hdbcoord(gc, hdlist[p->hd], p->bi))
 		error(CONSISTENCY, "bad beam index in packrays");
-	td2 = myeye.rng + FTINY; td2 *= td2;
-	for (i = 0, md2 = 0.; i < p->nr || (md2 > td2 && iterleft--); ) {
-		rpos[0][0] = frandom() * 256.;
-		rpos[0][1] = frandom() * 256.;
-		rpos[1][0] = frandom() * 256.;
-		rpos[1][1] = frandom() * 256.;
-		d = hdray(ro, rd, hdlist[p->hd], gc, rpos);
-		if (myeye.rng > FTINY) {		/* check eyepoint */
-			register int	nexti;
-
-			VSUM(rp1, ro, rd, d);
-			dc2 = dist2line(myeye.vpt, ro, rp1) / p->nr;
-			if (i == p->nr) {		/* packet full */
-				if (dc2 >= dc2worst)	/* quick check */
-					continue;
-				nexti = 0;		/* find worst */
-				for (ii = i; --ii; )
-					if (packdc2[ii] > packdc2[nexti])
-						nexti = ii;
-				if (dc2 >= (dc2worst = packdc2[nexti]))
-					continue;	/* worse than worst */
-				md2 -= dc2worst;
-			} else
-				nexti = i++;
-			md2 += packdc2[nexti] = dc2;	/* new distance */
-			ii = nexti;			/* put it here */
-		} else
-			ii = i++;
+	if ((useyelim = myeye.rng > FTINY)) {
+		initeyelim(&eyelim, p->hd, gc);
+		gp[gc[1].w>>1] = gc[1].w&1 ?
+				hdlist[p->hd]->grid[gc[1].w>>1] : 0;
+		gp[hdwg0[gc[1].w]] = gc[1].i[0];
+		gp[hdwg1[gc[1].w]] = gc[1].i[1];
+		groweyelim(&eyelim, gp);
+		gp[hdwg0[gc[1].w]]++;
+		gp[hdwg1[gc[1].w]]++;
+		groweyelim(&eyelim, gp);
+		useyelim &= clipeyelim(rrng0, &eyelim);
+	}
+	for (i = 0; i < p->nr; i++) {
+	retry:
+		if (useyelim) {
+			p->ra[i].r[0][0] = (int)(frandom()*rrng0[0][1])
+						+ rrng0[0][0];
+			p->ra[i].r[0][1] = (int)(frandom()*rrng0[1][1])
+						+ rrng0[1][0];
+			initeyelim(&eyelim, p->hd, gc+1);
+			gp[gc[0].w>>1] = gc[0].w&1 ?
+					hdlist[p->hd]->grid[gc[0].w>>1] : 0;
+			gp[hdwg0[gc[0].w]] = gc[0].i[0] +
+					(1./256.)*(p->ra[i].r[0][0]+.5);
+			gp[hdwg1[gc[0].w]] = gc[0].i[1] +
+					(1./256.)*(p->ra[i].r[0][1]+.5);
+			groweyelim(&eyelim, gp);
+			if (!clipeyelim(rrng1, &eyelim)) {
+				useyelim &= nretries-- > 0;
+#ifdef DEBUG
+				if (!useyelim)
+					error(WARNING, "exceeded retry limit in packrays");
+#endif
+				goto retry;
+			}
+			p->ra[i].r[1][0] = (int)(frandom()*rrng1[0][1])
+						+ rrng1[0][0];
+			p->ra[i].r[1][1] = (int)(frandom()*rrng1[1][1])
+						+ rrng1[1][0];
+		} else {
+			p->ra[i].r[0][0] = frandom() * 256.;
+			p->ra[i].r[0][1] = frandom() * 256.;
+			p->ra[i].r[1][0] = frandom() * 256.;
+			p->ra[i].r[1][1] = frandom() * 256.;
+		}
+		d = hdray(ro, rd, hdlist[p->hd], gc, p->ra[i].r);
+#ifdef DEBUG
+		VSUM(vt, ro, rd, d);
+		dist2sum += dist2line(myeye.vpt, ro, vt);
+#endif
 		if (p->offset != NULL) {
 			if (!vdef(OBSTRUCTIONS))
 				d *= frandom();		/* random offset */
 			VSUM(ro, ro, rd, d);		/* advance ray */
-			p->offset[ii] = d;
+			p->offset[i] = d;
 		}
-		p->ra[ii].r[0][0] = rpos[0][0];
-		p->ra[ii].r[0][1] = rpos[0][1];
-		p->ra[ii].r[1][0] = rpos[1][0];
-		p->ra[ii].r[1][1] = rpos[1][1];
-		VCOPY(rod+6*ii, ro);
-		VCOPY(rod+6*ii+3, rd);
+		VCOPY(rod, ro);
+		rod += 3;
+		VCOPY(rod, rd);
+		rod += 3;
 	}
 #ifdef DEBUG
-	fprintf(stderr, "%f mean distance for target %f (%d iterations left)\n",
-			sqrt(md2), myeye.rng, iterleft);
+	fprintf(stderr, "RMS distance = %f\n", sqrt(dist2sum/p->nr));
 #endif
+#undef gp
 }
 
 
