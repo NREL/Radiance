@@ -48,8 +48,16 @@ typedef float  COLOR[3];	/* red, green, blue */
 #define  normbright(c)		(int)((67L*(c)[RED]+168L*(c)[GRN]+21L*(c)[BLU])/256)
 #endif
 
-#define  D65EFFICACY		203.		/* luminous efficacy of D65 */
-#define  luminance(col)		(D65EFFICACY * bright(col))
+				/* luminous efficacies over visible spectrum */
+#define  MAXEFFICACY		683.		/* defined maximum at 550 nm */
+#define  WHTEFFICACY		179.		/* uniform white light */
+#define  D65EFFICACY		203.		/* standard illuminant D65 */
+#define  INCEFFICACY		160.		/* illuminant A (incand.) */
+#define  SUNEFFICACY		208.		/* illuminant B (solar dir.) */
+#define  SKYEFFICACY		D65EFFICACY	/* skylight */
+#define  DAYEFFICACY		D65EFFICACY	/* combined sky and solar */
+
+#define  luminance(col)		(WHTEFFICACY * bright(col))
 
 #define  intens(col)		( (col)[0] > (col)[1] \
 				? (col)[0] > (col)[2] ? (col)[0] : (col)[2] \
