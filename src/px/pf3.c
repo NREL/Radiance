@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1993 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -15,6 +15,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "color.h"
 
 #define  TEPS		0.2	/* threshold proximity goal */
+#define  REPS		0.1	/* radius proximity goal */
 
 extern double  CHECKRAD;	/* radius over which gaussian is summed */
 
@@ -222,10 +223,13 @@ pickfilt(p0)			/* find filter multiplier for p0 */
 double  p0;
 {
 	double  m = 1.0;
-	double  t, avg, wsum;
+	double  t, num, denom, avg, wsum;
+	double  maxm = orad/rad/CHECKRAD;
+	double  mlimit[2];
 	int  ilimit = 4/TEPS;
 	register int  i;
 				/* iterative search for m */
+	mlimit[0] = 1.0; mlimit[1] = maxm;
 	do {
 					/* compute grey weighted average */
 		i = 1.25*CHECKRAD*rad*m + .5;
@@ -237,21 +241,35 @@ double  p0;
 			avg += t*ringsum[i];
 			wsum += t*ringwt[i];
 		}
+		if (avg < 1e-20)		/* zero inclusive average */
+			return(1.0);
 		avg /= wsum;
 					/* check threshold */
-		t = p0 - avg;
-		if (t < 0.0) t = -t;
-		t *= gausstable[0]/(m*m*avg);
-		if (t <= thresh && (m <= 1.0+FTINY ||
-				(thresh-t)/thresh <= TEPS))
-			break;
-		if (t > thresh && (m*CHECKRAD*rad >= orad-FTINY ||
-				(t-thresh)/thresh <= TEPS))
-			break;
+		denom = m*m/gausstable[0] - p0/avg;
+		if (denom <= FTINY)		/* zero exclusive average */
+			return(maxm);
+		num = p0/avg - 1.0;
+		if (num < 0.0) num = -num;
+		t = num/denom;
+		if (t <= thresh) {
+			if (m <= mlimit[0]+REPS || (thresh-t)/thresh <= TEPS)
+				break;
+		} else {
+			if (m >= mlimit[1]-REPS || (t-thresh)/thresh <= TEPS)
+				break;
+		}
+		t = m;			/* remember current m */
 					/* next guesstimate */
-		m *= sqrt(t/thresh);
-		if (m < 1.0) m = 1.0;
-		else if (m*CHECKRAD*rad > orad) m = orad/rad/CHECKRAD;
+		m = sqrt(gausstable[0]*(num/thresh + p0/avg));
+		if (m < t) {		/* bound it */
+			if (m <= mlimit[0]+FTINY)
+				m = 0.5*(mlimit[0] + t);
+			mlimit[1] = t;
+		} else {
+			if (m >= mlimit[1]-FTINY)
+				m = 0.5*(mlimit[1] + t);
+			mlimit[0] = t;
+		}
 	} while (--ilimit > 0);
 	return(m);
 }
