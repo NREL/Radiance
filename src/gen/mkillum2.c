@@ -306,9 +306,9 @@ register struct rtproc  *rt;
 	bzero(rt->buf+6*rt->nrays, 6*sizeof(float));
 	errno = 0;
 	if ( process(rt->pd, (char *)rt->buf, (char *)rt->buf,
-			3*sizeof(float)*rt->nrays,
+			3*sizeof(float)*(rt->nrays+1),
 			6*sizeof(float)*(rt->nrays+1)) <
-			3*sizeof(float)*rt->nrays )
+			3*sizeof(float)*(rt->nrays+1) )
 		error(SYSTEM, "error reading from rtrace process");
 	i = rt->nrays;
 	while (i--) {
