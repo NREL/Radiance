@@ -73,7 +73,8 @@ proc run_batch {} {		# start rendering in background
 		return
 	}
 	# Make space for PID to be written later
-	puts $fo "                                                            "
+	puts $fo \
+"                                                                             "
 	if {$rpview == " ALL"} {
 		set radcom "rad"
 	} else {
@@ -235,10 +236,10 @@ proc do_action w {		# Action screen
 		if {"$hostname" != "$batch_host"} {
 			if $alldone {
 				set curmess "Batch rendering finished\
-						on host $batch_host."
+						on $batch_host."
 			} else {
-				set curmess "Unknown batch rendering status\
-						on host $batch_host."
+				set curmess "Batch rendering on\
+						$batch_host -- status UNKNOWN."
 				$w.rbst configure -state disabled
 				$w.rbvmb configure -state disabled
 			}
