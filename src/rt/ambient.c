@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1993 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -6,8 +6,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 /*
  *  ambient.c - routines dealing with ambient (inter-reflected) component.
- *
- *     5/9/86
  */
 
 #include  "ray.h"
@@ -37,6 +35,7 @@ double	minarad;		/* minimum ambient radius */
 
 static AMBTREE	atrunk;		/* our ambient trunk node */
 
+static char  *ambfname = NULL;	/* ambient file name */
 static FILE  *ambfp = NULL;	/* ambient file pointer */
 
 #define	 AMBFLUSH	(BUFSIZ/AMBVALSIZ)
@@ -75,7 +74,7 @@ char  *afile;
 						/* init ambient limits */
 	setambres(ambres);
 						/* open ambient file */
-	if (afile != NULL)
+	if ((ambfname = afile) != NULL)
 		if ((ambfp = fopen(afile, "r+")) != NULL) {
 			initambfile(0);
 			headlen = ftell(ambfp);
@@ -322,12 +321,9 @@ int  creat;
 		fputformat(AMBFMT, ambfp);
 		putc('\n', ambfp);
 		putambmagic(ambfp);
-		fflush(ambfp);
-#ifndef	 NIX
-		sync();			/* protect against NFS buffering */
-#endif
 	} else if (checkheader(ambfp, AMBFMT, NULL) < 0 || !hasambmagic(ambfp))
 		error(USER, "bad ambient file");
+	ambsync();
 }
 
 
@@ -400,18 +396,14 @@ ambsync()			/* flush ambient file */
 
 #else
 
-#include  <sys/types.h>
-#include  <sys/stat.h>
-
 static
 ambsync()			/* synchronize ambient file */
 {
 	static FILE  *ambinp = NULL;
+	static long  lastpos = -1;
 	struct flock  fls;
-	struct stat  sts;
-#define	flen	sts.st_size
+	long  flen;
 	AMBVAL	avs;
-	long  lastpos;
 	register int  n;
 				/* gain exclusive access */
 	fls.l_type = F_WRLCK;
@@ -420,24 +412,30 @@ ambsync()			/* synchronize ambient file */
 	fls.l_len = 0L;
 	if (fcntl(fileno(ambfp), F_SETLKW, &fls) < 0)
 		error(SYSTEM, "cannot lock ambient file");
+	if (lastpos < 0)	/* initializing */
+		goto syncend;
 				/* see if file has grown */
-	lastpos = lseek(fileno(ambfp), 0L, 1);	/* get previous position */
-	if (fstat(fileno(ambfp), &sts) < 0)	/* get current length */
-		error(SYSTEM, "cannot stat ambient file");
-	if (n = (flen - lastpos)/AMBVALSIZ) {	/* file has grown */
-		if (ambinp == NULL) {		/* use duplicate file */
-			ambinp = fdopen(dup(fileno(ambfp)), "r");
+	if ((flen = lseek(fileno(ambfp), 0L, 2)) < 0)
+		error(SYSTEM, "cannot seek on ambient file");
+	if (n = flen - lastpos) {		/* file has grown */
+		if (ambinp == NULL) {
+			ambinp = fopen(ambfname, "r");
 			if (ambinp == NULL)
-				error(SYSTEM, "fdopen failed in ambsync");
+				error(SYSTEM, "fopen failed in ambsync");
 		}
-		while (n--) {			/* load contributed values */
+		if (fseek(ambinp, lastpos, 0) < 0)
+			error(SYSTEM, "fseek failed in ambsync");
+		while (n >= AMBVALSIZ) {	/* load contributed values */
 			readambval(&avs, ambinp);
 			avinsert(&avs,&atrunk,thescene.cuorg,thescene.cusize);
-		}				/* moves shared file pointer */
-		if (n = (flen - lastpos)%AMBVALSIZ)	/* alignment */
+			n -= AMBVALSIZ;
+		}
+		if (n)				/* alignment */
 			lseek(fileno(ambfp), flen-n, 0);
 	}
+syncend:
 	n = fflush(ambfp);			/* calls write() at last */
+	lastpos = lseek(fileno(ambfp), 0L, 1);
 	fls.l_type = F_UNLCK;			/* release file */
 	fcntl(fileno(ambfp), F_SETLKW, &fls);
 	return(n);
