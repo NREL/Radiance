@@ -186,7 +186,6 @@ char  *s;
 getaim(s)				/* aim camera */
 char  *s;
 {
-	extern double  tan(), atan();
 	double  zfact;
 	VIEW  nv;
 
@@ -217,7 +216,6 @@ char  *s;
 getrotate(s)				/* rotate camera */
 char  *s;
 {
-	extern double  normalize(), tan(), atan();
 	VIEW  nv;
 	FVECT  v1;
 	double  angle, elev, zfact;

@@ -267,7 +267,6 @@ intext(p, m)			/* check to see if p is in text glyph */
 FVECT  p;
 OBJREC  *m;
 {
-	extern double  fabs();
 	register TEXT  *tp;
 	register TLINE  *tlp;
 	FVECT  v;

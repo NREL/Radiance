@@ -10,6 +10,13 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include <stdio.h>
 
+#ifndef frexp
+extern double  frexp();
+#endif
+#ifndef ldexp
+extern double  ldexp();
+#endif
+
 
 putstr(s, fp)			/* write null-terminated string to fp */
 register char  *s;
@@ -35,7 +42,6 @@ putflt(f, fp)			/* put out floating point number */
 double	f;
 FILE  *fp;
 {
-	extern double  frexp();
 	int  e;
 
 	putint((long)(frexp(f,&e)*0x7fffffff), 4, fp);
@@ -85,7 +91,6 @@ double
 getflt(fp)			/* get a floating point number */
 FILE  *fp;
 {
-	extern double  ldexp();
 	double	d;
 
 	d = (double)getint(4, fp)/0x7fffffff;

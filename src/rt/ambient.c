@@ -167,7 +167,6 @@ AMBTREE	 *at;
 FVECT  c0;
 double	s;
 {
-	extern double  sqrt();
 	double	d, e1, e2, wt, wsum;
 	COLOR  ct;
 	FVECT  ck0;

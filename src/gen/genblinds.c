@@ -39,7 +39,6 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-	double  fabs();
 	double  width, delem, depth, rcurv = 0.0, angle;
 	double  beta, gamma, theta, chi;
 	int     i, j, k, l;
@@ -156,7 +155,6 @@ userr:
 makeflat(w,d,a)
 double  w, d, a;
 {
-	double  sin(), cos();
 	double  h;
 
 	h = d*sin(a);

@@ -401,7 +401,6 @@ FILE  *fin;
 m_dielectric(fin)		/* transform arguments for dielectric */
 FILE  *fin;
 {
-	double	pow();
 	FUNARGS	 fa;
 
 	if (readfargs(&fa, fin) != 1)
@@ -422,7 +421,6 @@ FILE  *fin;
 m_interface(fin)		/* transform arguments for interface */
 FILE  *fin;
 {
-	double	pow();
 	FUNARGS	 fa;
 
 	if (readfargs(&fa, fin) != 1)
