@@ -105,6 +105,8 @@ register char	**av;
 			c_ccname = NULL;
 			return(MG_OK);
 		}
+		if (!isname(av[1]))
+			return(MG_EILL);
 		lp = lu_find(&clr_tab, av[1]);	/* lookup context */
 		if (lp == NULL)
 			return(MG_EMEM);
@@ -221,6 +223,8 @@ register char	**av;
 			c_cmname = NULL;
 			return(MG_OK);
 		}
+		if (!isname(av[1]))
+			return(MG_EILL);
 		lp = lu_find(&mat_tab, av[1]);	/* lookup context */
 		if (lp == NULL)
 			return(MG_EMEM);
@@ -366,6 +370,8 @@ register char	**av;
 			c_cvname = NULL;
 			return(MG_OK);
 		}
+		if (!isname(av[1]))
+			return(MG_EILL);
 		lp = lu_find(&vtx_tab, av[1]);	/* lookup context */
 		if (lp == NULL)
 			return(MG_EMEM);
