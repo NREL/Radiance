@@ -16,7 +16,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "source.h"
 
 
-double  intercircle();
+double  intercircle(), getdisk();
 
 static OBJECT  *vobject;		/* virtual source objects */
 static int  nvobjects = 0;		/* number of virtual source objects */
@@ -97,7 +97,7 @@ int  n;
 		if ((*vsmat->vproj)(proj, o, &source[sn], i))
 			if ((ns = makevsrc(o, sn, proj)) >= 0) {
 #ifdef DEBUG
-				virtverb(&source[ns], stderr);
+				virtverb(ns, stderr);
 #endif
 				addvirtuals(ns, n);
 			}
@@ -110,100 +110,105 @@ OBJREC  *op;
 register int  sn;
 MAT4  pm;
 {
-	register int  nsn;
-	FVECT  nsloc, ocent, nsnorm;
-	int  nsflags;
+	FVECT  nsloc, nsnorm, ocent;
 	double  maxrad2;
+	int  nsflags;
 	double  d1;
 	SPOT  theirspot, ourspot;
 	register int  i;
 
-	nsflags = (source[sn].sflags|(SVIRTUAL|SFOLLOW)) & ~SSPOT;
+	nsflags = source[sn].sflags | (SVIRTUAL|SSPOT|SFOLLOW);
 					/* get object center and max. radius */
-	if (sfun[op->otype].of->getdisk != NULL) {
-		maxrad2 = (*sfun[op->otype].of->getdisk)(ocent, op);
-		if (maxrad2 <= FTINY)			/* too small? */
-			return(-1);
-		nsflags |= SSPOT;
-	}
+	maxrad2 = getdisk(ocent, op, sn);
+	if (maxrad2 <= FTINY)			/* too small? */
+		return(-1);
 					/* get location and spot */
 	if (source[sn].sflags & SDISTANT) {		/* distant source */
 		if (source[sn].sflags & SPROX)
 			return(-1);		/* should never get here! */
 		multv3(nsloc, source[sn].sloc, pm);
-		if (nsflags & SSPOT) {
-			VCOPY(ourspot.aim, ocent);
-			ourspot.siz = PI*maxrad2;
-			ourspot.flen = 0.;
-		}
+		VCOPY(ourspot.aim, ocent);
+		ourspot.siz = PI*maxrad2;
+		ourspot.flen = 0.;
 		if (source[sn].sflags & SSPOT) {
 			copystruct(&theirspot, source[sn].sl.s);
 			multp3(theirspot.aim, source[sn].sl.s->aim, pm);
-			if (nsflags & SSPOT &&
-				!commonbeam(&ourspot, &theirspot, nsloc))
+			if (!commonbeam(&ourspot, &theirspot, nsloc))
 				return(-1);		/* no overlap */
 		}
 	} else {				/* local source */
 		multp3(nsloc, source[sn].sloc, pm);
-		if (nsflags & SSPOT) {
-			for (i = 0; i < 3; i++)
-				ourspot.aim[i] = ocent[i] - nsloc[i];
-			if ((d1 = normalize(ourspot.aim)) == 0.)
-				return(-1);		/* at source!! */
-			if (source[sn].sflags & SPROX &&
-					d1 > source[sn].sl.prox)
-				return(-1);		/* too far away */
-			ourspot.siz = 2.*PI*(1. - d1/sqrt(d1*d1+maxrad2));
-			ourspot.flen = 0.;
-		} else if (source[sn].sflags & SPROX) {
-			FVECT  norm;
-			double  offs;
-						/* use distance from plane */
-			offs = (*sfun[op->otype].of->getpleq)(norm, op);
-			d1 = DOT(norm, nsloc) - offs;
-			if (d1 < 0.) d1 = -d1;
-			if (d1 > source[sn].sl.prox)
-				return(-1);		/* too far away */
-		}
+		for (i = 0; i < 3; i++)
+			ourspot.aim[i] = ocent[i] - nsloc[i];
+		if ((d1 = normalize(ourspot.aim)) == 0.)
+			return(-1);		/* at source!! */
+		if (source[sn].sflags & SPROX && d1 > source[sn].sl.prox)
+			return(-1);		/* too far away */
+		ourspot.siz = 2.*PI*(1. - d1/sqrt(d1*d1+maxrad2));
+		ourspot.flen = 0.;
 		if (source[sn].sflags & SSPOT) {
 			copystruct(&theirspot, source[sn].sl.s);
 			multv3(theirspot.aim, source[sn].sl.s->aim, pm);
-			if (nsflags & SSPOT) {
-				if (!commonspot(&ourspot, &theirspot, nsloc))
-					return(-1);	/* no overlap */
-				ourspot.flen = theirspot.flen;
-			}
+			if (!commonspot(&ourspot, &theirspot, nsloc))
+				return(-1);	/* no overlap */
+			ourspot.flen = theirspot.flen;
 		}
 		if (source[sn].sflags & SFLAT) {	/* behind source? */
 			multv3(nsnorm, source[sn].snorm, pm);
-			if (nsflags & SSPOT && checkspot(&ourspot, nsnorm) < 0)
+			if (checkspot(&ourspot, nsnorm) < 0)
 				return(-1);
 		}
 	}
 					/* everything is OK, make source */
-	if ((nsn = newsource()) < 0)
+	if ((i = newsource()) < 0)
 		goto memerr;
-	source[nsn].sflags = nsflags;
-	VCOPY(source[nsn].sloc, nsloc);
+	source[i].sflags = nsflags;
+	VCOPY(source[i].sloc, nsloc);
 	if (nsflags & SFLAT)
-		VCOPY(source[nsn].snorm, nsnorm);
-	source[nsn].ss = source[sn].ss; source[nsn].ss2 = source[sn].ss2;
-	if ((nsflags | source[sn].sflags) & SSPOT) {
-		if ((source[nsn].sl.s = (SPOT *)malloc(sizeof(SPOT))) == NULL)
-			goto memerr;
-		if (nsflags & SSPOT)
-			copystruct(source[nsn].sl.s, &ourspot);
-		else
-			copystruct(source[nsn].sl.s, &theirspot);
-		source[nsn].sflags |= SSPOT;
-	}
+		VCOPY(source[i].snorm, nsnorm);
+	source[i].ss = source[sn].ss; source[i].ss2 = source[sn].ss2;
+	if ((source[i].sl.s = (SPOT *)malloc(sizeof(SPOT))) == NULL)
+		goto memerr;
+	copystruct(source[i].sl.s, &ourspot);
 	if (nsflags & SPROX)
-		source[nsn].sl.prox = source[sn].sl.prox;
-	source[nsn].sa.svnext = sn;
-	source[nsn].so = op;
-	return(nsn);
+		source[i].sl.prox = source[sn].sl.prox;
+	source[i].sa.svnext = sn;
+	source[i].so = op;
+	return(i);
 memerr:
 	error(SYSTEM, "out of memory in makevsrc");
+}
+
+
+double
+getdisk(oc, op, sn)		/* get visible object disk */
+FVECT  oc;
+OBJREC  *op;
+register int  sn;
+{
+	double  rad2, roffs, offs, d, rd, rdoto;
+	FVECT  rnrm, nrm;
+				/* first, use object getdisk function */
+	rad2 = (*sfun[op->otype].of->getdisk)(oc, op);
+	if (!(source[sn].sflags & SVIRTUAL))
+		return(rad2);		/* all done for normal source */
+				/* check for correct side of relay surface */
+	roffs = (*sfun[source[sn].so->otype].of->getpleq)(rnrm, source[sn].so);
+	rd = DOT(rnrm, source[sn].sloc);	/* source projection */
+	if (!(source[sn].sflags & SDISTANT))
+		rd -= roffs;
+	d = DOT(rnrm, oc) - roffs;	/* disk distance to relay plane */
+	if ((d > 0.) ^ (rd > 0.))
+		return(rad2);		/* OK if opposite sides */
+	if (d*d >= rad2)
+		return(.0);		/* no relay is possible */
+				/* we need a closer look */
+	offs = (*sfun[op->otype].of->getpleq)(nrm, op);
+	rdoto = DOT(rnrm, nrm);
+	if (d*d >= rad2*(1.-rdoto*rdoto))
+		return(0.);		/* disk entirely on projection side */
+				/* should shrink disk but I'm lazy */
+	return(rad2);
 }
 
 
@@ -307,27 +312,28 @@ double  r1s, r2s;		/* radii squared */
 
 
 #ifdef DEBUG
-virtverb(vs, fp)	/* print verbose description of virtual source */
-register SRCREC  *vs;
+virtverb(sn, fp)	/* print verbose description of virtual source */
+register int  sn;
 FILE  *fp;
 {
 	register int  i;
 
 	fprintf(fp, "%s virtual source %d in %s %s\n",
-			vs->sflags & SDISTANT ? "distant" : "local",
-			vs-source, ofun[vs->so->otype].funame, vs->so->oname);
+			source[sn].sflags & SDISTANT ? "distant" : "local",
+			sn, ofun[source[sn].so->otype].funame,
+			source[sn].so->oname);
 	fprintf(fp, "\tat (%f,%f,%f)\n",
-			vs->sloc[0], vs->sloc[1], vs->sloc[2]);
+		source[sn].sloc[0], source[sn].sloc[1], source[sn].sloc[2]);
 	fprintf(fp, "\tlinked to source %d (%s)\n",
-			vs->sa.svnext, source[vs->sa.svnext].so->oname);
-	if (vs->sflags & SFOLLOW)
+		source[sn].sa.svnext, source[source[sn].sa.svnext].so->oname);
+	if (source[sn].sflags & SFOLLOW)
 		fprintf(fp, "\talways followed\n");
 	else
 		fprintf(fp, "\tnever followed\n");
-	if (!(vs->sflags & SSPOT))
+	if (!(source[sn].sflags & SSPOT))
 		return;
 	fprintf(fp, "\twith spot aim (%f,%f,%f) and size %f\n",
-			vs->sl.s->aim[0], vs->sl.s->aim[1], vs->sl.s->aim[2],
-			vs->sl.s->siz);
+			source[sn].sl.s->aim[0], source[sn].sl.s->aim[1],
+			source[sn].sl.s->aim[2], source[sn].sl.s->siz);
 }
 #endif
