@@ -1,4 +1,4 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1996 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -62,6 +62,8 @@ int  (*cmdvec)() = NULL;		/* command error vector */
 
 int  (*trace)() = NULL;			/* trace call */
 int  do_irrad = 0;			/* compute irradiance? */
+
+char  *errfile = NULL;			/* error output file */
 
 extern time_t  time();
 time_t  tstart;				/* start time */
@@ -156,7 +158,6 @@ char  *argv[];
 	char  *recover = NULL;
 	char  *outfile = NULL;
 	char  *zfile = NULL;
-	char  *errfile = NULL;
 	char  *ambfile = NULL;
 	int  loadflags = ~IO_FILES;
 	int  seqstart = 0;
