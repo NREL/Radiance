@@ -57,7 +57,7 @@ typedef struct {
 	unsigned long	tick;	/* clock tick for LRU replacement */
 } BEAM;			/* followed by nrm RAYVAL's */
 
-#define hdbray(bp)	(RAYVAL *)((bp)+1)
+#define hdbray(bp)	((RAYVAL *)((bp)+1))
 #define hdbsiz(nr)	(sizeof(BEAM)+(nr)*sizeof(RAYVAL))
 
 typedef struct {
