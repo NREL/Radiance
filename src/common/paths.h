@@ -6,8 +6,6 @@
  * Definitions for paths on different machines
  */
 
-#ifdef NIX
-
 #ifdef MSDOS
 
 #define DIRSEP		'/'
@@ -15,14 +13,14 @@
 #define CASEDIRSEP	case '/': case '\\'
 #define PATHSEP		';'
 #define MAXPATH		128
-#define TEMPLATE	"c:/tmp/rtXXXXXX"
+#define TEMPLATE	"c:\\tmp\\rtXXXXXX"
 #define TEMPLEN		15
 #define ULIBVAR		"RAYPATH"
-#ifndef	DEFPATH
-#define	DEFPATH		";c:/ray/lib"
+#ifndef DEFPATH
+#define DEFPATH		";c:/ray/lib"
 #endif
 
-#endif
+#else
 #ifdef AMIGA
 
 #define DIRSEP		'/'
@@ -31,10 +29,8 @@
 #define TEMPLATE	"/tmp/rtXXXXXX"
 #define TEMPLEN		13
 #define ULIBVAR		"RAYPATH"
-#ifndef	DEFPATH
-#define	DEFPATH		";/ray/lib"
-#endif
-
+#ifndef DEFPATH
+#define DEFPATH		";/ray/lib"
 #endif
 
 #else
@@ -45,10 +41,11 @@
 #define TEMPLATE	"/tmp/rtXXXXXX"
 #define TEMPLEN		13
 #define ULIBVAR		"RAYPATH"
-#ifndef	DEFPATH
-#define	DEFPATH		":/usr/local/lib/ray"
+#ifndef DEFPATH
+#define DEFPATH		":/usr/local/lib/ray"
 #endif
 
+#endif
 #endif
 
 #ifndef ISDIRSEP

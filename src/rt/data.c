@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -23,9 +23,9 @@ extern char  *fgetword();
 
 extern char  *libpath;			/* library search path */
 
-static DATARRAY  *dlist = NULL;		/* data array list */
+static DATARRAY	 *dlist = NULL;		/* data array list */
 
-static DATARRAY  *plist = NULL;		/* picture list */
+static DATARRAY	 *plist = NULL;		/* picture list */
 
 
 DATARRAY *
@@ -159,7 +159,7 @@ char  *pname;
 	FILE  *fp;
 	COLOR  *scanin;
 	int  sl, ns;
-	RESOLU  inpres;
+	RESOLU	inpres;
 	FLOAT  loc[2];
 	int  y;
 	register int  x, i;
@@ -184,6 +184,9 @@ char  *pname;
 		sprintf(errmsg, "cannot open picture file \"%s\"", pfname);
 		error(SYSTEM, errmsg);
 	}
+#ifdef MSDOS
+	setmode(fileno(fp), O_BINARY);
+#endif
 						/* get dimensions */
 	inpaspect = 1.0;
 	getheader(fp, headaspect);
@@ -289,13 +292,13 @@ char  *pname;
 double
 datavalue(dp, pt)		/* interpolate data value at a point */
 register DATARRAY  *dp;
-double  *pt;
+double	*pt;
 {
 	DATARRAY  sd;
 	int  asize;
 	int  lower, upper;
 	register int  i;
-	double  x, y, y0, y1;
+	double	x, y, y0, y1;
 					/* set up dimensions for recursion */
 	sd.nd = dp->nd - 1;
 	asize = 1;

@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
 
@@ -7,14 +7,14 @@
  *
  */
 				/* EPNODE types */
-#define  VAR		1
-#define  NUM		2
-#define  UMINUS		3
-#define  CHAN		4
-#define  FUNC		5
-#define  ARG		6
-#define  TICK		7
-#define  SYM		8
+#define	 VAR		1
+#define	 NUM		2
+#define	 UMINUS		3
+#define	 CHAN		4
+#define	 FUNC		5
+#define	 ARG		6
+#define	 TICK		7
+#define	 SYM		8
 				/* also: '+', '-', '*', '/', '^', '=', ':' */
 
 typedef struct {
@@ -25,17 +25,17 @@ typedef struct {
 }  LIBR;		/* a library function */
 
 typedef struct epnode {
-    int  type;			/* node type */
+    int	 type;			/* node type */
     struct epnode  *sibling;	/* next child this level */
     union {
 	struct epnode  *kid;	/* first child */
-	double  num;		/* number */
+	double	num;		/* number */
 	char  *name;		/* symbol name */
 	int  chan;		/* channel number */
 	long  tick;		/* timestamp */
 	struct vardef {
 	    char  *name;		/* variable name */
-	    int  nlinks;		/* number of references */
+	    int	 nlinks;		/* number of references */
 	    struct epnode  *def;	/* definition */
 	    LIBR  *lib;			/* library definition */
 	    struct vardef  *next;	/* next in hash list */
@@ -45,10 +45,10 @@ typedef struct epnode {
 
 typedef struct vardef  VARDEF;	/* a variable definition */
 
-#define  MAXWORD	63		/* maximum word/id length */
-#define  CNTXMARK	'`'		/* context mark */
+#define	 MAXWORD	63		/* maximum word/id length */
+#define	 CNTXMARK	'`'		/* context mark */
 
-#define  isid(c)	(isalnum(c) || (c) == '_' || \
+#define	 isid(c)	(isalnum(c) || (c) == '_' || \
 			(c) == '.' || (c) == CNTXMARK)
 
 extern double  eval(), varvalue(), chanvalue(), funvalue();
@@ -63,6 +63,5 @@ extern VARDEF  *varinsert(), *varlookup(), *argf();
 extern LIBR  *liblookup();
 extern long  eclock;
 extern int  nextc;
-extern int  errno;
 
-#define  evalue(ep)	(*eoper[(ep)->type])(ep)
+#define	 evalue(ep)	(*eoper[(ep)->type])(ep)

@@ -41,7 +41,7 @@ char  *ofn[];
 	extern int  fputs();
 	char  sbuf[512];
 	int  nf;
-	OBJECT  fnobjects;
+	OBJECT	fnobjects;
 	register int  i;
 	long  m;
 	
@@ -56,6 +56,9 @@ char  *ofn[];
 			error(SYSTEM, errmsg);
 		}
 	}
+#ifdef MSDOS
+	setmode(fileno(infp), O_BINARY);
+#endif
 					/* get header */
 	if (checkheader(infp, OCTFMT, load&IO_INFO ? stdout : NULL) < 0)
 		octerror(USER, "not an octree");
@@ -130,7 +133,7 @@ char  *s;
 static OCTREE
 getfullnode()			/* get a set, return fullnode */
 {
-	OBJECT  set[MAXSET+1];
+	OBJECT	set[MAXSET+1];
 	register int  i;
 	register long  m;
 
@@ -163,7 +166,7 @@ static double
 ogetflt()			/* get a floating point number */
 {
 	extern double  getflt();
-	double  r;
+	double	r;
 
 	r = getflt(infp);
 	if (feof(infp))
@@ -175,7 +178,7 @@ ogetflt()			/* get a floating point number */
 static OCTREE
 gettree()			/* get a pre-ordered octree */
 {
-	register OCTREE  ot;
+	register OCTREE	 ot;
 	register int  i;
 	
 	switch (getc(infp)) {
@@ -229,7 +232,7 @@ getobj()				/* get next object */
 	int  obj;
 	register int  i;
 	register long  m;
-	register OBJREC  *objp;
+	register OBJREC	 *objp;
 
 	i = ogetint(1);
 	if (i == -1)
@@ -255,7 +258,7 @@ getobj()				/* get next object */
 			objp->oargs.sarg[i] = savestr(ogetstr(sbuf));
 	} else
 		objp->oargs.sarg = NULL;
-#ifdef  IARGS
+#ifdef	IARGS
 	if (objp->oargs.niargs = ogetint(2)) {
 		objp->oargs.iarg = (long *)bmalloc
 				(objp->oargs.niargs*sizeof(long));

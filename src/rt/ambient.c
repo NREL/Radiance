@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -20,30 +20,30 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "random.h"
 
-#define  OCTSCALE	0.5	/* ceil((valid rad.)/(cube size)) */
+#define	 OCTSCALE	0.5	/* ceil((valid rad.)/(cube size)) */
 
 typedef struct ambtree {
-	AMBVAL  *alist;		/* ambient value list */
-	struct ambtree  *kid;	/* 8 child nodes */
+	AMBVAL	*alist;		/* ambient value list */
+	struct ambtree	*kid;	/* 8 child nodes */
 }  AMBTREE;			/* ambient octree */
 
 extern CUBE  thescene;		/* contains space boundaries */
 
-#define  MAXASET	511	/* maximum number of elements in ambient set */
-OBJECT  ambset[MAXASET+1]={0};	/* ambient include/exclude set */
+#define	 MAXASET	511	/* maximum number of elements in ambient set */
+OBJECT	ambset[MAXASET+1]={0};	/* ambient include/exclude set */
 
-double  maxarad;		/* maximum ambient radius */
-double  minarad;		/* minimum ambient radius */
+double	maxarad;		/* maximum ambient radius */
+double	minarad;		/* minimum ambient radius */
 
-static AMBTREE  atrunk;		/* our ambient trunk node */
+static AMBTREE	atrunk;		/* our ambient trunk node */
 
 static FILE  *ambfp = NULL;	/* ambient file pointer */
 
-#define  AMBFLUSH	(BUFSIZ/AMBVALSIZ)
+#define	 AMBFLUSH	(BUFSIZ/AMBVALSIZ)
 
-#define  newambval()	(AMBVAL *)bmalloc(sizeof(AMBVAL))
+#define	 newambval()	(AMBVAL *)bmalloc(sizeof(AMBVAL))
 
-#define  newambtree()	(AMBTREE *)calloc(8, sizeof(AMBTREE))
+#define	 newambtree()	(AMBTREE *)calloc(8, sizeof(AMBTREE))
 
 extern long  ftell(), lseek();
 static int  initambfile(), avsave(), avinsert(), ambsync();
@@ -71,7 +71,7 @@ setambient(afile)			/* initialize calculation */
 char  *afile;
 {
 	long  headlen;
-	AMBVAL  amb;
+	AMBVAL	amb;
 						/* init ambient limits */
 	setambres(ambres);
 						/* open ambient file */
@@ -95,10 +95,10 @@ char  *afile;
 
 
 ambnotify(obj)			/* record new modifier */
-OBJECT  obj;
+OBJECT	obj;
 {
 	static int  hitlimit = 0;
-	register OBJREC  *o = objptr(obj);
+	register OBJREC	 *o = objptr(obj);
 	register char  **amblp;
 
 	if (hitlimit || !ismodifier(o->otype))
@@ -121,7 +121,7 @@ COLOR  acol;
 register RAY  *r;
 {
 	static int  rdepth = 0;			/* ambient recursion */
-	double  d;
+	double	d;
 
 	if (ambdiv <= 0)			/* no ambient calculation */
 		goto dumbamb;
@@ -163,17 +163,17 @@ sumambient(acol, r, al, at, c0, s)	/* get interpolated ambient value */
 COLOR  acol;
 register RAY  *r;
 int  al;
-AMBTREE  *at;
+AMBTREE	 *at;
 FVECT  c0;
-double  s;
+double	s;
 {
 	extern double  sqrt();
-	double  d, e1, e2, wt, wsum;
+	double	d, e1, e2, wt, wsum;
 	COLOR  ct;
 	FVECT  ck0;
 	int  i;
 	register int  j;
-	register AMBVAL  *av;
+	register AMBVAL	 *av;
 					/* do this node */
 	wsum = 0.0;
 	for (av = at->alist; av != NULL; av = av->next) {
@@ -252,7 +252,7 @@ COLOR  acol;
 register RAY  *r;
 int  al;
 {
-	AMBVAL  amb;
+	AMBVAL	amb;
 	FVECT	gp, gd;
 						/* compute weight */
 	amb.weight = pow(AVGREFL, (double)al);
@@ -277,12 +277,12 @@ int  al;
 
 extambient(cr, ap, pv, nv)		/* extrapolate value at pv, nv */
 COLOR  cr;
-register AMBVAL  *ap;
+register AMBVAL	 *ap;
 FVECT  pv, nv;
 {
 	FVECT  v1, v2;
 	register int  i;
-	double  d;
+	double	d;
 
 	d = 1.0;			/* zeroeth order */
 					/* gradient due to translation */
@@ -307,6 +307,9 @@ int  creat;
 {
 	extern char  *progname, *octname, VersionID[];
 
+#ifdef MSDOS
+	setmode(fileno(ambfp), O_BINARY);
+#endif
 	setbuf(ambfp, bmalloc(BUFSIZ));
 	if (creat) {			/* new file */
 		fprintf(ambfp, "%s -av %g %g %g -ab %d -aa %g ",
@@ -321,7 +324,7 @@ int  creat;
 		putc('\n', ambfp);
 		putambmagic(ambfp);
 		fflush(ambfp);
-#ifndef  NIX
+#ifndef	 NIX
 		sync();			/* protect against NFS buffering */
 #endif
 	} else if (checkheader(ambfp, AMBFMT, NULL) < 0 || !hasambmagic(ambfp))
@@ -331,7 +334,7 @@ int  creat;
 
 static
 avsave(av)				/* insert and save an ambient value */
-AMBVAL  *av;
+AMBVAL	*av;
 {
 	static int  nunflshed = 0;
 
@@ -353,14 +356,14 @@ writerr:
 
 static
 avinsert(aval, at, c0, s)		/* insert ambient value in a tree */
-AMBVAL  *aval;
+AMBVAL	*aval;
 register AMBTREE  *at;
 FVECT  c0;
-double  s;
+double	s;
 {
 	FVECT  ck0;
 	int  branch;
-	register AMBVAL  *av;
+	register AMBVAL	 *av;
 	register int  i;
 
 	if ((av = newambval()) == NULL)
@@ -388,7 +391,7 @@ memerr:
 }
 
 
-#ifdef  NIX
+#ifdef	NIX
 
 static
 ambsync()			/* flush ambient file */
@@ -408,7 +411,7 @@ ambsync()			/* synchronize ambient file */
 	static FILE  *ambinp = NULL;
 	struct flock  fls;
 	struct stat  sts;
-	AMBVAL  avs;
+	AMBVAL	avs;
 	long  lastpos, flen;
 	register int  n;
 				/* gain exclusive access */

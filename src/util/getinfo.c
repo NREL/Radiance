@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -11,6 +11,10 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include  <stdio.h>
+
+#ifdef MSDOS
+#include <fcntl.h>
+#endif
 
 extern int  fputs();
 
@@ -39,6 +43,10 @@ char  *argv[];
 		argc--; argv++;
 		dim = 1;
 	} else if (argc == 2 && !strcmp(argv[1], "-")) {
+#ifdef MSDOS
+		setmode(fileno(stdin), O_BINARY);
+		setmode(fileno(stdout), O_BINARY);
+#endif
 		getheader(stdin, NULL);
 		copycat();
 		exit(0);
@@ -108,7 +116,7 @@ register FILE  *fp;
 copycat()			/* copy input to output */
 {
 	register int	c;
-
+	
 	while ((c = getchar()) != EOF)
 		putchar(c);
 }

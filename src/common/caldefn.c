@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -30,13 +30,13 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "calcomp.h"
 
-#ifndef  NHASH
-#define  NHASH		521		/* hash size (a prime!) */
+#ifndef	 NHASH
+#define	 NHASH		521		/* hash size (a prime!) */
 #endif
 
-#define  newnode()	(EPNODE *)ecalloc(1, sizeof(EPNODE))
+#define	 newnode()	(EPNODE *)ecalloc(1, sizeof(EPNODE))
 
-extern char  *ecalloc(), *savestr(), *strcpy();
+extern char  *ecalloc(), *emalloc(), *savestr(), *strcpy();
 
 static int  hash();
 
@@ -49,18 +49,18 @@ static char  context[MAXWORD+1];	/* current context path */
 static VARDEF  *hashtbl[NHASH];		/* definition list */
 static int  htndx;			/* index for */		
 static VARDEF  *htpos;			/* ...dfirst() and */
-#ifdef  OUTCHAN
+#ifdef	OUTCHAN
 static EPNODE  *ochpos;			/* ...dnext */
 static EPNODE  *outchan;
 #endif
 
-#ifdef  FUNCTION
-EPNODE  *curfunc;
-#define  dname(ep)	((ep)->v.kid->type == SYM ? \
+#ifdef	FUNCTION
+EPNODE	*curfunc;
+#define	 dname(ep)	((ep)->v.kid->type == SYM ? \
 			(ep)->v.kid->v.name : \
 			(ep)->v.kid->v.kid->v.name)
 #else
-#define  dname(ep)	((ep)->v.kid->v.name)
+#define	 dname(ep)	((ep)->v.kid->v.name)
 #endif
 
 
@@ -105,7 +105,7 @@ char  *vname;
 
 double
 evariable(ep)			/* evaluate a variable */
-EPNODE  *ep;
+EPNODE	*ep;
 {
     register VARDEF  *dp = ep->v.ln;
 
@@ -116,7 +116,7 @@ EPNODE  *ep;
 varset(vname, assign, val)	/* set a variable's value */
 char  *vname;
 int  assign;
-double  val;
+double	val;
 {
     char  *qname;
     register EPNODE  *ep1, *ep2;
@@ -215,7 +215,7 @@ qualname(nam, lvl)		/* get qualified name */
 register char  *nam;
 int  lvl;
 {
-    static char  nambuf[MAXWORD+1];
+    static char	 nambuf[MAXWORD+1];
     register char  *cp = nambuf, *cpp;
 				/* check for explicit local */
     if (*nam == CNTXMARK)
@@ -265,7 +265,7 @@ register char  *qn;
 }
 
 
-#ifdef  OUTCHAN
+#ifdef	OUTCHAN
 chanout(cs)			/* set output channels */
 int  (*cs)();
 {
@@ -292,7 +292,7 @@ int  lvl;
 		    dremove(vp->name);
 		else
 		    dclear(vp->name);
-#ifdef  OUTCHAN
+#ifdef	OUTCHAN
     if (lvl >= 1) {
 	for (ep = outchan; ep != NULL; ep = ep->sibling)
 	    epfree(ep);
@@ -309,7 +309,7 @@ char  *name;
     register VARDEF  *vp;
     
     if ((vp = varlookup(name)) == NULL)
-    	return(NULL);
+	return(NULL);
     return(vp->def);
 }
 
@@ -318,10 +318,10 @@ VARDEF *
 varlookup(name)			/* look up a variable */
 char  *name;
 {
-    int  lvl = 0;
+    int	 lvl = 0;
     register char  *qname;
     register VARDEF  *vp;
-    				/* find most qualified match */
+				/* find most qualified match */
     while ((qname = qualname(name, lvl++)) != NULL)
 	for (vp = hashtbl[hash(qname)]; vp != NULL; vp = vp->next)
 	    if (!strcmp(vp->name, qname))
@@ -335,14 +335,14 @@ varinsert(name)			/* get a link to a variable */
 char  *name;
 {
     register VARDEF  *vp;
-    int  hv;
+    int	 hv;
     
     if ((vp = varlookup(name)) != NULL) {
 	vp->nlinks++;
 	return(vp);
     }
     vp = (VARDEF *)emalloc(sizeof(VARDEF));
-#ifdef  FUNCTION
+#ifdef	FUNCTION
     vp->lib = liblookup(name);
 #else
     vp->lib = NULL;
@@ -359,7 +359,7 @@ char  *name;
 }
 
 
-#ifdef  FUNCTION
+#ifdef	FUNCTION
 libupdate(fn)			/* update library links */
 char  *fn;
 {
@@ -375,22 +375,22 @@ char  *fn;
 
 
 varfree(ln)				/* release link to variable */
-register VARDEF  *ln;
+register VARDEF	 *ln;
 {
     register VARDEF  *vp;
-    int  hv;
+    int	 hv;
 
     if (--ln->nlinks > 0)
-    	return;				/* still active */
+	return;				/* still active */
 
     hv = hash(ln->name);
     vp = hashtbl[hv];
     if (vp == ln)
-    	hashtbl[hv] = vp->next;
+	hashtbl[hv] = vp->next;
     else {
-    	while (vp->next != ln)		/* must be in list */
-    		vp = vp->next;
-    	vp->next = ln->next;
+	while (vp->next != ln)		/* must be in list */
+		vp = vp->next;
+	vp->next = ln->next;
     }
     freestr(ln->name);
     efree((char *)ln);
@@ -402,7 +402,7 @@ dfirst()			/* return pointer to first definition */
 {
     htndx = 0;
     htpos = NULL;
-#ifdef  OUTCHAN
+#ifdef	OUTCHAN
     ochpos = outchan;
 #endif
     return(dnext());
@@ -416,19 +416,19 @@ dnext()				/* return pointer to next definition */
     register char  *nm;
 
     while (htndx < NHASH) {
-    	if (htpos == NULL)
-    		htpos = hashtbl[htndx++];
-    	while (htpos != NULL) {
-    	    ep = htpos->def;
+	if (htpos == NULL)
+		htpos = hashtbl[htndx++];
+	while (htpos != NULL) {
+	    ep = htpos->def;
 	    nm = htpos->name;
-    	    htpos = htpos->next;
-    	    if (ep != NULL && incontext(nm))
-    	    	return(ep);
-    	}
+	    htpos = htpos->next;
+	    if (ep != NULL && incontext(nm))
+		return(ep);
+	}
     }
-#ifdef  OUTCHAN
+#ifdef	OUTCHAN
     if ((ep = ochpos) != NULL)
-    	ochpos = ep->sibling;
+	ochpos = ep->sibling;
     return(ep);
 #else
     return(NULL);
@@ -444,7 +444,7 @@ char  *name;
     register EPNODE  *dp;
     
     if ((vp = varlookup(name)) == NULL || vp->def == NULL)
-    	return(NULL);
+	return(NULL);
     dp = vp->def;
     vp->def = dp->sibling;
     varfree(vp);
@@ -454,7 +454,7 @@ char  *name;
 
 dpush(nm, ep)			/* push on a definition */
 char  *nm;
-register EPNODE  *ep;
+register EPNODE	 *ep;
 {
     register VARDEF  *vp;
 
@@ -464,11 +464,11 @@ register EPNODE  *ep;
 }
 
 
-#ifdef  OUTCHAN
+#ifdef	OUTCHAN
 addchan(sp)			/* add an output channel assignment */
-EPNODE  *sp;
+EPNODE	*sp;
 {
-    int  ch = sp->v.kid->v.chan;
+    int	 ch = sp->v.kid->v.chan;
     register EPNODE  *ep, *epl;
 
     for (epl = NULL, ep = outchan; ep != NULL; epl = ep, ep = ep->sibling)
@@ -505,7 +505,7 @@ getstatement()			/* get next statement */
 	scan();
 	return;
     }
-#ifdef  OUTCHAN
+#ifdef	OUTCHAN
     if (nextc == '$') {		/* channel assignment */
 	ep = getchan();
 	addchan(ep);
@@ -514,7 +514,7 @@ getstatement()			/* get next statement */
     {				/* ordinary definition */
 	ep = getdefn();
 	qname = qualname(dname(ep), 0);
-#ifdef  REDEFW
+#ifdef	REDEFW
 	if ((vdef = varlookup(qname)) != NULL)
 	    if (vdef->def != NULL) {
 		wputs(qname);
@@ -523,7 +523,7 @@ getstatement()			/* get next statement */
 		else
 		    wputs(": redefined\n");
 	    }
-#ifdef  FUNCTION
+#ifdef	FUNCTION
 	    else if (ep->v.kid->type == FUNC && vdef->lib != NULL) {
 		wputs(qname);
 		wputs(": definition hides library function\n");
@@ -547,7 +547,7 @@ getstatement()			/* get next statement */
 EPNODE *
 getdefn()			/* A -> SYM = E1 */
 				/*	SYM : E1 */
-				/*      FUNC(SYM,..) = E1 */
+				/*	FUNC(SYM,..) = E1 */
 				/*	FUNC(SYM,..) : E1 */
 {
     register EPNODE  *ep1, *ep2;
@@ -559,7 +559,7 @@ getdefn()			/* A -> SYM = E1 */
     ep1->type = SYM;
     ep1->v.name = savestr(getname());
 
-#ifdef  FUNCTION
+#ifdef	FUNCTION
     if (nextc == '(') {
 	ep2 = newnode();
 	ep2->type = FUNC;
@@ -592,8 +592,8 @@ getdefn()			/* A -> SYM = E1 */
     addekid(ep2, getE1());
 
     if (
-#ifdef  FUNCTION
-    	    ep1->type == SYM &&
+#ifdef	FUNCTION
+	    ep1->type == SYM &&
 #endif
 	    ep1->sibling->type != NUM) {
 	ep1 = newnode();
@@ -609,7 +609,7 @@ getdefn()			/* A -> SYM = E1 */
 }
 
 
-#ifdef  OUTCHAN
+#ifdef	OUTCHAN
 EPNODE *
 getchan()			/* A -> $N = E1 */
 {
@@ -646,7 +646,7 @@ getchan()			/* A -> $N = E1 */
 static double
 dvalue(name, d)			/* evaluate a variable */
 char  *name;
-EPNODE  *d;
+EPNODE	*d;
 {
     register EPNODE  *ep1, *ep2;
     

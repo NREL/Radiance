@@ -26,26 +26,26 @@ int  ndims = 0;				/* number of sampling dimensions */
 int  samplendx = 0;			/* index for this sample */
 
 int  psample = 8;			/* pixel sample size */
-double  maxdiff = .15;			/* max. sample difference */
+double	maxdiff = .15;			/* max. sample difference */
 
-double  exposure = 1.0;			/* exposure for scene */
+double	exposure = 1.0;			/* exposure for scene */
 
-double  dstrsrc = 0.0;			/* square source distribution */
-double  shadthresh = .1;		/* shadow threshold */
-double  shadcert = .25;			/* shadow certainty */
+double	dstrsrc = 0.0;			/* square source distribution */
+double	shadthresh = .1;		/* shadow threshold */
+double	shadcert = .25;			/* shadow certainty */
 int  directrelay = 0;			/* number of source relays */
 int  vspretest = 128;			/* virtual source pretest density */
 int  directinvis = 0;			/* sources invisible? */
-double  srcsizerat = 0.;		/* maximum ratio source size/dist. */
+double	srcsizerat = 0.;		/* maximum ratio source size/dist. */
 
-double  specthresh = .3;		/* specular sampling threshold */
-double  specjitter = 1.;		/* specular sampling jitter */
+double	specthresh = .3;		/* specular sampling threshold */
+double	specjitter = 1.;		/* specular sampling jitter */
 
 int  maxdepth = 4;			/* maximum recursion depth */
-double  minweight = 1e-2;		/* minimum ray weight */
+double	minweight = 1e-2;		/* minimum ray weight */
 
 COLOR  ambval = BLKCOLOR;		/* ambient value */
-double  ambacc = 0.2;			/* ambient accuracy */
+double	ambacc = 0.2;			/* ambient accuracy */
 int  ambres = 8;			/* ambient resolution */
 int  ambdiv = 32;			/* ambient divisions */
 int  ambssamp = 0;			/* ambient super-samples */
@@ -68,7 +68,7 @@ static char  *reserve_mem = NULL;	/* pre-allocated reserve memory */
 
 #define RESERVE_AMT	32768		/* amount of memory to reserve */
 
-#define  CTRL(c)	((c)-'@')
+#define	 CTRL(c)	((c)-'@')
 
 
 quit(code)			/* quit program */
@@ -95,11 +95,13 @@ char  *dname;
 				error(USER, errmsg);
 			} else
 				return;
+#ifndef NIX						   
 						/* not there, try exec */
 	if ((dev = comm_init(dname, id)) == NULL) {
 		sprintf(errmsg, "cannot start device \"%s\"", dname);
 		error(USER, errmsg);
 	}
+#endif
 }
 
 
@@ -172,7 +174,7 @@ freereserves()			/* free memory reserves */
 command(prompt)			/* get/execute command */
 char  *prompt;
 {
-#define  badcom(s)	strncmp(s, inpbuf, args-inpbuf-1)
+#define	 badcom(s)	strncmp(s, inpbuf, args-inpbuf-1)
 	char  inpbuf[256];
 	char  *args;
 again:
@@ -225,7 +227,7 @@ again:
 		break;
 	case 'm':				/* move camera */
 		if (badcom("move"))
-#ifdef  MSTATS
+#ifdef	MSTATS
 		{
 			if (badcom("memory"))
 				goto commerr;
@@ -265,7 +267,7 @@ again:
 		quit(0);
 	case CTRL('C'):				/* interrupt */
 		goto again;
-#ifdef  SIGTSTP
+#ifdef	SIGTSTP
 	case CTRL('Z'):				/* stop */
 		devclose();
 		kill(0, SIGTSTP);
@@ -286,7 +288,7 @@ commerr:
 		error(COMMAND, errmsg);
 		break;
 	}
-#undef  badcom
+#undef	badcom
 }
 
 
@@ -296,11 +298,11 @@ rsample()			/* sample the image */
 	RECT  r;
 	PNODE  *p;
 	register RECT  *rl;
-	register PNODE  **pl;
+	register PNODE	**pl;
 	register int  x;
 	/*
 	 *     We initialize the bottom row in the image at our current
-	 * resolution.  During sampling, we check super-pixels to the
+	 * resolution.	During sampling, we check super-pixels to the
 	 * right and above by calling bigdiff().  If there is a significant
 	 * difference, we subsample the super-pixels.  The testing process
 	 * includes initialization of the next row.
@@ -380,7 +382,7 @@ escape:
 
 int
 refine(p, xmin, ymin, xmax, ymax, pd)		/* refine a node */
-register PNODE  *p;
+register PNODE	*p;
 int  xmin, ymin, xmax, ymax;
 int  pd;
 {
