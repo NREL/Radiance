@@ -55,6 +55,10 @@ PNODE  ptrunk;				/* the base of our image */
 RECT  pframe;				/* current frame boundaries */
 int  pdepth;				/* image depth in current frame */
 
+static char  *reserve_mem = NULL;	/* pre-allocated reserve memory */
+
+#define RESERVE_AMT	8192		/* amount of memory to reserve */
+
 #define  CTRL(c)	('c'-'@')
 
 
@@ -134,6 +138,28 @@ rview()				/* do a view */
 		else
 			pdepth++;
 	}
+}
+
+
+memreserve()			/* fill memory reserves */
+{
+	if (reserve_mem != NULL)
+		return;			/* got some already */
+	reserve_mem = malloc(RESERVE_AMT);
+}
+
+
+memerror(detail)		/* try and rescue a memory error */
+char	*detail;
+{
+	if (reserve_mem == NULL) {
+		sprintf(errmsg, "out of memory %s", detail);
+		error(SYSTEM, errmsg);
+	}
+	free(reserve_mem);
+	reserve_mem = NULL;
+	for ( ; ; )
+		command("out of memory: ");
 }
 
 
@@ -268,9 +294,11 @@ rsample()			/* sample the image */
 	xsiz = (((pframe.r-pframe.l)<<pdepth)+hresolu-1) / hresolu;
 	ysiz = (((pframe.u-pframe.d)<<pdepth)+vresolu-1) / vresolu;
 	rl = (RECT *)malloc(xsiz*sizeof(RECT));
+	if (rl == NULL)
+		memerror("in rsample");
 	pl = (PNODE **)malloc(xsiz*sizeof(PNODE *));
-	if (rl == NULL || pl == NULL)
-		error(SYSTEM, "out of memory in rsample");
+	if (pl == NULL)
+		memerror("in rsample");
 	/*
 	 * Initialize the bottom row.
 	 */
@@ -357,7 +385,7 @@ int  pd;
 	if (p->kid == NULL) {			/* subdivide */
 
 		if ((p->kid = newptree()) == NULL)
-			error(SYSTEM, "out of memory in refine");
+			memerror("in refine");
 		/*
 		 *  The following paint order can leave a black pixel
 		 *  when redraw() is called in (*dev->paintr)().
