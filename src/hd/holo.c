@@ -199,16 +199,13 @@ register GCOORD	*gc;
 }
 
 
-hdlseg(lseg, hp, i)			/* compute line segment for beam */
+hdlseg(lseg, hp, gc)			/* compute line segment for beam */
 register int	lseg[2][3];
 register HOLO	*hp;
-int	i;
+GCOORD	gc[2];
 {
-	GCOORD	gc[2];
 	register int	k;
 
-	if (!hdbcoord(gc, hp, i))		/* compute grid coordinates */
-		return(0);
 	for (k = 0; k < 2; k++) {		/* compute end points */
 		lseg[k][gc[k].w>>1] = gc[k].w&1	? hp->grid[gc[k].w>>1]-1 : 0 ;
 		lseg[k][wg0[gc[k].w]] = gc[k].i[0];
