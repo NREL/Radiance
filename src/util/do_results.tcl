@@ -80,7 +80,7 @@ proc list_views {} {		# List finished and unfinished pictures
 proc delpic {} {		# Delete selected pictures
 	global curmess
 	set selected_pics [get_selpics 1]
-	if {"$selected_pics" == {}} {
+	if {$selected_pics == {}} {
 		set curmess "No pictures selected."
 		return
 	}
@@ -119,11 +119,11 @@ proc get_selpics {{getall 0}} {		# return selected pictures
 proc dsppic {} {		# Display selected pictures
 	global curmess dispcom radvar
 	set selected_pics [get_selpics]
-	if {"$selected_pics" == {}} {
+	if {$selected_pics == {}} {
 		set curmess "No pictures selected."
 		return
 	}
-	if {"$radvar(EXPOSURE)" == {}} {
+	if {$radvar(EXPOSURE) == {}} {
 		set ev 0
 	} else {
 		if [regexp {^[+-]} $radvar(EXPOSURE)] {
@@ -138,7 +138,8 @@ proc dsppic {} {		# Display selected pictures
 		}
 	}
 	foreach p $selected_pics {
-		if [string match *.unf $p] {
+		if {[string match *.unf $p] ||
+				$radvar(PICTURE) == "$radvar(RAWFILE)"} {
 			set dc [format $dispcom $ev $p]
 		} else {
 			set dc [format $dispcom 0 $p]
@@ -263,13 +264,10 @@ proc do_results w {		# Results screen
 	place $w.prte -relwidth .5714 -relheight .0610 -relx .3571 -rely .8537
 	helplink $w.prte trad results printcommand
 	# Fill in views
-	if {[info exists radvar(RAWFILE)] && $radvar(RAWFILE) != {}} {
+	if {$radvar(RAWFILE) != {}} {
 		set rawfroot $radvar(RAWFILE)
 	} else {
 		set rawfroot $radvar(PICTURE)
-	}
-	if {! [info exists radvar(ZFILE)]} {
-		set radvar(ZFILE) {}
 	}
 	list_views
 }
