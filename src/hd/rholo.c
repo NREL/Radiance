@@ -90,20 +90,25 @@ char	*argv[];
 		}
 						/* get root file name */
 	rootname(froot, hdkfile=argv[i++]);
-						/* load... */
-	if (i < argc) {				/* variables */
-		loadvars(argv[i++]);
-							/* cmdline settings */
-		for ( ; i < argc; i++)
-			if (setvariable(argv[i], matchvar) < 0) {
-				sprintf(errmsg, "unknown variable: %s",
-						argv[i]);
-				error(USER, errmsg);
-			}
-							/* check settings */
-		checkvalues();
-							/* load RIF if any */
-		getradfile();
+						/* load variables? */
+	if (i < argc)
+		if (argv[i][0] != '-' && argv[i][0] != '+')
+			loadvars(argv[i]);	/* load variables from file */
+
+	if (i >= argc || argv[i][0] == '+')
+		loadholo();			/* load existing holodeck */
+
+	while (++i < argc)			/* get command line settings */
+		if (setvariable(argv[i], matchvar) < 0) {
+			sprintf(errmsg, "unknown variable: %s", argv[i]);
+			error(USER, errmsg);
+		}
+						/* check settings */
+	checkvalues();
+						/* load RIF if any */
+	getradfile();
+
+	if (hdlist[i] == NULL) {		/* create new holodeck */
 							/* set defaults */
 		setdefaults(&hdg);
 							/* holodeck exists? */
@@ -112,15 +117,8 @@ char	*argv[];
 				"holodeck file exists -- use -f to overwrite");
 							/* create holodeck */
 		creatholo(&hdg);
-	} else {				/* else load holodeck */
-		loadholo();
-							/* check settings */
-		checkvalues();
-							/* load RIF if any */
-		getradfile();
-							/* set defaults */
+	} else					/* else just set defaults */
 		setdefaults(NULL);
-	}
 						/* initialize */
 	initrholo();
 						/* main loop */
@@ -130,7 +128,7 @@ char	*argv[];
 	quit(0);
 userr:
 	fprintf(stderr,
-"Usage: %s [-n nprocs][-o disp][-w][-f] output.hdk [control.hif [VAR=val ..]]\n",
+"Usage: %s [-n nprocs][-o disp][-w][-f] output.hdk [control.hif|+|- [VAR=val ..]]\n",
 			progname);
 	quit(1);
 }
