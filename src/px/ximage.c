@@ -144,10 +144,12 @@ char  *argv[];
 	if (fgetresolu(&xmax, &ymax, fin) != (YMAJOR|YDECR))
 		quiterr("bad picture size");
 				/* set view parameters */
-	if (gotview)
+	if (gotview) {
+		ourview.hresolu = xmax;
+		ourview.vresolu = ymax;
 		if (setview(&ourview) != NULL)
 			gotview = 0;
-
+	}
 	if ((scanline = (COLR *)malloc(xmax*sizeof(COLR))) == NULL)
 		quiterr("out of memory");
 
