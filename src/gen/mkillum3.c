@@ -24,6 +24,8 @@ register OBJREC  *obj;
 {
 	register int  i;
 
+	if (!strcmp(mod, VOIDID))	/* don't print void objects */
+		return;
 	printf("\n%s %s %s", mod, ofun[obj->otype].funame, obj->oname);
 	printf("\n%d", obj->oargs.nsargs);
 	for (i = 0; i < obj->oargs.nsargs; i++)
