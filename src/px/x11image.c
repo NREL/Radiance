@@ -246,7 +246,6 @@ init()			/* get data and open window */
 	XSetFont(thedisplay, ourgc, fontid);
 	revgc = XCreateGC(thedisplay, wind, 0, 0);
 	XSetFunction(thedisplay, revgc, GXinvert);
-	XStoreName(thedisplay, wind, fname == NULL ? progname : fname);
 	XDefineCursor(thedisplay, wind, XCreateFontCursor(thedisplay, 
 			XC_diamond_cross));
 	if (geometry != NULL) {
@@ -281,6 +280,8 @@ init()			/* get data and open window */
 			|ButtonMotionMask|StructureNotifyMask
 			|KeyPressMask|ExposureMask);
 	XMapWindow(thedisplay, wind);
+				/* store name last as ready signal */
+	XStoreName(thedisplay, wind, fname == NULL ? progname : fname);
 	return;
 memerr:
 	quiterr("out of memory");
