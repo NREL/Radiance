@@ -22,12 +22,12 @@ static char SCCSid[] = "$SunId$ SGI";
 #define PCTFREE		20	/* maximum fraction to free (%) */
 #endif
 
+/* define MAXFRAG if you want to limit fragment tracking memory */
+
 #ifndef BSD
 #define write	writebuf	/* safe i/o routines */
 #define read	readbuf
 #endif
-
-#define MAXFRAG		(128*FRAGBLK)	/* maximum fragments per file */
 
 #define FRAGBLK		64	/* number of fragments to allocate at a time */
 
