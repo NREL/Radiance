@@ -40,6 +40,9 @@ int	hlim;				/* central limit of horizontal */
 
 struct illum	*indirect;		/* array of indirect illuminances */
 
+long	npixinvw;			/* number of pixels in view */
+long	npixmiss;			/* number of pixels missed */
+
 
 main(argc, argv)
 int	argc;
@@ -223,6 +226,7 @@ init()				/* initialize global variables */
 	indirect = (struct illum *)calloc(nglardirs, sizeof(struct illum));
 	if (indirect == NULL)
 		memerr("indirect illuminances");
+	npixinvw = npixmiss = 0L;
 	copystruct(&leftview, &ourview);
 	copystruct(&rightview, &ourview);
 	spinvector(leftview.vdir, ourview.vdir, ourview.vup, maxtheta);
@@ -276,6 +280,9 @@ cleanup()				/* close files, wait for children */
 		close_pict();
 	if (octree != NULL)
 		done_rtrace();
+	if (npixinvw < 100*npixmiss)
+		fprintf(stderr, "%s: warning -- missing %ld%% of samples\n",
+				progname, 100L*npixmiss/npixinvw);
 }
 
 
@@ -287,14 +294,14 @@ int	x, y;
 
 	if (x <= -hlim)			/* left region */
 		return(viewray(org, vd, &leftview,
-				(x+hlim)/(2.*sampdens)+.5,
-				y/(2.*sampdens)+.5));
+				(double)(x+hlim)/(2*sampdens)+.5,
+				(double)y/(2*sampdens)+.5));
 	if (x >= hlim)			/* right region */
 		return(viewray(org, vd, &rightview,
-				(x-hlim)/(2.*sampdens)+.5,
-				y/(2.*sampdens)+.5));
+				(double)(x-hlim)/(2*sampdens)+.5,
+				(double)y/(2*sampdens)+.5));
 						/* central region */
-	if (viewray(org, vd, &ourview, .5, y/(2.*sampdens)+.5) < 0)
+	if (viewray(org, vd, &ourview, .5, (double)y/(2*sampdens)+.5) < 0)
 		return(-1);
 	spinvector(vd, vd, ourview.vup, h_theta(x));
 	return(0);
