@@ -1,0 +1,46 @@
+#
+# SCCSid "$SunId$ LBL"
+#
+
+MACH = -f68881 /usr/lib/libm.il -DIEEE -DBSD
+
+OPT = -O
+
+CFLAGS = $(MACH) $(OPT)
+
+INSTDIR = /lumen/lumen/ray/bin.sun3
+
+PROGS = makedist swaprasheader
+
+all:	$(PROGS)
+
+install:	all objview.csh objpict.csh proj.csh
+	cp $(PROGS) $(INSTDIR)
+	cp objview.csh $(INSTDIR)/objview
+	cp objpict.csh $(INSTDIR)/objpict
+	cp proj.csh $(INSTDIR)/proj
+	chmod 755 $(INSTDIR)/objview $(INSTDIR)/objpict $(INSTDIR)/proj
+
+clean:
+	rm -f *.o $(PROGS) core
+
+scanner:	scanner.o
+	cc $(CFLAGS) -o scanner scanner.o -lm
+
+makedist:	makedist.o fvect.o
+	cc $(CFLAGS) -o makedist makedist.o fvect.o -lm
+
+contour:	contour.o
+	cc $(CFLAGS) -o contour contour.o -lm
+
+pranim:	pranim.o client/libclient.a
+	cc $(CFLAGS) -o pranim pranim.o \
+client/libclient.a -lrpcsvc
+
+t16anim:	t16anim.o client/libclient.a
+	cc $(CFLAGS) -o t16anim t16anim.o \
+client/libclient.a -lrpcsvc
+
+t16anim.o pranim.o:	client/clnt.h
+
+makedist.o:	setscan.c
