@@ -5,12 +5,12 @@
 #
 
 OPT = -O
-MACH = -DSTRUCTASSIGN
+MACH = -DSTRUCTASSIGN -f68881 /usr/lib/libm.il -DIEEE -DBSD
 CFLAGS = $(OPT) $(MACH)
 
-INSTDIR = ../../bin
+INSTDIR = /lumen/lumen/ray/bin.sun3
 
-LIBDIR = /usr/local/lib/ray
+LIBDIR = /lumen/lumen/ray/lib
 
 CALDEFS = -DFUNCTION -DVARIABLE -DRCONST -DBIGLIB
 
