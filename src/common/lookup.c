@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -10,6 +10,12 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #include <stdio.h>
 #include "lookup.h"
+
+#ifdef	NOSTRUCTASS
+#define	 copystruct(d,s)	bcopy((char *)(s),(char *)(d),sizeof(*(d)))
+#else
+#define	 copystruct(d,s)	(*(d) = *(s))
+#endif
 
 #define MEM_PTR		char *
 
@@ -42,7 +48,7 @@ int	nel;
 }
 
 
-long
+unsigned long
 lu_shash(s)			/* hash a nul-terminated string */
 char	*s;
 {
@@ -73,11 +79,11 @@ char	*s;
 		41, 198, 99
 	};
 	register int	i = 0;
-	register long	h = 0;
+	register unsigned long	h = 0;
 	register unsigned char *t = (unsigned char *)s;
 
 	while (*t)
-	    	h ^= (long)shuffle[*t++] << ((i+=11) & 0xf);
+	    	h ^= (unsigned long)shuffle[*t++] << ((i+=11) & 0xf);
 
 	return(h);
 }
@@ -88,18 +94,18 @@ lu_find(tbl, key)		/* find a table entry */
 register LUTAB	*tbl;
 char	*key;
 {
-	long	hval;
+	unsigned long	hval;
 	int	i, n;
 	register int	ndx;
 	register LUENT	*le;
 					/* look up object */
-	if (tbl->tsiz == 0)
-		lu_init(tbl, 1);
+	if (tbl->tsiz == 0 && !lu_init(tbl, 1))
+		return(NULL);
 	hval = (*tbl->hashf)(key);
 tryagain:
 	ndx = hval % tbl->tsiz;
-	le = &tbl->tabl[ndx];
 	for (i = 0, n = 1; i < tbl->tsiz; i++, n += 2) {
+		le = &tbl->tabl[ndx];
 		if (le->key == NULL) {
 			le->hval = hval;
 			return(le);
@@ -108,11 +114,8 @@ tryagain:
 		      (tbl->keycmp == NULL || !(*tbl->keycmp)(le->key, key))) {
 			return(le);
 		}
-		le += n;
-		if ((ndx += n) >= tbl->tsiz) {	/* this happens rarely */
+		if ((ndx += n) >= tbl->tsiz)	/* this happens rarely */
 			ndx = ndx % tbl->tsiz;
-			le = &tbl->tabl[ndx];
-		}
 	}
 					/* table is full, reallocate */
 	le = tbl->tabl;
@@ -124,8 +127,6 @@ tryagain:
 		tbl->ndel = i;
 		return(NULL);
 	}
-	if (!ndx)
-		goto tryagain;
 	/*
 	 * The following code may fail if the user has reclaimed many
 	 * deleted entries and the system runs out of memory in a
@@ -134,7 +135,7 @@ tryagain:
 	while (ndx--)
 		if (le[ndx].key != NULL)
 			if (le[ndx].data != NULL)
-				*lu_find(tbl, le[ndx].key) = le[ndx];
+				copystruct(lu_find(tbl,le[ndx].key), &le[ndx]);
 			else if (tbl->freek != NULL)
 				(*tbl->freek)(le[ndx].key);
 	free((MEM_PTR)le);
