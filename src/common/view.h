@@ -8,6 +8,7 @@
 #ifndef _RAD_VIEW_H_
 #define _RAD_VIEW_H_
 
+#include  <time.h>
 #include  "resolu.h"
 
 #ifdef __cplusplus

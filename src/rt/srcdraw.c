@@ -420,7 +420,7 @@ int	x0, xsiz, y0, ysiz;		/* origin and size of subimage */
 					continue;	/* missed/blocked */
 							/* modify pixel */
 				if (zbf[y-y0] != NULL &&
-						sr.rt < 0.999*zbf[y-y0][x-x0])
+						sr.rt < 0.99*zbf[y-y0][x-x0])
 					zbf[y-y0][x-x0] = sr.rt;
 				else if (!bigdiff(sr.rcol, pic[y-y0][x-x0],
 						0.01))	/* source sample */
