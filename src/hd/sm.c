@@ -21,9 +21,8 @@ double smDist_sum=0;
 #define S_INC 1000
 int smNew_tri_cnt=0;
 int smNew_tri_size=0;
-T_DEPTH *smNew_tris= NULL;
 
-#define SM_MIN_SAMP_DIFF 1e-3	/* min edge length in radians */
+#define SM_MIN_SAMP_DIFF 1e-4/* min edge length in radians */
 
 /* Each edge extends .5536 radians - 31.72 degrees */
 static FVECT icosa_verts[162] = 
@@ -449,7 +448,7 @@ smAlloc(max_samples)
 
   total_points = n + SM_EXTRA_POINTS;
 
-  max_tris = total_points*4;
+  max_tris = total_points*2;
   /* Now allocate space for mesh vertices and triangles */
   max_tris = smAlloc_mesh(smMesh, total_points, max_tris);
 
@@ -700,20 +699,21 @@ int v0_id,v1_id,v2_id;
     SM_NTH_VERT(sm,v1_id) = t_id;
     SM_NTH_VERT(sm,v2_id) = t_id;
 
-    smClear_tri_flags(sm,t_id);
     if(SM_BASE_ID(sm,v0_id) || SM_BASE_ID(sm,v1_id) || SM_BASE_ID(sm,v2_id))
-    {
       SM_SET_NTH_T_BASE(sm,t_id);
-    }
     else
-      {
-	S_SET_FLAG(T_NTH_V(t,0));
-	S_SET_FLAG(T_NTH_V(t,1));
-	S_SET_FLAG(T_NTH_V(t,2));
-      }
+      if(SM_DIR_ID(sm,v0_id) && SM_DIR_ID(sm,v1_id) && SM_DIR_ID(sm,v2_id))
+      SM_SET_NTH_T_BG(sm,t_id);
+
+    S_SET_FLAG(T_NTH_V(t,0));
+    S_SET_FLAG(T_NTH_V(t,1));
+    S_SET_FLAG(T_NTH_V(t,2));
+
     SM_SET_NTH_T_ACTIVE(sm,t_id);
+    SM_SET_NTH_T_NEW(sm,t_id);
 
     SM_SAMPLE_TRIS(sm)++;
+    smNew_tri_cnt++;
 
     /* return initialized triangle */
     return(t_id);
@@ -844,35 +844,12 @@ Ltri_error:
     error(CONSISTENCY,"Invalid tri: smTris_swap_edge()\n");
 }
 
-add_new_tri(id)
-int id;
-{
-  if(smNew_tri_cnt == smNew_tri_size)
-   {
-     smNew_tri_size += S_INC;
-     smNew_tris=(T_DEPTH *)realloc(smNew_tris,sizeof(T_DEPTH)*smNew_tri_size);
-     if(!smNew_tris)
-       error(SYSTEM,"Out of memory in add_new_tris()\n");
-   }
-  smNew_tris[smNew_tri_cnt++].tri = id;
-}
-
 smUpdate_locator(sm,add_list)
 SM *sm;
 LIST *add_list;
 {
-  int t_id,i;
+  int t_id;
   TRI *t;
-  OBJECT *optr;
-  LIST *list;
-
-  list = add_list;
-  while(list)
-  {
-    t_id = LIST_DATA(list);
-    add_new_tri(t_id);
-    list = LIST_NEXT(list);
-  }
   
   while(add_list)
   {
@@ -981,10 +958,6 @@ smInsert_samp(sm,s_id,tri_id,on,which)
     FVECT npt;
     TRI *tri,*nbr,*topp;
 
-    if(tri_id==18611 && s_id == 2243)
-      sleep(1);
-    if(s_id == 2649 && tri_id == 13302)
-      sleep(1);
     add_list = NULL;
     for(i=0; i<3;i++)
       v_id[i] = T_NTH_V(SM_NTH_TRI(sm,tri_id),i);
@@ -1399,7 +1372,7 @@ smTest_sample(sm,tri_id,dir,p,rptr)
 	
       VSUB(npt,SM_NTH_WV(sm,vid[i]),SM_VIEW_CENTER(sm));
       
-      if(!SM_BASE_ID(sm,vid[i]) || !SM_DIR_ID(sm,vid[i]))
+      if(!SM_BASE_ID(sm,vid[i]) && !SM_DIR_ID(sm,vid[i]))
 	normalize(npt);
 
       d = DIST_SQ(npt,spt);
@@ -1489,6 +1462,42 @@ smTest_sample(sm,tri_id,dir,p,rptr)
     return(FALSE);
 }
 
+smReplace_base_samp(sm,b_id,s_id,tri,t_id,which)
+SM *sm;
+int b_id,s_id;
+TRI *tri;
+int t_id,which;
+{
+  TRI *t;
+
+  SM_NTH_VERT(sm,s_id) = t_id;
+  T_NTH_V(tri,which) = s_id;
+  if(!(SM_BASE_ID(sm,T_NTH_V(tri,(which+1)%3)) || 
+       SM_BASE_ID(sm,T_NTH_V(tri,(which+2)%3)))) 
+    SM_CLR_NTH_T_BASE(sm,t_id);
+  if(!SM_IS_NTH_T_NEW(sm,t_id))
+  {
+    smNew_tri_cnt++;
+    SM_SET_NTH_T_NEW(sm,t_id);
+  }
+  t_id = smTri_next_ccw_nbr(sm,tri,b_id);
+  while(t_id != INVALID)
+  {
+    t = SM_NTH_TRI(sm,t_id);
+    which = T_WHICH_V(t,b_id);
+    T_NTH_V(t,which) = s_id;
+    /* Check if still a base triangle */
+    if(!(SM_BASE_ID(sm,T_NTH_V(t,(which+1)%3)) || 
+	 SM_BASE_ID(sm,T_NTH_V(t,(which+2)%3)))) 
+      SM_CLR_NTH_T_BASE(sm,t_id);
+     if(!SM_IS_NTH_T_NEW(sm,t_id))
+	{
+	  smNew_tri_cnt++;
+	  SM_SET_NTH_T_NEW(sm,t_id);
+	} 
+     t_id = smTri_next_ccw_nbr(sm,t,b_id);
+    }
+}
 
 int
 smReplace_samp(sm,c,dir,p,s_id,t_id,o_id,on,which)
@@ -1497,7 +1506,7 @@ smReplace_samp(sm,c,dir,p,s_id,t_id,o_id,on,which)
      FVECT dir,p;
      int s_id,t_id,o_id,on,which;
 {
-  int tonemap,v_id,tri_id;
+  int v_id,tri_id;
   TRI *t,*tri;
 
   tri = SM_NTH_TRI(sm,t_id);
@@ -1506,32 +1515,8 @@ smReplace_samp(sm,c,dir,p,s_id,t_id,o_id,on,which)
   /* If it is a base id, need new sample */
   if(SM_BASE_ID(sm,v_id))
   {
-    tonemap = (SM_TONE_MAP(sm) > s_id);
-    sInit_samp(SM_SAMP(sm),s_id,c,dir,p,o_id,tonemap);
-    SM_NTH_VERT(sm,s_id) = t_id;
-    T_NTH_V(tri,which) = s_id;
-    if(!(SM_BASE_ID(sm,T_NTH_V(tri,(which+1)%3)) || 
-	 SM_BASE_ID(sm,T_NTH_V(tri,(which+2)%3)))) 
-    {
-      SM_CLR_NTH_T_BASE(sm,t_id);
-      
-    }
-    add_new_tri(t_id);
-    t_id = smTri_next_ccw_nbr(sm,tri,v_id);
-    while(t_id != INVALID)
-    {
-      t = SM_NTH_TRI(sm,t_id);
-      which = T_WHICH_V(t,v_id);
-      T_NTH_V(t,which) = s_id;
-      /* Check if still a base triangle */
-      if(!(SM_BASE_ID(sm,T_NTH_V(t,(which+1)%3)) || 
-	   SM_BASE_ID(sm,T_NTH_V(t,(which+2)%3)))) 
-	{ 
-	  SM_CLR_NTH_T_BASE(sm,t_id);
-	}
-      add_new_tri(t_id);
-      t_id = smTri_next_ccw_nbr(sm,t,v_id);
-    }
+    sInit_samp(SM_SAMP(sm),s_id,c,dir,p,o_id);
+    smReplace_base_samp(sm,v_id,s_id,tri,t_id,which);
     return(s_id);
   }
   if(dir)
@@ -1542,14 +1527,23 @@ smReplace_samp(sm,c,dir,p,s_id,t_id,o_id,on,which)
       return(INVALID);
     if(on == ON_V)
     {
-      tonemap = (SM_TONE_MAP(sm) > v_id);
-      sInit_samp(SM_SAMP(sm),v_id,c,dir,p,o_id,tonemap);
-      add_new_tri(t_id);
+      sInit_samp(SM_SAMP(sm),v_id,c,dir,p,o_id);
+
+     if(!SM_IS_NTH_T_NEW(sm,t_id))
+	{
+	  smNew_tri_cnt++;
+	  SM_SET_NTH_T_NEW(sm,t_id);
+	} 
       tri_id = smTri_next_ccw_nbr(sm,tri,v_id);
       while(tri_id != t_id)
       {
 	t = SM_NTH_TRI(sm,tri_id);
-	add_new_tri(tri_id);
+     if(!SM_IS_NTH_T_NEW(sm,tri_id))
+	{
+	  smNew_tri_cnt++;
+	  SM_SET_NTH_T_NEW(sm,tri_id);
+	} 
+
 	tri_id = smTri_next_ccw_nbr(sm,t,v_id);
       }
       return(v_id);
@@ -1572,14 +1566,22 @@ smReplace_samp(sm,c,dir,p,s_id,t_id,o_id,on,which)
      if(d2 < d)
        {
 	 /* The new sample has better information- replace values */
-	 tonemap = (SM_TONE_MAP(sm) > v_id);
-	 sInit_samp(SM_SAMP(sm),v_id,c,dir,p,o_id,tonemap);
-	 add_new_tri(t_id);
+	 sInit_samp(SM_SAMP(sm),v_id,c,dir,p,o_id);
+	 if(!SM_IS_NTH_T_NEW(sm,t_id))
+	    {
+	      smNew_tri_cnt++;
+	      SM_SET_NTH_T_NEW(sm,t_id);
+	    } 
+
 	 tri_id = smTri_next_ccw_nbr(sm,tri,v_id);
 	 while(tri_id != t_id)
 	   {
 	     t = SM_NTH_TRI(sm,tri_id);
-	     add_new_tri(tri_id);
+	     if(!SM_IS_NTH_T_NEW(sm,tri_id))
+	    {
+	      smNew_tri_cnt++;
+	      SM_SET_NTH_T_NEW(sm,tri_id);
+	    } 
 	     tri_id = smTri_next_ccw_nbr(sm,t,v_id);
 	   }
        }
@@ -1645,8 +1647,6 @@ smAdd_samp(sm,c,dir,p,o_id)
 
   /* Must do this first-as may change mesh */
   s_id = smAlloc_samp(sm);
- if(s_id== 2649)
-	r_id = INVALID;
   /* If sample is a world space point */
   if(p)
   {
@@ -1664,9 +1664,10 @@ smAdd_samp(sm,c,dir,p,o_id)
       /* If spherical projection coincides with existing sample: replace */
       if((on == ON_V || on == ON_P))
       {
-	if((n_id = smReplace_samp(sm,c,dir,p,s_id,t_id,o_id,on,which))!= s_id)
-	  smUnalloc_samp(sm,s_id);
-	return(n_id);
+	  n_id = smReplace_samp(sm,c,dir,p,s_id,t_id,o_id,on,which);
+	  if(n_id!= s_id)
+	     smUnalloc_samp(sm,s_id);
+	  return(n_id);
       }
       if((!(smTest_sample(sm,t_id,dir,p,&r_id))))
      { 
@@ -1685,7 +1686,7 @@ smAdd_samp(sm,c,dir,p,o_id)
        map individually
        */
     /* Initialize sample */
-    sInit_samp(SM_SAMP(sm),s_id,c,dir,p,o_id,(SM_TONE_MAP(sm)>s_id));	  
+    sInit_samp(SM_SAMP(sm),s_id,c,dir,p,o_id);
     
   }
     /* If sample is a direction vector */
@@ -1693,39 +1694,38 @@ smAdd_samp(sm,c,dir,p,o_id)
     {
       VADD(wpt,dir,SM_VIEW_CENTER(sm));
       while(1)
-      	{ if(s_id == 2299)
-	  t_id = INVALID;
-	t_id = smPointLocateTri(sm,wpt,&on,&which);
-	if(t_id == INVALID)
-	{
+      	{ 
+	    t_id = smPointLocateTri(sm,wpt,&on,&which);
+	    if(t_id == INVALID)
+	       {
 #ifdef DEBUG
-	  eputs("smAddSamp(): unable to locate tri containing sample \n");
+		   eputs("smAddSamp(): can'tlocate tri containing samp\n");
 #endif
-	  smUnalloc_samp(sm,s_id);
-	  return(INVALID);
+		   smUnalloc_samp(sm,s_id);
+		   return(INVALID);
+	       }
+	    if(on == ON_V || on == ON_P)
+            {
+		n_id=smReplace_samp(sm,c,NULL,wpt,s_id,t_id,o_id,on,which);
+		if(n_id !=s_id)
+		   smUnalloc_samp(sm,s_id);
+		return(n_id);
+	    }
+	    if((!(smTest_sample(sm,t_id,NULL,wpt,&r_id))))
+	    {
+		smUnalloc_samp(sm,s_id);
+		return(INVALID);
+	    }
+	    if(r_id != INVALID)
+            {
+		smRemoveVertex(sm,r_id);
+		sDelete_samp(SM_SAMP(sm),r_id);
+	    }
+	    else
+	       break;
 	}
-	if(on == ON_V || on == ON_P)
-        {
-	 if((n_id=smReplace_samp(sm,c,NULL,wpt,s_id,t_id,o_id,on,which))!=s_id)
-	   smUnalloc_samp(sm,s_id);
-	 return(n_id);
-	}
-      if((!(smTest_sample(sm,t_id,NULL,wpt,&r_id))))
-      {
-	smUnalloc_samp(sm,s_id);
-	return(INVALID);
-      }
-
-      if(r_id != INVALID)
-      {
-	smRemoveVertex(sm,r_id);
-	sDelete_samp(SM_SAMP(sm),r_id);
-      }
-      else
-	break;
-      }
       /* Allocate space for a sample and initialize */
-      sInit_samp(SM_SAMP(sm),s_id,c,NULL,wpt,o_id,(SM_TONE_MAP(sm)>s_id));
+      sInit_samp(SM_SAMP(sm),s_id,c,NULL,wpt,o_id);
     }
   if(!SM_DIR_ID(sm,s_id))
     {
@@ -1859,6 +1859,7 @@ smNext_tri_flag_set(sm,i,which,b)
 }
 
 
+
 int
 smNext_valid_tri(sm,i)
      SM *sm;
@@ -1939,10 +1940,6 @@ smRebuild_mesh(sm,v)
 	}
 
     }
-#if 0
-   smNew_tri_cnt = SM_SAMPLE_TRIS(sm);
-#endif
-
 #ifdef DEBUG
     fprintf(stderr,"smRebuild_mesh():done\n");
 #endif
@@ -2283,12 +2280,9 @@ mark_active_tris(argptr,root,qt)
 	    continue;
      SM_SET_NTH_T_ACTIVE(smMesh,t_id);
      /* Set the Active bits of the Vertices */
-     if(!SM_IS_NTH_T_BASE(smMesh,t_id))
-     {
-       S_SET_FLAG(T_NTH_V(tri,0));
-       S_SET_FLAG(T_NTH_V(tri,1));
-       S_SET_FLAG(T_NTH_V(tri,2));
-     }
+     S_SET_FLAG(T_NTH_V(tri,0));
+     S_SET_FLAG(T_NTH_V(tri,1));
+     S_SET_FLAG(T_NTH_V(tri,2));
   }
  }
 

@@ -33,7 +33,7 @@ sClear_all_flags(s)
 SAMP *s;
 {
   if(samp_flag)
-    bzero((char *)samp_flag,FLAG_BYTES(S_MAX_SAMP(s)));
+    bzero((char *)samp_flag,FLAG_BYTES(S_MAX_BASE_PT(s)));
 }
 
 sInit(s)
@@ -93,7 +93,7 @@ int *nptr,extra_points;
   S_MAX_BASE_PT(s) = n + extra_points;
 
   /* Allocate memory for a per/sample bit flag */
-  if(!(samp_flag = (int4 *)malloc(FLAG_BYTES(n))))
+  if(!(samp_flag = (int4 *)malloc(FLAG_BYTES(n+extra_points))))
     error(SYSTEM,"sAlloc(): Unable to allocate flag memory");
 
   sInit(s);
@@ -166,12 +166,12 @@ sCopy_samp(s,n_id,id)
    the view sphere, and the direction value is set to -1
  */
 void
-sInit_samp(s,id,c,d,p,o_id,tonemap)
+sInit_samp(s,id,c,d,p,o_id)
    SAMP *s;
    int id;
    COLR c;
    FVECT d,p;
-   int o_id,tonemap;
+   int o_id;
 {
 
   if(o_id != INVALID)
@@ -208,7 +208,7 @@ sInit_samp(s,id,c,d,p,o_id,tonemap)
     /* Set ACTIVE bit upon creation */
     S_SET_FLAG(id);
 #ifndef TEST_DRIVER
-  if(tonemap)
+  if(id < S_TONE_MAP(s))
     tmMapPixels(S_NTH_RGB(s,id),&S_NTH_BRT(s,id),S_NTH_CHR(s,id),1);
 #endif
 }
