@@ -103,7 +103,9 @@ extern char  errmsg[];			/* global buffer for error messages */
 #define	 index			strchr
 #define	 rindex			strrchr
 #endif
-extern off_t  lseek();
+
+			/* <unistd.h> is missing on some systems */
+extern off_t  lseek(int, off_t, int);
 
 #ifdef _WIN32
 #define NIX 1

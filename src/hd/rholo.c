@@ -215,7 +215,7 @@ initrholo()			/* get our holodeck running */
 		init_global();
 						/* record disk space limit */
 	if (!vdef(DISKSPACE))
-		maxdisk = (1L<<(sizeof(off_t)*8-2)) - 1024;
+		maxdisk = ((off_t)1<<(sizeof(off_t)*8-2)) - 1024;
 	else
 		maxdisk = 1024.*1024.*vflt(DISKSPACE);
 						/* set up memory cache */
