@@ -71,3 +71,5 @@ image.o xglaresrc.o:	../common/standard.h ../common/mat4.h \
 swaprasheader.o:	../common/rasterfile.h
 
 glareval.o xglaresrc.o:	../common/resolu.h
+
+xglaresrc.o:	../common/vfork.h
