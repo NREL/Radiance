@@ -271,11 +271,9 @@ picreadline3(y, l3)			/* read in 3-byte scanline */
 int  y;
 register rgbpixel  *l3;
 {
-	register BYTE	*l4;
-	register int	shift, c;
-	int	i;
+	register int	i;
 
-	if (inpic->nexty != y) {				/* find scanline */
+	if (inpic->nexty != y) {			/* find scanline */
 		if (inpic->bytes_line == 0) {
 			if (inpic->pos.y[y] == 0) {
 				while (inpic->nexty < y) {
@@ -293,28 +291,11 @@ register rgbpixel  *l3;
 		quiterr("read error in picreadline3");
 	inpic->nexty = y+1;
 							/* convert scanline */
-	for (l4=inline[0], i=xmax; i--; l4+=4, l3++) {
-		shift = l4[EXP] - COLXS;
-		if (shift >= 8) {
-			l3->r = l3->g = l3->b = 255;
-		} else if (shift <= -8) {
-			l3->r = l3->g = l3->b = 0;
-		} else if (shift > 0) {
-			c = l4[RED] << shift;
-			l3->r = c > 255 ? 255 : c;
-			c = l4[GRN] << shift;
-			l3->g = c > 255 ? 255 : c;
-			c = l4[BLU] << shift;
-			l3->b = c > 255 ? 255 : c;
-		} else if (shift < 0) {
-			l3->r = l4[RED] >> -shift;
-			l3->g = l4[GRN] >> -shift;
-			l3->b = l4[BLU] >> -shift;
-		} else {
-			l3->r = l4[RED];
-			l3->g = l4[GRN];
-			l3->b = l4[BLU];
-		}
+	normcolrs(inline, xmax);
+	for (i = 0; i < xmax; i++) {
+		l3[i].r = inline[i][RED];
+		l3[i].g = inline[i][GRN];
+		l3[i].b = inline[i][BLU];
 	}
 }
 

@@ -67,7 +67,7 @@ char  *fname;
 	for (i = yres-1; i >= 0; i--) {
 		if (freadcolrs(scanline, xres, input) < 0)
 			return(-1);
-		normscan(scanline, xres);
+		normcolrs(scanline, xres);
 		plotscan(scanline, xres, i);
 	}
 
@@ -76,17 +76,6 @@ char  *fname;
 	fclose(input);
 
 	return(0);
-}
-
-
-normscan(scan, len)			/* normalize a scanline */
-register COLR  scan[];
-int  len;
-{
-	register int  i;
-
-	for (i = 0; i < len; i++)
-		colr_norm(scan[i], scan[i]);
 }
 
 

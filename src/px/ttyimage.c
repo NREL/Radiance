@@ -53,6 +53,7 @@ char  **argv;
 			fprintf(stderr, "%s: read error\n", argv[0]);
 			exit(1);
 		}
+		normcolrs(scanline, xres);
 		for (j = 0; j < xres; j++)
 			putchar(shade(scanline[j]));
 		putchar('\n');
@@ -69,13 +70,8 @@ COLR  clr;
 #define NSHADES  13
 
 	static char  shadech[NSHADES+1] = " .,:;+?%&*$@#";
-	COLR  nclr;
-	register int  b;
 
-	colr_norm(clr, nclr);
-	b = norm_bright(nclr);
-	b = b*NSHADES/256;
-	return(shadech[b]);
+	return(shadech[normbright(clr)*NSHADES/256]);
 
 #undef NSHADES
 }

@@ -74,7 +74,7 @@ char  *fname;
 			fprintf(stderr, "%s: read error (y=%d)\n", fname, i);
 			return(-1);
 		}
-		normscan(scanline, xres);
+		normcolrs(scanline, xres);
 		plotscan(scanline, xres, i);
 	}
 				/* advance page */
@@ -83,17 +83,6 @@ char  *fname;
 	fclose(input);
 
 	return(0);
-}
-
-
-normscan(scan, len)			/* normalize a scanline */
-register COLR  scan[];
-int  len;
-{
-	register int  i;
-
-	for (i = 0; i < len; i++)
-		colr_norm(scan[i], scan[i]);
 }
 
 
