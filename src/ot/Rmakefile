@@ -1,0 +1,54 @@
+# SCCSid "$SunId$ LBL"
+
+#
+#  Compiles for octree conversion program
+#
+#     The compile define "STRICT" enforces strict intersection calculations
+#  so that no cube which does not intersect an object contains that object.
+#  Otherwise, a somewhat faster more lax approach is taken by certain routines.
+#
+
+CFLAGS = -DSTRICT -O -f68881 /usr/lib/f68881.il
+
+INSTDIR = /usr/local/ray
+
+COMPAT = malloc.o
+
+oconv:	dummy.o misc.o objset.o oconv.o octree.o readobj.o \
+readoct.o sphere.o fvect.o otypes.o writeoct.o o_face.o face.o plocate.o xf.o \
+clip.o cone.o o_cone.o instance.o o_instance.o bbox.o savestr.o header.o \
+mat4.o $(COMPAT)
+	cc $(CFLAGS) -o oconv oconv.o readoct.o octree.o objset.o \
+readobj.o writeoct.o fvect.o otypes.o sphere.o dummy.o misc.o o_face.o \
+face.o plocate.o clip.o cone.o o_cone.o instance.o o_instance.o mat4.o xf.o \
+bbox.o savestr.o header.o $(COMPAT) -lm
+
+install:	oconv
+	sccs check
+	install oconv $(INSTDIR)
+
+xf.o:	xf.c
+	cc $(CFLAGS) -DINVXF -c xf.c
+
+bbox.o cone.o face.o misc.o o_cone.o o_face.o \
+o_instance.o objset.o oconv.o instance.o octree.o \
+otypes.o readobj.o readoct.o sphere.o writeoct.o:	standard.h fvect.h
+
+o_cone.o o_face.o objset.o oconv.o octree.o \
+readoct.o sphere.o writeoct.o:	octree.h
+
+bbox.o cone.o face.o o_cone.o o_face.o o_instance.o objset.o oconv.o \
+instance.o otypes.o readobj.o readoct.o sphere.o writeoct.o:	object.h
+
+bbox.o cone.o oconv.o otypes.o \
+readobj.o readoct.o sphere.o writeoct.o:	otypes.h
+
+fvect.o:	fvect.h
+
+bbox.o cone.o o_cone.o:	cone.h
+
+bbox.o face.o o_face.o:	face.h
+
+bbox.o o_instance.o instance.o:	instance.h octree.h
+
+clip.o o_face.o plocate.o:	plocate.h
