@@ -37,11 +37,12 @@ extern ANGLE	glarang[];		/* glare calculation angles */
 extern int	nglarangs;
 extern double	maxtheta;		/* maximum glare angle (in radians) */
 extern int	hsize;			/* horizontal size */
-extern int	hlim;			/* horizontal limit of central view */
 
 #define nglardirs	(2*nglarangs+1)
 #define vsize		(sampdens-1)
-#define h_theta(h)	(-(double)(h)/(double)sampdens)
+#define hscale(v)	sqrt(1.-(double)((v)*(v)/(sampdens*sampdens)))
+#define hlim(v)		(int)(maxtheta*sampdens*hscale(v))
+#define h_theta(h,v)	(-(h)/(sampdens*hscale(v)))
 
 extern struct illum {
 	float	theta;		/* glare direction */
@@ -66,12 +67,8 @@ extern struct source {
 	struct source	*next;	/* next source in list */
 } *donelist;			/* finished sources */
 
-typedef struct {
-	double	err;		/* cumulative error */
-	double	prob;		/* target probability */
-} SPANERR;		/* probability record for computing spans */
-
 extern double	getviewpix();
+extern double	pixsize();
 
 extern long	npixinvw;	/* number of samples in view */
 extern long	npixmiss;	/* number of samples missing */

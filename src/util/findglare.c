@@ -36,7 +36,6 @@ ANGLE	glarang[180] = {AEND};		/* glare calculation angles */
 int	nglarangs = 0;
 double	maxtheta;			/* maximum angle (in radians) */
 int	hsize;				/* horizontal size */
-int	hlim;				/* central limit of horizontal */
 
 struct illum	*indirect;		/* array of indirect illuminances */
 
@@ -227,8 +226,7 @@ init()				/* initialize global variables */
 		maxtheta = (PI/180.)*glarang[nglarangs-1];
 	else
 		maxtheta = 0.0;
-	hlim = sampdens*maxtheta;
-	hsize = hlim + sampdens - 1;
+	hsize = hlim(0) + sampdens - 1;
 	if (hsize > (int)(PI*sampdens))
 		hsize = PI*sampdens;
 	indirect = (struct illum *)calloc(nglardirs, sizeof(struct illum));
@@ -294,41 +292,48 @@ cleanup()				/* close files, wait for children */
 }
 
 
-compdir(vd, x, y, se)			/* compute direction for x,y */
+compdir(vd, x, y)			/* compute direction for x,y */
 FVECT	vd;
 int	x, y;
-SPANERR	*se;
 {
+	int	hl;
 	FVECT	org;			/* dummy variable */
 
-	if (x <= -hlim)			/* left region */
+	hl = hlim(y);
+	if (x <= -hl)			/* left region */
 		return(viewray(org, vd, &leftview,
-				(double)(x+hlim)/(2*sampdens)+.5,
+				(double)(x+hl)/(2*sampdens)+.5,
 				(double)y/(2*sampdens)+.5));
-	if (x >= hlim)			/* right region */
+	if (x >= hl)			/* right region */
 		return(viewray(org, vd, &rightview,
-				(double)(x-hlim)/(2*sampdens)+.5,
+				(double)(x-hl)/(2*sampdens)+.5,
 				(double)y/(2*sampdens)+.5));
 					/* central region */
-	if (se != NULL) {	/* avoid over-counting of poles */
-		se->err += se->prob;
-		if (se->err <= 0.5)
-			return(-1);
-		se->err -= 1.0;
-	}
 	if (viewray(org, vd, &ourview, .5, (double)y/(2*sampdens)+.5) < 0)
 		return(-1);
-	spinvector(vd, vd, ourview.vup, h_theta(x));
+	spinvector(vd, vd, ourview.vup, h_theta(x,y));
 	return(0);
 }
 
 
-setspanerr(se, y)		/* initialize span error at y */
-register SPANERR	*se;
-int	y;
+double
+pixsize(x, y)		/* return the solid angle of pixel at (x,y) */
+int	x, y;
 {
-	se->err = 0.0;
-	se->prob = sqrt(1.0 - (double)((long)y*y)/((long)vsize*vsize));
+	register int	hl, xo;
+	double	disc;
+
+	hl = hlim(y);
+	if (x < -hl)
+		xo = x+hl;
+	else if (x > hl)
+		xo = x-hl;
+	else
+		xo = 0;
+	disc = 1. - (xo*xo + y*y)/(sampdens*sampdens);
+	if (disc <= FTINY)
+		return(0.);
+	return(1./(sampdens*sampdens*sqrt(disc)));
 }
 
 
