@@ -20,6 +20,8 @@ extern char  *malloc(), *realloc();
 
 int  lzcomp = 0;			/* use Lempel-Ziv compression? */
 
+int  greyscale = 0;			/* produce greyscale image? */
+
 double	gamma = 2.2;			/* gamma correction */
 
 int  bradj = 0;				/* brightness adjustment */
@@ -44,6 +46,9 @@ char  *argv[];
 				break;
 			case 'z':
 				lzcomp = !lzcomp;
+				break;
+			case 'b':
+				greyscale = !greyscale;
 				break;
 			case 'e':
 				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
@@ -77,7 +82,7 @@ doneopts:
 	exit(0);
 userr:
 	fprintf(stderr,
-		"Usage: %s [-r][-z][-e +/-stops][-g gamma] input output\n",
+	"Usage: %s [-r][-b][-z][-e +/-stops][-g gamma] input output\n",
 			progname);
 	exit(1);
 }
@@ -99,7 +104,7 @@ char	*inpf, *outf;
 {
 	unsigned long	xmax, ymax;
 	TIFF	*tif;
-	unsigned short	pconfig;
+	unsigned short	pconfig, nsamps;
 	unsigned short	hi;
 	register BYTE	*scanin;
 	register COLR	*scanout;
@@ -108,11 +113,13 @@ char	*inpf, *outf;
 					/* open/check  TIFF file */
 	if ((tif = TIFFOpen(inpf, "r")) == NULL)
 		quiterr("cannot open TIFF input");
-	if (!TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &hi) || hi != 3)
+	if (!TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &nsamps) ||
+			(nsamps != 1 && nsamps != 3))
 		quiterr("unsupported samples per pixel");
 	if (!TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &hi) || hi != 8)
 		quiterr("unsupported bits per sample");
-	if (TIFFGetField(tif, TIFFTAG_PHOTOMETRIC, &hi) && hi != 2)
+	if (TIFFGetField(tif, TIFFTAG_PHOTOMETRIC, &hi) &&
+			hi != (nsamps==1 ? 1 : 2))
 		quiterr("unsupported photometric interpretation");
 	if (!TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &pconfig) ||
 			(pconfig != 1 && pconfig != 2))
@@ -137,15 +144,23 @@ char	*inpf, *outf;
 	putchar('\n');
 	fputresolu(YDECR|YMAJOR, xmax, ymax, stdout);
 						/* convert image */
+	if (nsamps == 1)
+		pconfig = 1;
 	for (y = 0; y < ymax; y++) {
 		if (pconfig == 1) {
 			if (TIFFReadScanline(tif, scanin, y, 0) < 0)
 				goto readerr;
-			for (x = 0; x < xmax; x++) {
-				scanout[x][RED] = scanin[3*x];
-				scanout[x][GRN] = scanin[3*x+1];
-				scanout[x][BLU] = scanin[3*x+2];
-			}
+			if (nsamps == 1)
+				for (x = 0; x < xmax; x++)
+					scanout[x][RED] =
+					scanout[x][GRN] =
+					scanout[x][BLU] = scanin[x];
+			else
+				for (x = 0; x < xmax; x++) {
+					scanout[x][RED] = scanin[3*x];
+					scanout[x][GRN] = scanin[3*x+1];
+					scanout[x][BLU] = scanin[3*x+2];
+				}
 		} else {
 			if (TIFFReadScanline(tif, scanin, y, 0) < 0)
 				goto readerr;
@@ -196,9 +211,9 @@ char	*inpf, *outf;
 		quiterr("cannot open TIFF output");
 	TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, (unsigned long)xmax);
 	TIFFSetField(tif, TIFFTAG_IMAGELENGTH, (unsigned long)ymax);
-	TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 3);
+	TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, greyscale ? 1 : 3);
 	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8);
-	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, 2);
+	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, greyscale ? 1 : 2);
 	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, 1);
 	if (lzcomp)
 		TIFFSetField(tif, TIFFTAG_COMPRESSION, (unsigned short)5);
@@ -213,11 +228,19 @@ char	*inpf, *outf;
 			quiterr("error reading Radiance picture");
 		if (bradj)
 			shiftcolrs(scanin, xmax, bradj);
-		colrs_gambs(scanin, xmax);
-		for (x = 0; x < xmax; x++) {
-			scanout[3*x] = scanin[x][RED];
-			scanout[3*x+1] = scanin[x][GRN];
-			scanout[3*x+2] = scanin[x][BLU];
+		if (greyscale) {
+			for (x = 0; x < xmax; x++)
+				scanin[x][GRN] = normbright(scanin[x]);
+			colrs_gambs(scanin, xmax);
+			for (x = 0; x < xmax; x++)
+				scanout[x] = scanin[x][GRN];
+		} else {
+			colrs_gambs(scanin, xmax);
+			for (x = 0; x < xmax; x++) {
+				scanout[3*x] = scanin[x][RED];
+				scanout[3*x+1] = scanin[x][GRN];
+				scanout[3*x+2] = scanin[x][BLU];
+			}
 		}
 		if (TIFFWriteScanline(tif, scanout, y, 0) < 0)
 			quiterr("error writing TIFF output");
