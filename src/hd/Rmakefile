@@ -1,0 +1,39 @@
+#
+# SCCSid "$SunId$ SGI"
+# Radiance makefile for holodeck programs
+#
+
+MACH = -DBSD
+
+OPT = -O
+
+CFLAGS = $(MACH) $(OPT) -I../common -L../lib
+
+CC = cc
+
+INSTDIR = /usr/local/bin
+
+LIBDIR = /usr/local/lib/ray
+
+PROGS = rholo
+
+all:	$(PROGS)
+
+install:	all
+	cp $(PROGS) $(INSTDIR)
+
+clean:
+	set nonomatch; rm -f *.o $(PROGS) core
+
+rholo:	rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o holo.o holofile.o
+	$(CC) $(CFLAGS) -o rholo rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o \
+holo.o holofile.o -lrt -lm
+
+rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o:	rholo.h
+
+rholo4.o:	rhdisp.h
+
+holo.o holofile.o \
+rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o:	holo.h \
+../common/vars.h ../common/color.h \
+../common/standard.h ../common/mat4.h ../common/fvect.h
