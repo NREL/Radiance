@@ -24,10 +24,8 @@ extern double  specthresh;		/* specular sampling threshold */
 extern double  specjitter;		/* specular sampling jitter */
 
 /*
- *	This routine uses portions of the reflection
- *  model described by Cook and Torrance.
- *	The computation of specular components has been simplified by
- *  numerous approximations and ommisions to improve speed.
+ *	This routine implements the isotropic Gaussian
+ *  model described by Ward in Siggraph `92 article.
  *	We orient the surface towards the incoming ray, so a single
  *  surface can be used to represent an infinitely thin object.
  *

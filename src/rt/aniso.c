@@ -20,8 +20,8 @@ extern double  specthresh;		/* specular sampling threshold */
 extern double  specjitter;		/* specular sampling jitter */
 
 /*
- *	This anisotropic reflection model uses a variant on the
- *  exponential Gaussian used in normal.c.
+ *	This routine implements the anisotropic Gaussian
+ *  model described by Ward in Siggraph `92 article.
  *	We orient the surface towards the incoming ray, so a single
  *  surface can be used to represent an infinitely thin object.
  *
