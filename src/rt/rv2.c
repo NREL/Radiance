@@ -450,9 +450,9 @@ register char  *s;
 			}
 			dstrsrc = d0;
 			break;
-		case 't':			/* threshold */
+		case 't':			/* tolerance */
 			if (sscanf(s+2, "%lf", &d0) != 1) {
-				sprintf(buf, "direct threshold (%.6g): ",
+				sprintf(buf, "direct tolerance (%.6g): ",
 						shadthresh);
 				(*dev->comout)(buf);
 				(*dev->comin)(buf);

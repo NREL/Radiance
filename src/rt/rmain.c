@@ -123,6 +123,7 @@ char  *argv[];
 		case 'v':				/* view */
 			switch (argv[i][2]) {
 			case 't':				/* type */
+				check(4,0);
 				ourview.type = argv[i][3];
 				break;
 			case 'p':				/* point */
@@ -174,7 +175,7 @@ char  *argv[];
 #endif
 		case 'd':				/* direct */
 			switch (argv[i][2]) {
-			case 't':				/* threshold */
+			case 't':				/* tolerance */
 				check(3,1);
 				shadthresh = atof(argv[++i]);
 				break;
@@ -336,6 +337,7 @@ char  *argv[];
 			case 'a':				/* ascii */
 			case 'f':				/* float */
 			case 'd':				/* double */
+				check(4,0);
 				outform = argv[i][3];
 				break;
 			default:
@@ -535,7 +537,7 @@ printdefaults()			/* print default values to stdout */
 	printf("-x  %-9d\t\t\t# x resolution\n", hresolu);
 	printf("-y  %-9d\t\t\t# y resolution\n", vresolu);
 #endif
-	printf("-dt %f\t\t\t# direct threshold\n", shadthresh);
+	printf("-dt %f\t\t\t# direct tolerance\n", shadthresh);
 	printf("-dj %f\t\t\t# direct jitter\n", dstrsrc);
 #if  RPICT|RVIEW
 	printf("-sp %-9d\t\t\t# sample pixel\n", psample);
