@@ -110,8 +110,8 @@ int	nents;
 					lastin = -1;	/* flag full sort */
 					break;
 				}
-					/* sort updated list */
-		sortcomplist();
+		if (lastin < 0)		/* sort updated list */
+			sortcomplist();
 		return;			/* no display */
 	default:
 		error(CONSISTENCY, "bundle_set called with unknown operation");
@@ -121,10 +121,11 @@ int	nents;
 		if (clist[i].nr > n)
 			n = clist[i].nr;
 	p = (PACKHEAD *)malloc(sizeof(PACKHEAD) + n*sizeof(RAYVAL));
-					/* now, display what we can */
+	if (p == NULL)
+		goto memerr;
+					/* display what we have */
 	for (i = 0; i < nents; i++)
-		if (clist[i].nr > 0 &&
-		(b = hdgetbeam(hdlist[clist[i].hd], clist[i].bi)) != NULL) {
+		if ((b = hdgetbeam(hdlist[clist[i].hd], clist[i].bi)) != NULL) {
 			bcopy((char *)hdbray(b), (char *)(p+1),
 					(p->nr=b->nrm)*sizeof(RAYVAL));
 			disp_packet((PACKET *)p);
@@ -204,6 +205,9 @@ init_global()			/* initialize global ray computation */
 	int	lseg[2][3];
 	double	frac;
 	register int	k;
+					/* free old list */
+	if (complen > 0)
+		free((char *)complist);
 					/* allocate beam list */
 	complen = 0;
 	for (j = 0; hdlist[j] != NULL; j++)
@@ -266,7 +270,7 @@ sortcomplist()			/* fix our list order */
 
 				/* empty queue */
 	done_packets(flush_queue());
-	if (complen <= 0)	/* check to see if there even is a list */
+	if (complen <= 0)	/* check to see if there is even a list */
 		return;
 	if (lastin < 0)		/* flag to sort entire list */
 		qsort((char *)complist, complen, sizeof(PACKHEAD), beamcmp);
