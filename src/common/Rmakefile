@@ -22,7 +22,7 @@ STDOBJ = fgetline.o fropen.o linregr.o xf.o mat4.o invmat4.o fvect.o urand.o \
 	urind.o peano.o calexpr.o caldefn.o calfunc.o calprnt.o \
 	multisamp.o process.o getpath.o error.o savestr.o savqstr.o \
 	badarg.o fgetword.o words.o expandarg.o wordfile.o \
-	cputs.o wputs.o eputs.o quit.o
+	cputs.o wputs.o eputs.o quit.o lookup.o
 
 SYSOBJ = ealloc.o fdate.o portio.o $(COMPAT)
 
@@ -85,3 +85,5 @@ process.o:	vfork.h
 font.o:	font.h
 
 fropen.o getpath.o image.o:	paths.h
+
+lookup.o:	lookup.h
