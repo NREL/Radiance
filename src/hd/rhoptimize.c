@@ -172,7 +172,7 @@ static int
 bpcmp(b1p, b2p)			/* compare beam positions on disk */
 int	*b1p, *b2p;
 {
-	register long	pdif = beamdir[*b1p].fo - beamdir[*b2p].fo;
+	register off_t	pdif = beamdir[*b1p].fo - beamdir[*b2p].fo;
 
 	if (pdif < 0L) return(-1);
 	return(pdif > 0L);

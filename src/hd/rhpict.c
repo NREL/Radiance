@@ -260,7 +260,6 @@ endpicture()			/* finish and write out pixels */
 
 initialize()			/* initialize holodeck and buffers */
 {
-	extern long	ftell();
 	int	fd;
 	FILE	*fp;
 	int	n;

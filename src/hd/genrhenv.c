@@ -55,7 +55,6 @@ openholo(fname, sect)		/* open holodeck section for input */
 char	*fname;
 int	sect;
 {
-	extern long	ftell();
 	FILE	*fp;
 	int	fd;
 	int4	nextloc;

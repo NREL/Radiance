@@ -37,7 +37,6 @@ gethdinfo(fname, fout)		/* get information on holodeck */
 char	*fname;
 FILE	*fout;
 {
-	extern long	ftell();
 	FILE	*fp;
 	HOLO	*hdsect;
 	int	fd;

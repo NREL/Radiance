@@ -41,7 +41,6 @@ gridsect(fname, sect)		/* get specified section(s) and print grids */
 char	*fname;
 int	sect;
 {
-	extern long	ftell();
 	FILE	*fp;
 	HOLO	hdsect;
 	int	fd;

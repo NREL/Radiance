@@ -107,7 +107,6 @@ openholo(fname, append)		/* open existing holodeck file for i/o */
 char	*fname;
 int	append;
 {
-	extern long	ftell();
 	FILE	*fp;
 	int	fd;
 	int	hflags = 0;
@@ -195,7 +194,7 @@ static int
 bpcmp(b1p, b2p)			/* compare beam positions on disk */
 int	*b1p, *b2p;
 {
-	register long	pdif = beamdir[*b1p].fo - beamdir[*b2p].fo;
+	register off_t	pdif = beamdir[*b1p].fo - beamdir[*b2p].fo;
 
 	if (pdif > 0L) return(1);
 	if (pdif < 0L) return(-1);
