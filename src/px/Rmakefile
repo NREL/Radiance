@@ -27,27 +27,31 @@ install:	$(PROGS)
 pfilt:	pfilt.o pf2.o pf3.o resolu.o color.o header.o
 	cc $(CFLAGS) -o pfilt pfilt.o pf2.o pf3.o resolu.o color.o header.o -lm
 
-ttyimage:	ttyimage.o resolu.o color.o header.o
-	cc $(CFLAGS) -o ttyimage ttyimage.o resolu.o color.o header.o
+ttyimage:	ttyimage.o resolu.o color.o colrops.o header.o
+	cc $(CFLAGS) -o ttyimage ttyimage.o resolu.o color.o colrops.o \
+header.o -lm
 
 t4027:	t4027.o color.o resolu.o
 	cc $(CFLAGS) -o t4027 t4027.o color.o resolu.o
 
-glimage:	glimage.o color.o resolu.o header.o
-	cc $(CFLAGS) -o glimage glimage.o color.o resolu.o header.o -lgl_s
+glimage:	glimage.o color.o colrops.o resolu.o header.o
+	cc $(CFLAGS) -o glimage glimage.o color.o colrops.o resolu.o \
+header.o -lgl_s -lm
 
-aedimage:	aedimage.o color.o resolu.o ciq.o cut.o closest.o ealloc.o biq.o header.o
-	cc $(CFLAGS) -o aedimage aedimage.o color.o resolu.o ciq.o cut.o \
-closest.o ealloc.o biq.o header.o -lm
+aedimage:	aedimage.o color.o colrops.o resolu.o ciq.o cut.o closest.o \
+ealloc.o biq.o header.o
+	cc $(CFLAGS) -o aedimage aedimage.o color.o colrops.o resolu.o \
+ciq.o cut.o closest.o ealloc.o biq.o header.o -lm
 
-oki20c:	oki20c.o color.o resolu.o header.o
-	cc $(CFLAGS) -o oki20c oki20c.o color.o resolu.o header.o
+oki20c:	oki20c.o color.o colrops.o resolu.o header.o
+	cc $(CFLAGS) -o oki20c oki20c.o color.o colrops.o resolu.o header.o -lm
 
-paintjet:	paintjet.o color.o resolu.o header.o
-	cc $(CFLAGS) -o paintjet paintjet.o color.o resolu.o header.o
+paintjet:	paintjet.o color.o colrops.o resolu.o header.o
+	cc $(CFLAGS) -o paintjet paintjet.o color.o colrops.o resolu.o \
+header.o -lm
 
-mt160r:	mt160r.o color.o resolu.o header.o
-	cc $(CFLAGS) -o mt160r mt160r.o color.o resolu.o header.o
+mt160r:	mt160r.o color.o colrops.o resolu.o header.o
+	cc $(CFLAGS) -o mt160r mt160r.o color.o colrops.o resolu.o header.o -lm
 
 getinfo:	getinfo.o header.o
 	cc $(CFLAGS) -n -o getinfo getinfo.o header.o
@@ -73,42 +77,46 @@ psign:	psign.o color.o resolu.o
 d48c:	d48c.o color.o resolu.o
 	cc $(CFLAGS) -o d48c d48c.o color.o resolu.o
 
-ra_pr: ra_pr.o ciq.o cut.o closest.o color.o resolu.o ealloc.o header.o biq.o
+ra_pr:	ra_pr.o ciq.o cut.o closest.o color.o colrops.o resolu.o ealloc.o \
+header.o biq.o
 	cc $(CFLAGS) -o ra_pr ra_pr.o ciq.o cut.o closest.o \
-color.o resolu.o ealloc.o header.o biq.o -lm
+color.o colrops.o resolu.o ealloc.o header.o biq.o -lm
 
-ra_pr24: ra_pr24.o color.o colrops.o resolu.o header.o
+ra_pr24:	ra_pr24.o color.o colrops.o resolu.o header.o
 	cc $(CFLAGS) -o ra_pr24 ra_pr24.o color.o colrops.o resolu.o \
 header.o -lm
 
-ra_t8: ra_t8.o ciq.o cut.o closest.o color.o resolu.o ealloc.o header.o biq.o
+ra_t8:	ra_t8.o ciq.o cut.o closest.o color.o colrops.o resolu.o \
+ealloc.o header.o biq.o
 	cc $(CFLAGS) -o ra_t8 ra_t8.o ciq.o cut.o closest.o \
-color.o resolu.o ealloc.o header.o biq.o -lm
+color.o colrops.o resolu.o ealloc.o header.o biq.o -lm
 
-ra_t16: ra_t16.o color.o resolu.o ealloc.o header.o
-	cc $(CFLAGS) -o ra_t16 ra_t16.o color.o resolu.o ealloc.o header.o -lm
+ra_t16: ra_t16.o color.o colrops.o resolu.o ealloc.o header.o
+	cc $(CFLAGS) -o ra_t16 ra_t16.o color.o colrops.o \
+resolu.o ealloc.o header.o -lm
 
 ra_im: ra_im.o
 	cc $(CFLAGS) -n -o ra_im ra_im.o
 
-ra_bn: ra_bn.o color.o resolu.o header.o
-	cc $(CFLAGS) -o ra_bn ra_bn.o color.o resolu.o header.o -lm
+ra_bn: ra_bn.o color.o colrops.o resolu.o header.o
+	cc $(CFLAGS) -o ra_bn ra_bn.o color.o colrops.o resolu.o header.o -lm
 
-ximage:	ximage.o color.o resolu.o ciq.o cut.o closest.o ealloc.o \
+ximage:	ximage.o color.o colrops.o resolu.o ciq.o cut.o closest.o ealloc.o \
 xraster.o header.o biq.o image.o fvect.o
-	cc $(CFLAGS) -o ximage ximage.o color.o resolu.o xraster.o \
+	cc $(CFLAGS) -o ximage ximage.o color.o colrops.o resolu.o xraster.o \
 header.o ciq.o cut.o closest.o ealloc.o biq.o image.o fvect.o -lX -lm
 
-x11image:	x11image.o color.o resolu.o ciq.o cut.o closest.o ealloc.o \
-x11raster.o header.o biq.o image.o fvect.o
-	cc $(CFLAGS) -o x11image x11image.o color.o resolu.o x11raster.o \
-header.o ciq.o cut.o closest.o ealloc.o biq.o image.o fvect.o -lX11 -lm
+x11image:	x11image.o color.o colrops.o resolu.o ciq.o cut.o closest.o \
+ealloc.o x11raster.o header.o biq.o image.o fvect.o
+	cc $(CFLAGS) -o x11image x11image.o color.o colrops.o resolu.o \
+x11raster.o header.o ciq.o cut.o closest.o ealloc.o biq.o image.o \
+fvect.o -lX11 -lm
 
 prot:		prot.o color.o resolu.o header.o
 	cc $(CFLAGS) -o prot prot.o color.o resolu.o header.o
 
-panim:	panim.o color.o resolu.o header.o client/libclient.a
-	cc $(CFLAGS) -o panim panim.o color.o resolu.o header.o \
+panim:	panim.o color.o colrops.o resolu.o header.o client/libclient.a
+	cc $(CFLAGS) -o panim panim.o color.o colrops.o resolu.o header.o \
 client/libclient.a -lrpcsvc -lm
 
 pcomb:	pcomb.o calexpr.o calfunc.o caldefn.o color.o resolu.o \
