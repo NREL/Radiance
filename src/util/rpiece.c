@@ -321,10 +321,7 @@ int  *xp, *yp;
 		sflock(F_UNLCK);		/* release sync file */
 		return(1);
 	}
-	if (scanf("%d %d", xp, yp) == 2)	/* use stdin */
-		return(1);
-	fprintf(stderr, "%s: input format error\n", progname);
-	exit(cleanup(1));
+	return(scanf("%d %d", xp, yp) == 2);	/* use stdin */
 }
 
 
@@ -484,28 +481,30 @@ int  xpos, ypos;
 				/* lock file section so NFS doesn't mess up */
 	fls.l_whence = 0;
 	fls.l_type = F_WRLCK;
-	fcntl(outfd, F_SETLKW, &fls);
+	if (fcntl(outfd, F_SETLKW, &fls) < 0)
+		filerr("lock");
 #endif
 				/* write new piece to file */
 	if (lseek(outfd, fls.l_start, 0) == -1)
-		goto seekerr;
+		filerr("seek");
 	if (hmult == 1) {
 		if (writebuf(outfd, (char *)pbuf,
 				vr*hr*sizeof(COLR)) != vr*hr*sizeof(COLR))
-			goto writerr;
+			filerr("write");
 	} else
 		for (y = 0; y < vr; y++) {
 			if (writebuf(outfd, (char *)(pbuf+y*hr),
 					hr*sizeof(COLR)) != hr*sizeof(COLR))
-				goto writerr;
+				filerr("write");
 			if (y < vr-1 && lseek(outfd,
 					(long)(hmult-1)*hr*sizeof(COLR),
 					1) == -1)
-				goto seekerr;
+				filerr("seek");
 		}
 #if NFS
 	fls.l_type = F_UNLCK;		/* release lock */
-	fcntl(outfd, F_SETLKW, &fls);
+	if (fcntl(outfd, F_SETLKW, &fls) < 0)
+		filerr("lock");
 #endif
 	if (syncfp != NULL) {			/* record what's been done */
 		sflock(F_WRLCK);
@@ -522,11 +521,16 @@ int  xpos, ypos;
 	if (pid == -1)		/* didn't fork or fork failed */
 		return(0);
 	_exit(0);		/* else exit child process (releasing locks) */
-seekerr:
-	fprintf(stderr, "%s: seek error on file \"%s\"\n", progname, outfile);
-	_exit(1);
-writerr:
-	fprintf(stderr, "%s: write error on file \"%s\"\n", progname, outfile);
+}
+
+
+filerr(t)			/* report file error and exit */
+char  *t;
+{
+	extern char  *sys_errlist[];
+
+	fprintf(stderr, "%s: %s error on file \"%s\": %s\n",
+			progname, t, outfile, sys_errlist[errno]);
 	_exit(1);
 }
 
