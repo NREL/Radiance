@@ -148,7 +148,7 @@ proc load_vars {f {vl all}} {	# load RIF variables
 	}
 	if {"$vl" == "all" && ! [chksave]} {return 0}
 	set curmess {Please wait...}
-	update idletasks
+	update
 	if [catch {exec rad -n -w -e $f >& /usr/tmp/ro[pid]}] {
 		set curmess [exec cat /usr/tmp/ro[pid]]
 		exec rm -f /usr/tmp/ro[pid]
