@@ -404,7 +404,7 @@ register char  *s;
 	char  buf[128];
 	
 	if (s[0] == '\0') {
-		(*dev->comout)("aa ab ad ar as av dj dt lr lw sd sp: ");
+		(*dev->comout)("aa ab ad ar as av dj dt lr lw sp st: ");
 		(*dev->comin)(buf);
 		s = buf;
 	}
@@ -450,9 +450,9 @@ register char  *s;
 			}
 			dstrsrc = d0;
 			break;
-		case 't':			/* tolerance */
+		case 't':			/* threshold */
 			if (sscanf(s+2, "%lf", &d0) != 1) {
-				sprintf(buf, "direct tolerance (%.6g): ",
+				sprintf(buf, "direct threshold (%.6g): ",
 						shadthresh);
 				(*dev->comout)(buf);
 				(*dev->comin)(buf);
@@ -555,9 +555,9 @@ register char  *s;
 			psample = i0;
 			pdepth = 0;
 			break;
-		case 'd':			/* difference */
+		case 't':			/* threshold */
 			if (sscanf(s+2, "%lf", &d0) != 1) {
-				sprintf(buf, "sample difference (%.6g): ",
+				sprintf(buf, "sample threshold (%.6g): ",
 						maxdiff);
 				(*dev->comout)(buf);
 				(*dev->comin)(buf);

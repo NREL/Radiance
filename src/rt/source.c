@@ -304,8 +304,7 @@ char  *p;			/* data for f */
 	register int  sn;
 	register CONTRIB  *srccnt;
 	register CNTPTR  *cntord;
-	int  ncnts;
-	double  ourthresh, prob, hwt, test2, hit2;
+	double  prob, ourthresh, hwt, test2, hit2;
 	RAY  sr;
 
 	srccnt = (CONTRIB *)malloc(nsources*sizeof(CONTRIB));
@@ -341,23 +340,10 @@ char  *p;			/* data for f */
 						/* sort contributions */
 	qsort(cntord, nsources, sizeof(CNTPTR), cntcmp);
 	hit2 = 0.0; test2 = FTINY;
-						/* find last */
-	sn = 0; ncnts = nsources;
-	while (sn < ncnts-1) {
-		register int  m;
-		m = (sn + ncnts) >> 1;
-		if (cntord[m].brt > 0.0)
-			sn = m;
-		else
-			ncnts = m;
-	}
-						/* accumulate tail */
-	for (sn = ncnts-1; sn > 0; sn--)
-		cntord[sn-1].brt += cntord[sn].brt;
-						/* shadow testing */
-	for (sn = 0; sn < ncnts; sn++) {
-						/* tail below threshold? */
-		if (cntord[sn].brt < ourthresh*bright(r->rcol))
+						/* test for shadows */
+	for (sn = 0; sn < nsources; sn++) {
+						/* check threshold */
+		if (cntord[sn].brt <= ourthresh*bright(r->rcol))
 			break;
 						/* get statistics */
 		hwt = (double)source[cntord[sn].sno].nhits /
@@ -389,16 +375,24 @@ char  *p;			/* data for f */
 					/* weighted hit rate */
 	hwt = hit2 / test2;
 #ifdef DEBUG
-	fprintf(stderr, "%d tested, %d untested, %f hit rate\n",
-			sn, ncnts-sn, hwt);
+	{
+		int  ntested = sn;
 #endif
 					/* add in untested sources */
-	for ( ; sn < ncnts; sn++) {
+	for ( ; sn < nsources; sn++) {
+		if (cntord[sn].brt <= 0.0)
+			break;
 		prob = hwt * (double)source[cntord[sn].sno].nhits /
 				(double)source[cntord[sn].sno].ntests;
 		scalecolor(srccnt[cntord[sn].sno].val, prob);
 		addcolor(r->rcol, srccnt[cntord[sn].sno].val);
 	}
+#ifdef DEBUG
+	fprintf(stderr, "%d tested, %d untested, %f hit rate\n",
+			ntested, sn-ntested, hwt);
+	}
+#endif
+		
 	free(srccnt);
 	free(cntord);
 }

@@ -175,7 +175,7 @@ char  *argv[];
 #endif
 		case 'd':				/* direct */
 			switch (argv[i][2]) {
-			case 't':				/* tolerance */
+			case 't':				/* threshold */
 				check(3,1);
 				shadthresh = atof(argv[++i]);
 				break;
@@ -194,7 +194,7 @@ char  *argv[];
 				check(3,1);
 				psample = atoi(argv[++i]);
 				break;
-			case 'd':				/* difference */
+			case 't':				/* threshold */
 				check(3,1);
 				maxdiff = atof(argv[++i]);
 				break;
@@ -537,11 +537,11 @@ printdefaults()			/* print default values to stdout */
 	printf("-x  %-9d\t\t\t# x resolution\n", hresolu);
 	printf("-y  %-9d\t\t\t# y resolution\n", vresolu);
 #endif
-	printf("-dt %f\t\t\t# direct tolerance\n", shadthresh);
+	printf("-dt %f\t\t\t# direct threshold\n", shadthresh);
 	printf("-dj %f\t\t\t# direct jitter\n", dstrsrc);
 #if  RPICT|RVIEW
 	printf("-sp %-9d\t\t\t# sample pixel\n", psample);
-	printf("-sd %f\t\t\t# sample difference\n", maxdiff);
+	printf("-st %f\t\t\t# sample threshold\n", maxdiff);
 #if  RPICT
 	printf("-sj %f\t\t\t# sample jitter\n", dstrpix);
 #endif
