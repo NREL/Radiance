@@ -196,10 +196,10 @@ register RAY  *r;
 loadfunc(fname)			/* load definition file */
 char  *fname;
 {
-	extern char  *libpath;		/* library search path */
+	extern char  *getlibpath();	/* library search path */
 	char  *ffname;
 
-	if ((ffname = getpath(fname, libpath, R_OK)) == NULL) {
+	if ((ffname = getpath(fname, getlibpath(), R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find function file \"%s\"", fname);
 		error(USER, errmsg);
 	}

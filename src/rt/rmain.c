@@ -47,7 +47,7 @@ char  *progname;			/* argv[0] */
 
 char  *octname;				/* octree name */
 
-char  *libpath;				/* library directory list */
+char  *getlibpath();			/* library directory list */
 
 char  *sigerr[NSIG];			/* signal error messages */
 
@@ -160,9 +160,6 @@ char  *argv[];
 	tstart = time((time_t *)NULL);
 					/* global program name */
 	progname = argv[0] = fixargv0(argv[0]);
-					/* get library path */
-	if ((libpath = getenv(ULIBVAR)) == NULL)
-		libpath = DEFPATH;
 					/* initialize object types */
 	initotypes();
 					/* initialize urand */
@@ -401,7 +398,7 @@ char  *argv[];
 				}
 				if (argv[i][2] == 'I') {	/* file */
 					rval = wordfile(amblp,
-					getpath(argv[++i],libpath,R_OK));
+					getpath(argv[++i],getlibpath(),R_OK));
 					if (rval < 0) {
 						sprintf(errmsg,
 				"cannot open ambient include file \"%s\"",
@@ -423,7 +420,7 @@ char  *argv[];
 				}
 				if (argv[i][2] == 'E') {	/* file */
 					rval = wordfile(amblp,
-					getpath(argv[++i],libpath,R_OK));
+					getpath(argv[++i],getlibpath(),R_OK));
 					if (rval < 0) {
 						sprintf(errmsg,
 				"cannot open ambient exclude file \"%s\"",
@@ -493,7 +490,7 @@ char  *argv[];
 				}
 				if (argv[i][2] == 'I') {	/* file */
 					rval = wordfile(tralp,
-					getpath(argv[++i],libpath,R_OK));
+					getpath(argv[++i],getlibpath(),R_OK));
 					if (rval < 0) {
 						sprintf(errmsg,
 				"cannot open trace include file \"%s\"",
@@ -515,7 +512,7 @@ char  *argv[];
 				}
 				if (argv[i][2] == 'E') {	/* file */
 					rval = wordfile(tralp,
-					getpath(argv[++i],libpath,R_OK));
+					getpath(argv[++i],getlibpath(),R_OK));
 					if (rval < 0) {
 						sprintf(errmsg,
 				"cannot open trace exclude file \"%s\"",

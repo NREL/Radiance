@@ -36,7 +36,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 extern char  *fgetword();
 
-extern char  *libpath;			/* library search path */
+extern char  *getlibpath();		/* library search path */
 
 static DATARRAY	 *dtab[TABSIZ];		/* data array list */
 
@@ -78,7 +78,7 @@ char  *dname;
 	 *		0 0 ni p0i p1i .. pni
 	 */
 
-	if ((dfname = getpath(dname, libpath, R_OK)) == NULL) {
+	if ((dfname = getpath(dname, getlibpath(), R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find data file \"%s\"", dname);
 		error(USER, errmsg);
 	}
@@ -169,7 +169,6 @@ DATARRAY *
 getpict(pname)				/* get picture pname */
 char  *pname;
 {
-	extern char  *libpath;
 	double  inpaspect;
 	char  *pfname;
 	FILE  *fp;
@@ -185,7 +184,7 @@ char  *pname;
 		if (!strcmp(pname, pp->name))
 			return(pp);		/* found! */
 
-	if ((pfname = getpath(pname, libpath, R_OK)) == NULL) {
+	if ((pfname = getpath(pname, getlibpath(), R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find picture file \"%s\"", pname);
 		error(USER, errmsg);
 	}

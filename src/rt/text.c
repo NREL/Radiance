@@ -77,7 +77,7 @@ typedef struct {
 	TLINE  tl;			/* line list */
 }  TEXT;
 
-extern char  *libpath;
+extern char  *getlibpath();
 
 extern char  *fgetword();
 
@@ -201,7 +201,7 @@ register OBJREC  *tm;
 		tlp = tlp->next;
 	} else {				/* text file */
 		if ((s = getpath(tm->oargs.sarg[tndx(tm)],
-				libpath, R_OK)) == NULL) {
+				getlibpath(), R_OK)) == NULL) {
 			sprintf(errmsg, "cannot find text file \"%s\"",
 					tm->oargs.sarg[tndx(tm)]);
 			error(USER, errmsg);
