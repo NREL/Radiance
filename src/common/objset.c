@@ -46,8 +46,12 @@ OBJECT  obj;
 {
 	register int  i;
 
-	for (i = (*os++)--; i > 0 && *os < obj; i--, os++)
-		;
+	i = (*os)--;
+	os++;
+	while (i > 0 && *os < obj) {
+		i--;
+		os++;
+	}
 	while (--i > 0) {
 		os[0] = os[1];
 		os++;
