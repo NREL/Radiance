@@ -386,7 +386,6 @@ register char  *s;
 	extern double  shadcert;
 	extern COLOR  ambval;
 	extern double  ambacc;
-	extern double  minarad;
 	extern int  ambres;
 	extern int  ambdiv;
 	extern int  ambssamp;
@@ -464,8 +463,7 @@ register char  *s;
 			break;
 		case 'r':
 			if (getparam(s+2, "ambient resolution", 'i', &ambres))
-				minarad = ambres > 0 ?
-						thescene.cusize/ambres : 0.0;
+				setambres(ambres);
 			break;
 		default:
 			goto badparam;
