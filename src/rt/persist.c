@@ -12,10 +12,8 @@ static const char	RCSid[] = "$Id$";
 #include <string.h>
 #include <signal.h>
 #include <sys/stat.h>
-#ifdef _WIN32
- #include <process.h> /* getpid() */
-#endif
 
+#include "rtprocess.h" /* getpid() */
 #include "standard.h"
 #include "random.h"
 
@@ -90,6 +88,7 @@ int	lf;
 }
 
 
+void
 persistfile(pfn)	/* open persist file and lock it */
 char	*pfn;
 {

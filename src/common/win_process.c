@@ -16,7 +16,8 @@ static char RCSid[]="$Id$";
 #include <io.h>      /* _open_osfhandle */
 #include <fcntl.h>   /* _O_XXX */
 
-#include "standard.h"
+#include "rterror.h"
+#include "rtio.h"
 #include "rtprocess.h"
 
 

@@ -17,6 +17,7 @@ extern "C" {
 
 #ifdef _WIN32
   #include <io.h>
+  #include <direct.h> /* getcwd(), chdir(), etc. */
 
   #define access _access
   #define PATH_MAX _MAX_PATH

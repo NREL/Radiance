@@ -8,11 +8,20 @@ static const char	RCSid[] = "$Id$";
 #include "standard.h"
 
 #include <ctype.h>
+#include <time.h>
 
 #include "platform.h"
 #include "view.h"
 #include "paths.h"
 #include "vars.h"
+
+#ifdef _WIN32
+  #define DELCMD "del"
+  #define RENAMECMD "rename"
+#else
+  #define DELCMD "rm -f"
+  #define RENAMECMD "mv"
+#endif
 
 				/* variables (alphabetical by name) */
 #define AMBFILE		0		/* ambient file name */
@@ -80,7 +89,6 @@ char	overfile[] = NULL_DEVICE;
 char	overfile[] = "overture.unf";
 #endif
 
-extern time_t	time();
 
 time_t	scenedate;		/* date of latest scene or object file */
 time_t	octreedate;		/* date of octree */
@@ -1306,11 +1314,7 @@ rmfile(fn)			/* remove a file */
 char	*fn;
 {
 	if (!silent)
-#ifdef _WIN32
-		printf("\tdel %s\n", fn);
-#else
-		printf("\trm -f %s\n", fn);
-#endif
+		printf("\t%s %s\n", DELCMD, fn);
 	if (!nprocs)
 		return(0);
 	return(unlink(fn));
@@ -1321,11 +1325,7 @@ mvfile(fold, fnew)		/* move a file */
 char	*fold, *fnew;
 {
 	if (!silent)
-#ifdef _WIN32
-		printf("\trename %s %s\n", fold, fnew);
-#else
-		printf("\tmv %s %s\n", fold, fnew);
-#endif
+		printf("\t%s %s %s\n", RENAMECMD, fold, fnew);
 	if (!nprocs)
 		return(0);
 	return(rename(fold, fnew));

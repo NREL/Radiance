@@ -12,15 +12,11 @@ static const char	RCSid[] = "$Id$";
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
-#ifdef _WIN32
- #include <process.h> /* getpid() */
-#else
- #include <sys/types.h>
- #include <unistd.h>
-#endif
+#include <sys/types.h>
 
-#include "standard.h"
-#include "platform.h"
+#include "rtprocess.h" /* getpid() */
+#include "rtmath.h"
+#include "rtio.h"
 
 #define  isdelim(c)	(isspace(c) || (c)==',')
 

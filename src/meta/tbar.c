@@ -10,11 +10,8 @@ static const char	RCSid[] = "$Id$";
  *      cc -o ../tbar tbar.c tgraph.o primout.o mfio.o syscalls.o misc.o -lm
  */
 
-#ifdef _WIN32
- #include <process.h> /* getpid() */
-#endif
-
-#include  "tgraph.h"
+#include "rtprocess.h" /* getpid() */
+#include "tgraph.h"
 
 
 #define  XLEGEND  (XBEG+XSIZ+4*TSIZ)	/* x start of legend */

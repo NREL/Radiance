@@ -5,14 +5,9 @@ static const char	RCSid[] = "$Id$";
  *  System calls for meta-file routines
  */
 
-#ifdef _WIN32
-  #include <process.h> /* getpid() */
-#endif
-
+#include "rtprocess.h" /* getpid() */
+#include "rterror.h"
 #include  "meta.h"
-
-
-
 
 
 FILE *

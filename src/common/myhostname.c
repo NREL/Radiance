@@ -7,21 +7,7 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
-#ifndef BSD
-
-#include  <sys/utsname.h>
-
-char *
-myhostname()
-{
-	static struct utsname	nambuf;
-
-	if (!nambuf.nodename[0])
-		uname(&nambuf);
-	return(nambuf.nodename);
-}
-
-#else
+#include <unistd.h>
 
 char *
 myhostname()
@@ -33,4 +19,3 @@ myhostname()
 	return(hostname);
 }
 
-#endif

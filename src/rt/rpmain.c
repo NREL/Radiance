@@ -9,11 +9,9 @@ static const char	RCSid[] = "$Id$";
 
 #include  <sys/types.h>
 #include  <signal.h>
-#ifdef _WIN32
-  #include <process.h> /* getpid */
-#endif
 
 #include  "platform.h"
+#include  "rtprocess.h" /* getpid() */
 #include  "ray.h"
 #include  "source.h"
 #include  "ambient.h"
@@ -425,8 +423,6 @@ char  *msg;
 void
 printdefaults()			/* print default values to stdout */
 {
-	register char  *cp;
-
 	printf("-vt%c\t\t\t\t# view type %s\n", ourview.type,
 			ourview.type==VT_PER ? "perspective" :
 			ourview.type==VT_PAR ? "parallel" :

@@ -9,10 +9,8 @@ static const char	RCSid[] = "$Id$";
 
 #include <signal.h>
 #include <string.h>
-#ifdef _WIN32
-  #include <process.h> /* getpid() */
-#endif
 
+#include "rtprocess.h" /* getpid() */
 #include "holo.h"
 
 #ifndef BKBSIZE

@@ -11,15 +11,13 @@
 extern "C" {
 #endif
 
-#include  <sys/types.h>
+#include  <errno.h>
 #ifdef _WIN32
-  #include <windows.h>
+  #include <windows.h> /* DWORD etc. */
+  typedef DWORD pid_t;
+  #include <process.h> /* getpid() and others */
 #else
   #include <sys/param.h>
-  #include <unistd.h>
-#endif
-#ifndef BSD
-#include  <errno.h>
 #endif
 
 #include "paths.h"
@@ -38,9 +36,6 @@ extern "C" {
    runtime, so that client modules can still use -1 as invalid PID.
 */
 
-#ifdef _WIN32
-  typedef DWORD pid_t;
-#endif
 
 #ifndef PIPE_BUF
   #ifdef PIPSIZ
