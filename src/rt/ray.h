@@ -41,8 +41,8 @@ typedef struct ray {
 	int	rsrc;		/* source we're aiming for */
 	OBJECT	*clipset;	/* set of objects currently clipped */
 	OBJECT	*newcset;	/* next clipset, used for transmission */
-	void	(*revf)();	/* evaluation function for this ray */
-	void	(*hitf)();	/* custom hit test for this traversal */
+	void	(*revf)(struct ray *);	/* evaluation function for this ray */
+	void	(*hitf)(OBJECT *, struct ray *);	/* custom hit test */
 	OBJECT	robj;		/* intersected object number */
  	OBJREC	*ro;		/* intersected object (one with material) */
 	double	rot;		/* distance to object */
