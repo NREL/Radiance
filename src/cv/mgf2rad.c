@@ -48,6 +48,7 @@ char	*argv[];
 	mg_ehand[MG_E_RD] = c_hmaterial;
 	mg_ehand[MG_E_RING] = r_ring;
 	mg_ehand[MG_E_RS] = c_hmaterial;
+	mg_ehand[MG_E_SIDES] = c_hmaterial;
 	mg_ehand[MG_E_SPH] = r_sph;
 	mg_ehand[MG_E_TD] = c_hmaterial;
 	mg_ehand[MG_E_TS] = c_hmaterial;
@@ -431,7 +432,11 @@ material()			/* get (and print) current material */
 	if (c_cmaterial->td > .01 || c_cmaterial->ts > .01) {
 		double	ts, a5, a6;
 
-		ts = sqrt(c_cmaterial->ts);	/* because we use 2 sides */
+		if (c_cmaterial->sided) {
+			ts = sqrt(c_cmaterial->ts);	/* approximate */
+			a5 = .5;
+		} else
+			a5 = 1.;
 						/* average colors */
 		d = c_cmaterial->rd + c_cmaterial->td + ts;
 		cvtcolor(radrgb, &c_cmaterial->rd_c, c_cmaterial->rd/d);
@@ -441,7 +446,7 @@ material()			/* get (and print) current material */
 		addcolor(radrgb, c2);
 		if (c_cmaterial->rs + ts > .0001)
 			a5 = (c_cmaterial->rs*c_cmaterial->rs_a +
-					ts*.5*c_cmaterial->ts_a) /
+					ts*a5*c_cmaterial->ts_a) /
 					(c_cmaterial->rs + ts);
 		a6 = (c_cmaterial->td + ts) /
 				(c_cmaterial->rd + c_cmaterial->td + ts);

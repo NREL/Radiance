@@ -28,18 +28,19 @@
 #define MG_E_RD		16
 #define MG_E_RING	17
 #define MG_E_RS		18
-#define MG_E_SPH	19
-#define MG_E_TD		20
-#define MG_E_TORUS	21
-#define MG_E_TS		22
-#define MG_E_VERTEX	23
-#define MG_E_XF		24
+#define MG_E_SIDES	19
+#define MG_E_SPH	20
+#define MG_E_TD		21
+#define MG_E_TORUS	22
+#define MG_E_TS		23
+#define MG_E_VERTEX	24
+#define MG_E_XF		25
 
-#define MG_NENTITIES	25
+#define MG_NENTITIES	26
 
 #define MG_NAMELIST	{"#","c","cone","cmix","cspec","cxy","cyl","ed","f",\
 			"i","ies","m","n","o","p","prism","rd","ring","rs",\
-			"sph","td","torus","ts","v","xf"}
+			"sides","sph","td","torus","ts","v","xf"}
 
 #define MG_MAXELEN	6
 
@@ -240,6 +241,7 @@ typedef struct {
 
 typedef struct {
 	int	clock;		/* incremented each change -- resettable */
+	int	sided;		/* 1 if surface is 1-sided, 0 for 2-sided */
 	float	rd;		/* diffuse reflectance */
 	C_COLOR	rd_c;		/* diffuse reflectance color */
 	float	td;		/* diffuse transmittance */
@@ -259,7 +261,7 @@ typedef struct {
 	FVECT	p, n;		/* point and normal */
 } C_VERTEX;		/* vertex context */
 
-#define C_DEFMATERIAL	{1,0.,C_DEFCOLOR,0.,C_DEFCOLOR,0.,C_DEFCOLOR,\
+#define C_DEFMATERIAL	{1,0,0.,C_DEFCOLOR,0.,C_DEFCOLOR,0.,C_DEFCOLOR,\
 					0.,C_DEFCOLOR,0.,0.,C_DEFCOLOR,0.}
 #define C_DEFVERTEX	{1,{0.,0.,0.},{0.,0.,0.}}
 

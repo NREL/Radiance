@@ -269,6 +269,20 @@ register char	**av;
 		c_cmaterial->ts_c = *c_ccolor;
 		c_cmaterial->clock++;
 		return(MG_OK);
+	case MG_E_SIDES:	/* set number of sides */
+		if (ac != 2)
+			return(MG_EARGC);
+		if (!isint(av[1]))
+			return(MG_ETYPE);
+		i = atoi(av[1]);
+		if (i == 1)
+			c_cmaterial->sided = 1;
+		else if (i == 2)
+			c_cmaterial->sided = 0;
+		else
+			return(MG_EILL);
+		c_cmaterial->clock++;
+		return(MG_OK);
 	}
 	return(MG_EUNK);
 }
