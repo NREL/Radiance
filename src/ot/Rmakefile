@@ -10,7 +10,7 @@
 
 OPT = -O
 MACH = -DBSD -DSTRUCTASSIGN -f68881 /usr/lib/libm.il
-CFLAGS = -DSTRICT $(OPT) $(MACH)
+CFLAGS = -DSTRICT $(OPT) $(MACH) -I../common
 
 LIBDIR = /usr/local/lib/ray
 
@@ -38,21 +38,22 @@ oconv.o:	oconv.c
 	cc $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c oconv.c
 
 bbox.o initotypes.o o_cone.o o_face.o \
-o_instance.o oconv.o sphere.o writeoct.o:	standard.h mat4.h fvect.h
+o_instance.o oconv.o sphere.o \
+writeoct.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
 
 initotypes.o o_cone.o o_face.o oconv.o \
-sphere.o writeoct.o:	octree.h
+sphere.o writeoct.o:	../common/octree.h
 
 bbox.o o_cone.o o_face.o o_instance.o oconv.o \
-sphere.o writeoct.o:	object.h
+sphere.o writeoct.o:	../common/object.h
 
 bbox.o initotypes.o oconv.o \
-sphere.o writeoct.o:	otypes.h
+sphere.o writeoct.o:	../common/otypes.h
 
-bbox.o o_cone.o:	cone.h
+bbox.o o_cone.o:	../common/cone.h
 
-bbox.o o_face.o:	face.h
+bbox.o o_face.o:	../common/face.h
 
-bbox.o o_instance.o:	instance.h octree.h
+bbox.o o_instance.o:	../common/instance.h ../common/octree.h
 
 clip.o o_face.o plocate.o:	plocate.h
