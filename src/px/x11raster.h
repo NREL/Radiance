@@ -22,6 +22,8 @@ typedef struct {
 	Pixmap	pm;				/* storage on server side */
 }	XRASTER;
 
+extern Colormap	newcmap();
+
 extern unsigned long	*map_rcolors();
 
 extern Pixmap	make_rpixmap();
