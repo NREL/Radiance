@@ -26,6 +26,7 @@ char	*progname;			/* global argv[0] */
 
 char	*infn;				/* input file name */
 FILE	*infp;				/* input stream */
+FILE	*mapfp = NULL;			/* tone-mapping function stream */
 VIEW	ourview = STDVIEW;		/* picture view */
 int	gotview = 0;			/* picture has view */
 double	pixaspect = 1.0;		/* pixel aspect ratio */
@@ -113,6 +114,15 @@ char	*argv[];
 			if (i+1 >= argc) goto userr;
 			ldmin = atof(argv[++i]);
 			break;
+		case 'm':
+			if (i+1 >= argc) goto userr;
+			if ((mapfp = fopen(argv[++i], "w")) == NULL) {
+				fprintf(stderr,
+					"%s: cannot open for writing\n",
+						argv[i]);
+				exit(1);
+			}
+			break;
 		default:
 			goto userr;
 		}
@@ -147,9 +157,11 @@ char	*argv[];
 	if (outprims != inprims)
 		fputprims(outprims, stdout);
 	mapimage();			/* map the picture */
+	if (mapfp != NULL)		/* write out basic mapping */
+		putmapping(mapfp);
 	exit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-{h|a|v|s|c|l|w}[+-]][-e ev][-p xr yr xg yg xb yb xw yw|-f mbf.cal][-t Ldmax][-b Ldmin] inpic [outpic]\n",
+	fprintf(stderr, "Usage: %s [-{h|a|v|s|c|l|w}[+-]][-e ev][-p xr yr xg yg xb yb xw yw|-f mbf.cal][-t Ldmax][-b Ldmin][-m mapfile] inpic [outpic]\n",
 			progname);
 	exit(1);
 #undef bool
