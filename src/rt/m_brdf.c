@@ -36,8 +36,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 extern double	funvalue(), varvalue();
 
-#define  BSPEC(m)		(6.0)		/* specular parameter b */
-
 typedef struct {
 	OBJREC  *mp;		/* material pointer */
 	RAY  *pr;		/* intersected ray */
@@ -165,11 +163,6 @@ register RAY  *r;
 		else
 			setcolor(nd.scolor, 1.0, 1.0, 1.0);
 		scalecolor(nd.scolor, nd.rspec);
-						/* improved model */
-		dtmp = exp(-BSPEC(m)*nd.pdot);
-		for (i = 0; i < 3; i++)
-			colval(nd.scolor,i) += (1.0-colval(nd.scolor,i))*dtmp;
-		nd.rspec += (1.0-nd.rspec)*dtmp;
 	}
 						/* diffuse reflection */
 	nd.rdiff = 1.0 - nd.rspec;
