@@ -379,8 +379,8 @@ int	n;			/* list length */
 int	(*bf)();		/* callback function (optional) */
 {
 	unsigned	origcachesize, memuse;
-	register BEAM	*bp;
 	int	bytesloaded, needbytes, bytes2free;
+	register BEAM	*bp;
 	register int	i;
 					/* precheck consistency */
 	for (i = n; i--; )
@@ -390,10 +390,10 @@ int	(*bf)();		/* callback function (optional) */
 	qsort((char *)hb, n, sizeof(HDBEAMI), hdfilord);
 	bytesloaded = 0;		/* run through loaded beams */
 	for ( ; n && (bp = hb->h->bl[hb->b]) != NULL; n--, hb++) {
-		bp->tick = hdclock;		/* preempt swap */
+		bp->tick = hdclock;	/* preempt swap */
 		bytesloaded += bp->nrm;
 		if (bf != NULL)
-			(*bf)(bp, hb->h, hb->b);
+			(*bf)(bp, hb);
 	}
 	bytesloaded *= sizeof(RAYVAL);
 	if ((origcachesize = hdcachesize) > 0) {
@@ -412,7 +412,7 @@ int	(*bf)();		/* callback function (optional) */
 	}
 	for (i = 0; i < n; i++)
 		if ((bp = hdgetbeam(hb[i].h, hb[i].b)) != NULL && bf != NULL)
-			(*bf)(bp, hb[i].h, hb[i].b);
+			(*bf)(bp, hb+i);
 	hdcachesize = origcachesize;	/* resume dynamic swapping */
 }
 
