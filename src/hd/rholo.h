@@ -44,10 +44,9 @@ typedef struct {
 #define GRID		7		/* target grid size */
 #define OBSTRUCTIONS	8		/* shall we track obstructions? */
 #define VDIST		9		/* virtual distance calculation */
-#define OCCUPANCY	10		/* expected occupancy probability */
-#define REPORT		11		/* report interval and error file */
+#define REPORT		10		/* report interval and error file */
 
-#define NRHVARS		12		/* number of variables */
+#define NRHVARS		11		/* number of variables */
 
 #define RHVINIT { \
 	{"render",	3,	0,	NULL,	catvalues}, \
@@ -60,7 +59,6 @@ typedef struct {
 	{"GRID",	2,	0,	NULL,	fltvalue}, \
 	{"OBSTRUCTIONS",3,	0,	NULL,	boolvalue}, \
 	{"VDISTANCE",	2,	0,	NULL,	boolvalue}, \
-	{"OCCUPANCY",	3,	0,	NULL,	onevalue}, \
 	{"REPORT",	3,	0,	NULL,	onevalue}, \
 }
 
