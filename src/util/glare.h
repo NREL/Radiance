@@ -25,6 +25,8 @@ extern VIEW	leftview, rightview;	/* leftmost and rightmost views */
 extern int	verbose;		/* verbose reporting */
 extern char	*progname;		/* global argv[0] */
 
+extern double	threshold;		/* threshold value for glare sources */
+
 extern int	sampdens;		/* sample density */
 extern ANGLE	glarang[];		/* glare calculation angles */
 extern int	nglarangs;
