@@ -191,7 +191,7 @@ char  *name;
 	}
 	printf("%f %f translate\n", (pwidth-iwidth)*.5, (pheight-iheight)*.5);
 	printf("%f %f scale\n", iwidth, iheight);
-	puts("%%%%EndProlog");
+	puts("%%EndProlog");
 					/* start image procedure */
 	printf("%d %d 8 [%d 0 0 %d 0 %d] ", xmax, ymax, xmax, -ymax, ymax);
 	if (docolor) {
