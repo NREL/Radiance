@@ -12,6 +12,10 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "rhdisp.h"
 #include "rhdriver.h"
 
+#ifndef MAXDIST
+#define MAXDIST		13	/* maximum distance outside section */
+#endif
+
 extern GCOORD	*getviewcells();
 
 static VIEW	dvw;		/* current view corresponding to beam list */
@@ -295,6 +299,11 @@ FVECT	vp;
 			n++;
 		}
 	}
+					/* check for really stupid move */
+	if (bestd > MAXDIST) {
+		error(WARNING, "move to outer solar system");
+		return(0);
+	}
 					/* warn of dangerous moves */
 	if (n < lastn && bestd >= lastd)
 		error(WARNING, "moving outside holodeck section");
@@ -442,7 +451,7 @@ beam_sync()		/* synchronize beams on server */
 }
 
 
-beam_view(vn)			/* change beam view */
+beam_view(vn)			/* change beam view (if advisable) */
 VIEW	*vn;
 {
 	struct cellact	ca;
@@ -454,10 +463,14 @@ VIEW	*vn;
 		cbeamop(DR_DELSET, cbeam, ncbeams, NULL, 0, 0);
 		ncbeams = 0;
 		copystruct(&dvw, vn);
-		return;
+		return(1);
 	}
 					/* find our new voxels */
 	n = get_voxels(vlnew, vn->vp);
+	if (dvw.type && !n) {
+		copystruct(vn, &dvw);		/* cancel move */
+		return(0);
+	}
 					/* set the new voxels */
 	comn = set_voxels(vlnew, n);
 	if (!dvw.type)
@@ -480,4 +493,5 @@ VIEW	*vn;
 	xcbeams = 0;			/* truncate our list */
 #endif
 	copystruct(&dvw, vn);		/* record new view */
+	return(1);
 }
