@@ -43,7 +43,20 @@ register OBJREC	*op;
 preload_objs()		/* preload object data structures */
 {
 	register OBJECT on;
-				/* note that nobjects may change during */
+				/* note that nobjects may change during loop */
 	for (on = 0; on < nobjects; on++)
 		load_os(objptr(on));
+}
+
+
+clean_slate()		/* reset time and ray counters */
+{
+	extern long	tstart, time();
+	extern long	raynum, nrays;
+	register OBJECT	on;
+
+	tstart = time(0);
+	raynum = nrays = 0;
+	for (on = 0; on < nobjects; on++)
+		objptr(on)->lastrno = -1;
 }
