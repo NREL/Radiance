@@ -1359,10 +1359,13 @@ details.)
 The print command window on the Results screen contains the system
 command to use in printing out finished Radiance pictures.
 The "%s" format field, which must appear somewhere in the command,
-is replaced by the selected Radiance picture file name(s).
+is replaced by the selected Radiance picture file name.
+This command is executed multiple times if multiple files are
+selected.
 
 The default command is "ra_ps %s | lpr", which converts the Radiance
 picture to a black and white PostScript file and sends it to the lpr
 print spooler.
+Add a "-c" option to "ra_ps" if the printer supports color.
 If your printer does not understand PostScript, or your system does
 not support lpr, this command must obviously be changed.
