@@ -190,7 +190,7 @@ char  **argv;
 					/* add new header info. */
 	printargs(i, argv, stdout);
 					/* get picture size */
-	if (fscanf(fin, "-Y %d +X %d\n", &yres, &xres) != 2) {
+	if (fgetresolu(&xres, &yres, fin) != (YMAJOR|YDECR)) {
 		fprintf(stderr, "%s: bad picture size\n", progname);
 		quit(1);
 	}
@@ -345,7 +345,7 @@ scan2init()			/* prepare scanline arrays */
 	if (e < 1-1e-7 || e > 1+1e-7)		/* record exposure */
 		printf("EXPOSURE=%e\n", e);
 	printf("\n");
-	printf("-Y %d +X %d\n", nrows, ncols);	/* write picture size */
+	fputresolu(YMAJOR|YDECR, ncols, nrows, stdout);	/* resolution */
 }
 
 
