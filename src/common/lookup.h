@@ -22,6 +22,7 @@ typedef struct {
 	int	ndel;		/* number of deleted entries */
 } LUTAB;
 
+#undef strcmp
 #define LU_SINIT(fk,fd)		{lu_shash,strcmp,(void (*)())(fk),\
 				(void (*)())(fd),0,NULL,0}
 
