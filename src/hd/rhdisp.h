@@ -26,6 +26,7 @@
 #define DS_ADDHOLO	35		/* register new holodeck */
 #define DS_STARTIMM	36		/* begin immediate bundle set */
 #define DS_ENDIMM	37		/* end immediate bundle set */
+#define DS_OUTSECT	38		/* render from outside sections */
 
 /*
  * Normally, the server channel has priority, with the display process

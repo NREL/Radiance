@@ -53,6 +53,9 @@ char	*dname;
 	if (readinp)
 		close(atoi(fd0));
 	close(atoi(fd1));
+				/* check if outside */
+	if (vdef(OBSTRUCTIONS) && vbool(OBSTRUCTIONS))
+		disp_result(DS_OUTSECT, 0, NULL);
 				/* write out hologram grids */
 	for (i = 0; hdlist[i] != NULL; i++)
 		disp_result(DS_ADDHOLO, sizeof(HDGRID), (char *)hdlist[i]);
