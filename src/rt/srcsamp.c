@@ -28,7 +28,9 @@ register SRCINDEX  *si;		/* source index (modified to current) */
 	while (++si->sp >= si->np) {	/* get next sample */
 		if (++si->sn >= nsources)
 			return(0.0);	/* no more */
-		if (srcsizerat <= FTINY)
+		if (source[si->sn].sflags & SSKIP)
+			si->np = 0;
+		else if (srcsizerat <= FTINY)
 			nopart(si, r);
 		else {
 			for (i = si->sn; source[i].sflags & SVIRTUAL;
