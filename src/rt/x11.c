@@ -252,8 +252,11 @@ static
 x11_comout(out)			/* output a string to command line */
 char  *out;
 {
-	if (comline != NULL)
-		xt_puts(out, comline);
+	if (comline == NULL)
+		return;
+	xt_puts(out, comline);
+	if (out[strlen(out)-1] == '\n')
+		XFlush(ourdisplay);
 }
 
 
@@ -263,7 +266,6 @@ char  *msg;
 {
 	stderr_v(msg);		/* send to stderr also! */
 	x11_comout(msg);
-	x11_flush();
 }
 
 
