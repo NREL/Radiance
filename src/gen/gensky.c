@@ -133,6 +133,8 @@ computesky()			/* compute sky parameters */
 			zenithbr = (1.376*turbidity-1.81)*tan(altitude)+0.38;
 			zenithbr *= 1000.0/683.0;
 		}
+	if (zenithbr < 0.0)
+		zenithbr = 0.0;
 					/* Compute horizontal radiance */
 	if (cloudy) {
 		groundbr = zenithbr*0.777778;
