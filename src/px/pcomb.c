@@ -439,11 +439,8 @@ advance(void)			/* read in data for next scanline */
 				eputs(": read error\n");
 				quit(1);
 			}
-			if (fabs(colval(input[i].coef,RED)-1.0) > 1e-3 ||
-				fabs(colval(input[i].coef,GRN)-1.0) > 1e-3 ||
-				fabs(colval(input[i].coef,BLU)-1.0) > 1e-3)
-				for (j = 0; j < xmax; j++)  /* adjust color */
-					multcolor(st[j], input[i].coef);
+			for (j = 0; j < xmax; j++)	/* adjust color */
+				multcolor(st[j], input[i].coef);
 		}
 }
 
