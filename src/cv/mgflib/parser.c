@@ -866,16 +866,18 @@ int	ac;
 char	**av;
 {
 	static char	p[3][24];
-	static char	*vent[4] = {mg_ename[MG_E_VERTEX],NULL,"="};
+	static char	*vent[5] = {mg_ename[MG_E_VERTEX],NULL,"="};
 	static char	*pent[5] = {mg_ename[MG_E_POINT],p[0],p[1],p[2]};
+	static char	*znorm[5] = {mg_ename[MG_E_NORMAL],"0","0","0"};
 	char	*newav[MG_MAXARGC], nvn[MG_MAXARGC-1][8];
 	double	length;
+	int	hasnorm;
 	FVECT	v1, v2, v3, norm;
 	register C_VERTEX	*cv;
 	C_VERTEX	*cv0;
 	int	rv;
 	register int	i, j;
-
+						/* check arguments */
 	if (ac < 5)
 		return(MG_EARGC);
 	if (!isflt(av[ac-1]))
@@ -883,21 +885,16 @@ char	**av;
 	length = atof(av[ac-1]);
 	if (length <= FTINY && length >= -FTINY)
 		return(MG_EILL);
-					/* do bottom face */
-	newav[0] = mg_ename[MG_E_FACE];
-	for (i = 1; i < ac-1; i++)
-		newav[i] = av[i];
-	newav[i] = NULL;
-	if ((rv = mg_handle(MG_E_FACE, i, newav)) != MG_OK)
-		return(rv);
-					/* compute face normal */
+						/* compute face normal */
 	if ((cv0 = c_getvert(av[1])) == NULL)
 		return(MG_EUNDEF);
+	hasnorm = 0;
 	norm[0] = norm[1] = norm[2] = 0.;
 	v1[0] = v1[1] = v1[2] = 0.;
 	for (i = 2; i < ac-1; i++) {
 		if ((cv = c_getvert(av[i])) == NULL)
 			return(MG_EUNDEF);
+		hasnorm += !is0vect(cv->n);
 		v2[0] = cv->p[0] - cv0->p[0];
 		v2[1] = cv->p[1] - cv0->p[1];
 		v2[2] = cv->p[2] - cv0->p[2];
@@ -909,22 +906,21 @@ char	**av;
 	}
 	if (normalize(norm) == 0.)
 		return(MG_EILL);
-					/* create moved vertices */
+						/* create moved vertices */
 	for (i = 1; i < ac-1; i++) {
 		sprintf(nvn[i-1], "_pv%d", i);
 		vent[1] = nvn[i-1];
-		if ((rv = mg_handle(MG_E_VERTEX, 3, vent)) != MG_OK)
+		vent[3] = av[i];
+		if ((rv = mg_handle(MG_E_VERTEX, 4, vent)) != MG_OK)
 			return(rv);
 		cv = c_getvert(av[i]);		/* checked above */
 		for (j = 0; j < 3; j++)
 			sprintf(p[j], FLTFMT, cv->p[j] - length*norm[j]);
 		if ((rv = mg_handle(MG_E_POINT, 4, pent)) != MG_OK)
 			return(rv);
-		newav[ac-1-i] = nvn[i-1];	/* reverse */
 	}
-						/* do top face */
-	if ((rv = mg_handle(MG_E_FACE, ac-1, newav)) != MG_OK)
-		return(rv);
+						/* make faces */
+	newav[0] = mg_ename[MG_E_FACE];
 						/* do the side faces */
 	newav[5] = NULL;
 	newav[3] = av[ac-2];
@@ -937,6 +933,36 @@ char	**av;
 		newav[3] = newav[2];
 		newav[4] = newav[1];
 	}
+						/* do top face */
+	for (i = 1; i < ac-1; i++) {
+		if (hasnorm) {			/* zero normals */
+			vent[1] = nvn[i-1];
+			if ((rv = mg_handle(MG_E_VERTEX, 2, vent)) != MG_OK)
+				return(rv);
+			if ((rv = mg_handle(MG_E_NORMAL, 4, znorm)) != MG_OK)
+				return(rv);
+		}
+		newav[ac-1-i] = nvn[i-1];	/* reverse */
+	}
+	if ((rv = mg_handle(MG_E_FACE, ac-1, newav)) != MG_OK)
+		return(rv);
+						/* do bottom face */
+	if (hasnorm)
+		for (i = 1; i < ac-1; i++) {
+			vent[1] = nvn[i-1];
+			vent[3] = av[i];
+			if ((rv = mg_handle(MG_E_VERTEX, 4, vent)) != MG_OK)
+				return(rv);
+			if ((rv = mg_handle(MG_E_NORMAL, 4, znorm)) != MG_OK)
+				return(rv);
+			newav[i] = nvn[i-1];
+		}
+	else
+		for (i = 1; i < ac-1; i++)
+			newav[i] = av[i];
+	newav[i] = NULL;
+	if ((rv = mg_handle(MG_E_FACE, i, newav)) != MG_OK)
+		return(rv);
 	return(MG_OK);
 }
 

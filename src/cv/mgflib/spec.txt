@@ -68,7 +68,8 @@ can be thought of as parts and subparts of an enclosing global object.
 Note that this is strictly for ease of identification, and has no
 real meaning as far as the geometric description goes.  In contrast,
 the transform entity is very significant as it determines how enclosing
-objects are to be scaled and placed in the final description.
+objects are to be scaled and placed in the final description.  Hierarchical
+contexts may be nested in any way, but should not overlap.
 
 Without further ado, here are the proposed entities and their interpretations:
 
@@ -96,7 +97,7 @@ f	v1 v2 v3 ..		polygon using current material, spec. vertices
 sph	vc radius		sphere
 cyl	v1 radius v2		truncated right cylinder (open-ended)
 cone	v1 rad1 v2 rad2		truncated right cone (open-ended)
-prism	v1 v2 v3 .. length	right prism (closed solid)
+prism	v1 v2 v3 .. length	truncated right prism (closed solid)
 ring	vc rmin rmax		circular ring with inner and outer radii
 torus	vc rmin rmax		circular torus with inner and outer radii
 xf	[xform]			begin/end transformation context
@@ -262,7 +263,10 @@ A prism consists of a set of coplanar vertices specifying an end-face,
 and a length value.  The prism will be extruded so that the end-face
 points outward, unless the length value is negative, in which case the
 object is extruded in the opposite direction, resulting in inward-
-directed surface normals.
+directed surface normals.  If surface normals are specified for the
+vertices, they will be applied to the side faces but not the end
+faces, and they must generally point in the appropriate direction
+(i.e. in or out depending on whether extrusion is negative or positive).
 
 A sphere, cylinder or cone with negative radii is interpreted as having
 an inward facing surface normal.  Otherwise, the normal is assumed
