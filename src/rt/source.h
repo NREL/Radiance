@@ -42,16 +42,39 @@ typedef struct {
 	OBJREC  *so;		/* source destination object */
 }  SRCREC;		/* light source */
 
-typedef struct {
-	FVECT  dir;		/* source direction */
-	COLOR  coef;		/* material coefficient */
-	COLOR  val;		/* contribution */
-}  CONTRIB;		/* direct contribution */
+/*
+ * Special support functions for sources
+ */
+
+/*
+ * Virtual source materials must support the following functions:
+ *
+ *	vproj(pm, op, sp, i)	Compute i'th virtual projection
+ *				of source sp in object op and assign
+ *				the 4x4 transformation matrix pm.
+ *				Return 1 on success, 0 if no i'th projection.
+ *
+ *	nproj			The number of projections.  The value of
+ *				i passed to vproj runs from 0 to nproj-1.
+ */
 
 typedef struct {
-	int  sno;		/* source number */
-	float  brt;		/* brightness (for comparison) */
-}  CNTPTR;		/* contribution pointer */
+	int  (*vproj)();	/* project virtual sources */
+	int  nproj;		/* number of possible projections */
+} VSMATERIAL;		/* virtual source material functions */
+
+typedef struct {
+	int	(*setsrc)();	/* set light source for object */
+	double  (*getpleq)();	/* plane equation for surface */
+	double  (*getdisk)();	/* maximum disk for surface */
+} SOBJECT;		/* source object functions */
+
+typedef union {
+	VSMATERIAL  *mf;	/* material functions */
+	SOBJECT  *of;		/* object functions */
+} SRCFUNC;		/* source functions */
+
+extern SRCFUNC  sfun[];			/* source dispatch table */
 
 extern SRCREC  *source;			/* our source list */
 extern int  nsources;			/* the number of sources */
@@ -61,3 +84,8 @@ extern double  srcray();                /* ray to source */
 extern SPOT  *makespot();		/* make spotlight */
 
 extern SRCREC  *newsource();		/* allocate new source */
+
+extern double  dstrsrc;			/* source distribution amount */
+extern double  shadthresh;		/* relative shadow threshold */
+extern double  shadcert;		/* shadow testing certainty */
+extern int  directrelay;		/* maximum number of source relays */
