@@ -210,18 +210,21 @@ saturation.  Intensity, such as reflectance or emittance, is explicitly
 included in the other material parameters.  All colors are absolute,
 e.g. spectral reflectance or transmittance under uniform white light.
 
-A CIE xy chromaticity pair is the most basic color specification.
-A full spectrum is the most general specification, and the starting
-(i.e. minimum) and ending (i.e. maximum) wavelengths are given along
-with a set of evenly spaced values.  Wavelengths are given in nanometers,
-and must be within the range of 380-780.  The spectral values themselves
-are located starting at the first wavelength and proceeding at even
-increments to the ending wavelength.  The values in between will be
-interpolated as necessary, so there must be at least two specified points.
-The color mixing entity is intended not only for the mixing of named
-colors, but also for color specifications  using an arbitrary set
-of basis functions.  The actual totals for spectral and mixing
-coefficients is irrelevant, since the results will be normalized.
+A CIE xy chromaticity pair is the most basic color specification.  A
+full spectrum is the most general specification, and the starting (i.e.
+minimum) and ending (i.e. maximum) wavelengths are given along with a
+set of evenly spaced values.  Wavelengths are given in nanometers, and
+must be within the range of 380-780.  The spectral values themselves,
+which can be thought of as relative power density per nanometer, start
+at the first wavelength and proceed at even increments to the last
+wavelength.  The values in between will be interpolated as necessary,
+so there must be at least two specified points.  The color mixing
+entity is intended not only for the mixing of named colors, but also
+for color specifications  using an arbitrary set of basis functions.
+The mixing coefficients are in effect relative luminances for each
+color "primary."  The actual total of the mixing coefficients or
+spectral values is irrelevant, since the results will always be
+normalized.
 
 Diffuse emittance is always given in SI units of lumens/meter^2.  Note that
 this is emittance, not exitance, and does not include light reflected or

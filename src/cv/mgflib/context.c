@@ -445,11 +445,12 @@ int	fl;
 	double	x, y, z;
 	register int	i;
 
-	if (clr->flags & fl)		/* already done */
+	fl &= ~clr->flags;			/* ignore what's done */
+	if (!fl)				/* everything's done! */
 		return;
 	if (!(clr->flags & (C_CSXY|C_CSSPEC)))	/* nothing set! */
 		*clr = c_dfcolor;
-	else if (fl & C_CSXY) {		/* cspec -> cxy */
+	if (fl & C_CSXY) {		/* cspec -> cxy */
 		x = y = z = 0.;
 		for (i = 0; i < C_CNSS; i++) {
 			x += cie_xf.ssamp[i] * clr->ssamp[i];
@@ -460,7 +461,7 @@ int	fl;
 		clr->cx = x / z;
 		clr->cy = y / z;
 		clr->flags |= C_CSXY;
-	} else {			/* cxy -> cspec */
+	} else if (fl & C_CSSPEC) {	/* cxy -> cspec */
 		z = (cie_xf.ssum + cie_yf.ssum + cie_zf.ssum) / 3.;
 		x = clr->cx * z / cie_xf.ssum;
 		y = clr->cy * z / cie_yf.ssum;
@@ -472,6 +473,18 @@ int	fl;
 					y * cie_yf.ssamp[i] +
 					z * cie_zf.ssamp[i] ;
 		clr->flags |= C_CSSPEC;
+	}
+	if (fl & C_CSEFF) {		/* compute efficacy */
+		if (clr->flags & C_CDSPEC) {		/* from spectrum */
+			y = 0.;
+			for (i = 0; i < C_CNSS; i++)
+				y += cie_yf.ssamp[i] * clr->ssamp[i];
+			clr->eff = C_CLPWM * y / clr->ssum;
+		} else /* clr->flags & C_CDXY */ {	/* from (x,y) */
+			clr->eff = clr->cx*cie_xf.eff + clr->cy*cie_yf.eff +
+					(1. - clr->cx - clr->cy)*cie_zf.eff;
+		}
+		clr->flags |= C_CSEFF;
 	}
 }
 
@@ -543,10 +556,10 @@ double	w1, w2;
 	register int	i;
 
 	if ((c1->flags|c2->flags) & C_CDSPEC) {		/* spectral mixing */
-		c_ccvt(c1, C_CSSPEC);
-		c_ccvt(c2, C_CSSPEC);
-		w1 /= (double)c1->ssum;
-		w2 /= (double)c2->ssum;
+		c_ccvt(c1, C_CSSPEC|C_CSEFF);
+		c_ccvt(c2, C_CSSPEC|C_CSEFF);
+		w1 /= c1->eff*c1->ssum;
+		w2 /= c1->eff*c2->ssum;
 		scale = 0.;
 		for (i = 0; i < C_CNSS; i++) {
 			cmix[i] = w1*c1->ssamp[i] + w2*c2->ssamp[i];
