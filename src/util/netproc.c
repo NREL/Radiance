@@ -10,6 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/param.h>
 #include <signal.h>
 #include <fcntl.h>
 #include "netproc.h"
@@ -37,7 +38,7 @@ PSERVER	*pslist = NULL;		/* global process server list */
 static PROC	*pindex[FD_SETSIZE];	/* process index table */
 
 static char	ourhost[64];	/* this host name */
-static char	ourdir[128];	/* our working directory */
+static char	ourdir[MAXPATHLEN];	/* our working directory */
 static char	ouruser[32];	/* our user name */
 static char	*ourshell;	/* our user's shell */
 
@@ -63,12 +64,12 @@ int	np;
 	if (ps == NULL)
 		return(NULL);
 	if (!ourhost[0]) {		/* initialize */
-		char	dirtmp[128];
+		char	dirtmp[MAXPATHLEN];
 		register char	*cp;
 		register int	len;
 
 		strcpy(ourhost, myhostname());
-		getcwd(dirtmp, sizeof(dirtmp));
+		getwd(dirtmp);
 		if ((cp = getenv("HOME")) != NULL) {
 			if (!strcmp(cp, dirtmp))
 				ourdir[0] = '\0';
@@ -169,7 +170,7 @@ register PSERVER	*ps;
 char	*command;
 int	(*compf)();
 {
-	char	udirt[128];
+	char	udirt[MAXPATHLEN];
 	char	*av[16];
 	int	pfd[2], pid;
 	register int	i;
