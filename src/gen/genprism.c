@@ -36,7 +36,7 @@ int  do_ends = 1;		/* include end caps */
 int  iscomplete = 0;		/* polygon is already completed */
 double  crad = 0.0;		/* radius for corners (sign from lvdir) */
 
-extern double  compute_rounding();
+static double  compute_rounding(void);
 
 
 static void
