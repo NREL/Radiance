@@ -84,19 +84,20 @@ getback:
  * The ray directions that define the pyramid in visit_cells() needn't
  * be normalized, but they must be given in clockwise order as seen
  * from the pyramid's apex (origin).
+ * If no cell centers fall within the domain, the closest cell is visited.
  */
 int
 visit_cells(orig, pyrd, hp, vf, dp)	/* visit cells within a pyramid */
 FVECT	orig, pyrd[4];		/* pyramid ray directions in clockwise order */
-HOLO	*hp;
+register HOLO	*hp;
 int	(*vf)();
 char	*dp;
 {
-	int	n = 0;
+	int	ncalls = 0, n = 0;
 	int	inflags = 0;
 	FVECT	gp, pn[4], lo, ld;
 	double	po[4], lbeg, lend, d, t;
-	GCOORD	gc;
+	GCOORD	gc, gc2[2];
 	register int	i;
 					/* figure out whose side we're on */
 	hdgrid(gp, hp, orig);
@@ -142,11 +143,26 @@ char	*dp;
 			if (lbeg >= lend)
 				continue;
 			i = lend + .5;		/* visit cells on this scan */
-			for (gc.i[0] = lbeg + .5; gc.i[0] < i; gc.i[0]++)
+			for (gc.i[0] = lbeg + .5; gc.i[0] < i; gc.i[0]++) {
 				n += (*vf)(&gc, dp);
+				ncalls++;
+			}
 		}
 	}
-	return(n);
+	if (ncalls)			/* got one at least */
+		return(n);
+					/* else find closest cell */
+	VSUM(ld, pyrd[0], pyrd[1], 1.);
+	VSUM(ld, ld, pyrd[2], 1.);
+	VSUM(ld, ld, pyrd[3], 1.);
+#if 0
+	if (normalize(ld) == 0.0)	/* technically not necessary */
+		return(0);
+#endif
+	d = hdinter(gc2, NULL, &t, hp, orig, ld);
+	if (d >= FHUGE || t <= 0.)
+		return(0);
+	return((*vf)(gc2+1, dp));	/* visit it */
 }
 
 
