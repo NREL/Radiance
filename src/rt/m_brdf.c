@@ -14,6 +14,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "otypes.h"
 
+#include  "func.h"
+
 /*
  *	Arguments to this material include the color and specularity.
  *  String arguments include the reflection function and files.
@@ -57,9 +59,6 @@ static char SCCSid[] = "$SunId$ LBL";
  *		RdotP -			perturbed ray dot product
  *		CrP, CgP, CbP -		perturbed material color
  */
-
-extern double	funvalue(), varvalue();
-extern XF  funcxf;
 
 typedef struct {
 	OBJREC  *mp;		/* material pointer */
@@ -153,8 +152,10 @@ double  omega;			/* light source size */
 		dtmp = funvalue(sa[0], 1, &dtmp);
 		setcolor(ctmp, dtmp, dtmp, dtmp);
 	}
-	if (errno)
-		goto computerr;
+	if (errno) {
+		objerror(np->mp, WARNING, "compute error");
+		return;
+	}
 	if (dtmp <= FTINY)
 		return;
 	if (ldot > 0.0) {
@@ -176,10 +177,6 @@ double  omega;			/* light source size */
 		scalecolor(ctmp, dtmp);
 		addcolor(cval, ctmp);
 	}
-	return;
-computerr:
-	objerror(np->mp, WARNING, "compute error");
-	return;
 }
 
 
@@ -192,6 +189,7 @@ register RAY  *r;
 	double  transtest, transdist;
 	COLOR  ctmp;
 	double  dtmp, tspect, rspecr;
+	MFUNC  *mf;
 	register int  i;
 						/* check arguments */
 	switch (m->otype) {
@@ -238,21 +236,16 @@ register RAY  *r;
 	multcolor(nd.mcolor, r->pcol);		/* modify material color */
 	transtest = 0;
 						/* load auxiliary files */
-	if (m->otype == MAT_PDATA || m->otype == MAT_MDATA
-			|| m->otype == MAT_TDATA) {
+	if (hasdata(m->otype)) {
 		nd.dp = getdata(m->oargs.sarg[1]);
-		for (i = 3; i < m->oargs.nsargs; i++)
-			if (m->oargs.sarg[i][0] == '-')
-				break;
-		if (i-3 != nd.dp->nd)
-			objerror(m, USER, "dimension error");
-		funcfile(m->oargs.sarg[2]);
+		i = (1 << nd.dp->nd) - 1;
+		mf = getfunc(m, 2, i<<3, 0);
 	} else if (m->otype == MAT_BRTDF) {
 		nd.dp = NULL;
-		funcfile(m->oargs.sarg[9]);
+		mf = getfunc(m, 9, 0x3f, 0);
 	} else {
 		nd.dp = NULL;
-		funcfile(m->oargs.sarg[1]);
+		mf = getfunc(m, 1, 0, 0);
 	}
 						/* set special variables */
 	setbrdfunc(&nd);
@@ -261,9 +254,9 @@ register RAY  *r;
 	if (m->otype == MAT_BRTDF && nd.tspec > FTINY) {
 		RAY  sr;
 		errno = 0;
-		setcolor(ctmp, varvalue(m->oargs.sarg[3]),
-				varvalue(m->oargs.sarg[4]),
-				varvalue(m->oargs.sarg[5]));
+		setcolor(ctmp, evalue(mf->ep[3]),
+				evalue(mf->ep[4]),
+				evalue(mf->ep[5]));
 		scalecolor(ctmp, nd.trans);
 		if (errno)
 			objerror(m, WARNING, "compute error");
@@ -293,9 +286,9 @@ register RAY  *r;
 	if (m->otype == MAT_BRTDF && nd.rspec > FTINY) {
 		RAY  sr;
 		errno = 0;
-		setcolor(ctmp, varvalue(m->oargs.sarg[0]),
-				varvalue(m->oargs.sarg[1]),
-				varvalue(m->oargs.sarg[2]));
+		setcolor(ctmp, evalue(mf->ep[0]),
+				evalue(mf->ep[1]),
+				evalue(mf->ep[2]));
 		if (errno)
 			objerror(m, WARNING, "compute error");
 		else if ((rspecr = bright(ctmp)) > FTINY &&

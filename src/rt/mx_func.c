@@ -1,4 +1,4 @@
-/* Copyright (c) 1988 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -11,6 +11,8 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include  "ray.h"
+
+#include  "func.h"
 
 /*
  *	A mixture function is specified:
@@ -31,29 +33,25 @@ mx_func(m, r)			/* compute mixture function */
 register OBJREC  *m;
 RAY  *r;
 {
-	extern double  varvalue();
-	extern int  errno;
 	register int  i;
 	double  coef;
 	OBJECT  mod[2];
-	register char  **sa;
-
-	setfunc(m, r);
-
-	sa = m->oargs.sarg;
+	register MFUNC  *mf;
 
 	if (m->oargs.nsargs < 4)
 		objerror(m, USER, "bad # arguments");
 	for (i = 0; i < 2; i++)
-		if (!strcmp(sa[i], VOIDID))
+		if (!strcmp(m->oargs.sarg[i], VOIDID))
 			mod[i] = OVOID;
-		else if ((mod[i] = modifier(sa[i])) == OVOID) {
-			sprintf(errmsg, "undefined modifier \"%s\"", sa[i]);
+		else if ((mod[i] = modifier(m->oargs.sarg[i])) == OVOID) {
+			sprintf(errmsg, "undefined modifier \"%s\"",
+					m->oargs.sarg[i]);
 			objerror(m, USER, errmsg);
 		}
-	funcfile(sa[3]);
+	mf = getfunc(m, 3, 0x4, 0);
+	setfunc(m, r);
 	errno = 0;
-	coef = varvalue(sa[2]);
+	coef = evalue(mf->ep[0]);
 	if (errno) {
 		objerror(m, WARNING, "compute error");
 		return;

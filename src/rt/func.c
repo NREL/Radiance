@@ -14,9 +14,13 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "otypes.h"
 
+#include  "func.h"
+
 
 #define  INITFILE	"rayinit.cal"
-#define  DEFVNAME	"`FILE_LOADED"
+#define  REFVNAME	"`FILE_REFCNT"
+#define  CALSUF		".cal"
+#define  LCALSUF	4
 
 XF  unitxf = {			/* identity transform */
 	1.0, 0.0, 0.0, 0.0,
@@ -30,62 +34,160 @@ XF  funcxf;			/* current transformation */
 static OBJREC  *fobj = NULL;	/* current function object */
 static RAY  *fray = NULL;	/* current function ray */
 
+static double  l_erf(), l_erfc(), l_arg();
 
-setmap(m, r, bx)		/* set channels for function call */
+
+MFUNC *
+getfunc(m, ff, ef, dofwd)	/* get function for this modifier */
+OBJREC  *m;
+int  ff;
+unsigned  ef;
+int  dofwd;
+{
+	extern EPNODE  *curfunc;
+	static char  initfile[] = INITFILE;
+	char  sbuf[MAXSTR];
+	register char  **arg;
+	register MFUNC  *f;
+	int  ne, na;
+	register int  i;
+					/* check to see if done already */
+	if ((f = (MFUNC *)m->os) != NULL)
+		return(f);
+	if (initfile[0]) {		/* initialize on first call */
+		setcontext("");
+		scompile("Dx=$1;Dy=$2;Dz=$3;", NULL, 0);
+		scompile("Nx=$4;Ny=$5;Nz=$6;", NULL, 0);
+		scompile("Px=$7;Py=$8;Pz=$9;", NULL, 0);
+		scompile("T=$10;Rdot=$11;", NULL, 0);
+		scompile("S=$12;Tx=$13;Ty=$14;Tz=$15;", NULL, 0);
+		scompile("Ix=$16;Iy=$17;Iz=$18;", NULL, 0);
+		scompile("Jx=$19;Jy=$20;Jz=$21;", NULL, 0);
+		scompile("Kx=$22;Ky=$23;Kz=$24;", NULL, 0);
+		funset("arg", 1, '=', l_arg);
+		funset("erf", 1, ':', l_erf);
+		funset("erfc", 1, ':', l_erfc);
+		setnoisefuncs();
+		loadfunc(initfile);
+		initfile[0] = '\0';
+	}
+	if ((na = m->oargs.nsargs) <= ff)
+		goto toofew;
+	arg = m->oargs.sarg;
+	if ((f = (MFUNC *)calloc(1, sizeof(MFUNC))) == NULL)
+		goto memerr;
+	i = strlen(arg[ff]);			/* set up context */
+	if (i == 1 && arg[ff][0] == '.')
+		setcontext(f->ctx = "");	/* "." means no file */
+	else {
+		strcpy(sbuf,m->oargs.sarg[ff]);	/* file name is context */
+		if (i > LCALSUF && !strcmp(sbuf+i-LCALSUF, CALSUF))
+			sbuf[i-LCALSUF] = '\0';	/* remove suffix */
+		setcontext(f->ctx = savestr(sbuf));
+		if (!vardefined(REFVNAME)) {	/* file loaded? */
+			loadfunc(m->oargs.sarg[ff]);
+			varset(REFVNAME, '=', 1.0);
+		} else				/* reference_count++ */
+			varset(REFVNAME, '=', varvalue(REFVNAME)+1.0);
+	}
+	curfunc = NULL;			/* parse expressions */
+	sprintf(sbuf, "%s \"%s\"", ofun[m->otype].funame, m->oname);
+	for (i=0, ne=0; ef && i < na; i++, ef>>=1)
+		if (ef & 1) {			/* flagged as an expression? */
+			if (ne >= MAXEXPR)
+				objerror(m, INTERNAL, "too many expressions");
+			initstr(arg[i], sbuf, 0);
+			f->ep[ne++] = getE1();
+			if (nextc != EOF)
+				syntax("unexpected character");
+		}
+	if (ef)
+		goto toofew;
+	if (i <= ff)			/* find transform args */
+		i = ff+1;
+	while (i < na && arg[i][0] != '-')
+		i++;
+	if (i == na)			/* no transform */
+		f->f = f->b = &unitxf;
+	else {				/* get transform */
+		if ((f->b = (XF *)malloc(sizeof(XF))) == NULL)
+			goto memerr;;
+		if (invxf(f->b, na-i, arg+i) != na-i)
+			objerror(m, USER, "bad transform");
+		if (f->b->sca < 0.0)
+			f->b->sca = -f->b->sca;
+		if (dofwd) {			/* do both transforms */
+			if ((f->f = (XF *)malloc(sizeof(XF))) == NULL)
+				goto memerr;;
+			xf(f->f, na-i, arg+i);
+			if (f->f->sca < 0.0)
+				f->f->sca = -f->f->sca;
+		}
+	}
+	m->os = (char *)f;
+	return(f);
+toofew:
+	objerror(m, USER, "too few arguments");
+memerr:
+	error(SYSTEM, "out of memory in getfunc");
+}
+
+
+freefunc(m)			/* free memory associated with modifier */
+OBJREC  *m;
+{
+	register MFUNC  *f;
+	register int  i;
+
+	if ((f = (MFUNC *)m->os) == NULL)
+		return;
+	for (i = 0; f->ep[i] != NULL; i++)
+		epfree(f->ep[i]);
+	if (f->ctx[0]) {			/* done with definitions */
+		setcontext(f->ctx);
+		i = varvalue(REFVNAME)-.5;	/* reference_count-- */
+		if (i > 0)
+			varset(REFVNAME, '=', (double)i);
+		else
+			dcleanup(2);		/* remove definitions */
+		freestr(f->ctx);
+	}
+	if (f->b != &unitxf)
+		free((char *)f->b);
+	if (f->f != NULL && f->f != &unitxf)
+		free((char *)f->f);
+	free((char *)f);
+	m->os = NULL;
+}
+
+
+setfunc(m, r)			/* set channels for function call */
 OBJREC  *m;
 register RAY  *r;
-XF  *bx;
 {
-	extern long  eclock;
 	static long  lastrno = -1;
-					/* check to see if already set */
+	register MFUNC  *f;
+					/* get function */
+	if ((f = (MFUNC *)m->os) == NULL)
+		error(m, CONSISTENCY, "setfunc called before getfunc");
+					/* set evaluator context */
+	setcontext(f->ctx);
+					/* check to see if matrix set */
 	if (m == fobj && r->rno == lastrno)
 		return(0);
 	fobj = m;
 	fray = r;
 	if (r->rox != NULL)
-		if (bx != &unitxf) {
-			funcxf.sca = r->rox->b.sca * bx->sca;
-			multmat4(funcxf.xfm, r->rox->b.xfm, bx->xfm);
+		if (f->b != &unitxf) {
+			funcxf.sca = r->rox->b.sca * f->b->sca;
+			multmat4(funcxf.xfm, r->rox->b.xfm, f->b->xfm);
 		} else
 			copystruct(&funcxf, &r->rox->b);
 	else
-		copystruct(&funcxf, bx);
+		copystruct(&funcxf, f->b);
 	lastrno = r->rno;
 	eclock++;		/* notify expression evaluator */
 	return(1);
-}
-
-
-setfunc(m, r)				/* simplified interface to setmap */
-register OBJREC  *m;
-RAY  *r;
-{
-	register XF  *mxf;
-
-	if ((mxf = (XF *)m->os) == NULL) {
-		register int  n;
-		register char  **sa;
-
-		for (n = m->oargs.nsargs, sa = m->oargs.sarg;
-				n > 0 && **sa != '-'; n--, sa++)
-			;
-		if (n == 0)
-			mxf = &unitxf;
-		else {
-			mxf = (XF *)malloc(sizeof(XF));
-			if (mxf == NULL)
-				goto memerr;
-			if (invxf(mxf, n, sa) != n)
-				objerror(m, USER, "bad transform");
-			if (mxf->sca < 0.0)
-				mxf->sca = -mxf->sca;
-		}
-		m->os = (char *)mxf;
-	}
-	return(setmap(m, r, mxf));
-memerr:
-	error(SYSTEM, "out of memory in setfunc");
 }
 
 
@@ -103,7 +205,7 @@ char  *fname;
 }
 
 
-double
+static double
 l_arg()				/* return nth real argument */
 {
 	extern double  argument();
@@ -122,7 +224,7 @@ l_arg()				/* return nth real argument */
 }
 
 
-double
+static double
 l_erf()				/* error function */
 {
 	extern double  erf();
@@ -131,47 +233,12 @@ l_erf()				/* error function */
 }
 
 
-double
+static double
 l_erfc()			/* cumulative error function */
 {
 	extern double  erfc();
 
 	return(erfc(argument(1)));
-}
-
-
-funcfile(fname)			/* set context, load file if necessary */
-register char  *fname;
-{
-	extern char  *setcontext();
-	static char  initfile[] = INITFILE;
-
-	if (initfile[0]) {		/* initialize on first call */
-		setcontext("");
-		scompile("Dx=$1;Dy=$2;Dz=$3;", NULL, 0);
-		scompile("Nx=$4;Ny=$5;Nz=$6;", NULL, 0);
-		scompile("Px=$7;Py=$8;Pz=$9;", NULL, 0);
-		scompile("T=$10;Rdot=$11;", NULL, 0);
-		scompile("S=$12;Tx=$13;Ty=$14;Tz=$15;", NULL, 0);
-		scompile("Ix=$16;Iy=$17;Iz=$18;", NULL, 0);
-		scompile("Jx=$19;Jy=$20;Jz=$21;", NULL, 0);
-		scompile("Kx=$22;Ky=$23;Kz=$24;", NULL, 0);
-		funset("arg", 1, '=', l_arg);
-		funset("erf", 1, ':', l_erf);
-		funset("erfc", 1, ':', l_erfc);
-		setnoisefuncs();
-		loadfunc(initfile);
-		initfile[0] = '\0';
-	}
-	if (fname[0] == '.' && fname[1] == '\0')
-		setcontext("");			/* "." means no file */
-	else {
-		setcontext(fname);
-		if (!vardefined(DEFVNAME)) {
-			loadfunc(fname);
-			varset(DEFVNAME, ':', 1.0);
-		}
-	}
 }
 
 

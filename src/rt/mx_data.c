@@ -1,4 +1,4 @@
-/* Copyright (c) 1988 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -13,6 +13,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "ray.h"
 
 #include  "data.h"
+
+#include  "func.h"
 
 /*
  *	A stored mixture is specified:
@@ -37,49 +39,40 @@ mx_data(m, r)			/* interpolate mixture data */
 register OBJREC  *m;
 RAY  *r;
 {
-	extern double  varvalue(), funvalue(), datavalue();
-	extern int  errno;
-	register int  i;
 	double  coef;
 	double  pt[MAXDIM];
 	DATARRAY  *dp;
 	OBJECT  mod[2];
-	register char  **sa;
-
-	setfunc(m, r);
-
-	sa = m->oargs.sarg;
+	register MFUNC  *mf;
+	register int  i;
 
 	if (m->oargs.nsargs < 6)
 		objerror(m, USER, "bad # arguments");
 	for (i = 0; i < 2; i++)
-		if (!strcmp(sa[i], VOIDID))
+		if (!strcmp(m->oargs.sarg[i], VOIDID))
 			mod[i] = OVOID;
-		else if ((mod[i] = modifier(sa[i])) == OVOID) {
-			sprintf(errmsg, "undefined modifier \"%s\"", sa[i]);
+		else if ((mod[i] = modifier(m->oargs.sarg[i])) == OVOID) {
+			sprintf(errmsg, "undefined modifier \"%s\"",
+					m->oargs.sarg[i]);
 			objerror(m, USER, errmsg);
 		}
-	funcfile(sa[4]);
-	for (i = 0; i+5 < m->oargs.nsargs &&
-			sa[i+5][0] != '-'; i++) {
-		if (i >= MAXDIM)
-			objerror(m, USER, "dimension error");
-		errno = 0;
-		pt[i] = varvalue(sa[i+5]);
+	dp = getdata(m->oargs.sarg[3]);
+	i = (1 << dp->nd) - 1;
+	mf = getfunc(m, 4, i<<5, 0);
+	setfunc(m, r);
+	errno = 0;
+	for (i = 0; i < dp->nd; i++) {
+		pt[i] = evalue(mf->ep[i]);
 		if (errno)
 			goto computerr;
 	}
-	dp = getdata(sa[3]);
-	if (dp->nd != i)
-		objerror(m, USER, "dimension error");
 	coef = datavalue(dp, pt);
 	errno = 0;
-	coef = funvalue(sa[2], 1, &coef);
+	coef = funvalue(m->oargs.sarg[2], 1, &coef);
 	if (errno)
 		goto computerr;
 	raymixture(r, mod[0], mod[1], coef);
 	return;
-
 computerr:
 	objerror(m, WARNING, "compute error");
 }

@@ -14,6 +14,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "data.h"
 
+#include  "func.h"
+
 /*
  *	A stored pattern can either be brightness or
  *  color data.  Brightness data is specified as:
@@ -52,44 +54,31 @@ p_bdata(m, r)			/* interpolate brightness data */
 register OBJREC  *m;
 RAY  *r;
 {
-	extern double  varvalue(), funvalue(), datavalue();
-	extern int  errno;
-	int  nv;
 	double  bval;
 	double  pt[MAXDIM];
 	DATARRAY  *dp;
-	register char  **sa;
-
-	setfunc(m, r);
-
-	sa = m->oargs.sarg;
+	register MFUNC  *mf;
+	register int  i;
 
 	if (m->oargs.nsargs < 4)
 		objerror(m, USER, "bad # arguments");
-	funcfile(sa[2]);
+	dp = getdata(m->oargs.sarg[1]);
+	i = (1 << dp->nd) - 1;
+	mf = getfunc(m, 2, i<<3, 0);
+	setfunc(m, r);
 	errno = 0;
-	for (nv = 0; nv+3 < m->oargs.nsargs &&
-			sa[nv+3][0] != '-'; nv++) {
-		if (nv >= MAXDIM)
-			goto dimerr;
-		pt[nv] = varvalue(sa[nv+3]);
+	for (i = dp->nd; i-- > 0; ) {
+		pt[i] = evalue(mf->ep[i]);
+		if (errno)
+			goto computerr;
 	}
-	if (errno)
-		goto computerr;
-	dp = getdata(sa[1]);
-	if (dp->nd != nv)
-		goto dimerr;
 	bval = datavalue(dp, pt);
 	errno = 0;
-	bval = funvalue(sa[0], 1, &bval);
+	bval = funvalue(m->oargs.sarg[0], 1, &bval);
 	if (errno)
 		goto computerr;
 	scalecolor(r->pcol, bval);
 	return;
-
-dimerr:
-	objerror(m, USER, "dimension error");
-
 computerr:
 	objerror(m, WARNING, "compute error");
 	return;
@@ -100,49 +89,41 @@ p_cdata(m, r)			/* interpolate color data */
 register OBJREC  *m;
 RAY  *r;
 {
-	extern double  varvalue(), funvalue(), datavalue();
-	extern int  errno;
-	int  i, nv;
 	double  col[3];
 	COLOR  cval;
 	double  pt[MAXDIM];
+	int  nv;
 	DATARRAY  *dp;
-	register char  **sa;
-
-	setfunc(m, r);
-
-	sa = m->oargs.sarg;
+	register MFUNC  *mf;
+	register int  i;
 
 	if (m->oargs.nsargs < 8)
 		objerror(m, USER, "bad # arguments");
-	funcfile(sa[6]);
-	for (nv = 0; nv+7 < m->oargs.nsargs &&
-			sa[nv+7][0] != '-'; nv++) {
-		if (nv >= MAXDIM)
-			goto dimerr;
-		errno = 0;
-		pt[nv] = varvalue(sa[nv+7]);
+	dp = getdata(m->oargs.sarg[3]);
+	i = (1 << (nv = dp->nd)) - 1;
+	mf = getfunc(m, 6, i<<7, 0);
+	setfunc(m, r);
+	errno = 0;
+	for (i = 0; i < nv; i++) {
+		pt[i] = evalue(mf->ep[i]);
 		if (errno)
 			goto computerr;
 	}
-	for (i = 0; i < 3; i++) {
-		dp = getdata(sa[i+3]);
+	col[0] = datavalue(dp, pt);
+	for (i = 1; i < 3; i++) {
+		dp = getdata(m->oargs.sarg[i+3]);
 		if (dp->nd != nv)
-			goto dimerr;
+			objerror(m, USER, "dimension error");
 		col[i] = datavalue(dp, pt);
 	}
 	errno = 0;
-	setcolor(cval,	funvalue(sa[0], 3, col),
-			funvalue(sa[1], 3, col),
-			funvalue(sa[2], 3, col));
+	setcolor(cval,	funvalue(m->oargs.sarg[0], 3, col),
+			funvalue(m->oargs.sarg[1], 3, col),
+			funvalue(m->oargs.sarg[2], 3, col));
 	if (errno)
 		goto computerr;
 	multcolor(r->pcol, cval);
 	return;
-
-dimerr:
-	objerror(m, USER, "dimension error");
-
 computerr:
 	objerror(m, WARNING, "compute error");
 	return;
@@ -153,34 +134,29 @@ p_pdata(m, r)			/* interpolate picture data */
 register OBJREC  *m;
 RAY  *r;
 {
-	extern double  varvalue(), funvalue(), datavalue();
-	extern int  errno;
-	int  i;
 	double  col[3];
 	COLOR  cval;
 	double  pt[2];
 	DATARRAY  *dp;
-	register char  **sa;
-
-	setfunc(m, r);
-
-	sa = m->oargs.sarg;
+	register MFUNC  *mf;
+	register int  i;
 
 	if (m->oargs.nsargs < 7)
 		objerror(m, USER, "bad # arguments");
-	funcfile(sa[4]);
+	mf = getfunc(m, 4, 0x3<<5, 0);
+	setfunc(m, r);
 	errno = 0;
-	pt[1] = varvalue(sa[5]);	/* y major ordering */
-	pt[0] = varvalue(sa[6]);
+	pt[1] = evalue(mf->ep[0]);	/* y major ordering */
+	pt[0] = evalue(mf->ep[1]);
 	if (errno)
 		goto computerr;
-	dp = getpict(sa[3]);
+	dp = getpict(m->oargs.sarg[3]);
 	for (i = 0; i < 3; i++)
 		col[i] = datavalue(dp+i, pt);
 	errno = 0;
-	setcolor(cval,	funvalue(sa[0], 3, col),
-			funvalue(sa[1], 3, col),
-			funvalue(sa[2], 3, col));
+	setcolor(cval,	funvalue(m->oargs.sarg[0], 3, col),
+			funvalue(m->oargs.sarg[1], 3, col),
+			funvalue(m->oargs.sarg[2], 3, col));
 	if (errno)
 		goto computerr;
 	multcolor(r->pcol, cval);

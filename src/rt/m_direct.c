@@ -15,6 +15,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "source.h"
 
+#include  "func.h"
+
 /*
  * The arguments for MAT_DIRECT1 are:
  *
@@ -30,39 +32,13 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 
-extern double  varvalue();
-
 int  dir_proj();
 VSMATERIAL  direct1_vs = {dir_proj, 1};
 VSMATERIAL  direct2_vs = {dir_proj, 2};
 
-#define fndx(m)		((m)->otype == MAT_DIRECT1 ? 4 : 8)
-
-
-static
-dir_check(m)			/* check arguments and load function file */
-register OBJREC  *m;
-{
-	register FULLXF  *mxf;
-	register int  ff;
-
-	ff = fndx(m)+1;
-	if (ff > m->oargs.nsargs)
-		objerror(m, USER, "too few arguments");
-	if (m->os == NULL) {
-		mxf = (FULLXF *)malloc(sizeof(FULLXF));
-		if (mxf == NULL)
-			error(SYSTEM, "out of memory in dir_check");
-		if (fullxf(mxf, m->oargs.nsargs-ff, m->oargs.sarg+ff) !=
-				m->oargs.nsargs-ff)
-			objerror(m, USER, "bad transform");
-		if (mxf->f.sca < 0.0)
-			mxf->f.sca = -mxf->f.sca;
-		if (mxf->b.sca < 0.0)
-			mxf->b.sca = -mxf->b.sca;
-		m->os = (char *)mxf;
-	}
-}
+#define getdfunc(m)	( (m)->otype == MAT_DIRECT1 ? \
+				getfunc(m, 4, 0xf, 1) : \
+				getfunc(m, 8, 0xff, 1) )
 
 
 m_direct(m, r)			/* shade redirected ray */
@@ -72,7 +48,6 @@ register RAY  *r;
 					/* check if source ray */
 	if (r->rsrc >= 0 && source[r->rsrc].so != r->ro)
 		return;				/* got the wrong guy */
-	dir_check(m);
 					/* compute first projection */
 	if (m->otype == MAT_DIRECT1 ||
 			(r->rsrc < 0 || source[r->rsrc].sa.sv.pn == 0))
@@ -89,28 +64,30 @@ OBJREC  *m;
 RAY  *r;
 int  n;
 {
-	register char  **sa;
+	MFUNC  *mf;
+	register EPNODE  **va;
 	RAY  nr;
 	double  coef;
 	register int  j;
 					/* set up function */
-	setmap(m, r, &((FULLXF *)m->os)->b);
-	funcfile(m->oargs.sarg[fndx(m)]);
-	sa = m->oargs.sarg + 4*n;
+	mf = getdfunc(m);
+	setfunc(m, r);
 					/* compute coefficient */
 	errno = 0;
-	coef = varvalue(sa[0]);
+	va = mf->ep + 4*n;
+	coef = evalue(va[0]);
 	if (errno)
 		goto computerr;
 	if (coef <= FTINY || rayorigin(&nr, r, TRANS, coef) < 0)
 		return(0);
-					/* compute direction */
-	errno = 0;
-	for (j = 0; j < 3; j++)
-		nr.rdir[j] = varvalue(sa[j+1]);
-	if (errno)
-		goto computerr;
-	multv3(nr.rdir, nr.rdir, ((FULLXF *)m->os)->f.xfm);
+	va++;				/* compute direction */
+	for (j = 0; j < 3; j++) {
+		nr.rdir[j] = evalue(va[j]);
+		if (errno)
+			goto computerr;
+	}
+	if (mf->f != &unitxf)
+		multv3(nr.rdir, nr.rdir, mf->f->xfm);
 	if (r->rox != NULL)
 		multv3(nr.rdir, nr.rdir, r->rox->f.xfm);
 	if (normalize(nr.rdir) == 0.0)
@@ -135,15 +112,12 @@ SRCREC  *s;
 int  n;
 {
 	RAY  tr;
-	register OBJREC  *m;
-	char  **sa;
+	OBJREC  *m;
+	MFUNC  *mf;
+	EPNODE  **va;
 	FVECT  cent, newdir, nv, h;
-	double  olddot, newdot, od;
+	double  coef, olddot, newdot, od;
 	register int  i, j;
-				/* get material arguments */
-	m = vsmaterial(o);
-	dir_check(m);
-	sa = m->oargs.sarg + 4*n;
 				/* initialize test ray */
 	getmaxdisk(cent, o);
 	if (s->sflags & SDISTANT)
@@ -167,18 +141,24 @@ int  n;
 	if (!(*ofun[o->otype].funp)(o, &tr))
 		return(0);		/* no intersection! */
 				/* compute redirection */
-	setmap(m, &tr, &((FULLXF *)m->os)->b);
-	funcfile(m->oargs.sarg[fndx(m)]);
+	m = vsmaterial(o);
+	mf = getdfunc(m);
+	setfunc(m, &tr);
 	errno = 0;
-	if (varvalue(sa[0]) <= FTINY)
+	va = mf->ep + 4*n;
+	coef = evalue(va[0]);
+	if (errno)
+		goto computerr;
+	if (coef <= FTINY)
 		return(0);		/* insignificant */
-	if (errno)
-		goto computerr;
-	for (i = 0; i < 3; i++)
-		newdir[i] = varvalue(sa[i+1]);
-	if (errno)
-		goto computerr;
-	multv3(newdir, newdir, ((FULLXF *)m->os)->f.xfm);
+	va++;
+	for (i = 0; i < 3; i++) {
+		newdir[i] = evalue(va[i]);
+		if (errno)
+			goto computerr;
+	}
+	if (mf->f != &unitxf)
+		multv3(newdir, newdir, mf->f->xfm);
 					/* normalization unnecessary */
 	newdot = DOT(newdir, nv);
 	if (newdot <= FTINY && newdot >= -FTINY)

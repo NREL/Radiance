@@ -6,6 +6,7 @@ This directory contains the RADIANCE renderers "rpict", "rtrace" and "rview".
 ambient.h	common definitions for interreflection routines
 data.h		header file for routines which interpolate data
 driver.h	header file for interactive device drivers
+func.h		header file for modifiers using function files
 nwsdev.h	header file for NeWS driver
 otspecial.h	special type flags for objects used in rendering
 ray.h		header file for routines using rays

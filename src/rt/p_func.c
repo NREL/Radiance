@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -11,6 +11,8 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include  "ray.h"
+
+#include  "func.h"
 
 /*
  *	A procedural pattern can either be a brightness or a
@@ -36,23 +38,18 @@ static char SCCSid[] = "$SunId$ LBL";
 
 
 p_bfunc(m, r)			/* compute brightness pattern */
-register OBJREC  *m;
+OBJREC  *m;
 RAY  *r;
 {
-	extern double  varvalue();
-	extern int  errno;
 	double  bval;
-	register char  **sa;
-
-	setfunc(m, r);
-
-	sa = m->oargs.sarg;
+	register MFUNC  *mf;
 
 	if (m->oargs.nsargs < 2)
 		objerror(m, USER, "bad # arguments");
-	funcfile(sa[1]);
+	mf = getfunc(m, 1, 0x1, 0);
+	setfunc(m, r);
 	errno = 0;
-	bval = varvalue(sa[0]);
+	bval = evalue(mf->ep[0]);
 	if (errno) {
 		objerror(m, WARNING, "compute error");
 		return;
@@ -62,25 +59,20 @@ RAY  *r;
 
 
 p_cfunc(m, r)			/* compute color pattern */
-register OBJREC  *m;
+OBJREC  *m;
 RAY  *r;
 {
-	extern double  varvalue();
-	extern int  errno;
 	COLOR  cval;
-	register char  **sa;
-
-	setfunc(m, r);
-
-	sa = m->oargs.sarg;
+	register MFUNC  *mf;
 
 	if (m->oargs.nsargs < 4)
 		objerror(m, USER, "bad # arguments");
-	funcfile(sa[3]);
+	mf = getfunc(m, 3, 0x7, 0);
+	setfunc(m, r);
 	errno = 0;
-	setcolor(cval, varvalue(sa[0]),
-			varvalue(sa[1]),
-			varvalue(sa[2]));
+	setcolor(cval, evalue(mf->ep[0]),
+			evalue(mf->ep[1]),
+			evalue(mf->ep[2]));
 	if (errno) {
 		objerror(m, WARNING, "compute error");
 		return;
