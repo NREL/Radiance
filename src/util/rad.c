@@ -195,7 +195,7 @@ load(rfname)			/* load Radiance simulation file */
 char	*rfname;
 {
 	FILE	*fp;
-	char	buf[256];
+	char	buf[512];
 	register char	*cp;
 
 	if (rfname == NULL)
@@ -212,6 +212,8 @@ char	*rfname;
 			case '#':
 				*cp = '\0';
 				break;
+			default:
+				continue;
 			}
 			break;
 		}
@@ -260,12 +262,15 @@ register char	*ass;
 		exit(1);
 	}
 					/* assign new value */
-	cp = vp->value; i = vp->nass;
-	while (i--)
-		while (*cp++)
-			;
-	i = cp - vp->value;
-	vp->value = realloc(vp->value, i+n+1);
+	if (i = vp->nass) {
+		cp = vp->value;
+		while (i--)
+			while (*cp++)
+				;
+		i = cp - vp->value;
+		vp->value = realloc(vp->value, i+n+1);
+	} else
+		vp->value = malloc(n+1);
 	if (vp->value == NULL)
 		syserr(progname);
 	strcpy(vp->value+i, ass);
@@ -369,7 +374,8 @@ register char	*fnames;
 	while (*fnames) {
 		while (isspace(*fnames)) fnames++;
 		cp = thisfile;
-		while (*fnames && !isspace(*fnames)) *cp++ = *fnames++;
+		while (*fnames && !isspace(*fnames))
+			*cp++ = *fnames++;
 		*cp = '\0';
 		if ((thisdate = fdate(thisfile)) < 0)
 			syserr(thisfile);
@@ -488,8 +494,8 @@ printvals()			/* print variable values */
 	register int	i, j;
 
 	for (i = 0; i < NVARS; i++)
-		for (j = 0; j < vv[i].nass; j++)
-			printf("%s= %s\n", vv[i].name, nvalue(vv+i, j));
+		for (j = 0; j < vdef(i); j++)
+			printf("%s= %s\n", vnam(i), nvalue(vv+i, j));
 	fflush(stdout);
 }
 
@@ -502,16 +508,14 @@ oconv()				/* run oconv if necessary */
 		return;
 					/* build command */
 	oconvopts(ocopts);
-	sprintf(combuf, "oconv%s %s %s > %s", ocopts,
-			vdef(MATERIAL) ? vval(MATERIAL) : "",
-			vval(SCENE), vval(OCTREE));
-	if (!silent) {			/* echo it */
-		printf("\t%s\n", combuf);
-		fflush(stdout);
-	}
-	if (noaction)
-		return;
-	if (system(combuf)) {		/* run it */
+	if (vdef(MATERIAL))
+		sprintf(combuf, "oconv%s %s %s > %s", ocopts,
+				vval(MATERIAL), vval(SCENE), vval(OCTREE));
+	else
+		sprintf(combuf, "oconv%s %s > %s", ocopts,
+				vval(SCENE), vval(OCTREE));
+	
+	if (runcom(combuf)) {		/* run it */
 		fprintf(stderr, "%s: error generating octree\n\t%s removed\n",
 				progname, vval(OCTREE));
 		unlink(vval(OCTREE));
@@ -575,20 +579,17 @@ register char	*op;
 	d *= 3./(siz[0]+siz[1]+siz[2]);
 	switch (vscale(DETAIL)) {
 	case LOW:
-		op = addarg(op, "-ps 16");
-		op = addarg(op, "-dp 16");
+		op = addarg(op, "-ps 16 -dp 16");
 		sprintf(op, " -ar %d", (int)(4*d));
 		op += strlen(op);
 		break;
 	case MEDIUM:
-		op = addarg(op, "-ps 8");
-		op = addarg(op, "-dp 32");
+		op = addarg(op, "-ps 8 -dp 32");
 		sprintf(op, " -ar %d", (int)(8*d));
 		op += strlen(op);
 		break;
 	case HIGH:
-		op = addarg(op, "-ps 4");
-		op = addarg(op, "-dp 64");
+		op = addarg(op, "-ps 4 -dp 64");
 		sprintf(op, " -ar %d", (int)(16*d));
 		op += strlen(op);
 		break;
@@ -596,12 +597,9 @@ register char	*op;
 	op = addarg(op, "-pt .16");
 	if (vbool(PENUMBRAS))
 		op = addarg(op, "-ds .4");
-	op = addarg(op, "-dt .2");
-	op = addarg(op, "-dc .25");
-	op = addarg(op, "-dr 0");
-	op = addarg(op, "-sj 0");
-	op = addarg(op, "-st .7");
-	op = addarg(op, "-ab 0");
+	else
+		op = addarg(op, "-ds 0");
+	op = addarg(op, "-dt .2 -dc .25 -dr 0 -sj 0 -st .7");
 	if (vdef(AMBFILE)) {
 		sprintf(op, " -af %s", vval(AMBFILE));
 		op += strlen(op);
@@ -609,24 +607,20 @@ register char	*op;
 		overture = 0;
 	switch (vscale(VARIABILITY)) {
 	case LOW:
-		op = addarg(op, "-aa .4");
-		op = addarg(op, "-ad 32");
+		op = addarg(op, "-aa .4 -ad 32");
 		break;
 	case MEDIUM:
-		op = addarg(op, "-aa .3");
-		op = addarg(op, "-ad 64");
+		op = addarg(op, "-aa .3 -ad 64");
 		break;
 	case HIGH:
-		op = addarg(op, "-aa .25");
-		op = addarg(op, "-ad 128");
+		op = addarg(op, "-aa .25 -ad 128");
 		break;
 	}
 	op = addarg(op, "-as 0");
 	d = ambval();
 	sprintf(op, " -av %.2g %.2g %.2g", d, d, d);
 	op += strlen(op);
-	op = addarg(op, "-lr 3");
-	op = addarg(op, "-lw .02");
+	op = addarg(op, "-lr 3 -lw .02");
 	if (vdef(RENDER))
 		op = addarg(op, vval(RENDER));
 }
@@ -665,16 +659,11 @@ register char	*op;
 		break;
 	}
 	op = addarg(op, "-pt .08");
-	if (vbool(PENUMBRAS)) {
-		op = addarg(op, "-ds .2");
-		op = addarg(op, "-dj .35");
-	} else
+	if (vbool(PENUMBRAS))
+		op = addarg(op, "-ds .2 -dj .35");
+	else
 		op = addarg(op, "-ds .3");
-	op = addarg(op, "-dt .1");
-	op = addarg(op, "-dc .5");
-	op = addarg(op, "-dr 1");
-	op = addarg(op, "-sj .7");
-	op = addarg(op, "-st .15");
+	op = addarg(op, "-dt .1 -dc .5 -dr 1 -sj .7 -st .15");
 	sprintf(op, " -ab %d", overture=vint(INDIRECT));
 	op += strlen(op);
 	if (vdef(AMBFILE)) {
@@ -684,26 +673,19 @@ register char	*op;
 		overture = 0;
 	switch (vscale(VARIABILITY)) {
 	case LOW:
-		op = addarg(op, "-aa .25");
-		op = addarg(op, "-ad 128");
-		op = addarg(op, "-as 0");
+		op = addarg(op, "-aa .25 -ad 128 -as 0");
 		break;
 	case MEDIUM:
-		op = addarg(op, "-aa .2");
-		op = addarg(op, "-ad 300");
-		op = addarg(op, "-as 64");
+		op = addarg(op, "-aa .2 -ad 300 -as 64");
 		break;
 	case HIGH:
-		op = addarg(op, "-aa .15");
-		op = addarg(op, "-ad 500");
-		op = addarg(op, "-as 128");
+		op = addarg(op, "-aa .15 -ad 500 -as 128");
 		break;
 	}
 	d = ambval();
 	sprintf(op, " -av %.2g %.2g %.2g", d, d, d);
 	op += strlen(op);
-	op = addarg(op, "-lr 6");
-	op = addarg(op, "-lw .002");
+	op = addarg(op, "-lr 6 -lw .002");
 	if (vdef(RENDER))
 		op = addarg(op, vval(RENDER));
 }
@@ -742,16 +724,11 @@ register char	*op;
 		break;
 	}
 	op = addarg(op, "-pt .04");
-	if (vbool(PENUMBRAS)) {
-		op = addarg(op, "-ds .1");
-		op = addarg(op, "-dj .7");
-	} else
+	if (vbool(PENUMBRAS))
+		op = addarg(op, "-ds .1 -dj .7");
+	else
 		op = addarg(op, "-ds .2");
-	op = addarg(op, "-dt .05");
-	op = addarg(op, "-dc .75");
-	op = addarg(op, "-dr 3");
-	op = addarg(op, "-sj 1");
-	op = addarg(op, "-st .03");
+	op = addarg(op, "-dt .05 -dc .75 -dr 3 -sj 1 -st .03");
 	sprintf(op, " -ab %d", overture=vint(INDIRECT)+1);
 	op += strlen(op);
 	if (vdef(AMBFILE)) {
@@ -761,26 +738,19 @@ register char	*op;
 		overture = 0;
 	switch (vscale(VARIABILITY)) {
 	case LOW:
-		op = addarg(op, "-aa .15");
-		op = addarg(op, "-ad 200");
-		op = addarg(op, "-as 0");
+		op = addarg(op, "-aa .15 -ad 200 -as 0");
 		break;
 	case MEDIUM:
-		op = addarg(op, "-aa .125");
-		op = addarg(op, "-ad 512");
-		op = addarg(op, "-as 128");
+		op = addarg(op, "-aa .125 -ad 512 -as 128");
 		break;
 	case HIGH:
-		op = addarg(op, "-aa .08");
-		op = addarg(op, "-ad 850");
-		op = addarg(op, "-as 256");
+		op = addarg(op, "-aa .08 -ad 850 -as 256");
 		break;
 	}
 	d = ambval();
 	sprintf(op, " -av %.2g %.2g %.2g", d, d, d);
 	op += strlen(op);
-	op = addarg(op, "-lr 12");
-	op = addarg(op, "-lw .0005");
+	op = addarg(op, "-lr 12 -lw .0005");
 	if (vdef(RENDER))
 		op = addarg(op, vval(RENDER));
 }
@@ -801,9 +771,7 @@ char	*ro;
 			syserr(vval(OPTFILE));
 		write(fd, "\n", 1);
 		close(fd);
-		ro[0] = ' ';
-		ro[1] = '^';
-		strcpy(ro+2, vval(OPTFILE));
+		sprintf(ro, " \"^%s\"", vval(OPTFILE));
 	}
 #ifdef MSDOS
 	else if (n > 50) {
@@ -948,8 +916,9 @@ register char	*vs;
 			break;
 		}
 	} else {
-		while (*vs && !isspace(*vs))	/* else skip id */
-			vs++;
+		while (!isspace(*vs))		/* else skip id */
+			if (!*vs++)
+				return(NULL);
 		if (upax) {			/* specify up vector */
 			strcpy(cp, vup[upax+3]);
 			cp += strlen(cp);
@@ -1006,13 +975,7 @@ char	*opts;
 	if (rvdevice != NULL)
 		sprintf(combuf+strlen(combuf), "-o %s ", rvdevice);
 	strcat(combuf, vval(OCTREE));
-	if (!silent) {			/* echo it */
-		printf("\t%s\n", combuf);
-		fflush(stdout);
-	}
-	if (noaction)
-		return;
-	if (system(combuf)) {		/* run it */
+	if (runcom(combuf)) {		/* run it */
 		fprintf(stderr, "%s: error running rview\n", progname);
 		exit(1);
 	}
@@ -1060,16 +1023,8 @@ char	*opts;
 					/* check date on ambient file */
 	if (vdef(AMBFILE)) {
 		long	afdate = fdate(vval(AMBFILE));
-		if (afdate >= 0 & octreedate > afdate) {
-			if (!silent)
-#ifdef MSDOS
-				printf("\tdel %s\n", vval(AMBFILE));
-#else
-				printf("\trm %s\n", vval(AMBFILE));
-#endif
-			if (!noaction)
-				unlink(vval(AMBFILE));
-		}
+		if (afdate >= 0 & octreedate > afdate)
+			rmfile(vval(AMBFILE));
 	}
 					/* do each view */
 	vn = 0;
@@ -1091,11 +1046,7 @@ char	*opts;
 				"rpict%s %s%s -x 64 -y 64 -ps 1 %s > %s",
 						rep, vw, opts,
 						vval(OCTREE), rawfile);
-				if (!silent) {
-					printf("\t%s\n", combuf);
-					fflush(stdout);
-				}
-				if (!noaction && system(combuf)) {
+				if (runcom(combuf)) {
 					fprintf(stderr,
 			"%s: error in overture for view %s\n\t%s removed\n",
 						progname, vs, rawfile);
@@ -1107,11 +1058,7 @@ char	*opts;
 					rep, vw, res, opts,
 					vval(OCTREE), rawfile);
 		}
-		if (!silent) {			/* echo rpict command */
-			printf("\t%s\n", combuf);
-			fflush(stdout);
-		}
-		if (!noaction && system(combuf)) {	/* run rpict */
+		if (runcom(combuf)) {		/* run rpict */
 			fprintf(stderr, "%s: error rendering view %s\n",
 					progname, vs);
 			exit(1);
@@ -1123,11 +1070,7 @@ char	*opts;
 		else
 			sprintf(combuf, "pfilt%s %s > %s", pfopts,
 					rawfile, picfile);
-		if (!silent) {			/* echo pfilt command */
-			printf("\t%s\n", combuf);
-			fflush(stdout);
-		}
-		if (!noaction && system(combuf)) {	/* run pfilt */
+		if (runcom(combuf)) {		/* run pfilt */
 			fprintf(stderr,
 			"%s: error filtering view %s\n\t%s removed\n",
 					progname, vs, picfile);
@@ -1135,15 +1078,35 @@ char	*opts;
 			exit(1);
 		}
 						/* remove raw file */
-		if (!silent)
-#ifdef MSDOS
-			printf("\tdel %s\n", rawfile);
-#else
-			printf("\trm %s\n", rawfile);
-#endif
-		if (!noaction)
-			unlink(rawfile);
+		rmfile(rawfile);
 	}
+}
+
+
+runcom(cs)			/* run command */
+char	*cs;
+{
+	if (!silent)		/* echo it */
+		printf("\t%s\n", cs);
+	if (noaction)
+		return(0);
+	fflush(stdout);		/* flush output and pass to shell */
+	return(system(cs));
+}
+
+
+rmfile(fn)			/* remove a file */
+char	*fn;
+{
+	if (!silent)
+#ifdef MSDOS
+		printf("\tdel %s\n", fn);
+#else
+		printf("\trm -f %s\n", fn);
+#endif
+	if (noaction)
+		return(0);
+	return(unlink(fn));
 }
 
 
