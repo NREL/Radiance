@@ -22,7 +22,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #define MAXRAD		64	/* maximum kernel radius */
 #endif
 #ifndef NNEIGH
-#define NNEIGH		7	/* find this many neighbors */
+#define NNEIGH		5	/* find this many neighbors */
 #endif
 
 #define NINF		16382
@@ -45,7 +45,7 @@ static int4	*pixFlags;	/* pixel occupancy flags */
 static float	pixWeight[MAXRAD2];	/* pixel weighting function */
 static short	isqrttab[MAXRAD2];	/* integer square root table */
 
-#define isqrt(i2)	((int)isqrttab[(int)(i2)])
+#define isqrt(i2)	(isqrttab[i2])
 
 extern VIEW	myview;		/* current output view */
 extern COLOR	*mypixel;	/* pixels being rendered */
@@ -112,14 +112,16 @@ register HDBEAMI	*hb;
 
 
 int
-kill_occl(h, v, nl, n)		/* check for occlusion errors */
+kill_occl(h, v, nl, nd, n)		/* check for occlusion errors */
 int	h, v;
 register short	nl[NNEIGH][2];
+int	nd[NNEIGH];
 int	n;
 {
 	short	forequad[2][2];
 	int	d;
-	register int4	i, p;
+	register int	i;
+	register int4	p;
 
 	if (n <= 0) {
 #ifdef DEBUG
@@ -130,8 +132,7 @@ int	n;
 	p = v*hres + h;
 	forequad[0][0] = forequad[0][1] = forequad[1][0] = forequad[1][1] = 0;
 	for (i = n; i--; ) {
-		d = (h-nl[i][0])*(h-nl[i][0]) + (v-nl[i][1])*(v-nl[i][1]);
-		d = isqrt(d);
+		d = isqrt(nd[i]);
 		if (mydepth[nl[i][1]*hres+nl[i][0]]*(1.+DEPS*d) < mydepth[p])
 			forequad[nl[i][0]<h][nl[i][1]<v] = 1;
 	}
@@ -144,22 +145,24 @@ int	n;
 
 
 int
-smooth_samp(h, v, nl, n)	/* grow sample point smoothly */
+smooth_samp(h, v, nl, nd, n)	/* grow sample point smoothly */
 int	h, v;
 register short	nl[NNEIGH][2];
+int	nd[NNEIGH];
 int	n;
 {
 	int	dis[NNEIGH], ndis;
 	COLOR	mykern[MAXRAD2];
-	int4	maxr2;
+	int	maxr2;
 	double	d;
-	register int4	p, r2;
+	register int4	p;
+	register int	r2;
 	int	i, r, maxr, h2, v2;
 
 	if (n <= 0)
 		return(1);
 	p = v*hres + h;				/* build kernel values */
-	maxr2 = (h-nl[n-1][0])*(h-nl[n-1][0]) + (v-nl[n-1][1])*(v-nl[n-1][1]);
+	maxr2 = nd[n-1];
 	DCHECK(maxr2>=MAXRAD2, CONSISTENCY, "out of range neighbor");
 	maxr = isqrt(maxr2);
 	for (v2 = 1; v2 <= maxr; v2++)
@@ -171,8 +174,7 @@ int	n;
 		}
 	ndis = 0;				/* find discontinuities */
 	for (i = n; i--; ) {
-		r2 = (h-nl[i][0])*(h-nl[i][0]) + (v-nl[i][1])*(v-nl[i][1]);
-		r = isqrt(r2);
+		r = isqrt(nd[i]);
 		d = mydepth[nl[i][1]*hres+nl[i][0]] / mydepth[p];
 		d = d>=1. ? d-1. : 1.-d;
 		if (d > r*DEPS || bigdiff(mypixel[p],
@@ -205,57 +207,35 @@ int	n;
 
 
 int
-random_samp(h, v, nl, n, rf)	/* grow sample point noisily */
+random_samp(h, v, nl, nd, n, rf)	/* gather samples randomly */
 int	h, v;
 register short	nl[NNEIGH][2];
+int	nd[NNEIGH];
 int	n;
 double	*rf;
 {
-	double	tv = *rf * (1.-1./NNEIGH);
-	int4	maxr2;
-	register int4	p, r2;
-	register int	i;
-	int	maxr, h2, v2;
-	COLOR	ctmp;
+	float	rnt[NNEIGH];
+	double	rvar;
+	register int4	p, pn;
+	register int	ni;
 
 	if (n <= 0)
 		return(1);
-	p = v*hres + h;				/* compute kernel radius */
-	maxr2 = (h-nl[n-1][0])*(h-nl[n-1][0]) + (v-nl[n-1][1])*(v-nl[n-1][1]);
-	DCHECK(maxr2>=MAXRAD2, CONSISTENCY, "out of range neighbor");
-	maxr = isqrt(maxr2);
-						/* sample kernel */
-	for (v2 = v-maxr; v2 <= v+maxr; v2++) {
-		if (v2 < 0) v2 = 0;
-		else if (v2 >= vres) break;
-		for (h2 = h-maxr; h2 <= h+maxr; h2++) {
-			if (h2 < 0) h2 = 0;
-			else if (h2 >= hres) break;
-			r2 = (h2-h)*(h2-h) + (v2-v)*(v2-v);
-			if (r2 > maxr2) continue;
-			if (CHK4(pixFlags, v2*hres+h2))
-				continue;	/* occupied */
-			if (frandom() < tv) {	/* use neighbor instead? */
-				i = random() % n;
-				r2 = nl[i][1]*hres + nl[i][0];
-				copycolor(ctmp, mypixel[r2]);
-				r2 = (h2-nl[i][0])*(h2-nl[i][0]) +
-						(v2-nl[i][1])*(v2-nl[i][1]);
-				if (r2 < MAXRAD2) {
-					scalecolor(ctmp, pixWeight[r2]);
-					addcolor(mypixel[v2*hres+h2], ctmp);
-					myweight[v2*hres+h2] += pixWeight[r2] *
-					      myweight[nl[i][1]*hres+nl[i][0]];
-					continue;
-				}
-			}
-						/* use central sample */
-			copycolor(ctmp, mypixel[p]);
-			scalecolor(ctmp, pixWeight[r2]);
-			addcolor(mypixel[v2*hres+h2], ctmp);
-			myweight[v2*hres+h2] += pixWeight[r2] * myweight[p];
-		}
+	p = v*hres + h;
+	if (*rf <= FTINY)		/* straight Voronoi regions */
+		ni = 0;
+	else {				/* weighted choice */
+		DCHECK(nd[n-1]>=MAXRAD2, CONSISTENCY, "out of range neighbor");
+		rnt[0] = pixWeight[nd[0]];
+		for (ni = 1; ni < n; ni++)
+			rnt[ni] = rnt[ni-1] + pixWeight[nd[ni]];
+		rvar = rnt[n-1]*pow(frandom(), 1. / *rf);
+		for (ni = 0; rvar > rnt[ni]+FTINY; ni++)
+			;
 	}
+	pn = nl[ni][1]*hres + nl[ni][0];
+	addcolor(mypixel[p], mypixel[pn]);
+	myweight[p] += myweight[pn];
 	return(1);
 }
 
@@ -266,12 +246,12 @@ double	ransamp;
 	if (pixWeight[0] <= FTINY)
 		init_wfunc();		/* initialize weighting function */
 	reset_flags();			/* set occupancy flags */
-	meet_neighbors(kill_occl,NULL);	/* eliminate occlusion errors */
+	meet_neighbors(1,kill_occl,NULL); /* identify occlusion errors */
 	reset_flags();			/* reset occupancy flags */
 	if (ransamp >= 0.)		/* spread samples over image */
-		meet_neighbors(random_samp,&ransamp);
+		meet_neighbors(0,random_samp,&ransamp);
 	else
-		meet_neighbors(smooth_samp,NULL);
+		meet_neighbors(1,smooth_samp,NULL);
 	free((char *)pixFlags);		/* free pixel flags */
 	pixFlags = NULL;
 }
@@ -294,7 +274,7 @@ reset_flags()			/* allocate/set/reset occupancy flags */
 
 init_wfunc()			/* initialize weighting function */
 {
-	register int4	r2;
+	register int	r2;
 	register double	d;
 
 	for (r2 = MAXRAD2; --r2; ) {
@@ -308,18 +288,18 @@ init_wfunc()			/* initialize weighting function */
 
 
 int
-findneigh(nl, h, v, rnl)	/* find NNEIGH neighbors for pixel */
+findneigh(nl, nd, h, v, rnl)	/* find NNEIGH neighbors for pixel */
 short	nl[NNEIGH][2];
+int	nd[NNEIGH];
 int	h, v;
 register short	(*rnl)[NNEIGH];
 {
 	int	nn = 0;
-	int4	d, nd[NNEIGH];
-	int	n, hoff;
+	int	d, n, hoff;
 	register int	h2, n2;
 
 	nd[NNEIGH-1] = MAXRAD2;
-	for (hoff = 1; hoff < hres; hoff = (hoff<0) - hoff) {
+	for (hoff = 0; hoff < hres; hoff = (hoff<=0) - hoff) {
 		h2 = h + hoff;
 		if (h2 < 0 | h2 >= hres)
 			continue;
@@ -327,7 +307,7 @@ register short	(*rnl)[NNEIGH];
 			break;
 		for (n = 0; n < NNEIGH && rnl[h2][n] < NINF; n++) {
 			d = (h2-h)*(h2-h) + (v-rnl[h2][n])*(v-rnl[h2][n]);
-			if (d >= nd[NNEIGH-1])
+			if (d == 0 | d >= nd[NNEIGH-1])
 				continue;
 			if (nn < NNEIGH)	/* insert neighbor */
 				nn++;
@@ -348,11 +328,13 @@ register short	(*rnl)[NNEIGH];
 }
 
 
-meet_neighbors(nf, dp)		/* run through samples and their neighbors */
+meet_neighbors(occ, nf, dp)	/* run through samples and their neighbors */
+int	occ;
 int	(*nf)();
 char	*dp;
 {
 	short	ln[NNEIGH][2];
+	int	nd[NNEIGH];
 	int	h, v, n, v2;
 	register short	(*rnl)[NNEIGH];
 					/* initialize bottom row list */
@@ -371,10 +353,12 @@ char	*dp;
 	v = 0;				/* do each row */
 	for ( ; ; ) {
 		for (h = 0; h < hres; h++) {
-			if (!CHK4(pixFlags, v*hres+h))
-				continue;	/* no one home */
-			n = findneigh(ln, h, v, rnl);
-			(*nf)(h, v, ln, n, dp);	/* call on neighbors */
+			if (!CHK4(pixFlags, v*hres+h) != !occ)
+				continue;	/* occupancy mismatch */
+						/* find neighbors */
+			n = findneigh(ln, nd, h, v, rnl);
+						/* call on neighbors */
+			(*nf)(h, v, ln, nd, n, dp);
 		}
 		if (++v >= vres)		/* reinitialize row list */
 			break;
