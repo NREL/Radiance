@@ -276,7 +276,8 @@ char  *argv[];
 		case 'w':				/* warnings */
 			rval = wrnvec != NULL;
 			bool(2,rval);
-			wrnvec = rval ? stderr_v : NULL;
+			if (rval) wrnvec = stderr_v;
+			else wrnvec = NULL;
 			break;
 		case 'e':				/* error file */
 			check(2,"s");
