@@ -167,25 +167,25 @@ ra2bn()					/* convert radiance to barneyscan */
 {
 	unsigned char	gmap[1024];
 	register int	i,k,c;
-	register COLOR	*inline;
+	register COLOR	*inl;
 	int	j;
 
-	if ((inline = (COLOR *)malloc(xmax*sizeof(COLOR))) == NULL)
+	if ((inl = (COLOR *)malloc(xmax*sizeof(COLOR))) == NULL)
 		quiterr("out of memory");
 	for (i = 0; i < 1024; i++)
 		gmap[i] = 256.*pow((i+.5)/1024., 1./gamma);
 	for (j = 0; j < ymax; j++) {
-		if (freadscan(inline, xmax, rafp) < 0)
+		if (freadscan(inl, xmax, rafp) < 0)
 			quiterr("error reading RADIANCE file");
 		for (i = 0; i < xmax; i++)
 			for (k = 0; k < 3; k++) {
-				c = 1024.*colval(inline[i],k);
+				c = 1024.*colval(inl[i],k);
 				if (c >= 1024)
 					c = 1023;
 				putc(gmap[c], bnfp[k]);
 			}
 	}
-	free((char *)inline);
+	free((char *)inl);
 }
 
 

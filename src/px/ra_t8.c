@@ -59,7 +59,7 @@ char  *progname;
 
 char  errmsg[128];
 
-COLR	*inline;
+COLR	*inl;
 
 pixel	*tarData;
 
@@ -304,7 +304,7 @@ register struct hdStruct  *h;
 	h->dataBits = 8;
 	h->imType = 0;
 					/* allocate scanline */
-	inline = (COLR *)emalloc(xmax*sizeof(COLR));
+	inl = (COLR *)emalloc(xmax*sizeof(COLR));
 					/* allocate targa data */
 	tarData = taralloc(h);
 
@@ -368,7 +368,7 @@ register rgbpixel  *l3;
 		if (inpic->bytes_line == 0) {
 			if (inpic->pos.y[y] == 0) {
 				while (inpic->nexty < y) {
-					if (freadcolrs(inline, xmax, inpic->fp) < 0)
+					if (freadcolrs(inl, xmax, inpic->fp) < 0)
 						quiterr("read error in picreadline3");
 					inpic->pos.y[++inpic->nexty] = ftell(inpic->fp);
 				}
@@ -378,15 +378,15 @@ register rgbpixel  *l3;
 			quiterr("seek error in picreadline3");
 	} else if (inpic->bytes_line == 0 && inpic->pos.y[inpic->nexty] == 0)
 		inpic->pos.y[inpic->nexty] = ftell(inpic->fp);
-	if (freadcolrs(inline, xmax, inpic->fp) < 0)	/* read scanline */
+	if (freadcolrs(inl, xmax, inpic->fp) < 0)	/* read scanline */
 		quiterr("read error in picreadline3");
 	inpic->nexty = y+1;
 							/* convert scanline */
-	normcolrs(inline, xmax, 0);
+	normcolrs(inl, xmax, 0);
 	for (i = 0; i < xmax; i++) {
-		l3[i].r = inline[i][RED];
-		l3[i].g = inline[i][GRN];
-		l3[i].b = inline[i][BLU];
+		l3[i].r = inl[i][RED];
+		l3[i].g = inl[i][GRN];
+		l3[i].b = inl[i][BLU];
 	}
 }
 
