@@ -4,7 +4,7 @@
 
 #ifdef  SMLFLT
 #define  FLOAT		float
-#define  FTINY		(1e-4)
+#define  FTINY		(4e-4)
 #else
 #define  FLOAT		double
 #define  FTINY		(1e-6)
