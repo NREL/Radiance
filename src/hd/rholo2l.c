@@ -56,7 +56,8 @@ start_rtrace()			/* start rtrace process */
 	rtargv[rtargc++] = "-y"; rtargv[rtargc++] = "0";
 	rtargv[rtargc++] = "-fff";
 	rtargv[rtargc++] = vbool(VDIST) ? "-ovl" : "-ovL";
-	rtargv[rtargc++] = nowarn ? "-w-" : "-w+";
+	if (nowarn)
+		rtargv[rtargc++] = "-w-";
 	if (npt > 1) {
 		mktemp(pfile);
 		rtargv[rtargc++] = "-PP"; rtargv[rtargc++] = pfile;
