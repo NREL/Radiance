@@ -17,13 +17,14 @@ static char SCCSid[] = "$SunId$ LBL";
 #define ULIBVAR		"RAYPATH"
 #endif
 
+char  *libpath = NULL;		/* library search path */
+
 
 FILE *
 fropen(fname)			/* find file and open for reading */
 register char  *fname;
 {
 	extern char  *strcpy(), *getenv();
-	static char  *searchpath;
 	FILE  *fp;
 	char  pname[256];
 	register char  *sp, *cp;
@@ -34,13 +35,13 @@ register char  *fname;
 	if (fname[0] == '/' || fname[0] == '.')	/* absolute path */
 		return(fopen(fname, "r"));
 		
-	if (searchpath == NULL) {		/* get search path */
-		searchpath = getenv(ULIBVAR);
-		if (searchpath == NULL)
-			searchpath = DEFPATH;
+	if (libpath == NULL) {			/* get search path */
+		libpath = getenv(ULIBVAR);
+		if (libpath == NULL)
+			libpath = DEFPATH;
 	}
 						/* check search path */
-	sp = searchpath;
+	sp = libpath;
 	do {
 		cp = pname;
 		while (*sp && (*cp = *sp++) != ':')
