@@ -149,23 +149,17 @@ openheader()			/* save standard output to header file */
 }
 
 
-closeheader()			/* done with header output */
-{
-	if (hfname == NULL)
-		return;
-	if (fflush(stdout) == EOF || (hfp = fopen(hfname, "r")) == NULL)
-		error(SYSTEM, "error reopening header file");
-#ifdef MSDOS
-	setmode(fileno(hfp), O_BINARY);
-#endif
-}
-
-
 dupheader()			/* repeat header on standard output */
 {
 	register int  c;
 
-	if (fseek(hfp, 0L, 0) < 0)
+	if (hfp == NULL) {
+		if ((hfp = fopen(hfname, "r")) == NULL)
+			error(SYSTEM, "error reopening header file");
+#ifdef MSDOS
+		setmode(fileno(hfp), O_BINARY);
+#endif
+	} else if (fseek(hfp, 0L, 0) < 0)
 		error(SYSTEM, "seek error on header file");
 	while ((c = getc(hfp)) != EOF)
 		putchar(c);
@@ -192,8 +186,6 @@ char  *pout, *zout, *prvr;
 	register char  *cp;
 	RESOLU	rs;
 	double	pa;
-					/* finished writing header */
-	closeheader();
 					/* check sampling */
 	if (psample < 1)
 		psample = 1;
@@ -217,13 +209,15 @@ char  *pout, *zout, *prvr;
 				error(USER, "unexpected EOF on view input");
 		prvr = fbuf;			/* mark for renaming */
 	}
-	if (pout != NULL) {
+	if (pout != NULL & prvr != NULL) {
 		sprintf(fbuf, pout, seq);
-		if (prvr != NULL && !strcmp(prvr, fbuf)) {	/* rename */
-			fbuf2[0] = '\0';
-			if ((cp = rindex(fbuf, '/')) != NULL)
-				strncpy(fbuf2, fbuf, cp-fbuf+1);
-			strcat(fbuf2, RFTEMPLATE);
+		if (!strcmp(prvr, fbuf)) {	/* rename */
+			strcpy(fbuf2, fbuf);
+			for (cp = fbuf2; *cp; cp++)
+				;
+			while (cp > fbuf2 && !ISDIRSEP(cp[-1]))
+				cp--;
+			strcpy(cp, RFTEMPLATE);
 			prvr = mktemp(fbuf2);
 			if (rename(fbuf, prvr) < 0 && errno != ENOENT) {
 				sprintf(errmsg,
