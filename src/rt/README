@@ -30,6 +30,7 @@ devmain.c	main for independent drivers
 devtable.c	device table for rview
 dielectric.c	shading function for transparent materials
 editline.c	routine for editing raw input for rview
+freeobjmem.c	routines for freeing unneeded object structures
 func.c		interface to calcomp functions
 glass.c		simpler shading function for thin glass surfaces
 initotypes.c	initialize ofun[] list for renderers
