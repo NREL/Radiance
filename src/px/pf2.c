@@ -36,6 +36,8 @@ extern char  *progname;
 
 extern COLOR  exposure;		/* exposure for frame */
 
+extern double  (*ourbright)();	/* brightness calculation function */
+
 #define	 AVGLVL		0.5	/* target mean brightness */
 
 double	avgbrt;			/* average picture brightness */
@@ -80,7 +82,7 @@ int  y;
 
 	for (x = 0; x < xres; x++) {
 	
-		cbrt = bright(scan[x]);
+		cbrt = (*ourbright)(scan[x]);
 
 		if (cbrt <= 0)
 			continue;
@@ -118,7 +120,7 @@ pass2init()			/* prepare for final pass */
 
 	scalecolor(exposure,  AVGLVL/avgbrt);
 	
-	sprdfact = spread / (hotlvl * bright(exposure))
+	sprdfact = spread / (hotlvl * (*ourbright)(exposure))
 			* ((double)xres*xres + (double)yres*yres) / 4.0;
 }
 
