@@ -51,13 +51,13 @@ char  *av[];
 				break;
 			case 'y':
 				checkarg("-ry",1);
-				theta = PI/180 * atof(av[++i]);
+				theta = PI/180.0 * atof(av[++i]);
 				m4[0][0] = m4[2][2] = cos(theta);
 				m4[0][2] = -(m4[2][0] = sin(theta));
 				break;
 			case 'z':
 				checkarg("-rz",1);
-				theta = PI/180 * atof(av[++i]);
+				theta = PI/180.0 * atof(av[++i]);
 				m4[0][0] = m4[1][1] = cos(theta);
 				m4[1][0] = -(m4[0][1] = sin(theta));
 				break;
