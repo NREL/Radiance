@@ -1,4 +1,4 @@
-/* Copyright (c) 1993 Regents of the University of California */
+/* Copyright (c) 1994 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -186,7 +186,11 @@ char	*argv[];
 	if (fillsamp == 1)
 		fillo &= ~F_BACK;
 						/* set view */
-	if (err = setview(&ourview)) {
+	if (ourview.vaft > FTINY)
+		err = "no aft clipping plane allowed";
+	else
+		err = setview(&ourview);
+	if (err != NULL) {
 		fprintf(stderr, "%s: %s\n", progname, err);
 		exit(1);
 	}
@@ -494,7 +498,7 @@ FVECT	pos;
 		pos[1] += .5 - ourview.voff;
 		return(0);
 	}
-	if (viewray(pt, direc, &theirview, pos[0], pos[1]) < 0)
+	if (viewray(pt, direc, &theirview, pos[0], pos[1]) < -FTINY)
 		return(-1);
 	pt[0] += direc[0]*pos[2];
 	pt[1] += direc[1]*pos[2];
