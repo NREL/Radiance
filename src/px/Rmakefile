@@ -151,7 +151,7 @@ ra_pict:    ra_pict.o
 	$(CC) $(CFLAGS) -o ra_pict ra_pict.o -lrt $(MLIB)
 
 ra_hexbit:	ra_hexbit.o
-	$(CC) $(CFLAGS) -o ra_hexbit ra_hexbit.o -lrt
+	$(CC) $(CFLAGS) -o ra_hexbit ra_hexbit.o -lrt $(MLIB)
 
 x10image:	ximage.o ciq.o cut.o closest.o xraster.o biq.o
 	$(CC) $(CFLAGS) -o x10image ximage.o xraster.o \

@@ -491,7 +491,7 @@ register HDBEAMI	*hb1, *hb2;
 hdloadbeams(hb, n, bf)	/* load a list of beams in optimal order */
 register HDBEAMI	*hb;	/* list gets sorted by hdfilord() */
 int	n;			/* list length */
-int	(*bf)();		/* callback function (optional) */
+void	(*bf)();		/* callback function (optional) */
 {
 	unsigned	origcachesize, memuse;
 	int	bytesloaded, needbytes, bytes2free;

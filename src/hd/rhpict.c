@@ -169,7 +169,7 @@ render_frame(bl, nb)		/* render frame from beam values */
 register PACKHEAD	*bl;
 int	nb;
 {
-	extern int	pixBeam();
+	extern void	pixBeam();
 	register HDBEAMI	*bil;
 	register int	i;
 

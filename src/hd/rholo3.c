@@ -77,7 +77,7 @@ register PACKHEAD	*b0, *b1;
 }
 
 
-int
+void
 dispbeam(b, hb)				/* display a holodeck beam */
 register BEAM	*b;
 register HDBEAMI	*hb;

@@ -277,7 +277,7 @@ done_rtrace()			/* clean up and close rtrace calculation */
 	int	status;
 					/* already closed? */
 	if (!nprocs)
-		return;
+		return(0);
 					/* flush beam queue */
 	done_packets(flush_queue());
 					/* sync holodeck */

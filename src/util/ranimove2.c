@@ -428,7 +428,7 @@ long	nrays;
 	int	i;
 					/* skip if nothing significant */
 	if (ndtset && cerrzero)
-		return;
+		return(0);
 					/* initialize priority list */
 	pord = (int *)malloc(sizeof(int)*hres*vres);
 	for (i = hres*vres; i--; )

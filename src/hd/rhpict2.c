@@ -53,6 +53,7 @@ extern float	*mydepth;	/* depth values (visibility culling) */
 extern int	hres, vres;	/* current horizontal and vertical res. */
 
 
+void
 pixBeam(bp, hb)			/* render a particular beam */
 BEAM	*bp;
 register HDBEAMI	*hb;
