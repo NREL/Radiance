@@ -41,9 +41,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  hashcolr(c)	((67*(c)[RED]+59*(c)[GRN]+71*(c)[BLU])%ncolors)
 
-#define  flush()	XFlush()
-
-#define  checkinp()	while (QLength() > 0) getevent()
+#define  checkinp()	while (XPending() > 0) getevent()
 
 #define  levptr(etype)	((etype *)&thisevent)
 
@@ -176,7 +174,7 @@ int  xres, yres;
 	} else						/* just clear */
 		XClear(gwind);
 	newmap();
-	flush();
+	checkinp();
 	return;
 fail:
 	stderr_v("Failure opening window in x_clear\n");
@@ -203,10 +201,9 @@ int  xmin, ymin, xmax, ymax;
 				pixval[ndx]);
 	}
 	if (nrays - lastflush >= WFLUSH) {
-		flush();
+		checkinp();
 		lastflush = nrays;
 	}
-	checkinp();
 }
 
 
@@ -228,7 +225,7 @@ char  *out;
 {
 	if (comline != NULL)
 		xt_puts(out, comline);
-	flush();
+	XFlush();
 }
 
 
@@ -255,7 +252,7 @@ int  *xp, *yp;
 	*yp = gheight-1 - levptr(XKeyOrButtonEvent)->y;
 	XFocusKeyboard(RootWindow);
 	XUngrabMouse();
-	flush();				/* insure release */
+	XFlush();				/* insure release */
 	if (c_last > c_first)			/* key pressed */
 		return(x_getc());
 						/* button pressed */
