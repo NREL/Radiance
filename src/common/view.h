@@ -11,6 +11,8 @@
 				/* view types */
 #define  VT_PER		'v'		/* perspective */
 #define  VT_PAR		'l'		/* parallel */
+#define  VT_ANG		'a'		/* angular fisheye */
+#define  VT_HEM		'h'		/* hemispherical fisheye */
 
 typedef struct {
 	int  type;		/* view type */
