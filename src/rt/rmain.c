@@ -338,7 +338,9 @@ unkopt:
 #endif
 #if  RPICT
 	signal(SIGALRM, report);
+#ifdef  BSD
 	diemask |= sigmask(SIGALRM);
+#endif
 #else
 	sigdie(SIGALRM, "Alarm clock");
 #endif
@@ -460,8 +462,10 @@ char  *msg;
 {
 	if (signal(signo, onsig) == SIG_IGN)
 		signal(signo, SIG_IGN);
+#ifdef  BSD
 	else
 		diemask |= sigmask(signo);
+#endif
 	sigerr[signo] = msg;
 }
 
