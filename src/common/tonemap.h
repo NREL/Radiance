@@ -1,12 +1,12 @@
-/* Copyright (c) 1997 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
-/* SCCSid "$SunId$ LBL" */
+/* SCCSid "$SunId$ SGI" */
 
 /*
  * Header file for tone mapping functions.
+ *
+ * Include after "color.h"
  */
-				/* required non-system header files */
-#include	"color.h"
 
 
 /****    Argument Macros    ****/
@@ -31,6 +31,7 @@
 #define	TM_NOCHROM	(BYTE *)NULL	/* indicate no chrominance */
 #define	TM_NOCHROMP	(BYTE **)NULL	/* indicate no chrominances */
 #define	TM_GETFILE	(FILE *)NULL	/* indicate file must be opened */
+
 
 /****    Error Return Values    ****/
 
