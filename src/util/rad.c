@@ -796,7 +796,8 @@ char	*ro;
 		return;
 	if (vdef(OPTFILE)) {
 		for (cp = ro; cp[1]; cp++)
-			if (isspace(cp[1]) && cp[2] == '-' && isalpha(cp[3]))
+			if (isspace(cp[1]) && (cp[2] == '@' ||
+					(cp[2] == '-' && isalpha(cp[3]))))
 				*cp = '\n';
 			else
 				*cp = cp[1];
