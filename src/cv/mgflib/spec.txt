@@ -144,8 +144,8 @@ of the axis, rotation follows the curl of the fingers.
 
 The transform command itself is also cumulative, and a transform
 command with no arguments is used to return to the previous
-condition.  It is best if transforms and their end statements
-("xf" by itself) are balanced in a file, so that later or enclosing
+condition.  It is necessary that transforms and their end statements
+("xf" by itself) be balanced in a file, so that later or enclosing
 files are not affected.
 
 Transformations apply only to geometric types, e.g. polygons, spheres, etc.
@@ -157,10 +157,9 @@ Arrays
 ======
 The -a N transform specification causes the following transform
 arguments to be repeated along with the contents of the included
-file N times.  (Note that this option is supported only for included
-files.)  The first instance of the geometry will be in its initial
-location; the second instance will be repositioned according to the
-named transformation; the third instance will be repositioned by
+objects N times.  The first instance of the geometry will be in its
+initial location; the second instance will be repositioned according
+to the named transformation; the third instance will be repositioned by
 applying this transformation twice, and so on up to N-1 applications.
 
 Multi-dimensional arrays may be specified with a single include
