@@ -23,9 +23,7 @@ static int	wg1[6] = {2,2,0,0,1,1};
 hdcompgrid(hp)			/* compute derived grid vector and index */
 register HOLO	*hp;
 {
-	FVECT	AxB;
 	double	d;
-	register FLOAT	*v;
 	register int	i, j;
 				/* initialize depth map */
 	if (hd_depthmap[0] < 1.) {
@@ -38,22 +36,13 @@ register HOLO	*hp;
 	}
 				/* compute grid coordinate vectors */
 	for (i = 0; i < 3; i++) {
-		fcross(AxB, hp->xv[(i+1)%3], v=hp->xv[(i+2)%3]);
-		VCOPY(hp->wn[i], AxB);
+		fcross(hp->wn[i], hp->xv[(i+1)%3], hp->xv[(i+2)%3]);
 		if (normalize(hp->wn[i]) == 0.)
 			error(USER, "degenerate holodeck section");
 		hp->wo[i<<1] = DOT(hp->wn[i],hp->orig);
-		hp->wo[i<<1|1] = hp->wo[i<<1] + DOT(hp->wn[i],hp->xv[i]);
-		fcross(hp->gv[i][0], v, AxB);
-		d = DOT(v,v) / DOT(hp->gv[i][0],hp->gv[i][0]) *
-				hp->grid[(i+1)%3];
-		for (j = 0; j < 3; j++)
-			hp->gv[i][0][j] *= d;
-		fcross(hp->gv[i][1], AxB, v=hp->xv[(i+1)%3]);
-		d = DOT(v,v) / DOT(hp->gv[i][1],hp->gv[i][1]) *
-				hp->grid[(i+2)%3];
-		for (j = 0; j < 3; j++)
-			hp->gv[i][1][j] *= d;
+		d = DOT(hp->wn[i],hp->xv[i]);
+		hp->wo[i<<1|1] = hp->wo[i<<1] + d;
+		hp->wg[i] = (double)hp->grid[i] / d;
 	}
 				/* compute linear depth range */
 	hp->tlin = VLEN(hp->xv[0]) + VLEN(hp->xv[1]) + VLEN(hp->xv[2]);
@@ -248,6 +237,22 @@ double	d;
 }
 
 
+hdgrid(gp, hp, wp)		/* compute grid coordinates */
+FVECT	gp;		/* returned */
+register HOLO	*hp;
+FVECT	wp;
+{
+	FVECT	vt;
+
+	vt[0] = wp[0] - hp->orig[0];
+	vt[1] = wp[1] - hp->orig[1];
+	vt[2] = wp[2] - hp->orig[2];
+	gp[0] = DOT(vt, hp->wn[0]) * hp->wg[0];
+	gp[1] = DOT(vt, hp->wn[1]) * hp->wg[1];
+	gp[2] = DOT(vt, hp->wn[2]) * hp->wg[2];
+}
+
+
 double
 hdray(ro, rd, hp, gc, r)	/* compute ray within a beam */
 FVECT	ro, rd;		/* returned */
@@ -328,17 +333,13 @@ FVECT	ro, rd;		/* rd should be normalized */
 		vt[0] = p[i][0] - hp->orig[0];
 		vt[1] = p[i][1] - hp->orig[1];
 		vt[2] = p[i][2] - hp->orig[2];
-		if (gc[i].w & 1) {
-			v = hp->xv[gc[i].w>>1];
-			vt[0] -= *v++; vt[1] -= *v++; vt[2] -= *v;
-		}
-		v = hp->gv[gc[i].w>>1][0];
-		d = DOT(vt, v);
+		v = hp->wn[wg0[gc[i].w]];
+		d = DOT(vt, v) * hp->wg[wg0[gc[i].w]];
 		if (d < 0. || (gc[i].i[0] = d) >= hp->grid[wg0[gc[i].w]])
 			return(FHUGE);		/* outside wall */
 		r[i][0] = 256. * (d - gc[i].i[0]);
-		v = hp->gv[gc[i].w>>1][1];
-		d = DOT(vt, v);
+		v = hp->wn[wg1[gc[i].w]];
+		d = DOT(vt, v) * hp->wg[wg1[gc[i].w]];
 		if (d < 0. || (gc[i].i[1] = d) >= hp->grid[wg1[gc[i].w]])
 			return(FHUGE);		/* outside wall */
 		r[i][1] = 256. * (d - gc[i].i[1]);
