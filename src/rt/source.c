@@ -164,8 +164,10 @@ register int  sn;		/* source number */
 	if (source[sn].sflags & SDISTANT) {
 		if (source[sn].sflags & SSPOT) {	/* check location */
 			for (i = 0; i < 3; i++)
-				vd[i] = sr->rorg[i] - source[sn].sl.s->aim[i];
+				vd[i] = source[sn].sl.s->aim[i] - sr->rorg[i];
 			d = DOT(sr->rdir,vd);
+			if (d <= FTINY)
+				return(0.0);
 			d = DOT(vd,vd) - d*d;
 			if (PI*d > source[sn].sl.s->siz)
 				return(0.0);

@@ -66,7 +66,7 @@ int  n;
 	double  coef;
 	register int  j;
 					/* set up function */
-	setfunc(m, r);
+	setmap(m, r, &((FULLXF *)m->os)->b);
 	sa = m->oargs.sarg + 4*n;
 					/* compute coefficient */
 	errno = 0;
@@ -79,7 +79,12 @@ int  n;
 	errno = 0;
 	for (j = 0; j < 3; j++)
 		nr.rdir[j] = varvalue(sa[j+1]);
-	if (errno || normalize(nr.rdir) == 0.0)
+	if (errno)
+		goto computerr;
+	multv3(nr.rdir, nr.rdir, ((FULLXF *)m->os)->f.xfm);
+	if (r->rox != NULL)
+		multv3(nr.rdir, nr.rdir, r->rox->f.xfm);
+	if (normalize(nr.rdir) == 0.0)
 		goto computerr;
 					/* compute value */
 	if (r->rsrc >= 0)
@@ -133,7 +138,7 @@ int  n;
 	if (!(*ofun[o->otype].funp)(o, &tr))
 		return(0);		/* no intersection! */
 				/* compute redirection */
-	setfunc(m, &tr);
+	setmap(m, &tr, &((FULLXF *)m->os)->b);
 	errno = 0;
 	if (varvalue(sa[0]) <= FTINY)
 		return(0);		/* insignificant */
@@ -143,12 +148,14 @@ int  n;
 		newdir[i] = varvalue(sa[i+1]);
 	if (errno)
 		goto computerr;
+	multv3(newdir, newdir, ((FULLXF *)m->os)->f.xfm);
+					/* normalization unnecessary */
 	newdot = DOT(newdir, nv);
 	if (newdot <= FTINY && newdot >= -FTINY)
 		return(0);		/* new dir parallels plane */
 				/* everything OK -- compute shear */
 	for (i = 0; i < 3; i++)
-		h[i] = tr.rdir[i]/olddot + newdir[i]/newdot;
+		h[i] = newdir[i]/newdot - tr.rdir[i]/olddot;
 	setident4(pm);
 	for (j = 0; j < 3; j++) {
 		for (i = 0; i < 3; i++)
@@ -172,11 +179,25 @@ static
 dir_check(m)			/* check arguments and load function file */
 register OBJREC  *m;
 {
+	register FULLXF  *mxf;
 	register int  ff;
 
-	ff = m->otype == MAT_DIRECT1 ? 4 : 8;
-	if (ff >= m->oargs.nsargs)
+	ff = m->otype == MAT_DIRECT1 ? 5 : 9;
+	if (ff > m->oargs.nsargs)
 		objerror(m, USER, "too few arguments");
 	if (!vardefined(m->oargs.sarg[0]))
-		loadfunc(m->oargs.sarg[ff]);
+		loadfunc(m->oargs.sarg[ff-1]);
+	if (m->os == NULL) {
+		mxf = (FULLXF *)malloc(sizeof(FULLXF));
+		if (mxf == NULL)
+			error(SYSTEM, "out of memory in dir_check");
+		if (fullxf(mxf, m->oargs.nsargs-ff, m->oargs.sarg+ff) !=
+				m->oargs.nsargs-ff)
+			objerror(m, USER, "bad transform");
+		if (mxf->f.sca < 0.0)
+			mxf->f.sca = -mxf->f.sca;
+		if (mxf->b.sca < 0.0)
+			mxf->b.sca = -mxf->b.sca;
+		m->os = (char *)mxf;
+	}
 }
