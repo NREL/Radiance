@@ -753,7 +753,7 @@ BMPwriteScanline(BMPWriter *bw)
 			break;
 		val = *sp;			/* output run */
 		for (cnt = 1; cnt < 255; cnt++)
-			if (!--n | *++sp != val)
+			if ((!--n) | (*++sp != val))
 				break;
 		wrbyte(cnt, bw);
 		wrbyte(val, bw);
