@@ -207,7 +207,7 @@ that the same vertices will appear under different names, so that none
 of the above would help to merge them.  The most sure-fire approach to
 linking identical vertices is therefore to hash the point and normal
 values directly and use the functions in lookup.c to associate them.
-You will have to write your own hash function, and I recommend making
+You will have to write your own hash function, and we recommend making
 one that allows a little slop so that nearly identical points hash to
 the same value.
 
@@ -239,9 +239,9 @@ At this point, the legal issues related to this parser have not been
 worked out.  The intent is to offer it free of charge to all those who
 wish to use it (with no guarantees, of course).  However, we may decide
 that copyright protections are necessary to prevent unauthorized versions
-of the parser that do not properly support the MGF standard from getting
-spread around.  Since this is a pre-release, we trust that you will not
-share it with anyone without getting our permission first.
+of the parser, which do not properly support the MGF standard, from
+getting spread around.  Since this is a pre-release, we trust that you
+will not share it with anyone without getting our permission first.
 
 Questions
 =========
