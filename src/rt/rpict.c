@@ -70,7 +70,7 @@ extern long  tstart;			/* starting time */
 
 extern long  nrays;			/* number of rays traced */
 
-#define  MAXDIV		15		/* maximum sample size */
+#define  MAXDIV		16		/* maximum sample size */
 
 #define  pixjitter()	(.5+dstrpix*(.5-frandom()))
 
@@ -123,6 +123,7 @@ char  *zfile, *oldfile;
 	extern long  lseek();
 	COLOR  *scanbar[MAXDIV+1];	/* scanline arrays of pixel values */
 	float  *zbar[MAXDIV+1];		/* z values */
+	char  *sampdens;		/* previous sample density */
 	int  ypos;			/* current scanline */
 	int  ystep;			/* current y step size */
 	int  hstep;			/* h step size */
@@ -145,6 +146,16 @@ char  *zfile, *oldfile;
 		if (scanbar[i] == NULL)
 			goto memerr;
 	}
+	hstep = (psample*140+49)/99;		/* quincunx sampling */
+	ystep = (psample*99+70)/140;
+	if (hstep > 2) {
+		i = hresolu/hstep + 2;
+		if ((sampdens = malloc(i)) == NULL)
+			goto memerr;
+		while (i--)
+			sampdens[i] = hstep;
+	} else
+		sampdens = NULL;
 					/* open z file */
 	if (zfile != NULL) {
 		if ((zfd = open(zfile, O_WRONLY|O_CREAT, 0666)) == -1) {
@@ -176,9 +187,7 @@ char  *zfile, *oldfile;
 #endif
 	signal(SIGALRM, report);
 	ypos = vresolu-1 - i;
-	hstep = (psample*140+49)/99;		/* quincunx sampling */
-	ystep = (psample*99+70)/140;
-	fillscanline(scanbar[0], zbar[0], hresolu, ypos, hstep);
+	fillscanline(scanbar[0], zbar[0], sampdens, hresolu, ypos, hstep);
 						/* compute scanlines */
 	for (ypos -= ystep; ypos > -ystep; ypos -= ystep) {
 							/* bottom adjust? */
@@ -193,7 +202,8 @@ char  *zfile, *oldfile;
 		zbar[ystep] = zbar[0];
 		zbar[0] = zptr;
 							/* fill base line */
-		fillscanline(scanbar[0], zbar[0], hresolu, ypos, hstep);
+		fillscanline(scanbar[0], zbar[0], sampdens,
+				hresolu, ypos, hstep);
 							/* fill bar */
 		fillscanbar(scanbar, zbar, hresolu, ypos, ystep);
 							/* write it out */
@@ -234,6 +244,8 @@ char  *zfile, *oldfile;
 		goto writerr;
 	for (i = 0; i <= psample; i++)
 		free((char *)scanbar[i]);
+	if (sampdens != NULL)
+		free(sampdens);
 	pctdone = 100.0;
 	return;
 writerr:
@@ -243,30 +255,34 @@ memerr:
 }
 
 
-fillscanline(scanline, zline, xres, y, xstep)	/* fill scan line at y */
+fillscanline(scanline, zline, sd, xres, y, xstep)	/* fill scan at y */
 register COLOR  *scanline;
 register float  *zline;
+register char  *sd;
 int  xres, y, xstep;
 {
 	static int  nc = 0;		/* number of calls */
-	int  b = xstep;
+	int  bl = xstep, b = xstep;
 	double  z;
 	register int  i;
 	
 	z = pixvalue(scanline[0], 0, y);
 	if (zline) zline[0] = z;
 				/* zig-zag start for quincunx pattern */
-	for (i = nc++ & 1 ? xstep/2 : xstep; i < xres-1+xstep; i += xstep) {
+	for (i = ++nc & 1 ? xstep : xstep/2; i < xres-1+xstep; i += xstep) {
 		if (i >= xres) {
 			xstep += xres-1-i;
 			i = xres-1;
 		}
 		z = pixvalue(scanline[i], i, y);
 		if (zline) zline[i] = z;
-		
+		if (sd) b = sd[0] > sd[1] ? sd[0] : sd[1];
 		b = fillsample(scanline+i-xstep, zline ? zline+i-xstep : NULL,
 				i-xstep, y, xstep, 0, b/2);
+		if (sd) *sd++ = nc & 1 ? bl : b;
+		bl = b;
 	}
+	if (sd && nc & 1) *sd = bl;
 }
 
 
