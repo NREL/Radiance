@@ -37,6 +37,7 @@ int  ndims = 0;				/* number of sampling dimensions */
 int  samplendx = 0;			/* index for this sample */
 
 int  imm_irrad = 0;			/* compute immediate irradiance? */
+int  lim_dist = 0;			/* limit distance? */
 
 int  inform = 'a';			/* input format */
 int  outform = 'a';			/* output format */
@@ -82,6 +83,8 @@ char  *amblist[128];			/* ambient include/exclude list */
 int  ambincl = -1;			/* include == 1, exclude == 0 */
 
 extern OBJREC  Lamb;			/* a Lambertian surface */
+extern OBJREC  Aftplane;		/* aft clipping object */
+
 
 static RAY  thisray;			/* for our convenience */
 
@@ -128,6 +131,7 @@ char  *fname;
 	long  vcount = hresolu>1 ? hresolu*vresolu : vresolu;
 	long  nextflush = hresolu;
 	FILE  *fp;
+	double	d;
 	FVECT  orig, direc;
 					/* set up input */
 	if (fname == NULL)
@@ -162,7 +166,8 @@ char  *fname;
 	while (getvec(orig, inform, fp) == 0 &&
 			getvec(direc, inform, fp) == 0) {
 
-		if (normalize(direc) == 0.0) {		/* zero ==> flush */
+		d = normalize(direc);
+		if (d == 0.0) {				/* zero ==> flush */
 			bogusray();
 			if (--nextflush <= 0) {
 				fflush(stdout);
@@ -174,7 +179,7 @@ char  *fname;
 			if (imm_irrad)
 				irrad(orig, direc);
 			else
-				rad(orig, direc);
+				rad(orig, direc, lim_dist ? d : 0.0);
 							/* flush if time */
 			if (--nextflush == 0) {
 				fflush(stdout);
@@ -259,16 +264,22 @@ bogusray()			/* print out empty record */
 }
 
 
-rad(org, dir)			/* compute and print ray value(s) */
+rad(org, dir, dmax)		/* compute and print ray value(s) */
 FVECT  org, dir;
+double	dmax;
 {
 	VCOPY(thisray.rorg, org);
 	VCOPY(thisray.rdir, dir);
-	thisray.rmax = 0.0;
+	thisray.rmax = dmax;
 	rayorigin(&thisray, NULL, PRIMARY, 1.0);
-	if (castonly)
-		localhit(&thisray, &thescene) || sourcehit(&thisray);
-	else
+	if (castonly) {
+		if (!localhit(&thisray, &thescene))
+			if (thisray.ro == &Aftplane) {	/* clipped */
+				thisray.ro = NULL;
+				thisray.rot = FHUGE;
+			} else
+				sourcehit(&thisray);
+	} else
 		rayvalue(&thisray);
 	printvals(&thisray);
 }
