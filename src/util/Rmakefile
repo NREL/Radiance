@@ -15,7 +15,7 @@ INSTDIR = /usr/local/bin
 
 LIBDIR = /usr/local/lib/ray
 
-PROGS = findglare xglaresrc glarendx rpiece rad ranimate vwright getinfo
+PROGS = findglare xglaresrc glarendx rpiece rad ranimate vwright getinfo vwrays
 
 all:	$(PROGS)
 
@@ -66,6 +66,9 @@ rpiece:	rpiece.o Version.o
 
 vwright:	vwright.o
 	$(CC) $(CFLAGS) -o vwright vwright.o -lrt -lm
+
+vwrays:		vwrays.o
+	$(CC) $(CFLAGS) -o vwrays vwrays.o -lrt -lm
 
 getinfo:	getinfo.o
 	$(CC) $(CFLAGS) -o getinfo getinfo.o -lrt
