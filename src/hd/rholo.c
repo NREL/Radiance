@@ -88,6 +88,8 @@ char	*argv[];
 			goto userr;
 		}
 						/* get root file name */
+	if (i >= argc)
+		goto userr;
 	rootname(froot, hdkfile=argv[i++]);
 						/* load variables? */
 	if (i < argc)
