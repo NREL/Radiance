@@ -19,4 +19,5 @@
 			"Out of memory",\
 			"Seek failure",\
 			"Illegal material specification",\
+			"Input line too long",\
 			}
