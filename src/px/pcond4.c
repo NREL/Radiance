@@ -381,7 +381,7 @@ initacuity()			/* initialize variable acuity sampling */
 			}
 			fcross(cp, diffx, diffy);
 			omega = 0.5 * sqrt(DOT(cp,cp));
-			if (omega <= FTINY)
+			if (omega <= FTINY*FTINY)
 				tsampr(x,y) = 1.;
 			else if ((tsampr(x,y) = PI/180. / sqrt(omega) /
 					hacuity(plum(fovscan(y)[x]))) > maxsr)
