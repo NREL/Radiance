@@ -16,8 +16,8 @@ else
 		if ( $status ) exit 1
 	end
 endif
-set Lmin=`total -l $tf.dat | rcalc -e 'L=$1*179;$1=if(L-1e-7,log10(L),-7)'`
-set Lmax=`total -u $tf.dat | rcalc -e '$1=log10($1*179)'`
+set Lmin=`total -l $tf.dat | rcalc -e 'L=$1*179;$1=if(L-1e-7,log10(L)-.01,-7)'`
+set Lmax=`total -u $tf.dat | rcalc -e '$1=log10($1*179)+.01'`
 rcalc -e 'L=$1*179;cond=L-1e-7;$1=log10(L)' $tf.dat \
 	| histo $Lmin $Lmax 100
 quit:
