@@ -36,13 +36,16 @@ DEFINE_ICON_FROM_IMAGE(sun_icon, icon_image);
 #define FIRSTCOLOR	2		/* first usable entry */
 #define NCOLORS		251		/* number of usable colors */
 
+#define CWIDTH		1100		/* starting canvas width */
+#define CHEIGHT		800		/* starting canvas height */
+
 int  sun_close(), sun_clear(), sun_paintr(), sun_getcur(),
 		sun_comout(), sun_comin();
 
 static struct driver  sun_driver = {
 	sun_close, sun_clear, sun_paintr,
 	sun_getcur, sun_comout, sun_comin,
-	NULL, 1.0, 1100, 800
+	NULL, 1.0, CWIDTH, CHEIGHT
 };
 
 static FILE  *ttyin;
@@ -61,6 +64,7 @@ sun_init(name, id)		/* initialize SunView */
 char  *name, *id;
 {
 	extern Notify_value	newinput();
+	extern int	canvas_resize();
 	char	*ttyargv[3], arg1[16];
 	int	pd[2];
 	int	com;
@@ -102,6 +106,7 @@ char  *name, *id;
 	notify_set_input_func(sun_init, newinput, pd[0]);
 	canvas = window_create(frame, CANVAS,
 			CANVAS_RETAINED, FALSE,
+			CANVAS_RESIZE_PROC, canvas_resize,
 			WIN_INPUT_DESIGNEE, window_get(tty,WIN_DEVICE_NUMBER),
 			WIN_CONSUME_PICK_EVENTS, WIN_NO_EVENTS,
 				MS_LEFT, MS_MIDDLE, MS_RIGHT, 0,
@@ -146,6 +151,19 @@ int  fd;
 
 
 static
+canvas_resize(canvas, width, height)	/* canvas being resized */
+Canvas	canvas;
+int	width, height;
+{
+	if (width == sun_driver.xsiz && height == sun_driver.ysiz)
+		return;
+	sun_driver.xsiz = xres = width;
+	sun_driver.ysiz = yres = height;
+	strcpy(getcombuf(&sun_driver), "new\n");
+}
+
+
+static
 sun_clear(nwidth, nheight)		/* clear our canvas */
 int  nwidth, nheight;
 {
@@ -153,17 +171,12 @@ int  nwidth, nheight;
 
 	pw = canvas_pixwin(canvas);
 	if (nwidth != xres || nheight != yres) {
-		window_set(frame, WIN_SHOW, FALSE, 0);
-		window_set(canvas, CANVAS_AUTO_SHRINK, TRUE,
-				CANVAS_AUTO_EXPAND, TRUE, 0);
+		sun_driver.xsiz = xres = nwidth;
+		sun_driver.ysiz = yres = nheight;
 		window_set(canvas, WIN_WIDTH, nwidth, WIN_HEIGHT, nheight, 0);
-		window_set(canvas, CANVAS_AUTO_SHRINK, FALSE,
-				CANVAS_AUTO_EXPAND, FALSE, 0);
 		window_fit(frame);
 		window_set(frame, WIN_SHOW, TRUE, 0);
 		notify_do_dispatch();
-		xres = nwidth;
-		yres = nheight;
 	}
 	pw_writebackground(pw, 0, 0, xres, xres, PIX_SRC);
 	new_ctab(NCOLORS);
@@ -190,10 +203,13 @@ static
 sun_comin(buf, prompt)		/* input a string from the command line */
 char  *buf, *prompt;
 {
-	Notify_value  newinput();
-						/* echo prompt */
+	extern Notify_value  newinput();
+						/* check command buffer */
 	if (prompt != NULL)
-		sun_comout(prompt);
+		if (fromcombuf(buf, &sun_driver))
+			return;
+		else
+			sun_comout(prompt);
 						/* await signal */
 	if (sun_driver.inpready <= 0)
 		newinput(sun_init, fileno(ttyin));
