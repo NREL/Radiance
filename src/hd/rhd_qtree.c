@@ -10,6 +10,10 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #include "standard.h"
 #include "rhd_qtree.h"
+				/* quantity of leaves to free at a time */
+#ifndef LFREEPCT
+#define	LFREEPCT	25
+#endif
 
 RTREE	qtrunk;			/* our quadtree trunk */
 double	qtDepthEps = .02;	/* epsilon to compare depths (z fraction) */
@@ -58,7 +62,7 @@ int	really;
 {
 	register int	i;
 
-	qtrunk.flgs = 0;
+	qtrunk.flgs = CH_ANY;
 	nexttwig = 0;
 	if (twigbundle == NULL)
 		return;
@@ -323,11 +327,12 @@ qtMapLeaves(redo)		/* map our leaves to RGB */
 int	redo;
 {
 	int	aorg, alen, borg, blen;
+					/* recompute mapping? */
+	if (redo)
+		qtL.tml = qtL.bl;
 					/* already done? */
 	if (qtL.tml == qtL.tl)
 		return(1);
-	if (redo)
-		qtL.tml = qtL.bl;
 					/* compute segments */
 	aorg = qtL.tml;
 	if (qtL.tl >= aorg) {
