@@ -153,15 +153,15 @@ pcomb $pc0args -e 'v=(y+.5)/yres;vleft=v;vright=v' \
 		-x $legwidth -y $legheight > $td/scol.pic
 ( echo $label; cnt $ndivs \
 		| rcalc -e '$1='"($scale)*imap(($ndivs-.5-"'$1'")/$ndivs)" \
-		-e "$imap" ) \
+		-e "$imap" | sed -e 's/\(\.[0-9][0-9][0-9]\)[0-9]*/\1/' ) \
 	| psign -s -.15 -cf 1 1 1 -cb 0 0 0 \
 		-h `ev "floor($legheight/$ndivs+.5)"` > $td/slab.pic
 if ( $?doextrem ) then
 	pextrem -o $picture > $td/extrema
 	set minpos=`sed 2d $td/extrema | rcalc -e '$2=$2;$1=$1+'"$legwidth"`
-	set minval=`rcalc -e '$1=($3*.3+$4*.59+$5*.11)*'"$mult" $td/extrema | sed -e 2d -e 's/\(.....\).*$/\1/'`
+	set minval=`rcalc -e '$1=($3*.27+$4*.67+$5*.06)*'"$mult" $td/extrema | sed -e 2d -e 's/\(\.[0-9][0-9][0-9]\)[0-9]*/\1/'`
 	set maxpos=`sed 1d $td/extrema | rcalc -e '$2=$2;$1=$1+'"$legwidth"`
-	set maxval=`rcalc -e '$1=($3*.3+$4*.59+$5*.11)*'"$mult" $td/extrema | sed -e 1d -e 's/\(.....\).*$/\1/'`
+	set maxval=`rcalc -e '$1=($3*.27+$4*.67+$5*.06)*'"$mult" $td/extrema | sed -e 1d -e 's/\(\.[0-9][0-9][0-9]\)[0-9]*/\1/'`
 	psign -s -.15 -a 2 -h 16 $minval > $td/minv.pic
 	psign -s -.15 -a 2 -h 16 $maxval > $td/maxv.pic
 	pcomb $pc0args $pc1args $picture $cpict \
