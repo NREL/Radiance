@@ -928,7 +928,7 @@ char	**av;
 	if ((rv = handle_it(MG_E_FACE, i, newav)) != MG_OK)
 		return(rv);
 					/* compute face normal */
-	if ((cv0 = c_getvert(av[2])) == NULL)
+	if ((cv0 = c_getvert(av[1])) == NULL)
 		return(MG_EUNDEF);
 	norm[0] = norm[1] = norm[2] = 0.;
 	v1[0] = v1[1] = v1[2] = 0.;
