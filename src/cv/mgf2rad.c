@@ -307,16 +307,23 @@ char	**av;
 	if ((mat = material()) == NULL)	/* get material */
 		return(MG_EBADMAT);
 	if (ac <= 5) {				/* check for smoothing */
+		C_VERTEX	*cva[5];
 		for (i = 1; i < ac; i++) {
-			if ((cv = c_getvert(av[i])) == NULL)
+			if ((cva[i-1] = c_getvert(av[i])) == NULL)
 				return(MG_EUNDEF);
-			if (is0vect(cv->n))
+			if (is0vect(cva[i-1]->n))
 				break;
 		}
-		if (i == ac) {			/* break into triangles */
-			do_tri(mat, av[1], av[2], av[3]);
+		if (i == ac) {
+			i = flat_tri(cva[0]->p, cva[1]->p, cva[2]->p,
+					cva[0]->n, cva[1]->n, cva[2]->n);
+			if (i < 0)
+				return(MG_OK);	/* degenerate (error?) */
+		}
+		if (!i) {			/* smoothed triangles */
+			do_tri(mat, cva[0], cva[1], cva[2]);
 			if (ac == 5)
-				do_tri(mat, av[3], av[4], av[1]);
+				do_tri(mat, cva[2], cva[3], cva[0]);
 			return(MG_OK);
 		}
 	}
@@ -398,24 +405,22 @@ char	**av;
 }
 
 
-do_tri(mat, vn1, vn2, vn3)		/* put out smoothed triangle */
-char	*mat, *vn1, *vn2, *vn3;
+do_tri(mat, cv1, cv2, cv3)		/* put out smoothed triangle */
+char	*mat;
+C_VERTEX	*cv1, *cv2, *cv3;
 {
 	static int	ntris;
 	BARYCCM	bvecs;
 	FLOAT	bcoor[3][3];
-	C_VERTEX	*cv1, *cv2, *cv3;
+	C_VERTEX	*cvt;
 	FVECT	v1, v2, v3;
 	FVECT	n1, n2, n3;
 	register int	i;
-			/* the following is repeat code, so assume it's OK */
-	cv2 = c_getvert(vn2);
-	if (invert) {
-		cv3 = c_getvert(vn1);
-		cv1 = c_getvert(vn3);
-	} else {
-		cv1 = c_getvert(vn1);
-		cv3 = c_getvert(vn3);
+
+	if (invert) {			/* swap vertex order if inverted */
+		cvt = cv1;
+		cv1 = cv3;
+		cv3 = cvt;
 	}
 	xf_xfmpoint(v1, cv1->p);
 	xf_xfmpoint(v2, cv2->p);

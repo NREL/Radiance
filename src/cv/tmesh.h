@@ -12,3 +12,14 @@ typedef struct {
 	int	ax;		/* major axis */
 	FLOAT	tm[2][3];	/* transformation */
 } BARYCCM;
+
+#ifndef COSTOL
+#define COSTOL		0.99985		/* cosine of tolerance for smoothing */
+#endif
+
+				/* flat_tri() return values */
+#define ISBENT		0		/* is not flat */
+#define ISFLAT		1		/* is flat */
+#define RVBENT		2		/* reversed and not flat */
+#define RVFLAT		3		/* reversed and flat */
+#define DEGEN		-1		/* degenerate (zero area) */
