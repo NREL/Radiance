@@ -671,7 +671,7 @@ oconv()				/* run oconv and mkillum if necessary */
 			unlink(vval(OCTREE));
 			exit(1);
 		}
-		octreedate = time(0);
+		octreedate = time((unsigned long *)NULL);
 	}
 	if (oct1name == vval(OCTREE))		/* no mkillum? */
 		oct1date = octreedate > matdate ? octreedate : matdate;
@@ -697,7 +697,7 @@ oconv()				/* run oconv and mkillum if necessary */
 			unlink(oct0name);
 			exit(1);
 		}
-		oct0date = time(0);
+		oct0date = time((unsigned long *)NULL);
 	}
 	mkillumopts(mkopts);			/* build mkillum command */
 	mktemp(illumtmp);
@@ -725,7 +725,7 @@ oconv()				/* run oconv and mkillum if necessary */
 		unlink(oct1name);
 		exit(1);
 	}
-	oct1date = time(0);
+	oct1date = time((unsigned long *)NULL);
 	rmfile(illumtmp);
 }
 
