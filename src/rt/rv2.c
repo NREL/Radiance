@@ -246,7 +246,6 @@ register char  *s;
 getexposure(s)				/* get new exposure */
 char  *s;
 {
-	double  atof(), pow(), fabs();
 	char  buf[128];
 	register char  *cp;
 	register PNODE  *p;

@@ -170,7 +170,6 @@ command(prompt)			/* get/execute command */
 char  *prompt;
 {
 #define  badcom(s)	strncmp(s, inpbuf, args-inpbuf-1)
-	double  atof();
 	char  inpbuf[256];
 	char  *args;
 again:

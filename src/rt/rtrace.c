@@ -237,7 +237,6 @@ int  fmt;
 FILE  *fp;
 {
 	extern char  *fgetword();
-	extern double  atof();
 	static float  vf[3];
 	char  buf[32];
 	register int  i;

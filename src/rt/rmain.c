@@ -120,7 +120,6 @@ char  *argv[];
 				case 'n': case 'N': case 'f': case 'F': \
 				case '-': case '0': var = 0; break; \
 				default: goto badopt; }
-	extern double  atof();
 	extern char  *getenv();
 	char  *err;
 	char  *recover = NULL;
