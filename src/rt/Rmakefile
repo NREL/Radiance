@@ -1,5 +1,5 @@
 #
-# SCCSid "$SunId$ LBL"
+# SCCSid "$SunId$ SGI"
 # Compiles for ray tracing programs.
 #
 
@@ -76,10 +76,8 @@ MATSRC = aniso.c normal.c dielectric.c m_clip.c glass.c m_brdf.c \
 MODOBJS = p_func.o t_func.o p_data.o t_data.o text.o mx_func.o mx_data.o
 MODSRC = p_func.c t_func.c p_data.c t_data.c text.c mx_func.c mx_data.c
 
-SUPPOBJS = zeroes.o calexpr.o caldefn.o func.o noise3.o malloc.o data.o \
-	readfargs.o
-SUPPSRC = zeroes.c calexpr.c caldefn.c func.c noise3.c data.c malloc.c \
-	readfargs.c
+SUPPOBJS = calexpr.o caldefn.o func.o noise3.o malloc.o data.o readfargs.o
+SUPPSRC = calexpr.c caldefn.c func.c noise3.c data.c malloc.c readfargs.c
 
 HEADERS = ambient.h ray.h data.h otspecial.h source.h
 
