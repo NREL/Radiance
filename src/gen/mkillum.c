@@ -10,6 +10,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "mkillum.h"
 
+#include  <signal.h>
+
 #include  <ctype.h>
 
 				/* default parameters */
@@ -37,10 +39,10 @@ struct illum_args  thisillum = {	/* our illum and default values */
 		DFLMAT,
 		0,
 		VOIDID,
+		SAMPDENS,
 		NSAMPS,
 	};
 
-int	sampdens = SAMPDENS;	/* sample point density */
 char	matcheck[MAXSTR];	/* current material to include or exclude */
 int	matselect = S_ALL;	/* selection criterion */
 
@@ -66,23 +68,27 @@ char	*argv[];
 {
 	extern char	*getenv(), *getpath();
 	char	*rtpath;
+	FILE	*fp;
 	register int	i;
 				/* set global arguments */
-	gargc = argc; gargv = argv;
+	gargv = argv;
 				/* set up rtrace command */
-	if (argc < 2)
-		error(USER, "too few arguments");
-	for (i = 1; i < argc-1; i++) {
+	for (i = 1; i < argc; i++) {
+		if (argv[i][0] == '<' && !argv[i][1])
+			break;
 		rtargv[rtargc++] = argv[i];
 		if (argv[i][0] == '-' && argv[i][1] == 'w')
 			warnings = !warnings;
 	}
+	if ((gargc = i) < 2)
+		error(USER, "too few arguments");
+	rtargc--;
 	for (i = 0; myrtopts[i] != NULL; i++)
 		rtargv[rtargc++] = myrtopts[i];
-	rtargv[rtargc++] = argv[argc-1];
+	rtargv[rtargc++] = argv[gargc-1];
 	rtargv[rtargc] = NULL;
 				/* just asking for defaults? */
-	if (!strcmp(argv[argc-1], "-defaults")) {
+	if (!strcmp(argv[gargc-1], "-defaults")) {
 		rtpath = getpath(rtargv[0], getenv("PATH"), X_OK);
 		if (rtpath == NULL) {
 			eputs(rtargv[0]);
@@ -95,29 +101,19 @@ char	*argv[];
 	}
 				/* else initialize and run our calculation */
 	init();
-	filter(stdin, "standard input");
+	if (gargc+1 < argc)
+		for (i = gargc+1; i < argc; i++) {
+			if ((fp = fopen(argv[i], "r")) == NULL {
+				sprintf(errmsg,
+				"cannot open scene file \"%s\"", argv[i]);
+				error(SYSTEM, errmsg);
+			}
+			filter(fp, argv[i]);
+			fclose(fp);
+		}
+	else
+		filter(stdin, "standard input");
 	quit(0);
-}
-
-
-init()				/* start rtrace and set up buffers */
-{
-	int	maxbytes;
-
-	maxbytes = open_process(rt.pd, rtargv);
-	if (maxbytes == 0) {
-		eputs(rtargv[0]);
-		eputs(": command not found\n");
-		exit(1);
-	}
-	if (maxbytes < 0)
-		error(SYSTEM, "cannot start rtrace process");
-	rt.bsiz = maxbytes/(6*sizeof(float));
-	rt.buf = (float *)malloc(rt.bsiz*(6*sizeof(float)));
-	if (rt.buf == NULL)
-		error(SYSTEM, "out of memory in init");
-	rt.bsiz--;			/* allow for flush ray */
-	rt.nrays = 0;
 }
 
 
@@ -134,6 +130,33 @@ int  status;
 		else
 			status = rtstat;
 	exit(status);
+}
+
+
+init()				/* start rtrace and set up buffers */
+{
+	extern int  o_face(), o_ring();
+	int	maxbytes;
+					/* set up object functions */
+	ofun[OBJ_FACE].funp = o_face;
+	ofun[OBJ_RING].funp = o_ring;
+					/* set up signal handling */
+	signal(SIGPIPE, quit);
+					/* start rtrace process */
+	maxbytes = open_process(rt.pd, rtargv);
+	if (maxbytes == 0) {
+		eputs(rtargv[0]);
+		eputs(": command not found\n");
+		exit(1);
+	}
+	if (maxbytes < 0)
+		error(SYSTEM, "cannot start rtrace process");
+	rt.bsiz = maxbytes/(6*sizeof(float));
+	rt.buf = (float *)malloc(rt.bsiz*(6*sizeof(float)));
+	if (rt.buf == NULL)
+		error(SYSTEM, "out of memory in init");
+	rt.bsiz--;			/* allow for flush ray */
+	rt.nrays = 0;
 }
 
 
@@ -278,7 +301,7 @@ char	*nm;
 				break;
 			if (!isintd(++cp, " \t\n"))
 				break;
-			sampdens = atoi(cp);
+			thisillum.sampdens = atoi(cp);
 			cp = sskip(cp);
 			continue;
 		case 's':			/* point super-samples */
@@ -288,6 +311,14 @@ char	*nm;
 				break;
 			thisillum.nsamps = atoi(cp);
 			cp = sskip(cp);
+			continue;
+		case 'l':			/* light sources */
+			if (*++cp != '+' && *cp != '-')
+				break;
+			if (*cp++ == '+')
+				thisillum.flags |= IL_LIGHT;
+			else
+				thisillum.flags &= ~IL_LIGHT;
 			continue;
 		case 'o':			/* output file */
 			if (*++cp != '=')
@@ -385,26 +416,17 @@ char  *nm;
 		doit = strcmp(thisillum.altmat, matcheck);
 		break;
 	}
-	if (doit)				/* make sure we can do it */
-		switch (thisobj.otype) {
-		case OBJ_SPHERE:
-		case OBJ_FACE:
-		case OBJ_RING:
-			break;
-		default:
-			sprintf(errmsg,
-				"(%s): cannot make illum for %s \"%s\"",
-					nm, ofun[thisobj.otype].funame,
-					thisobj.oname);
-			error(WARNING, errmsg);
-			doit = 0;
-			break;
-		}
+	if (doit && ofun[thisobj.otype].funp == o_default) {
+		sprintf(errmsg, "(%s): cannot make illum for %s \"%s\"",
+				nm, ofun[thisobj.otype].funame, thisobj.oname);
+		error(WARNING, errmsg);
+		doit = 0;
+	}
 						/* print header? */
 	checkhead();
 						/* process object */
 	if (doit)
-		mkillum(&thisobj, &thisillum, &rt);
+		(*ofun[thisobj.otype].funp)(&thisobj, &thisillum, &rt);
 	else
 		printobj(thisillum.altmat, &thisobj);
 						/* free arguments */
