@@ -227,7 +227,7 @@ char  *out;
 {
 	if (comline != NULL)
 		xt_puts(out, comline);
-	flush();
+	XFlush();
 }
 
 
