@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1990 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -12,7 +12,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *     11/6/86		Finally added error checking!
  */
 
-#include  <stdio.h>
+#include  "standard.h"
 
 #include  <ctype.h>
 
@@ -22,8 +22,7 @@ int  xac;				/* global xform argument count */
 char  **xav;				/* global xform argument pointer */
 int  xfa;				/* start of xf arguments */
 
-double  totxform[4][4];			/* total transformation matrix */
-double  totscale;			/* total scale factor */
+XF  tot;				/* total transformation */
 int  reverse;				/* boolean true if scene inverted */
 
 int  expand = 0;			/* boolean true to expand commands */
@@ -87,13 +86,10 @@ char  *argv[];
 	xav = argv;
 	xfa = a;
 
-	totscale = 1.0;
-	setident4(totxform);
+	a += xf(&tot, argc-a, argv+a);
 
-	a += xf(totxform, &totscale, argc-a, argv+a);
-
-	if (reverse = totscale < 0.0)
-		totscale = -totscale;
+	if (reverse = tot.sca < 0.0)
+		tot.sca = -tot.sca;
 
 	if (a < argc && argv[a][0] == '-') {
 		fprintf(stderr, "%s: command line error at '%s'\n",
@@ -165,7 +161,7 @@ int  ac, ai;
 }
 
 
-xform(name, fin)			/* transform stream by totxform */
+xform(name, fin)			/* transform stream by tot.xfm */
 char  *name;
 register FILE  *fin;
 {
@@ -333,11 +329,11 @@ register char  *ofname;
 alias(fin)			/* transfer alias */
 FILE  *fin;
 {
-	char  alias[MAXSTR];
+	char  aliasnm[MAXSTR];
 
-	if (fscanf(fin, "%s", alias) != 1)
+	if (fscanf(fin, "%s", aliasnm) != 1)
 		return(-1);
-	printf("\t%s\n", alias);
+	printf("\t%s\n", aliasnm);
 	return(0);
 }
 
@@ -354,7 +350,7 @@ FILE  *fin;
 	printf("0\n0\n4");
 	printf(" %18.12g %18.12g %18.12g",
 			fa->farg[0], fa->farg[1], fa->farg[2]);
-	printf(" %18.12g\n", fa->farg[3] * totscale);
+	printf(" %18.12g\n", fa->farg[3] * tot.sca);
 	freefargs(fa);
 	return(0);
 }
@@ -373,7 +369,7 @@ FILE  *fin;
 	printf("0\n0\n7");
 	printf(" %18.12g %18.12g %18.12g %18.12g\n",
 			fa->farg[0], fa->farg[1], fa->farg[2], fa->farg[3]);
-	multv3(v, fa->farg+4, totxform);
+	multv3(v, fa->farg+4, tot.xfm);
 	printf("\t%18.12g %18.12g %18.12g\n", v[0], v[1], v[2]);
 	freefargs(fa);
 	return(0);
@@ -392,9 +388,9 @@ FILE  *fin;
 		return(-1);
 	printf("0\n0\n5");
 	printf(" %18.12g %18.12g %18.12g",
-		pow(fa->farg[0], 1.0/totscale),
-		pow(fa->farg[1], 1.0/totscale),
-		pow(fa->farg[2], 1.0/totscale));
+		pow(fa->farg[0], 1.0/tot.sca),
+		pow(fa->farg[1], 1.0/tot.sca),
+		pow(fa->farg[2], 1.0/tot.sca));
 	printf(" %18.12g %18.12g\n", fa->farg[3], fa->farg[4]);
 	freefargs(fa);
 	return(0);
@@ -413,14 +409,14 @@ FILE  *fin;
 		return(-1);
 	printf("0\n0\n8\n");
 	printf("%18.12g %18.12g %18.12g",
-		pow(fa->farg[0], 1.0/totscale),
-		pow(fa->farg[1], 1.0/totscale),
-		pow(fa->farg[2], 1.0/totscale));
+		pow(fa->farg[0], 1.0/tot.sca),
+		pow(fa->farg[1], 1.0/tot.sca),
+		pow(fa->farg[2], 1.0/tot.sca));
 	printf(" %18.12g\n", fa->farg[3]);
 	printf("%18.12g %18.12g %18.12g",
-		pow(fa->farg[4], 1.0/totscale),
-		pow(fa->farg[5], 1.0/totscale),
-		pow(fa->farg[6], 1.0/totscale));
+		pow(fa->farg[4], 1.0/tot.sca),
+		pow(fa->farg[5], 1.0/tot.sca),
+		pow(fa->farg[6], 1.0/tot.sca));
 	printf(" %18.12g\n", fa->farg[7]);
 	freefargs(fa);
 	return(0);
@@ -445,13 +441,13 @@ FILE  *fin;
 		printf(" %s", fa->sarg[i]);
 	printf("\n0\n%d\n", fa->nfargs);
 					/* anchor point */
-	multp3(v, fa->farg, totxform);
+	multp3(v, fa->farg, tot.xfm);
 	printf(" %18.12g %18.12g %18.12g\n", v[0], v[1], v[2]);
 					/* right vector */
-	multv3(v, fa->farg+3, totxform);
+	multv3(v, fa->farg+3, tot.xfm);
 	printf(" %18.12g %18.12g %18.12g\n", v[0], v[1], v[2]);
 					/* down vector */
-	multv3(v, fa->farg+6, totxform);
+	multv3(v, fa->farg+6, tot.xfm);
 	printf(" %18.12g %18.12g %18.12g\n", v[0], v[1], v[2]);
 					/* forground and background */
 	if (fa->nfargs == 11)
@@ -478,7 +474,7 @@ FILE  *fin;
 	if (fa->nsargs != 0 || fa->niargs != 0 || fa->nfargs != 4)
 		return(-1);
 					/* transform direction vector */
-	multv3(dv, fa->farg, totxform);
+	multv3(dv, fa->farg, tot.xfm);
 					/* output */
 	printf("0\n0\n4");
 	printf(" %18.12g %18.12g %18.12g %18.12g\n",
@@ -499,9 +495,9 @@ FILE  *fin;
 	if (fa->nsargs != 0 || fa->niargs != 0 || fa->nfargs != 4)
 		return(-1);
 	
-	multp3(cent, fa->farg, totxform);	/* transform center */
+	multp3(cent, fa->farg, tot.xfm);	/* transform center */
 	
-	rad = fa->farg[3] * totscale;		/* scale radius */
+	rad = fa->farg[3] * tot.sca;		/* scale radius */
 	
 	printf("0\n0\n4");
 	printf(" %18.12g %18.12g %18.12g %18.12g\n",
@@ -527,9 +523,9 @@ FILE  *fin;
 	
 	for (i = 0; i < fa->nfargs; i += 3) {
 		if (reverse)
-			multp3(p, fa->farg+(fa->nfargs-i-3), totxform);
+			multp3(p, fa->farg+(fa->nfargs-i-3), tot.xfm);
 		else
-			multp3(p, fa->farg+i, totxform);
+			multp3(p, fa->farg+i, tot.xfm);
 		printf(" %18.12g %18.12g %18.12g\n", p[0], p[1], p[2]);
 	}
 	freefargs(fa);
@@ -550,10 +546,10 @@ FILE  *fin;
 
 	printf("0\n0\n8\n");
 
-	multp3(p0, fa->farg, totxform);
-	multp3(p1, fa->farg+3, totxform);
-	r0 = fa->farg[6] * totscale;
-	r1 = fa->farg[7] * totscale;
+	multp3(p0, fa->farg, tot.xfm);
+	multp3(p1, fa->farg+3, tot.xfm);
+	r0 = fa->farg[6] * tot.sca;
+	r1 = fa->farg[7] * tot.sca;
 	printf(" %18.12g %18.12g %18.12g\n", p0[0], p0[1], p0[2]);
 	printf(" %18.12g %18.12g %18.12g\n", p1[0], p1[1], p1[2]);
 	printf(" %18.12g %18.12g\n", r0, r1);
@@ -576,9 +572,9 @@ FILE  *fin;
 
 	printf("0\n0\n7\n");
 
-	multp3(p0, fa->farg, totxform);
-	multp3(p1, fa->farg+3, totxform);
-	rad = fa->farg[6] * totscale;
+	multp3(p0, fa->farg, tot.xfm);
+	multp3(p1, fa->farg+3, tot.xfm);
+	rad = fa->farg[6] * tot.sca;
 	printf(" %18.12g %18.12g %18.12g\n", p0[0], p0[1], p0[2]);
 	printf(" %18.12g %18.12g %18.12g\n", p1[0], p1[1], p1[2]);
 	printf(" %18.12g\n", rad);
@@ -600,10 +596,10 @@ FILE  *fin;
 
 	printf("0\n0\n8\n");
 
-	multp3(p0, fa->farg, totxform);
-	multv3(pd, fa->farg+3, totxform);
-	r0 = fa->farg[6] * totscale;
-	r1 = fa->farg[7] * totscale;
+	multp3(p0, fa->farg, tot.xfm);
+	multv3(pd, fa->farg+3, tot.xfm);
+	r0 = fa->farg[6] * tot.sca;
+	r1 = fa->farg[7] * tot.sca;
 	printf(" %18.12g %18.12g %18.12g\n", p0[0], p0[1], p0[2]);
 	printf(" %18.12g %18.12g %18.12g\n", pd[0], pd[1], pd[2]);
 	printf(" %18.12g %18.12g\n", r0, r1);
