@@ -50,7 +50,7 @@ extern struct illum {
 	float	lcos, lsin;	/* cosine and sine to left view */
 	float	rcos, rsin;	/* cosine and sine to right view */
 	double	sum;		/* sum of indirect luminances */
-	int	n;		/* number of values in sum */
+	double	n;		/* number of values in sum */
 } *indirect;		/* array of indirect illuminances */
 
 struct srcspan {

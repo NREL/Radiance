@@ -329,6 +329,6 @@ printillum()			/* print out indirect illuminances */
 	printf("BEGIN indirect illuminance\n");
 	for (i = 0; i < nglardirs; i++)
 		printf("\t%.0f\t%f\n", (180.0/PI)*indirect[i].theta,
-				PI * indirect[i].sum / (double)indirect[i].n);
+				PI * indirect[i].sum / indirect[i].n);
 	printf("END indirect illuminance\n");
 }
