@@ -67,6 +67,7 @@ extern VIEW  ourview;			/* viewing parameters */
 
 extern int  hresolu;			/* horizontal resolution */
 extern int  vresolu;			/* vertical resolution */
+extern double  pixaspect;		/* pixel aspect ratio */
 
 extern int  psample;			/* pixel sample size */
 extern double  maxdiff;			/* max. sample difference */
@@ -193,6 +194,7 @@ char  *argv[];
 			}
 			break;
 #endif
+#if  RPICT|RTRACE
 		case 'x':				/* x resolution */
 			check(2,1);
 			hresolu = atoi(argv[++i]);
@@ -201,6 +203,15 @@ char  *argv[];
 			check(2,1);
 			vresolu = atoi(argv[++i]);
 			break;
+#endif
+#if  RPICT	
+		case 'p':				/* pixel aspect */
+			if (argv[i][2] != 'a')
+				goto badopt;
+			check(3,1);
+			pixaspect = atof(argv[++i]);
+			break;
+#endif
 		case 'w':				/* warnings */
 			check(2,0);
 			wrnvec = wrnvec==NULL ? stderr_v : NULL;
@@ -349,6 +360,9 @@ char  *argv[];
 	if (err != NULL)
 		error(USER, err);
 #endif
+#if  RPICT
+	normaspect(&ourview, &pixaspect, &hresolu, &vresolu);
+#endif
 					/* set up signal handling */
 	sigdie(SIGINT, "Interrupt");
 	sigdie(SIGHUP, "Hangup");
@@ -400,6 +414,8 @@ char  *argv[];
 			fprintview(&ourview, stdout);
 			printf("\n");
 		}
+		if (pixaspect > 1.+FTINY || pixaspect < 1.-FTINY)
+			fputaspect(pixaspect, stdout);
 #endif
 		printf("\n");
 	}
@@ -513,20 +529,25 @@ printdefaults()			/* print default values to stdout */
 			ourview.vup[0], ourview.vup[1], ourview.vup[2]);
 	printf("-vh %f\t\t\t# view horizontal size\n", ourview.horiz);
 	printf("-vv %f\t\t\t# view vertical size\n", ourview.vert);
-	printf("-vs  %f\t\t\t# view shift\n", ourview.hoff);
-	printf("-vl  %f\t\t\t# view lift\n", ourview.voff);
+	printf("-vs %f\t\t\t# view shift\n", ourview.hoff);
+	printf("-vl %f\t\t\t# view lift\n", ourview.voff);
 #endif
+#if  RPICT|RTRACE
 	printf("-x  %-9d\t\t\t# x resolution\n", hresolu);
 	printf("-y  %-9d\t\t\t# y resolution\n", vresolu);
+#endif
+#if  RPICT
+	printf("-pa %f\t\t\t# pixel aspect ratio\n", pixaspect);
+#endif
 	printf("-dt %f\t\t\t# direct threshold\n", shadthresh);
 	printf("-dc %f\t\t\t# direct certainty\n", shadcert);
 	printf("-dj %f\t\t\t# direct jitter\n", dstrsrc);
 #if  RPICT|RVIEW
 	printf("-sp %-9d\t\t\t# sample pixel\n", psample);
 	printf("-st %f\t\t\t# sample threshold\n", maxdiff);
+#endif
 #if  RPICT
 	printf("-sj %f\t\t\t# sample jitter\n", dstrpix);
-#endif
 #endif
 	printf("-av %f %f %f\t# ambient value\n", colval(ambval,RED),
 			colval(ambval,GRN), colval(ambval, BLU));

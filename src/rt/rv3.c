@@ -165,13 +165,9 @@ newimage()				/* start a new image */
 						/* free old image */
 	freepkids(&ptrunk);
 						/* compute resolution */
-	if (viewaspect(&ourview)*dev->xsiz > dev->pixaspect*dev->ysiz) {
-		vresolu = dev->ysiz;
-		hresolu = vresolu/viewaspect(&ourview)*dev->pixaspect;
-	} else {
-		hresolu = dev->xsiz;
-		vresolu = hresolu*viewaspect(&ourview)/dev->pixaspect;
-	}
+	hresolu = dev->xsiz;
+	vresolu = dev->ysiz;
+	normaspect(&ourview, &dev->pixaspect, &hresolu, &vresolu);
 	pframe.l = pframe.d = 0;
 	pframe.r = hresolu; pframe.u = vresolu;
 	pdepth = 0;
