@@ -212,6 +212,7 @@ int
 dev_input()			/* get X11 input */
 {
 	inpresflags = 0;
+
 	do
 		getevent();
 
@@ -474,12 +475,14 @@ register XKeyPressedEvent  *ekey;
 	case 'H':			/* turn off height motion lock */
 		headlocked = 0;
 		return;
-	case CTRL('Z'):
+	case CTRL('S'):
 	case 'p':			/* pause computation */
 		inpresflags |= DEV_WAIT;
 		return;
+	case CTRL('Q'):
 	case '\n':
-	case '\r':			/* release */
+	case '\r':			/* resume computation */
+		inpresflags |= DEV_RESUME;
 		return;
 	case CTRL('R'):			/* redraw */
 		if (ncolors > 0)

@@ -29,7 +29,7 @@ main(argc, argv)
 int	argc;
 char	*argv[];
 {
-	int	rdy, inp, res = 0;
+	int	rdy, inp, res = 0, pause = 0;
 
 	progname = argv[0];
 	if (argc != 2)
@@ -39,21 +39,27 @@ char	*argv[];
 					/* enter main loop */
 	do {
 		rdy = disp_wait();
-		while (rdy & DEV_READY) {
-			inp = dev_input();	/* take residual action here */
+		if (rdy & DEV_READY) {		/* get user input */
+			inp = dev_input();
 			if (inp & DEV_NEWVIEW)
 				new_view(&odev.v);
 			if (inp & DEV_SHUTDOWN)
 				serv_request(DR_SHUTDOWN, 0, NULL);
 			if (inp & DEV_WAIT)
-				serv_request(DR_ATTEN, 0, NULL);
-			else
-				rdy &= ~DEV_READY;
-		}
-		if (rdy & SERV_READY) {
-			res = serv_result();	/* processes result, also */
-			if (res == DS_ACKNOW)
+				pause = 1;
+			if (inp & DEV_RESUME) {
 				serv_request(DR_NOOP, 0, NULL);
+				pause = 0;
+			}
+		}
+		if (rdy & SERV_READY) {		/* get server result */
+			res = serv_result();
+			if (pause && res != DS_SHUTDOWN) {
+				serv_request(DR_ATTEN, 0, NULL);
+				while ((res = serv_result()) != DS_ACKNOW &&
+						res != DS_SHUTDOWN)
+					;
+			}
 		}
 	} while (res != DS_SHUTDOWN);
 					/* all done */
