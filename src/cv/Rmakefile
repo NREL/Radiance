@@ -12,13 +12,15 @@ CFLAGS = $(OPT) $(MACH) -I../common -L../lib
 
 CC = cc
 
+MLIB = -lm
+
 INSTDIR = /usr/local/bin
 
 LIBDIR = /usr/local/lib/ray
 
-PROGS = thf2rad ies2rad arch2rad nff2rad lampcolor
+PROGS = thf2rad ies2rad arch2rad nff2rad lampcolor tmesh2rad
 
-LIBFILES = source.cal tilt.cal lamp.tab
+LIBFILES = source.cal tilt.cal lamp.tab tmesh.cal
 
 all:	$(PROGS)
 
@@ -45,8 +47,13 @@ nff2rad:	nff2rad.o
 lampcolor:	lampcolor.o
 	$(CC) $(CFLAGS) -o lampcolor lampcolor.o -lrt
 
+tmesh2rad:	tmesh2rad.o
+	$(CC) $(CFLAGS) -o tmesh2rad tmesh2rad.o -lrt $(MLIB)
+
 arch2rad.o trans.o:	trans.h
 
 ies2rad.o lampcolor.o:	../common/color.h
 
 ies2rad.o:	../common/paths.h
+
+tmesh2rad.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
