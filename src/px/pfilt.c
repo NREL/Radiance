@@ -40,7 +40,7 @@ int  singlepass = 0;		/* true means skip first pass */
 
 int  avghot = 0;		/* true means average in bright spots */
 
-double	hotlvl = 1000.0;	/* level considered "hot" */
+double	hotlvl = 100.0;		/* level considered "hot" */
 
 int  npts = 0;			/* (half) number of points for stars */
 
@@ -292,6 +292,8 @@ char  *s;
 	fputs(s, stdout);		/* copy to output */
 	if (isaspect(s))		/* get aspect ratio */
 		inpaspect *= aspectval(s);
+	else if (isexpos(s))
+		hotlvl *= exposval(s);
 	else if (isformat(s)) {
 		formatval(fmt, s);
 		wrongformat = strcmp(fmt, COLRFMT);
