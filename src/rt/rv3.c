@@ -202,9 +202,6 @@ register RECT  *r;
 {
 	int  mx, my;
 
-	if (dev->inpready)
-		return;				/* break for input */
-
 	if (xmax - xmin <= 0 || ymax - ymin <= 0)
 		return;
 
