@@ -242,7 +242,8 @@ proc newsave f {		# save a RIF
 			return 0
 		}
 	}
-	if {! [file writable $f] && [catch {exec chmod u+w $f} curmess]} {
+	if {[file exists $f] && ! [file writable $f] && 
+			[catch {exec chmod u+w $f} curmess]} {
 		beep
 		return 0
 	}
