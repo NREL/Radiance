@@ -95,7 +95,7 @@ if ( "$ilpict" != "$nofile" ) then
 endif
 if ( "$dfpict" != "$nofile" ) then
 	echo 'falsecolor -cb -l DF $fcopts \\
-		-s "$maxval/$extamb" -m "1/$extamb" -pi $iltemp \\
+		-s "100*$maxval/$extamb" -m "100/$extamb" -pi $iltemp \\
 		| pcompos -a 1 - $tltemp > $dfpict' >> $sctemp
 endif
 echo 'rm -f $tempfiles' >> $sctemp
