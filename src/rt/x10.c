@@ -91,8 +91,6 @@ char  *name, *id;
 		return(NULL);
 	}
 	make_gmap(GAMMA);			/* make color map */
-	if (getpixels() < 0)			/* get pixels */
-		stderr_v("cannot allocate colors\n");
 
 	pickcursor = XCreateCursor(bcross_width, bcross_height,
 			bcross_bits, bcross_mask_bits,
@@ -138,27 +136,31 @@ int  xres, yres;
 	if (xres != gwidth || yres != gheight) {	/* new window */
 		if (comline != NULL)
 			xt_close(comline);
-		if (gwind != 0)
-			XDestroyWindow(gwind);
-		gwind = XCreateWindow(RootWindow, 0, BARHEIGHT,
-				xres, yres+COMHEIGHT, BORWIDTH,
-				BlackPixmap, BlackPixmap);
-		if (gwind == 0)
-			goto fail;
+		if (gwind == 0) {
+			gwind = XCreateWindow(RootWindow, 0, BARHEIGHT,
+					xres, yres+COMHEIGHT, BORWIDTH,
+					BlackPixmap, BlackPixmap);
+			if (gwind == 0)
+				goto fail;
+			XStoreName(gwind, clientname);
+			XSelectInput(gwind, KeyPressed|ButtonPressed|
+					ExposeWindow|ExposeRegion|UnmapWindow);
+			XMapWindow(gwind);
+		} else
+			XChangeWindow(gwind, xres, yres+COMHEIGHT);
 		comline = xt_open(gwind, 0, yres, xres, COMHEIGHT, 0, COMFN);
 		if (comline == NULL)
 			goto fail;
-		XMapWindow(gwind);
-		XSelectInput(gwind,
-	KeyPressed|ButtonPressed|ExposeWindow|ExposeRegion|UnmapWindow);
-		XStoreName(gwind, clientname);
 		gwidth = xres;
 		gheight = yres;
 	} else						/* just clear */
 		XClear(gwind);
-						/* redo color table */
-	new_ctab(ncolors);
-	checkinp();
+						/* reinitialize color table */
+	if (ncolors == 0 && getpixels() == 0)
+		stderr_v("cannot allocate colors\n");
+	else
+		new_ctab(ncolors);
+	XSync(1);				/* discard input */
 	return;
 fail:
 	stderr_v("Failure opening window in x_clear\n");
@@ -265,21 +267,21 @@ int  r, g, b;
 }
 
 
-static
+static int
 getpixels()				/* get the color map */
 {
 	int  planes;
 
+	freepixels();
 	for (ncolors=(1<<DisplayPlanes())-3; ncolors>12; ncolors=ncolors*.937){
 		pixval = (int *)malloc(ncolors*sizeof(int));
 		if (pixval == NULL)
 			break;
 		if (XGetColorCells(0,ncolors,0,&planes,pixval) != 0)
-			return(0);
+			return(ncolors);
 		free((char *)pixval);
 	}
-	ncolors = 0;
-	return(-1);
+	return(ncolors = 0);
 }
 
 
@@ -316,7 +318,7 @@ getevent()			/* get next event */
 		break;
 	case ExposeWindow:
 		if (levptr(XExposeEvent)->subwindow == 0) {
-			if (ncolors == 0 && getpixels() < 0) {
+			if (ncolors == 0 && getpixels() == 0) {
 				stderr_v("cannot allocate colors\n");
 				break;
 			}
