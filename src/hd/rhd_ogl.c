@@ -1,4 +1,4 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
+/* Copyright (c) 1999 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -857,7 +857,7 @@ setglpersp()			/* set perspective view in GL */
 		dev_zmax = 100.;
 	} else {
 		dev_zmin = 0.5*depthlim[0];
-		dev_zmax = 2.0*depthlim[1];
+		dev_zmax = 1.25*depthlim[1];
 		if (dev_zmin > dev_zmax/5.)
 			dev_zmin = dev_zmax/5.;
 	}

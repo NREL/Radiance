@@ -1,4 +1,4 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
+/* Copyright (c) 1999 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -59,6 +59,7 @@ char	*file;
 	dolights = 0;
 	domats = 1;
 	gmNext[i].listid = rgl_octlist(file, gmNext[i].cent, &gmNext[i].rad);
+	gmNext[i].rad *= 1.732;		/* go to corners */
 #ifdef DEBUG
 	fprintf(stderr, "Loaded octree \"%s\" into listID %d with radius %f\n",
 			file, gmNext[i].listid, gmNext[i].rad);
