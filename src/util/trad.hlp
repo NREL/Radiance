@@ -1,4 +1,4 @@
-	$Id: trad.hlp,v 2.9 1995/01/03 16:11:28 greg Exp $
+	$Id: trad.hlp,v 2.10 1995/02/21 14:27:06 greg Exp $
 
 This help file is associated with the trad interface to the Radiance
 rad(1) program.  Trad consists of trad.wsh and one do_*.tcl file for
@@ -1057,12 +1057,13 @@ command, and new views can be added with the "V name"
 command.
 
 When using the "V" command to change an existing view, do not
-give it a name because the previous view will not be overridden.
+give it an existing name because the previous view will not be overridden.
 Instead, give it a new name (or no name, which will show up as
 a number later), then use the Views screen to override the previous
 view definition with the new one.
-(See the rview(1) man page and the "View" topic in the current
-help category for more information.)
+(See the "View" topic in the current
+help category, the "Change" topic under "Views" and the rview(1)
+manual page for more information.)
 
 If the octree is out-of-date, it will be rebuilt before rendering
 begins.
