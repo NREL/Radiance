@@ -21,14 +21,25 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <errno.h>
 
+#ifdef MSTATS
+#include  <stdio.h>
+
+static unsigned	b_nalloced = 0;
+static unsigned	b_nfreed = 0;
+static unsigned	b_nscrounged = 0;
+static unsigned	m_nalloced = 0;
+static unsigned	m_nfreed = 0;
+static unsigned	m_nwasted = 0;
+#else
 #define  NULL		0
+#endif
 
 #ifndef ALIGN
 #define  ALIGN		int			/* align type */
 #endif
 #define  BYTES_WORD	sizeof(ALIGN)
 
-#define  MAXINCR	(1<<18)			/* largest sbrk(2) increment */
+#define  MAXINCR	(1<<16)			/* largest sbrk(2) increment */
 
 #ifdef  NOVMEM
 #define  getpagesize()	BYTES_WORD
@@ -60,6 +71,9 @@ register unsigned	*np;
 			*np = bsiz+sizeof(M_HEAD);
 			p = (char *)free_list[bucket];
 			free_list[bucket] = free_list[bucket]->next;
+#ifdef MSTATS
+			b_nscrounged += *np;
+#endif
 			return(p);
 		}
 	*np = 0;
@@ -79,6 +93,9 @@ register unsigned  n;
 	unsigned  thisamnt;
 	register char	*p;
 
+#ifdef MSTATS
+	b_nalloced += n;
+#endif
 	if (pagesz == 0) {				/* initialize */
 		pagesz = amnt = getpagesize();
 		nrem = (int)sbrk(0);			/* page align break */
@@ -124,6 +141,10 @@ register unsigned  n;
 {
 	register int	bucket;
 	register unsigned	bsiz;
+
+#ifdef MSTATS
+	b_nfreed += n;
+#endif
 					/* align pointer */
 	bsiz = BYTES_WORD - ((unsigned)p&(BYTES_WORD-1));
 	if (bsiz < BYTES_WORD) {
@@ -159,6 +180,10 @@ unsigned	n;
 		errno = EINVAL;
 		return(NULL);
 	}
+#ifdef MSTATS
+	m_nalloced += bsiz + sizeof(M_HEAD);
+	m_nwasted += bsiz + sizeof(M_HEAD) - n;
+#endif
 	if (free_list[bucket] == NULL) {	/* need more core */
 		mp = (M_HEAD *)bmalloc(bsiz+sizeof(M_HEAD));
 		if (mp == NULL)
@@ -210,6 +235,9 @@ char	*p;
 	bucket = mp->bucket;
 	mp->next = free_list[bucket];
 	free_list[bucket] = mp;
+#ifdef MSTATS
+	m_nfreed += (1 << bucket) + sizeof(M_HEAD);
+#endif
 }
 
 
@@ -225,4 +253,35 @@ getpagesize()			/* use SYSV var structure to get page size */
 	return(1 << v.v_pageshift);
 }
 #endif
+#endif
+
+
+#ifdef MSTATS
+printmemstats(fp)		/* print memory statistics to stream */
+FILE	*fp;
+{
+	register int	i;
+	int	n;
+	register M_HEAD	*mp;
+	unsigned int	total = 0;
+
+	fprintf(fp, "Memory statistics:\n");
+	fprintf(fp, "\tbmalloc: %d bytes allocated\n", b_nalloced);
+	fprintf(fp, "\tbmalloc: %d bytes freed\n", b_nfreed);
+	fprintf(fp, "\tbmalloc: %d bytes scrounged\n", b_nscrounged);
+	fprintf(fp, "\tmalloc: %d bytes allocated\n", m_nalloced);
+	fprintf(fp, "\tmalloc: %d bytes wasted (%.1f%%)\n", m_nwasted,
+			100.0*m_nwasted/m_nalloced);
+	fprintf(fp, "\tmalloc: %d bytes freed\n", m_nfreed);
+	for (i = NBUCKETS-1; i >= FIRSTBUCKET; i--) {
+		n = 0;
+		for (mp = free_list[i]; mp != NULL; mp = mp->next)
+			n++;
+		if (n) {
+			fprintf(fp, "\t%d * %u\n", n, 1<<i);
+			total += n * ((1<<i) + sizeof(M_HEAD));
+		}
+	}
+	fprintf(fp, "\t %u total bytes in free list\n", total);
+}
 #endif
