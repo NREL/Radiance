@@ -11,6 +11,8 @@ CFLAGS = $(MACH) $(OPT) -I../common -L../lib
 
 CC = cc
 
+SPECIAL =
+
 INSTDIR = /usr/local/bin
 DEVDIR = $(INSTDIR)/dev
 
@@ -18,16 +20,28 @@ LIBDIR = /usr/local/lib/ray
 
 PROGS = rholo rhcopy genrhenv genrhgrid
 
-DEVS = $(DEVDIR)/x11.hdi $(DEVDIR)/x11h.hdi \
-$(DEVDIR)/glx.hdi $(DEVDIR)/glxh.hdi
+DEVS = $(DEVDIR)/x11.hdi $(DEVDIR)/x11h.hdi
 
-all:	$(PROGS)
+all:	$(PROGS) $(SPECIAL)
 
 install:	all $(DEVS)
 	cp $(PROGS) $(INSTDIR)
 
 clean:
 	set nonomatch; rm -f *.o $(PROGS) core
+
+ogl:	$(DEVDIR)/glx.hdi $(DEVDIR)/glxh.hdi \
+	$(DEVDIR)/glxo.hdi $(DEVDIR)/glxoh.hdi \
+	$(DEVDIR)/glxs.hdi $(DEVDIR)/glxsh.hdi \
+	$(DEVDIR)/glxso.hdi $(DEVDIR)/glxsoh.hdi
+
+x10:
+
+aed:
+
+sgi:
+
+sun:
 
 rholo:	rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o holo.o holofile.o Version.o
 	$(CC) $(CFLAGS) -o rholo rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o \
@@ -55,10 +69,66 @@ $(DEVDIR)/glxh.hdi:	$(DEVDIR)/glx.hdi
 	rm -f $(DEVDIR)/glxh.hdi
 	ln $(DEVDIR)/glx.hdi $(DEVDIR)/glxh.hdi
 
-$(DEVDIR)/glx.hdi:	rhdisp.o rhdisp2.o rhdisp3.o rhd_glx.o \
-rhd_qtree.o rhd_qtree2c.o dircode.o holo.o
-	$(CC) $(CFLAGS) -o $(DEVDIR)/glx.hdi rhdisp.o rhdisp2.o rhdisp3.o \
-rhd_glx.o holo.o rhd_qtree.o rhd_qtree2c.o dircode.o -lrt -lGLU -lGL -lX11 -lm
+$(DEVDIR)/glxoh.hdi:	$(DEVDIR)/glxo.hdi
+	rm -f $(DEVDIR)/glxoh.hdi
+	ln $(DEVDIR)/glxo.hdi $(DEVDIR)/glxoh.hdi
+
+$(DEVDIR)/glxsh.hdi:	$(DEVDIR)/glxs.hdi
+	rm -f $(DEVDIR)/glxsh.hdi
+	ln $(DEVDIR)/glxs.hdi $(DEVDIR)/glxsh.hdi
+
+$(DEVDIR)/glxsoh.hdi:	$(DEVDIR)/glxso.hdi
+	rm -f $(DEVDIR)/glxsoh.hdi
+	ln $(DEVDIR)/glxso.hdi $(DEVDIR)/glxsoh.hdi
+
+$(DEVDIR)/glx.hdi:	rhd_glx0.o rhdisp.o rhdisp2.o rhdisp3.o \
+sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
+sm_ogl.o sm.o sm_sets.o dircode.o holo.o
+	rm -f $(DEVDIR)/glx.hdi
+	$(CC) $(CFLAGS) -o $(DEVDIR)/glx.hdi rhd_glx0.o rhdisp.o rhdisp2.o \
+rhdisp3.o holo.o sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
+sm_ogl.o sm.o sm_sets.o dircode.o -lrt -lGLU -lGL -lX11 -lm
+
+$(DEVDIR)/glxo.hdi:	rhd_glxo.o rhdisp.o rhdisp2.o rhdisp3.o \
+sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
+sm_ogl.o sm_sets.o sm.o dircode.o holo.o rhdobj.o 
+	rm -f $(DEVDIR)/glxo.hdi
+	$(CC) $(CFLAGS) -o $(DEVDIR)/glxo.hdi rhd_glxo.o rhdisp.o rhdisp2.o \
+rhdisp3.o holo.o sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
+sm_ogl.o sm_sets.o sm.o dircode.o rhdobj.o -lrgl -lrt -lGLU -lGL -lX11 -lm
+
+$(DEVDIR)/glxs.hdi:	rhd_glxs.o rhdisp.o rhdisp2.o rhdisp3.o \
+sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
+sm_ogl.o sm_sets.o sm.o dircode.o holo.o
+	rm -f $(DEVDIR)/glxs.hdi
+	$(CC) $(CFLAGS) -o $(DEVDIR)/glxs.hdi rhd_glxs.o rhdisp.o rhdisp2.o \
+rhdisp3.o holo.o sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
+sm_ogl.o sm_sets.o sm.o dircode.o -lrt -lGLU -lGL -lX11 -lXext -lm
+
+$(DEVDIR)/glxso.hdi:	rhd_glxso.o rhdisp.o rhdisp2.o rhdisp3.o \
+sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
+sm_ogl.o sm_sets.o sm.o dircode.o holo.o rhdobj.o
+	rm -f $(DEVDIR)/glxso.hdi
+	$(CC) $(CFLAGS) -o $(DEVDIR)/glxso.hdi rhd_glxso.o rhdisp.o rhdisp2.o \
+rhdisp3.o holo.o sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
+sm_ogl.o sm_sets.o sm.o dircode.o rhdobj.o \
+-lrgl -lrt -lGLU -lGL -lX11 -lXext -lm
+
+rhd_glx0.o:	rhd_glx.c
+	$(CC) $(CFLAGS) -c rhd_glx.c
+	mv -f rhd_glx.o rhd_glx0.o
+
+rhd_glxo.o:	rhd_glx.c
+	$(CC) $(CFLAGS) -DDOBJ -c rhd_glx.c
+	mv -f rhd_glx.o rhd_glxo.o
+
+rhd_glxs.o:	rhd_glx.c
+	$(CC) $(CFLAGS) -DSTEREO -c rhd_glx.c
+	mv -f rhd_glx.o rhd_glxs.o
+
+rhd_glxso.o:	rhd_glx.c
+	$(CC) $(CFLAGS) -DDOBJ -DSTEREO -c rhd_glx.c
+	mv -f rhd_glx.o rhd_glxso.o
 
 rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o \
 rhdisp.o rhdisp2.o rhdisp3.o:	rholo.h
@@ -81,12 +151,34 @@ rhcopy.o:	../common/resolu.h
 
 rhcopy.o:	../common/view.h
 
-rhd_glx.o rhd_x11.o rhd_qtree.o rhd_qtree2r.o:	../common/standard.h \
+rhd_x11.o rhd_qtree.o rhd_sets.o rhd_qtree2r.o:	../common/standard.h \
 ../common/mat4.h ../common/fvect.h
 
-rhd_glx.o rhd_x11.o rhd_qtree.o rhd_qtree2r.o:	rhd_qtree.h rhdriver.h \
-../common/tonemap.h ../common/color.h
+rhd_x11.o rhd_qtree.o rhd_qtree2r.o:	rhd_qtree.h rhdriver.h \
+x11icon.h ../common/tonemap.h ../common/color.h
 
-rhd_glx.o rhd_x11.o:	x11icon.h
+rhd_glx0.o rhd_glxo.o rhd_glxs.o rhd_glxso.o:	rhd_sample.h rhdriver.h \
+x11icon.h ../common/tonemap.h ../common/view.h \
+../common/standard.h ../common/mat4.h ../common/fvect.h
+
+rhd_glxs.o rhd_glxso.o rhdobj.o:	rhdobj.h
+
+sm_samp.o sm_qtree.o sm_stree.o sm_geom.o sm_list.o sm_del.o \
+sm_ogl.o sm.o:	sm.h rhd_sample.h \
+../common/standard.h ../common/mat4.h ../common/fvect.h
+
+sm_sets.o:	sm_qtree.h ../common/object.h
+
+sm_del.o:	sm_list.h sm_geom.h
+
+sm_geom.o:	sm_geom.h
+
+sm_list.o:	sm_list.h
+
+sm_ogl.o:	sm_geom.h ../common/object.h
+
+sm_qtree.o:	sm_geom.h sm_qtree.h ../common/object.h
+
+sm_stree.o:	sm_stree.h sm_qtree.h sm_geom.h ../common/object.h
 
 dircode.o:	../common/fvect.h
