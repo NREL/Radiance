@@ -166,7 +166,7 @@ HDGRID	*hproto;		/* holodeck section grid */
 	biglob(hp)->nrd = rtrunc = 0;
 	for (n = hproto == NULL ? nbeams(hp) : 0; n > 0; n--)
 		if (hp->bi[n].nrd)
-			if (hp->bi[n].fo + hp->bi[n].nrd > fpos) {
+			if (hp->bi[n].fo+hp->bi[n].nrd*sizeof(RAYVAL) > fpos) {
 				rtrunc += hp->bi[n].nrd;
 				hp->bi[n].nrd = 0;
 			} else
@@ -743,7 +743,8 @@ register HOLO	*hp;		/* NULL means clean up all */
 		return;
 	}
 					/* flush all data and free memory */
-	hdflush(hp);
+	hdfreebeam(hp, 0);
+	hdsync(hp, 0);
 					/* release fragment resources */
 	hdrelease(hp->fd);
 					/* remove hp from active list */
