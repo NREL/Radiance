@@ -59,6 +59,19 @@ typedef long TINT;
 #define GT_ADJACENT  32
 #define GT_OUT       64
 
+#define IADDV3(v,a)  ((v)[0] += (a)[0],(v)[1] += (a)[1],(v)[2] += (a)[2])
+#define ISUBV3(v,a)  ((v)[0] -= (a)[0],(v)[1] -= (a)[1],(v)[2] -= (a)[2])
+#define ISCALEV3(v,a)  ((v)[0] *= (a),(v)[1] *= (a),(v)[2] *= (a))
+#define IDIVV3(v,a)  ((v)[0] /= (a),(v)[1] /= (a),(v)[2] /= (a))
+
+
+#define ADDV3(v,a,b) ((v)[0] = (a)[0]+(b)[0],(v)[1] = (a)[1]+(b)[1],\
+		      (v)[2] = (a)[2]+(b)[2])
+#define SUBV3(v,a,b) ((v)[0] = (a)[0]-(b)[0],(v)[1] = (a)[1]-(b)[1],\
+		      (v)[2] = (a)[2]-(b)[2])
+#define SUMV3(v,a,b,s) ((v)[0] = (a)[0]+(s)*(b)[0],(v)[1]=(a)[1]+(s)*(b)[1],\
+		      (v)[2] = (a)[2]+(s)*(b)[2])
+#define SCALEV3(v,a,s)  ((v)[0]=(a)[0]*(s),(v)[1]=(a)[1]*(s),(v)[2]=(a)[2]*(s))
 #define ZERO_VEC3(v)     (ZERO(v[0]) && ZERO(v[1]) && ZERO(v[2]) )
 #define EQUAL_VEC3(a,b)  (FEQUAL(a[0],b[0])&&FEQUAL(a[1],b[1])&&FEQUAL(a[2],b[2]))
 #define OPP_EQUAL_VEC3(a,b)  (EQUAL(a[0],-b[0])&&EQUAL(a[1],-b[1])&&EQUAL(a[2],-b[2]))
