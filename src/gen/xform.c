@@ -1,4 +1,4 @@
-/* Copyright (c) 1994 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -642,20 +642,6 @@ FILE  *fin;
 
 initotypes()			/* initialize ofun[] array */
 {
-	extern int  o_source();
-	extern int  o_sphere();
-	extern int  o_face();
-	extern int  o_cone();
-	extern int  o_cylinder();
-	extern int  o_ring();
-	extern int  m_glow();
-	extern int  m_spot();
-	extern int  m_dielectric();
-	extern int  m_interface();
-	extern int  text();
-	extern int  alias();
-	extern int  passargs();
-	extern int  addxform();
 	register int  i;
 
 	if (ofun[OBJ_SOURCE].funp == o_source)
@@ -687,6 +673,7 @@ initotypes()			/* initialize ofun[] array */
 	ofun[MIX_TEXT].funp = text;
 	ofun[ALIAS].funp = alias;
 					/* surface inverses */
+	tinvers[OBJ_FACE] = OBJ_FACE;
 	tinvers[OBJ_SOURCE] = OBJ_SOURCE;
 	tinvers[OBJ_CONE] = OBJ_CUP;
 	tinvers[OBJ_CUP] = OBJ_CONE;
