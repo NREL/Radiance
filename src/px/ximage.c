@@ -387,7 +387,7 @@ XKeyEvent  *ekey;
 			sprintf(buf, "%-3g", intens(cval)/exposure);
 			break;
 		case 'l':				/* luminance */
-			sprintf(buf, "%-3gL", bright(cval)*683.0/exposure);
+			sprintf(buf, "%-3gn", bright(cval)*683.0/exposure);
 			break;
 		case 'c':				/* color */
 			comp = pow(2.0, (double)scale);
@@ -401,7 +401,7 @@ XKeyEvent  *ekey;
 				fontid, BlackPixel, WhitePixel);
 		return(0);
 	case 'i':				/* identify (contour) */
-		if (ourras->ncolors == 0)
+		if (ourras->pixels == NULL)
 			return(-1);
 		n = ourras->data.bz[ekey->x-xoff+BZPixmapSize(xmax,ekey->y-yoff)];
 		n = ourras->pmap[n];
@@ -444,8 +444,8 @@ XKeyEvent  *ekey;
 	/* fall through */
 	case CTRL(R):				/* redraw */
 	case CTRL(L):
+		unmap_rcolors(ourras);
 		XClear(wind);
-		XStoreColors(ourras->ncolors, ourras->cdefs);
 		return(redraw(0, 0, width, height));
 	case ' ':				/* clear */
 		return(redraw(box.xmin, box.ymin, box.xsiz, box.ysiz));
@@ -618,24 +618,26 @@ register XRASTER	*xr;
 double	sf;
 {
 	register int	i;
-	int	maxv;
+	long	maxv;
+
+	if (xr->pixels == NULL)
+		return;
 
 	sf = pow(sf, 1.0/gamcor);
-	maxv = (1<<16) / sf;
+	maxv = 65535/sf;
 
 	for (i = xr->ncolors; i--; ) {
-		xr->cdefs[i].red = xr->cdefs[i].red >= maxv ?
-				(1<<16)-1 :
+		xr->cdefs[i].red = xr->cdefs[i].red > maxv ?
+				65535 :
 				xr->cdefs[i].red * sf;
-		xr->cdefs[i].green = xr->cdefs[i].green >= maxv ?
-				(1<<16)-1 :
+		xr->cdefs[i].green = xr->cdefs[i].green > maxv ?
+				65535 :
 				xr->cdefs[i].green * sf;
-		xr->cdefs[i].blue = xr->cdefs[i].blue >= maxv ?
-				(1<<16)-1 :
+		xr->cdefs[i].blue = xr->cdefs[i].blue > maxv ?
+				65535 :
 				xr->cdefs[i].blue * sf;
 	}
-	if (xr->pixels != NULL)
-		XStoreColors(xr->ncolors, xr->cdefs);
+	XStoreColors(xr->ncolors, xr->cdefs);
 }
 
 
