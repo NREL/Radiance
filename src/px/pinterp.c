@@ -14,6 +14,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include <fcntl.h>
 
+#include <ctype.h>
+
 #include "view.h"
 
 #include "color.h"
@@ -30,9 +32,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #define F_FORE		1		/* fill foreground */
 #define F_BACK		2		/* fill background */
 
-#define PACKSIZ		42		/* calculation packet size */
+#define PACKSIZ		256		/* max. calculation packet size */
 
-#define RTCOM		"rtrace -h -ovl -fff %s"
+#define RTCOM		"rtrace -h- -ovl -fff"
 
 #define ABS(x)		((x)>0?(x):-(x))
 
@@ -67,9 +69,10 @@ double	theirexp;			/* input picture exposure */
 double	theirs2ours[4][4];		/* transformation matrix */
 int	hasmatrix = 0;			/* has transformation matrix */
 
-int	childpid = -1;			/* id of fill process */
-FILE	*psend, *precv;			/* pipes to/from fill calculation */
-int	queue[PACKSIZ][2];		/* pending pixels */
+int	PDesc[3] = {-1,-1,-1};		/* rtrace process descriptor */
+#define childpid	(PDesc[2])
+unsigned short	queue[PACKSIZ][2];	/* pending pixels */
+int	packsiz;			/* actual packet size */
 int	queuesiz;			/* number of pixels pending */
 
 
@@ -77,7 +80,9 @@ main(argc, argv)			/* interpolate pictures */
 int	argc;
 char	*argv[];
 {
-#define check(olen,narg)	if (argv[i][olen] || narg >= argc-i) goto badopt
+#define  check(ol,al)		if (argv[i][ol] || \
+				badarg(argc-i-1,argv+i+1,al)) \
+				goto badopt
 	int	gotvfile = 0;
 	char	*zfile = NULL;
 	char	*err;
@@ -93,49 +98,49 @@ char	*argv[];
 		}
 		switch (argv[i][1]) {
 		case 't':				/* threshold */
-			check(2,1);
+			check(2,"f");
 			zeps = atof(argv[++i]);
 			break;
 		case 'n':				/* dist. normalized? */
-			check(2,0);
+			check(2,NULL);
 			normdist = !normdist;
 			break;
 		case 'f':				/* fill type */
 			switch (argv[i][2]) {
 			case '0':				/* none */
-				check(3,0);
+				check(3,NULL);
 				fillo = 0;
 				break;
 			case 'f':				/* foreground */
-				check(3,0);
+				check(3,NULL);
 				fillo = F_FORE;
 				break;
 			case 'b':				/* background */
-				check(3,0);
+				check(3,NULL);
 				fillo = F_BACK;
 				break;
 			case 'a':				/* all */
-				check(3,0);
+				check(3,NULL);
 				fillo = F_FORE|F_BACK;
 				break;
 			case 's':				/* sample */
-				check(3,1);
+				check(3,"i");
 				fillsamp = atoi(argv[++i]);
 				break;
 			case 'c':				/* color */
-				check(3,3);
+				check(3,"fff");
 				fillfunc = backfill;
 				setcolr(backcolr, atof(argv[i+1]),
 					atof(argv[i+2]), atof(argv[i+3]));
 				i += 3;
 				break;
 			case 'z':				/* z value */
-				check(3,1);
+				check(3,"f");
 				fillfunc = backfill;
 				backz = atof(argv[++i]);
 				break;
 			case 'r':				/* rtrace */
-				check(3,1);
+				check(3,"s");
 				fillfunc = rcalfill;
 				calstart(RTCOM, argv[++i]);
 				break;
@@ -144,25 +149,25 @@ char	*argv[];
 			}
 			break;
 		case 'z':				/* z file */
-			check(2,1);
+			check(2,"s");
 			zfile = argv[++i];
 			break;
 		case 'x':				/* x resolution */
-			check(2,1);
+			check(2,"i");
 			hresolu = atoi(argv[++i]);
 			break;
 		case 'y':				/* y resolution */
-			check(2,1);
+			check(2,"i");
 			vresolu = atoi(argv[++i]);
 			break;
 		case 'p':				/* pixel aspect */
-			check(2,1);
+			check(2,"f");
 			pixaspect = atof(argv[++i]);
 			break;
 		case 'v':				/* view file */
 			if (argv[i][2] != 'f')
 				goto badopt;
-			check(3,1);
+			check(3,"s");
 			gotvfile = viewfile(argv[++i], &ourview, 0, 0);
 			if (gotvfile < 0) {
 				perror(argv[i]);
@@ -183,6 +188,8 @@ char	*argv[];
 						/* check arguments */
 	if ((argc-i)%2)
 		goto userr;
+	if (fillsamp == 1)
+		fillo &= ~F_BACK;
 						/* set view */
 	if (err = setview(&ourview)) {
 		fprintf(stderr, "%s: %s\n", progname, err);
@@ -691,57 +698,52 @@ int	x, y;
 }
 
 
-calstart(prog, args)			/* start fill calculation */
+calstart(prog, args)                    /* start fill calculation */
 char	*prog, *args;
 {
 	char	combuf[512];
-	int	p0[2], p1[2];
+	char	*argv[64];
+	int	rval;
+	register char	**wp, *cp;
 
 	if (childpid != -1) {
 		fprintf(stderr, "%s: too many calculations\n", progname);
 		exit(1);
 	}
-	sprintf(combuf, prog, args);
-	if (pipe(p0) < 0 || pipe(p1) < 0)
-		syserror();
-	if ((childpid = vfork()) == 0) {	/* fork calculation */
-		close(p0[1]);
-		close(p1[0]);
-		if (p0[0] != 0) {
-			dup2(p0[0], 0);
-			close(p0[0]);
-		}
-		if (p1[1] != 1) {
-			dup2(p1[1], 1);
-			close(p1[1]);
-		}
-		execl("/bin/sh", "sh", "-c", combuf, 0);
-		perror("/bin/sh");
-		_exit(127);
+	strcpy(combuf, prog);
+	strcat(combuf, args);
+	cp = combuf;
+	wp = argv;
+	for ( ; ; ) {
+		while (isspace(*cp)) cp++;
+		if (!*cp) break;
+		*wp++ = cp;
+		while (!isspace(*cp))
+			if (!*cp++) goto done;
+		*cp++ = '\0';
 	}
-	if (childpid == -1)
+done:
+	*wp = NULL;
+						/* start process */
+	if ((rval = open_process(PDesc, argv)) < 0)
 		syserror();
-	close(p0[0]);
-	close(p1[1]);
-	if ((psend = fdopen(p0[1], "w")) == NULL)
-		syserror();
-	if ((precv = fdopen(p1[0], "r")) == NULL)
-		syserror();
+	if (rval == 0) {
+		fprintf(stderr, "%s: command not found\n", argv[0]);
+		exit(1);
+	}
+	packsiz = rval/(6*sizeof(float)) - 1;
+	if (packsiz > PACKSIZ)
+		packsiz = PACKSIZ;
 	queuesiz = 0;
 }
 
 
-caldone()				/* done with calculation */
+caldone()                               /* done with calculation */
 {
-	int	pid;
-
 	if (childpid == -1)
 		return;
 	clearqueue();
-	fclose(psend);
-	fclose(precv);
-	while ((pid = wait(0)) != -1 && pid != childpid)
-		;
+	close_process(PDesc);
 	childpid = -1;
 }
 
@@ -749,7 +751,7 @@ caldone()				/* done with calculation */
 rcalfill(x, y)				/* fill with ray-calculated pixel */
 int	x, y;
 {
-	if (queuesiz >= PACKSIZ)	/* flush queue if needed */
+	if (queuesiz >= packsiz)	/* flush queue if needed */
 		clearqueue();
 					/* add position to queue */
 	queue[queuesiz][0] = x;
@@ -761,36 +763,38 @@ int	x, y;
 clearqueue()				/* process queue */
 {
 	FVECT	orig, dir;
-	float	fbuf[6];
+	float	fbuf[6*(PACKSIZ+1)];
+	register float	*fbp;
 	register int	i;
 
+	fbp = fbuf;
 	for (i = 0; i < queuesiz; i++) {
 		viewray(orig, dir, &ourview,
 				(queue[i][0]+.5)/hresolu,
 				(queue[i][1]+.5)/vresolu);
-		fbuf[0] = orig[0]; fbuf[1] = orig[1]; fbuf[2] = orig[2];
-		fbuf[3] = dir[0]; fbuf[4] = dir[1]; fbuf[5] = dir[2];
-		fwrite((char *)fbuf, sizeof(float), 6, psend);
+		*fbp++ = orig[0]; *fbp++ = orig[1]; *fbp++ = orig[2];
+		*fbp++ = dir[0]; *fbp++ = dir[1]; *fbp++ = dir[2];
 	}
-					/* flush output and get results */
-	fbuf[3] = fbuf[4] = fbuf[5] = 0.0;		/* mark */
-	fwrite((char *)fbuf, sizeof(float), 6, psend);
-	if (fflush(psend) == EOF)
-		syserror();
+					/* mark end and get results */
+	bzero((char *)fbp, 6*sizeof(float));
+	if (process(PDesc, fbuf, fbuf, 4*sizeof(float)*queuesiz,
+			6*sizeof(float)*(queuesiz+1)) !=
+			4*sizeof(float)*queuesiz) {
+		fprintf(stderr, "%s: error reading from rtrace process\n",
+				progname);
+		exit(1);
+	}
+	fbp = fbuf;
 	for (i = 0; i < queuesiz; i++) {
-		if (fread((char *)fbuf, sizeof(float), 4, precv) < 4) {
-			fprintf(stderr, "%s: read error in clearqueue\n",
-					progname);
-			exit(1);
-		}
 		if (ourexp > 0 && ourexp != 1.0) {
-			fbuf[0] *= ourexp;
-			fbuf[1] *= ourexp;
-			fbuf[2] *= ourexp;
+			fbp[0] *= ourexp;
+			fbp[1] *= ourexp;
+			fbp[2] *= ourexp;
 		}
 		setcolr(pscan(queue[i][1])[queue[i][0]],
-				fbuf[0], fbuf[1], fbuf[2]);
-		zscan(queue[i][1])[queue[i][0]] = fbuf[3];
+				fbp[0], fbp[1], fbp[2]);
+		zscan(queue[i][1])[queue[i][0]] = fbp[3];
+		fbp += 4;
 	}
 	queuesiz = 0;
 }
