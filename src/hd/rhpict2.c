@@ -10,6 +10,7 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #include "holo.h"
 #include "view.h"
+#include "random.h"
 
 #ifndef DEPS
 #define DEPS		0.02	/* depth epsilon */
@@ -143,7 +144,7 @@ int	n;
 
 
 int
-grow_samp(h, v, nl, n)		/* grow sample point appropriately */
+smooth_samp(h, v, nl, n)	/* grow sample point smoothly */
 int	h, v;
 register short	nl[NNEIGH][2];
 int	n;
@@ -203,14 +204,71 @@ int	n;
 }
 
 
-pixFlush()			/* done with beams -- flush pixel values */
+int
+random_samp(h, v, nl, n)	/* grow sample point noisily */
+int	h, v;
+register short	nl[NNEIGH][2];
+int	n;
+{
+	float	nwt[NNEIGH];
+	int4	maxr2;
+	register int4	p, r2;
+	register int	i;
+	int	maxr, h2, v2;
+	COLOR	ctmp;
+
+	if (n <= 0)
+		return(1);
+	p = v*hres + h;				/* compute kernel radius */
+	maxr2 = (h-nl[n-1][0])*(h-nl[n-1][0]) + (v-nl[n-1][1])*(v-nl[n-1][1]);
+	DCHECK(maxr2>=MAXRAD2, CONSISTENCY, "out of range neighbor");
+	maxr = isqrt(maxr2);
+						/* compute neighbor weights */
+	for (i = n; i--; ) {
+		r2 = (nl[i][0]-h)*(nl[i][0]-h) + (nl[i][1]-v)*(nl[i][1]-v);
+		nwt[i] = pixWeight[r2];
+	}
+						/* sample kernel */
+	for (v2 = v-maxr; v2 <= v+maxr; v2++) {
+		if (v2 < 0) v2 = 0;
+		else if (v2 >= vres) break;
+		for (h2 = h-maxr; h2 <= h+maxr; h2++) {
+			if (h2 < 0) h2 = 0;
+			else if (h2 >= hres) break;
+			r2 = (h2-h)*(h2-h) + (v2-v)*(v2-v);
+			if (r2 > maxr2) continue;
+			if (CHK4(pixFlags, v2*hres+h2))
+				continue;	/* occupied */
+			if (frandom() > pixWeight[r2]) {
+						/* pick neighbor instead */
+				i = random() % n;
+				r2 = nl[i][1]*hres + nl[i][0];
+				copycolor(ctmp, mypixel[r2]);
+				scalecolor(ctmp, nwt[i]);
+				addcolor(mypixel[v2*hres+h2], ctmp);
+				myweight[v2*hres+h2] += nwt[i] * myweight[r2];
+				continue;
+			}
+			addcolor(mypixel[v2*hres+h2], mypixel[p]);
+			myweight[v2*hres+h2] += myweight[p];
+		}
+	}
+	return(1);
+}
+
+
+pixFinish(ransamp)		/* done with beams -- compute pixel values */
+int	ransamp;
 {
 	if (pixWeight[0] <= FTINY)
 		init_wfunc();		/* initialize weighting function */
 	reset_flags();			/* set occupancy flags */
 	meet_neighbors(kill_occl);	/* eliminate occlusion errors */
 	reset_flags();			/* reset occupancy flags */
-	meet_neighbors(grow_samp);	/* grow valid samples over image */
+	if (ransamp)			/* spread samples over image */
+		meet_neighbors(random_samp);
+	else
+		meet_neighbors(smooth_samp);
 	free((char *)pixFlags);		/* free pixel flags */
 	pixFlags = NULL;
 }
@@ -233,18 +291,14 @@ reset_flags()			/* allocate/set/reset occupancy flags */
 
 init_wfunc()			/* initialize weighting function */
 {
-	register int	i, j;
 	register int4	r2;
 	register double	d;
 
-	for (i = 1; i <= MAXRAD; i++)
-		for (j = 0; j <= i; j++) {
-			r2 = i*i + j*j;
-			if (r2 >= MAXRAD2) break;
-			d = sqrt((double)r2);
-			pixWeight[r2] = G0NORM/d;
-			isqrttab[r2] = d + 0.99;
-		}
+	for (r2 = MAXRAD2; --r2; ) {
+		d = sqrt((double)r2);
+		pixWeight[r2] = G0NORM/d;
+		isqrttab[r2] = d + 0.99;
+	}
 	pixWeight[0] = 1.;
 	isqrttab[0] = 0;
 }
