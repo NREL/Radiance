@@ -17,8 +17,8 @@ typedef FLOAT  MAT4[4][4];
 extern char  *memcpy();
 #endif
 
-#define  MAT4IDENT		{ 1.,0.,0.,0., 0.,1.,0.,0., \
-				0.,0.,1.,0., 0.,0.,0.,1. }
+#define  MAT4IDENT		{ {1.,0.,0.,0.}, {0.,1.,0.,0.}, \
+				{0.,0.,1.,0.}, {0.,0.,0.,1.} }
 
 extern MAT4  m4ident;
 
