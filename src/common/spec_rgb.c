@@ -170,9 +170,13 @@ colortrans(c2, mat, c1)		/* convert c1 by mat and put into c2 */
 register COLORMAT  mat;
 register COLOR  c1, c2;
 {
-	c2[0] = mat[0][0]*c1[0] + mat[0][1]*c1[1] + mat[0][2]*c1[2];
-	c2[1] = mat[1][0]*c1[0] + mat[1][1]*c1[1] + mat[1][2]*c1[2];
-	c2[2] = mat[2][0]*c1[0] + mat[2][1]*c1[1] + mat[2][2]*c1[2];
+	COLOR	cout;
+
+	cout[0] = mat[0][0]*c1[0] + mat[0][1]*c1[1] + mat[0][2]*c1[2];
+	cout[1] = mat[1][0]*c1[0] + mat[1][1]*c1[1] + mat[1][2]*c1[2];
+	cout[2] = mat[2][0]*c1[0] + mat[2][1]*c1[1] + mat[2][2]*c1[2];
+
+	copycolor(c2, cout);
 }
 
 
