@@ -284,7 +284,7 @@ double	rad;
 		else
 			apexh = 1. - ip[2]/(curzmax*DEPTHFACT);
 	}
-					/* find closest cone match */
+	rad *= 1.25;			/* find conservative cone match */
 	for (ci = 0; ci < MAXCONE-1; ci++)
 		if (cone[ci].rad >= rad)
 			break;
