@@ -12,8 +12,7 @@ static const char	RCSid[] = "$Id$";
 #include <sys/wait.h>
 
 #include "platform.h"
-#include "rtio.h"
-#include "rtmisc.h"
+#include "standard.h"
 #include "color.h"
 #include "view.h"
 #include "rtprocess.h"

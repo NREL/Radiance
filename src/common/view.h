@@ -2,15 +2,12 @@
 /*
  *  view.h - header file for image generation.
  *
- *  Include after stdio.h and fvect.h
+ *  Include after stdio.h and rtmath.h
  *  Includes resolu.h
  */
 #ifndef _RAD_VIEW_H_
 #define _RAD_VIEW_H_
 
-#include  <time.h>
-
-#include  "rtmath.h"
 #include  "resolu.h"
 
 #ifdef __cplusplus

@@ -7,7 +7,6 @@ static const char	RCSid[] = "$Id$";
 
 #include "rholo.h"
 #include "rhdisp.h"
-#include "view.h"
 
 struct cellist {
 	GCOORD	*cl;

@@ -5,10 +5,8 @@
 #ifndef _RAD_RHOLO_H_
 #define _RAD_RHOLO_H_
 
-#include <stdio.h>
-
-#include "view.h"
 #include "holo.h"
+#include "view.h"
 #include "vars.h"
 
 #ifdef __cplusplus

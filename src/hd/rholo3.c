@@ -5,11 +5,6 @@ static const char	RCSid[] = "$Id$";
  * Routines for tracking beam compuatations
  */
 
-#include <time.h>
-#include <string.h>
-#include <stdio.h>
-
-#include "view.h"
 #include "rholo.h"
 
 #ifndef NFRAG2CHUNK

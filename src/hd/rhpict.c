@@ -10,7 +10,6 @@ static const char	RCSid[] = "$Id$";
 #include "platform.h"
 #include "rterror.h"
 #include "rholo.h"
-#include "view.h"
 
 char	*progname;		/* our program name */
 char	*hdkfile;		/* holodeck file name */
