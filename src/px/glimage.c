@@ -63,7 +63,7 @@ char  *argv[];
 			fprintf(stderr, "%s: read error (y=%d)\n", fname, i);
 			exit(1);
 		}
-		normcolrs(scanline, xres);
+		normcolrs(scanline, xres, 0);
 		for (j = 0; j < xres; j++) {
 			winout[j] = 255L<<24;
 			winout[j] |= (long)scanline[j][BLU]<<16;

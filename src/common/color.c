@@ -367,15 +367,16 @@ register COLR  clr;
 }
 
 
-normcolrs(scan, len)		/* normalize a scanline of colrs */
+normcolrs(scan, len, adjust)	/* normalize a scanline of colrs */
 register COLR  *scan;
 int  len;
+int  adjust;
 {
 	register int  c;
 	register int  shift;
 
 	while (len-- > 0) {
-		shift = scan[0][EXP] - COLXS;
+		shift = scan[0][EXP] + adjust - COLXS;
 		if (shift > 0) {
 			if (shift > 8) {
 				scan[0][RED] =
@@ -402,7 +403,7 @@ int  len;
 				scan[0][BLU] = ((scan[0][BLU]>>shift)+1)>>1;
 			}
 		}
-		scan[0][EXP] = COLXS;
+		scan[0][EXP] = COLXS - adjust;
 		scan++;
 	}
 }

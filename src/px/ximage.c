@@ -656,11 +656,7 @@ register rgbpixel  *l3;
 	if (getscan(y) < 0)
 		quiterr("cannot seek for picreadline");
 							/* convert scanline */
-	if (scale)
-		for (i = 0; i < xmax; i++)
-			if (scanline[i][EXP])
-				scanline[i][EXP] += scale;
-	normcolrs(scanline, xmax);
+	normcolrs(scanline, xmax, scale);
 	for (i = 0; i < xmax; i++) {
 		l3[i].r = scanline[i][RED];
 		l3[i].g = scanline[i][GRN];

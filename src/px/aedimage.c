@@ -400,7 +400,7 @@ register rgbpixel  *l3;
 							/* read scanline */
 	getscan(y);
 							/* convert scanline */
-	normcolrs(scanline, xmax);
+	normcolrs(scanline, xmax, 0);
 	for (i = 0; i < xmax; i++) {
 		l3[i].r = scanline[i][RED];
 		l3[i].g = scanline[i][GRN];

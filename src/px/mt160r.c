@@ -67,7 +67,7 @@ char  *fname;
 			fprintf(stderr, "%s: read error (y=%d)\n", fname, i);
 			return(-1);
 		}
-		normcolrs(scanline, xres);
+		normcolrs(scanline, xres, 0);
 		plotscan(scanline, xres, i);
 	}
 
