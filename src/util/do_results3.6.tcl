@@ -52,15 +52,21 @@ set conv(types) {GIF-bw GIF-8 PICT PS PPM-asc PPM-bin ras-bw ras-8 ras-24\
 		tga-bw tga-8 tga-16 tga-24 TIFF-bw TIFF-24}
 set conv(typ) tga-24
 
+proc testappend {flst tf} {	# test if tf exists and append to flst if so
+	upvar $flst mylist
+	if [file exists $tf] {
+		lappend mylist $tf
+	}
+}
+
 proc list_views {} {		# List finished and unfinished pictures
-	global radvar fvwbox ufvwbox alldone
+	global radvar fvwbox ufvwbox alldone rawfroot
 	set fpics {}
 	set ufpics {}
 	foreach vw $radvar(view) {
-		set fnr $radvar(PICTURE)_[lindex $vw 0]
-		if [file exists $fnr.raw] {
+		if [file exists ${rawfroot}_[lindex $vw 0].unf] {
 			lappend ufpics [lindex $vw 0]
-		} elseif {[file exists $fnr.pic]} {
+		} elseif {[file exists $radvar(PICTURE)_[lindex $vw 0].pic]} {
 			lappend fpics [lindex $vw 0]
 		}
 	}
@@ -79,7 +85,7 @@ proc delpic {} {		# Delete selected pictures
 		return
 	}
 	if [tk_dialog .dlg {Verification} \
-			"Really delete picture file(s) $selected_pics?" \
+			"Really delete file(s) $selected_pics?" \
 			questhead 0 {Delete} {Cancel}] {
 		return
 	}
@@ -90,13 +96,22 @@ proc delpic {} {		# Delete selected pictures
 }
 
 proc get_selpics {} {		# return selected pictures
-	global fvwbox ufvwbox radvar
+	global fvwbox ufvwbox radvar rawfroot
 	set sl {}
 	foreach i [$fvwbox curselection] {
-		lappend sl $radvar(PICTURE)_[$fvwbox get $i].pic
+		testappend sl $radvar(PICTURE)_[$fvwbox get $i].pic
+		if {$rawfroot != $radvar(PICTURE)} {
+			testappend sl ${rawfroot}_[$fvwbox get $i].pic
+		}
+		if {$radvar(ZFILE) != {}} {
+			testappend sl $radvar(ZFILE)_[$fvwbox get $i].zbf
+		}
 	}
 	foreach i [$ufvwbox curselection] {
-		lappend sl $radvar(PICTURE)_[$ufvwbox get $i].raw
+		testappend sl ${rawfroot}_[$ufvwbox get $i].unf
+		if {$radvar(ZFILE) != {}} {
+			testappend sl $radvar(ZFILE)_[$ufvwbox get $i].zbf
+		}
 	}
 	return $sl
 }
@@ -123,7 +138,7 @@ proc dsppic {} {		# Display selected pictures
 		}
 	}
 	foreach p $selected_pics {
-		if [string match *.raw $p] {
+		if [string match *.unf $p] {
 			set dc [format $dispcom $ev $p]
 		} else {
 			set dc [format $dispcom 0 $p]
@@ -163,9 +178,10 @@ proc prtpic {} {		# Print selected pictures
 }
 
 proc do_results w {		# Results screen
-	global radvar curmess fvwbox ufvwbox dispcom prntcom conv convdest
+	global radvar curmess fvwbox ufvwbox dispcom prntcom conv \
+			rawfroot convdest
 	if {"$w" == "done"} {
-		unset fvwbox ufvwbox convdest
+		unset fvwbox ufvwbox convdest rawfroot
 		return
 	}
 	frame $w
@@ -245,5 +261,13 @@ proc do_results w {		# Results screen
 	place $w.prte -relwidth .5714 -relheight .0610 -relx .3571 -rely .8537
 	helplink $w.prte trad results printcommand
 	# Fill in views
+	if {[info exists radvar(RAWFILE)] && $radvar(RAWFILE) != {}} {
+		set rawfroot $radvar(RAWFILE)
+	} else {
+		set rawfroot $radvar(PICTURE)
+	}
+	if {! [info exists radvar(ZFILE)]} {
+		set radvar(ZFILE) {}
+	}
 	list_views
 }
