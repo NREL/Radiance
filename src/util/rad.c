@@ -828,7 +828,7 @@ register char	*po;
 		po = addarg(po, "-r 1");
 		break;
 	case HIGH:
-		po = addarg(po, "-m .15");
+		po = addarg(po, "-m .25");
 		break;
 	}
 	if (vdef(PFILT))
