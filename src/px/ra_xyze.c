@@ -83,7 +83,7 @@ char  *argv[];
 				rgbout = 1;
 				break;
 			case 'p':		/* RGB primaries */
-				if (i+9 >= argc)
+				if (i+8 >= argc)
 					goto userr;
 				outprims[RED][CIEX] = atof(argv[++i]);
 				outprims[RED][CIEY] = atof(argv[++i]);
