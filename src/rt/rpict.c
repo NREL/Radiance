@@ -61,6 +61,8 @@ double	dstrpix = 0.67;			/* square pixel distribution */
 
 double  mblur = 0.;			/* motion blur parameter */
 
+double  dblur = 0.;			/* depth-of-field blur parameter */
+
 void  (*trace)() = NULL;		/* trace call */
 
 int  do_irrad = 0;			/* compute irradiance? */
@@ -662,7 +664,8 @@ pixvalue(		/* compute pixel value */
 {
 	RAY  thisray;
 	FVECT	lorg, ldir;
-	double	hpos, vpos, lmax;
+	double	hpos, vpos, vdist, lmax;
+	register int	i;
 						/* compute view ray */
 	hpos = (x+pixjitter())/hres;
 	vpos = (y+pixjitter())/vres;
@@ -671,19 +674,34 @@ pixvalue(		/* compute pixel value */
 		setcolor(col, 0.0, 0.0, 0.0);
 		return(0.0);
 	}
+	vdist = ourview.vdist;
 
 	samplendx = pixnumber(x,y,hres,vres);	/* set pixel index */
 
 						/* optional motion blur */
 	if (lastview.type && mblur > FTINY && (lmax = viewray(lorg, ldir,
 					&lastview, hpos, vpos)) >= -FTINY) {
-		register int	i;
 		register double  d = mblur*(.5-urand(281+samplendx));
 
 		thisray.rmax = (1.-d)*thisray.rmax + d*lmax;
 		for (i = 3; i--; ) {
 			thisray.rorg[i] = (1.-d)*thisray.rorg[i] + d*lorg[i];
 			thisray.rdir[i] = (1.-d)*thisray.rdir[i] + d*ldir[i];
+		}
+		if (normalize(thisray.rdir) == 0.0)
+			return(0.0);
+		vdist = (1.-d)*vdist + d*lastview.vdist;
+	}
+						/* optional depth-of-field */
+	if (dblur > FTINY && vdist > FTINY) {
+		double  vc, df[2];
+		df[0] = PI/4.*dblur*(.5 - frandom())/sqrt(ourview.hn2);
+		df[1] = PI/4.*dblur*(.5 - frandom())/sqrt(ourview.vn2);
+		for (i = 3; i--; ) {
+			vc = thisray.rorg[i] + vdist*thisray.rdir[i];
+			thisray.rorg[i] += df[0]*ourview.hvec[i] +
+						df[1]*ourview.vvec[i] ;
+			thisray.rdir[i] = vc - thisray.rorg[i];
 		}
 		if (normalize(thisray.rdir) == 0.0)
 			return(0.0);
@@ -758,7 +776,6 @@ writerr:
 	error(SYSTEM, errmsg);
 	return -1; /* pro forma return */
 }
-
 
 static int
 pixnumber(		/* compute pixel index (brushed) */

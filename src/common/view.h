@@ -26,6 +26,7 @@ typedef struct {
 	FVECT  vp;		/* view origin */
 	FVECT  vdir;		/* view direction */
 	FVECT  vup;		/* view up */
+	double  vdist;		/* view distance */
 	double  horiz;		/* horizontal view size */
 	double  vert;		/* vertical view size */
 	double  hoff;		/* horizontal image offset */
@@ -43,7 +44,7 @@ extern VIEW  stdview;
 #define  viewaspect(v)	sqrt((v)->vn2/(v)->hn2)
 
 #define  STDVIEW	{VT_PER,{0.,0.,0.},{0.,1.,0.},{0.,0.,1.}, \
-				45.,45.,0.,0.,0.,0., \
+				1.,45.,45.,0.,0.,0.,0., \
 				{0.,0.,0.},{0.,0.,0.},0.,0.}
 
 #define  VIEWSTR	"VIEW="

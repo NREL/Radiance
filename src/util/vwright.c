@@ -65,6 +65,7 @@ main(
 				argv[1], vw.vp[1], argv[1], vw.vp[2]);
 		printf("%sdx:%g;%sdy:%g;%sdz:%g;", argv[1], vw.vdir[0],
 				argv[1], vw.vdir[1], argv[1], vw.vdir[2]);
+		printf("%sd:%g;", argv[1], vw.vdist);
 		printf("%sux:%g;%suy:%g;%suz:%g;", argv[1], vw.vup[0],
 				argv[1], vw.vup[1], argv[1], vw.vup[2]);
 		printf("%sh:%g;%sv:%g;", argv[1], vw.horiz,

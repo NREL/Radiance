@@ -49,6 +49,8 @@ extern double  dstrpix;			/* square pixel distribution */
 
 extern double  mblur;			/* motion blur parameter */
 
+extern double  dblur;			/* depth-of-field blur parameter */
+
 static void onsig(int signo);
 static void sigdie(int  signo, char  *msg);
 static void printdefaults(void);
@@ -151,6 +153,10 @@ main(int  argc, char  *argv[])
 			case 'm':				/* motion */
 				check(3,"f");
 				mblur = atof(argv[++i]);
+				break;
+			case 'd':				/* aperture */
+				check(3,"f");
+				dblur = atof(argv[++i]);
 				break;
 			default:
 				goto badopt;
@@ -447,6 +453,7 @@ printdefaults(void)			/* print default values to stdout */
 	printf("-pa %f\t\t\t# pixel aspect ratio\n", pixaspect);
 	printf("-pj %f\t\t\t# pixel jitter\n", dstrpix);
 	printf("-pm %f\t\t\t# pixel motion\n", mblur);
+	printf("-pd %f\t\t\t# pixel depth-of-field\n", dblur);
 	printf("-ps %-9d\t\t\t# pixel sample\n", psample);
 	printf("-pt %f\t\t\t# pixel threshold\n", maxdiff);
 	printf("-t  %-9d\t\t\t# time between reports\n", ralrm);
