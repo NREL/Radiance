@@ -14,6 +14,9 @@ while ($#argv > 0)
 	case -b:
 		set blend
 		breaksw
+	case -v:
+		set verb
+		breaksw
 	case -*:
 		echo bad option $argv[1]
 		exit 1
@@ -34,8 +37,10 @@ else
 	mknod $td/hf p
 endif
 foreach f ($*)
-	echo $f\:
-	echo adjusting size/exposure...
+	if ( $?verb ) then
+		echo $f\:
+		echo adjusting exposure/size...
+	endif
 	$pf $f > $td/pf
 	getinfo < $td/pf > $f
 	ed - $f << _EOF_
@@ -45,18 +50,23 @@ $ha
 w
 q
 _EOF_
-	if ( ! $?blend ) then
-		getinfo - < $td/hf >> $f &
-	endif
 	set resolu=`getinfo -d < $td/pf | sed 's/-Y \([0-9]*\) +X \([0-9]*\)/\2 \1/'`
-	echo computing Fourier coefficients...
+	if ( $?verb ) then
+		echo computing Fourier coefficients...
+	endif
 	set coef=`pfilt -1 -x 32 -y 32 $td/pf | pvalue -h -b | rcalc -e '$1=2*$3*cos(wx);$2=2*$3*cos(wy);$3=2*$3*sin(wx);$4=2*$3*sin(wy);$5=4*$3*cos(wx)*cos(wy);$6=4*$3*cos(wx)*sin(wy);$7=4*$3*sin(wx)*cos(wy);$8=4*$3*sin(wx)*sin(wy);' -e 'wx=2*PI/32*$1;wy=2*PI/32*$2' | total -m`
-	echo "cosx cosy sinx siny"
-	echo $coef[1-4]
-	echo "cosx*cosy cosx*siny sinx*cosy sinx*siny"
-	echo $coef[5-8]
-	echo removing low frequencies...
-	pcomb -e 'ro=ri(1)*f;go=gi(1)*f;bo=bi(1)*f;f=1-fc-fs-f0-f1' \
+	if ( $?verb ) then
+		echo "cosx cosy sinx siny"
+		echo $coef[1-4]
+		echo "cosx*cosy cosx*siny sinx*cosy sinx*siny"
+		echo $coef[5-8]
+		echo removing low frequencies...
+	endif
+	if ( ! $?blend ) then
+		( getinfo - < $td/hf >> $f & ) > /dev/null
+	endif
+	pcomb -e 'ro=f*ri(1);go=f*gi(1);bo=f*bi(1);f=(i-fc-fs-f0-f1)/i' \
+		-e 'i=.263*ri(1)+.655*gi(1)+.082*bi(1)' \
 		-e "fc=$coef[1]*cos(wx)+$coef[2]*cos(wy)" \
 		-e "fs=$coef[3]*sin(wx)+$coef[4]*sin(wy)" \
 		-e "f0=$coef[5]*cos(wx)*cos(wy)+$coef[6]*cos(wx)*sin(wy)" \
@@ -64,7 +74,9 @@ _EOF_
 		-e "wx=2*3.1416/$resolu[1]*x;wy=2*3.1416/$resolu[2]*y" \
 		$td/pf > $td/hf
 	if ( $?blend ) then
-		echo blending edges...
+		if ( $?verb ) then
+			echo blending edges...
+		endif
 		@ mar= $resolu[1] - 3
 		pcompos -x 3 $td/hf 0 0 > $td/left
 		pcompos $td/hf -$mar 0 > $td/right
@@ -88,7 +100,9 @@ _EOF_
 		pcompos $td/hflr 0 0 $td/bottom.patch 0 0 $td/top.patch 0 $mar \
 			| getinfo - >> $f
 	endif
-	echo $f done.
+	if ( $?verb ) then
+		echo $f done.
+	endif
 end
 quit:
 rm -rf $td
