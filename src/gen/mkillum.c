@@ -15,7 +15,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <ctype.h>
 
 				/* default parameters */
-#define  SAMPDENS	128		/* points per projected steradian */
+#define  SAMPDENS	48		/* points per projected steradian */
 #define  NSAMPS		32		/* samples per point */
 #define  DFLMAT		"illum_mat"	/* material name */
 				/* selection options */
