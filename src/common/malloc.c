@@ -13,7 +13,7 @@ static char SCCSid[] = "$SunId$ LBL";
  * bmalloc() doesn't keep track of free lists -- it's usually
  *	just a buffered call to sbrk(2).  However, bmalloc will
  *	call mscrounge() if sbrk fails.
- * mscrounge() returns whatever memory it can find to satisfy the
+ * mscrounge() returns whatever free memory it can find to satisfy the
  *	request along with the number of bytes (modified).
  *
  *	Greg Ward	Lawrence Berkeley Laboratory
@@ -219,14 +219,10 @@ char	*p;
 int
 getpagesize()			/* use SYSV var structure to get page size */
 {
-	static int  pagesz = 0;
 	struct var  v;
 
-	if (pagesz == 0) {
-		uvar(&v);
-		pagesz = 1 << v.v_pageshift;
-	}
-	return(pagesz);
+	uvar(&v);
+	return(1 << v.v_pageshift);
 }
 #endif
 #endif
