@@ -468,7 +468,12 @@ char	**av;
 	va[1] = v2->p[1] - v1->p[1];
 	va[2] = v2->p[2] - v1->p[2];
 	length = sqrt(DOT(va,va));
-	angle = acos(va[1]/length);
+	if (va[1] >= length)
+		angle = 0.;
+	else if (va[1] <= -length)
+		angle = PI;
+	else
+		angle = acos(va[1]/length);
 	printf("%sTranslation { translation %13.9g %13.9g %13.9g }\n", tabs,
 			.5*(v1->p[0]+v2->p[0]), .5*(v1->p[1]+v2->p[1]),
 			.5*(v1->p[2]+v2->p[2]));
