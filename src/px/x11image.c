@@ -27,17 +27,14 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <X11/Xutil.h>
 #include  <X11/Xatom.h>
 
-#include  "color.h"
+#include  "tonemap.h"
 #include  "view.h"
 #include  "x11raster.h"
 #include  "random.h"
 #include  "resolu.h"
 
-#ifdef  __alpha
-#define  int4		int
-#endif
 #ifndef  int4
-#define  int4		long
+#define  int4		int		/* most int's are 32-bit */
 #endif
 
 #define  FONTNAME	"8x13"		/* text font we'll use */
@@ -79,10 +76,15 @@ int  sequential = 0;			/* display images in sequence */
 char  *tout = "od";			/* output of 't' command */
 int  tinterv = 0;			/* interval between mouse reports */
 
+int  tmflags = -1;			/* tone mapping flags (-1 for none) */
+
 VIEW  ourview = STDVIEW;		/* image view parameters */
 int  gotview = 0;			/* got parameters from file */
 
 COLR  *scanline;			/* scan line buffer */
+TMbright  *lscan;			/* encoded luminance scanline */
+BYTE  *cscan;				/* encoded chroma scanline */
+BYTE  *pscan;				/* compute pixel scanline */
 
 RESOLU  inpres;				/* input resolution and ordering */
 int  xmax, ymax;			/* picture dimensions */
@@ -173,9 +175,18 @@ char  *argv[];
 				tinterv = atoi(argv[++i]);
 				break;
 			case 'e':			/* exposure comp. */
-				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
+				i++;
+				if (!strcmp(argv[i], "auto")) {
+					tmflags = TM_F_CAMERA;
+					break;
+				}
+				if (!strcmp(argv[i], "human")) {
+					tmflags = TM_F_HUMAN;
+					break;
+				}
+				if (argv[i][0] != '+' && argv[i][0] != '-')
 					goto userr;
-				scale = atoi(argv[++i]);
+				scale = atoi(argv[i]);
 				break;
 			case 'g':			/* gamma comp. */
 				if (argv[i][2] == 'e')
@@ -232,7 +243,7 @@ char  *argv[];
 		getevent();		/* main loop */
 userr:
 	fprintf(stderr,
-"Usage: %s [-di disp][[-ge] spec][-b][-m][-d][-f][-c nclrs][-e +/-stops][-g gamcor][-s][-ospec][-t intvl] pic ..\n",
+"Usage: %s [-di disp][[-ge] spec][-b][-m][-d][-f][-c nclrs][-e spec][-g gamcor][-s][-ospec][-t intvl] pic ..\n",
 			progname);
 	exit(1);
 }
@@ -245,10 +256,9 @@ char  *s;
 
 	if (isexpos(s))
 		exposure *= exposval(s);
-	else if (isformat(s)) {
-		formatval(fmt, s);
+	else if (formatval(fmt, s))
 		wrongformat = strcmp(fmt, COLRFMT);
-	} else if (isview(s) && sscanview(&ourview, s) > 0)
+	else if (isview(s) && sscanview(&ourview, s) > 0)
 		gotview++;
 }
 
@@ -544,7 +554,7 @@ getras()				/* get raster file */
 				xmax, ymax, 8);
 		if (ourras == NULL)
 			goto fail;
-		if (greyscale | ourvis.class == StaticGray)
+		if (greyscale)
 			getgrey();
 		else
 			getmapped();
@@ -737,9 +747,13 @@ XKeyPressedEvent  *ekey;
 			comp = .5/comp;
 		comp = log(comp)/.69315 - scale;
 		n = comp < 0 ? comp-.5 : comp+.5 ;	/* round */
-		if (n == 0)
-			return(0);
-		scale_rcolors(ourras, pow(2.0, (double)n));
+		if (tmflags != -1)
+			tmflags = -1;		/* turn off tone mapping */
+		else {
+			if (n == 0)		/* else check if any change */
+				return(0);
+			scale_rcolors(ourras, pow(2.0, (double)n));
+		}
 		scale += n;
 		sprintf(buf, "%+d", scale);
 		XDrawImageString(thedisplay, wind, ourgc,
@@ -913,6 +927,104 @@ COLOR  clr;
 }
 
 
+make_tonemap()			/* initialize tone mapping */
+{
+	int  y;
+
+	if (tmflags != -1 && fname == NULL) {
+		fprintf(stderr, "%s: cannot adjust tone of standard input\n",
+				progname);
+		tmflags = -1;
+	}
+	if (tmflags == -1) {
+		setcolrcor(pow, 1.0/gamcor);
+		return;
+	}
+	if (greyscale)
+		tmflags |= TM_F_BW;
+					/* initialize tm library */
+	if (tmInit(tmflags, stdprims, gamcor) == NULL)
+		goto memerr;
+	if (tmSetSpace(stdprims, WHTEFFICACY/exposure))
+		goto tmerr;
+					/* allocate encoding buffers */
+	if ((lscan = (TMbright *)malloc(xmax*sizeof(TMbright))) == NULL)
+		goto memerr;
+	if (tmflags & TM_F_BW) {
+		cscan = TM_NOCHROM;
+		if ((pscan = (BYTE *)malloc(sizeof(BYTE)*xmax)) == NULL)
+			goto memerr;
+	} else if ((pscan=cscan = (BYTE *)malloc(3*sizeof(BYTE)*xmax)) == NULL)
+		goto memerr;
+					/* compute picture histogram */
+	for (y = 0; y < ymax; y++) {
+		getscan(y);
+		if (tmCvColrs(lscan, TM_NOCHROM, scanline, xmax))
+			goto tmerr;
+		if (tmAddHisto(lscan, xmax, 1))
+			goto tmerr;
+	}
+					/* compute tone mapping */
+	if (tmComputeMapping(gamcor, 0., 0.))
+		goto tmerr;
+	free((char *)lscan);
+	return;
+memerr:
+	quiterr("out of memory in make_tonemap");
+tmerr:
+	quiterr("tone mapping error");
+}
+
+
+tmap_colrs(scn, len)		/* apply tone mapping to scanline */
+register COLR  *scn;
+int  len;
+{
+	register BYTE  *ps;
+
+	if (tmflags == -1) {
+		if (scale)
+			shiftcolrs(scn, len, scale);
+		colrs_gambs(scn, len);
+		return;
+	}
+	if (len > xmax)
+		quiterr("code error 1 in tmap_colrs");
+	if (tmCvColrs(lscan, cscan, scn, len))
+		goto tmerr;
+	if (tmMapPixels(pscan, lscan, cscan, len))
+		goto tmerr;
+	ps = pscan;
+	if (tmflags & TM_F_BW)
+		while (len--) {
+			scn[0][RED] = scn[0][GRN] = scn[0][BLU] = *ps++;
+			scn[0][EXP] = COLXS;
+			scn++;
+		}
+	else
+		while (len--) {
+			scn[0][RED] = *ps++;
+			scn[0][GRN] = *ps++;
+			scn[0][BLU] = *ps++;
+			scn[0][EXP] = COLXS;
+			scn++;
+		}
+	return;
+tmerr:
+	quiterr("tone mapping error");
+}
+
+
+done_tonemap()			/* clean up after tone mapping is done */
+{
+	if (tmflags == -1 || tmTop == NULL)
+		return;
+	tmDone(tmTop);			/* clear old mapping */
+	free((char *)lscan);		/* free memory */
+	free((char *)pscan);
+}
+
+
 getmono()			/* get monochrome data */
 {
 	register unsigned char	*dp;
@@ -1002,16 +1114,14 @@ getfull()			/* get full (24-bit) data */
 	int	y;
 	register unsigned int4	*dp;
 	register int	x;
-					/* set gamma correction */
-	setcolrgam(gamcor);
+					/* initialize tone mapping */
+	make_tonemap();
 					/* read and convert file */
 	dp = (unsigned int4 *)ourdata;
 	for (y = 0; y < ymax; y++) {
 		getscan(y);
 		add2icon(y, scanline);
-		if (scale)
-			shiftcolrs(scanline, xmax, scale);
-		colrs_gambs(scanline, xmax);
+		tmap_colrs(scanline, xmax);
 		if (ourras->image->blue_mask & 1)
 			for (x = 0; x < xmax; x++)
 				*dp++ =	(unsigned int4)scanline[x][RED] << 16 |
@@ -1023,6 +1133,7 @@ getfull()			/* get full (24-bit) data */
 					(unsigned int4)scanline[x][GRN] << 8 |
 					(unsigned int4)scanline[x][BLU] << 16 ;
 	}
+	done_tonemap();
 }
 
 
@@ -1031,21 +1142,17 @@ getgrey()			/* get greyscale data */
 	int	y;
 	register unsigned char	*dp;
 	register int	x;
-					/* set gamma correction */
-	setcolrgam(gamcor);
+					/* initialize tone mapping */
+	make_tonemap();
 					/* read and convert file */
 	dp = ourdata;
 	for (y = 0; y < ymax; y++) {
 		getscan(y);
 		add2icon(y, scanline);
-		if (scale)
-			shiftcolrs(scanline, xmax, scale);
-		for (x = 0; x < xmax; x++)
-			scanline[x][GRN] = normbright(scanline[x]);
-		colrs_gambs(scanline, xmax);
+		tmap_colrs(scanline, xmax);
 		if (maxcolors < 256)
 			for (x = 0; x < xmax; x++)
-				*dp++ =	((long)scanline[x][GRN] *
+				*dp++ =	((int4)scanline[x][GRN] *
 					maxcolors + maxcolors/2) >> 8;
 		else
 			for (x = 0; x < xmax; x++)
@@ -1053,7 +1160,8 @@ getgrey()			/* get greyscale data */
 	}
 	for (x = 0; x < maxcolors; x++)
 		clrtab[x][RED] = clrtab[x][GRN] =
-			clrtab[x][BLU] = ((long)x*256 + 128)/maxcolors;
+			clrtab[x][BLU] = ((int4)x*256 + 128)/maxcolors;
+	done_tonemap();
 }
 
 
@@ -1063,18 +1171,16 @@ getmapped()			/* get color-mapped data */
 					/* make sure we can do it first */
 	if (fname == NULL)
 		quiterr("cannot map colors from standard input");
-					/* set gamma correction */
-	setcolrgam(gamcor);
+					/* initialize tone mapping */
+	make_tonemap();
 					/* make histogram */
-	if (new_histo((long)xmax*ymax) == -1)
+	if (new_histo((int4)xmax*ymax) == -1)
 		quiterr("cannot initialize histogram");
 	for (y = 0; y < ymax; y++) {
 		if (getscan(y) < 0)
 			break;
 		add2icon(y, scanline);
-		if (scale)
-			shiftcolrs(scanline, xmax, scale);
-		colrs_gambs(scanline, xmax);
+		tmap_colrs(scanline, xmax);
 		cnt_colrs(scanline, xmax);
 	}
 					/* map pixels */
@@ -1082,14 +1188,13 @@ getmapped()			/* get color-mapped data */
 		quiterr("cannot create color map");
 	for (y = 0; y < ymax; y++) {
 		getscan(y);
-		if (scale)
-			shiftcolrs(scanline, xmax, scale);
-		colrs_gambs(scanline, xmax);
+		tmap_colrs(scanline, xmax);
 		if (dither)
 			dith_colrs(ourdata+y*xmax, scanline, xmax);
 		else
 			map_colrs(ourdata+y*xmax, scanline, xmax);
 	}
+	done_tonemap();
 }
 
 
