@@ -21,8 +21,9 @@ static char SCCSid[] = "$SunId$ SGI";
 #ifndef PCTFREE
 #define PCTFREE		20	/* maximum fraction to free (%) */
 #endif
-
-/* define MAXFRAG if you want to limit fragment tracking memory */
+#ifndef MAXFRAG
+#define MAXFRAG		131000	/* maximum fragments/file to track (0==inf) */
+#endif
 
 #ifndef BSD
 #define write	writebuf	/* safe i/o routines */
@@ -177,7 +178,7 @@ int	all;
 		return(n);
 	}
 					/* sync the beams */
-	for (j = all ? nbeams(hp) : 0; j > 0; j--)
+	for (j = (all ? nbeams(hp) : 0); j > 0; j--)
 		if (hp->bl[j] != NULL)
 			hdsyncbeam(hp, j);
 	if (!hp->dirty)			/* directory clean? */
@@ -374,25 +375,24 @@ int	(*bf)();		/* callback function (optional) */
 			error(CONSISTENCY, "bad beam in hdloadbeams");
 					/* sort list for optimal access */
 	qsort((char *)hb, n, sizeof(HDBEAMI), hdfilord);
-	if ((origcachesize = hdcachesize) == 0)
-		goto loadbeams;
 	bytesloaded = needbytes = 0;	/* figure out memory needs */
-	for (i = 0; i < n; i++)
-		if ((bp = hb[i].h->bl[hb[i].b]) != NULL) {
-			bp->tick = hdclock;		/* preempt swap */
-			bytesloaded += bp->nrm;
-		} else					/* prepare to load */
-			needbytes += hb[i].h->bi[hb[i].b].nrd;
-	bytesloaded *= sizeof(RAYVAL);
-	needbytes *= sizeof(RAYVAL);
-	do {				/* free enough memory */
-		memuse = hdmemuse(0);
-		bytes2free = needbytes - (signed)(hdcachesize-memuse);
-		if (bytes2free > (signed)(memuse - bytesloaded))
-			bytes2free = memuse - bytesloaded;
-	} while (bytes2free > 0 &&
-			hdfreecache(100*bytes2free/memuse, NULL) < 0);
-loadbeams:
+	if ((origcachesize = hdcachesize) > 0) {
+		for (i = n; i--; )
+			if ((bp = hb[i].h->bl[hb[i].b]) != NULL) {
+				bp->tick = hdclock;	/* preempt swap */
+				bytesloaded += bp->nrm;
+			} else				/* prepare to load */
+				needbytes += hb[i].h->bi[hb[i].b].nrd;
+		bytesloaded *= sizeof(RAYVAL);
+		needbytes *= sizeof(RAYVAL);
+		do {				/* free enough memory */
+			memuse = hdmemuse(0);
+			bytes2free = needbytes - (signed)(hdcachesize-memuse);
+			if (bytes2free > (signed)(memuse - bytesloaded))
+				bytes2free = memuse - bytesloaded;
+		} while (bytes2free > 0 &&
+				hdfreecache(100*bytes2free/memuse, NULL) < 0);
+	}
 	hdcachesize = 0;		/* load the ordered beams w/o swap */
 	for (i = 0; i < n; i++)
 		if ((bp = hdgetbeam(hb[i].h, hb[i].b)) != NULL && bf != NULL)
@@ -433,7 +433,7 @@ register int	i;
 					/* relinquish old fragment */
 		if (hp->bi[i].nrd) {
 			j = f->nfrags++;
-#ifdef MAXFRAG
+#if MAXFRAG
 			if (j >= MAXFRAG-1)
 				f->nfrags--;
 #endif
@@ -457,21 +457,19 @@ register int	i;
 				copystruct(f->fi+j, f->fi+(j-1));
 			}
 					/* coalesce adjacent fragments */
-			for (j = k = 0; k < f->nfrags; j++, k++) {
-				if (k > j)
-					copystruct(f->fi+j, f->fi+k);
-				while (k+1 < f->nfrags && f->fi[k+1].fo +
-						f->fi[k+1].nrd*sizeof(RAYVAL)
-							== f->fi[j].fo) {
-					f->fi[j].fo -=
-						f->fi[++k].nrd*sizeof(RAYVAL);
-					f->fi[j].nrd += f->fi[k].nrd;
-				}
+			if (j && f->fi[j-1].fo == f->fi[j].fo +
+					f->fi[j].nrd*sizeof(RAYVAL)) {
+				f->fi[j].nrd += f->fi[j-1].nrd;
+				f->fi[j-1].nrd = 0;
 			}
-			f->nfrags = j;
+			if (j+1 < f->nfrags && f->fi[j].fo == f->fi[j+1].fo +
+					f->fi[j+1].nrd*sizeof(RAYVAL)) {
+				f->fi[j+1].nrd += f->fi[j].nrd;
+				f->fi[j].nrd = 0;
+			}
 		}
 		k = -1;			/* find closest-sized fragment */
-		for (j = nrays ? f->nfrags : 0; j-- > 0; )
+		for (j = (nrays ? f->nfrags : 0); j-- > 0; )
 			if (f->fi[j].nrd >= nrays &&
 					(k < 0 || f->fi[j].nrd < f->fi[k].nrd))
 				if (f->fi[k=j].nrd == nrays)
@@ -481,15 +479,19 @@ register int	i;
 			f->flen += nrays*sizeof(RAYVAL);
 		} else {		/* else use fragment */
 			nfo = f->fi[k].fo;
-			if (f->fi[k].nrd == nrays) {	/* delete fragment */
-				f->nfrags--;
-				for (j = k; j < f->nfrags; j++)
-					copystruct(f->fi+j, f->fi+(j+1));
-			} else {			/* else shrink it */
-				f->fi[k].fo += nrays*sizeof(RAYVAL);
-				f->fi[k].nrd -= nrays;
-			}
+			f->fi[k].fo += nrays*sizeof(RAYVAL);
+			f->fi[k].nrd -= nrays;
 		}
+					/* delete empty remnants */
+		for (j = k = 0; k < f->nfrags; j++, k++) {
+			while (f->fi[k].nrd == 0)
+				if (++k >= f->nfrags)
+					goto endloop;
+			if (k > j)
+				copystruct(f->fi+j, f->fi+k);
+		}
+	endloop:
+		f->nfrags = j;
 	}
 	if (nrays) {		/* write the new fragment */
 		errno = 0;
