@@ -133,21 +133,8 @@ register int  n;
 	double  sum;
 	register RAY  *r;
 
-	n--;				/* for convenience */
-
-	if (n < 0 || n > 23)
-		error(USER, "illegal channel number");
-
-	if (n == 9) {			/* distance */
-
-		sum = fray->rot;
-		for (r = fray->parent; r != NULL; r = r->parent)
-			sum += r->rot;
-		return(sum * fxf.sca);
-
-	}
-	if (n == 10)			/* dot product */
-		return(fray->rod);
+	if (--n < 0)
+		goto badchan;
 
 	if (n < 3)			/* ray direction */
 
@@ -170,6 +157,17 @@ register int  n;
 				fray->rop[2]*fxf.xfm[2][n-6] +
 					     fxf.xfm[3][n-6] );
 
+	if (n == 9) {			/* distance */
+
+		sum = fray->rot;
+		for (r = fray->parent; r != NULL; r = r->parent)
+			sum += r->rot;
+		return(sum * fxf.sca);
+
+	}
+	if (n == 10)			/* dot product */
+		return(fray->rod);
+
 	if (n == 11)			/* scale */
 		return(fxf.sca);
 
@@ -184,4 +182,6 @@ register int  n;
 
 	if (n < 24)			/* k unit vector */
 		return(fxf.xfm[2][n-21] / fxf.sca);
+badchan:
+	error(USER, "illegal channel number");
 }
