@@ -96,6 +96,7 @@ register RAY  *r;
 {
 	r->rno = raynum++;
 	r->newcset = r->clipset;
+	r->robj = OVOID;
 	r->ro = NULL;
 	r->rot = FHUGE;
 	r->pert[0] = r->pert[1] = r->pert[2] = 0.0;
@@ -554,7 +555,8 @@ OBJECT  *cxs;
 	checkset(oset, cxs);			/* eliminate double-checking */
 	for (i = oset[0]; i > 0; i--) {
 		o = objptr(oset[i]);
-		(*ofun[o->otype].funp)(o, r);
+		if ((*ofun[o->otype].funp)(o, r))
+			r->robj = oset[i];
 	}
 	if (r->ro == NULL)
 		return(0);			/* no scores yet */

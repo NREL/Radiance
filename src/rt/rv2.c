@@ -662,6 +662,7 @@ char  *s;
 {
 	char  buf[128];
 	int  x, y;
+	OBJREC	*inst;
 	RAY  thisray;
 
 	thisray.rmax = 0.0;
@@ -699,6 +700,9 @@ char  *s;
 					objptr(thisray.ro->omod)->oname,
 				ofun[thisray.ro->otype].funame,
 				thisray.ro->oname);
+		if ((inst = objptr(thisray.robj)) != thisray.ro)
+			sprintf(buf+strlen(buf), " in instance \"%s\"",
+					inst->oname);
 		(*dev->comout)(buf);
 		(*dev->comin)(buf, NULL);
 		if (thisray.rot >= FHUGE)
