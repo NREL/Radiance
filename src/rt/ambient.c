@@ -41,6 +41,9 @@ double  minarad;		/* minimum ambient radius */
 static AMBTREE  atrunk;		/* our ambient trunk node */
 
 static FILE  *ambfp = NULL;	/* ambient file pointer */
+static int  ambheadlen;		/* length of ambient file header */
+
+#define  AMBFLUSH	(BUFSIZ/AMBVALSIZ)
 
 #define  newambval()	(AMBVAL *)bmalloc(sizeof(AMBVAL))
 
@@ -68,23 +71,50 @@ int  ar;
 setambient(afile)			/* initialize calculation */
 char  *afile;
 {
-	long  ftell();
+	extern long  ftell();
 	AMBVAL  amb;
 						/* init ambient limits */
 	setambres(ambres);
 						/* open ambient file */
 	if (afile != NULL)
 		if ((ambfp = fopen(afile, "r+")) != NULL) {
+			initambfile(0);
 			while (readambval(&amb, ambfp))
 				avinsert(&amb, &atrunk, thescene.cuorg,
 						thescene.cusize);
 							/* align */
-			fseek(ambfp, -(ftell(ambfp)%AMBVALSIZ), 1);
-		} else if ((ambfp = fopen(afile, "w")) == NULL) {
+			fseek(ambfp, -((ftell(ambfp)-ambheadlen)%AMBVALSIZ), 1);
+		} else if ((ambfp = fopen(afile, "w")) != NULL)
+			initambfile(1);
+		else {
 			sprintf(errmsg, "cannot open ambient file \"%s\"",
 					afile);
 			error(SYSTEM, errmsg);
 		}
+}
+
+
+initambfile(creat)		/* initialize ambient file */
+int  creat;
+{
+	extern char  *progname, *octname;
+
+	setbuf(ambfp, bmalloc(BUFSIZ));
+	if (creat) {			/* new file */
+		fprintf(ambfp, "%s -av %g %g %g -ab %d -aa %g ",
+				progname, colval(ambval,RED),
+				colval(ambval,GRN), colval(ambval,BLU),
+				ambounce, ambacc);
+		fprintf(ambfp, "-ad %d -as %d -ar %d %s\n",
+				ambdiv, ambssamp, ambres,
+				octname==NULL ? "" : octname);
+		fputformat(AMBFMT, ambfp);
+		putc('\n', ambfp);
+		putambmagic(ambfp);
+		fflush(ambfp);
+	} else if (checkheader(ambfp, AMBFMT, NULL) < 0 || !hasambmagic(ambfp))
+		error(USER, "ambient file format error");
+	ambheadlen = ftell(ambfp);
 }
 
 
@@ -300,20 +330,17 @@ static
 avsave(av)				/* save an ambient value */
 AMBVAL  *av;
 {
-#ifdef  AMBFLUSH
 	static int  nunflshed = 0;
-#endif
+
 	if (ambfp == NULL)
 		return;
 	if (writambval(av, ambfp) < 0)
 		goto writerr;
-#ifdef  AMBFLUSH
 	if (++nunflshed >= AMBFLUSH) {
 		if (fflush(ambfp) == EOF)
 			goto writerr;
 		nunflshed = 0;
 	}
-#endif
 	return;
 writerr:
 	error(SYSTEM, "error writing ambient file");
