@@ -30,7 +30,8 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-	char  expr[512];
+	char  expr[2048];
+	char  *epos;
 	FILE  *fp;
 	int  i;
 	register char  *cp;
@@ -49,10 +50,16 @@ char  *argv[];
 	recover = 1;
 	eclock++;
 
-	while (fgets(expr, sizeof(expr), stdin) != NULL) {
-		for (cp = expr; *cp && *cp != '\n'; cp++)
-			;
-		*cp = '\0';
+	epos = expr;
+	while (fgets(epos, sizeof(expr)-(epos-expr), stdin) != NULL) {
+		while (*epos && *epos != '\n')
+			epos++;
+		if (*epos && epos > expr && epos[-1] == '\\') {
+			epos[-1] = ' ';
+			continue;		/* escaped newline */
+		}
+		*epos = '\0';
+		epos = expr;
 		switch (expr[0]) {
 		case '\0':
 			continue;
