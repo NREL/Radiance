@@ -38,7 +38,7 @@ start_rtrace()			/* start rtrace process */
 	int	rmaxpack = 0;
 	int	psiz, n;
 					/* get number of processes */
-	if (ncprocs <= 0)
+	if (ncprocs <= 0 || nprocs > 0)
 		return(0);
 	if (ncprocs > MAXPROC) {
 		sprintf(errmsg,
