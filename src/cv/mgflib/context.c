@@ -606,10 +606,10 @@ char	**av;
 		}
 		if (n > 1)
 			va[i] /= (double)n;
-		if (va[i] < 0.)
-			return(MG_EILL);
 		if (va[i] > scale)
 			scale = va[i];
+		else if (va[i] < -scale)
+			scale = -va[i];
 	}
 	if (scale <= FTINY)
 		return(MG_EILL);
