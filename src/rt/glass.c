@@ -27,11 +27,11 @@ static char SCCSid[] = "$SunId$ LBL";
  *	3 red grn blu
  *
  *  The color is used for the transmission at normal incidence.
- *  To compute transmission (tn) from transmissivity (Tn) use:
+ *  To compute transmissivity (tn) from transmittance (Tn) use:
  *
  *	tn = (sqrt(.8402528435+.0072522239*Tn*Tn)-.9166530661)/.0036261119/Tn
  *
- *  The transmission of standard 88% transmissivity glass is 0.96.
+ *  The transmissivity of standard 88% transmittance glass is 0.96.
  *  A refractive index other than the default can be used by giving
  *  it as the fourth real argument.  The above formula no longer applies.
  *
