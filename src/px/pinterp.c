@@ -34,7 +34,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define PACKSIZ		256		/* max. calculation packet size */
 
-#define RTCOM		"rtrace -h- -ovl -fff"
+#define RTCOM		"rtrace -h- -ovl -fff "
 
 #define ABS(x)		((x)>0?(x):-(x))
 
