@@ -7,6 +7,8 @@ OPT = -O -pipe
 MACH = -DSTRUCTASSIGN -DBSD -DIEEE -f68881 /usr/lib/libm.il
 CFLAGS = $(MACH) $(OPT)
 
+COMPAT = bmalloc.o erf.o # frexp.o fwrite.o random.o
+
 LIBDIR = /usr/local/lib/ray
 
 RTOBJ = cone.o face.o instance.o readobj.o readoct.o otypes.o objset.o \
@@ -20,14 +22,14 @@ STDOBJ = fgetline.o fropen.o linregr.o xf.o mat4.o fvect.o urand.o \
 	multisamp.o process.o getpath.o error.o savestr.o savqstr.o \
 	fgetword.o words.o cputs.o wputs.o eputs.o quit.o
 
-SYSOBJ = ealloc.o bmalloc.o erf.o # frexp.o fwrite.o random.o bcopy.o
-
-install:	librt.a
-	mv librt.a ../lib
+SYSOBJ = ealloc.o $(COMPAT)
 
 librt.a:	$(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 	ar rc librt.a $(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 	-ranlib librt.a
+
+install:	librt.a
+	mv librt.a ../lib
 
 clean:
 	rm -f $(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ) librt.a
