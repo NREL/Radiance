@@ -242,6 +242,7 @@ done:						/* clean up */
 }
 
 
+#ifdef PCOND
 int					/* run pcond to map picture */
 dopcond(psp, xp, yp, flags, monpri, gamval, Lddyn, Ldmax, fname)
 BYTE	**psp;
@@ -262,26 +263,26 @@ char	*fname;
 	if (setcolrcor(pow, 1./gamval) < 0)
 		returnErr(TM_E_NOMEM);
 					/* create command */
-	strcpy(cmdbuf, "pcond ");
+	strcpy(cmdbuf, PCOND);
 	if (flags & TM_F_HCONTR)
-		strcat(cmdbuf, "-s ");
+		strcat(cmdbuf, " -s");
 	if (flags & TM_F_MESOPIC)
-		strcat(cmdbuf, "-c ");
+		strcat(cmdbuf, " -c");
 	if (flags & TM_F_LINEAR)
-		strcat(cmdbuf, "-l ");
+		strcat(cmdbuf, " -l");
 	if (flags & TM_F_ACUITY)
-		strcat(cmdbuf, "-a ");
+		strcat(cmdbuf, " -a");
 	if (flags & TM_F_VEIL)
-		strcat(cmdbuf, "-v ");
+		strcat(cmdbuf, " -v");
 	if (flags & TM_F_CWEIGHT)
-		strcat(cmdbuf, "-w ");
-	sprintf(cmdbuf+strlen(cmdbuf),
-			"-p %f %f %f %f %f %f %f %f -d %f -u %f %s",
-			monpri[RED][CIEX], monpri[RED][CIEY],
-			monpri[GRN][CIEX], monpri[GRN][CIEY],
-			monpri[BLU][CIEX], monpri[BLU][CIEY],
-			monpri[WHT][CIEX], monpri[WHT][CIEY],
-			Lddyn, Ldmax, fname);
+		strcat(cmdbuf, " -w");
+	if (monpri != stdprims)
+		sprintf(cmdbuf+strlen(cmdbuf), " -p %f %f %f %f %f %f %f %f",
+				monpri[RED][CIEX], monpri[RED][CIEY],
+				monpri[GRN][CIEX], monpri[GRN][CIEY],
+				monpri[BLU][CIEX], monpri[BLU][CIEY],
+				monpri[WHT][CIEX], monpri[WHT][CIEY]);
+	sprintf(cmdbuf+strlen(cmdbuf), " -d %f -u %f %s", Lddyn, Ldmax, fname);
 					/* start pcond */
 	if ((infp = popen(cmdbuf, "r")) == NULL)
 		returnErr(TM_E_BADFILE);
@@ -325,6 +326,7 @@ char	*fname;
 	pclose(infp);
 	returnOK;
 }
+#endif
 
 
 int					/* map a Radiance picture */
@@ -350,10 +352,12 @@ FILE	*fp;
 	if (Lddyn < MINLDDYN) Lddyn = DEFLDDYN;
 	if (Ldmax < MINLDMAX) Ldmax = DEFLDMAX;
 	if (flags & TM_F_BW) monpri = stdprims;
+#ifdef PCOND
 						/* check for pcond run */
 	if (fp == TM_GETFILE && flags & TM_F_UNIMPL)
 		return( dopcond(psp, xp, yp, flags,
 				monpri, gamval, Lddyn, Ldmax, fname) );
+#endif
 						/* initialize tone mapping */
 	if (tmInit(flags, monpri, gamval) == NULL)
 		returnErr(TM_E_NOMEM);
