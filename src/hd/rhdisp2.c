@@ -373,21 +373,18 @@ VIEW	*vold, *vnew;
 		ocnt = -ocnt;
 	if ((nca.rev = ncnt < 0))
 		ncnt = -ncnt;
-				/* add and delete cells in order */
-	while (ocnt > 0 & ncnt > 0)
-		if ((c = cellcmp(ogcp, ngcp)) > 0) {	/* new cell */
-			netchange += docell(ngcp++, &nca);
-			ncnt--;
-		} else if (c < 0) {			/* obsolete cell */
-			netchange -= docell(ogcp++, &oca);
-			ocnt--;
-		} else {				/* same cell? */
-			if (oca.rev != nca.rev)		/* not */
-				netchange += docell(ngcp, &nca) -
-						docell(ogcp, &oca);
-			ogcp++; ocnt--;
-			ngcp++; ncnt--;
-		}
+	if (nca.rev == oca.rev)		/* add and delete cells in order */
+		while (ocnt > 0 & ncnt > 0)
+			if ((c = cellcmp(ogcp, ngcp)) > 0) {	/* new cell */
+				netchange += docell(ngcp++, &nca);
+				ncnt--;
+			} else if (c < 0) {			/* old cell */
+				netchange -= docell(ogcp++, &oca);
+				ocnt--;
+			} else {				/* same cell */
+				ogcp++; ocnt--;
+				ngcp++; ncnt--;
+			}
 				/* take care of list tails */
 	for ( ; ncnt > 0; ncnt--)
 		netchange += docell(ngcp++, &nca);
