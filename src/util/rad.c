@@ -1042,7 +1042,7 @@ char	*po;
 	}
 	po = addarg(po, "-pt .04");
 	if (vbool(PENUMBRAS))
-		op = addarg(op, "-ds .1 -dj .7");
+		op = addarg(op, "-ds .1 -dj .65");
 	else
 		op = addarg(op, "-ds .2");
 	op = addarg(op, "-dt .05 -dc .75 -dr 3 -sj 1 -st .01");
