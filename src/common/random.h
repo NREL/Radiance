@@ -3,7 +3,7 @@
 /* SCCSid "$SunId$ LBL" */
 
 /*
- *  random.h - header file for random(3) function.
+ *  random.h - header file for random(3) and urand() function.
  *
  *     10/1/85
  */
@@ -23,3 +23,8 @@ extern double  drand48();
 #define  frandom()	drand48()
 
 #endif
+
+#define  urand(i)	((urperm[(i)&urmask]+frandom())/(urmask+1))
+
+extern short  *urperm;
+extern int  urmask;
