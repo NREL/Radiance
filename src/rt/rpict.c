@@ -153,6 +153,7 @@ char  *pout, *zout, *prvr;
 {
 	extern char  *rindex(), *strncpy(), *strcat(), *strcpy();
 	char  fbuf[128], fbuf2[128];
+	int  npicts;
 	register char  *cp;
 	RESOLU	rs;
 	double	pa;
@@ -197,13 +198,15 @@ char  *pout, *zout, *prvr;
 			}
 		}
 	}
-					/* render sequence */
+	npicts = 0;			/* render sequence */
 	do {
 		if (seq && nextview(stdin) == EOF)
 			break;
 		pctdone = 0.0;
 		if (pout != NULL) {
 			sprintf(fbuf, pout, seq);
+			if (prvr == NULL && access(fbuf, F_OK) == 0)
+				continue;		/* don't clobber */
 			if (freopen(fbuf, "w", stdout) == NULL) {
 				sprintf(errmsg,
 					"cannot open output file \"%s\"", fbuf);
@@ -251,7 +254,11 @@ char  *pout, *zout, *prvr;
 			cp = NULL;
 		render(cp, prvr);
 		prvr = NULL;
+		npicts++;
 	} while (seq++);
+					/* check that we did something */
+	if (npicts == 0)
+		error(WARNING, "no output produced");
 }
 
 
@@ -297,10 +304,10 @@ char  *zfile, *oldfile;
 			sampdens[i] = hstep;
 	} else
 		sampdens = NULL;
-					/* open z file */
+					/* open z-file */
 	if (zfile != NULL) {
 		if ((zfd = open(zfile, O_WRONLY|O_CREAT, 0666)) == -1) {
-			sprintf(errmsg, "cannot open z file \"%s\"", zfile);
+			sprintf(errmsg, "cannot open z-file \"%s\"", zfile);
 			error(SYSTEM, errmsg);
 		}
 #ifdef MSDOS
@@ -322,7 +329,7 @@ char  *zfile, *oldfile;
 	i = salvage(oldfile);
 	if (zfd != -1 && i > 0 &&
 			lseek(zfd, (long)i*hres*sizeof(float), 0) == -1)
-		error(SYSTEM, "z file seek error in render");
+		error(SYSTEM, "z-file seek error in render");
 	pctdone = 100.0*i/vres;
 	if (ralrm > 0)			/* report init stats */
 		report();
