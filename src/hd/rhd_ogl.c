@@ -40,16 +40,19 @@ static char SCCSid[] = "$SunId$ SGI";
 #define RAYQLEN		50000		/* max. rays to queue before flush */
 #endif
 
+			/* values other than 0 or 255 do not map reliably */
 #ifndef PORTALP
-#define PORTRED		2		/* portal red color */
-#define PORTGRN		-1		/* portal green left alone */
-#define PORTBLU		128		/* portal blue color */
-#define PORTALP		-1		/* don't use alpha channel */
+#define PORTRED		0		/* -1, 0 or 255 */
+#define PORTGRN		-1		/* -1, 0 or 255 */
+#define PORTBLU		255		/* -1, 0 or 255 */
+#define PORTALP		-1		/* -1 or 255 */
 #endif
 #define isportal(c)	((PORTRED<0 || (c)[0]==PORTRED) && \
 				(PORTGRN<0 || (c)[1]==PORTGRN) && \
 				(PORTBLU<0 || (c)[2]==PORTBLU) && \
 				(PORTALP<0 || (c)[3]==PORTALP))
+#define doportals()	if (gmPortals) \
+			gmDrawPortals(PORTRED,PORTGRN,PORTBLU,PORTALP); else
 
 #ifndef FEQ
 #define FEQ(a,b)	((a)-(b) <= FTINY && (a)-(b) >= -FTINY)
@@ -153,11 +156,11 @@ char  *id;
 #else
 	static int	atlBest[] = {GLX_RGBA, GLX_DOUBLEBUFFER,
 				GLX_RED_SIZE,8, GLX_GREEN_SIZE,8,
-				GLX_BLUE_SIZE,8, GLX_ALPHA_SIZE,2,
+				GLX_BLUE_SIZE,8, GLX_ALPHA_SIZE,1,
 				GLX_DEPTH_SIZE,15, None};
 	static int	atlOK[] = {GLX_RGBA, GLX_DOUBLEBUFFER,
-				GLX_RED_SIZE,4, GLX_GREEN_SIZE,4,
-				GLX_BLUE_SIZE,4, GLX_ALPHA_SIZE,2,
+				GLX_RED_SIZE,5, GLX_GREEN_SIZE,5,
+				GLX_BLUE_SIZE,5, GLX_ALPHA_SIZE,1,
 				GLX_DEPTH_SIZE,15, None};
 #endif
 	char	*ev;
@@ -459,8 +462,8 @@ dev_flush()			/* flush output as appropriate */
 #ifdef DOBJ
 		ndrawn += dobj_render();
 #endif
-		if (ndrawn && gmPortals)
-			gmDrawPortals(PORTRED,PORTGRN,PORTBLU,PORTALP);
+		if (ndrawn)
+			doportals();
 		checkglerr("rendering right eye");
 		popright();			/* draw left eye */
 #endif
@@ -468,8 +471,8 @@ dev_flush()			/* flush output as appropriate */
 #ifdef DOBJ
 		ndrawn += dobj_render();
 #endif
-		if (ndrawn && gmPortals)
-			gmDrawPortals(PORTRED,PORTGRN,PORTBLU,PORTALP);
+		if (ndrawn)
+			doportals();
 		glXSwapBuffers(ourdisplay, gwind);
 		checkglerr("rendering base view");
 	}
@@ -714,7 +717,7 @@ int	fore;
 	glPushAttrib(GL_LIGHTING_BIT|GL_ENABLE_BIT);
 	glDisable(GL_LIGHTING);
 	if (fore)
-		glColor3ub(0, 255, 255);
+		glColor3ub(4, 250, 250);
 	else
 		glColor3ub(0, 0, 0);
 	glBegin(GL_LINES);		/* draw each grid line */
@@ -837,8 +840,8 @@ XButtonPressedEvent	*ebut;
 #ifdef DOBJ
 		ndrawn += dobj_render();
 #endif
-		if (ndrawn && gmPortals)
-			gmDrawPortals(PORTRED,PORTGRN,PORTBLU,PORTALP);
+		if (ndrawn)
+			doportals();
 		popright();
 #endif
 					/* redraw octrees */
@@ -846,8 +849,8 @@ XButtonPressedEvent	*ebut;
 #ifdef DOBJ
 		ndrawn += dobj_render();	/* redraw objects */
 #endif
-		if (ndrawn && gmPortals)
-			gmDrawPortals(PORTRED, PORTGRN, PORTBLU, PORTALP);
+		if (ndrawn)
+			doportals();
 		glXSwapBuffers(ourdisplay, gwind);
 		if (!ndrawn)
 			sleep(1);	/* for reasonable interaction */
@@ -946,6 +949,8 @@ static
 wipeclean()			/* prepare for redraw */
 {
 	glDrawBuffer(GL_BACK);		/* use double-buffer mode */
+	glReadBuffer(GL_FRONT);		/* read back visible contents */
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 					/* clear buffers */
 #ifdef STEREO
 	setstereobuf(STEREO_BUFFER_RIGHT);
@@ -953,6 +958,7 @@ wipeclean()			/* prepare for redraw */
 	setstereobuf(STEREO_BUFFER_LEFT);
 #endif
 	glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 	freedepth();
 	if ((viewflags&(VWCHANGE|VWSTEADY)) ==
 			(VWCHANGE|VWSTEADY)) {	/* clear samples if new */
