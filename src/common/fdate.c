@@ -12,7 +12,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <sys/stat.h>
 
 
-unsigned long
+time_t
 fdate(fname)				/* get file date */
 char  *fname;
 {
