@@ -51,6 +51,8 @@
 
 #define SM_VIEW_FRAC   0.1
 
+#define  SM_ALL_LEVELS -1
+
 
 typedef int VERT;  /* One triangle that vertex belongs to- the rest
 		      are derived by traversing neighbors */

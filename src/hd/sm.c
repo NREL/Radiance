@@ -242,16 +242,6 @@ smDir(sm,ps,id)
     normalize(ps);
 }
 
-smDir_in_cone(sm,ps,id)
-   SM *sm;
-   FVECT ps;
-   int id;
-{
-    
-    VSUB(ps,SM_NTH_WV(sm,id),SM_VIEW_CENTER(sm)); 
-    normalize(ps);
-}
-
 smClear_flags(sm,which)
 SM *sm;
 int which;
@@ -491,7 +481,6 @@ smInit(n)
 {
   int max_vertices;
 
-
   /* If n <=0, Just clear the existing structures */
   if(n <= 0)
   {
@@ -520,10 +509,11 @@ smInit(n)
 }
 
 
-smLocator_apply(sm,v0,v1,v2,func)
+smLocator_apply(sm,v0,v1,v2,func,n)
    SM *sm;
    FVECT v0,v1,v2;
    FUNC func;
+   int n;
 {
   STREE *st;
   FVECT tri[3];
@@ -533,12 +523,10 @@ smLocator_apply(sm,v0,v1,v2,func)
   VSUB(tri[0],v0,SM_VIEW_CENTER(sm));
   VSUB(tri[1],v1,SM_VIEW_CENTER(sm));
   VSUB(tri[2],v2,SM_VIEW_CENTER(sm));
-  stVisit(st,tri,func);
+  stVisit(st,tri,func,n);
 
 }
 
-
-/* NEW INSERTION!!! ******************************************************/
 QUADTREE
 insert_tri(argptr,root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,scale,
                s0,s1,s2,sq0,sq1,sq2,rev,f,n)
@@ -701,8 +689,8 @@ int v0_id,v1_id,v2_id;
 
     if(SM_BASE_ID(sm,v0_id) || SM_BASE_ID(sm,v1_id) || SM_BASE_ID(sm,v2_id))
       SM_SET_NTH_T_BASE(sm,t_id);
-    else
-      if(SM_DIR_ID(sm,v0_id) && SM_DIR_ID(sm,v1_id) && SM_DIR_ID(sm,v2_id))
+
+    if(SM_DIR_ID(sm,v0_id) || SM_DIR_ID(sm,v1_id) || SM_DIR_ID(sm,v2_id))
       SM_SET_NTH_T_BG(sm,t_id);
 
     S_SET_FLAG(T_NTH_V(t,0));
@@ -891,9 +879,9 @@ LIST *tlist,*add_list;
 	if(!T_IS_VALID(t_opp))
 	  error(CONSISTENCY,"Invalid trismFix_tris()\n");
 #endif
-	smDir_in_cone(sm,p0,T_NTH_V(t_opp,0));
-	smDir_in_cone(sm,p1,T_NTH_V(t_opp,1));
-	smDir_in_cone(sm,p2,T_NTH_V(t_opp,2));
+	smDir(sm,p0,T_NTH_V(t_opp,0));
+	smDir(sm,p1,T_NTH_V(t_opp,1));
+	smDir(sm,p2,T_NTH_V(t_opp,2));
 	if(point_in_cone(p,p0,p1,p2))
 	{
 	    swapped = 1;
@@ -1832,64 +1820,6 @@ int type;
 
 }
 
-
-int
-smNext_tri_flag_set(sm,i,which,b)
-     SM *sm;
-     int i,which;
-     int b;
-{
-
-  for(; i < SM_NUM_TRI(sm);i++)
-  {
-
-    if(!T_IS_VALID(SM_NTH_TRI(sm,i)))
-	 continue;
-    if(!SM_IS_NTH_T_FLAG(sm,i,which))
-	continue;
-    if(!b)
-      break;
-    if((b==1) && !SM_BG_TRI(sm,i))
-      break;
-    if((b==2) && SM_BG_TRI(sm,i))
-      break;
-  }
-     
-  return(i);
-}
-
-
-
-int
-smNext_valid_tri(sm,i)
-     SM *sm;
-     int i;
-{
-
-  while( i < SM_NUM_TRI(sm) && !T_IS_VALID(SM_NTH_TRI(sm,i)))
-     i++;
-     
-  return(i);
-}
-
-
-
-qtTri_from_id(t_id,v0,v1,v2)
-int t_id;
-FVECT v0,v1,v2;
-{
-  TRI *t;
-  
-  t = SM_NTH_TRI(smMesh,t_id);
-  if(!T_IS_VALID(t))
-    return(0);
-  VSUB(v0,SM_T_NTH_WV(smMesh,t,0),SM_VIEW_CENTER(smMesh));
-  VSUB(v1,SM_T_NTH_WV(smMesh,t,1),SM_VIEW_CENTER(smMesh));
-  VSUB(v2,SM_T_NTH_WV(smMesh,t,2),SM_VIEW_CENTER(smMesh));
-  return(1);
-}
-
-
 smRebuild_mesh(sm,v)
    SM *sm;
    VIEW *v;
@@ -1901,6 +1831,7 @@ smRebuild_mesh(sm,v)
 #ifdef DEBUG
     fprintf(stderr,"smRebuild_mesh(): rebuilding....");
 #endif
+    smCull(sm,v,SM_ALL_LEVELS);
     /* Clear the mesh- and rebuild using the current sample array */
     /* Remember the current number of samples */
     cnt = SM_NUM_SAMP(sm);
@@ -1962,80 +1893,28 @@ intersect_tri_set(t_set,orig,dir,pt)
     {
 	t_id = QT_SET_NEXT_ELEM(optr);
 	t = SM_NTH_TRI(smMesh,t_id);
-	if(!T_IS_VALID(t))
+	if(!T_IS_VALID(t) || SM_IS_NTH_T_BASE(smMesh,t_id)|| 
+	       SM_IS_NTH_T_BG(smMesh,t_id))
 	  continue;
 	pid0 = T_NTH_V(t,0);
 	pid1 = T_NTH_V(t,1);
 	pid2 = T_NTH_V(t,2);
-	if(base = SM_IS_NTH_T_BASE(smMesh,t_id))
-	  if(SM_BASE_ID(smMesh,pid0) && SM_BASE_ID(smMesh,pid1) &&
-	     SM_BASE_ID(smMesh,pid2))
-	    continue;
 	VCOPY(p0,SM_NTH_WV(smMesh,pid0));
 	VCOPY(p1,SM_NTH_WV(smMesh,pid1));
 	VCOPY(p2,SM_NTH_WV(smMesh,pid2));
 	if(ray_intersect_tri(orig,dir,p0,p1,p2,p))
         {
-	  if(!base)
-	  {
-	    d =  DIST_SQ(p,p0);
-	    d1 = DIST_SQ(p,p1);
-	    if(d < d1)
-	      {
-		d1 = DIST_SQ(p,p2);
-		id = (d1 < d)?pid2:pid0;
-	      }
-	    else
-	      {
-		d = DIST_SQ(p,p2);
-		id = (d < d1)? pid2:pid1;
-	      }
-	  }
+	  d =  DIST_SQ(p,p0);
+	  d1 = DIST_SQ(p,p1);
+	  if(d < d1)
+	   {
+	     d1 = DIST_SQ(p,p2);
+	     id = (d1 < d)?pid2:pid0;
+	   }
 	  else
 	    {
-	      if(SM_BASE_ID(smMesh,pid0))
-	      {
-		if(SM_BASE_ID(smMesh,pid1))
-		  id = pid2;
-		else
-		  if(SM_BASE_ID(smMesh,pid2))
-		    id = pid1;
-		  else
-		  {
-		    d =  DIST_SQ(p,p1);
-		    d1 = DIST_SQ(p,p2);
-		    if(d < d1)
-		      id = pid1;
-		    else
-		      id = pid2;
-		  }
-	      }
-	      else
-	      {
-		if(SM_BASE_ID(smMesh,pid1))
-		{
-		  if(SM_BASE_ID(smMesh,pid2))
-		    id = pid0;
-		  else
-		  {
-		    d =  DIST_SQ(p,p0);
-		    d1 = DIST_SQ(p,p2);
-		    if(d < d1)
-		      id = pid0;
-		    else
-		      id = pid2;
-		  }
-		}
-		else
-		{
-		  d =  DIST_SQ(p,p0);
-		  d1 = DIST_SQ(p,p1);
-		  if(d < d1)
-		    id = pid0;
-		  else
-		    id = pid1;
-		}
-	      }
+	      d = DIST_SQ(p,p2);
+	      id = (d < d1)? pid2:pid1;
 	    }
 	  if(pt)
 	    VCOPY(pt,p);
@@ -2172,10 +2051,6 @@ FVECT orig,dir;
 #ifdef DEBUG_TEST_DRIVER
     VCOPY(Pick_point[0],p);
 #endif
-#ifdef DEBUG
-    fprintf(stderr,"Simple pick returning %d\n",s_id);
-#endif
-
     return(s_id);
   }
   d = point_on_sphere(b,orig,SM_VIEW_CENTER(smMesh));
@@ -2188,9 +2063,6 @@ FVECT orig,dir;
     s_id = intersect_tri_set(ts,orig,dir,p);
 #ifdef DEBUG_TEST_DRIVER
 	VCOPY(Pick_point[0],p);
-#endif
-#ifdef DEBUG
-    fprintf(stderr,"Simple pick2 returning %d\n",s_id);
 #endif
 	return(s_id);
   }
@@ -2241,10 +2113,8 @@ FVECT orig,dir;
     F_ARGS(func) = (int *)(&rt);
     stTrace_ray(SM_LOCATOR(smMesh),o,dir,func);
     s_id = rt.t_id;
+
   }    
-#ifdef DEBUG
-    fprintf(stderr,"Trace pick returning %d\n",s_id);
-#endif
   return(s_id);
 
 Lerror:
@@ -2255,11 +2125,20 @@ Lerror:
 
 }
 
-
-mark_active_tris(argptr,root,qt)
+null_func(argptr,root,qt,n)
      int *argptr;
      int root;
      QUADTREE qt;
+     int n;
+{
+  /* do nothing */
+}
+
+mark_active_tris(argptr,root,qt,n)
+     int *argptr;
+     int root;
+     QUADTREE qt;
+     int n;
 {
   OBJECT *os,*optr;
   register int i,t_id;
@@ -2287,32 +2166,40 @@ mark_active_tris(argptr,root,qt)
  }
 
 
-mark_tris_in_frustum(view)
+smCull(sm,view,n)
+ SM *sm;
  VIEW *view;
+ int n;
  {
      FVECT nr[4],far[4];
      FPEQ peq;
      int debug=0;
      FUNC f;
 
-     F_FUNC(f) = mark_active_tris;
-     F_ARGS(f) = NULL;
+     /* First clear all the quadtree node flags */
+     qtClearAllFlags();
 
+     F_ARGS(f) = NULL;
+     /* If marking samples down to leaves */
+     if(n == SM_ALL_LEVELS)
+     {
      /* Mark triangles in approx. view frustum as being active:set
 	LRU counter: for use in discarding samples when out
 	of space
+	*/
+       F_FUNC(f) = mark_active_tris;
+       smClear_flags(sm,T_ACTIVE_FLAG);
+       /* Clear all of the active sample flags*/
+       sClear_all_flags(SM_SAMP(sm));
+     }
+     else
+       /* Just mark qtree flags */
+       F_FUNC(f) = null_func;
+
+     /* calculate the world space coordinates of the view frustum:
 	Radiance often has no far clipping plane: but driver will set
 	dev_zmin,dev_zmax to satisfy OGL
-     */
-
-     /* First clear all the quadtree node and triangle active flags */
-     qtClearAllFlags();
-     smClear_flags(smMesh,T_ACTIVE_FLAG);
-     /* Clear all of the active sample flags*/
-     sClear_all_flags(SM_SAMP(smMesh));
-
-
-     /* calculate the world space coordinates of the view frustum */
+    */
      calculate_view_frustum(view->vp,view->hvec,view->vvec,view->horiz,
 			    view->vert, dev_zmin,dev_zmax,nr,far);
 
@@ -2333,80 +2220,80 @@ mark_tris_in_frustum(view)
 	Also set the triangles LRU clock counter
 	*/
 
-     if(EQUAL_VEC3(view->vp,SM_VIEW_CENTER(smMesh)))
+     if(EQUAL_VEC3(view->vp,SM_VIEW_CENTER(sm)))
      {/* Near face triangles */
 
-       smLocator_apply(smMesh,nr[0],nr[2],nr[3],f);
-       smLocator_apply(smMesh,nr[2],nr[0],nr[1],f); 
+       smLocator_apply(sm,nr[0],nr[2],nr[3],f,n);
+       smLocator_apply(sm,nr[2],nr[0],nr[1],f,n); 
        return;
      }
      /* Test the view against the planes: and swap orientation if inside:*/
      tri_plane_equation(nr[0],nr[2],nr[3], &peq,FALSE);
-     if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
+     if(PT_ON_PLANE(SM_VIEW_CENTER(sm),peq) < 0.0)
      {/* Near face triangles */
-       smLocator_apply(smMesh,nr[3],nr[2],nr[0],f);
-       smLocator_apply(smMesh,nr[1],nr[0],nr[2],f);
+       smLocator_apply(sm,nr[3],nr[2],nr[0],f,n);
+       smLocator_apply(sm,nr[1],nr[0],nr[2],f,n);
      }
      else
      {/* Near face triangles */
-       smLocator_apply(smMesh,nr[0],nr[2],nr[3],f);
-       smLocator_apply(smMesh,nr[2],nr[0],nr[1],f);
+       smLocator_apply(sm,nr[0],nr[2],nr[3],f,n);
+       smLocator_apply(sm,nr[2],nr[0],nr[1],f,n);
      }
      tri_plane_equation(nr[0],far[3],far[0], &peq,FALSE);
-     if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
+     if(PT_ON_PLANE(SM_VIEW_CENTER(sm),peq) < 0.0)
      { /* Right face triangles */
-       smLocator_apply(smMesh,far[0],far[3],nr[0],f);
-       smLocator_apply(smMesh,nr[3],nr[0],far[3],f);
+       smLocator_apply(sm,far[0],far[3],nr[0],f,n);
+       smLocator_apply(sm,nr[3],nr[0],far[3],f,n);
      }
      else
      {/* Right face triangles */
-       smLocator_apply(smMesh,nr[0],far[3],far[0],f);
-       smLocator_apply(smMesh,far[3],nr[0],nr[3],f);
+       smLocator_apply(sm,nr[0],far[3],far[0],f,n);
+       smLocator_apply(sm,far[3],nr[0],nr[3],f,n);
      }
 
      tri_plane_equation(nr[1],far[2],nr[2], &peq,FALSE);
      if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
      { /* Left face triangles */
-       smLocator_apply(smMesh,nr[2],far[2],nr[1],f);
-       smLocator_apply(smMesh,far[1],nr[1],far[2],f);
+       smLocator_apply(sm,nr[2],far[2],nr[1],f,n);
+       smLocator_apply(sm,far[1],nr[1],far[2],f,n);
      }
      else
      { /* Left face triangles */
-       smLocator_apply(smMesh,nr[1],far[2],nr[2],f);
-       smLocator_apply(smMesh,far[2],nr[1],far[1],f);
+       smLocator_apply(sm,nr[1],far[2],nr[2],f,n);
+       smLocator_apply(sm,far[2],nr[1],far[1],f,n);
      }
      tri_plane_equation(nr[0],far[0],nr[1], &peq,FALSE);
-     if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
+     if(PT_ON_PLANE(SM_VIEW_CENTER(sm),peq) < 0.0)
      {/* Top face triangles */
-       smLocator_apply(smMesh,nr[1],far[0],nr[0],f);
-       smLocator_apply(smMesh,far[1],far[0],nr[1],f);
+       smLocator_apply(sm,nr[1],far[0],nr[0],f,n);
+       smLocator_apply(sm,far[1],far[0],nr[1],f,n);
      }
      else
      {/* Top face triangles */
-       smLocator_apply(smMesh,nr[0],far[0],nr[1],f);
-       smLocator_apply(smMesh,nr[1],far[0],far[1],f);
+       smLocator_apply(sm,nr[0],far[0],nr[1],f,n);
+       smLocator_apply(sm,nr[1],far[0],far[1],f,n);
      }
      tri_plane_equation(nr[3],nr[2],far[3], &peq,FALSE);
-     if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
+     if(PT_ON_PLANE(SM_VIEW_CENTER(sm),peq) < 0.0)
      {/* Bottom face triangles */
-       smLocator_apply(smMesh,far[3],nr[2],nr[3],f);
-       smLocator_apply(smMesh,far[3],far[2],nr[2],f);
+       smLocator_apply(sm,far[3],nr[2],nr[3],f,n);
+       smLocator_apply(sm,far[3],far[2],nr[2],f,n);
      }
      else
      { /* Bottom face triangles */
-       smLocator_apply(smMesh,nr[3],nr[2],far[3],f);
-       smLocator_apply(smMesh,nr[2],far[2],far[3],f);
+       smLocator_apply(sm,nr[3],nr[2],far[3],f,n);
+       smLocator_apply(sm,nr[2],far[2],far[3],f,n);
      }
       tri_plane_equation(far[2],far[0],far[1], &peq,FALSE);
-     if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
+     if(PT_ON_PLANE(SM_VIEW_CENTER(sm),peq) < 0.0)
      {/* Far face triangles */
-       smLocator_apply(smMesh,far[0],far[2],far[1],f);
-       smLocator_apply(smMesh,far[2],far[0],far[3],f);
+       smLocator_apply(sm,far[0],far[2],far[1],f,n);
+       smLocator_apply(sm,far[2],far[0],far[3],f,n);
      }
      else
      {/* Far face triangles */
-       smLocator_apply(smMesh,far[1],far[2],far[0],f);
-       smLocator_apply(smMesh,far[3],far[0],far[2],f);
+       smLocator_apply(sm,far[1],far[2],far[0],f,n);
+       smLocator_apply(sm,far[3],far[0],far[2],f,n);
      }
 
  }
