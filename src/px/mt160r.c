@@ -118,14 +118,16 @@ COLR  clr;
 register int  x;
 {
 	static int  cerr[NCOLS];
-	static int  err;
+	static int  err, errp;
 	int  b;
 	register int  isblack;
 
 	b = normbright(clr);
+	errp = err;
 	err += b + cerr[x];
 	isblack = err < 128;
 	if (!isblack) err -= 256;
-	cerr[x] = err /= 2;
+	err /= 3;
+	cerr[x] = err + errp;
 	return(isblack);
 }

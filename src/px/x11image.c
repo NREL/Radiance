@@ -621,7 +621,7 @@ getmono()			/* get monochrome data */
 {
 	register unsigned char	*dp;
 	register int	x, err;
-	int	y;
+	int	y, errp;
 	short	*cerr;
 
 	if ((cerr = (short *)calloc(xmax,sizeof(short))) == NULL)
@@ -636,12 +636,14 @@ getmono()			/* get monochrome data */
 		for (x = 0; x < xmax; x++) {
 			if (!(x&7))
 				*++dp = 0;
+			errp = err;
 			err += normbright(scanline[x]) + cerr[x];
 			if (err > 127)
 				err -= 255;
 			else
 				*dp |= 1<<(7-(x&07));
-			cerr[x] = err >>= 1;
+			err /= 3;
+			cerr[x] = err + errp;
 		}
 	}
 	free((char *)cerr);
@@ -657,6 +659,7 @@ COLR  *scan;
 	static char  *dp;
 	register int  err;
 	register int	x, ti;
+	int  errp;
 
 	if (iconheight == 0) {		/* initialize */
 		if (xmax <= ICONSIZ && ymax <= ICONSIZ) {
@@ -678,13 +681,15 @@ COLR  *scan;
 	for (x = 0; x < iconwidth; x++) {
 		if (!(x&7))
 			*++dp = 0;
+		errp = err;
 		ti = x*xmax/iconwidth;
 		err += normbright(scan[ti]) + cerr[x];
 		if (err > 127)
 			err -= 255;
 		else
 			*dp |= 1<<(x&07);
-		cerr[x] = err >>= 1;
+		err /= 3;
+		cerr[x] = err + errp;
 	}
 	ynext++;
 }
