@@ -19,6 +19,10 @@ falsecolor - make a false color RADIANCE picture
 ][
 .B "\-n ndivs"
 ][
+.B "\-lw lwidth"
+][
+.B "\-lh lheight"
+][
 .B "\-log decades"
 ][
 .B "\-m mult"
@@ -81,6 +85,13 @@ The
 .I \-n
 option can be used to change the number of contours (and corresponding
 legend entries) from the default value of 8.
+The
+.I \-lw
+and
+.I \-lh
+options may be used to change the legend dimensions from the default width
+and height of 100x200.
+A value of zero in either eliminates the legend in the output.
 .PP
 The
 .I \-e
