@@ -212,12 +212,12 @@ double  d2;
 	newct[0] = cent[0] - newax[0];
 	newct[1] = cent[1] - newax[1];
 	newct[2] = cent[2] - newax[2];
-	npl = cyl_partit(ro, pt, pi, mp*3/4, newct, newax, d2);
+	npl = cyl_partit(ro, pt, pi, mp/2, newct, newax, d2);
 					/* upper half */
 	newct[0] = cent[0] + newax[0];
 	newct[1] = cent[1] + newax[1];
 	newct[2] = cent[2] + newax[2];
-	npu = cyl_partit(ro, pt, pi, mp-npl, newct, newax, d2);
+	npu = cyl_partit(ro, pt, pi, mp/2, newct, newax, d2);
 					/* return total */
 	return(npl + npu);
 }
@@ -282,12 +282,12 @@ double  du2, dv2;
 	newct[0] = cent[0] - newax[0];
 	newct[1] = cent[1] - newax[1];
 	newct[2] = cent[2] - newax[2];
-	npl = flt_partit(ro, pt, pi, mp*3/4, newct, u, v, du2, dv2);
+	npl = flt_partit(ro, pt, pi, mp/2, newct, u, v, du2, dv2);
 					/* upper half */
 	newct[0] = cent[0] + newax[0];
 	newct[1] = cent[1] + newax[1];
 	newct[2] = cent[2] + newax[2];
-	npu = flt_partit(ro, pt, pi, mp-npl, newct, u, v, du2, dv2);
+	npu = flt_partit(ro, pt, pi, mp/2, newct, u, v, du2, dv2);
 				/* return total */
 	return(npl + npu);
 }
