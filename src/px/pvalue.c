@@ -45,8 +45,6 @@ char  *progname;
 
 FILE  *fin;
 
-extern double  atof(), pow();
-
 int  (*getval)(), (*putval)();
 
 

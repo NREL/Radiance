@@ -57,7 +57,6 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-	double  atof();
 	int  an;
 
 	for (an = 1; an < argc && argv[an][0] == '-'; an++)

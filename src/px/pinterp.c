@@ -78,7 +78,6 @@ int	argc;
 char	*argv[];
 {
 #define check(olen,narg)	if (argv[i][olen] || narg >= argc-i) goto badopt
-	extern double	atof();
 	int	gotvfile = 0;
 	char	*zfile = NULL;
 	char	*err;
@@ -265,7 +264,6 @@ char	*s;
 addpicture(pfile, zspec)		/* add picture to output */
 char	*pfile, *zspec;
 {
-	extern double	atof();
 	FILE	*pfp;
 	int	zfd;
 	char	*err;

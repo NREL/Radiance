@@ -16,7 +16,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "resolu.h"
 
-extern double  atof(), pow();
+extern double  pow();
 
 int  agryscan(), bgryscan(), aclrscan(), bclrscan();
 

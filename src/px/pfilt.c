@@ -73,7 +73,7 @@ int  argc;
 char  **argv;
 {
 	extern char  *mktemp();
-	extern double  atof(), pow();
+	extern double  pow();
 	extern long  ftell();
 	extern int  quit(), headline();
 	FILE  *fin;

@@ -70,7 +70,6 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-	double  atof();
 	int  ncolumns = 0;
 	int  autolabel = 0;
 	int  curcol = 0, curx = 0, cury = 0;

@@ -97,7 +97,6 @@ FILE  *fin;
 extern long  ftell();
 long  scanpos[NROWS];
 
-extern double  atof();
 double  exposure = 1.0;
 int  wrong_fmt = 0;
 
