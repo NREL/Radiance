@@ -1,4 +1,4 @@
-/* Copyright (c) 1988 Regents of the University of California */
+/* Copyright (c) 1990 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -66,14 +66,13 @@ int  flags;
 			error(SYSTEM, "out of memory in getinstance");
 		if (o->oargs.nsargs < 1)
 			objerror(o, USER, "bad # of arguments");
-		if (xf(in->f.xfm, &in->f.sca, o->oargs.nsargs-1,
+		if (fullxf(&in->x, o->oargs.nsargs-1,
 				o->oargs.sarg+1) != o->oargs.nsargs-1)
 			objerror(o, USER, "bad transform");
-		if (in->f.sca < 0.0)
-			in->f.sca = -in->f.sca;
-		invxf(in->b.xfm, &in->b.sca,o->oargs.nsargs-1,o->oargs.sarg+1);
-		if (in->b.sca < 0.0)
-			in->b.sca = -in->b.sca;
+		if (in->x.f.sca < 0.0)
+			in->x.f.sca = -in->x.f.sca;
+		if (in->x.b.sca < 0.0)
+			in->x.b.sca = -in->x.b.sca;
 		in->obj = NULL;
 		o->os = (char *)in;
 	}

@@ -1,4 +1,4 @@
-/* Copyright (c) 1988 Regents of the University of California */
+/* Copyright (c) 1990 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
 
@@ -18,10 +18,7 @@ typedef struct scene {
 }  SCENE;			/* loaded octree */
 
 typedef struct {
-	struct {
-		double  sca;			/* scaling */
-		double  xfm[4][4];		/* transform */
-	} f, b;				/* forward and backward */
+	FULLXF  x;			/* forward and backward transforms */
 	SCENE  *obj;			/* loaded object */
 }  INSTANCE;			/* instance of octree */
 

@@ -1,4 +1,4 @@
-/* Copyright (c) 1988 Regents of the University of California */
+/* Copyright (c) 1990 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
 
@@ -12,7 +12,17 @@
 
 #include  <errno.h>
 
-#include  "fvect.h"
+#include  "mat4.h"
+				/* regular transformation */
+typedef struct {
+	MAT4  xfm;				/* transform matrix */
+	double  sca;				/* scalefactor */
+}  XF;
+				/* complemetary tranformation */
+typedef struct {
+	XF  f;					/* forward */
+	XF  b;					/* backward */
+}  FULLXF;
 
 #define  FHUGE		(1e10)		/* large real number */
 #define  FTINY		(1e-6)		/* small real number */
