@@ -64,6 +64,14 @@ double  rw;
 		r->crtype = ro->crtype | (r->rtype = rt);
 		VCOPY(r->rorg, ro->rop);
 	}
+	rayclear(r);
+	return(r->rlvl <= maxdepth && r->rweight >= minweight ? 0 : -1);
+}
+
+
+rayclear(r)			/* clear a ray for (re)evaluation */
+register RAY  *r;
+{
 	r->rno = raynum++;
 	r->newcset = r->clipset;
 	r->ro = NULL;
@@ -72,7 +80,6 @@ double  rw;
 	setcolor(r->pcol, 1.0, 1.0, 1.0);
 	setcolor(r->rcol, 0.0, 0.0, 0.0);
 	r->rt = 0.0;
-	return(r->rlvl <= maxdepth && r->rweight >= minweight ? 0 : -1);
 }
 
 
