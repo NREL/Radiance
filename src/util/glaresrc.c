@@ -73,8 +73,9 @@ analyze()			/* analyze our scene */
 		if (left < h)
 			addsrcspan(newspan(left,h,v,spanbr));
 	}
-	close_allsrcs();
 	free((char *)spanbr);
+	close_allsrcs();
+	absorb_specks();
 }
 
 
@@ -175,9 +176,8 @@ struct srcspan	*nss;
 				if (cs == NULL)
 					cs = this;
 				else {
-					mergesource(cs, this);
 					last->next = this->next;
-					free((char *)this);
+					mergesource(cs, this);
 					this = last;
 				}
 				break;
@@ -189,6 +189,7 @@ struct srcspan	*nss;
 		cs = (struct source *)malloc(sizeof(struct source));
 		if (cs == NULL)
 			memerr("source records");
+		cs->dom = 0.0;
 		cs->first = NULL;
 		cs->next = curlist;
 		curlist = cs;
@@ -219,7 +220,16 @@ struct source	*sp, *ap;
 	if (prev->next == NULL)
 		prev->next = alp;
 	sp->first = head.next;
-	ap->first = NULL;
+	if (ap->dom > 0.0 && sp->dom > 0.0) {		/* sources are done */
+		sp->dir[0] *= sp->dom;
+		sp->dir[1] *= sp->dom;
+		sp->dir[2] *= sp->dom;
+		fvsum(sp->dir, sp->dir, ap->dir, ap->dom);
+		normalize(sp->dir);
+		sp->brt = (sp->brt*sp->dom + ap->brt*ap->dom)
+				/ (sp->dom + ap->dom);
+	}
+	free((char *)ap);
 }
 
 
@@ -292,4 +302,67 @@ register struct source	*sp;
 	"%s: found source at (%.3f,%.3f,%.3f), dw %.5f, br %.1f (%d samps)\n",
 			progname, sp->dir[0], sp->dir[1], sp->dir[2], 
 			sp->dom, sp->brt, n);
+}
+
+
+struct source *
+findbuddy(s, l)			/* find close enough source to s in l*/
+register struct source	*s, *l;
+{
+	struct source	*bestbuddy = NULL;
+	double	d, r, mindist = MAXBUDDY;
+
+	r = sqrt(s->dom/PI);
+	for ( ; l != NULL; l = l->next) {
+		d = sqrt(dist2(l->dir, s->dir)) - sqrt(l->dom/PI) - r;
+		if (d < mindist) {
+			bestbuddy = l;
+			mindist = d;
+		}
+	}
+	return(bestbuddy);
+}
+
+
+absorb_specks()			/* eliminate too-small sources */
+{
+	struct source	head, *buddy;
+	register struct source	*last, *this;
+
+	if (verbose)
+		fprintf(stderr, "%s: absorbing small sources...\n", progname);
+	head.next = donelist;
+	last = &head;
+	for (this = donelist; this != NULL; this = this->next)
+		if (TOOSMALL(this)) {
+			last->next = this->next;
+			buddy = findbuddy(this, donelist);
+			if (buddy != NULL)
+				mergesource(buddy, this);
+			else
+				absorb(this);
+			this = last;
+		} else
+			last = this;
+	donelist = head.next;
+}
+
+
+absorb(s)			/* absorb a source into indirect */
+register struct source	*s;
+{
+	FVECT	dir;
+	register int	i, n;
+
+	for (i = 0; i < nglardirs; i++) {
+		spinvector(dir, ourview.vdir, ourview.vup, indirect[i].theta);
+		n = DOT(dir,s->dir)*s->dom*(sampdens*sampdens) + 0.5;
+		if (n == 0)
+			continue;
+		indirect[i].sum += n * s->brt;
+		indirect[i].n += n;
+	}
+	for ( ; s->first != NULL; s->first = s->first->next)
+		free((char *)s->first);
+	free((char *)s);
 }
