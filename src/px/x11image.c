@@ -445,9 +445,10 @@ XKeyPressedEvent  *ekey;
 			XBell(thedisplay, 0);
 			return(-1);
 		}
-		viewray(rorg, rdir, &ourview,
+		if (viewray(rorg, rdir, &ourview,
 				(ekey->x-xoff+.5)/xmax,
-				(ymax-1-ekey->y+yoff+.5)/ymax);
+				(ymax-1-ekey->y+yoff+.5)/ymax) < 0)
+			return(-1);
 		printf("%e %e %e ", rorg[0], rorg[1], rorg[2]);
 		printf("%e %e %e\n", rdir[0], rdir[1], rdir[2]);
 		fflush(stdout);
