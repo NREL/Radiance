@@ -279,14 +279,14 @@ Context	Cntl. Entity	Default Value	Field Entities	Affects
 =	=	=	=	=
 Object	o	-	-	-
 Transform	xf	-	-	T{
-f, sph, cyl, cone,
+f, fh, sph, cyl, cone,
 ring, torus, prism
 T}
 Material	m	2-sided black	T{
 sides, rd, td,
 ed, rs, ts, ir
 T}	T{
-f, sph, cyl, cone,
+f, fh, sph, cyl, cone,
 ring, torus, prism
 T}
 Color	c	neutral grey	T{
@@ -298,7 +298,7 @@ Vertex	v	T{
 (0,0,0),
 no normal
 T}	p, n	T{
-f, sph, cyl, cone,
+f, fh, sph, cyl, cone,
 ring, torus, prism
 T}
 .TE
@@ -817,6 +817,7 @@ Geometry
 .TS
 lw(.75i) lw(1.75i) lw(3i).
 f	v1 v2 v3 ...	polygon using current material, spec. vertices
+fh	v1 v2 v3 - ...	face with explicit holes
 sph	vc radius	sphere
 cyl	v1 radius v2	truncated right cylinder (open-ended)
 cone	v1 rad1 v2 rad2	truncated right cone (open-ended)
