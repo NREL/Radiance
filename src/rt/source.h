@@ -10,9 +10,6 @@
 extern "C" {
 #endif
 
-
-#include "copyright.h"
-
 #define  AIMREQT	100		/* required aim success/failure */
 
 #define  SDISTANT	01		/* source distant flag */

@@ -15,8 +15,6 @@
 extern "C" {
 #endif
 
-#include "copyright.h"
-
 typedef struct cone {
 	RREAL  *ca;		/* cone arguments (o->oargs.farg) */
 	char  p0, p1;		/* indices for endpoints */

@@ -8,9 +8,6 @@
 extern "C" {
 #endif
 
-
-#include "copyright.h"
-
 #define  MAXDDIM	5		/* maximum data dimensions */
 
 #define  DATATYPE	float		/* single precision to save space */

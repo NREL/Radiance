@@ -44,7 +44,9 @@ clean:
 bbox.o initotypes.o o_cone.o o_face.o \
 o_instance.o oconv.o sphere.o \
 cvmesh.o obj2mesh.o wfconv.o \
-writeoct.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
+writeoct.o:	../common/standard.h ../common/rtmisc.h ../common/rtio.h \
+../common/rtmath.h ../common/mat4.h ../common/fvect.h \
+../common/rterror.h
 
 initotypes.o o_cone.o o_face.o oconv.o \
 sphere.o writeoct.o:	../common/octree.h

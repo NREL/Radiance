@@ -8,8 +8,6 @@
 extern "C" {
 #endif
 
-#include "copyright.h"
-
 #include  <string.h>
 
 #include  "fvect.h"

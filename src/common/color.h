@@ -15,9 +15,6 @@
 extern "C" {
 #endif
 
-
-#include "copyright.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 

@@ -8,9 +8,6 @@
 extern "C" {
 #endif
 
-
-#include "copyright.h"
-
 #include "standard.h"
 #include <GL/glu.h>
 #include "color.h"

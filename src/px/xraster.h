@@ -3,8 +3,6 @@
  * xraster.h - header file for X routines using images.
  */
 
-#include "copyright.h"
-
 typedef struct {
 	int	width, height;			/* image size */
 	int	ncolors;			/* number of colors */

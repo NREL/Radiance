@@ -2,12 +2,12 @@
 static const char RCSid[] = "$Id$";
 #endif
 /*
- * Compute a 4-byte direction code (int32 type defined in standard.h).
+ * Compute a 4-byte direction code (externals defined in rtmath.h).
  *
  * Mean accuracy is 0.0022 degrees, with a maximum error of 0.0058 degrees.
  */
 
-#include "standard.h"
+#include "rtmath.h"
 
 #define	DCSCALE		11585.2		/* (1<<13)*sqrt(2) */
 #define FXNEG		01

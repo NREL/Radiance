@@ -411,8 +411,8 @@ initscans()				/* initialize scanline buffers */
 		hashtab[i] = NULL;
 					/* allocate scanline buffers */
 	scansize = sizeof(SCAN) + pxsiz*sizeof(COLR);
-#ifdef ALIGN
-	scansize = scansize+(sizeof(ALIGN)-1) & ~(sizeof(ALIGN)-1);
+#ifdef ALIGNT
+	scansize = scansize+(sizeof(ALIGNT)-1) & ~(sizeof(ALIGNT)-1);
 #endif
 	i = MAXSBUF / scansize;		/* compute number to allocate */
 	if (i > HSIZE)

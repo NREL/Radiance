@@ -17,8 +17,6 @@
  * See the ranimove(1) man page for further details.
  */
 
-#include "copyright.h"
-
 #include "ray.h"
 #include "view.h"
 #include "vars.h"

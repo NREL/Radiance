@@ -8,8 +8,6 @@
 extern "C" {
 #endif
 
-#include "copyright.h"
-
 typedef unsigned char  GORD;
 
 typedef struct {

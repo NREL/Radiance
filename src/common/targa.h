@@ -8,8 +8,6 @@
 extern "C" {
 #endif
  
-#include "copyright.h"
-
 			/* header structure adapted from tardev.h */
 struct hdStruct {
 	char textSize;			/* size of info. line ( < 256) */

@@ -10,9 +10,6 @@
 extern "C" {
 #endif
 
-
-#include "copyright.h"
-
 /*
  * Since we've defined our vectors as float below to save space,
  * watch out for changes in the definitions of VCOPY() and DOT()

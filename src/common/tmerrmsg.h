@@ -10,8 +10,6 @@
 extern "C" {
 #endif
 
-#include "copyright.h"
-
 char	*tmErrorMessage[] = {
 		"no error",
 		"out of memory",

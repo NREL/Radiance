@@ -4,12 +4,16 @@ static const char	RCSid[] = "$Id$";
 /*
  * Get additional command arguments from file or environment.
  *
- *  External symbols declared in standard.h
+ *  External symbols declared in rtio.h
  */
 
 #include "copyright.h"
 
-#include "standard.h"
+#include "rtio.h"
+
+#include "rtmisc.h"
+
+#include <errno.h>
 
 #define MAXARGEXP	512		/* maximum argument expansion */
 

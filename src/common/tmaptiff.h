@@ -12,10 +12,6 @@
 extern "C" {
 #endif
 
-
-#include "copyright.h"
-
-
 extern int	tmCvL16(TMbright *ls, uint16 *luvs, int len);
 extern int	tmCvLuv24(TMbright *ls, BYTE *cs, uint32 *luvs, int len);
 extern int	tmCvLuv32(TMbright *ls, BYTE *cs, uint32 *luvs, int len);
@@ -25,7 +21,6 @@ extern int	tmMapTIFF(BYTE **psp, int *xp, int *yp, int flags,
 				RGBPRIMP monpri, double gamval,
 				double Lddyn, double Ldmax,
 				char *fname, TIFF *tp);
-
 
 #ifdef __cplusplus
 }

@@ -8,8 +8,6 @@
 extern "C" {
 #endif
 
-#include "copyright.h"
-
 typedef struct {
 	double	xs, ys, xxs, yys, xys;
 	int	n;

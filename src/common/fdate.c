@@ -4,12 +4,12 @@ static const char	RCSid[] = "$Id$";
 /*
  * Return file date (UNIX seconds as returned by time(2) call)
  *
- *  External symbols declared in standard.h
+ *  External symbols declared in rtio.h
  */
 
 #include "copyright.h"
 
-#include  <sys/types.h>
+#include  "rtio.h"
 #include  <sys/stat.h>
 #ifdef _WIN32
   #include  <sys/utime.h>

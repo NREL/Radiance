@@ -3,8 +3,6 @@
  * Header file for network processing routines
  */
 
-#include "copyright.h"
-
 typedef struct {
 	char	*com;		/* command (stored on client side) */
 	int	pid;		/* process ID */

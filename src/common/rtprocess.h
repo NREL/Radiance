@@ -11,9 +11,6 @@
 extern "C" {
 #endif
 
-
-#include "copyright.h"
-
 #include  <sys/types.h>
 #ifdef _WIN32
   #include <windows.h>

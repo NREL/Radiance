@@ -10,9 +10,6 @@
 extern "C" {
 #endif
 
-
-#include "copyright.h"
-
 /****    Argument Macros    ****/
 				/* Flags of what to do */
 #define	TM_F_HCONTR	01		/* human contrast sensitivity */

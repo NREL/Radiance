@@ -8,8 +8,6 @@
 extern "C" {
 #endif
 
-#include "copyright.h"
-
 typedef struct {
 	char  *funame;			/* function name */
 	int  flags;			/* type flags */

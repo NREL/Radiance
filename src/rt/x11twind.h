@@ -14,9 +14,6 @@
 extern "C" {
 #endif
 
-
-#include "copyright.h"
-
 #define LEFTMAR	2			/* left margin width */
 
 typedef struct {

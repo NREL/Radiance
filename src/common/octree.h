@@ -8,8 +8,6 @@
 extern "C" {
 #endif
 
-#include "copyright.h"
-
 /*
  *	An octree is expressed as an integer which is either
  *	an index to eight other nodes, the empty tree, or an index

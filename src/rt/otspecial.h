@@ -9,9 +9,6 @@
 extern "C" {
 #endif
 
-
-#include "copyright.h"
-
 		/* flag for materials to ignore during irradiance comp. */
 #define  T_IRR_IGN	T_SP1
 

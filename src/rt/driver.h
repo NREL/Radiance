@@ -8,9 +8,6 @@
 extern "C" {
 #endif
 
-
-#include "copyright.h"
-
 struct driver {				/* driver functions */
 	void  (*close)();			/* close device */
 	void  (*clear)();			/* clear device */

@@ -8,9 +8,6 @@
 extern "C" {
 #endif
 
-
-#include "copyright.h"
-
 #ifdef  NORANDOM
 
 #undef  random

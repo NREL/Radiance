@@ -4,12 +4,11 @@ static const char	RCSid[] = "$Id$";
 /*
  *  xf.c - routines to convert transform arguments into 4X4 matrix.
  *
- *  External symbols declared in standard.h
+ *  External symbols declared in rtmath.h
  */
 
-#include "copyright.h"
-
-#include  "standard.h"
+#include  "rtmath.h"
+#include  "rtio.h"
 
 #define  d2r(a)		((PI/180.)*(a))
 

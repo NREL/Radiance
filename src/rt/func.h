@@ -10,9 +10,6 @@
 extern "C" {
 #endif
 
-
-#include "copyright.h"
-
 #include  "calcomp.h"
 
 #define  MAXEXPR	9	/* maximum expressions in modifier */

@@ -9,7 +9,9 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
-#include  "standard.h"
+#include  <stdio.h>
+
+#include  "rterror.h"
 
 extern char	*strerror();
 				/* global list of error actions */

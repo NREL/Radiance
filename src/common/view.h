@@ -11,8 +11,6 @@
 extern "C" {
 #endif
 
-#include "copyright.h"
-
 #include  "resolu.h"
 
 				/* view types */

@@ -4,12 +4,12 @@ static const char	RCSid[] = "$Id$";
 /*
  * fgetline.c - read line with escaped newlines.
  *
- *  External symbols declared in standard.h
+ *  External symbols declared in rtio.h
  */
 
 #include "copyright.h"
 
-#include  <stdio.h>
+#include  "rtio.h"
 
 
 char *

@@ -8,9 +8,6 @@
 extern "C" {
 #endif
 
-
-#include "copyright.h"
-
 #include  "standard.h"
 
 #include  "octree.h"

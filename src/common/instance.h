@@ -10,8 +10,6 @@
 extern "C" {
 #endif
 
-#include "copyright.h"
-
 typedef struct scene {
 	char  *name;			/* octree name */
 	int  nref;			/* number of references */

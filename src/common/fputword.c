@@ -4,12 +4,12 @@ static const char	RCSid[] = "$Id$";
 /*
  * Read white space separated words from stream
  *
- *  External symbols declared in standard.h
+ *  External symbols declared in rtio.h
  */
 
 #include "copyright.h"
 
-#include <stdio.h>
+#include "rtio.h"
 
 #include <ctype.h>
 

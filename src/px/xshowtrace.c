@@ -136,10 +136,12 @@ mainloop()				/* get and process input */
 freetree(tp)				/* free a trace tree */
 struct node	*tp;
 {
-	register struct node	*kid;
+	register struct node	*kid, *k2;
 
-	for (kid = tp->daughter; kid != NULL; kid = kid->sister)
+	for (kid = tp->daughter; kid != NULL; kid = k2) {
+		k2 = kid->sister;
 		freetree(kid);
+	}
 	free((void *)tp);
 }
 

@@ -8,8 +8,6 @@
 extern "C" {
 #endif
 
-#include "copyright.h"
-
 #define  VERTEX(f,n)	((f)->va + 3*(n))
 
 typedef struct {	/* a polygonal face */

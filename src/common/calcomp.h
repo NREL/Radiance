@@ -8,9 +8,6 @@
 extern "C" {
 #endif
 
-
-#include "copyright.h"
-
 #include <stdio.h>
 
 #define	 VAR		1

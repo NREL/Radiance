@@ -8,9 +8,6 @@
 extern "C" {
 #endif
 
-
-#include "copyright.h"
-
 typedef struct {
 	char	*key;			/* key name */
 	unsigned long	hval;		/* key hash value (for efficiency) */

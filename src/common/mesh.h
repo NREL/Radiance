@@ -10,8 +10,6 @@
 extern "C" {
 #endif
 
-#include "copyright.h"
-
 #include "lookup.h"
 
 #ifndef BYTE

@@ -19,8 +19,7 @@
 extern "C" {
 #endif
 
-#include "copyright.h"
-
+#include <stdio.h>
 			/* flags for scanline ordering */
 #define  XDECR			1
 #define  YDECR			2
@@ -73,7 +72,6 @@ extern void	fputformat(char *s, FILE *fp);
 extern int	getheader(FILE *fp, int (*f)(), char *p);
 extern int	globmatch(char *pat, char *str);
 extern int	checkheader(FILE *fin, char *fmt, FILE *fout);
-
 
 #ifdef __cplusplus
 }

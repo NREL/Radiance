@@ -5,11 +5,11 @@ static const char	RCSid[] = "$Id$";
  * Holodeck display process communication
  */
 
-#include <sys/uio.h>
-
 #include "rholo.h"
 #include "rhdisp.h"
 #include "rtprocess.h"
+
+#include <sys/uio.h>
 
 #ifndef HDSUF
 #define HDSUF		".hdi"

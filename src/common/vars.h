@@ -8,8 +8,6 @@
 extern "C" {
 #endif
 
-#include "copyright.h"
-
 typedef struct {
 	char	*name;		/* variable name */
 	short	nick;		/* # characters required for nickname */

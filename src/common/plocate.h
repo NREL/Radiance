@@ -10,8 +10,6 @@
 extern "C" {
 #endif
 
-#include "copyright.h"
-
 #define  EPSILON	FTINY		/* acceptable location error */
 
 #define  XPOS		03		/* x position mask */

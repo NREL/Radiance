@@ -8,8 +8,6 @@
 extern "C" {
 #endif
 
-#include "copyright.h"
-
 #ifdef _WIN32
 
 #include <stdio.h>

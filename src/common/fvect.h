@@ -8,8 +8,6 @@
 extern "C" {
 #endif
 
-#include "copyright.h"
-
 #ifdef  SMLFLT
 #define  RREAL		float
 #define  FTINY		(1e-3)

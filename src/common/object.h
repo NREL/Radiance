@@ -10,8 +10,6 @@
 extern "C" {
 #endif
 
-#include "copyright.h"
-
 #ifndef  OCTREE
 #define  OCTREE		int
 #endif

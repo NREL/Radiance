@@ -4,14 +4,14 @@ static const char	RCSid[] = "$Id$";
 /*
  * Check argument list against format string.
  *
- *  External symbols declared in standard.h
+ *  External symbols declared in rtio.h
  */
 
 #include "copyright.h"
 
 #include <ctype.h>
 
-#include "standard.h"
+#include "rtio.h"
 
 
 int

@@ -8,8 +8,6 @@
 extern "C" {
 #endif
 
-#include "copyright.h"
-
 #ifndef	MEM_PTR
 #define	MEM_PTR		void *
 #endif
