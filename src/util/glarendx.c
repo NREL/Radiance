@@ -134,7 +134,7 @@ char	*s;
 		sscanview(&midview, s+VIEWSTRL);
 	else if (isformat(s)) {
 		formatval(fmt, s);
-		wrongformat = strcmp(fmt, "ASCII");
+		wrongformat = strcmp(fmt, "ascii");
 	}
 }
 
