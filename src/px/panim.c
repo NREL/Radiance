@@ -75,10 +75,8 @@ char	*file;
 	int	xres, yres;
 	int	xbeg, ybeg;
 	FILE	*fp;
-	int	j;
-	register int	k, c;
-	register BYTE	*in;
-	short	*out;
+	int	y;
+	register int	x;
 						/* open file */
 	if (file == NULL) {
 		fp = stdin;
@@ -101,38 +99,18 @@ char	*file;
 						/* clear output */
 	bzero(sc_frame_arr, sizeof(sc_frame_arr));
 						/* get frame */
-	for (j = yres-1; j >= 0; j--) {
+	for (y = yres-1; y >= 0; y--) {
 		if (freadcolrs(scanin, xres, fp) < 0) {
 			fputs(file, stderr);
 			fputs(": read error\n", stderr);
 			exit(1);
 		}
-		for (in = scanin[0], out = sc_frame_arr[ybeg+j]+xbeg;
-				in < scanin[xres]; in += 4, out++) {
-			k = in[EXP] - COLXS;
-			if (k >= 8) {
-				in[RED] =
-				in[GRN] =
-				in[BLU] = 255;
-			} else if (k <= -8) {
-				in[RED] =
-				in[GRN] =
-				in[BLU] = 0;
-			} else if (k > 0) {
-				c = in[RED] << k;
-				in[RED] = c > 255 ? 255 : c;
-				c = in[GRN] << k;
-				in[GRN] = c > 255 ? 255 : c;
-				c = in[BLU] << k;
-				in[BLU] = c > 255 ? 255 : c;
-			} else if (k < 0) {
-				in[RED] = in[RED] >> -k;
-				in[GRN] = in[GRN] >> -k;
-				in[BLU] = in[BLU] >> -k;
-			}
-			for (k = 0; k < 3; k++)
-				*out = *out<<5 | (gammamap[in[k]]+(random()&0x7))>>3;
-		}
+		normcolrs(scanin, xres);	/* normalize */
+		for (x = 0; x < xres; x++)	/* convert */
+			sc_frame_arr[y+ybeg][x+xbeg] =
+			((gammamap[scanin[x][RED]]+(random()&7))&0xf8)<<7
+			| ((gammamap[scanin[x][GRN]]+(random()&7))&0xf8)<<2
+			| (gammamap[scanin[x][BLU]]+(random()&7))>>3;
 	}
 						/* send frame */
 	scry_send_frame();
