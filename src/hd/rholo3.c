@@ -126,7 +126,7 @@ int	nents;
 					/* display what we have */
 	for (i = 0; i < nents; i++)
 		if ((b = hdgetbeam(hdlist[clist[i].hd], clist[i].bi)) != NULL) {
-			bcopy((char *)hdbray(b), (char *)packrays(p),
+			bcopy((char *)hdbray(b), (char *)packra(p),
 					(p->nr=b->nrm)*sizeof(RAYVAL));
 			disp_packet(p);
 		}
@@ -272,7 +272,7 @@ sortcomplist()			/* fix our list order */
 	done_packets(flush_queue());
 	if (complen <= 0)	/* check to see if there is even a list */
 		return;
-	if (lastin < 0)		/* flag to sort entire list */
+	if (lastin < 0 || listpos*4 >= complen*3)
 		qsort((char *)complist, complen, sizeof(PACKHEAD), beamcmp);
 	else if (listpos) {	/* else sort and merge sublist */
 		list2 = (PACKHEAD *)malloc(listpos*sizeof(PACKHEAD));

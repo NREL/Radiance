@@ -2,6 +2,10 @@
 
 /* SCCSid "$SunId$ SGI" */
 
+/* Copyright (c) 1997 Silicon Graphics, Inc. */
+
+/* SCCSid "$SunId$ SGI" */
+
 /*
  * Header file for rholo program
  */
@@ -29,28 +33,26 @@ typedef struct {
 } PACKHEAD;		/* followed by ray values */
 
 #define packsiz(nr)	(sizeof(PACKHEAD)+(nr)*sizeof(RAYVAL))
-#define packray(p)	(RAYVAL *)((PACKHEAD *)(p)+1)
+#define packra(p)	((RAYVAL *)((p)+1))
 
 				/* input variables */
 #define RENDER		0		/* rendering options */
-#define VIEW		1		/* starting view */
-#define SECTION		2		/* holodeck section boundaries */
-#define OCTREE		3		/* octree file name */
-#define RIF		4		/* rad input file */
-#define EXPOSURE	5		/* section exposure value */
-#define TIME		6		/* maximum rendering time */
-#define DISKSPACE	7		/* how much disk space to use */
-#define CACHE		8		/* amount of memory to use as cache */
-#define GRID		9		/* target grid size */
-#define OBSTRUCTIONS	10		/* shall we track obstructions? */
-#define OCCUPANCY	11		/* expected occupancy probability */
-#define REPORT		12		/* report interval and error file */
+#define SECTION		1		/* holodeck section boundaries */
+#define OCTREE		2		/* octree file name */
+#define RIF		3		/* rad input file */
+#define EXPOSURE	4		/* section exposure value */
+#define TIME		5		/* maximum rendering time */
+#define DISKSPACE	6		/* how much disk space to use */
+#define CACHE		7		/* amount of memory to use as cache */
+#define GRID		8		/* target grid size */
+#define OBSTRUCTIONS	9		/* shall we track obstructions? */
+#define OCCUPANCY	10		/* expected occupancy probability */
+#define REPORT		11		/* report interval and error file */
 
-#define NRHVARS		13		/* number of variables */
+#define NRHVARS		12		/* number of variables */
 
 #define RHVINIT { \
 	{"render",	3,	0,	NULL,	catvalues}, \
-	{"view",	2,	0,	NULL,	NULL}, \
 	{"section",	3,	0,	NULL,	NULL}, \
 	{"OCTREE",	3,	0,	NULL,	onevalue}, \
 	{"RIF",		3,	0,	NULL,	onevalue}, \
