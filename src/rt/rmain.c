@@ -32,7 +32,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #ifndef  DEFPATH
 #define  DEFPATH	":/usr/local/lib/ray"
 #endif
+#ifndef  ULIBVAR
 #define  ULIBVAR	"RAYPATH"
+#endif
 
 char  *progname;			/* argv[0] */
 
