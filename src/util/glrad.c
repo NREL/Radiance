@@ -66,7 +66,6 @@ struct {
 int	currentview = 0;		/* current view number */
 VIEW	thisview = STDVIEW;		/* displayed view */
 VIEW	lastview;			/* last recorded view */
-char	*lastvc = NULL;			/* cause of last view change */
 
 char	*progname;			/* global argv[0] */
 char	*radfile;			/* rad input file */
@@ -79,6 +78,8 @@ int	rtpd[3];			/* rtrace process descriptors */
 int	backvis = 1;			/* back faces visible? */
 
 int	displist;			/* our scene display list */
+
+int	in_dev_view = 0;		/* currently in dev_view() */
 
 extern char	*fgets(), *fgetline(), *atos(), *scan4var();
 extern int	nowarn;			/* turn warnings off? */
@@ -419,7 +420,7 @@ register VIEW	*nv;
 	}
 	if (hres != 0 & vres != 0) {
 		wa = (vres*pheight)/(hres*pwidth);
-		va = viewaspect(&thisview);
+		va = viewaspect(nv);
 		if (va > wa+.05) {
 			newvres = (pwidth/pheight)*va*newhres + .5;
 			if (newvres > maxvres) {
@@ -434,10 +435,12 @@ register VIEW	*nv;
 			}
 		}
 		if (newhres != hres | newvres != vres) {
+			in_dev_view++;
 			XResizeWindow(ourdisplay, gwind, newhres, newvres);
 			do
 				dev_input(0);		/* get resize event */
 			while (newhres != hres | newvres != vres);
+			in_dev_view--;
 		}
 	}
 	copystruct(&thisview, nv);
@@ -609,8 +612,8 @@ register VIEW	*vp;
 {
 	double	d, xmin, xmax, ymin, ymax, zmin, zmax;
 
-	zmin = 0.05;
-	zmax = 5000.;
+	zmin = 0.1;
+	zmax = 1000.;
 	if (thisview.vfore > FTINY)
 		zmin = thisview.vfore;
 	if (thisview.vaft > FTINY)
@@ -654,7 +657,7 @@ register XKeyPressedEvent  *ekey;
 		headlocked = 0;
 		break;
 	case 'l':			/* retrieve last (premouse) view */
-		if (lastvc != NULL) {
+		if (lastview.type) {
 			VIEW	vtmp;
 			copystruct(&vtmp, &thisview);
 			dev_view(&lastview);
@@ -728,6 +731,7 @@ int	vwnum;
 		vwnum = 0;
 	if (vwnum == currentview)
 		return;
+	/* copylastv("change view"); */
 	dev_view(vwl[currentview=vwnum].v);
 }
 
@@ -768,6 +772,8 @@ VIEW	*vp;
 copylastv(cause)			/* copy last view position */
 char	*cause;
 {
+	static char	*lastvc;
+
 	if (cause == lastvc)
 		return;			/* only record one view per cause */
 	lastvc = cause;
@@ -798,6 +804,8 @@ register XConfigureEvent  *ersz;
 	glViewport(0, 0, hres=ersz->width, vres=ersz->height);
 	if (hres > maxhres) maxhres = hres;
 	if (vres > maxvres) maxvres = vres;
+	if (in_dev_view)
+		return;
 	wa = (vres*pheight)/(hres*pwidth);
 	va = viewaspect(&thisview);
 	if (va > wa+.05) {
