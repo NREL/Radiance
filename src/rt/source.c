@@ -68,6 +68,9 @@ marksources()			/* find and mark source objects */
 				o->otype != OBJ_SOURCE &&
 				m->oargs.farg[3] <= FTINY)
 			continue;			/* don't bother */
+		if (m->oargs.farg[0] <= FTINY && m->oargs.farg[1] <= FTINY &&
+				m->oargs.farg[2] <= FTINY)
+			continue;			/* don't bother */
 
 		if (sfun[o->otype].of == NULL ||
 				sfun[o->otype].of->setsrc == NULL)
