@@ -40,7 +40,6 @@ char	**av;
 	register XF_SPEC	*spec;
 	register int	n;
 	int	rv;
-	XF	thisxf;
 
 	if (ac == 1) {			/* something with existing transform */
 		if ((spec = xf_context) == NULL)
@@ -78,18 +77,17 @@ char	**av;
 		xf_context = spec;
 	}
 					/* translate new specification */
-	if (xf(&thisxf, spec->xac, &xf_argv[spec->xav0]) != spec->xac)
+	if (xf(&spec->xf, spec->xac, &xf_argv[spec->xav0]) != spec->xac)
 		return(MG_ETYPE);
 					/* check for vertex reversal */
-	if ((spec->rev = (thisxf.sca < 0.)))
-		thisxf.sca = -thisxf.sca;
+	if ((spec->rev = (spec->xf.sca < 0.)))
+		spec->xf.sca = -spec->xf.sca;
 					/* compute total transformation */
 	if (spec->prev != NULL) {
-		multmat4(spec->xf.xfm, thisxf.xfm, spec->prev->xf.xfm);
-		spec->xf.sca = thisxf.sca * spec->prev->xf.sca;
+		multmat4(spec->xf.xfm, spec->xf.xfm, spec->prev->xf.xfm);
+		spec->xf.sca *= spec->prev->xf.sca;
 		spec->rev ^= spec->prev->rev;
-	} else
-		spec->xf = thisxf;
+	}
 	spec->xid = comp_xfid(spec->xf.xfm);	/* compute unique ID */
 	return(MG_OK);
 }
