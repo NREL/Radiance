@@ -270,4 +270,4 @@ p_func.o t_data.o t_func.o:	func.h
 
 devcomm.o:	../common/vfork.h
 
-rtmain.o rpmain.o rvmain.o:	../common/paths.h
+rtmain.o rpmain.o rvmain.o rpict.o:	../common/paths.h

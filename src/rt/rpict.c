@@ -26,6 +26,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "random.h"
 
+#include  "paths.h"
+
 int  dimlist[MAXDIM];			/* sampling dimensions */
 int  ndims = 0;				/* number of sampling dimensions */
 int  samplendx;				/* sample index number */
@@ -78,7 +80,7 @@ extern long  nrays;			/* number of rays traced */
 #define  pixjitter()	(.5+dstrpix*(.5-frandom()))
 
 #define  RFTEMPLATE	"rfXXXXXX"
-#define  HFTEMPLATE	"/tmp/hfXXXXXX"
+#define  HFTEMPLATE	TEMPLATE
 
 static char  *hfname = NULL;		/* header file name */
 static FILE  *hfp = NULL;		/* header file pointer */
