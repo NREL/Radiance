@@ -17,7 +17,7 @@ PIXAR_INCLUDE=	-I/usr/pixar/include
 PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar -lm
 
 PROGS = pfilt ttyimage oki20c oki20 paintjet mt160r getinfo psign \
-greyscale pvalue pcompos colorscale protate ra_pr ra_pr24 \
+greyscale pvalue pcompos colorscale protate ra_pr ra_pr24 ra_avs \
 ra_t8 ra_bn ra_t16 pcomb pinterp ximage xshowtrace pflip ra_ppm \
 ra_rgbe ra_pict ra_ps pextrem
 
@@ -105,6 +105,9 @@ biq.o -lrt -lm
 
 ra_pr24:	ra_pr24.o
 	$(CC) $(CFLAGS) -o ra_pr24 ra_pr24.o -lrt -lm
+
+ra_avs:	ra_avs.o
+	$(CC) $(CFLAGS) -o ra_avs ra_avs.o -lrt -lm
 
 ra_ps:	ra_ps.o
 	$(CC) $(CFLAGS) -o ra_ps ra_ps.o -lrt -lm
