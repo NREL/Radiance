@@ -68,7 +68,7 @@ register struct tmStruct	*tm;
 double	uvp[2];
 {	/* Should check that tm->inppri==TM_XYZPRIM beforehand... */
 	double	d, x, y;
-	COLR	XYZ, RGB;
+	COLOR	XYZ, RGB;
 					/* convert to XYZ */
 	d = 1./(6.*uvp[0] - 16.*uvp[1] + 12.);
 	x = 9.*uvp[0] * d;
@@ -94,8 +94,21 @@ compmeshift(li, uvp)			/* compute mesopic color shift */
 TMbright	li;		/* encoded world luminance */
 double	uvp[2];			/* world (u',v') -> returned desaturated */
 {
-	/* UNIMPLEMENTED */
-	return(li);
+	double	scotrat, d;
+
+	if (li >= BMESUPPER)
+		return(li);
+	scotrat = 1.33/9.*(6.*uvp[0]-16.*uvp[1]+12.)/uvp[0] - 1.68;
+	if (li <= BMESLOWER) {
+		d = 0.;
+		uvp[0] = U_NEU; uvp[1] = V_NEU;
+	} else {
+		d = (tmLuminance(li) - LMESLOWER)/(LMESUPPER - LMESLOWER);
+		uvp[0] = d*uvp[0] + (1.-d)*U_NEU;
+		uvp[1] = d*uvp[1] + (1.-d)*V_NEU;
+	}
+	d = li + (double)TM_BRTSCALE*log(d + (1.-d)*scotrat/2.26);
+	return((TMbright)(d+.5));
 }
 
 
@@ -185,7 +198,7 @@ int	len;
 			uvp[0] = 1./UVSCALE*((luvs[i]>>8 & 0xff) + .5);
 			uvp[1] = 1./UVSCALE*((luvs[i] & 0xff) + .5);
 			ls[i] = compmeshift(ls[i], uvp);
-			j = tmTop->flags & TM_F_BW || ls[i] < BMESLOWER
+			j = tmTop->flags&TM_F_BW || ls[i]<BMESLOWER
 					? UVNEU
 					: (int)(uvp[0]*UVSCALE)<<8
 						| (int)(uvp[1]*UVSCALE);
@@ -241,7 +254,7 @@ int	len;
 				uvp[1] = V_NEU;
 			}
 			ls[i] = compmeshift(ls[i], uvp);
-			if (tmTop->flags & TM_F_BW || ls[i] < BMESLOWER
+			if (tmTop->flags&TM_F_BW || ls[i]<BMESLOWER
 					|| (j = uvpencode(uvp)) < 0)
 				j = uv14neu;
 		} else {
@@ -249,8 +262,7 @@ int	len;
 		}
 		if (!isuvset(ld, j)) {
 			if (uvpdecode(uvp, j) < 0) {
-				uvp[0] = U_NEU;
-				uvp[1] = V_NEU;
+				uvp[0] = U_NEU; uvp[1] = V_NEU;
 			}
 			uv2rgb(ld->rgbval[j], tmTop, uvp);
 			setuv(ld, j);
