@@ -76,7 +76,7 @@ char  **argv;
 						/* print bounding box */
 	if (!nohead)
 		printf(
-"      xmin      xmax      ymin      ymax      zmin      zmax\n");
+"     xmin      xmax      ymin      ymax      zmin      zmax\n");
 
 	printf("%9g %9g %9g %9g %9g %9g\n", bbmin[0], bbmax[0],
 			bbmin[1], bbmax[1], bbmin[2], bbmax[2]);
