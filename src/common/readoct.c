@@ -18,9 +18,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "otypes.h"
 
-static double  getflt();
-static long  getint();
-static char  *getstr();
+static double  ogetflt();
+static long  ogetint();
+static char  *ogetstr();
 static int  getobj(), octerror();
 static OCTREE  getfullnode(), gettree();
 
@@ -60,21 +60,21 @@ char  *ofn[];
 	if (checkheader(infp, OCTFMT, load&IO_INFO ? stdout : NULL) < 0)
 		octerror(USER, "not an octree");
 					/* check format */
-	if ((objsize = getint(2)-OCTMAGIC) <= 0 ||
+	if ((objsize = ogetint(2)-OCTMAGIC) <= 0 ||
 			objsize > MAXOBJSIZ || objsize > sizeof(long))
 		octerror(USER, "incompatible octree format");
 					/* get boundaries */
 	if (load & IO_BOUNDS) {
 		for (i = 0; i < 3; i++)
-			scene->cuorg[i] = atof(getstr(sbuf));
-		scene->cusize = atof(getstr(sbuf));
+			scene->cuorg[i] = atof(ogetstr(sbuf));
+		scene->cusize = atof(ogetstr(sbuf));
 	} else {
 		for (i = 0; i < 4; i++)
-			getstr(sbuf);
+			ogetstr(sbuf);
 	}
 	objorig = nobjects;		/* set object offset */
 	nf = 0;				/* get object files */
-	while (*getstr(sbuf)) {
+	while (*ogetstr(sbuf)) {
 		if (load & IO_SCENE)
 			readobj(sbuf);
 		if (load & IO_FILES)
@@ -84,7 +84,7 @@ char  *ofn[];
 	if (load & IO_FILES)
 		ofn[nf] = NULL;
 					/* get number of objects */
-	fnobjects = m = getint(objsize);
+	fnobjects = m = ogetint(objsize);
 	if (fnobjects != m)
 		octerror(USER, "too many objects");
 
@@ -93,7 +93,7 @@ char  *ofn[];
 		scene->cutree = gettree();
 		if (load & IO_SCENE)		/* get the scene */
 		    if (nf == 0) {
-			for (i = 0; *getstr(sbuf); i++)
+			for (i = 0; *ogetstr(sbuf); i++)
 				if ((otypmap[i] = otype(sbuf)) < 0) {
 					sprintf(errmsg, "unknown type \"%s\"",
 							sbuf);
@@ -116,18 +116,14 @@ char  *ofn[];
 
 
 static char *
-getstr(s)			/* get null-terminated string */
+ogetstr(s)			/* get null-terminated string */
 char  *s;
 {
-	register char  *cp;
-	register int  c;
+	extern char  *getstr();
 
-	cp = s;
-	while ((c = getc(infp)) != EOF)
-		if ((*cp++ = c) == '\0')
-			return(s);
-		
-	octerror(USER, "truncated octree");
+	if (getstr(s, infp) == NULL)
+		octerror(USER, "truncated octree");
+	return(s);
 }
 
 
@@ -138,10 +134,10 @@ getfullnode()			/* get a set, return fullnode */
 	register int  i;
 	register long  m;
 
-	if ((set[0] = getint(objsize)) > MAXSET)
+	if ((set[0] = ogetint(objsize)) > MAXSET)
 		octerror(USER, "bad set in getfullnode");
 	for (i = 1; i <= set[0]; i++) {
-		m = getint(objsize) + objorig;
+		m = ogetint(objsize) + objorig;
 		if ((set[i] = m) != m)
 			octerror(USER, "too many objects");
 	}
@@ -150,35 +146,29 @@ getfullnode()			/* get a set, return fullnode */
 
 
 static long
-getint(siz)			/* get a siz-byte integer */
-register int  siz;
+ogetint(siz)			/* get a siz-byte integer */
+int  siz;
 {
-	register int  c;
+	extern long  getint();
 	register long  r;
 
-	if ((c = getc(infp)) == EOF)
-		goto end_file;
-	r = 0x80&c ? -1<<8|c : c;		/* sign extend */
-	while (--siz > 0) {
-		if ((c = getc(infp)) == EOF)
-			goto end_file;
-		r <<= 8;
-		r |= c;
-	}
+	r = getint(siz, infp);
+	if (feof(infp))
+		octerror(USER, "truncated octree");
 	return(r);
-end_file:
-	octerror(USER, "truncated octree");
 }
 
 
 static double
-getflt()			/* get a floating point number */
+ogetflt()			/* get a floating point number */
 {
-	extern double  ldexp();
-	double  d;
+	extern double  getflt();
+	double  r;
 
-	d = (double)getint(4)/0x7fffffff;
-	return(ldexp(d, (int)getint(1)));
+	r = getflt(infp);
+	if (feof(infp))
+		octerror(USER, "truncated octree");
+	return(r);
 }
 	
 
@@ -216,7 +206,7 @@ getobj()				/* get next object */
 	register long  m;
 	register OBJREC  *objp;
 
-	i = getint(1);
+	i = ogetint(1);
 	if (i == -1)
 		return(OVOID);		/* terminator */
 	if ((obj = newobject()) == OVOID)
@@ -224,40 +214,40 @@ getobj()				/* get next object */
 	objp = objptr(obj);
 	if ((objp->otype = otypmap[i]) < 0)
 		octerror(USER, "reference to unknown type");
-	if ((m = getint(objsize)) != OVOID) {
+	if ((m = ogetint(objsize)) != OVOID) {
 		m += objorig;
 		if ((OBJECT)m != m)
 			octerror(USER, "too many objects");
 	}
 	objp->omod = m;
-	objp->oname = savqstr(getstr(sbuf));
-	if (objp->oargs.nsargs = getint(2)) {
+	objp->oname = savqstr(ogetstr(sbuf));
+	if (objp->oargs.nsargs = ogetint(2)) {
 		objp->oargs.sarg = (char **)bmalloc
 				(objp->oargs.nsargs*sizeof(char *));
 		if (objp->oargs.sarg == NULL)
 			goto memerr;
 		for (i = 0; i < objp->oargs.nsargs; i++)
-			objp->oargs.sarg[i] = savestr(getstr(sbuf));
+			objp->oargs.sarg[i] = savestr(ogetstr(sbuf));
 	} else
 		objp->oargs.sarg = NULL;
 #ifdef  IARGS
-	if (objp->oargs.niargs = getint(2)) {
+	if (objp->oargs.niargs = ogetint(2)) {
 		objp->oargs.iarg = (long *)bmalloc
 				(objp->oargs.niargs*sizeof(long));
 		if (objp->oargs.iarg == NULL)
 			goto memerr;
 		for (i = 0; i < objp->oargs.niargs; i++)
-			objp->oargs.iarg[i] = getint(4);
+			objp->oargs.iarg[i] = ogetint(4);
 	} else
 		objp->oargs.iarg = NULL;
 #endif
-	if (objp->oargs.nfargs = getint(2)) {
+	if (objp->oargs.nfargs = ogetint(2)) {
 		objp->oargs.farg = (FLOAT *)bmalloc
 				(objp->oargs.nfargs*sizeof(FLOAT));
 		if (objp->oargs.farg == NULL)
 			goto memerr;
 		for (i = 0; i < objp->oargs.nfargs; i++)
-			objp->oargs.farg[i] = getflt();
+			objp->oargs.farg[i] = ogetflt();
 	} else
 		objp->oargs.farg = NULL;
 						/* initialize */
