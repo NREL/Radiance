@@ -22,11 +22,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define DEVPATH		getenv("PATH")	/* device search path */
 #endif
 
-#ifndef DELAY
-#define DELAY		20		/* seconds to wait for response */
-#endif
-
-static int	comm_close(), comm_clear(), comm_paintr(), comm_errout(),
+static int	comm_close(), comm_clear(), comm_paintr(),
 		comm_getcur(), comm_comout(), comm_comin(), comm_flush();
 
 struct driver	comm_driver = {
@@ -37,6 +33,34 @@ struct driver	comm_driver = {
 FILE	*devin, *devout;
 
 int	devchild;
+
+
+static struct driver *
+final_connect()				/* verify and initialize connection */
+{
+	putw(COM_SENDM, devout);
+	fflush(devout);
+	if (getw(devin) != COM_RECVM)
+		return(NULL);
+						/* get driver parameters */
+	getstate();
+						/* set error vectors */
+	cmdvec = comm_comout;
+	if (wrnvec != NULL)
+		wrnvec = comm_comout;
+	return(&comm_driver);
+}
+
+
+struct driver *
+slave_init(dname, id)			/* run rview in slave mode */
+char	*dname, *id;
+{
+	devchild = -1;				/* we're the slave here */
+	devout = stdout;			/* use standard input */
+	devin = stdin;				/* and standard output */
+	return(final_connect());		/* verify initialization */
+}
 
 
 struct driver *
@@ -72,18 +96,7 @@ char	*dname, *id;
 		goto syserr;
 	if ((devin = fdopen(p2[0], "r")) == NULL)
 		goto syserr;
-						/* verify initialization */
-	putw(COM_SENDM, devout);
-	fflush(devout);
-	if (getw(devin) != COM_RECVM)
-		return(NULL);
-						/* get driver parameters */
-	getstate();
-						/* set error vectors */
-	cmdvec = comm_comout;
-	if (wrnvec != NULL)
-		wrnvec = comm_comout;
-	return(&comm_driver);
+	return(final_connect());		/* verify initialization */
 syserr:
 	perror(dname);
 	return(NULL);
@@ -100,6 +113,8 @@ comm_close()			/* done with driver */
 		wrnvec = stderr_v;
 	fclose(devout);
 	fclose(devin);
+	if (devchild < 0)
+		return;
 	while ((pid = wait(0)) != -1 && pid != devchild)
 		;
 }
@@ -186,15 +201,6 @@ char	*prompt;
 		reply_error("comin");
 	mygets(buf, devin);
 	getstate();
-}
-
-
-static
-comm_errout(str)			/* display an error message */
-char	*str;
-{
-	comm_comout(str);
-	stderr_v(str);			/* send to standard error also */
 }
 
 
