@@ -39,7 +39,7 @@ char *argv[];
 #endif
 #endif
 					/* protection from SYSV signals(!) */
-#if defined(sgi) || defined(hpux)
+#if defined(sgi)
 #define guard_io()	sighold(SIGALRM)
 #define unguard()	sigrelse(SIGALRM)
 #endif
