@@ -85,15 +85,15 @@ int  n;
 				nsdir[j] = sp->sloc[j] - r->rop[j];
 			normalize(nsdir);
 		}
-		if (r->rox != NULL)
-			multv3(nsdir, nsdir, r->rox->b.xfm);
-		if (mf->b != &unitxf)
-			multv3(nsdir, nsdir, mf->b->xfm);
-	} else
-		nsdir[0] = nsdir[1] = nsdir[2] = 0.0;
-	varset("DxA", '=', nsdir[0]);
-	varset("DyA", '=', nsdir[1]);
-	varset("DzA", '=', nsdir[2]);
+		multv3(nsdir, nsdir, funcxf.xfm);
+		varset("DxA", '=', nsdir[0]/funcxf.sca);
+		varset("DyA", '=', nsdir[1]/funcxf.sca);
+		varset("DzA", '=', nsdir[2]/funcxf.sca);
+	} else {
+		varset("DxA", '=', 0.0);
+		varset("DyA", '=', 0.0);
+		varset("DzA", '=', 0.0);
+	}
 					/* compute coefficient */
 	errno = 0;
 	va = mf->ep + 4*n;
