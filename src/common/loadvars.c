@@ -76,9 +76,11 @@ register char	*ass;
 	for (n = strlen(ass); n > 0; n--)
 		if (!isspace(ass[n-1]))
 			break;
-	if (!n && !nowarn) {
-		fprintf(stderr, "%s: warning - missing value for variable '%s'\n",
-				progname, varname);
+	if (!n) {
+		if (!nowarn)
+			fprintf(stderr,
+			"%s: warning - missing value for variable '%s'\n",
+					progname, varname);
 		return;
 	}
 					/* match variable from list */
