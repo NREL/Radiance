@@ -50,9 +50,9 @@ $(DEVDIR)/glxh.hdi:	$(DEVDIR)/glx.hdi
 	ln $(DEVDIR)/glx.hdi $(DEVDIR)/glxh.hdi
 
 $(DEVDIR)/glx.hdi:	rhdisp.o rhdisp2.o rhdisp3.o rhd_glx.o \
-dircode.o holo.o
+rhd_qtree.o rhd_qtree2c.o dircode.o holo.o
 	$(CC) $(CFLAGS) -o $(DEVDIR)/glx.hdi rhdisp.o rhdisp2.o rhdisp3.o \
-rhd_glx.o holo.o dircode.o -lrt -lGLU -lGL -lX11 -lm
+rhd_glx.o holo.o rhd_qtree.o rhd_qtree2c.o dircode.o -lrt -lGLU -lGL -lX11 -lm
 
 rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o \
 rhdisp.o rhdisp2.o rhdisp3.o:	rholo.h
@@ -78,11 +78,9 @@ rhcopy.o:	../common/view.h
 rhd_glx.o rhd_x11.o rhd_qtree.o rhd_qtree2r.o:	../common/standard.h \
 ../common/mat4.h ../common/fvect.h
 
-rhd_glx.o:	rhdriver.h ../common/view.h ../common/tonemap.h
-
-rhd_x11.o rhd_qtree.o rhd_qtree2r.o:	rhd_qtree.h rhdriver.h \
+rhd_glx.o rhd_x11.o rhd_qtree.o rhd_qtree2r.o:	rhd_qtree.h rhdriver.h \
 ../common/tonemap.h ../common/color.h
 
-rhd_x11.o:	x11icon.h
+rhd_glx.o rhd_x11.o:	x11icon.h
 
 dircode.o:	../common/fvect.h
