@@ -144,11 +144,12 @@ Rotations are given in degrees counter-clockwise about a principal axis.
 That is, with the thumb of the right hand pointing in the direction
 of the axis, rotation follows the curl of the fingers.
 
-The transform command itself is also cumulative, and a transform
-command with no arguments is used to return to the previous
-condition.  It is necessary that transforms and their end statements
-("xf" by itself) be balanced in a file, so that later or enclosing
-files are not affected.
+The transform command itself is also cumulative, but in the reverse
+order.  That is, later transformations (i.e. enclosed transformations)
+are prepended to existing (i.e. enclosing) ones.  A transform command
+with no arguments is used to return to the previous condition.  It is
+necessary that transforms and their end statements ("xf" by itself) be
+balanced in a file, so that later or enclosing files are not affected.
 
 Transformations apply only to geometric types, e.g. polygons, spheres, etc.
 Vertices and the components that go into geometry are not directly affected.
