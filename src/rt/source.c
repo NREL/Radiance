@@ -335,7 +335,7 @@ char  *p;			/* data for f */
 	}
 						/* sort contributions */
 	qsort(srccnt, nsources, sizeof(CONTRIB), cntcmp);
-	hit2 = test2 = 0.0;
+	hit2 = 0.0; test2 = FTINY;
 						/* test for shadows */
 	for (sn = 0; sn < nsources; sn++) {
 						/* check threshold */
@@ -366,12 +366,11 @@ char  *p;			/* data for f */
 		hit2 += hwt;
 		source[srccnt[sn].sno].nhits++;
 	}
-	if (test2 > FTINY)		/* weighted hit rate */
-		hwt = hit2 / test2;
-	else
-		hwt = 0.0;
+					/* weighted hit rate */
+	hwt = hit2 / test2;
 #ifdef DEBUG
-	fprintf(stderr, "%d tested, %f hit rate\n", sn, hwt);
+	{
+		int  ntested = sn;
 #endif
 					/* add in untested sources */
 	for ( ; sn < nsources; sn++) {
@@ -382,6 +381,11 @@ char  *p;			/* data for f */
 		scalecolor(srccnt[sn].val, dtmp);
 		addcolor(r->rcol, srccnt[sn].val);
 	}
+#ifdef DEBUG
+	fprintf(stderr, "%d tested, %d untested, %f hit rate\n",
+			ntested, sn-ntested, hwt);
+	}
+#endif
 		
 	free(srccnt);
 }
