@@ -42,7 +42,6 @@ XF  *bx;
 		return(0);
 					/* initialize if first call */
 	if (initfile != NULL) {
-		loadfunc(initfile);
 		scompile("Dx=$1;Dy=$2;Dz=$3;", NULL, 0);
 		scompile("Nx=$4;Ny=$5;Nz=$6;", NULL, 0);
 		scompile("Px=$7;Py=$8;Pz=$9;", NULL, 0);
@@ -55,6 +54,7 @@ XF  *bx;
 		funset("erf", 1, ':', l_erf);
 		funset("erfc", 1, ':', l_erfc);
 		setnoisefuncs();
+		loadfunc(initfile);
 		initfile = NULL;
 	}
 	fobj = m;
