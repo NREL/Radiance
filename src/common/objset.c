@@ -182,39 +182,21 @@ nonsurfinset(orig, nobjs)		/* check sets for non-surfaces */
 int  orig, nobjs;
 {
 	int  n;
-	OBJECT  *nonset;
 	register OBJECT  *os;
-	register OBJECT  i;
-						/* count non-surfaces */
-	n = 0;
-	for (i = orig; i < orig+nobjs; i++)
-		if (!issurface(objptr(i)->otype))
-			n++;
-	if (n <= 0)
-		return(0);
-						/* allocate set */
-	if ((nonset = (OBJECT *)malloc((n+1)*sizeof(OBJECT))) == NULL)
-		return(0);		/* give up if we haven't enough mem */
-						/* fill set */
-	os = nonset;
-	*os = n;
-	for (i = orig; i < orig+nobjs; i++)
-		if (!issurface(objptr(i)->otype))
-			*++os = i;
-						/* now check all sets */
+	register OBJECT  i, t;
+
 	for (n = 0; n < OSTSIZ; n++) {
 		if ((os = ostable[n]) == NULL)
 			continue;
 		while ((i = *os++) > 0)
 			while (i--) {
-				if (*os >= nonset[1]
-						&& *os <= nonset[nonset[0]]
-						&& inset(nonset, *os))
-					goto done;
-				os++;
+				t = *os++;
+				if (t >= orig && t < orig+nobjs) {
+					t = objptr(t)->otype;
+					if (!issurface(t))
+						return(1);
+				}
 			}
 	}
-done:
-	free((char *)nonset);
-	return(n < OSTSIZ);
+	return(0);
 }
