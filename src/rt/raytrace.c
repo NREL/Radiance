@@ -26,7 +26,7 @@ extern int  do_irrad;			/* compute irradiance? */
 long  raynum = 0L;			/* next unique ray number */
 long  nrays = 0L;			/* number of calls to localhit */
 
-static double  Lambfa[5] = {PI, PI, PI, 0.0, 0.0};
+static FLOAT  Lambfa[5] = {PI, PI, PI, 0.0, 0.0};
 OBJREC  Lamb = {
 	OVOID, MAT_PLASTIC, "Lambertian",
 	{0, 5, NULL, Lambfa}, NULL, -1,

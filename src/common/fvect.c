@@ -12,8 +12,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "fvect.h"
 
-#define  FTINY		1e-7
-
 
 double
 fdot(v1, v2)			/* return the dot product of two vectors */

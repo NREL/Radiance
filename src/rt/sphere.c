@@ -23,7 +23,7 @@ register RAY  *r;
 	double  root[2];	/* quadratic roots */
 	int  nroots;
 	double  t;
-	register double  *ap;
+	register FLOAT  *ap;
 	register int  i;
 
 	if (so->oargs.nfargs != 4)

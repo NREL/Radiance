@@ -113,7 +113,7 @@ FACE  *f;
 	int  ncross, n;
 	double  x, y;
 	register int  xi, yi;
-	register double  *p0, *p1;
+	register FLOAT  *p0, *p1;
 
 	xi = (f->ax+1)%3;
 	yi = (f->ax+2)%3;

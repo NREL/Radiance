@@ -10,13 +10,15 @@ static char SCCSid[] = "$SunId$ LBL";
  *     8/28/85
  */
 
+#include  "fvect.h"
+
 #include  "plocate.h"
 
 
 int
 plocate(p, min, max)		/* return location of p w.r.t. min & max */
-register double  p[3];
-double  min[3], max[3];
+register FVECT  p;
+FVECT  min, max;
 {
 	register int  loc = 0;
 

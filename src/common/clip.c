@@ -10,16 +10,18 @@ static char SCCSid[] = "$SunId$ LBL";
  *     8/28/85
  */
 
+#include  "fvect.h"
+
 #include  "plocate.h"
 
 
 clip(ep1, ep2, min, max)	/* clip a line segment to a box */
-double  *ep1, *ep2;
-double  min[3], max[3];
+FLOAT  *ep1, *ep2;
+FVECT  min, max;
 {
 	int  loc1, loc2;
 	int  accept;
-	double  *dp;
+	FLOAT  *dp;
 	double  d;
 	register int  i, j;
 
