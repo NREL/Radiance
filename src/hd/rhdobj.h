@@ -44,8 +44,9 @@ int
 dobj_command(cmd, args)		: check/run object display command
 char	*cmd, *args;		: command name and argument string
 
-Check to see if this is an object display command, and return the command
-number after running it if it is, or -1 if it isn't.  Error messages should
+Check to see if this is an object display command, and return -1 if
+it isn't.  If it is a valid command that results in some visible
+change, return non-zero, otherwise return 0.  Error messages should
 be printed with error(COMMAND,err).
 
 

@@ -416,14 +416,13 @@ memerr:
 }
 
 
-static int
+static
 cmderror(cn, err)		/* report command error */
 int	cn;
 char	*err;
 {
 	sprintf(errmsg, "%s: %s", rhdcmd[cn], err);
 	error(COMMAND, errmsg);
-	return(cn);
 }
 
 
@@ -433,7 +432,6 @@ char	*cmd;
 register char	*args;
 {
 	int	somechange = 0;
-	VIEW	sameview;
 	int	cn, na, doxfm;
 	register int	nn;
 	char	*alist[MAXAC+1], *nm;
@@ -461,8 +459,10 @@ register char	*args;
 			dobj_load(alist[0], alist[0]);
 		else if (na == 2)
 			dobj_load(alist[0], alist[1]);
-		else
-			return(cmderror(cn, "need octree [name]"));
+		else {
+			cmderror(cn, "need octree [name]");
+			return(0);
+		}
 		break;
 	case DO_UNLOAD:				/* clear an object */
 		if (na > 1) goto toomany;
@@ -478,8 +478,10 @@ register char	*args;
 		} else {
 			nm = curname; nn = 0;
 		}
-		if (cn == DO_MOVE && nn >= na)
-			return(cmderror(cn, "missing transform"));
+		if (cn == DO_MOVE && nn >= na) {
+			cmderror(cn, "missing transform");
+			return(0);
+		}
 		somechange += dobj_xform(nm, cn==DO_MOVE, na-nn, alist+nn);
 		break;
 	case DO_UNMOVE:				/* undo last transform */
@@ -497,7 +499,8 @@ register char	*args;
 				break;
 		switch (nn) {
 		case 0:
-			return(cmderror(cn, "need new object name"));
+			cmderror(cn, "need new object name");
+			return(0);
 		case 1:
 			nm = curname;
 			break;
@@ -525,11 +528,7 @@ register char	*args;
 	default:
 		error(CONSISTENCY, "bad command id in dobj_command");
 	}
-	if (somechange) {
-		copystruct(&sameview, &odev.v);	/* make 'em think new view */
-		dev_view(&sameview);		/* redraw */
-	}
-	return(cn);
+	return(somechange);
 toomany:
 	return(cmderror(cn, "too many arguments"));
 }
