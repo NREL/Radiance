@@ -67,14 +67,6 @@ static int	e_any_toss(),		/* discard unneeded entity */
 		e_cmix(),		/* color mixtures */
 		e_cspec();		/* color spectra */
 
-int		e_include(),		/* include file */
-		e_sph(),		/* sphere */
-		e_cyl(),		/* cylinder */
-		e_cone(),		/* cone */
-		e_prism(),		/* prism */
-		e_ring(),		/* ring */
-		e_torus();		/* torus */
-
 				/* alternate handler support functions */
 
 static int	(*e_supp[MG_NENTITIES])();
@@ -124,6 +116,10 @@ mg_init()			/* initialize alternate entity handlers */
 		ineed |= 1L<<MG_E_POINT|1L<<MG_E_NORMAL|1L<<MG_E_VERTEX;
 	} else
 		uneed |= 1L<<MG_E_POINT|1L<<MG_E_NORMAL|1L<<MG_E_VERTEX|1L<<MG_E_XF;
+	if (mg_ehand[MG_E_FACE] == NULL)
+		mg_ehand[MG_E_FACE] = mg_ehand[MG_E_FACEH];
+	else if (mg_ehand[MG_E_FACEH] == NULL)
+		mg_ehand[MG_E_FACEH] = e_faceh;
 	if (mg_ehand[MG_E_COLOR] != NULL) {
 		if (mg_ehand[MG_E_CMIX] == NULL) {
 			mg_ehand[MG_E_CMIX] = e_cmix;
@@ -461,6 +457,38 @@ char	**av;
 	} while (xf_context != xf_orig);
 	mg_close();
 	return(MG_OK);
+}
+
+
+int
+e_faceh(ac, av)			/* replace face+holes with single contour */
+int	ac;
+char	**av;
+{
+	char	*newav[MG_MAXARGC];
+	int	lastp = 0;
+	register int	i, j;
+
+	newav[0] = mg_ename[MG_E_FACE];
+	for (i = 1; i < ac; i++)
+		if (av[i][0] == '-') {
+			if (i < 4)
+				return(MG_EARGC);
+			if (i >= ac-1)
+				break;
+			if (!lastp)
+				lastp = i-1;
+			for (j = i+1; j < ac-1 && av[j+1][0] != '-'; j++)
+				;
+			if (j - i < 3)
+				return(MG_EARGC);
+			newav[i] = av[j];	/* connect hole loop */
+		} else
+			newav[i] = av[i];	/* hole or perimeter vertex */
+	if (lastp)
+		newav[i++] = av[lastp];		/* finish seam to outside */
+	newav[i] = NULL;
+	return(mg_handle(MG_E_FACE, i, newav));
 }
 
 
