@@ -272,42 +272,41 @@ register VIEW	*nv;
 		nv->vert = odev.v.vert;
 		return(0);
 	}
-	if (nv != &odev.v) {
-		if (!FEQ(nv->horiz,odev.v.horiz) ||	/* resize window? */
-				!FEQ(nv->vert,odev.v.vert)) {
-			int	dw = DisplayWidth(ourdisplay,ourscreen);
-			int	dh = DisplayHeight(ourdisplay,ourscreen);
+	if (nv != &odev.v &&			/* resize window? */
+			(!FEQ(nv->horiz,odev.v.horiz) ||
+				!FEQ(nv->vert,odev.v.vert))) {
+		int	dw = DisplayWidth(ourdisplay,ourscreen);
+		int	dh = DisplayHeight(ourdisplay,ourscreen);
 
-			dw -= 25;	/* for window frame */
-			dh -= 50;
+		dw -= 25;	/* for window frame */
+		dh -= 50;
 #ifdef STEREO
-			dh /= 2;
+		dh /= 2;
 #endif
-			odev.hres = 2.*VIEWDIST/pwidth *
-					tan(PI/180./2.*nv->horiz);
-			odev.vres = 2.*VIEWDIST/pheight *
-					tan(PI/180./2.*nv->vert);
-			if (odev.hres > dw) {
-				odev.vres = dw * odev.vres / odev.hres;
-				odev.hres = dw;
-			}
-			if (odev.vres > dh) {
-				odev.hres = dh * odev.hres / odev.vres;
-				odev.vres = dh;
-			}
-			XResizeWindow(ourdisplay, gwind, odev.hres, odev.vres);
-			dev_input();	/* get resize event */
+		odev.hres = 2.*VIEWDIST/pwidth *
+				tan(PI/180./2.*nv->horiz);
+		odev.vres = 2.*VIEWDIST/pheight *
+				tan(PI/180./2.*nv->vert);
+		if (odev.hres > dw) {
+			odev.vres = dw * odev.vres / odev.hres;
+			odev.hres = dw;
 		}
-		copystruct(&odev.v, nv);	/* setview() already called */
-		setglpersp(&odev.v);
-#ifdef STEREO
-		copystruct(&vwright, nv);
-		d = eyesepdist / sqrt(nv->hn2);
-		VSUM(vwright.vp, nv->vp, nv->hvec, d);
-		/* setview(&vwright);	-- Unnecessary */
-#endif
-		checkglerr("setting view");
+		if (odev.vres > dh) {
+			odev.hres = dh * odev.hres / odev.vres;
+			odev.vres = dh;
+		}
+		XResizeWindow(ourdisplay, gwind, odev.hres, odev.vres);
+		dev_input();	/* get resize event */
 	}
+	copystruct(&odev.v, nv);	/* setview() already called */
+	setglpersp(&odev.v);
+#ifdef STEREO
+	copystruct(&vwright, nv);
+	d = eyesepdist / sqrt(nv->hn2);
+	VSUM(vwright.vp, nv->vp, nv->hvec, d);
+	/* setview(&vwright);	-- Unnecessary */
+#endif
+	checkglerr("setting view");
 	wipeclean();
 	return(1);
 }
