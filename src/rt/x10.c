@@ -202,13 +202,16 @@ int  xmin, ymin, xmax, ymax;
 
 
 static
-x_comin(inp)			/* read in a command line */
-char  *inp;
+x_comin(inp, prompt)		/* read in a command line */
+char  *inp, *prompt;
 {
 	int  x_getc(), x_comout();
 
-	if (fromcombuf(inp, &x_driver))
-		return;
+	if (prompt != NULL)
+		if (fromcombuf(inp, &x_driver))
+			return;
+		else
+			xt_puts(prompt, comline);
 	xt_cursor(comline, TBLKCURS);
 	editline(inp, x_getc, x_comout);
 	xt_cursor(comline, TNOCURS);

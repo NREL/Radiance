@@ -81,11 +81,13 @@ getch()					/* get a character in raw mode */
 
 
 static
-ttyin(buf)				/* read a line in raw mode */
-char  *buf;
+ttyin(buf, prompt)			/* read a line in raw mode */
+char  *buf, *prompt;
 {
 	int  getch();
 
+	if (prompt != NULL)
+		(*ttydev->comout)(prompt);
 	editline(buf, getch, ttydev->comout);
 }
 

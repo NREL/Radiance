@@ -236,11 +236,13 @@ int  xmin, ymin, xmax, ymax;
 
 
 static
-x11_comin(inp)			/* read in a command line */
-char  *inp;
+x11_comin(inp, prompt)		/* read in a command line */
+char  *inp, *prompt;
 {
 	int  x11_getc(), x11_comout();
 
+	if (prompt != NULL)
+		xt_puts(prompt, comline);
 	xt_cursor(comline, TBLKCURS);
 	editline(inp, x11_getc, x11_comout);
 	xt_cursor(comline, TNOCURS);

@@ -92,14 +92,17 @@ extern struct device {			/* interactive device */
  *	string ends with '\n', the message is considered complete,
  *	and the next call can erase it.
  *  }
- *  (*dev->comin)(in)
- *  char  *in;
+ *  (*dev->comin)(in, prompt)
+ *  char  *in, *prompt;
  *  {
- *	Read an edited input string from the command line.  If
- *	an unrecognized control character is entered, terminate
- *	input and return the string with only that character.
- *	The input string should not contain a newline.
- *	Must work in consort with comout.
+ *	Print a prompt then read an edited input command line
+ *	assuming the in buffer is big enough.  Unless prompt is NULL,
+ *	the driver may substitute its own rview command.  This is
+ *	the most reliable way to repaint areas of the screen.
+ *	If the user enters an unrecognized control character is entered,
+ *	terminate input and return the string with only that character.
+ *	The input string should not contain a newline.  The routines in
+ *	editline.c may be useful.  Comin must work in consort with comout.
  *  }
  *  xsiz, ysiz
  *	The maximum allowable x and y dimensions.  If any

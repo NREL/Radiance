@@ -145,9 +145,15 @@ r_comout()				/* print string to command line */
 
 r_comin()				/* read string from command line */
 {
-	char	buf[256];
+	char	buf[256], *prompt;
+					/* get prompt */
+	if (getc(devin)) {
+		mygets(buf, devin);
+		prompt = buf;
+	} else
+		prompt = NULL;
 					/* get string */
-	(*dev->comin)(buf);
+	(*dev->comin)(buf, prompt);
 					/* reply */
 	putc(COM_COMIN, devout);
 	myputs(buf, devout);

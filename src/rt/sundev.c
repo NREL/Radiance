@@ -172,9 +172,11 @@ int  xmin, ymin, xmax, ymax;
 }
 
 
-sun_comin(buf)			/* input a string from the command line */
-char  *buf;
+sun_comin(buf, prompt)		/* input a string from the command line */
+char  *buf, *prompt;
 {
+	if (prompt != NULL)
+		sun_comout(prompt);
 						/* echo characters */
 	do {
 		mygets(buf, ttyin);
