@@ -46,8 +46,6 @@ char	*dname;
 disp_packet(p)			/* display a packet */
 register PACKET	*p;
 {
-	if (pipesiz <= 0)
-		return;
 	disp_result(DS_BUNDLE, sizeof(PACKHEAD) + p->nr*sizeof(RAYVAL),
 			(char *)p);
 }
@@ -62,7 +60,7 @@ int	block;
 
 	if (pipesiz <= 0)
 		return(-1);
-restart:				/* check read blocking */
+					/* check read blocking */
 	if (block != (inp_flags == 0)) {
 		inp_flags = block ? 0 : FNONBLK;
 		if (fcntl(dpd[0], F_SETFL, inp_flags) < 0)
@@ -75,7 +73,7 @@ restart:				/* check read blocking */
 			error(USER, "display process died");
 		if (errno != EAGAIN & errno != EINTR)
 			goto readerr;
-		return(2);		/* else acceptable failure */
+		return(2);		/* acceptable failure */
 	}
 	if (msg.nbytes) {		/* get the message body */
 		buf = (char *)malloc(msg.nbytes);
@@ -116,8 +114,7 @@ restart:				/* check read blocking */
 			error(INTERNAL, "bad DR_ATTEN from display process");
 					/* send acknowledgement */
 		disp_result(DS_ACKNOW, 0, NULL);
-		block = 1;		/* block on following request */
-		goto restart;
+		return(disp_check(1));	/* block on following request */
 	case DR_SHUTDOWN:
 		if (msg.nbytes)
 			error(INTERNAL, "bad DR_SHUTDOWN from display process");
@@ -125,7 +122,7 @@ restart:				/* check read blocking */
 	default:
 		error(INTERNAL, "unrecognized request from display process");
 	}
-	if (msg.nbytes)
+	if (msg.nbytes)			/* clean up */
 		free(buf);
 	return(1);			/* normal return value */
 fcntlerr:
@@ -156,10 +153,14 @@ char	*p;
 	MSGHEAD	msg;
 	int	n;
 
+	if (pipesiz <= 0)
+		return;
 	msg.type = type;
 	msg.nbytes = nbytes;
 	if (nbytes == 0 || sizeof(MSGHEAD)+nbytes > pipesiz) {
-		n = write(dpd[1], (char *)&msg, sizeof(MSGHEAD));
+		do
+			n = write(dpd[1], (char *)&msg, sizeof(MSGHEAD));
+		while (n < 0 && errno == EINTR);
 		if (n != sizeof(MSGHEAD))
 			goto writerr;
 		if (nbytes > 0) {
@@ -173,8 +174,10 @@ char	*p;
 	iov[0].iov_len = sizeof(MSGHEAD);
 	iov[1].iov_base = p;
 	iov[1].iov_len = nbytes;
-	n = writev(dpd[1], iov, 2);
-	if (n == nbytes+sizeof(MSGHEAD))
+	do
+		n = writev(dpd[1], iov, 2);
+	while (n < 0 && errno == EINTR);
+	if (n == sizeof(MSGHEAD)+nbytes)
 		return;
 writerr:
 	error(SYSTEM, "write error in disp_result");
