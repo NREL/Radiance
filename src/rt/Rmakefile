@@ -20,8 +20,9 @@ DEVDIR = $(LIBDIR)/lib
 LIBDIR = /usr/local/lib/ray
 
 #
-# Broken library routines:
+# Library routines:
 #
+LIBS = -lm
 COMPAT = malloc.o
 
 #
@@ -68,7 +69,6 @@ PROGS = $(DESTDIR)/rtrace $(DESTDIR)/rpict $(DESTDIR)/rview $(DESTDIR)/lookamb
 all:	$(PROGS) $(DRIVERS)
 
 install:	all
-	sccs check
 	$(INSTALL) $(PROGS) $(INSTDIR)
 
 clean:
@@ -79,20 +79,20 @@ clean:
 #
 
 $(DESTDIR)/rtrace:	$(RTOBJS)
-	cc $(CFLAGS) -o $(DESTDIR)/rtrace $(RTOBJS) -lm
+	cc $(CFLAGS) -o $(DESTDIR)/rtrace $(RTOBJS) $(LIBS)
 
 $(DESTDIR)/rpict:	$(RPOBJS)
-	cc $(CFLAGS) -o $(DESTDIR)/rpict $(RPOBJS) -lm
+	cc $(CFLAGS) -o $(DESTDIR)/rpict $(RPOBJS) $(LIBS)
 
 $(DESTDIR)/rview:	$(RVOBJS)
-	cc $(CFLAGS) -o $(DESTDIR)/rview $(RVOBJS) $(DLIBS) -lm
+	cc $(CFLAGS) -o $(DESTDIR)/rview $(RVOBJS) $(DLIBS) $(LIBS)
 
 $(DESTDIR)/lookamb:	lookamb.o
 	cc $(CFLAGS) -o $(DESTDIR)/lookamb lookamb.o
 
 $(DEVDIR)/sun.dev:	sundev.o
 	cc $(CFLAGS) -o $(DEVDIR)/sun.dev sundev.o \
--lsuntool -lsunwindow -lpixrect -lm
+-lsuntool -lsunwindow -lpixrect $(LIBS)
 
 $(DEVDIR)/sun.com:	suncom.o editline.o
 	cc $(CFLAGS) -o $(DEVDIR)/sun.com suncom.o editline.o

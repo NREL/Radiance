@@ -40,10 +40,10 @@ t_func(m, r)			/* compute texture for ray */
 register OBJREC  *m;
 register RAY  *r;
 {
-#define  mxf	((XFORM *)m->os)
 	extern double  varvalue();
 	extern int  errno;
 	FVECT  disp;
+	register XFORM  *mxf;
 	register int  i;
 	register char  **sa;
 
@@ -51,7 +51,7 @@ register RAY  *r;
 		objerror(m, USER, "bad # arguments");
 	sa = m->oargs.sarg;
 
-	if (mxf == NULL) {
+	if ((mxf = (XFORM *)m->os) == NULL) {
 		mxf = (XFORM *)malloc(sizeof(XFORM));
 		if (mxf == NULL)
 			goto memerr;
@@ -68,6 +68,7 @@ register RAY  *r;
 				m->oargs.nsargs-4, sa+4);
 		if (mxf->back.sca < 0.0)
 			mxf->back.sca = -mxf->back.sca;
+		m->os = (char *)mxf;
 	}
 
 	setmap(m, r, mxf->back.sca, mxf->back.xfm);
@@ -93,5 +94,4 @@ register RAY  *r;
 	return;
 memerr:
 	error(SYSTEM, "out of memory in t_func");
-#undef  mxf
 }

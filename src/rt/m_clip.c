@@ -53,7 +53,7 @@ register RAY  *r;
 			}
 			insertelem(modset, mod);
 		}
-		(OBJECT *)m->os = modset;
+		m->os = (char *)modset;
 	}
 	if (r->clipset != NULL)
 		setcopy(cset, r->clipset);

@@ -444,7 +444,9 @@ register char  *s;
 onsig(signo)				/* fatal signal */
 int  signo;
 {
+#ifdef  BSD
 	sigblock(diemask);
+#endif
 	eputs("signal - ");
 	eputs(sigerr[signo]);
 	eputs("\n");
