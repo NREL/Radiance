@@ -1,4 +1,4 @@
-	$Id: trad.hlp,v 2.1 1994/10/27 15:56:04 greg Exp $
+	$Id: trad.hlp,v 2.2 1994/10/28 11:09:52 greg Exp $
 
 This help file is associated with the trad interface to the Radiance
 rad(1) program.  Trad consists of trad.wsh and one do_*.tcl file for
@@ -110,9 +110,7 @@ it is saved.
 Loading a writable file always clears the "Read Only" check box.
 
 If an error is encountered while trying to load the file, a message
-will be printed in the box at the bottom and it will be necessary to
-load another file.
-(I.e. any previous information will be lost.)
+will be printed in the box at the bottom.
 
 .File.Save
 
