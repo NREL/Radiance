@@ -161,7 +161,9 @@ char	*argv[];
 			vresolu = atoi(argv[++i]);
 			break;
 		case 'p':				/* pixel aspect */
-			check(2,"f");
+			if (argv[i][2] != 'a')
+				goto badopt;
+			check(3,"f");
 			pixaspect = atof(argv[++i]);
 			break;
 		case 'v':				/* view file */
