@@ -12,7 +12,7 @@ static char SCCSid[] = "$SunId$ LBL";
  * Paul Heckbert	5 Nov 85, 12 Dec 85
  */
 
-static char rcsid[] = "$Header: /home/cvsd/radiance/ray/src/px/pmapgen.c,v 2.1 1995/10/11 10:39:26 greg Exp $";
+static char rcsid[] = "$Header: /home/cvsd/radiance/ray/src/px/pmapgen.c,v 2.2 1996/07/24 09:18:20 greg Exp $";
 #include <stdio.h>
 #include "pmap.h"
 #include "mx3.h"
@@ -20,30 +20,30 @@ static char rcsid[] = "$Header: /home/cvsd/radiance/ray/src/px/pmapgen.c,v 2.1 1
 #define TOLERANCE 1e-13
 #define ZERO(x) ((x)<TOLERANCE && (x)>-TOLERANCE)
 
-#define X(i) quad[i][0]		/* quadrilateral x and y */
-#define Y(i) quad[i][1]
+#define X(i) qdrl[i][0]		/* quadrilateral x and y */
+#define Y(i) qdrl[i][1]
 
 /*
  * pmap_quad_rect: find mapping between quadrilateral and rectangle.
  * The correspondence is:
  *
- *	quad[0] --> (u0,v0)
- *	quad[1] --> (u1,v0)
- *	quad[2] --> (u1,v1)
- *	quad[3] --> (u0,v1)
+ *	qdrl[0] --> (u0,v0)
+ *	qdrl[1] --> (u1,v0)
+ *	qdrl[2] --> (u1,v1)
+ *	qdrl[3] --> (u0,v1)
  *
  * This method of computing the adjoint numerically is cheaper than
  * computing it symbolically.
  */
 	
-pmap_quad_rect(u0, v0, u1, v1, quad, QR)
+pmap_quad_rect(u0, v0, u1, v1, qdrl, QR)
 double u0, v0, u1, v1;		/* bounds of rectangle */
-double quad[4][2];		/* vertices of quadrilateral */
-double QR[3][3];		/* quad->rect transform (returned) */
+double qdrl[4][2];		/* vertices of quadrilateral */
+double QR[3][3];		/* qdrl->rect transform (returned) */
 {
     int ret;
     double du, dv;
-    double RQ[3][3];		/* rect->quad transform */
+    double RQ[3][3];		/* rect->qdrl transform */
 
     du = u1-u0;
     dv = v1-v0;
@@ -53,7 +53,7 @@ double QR[3][3];		/* quad->rect transform (returned) */
     }
 
     /* first find mapping from unit uv square to xy quadrilateral */
-    ret = pmap_square_quad(quad, RQ);
+    ret = pmap_square_quad(qdrl, RQ);
     if (ret==PMAP_BAD) return PMAP_BAD;
 
     /* concatenate transform from uv rectangle (u0,v0,u1,v1) to unit square */
@@ -78,15 +78,15 @@ double QR[3][3];		/* quad->rect transform (returned) */
  * pmap_square_quad: find mapping between unit square and quadrilateral.
  * The correspondence is:
  *
- *	(0,0) --> quad[0]
- *	(1,0) --> quad[1]
- *	(1,1) --> quad[2]
- *	(0,1) --> quad[3]
+ *	(0,0) --> qdrl[0]
+ *	(1,0) --> qdrl[1]
+ *	(1,1) --> qdrl[2]
+ *	(0,1) --> qdrl[3]
  */
 
-pmap_square_quad(quad, SQ)
-register double quad[4][2];	/* vertices of quadrilateral */
-register double SQ[3][3];	/* square->quad transform */
+pmap_square_quad(qdrl, SQ)
+register double qdrl[4][2];	/* vertices of quadrilateral */
+register double SQ[3][3];	/* square->qdrl transform */
 {
     double px, py;
 
