@@ -1026,6 +1026,7 @@ char	*opts;
 	char	pfopts[128];
 	char	vs[32], *vw;
 	int	vn, mult;
+	long	lastdate;
 					/* get pfilt options */
 	pfiltopts(pfopts);
 					/* get resolution, reporting */
@@ -1056,6 +1057,8 @@ char	*opts;
 		else
 			badvalue(REPORT);
 	}
+					/* get update time */
+	lastdate = octreedate > matdate ? octreedate : matdate;
 					/* do each view */
 	vn = 0;
 	while ((vw = getview(vn++, vs)) != NULL) {
@@ -1063,7 +1066,7 @@ char	*opts;
 			sprintf(vs, "%d", vn);
 		sprintf(picfile, "%s_%s.pic", vval(PICTURE), vs);
 						/* check date on picture */
-		if (fdate(picfile) >= octreedate)
+		if (fdate(picfile) >= lastdate)
 			continue;
 						/* build rpict command */
 		sprintf(rawfile, "%s_%s.raw", vval(PICTURE), vs);
