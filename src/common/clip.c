@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1993 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -14,11 +14,14 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "plocate.h"
 
+#define MAXITER		6	/* maximum possible number of iterations */
+
 
 clip(ep1, ep2, min, max)	/* clip a line segment to a box */
 FLOAT  *ep1, *ep2;
 FVECT  min, max;
 {
+	int  itlim = MAXITER;
 	int  loc1, loc2;
 	int  accept;
 	FLOAT  *dp;
@@ -41,6 +44,9 @@ FVECT  min, max;
 	
 	while (!((accept = !(loc1 | loc2)) || (loc1 & loc2))) {
 	
+		if (itlim-- <= 0)	/* past theoretical limit? */
+			return(0);	/* quit fooling around */
+
 		if (!loc1) {		/* make sure first point is outside */
 			dp = ep1; ep1 = ep2; ep2 = dp;
 			i = loc1; loc1 = loc2; loc2 = i;
