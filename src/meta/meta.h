@@ -12,8 +12,9 @@ extern "C" {
 
 #include  <stdio.h>
 #include  <stdlib.h>
-
 #include  <ctype.h>
+
+#include  "rterror.h"
 
 
 #define  TRUE  1
@@ -52,10 +53,6 @@ extern "C" {
 #define  SPAT1  05		/* set pattern 1 */
 #define  SPAT2  06		/* set pattern 2 */
 #define  SPAT3  07		/* set pattern 3 */
-
-#define  SYSTEM	 0		/* system error, internal, fatal */
-#define  USER  1		/* user error, fatal */
-#define  WARNING  2		/* user error, not fatal */
 
 #ifdef  UNIX
 #define  TDIR  "/tmp/"		/* directory for temporary files */

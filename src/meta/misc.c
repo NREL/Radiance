@@ -15,44 +15,6 @@ char  errmsg[128];
 
 
 
-error(errtype, emsg)		/* report error */
-
-int  errtype;
-char  *emsg;
-
-{
-
- switch (errtype)  {
-
-    case WARNING:
-       wputs(progname);
-       wputs(": warning - ");
-       wputs(emsg);
-       wputs("\n");
-       break;
-
-    case USER:
-       eputs(progname);
-       eputs(": fatal - ");
-       eputs(emsg);
-       eputs("\n");
-       exit(1);
-       break;
-
-    case SYSTEM:
-       eputs(progname);
-       eputs(": system - ");
-       eputs(emsg);
-       eputs("\n");
-       exit(1);
-       break;
-    }
-
- }
-
-
-
-
 int
 comndx(c)		/* return index for command */
 
