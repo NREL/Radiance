@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1996 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -20,6 +20,10 @@ extern double  specthresh;		/* specular sampling threshold */
 extern double  specjitter;		/* specular sampling jitter */
 
 extern int  backvis;			/* back faces visible? */
+
+#ifndef  MAXITER
+#define  MAXITER	10		/* maximum # specular ray attempts */
+#endif
 
 static  agaussamp(), getacoords();
 
@@ -342,69 +346,81 @@ register ANISODAT  *np;
 	FVECT  h;
 	double  rv[2];
 	double  d, sinp, cosp;
+	int  niter;
 	register int  i;
 					/* compute reflection */
 	if ((np->specfl & (SP_REFL|SP_RBLT)) == SP_REFL &&
 			rayorigin(&sr, r, SPECULAR, np->rspec) == 0) {
 		dimlist[ndims++] = (int)np->mp;
-		d = urand(ilhash(dimlist,ndims)+samplendx);
-		multisamp(rv, 2, d);
-		d = 2.0*PI * rv[0];
-		cosp = cos(d) * np->u_alpha;
-		sinp = sin(d) * np->v_alpha;
-		d = sqrt(cosp*cosp + sinp*sinp);
-		cosp /= d;
-		sinp /= d;
-		rv[1] = 1.0 - specjitter*rv[1];
-		if (rv[1] <= FTINY)
-			d = 1.0;
-		else
-			d = sqrt(-log(rv[1]) /
-				(cosp*cosp/(np->u_alpha*np->u_alpha) +
-				 sinp*sinp/(np->v_alpha*np->v_alpha)));
-		for (i = 0; i < 3; i++)
-			h[i] = np->pnorm[i] +
-				d*(cosp*np->u[i] + sinp*np->v[i]);
-		d = -2.0 * DOT(h, r->rdir) / (1.0 + d*d);
-		for (i = 0; i < 3; i++)
-			sr.rdir[i] = r->rdir[i] + d*h[i];
-		if (DOT(sr.rdir, r->ron) <= FTINY)	/* penetration? */
-			VCOPY(sr.rdir, np->vrefl);	/* jitter no good */
-		rayvalue(&sr);
-		multcolor(sr.rcol, np->scolor);
-		addcolor(r->rcol, sr.rcol);
+		for (niter = 0; niter < MAXITER; niter++) {
+			if (niter)
+				d = frandom();
+			else
+				d = urand(ilhash(dimlist,ndims)+samplendx);
+			multisamp(rv, 2, d);
+			d = 2.0*PI * rv[0];
+			cosp = cos(d) * np->u_alpha;
+			sinp = sin(d) * np->v_alpha;
+			d = sqrt(cosp*cosp + sinp*sinp);
+			cosp /= d;
+			sinp /= d;
+			rv[1] = 1.0 - specjitter*rv[1];
+			if (rv[1] <= FTINY)
+				d = 1.0;
+			else
+				d = sqrt(-log(rv[1]) /
+					(cosp*cosp/(np->u_alpha*np->u_alpha) +
+					 sinp*sinp/(np->v_alpha*np->v_alpha)));
+			for (i = 0; i < 3; i++)
+				h[i] = np->pnorm[i] +
+					d*(cosp*np->u[i] + sinp*np->v[i]);
+			d = -2.0 * DOT(h, r->rdir) / (1.0 + d*d);
+			for (i = 0; i < 3; i++)
+				sr.rdir[i] = r->rdir[i] + d*h[i];
+			if (DOT(sr.rdir, r->ron) > FTINY) {
+				rayvalue(&sr);
+				multcolor(sr.rcol, np->scolor);
+				addcolor(r->rcol, sr.rcol);
+				break;
+			}
+		}
 		ndims--;
 	}
 					/* compute transmission */
 	if ((np->specfl & (SP_TRAN|SP_TBLT)) == SP_TRAN &&
 			rayorigin(&sr, r, SPECULAR, np->tspec) == 0) {
 		dimlist[ndims++] = (int)np->mp;
-		d = urand(ilhash(dimlist,ndims)+1823+samplendx);
-		multisamp(rv, 2, d);
-		d = 2.0*PI * rv[0];
-		cosp = cos(d) * np->u_alpha;
-		sinp = sin(d) * np->v_alpha;
-		d = sqrt(cosp*cosp + sinp*sinp);
-		cosp /= d;
-		sinp /= d;
-		rv[1] = 1.0 - specjitter*rv[1];
-		if (rv[1] <= FTINY)
-			d = 1.0;
-		else
-			d = sqrt(-log(rv[1]) /
-				(cosp*cosp/(np->u_alpha*np->u_alpha) +
-				 sinp*sinp/(np->v_alpha*np->u_alpha)));
-		for (i = 0; i < 3; i++)
-			sr.rdir[i] = np->prdir[i] +
-					d*(cosp*np->u[i] + sinp*np->v[i]);
-		if (DOT(sr.rdir, r->ron) < -FTINY)
-			normalize(sr.rdir);		/* OK, normalize */
-		else
-			VCOPY(sr.rdir, np->prdir);	/* else no jitter */
-		rayvalue(&sr);
-		scalecolor(sr.rcol, np->tspec);
-		multcolor(sr.rcol, np->mcolor);		/* modify by color */
-		addcolor(r->rcol, sr.rcol);
+		for (niter = 0; niter < MAXITER; niter++) {
+			if (niter)
+				d = frandom();
+			else
+				d = urand(ilhash(dimlist,ndims)+1823+samplendx);
+			multisamp(rv, 2, d);
+			d = 2.0*PI * rv[0];
+			cosp = cos(d) * np->u_alpha;
+			sinp = sin(d) * np->v_alpha;
+			d = sqrt(cosp*cosp + sinp*sinp);
+			cosp /= d;
+			sinp /= d;
+			rv[1] = 1.0 - specjitter*rv[1];
+			if (rv[1] <= FTINY)
+				d = 1.0;
+			else
+				d = sqrt(-log(rv[1]) /
+					(cosp*cosp/(np->u_alpha*np->u_alpha) +
+					 sinp*sinp/(np->v_alpha*np->u_alpha)));
+			for (i = 0; i < 3; i++)
+				sr.rdir[i] = np->prdir[i] +
+						d*(cosp*np->u[i] + sinp*np->v[i]);
+			if (DOT(sr.rdir, r->ron) < -FTINY) {
+				normalize(sr.rdir);	/* OK, normalize */
+				rayvalue(&sr);
+				scalecolor(sr.rcol, np->tspec);
+				multcolor(sr.rcol, np->mcolor);	/* modify */
+				addcolor(r->rcol, sr.rcol);
+				break;
+			}
+		}
 		ndims--;
 	}
 }
