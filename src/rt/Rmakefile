@@ -179,7 +179,7 @@ readoct.o rmain.o rv2.o rv3.o source.o:	octree.h
 
 o_instance.o instance.o:	instance.h octree.h
 
-cone.o dielectric.o func.o normal.o o_cone.o otypes.o \
+ambient.o cone.o dielectric.o func.o normal.o o_cone.o otypes.o \
 text.o raytrace.o readobj.o readoct.o rtrace.o \
 rv2.o source.o sphere.o:	otypes.h
 
