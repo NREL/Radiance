@@ -8,6 +8,12 @@
  *  Modified for X11 B. V. Smith
  *	9/26/88
  */
+#ifndef _RAD_X11TWIND_H_
+#define _RAD_X11TWIND_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #include "copyright.h"
 
@@ -27,21 +33,6 @@ typedef struct {
 #define TNOCURS		0
 #define TBLKCURS	1
 
-#ifdef NOPROTO
-
-extern TEXTWIND  *xt_open();
-extern void	xt_puts();
-extern void	xt_putc();
-extern void	xt_delete();
-extern void	xt_insert();
-extern void	xt_redraw();
-extern void	xt_clear();
-extern void	xt_move();
-extern int	xt_cursor();
-extern void	xt_close();
-
-#else
-
 extern TEXTWIND	*xt_open(Display *dpy, Window parent,
 			int x, int y, int width, int height,
 			int bw, unsigned long fore, unsigned long back,
@@ -56,4 +47,9 @@ extern void	xt_move(TEXTWIND *t, int r, int c);
 extern int	xt_cursor(TEXTWIND *t, int curs);
 extern void	xt_close(TEXTWIND *t);
 
+
+#ifdef __cplusplus
+}
 #endif
+#endif /* _RAD_X11TWIND_H_ */
+

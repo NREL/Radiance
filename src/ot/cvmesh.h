@@ -4,6 +4,11 @@
  *
  *  Include after standard.h
  */
+#ifndef _RAD_CVMESH_H_
+#define _RAD_CVMESH_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "octree.h"
 #include "object.h"
@@ -13,16 +18,6 @@ extern MESH	*ourmesh;		/* global mesh pointer */
 
 extern FVECT	meshbounds[2];		/* mesh bounding box */
 
-#ifdef NOPROTO
-
-extern MESH	*cvinit();
-extern int	cvpoly();
-extern int	cvtri();
-extern void	cvmeshbounds();
-extern MESH	*cvmesh();
-void		wfreadobj();
-
-#else
 
 extern MESH	*cvinit(char *nm);
 extern int	cvpoly(OBJECT mo, int n, FVECT *vp,
@@ -36,4 +31,8 @@ extern MESH	*cvmesh(void);
 void		wfreadobj(char *objfn);
 
 
-#endif /* NOPROTO */
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_CVMESH_H_ */
+

@@ -2,6 +2,12 @@
 /*
  *  driver.h - header file for interactive device drivers.
  */
+#ifndef _RAD_DRIVER_H_
+#define _RAD_DRIVER_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #include "copyright.h"
 
@@ -115,20 +121,6 @@ extern char  dev_default[];		/* default device name */
  *	to check for input during calls to paintr.)
  */
 
-#ifdef NOPROTO
-
-extern void	editline();
-extern void	tocombuf();
-extern int	fromcombuf();
-extern struct driver	*slave_init();
-extern struct driver	*comm_init();
-extern int	new_ctab();
-extern int	get_pixel();
-extern void	make_gmap();
-extern void	set_cmap();
-extern void	map_color();
-
-#else
 					/* defined in editline.c */
 extern void	editline(char *buf, int (*c_get)(), void (*s_put)());
 extern void	tocombuf(char *b, struct driver *d);
@@ -143,4 +135,9 @@ extern void	make_gmap(double gam);
 extern void	set_cmap(BYTE *rmap, BYTE *gmap, BYTE *bmap);
 extern void	map_color(BYTE rgb[3], COLOR col);
 
+
+#ifdef __cplusplus
+}
 #endif
+#endif /* _RAD_DRIVER_H_ */
+

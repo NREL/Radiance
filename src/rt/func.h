@@ -4,6 +4,12 @@
  *
  * Include after ray.h
  */
+#ifndef _RAD_FUNC_H_
+#define _RAD_FUNC_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #include "copyright.h"
 
@@ -20,18 +26,15 @@ typedef struct {
 extern XF  unitxf;		/* identity transform */
 extern XF  funcxf;		/* current transform */
 
-#ifdef NOPROTO
-
-extern MFUNC	*getfunc();
-extern void	freefunc();
-extern int	setfunc();
-extern void	loadfunc();
-
-#else
 
 extern MFUNC	*getfunc(OBJREC *m, int ff, unsigned int ef, int dofwd);
 extern void	freefunc(OBJREC *m);
 extern int	setfunc(OBJREC *m, RAY *r);
 extern void	loadfunc(char *fname);
 
+
+#ifdef __cplusplus
+}
 #endif
+#endif /* _RAD_FUNC_H_ */
+

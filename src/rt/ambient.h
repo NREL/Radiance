@@ -4,6 +4,12 @@
  *
  * Include after ray.h
  */
+#ifndef _RAD_AMBIENT_H_
+#define _RAD_AMBIENT_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #include "copyright.h"
 
@@ -52,33 +58,6 @@ extern double  minarad;		/* minimum ambient radius */
 #define  AMBMAGIC	557	/* magic number for ambient value files */
 #define  AMBFMT		"Radiance_ambval"	/* format id string */
 
-#ifdef NOPROTO
-
-extern int	divsample();
-extern double	doambient();
-extern void	inithemi();
-extern void	comperrs();
-extern void	posgradient();
-extern void	dirgradient();
-extern void	setambres();
-extern void	setambacc();
-extern void	setambient();
-extern void	ambdone();
-extern void	ambnotify();
-extern void	ambient();
-extern double	sumambient();
-extern double	makeambient();
-extern void	extambient();
-extern int	ambsync();
-extern void	putambmagic();
-extern int	hasambmagic();
-extern int	writambval();
-extern int	ambvalOK();
-extern int	readambval();
-extern void	lookamb();
-extern void	writamb();
-
-#else
 					/* defined in ambcomp.c */
 extern int	divsample(AMBSAMP *dp, AMBHEMI *h, RAY *r);
 extern double	doambient(COLOR acol, RAY *r, double wt, FVECT pg, FVECT dg);
@@ -108,4 +87,9 @@ extern int	readambval(AMBVAL *av, FILE *fp);
 extern void	lookamb(FILE *fp);
 extern void	writamb(FILE *fp);
 
+
+#ifdef __cplusplus
+}
 #endif
+#endif /* _RAD_AMBIENT_H_ */
+
