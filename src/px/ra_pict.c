@@ -34,7 +34,7 @@ extern char	*malloc();
 int	outbytes;		    /* This had better be 32 bits! */
 char	*progname;
 int	verbose = 0;
-float	gamma = 2.0;
+float	gamcor = 2.0;
 int	bradj = 0;
 
 	/* First some utility routines */
@@ -112,7 +112,7 @@ char **argv;
     for (i = 1; i < argc ; i++)
 	if (argv[i][0] ==  '-')
 	    switch (argv[i][1]) {
-		case 'g':	gamma = atof(argv[++i]);
+		case 'g':	gamcor = atof(argv[++i]);
 				break;
 
 		case 'e':	if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
@@ -158,7 +158,7 @@ outofparse:
 #ifdef DEBUG
 	fprintf(stderr, "Input file: %s\n", i <= argc - 1 ? argv[i] : "stdin");
 	fprintf(stderr, "Outut file: %s\n", i <= argc - 2 ? argv[i+1] : "stdout" );
-	fprintf(stderr, "Gamma: %f\n", gamma);
+	fprintf(stderr, "Gamma: %f\n", gamcor);
 	fprintf(stderr, "Brightness adjust: %d\n", bradj);
 	fprintf(stderr, "Verbose: %s\n", verbose ? "on" : "off");
 #endif
@@ -173,7 +173,7 @@ outofparse:
 
 	    /* Set the gamma correction */
 
-    setcolrgam(gamma);
+    setcolrgam(gamcor);
 
     for(i=0; i<HEADER_SIZE; i++) 
 	putbyte(0);
@@ -196,7 +196,7 @@ outofparse:
 
     if (verbose)
 	fprintf(stderr, "%s: The picture is %d by %d, with a gamma of %f\n",
-	    progname, xsize, ysize, gamma);
+	    progname, xsize, ysize, gamcor);
 
 
     putpict(xsize, ysize);	/* Here is where all the work is done */
