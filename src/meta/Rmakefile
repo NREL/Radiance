@@ -26,7 +26,7 @@ SPECIALPROGS = $(DESTDIR)/mt160l $(DESTDIR)/mt160 $(DESTDIR)/mtext \
 	$(DESTDIR)/plotout $(DESTDIR)/okimate $(DESTDIR)/tbar \
 	$(DESTDIR)/mx80 $(DESTDIR)/t4014 $(DESTDIR)/imagew \
 	$(DESTDIR)/impress $(DESTDIR)/aed5 $(DESTDIR)/tscat \
-	$(DESTDIR)/tbar #$(DESTDIR)/xmeta 
+	$(DESTDIR)/tcurve #$(DESTDIR)/xmeta 
 
 LIBMETA = ../lib/libmeta.a 
 
