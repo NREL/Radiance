@@ -528,23 +528,23 @@ getE2()				/* E2 -> E2 MULOP E3 */
 
 
 EPNODE *
-getE3()				/* E3 -> E3 ^ E4 */
+getE3()				/* E3 -> E4 ^ E3 */
 				/*       E4 */
 {
     register EPNODE  *ep1, *ep2;
 
     ep1 = getE4();
-    while (nextc == '^') {
+    if (nextc == '^') {
 	ep2 = newnode();
 	ep2->type = nextc;
 	scan();
 	addekid(ep2, ep1);
-	addekid(ep2, getE4());
+	addekid(ep2, getE3());
 #ifdef  RCONST
 	if (ep1->type == NUM && ep1->sibling->type == NUM)
 		ep2 = rconst(ep2);
 #endif
-	ep1 = ep2;
+	return(ep2);
     }
     return(ep1);
 }
