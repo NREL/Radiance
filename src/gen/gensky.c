@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -150,6 +150,14 @@ computesky()			/* compute sky parameters */
 			st = hour + stadj(jd);
 		altitude = salt(sd, st);
 		azimuth = sazi(sd, st);
+	}
+	if (!cloudy && altitude > 87.*PI/180.) {
+		fprintf(stderr,
+"%s: warning - sun too close to zenith, reducing altitude to 87 degrees\n",
+				progname);
+		printf(
+"# warning - sun too close to zenith, reducing altitude to 87 degrees\n");
+		altitude = 87.*PI/180.;
 	}
 	sundir[0] = -sin(azimuth)*cos(altitude);
 	sundir[1] = -cos(azimuth)*cos(altitude);
