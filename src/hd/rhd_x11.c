@@ -199,6 +199,16 @@ dev_close()			/* close our display */
 }
 
 
+
+dev_clear()			/* clear our quadtree */
+{
+	qtCompost(100);
+	if (ncolors > 0)
+		new_ctab(ncolors);
+	rayqleft = 0;			/* hold off update */
+}
+
+
 int
 dev_view(nv)			/* assign new driver view */
 VIEW	*nv;

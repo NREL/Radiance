@@ -323,6 +323,7 @@ usr_input()			/* get user input and process it */
 		break;
 	case DC_REDRAW:			/* redraw from server */
 		imm_mode = beam_sync() > 0;
+		dev_clear();
 		break;
 	case DC_KILL:			/* kill rtrace process(es) */
 		serv_request(DR_KILL, 0, NULL);
