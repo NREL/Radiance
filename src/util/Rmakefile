@@ -12,19 +12,22 @@ CC = cc
 
 INSTDIR = /usr/local/bin
 
-PROGS = findglare xglaresrc glarendx rpiece
+PROGS = findglare xglaresrc glarendx rpiece render
 
 all:	$(PROGS)
 
-install:	all objview.csh objpict.csh proj.csh glare.csh dayfact.csh
+install:	all objview.csh objpict.csh proj.csh glare.csh dayfact.csh \
+rlux.csh
 	cp $(PROGS) $(INSTDIR)
 	cp objview.csh $(INSTDIR)/objview
 	cp objpict.csh $(INSTDIR)/objpict
 	cp glare.csh $(INSTDIR)/glare
 	cp dayfact.csh $(INSTDIR)/dayfact
 	cp debugcal.csh $(INSTDIR)/debugcal
+	cp rlux.csh $(INSTDIR)/rlux
 	chmod 755 $(INSTDIR)/objview $(INSTDIR)/objpict \
-		$(INSTDIR)/glare $(INSTDIR)/dayfact $(INSTDIR)/debugcal
+		$(INSTDIR)/glare $(INSTDIR)/dayfact $(INSTDIR)/debugcal \
+		$(INSTDIR)/rlux
 
 clean:
 	set nonomatch; rm -f *.o $(PROGS) core
@@ -45,6 +48,9 @@ glarendx:	glarendx.o
 xglaresrc:	xglaresrc.o x11findwind.o
 	$(CC) $(CFLAGS) -o xglaresrc xglaresrc.o \
 x11findwind.o -lrt -lX11 -lm
+
+render:	render.o
+	$(CC) $(CFLAGS) -o render render.o -lrt -lm
 
 rpiece:	rpiece.o Version.o
 	$(CC) $(CFLAGS) -o rpiece rpiece.o Version.o -lrt -lm
@@ -72,8 +78,8 @@ glaresrc.o:	../common/linregr.h
 
 rpiece.o:	../common/color.h ../common/view.h ../common/resolu.h
 
-rpiece.o xglaresrc.o:	../common/standard.h ../common/mat4.h \
-../common/fvect.h
+render.o rpiece.o xglaresrc.o:	../common/standard.h \
+../common/mat4.h ../common/fvect.h
 
 xglaresrc.o:	../common/view.h
 
