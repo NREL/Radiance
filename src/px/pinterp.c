@@ -1,4 +1,4 @@
-/* Copyright (c) 1994 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -26,7 +26,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #define sscan(y)	(ourspict+(y)*hresolu)
 #define wscan(y)	(ourweigh+(y)*hresolu)
 #define zscan(y)	(ourzbuf+(y)*hresolu)
+#define bscan(y)	(ourbpict+(y)*hresolu)
 #define averaging	(ourweigh != NULL)
+#define blurring	(ourbpict != NULL)
 #define usematrix	(hasmatrix & !averaging)
 #define zisnorm		(!usematrix | ourview.type != VT_PER)
 
@@ -59,6 +61,10 @@ COLR	*ourpict;			/* output picture (COLR's) */
 COLOR	*ourspict;			/* output pixel sums (averaging) */
 float	*ourweigh = NULL;		/* output pixel weights (averaging) */
 float	*ourzbuf;			/* corresponding z-buffer */
+COLOR	*ourbpict = NULL;		/* blurred picture */
+
+VIEW	avgview;			/* average view for -B option */
+int	nvavg;				/* number of views averaged */
 
 char	*progname;
 
@@ -74,7 +80,7 @@ double	ourexp = -1;			/* original picture exposure */
 int	expadj = 0;			/* exposure adjustment (f-stops) */
 double	rexpadj = 1;			/* real exposure adjustment */
 
-VIEW	theirview = STDVIEW;		/* input view */
+VIEW	theirview;			/* input view */
 int	gotview;			/* got input view? */
 int	wrongformat = 0;		/* input in another format? */
 RESOLU	tresolu;			/* input resolution */
@@ -95,36 +101,40 @@ main(argc, argv)			/* interpolate pictures */
 int	argc;
 char	*argv[];
 {
-#define  check(ol,al)		if (argv[i][ol] || \
-				badarg(argc-i-1,argv+i+1,al)) \
+#define  check(ol,al)		if (argv[an][ol] || \
+				badarg(argc-an-1,argv+an+1,al)) \
 				goto badopt
 	int	gotvfile = 0;
 	int	doavg = -1;
+	int	doblur = 0;
 	char	*zfile = NULL;
 	char	*expcomp = NULL;
-	char	*err;
-	int	i, rval;
+	int	i, an, rval;
 
 	progname = argv[0];
 
-	for (i = 1; i < argc && argv[i][0] == '-'; i++) {
-		rval = getviewopt(&ourview, argc-i, argv+i);
+	for (an = 1; an < argc && argv[an][0] == '-'; an++) {
+		rval = getviewopt(&ourview, argc-an, argv+an);
 		if (rval >= 0) {
-			i += rval;
+			an += rval;
 			continue;
 		}
-		switch (argv[i][1]) {
+		switch (argv[an][1]) {
 		case 'e':				/* exposure */
 			check(2,"f");
-			expcomp = argv[++i];
+			expcomp = argv[++an];
 			break;
 		case 't':				/* threshold */
 			check(2,"f");
-			zeps = atof(argv[++i]);
+			zeps = atof(argv[++an]);
 			break;
 		case 'a':				/* average */
 			check(2,NULL);
 			doavg = 1;
+			break;
+		case 'B':				/* blur views */
+			check(2,NULL);
+			doblur = 1;
 			break;
 		case 'q':				/* quick (no avg.) */
 			check(2,NULL);
@@ -135,7 +145,7 @@ char	*argv[];
 			normdist = !normdist;
 			break;
 		case 'f':				/* fill type */
-			switch (argv[i][2]) {
+			switch (argv[an][2]) {
 			case '0':				/* none */
 				check(3,NULL);
 				fillo = 0;
@@ -154,27 +164,27 @@ char	*argv[];
 				break;
 			case 's':				/* sample */
 				check(3,"i");
-				fillsamp = atoi(argv[++i]);
+				fillsamp = atoi(argv[++an]);
 				break;
 			case 'c':				/* color */
 				check(3,"fff");
 				fillfunc = backfill;
-				setcolor(backcolor, atof(argv[i+1]),
-					atof(argv[i+2]), atof(argv[i+3]));
+				setcolor(backcolor, atof(argv[an+1]),
+					atof(argv[an+2]), atof(argv[an+3]));
 				setcolr(backcolr, colval(backcolor,RED),
 						colval(backcolor,GRN),
 						colval(backcolor,BLU));
-				i += 3;
+				an += 3;
 				break;
 			case 'z':				/* z value */
 				check(3,"f");
 				fillfunc = backfill;
-				backz = atof(argv[++i]);
+				backz = atof(argv[++an]);
 				break;
 			case 'r':				/* rtrace */
 				check(3,"s");
 				fillfunc = rcalfill;
-				calstart(RTCOM, argv[++i]);
+				calstart(RTCOM, argv[++an]);
 				break;
 			default:
 				goto badopt;
@@ -182,53 +192,53 @@ char	*argv[];
 			break;
 		case 'z':				/* z file */
 			check(2,"s");
-			zfile = argv[++i];
+			zfile = argv[++an];
 			break;
 		case 'x':				/* x resolution */
 			check(2,"i");
-			hresolu = atoi(argv[++i]);
+			hresolu = atoi(argv[++an]);
 			break;
 		case 'y':				/* y resolution */
 			check(2,"i");
-			vresolu = atoi(argv[++i]);
+			vresolu = atoi(argv[++an]);
 			break;
 		case 'p':				/* pixel aspect */
-			if (argv[i][2] != 'a')
+			if (argv[an][2] != 'a')
 				goto badopt;
 			check(3,"f");
-			pixaspect = atof(argv[++i]);
+			pixaspect = atof(argv[++an]);
 			break;
 		case 'v':				/* view file */
-			if (argv[i][2] != 'f')
+			if (argv[an][2] != 'f')
 				goto badopt;
 			check(3,"s");
-			gotvfile = viewfile(argv[++i], &ourview, 0, 0);
+			gotvfile = viewfile(argv[++an], &ourview, 0, 0);
 			if (gotvfile < 0)
-				syserror(argv[i]);
+				syserror(argv[an]);
 			else if (gotvfile == 0) {
 				fprintf(stderr, "%s: bad view file\n",
-						argv[i]);
+						argv[an]);
 				exit(1);
 			}
 			break;
 		default:
 		badopt:
 			fprintf(stderr, "%s: command line error at '%s'\n",
-					progname, argv[i]);
+					progname, argv[an]);
 			goto userr;
 		}
 	}
 						/* check arguments */
-	if ((argc-i)%2)
+	if ((argc-an)%2)
 		goto userr;
 	if (fillsamp == 1)
 		fillo &= ~F_BACK;
 	if (doavg < 0)
-		doavg = (argc-i) > 2;
+		doavg = (argc-an) > 2;
 	if (expcomp != NULL)
 		if (expcomp[0] == '+' | expcomp[0] == '-') {
 			expadj = atof(expcomp) + (expcomp[0]=='+' ? .5 : -.5);
-			if (doavg)
+			if (doavg | doblur)
 				rexpadj = pow(2.0, atof(expcomp));
 			else
 				rexpadj = pow(2.0, (double)expadj);
@@ -237,12 +247,13 @@ char	*argv[];
 				goto userr;
 			rexpadj = atof(expcomp);
 			expadj = log(rexpadj)/LOG2 + (rexpadj>1 ? .5 : -.5);
-			if (!doavg)
+			if (!(doavg | doblur))
 				rexpadj = pow(2.0, (double)expadj);
 		}
 						/* set view */
-	if ((err = setview(&ourview)) != NULL) {
-		fprintf(stderr, "%s: %s\n", progname, err);
+	if (nextview(doblur ? stdin : NULL) == EOF) {
+		fprintf(stderr, "%s: no view on standard input!\n",
+				progname);
 		exit(1);
 	}
 	normaspect(viewaspect(&ourview), &pixaspect, &hresolu, &vresolu);
@@ -257,29 +268,36 @@ char	*argv[];
 		if (ourpict == NULL)
 			syserror(progname);
 	}
+	if (doblur) {
+		ourbpict = (COLOR *)bmalloc(hresolu*vresolu*sizeof(COLOR));
+		if (ourbpict == NULL)
+			syserror(progname);
+	}
 	ourzbuf = (float *)bmalloc(hresolu*vresolu*sizeof(float));
 	if (ourzbuf == NULL)
 		syserror(progname);
-	bzero((char *)ourzbuf, hresolu*vresolu*sizeof(float));
 							/* new header */
 	newheader("RADIANCE", stdout);
-							/* get input */
-	for ( ; i < argc; i += 2)
-		addpicture(argv[i], argv[i+1]);
-							/* fill in spaces */
-	if (fillo&F_BACK)
-		backpicture(fillfunc, fillsamp);
-	else
-		fillpicture(fillfunc);
+							/* run pictures */
+	do {
+		bzero((char *)ourzbuf, hresolu*vresolu*sizeof(float));
+		for (i = an; i < argc; i += 2)
+			addpicture(argv[i], argv[i+1]);
+		if (fillo&F_BACK)			/* fill in spaces */
+			backpicture(fillfunc, fillsamp);
+		else
+			fillpicture(fillfunc);
+							/* aft clipping */
+		clipaft();
+	} while (addblur() && nextview(stdin) != EOF);
 							/* close calculation */
 	caldone();
-							/* aft clipping */
-	clipaft();
 							/* add to header */
 	printargs(argc, argv, stdout);
-	if (gotvfile) {
+	compavgview();
+	if (doblur | gotvfile) {
 		fputs(VIEWSTR, stdout);
-		fprintview(&ourview, stdout);
+		fprintview(&avgview, stdout);
 		putc('\n', stdout);
 	}
 	if (pixaspect < .99 | pixaspect > 1.01)
@@ -301,7 +319,7 @@ char	*argv[];
 	exit(0);
 userr:
 	fprintf(stderr,
-	"Usage: %s [view opts][-t eps][-z zout][-e spec][-a|-q][-fT][-n] pfile zspec ..\n",
+	"Usage: %s [view opts][-t eps][-z zout][-e spec][-B][-a|-q][-fT][-n] pfile zspec ..\n",
 			progname);
 	exit(1);
 #undef check
@@ -319,15 +337,79 @@ char	*s;
 		wrongformat = strcmp(fmt, COLRFMT);
 		return;
 	}
-	putc('\t', stdout);
-	fputs(s, stdout);
-
+	if (nvavg < 2) {
+		putc('\t', stdout);
+		fputs(s, stdout);
+	}
 	if (isexpos(s)) {
 		theirexp *= exposval(s);
 		return;
 	}
 	if (isview(s) && sscanview(&theirview, s) > 0)
 		gotview++;
+}
+
+
+nextview(fp)				/* get and set next view */
+FILE	*fp;
+{
+	char	linebuf[256];
+	char	*err;
+	register int	i;
+
+	if (fp != NULL) {
+		do			/* get new view */
+			if (fgets(linebuf, sizeof(linebuf), fp) == NULL)
+				return(EOF);
+		while (!isview(linebuf) || !sscanview(&ourview, linebuf));
+	}
+					/* set new view */
+	if ((err = setview(&ourview)) != NULL) {
+		fprintf(stderr, "%s: %s\n", progname, err);
+		exit(1);
+	}
+	if (!nvavg) {			/* first view */
+		copystruct(&avgview, &ourview);
+		return(nvavg++);
+	}
+					/* add to average view */
+	for (i = 0; i < 3; i++) {
+		avgview.vp[i] += ourview.vp[i];
+		avgview.vdir[i] += ourview.vdir[i];
+		avgview.vup[i] += ourview.vup[i];
+	}
+	avgview.horiz += ourview.horiz;
+	avgview.vert += ourview.vert;
+	avgview.hoff += ourview.hoff;
+	avgview.voff += ourview.voff;
+	avgview.vfore += ourview.vfore;
+	avgview.vaft += ourview.vaft;
+	return(nvavg++);
+}
+
+
+compavgview()				/* compute average view */
+{
+	register int	i;
+	double	f;
+
+	if (nvavg < 2)
+		return;
+	f = 1.0/nvavg;
+	for (i = 0; i < 3; i++) {
+		avgview.vp[i] *= f;
+		avgview.vdir[i] *= f;
+		avgview.vup[i] *= f;
+	}
+	avgview.horiz *= f;
+	avgview.vert *= f;
+	avgview.hoff *= f;
+	avgview.voff *= f;
+	avgview.vfore *= f;
+	avgview.vaft *= f;
+	if (setview(&avgview) != NULL)		/* in case of emergency... */
+		copystruct(&avgview, &ourview);
+	pixaspect = viewaspect(&avgview) * hresolu / vresolu;
 }
 
 
@@ -347,8 +429,10 @@ char	*pfile, *zspec;
 		syserror(pfile);
 					/* get header with exposure and view */
 	theirexp = 1.0;
+	copystruct(&theirview, &stdview);
 	gotview = 0;
-	printf("%s:\n", pfile);
+	if (nvavg < 2)
+		printf("%s:\n", pfile);
 	getheader(pfp, headline, NULL);
 	if (wrongformat || !gotview || !fgetsresolu(&tresolu, pfp)) {
 		fprintf(stderr, "%s: picture format error\n", pfile);
@@ -851,7 +935,7 @@ clipaft()			/* perform aft clipping as indicated */
 	double	yzn2, vx;
 
 	if (ourview.vaft <= FTINY)
-		return;
+		return(0);
 	tstdist = ourview.vaft - ourview.vfore;
 	for (y = 0; y < vresolu; y++) {
 		if (adjtest) {				/* adjust test */
@@ -875,6 +959,47 @@ clipaft()			/* perform aft clipping as indicated */
 				zscan(y)[x] = 0.0;
 			}
 	}
+	return(1);
+}
+
+
+addblur()				/* add to blurred picture */
+{
+	COLOR	cval;
+	double	d;
+	register int	i;
+
+	if (!blurring)
+		return(0);
+	i = hresolu*vresolu;
+	if (nvavg < 2)
+		if (averaging)
+			while (i--) {
+				copycolor(ourbpict[i], ourspict[i]);
+				d = 1.0/ourweigh[i];
+				scalecolor(ourbpict[i], d);
+			}
+		else
+			while (i--)
+				colr_color(ourbpict[i], ourpict[i]);
+	else
+		if (averaging)
+			while (i--) {
+				copycolor(cval, ourspict[i]);
+				d = 1.0/ourweigh[i];
+				scalecolor(cval, d);
+				addcolor(ourbpict[i], cval);
+			}
+		else
+			while (i--) {
+				colr_color(cval, ourpict[i]);
+				addcolor(ourbpict[i], cval);
+			}
+				/* print view */
+	printf("VIEW%d:", nvavg);
+	fprintview(&ourview, stdout);
+	putchar('\n');
+	return(1);
 }
 
 
@@ -886,7 +1011,14 @@ writepicture()				/* write out picture (alters buffer) */
 
 	fprtresolu(hresolu, vresolu, stdout);
 	for (y = vresolu-1; y >= 0; y--)
-		if (averaging) {
+		if (blurring) {
+			for (x = 0; x < hresolu; x++) {	/* compute avg. */
+				d = rexpadj/nvavg;
+				scalecolor(bscan(y)[x], d);
+			}
+			if (fwritescan(bscan(y), hresolu, stdout) < 0)
+				syserror(progname);
+		} else if (averaging) {
 			for (x = 0; x < hresolu; x++) {	/* average pixels */
 				d = rexpadj/wscan(y)[x];
 				scalecolor(sscan(y)[x], d);
