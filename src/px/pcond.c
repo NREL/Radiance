@@ -7,6 +7,7 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include "platform.h"
+#include "rtprocess.h"
 #include "pcond.h"
 
 
@@ -305,7 +306,6 @@ mapimage()				/* map picture and send to stdout */
 
 getfovimg()			/* load foveal sampled image */
 {
-	extern FILE	*popen();
 	char	combuf[128];
 	FILE	*fp;
 	int	x, y;

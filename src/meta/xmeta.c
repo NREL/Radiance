@@ -9,9 +9,8 @@ static const char	RCSid[] = "$Id$";
  *     2/26/86
  */
 
-
+#include  "rtprocess.h"
 #include  "meta.h"
-
 #include  "plot.h"
 
 
@@ -40,7 +39,6 @@ char  **argv;
 
 {
  FILE  *fp;
- FILE  *popen();
  char  *geometry = NULL;
  short  condonly, conditioned;
  char  comargs[500], command[600];

@@ -30,7 +30,7 @@ arc(x,y,x0,y0,x1,y1){
 	else flg=1;
 	qs = quad(x,y,x0,y0);
 	qf = quad(x,y,x1,y1);
-	if(abs(x-x1) < abs(y-y1)){
+	if(abs_(x-x1) < abs_(y-y1)){
 		use = 'x';
 		if(qs == 2 || qs ==3)m = -1;
 		else m=1;
@@ -110,7 +110,7 @@ quad(x,y,xp,yp){
 	else if(y < yp)return(2);
 	else return(4);
 }
-abs(a){
+abs_(a){ /* Windows complains that abs() is an "internal function" */
 	if(a < 0)return(-a);
 	return(a);
 }

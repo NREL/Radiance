@@ -21,6 +21,7 @@ static const char	RCSid[] = "$Id$";
 
 #include  <fcntl.h>
 
+#include  "rtprocess.h"
 #include  "meta.h"
 
 
@@ -48,7 +49,7 @@ int  argc;
 char  **argv;
 
 {
- FILE  *fp, *popen();
+ FILE  *fp;
  char  comargs[200], command[300];
  short  condonly = FALSE, conditioned = FALSE;
 

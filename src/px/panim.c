@@ -10,6 +10,7 @@ static const char	RCSid[] = "$Id$";
 #include <stdio.h>
 #include <string.h>
 
+#include "rtprocess.h"
 #include "random.h"
 #include "color.h"
 #include "clntrpc.h"
@@ -17,7 +18,6 @@ static const char	RCSid[] = "$Id$";
 
 #define GAMMA		2.0		/* gamma correction factor */
 
-FILE	*popen();
 
 char	*pcom = NULL;			/* pipe command */
 

@@ -9,6 +9,7 @@ static const char	RCSid[] = "$Id$";
 #include  <time.h>
 
 #include  "platform.h"
+#include  "rtprocess.h"
 #include  "color.h"
 #include  "resolu.h"
 
@@ -28,8 +29,6 @@ static const char	RCSid[] = "$Id$";
 long  lpat[NCOLS][3];
 
 int  dofilter = 0;		/* filter through pfilt first? */
-
-extern FILE  *popen();
 
 
 main(argc, argv)

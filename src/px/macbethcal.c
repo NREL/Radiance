@@ -15,6 +15,7 @@ static const char	RCSid[] = "$Id$";
 #include <time.h>
 
 #include "platform.h"
+#include "rtprocess.h"
 #include "color.h"
 #include "resolu.h"
 #include "pmap.h"

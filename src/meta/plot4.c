@@ -8,6 +8,7 @@ static const char	RCSid[] = "$Id$";
  *	7/10/86
  */
 
+#include  "rtprocess.h"
 #include  "meta.h"
 
 
@@ -25,7 +26,6 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-	FILE  *popen();
 	FILE  *fp;
 	int  i;
 

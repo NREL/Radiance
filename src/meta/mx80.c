@@ -36,15 +36,10 @@ static const char	RCSid[] = "$Id$";
 
 
 
-
-
+#include  "rtprocess.h"
 #include  "meta.h"
-
 #include  "plot.h"
-
 #include  "span.h"
-
-
 
 
 char  *progname;
@@ -74,7 +69,6 @@ char  **argv;
 
 {
  FILE  *fp;
- FILE  *popen();
  char  comargs[200], command[300];
 
  progname = *argv++;

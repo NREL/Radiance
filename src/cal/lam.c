@@ -12,6 +12,7 @@ static const char	RCSid[] = "$Id$";
 #include <stdio.h>
 
 #include "platform.h"
+#include "rtprocess.h"
 
 #define MAXFILE		16		/* maximum number of files */
 

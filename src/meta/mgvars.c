@@ -10,13 +10,13 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include  <stdio.h>
-
 #include  <stdlib.h>
-
 #include  <math.h>
-
 #include  <ctype.h>
 
+#include  "rtprocess.h"
+#include  "rtmisc.h"
+#include  "rtio.h"
 #include  "mgvars.h"
 
 #define  MAXLINE	512
@@ -25,8 +25,8 @@ static const char	RCSid[] = "$Id$";
 
 #define  isnum(c) (isdigit(c)||(c)=='-'||(c)=='+'||(c)=='.'||(c)=='e'||(c)=='E')
 
-char  *findfile(), *emalloc(), *ecalloc(), *erealloc(), *savestr(), *strcpy();
-FILE  *fopen(), *popen();
+char  *findfile();
+
 extern char  *progname, *libpath[];
 
 #ifdef  DCL_ATOF

@@ -9,6 +9,8 @@ static const char	RCSid[] = "$Id$";
 
 #include  <fcntl.h>
 
+#include  "platform.h"
+#include  "rtprocess.h"
 #include  "meta.h"
 
 
@@ -79,7 +81,7 @@ main(argc, argv)
 int  argc;
 char  **argv;
 {
-	FILE  *fp, *popen();
+	FILE  *fp;
 	char  comargs[200], shcom[300];
 	short  condonly = FALSE, conditioned = FALSE;
 

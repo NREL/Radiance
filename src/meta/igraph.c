@@ -15,6 +15,7 @@ static const char	RCSid[] = "$Id$";
 
 #include  <setjmp.h>
 
+#include  "rtprocess.h"
 #include  "mgvars.h"
 
 typedef struct {
@@ -226,7 +227,7 @@ settype()			/* set plot type */
 
 plotout()			/* output our graph */
 {
-	extern FILE  *pout, *popen();
+	extern FILE  *pout;
 	char  sbuf[128];
 	char  *command;
 	int  i;

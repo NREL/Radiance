@@ -37,15 +37,10 @@ static const char	RCSid[] = "$Id$";
 #define  XCOM  "pexpand +vOCIsp %s | psort -Y +x"
 
 
-
-
+#include  "rtprocess.h"
 #include  "meta.h"
-
 #include  "plot.h"
-
 #include  "span.h"
-
-
 
 
 char  *progname;
@@ -94,7 +89,6 @@ char  **argv;
 
 {
  FILE  *fp;
- FILE  *popen();
  char  comargs[200], command[300];
 
  progname = *argv++;

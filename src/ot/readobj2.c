@@ -6,20 +6,23 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include  <ctype.h>
+#include  <stdio.h>
 
 #include  "platform.h"
-#include  "standard.h"
+#include  "rtprocess.h"
+#include  "rtmath.h"
+#include  "rtio.h"
+#include  "rterror.h"
 #include  "object.h"
 #include  "otypes.h"
 
 
-extern char  *fgetword();
+static void getobject2(char  *name, FILE  *fp, int  (*f)());
 
 readobj2(input, callback)	/* read in an object file or stream */
 char  *input;
 int  (*callback)();
 {
-	FILE  *popen();
 	char  *fgetline();
 	FILE  *infp;
 	char  buf[512];
@@ -58,10 +61,12 @@ int  (*callback)();
 }
 
 
-getobject2(name, fp, f)			/* read the next object */
-char  *name;
-FILE  *fp;
-int  (*f)();
+static void
+getobject2(			/* read the next object */
+char  *name,
+FILE  *fp,
+int  (*f)()
+)
 {
 	char  sbuf[MAXSTR];
 	OBJREC  thisobj;

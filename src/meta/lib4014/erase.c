@@ -7,6 +7,8 @@ static char sccsid[] = "@(#)erase.c	4.1 (Berkeley) 6/27/83";
 
 #include <stdio.h>
 
+#include "platform.h"
+
 extern int ohiy;
 extern int ohix;
 extern int oloy;

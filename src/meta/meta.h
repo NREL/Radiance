@@ -56,8 +56,9 @@ extern "C" {
 
 
 #ifdef  _WIN32  /* XXX */
-#define MDIR "c\\tmp\\" /* XXX we just need something to compile for now */
+#define MDIR "C:\\tmp\\" /* XXX we just need something to compile for now */
 #define TTY "CON:"   /* XXX this probably doesn't work */
+#define TDIR "C:\\tmp\\" /* XXX we just need something to compile for now */
 #else  /* XXX */
 
 #define  TDIR  "/tmp/"		/* directory for temporary files */

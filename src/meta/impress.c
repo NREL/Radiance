@@ -9,10 +9,9 @@ static const char	RCSid[] = "$Id$";
  */
 
 
+#include  "rtprocess.h"
 #include  "meta.h"
-
 #include  "imPcodes.h"
-
 #include  "imPfuncs.h"
 
 
@@ -34,7 +33,6 @@ char  **argv;
 
 {
  FILE  *fp;
- FILE  *popen();
  short  condonly, conditioned;
  char  comargs[200], command[300];
 

@@ -9,13 +9,14 @@ static const char	RCSid[] = "$Id$";
 
 #include <stdio.h>
 
+#include "rtprocess.h"
 
 #define PCOMM		"pvalue -h -b -db"
 
 #define MINVAL		1
 #define MAXVAL		252
 
-extern FILE	*popen(), *freopen();
+extern FILE	*freopen();
 
 
 main(argc, argv)
