@@ -63,8 +63,7 @@ int	really;
 {
 	register int	i;
 
-	if (tmTop != NULL)
-		tmClearHisto();
+	tmClearHisto();
 	bzero((char *)&qtrunk, sizeof(RTREE));
 	nexttwig = 0;
 	if (twigbundle == NULL)
@@ -85,11 +84,14 @@ int	really;
 static RLEAF *
 newleaf()			/* allocate a leaf from our pile */
 {
-	if (tleaf++ >= nleaves)		/* get next leaf in ring */
+	RLEAF	*lp;
+	
+	lp = leafpile + tleaf++;
+	if (tleaf >= nleaves)		/* get next leaf in ring */
 		tleaf = 0;
 	if (tleaf == bleaf)		/* need to shake some free */
 		qtCompost(LFREEPCT);
-	return(leafpile + tleaf);
+	return(lp);
 }
 
 
@@ -157,18 +159,23 @@ qtCompost(pct)			/* free up some leaves */
 int	pct;
 {
 	int	nused, nclear;
+
+	if (is_stump(&qtrunk))
+		return(0);
 				/* figure out how many leaves to clear */
 	nclear = nleaves * pct / 100;
+	nused = tleaf > bleaf ? tleaf-bleaf : tleaf+nleaves-bleaf;
+	nclear -= nleaves - nused;	/* less what's already free */
 	if (nclear <= 0)
 		return(0);
-	nused = tleaf > bleaf ? tleaf-bleaf : tleaf+nleaves-bleaf;
 	if (nclear >= nused) {	/* clear them all */
 		qtFreeTree(0);
 		bleaf = tleaf = 0;
 		return(nused);
 	}
 				/* else clear leaves from bottom */
-	bleaf = (bleaf + nclear) % nleaves;
+	bleaf += nclear;
+	if (bleaf >= nleaves) bleaf -= nleaves;
 	shaketree(&qtrunk);
 	return(nclear);
 }
@@ -427,10 +434,11 @@ int	x0, y0, x1, y1;
 
 	if (is_stump(&qtrunk))
 		return;
-	if ((lim[0][0]=x0) == 0 & (lim[1][0]=y0) == 0 &
-		(lim[0][1]=x1) == odev.hres & (lim[1][1]=y1) == odev.vres ||
-			tmTop->lumap == NULL)
-		tmComputeMapping(0., 0., 0.);
+	if ((lim[0][0]=x0) <= 0 & (lim[1][0]=y0) <= 0 &
+		(lim[0][1]=x1) >= odev.hres-1 & (lim[1][1]=y1) >= odev.vres-1
+			|| tmTop->lumap == NULL)
+		if (tmComputeMapping(0., 0., 0.) != TM_E_OK)
+			return;
 	redraw(ca, &qtrunk, 0, 0, odev.hres, odev.vres, lim);
 }
 
