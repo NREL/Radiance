@@ -42,7 +42,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define prim(cn)	((cn)&3)
 #define pval(cn)	((cn)>>2)
 				/* our color table */
-struct tabent {
+static struct tabent {
 	long	sum[3];		/* sum of colors using this entry */
 	long	n;		/* number of colors */
 	short	ent[3];		/* current table value */
@@ -61,8 +61,10 @@ int
 new_ctab(ncolors)		/* start new color table with max ncolors */
 int	ncolors;
 {
-	if (ncolors < 1 || ncolors > 1<<FBDEPTH)
+	if (ncolors < 1)
 		return(0);
+	if (ncolors > 1<<FBDEPTH)
+		ncolors = 1<<FBDEPTH;
 				/* clear color table */
 	bzero(clrtab, sizeof(clrtab));
 				/* partition color space */
