@@ -8,7 +8,7 @@ static char SCCSid[] = "$SunId$ LBL";
  * flip picture file horizontally and/or vertically
  */
 
-#include "standard.h"
+#include <stdio.h>
 
 #include "color.h"
 
