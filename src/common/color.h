@@ -62,11 +62,18 @@ typedef float  COLOR[3];	/* red, green, blue */
 #define  YDECR			2
 #define  YMAJOR			4
 
-				/* info. header string indicating exposure */
+				/* macros for exposures */
 #define  EXPOSSTR		"EXPOSURE="
 #define  EXPOSSTRL		9
 #define  isexpos(hl)		(!strncmp(hl,EXPOSSTR,EXPOSSTRL))
 #define  exposval(hl)		atof((hl)+EXPOSSTRL)
 #define  fputexpos(ex,fp)	fprintf(fp,"%s%e\n",EXPOSSTR,ex)
+
+				/* macros for pixel aspect ratios */
+#define  ASPECTSTR		"PIXASPECT="
+#define  ASPECTSTRL		10
+#define  isaspect(hl)		(!strncmp(hl,ASPECTSTR,ASPECTSTRL))
+#define  aspectval(hl)		atof((hl)+ASPECTSTRL)
+#define  fputaspect(pa,fp)	fprintf(fp,"%s%f\n",ASPECTSTR,pa)
 
 extern double  ldexp(), atof();
