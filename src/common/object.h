@@ -72,3 +72,7 @@ extern OBJECT  nobjects;		/* # of objects */
  */
 
 #define  MAXSET		127		/* maximum object set size */
+
+OBJECT	*setsave();
+
+#define setfree(os)	free((char *)(os))

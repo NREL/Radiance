@@ -16,8 +16,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "object.h"
 
-#include  "otypes.h"
-
 #ifndef  OSTSIZ
 #ifdef  BIGMEM
 #define  OSTSIZ		56437		/* object table size (a prime!) */
@@ -72,7 +70,7 @@ OBJECT  obj;
 
 	lower = 1;
 	upper = cm = os[0] + 1;
-
+					/* binary search algorithm */
 	while ((i = (lower + upper) >> 1) != cm) {
 		cm = obj - os[i];
 		if (cm > 0)
@@ -106,6 +104,62 @@ register OBJECT  *os1, *os2;
 
 	for (i = *os2; i-- >= 0; )
 		*os1++ = *os2++;
+}
+
+
+OBJECT *
+setsave(os)			/* allocate space and save set */
+register OBJECT  *os;
+{
+	OBJECT  *osnew;
+	register OBJECT  *oset;
+	register int  i;
+
+	if ((osnew = oset = (OBJECT *)malloc((*os+1)*sizeof(OBJECT))) == NULL)
+		error(SYSTEM, "out of memory in setsave\n");
+	for (i = *os; i-- >= 0; )	/* inline setcopy */
+		*oset++ = *os++;
+	return(osnew);
+}
+
+
+setunion(osr, os1, os2)		/* osr = os1 Union os2 */
+register OBJECT  *osr, *os1, *os2;
+{
+	register int	i1, i2;
+
+	osr[0] = 0;
+	for (i1 = i2 = 1; i1 <= os1[0] || i2 <= os2[0]; ) {
+		while (i1 <= os1[0] && (i2 > os2[0] || os1[i1] <= os2[i2])) {
+			osr[++osr[0]] = os1[i1];
+			if (i2 <= os2[0] && os2[i2] == os1[i1])
+				i2++;
+			i1++;
+		}
+		while (i2 <= os2[0] && (i1 > os1[0] || os2[i2] < os1[i1]))
+			osr[++osr[0]] = os2[i2++];
+	}
+}
+
+
+setintersect(osr, os1, os2)	/* osr = os1 Intersect os2 */
+register OBJECT  *osr, *os1, *os2;
+{
+	register int	i1, i2;
+
+	osr[0] = 0;
+	if (os1[0] <= 0)
+		return;
+	for (i1 = i2 = 1; i2 <= os2[0]; ) {
+		while (os1[i1] < os2[i2])
+			if (++i1 > os1[0])
+				return;
+		while (os2[i2] < os1[i1])
+			if (++i2 > os2[0])
+				return;
+		if (os1[i1] == os2[i2])
+			osr[++osr[0]] = os2[i2++];
+	}
 }
 
 
@@ -188,22 +242,33 @@ noderr:
 }
 
 
-nonsurfinset(orig, nobjs)		/* check sets for non-surfaces */
-int  orig, nobjs;
+int
+dosets(f)				/* loop through all sets */
+int	(*f)();
 {
+	int  res = 0;
 	int  n;
 	register OBJECT  *os;
-	register OBJECT  i, s;
 
 	for (n = 0; n < OSTSIZ; n++) {
 		if ((os = ostable[n]) == NULL)
 			continue;
-		while ((i = *os++) > 0)
-			do
-				if ((s = *os++) >= orig && s < orig+nobjs &&
-						ismodifier(objptr(s)->otype))
-					return(1);
-			while (--i);
+		while (*os > 0) {
+			res += (*f)(os);
+			os += *os + 1;
+		}
 	}
-	return(0);
+	return(res);
+}
+
+
+donesets()			/* free ALL SETS in our table */
+{
+	register int  n;
+
+	for (n = 0; n < OSTSIZ; n++) 
+		if (ostable[n] != NULL) {
+			free((char *)ostable[n]);
+			ostable[n] = NULL;
+		}
 }
