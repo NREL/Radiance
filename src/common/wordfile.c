@@ -27,6 +27,8 @@ char	*fname;
 	char	buf[MAXFLEN];
 	register int	n;
 					/* load file into buffer */
+	if (fname == NULL)
+		return(-1);			/* no filename */
 	if ((fd = open(fname, 0)) < 0)
 		return(-1);			/* open error */
 	n = read(fd, buf, MAXFLEN);
