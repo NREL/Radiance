@@ -471,6 +471,13 @@ compute(void)			/* compute color mapping */
 					/* compute piecewise luminance curve */
 	for (i = 0; i < NMBNEU; i++) {
 		copycolor(bramp[i][0], inpRGB[mbneu[i]]);
+		for (n = i ? 3 : 0; n--; )
+			if (colval(bramp[i][0],n) <=
+					colval(bramp[i-1][0],n)+1e-7) {
+				fprintf(stderr,
+		"%s: non-increasing neutral patch\n", progname);
+				exit(1);
+			}
 		copycolor(bramp[i][1], mbRGB[mbneu[i]]);
 	}
 					/* compute color space gamut */
