@@ -1315,8 +1315,10 @@ rpict(				/* run rpict and pfilt for each view */
 					zopt, oct1name, rawfile);
 			if (pfile != NULL && inchild()) {
 						/* rpict persistent mode */
-				if (!silent)
+				if (!silent) {
 					printf("\t%s\n", combuf);
+					fflush(stdout);
+				}
 				sprintf(combuf, "rpict%s %s %s%s%s %s > %s",
 						rep, rppopt, res, po, opts,
 						oct1name, rawfile);
