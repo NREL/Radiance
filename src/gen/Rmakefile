@@ -21,7 +21,7 @@ install:	$(PROGS) genpine.csh genwindow.csh
 	chmod 755 $(INSTDIR)/genwindow
 
 clean:
-	rm -f $(PROGS) *.o core
+	set nonomatch; rm -f $(PROGS) *.o core
 
 genbeads:	genbeads.o hermite3.o
 	cc $(CFLAGS) -o genbeads genbeads.o hermite3.o -lm

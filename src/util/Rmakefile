@@ -21,7 +21,7 @@ install:	all objview.csh objpict.csh proj.csh
 	chmod 755 $(INSTDIR)/objview $(INSTDIR)/objpict
 
 clean:
-	rm -f *.o $(PROGS) core
+	set nonomatch; rm -f *.o $(PROGS) core
 
 scanner:	scanner.o
 	cc $(CFLAGS) -o scanner scanner.o -lm
