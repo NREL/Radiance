@@ -75,17 +75,18 @@ trace variable rifname w setrname
 
 set smallscrn [expr [winfo screenwidth .] < 830]
 
+message .mess -relief ridge -font fixed -textvariable curmess -anchor nw
 if $smallscrn {
 	frame .upper -geometry 640x410
 	frame .upper.right -geometry 120x410
+	.mess configure -width 640
 } else {
 	frame .upper -geometry 830x410
 	frame .upper.right -geometry 130x410
+	.mess configure -width 830
 }
 pack .upper -side top
 place .upper.right -relx .98 -rely 0 -anchor ne
-message .mess -relief ridge -font fixed -textvariable curmess \
-		-anchor nw -width 620
 pack .mess -side top -expand yes -fill both
 helplink .mess trad trad messages
 . configure -cursor top_left_arrow
@@ -141,8 +142,10 @@ helplink .upper.right.quit trad trad quit
 
 if $smallscrn {
 	wm minsize . 640 460
+	wm maxsize . 640 512
 } else {
 	wm minsize . 830 460
+	wm maxsize . 830 512
 }
 wm iconbitmap . @$radlib/trad.icon
 
