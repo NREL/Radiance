@@ -84,6 +84,7 @@ OBJECT	nsceneobjs;			/* number of objects in our scene */
 extern unsigned long  raynum, nrays;	/* ray counts */
 
 extern int  imm_irrad;			/* calculate immediate irradiance? */
+extern int  lim_dist;			/* limit distance? */
 
 extern int  ralrm;			/* seconds between reports */
 
@@ -349,6 +350,11 @@ char  *argv[];
 				check(3,"f");
 				minweight = atof(argv[++i]);
 				break;
+#if  RTRACE
+			case 'd':				/* distance */
+				bool(3,lim_dist);
+				break;
+#endif
 			default:
 				goto badopt;
 			}
@@ -922,6 +928,10 @@ printdefaults()			/* print default values to stdout */
 	printf("-ms %f\t\t\t# mist sampling distance\n", ssampdist);
 	printf("-lr %-9d\t\t\t# limit reflection\n", maxdepth);
 	printf("-lw %f\t\t\t# limit weight\n", minweight);
+#if  RTRACE
+	printf(lim_dist ? "-ld+\t\t\t\t# limit distance on\n" :
+			"-ld-\t\t\t\t# limit distance off\n");
+#endif
 #if  RPICT
 	printf("-t  %-9d\t\t\t# time between reports\n", ralrm);
 #endif
