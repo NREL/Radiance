@@ -82,7 +82,7 @@ done_rtrace()			/* clean up and close rtrace calculation */
 	if ((status = end_rtrace()))
 		error(WARNING, "bad exit status from rtrace");
 	if (vdef(REPORT)) {		/* report time */
-		eputs("rtrace process ended\n");
+		eputs("rtrace process closed\n");
 		report(0);
 	}
 	return(status);			/* return status */
@@ -150,7 +150,7 @@ getradfile()			/* run rad and get needed variables */
 	if (system(combuf)) {
 		unlink(tf2);			/* clean up */
 		unlink(tf1);
-		error(SYSTEM, "cannot execute rad command");
+		error(USER, "error executing rad command");
 	}
 	if (pippt == NULL) {
 		loadvars(tf2);			/* load variables */
