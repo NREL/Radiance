@@ -111,7 +111,7 @@ extern off_t  lseek();
 #endif
 extern long  ftell();
 
-extern char  *sskip(), *sskip2();
+extern char  *nextword(), *sskip(), *sskip2();
 extern char  *getpath(), *getenv();
 #ifndef malloc
 extern char  *malloc(), *calloc(), *realloc();
