@@ -44,12 +44,12 @@ double	t, e;
 
 
 peano(p, n, t, e)		/* compute Peano point */
-double  p[];
+register double  p[];
 int	n;
 double	t, e;
 {
 	register int	i;
-	int  neg = 0;
+	register int  neg = 0;
 
 	i = n;
 	while (i-- > 0) {
