@@ -419,10 +419,8 @@ XKeyEvent  *ekey;
 		if (avgbox(cval) == -1)
 			return(-1);
 		n = log(.5/bright(cval))/.69315 - scale;	/* truncate */
-		if (n == 0) {
-			XFeep(0);
+		if (n == 0)
 			return(0);
-		}
 		scale_rcolors(ourras, pow(2.0, (double)n));
 		scale += n;
 		sprintf(buf, "%+d", scale);
