@@ -304,11 +304,11 @@ mg_read()			/* read next line from file */
 		if (fgets(mg_file->inpline+len,
 				MG_MAXLINE-len, mg_file->fp) == NULL)
 			return(len);
-		mg_file->lineno++;
 		len += strlen(mg_file->inpline+len);
-		if (len > 1 && mg_file->inpline[len-2] == '\\')
-			mg_file->inpline[--len-1] = ' ';
-	} while (mg_file->inpline[len]);
+		if (len >= MG_MAXLINE-1)
+			return(len);
+		mg_file->lineno++;
+	} while (len > 1 && mg_file->inpline[len-2] == '\\');
 
 	return(len);
 }
@@ -320,10 +320,13 @@ mg_parse()			/* parse current input line */
 	char	abuf[MG_MAXLINE];
 	char	*argv[MG_MAXARGC];
 	int	en;
-	register char	*cp, **ap;
-
-	strcpy(cp=abuf, mg_file->inpline);
-	ap = argv;			/* break into words */
+	register char	*cp, *cp2, **ap;
+					/* copy line, removing escape chars */
+	cp = abuf; cp2 = mg_file->inpline;
+	while ((*cp++ = *cp2++))
+		if (cp2[0] == '\n' && cp2[-1] == '\\')
+			cp--;
+	cp = abuf; ap = argv;		/* break into words */
 	for ( ; ; ) {
 		while (isspace(*cp))
 			*cp++ = '\0';
@@ -356,7 +359,7 @@ char	*fn;
 		return(rval);
 	}
 	while ((nbr = mg_read()) > 0) {	/* parse each line */
-		if (nbr >= MG_MAXLINE-1 && cntxt.inpline[nbr-1] != '\n') {
+		if (nbr >= MG_MAXLINE-1) {
 			fprintf(stderr, "%s: %d: %s\n", cntxt.fname,
 					cntxt.lineno, mg_err[rval=MG_ELINE]);
 			break;
@@ -435,7 +438,7 @@ char	**av;
 	}
 	do {
 		while ((rv = mg_read()) > 0) {
-			if (rv >= MG_MAXLINE-1 && ictx.inpline[rv-1] != '\n') {
+			if (rv >= MG_MAXLINE-1) {
 				fprintf(stderr, "%s: %d: %s\n", ictx.fname,
 						ictx.lineno, mg_err[MG_ELINE]);
 				mg_close();
