@@ -61,7 +61,6 @@ register MAT4  m4;
 }
 
 
-#ifdef  INVMAT
 /*
  * invmat - computes the inverse of mat into inverse.  Returns 1
  * if there exists an inverse, 0 otherwise.  It uses Gaussian Elimination
@@ -78,7 +77,7 @@ MAT4  mat, inverse;
 	register double temp;
 
 	copymat4(m4tmp, mat);
-	setident(inverse);
+	setident4(inverse);
 
 	for(i = 0; i < 4; i++) {
 		/* Look for row with largest pivot and swap rows */
@@ -116,4 +115,3 @@ MAT4  mat, inverse;
 #undef ABS
 #undef SWAP
 }
-#endif
