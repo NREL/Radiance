@@ -144,9 +144,10 @@ char  *afile;
 		pos += (long)nambvals*AMBVALSIZ;
 		flen = lseek(fileno(ambfp), 0L, 2);
 		if (flen != pos) {
-			error(WARNING,
+			sprintf(errmsg,
 			"ignoring last %ld values in ambient file (corrupted)",
 					(flen - pos)/AMBVALSIZ);
+			error(WARNING, errmsg);
 			fseek(ambfp, pos, 0);
 			ftruncate(fileno(ambfp), pos);
 		}
