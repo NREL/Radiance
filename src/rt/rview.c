@@ -58,6 +58,8 @@ char  *devname = dev_default;		/* output device name */
 
 struct driver  *dev = NULL;		/* driver functions */
 
+char  rifname[128];			/* rad input file name */
+
 VIEW  oldview;				/* previous view parameters */
 
 PNODE  ptrunk;				/* the base of our image */
@@ -207,6 +209,16 @@ again:
 		if (badcom("last"))
 			goto commerr;
 		lastview(args);
+		break;
+	case 'V':				/* save view */
+		if (badcom("V"))
+			goto commerr;
+		saveview(args);
+		break;
+	case 'L':				/* load view */
+		if (badcom("L"))
+			goto commerr;
+		loadview(args);
 		break;
 	case 'e':				/* exposure */
 		if (badcom("exposure"))
