@@ -13,8 +13,8 @@
 #define MG_E_COLOR	1
 #define MG_E_CONE	2
 #define MG_E_CMIX	3
-#define MG_E_CXY	4
-#define MG_E_CSPEC	5
+#define MG_E_CSPEC	4
+#define MG_E_CXY	5
 #define MG_E_CYL	6
 #define MG_E_ED		7
 #define MG_E_FACE	8
@@ -162,7 +162,7 @@ typedef FLOAT  FVECT[3];
 				(vr)[1]=(v1)[1]+(f)*(v2)[1], \
 				(vr)[2]=(v1)[2]+(f)*(v2)[2])
 
-#define is0vect(v)	(DOT(v,v) < FTINY*FTINY)
+#define is0vect(v)	(DOT(v,v) <= FTINY*FTINY)
 
 #define round0(x)	if (x <= FTINY && x >= -FTINY) x = 0
 
@@ -177,30 +177,25 @@ extern double	normalize(FVECT);	/* normalize a vector */
  *	(materials, colors, vectors)
  */
 
-/* The following structure will change when we add spectral data support */
-typedef struct {
-	float	cx, cy;		/* XY chromaticity coordinates */
-} C_COLOR;		/* color context */
-
-#ifdef later
-
-#define C_CMAXWL	780		/* maximum wavelength */
 #define C_CMINWL	380		/* minimum wavelength */
+#define C_CMAXWL	780		/* maximum wavelength */
 #define C_CNSS		41		/* number of spectral samples */
-#define C_WLINC		((C_MAXWL-C_MINWL)/(C_NSS-1))	/* 10 nm increment */
+#define C_CWLI		((C_CMAXWL-C_CMINWL)/(C_CNSS-1))
 #define C_CMAXV		10000		/* nominal maximum sample value */
 
-#define C_CXY		1		/* flag if has xy chromaticity */
-#define C_CSPEC		2		/* flag if has spectrum */
+#define C_CSSPEC	01		/* flag if spectrum is set */
+#define C_CDSPEC	02		/* flag if defined w/ spectrum */
+#define C_CSXY		04		/* flag if xy is set */
+#define C_CDXY		010		/* flag if defined w/ xy */
 
 typedef struct {
 	short	flags;			/* what's been set */
-	float	cx, cy;			/* xy chromaticity value */
 	short	ssamp[C_CNSS];		/* spectral samples, min wl to max */
 	long	ssum;			/* straight sum of spectral values */
+	float	cx, cy;			/* xy chromaticity value */
 } C_COLOR;
 
-#define C_DEFCOLOR	{ C_CXY|C_CSPEC, 1./3., 1./3.,
+#define C_DEFCOLOR	{ C_CDXY|C_CSXY|C_CSSPEC,\
 			{C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,\
 			C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,\
 			C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,\
@@ -208,28 +203,27 @@ typedef struct {
 			C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,\
 			C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,\
 			C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV},\
-			(long)C_CNSS*C_MAXV }
+			(long)C_CNSS*C_CMAXV, 1./3., 1./3. }
 
-#define C_CIEX		{ C_CXY|C_CSPEC, ???, ???,
+#define C_CIEX		{ C_CDSPEC|C_CSSPEC|C_CSXY,\
 			{14,42,143,435,1344,2839,3483,3362,2908,1954,956,\
 			320,49,93,633,1655,2904,4334,5945,7621,9163,10263,\
 			10622,10026,8544,6424,4479,2835,1649,874,468,227,\
-			114,58,29,14,7,3,2,1,0}, 106836L }
+			114,58,29,14,7,3,2,1,0}, 106836L, .735, .265 }
 
-#define C_CIEY		{ C_CXY|C_CSPEC, ???, ???,
+#define C_CIEY		{ C_CDSPEC|C_CSSPEC|C_CSXY,\
 			{0,1,4,12,40,116,230,380,600,910,1390,2080,3230,\
 			5030,7100,8620,9540,9950,9950,9520,8700,7570,6310,\
 			5030,3810,2650,1750,1070,610,320,170,82,41,21,10,\
-			5,2,1,1,0,0}, 106856L }
+			5,2,1,1,0,0}, 106856L, .274, .717 }
 
-#define C_CIEZ		{ C_CXY|C_CSPEC, ???, ???,
+#define C_CIEZ		{ C_CDSPEC|C_CSSPEC|C_CSXY,\
 			{65,201,679,2074,6456,13856,17471,17721,16692,\
 			12876,8130,4652,2720,1582,782,422,203,87,39,21,17,\
-			11,8,3,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 106770L }
+			11,8,3,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},\
+			106770L, .167, .009 }
 
-#define c_cval(c,l)	((double)(c)->ssamp[((l)-C_MINWL)/C_WLINC] / (c)->sum)
-
-#endif
+#define c_cval(c,l)	((double)(c)->ssamp[((l)-C_MINWL)/C_CWLI] / (c)->sum)
 
 typedef struct {
 	char	*name;		/* material name */
@@ -252,10 +246,6 @@ typedef struct {
 	FVECT	p, n;		/* point and normal */
 } C_VERTEX;		/* vertex context */
 
-#define isgrey(cxy)	((cxy)->cx > .32 && (cxy)->cx < .34 && \
-			(cxy)->cy > .32 && (cxy)->cy < .34)
-
-#define C_DEFCOLOR	{.333,.333}
 #define C_DEFMATERIAL	{NULL,1,0.,C_DEFCOLOR,0.,C_DEFCOLOR,0.,C_DEFCOLOR,\
 					0.,C_DEFCOLOR,0.,0.,C_DEFCOLOR,0.}
 #define C_DEFVERTEX	{{0.,0.,0.},{0.,0.,0.}}
@@ -270,12 +260,16 @@ extern int	c_hmaterial();			/* handle material entity */
 extern int	c_hvertex();			/* handle vertex entity */
 extern void	c_clearall();			/* clear context tables */
 extern C_VERTEX	*c_getvert();			/* get a named vertex */
+extern void	c_ccvt();			/* fix color representation */
+extern int	c_isgrey();			/* check if color is grey */
 #else
 extern int	c_hcolor(int, char **);		/* handle color entity */
 extern int	c_hmaterial(int, char **);	/* handle material entity */
 extern int	c_hvertex(int, char **);	/* handle vertex entity */
 extern void	c_clearall(void);		/* clear context tables */
 extern C_VERTEX	*c_getvert(char *);		/* get a named vertex */
+extern void	c_ccvt(C_COLOR *, int);		/* fix color representation */
+extern int	c_isgrey(C_COLOR *);		/* check if color is grey */
 #endif
 
 /*************************************************************************
@@ -303,7 +297,6 @@ typedef FLOAT  MAT4[4][4];
 #define  copymat4(m4a,m4b)	bcopy((char *)m4b,(char *)m4a,sizeof(MAT4))
 #else
 #define  copymat4(m4a,m4b)	(void)memcpy((char *)m4a,(char *)m4b,sizeof(MAT4))
-extern char  *memcpy();
 #endif
 
 #define  MAT4IDENT		{ {1.,0.,0.,0.}, {0.,1.,0.,0.}, \
@@ -374,7 +367,7 @@ extern void	xf_clear(void);			/* clear xf stack */
 extern void	multmat4(MAT4, MAT4, MAT4);	/* m4a = m4b X m4c */
 extern void	multv3(FVECT, FVECT, MAT4);	/* v3a = v3b X m4 (vectors) */
 extern void	multp3(FVECT, FVECT, MAT4);	/* p3a = p3b X m4 (points) */
-extern int	xf(XF, int, char **);		/* interpret transform spec. */
+extern int	xf(XF *, int, char **);		/* interpret transform spec. */
 
 #endif
 

@@ -53,8 +53,6 @@ int	mg_nqcdivs = MG_NQCD;	/* number of divisions per quarter circle */
 
 /* temporary settings for testing */
 #define e_ies e_any_toss
-#define e_cmix e_any_toss
-#define e_cspec e_any_toss
 				/* alternate handler routines */
 
 static int	e_any_toss(),		/* discard unneeded entity */
@@ -62,7 +60,7 @@ static int	e_any_toss(),		/* discard unneeded entity */
 		e_include(),		/* include file */
 		e_sph(),		/* sphere */
 		e_cmix(),		/* color mixtures */
-		e_cspec();		/* color spectra */
+		e_cspec(),		/* color spectra */
 		e_cyl(),		/* cylinder */
 		e_cone(),		/* cone */
 		e_prism(),		/* prism */
@@ -119,15 +117,20 @@ mg_init()			/* initialize alternate entity handlers */
 	} else
 		uneed |= 1<<MG_E_POINT|1<<MG_E_NORMAL|1<<MG_E_VERTEX|1<<MG_E_XF;
 	if (mg_ehand[MG_E_COLOR] != NULL) {
-		if (mg_ehand[MG_E_CMIX] == NULL)
+		if (mg_ehand[MG_E_CMIX] == NULL) {
 			mg_ehand[MG_E_CMIX] = e_cmix;
-		if (mg_ehand[MG_E_CSPEC] == NULL)
+			ineed |= 1<<MG_E_COLOR|1<<MG_E_CXY|1<<MG_E_CSPEC|1<<MG_E_CMIX;
+		}
+		if (mg_ehand[MG_E_CSPEC] == NULL) {
 			mg_ehand[MG_E_CSPEC] = e_cspec;
+			ineed |= 1<<MG_E_COLOR|1<<MG_E_CXY|1<<MG_E_CSPEC|1<<MG_E_CMIX;
+		}
 	}
 					/* check for consistency */
 	if (mg_ehand[MG_E_FACE] != NULL)
 		uneed |= 1<<MG_E_POINT|1<<MG_E_VERTEX|1<<MG_E_XF;
-	if (mg_ehand[MG_E_CXY] != NULL)
+	if (mg_ehand[MG_E_CXY] != NULL || mg_ehand[MG_E_CSPEC] != NULL ||
+			mg_ehand[MG_E_CMIX] != NULL)
 		uneed |= 1<<MG_E_COLOR;
 	if (mg_ehand[MG_E_RD] != NULL || mg_ehand[MG_E_TD] != NULL ||
 			mg_ehand[MG_E_ED] != NULL || 
@@ -147,6 +150,14 @@ mg_init()			/* initialize alternate entity handlers */
 		e_supp[MG_E_POINT] = c_hvertex;
 	if (ineed & 1<<MG_E_NORMAL && mg_ehand[MG_E_NORMAL] != c_hvertex)
 		e_supp[MG_E_NORMAL] = c_hvertex;
+	if (ineed & 1<<MG_E_COLOR && mg_ehand[MG_E_COLOR] != c_hcolor)
+		e_supp[MG_E_COLOR] = c_hcolor;
+	if (ineed & 1<<MG_E_CXY && mg_ehand[MG_E_CXY] != c_hcolor)
+		e_supp[MG_E_CXY] = c_hcolor;
+	if (ineed & 1<<MG_E_CSPEC && mg_ehand[MG_E_CSPEC] != c_hcolor)
+		e_supp[MG_E_CSPEC] = c_hcolor;
+	if (ineed & 1<<MG_E_CMIX && mg_ehand[MG_E_CMIX] != c_hcolor)
+		e_supp[MG_E_CMIX] = c_hcolor;
 					/* discard remaining entities */
 	for (i = 0; i < MG_NENTITIES; i++)
 		if (mg_ehand[i] == NULL)
@@ -962,6 +973,79 @@ char	**av;
 			return(rv);
 		newav[3] = newav[2];
 		newav[4] = newav[1];
+	}
+	return(MG_OK);
+}
+
+
+static int
+e_cspec(ac, av)			/* handle spectral color */
+int	ac;
+char	**av;
+{
+	static char	xbuf[24], ybuf[24];
+	static char	*ccom[4] = {mg_ename[MG_E_CXY], xbuf, ybuf};
+	int	rv;
+
+	c_ccvt(c_ccolor, C_CSXY);
+				/* if it's really their handler, use it */
+	if (mg_ehand[MG_E_CXY] != c_hcolor) {
+		sprintf(xbuf, "%.4f", c_ccolor->cx);
+		sprintf(ybuf, "%.4f", c_ccolor->cy);
+		if ((rv = handle_it(MG_E_CXY, 3, ccom)) != MG_OK)
+			return(rv);
+	}
+	return(MG_OK);
+}
+
+
+static int
+e_cmix(ac, av)			/* handle mixing of colors */
+int	ac;
+char	**av;
+{
+	char	wl[2][6], vbuf[C_CNSS][24];
+	char	*newav[C_CNSS+4];
+	int	rv;
+	register int	i;
+	/*
+	 * Contorted logic works as follows:
+	 *	1. the colors are already mixed in c_hcolor() support function
+	 *	2. if we would handle a spectral result, make sure it's not
+	 *	3. if c_hcolor() would handle a spectral result, don't bother
+	 *	4. otherwise, make cspec entity and pass it to their handler
+	 *	5. if we have only xy results, handle it as c_spec() would
+	 */
+	if (mg_ehand[MG_E_CSPEC] == e_cspec)
+		c_ccvt(c_ccolor, C_CSXY);
+	else if (c_ccolor->flags & C_CDSPEC) {
+		if (mg_ehand[MG_E_CSPEC] != c_hcolor) {
+			sprintf(wl[0], "%d", C_CMINWL);
+			sprintf(wl[1], "%d", C_CMAXWL);
+			newav[0] = mg_ename[MG_E_CSPEC];
+			newav[1] = wl[0];
+			newav[2] = wl[1];
+			for (i = 0; i < C_CNSS; i++) {
+				sprintf(vbuf[i], "%.6f",
+						(double)c_ccolor->ssamp[i] /
+						c_ccolor->ssum);
+				newav[i+3] = vbuf[i];
+			}
+			newav[C_CNSS+3] = NULL;
+			if ((rv = handle_it(MG_E_CSPEC, C_CNSS+3, newav)) != MG_OK)
+				return(rv);
+		}
+		return(MG_OK);
+	}
+	if (mg_ehand[MG_E_CXY] != c_hcolor) {
+		sprintf(vbuf[0], "%.4f", c_ccolor->cx);
+		sprintf(vbuf[1], "%.4f", c_ccolor->cy);
+		newav[0] = mg_ename[MG_E_CXY];
+		newav[1] = vbuf[0];
+		newav[2] = vbuf[1];
+		newav[3] = NULL;
+		if ((rv = handle_it(MG_E_CXY, 3, newav)) != MG_OK)
+			return(rv);
 	}
 	return(MG_OK);
 }
