@@ -14,7 +14,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 			/* set the following to suit, -1 to disable */
 int	envexpchr = '$';		/* environment expansion character */
-int	filexpchr = '^';		/* file expansion character */
+int	filexpchr = '@';		/* file expansion character */
 
 
 expandarg(acp, avp, n)		/* expand list at argument n */
