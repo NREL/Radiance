@@ -41,6 +41,8 @@ extern RTREE	qtrunk;		/* trunk of quadtree */
 extern double	qtDepthEps;	/* epsilon to compare depths (z fraction) */
 extern int	qtMinNodesiz;	/* minimum node dimension (pixels) */
 
+extern RLEAF	*qtFindLeaf();
+
 
 /************************************************************************
  * These driver support routines implement the dev_value() call, but

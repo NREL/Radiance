@@ -58,8 +58,7 @@ memerr:
 }
 
 
-static
-freetree(really)		/* free allocated twigs */
+qtFreeTree(really)		/* free allocated twigs */
 int	really;
 {
 	register int	i;
@@ -101,7 +100,7 @@ int	n;
 	unsigned	nbytes;
 	register unsigned	i;
 
-	freetree(0);		/* make sure tree is empty */
+	qtFreeTree(0);		/* make sure tree is empty */
 	if (n <= 0)
 		return(0);
 	if (nleaves >= n)
@@ -124,7 +123,7 @@ int	n;
 
 qtFreeLeaves()			/* free our allocated leaves and twigs */
 {
-	freetree(1);		/* free tree also */
+	qtFreeTree(1);		/* free tree also */
 	if (nleaves <= 0)
 		return;
 	free((char *)leafpile);
@@ -164,7 +163,7 @@ int	pct;
 		return(0);
 	nused = tleaf > bleaf ? tleaf-bleaf : tleaf+nleaves-bleaf;
 	if (nclear >= nused) {	/* clear them all */
-		freetree(0);
+		qtFreeTree(0);
 		bleaf = tleaf = 0;
 		return(nused);
 	}
@@ -172,6 +171,43 @@ int	pct;
 	bleaf = (bleaf + nclear) % nleaves;
 	shaketree(&qtrunk);
 	return(nclear);
+}
+
+
+RLEAF *
+qtFindLeaf(x, y)		/* find closest leaf to (x,y) */
+int	x, y;
+{
+	register RTREE	*tp = &qtrunk;
+	RLEAF	*lp = NULL;
+	int	x0=0, y0=0, x1=odev.hres, y1=odev.vres;
+	int	mx, my;
+	register int	q;
+					/* check limits */
+	if (x < 0 || x >= odev.hres || y < 0 || y >= odev.vres)
+		return(NULL);
+					/* find nearby leaf in our tree */
+	for ( ; ; ) {
+		for (q = 0; q < 4; q++)		/* find any leaf this level */
+			if (!(tp->flgs & BRF(q)) && tp->k[q].l != NULL) {
+				lp = tp->k[q].l;
+				break;
+			}
+		q = 0;				/* which quadrant are we? */
+		mx = (x0 + x1) >> 1;
+		my = (y0 + y1) >> 1;
+		if (x < mx) x1 = mx;
+		else {x0 = mx; q |= 01;}
+		if (y < my) y1 = my;
+		else {y0 = my; q |= 02;}
+		if (tp->flgs & BRF(q)) {	/* branch down if not a leaf */
+			tp = tp->k[q].b;
+			continue;
+		}
+		if (tp->k[q].l != NULL)		/* good shot! */
+			return(tp->k[q].l);
+		return(lp);			/* else return what we have */
+	}
 }
 
 
@@ -262,7 +298,7 @@ qtReplant()			/* replant our tree using new view */
 
 	if (bleaf == tleaf)		/* anything to replant? */
 		return;
-	freetree(0);			/* blow the tree away */
+	qtFreeTree(0);			/* blow the tree away */
 					/* now rebuild it */
 	for (i = bleaf; i != tleaf; ) {
 		addleaf(leafpile+i);
