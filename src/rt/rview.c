@@ -226,8 +226,13 @@ again:
 		getexposure(args);
 		break;
 	case 's':				/* set a parameter */
-		if (badcom("set"))
+		if (badcom("set")) {
+#ifdef	SIGTSTP
+			if (!badcom("stop"))
+				goto dostop;
+#endif
 			goto commerr;
+		}
 		setparam(args);
 		break;
 	case 'n':				/* new picture */
@@ -261,16 +266,23 @@ again:
 		break;
 	case 'r':				/* rotate/repaint */
 		if (badcom("rotate")) {
-			if (badcom("repaint"))
-				goto commerr;
+			if (badcom("repaint")) {
+				if (badcom("redraw"))
+					goto commerr;
+				redraw();
+				break;
+			}
 			getrepaint(args);
 			break;
 		}
 		getrotate(args);
 		break;
 	case 'p':				/* pivot view */
-		if (badcom("pivot"))
-			goto commerr;
+		if (badcom("pivot")) {
+			if (badcom("pause"))
+				goto commerr;
+			goto again;
+		}
 		getpivot(args);
 		break;
 	case CTRL('R'):				/* redraw */
@@ -288,7 +300,8 @@ again:
 	case CTRL('C'):				/* interrupt */
 		goto again;
 #ifdef	SIGTSTP
-	case CTRL('Z'):				/* stop */
+	case CTRL('Z'):;			/* stop */
+dostop:
 		devclose();
 		kill(0, SIGTSTP);
 		/* pc stops here */
