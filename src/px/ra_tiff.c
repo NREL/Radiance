@@ -579,10 +579,10 @@ uint32	y;
 		if (TIFFReadScanline(cvts.tif, cvts.t.p, y, 0) < 0)
 			goto readerr;
 		if (TIFFReadScanline(cvts.tif,
-				(tidata_t)(cvts.t.bp + cvts.xmax), y, 1) < 0)
+				(tdata_t)(cvts.t.bp + cvts.xmax), y, 1) < 0)
 			goto readerr;
 		if (TIFFReadScanline(cvts.tif,
-				(tidata_t)(cvts.t.bp + 2*cvts.xmax), y, 2) < 0)
+				(tdata_t)(cvts.t.bp + 2*cvts.xmax), y, 2) < 0)
 			goto readerr;
 		for (x = cvts.xmax; x--; ) {
 			cvts.r.colrs[x][RED] = cvts.t.bp[x];
