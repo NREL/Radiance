@@ -453,7 +453,7 @@ FILE  *fin;
 
 	if (readfargs(&fa, fin) != 1)
 		return(-1);
-	if (fa.nfargs != 9 && fa.nfargs != 11 && fa.nfargs != 15)
+	if (fa.nfargs < 9)
 		return(-1);
 					/* string arguments */
 	printf("%d", fa.nsargs);
@@ -468,16 +468,14 @@ FILE  *fin;
 	printf(" %18.12g %18.12g %18.12g\n", v[0], v[1], v[2]);
 					/* down vector */
 	multv3(v, fa.farg+6, tot.xfm);
-	printf(" %18.12g %18.12g %18.12g\n", v[0], v[1], v[2]);
-					/* forground and background */
-	if (fa.nfargs == 11)
-		printf(" %18.12g %18.12g\n", fa.farg[9], fa.farg[10]);
-	else if (fa.nfargs == 15) {
-		printf(" %18.12g %18.12g %18.12g\n",
-				fa.farg[9], fa.farg[10], fa.farg[11]);
-		printf(" %18.12g %18.12g %18.12g\n",
-				fa.farg[12], fa.farg[13], fa.farg[14]);
+	printf(" %18.12g %18.12g %18.12g", v[0], v[1], v[2]);
+					/* remaining arguments */
+	for (i = 9; i < fa.nfargs; i++) {
+		if (i%3 == 0)
+			putchar('\n');
+		printf(" %18.12g", fa.farg[i]);
 	}
+	putchar('\n');
 	freefargs(&fa);
 	return(0);
 }
