@@ -27,7 +27,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 #include  "view.h"
-#include  "pic.h"
 #include  "x11raster.h"
 #include  "random.h"
 #include  "resolu.h"
@@ -103,6 +102,8 @@ int  iconwidth = 0, iconheight = 0;
 char  *progname;
 
 char  errmsg[128];
+
+extern BYTE  clrtab[256][3];		/* global color map */
 
 extern long  ftell();
 
@@ -424,8 +425,6 @@ static char  vistype[][12] = {
 		greyscale = 1;
 	if (ourvis.depth <= 8 && ourvis.colormap_size < maxcolors)
 		maxcolors = ourvis.colormap_size;
-	if (maxcolors > 4)
-		maxcolors -= 2;
 	if (ourvis.class == StaticGray) {
 		ourblack = 0;
 		ourwhite = 255;
@@ -436,6 +435,8 @@ static char  vistype[][12] = {
 			ourblack = 0;
 			ourwhite = 1;
 		}
+		if (maxcolors > 4)
+			maxcolors -= 2;
 	} else {
 		ourblack = 0;
 		ourwhite = ourvis.red_mask|ourvis.green_mask|ourvis.blue_mask;
@@ -446,7 +447,6 @@ static char  vistype[][12] = {
 
 getras()				/* get raster file */
 {
-	colormap	ourmap;
 	XVisualInfo	vinfo;
 
 	if (maxcolors <= 2) {		/* monochrome */
@@ -458,7 +458,7 @@ getras()				/* get raster file */
 		if (ourras == NULL)
 			goto fail;
 		getmono();
-	} else if (ourvis.class == TrueColor || ourvis.class == DirectColor) {
+	} else if (ourvis.class == TrueColor | ourvis.class == DirectColor) {
 		ourdata = (unsigned char *)malloc(4*xmax*ymax);
 		if (ourdata == NULL)
 			goto fail;
@@ -475,19 +475,14 @@ getras()				/* get raster file */
 				xmax, ymax, 8);
 		if (ourras == NULL)
 			goto fail;
-		if (ourvis.class == StaticGray)
+		if (greyscale | ourvis.class == StaticGray)
 			getgrey();
-		else {
-			if (greyscale)
-				biq(dither,maxcolors,1,ourmap);
-			else
-				ciq(dither,maxcolors,1,ourmap);
-			if (init_rcolors(ourras, ourmap[0],
-					ourmap[1], ourmap[2]) == 0)
-				goto fail;
-		}
+		else
+			getmapped();
+		if (ourvis.class != StaticGray && !init_rcolors(ourras,clrtab))
+			goto fail;
 	}
-		return;
+	return;
 fail:
 	quiterr("could not create raster image");
 }
@@ -886,18 +881,54 @@ getgrey()			/* get greyscale data */
 	dp = ourdata;
 	for (y = 0; y < ymax; y++) {
 		if (getscan(y) < 0)
-			quiterr("seek error in getfull");
+			quiterr("seek error in getgrey");
 		if (scale)
 			shiftcolrs(scanline, xmax, scale);
 		colrs_gambs(scanline, xmax);
 		add2icon(y, scanline);
-		if (ourvis.colormap_size < 256)
+		if (maxcolors < 256)
 			for (x = 0; x < xmax; x++)
 				*dp++ =	((long)normbright(scanline[x]) *
-					ourvis.colormap_size + 128) >> 8;
+					maxcolors + 128) >> 8;
 		else
 			for (x = 0; x < xmax; x++)
 				*dp++ =	normbright(scanline[x]);
+	}
+	for (x = 0; x < maxcolors; x++)
+		clrtab[x][RED] = clrtab[x][GRN] =
+			clrtab[x][BLU] = (x*256+maxcolors/2)/maxcolors;
+}
+
+
+getmapped()			/* get color-mapped data */
+{
+	int	y;
+					/* set gamma correction */
+	setcolrgam(gamcor);
+					/* make histogram */
+	new_histo();
+	for (y = 0; y < ymax; y++) {
+		if (getscan(y) < 0)
+			quiterr("seek error in getmapped");
+		if (scale)
+			shiftcolrs(scanline, xmax, scale);
+		colrs_gambs(scanline, xmax);
+		add2icon(y, scanline);
+		cnt_colrs(scanline, xmax);
+	}
+					/* map pixels */
+	if (!new_clrtab(maxcolors))
+		quiterr("cannot create color map");
+	for (y = 0; y < ymax; y++) {
+		if (getscan(y) < 0)
+			quiterr("seek error in getmapped");
+		if (scale)
+			shiftcolrs(scanline, xmax, scale);
+		colrs_gambs(scanline, xmax);
+		if (dither)
+			dith_colrs(ourdata+y*xmax, scanline, xmax);
+		else
+			map_colrs(ourdata+y*xmax, scanline, xmax);
 	}
 }
 
@@ -947,56 +978,4 @@ int  y;
 
 	cury++;
 	return(0);
-}
-
-
-picreadline3(y, l3)			/* read in 3-byte scanline */
-int  y;
-register rgbpixel  *l3;
-{
-	register int	i;
-							/* read scanline */
-	if (getscan(y) < 0)
-		quiterr("cannot seek for picreadline");
-							/* convert scanline */
-	normcolrs(scanline, xmax, scale);
-	add2icon(y, scanline);
-	for (i = 0; i < xmax; i++) {
-		l3[i].r = scanline[i][RED];
-		l3[i].g = scanline[i][GRN];
-		l3[i].b = scanline[i][BLU];
-	}
-}
-
-
-picwriteline(y, l)		/* add 8-bit scanline to image */
-int  y;
-pixel  *l;
-{
-	bcopy((char *)l, (char *)ourdata+y*xmax, xmax);
-}
-
-
-picreadcm(map)			/* do gamma correction */
-colormap  map;
-{
-	extern double  pow();
-	register int  i, val;
-
-	for (i = 0; i < 256; i++) {
-		val = pow((i+0.5)/256.0, 1.0/gamcor) * 256.0;
-		map[0][i] = map[1][i] = map[2][i] = val;
-	}
-}
-
-
-picwritecm(map)			/* handled elsewhere */
-colormap  map;
-{
-#if 0
-	register int i;
-
-	for (i = 0; i < 256; i++)
-		printf("%d %d %d\n", map[0][i],map[1][i],map[2][i]);
-#endif
 }
