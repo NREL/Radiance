@@ -1,5 +1,5 @@
 #ifndef lint
-static const char	RCSid[] = "$Id$";
+static const char RCSid[] = "$Id$";
 #endif
 /*
  *  readobj.c - routines for reading in object descriptions.
@@ -130,7 +130,7 @@ FILE  *fp;
 }
 
 
-int
+OBJECT
 newobject()				/* get a new object */
 {
 	register int  i;

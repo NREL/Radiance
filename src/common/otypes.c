@@ -1,5 +1,5 @@
 #ifndef lint
-static const char	RCSid[] = "$Id$";
+static const char RCSid[] = "$Id$";
 #endif
 /*
  * Object type lookup and error reporting
@@ -39,6 +39,7 @@ char  *msg;
 	char  msgbuf[128];
 
 	sprintf(msgbuf, "%s for %s \"%s\"",
-			msg, ofun[o->otype].funame, o->oname);
+			msg, ofun[o->otype].funame,
+			o->oname!=NULL ? o->oname : "(NULL)");
 	error(etyp, msgbuf);
 }

@@ -10,8 +10,6 @@ static const char	RCSid[] = "$Id$";
 #include <math.h>
 #include "color.h"
 
-#define NULL		0
-
 extern char	*bmalloc();
 
 #define MAXGSHIFT	31		/* maximum shift for gamma table */

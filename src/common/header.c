@@ -33,12 +33,6 @@ static const char	RCSid[] = "$Id$";
 
 #define	 MAXLINE	512
 
-#ifndef BSD
-#define	 index	strchr
-#endif
-
-extern char  *index();
-
 char  HDRSTR[] = "#?";		/* information header magic number */
 
 char  FMTSTR[] = "FORMAT=";	/* format identifier */

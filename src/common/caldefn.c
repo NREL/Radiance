@@ -224,7 +224,6 @@ char *
 pushcontext(ctx)		/* push on another context */
 char  *ctx;
 {
-    extern char  *strncpy(), *strcpy();
     char  oldcontext[MAXCNTX+1];
     register int  n;
 
