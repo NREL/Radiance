@@ -13,11 +13,19 @@
 	A5,A6,A7		- sun direction
 }
 
+cosgamma = Dx*A5 + Dy*A6 + Dz*A7;
+
+gamma = Acos(cosgamma);		{ angle from sun to this point in sky }
+
+zt = Acos(A7);			{ angle from zenith to sun }
+
+eta = Acos(Dz);			{ angle from zenith to this point in sky }
+
+wmean(a, x, b, y) : (a*x + b*y) / (a + b);
+
 skybr = wmean((Dz+1.01)^10,
 		select(A1, sunnysky, cloudysky, unifsky, intersky),
 		(Dz+1.01)^-10, A3);
-
-wmean(a, x, b, y) = (a*x + b*y) / (a + b);
 
 sunnysky = A2 * (.91 + 10*exp(-3*gamma) + .45*cosgamma*cosgamma)
 	      *  if( Dz - .01, 1.0 - exp(-.32/Dz), 1.0) / A4;
@@ -29,11 +37,3 @@ unifsky = A2;
 intersky = A2 * ( (1.35*sin(5.631-3.59*eta)+3.12)*sin(4.396-2.6*zt)
 			+ 6.37 - eta ) / 2.326 *
 		exp(gamma*-.563*((2.629-eta)*(1.562-zt)+.812)) / A4;
-
-cosgamma = Dx*A5 + Dy*A6 + Dz*A7;
-
-gamma = Acos(cosgamma);		{ angle from sun to this point in sky }
-
-zt = Acos(A7);			{ angle from zenith to sun }
-
-eta = Acos(Dz);			{ angle from zenith to this point in sky }

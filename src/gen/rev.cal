@@ -9,9 +9,9 @@
 	(A3,A4) =	(Mr,Br)
 }
 
+rev_dr = rev_rad*A3 + A4;
+rev_rad = sqrt(Px*Px + Py*Py);
+
 rev_dx = rev_dr * Px/rev_rad;
 rev_dy = rev_dr * Py/rev_rad;
 rev_dz = Pz*A1 + A2;
-
-rev_dr = rev_rad*A3 + A4;
-rev_rad = sqrt(Px*Px + Py*Py);
