@@ -36,9 +36,6 @@ install:	librt.a
 clean:
 	rm -f *.o librt.a
 
-fropen.o:	fropen.c
-	$(CC) $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c fropen.c
-
 calexpr.o:	calexpr.c calcomp.h
 	$(CC) $(CFLAGS) -DVARIABLE -DFUNCTION -DRCONST -c calexpr.c
 
