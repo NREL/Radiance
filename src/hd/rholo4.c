@@ -125,6 +125,8 @@ int	block;
 		if (msg.nbytes)
 			error(INTERNAL, "bad DR_SHUTDOWN from display process");
 		return(0);		/* zero return signals shutdown */
+	case DR_NOOP:
+		break;
 	default:
 		error(INTERNAL, "unrecognized request from display process");
 	}

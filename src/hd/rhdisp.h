@@ -7,6 +7,7 @@
  */
 
 				/* display requests */
+#define DR_NOOP		0		/* to release from vain DR_ATTEN */
 #define DR_BUNDLE	1		/* bundle request */
 #define DR_ATTEN	2		/* request for attention */
 #define DR_SHUTDOWN	3		/* shutdown request */
