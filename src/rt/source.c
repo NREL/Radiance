@@ -473,7 +473,5 @@ register RAY  *r;
 				  m->oargs.farg[2]);
 						/* modify value */
 		multcolor(r->rcol, r->pcol);
-						/* assign distance */
-		r->rt = r->rot;
 	}
 }
