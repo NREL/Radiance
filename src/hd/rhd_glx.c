@@ -28,7 +28,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #define MAXCONE		16		/* number of different cone sizes */
 #endif
 #ifndef MAXVERT
-#define MAXVERT		32		/* maximum number of cone vertices */
+#define MAXVERT		64		/* maximum number of cone vertices */
 #endif
 #ifndef MINVERT
 #define MINVERT		4		/* minimum number of cone vertices */
@@ -359,7 +359,7 @@ initcones()			/* initialize cone vertices */
 	for (i = 0; i < MAXCONE; i++) {
 		d = (double)i/(MAXCONE-1); d *= d;	/* x^2 distribution */
 		cone[i].rad = minrad + (1.-minrad)*d;
-		cone[i].nverts = MINVERT + (MAXVERT-MINVERT)*d;
+		cone[i].nverts = MINVERT + 0.5 + (MAXVERT-MINVERT)*d;
 		cone[i].va = (FVECT *)malloc(cone[i].nverts*sizeof(FVECT));
 		if (cone[i].va == NULL)
 			error(SYSTEM, "out of memory in initcones");
