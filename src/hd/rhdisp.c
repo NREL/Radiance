@@ -24,6 +24,8 @@ char	cmdlist[DC_NCMDS][8] = DC_INIT;
 
 int	imm_mode = 0;		/* bundles are being delivered immediately */
 
+int	do_outside = 0;		/* render from outside sections */
+
 char	*progname;		/* global argv[0] */
 
 FILE	*sstdin, *sstdout;	/* server's standard input and output */
@@ -160,6 +162,7 @@ add_holo(hdg)			/* register a new holodeck section */
 HDGRID	*hdg;
 {
 	VIEW	nv;
+	double	d;
 	register int	hd;
 
 	for (hd = 0; hd < HDMAX && hdlist[hd] != NULL; hd++)
@@ -180,6 +183,12 @@ HDGRID	*hdg;
 	VSUM(nv.vp, nv.vp, hdlist[0]->xv[2], 0.5);
 	fcross(nv.vdir, hdlist[0]->xv[1], hdlist[0]->xv[2]);
 	VCOPY(nv.vup, hdlist[0]->xv[2]);
+	if (do_outside) {
+		normalize(nv.vdir);
+		d = VLEN(hdlist[0]->xv[1]);
+		d += VLEN(hdlist[0]->xv[2]);
+		VSUM(nv.vp, nv.vp, nv.vdir, -d);
+	}
 	new_view(&nv);
 }
 
@@ -351,6 +360,9 @@ serv_result()			/* get next server result and process it */
 		if (msg.nbytes != sizeof(HDGRID))
 			error(INTERNAL, "bad holodeck record from server");
 		add_holo((HDGRID *)buf);
+		break;
+	case DS_OUTSECT:
+		do_outside = 1;
 		break;
 	case DS_STARTIMM:
 	case DS_ENDIMM:
