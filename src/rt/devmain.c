@@ -14,8 +14,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include <stdio.h>
 
-#include <signal.h>
-
 #include "color.h"
 
 #include "driver.h"
@@ -25,8 +23,6 @@ int	(*wrnvec)(), (*errvec)(), (*cmdvec)();	/* error vectors, unused */
 struct driver	*dev = NULL;			/* output device */
 
 FILE	*devin, *devout;			/* communications channels */
-
-int	notified = 0;				/* notified parent of input? */
 
 char	*progname;				/* driver name */
 
@@ -105,11 +101,6 @@ r_paintr()				/* paint a rectangle */
 	xmin = getw(devin); ymin = getw(devin);
 	xmax = getw(devin); ymax = getw(devin);
 	(*dev->paintr)(col, xmin, ymin, xmax, ymax);
-					/* check for input */
-	if (!notified && dev->inpready > 0) {
-		notified = 1;
-		kill(getppid(), SIGIO);
-	}
 }
 
 
@@ -117,6 +108,9 @@ r_flush()				/* flush output */
 {
 	if (dev->flush != NULL)
 		(*dev->flush)();
+	putc(COM_FLUSH, devout);
+	putw(dev->inpready, devout);
+	fflush(devout);
 }
 
 
@@ -162,9 +156,8 @@ r_comin()				/* read string from command line */
 					/* reply */
 	putc(COM_COMIN, devout);
 	myputs(buf, devout);
+	putw(dev->inpready, devout);
 	fflush(devout);
-					/* reset notify */
-	notified = 0;
 }
 
 

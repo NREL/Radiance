@@ -12,8 +12,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "standard.h"
 
-#include <signal.h>
-
 #include "color.h"
 
 #include "driver.h"
@@ -85,8 +83,6 @@ char	*dname, *id;
 			sizeof(comm_driver.pixaspect), 1, devin);
 	comm_driver.xsiz = getw(devin);
 	comm_driver.ysiz = getw(devin);
-						/* input handling */
-	signal(SIGIO, onsigio);
 						/* set error vectors */
 	cmdvec = comm_comout;
 	if (wrnvec != NULL)
@@ -106,7 +102,6 @@ comm_close()			/* done with driver */
 	cmdvec = NULL;				/* reset error vectors */
 	if (wrnvec != NULL)
 		wrnvec = stderr_v;
-	signal(SIGIO, SIG_DFL);
 	fclose(devout);
 	fclose(devin);
 	while ((pid = wait(0)) != -1 && pid != devchild)
@@ -144,6 +139,9 @@ comm_flush()				/* flush output to driver */
 {
 	putc(COM_FLUSH, devout);
 	fflush(devout);
+	if (getc(devin) != COM_FLUSH)
+		reply_error("flush");
+	comm_driver.inpready = getw(devin);
 }
 
 
@@ -190,8 +188,7 @@ char	*prompt;
 	if (getc(devin) != COM_COMIN)
 		reply_error("comin");
 	mygets(buf, devin);
-	if (comm_driver.inpready > 0)
-		comm_driver.inpready--;
+	comm_driver.inpready = getw(devin);
 }
 
 
@@ -236,11 +233,4 @@ char	*routine;
 	stderr_v(routine);
 	stderr_v(": driver reply error\n");
 	quit(1);
-}
-
-
-static
-onsigio()				/* input ready */
-{
-	comm_driver.inpready++;
 }
