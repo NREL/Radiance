@@ -135,7 +135,7 @@ double  omega;			/* light source size */
 		 *  is always modified by material color.
 		 */
 						/* roughness + source */
-		dtmp = np->alpha2/4.0 + omega/PI;
+		dtmp = np->alpha2 + omega/PI;
 						/* gaussian */
 		dtmp = exp((2.*DOT(np->prdir,ldir)-2.)/dtmp)/(4.*PI*dtmp);
 						/* worth using? */
@@ -240,8 +240,7 @@ register RAY  *r;
 				transtest = 2;
 			} else {
 				for (i = 0; i < 3; i++)		/* perturb */
-					nd.prdir[i] = r->rdir[i] -
-							0.5*r->pert[i];
+					nd.prdir[i] = r->rdir[i] - r->pert[i];
 				if (DOT(nd.prdir, r->ron) < -FTINY)
 					normalize(nd.prdir);	/* OK */
 				else
