@@ -198,6 +198,8 @@ extern COLOR  cblack, cwhite;		/* black (0,0,0) and white (1,1,1) */
 #ifdef BSD
 #define  cpcolormat(md,ms)	bcopy((char *)ms,(char *)md,sizeof(COLORMAT))
 #else
+#ifndef memcpy
 extern char  *memcpy();
+#endif
 #define  cpcolormat(md,ms)	(void)memcpy((char *)md,(char *)ms,sizeof(COLORMAT))
 #endif
