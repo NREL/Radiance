@@ -17,9 +17,8 @@ char  dev_default[] = "x11";
 extern struct driver  *x11_init();
 
 struct device  devtable[] = {			/* supported devices */
-	{"aed", "AED 512 color graphics terminal", comm_init},
-	{"news", "NeWS color or greyscale screen", comm_init},
-	{"sun", "SunView color or greyscale screen", comm_init},
+	{"slave", "Slave driver", comm_init},
 	{"x11", "X11 color or greyscale display", x11_init},
+	{"x11d", "X11 display using stdin/stdout", x11_init},
 	{0}					/* terminator */
 };
