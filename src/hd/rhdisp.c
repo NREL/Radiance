@@ -15,7 +15,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #include <ctype.h>
 
 #ifndef VIEWHISTLEN
-#define VIEWHISTLEN	2	/* number of remembered views */
+#define VIEWHISTLEN	4	/* number of remembered views */
 #endif
 
 HOLO	*hdlist[HDMAX+1];	/* global holodeck list */
@@ -214,11 +214,11 @@ register VIEW	*v;
 	char	*err;
 				/* restore previous view? */
 	if (v == NULL) {
-		if (nhist < 2) {
-			error(COMMAND, "no previous view");
-			return;
-		}
-		nhist--;	/* get one before last setting */
+		if (nhist > 1)		/* get one before last setting */
+			nhist--;
+		else			/* else go to end of list */
+			while (nhist < VIEWHISTLEN && viewhist[nhist].type)
+				nhist++;
 		v = viewhist + ((nhist-1)%VIEWHISTLEN);
 	} else if ((err = setview(v)) != NULL) {
 		error(COMMAND, err);
