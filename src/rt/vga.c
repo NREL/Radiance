@@ -39,7 +39,7 @@ vga_init(name, id)			/* open VGA */
 char  *name, *id;
 {
 	static short  mode_pref[] = {_XRES256COLOR, _SVRES256COLOR,
-					_MRES256COLOR, -1};
+					_VRES256COLOR, _MRES256COLOR, -1};
 	char  *ep;
 	register int  i;
 
