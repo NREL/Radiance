@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1994 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -6,8 +6,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 /*
  *  pf2.c - routines used by pfilt.
- *
- *     10/3/85
  */
 
 #include  <stdio.h>
@@ -41,6 +39,7 @@ extern COLOR  exposure;		/* exposure for frame */
 #define	 AVGLVL		0.5	/* target mean brightness */
 
 double	avgbrt;			/* average picture brightness */
+long	npix;			/* # pixels in average */
 
 typedef struct	hotpix {	/* structure for avgbrt pixels */
 	struct hotpix  *next;	/* next in list */
@@ -57,13 +56,15 @@ double	sprdfact;		/* computed spread factor */
 pass1init()			/* prepare for first pass */
 {
 	avgbrt = 0.0;
+	npix = 0;
 	head = NULL;
 }
 
 
 pass1default()			/* for single pass */
 {
-	avgbrt = AVGLVL * xres * yres;
+	avgbrt = AVGLVL;
+	npix = 1;
 	head = NULL;
 }
 
@@ -81,9 +82,13 @@ int  y;
 	
 		cbrt = bright(scan[x]);
 
-		if (avghot || cbrt < hotlvl)
-			avgbrt += cbrt;
+		if (cbrt <= 0)
+			continue;
 
+		if (avghot || cbrt < hotlvl) {
+			avgbrt += cbrt;
+			npix++;
+		}
 		if (npts && cbrt >= hotlvl) {
 			hp = (HOTPIX *)malloc(sizeof(HOTPIX));
 			if (hp == NULL) {
@@ -104,12 +109,12 @@ int  y;
 
 pass2init()			/* prepare for final pass */
 {
-	avgbrt /= (double)xres * yres;
-
-	if (avgbrt <= FTINY) {
-		fprintf(stderr, "%s: picture too dark\n", progname);
+	if (!npix) {
+		fprintf(stderr, "%s: picture too dark or too bright\n",
+				progname);
 		quit(1);
 	}
+	avgbrt /= (double)npix;
 
 	scalecolor(exposure,  AVGLVL/avgbrt);
 	
