@@ -518,7 +518,10 @@ oputm(r)				/* print modifier */
 register RAY  *r;
 {
 	if (r->ro != NULL)
-		fputs(objptr(r->ro->omod)->oname, stdout);
+		if (r->ro->omod != OVOID)
+			fputs(objptr(r->ro->omod)->oname, stdout);
+		else
+			fputs(VOIDID, stdout);
 	else
 		putchar('*');
 	putchar('\t');
