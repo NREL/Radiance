@@ -24,7 +24,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define O_INV1		1	/* Inventor 1.0 output */
 #define O_INV2		2	/* Inventor 2.0 output */
-#define O_VRML		3	/* VRML output */
+#define O_VRML1		3	/* VRML 1.0 output */
 
 #define MAXID		48	/* maximum identifier length */
 
@@ -99,7 +99,7 @@ char	*argv[];
 				/* get options and print format line */
 	for (i = 1; i < argc && argv[i][0] == '-'; i++)
 		if (!strcmp(argv[i], "-vrml"))
-			outtype = O_VRML;
+			outtype = O_VRML1;
 		else if (!strcmp(argv[i], "-1"))
 			outtype = O_INV1;
 		else if (!strcmp(argv[i], "-2"))
@@ -113,8 +113,8 @@ char	*argv[];
 	case O_INV2:
 		printf("#Inventor V2.0 ascii\n");
 		break;
-	case O_VRML:
-		printf("#VRML 1.0 ascii\n");
+	case O_VRML1:
+		printf("#VRML V1.0 ascii\n");
 		break;
 	}
 	printf("## Translated from MGF Version %d.%d\n", MG_VMAJOR, MG_VMINOR);
