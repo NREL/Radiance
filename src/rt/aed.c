@@ -46,13 +46,10 @@ static char SCCSid[] = "$SunId$ LBL";
 #define string(s)	fputs(s, stdout)
 #define flush()		fflush(stdout)
 
-#define  GAMMA		2.0		/* exponent for color correction */
+#define  GAMMA		2.2		/* exponent for color correction */
 
-#define  MINCOLOR	8		/* start of device color table */
-
-#define  NCOLORS	241		/* our color table size (prime) */
-
-#define  hashcolr(c)	((67*(c)[RED]+59*(c)[GRN]+71*(c)[BLU])%NCOLORS)
+#define  NCOLORS	244		/* our color table size */
+#define  MINPIX		8		/* minimum hardware color */
 
 #define  NCOLS		512		/* maximum # columns for output */
 #define  NROWS		512-COMHT	/* maximum # rows for output */
@@ -95,6 +92,7 @@ char  *name;
 	byte(BLK); byte(WHT); byte(15);
 	command(SCP);
 	byte('+'); byte(0); byte(1);
+	make_cmap(GAMMA);				/* make color map */
 	errvec = aed_errout;				/* set error vector */
 	cmdvec = aed_errout;
 	if (wrnvec != NULL)
@@ -125,8 +123,8 @@ aed_clear(x, y)					/* clear AED */
 int  x, y;
 {
 	command(FFD);
-	flush();
-	makemap();				/* init color map */
+	maketab();				/* init color table */
+	longwait(1);
 }
 
 
@@ -135,15 +133,8 @@ aed_paintr(col, xmin, ymin, xmax, ymax)		/* paint a rectangle */
 COLOR  col;
 int  xmin, ymin, xmax, ymax;
 {
-	int  ndx;
-
-	if ((ndx = colindex(col)) < 0) {		/* full table? */
-		colres >>= 1;
-		redraw();
-		return;
-	}
 	command(SEC);					/* draw rectangle */
-	byte(ndx+MINCOLOR);
+	byte(get_pixel(col)+MINPIX);
 	aedsetcap(xmin, ymin+COMHT);
 	command(DFR);
 	aedcoord(xmax-1, ymax+(-1+COMHT));
@@ -261,84 +252,22 @@ int  *xp, *yp;
 }
 
 
-static int
-colindex(col)			/* return table index for color */
-COLOR  col;
-{
-	static COLR  clr;
-	int  hval;
-	register int  ndx, i;
-	
-	mapcolor(clr, col);
-
-	hval = ndx = hashcolr(clr);
-	
-	for (i = 1; i < NCOLORS; i++) {
-		if (colrtbl[ndx][EXP] == 0) {
-			colrtbl[ndx][RED] = clr[RED];
-			colrtbl[ndx][GRN] = clr[GRN];
-			colrtbl[ndx][BLU] = clr[BLU];
-			colrtbl[ndx][EXP] = COLXS;
-			newcolr(ndx, clr);
-			return(ndx);
-		}
-		if (		colrtbl[ndx][RED] == clr[RED] &&
-				colrtbl[ndx][GRN] == clr[GRN] &&
-				colrtbl[ndx][BLU] == clr[BLU]	)
-			return(ndx);
-		ndx = (hval + i*i) % NCOLORS;
-	}
-	return(-1);
-}
-
-
 static
-newcolr(index, clr)		/* enter a color into our table */
-int  index;
-COLR  clr;
+maketab()				/* reinitialize the color table */
 {
-	command(SCT);
-	byte(index+MINCOLOR);
-	byte(1);
-	byte(clr[RED]);
-	byte(clr[GRN]);
-	byte(clr[BLU]);
-	flush();
-}
-
-
-static
-mapcolor(clr, col)			/* map to our color space */
-COLR  clr;
-COLOR  col;
-{
-	register int  i, p;
-					/* compute color table value */
-	for (i = 0; i < 3; i++) {
-		p = colval(col,i) * 256.0;
-		if (p < 0) p = 0;
-		else if (p >= 256) p = 255;
-		clr[i] = colrmap[p][i];
-	}
-	clr[EXP] = COLXS;
-}
-
-
-static
-makemap()				/* initialize the color map */
-{
-	double  pow();
-	int  val;
+	extern COLR  *get_ctab();
+	register COLR  *ctab;
 	register int  i;
 
-	for (i = 0; i < 256; i++) {
-		val = pow(i/256.0, 1.0/GAMMA) * colres;
-		val = (val*256 + 128) / colres;
-		colrmap[i][RED] = colrmap[i][GRN] = colrmap[i][BLU] = val;
-		colrmap[i][EXP] = COLXS;
+	ctab = get_ctab(NCOLORS);	/* get colors */
+	command(SCT);			/* set color table */
+	byte(MINPIX);			/* starting index */
+	byte(NCOLORS&255);		/* number of colors (0==256) */
+	for (i = 0; i < NCOLORS; i++) {
+		byte(ctab[i][RED]);
+		byte(ctab[i][GRN]);
+		byte(ctab[i][BLU]);
 	}
-	for (i = 0; i < NCOLORS; i++)
-		colrtbl[i][EXP] = 0;
 }
 
 

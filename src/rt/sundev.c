@@ -29,19 +29,11 @@ DEFINE_ICON_FROM_IMAGE(sun_icon, icon_image);
 #define TTYPROG		"sun.com"	/* tty program */
 #endif
 
-#define GAMMA		2.0		/* exponent for color correction */
+#define GAMMA		2.2		/* exponent for color correction */
 
 #define COMLH		3		/* number of command lines */
 
-#define  hashcolr(c)	((67*(c)[RED]+59*(c)[GRN]+71*(c)[BLU])%NCOLORS)
-
-int  colres = 128;			/* color resolution */
-COLR  colrmap[256];			/* our color mapping */
-
-#define NCOLORS		251		/* color table size (prime) */
 #define FIRSTCOLOR	2		/* first usable entry */
-
-COLR  colrtbl[NCOLORS];			/* our color table */
 
 int  sun_clear(), sun_paintr(), sun_getcur(),
 		sun_comout(), sun_comin();
@@ -108,6 +100,7 @@ char	*argv[];
 			0);
 	if (canvas == 0)
 		quit("cannot create canvas");
+	make_cmap(GAMMA);
 	if (getmap() < 0)
 		quit("not a color screen");
 	window_set(canvas, CANVAS_RETAINED, TRUE, 0);
@@ -185,7 +178,7 @@ sun_paintr()				/* fill a rectangle */
 	fread(&ymin, sizeof(ymin), 1, stdin);
 	fread(&xmax, sizeof(xmax), 1, stdin);
 	fread(&ymax, sizeof(ymax), 1, stdin);
-	pval = pixel(col);
+	pval = get_pixel(col) + FIRSTCOLOR;
 	pw = canvas_pixwin(canvas);
 	pw_rop(pw, xmin, yres-ymax, xmax-xmin, ymax-ymin,
 			PIX_SRC|PIX_COLOR(pval), NULL, 0, 0);
@@ -298,131 +291,10 @@ register char	*s;
 }
 
 
-int
-pixel(col)			/* return pixel value for color */
-COLOR  col;
-{
-	COLR  clr;
-	register int  ndx;
-
-	mapcolor(clr, col);
-	while ((ndx = insertcolr(clr)) < 0) {
-		reduce_colres();
-		mapcolor(clr, col);
-	}
-	return(ndx+FIRSTCOLOR);
-}
-
-
-int
-insertcolr(clr)			/* insert a new color */
-register COLR  clr;
-{
-	int  hval;
-	register int  ndx, i;
-
-	hval = ndx = hashcolr(clr);
-	
-	for (i = 1; i < NCOLORS; i++) {
-		if (colrtbl[ndx][EXP] == 0) {
-			colrtbl[ndx][RED] = clr[RED];
-			colrtbl[ndx][GRN] = clr[GRN];
-			colrtbl[ndx][BLU] = clr[BLU];
-			colrtbl[ndx][EXP] = COLXS;
-			newcolr(ndx, clr);
-			return(ndx);
-		}
-		if (		colrtbl[ndx][RED] == clr[RED] &&
-				colrtbl[ndx][GRN] == clr[GRN] &&
-				colrtbl[ndx][BLU] == clr[BLU]	)
-			return(ndx);
-		ndx = (hval + i*i) % NCOLORS;
-	}
-	return(-1);
-}
-
-
-newcolr(ndx, clr)		/* enter a color into hardware table */
-int  ndx;
-COLR  clr;
-{
-	register Pixwin  *pw;
-	
-	pw = canvas_pixwin(canvas);
-	pw_putcolormap(pw, ndx+FIRSTCOLOR, 1,
-			&clr[RED], &clr[GRN], &clr[BLU]);
-	pw = (Pixwin *)window_get(tty, WIN_PIXWIN);
-	pw_putcolormap(pw, ndx+FIRSTCOLOR, 1,
-			&clr[RED], &clr[GRN], &clr[BLU]);
-}
-
-
-reduce_colres()				/* reduce the color resolution */
-{
-	COLR	oldtbl[NCOLORS];
-	unsigned char	pixmap[256];
-	Pixwin	*pw;
-	register int	i, j;
-	register unsigned char	*p;
-
-	ttyputs("remapping colors...\n");
-	bcopy(colrtbl, oldtbl, sizeof(oldtbl));
-	colres >>= 1;
-	newmap();
-	for (i = 0; i < 256; i++)
-		pixmap[i] = i;
-	for (i = 0; i < NCOLORS; i++)
-		if (oldtbl[i][EXP] != 0) {
-			for (j = 0; j < 3; j++)
-				oldtbl[i][j] = ((oldtbl[i][j]*colres/256) *
-							256 + 128)/colres;
-			pixmap[i+FIRSTCOLOR] = insertcolr(oldtbl[i])+FIRSTCOLOR;
-		}
-	pw = canvas_pixwin(canvas);
-				/* I probably should get my own memory */
-	p = (unsigned char *)mpr_d(pw->pw_prretained)->md_image;
-	for (j = 0; j < yres; j++) {
-		for (i = 0; i < xres; i++) {
-			*p = pixmap[*p];
-			p++;
-		}
-		if (xres&1)		/* 16-bit boundaries */
-			p++;
-	}
-	pw_rop(pw, 0, 0, xres, yres, PIX_SRC, pw->pw_prretained, 0, 0);
-}
-
-
-mapcolor(clr, col)			/* map to our color space */
-COLR  clr;
-COLOR  col;
-{
-	register int  i, p;
-					/* compute color table value */
-	for (i = 0; i < 3; i++) {
-		p = colval(col,i) * 255.0 + 0.5;
-		if (p < 0) p = 0;
-		else if (p > 255) p = 255;
-		clr[i] = colrmap[p][i];
-	}
-	clr[EXP] = COLXS;
-}
-
-
 getmap()				/* allocate color map segments */
 {
 	char  cmsname[20];
-	unsigned char  red[256], green[256], blue[256];
 	register Pixwin  *pw;
-	register int  i;
-
-	for (i = 0; i < 256; i++)
-		red[i] = green[i] = blue[i] = 128;
-	red[0] = green[0] = blue[0] = 255;
-	red[1] = green[1] = blue[1] = 0;
-	red[255] = green[255] = blue[255] = 0;
-	red[254] = green[254] = blue[254] = 255;
-	red[253] = green[253] = blue[253] = 0;
 						/* name shared segment */
 	sprintf(cmsname, "rv%d", getpid());
 						/* set canvas */
@@ -430,32 +302,43 @@ getmap()				/* allocate color map segments */
 	if (pw->pw_pixrect->pr_depth < 8)
 		return(-1);
 	pw_setcmsname(pw, cmsname);
-	pw_putcolormap(pw, 0, 256, red, green, blue);
 						/* set tty subwindow */
 	pw = (Pixwin *)window_get(tty, WIN_PIXWIN);
 	pw_setcmsname(pw, cmsname);
-	pw_putcolormap(pw, 0, 256, red, green, blue);
 						/* set frame */
 	pw = (Pixwin *)window_get(frame, WIN_PIXWIN);
 	pw_setcmsname(pw, cmsname);
-	pw_putcolormap(pw, 0, 256, red, green, blue);
 
 	return(0);
 }
 
 
-newmap()				/* initialize our color table */
+newmap()				/* reinitialize color map segments */
 {
-	double  pow();
-	int  val;
+	unsigned char  red[256], green[256], blue[256];
+	COLR  *get_ctab(), *ctab;
+	register Pixwin  *pw;
 	register int  i;
-
-	for (i = 0; i < 256; i++) {
-		val = pow(i/256.0, 1.0/GAMMA) * colres;
-		val = (val*256 + 128) / colres;
-		colrmap[i][RED] = colrmap[i][GRN] = colrmap[i][BLU] = val;
-		colrmap[i][EXP] = COLXS;
+						/* assign constant pixels */
+	red[0] = green[0] = blue[0] = 255;
+	red[1] = green[1] = blue[1] = 0;
+	red[255] = green[255] = blue[255] = 0;
+	red[254] = green[254] = blue[254] = 255;
+	red[253] = green[253] = blue[253] = 0;
+						/* assign color table */
+	ctab = get_ctab(251);
+	for (i = 0; i < 251; i++) {
+		red[i+FIRSTCOLOR] = ctab[i][RED];
+		green[i+FIRSTCOLOR] = ctab[i][GRN];
+		blue[i+FIRSTCOLOR] = ctab[i][BLU];
 	}
-	for (i = 0; i < NCOLORS; i++)
-		colrtbl[i][EXP] = 0;
+						/* set canvas */
+	pw = canvas_pixwin(canvas);
+	pw_putcolormap(pw, 0, 256, red, green, blue);
+						/* set tty subwindow */
+	pw = (Pixwin *)window_get(tty, WIN_PIXWIN);
+	pw_putcolormap(pw, 0, 256, red, green, blue);
+						/* set frame */
+	pw = (Pixwin *)window_get(frame, WIN_PIXWIN);
+	pw_putcolormap(pw, 0, 256, red, green, blue);
 }
