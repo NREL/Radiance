@@ -83,7 +83,8 @@ register RAY  *r;
 	}
 						/* transmitted ray */
 	if (rayorigin(&p, r, TRANS, bright(trans)) == 0) {
-		if (DOT(r->pert,r->pert) > FTINY*FTINY) {
+		if (!(r->crtype & SHADOW) &&
+				DOT(r->pert,r->pert) > FTINY*FTINY) {
 			for (i = 0; i < 3; i++)		/* perturb direction */
 				p.rdir[i] = r->rdir[i] - r->pert[i]/RINDEX;
 			normalize(p.rdir);
