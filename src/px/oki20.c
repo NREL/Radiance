@@ -65,14 +65,15 @@ char  *fname;
 	int  i;
 
 	if (dofilter) {
-		if (fname == NULL)
-			fname = "";
-		sprintf(buf, FILTER, fname);
+		if (fname == NULL) {
+			sprintf(buf, FILTER, "");
+			fname = "<stdin>";
+		} else
+			sprintf(buf, FILTER, fname);
 		if ((input = popen(buf, "r")) == NULL) {
 			fprintf(stderr, "Cannot execute: %s\n", buf);
 			return(-1);
 		}
-		fname = buf;
 	} else if (fname == NULL) {
 		input = stdin;
 		fname = "<stdin>";
