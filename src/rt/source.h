@@ -83,8 +83,6 @@ extern double  srcray();                /* ray to source */
 
 extern SPOT  *makespot();		/* make spotlight */
 
-extern SRCREC  *newsource();		/* allocate new source */
-
 extern double  dstrsrc;			/* source distribution amount */
 extern double  shadthresh;		/* relative shadow threshold */
 extern double  shadcert;		/* shadow testing certainty */

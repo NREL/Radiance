@@ -44,7 +44,7 @@ initstypes()			/* initialize source dispatch table */
 }
 
 
-SRCREC *
+int
 newsource()			/* allocate new source in our array */
 {
 	if (nsources == 0)
@@ -53,11 +53,11 @@ newsource()			/* allocate new source in our array */
 		source = (SRCREC *)realloc((char *)source,
 				(unsigned)(nsources+1)*sizeof(SRCREC));
 	if (source == NULL)
-		return(NULL);
+		return(-1);
 	source[nsources].sflags = 0;
 	source[nsources].nhits = 1;
 	source[nsources].ntests = 2;	/* initial hit probability = 1/2 */
-	return(&source[nsources++]);
+	return(nsources++);
 }
 
 
