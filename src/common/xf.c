@@ -14,7 +14,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  d2r(a)		((PI/180.)*(a))
 
-#define  checkarg(a,n)	if (av[i][a] || i+n >= ac) goto done
+#define  checkarg(a,l)	if (av[i][a] || badarg(ac-i-1,av+i+1,l)) goto done
 
 
 int
@@ -42,7 +42,7 @@ char  *av[];
 		switch (av[i][1]) {
 	
 		case 't':			/* translate */
-			checkarg(2,3);
+			checkarg(2,"fff");
 			m4[3][0] = atof(av[++i]);
 			m4[3][1] = atof(av[++i]);
 			m4[3][2] = atof(av[++i]);
@@ -51,19 +51,19 @@ char  *av[];
 		case 'r':			/* rotate */
 			switch (av[i][2]) {
 			case 'x':
-				checkarg(3,1);
+				checkarg(3,"f");
 				dtmp = d2r(atof(av[++i]));
 				m4[1][1] = m4[2][2] = cos(dtmp);
 				m4[2][1] = -(m4[1][2] = sin(dtmp));
 				break;
 			case 'y':
-				checkarg(3,1);
+				checkarg(3,"f");
 				dtmp = d2r(atof(av[++i]));
 				m4[0][0] = m4[2][2] = cos(dtmp);
 				m4[0][2] = -(m4[2][0] = sin(dtmp));
 				break;
 			case 'z':
-				checkarg(3,1);
+				checkarg(3,"f");
 				dtmp = d2r(atof(av[++i]));
 				m4[0][0] = m4[1][1] = cos(dtmp);
 				m4[1][0] = -(m4[0][1] = sin(dtmp));
@@ -74,7 +74,7 @@ char  *av[];
 			break;
 
 		case 's':			/* scale */
-			checkarg(2,1);
+			checkarg(2,"f");
 			dtmp = atof(av[i+1]);
 			if (dtmp == 0.0) goto done;
 			i++;
@@ -87,17 +87,17 @@ char  *av[];
 		case 'm':			/* mirror */
 			switch (av[i][2]) {
 			case 'x':
-				checkarg(3,0);
+				checkarg(3,"");
 				xfsca *=
 				m4[0][0] = -1.0;
 				break;
 			case 'y':
-				checkarg(3,0);
+				checkarg(3,"");
 				xfsca *=
 				m4[1][1] = -1.0;
 				break;
 			case 'z':
-				checkarg(3,0);
+				checkarg(3,"");
 				xfsca *=
 				m4[2][2] = -1.0;
 				break;
@@ -107,7 +107,7 @@ char  *av[];
 			break;
 
 		case 'i':			/* iterate */
-			checkarg(2,1);
+			checkarg(2,"i");
 			while (icnt-- > 0) {
 				multmat4(ret->xfm, ret->xfm, xfmat);
 				ret->sca *= xfsca;
@@ -157,7 +157,7 @@ char  *av[];
 		switch (av[i][1]) {
 	
 		case 't':			/* translate */
-			checkarg(2,3);
+			checkarg(2,"fff");
 			m4[3][0] = -atof(av[++i]);
 			m4[3][1] = -atof(av[++i]);
 			m4[3][2] = -atof(av[++i]);
@@ -166,19 +166,19 @@ char  *av[];
 		case 'r':			/* rotate */
 			switch (av[i][2]) {
 			case 'x':
-				checkarg(3,1);
+				checkarg(3,"f");
 				dtmp = -d2r(atof(av[++i]));
 				m4[1][1] = m4[2][2] = cos(dtmp);
 				m4[2][1] = -(m4[1][2] = sin(dtmp));
 				break;
 			case 'y':
-				checkarg(3,1);
+				checkarg(3,"f");
 				dtmp = -d2r(atof(av[++i]));
 				m4[0][0] = m4[2][2] = cos(dtmp);
 				m4[0][2] = -(m4[2][0] = sin(dtmp));
 				break;
 			case 'z':
-				checkarg(3,1);
+				checkarg(3,"f");
 				dtmp = -d2r(atof(av[++i]));
 				m4[0][0] = m4[1][1] = cos(dtmp);
 				m4[1][0] = -(m4[0][1] = sin(dtmp));
@@ -189,7 +189,7 @@ char  *av[];
 			break;
 
 		case 's':			/* scale */
-			checkarg(2,1);
+			checkarg(2,"f");
 			dtmp = atof(av[i+1]);
 			if (dtmp == 0.0) goto done;
 			i++;
@@ -202,17 +202,17 @@ char  *av[];
 		case 'm':			/* mirror */
 			switch (av[i][2]) {
 			case 'x':
-				checkarg(3,0);
+				checkarg(3,"");
 				xfsca *=
 				m4[0][0] = -1.0;
 				break;
 			case 'y':
-				checkarg(3,0);
+				checkarg(3,"");
 				xfsca *=
 				m4[1][1] = -1.0;
 				break;
 			case 'z':
-				checkarg(3,0);
+				checkarg(3,"");
 				xfsca *=
 				m4[2][2] = -1.0;
 				break;
@@ -222,7 +222,7 @@ char  *av[];
 			break;
 
 		case 'i':			/* iterate */
-			checkarg(2,1);
+			checkarg(2,"i");
 			while (icnt-- > 0) {
 				multmat4(ret->xfm, xfmat, ret->xfm);
 				ret->sca *= xfsca;
