@@ -5,7 +5,7 @@
 #
 
 OPT = -O -pipe
-MACH = -DSTRUCTASSIGN -DBSD -DIEEE -f68881 /usr/lib/f68881.il
+MACH = -DSTRUCTASSIGN -DBSD -DIEEE -f68881 /usr/lib/libm.il
 CFLAGS = $(MACH) $(OPT)
 CC = cc
 LINT = lint
@@ -16,7 +16,7 @@ LINTFLAGS = -DSTRUCTASSIGN -DBSD -DIEEE -DVARIABLE -DFUNCTION \
 # The following are user-definable:
 #
 DESTDIR = .
-INSTDIR = /usr/local/ray
+INSTDIR = /lumen/lumen/ray/bin.sun3
 INSTALL = cp
 
 #
@@ -34,12 +34,11 @@ COMPAT = malloc.o
 #
 # Device drivers for rview (see also devtable.c):
 #
-DOBJS = devtable.o devcomm.o aed.o tty.o editline.o x10.o xtwind.o \
-	colortab.o nwsdev.o
-DSRC = devtable.c devcomm.c aed.c tty.c editline.c x10.c xtwind.c \
-	colortab.c nwsdev.c
-DLIBS = -lX -lcps
-DRIVERS = $(DEVDIR)/sun $(DEVDIR)/sun.com $(DEVDIR)/x11
+DOBJS = devtable.o devcomm.o editline.o x11.o x11twind.o \
+	colortab.o
+DSRC = devtable.c devcomm.c editline.c x10.c xtwind.c \
+	colortab.c
+DLIBS = -lX11
 
 #
 # Standard object files:
@@ -90,13 +89,20 @@ MISCSRC = misc.c header.c mat4.c xf.c fvect.c savestr.c fgetline.c ealloc.c \
 
 PROGS = $(DESTDIR)/rtrace $(DESTDIR)/rpict $(DESTDIR)/rview $(DESTDIR)/lookamb
 
-all:	$(PROGS) $(DRIVERS)
+all:	$(PROGS)
 
-install:	all
+install:	$(PROGS)
 	$(INSTALL) $(PROGS) $(INSTDIR)
 
+sun:	$(DEVDIR)/sun $(DEVDIR)/sun.com
+
+x10:	$(DEVDIR)/x10
+
+aed:
+	@echo
+
 clean:
-	rm -f *.o core
+	rm -f $(PROGS) *.o core
 
 lint:	$(RVSRC)
 	$(LINT) $(LINTFLAGS) -DRVIEW $(RVSRC) $(LIBS)
@@ -124,9 +130,9 @@ editline.o -lsuntool -lsunwindow -lpixrect $(LIBS)
 $(DEVDIR)/sun.com:	suncom.o editline.o
 	$(CC) $(CFLAGS) -s -o $(DEVDIR)/sun.com suncom.o editline.o
 
-$(DEVDIR)/x11:	x11.o x11twind.o colortab.o devmain.o editline.o
-	$(CC) $(CFLAGS) -s -o $(DEVDIR)/x11 x11.o x11twind.o devmain.o \
-colortab.o editline.o -lX11 $(LIBS)
+$(DEVDIR)/x10:	x10.o xtwind.o colortab.o devmain.o editline.o
+	$(CC) $(CFLAGS) -s -o $(DEVDIR)/x10 x10.o xtwind.o devmain.o \
+colortab.o editline.o -lX $(LIBS)
 
 #
 # Special compiles:
@@ -158,8 +164,8 @@ devcomm.o:	devcomm.c
 sundev.o:	sundev.c
 	$(CC) $(CFLAGS) -DTTYPROG=\"$(DEVDIR)/sun.com\" -Dsun_init=dinit -c sundev.c
 
-x11.o:	x11.c
-	$(CC) $(CFLAGS) -Dx11_init=dinit -c x11.c
+x10.o:	x10.c
+	$(CC) $(CFLAGS) -Dx_init=dinit -c x10.c
 
 ambient.o:	ambient.c
 	$(CC) $(CFLAGS) -DAMBFLUSH=16 -c ambient.c
