@@ -525,8 +525,6 @@ int	ec;
 {
 	int	status = 0;
 
-	if (outdev != NULL)		/* close display */
-		disp_close();
 	if (hdlist[0] != NULL) {	/* flush holodeck */
 		if (ncprocs > 0) {
 			done_packets(flush_queue());
@@ -545,5 +543,7 @@ int	ec;
 		} else
 			hdflush(NULL);
 	}
+	if (outdev != NULL)		/* close display */
+		disp_close();
 	exit(ec ? ec : status);		/* exit */
 }
