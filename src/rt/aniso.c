@@ -1,7 +1,7 @@
-/* Copyright (c) 1996 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -359,8 +359,8 @@ register ANISODAT  *np;
 				d = urand(ilhash(dimlist,ndims)+samplendx);
 			multisamp(rv, 2, d);
 			d = 2.0*PI * rv[0];
-			cosp = cos(d) * np->u_alpha;
-			sinp = sin(d) * np->v_alpha;
+			cosp = tcos(d) * np->u_alpha;
+			sinp = tsin(d) * np->v_alpha;
 			d = sqrt(cosp*cosp + sinp*sinp);
 			cosp /= d;
 			sinp /= d;
@@ -397,8 +397,8 @@ register ANISODAT  *np;
 				d = urand(ilhash(dimlist,ndims)+1823+samplendx);
 			multisamp(rv, 2, d);
 			d = 2.0*PI * rv[0];
-			cosp = cos(d) * np->u_alpha;
-			sinp = sin(d) * np->v_alpha;
+			cosp = tcos(d) * np->u_alpha;
+			sinp = tsin(d) * np->v_alpha;
 			d = sqrt(cosp*cosp + sinp*sinp);
 			cosp /= d;
 			sinp /= d;
@@ -408,7 +408,7 @@ register ANISODAT  *np;
 			else
 				d = sqrt(-log(rv[1]) /
 					(cosp*cosp/(np->u_alpha*np->u_alpha) +
-					 sinp*sinp/(np->v_alpha*np->u_alpha)));
+					 sinp*sinp/(np->v_alpha*np->v_alpha)));
 			for (i = 0; i < 3; i++)
 				sr.rdir[i] = np->prdir[i] +
 						d*(cosp*np->u[i] + sinp*np->v[i]);

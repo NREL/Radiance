@@ -1,7 +1,7 @@
-/* Copyright (c) 1996 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -368,8 +368,8 @@ register NORMDAT  *np;
 				d = urand(ilhash(dimlist,ndims)+samplendx);
 			multisamp(rv, 2, d);
 			d = 2.0*PI * rv[0];
-			cosp = cos(d);
-			sinp = sin(d);
+			cosp = tcos(d);
+			sinp = tsin(d);
 			rv[1] = 1.0 - specjitter*rv[1];
 			if (rv[1] <= FTINY)
 				d = 1.0;
@@ -400,13 +400,13 @@ register NORMDAT  *np;
 				d = urand(ilhash(dimlist,ndims)+1823+samplendx);
 			multisamp(rv, 2, d);
 			d = 2.0*PI * rv[0];
-			cosp = cos(d);
-			sinp = sin(d);
+			cosp = tcos(d);
+			sinp = tsin(d);
 			rv[1] = 1.0 - specjitter*rv[1];
 			if (rv[1] <= FTINY)
 				d = 1.0;
 			else
-				d = sqrt( -log(rv[1]) * np->alpha2 );
+				d = sqrt( np->alpha2 * -log(rv[1]) );
 			for (i = 0; i < 3; i++)
 				sr.rdir[i] = np->prdir[i] + d*(cosp*u[i] + sinp*v[i]);
 			if (DOT(sr.rdir, r->ron) < -FTINY) {

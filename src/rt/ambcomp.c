@@ -1,7 +1,7 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -73,8 +73,8 @@ RAY  *r;
 	multisamp(spt, 2, urand(ilhash(hlist,3)+dp->n));
 	zd = sqrt((dp->t + spt[0])/h->nt);
 	phi = 2.0*PI * (dp->p + spt[1])/h->np;
-	xd = cos(phi) * zd;
-	yd = sin(phi) * zd;
+	xd = tcos(phi) * zd;
+	yd = tsin(phi) * zd;
 	zd = sqrt(1.0 - zd*zd);
 	for (i = 0; i < 3; i++)
 		ar.rdir[i] =	xd*h->ux[i] +
@@ -358,7 +358,7 @@ register AMBHEMI  *hp;
 		}
 		mag0 *= 2.0*PI / hp->np;
 		phi = 2.0*PI * (double)j/hp->np;
-		cosp = cos(phi); sinp = sin(phi);
+		cosp = tcos(phi); sinp = tsin(phi);
 		xd += mag0*cosp - mag1*sinp;
 		yd += mag0*sinp + mag1*cosp;
 	}
@@ -392,8 +392,8 @@ register AMBHEMI  *hp;
 			dp += hp->np;
 		}
 		phi = 2.0*PI * (j+.5)/hp->np + PI/2.0;
-		xd += mag * cos(phi);
-		yd += mag * sin(phi);
+		xd += mag * tcos(phi);
+		yd += mag * tsin(phi);
 	}
 	for (i = 0; i < 3; i++)
 		gv[i] = (xd*hp->ux[i] + yd*hp->uy[i])/(hp->nt*hp->np);
