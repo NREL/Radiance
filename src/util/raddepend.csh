@@ -1,7 +1,7 @@
 #!/bin/csh -f
 # SCCSid "$SunId$ LBL"
 #
-# Find scene dependencies in this directory and one level down
+# Find scene dependencies in this directory
 #
 set es=1
 onintr quit
@@ -12,7 +12,7 @@ sleep 1
 getbbox -w $* >/dev/null
 set es=$status
 if ( $es == 0 ) then
-	ls -tu | sed -f /tmp/sed$$ | sort
+	ls -tuL | sed -f /tmp/sed$$ | sort
 endif
 quit:
 rm -f /tmp/sed$$ EMPTY
