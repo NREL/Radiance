@@ -46,8 +46,8 @@ char	*argv[];
 			if (inp & DEV_SHUTDOWN)
 				serv_request(DR_SHUTDOWN, 0, NULL);
 			if (inp & DEV_REDRAW) {
-				beam_sync();
 				imm_mode = 1;	/* preempt updates */
+				beam_sync();
 			}
 			if (inp & DEV_WAIT)
 				pause = 1;
