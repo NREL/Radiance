@@ -36,7 +36,7 @@ static char SCCSid[] = "$SunId$ LBL";
 					r0*hpoly3(t) + \
 					r1*hpoly4(t) )
 
-static char  noise_name[4][8] = {"noise3a", "noise3b", "noise3c", "noise3"};
+static char  noise_name[4][8] = {"noise3x", "noise3y", "noise3z", "noise3"};
 static char  fnoise_name[] = "fnoise3";
 static char  hermite_name[] = "hermite";
 
