@@ -257,7 +257,7 @@ int	n;
 #define true    	1
 
 /* network defs */
-#define netsize		256			/* number of colours - can change this */
+#define netsize		clrtabsiz		/* number of colours - can change this */
 #define maxnetpos	(netsize-1)
 #define netbiasshift	4			/* bias for colour values */
 #define ncycles		100			/* no. of learning cycles */
@@ -272,7 +272,7 @@ int	n;
 #define betagamma	(intbias<<(gammashift-betashift))
 
 /* defs for decreasing radius factor */
-#define initrad		(netsize>>3)		/* for 256 cols, radius starts */
+#define initrad		(256>>3)		/* for 256 cols, radius starts */
 #define radiusbiasshift	6			/* at 32.0 biased by 6 bits */
 #define radiusbias	(((int) 1)<<radiusbiasshift)
 #define initradius	(initrad*radiusbias)	/* and decreases by a */
@@ -297,12 +297,12 @@ int alphadec;					/* biased by 10 bits */
 #define prime4		503
 
 typedef int pixel[4];  /* BGRc */
-pixel network[netsize];
+pixel network[256];
 
 int netindex[256];	/* for network lookup - really 256 */
 
-int bias [netsize];	/* bias and freq arrays for learning */
-int freq [netsize];
+int bias [256];		/* bias and freq arrays for learning */
+int freq [256];
 int radpower[initrad];	/* radpower for precomputation */
 
 
@@ -313,10 +313,10 @@ initnet()
 	register int i;
 	register int *p;
 	
-	for (i=0; i<clrtabsiz; i++) {
+	for (i=0; i<netsize; i++) {
 		p = network[i];
-		p[0] = p[1] = p[2] = (i << (netbiasshift+8))/clrtabsiz;
-		freq[i] = intbias/clrtabsiz;  /* 1/clrtabsiz */
+		p[0] = p[1] = p[2] = (i << (netbiasshift+8))/netsize;
+		freq[i] = intbias/netsize;  /* 1/netsize */
 		bias[i] = 0;
 	}
 }
@@ -332,12 +332,12 @@ inxbuild()
 
 	previouscol = 0;
 	startpos = 0;
-	for (i=0; i<clrtabsiz; i++) {
+	for (i=0; i<netsize; i++) {
 		p = network[i];
 		smallpos = i;
 		smallval = p[1];	/* index on g */
-		/* find smallest in i..clrtabsiz-1 */
-		for (j=i+1; j<clrtabsiz; j++) {
+		/* find smallest in i..netsize-1 */
+		for (j=i+1; j<netsize; j++) {
 			q = network[j];
 			if (q[1] < smallval) {	/* index on g */
 				smallpos = j;
@@ -377,11 +377,11 @@ register int b,g,r;
 	i = netindex[g]; /* index on g */
 	j = i-1;	 /* start at netindex[g] and work outwards */
 
-	while ((i<clrtabsiz) || (j>=0)) {
-		if (i<clrtabsiz) {
+	while ((i<netsize) || (j>=0)) {
+		if (i<netsize) {
 			p = network[i];
 			dist = p[1] - g;	/* inx key */
-			if (dist >= bestd) i = clrtabsiz; /* stop iter */
+			if (dist >= bestd) i = netsize; /* stop iter */
 			else {
 				i++;
 				if (dist<0) dist = -dist;
@@ -418,7 +418,7 @@ register int b,g,r;
 /* finds closest neuron (min dist) and updates freq */
 /* finds best neuron (min dist-bias) and returns position */
 /* for frequently chosen neurons, freq[i] is high and bias[i] is negative */
-/* bias[i] = gamma*((1/clrtabsiz)-freq[i]) */
+/* bias[i] = gamma*((1/netsize)-freq[i]) */
 
 int contest(b,g,r)	/* accepts biased BGR values */
 register int b,g,r;
@@ -434,7 +434,7 @@ register int b,g,r;
 	p = bias;
 	f = freq;
 
-	for (i=0; i<clrtabsiz; i++) {
+	for (i=0; i<netsize; i++) {
 		n = network[i];
 		dist = n[0] - b;   if (dist<0) dist = -dist;
 		a = n[1] - g;   if (a<0) a = -a;
@@ -481,7 +481,7 @@ register int b,g,r;
 	register int *p, *q;
 
 	lo = i-rad;   if (lo<-1) lo= -1;
-	hi = i+rad;   if (hi>clrtabsiz) hi=clrtabsiz;
+	hi = i+rad;   if (hi>netsize) hi=netsize;
 
 	j = i+1;
 	k = i-1;
@@ -572,7 +572,7 @@ unbiasnet()
 {
 	int i,j;
 
-	for (i=0; i<clrtabsiz; i++) {
+	for (i=0; i<netsize; i++) {
 		for (j=0; j<3; j++)
 			network[i][j] >>= netbiasshift;
 		network[i][3] = i; /* record colour no */
@@ -587,7 +587,7 @@ cpyclrtab()
 {
 	register int i,j,k;
 	
-	for (j=0; j<clrtabsiz; j++) {
+	for (j=0; j<netsize; j++) {
 		k = network[j][3];
 		for (i = 0; i < 3; i++)
 			clrtab[k][i] = network[j][2-i];
