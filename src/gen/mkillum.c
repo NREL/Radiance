@@ -268,8 +268,9 @@ char	*nm;
 		case 'e':			/* exclude material */
 			if (cp[1] != '=')
 				break;
-			matselect = (*++cp == 'i') ? S_ELEM : S_COMPL;
-			atos(matcheck, MAXSTR, ++cp);
+			matselect = (*cp == 'i') ? S_ELEM : S_COMPL;
+			cp += 2;
+			atos(matcheck, MAXSTR, cp);
 			cp = sskip(cp);
 			continue;
 		case 'a':			/* use everything */
@@ -340,9 +341,9 @@ char	*nm;
 			doneheader = 0;
 			continue;
 		case '!':			/* processed file! */
-			sprintf(errmsg, "(%s): processed by mkillum already!",
-					nm);
+			sprintf(errmsg, "(%s): already processed!", nm);
 			error(WARNING, errmsg);
+			matselect = S_NONE;
 			return;
 		}
 	opterr:					/* skip faulty option */
