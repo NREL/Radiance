@@ -12,6 +12,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "standard.h"
 #include "view.h"
+#include "resolu.h"
 #include <signal.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -29,7 +30,7 @@ static char SCCSid[] = "$SunId$ LBL";
 float	col[3] = {1.,0.,0.};		/* color */
 
 VIEW	ourview = STDVIEW;		/* view for picture */
-int	xres, yres;			/* picture resolution */
+RESOLU	pres;				/* picture resolution */
 
 char	*progname;			/* program name */
 
@@ -92,7 +93,7 @@ char	*pname, *wname;
 	XColor	xc;
 	XGCValues	gcv;
 					/* get the viewing parameters */
-	if (viewfile(pname, &ourview, &xres, &yres) <= 0 ||
+	if (viewfile(pname, &ourview, &pres) <= 0 ||
 			setview(&ourview) != NULL) {
 		fprintf(stderr, "%s: cannot get view from \"%s\"\n",
 				progname, pname);
@@ -133,12 +134,17 @@ char	*pname, *wname;
 		XGetWindowAttributes(theDisplay, gwind, &wa);
 		sleep(6);
 	} while (wa.map_state != IsViewable);
-	if (wa.width != xres || wa.height != yres) {
+	if (wa.width != scanlen(&pres) || wa.height != numscans(&pres)) {
 		fprintf(stderr,
 		"%s: warning -- window seems to be the wrong size!\n",
 				progname);
-		xres = wa.width;
-		yres = wa.height;
+		if (pres.or & YMAJOR) {
+			pres.xr = wa.width;
+			pres.yr = wa.height;
+		} else {
+			pres.xr = wa.height;
+			pres.yr = wa.width;
+		}
 	}
 					/* set graphics context */
 	gcv.font = XLoadFont(theDisplay, FONTNAME);
@@ -205,7 +211,8 @@ double	dom;
 {
 	FVECT	start, cur;
 	XPoint	pt[NSEG+1];
-	double	px, py, pz;
+	FVECT	pp;
+	int	ip[2];
 	register int	i;
 
 	fcross(cur, dir, ourview.vup);
@@ -217,11 +224,12 @@ double	dom;
 		cur[0] += ourview.vp[0];
 		cur[1] += ourview.vp[1];
 		cur[2] += ourview.vp[2];
-		viewpixel(&px, &py, &pz, &ourview, cur);
-		if (pz <= 0.0)
+		viewloc(pp, &ourview, cur);
+		if (pp[2] <= 0.0)
 			goto fail;
-		pt[i].x = px*xres;
-		pt[i].y = yres-1 - (int)(py*yres);
+		loc2pix(ip, &pres, pp[0], pp[1]);
+		pt[i].x = ip[0];
+		pt[i].y = ip[1];
 	}
 	XDrawLines(theDisplay, gwind, vecGC, pt, NSEG+1, CoordModeOrigin);
 	return;
@@ -236,17 +244,18 @@ FVECT	dir;
 double	v;
 {
 	FVECT	pos;
-	double	px, py, pz;
+	FVECT	pp;
+	int	ip[2];
 	char	buf[32];
 
 	pos[0] = ourview.vp[0] + dir[0];
 	pos[1] = ourview.vp[1] + dir[1];
 	pos[2] = ourview.vp[2] + dir[2];
-	viewpixel(&px, &py, &pz, &ourview, pos);
-	if (pz <= 0.0)
+	viewloc(pp, &ourview, pos);
+	if (pp[2] <= 0.0)
 		return;
+	loc2pix(ip, &pres, pp[0], pp[1]);
 	sprintf(buf, "%.0f", v);
 	XDrawImageString(theDisplay, gwind, strGC,
-			(int)(px*xres), yres-1-(int)(py*yres),
-			buf, strlen(buf)); 
+			ip[0], ip[1], buf, strlen(buf)); 
 }
