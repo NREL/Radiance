@@ -292,7 +292,6 @@ char  *argv[];
 	if (loadflags & IO_INFO) {	/* print header */
 		printargs(i, argv, stdout);
 		printf("SOFTWARE= %s\n", VersionID);
-		fputnow(stdout);
 	}
 
 	marksources();			/* find and mark sources */
