@@ -14,7 +14,6 @@ static const char	RCSid[] = "$Id$";
 #include <sys/wait.h>
 
 #include "rtprocess.h"
-#include  "vfork.h"
 
 
 int

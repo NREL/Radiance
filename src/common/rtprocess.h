@@ -33,6 +33,10 @@
 
 #include "paths.h"
 
+#if !defined(BSD) || defined(sparc)
+#define	vfork	fork
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -101,8 +101,6 @@ image.o:	view.h
 
 caldefn.o calexpr.o calfunc.o calprnt.o:	calcomp.h
 
-process.o:	vfork.h
-
 clip.o plocate.o:	plocate.h
 
 font.o:	font.h
