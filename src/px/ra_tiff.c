@@ -122,10 +122,12 @@ char	*inpf, *outf;
 	if (!TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &hi) || hi != 8)
 		quiterr("unsupported bits per sample");
 	if (TIFFGetField(tif, TIFFTAG_PHOTOMETRIC, &hi) &&
-			hi != (nsamps==1 ? 1 : 2))
+			hi != (nsamps==1 ? PHOTOMETRIC_MINISBLACK :
+					PHOTOMETRIC_RGB))
 		quiterr("unsupported photometric interpretation");
 	if (!TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &pconfig) ||
-			(pconfig != 1 && pconfig != 2))
+			(pconfig != PLANARCONFIG_CONTIG &&
+				pconfig != PLANARCONFIG_SEPARATE))
 		quiterr("unsupported planar configuration");
 	if (!TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &xmax) ||
 			!TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &ymax))
@@ -217,10 +219,13 @@ char	*inpf, *outf;
 	TIFFSetField(tif, TIFFTAG_IMAGELENGTH, (unsigned long)ymax);
 	TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, greyscale ? 1 : 3);
 	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8);
-	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, greyscale ? 1 : 2);
-	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, 1);
+	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC,
+			greyscale ? PHOTOMETRIC_MINISBLACK :
+				PHOTOMETRIC_RGB);
+	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 	if (lzcomp)
-		TIFFSetField(tif, TIFFTAG_COMPRESSION, (unsigned short)5);
+		TIFFSetField(tif, TIFFTAG_COMPRESSION,
+				(unsigned short)COMPRESSION_LZW);
 						/* allocate scanlines */
 	scanin = (COLR *)malloc(xmax*sizeof(COLR));
 	scanout = (BYTE *)malloc(TIFFScanlineSize(tif));
