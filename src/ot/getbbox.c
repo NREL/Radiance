@@ -43,6 +43,7 @@ char  **argv;
 {
 	char  *getenv();
 	double  atof();
+	int  nohead = 0;
 	int  i;
 
 	progname = argv[0];
@@ -50,12 +51,17 @@ char  **argv;
 	if ((libpath = getenv("RAYPATH")) == NULL)
 		libpath = DEFPATH;
 
-	if (!strcmp(argv[1], "-w")) {
-		nowarn = 1;
-		i = 2;
-	} else
-		i = 1;
-breakopt:
+	for (i = 1; i < argc && argv[i][0] == '-'; i++) {
+		switch (argv[i][1]) {
+		case 'w':
+			nowarn = 1;
+			continue;
+		case 'h':
+			nohead = 1;
+			continue;
+		}
+		break;
+	}
 						/* find bounding box */
 	bbmin[0] = bbmin[1] = bbmin[2] = FHUGE;
 	bbmax[0] = bbmax[1] = bbmax[2] = -FHUGE;
@@ -69,7 +75,10 @@ breakopt:
 			else				/* from file */
 				readobj(argv[i], addobject);
 						/* print bounding box */
-	printf("      xmin      xmax      ymin      ymax      zmin      zmax\n");
+	if (!nohead)
+		printf(
+"      xmin      xmax      ymin      ymax      zmin      zmax\n");
+
 	printf("%9g %9g %9g %9g %9g %9g\n", bbmin[0], bbmax[0],
 			bbmin[1], bbmax[1], bbmin[2], bbmax[2]);
 	quit(0);
