@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -79,7 +79,7 @@ char  **argv;
 	long  fpos;
 	double  outaspect = 0.0;
 	double  d;
-	int  i;
+	int  i, j;
 
 	if (signal(SIGINT, quit) == SIG_IGN)
 		signal(SIGINT, SIG_IGN);
@@ -196,9 +196,9 @@ char  **argv;
 			fprintf(stderr, "%s: unknown lamp type\n", lamptype);
 			quit(1);
 		}
-		colval(exposure,RED) /= lampcolor[0];
-		colval(exposure,GRN) /= lampcolor[1];
-		colval(exposure,BLU) /= lampcolor[2];
+		for (i = 0; i < 3; i++)
+			if (lampcolor[i] > 1e-4)
+				colval(exposure,i) /= lampcolor[i];
 		freelamps();
 	}
 					/* open input file */
