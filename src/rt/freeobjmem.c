@@ -78,6 +78,5 @@ free_objmem()			/* free all object cache memory */
 {
 	free_objs(0, nobjects);
 	freedata(NULL);
-	freepict(NULL);
 	freefont(NULL);
 }
