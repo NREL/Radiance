@@ -191,9 +191,12 @@ sun_comin(buf, prompt)		/* input a string from the command line */
 char  *buf, *prompt;
 {
 	Notify_value  newinput();
-
+						/* echo prompt */
 	if (prompt != NULL)
 		sun_comout(prompt);
+						/* await signal */
+	if (sun_driver.inpready <= 0)
+		newinput(sun_init, fileno(ttyin));
 						/* echo characters */
 	do {
 		mygets(buf, ttyin);
@@ -204,7 +207,7 @@ char  *buf, *prompt;
 
 	if (sun_driver.inpready > 0)
 		sun_driver.inpready--;
-
+						/* reinstall handler */
 	notify_set_input_func(sun_init, newinput, fileno(ttyin));
 }
 
