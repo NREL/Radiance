@@ -404,7 +404,7 @@ loaddefn()			/* load next definition */
 	else if (ep->v.kid->type == FUNC &&
 			liblookup(ep->v.kid->v.kid->v.name) != NULL) {
 	    wputs(ep->v.kid->v.kid->v.name);
-	    wputs(": redefined library function\n");
+	    wputs(": definition hides library function\n");
 	}
 #endif
 #endif
