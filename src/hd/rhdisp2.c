@@ -16,6 +16,8 @@ static char SCCSid[] = "$SunId$ SGI";
 #define MAXDIST		42	/* maximum distance outside section */
 #endif
 
+#define MAXVOXEL	16	/* maximum number of active voxels */
+
 extern GCOORD	*getviewcells();
 
 static VIEW	dvw;		/* current view corresponding to beam list */
@@ -25,16 +27,13 @@ typedef struct {
 	int	i[3];		/* voxel index (may be outside section) */
 } VOXL;			/* a voxel */
 
-static VOXL voxel[8] = {	/* current voxel list */
-	{-1}, {-1}, {-1}, {-1},
-	{-1}, {-1}, {-1}, {-1}
-};
+static VOXL voxel[MAXVOXEL] = {{-1}};	/* current voxel list */
 
 #define CBEAMBLK	1024	/* cbeam allocation block size */
 
 static struct beamcomp {
-	short	wants;		/* flags telling which voxels want us */
-	short	hd;		/* holodeck section number */
+	unsigned short	wants;	/* flags telling which voxels want us */
+	unsigned short	hd;	/* holodeck section number */
 	int	bi;		/* beam index */
 } *cbeam = NULL;	/* current beam list */
 
@@ -193,16 +192,16 @@ int	hr, vr;
 
 int
 set_voxels(vl, n)	/* set new voxel array */
-VOXL	vl[8];
+VOXL	vl[MAXVOXEL];
 int	n;
 {
 	short	wmap[256];
-	int	vmap[8];
+	int	vmap[MAXVOXEL];
 	int	comn = 0;
 	int	no;
 	register int	i, j;
 					/* find common voxels */
-	for (j = 0; j < 8 && voxel[j].hd >= 0; j++) {
+	for (j = 0; j < MAXVOXEL && voxel[j].hd >= 0; j++) {
 		vmap[j] = -1;
 		for (i = n; i--; )
 			if (!bcmp((char *)(vl+i), (char *)(voxel+j),
@@ -224,27 +223,30 @@ int	n;
 		cbeam[i].wants = wmap[cbeam[i].wants];
 					/* update our voxel list */
 	bcopy((char *)vl, (char *)voxel, n*sizeof(VOXL));
-	for (j = n; j < 8; j++)
-		voxel[j].hd = -1;
+	if (n < MAXVOXEL)
+		voxel[n].hd = -1;
 	return(comn);			/* return bit array of common voxels */
 }
 
 
 int
 get_voxels(vl, vp)	/* find voxels corresponding to view point */
-VOXL	vl[8];
+VOXL	vl[MAXVOXEL];
 FVECT	vp;
 {
-	int	n = 0;
+	int	first, n;
 	FVECT	gp;
 	double	d;
 	int	dist, bestd = 0x7fff;
 	VOXL	vox;
 	register int	i, j, k;
+					/* count voxels in list already */
+	for (first = 0; first < MAXVOXEL && vl[first].hd >= 0; first++)
+		;
 					/* find closest voxels */
-	for (i = 0; n < 8 && hdlist[i]; i++) {
+	for (n = first, i = 0; n < MAXVOXEL && hdlist[i]; i++) {
 		hdgrid(gp, hdlist[i], vp);
-		for (j = 0; n < 8 && j < 8; j++) {
+		for (j = 0; n < MAXVOXEL && j < 8; j++) {
 			dist = 0;
 			for (k = 0; k < 3; k++) {
 				d = gp[k] - .5 + (j>>k & 1);
@@ -257,9 +259,18 @@ FVECT	vp;
 			if (dist > bestd)	/* others were closer */
 				continue;
 			if (dist < bestd) {	/* start closer list */
-				n = 0;
+				n = first;
 				bestd = dist;
 			}
+						/* check if already in list */
+			for (k = first; k--; )
+				if (vl[k].hd == i &&
+						vl[k].i[0] == vox.i[0] &&
+						vl[k].i[1] == vox.i[1] &&
+						vl[k].i[2] == vox.i[2])
+					break;
+			if (k >= 0)
+				continue;
 			vox.hd = i;		/* add this voxel */
 			copystruct(&vl[n], &vox);
 			n++;
@@ -270,6 +281,8 @@ FVECT	vp;
 		error(COMMAND, "move past outer limits");
 		return(0);
 	}
+	if (n < MAXVOXEL)
+		vl[n].hd = -1;
 	return(n);
 }
 
@@ -461,7 +474,7 @@ beam_view(vn)			/* change beam view (if advisable) */
 VIEW	*vn;
 {
 	struct cellact	ca;
-	VOXL	vlnew[8];
+	VOXL	vlnew[MAXVOXEL];
 	int	n, comn;
 
 	if (vn == NULL || !vn->type) {	/* clear our beam list */
