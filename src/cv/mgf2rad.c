@@ -401,8 +401,8 @@ material()			/* get (and print) current material */
 	double	d;
 	register int	i;
 
-	if (c_cmaterial->name != NULL)
-		mname = c_cmaterial->name;
+	if (c_cmname != NULL)
+		mname = c_cmname;
 	if (!c_cmaterial->clock)
 		return(mname);		/* already current */
 				/* else update output */
