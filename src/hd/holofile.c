@@ -30,7 +30,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #endif
 #ifndef FF_DEFAULT
 				/* when to free a beam fragment */
-#define FF_DEFAULT	(FF_ALLOC|FF_WRITE|FF_KILL)
+#define FF_DEFAULT	(FF_WRITE|FF_KILL)
 #endif
 #ifndef MINDIRSEL
 				/* minimum directory seek length */
@@ -559,6 +559,7 @@ int	i;
 	biglob(hp)->nrd -= bi->nrd;		/* tell fragment it's free */
 	bi->nrd = 0;
 	bi->fo = 0L;
+	hdmarkdirty(hp, i);			/* assume we'll reallocate */
 	return(1);
 }
 
@@ -621,6 +622,7 @@ hdsyncbeam(hp, i)		/* sync beam in memory with beam on disk */
 register HOLO	*hp;
 register int	i;
 {
+	int	fragfreed;
 	unsigned int4	nrays;
 	unsigned int	n;
 	long	nfo;
@@ -632,8 +634,8 @@ register int	i;
 					/* is current fragment OK? */
 	if (hp->bl[i] == NULL || (nrays = hp->bl[i]->nrm) == hp->bi[i].nrd)
 		return(0);
-	if (hdfragflags&FF_WRITE && hp->bi[i].nrd)
-		hdfreefrag(hp, i);	/* relinquish old fragment */
+					/* relinquish old fragment? */
+	fragfreed = hdfragflags&FF_WRITE && hp->bi[i].nrd && hdfreefrag(hp,i);
 	if (nrays) {			/* get and write new fragment */
 		nfo = hdallocfrag(hp->fd, nrays);
 		errno = 0;
@@ -650,7 +652,8 @@ register int	i;
 		hp->bi[i].fo = 0L;
 	biglob(hp)->nrd += nrays - hp->bi[i].nrd;
 	hp->bi[i].nrd = nrays;
-	hdmarkdirty(hp, i);		/* section directory now out of date */
+	if (!fragfreed)
+		hdmarkdirty(hp, i);		/* need to flag dir. ent. */
 	return(1);
 }
 
@@ -726,16 +729,15 @@ register int	i;
 	if (hp->bl[i] != NULL) {	/* free memory */
 		blglob(hp)->nrm -= nchanged = hp->bl[i]->nrm;
 		free((char *)hp->bl[i]);
+		hp->bl[i] = NULL;
 	} else
 		nchanged = hp->bi[i].nrd;
-	if (hp->bi[i].nrd) {
-		if (hdfragflags&FF_KILL)
-			hdfreefrag(hp, i);
-		biglob(hp)->nrd -= hp->bi[i].nrd;
-		hp->bi[i].nrd = 0;	/* make sure it's gone */
+	if (hp->bi[i].nrd && !(hdfragflags&FF_KILL && hdfreefrag(hp,i))) {
+		biglob(hp)->nrd -= hp->bi[i].nrd;	/* free failed */
+		hp->bi[i].nrd = 0;
 		hp->bi[i].fo = 0L;
+		hdmarkdirty(hp, i);
 	}
-	hp->bl[i] = NULL;
 	return(nchanged);
 }
 
