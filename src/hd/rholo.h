@@ -80,7 +80,8 @@ extern int	readinp;	/* read input from stdin */
 
 extern int	nowarn;		/* turn warnings off? */
 
-extern int	ncprocs;	/* number of compute processes */
+extern int	ncprocs;	/* number of requested compute processes */
+extern int	nprocs;		/* number of running compute processes */
 
 extern double	expval;		/* global exposure value */
 
