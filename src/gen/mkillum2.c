@@ -148,8 +148,8 @@ o_face(		/* make an illum face */
 				/* clean up */
 	freeface(ob);
 	free((void *)distarr);
+	return(0);
 #undef MAXMISS
-	/* XXX we need to return something here. what is it? */
 }
 
 

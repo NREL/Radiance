@@ -555,9 +555,8 @@ dobj_command(		/* run object display command */
 	}
 	return(somechange);
 toomany:
-	/* return(cmderror(cn, "too many arguments")); *//* XXX cmderror is void */
 	cmderror(cn, "too many arguments");
-	return 0; /* XXX not sure if this is the right return value */
+	return(-1);
 }
 
 

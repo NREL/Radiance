@@ -253,7 +253,7 @@ register OBJREC *o;
 	} else if (!iscyl && o->oargs.farg[7] < -FTINY)
 		objerror(o, USER, "illegal radii");
 	if (o->oargs.farg[6] <= FTINY && (iscyl || o->oargs.farg[7] <= FTINY))
-		return; /* XXX we should return a value here */
+		return(0);
 	if (!iscyl) {
 		if (o->oargs.farg[6] < 0.)	/* complains for tiny neg's */
 			o->oargs.farg[6] = 0.;
@@ -262,7 +262,7 @@ register OBJREC *o;
 	}
 	h = sqrt(dist2(o->oargs.farg,o->oargs.farg+3));
 	if (h <= FTINY)
-		return; /* XXX we should return a value here */
+		return(0);
 	cent[0] = .5*(o->oargs.farg[0] + o->oargs.farg[3]);
 	cent[1] = .5*(o->oargs.farg[1] + o->oargs.farg[4]);
 	cent[2] = .5*(o->oargs.farg[2] + o->oargs.farg[5]);
@@ -315,10 +315,10 @@ register OBJREC	*o;
 	if (o->oargs.farg[6] < 0.)		/* complains for tiny neg's */
 		o->oargs.farg[6] = 0.;
 	if (o->oargs.farg[7] - o->oargs.farg[6] <= FTINY)
-		return; /* XXX we should return a value here */
+		return(0);
 	h = VLEN(o->oargs.farg+3);
 	if (h <= FTINY)
-		return; /* XXX we should return a value here */
+		return(0);
 	if (dolights)
 		doflatsrc((MATREC *)o->os, o->oargs.farg, o->oargs.farg+3, 
 				PI*(o->oargs.farg[7]*o->oargs.farg[7] -
