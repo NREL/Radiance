@@ -1,4 +1,4 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1997 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -201,8 +201,12 @@ convert()				/* convert to XYZE or RGBE picture */
 	for (y = 0; y < ymax; y++) {
 		if (freadscan(scanin, xmax, stdin) < 0)
 			quiterr("error reading input picture");
-		for (x = 0; x < xmax; x++)
+		for (x = 0; x < xmax; x++) {
 			colortrans(scanin[x], xfm, scanin[x]);
+			if (rgbout)
+				clipgamut(scanin[x], bright(scanin[x]),
+						CGAMUT_LOWER, cblack, cwhite);
+		}
 		if (scanout != NULL) {
 			for (x = 0; x < xmax; x++)
 				setcolr(scanout[x], colval(scanin[x],RED),
