@@ -43,6 +43,8 @@ int  header = 1;		/* do header? */
 
 long  skipbytes = 0;		/* skip bytes in input? */
 
+int  interleave = 1;		/* file is interleaved? */
+
 int  resolution = 1;		/* put/get resolution string? */
 
 int  original = 0;		/* convert to original values? */
@@ -118,6 +120,9 @@ char  **argv;
 				break;
 			case 'r':		/* reverse conversion */
 				reverse = argv[i][0] == '-';
+				break;
+			case 'n':		/* non-interleaved RGB */
+				interleave = argv[i][0] == '+';
 				break;
 			case 'b':		/* brightness values */
 				putprim = argv[i][0] == '-' ? BRIGHT : ALL;
@@ -205,8 +210,6 @@ unkopt:
 						progname, argv[i]);
 			quit(1);
 		}
-		if (skipbytes && fseek(fin, skipbytes, 0))
-			goto seekerr;
 		if (reverse && !brightonly && i == argc-3) {
 			if ((fin2 = fopen(argv[i+1], "r")) == NULL) {
 				fprintf(stderr, "%s: can't open file \"%s\"\n",
@@ -218,18 +221,25 @@ unkopt:
 						progname, argv[i+2]);
 				quit(1);
 			}
-			if (skipbytes && (fseek(fin2, skipbytes, 0) ||
-					fseek(fin3, skipbytes, 0)))
-				goto seekerr;
+			interleave = -1;
 		} else if (i != argc-1)
 			fin = NULL;
+		if (reverse && !brightonly && !interleave) {
+			fin2 = fopen(argv[i], "r");
+			fin3 = fopen(argv[i], "r");
+		}
+		if (skipbytes && (fseek(fin, skipbytes, 0) || (fin2 != NULL &&
+				(fseek(fin2, skipbytes, 0) ||
+				fseek(fin3, skipbytes, 0))))) {
+			fprintf(stderr, "%s: cannot skip %ld bytes on input\n",
+					progname, skipbytes);
+			quit(1);
+		}
 	}
 	if (fin == NULL) {
 		fprintf(stderr, "%s: bad # file arguments\n", progname);
 		quit(1);
 	}
-
-	set_io();
 
 	if (reverse) {
 #ifdef MSDOS
@@ -309,10 +319,6 @@ unkopt:
 	}
 
 	quit(0);
-seekerr:
-	fprintf(stderr, "%s: cannot skip %ld bytes on input\n",
-			progname, skipbytes);
-	quit(1);
 }
 
 
@@ -346,6 +352,8 @@ pixtoval()				/* convert picture to values */
 	int  dogamma;
 	COLOR  lastc;
 	FLOAT  hv[2];
+	int  startprim, endprim;
+	long  startpos;
 	int  y;
 	register int  x;
 
@@ -355,38 +363,54 @@ pixtoval()				/* convert picture to values */
 		quit(1);
 	}
 	dogamma = gamcor < .95 || gamcor > 1.05;
-	setcolor(lastc, 0.0, 0.0, 0.0);
-	for (y = 0; y < numscans(&picres); y++) {
-		if (freadscan(scanln, scanlen(&picres), fin) < 0) {
-			fprintf(stderr, "%s: read error\n", progname);
+	if (putprim == ALL && !interleave) {
+		startprim = RED; endprim = BLU;
+		startpos = ftell(fin);
+	} else {
+		startprim = putprim; endprim = putprim;
+	}
+	for (putprim = startprim; putprim <= endprim; putprim++) {
+		if (putprim != startprim && fseek(fin, startpos, 0)) {
+			fprintf(stderr, "%s: seek error on input file\n",
+					progname);
 			quit(1);
 		}
-		for (x = 0; x < scanlen(&picres); x++) {
-			if (uniq)
-				if (	colval(scanln[x],RED) ==
-						colval(lastc,RED) &&
-					colval(scanln[x],GRN) ==
-						colval(lastc,GRN) &&
-					colval(scanln[x],BLU) ==
-						colval(lastc,BLU)	)
-					continue;
-				else
-					copycolor(lastc, scanln[x]);
-			if (doexposure)
-				multcolor(scanln[x], exposure);
-			if (dogamma)
-				setcolor(scanln[x],
-				pow(colval(scanln[x],RED), 1.0/gamcor),
-				pow(colval(scanln[x],GRN), 1.0/gamcor),
-				pow(colval(scanln[x],BLU), 1.0/gamcor));
-			if (!dataonly) {
-				pix2loc(hv, &picres, x, y);
-				printf("%7d %7d ", (int)(hv[0]*picres.xr),
-						(int)(hv[1]*picres.yr));
-			}
-			if ((*putval)(scanln[x]) < 0) {
-				fprintf(stderr, "%s: write error\n", progname);
+		set_io();
+		setcolor(lastc, 0.0, 0.0, 0.0);
+		for (y = 0; y < numscans(&picres); y++) {
+			if (freadscan(scanln, scanlen(&picres), fin) < 0) {
+				fprintf(stderr, "%s: read error\n", progname);
 				quit(1);
+			}
+			for (x = 0; x < scanlen(&picres); x++) {
+				if (uniq)
+					if (	colval(scanln[x],RED) ==
+							colval(lastc,RED) &&
+						colval(scanln[x],GRN) ==
+							colval(lastc,GRN) &&
+						colval(scanln[x],BLU) ==
+							colval(lastc,BLU)	)
+						continue;
+					else
+						copycolor(lastc, scanln[x]);
+				if (doexposure)
+					multcolor(scanln[x], exposure);
+				if (dogamma)
+					setcolor(scanln[x],
+					pow(colval(scanln[x],RED), 1.0/gamcor),
+					pow(colval(scanln[x],GRN), 1.0/gamcor),
+					pow(colval(scanln[x],BLU), 1.0/gamcor));
+				if (!dataonly) {
+					pix2loc(hv, &picres, x, y);
+					printf("%7d %7d ",
+							(int)(hv[0]*picres.xr),
+							(int)(hv[1]*picres.yr));
+				}
+				if ((*putval)(scanln[x]) < 0) {
+					fprintf(stderr, "%s: write error\n",
+							progname);
+					quit(1);
+				}
 			}
 		}
 	}
@@ -407,6 +431,7 @@ valtopix()			/* convert values to a pixel file */
 		quit(1);
 	}
 	dogamma = gamcor < .95 || gamcor > 1.05;
+	set_io();
 	for (y = 0; y < numscans(&picres); y++) {
 		for (x = 0; x < scanlen(&picres); x++) {
 			if (!dataonly) {
@@ -800,6 +825,12 @@ set_io()			/* set put and get functions */
 		} else {
 			getval = getcascii;
 			putval = putcascii;
+			if (reverse && !interleave) {
+				fprintf(stderr,
+				"%s: ASCII input files must be interleaved\n",
+						progname);
+				quit(1);
+			}
 		}
 		return;
 	case 'f':					/* binary float */
@@ -812,6 +843,16 @@ set_io()			/* set put and get functions */
 		} else {
 			getval = getcfloat;
 			putval = putcfloat;
+			if (reverse && !interleave) {
+				if (fin2 == NULL)
+					goto namerr;
+				if (fseek(fin2,
+				(long)sizeof(float)*picres.xr*picres.yr, 1))
+					goto seekerr;
+				if (fseek(fin3,
+				(long)sizeof(float)*2*picres.xr*picres.yr, 1))
+					goto seekerr;
+			}
 		}
 		return;
 	case 'd':					/* binary double */
@@ -824,6 +865,16 @@ set_io()			/* set put and get functions */
 		} else {
 			getval = getcdouble;
 			putval = putcdouble;
+			if (reverse && !interleave) {
+				if (fin2 == NULL)
+					goto namerr;
+				if (fseek(fin2,
+				(long)sizeof(double)*picres.xr*picres.yr, 1))
+					goto seekerr;
+				if (fseek(fin3,
+				(long)sizeof(double)*2*picres.xr*picres.yr, 1))
+					goto seekerr;
+			}
 		}
 		return;
 	case 'i':					/* integer */
@@ -836,6 +887,12 @@ set_io()			/* set put and get functions */
 		} else {
 			getval = getcint;
 			putval = putcint;
+			if (reverse && !interleave) {
+				fprintf(stderr,
+				"%s: integer input files must be interleaved\n",
+						progname);
+				quit(1);
+			}
 		}
 		return;
 	case 'b':					/* byte */
@@ -848,7 +905,28 @@ set_io()			/* set put and get functions */
 		} else {
 			getval = getcbyte;
 			putval = putcbyte;
+			if (reverse && !interleave) {
+				if (fin2 == NULL)
+					goto namerr;
+				if (fseek(fin2,
+				(long)sizeof(BYTE)*picres.xr*picres.yr, 1))
+					goto seekerr;
+				if (fseek(fin3,
+				(long)sizeof(BYTE)*2*picres.xr*picres.yr, 1))
+					goto seekerr;
+			}
 		}
 		return;
 	}
+badopt:
+	fprintf(stderr, "%s: botched file type\n", progname);
+	quit(1);
+namerr:
+	fprintf(stderr, "%s: non-interleaved file(s) must be named\n",
+			progname);
+	quit(1);
+seekerr:
+	fprintf(stderr, "%s: cannot seek on interleaved input file\n",
+			progname);
+	quit(1);
 }
