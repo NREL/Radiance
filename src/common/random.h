@@ -18,7 +18,7 @@ extern "C" {
 #define  urand(i)	0.5
 #define  initurand(n)	(n)
 
-#else
+#else	/* ! NORANDOM */
 
 #ifdef	_WIN32
 
@@ -55,19 +55,20 @@ extern double  drand48();
 #define  urand(i)	frandom()
 #define  initurand(n)	(n)
 
-#else
+#else	/* ! MC */
 
 extern unsigned short	*urperm;
 extern int	urmask;
 
 #define	 urand(i)	((urperm[(i)&urmask]+frandom())/(urmask+1))
 
-#endif
+extern int	initurand(int size);
 
-#endif
+#endif	/* ! MC */
+
+#endif	/* ! NORANDOM */
 
 				/* defined in urand.c */
-extern int	initurand(int size);
 extern int	ilhash(int *d, int n);
 				/* defined in urind.c */
 extern int	urind(int s, int i);
