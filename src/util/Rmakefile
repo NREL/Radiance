@@ -36,13 +36,14 @@ raddepend.csh ivprep.csh ivpict.csh trad.wsh
 	cp raddepend.csh $(INSTDIR)/raddepend
 	cp ivprep.csh $(INSTDIR)/ivprep
 	cp ivpict.csh $(INSTDIR)/ivpict
-	sed -e "1s|/usr/local/bin/wish|`which wish`|" \
-		-e "s|^set radlib .*|set radlib $(LIBDIR)/tcl|" \
-		trad.wsh > $(INSTDIR)/trad
 	chmod 755 $(INSTDIR)/objview $(INSTDIR)/objpict \
 		$(INSTDIR)/glare $(INSTDIR)/dayfact $(INSTDIR)/debugcal \
 		$(INSTDIR)/rlux $(INSTDIR)/raddepend $(INSTDIR)/ivprep \
-		$(INSTDIR)/ivpict $(INSTDIR)/trad
+		$(INSTDIR)/ivpict
+	sed -e "1s|/usr/local/bin/wish|`which wish`|" \
+		-e "s|^set radlib .*|set radlib $(LIBDIR)/tcl|" \
+		trad.wsh > $(INSTDIR)/trad
+	chmod 755 $(INSTDIR)/trad
 	cd $(LIBDIR)/tcl ; rm -f $(TLIBFILES)
 	cp $(TLIBFILES) $(LIBDIR)/tcl
 
