@@ -42,6 +42,10 @@ double  sca;
 		scompile(NULL, "Nx=$4;Ny=$5;Nz=$6;");
 		scompile(NULL, "Px=$7;Py=$8;Pz=$9;");
 		scompile(NULL, "T=$10;Rdot=$11;");
+		scompile(NULL, "S=$12;Tx=$13;Ty=$14;Tz=$15;");
+		scompile(NULL, "Ix=$16;Iy=$17;Iz=$18;");
+		scompile(NULL, "Jx=$19;Jy=$20;Jz=$21;");
+		scompile(NULL, "Kx=$22;Ky=$23;Kz=$24;");
 		funset("arg", 1, l_arg);
 		funset("noise3", 3, l_noise3);
 		funset("noise3a", 3, l_noise3a);
@@ -126,41 +130,58 @@ double
 chanvalue(n)			/* return channel n to calcomp */
 register int  n;
 {
-	double  res;
+	double  sum;
 	register RAY  *r;
 
-	n--;					/* for convenience */
+	n--;				/* for convenience */
 
-	if (n < 0 || n > 10)
+	if (n < 0 || n > 23)
 		error(USER, "illegal channel number");
 
-	if (n == 9) {				/* distance */
+	if (n == 9) {			/* distance */
 
-		res = fray->rot;
+		sum = fray->rot;
 		for (r = fray->parent; r != NULL; r = r->parent)
-			res += r->rot;
-		res *= fxf.sca;
+			sum += r->rot;
+		return(sum * fxf.sca);
 
-	} else if (n == 10) {			/* dot product */
-
-		res = fray->rod;
-
-	} else if (n < 3) {			/* ray direction */
-			res = (	fray->rdir[0]*fxf.xfm[0][n] +
-					fray->rdir[1]*fxf.xfm[1][n] +
-					fray->rdir[2]*fxf.xfm[2][n]	)
-				 / fxf.sca ;
-	} else if (n < 6) {			/* surface normal */
-			res = (	fray->ron[0]*fxf.xfm[0][n-3] +
-					fray->ron[1]*fxf.xfm[1][n-3] +
-					fray->ron[2]*fxf.xfm[2][n-3]	)
-				 / fxf.sca ;
-	} else {				/* intersection */
-			res =	fray->rop[0]*fxf.xfm[0][n-6] +
-					fray->rop[1]*fxf.xfm[1][n-6] +
-					fray->rop[2]*fxf.xfm[2][n-6] +
-						     fxf.xfm[3][n-6] ;
 	}
+	if (n == 10)			/* dot product */
+		return(fray->rod);
 
-	return(res);
+	if (n < 3)			/* ray direction */
+
+		return( (	fray->rdir[0]*fxf.xfm[0][n] +
+				fray->rdir[1]*fxf.xfm[1][n] +
+				fray->rdir[2]*fxf.xfm[2][n]	)
+			 / fxf.sca );
+
+	if (n < 6)			/* surface normal */
+
+		return( (	fray->ron[0]*fxf.xfm[0][n-3] +
+				fray->ron[1]*fxf.xfm[1][n-3] +
+				fray->ron[2]*fxf.xfm[2][n-3]	)
+			 / fxf.sca );
+
+	if (n < 9)			/* intersection */
+
+		return( fray->rop[0]*fxf.xfm[0][n-6] +
+				fray->rop[1]*fxf.xfm[1][n-6] +
+				fray->rop[2]*fxf.xfm[2][n-6] +
+					     fxf.xfm[3][n-6] );
+
+	if (n == 11)			/* scale */
+		return(fxf.sca);
+
+	if (n < 15)			/* origin */
+		return(fxf.xfm[3][n-12]);
+
+	if (n < 18)			/* i unit vector */
+		return(fxf.xfm[0][n-15] / fxf.sca);
+
+	if (n < 21)			/* j unit vector */
+		return(fxf.xfm[1][n-15] / fxf.sca);
+
+	if (n < 24)			/* k unit vector */
+		return(fxf.xfm[2][n-21] / fxf.sca);
 }
