@@ -138,8 +138,8 @@ if ($?DISPLAY && $picture != $nofile) then
 		xglaresrc $picture $glarefile
 	endif
 endif
-set ndxnam=("Guth Visual Comfort Probability" "Guth Disability Glare Ratio")
-set ndxcom=(guth_vcp guth_dgr)
+set ndxnam=("Guth Visual Comfort Probability" "Guth Disability Glare Ratio" "CIE Glare Index")
+set ndxcom=("glarendx -t guth_vcp" "glarendx -t guth_dgr" "glarendx -t cie_cgi")
 while ( 1 )
 	echo ""
 	echo "	0.  Quit"
