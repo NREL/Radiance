@@ -51,6 +51,9 @@ int  vspretest = 512;			/* virtual source pretest density */
 int  directinvis = 0;			/* sources invisible? */
 double  srcsizerat = .25;		/* maximum ratio source size/dist. */
 
+double  specthresh = .5;		/* specular sampling threshold */
+double  specjitter = 1.;		/* specular sampling jitter */
+
 int  maxdepth = 6;			/* maximum recursion depth */
 double  minweight = 4e-3;		/* minimum ray weight */
 
