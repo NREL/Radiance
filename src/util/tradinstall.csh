@@ -9,7 +9,7 @@ set TLIBFILES = ( *[a-z].tcl *.hlp trad.icon tclIndex )
 
 set TDIFFS = (`ls | sed -n 's/3\.6\.tcl$//p'`)
 
-set WISHCOMS = ( wish4.{3,2,1,0} wish )
+set WISHCOMS = ( wish4.{3,2,1,0} wish8.0 wish )
 
 foreach w ( $WISHCOMS )
 	foreach d ($path)
