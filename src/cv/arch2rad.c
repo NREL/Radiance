@@ -463,27 +463,27 @@ FILE	*fp;
 		newp.h[i] = p->h[i];
 	}
 					/* spread reference and opposite */
-	if (p->x[1] > p->x[0]) {
+	if (p->x[2] > p->x[0]) {
 		newp.x[0] -= 2;
-		newp.x[1] += 2;
-		newp.x[2] += 2;
-		newp.x[3] -= 2;
-	} else if (p->x[0] > p->x[1]) {
-		newp.x[0] += 2;
 		newp.x[1] -= 2;
-		newp.x[2] -= 2;
+		newp.x[2] += 2;
 		newp.x[3] += 2;
+	} else if (p->x[0] > p->x[2]) {
+		newp.x[0] += 2;
+		newp.x[1] += 2;
+		newp.x[2] -= 2;
+		newp.x[3] -= 2;
 	}
-	if (p->y[1] > p->y[0]) {
+	if (p->y[2] > p->y[0]) {
 		newp.y[0] -= 2;
-		newp.y[1] += 2;
-		newp.y[2] += 2;
-		newp.y[3] -= 2;
-	} else if (p->y[0] > p->y[1]) {
-		newp.y[0] += 2;
 		newp.y[1] -= 2;
-		newp.y[2] -= 2;
+		newp.y[2] += 2;
 		newp.y[3] += 2;
+	} else if (p->y[0] > p->y[2]) {
+		newp.y[0] += 2;
+		newp.y[1] += 2;
+		newp.y[2] -= 2;
+		newp.y[3] -= 2;
 	}
 						/* put out faces */
 	sprintf(buf, "op%d", ++nopens);
