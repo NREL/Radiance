@@ -154,7 +154,7 @@ char  *argv[];
 	quiterr(NULL);
 userr:
 	fprintf(stderr,
-	"Usage: %s [-d][-c ncolors][-b][-g gamv][-e +/-stops] input [output]\n",
+	"Usage: %s [-d][-n samp][-c ncolors][-b][-g gamv][-e +/-stops] input [output]\n",
 			progname);
 	fprintf(stderr, "   Or: %s -r [-g gamv][-e +/-stops] [input [output]]\n",
 			progname);

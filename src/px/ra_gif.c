@@ -142,7 +142,7 @@ char  *argv[];
 	exit(0);
 userr:
 	fprintf(stderr,
-	"Usage: %s [-b][-c ncolors][-g gamv][-e +/-stops] input [output]\n",
+	"Usage: %s [-b][-d][-n samp][-c ncolors][-g gamv][-e +/-stops] input [output]\n",
 			progname);
 	exit(1);
 }
