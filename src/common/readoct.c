@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -96,18 +96,16 @@ char  *ofn[];
 				}
 			while (getobj() != OVOID)
 				;
+		} else if (load & IO_SCENE) {		/* consistency checks */
+						/* check object count */
+			if (nobjects != objorig+fnobjects)
+				octerror(USER, "bad object count; octree stale?");
+						/* check for non-surfaces */
+			if (nonsurfinset(objorig, fnobjects))
+				octerror(USER, "non-surface in set; octree stale?");
 		}
 	}
 	fclose(infp);
-					/* consistency checks */
-	if (load & IO_SCENE) {
-					/* check object count */
-		if (nobjects != objorig+fnobjects)
-			octerror(USER, "bad object count; octree stale?");
-					/* check for non-surfaces */
-		if (nonsurfinset(objorig, fnobjects))
-			octerror(USER, "non-surface in set; octree stale?");
-	}
 	return(nf);
 }
 
