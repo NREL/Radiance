@@ -21,7 +21,8 @@ getpagesize()			/* use var structure to get page size */
 	return(1 << v.v_pageshift);
 }
 
-#elif defined(hpux)		/* Hewlett Packard's HPUX */
+#else
+#if defined(hpux)		/* Hewlett Packard's HPUX */
 
 #include <machine/param.h>
 int
@@ -42,6 +43,7 @@ getpagesize()
 	return(PAGESIZE);
 }
 
+#endif
 #endif
 
 #endif /* !BSD */
