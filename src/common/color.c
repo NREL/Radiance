@@ -241,7 +241,7 @@ double  r, g, b;
 		return;
 	}
 
-	d = frexp(d, &e) * 256.0 / d;
+	d = frexp(d, &e) * 255.9999 / d;
 
 	clr[RED] = r * d;
 	clr[GRN] = g * d;
