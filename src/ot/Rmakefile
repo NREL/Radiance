@@ -31,7 +31,7 @@ bbox.o init2otypes.o -lrt $(MLIB)
 
 obj2mesh:	obj2mesh.o cvmesh.o wfconv.o o_face.o writemesh.o
 	$(CC) $(CFLAGS) -o obj2mesh obj2mesh.o cvmesh.o wfconv.o \
-o_face.o writemesh.o -lrt
+o_face.o writemesh.o -lrt $(MLIB)
 
 install:	oconv getbbox obj2mesh
 	cp oconv getbbox obj2mesh $(INSTDIR)
