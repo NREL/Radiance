@@ -62,8 +62,8 @@ MODOBJS = p_func.o t_func.o p_data.o t_data.o text.o mx_func.o mx_data.o
 
 SUPPOBJS = zeroes.o calexpr.o caldefn.o calfunc.o func.o noise3.o data.o
 
-MISCOBJS = misc.o color.o header.o mat4.o xf.o fvect.o savestr.o \
-		fgetline.o ealloc.o
+MISCOBJS = misc.o header.o mat4.o xf.o fvect.o savestr.o fgetline.o ealloc.o \
+		color.o resolu.o
 
 #
 # What this makefile produces:
@@ -123,13 +123,10 @@ rvmain.o:	rmain.c
 	mv rmain.o rvmain.o
 
 #
-# Uncomment the following to model dispersion:
+# Uncomment the following and add spec_rgb.o to MISCOBJS to model dispersion:
 #
 #dielectric.o:	dielectric.c source.h
 #	$(CC) $(CFLAGS) -DDISPERSE -c dielectric.c
-#
-#color.o:	color.c color.h
-#	$(CC) $(CFLAGS) -DSPEC_RGB -c color.c
 #
 # end of dispersion compiles.
 
@@ -166,8 +163,8 @@ nwsdev.h:	nwsdev.cps newsconstants.h
 
 caldefn.o calexpr.o calfunc.o:	calcomp.h
 
-aed.o color.o colortab.o data.o devcomm.o \
-devmain.o lookamb.o rview.o sundev.o x10.o x11.o:	color.h
+aed.o color.o colortab.o data.o devcomm.o spec_rgb.o \
+devmain.o lookamb.o resolu.o rview.o sundev.o x10.o x11.o:	color.h
 
 cone.o o_cone.o source.o:	cone.h
 
