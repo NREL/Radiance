@@ -216,7 +216,7 @@ int	block;
 	case DR_CLOBBER:	/* clobber holodeck */
 		if (msg.nbytes)
 			error(INTERNAL, "bad DR_CLOBBER from display process");
-		if (!force || !ncprocs)
+		if (force <= 0 | ncprocs <= 0)
 			error(WARNING, "request to clobber holodeck denied");
 		else {
 			error(WARNING, "clobbering holodeck contents");
