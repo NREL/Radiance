@@ -463,7 +463,7 @@ loadholo()			/* start loading a holodeck from fname */
 done_packets(pl)		/* handle finished packets */
 PACKET	*pl;
 {
-	static int	nunflushed = 0;
+	static int	n2flush = 0;
 	register PACKET	*p;
 
 	while (pl != NULL) {
@@ -474,8 +474,8 @@ PACKET	*pl;
 				p->nr*sizeof(RAYVAL));
 			if (outdev != NULL)	/* display it */
 				disp_packet((PACKHEAD *)p);
-			else
-				nunflushed += p->nr;
+			if (hdcachesize <= 0)	/* manual flushing */
+				n2flush += p->nr;
 			nraysdone += p->nr;
 			npacksdone++;
 		}
@@ -483,9 +483,9 @@ PACKET	*pl;
 		p->next = freepacks;
 		freepacks = p;
 	}
-	if (nunflushed >= 256*RPACKSIZ) {
+	if (n2flush > 512*RPACKSIZ*ncprocs) {
 		hdflush(NULL);			/* flush holodeck buffers */
-		nunflushed = 0;
+		n2flush = 0;
 	}
 }
 
