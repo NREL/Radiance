@@ -92,8 +92,8 @@ double	br;
 	register int	i;
 
 	if (h <= -hlim) {			/* left region */
-		d = (double)(h+hlim)/sampdens;
-		if (d <= -1.0+FTINY)
+		d = (double)(-h-hlim)/sampdens;
+		if (d >= 1.0-FTINY)
 			return;
 		tanb = d/sqrt(1.0-d*d);
 		for (i = 0; i < nglardirs; i++) {
@@ -106,8 +106,8 @@ double	br;
 		return;
 	}
 	if (h >= hlim) {			/* right region */
-		d = (double)(h-hlim)/sampdens;
-		if (d >= 1.0-FTINY)
+		d = (double)(-h+hlim)/sampdens;
+		if (d <= -1.0+FTINY)
 			return;
 		tanb = d/sqrt(1.0-d*d);
 		for (i = 0; i < nglardirs; i++) {
