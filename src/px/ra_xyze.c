@@ -1,7 +1,7 @@
-/* Copyright (c) 1997 Regents of the University of California */
+/* Copyright (c) 1997 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -125,8 +125,6 @@ char  *argv[];
 	if (rgbinp == -1)
 		rgbinp = !rgbout;
 	printargs(argc, argv, stdout);		/* add to header */
-	if (expcomp < 0.99 || expcomp > 1.01)
-		fputexpos(expcomp, stdout);
 	convert();				/* convert picture */
 	exit(0);
 userr:
@@ -154,37 +152,36 @@ convert()				/* convert to XYZE or RGBE picture */
 	COLORMAT	xfm;
 	register COLOR	*scanin;
 	register COLR	*scanout;
+	double	ourexp = expcomp;
 	int	y;
 	register int	x;
 						/* compute transform */
 	if (rgbout) {
-		double	mult;
 		if (rgbinp) {			/* RGBE -> RGBE */
 			comprgb2rgbmat(xfm, inprims, outprims);
-			mult = expcomp;
 		} else {			/* XYZE -> RGBE */
 			compxyz2rgbmat(xfm, outprims);
-			mult = expcomp/WHTEFFICACY;
+			ourexp *= WHTEFFICACY;
 		}
-		for (y = 0; y < 3; y++)
-			for (x = 0; x < 3; x++)
-				xfm[y][x] *= mult;
 	} else {
 		if (rgbinp) {			/* RGBE -> XYZE */
 			comprgb2xyzmat(xfm, inprims);
-			for (y = 0; y < 3; y++)
-				for (x = 0; x < 3; x++)
-					xfm[y][x] *= WHTEFFICACY*expcomp;
+			ourexp /= WHTEFFICACY;
 		} else {			/* XYZE -> XYZE */
 			for (y = 0; y < 3; y++)
 				for (x = 0; x < 3; x++)
-					xfm[y][x] = x==y ? expcomp : 0.;
+					xfm[y][x] = x==y ? 1. : 0.;
 		}
 	}
+	for (y = 0; y < 3; y++)
+		for (x = 0; x < 3; x++)
+			xfm[y][x] *= expcomp;
 						/* get input resolution */
 	if ((order = fgetresolu(&xmax, &ymax, stdin)) < 0)
 		quiterr("bad picture format");
 						/* complete output header */
+	if (ourexp < 0.99 || ourexp > 1.01)
+		fputexpos(ourexp, stdout);
 	if (rgbout) {
 		fputprims(outprims, stdout);
 		fputformat(COLRFMT, stdout);
