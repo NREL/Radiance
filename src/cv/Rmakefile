@@ -18,7 +18,7 @@ INSTDIR = /usr/local/bin
 
 LIBDIR = /usr/local/lib/ray
 
-PROGS = thf2rad ies2rad arch2rad nff2rad lampcolor tmesh2rad
+PROGS = thf2rad ies2rad arch2rad nff2rad lampcolor tmesh2rad obj2rad
 
 LIBFILES = source.cal tilt.cal lamp.tab tmesh.cal
 
@@ -49,6 +49,9 @@ lampcolor:	lampcolor.o
 
 tmesh2rad:	tmesh2rad.o
 	$(CC) $(CFLAGS) -o tmesh2rad tmesh2rad.o -lrt $(MLIB)
+
+obj2rad:	obj2rad.o
+	$(CC) $(CFLAGS) -o obj2rad obj2rad.o -lrt $(MLIB)
 
 arch2rad.o trans.o:	trans.h
 
