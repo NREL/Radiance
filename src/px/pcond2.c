@@ -9,6 +9,7 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include "pcond.h"
+#include "warp3d.h"
 
 
 RGBPRIMP	inprims = stdprims;	/* input primaries */
@@ -19,12 +20,15 @@ double	(*lumf)() = rgblum;		/* input luminance function */
 double	inpexp = 1.0;			/* input exposure value */
 
 char	*mbcalfile = NULL;		/* macbethcal mapping file */
+char	*cwarpfile = NULL;		/* color space warping file */
 
 static struct mbc {
 	COLORMAT	cmat;
 	float	xa[3][6], ya[3][6];
 	COLOR	cmin, cmax;
 }	mbcond;				/* macbethcal conditioning struct */
+
+static WARP3D	*cwarp;			/* color warping structure */
 
 static COLOR	*scanbuf;		/* scanline processing buffer */
 static int	nread;			/* number of scanlines processed */
@@ -61,6 +65,8 @@ COLOR *
 nextscan()				/* read and condition next scanline */
 {
 	if (nread >= numscans(&inpres)) {
+		if (cwarpfile != NULL)
+			free3dw(cwarp);
 		free((char *)scanbuf);
 		return(scanbuf = NULL);
 	}
@@ -81,6 +87,8 @@ nextscan()				/* read and condition next scanline */
 		mapscan(scanbuf, scanlen(&inpres));
 	if (mbcalfile != NULL)			/* device color correction */
 		mbscan(scanbuf, scanlen(&inpres), &mbcond);
+	else if (cwarpfile != NULL)		/* device color space warp */
+		cwscan(scanbuf, scanlen(&inpres), cwarp);
 	else if (lumf == cielum | inprims != outprims)
 		matscan(scanbuf, scanlen(&inpres), mbcond.cmat);
 	nread++;
@@ -93,7 +101,10 @@ firstscan()				/* return first processed scanline */
 {
 	if (mbcalfile != NULL)		/* load macbethcal file */
 		getmbcalfile(mbcalfile, &mbcond);
-	else
+	else if (cwarpfile != NULL) {
+		if ((cwarp = load3dw(cwarpfile, NULL)) == NULL)
+			syserror(cwarpfile);
+	} else
 		if (lumf == rgblum)
 			comprgb2rgbmat(mbcond.cmat, inprims, outprims);
 		else
@@ -152,6 +163,28 @@ register struct mbc	*mb;
 					(d - mb->xa[i][j])*mb->ya[i][j+1] ) /
 					(mb->xa[i][j+1] - mb->xa[i][j]);
 		}
+		sl++;
+	}
+}
+
+
+cwscan(sl, len, wp)			/* apply color space warp to scaline */
+COLOR	*sl;
+int	len;
+WARP3D	*wp;
+{
+	int	rval;
+
+	while (len--) {
+		rval = warp3d(sl[0], sl[0], wp);
+		if (rval & W3ERROR)
+			syserror("warp3d");
+		if (rval & W3BADMAP) {
+			fprintf(stderr, "%s: %s: bad color space map\n",
+					progname, cwarpfile);
+			exit(1);
+		}
+		clipgamut(sl[0], bright(sl[0]), CGAMUT, cblack, cwhite);
 		sl++;
 	}
 }

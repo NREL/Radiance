@@ -111,6 +111,10 @@ char	*argv[];
 			if (i+1 >= argc) goto userr;
 			mbcalfile = argv[++i];
 			break;
+		case 'm':
+			if (i+1 >= argc) goto userr;
+			cwarpfile = argv[++i];
+			break;
 		case 't':
 			if (i+1 >= argc) goto userr;
 			ldmax = atof(argv[++i]);
@@ -121,7 +125,7 @@ char	*argv[];
 			if (i+1 >= argc) goto userr;
 			ldmin = atof(argv[++i]);
 			break;
-		case 'm':
+		case 'd':
 			if (i+1 >= argc) goto userr;
 			if ((mapfp = fopen(argv[++i], "w")) == NULL) {
 				fprintf(stderr,
@@ -133,8 +137,10 @@ char	*argv[];
 		default:
 			goto userr;
 		}
-	if (mbcalfile != NULL & outprims != stdprims) {
-		fprintf(stderr, "%s: only one of -p or -f option supported\n",
+	if ((mbcalfile != NULL) + (cwarpfile != NULL) +
+			(outprims != stdprims) > 1) {
+		fprintf(stderr,
+			"%s: only one of -p, -m or -f option supported\n",
 				progname);
 		exit(1);
 	}
@@ -173,7 +179,7 @@ char	*argv[];
 		putmapping(mapfp);
 	exit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-{h|a|v|s|c|l|w}[+-]][-i ffrac][-e ev][-p xr yr xg yg xb yb xw yw|-f mbf.cal][-t Ldmax][-b Ldmin][-m mapfile] inpic [outpic]\n",
+	fprintf(stderr, "Usage: %s [-{h|a|v|s|c|l|w}[+-]][-i ffrac][-e ev][-p xr yr xg yg xb yb xw yw|-f mbf.cal|-m rgb.cwp][-t Ldmax][-b Ldmin][-d mapfile] inpic [outpic]\n",
 			progname);
 	exit(1);
 #undef bool

@@ -89,6 +89,7 @@ extern double	pixaspect;		/* pixel aspect ratio */
 extern RESOLU	inpres;			/* input picture resolution */
 
 extern char	*mbcalfile;		/* macbethcal mapping file */
+extern char	*cwarpfile;		/* color warp mapping file */
 
 extern double	hacuity();		/* human acuity func. (cycles/deg.) */
 extern double	htcontrs();		/* human contrast sens. func. */
