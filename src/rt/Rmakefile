@@ -33,7 +33,7 @@ COMPAT = malloc.o
 DOBJS = devtable.o devcomm.o aed.o tty.o editline.o x10.o xtwind.o \
 	colortab.o
 DLIBS = -lX
-DRIVERS = $(DEVDIR)/sundev $(DEVDIR)/sun.com
+DRIVERS = $(DEVDIR)/sundev $(DEVDIR)/sun.com # $(DEVDIR)/X11dev
 
 #
 # Standard object files:
@@ -100,6 +100,10 @@ $(DEVDIR)/sundev:	sundev.o devmain.o colortab.o
 
 $(DEVDIR)/sun.com:	suncom.o editline.o
 	cc $(CFLAGS) -o $(DEVDIR)/sun.com suncom.o editline.o
+
+$(DEVDIR)/X11dev:	x11.o x11twind.o colortab.o
+	cc $(CFLAGS) -o $(DEVDIR)/x11dev devmain.o sundev.o colortab.o \
+-lX11 $(LIBS)
 
 #
 # Special compiles:
@@ -199,3 +203,5 @@ sundev.o:	suntools.icon
 image.o rmain.o rpict.o:	view.h
 
 x10.o xtwind.o:	xtwind.h
+
+x11.o x11twind.o: x11twind.h
