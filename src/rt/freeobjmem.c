@@ -42,6 +42,9 @@ register OBJREC	*op;
 	case OBJ_INSTANCE:	/* octree instance */
 		freeinstance(op);
 		return(1);
+	case OBJ_MESH:		/* mesh instance */
+		freemeshinst(op);
+		return(1);
 	case PAT_BTEXT:		/* monochromatic text */
 	case PAT_CTEXT:		/* colored text */
 	case MIX_TEXT:		/* mixing text */

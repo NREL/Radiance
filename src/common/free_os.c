@@ -38,6 +38,9 @@ register OBJREC	*op;
 	case OBJ_INSTANCE:	/* octree instance */
 		freeinstance(op);
 		return(1);
+	case OBJ_MESH:		/* mesh instance */
+		freemeshinst(op);
+		return(1);
 	}
 				/* don't really know */
 	free((void *)op->os);
