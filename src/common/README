@@ -8,6 +8,7 @@ calcomp.h	header file for expression parser
 color.h		header for routines using pixel color values
 cone.h		header file for cones (cones, cylinders, rings, cups, tubes)
 face.h		header for routines using polygonal faces
+font.h		header for font handling rountines
 fvect.h		header file for floating point routines using vectors
 instance.h	header file for routines using octree objects
 linregr.h	header file for linear regression calculation
@@ -15,11 +16,12 @@ mat4.h		definitions for 4x4 matrix operations
 object.h	header file for routines using objects and object sets
 octree.h	header file for routines using octrees
 otypes.h	defines for object types
+paths.h		header file defining standard path names for this architecture
 random.h	header file for random(3) and urand() function
-rasterfile.h	description of header for files containing raster images
 resolu.h	definitions for resolution line in image file.
 standard.h	standard include file for most programs
 targa.h		header file for reading and writing Targa format files
+vfork.h		header file for routines using vfork()
 view.h		header file for image generation
 xraster.h	header file for X routines using images
 xtwind.h	header for X text window routines
@@ -33,13 +35,19 @@ calprnt.c	routines for printing calcomp expressions
 color.c		routines for color calculations
 colrops.c	integer operations on COLR scanlines
 cone.c		routines for making cones
+cputs.c		default routine for command-line error output
 ealloc.c	memory routines which call quit on error
+eputs.c		default routine for error output
+erf.c		BSD implementation of erf() and erfc()
 error.c		standard error reporting function
 face.c		routines dealing with polygonal faces
 fgetline.c	read line with escaped newlines
 fgetword.c	read white space separated words from stream
-frexp.c		find and open a Radiance library file
+font.c		library routines for font handling
+frexp.c		free exponent
+fropen.c	find and open a Radiance library file
 fvect.c		routines for float vector calculations
+fwrite.c	standard lib replacement
 getpagesize.c	return system page size for non-BSD machine
 getpath.c	function to search for file in a list of directories
 header.c	routines for reading and writing information headers
@@ -49,14 +57,16 @@ lamps.c		load lamp data
 linregr.c	basic linear regression calculation
 malloc.c	fast malloc for memory hogs and VM environments
 mat4.c		routines dealing with 4 X 4 homogeneous matrices
-misc.c		miscellaneous routines used by most programs
 modobject.c	routines for tracking object modifiers
 multisamp.c	binary space partitioning curve for multidimensional sampling
 objset.c	routines for maintaining object sets
 octree.c	routines dealing with octrees and cubes
 otypes.c	object type lookup and error reporting
 peano.c		generate an N-dimensional Peano space-filling curve
+portio.c	routines for portable binary input and output
 process.c	routines to communicate with separate process via dual pipes
+quit.c		default quit() routine, calles exit()
+random.c	BSD random number generator
 readfargs.c	allocate, read and free object arguments (RADIANCE parser)
 readobj.c	routines for reading in object descriptions
 readoct.c	routines to read octree information
@@ -65,8 +75,13 @@ rexpr.c		regular expression parser (ala grep)
 savestr.c	routines for efficient string storage
 savqstr.c	quick and dirty string saver
 spec_rgb.c	convert colors and spectral ranges
+strcmp.c	more efficient standard lib replacement for use with savestr()
 urand.c		anticorrelated random function due to Christophe Schlick
 urind.c		compute pseudo-asyncronous entry point for urand(3)
+wordfile.c	open and read a file of whitespace-separated words
 words.c		routines for recognizing and moving about words in strings
+wputs.c		default warning message output function
 x11findwind.c	find a window by its name under X
 xf.c		routines to convert transform arguments into 4X4 matrix
+xraster.c	X10R4 raster handling routines
+xtwind.c	X10R4 text window routines
