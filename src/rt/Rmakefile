@@ -218,15 +218,17 @@ ambient.o rpict.o rv3.o source.o:	random.h
 ambient.o dielectric.o func.o glass.o m_clip.o \
 m_brdf.o mx_data.o mx_func.o normal.o o_cone.o o_face.o o_instance.o \
 p_data.o p_func.o text.o raytrace.o rpmain.o rtmain.o rvmain.o rpict.o \
-rtrace.o rv2.o rv3.o source.o \
-sphere.o t_data.o t_func.o:	ray.h standard.h fvect.h object.h color.h
+rtrace.o rv2.o rv3.o source.o sphere.o \
+t_data.o t_func.o:	ray.h standard.h mat4.h fvect.h object.h color.h
 
 rv2.o rv3.o rview.o:	rpaint.h driver.h view.h
 
 source.o:	source.h
 
-cone.o data.o devcomm.o face.o image.o initotypes.o misc.o objset.o \
-octree.o otypes.o readobj.o readoct.o rview.o:	standard.h fvect.h
+cone.o data.o devcomm.o face.o image.o initotypes.o xf.o misc.o objset.o \
+octree.o otypes.o readobj.o readoct.o rview.o:	standard.h mat4.h fvect.h
+
+mat4.o:		mat4.h fvect.h
 
 sundev.o:	suntools.icon
 
