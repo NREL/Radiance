@@ -424,7 +424,7 @@ XKeyPressedEvent  *ekey;
 			sprintf(buf, "%.3f", intens(cval)/exposure);
 			break;
 		case 'l':				/* luminance */
-			sprintf(buf, "%.0fn", luminance(cval)/exposure);
+			sprintf(buf, "%.0fL", luminance(cval)/exposure);
 			break;
 		case 'c':				/* color */
 			comp = pow(2.0, (double)scale);
