@@ -36,37 +36,39 @@ start_rtrace()			/* start rtrace process */
 {
 	static char	buf1[8];
 	int	rmaxpack = 0;
-	int	psiz, npt, n;
+	int	psiz, n;
 					/* get number of processes */
-	if ((npt = ncprocs) <= 0)
+	if (ncprocs <= 0)
 		return(0);
-	if (npt > MAXPROC) {
+	if (ncprocs > MAXPROC) {
 		sprintf(errmsg,
 			"number of rtrace processes reduced from %d to %d",
-				npt, MAXPROC);
+				ncprocs, MAXPROC);
 		error(WARNING, errmsg);
-		npt = MAXPROC;
+		ncprocs = MAXPROC;
 	}
-					/* add compulsory options */
-	rtargv[rtargc++] = "-i-";
-	rtargv[rtargc++] = "-I-";
-	rtargv[rtargc++] = "-h-";
-	rtargv[rtargc++] = "-ld-";
-	sprintf(buf1, "%d", RPACKSIZ);
-	rtargv[rtargc++] = "-x"; rtargv[rtargc++] = buf1;
-	rtargv[rtargc++] = "-y"; rtargv[rtargc++] = "0";
-	rtargv[rtargc++] = "-fff";
-	rtargv[rtargc++] = vbool(VDIST) ? "-ovl" : "-ovL";
-	if (nowarn)
-		rtargv[rtargc++] = "-w-";
-	if (npt > 1) {
-		mktemp(pfile);
-		rtargv[rtargc++] = "-PP"; rtargv[rtargc++] = pfile;
+	if (rtargv[rtargc-1] != vval(OCTREE)) {
+						/* add compulsory options */
+		rtargv[rtargc++] = "-i-";
+		rtargv[rtargc++] = "-I-";
+		rtargv[rtargc++] = "-h-";
+		rtargv[rtargc++] = "-ld-";
+		sprintf(buf1, "%d", RPACKSIZ);
+		rtargv[rtargc++] = "-x"; rtargv[rtargc++] = buf1;
+		rtargv[rtargc++] = "-y"; rtargv[rtargc++] = "0";
+		rtargv[rtargc++] = "-fff";
+		rtargv[rtargc++] = vbool(VDIST) ? "-ovl" : "-ovL";
+		if (nowarn)
+			rtargv[rtargc++] = "-w-";
+		if (ncprocs > 1) {
+			mktemp(pfile);
+			rtargv[rtargc++] = "-PP"; rtargv[rtargc++] = pfile;
+		}
+		rtargv[rtargc++] = vval(OCTREE);
+		rtargv[rtargc] = NULL;
 	}
-	rtargv[rtargc++] = vval(OCTREE);
-	rtargv[rtargc] = NULL;
 	maxqlen = 0;
-	for (nprocs = 0; nprocs < npt; nprocs++) {	/* spawn children */
+	for (nprocs = 0; nprocs < ncprocs; nprocs++) {	/* spawn children */
 		psiz = open_process(rtpd[nprocs], rtargv);
 		if (psiz <= 0)
 			error(SYSTEM, "cannot start rtrace process");

@@ -72,6 +72,12 @@ char	*argv[];
 			}
 			if (inp & DFL(DC_REDRAW))
 				imm_mode = beam_sync() > 0;
+			if (inp & DFL(DC_KILL))
+				serv_request(DR_KILL, 0, NULL);
+			if (inp & DFL(DC_CLOBBER))
+				serv_request(DR_CLOBBER, 0, NULL);
+			if (inp & DFL(DC_RESTART))
+				serv_request(DR_RESTART, 0, NULL);
 			if (inp & DFL(DC_QUIT))
 				serv_request(DR_SHUTDOWN, 0, NULL);
 		}
@@ -275,6 +281,15 @@ usr_input()			/* get user input and process it */
 		break;
 	case DC_REDRAW:			/* redraw from server */
 		imm_mode = beam_sync() > 0;
+		break;
+	case DC_KILL:			/* kill rtrace process(es) */
+		serv_request(DR_KILL, 0, NULL);
+		break;
+	case DC_CLOBBER:		/* clobber holodeck */
+		serv_request(DR_CLOBBER, 0, NULL);
+		break;
+	case DC_RESTART:		/* restart rtrace */
+		serv_request(DR_RESTART, 0, NULL);
 		break;
 	case DC_QUIT:			/* quit request */
 		serv_request(DR_SHUTDOWN, 0, NULL);

@@ -13,16 +13,19 @@
 #define DR_SHUTDOWN	3		/* shutdown request */
 #define DR_NEWSET	4		/* new bundle set */
 #define DR_ADDSET	5		/* add to current set */
-#define	DR_ADJSET	6		/* adjust set quantities */
+#define DR_ADJSET	6		/* adjust set quantities */
 #define DR_DELSET	7		/* delete from current set */
+#define DR_KILL		8		/* kill rtrace process(es) */
+#define DR_RESTART	9		/* restart rtrace */
+#define DR_CLOBBER	10		/* clobber holodeck */
 
 				/* server responses */
-#define DS_BUNDLE	8		/* computed bundle */
-#define DS_ACKNOW	9		/* acknowledge request for attention */
-#define DS_SHUTDOWN	10		/* end process and close connection */
-#define DS_ADDHOLO	11		/* register new holodeck */
-#define DS_STARTIMM	12		/* begin immediate bundle set */
-#define DS_ENDIMM	13		/* end immediate bundle set */
+#define DS_BUNDLE	32		/* computed bundle */
+#define DS_ACKNOW	33		/* acknowledge request for attention */
+#define DS_SHUTDOWN	34		/* end process and close connection */
+#define DS_ADDHOLO	35		/* register new holodeck */
+#define DS_STARTIMM	36		/* begin immediate bundle set */
+#define DS_ENDIMM	37		/* end immediate bundle set */
 
 /*
  * Normally, the server channel has priority, with the display process
