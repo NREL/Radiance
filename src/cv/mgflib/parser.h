@@ -341,17 +341,21 @@ struct xf_array {
 
 typedef struct xf_spec {
 	long	xid;			/* unique transform id */
-	short	xav0;			/* zeroeth argument in xf_argv array */
-	short	xac;			/* transform argument count */
+	short	xac;			/* context argument count */
 	short	rev;			/* boolean true if vertices reversed */
 	XF	xf;			/* cumulative transformation */
 	struct xf_array	*xarr;		/* transformation array pointer */
 	struct xf_spec	*prev;		/* previous transformation context */
 } XF_SPEC;			/* followed by argument buffer */
 
-extern int	xf_argc;			/* total # transform args. */
-extern char	**xf_argv;			/* transform arguments */
-extern XF_SPEC	*xf_context;			/* current context */
+extern XF_SPEC	*xf_context;			/* current transform context */
+extern char	**xf_argend;			/* last transform argument */
+
+#define xf_ac(xf)	((xf)->xac)
+#define xf_av(xf)	(xf_argend - (xf)->xac)
+
+#define xf_argc		(xf_context==NULL ? 0 : xf_ac(xf_context))
+#define xf_argv		xf_av(xf_context)
 
 /*
  * The transformation handler should do most of the work that needs
