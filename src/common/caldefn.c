@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -185,7 +185,8 @@ int  (*cs)();
 #endif
 
 
-dclearall()			/* clear all definitions */
+dcleanup(cons, ochans)		/* clear definitions */
+int  cons, ochans;
 {
     register int  i;
     register VARDEF  *vp;
@@ -193,11 +194,16 @@ dclearall()			/* clear all definitions */
 
     for (i = 0; i < NHASH; i++)
 	for (vp = hashtbl[i]; vp != NULL; vp = vp->next)
-	    dremove(vp->name);
+	    if (cons)
+		dremove(vp->name);
+	    else
+		dclear(vp->name);
 #ifdef  OUTCHAN
-    for (ep = outchan; ep != NULL; ep = ep->sibling)
-	epfree(ep);
-    outchan = NULL;
+    if (ochans) {
+	for (ep = outchan; ep != NULL; ep = ep->sibling)
+	    epfree(ep);
+	outchan = NULL;
+    }
 #endif
 }
 
