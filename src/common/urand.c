@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -14,7 +14,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 extern char  *malloc();
 
-short  *urperm;		/* urand() permutation */
+short  *urperm = NULL;	/* urand() permutation */
 int  urmask;		/* bits used in permutation */
 
 
@@ -24,6 +24,8 @@ int  size;
 	int  order, n;
 	register int  i, offset;
 
+	if (urperm != NULL)
+		free((char *)urperm);
 	size--;
 	for (i = 1; size >>= 1; i++)
 		;
