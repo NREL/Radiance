@@ -594,6 +594,7 @@ register XKeyPressedEvent  *ekey;
 		glFlush();
 		qtCompost(100);			/* get rid of old values */
 		inpresflags |= DFL(DC_REDRAW);	/* resend values from server */
+		rayqleft = 0;			/* hold off update */
 		return;
 	case 'K':			/* kill rtrace process(es) */
 		inpresflags |= DFL(DC_KILL);

@@ -604,6 +604,7 @@ register XKeyPressedEvent  *ekey;
 		if (ncolors > 0)
 			new_ctab(ncolors);
 		inpresflags |= DFL(DC_REDRAW);	/* resend values from server */
+		rayqleft = 0;			/* hold off update */
 		return;
 	case 'K':			/* kill rtrace process(es) */
 		inpresflags |= DFL(DC_KILL);
