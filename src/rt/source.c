@@ -499,13 +499,21 @@ srcscatter(			/* compute source scattering into ray */
 			if (!srcray(&sr, NULL, &si) ||
 					sr.rsrc != r->slights[i])
 				continue;		/* no path */
+#if SHADCACHE
+			if (srcblocked(&sr))		/* check shadow cache */
+				continue;
+#endif
 			copycolor(sr.cext, r->cext);
 			copycolor(sr.albedo, r->albedo);
 			sr.gecc = r->gecc;
 			sr.slights = r->slights;
 			rayvalue(&sr);			/* eval. source ray */
-			if (bright(sr.rcol) <= FTINY)
+			if (bright(sr.rcol) <= FTINY) {
+#if SHADCACHE
+				srcblocker(&sr);	/* add blocker to cache */
+#endif
 				continue;
+			}
 			if (r->gecc <= FTINY)		/* compute P(theta) */
 				d = 1.;
 			else {
