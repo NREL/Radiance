@@ -27,6 +27,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "paths.h"
 
+#define	 RFTEMPLATE	"rfXXXXXX"
+
 int  dimlist[MAXDIM];			/* sampling dimensions */
 int  ndims = 0;				/* number of sampling dimensions */
 int  samplendx;				/* sample index number */
@@ -82,12 +84,6 @@ extern long  nrays;			/* number of rays traced */
 
 #define	 pixjitter()	(.5+dstrpix*(.5-frandom()))
 
-#define	 RFTEMPLATE	"rfXXXXXX"
-#define	 HFTEMPLATE	TEMPLATE
-
-static char  *hfname = NULL;		/* header file name */
-static FILE  *hfp = NULL;		/* header file pointer */
-
 static int  hres, vres;			/* resolution for this frame */
 
 extern char  *mktemp();
@@ -100,11 +96,8 @@ int  code;
 {
 	if (code)			/* report status */
 		report();
-	if (hfname != NULL) {		/* delete header file */
-		if (hfp != NULL)
-			fclose(hfp);
-		unlink(hfname);
-	}
+	headclean();			/* delete header file */
+	pfclean();			/* clean up persist files */
 	exit(code);
 }
 
@@ -139,33 +132,6 @@ report()		/* report progress */
 #endif
 
 
-openheader()			/* save standard output to header file */
-{
-	hfname = mktemp(HFTEMPLATE);
-	if (freopen(hfname, "w", stdout) == NULL) {
-		sprintf(errmsg, "cannot open header file \"%s\"", hfname);
-		error(SYSTEM, errmsg);
-	}
-}
-
-
-dupheader()			/* repeat header on standard output */
-{
-	register int  c;
-
-	if (hfp == NULL) {
-		if ((hfp = fopen(hfname, "r")) == NULL)
-			error(SYSTEM, "error reopening header file");
-#ifdef MSDOS
-		setmode(fileno(hfp), O_BINARY);
-#endif
-	} else if (fseek(hfp, 0L, 0) < 0)
-		error(SYSTEM, "seek error on header file");
-	while ((c = getc(hfp)) != EOF)
-		putchar(c);
-}
-
-
 rpict(seq, pout, zout, prvr)			/* generate image(s) */
 int  seq;
 char  *pout, *zout, *prvr;
@@ -181,7 +147,7 @@ char  *pout, *zout, *prvr;
  * sequenced file naming.
  */
 {
-	extern char  *rindex(), *strncpy(), *strcat();
+	extern char  *rindex(), *strncpy(), *strcat(), *strcpy();
 	char  fbuf[128], fbuf2[128];
 	register char  *cp;
 	RESOLU	rs;

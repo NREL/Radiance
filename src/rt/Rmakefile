@@ -43,10 +43,10 @@ DLIBS = -lX11
 # Standard object files:
 #
 
-RTOBJS = rtmain.o rtrace.o $(ROBJS) Version.o
+RTOBJS = rtmain.o rtrace.o duphead.o persist.o preload.o $(ROBJS) Version.o
 RTSRC = rmain.c rtrace.c $(RSRC) Version.c
 
-RPOBJS = rpmain.o rpict.o $(ROBJS) Version.o
+RPOBJS = rpmain.o rpict.o duphead.o persist.o preload.o $(ROBJS) Version.o
 RPSRC = rmain.c rpict.c $(RSRC) Version.c
 
 RVOBJS = rvmain.o rview.o rv2.o rv3.o $(DOBJS) $(ROBJS) Version.o
@@ -238,7 +238,7 @@ ambient.o ambcomp.o aniso.o dielectric.o func.o glass.o m_clip.o m_mirror.o \
 m_brdf.o mx_data.o mx_func.o normal.o o_cone.o o_face.o o_instance.o \
 p_data.o p_func.o text.o raytrace.o rpmain.o rtmain.o rvmain.o rpict.o \
 rtrace.o rview.o rv2.o rv3.o source.o srcsamp.o srcsupp.o virtuals.o \
-sphere.o t_data.o t_func.o:	ray.h ../common/standard.h \
+sphere.o t_data.o t_func.o persist.o duphead.o:	ray.h ../common/standard.h \
 ../common/mat4.h ../common/fvect.h ../common/object.h ../common/color.h
 
 rv2.o rv3.o rview.o:	rpaint.h driver.h ../common/view.h
@@ -270,4 +270,4 @@ p_func.o t_data.o t_func.o:	func.h
 
 devcomm.o:	../common/vfork.h
 
-rtmain.o rpmain.o rvmain.o rpict.o:	../common/paths.h
+rtmain.o rpmain.o rvmain.o persist.o duphead.o rpict.o:	../common/paths.h
