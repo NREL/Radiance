@@ -35,6 +35,8 @@ char	**av;
 	}
 	if (ac != 2)
 		return(MG_EARGC);
+	if (!isname(av[1]))
+		return(MG_EILL);
 	if (obj_nnames >= obj_maxname-1) {	/* enlarge array */
 		if (!obj_maxname)
 			obj_name = (char **)malloc(

@@ -150,10 +150,12 @@ extern int	mg_nqcdivs;		/* divisions per quarter circle */
 extern int mg_entity();			/* get entity number from its name */
 extern int isint();			/* non-zero if integer format */
 extern int isflt();			/* non-zero if floating point format */
+extern int isname();			/* non-zero if legal identifier name */
 #else
 extern int mg_entity(char *);		/* get entity number from its name */
 extern int isint(char *);		/* non-zero if integer format */
 extern int isflt(char *);		/* non-zero if floating point format */
+extern int isname(char *);		/* non-zero if legal identifier name */
 #endif
 
 /************************************************************************
