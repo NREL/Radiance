@@ -33,7 +33,7 @@ COMPAT = malloc.o
 DOBJS = devtable.o devcomm.o aed.o tty.o editline.o x10.o xtwind.o \
 	colortab.o
 DLIBS = -lX
-DRIVERS = $(DEVDIR)/sundev $(DEVDIR)/sun.com # $(DEVDIR)/X11dev
+DRIVERS = $(DEVDIR)/sundev $(DEVDIR)/sun.com $(DEVDIR)/x11dev
 
 #
 # Standard object files:
@@ -101,9 +101,9 @@ $(DEVDIR)/sundev:	sundev.o devmain.o colortab.o
 $(DEVDIR)/sun.com:	suncom.o editline.o
 	cc $(CFLAGS) -o $(DEVDIR)/sun.com suncom.o editline.o
 
-$(DEVDIR)/X11dev:	x11.o x11twind.o colortab.o
-	cc $(CFLAGS) -o $(DEVDIR)/x11dev devmain.o x11.o colortab.o \
--lX11 $(LIBS)
+$(DEVDIR)/x11dev:	x11.o x11twind.o colortab.o devmain.o editline.o
+	cc $(CFLAGS) -o $(DEVDIR)/x11dev x11.o x11twind.o devmain.o \
+colortab.o editline.o -lX11 $(LIBS)
 
 #
 # Special compiles:
@@ -135,8 +135,8 @@ rvmain.o:	rmain.c
 sundev.o:	sundev.c
 	cc $(CFLAGS) -Dsun_init=dinit -c sundev.c
 
-devcomm.o:	devcomm.c
-	cc $(CFLAGS) -c devcomm.c
+x11.o:	x11.c
+	cc $(CFLAGS) -Dx11_init=dinit -c x11.c
 
 ambient.o:	ambient.c
 	cc $(CFLAGS) -DAMBFLUSH=16 -c ambient.c
