@@ -366,7 +366,7 @@ int	x0, xsiz, y0, ysiz;		/* origin and size of subimage */
 	int	nsv, npv;
 	int	xmin, xmax, ymin, ymax, x, y;
 	FLOAT	cxy[2];
-	double	pa;
+	double	w;
 	RAY	sr;
 	register SPLIST	*sp;
 	register int	i;
@@ -415,11 +415,14 @@ int	x0, xsiz, y0, ysiz;		/* origin and size of subimage */
 					continue;	/* missed/blocked */
 							/* modify pixel */
 				if (zbf[y-y0] != NULL &&
-						sr.rt < zbf[y-y0][x-x0])
+						sr.rt < 0.999*zbf[y-y0][x-x0])
 					zbf[y-y0][x-x0] = sr.rt;
-				pa = poly_area(ppoly, npv);
-				scalecolor(sr.rcol, pa*hres*vres);
-				scalecolor(pic[y-y0][x-x0], (1.-pa*hres*vres));
+				else if (!bigdiff(sr.rcol, pic[y-y0][x-x0],
+						0.001))	/* source sample */
+					setcolor(pic[y-y0][x-x0], 0., 0., 0.);
+				w = poly_area(ppoly, npv) * hres * vres;
+				scalecolor(sr.rcol, w);
+				scalecolor(pic[y-y0][x-x0], 1.-w);
 				addcolor(pic[y-y0][x-x0], sr.rcol);
 			}
 	}
