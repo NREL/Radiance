@@ -128,7 +128,7 @@ char  *expr;
 epfree(epar)			/* free a parse tree */
 register EPNODE	 *epar;
 {
-    register EPNODE  *ep;
+    register EPNODE  *ep, *epn;
 
     switch (epar->type) {
 
@@ -149,8 +149,10 @@ register EPNODE	 *epar;
 	    break;
 
 	default:
-	    for (ep = epar->v.kid; ep != NULL; ep = ep->sibling)
+	    for (ep = epar->v.kid; ep != NULL; ep = epn) {
+		epn = ep->sibling;
 		epfree(ep);
+	    }
 	    break;
 
     }
