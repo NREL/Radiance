@@ -44,6 +44,8 @@ rhd_x11.o rhd_qtree.o rhd_qtree2r.o rhd_ctab.o holo.o -lrt -lX11 -lm
 rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o \
 rhdisp.o rhdisp2.o rhdisp3.o:	rholo.h
 
+rholo2l.o:	../common/paths.h
+
 rholo4.o:	rhdisp.h rholo4.c
 	$(CC) $(CFLAGS) -c rholo4.c
 
