@@ -76,6 +76,8 @@ int  yoff = 0;				/* y image offset */
 int  parent = 0;			/* number of children, -1 if child */
 int  sequential = 0;			/* display images in sequence */
 
+char  *tout = "od";			/* output of 't' command */
+
 VIEW  ourview = STDVIEW;		/* image view parameters */
 int  gotview = 0;			/* got parameters from file */
 
@@ -141,34 +143,37 @@ char  *argv[];
 	for (i = 1; i < argc; i++)
 		if (argv[i][0] == '-')
 			switch (argv[i][1]) {
-			case 'c':
+			case 'c':			/* number of colors */
 				maxcolors = atoi(argv[++i]);
 				break;
-			case 'b':
+			case 'b':			/* greyscale only */
 				greyscale = !greyscale;
 				break;
-			case 'm':
+			case 'm':			/* monochrome */
 				greyscale = 1;
 				maxcolors = 2;
 				break;
-			case 'd':
+			case 'd':			/* display or dither */
 				if (argv[i][2] == 'i')
 					dispname = argv[++i];
 				else
 					dither = !dither;
 				break;
-			case 'f':
+			case 'f':			/* save pixmap */
 				fast = !fast;
 				break;
-			case 's':
+			case 's':			/* one at a time */
 				sequential = !sequential;
 				break;
-			case 'e':
+			case 'o':			/* 't' output */
+				tout = argv[i]+2;
+				break;
+			case 'e':			/* exposure comp. */
 				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
 					goto userr;
 				scale = atoi(argv[++i]);
 				break;
-			case 'g':
+			case 'g':			/* gamma comp. */
 				if (argv[i][2] == 'e')
 					geometry = argv[++i];
 				else
@@ -595,21 +600,45 @@ getevent()				/* process the next event */
 }
 
 
-traceray(xpos, ypos)			/* print ray corresponding to pixel */
+traceray(xpos, ypos)			/* print requested pixel data */
 int  xpos, ypos;
 {
+	extern char  *index();
 	FLOAT  hv[2];
 	FVECT  rorg, rdir;
+	COLOR  cval;
+	register char  *cp;
 
-	if (!gotview) {		/* no view, no can do */
-		XBell(thedisplay, 0);
-		return(-1);
-	}
+	box.xmin = xpos; box.xsiz = 1;
+	box.ymin = ypos; box.ysiz = 1;
+	avgbox(cval);
+	scalecolor(cval, 1./exposure);
 	pix2loc(hv, &inpres, xpos-xoff, ypos-yoff);
-	if (viewray(rorg, rdir, &ourview, hv[0], hv[1]) < 0)
-		return(-1);
-	printf("%e %e %e ", rorg[0], rorg[1], rorg[2]);
-	printf("%e %e %e\n", rdir[0], rdir[1], rdir[2]);
+	if (!gotview || viewray(rorg, rdir, &ourview, hv[0], hv[1]) < 0)
+		rorg[0] = rorg[1] = rorg[2] =
+		rdir[0] = rdir[1] = rdir[2] = 0.;
+
+	for (cp = tout; *cp; cp++)	/* print what they asked for */
+		switch (*cp) {
+		case 'o':			/* origin */
+			printf("%e %e %e ", rorg[0], rorg[1], rorg[2]);
+			break;
+		case 'd':			/* direction */
+			printf("%e %e %e ", rdir[0], rdir[1], rdir[2]);
+			break;
+		case 'v':			/* radiance value */
+			printf("%e %e %e ", colval(cval,RED),
+					colval(cval,GRN), colval(cval,BLU));
+			break;
+		case 'l':			/* luminance */
+			printf("%e ", luminance(cval));
+			break;
+		case 'p':			/* pixel position */
+			printf("%d %d ", (int)(hv[0]*inpres.xr),
+					(int)(hv[1]*inpres.yr));
+			break;
+		}
+	putchar('\n');
 	fflush(stdout);
 	return(0);
 }
