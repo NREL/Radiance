@@ -34,7 +34,13 @@ typedef struct {
  *	and the modifier index.
  */
 
-typedef short  OBJECT;			/* index into object array */
+#ifndef  OBJECT
+#ifdef  BIGMEM
+#define  OBJECT		int		/* index to object array */
+#else
+#define  OBJECT		short		/* index to object array */
+#endif
+#endif
 
 typedef struct {
 	OBJECT  omod;			/* modifier number */
@@ -45,7 +51,13 @@ typedef struct {
 	long  lastrno;			/* last ray this was used with */
 }  OBJREC;
 
+#ifndef  MAXOBJBLK
+#ifdef  BIGMEM
+#define  MAXOBJBLK	4095		/* maximum number of object blocks */
+#else
 #define  MAXOBJBLK	511		/* maximum number of object blocks */
+#endif
+#endif
 
 extern OBJREC  *objblock[MAXOBJBLK];	/* the object blocks */
 extern OBJECT  nobjects;		/* # of objects */
