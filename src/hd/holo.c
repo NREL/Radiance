@@ -296,9 +296,10 @@ BYTE	r[2][2];
 
 
 double
-hdinter(gc, r, hp, ro, rd)	/* compute ray intersection with section */
+hdinter(gc, r, ed, hp, ro, rd)	/* compute ray intersection with section */
 register GCOORD	gc[2];	/* returned */
 BYTE	r[2][2];	/* returned */
+double	*ed;		/* returned (optional) */
 register HOLO	*hp;
 FVECT	ro, rd;		/* rd should be normalized */
 {
@@ -359,9 +360,8 @@ FVECT	ro, rd;		/* rd should be normalized */
 			return(FHUGE);		/* outside wall */
 		r[i][1] = 256. * (d - gc[i].i[1]);
 	}
-					/* return distance from entry point */
-	vt[0] = ro[0] - p[0][0];
-	vt[1] = ro[1] - p[0][1];
-	vt[2] = ro[2] - p[0][2];
-	return(DOT(vt,rd));
+
+	if (ed != NULL)			/* assign distance to exit point */
+		*ed = t1;
+	return(t0);			/* return distance to entry point */
 }
