@@ -124,7 +124,7 @@ char  *id;
 	XSizeHints	oursizhints;
 					/* check for unsupported stereo */
 #ifdef NOSTEREO
-	error(USER, "stereo display driver unavailable");
+	error(INTERNAL, "stereo display driver unavailable");
 #endif
 					/* open display server */
 	ourdisplay = XOpenDisplay(NULL);
@@ -272,41 +272,41 @@ register VIEW	*nv;
 		nv->vert = odev.v.vert;
 		return(0);
 	}
-	if (nv != &odev.v &&			/* resize window? */
-			(!FEQ(nv->horiz,odev.v.horiz) ||
-				!FEQ(nv->vert,odev.v.vert))) {
-		int	dw = DisplayWidth(ourdisplay,ourscreen);
-		int	dh = DisplayHeight(ourdisplay,ourscreen);
+	if (nv != &odev.v) {
+						/* resize window? */
+		if (!FEQ(nv->horiz,odev.v.horiz) ||
+				!FEQ(nv->vert,odev.v.vert)) {
+			int	dw = DisplayWidth(ourdisplay,ourscreen);
+			int	dh = DisplayHeight(ourdisplay,ourscreen);
 
-		dw -= 25;	/* for window frame */
-		dh -= 50;
+			dw -= 25;	/* for window frame */
+			dh -= 50;
 #ifdef STEREO
-		dh /= 2;
+			dh /= 2;
 #endif
-		odev.hres = 2.*VIEWDIST/pwidth *
-				tan(PI/180./2.*nv->horiz);
-		odev.vres = 2.*VIEWDIST/pheight *
-				tan(PI/180./2.*nv->vert);
-		if (odev.hres > dw) {
-			odev.vres = dw * odev.vres / odev.hres;
-			odev.hres = dw;
+			odev.hres = 2.*VIEWDIST/pwidth *
+					tan(PI/180./2.*nv->horiz);
+			odev.vres = 2.*VIEWDIST/pheight *
+					tan(PI/180./2.*nv->vert);
+			if (odev.hres > dw) {
+				odev.vres = dw * odev.vres / odev.hres;
+				odev.hres = dw;
+			}
+			if (odev.vres > dh) {
+				odev.hres = dh * odev.hres / odev.vres;
+				odev.vres = dh;
+			}
+			XResizeWindow(ourdisplay, gwind, odev.hres, odev.vres);
+			dev_input();	/* get resize event */
 		}
-		if (odev.vres > dh) {
-			odev.hres = dh * odev.hres / odev.vres;
-			odev.vres = dh;
-		}
-		XResizeWindow(ourdisplay, gwind, odev.hres, odev.vres);
-		dev_input();	/* get resize event */
+		copystruct(&odev.v, nv);	/* setview() already called */
+#ifdef STEREO
+		copystruct(&vwright, nv);
+		d = eyesepdist / sqrt(nv->hn2);
+		VSUM(vwright.vp, nv->vp, nv->hvec, d);
+		/* setview(&vwright);	-- Unnecessary */
+#endif
 	}
-	copystruct(&odev.v, nv);	/* setview() already called */
-	setglpersp(&odev.v);
-#ifdef STEREO
-	copystruct(&vwright, nv);
-	d = eyesepdist / sqrt(nv->hn2);
-	VSUM(vwright.vp, nv->vp, nv->hvec, d);
-	/* setview(&vwright);	-- Unnecessary */
-#endif
-	checkglerr("setting view");
 	wipeclean();
 	return(1);
 }
@@ -367,8 +367,7 @@ FVECT	d, p;
 		return;
 	}
 #endif
-	smNewSamp(c, d, p);		/* add to display representation */
-	if (p != NULL) {
+	if (p != NULL) {		/* add depth to our range */
 		depth = (p[0] - odev.v.vp[0])*d[0] +
 			(p[1] - odev.v.vp[1])*d[1] +
 			(p[2] - odev.v.vp[2])*d[2];
@@ -379,6 +378,7 @@ FVECT	d, p;
 				maxdpth = depth;
 		}
 	}
+	smNewSamp(c, d, p);		/* add to display representation */
 	if (!--rayqleft)
 		dev_flush();		/* flush output */
 }
@@ -387,22 +387,24 @@ FVECT	d, p;
 int
 dev_flush()			/* flush output */
 {
+	if (mapped) {
 #ifdef STEREO
-	pushright();			/* update right eye */
-	glClear(GL_DEPTH_BUFFER_BIT);
-	smUpdate(&vwright, 100);
+		pushright();			/* update right eye */
+		glClear(GL_DEPTH_BUFFER_BIT);
+		smUpdate(&vwright, 100);
 #ifdef DOBJ
-	dobj_render();			/* usually in foreground */
+		dobj_render();			/* usually in foreground */
 #endif
-	popright();			/* update left eye */
-	glClear(GL_DEPTH_BUFFER_BIT);
+		popright();			/* update left eye */
+		glClear(GL_DEPTH_BUFFER_BIT);
 #endif
-	smUpdate(&odev.v, 100);
+		smUpdate(&odev.v, 100);
+		checkglerr("rendering mesh");
 #ifdef DOBJ
-	dobj_render();
+		dobj_render();
 #endif
-	glFlush();			/* flush OGL */
-	checkglerr("flushing display");
+		glFlush();			/* flush OGL */
+	}
 	rayqleft = RAYQLEN;
 					/* flush X11 and return # pending */
 	return(odev.inpready = XPending(ourdisplay));
@@ -501,13 +503,15 @@ register FVECT	wp[2];
 
 
 static
-draw_grids()			/* draw holodeck section grids */
+draw_grids(fore)		/* draw holodeck section grids */
+int	fore;
 {
-	static BYTE	gridrgba[4] = {0x0, 0xff, 0xff, 0x00};
-
 	if (!mapped)
 		return;
-	glColor4ub(gridrgba[0], gridrgba[1], gridrgba[2], gridrgba[3]);
+	if (fore)
+		glColor4ub(0, 255, 255, 0);
+	else
+		glColor4ub(0, 0, 0, 0);
 	glBegin(GL_LINES);		/* draw each grid line */
 	gridlines(draw3dline);
 	glEnd();
@@ -524,30 +528,29 @@ int	dx, dy, mov, orb;
 	register int	li;
 				/* start with old view */
 	copystruct(&nv, &odev.v);
-				/* change view direction */
+				/* orient our motion */
 	if (viewray(v1, odir, &odev.v,
 			(dx+.5)/odev.hres, (dy+.5)/odev.vres) < -FTINY)
 		return(0);		/* outside view */
-	if (mov | orb) {
+	if (mov | orb) {	/* moving relative to geometry */
 #ifdef DOBJ
 		d = dobj_trace(NULL, v1, odir);	/* check objects */
-						/* is holodeck in front? */
-		if ((li = smFindSamp(v1, odir)) >= 0 &&
-				(rsL.wp[li][0] - nv.vp[0])*odir[0] +
-				(rsL.wp[li][1] - nv.vp[1])*odir[1] +
-				(rsL.wp[li][2] - nv.vp[2])*odir[2] < d)
+						/* check holodeck */
+		if ((li = smFindSamp(v1, odir)) >= 0) {
 			VCOPY(wip, rsL.wp[li]);
-		else if (d < .99*FHUGE)		/* object is closer */
-			VSUM(wip, nv.vp, odir, d);
-		else				/* nothing visible */
-			return(0);
+			if (d < .99*FHUGE && d*d <= dist2(v1, wip))
+				li = -1;	/* object is closer */
+		} else if (d >= .99*FHUGE)
+			return(0);		/* nothing visible */
+		if (li < 0)
+			VSUM(wip, v1, odir, d);	/* else get object point */
 #else
 		if ((li = smFindSamp(v1, odir)) < 0)
 			return(0);	/* not on window */
 		VCOPY(wip, rsL.wp[li]);
 #endif
-		VSUM(odir, wip, nv.vp, -1.);
-	} else
+		VSUM(odir, wip, odev.v.vp, -1.);
+	} else			/* panning with constant viewpoint */
 		VCOPY(nv.vdir, odir);
 	if (orb && mov) {		/* orbit left/right */
 		spinvector(odir, odir, nv.vup, d=MOVDEG*PI/180.*mov);
@@ -566,7 +569,7 @@ int	dx, dy, mov, orb;
 	}
 	if (!mov ^ !orb && headlocked) {	/* restore head height */
 		VSUM(v1, odev.v.vp, nv.vp, -1.);
-		d = DOT(v1, odev.v.vup);
+		d = DOT(v1, nv.vup);
 		VSUM(nv.vp, nv.vp, odev.v.vup, d);
 	}
 	if (setview(&nv) != NULL)
@@ -600,6 +603,7 @@ XButtonPressedEvent	*ebut;
 				&rootx, &rooty, &wx, &wy, &statemask))
 			break;		/* on another screen */
 
+		draw_grids(0);		/* clear old grid lines */
 		if (!moveview(wx, odev.vres-1-wy, movdir, movorb)) {
 			sleep(1);
 			lasttime++;
@@ -607,16 +611,14 @@ XButtonPressedEvent	*ebut;
 		}
 #ifdef STEREO
 		pushright();
-		glClear(GL_COLOR_BUFFER_BIT);
-		draw_grids();
+		draw_grids(1);
 		smUpdate(&vwright, qlevel);
 #ifdef DOBJ
 		dobj_render();
 #endif
 		popright();
 #endif
-		glClear(GL_COLOR_BUFFER_BIT);
-		draw_grids();
+		draw_grids(1);
 		smUpdate(&odev.v, qlevel);
 #ifdef DOBJ
 		dobj_render();
@@ -694,13 +696,15 @@ register VIEW	*vp;
 static
 wipeclean()			/* prepare for redraw */
 {
+					/* clear depth buffer */
 #ifdef STEREO
 	setstereobuf(STEREO_BUFFER_RIGHT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	setstereobuf(STEREO_BUFFER_LEFT);
 #endif
 	glClear(GL_DEPTH_BUFFER_BIT);
-	smClean();
+	smClean();			/* reset drawing routines */
+	setglpersp(&odev.v);		/* reset view & clipping planes */
 }
 
 
@@ -742,17 +746,18 @@ register XKeyPressedEvent  *ekey;
 			return;
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glDisable(GL_DEPTH_TEST);
-		draw_grids();
+		draw_grids(1);
 #ifdef STEREO
 		pushright();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		draw_grids();
+		draw_grids(1);
 		popright();
 #endif
 		glEnable(GL_DEPTH_TEST);
 		glFlush();
 		smInit(rsL.max_samp);		/* get rid of old values */
 		inpresflags |= DFL(DC_REDRAW);	/* resend values from server */
+		setglpersp(&odev.v);		/* reset clipping planes */
 		rayqleft = 0;			/* hold off update */
 		return;
 	case 'K':			/* kill rtrace process(es) */
