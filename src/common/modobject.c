@@ -158,7 +158,7 @@ register struct ohtab  *tab;
 	hval = shash(name);
 tryagain:
 	for (i = 0; i < tab->hsiz; i++) {
-		ndx = (hval + i*i) % tab->hsiz;
+		ndx = (hval + (unsigned long)i*i) % tab->hsiz;
 		if (tab->htab[ndx] == OVOID ||
 				!strcmp(objptr(tab->htab[ndx])->oname, name))
 			return(ndx);
