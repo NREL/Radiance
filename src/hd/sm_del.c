@@ -27,7 +27,7 @@ int id;
 
   tri = SM_NTH_TRI(sm,id);
   /* Add to the free_list */
-
+  smClear_tri_flags(sm,id);
   T_NEXT_FREE(tri) = SM_FREE_TRIS(sm);
   SM_FREE_TRIS(sm) = id;
   T_VALID_FLAG(tri) = -1;
@@ -48,14 +48,9 @@ int t_id;
      point to tri id as being the first triangle pointer
   */
   SM_SAMPLE_TRIS(sm)--;
-  if(!SM_IS_NTH_T_BASE(sm,t_id))
-  {
+  if(SM_IS_NTH_T_NEW(sm,t_id))
+     smNew_tri_cnt--;
 
-#if 0
-    if(SM_IS_NTH_T_NEW(sm,t_id))
-      smNew_tri_cnt--;
-#endif
-  }
   smClear_tri_flags(sm,t_id);
 
   smFree_tri(sm,t_id);
@@ -72,7 +67,10 @@ eNew_edge()
   if(Ecnt >= Max_edges)
     {
       if(Max_edges > 10000)
-	error(CONSISTENCY,"Too many edges in vertex loop\n");
+      {
+	eputs("Too many edges in vertex loop\n");
+	return(-1);
+      }
       Max_edges += 100;
       if(!(Edges = (EDGE *)realloc(Edges,(Max_edges+1)*sizeof(EDGE))))
 	goto memerr;
@@ -104,6 +102,7 @@ LIST **del_ptr;
     tri = SM_NTH_TRI(sm,t_id);
 
     e = eNew_edge();
+
     /* Get the  next vertex on the polygon boundary */
     v_id = T_WHICH_V(tri,id);
     b_id = (v_id + 1)%3;
@@ -123,6 +122,8 @@ LIST **del_ptr;
     while((t_next_id = T_NTH_NBR(t_next,b_id)) != t_id)
     {
       e = eNew_edge();
+      if(e== INVALID)
+	return(NULL);
       t_next = SM_NTH_TRI(sm,t_next_id);
       SET_E_NTH_VERT(e,0,v_next);
       SET_E_NTH_TRI(e,0,INVALID);
@@ -468,7 +469,12 @@ smRemoveVertex(sm,id)
      */
     del_list = NULL;
     b_list = smVertexPolygon(sm,id,&del_list);
-
+    if(!b_list)
+    {
+      if(del_list)
+	free_list(del_list);
+      return(FALSE);
+    }
     add_list = NULL;
     /* Triangulate polygonal hole  */
     if(!smTriangulate(sm,id,b_list,&add_list))
@@ -478,15 +484,6 @@ smRemoveVertex(sm,id)
     }
     else
     {
-#ifdef DEBUG
-      b_list = del_list;
-      while(b_list)
-      {
-	t_id = LIST_DATA(b_list);
-	b_list = LIST_NEXT(b_list);
-	T_VALID_FLAG(SM_NTH_TRI(sm,t_id))=-1;
-      }
-#endif
       while(del_list)
       {
 	t_id = pop_list(&del_list);

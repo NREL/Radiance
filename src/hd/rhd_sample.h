@@ -73,6 +73,7 @@ typedef struct samp {
 /* Max allowed angle of sample dir from current view */
 #define MAXANG		20
 #define MAXDIFF2	( MAXANG*MAXANG * (PI*PI/180./180.))
+#define MAXQUALITY      10000   /* Maximum quality for rendering rep */
 
 extern	SAMP rsL;			
 extern double	sDepthEps;	/* epsilon to compare depths (z fraction) */

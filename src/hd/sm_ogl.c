@@ -47,15 +47,24 @@ static QT_LUENT	*qt_htbl = NULL;	/* quadtree cache */
 static int	qt_hsiz = 0;		/* quadtree cache size */
 
 
+typedef struct _T_DEPTH {
+  int tri;
+  double depth;
+}T_DEPTH;
+
  /*
-  * smClean()		: display has been wiped clean
-  *
+  * smClean(tmflag)	: display has been wiped clean
+  *     int tmflag;
   * Called after display has been effectively cleared, meaning that all
   * geometry must be resent down the pipeline in the next call to smUpdate().
+  * If tmflag is set, tone-mapping should be performed
   */
-smClean()
+smClean(tmflag)
+   int tmflag;
 {
     smClean_notify = TRUE;
+    if(tmflag)
+       SM_TONE_MAP(smMesh) = 0;
 }
 
 int
@@ -281,17 +290,23 @@ smRender_stree(sm, qual)	/* render some quadtree triangles */
 SM *sm;
 int qual;
 {
-  int i, ntarget;
+  int i, n,ntarget;
   int lvlcnt[QT_MAX_LEVELS];
   STREE *st;
-
+  int4 *active_flag;
   if (qual <= 0)
     return;
 				/* compute rendering target */
   ntarget = 0;
-  SM_FOR_ALL_ACTIVE_TRIS(sm,i)
-    ntarget++;
-  ntarget = ntarget*qual/100;
+
+  active_flag = SM_NTH_FLAGS(sm,T_ACTIVE_FLAG);
+  for(n=((SM_NUM_TRI(sm)+31)>>5) +1; --n;)
+    if(active_flag[n])
+      for(i=0; i < 32; i++)
+	if(active_flag[n] & (1L << i))
+	  ntarget++;
+
+  ntarget = ntarget*qual/MAXQUALITY;
   if (!ntarget)
     return;
   for (i = QT_MAX_LEVELS; i--; )
@@ -328,12 +343,12 @@ FVECT vp,vc;
   /* NOTE:Triangles are defined clockwise:historical relative to spherical
      tris: could change
      */
+  if(bg0 && bg1 && bg2)
+    return;
+
   cnt = 0;
   d = 0.0;
   rgb[0] = rgb[1] = rgb[2] = 0;
-
-  if(bg0 && bg1 && bg2)
-    return;
 
   if(!bg0)
   {
@@ -456,17 +471,17 @@ double d;
 
 }
 
-smRender_mesh(sm,vp,clr)
+smRender_mesh(sm,vp)
 SM *sm;
 FVECT vp;
-int clr;
 {
-  int i,bg0,bg1,bg2;
+  int i,n,bg0,bg1,bg2;
   double d;
   int v0_id,v1_id,v2_id;
   TRI *tri;
   float (*wp)[3];
   BYTE  (*rgb)[3];
+  int4  *active_flag,*bg_flag;
 
   wp = SM_WP(sm);
   rgb =SM_RGB(sm);
@@ -476,39 +491,44 @@ int clr;
   /* First draw background polygons */
   glDisable(GL_DEPTH_TEST);
   glBegin(GL_TRIANGLES);
-  /* Maintain a list? */
-  SM_FOR_ALL_ACTIVE_BG_TRIS(sm,i)
-  {
-    if (clr) 
-      SM_CLR_NTH_T_NEW(sm,i);
-    tri = SM_NTH_TRI(sm,i);
-    v0_id = T_NTH_V(tri,0);
-    v1_id = T_NTH_V(tri,1);
-    v2_id = T_NTH_V(tri,2);
-    render_bg_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
-		   rgb[v2_id],vp,SM_VIEW_CENTER(sm),d);
-  }
+
+  active_flag = SM_NTH_FLAGS(sm,T_ACTIVE_FLAG);
+  bg_flag = SM_NTH_FLAGS(sm,T_BG_FLAG);
+  for(n=((SM_NUM_TRI(sm)+31)>>5) +1; --n;)
+    if(active_flag[n] & bg_flag[n])
+      for(i=0; i < 32; i++)
+	if(active_flag[n] & bg_flag[n] & (1L << i))
+	 {
+	   tri = SM_NTH_TRI(sm,(n<<5)+i);
+	   v0_id = T_NTH_V(tri,0);
+	   v1_id = T_NTH_V(tri,1);
+	   v2_id = T_NTH_V(tri,2);
+	   render_bg_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
+			 rgb[v2_id],vp,SM_VIEW_CENTER(sm),d);
+	 }
   glEnd();
+
   glEnable(GL_DEPTH_TEST);
   glBegin(GL_TRIANGLES);
-  SM_FOR_ALL_ACTIVE_FG_TRIS(sm,i)
-  {
-    if (clr) 
-      SM_CLR_NTH_T_NEW(sm,i);
-    tri = SM_NTH_TRI(sm,i);
-    v0_id = T_NTH_V(tri,0);
-    v1_id = T_NTH_V(tri,1);
-    v2_id = T_NTH_V(tri,2);
-    bg0 = SM_DIR_ID(sm,v0_id) || SM_BASE_ID(sm,v0_id);
-    bg1 = SM_DIR_ID(sm,v1_id) || SM_BASE_ID(sm,v1_id);
-    bg2 = SM_DIR_ID(sm,v2_id) || SM_BASE_ID(sm,v2_id);
-    if(!(bg0 || bg1 || bg2))
-	render_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
-		   rgb[v2_id])
-   else
-	render_mixed_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
-	   rgb[v2_id],bg0,bg1,bg2,vp,SM_VIEW_CENTER(sm));
-  }
+  for(n=((SM_NUM_TRI(sm)+31)>>5) +1; --n;)
+    if(active_flag[n])
+      for(i=0; i < 32; i++)
+	if((active_flag[n] & (1L << i)) && !(bg_flag[n] & (1L << i)))
+	 {
+	   tri = SM_NTH_TRI(sm,(n<<5)+i);
+	   v0_id = T_NTH_V(tri,0);
+	   v1_id = T_NTH_V(tri,1);
+	   v2_id = T_NTH_V(tri,2);
+	   bg0 = SM_DIR_ID(sm,v0_id) || SM_BASE_ID(sm,v0_id);
+	   bg1 = SM_DIR_ID(sm,v1_id) || SM_BASE_ID(sm,v1_id);
+	   bg2 = SM_DIR_ID(sm,v2_id) || SM_BASE_ID(sm,v2_id);
+	   if(!(bg0 || bg1 || bg2))
+	     render_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
+			rgb[v2_id])
+	       else
+		 render_mixed_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],
+		  rgb[v1_id],rgb[v2_id],bg0,bg1,bg2,vp,SM_VIEW_CENTER(sm));
+	 }
   glEnd();
 
   glPopAttrib();
@@ -519,16 +539,6 @@ compare_tri_depths(T_DEPTH *td1,T_DEPTH *td2)
 {
   double d;
 
-  if(td1->tri==-1)
-    {
-      if(td2->tri==-1)
-	return(0);
-      else 
-	return(-1);
-    }
-  if(td2->tri==-1)
-    return(1);
-
   d = td2->depth-td1->depth;
   
   if(d > 0.0)
@@ -537,118 +547,87 @@ compare_tri_depths(T_DEPTH *td1,T_DEPTH *td2)
     return(-1);
   
   return(0);
+
 }
 
-int
-compare_tri_depths_old(T_DEPTH *td1,T_DEPTH *td2)
+#ifdef DEBUG
+#define freebuf(b)  tempbuf(-1)
+#endif
+
+
+char *
+tempbuf(len)			/* get a temporary buffer */
+unsigned  len;
 {
-  double d;
+	extern char  *malloc(), *realloc();
+	static char  *tempbuf = NULL;
+	static unsigned  tempbuflen = 0;
 
-  d = td2->depth-td1->depth;
-  
-  if(d > 0.0)
-    return(1);
-  if(d < 0.0)
-    return(-1);
-  
-  return(0);
+#ifdef DEBUG
+	static int in_use=FALSE;
+
+	if(len == -1)
+	  {
+	    in_use = FALSE;
+	    return(NULL);
+	  }
+	if(in_use)
+        {
+	    eputs("Buffer in use:cannot allocate:tempbuf()\n");
+	    return(NULL);
+	}
+#endif
+	if (len > tempbuflen) {
+		if (tempbuflen > 0)
+			tempbuf = realloc(tempbuf, len);
+		else
+			tempbuf = malloc(len);
+		tempbuflen = tempbuf==NULL ? 0 : len;
+	}
+#ifdef DEBUG
+	in_use = TRUE;
+#endif
+	return(tempbuf);
 }
 
-LIST
-*smDepth_sort_tris(sm,vp,td)
+smOrder_new_tris(sm,vp,td)
 SM *sm;
 FVECT vp;
 T_DEPTH *td;
 {
-  int i,j,t_id,v;
+  int n,i,j,tcnt,v;
   TRI *tri;
   double d,min_d;
-  LIST *tlist=NULL;
   FVECT diff;
+  int4 *new_flag,*bg_flag;
 
-  i = 0;
-  SM_FOR_ALL_NEW_TRIS(sm,t_id)
-  {
-    if(SM_BG_TRI(sm,t_id))
-    {
-	tlist = push_data(tlist,t_id);
-	continue;
-    }
-    tri = SM_NTH_TRI(sm,t_id);
-    td[i].tri = t_id;
-    min_d = -1;
-    for(j=0;j < 3;j++)
-    {
-	v = T_NTH_V(tri,j);
-	if(!SM_BG_SAMPLE(sm,v))
-	{
-	    VSUB(diff,SM_NTH_WV(sm,v),vp);
-	    d = DOT(diff,diff);
-	    if(min_d == -1 || d < min_d)
-	       min_d = d;
-	}
-    }
-    td[i].depth = min_d;
-    i++;
+  tcnt=0;
+  new_flag = SM_NTH_FLAGS(sm,T_NEW_FLAG);
+  bg_flag = SM_NTH_FLAGS(sm,T_BG_FLAG);
+  for(n=((SM_NUM_TRI(sm)+31)>>5) +1; --n;)
+    if(new_flag[n] & ~bg_flag[n])
+      for(i=0; i < 32; i++)
+	if(new_flag[n] & (1L << i) & ~bg_flag[n])
+	 {
+	   tri = SM_NTH_TRI(sm,(n<<5)+i);
+	   td[tcnt].tri = (n << 5)+i;
+	   min_d = -1;
+	   for(j=0;j < 3;j++)
+	     {
+	       v = T_NTH_V(tri,j);
+	       if(!SM_BG_SAMPLE(sm,v))
+		 {
+		   VSUB(diff,SM_NTH_WV(sm,v),vp);
+		   d = DOT(diff,diff);
+		   if(min_d == -1 || d < min_d)
+		     min_d = d;
+		 }
+	     }
+	   td[tcnt++].depth = min_d;
   }
-  td[i].tri = -1;
-  if(i)
-     qsort((void *)td,i,sizeof(T_DEPTH),compare_tri_depths);
-  return(tlist);
-}
-
-
-
-LIST
-*smOrder_new_tris(sm,vp,td,sort)
-SM *sm;
-FVECT vp;
-T_DEPTH *td;
-int sort;
-{
-  int i,j,t_id,v;
-  TRI *tri;
-  double d,min_d;
-  LIST *tlist=NULL;
-  FVECT diff;
-
-  i = 0;
-  for(i=0; i < smNew_tri_cnt;i++)
-  {
-    t_id = smNew_tris[i].tri;
-
-    tri = SM_NTH_TRI(sm,t_id);
-    if(!T_IS_VALID(tri))
-    {
-      smNew_tris[i].tri = -1;
-      continue;
-    }
-    if(SM_BG_TRI(sm,t_id))
-    {
-	tlist = push_data(tlist,t_id);
-	smNew_tris[i].tri = -1;
-	continue;
-    }
-    if(!sort)
-      continue;
-    min_d = -1;
-    for(j=0;j < 3;j++)
-    {
-	v = T_NTH_V(tri,j);
-	if(!SM_BG_SAMPLE(sm,v))
-	{
-	    VSUB(diff,SM_NTH_WV(sm,v),vp);
-	    d = DOT(diff,diff);
-	    if(min_d == -1 || d < min_d)
-	       min_d = d;
-	}
-    }
-    td[i].depth = min_d;
-  }
-  if(!sort)
-    return(tlist);
-  qsort((void *)td,smNew_tri_cnt,sizeof(T_DEPTH),compare_tri_depths);
-  return(tlist);
+  td[tcnt].tri = -1;
+  if(tcnt)
+      qsort((void *)td,tcnt,sizeof(T_DEPTH),compare_tri_depths);
 }
 
 
@@ -657,90 +636,107 @@ SM *sm;
 FVECT vp;
 int clr;
 {
-  static T_DEPTH *td= NULL;
-  static int tsize = 0;
-  int i,v0_id,v1_id,v2_id,bg0,bg1,bg2;
+  int i,n,v0_id,v1_id,v2_id,bg0,bg1,bg2;
   GLint depth_test;
   double d;
-  LIST *bglist;
   TRI *tri;
   float (*wp)[3];
   BYTE  (*rgb)[3];
-
+  int4  *new_flag,*bg_flag;
+  T_DEPTH *td = NULL;
   /* For all of the NEW triangles (since last update): assume
      ACTIVE. Go through and sort on depth value (from vp). Turn
      Depth Buffer test off and render back-front
      */
-  /* NOTE: could malloc each time or hard code */
-#if 0
-  if(smNew_tri_cnt > tsize)
-  {
-    if(td)
-      free((char *)td);
-    td = (T_DEPTH *)malloc(smNew_tri_cnt*sizeof(T_DEPTH));
-    tsize = smNew_tri_cnt;
-  }
-  if(!td)
-  {
-    error(SYSTEM,"smUpdate_Rendered_mesh:Cannot allocate memory\n");
-  }
-  bglist = smDepth_sort_tris(sm,vp,td);
-#else
-  td = smNew_tris;
   if(!EQUAL_VEC3(SM_VIEW_CENTER(sm),vp))
-    bglist = smOrder_new_tris(sm,vp,td,1);
-  else
-    bglist = smOrder_new_tris(sm,vp,td,0);
+  {
+    /* Must depth sort if view points do not coincide */
+    td = (T_DEPTH *)tempbuf(smNew_tri_cnt*sizeof(T_DEPTH));
+#ifdef DEBUG
+    if(!td)
+	eputs("Cant create list:wont depth sort:smUpdate_rendered_mesh\n");
 #endif
+    smOrder_new_tris(sm,vp,td);
+  }
   wp = SM_WP(sm);
   rgb =SM_RGB(sm);
   /* Turn Depth Test off -- using Painter's algorithm */
   glPushAttrib(GL_DEPTH_BUFFER_BIT);
   glDepthFunc(GL_ALWAYS);
   d = (dev_zmin+dev_zmax)/2.0;
+
   /* Now render back-to front */
   /* First render bg triangles */
+  new_flag = SM_NTH_FLAGS(sm,T_NEW_FLAG);
+  bg_flag = SM_NTH_FLAGS(sm,T_BG_FLAG);
   glBegin(GL_TRIANGLES);
-  while(bglist)
-  {
-    i = pop_list(&bglist);
-    if (clr) 
-      SM_CLR_NTH_T_NEW(sm,i);
-    tri = SM_NTH_TRI(sm,i);
-    v0_id = T_NTH_V(tri,0);
-    v1_id = T_NTH_V(tri,1);
-    v2_id = T_NTH_V(tri,2);
-    render_bg_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
-		   rgb[v2_id],vp,SM_VIEW_CENTER(sm),d);
-  }
+  for(n=((SM_NUM_TRI(sm)+31)>>5) +1; --n;)
+    if(new_flag[n] & bg_flag[n])
+      for(i=0; i < 32; i++)
+	if(new_flag[n] & (1L << i) & bg_flag[n] )
+	 {
+	   tri = SM_NTH_TRI(sm,(n<<5)+i);
+	   v0_id = T_NTH_V(tri,0);
+	   v1_id = T_NTH_V(tri,1);
+	   v2_id = T_NTH_V(tri,2);
+	   render_bg_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
+			 rgb[v2_id],vp,SM_VIEW_CENTER(sm),d);
+	 }
   glEnd();
 
 
   glBegin(GL_TRIANGLES);
-  i=0;
-  while(i != smNew_tri_cnt)
+  if(!td)
   {
-    if(td[i].tri == -1)
-      {
-	i++;
-	continue;
-      }
-    if (clr) 
-      SM_CLR_NTH_T_NEW(sm,td[i].tri);
-    tri = SM_NTH_TRI(sm,td[i].tri);
-    v0_id = T_NTH_V(tri,0);
-    v1_id = T_NTH_V(tri,1);
-    v2_id = T_NTH_V(tri,2);
-    bg0 = SM_DIR_ID(sm,v0_id) || SM_BASE_ID(sm,v0_id);
-    bg1 = SM_DIR_ID(sm,v1_id) || SM_BASE_ID(sm,v1_id);
-    bg2 = SM_DIR_ID(sm,v2_id) || SM_BASE_ID(sm,v2_id);
-    if(!(bg0 || bg1 || bg2))
-      render_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
-		 rgb[v2_id])
-   else
-     render_mixed_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
-		      rgb[v2_id],bg0,bg1,bg2,vp,SM_VIEW_CENTER(sm));
-    i++;
+    for(n=((SM_NUM_TRI(sm)+31)>>5) +1; --n;)
+     if(new_flag[n] & ~bg_flag[n])
+      for(i=0; i < 32; i++)
+	if(new_flag[n] & (1L << i) & ~bg_flag[n])
+	 {
+	   tri = SM_NTH_TRI(sm,(n<<5)+i);
+	   /* Dont need to check for valid tri because flags are
+	      cleared on delete
+	    */
+	   v0_id = T_NTH_V(tri,0);
+	   v1_id = T_NTH_V(tri,1);
+	   v2_id = T_NTH_V(tri,2);
+	   bg0 = SM_DIR_ID(sm,v0_id) || SM_BASE_ID(sm,v0_id);
+	   bg1 = SM_DIR_ID(sm,v1_id) || SM_BASE_ID(sm,v1_id);
+	   bg2 = SM_DIR_ID(sm,v2_id) || SM_BASE_ID(sm,v2_id);
+	   if(!(bg0 || bg1 || bg2))
+	     render_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
+			rgb[v2_id])
+	   else
+	     render_mixed_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],
+			      rgb[v1_id],rgb[v2_id],bg0,bg1,bg2,vp,
+			      SM_VIEW_CENTER(sm));
+	 }
+  }
+  else
+  {
+    for(i=0; td[i].tri != -1;i++)
+    {
+      tri = SM_NTH_TRI(sm,td[i].tri);
+      /* Dont need to check for valid tri because flags are
+	 cleared on delete
+	 */
+      v0_id = T_NTH_V(tri,0);
+      v1_id = T_NTH_V(tri,1);
+      v2_id = T_NTH_V(tri,2);
+      bg0 = SM_DIR_ID(sm,v0_id) || SM_BASE_ID(sm,v0_id);
+      bg1 = SM_DIR_ID(sm,v1_id) || SM_BASE_ID(sm,v1_id);
+      bg2 = SM_DIR_ID(sm,v2_id) || SM_BASE_ID(sm,v2_id);
+      if(!(bg0 || bg1 || bg2))
+	render_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],rgb[v1_id],
+		   rgb[v2_id])
+	  else
+	    render_mixed_tri(wp[v0_id],wp[v1_id],wp[v2_id],rgb[v0_id],
+			     rgb[v1_id],rgb[v2_id],bg0,bg1,bg2,vp,
+			     SM_VIEW_CENTER(sm));
+    }
+#ifdef DEBUG
+    freebuf(td);
+#endif
   }
   glEnd();
 
@@ -765,19 +761,17 @@ smUpdate(view,qual)
    int qual;
 {
   double d;
-  int last_update;
-  int t;
+  int last_update,t;
+
+  if(!smMesh)
+    return;
 
   /* If view has moved beyond epsilon from canonical: must rebuild -
      epsilon is calculated as running avg of distance of sample points
      from canonical view: m = 1/(AVG(1/r)): some fraction of this
    */
-
-  if(!smMesh)
-    return;
-
   d = DIST(view->vp,SM_VIEW_CENTER(smMesh));
-  if(qual >= 100 && d > SM_ALLOWED_VIEW_CHANGE(smMesh))
+  if(qual >= MAXQUALITY  && d > SM_ALLOWED_VIEW_CHANGE(smMesh))
   {
       /* Re-build the mesh */
 #ifdef TEST_DRIVER
@@ -787,28 +781,29 @@ smUpdate(view,qual)
       smRebuild_mesh(smMesh,view);
       smClean_notify = TRUE;
   }
-  /* This is our final update iff qual==100 and view==&odev.v */
-  last_update = qual>=100 && view==&(odev.v);
+  /* This is our final update iff qual==MAXQUALITY and view==&odev.v */
+  last_update = qual>=MAXQUALITY && view==&(odev.v);
   /* Check if we should draw ALL triangles in current frustum */
-  if(smClean_notify || smNew_tri_cnt > SM_SAMPLE_TRIS(smMesh)*SM_INC_PERCENT)
+  if(smClean_notify || smNew_tri_cnt>SM_SAMPLE_TRIS(smMesh)*SM_INC_PERCENT)
   {
 #ifdef TEST_DRIVER
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 #else
-    if ( SM_TONE_MAP(smMesh) < SM_NUM_SAMP(smMesh))
+    if (SM_TONE_MAP(smMesh) < SM_NUM_SAMP(smMesh))
     {
        tmClearHisto();
        tmAddHisto(SM_BRT(smMesh),SM_NUM_SAMP(smMesh),1);
-       tmComputeMapping(0.,0.,0.);
+       if(tmComputeMapping(0.,0.,0.) != TM_E_OK)
+	 return;
        tmMapPixels(SM_RGB(smMesh),SM_BRT(smMesh),SM_CHR(smMesh),
 		   SM_NUM_SAMP(smMesh));
     }
 #endif
     mark_tris_in_frustum(view);
-    if (qual <= 75)
+    if (qual <= (MAXQUALITY*3/4))
 	smRender_stree(smMesh,qual);
     else
-	smRender_mesh(smMesh,view->vp,last_update);
+	smRender_mesh(smMesh,view->vp);
 #ifdef TEST_DRIVER
     glFlush();
     glutSwapBuffers();
@@ -830,7 +825,7 @@ smUpdate(view,qual)
 	if(tmComputeMapping(0.,0.,0.) != TM_E_OK)
 	   return;
     }
-    tmMapPixels(SM_NTH_RGB(smMesh,t),&SM_NTH_BRT(smMesh,t),
+      tmMapPixels(SM_NTH_RGB(smMesh,t),&SM_NTH_BRT(smMesh,t),
 		   SM_NTH_CHR(smMesh,t), SM_NUM_SAMP(smMesh)-t);
 	
 #endif    
@@ -847,10 +842,16 @@ smUpdate(view,qual)
   {
     smClean_notify = FALSE;
     smNew_tri_cnt = 0;
-#if 0   
     smClear_flags(smMesh,T_NEW_FLAG);
-#endif
     qtCache_init(0);
   }
 
 }
+
+
+
+
+
+
+
+

@@ -89,7 +89,7 @@ typedef struct _TRI {
 #define T_NEXT_AVAILABLE(t) ((t)->nbrs[0])
 #define T_VALID_FLAG(t) ((t)->nbrs[1])
 #define T_IS_VALID(t)  (T_VALID_FLAG(t)!=-1)
-#define T_FLAGS 3
+#define T_FLAGS 4
 
 typedef struct _SM {
     FVECT view_center;    /* Canonical view center defining unit sphere */
@@ -111,6 +111,7 @@ typedef struct _SM {
 #define T_ACTIVE_FLAG   0
 #define T_NEW_FLAG      1
 #define T_BASE_FLAG     2
+#define T_BG_FLAG       3
 
 #define SM_VIEW_CENTER(m)             ((m)->view_center)
 #define SM_SAMP(m)                    ((m)->samples)
@@ -134,14 +135,17 @@ typedef struct _SM {
 #define SM_IS_NTH_T_ACTIVE(sm,n)     SM_IS_NTH_T_FLAG(sm,n,T_ACTIVE_FLAG)
 #define SM_IS_NTH_T_BASE(sm,n)       SM_IS_NTH_T_FLAG(sm,n,T_BASE_FLAG)
 #define SM_IS_NTH_T_NEW(sm,n)        SM_IS_NTH_T_FLAG(sm,n,T_NEW_FLAG)
+#define SM_IS_NTH_T_BG(sm,n)        SM_IS_NTH_T_FLAG(sm,n,T_BG_FLAG)
 
 #define SM_SET_NTH_T_ACTIVE(sm,n)    SM_SET_NTH_T_FLAG(sm,n,T_ACTIVE_FLAG)
 #define SM_SET_NTH_T_BASE(sm,n)      SM_SET_NTH_T_FLAG(sm,n,T_BASE_FLAG)
 #define SM_SET_NTH_T_NEW(sm,n)       SM_SET_NTH_T_FLAG(sm,n,T_NEW_FLAG)
+#define SM_SET_NTH_T_BG(sm,n)        SM_SET_NTH_T_FLAG(sm,n,T_BG_FLAG)
 
 #define SM_CLR_NTH_T_ACTIVE(sm,n)   SM_CLR_NTH_T_FLAG(sm,n,T_ACTIVE_FLAG)
 #define SM_CLR_NTH_T_BASE(sm,n)     SM_CLR_NTH_T_FLAG(sm,n,T_BASE_FLAG)
 #define SM_CLR_NTH_T_NEW(sm,n)      SM_CLR_NTH_T_FLAG(sm,n,T_NEW_FLAG)
+#define SM_CLR_NTH_T_BG(sm,n)       SM_CLR_NTH_T_FLAG(sm,n,T_BG_FLAG)
 
 #define SM_NTH_TRI(m,n)               (&(SM_TRIS(m)[(n)]))
 #define SM_NTH_VERT(m,n)              (SM_VERTS(m)[(n)])
@@ -166,24 +170,6 @@ typedef struct _SM {
 #define SM_TONE_MAP(m)               S_TONE_MAP(SM_SAMP(m))
 
 #define SM_ALLOWED_VIEW_CHANGE(m) (SM_NUM_SAMP(m)/smDist_sum*SM_VIEW_FRAC)
-
-#define SM_FOR_ALL_FLAGGED_TRIS(m,i,w,b) for(i=smNext_tri_flag_set(m,0,w,b); \
-i < SM_NUM_TRI(m); i=smNext_tri_flag_set(m,i+1,w,b))
-
-#define SM_FOR_ALL_ACTIVE_TRIS(m,i) SM_FOR_ALL_FLAGGED_TRIS(m,i,T_ACTIVE_FLAG,0)
-#if 0
-#define SM_FOR_ALL_NEW_TRIS(m,i) SM_FOR_ALL_FLAGGED_TRIS(m,i,T_NEW_FLAG,0)
-#else
-#define SM_FOR_ALL_NEW_TRIS(m,i) for(i=0; i < smNew_tri_cnt; i++)
-#endif
-#define SM_FOR_ALL_BASE_TRIS(m,i) SM_FOR_ALL_FLAGGED_TRIS(m,i,T_BASE_FLAG,0)
-#define SM_FOR_ALL_VALID_TRIS(m,i) for(i=smNext_valid_tri(m,0); \
-i < SM_NUM_TRI(m); i=smNext_valid_tri(m,i+1))
-
-#define SM_FOR_ALL_ACTIVE_FG_TRIS(m,i) SM_FOR_ALL_FLAGGED_TRIS(m,i,T_ACTIVE_FLAG,1)
-
-#define SM_FOR_ALL_ACTIVE_BG_TRIS(m,i) SM_FOR_ALL_FLAGGED_TRIS(m,i,T_ACTIVE_FLAG,2)
-
 
 #define SM_FOR_ALL_ADJACENT_TRIS(sm,id,t) for(t=smTri_next_ccw_nbr(sm,t,id); \
 t!=SM_NTH_TRI(sm,SM_NTH_VERT(sm,id)); t=smTri_next_ccw_nbr(sm,t,id))
@@ -220,13 +206,6 @@ t!=SM_NTH_TRI(sm,SM_NTH_VERT(sm,id)); t=smTri_next_ccw_nbr(sm,t,id))
 
 #define smClear_vert(sm,id)    (SM_NTH_VERT(sm,id) = INVALID)
 
-#define SQRT3_INV 0.5773502692
-
-typedef struct _T_DEPTH {
-  int tri;
-  double depth;
-}T_DEPTH;
-
 typedef struct _RT_ARGS_{
   FVECT orig,dir;
   int t_id;
@@ -241,9 +220,6 @@ typedef struct _ADD_ARGS {
 
 extern SM *smMesh;
 extern int smNew_tri_cnt;
-extern int smNew_tri_size;
-extern T_DEPTH *smNew_tris;
-
 extern double smDist_sum;
 
 
