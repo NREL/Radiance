@@ -12,15 +12,13 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+#include  <math.h>
+
 #include  "color.h"
 
 #define  MINELEN	8	/* minimum scanline length for encoding */
 #define  MAXELEN	0x7fff	/* maximum scanline length for encoding */
 #define  MINRUN		4	/* minimum run length */
-
-#ifndef frexp
-extern double  frexp();
-#endif
 
 
 char *
