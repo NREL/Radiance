@@ -18,11 +18,6 @@ static char SCCSid[] = "$SunId$ SGI";
 #define BKBSIZE		256		/* beam clump size (kilobytes) */
 #endif
 
-#define flgop(p,i,op)		((p)[(i)>>5] op (1L<<((i)&0x1f)))
-#define isset(p,i)		flgop(p,i,&)
-#define setfl(p,i)		flgop(p,i,|=)
-#define clrfl(p,i)		flgop(p,i,&=~)
-
 char	*progname;
 char	tempfile[128];
 
@@ -130,182 +125,38 @@ char	*infn, *outfn;
 	fclose(infp);
 	if (fclose(outfp) == EOF)
 		error(SYSTEM, "file flushing error in rhinitcopy");
-					/* flush everything manually hence */
-	hdcachesize = 0;
+					/* check cache size */
+	if (BKBSIZE*1024*1.5 > hdcachesize)
+		hdcachesize = BKBSIZE*1024*1.5;
 					/* return input position */
 	return(ifpos);
 }
 
 
-gcshifti(gc, ia, di, hp)	/* shift cell row or column */
-register GCOORD	*gc;
-int	ia, di;
-register HOLO	*hp;
+static HOLO	*hout;		/* output holodeck section */
+
+static int
+xferbeam(bp, hb)		/* transfer the given beam to hout and free */
+register BEAM	*bp;
+HDBEAMI	*hb;
 {
-	int	nw;
-
-	if (di > 0) {
-		if (++gc->i[ia] >= hp->grid[((gc->w>>1)+1+ia)%3]) {
-			nw = ((gc->w&~1) + (ia<<1) + 3) % 6;
-			gc->i[ia] = gc->i[1-ia];
-			gc->i[1-ia] = gc->w&1 ? hp->grid[((nw>>1)+2-ia)%3]-1 : 0;
-			gc->w = nw;
-		}
-	} else if (di < 0) {
-		if (--gc->i[ia] < 0) {
-			nw = ((gc->w&~1) + (ia<<1) + 2) % 6;
-			gc->i[ia] = gc->i[1-ia];
-			gc->i[1-ia] = gc->w&1 ? hp->grid[((nw>>1)+2-ia)%3]-1 : 0;
-			gc->w = nw;
-		}
-	}
-}
-
-
-mkneighgrid(ng, hp, gc)		/* compute neighborhood for grid cell */
-GCOORD	ng[3*3];
-HOLO	*hp;
-GCOORD	*gc;
-{
-	GCOORD	gci0;
-	register int	i, j;
-
-	for (i = 3; i--; ) {
-		copystruct(&gci0, gc);
-		gcshifti(&gci0, 0, i-1, hp);
-		for (j = 3; j--; ) {
-			copystruct(ng+(3*i+j), &gci0);
-			gcshifti(ng+(3*i+j), gci0.w==gc->w, j-1, hp);
-		}
-	}
-}
-
-
-int	bneighlist[9*9-1];
-int	bneighrem;
-
-#define nextneigh()	(bneighrem<=0 ? 0 : bneighlist[--bneighrem])
-
-int
-firstneigh(hp, b)		/* initialize neighbor list and return first */
-HOLO	*hp;
-int	b;
-{
-	GCOORD	wg0[9], wg1[9], bgc[2];
-	int	i, j;
-
-	hdbcoord(bgc, hp, b);
-	mkneighgrid(wg0, hp, bgc);
-	mkneighgrid(wg1, hp, bgc+1);
-	bneighrem = 0;
-	for (i = 9; i--; )
-		for (j = 9; j--; ) {
-			if (i == 4 & j == 4)	/* don't copy starting beam */
-				continue;
-			if (wg0[i].w == wg1[j].w)
-				continue;
-			copystruct(bgc, wg0+i);
-			copystruct(bgc+1, wg1+j);
-			bneighlist[bneighrem++] = hdbindex(hp, bgc);
-#ifdef DEBUG
-			if (bneighlist[bneighrem-1] <= 0)
-				error(CONSISTENCY, "bad beam in firstneigh");
-#endif
-		}
-	return(nextneigh());
-}
-
-
-BEAMI	*beamdir;
-
-int
-bpcmp(b1p, b2p)			/* compare beam positions on disk */
-int	*b1p, *b2p;
-{
-	register long	pdif = beamdir[*b1p].fo - beamdir[*b2p].fo;
-
-	if (pdif > 0L) return(1);
-	if (pdif < 0L) return(-1);
+	bcopy((char *)hdbray(bp), (char *)hdnewrays(hout,hb->b,bp->nrm),
+			bp->nrm*sizeof(RAYVAL));
+	hdfreebeam(hb->h, hb->b);
 	return(0);
 }
-
 
 copysect(ifd, ofd)		/* copy holodeck section from ifd to ofd */
 int	ifd, ofd;
 {
-	static short	primes[] = {9431,6803,4177,2659,1609,887,587,251,47,1};
-	register HOLO	*hinp;
-	HOLO	*hout;
-	register BEAM	*bp;
-	unsigned int4	*bflags;
-	int	*bqueue;
-	int	bqlen;
-	int4	bqtotal;
-	int	bc, bci, bqc, myprime;
-	register int	i;
+	HOLO	*hinp;
 					/* load input section directory */
 	hinp = hdinit(ifd, NULL);
 					/* create output section directory */
 	hout = hdinit(ofd, (HDGRID *)hinp);
-					/* allocate beam queue */
-	bqueue = (int *)malloc(nbeams(hinp)*sizeof(int));
-	bflags = (unsigned int4 *)calloc((nbeams(hinp)>>5)+1,
-			sizeof(unsigned int4));
-	if (bqueue == NULL | bflags == NULL)
-		error(SYSTEM, "out of memory in copysect");
-					/* mark empty beams as done */
-	for (i = nbeams(hinp); i > 0; i--)
-		if (!hinp->bi[i].nrd)
-			setfl(bflags, i);
-					/* pick a good prime step size */
-	for (i = 0; primes[i]<<5 >= nbeams(hinp); i++)
-		;
-	while ((myprime = primes[i++]) > 1)
-		if (nbeams(hinp) % myprime)
-			break;
-					/* add each input beam and neighbors */
-	for (bc = bci = nbeams(hinp); bc > 0; bc--,
-			bci += bci>myprime ? -myprime : nbeams(hinp)-myprime) {
-		if (isset(bflags, bci))
-			continue;
-		bqueue[0] = bci;		/* initialize queue */
-		bqlen = 1;
-		bqtotal = hinp->bi[bci].nrd;
-		setfl(bflags, bci);
-						/* run through growing queue */
-		for (bqc = 0; bqc < bqlen; bqc++) {
-						/* add neighbors until full */
-			for (i = firstneigh(hinp,bqueue[bqc]); i > 0;
-					i = nextneigh()) {
-				if (isset(bflags, i))	/* done already? */
-					continue;
-				bqueue[bqlen++] = i;	/* add it */
-				bqtotal += hinp->bi[i].nrd;
-				setfl(bflags, i);
-				if (bqtotal >= BKBSIZE*1024/sizeof(RAYVAL))
-					break;		/* queue full */
-			}
-			if (i > 0)
-				break;
-		}
-		beamdir = hinp->bi;		/* sort queue */
-		qsort((char *)bqueue, bqlen, sizeof(*bqueue), bpcmp);
-						/* transfer each beam */
-		for (i = 0; i < bqlen; i++) {
-			bp = hdgetbeam(hinp, bqueue[i]);
-			bcopy((char *)hdbray(bp),
-				(char *)hdnewrays(hout,bqueue[i],bp->nrm),
-					bp->nrm*sizeof(RAYVAL));
-			hdfreebeam(hinp, bqueue[i]);
-		}
-		hdfreebeam(hout, 0);		/* flush output block */
-#ifdef DEBUG
-		hdsync(hout, 0);
-#endif
-	}
-					/* we're done -- clean up */
-	free((char *)bqueue);
-	free((char *)bflags);
+					/* clump the beams */
+	clumpbeams(hinp, 0, BKBSIZE*1024, xferbeam);
+					/* clean up */
 	hddone(hinp);
 	hddone(hout);
 }
