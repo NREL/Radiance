@@ -5,12 +5,7 @@ static const char	RCSid[] = "$Id$";
  * Compute 4-byte direction code (assume this fits into int)
  */
 
-#include <math.h>
-#include "fvect.h"
-
-#ifndef int4
-#define int4	int
-#endif
+#include "standard.h"
 
 #define	DCSCALE		11585.2		/* (1<<13)*sqrt(2) */
 #define FXNEG		01
@@ -51,6 +46,7 @@ FVECT	dv;
 }
 
 
+void
 decodedir(dv, dc)	/* decode a normalized direction vector */
 register FVECT	dv;	/* returned */
 register int4	dc;

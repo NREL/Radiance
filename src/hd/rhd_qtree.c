@@ -355,10 +355,11 @@ FVECT	d, p;
 	else
 		VCOPY(qtL.wp[li], p);
 	qtL.wd[li] = encodedir(d);
-	tmCvColrs(&qtL.brt[li], qtL.chr[li], c, 1);
+	tmCvColrs(&qtL.brt[li], qtL.chr[li], (COLR *)c, 1);
 	if (putleaf(li, 1)) {
 		if (mapit)
-			tmMapPixels(qtL.rgb+li, qtL.brt+li, qtL.chr+li, 1);
+			tmMapPixels((BYTE *)(qtL.rgb+li), qtL.brt+li,
+					(BYTE *)(qtL.chr+li), 1);
 		if (--rayqleft == 0)
 			dev_flush();		/* flush output */
 	}
@@ -409,12 +410,12 @@ int	redo;
 		if (tmComputeMapping(0., 0., 0.) != TM_E_OK)
 			return(0);
 	}
-	if (tmMapPixels(qtL.rgb+aorg, qtL.brt+aorg,
-			qtL.chr+aorg, alen) != TM_E_OK)
+	if (tmMapPixels((BYTE *)(qtL.rgb+aorg), qtL.brt+aorg,
+			(BYTE *)(qtL.chr+aorg), alen) != TM_E_OK)
 		return(0);
 	if (blen > 0)
-		tmMapPixels(qtL.rgb+borg, qtL.brt+borg,
-				qtL.chr+borg, blen);
+		tmMapPixels((BYTE *)(qtL.rgb+borg), qtL.brt+borg,
+				(BYTE *)(qtL.chr+borg), blen);
 	qtL.tml = qtL.tl;
 	return(1);
 }

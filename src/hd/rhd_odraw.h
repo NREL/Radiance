@@ -1,10 +1,8 @@
-/* RCSid: $Id$ */
+/* RCSid $Id$ */
 /*
  * Header for OpenGL cone drawing routines with depth buffer checks.
  */
 
-#undef NOPROTO
-#define NOPROTO 1
 #include "color.h"
 #include "tonemap.h"
 #include "rhdriver.h"
