@@ -16,27 +16,17 @@ LIBDIR = /usr/local/lib/ray
 
 INSTDIR = /lumen/lumen/ray/bin.sun3
 
-COMPAT = bmalloc.o
-
 all:	oconv getbbox
 
-oconv:	misc.o objset.o oconv.o octree.o readobj.o \
-readoct.o sphere.o fvect.o otypes.o writeoct.o o_face.o face.o plocate.o xf.o \
-clip.o cone.o o_cone.o instance.o o_instance.o bbox.o savestr.o header.o \
-mat4.o fgetline.o initotypes.o $(COMPAT)
-	cc $(CFLAGS) -o oconv oconv.o readoct.o octree.o objset.o \
-readobj.o writeoct.o fvect.o otypes.o sphere.o misc.o o_face.o \
-face.o plocate.o clip.o cone.o o_cone.o instance.o o_instance.o mat4.o xf.o \
-bbox.o savestr.o header.o fgetline.o initotypes.o $(COMPAT) -lm
+oconv:	oconv.o sphere.o writeoct.o o_face.o plocate.o \
+clip.o o_cone.o o_instance.o bbox.o initotypes.o
+	cc $(CFLAGS) -o oconv oconv.o writeoct.o sphere.o o_face.o \
+plocate.o clip.o o_cone.o o_instance.o bbox.o \
+initotypes.o ../common/librt.a -lm
 
-getbbox:	getbbox.o objset.o octree.o readobj2.o \
-readoct.o fvect.o otypes.o face.o xf.o misc.o \
-cone.o instance.o bbox.o savestr.o header.o \
-mat4.o fgetline.o initotypes2.o $(COMPAT)
-	cc $(CFLAGS) -o getbbox getbbox.o readoct.o octree.o objset.o \
-readobj2.o fvect.o otypes.o misc.o \
-face.o cone.o instance.o mat4.o xf.o \
-bbox.o savestr.o header.o fgetline.o initotypes2.o $(COMPAT) -lm
+getbbox:	getbbox.o readobj2.o bbox.o initotypes2.o
+	cc $(CFLAGS) -o getbbox getbbox.o readobj2.o \
+bbox.o initotypes2.o ../common/librt.a -lm
 
 install:	oconv getbbox
 	cp oconv getbbox $(INSTDIR)
@@ -47,30 +37,22 @@ clean:
 oconv.o:	oconv.c
 	cc $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c oconv.c
 
-xf.o:	xf.c
-	cc $(CFLAGS) -DINVXF -c xf.c
+bbox.o initotypes.o o_cone.o o_face.o \
+o_instance.o oconv.o sphere.o writeoct.o:	standard.h mat4.h fvect.h
 
-bbox.o cone.o face.o initotypes.o misc.o o_cone.o o_face.o \
-o_instance.o objset.o oconv.o instance.o octree.o otypes.o readobj.o \
-readoct.o sphere.o writeoct.o xf.o:	standard.h mat4.h fvect.h
+initotypes.o o_cone.o o_face.o oconv.o \
+sphere.o writeoct.o:	octree.h
 
-initotypes.o o_cone.o o_face.o objset.o oconv.o octree.o \
-readoct.o sphere.o writeoct.o:	octree.h
+bbox.o o_cone.o o_face.o o_instance.o oconv.o \
+sphere.o writeoct.o:	object.h
 
-bbox.o cone.o face.o o_cone.o o_face.o o_instance.o objset.o oconv.o \
-instance.o otypes.o readobj.o readoct.o sphere.o writeoct.o:	object.h
+bbox.o initotypes.o oconv.o \
+sphere.o writeoct.o:	otypes.h
 
-bbox.o cone.o initotypes.o objset.o oconv.o otypes.o \
-readobj.o readoct.o sphere.o writeoct.o:	otypes.h
+bbox.o o_cone.o:	cone.h
 
-mat4.o:		mat4.h fvect.h
+bbox.o o_face.o:	face.h
 
-fvect.o:	fvect.h
-
-bbox.o cone.o o_cone.o:	cone.h
-
-bbox.o face.o o_face.o:	face.h
-
-bbox.o o_instance.o instance.o:	instance.h octree.h
+bbox.o o_instance.o:	instance.h octree.h
 
 clip.o o_face.o plocate.o:	plocate.h
