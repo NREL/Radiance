@@ -67,6 +67,7 @@ noise3d(i,x,y,z) = select(i, noise3a(x,y,z), noise3b(x,y,z), noise3c(x,y,z));
 bound(a,x,b) : if(a-x, a, if(x-b, b, x));
 Acos(x) : acos(bound(-1,x,1));
 Asin(x) : asin(bound(-1,x,1));
+Atan2(y,x) : if(x*x+y*y, atan2(y,x), 0);
 Exp(x) : if(-x-100, 0, exp(x));
 Sqrt(x) : if(x, sqrt(x), 0);
 
