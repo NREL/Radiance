@@ -24,7 +24,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #endif
 
 char	rtcom[] = "rtrace -h- -otp -fa -x 1";
-char	xicom[] = "ximage";
+char	xicom[] = "ximage -c 256";
 
 VIEW	ourview = STDVIEW;		/* view for picture */
 RESOLU	ourres;				/* picture resolution */
