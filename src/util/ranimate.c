@@ -798,7 +798,7 @@ int	frame;
 		return(1);
 					/* add frame to recovered list */
 	if (nrfrms)
-		rfrm = (int *)realloc((char *)rfrm, (nrfrms+1)*sizeof(int));
+		rfrm = (int *)realloc((void *)rfrm, (nrfrms+1)*sizeof(int));
 	else
 		rfrm = (int *)malloc(sizeof(int));
 	if (rfrm == NULL) {

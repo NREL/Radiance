@@ -197,10 +197,10 @@ OBJECT	ti;
 
 int
 getmeshvert(vp, mp, vid, what)	/* get triangle vertex from ID */
-MESHVERT*vp;
-MESH	*mp;
-int4	vid;
-int	what;
+MESHVERT	*vp;
+MESH		*mp;
+int4		vid;
+int		what;
 {
 	int		pn = vid >> 8;
 	MESHPATCH	*pp;

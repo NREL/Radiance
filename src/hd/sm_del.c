@@ -62,7 +62,7 @@ eNew_edge()
 	error(CONSISTENCY,"Too many edges in vertex loop\n");
 #endif
       Max_edges += 100;
-      if(!(Edges = (EDGE *)realloc(Edges,(Max_edges+1)*sizeof(EDGE))))
+      if(!(Edges = (EDGE *)realloc((void *)Edges,(Max_edges+1)*sizeof(EDGE))))
 	goto memerr;
     }
 #ifdef DEBUG

@@ -49,7 +49,7 @@ markvirtuals()			/* find and mark virtual sources */
 		if (nvobjects == 0)
 			vobject = (OBJECT *)malloc(sizeof(OBJECT));
 		else
-			vobject = (OBJECT *)realloc((char *)vobject,
+			vobject = (OBJECT *)realloc((void *)vobject,
 				(unsigned)(nvobjects+1)*sizeof(OBJECT));
 		if (vobject == NULL)
 			error(SYSTEM, "out of memory in addvirtuals");

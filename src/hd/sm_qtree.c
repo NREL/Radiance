@@ -52,7 +52,7 @@ qtAlloc()			/* allocate a quadtree */
 	   error(SYSTEM,"qtAlloc(): Unable to allocate memory\n");
 
 	/* Realloc the per/node flags */
-	quad_flag = (int4 *)realloc((char *)quad_flag,
+	quad_flag = (int4 *)realloc((void *)quad_flag,
 			(QT_BLOCK(freet)+1)*((QT_BLOCK_SIZE+7)>>3));
 	if (quad_flag == NULL)
 	   error(SYSTEM,"qtAlloc(): Unable to allocate memory\n");

@@ -257,7 +257,7 @@ int resize;
 #endif
 	if (len > tempbuflen) {
 		if (tempbuflen > 0)
-			tempbuf = realloc(tempbuf, len);
+			tempbuf = realloc((void *)tempbuf, len);
 		else
 			tempbuf = malloc(len);
 		tempbuflen = tempbuf==NULL ? 0 : len;

@@ -217,7 +217,7 @@ tryagain:
 						/* remember position */
 		i = os - ostable[osentry];
 		os = ostable[osentry] = (OBJECT *)realloc(
-				(char *)ostable[osentry],
+				(void *)ostable[osentry],
 				(unsigned)(i+oset[0]+2)*sizeof(OBJECT));
 		if (os == NULL)
 			goto memerr;

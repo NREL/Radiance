@@ -94,7 +94,7 @@ VARIABLE	*(*mv)();
 			while (*cp++)
 				;
 		i = cp - vp->value;
-		vp->value = (char *)realloc(vp->value, i+n+1);
+		vp->value = (char *)realloc((void *)vp->value, i+n+1);
 	} else
 		vp->value = (char *)malloc(n+1);
 	if (vp->value == NULL) {

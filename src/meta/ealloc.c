@@ -7,9 +7,8 @@ static const char	RCSid[] = "$Id$";
 
 
 #include  <stdio.h>
+#include  <stdlib.h>
 
-
-char  *malloc(), *realloc(), *emalloc(), *ecalloc(), *erealloc();
 
 
 char *
@@ -65,7 +64,7 @@ unsigned  n;
 	if (cp == NULL)
 		cp = malloc(n);
 	else 
-		cp = realloc(cp, n);
+		cp = realloc((void *)cp, n);
 
 	if (cp != NULL)
 		return(cp);
@@ -78,5 +77,5 @@ unsigned  n;
 efree(cp)			/* free memory allocated by above */
 char  *cp;
 {
-	free(cp);
+	free((void *)cp);
 }

@@ -85,7 +85,7 @@ BYTE	cmap[][3];
 			xr->cdefs[xr->ncolors].flags = DoRed|DoGreen|DoBlue;
 			xr->pmap[*p] = xr->ncolors++;
 		}
-	xr->cdefs = (XColor *)realloc((char *)xr->cdefs,
+	xr->cdefs = (XColor *)realloc((void *)xr->cdefs,
 			xr->ncolors*sizeof(XColor));
 	if (xr->cdefs == NULL)
 		return(0);

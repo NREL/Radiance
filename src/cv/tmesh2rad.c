@@ -270,7 +270,7 @@ double	x, y, z;
 		if (vlist == NULL)
 			vlist = (VERTEX *)malloc(nverts*sizeof(VERTEX));
 		else
-			vlist = (VERTEX *)realloc((char *)vlist,
+			vlist = (VERTEX *)realloc((void *)vlist,
 					nverts*sizeof(VERTEX));
 		if (vlist == NULL) {
 			fprintf(stderr,

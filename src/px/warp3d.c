@@ -284,11 +284,11 @@ W3VEC	pti, pto;
 		W3VCPY(wp->ulim, pti);
 	} else {
 		if (wp->npts % AHUNK == 0) {	/* allocate another hunk */
-			na = (W3VEC *)realloc((char *)wp->ip,
+			na = (W3VEC *)realloc((void *)wp->ip,
 					(wp->npts+AHUNK)*sizeof(W3VEC));
 			if (na == NULL) return(0);
 			wp->ip = na;
-			na = (W3VEC *)realloc((char *)wp->ov,
+			na = (W3VEC *)realloc((void *)wp->ov,
 					(wp->npts+AHUNK)*sizeof(W3VEC));
 			if (na == NULL) return(0);
 			wp->ov = na;

@@ -400,7 +400,7 @@ if(r.e > seuil)
  if (egalite == 0)
   {
    if (nbrayons == 0) ray = (TRAYON *)calloc(1,sizeof(TRAYON));
-   else ray = (TRAYON *)realloc(ray, (nbrayons+1)*(sizeof(TRAYON)));         
+   else ray = (TRAYON *)realloc((void *)ray, (nbrayons+1)*(sizeof(TRAYON)));         
    if (ray == NULL)
      error(SYSTEM, "out of memory in sortie\n");
    raytemp = &ray[nbrayons];

@@ -101,7 +101,7 @@ char	*rout;
 	register char	*newp;
 					/* call malloc/realloc */
 	if (ptr == NULL) newp = (char *)malloc(siz);
-	else newp = (char *)realloc(ptr, siz);
+	else newp = (char *)realloc((void *)ptr, siz);
 					/* check success */
 	if (newp == NULL && rout != NULL) {
 		hdfreecache(25, NULL);	/* free some memory */
@@ -569,7 +569,7 @@ int	i;
 		if (f->fi == NULL)
 			newp = (BEAMI *)malloc((j+FRAGBLK)*sizeof(BEAMI));
 		else
-			newp = (BEAMI *)realloc((char *)f->fi,
+			newp = (BEAMI *)realloc((void *)f->fi,
 					(j+FRAGBLK)*sizeof(BEAMI));
 		if (newp == NULL) {
 			f->nfrags--;	/* graceful failure */

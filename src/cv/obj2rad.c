@@ -664,7 +664,7 @@ double	x, y, z;
 		if (nvs == 0)
 			vlist = (FVECT *)malloc(CHUNKSIZ*sizeof(FVECT));
 		else
-			vlist = (FVECT *)realloc((char *)vlist,
+			vlist = (FVECT *)realloc((void *)vlist,
 					(nvs+CHUNKSIZ)*sizeof(FVECT));
 		if (vlist == NULL) {
 			fprintf(stderr,
@@ -688,7 +688,7 @@ double	x, y, z;
 		if (nvns == 0)
 			vnlist = (FVECT *)malloc(CHUNKSIZ*sizeof(FVECT));
 		else
-			vnlist = (FVECT *)realloc((char *)vnlist,
+			vnlist = (FVECT *)realloc((void *)vnlist,
 					(nvns+CHUNKSIZ)*sizeof(FVECT));
 		if (vnlist == NULL) {
 			fprintf(stderr,
@@ -714,7 +714,7 @@ double	x, y;
 		if (nvts == 0)
 			vtlist = (FLOAT (*)[2])malloc(CHUNKSIZ*2*sizeof(FLOAT));
 		else
-			vtlist = (FLOAT (*)[2])realloc((char *)vtlist,
+			vtlist = (FLOAT (*)[2])realloc((void *)vtlist,
 					(nvts+CHUNKSIZ)*2*sizeof(FLOAT));
 		if (vtlist == NULL) {
 			fprintf(stderr,

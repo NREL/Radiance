@@ -88,7 +88,7 @@ register HDBEAMI	*hb;
 	if (b->nrm > n) {		/* (re)allocate packet holder */
 		n = b->nrm;
 		if (p == NULL) p = (PACKHEAD *)malloc(packsiz(n));
-		else p = (PACKHEAD *)realloc((char *)p, packsiz(n));
+		else p = (PACKHEAD *)realloc((void *)p, packsiz(n));
 		CHECK(p==NULL, SYSTEM, "out of memory in dispbeam");
 	}
 					/* assign packet fields */
@@ -405,7 +405,7 @@ sortcomplist()			/* fix our list order */
 		complist = NULL;
 		complen = 0;
 	} else if (i < complen-1) {
-		list2 = (PACKHEAD *)realloc((char *)complist,
+		list2 = (PACKHEAD *)realloc((void *)complist,
 				(i+1)*sizeof(PACKHEAD));
 		if (list2 != NULL)
 			complist = list2;

@@ -34,7 +34,7 @@ newcbeam()		/* allocate new entry at end of cbeam array */
 			cbeam = (PACKHEAD *)malloc(
 					maxcbeam*sizeof(PACKHEAD) );
 		else
-			cbeam = (PACKHEAD *)realloc( (char *)cbeam,
+			cbeam = (PACKHEAD *)realloc((void *)cbeam,
 					maxcbeam*sizeof(PACKHEAD) );
 		if (cbeam == NULL)
 			error(SYSTEM, "out of memory in newcbeam");

@@ -58,7 +58,7 @@ unsigned int  n;
 {
 	if (n == 0) {
 		if (cp != NULL)
-			free(cp);
+			free((void *)cp);
 		return(NULL);
 	}
 
@@ -79,5 +79,5 @@ void
 efree(cp)			/* free memory allocated by above */
 char  *cp;
 {
-	free((char *)cp);
+	free((void *)cp);
 }

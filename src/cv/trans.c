@@ -88,7 +88,7 @@ int	insert;
     		if (idl->id == NULL)
     			goto memerr;
     	} else {				/* grow old list */
-    		idl->id = (ID *)realloc((char *)idl->id,(idl->nids+1)*sizeof(ID));
+    		idl->id = (ID *)realloc((void *)idl->id,(idl->nids+1)*sizeof(ID));
     		if (idl->id == NULL)
     			goto memerr;
     		for (i = idl->nids; i > upper; i--) {

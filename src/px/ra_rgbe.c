@@ -209,7 +209,7 @@ char	*s;
 		frameno = atoi(s+6);
 	n = strlen(s);
 	if (headlen)
-		headlines = (char *)realloc(headlines, headlen+n+1);
+		headlines = (char *)realloc((void *)headlines, headlen+n+1);
 	else
 		headlines = (char *)malloc(n+1);
 	if (headlines == NULL) {

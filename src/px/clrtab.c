@@ -337,7 +337,8 @@ int	j;
 		if (nl[i][t] == i) {		/* add to list */
 			nl[i][t++] = j;
 			if (t % NBSIZ == 0) {	/* enlarge list */
-				if ((nnl = realloc(nl[i], t+NBSIZ)) == NULL)
+				if ((nnl = realloc((void *)nl[i],
+						t+NBSIZ)) == NULL)
 					t--;
 				else
 					nl[i] = (BYTE *)nnl;

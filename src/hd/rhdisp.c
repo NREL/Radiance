@@ -479,7 +479,8 @@ serv_result()			/* get next server result and process it */
 			if (buf == NULL)
 				buf = (char *)malloc(bufsiz=msg.nbytes);
 			else
-				buf = (char *)realloc(buf, bufsiz=msg.nbytes);
+				buf = (char *)realloc((void *)buf,
+						bufsiz=msg.nbytes);
 			if (buf == NULL)
 				error(SYSTEM, "out of memory in serv_result");
 		}

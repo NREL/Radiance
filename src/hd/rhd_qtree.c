@@ -53,7 +53,7 @@ newtwig()			/* allocate a twig */
 	}
 	bi = nexttwig / TBUNDLESIZ;
 	if (twigbundle[bi] == NULL) {	/* new block */
-		twigbundle = (RTREE **)realloc((char *)twigbundle,
+		twigbundle = (RTREE **)realloc((void *)twigbundle,
 					(bi+2)*sizeof(RTREE *));
 		if (twigbundle == NULL)
 			goto memerr;

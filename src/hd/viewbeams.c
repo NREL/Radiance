@@ -37,7 +37,7 @@ int	hd, bi, nr;
 		}
 	i = blist.nb++;				/* else add beam to list */
 	if (i % BALLOCBLK == 0) {
-		blist.bl = (PACKHEAD *)realloc((char *)blist.bl,
+		blist.bl = (PACKHEAD *)realloc((void *)blist.bl,
 				(i+BALLOCBLK)*sizeof(PACKHEAD));
 		CHECK(blist.bl==NULL, SYSTEM, "out of memory in add2blist");
 	}

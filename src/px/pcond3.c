@@ -54,7 +54,7 @@ FILE	*fp;
 				if (nfixations % FIXHUNK == 0) {
 					if (nfixations)
 						fixlst = (short (*)[2])
-							realloc((char *)fixlst,
+							realloc((void *)fixlst,
 							(nfixations+FIXHUNK)*
 							2*sizeof(short));
 					else

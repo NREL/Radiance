@@ -597,7 +597,7 @@ colormap	cmap;
 			xr->cdefs[xr->ncolors].pixel = *p;
 			xr->pmap[*p] = xr->ncolors++;
 		}
-	xr->cdefs = (Color *)realloc((char *)xr->cdefs, xr->ncolors*sizeof(Color));
+	xr->cdefs = (Color *)realloc((void *)xr->cdefs, xr->ncolors*sizeof(Color));
 	if (xr->cdefs == NULL)
 		return(0);
 	return(1);

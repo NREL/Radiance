@@ -54,7 +54,7 @@ newsource()			/* allocate new source in our array */
 	if (nsources == 0)
 		source = (SRCREC *)malloc(SRCINC*sizeof(SRCREC));
 	else if (nsources%SRCINC == 0)
-		source = (SRCREC *)realloc((char *)source,
+		source = (SRCREC *)realloc((void *)source,
 				(unsigned)(nsources+SRCINC)*sizeof(SRCREC));
 	if (source == NULL)
 		return(-1);

@@ -31,7 +31,7 @@ unsigned int  len;
 
 	if (len > tempbuflen) {
 		if (tempbuflen > 0)
-			tempbuf = (char *)realloc(tempbuf, len);
+			tempbuf = (char *)realloc((void *)tempbuf, len);
 		else
 			tempbuf = (char *)malloc(len);
 		tempbuflen = tempbuf==NULL ? 0 : len;

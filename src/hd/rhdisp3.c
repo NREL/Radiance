@@ -292,7 +292,7 @@ VIEW	*vp;
 	 * sorted automatically by visit_cells(), so we don't need this.
 	 */
 					/* optimize memory use */
-	cl.cl = (GCOORD *)realloc((char *)cl.cl, cl.n*sizeof(GCOORD));
+	cl.cl = (GCOORD *)realloc((void *)cl.cl, cl.n*sizeof(GCOORD));
 	if (cl.cl == NULL)
 		goto memerr;
 					/* sort the list */

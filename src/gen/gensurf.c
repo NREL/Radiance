@@ -211,7 +211,7 @@ int  pointsize;
 		size--;
 	}
 	if (size == (m+n+1)*pointsize) {	/* no border after all */
-		dp = (FLOAT *)realloc((char *)datarec.data,
+		dp = (FLOAT *)realloc((void *)datarec.data,
 				m*n*pointsize*sizeof(FLOAT));
 		if (dp != NULL)
 			datarec.data = dp;

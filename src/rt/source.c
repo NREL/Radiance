@@ -293,9 +293,9 @@ char  *p;			/* data for f */
 	for (sn = 0; srcray(&sr, r, &si); sn++) {
 		if (sn >= maxcntr) {
 			maxcntr = sn + MAXSPART;
-			srccnt = (CONTRIB *)realloc((char *)srccnt,
+			srccnt = (CONTRIB *)realloc((void *)srccnt,
 					maxcntr*sizeof(CONTRIB));
-			cntord = (CNTPTR *)realloc((char *)cntord,
+			cntord = (CNTPTR *)realloc((void *)cntord,
 					maxcntr*sizeof(CNTPTR));
 			if (srccnt == NULL | cntord == NULL)
 				error(SYSTEM, "out of memory in direct");
