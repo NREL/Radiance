@@ -43,7 +43,7 @@ char  *argv[];
 	FVECT  lastp, p;
 	int  i, nseg;
 
-	varset("PI", PI, NULL);
+	varset("PI", ':', PI);
 	funset("hermite", 5, l_hermite);
 	funset("bezier", 5, l_bezier);
 	funset("bspline", 5, l_bspline);
