@@ -58,8 +58,8 @@ x11findwind.o -lrt -lX11 -lm
 rad:	rad.o loadvars.o
 	$(CC) $(CFLAGS) -o rad rad.o loadvars.o -lrt -lm
 
-ranimate:	ranimate.o loadvars.o
-	$(CC) $(CFLAGS) -o ranimate ranimate.o loadvars.o -lrt -lm
+ranimate:	ranimate.o loadvars.o netproc.o
+	$(CC) $(CFLAGS) -o ranimate ranimate.o loadvars.o netproc.o -lrt -lm
 
 rpiece:	rpiece.o Version.o
 	$(CC) $(CFLAGS) -o rpiece rpiece.o Version.o -lrt -lm
@@ -90,7 +90,7 @@ glaresrc.o:	../common/linregr.h
 
 rpiece.o:	../common/color.h ../common/view.h ../common/resolu.h
 
-rad.o rpiece.o xglaresrc.o:	../common/standard.h \
+rad.o ranimate.o rpiece.o xglaresrc.o:	../common/standard.h \
 ../common/mat4.h ../common/fvect.h
 
 xglaresrc.o:	../common/view.h
@@ -101,4 +101,10 @@ glareval.o xglaresrc.o:	../common/resolu.h
 
 xglaresrc.o:	../common/vfork.h
 
-rad.o loadvars.o:	vars.h
+rad.o ranimate.o loadvars.o:	vars.h
+
+rad.o:	../common/paths.h
+
+ranimate.o netproc.o:	netproc.h
+
+ranimate.o:	../common/view.h
