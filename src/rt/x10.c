@@ -67,6 +67,8 @@ static int  c_last = 0;			/* last character in queue */
 
 extern char  *malloc();
 
+int  xnewcolr();
+
 int  x_close(), x_clear(), x_paintr(), x_errout(),
 		x_getcur(), x_comout(), x_comin();
 
@@ -156,7 +158,7 @@ int  xres, yres;
 		gheight = yres;
 	} else						/* just clear */
 		XClear(gwind);
-	if (newtab() < 0) {
+	if (new_ctab(ncolors, xnewcolr) == 0) {
 		stderr_v("Color allocation error\n");
 		quit(1);
 	}
@@ -251,42 +253,18 @@ int  *xp, *yp;
 
 
 static
-newcolr(ndx, clr)		/* enter a color into hardware table */
+xnewcolr(ndx, r, g, b)		/* enter a color into hardware table */
 int  ndx;
-COLR  clr;
+int  r, g, b;
 {
 	Color  xcolor;
 
 	xcolor.pixel = pixval[ndx];
-	xcolor.red = clr[RED] << 8;
-	xcolor.green = clr[GRN] << 8;
-	xcolor.blue = clr[BLU] << 8;
+	xcolor.red = r << 8;
+	xcolor.green = g << 8;
+	xcolor.blue = b << 8;
 
 	XStoreColor(&xcolor);
-}
-
-
-static
-newtab()			/* assign new color table */
-{
-	extern COLR	*get_ctab();
-	COLR	*ctab;
-	Color	*defs;
-	register int	i;
-
-	if ((ctab = get_ctab(ncolors)) == NULL)
-		return(-1);
-	if ((defs = (Color *)malloc(ncolors*sizeof(Color))) == NULL)
-		return(-1);
-	for (i = 0; i < ncolors; i++) {
-		defs[i].pixel = pixval[i];
-		defs[i].red = ctab[i][RED] << 8;
-		defs[i].green = ctab[i][GRN] << 8;
-		defs[i].blue = ctab[i][BLU] << 8;
-	}
-	XStoreColors(ncolors, defs);
-	free((char *)defs);
-	return(0);
 }
 
 
@@ -340,11 +318,13 @@ getevent()			/* get next event */
 		getkey(levptr(XKeyPressedEvent));
 		break;
 	case ExposeWindow:
-		if (ncolors == 0 && levptr(XExposeEvent)->subwindow == 0)
-			if (getpixels() < 0)
-				stderr_v("cannot grab colors\n");
-			else
-				newtab();
+		if (levptr(XExposeEvent)->subwindow == 0) {
+			if (ncolors == 0 && getpixels() < 0) {
+				stderr_v("cannot allocate colors\n");
+				break;
+			}
+			new_ctab(ncolors, xnewcolr);
+		}
 		/* fall through */
 	case ExposeRegion:
 		fixwindow(levptr(XExposeEvent));
