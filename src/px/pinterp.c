@@ -465,6 +465,8 @@ FVECT	pos;
 {
 	FVECT	pt, direc;
 	
+	if (pos[2] <= 0)		/* empty pixel */
+		return(-1);
 	if (hasmatrix) {
 		pos[0] += theirview.hoff - .5;
 		pos[1] += theirview.voff - .5;
