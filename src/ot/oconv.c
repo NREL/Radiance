@@ -179,15 +179,15 @@ char  *s;
 eputs(s)				/* put string to stderr */
 register char  *s;
 {
-	static int  inline = 0;
+	static int  inln = 0;
 
-	if (!inline++) {
+	if (!inln++) {
 		fputs(progname, stderr);
 		fputs(": ", stderr);
 	}
 	fputs(s, stderr);
 	if (*s && s[strlen(s)-1] == '\n')
-		inline = 0;
+		inln = 0;
 }
 
 
