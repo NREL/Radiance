@@ -207,7 +207,7 @@ int
 xf(ret, ac, av)			/* get transform specification */
 register XF  *ret;
 int  ac;
-char  *av[];
+char  **av;
 {
 	MAT4  xfmat, m4;
 	double  xfsca, dtmp;
