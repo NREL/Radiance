@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1993 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -32,8 +32,15 @@ return(NBPG_PA83);	/* This is supposed to be ok for PA-RISC 1.0, but
 				I don't know about 1.1 (i.e. Snakes) */
 }
 
-#else				/* Unknown version of UNIX */
+#else
+#if defined(sparc)
 
+#include <unistd.h>
+int getpagesize()
+{
+	return (int)sysconf(_SC_PAGESIZE);
+}
+#else				/* Unknown version of UNIX */
 #ifndef PAGESIZE
 #define PAGESIZE	8192		/* Guess on the high side */
 #endif
@@ -43,6 +50,7 @@ getpagesize()
 	return(PAGESIZE);
 }
 
+#endif
 #endif
 #endif
 
