@@ -76,6 +76,22 @@ extern struct erract {
 
 extern char  errmsg[];			/* global buffer for error messages */
 
+#ifdef  FASTMATH
+#define  tcos			cos
+#define  tsin			sin
+#define  ttan			tan
+#else
+extern double	tcos();			/* table-based cosine approximation */
+#define  tsin(x)		tcos((x)-(PI/2.))
+#define  ttan(x)		(tsin(x)/tcos(x))
+#endif
+					/* custom version of assert(3) */
+#define  CHECK(be,et,em)	((be) ? error(et,em) : 0)
+#ifdef  DEBUG
+#define  DCHECK			CHECK
+#else
+#define  DCHECK(be,et,em)	0
+#endif
 					/* memory operations */
 #ifdef	NOSTRUCTASS
 #define	 copystruct(d,s)	bcopy((char *)(s),(char *)(d),sizeof(*(d)))
@@ -83,7 +99,7 @@ extern char  errmsg[];			/* global buffer for error messages */
 #define	 copystruct(d,s)	(*(d) = *(s))
 #endif
 
-#ifdef	 BSD
+#ifdef  BSD
 extern long  lseek();
 #else
 #define	 bcopy(s,d,n)		(void)memcpy(d,s,n)
