@@ -19,11 +19,11 @@ COMPAT = malloc.o
 oconv:	dummy.o misc.o objset.o oconv.o octree.o readobj.o \
 readoct.o sphere.o fvect.o otypes.o writeoct.o o_face.o face.o plocate.o xf.o \
 clip.o cone.o o_cone.o instance.o o_instance.o bbox.o savestr.o header.o \
-mat4.o $(COMPAT)
+mat4.o fgetline.o $(COMPAT)
 	cc $(CFLAGS) -o oconv oconv.o readoct.o octree.o objset.o \
 readobj.o writeoct.o fvect.o otypes.o sphere.o dummy.o misc.o o_face.o \
 face.o plocate.o clip.o cone.o o_cone.o instance.o o_instance.o mat4.o xf.o \
-bbox.o savestr.o header.o $(COMPAT) -lm
+bbox.o savestr.o header.o fgetline.o $(COMPAT) -lm
 
 install:	oconv
 	$(INSTALL) oconv $(INSTDIR)
