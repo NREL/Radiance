@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -126,7 +126,7 @@ HDGRID	*hproto;		/* holodeck section grid */
 			error(SYSTEM, "failure loading holodeck directory");
 						/* check that it's clean */
 		if (hp->bi[nbeams(hp)].fo < 0)
-			error(USER, "dirty holodeck section");
+			error(WARNING, "dirty holodeck section");
 	} else {			/* assume we're creating it */
 		if ((hp = hdalloc(hproto)) == NULL)
 			goto memerr;
