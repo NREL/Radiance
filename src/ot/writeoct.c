@@ -108,7 +108,7 @@ double  f;
 	int  e;
 
 	putint((long)(frexp(f,&e)*0x7fffffff), 4);
-	putint(e, 1);
+	putint((long)e, 1);
 }
 
 
@@ -147,9 +147,9 @@ register OBJREC  *o;
 	for (i = 0; i < o->oargs.nsargs; i++)
 		putstr(o->oargs.sarg[i]);
 #ifdef  IARGS
-	putint(o->oargs.niargs, 2);
+	putint((long)o->oargs.niargs, 2);
 	for (i = 0; i < o->oargs.niargs; i++)
-		putint(o->oargs.iarg[i], 4);
+		putint((long)o->oargs.iarg[i], 4);
 #endif
 	putint((long)o->oargs.nfargs, 2);
 	for (i = 0; i < o->oargs.nfargs; i++)
