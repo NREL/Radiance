@@ -53,6 +53,8 @@ int	print_header = 1;
 
 VIEW	midview = STDVIEW;
 
+int	wrongformat = 0;
+
 
 main(argc, argv)
 int	argc;
@@ -89,14 +91,19 @@ char	*argv[];
 			exit(1);
 		}
 					/* read header */
-	getheader(stdin, headline);
+	getheader(stdin, headline, NULL);
+	if (wrongformat) {
+		fprintf(stderr, "%s: bad input format\n", progname);
+		exit(1);
+	}
 	if (print_header) {		/* add to header */
 		printargs(i, argv, stdout);
 		putchar('\n');
 	}
 					/* set view */
 	if (setview(&midview) != NULL) {
-		fprintf(stderr, "%s: bad view information in input\n");
+		fprintf(stderr, "%s: bad view information in input\n",
+				progname);
 		exit(1);
 	}
 					/* get findglare data */
@@ -119,10 +126,16 @@ userr:
 headline(s)			/* get line from header */
 char	*s;
 {
+	char	fmt[32];
+
 	if (print_header)		/* copy to output */
 		fputs(s, stdout);
 	if (!strncmp(s, VIEWSTR, VIEWSTRL))
 		sscanview(&midview, s+VIEWSTRL);
+	else if (isformat(s)) {
+		formatval(fmt, s);
+		wrongformat = strcmp(fmt, "ASCII");
+	}
 }
 
 
