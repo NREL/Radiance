@@ -20,7 +20,7 @@ extern char  *strchr();
 
 
 char *
-atos(rs, nb, s)			/* get next word from string */
+atos(rs, nb, s)			/* get word from string, returning rs */
 char  *rs;
 register int  nb;
 register char  *s;
@@ -33,6 +33,33 @@ register char  *s;
 		*cp++ = *s++;
 	*cp = '\0';
 	return(rs);
+}
+
+
+char *
+nextword(cp, nb, s)		/* get (quoted) word, returning new s */
+register char  *cp;
+register int  nb;
+register char  *s;
+{
+	int	quote = 0;
+
+	if (s == NULL) return(NULL);
+	while (isspace(*s))
+		s++;
+	switch (*s) {
+	case '\0':
+		return(NULL);
+	case '"':
+	case '\'':
+		quote = *s++;
+	}
+	while (--nb > 0 && *s && (quote ? *s!=quote : !isspace(*s)))
+		*cp++ = *s++;
+	*cp = '\0';
+	if (quote && *s==quote)
+		s++;
+	return(s);
 }
 
 
