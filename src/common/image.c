@@ -258,9 +258,10 @@ char  *s;
 
 
 int
-viewfile(fname, vp)			/* get view from file */
+viewfile(fname, vp, xp, yp)		/* get view from file */
 char  *fname;
 VIEW  *vp;
+int  *xp, *yp;
 {
 	extern char  *progname;
 	FILE  *fp;
@@ -273,6 +274,10 @@ VIEW  *vp;
 	gothview = 0;
 
 	getheader(fp, gethview);
+
+	if (xp != NULL && yp != NULL
+			&& fgetresolu(xp, yp, fp) == -1)
+		gothview = 0;
 
 	fclose(fp);
 
