@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1994 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -351,6 +351,7 @@ register int  sn;	/* target source number */
 			for (i = 0; i < 3; i++)
 				sr.rorg[i] = oc[i] + offsdir[i];
 			d = DOT(offsdir,onorm);
+			sr.rmax = 0.0;
 			if (infront)
 				for (i = 0; i < 3; i++) {
 					sr.rorg[i] -= (d-.0001)*onorm[i];

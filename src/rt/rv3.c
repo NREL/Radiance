@@ -1,4 +1,4 @@
-/* Copyright (c) 1987 Regents of the University of California */
+/* Copyright (c) 1994 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -103,8 +103,8 @@ double  *mp;
 		(*dev->comout)("Pick view center\n");
 		if ((*dev->getcur)(&x, &y) == ABORT)
 			return(-1);
-		if (viewray(thisray.rorg, thisray.rdir, &ourview,
-				(x+.5)/hresolu, (y+.5)/vresolu) < 0) {
+		if ((thisray.rmax = viewray(thisray.rorg, thisray.rdir,
+			&ourview, (x+.5)/hresolu, (y+.5)/vresolu)) < -FTINY) {
 			error(COMMAND, "not on image");
 			return(-1);
 		}
@@ -162,8 +162,8 @@ int  xmin, ymin, xmax, ymax;
 	h = xmin + (xmax-xmin)*frandom();
 	v = ymin + (ymax-ymin)*frandom();
 	
-	if (viewray(thisray.rorg, thisray.rdir, &ourview,
-			h/hresolu, v/vresolu) < 0) {
+	if ((thisray.rmax = viewray(thisray.rorg, thisray.rdir, &ourview,
+			h/hresolu, v/vresolu)) < -FTINY) {
 		setcolor(thisray.rcol, 0.0, 0.0, 0.0);
 	} else {
 		rayorigin(&thisray, NULL, PRIMARY, 1.0);

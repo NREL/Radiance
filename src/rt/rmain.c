@@ -1,4 +1,4 @@
-/* Copyright (c) 1993 Regents of the University of California */
+/* Copyright (c) 1994 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -819,6 +819,8 @@ printdefaults()			/* print default values to stdout */
 			ourview.vup[0], ourview.vup[1], ourview.vup[2]);
 	printf("-vh %f\t\t\t# view horizontal size\n", ourview.horiz);
 	printf("-vv %f\t\t\t# view vertical size\n", ourview.vert);
+	printf("-vo %f\t\t\t# view fore clipping plane\n", ourview.vfore);
+	printf("-va %f\t\t\t# view aft clipping plane\n", ourview.vaft);
 	printf("-vs %f\t\t\t# view shift\n", ourview.hoff);
 	printf("-vl %f\t\t\t# view lift\n", ourview.voff);
 #endif

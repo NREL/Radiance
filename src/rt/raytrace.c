@@ -34,6 +34,8 @@ OBJREC  Lamb = {
 	{0, 5, NULL, Lambfa}, NULL,
 };					/* a Lambertian surface */
 
+static OBJREC  Aftplane;		/* aft clipping plane object */
+
 static int  raymove(), checkset(), checkhit();
 
 #define  MAXLOOP	128		/* modifier loop detection */
@@ -67,6 +69,7 @@ double  rw;
 		r->rweight = ro->rweight * rw;
 		r->crtype = ro->crtype | (r->rtype = rt);
 		VCOPY(r->rorg, ro->rop);
+		r->rmax = 0.0;
 	}
 	rayclear(r);
 	return(r->rlvl <= maxdepth && r->rweight >= minweight ? 0 : -1);
@@ -78,8 +81,16 @@ register RAY  *r;
 {
 	r->rno = raynum++;
 	r->newcset = r->clipset;
-	r->ro = NULL;
-	r->rot = FHUGE;
+	if (r->rmax > FTINY) {
+		r->ro = &Aftplane;
+		r->rot = r->rmax;
+		r->rop[0] = r->rorg[0] + r->rot*r->rdir[0];
+		r->rop[1] = r->rorg[1] + r->rot*r->rdir[1];
+		r->rop[2] = r->rorg[2] + r->rot*r->rdir[2];
+	} else {
+		r->ro = NULL;
+		r->rot = FHUGE;
+	}
 	r->pert[0] = r->pert[1] = r->pert[2] = 0.0;
 	setcolor(r->pcol, 1.0, 1.0, 1.0);
 	setcolor(r->rcol, 0.0, 0.0, 0.0);
@@ -95,7 +106,10 @@ RAY  *r;
 
 	if (localhit(r, &thescene))
 		gotmat = raycont(r);
-	else if (sourcehit(r))
+	else if (r->ro == &Aftplane) {
+		r->ro = NULL;
+		r->rot = FHUGE;
+	} else if (sourcehit(r))
 		gotmat = rayshade(r, r->ro->omod);
 
 	if (r->ro != NULL && !gotmat)
@@ -378,7 +392,8 @@ register CUBE  *scene;
 			return(0);
 	}
 	cxset[0] = 0;
-	return(raymove(curpos, cxset, sflags, r, scene) == RAYHIT);
+	return(raymove(curpos, cxset, sflags, r, scene) == RAYHIT &&
+			r->ro != &Aftplane);
 }
 
 

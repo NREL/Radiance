@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1994 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -24,15 +24,15 @@ register RAY  *r;
 	register int  i;
 					/* get the octree */
 	in = getinstance(o, IO_ALL);
-					/* duplicate and clear ray */
+					/* copy and transform ray */
 	copystruct(&rcont, r);
-	rayclear(&rcont);
-					/* transform ray to new space */
 	multp3(rcont.rorg, r->rorg, in->x.b.xfm);
 	multv3(rcont.rdir, r->rdir, in->x.b.xfm);
 	for (i = 0; i < 3; i++)
 		rcont.rdir[i] /= in->x.b.sca;
-					/* trace it */
+	rcont.rmax *= in->x.b.sca;
+					/* clear and trace it */
+	rayclear(&rcont);
 	if (!localhit(&rcont, &in->obj->scube))
 		return(0);			/* missed */
 	if (rcont.rot * in->x.f.sca >= r->rot)
