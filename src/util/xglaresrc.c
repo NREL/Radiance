@@ -88,6 +88,7 @@ char	*pname, *wname;
 	XWindowAttributes	wa;
 	XColor	xc;
 	XGCValues	gcv;
+	register int	i;
 					/* get the viewing parameters */
 	if (viewfile(pname, &ourview, &pres) <= 0 ||
 			setview(&ourview) != NULL) {
@@ -103,11 +104,18 @@ char	*pname, *wname;
 		exit(1);
 	}
 					/* find our window */
-	if (wname == NULL)
-		wname = pname;
+	if (wname == NULL) {
+				/* remove directory prefix from name */
+		for (i = strlen(pname); i-- > 0; )
+			if (pname[i] == '/')
+				break;
+		wname = pname+i+1;
+		i = 0;
+	} else
+		i = 1;
 	gwind = xfindwind(theDisplay, rwind, wname, 4);
 	if (gwind == None) {
-		if (wname != pname) {
+		if (i) {
 			fprintf(stderr, "%s: cannot find \"%s\" window\n",
 					progname, wname);
 			exit(2);
@@ -123,7 +131,7 @@ char	*pname, *wname;
 		}
 		do
 			sleep(8);
-		while ((gwind=xfindwind(theDisplay,rwind,pname,4)) == None);
+		while ((gwind=xfindwind(theDisplay,rwind,wname,4)) == None);
 	} else
 		XMapRaised(theDisplay, gwind);
 	do {
