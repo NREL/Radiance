@@ -424,9 +424,7 @@ GLfloat	*dm;
 odUpdate(vn)				/* update this view */
 int	vn;
 {
-	int	i, j;
-	register struct ODblock	*bp;
-	register int	k;
+	register int	i, j;
 
 	DCHECK(vn<0 | vn>=odNViews, CONSISTENCY,
 			"bad view number in odUpdate");
@@ -439,32 +437,21 @@ int	vn;
 				return;
 			if (tmComputeMapping(0.,0.,0.) != TM_E_OK)
 				return;
-			for (k = odS.nsamp; k--; )	/* redraw all */
-				if (odS.ip[k][0] >= 0)
-					SET4(odS.redraw, k);
+			for (i = odS.nsamp; i--; )	/* redraw all */
+				if (odS.ip[i][0] >= 0)
+					SET4(odS.redraw, i);
 		}
 		if (tmMapPixels(odS.rgb,odS.brt,odS.chr,odS.nsamp) != TM_E_OK)
 			return;
 		needmapping = 0;		/* reset flag */
 	}
-					/* draw each block in view */
-	for (j = odView[vn].vlow; j--; )
-		for (i = 0; i < odView[vn].hlow; i++) {
-					/* get block */
-			bp = odView[vn].bmap + j*odView[vn].hlow + i;
-					/* do quick, conservative flag check */
-			for (k = (bp->first+bp->nsamp+31)>>5;
-					k-- > bp->first>>5; )
-				if (odS.redraw[k])
-					break;		/* non-zero flag */
-			if (k < bp->first>>5)
-				continue;		/* no flags set */
-			for (k = bp->nsamp; k--; )	/* sample by sample */
-				if (CHK4(odS.redraw, bp->first+k)) {
-					odDrawBlockSamp(vn, i, j, bp->first+k);
-					CLR4(odS.redraw, bp->first+k);
-				}
-		}
+					/* draw samples flagged for redraw */
+	for (j = FL4NELS(odS.nsamp); j--; )
+		for (i = 0; odS.redraw[j]; i++)		/* skips faster */
+			if (odS.redraw[j] & 1L<<i) {
+				odDrawSamp(vn, (j<<5)+i);
+				odS.redraw[j] &= ~(1L<<i);
+			}
 }
 
 
@@ -603,8 +590,8 @@ register int	h, v;
 }
 
 
-odDrawBlockSamp(vn, h, v, id)		/* draw sample in view block */
-int	vn, h, v;
+odDrawSamp(vn, id)			/* draw view sample */
+int	vn;
 register int	id;
 {
 	GLshort	arm[MAXFAN][3];
@@ -615,12 +602,10 @@ register int	id;
 	register int	i;
 
 	vp = odView + vn;
-	blockindex = v*vp->hlow + h;
-	DCHECK(odS.ip[id][0]*vp->hlow/vp->hhi != h |
-			odS.ip[id][1]*vp->vlow/vp->vhi != v,
-			CONSISTENCY, "bad sample position in odDrawBlockSamp");
+	blockindex = getblock(vp, odS.ip[id][0], odS.ip[id][1]);
+	DCHECK(blockindex<0, CONSISTENCY, "bad sample handed to odDrawSamp");
 	DCHECK(vp->bmap[blockindex].nused <= 0,
-			CONSISTENCY, "bad in-use count in odDrawBlockSamp");
+			CONSISTENCY, "bad in-use count in odDrawSamp");
 					/* create triangle fan */
 	size = 1./sqrt((double)vp->bmap[blockindex].nused);
 	narms = make_arms(arm, odS.ip[id], vp, size);
