@@ -101,7 +101,7 @@ char  *name;
 	}
 	ourdisplay = XOpenDisplay(NULL);
 	if (ourdisplay == NULL) {
-		stderr_v("cannot open display; DISPLAY variable set?\n");
+		stderr_v("cannot open X-windows; DISPLAY variable set?\n");
 		return(NULL);
 	}
 	if (DisplayPlanes() < 4) {
