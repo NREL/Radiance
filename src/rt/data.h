@@ -1,27 +1,29 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1996 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
 
 /*
  *  data.h - header file for routines which interpolate data.
- *
- *     6/4/86
  */
 
-#define  MAXDDIM	8		/* maximum dimensions for data array */
+#define  MAXDDIM	5		/* maximum data dimensions */
 
 #define  DATATYPE	float		/* single precision to save space */
 #define  DATATY		'f'		/* format for DATATYPE */
 
 typedef struct datarray {
 	char  *name;			/* name of our data */
-	int  nd;			/* number of dimensions */
+	short  type;			/* DATATY, RED, GRN or BLU */
+	short  nd;			/* number of dimensions */
 	struct {
-		double  org, siz;		/* coordinate domain */
+		DATATYPE  org, siz;		/* coordinate domain */
 		int  ne;			/* number of elements */
-		double  *p;			/* point locations */
+		DATATYPE  *p;			/* point locations */
 	} dim[MAXDDIM];			/* dimension specifications */
-	DATATYPE  *arr;			/* the data */
+	union {
+		DATATYPE  *d;			/* float data */
+		COLR  *c;			/* RGB data */
+	}  arr;				/* the data */
 	struct datarray  *next;		/* next array in list */
 } DATARRAY;			/* a data array */
 
