@@ -1,0 +1,32 @@
+{ SCCSid "$SunId$ LBL" }
+
+{
+	Source distribution coordinates (degrees).
+
+	Theta is measured from the negative z-axis,
+	phi is measured from the positive x-axis
+	according to the right-hand rule.
+
+	srcB_vert and srcB_horiz are angles
+	used in type B photometry.
+
+	A1	- optional multipier
+}
+
+flatcorr(v) = corr(v) / Rdot;		{ correction for flat sources }
+corr(v) = if(AC-.5, A1*v, v);		{ multiplier correction }
+
+src_theta = Acos(Dz) / DEGREE;			{ 0-180 }
+src_phi = norm_deg( atan2(Dy, Dx) / DEGREE );	{ 0-360 }
+				{ bilateral symmetry }
+src_phi2 = tri( src_phi, 180 );		{ 0-180 }
+				{ quadrilateral symmetry }
+src_phi4 = tri( src_phi, 90 );		{ 0-90 }
+
+norm_deg(d) : if( d, d, d+360 );
+
+				{ Type B photometry coordinates }
+srcB_vert = atan( -Dx/Dz ) / DEGREE;
+srcB_horiz = Asin(Dy) / DEGREE;
+				{ w/ bilateral symmetry }
+srcB_horiz2 = abs( srcB_horiz );

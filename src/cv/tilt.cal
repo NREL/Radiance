@@ -1,0 +1,11 @@
+{ SCCSid "$SunId$ LBL" }
+
+{
+	tilt.cal - tilt data for IES luminaires
+}
+
+tilt_ang = Acos(Kz) / DEGREE;
+tilt_xang = Asin(Jy/sqrt(Jy*Jy+Jz*Jz)) / DEGREE;
+
+tilt_ang2 = tri(tilt_ang, 90);
+tilt_xang2 = tri(tilt_xang, 90);
