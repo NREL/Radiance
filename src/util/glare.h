@@ -2,6 +2,12 @@
 /*
  * Common data structures for glare source finding routines
  */
+#ifndef _RAD_GLARE_H_
+#define _RAD_GLARE_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #include "standard.h"
 #include "view.h"
@@ -67,8 +73,16 @@ extern struct source {
 	struct source	*next;	/* next source in list */
 } *donelist;			/* finished sources */
 
-extern double	getviewpix();
-extern double	pixsize();
+extern double	getviewpix(int vh, int vv);
+extern double	pixsize(int x, int y);
 
 extern long	npixinvw;	/* number of samples in view */
 extern long	npixmiss;	/* number of samples missing */
+
+
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_GLARE_H_ */
+

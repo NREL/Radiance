@@ -16,6 +16,12 @@
  *
  * See the ranimove(1) man page for further details.
  */
+#ifndef _RAD_RANIMOVE_H_
+#define _RAD_RANIMOVE_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #include "ray.h"
 #include "view.h"
@@ -174,3 +180,10 @@ extern double	hlsmax;		/* maximum high-level saliency */
 void	write_map(), sample_pos(), comp_frame_error(), conspicuity();
 int	getclosest(), getambcolor(), refine_first();
 double	sample_wt(), estimaterr(), comperr(); 
+
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* _RAD_RANIMOVE_H_ */
+

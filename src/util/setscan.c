@@ -9,10 +9,11 @@ static const char	RCSid[] = "$Id$";
 
 #include "setscan.h"
 
-
-setscan(ang, arg)			/* set up scan according to arg */
-register ANGLE  *ang;
-register char  *arg;
+int
+setscan(			/* set up scan according to arg */
+register ANGLE  *ang,
+register char  *arg
+)
 {
 	int  state = ',';
 	int  start, finish, step;
