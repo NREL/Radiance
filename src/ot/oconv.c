@@ -26,8 +26,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 char  *progname;			/* argv[0] */
 
-char  *libpath;				/* library search path */
-
 int  nowarn = 0;			/* supress warnings? */
 
 int  objlim = 5;			/* # of objects before split */
@@ -57,9 +55,6 @@ char  **argv;
 	int  i;
 
 	progname = argv[0] = fixargv0(argv[0]);
-
-	if ((libpath = getenv(ULIBVAR)) == NULL)
-		libpath = DEFPATH;
 
 	initotypes();
 

@@ -36,9 +36,6 @@ install:	oconv getbbox
 clean:
 	set nonomatch; rm -f oconv getbbox *.o core
 
-oconv.o:	oconv.c
-	$(CC) $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c oconv.c
-
 readfargs.o:	readfargs.c ../common/object.h
 	$(CC) $(CFLAGS) -DMEMHOG -c readfargs.c
 
@@ -54,6 +51,8 @@ sphere.o writeoct.o:	../common/object.h
 
 bbox.o initotypes.o oconv.o \
 sphere.o writeoct.o:	../common/otypes.h
+
+oconv.o:	../common/paths.h
 
 bbox.o o_cone.o:	../common/cone.h
 
