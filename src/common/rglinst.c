@@ -77,6 +77,7 @@ register OBJREC	*o;
 		glPopAttrib();
 	}
 	rgl_checkerr("creating instance");
+	return(0);
 }
 
 

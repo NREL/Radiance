@@ -34,6 +34,7 @@ initotypes()			/* initialize ofun array */
 	ofun[OBJ_RING].funp = o_ring;
 	ofun[OBJ_SOURCE].funp = o_source;
 	ofun[OBJ_INSTANCE].funp = o_instance;
+	ofun[OBJ_MESH].funp = o_unsupported;
 						/* assign material types */
 	ofun[MAT_TRANS].funp =
 	ofun[MAT_PLASTIC].funp =
