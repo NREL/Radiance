@@ -15,9 +15,16 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "view.h"
 #include "resolu.h"
 
+#ifndef NFS
+#define  NFS			1
+#endif
 				/* set the following to 0 to forgo forking */
 #ifndef MAXFORK
+#if NFS
 #define  MAXFORK		3	/* allotment of duped processes */
+#else
+#define  MAXFORK		0
+#endif
 #endif
 
 				/* rpict command */
@@ -179,7 +186,9 @@ char  **av;
 	scanorig = ftell(fp);		/* record position of first scanline */
 	if (fclose(fp) == -1)		/* done with stream i/o */
 		goto filerr;
+#if NFS
 	sync();				/* flush NFS buffers */
+#endif
 					/* start rpict process */
 	if (open_process(rpd, rpargv) <= 0) {
 		fprintf(stderr, "%s: cannot start %s\n", progname, rpargv[0]);
@@ -352,12 +361,14 @@ int  xpos, ypos;
 #else
 	pid = -1;		/* no forking */
 #endif
+#if NFS
 				/* lock file section so NFS doesn't mess up */
 	fls.l_whence = 0;
 	fls.l_len = (long)vres*hmult*hres*sizeof(COLR);
 	fls.l_start = scanorig + (vmult-1-ypos)*fls.l_len;
 	fls.l_type = F_WRLCK;
 	fcntl(outfd, F_SETLKW, &fls);
+#endif
 				/* write new piece to file */
 	if (lseek(outfd, fls.l_start+(long)xpos*hres*sizeof(COLR), 0) == -1)
 		goto seekerr;
@@ -376,8 +387,10 @@ int  xpos, ypos;
 				goto seekerr;
 		}
 	if (pid == -1) {	/* fork failed */
+#if NFS
 		fls.l_type = F_UNLCK;		/* release lock */
 		fcntl(outfd, F_SETLKW, &fls);
+#endif
 		return(0);
 	}
 	_exit(0);		/* else exit child process (releasing lock) */
