@@ -128,7 +128,14 @@ register RAY  *r;
 			r->gecc = 0.;
 		}
 	}
-	mabsorp = exp(-bright(r->cext)*r->rot);		/* approximate */
+						/* estimate absorption */
+	mabsorp = colval(r->cext,RED) < colval(r->cext,GRN) ?
+			colval(r->cext,RED) : colval(r->cext,GRN);
+	if (colval(r->cext,BLU) < mabsorp) mabsorp = colval(r->cext,BLU);
+	if (mabsorp > 0.)
+		mabsorp = exp(-mabsorp*r->rot);		/* conservative */
+	else
+		mabsorp = 1.0;
 
 	d2 = 1.0 - nratio*nratio*(1.0 - cos1*cos1);	/* compute cos theta2 */
 
@@ -165,7 +172,8 @@ register RAY  *r;
 					|| r->crtype & SHADOW
 					|| !directvis
 					|| m->oargs.farg[4] == 0.0
-					|| !disperse(m, r, p.rdir, trans))
+					|| !disperse(m, r, p.rdir,
+							trans, ctrans, talb))
 #endif
 			{
 				copycolor(p.cext, ctrans);
@@ -199,11 +207,12 @@ register RAY  *r;
 #ifdef  DISPERSE
 
 static
-disperse(m, r, vt, tr)		/* check light sources for dispersion */
+disperse(m, r, vt, tr, cet, abt)  /* check light sources for dispersion */
 OBJREC  *m;
 RAY  *r;
 FVECT  vt;
 double  tr;
+COLOR  cet, abt;
 {
 	RAY  sray, *entray;
 	FVECT  v1, v2, n1, n2;
@@ -289,6 +298,8 @@ double  tr;
 		if (l1 > MAXLAMBDA || l1 < MINLAMBDA)	/* not visible */
 			continue;
 						/* trace source ray */
+		copycolor(sray.cext, cet);
+		copycolor(sray.albedo, abt);
 		normalize(sray.rdir);
 		rayvalue(&sray);
 		if (bright(sray.rcol) <= FTINY)	/* missed it */
