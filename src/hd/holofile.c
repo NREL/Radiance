@@ -105,6 +105,7 @@ hdinit(fd, hproto)	/* initialize a holodeck section in a file */
 int	fd;			/* corresponding file descriptor */
 HDGRID	*hproto;		/* holodeck section grid */
 {
+	long	rtrunc;
 	long	fpos;
 	register HOLO	*hp;
 	register int	n;
@@ -144,13 +145,19 @@ HDGRID	*hproto;		/* holodeck section grid */
 	hdattach(fd);
 					/* check rays on disk */
 	fpos = hdfilen(fd);
-	biglob(hp)->nrd = 0;
+	biglob(hp)->nrd = rtrunc = 0;
 	for (n = hproto == NULL ? nbeams(hp) : 0; n > 0; n--)
 		if (hp->bi[n].nrd)
-			if (hp->bi[n].fo + hp->bi[n].nrd > fpos)
-				hp->bi[n].nrd = 0;	/* off end */
-			else
+			if (hp->bi[n].fo + hp->bi[n].nrd > fpos) {
+				rtrunc += hp->bi[n].nrd;
+				hp->bi[n].nrd = 0;
+			} else
 				biglob(hp)->nrd += hp->bi[n].nrd;
+	if (rtrunc) {
+		sprintf(errmsg, "truncated section, %ld rays lost (%.1f%%)",
+				rtrunc, 100.*rtrunc/(rtrunc+biglob(hp)->nrd));
+		error(WARNING, errmsg);
+	}
 					/* add to holodeck list */
 	for (n = 0; n < HDMAX; n++)
 		if (hdlist[n] == NULL) {
