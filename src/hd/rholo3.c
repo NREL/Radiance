@@ -105,7 +105,7 @@ int	nents;
 		if (complist[i].nr != oldnr)
 			lastin = -1;	/* flag sort */
 	}
-				/* computed rays for each uncommon beams */
+				/* record computed rays for uncommon beams */
 	for (csm = clist+nents; csm-- > clist; )
 		if (csm->nc < 0)
 			csm->nc = bnrays(hdlist[csm->hd], csm->bi);
@@ -134,9 +134,9 @@ int	nents;
 			;
 		n = csm - clist;
 		if (op == BS_ADJ) {	/* don't regenerate adjusted beams */
-			for (i = n; i < nents && clist[i].nr > 0; i++)
+			for (++i; i-- && csm->nr > 0; csm++)
 				;
-			nents = i;
+			nents = csm - clist;
 		}
 		if (n) {		/* allocate space for merged list */
 			PACKHEAD	*newlist;
@@ -246,7 +246,7 @@ init_global()			/* initialize global ray computation */
 	else
 		frac = 1024.*1024.*16384. / (wtotal*sizeof(RAYVAL));
 	while (k--)
-		complist[k].nr = frac * complist[k].nr;
+		complist[k].nr = frac*complist[k].nr + 0.5;
 	listpos = 0; lastin = -1;	/* perform initial sort */
 	sortcomplist();
 }
