@@ -46,7 +46,7 @@ static int  nunflshed = 0;	/* number of unflushed ambient values */
 #define  freeambtree(t)	free((char *)(t))
 
 extern long  ftell(), lseek();
-static int  initambfile(), avsave(), avinsert(), loadtree();
+static int  initambfile(), avsave(), avinsert(), loadatree();
 static AMBVAL  *avstore();
 #ifdef  F_SETLKW
 static  aflock();
@@ -56,7 +56,7 @@ static  aflock();
 setambres(ar)				/* set ambient resolution */
 int  ar;
 {
-	ambres = ar;			/* may be done already */
+	ambres = ar < 0 ? 0 : ar;		/* may be done already */
 						/* set min & max radii */
 	if (ar <= 0) {
 		minarad = 0.0;
@@ -72,21 +72,25 @@ int  ar;
 }
 
 
-resetambacc(newa)			/* change ambient accuracy setting */
+setambacc(newa)				/* set ambient accuracy */
 double  newa;
 {
+	static double  oldambacc = -1.0;
 	AMBTREE  oldatrunk;
 
-	if (fabs(newa - ambacc) < 0.01)
+	ambacc = newa < 0.0 ? 0.0 : newa;	/* may be done already */
+	if (oldambacc < -FTINY)
+		oldambacc = ambacc;	/* do nothing first call */
+	if (fabs(newa - oldambacc) < 0.01)
 		return;			/* insignificant -- don't bother */
-	ambacc = newa;
 	if (ambacc <= FTINY)
 		return;			/* cannot build new tree */
 					/* else need to rebuild tree */
 	copystruct(&oldatrunk, &atrunk);
 	atrunk.alist = NULL;
 	atrunk.kid = NULL;
-	loadtree(&oldatrunk);
+	loadatree(&oldatrunk);
+	oldambacc = ambacc;		/* remeber setting for next call */
 }
 
 
@@ -97,10 +101,11 @@ char  *afile;
 	AMBVAL	amb;
 						/* init ambient limits */
 	setambres(ambres);
+	setambacc(ambacc);
 	if (afile == NULL)
 		return;
 	if (ambacc <= FTINY) {
-		sprintf(errmsg, "zero ambient accuracy so \"%s\" not loaded",
+		sprintf(errmsg, "zero ambient accuracy so \"%s\" not opened",
 				afile);
 		error(WARNING, errmsg);
 		return;
@@ -110,8 +115,7 @@ char  *afile;
 		initambfile(0);
 		headlen = ftell(ambfp);
 		while (readambval(&amb, ambfp))
-			avinsert(avstore(&amb), &atrunk,
-					thescene.cuorg, thescene.cusize);
+			avinsert(avstore(&amb));
 						/* align */
 		fseek(ambfp, -((ftell(ambfp)-headlen)%AMBVALSIZ), 1);
 	} else if ((ambfp = fopen(afile, "w+")) != NULL)
@@ -343,7 +347,7 @@ int  creat;
 #ifdef MSDOS
 	setmode(fileno(ambfp), O_BINARY);
 #endif
-	setbuf(ambfp, bmalloc(BUFSIZ));
+	setbuf(ambfp, bmalloc(BUFSIZ+8));
 	if (creat) {			/* new file */
 		fprintf(ambfp, "%s -av %g %g %g -ab %d -aa %g ",
 				progname, colval(ambval,RED),
@@ -365,7 +369,7 @@ static
 avsave(av)				/* insert and save an ambient value */
 AMBVAL	*av;
 {
-	avinsert(avstore(av), &atrunk, thescene.cuorg, thescene.cusize);
+	avinsert(avstore(av));
 	if (ambfp == NULL)
 		return;
 	if (writambval(av, ambfp) < 0)
@@ -393,19 +397,20 @@ register AMBVAL  *aval;
 
 
 static
-avinsert(av, at, c0, s)			/* insert ambient value in a tree */
+avinsert(av)				/* insert ambient value in our tree */
 register AMBVAL	 *av;
-register AMBTREE  *at;
-FVECT  c0;
-double	s;
 {
+	register AMBTREE  *at;
 	FVECT  ck0;
+	double	s;
 	int  branch;
 	register int  i;
 
 	if (av->rad <= FTINY)
 		error(CONSISTENCY, "zero ambient radius in avinsert");
-	VCOPY(ck0, c0);
+	at = &atrunk;
+	VCOPY(ck0, thescene.cuorg);
+	s = thescene.cusize;
 	while (s*(OCTSCALE/2) > av->rad*ambacc) {
 		if (at->kid == NULL)
 			if ((at->kid = newambtree()) == NULL)
@@ -425,7 +430,7 @@ double	s;
 
 
 static
-loadtree(at)				/* move tree to main store */
+loadatree(at)				/* move tree to main store */
 register AMBTREE  *at;
 {
 	register AMBVAL  *av;
@@ -433,10 +438,12 @@ register AMBTREE  *at;
 					/* transfer values at this node */
 	for (av = at->alist; av != NULL; av = at->alist) {
 		at->alist = av->next;
-		avinsert(av, &atrunk, thescene.cuorg, thescene.cusize);
+		avinsert(av);
 	}
+	if (at->kid == NULL)
+		return;
 	for (i = 0; i < 8; i++)		/* transfer and free children */
-		loadtree(at->kid+i);
+		loadatree(at->kid+i);
 	freeambtree(at->kid);
 }
 
@@ -472,7 +479,7 @@ ambsync()			/* synchronize ambient file */
 	aflock(F_WRLCK);
 				/* see if file has grown */
 	if ((flen = lseek(fileno(ambfp), 0L, 2)) < 0)
-		error(SYSTEM, "cannot seek on ambient file");
+		goto seekerr;
 	if (n = flen - lastpos) {		/* file has grown */
 		if (ambinp == NULL) {		/* use duplicate filedes */
 			ambinp = fdopen(dup(fileno(ambfp)), "r");
@@ -480,22 +487,33 @@ ambsync()			/* synchronize ambient file */
 				error(SYSTEM, "fdopen failed in ambsync");
 		}
 		if (fseek(ambinp, lastpos, 0) < 0)
-			error(SYSTEM, "fseek failed in ambsync");
+			goto seekerr;
 		while (n >= AMBVALSIZ) {	/* load contributed values */
 			readambval(&avs, ambinp);
-			avinsert(avstore(&avs), &atrunk,
-					thescene.cuorg, thescene.cusize);
+			avinsert(avstore(&avs));
 			n -= AMBVALSIZ;
 		}
 		if (n)				/* alignment */
-			lseek(fileno(ambfp), flen-n, 0);
+			if (lseek(fileno(ambfp), flen-n, 0) < 0)
+				goto seekerr;
 	}
+#ifdef  DEBUG
+	if (ambfp->_ptr - ambfp->_base != nunflshed*AMBVALSIZ) {
+		sprintf(errmsg, "ambient file buffer at %d rather than %d",
+				ambfp->_ptr - ambfp->_base,
+				nunflshed*AMBVALSIZ);
+		error(CONSISTENCY, errmsg);
+	}
+#endif
 syncend:
 	n = fflush(ambfp);			/* calls write() at last */
-	lastpos = lseek(fileno(ambfp), 0L, 1);
+	if ((lastpos = lseek(fileno(ambfp), 0L, 1)) < 0)
+		goto seekerr;
 	aflock(F_UNLCK);			/* release file */
 	nunflshed = 0;
 	return(n);
+seekerr:
+	error(SYSTEM, "seek failed in ambsync");
 }
 
 #else
