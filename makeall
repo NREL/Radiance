@@ -179,9 +179,9 @@ case 3:			# Silicon Graphics
 	endsw
 	breaksw
 case 4:			# AIX
-	set mach="-Dvoid=char -DNOPROTO -DINCL_SEL_H"
 	set opt="-O"
-	set compat="bmalloc.o erf.o"
+	set compat="bmalloc.o erf.o strcmp.o"
+	set arch=PowerPC
 	breaksw
 case 5:			# BSDI BSD/386
 	set mach="-DBSD -L/usr/X11/lib -I/usr/X11/include"
@@ -218,6 +218,7 @@ case 9:			# Other
 	if ( "$<" =~ [yY]* ) then
 		set extras="CC=gcc"
 	endif
+	set arch=other
 	breaksw
 default:
 	echo "Illegal choice\!"
