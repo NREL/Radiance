@@ -13,8 +13,10 @@ static const char	RCSid[] = "$Id$";
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <stdlib.h>
 
 #include "rtprocess.h"
+#include "rtio.h"
 
 
 int
@@ -23,7 +25,6 @@ SUBPROC *pd,
 char	*av[]
 )
 {
-	extern char	*getpath(), *getenv();
 	char	*compath;
 	int	p0[2], p1[2];
 

@@ -129,7 +129,7 @@ free_os.o:	octree.h object.h otypes.h face.h cone.h instance.h
 
 tmesh.o:	tmesh.h fvect.h
 
-fgetword.o fputword.o fgetval.o fgetline.o fdate.o \
+fgetword.o fputword.o fgetval.o fgetline.o fdate.o unix_process.o \
 expandarg.o badarg.o xf.o:	rtio.h
 
 expandarg.o:	rtmisc.h
