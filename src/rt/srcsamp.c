@@ -82,13 +82,13 @@ nextsample:
 	si->dom  = source[si->sn].ss2;
 	if (source[si->sn].sflags & SFLAT) {
 		si->dom *= sflatform(si->sn, r->rdir);
-		si->dom *= (double)(size[SU]*size[SV])/(MAXSPART*MAXSPART);
+		si->dom *= size[SU]*size[SV]/(MAXSPART*(double)MAXSPART);
 	} else if (source[si->sn].sflags & SCYL) {
 		si->dom *= scylform(si->sn, r->rdir);
-		si->dom *= (double)size[SU]/MAXSPART;
+		si->dom *= size[SU]/(double)MAXSPART;
 	} else {
-		si->dom *= (double)(size[SU]*size[SV]*size[SW]) /
-				(MAXSPART*MAXSPART*MAXSPART) ;
+		si->dom *= size[SU]*size[SV]*(double)size[SW] /
+				(MAXSPART*MAXSPART*(double)MAXSPART) ;
 	}
 	if (source[si->sn].sflags & SDISTANT)
 		return(FHUGE);
