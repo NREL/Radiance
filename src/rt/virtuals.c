@@ -199,7 +199,7 @@ MAT4  pm;
 		if (source[sn].sflags & SFLAT) {	/* behind source? */
 			multv3(nsnorm, source[sn].snorm, pm);
 			normalize(nsnorm);
-			if (!checkspot(&ourspot, nsnorm))
+			if (nsflags & SSPOT && !checkspot(&ourspot, nsnorm))
 				return(-1);
 		}
 	}
@@ -291,7 +291,11 @@ register int  sn;	/* target source number */
 	} else {
 		for (i = 0; i < 3; i++)
 			offsdir[i] = source[sn].sloc[i] - oc[i];
-		n = or2/DOT(offsdir,offsdir)*vspretest + .5;
+		d = DOT(offsdir,offsdir);
+		if (d <= FTINY)
+			n = 2.*PI * vspretest + .5;
+		else
+			n = 2.*PI * (1.-sqrt(1./(1.+or2/d)))*vspretest + .5;
 		infront = DOT(onorm, offsdir) > 0.;
 	}
 	if (n < MINSAMPLES) n = MINSAMPLES;
