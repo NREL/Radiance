@@ -21,8 +21,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "view.h"
 
 #define MAXINP		32		/* maximum number of input files */
-#define WINSIZ		9		/* scanline window size */
-#define MIDSCN		4		/* current scan position */
+#define WINSIZ		17		/* scanline window size */
+#define MIDSCN		((WINSIZ-1)/2+1)
 
 struct {
 	char	*name;		/* file or command name */
