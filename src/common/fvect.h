@@ -44,6 +44,8 @@ extern double	dist2lseg(FVECT p, FVECT ep1, FVECT ep2);
 extern void	fcross(FVECT vres, FVECT v1, FVECT v2);
 extern void	fvsum(FVECT vres, FVECT v0, FVECT v1, double f);
 extern double	normalize(FVECT v);
+extern int	closestapproach(RREAL t[2], FVECT rorg0, FVECT rdir0,
+				FVECT rorg1, FVECT rdir1);
 extern void	spinvector(FVECT vres, FVECT vorig, FVECT vnorm, double theta);
 
 
