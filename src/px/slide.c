@@ -1,8 +1,10 @@
-/*
+/* Copyright 1988 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
+
+/*
  *  slide.c - driver for dicomed film recorder using GRAFPAC under VMS.
  *
  *     2/19/86

@@ -1,8 +1,10 @@
-/*
+/* Copyright 1988 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
+
+/*
 CIQ - main program for color image quantization
 options for Floyd-Steinberg dithering by minimization of accumulated error
 or undithered quantization
