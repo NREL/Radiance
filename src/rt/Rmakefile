@@ -253,6 +253,8 @@ source.o srcdraw.o srcsamp.o srcsupp.o virtuals.o:	source.h
 cone.o data.o devcomm.o freeobjmem.o initotypes.o fprism.o \
 duphead.o octree.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
 
+ambio.o:	../common/fvect.h
+
 initotypes.o raytrace.o:	otspecial.h
 
 sundev.o:	suntools.icon

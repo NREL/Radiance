@@ -12,12 +12,18 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "color.h"
 
+#include "fvect.h"
+
 #include "ambient.h"
 
 
 #define  putvec(v,fp)	putflt((v)[0],fp);putflt((v)[1],fp);putflt((v)[2],fp)
 
 #define  getvec(v,fp)	(v)[0]=getflt(fp);(v)[1]=getflt(fp);(v)[2]=getflt(fp)
+
+#define  badflt(x)	((x) < -FHUGE || (x) > FHUGE)
+
+#define  badvec(v)	(badflt((v)[0]) || badflt((v)[1]) || badflt((v)[2]))
 
 
 extern double  getflt();
@@ -63,6 +69,31 @@ FILE  *fp;
 }
 
 
+int
+ambvalOK(av)			/* check consistency of ambient value */
+register AMBVAL  *av;
+{
+	double	d;
+
+	if (badvec(av->pos)) return(0);
+	if (badvec(av->dir)) return(0);
+	d = DOT(av->dir,av->dir);
+	if (d < 0.9999 || d > 1.0001) return(0);
+	if (av->lvl < 0 || av->lvl > 100) return(0);
+	if (av->weight <= 0. || av->weight > 1.) return(0);
+	if (av->rad <= 0. || av->rad >= FHUGE) return(0);
+	if (colval(av->val,RED) < 0. ||
+			colval(av->val,RED) > FHUGE ||
+			colval(av->val,GRN) < 0. ||
+			colval(av->val,GRN) > FHUGE ||
+			colval(av->val,BLU) < 0. ||
+			colval(av->val,BLU) > FHUGE) return(0);
+	if (badvec(av->gpos)) return(0);
+	if (badvec(av->gdir)) return(0);
+	return(1);
+}
+
+
 readambval(av, fp)		/* read ambient value from stream */
 register AMBVAL  *av;
 FILE  *fp;
@@ -81,5 +112,5 @@ FILE  *fp;
 	av->rad = getflt(fp);
 	getvec(av->gpos, fp);
 	getvec(av->gdir, fp);
-	return(feof(fp) ? 0 : 1);
+	return(feof(fp) ? 0 : ambvalOK(av));
 }
