@@ -616,10 +616,10 @@ char	*po;
 		overture = 0;
 	switch (vscale(VARIABILITY)) {
 	case LOW:
-		op = addarg(op, "-aw 128 -aa .4 -ad 64");
+		op = addarg(op, "-aa .4 -ad 64");
 		break;
 	case MEDIUM:
-		op = addarg(op, "-aw 1024 -aa .3 -ad 128");
+		op = addarg(op, "-aa .3 -ad 128");
 		break;
 	case HIGH:
 		op = addarg(op, "-aa .25 -ad 256");
@@ -695,10 +695,10 @@ char	*po;
 		overture = 0;
 	switch (vscale(VARIABILITY)) {
 	case LOW:
-		op = addarg(op, "-aw 128 -aa .25 -ad 196 -as 0");
+		op = addarg(op, "-aa .25 -ad 196 -as 0");
 		break;
 	case MEDIUM:
-		op = addarg(op, "-aw 1024 -aa .2 -ad 400 -as 64");
+		op = addarg(op, "-aa .2 -ad 400 -as 64");
 		break;
 	case HIGH:
 		op = addarg(op, "-aa .15 -ad 768 -as 196");
@@ -771,10 +771,10 @@ char	*po;
 		overture = 0;
 	switch (vscale(VARIABILITY)) {
 	case LOW:
-		op = addarg(op, "-aw 128 -aa .15 -ad 256 -as 0");
+		op = addarg(op, "-aa .15 -ad 256 -as 0");
 		break;
 	case MEDIUM:
-		op = addarg(op, "-aw 1024 -aa .125 -ad 512 -as 256");
+		op = addarg(op, "-aa .125 -ad 512 -as 256");
 		break;
 	case HIGH:
 		op = addarg(op, "-aa .08 -ad 1024 -as 512");
