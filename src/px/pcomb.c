@@ -486,7 +486,7 @@ register char	*nam;
 		if (input[fn].vw.type == 0)
 			errno = ERANGE;
 		else {
-			pix2loc(loc, &input[fn].rs, xpos, ypos);
+			pix2loc(loc, &input[fn].rs, xscan, ymax-1-yscan);
 			if (viewray(lorg[fn], ldir[fn],
 					&input[fn].vw, loc[0], loc[1]) < 0)
 				errno = ERANGE;
