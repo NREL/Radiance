@@ -19,6 +19,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "random.h"
 
+#define  MINSAMPLES	3		/* minimum number of pretest samples */
+#define  STESTMAX	30		/* maximum seeks per sample */
+
 
 double  getdisk();
 
@@ -272,14 +275,14 @@ register int  sn;	/* target source number */
 		n = or2/DOT(offsdir,offsdir)*vspretest + .5;
 		infront = DOT(onorm, offsdir) > 0.;
 	}
-	if (n < 1) n = 1;
+	if (n < MINSAMPLES) n = MINSAMPLES;
 #ifdef DEBUG
 	fprintf(stderr, "pretesting source %d in object %s with %d rays\n",
 			sn, o->oname, n);
 #endif
 				/* sample */
 	or = sqrt(or2);
-	ssn = 25*n;
+	ssn = STESTMAX*n;
 	nhit = nok = 0;
 	while (n-- > 0) {
 					/* get sample point */
