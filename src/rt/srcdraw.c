@@ -311,14 +311,14 @@ int	rad;				/* source sample size */
 					/* compute image polygon for source */
 		if (!(nsv = sourcepoly(vw, sn, spoly)))
 			continue;
+					/* big enough for standard sampling? */
+		if (minw2(spoly, nsv, vw->vn2/vw->hn2) > (double)rad*rad/xr/xr)
+			continue;
 					/* clip source poly to subimage */
 		nsv = box_clip_poly(spoly, nsv,
 				(double)x0/xr, (double)(x0+xsiz)/xr,
 				(double)y0/yr, (double)(y0+ysiz)/yr, spoly);
 		if (!nsv)
-			continue;
-					/* is it big so sampling found it? */
-		if (minw2(spoly, nsv, vw->vn2/vw->hn2) > (double)rad*rad/xr/xr)
 			continue;
 					/* find common subimage (BBox) */
 		xmin = x0 + xsiz; xmax = x0;
@@ -347,7 +347,7 @@ int	rad;				/* source sample size */
 						cxy[0], cxy[1])) < -FTINY)
 					continue;	/* not in view */
 				if (source[sn].sflags & SSPOT &&
-						spotout(sr, source[sn].sl.s))
+						spotout(&sr, source[sn].sl.s))
 					continue;	/* outside spot */
 				rayorigin(&sr, NULL, SHADOW, 1.0);
 				sr.rsrc = sn;
