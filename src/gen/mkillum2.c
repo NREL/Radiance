@@ -38,10 +38,10 @@ struct rtproc  *rt;
 char  *nm;
 {
 #define MAXMISS		(5*n*il->nsamps)
-	int  dim[4];
-	int  n, nalt, nazi;
+	int  dim[3];
+	int  n, nalt, nazi, h;
 	float  *distarr;
-	double  r1, r2;
+	double  sp[2], r1, r2;
 	FVECT  dn, org, dir;
 	FVECT  u, v;
 	double  ur[2], vr[2];
@@ -81,21 +81,18 @@ char  *nm;
 	    for (dim[2] = 0; dim[2] < nazi; dim[2]++)
 		for (i = 0; i < il->nsamps; i++) {
 					/* random direction */
-		    dim[3] = 1;
-		    r1 = (dim[1]+urand(urind(ilhash(dim,4),i)))/nalt;
-		    dim[3] = 2;
-		    r2 = (dim[2]+urand(urind(ilhash(dim,4),i)))/nazi;
+		    h = ilhash(dim, 3) + i;
+		    peano(sp, 2, urand(h), .02);
+		    r1 = (dim[1] + sp[0])/nalt;
+		    r2 = (dim[2] + sp[1])/nazi;
 		    flatdir(dn, r1, r2);
 		    for (j = 0; j < 3; j++)
 			dir[j] = -dn[0]*u[j] - dn[1]*v[j] - dn[2]*fa->norm[j];
 					/* random location */
 		    do {
-			dim[3] = 3;
-			r1 = ur[0] + (ur[1]-ur[0]) *
-					urand(urind(ilhash(dim,4),i+nmisses));
-			dim[3] = 4;
-			r2 = vr[0] + (vr[1]-vr[0]) *
-					urand(urind(ilhash(dim,4),i+nmisses));
+			peano(sp, 2, urand(h+nmisses), .01);
+			r1 = ur[0] + (ur[1]-ur[0]) * sp[0];
+			r2 = vr[0] + (vr[1]-vr[0]) * sp[1];
 			for (j = 0; j < 3; j++)
 			    org[j] = r1*u[j] + r2*v[j]
 					+ fa->offset*fa->norm[j];
@@ -130,10 +127,10 @@ struct illum_args  *il;
 struct rtproc  *rt;
 char  *nm;
 {
-	int  dim[4];
+	int  dim[3];
 	int  n, nalt, nazi;
 	float  *distarr;
-	double  r1, r2, r3;
+	double  sp[4], r1, r2, r3;
 	FVECT  org, dir;
 	FVECT  u, v;
 	register int  i, j;
@@ -153,18 +150,16 @@ char  *nm;
 	for (dim[1] = 0; dim[1] < nalt; dim[1]++)
 	    for (dim[2] = 0; dim[2] < nazi; dim[2]++)
 		for (i = 0; i < il->nsamps; i++) {
+					/* next sample point */
+		    peano(sp, 4, urand(ilhash(dim,3)+i), .02);
 					/* random direction */
-		    dim[3] = 1;
-		    r1 = (dim[1]+urand(urind(ilhash(dim,4),i)))/nalt;
-		    dim[3] = 2;
-		    r2 = (dim[2]+urand(urind(ilhash(dim,4),i)))/nazi;
+		    r1 = (dim[1] + sp[0])/nalt;
+		    r2 = (dim[2] + sp[1])/nazi;
 		    rounddir(dir, r1, r2);
 					/* random location */
 		    mkaxes(u, v, dir);		/* yuck! */
-		    dim[3] = 3;
-		    r3 = sqrt(urand(urind(ilhash(dim,4),i)));
-		    dim[3] = 4;
-		    r2 = 2.*PI*urand(urind(ilhash(dim,4),i));
+		    r3 = sqrt(sp[2]);
+		    r2 = 2.*PI*sp[3];
 		    r1 = r3*ob->oargs.farg[3]*cos(r2);
 		    r2 = r3*ob->oargs.farg[3]*sin(r2);
 		    r3 = ob->oargs.farg[3]*sqrt(1.01-r3*r3);
@@ -191,10 +186,10 @@ struct illum_args  *il;
 struct rtproc  *rt;
 char  *nm;
 {
-	int  dim[4];
+	int  dim[3];
 	int  n, nalt, nazi;
 	float  *distarr;
-	double  r1, r2, r3;
+	double  sp[4], r1, r2, r3;
 	FVECT  dn, org, dir;
 	FVECT  u, v;
 	register CONE  *co;
@@ -215,21 +210,18 @@ char  *nm;
 	for (dim[1] = 0; dim[1] < nalt; dim[1]++)
 	    for (dim[2] = 0; dim[2] < nazi; dim[2]++)
 		for (i = 0; i < il->nsamps; i++) {
+					/* next sample point */
+		    peano(sp, 4, urand(ilhash(dim,3)+i), .02);
 					/* random direction */
-		    dim[3] = 1;
-		    r1 = (dim[1]+urand(urind(ilhash(dim,4),i)))/nalt;
-		    dim[3] = 2;
-		    r2 = (dim[2]+urand(urind(ilhash(dim,4),i)))/nalt;
+		    r1 = (dim[1] + sp[0])/nalt;
+		    r2 = (dim[2] + sp[1])/nalt;
 		    flatdir(dn, r1, r2);
 		    for (j = 0; j < 3; j++)
 			dir[j] = -dn[0]*u[j] - dn[1]*v[j] - dn[2]*co->ad[j];
 					/* random location */
-		    dim[3] = 3;
 		    r3 = sqrt(CO_R0(co)*CO_R0(co) +
-				urand(urind(ilhash(dim,4),i))*
-				(CO_R1(co)*CO_R1(co) - CO_R0(co)*CO_R0(co)));
-		    dim[3] = 4;
-		    r2 = 2.*PI*urand(urind(ilhash(dim,4),i));
+			    sp[2]*(CO_R1(co)*CO_R1(co) - CO_R0(co)*CO_R0(co)));
+		    r2 = 2.*PI*sp[3];
 		    r1 = r3*cos(r2);
 		    r2 = r3*sin(r2);
 		    for (j = 0; j < 3; j++)
