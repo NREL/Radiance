@@ -18,6 +18,8 @@ static char SCCSid[] = "$SunId$ LBL";
  *  11/16/88  Added VARDEF structure for hard linking.
  *
  *  5/31/90  Added conditional compile (REDEFW) for redefinition warning.
+ *
+ *  4/23/91  Added ':' defines for constant expressions (RCONST)
  */
 
 #include  <stdio.h>
@@ -105,8 +107,9 @@ EPNODE  *ep;
 }
 
 
-varset(vname, val)		/* set a variable's value */
+varset(vname, assign, val)	/* set a variable's value */
 char  *vname;
+int  assign;
 double  val;
 {
     register EPNODE  *ep1, *ep2;
@@ -115,12 +118,13 @@ double  val;
 	ep2 = ep1->v.kid->sibling;
 	if (ep2->type == NUM) {
 	    ep2->v.num = val;
+	    ep1->type = assign;
 	    return;
 	}
     }
 					/* hand build definition */
     ep1 = newnode();
-    ep1->type = '=';
+    ep1->type = assign;
     ep2 = newnode();
     ep2->type = SYM;
     ep2->v.name = savestr(vname);
@@ -129,12 +133,27 @@ double  val;
     ep2->type = NUM;
     ep2->v.num = val;
     addekid(ep1, ep2);
-    dclear(vname);
+    dremove(vname);
     dpush(ep1);
 }
 
 
-dclear(name)			/* delete all definitions of name */
+dclear(name)			/* delete variable definitions of name */
+char  *name;
+{
+    register EPNODE  *ep;
+
+    while ((ep = dpop(name)) != NULL) {
+	if (ep->type == ':') {
+	    dpush(ep);		/* don't clear constants */
+	    return;
+	}
+	epfree(ep);
+    }
+}
+
+
+dremove(name)			/* delete all definitions of name */
 char  *name;
 {
     register EPNODE  *ep;
@@ -174,7 +193,7 @@ dclearall()			/* clear all definitions */
 
     for (i = 0; i < NHASH; i++)
 	for (vp = hashtbl[i]; vp != NULL; vp = vp->next)
-	    dclear(vp->name);
+	    dremove(vp->name);
 #ifdef  OUTCHAN
     for (ep = outchan; ep != NULL; ep = ep->sibling)
 	epfree(ep);
@@ -368,10 +387,20 @@ loaddefn()			/* load next definition */
 	ep = getdefn();
 #ifdef  REDEFW
 	if (dlookup(dname(ep)) != NULL) {
-		dclear(dname(ep));
-		wputs(dname(ep));
+	    dclear(dname(ep));
+	    wputs(dname(ep));
+	    if (dlookup(dname(ep)) == NULL)
 		wputs(": redefined\n");
+	    else
+		wputs(": redefined constant expression\n");
 	}
+#ifdef  FUNCTION
+	else if (ep->v.kid->type == FUNC &&
+			liblookup(ep->v.kid->v.kid->v.name) != NULL) {
+	    wputs(ep->v.kid->v.kid->v.name);
+	    wputs(": redefined library function\n");
+	}
+#endif
 #else
 	dclear(dname(ep));
 #endif
@@ -387,7 +416,9 @@ loaddefn()			/* load next definition */
 
 EPNODE *
 getdefn()			/* A -> SYM = E1 */
+				/*	SYM : E1 */
 				/*      FUNC(SYM,..) = E1 */
+				/*	FUNC(SYM,..) : E1 */
 {
     register EPNODE  *ep1, *ep2;
 
@@ -421,13 +452,22 @@ getdefn()			/* A -> SYM = E1 */
 	curfunc = NULL;
 #endif
 
-    if (nextc != '=')
-	syntax("'=' expected");
-    scan();
+    if (nextc != '=' && nextc != ':')
+	syntax("'=' or ':' expected");
 
     ep2 = newnode();
-    ep2->type = '=';
+    ep2->type = nextc;
+    scan();
     addekid(ep2, ep1);
+#ifdef  RCONST
+    if (
+#ifdef  FUNCTION
+	    ep1->type == SYM &&
+#endif
+	    ep2->type == ':')
+	addekid(ep2, rconst(getE1()));
+    else
+#endif
     addekid(ep2, getE1());
 
     if (
@@ -499,7 +539,7 @@ EPNODE  *d;
 	return(ep1->v.num);			/* return if number */
     ep2 = ep1->sibling;				/* check time */
     if (ep2->v.tick < 0 || ep2->v.tick < eclock) {
-	ep2->v.tick = eclock;
+	ep2->v.tick = d->type == ':' ? 1L<<30 : eclock;
 	ep2 = ep2->sibling;
 	ep2->v.num = evalue(ep1);		/* needs new value */
     } else
