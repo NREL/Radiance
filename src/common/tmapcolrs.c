@@ -39,7 +39,7 @@ static BYTE	photofact[BMESUPPER-BMESLOWER];
 
 
 int
-tmCvColrs(ls, cs, scan, len)		/* tone map RGBE/XYZE colors */
+tmCvColrs(ls, cs, scan, len)		/* convert RGBE/XYZE colors */
 TMbright	*ls;
 BYTE	*cs;
 COLR	*scan;
@@ -63,7 +63,7 @@ int	len;
 			colr_color(newscan[i], scan[i]);
 		return(tmCvColors(ls, cs, newscan, len));
 	}
-	if (colrReg == -1) {			/* build tables if necessary */
+	if (colrReg < 0) {			/* build tables if necessary */
 		colrReg = tmRegPkg(&colrPkg);
 		if (colrReg < 0)
 			returnErr(TM_E_CODERR1);
@@ -183,8 +183,10 @@ FILE	*fp;
 	*xp = *yp = 0;				/* error precaution */
 	if ((inpf = fp) == TM_GETFILE && (inpf = fopen(fname, "r")) == NULL)
 		returnErr(TM_E_BADFILE);
+	*lpp = NULL;
+	if (cpp != TM_NOCHROMP) *cpp = NULL;
 	info = rhdefault;			/* get our header */
-	getheader(inpf, headline, (char *)&info);
+	getheader(inpf, headline, (MEM_PTR)&info);
 	if (info.format == FMTBAD | info.expos <= 0. ||
 			fgetresolu(xp, yp, inpf) < 0) {
 		err = TM_E_BADFILE; goto done;
@@ -225,9 +227,14 @@ done:						/* clean up */
 	if (fp == NULL)
 		fclose(inpf);
 	if (scanin != NULL)
-		free((char *)scanin);
-	if (err != TM_E_OK)
+		free((MEM_PTR)scanin);
+	if (err != TM_E_OK) {
+		if (*lpp != NULL)
+			free((MEM_PTR)*lpp);
+		if (cpp != TM_NOCHROMP && *cpp != NULL)
+			free((MEM_PTR)*cpp);
 		returnErr(err);
+	}
 	returnOK;
 }
 
@@ -295,8 +302,8 @@ char	*fname;
 	for (y = 0; y < *yp; y++) {
 		if (freadcolrs(scan, *xp, infp) < 0) {
 			pclose(infp);
-			free((char *)scan);
-			free((char *)*psp);
+			free((MEM_PTR)scan);
+			free((MEM_PTR)*psp);
 			*psp = NULL;
 			returnErr(TM_E_BADFILE);
 		}
@@ -311,7 +318,7 @@ char	*fname;
 				*rp++ = scan[x][BLU];
 			}
 	}
-	free((char *)scan);
+	free((MEM_PTR)scan);
 	pclose(infp);
 	returnOK;
 }
@@ -328,7 +335,6 @@ char	*fname;
 FILE	*fp;
 {
 	char	*funcName = fname==NULL ? "tmMapPicture" : fname;
-	FILE	*inpf;
 	BYTE	*cp;
 	TMbright	*lp;
 	int	err;
@@ -359,7 +365,7 @@ FILE	*fp;
 	if (flags & TM_F_BW) {
 		*psp = (BYTE *)malloc(sizeof(BYTE) * *xp * *yp);
 		if (*psp == NULL) {
-			free((char *)lp);
+			free((MEM_PTR)lp);
 			tmDone(NULL);
 			returnErr(TM_E_NOMEM);
 		}
@@ -377,10 +383,10 @@ FILE	*fp;
 	err = tmMapPixels(*psp, lp, cp, *xp * *yp);
 
 done:						/* clean up */
-	free((char *)lp);
+	free((MEM_PTR)lp);
 	tmDone(NULL);
 	if (err != TM_E_OK) {			/* free memory on error */
-		free((char *)*psp);
+		free((MEM_PTR)*psp);
 		*psp = NULL;
 		returnErr(err);
 	}
