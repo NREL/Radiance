@@ -413,7 +413,7 @@ register RAY  *r;
 					sr.rsrc != r->slights[i])
 				continue;		/* no path */
 			copycolor(sr.cext, r->cext);
-			sr.albedo = r->albedo;
+			copycolor(sr.albedo, r->albedo);
 			sr.gecc = r->gecc;
 			rayvalue(&sr);			/* eval. source ray */
 			if (bright(sr.rcol) <= FTINY)
@@ -433,8 +433,9 @@ register RAY  *r;
 				d = (1. - r->gecc*r->gecc) / (d*d*d);
 			}
 							/* other factors */
-			d *= si.dom * r->albedo * r->rot / (4.*PI*nsamps);
+			d *= si.dom * r->rot / (4.*PI*nsamps);
 			multcolor(sr.rcol, r->cext);
+			multcolor(sr.rcol, r->albedo);
 			scalecolor(sr.rcol, d);
 			addcolor(cumval, sr.rcol);
 		}

@@ -118,7 +118,7 @@ extern double  specthresh;		/* specular sampling threshold */
 extern double  specjitter;		/* specular sampling jitter */
 
 extern COLOR  cextinction;		/* global extinction coefficient */
-extern double  salbedo;			/* global scattering albedo */
+extern COLOR  salbedo;			/* global scattering albedo */
 extern double  seccg;			/* global scattering eccentricity */
 extern double  ssampdist;		/* scatter sampling distance */
 
@@ -476,8 +476,11 @@ char  *argv[];
 				i += 3;
 				break;
 			case 'a':				/* albedo */
-				check(3,"f");
-				salbedo = atof(argv[++i]);
+				check(3,"fff");
+				setcolor(salbedo, atof(argv[i+1]),
+						atof(argv[i+2]),
+						atof(argv[i+3]));
+				i += 3;
 				break;
 			case 'g':				/* eccentr. */
 				check(3,"f");
@@ -912,7 +915,8 @@ printdefaults()			/* print default values to stdout */
 			colval(cextinction,RED),
 			colval(cextinction,GRN),
 			colval(cextinction,BLU));
-	printf("-ma %f\t\t\t# scattering albedo\n", salbedo);
+	printf("-ma %f %f %f\t# scattering albedo\n", colval(salbedo,RED),
+			colval(salbedo,GRN), colval(salbedo,BLU));
 	printf("-mg %f\t\t\t# scattering eccentricity\n", seccg);
 	printf("-ms %f\t\t\t# mist sampling distance\n", ssampdist);
 	printf("-lr %-9d\t\t\t# limit reflection\n", maxdepth);
