@@ -258,26 +258,6 @@ noderr:
 }
 
 
-int
-dosets(f)				/* loop through all sets */
-int	(*f)();
-{
-	int  res = 0;
-	int  n;
-	register OBJECT  *os;
-
-	for (n = 0; n < OSTSIZ; n++) {
-		if ((os = ostable[n]) == NULL)
-			continue;
-		while (*os > 0) {
-			res += (*f)(os);
-			os += *os + 1;
-		}
-	}
-	return(res);
-}
-
-
 void
 donesets()			/* free ALL SETS in our table */
 {
