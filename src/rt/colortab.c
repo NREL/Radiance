@@ -1,4 +1,4 @@
-/* Copyright (c) 1989 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -33,7 +33,7 @@ static char SCCSid[] = "$SunId$ LBL";
 				(int)(colval(c,p)*256.) : 255 ]
 				/* color partition tree */
 #define CNODE		short
-#define set_branch(p,c)	((c)<<2|(p))
+#define set_branch(p,c) ((c)<<2|(p))
 #define set_pval(pv)	((pv)<<2|3)
 #define is_branch(cn)	(((cn)&3)!=3)
 #define is_pval(cn)	(((cn)&3)==3)
@@ -128,7 +128,7 @@ int	(*set_pixel)();
 			(g-clrtab[h].ent[GRN])*(g-clrtab[h].ent[GRN]) +
 			(b-clrtab[h].ent[BLU])*(b-clrtab[h].ent[BLU]) > MAXDST2) {
 		clrtab[h].ent[RED] = r;
-		clrtab[h].ent[GRN] = g;	/* reassign pixel */
+		clrtab[h].ent[GRN] = g; /* reassign pixel */
 		clrtab[h].ent[BLU] = b;
 #ifdef DEBUG
 		sprintf(errmsg, "pixel %d = (%d,%d,%d) (%d refs)\n",
@@ -142,9 +142,8 @@ int	(*set_pixel)();
 
 
 make_gmap(gam)			/* make gamma correction map */
-double  gam;
+double	gam;
 {
-	extern double	pow();
 	register int	i;
 	
 	for (i = 0; i < 256; i++)
