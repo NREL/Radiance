@@ -54,6 +54,7 @@ int  dofwd;
 					/* check to see if done already */
 	if ((f = (MFUNC *)m->os) != NULL)
 		return(f);
+	fobj = NULL; fray = NULL;
 	if (initfile[0]) {		/* initialize on first call */
 		setcontext("");
 		scompile("Dx=$1;Dy=$2;Dz=$3;", NULL, 0);
@@ -211,6 +212,9 @@ l_arg()				/* return nth real argument */
 	extern double  argument();
 	register int  n;
 
+	if (fobj == NULL)
+		syntax("arg(n) used in constant expression");
+
 	n = argument(1) + .5;		/* round to integer */
 
 	if (n < 1)
@@ -248,6 +252,9 @@ register int  n;
 {
 	double  sum;
 	register RAY  *r;
+
+	if (fray == NULL)
+		syntax("ray parameter used in constant expression");
 
 	if (--n < 0)
 		goto badchan;
