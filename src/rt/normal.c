@@ -155,7 +155,6 @@ register RAY  *r;
 	raytexture(r, m->omod);
 	nd.pdot = raynormal(nd.pnorm, r);	/* perturb normal */
 	multcolor(nd.mcolor, r->pcol);		/* modify material color */
-	r->rt = r->rot;				/* default ray length */
 	transtest = 0;
 						/* get specular component */
 	nd.rspec = m->oargs.farg[3];

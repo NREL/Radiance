@@ -61,7 +61,6 @@ register RAY  *r;
 
 	if (r->rod < 0.0)			/* reorient if necessary */
 		flipsurface(r);
-	r->rt = r->rot;				/* default ray length */
 	transtest = 0;
 						/* get modifiers */
 	raytexture(r, m->omod);
