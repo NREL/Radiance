@@ -26,7 +26,7 @@ LIBDIR = /usr/local/lib/ray
 # Library routines:
 #
 LIBS = -lm
-COMPAT =
+COMPAT = malloc.o
 
 #
 # Device drivers for rview (see also devtable.c):
