@@ -152,7 +152,7 @@ char  **av;
 int  ac, fi;
 {
 	char  *newav[256], **avp;
-	char  argbuf[2048];
+	char  argbuf[1024];
 	char  newid[128];
 	char  *oldid;
 	register char	*cp;
