@@ -55,7 +55,7 @@ static EPNODE  *outchan;
 #endif
 
 #ifdef	FUNCTION
-EPNODE	*curfunc;
+EPNODE	*curfunc = NULL;
 #define	 dname(ep)	((ep)->v.kid->type == SYM ? \
 			(ep)->v.kid->v.name : \
 			(ep)->v.kid->v.kid->v.name)
@@ -620,8 +620,7 @@ getdefn()			/* A -> SYM = E1 */
 	    syntax("')' expected");
 	scan();
 	curfunc = ep1;
-    } else
-	curfunc = NULL;
+    }
 #endif
 
     if (nextc != '=' && nextc != ':')
@@ -646,6 +645,10 @@ getdefn()			/* A -> SYM = E1 */
 	ep1->type = NUM;
 	addekid(ep2, ep1);
     }
+
+#ifdef  FUNCTION
+    curfunc = NULL;
+#endif
 
     return(ep2);
 }
