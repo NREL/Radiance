@@ -337,8 +337,8 @@ register char  *s;
 	int  na;
 	int  nvopts = 0;
 
-	while (*s == ' ')
-		s++;
+	if (*s != '-')
+		s = sskip(s);
 	while (*s) {
 		ac = 0;
 		do {
@@ -372,7 +372,32 @@ FILE  *fp;
 }
 
 
-static char  *altname[] = {NULL,"rpict","rview","pinterp",VIEWSTR,NULL};
+int
+isview(s)				/* is this a view string? */
+char  *s;
+{
+	static char  *altname[]={NULL,"rpict","rview","pinterp",VIEWSTR,NULL};
+	extern char  *progname, *rindex();
+	register char  *cp;
+	register char  **an;
+					/* add program name to list */
+	if (altname[0] == NULL)
+		if ((cp = rindex(progname, '/')) != NULL)
+			altname[0] = cp+1;
+		else
+			altname[0] = progname;
+					/* skip leading path */
+	cp = s;
+	while (*cp && *cp != ' ')
+		cp++;
+	while (cp > s && cp[-1] != '/')
+		cp--;
+	for (an = altname; *an != NULL; an++)
+		if (!strncmp(*an, cp, strlen(*an)))
+			return(1);
+	return(0);
+}
+
 
 struct myview {
 	VIEW	*hv;
@@ -385,14 +410,8 @@ gethview(s, v)				/* get view from header */
 char  *s;
 register struct myview  *v;
 {
-	register char  **an;
-
-	for (an = altname; *an != NULL; an++)
-		if (!strncmp(*an, s, strlen(*an))) {
-			if (sscanview(v->hv, s+strlen(*an)) > 0)
-				v->ok++;
-			return;
-		}
+	if (isview(s) && sscanview(v->hv, s) > 0)
+		v->ok++;
 }
 
 
@@ -402,14 +421,12 @@ char  *fname;
 VIEW  *vp;
 RESOLU  *rp;
 {
-	extern char  *progname;
 	struct myview	mvs;
 	FILE  *fp;
 
 	if ((fp = fopen(fname, "r")) == NULL)
 		return(-1);
 
-	altname[0] = progname;
 	mvs.hv = vp;
 	mvs.ok = 0;
 
