@@ -439,8 +439,9 @@ register int	i;
 		return(-1);
 	if (i == 0) {			/* clear entire holodeck */
 		nchanged = 0;
-		for (i = 1; i <= nbeams(hp); i++)
-			nchanged += hdfreebeam(hp, i);
+		for (i = nbeams(hp); i > 0; i--)
+			if (hp->bl[i] != NULL)
+				nchanged += hdfreebeam(hp, i);
 		return(nchanged);
 	}
 	if (i < 1 | i > nbeams(hp))
@@ -467,6 +468,47 @@ register int	i;
 }
 
 
+int
+hdkillbeam(hp, i)		/* delete beam from holodeck */
+register HOLO	*hp;
+register int	i;
+{
+	static BEAM	emptybeam;
+	int	nchanged, n;
+
+	if (hp == NULL) {		/* clobber all holodecks */
+		nchanged = 0;
+		for (i = 0; hdlist[i] != NULL; i++)
+			nchanged += hdkillbeam(hdlist[i], 0);
+		return(nchanged);
+	}
+	if (i == 0) {			/* clobber entire holodeck */
+		nchanged = 0;
+		for (i = nbeams(hp); i > 0; i--)
+			if (hp->bi[i].nrd > 0 || hp->bl[i] != NULL)
+				nchanged += hdkillbeam(hp, i);
+#ifdef DEBUG
+		if (biglob(hp)->nrd != 0 | blglob(hp)->nrm != 0)
+			error(CONSISTENCY, "bad beam count in hdkillbeam");
+#endif
+		return(nchanged);
+	}
+	if (i < 1 | i > nbeams(hp))
+		error(CONSISTENCY, "bad beam index to hdkillbeam");
+	if (hp->bl[i] != NULL) {	/* free memory */
+		blglob(hp)->nrm -= nchanged = hp->bl[i]->nrm;
+		free((char *)hp->bl[i]);
+	} else
+		nchanged = hp->bi[i].nrd;
+	if (hp->bi[i].nrd) {		/* free file fragment */
+		hp->bl[i] = &emptybeam;
+		hdgetbi(hp, i);
+	}
+	hp->bl[i] = NULL;
+	return(nchanged);
+}
+
+
 hdlrulist(ha, ba, n, hp)	/* add beams from holodeck to LRU list */
 register HOLO	*ha[];			/* section list (NULL terminated) */
 register int	ba[];			/* beam index to go with section */
@@ -480,7 +522,7 @@ register HOLO	*hp;			/* section we're adding from */
 		;
 	nents = j;
 					/* insert each beam from hp */
-	for (i = nbeams(hp); i > 0; i-- ) {
+	for (i = nbeams(hp); i > 0; i--) {
 		if (hp->bl[i] == NULL)		/* check if loaded */
 			continue;
 		if ((j = ++nents) > n)		/* grow list if we can */
