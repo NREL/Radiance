@@ -18,9 +18,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 
 #define  INITFILE	"rayinit.cal"
-#define  REFVNAME	"`FILE_REFCNT"
 #define  CALSUF		".cal"
 #define  LCALSUF	4
+char  REFVNAME[] = "`FILE_REFCNT";
 
 XF  unitxf = {			/* identity transform */
 	{{1.0, 0.0, 0.0, 0.0},
