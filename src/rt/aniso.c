@@ -163,7 +163,7 @@ double  omega;			/* light source size */
 		} else
 			dtmp = 0.0;
 						/* gaussian */
-		dtmp = exp(-dtmp) * 1.0/(4.0*PI)
+		dtmp = exp(-dtmp) * 1.0/PI
 				* sqrt(-ldot/(np->pdot*au2*av2));
 						/* worth using? */
 		if (dtmp > FTINY) {

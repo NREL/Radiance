@@ -137,7 +137,7 @@ double  omega;			/* light source size */
 						/* roughness + source */
 		dtmp = np->alpha2 + omega/PI;
 						/* gaussian */
-		dtmp = exp((2.*DOT(np->prdir,ldir)-2.)/dtmp)/(4.*PI*dtmp);
+		dtmp = exp((2.*DOT(np->prdir,ldir)-2.)/dtmp)/(PI*dtmp);
 						/* worth using? */
 		if (dtmp > FTINY) {
 			copycolor(ctmp, np->mcolor);
