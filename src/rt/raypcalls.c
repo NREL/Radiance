@@ -468,6 +468,12 @@ ray_popen(			/* open the specified # processes */
 		if (r_proc[ray_pnprocs].pid < 0)
 			error(SYSTEM, "cannot fork child process");
 		close(p1[0]); close(p0[1]);
+		/*
+		 * Close write stream on exec to avoid multiprocessing deadlock.
+		 * No use in read stream without it, so set flag there as well.
+		 */
+		fcntl(p1[1], F_SETFD, FD_CLOEXEC);
+		fcntl(p0[0], F_SETFD, FD_CLOEXEC);
 		r_proc[ray_pnprocs].fd_send = p1[1];
 		r_proc[ray_pnprocs].fd_recv = p0[0];
 		r_proc[ray_pnprocs].npending = 0;

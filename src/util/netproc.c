@@ -229,7 +229,7 @@ startjob(	/* start a job on a process server */
 	ps->proc[i].pid = pid;
 	close(pfd[1]);			/* get piped stderr file descriptor */
 	ps->proc[i].efd = pfd[0];
-	fcntl(pfd[0], F_SETFD, 1);	/* set close on exec flag */
+	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);	/* set close on exec flag */
 	pindex[pfd[0]] = ps->proc + i;	/* assign error fd index */
 	FD_SET(pfd[0], &errdesc);	/* add to select call parameter */
 	if (pfd[0] > maxfd)
