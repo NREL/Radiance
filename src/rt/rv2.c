@@ -1,4 +1,4 @@
-/* Copyright (c) 1994 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -497,6 +497,10 @@ register char  *s;
 	extern int  ambdiv;
 	extern int  ambssamp;
 	extern int  ambounce;
+	extern COLOR  cextinction;
+	extern double  salbedo;
+	extern double  seccg;
+	extern double  ssampdist;
 	extern int  directvis;
 	extern double  srcsizerat;
 	extern int  do_irrad;
@@ -507,7 +511,7 @@ register char  *s;
 	
 	if (s[0] == '\0') {
 		(*dev->comout)(
-		"aa ab ad ar as av b dc dv dj ds dt i lr lw ps pt sj st bv: ");
+		"aa ab ad ar as av b dc dv dj ds dt i lr lw me ma mg ms ps pt sj st bv: ");
 		(*dev->comin)(buf, NULL);
 		s = buf;
 	}
@@ -585,6 +589,26 @@ register char  *s;
 		case 'r':
 			if (getparam(s+2, "ambient resolution", 'i', &ambres))
 				setambres(ambres);
+			break;
+		default:
+			goto badparam;
+		}
+		break;
+	case 'm':			/* medium */
+		switch (s[1]) {
+		case 'e':			/* extinction coefficient */
+			getparam(s+2, "extinction coefficient", 'C',
+					(COLOR *)cextinction);
+			break;
+		case 'a':			/* scattering albedo */
+			getparam(s+2, "scattering albedo", 'r', &salbedo);
+			break;
+		case 'g':			/* scattering eccentricity */
+			getparam(s+2, "scattering eccentricity", 'r', &seccg);
+			break;
+		case 's':			/* sampling distance */
+			getparam(s+2, "mist sampling distance", 'r',
+					&ssampdist);
 			break;
 		default:
 			goto badparam;
