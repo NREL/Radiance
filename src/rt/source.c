@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -247,6 +247,7 @@ RAY  *r;			/* ray that hit surface */
 int  (*f)();			/* direct component coefficient function */
 char  *p;			/* data for f */
 {
+	extern int  (*trace)();
 	extern double  pow();
 	register int  sn;
 	int  nshadcheck, ncnts;
@@ -316,6 +317,8 @@ char  *p;			/* data for f */
 				source[cntord[sn].sno].sflags & SFOLLOW )) {
 						/* follow entire path */
 			raycont(&sr);
+			if (trace != NULL)
+				(*trace)(&sr);	/* trace execution */
 			if (bright(sr.rcol) <= FTINY)
 				continue;	/* missed! */
 			copycolor(srccnt[cntord[sn].sno].val, sr.rcol);
