@@ -42,6 +42,11 @@ int  inform = 'a';			/* input format */
 int  outform = 'a';			/* output format */
 char  *outvals = "v";			/* output specification */
 
+char  *tralist[128];			/* list of modifers to trace (or no) */
+int  traincl = -1;			/* include == 1, exclude == 0 */
+#define	 MAXTSET	511		/* maximum number in trace set */
+OBJECT	traset[MAXTSET+1]={0};		/* trace include/exclude set */
+
 int  hresolu = 0;			/* horizontal (scan) size */
 int  vresolu = 0;			/* vertical resolution */
 
@@ -319,6 +324,28 @@ FILE  *fp;
 }
 
 
+tranotify(obj)			/* record new modifier */
+OBJECT	obj;
+{
+	static int  hitlimit = 0;
+	register OBJREC	 *o = objptr(obj);
+	register char  **tralp;
+
+	if (hitlimit || !ismodifier(o->otype))
+		return;
+	for (tralp = tralist; *tralp != NULL; tralp++)
+		if (!strcmp(o->oname, *tralp)) {
+			if (traset[0] >= MAXTSET) {
+				error(WARNING, "too many modifiers in trace list");
+				hitlimit++;
+				return;		/* should this be fatal? */
+			}
+			insertelem(traset, obj);
+			return;
+		}
+}
+
+
 static
 ourtrace(r)				/* print ray values */
 RAY  *r;
@@ -326,6 +353,10 @@ RAY  *r;
 	register int  (**tp)();
 
 	if (every_out[0] == NULL)
+		return;
+	if (traincl == 1 && r->ro == NULL)
+		return;
+	if (traincl != -1 && traincl != inset(traset, r->ro->omod))
 		return;
 	tabin(r);
 	for (tp = every_out; *tp != NULL; tp++)
