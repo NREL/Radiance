@@ -25,10 +25,15 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  rand3c(x,y,z)	frand(89*(x)+97*(y)+101*(z))
 #define  rand3d(x,y,z)	frand(103*(x)+107*(y)+109*(z))
 
-#define  hermite(p0,p1,r0,r1,t)  (	p0*((2.0*t-3.0)*t*t+1.0) + \
-					p1*(-2.0*t+3.0)*t*t + \
-					r0*((t-2.0)*t+1.0)*t + \
-					r1*(t-1.0)*t*t )
+#define  hpoly1(t)	((2.0*t-3.0)*t*t+1.0)
+#define  hpoly2(t)	(-2.0*t+3.0)*t*t
+#define  hpoly3(t)	((t-2.0)*t+1.0)*t
+#define  hpoly4(t)	(t-1.0)*t*t
+
+#define  hermite(p0,p1,r0,r1,t)  (	p0*hpoly1(t) + \
+					p1*hpoly2(t) + \
+					r0*hpoly3(t) + \
+					r1*hpoly4(t) )
 
 static char  noise_name[4][8] = {"noise3a", "noise3b", "noise3c", "noise3"};
 static char  fnoise_name[] = "fnoise3";
@@ -117,7 +122,7 @@ interpolate(f, i, n)
 double  f[4];
 register int  i, n;
 {
-	double  f0[4], f1[4];
+	double  f0[4], f1[4], hp1, hp2;
 
 	if (n == 0) {
 		f[A] = rand3a(xlim[0][i&1],xlim[1][i>>1&1],xlim[2][i>>2]);
@@ -128,10 +133,12 @@ register int  i, n;
 		n--;
 		interpolate(f0, i, n);
 		interpolate(f1, i | 1<<n, n);
-		f[A] = (1.0-xarg[n])*f0[A] + xarg[n]*f1[A];
-		f[B] = (1.0-xarg[n])*f0[B] + xarg[n]*f1[B];
-		f[C] = (1.0-xarg[n])*f0[C] + xarg[n]*f1[C];
-		f[D] = hermite(f0[D], f1[D], f0[n], f1[n], xarg[n]);
+		hp1 = hpoly1(xarg[n]); hp2 = hpoly2(xarg[n]);
+		f[A] = f0[A]*hp1 + f1[A]*hp2;
+		f[B] = f0[B]*hp1 + f1[B]*hp2;
+		f[C] = f0[C]*hp1 + f1[C]*hp2;
+		f[D] = f0[D]*hp1 + f1[D]*hp2 +
+				f0[n]*hpoly3(xarg[n]) + f1[n]*hpoly4(xarg[n]);
 	}
 }
 
