@@ -119,7 +119,9 @@ extern long  ftell();
 Display  *thedisplay;
 Atom  closedownAtom, wmProtocolsAtom;
 
-int  noop() {}
+int  sigrecv;
+
+int  onsig() { sigrecv++; }
 
 
 main(argc, argv)
@@ -179,6 +181,8 @@ char  *argv[];
 	if (i > argc)
 		goto userr;
 	while (i < argc-1) {
+		sigrecv = 0;
+		signal(SIGCONT, onsig);
 		if ((pid=fork()) == 0) {	/* a child for each picture */
 			parent = -1;
 			break;
@@ -186,8 +190,8 @@ char  *argv[];
 		if (pid < 0)
 			quiterr("fork failed");
 		parent++;
-		signal(SIGCONT, noop);
-		pause();		/* wait for wake-up call */
+		while (!sigrecv)
+			pause();	/* wait for wake-up call */
 		i++;
 	}
 	if (i < argc) {			/* open picture file */
@@ -213,9 +217,10 @@ char  *argv[];
 
 	init(argc, argv);			/* get file and open window */
 
-	if (parent < 0)
+	if (parent < 0) {
 		kill(getppid(), SIGCONT);	/* signal parent if child */
-
+		sigrecv--;
+	}
 	for ( ; ; )
 		getevent();		/* main loop */
 userr:
@@ -311,10 +316,11 @@ char **argv;
 		quiterr("cannot create window");
 	width = xmax;
 	height = ymax;
-	xgcv.foreground = ourblack;
-	xgcv.background = ourwhite;
+	/* prepare graphics drawing context */
 	if ((xgcv.font = XLoadFont(thedisplay, FONTNAME)) == 0)
 		quiterr("cannot get font");
+	xgcv.foreground = ourblack;
+	xgcv.background = ourwhite;
 	ourgc = XCreateGC(thedisplay, wind, GCForeground|GCBackground|
 			GCFont, &xgcv);
 	xgcv.function = GXinvert;
@@ -359,7 +365,8 @@ char  *err;
 	if (parent > 0 & wind != 0) {
 		XDestroyWindow(thedisplay, wind);
 		XFlush(thedisplay);
-	}
+	} else if (parent < 0 & sigrecv == 0)
+		kill(getppid(), SIGCONT);
 	while (parent > 0 && wait(&cs) != -1) {	/* wait for any children */
 		if (es == 0)
 			es = cs>>8 & 0xff;
