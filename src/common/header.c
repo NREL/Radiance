@@ -26,7 +26,6 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
-#include  <time.h>
 #include  <ctype.h>
 
 #include  "rtio.h"

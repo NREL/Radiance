@@ -10,8 +10,6 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
 
 #include "resolu.h"
 

@@ -2,7 +2,7 @@
 /*
  * Definitions for resolution line in image file.
  *
- * Include after <stdio.h>, <string.h>, and <time.h>
+ * Include after <stdio.h>
  *
  * True image orientation is defined by an xy coordinate system
  * whose origin is at the lower left corner of the image, with
