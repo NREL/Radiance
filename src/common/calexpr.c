@@ -755,7 +755,7 @@ register EPNODE  *ep;
 	return(0);
     if ((dp = ep->v.ln->def) != NULL && dp->v.kid->type == FUNC)
 	return(dp->type == ':');
-    if ((lp = liblookup(ep->v.ln->name)) != NULL)
+    if ((lp = ep->v.ln->lib) != NULL)
 	return(lp->atyp == ':');
     return(0);
 }

@@ -88,8 +88,6 @@ static int  libsize = 5;
 
 extern char  *savestr(), *emalloc();
 
-extern LIBR  *liblookup();
-
 extern VARDEF  *argf();
 
 #ifdef  VARIABLE
@@ -157,7 +155,7 @@ double  (*fptr)();
 {
     register LIBR  *lp;
 
-    if ((lp = liblookup(fname)) == NULL) {
+    if ((lp = liblookup(fname)) == NULL) {	/* insert */
 	if (libsize >= MAXLIB) {
 	    eputs("Too many library functons!\n");
 	    quit(1);
@@ -172,10 +170,22 @@ double  (*fptr)();
 		break;
 	libsize++;
     }
-    lp[0].fname = fname;		/* must be static! */
-    lp[0].nargs = nargs;
-    lp[0].atyp = assign;
-    lp[0].f = fptr;
+    if (fptr == NULL) {				/* delete */
+	while (lp < &library[libsize-1]) {
+	    lp[0].fname = lp[1].fname;
+	    lp[0].nargs = lp[1].nargs;
+	    lp[0].atyp = lp[1].atyp;
+	    lp[0].f = lp[1].f;
+	    lp++;
+	}
+	libsize--;
+    } else {					/* or assign */
+	lp[0].fname = fname;		/* string must be static! */
+	lp[0].nargs = nargs;
+	lp[0].atyp = assign;
+	lp[0].f = fptr;
+    }
+    libupdate(fname);			/* relink library */
 }
 
 
@@ -369,11 +379,9 @@ register VARDEF  *vp;
 
     if (vp == NULL) {
 	vp = &dumdef;
-	vp->lib = NULL;
+	vp->lib = liblookup(fname);
     }
-    if (((vp->lib == NULL || strcmp(fname, vp->lib->fname)) &&
-				(vp->lib = liblookup(fname)) == NULL) ||
-		vp->lib->f == NULL) {
+    if (vp->lib == NULL) {
 	eputs(fname);
 	eputs(": undefined function\n");
 	quit(1);
