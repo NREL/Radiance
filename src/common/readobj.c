@@ -28,7 +28,7 @@ readobj(input)			/* read in an object file or stream */
 char  *input;
 {
 	FILE  *popen();
-	char  *fgets(), *fgetline();
+	char  *fgetline();
 	FILE  *infp;
 	char  buf[512];
 	register int  c;
