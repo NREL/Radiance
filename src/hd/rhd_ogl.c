@@ -37,7 +37,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "x11icon.h"
 
 #ifndef RAYQLEN
-#define RAYQLEN		10240		/* max. rays to queue before flush */
+#define RAYQLEN		50000		/* max. rays to queue before flush */
 #endif
 
 #ifndef PORTALP
@@ -142,13 +142,21 @@ char  *id;
 	extern char	*getenv();
 	static RGBPRIMS	myprims = STDPRIMS;
 #if (PORTALP<0)
-	static int	atlBest[] = {GLX_RGBA, GLX_RED_SIZE,8,
-				GLX_GREEN_SIZE,8, GLX_BLUE_SIZE,8,
-				GLX_DEPTH_SIZE,15, None};
+	static int	atlBest[] = {GLX_RGBA, GLX_DOUBLEBUFFER,
+				GLX_RED_SIZE,8, GLX_GREEN_SIZE,8,
+				GLX_BLUE_SIZE,8, GLX_DEPTH_SIZE,15, None};
+	static int	atlOK[] = {GLX_RGBA, GLX_DOUBLEBUFFER,
+				GLX_RED_SIZE,4, GLX_GREEN_SIZE,4,
+				GLX_BLUE_SIZE,4, GLX_DEPTH_SIZE,15, None};
 #else
-	static int	atlBest[] = {GLX_RGBA, GLX_RED_SIZE,8,
-				GLX_GREEN_SIZE,8, GLX_BLUE_SIZE,8,
-				GLX_ALPHA_SIZE,2, GLX_DEPTH_SIZE,15, None};
+	static int	atlBest[] = {GLX_RGBA, GLX_DOUBLEBUFFER,
+				GLX_RED_SIZE,8, GLX_GREEN_SIZE,8,
+				GLX_BLUE_SIZE,8, GLX_ALPHA_SIZE,2,
+				GLX_DEPTH_SIZE,15, None};
+	static int	atlOK[] = {GLX_RGBA, GLX_DOUBLEBUFFER,
+				GLX_RED_SIZE,4, GLX_GREEN_SIZE,4,
+				GLX_BLUE_SIZE,4, GLX_ALPHA_SIZE,2,
+				GLX_DEPTH_SIZE,15, None};
 #endif
 	char	*ev;
 	double	gamval = GAMMA;
@@ -180,6 +188,8 @@ char  *id;
 #endif
 					/* find a usable visual */
 	ourvinf = glXChooseVisual(ourdisplay, ourscreen, atlBest);
+	if (ourvinf == NULL)
+		ourvinf = glXChooseVisual(ourdisplay, ourscreen, atlOK);
 	CHECK(ourvinf==NULL, USER, "no suitable visuals available");
 					/* get a context */
 	gctx = glXCreateContext(ourdisplay, ourvinf, NULL, GL_TRUE);
@@ -236,7 +246,7 @@ char  *id;
 	glXMakeCurrent(ourdisplay, gwind, gctx);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
-	glDisable(GL_DITHER);
+	glEnable(GL_DITHER);
 	glFrontFace(GL_CCW);
 	glDisable(GL_CULL_FACE);
 	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
@@ -345,8 +355,7 @@ register VIEW	*nv;
 		VSUM(vwright.vp, nv->vp, nv->hvec, d);
 		/* setview(&vwright);	-- Unnecessary */
 #endif
-	} else
-		viewsteady = 1;
+	}
 	wipeclean();
 	return(1);
 }
@@ -449,8 +458,8 @@ dev_flush()			/* flush output as appropriate */
 #ifdef DOBJ
 		ndrawn += dobj_render();
 #endif
-		if (ndrawn)
-			gmDrawPortals(PORTRED, PORTGRN, PORTBLU, PORTALP);
+		if (ndrawn && gmPortals)
+			gmDrawPortals(PORTRED,PORTGRN,PORTBLU,PORTALP);
 		checkglerr("rendering right eye");
 		popright();			/* draw left eye */
 #endif
@@ -458,8 +467,9 @@ dev_flush()			/* flush output as appropriate */
 #ifdef DOBJ
 		ndrawn += dobj_render();
 #endif
-		if (ndrawn)
-			gmDrawPortals(PORTRED, PORTGRN, PORTBLU, PORTALP);
+		if (ndrawn && gmPortals)
+			gmDrawPortals(PORTRED,PORTGRN,PORTBLU,PORTALP);
+		glXSwapBuffers(ourdisplay, gwind);
 		checkglerr("rendering base view");
 	}
 	if (mapped && viewsteady)
@@ -474,8 +484,8 @@ dev_flush()			/* flush output as appropriate */
 			popright();
 #endif
 			odUpdate(0);		/* draw left eye */
+			glFlush();		/* flush OpenGL */
 		}
-	glFlush();				/* flush OpenGL */
 	rayqleft = RAYQLEN;
 					/* flush X11 and return # pending */
 	return(odev.inpready = XPending(ourdisplay));
@@ -512,7 +522,7 @@ xferdepth()			/* load and clear depth buffer */
 	}
 				/* allocate alpha buffer for portals */
 	if (gmPortals)
-		cbuf = (GLubyte *)malloc(odev.hres*odev.vres*
+		cbuf = (GLubyte *)malloc(odev.hres*odev.vres *
 							(4*sizeof(GLubyte)));
 	else
 		cbuf = NULL;
@@ -821,8 +831,8 @@ XButtonPressedEvent	*ebut;
 #ifdef DOBJ
 		ndrawn += dobj_render();
 #endif
-		if (ndrawn)
-			gmDrawPortals(PORTRED, PORTGRN, PORTBLU, PORTALP);
+		if (ndrawn && gmPortals)
+			gmDrawPortals(PORTRED,PORTGRN,PORTBLU,PORTALP);
 		popright();
 #endif
 					/* redraw octrees */
@@ -830,18 +840,11 @@ XButtonPressedEvent	*ebut;
 #ifdef DOBJ
 		ndrawn += dobj_render();	/* redraw objects */
 #endif
-		if (ndrawn)
+		if (ndrawn && gmPortals)
 			gmDrawPortals(PORTRED, PORTGRN, PORTBLU, PORTALP);
-		glFlush();
-		if (!ndrawn) {
+		glXSwapBuffers(ourdisplay, gwind);
+		if (!ndrawn)
 			sleep(1);	/* for reasonable interaction */
-#ifdef STEREO
-			pushright();
-			draw_grids(0);
-			popright();
-#endif
-			draw_grids(0);
-		}
 	}
 	if (!(inpresflags & DFL(DC_SETVIEW))) {	/* do final motion */
 		movdir = MOVDIR(levptr(XButtonReleasedEvent)->button);
@@ -849,6 +852,7 @@ XButtonPressedEvent	*ebut;
 		wy = levptr(XButtonReleasedEvent)->y;
 		moveview(wx, odev.vres-1-wy, movdir, movorb);
 	}
+	viewsteady = 1;			/* done goofing around */
 }
 
 
@@ -917,6 +921,7 @@ register VIEW	*vp;
 static
 setglortho()			/* set up orthographic view for cone drawing */
 {
+	glDrawBuffer(GL_FRONT);		/* use single-buffer mode */
 					/* set view matrix */
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -932,16 +937,17 @@ setglortho()			/* set up orthographic view for cone drawing */
 static
 wipeclean()			/* prepare for redraw */
 {
-					/* clear depth buffer */
+	glDrawBuffer(GL_BACK);		/* use double-buffer mode */
+					/* clear buffers */
 #ifdef STEREO
 	setstereobuf(STEREO_BUFFER_RIGHT);
-	glClear(GL_DEPTH_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
 	setstereobuf(STEREO_BUFFER_LEFT);
 #endif
-	glClear(GL_DEPTH_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
+	freedepth();
 	if (viewsteady)			/* clear samples if steady */
 		odClean();
-	freedepth();
 	setglpersp(&odev.v);		/* reset view & clipping planes */
 }
 
@@ -993,10 +999,10 @@ register XKeyPressedEvent  *ekey;
 		return;
 	case CTRL('R'):			/* redraw screen */
 		odRemap(0);
-		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+		glClear(GL_DEPTH_BUFFER_BIT);
 #ifdef STEREO
 		setstereobuf(STEREO_BUFFER_RIGHT);
-		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+		glClear(GL_DEPTH_BUFFER_BIT);
 		setstereobuf(STEREO_BUFFER_LEFT);
 #endif
 		return;
