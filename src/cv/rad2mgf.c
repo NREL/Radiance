@@ -46,7 +46,7 @@ char	VKFMT[] = "%+1.9e %+1.9e %+1.9e";
 
 #define NVERTS		256
 
-long	clock;		/* incremented at each vertex request */
+long	vclock;		/* incremented at each vertex request */
 
 struct vert {
 	long	lused;		/* when last used (0 if unassigned) */
@@ -347,7 +347,7 @@ FVECT	vp;
 	register LUENT	*lp;
 	register int	i, vndx;
 
-	clock++;			/* increment counter */
+	vclock++;			/* increment counter */
 	mkvkey(vkey, vp);
 	if ((lp = lu_find(&vertab, vkey)) == NULL)
 		goto memerr;
@@ -373,7 +373,7 @@ FVECT	vp;
 		lp->data = (char *)&vert[vndx];			/* set it */
 	} else
 		vndx = (struct vert *)lp->data - vert;
-	vert[vndx].lused = clock;		/* record this use */
+	vert[vndx].lused = vclock;		/* record this use */
 	sprintf(vname, "v%d", vndx);
 	return(vname);
 memerr:
