@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+#include	"tifftypes.h"
+
 /****    Argument Macros    ****/
 				/* Flags of what to do */
 #define	TM_F_HCONTR	01		/* human contrast sensitivity */
@@ -329,7 +331,32 @@ tmMapPicture(BYTE **psp, int *xp, int *yp, int flags,
 	returns	-	0 on success, TM_E_* on failure.
 */
 
+extern int
+tmCvRGB48(TMbright *ls, BYTE *cs, uint16 (*scan)[3], int len, double gv);
+/*
+	Convert 48-bit RGB scanline to encoded luminance and chrominance.
 
+	ls	-	returned encoded luminance values.
+	cs	-	returned encoded chrominance values (Note 2).
+	scan	-	input scanline.
+	len	-	scanline length.
+	gv	-	input gamma value.
+
+	returns	-	0 on success, TM_E_* on error.
+*/
+
+extern int
+tmCvGray16(TMbright *ls, uint16 *scan, int len, double gv);
+/*
+	Convert 16-bit gray scanline to encoded luminance.
+
+	ls	-	returned encoded luminance values.
+	scan	-	input scanline.
+	len	-	scanline length.
+	gv	-	input gamma value.
+
+	returns	-	0 on success, TM_E_* on error.
+*/
 
 /****    Notes    ****/
 /*

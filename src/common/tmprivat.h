@@ -13,7 +13,6 @@ extern "C" {
 #endif
 #include	"color.h"
 #include	"tonemap.h"
-#include	"tifftypes.h"
 
 				/* required constants */
 #ifndef M_LN2
