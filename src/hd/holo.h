@@ -94,7 +94,7 @@ typedef struct holo {
 extern HOLO	*hdinit(), *hdalloc();
 extern BEAM	*hdgetbeam();
 extern RAYVAL	*hdnewrays();
-extern long	hdmemuse(), hdfiluse();
+extern long	hdmemuse(), hdfiluse(), hdfilen();
 extern double	hdray(), hdinter();
 extern unsigned	hdcode();
 
