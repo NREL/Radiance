@@ -135,6 +135,7 @@ register RAY  *r;
 				multcolor(mcolor, r->pcol);	/* modify */
 				scalecolor(p.rcol, trans);
 				addcolor(r->rcol, p.rcol);
+				r->rt = r->rot + p.rt;
 			}
 		}
 	}
@@ -150,6 +151,8 @@ register RAY  *r;
 
 		scalecolor(p.rcol, refl);	/* color contribution */
 		addcolor(r->rcol, p.rcol);
+		if (refl > trans)
+			r->rt = r->rot + p.rt;
 	}
 
 	multcolor(r->rcol, mcolor);		/* multiply by transmittance */

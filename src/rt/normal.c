@@ -156,6 +156,7 @@ register RAY  *r;
 	raytexture(r, m->omod);
 	nd.pdot = raynormal(nd.pnorm, r);	/* perturb normal */
 	multcolor(nd.mcolor, r->pcol);		/* modify material color */
+	r->rt = r->rot;				/* default ray length */
 						/* get specular component */
 	nd.rspec = m->oargs.farg[3];
 
@@ -182,6 +183,8 @@ register RAY  *r;
 				rayvalue(&lr);
 				multcolor(lr.rcol, nd.scolor);
 				addcolor(r->rcol, lr.rcol);
+				if (nd.rspec > 0.5 && m->omod == OVOID)
+					r->rt = r->rot + lr.rt;
 			}
 		}
 	}
@@ -200,6 +203,8 @@ register RAY  *r;
 			rayvalue(&lr);
 			scalecolor(lr.rcol, nd.tspec);
 			addcolor(r->rcol, lr.rcol);
+			if (nd.tspec > .5)
+				r->rt = r->rot + lr.rt;
 		}
 	}
 	if (r->crtype & SHADOW)			/* the rest is shadow */

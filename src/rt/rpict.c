@@ -182,7 +182,8 @@ char  *zfile, *oldfile;
 		if (write(zfd, (char *)zbar[0], hresolu*sizeof(float))
 				< hresolu*sizeof(float))
 			goto writerr;
-		close(zfd);
+		if (close(zfd) == -1)
+			goto writerr;
 		for (i = 0; i <= psample; i++)
 			free((char *)zbar[i]);
 	}
@@ -329,7 +330,7 @@ int  x, y;			/* pixel position */
 
 	copycolor(col, thisray.rcol);		/* return color */
 	
-	return(thisray.rot);			/* return distance */
+	return(thisray.rt);			/* return distance */
 }
 
 
