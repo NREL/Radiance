@@ -155,6 +155,7 @@ int  y;
 		if (freadcolrs(scanln, xmax, stdin) < 0) {
 			fprintf(stderr, "%s: error reading picture (y==%d)\n",
 					progname, ymax-1-y);
+			exit(1);
 		}
 	while (++currow < y);
 	if (bradj)
