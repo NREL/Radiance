@@ -31,7 +31,6 @@ register RAY  *r;
 	rcont.rno = nrays;
 	rcont.ro = NULL;
 	rcont.rot = FHUGE;
-	rcont.rno = nrays;
 	multp3(rcont.rorg, r->rorg, in->b.xfm);
 	multv3(rcont.rdir, r->rdir, in->b.xfm);
 	for (i = 0; i < 3; i++)
