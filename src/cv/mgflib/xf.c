@@ -33,6 +33,14 @@ xf_handler(ac, av)		/* handle xf entity */
 int	ac;
 char	**av;
 {
+#define randshift(x,n)	((long)(x) << shifttab[(n)&63])
+	static char	shifttab[64] = { 15, 5, 11, 5, 6, 3,
+				9, 15, 13, 2, 13, 5, 2, 12, 14, 11,
+				11, 12, 12, 3, 2, 11, 8, 12, 1, 12,
+				5, 4, 15, 9, 14, 5, 13, 14, 2, 10,
+				10, 14, 12, 3, 5, 5, 14, 6, 12, 11,
+				13, 9, 12, 8, 1, 6, 5, 12, 7, 13,
+				15, 8, 9, 2, 6, 11, 9, 11 };
 	register int	i;
 	register XF_SPEC	*spec;
 	XF	thisxf;
@@ -80,9 +88,14 @@ char	**av;
 		spec->xf.sca = xf_context->xf.sca * thisxf.sca;
 	} else
 		spec->xf = thisxf;
+	spec->xid = 0;			/* compute unique transform id */
+	for (i = 0; i < sizeof(MAT4)/sizeof(unsigned short); i++)
+		spec->xid ^= randshift(((unsigned short *)&spec->xf.xfm)[i],i);
+
 	spec->prev = xf_context;	/* push new transform onto stack */
 	xf_context = spec;
 	return(MG_OK);
+#undef randshift
 }
 
 

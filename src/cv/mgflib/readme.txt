@@ -46,7 +46,7 @@ not QUITE that simple, but close.)
 There are two ways to support the language, by linking the parser to
 the program itself, or by linking the parser to a translator program
 that expresses MGF entities in the native scene description format.
-The differences in the two approaches are slight, and we will explain
+The differences in the two approaches are slight, and we will mention
 them following a general explanation of the parser and support library.
 
 The Parser
@@ -147,6 +147,69 @@ Simply set the MG_E_OBJECT entry of the mg_ehand array to obj_handler,
 and the current object name list will be kept in the global array obj_name.
 The number of names is stored in the global obj_nnames variable.  To clear
 this array (freeing any memory used in the process), call obj_clear.
+
+Loading vs. Translating
+=======================
+As mentioned in the introduction, the parser may be used either to load
+data into a rendering program directly, or to get MGF input for translation
+to another file format.  In either case, the procedure is nearly identical.
+The only important difference is what you do with the parser data structures
+after loading.  For a translator, this is not an issue, but rendering
+programs usually need all the memory they can get.  Therefore, once the
+input process is complete, you should call the mg_clear function to free
+the parser data structures and return to an initialized state (i.e. it
+is never necessary to recall the mg_init routine).
+
+Also, if you use some of the support functions, you should call their
+specific clearing functions.  For the transform module, the call is
+xf_clear.  For the object support module, the call is obj_clear.  The
+context routines use the c_clearall function, but this is actually
+called by mg_clear, so calling it again is unnecessary.
+
+Linking Vertices
+================
+Although the MGF language was designed with linking vertices in mind,
+there are certain aspects which make this goal more challenging.
+Specifically, the ability to redefine values for a previously named
+vertex is troublesome for the programmer, since the same vertex can
+have different values at different points in the input.  Likewise, the
+effect of the transform entity on surfaces rather than vertices means
+that the same named vertex can appear in many positions.
+
+It is not possible to use the parser data structures directly for
+linking vertices, but we've taken a couple of steps in the support
+routines to make the task of organizing your own data structures a
+little easier.  First, there is a clock member in the C_VERTEX
+structure that is incremented on each change.  (The same member is
+contained in the C_COLOR and C_MATERIAL structures.)  Second, the
+current transform (pointed to by xf_context) contains a unique
+identifier, xf_context->xid.  This is a long integer that will be
+different for each unique transform.  (It is actually a hash key on the
+transformation matrix, and there is about 1 chance in 2 billion that
+two different matrices will hash to the same value.  Is this a bug?
+I guess it depends on how long the programmer lives -- or vice versa.)
+
+There are two ways to use of this additional information.  One
+is to record the vertex clock value along with it's id and the
+current xf_context->xid value.  If another vertex comes along with
+the same name, but one of these two additional values fails to match,
+then it (probably) is a different vertex.  Alternatively, one can reset
+the clock member every time a new vertex is stored.  That way, it is
+only necessary to check the clock against zero rather than storing this
+value along with the vertex name and transform id.  If the name and
+transform are the same and the clock is zero, then it's the same vertex
+as last time.
+
+Yet another approach is to ignore the parser structures entirely and
+focus on the actual vertex values.  After all, the user is not compelled
+to reuse the same vertex names for the same points.  It is just as likely
+that the same vertices will appear under different names, so that none
+of the above would help to merge them.  The most sure-fire approach to
+linking identical vertices is therefore to hash the point and normal
+values directly and use the functions in lookup.c to associate them.
+You will have to write your own hash function, and I recommend making
+one that allows a little slop so that nearly identical points hash to
+the same value.
 
 Examples
 ========

@@ -197,7 +197,7 @@ typedef struct {
 	float	cx, cy;			/* xy chromaticity value */
 } C_COLOR;
 
-#define C_DEFCOLOR	{ NULL, 1, C_CDXY|C_CSXY|C_CSSPEC,\
+#define C_DEFCOLOR	{ NULL, 0, C_CDXY|C_CSXY|C_CSSPEC,\
 			{C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,\
 			C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,\
 			C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,\
@@ -207,19 +207,19 @@ typedef struct {
 			C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV},\
 			(long)C_CNSS*C_CMAXV, 1./3., 1./3. }
 
-#define C_CIEX		{ "_cie_x", 1, C_CDSPEC|C_CSSPEC|C_CSXY,\
+#define C_CIEX		{ "_cie_x", 0, C_CDSPEC|C_CSSPEC|C_CSXY,\
 			{14,42,143,435,1344,2839,3483,3362,2908,1954,956,\
 			320,49,93,633,1655,2904,4334,5945,7621,9163,10263,\
 			10622,10026,8544,6424,4479,2835,1649,874,468,227,\
 			114,58,29,14,7,3,2,1,0}, 106836L, .735, .265 }
 
-#define C_CIEY		{ "_cie_y", 1, C_CDSPEC|C_CSSPEC|C_CSXY,\
+#define C_CIEY		{ "_cie_y", 0, C_CDSPEC|C_CSSPEC|C_CSXY,\
 			{0,1,4,12,40,116,230,380,600,910,1390,2080,3230,\
 			5030,7100,8620,9540,9950,9950,9520,8700,7570,6310,\
 			5030,3810,2650,1750,1070,610,320,170,82,41,21,10,\
 			5,2,1,1,0,0}, 106856L, .274, .717 }
 
-#define C_CIEZ		{ "_cie_z", 1, C_CDSPEC|C_CSSPEC|C_CSXY,\
+#define C_CIEZ		{ "_cie_z", 0, C_CDSPEC|C_CSSPEC|C_CSXY,\
 			{65,201,679,2074,6456,13856,17471,17721,16692,\
 			12876,8130,4652,2720,1582,782,422,203,87,39,21,17,\
 			11,8,3,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},\
@@ -250,9 +250,9 @@ typedef struct {
 	FVECT	p, n;		/* point and normal */
 } C_VERTEX;		/* vertex context */
 
-#define C_DEFMATERIAL	{NULL,1,0.,C_DEFCOLOR,0.,C_DEFCOLOR,0.,C_DEFCOLOR,\
+#define C_DEFMATERIAL	{NULL,0,0.,C_DEFCOLOR,0.,C_DEFCOLOR,0.,C_DEFCOLOR,\
 					0.,C_DEFCOLOR,0.,0.,C_DEFCOLOR,0.}
-#define C_DEFVERTEX	{NULL,1,{0.,0.,0.},{0.,0.,0.}}
+#define C_DEFVERTEX	{NULL,0,{0.,0.,0.},{0.,0.,0.}}
 
 extern C_COLOR		*c_ccolor;	/* the current color */
 extern C_MATERIAL	*c_cmaterial;	/* the current material */
@@ -321,6 +321,7 @@ typedef struct {
 #define identxf(xp)		(void)(setident4((xp)->xfm),(xp)->sca=1.0)
 
 typedef struct xf_spec {
+	long	xid;		/* unique transform id */
 	short	xac;		/* transform argument count */
 	short	xav0;		/* zeroeth argument in xf_argv array */
 	XF	xf;		/* cumulative transformation */

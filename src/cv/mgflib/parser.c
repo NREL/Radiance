@@ -170,7 +170,7 @@ int
 mg_entity(name)			/* get entity number from its name */
 char	*name;
 {
-	static LUTAB	ent_tab;	/* entity lookup table */
+	static LUTAB	ent_tab = LU_SINIT(NULL,NULL);	/* lookup table */
 	register char	*cp;
 
 	if (!ent_tab.tsiz) {		/* initialize hash table */

@@ -42,14 +42,15 @@ int	nel;
 }
 
 
-int
-lu_hash(s)			/* hash a nul-terminated string */
+long
+lu_shash(s)			/* hash a nul-terminated string */
 register char  *s;
 {
-	register int  h = 0;
+	register int	i = 0;
+	register long	h = 0;
 
 	while (*s)
-		h = (h<<1 & 0x7fff) ^ (*s++ & 0xff);
+		h ^= (long)(*s++ & 0xff) << (i++ & 15);
 	return(h);
 }
 
@@ -59,16 +60,21 @@ lu_find(tbl, key)		/* find a table entry */
 register LUTAB	*tbl;
 char	*key;
 {
-	int  hval, i;
-	register int  ndx;
-	register LUENT  *oldtabl;
+	long	hval;
+	int	i;
+	register int	ndx;
+	register LUENT	*oldtabl;
 					/* look up object */
-	hval = lu_hash(key);
+	hval = (*tbl->hashf)(key);
 tryagain:
 	for (i = 0; i < tbl->tsiz; i++) {
 		ndx = (hval + i*i) % tbl->tsiz;
-		if (tbl->tabl[ndx].key == NULL ||
-				!strcmp(tbl->tabl[ndx].key, key))
+		if (tbl->tabl[ndx].key == NULL) {
+			tbl->tabl[ndx].hval = hval;
+			return(&tbl->tabl[ndx]);
+		}
+		if ( tbl->tabl[ndx].hval == hval && (tbl->keycmp == NULL ||
+				!(*tbl->keycmp)(tbl->tabl[ndx].key, key)) )
 			return(&tbl->tabl[ndx]);
 	}
 					/* table is full, reallocate */
