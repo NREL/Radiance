@@ -27,7 +27,7 @@ extern int  do_irrad;			/* compute irradiance? */
 extern COLOR  ambval;			/* ambient value */
 
 extern COLOR  cextinction;		/* global extinction coefficient */
-extern double  salbedo;			/* global scattering albedo */
+extern COLOR  salbedo;			/* global scattering albedo */
 extern double  seccg;			/* global scattering eccentricity */
 extern double  ssampdist;		/* scatter sampling distance */
 
@@ -62,7 +62,7 @@ double  rw;
 		r->clipset = NULL;
 		r->revf = raytrace;
 		copycolor(r->cext, cextinction);
-		r->albedo = salbedo;
+		copycolor(r->albedo, salbedo);
 		r->gecc = seccg;
 		r->slights = NULL;
 	} else {				/* spawned ray */
@@ -79,7 +79,7 @@ double  rw;
 		}
 		r->revf = ro->revf;
 		copycolor(r->cext, ro->cext);
-		r->albedo = ro->albedo;
+		copycolor(r->albedo, ro->albedo);
 		r->gecc = ro->gecc;
 		r->slights = ro->slights;
 		r->rweight = ro->rweight * rw;
@@ -196,22 +196,24 @@ register RAY  *r;
 		return;				/* no medium */
 	if ((dist = r->rot) >= FHUGE)
 		dist = 2.*thescene.cusize;	/* what to use for infinity? */
-	if (r->crtype & SHADOW)
-		dist *= 1. - r->albedo;		/* no scattering for sources */
-	if (dist <= FTINY)
-		return;				/* no effective ray travel */
 	re = dist*colval(r->cext,RED);
 	ge = dist*colval(r->cext,GRN);
 	be = dist*colval(r->cext,BLU);
-	setcolor(ce,	re>92. ? 0. : exp(-re),
-			ge>92. ? 0. : exp(-ge),
-			be>92. ? 0. : exp(-be));
+	if (r->crtype & SHADOW) {		/* no scattering for sources */
+		re *= 1. - colval(r->albedo,RED);
+		ge *= 1. - colval(r->albedo,GRN);
+		be *= 1. - colval(r->albedo,BLU);
+	}
+	setcolor(ce,	re<=0. ? 1. : re>92. ? 0. : exp(-re),
+			ge<=0. ? 1. : ge>92. ? 0. : exp(-ge),
+			be<=0. ? 1. : be>92. ? 0. : exp(-be));
 	multcolor(r->rcol, ce);			/* path absorption */
-	if (r->albedo <= FTINY || r->crtype & SHADOW)
+	if (r->crtype & SHADOW || intens(r->albedo) <= FTINY)
 		return;				/* no scattering */
-	setcolor(ca,	r->albedo*colval(ambval,RED)*(1.-colval(ce,RED)),
-			r->albedo*colval(ambval,GRN)*(1.-colval(ce,GRN)),
-			r->albedo*colval(ambval,BLU)*(1.-colval(ce,BLU)));
+	setcolor(ca,
+		colval(r->albedo,RED)*colval(ambval,RED)*(1.-colval(ce,RED)),
+		colval(r->albedo,GRN)*colval(ambval,GRN)*(1.-colval(ce,GRN)),
+		colval(r->albedo,BLU)*colval(ambval,BLU)*(1.-colval(ce,BLU)));
 	addcolor(r->rcol, ca);			/* ambient in scattering */
 	srcscatter(r);				/* source in scattering */
 }
