@@ -279,7 +279,7 @@ rholo()				/* holodeck main loop */
 		if (!disp_check(idle))
 			return(0);
 					/* display only? */
-	if (ncprocs <= 0)
+	if (nprocs <= 0)
 		return(1);
 					/* check file size */
 	if (maxdisk > 0 && hdfilen(hdlist[0]->fd) >= maxdisk) {
@@ -500,7 +500,7 @@ PACKET	*pl;
 		p->next = freepacks;
 		freepacks = p;
 	}
-	if (n2flush > 512*RPACKSIZ*ncprocs) {
+	if (n2flush > 512*RPACKSIZ*nprocs) {
 		hdflush(NULL);			/* flush holodeck buffers */
 		n2flush = 0;
 	}
@@ -610,22 +610,21 @@ int	ec;
 	int	status = 0;
 
 	if (hdlist[0] != NULL) {	/* flush holodeck */
-		if (ncprocs > 0) {
+		if (nprocs > 0) {
 			done_packets(flush_queue());
 			status = end_rtrace();	/* close rtrace */
-			hdflush(NULL);
-			if (vdef(REPORT)) {
-				long	fsiz, fuse;
-				report(0);
-				fsiz = hdfilen(hdlist[0]->fd);
-				fuse = hdfiluse(hdlist[0]->fd, 1);
-				fprintf(stderr,
+		}
+		hdflush(NULL);
+		if (ncprocs > 0 && vdef(REPORT)) {
+			long	fsiz, fuse;
+			report(0);
+			fsiz = hdfilen(hdlist[0]->fd);
+			fuse = hdfiluse(hdlist[0]->fd, 1);
+			fprintf(stderr,
 			"%s: %.1f Mbyte holodeck file, %.1f%% fragmentation\n",
-						hdkfile, fsiz/(1024.*1024.),
-						100.*(fsiz-fuse)/fsiz);
-			}
-		} else
-			hdflush(NULL);
+					hdkfile, fsiz/(1024.*1024.),
+					100.*(fsiz-fuse)/fsiz);
+		}
 	}
 	if (orig_mode >= 0)		/* reset holodeck access mode */
 		fchmod(hdlist[0]->fd, orig_mode);
