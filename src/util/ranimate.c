@@ -15,6 +15,12 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "view.h"
 #include "vars.h"
 #include "netproc.h"
+				/* default remote shell */
+#ifdef _AUX_SOURCE
+#define REMSH		"remsh"
+#else
+#define REMSH		"rsh"
+#endif
 				/* input variables */
 #define HOST		0		/* rendering host machine */
 #define RENDER		1		/* rendering options */
@@ -38,8 +44,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #define DISKSPACE	19		/* how much disk space to use */
 #define RESOLUTION	20		/* desired final resolution */
 #define EXPOSURE	21		/* how to compute exposure */
+#define RSH		22		/* remote shell script or program */
 
-int	NVARS = 22;		/* total number of variables */
+int	NVARS = 23;		/* total number of variables */
 
 VARIABLE	vv[] = {		/* variable-value pairs */
 	{"host",	4,	0,	NULL,	NULL},
@@ -64,6 +71,7 @@ VARIABLE	vv[] = {		/* variable-value pairs */
 	{"DISKSPACE",	3,	0,	NULL,	fltvalue},
 	{"RESOLUTION",	3,	0,	NULL,	onevalue},
 	{"EXPOSURE",	3,	0,	NULL,	onevalue},
+	{"RSH",		3,	0,	NULL,	onevalue},
 };
 
 #define SFNAME	"STATUS"		/* status file name */
@@ -84,6 +92,7 @@ int	nowarn = 0;		/* turn warnings off? */
 int	silent = 0;		/* silent mode? */
 int	noaction = 0;		/* take no action? */
 
+char	*remsh;			/* remote shell program/script */
 char	rendopt[2048] = "";	/* rendering options */
 char	rresopt[32];		/* rendering resolution options */
 char	fresopt[32];		/* filter resolution options */
@@ -281,6 +290,7 @@ checkdir()			/* make sure we have our directory */
 
 setdefaults()			/* set default values */
 {
+	extern char	*atos();
 	char	buf[256];
 
 	if (vdef(ANIMATE)) {
@@ -346,6 +356,17 @@ setdefaults()			/* set default values */
 		vval(DISKSPACE) = "100";
 		vdef(DISKSPACE)++;
 	}
+	if (!vdef(RSH)) {
+		vval(RSH) = REMSH;
+		vdef(RSH)++;
+	}
+				/* locate remote shell program */
+	atos(buf, sizeof(buf), vval(RSH));
+	if ((remsh = getpath(buf, getenv("PATH"), X_OK)) != NULL)
+		remsh = savqstr(remsh);
+	else
+		remsh = vval(RSH);	/* will generate error if used */
+
 				/* append rendering options */
 	if (vdef(RENDER))
 		sprintf(rendopt+strlen(rendopt), " %s", vval(RENDER));
