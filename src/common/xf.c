@@ -32,6 +32,7 @@ char  *av[];
 	setident4(retmat);
 	*retsca = 1.0;
 
+	icnt = 1;
 	setident4(xfmat);
 	xfsca = 1.0;
 
@@ -108,14 +109,14 @@ char  *av[];
 
 		case 'i':			/* iterate */
 			checkarg(2,1);
-			icnt = atoi(av[++i]);
 			while (icnt-- > 0) {
 				multmat4(retmat, retmat, xfmat);
 				*retsca *= xfsca;
 			}
+			icnt = atoi(av[++i]);
 			setident4(xfmat);
 			xfsca = 1.0;
-			break;
+			continue;
 
 		default:
 			return(i);
@@ -124,8 +125,10 @@ char  *av[];
 		multmat4(xfmat, xfmat, m4);
 	}
 done:
-	multmat4(retmat, retmat, xfmat);
-	*retsca *= xfsca;
+	while (icnt-- > 0) {
+		multmat4(retmat, retmat, xfmat);
+		*retsca *= xfsca;
+	}
 	return(i);
 }
 
@@ -146,6 +149,7 @@ char  *av[];
 	setident4(retmat);
 	*retsca = 1.0;
 
+	icnt = 1;
 	setident4(xfmat);
 	xfsca = 1.0;
 
@@ -222,11 +226,11 @@ char  *av[];
 
 		case 'i':			/* iterate */
 			checkarg(2,1);
-			icnt = atoi(av[++i]);
 			while (icnt-- > 0) {
 				multmat4(retmat, xfmat, retmat);
 				*retsca *= xfsca;
 			}
+			icnt = atoi(av[++i]);
 			setident4(xfmat);
 			xfsca = 1.0;
 			break;
@@ -238,8 +242,10 @@ char  *av[];
 		multmat4(xfmat, m4, xfmat);	/* left multiply */
 	}
 done:
-	multmat4(retmat, xfmat, retmat);
-	*retsca *= xfsca;
+	while (icnt-- > 0) {
+		multmat4(retmat, xfmat, retmat);
+		*retsca *= xfsca;
+	}
 	return(i);
 }
 #endif
