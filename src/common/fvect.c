@@ -1,7 +1,7 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -26,7 +26,7 @@ double
 dist2(p1, p2)			/* return square of distance between points */
 register FVECT  p1, p2;
 {
-	static FVECT  delta;
+	FVECT  delta;
 
 	delta[0] = p2[0] - p1[0];
 	delta[1] = p2[1] - p1[1];
@@ -40,7 +40,7 @@ dist2line(p, ep1, ep2)		/* return square of distance to line */
 FVECT  p;		/* the point */
 FVECT  ep1, ep2;	/* points on the line */
 {
-	static double  d, d1, d2;
+	register double  d, d1, d2;
 
 	d = dist2(ep1, ep2);
 	d1 = dist2(ep1, p);
@@ -55,7 +55,7 @@ dist2lseg(p, ep1, ep2)		/* return square of distance to line segment */
 FVECT  p;		/* the point */
 FVECT  ep1, ep2;	/* the end points */
 {
-	static double  d, d1, d2;
+	register double  d, d1, d2;
 
 	d = dist2(ep1, ep2);
 	d1 = dist2(ep1, p);
@@ -96,7 +96,7 @@ double
 normalize(v)			/* normalize a vector, return old magnitude */
 register FVECT  v;
 {
-	static double  len;
+	register double  len;
 	
 	len = DOT(v, v);
 	
