@@ -9,7 +9,7 @@ set octree=$tmpdir/ov$$.oct
 set tmpfiles="$octree"
 onintr quit
 
-oconv - $* > $octree <<_EOF_
+oconv - $argv[*]:q > $octree <<_EOF_
 void glow dim 0 0 4 .1 .1 .15 0
 dim source background 0 0 4 0 0 1 360
 void light bright 0 0 3 1000 1000 1000
