@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1994 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -24,25 +24,27 @@ OBJREC  *objblock[MAXOBJBLK];		/* our objects */
 OBJECT  nobjects = 0;			/* # of objects */
 
 
-readobj(input)			/* read in an object file or stream */
-char  *input;
+readobj(inpspec)		/* read in an object file or stream */
+char  *inpspec;
 {
 	FILE  *popen();
 	char  *fgetline();
+	OBJECT  lastobj;
 	FILE  *infp;
 	char  buf[512];
 	register int  c;
 
-	if (input == NULL) {
+	lastobj = nobjects;
+	if (inpspec == NULL) {
 		infp = stdin;
-		input = "standard input";
-	} else if (input[0] == '!') {
-		if ((infp = popen(input+1, "r")) == NULL) {
-			sprintf(errmsg, "cannot execute \"%s\"", input);
+		inpspec = "standard input";
+	} else if (inpspec[0] == '!') {
+		if ((infp = popen(inpspec+1, "r")) == NULL) {
+			sprintf(errmsg, "cannot execute \"%s\"", inpspec);
 			error(SYSTEM, errmsg);
 		}
-	} else if ((infp = fopen(input, "r")) == NULL) {
-		sprintf(errmsg, "cannot open scene file \"%s\"", input);
+	} else if ((infp = fopen(inpspec, "r")) == NULL) {
+		sprintf(errmsg, "cannot open scene file \"%s\"", inpspec);
 		error(SYSTEM, errmsg);
 	}
 	while ((c = getc(infp)) != EOF) {
@@ -56,13 +58,17 @@ char  *input;
 			readobj(buf);
 		} else {				/* object */
 			ungetc(c, infp);
-			getobject(input, infp);
+			getobject(inpspec, infp);
 		}
 	}
-	if (input[0] == '!')
+	if (inpspec[0] == '!')
 		pclose(infp);
 	else
 		fclose(infp);
+	if (nobjects == lastobj) {
+		sprintf(errmsg, "(%s): empty file", inpspec);
+		error(WARNING, errmsg);
+	}
 }
 
 

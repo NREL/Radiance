@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1994 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -173,6 +173,7 @@ xform(name, fin)			/* transform stream by tot.xfm */
 char  *name;
 register FILE  *fin;
 {
+	int  nobjs = 0;
 	register int  c;
 
 	while ((c = getc(fin)) != EOF) {
@@ -188,11 +189,16 @@ register FILE  *fin;
 		} else if (c == '!') {			/* command */
 			ungetc(c, fin);
 			xfcomm(name, fin);
+			nobjs++;
 		} else {				/* object */
 			ungetc(c, fin);
 			xfobject(name, fin);
+			nobjs++;
 		}
 	}
+	if (nobjs == 0)
+		fprintf(stderr, "%s: (%s): warning - empty file\n",
+				progname, name);
 }
 
 
