@@ -8,11 +8,9 @@ static char SCCSid[] = "$SunId$ LBL";
  * Make illum sources for optimizing rendering process
  */
 
-#include  "standard.h"
+#include  "mkillum.h"
 
-#include  "object.h"
-
-#include  "otypes.h"
+#include  <ctype.h>
 
 				/* default parameters */
 #define  SAMPDENS	128		/* points per projected steradian */
@@ -31,45 +29,31 @@ int  rtargc = 13;
 				/* overriding rtrace options */
 char  *myrtopts[] = { "-I-", "-i-", "-di+", "-ov", "-h-", "-fff", NULL };
 
-				/* illum flags */
-#define  IL_FLAT	0x1		/* flat surface */
-#define  IL_LIGHT	0x2		/* light rather than illum */
-#define  IL_COLDST	0x4		/* colored distribution */
-#define  IL_COLAVG	0x8		/* compute average color */
-#define  IL_DATCLB	0x10		/* OK to clobber data file */
+struct rtproc	rt;		/* our rtrace process */
 
-struct illum_args {
-	int	flags;			/* flags from list above */
-	char	matname[MAXSTR];	/* illum material name */
-	char	datafile[MAXSTR];	/* distribution data file name */
-	int	dfnum;			/* data file number */
-	char	altmatname[MAXSTR];	/* alternate material name */
-	int	nsamps;			/* # of samples in each direction */
-	int	nalt, nazi;		/* # of altitude and azimuth angles */
-	FVECT	orient;			/* coordinate system orientation */
-} thisillum = {			/* default values */
-	0,
-	DFLMAT,
-	DFLMAT,
-	0,
-	VOIDID,
-	NSAMPS,
-};
+struct illum_args  thisillum = {	/* our illum and default values */
+		0,
+		DFLMAT,
+		DFLMAT,
+		0,
+		VOIDID,
+		NSAMPS,
+	};
 
 int	sampdens = SAMPDENS;	/* sample point density */
 char	matcheck[MAXSTR];	/* current material to include or exclude */
 int	matselect = S_ALL;	/* selection criterion */
 
-int	rt_pd[3];		/* rtrace pipe descriptors */
-float	*rt_buf;		/* rtrace i/o buffer */
-int	rt_bsiz;		/* maximum rays for rtrace buffer */
-int	rt_nrays;		/* current length of rtrace buffer */
+FUN	ofun[NUMOTYPE] = INIT_OTYPE;	/* object types */
 
 int	gargc;			/* global argc */
 char	**gargv;		/* global argv */
 #define  progname	gargv[0]
 
 int	doneheader = 0;		/* printed header yet? */
+#define  checkhead()	if (!doneheader++) printhead(gargc,gargv)
+
+int	warnings = 1;		/* print warnings? */
 
 extern char	*fgetline(), *fgetword(), *sskip(), 
 		*atos(), *iskip(), *fskip();
@@ -88,8 +72,11 @@ char	*argv[];
 				/* set up rtrace command */
 	if (argc < 2)
 		error(USER, "too few arguments");
-	for (i = 1; i < argc-1; i++)
+	for (i = 1; i < argc-1; i++) {
 		rtargv[rtargc++] = argv[i];
+		if (argv[i][0] == '-' && argv[i][1] == 'w')
+			warnings = !warnings;
+	}
 	for (i = 0; myrtopts[i] != NULL; i++)
 		rtargv[rtargc++] = myrtopts[i];
 	rtargv[rtargc++] = argv[argc-1];
@@ -108,8 +95,8 @@ char	*argv[];
 	}
 				/* else initialize and run our calculation */
 	init();
-	mkillum(stdin, "standard input");
-	exit(cleanup());	/* cleanup returns rtrace status */
+	filter(stdin, "standard input");
+	quit(0);
 }
 
 
@@ -117,7 +104,7 @@ init()				/* start rtrace and set up buffers */
 {
 	int	maxbytes;
 
-	maxbytes = open_process(rt_pd, rtargv);
+	maxbytes = open_process(rt.pd, rtargv);
 	if (maxbytes == 0) {
 		eputs(rtargv[0]);
 		eputs(": command not found\n");
@@ -125,26 +112,28 @@ init()				/* start rtrace and set up buffers */
 	}
 	if (maxbytes < 0)
 		error(SYSTEM, "cannot start rtrace process");
-	rt_bsiz = maxbytes/(6*sizeof(float));
-	rt_buf = (float *)malloc(rt_bsiz*(6*sizeof(float)));
-	if (rt_buf == NULL)
+	rt.bsiz = maxbytes/(6*sizeof(float));
+	rt.buf = (float *)malloc(rt.bsiz*(6*sizeof(float)));
+	if (rt.buf == NULL)
 		error(SYSTEM, "out of memory in init");
-	rt_bsiz--;			/* allow for flush ray */
-	rt_nrays = 0;
+	rt.bsiz--;			/* allow for flush ray */
+	rt.nrays = 0;
 }
 
 
-int
-cleanup()			/* close rtrace process and return status */
+quit(status)			/* exit with status */
+int  status;
 {
-	int	status;
+	int	rtstat;
 
-	free((char *)rt_buf);
-	rt_bsiz = 0;
-	status = close_process(rt_pd);
-	if (status < 0)
-		return(0);		/* unknown status */
-	return(status);
+	rtstat = close_process(rt.pd);
+	if (status == 0)
+		if (rtstat < 0)
+			error(WARNING,
+			"unknown return status from rtrace process");
+		else
+			status = rtstat;
+	exit(status);
 }
 
 
@@ -163,7 +152,15 @@ register char  *s;
 }
 
 
-mkillum(infp, name)		/* process stream */
+wputs(s)			/* print warning if enabled */
+char  *s;
+{
+	if (warnings)
+		eputs(s);
+}
+
+
+filter(infp, name)		/* process stream */
 register FILE	*infp;
 char	*name;
 {
@@ -177,8 +174,7 @@ char	*name;
 		if (c == '#') {				/* comment/options */
 			buf[0] = c;
 			fgets(buf+1, sizeof(buf)-1, infp);
-			fputs(buf, stdout);
-			getoptions(buf, name);
+			xoptions(buf, name);
 		} else if (c == '!') {			/* command */
 			buf[0] = c;
 			fgetline(buf+1, sizeof(buf)-1, infp);
@@ -186,7 +182,7 @@ char	*name;
 				sprintf(errmsg, "cannot execute \"%s\"", buf);
 				error(SYSTEM, errmsg);
 			}
-			mkillum(pfp, buf);
+			filter(pfp, buf);
 			pclose(pfp);
 		} else {				/* object */
 			ungetc(c, infp);
@@ -196,7 +192,7 @@ char	*name;
 }
 
 
-getoptions(s, nm)		/* get options from string s */
+xoptions(s, nm)			/* process options in string s */
 char	*s;
 char	*nm;
 {
@@ -205,8 +201,10 @@ char	*nm;
 	int	nerrs = 0;
 	register char	*cp;
 
-	if (strncmp(s, "#@mkillum", 9) || !isspace(s[9]))
+	if (strncmp(s, "#@mkillum", 9) || !isspace(s[9])) {
+		fputs(s, stdout);		/* not for us */
 		return;
+	}
 	cp = s+10;
 	while (*cp) {
 		switch (*cp) {
@@ -216,10 +214,10 @@ char	*nm;
 			cp++;
 			continue;
 		case 'm':			/* material name */
-			cp++;
-			if (*cp != '=')
+			if (*++cp != '=')
 				break;
-			cp++;
+			if (!*++cp)
+				break;
 			atos(thisillum.matname, MAXSTR, cp);
 			cp = sskip(cp);
 			if (!(thisillum.flags & IL_DATCLB)) {
@@ -228,11 +226,9 @@ char	*nm;
 			}
 			continue;
 		case 'f':			/* data file name */
-			cp++;
-			if (*cp != '=')
+			if (*++cp != '=')
 				break;
-			cp++;
-			if (*cp == '\0') {
+			if (!*++cp) {
 				thisillum.flags &= ~IL_DATCLB;
 				continue;
 			}
@@ -243,11 +239,10 @@ char	*nm;
 			continue;
 		case 'i':			/* include material */
 		case 'e':			/* exclude material */
-			matselect = (*cp++ == 'i') ? S_ELEM : S_COMPL;
-			if (*cp != '=')
+			matselect = (*cp == 'i') ? S_ELEM : S_COMPL;
+			if (*++cp != '=')
 				break;
-			cp++;
-			atos(matcheck, MAXSTR, cp);
+			atos(matcheck, MAXSTR, ++cp);
 			cp = sskip(cp);
 			continue;
 		case 'a':			/* use everything */
@@ -259,11 +254,9 @@ char	*nm;
 			matselect = S_NONE;
 			continue;
 		case 'c':			/* color calculation */
-			cp++;
-			if (*cp != '=')
+			if (*++cp != '=')
 				break;
-			cp++;
-			switch (*cp) {
+			switch (*++cp) {
 			case 'a':			/* average */
 				thisillum.flags |= IL_COLAVG;
 				thisillum.flags &= ~IL_COLDST;
@@ -281,30 +274,26 @@ char	*nm;
 			cp = sskip(cp);
 			continue;
 		case 'd':			/* point sample density */
-			cp++;
-			if (*cp != '=')
+			if (*++cp != '=')
 				break;
-			cp++;
-			if (!isintd(cp, " \t\n"))
+			if (!isintd(++cp, " \t\n"))
 				break;
 			sampdens = atoi(cp);
 			cp = sskip(cp);
 			continue;
 		case 's':			/* point super-samples */
-			cp++;
-			if (*cp != '=')
+			if (*++cp != '=')
 				break;
-			cp++;
-			if (!isintd(cp, " \t\n"))
+			if (!isintd(++cp, " \t\n"))
 				break;
 			thisillum.nsamps = atoi(cp);
 			cp = sskip(cp);
 			continue;
 		case 'o':			/* output file */
-			cp++;
-			if (*cp != '=')
+			if (*++cp != '=')
 				break;
-			cp++;
+			if (!*++cp)
+				break;
 			atos(buf, sizeof(buf), cp);
 			cp = sskip(cp);
 			if (freopen(buf, "w", stdout) == NULL) {
@@ -319,10 +308,126 @@ char	*nm;
 		cp = sskip(cp);
 		nerrs++;
 	}
+						/* print header? */
+	checkhead();
+						/* issue warnings? */
 	if (nerrs) {
 		sprintf(errmsg, "(%s): %d error(s) in option line:",
 				nm, nerrs);
 		error(WARNING, errmsg);
-		eputs(s);
+		wputs(s);
+		printf("# %s: the following option line has %d error(s):\n",
+				progname, nerrs);
 	}
+						/* print pure comment */
+	putchar('#'); putchar(' '); fputs(s+2, stdout);
 }
+
+
+printhead(ac, av)			/* print out header */
+register int  ac;
+register char  **av;
+{
+	putchar('#');
+	while (ac-- > 0) {
+		putchar(' ');
+		fputs(*av++, stdout);
+	}
+	putchar('\n');
+}
+
+
+xobject(fp, nm)				/* translate an object from fp */
+FILE  *fp;
+char  *nm;
+{
+	OBJREC  thisobj;
+	char  str[MAXSTR];
+	int  doit;
+					/* read the object */
+	if (fgetword(thisillum.altmat, MAXSTR, fp) == NULL)
+		goto readerr;
+	if (fgetword(str, MAXSTR, fp) == NULL)
+		goto readerr;
+					/* is it an alias? */
+	if (!strcmp(str, ALIASID)) {
+		if (fgetword(str, MAXSTR, fp) == NULL)
+			goto readerr;
+		printf("\n%s %s %s", thisillum.altmat, ALIASID, str);
+		if (fgetword(str, MAXSTR, fp) == NULL)
+			goto readerr;
+		printf(" %s\n", str);
+		return;
+	}
+	thisobj.omod = OVOID;
+	if ((thisobj.otype = otype(str)) < 0) {
+		sprintf(errmsg, "(%s): unknown type \"%s\"", nm, str);
+		error(USER, errmsg);
+	}
+	if (fgetword(str, MAXSTR, fp) == NULL)
+		goto readerr;
+	thisobj.oname = str;
+	if (readfargs(&thisobj.oargs, fp) != 1)
+		goto readerr;
+	thisobj.os = NULL;
+					/* check for translation */
+	switch (matselect) {
+	case S_NONE:
+		doit = 0;
+		break;
+	case S_ALL:
+		doit = issurface(thisobj.otype);
+		break;
+	case S_ELEM:
+		doit = !strcmp(thisillum.altmat, matcheck);
+		break;
+	case S_COMPL:
+		doit = strcmp(thisillum.altmat, matcheck);
+		break;
+	}
+	if (doit)				/* make sure we can do it */
+		switch (thisobj.otype) {
+		case OBJ_SPHERE:
+		case OBJ_FACE:
+		case OBJ_RING:
+			break;
+		default:
+			sprintf(errmsg,
+				"(%s): cannot make illum for %s \"%s\"",
+					nm, ofun[thisobj.otype].funame,
+					thisobj.oname);
+			error(WARNING, errmsg);
+			doit = 0;
+			break;
+		}
+						/* print header? */
+	checkhead();
+						/* process object */
+	if (doit)
+		mkillum(&thisobj, &thisillum, &rt);
+	else
+		printobj(thisillum.altmat, &thisobj);
+						/* free arguments */
+	freefargs(&thisobj.oargs);
+	return;
+readerr:
+	sprintf(errmsg, "(%s): error reading scene", nm);
+	error(USER, errmsg);
+}
+
+
+int
+otype(ofname)			/* get object function number from its name */
+char  *ofname;
+{
+	register int  i;
+
+	for (i = 0; i < NUMOTYPE; i++)
+		if (!strcmp(ofun[i].funame, ofname))
+			return(i);
+
+	return(-1);		/* not found */
+}
+
+
+o_default() {}

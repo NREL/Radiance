@@ -5,6 +5,13 @@
 /*
  * Common definitions for mkillum
  */
+
+#include  "standard.h"
+
+#include  "object.h"
+
+#include  "otypes.h"
+
 				/* illum flags */
 #define  IL_FLAT	0x1		/* flat surface */
 #define  IL_LIGHT	0x2		/* light rather than illum */
@@ -17,7 +24,7 @@ struct illum_args {
 	char	matname[MAXSTR];	/* illum material name */
 	char	datafile[MAXSTR];	/* distribution data file name */
 	int	dfnum;			/* data file number */
-	char	altmatname[MAXSTR];	/* alternate material name */
+	char	altmat[MAXSTR];		/* alternate material name */
 	int	nsamps;			/* # of samples in each direction */
 	int	nalt, nazi;		/* # of altitude and azimuth angles */
 	FVECT	orient;			/* coordinate system orientation */
