@@ -281,18 +281,22 @@ rholo()				/* holodeck main loop */
 			return(0);
 					/* display only? */
 	if (nprocs <= 0)
-		return(1);
+		return(outdev != NULL);
 					/* check file size */
 	if (maxdisk > 0 && hdfilen(hdlist[0]->fd) >= maxdisk) {
 		error(WARNING, "file limit exceeded");
-		return(0);
+		done_rtrace();
+		idle = 1;
+		return(1);	/* comes back */
 	}
 					/* check time */
 	if (endtime > 0 || reporttime > 0)
 		t = time(NULL);
 	if (endtime > 0 && t >= endtime) {
 		error(WARNING, "time limit exceeded");
-		return(0);
+		done_rtrace();
+		idle = 1;
+		return(1);	/* comes back */
 	}
 	if (reporttime > 0 && t >= reporttime)
 		report(t);
@@ -301,17 +305,14 @@ rholo()				/* holodeck main loop */
 		p = freepacks; freepacks = p->next; p->next = NULL;
 		if (!next_packet(p)) {
 			p->next = freepacks; freepacks = p;
+			idle = 1;
 			break;
 		}
 		if (pl == NULL) pl = p;
 		else plend->next = p;
 		plend = p;
 	}
-	idle = pl == NULL && freepacks != NULL;
-					/* are we out of stuff to do? */
-	if (idle && outdev == NULL)
-		return(0);
-					/* else process packets */
+					/* process packets */
 	done_packets(do_packets(pl));
 	return(1);			/* and continue */
 }
@@ -320,13 +321,17 @@ rholo()				/* holodeck main loop */
 report(t)			/* report progress so far */
 time_t	t;
 {
-	if (t == 0)
+	static time_t	seconds2go = 1000000;
+
+	if (t == 0L)
 		t = time(NULL);
-	fprintf(stderr, "%s: %ld packets (%ld rays) done after %.2f hours\n",
-			progname, npacksdone, nraysdone, (t-starttime)/3600.);
-	fflush(stderr);
-	if (vdef(REPORT))
-		reporttime = t + (time_t)(vflt(REPORT)*60.+.5);
+	sprintf(errmsg, "%ld packets (%ld rays) done after %.2f hours\n",
+			npacksdone, nraysdone, (t-starttime)/3600.);
+	eputs(errmsg);
+	if (seconds2go == 1000000)
+		seconds2go = vdef(REPORT) ? (long)(vflt(REPORT)*60. + .5) : 0L;
+	if (seconds2go)
+		reporttime = t + seconds2go;
 }
 
 
@@ -508,15 +513,42 @@ PACKET	*pl;
 }
 
 
-checkrad()			/* check to make sure octree is up to date */
+int
+done_rtrace()			/* clean up and close rtrace calculation */
+{
+	int	status;
+					/* already closed? */
+	if (!nprocs)
+		return;
+					/* report activity */
+	wputs("closing rtrace process...\n");
+					/* flush beam queue */
+	done_packets(flush_queue());
+					/* close rtrace */
+	if ((status = end_rtrace()))
+		error(WARNING, "bad exit status from rtrace");
+	if (vdef(REPORT))		/* report time */
+		report(0);
+	return(status);			/* return status */
+}
+
+
+new_rtrace()			/* restart rtrace calculation */
 {
 	char	combuf[128];
 
-	if (!vdef(RIF))
+	if (nprocs > 0)			/* already running? */
 		return;
-	sprintf(combuf, "rad -v 0 -s -w %s", vval(RIF));
-	if (system(combuf))
-		error(WARNING, "error running rad");
+	wputs("restarting rtrace process...\n");
+	if (vdef(RIF)) {		/* rerun rad to update octree */
+		sprintf(combuf, "rad -v 0 -s -w %s", vval(RIF));
+		if (system(combuf))
+			error(WARNING, "error running rad");
+	}
+	if (start_rtrace() < 1)		/* start rtrace */
+		error(WARNING, "cannot restart rtrace");
+	else if (vdef(REPORT))
+		report(0);
 }
 
 
@@ -622,14 +654,11 @@ int	ec;
 	int	status = 0;
 
 	if (hdlist[0] != NULL) {	/* flush holodeck */
-		if (nprocs > 0) {
-			done_packets(flush_queue());
-			status = end_rtrace();	/* close rtrace */
-		}
+		if (nprocs > 0)
+			status = done_rtrace();
 		hdflush(NULL);
 		if (ncprocs > 0 && vdef(REPORT)) {
 			long	fsiz, fuse;
-			report(0);
 			fsiz = hdfilen(hdlist[0]->fd);
 			fuse = hdfiluse(hdlist[0]->fd, 1);
 			fprintf(stderr,
