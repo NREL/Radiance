@@ -147,8 +147,8 @@ paint(p, xmin, ymin, xmax, ymax)	/* compute and paint a rectangle */
 register PNODE  *p;
 int  xmin, ymin, xmax, ymax;
 {
-	extern long  nrays;
-	static long  lastflush = 0;
+	extern unsigned long  nrays;
+	static unsigned long  lastflush = 0;
 	static RAY  thisray;
 	double  h, v;
 
