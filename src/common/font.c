@@ -175,11 +175,12 @@ int  cis;			/* intercharacter spacing */
 	int  linelen;
 	register GLYPH	*gp;
 
+	linelen = 0;
 	gp = NULL;
 	while (*tp && (gp = f->fg[*tp++&0xff]) == NULL)
 		*sp++ = 0;
 	cis /= 2;
-	linelen = *sp = cis;
+	*sp = cis;
 	while (gp != NULL) {
 		if (gp->nverts) {		/* regular character */
 			linelen += *sp++ += cis - gp->left;
