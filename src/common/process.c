@@ -100,7 +100,7 @@ int	fd;
 char	*bpos;
 int	siz;
 {
-	register int	cc, nrem = siz;
+	register int	cc = 0, nrem = siz;
 
 	while (nrem > 0 && (cc = read(fd, bpos, nrem)) > 0) {
 		bpos += cc;
@@ -118,7 +118,7 @@ int	fd;
 char	*bpos;
 int	siz;
 {
-	register int	cc, nrem = siz;
+	register int	cc = 0, nrem = siz;
 
 	while (nrem > 0 && (cc = write(fd, bpos, nrem)) > 0) {
 		bpos += cc;
