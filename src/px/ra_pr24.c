@@ -35,6 +35,7 @@ char  *argv[];
 	
 	progname = argv[0];
 
+	head.ras_type = RT_STANDARD;
 	for (i = 1; i < argc; i++)
 		if (argv[i][0] == '-')
 			switch (argv[i][1]) {
@@ -47,7 +48,10 @@ char  *argv[];
 				bradj = atoi(argv[++i]);
 				break;
 			case 'r':
-				reverse = !reverse;
+				if (!strcmp(argv[i], "-rgb"))
+					head.ras_type = RT_FORMAT_RGB;
+				else
+					reverse = 1;
 				break;
 			default:
 				goto userr;
@@ -99,12 +103,11 @@ char  *argv[];
 		head.ras_height = ymax;
 		head.ras_depth = 24;
 		head.ras_length = xmax*ymax*3;
-		head.ras_type = RT_STANDARD;
 		head.ras_maptype = RMT_NONE;
 		head.ras_maplength = 0;
 		fwrite((char *)&head, sizeof(head), 1, stdout);
 					/* convert file */
-		ra2pr();
+		ra2pr(head.ras_type);
 	}
 	exit(0);
 userr:
@@ -137,12 +140,14 @@ int	rf;
 		quiterr("out of memory in pr2ra");
 						/* convert image */
 	for (y = ymax-1; y >= 0; y--) {
-		for (x = 0; x < xmax; x++)
-			if (rf == RT_FORMAT_RGB) {
+		if (rf == RT_FORMAT_RGB)
+			for (x = 0; x < xmax; x++) {
 				scanout[x][RED] = getc(stdin);
 				scanout[x][GRN] = getc(stdin);
 				scanout[x][BLU] = getc(stdin);
-			} else {
+			}
+		else
+			for (x = 0; x < xmax; x++) {
 				scanout[x][BLU] = getc(stdin);
 				scanout[x][GRN] = getc(stdin);
 				scanout[x][RED] = getc(stdin);
@@ -160,7 +165,8 @@ int	rf;
 }
 
 
-ra2pr()			/* convert Radiance scanlines to 24-bit rasterfile */
+ra2pr(rf)		/* convert Radiance scanlines to 24-bit rasterfile */
+int  rf;
 {
 	COLR	*scanin;
 	register int	x;
@@ -176,11 +182,18 @@ ra2pr()			/* convert Radiance scanlines to 24-bit rasterfile */
 		if (bradj)
 			shiftcolrs(scanin, xmax, bradj);
 		colrs_gambs(scanin, xmax);
-		for (x = 0; x < xmax; x++) {
-			putc(scanin[x][BLU], stdout);
-			putc(scanin[x][GRN], stdout);
-			putc(scanin[x][RED], stdout);
-		}
+		if (rf == RT_FORMAT_RGB)
+			for (x = 0; x < xmax; x++) {
+				putc(scanin[x][RED], stdout);
+				putc(scanin[x][GRN], stdout);
+				putc(scanin[x][BLU], stdout);
+			}
+		else
+			for (x = 0; x < xmax; x++) {
+				putc(scanin[x][BLU], stdout);
+				putc(scanin[x][GRN], stdout);
+				putc(scanin[x][RED], stdout);
+			}
 		if (ferror(stdout))
 			quiterr("error writing rasterfile");
 	}
