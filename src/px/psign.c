@@ -216,7 +216,6 @@ makemap()			/* create the bit map */
 gettext(fp)			/* get text from a file */
 FILE  *fp;
 {
-	char  *fgets();
 	char  buf[MAXLINE];
 	register LINE  *curl;
 	int  len;

@@ -28,7 +28,7 @@ char  *input;
 int  (*callback)();
 {
 	FILE  *popen();
-	char  *fgets(), *fgetline();
+	char  *fgetline();
 	FILE  *infp;
 	char  buf[512];
 	register int  c;

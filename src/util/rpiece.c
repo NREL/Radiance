@@ -241,7 +241,6 @@ int
 nextpiece(xp, yp)		/* get next piece assignment */
 int  *xp, *yp;
 {
-	extern char  *fgets();
 	struct flock  fls;
 	char  buf[64];
 
