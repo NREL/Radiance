@@ -92,7 +92,7 @@ char  **argv;
 	long  fpos;
 	double	outaspect = 0.0;
 	double	d;
-	int  i;
+	int  i, j;
 #ifdef MSDOS
 	extern int  _fmode;
 	_fmode = O_BINARY;
@@ -219,9 +219,9 @@ char  **argv;
 			fprintf(stderr, "%s: unknown lamp type\n", lamptype);
 			quit(1);
 		}
-		for (i = 0; i < 3; i++)
-			if (lampcolor[i] > 1e-4)
-				colval(exposure,i) /= lampcolor[i];
+		for (j = 0; j < 3; j++)
+			if (lampcolor[j] > 1e-4)
+				colval(exposure,j) /= lampcolor[j];
 		freelamps();
 	}
 					/* open input file */
