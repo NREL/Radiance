@@ -125,15 +125,15 @@ double	hour;
 
 	printf("\nhand_paint polygon %s.hour_hand\n", name);
 	printf("0\n0\n12\n");
-	rvert(.06, -.03, -.03, hrot);
-	rvert(.06, .03, -.03, hrot);
+	rvert(.06, -.03, -.06, hrot);
+	rvert(.06, .03, -.06, hrot);
 	rvert(.06, .025, .5, hrot);
 	rvert(.06, -.025, .5, hrot);
 
 	printf("\nhand_paint polygon %s.minute_hand\n", name);
 	printf("0\n0\n12\n");
-	rvert(.07, -.02, -.04, mrot);
-	rvert(.07, .02, -.04, mrot);
+	rvert(.07, -.02, -.1, mrot);
+	rvert(.07, .02, -.1, mrot);
 	rvert(.07, .01, .9, mrot);
 	rvert(.07, -.01, .9, mrot);
 }
@@ -142,9 +142,12 @@ double	hour;
 rvert(x, y, z, ang)			/* print rotated vertex */
 double	x, y, z, ang;
 {
-	double	sa, ca;
+	static double	lastang=0, sa=0, ca=1;
 
-	sa = sin(-ang);
-	ca = cos(-ang);
+	if (ang != lastang) {
+		sa = sin(-ang);
+		ca = cos(-ang);
+		lastang = ang;
+	}
 	printf("%15.12g %15.12g %15.12g\n", x, y*ca-z*sa, z*ca+y*sa);
 }
