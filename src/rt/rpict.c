@@ -36,7 +36,6 @@ double  pixaspect = 1.0;		/* pixel aspect ratio */
 int  psample = 4;			/* pixel sample size */
 double  maxdiff = .05;			/* max. difference for interpolation */
 double  dstrpix = 0.67;			/* square pixel distribution */
-int  psuper = 2;			/* pixel super-sampling rate */
 
 double  dstrsrc = 0.0;			/* square source distribution */
 double  shadthresh = .05;		/* shadow threshold */
@@ -65,7 +64,7 @@ extern long  tstart;			/* starting time */
 
 extern long  nrays;			/* number of rays traced */
 
-#define  MAXDIV		32		/* maximum sample size */
+#define  MAXDIV		15		/* maximum sample size */
 
 #define  pixjitter()	(.5+dstrpix*(.5-frandom()))
 
@@ -127,8 +126,12 @@ char  *zfile, *oldfile;
 					/* check sampling */
 	if (psample < 1)
 		psample = 1;
-	else if (psample > MAXDIV)
+	else if (psample > MAXDIV) {
+		sprintf(errmsg, "pixel sampling reduced from %d to %d",
+				psample, MAXDIV);
+		error(WARNING, errmsg);
 		psample = MAXDIV;
+	}
 					/* allocate scanlines */
 	for (i = 0; i <= psample; i++) {
 		scanbar[i] = (COLOR *)malloc(hresolu*sizeof(COLOR));
