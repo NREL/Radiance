@@ -55,8 +55,8 @@ xglaresrc:	xglaresrc.o x11findwind.o
 	$(CC) $(CFLAGS) -o xglaresrc xglaresrc.o \
 x11findwind.o -lrt -lX11 -lm
 
-rad:	rad.o
-	$(CC) $(CFLAGS) -o rad rad.o -lrt -lm
+rad:	rad.o loadvars.o
+	$(CC) $(CFLAGS) -o rad rad.o loadvars.o -lrt -lm
 
 rpiece:	rpiece.o Version.o
 	$(CC) $(CFLAGS) -o rpiece rpiece.o Version.o -lrt -lm
@@ -97,3 +97,5 @@ swaprasheader.o:	../common/rasterfile.h
 glareval.o xglaresrc.o:	../common/resolu.h
 
 xglaresrc.o:	../common/vfork.h
+
+rad.o loadvars.o:	vars.h
