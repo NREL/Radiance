@@ -1,5 +1,5 @@
 #
-# SCCSid "$SunId$ LBL"
+# SCCSid "$SunId$ SGI"
 # Radiance makefile for utility programs
 #
 
@@ -40,6 +40,9 @@ raddepend.csh trad.wsh objline.csh compamb.csh
 clean:
 	set nonomatch; rm -f *.o $(PROGS) core
 
+ogl:	glrad
+	cp glrad $(INSTDIR)
+
 scanner:	scanner.o
 	$(CC) $(CFLAGS) -o scanner scanner.o -lm
 
@@ -74,6 +77,9 @@ vwrays:		vwrays.o
 
 getinfo:	getinfo.o
 	$(CC) $(CFLAGS) -o getinfo getinfo.o -lrt
+
+glrad:	glrad.o
+	$(CC) $(CFLAGS) -o glrad glrad.o -lrgl -lrt -lGLU -lGL -lX11 -lm
 
 contour:	contour.o
 	$(CC) $(CFLAGS) -o contour contour.o -lm
@@ -118,3 +124,9 @@ ranimate.o netproc.o:	netproc.h
 netproc.o:	../common/paths.h
 
 rad.o ranimate.o:	../common/view.h
+
+glrad.o:	../common/radogl.h \
+../common/standard.h ../common/mat4.h ../common/fvect.h \
+../common/color.h ../common/object.h ../common/otypes.h ../common/lookup.h
+
+glrad.o:	glradicon.h ../common/view.h ../common/paths.h
