@@ -60,7 +60,7 @@ typedef long TINT;
 #define GT_OUT       64
 
 #define ZERO_VEC3(v)     (ZERO(v[0]) && ZERO(v[1]) && ZERO(v[2]) )
-#define EQUAL_VEC3(a,b)  (EQUAL(a[0],b[0])&&EQUAL(a[1],b[1])&&EQUAL(a[2],b[2]))
+#define EQUAL_VEC3(a,b)  (FEQUAL(a[0],b[0])&&FEQUAL(a[1],b[1])&&FEQUAL(a[2],b[2]))
 #define OPP_EQUAL_VEC3(a,b)  (EQUAL(a[0],-b[0])&&EQUAL(a[1],-b[1])&&EQUAL(a[2],-b[2]))
 #define FZERO_VEC3(v)     (FZERO(v[0]) && FZERO(v[1]) && FZERO(v[2]) )
 #define FEQUAL_VEC3(a,b) (FEQUAL(a[0],b[0])&&FEQUAL(a[1],b[1])&&FEQUAL(a[2],b[2]))

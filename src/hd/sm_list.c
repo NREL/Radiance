@@ -124,21 +124,7 @@ int d;
     return(l);
 }
 
-/* Pushes data element d at the top of the list- returns pointer
-   to new top of list
- */
-LIST
-*push_data(l,d)
-LIST *l;
-int d;
-{
-    LIST * list;
-    
-    list = new_list();
-    SET_LIST_DATA(list,d);
-    SET_LIST_NEXT(list,l);
-    return(list);
-}
+
 
 /* frees the list */
 LIST
@@ -153,6 +139,21 @@ LIST * l;
     return(NULL);
 }
 
+/* Pushes data element d at the top of the list- returns pointer
+   to new top of list
+ */
+LIST
+*push_data(l,d)
+LIST *l;
+int d;
+{
+  LIST *list;
+
+  list = new_list();
+  SET_LIST_DATA(list,d);
+  SET_LIST_NEXT(list,l);
+  return(list);
+}
 /* Returns data element d at the top of the list- returns pointer
    to new top of list
  */
