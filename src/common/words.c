@@ -37,15 +37,30 @@ register char  *s;
 
 
 char *
-sskip(s)			/* skip word in string */
+sskip(s)			/* skip word in string, leaving on space */
 register char  *s;
 {
 	while (isspace(*s))
 		s++;
 	while (*s && !isspace(*s))
 		s++;
+	return(s);
+}
+
+
+char *
+sskip2(s, n)			/* skip word(s) in string, leaving on word */
+register char  *s;
+register int	n;
+{
 	while (isspace(*s))
 		s++;
+	while (n-- > 0) {
+		while (*s && !isspace(*s))
+			s++;
+		while (isspace(*s))
+			s++;
+	}
 	return(s);
 }
 
