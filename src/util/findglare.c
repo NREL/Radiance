@@ -12,7 +12,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "glare.h"
 
-#define FEQ(a,b)	((a)-(b)<=FTINY&&(a)-(b)<=FTINY)
+#define FEQ(a,b)	((a)-(b)<=FTINY&&(b)-(a)<=FTINY)
 #define VEQ(v1,v2)	(FEQ((v1)[0],(v2)[0])&&FEQ((v1)[1],(v2)[1]) \
 				&&FEQ((v1)[2],(v2)[2]))
 
