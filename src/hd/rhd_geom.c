@@ -55,7 +55,7 @@ char	*file;
 			return;
 		}
 					/* else load new octree */
-	gmNext[i].gfile = file;
+	gmNext[i].gfile = savestr(file);
 	dolights = 0;
 	domats = 1;
 	gmNext[i].listid = rgl_octlist(file, gmNext[i].cent, &gmNext[i].rad);
@@ -75,8 +75,10 @@ gmEndGeom()			/* make next list current */
 		FORALLGEOM(gmNext, j)
 			if (gmNext[j].listid == gmCurrent[i].listid)
 				break;
-		if (j >= MAXGEO || gmNext[j].gfile == NULL)
+		if (j >= MAXGEO || gmNext[j].gfile == NULL) {
 			glDeleteLists(gmCurrent[i].listid, 1);	/* not found */
+			freestr(gmCurrent[i].gfile);
+		}
 	}
 	bcopy((char *)gmNext, (char *)gmCurrent, sizeof(gmNext));
 	bzero((char *)gmNext, sizeof(gmNext));
