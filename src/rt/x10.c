@@ -12,7 +12,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 #include  <math.h>
-#include  <sys/ioctl.h>
 
 #include  <X/Xlib.h>
 #include  <X/cursors/bcross.cursor>
