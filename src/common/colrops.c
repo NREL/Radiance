@@ -1,7 +1,7 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -60,15 +60,13 @@ double	a2;
 					/* compute gamb -> colr mapping */
 	i = 0;
 	mult = 256.0;
-	for (j = 255; j > 0; j--) {
-		while ((g_mant[j] = mult * (*f)(j/256.0, a2)) < 128) {
+	for (j = 256; j--; ) {
+		while ((g_mant[j] = mult * (*f)((j+.5)/256.0, a2)) < 128) {
 			i++;
 			mult *= 2.0;
 		}
 		g_nexp[j] = i;
 	}
-	g_mant[0] = 0;
-	g_nexp[0] = COLXS;
 	return(0);
 }
 
