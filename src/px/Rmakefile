@@ -80,7 +80,7 @@ colorscale:	colorscale.o color.o resolu.o
 	cc $(CFLAGS) -o colorscale colorscale.o color.o resolu.o
 
 pvalue:	pvalue.o color.o resolu.o header.o
-	cc $(CFLAGS) -o pvalue pvalue.o color.o resolu.o header.o
+	cc $(CFLAGS) -o pvalue pvalue.o color.o resolu.o header.o -lm
 
 psum:	psum.o color.o resolu.o header.o
 	cc $(CFLAGS) -o psum psum.o color.o resolu.o header.o
