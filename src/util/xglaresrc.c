@@ -105,7 +105,7 @@ char	*pname, *wname;
 					/* find our window */
 	if (wname == NULL)
 		wname = pname;
-	gwind = xfindwind(theDisplay, rwind, wname, 2);
+	gwind = xfindwind(theDisplay, rwind, wname, 4);
 	if (gwind == None) {
 		if (wname != pname) {
 			fprintf(stderr, "%s: cannot find \"%s\" window\n",
@@ -114,7 +114,7 @@ char	*pname, *wname;
 		}
 					/* start ximage */
 		if (vfork() == 0) {
-			execlp(XIM, XIM, pname, 0);
+			execlp(XIM, XIM, "-c", "256", pname, 0);
 			perror(XIM);
 			fprintf(stderr, "%s: cannot start %s\n",
 					progname, XIM);
@@ -123,7 +123,7 @@ char	*pname, *wname;
 		}
 		do
 			sleep(8);
-		while ((gwind=xfindwind(theDisplay,rwind,pname,2)) == None);
+		while ((gwind=xfindwind(theDisplay,rwind,pname,4)) == None);
 	} else
 		XMapRaised(theDisplay, gwind);
 	do {
