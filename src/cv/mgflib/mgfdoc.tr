@@ -3278,8 +3278,9 @@ and return one of the non-zero values from "parser.h" listed below:
 #define MG_ESEEK		9		/* file seek error */
 #define MG_EBADMAT	10		/* bad material specification */
 #define MG_ELINE		11		/* input line too long */
+#define MG_ECNTXT		12		/* unmatched context close */
 
-#define MG_NERRS	12
+#define MG_NERRS	13
 .DE
 If it is inappropriate to send output to standard error, the calling
 program should use the routines listed under

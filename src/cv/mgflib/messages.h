@@ -20,4 +20,5 @@
 			"Seek failure",\
 			"Illegal material specification",\
 			"Input line too long",\
+			"Unmatched context close",\
 			}

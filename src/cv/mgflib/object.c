@@ -28,7 +28,7 @@ char	**av;
 {
 	if (ac == 1) {				/* just pop top object */
 		if (obj_nnames < 1)
-			return(MG_OK);		/* should be error? */
+			return(MG_ECNTXT);
 		free((MEM_PTR)obj_name[--obj_nnames]);
 		obj_name[obj_nnames] = NULL;
 		return(MG_OK);
