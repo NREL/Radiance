@@ -166,7 +166,7 @@ setfunc(m, r)			/* set channels for function call */
 OBJREC  *m;
 register RAY  *r;
 {
-	static long  lastrno = -1;
+	static unsigned long  lastrno = ~0;
 	register MFUNC  *f;
 					/* get function */
 	if ((f = (MFUNC *)m->os) == NULL)

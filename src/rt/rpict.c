@@ -82,7 +82,7 @@ long  tlastrept = 0L;			/* time at last report */
 extern long  time();
 extern long  tstart;			/* starting time */
 
-extern long  nrays;			/* number of rays traced */
+extern unsigned long  nrays;		/* number of rays traced */
 
 #define	 MAXDIV		16		/* maximum sample size */
 
@@ -119,7 +119,7 @@ report()		/* report progress */
 	t += (rubuf.ru_utime.tv_usec + rubuf.ru_stime.tv_usec) / 1e6;
 	t += rubuf.ru_utime.tv_sec + rubuf.ru_stime.tv_sec;
 
-	sprintf(errmsg, "%ld rays, %4.2f%% done after %5.4f CPU hours\n",
+	sprintf(errmsg, "%lu rays, %4.2f%% done after %5.4f CPU hours\n",
 			nrays, pctdone, t/3600.0);
 	eputs(errmsg);
 	tlastrept = time((long *)0);
@@ -128,7 +128,7 @@ report()		/* report progress */
 report()		/* report progress */
 {
 	tlastrept = time((long *)0);
-	sprintf(errmsg, "%ld rays, %4.2f%% done after %5.4f hours\n",
+	sprintf(errmsg, "%lu rays, %4.2f%% done after %5.4f hours\n",
 			nrays, pctdone, (tlastrept-tstart)/3600.0);
 	eputs(errmsg);
 	signal(SIGCONT, report);

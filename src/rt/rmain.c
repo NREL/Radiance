@@ -66,7 +66,7 @@ int  (*addobjnotify[])() = {ambnotify, NULL};
 CUBE  thescene;				/* our scene */
 OBJECT	nsceneobjs;			/* number of objects in our scene */
 
-extern long  raynum, nrays;		/* ray counts */
+extern unsigned long  raynum, nrays;	/* ray counts */
 
 extern int  imm_irrad;			/* calculate immediate irradiance? */
 

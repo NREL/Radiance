@@ -25,8 +25,8 @@ extern int  maxdepth;			/* maximum recursion depth */
 extern double  minweight;		/* minimum ray weight */
 extern int  do_irrad;			/* compute irradiance? */
 
-long  raynum = 0L;			/* next unique ray number */
-long  nrays = 0L;			/* number of calls to localhit */
+unsigned long  raynum = 0;		/* next unique ray number */
+unsigned long  nrays = 0;		/* number of calls to localhit */
 
 static FLOAT  Lambfa[5] = {PI, PI, PI, 0.0, 0.0};
 OBJREC  Lamb = {
