@@ -124,7 +124,8 @@ char	*argv[];
 	if (i == argc)
 		normaspect(viewaspect(&vw), &pa, &rs.xr, &rs.yr);
 	if (getdim) {
-		printf("-x %d -y %d\n", rs.xr, rs.yr);
+		printf("-x %d -y %d -ld%c\n", rs.xr, rs.yr,
+				vw.vaft > FTINY ? '+' : '-');
 		exit(0);
 	}
 	putrays();
