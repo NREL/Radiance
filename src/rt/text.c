@@ -14,6 +14,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "otypes.h"
 
+#include  "font.h"
+
 /*
  *	A text pattern is specified as the text (a file or line),
  *  the upper left anchor point, the right motion vector, the down
@@ -55,16 +57,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  fndx(m)	((m)->otype==MIX_TEXT ? 2 : 0)
 #define  tndx(m)	((m)->otype==MIX_TEXT ? 3 : 1)
 
-extern char  *libpath;			/* library search path */
-
-typedef unsigned char  GLYPH;
-
-typedef struct font {
-	GLYPH  *fg[256];		/* font glyphs */
-	char  *name;			/* font file name */
-	struct font  *next;		/* next font in list */
-}  FONT;
-
 typedef struct tline {
 	struct tline  *next;		/* pointer to next line */
 					/* followed by the string */
@@ -83,10 +75,6 @@ extern char  *fgetword();
 TEXT  *gettext();
 
 TLINE  *tlalloc();
-
-FONT  *getfont();
-
-static FONT  *fontlist = NULL;		/* our font list */
 
 
 text(m, r)
@@ -271,83 +259,7 @@ OBJREC  *m;
 			break;
 	if (tlp == NULL || col >= strlen(TLSTR(tlp)))
 		return(0);
-	return(inglyph(x, y, tp->f->fg[TLSTR(tlp)[col]]));
-}
-
-
-FONT *
-getfont(fname)				/* return font fname */
-char  *fname;
-{
-	char  buf[16];
-	FILE  *fp;
-	char  *pathname, *err;
-	int  gn, ngv, gv;
-	register GLYPH  *g;
-	register FONT  *f;
-
-	for (f = fontlist; f != NULL; f = f->next)
-		if (!strcmp(f->name, fname))
-			return(f);
-						/* load the font file */
-	if ((pathname = getpath(fname, libpath, R_OK)) == NULL) {
-		sprintf(errmsg, "cannot find font file \"%s\"", fname);
-		error(USER, errmsg);
-	}
-	f = (FONT *)calloc(1, sizeof(FONT));
-	if (f == NULL)
-		goto memerr;
-	f->name = savestr(fname);
-	if ((fp = fopen(pathname, "r")) == NULL) {
-		sprintf(errmsg, "cannot open font file \"%s\"",
-				pathname);
-		error(SYSTEM, errmsg);
-	}
-	while (fgetword(buf,sizeof(buf),fp) != NULL) {	/* get each glyph */
-		if (!isint(buf))
-			goto nonint;
-		gn = atoi(buf);
-		if (gn < 0 || gn > 255) {
-			err = "illegal";
-			goto fonterr;
-		}
-		if (f->fg[gn] != NULL) {
-			err = "duplicate";
-			goto fonterr;
-		}
-		if (fgetword(buf,sizeof(buf),fp) == NULL || !isint(buf) ||
-				(ngv = atoi(buf)) < 0 || ngv > 255) {
-			err = "bad # vertices for";
-			goto fonterr;
-		}
-		g = (GLYPH *)malloc((2*ngv+1)*sizeof(GLYPH));
-		if (g == NULL)
-			goto memerr;
-		f->fg[gn] = g;
-		*g++ = ngv;
-		ngv *= 2;
-		while (ngv--) {
-			if (fgetword(buf,sizeof(buf),fp) == NULL ||
-					!isint(buf) ||
-					(gv = atoi(buf)) < 0 || gv > 255) {
-				err = "bad vertex for";
-				goto fonterr;
-			}
-			*g++ = gv;
-		}
-	}
-	fclose(fp);
-	f->next = fontlist;
-	return(fontlist = f);
-nonint:
-	sprintf(errmsg, "non-integer in font file \"%s\"", pathname);
-	error(USER, errmsg);
-fonterr:
-	sprintf(errmsg, "%s character (%d) in font file \"%s\"",
-			err, gn, pathname);
-	error(USER, errmsg);
-memerr:
-	error(SYSTEM, "out of memory in fontglyph");
+	return(inglyph(x, y, tp->f->fg[TLSTR(tlp)[col]&0xff]));
 }
 
 
@@ -357,7 +269,7 @@ GLYPH  *gl;
 {
 	int  n, ncross;
 	int  xlb, ylb;
-	register GLYPH  *p0, *p1;
+	register GORD  *p0, *p1;
 
 	if (gl == NULL)
 		return(0);
@@ -365,9 +277,9 @@ GLYPH  *gl;
 	y *= 256.0;
 	xlb = x + 0.5;
 	ylb = y + 0.5;
-	n = *gl++;			/* get # of vertices */
-	p0 = gl + 2*(n-1);		/* connect last to first */
-	p1 = gl;
+	n = gl->nverts;			/* get # of vertices */
+	p0 = gvlist(gl) + 2*(n-1);	/* connect last to first */
+	p1 = gvlist(gl);
 	ncross = 0;
 					/* positive x axis cross test */
 	while (n--) {
