@@ -20,6 +20,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "random.h"
 
+extern double  specthresh;		/* specular sampling threshold */
+extern double  specjitter;		/* specular sampling jitter */
+
 /*
  *	This routine uses portions of the reflection
  *  model described by Cook and Torrance.
@@ -42,6 +45,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  SP_TRAN	02		/* has transmitted specular */
 #define  SP_PURE	010		/* purely specular (zero roughness) */
 #define  SP_FLAT	020		/* flat reflecting surface */
+#define  SP_RBLT	040		/* reflection below sample threshold */
+#define  SP_TBLT	0100		/* transmission below threshold */
 
 typedef struct {
 	OBJREC  *mp;		/* material pointer */
@@ -186,6 +191,9 @@ register RAY  *r;
 		for (i = 0; i < 3; i++)
 			colval(nd.scolor,i) += (1.0-colval(nd.scolor,i))*dtmp;
 		nd.rspec += (1.0-nd.rspec)*dtmp;
+						/* check threshold */
+		if (nd.rspec <= specthresh+FTINY)
+			nd.specfl |= SP_RBLT;
 						/* compute reflected ray */
 		for (i = 0; i < 3; i++)
 			nd.vrefl[i] = r->rdir[i] + 2.0*nd.pdot*nd.pnorm[i];
@@ -207,6 +215,9 @@ register RAY  *r;
 		nd.tdiff = nd.trans - nd.tspec;
 		if (nd.tspec > FTINY) {
 			nd.specfl |= SP_TRAN;
+							/* check threshold */
+			if (nd.tspec <= specthresh+FTINY)
+				nd.specfl |= SP_TBLT;
 			if (r->crtype & SHADOW ||
 					DOT(r->pert,r->pert) <= FTINY*FTINY) {
 				VCOPY(nd.prdir, r->rdir);
@@ -250,14 +261,20 @@ register RAY  *r;
 
 	if (nd.rdiff > FTINY) {		/* ambient from this side */
 		ambient(ctmp, r);
-		scalecolor(ctmp, nd.rdiff);
+		if (nd.specfl & SP_RBLT)
+			scalecolor(ctmp, 1.0-nd.trans);
+		else
+			scalecolor(ctmp, nd.rdiff);
 		multcolor(ctmp, nd.mcolor);	/* modified by material color */
 		addcolor(r->rcol, ctmp);	/* add to returned color */
 	}
 	if (nd.tdiff > FTINY) {		/* ambient from other side */
 		flipsurface(r);
 		ambient(ctmp, r);
-		scalecolor(ctmp, nd.tdiff);
+		if (nd.specfl & SP_TBLT)
+			scalecolor(ctmp, nd.trans);
+		else
+			scalecolor(ctmp, nd.tdiff);
 		multcolor(ctmp, nd.mcolor);	/* modified by color */
 		addcolor(r->rcol, ctmp);
 		flipsurface(r);
@@ -291,7 +308,7 @@ register NORMDAT  *np;
 	normalize(u);
 	fcross(v, np->pnorm, u);
 					/* compute reflection */
-	if (np->specfl & SP_REFL &&
+	if ((np->specfl & (SP_REFL|SP_RBLT)) == SP_REFL &&
 			rayorigin(&sr, r, SPECULAR, np->rspec) == 0) {
 		dimlist[ndims++] = (int)np->mp;
 		for (ntries = 0; ntries < 10; ntries++) {
@@ -301,6 +318,7 @@ register NORMDAT  *np;
 			d = 2.0*PI * rv[0];
 			cosp = cos(d);
 			sinp = sin(d);
+			rv[1] = 1.0 - specjitter*rv[1];
 			if (rv[1] <= FTINY)
 				d = 1.0;
 			else

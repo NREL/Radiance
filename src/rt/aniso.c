@@ -16,6 +16,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "random.h"
 
+extern double  specthresh;		/* specular sampling threshold */
+extern double  specjitter;		/* specular sampling jitter */
+
 /*
  *	This anisotropic reflection model uses a variant on the
  *  exponential Gaussian used in normal.c.
@@ -37,8 +40,10 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  SP_REFL	01		/* has reflected specular component */
 #define  SP_TRAN	02		/* has transmitted specular */
 #define  SP_PURE	010		/* purely specular (zero roughness) */
-#define  SP_BADU	020		/* bad u direction calculation */
-#define  SP_FLAT	040		/* reflecting surface is flat */
+#define  SP_FLAT	020		/* reflecting surface is flat */
+#define  SP_RBLT	040		/* reflection below sample threshold */
+#define  SP_TBLT	0100		/* transmission below threshold */
+#define  SP_BADU	0200		/* bad u direction calculation */
 
 typedef struct {
 	OBJREC  *mp;		/* material pointer */
@@ -200,6 +205,9 @@ register RAY  *r;
 		for (i = 0; i < 3; i++)
 			colval(nd.scolor,i) += (1.0-colval(nd.scolor,i))*dtmp;
 		nd.rspec += (1.0-nd.rspec)*dtmp;
+						/* check threshold */
+		if (nd.rspec <= specthresh+FTINY)
+			nd.specfl |= SP_RBLT;
 
 		if (!(r->crtype & SHADOW) && nd.specfl & SP_PURE) {
 			RAY  lr;
@@ -220,6 +228,9 @@ register RAY  *r;
 		nd.tdiff = nd.trans - nd.tspec;
 		if (nd.tspec > FTINY) {
 			nd.specfl |= SP_TRAN;
+							/* check threshold */
+			if (nd.tspec <= specthresh+FTINY)
+				nd.specfl |= SP_TBLT;
 			if (r->crtype & SHADOW ||
 					DOT(r->pert,r->pert) <= FTINY*FTINY) {
 				VCOPY(nd.prdir, r->rdir);
@@ -255,6 +266,9 @@ register RAY  *r;
 	if (nd.specfl & SP_PURE && nd.rdiff <= FTINY && nd.tdiff <= FTINY)
 		return;				/* 100% pure specular */
 
+	if (r->ro->otype == OBJ_FACE || r->ro->otype == OBJ_RING)
+		nd.specfl |= SP_FLAT;
+
 	getacoords(r, &nd);			/* set up coordinates */
 
 	if (nd.specfl & (SP_REFL|SP_TRAN) && !(nd.specfl & (SP_PURE|SP_BADU)))
@@ -262,14 +276,20 @@ register RAY  *r;
 
 	if (nd.rdiff > FTINY) {		/* ambient from this side */
 		ambient(ctmp, r);
-		scalecolor(ctmp, nd.rdiff);
+		if (nd.specfl & SP_RBLT)
+			scalecolor(ctmp, 1.0-nd.trans);
+		else
+			scalecolor(ctmp, nd.rdiff);
 		multcolor(ctmp, nd.mcolor);	/* modified by material color */
 		addcolor(r->rcol, ctmp);	/* add to returned color */
 	}
 	if (nd.tdiff > FTINY) {		/* ambient from other side */
 		flipsurface(r);
 		ambient(ctmp, r);
-		scalecolor(ctmp, nd.tdiff);
+		if (nd.specfl & SP_TBLT)
+			scalecolor(ctmp, nd.trans);
+		else
+			scalecolor(ctmp, nd.tdiff);
 		multcolor(ctmp, nd.mcolor);	/* modified by color */
 		addcolor(r->rcol, ctmp);
 		flipsurface(r);
@@ -323,7 +343,7 @@ register ANISODAT  *np;
 	int  ntries;
 	register int  i;
 					/* compute reflection */
-	if (np->specfl & SP_REFL &&
+	if ((np->specfl & (SP_REFL|SP_RBLT)) == SP_REFL &&
 			rayorigin(&sr, r, SPECULAR, np->rspec) == 0) {
 		dimlist[ndims++] = (int)np->mp;
 		for (ntries = 0; ntries < 10; ntries++) {
@@ -336,6 +356,7 @@ register ANISODAT  *np;
 			d = sqrt(cosp*cosp + sinp*sinp);
 			cosp /= d;
 			sinp /= d;
+			rv[1] = 1.0 - specjitter*rv[1];
 			if (rv[1] <= FTINY)
 				d = 1.0;
 			else
