@@ -321,14 +321,12 @@ int  *xp, *yp;
 	if (c_last > c_first)			/* key pressed */
 		return(x11_getc());
 						/* button pressed */
-	if (levptr(XButtonPressedEvent)->button & Button1)
+	if (levptr(XButtonPressedEvent)->button == Button1)
 		return(MB1);
-	if (levptr(XButtonPressedEvent)->button & Button2)
+	if (levptr(XButtonPressedEvent)->button == Button2)
 		return(MB2);
-	if (levptr(XButtonPressedEvent)->button & Button3)
+	if (levptr(XButtonPressedEvent)->button == Button3)
 		return(MB3);
-	if (levptr(XButtonPressedEvent)->button & (Button4|Button5))
-		return(MB1);
 	return(ABORT);
 }
 
