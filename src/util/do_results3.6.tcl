@@ -33,9 +33,12 @@ set conv(ras-8,suf)	.ras
 set conv(ras-24,nam)	"Sun 24-bit"
 set conv(ras-24,com)	"ra_pr24 %s %s"
 set conv(ras-24,suf)	.ras
-set conv(PS,nam)	"PostScript B&W"
-set conv(PS,com)	"ra_ps %s %s"
-set conv(PS,suf)	.ps
+set conv(PS-bw,nam)	"PostScript B&W"
+set conv(PS-bw,com)	"ra_ps %s %s"
+set conv(PS-bw,suf)	.ps
+set conv(PS-clr,nam)	"PostScript Color"
+set conv(PS-clr,com)	"ra_ps -c %s %s"
+set conv(PS-clr,suf)	.ps
 set conv(tga-bw,nam)	"Targa B&W"
 set conv(tga-bw,com)	"ra_t8 -b %s %s"
 set conv(tga-bw,suf)	.tga
@@ -48,8 +51,8 @@ set conv(tga-16,suf)	.tga
 set conv(tga-24,nam)	"Targa 24-bit"
 set conv(tga-24,com)	"ra_t16 -3 %s %s"
 set conv(tga-24,suf)	.tga
-set conv(types) {GIF-bw GIF-8 PICT PS PPM-asc PPM-bin ras-bw ras-8 ras-24\
-		tga-bw tga-8 tga-16 tga-24 TIFF-bw TIFF-24}
+set conv(types) {GIF-bw GIF-8 PICT PS-bw PS-clr PPM-asc PPM-bin ras-bw ras-8\
+		ras-24 tga-bw tga-8 tga-16 tga-24 TIFF-bw TIFF-24}
 set conv(typ) tga-24
 
 proc testappend {flst tf} {	# test if tf exists and append to flst if so
@@ -229,7 +232,7 @@ proc do_results w {		# Results screen
 	helplink $w.cnvb trad results convert
 	menubutton $w.typb -text $conv($conv(typ),nam) -relief raised \
 			-menu $w.typb.m
-	place $w.typb -relwidth .1786 -relheight .0610 -relx .2143 -rely .7317
+	place $w.typb -relwidth .1986 -relheight .0610 -relx .2143 -rely .7317
 	helplink $w.typb trad results convtype
 	menu $w.typb.m
 	foreach t $conv(types) {
@@ -239,10 +242,10 @@ proc do_results w {		# Results screen
 				set convdest $radvar(PICTURE)_%s$conv($t,suf)"
 	}
 	label $w.fil -text File:
-	place $w.fil -relx .4286 -rely .7317
+	place $w.fil -relx .4486 -rely .7317
 	set convdest $radvar(PICTURE)_%s$conv($conv(typ),suf)
 	entry $w.file -textvariable convdest -relief sunken
-	place $w.file -relwidth .4286 -relheight .0610 -relx .5000 -rely .7317
+	place $w.file -relwidth .4086 -relheight .0610 -relx .5200 -rely .7317
 	helplink $w.file trad results convfile
 	# Print picture(s)
 	button $w.prtb -text Print -relief raised -command prtpic
