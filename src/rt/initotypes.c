@@ -32,7 +32,7 @@ extern int  m_brdf2();
 extern int  t_func(), t_data();
 extern int  p_cfunc(), p_bfunc();
 extern int  p_pdata(), p_cdata(), p_bdata();
-extern int  mx_func(), mx_data();
+extern int  mx_func(), mx_data(), mx_pdata();
 extern int  do_text();
 
 FUN  ofun[NUMOTYPE] = INIT_OTYPE;
@@ -92,6 +92,7 @@ initotypes()			/* initialize ofun array */
 	ofun[MIX_TEXT].funp = do_text;
 	ofun[MIX_FUNC].funp = mx_func;
 	ofun[MIX_DATA].funp = mx_data;
+	ofun[MIX_PICT].funp = mx_pdata;
 }
 
 
