@@ -57,7 +57,7 @@ register char  *r, *s;
 
 	while (*cp) if (*cp++ != *s++) return(0);
 	if (r == NULL) return(1);
-	while (*s) *r++ = *s++;
+	while (*s && !isspace(*s)) *r++ = *s++;
 	*r = '\0';
 	return(1);
 }
