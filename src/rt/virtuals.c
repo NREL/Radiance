@@ -115,10 +115,9 @@ OBJREC  *op;
 register int  sn;
 MAT4  pm;
 {
-	FVECT  nsloc, nsnorm, ocent;
-	double  maxrad2;
+	FVECT  nsloc, nsnorm, ocent, v;
+	double  maxrad2, d;
 	int  nsflags;
-	double  d1;
 	SPOT  theirspot, ourspot;
 	register int  i;
 
@@ -138,24 +137,44 @@ MAT4  pm;
 		if (source[sn].sflags & SSPOT) {
 			copystruct(&theirspot, source[sn].sl.s);
 			multp3(theirspot.aim, source[sn].sl.s->aim, pm);
+			d = ourspot.siz;
 			if (!commonbeam(&ourspot, &theirspot, nsloc))
-				return(-1);		/* no overlap */
+				return(-1);	/* no overlap */
+			if (ourspot.siz < d-FTINY) {	/* it shrunk */
+				d = beamdisk(v, op, &ourspot, nsloc);
+				if (d <= FTINY)
+					return(-1);
+				if (d < maxrad2) {
+					maxrad2 = d;
+					VCOPY(ocent, v);
+				}
+			}
 		}
 	} else {				/* local source */
 		multp3(nsloc, source[sn].sloc, pm);
 		for (i = 0; i < 3; i++)
 			ourspot.aim[i] = ocent[i] - nsloc[i];
-		if ((d1 = normalize(ourspot.aim)) == 0.)
+		if ((d = normalize(ourspot.aim)) == 0.)
 			return(-1);		/* at source!! */
-		if (source[sn].sflags & SPROX && d1 > source[sn].sl.prox)
+		if (source[sn].sflags & SPROX && d > source[sn].sl.prox)
 			return(-1);		/* too far away */
-		ourspot.siz = 2.*PI*(1. - d1/sqrt(d1*d1+maxrad2));
+		ourspot.siz = 2.*PI*(1. - d/sqrt(d*d+maxrad2));
 		ourspot.flen = 0.;
 		if (source[sn].sflags & SSPOT) {
 			copystruct(&theirspot, source[sn].sl.s);
 			multv3(theirspot.aim, source[sn].sl.s->aim, pm);
+			d = ourspot.siz;
 			if (!commonspot(&ourspot, &theirspot, nsloc))
 				return(-1);	/* no overlap */
+			if (ourspot.siz < d-FTINY) {	/* it shrunk */
+				d = spotdisk(v, op, &ourspot, nsloc);
+				if (d <= FTINY)
+					return(-1);
+				if (d < maxrad2) {
+					maxrad2 = d;
+					VCOPY(ocent, v);
+				}
+			}
 			ourspot.flen = theirspot.flen;
 		}
 		if (source[sn].sflags & SFLAT) {	/* behind source? */
@@ -198,11 +217,11 @@ register int  sn;
 	double  rad2, roffs, offs, d, rd, rdoto;
 	FVECT  rnrm, nrm;
 				/* first, use object getdisk function */
-	rad2 = (*sfun[op->otype].of->getdisk)(oc, op);
+	rad2 = getmaxdisk(oc, op);
 	if (!(source[sn].sflags & SVIRTUAL))
 		return(rad2);		/* all done for normal source */
 				/* check for correct side of relay surface */
-	roffs = (*sfun[source[sn].so->otype].of->getpleq)(rnrm, source[sn].so);
+	roffs = getplaneq(rnrm, source[sn].so);
 	rd = DOT(rnrm, source[sn].sloc);	/* source projection */
 	if (!(source[sn].sflags & SDISTANT))
 		rd -= roffs;
@@ -210,9 +229,9 @@ register int  sn;
 	if ((d > 0.) ^ (rd > 0.))
 		return(rad2);		/* OK if opposite sides */
 	if (d*d >= rad2)
-		return(.0);		/* no relay is possible */
+		return(0.);		/* no relay is possible */
 				/* we need a closer look */
-	offs = (*sfun[op->otype].of->getpleq)(nrm, op);
+	offs = getplaneq(nrm, op);
 	rdoto = DOT(rnrm, nrm);
 	if (d*d >= rad2*(1.-rdoto*rdoto))
 		return(0.);		/* disk entirely on projection side */
@@ -235,34 +254,42 @@ register int  sn;	/* target source number */
 	double  or, d;
 	int  infront;
 	int  ssn;
-	int  nok, nhit;
+	int  nhit;
 	register int  i, n;
 				/* return if pretesting disabled */
 	if (vspretest <= 0)
 		return(f);
 				/* get surface normal */
-	(*sfun[o->otype].of->getpleq)(onorm, o);
+	getplaneq(onorm, o);
 				/* set number of rays to sample */
 	if (source[sn].sflags & SDISTANT) {
 		n = (2./3.*PI*PI)*or2/(thescene.cusize*thescene.cusize)*
 				vspretest + .5;
 		infront = DOT(onorm, source[sn].sloc) > 0.;
 	} else {
-		n = or2/dist2(oc,source[sn].sloc)*vspretest + .5;
 		for (i = 0; i < 3; i++)
 			offsdir[i] = source[sn].sloc[i] - oc[i];
+		n = or2/DOT(offsdir,offsdir)*vspretest + .5;
 		infront = DOT(onorm, offsdir) > 0.;
 	}
 	if (n < 1) n = 1;
+#ifdef DEBUG
+	fprintf(stderr, "pretesting source %d in object %s with %d rays\n",
+			sn, o->oname, n);
+#endif
 				/* sample */
 	or = sqrt(or2);
-	ssn = 7*n;
-	nhit = nok = 0;
+	ssn = 25*n;
+	nhit = 0;
 	while (n-- > 0) {
 					/* get sample point */
 		do {
-			if (--ssn < 0)
+			if (--ssn < 0) {
+#ifdef DEBUG
+				fprintf(stderr, "\ttoo hard to hit\n");
+#endif
 				return(f);	/* too small a target! */
+			}
 			for (i = 0; i < 3; i++)
 				offsdir[i] = or*(1. -
 						2.*urand(931*i+5827+ssn));
@@ -283,26 +310,33 @@ register int  sn;	/* target source number */
 		} while (!(*ofun[o->otype].funp)(o, &sr));
 					/* check against source */
 		samplendx++;
-		if (srcray(&sr, NULL, sn) == 0.0)
+		if (srcray(&sr, NULL, sn) == 0.)
 			continue;
 		sr.revf = srcvalue;
 		rayvalue(&sr);
 		if (bright(sr.rcol) <= FTINY)
 			continue;
-		nok++;
 					/* check against obstructions */
 		srcray(&sr, NULL, sn);
 		rayvalue(&sr);
-		if (bright(sr.rcol) <= FTINY)
-			continue;
+		if (bright(sr.rcol) <= FTINY) {
+#ifdef DEBUG
+			fprintf(stderr, "\tfound an occlusion\n");
+#endif
+			return(f);	/* need to shadow test */
+		}
 		nhit++;
 	}
-				/* interpret results */
-	if (nhit == 0)
+	if (nhit == 0) {
+#ifdef DEBUG
+		fprintf(stderr, "\t0%% hit rate\n");
+#endif
 		return(f | SSKIP);	/* 0% hit rate:  totally occluded */
-	if (nhit == nok)
-		return(f & ~SFOLLOW);	/* 100% hit rate:  no occlusion */
-	return(f);		/* no comment */
+	}
+#ifdef DEBUG
+	fprintf(stderr, "\t100%% hit rate\n");
+#endif
+	return(f & ~SFOLLOW);		/* 100% hit rate:  no occlusion */
 }
 	
 
