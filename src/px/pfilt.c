@@ -28,8 +28,8 @@ double  rad = 0.0;		/* output pixel radius for filtering */
 int  nrows = 0;			/* number of rows for output */
 int  ncols = 0;			/* number of columns for output */
 
-double  xrat = 1.0;		/* ratio of input x size to output */
-double  yrat = 1.0;		/* ratio of input y size to output */
+double  x_c = 1.0;		/* ratio of output x size to input */
+double  y_r = 1.0;		/* ratio of output y size to input */
 
 int  singlepass = 0;		/* true means skip first pass */
 
@@ -46,8 +46,6 @@ double  spread = 1e-4;		/* spread for star points */
 char  *tfname = NULL;
 
 int  xres, yres;		/* resolution of input */
-
-double  x_c, y_r;		/* conversion factors */
 
 int  xrad;			/* x window size */
 int  yrad;			/* y window size */
@@ -91,14 +89,14 @@ char  **argv;
 			case 'x':
 				i++;
 				if (argv[i][0] == '/')
-					xrat = atof(argv[i]+1);
+					x_c = 1.0/atof(argv[i]+1);
 				else
 					ncols = atoi(argv[i]);
 				break;
 			case 'y':
 				i++;
 				if (argv[i][0] == '/')
-					yrat = atof(argv[i]+1);
+					y_r = 1.0/atof(argv[i]+1);
 				else
 					nrows = atoi(argv[i]);
 				break;
@@ -192,13 +190,13 @@ char  **argv;
 		quit(1);
 	}
 	if (ncols > 0)
-		xrat = (double)xres/ncols;
+		x_c = (double)ncols/xres;
 	else
-		ncols = xres/xrat + .5;
+		ncols = x_c*xres + .5;
 	if (nrows > 0)
-		yrat = (double)yres/nrows;
+		y_r = (double)nrows/yres;
 	else
-		nrows = yres/yrat + .5;
+		nrows = y_r*yres + .5;
 
 	if (singlepass) {
 					/* skip exposure, etc. */
@@ -311,9 +309,6 @@ scan2init()			/* prepare scanline arrays */
 {
 	double  e;
 	register int  i;
-
-	x_c = (double)ncols/xres;
-	y_r = (double)nrows/yres;
 
 	if (rad <= 0.0) {
 		xrad = xres/ncols/2 + 1;
