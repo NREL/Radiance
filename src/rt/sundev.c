@@ -180,7 +180,7 @@ int	width, height;
 		return;
 	sun_driver.xsiz = width;
 	sun_driver.ysiz = height;
-	strcpy(getcombuf(&sun_driver), "new\n");
+	tocombuf("new\n", &sun_driver);
 }
 
 

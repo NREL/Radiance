@@ -76,7 +76,7 @@ static Colormap ourmap = 0;		/* our color map */
 
 static int  inpcheck;			/* whence to check input */
 
-extern char  *malloc(), *getcombuf();
+extern char  *malloc();
 
 static int  x11_close(), x11_clear(), x11_paintr(), x11_errout(),
 		x11_getcur(), x11_comout(), x11_comin(), x11_flush();
@@ -312,7 +312,7 @@ x11_flush()			/* flush output */
 		n = read(fileno(stdin), buf, sizeof(buf)-1);
 		if (n > 0) {
 			buf[n] = '\0';
-			strcpy(getcombuf(&x11_driver), buf);
+			tocombuf(buf, &x11_driver);
 		}
 	}
 }
@@ -576,10 +576,13 @@ static
 fixwindow(eexp)				/* repair damage to window */
 register XExposeEvent  *eexp;
 {
+	char  buf[80];
+
 	if (eexp->window == gwind) {
-		sprintf(getcombuf(&x11_driver), "repaint %d %d %d %d\n",
+		sprintf(buf, "repaint %d %d %d %d\n",
 			eexp->x, gheight - eexp->y - eexp->height,
 			eexp->x + eexp->width, gheight - eexp->y);
+		tocombuf(buf, &x11_driver);
 	} else if (eexp->window == comline->w) {
 		if (eexp->count == 0)
 			xt_redraw(comline);
@@ -599,5 +602,5 @@ register XConfigureEvent  *ersz;
 	x11_driver.xsiz = gwidth < MINWIDTH ? MINWIDTH : gwidth;
 	x11_driver.ysiz = gheight < MINHEIGHT ? MINHEIGHT : gheight;
 
-	strcpy(getcombuf(&x11_driver), "new\n");
+	tocombuf("new\n", &x11_driver);
 }

@@ -68,12 +68,17 @@ int  (*c_get)(), (*s_put)();
 static char  mybuf[512];
 
 
-char *
-getcombuf(d)				/* return buffer for my command */
-struct driver  *d;
+tocombuf(b, d)				/* add command(s) to my buffer */
+register char  *b;
+register struct driver  *d;
 {
-	d->inpready++;
-	return(mybuf+strlen(mybuf));
+	register char  *cp;
+
+	for (cp = mybuf; *cp; cp++)
+		;
+	while (*cp++ = *b)
+		if (*b++ == '\n')
+			d->inpready++;
 }
 
 
