@@ -127,12 +127,14 @@ char  **argv;
 				}
 				break;
 			case 'x':		/* x resolution */
+			case 'X':		/* x resolution */
 				resolution = 0;
 				if (argv[i][0] == '-')
 					picres.or |= XDECR;
 				picres.xr = atoi(argv[++i]);
 				break;
 			case 'y':		/* y resolution */
+			case 'Y':		/* y resolution */
 				resolution = 0;
 				if (argv[i][0] == '-')
 					picres.or |= YDECR;
