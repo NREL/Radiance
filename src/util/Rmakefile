@@ -55,11 +55,11 @@ xglaresrc:	xglaresrc.o x11findwind.o
 	$(CC) $(CFLAGS) -o xglaresrc xglaresrc.o \
 x11findwind.o -lrt -lX11 -lm
 
-rad:	rad.o loadvars.o
-	$(CC) $(CFLAGS) -o rad rad.o loadvars.o -lrt -lm
+rad:	rad.o
+	$(CC) $(CFLAGS) -o rad rad.o -lrt -lm
 
-ranimate:	ranimate.o loadvars.o netproc.o
-	$(CC) $(CFLAGS) -o ranimate ranimate.o loadvars.o netproc.o -lrt -lm
+ranimate:	ranimate.o netproc.o
+	$(CC) $(CFLAGS) -o ranimate ranimate.o netproc.o -lrt -lm
 
 rpiece:	rpiece.o Version.o
 	$(CC) $(CFLAGS) -o rpiece rpiece.o Version.o -lrt -lm
@@ -104,7 +104,7 @@ glareval.o xglaresrc.o:	../common/resolu.h
 
 xglaresrc.o:	../common/vfork.h
 
-rad.o ranimate.o loadvars.o:	vars.h
+rad.o ranimate.o:	../common/vars.h
 
 rad.o:	../common/paths.h
 
