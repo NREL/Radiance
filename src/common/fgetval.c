@@ -1,0 +1,90 @@
+/* Copyright (c) 1995 Regents of the University of California */
+
+#ifndef lint
+static char SCCSid[] = "$SunId$ LBL";
+#endif
+
+/*
+ * Read white space separated values from stream
+ */
+
+#include  <stdio.h>
+
+#include  <math.h>
+
+#include  <ctype.h>
+
+
+#ifdef DCL_ATOF
+extern double	atof();
+#endif
+extern int	atoi();
+extern long	atol();
+extern char	*strcpy();
+
+
+int
+fgetval(fp, ty, vp)			/* get specified data word */
+register FILE	*fp;
+int	ty;
+char	*vp;
+{
+	static char	delims[] = " \t\n\r\f#";
+	char	wrd[64];
+	register char	*cp;
+	register int	c;
+					/* elide comments (# to EOL) */
+	do {
+		while ((c = getc(fp)) != EOF && isspace(c))
+			;
+		if (c == '#')
+			while ((c = getc(fp)) != EOF && c != '\n')
+				;
+	} while (c == '\n');
+	if (c == EOF)
+		return(EOF);
+					/* get word */
+	cp = wrd;
+	do {
+		*cp++ = c;
+		if (cp - wrd >= sizeof(wrd))
+			return(0);
+	} while ((c = getc(fp)) != EOF && !isspace(c) && c != '#');
+	if (c != EOF)
+		ungetc(c, fp);
+	*cp = '\0';
+	switch (ty) {			/* check and convert it */
+	case 'h':			/* short */
+		if (!isintd(wrd, delims))
+			return(0);
+		*(short *)vp = c = atoi(wrd);
+		if (*(short *)vp != c)
+			return(0);
+		return(1);
+	case 'i':			/* integer */
+		if (!isintd(wrd, delims))
+			return(0);
+		*(int *)vp = atoi(wrd);
+		return(1);
+	case 'l':			/* long */
+		if (!isintd(wrd, delims))
+			return(0);
+		*(long *)vp = atol(wrd);
+		return(1);
+	case 'f':			/* float */
+		if (!isfltd(wrd, delims))
+			return(0);
+		*(float *)vp = atof(wrd);
+		return(1);
+	case 'd':			/* double */
+		if (!isfltd(wrd, delims))
+			return(0);
+		*(double *)vp = atof(wrd);
+		return(1);
+	case 's':			/* string */
+		strcpy(vp, wrd);
+		return(1);
+	default:			/* unsupported type */
+		return(0);
+	}
+}
