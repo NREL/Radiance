@@ -175,9 +175,8 @@ char	*pfile, *zfile;
 	FILE	*pfp, *zfp;
 	char	*err;
 	COLR	*scanin;
-	float	*zin, *zout;
-	int	*pout;
-	int	xres, yres;
+	float	*zin, *zlast;
+	int	*plast;
 	int	y;
 					/* open input files */
 	if ((pfp = fopen(pfile, "r")) == NULL) {
@@ -192,12 +191,11 @@ char	*pfile, *zfile;
 	printf("%s:\n", pfile);
 	gotview = 0;
 	getheader(pfp, headline);
-	if (!gotview || fgetresolu(&xres, &yres, pfp) != (YMAJOR|YDECR)) {
+	if (!gotview || fgetresolu(&theirview.hresolu, &theirview.vresolu, pfp)
+			!= (YMAJOR|YDECR)) {
 		fprintf(stderr, "%s: picture view error\n", pfile);
 		exit(1);
 	}
-	theirview.hresolu = xres;
-	theirview.vresolu = yres;
 	if (err = setview(&theirview)) {
 		fprintf(stderr, "%s: %s\n", pfile, err);
 		exit(1);
@@ -205,31 +203,32 @@ char	*pfile, *zfile;
 					/* compute transformation */
 	pixform(theirs2ours, &theirview, &ourview);
 					/* allocate scanlines */
-	scanin = (COLR *)malloc(xres*sizeof(COLR));
-	zin = (float *)malloc(xres*sizeof(float));
-	zout = (float *)calloc(xres, sizeof(float));
-	pout = (int *)calloc(xres, sizeof(int));
-	if (scanin == NULL || zin == NULL || zout == NULL || pout == NULL) {
+	scanin = (COLR *)malloc(theirview.hresolu*sizeof(COLR));
+	zin = (float *)malloc(theirview.hresolu*sizeof(float));
+	zlast = (float *)calloc(theirview.hresolu, sizeof(float));
+	plast = (int *)calloc(theirview.hresolu, sizeof(int));
+	if (scanin == NULL || zin == NULL || zlast == NULL || plast == NULL) {
 		perror(progname);
 		exit(1);
 	}
 					/* load image */
-	for (y = yres-1; y >= 0; y--) {
-		if (freadcolrs(scanin, xres, pfp) < 0) {
+	for (y = theirview.vresolu-1; y >= 0; y--) {
+		if (freadcolrs(scanin, theirview.hresolu, pfp) < 0) {
 			fprintf(stderr, "%s: read error\n", pfile);
 			exit(1);
 		}
-		if (fread(zin, sizeof(float), xres, zfp) < xres) {
+		if (fread(zin, sizeof(float), theirview.hresolu, zfp)
+				< theirview.hresolu) {
 			fprintf(stderr, "%s: read error\n", zfile);
 			exit(1);
 		}
-		addscanline(y, scanin, zin, pout, zout);
+		addscanline(y, scanin, zin, plast, zlast);
 	}
 					/* clean up */
 	free((char *)scanin);
 	free((char *)zin);
-	free((char *)pout);
-	free((char *)zout);
+	free((char *)plast);
+	free((char *)zlast);
 	fclose(pfp);
 	fclose(zfp);
 }
@@ -275,8 +274,8 @@ addscanline(y, pline, zline, lasty, lastyz)	/* add scanline to output */
 int	y;
 COLR	*pline;
 float	*zline;
-int	*lasty;
-float	*lastyz;
+int	*lasty;			/* input/output */
+float	*lastyz;		/* input/output */
 {
 	extern double	sqrt(), fabs();
 	double	pos[3];
