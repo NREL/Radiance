@@ -10,7 +10,7 @@ CFLAGS = $(MACH) $(OPT)
 CC = cc
 LINT = lint
 LINTFLAGS = -DSTRUCTASSIGN -DBSD -DIEEE -DVARIABLE -DFUNCTION \
--DINCHAN -DRCONST -DREDEFW -DBIGLIB -DINVXF 
+-DINCHAN -DRCONST -DREDEFW -DBIGLIB
 
 #
 # The following are user-definable:
@@ -28,8 +28,7 @@ LIBDIR = /usr/local/lib/ray
 #
 # Library routines:
 #
-LIBS = -lm
-COMPAT = bmalloc.o erf.o
+LIBS = ../common/librt.a -lm
 
 #
 # Device drivers for rview (see also devtable.c):
@@ -47,27 +46,24 @@ DLIBS = -lX11
 RTOBJS = rtmain.o rtrace.o $(ROBJS)
 RTSRC = rmain.c rtrace.c $(RSRC)
 
-RPOBJS = rpmain.o rpict.o image.o $(ROBJS)
-RPSRC = rmain.c rpict.c image.c $(RSRC)
+RPOBJS = rpmain.o rpict.o $(ROBJS)
+RPSRC = rmain.c rpict.c $(RSRC)
 
-RVOBJS = rvmain.o rview.o rv2.o rv3.o image.o $(DOBJS) $(ROBJS)
-RVSRC = rmain.c rview.c rv2.c rv3.c image.c $(DSRC) $(RSRC)
+RVOBJS = rvmain.o rview.o rv2.o rv3.o $(DOBJS) $(ROBJS)
+RVSRC = rmain.c rview.c rv2.c rv3.c $(DSRC) $(RSRC)
 
-ROBJS = $(OCTOBJS) $(RAYOBJS) $(SURFOBJS) $(MATOBJS) \
-	$(MODOBJS) $(SUPPOBJS) $(MISCOBJS) $(COMPAT)
-RSRC = $(OCTSRC) $(RAYSRC) $(SURFSRC) $(MATSRC) \
-	$(MODSRC) $(SUPPSRC) $(MISCSRC)
+ROBJS = $(RAYOBJS) $(SURFOBJS) $(MATOBJS) \
+	$(MODOBJS) $(SUPPOBJS)
+RSRC = $(RAYSRC) $(SURFSRC) $(MATSRC) \
+	$(MODSRC) $(SUPPSRC)
 
-OCTOBJS = octree.o readobj.o readoct.o objset.o otypes.o initotypes.o
-OCTSRC = octree.c readobj.c readoct.c objset.c otypes.c initotypes.c
+RAYOBJS = initotypes.o raytrace.o ambient.o ambcomp.o
+RAYSRC = initotypes.c raytrace.c ambient.c ambcomp.c
 
-RAYOBJS = raytrace.o ambient.o ambcomp.o
-RAYSRC = raytrace.c ambient.c ambcomp.c
-
-SURFOBJS = face.o sphere.o source.o srcsupp.o virtuals.o o_face.o cone.o \
-		o_cone.o o_instance.o instance.o
-SURFSRC = face.c sphere.c source.c srcsupp.c virtuals.c o_face.c cone.c \
-		o_cone.c o_instance.c instance.c
+SURFOBJS = source.o sphere.o srcsupp.o virtuals.o o_face.o o_cone.o \
+	o_instance.o
+SURFSRC = sphere.c source.c srcsupp.c virtuals.c o_face.c \
+		o_cone.c o_instance.c
 
 MATOBJS = normal.o dielectric.o m_clip.o glass.o m_brdf.o m_mirror.o
 MATSRC = normal.c dielectric.c m_clip.c glass.c m_brdf.c m_mirror.c
@@ -77,11 +73,6 @@ MODSRC = p_func.c t_func.c p_data.c t_data.c text.c mx_func.c mx_data.c
 
 SUPPOBJS = zeroes.o calexpr.o caldefn.o calfunc.o func.o noise3.o data.o
 SUPPSRC = zeroes.c calexpr.c caldefn.c calfunc.c func.c noise3.c data.c
-
-MISCOBJS = misc.o header.o mat4.o xf.o fvect.o savestr.o fgetline.o ealloc.o \
-		color.o resolu.o urand.o
-MISCSRC = misc.c header.c mat4.c xf.c fvect.c savestr.c fgetline.c ealloc.c \
-		color.c resolu.c urand.c
 
 #
 # What this makefile produces:
@@ -154,7 +145,7 @@ rvmain.o:	rmain.c
 	mv rmain.o rvmain.o
 
 #
-# Uncomment the following and add spec_rgb.o to MISCOBJS to model dispersion:
+# Uncomment the following to model dispersion:
 #
 #dielectric.o:	dielectric.c source.h
 #	$(CC) $(CFLAGS) -DDISPERSE -c dielectric.c
@@ -185,9 +176,6 @@ caldefn.o:	caldefn.c calcomp.h
 calfunc.o:	calfunc.c calcomp.h
 	$(CC) $(CFLAGS) -DVARIABLE -DBIGLIB -c calfunc.c
 
-xf.o:	xf.c
-	$(CC) $(CFLAGS) -DINVXF -c xf.c
-
 nwsdev.o:	nwsdev.c nwsdev.h newsconstants.h
 	$(CC) $(CFLAGS) -c nwsdev.c
 
@@ -200,29 +188,25 @@ nwsdev.h:	nwsdev.cps newsconstants.h
 
 caldefn.o calexpr.o calfunc.o:	calcomp.h
 
-aed.o color.o colortab.o data.o devcomm.o spec_rgb.o \
-devmain.o lookamb.o resolu.o rview.o sundev.o x10.o x11.o:	color.h
+aed.o colortab.o data.o devcomm.o \
+devmain.o lookamb.o rview.o sundev.o x10.o x11.o:	color.h
 
-cone.o o_cone.o srcsupp.o:	cone.h
+o_cone.o srcsupp.o:	cone.h
 
 data.o m_brdf.o mx_data.o p_data.o t_data.o:	data.h
 
 aed.o devcomm.o devmain.o devtable.o \
 editline.o nwsdev.o sundev.o tty.o x10.o x11.o:	driver.h
 
-face.o o_face.o srcsupp.o:	face.h
+o_face.o srcsupp.o:	face.h
 
-fvect.o:	fvect.h
+ambient.o raytrace.o rpmain.o rtmain.o \
+rtrace.o rvmain.o rv2.o rv3.o source.o:	octree.h
 
-cone.o face.o objset.o otypes.o readobj.o readoct.o:	object.h
+o_instance.o:	instance.h octree.h
 
-ambient.o objset.o octree.o raytrace.o readoct.o \
-rpmain.o rtmain.o rtrace.o rvmain.o rv2.o rv3.o source.o:	octree.h
-
-o_instance.o instance.o:	instance.h octree.h
-
-ambient.o cone.o dielectric.o func.o initotypes.o m_brdf.o normal.o o_cone.o \
-objset.o otypes.o text.o raytrace.o readobj.o readoct.o rtrace.o \
+ambient.o dielectric.o func.o initotypes.o m_brdf.o \
+normal.o o_cone.o text.o raytrace.o rtrace.o \
 rv2.o source.o srcsupp.o virtuals.o sphere.o:	otypes.h
 
 ambient.o ambcomp.o rpict.o rv3.o source.o:	random.h
@@ -237,16 +221,14 @@ rv2.o rv3.o rview.o:	rpaint.h driver.h view.h
 
 mirror.o source.o srcsupp.o virtuals.o:	source.h
 
-cone.o data.o devcomm.o face.o image.o initotypes.o xf.o misc.o objset.o \
-octree.o otypes.o readobj.o readoct.o:	standard.h mat4.h fvect.h
+cone.o data.o devcomm.o initotypes.o \
+octree.o:	standard.h mat4.h fvect.h
 
 initotypes.o raytrace.o:	otspecial.h
 
-mat4.o:		mat4.h fvect.h
-
 sundev.o:	suntools.icon
 
-image.o rpmain.o rtmain.o rvmain.o rpict.o:	view.h
+rpmain.o rtmain.o rvmain.o rpict.o:	view.h
 
 x10.o xtwind.o:	xtwind.h
 
