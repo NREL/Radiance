@@ -38,8 +38,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  ourscreen	DefaultScreen(ourdisplay)
 #define  ourroot	RootWindow(ourdisplay,ourscreen)
-#define  ourwhite	WhitePixel(ourdisplay,ourscreen)
-#define  ourblack	BlackPixel(ourdisplay,ourscreen)
 
 #define  levptr(etype)	((etype *)&currentevent)
 
@@ -47,6 +45,7 @@ static XEvent  currentevent;		/* current event */
 
 static int  ncolors = 0;		/* color table size */
 static unsigned long  *pixval = NULL;	/* allocated pixels */
+static unsigned long  ourblack=0, ourwhite=1;
 
 static Display  *ourdisplay = NULL;	/* our display */
 
@@ -98,7 +97,7 @@ char  *name, *id;
 	if (	!XMatchVisualInfo(ourdisplay,ourscreen,
 			24,TrueColor,&ourvinfo) &&
 		!XMatchVisualInfo(ourdisplay,ourscreen,
-			24,DirectColor,&ourvinfo)	)
+			24,DirectColor,&ourvinfo)	) {
 		if (nplanes < 4) {
 			stderr_v("not enough colors\n");
 			return(NULL);
@@ -109,6 +108,12 @@ char  *name, *id;
 			stderr_v("unsupported visual type\n");
 			return(NULL);
 		}
+		ourblack = BlackPixel(ourdisplay,ourscreen);
+		ourwhite = WhitePixel(ourdisplay,ourscreen);
+	} else {
+		ourblack = 0;
+		ourwhite = ~0;
+	}
 	make_gmap(GAMMA);
 	/* open window */
 	ourwinattr.background_pixel = ourblack;
@@ -205,9 +210,8 @@ int  xres, yres;
 						/* get new command line */
 	if (comline != NULL)
 		xt_close(comline);
-	comline = xt_open(ourdisplay,
-			DefaultGC(ourdisplay,ourscreen),
-			gwind, 0, gheight, gwidth, COMHEIGHT, 0, COMFN);
+	comline = xt_open(ourdisplay, gwind, 0, gheight,
+			gwidth, COMHEIGHT, 0, ourblack, ourwhite, COMFN);
 	if (comline == NULL) {
 		stderr_v("Cannot open command line window\n");
 		quit(1);
