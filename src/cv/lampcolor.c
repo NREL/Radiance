@@ -27,7 +27,7 @@ int	typecheck(), unitcheck(), geomcheck(), outpcheck();
 
 float	*lampcolor;		/* the lamp color (RGB) */
 double	unit2meter;		/* conversion from units to meters */
-double	projarea;		/* projected area for this geometry */
+double	area;			/* radiating area for this geometry */
 double	lumens;			/* total lamp lumens */
 
 struct {
@@ -173,7 +173,7 @@ compute()			/* compute lamp radiance */
 {
 	double	whiteval;
 
-	whiteval = lumens/470./projarea;
+	whiteval = lumens/470./PI/area;
 
 	printf("Lamp color (RGB) = %f %f %f\n",
 			lampcolor[0]*whiteval,
@@ -209,7 +209,7 @@ getpolygon()			/* get projected area for a polygon */
 
 	getd("Polygon area", &area,
 		"Enter the total radiating area of the polygon.");
-	projarea = PI*unit2meter*unit2meter * area;
+	area = unit2meter*unit2meter * area;
 	return(1);
 }
 
@@ -220,7 +220,7 @@ getsphere()			/* get projected area for a sphere */
 
 	getd("Sphere radius", &radius,
 		"Enter the distance from the sphere's center to its surface.");
-	projarea = 4.*PI*PI*unit2meter*unit2meter * radius*radius;
+	area = 4.*PI*unit2meter*unit2meter * radius*radius;
 	return(1);
 }
 
@@ -233,7 +233,7 @@ getcylinder()			/* get projected area for a cylinder */
 		"Enter the length of the cylinder.");
 	getd("Cylinder radius", &radius,
 		"Enter the distance from the cylinder's axis to its surface.");
-	projarea = PI*PI*2.*PI*unit2meter*unit2meter * radius*length;
+	area = 2.*PI*unit2meter*unit2meter * radius*length;
 	return(1);
 }
 
@@ -245,6 +245,6 @@ getring()			/* get projected area for a ring */
 	getd("Disk radius", &radius,
 "Enter the distance from the ring's center to its outer edge.\n\
 The inner radius must be zero.");
-	projarea = PI*PI*unit2meter*unit2meter * radius*radius;
+	area = PI*unit2meter*unit2meter * radius*radius;
 	return(1);
 }
