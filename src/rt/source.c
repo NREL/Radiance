@@ -383,6 +383,7 @@ char  *p;			/* data for f */
  */
 
 #define  distglow(m, r)		(m->otype==MAT_GLOW && \
+				m->oargs.farg[3] >= -FTINY && \
 				r->rot > m->oargs.farg[3])
 
 /* badcomponent *
@@ -418,7 +419,7 @@ char  *p;			/* data for f */
 
 /* srcignore *
  *
- * The -di flag renders light sources invisible, and here is the test.
+ * The -dv flag is normally on for sources to be visible.
  */
 
 #define  srcignore(m, r)	(!directvis && !(r->crtype&SHADOW) && \
