@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -263,7 +263,7 @@ char	*nm;
 		case 'm':			/* material name */
 			if (*++cp != '=')
 				break;
-			if (!*++cp)
+			if (!*++cp || isspace(*cp))
 				break;
 			atos(thisillum.matname, MAXSTR, cp);
 			cp = sskip(cp);
@@ -275,7 +275,7 @@ char	*nm;
 		case 'f':			/* data file name */
 			if (*++cp != '=')
 				break;
-			if (!*++cp) {
+			if (!*++cp || isspace(*cp)) {
 				strcpy(thisillum.datafile,thisillum.matname);
 				thisillum.dfnum = 0;
 				thisillum.flags &= ~IL_DATCLB;
@@ -361,7 +361,7 @@ char	*nm;
 		case 'o':			/* output file */
 			if (*++cp != '=')
 				break;
-			if (!*++cp)
+			if (!*++cp || isspace(*cp))
 				break;
 			atos(buf, sizeof(buf), cp);
 			cp = sskip(cp);
