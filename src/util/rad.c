@@ -94,6 +94,13 @@ int	(*setqopts[3])() = {lowqopts, medqopts, hiqopts};
 
 #define renderopts	(*setqopts[vscale(QUALITY)])
 
+				/* overture calculation file */
+#ifdef NIX
+char	overfile[] = "overture.raw";
+#else
+char	overfile[] = "/dev/null";
+#endif
+
 extern long	fdate(), time();
 
 long	scenedate;		/* date of latest scene or object file */
@@ -1047,14 +1054,16 @@ char	*opts;
 				sprintf(combuf,
 				"rpict%s %s%s -x 64 -y 64 -ps 1 %s > %s",
 						rep, vw, opts,
-						vval(OCTREE), rawfile);
+						vval(OCTREE), overfile);
 				if (runcom(combuf)) {
 					fprintf(stderr,
-			"%s: error in overture for view %s\n\t%s removed\n",
-						progname, vs, rawfile);
-					unlink(rawfile);
+					"%s: error in overture for view %s\n",
+						progname, vs);
 					exit(1);
 				}
+#ifdef NIX
+				rmfile(overfile);
+#endif
 			}
 			sprintf(combuf, "rpict%s %s %s%s %s > %s",
 					rep, vw, res, opts,
