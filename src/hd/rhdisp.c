@@ -215,7 +215,7 @@ usr_input()			/* get user input and process it */
 	VIEW	vparams;
 	char	cmd[128];
 	register char	*args;
-	register int	cmdno;
+	register int	i;
 
 	if (fgets(cmd, sizeof(cmd), sstdin) == NULL)
 		return(DC_QUIT);
@@ -225,15 +225,17 @@ usr_input()			/* get user input and process it */
 		*args++ = '\0';
 	if (!*cmd)
 		return(DC_RESUME);
-	for (cmdno = 0; cmdno < DC_NCMDS; cmdno++)
-		if (!strcmp(cmd, cmdlist[cmdno]))
+	if (*args && args[i=strlen(args)-1] == '\n')
+		args[i] = '\0';
+	for (i = 0; i < DC_NCMDS; i++)
+		if (!strcmp(cmd, cmdlist[i]))
 			break;
-	if (cmdno >= DC_NCMDS) {
+	if (i >= DC_NCMDS) {
 		sprintf(errmsg, "unknown command: %s", cmd);
 		error(COMMAND, errmsg);
 		return(-1);
 	}
-	switch (cmdno) {
+	switch (i) {
 	case DC_SETVIEW:		/* set the view */
 		copystruct(&vparams, &odev.v);
 		if (!sscanview(&vparams, args))
@@ -254,8 +256,7 @@ usr_input()			/* get user input and process it */
 	default:
 		error(CONSISTENCY, "bad command id in usr_input");
 	}
-	return(cmdno);
-		
+	return(i);
 }
 
 
