@@ -27,6 +27,7 @@ extern int  m_clip();
 extern int  m_mirror();
 extern int  m_direct();
 extern int  m_brdf();
+extern int  m_brdf2();
 extern int  t_func(), t_data();
 extern int  p_cfunc(), p_bfunc();
 extern int  p_pdata(), p_cdata(), p_bdata();
@@ -69,13 +70,13 @@ initotypes()			/* initialize ofun array */
 	ofun[MAT_DIRECT1].funp =
 	ofun[MAT_DIRECT2].funp = m_direct;
 	ofun[MAT_CLIP].funp = m_clip;
+	ofun[MAT_BRTDF].funp = m_brdf;
 	ofun[MAT_PFUNC].funp =
 	ofun[MAT_MFUNC].funp =
 	ofun[MAT_PDATA].funp =
 	ofun[MAT_MDATA].funp = 
 	ofun[MAT_TFUNC].funp =
-	ofun[MAT_BRTDF].funp = 
-	ofun[MAT_TDATA].funp = m_brdf;
+	ofun[MAT_TDATA].funp = m_brdf2;
 	ofun[TEX_FUNC].funp = t_func;
 	ofun[TEX_DATA].funp = t_data;
 	ofun[PAT_CFUNC].funp = p_cfunc;

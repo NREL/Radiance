@@ -51,25 +51,27 @@ static char SCCSid[] = "$SunId$ LBL";
  *		rbrtd	gbrtd	bbrtd
  *		funcfile	transform
  *	0
- *	6+	red	grn	blu	rspec	trans	tspec	A7 ..
+ *	9+	rdf	gdf	bdf
+ *		rdb	gdb	bdb
+ *		rdt	gdt	bdt	A10 ..
  *
  *	In addition to the normal variables available to functions,
  *  we define the following:
  *		NxP, NyP, NzP -		perturbed surface normal
  *		RdotP -			perturbed ray dot product
- *		CrP, CgP, CbP -		perturbed material color
+ *		CrP, CgP, CbP -		perturbed material color (or pattern)
  */
 
 typedef struct {
 	OBJREC  *mp;		/* material pointer */
 	RAY  *pr;		/* intersected ray */
 	DATARRAY  *dp;		/* data array for PDATA, MDATA or TDATA */
-	COLOR  mcolor;		/* color of this material */
-	double  rspec;		/* specular reflection */
-	double	rdiff;		/* diffuse reflection */
-	double  trans;		/* transmissivity */
-	double  tspec;		/* specular transmission */
-	double  tdiff;		/* diffuse transmission */
+	COLOR  mcolor;		/* material (or pattern) color */
+	COLOR  rdiff;		/* diffuse reflection */
+	COLOR  tdiff;		/* diffuse transmission */
+	double  rspec;		/* specular reflectance (1 for BRDTF) */
+	double  trans;		/* transmissivity (.5 for BRDTF) */
+	double  tspec;		/* specular transmittance (1 for BRDTF) */
 	FVECT  pnorm;		/* perturbed surface normal */
 	double  pdot;		/* perturbed dot product */
 }  BRDFDAT;		/* BRDF material data */
@@ -95,26 +97,26 @@ double  omega;			/* light source size */
 
 	if (ldot <= FTINY && ldot >= -FTINY)
 		return;		/* too close to grazing */
+
 	if (ldot < 0.0 ? np->trans <= FTINY : np->trans >= 1.0-FTINY)
 		return;		/* wrong side */
 
-	if (ldot > 0.0 && np->rdiff > FTINY) {
+	if (ldot > 0.0) {
 		/*
 		 *  Compute and add diffuse reflected component to returned
 		 *  color.  The diffuse reflected component will always be
 		 *  modified by the color of the material.
 		 */
-		copycolor(ctmp, np->mcolor);
-		dtmp = ldot * omega * np->rdiff / PI;
+		copycolor(ctmp, np->rdiff);
+		dtmp = ldot * omega / PI;
 		scalecolor(ctmp, dtmp);
 		addcolor(cval, ctmp);
-	}
-	if (ldot < 0.0 && np->tdiff > FTINY) {
+	} else {
 		/*
 		 *  Diffuse transmitted component.
 		 */
-		copycolor(ctmp, np->mcolor);
-		dtmp = -ldot * omega * np->tdiff / PI;
+		copycolor(ctmp, np->tdiff);
+		dtmp = -ldot * omega / PI;
 		scalecolor(ctmp, dtmp);
 		addcolor(cval, ctmp);
 	}
@@ -130,7 +132,10 @@ double  omega;			/* light source size */
 		lddx[i] = ldx[i]/funcxf.sca;
 					/* compute BRTDF */
 	if (np->mp->otype == MAT_BRTDF) {
-		colval(ctmp,RED) = funvalue(sa[6], 3, lddx);
+		if (sa[6][0] == '0')		/* special case */
+			colval(ctmp,RED) = 0.0;
+		else
+			colval(ctmp,RED) = funvalue(sa[6], 3, lddx);
 		if (!strcmp(sa[7],sa[6]))
 			colval(ctmp,GRN) = colval(ctmp,RED);
 		else
@@ -162,7 +167,7 @@ double  omega;			/* light source size */
 		/*
 		 *  Compute reflected non-diffuse component.
 		 */
-		if (np->mp->otype == MAT_MFUNC || np->mp->otype == MAT_MDATA)
+		if (np->mp->otype == MAT_MFUNC | np->mp->otype == MAT_MDATA)
 			multcolor(ctmp, np->mcolor);
 		dtmp = ldot * omega * np->rspec;
 		scalecolor(ctmp, dtmp);
@@ -171,7 +176,7 @@ double  omega;			/* light source size */
 		/*
 		 *  Compute transmitted non-diffuse component.
 		 */
-		if (np->mp->otype == MAT_TFUNC || np->mp->otype == MAT_TDATA)
+		if (np->mp->otype == MAT_TFUNC | np->mp->otype == MAT_TDATA)
 			multcolor(ctmp, np->mcolor);
 		dtmp = -ldot * omega * np->tspec;
 		scalecolor(ctmp, dtmp);
@@ -180,150 +185,199 @@ double  omega;			/* light source size */
 }
 
 
-m_brdf(m, r)			/* color a ray which hit a BRDF material */
+m_brdf(m, r)			/* color a ray which hit a BRDTF material */
 register OBJREC  *m;
 register RAY  *r;
 {
-	int  minsa, minfa;
 	BRDFDAT  nd;
+	RAY  sr;
 	double  transtest, transdist;
+	int  hasrefl, hastrans;
 	COLOR  ctmp;
-	double  dtmp, tspect, rspecr;
-	MFUNC  *mf;
+	double  dtmp;
+	register MFUNC  *mf;
 	register int  i;
 						/* check arguments */
-	switch (m->otype) {
-	case MAT_PFUNC: case MAT_MFUNC:
-		minsa = 2; minfa = 4; break;
-	case MAT_PDATA: case MAT_MDATA:
-		minsa = 4; minfa = 4; break;
-	case MAT_TFUNC:
-		minsa = 2; minfa = 6; break;
-	case MAT_TDATA:
-		minsa = 4; minfa = 6; break;
-	case MAT_BRTDF:
-		minsa = 10; minfa = 6; break;
-	}
-	if (m->oargs.nsargs < minsa || m->oargs.nfargs < minfa)
+	if (m->oargs.nsargs < 10 | m->oargs.nfargs < 9)
 		objerror(m, USER, "bad # arguments");
 	nd.mp = m;
 	nd.pr = r;
-						/* get specular component */
-	nd.rspec = m->oargs.farg[3];
-						/* compute transmission */
-	if (m->otype == MAT_TFUNC || m->otype == MAT_TDATA
-			|| m->otype == MAT_BRTDF) {
-		nd.trans = m->oargs.farg[4]*(1.0 - nd.rspec);
-		nd.tspec = nd.trans * m->oargs.farg[5];
-		nd.tdiff = nd.trans - nd.tspec;
-	} else
-		nd.tdiff = nd.tspec = nd.trans = 0.0;
-						/* early shadow check */
-	if (r->crtype & SHADOW && (m->otype != MAT_BRTDF || nd.tspec <= FTINY))
+						/* dummy values */
+	nd.rspec = nd.tspec = 1.0;
+	nd.trans = 0.5;
+						/* diffuse reflectance */
+	if (r->rod > 0.0)
+		setcolor(nd.rdiff, m->oargs.farg[0],
+				m->oargs.farg[1],
+				m->oargs.farg[2]);
+	else
+		setcolor(nd.rdiff, m->oargs.farg[3],
+				m->oargs.farg[4],
+				m->oargs.farg[5]);
+						/* diffuse transmittance */
+	setcolor(nd.tdiff, m->oargs.farg[6],
+			m->oargs.farg[7],
+			m->oargs.farg[8]);
+					/* get modifiers */
+	raytexture(r, m->omod);
+	nd.pdot = raynormal(nd.pnorm, r);	/* perturb normal */
+	if (r->rod < 0.0) {			/* orient perturbed values */
+		nd.pdot = -nd.pdot;
+		for (i = 0; i < 3; i++) {
+			nd.pnorm[i] = -nd.pnorm[i];
+			r->pert[i] = -r->pert[i];
+		}
+	}
+	copycolor(nd.mcolor, r->pcol);		/* get pattern color */
+	multcolor(nd.rdiff, nd.mcolor);		/* modify diffuse values */
+	multcolor(nd.tdiff, nd.mcolor);
+	hasrefl = bright(nd.rdiff) > FTINY;
+	hastrans = bright(nd.tdiff) > FTINY;
+						/* load cal file */
+	nd.dp = NULL;
+	mf = getfunc(m, 9, 0x3f, 0);
+						/* compute transmitted ray */
+	setbrdfunc(&nd);
+	transtest = 0;
+	errno = 0;
+	setcolor(ctmp, evalue(mf->ep[3]),
+			evalue(mf->ep[4]),
+			evalue(mf->ep[5]));
+	if (errno)
+		objerror(m, WARNING, "compute error");
+	else if (rayorigin(&sr, r, TRANS, bright(ctmp)) == 0) {
+		if (!(r->crtype & SHADOW) &&
+				DOT(r->pert,r->pert) > FTINY*FTINY) {
+			for (i = 0; i < 3; i++)	/* perturb direction */
+				sr.rdir[i] = r->rdir[i] - .75*r->pert[i];
+			if (normalize(sr.rdir) == 0.0) {
+				objerror(m, WARNING, "illegal perturbation");
+				VCOPY(sr.rdir, r->rdir);
+			}
+		} else {
+			VCOPY(sr.rdir, r->rdir);
+			transtest = 2;
+		}
+		rayvalue(&sr);
+		multcolor(sr.rcol, ctmp);
+		addcolor(r->rcol, sr.rcol);
+		transtest *= bright(sr.rcol);
+		transdist = r->rot + sr.rt;
+	}
+	if (r->crtype & SHADOW)			/* the rest is shadow */
 		return;
-						/* diffuse reflection */
-	nd.rdiff = 1.0 - nd.trans - nd.rspec;
+						/* compute reflected ray */
+	setbrdfunc(&nd);
+	errno = 0;
+	setcolor(ctmp, evalue(mf->ep[0]),
+			evalue(mf->ep[1]),
+			evalue(mf->ep[2]));
+	if (errno)
+		objerror(m, WARNING, "compute error");
+	else if (rayorigin(&sr, r, REFLECTED, bright(ctmp)) == 0) {
+		for (i = 0; i < 3; i++)
+			sr.rdir[i] = r->rdir[i] + 2.0*nd.pdot*nd.pnorm[i];
+		rayvalue(&sr);
+		multcolor(sr.rcol, ctmp);
+		addcolor(r->rcol, sr.rcol);
+	}
+						/* compute ambient */
+	if (hasrefl) {
+		if (nd.pdot < 0.0)
+			flipsurface(r);
+		ambient(ctmp, r);
+		multcolor(ctmp, nd.rdiff);
+		addcolor(r->rcol, ctmp);	/* add to returned color */
+		if (nd.pdot < 0.0)
+			flipsurface(r);
+	}
+	if (hastrans) {				/* from other side */
+		if (nd.pdot > 0.0)
+			flipsurface(r);
+		ambient(ctmp, r);
+		multcolor(ctmp, nd.tdiff);
+		addcolor(r->rcol, ctmp);
+		if (nd.pdot > 0.0)
+			flipsurface(r);
+	}
+	if (hasrefl | hastrans || m->oargs.sarg[6][0] != '0')
+		direct(r, dirbrdf, &nd);	/* add direct component */
+						/* check distance */
+	if (transtest > bright(r->rcol))
+		r->rt = transdist;
+}
+
+
+
+m_brdf2(m, r)			/* color a ray which hit a BRDF material */
+register OBJREC  *m;
+register RAY  *r;
+{
+	BRDFDAT  nd;
+	COLOR  ctmp;
+	double  dtmp;
+						/* always a shadow */
+	if (r->crtype & SHADOW)
+		return;
+						/* check arguments */
+	if (m->oargs.nsargs < (hasdata(m->otype)?4:2) | m->oargs.nfargs <
+			(m->otype==MAT_TFUNC|m->otype==MAT_TDATA?6:4))
+		objerror(m, USER, "bad # arguments");
+	nd.mp = m;
+	nd.pr = r;
 						/* get material color */
 	setcolor(nd.mcolor, m->oargs.farg[0],
-			   m->oargs.farg[1],
-			   m->oargs.farg[2]);
+			m->oargs.farg[1],
+			m->oargs.farg[2]);
+						/* get specular component */
+	nd.rspec = m->oargs.farg[3];
+						/* compute transmittance */
+	if (m->otype == MAT_TFUNC | m->otype == MAT_TDATA) {
+		nd.trans = m->oargs.farg[4]*(1.0 - nd.rspec);
+		nd.tspec = nd.trans * m->oargs.farg[5];
+		dtmp = nd.trans - nd.tspec;
+		setcolor(nd.tdiff, dtmp, dtmp, dtmp);
+	} else {
+		nd.tspec = nd.trans = 0.0;
+		setcolor(nd.tdiff, 0.0, 0.0, 0.0);
+	}
+						/* compute reflectance */
+	dtmp = 1.0 - nd.trans - nd.rspec;
+	setcolor(nd.rdiff, dtmp, dtmp, dtmp);
 						/* fix orientation */
-	if (m->otype != MAT_BRTDF && r->rod < 0.0)
+	if (r->rod < 0.0)
 		flipsurface(r);
 						/* get modifiers */
 	raytexture(r, m->omod);
 	nd.pdot = raynormal(nd.pnorm, r);	/* perturb normal */
 	multcolor(nd.mcolor, r->pcol);		/* modify material color */
-	transtest = 0;
+	multcolor(nd.rdiff, nd.mcolor);
+	multcolor(nd.tdiff, nd.mcolor);
 						/* load auxiliary files */
 	if (hasdata(m->otype)) {
 		nd.dp = getdata(m->oargs.sarg[1]);
-		i = (1 << nd.dp->nd) - 1;
-		mf = getfunc(m, 2, i<<3, 0);
-	} else if (m->otype == MAT_BRTDF) {
-		nd.dp = NULL;
-		mf = getfunc(m, 9, 0x3f, 0);
+		getfunc(m, 2, 0, 0);
 	} else {
 		nd.dp = NULL;
-		mf = getfunc(m, 1, 0, 0);
-	}
-						/* set special variables */
-	setbrdfunc(&nd);
-						/* compute transmitted ray */
-	tspect = 0.;
-	if (m->otype == MAT_BRTDF && nd.tspec > FTINY) {
-		RAY  sr;
-		errno = 0;
-		setcolor(ctmp, evalue(mf->ep[3]),
-				evalue(mf->ep[4]),
-				evalue(mf->ep[5]));
-		scalecolor(ctmp, nd.trans);
-		if (errno)
-			objerror(m, WARNING, "compute error");
-		else if ((tspect = bright(ctmp)) > FTINY &&
-				rayorigin(&sr, r, TRANS, tspect) == 0) {
-			if (!(r->crtype & SHADOW) &&
-					DOT(r->pert,r->pert) > FTINY*FTINY) {
-				for (i = 0; i < 3; i++)	/* perturb direction */
-					sr.rdir[i] = r->rdir[i] -
-							.75*r->pert[i];
-				if (normalize(sr.rdir) == 0.0) {
-					objerror(m, WARNING, "illegal perturbation");
-					VCOPY(sr.rdir, r->rdir);
-				}
-			} else {
-				VCOPY(sr.rdir, r->rdir);
-				transtest = 2;
-			}
-			rayvalue(&sr);
-			multcolor(sr.rcol, ctmp);
-			addcolor(r->rcol, sr.rcol);
-			transtest *= bright(sr.rcol);
-			transdist = r->rot + sr.rt;
-		}
-	}
-	if (r->crtype & SHADOW)			/* the rest is shadow */
-		return;
-						/* compute reflected ray */
-	rspecr = 0.;
-	if (m->otype == MAT_BRTDF && nd.rspec > FTINY) {
-		RAY  sr;
-		errno = 0;
-		setcolor(ctmp, evalue(mf->ep[0]),
-				evalue(mf->ep[1]),
-				evalue(mf->ep[2]));
-		if (errno)
-			objerror(m, WARNING, "compute error");
-		else if ((rspecr = bright(ctmp)) > FTINY &&
-				rayorigin(&sr, r, REFLECTED, rspecr) == 0) {
-			for (i = 0; i < 3; i++)
-				sr.rdir[i] = r->rdir[i] +
-						2.0*nd.pdot*nd.pnorm[i];
-			rayvalue(&sr);
-			multcolor(sr.rcol, ctmp);
-			addcolor(r->rcol, sr.rcol);
-		}
+		getfunc(m, 1, 0, 0);
 	}
 						/* compute ambient */
-	if ((dtmp = 1.0-nd.trans-rspecr) > FTINY) {
+	if (nd.trans < 1.0-FTINY) {
 		ambient(ctmp, r);
-		scalecolor(ctmp, dtmp);
+		scalecolor(ctmp, 1.0-nd.trans);
 		multcolor(ctmp, nd.mcolor);	/* modified by material color */
 		addcolor(r->rcol, ctmp);	/* add to returned color */
 	}
-	if ((dtmp = nd.trans-tspect) > FTINY) {	/* from other side */
+	if (nd.trans > FTINY) {		/* from other side */
 		flipsurface(r);
 		ambient(ctmp, r);
-		scalecolor(ctmp, dtmp);
+		scalecolor(ctmp, nd.trans);
 		multcolor(ctmp, nd.mcolor);
 		addcolor(r->rcol, ctmp);
 		flipsurface(r);
 	}
 						/* add direct component */
 	direct(r, dirbrdf, &nd);
-						/* check distance */
-	if (transtest > bright(r->rcol))
-		r->rt = transdist;
 }
 
 
