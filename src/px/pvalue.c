@@ -41,6 +41,9 @@ int  wrongformat = 0;		/* wrong input format? */
 
 double  gamcor = 1.0;		/* gamma correction */
 
+int  ord[3] = {RED, GRN, BLU};	/* RGB ordering */
+int  rord[4];			/* reverse ordering */
+
 COLOR  exposure = WHTCOLOR;
 
 char  *progname;
@@ -78,6 +81,13 @@ char  **argv;
 				gamcor = atof(argv[++i]);
 				if (argv[i][0] == '+')
 					gamcor = 1.0/gamcor;
+				break;
+			case 'R':		/* reverse byte sequence */
+				if (argv[i][0] == '-') {
+					ord[0]=BLU; ord[1]=GRN; ord[2]=RED;
+				} else {
+					ord[0]=RED; ord[1]=GRN; ord[2]=BLU;
+				}
 				break;
 			case 'r':		/* reverse conversion */
 				reverse = argv[i][0] == '-';
@@ -145,7 +155,11 @@ unkopt:
 			fmtid = "8-bit_grey";
 		else
 			fmtid = "24-bit_rgb";
-
+					/* assign reverse ordering */
+	rord[ord[0]] = 0;
+	rord[ord[1]] = 1;
+	rord[ord[2]] = 2;
+					/* get input */
 	if (i == argc) {
 		fin = stdin;
 	} else if (i == argc-1) {
@@ -333,7 +347,7 @@ FILE  *fp;
 
 	if (fscanf(fp, "%lf %lf %lf", &vd[0], &vd[1], &vd[2]) != 3)
 		return(-1);
-	setcolor(col, vd[0], vd[1], vd[2]);
+	setcolor(col, vd[rord[RED]], vd[rord[GRN]], vd[rord[BLU]]);
 	return(0);
 }
 
@@ -346,7 +360,7 @@ FILE  *fp;
 
 	if (fread((char *)vd, sizeof(double), 3, fp) != 3)
 		return(-1);
-	setcolor(col, vd[0], vd[1], vd[2]);
+	setcolor(col, vd[rord[RED]], vd[rord[GRN]], vd[rord[BLU]]);
 	return(0);
 }
 
@@ -359,7 +373,7 @@ FILE  *fp;
 
 	if (fread((char *)vf, sizeof(float), 3, fp) != 3)
 		return(-1);
-	setcolor(col, vf[0], vf[1], vf[2]);
+	setcolor(col, vf[rord[RED]], vf[rord[GRN]], vf[rord[BLU]]);
 	return(0);
 }
 
@@ -372,7 +386,8 @@ FILE  *fp;
 
 	if (fscanf(fp, "%d %d %d", &vi[0], &vi[1], &vi[2]) != 3)
 		return(-1);
-	setcolor(col,(vi[0]+.5)/256.,(vi[1]+.5)/256.,(vi[2]+.5)/256.);
+	setcolor(col, (vi[rord[RED]]+.5)/256.,
+			(vi[rord[GRN]]+.5)/256., (vi[rord[BLU]]+.5)/256.);
 	return(0);
 }
 
@@ -385,7 +400,8 @@ FILE  *fp;
 
 	if (fread((char *)vb, sizeof(BYTE), 3, fp) != 3)
 		return(-1);
-	setcolor(col,(vb[0]+.5)/256.,(vb[1]+.5)/256.,(vb[2]+.5)/256.);
+	setcolor(col, (vb[rord[RED]]+.5)/256.,
+			(vb[rord[GRN]]+.5)/256., (vb[rord[BLU]]+.5)/256.);
 	return(0);
 }
 
@@ -464,9 +480,9 @@ COLOR  col;
 FILE  *fp;
 {
 	fprintf(fp, "%15.3e %15.3e %15.3e\n",
-			colval(col,RED),
-			colval(col,GRN),
-			colval(col,BLU));
+			colval(col,ord[0]),
+			colval(col,ord[1]),
+			colval(col,ord[2]));
 
 	return(ferror(fp) ? -1 : 0);
 }
@@ -478,9 +494,9 @@ FILE  *fp;
 {
 	float  vf[3];
 
-	vf[0] = colval(col,RED);
-	vf[1] = colval(col,GRN);
-	vf[2] = colval(col,BLU);
+	vf[0] = colval(col,ord[0]);
+	vf[1] = colval(col,ord[1]);
+	vf[2] = colval(col,ord[2]);
 	fwrite((char *)vf, sizeof(float), 3, fp);
 
 	return(ferror(fp) ? -1 : 0);
@@ -493,9 +509,9 @@ FILE  *fp;
 {
 	double  vd[3];
 
-	vd[0] = colval(col,RED);
-	vd[1] = colval(col,GRN);
-	vd[2] = colval(col,BLU);
+	vd[0] = colval(col,ord[0]);
+	vd[1] = colval(col,ord[1]);
+	vd[2] = colval(col,ord[2]);
 	fwrite((char *)vd, sizeof(double), 3, fp);
 
 	return(ferror(fp) ? -1 : 0);
@@ -507,9 +523,9 @@ COLOR  col;
 FILE  *fp;
 {
 	fprintf(fp, "%d %d %d\n",
-			(int)(colval(col,RED)*256.),
-			(int)(colval(col,GRN)*256.),
-			(int)(colval(col,BLU)*256.));
+			(int)(colval(col,ord[0])*256.),
+			(int)(colval(col,ord[1])*256.),
+			(int)(colval(col,ord[2])*256.));
 
 	return(ferror(fp) ? -1 : 0);
 }
@@ -522,11 +538,11 @@ FILE  *fp;
 	register int  i;
 	BYTE  vb[3];
 
-	i = colval(col,RED)*256.;
+	i = colval(col,ord[0])*256.;
 	vb[0] = min(i,255);
-	i = colval(col,GRN)*256.;
+	i = colval(col,ord[1])*256.;
 	vb[1] = min(i,255);
-	i = colval(col,BLU)*256.;
+	i = colval(col,ord[2])*256.;
 	vb[2] = min(i,255);
 	fwrite((char *)vb, sizeof(BYTE), 3, fp);
 
