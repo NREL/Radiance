@@ -180,13 +180,13 @@ int	xres;
 			incolor = (Lw - BotMesopic) /
 					(TopMesopic - BotMesopic);
 		if (incolor < 1.-FTINY) {
+			b = (1.-incolor)*slum(scan[i])*inpexp/SWNORM;
+			if (lumf == rgblum) b /= WHTEFFICACY;
+			setcolor(ctmp, b, b, b);
 			if (incolor <= FTINY)
 				setcolor(scan[i], 0., 0., 0.);
 			else
 				scalecolor(scan[i], incolor);
-			b = (1.-incolor)*slum(scan[i])*inpexp/SWNORM;
-			if (lumf == rgblum) b /= WHTEFFICACY;
-			setcolor(ctmp, b, b, b);
 			addcolor(scan[i], ctmp);
 		}
 	}
