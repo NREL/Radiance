@@ -21,6 +21,9 @@ random.h	header file for random(3) and urand() function
 resolu.h	definitions for resolution line in image file.
 standard.h	standard include file for most programs
 targa.h		header file for reading and writing Targa format files
+tmerrmsg.h	error messages for tone mapping routines
+tmprivat.h	private header file for tone mapping routines
+tonemap.h	header file for tone mapping routines
 vfork.h		header file for routines using vfork()
 view.h		header file for image generation
 xraster.h	header file for X routines using images
@@ -88,6 +91,8 @@ savestr.c	routines for efficient string storage
 savqstr.c	quick and dirty string saver
 spec_rgb.c	convert colors and spectral ranges
 strcmp.c	more efficient standard lib replacement for use with savestr()
+tmapcolrs.c	routines for applying tone mapping to COLR scanlines
+tonemap.c	basic tone mapping routines
 urand.c		anticorrelated random function due to Christophe Schlick
 urind.c		compute pseudo-asyncronous entry point for urand(3)
 wordfile.c	open and read a file of whitespace-separated words
