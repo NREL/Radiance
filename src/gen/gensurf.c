@@ -16,6 +16,8 @@ static const char RCSid[] = "$Id$";
  */
 
 #include  "standard.h"
+
+#include  "paths.h"
 #include  "calcomp.h"
 
 char  XNAME[] =		"X`SYS";		/* x function name */
