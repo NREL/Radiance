@@ -27,7 +27,11 @@ static char SCCSid[] = "$SunId$ LBL";
  *  The last vertex is automatically connected to the first.
  */
 
+#ifdef  SMLFLT
+#define  VERTEPS	1e-2		/* allowed vertex error */
+#else
 #define  VERTEPS	1e-4		/* allowed vertex error */
+#endif
 
 
 FACE *
