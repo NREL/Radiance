@@ -34,6 +34,8 @@ struct node {				/* ray tree node */
 
 #define newnode()	(struct node *)calloc(1, sizeof(struct node))
 
+int	slow = 0;		/* slow trace? */
+
 
 main(argc, argv)		/* takes both the octree and the image */
 int	argc;
@@ -44,8 +46,13 @@ char	*argv[];
 	Cursor	curs;
 
 	progname = argv[0];
-	if (argc < 3) {
-		fprintf(stderr, "Usage: %s [rtrace args] octree picture\n",
+	for (i = 1; i < argc-2; i++)
+		if (!strcmp(argv[i], "-s"))
+			slow++;
+		else
+			break;
+	if (i > argc-2) {
+		fprintf(stderr, "Usage: %s [-s] [rtrace args] octree picture\n",
 				argv[0]);
 		exit(1);
 	}
@@ -65,7 +72,7 @@ char	*argv[];
 	}
 					/* build input command */
 	sprintf(combuf, "%s %s | %s", xicom, argv[argc-1], rtcom);
-	for (i = 1; i < argc-1; i++) {
+	for ( ; i < argc-1; i++) {
 		strcat(combuf, " ");
 		strcat(combuf, argv[i]);
 	}
@@ -109,9 +116,10 @@ mainloop()				/* get and process input */
 		if (i == 0) {
 			setvec(sis[0]->ipt);
 			tracerays(sis[0]);
-			XFlush(theDisplay);
 			freetree(sis[0]);
 			sis[0] = NULL;
+			if (!slow)
+				XFlush(theDisplay);
 		}
 	}
 }
@@ -134,8 +142,8 @@ struct node	*tp;
 	register struct node	*kid;
 
 	for (kid = tp->daughter; kid != NULL; kid = kid->sister) {
-		tracerays(kid);
 		vector(tp->ipt, kid->ipt);
+		tracerays(kid);
 	}
 }
 
@@ -199,4 +207,8 @@ double	ip1[2], ip2[2];
 	XDrawLine(theDisplay, gwind, vecGC,
 			(int)(ip1[0]*xres)+xoff, (int)((1.-ip1[1])*yres)+yoff,
 			(int)(ip2[0]*xres)+xoff, (int)((1.-ip2[1])*yres)+yoff);
+	if (slow) {
+		XFlush(theDisplay);
+		sleep(1);
+	}
 }
