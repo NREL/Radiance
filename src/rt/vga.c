@@ -38,15 +38,17 @@ struct driver *
 vga_init(name, id)			/* open VGA */
 char  *name, *id;
 {
-	static short  mode_pref[] = {_XRES256COLOR, _SVRES256COLOR,
+	static short  mode_pref[] = {_MRES256COLOR, -1};
+	static short  smode_pref[] = {_XRES256COLOR, _SVRES256COLOR,
 					_VRES256COLOR, _MRES256COLOR, -1};
 	char  *ep;
-	register int  i;
+	register short	*mp;
 
-	for (i = 0; mode_pref[i] != -1; i++)
-		if (_setvideomode(mode_pref[i]))
+	mp = !strcmp(name, "vga") ? mode_pref : smode_pref;
+	for ( ; *mp != -1; mp++)
+		if (_setvideomode(*mp))
 			break;
-	if (mode_pref[i] == -1) {
+	if (*mp == -1) {
 		_setvideomode(_DEFAULTMODE);
 		stderr_v(name);
 		stderr_v(": card not present or insufficient VGA memory\n");
