@@ -122,7 +122,8 @@ FVECT  u, v, w;
 				il->matname, DSTSUF);
 		printf("\n5 noneg");
 		dfp = dfopen(il, 0);
-		fprintf(dfp, "2\n%f %f %d\n%f %f %d\n", 1.+.5/n, .5/n, n+1,
+		fprintf(dfp, "2\n%f %f %d\n%f %f %d\n",
+				1.+.5/n, .5/n, n+1,
 				0., 2.*PI, m+1);
 		brightout(Ninv, 1, m, 1./il->nsamps/brt(il->col), dfp);
 		brightout(da, n, m, 1./il->nsamps/brt(il->col), dfp);
@@ -151,7 +152,7 @@ int  n, m;
 
 	if ((Ninv = (float *)malloc(3*m*sizeof(float))) == NULL ||
 			(Sinv = (float *)malloc(3*m*sizeof(float))) == NULL)
-		error(SYSTEM, "out of memory in flatout");
+		error(SYSTEM, "out of memory in roundout");
 	compinv(Ninv, da, m);
 	compinv(Sinv, da+3*m*(n-1), m);
 	if (il->flags & IL_COLDST) {
@@ -175,7 +176,8 @@ int  n, m;
 				il->matname, DSTSUF);
 		printf("\n5 noneg");
 		dfp = dfopen(il, 0);
-		fprintf(dfp, "2\n%f %f %d\n%f %f %d\n", 1.-1./n, -1.+1./n, n,
+		fprintf(dfp, "2\n%f %f %d\n%f %f %d\n",
+				1.+1./n, -1.-1./n, n+2,
 				0., 2.*PI, m+1);
 		brightout(Ninv, 1, m, 1./il->nsamps/brt(il->col), dfp);
 		brightout(da, n, m, 1./il->nsamps/brt(il->col), dfp);
