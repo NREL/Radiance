@@ -345,11 +345,14 @@ rholo(void)				/* holodeck main loop */
 	}
 #if FRAGWARN
 	if (fsiz >= nextfragwarn &&
-		(fsiz-hdfiluse(hdlist[0]->fd,0))/(fsiz/100) > FRAGWARN) {
-		sprintf(errmsg, "holodeck file fragmentation is %.0f%%",
-				100.*(fsiz-hdfiluse(hdlist[0]->fd,1))/fsiz);
-		error(WARNING, errmsg);
-		nextfragwarn = fsiz + (fsiz>>2);	/* decent interval */
+		    (fsiz-hdfiluse(hdlist[0]->fd,0))/(fsiz/100) > FRAGWARN) {
+		double	pctfrag = 100.*(fsiz-hdfiluse(hdlist[0]->fd,1))/fsiz;
+		if (pctfrag >= (double)FRAGWARN) {
+			sprintf(errmsg, "holodeck file fragmentation is %.0f%%",
+					pctfrag);
+			error(WARNING, errmsg);
+			nextfragwarn = fsiz + (fsiz>>2);
+		}
 	}
 #endif
 	t = time(NULL);			/* check time */
