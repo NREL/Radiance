@@ -341,7 +341,7 @@ register union {int i; double d; COLOR C;}  *ptr;
 	case 'b':			/* boolean */
 		if (sscanf(str, "%1s", buf) != 1) {
 			(*dev->comout)(dsc);
-			sprintf(buf, " (%c): ", ptr->i ? 'y' : 'n');
+			sprintf(buf, "? (%c): ", ptr->i ? 'y' : 'n');
 			(*dev->comout)(buf);
 			(*dev->comin)(buf, NULL);
 			if (buf[0] == '\0' ||
