@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -88,28 +88,28 @@ char  *ofn[];
 	if (fnobjects != m)
 		octerror(USER, "too many objects");
 
-	if (load & IO_TREE) {
-						/* get the octree */
+	if (load & IO_TREE)			/* get the octree */
 		scene->cutree = gettree();
-		if (load & IO_SCENE)		/* get the scene */
-		    if (nf == 0) {
-			for (i = 0; *ogetstr(sbuf); i++)
-				if ((otypmap[i] = otype(sbuf)) < 0) {
-					sprintf(errmsg, "unknown type \"%s\"",
-							sbuf);
-					octerror(WARNING, errmsg);
-				}
-			while (getobj() != OVOID)
-				;
-		    } else {			/* consistency checks */
-					/* check object count */
-			if (nobjects != objorig+fnobjects)
-				octerror(USER, "bad object count; octree stale?");
-					/* check for non-surfaces */
-			if (nonsurfinset(objorig, fnobjects))
-				octerror(USER, "modifier in tree; octree stale?");
-		    }
-	}
+	else if (load & IO_SCENE && nf == 0)
+		skiptree();
+		
+	if (load & IO_SCENE)		/* get the scene */
+	    if (nf == 0) {
+		for (i = 0; *ogetstr(sbuf); i++)
+			if ((otypmap[i] = otype(sbuf)) < 0) {
+				sprintf(errmsg, "unknown type \"%s\"", sbuf);
+				octerror(WARNING, errmsg);
+			}
+		while (getobj() != OVOID)
+			;
+	    } else {			/* consistency checks */
+				/* check object count */
+		if (nobjects != objorig+fnobjects)
+			octerror(USER, "bad object count; octree stale?");
+				/* check for non-surfaces */
+		if (nonsurfinset(objorig, fnobjects))
+			octerror(USER, "modifier in tree; octree stale?");
+	    }
 	fclose(infp);
 	return(nf);
 }
@@ -189,6 +189,30 @@ gettree()			/* get a pre-ordered octree */
 		for (i = 0; i < 8; i++)
 			octkid(ot, i) = gettree();
 		return(ot);
+	case EOF:
+		octerror(USER, "truncated octree");
+	default:
+		octerror(USER, "damaged octree");
+	}
+}
+
+
+static
+skiptree()				/* skip octree on input */
+{
+	register int  i;
+	
+	switch (getc(infp)) {
+	case OT_EMPTY:
+		return;
+	case OT_FULL:
+		for (i = ogetint(objsize); i-- > 0; )
+			ogetint(objsize);
+		return;
+	case OT_TREE:
+		for (i = 0; i < 8; i++)
+			skiptree();
+		return;
 	case EOF:
 		octerror(USER, "truncated octree");
 	default:
