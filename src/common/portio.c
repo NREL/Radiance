@@ -13,12 +13,7 @@ static const char	RCSid[] = "$Id$";
 
 #include "rtio.h"
 
-#ifndef frexp
-extern double  frexp();
-#endif
-#ifndef ldexp
-extern double  ldexp();
-#endif
+#include <math.h>
 
 
 void
