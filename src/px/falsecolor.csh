@@ -67,6 +67,10 @@ while ($#argv > 0)
 	case -cb:
 		set docont=b
 		breaksw
+	case -e:
+		set doextrem
+		set needfile
+		breaksw
 	case -n:
 		shift argv
 		set ndivs="$argv[1]"
@@ -131,6 +135,10 @@ if ("$cpict" == "") then
 else if ("$cpict" == "$picture") then
 	set cpict=
 endif
+if ($?needfile && "$picture" == '-') then
+	cat > $td/picture
+	set picture=$td/picture
+endif
 if ($decades > 0) then
 	set pc1args=($pc1args -e "map(x)=if(x-10^-$decades,log10(x)/$decades+1,0)")
 	set imap="imap(y)=10^((y-1)*$decades)"
@@ -143,9 +151,22 @@ pcomb $pc0args -e 'v=(y+.5)/yres;vleft=v;vright=v' \
 ( echo $label; cnt $ndivs \
 		| rcalc -e '$1='"($scale)*imap(($ndivs-.5-"'$1'")/$ndivs)" \
 		-e "$imap" ) \
-	| psign -cf 1 1 1 -cb 0 0 0 -h `ev "floor(2*$legheight/$ndivs+.5)"` \
-	| pfilt -1 -x /2 -y /2 > $td/slab.pic
-pcomb $pc0args $pc1args $picture $cpict \
-	| pcompos $td/scol.pic 0 0 -t .2 $td/slab.pic 25 0 - $legwidth 0
+	| psign -s -.15 -cf 1 1 1 -cb 0 0 0 \
+		-h `ev "floor($legheight/$ndivs+.5)"` > $td/slab.pic
+if ( $?doextrem ) then
+	pextrem -o $picture > $td/extrema
+	set minpos=`sed 2d $td/extrema | rcalc -e '$2=$2;$1=$1+'"$legwidth"`
+	set minval=`rcalc -e '$1=($3*.3+$4*.59+$5*.11)*'"$mult" $td/extrema | sed -e 2d -e 's/\(.....\).*$/\1/'`
+	set maxpos=`sed 1d $td/extrema | rcalc -e '$2=$2;$1=$1+'"$legwidth"`
+	set maxval=`rcalc -e '$1=($3*.3+$4*.59+$5*.11)*'"$mult" $td/extrema | sed -e 1d -e 's/\(.....\).*$/\1/'`
+	psign -s -.15 -a 2 -h 16 $minval > $td/minv.pic
+	psign -s -.15 -a 2 -h 16 $maxval > $td/maxv.pic
+	pcomb $pc0args $pc1args $picture $cpict \
+		| pcompos $td/scol.pic 0 0 -t .2 $td/slab.pic 0 20 \
+		  - $legwidth 0 $td/minv.pic $minpos $td/maxv.pic $maxpos
+else
+	pcomb $pc0args $pc1args $picture $cpict \
+		| pcompos $td/scol.pic 0 0 -t .2 $td/slab.pic 0 20 - $legwidth 0
+endif
 quit:
 rm -rf $td
