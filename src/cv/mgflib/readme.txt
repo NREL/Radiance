@@ -115,6 +115,7 @@ materials.)  A list of related mg_ehand assignments is given below:
 	mg_ehand[MG_E_CSPEC] = c_hcolor;
 	mg_ehand[MG_E_CXY] = c_hcolor;
 	mg_ehand[MG_E_ED] = c_hmaterial;
+	mg_ehand[MG_E_IR] = c_hmaterial;
 	mg_ehand[MG_E_MATERIAL] = c_hmaterial;
 	mg_ehand[MG_E_NORMAL] = c_hvertex;
 	mg_ehand[MG_E_POINT] = c_hvertex;

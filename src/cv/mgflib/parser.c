@@ -138,6 +138,7 @@ mg_init()			/* initialize alternate entity handlers */
 			mg_ehand[MG_E_CMIX] != NULL)
 		uneed |= 1<<MG_E_COLOR;
 	if (mg_ehand[MG_E_RD] != NULL || mg_ehand[MG_E_TD] != NULL ||
+			mg_ehand[MG_E_IR] != NULL ||
 			mg_ehand[MG_E_ED] != NULL || 
 			mg_ehand[MG_E_RS] != NULL ||
 			mg_ehand[MG_E_TS] != NULL ||

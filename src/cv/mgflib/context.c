@@ -259,6 +259,17 @@ register char	**av;
 		*c_cmaterial = *(C_MATERIAL *)lp->data;
 		c_cmaterial->clock = i + 1;
 		return(MG_OK);
+	case MG_E_IR:		/* set index of refraction */
+		if (ac != 3)
+			return(MG_EARGC);
+		if (!isflt(av[1]) | !isflt(av[2]))
+			return(MG_ETYPE);
+		c_cmaterial->nr = atof(av[1]);
+		c_cmaterial->ni = atof(av[2]);
+		if (c_cmaterial->nr <= FTINY)
+			return(MG_EILL);
+		c_cmaterial->clock++;
+		return(MG_OK);
 	case MG_E_RD:		/* set diffuse reflectance */
 		if (ac != 2)
 			return(MG_EARGC);
