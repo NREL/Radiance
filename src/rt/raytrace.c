@@ -331,9 +331,9 @@ register CUBE  *scene;
 	sflags = 0;
 	for (i = 0; i < 3; i++) {
 		curpos[i] = r->rorg[i];
-		if (r->rdir[i] > FTINY)
+		if (r->rdir[i] > 1e-7)
 			sflags |= 1 << i;
-		else if (r->rdir[i] < -FTINY)
+		else if (r->rdir[i] < -1e-7)
 			sflags |= 0x10 << i;
 	}
 	if (sflags == 0)
