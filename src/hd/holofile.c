@@ -16,10 +16,10 @@ static char SCCSid[] = "$SunId$ SGI";
 #define CACHESIZE	16	/* default cache size (Mbytes, 0==inf) */
 #endif
 #ifndef FREEBEAMS
-#define FREEBEAMS	512	/* maximum beams to free at a time */
+#define FREEBEAMS	1024	/* maximum beams to free at a time */
 #endif
 #ifndef PCTFREE
-#define PCTFREE		20	/* maximum fraction to free (%) */
+#define PCTFREE		15	/* maximum fraction to free (%) */
 #endif
 #ifndef MAXFRAG
 #define MAXFRAG		32767	/* maximum fragments/file to track (0==inf) */
@@ -641,7 +641,7 @@ register HOLO	*hp;			/* section we're adding from */
 {
 	register int	i, j;
 					/* insert each beam from hp */
-	for (i = nbeams(hp); i > 0; i--) {
+	for (i = 1; i <= nbeams(hp); i++) {
 		if (hp->bl[i] == NULL)		/* check if loaded */
 			continue;
 #if 0
