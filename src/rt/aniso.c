@@ -281,8 +281,13 @@ register RAY  *r;
 		addcolor(r->rcol, ctmp);	/* add to returned color */
 	}
 	if (nd.tdiff > FTINY) {		/* ambient from other side */
+		FVECT  bnorm;
+
 		flipsurface(r);
-		ambient(ctmp, r, nd.pnorm);
+		bnorm[0] = -nd.pnorm[0];
+		bnorm[1] = -nd.pnorm[1];
+		bnorm[2] = -nd.pnorm[2];
+		ambient(ctmp, r, bnorm);
 		if (nd.specfl & SP_TBLT)
 			scalecolor(ctmp, nd.trans);
 		else
