@@ -16,6 +16,10 @@ static char SCCSid[] = "$SunId$ SGI";
 #define HDSUF	".hdi"
 #endif
 
+#ifndef FNONBLK
+#define FNONBLK		O_NONBLOCK
+#endif
+
 static int	inp_flags;
 static int	dpd[3];
 static FILE	*dpout;
