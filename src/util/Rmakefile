@@ -89,7 +89,8 @@ getinfo:	getinfo.o
 	$(CC) $(CFLAGS) -o getinfo getinfo.o -lrt
 
 glrad:	glrad.o
-	$(CC) $(CFLAGS) -o glrad glrad.o -lrgl -lrt -lGLU -lGL -lX11 -lm
+	$(CC) $(CFLAGS) -o glrad glrad.o -lrgl -lrt -lGLU -lGL \
+-lX11 -lXext -lm
 
 contour:	contour.o
 	$(CC) $(CFLAGS) -o contour contour.o -lm
