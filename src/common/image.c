@@ -349,6 +349,7 @@ register char  *av[];
 		v->vdir[0] = atof(av[1]);
 		v->vdir[1] = atof(av[2]);
 		v->vdir[2] = atof(av[3]);
+		v->vdist = 1.;
 		return(3);
 	case 'u':			/* up */
 		check(3,"fff");
