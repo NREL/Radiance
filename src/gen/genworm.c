@@ -136,6 +136,7 @@ char  *msg;
 
 
 quit(code)
+int  code;
 {
 	exit(code);
 }
