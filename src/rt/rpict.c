@@ -12,9 +12,15 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "ray.h"
 
+#ifndef NIX
 #ifdef BSD
 #include  <sys/time.h>
 #include  <sys/resource.h>
+#else
+#include  <sys/types.h>
+#include  <sys/times.h>
+#include  <limits.h>
+#endif
 #endif
 
 #include  <signal.h>
@@ -121,29 +127,43 @@ int  code;
 }
 
 
-#ifdef BSD
+#ifndef NIX
 report()		/* report progress */
 {
+	char  hostname[128];
+	double  u, s;
+#ifdef BSD
 	struct rusage  rubuf;
-	double	t;
+#else
+	struct tms  tbuf;
+#endif
 
-	getrusage(RUSAGE_SELF, &rubuf);
-	t = (rubuf.ru_utime.tv_usec + rubuf.ru_stime.tv_usec) / 1e6;
-	t += rubuf.ru_utime.tv_sec + rubuf.ru_stime.tv_sec;
-	getrusage(RUSAGE_CHILDREN, &rubuf);
-	t += (rubuf.ru_utime.tv_usec + rubuf.ru_stime.tv_usec) / 1e6;
-	t += rubuf.ru_utime.tv_sec + rubuf.ru_stime.tv_sec;
-
-	sprintf(errmsg, "%lu rays, %4.2f%% done after %5.4f CPU hours\n",
-			nrays, pctdone, t/3600.0);
-	eputs(errmsg);
 	tlastrept = time((long *)0);
+#ifdef BSD
+	getrusage(RUSAGE_SELF, &rubuf);
+	u = rubuf.ru_utime.tv_sec + rubuf.ru_utime.tv_usec/1e6;
+	s = rubuf.ru_stime.tv_sec + rubuf.ru_stime.tv_usec/1e6;
+	getrusage(RUSAGE_CHILDREN, &rubuf);
+	u += rubuf.ru_utime.tv_sec + rubuf.ru_utime.tv_usec/1e6;
+	s += rubuf.ru_stime.tv_sec + rubuf.ru_stime.tv_usec/1e6;
+#else
+	times(&tbuf);
+	u = ( tbuf.tms_utime + tbuf.tms_cutime ) / CLK_TCK;
+	s = ( tbuf.tms_stime + tbuf.tms_cstime ) / CLK_TCK;
+#endif
+	gethostname(hostname, sizeof(hostname));
+
+	sprintf(errmsg,
+		"%lu rays, %4.2f%% after %.3fu %.3fs %.3fr hours on %s\n",
+			nrays, pctdone, u/3600., s/3600.,
+			(tlastrept-tstart)/3600., hostname);
+	eputs(errmsg);
 }
 #else
 report()		/* report progress */
 {
 	tlastrept = time((long *)0);
-	sprintf(errmsg, "%lu rays, %4.2f%% done after %5.4f hours\n",
+	sprintf(errmsg, "%lu rays, %4.2f%% after %5.4f hours\n",
 			nrays, pctdone, (tlastrept-tstart)/3600.0);
 	eputs(errmsg);
 	signal(SIGCONT, report);
