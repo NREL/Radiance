@@ -28,10 +28,13 @@ int  count = 0;				/* number to sum */
 int  tabc = '\t';			/* default separator */
 int  subtotal = 0;			/* produce subtotals? */
 
+static int execute(char *fname);
 
-main(argc, argv)
-int  argc;
-char  *argv[];
+int
+main(
+int  argc,
+char  *argv[]
+)
 {
 	int  status;
 	int  a;
@@ -92,8 +95,10 @@ char  *argv[];
 }
 
 
-execute(fname)			/* compute result */
-char  *fname;
+static int
+execute(			/* compute result */
+char  *fname
+)
 {
 	double  result[MAXCOL];
 	char  buf[16*MAXCOL];

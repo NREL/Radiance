@@ -14,3 +14,8 @@ extern int  dxsize, dysize;	/* device size */
 extern int  pati[];
 
 extern unsigned char  pattern[][PATSIZE/8][PATSIZE];	/* fill patterns */
+
+extern void set(int  attrib, char  *value);
+extern void reset(int  attrib);
+extern void unset(int  attrib);
+

@@ -12,7 +12,9 @@ extern "C" {
 
 #ifdef _WIN32
 
-#include <stdio.h>  /* fileno() */
+#include <stdio.h>
+#define popen _popen
+#define pclose _pclose
 #include <fcntl.h>  /* _O_BINARY, _O_TEXT */
 #include <io.h>     /* _setmode() */
 #include <stdlib.h> /* _fmode */

@@ -7,10 +7,10 @@ static const char	RCSid[] = "$Id$";
  *     4/1/86
  */
 
+#include  <stdlib.h>
 #include  <stdio.h>
-
+#include  <string.h>
 #include  <setjmp.h>
-
 #include  <ctype.h>
 
 #include  "calcomp.h"
@@ -24,8 +24,6 @@ int	nres = 0;
 #ifndef BSD
 #define  index		strchr
 #endif
-extern char  *index(), *fgets();
-
 
 jmp_buf  env;
 int  recover = 0;

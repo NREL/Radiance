@@ -152,6 +152,7 @@ userr:
 }
 
 
+void
 onsig(signo)				/* fatal signal */
 int  signo;
 {

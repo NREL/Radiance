@@ -11,12 +11,10 @@ static const char RCSid[] = "$Id$";
 
 #include  <ctype.h>
 #include  <stdio.h>
-#ifdef _WIN32
- #define popen _popen
- #define pclose _pclose
-#endif
+#include  <stdio.h>
 
 #include  "standard.h"
+#include  "platform.h"
 #include  "object.h"
 #include  "otypes.h"
 

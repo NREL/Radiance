@@ -9,6 +9,7 @@ static const char	RCSid[] = "$Id$";
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <ctype.h>
 
@@ -28,9 +29,71 @@ int	ndiv;
 int	ncols;
 
 
-main(argc, argv)
-int	argc;
-char	*argv[];
+static void
+readinp(void)			/* gather statistics on input */
+{
+	char	buf[16*MAXCOL];
+	double	d;
+	register int	c;
+	register char	*cp;
+
+	while ((cp = fgets(buf, sizeof(buf), stdin)) != NULL) {
+		for (c = 0; c < MAXCOL; c++) {
+			while (isspace(*cp))
+				cp++;
+			if (!*cp)
+				break;
+			d = atof(cp);
+			while (*cp && !isspace(*cp))
+				cp++;
+			if (d >= minv && d < maxv)
+				histo[c][(int)(ndiv*(d-minv)/(maxv-minv))]++;
+		}
+		if (c > ncols)
+			ncols = c;
+	}
+}
+
+
+static void
+printcumul(void)			/* print cumulative histogram results */
+{
+	long		ctot[MAXCOL];
+	register int	i, c;
+
+	for (c = ncols; c--; )
+		ctot[c] = 0L;
+
+	for (i = 0; i < ndiv; i++) {
+		printf("%g", minv + (maxv-minv)*(i+1)/ndiv);
+		for (c = 0; c < ncols; c++) {
+			ctot[c] += histo[c][i];
+			printf("\t%ld", ctot[c]);
+		}
+		putchar('\n');
+	}
+}
+
+
+static void
+printhisto(void)			/* print histogram results */
+{
+	register int	i, c;
+
+	for (i = 0; i < ndiv; i++) {
+		printf("%g", minv + (maxv-minv)*(i+.5)/ndiv);
+		for (c = 0; c < ncols; c++)
+			printf("\t%ld", histo[c][i]);
+		putchar('\n');
+	}
+}
+
+
+int
+main(
+int	argc,
+char	*argv[]
+)
 {
 	progname = argv[0];
 	if (argc > 1 && !strcmp(argv[1], "-c")) {
@@ -70,58 +133,3 @@ userr:
 }
 
 
-readinp()			/* gather statistics on input */
-{
-	char	buf[16*MAXCOL];
-	double	d;
-	register int	c;
-	register char	*cp;
-
-	while ((cp = fgets(buf, sizeof(buf), stdin)) != NULL) {
-		for (c = 0; c < MAXCOL; c++) {
-			while (isspace(*cp))
-				cp++;
-			if (!*cp)
-				break;
-			d = atof(cp);
-			while (*cp && !isspace(*cp))
-				cp++;
-			if (d >= minv && d < maxv)
-				histo[c][(int)(ndiv*(d-minv)/(maxv-minv))]++;
-		}
-		if (c > ncols)
-			ncols = c;
-	}
-}
-
-
-printcumul()			/* print cumulative histogram results */
-{
-	long		ctot[MAXCOL];
-	register int	i, c;
-
-	for (c = ncols; c--; )
-		ctot[c] = 0L;
-
-	for (i = 0; i < ndiv; i++) {
-		printf("%g", minv + (maxv-minv)*(i+1)/ndiv);
-		for (c = 0; c < ncols; c++) {
-			ctot[c] += histo[c][i];
-			printf("\t%ld", ctot[c]);
-		}
-		putchar('\n');
-	}
-}
-
-
-printhisto()			/* print histogram results */
-{
-	register int	i, c;
-
-	for (i = 0; i < ndiv; i++) {
-		printf("%g", minv + (maxv-minv)*(i+.5)/ndiv);
-		for (c = 0; c < ncols; c++)
-			printf("\t%ld", histo[c][i]);
-		putchar('\n');
-	}
-}

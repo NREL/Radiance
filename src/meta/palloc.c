@@ -9,28 +9,20 @@ static const char	RCSid[] = "$Id$";
 #define  FBSIZE  72		/* size of malloc call */
 
 
-
-
-
 #include  "meta.h"
 
 
-
-
-
 extern int  maxalloc;		/* number of prims to allocate */
-
 int  nalloc = 0;		/* number allocated so far */
-
-
 
 static PLIST  freelist = {NULL, NULL};
 
 
+static int morefree(void);
 
 
 PRIMITIVE *
-palloc()		/* allocate a primitive */
+palloc(void)		/* allocate a primitive */
 
 {
  register PRIMITIVE  *p;
@@ -48,16 +40,14 @@ palloc()		/* allocate a primitive */
 
  nalloc++;
  return(p);
- }
+}
 
 
 
-
-
-pfree(p)		/* free a primitive */
-
-register PRIMITIVE  *p;
-
+void
+pfree(		/* free a primitive */
+register PRIMITIVE  *p
+)
 {
 
  if (p->args != NULL) {
@@ -71,11 +61,10 @@ register PRIMITIVE  *p;
 
 
 
-
-plfree(pl)		/* free a primitive list */
-
-register PLIST  *pl;
-
+void
+plfree(		/* free a primitive list */
+register PLIST  *pl
+)
 {
     register PRIMITIVE  *p;
     
@@ -94,10 +83,8 @@ register PLIST  *pl;
     
 
 
-
-
 static int
-morefree()		/* get more free space */
+morefree(void)		/* get more free space */
 
 {
  register PRIMITIVE  *p;

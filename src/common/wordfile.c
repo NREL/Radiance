@@ -17,11 +17,8 @@ static const char	RCSid[] = "$Id$";
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#ifdef _WIN32
- #include <io.h>
-#endif
-
 #include "standard.h"
+#include "platform.h"
 
 
 #define MAXFLEN		8192		/* file must be smaller than this */

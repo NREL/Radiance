@@ -9,6 +9,8 @@ static const char	RCSid[] = "$Id$";
  *  cc mtext.c mfio.o syscalls.o misc.o
  */
 
+#include <malloc.h>
+#include <string.h>
 
 #include  "meta.h"
 
@@ -122,7 +124,6 @@ FILE  *fp;
     static char  linbuf[MAXLINE];
     int  nlines;
     char  **section;
-    char  *calloc(), *malloc(), *fgets(), *strcpy();
     int  maxlen;
     int  done;
     int  i, j, k;

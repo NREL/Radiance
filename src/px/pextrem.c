@@ -54,7 +54,7 @@ char  *argv[];
 	COLR  *scan;
 	COLR  cmin, cmax;
 	int  xmin, ymin, xmax, ymax;
-	SET_DEFAULT_BINARY()
+	SET_DEFAULT_BINARY();
 	SET_FILE_BINARY(stdin);
 	for (i = 1; i < argc; i++)	/* get options */
 		if (!strcmp(argv[i], "-o"))

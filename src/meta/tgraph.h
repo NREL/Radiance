@@ -1,8 +1,8 @@
 /* RCSid: $Id$ */
-#include  "meta.h"
 
 #include  <math.h>
 
+#include  "meta.h"
 
 #define  MINDIVS  4		/* Minimum number of divisions for axis */
 

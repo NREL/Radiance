@@ -8,13 +8,10 @@ static const char RCSid[] = "$Id$";
  */
 
 #include  "standard.h"
-
+#include  "platform.h"
 #include  "octree.h"
-
 #include  "object.h"
-
 #include  "otypes.h"
-
 #include  "paths.h"
 
 #define	 OMARGIN	(10*FTINY)	/* margin around global cube */

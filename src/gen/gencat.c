@@ -64,6 +64,19 @@ fprintf(stderr, "Interation limit exceeded -- invalid K value\n");
 }
 
 
+static void
+printhead(ac, av)		/* print command header */
+register int  ac;
+register char  **av;
+{
+	putchar('#');
+	while (ac--) {
+		putchar(' ');
+		fputs(*av++, stdout);
+	}
+	putchar('\n');
+}
+
 main (argc, argv)
 int argc;
 char *argv[];
@@ -124,15 +137,3 @@ char *argv[];
    }
 }
 
-
-printhead(ac, av)		/* print command header */
-register int  ac;
-register char  **av;
-{
-	putchar('#');
-	while (ac--) {
-		putchar(' ');
-		fputs(*av++, stdout);
-	}
-	putchar('\n');
-}

@@ -8,12 +8,9 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  <stdio.h>
-#ifdef _WIN32
- #define popen _popen
- #define pclose _pclose
-#endif
 
 #include  "standard.h"
+#include  "platform.h"
 #include  "octree.h"
 #include  "object.h"
 #include  "otypes.h"

@@ -19,7 +19,8 @@ static const char	RCSid[] = "$Id$";
 
 typedef double  FVECT[3];
 
-double  bubble();	/* pretty cute, huh? */
+static double  bubble();	/* pretty cute, huh? */
+static void sphere_cart();
 
 
 main(argc, argv)
@@ -67,7 +68,7 @@ char  **argv;
 }
 
 
-double
+static double
 bubble(v, cent, rad, bubrad)	/* compute location of random bubble */
 FVECT  v, cent;
 double  rad, bubrad;
@@ -84,6 +85,7 @@ double  rad, bubrad;
 }
 
 
+static void
 sphere_cart(v, ro, theta, phi)	/* spherical to cartesian coord. conversion */
 FVECT  v;
 double  ro, theta, phi;

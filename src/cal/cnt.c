@@ -7,16 +7,20 @@ static const char	RCSid[] = "$Id$";
  *	2/1/88
  */
 
+#include  <stdlib.h>
 #include  <stdio.h>
 
 
 int  n[50];
 char  buf[256];
 
+static void loop(int *n, char *b);
 
-main(argc, argv)
-int  argc;
-char  *argv[];
+int
+main(
+int  argc,
+char  *argv[]
+)
 {
 	int  a;
 
@@ -31,9 +35,10 @@ char  *argv[];
 
 
 char *
-tack(b, i)
-register char  *b;
-register int  i;
+tack(
+register char  *b,
+register int  i
+)
 {
 	register char  *cp;
 	char  *res;
@@ -59,9 +64,11 @@ register int  i;
 }
 
 
-loop(n, b)
-int  *n;
-char  *b;
+static void
+loop(
+int  *n,
+char  *b
+)
 {
 	int  i;
 

@@ -7,7 +7,11 @@ static const char	RCSid[] = "$Id$";
  *	7/14/88		Greg Ward
  */
 
+#include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
+
+#include "platform.h"
 
 #define MAXFILE		16		/* maximum number of files */
 

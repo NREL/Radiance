@@ -11,6 +11,7 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include  "tgraph.h"
+#include  "paths.h"
 
 
 #define  XLEGEND  (XBEG+XSIZ+4*TSIZ)	/* x start of legend */
@@ -103,7 +104,8 @@ char  **argv;
        }
  else  {
 
-    sprintf(tfname, "%sts%d", TDIR, getpid());
+    /*sprintf(tfname, "%sts%d", TDIR, getpid());*/
+	temp_filename(tfname, sizeof(tfname), NULL);
     fp = efopen(tfname, "w+");
     normalize(stdin, fp);
     makeaxis(axflag);

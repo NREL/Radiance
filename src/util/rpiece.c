@@ -72,7 +72,7 @@ unsigned  timelim = 0;
 int  rvrlim = -1;
 
 int  gotalrm = 0;
-int  onalrm() { gotalrm++; }
+void  onalrm(int i) { gotalrm++; }
 
 
 main(argc, argv)

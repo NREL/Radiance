@@ -9,14 +9,13 @@ static const char RCSid[] = "$Id$";
  *     11/6/86		Finally added error checking!
  */
 
-#include  "standard.h"
-
-#include  "paths.h"
-
 #include  <ctype.h>
+#include  <stdio.h>
 
+#include  "standard.h"
+#include  "platform.h"
+#include  "paths.h"
 #include  "object.h"
-
 #include  "otypes.h"
 
 int  xac;				/* global xform argument count */
