@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1990 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -10,17 +10,16 @@ static char SCCSid[] = "$SunId$ LBL";
  *     1/28/86
  */
 
+#include  "standard.h"
 
-#define  PI		3.14159265358979323846
 #define  d2r(a)		((PI/180.)*(a))
 
 #define  checkarg(a,n)	if (av[i][a] || i+n >= ac) goto done
 
 
 int
-xf(retmat, retsca, ac, av)		/* get transform specification */
-double  retmat[4][4];
-double  *retsca;
+xf(ret, ac, av)			/* get transform specification */
+register XF  *ret;
 int  ac;
 char  *av[];
 {
@@ -29,8 +28,8 @@ char  *av[];
 	double  xfsca, dtmp;
 	int  i, icnt;
 
-	setident4(retmat);
-	*retsca = 1.0;
+	setident4(ret->xfm);
+	ret->sca = 1.0;
 
 	icnt = 1;
 	setident4(xfmat);
@@ -110,8 +109,8 @@ char  *av[];
 		case 'i':			/* iterate */
 			checkarg(2,1);
 			while (icnt-- > 0) {
-				multmat4(retmat, retmat, xfmat);
-				*retsca *= xfsca;
+				multmat4(ret->xfm, ret->xfm, xfmat);
+				ret->sca *= xfsca;
 			}
 			icnt = atoi(av[++i]);
 			setident4(xfmat);
@@ -126,8 +125,8 @@ char  *av[];
 	}
 done:
 	while (icnt-- > 0) {
-		multmat4(retmat, retmat, xfmat);
-		*retsca *= xfsca;
+		multmat4(ret->xfm, ret->xfm, xfmat);
+		ret->sca *= xfsca;
 	}
 	return(i);
 }
@@ -135,9 +134,8 @@ done:
 
 #ifdef  INVXF
 int
-invxf(retmat, retsca, ac, av)		/* invert transform specification */
-double  retmat[4][4];
-double  *retsca;
+invxf(ret, ac, av)		/* invert transform specification */
+register XF  *ret;
 int  ac;
 char  *av[];
 {
@@ -146,8 +144,8 @@ char  *av[];
 	double  xfsca, dtmp;
 	int  i, icnt;
 
-	setident4(retmat);
-	*retsca = 1.0;
+	setident4(ret->xfm);
+	ret->sca = 1.0;
 
 	icnt = 1;
 	setident4(xfmat);
@@ -227,8 +225,8 @@ char  *av[];
 		case 'i':			/* iterate */
 			checkarg(2,1);
 			while (icnt-- > 0) {
-				multmat4(retmat, xfmat, retmat);
-				*retsca *= xfsca;
+				multmat4(ret->xfm, xfmat, ret->xfm);
+				ret->sca *= xfsca;
 			}
 			icnt = atoi(av[++i]);
 			setident4(xfmat);
@@ -243,9 +241,20 @@ char  *av[];
 	}
 done:
 	while (icnt-- > 0) {
-		multmat4(retmat, xfmat, retmat);
-		*retsca *= xfsca;
+		multmat4(ret->xfm, xfmat, ret->xfm);
+		ret->sca *= xfsca;
 	}
 	return(i);
+}
+
+
+int
+fullxf(fx, ac, av)			/* compute both forward and inverse */
+FULLXF  *fx;
+int  ac;
+char  *av[];
+{
+	xf(&fx->f, ac, av);
+	return(invxf(&fx->b, ac, av));
 }
 #endif

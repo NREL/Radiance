@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1990 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -10,21 +10,15 @@ static char SCCSid[] = "$SunId$ LBL";
  *     10/19/85
  */
 
+#include  "mat4.h"
 
-static double  m4tmp[4][4];		/* for efficiency */
-
-#ifdef  BSD
-#define  copymat4(m4a,m4b)	bcopy((char *)m4b,(char *)m4a,sizeof(m4tmp))
-#else
-#define  copymat4(m4a,m4b)	(void)memcpy((char *)m4a,(char *)m4b,sizeof(m4tmp))
-extern char  *memcpy();
-#endif
+static MAT4  m4tmp;		/* for efficiency */
 
 
 setident4(m4)
-double  m4[4][4];
+MAT4  m4;
 {
-	static double  ident[4][4] = {
+	static MAT4  ident = {
 		1.,0.,0.,0.,
 		0.,1.,0.,0.,
 		0.,0.,1.,0.,
@@ -35,8 +29,8 @@ double  m4[4][4];
 
 
 multmat4(m4a, m4b, m4c)		/* multiply m4b X m4c and put into m4a */
-double  m4a[4][4];
-register double  m4b[4][4], m4c[4][4];
+MAT4  m4a;
+register MAT4  m4b, m4c;
 {
 	register int  i, j;
 	
@@ -52,9 +46,9 @@ register double  m4b[4][4], m4c[4][4];
 
 
 multv3(v3a, v3b, m4)	/* transform vector v3b by m4 and put into v3a */
-double  v3a[3];
-register double  v3b[3];
-register double  m4[4][4];
+FVECT  v3a;
+register FVECT  v3b;
+register MAT4  m4;
 {
 	m4tmp[0][0] = v3b[0]*m4[0][0] + v3b[1]*m4[1][0] + v3b[2]*m4[2][0];
 	m4tmp[0][1] = v3b[0]*m4[0][1] + v3b[1]*m4[1][1] + v3b[2]*m4[2][1];
@@ -67,9 +61,9 @@ register double  m4[4][4];
 
 
 multp3(p3a, p3b, m4)		/* transform p3b by m4 and put into p3a */
-register double  p3a[3];
-double  p3b[3];
-register double  m4[4][4];
+register FVECT  p3a;
+FVECT  p3b;
+register MAT4  m4;
 {
 	multv3(p3a, p3b, m4);	/* transform as vector */
 	p3a[0] += m4[3][0];	/* translate */
@@ -86,7 +80,7 @@ register double  m4[4][4];
  */
 
 invmat(inverse,mat)
-double mat[4][4],inverse[4][4];
+MAT4  mat, inverse;
 {
 #define SWAP(a,b,t) (t=a,a=b,b=t)
 #define ABS(x) (x>=0?x:-(x))
