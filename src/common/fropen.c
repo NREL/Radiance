@@ -18,7 +18,7 @@ FILE *
 frlibopen(fname)		/* find file and open for reading */
 register char  *fname;
 {
-	extern char  *strcpy(), *getrlibpath();
+	extern char  *getrlibpath();
 	FILE  *fp;
 	char  pname[PATH_MAX];
 	register char  *sp, *cp;

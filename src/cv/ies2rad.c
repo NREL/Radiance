@@ -10,6 +10,7 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 #include <sys/types.h>
 #include <ctype.h>
@@ -123,7 +124,7 @@ typedef struct {
 int	gargc;				/* global argc (minus filenames) */
 char	**gargv;			/* global argv */
 
-extern char	*strcpy(), *strcat(), *stradd(), *tailtrunc(), *filetrunc(),
+extern char	*stradd(), *tailtrunc(), *filetrunc(),
 		*filename(), *libname(), *fullnam(), *getword(), *atos();
 extern float	*matchlamp();
 extern time_t	fdate();
