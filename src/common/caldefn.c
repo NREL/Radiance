@@ -219,6 +219,9 @@ int  lvl;
 {
     static char  nambuf[MAXWORD];
     register char  *cp = nambuf, *cpp = context;
+				/* check for explicit global */
+    if (*nam == CNTXMARK)
+	return(lvl > 0 ? NULL : nam+1);
 				/* check for repeat call */
     if (nam == nambuf)
 	return(lvl > 0 ? NULL : nambuf);
