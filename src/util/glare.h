@@ -6,8 +6,6 @@
  * Common data structures for glare source finding routines
  */
 
-#define DEBUG 1
-
 #include "standard.h"
 #include "view.h"
 #include "color.h"
