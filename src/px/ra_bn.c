@@ -68,7 +68,7 @@ char  *argv[];
 					/* put header */
 		printargs(argc, argv, rafp);
 		putc('\n', rafp);
-		fprintf(rafp, "-Y %d +X %d\n", ymax, xmax);
+		fputresolu(YMAJOR|YDECR, xmax, ymax, rafp);
 					/* convert file */
 		bn2ra();
 	} else {
@@ -83,7 +83,7 @@ char  *argv[];
 		}
 					/* get header */
 		getheader(rafp, NULL);
-		if (fscanf(rafp, "-Y %d +X %d\n", &ymax, &xmax) != 2)
+		if (fgetresolu(&xmax, &ymax, rafp) != (YMAJOR|YDECR))
 			quiterr("bad RADIANCE format");
 		if (openbarney(argv[i+1], "w") < 0) {
 			sprintf(errmsg, "cannot open output \"%s\"", argv[i+1]);
