@@ -183,10 +183,7 @@ OBJREC  *ob;
 	} else {
 		cout[0] = cout[1] = cout[2] = brt(il->col);
 	}
-	if (il->flags & IL_LIGHT)
-		printf("\n3 %f %f %f\n", cout[0], cout[1], cout[2]);
-	else
-		printf("\n4 %f %f %f 0\n", cout[0], cout[1], cout[2]);
+	printf("\n0\n3 %f %f %f\n", cout[0], cout[1], cout[2]);
 
 	printobj(il->matname, ob);
 }

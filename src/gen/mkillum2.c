@@ -335,5 +335,5 @@ double  alt, azi;
 	d2 = 2.*PI * azi;
 	dv[0] = d1*cos(d2);
 	dv[1] = d1*sin(d2);
-	dv[2] = sqrt(1. - d1*d1);
+	dv[2] = sqrt(1. - alt);
 }
