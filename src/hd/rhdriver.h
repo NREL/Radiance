@@ -19,6 +19,7 @@ extern struct driver {
 #define	DEV_SHUTDOWN	01	/* user shutdown request */
 #define DEV_NEWVIEW	02	/* view change (new view in odev.v) */
 #define DEV_NEWSIZE	04	/* device resolution change */
+#define DEV_WAIT	010	/* pause computation and wait for input */
 
 
 /************************************************************************
