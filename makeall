@@ -50,7 +50,9 @@ again1:
 echo -n "Where do you want the executables [/usr/local/bin]? "
 set idir=$<
 (echo $idir) >/dev/null
-if ( $status ) goto again1
+if ( $status ) then
+	goto again1
+endif
 set idir=$idir
 if ( "$idir" == "" ) then
 	set idir=/usr/local/bin
@@ -73,7 +75,9 @@ if ( ! -d $idir/dev ) then
 	endif
 endif
 set rmake=$idir/rmake
-if ( "`ls -tL $rmake $0 |& head -1`" == $rmake ) goto gotrmake
+if ( "`ls -tL $rmake $0 |& head -1`" == $rmake ) then
+	goto gotrmake
+endif
 set newrmake
 goto skiplicense
 cat << _EOF_
@@ -139,17 +143,9 @@ set arch="$<"
 switch ("$arch")
 case 1:			# SPARC Station
 	set arch=sun
-	if ( `uname -r` =~ 4.* ) then
-		set mach="-fsingle -DBSD /usr/lib/libm.il -I/usr/openwin/include -L/usr/openwin/lib -DNOSTEREO"
-		set opt="-O -pipe -DSPEED=12"
-		set special="sun"
-		set compat="bmalloc.o strcmp.o"
-	else
-		set mach="-I/usr/openwin/include -L/usr/openwin/lib -DNOSTEREO"
-		set opt="-O -DSPEED=80"
-		set special="ogl"
-		set compat="bmalloc.o strcmp.o getpagesize.o"
-	endif
+	set mach="-I/usr/openwin/include -L/usr/openwin/lib -DNOSTEREO"
+	set opt="-O -DSPEED=80"
+	set compat="bmalloc.o strcmp.o getpagesize.o"
 	breaksw
 case 2:			# HP workstation
 	set mach=""
