@@ -612,17 +612,17 @@ register char	*op;
 	d *= 3./(siz[0]+siz[1]+siz[2]);
 	switch (vscale(DETAIL)) {
 	case LOW:
-		op = addarg(op, "-ps 16 -dp 16");
+		op = addarg(op, "-ps 16 -dp 64");
 		sprintf(op, " -ar %d", (int)(4*d));
 		op += strlen(op);
 		break;
 	case MEDIUM:
-		op = addarg(op, "-ps 8 -dp 32");
+		op = addarg(op, "-ps 8 -dp 128");
 		sprintf(op, " -ar %d", (int)(8*d));
 		op += strlen(op);
 		break;
 	case HIGH:
-		op = addarg(op, "-ps 4 -dp 64");
+		op = addarg(op, "-ps 4 -dp 256");
 		sprintf(op, " -ar %d", (int)(16*d));
 		op += strlen(op);
 		break;
@@ -674,19 +674,19 @@ register char	*op;
 	switch (vscale(DETAIL)) {
 	case LOW:
 		op = addarg(op, vbool(PENUMBRAS) ? "-ps 4" : "-ps 8");
-		op = addarg(op, "-dp 64");
+		op = addarg(op, "-dp 256");
 		sprintf(op, " -ar %d", (int)(8*d));
 		op += strlen(op);
 		break;
 	case MEDIUM:
 		op = addarg(op, vbool(PENUMBRAS) ? "-ps 3" : "-ps 6");
-		op = addarg(op, "-dp 128");
+		op = addarg(op, "-dp 512");
 		sprintf(op, " -ar %d", (int)(16*d));
 		op += strlen(op);
 		break;
 	case HIGH:
 		op = addarg(op, vbool(PENUMBRAS) ? "-ps 2" : "-ps 4");
-		op = addarg(op, "-dp 256");
+		op = addarg(op, "-dp 1024");
 		sprintf(op, " -ar %d", (int)(32*d));
 		op += strlen(op);
 		break;
@@ -741,19 +741,19 @@ register char	*op;
 	switch (vscale(DETAIL)) {
 	case LOW:
 		op = addarg(op, vbool(PENUMBRAS) ? "-ps 1" : "-ps 8");
-		op = addarg(op, "-dp 256");
+		op = addarg(op, "-dp 1024");
 		sprintf(op, " -ar %d", (int)(16*d));
 		op += strlen(op);
 		break;
 	case MEDIUM:
 		op = addarg(op, vbool(PENUMBRAS) ? "-ps 1" : "-ps 5");
-		op = addarg(op, "-dp 512");
+		op = addarg(op, "-dp 2048");
 		sprintf(op, " -ar %d", (int)(32*d));
 		op += strlen(op);
 		break;
 	case HIGH:
 		op = addarg(op, vbool(PENUMBRAS) ? "-ps 1" : "-ps 3");
-		op = addarg(op, "-dp 1024");
+		op = addarg(op, "-dp 4096");
 		sprintf(op, " -ar %d", (int)(64*d));
 		op += strlen(op);
 		break;
