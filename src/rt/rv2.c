@@ -492,6 +492,7 @@ register char  *s;
 	extern double  shadthresh;
 	extern double  shadcert;
 	extern COLOR  ambval;
+	extern int  ambvwt;
 	extern double  ambacc;
 	extern int  ambres;
 	extern int  ambdiv;
@@ -511,7 +512,7 @@ register char  *s;
 	
 	if (s[0] == '\0') {
 		(*dev->comout)(
-		"aa ab ad ar as av b dc dv dj ds dt i lr lw me ma mg ms ps pt sj st bv: ");
+		"aa ab ad ar as av aw b dc dv dj ds dt i lr lw me ma mg ms ps pt sj st bv: ");
 		(*dev->comin)(buf, NULL);
 		s = buf;
 	}
@@ -572,6 +573,9 @@ register char  *s;
 		switch (s[1]) {
 		case 'v':			/* value */
 			getparam(s+2, "ambient value", 'C', (COLOR *)ambval);
+			break;
+		case 'w':			/* weight */
+			getparam(s+2, "ambient value weight", 'i', &ambvwt);
 			break;
 		case 'a':			/* accuracy */
 			if (getparam(s+2, "ambient accuracy", 'r', &ambacc))
