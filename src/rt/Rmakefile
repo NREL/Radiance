@@ -1,6 +1,5 @@
-# SCCSid "$SunId$ LBL"
-
 #
+# SCCSid "$SunId$ LBL"
 #  Compiles for ray tracing programs.
 #
 
@@ -73,8 +72,8 @@ MATSRC = normal.c dielectric.c m_clip.c glass.c m_brdf.c m_mirror.c \
 MODOBJS = p_func.o t_func.o p_data.o t_data.o text.o mx_func.o mx_data.o
 MODSRC = p_func.c t_func.c p_data.c t_data.c text.c mx_func.c mx_data.c
 
-SUPPOBJS = zeroes.o calexpr.o caldefn.o func.o noise3.o data.o
-SUPPSRC = zeroes.c calexpr.c caldefn.c func.c noise3.c data.c
+SUPPOBJS = zeroes.o calexpr.o caldefn.o func.o noise3.o data.o readfargs.o
+SUPPSRC = zeroes.c calexpr.c caldefn.c func.c noise3.c data.c readfargs.c
 
 #
 # What this makefile produces:
@@ -103,16 +102,14 @@ lint:	$(RVSRC)
 # Links:
 #
 
-$(DESTDIR)/rtrace:	$(RTOBJS)
+$(DESTDIR)/rtrace:	$(RTOBJS) ../common/librt.a
 	$(CC) $(CFLAGS) -o $(DESTDIR)/rtrace $(RTOBJS) $(LIBS)
 
-$(DESTDIR)/rpict:	$(RPOBJS)
+$(DESTDIR)/rpict:	$(RPOBJS) ../common/librt.a
 	$(CC) $(CFLAGS) -o $(DESTDIR)/rpict $(RPOBJS) $(LIBS)
 
-$(DESTDIR)/rview:	$(RVOBJS)
+$(DESTDIR)/rview:	$(RVOBJS) ../common/librt.a
 	$(CC) $(CFLAGS) -o $(DESTDIR)/rview $(RVOBJS) $(DLIBS) $(LIBS)
-
-$(DESTDIR)/rtrace $(DESTDIR)/rpict $(DESTDIR)/rview:	../common/librt.a
 
 $(DESTDIR)/lookamb:	lookamb.o
 	$(CC) $(CFLAGS) -o $(DESTDIR)/lookamb lookamb.o
@@ -147,6 +144,9 @@ rpmain.o:	rmain.c
 rvmain.o:	rmain.c
 	$(CC) $(CFLAGS) -DRVIEW -DDEFPATH=\":$(LIBDIR)\" -c rmain.c
 	mv rmain.o rvmain.o
+
+readfargs.o:	readfargs.c ../common/object.h
+	$(CC) $(CFLAGS) -DMEMHOG -c readfargs.c
 
 #
 # Uncomment the following to model dispersion:

@@ -90,7 +90,7 @@ int  (*f)();
 		fscanf(fp, "%*s");
 		return;
 	}
-	if (readfargs(&thisobj.oargs, fp) < 0) {
+	if (readfargs(&thisobj.oargs, fp) <= 0) {
 		sprintf(errmsg, "(%s): bad arguments", name);
 		objerror(&thisobj, USER, errmsg);
 	}
@@ -116,81 +116,4 @@ int  (*f)();
 			break;
 		}
 	freefargs(&thisobj.oargs);
-}
-
-
-readfargs(fa, fp)		/* read function arguments from stream */
-register FUNARGS  *fa;
-FILE  *fp;
-{
-	extern char  *strcpy();
-	char  sbuf[MAXSTR];
-	int  n;
-	register int  i;
-
-	if (fscanf(fp, "%d", &n) != 1 || n < 0)
-		return(-1);
-	if (fa->nsargs = n) {
-		fa->sarg = (char **)malloc(n*sizeof(char *));
-		if (fa->sarg == NULL)
-			goto memerr;
-		for (i = 0; i < fa->nsargs; i++) {
-			if (fscanf(fp, "%s", sbuf) != 1)
-				return(-1);
-			fa->sarg[i] = malloc(strlen(sbuf)+1);
-			if (fa->sarg[i] == NULL)
-				goto memerr;
-			(void)strcpy(fa->sarg[i], sbuf);
-		}
-	} else
-		fa->sarg = NULL;
-	if (fscanf(fp, "%d", &n) != 1 || n < 0)
-		return(-1);
-#ifdef  IARGS
-	if (fa->niargs = n) {
-		fa->iarg = (long *)malloc(n*sizeof(long));
-		if (fa->iarg == NULL)
-			goto memerr;
-		for (i = 0; i < n; i++)
-			if (fscanf(fp, "%ld", &fa->iarg[i]) != 1)
-				return(-1);
-	} else
-		fa->iarg = NULL;
-#else
-	if (n != 0)
-		return(-1);
-#endif
-	if (fscanf(fp, "%d", &n) != 1 || n < 0)
-		return(-1);
-	if (fa->nfargs = n) {
-		fa->farg = (double *)malloc(n*sizeof(double));
-		if (fa->farg == NULL)
-			goto memerr;
-		for (i = 0; i < n; i++)
-			if (fscanf(fp, "%lf", &fa->farg[i]) != 1)
-				return(-1);
-	} else
-		fa->farg = NULL;
-	return(0);
-memerr:
-	error(SYSTEM, "out of memory in readfargs");
-}
-
-
-freefargs(fa)		/* free arguments */
-register FUNARGS  *fa;
-{
-	register int  i;
-
-	if (fa->nsargs) {
-		for (i = 0; i < fa->nsargs; i++)
-			free(fa->sarg[i]);
-		free((char *)fa->sarg);
-	}
-#ifdef  IARGS
-	if (fa->niargs)
-		free((char *)fa->iarg);
-#endif
-	if (fa->nfargs)
-		free((char *)fa->farg);
 }
