@@ -76,6 +76,7 @@ COLR	backcolr = BLKCOLR;		/* background color */
 COLOR	backcolor = BLKCOLOR;		/* background color (float) */
 double	backz = 0.0;			/* background z value */
 int	normdist = 1;			/* i/o normalized distance? */
+char	ourfmt[LPICFMT+1] = PICFMT;	/* original picture format */
 double	ourexp = -1;			/* original picture exposure */
 int	expadj = 0;			/* exposure adjustment (f-stops) */
 double	rexpadj = 1;			/* real exposure adjustment */
@@ -308,7 +309,8 @@ char	*argv[];
 		ourexp = rexpadj;
 	if (ourexp < .995 | ourexp > 1.005)
 		fputexpos(ourexp, stdout);
-	fputformat(COLRFMT, stdout);
+	if (strcmp(ourfmt, PICFMT))		/* print format if known */
+		fputformat(ourfmt, stdout);
 	putc('\n', stdout);
 							/* write picture */
 	writepicture();
@@ -334,7 +336,11 @@ char	*s;
 	if (isheadid(s))
 		return;
 	if (formatval(fmt, s)) {
-		wrongformat = strcmp(fmt, COLRFMT);
+		if (globmatch(ourfmt, fmt)) {
+			wrongformat = 0;
+			strcpy(ourfmt, fmt);
+		} else
+			wrongformat = 1;
 		return;
 	}
 	if (nvavg < 2) {

@@ -58,6 +58,7 @@ struct {
 
 int  nfile;			/* number of files */
 
+char  ourfmt[LPICFMT+1] = PICFMT;
 int  wrongformat = 0;
 
 FILE  *popen(), *lblopen();
@@ -72,9 +73,13 @@ char  *s;
 
 	if (isheadid(s))
 		return;
-	if (formatval(fmt, s))
-		wrongformat = strcmp(fmt, COLRFMT);
-	else {
+	if (formatval(fmt, s)) {
+		if (globmatch(ourfmt, fmt)) {
+			wrongformat = 0;
+			strcpy(ourfmt, fmt);
+		} else
+			wrongformat = 1;
+	} else {
 		putc('\t', stdout);
 		fputs(s, stdout);
 	}
@@ -222,7 +227,7 @@ getfile:
 		printf("%s:\n", input[nfile].name);
 		getheader(input[nfile].fp, tabputs, NULL);
 		if (wrongformat) {
-			fprintf(stderr, "%s: not a Radiance picture\n",
+			fprintf(stderr, "%s: bad Radiance input file\n",
 					input[nfile].name);
 			quit(1);
 		}
@@ -289,7 +294,8 @@ getfile:
 		ymax = ysiz;
 					/* add new header info. */
 	printargs(argc, argv, stdout);
-	fputformat(COLRFMT, stdout);
+	if (strcmp(ourfmt, PICFMT))
+		fputformat(ourfmt, stdout);	/* print format if known */
 	putchar('\n');
 	fprtresolu(xsiz, ysiz, stdout);
 

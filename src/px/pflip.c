@@ -56,7 +56,8 @@ main(argc, argv)
 int	argc;
 char	*argv[];
 {
-	int	i;
+	static char	picfmt[LPICFMT+1] = PICFMT;
+	int	i, rval;
 #ifdef MSDOS
 	extern int  _fmode;
 	_fmode = O_BINARY;
@@ -87,14 +88,15 @@ char	*argv[];
 		exit(1);
 	}
 					/* transfer header */
-	if (checkheader(fin, COLRFMT, stdout) < 0) {
+	if ((rval = checkheader(fin, picfmt, stdout)) < 0) {
 		fprintf(stderr, "%s: input not a Radiance picture\n",
 				progname);
 		exit(1);
 	}
+	if (rval)
+		fputformat(picfmt, stdout);
 					/* add new header info. */
 	printargs(i, argv, stdout);
-	fputformat(COLRFMT, stdout);
 	putchar('\n');
 					/* get picture size */
 	if ((order = fgetresolu(&xres, &yres, fin)) < 0) {

@@ -41,6 +41,8 @@ main(argc, argv)
 int	argc;
 char	*argv[];
 {
+	static char	picfmt[LPICFMT+1] = PICFMT;
+	int	rval;
 	FILE	*fin;
 
 	progname = argv[0];
@@ -62,10 +64,12 @@ char	*argv[];
 		exit(1);
 	}
 					/* transfer header */
-	if (checkheader(fin, COLRFMT, stdout) < 0) {
+	if ((rval = checkheader(fin, picfmt, stdout)) < 0) {
 		fprintf(stderr, "%s: not a Radiance picture\n", progname);
 		exit(1);
 	}
+	if (rval)
+		fputformat(picfmt, stdout);
 					/* add new header info. */
 	printf("%s%s\n\n", progname, correctorder?" -c":"");
 					/* get picture size */
