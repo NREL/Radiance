@@ -517,24 +517,18 @@ EPNODE *
 getE4()				/* E4 -> ADDOP E5 */
 				/*       E5 */
 {
-    register EPNODE  *ep1;
+    register EPNODE  *ep1, *ep2;
 
     if (nextc == '-') {
 	scan();
-	ep1 = newnode();
-#ifndef  RCONST
-	if (isdecimal(nextc)) {
-	    ep1->type = NUM;
-	    ep1->v.num = -getnum();
-	    return(ep1);
+	ep2 = getE5();
+	if (ep2->type == NUM) {
+		ep2->v.num = -ep2->v.num;
+		return(ep2);
 	}
-#endif
+	ep1 = newnode();
 	ep1->type = UMINUS;
-	addekid(ep1, getE5());
-#ifdef  RCONST
-	if (ep1->v.kid->type == NUM)
-		ep1 = rconst(ep1);
-#endif
+	addekid(ep1, ep2);
 	return(ep1);
     }
     if (nextc == '+')
