@@ -44,8 +44,10 @@ markvirtuals()			/* find and mark virtual sources */
 		if (!isvlight(objptr(o->omod)->otype))
 			continue;
 		if (sfun[o->otype].of == NULL ||
-				sfun[o->otype].of->getpleq == NULL)
-			objerror(o, USER, "illegal material");
+				sfun[o->otype].of->getpleq == NULL) {
+			objerror(o,WARNING,"secondary sources not supported");
+			continue;
+		}
 		if (nvobjects == 0)
 			vobject = (OBJECT *)malloc(sizeof(OBJECT));
 		else
