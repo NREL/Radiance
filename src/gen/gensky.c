@@ -148,6 +148,8 @@ char  *argv[];
 
 	computesky();
 	printsky();
+
+	exit(0);
 }
 
 
