@@ -336,10 +336,6 @@ rpiece()			/* render picture piece by piece */
 		putc('\n', torp);
 		fflush(torp);			/* assigns piece to rpict */
 		putpiece(xorg, yorg);		/* place piece in output */
-		if (verbose) {			/* notify caller */
-			printf("%d %d done\n", xorg, yorg);
-			fflush(stdout);
-		}
 	}
 }
 
@@ -417,7 +413,11 @@ int  xpos, ypos;
 					1) == -1)
 				goto seekerr;
 		}
-	if (pid == -1) {	/* fork failed */
+	if (verbose) {				/* notify caller */
+		printf("%d %d done\n", xpos, ypos);
+		fflush(stdout);
+	}
+	if (pid == -1) {	/* didn't fork or fork failed */
 #if NFS
 		fls.l_type = F_UNLCK;		/* release lock */
 		fcntl(outfd, F_SETLKW, &fls);
