@@ -89,6 +89,7 @@ typedef struct holo {
 #define bnrays(hp,i)	((hp)->bl[i]!=NULL ? (hp)->bl[i]->nrm : (hp)->bi[i].nrd)
 
 #define hdflush(hp)	(hdfreebeam(hp,0) && hdsync(hp))
+#define hdclobber(hp)	(hdkillbeam(hp,0) && hdsync(hp))
 
 extern HOLO	*hdinit(), *hdalloc();
 extern BEAM	*hdgetbeam();
@@ -117,8 +118,8 @@ extern float	hd_depthmap[];		/* depth conversion map */
  * blank line, with "FORMAT=Holodeck" somewhere in it.
  * The first integer after the information header is the
  * above magic number, which includes the file format version number.
- * The first longword after the magic number is the position
- * of the SECOND holodeck section, or 0 if there is only one.
+ * The first longword after the magic number is a pointer to the pointer
+ * just before the SECOND holodeck section, or 0 if there is only one.
  * This longword is immediately followed by the first holodeck
  * section header and directory.
  * Similarly, every holodeck section in the file is preceeded by
