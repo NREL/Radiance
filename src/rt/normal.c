@@ -203,7 +203,7 @@ register RAY  *r;
 		if (!(nd.specfl & SP_PURE) &&
 				specthresh > FTINY &&
 				(specthresh >= 1.-FTINY ||
-				specthresh > nd.rspec))
+				specthresh + .05 - .1*frandom() > nd.rspec))
 			nd.specfl |= SP_RBLT;
 						/* compute reflected ray */
 		for (i = 0; i < 3; i++)
@@ -232,7 +232,7 @@ register RAY  *r;
 							/* check threshold */
 			if (!(nd.specfl & SP_PURE) && specthresh > FTINY &&
 					(specthresh >= 1.-FTINY ||
-					specthresh > nd.tspec))
+				specthresh + .05 - .1*frandom() > nd.tspec))
 				nd.specfl |= SP_TBLT;
 			if (r->crtype & SHADOW ||
 					DOT(r->pert,r->pert) <= FTINY*FTINY) {
