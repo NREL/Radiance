@@ -82,7 +82,7 @@ cnt $wpres[2] $wpres[1] \
 	| rcalc -e '$1=($2+.5)/'"$wpres[1]*$wpsize[1]+$wporig[1]" \
 		-e '$2=(1-($1+.5)/'"$wpres[2])*$wpsize[2]+$wporig[2]" \
 		-e '$3='"$wporig[3]" -e '$4=0;$5=0;$6=1' \
-	| rtrace $rtargs -I -ov -faf $octree \
+	| rtrace $rtargs -h+ -I+ -ov -faf $octree \
 	| pvalue -r -x $wpres[1] -y $wpres[2] -df \
 	| pfilt -h 20 -n 0 -x 350 -y 350 -p 1 -r 1 > $iltemp
 set maxval=`getinfo < $iltemp | rcalc -i 'EXPOSURE=${e}' -e '$1=3/e'`
@@ -90,12 +90,12 @@ psign -h 50 " $title " | pfilt -1 -x /2 -y /2 > $tltemp
 '_EOF_'
 if ( "$ilpict" != "$nofile" ) then
 	echo 'falsecolor -cb -l Lux $fcopts \\
-		-s "$maxval*470" -m 470 -pi $iltemp \\
+		-s "$maxval*470" -m 470 -ip $iltemp \\
 		| pcompos -a 1 - $tltemp > $ilpict' >> $sctemp
 endif
 if ( "$dfpict" != "$nofile" ) then
 	echo 'falsecolor -cb -l DF $fcopts \\
-		-s "100*$maxval/$extamb" -m "100/$extamb" -pi $iltemp \\
+		-s "100*$maxval/PI/$extamb" -m "100/PI/$extamb" -ip $iltemp \\
 		| pcompos -a 1 - $tltemp > $dfpict' >> $sctemp
 endif
 echo 'rm -f $tempfiles' >> $sctemp
