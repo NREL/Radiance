@@ -29,6 +29,10 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define	 RFTEMPLATE	"rfXXXXXX"
 
+#ifndef SIGCONT
+#define SIGCONT		SIGIO
+#endif
+
 int  dimlist[MAXDIM];			/* sampling dimensions */
 int  ndims = 0;				/* number of sampling dimensions */
 int  samplendx;				/* sample index number */
@@ -127,7 +131,7 @@ report()		/* report progress */
 	sprintf(errmsg, "%ld rays, %4.2f%% done after %5.4f hours\n",
 			nrays, pctdone, (tlastrept-tstart)/3600.0);
 	eputs(errmsg);
-	signal(SIGALRM, report);
+	signal(SIGCONT, report);
 }
 #endif
 
@@ -324,7 +328,7 @@ char  *zfile, *oldfile;
 #ifndef	 BSD
 	else
 #endif
-	signal(SIGALRM, report);
+	signal(SIGCONT, report);
 	ypos = vres-1 - i;
 	fillscanline(scanbar[0], zbar[0], sampdens, hres, ypos, hstep);
 						/* compute scanlines */
@@ -347,7 +351,7 @@ char  *zfile, *oldfile;
 		fillscanbar(scanbar, zbar, hres, ypos, ystep);
 							/* write it out */
 #ifndef	 BSD
-		signal(SIGALRM, SIG_IGN);	/* don't interrupt writes */
+		signal(SIGCONT, SIG_IGN);	/* don't interrupt writes */
 #endif
 		for (i = ystep; i > 0; i--) {
 			if (zfd != -1 && write(zfd, (char *)zbar[i],
@@ -365,11 +369,11 @@ char  *zfile, *oldfile;
 			report();
 #ifndef	 BSD
 		else
-			signal(SIGALRM, report);
+			signal(SIGCONT, report);
 #endif
 	}
 						/* clean up */
-	signal(SIGALRM, SIG_IGN);
+	signal(SIGCONT, SIG_IGN);
 	if (zfd != -1) {
 		if (write(zfd, (char *)zbar[0], hres*sizeof(float))
 				< hres*sizeof(float))
