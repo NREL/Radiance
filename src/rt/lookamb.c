@@ -70,12 +70,12 @@ FILE  *fp;
 			printf("%f\t%f\t%f\t", av.pos[0], av.pos[1], av.pos[2]);
 			printf("%f\t%f\t%f\t", av.dir[0], av.dir[1], av.dir[2]);
 			printf("%d\t%f\t%f\t", av.lvl, av.weight, av.rad);
-			printf("%e\t%e\t%e\n", colval(av.val,RED),
+			printf("%e\t%e\t%e\t", colval(av.val,RED),
 						colval(av.val,GRN),
 						colval(av.val,BLU));
 			printf("%f\t%f\t%f\t", av.gpos[0],
 					av.gpos[1], av.gpos[2]);
-			printf("%f\t%f\t%f\t", av.gdir[0],
+			printf("%f\t%f\t%f\n", av.gdir[0],
 					av.gdir[1], av.gdir[2]);
 		} else {
 			printf("\nPosition:\t%f\t%f\t%f\n", av.pos[0],
