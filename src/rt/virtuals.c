@@ -41,7 +41,7 @@ markvirtuals()			/* find and mark virtual sources */
 		o = objptr(i);
 		if (!issurface(o->otype) || o->omod == OVOID)
 			continue;
-		if (!isvlight(objptr(o->omod)->otype))
+		if (!isvlight(vsmaterial(o)->otype))
 			continue;
 		if (sfun[o->otype].of == NULL ||
 				sfun[o->otype].of->getpleq == NULL) {
@@ -101,7 +101,7 @@ int  n;
 	if (o == source[sn].so)	/* objects cannot project themselves */
 		return;
 				/* get virtual source material */
-	vsmat = sfun[objptr(o->omod)->otype].mf;
+	vsmat = sfun[vsmaterial(o)->otype].mf;
 				/* project virtual sources */
 	for (i = 0; i < vsmat->nproj; i++)
 		if ((*vsmat->vproj)(proj, o, &source[sn], i))
@@ -112,6 +112,23 @@ int  n;
 #endif
 				addvirtuals(ns, n);
 			}
+}
+
+
+OBJREC *
+vsmaterial(o)			/* get virtual source material pointer */
+OBJREC  *o;
+{
+	register int  i;
+	register OBJREC  *m;
+
+	i = o->omod;
+	m = objptr(i);
+	if (m->otype != MAT_ILLUM || m->oargs.nsargs < 1 ||
+			!strcmp(m->oargs.sarg[0], VOIDID) ||
+			(i = modifier(m->oargs.sarg[0])) < 0)
+		return(m);		/* direct modifier */
+	return(objptr(i));		/* illum alternate */
 }
 
 

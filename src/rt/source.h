@@ -113,6 +113,8 @@ extern double  scylform();		/* cosine to axis of cylinder */
 
 #define  sflatform(sn,dir)	-DOT(source[sn].snorm, dir)
 
+extern OBJREC  *vsmaterial();		/* virtual source material */
+
 extern double  intercircle();		/* intersect two circles */
 extern double  spotdisk();		/* intersecting disk for spot */
 extern double  beamdisk();		/* intersecting disk for beam */

@@ -500,19 +500,66 @@ register RAY  *r;
 }
 
 
-#define  wrongsource(m, r)	(r->rsrc>=0 && \
-				source[r->rsrc].so!=r->ro && \
-				(m->otype!=MAT_ILLUM || \
-			objptr(source[r->rsrc].so->omod)->otype==MAT_ILLUM))
+/****************************************************************
+ * The following macros were separated from the m_light() routine
+ * because they are very nasty and difficult to understand.
+ */
+
+/* wrongillum *
+ *
+ * We cannot allow an illum to pass to another illum, because that
+ * would almost certainly constitute overcounting.
+ * However, we do allow an illum to pass to another illum
+ * that is actually going to relay to a virtual light source.
+ */
+
+#define  wrongillum(m, r)	(!(source[r->rsrc].sflags&SVIRTUAL) && \
+			objptr(source[r->rsrc].so->omod)->otype==MAT_ILLUM)
+
+/* wrongsource *
+ *
+ * This source is the wrong source (ie. overcounted) if we are
+ * aimed to a different source than the one we hit and the one
+ * we hit is not an illum which should be passed.
+ */
+
+#define  wrongsource(m, r)	(r->rsrc>=0 && source[r->rsrc].so!=r->ro && \
+				(m->otype!=MAT_ILLUM || wrongillum(m,r)))
+
+/* distglow *
+ *
+ * A distant glow is an object that sometimes acts as a light source,
+ * but is too far away from the test point to be one in this case.
+ */
 
 #define  distglow(m, r)		(m->otype==MAT_GLOW && \
 				r->rot > m->oargs.farg[3])
 
+/* badambient *
+ *
+ * We must avoid including counting light sources in the ambient calculation,
+ * since the direct component is handled separately.  Therefore, any
+ * ambient ray which hits an active light source must be discarded.
+ */
+
 #define  badambient(m, r)	((r->crtype&(AMBIENT|SHADOW))==AMBIENT && \
 				!distglow(m, r))
 
+/* passillum *
+ *
+ * An illum passes to another material type when we didn't hit it
+ * on purpose (as part of a direct calculation), or it is relaying
+ * a virtual light source.
+ */
+
 #define  passillum(m, r)	(m->otype==MAT_ILLUM && \
-				!(r->rsrc>=0&&source[r->rsrc].so==r->ro))
+				(r->rsrc<0 || source[r->rsrc].so!=r->ro || \
+				source[r->rsrc].sflags&SVIRTUAL))
+
+/* srcignore *
+ *
+ * The -di flag renders light sources invisible, and here is the test.
+ */
 
 #define  srcignore(m, r)	(directinvis && !(r->crtype&SHADOW) && \
 				!distglow(m, r))

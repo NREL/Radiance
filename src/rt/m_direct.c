@@ -141,7 +141,7 @@ int  n;
 	double  olddot, newdot, od;
 	register int  i, j;
 				/* get material arguments */
-	m = objptr(o->omod);
+	m = vsmaterial(o);
 	dir_check(m);
 	sa = m->oargs.sarg + 4*n;
 				/* initialize test ray */
