@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -97,12 +97,21 @@ register OBJREC  *o;
 SRCREC  *s;
 int  n;
 {
-	FVECT  nv;
+	FVECT  nv, sc;
 	double  od;
+	register int  i, j;
 				/* get surface normal and offset */
 	od = getplaneq(nv, o);
-				/* check for behind */
-	if (DOT(s->sloc, nv) <= (s->sflags & SDISTANT ? FTINY : od+FTINY))
+				/* check for extreme point for behind */
+	VCOPY(sc, s->sloc);
+	for (i = s->sflags & SFLAT ? SV : SW; i >= 0; i--)
+		if (DOT(nv, s->ss[i]) > 0.)
+			for (j = 0; j < 3; j++)
+				sc[j] += s->ss[i][j];
+		else
+			for (j = 0; j < 3; j++)
+				sc[j] -= s->ss[i][j];
+	if (DOT(sc, nv) <= (s->sflags & SDISTANT ? FTINY : od+FTINY))
 		return(0);
 				/* everything OK -- compute projection */
 	mirrorproj(pm, nv, od);
