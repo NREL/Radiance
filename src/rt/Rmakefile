@@ -54,7 +54,7 @@ SURFOBJS = face.o sphere.o source.o o_face.o cone.o \
 
 MATOBJS = normal.o dielectric.o m_clip.o glass.o
 
-MODOBJS = p_func.o t_func.o p_data.o text.o mx_func.o mx_data.o
+MODOBJS = p_func.o t_func.o p_data.o t_data.o text.o mx_func.o mx_data.o
 
 SUPPOBJS = zeroes.o calexpr.o caldefn.o calfunc.o func.o noise3.o data.o
 
@@ -155,7 +155,7 @@ aed.o color.o data.o devcomm.o lookamb.o rview.o sundev.o x10.o:	color.h
 
 cone.o o_cone.o source.o:	cone.h
 
-data.o mx_data.o p_data.o:	data.h
+data.o mx_data.o p_data.o t_data.o:	data.h
 
 aed.o devcomm.o devtable.o sun.o sundev.o tty.o x10.o:	driver.h
 
@@ -179,7 +179,7 @@ ambient.o dielectric.o func.o glass.o image.o m_clip.o \
 mx_data.o mx_func.o normal.o o_cone.o o_face.o o_instance.o \
 p_data.o p_func.o text.o raytrace.o rmain.o rpict.o \
 rtrace.o rv2.o rv3.o source.o \
-sphere.o t_func.o:	ray.h standard.h fvect.h object.h color.h
+sphere.o t_data.o t_func.o:	ray.h standard.h fvect.h object.h color.h
 
 rv2.o rv3.o rview.o:	rpaint.h driver.h view.h
 
