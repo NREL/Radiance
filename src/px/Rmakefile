@@ -242,6 +242,6 @@ pinterp.o protate.o pvalue.o ra_bn.o ra_pict.o ra_pixar.o \
 ra_ppm.o ra_pr.o ra_pr24.o ra_rgbe.o ra_t16.o ra_t8.o glimage.o \
 ra_tiff.o ttyimage.o ximage.o x11image.o:	../common/resolu.h
 
-pfilt.o:	../common/paths.h
+pfilt.o:	../common/paths.h ../common/view.h
 
 psign.o:	../common/font.h

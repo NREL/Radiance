@@ -17,6 +17,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 
+#include  "view.h"
+
 #include  "resolu.h"
 
 #include  "paths.h"
@@ -63,6 +65,10 @@ double	inpaspect = 1.0;	/* pixel aspect ratio of input */
 int  correctaspect = 0;		/* aspect ratio correction? */
 
 int  wrongformat = 0;
+
+VIEW  ourview = STDVIEW;
+int  gotview = 0;
+int  wrapfilt = 0;		/* wrap filter horizontally? */
 
 int  xrad;			/* x search radius */
 int  yrad;			/* y search radius */
@@ -267,6 +273,9 @@ char  **argv;
 	}
 	if (!(order & YMAJOR))
 		inpaspect = 1.0/inpaspect;
+					/* wrap around for cylindrical view? */
+	wrapfilt = gotview && ourview.type == VT_CYL &&
+			ourview.horiz >= 360.-FTINY && order & YMAJOR;
 					/* compute output resolution */
 	if (ncols <= 0)
 		ncols = x_c*xres + .5;
@@ -339,7 +348,8 @@ char  *s;
 			ourbright = xyz_bright;
 		else
 			wrongformat = !globmatch(PICFMT, fmt);
-	}
+	} else if (isview(s) && sscanview(&ourview, s) > 0)
+		gotview++;
 }
 
 
