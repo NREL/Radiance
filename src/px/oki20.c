@@ -6,8 +6,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 /*
  *  oki20c.c - program to dump pixel file to OkiMate 20 color printer.
- *
- *     6/10/87
  */
 
 #include  <stdio.h>
@@ -96,7 +94,7 @@ char  *fname;
 		return(-1);
 	}
 				/* set line spacing (overlap for knitting) */
-	fputs("\0333\042", stdout);
+	fputs("\0333\042\022", stdout);
 				/* clear line buffer */
 	clearlbuf();
 				/* put out scanlines */
@@ -125,32 +123,46 @@ COLR  scan[];
 int  len;
 int  y;
 {
-	int  bpos;
+	int  bpos, start, end;
 	register long  c;
 	register int  i;
 
-	if (bpos = y % 23) {
+	bpos = y % 23;
+	for (i = 0; i < len; i++)
+		lpat[i] |= (long)bit(scan[i],i) << bpos;
 
-		for (i = 0; i < len; i++)
-			lpat[i] |= (long)bit(scan[i],i) << bpos;
-
-	} else {
-
-		fputs("\033%O", stdout);
-		putchar(len & 255);
-		putchar(len >> 8);
-		for (i = 0; i < len; i++) {
-			c = lpat[i] | bit(scan[i],i);
-						/* repeat this row */
-			lpat[i] = (c & 1) << 23;
-			putchar(c>>16);
-			putchar(c>>8 & 255);
-			putchar(c & 255);
+	if (bpos)
+		return;
+				/* find limits of non-zero print buffer */
+	for (i = 0; lpat[i] == 0; i++)
+		if (i == len-1) {
+			putchar('\n');
+			return;
 		}
-		putchar('\r');
-		putchar('\n');
-		fflush(stdout);
+	start = i - i%12;
+	i = len;
+	while (lpat[--i] == 0)
+		;
+	end = i;
+				/* skip to start position */
+	for (i = start/12; i-- > 0; )
+		putchar(' ');
+				/* print non-zero portion of buffer */
+	fputs("\033%O", stdout);
+	i = end+1-start;
+	putchar(i & 255);
+	putchar(i >> 8);
+	for (i = start; i <= end; i++) {
+		c = lpat[i];
+		putchar(c>>16);
+		putchar(c>>8 & 255);
+		putchar(c & 255);
+					/* repeat this row next time */
+		lpat[i] = (c & 1) << 23;
 	}
+	putchar('\r');
+	putchar('\n');
+	fflush(stdout);
 }
 
 
