@@ -108,7 +108,7 @@ char	*argv[];
 				break;
 			case 'o':
 				original++;
-				break;
+				continue;
 			case 's':
 				f = atof(argv[++a]);
 				scalecolor(input[nfiles].coef, f);
