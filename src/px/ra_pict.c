@@ -1,25 +1,38 @@
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ Auckuni";
 #endif
 
 /*
-    rad2pict - Convert an Radiance image to APPLE pict format.
-	
-    School of Architecture, Auckland University, Private Bag
-    Auckland, New Zealand
-*/
+ *	rad2pict - 
+ *		Convert an Radiance image to APPLE pict format.
+ *
+ *			Orginally Iris to PICT by	Paul Haeberli - 1990
+ *			Hacked into Rad to PICT by Russell Street 1990
+ *
+ *	History:
+ *	    V 1			-- Does basic conversion
+ *	    V 1.1 (2/11/91)	-- Added options for Gamma
+ *				-- verbose option
+ *				-- man page
+ *				-- better about allocating buffers
+ *	    V 1.2 (19/11/91)	-- Revised to handle opening "The Radiance Way"
+ *				-- Added exposure level adjustment
+ */
+
 #include <stdio.h>
+#include <stdlib.h>
+
 #include "pict.h"
 #include "color.h"
 #include "resolu.h"
 
-extern char  *malloc();
+int	outbytes;		    /* This had better be 32 bits! */
+char	*progname;
+int	verbose = 0;
+float	gamma = 2.0;
+int	bradj = 0;
 
-char cbuf[8192*5]; 
-char pbuf[8192]; 
-int outbytes;
-FILE *outf, *inf;
-char **gargv;
+	/* First some utility routines */
 
 putrect(xorg,yorg,xsize,ysize)
 int xorg, yorg, xsize, ysize;
@@ -56,13 +69,10 @@ short s;
 }
 
 putbyte(b)
-unsigned char b;
+int b;
 {
-    char c[1];
-
-    c[0] = b;
-    if(!fwrite(c,1,1,outf)) {
-	fprintf(stderr,"%s: error on write\n", gargv[0]);
+    if (putc(b,stdout) == EOF && ferror(stdout)) {
+	fprintf(stderr,"%s: error on write\n", progname);
 	exit(1);
     }
     outbytes++;
@@ -72,8 +82,8 @@ putbytes(buf,n)
 unsigned char *buf;
 int n;
 {
-    if(!fwrite(buf,n,1,outf)) {
-	fprintf(stderr,"topict: error on write\n");
+    if(!fwrite(buf,n,1,stdout)) {
+	fprintf(stderr,"%s: error on write\n", progname);
 	exit(1);
     }
     outbytes+=n;
@@ -87,33 +97,77 @@ char **argv;
     int i, picsize;
     int ssizepos, lsizepos;
 
-    gargv = argv;
+    progname = argv[0];
 
-    if( argc<3 ) {
-	fprintf(stderr, "Usage: %s inimage out.pict\n", gargv[0]);
-	exit(1);
-    } 
+    for (i = 1; i < argc ; i++)
+        if (argv[i][0] ==  '-')
+	    switch (argv[i][1]) {
+		case 'g':	gamma = atof(argv[++i]);
+				break;
 
-    if( (inf=fopen(gargv[1],"rb")) == NULL ) {
-	fprintf(stderr,"%s: can't open input file %s\n",gargv[0], gargv[1]);
+		case 'e':	if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
+				   usage();
+				else
+				    bradj = atoi(argv[++i]);
+				break;
+
+		case 'v':	;
+				verbose = 1;
+				break;
+
+		case 'r':	fprintf(stderr, "Sorry. Get a Macintosh :-)\n");
+				exit(1);
+
+		case '-':	i++;
+				goto outofparse;
+				break;		    /* NOTREACHED */
+
+		otherwise:	usage();
+				break;
+		 }
+	else
+	    break;
+
+outofparse:
+
+    if (i < argc - 2)
+	usage();
+
+    if (i <= argc - 1 && freopen(argv[i], "r", stdin) == NULL) {
+	fprintf(stderr, "%s: can not open input \"%s\"\n",
+	    progname, argv[i]);
 	exit(1);
     }
 
-    if( (outf=fopen(gargv[2],"wb")) == NULL ) {
-	fprintf(stderr,"%s: can't open output file %s\n", gargv[0], gargv[1]);
+    if (i <= argc - 2 && freopen(argv[i+1], "w", stdout) == NULL) {
+	fprintf(stderr, "%s: can not open input \"%s\"\n",
+	    progname, argv[i+1]);
 	exit(1);
     }
+	
+#ifdef DEBUG
+	fprintf(stderr, "Input file: %s\n", i <= argc - 1 ? argv[i] : "stdin");
+        fprintf(stderr, "Outut file: %s\n", i <= argc - 2 ? argv[i+1] : "stdout" );
+	fprintf(stderr, "Gamma: %f\n", gamma);
+	fprintf(stderr, "Brightness adjust: %d\n", bradj);
+        fprintf(stderr, "Verbose: %s\n", verbose ? "on" : "off");
+#endif
 
-    if (checkheader(inf, COLRFMT, NULL) < 0 ||
-            fgetresolu(&xsize, &ysize, inf) < 0) {
-        fprintf(stderr, "%s: not a radiance picture\n", argv[1]);
+
+             /* OK. Now we read the size of the Radiance picture */
+    if (checkheader(stdin, COLRFMT, NULL) < 0 ||
+            fgetresolu(&xsize, &ysize, stdin) < 0 /* != (YMAJOR|YDECR) */ ) {
+        fprintf(stderr, "%s: not a radiance picture\n", progname);
         exit(1);
-    }
+	}
 
-    setcolrgam(2.0);
+	    /* Set the gamma correction */
+
+    setcolrgam(gamma);
 
     for(i=0; i<HEADER_SIZE; i++) 
 	putbyte(0);
+
     ssizepos = outbytes;
     putashort(0);	 	/* low 16 bits of file size less HEADER_SIZE */
     putrect(0,0,xsize,ysize);	/* bounding box of picture */
@@ -130,30 +184,54 @@ char **argv;
     putashort(10);
     putrect(0,0,xsize,ysize);
 
-    putpict(xsize, ysize);
+    if (verbose)
+	fprintf(stderr, "%s: The picture is %d by %d, with a gamma of %f\n",
+	    progname, xsize, ysize, gamma);
+
+
+    putpict(xsize, ysize);	/* Here is where all the work is done */
 
     putashort(PICT_EndOfPicture); /* end of pict */
 
     picsize = outbytes-HEADER_SIZE;
-    fseek(outf,ssizepos,0);
+    fseek(stdout,ssizepos,0);
     putashort(picsize&0xffff);
-    fseek(outf,lsizepos,0);
+    fseek(stdout,lsizepos,0);
     putalong(picsize);
 
-    fclose(outf);
+    fclose(stdout);
+    fclose(stdin);
+    
     exit(0);
+    return 0;	    /* lint fodder */
 }
 
 putpict(xsize, ysize)
 int xsize;
 int ysize;
 {
-    int y;
-    int nbytes, rowbytes;
+    int	    y;
+    int	    nbytes, rowbytes;
+    char    *cbuf, *pbuf;
+
+    cbuf = malloc(4 * xsize);
+
+    if (cbuf == NULL) {
+	fprintf(stderr, "%s: not enough memory\n", progname);
+	exit(1);
+	}
+
+    pbuf = malloc(4 * xsize);
+
+    if (pbuf == NULL) {
+	fprintf(stderr, "%s: not enough memory\n", progname);
+	exit(1);
+	}
 
     putashort(PICT_Pack32BitsRect); /* 32 bit rgb */
     rowbytes = 4*xsize;
     putalong(0x000000ff);		/* base address */
+
 
     if(rowbytes&1)
 	rowbytes++;
@@ -170,17 +248,21 @@ int ysize;
     putashort(32);	/* pixelsize */
     putashort(3);	/* cmpcount */
 
+
     putashort(8);	/* cmpsize */
     putalong(0);	/* planebytes */
     putalong(0);	/* pmtable */
     putalong(0);	/* pmreserved */
 
+
     putrect(0,0,xsize,ysize);	/* scr rect */
     putrect(0,0,xsize,ysize);	/* dest rect */
 
+
     putashort(0x40);	/* transfer mode */
+
     for(y=0; y<ysize; y++) {
-	getrow(inf, cbuf, xsize);
+	getrow(stdin, cbuf, xsize);
 
 	nbytes = packbits(cbuf,pbuf,24*xsize);
 	if(rowbytes>250) 
@@ -188,48 +270,54 @@ int ysize;
 	else
 	    putbyte(nbytes);
 	putbytes(pbuf,nbytes);
-    }
+	}
 
     if(outbytes&1) 
 	putbyte(0);
+
+    free(cbuf);
+    free(pbuf);
 }
 
-int
-getrow(in, mybuff, xsize)
-FILE  *in;
-char  *mybuff;
-int  xsize;
+int getrow(in, cbuf, xsize)
+FILE *in;
+char *cbuf;
+int xsize;
 {
-    COLOR    color;
-    COLR    *scanin = (COLR*) malloc(xsize * sizeof(COLR));
+    extern char	*tempbuffer();		/* defined in color.c */
+    COLR    *scanin = NULL;
     int	    x;
 
-    if (scanin == NULL) {
-	printf("scanin null");
+    if ((scanin = (COLR *)tempbuffer(xsize*sizeof(COLR))) == NULL) {
+	fprintf(stderr, "%s: not enough memory\n", progname);
+	exit(1);
     }
-
 
     if (freadcolrs(scanin, xsize, in) < 0) {
-        fprintf(stderr, " read error\n");
+        fprintf(stderr, "%s: read error\n", progname);
         exit(1);
-    }
+        }
 
-    colrs_gambs(scanin, xsize);
+    if (bradj)	    /* Adjust exposure level */
+	shiftcolrs(scanin, xsize, bradj);
+
+
+    colrs_gambs(scanin, xsize);	    /* Gamma correct it */
     
     for (x = 0; x < xsize; x++) {
-	colr_color(color, scanin[x]);
-	cbuf[xsize * 0 + x] = color[RED] * 255;
-	cbuf[xsize * 1 + x] = color[GRN] * 255;
-	cbuf[xsize * 2 + x] = color[BLU] * 255;
-    }
-    free(scanin);
+	cbuf[x] = scanin[x][RED];
+	cbuf[xsize + x] = scanin[x][GRN];
+	cbuf[2*xsize + x] = scanin[x][BLU];
+	}
+
 }
+
 
 packbits(ibits,pbits,nbits)
 unsigned char *ibits, *pbits;
 int nbits;
 {
-    int bytes;
+    int bytes;			    /* UNUSED */
     unsigned char *sptr;
     unsigned char *ibitsend;
     unsigned char *optr = pbits;
@@ -237,7 +325,7 @@ int nbits;
 
     nbytes = ((nbits-1)/8)+1;
     ibitsend = ibits+nbytes;
-    while (ibits<ibitsend) {
+    while(ibits<ibitsend) {
 	sptr = ibits;
 	ibits += 2;
 	while((ibits<ibitsend)&&((ibits[-2]!=ibits[-1])||(ibits[-1]!=ibits[0])))
@@ -268,4 +356,11 @@ int nbits;
 	}
     }
     return optr-pbits;
+}
+
+usage()
+{
+    fprintf(stderr, "Usage: %s [-v] [-g gamma] [infile [outfile]]\n",
+	progname);
+    exit(2);
 }
