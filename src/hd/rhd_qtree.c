@@ -11,13 +11,13 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "standard.h"
 #include "rhd_qtree.h"
 
-static RLEAF	*leafpile;	/* our collection of leaf values */
-static int	nleaves;	/* count of leaves in our pile */
-static int	bleaf, tleaf;	/* bottom and top (next) leaf index (ring) */
-
 RTREE	qtrunk;			/* our quadtree trunk */
 double	qtDepthEps = .02;	/* epsilon to compare depths (z fraction) */
 int	qtMinNodesiz = 2;	/* minimum node dimension (pixels) */
+
+static RLEAF	*leafpile;	/* our collection of leaf values */
+static int	nleaves;	/* count of leaves in our pile */
+static int	bleaf, tleaf;	/* bottom and top (next) leaf index (ring) */
 
 #define	TBUNDLESIZ	409	/* number of twigs in a bundle */
 
@@ -59,7 +59,7 @@ memerr:
 
 
 static
-freetwigs(really)		/* free allocated twigs */
+freetree(really)		/* free allocated twigs */
 int	really;
 {
 	register int	i;
@@ -101,7 +101,7 @@ int	n;
 	unsigned	nbytes;
 	register unsigned	i;
 
-	freetwigs(0);		/* make sure tree is empty */
+	freetree(0);		/* make sure tree is empty */
 	if (n <= 0)
 		return(0);
 	if (nleaves >= n)
@@ -124,7 +124,7 @@ int	n;
 
 qtFreeLeaves()			/* free our allocated leaves and twigs */
 {
-	freetwigs(1);		/* free tree also */
+	freetree(1);		/* free tree also */
 	if (nleaves <= 0)
 		return;
 	free((char *)leafpile);
@@ -140,19 +140,16 @@ register RTREE	*tp;
 	register int	i, li;
 
 	for (i = 0; i < 4; i++)
-		if (tp->flgs & BRF(i)) {
-			if (shaketree(tp->k[i].b))
-				tp->flgs |= CHF(i);
-		} else if (tp->k[i].l != NULL) {
+		if (tp->flgs & BRF(i))
+			shaketree(tp->k[i].b);
+		else if (tp->k[i].l != NULL) {
 			li = tp->k[i].l - leafpile;
 			if (bleaf < tleaf ? (li < bleaf || li >= tleaf) :
 					(li < bleaf && li >= tleaf)) {
 				tmAddHisto(&tp->k[i].l->brt, 1, -1);
 				tp->k[i].l = NULL;
-				tp->flgs |= CHF(i);
 			}
 		}
-	return(tp->flgs & CH_ANY);
 }
 
 
@@ -167,7 +164,7 @@ int	pct;
 		return(0);
 	nused = tleaf > bleaf ? tleaf-bleaf : tleaf+nleaves-bleaf;
 	if (nclear >= nused) {	/* clear them all */
-		freetwigs(0);
+		freetree(0);
 		bleaf = tleaf = 0;
 		return(nused);
 	}
@@ -265,7 +262,7 @@ qtReplant()			/* replant our tree using new view */
 
 	if (bleaf == tleaf)		/* anything to replant? */
 		return;
-	freetwigs(0);			/* blow the tree away */
+	freetree(0);			/* blow the tree away */
 					/* now rebuild it */
 	for (i = bleaf; i != tleaf; ) {
 		addleaf(leafpile+i);
