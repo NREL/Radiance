@@ -498,7 +498,6 @@ int  x, y;
 int  xlen, ylen;
 int  b;
 {
-	extern double  fabs();
 	double	ratio;
 	double	z;
 	COLOR  ctmp;

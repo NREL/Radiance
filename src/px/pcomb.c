@@ -16,11 +16,13 @@ static char SCCSid[] = "$SunId$ LBL";
 #include <fcntl.h>
 #endif
 
+#include <math.h>
+
 #include <errno.h>
 
 #include "color.h"
 
-#include  "resolu.h"
+#include "resolu.h"
 
 #include "calcomp.h"
 
@@ -347,7 +349,6 @@ combine()			/* combine pictures */
 
 advance()			/* read in data for next scanline */
 {
-	extern double  fabs();
 	int	ytarget;
 	register COLOR	*st;
 	register int	i, j;

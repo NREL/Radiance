@@ -15,6 +15,7 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include  <stdio.h>
+#include  <math.h>
 
 #define  ZNAME		"Z`SYS`"		/* z function name */
 #define  RNAME		"R`SYS`"		/* r function name */
@@ -160,7 +161,6 @@ userror:
 computen(nzp, nrp, z0, r0, z1, r1)		/* compute normal */
 double  *nzp, *nrp, z0, r0, z1, r1;
 {
-	extern double  sqrt();
 	double  dr, dz, len;
 
 	dz = r0 - r1;				/* right angle vector */

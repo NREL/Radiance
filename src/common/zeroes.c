@@ -10,7 +10,10 @@ static char SCCSid[] = "$SunId$ LBL";
  *     8/19/85
  */
 
-#define  FTINY		1e-7
+
+#include  <math.h>
+
+#include  "fvect.h"
 
 
 int
@@ -18,7 +21,6 @@ quadratic(r, a, b, c)		/* find real roots of quadratic equation */
 double  *r;			/* roots in ascending order */
 double  a, b, c; 
 {
-	double  fabs(), sqrt();
 	double  disc;
 	int  first;
 

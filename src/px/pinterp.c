@@ -386,7 +386,6 @@ COLR	*pline;
 float	*zline;
 struct position	*lasty;		/* input/output */
 {
-	extern double	sqrt();
 	FVECT	pos;
 	struct position	lastx, newpos;
 	register int	x;
@@ -634,7 +633,6 @@ writepicture()				/* write out picture */
 writedistance(fname)			/* write out z file */
 char	*fname;
 {
-	extern double	sqrt();
 	int	donorm = normdist && ourview.type == VT_PER;
 	int	fd;
 	int	y;

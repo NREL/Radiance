@@ -27,8 +27,6 @@ typedef struct {
 	short  nt, np;		/* number of theta and phi directions */
 }  AMBHEMI;		/* ambient sample hemisphere */
 
-extern double  sin(), cos(), sqrt();
-
 
 static int
 ambcmp(d1, d2)				/* decreasing order */

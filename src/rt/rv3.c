@@ -381,7 +381,6 @@ moveview(angle, elev, mag, vc)			/* move viewpoint */
 double  angle, elev, mag;
 FVECT  vc;
 {
-	extern double  sqrt(), dist2();
 	double  d;
 	FVECT  v1;
 	VIEW  nv;

@@ -13,6 +13,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+#include  <math.h>
+
 #include  "rasterfile.h"
 
 #include  "color.h"
@@ -38,8 +40,6 @@ extern pic	*openinput(), *openoutput();
 extern char	*ecalloc(), *emalloc();
 
 extern long  ftell();
-
-extern double  pow();
 
 double	gamma = 2.2;			/* gamma correction */
 

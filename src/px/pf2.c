@@ -12,6 +12,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+#include  <math.h>
+
 #include  "random.h"
 
 #include  "color.h"
@@ -71,7 +73,6 @@ register COLOR	*scan;
 int  y;
 {
 	extern char  *malloc();
-	extern double  tan(), sqrt();
 	double	cbrt;
 	register int  x;
 	register HOTPIX	 *hp;

@@ -13,6 +13,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+#include  <math.h>
+
 #include  <signal.h>
 
 #include  <sys/ioctl.h>
@@ -519,7 +521,6 @@ int  offset[3];
 picreadcm(map)			/* do gamma correction */
 colormap  map;
 {
-	extern double  pow();
 	register int  i, val;
 
 	for (i = 0; i < 256; i++) {

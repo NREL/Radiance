@@ -53,7 +53,6 @@ m_dielectric(m, r)	/* color a ray which hit something transparent */
 OBJREC  *m;
 register RAY  *r;
 {
-	double  sqrt(), pow();
 	double  cos1, cos2, nratio;
 	COLOR  mcolor;
 	double  mabsorp;
@@ -168,7 +167,6 @@ RAY  *r;
 FVECT  vt;
 double  tr;
 {
-	double  sqrt();
 	RAY  sray, *entray;
 	FVECT  v1, v2, n1, n2;
 	FVECT  dv, v2Xdv;

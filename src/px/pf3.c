@@ -12,6 +12,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+#include  <math.h>
+
 #include  "color.h"
 
 #define	 FTINY		1e-7
@@ -44,7 +46,6 @@ float  *exptable;		/* exponent table */
 initmask()			/* initialize gaussian lookup table */
 {
 	extern char  *malloc();
-	extern double  exp();
 	register int  x;
 
 	exptable = (float *)malloc(100*sizeof(float));

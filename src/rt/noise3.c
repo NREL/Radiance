@@ -14,6 +14,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *     5/19/88	Added fractal noise function
  */
 
+#include  <math.h>
 
 #define  A		0
 #define  B		1
@@ -99,7 +100,6 @@ double *
 noise3(xnew)			/* compute the noise function */
 register double  xnew[3];
 {
-	extern double  floor();
 	static double  x[3] = {-100000.0, -100000.0, -100000.0};
 	static double  f[4];
 
@@ -156,7 +156,6 @@ double
 fnoise3(p)			/* compute fractal noise function */
 double  p[3];
 {
-	double  floor();
 	long  t[3], v[3], beg[3];
 	double  fval[8], fc;
 	int  branch;

@@ -236,7 +236,6 @@ int  (*f)();			/* direct component coefficient function */
 char  *p;			/* data for f */
 {
 	extern int  (*trace)();
-	extern double  pow();
 	register int  sn;
 	SRCINDEX  si;
 	int  nshadcheck, ncnts;

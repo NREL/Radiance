@@ -46,7 +46,6 @@ m_glass(m, r)		/* color a ray which hit a thin glass surface */
 OBJREC  *m;
 register RAY  *r;
 {
-	double  sqrt(), pow();
 	COLOR  mcolor;
 	double  pdot;
 	FVECT  pnorm;

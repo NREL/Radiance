@@ -59,7 +59,6 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-	extern double  fabs();
 	int  i;
 
 	progname = argv[0];
