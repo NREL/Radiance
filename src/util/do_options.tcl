@@ -15,7 +15,7 @@ proc amb_delete {} {		# delete ambient file
 	if {$nv > 50 && [tk_dialog .dlg {Verification} \
 				"Really delete ambient file $radvar(AMBFILE)\
 				with $nv indirect irradiance values?" \
-				questhead 1 {Delete} {Cancel}]} {
+				questhead 0 {Delete} {Cancel}]} {
 		return 0
 	}
 	if [catch {exec rm $radvar(AMBFILE) < /dev/null} curmess] {return 0}
