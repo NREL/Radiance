@@ -252,7 +252,7 @@ char	*argv[];
 				rexpadj = pow(2.0, (double)expadj);
 		}
 						/* set view */
-	if (nextview(doblur ? stdin : NULL) == EOF) {
+	if (nextview(doblur ? stdin : (FILE *)NULL) == EOF) {
 		fprintf(stderr, "%s: no view on standard input!\n",
 				progname);
 		exit(1);

@@ -987,7 +987,7 @@ int	n;
 	}
 	while (n > viewnum) {		/* scan to desired view */
 		if (fgets(linebuf, sizeof(linebuf), viewfp) == NULL)
-			return(viewnum==1 ? &curview : NULL);
+			return(viewnum==1 ? &curview : (VIEW *)NULL);
 		if (isview(linebuf) && sscanview(&curview, linebuf) > 0)
 			viewnum++;
 	}
