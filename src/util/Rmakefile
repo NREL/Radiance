@@ -1,6 +1,8 @@
 #
 # SCCSid "$SunId$ LBL"
 #
+# Radiance makefile for utility programs
+#
 
 MACH = -DBSD
 
@@ -10,15 +12,14 @@ CFLAGS = $(MACH) $(OPT) -I../common -L../lib
 
 CC = cc
 
-MLIB = -lm
-
 INSTDIR = /usr/local/bin
 
 PROGS = findglare xglaresrc glarendx rpiece rad
 
 all:	$(PROGS)
 
-install:	all objview.csh objpict.csh glare.csh dayfact.csh rlux.csh
+install:	all objview.csh objpict.csh glare.csh dayfact.csh rlux.csh \
+raddepend.csh
 	cp $(PROGS) $(INSTDIR)
 	cp objview.csh $(INSTDIR)/objview
 	cp objpict.csh $(INSTDIR)/objpict
@@ -26,38 +27,39 @@ install:	all objview.csh objpict.csh glare.csh dayfact.csh rlux.csh
 	cp dayfact.csh $(INSTDIR)/dayfact
 	cp debugcal.csh $(INSTDIR)/debugcal
 	cp rlux.csh $(INSTDIR)/rlux
+	cp raddepend.csh $(INSTDIR)/raddepend
 	chmod 755 $(INSTDIR)/objview $(INSTDIR)/objpict \
 		$(INSTDIR)/glare $(INSTDIR)/dayfact $(INSTDIR)/debugcal \
-		$(INSTDIR)/rlux
+		$(INSTDIR)/rlux $(INSTDIR)/raddepend
 
 clean:
 	set nonomatch; rm -f *.o $(PROGS) core
 
 scanner:	scanner.o
-	$(CC) $(CFLAGS) -o scanner scanner.o $(MLIB)
+	$(CC) $(CFLAGS) -o scanner scanner.o -lm
 
 makedist:	makedist.o setscan.o
-	$(CC) $(CFLAGS) -o makedist makedist.o setscan.o -lrt $(MLIB)
+	$(CC) $(CFLAGS) -o makedist makedist.o setscan.o -lrt -lm
 
 findglare:	findglare.o glareval.o glaresrc.o setscan.o
 	$(CC) $(CFLAGS) -o findglare findglare.o glareval.o glaresrc.o \
-setscan.o -lrt $(MLIB)
+setscan.o -lrt -lm
 
 glarendx:	glarendx.o
-	$(CC) $(CFLAGS) -o glarendx glarendx.o -lrt $(MLIB)
+	$(CC) $(CFLAGS) -o glarendx glarendx.o -lrt -lm
 
 xglaresrc:	xglaresrc.o x11findwind.o
 	$(CC) $(CFLAGS) -o xglaresrc xglaresrc.o \
-x11findwind.o -lrt -lX11 $(MLIB)
+x11findwind.o -lrt -lX11 -lm
 
 rad:	rad.o
-	$(CC) $(CFLAGS) -o rad rad.o -lrt $(MLIB)
+	$(CC) $(CFLAGS) -o rad rad.o -lrt -lm
 
 rpiece:	rpiece.o Version.o
-	$(CC) $(CFLAGS) -o rpiece rpiece.o Version.o -lrt $(MLIB)
+	$(CC) $(CFLAGS) -o rpiece rpiece.o Version.o -lrt -lm
 
 contour:	contour.o
-	$(CC) $(CFLAGS) -o contour contour.o $(MLIB)
+	$(CC) $(CFLAGS) -o contour contour.o -lm
 
 pranim:	pranim.o client/libclient.a
 	$(CC) $(CFLAGS) -o pranim pranim.o \
