@@ -154,11 +154,11 @@ OBJREC  *o;
 {
 	register CONE  *co = (CONE *)o->os;
 
-	if (o->os == NULL)
+	if (co == NULL)
 		return;
 	if (co->tm != NULL)
 		free((char *)co->tm);
-	free(o->os);
+	free((char *)co);
 	o->os = NULL;
 }
 
