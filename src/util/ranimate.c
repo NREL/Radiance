@@ -1,7 +1,7 @@
-/* Copyright (c) 1996 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -474,11 +474,7 @@ char	*rfargs;
 		sprintf(cp, ")[ \t]*=' > %s/radset.var", vval(DIRECTORY));
 		cp += 11;		/* point to file name */
 	}
-	if (system(combuf)) {
-		fprintf(stderr, "%s: error executing rad command:\n\t%s\n",
-				progname, combuf);
-		quit(1);
-	}
+	system(combuf);			/* ignore exit code */
 	if (pippt == NULL) {		/* load variables and remove file */
 		loadvars(cp);
 		unlink(cp);
