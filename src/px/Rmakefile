@@ -31,9 +31,9 @@ ttyimage:	ttyimage.o color.o
 t4027:	t4027.o color.o
 	cc $(CFLAGS) -o t4027 t4027.o color.o
 
-aedimage:	aedimage.o color.o ciq.o cut.o closest.o ealloc.o biq.o
+aedimage:	aedimage.o color.o ciq.o cut.o closest.o ealloc.o biq.o header.o
 	cc $(CFLAGS) -o aedimage aedimage.o color.o ciq.o cut.o \
-closest.o ealloc.o biq.o -lm
+closest.o ealloc.o biq.o header.o -lm
 
 oki20c:	oki20c.o color.o header.o
 	cc $(CFLAGS) -o oki20c oki20c.o color.o header.o
