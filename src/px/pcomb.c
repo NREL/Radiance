@@ -319,6 +319,7 @@ init()					/* perform final setup */
 	double	l_colin(), l_expos(), l_pixaspect(), l_ray(), l_psize();
 	register int	i;
 						/* define constants */
+	varset("PI", ':', PI);
 	varset(vnfiles, ':', (double)nfiles);
 	varset(vxmax, ':', (double)xmax);
 	varset(vymax, ':', (double)ymax);
