@@ -341,7 +341,7 @@ double	*pt;
 	int  asize;
 	int  lower, upper;
 	register int  i;
-	double	x, y, y0, y1;
+	double	x, y0, y1;
 					/* set up dimensions for recursion */
 	sd.nd = dp->nd - 1;
 	asize = 1;
@@ -354,7 +354,7 @@ double	*pt;
 					/* get independent variable */
 	if (dp->dim[0].p == NULL) {		/* evenly spaced points */
 		x = (pt[0] - dp->dim[0].org)/dp->dim[0].siz;
-		x = x * (dp->dim[0].ne - 1);
+		x *= (double)(dp->dim[0].ne - 1);
 		i = x;
 		if (i < 0)
 			i = 0;
@@ -395,11 +395,10 @@ double	*pt;
 	 * taper off harmonically to zero.
 	 */
 	if (x > i+2)
-		y = (2*y1-y0)/(x-i-1);
-	else if (x < i-1)
-		y = (2*y0-y1)/(i-x);
-	else
-		y = y0*((i+1)-x) + y1*(x-i);
+		return( (2*y1-y0)/(x-(i-1)) );
 
-	return(y);
+	if (x < i-1)
+		return( (2*y0-y1)/(i-x) );
+
+	return( y0*((i+1)-x) + y1*(x-i) );
 }
