@@ -18,7 +18,7 @@ RTOBJ = cone.o face.o instance.o readobj.o readoct.o otypes.o objset.o \
 PICOBJ = color.o header.o image.o lamps.o resolu.o rexpr.o spec_rgb.o \
 	colrops.o font.o
 
-STDOBJ = fgetline.o fropen.o linregr.o xf.o mat4.o fvect.o urand.o \
+STDOBJ = fgetline.o fropen.o linregr.o xf.o mat4.o invmat4.o fvect.o urand.o \
 	urind.o peano.o calexpr.o caldefn.o calfunc.o calprnt.o \
 	multisamp.o process.o getpath.o error.o savestr.o savqstr.o \
 	badarg.o fgetword.o words.o expandarg.o wordfile.o \
@@ -60,7 +60,7 @@ instance.o:	instance.h
 
 linregr.o:	linregr.h
 
-mat4.o:		mat4.h fvect.h
+mat4.o invmat4.o:		mat4.h fvect.h
 
 cone.o face.o instance.o objset.o otypes.o \
 modobject.o readfargs.o readobj.o readoct.o:	object.h
