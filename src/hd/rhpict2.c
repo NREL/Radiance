@@ -205,10 +205,11 @@ int	n;
 
 
 int
-random_samp(h, v, nl, n)	/* grow sample point noisily */
+random_samp(h, v, nl, n, rf)	/* grow sample point noisily */
 int	h, v;
 register short	nl[NNEIGH][2];
 int	n;
+double	*rf;
 {
 	float	nwt[NNEIGH];
 	int4	maxr2;
@@ -239,8 +240,7 @@ int	n;
 			if (r2 > maxr2) continue;
 			if (CHK4(pixFlags, v2*hres+h2))
 				continue;	/* occupied */
-			if (frandom() > pixWeight[r2]) {
-						/* pick neighbor instead */
+			if (frandom() < *rf) {	/* pick neighbor instead */
 				i = random() % n;
 				r2 = nl[i][1]*hres + nl[i][0];
 				copycolor(ctmp, mypixel[r2]);
@@ -249,8 +249,10 @@ int	n;
 				myweight[v2*hres+h2] += nwt[i] * myweight[r2];
 				continue;
 			}
-			addcolor(mypixel[v2*hres+h2], mypixel[p]);
-			myweight[v2*hres+h2] += myweight[p];
+			copycolor(ctmp, mypixel[p]);
+			scalecolor(ctmp, pixWeight[r2]);
+			addcolor(mypixel[v2*hres+h2], ctmp);
+			myweight[v2*hres+h2] += pixWeight[r2] * myweight[p];
 		}
 	}
 	return(1);
@@ -258,17 +260,17 @@ int	n;
 
 
 pixFinish(ransamp)		/* done with beams -- compute pixel values */
-int	ransamp;
+double	ransamp;
 {
 	if (pixWeight[0] <= FTINY)
 		init_wfunc();		/* initialize weighting function */
 	reset_flags();			/* set occupancy flags */
-	meet_neighbors(kill_occl);	/* eliminate occlusion errors */
+	meet_neighbors(kill_occl,NULL);	/* eliminate occlusion errors */
 	reset_flags();			/* reset occupancy flags */
-	if (ransamp)			/* spread samples over image */
-		meet_neighbors(random_samp);
+	if (ransamp >= 0.)		/* spread samples over image */
+		meet_neighbors(random_samp,&ransamp);
 	else
-		meet_neighbors(smooth_samp);
+		meet_neighbors(smooth_samp,NULL);
 	free((char *)pixFlags);		/* free pixel flags */
 	pixFlags = NULL;
 }
@@ -345,8 +347,9 @@ register short	(*rnl)[NNEIGH];
 }
 
 
-meet_neighbors(nf)		/* run through samples and their neighbors */
+meet_neighbors(nf, dp)		/* run through samples and their neighbors */
 int	(*nf)();
+char	*dp;
 {
 	short	ln[NNEIGH][2];
 	int	h, v, n, v2;
@@ -370,7 +373,7 @@ int	(*nf)();
 			if (!CHK4(pixFlags, v*hres+h))
 				continue;	/* no one home */
 			n = findneigh(ln, h, v, rnl);
-			(*nf)(h, v, ln, n);	/* call on neighbors */
+			(*nf)(h, v, ln, n, dp);	/* call on neighbors */
 		}
 		if (++v >= vres)		/* reinitialize row list */
 			break;
