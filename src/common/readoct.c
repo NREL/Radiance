@@ -206,8 +206,9 @@ skiptree()				/* skip octree on input */
 	case OT_EMPTY:
 		return;
 	case OT_FULL:
-		for (i = ogetint(objsize); i-- > 0; )
-			ogetint(objsize);
+		for (i = ogetint(objsize)*objsize; i-- > 0; )
+			if (getc(infp) == EOF)
+				octerror(USER, "truncated octree");
 		return;
 	case OT_TREE:
 		for (i = 0; i < 8; i++)
