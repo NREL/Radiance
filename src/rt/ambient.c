@@ -381,8 +381,8 @@ register RAY  *r;
 		dnew.n = div[0].n + 1;
 		dnew.t = div[0].t; dnew.p = div[0].p;
 		b2 = bright(dnew.v)/dnew.n - bright(ar.rcol);
-		b2 = b2*b2 + div[0].k*(div[0].n*div[0].n);
-		dnew.k = b2/(dnew.n*dnew.n);
+		b2 = b2*b2 + div[0].k*div[0].n;
+		dnew.k = b2/dnew.n;
 						/* reinsert */
 		for (k = 0; k < ne-1 && dnew.k < div[k+1].k; k++)
 			bcopy(&div[k+1], &div[k], sizeof(AMBSAMP));
