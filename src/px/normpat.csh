@@ -111,8 +111,9 @@ _EOF_
 			echo blending edges...
 		endif
 		@ mar= $resolu[1] - 3
-		pcompos -x 3 $td/hf 0 0 > $td/left
-		pcompos $td/hf -$mar 0 > $td/right
+		@ les= $resolu[1] - 1
+		pcompos -x 1 $td/hf 0 0 | pfilt -1 -x 3 > $td/left
+		pcompos $td/hf -$les 0 | pfilt -1 -x 3 > $td/right
 		pcomb -e 'ro=f(ri);go=f(gi);bo=f(bi)' \
 			-e 'f(p)=(3-x)/7*p(1)+(4+x)/7*p(2)' \
 			$td/right $td/left > $td/left.patch
@@ -122,8 +123,9 @@ _EOF_
 		pcompos $td/hf 0 0 $td/left.patch 0 0 $td/right.patch $mar 0 \
 			> $td/hflr
 		@ mar= $resolu[2] - 3
-		pcompos -y 3 $td/hflr 0 0 > $td/bottom
-		pcompos $td/hflr 0 -$mar > $td/top
+		@ les= $resolu[2] - 1
+		pcompos -y 1 $td/hflr 0 0 | pfilt -1 -y 3 > $td/bottom
+		pcompos $td/hflr 0 -$les | pfilt -1 -y 3 > $td/top
 		pcomb -e 'ro=f(ri);go=f(gi);bo=f(bi)' \
 			-e 'f(p)=(3-y)/7*p(1)+(4+y)/7*p(2)' \
 			$td/top $td/bottom > $td/bottom.patch
