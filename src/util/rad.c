@@ -213,16 +213,13 @@ register char	*fnames;
 {
 	char	thisfile[MAXPATH];
 	time_t	thisdate, lastdate = 0;
-	register char	*cp;
 
 	if (fnames == NULL)
 		return(0);
-	while (*fnames) {
-		while (isspace(*fnames)) fnames++;
-		cp = thisfile;
-		while (*fnames && !isspace(*fnames))
-			*cp++ = *fnames++;
-		*cp = '\0';
+	while ((fnames = nextword(thisfile, MAXPATH, fnames)) != NULL) {
+		if (thisfile[0] == '!' ||
+				(thisfile[0] == '\\' && thisfile[1] == '!'))
+			continue;
 		if (!(thisdate = fdate(thisfile)))
 			syserr(thisfile);
 		if (thisdate > lastdate)
