@@ -38,6 +38,7 @@ extern char	*nvalue();
 #define vdef(vc)	(vv[vc].nass)
 #define vval(vc)	(vv[vc].value)
 #define vint(vc)	atoi(vval(vc))
+#define vflt(vc)	atof(vval(vc))
 #define vlet(vc)	UPPER(vval(vc)[0])
 #define vscale		vlet
 #define vbool(vc)	(vlet(vc)=='T')
