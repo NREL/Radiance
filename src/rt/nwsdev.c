@@ -2,11 +2,8 @@
 static char SCCSid[] = "$SunId$ LBL";
 #endif
 
-#ifndef lint
-static char sccsid[]="@(#)two.c";
-#endif
 /*
- * NeWS driver
+ * NeWS driver, by Isaac Kwo
  *
  * July 1990
  */
@@ -96,15 +93,17 @@ float col[3];
 int xmin,ymin,xmax,ymax;
  {
   int i;
+  float col2[3];
   /* NeWS trashes the window if a float value less than 1/256 is sent
      to it.  Therefore, weed out all such values first */
   for(i=0;i<3;i++)
    {
-    if(col[i]>1)col[i]=1;
-    col[i]=gamma[(int)(col[i]*256)];
+    col2[i]=col[i];
+    if(col2[i]>1)col2[i]=1;
+    col2[i]=gamma[(int)(col2[i]*256)];
    }
   box(xmin,ymin+textareaheight,xmax,ymax+textareaheight
-      ,col[0],col[1],col[2]);
+      ,col2[0],col2[1],col2[2]);
  }
 
 static int
