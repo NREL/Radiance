@@ -174,17 +174,18 @@ char  *pname;
 		goto readerr;
 	for (i = 0; i < 3; i++) {
 		pp[i].nd = 2;
-		pp[i].dim[0].ne = width;
-		pp[i].dim[1].ne = height;
+		pp[i].dim[0].ne = height;
+		pp[i].dim[1].ne = width;
 		pp[i].dim[0].org =
 		pp[i].dim[1].org = 0.0;
 		if (width <= height*inpaspect) {
-			pp[i].dim[0].siz = 1.0;
-			pp[i].dim[1].siz = inpaspect*(double)height/width;
-		} else {
-			pp[i].dim[0].siz = (double)width/height/inpaspect;
+			pp[i].dim[0].siz = inpaspect*(double)height/width;
 			pp[i].dim[1].siz = 1.0;
+		} else {
+			pp[i].dim[0].siz = 1.0;
+			pp[i].dim[1].siz = (double)width/height/inpaspect;
 		}
+		pp[i].dim[0].p = pp[i].dim[1].p = NULL;
 		pp[i].arr = (DATATYPE *)malloc(width*height*sizeof(DATATYPE));
 		if (pp[i].arr == NULL)
 			goto memerr;
@@ -197,7 +198,7 @@ char  *pname;
 			goto readerr;
 		for (x = 0; x < width; x++)
 			for (i = 0; i < 3; i++)
-				pp[i].arr[x*height+y] = colval(scanin[x],i);
+				pp[i].arr[y*width+x] = colval(scanin[x],i);
 	}
 	free((char *)scanin);
 	fclose(fp);
