@@ -26,10 +26,12 @@ typedef struct {
 	XF  b;					/* backward */
 }  FULLXF;
 
+#ifndef  PI
 #ifdef	M_PI
 #define	 PI		M_PI
 #else
 #define	 PI		3.14159265358979323846
+#endif
 #endif
 
 #ifndef	 F_OK			/* mode bits for access(2) call */
