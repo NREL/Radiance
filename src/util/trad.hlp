@@ -1102,11 +1102,17 @@ disabled, and rendering progress can be monitored by checking
 the error file periodically.
 (This file is named by the root of the rad input file followed by
 ".err".)
-When a batch process is started or already running, this button
-will be disabled.
+When a batch process is started or already running, or when a
+process is on another host and its status is unknown,
+this button will be disabled.
 
 The background process can be killed during this or later
 invocations of trad using the "Kill" button.
+If the process was started on another machine and the status is unknown,
+it will be necessary to run trad from the other host or remove the error
+file manually before starting a background process on this machine.
+This is to protect you from the great confusion that results when two
+machines are working from the same project file.
 
 .Action.Kill
 
@@ -1121,7 +1127,7 @@ screen, no data is lost by killing and restarting a batch
 rendering, though some new startup costs will be incurred.
 
 The "Kill" button is disabled if no running batch process is
-detected.
+detected on the current host machine.
 
 .Action.CheckErr
 
