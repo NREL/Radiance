@@ -11,6 +11,7 @@ static const char	RCSid[] = "$Id$";
 
 #include  "ray.h"
 #include  "view.h"
+#include  "otypes.h"
 #include  "source.h"
 
 
@@ -373,6 +374,9 @@ init_drawsources(
 	}
 					/* loop through all sources */
 	for (i = nsources; i--; ) {
+					/* skip illum's */
+		if (findmaterial(source[i].so)->otype == MAT_ILLUM)
+			continue;
 					/* compute image polygon for source */
 		if (!(nsv = sourcepoly(i, spoly)))
 			continue;
@@ -444,7 +448,8 @@ drawsources(
 				if (source[sp->sn].sflags & SSPOT &&
 						spotout(&sr, source[sp->sn].sl.s))
 					continue;	/* outside spot */
-				rayorigin(&sr, NULL, PRIMARY, 1.0);
+				rayorigin(&sr, NULL, SHADOW, 1.0);
+				sr.rsrc = sp->sn;
 				rayvalue(&sr);		/* compute value */
 				if (bright(sr.rcol) <= FTINY)
 					continue;	/* missed/blocked */
