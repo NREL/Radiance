@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -6,8 +6,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 /*
  *  text.c - functions for text patterns and mixtures.
- *
- *     11/12/86
  */
 
 #include  "ray.h"
@@ -45,7 +43,9 @@ static char SCCSid[] = "$SunId$ LBL";
  *		[spacing]
  *
  *  Colortext is identical, except colors are given rather than
- *  brightnesses.  Mixtext has foreground and background modifiers:
+ *  brightnesses.
+ *
+ *  Mixtext has foreground and background modifiers:
  *
  *	modifier mixtext id
  *	4+ foremod backmod fontfile text..
@@ -114,8 +114,7 @@ RAY  *r;
 				objerror(m, USER, "inappropriate modifier");
 			return(1);
 		}
-	}
-	if (m->otype == PAT_BTEXT) {
+	} else if (m->otype == PAT_BTEXT) {
 		if (foreground)
 			scalecolor(r->pcol, m->oargs.farg[9]);
 		else
