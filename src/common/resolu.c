@@ -1,3 +1,5 @@
+/* Copyright (c) 1991 Regents of the University of California */
+
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
@@ -8,35 +10,76 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include <stdio.h>
 
-#include "color.h"
+#include "resolu.h"
 
 
-fputresolu(ord, xres, yres, fp)		/* put x and y resolution */
-register int  ord;
-int  xres, yres;
+char  resolu_buf[RESOLU_BUFLEN];	/* resolution line buffer */
+
+
+fputresolu(ord, sl, ns, fp)		/* put out picture dimensions */
+int  ord;			/* scanline ordering */
+int  sl, ns;			/* scanline length and number */
 FILE  *fp;
 {
-	if (ord&YMAJOR)
-		fprintf(fp, "%cY %d %cX %d\n",
-				ord&YDECR ? '-' : '+', yres,
-				ord&XDECR ? '-' : '+', xres);
-	else
-		fprintf(fp, "%cX %d %cY %d\n",
-				ord&XDECR ? '-' : '+', xres,
-				ord&YDECR ? '-' : '+', yres);
+	RESOLU  rs;
+
+	if ((rs.or = ord) & YMAJOR) {
+		rs.xr = sl;
+		rs.yr = ns;
+	} else {
+		rs.xr = ns;
+		rs.yr = sl;
+	}
+	fputsresolu(&rs, fp);
 }
 
 
-fgetresolu(xrp, yrp, fp)		/* get x and y resolution */
-int  *xrp, *yrp;
+int
+fgetresolu(sl, ns, fp)			/* get picture dimensions */
+int  *sl, *ns;			/* scanline length and number */
 FILE  *fp;
 {
-	char  buf[64], *xndx, *yndx;
-	register char  *cp;
-	register int  ord;
+	RESOLU  rs;
 
-	if (fgets(buf, sizeof(buf), fp) == NULL)
+	if (!fgetsresolu(&rs, fp))
 		return(-1);
+	if (rs.or & YMAJOR) {
+		*sl = rs.xr;
+		*ns = rs.yr;
+	} else {
+		*sl = rs.yr;
+		*ns = rs.xr;
+	}
+	return(rs.or);
+}
+
+
+char *
+resolu2str(buf, rp)		/* convert resolution struct to line */
+char  *buf;
+register RESOLU  *rp;
+{
+	if (rp->or&YMAJOR)
+		sprintf(buf, "%cY %d %cX %d\n",
+				rp->or&YDECR ? '-' : '+', rp->yr,
+				rp->or&XDECR ? '-' : '+', rp->xr);
+	else
+		sprintf(buf, "%cX %d %cY %d\n",
+				rp->or&XDECR ? '-' : '+', rp->xr,
+				rp->or&YDECR ? '-' : '+', rp->yr);
+	return(buf);
+}
+
+
+str2resolu(rp, buf)		/* convert resolution line to struct */
+register RESOLU  *rp;
+char  *buf;
+{
+	char  *xndx, *yndx;
+	register char  *cp;
+
+	if (buf == NULL)
+		return(0);
 	xndx = yndx = NULL;
 	for (cp = buf+1; *cp; cp++)
 		if (*cp == 'X')
@@ -44,14 +87,14 @@ FILE  *fp;
 		else if (*cp == 'Y')
 			yndx = cp;
 	if (xndx == NULL || yndx == NULL)
-		return(-1);
-	ord = 0;
-	if (xndx > yndx) ord |= YMAJOR;
-	if (xndx[-1] == '-') ord |= XDECR;
-	if (yndx[-1] == '-') ord |= YDECR;
-	if ((*xrp = atoi(xndx+1)) <= 0)
-		return(-1);
-	if ((*yrp = atoi(yndx+1)) <= 0)
-		return(-1);
-	return(ord);
+		return(0);
+	rp->or = 0;
+	if (xndx > yndx) rp->or |= YMAJOR;
+	if (xndx[-1] == '-') rp->or |= XDECR;
+	if (yndx[-1] == '-') rp->or |= YDECR;
+	if ((rp->xr = atoi(xndx+1)) <= 0)
+		return(0);
+	if ((rp->yr = atoi(yndx+1)) <= 0)
+		return(0);
+	return(1);
 }

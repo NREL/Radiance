@@ -14,6 +14,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 
+#include  "resolu.h"
+
 #include  "data.h"
 
 
@@ -157,9 +159,11 @@ char  *pname;
 	char  *pfname;
 	FILE  *fp;
 	COLOR  *scanin;
-	int  width, height;
-	int  x, y;
-	register int  i;
+	int  sl, ns;
+	RESOLU  inpres;
+	FLOAT  loc[2];
+	int  y;
+	register int  x, i;
 	register DATARRAY  *pp;
 						/* look for array in list */
 	for (pp = plist; pp != NULL; pp = pp->next)
@@ -184,35 +188,45 @@ char  *pname;
 						/* get dimensions */
 	inpaspect = 1.0;
 	getheader(fp, headaspect);
-	if (fgetresolu(&width, &height, fp) != (YMAJOR|YDECR))
+	if (!fgetsresolu(&inpres, fp))
 		goto readerr;
 	for (i = 0; i < 3; i++) {
 		pp[i].nd = 2;
-		pp[i].dim[0].ne = height;
-		pp[i].dim[1].ne = width;
+		pp[i].dim[0].ne = inpres.yr;
+		pp[i].dim[1].ne = inpres.xr;
 		pp[i].dim[0].org =
 		pp[i].dim[1].org = 0.0;
-		if (width <= height*inpaspect) {
-			pp[i].dim[0].siz = inpaspect*(double)height/width;
+		if (inpres.xr <= inpres.yr*inpaspect) {
+			pp[i].dim[0].siz = inpaspect *
+						(double)inpres.yr/inpres.xr;
 			pp[i].dim[1].siz = 1.0;
 		} else {
 			pp[i].dim[0].siz = 1.0;
-			pp[i].dim[1].siz = (double)width/height/inpaspect;
+			pp[i].dim[1].siz = (double)inpres.xr/inpres.yr /
+						inpaspect;
 		}
 		pp[i].dim[0].p = pp[i].dim[1].p = NULL;
-		pp[i].arr = (DATATYPE *)malloc(width*height*sizeof(DATATYPE));
+		pp[i].arr = (DATATYPE *)
+				malloc(inpres.xr*inpres.yr*sizeof(DATATYPE));
 		if (pp[i].arr == NULL)
 			goto memerr;
 	}
 							/* load picture */
-	if ((scanin = (COLOR *)malloc(width*sizeof(COLOR))) == NULL)
+	sl = scanlen(&inpres);
+	ns = numscans(&inpres);
+	if ((scanin = (COLOR *)malloc(sl*sizeof(COLOR))) == NULL)
 		goto memerr;
-	for (y = height-1; y >= 0; y--) {
-		if (freadscan(scanin, width, fp) < 0)
+	for (y = 0; y < ns; y++) {
+		if (freadscan(scanin, sl, fp) < 0)
 			goto readerr;
-		for (x = 0; x < width; x++)
-			for (i = 0; i < 3; i++)
-				pp[i].arr[y*width+x] = colval(scanin[x],i);
+		for (x = 0; x < sl; x++) {
+			pix2loc(loc, &inpres, x, y);
+			i = (int)(loc[1]*inpres.yr)*inpres.xr +
+					(int)(loc[0]*inpres.xr);
+			pp[0].arr[i] = colval(scanin[x],RED);
+			pp[1].arr[i] = colval(scanin[x],GRN);
+			pp[2].arr[i] = colval(scanin[x],BLU);
+		}
 	}
 	free((char *)scanin);
 	fclose(fp);

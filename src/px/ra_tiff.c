@@ -14,6 +14,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 
+#include  "resolu.h"
+
 extern double  atof();
 
 extern char  *malloc(), *realloc();
@@ -142,7 +144,7 @@ char	*inpf, *outf;
 	fputs(" -r\n", stdout);
 	fputformat(COLRFMT, stdout);
 	putchar('\n');
-	fputresolu(YDECR|YMAJOR, xmax, ymax, stdout);
+	fprtresolu(xmax, ymax, stdout);
 						/* convert image */
 	if (nsamps == 1)
 		pconfig = 1;
@@ -204,7 +206,7 @@ char	*inpf, *outf;
 	if (strcmp(inpf, "-") && freopen(inpf, "r", stdin) == NULL)
 		quiterr("cannot open Radiance input file");
 	if (checkheader(stdin, COLRFMT, NULL) < 0 ||
-			fgetresolu(&xmax, &ymax, stdin) != (YDECR|YMAJOR))
+			fgetresolu(&xmax, &ymax, stdin) < 0)
 		quiterr("bad Radiance picture");
 						/* open TIFF file */
 	if ((tif = TIFFOpen(outf, "w")) == NULL)

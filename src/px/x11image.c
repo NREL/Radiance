@@ -30,6 +30,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "pic.h"
 #include  "x11raster.h"
 #include  "random.h"
+#include  "resolu.h"
 
 #define  FONTNAME	"8x13"		/* text font we'll use */
 
@@ -70,7 +71,8 @@ int  gotview = 0;			/* got parameters from file */
 
 COLR  *scanline;			/* scan line buffer */
 
-int  xmax, ymax;			/* picture resolution */
+RESOLU  inpres;				/* input resolution and ordering */
+int  xmax, ymax;			/* picture dimensions */
 int  width, height;			/* window size */
 char  *fname = NULL;			/* input file name */
 FILE  *fin = stdin;			/* input file */
@@ -165,8 +167,10 @@ char  *argv[];
 				/* get header */
 	getheader(fin, headline, NULL);
 				/* get picture dimensions */
-	if (wrongformat || fgetresolu(&xmax, &ymax, fin) != (YMAJOR|YDECR))
+	if (wrongformat || !fgetsresolu(&inpres, fin))
 		quiterr("bad picture format");
+	xmax = scanlen(&inpres);
+	ymax = numscans(&inpres);
 				/* set view parameters */
 	if (gotview && setview(&ourview) != NULL)
 		gotview = 0;
@@ -406,6 +410,7 @@ XKeyPressedEvent  *ekey;
 	XColor  cvx;
 	int  com, n;
 	double  comp;
+	FLOAT  hv[2];
 	FVECT  rorg, rdir;
 
 	n = XLookupString(ekey, buf, sizeof(buf), NULL, NULL); 
@@ -454,7 +459,9 @@ XKeyPressedEvent  *ekey;
 		XStoreColor(thedisplay, ourras->cmap, &cvx);
 		return(0);
 	case 'p':				/* position */
-		sprintf(buf, "(%d,%d)", ekey->x-xoff, ymax-1-ekey->y+yoff);
+		pix2loc(hv, &inpres, ekey->x-xoff, ekey->y-yoff);
+		sprintf(buf, "(%d,%d)", (int)(hv[0]*inpres.xr),
+				(int)(hv[1]*inpres.yr));
 		XDrawImageString(thedisplay, wind, ourgc, ekey->x, ekey->y,
 					buf, strlen(buf));
 		return(0);
@@ -463,9 +470,8 @@ XKeyPressedEvent  *ekey;
 			XBell(thedisplay, 0);
 			return(-1);
 		}
-		if (viewray(rorg, rdir, &ourview,
-				(ekey->x-xoff+.5)/xmax,
-				(ymax-1-ekey->y+yoff+.5)/ymax) < 0)
+		pix2loc(hv, &inpres, ekey->x-xoff, ekey->y-yoff);
+		if (viewray(rorg, rdir, &ourview, hv[0], hv[1]) < 0)
 			return(-1);
 		printf("%e %e %e ", rorg[0], rorg[1], rorg[2]);
 		printf("%e %e %e\n", rdir[0], rdir[1], rdir[2]);

@@ -1,3 +1,5 @@
+/* Copyright (c) 1991 Regents of the University of California */
+
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
@@ -15,6 +17,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "view.h"
 
 #include "color.h"
+
+#include "resolu.h"
 
 #ifndef BSD
 #define vfork		fork
@@ -58,7 +62,7 @@ double	ourexp = -1;			/* output picture exposure */
 VIEW	theirview = STDVIEW;		/* input view */
 int	gotview;			/* got input view? */
 int	wrongformat = 0;		/* input in another format? */
-int	thresolu, tvresolu;		/* input resolution */
+RESOLU	tresolu;			/* input resolution */
 double	theirexp;			/* input picture exposure */
 double	theirs2ours[4][4];		/* transformation matrix */
 int	hasmatrix = 0;			/* has transformation matrix */
@@ -279,9 +283,7 @@ char	*pfile, *zspec;
 	gotview = 0;
 	printf("%s:\n", pfile);
 	getheader(pfp, headline, NULL);
-	if (wrongformat || !gotview ||
-		fgetresolu(&thresolu, &tvresolu, pfp) != (YMAJOR|YDECR)) {
-
+	if (wrongformat || !gotview || !fgetsresolu(&tresolu, pfp)) {
 		fprintf(stderr, "%s: picture format error\n", pfile);
 		exit(1);
 	}
@@ -296,9 +298,10 @@ char	*pfile, *zspec;
 					/* compute transformation */
 	hasmatrix = pixform(theirs2ours, &theirview, &ourview);
 					/* allocate scanlines */
-	scanin = (COLR *)malloc(thresolu*sizeof(COLR));
-	zin = (float *)malloc(thresolu*sizeof(float));
-	plast = (struct position *)calloc(thresolu, sizeof(struct position));
+	scanin = (COLR *)malloc(scanlen(&tresolu)*sizeof(COLR));
+	zin = (float *)malloc(scanlen(&tresolu)*sizeof(float));
+	plast = (struct position *)calloc(scanlen(&tresolu),
+			sizeof(struct position));
 	if (scanin == NULL || zin == NULL || plast == NULL)
 		syserror();
 					/* get z specification or file */
@@ -309,17 +312,18 @@ char	*pfile, *zspec;
 			perror(zspec);
 			exit(1);
 		}
-		for (x = 0; x < thresolu; x++)
+		for (x = scanlen(&tresolu); x-- > 0; )
 			zin[x] = zvalue;
 	}
 					/* load image */
-	for (y = tvresolu-1; y >= 0; y--) {
-		if (freadcolrs(scanin, thresolu, pfp) < 0) {
+	for (y = 0; y < numscans(&tresolu); y++) {
+		if (freadcolrs(scanin, scanlen(&tresolu), pfp) < 0) {
 			fprintf(stderr, "%s: read error\n", pfile);
 			exit(1);
 		}
-		if (zfd != -1 && read(zfd,(char *)zin,thresolu*sizeof(float))
-				< thresolu*sizeof(float)) {
+		if (zfd != -1 && read(zfd,(char *)zin,
+				scanlen(&tresolu)*sizeof(float))
+				< scanlen(&tresolu)*sizeof(float)) {
 			fprintf(stderr, "%s: read error\n", zspec);
 			exit(1);
 		}
@@ -388,9 +392,8 @@ struct position	*lasty;		/* input/output */
 	register int	x;
 
 	lastx.z = 0;
-	for (x = thresolu-1; x >= 0; x--) {
-		pos[0] = (x+.5)/thresolu;
-		pos[1] = (y+.5)/tvresolu;
+	for (x = scanlen(&tresolu); x-- > 0; ) {
+		pix2loc(pos, &tresolu, x, y);
 		pos[2] = zline[x];
 		if (movepixel(pos) < 0) {
 			lasty[x].z = lastx.z = 0;	/* mark invalid */
@@ -503,7 +506,7 @@ FVECT	pos;
 	pt[0] += direc[0]*pos[2];
 	pt[1] += direc[1]*pos[2];
 	pt[2] += direc[2]*pos[2];
-	viewpixel(&pos[0], &pos[1], &pos[2], &ourview, pt);
+	viewloc(pos, &ourview, pt);
 	if (pos[2] <= 0)
 		return(-1);
 	return(0);
@@ -621,7 +624,7 @@ writepicture()				/* write out picture */
 {
 	int	y;
 
-	fputresolu(YMAJOR|YDECR, hresolu, vresolu, stdout);
+	fprtresolu(hresolu, vresolu, stdout);
 	for (y = vresolu-1; y >= 0; y--)
 		if (fwritecolrs(pscan(y), hresolu, stdout) < 0)
 			syserror();

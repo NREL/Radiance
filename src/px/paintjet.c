@@ -1,4 +1,4 @@
-/* Copyright (c) 1989 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -13,6 +13,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <stdio.h>
 
 #include  "color.h"
+#include  "resolu.h"
 
 #define  NCOLS		1440		/* 8" at 180 dpi */
 
@@ -53,7 +54,7 @@ char  *fname;
 		return(-1);
 	}
 				/* get picture dimensions */
-	if (fgetresolu(&xres, &yres, input) != (YMAJOR|YDECR)) {
+	if (fgetresolu(&xres, &yres, input) < 0) {
 		fprintf(stderr, "%s: bad picture size\n", fname);
 		return(-1);
 	}

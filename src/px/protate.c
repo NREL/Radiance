@@ -1,8 +1,9 @@
-/* Copyright (c) 1988 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
+
 /*
  * prot.c - program to rotate picture file 90 degrees clockwise.
  *
@@ -13,33 +14,23 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "color.h"
 
+#include "resolu.h"
+
+int	order;				/* input scanline order */
 int	xres, yres;			/* input resolution */
-double	inpaspect = 1.0;		/* input aspect ratio */
+
+int	correctorder = 0;		/* order correction? */
 
 char	buf[1<<20];			/* output buffer */
 
 int	nrows;				/* number of rows output at once */
 
-int	wrongformat = 0;
-
 #define scanbar		((COLR *)buf)
 
 char	*progname;
 
-
-headline(s)				/* process line from header */
-char	*s;
-{
-	char	fmt[32];
-
-	fputs(s, stdout);
-	if (isaspect(s))
-		inpaspect *= aspectval(s);
-	else if (isformat(s)) {
-		formatval(fmt, s);
-		wrongformat = strcmp(fmt, COLRFMT);
-	}
-}
+#define neworder()	(correctorder ? order : \
+			(order^(order&YMAJOR?YDECR:XDECR)^YMAJOR))
 
 
 main(argc, argv)
@@ -50,8 +41,12 @@ char	*argv[];
 
 	progname = argv[0];
 
+	if (argc > 2 && !strcmp(argv[1], "-c")) {
+		correctorder++;
+		argc--; argv++;
+	}
 	if (argc != 2 && argc != 3) {
-		fprintf(stderr, "Usage: %s infile [outfile]\n", progname);
+		fprintf(stderr, "Usage: %s [-c] infile [outfile]\n", progname);
 		exit(1);
 	}
 	if ((fin = fopen(argv[1], "r")) == NULL) {
@@ -63,22 +58,19 @@ char	*argv[];
 		exit(1);
 	}
 					/* transfer header */
-	getheader(fin, headline, NULL);
-	if (wrongformat) {
-		fprintf(stderr, "%s: wrong picture format\n", progname);
+	if (checkheader(fin, COLRFMT, stdout) < 0) {
+		fprintf(stderr, "%s: not a Radiance picture\n", progname);
 		exit(1);
 	}
 					/* add new header info. */
-	if (inpaspect < .99 || inpaspect > 1.01)
-		fputaspect(1./inpaspect/inpaspect, stdout);
 	printf("%s\n\n", progname);
 					/* get picture size */
-	if (fgetresolu(&xres, &yres, fin) != (YMAJOR|YDECR)) {
+	if ((order = fgetresolu(&xres, &yres, fin)) < 0) {
 		fprintf(stderr, "%s: bad picture size\n", progname);
 		exit(1);
 	}
 					/* write new picture size */
-	fputresolu(YMAJOR|YDECR, yres, xres, stdout);
+	fputresolu(neworder(), yres, xres, stdout);
 					/* compute buffer capacity */
 	nrows = sizeof(buf)/sizeof(COLR)/yres;
 	rotate(fin);			/* rotate the image */

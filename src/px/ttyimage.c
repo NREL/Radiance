@@ -1,4 +1,4 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -13,6 +13,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <stdio.h>
 
 #include  "color.h"
+#include  "resolu.h"
 
 
 #define  NCOLS		133
@@ -36,7 +37,7 @@ char  **argv;
 	
 				/* get picture dimensions */
 	if (checkheader(input, COLRFMT, NULL) < 0 ||
-			fgetresolu(&xres, &yres, input) != (YMAJOR|YDECR)) {
+			fgetresolu(&xres, &yres, input) < 0) {
 		fprintf(stderr, "%s: bad picture format\n", argv[0]);
 		exit(1);
 	}

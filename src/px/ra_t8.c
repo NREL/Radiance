@@ -15,6 +15,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 
+#include  "resolu.h"
+
 #include  "pic.h"
 
 #include  "targa.h"
@@ -134,7 +136,7 @@ char  *argv[];
 		printargs(i, argv, stdout);
 		fputformat(COLRFMT, stdout);
 		putchar('\n');
-		fputresolu(YMAJOR|YDECR, xmax, ymax, stdout);
+		fprtresolu(xmax, ymax, stdout);
 					/* convert file */
 		tg2ra(&head);
 	} else {
@@ -292,7 +294,7 @@ register struct hdStruct  *h;
 		return(NULL);
 					/* get header info. */
 	if (checkheader(p->fp, COLRFMT, NULL) < 0 ||
-			fgetresolu(&xmax, &ymax, p->fp) != (YMAJOR|YDECR))
+			fgetresolu(&xmax, &ymax, p->fp) < 0)
 		quiterr("bad picture format");
 	p->nexty = 0;
 	p->bytes_line = 0;		/* variable length lines */
@@ -332,8 +334,10 @@ struct hdStruct  *hp;
 	register int  i, j;
 
 					/* get color table */
-	if ((hp->CMapBits==24 ? fread((char *)map.c3,sizeof(map.c3),1,stdin) :
-			fread((char *)map.c4,sizeof(map.c4),1,stdin)) != 1)
+	if ((hp->CMapBits==24 ? fread((char *)(map.c3+hp->mapOrig),
+				3*hp->mapLength,1,stdin) :
+			fread((char *)(map.c4+hp->mapOrig),
+				4*hp->mapLength,1,stdin)) != 1)
 		quiterr("error reading color table");
 					/* convert table */
 	for (i = hp->mapOrig; i < hp->mapOrig+hp->mapLength; i++)

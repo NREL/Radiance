@@ -16,6 +16,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "color.h"
 
+#include  "resolu.h"
+
 #include "calcomp.h"
 
 #define MAXINP		32		/* maximum number of input files */
@@ -181,7 +183,7 @@ char	*argv[];
 	printargs(argc, argv, stdout);
 	fputformat(COLRFMT, stdout);
 	putchar('\n');
-	fputresolu(YMAJOR|YDECR, xres, yres, stdout);
+	fprtresolu(xres, yres, stdout);
 						/* combine pictures */
 	combine();
 	quit(0);
@@ -232,7 +234,7 @@ checkfile()			/* ready a file */
 		eputs(": not in Radiance picture format\n");
 		quit(1);
 	}
-	if (fgetresolu(&xinp, &yinp, input[nfiles].fp) != (YMAJOR|YDECR)) {
+	if (fgetresolu(&xinp, &yinp, input[nfiles].fp) < 0) {
 		eputs(input[nfiles].name);
 		eputs(": bad picture size\n");
 		quit(1);

@@ -14,6 +14,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 
+#include  "resolu.h"
+
 extern double  atof(), pow();
 
 int  agryscan(), bgryscan(), aclrscan(), bclrscan();
@@ -87,7 +89,7 @@ char  *argv[];
 		printargs(i, argv, stdout);
 		fputformat(COLRFMT, stdout);
 		putchar('\n');
-		fputresolu(YMAJOR|YDECR, xmax, ymax, stdout);
+		fprtresolu(xmax, ymax, stdout);
 					/* convert file */
 		switch (ptype) {
 		case '2':
@@ -108,7 +110,7 @@ char  *argv[];
 	} else {
 					/* get header info. */
 		if (checkheader(stdin, COLRFMT, NULL) < 0 ||
-			fgetresolu(&xmax, &ymax, stdin) != (YMAJOR|YDECR))
+				fgetresolu(&xmax, &ymax, stdin) < 0)
 			quiterr("bad picture format");
 					/* write PPM header */
 		printf("P%c\n%d %d\n%d\n", binflag ? '6' : '3',

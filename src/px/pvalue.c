@@ -10,14 +10,15 @@ static char SCCSid[] = "$SunId$ LBL";
  *     4/23/86
  */
 
-#include  <stdio.h>
+#include  "standard.h"
 
 #include  "color.h"
 
+#include  "resolu.h"
+
 #define  min(a,b)		((a)<(b)?(a):(b))
 
-int  xres = 0;			/* resolution of input */
-int  yres = 0;
+RESOLU  picres;			/* resolution of picture */
 
 int  uniq = 0;			/* print only unique values? */
 
@@ -36,7 +37,7 @@ int  header = 1;		/* do header */
 
 int  wrongformat = 0;		/* wrong input format? */
 
-double  gamma = 1.0;		/* gamma correction */
+double  gamcor = 1.0;		/* gamma correction */
 
 COLOR  exposure = WHTCOLOR;
 
@@ -59,28 +60,30 @@ char  **argv;
 	progname = argv[0];
 
 	for (i = 1; i < argc; i++)
-		if (argv[i][0] == '-')
+		if (argv[i][0] == '-' || argv[i][0] == '+')
 			switch (argv[i][1]) {
-			case 'h':		/* no header */
-				header = 0;
+			case 'h':		/* header */
+				header = argv[i][0] == '+';
 				break;
 			case 'u':		/* unique values */
-				uniq = 1;
+				uniq = argv[i][0] == '-';
 				break;
 			case 'o':		/* original values */
-				original = 1;
+				original = argv[i][0] == '-';
 				break;
 			case 'g':		/* gamma correction */
-				gamma = atof(argv[++i]);
+				gamcor = atof(argv[++i]);
+				if (argv[i][0] == '+')
+					gamcor = 1.0/gamcor;
 				break;
 			case 'r':		/* reverse conversion */
-				reverse = 1;
+				reverse = argv[i][0] == '-';
 				break;
 			case 'b':		/* brightness values */
-				brightonly = 1;
+				brightonly = argv[i][0] == '-';
 				break;
 			case 'd':		/* data only (no indices) */
-				dataonly = 1;
+				dataonly = argv[i][0] == '-';
 				switch (argv[i][2]) {
 				case '\0':
 				case 'a':		/* ascii */
@@ -92,14 +95,17 @@ char  **argv;
 					fmtid = "ascii";
 					break;
 				case 'b':		/* byte */
+					dataonly = 1;
 					format = 'b';
 					fmtid = "byte";
 					break;
 				case 'f':		/* float */
+					dataonly = 1;
 					format = 'f';
 					fmtid = "float";
 					break;
 				case 'd':		/* double */
+					dataonly = 1;
 					format = 'd';
 					fmtid = "double";
 					break;
@@ -108,10 +114,16 @@ char  **argv;
 				}
 				break;
 			case 'x':		/* x resolution */
-				xres = atoi(argv[++i]);
+				if (argv[i][0] == '-')
+					picres.or |= XDECR;
+				picres.xr = atoi(argv[++i]);
 				break;
 			case 'y':		/* y resolution */
-				yres = atoi(argv[++i]);
+				if (argv[i][0] == '-')
+					picres.or |= YDECR;
+				if (picres.xr == 0)
+					picres.or |= YMAJOR;
+				picres.yr = atoi(argv[++i]);
 				break;
 			default:
 unkopt:
@@ -145,21 +157,22 @@ unkopt:
 	set_io();
 
 	if (reverse) {
-		if (yres <= 0 || xres <= 0) {
-			fprintf(stderr, "%s: missing x and y resolution\n",
-					progname);
-			quit(1);
-		}
 					/* get header */
 		if (header && checkheader(fin, fmtid, stdout) < 0) {
 			fprintf(stderr, "%s: wrong input format\n", progname);
 			quit(1);
 		}
+		if (picres.xr <= 0 || picres.yr <= 0)	/* get resolution */
+			if (!fgetsresolu(&picres, fin)) {
+				fprintf(stderr, "%s: missing resolution\n",
+						progname);
+				quit(1);
+			}
 						/* add to header */
 		printargs(i, argv, stdout);
 		fputformat(COLRFMT, stdout);
-		printf("\n");
-		fputresolu(YMAJOR|YDECR, xres, yres, stdout);
+		putchar('\n');
+		fputsresolu(&picres, stdout);
 		valtopix();
 	} else {
 						/* get header */
@@ -170,17 +183,16 @@ unkopt:
 			quit(1);
 		}
 
-		if (xres <= 0 || yres <= 0)		/* get picture size */
-			if (fgetresolu(&xres, &yres, fin) != (YMAJOR|YDECR)) {
-				fprintf(stderr,
-				"%s: missing x and y resolution\n",
+		if (picres.xr <= 0 || picres.yr <= 0)	/* get picture size */
+			if (!fgetsresolu(&picres, fin)) {
+				fprintf(stderr, "%s: missing resolution\n",
 						progname);
 				quit(1);
 			}
 		if (header) {
 			printargs(i, argv, stdout);
 			fputformat(fmtid, stdout);
-			printf("\n");
+			putchar('\n');
 		}
 		pixtoval();
 	}
@@ -217,22 +229,23 @@ pixtoval()				/* convert picture to values */
 	register COLOR  *scanln;
 	int  dogamma;
 	COLOR  lastc;
+	FLOAT  hv[2];
 	int  y;
 	register int  x;
 
-	scanln = (COLOR *)malloc(xres*sizeof(COLOR));
+	scanln = (COLOR *)malloc(scanlen(&picres)*sizeof(COLOR));
 	if (scanln == NULL) {
 		fprintf(stderr, "%s: out of memory\n", progname);
 		quit(1);
 	}
-	dogamma = gamma < .95 || gamma > 1.05;
+	dogamma = gamcor < .95 || gamcor > 1.05;
 	setcolor(lastc, 0.0, 0.0, 0.0);
-	for (y = yres-1; y >= 0; y--) {
-		if (freadscan(scanln, xres, fin) < 0) {
+	for (y = 0; y < numscans(&picres); y++) {
+		if (freadscan(scanln, scanlen(&picres), fin) < 0) {
 			fprintf(stderr, "%s: read error\n", progname);
 			quit(1);
 		}
-		for (x = 0; x < xres; x++) {
+		for (x = 0; x < scanlen(&picres); x++) {
 			if (uniq)
 				if (	colval(scanln[x],RED) ==
 						colval(lastc,RED) &&
@@ -247,11 +260,14 @@ pixtoval()				/* convert picture to values */
 				multcolor(scanln[x], exposure);
 			if (dogamma)
 				setcolor(scanln[x],
-					pow(colval(scanln[x],RED), 1.0/gamma),
-					pow(colval(scanln[x],GRN), 1.0/gamma),
-					pow(colval(scanln[x],BLU), 1.0/gamma));
-			if (!dataonly)
-				printf("%7d %7d ", x, y);
+				pow(colval(scanln[x],RED), 1.0/gamcor),
+				pow(colval(scanln[x],GRN), 1.0/gamcor),
+				pow(colval(scanln[x],BLU), 1.0/gamcor));
+			if (!dataonly) {
+				pix2loc(hv, &picres, x, y);
+				printf("%7d %7d ", (int)(hv[0]*picres.xr),
+						(int)(hv[1]*picres.yr));
+			}
 			if ((*putval)(scanln[x], stdout) < 0) {
 				fprintf(stderr, "%s: write error\n", progname);
 				quit(1);
@@ -269,14 +285,14 @@ valtopix()			/* convert values to a pixel file */
 	int  y;
 	register int  x;
 
-	scanln = (COLOR *)malloc(xres*sizeof(COLOR));
+	scanln = (COLOR *)malloc(scanlen(&picres)*sizeof(COLOR));
 	if (scanln == NULL) {
 		fprintf(stderr, "%s: out of memory\n", progname);
 		quit(1);
 	}
-	dogamma = gamma < .95 || gamma > 1.05;
-	for (y = yres-1; y >= 0; y--) {
-		for (x = 0; x < xres; x++) {
+	dogamma = gamcor < .95 || gamcor > 1.05;
+	for (y = 0; y < numscans(&picres); y++) {
+		for (x = 0; x < scanlen(&picres); x++) {
 			if (!dataonly)
 				fscanf(fin, "%*d %*d");
 			if ((*getval)(scanln[x], fin) < 0) {
@@ -285,11 +301,11 @@ valtopix()			/* convert values to a pixel file */
 			}
 			if (dogamma)
 				setcolor(scanln[x],
-					pow(colval(scanln[x],RED), gamma),
-					pow(colval(scanln[x],GRN), gamma),
-					pow(colval(scanln[x],BLU), gamma));
+					pow(colval(scanln[x],RED), gamcor),
+					pow(colval(scanln[x],GRN), gamcor),
+					pow(colval(scanln[x],BLU), gamcor));
 		}
-		if (fwritescan(scanln, xres, stdout) < 0) {
+		if (fwritescan(scanln, scanlen(&picres), stdout) < 0) {
 			fprintf(stderr, "%s: write error\n", progname);
 			quit(1);
 		}

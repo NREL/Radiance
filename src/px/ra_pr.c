@@ -17,6 +17,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 
+#include  "resolu.h"
+
 #include  "pic.h"
 
 			/* descriptor for a picture file or frame buffer */
@@ -123,7 +125,7 @@ char  *argv[];
 		printargs(i, argv, stdout);
 		fputformat(COLRFMT, stdout);
 		putchar('\n');
-		fputresolu(YMAJOR|YDECR, xmax, ymax, stdout);
+		fprtresolu(xmax, ymax, stdout);
 					/* convert file */
 		pr2ra(&head);
 	} else {
@@ -195,7 +197,7 @@ register struct rasterfile  *h;
 		return(NULL);
 					/* check header */
 	if (checkheader(p->fp, COLRFMT, NULL) < 0 ||
-			fgetresolu(&xmax, &ymax, p->fp) != (YMAJOR|YDECR))
+			fgetresolu(&xmax, &ymax, p->fp) < 0)
 		quiterr("bad picture format");
 	p->nexty = 0;
 	p->bytes_line = 0;		/* variable length lines */

@@ -22,6 +22,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "view.h"
 
+#include  "resolu.h"
+
 #include  "random.h"
 
 int  dimlist[MAXDIM];			/* sampling dimensions */
@@ -160,7 +162,7 @@ char  *zfile, *oldfile;
 			zbar[i] = NULL;
 	}
 					/* write out boundaries */
-	fputresolu(YMAJOR|YDECR, hresolu, vresolu, stdout);
+	fprtresolu(hresolu, vresolu, stdout);
 					/* recover file and compute first */
 	i = salvage(oldfile);
 	if (zfd != -1 && i > 0 &&
@@ -398,7 +400,7 @@ char  *oldfile;
 				/* discard header */
 	getheader(fp, NULL);
 				/* get picture size */
-	if (fgetresolu(&x, &y, fp) != (YMAJOR|YDECR)) {
+	if (!fscnresolu(&x, &y, fp)) {
 		sprintf(errmsg, "bad recover file \"%s\"", oldfile);
 		error(WARNING, errmsg);
 		fclose(fp);

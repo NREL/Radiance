@@ -16,7 +16,7 @@ PIXAR_INCLUDE=	-I/usr/pixar/include
 PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar -lm
 
 PROGS = pfilt ttyimage oki20c paintjet mt160r getinfo psign \
-greyscale pvalue pcompos colorscale prot ra_pr ra_pr24 \
+greyscale pvalue pcompos colorscale protate ra_pr ra_pr24 \
 ra_t8 ra_bn ra_t16 pcomb pinterp ximage xshowtrace pflip ra_ppm \
 ra_rgbe ra_pict
 
@@ -133,8 +133,8 @@ ximage:	x11image.o ciq.o cut.o closest.o x11raster.o biq.o
 	cc $(CFLAGS) -o ximage x11image.o x11raster.o \
 ciq.o cut.o closest.o biq.o -lX11 -lrt -lm
 
-prot:		prot.o
-	cc $(CFLAGS) -o prot prot.o -lrt
+protate:		prot.o
+	cc $(CFLAGS) -o protate prot.o -lrt
 
 pflip:		pflip.o
 	cc $(CFLAGS) -o pflip pflip.o -lrt
@@ -184,7 +184,7 @@ d48c.o aedimage.o pcompos.o color.o resolu.o colrops.o pflip.o \
 greyscale.o ra_t8.o glimage.o ra_bn.o ra_t16.o ra_tiff.o ra_pict.o \
 ra_pr.o pvalue.o pcomb.o pinterp.o ximage.o:	../common/color.h
 
-prot.o biq.o ciq.o pinterp.o ximage.o \
+pvalue.o prot.o biq.o ciq.o pinterp.o ximage.o \
 image.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
 
 ximage.o xraster.o:	xraster.h
@@ -200,3 +200,8 @@ ciq.o cut.o closest.o biq.o:	pic.h ciq.h
 pinterp.o ximage.o image.o:	../common/view.h
 
 ra_pict.o:	pict.h
+
+mt160r.o oki20c.o paintjet.o pcomb.o pcompos.o pfilt.o pflip.o \
+pinterp.o prot.o pvalue.o ra_bn.o ra_pict.o ra_pixar.o \
+ra_ppm.o ra_pr.o ra_pr24.o ra_rgbe.o ra_t16.o ra_t8.o \
+ra_tiff.o ttyimage.o x11image.o:	../common/resolu.h

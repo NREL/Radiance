@@ -23,6 +23,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "ray.h"
 
+#include  "resolu.h"
+
 #include  "octree.h"
 
 #include  <signal.h>
@@ -128,6 +130,7 @@ char  *argv[];
 	char  **amblp = amblist;
 	int  loadflags = ~IO_FILES;
 	int  rval, gotvfile = 0;
+	RESOLU  rs;
 	int  i;
 					/* record start time */
 	tstart = time((long *)0);
@@ -170,7 +173,7 @@ char  *argv[];
 			if (argv[i][2] != 'f')
 				goto badopt;
 			check(3,"s");
-			rval = viewfile(argv[++i], &ourview, 0, 0);
+			rval = viewfile(argv[++i], &ourview, NULL);
 			if (rval < 0) {
 				sprintf(errmsg,
 				"cannot open view file \"%s\"",
@@ -290,14 +293,16 @@ char  *argv[];
 		case 'r':				/* recover file */
 			check(2,"s");
 			recover = argv[++i];
-			rval = viewfile(recover, &ourview, &hresolu, &vresolu);
-			if (rval <= 0) {
+			rval = viewfile(recover, &ourview, &rs);
+			if (rval <= 0 || rs.or != PIXSTANDARD) {
 				sprintf(errmsg,
 			"cannot recover view parameters from \"%s\"", recover);
 				error(WARNING, errmsg);
 			} else {
 				gotvfile += rval;
 				pixaspect = 0.0;
+				hresolu = rs.xr;
+				vresolu = rs.yr;
 			}
 			break;
 		case 't':				/* timer */
