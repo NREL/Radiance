@@ -1,0 +1,84 @@
+/* Copyright (c) 1994 Regents of the University of California */
+
+#ifndef lint
+static char SCCSid[] = "$SunId$ LBL";
+#endif
+
+/*
+ * Compute and print barycentric coordinates for triangle meshes
+ */
+
+#include <stdio.h>
+
+#include "fvect.h"
+
+#include "tmesh.h"
+
+#define ABS(x)		((x) >= 0 ? (x) : -(x))
+
+
+int
+comp_baryc(bcm, v1, v2, v3)		/* compute barycentric vectors */
+register BARYCCM	*bcm;
+FLOAT	*v1, *v2, *v3;
+{
+	FLOAT	*vt;
+	FVECT	va, vab, vcb;
+	double	d;
+	int	ax0, ax1;
+	register int	i, j;
+					/* compute major axis */
+	for (i = 0; i < 3; i++) {
+		vab[i] = v1[i] - v2[i];
+		vcb[i] = v3[i] - v2[i];
+	}
+	fcross(va, vab, vcb);
+	bcm->ax = ABS(va[0]) > ABS(va[1]) ? 0 : 1;
+	bcm->ax = ABS(va[bcm->ax]) > ABS(va[2]) ? bcm->ax : 2;
+	ax0 = (bcm->ax + 1) % 3;
+	ax1 = (bcm->ax + 2) % 3;
+	for (j = 0; j < 2; j++) {
+		vab[0] = v1[ax0] - v2[ax0];
+		vcb[0] = v3[ax0] - v2[ax0];
+		vab[1] = v1[ax1] - v2[ax1];
+		vcb[1] = v3[ax1] - v2[ax1];
+		d = vcb[0]*vcb[0] + vcb[1]*vcb[1];
+		if (d <= FTINY)
+			return(-1);
+		d = (vcb[0]*vab[0]+vcb[1]*vab[1])/d;
+		va[0] = vab[0] - vcb[0]*d;
+		va[1] = vab[1] - vcb[1]*d;
+		d = va[0]*va[0] + va[1]*va[1];
+		if (d <= FTINY)
+			return(-1);
+		bcm->tm[j][0] = va[0] /= d;
+		bcm->tm[j][1] = va[1] /= d;
+		bcm->tm[j][2] = -(v2[ax0]*va[0]+v2[ax1]*va[1]);
+					/* rotate vertices */
+		vt = v1;
+		v1 = v2;
+		v2 = v3;
+		v3 = vt;
+	}
+	return(0);
+}
+
+
+put_baryc(bcm, com, n)			/* put barycentric coord. vectors */
+register BARYCCM	*bcm;
+register FLOAT	com[][3];
+int	n;
+{
+	double	a, b;
+	register int	i, j;
+
+	printf("%d\t%d\n", 1+3*n, bcm->ax);
+	for (i = 0; i < n; i++) {
+		a = com[i][0] - com[i][2];
+		b = com[i][1] - com[i][2];
+		printf("%14.8f %14.8f %14.8f\n",
+			bcm->tm[0][0]*a + bcm->tm[1][0]*b,
+			bcm->tm[0][1]*a + bcm->tm[1][1]*b,
+			bcm->tm[0][2]*a + bcm->tm[1][2]*b + com[i][2]);
+	}
+}
