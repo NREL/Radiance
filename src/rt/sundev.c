@@ -70,7 +70,6 @@ char	*argv[];
 	char	*ttyargv[4], arg1[10], arg2[10];
 	int	pd[2];
 	int	com;
-	register Pixwin	*pw;
 
 	progname = argv[0];
 
@@ -141,8 +140,8 @@ Frame	fr;
 Destroy_status	st;
 {
 	if (st != DESTROY_CHECKING) {
-		kill((int)window_get(tty, TTY_PID), SIGHUP);
-		kill(getppid(), SIGHUP);
+		kill((int)window_get(tty, TTY_PID), SIGPIPE);
+		kill(getppid(), SIGPIPE);
 	}
 	return(notify_next_destroy_func(fr, st));
 }
@@ -221,36 +220,36 @@ sun_comin()			/* input a string from the command line */
 
 sun_getcur()			/* get cursor position */
 {
-	Event	*ep;
+	Event	ev;
 	int	xpos, ypos;
 	int	c;
 
 	notify_no_dispatch();			/* allow read to block */
 	window_set(canvas, WIN_CONSUME_KBD_EVENT, WIN_ASCII_EVENTS, 0);
-	while (window_read_event(canvas, ep) == 0) {
-		switch (event_id(ep)) {
-		case MS_LEFT:
-		case MB1:
-			c = MB1;
-			break;
-		case MS_MIDDLE:
-		case MB2:
-			c = MB2;
-			break;
-		case MS_RIGHT:
-		case MB3:
-			c = MB3;
-			break;
-		case ABORT:
-			c = ABORT;
-			break;
-		default:
-			continue;
-		}
-		xpos = event_x(ep);
-		ypos = yres-1 - event_y(ep);
+again:
+	if (window_read_event(canvas, &ev) == -1) {
+		notify_perror();
+		quit("window event read error");
+	}
+	c = event_id(&ev);
+	switch (c) {
+	case MS_LEFT:
+		c = MB1;
+		break;
+	case MS_MIDDLE:
+		c = MB2;
+		break;
+	case MS_RIGHT:
+		c = MB3;
+		break;
+	default:
+		if (c < ASCII_FIRST || c > ASCII_LAST)
+			goto again;
 		break;
 	}
+	xpos = event_x(&ev);
+	ypos = yres-1 - event_y(&ev);
+
 	window_set(canvas, WIN_IGNORE_KBD_EVENT, WIN_ASCII_EVENTS, 0);
 	notify_do_dispatch();
 	putc(COM_GETCUR, stdout);
