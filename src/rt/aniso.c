@@ -39,11 +39,10 @@ extern double  specjitter;		/* specular sampling jitter */
 				/* specularity flags */
 #define  SP_REFL	01		/* has reflected specular component */
 #define  SP_TRAN	02		/* has transmitted specular */
-#define  SP_PURE	010		/* purely specular (zero roughness) */
-#define  SP_FLAT	020		/* reflecting surface is flat */
-#define  SP_RBLT	040		/* reflection below sample threshold */
-#define  SP_TBLT	0100		/* transmission below threshold */
-#define  SP_BADU	0200		/* bad u direction calculation */
+#define  SP_FLAT	04		/* reflecting surface is flat */
+#define  SP_RBLT	010		/* reflection below sample threshold */
+#define  SP_TBLT	020		/* transmission below threshold */
+#define  SP_BADU	040		/* bad u direction calculation */
 
 typedef struct {
 	OBJREC  *mp;		/* material pointer */
@@ -94,7 +93,7 @@ double  omega;			/* light source size */
 		scalecolor(ctmp, dtmp);
 		addcolor(cval, ctmp);
 	}
-	if (ldot > FTINY && (np->specfl&(SP_REFL|SP_PURE|SP_BADU)) == SP_REFL) {
+	if (ldot > FTINY && (np->specfl&(SP_REFL|SP_BADU)) == SP_REFL) {
 		/*
 		 *  Compute specular reflection coefficient using
 		 *  anisotropic gaussian distribution model.
@@ -136,7 +135,7 @@ double  omega;			/* light source size */
 		scalecolor(ctmp, dtmp);
 		addcolor(cval, ctmp);
 	}
-	if (ldot < -FTINY && (np->specfl&(SP_TRAN|SP_PURE|SP_BADU)) == SP_TRAN) {
+	if (ldot < -FTINY && (np->specfl&(SP_TRAN|SP_BADU)) == SP_TRAN) {
 		/*
 		 *  Compute specular transmission.  Specular transmission
 		 *  is always modified by material color.
@@ -160,12 +159,11 @@ register OBJREC  *m;
 register RAY  *r;
 {
 	ANISODAT  nd;
-	double  transtest, transdist;
 	double  dtmp;
 	COLOR  ctmp;
 	register int  i;
 						/* easy shadow test */
-	if (r->crtype & SHADOW && m->otype != MAT_TRANS2)
+	if (r->crtype & SHADOW)
 		return;
 
 	if (m->oargs.nfargs != (m->otype == MAT_TRANS2 ? 8 : 6))
@@ -180,8 +178,8 @@ register RAY  *r;
 	nd.specfl = 0;
 	nd.u_alpha = m->oargs.farg[4];
 	nd.v_alpha = m->oargs.farg[5];
-	if (nd.u_alpha <= FTINY || nd.v_alpha <= FTINY)
-		nd.specfl |= SP_PURE;
+	if (nd.u_alpha < 1e-6 || nd.v_alpha <= 1e-6)
+		objerror(m, USER, "roughness too small");
 						/* reorient if necessary */
 	if (r->rod < 0.0)
 		flipsurface(r);
@@ -191,7 +189,6 @@ register RAY  *r;
 	if (nd.pdot < .001)
 		nd.pdot = .001;			/* non-zero for diraniso() */
 	multcolor(nd.mcolor, r->pcol);		/* modify material color */
-	transtest = 0;
 						/* get specular component */
 	if ((nd.rspec = m->oargs.farg[3]) > FTINY) {
 		nd.specfl |= SP_REFL;
@@ -217,16 +214,6 @@ register RAY  *r;
 		if (DOT(nd.vrefl, r->ron) <= FTINY)	/* penetration? */
 			for (i = 0; i < 3; i++)		/* safety measure */
 				nd.vrefl[i] = r->rdir[i] + 2.*r->rod*r->ron[i];
-
-		if (!(r->crtype & SHADOW) && nd.specfl & SP_PURE) {
-			RAY  lr;
-			if (rayorigin(&lr, r, REFLECTED, nd.rspec) == 0) {
-				VCOPY(lr.rdir, nd.vrefl);
-				rayvalue(&lr);
-				multcolor(lr.rcol, nd.scolor);
-				addcolor(r->rcol, lr.rcol);
-			}
-		}
 	}
 						/* compute transmission */
 	if (m->otype == MAT_TRANS) {
@@ -241,10 +228,8 @@ register RAY  *r;
 					specthresh +
 					    (.05 - .1*frandom()) > nd.tspec)))
 				nd.specfl |= SP_TBLT;
-			if (r->crtype & SHADOW ||
-					DOT(r->pert,r->pert) <= FTINY*FTINY) {
+			if (DOT(r->pert,r->pert) <= FTINY*FTINY) {
 				VCOPY(nd.prdir, r->rdir);
-				transtest = 2;
 			} else {
 				for (i = 0; i < 3; i++)		/* perturb */
 					nd.prdir[i] = r->rdir[i] -
@@ -257,34 +242,16 @@ register RAY  *r;
 		}
 	} else
 		nd.tdiff = nd.tspec = nd.trans = 0.0;
-						/* transmitted ray */
-	if ((nd.specfl&(SP_TRAN|SP_PURE)) == (SP_TRAN|SP_PURE)) {
-		RAY  lr;
-		if (rayorigin(&lr, r, TRANS, nd.tspec) == 0) {
-			VCOPY(lr.rdir, nd.prdir);
-			rayvalue(&lr);
-			scalecolor(lr.rcol, nd.tspec);
-			multcolor(lr.rcol, nd.mcolor);	/* modified by color */
-			addcolor(r->rcol, lr.rcol);
-			transtest *= bright(lr.rcol);
-			transdist = r->rot + lr.rt;
-		}
-	}
 
-	if (r->crtype & SHADOW)			/* the rest is shadow */
-		return;
 						/* diffuse reflection */
 	nd.rdiff = 1.0 - nd.trans - nd.rspec;
-
-	if (nd.specfl & SP_PURE && nd.rdiff <= FTINY && nd.tdiff <= FTINY)
-		return;				/* 100% pure specular */
 
 	if (r->ro->otype == OBJ_FACE || r->ro->otype == OBJ_RING)
 		nd.specfl |= SP_FLAT;
 
 	getacoords(r, &nd);			/* set up coordinates */
 
-	if (nd.specfl & (SP_REFL|SP_TRAN) && !(nd.specfl & (SP_PURE|SP_BADU)))
+	if (nd.specfl & (SP_REFL|SP_TRAN) && !(nd.specfl & SP_BADU))
 		agaussamp(r, &nd);
 
 	if (nd.rdiff > FTINY) {		/* ambient from this side */
@@ -309,9 +276,6 @@ register RAY  *r;
 	}
 					/* add direct component */
 	direct(r, diraniso, &nd);
-					/* check distance */
-	if (transtest > bright(r->rcol))
-		r->rt = transdist;
 }
 
 
@@ -410,7 +374,8 @@ register ANISODAT  *np;
 		else
 			VCOPY(sr.rdir, np->prdir);	/* else no jitter */
 		rayvalue(&sr);
-		multcolor(sr.rcol, np->scolor);
+		scalecolor(sr.rcol, np->tspec);
+		multcolor(sr.rcol, np->mcolor);		/* modify by color */
 		addcolor(r->rcol, sr.rcol);
 		ndims--;
 	}
