@@ -13,6 +13,7 @@ extern struct driver {
 	VIEW	v;		/* base view parameters */
 	int	hres, vres;	/* base view resolution */
 	int	ifd;		/* input file descriptor (for select) */
+	int	inpready;	/* number of unprocessed input events */
 } odev;			/* our open device */
 
 extern int	imm_mode;	/* bundles are being delivered immediately */
@@ -91,7 +92,7 @@ int
 dev_flush()		: flush the output and prepare for select call
 
 Updates display, taking any pending action required before select(2) call.
-Returns non-zero if there is device input available.
+Returns non-zero if there is device input available, setting odev.inpready.
 
 
 int
@@ -100,7 +101,8 @@ dev_input()		: process pending display input
 Called when odev struct file descriptor shows input is ready.
 Returns flags indicating actions to take in the control process.
 If the DC_VIEW or DC_RESIZE flag is returned, the odev
-structure must be updated beforehand.
+structure must be updated beforehand.  No events will be
+ready when this function returns, and odev.inpready will be 0.
 
 void
 dev_auxcom(cmd, args)	: process auxiliary command
