@@ -16,7 +16,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  MAXLINE		512	/* longest allowable line */
 
-char  *fontfile = "/usr/local/lib/ray/helvet.fnt";	/* our font file */
+char  *fontfile = "helvet.fnt";		/* our font file */
 
 COLR  bgcolr = WHTCOLR;			/* background color */
 COLR  fgcolr = BLKCOLR;			/* foreground color */
@@ -49,7 +49,8 @@ typedef struct line {
 LINE  *ourtext;				/* our text */
 int  nlines, maxline;			/* text dimensions */
 
-char  *malloc(), *calloc();
+extern char  *malloc(), *calloc();
+extern FILE  *fropen();
 
 
 main(argc, argv)
@@ -154,8 +155,8 @@ loadfont()			/* load the font file */
 	int  gn, ngv, gv;
 	register GLYPH  *g;
 
-	if ((fp = fopen(fontfile, "r")) == NULL) {
-		fprintf(stderr, "cannot open font file \"%s\"\n",
+	if ((fp = fropen(fontfile)) == NULL) {
+		fprintf(stderr, "cannot find font file \"%s\"\n",
 				fontfile);
 		exit(1);
 	}
