@@ -311,8 +311,8 @@ char  *argv[];
 		case 'o':				/* output */
 			outvals = argv[i]+2;
 			break;
-		case 'h':				/* no header */
-			loadflags &= ~IO_INFO;
+		case 'h':				/* toggle header */
+			loadflags ^= IO_INFO;
 			break;
 #endif
 #if  RVIEW
