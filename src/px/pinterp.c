@@ -17,6 +17,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #define pscan(y)	(ourpict+(y)*ourview.hresolu)
 #define zscan(y)	(ourzbuf+(y)*ourview.hresolu)
 
+#define F_FORE	1			/* fill foreground */
+#define F_BACK	2			/* fill background */
+
 #define ABS(x)		((x)>0?(x):-(x))
 
 VIEW	ourview = STDVIEW(512);		/* desired view */
@@ -31,8 +34,11 @@ char	*progname;
 VIEW	theirview = STDVIEW(512);	/* input view */
 int	gotview;			/* got input view? */
 
+int	fill = F_FORE|F_BACK;		/* fill level */
+COLR	backcolr = BLKCOLR;		/* background color */
+
 double	theirs2ours[4][4];		/* transformation matrix */
-int	regdist = 0;			/* regular distance? */
+int	normdist = 1;			/* normalized distance? */
 
 
 main(argc, argv)			/* interpolate pictures */
@@ -40,7 +46,9 @@ int	argc;
 char	*argv[];
 {
 #define check(olen,narg)	if (argv[i][olen] || narg >= argc-i) goto badopt
+	extern double	atof();
 	int	gotvfile = 0;
+	char	*zfile = NULL;
 	char	*err;
 	int	i;
 
@@ -52,9 +60,41 @@ char	*argv[];
 			check(2,1);
 			zeps = atof(argv[++i]);
 			break;
-		case 'r':				/* regular distance */
+		case 'n':				/* dist. normalized? */
 			check(2,0);
-			regdist = !regdist;
+			normdist = !normdist;
+			break;
+		case 'f':				/* fill type */
+			switch (argv[i][2]) {
+			case '0':				/* none */
+				check(3,0);
+				fill = 0;
+				break;
+			case 'f':				/* foreground */
+				check(3,0);
+				fill = F_FORE;
+				break;
+			case 'b':				/* background */
+				check(3,0);
+				fill = F_BACK;
+				break;
+			case 'a':				/* all */
+				check(3,0);
+				fill = F_FORE|F_BACK;
+				break;
+			case 'c':				/* color */
+				check(3,3);
+				setcolr(backcolr, atof(argv[i+1]),
+					atof(argv[i+2]), atof(argv[i+3]));
+				i += 3;
+				break;
+			default:
+				goto badopt;
+			}
+			break;
+		case 'z':				/* z file */
+			check(2,1);
+			zfile = argv[++i];
 			break;
 		case 'x':				/* x resolution */
 			check(2,1);
@@ -137,7 +177,10 @@ char	*argv[];
 	for ( ; i < argc; i += 2)
 		addpicture(argv[i], argv[i+1]);
 							/* fill in spaces */
-	fillpicture();
+	if (fill&F_BACK)
+		fillpicture();
+	else
+		backpicture();
 							/* add to header */
 	printargs(argc, argv, stdout);
 	if (gotvfile) {
@@ -146,13 +189,16 @@ char	*argv[];
 		printf("\n");
 	}
 	printf("\n");
-							/* write output */
+							/* write picture */
 	writepicture();
+							/* write z file */
+	if (zfile != NULL)
+		writedistance(zfile);
 
 	exit(0);
 userr:
 	fprintf(stderr,
-	"Usage: %s [view opts][-t zthresh][-r] pfile zspec ..\n",
+	"Usage: %s [view opts][-t zthresh][-z zout][-fT][-n] pfile zspec ..\n",
 			progname);
 	exit(1);
 #undef check
@@ -294,7 +340,7 @@ float	*zline;
 int	*lasty;			/* input/output */
 float	*lastyz;		/* input/output */
 {
-	extern double	sqrt(), fabs();
+	extern double	sqrt();
 	double	pos[3];
 	int	lastx = 0;
 	double	lastxz = 0;
@@ -307,7 +353,7 @@ float	*lastyz;		/* input/output */
 		pos[1] = y - .5*(theirview.vresolu-1);
 		pos[2] = zline[x];
 		if (theirview.type == VT_PER) {
-			if (!regdist)	/* adjust for eye-ray distance */
+			if (normdist)	/* adjust for eye-ray distance */
 				pos[2] /= sqrt( 1.
 					+ pos[0]*pos[0]*theirview.vhn2
 					+ pos[1]*pos[1]*theirview.vvn2 );
@@ -329,8 +375,10 @@ float	*lastyz;		/* input/output */
 					/* add pixel to our image */
 		zt = 2.*zeps*zline[x];
 		addpixel(xpos, ypos,
-			(fabs(zline[x]-lastxz) <= zt) ? lastx - xpos : 1,
-			(fabs(zline[x]-lastyz[x]) <= zt) ? lasty[x] - ypos : 1,
+			(fill&F_FORE && ABS(zline[x]-lastxz) <= zt)
+				? lastx - xpos : 1,
+			(fill&F_FORE && ABS(zline[x]-lastyz[x]) <= zt)
+				? lasty[x] - ypos : 1,
 			pline[x], pos[2]);
 		lastx = xpos;
 		lasty[x] = ypos;
@@ -411,7 +459,7 @@ fillpicture()				/* fill in empty spaces */
 				 * Next, find background from left or right.
 				 */
 				if (xback == -2) {
-					for (i = x+1; x < ourview.hresolu; i++)
+					for (i = x+1; i < ourview.hresolu; i++)
 						if (zscan(y)[i] > 0)
 							break;
 					if (i < ourview.hresolu
@@ -420,15 +468,23 @@ fillpicture()				/* fill in empty spaces */
 					else
 						xback = x-1;
 				}
-				if (xback < 0 && yback[x] < 0)
-					continue;	/* no background */
+				/*
+				 * Check to see if we have no background for
+				 * this pixel.  If not, use background color.
+				 */
+				if (xback < 0 && yback[x] < 0) {
+					copycolr(pscan(y)[x], backcolr);
+					continue;
+				}
 				/*
 				 * Compare, and use the background that is
 				 * farther, unless one of them is next to us.
 				 */
-				if (yback[x] < 0 || ABS(x-xback) <= 1
+				if ( yback[x] < 0
+					|| (xback >= 0 && ABS(x-xback) <= 1)
 					|| ( ABS(y-yback[x]) > 1
-				&& zscan(yback[x])[x] < zscan(y)[xback] ))
+						&& zscan(yback[x])[x]
+						< zscan(y)[xback] ) )
 					copycolr(pscan(y)[x],pscan(y)[xback]);
 				else
 					copycolr(pscan(y)[x],pscan(yback[x])[x]);
@@ -438,6 +494,17 @@ fillpicture()				/* fill in empty spaces */
 			}
 	}
 	free((char *)yback);
+}
+
+
+backpicture()				/* paint in empty pixels */
+{
+	register int	x, y;
+
+	for (y = 0; y < ourview.vresolu; y++)
+		for (x = 0; x < ourview.hresolu; x++)
+			if (zscan(y)[x] <= 0)
+				copycolr(pscan(y)[x], backcolr);
 }
 
 
@@ -451,6 +518,49 @@ writepicture()				/* write out picture */
 			perror(progname);
 			exit(1);
 		}
+}
+
+
+writedistance(fname)			/* write out z file */
+char	*fname;
+{
+	extern double	sqrt();
+	int	donorm = normdist && ourview.type == VT_PER;
+	FILE	*fp;
+	int	y;
+	float	*zout;
+
+	if ((fp = fopen(fname, "w")) == NULL) {
+		perror(fname);
+		exit(1);
+	}
+	if (donorm
+	&& (zout = (float *)malloc(ourview.hresolu*sizeof(float))) == NULL) {
+		perror(progname);
+		exit(1);
+	}
+	for (y = ourview.vresolu-1; y >= 0; y--) {
+		if (donorm) {
+			double	vx, yzn2;
+			register int	x;
+			yzn2 = y - .5*(ourview.vresolu-1);
+			yzn2 = 1. + yzn2*yzn2*ourview.vvn2;
+			for (x = 0; x < ourview.hresolu; x++) {
+				vx = x - .5*(ourview.hresolu-1);
+				zout[x] = zscan(y)[x]
+					* sqrt(vx*vx*ourview.vhn2 + yzn2);
+			}
+		} else
+			zout = zscan(y);
+		if (fwrite(zout, sizeof(float), ourview.hresolu, fp)
+				< ourview.hresolu) {
+			perror(fname);
+			exit(1);
+		}
+	}
+	if (donorm)
+		free((char *)zout);
+	fclose(fp);
 }
 
 
