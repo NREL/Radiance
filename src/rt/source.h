@@ -36,10 +36,10 @@ typedef struct {
 		SPOT  *s;		/* spot */
 	} sl;			/* localized source information */
 	union {
-		int  success;		/* successes - AIMREQT*failures */
+		long  success;		/* successes - AIMREQT*failures */
 		struct {
 			short  pn;		/* projection number */
-			short  sn;		/* next source to aim for */
+			int  sn;		/* next source to aim for */
 		}  sv;			/* virtual source */
 	} sa;			/* source aiming information */
 	long  ntests, nhits;	/* shadow tests and hits */
