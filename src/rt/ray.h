@@ -64,7 +64,7 @@ extern int  raytrace();
 
 extern double  raynormal();
 
-extern double  raydistance();
+extern double  raydist();
 
 extern int  dimlist[];		/* dimension list for distribution */
 extern int  ndims;		/* number of dimensions so far */
