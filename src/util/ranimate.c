@@ -721,8 +721,7 @@ char	*vfn;
 				close(open(combuf, O_RDONLY|O_CREAT, 0666));
 			}
 					/* create command */
-	sprintf(combuf, "rpict%s%s -w0", rendopt,
-			viewopt(getview(first>1 ? first-1 : 1)));
+	sprintf(combuf, "rpict%s -w0", rendopt);
 	inspoint = combuf;
 	while (*inspoint) inspoint++;
 	if (nblur) {
