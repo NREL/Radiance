@@ -144,7 +144,7 @@ nrand(x) = unif2norm(rand(x));
 
 			{ Local (u,v) coordinates for planar surfaces }
 crosslen`private = Nx*Nx + Ny*Ny;
-			{ U is distance from origin in XY-plane }
+			{ U is distance from projected Z-axis }
 U = if( crosslen`private - FTINY,
 		(Py*Nx - Px*Ny)/crosslen`private,
 		Px);
