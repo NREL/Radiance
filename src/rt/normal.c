@@ -43,10 +43,10 @@ extern double  specjitter;		/* specular sampling jitter */
 				/* specularity flags */
 #define  SP_REFL	01		/* has reflected specular component */
 #define  SP_TRAN	02		/* has transmitted specular */
-#define  SP_PURE	010		/* purely specular (zero roughness) */
-#define  SP_FLAT	020		/* flat reflecting surface */
-#define  SP_RBLT	040		/* reflection below sample threshold */
-#define  SP_TBLT	0100		/* transmission below threshold */
+#define  SP_PURE	04		/* purely specular (zero roughness) */
+#define  SP_FLAT	010		/* flat reflecting surface */
+#define  SP_RBLT	020		/* reflection below sample threshold */
+#define  SP_TBLT	040		/* transmission below threshold */
 
 typedef struct {
 	OBJREC  *mp;		/* material pointer */
@@ -254,7 +254,8 @@ register RAY  *r;
 			transtest *= bright(lr.rcol);
 			transdist = r->rot + lr.rt;
 		}
-	}
+	} else
+		transtest = 0;
 
 	if (r->crtype & SHADOW)			/* the rest is shadow */
 		return;
@@ -364,7 +365,8 @@ register NORMDAT  *np;
 		else
 			VCOPY(sr.rdir, np->prdir);	/* else no jitter */
 		rayvalue(&sr);
-		multcolor(sr.rcol, np->scolor);
+		scalecolor(sr.rcol, np->tspec);
+		multcolor(sr.rcol, np->mcolor);		/* modified by color */
 		addcolor(r->rcol, sr.rcol);
 		ndims--;
 	}
