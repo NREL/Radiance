@@ -61,3 +61,38 @@ int  (*c_get)(), (*s_put)();
 	buf[i] = '\0';
 	(*s_put)("\n");
 }
+
+
+#include  "driver.h"
+
+static char  mybuf[512];
+
+
+char *
+getcombuf(d)				/* return buffer for my command */
+struct driver  *d;
+{
+	d->inpready++;
+	return(mybuf+strlen(mybuf));
+}
+
+
+fromcombuf(b, d)			/* get command from my buffer */
+char  *b;
+struct driver  *d;
+{
+	register char	*cp;
+						/* get next command */
+	for (cp = mybuf; *cp != '\n'; cp++)
+		if (!*cp)
+			return(0);
+	*cp++ = '\0';
+	(*d->comout)(mybuf);			/* echo my command */
+	(*d->comout)("\n");
+						/* send it as reply */
+	strcpy(b, mybuf);
+	d->inpready--;
+						/* get next command */
+	strcpy(mybuf, cp);
+	return(1);
+}
