@@ -47,8 +47,8 @@ extern unsigned _stklen = 16384;
 #define MGF      4
 #define RAW      99
 
-#define DEG(x) ((180.0/M_PI)*(x))
-#define RAD(x) ((M_PI/180.0)*(x))
+#define DEG(x) ((double)(180.0/M_PI)*(x))
+#define RAD(x) ((double)(M_PI/180.0)*(x))
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846)

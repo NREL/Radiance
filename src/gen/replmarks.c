@@ -17,7 +17,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "fvect.h"
 
 #ifdef  M_PI
-#define  PI		M_PI
+#define  PI		((double)M_PI)
 #else
 #define  PI		3.14159265358979323846
 #endif
