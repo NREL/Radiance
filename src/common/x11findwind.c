@@ -23,7 +23,7 @@ int	depth;
 {
 	char	*nr;
 	Window	rr, pr, *cl;
-	int	nc;
+	unsigned int	nc;
 
 	if (XFetchName(dpy, win, &nr)) {
 		register int	succ = !strcmp(nr, name);
