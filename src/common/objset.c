@@ -18,7 +18,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "otypes.h"
 
-#define  OSTSIZ		3037		/* object table size (a prime!) */
+#ifndef  OSTSIZ
+#define  OSTSIZ		12329		/* object table size (a prime!) */
+#endif
 
 static OBJECT  *ostable[OSTSIZ];	/* the object set table */
 
