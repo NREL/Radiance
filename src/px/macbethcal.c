@@ -190,8 +190,10 @@ char	**argv;
 		getcolors();
 	compute();			/* compute color mapping */
 					/* print comment */
-	printf("{ Color correction file computed by:\n\t");
+	printf("{\n\tColor correction file computed by:\n\t\t");
 	printargs(argc, argv, stdout);
+	printf("\n\tUsage: pcomb -f %s uncorrected.pic > corrected.pic\n",
+			i+1 < argc ? argv[i+1] : "{this_file}");
 	printf("}\n");
 	putmapping();			/* put out color mapping */
 	if (debugfp != NULL)		/* put out debug picture */
