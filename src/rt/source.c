@@ -329,7 +329,7 @@ char  *p;			/* data for f */
 						/* compute coefficient */
 		(*f)(srccnt[sn].val, p, srccnt[sn].dir, srccnt[sn].dom);
 		cntord[sn].brt = bright(srccnt[sn].val);
-		if (cntord[sn].brt <= FTINY)
+		if (cntord[sn].brt <= 0.0)
 			continue;
 						/* compute intersection */
 		if (!( source[sn].sflags & SDISTANT ?
