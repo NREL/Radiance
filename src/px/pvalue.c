@@ -384,7 +384,6 @@ checkhead(				/* deal with line from header */
 	} else if (original && isexpos(line)) {
 		d = 1.0/exposval(line);
 		scalecolor(exposure, d);
-fprintf(stderr, "scaled exposure by %f, now at %f\n", d, bright(exposure));
 		doexposure++;
 	} else if (original && iscolcor(line)) {
 		colcorval(ctmp, line);
