@@ -363,6 +363,18 @@ char	*name;
 }
 
 
+C_COLOR *
+c_getcolor(name)		/* get a named color */
+char	*name;
+{
+	register LUENT	*lp;
+
+	if ((lp = lu_find(&clr_tab, name)) == NULL)
+		return(NULL);
+	return((C_COLOR *)lp->data);
+}
+
+
 int
 c_isgrey(clr)			/* check if color is grey */
 register C_COLOR	*clr;

@@ -90,7 +90,7 @@ extern char	*mg_err[MG_NERRS];
 #define MG_MAXARGC	(MG_MAXLINE/4)	/* maximum argument count */
 
 typedef struct mg_fctxt {
-	char	*fname;				/* file name */
+	char	fname[96];			/* file name */
 	FILE	*fp;				/* stream pointer */
 	char	inpline[MG_MAXLINE];		/* input line */
 	int	lineno;				/* line number */
@@ -260,6 +260,7 @@ extern int	c_hmaterial();			/* handle material entity */
 extern int	c_hvertex();			/* handle vertex entity */
 extern void	c_clearall();			/* clear context tables */
 extern C_VERTEX	*c_getvert();			/* get a named vertex */
+extern C_COLOR	*c_getcolor();			/* get a named color */
 extern void	c_ccvt();			/* fix color representation */
 extern int	c_isgrey();			/* check if color is grey */
 #else
@@ -268,6 +269,7 @@ extern int	c_hmaterial(int, char **);	/* handle material entity */
 extern int	c_hvertex(int, char **);	/* handle vertex entity */
 extern void	c_clearall(void);		/* clear context tables */
 extern C_VERTEX	*c_getvert(char *);		/* get a named vertex */
+extern C_COLOR	*c_getcolor(char *);		/* get a named color */
 extern void	c_ccvt(C_COLOR *, int);		/* fix color representation */
 extern int	c_isgrey(C_COLOR *);		/* check if color is grey */
 #endif

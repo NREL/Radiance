@@ -215,7 +215,7 @@ char	*fn;
 
 	ctx->lineno = 0;
 	if (fn == NULL) {
-		ctx->fname = "<stdin>";
+		strcpy(ctx->fname, "<stdin>");
 		ctx->fp = stdin;
 		ctx->prev = mg_file;
 		mg_file = ctx;
@@ -227,17 +227,12 @@ char	*fn;
 		olen = cp - mg_file->fname + 1;
 	else
 		olen = 0;
-	ctx->fname = (char *)malloc(olen+strlen(fn)+1);
-	if (ctx->fname == NULL)
-		return(MG_EMEM);
 	if (olen)
 		strcpy(ctx->fname, mg_file->fname);
 	strcpy(ctx->fname+olen, fn);
 	ctx->fp = fopen(ctx->fname, "r");
-	if (ctx->fp == NULL) {
-		free((MEM_PTR)ctx->fname);
+	if (ctx->fp == NULL)
 		return(MG_ENOFILE);
-	}
 	ctx->prev = mg_file;		/* establish new context */
 	mg_file = ctx;
 	return(MG_OK);
@@ -253,7 +248,6 @@ mg_close()			/* close input file */
 	if (ctx->fp == stdin)
 		return;			/* don't close standard input */
 	fclose(ctx->fp);
-	free((MEM_PTR)ctx->fname);
 }
 
 
