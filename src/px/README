@@ -39,6 +39,7 @@ ra_ppm.c	program to convert between RADIANCE and Poskanzer Pixmaps
 ra_pr.c		program to convert between RADIANCE and Sun 8-bit rasterfile
 ra_pr24.c	program to convert between RADIANCE and 24-bit rasterfile
 ra_rgbe.c	program to convert from RADIANCE RLE to flat format
+ra_skel.c	skeletal converter between RADIANCE and generic 24-bit format
 ra_t16.c	program to convert between RADIANCE and Targa 15+ bit formats
 ra_t8.c		program to convert between RADIANCE and Targa 8 bit format
 ra_tiff.c	program to convert between RADIANCE and 24-bit TIFF files

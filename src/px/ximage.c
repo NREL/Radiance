@@ -23,6 +23,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 
+#include  "resolu.h"
+
 #include  "xraster.h"
 
 #include  "view.h"
