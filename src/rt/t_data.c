@@ -57,10 +57,10 @@ RAY  *r;
 		objerror(m, USER, "bad # arguments");
 	sa = m->oargs.sarg;
 
+	for (i = 7; i < m->oargs.nsargs && sa[i][0] != '-'; i++)
+		;
+	nv = i-7;
 	if ((mxf = (XFORM *)m->os) == NULL) {
-		for (i = 7; i < m->oargs.nsargs && sa[i][0] != '-'; i++)
-			;
-		nv = i-7;
 		mxf = (XFORM *)malloc(sizeof(XFORM));
 		if (mxf == NULL)
 			goto memerr;
