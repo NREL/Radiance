@@ -671,10 +671,14 @@ register int	i;
 	if (hdfragl[hp->fd].writerr)	/* check for file error */
 		return(0);
 	if (i == 0) {			/* clear entire holodeck */
+		if (blglob(hp)->nrm == 0)
+			return(0);		/* already clear */
 		nchanged = 0;
 		for (i = nbeams(hp); i > 0; i--)
 			if (hp->bl[i] != NULL)
 				nchanged += hdfreebeam(hp, i);
+		DCHECK(blglob(hp)->nrm != 0,
+				CONSISTENCY, "bad beam count in hdfreebeam");
 		return(nchanged);
 	}
 	DCHECK(i < 1 | i > nbeams(hp),
@@ -706,6 +710,9 @@ register int	i;
 		return(nchanged);
 	}
 	if (i == 0) {			/* clobber entire holodeck */
+		if (biglob(hp)->nrd == 0 & blglob(hp)->nrm == 0)
+			return(0);		/* already empty */
+		nchanged = 0;
 		nchanged = 0;
 		for (i = nbeams(hp); i > 0; i--)
 			if (hp->bi[i].nrd > 0 || hp->bl[i] != NULL)
