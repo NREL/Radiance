@@ -1,0 +1,174 @@
+#!/usr/local/bin/wish -f
+# SCCSid "$SunId$ LBL"
+#
+# TCL/TK-based Rad Input File Editor
+#
+
+# Insert our autoload directory (may require local system modification)
+
+set radlib /usr/local/lib/ray/tcl
+set helplib $radlib
+
+set auto_path [linsert $auto_path 0 $radlib]
+
+# Create required procedures
+
+proc modified {} {	# check for radvar modification
+	global radvar oldradvar
+	if {! [info exists oldradvar]} {return 0}
+	foreach n [array names oldradvar] {
+		if {! [info exists radvar($n)] ||
+				"$radvar($n)" != "$oldradvar($n)"} {
+			return 1
+		}
+	}
+	return 0
+}
+
+proc chksave {} {	# check if RIF is saved and accost user if not
+	global readonly rifname oldradvar curmess
+	if $readonly {
+		set warnmess "You have modified variables, but the file\
+\"[file tail $rifname]\" was opened read-only.
+Do you wish to save this information somehow?"
+		set yesmess {Go to File Screen}
+	} else {
+		set warnmess "The file \"[file tail $rifname]\" has been\
+modified since it was last saved.
+Do you wish to save it now?"
+		set yesmess {Save File}
+	}
+	if [modified] {
+		switch [tk_dialog .dlg {File Modified} $warnmess \
+				warning 0 $yesmess {Discard Changes} \
+				{Cancel Operation}] {
+			1 { return 1 }
+			2 { return 0 }
+		}
+		if $readonly {
+			.file invoke
+			set curmess {Rename file or uncheck read-only to save.}
+			return 0
+		} else {
+			catch {unset oldradvar}
+			save_vars $rifname
+		}
+	} else { return 1 }
+}
+
+# Set global variable default values
+
+set readonly 0
+set alldone 0
+set rifname [pwd]/
+
+# Propogate essential variables
+
+proc setrname {name elem op} {
+	global rifname
+	wm title . $rifname
+	wm iconname . [file tail $rifname]
+}
+trace variable rifname w setrname
+
+# Make main window frames
+
+frame .upper -geometry 830x410
+pack .upper -side top
+frame .upper.right -geometry 130x410
+place .upper.right -x 700 -y 0
+message .mess -relief ridge -font fixed -textvariable curmess \
+		-width 830 -anchor nw
+pack .mess -side top -expand yes -fill both
+helplink .mess trad trad messages
+
+# Make mode buttons
+
+proc changescreen {} {		# switch screen according to curmode
+	global curscreen curmode curmess
+	if [info exists curscreen] {
+		if {"$curmode" == "$curscreen"} {return}
+		destroy .upper.left
+		do_$curscreen done
+		set curmess {}
+	}
+	set curscreen $curmode
+	do_$curscreen .upper.left
+	.upper.left configure -geometry 700x410
+	place .upper.left -x 0 -y 0
+}
+
+label .upper.right.title -text "- TRAD -"
+pack .upper.right.title -side top -pady 10
+
+proc setbutt v {
+	radiobutton .$v -text [string toupper $v] \
+			-variable curmode -value $v \
+			-width 9 -relief groove -anchor w \
+			-command changescreen
+	pack .$v -in .upper.right -side top -pady 5
+	helplink .$v trad $v intro
+}
+
+setbutt file
+setbutt scene
+setbutt zone
+setbutt views
+setbutt options
+setbutt action
+setbutt results
+rename setbutt {}
+button .upper.right.help -text HELP -width 9 \
+		-command "gethelp trad trad intro"
+pack .upper.right.help -side top -pady 10 -anchor se
+helplink .upper.right.help trad trad help
+button .upper.right.quit -text QUIT \
+		-command {if [chksave] {destroy .}} -width 9
+pack .upper.right.quit -side top -pady 10 -anchor se
+helplink .upper.right.quit trad trad quit
+
+wm minsize . 830 460
+wm iconbitmap . @$radlib/trad.icon
+
+proc gotfile {{o 1}} {		# set file possession state
+	global oldradvar radvar
+	catch {unset oldradvar}
+	if $o {
+		set mode normal
+		foreach n [array names radvar] {
+			set oldradvar($n) $radvar($n)
+		}
+	} else {
+		set mode disabled
+	}
+	foreach b {scene zone views options action results} {
+		.$b configure -state $mode
+	}
+}
+
+# Decide where to go and start
+
+if {[llength $argv] == 0} {
+	gotfile 0
+	set curmess "Choose a Radiance project file."
+	.file invoke
+} elseif {[llength $argv] == 1} {
+	cd [file dirname $argv]
+	set curfile [file tail $argv]
+	if {! [file exists $curfile]} {
+		newnew $argv
+		.scene invoke
+	} elseif {[newload $curfile]} {
+		if $alldone {
+			set curmess "All renderings are finished."
+			.results invoke
+		} else {
+			.action invoke
+		}
+	} else {
+		.file invoke
+	}
+} else {
+	puts stderr {Usage:  trad [rifname]}
+	exit 1
+}

@@ -1,0 +1,76 @@
+	$Id: file.hlp,v 2.1 1994/10/27 15:56:03 greg Exp $
+
+This help file is associated with the getfile.tcl routines, which
+produce a screen for browsing and naming files.
+
+.Directory.Intro
+
+The current directory may be set either by choosing a new directory
+by double-clicking on a directory in the file window, or by
+explicitly changing the directory named in the entry window.
+
+A directory may be given absolutely,
+relative to the current path, or relative to your home directory or
+that of another user using the tilde (~) shorthand.
+
+Hitting <return> in the directory entry window has the same effect as
+pressing the "List" button.
+That is, the interface changes to that directory and lists all files
+matching the given pattern(s).
+
+If an attempt is made to change to a non-existent or read-protected
+directory, an error message is printed in red and the interface
+returns to the previously selected directory.
+
+.Directory.Match
+
+One or more matching (i.e. globbing) patterns may be given in this window,
+separated by white spaces.
+
+Nothing or a single asterisk (*) matches all files in
+this directory.
+Whatever the selected pattern, directories will always be listed,
+followed by a slash (/).
+This makes changing directories more convenient.
+
+To list files beginning with a period (.), use the ".*" pattern.
+Thus, it is possible to include all files in the directory listing by
+entering ".* *" in the pattern window.
+
+Hitting <return> in the pattern entry window has the same effect as
+pressing the "List" button.
+
+.Directory.List
+
+The "List" button causes the interface to change to the selected
+directory and list all files there matching the given pattern(s).
+
+The same effect may be achieved by hitting <return> in either the
+directory entry or pattern entry window.
+
+.File.Intro
+
+The file list box shows all files in the given directory matching the
+specified pattern(s).
+In addition, all subdirectories and the parent directory are listed
+unconditionally.
+
+Double-clicking on a directory in the file list box is the most
+convenient method of filesystem navigation.
+
+Clicking on a file selects it for editing, but does not enter it.
+Double-click on a file if you wish to enter it.
+
+.File.Entry
+
+The file entry field allows you to enter the name of a file that may
+or may not exist in the current directory.
+
+Hitting <return> in this field is equivalent to
+pressing the "OK" button (if it exists).
+
+.File.View
+
+The "View" button, if it exists, permits you to edit the highlighted
+file from the directory listing, using either xedit or the editor
+indicated by the EDITOR environment variable, if defined.
