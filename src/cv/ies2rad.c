@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1996 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -108,6 +108,7 @@ float	defcolor[3] = {1.,1.,1.};	/* default lamp color */
 float	*lampcolor = defcolor;		/* pointer to current lamp color */
 double	multiplier = 1.0;		/* multiplier for all light sources */
 char	units[64] = "meters";		/* output units */
+int	out2stdout = 0;			/* put out to stdout r.t. file */
 int	instantiate = 0;		/* instantiate geometry */
 double	illumrad = 0.0;			/* radius for illum sphere */
 
@@ -203,8 +204,11 @@ char	*argv[];
 		case 'f':		/* lamp data file */
 			lampdat = argv[++i];
 			break;
-		case 'o':		/* output file name */
+		case 'o':		/* output file root name */
 			outfile = argv[++i];
+			break;
+		case 's':		/* output to stdout */
+			out2stdout = !out2stdout;
 			break;
 		case 'i':		/* illum */
 			illumrad = atof(argv[++i]);
@@ -241,16 +245,15 @@ char	*argv[];
 			exit(ies2rad(NULL, outfile) == 0 ? 0 : 1);
 		else if (i == argc-1)
 			exit(ies2rad(argv[i], outfile) == 0 ? 0 : 1);
-		else {
-			fprintf(stderr, "%s: single input file required\n",
-					argv[0]);
-			exit(1);
-		}
+		else
+			goto needsingle;
 	} else if (i >= argc) {
 		fprintf(stderr, "%s: missing output file specification\n",
 				argv[0]);
 		exit(1);
 	}
+	if (out2stdout && i != argc-1)
+		goto needsingle;
 	status = 0;
 	for ( ; i < argc; i++) {
 		tailtrunc(strcpy(outname,filename(argv[i])));
@@ -258,6 +261,9 @@ char	*argv[];
 			status = 1;
 	}
 	exit(status);
+needsingle:
+	fprintf(stderr, "%s: single input file required\n", argv[0]);
+	exit(1);
 }
 
 
@@ -464,7 +470,9 @@ char	*inpname, *outname;
 		perror(inpname);
 		return(-1);
 	}
-	if ((outfp = fopen(fullname(buf,outname,T_RAD), "w")) == NULL) {
+	if (out2stdout)
+		outfp = stdout;
+	else if ((outfp = fopen(fullname(buf,outname,T_RAD), "w")) == NULL) {
 		perror(buf);
 		fclose(inpfp);
 		return(-1);
@@ -1054,14 +1062,16 @@ FILE	*outfp;			/* close output file upon return */
 		fprintf(outfp, "0\n0\n");
 		fclose(outfp);
 	} else {			/* else append to luminaire file */
-		fclose(outfp);
 		if (!FEQ(meters2out, 1.0)) {	/* apply scalefactor */
 			sprintf(cp, "| xform -s %f ", meters2out);
 			cp += strlen(cp);
 		}
-		strcpy(cp, ">> ");		/* append works for DOS? */
-		cp += 3;
-		fullname(cp,outname,T_RAD);
+		if (!out2stdout) {
+			fclose(outfp);
+			strcpy(cp, ">> ");	/* append works for DOS? */
+			cp += 3;
+			fullname(cp,outname,T_RAD);
+		}
 		if (system(buf))
 			return(-1);
 	}
