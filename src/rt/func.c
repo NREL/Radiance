@@ -69,6 +69,7 @@ int  dofwd;
 		funset("erf", 1, ':', l_erf);
 		funset("erfc", 1, ':', l_erfc);
 		setnoisefuncs();
+		setprismfuncs();
 		loadfunc(initfile);
 		initfile[0] = '\0';
 	}
