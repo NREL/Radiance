@@ -119,10 +119,12 @@ char  **argv;
 				bbmin[i] -= OMARGIN;
 				bbmax[i] += OMARGIN;
 			}
-			VCOPY(thescene.cuorg, bbmin);
 			for (i = 0; i < 3; i++)
 				if (bbmax[i] - bbmin[i] > thescene.cusize)
 					thescene.cusize = bbmax[i] - bbmin[i];
+			for (i = 0; i < 3; i++)
+				thescene.cuorg[i] =
+					(bbmax[i]+bbmin[i]-thescene.cusize)*.5;
 		}
 	} else {
 		for (i = 0; i < 3; i++)
