@@ -10,6 +10,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "color.h"
 
+#define CEPS	1e-7			/* color epsilon */
+
 
 RGBPRIMS  stdprims = STDPRIMS;		/* standard primary chromaticities */
 
@@ -151,11 +153,11 @@ COLOR  lower, upper;
 	vv = 1.;			/* check each limit */
 	for (i = 0; i < 3; i++)
 		if (gamut & CGAMUT_LOWER && col[i] < lower[i]) {
-			v = (lower[i] - cgry[i])/(col[i] - cgry[i]);
+			v = (lower[i]+CEPS - cgry[i])/(col[i] - cgry[i]);
 			if (v < vv) vv = v;
 			rflags |= CGAMUT_LOWER;
 		} else if (gamut & CGAMUT_UPPER && col[i] > upper[i]) {
-			v = (upper[i] - cgry[i])/(col[i] - cgry[i]);
+			v = (upper[i]-CEPS - cgry[i])/(col[i] - cgry[i]);
 			if (v < vv) vv = v;
 			rflags |= CGAMUT_UPPER;
 		}
