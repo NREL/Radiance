@@ -270,6 +270,8 @@ int    cameras = 0;
 int    libs = 0;
 float  vue_version = 1.0;
 Matrix *ani_matrix = NULL;
+int    no_opt = FALSE;
+FILE   *meshf = NULL;
 
 
 void process_args (int argc, char *argv[]);
@@ -352,18 +354,30 @@ int read_mgfmatname (char *s, int n, FILE *f);
 
 int main (int argc, char *argv[])
 {
+    char meshfname[128];
     Material *m;
     int i;
 
     process_args (argc, argv);
 
-    if (format != RAW) {
+    if (!no_opt) {
 	opt_set_format (format);
 	opt_set_dec (4);
 	opt_set_bound (bound);
 	opt_set_smooth (smooth);
 	opt_set_quiet (!verbose);
 	opt_set_fname (outname, "");
+    } else if (format == MGF) {
+	strcpy(meshfname, outname);
+	add_ext(meshfname, "inc", 1);
+	if (!strcmp(meshfname, outname)) {
+	    printf ("Output and mesh file names are identical!\n");
+	    exit (1);
+	}
+	if ((meshf = fopen (meshfname, "w")) == NULL) {
+	    printf ("Cannot open mesh output file %s!\n", meshfname);
+	    exit (1);
+	}
     }
 
     if ((in = fopen (inname, "rb")) == NULL) {
@@ -407,11 +421,14 @@ int main (int argc, char *argv[])
     if (frame >= 0)
 	save_animation();
 
-    if (format != RAW) {
+    if (!no_opt) {
         write_summary (out);
         fflush (out);
 
 	opt_finish();
+    } else if (meshf != NULL) {
+	fclose(meshf);
+	fprintf (out, "i %s\n", meshfname);
     }
 
     fclose (out);
@@ -536,6 +553,9 @@ void process_args (int argc, char *argv[])
 
     if ((strlen(vuename) > 0) != (frame >= 0))
 	abortmsg ("The -a and -f parameters must be used together", 1);
+
+    if (format == RAW || (format == MGF && smooth < 0.1))
+	no_opt = TRUE;
 }
 
 
@@ -1580,7 +1600,9 @@ void write_mgf_material (FILE *f, MatProp *m)
 /* Write a mesh file */
 void write_mesh (FILE *f, Mesh *mesh)
 {
+    FILE *fi;
     int i;
+    char curmat[80];
     Vector va, vb, vc;
     Summary *new_summary;
     Matrix obj_matrix;
@@ -1607,11 +1629,33 @@ void write_mesh (FILE *f, Mesh *mesh)
     }
 
     switch (format) {
+	case MGF:
+	    if (no_opt) {
+		if (mesh->name[0]) fprintf (meshf, "o %s\n", mesh->name);
+		for (i = 0; i < mesh->vertices; i++) {
+		    vect_copy(va, mesh->vertex[i]);
+		    if (ani_matrix != NULL)
+			vect_transform (va, va, obj_matrix);
+		    fprintf (meshf, "v v%d =\n\tp %.5f %.5f %.5f\n",
+				i, va[X], va[Y], va[Z]);
+		}
+		curmat[0] = '\0';
+		for (i = 0; i < mesh->faces; i++) {
+		    if (strcmp(mesh->mtl[i]->name, curmat)) {
+			strcpy(curmat, mesh->mtl[i]->name);
+			fprintf (meshf, "m %s\n", curmat);
+		    }
+		    fprintf (meshf, "f v%d v%d v%d\n", mesh->face[i].a,
+				mesh->face[i].b, mesh->face[i].c);
+		}
+		if (mesh->name[0]) fprintf (meshf, "o\n");
+		break;
+	    }
+	    /*FALL THROUGH*/
 	case POV10:
 	case POV20:
 	case VIVID:
 	case POLYRAY:
-	case MGF:
 	    opt_set_vert (mesh->vertices);
 
 	    for (i = 0; i < mesh->faces; i++) {
