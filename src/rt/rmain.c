@@ -38,6 +38,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 char  *progname;			/* argv[0] */
 
+char  *octname;				/* octree name */
+
 char  *libpath;				/* library directory list */
 
 char  *sigerr[NSIG];			/* signal error messages */
@@ -371,10 +373,7 @@ char  *argv[];
 			break;
 #endif
 		default:
-badopt:
-			sprintf(errmsg, "command line error at '%s'", argv[i]);
-			error(USER, errmsg);
-			break;
+			goto badopt;
 		}
 	}
 #if  RPICT|RVIEW
@@ -409,18 +408,21 @@ badopt:
 #ifdef  NICE
 	nice(NICE);			/* lower priority */
 #endif
+					/* get octree */
 #if  RVIEW
 	loadflags &= ~IO_INFO;
 #endif
-#if  RPICT
 	if (i == argc)
-		readoct(NULL, loadflags, &thescene, NULL);
+		octname = NULL;
+	else if (i == argc-1)
+		octname = argv[i];
 	else
+		goto badopt;
+#if  RVIEW|RTRACE
+	if (octname == NULL)
+		error(USER, "missing octree argument");
 #endif
-	if (i == argc-1)
-		readoct(argv[i], loadflags, &thescene, NULL);
-	else
-		error(USER, "single octree required");
+	readoct(octname, loadflags, &thescene, NULL);
 
 	if (loadflags & IO_INFO) {	/* print header */
 		printargs(i, argv, stdout);
@@ -451,6 +453,11 @@ badopt:
 	rview();			/* go */
 #endif
 	quit(0);
+
+badopt:
+	sprintf(errmsg, "command line error at '%s'", argv[i]);
+	error(USER, errmsg);
+
 #undef  check
 }
 
