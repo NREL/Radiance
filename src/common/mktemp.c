@@ -8,7 +8,7 @@ static char SCCSid[] = "$SunId$ LBL";
  * Replacement mktemp(3) function for systems without
  */
 
-#include "standard.h"
+#define  NULL		0
 
 
 char *
@@ -35,7 +35,7 @@ char	*template;
 	}
 	p = te-1;			/* final character */
 	for (*p = 'a'; *p <= 'z'; (*p)++)
-		if (access(template, F_OK) == -1)
+		if (access(template, 0) == -1)
 			return(template);	/* found unique name */
 	return(NULL);			/* failure! */
 }
