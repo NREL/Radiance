@@ -26,6 +26,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "ray.h"
 
+#include  "octree.h"
+
 #include  "otypes.h"
 
 int  inform = 'a';			/* input format */
@@ -57,6 +59,7 @@ static int  oputo(), oputd(), oputv(), oputl(),
 		oputp(), oputn(), oputs(), oputw(), oputm();
 
 static int  (*ray_out[10])(), (*every_out[10])();
+static int  castonly;
 
 static int  puta(), putf(), putd();
 
@@ -126,12 +129,14 @@ register char  *vs;
 	extern int  ourtrace(), (*trace)();
 	register int (**table)() = ray_out;
 
+	castonly = 1;
 	while (*vs)
 		switch (*vs++) {
 		case 't':				/* trace */
 			*table = NULL;
 			table = every_out;
 			trace = ourtrace;
+			castonly = 0;
 			break;
 		case 'o':				/* origin */
 			*table++ = oputo;
@@ -141,9 +146,11 @@ register char  *vs;
 			break;
 		case 'v':				/* value */
 			*table++ = oputv;
+			castonly = 0;
 			break;
 		case 'l':				/* length */
 			*table++ = oputl;
+			castonly = 0;
 			break;
 		case 'p':				/* point */
 			*table++ = oputp;
@@ -173,7 +180,10 @@ FVECT  org, dir;
 	VCOPY(thisray.rorg, org);
 	VCOPY(thisray.rdir, dir);
 	rayorigin(&thisray, NULL, PRIMARY, 1.0);
-	rayvalue(&thisray);
+	if (castonly)
+		localhit(&thisray, &thescene) || sourcehit(&thisray);
+	else
+		rayvalue(&thisray);
 
 	if (ray_out[0] == NULL)
 		return;
