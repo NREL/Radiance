@@ -21,6 +21,10 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  bmalloc	malloc
 #endif
 
+#ifdef  DCL_ATOF
+extern double  atof();
+#endif
+
 extern char  *bmalloc(), *savestr(), *fgetword();
 extern int  atoi();
 extern long  atol();
