@@ -166,7 +166,7 @@ double  (*fptr)();
 		break;
 	libsize++;
     }
-    lp[0].fname = fname;		/* string must be static! */
+    lp[0].fname = savestr(fname);
     lp[0].nargs = nargs;
     lp[0].f = fptr;
 }
