@@ -1,4 +1,4 @@
-/* Copyright (c) 1987 Regents of the University of California */
+/* Copyright (c) 1991 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -121,7 +121,8 @@ unkopt:
 	maptext();
 					/* print header */
 	printargs(argc, argv, stdout);
-	printf("\n\n");
+	fputformat(COLRFMT, stdout);
+	putchar('\n');
 					/* write out bitmap */
 	writemap(stdout);
 
@@ -391,16 +392,4 @@ FILE  *fp;
 		}
 	}
 	free((char *)scanout);
-}
-
-
-printargs(ac, av, fp)		/* print arguments to a file */
-int  ac;
-char  **av;
-FILE  *fp;
-{
-	while (ac-- > 0) {
-		fputs(*av++, fp);
-		putc(' ', fp);
-	}
 }
