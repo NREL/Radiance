@@ -38,7 +38,6 @@ int  load;
 CUBE  *scene;
 char  *ofn[];
 {
-	extern int  fputs();
 	char  sbuf[512];
 	int  nf;
 	OBJECT	fnobjects;
