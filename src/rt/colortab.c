@@ -30,11 +30,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #define MAXDST2		5
 				/* maximum frame buffer depth */
 #define FBDEPTH		8
-				/* color map resolution */
-#define MAPSIZ		256
 				/* map a color */
-#define map_col(c,p)	clrmap[ colval(c,p)<1. ? \
-				(int)(colval(c,p)*MAPSIZ) : MAPSIZ-1 ]
+#define map_col(c,p)	clrmap[p][ colval(c,p)<1. ? \
+				(int)(colval(c,p)*256.) : 255 ]
 				/* color partition tree */
 #define CNODE		short
 #define set_branch(p,c)	((c)<<2|(p))
@@ -50,26 +48,21 @@ struct tabent {
 	short	ent[3];		/* current table value */
 }	clrtab[1<<FBDEPTH];
 				/* our color correction map */
-static BYTE	clrmap[MAPSIZ];
+static BYTE	clrmap[3][256];
 				/* histogram of colors used */
 static unsigned	histo[NRED][NGRN][NBLU];
 				/* initial color cube boundaries */
 static int	CLRCUBE[3][2] = {0,NRED,0,NGRN,0,NBLU};
 				/* color cube partition */
 static CNODE	ctree[1<<(FBDEPTH+1)];
-				/* callback for pixel assignment */
-static int	(*set_pixel)();
 
 
 int
-new_ctab(ncolors, cset)		/* start new color table with max ncolors */
+new_ctab(ncolors)		/* start new color table with max ncolors */
 int	ncolors;
-int	(*cset)();
 {
-	if (ncolors < 1 || ncolors > 1<<FBDEPTH || cset == NULL)
+	if (ncolors < 1 || ncolors > 1<<FBDEPTH)
 		return(0);
-				/* assign pixel callback routine */
-	set_pixel = cset;
 				/* clear color table */
 	bzero(clrtab, sizeof(clrtab));
 				/* partition color space */
@@ -82,8 +75,9 @@ int	(*cset)();
 
 
 int
-get_pixel(col)			/* get pixel for color */
+get_pixel(col, set_pixel)	/* get pixel for color */
 COLOR	col;
+int	(*set_pixel)();
 {
 	int	r, g, b;
 	int	cv[3];
@@ -139,14 +133,25 @@ COLOR	col;
 }
 
 
-make_cmap(gam)			/* make gamma correction map */
+make_gmap(gam)			/* make gamma correction map */
 double  gam;
 {
 	extern double	pow();
 	register int	i;
 	
-	for (i = 0; i < MAPSIZ; i++)
-		clrmap[i] = 256.0 * pow(i/(double)MAPSIZ, 1.0/gam);
+	for (i = 0; i < 256; i++)
+		clrmap[RED][i] =
+		clrmap[GRN][i] =
+		clrmap[BLU][i] = 256.0 * pow(i/256.0, 1.0/gam);
+}
+
+
+set_cmap(rmap, gmap, bmap)	/* set custom color correction map */
+BYTE	*rmap, *gmap, *bmap;
+{
+	bcopy(rmap, clrmap[RED], 256);
+	bcopy(gmap, clrmap[GRN], 256);
+	bcopy(bmap, clrmap[BLU], 256);
 }
 
 

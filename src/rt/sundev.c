@@ -36,8 +36,6 @@ DEFINE_ICON_FROM_IMAGE(sun_icon, icon_image);
 #define FIRSTCOLOR	2		/* first usable entry */
 #define NCOLORS		251		/* number of usable colors */
 
-int  newcolr();
-
 int  sun_clear(), sun_paintr(), sun_getcur(),
 		sun_comout(), sun_comin();
 
@@ -105,7 +103,7 @@ char	*argv[];
 		quit("cannot create canvas");
 	if (getmap() < 0)
 		quit("not a color screen");
-	make_cmap(GAMMA);
+	make_gmap(GAMMA);
 	window_set(canvas, CANVAS_RETAINED, TRUE, 0);
 	notify_interpose_destroy_func(frame, my_notice_destroy);
 
@@ -165,12 +163,13 @@ sun_clear()				/* clear our canvas */
 		yres = nheight;
 	}
 	pw_writebackground(pw, 0, 0, xres, xres, PIX_SRC);
-	new_ctab(NCOLORS, newcolr);
+	new_ctab(NCOLORS);
 }
 
 
 sun_paintr()				/* fill a rectangle */
 {
+	extern int  newcolr();
 	COLOR  col;
 	int  pval;
 	int  xmin, ymin, xmax, ymax;
@@ -181,7 +180,7 @@ sun_paintr()				/* fill a rectangle */
 	fread(&ymin, sizeof(ymin), 1, stdin);
 	fread(&xmax, sizeof(xmax), 1, stdin);
 	fread(&ymax, sizeof(ymax), 1, stdin);
-	pval = get_pixel(col) + FIRSTCOLOR;
+	pval = get_pixel(col, newcolr) + FIRSTCOLOR;
 	pw = canvas_pixwin(canvas);
 	pw_rop(pw, xmin, yres-ymax, xmax-xmin, ymax-ymin,
 			PIX_SRC|PIX_COLOR(pval), NULL, 0, 0);
