@@ -27,31 +27,35 @@ int	onevalue(), catvalues();
 #define OBJECT		0		/* object files */
 #define SCENE		1		/* scene files */
 #define MATERIAL	2		/* material files */
-#define RENDER		3		/* rendering options */
-#define OCONV		4		/* oconv options */
-#define PFILT		5		/* pfilt options */
-#define VIEW		6		/* view(s) for picture(s) */
-#define ZONE		7		/* simulation zone */
-#define QUALITY		8		/* desired rendering quality */
-#define OCTREE		9		/* octree file name */
-#define PICTURE		10		/* picture file name */
-#define AMBFILE		11		/* ambient file name */
-#define OPTFILE		12		/* rendering options file */
-#define EXPOSURE	13		/* picture exposure setting */
-#define RESOLUTION	14		/* maximum picture resolution */
-#define UP		15		/* view up (X, Y or Z) */
-#define INDIRECT	16		/* indirection in lighting */
-#define DETAIL		17		/* level of scene detail */
-#define PENUMBRAS	18		/* shadow penumbras are desired */
-#define VARIABILITY	19		/* level of light variability */
-#define REPORT		20		/* report frequency and errfile */
+#define ILLUM		3		/* mkillum input files */
+#define MKILLUM		4		/* mkillum options */
+#define RENDER		5		/* rendering options */
+#define OCONV		6		/* oconv options */
+#define PFILT		7		/* pfilt options */
+#define VIEW		8		/* view(s) for picture(s) */
+#define ZONE		9		/* simulation zone */
+#define QUALITY		10		/* desired rendering quality */
+#define OCTREE		11		/* octree file name */
+#define PICTURE		12		/* picture file name */
+#define AMBFILE		13		/* ambient file name */
+#define OPTFILE		14		/* rendering options file */
+#define EXPOSURE	15		/* picture exposure setting */
+#define RESOLUTION	16		/* maximum picture resolution */
+#define UP		17		/* view up (X, Y or Z) */
+#define INDIRECT	18		/* indirection in lighting */
+#define DETAIL		19		/* level of scene detail */
+#define PENUMBRAS	20		/* shadow penumbras are desired */
+#define VARIABILITY	21		/* level of light variability */
+#define REPORT		22		/* report frequency and errfile */
 				/* total number of variables */
-#define NVARS		21
+#define NVARS		23
 
 VARIABLE	vv[NVARS] = {		/* variable-value pairs */
 	{"objects",	3,	0,	NULL,	catvalues},
 	{"scene",	3,	0,	NULL,	catvalues},
 	{"materials",	3,	0,	NULL,	catvalues},
+	{"illum",	3,	0,	NULL,	catvalues},
+	{"mkillum",	3,	0,	NULL,	catvalues},
 	{"render",	3,	0,	NULL,	catvalues},
 	{"oconv",	3,	0,	NULL,	catvalues},
 	{"pfilt",	2,	0,	NULL,	catvalues},
@@ -101,11 +105,17 @@ char	overfile[] = "overture.raw";
 char	overfile[] = "/dev/null";
 #endif
 
-extern long	fdate(), time();
+extern unsigned long	fdate(), time();
 
-long	scenedate;		/* date of latest scene or object file */
-long	octreedate;		/* date of octree */
-long	matdate;		/* date of latest material file */
+unsigned long	scenedate;	/* date of latest scene or object file */
+unsigned long	octreedate;	/* date of octree */
+unsigned long	matdate;	/* date of latest material file */
+unsigned long	illumdate;	/* date of last illum file */
+
+char	*oct0name;		/* name of pre-mkillum octree */
+unsigned long	oct0date;	/* date of pre-mkillum octree */
+char	*oct1name;		/* name of post-mkillum octree */
+unsigned long	oct1date;	/* date of post-mkillum octree (>= matdate) */
 
 int	explicate = 0;		/* explicate variables */
 int	silent = 0;		/* do work silently */
@@ -173,7 +183,7 @@ char	*argv[];
 				/* print all values if requested */
 	if (explicate)
 		printvals();
-				/* build octree */
+				/* build octree (and run mkillum) */
 	oconv();
 				/* check date on ambient file */
 	checkambfile();
@@ -187,7 +197,7 @@ char	*argv[];
 	exit(0);
 userr:
 	fprintf(stderr,
-	"Usage: %s [-s][-n][-e][-v view][-o dev] rfile [VAR=value ..]\n",
+	"Usage: %s [-s][-n][-e][-V][-v view][-o dev] rfile [VAR=value ..]\n",
 			progname);
 	exit(1);
 }
@@ -301,7 +311,8 @@ register char	*ass;
 				i++;
 		*++cp = ass[i];
 	}
-	*++cp = '\0';
+	if (isspace(*cp))		/* remove trailing space */
+		*cp = '\0';
 	vp->nass++;
 }
 
@@ -391,21 +402,23 @@ register VARIABLE	*vp;
 }
 
 
-long
+unsigned long
 checklast(fnames)			/* check files and find most recent */
 register char	*fnames;
 {
 	char	thisfile[MAXPATH];
-	long	thisdate, lastdate = -1;
+	unsigned long	thisdate, lastdate = 0;
 	register char	*cp;
 
+	if (fnames == NULL)
+		return(0);
 	while (*fnames) {
 		while (isspace(*fnames)) fnames++;
 		cp = thisfile;
 		while (*fnames && !isspace(*fnames))
 			*cp++ = *fnames++;
 		*cp = '\0';
-		if ((thisdate = fdate(thisfile)) < 0)
+		if (!(thisdate = fdate(thisfile)))
 			syserr(thisfile);
 		if (thisdate > lastdate)
 			lastdate = thisdate;
@@ -414,36 +427,56 @@ register char	*fnames;
 }
 
 
+char *
+newfname(orig, pred)		/* create modified file name */
+char	*orig;
+int	pred;
+{
+	extern char	*rindex();
+	register char	*cp;
+	register int	n;
+	int	suffix;
+
+	suffix = n = strlen(orig);		/* find start of suffix */
+	if ((cp = rindex(orig, '.')) != NULL)
+		suffix = cp - orig;
+	if ((cp = bmalloc(n+2)) == NULL)
+		syserr(progname);
+	strncpy(cp, orig, suffix);
+	cp[suffix] = pred;			/* root name + pred + suffix */
+	strcpy(cp+suffix+1, orig+suffix);
+	return(cp);
+}
+
+
 checkfiles()			/* check for existence and modified times */
 {
-	char	*cp;
-	long	objdate;
+	unsigned long	objdate;
 
 	if (!vdef(OCTREE)) {
-		if ((cp = bmalloc(strlen(radname)+5)) == NULL)
+		if ((vval(OCTREE) = bmalloc(strlen(radname)+5)) == NULL)
 			syserr(progname);
-		sprintf(cp, "%s.oct", radname);
-		vval(OCTREE) = cp;
+		sprintf(vval(OCTREE), "%s.oct", radname);
 		vdef(OCTREE)++;
 	}
 	octreedate = fdate(vval(OCTREE));
-	scenedate = -1;
-	if (vdef(SCENE)) {
-		scenedate = checklast(vval(SCENE));
-		if (vdef(OBJECT)) {
-			objdate = checklast(vval(OBJECT));
-			if (objdate > scenedate)
-				scenedate = objdate;
-		}
-	}
-	if (octreedate < 0 & scenedate < 0) {
-		fprintf(stderr, "%s: need '%s' or '%s'\n", progname,
-				vnam(OCTREE), vnam(SCENE));
+	if (vdef(ILLUM)) {		/* illum requires secondary octrees */
+		oct0name = newfname(vval(OCTREE), '0');
+		oct1name = newfname(vval(OCTREE), '1');
+		oct0date = fdate(oct0name);
+		oct1date = fdate(oct1name);
+	} else
+		oct0name = oct1name = vval(OCTREE);
+	if ((scenedate = checklast(vval(SCENE))) &&
+			(objdate = checklast(vval(OBJECT))) > scenedate)
+		scenedate = objdate;
+	illumdate = checklast(vval(ILLUM));
+	if (!octreedate & !scenedate & !illumdate) {
+		fprintf(stderr, "%s: need '%s' or '%s' or '%s'\n", progname,
+				vnam(OCTREE), vnam(SCENE), vnam(ILLUM));
 		exit(1);
 	}
-	matdate = -1;
-	if (vdef(MATERIAL))
-		matdate = checklast(vval(MATERIAL));
+	matdate = checklast(vval(MATERIAL));
 }	
 
 
@@ -452,23 +485,47 @@ double	org[3], *sizp;
 {
 	extern FILE	*popen();
 	static double	oorg[3], osiz = 0.;
-	char	buf[MAXPATH+16];
+	double	min[3], max[3];
+	char	buf[512];
 	FILE	*fp;
+	register int	i;
 
-	if (osiz <= FTINY) {
-		oconv();		/* does nothing if done already */
-		sprintf(buf, "getinfo -d < %s", vval(OCTREE));
-		if ((fp = popen(buf, "r")) == NULL)
-			syserr("getinfo");
-		if (fscanf(fp, "%lf %lf %lf %lf", &oorg[0], &oorg[1],
-				&oorg[2], &osiz) != 4) {
-			fprintf(stderr,
+	if (osiz <= FTINY)
+		if (noaction && fdate(oct1name) <
+				(scenedate>illumdate?scenedate:illumdate)) {
+							/* run getbbox */
+			sprintf(buf, "getbbox -w -h %s",
+				vdef(SCENE) ? vval(SCENE) : vval(ILLUM));
+			if ((fp = popen(buf, "r")) == NULL)
+				syserr("getbbox");
+			if (fscanf(fp, "%lf %lf %lf %lf %lf %lf",
+					&min[0], &max[0], &min[1], &max[1],
+					&min[2], &max[2]) != 6) {
+				fprintf(stderr,
+			"%s: error reading bounding box from getbbox\n",
+						progname);
+				exit(1);
+			}
+			for (i = 0; i < 3; i++)
+				if (max[i] - min[i] > osiz)
+					osiz = max[i] - min[i];
+			for (i = 0; i < 3; i++)
+				oorg[i] = (max[i]+min[i]-osiz)*.5;
+			pclose(fp);
+		} else {				/* from octree */
+			oconv();	/* does nothing if done already */
+			sprintf(buf, "getinfo -d < %s", oct1name);
+			if ((fp = popen(buf, "r")) == NULL)
+				syserr("getinfo");
+			if (fscanf(fp, "%lf %lf %lf %lf", &oorg[0], &oorg[1],
+					&oorg[2], &osiz) != 4) {
+				fprintf(stderr,
 			"%s: error reading bounding cube from getinfo\n",
-					progname);
-			exit(1);
+						progname);
+				exit(1);
+			}
+			pclose(fp);
 		}
-		pclose(fp);
-	}
 	org[0] = oorg[0]; org[1] = oorg[1]; org[2] = oorg[2]; *sizp = osiz;
 }
 
@@ -531,28 +588,84 @@ printvals()			/* print variable values */
 }
 
 
-oconv()				/* run oconv if necessary */
+oconv()				/* run oconv and mkillum if necessary */
 {
-	char	combuf[512], ocopts[64];
+	static char	illumtmp[] = "ilXXXXXX";
+	char	combuf[512], ocopts[64], mkopts[64];
 
-	if (octreedate >= scenedate)	/* check dates */
-		return;
-					/* build command */
-	oconvopts(ocopts);
-	if (vdef(MATERIAL))
-		sprintf(combuf, "oconv%s %s %s > %s", ocopts,
+	oconvopts(ocopts);		/* get options */
+	if (octreedate < scenedate) {	/* check date on original octree */
+						/* build command */
+		if (vdef(MATERIAL))
+			sprintf(combuf, "oconv%s %s %s > %s", ocopts,
 				vval(MATERIAL), vval(SCENE), vval(OCTREE));
-	else
-		sprintf(combuf, "oconv%s %s > %s", ocopts,
-				vval(SCENE), vval(OCTREE));
-	
-	if (runcom(combuf)) {		/* run it */
-		fprintf(stderr, "%s: error generating octree\n\t%s removed\n",
-				progname, vval(OCTREE));
-		unlink(vval(OCTREE));
+		else
+			sprintf(combuf, "oconv%s %s > %s", ocopts,
+					vval(SCENE), vval(OCTREE));
+		
+		if (runcom(combuf)) {		/* run it */
+			fprintf(stderr,
+				"%s: error generating octree\n\t%s removed\n",
+					progname, vval(OCTREE));
+			unlink(vval(OCTREE));
+			exit(1);
+		}
+		octreedate = time(0);
+	}
+	if (oct1name == vval(OCTREE))		/* no mkillum? */
+		oct1date = octreedate > matdate ? octreedate : matdate;
+	if (oct1date >= octreedate & oct1date >= matdate
+			& oct1date >= illumdate)	/* all done */
+		return;
+						/* make octree0 */
+	if (oct0date < scenedate | oct0date < illumdate) {
+						/* build command */
+		if (octreedate)
+			sprintf(combuf, "oconv%s -i %s %s > %s", ocopts,
+				vval(OCTREE), vval(ILLUM), oct0name);
+		else if (vdef(MATERIAL))
+			sprintf(combuf, "oconv%s %s %s > %s", ocopts,
+				vval(MATERIAL), vval(ILLUM), oct0name);
+		else
+			sprintf(combuf, "oconv%s %s > %s", ocopts,
+				vval(ILLUM), oct0name);
+		if (runcom(combuf)) {		/* run it */
+			fprintf(stderr,
+				"%s: error generating octree\n\t%s removed\n",
+					progname, oct0name);
+			unlink(oct0name);
+			exit(1);
+		}
+		oct0date = time(0);
+	}
+	mkillumopts(mkopts);			/* build mkillum command */
+	mktemp(illumtmp);
+	sprintf(combuf, "mkillum%s %s \"<\" %s > %s", mkopts,
+			oct0name, vval(ILLUM), illumtmp);
+	if (runcom(combuf)) {			/* run it */
+		fprintf(stderr, "%s: error running mkillum\n", progname);
+		unlink(illumtmp);
 		exit(1);
 	}
-	octreedate = time(0);
+						/* make octree1 (frozen) */
+	if (octreedate)
+		sprintf(combuf, "oconv%s -f -i %s %s > %s", ocopts,
+			vval(OCTREE), illumtmp, oct1name);
+	else if (vdef(MATERIAL))
+		sprintf(combuf, "oconv%s -f %s %s > %s", ocopts,
+			vval(MATERIAL), illumtmp, oct1name);
+	else
+		sprintf(combuf, "oconv%s -f %s > %s", ocopts,
+			illumtmp, oct1name);
+	if (runcom(combuf)) {		/* run it */
+		fprintf(stderr,
+			"%s: error generating octree\n\t%s removed\n",
+				progname, oct1name);
+		unlink(oct1name);
+		exit(1);
+	}
+	oct1date = time(0);
+	rmfile(illumtmp);
 }
 
 
@@ -578,15 +691,26 @@ register char	*oo;
 }
 
 
+mkillumopts(mo)				/* get mkillum options */
+register char	*mo;
+{
+	/* BEWARE:  This may be called via setdefaults(), so no assumptions */
+
+	*mo = '\0';
+	if (vdef(MKILLUM))
+		addarg(mo, vval(MKILLUM));
+}
+
+
 checkambfile()			/* check date on ambient file */
 {
-	long	afdate;
+	unsigned long	afdate;
 
 	if (!vdef(AMBFILE))
 		return;
-	if ((afdate = fdate(vval(AMBFILE))) < 0)
+	if (!(afdate = fdate(vval(AMBFILE))))
 		return;
-	if (octreedate > afdate | matdate > afdate)
+	if (oct1date > afdate)
 		rmfile(vval(AMBFILE));
 }
 
@@ -971,7 +1095,9 @@ register char	*vs;
 			cp += strlen(cp);
 		}
 	}
-	strcpy(cp, vs);			/* append any additional options */
+	if (cp == viewopts)		/* append any additional options */
+		vs++;		/* skip prefixed space if unneeded */
+	strcpy(cp, vs);
 #ifdef MSDOS
 	if (strlen(viewopts) > 40) {
 		setenv("VIEW", viewopts);
@@ -1093,7 +1219,7 @@ char	*opts;
 	sprintf(combuf, "rview %s%s -R %s ", vw, opts, rifname);
 	if (rvdevice != NULL)
 		sprintf(combuf+strlen(combuf), "-o %s ", rvdevice);
-	strcat(combuf, vval(OCTREE));
+	strcat(combuf, oct1name);
 	if (runcom(combuf)) {		/* run it */
 		fprintf(stderr, "%s: error running rview\n", progname);
 		exit(1);
@@ -1109,7 +1235,6 @@ char	*opts;
 	char	pfopts[128];
 	char	vs[32], *vw;
 	int	vn, mult;
-	long	lastdate;
 					/* get pfilt options */
 	pfiltopts(pfopts);
 					/* get resolution, reporting */
@@ -1140,8 +1265,6 @@ char	*opts;
 		else
 			badvalue(REPORT);
 	}
-					/* get update time */
-	lastdate = octreedate > matdate ? octreedate : matdate;
 					/* do each view */
 	vn = 0;
 	while ((vw = getview(vn++, vs)) != NULL) {
@@ -1151,19 +1274,19 @@ char	*opts;
 			sprintf(vs, "%d", vn);
 		sprintf(picfile, "%s_%s.pic", vval(PICTURE), vs);
 						/* check date on picture */
-		if (fdate(picfile) >= lastdate)
+		if (fdate(picfile) >= oct1date)
 			continue;
 						/* build rpict command */
 		sprintf(rawfile, "%s_%s.raw", vval(PICTURE), vs);
-		if (fdate(rawfile) >= octreedate)	/* recover */
+		if (fdate(rawfile) >= oct1date)		/* recover */
 			sprintf(combuf, "rpict%s%s -ro %s %s",
-					rep, opts, rawfile, vval(OCTREE));
+					rep, opts, rawfile, oct1name);
 		else {
 			if (overture) {		/* run overture calculation */
 				sprintf(combuf,
 				"rpict%s %s%s -x 64 -y 64 -ps 1 %s > %s",
 						rep, vw, opts,
-						vval(OCTREE), overfile);
+						oct1name, overfile);
 				if (runcom(combuf)) {
 					fprintf(stderr,
 					"%s: error in overture for view %s\n",
@@ -1176,7 +1299,7 @@ char	*opts;
 			}
 			sprintf(combuf, "rpict%s %s %s%s %s > %s",
 					rep, vw, res, opts,
-					vval(OCTREE), rawfile);
+					oct1name, rawfile);
 		}
 		if (runcom(combuf)) {		/* run rpict */
 			fprintf(stderr, "%s: error rendering view %s\n",
