@@ -239,6 +239,7 @@ struct glare_dir	*gd;
  * All vectors are assumed to be normalized.
  * This function is an implementation of the method proposed by
  * Robert Levin in his 1975 JIES article.
+ * This calculation presumes the view direction and up vectors perpendicular.
  * We return a value less than zero for improper positions.
  */
 
@@ -252,8 +253,14 @@ FVECT	sd, vd, vu;
 	d = DOT(sd,vd);
 	if (d <= 0.0)
 		return(-1.0);
+	if (d >= 1.0)
+		return(1.0);
 	sigma = acos(d) * (180./PI);
-	tau = acos(DOT(sd,vu)/sqrt(1.0-d*d)) * (180./PI);
+	d = DOT(sd,vu)/sqrt(1.0-d*d);
+	if (d >= 1.0)
+		tau = 0.0;
+	else
+		tau = acos(d) * (180./PI);
 	return( exp( sigma*( (35.2 - tau*.31889 - 1.22*exp(-.22222*tau))*1e-3
 			+ sigma*(21. + tau*(.26667 + tau*-.002963))*1e-5 )
 		) );
