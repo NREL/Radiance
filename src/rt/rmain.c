@@ -51,6 +51,8 @@ char  *getlibpath();			/* library directory list */
 
 char  *sigerr[NSIG];			/* signal error messages */
 
+char  *shm_boundary = NULL;		/* boundary of shared memory */
+
 extern char  VersionID[];		/* version ID string */
 
 extern int  stderr_v();			/* standard error output */
@@ -667,6 +669,7 @@ char  *argv[];
 		}
 		if (persist == PARALLEL) {	/* multiprocessing */
 			preload_objs();		/* preload scene */
+			strcpy(shm_boundary=bmalloc(16), "SHM_BOUNDARY");
 			while ((rval=fork()) == 0) {	/* keep on forkin' */
 				pflock(1);
 				pfhold();
