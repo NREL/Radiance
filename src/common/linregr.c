@@ -8,6 +8,8 @@ static char SCCSid[] = "$SunId$ LBL";
  * Basic linear regression calculation.
  */
 
+#include <math.h>
+
 #include "linregr.h"
 
 
