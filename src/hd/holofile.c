@@ -303,26 +303,29 @@ register int	i;
 		register struct fragment	*f = hdfrag[hp->fd];
 		register int	j, k;
 					/* relinquish old fragment */
-		if ((j = ++f->nfrags) >= MAXFRAG)
-			f->nfrags--;
-		for ( ; ; ) {		/* stick it in our descending list */
-			if (!--j || hp->bi[i].fo < f->fi[j-1].fo) {
-				f->fi[j].fo = hp->bi[i].fo;
-				f->fi[j].nrd = hp->bi[i].nrd;
-				break;
+		if (hp->bi[i].nrd) {
+			if ((j = ++f->nfrags) >= MAXFRAG)
+				f->nfrags--;
+			for ( ; ; ) {	/* stick it in our descending list */
+				if (!--j || hp->bi[i].fo < f->fi[j-1].fo) {
+					f->fi[j].fo = hp->bi[i].fo;
+					f->fi[j].nrd = hp->bi[i].nrd;
+					break;
+				}
+				copystruct(f->fi+j, f->fi+j-1);
 			}
-			copystruct(f->fi+j, f->fi+j-1);
-		}
 					/* coalesce adjacent fragments */
-		for (j = k = 0; k < f->nfrags; j++, k++) {
-			if (j != k)
-				copystruct(f->fi+j, f->fi+k);
-			while (k+1 < f->nfrags &&
-				f->fi[k+1].fo + f->fi[k+1].nrd*sizeof(RAYVAL) ==
-					f->fi[j].fo)
-				f->fi[j].fo -= f->fi[++k].nrd*sizeof(RAYVAL);
+			for (j = k = 0; k < f->nfrags; j++, k++) {
+				if (j != k)
+					copystruct(f->fi+j, f->fi+k);
+				while (k+1 < f->nfrags &&
+				f->fi[k+1].fo + f->fi[k+1].nrd*sizeof(RAYVAL)
+						== f->fi[j].fo)
+					f->fi[j].fo -=
+						f->fi[++k].nrd*sizeof(RAYVAL);
+			}
+			f->nfrags = j;
 		}
-		f->nfrags = j;
 		k = -1;			/* find closest-sized fragment */
 		for (j = f->nfrags; j-- > 0; )
 			if (f->fi[j].nrd >= nrays &&
