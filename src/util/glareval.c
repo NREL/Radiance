@@ -477,7 +477,7 @@ initscans()				/* initialize scanline buffers */
 					/* allocate scanline buffers */
 	scansize = sizeof(SCAN) + pxsiz*sizeof(COLR);
 #ifdef ALIGN
-	scansize = scansize+(sizeof(ALIGN)-1)) & ~(sizeof(ALIGN)-1);
+	scansize = scansize+(sizeof(ALIGN)-1) & ~(sizeof(ALIGN)-1);
 #endif
 	i = MAXSBUF / scansize;		/* compute number to allocate */
 	if (i > HSIZE)
