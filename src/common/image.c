@@ -73,9 +73,9 @@ int  *xp, *yp;			/* x and y resolution in (or out if *ap!=0) */
 	if (*ap <= FTINY)
 		*ap = va * *xp / *yp;		/* compute pixel aspect */
 	else if (va * *xp > *ap * *yp)
-		*xp = *yp / va * *ap;		/* reduce x resolution */
+		*xp = *yp / va * *ap + .5;	/* reduce x resolution */
 	else
-		*yp = *xp * va / *ap;		/* reduce y resolution */
+		*yp = *xp * va / *ap + .5;	/* reduce y resolution */
 }
 
 
