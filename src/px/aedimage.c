@@ -315,7 +315,7 @@ loopcom()				/* print pixel values interactively */
 				break;
 			case 'l':
 			case 'L':
-				printf("%-3gL", bright(cval)*683.0/exposure);
+				printf("%-3gL", luminance(cval)/exposure);
 				break;
 			case 'c':
 			case 'C':
