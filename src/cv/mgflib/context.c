@@ -372,6 +372,18 @@ c_clearall()			/* empty context tables */
 }
 
 
+C_MATERIAL *
+c_getmaterial(name)		/* get a named material */
+char	*name;
+{
+	register LUENT	*lp;
+
+	if ((lp = lu_find(&mat_tab, name)) == NULL)
+		return(NULL);
+	return((C_MATERIAL *)lp->data);
+}
+
+
 C_VERTEX *
 c_getvert(name)			/* get a named vertex */
 char	*name;

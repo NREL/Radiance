@@ -275,6 +275,7 @@ extern int	c_hcolor();			/* handle color entity */
 extern int	c_hmaterial();			/* handle material entity */
 extern int	c_hvertex();			/* handle vertex entity */
 extern void	c_clearall();			/* clear context tables */
+extern C_MATERIAL	*c_getmaterial();	/* get a named material */
 extern C_VERTEX	*c_getvert();			/* get a named vertex */
 extern C_COLOR	*c_getcolor();			/* get a named color */
 extern void	c_ccvt();			/* fix color representation */
@@ -284,6 +285,7 @@ extern int	c_hcolor(int, char **);		/* handle color entity */
 extern int	c_hmaterial(int, char **);	/* handle material entity */
 extern int	c_hvertex(int, char **);	/* handle vertex entity */
 extern void	c_clearall(void);		/* clear context tables */
+extern C_MATERIAL	*c_getmaterial(char *);	/* get a named material */
 extern C_VERTEX	*c_getvert(char *);		/* get a named vertex */
 extern C_COLOR	*c_getcolor(char *);		/* get a named color */
 extern void	c_ccvt(C_COLOR *, int);		/* fix color representation */
