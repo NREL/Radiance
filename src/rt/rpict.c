@@ -233,6 +233,7 @@ char  *zfile, *oldfile;
 #endif
 	}
 						/* clean up */
+	signal(SIGALRM, SIG_IGN);
 	if (zfd != -1) {
 		if (write(zfd, (char *)zbar[0], hresolu*sizeof(float))
 				< hresolu*sizeof(float))
