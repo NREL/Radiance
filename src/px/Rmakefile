@@ -20,7 +20,7 @@ PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar $(MLIB)
 PROGS = pfilt ttyimage oki20c oki20 paintjet mt160r getinfo psign \
 greyscale pvalue pcompos colorscale protate ra_pr ra_pr24 ra_avs \
 ra_t8 ra_bn ra_t16 pcomb pinterp ximage xshowtrace pflip ra_ppm \
-ra_rgbe ra_pict ra_ps pextrem ra_gif macbetcal
+ra_rgbe ra_pict ra_ps pextrem ra_gif ra_xyze macbethcal
 
 all:	$(PROGS) $(SPECIAL)
 
@@ -165,6 +165,9 @@ pcomb:	pcomb.o
 
 pinterp:	pinterp.o
 	$(CC) $(CFLAGS) -o pinterp pinterp.o -lrt $(MLIB)
+
+ra_xyze:	ra_xyze.o
+	$(CC) $(CFLAGS) -o ra_xyze ra_xyze.o -lrt $(MLIB)
 
 ra_tiff:	ra_tiff.o ../lib/libtiff.a
 	$(CC) $(CFLAGS) -o ra_tiff ra_tiff.o -lrt -ltiff $(MLIB)
