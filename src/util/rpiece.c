@@ -77,8 +77,6 @@ int  verbose = 0;
 unsigned  timelim = 0;
 int  rvrlim = -1;
 
-extern long  lseek(), ftell();
-
 int  gotalrm = 0;
 int  onalrm() { gotalrm++; }
 
@@ -510,7 +508,7 @@ int  xpos, ypos;
 		filerr("lock");
 #endif
 				/* write new piece to file */
-	if (lseek(outfd, fls.l_start, 0) == -1)
+	if (lseek(outfd, fls.l_start, 0) < 0)
 		filerr("seek");
 	if (hmult == 1) {
 		if (writebuf(outfd, (char *)pbuf,
@@ -523,7 +521,7 @@ int  xpos, ypos;
 				filerr("write");
 			if (y < vr-1 && lseek(outfd,
 					(long)(hmult-1)*hr*sizeof(COLR),
-					1) == -1)
+					1) < 0)
 				filerr("seek");
 		}
 #if NFS
