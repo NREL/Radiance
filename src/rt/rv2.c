@@ -536,10 +536,11 @@ char  *s;
 			(*dev->comout)(buf);
 		}
 		(*dev->comin)(buf, NULL);
-		sprintf(buf, "with value (%.6g %.6g %.6g)",
+		sprintf(buf, "value (%.5g %.5g %.5g) (%.1fL)",
 				colval(thisray.rcol,RED),
 				colval(thisray.rcol,GRN),
-				colval(thisray.rcol,BLU));
+				colval(thisray.rcol,BLU),
+				luminance(thisray.rcol));
 		(*dev->comout)(buf);
 	}
 	(*dev->comin)(buf, NULL);
