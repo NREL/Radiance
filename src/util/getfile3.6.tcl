@@ -157,6 +157,7 @@ proc update_dir w {			# Update working directory
 	if {"$curpat" == ""} {
 		set curpat *
 	}
+	if {"$curdir" == {}} {set curdir {~}}
 	if [catch {cd $curdir} curdir] {
 		set oldcol [lindex [$w.de config -foreground] 4]
 		$w.de config -foreground Red
