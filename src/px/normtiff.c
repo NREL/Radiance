@@ -47,7 +47,7 @@ char	*argv[];
 {
 	FILE	*fin = NULL;
 	TIFF	*tin = NULL;
-	int	i;
+	int	i, rval;
 
 	for (i = 1; i < argc && argv[i][0] == '-'; i++)
 		switch (argv[i][1]) {
@@ -106,14 +106,14 @@ char	*argv[];
 		exit(1);
 	}
 	if (fin != NULL) {
-		tmap_picture(argv[i], fin);
+		rval = tmap_picture(argv[i], fin);
 		fclose(fin);
 	} else {
-		tmap_tiff(argv[i], tin);
+		rval = tmap_tiff(argv[i], tin);
 		TIFFClose(tin);
 	}
 	TIFFClose(tifout);
-	exit(0);
+	exit(rval==0 ? 0 : 1);
 userr:
 	fprintf(stderr,
 "Usage: %s [-h][-s][-c][-l][-b][-g gv][-d ld][-u lm][-p xr yr xg yg xb yb xw yw] input.{tif|pic} output.tif\n",
@@ -165,6 +165,7 @@ double	*pr;
 }
 
 
+int
 tmap_picture(fname, fp)			/* tone map Radiance picture */
 char	*fname;
 FILE	*fp;
@@ -177,7 +178,7 @@ FILE	*fp;
 					/* read and tone map picture */
 	if (tmMapPicture(&pix, &xsiz, &ysiz, flags,
 			rgbp, gamv, lddyn, ldmax, fname, fp) != TM_E_OK)
-		exit(1);
+		return(-1);
 					/* get relevant header info. */
 	rewind(fp);
 	pixrat = 1.;
@@ -190,9 +191,12 @@ FILE	*fp;
 				break;
 	orient++;
 					/* put out our image */
-	putimage(orient, (uint32)xsiz, (uint32)ysiz, 72., 72./pixrat, 2, pix);
+	if (putimage(orient, (uint32)xsiz, (uint32)ysiz,
+			72., 72./pixrat, 2, pix) != 0)
+		return(-1);
 					/* free data and we're done */
 	free((char *)pix);
+	return(0);
 }
 
 
@@ -207,24 +211,30 @@ TIFF	*tp;
 					/* check to make sure it's SGILOG */
 	TIFFGetFieldDefaulted(tp, TIFFTAG_PHOTOMETRIC, &phot);
 	if (phot != PHOTOMETRIC_LOGLUV && phot != PHOTOMETRIC_LOGL) {
-		fprintf(stderr, "%s: TIFF must be in SGILOG format\n", fname);
-		exit(1);
+		if (!(flags & TM_F_NOSTDERR)) {
+			fputs(fname, stderr);
+			fputs(": TIFF must be in SGILOG format\n", stderr);
+		}
+		return(-1);
 	}
 	if (phot == PHOTOMETRIC_LOGL)
 		flags |= TM_F_BW;
 					/* read and tone map TIFF */
 	if (tmMapTIFF(&pix, &xsiz, &ysiz, flags,
 			rgbp, gamv, lddyn, ldmax, fname, tp) != TM_E_OK)
-		exit(1);
+		return(-1);
 					/* get relevant tags */
 	TIFFGetFieldDefaulted(tp, TIFFTAG_RESOLUTIONUNIT, &resunit);
 	TIFFGetFieldDefaulted(tp, TIFFTAG_XRESOLUTION, &xres);
 	TIFFGetFieldDefaulted(tp, TIFFTAG_YRESOLUTION, &yres);
 	TIFFGetFieldDefaulted(tp, TIFFTAG_ORIENTATION, &orient);
 					/* put out our image */
-	putimage(orient, (uint32)xsiz, (uint32)ysiz, xres, yres, resunit, pix);
+	if (putimage(orient, (uint32)xsiz, (uint32)ysiz,
+			xres, yres, resunit, pix) != 0)
+		return(-1);
 					/* free data and we're done */
 	free((char *)pix);
+	return(0);
 }
 
 
@@ -274,8 +284,8 @@ BYTE	*pd;
 			if (TIFFWriteScanline(tifout, pd + y*3*xs, y, 0) < 0)
 				goto writerr;
 	}
-	return;				/* all done! */
+	return(0);			/* all done! */
 writerr:
 	fputs("Error writing TIFF output\n", stderr);
-	exit(2);
+	return(-1);
 }
