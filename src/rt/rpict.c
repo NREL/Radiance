@@ -67,6 +67,8 @@ double	srcsizerat = .25;		/* maximum ratio source size/dist. */
 double	specthresh = .15;		/* specular sampling threshold */
 double	specjitter = 1.;		/* specular sampling jitter */
 
+int  backvis = 1;			/* back face visibility */
+
 int  maxdepth = 6;			/* maximum recursion depth */
 double	minweight = 5e-3;		/* minimum ray weight */
 

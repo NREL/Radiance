@@ -500,11 +500,12 @@ register char  *s;
 	extern int  do_irrad;
 	extern double  specjitter;
 	extern double  specthresh;
+	extern int  backvis;
 	char  buf[128];
 	
 	if (s[0] == '\0') {
 		(*dev->comout)(
-		"aa ab ad ar as av b dc di dj ds dt i lr lw ps pt sj st: ");
+		"aa ab ad ar as av b dc di dj ds dt i lr lw ps pt sj st bv: ");
 		(*dev->comin)(buf, NULL);
 		s = buf;
 	}
@@ -543,8 +544,19 @@ register char  *s;
 			goto badparam;
 		}
 		break;
-	case 'b':			/* black and white */
-		getparam(s+1, "black and white", 'b', &greyscale);
+	case 'b':			/* back faces or black and white */
+		switch (s[1]) {
+		case 'v':			/* back face visibility */
+			getparam(s+2, "back face visibility", 'b', &backvis);
+			break;
+		case '\0':			/* black and white */
+		case 'y': case 'Y': case 't': case 'T': case '1': case '+':
+		case 'n': case 'N': case 'f': case 'F': case '0': case '-':
+			getparam(s+1, "black and white", 'b', &greyscale);
+			break;
+		default:
+			goto badparam;
+		}
 		break;
 	case 'i':			/* irradiance */
 		getparam(s+1, "irradiance", 'b', &do_irrad);

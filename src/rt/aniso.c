@@ -19,6 +19,8 @@ static char SCCSid[] = "$SunId$ LBL";
 extern double  specthresh;		/* specular sampling threshold */
 extern double  specjitter;		/* specular sampling jitter */
 
+extern int  backvis;			/* back faces visible? */
+
 static  agaussamp(), getacoords();
 
 /*
@@ -201,9 +203,14 @@ register RAY  *r;
 	nd.v_alpha = m->oargs.farg[5];
 	if (nd.u_alpha < FTINY || nd.v_alpha <= FTINY)
 		objerror(m, USER, "roughness too small");
-						/* reorient if necessary */
-	if (r->rod < 0.0)
-		flipsurface(r);
+						/* check for back side */
+	if (r->rod < 0.0) {
+		if (!backvis && m->otype != MAT_TRANS2) {
+			raytrans(r);
+			return(1);
+		}
+		flipsurface(r);			/* reorient if backvis */
+	}
 						/* get modifiers */
 	raytexture(r, m->omod);
 	nd.pdot = raynormal(nd.pnorm, r);	/* perturb normal */

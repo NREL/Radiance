@@ -16,6 +16,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "func.h"
 
+extern int  backvis;			/* back faces visible? */
+
 /*
  *	Arguments to this material include the color and specularity.
  *  String arguments include the reflection function and files.
@@ -349,9 +351,15 @@ register RAY  *r;
 						/* compute reflectance */
 	dtmp = 1.0 - nd.trans - nd.rspec;
 	setcolor(nd.rdiff, dtmp, dtmp, dtmp);
-						/* fix orientation */
-	if (r->rod < 0.0)
-		flipsurface(r);
+						/* check for back side */
+	if (r->rod < 0.0) {
+		if (!backvis && m->otype != MAT_TFUNC
+				&& m->otype != MAT_TDATA) {
+			raytrans(r);
+			return(1);
+		}
+		flipsurface(r);			/* reorient if backvis */
+	}
 						/* get modifiers */
 	raytexture(r, m->omod);
 	nd.pdot = raynormal(nd.pnorm, r);	/* perturb normal */
