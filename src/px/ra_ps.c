@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -15,7 +15,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #endif
 #include  "color.h"
 
-#define GAMVAL		1.5			/* gamma value for pixels */
+#define GAMVAL		1.47			/* gamma value for pixels */
 
 #define GRY		-1			/* artificial index for grey */
 
@@ -38,6 +38,10 @@ double	pixaspect = 1.0;		/* pixel aspect ratio */
 int  docolor = 0;			/* produce color image? */
 int  bradj = 0;				/* brightness adjustment */
 int  ncopies = 1;			/* number of copies */
+
+extern int	Aputprim(), Bputprim(), Cputprim();
+
+int  (*putprim)() = Aputprim;		/* function for writing scanline */
 
 char  *progname;
 
@@ -70,8 +74,20 @@ char  *argv[];
 	for (i = 1; i < argc; i++)
 		if (argv[i][0] == '-')
 			switch (argv[i][1]) {
+			case 'b':		/* produce b&w PostScript */
+				docolor = 0;
+				break;
 			case 'c':		/* produce color PostScript */
-				docolor++;
+				docolor = 1;
+				break;
+			case 'A':		/* standard ASCII encoding */
+				putprim = Aputprim;
+				break;
+			case 'B':		/* standard binary encoding */
+				putprim = Bputprim;
+				break;
+			case 'C':		/* compressed ASCII encoding */
+				putprim = Cputprim;
 				break;
 			case 'e':		/* exposure adjustment */
 				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
@@ -107,7 +123,8 @@ char  *argv[];
 	if (wrongformat || fgetresolu(&xmax, &ymax, stdin) < 0)
 		quiterr("bad picture format");
 				/* gamma compression */
-	setcolrgam(GAMVAL);
+	if (putprim == Cputprim)
+		setcolrgam(GAMVAL);
 				/* write header */
 	PSheader(i <= argc-1 ? argv[i] : "<stdin>");
 				/* convert file */
@@ -116,7 +133,7 @@ char  *argv[];
 	PStrailer();
 	exit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-c][-e +/-stops] [input [output]]\n",
+	fprintf(stderr, "Usage: %s [-b|c][-A|B|C][-e +/-stops] [input [output]]\n",
 			progname);
 	exit(1);
 }
@@ -136,6 +153,7 @@ char  *err;
 PSheader(name)			/* print PostScript header */
 char  *name;
 {
+	char  *rstr;
 	int  landscape = 0;
 	double	pwidth, pheight;
 	double	iwidth, iheight;
@@ -176,18 +194,17 @@ char  *name;
 				VMARGIN+(pheight-iheight)*.5+iheight);
 	puts("%%EndComments");
 	puts("gsave save");
-	puts("64 dict begin");
+	puts("17 dict begin");
 					/* define image reader */
 	if (docolor) {
 		printf("/redline %d string def\n", xmax);
 		printf("/grnline %d string def\n", xmax);
 		printf("/bluline %d string def\n", xmax);
-		printf("/rgbline %d string def\n", 3*xmax);
-		PSprocdef("read6bitRLE", "interleave");
-	} else {
-		printf("/greyline %d string def\n", xmax);
-		PSprocdef("read6bitRLE", NULL);
-	}
+	} else
+		printf("/gryline %d string def\n", xmax);
+					/* use compressed encoding? */
+	if (putprim == Cputprim)
+		PSprocdef("read6bitRLE");
 					/* set up transformation matrix */
 	printf("%f %f translate\n", HMARGIN, VMARGIN);
 	if (pwidth == PHEIGHT) {
@@ -198,12 +215,23 @@ char  *name;
 	printf("%f %f scale\n", iwidth, iheight);
 	puts("%%EndProlog");
 					/* start image procedure */
-	printf("%d %d 8 [%d 0 0 %d 0 %d] ", xmax, ymax, xmax, -ymax, ymax);
-	if (docolor) {
-		puts("{redline read6bitRLE grnline read6bitRLE");
-		puts("\tbluline read6bitRLE rgbline interleave} false 3 colorimage");
-	} else
-		puts("{greyline read6bitRLE} image");
+	printf("%d %d 8 [%d 0 0 %d 0 %d]\n", xmax, ymax, xmax, -ymax, ymax);
+	if (putprim == Cputprim) {
+		if (docolor) {
+			puts("{redline read6bitRLE grnline read6bitRLE");
+			puts("bluline read6bitRLE} true 3 colorimage");
+		} else
+			puts("{gryline read6bitRLE} image");
+	} else {
+		rstr = putprim==Aputprim ? "readhexstring" : "readstring";
+		if (docolor) {
+			printf("{currentfile redline %s pop}\n", rstr);
+			printf("{currentfile grnline %s pop}\n", rstr);
+			printf("{currentfile bluline %s pop}\n", rstr);
+			puts("true 3 colorimage");
+		} else
+			printf("{currentfile gryline %s pop} image\n", rstr);
+	}
 }
 
 
@@ -219,8 +247,8 @@ PStrailer()			/* print PostScript trailer */
 }
 
 
-PSprocdef(nam, inam)		/* define PS procedure to read image */
-char  *nam, *inam;
+PSprocdef(nam)			/* define PS procedure to read image */
+char  *nam;
 {
 	short  itab[128];
 	register int  i;
@@ -228,7 +256,7 @@ char  *nam, *inam;
 	for (i = 0; i < 128; i++)	/* clear */
 		itab[i] = -1;
 	for (i = 1; i < 63; i++)	/* assign greys */
-		itab[code[i]] = 256.0*pow(((i<<2)+2.5)/256.0, GAMVAL);
+		itab[code[i]] = 256.0*pow((i+.5)/64.0, GAMVAL);
 	itab[code[0]] = 0;		/* black is black */
 	itab[code[63]] = 255;		/* and white is white */
 	printf("/codetab [");
@@ -256,21 +284,6 @@ char  *nam, *inam;
 	printf("\t\t} for\n");
 	printf("\t} stopped {pop pop 0 string} {scanline} ifelse\n");
 	printf("} bind def\n");
-	if (inam == NULL)
-		return;
-					/* define interleaving procedure */
-	printf("/%s {\t%% redscn grnscn bluscn rgbscn\n", inam);
-	printf("\t/rgbscan exch def /bscan exch def\n");
-	printf("\t/gscan exch def /rscan exch def\n");
-	printf("\trscan length %d eq gscan length %d eq and ", xmax, xmax);
-	printf("bscan length %d eq and \n", xmax);
-	printf("\t{ 0 1 %d { /ndx exch def\n", xmax-1);
-	printf("\t\trgbscan ndx 3 mul rscan ndx get put\n");
-	printf("\t\trgbscan ndx 3 mul 1 add gscan ndx get put\n");
-	printf("\t\trgbscan ndx 3 mul 2 add bscan ndx get put\n");
-	printf("\t\t} for rgbscan }\n");
-	printf("\t{0 string} ifelse\n");
-	printf("} bind def\n");
 }
 
 
@@ -286,15 +299,18 @@ ra2ps()				/* convert Radiance scanlines to 6-bit */
 	for (y = ymax-1; y >= 0; y--) {
 		if (freadcolrs(scanin, xmax, stdin) < 0)
 			quiterr("error reading Radiance picture");
-		if (bradj)			/* adjust exposure */
-			shiftcolrs(scanin, xmax, bradj);
-		colrs_gambs(scanin, xmax);	/* gamma compression */
-		if (docolor) {
-			putprim(scanin, RED);
-			putprim(scanin, GRN);
-			putprim(scanin, BLU);
+		if (putprim == Cputprim) {
+			if (bradj)			/* adjust exposure */
+				shiftcolrs(scanin, xmax, bradj);
+			colrs_gambs(scanin, xmax);	/* gamma compression */
 		} else
-			putprim(scanin, GRY);
+			normcolrs(scanin, xmax, bradj);
+		if (docolor) {
+			(*putprim)(scanin, RED);
+			(*putprim)(scanin, GRN);
+			(*putprim)(scanin, BLU);
+		} else
+			(*putprim)(scanin, GRY);
 		if (ferror(stdout))
 			quiterr("error writing PostScript file");
 	}
@@ -304,7 +320,51 @@ ra2ps()				/* convert Radiance scanlines to 6-bit */
 }
 
 
-putprim(scn, pri)		/* put out one primary from scanline */
+int
+Aputprim(scn, pri)		/* put out hex ASCII primary from scanline */
+COLR	*scn;
+int	pri;
+{
+	static char	hexdigit[] = "0123456789ABCDEF";
+	static int	col = 0;
+	register int	x, c;
+
+	for (x = 0; x < xmax; x++) {
+		if (pri == GRY)
+			c = normbright(scn[x]);
+		else
+			c = scn[x][pri];
+		if (c > 255) c = 255;
+		putchar(hexdigit[c>>4]);
+		putchar(hexdigit[c&0xf]);
+		if ((col += 2) >= 72) {
+			putchar('\n');
+			col = 0;
+		}
+	}
+}
+
+
+int
+Bputprim(scn, pri)		/* put out binary primary from scanline */
+COLR	*scn;
+int	pri;
+{
+	register int	x, c;
+
+	for (x = 0; x < xmax; x++) {
+		if (pri == GRY)
+			c = normbright(scn[x]);
+		else
+			c = scn[x][pri];
+		if (c > 255) c = 255;
+		putchar(c);
+	}
+}
+
+
+int
+Cputprim(scn, pri)		/* put out compressed primary from scanline */
 COLR	*scn;
 int	pri;
 {
