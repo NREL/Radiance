@@ -98,7 +98,7 @@ char  *argv[];
 	char  *ambfile = NULL;
 	char  **amblp = amblist;
 	int  loadflags = ~IO_FILES;
-	int  gotvfile = 0;
+	int  rval, gotvfile = 0;
 	int  i;
 					/* global program name */
 	progname = argv[0];
@@ -146,18 +146,19 @@ char  *argv[];
 				ourview.vert = atof(argv[++i]);
 				break;
 			case 'f':				/* file */
-				gotvfile = viewfile(argv[++i], &ourview);
-				if (gotvfile < 0) {
+				rval = viewfile(argv[++i], &ourview);
+				if (rval < 0) {
 					sprintf(errmsg,
 					"cannot open view file \"%s\"",
 							argv[i]);
 					error(SYSTEM, errmsg);
-				} else if (gotvfile == 0) {
+				} else if (rval == 0) {
 					sprintf(errmsg,
 						"bad view file \"%s\"",
 							argv[i]);
 					error(USER, errmsg);
-				}
+				} else
+					gotvfile += rval;
 				break;
 			default:
 				goto unkopt;
@@ -227,6 +228,9 @@ char  *argv[];
 #if  RPICT
 		case 'r':				/* recover file */
 			recover = argv[++i];
+			rval = viewfile(recover, &ourview);
+			if (rval > 0)
+				gotvfile += rval;
 			break;
 		case 't':				/* timer */
 			ralrm = atoi(argv[++i]);
