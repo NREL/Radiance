@@ -25,22 +25,24 @@ static char SCCSid[] = "$SunId$ LBL";
  *	modifier brighttext id
  *	2 fontfile textfile
  *	0
- *	11
+ *	11+
  *		Ax Ay Az
  *		Rx Ry Rz
  *		Dx Dy Dz
  *		foreground background
+ *		[spacing]
  *
  *  For a single line, we use:
  *
  *	modifier brighttext id
  *	N+2 fontfile . This is a line with N words...
  *	0
- *	11
+ *	11+
  *		Ax Ay Az
  *		Rx Ry Rz
  *		Dx Dy Dz
  *		foreground background
+ *		[spacing]
  *
  *  Colortext is identical, except colors are given rather than
  *  brightnesses.  Mixtext has foreground and background modifiers:
@@ -48,17 +50,22 @@ static char SCCSid[] = "$SunId$ LBL";
  *	modifier mixtext id
  *	4+ foremod backmod fontfile text..
  *	0
- *	9
+ *	9+
  *		Ax Ay Az
  *		Rx Ry Rz
  *		Dx Dy Dz
+ *		[spacing]
  */
 
 #define  fndx(m)	((m)->otype==MIX_TEXT ? 2 : 0)
 #define  tndx(m)	((m)->otype==MIX_TEXT ? 3 : 1)
+#define  sndx(m)	((m)->otype==PAT_BTEXT ? 11 : \
+				(m)->otype==PAT_CTEXT ? 15 : 9)
 
 typedef struct tline {
 	struct tline  *next;		/* pointer to next line */
+	short  *spc;			/* character spacing */
+	int  width;			/* total line width */
 					/* followed by the string */
 }  TLINE;
 
@@ -128,11 +135,14 @@ tlalloc(s)			/* allocate and assign text line */
 char  *s;
 {
 	extern char  *strcpy();
+	register int  siz;
 	register TLINE  *tl;
 
-	tl = (TLINE *)malloc(sizeof(TLINE)+1+strlen(s));
-	if (tl == NULL)
+	siz = strlen(s) + 1;
+	if ((tl=(TLINE *)malloc(sizeof(TLINE)+siz)) == NULL ||
+			(tl->spc=(short *)malloc(siz*sizeof(short))) == NULL)
 		error(SYSTEM, "out of memory in tlalloc");
+	tl->spc = NULL;
 	tl->next = NULL;
 	strcpy(TLSTR(tl), s);
 	return(tl);
@@ -158,12 +168,10 @@ register OBJREC  *tm;
 	if ((t = (TEXT *)tm->os) != NULL)
 		return(t);
 						/* check arguments */
-	if (tm->oargs.nsargs - tndx(tm) < 1 ||
-			tm->oargs.nfargs != (tm->otype == PAT_BTEXT ? 11 :
-					tm->otype == PAT_CTEXT ? 15 : 9))
+	if (tm->oargs.nsargs - tndx(tm) < 1 || tm->oargs.nfargs < sndx(tm))
 		objerror(tm, USER, "bad # arguments");
 	if ((t = (TEXT *)malloc(sizeof(TEXT))) == NULL)
-		error(SYSTEM, "out of memory in gettext");
+		goto memerr;
 						/* compute vectors */
 	fcross(DxR, D, R);
 	fcross(t->right, DxR, D);
@@ -194,8 +202,7 @@ register OBJREC  *tm;
 			error(USER, errmsg);
 		}
 		if ((fp = fopen(s, "r")) == NULL) {
-			sprintf(errmsg, "cannot open text file \"%s\"",
-					s);
+			sprintf(errmsg, "cannot open text file \"%s\"", s);
 			error(SYSTEM, errmsg);
 		}
 		while (fgets(linbuf, sizeof(linbuf), fp) != NULL) {
@@ -210,9 +217,26 @@ register OBJREC  *tm;
 	tlp->next = NULL;
 						/* get the font */
 	t->f = getfont(tm->oargs.sarg[fndx(tm)]);
+						/* compute character spacing */
+	i = sndx(tm);
+	d = i < tm->oargs.nfargs ? tm->oargs.farg[i] : 0.0;
+	i = d * 256.0;
+	for (tlp = t->tl.next; tlp != NULL; tlp = tlp->next) {
+		if ((tlp->spc = (short *)malloc(
+				(strlen(TLSTR(tlp))+1)*sizeof(short))) == NULL)
+			goto memerr;
+		if (i < 0)
+			tlp->width = squeeztext(tlp->spc, TLSTR(tlp), t->f, -i);
+		else if (i > 0)
+			tlp->width = proptext(tlp->spc, TLSTR(tlp), t->f, i, 3);
+		else
+			tlp->width = uniftext(tlp->spc, TLSTR(tlp), t->f);
+	}
 						/* we're done */
 	tm->os = (char *)t;
 	return(t);
+memerr:
+	error(SYSTEM, "out of memory in gettext");
 #undef  R
 #undef  D
 }
@@ -227,8 +251,10 @@ OBJREC  *m;
 	tp = (TEXT *)m->os;
 	if (tp == NULL)
 		return;
-	for (tlp = tp->tl.next; tlp != NULL; tlp = tlp->next);
+	for (tlp = tp->tl.next; tlp != NULL; tlp = tlp->next) {
+		free((char *)tlp->spc);
 		free((char *)tlp);
+	}
 	free((char *)tp);
 	m->os = NULL;
 }
@@ -242,26 +268,29 @@ OBJREC  *m;
 	register TLINE  *tlp;
 	FVECT  v;
 	double  y, x;
-	int  col;
-	register int  lno;
+	register int  i, h;
 				/* first, compute position in text */
 	tp = gettext(m);
 	v[0] = p[0] - m->oargs.farg[0];
 	v[1] = p[1] - m->oargs.farg[1];
 	v[2] = p[2] - m->oargs.farg[2];
-	col = x = DOT(v, tp->right);
-	lno = y = DOT(v, tp->down);
+	h = x = DOT(v, tp->right)*256.;
+	i = y = DOT(v, tp->down);
 	if (x < 0.0 || y < 0.0)
 		return(0);
-	x -= (double)col;
-	y = (lno+1) - y;
-				/* get the font character */
+	x -= (double)h;
+	y = ((i+1) - y)*256.;
+				/* find the line position */
 	for (tlp = tp->tl.next; tlp != NULL; tlp = tlp->next)
-		if (--lno < 0)
+		if (--i < 0)
 			break;
-	if (tlp == NULL || col >= strlen(TLSTR(tlp)))
+	if (tlp == NULL || h >= tlp->width)
 		return(0);
-	return(inglyph(x, y, tp->f->fg[TLSTR(tlp)[col]&0xff]));
+	for (i = 0; (h -= tlp->spc[i]) >= 0; i++)
+		if (h < 256 && inglyph(h+x, y,
+				tp->f->fg[TLSTR(tlp)[i]&0xff]))
+			return(1);
+	return(0);
 }
 
 
@@ -270,17 +299,15 @@ double  x, y;
 register GLYPH  *gl;
 {
 	int  n, ncross;
-	int  xlb, ylb;
+	int  xtc, ytc;
 	register GORD  *p0, *p1;
 
 	if (gl == NULL)
 		return(0);
-	x *= 256.0;			/* get glyph coordinates */
-	y *= 256.0;
-	xlb = x + 0.5;
-	ylb = y + 0.5;
-	if (gl->left > xlb || gl->right <= xlb ||
-			gl->bottom > ylb || gl->top <= ylb)
+	xtc = x + 0.5;			/* compute test coordinates */
+	ytc = y + 0.5;
+	if (gl->left > xtc || gl->right < xtc ||
+			gl->bottom > ytc || gl->top < ytc)
 		return(0);	/* outside extent */
 	n = gl->nverts;			/* get # of vertices */
 	p0 = gvlist(gl) + 2*(n-1);	/* connect last to first */
@@ -288,10 +315,10 @@ register GLYPH  *gl;
 	ncross = 0;
 					/* positive x axis cross test */
 	while (n--) {
-		if ((p0[1] > ylb) ^ (p1[1] > ylb))
-			if (p0[0] > xlb && p1[0] > xlb)
+		if ((p0[1] > ytc) ^ (p1[1] > ytc))
+			if (p0[0] > xtc && p1[0] > xtc)
 				ncross++;
-			else if (p0[0] > xlb || p1[0] > xlb)
+			else if (p0[0] > xtc || p1[0] > xtc)
 				ncross += (p1[1] > p0[1]) ^
 						((p0[1]-y)*(p1[0]-x) >
 						(p0[0]-x)*(p1[1]-y));
