@@ -378,10 +378,14 @@ check2do()		/* check histogram to see what isn't worth doing */
 	register int	i;
 
 					/* check for within display range */
-	if (!(what2do&DO_LINEAR) && Lb(bwmax)/Lb(bwmin) <= ldmax/ldmin)
+	l = Lb(bwmax)/Lb(bwmin);
+	if (l <= ldmax/ldmin)
 		what2do |= DO_LINEAR;
+					/* determine if veiling significant */
+	if (l < 100.)			/* heuristic */
+		what2do &= ~DO_VEIL;
 
-	if (!(what2do & (DO_ACUITY|DO_COLOR|DO_VEIL)))
+	if (!(what2do & (DO_ACUITY|DO_COLOR)))
 		return;
 					/* find 5th percentile */
 	sum = histot*0.05 + .5;
@@ -398,15 +402,4 @@ check2do()		/* check histogram to see what isn't worth doing */
 					/* color sensitivity loss? */
 	if (l >= 6.0)
 		what2do &= ~DO_COLOR;
-	if (!(what2do&DO_VEIL))
-		return;
-					/* find 50th percentile (median) */
-	sum = histot*0.50 + .5;
-	for (i = 0; i < HISTRES; i++)
-		if ((sum -= bwhist[i]) <= 0)
-			break;
-					/* determine if veiling significant */
-	 b = (i+.5)*(bwmax-bwmin)/HISTRES + bwmin;
-	 if ((b-bwmin)/(bwmax-bwmin) >= 0.70)	/* heuristic */
-		what2do &= ~DO_VEIL;
 }
