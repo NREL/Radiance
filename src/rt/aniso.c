@@ -209,8 +209,7 @@ register RAY  *r;
 						/* check threshold */
 		if (specthresh > FTINY &&
 				((specthresh >= 1.-FTINY ||
-				specthresh + (.05 - .1*urand(8199+samplendx))
-					> nd.rspec)))
+				specthresh + (.05 - .1*frandom()) > nd.rspec)))
 			nd.specfl |= SP_RBLT;
 						/* compute refl. direction */
 		for (i = 0; i < 3; i++)
@@ -240,8 +239,7 @@ register RAY  *r;
 			if (specthresh > FTINY &&
 					((specthresh >= 1.-FTINY ||
 					specthresh +
-					    (.05 - .1*urand(7241+samplendx))
-						> nd.tspec)))
+					    (.05 - .1*frandom()) > nd.tspec)))
 				nd.specfl |= SP_TBLT;
 			if (r->crtype & SHADOW ||
 					DOT(r->pert,r->pert) <= FTINY*FTINY) {
