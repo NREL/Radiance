@@ -16,15 +16,16 @@ static char SCCSid[] = "$SunId$ SGI";
 #include <sys/time.h>
 
 #ifndef MAXPROC
-#define MAXPROC		16
+#define MAXPROC		64
 #endif
+
+int	nprocs = 0;				/* running process count */
 
 static char	pfile[] = TEMPLATE;		/* persist file name */
 
 static int	rtpd[MAXPROC][3];		/* process descriptors */
 static float	*rtbuf = NULL;			/* allocated i/o buffer */
 static int	maxqlen = 0;			/* maximum packets per queue */
-static int	nprocs = 0;			/* number of processes */
 
 static PACKET	*pqueue[MAXPROC];		/* packet queues */
 static int	pqlen[MAXPROC];			/* packet queue lengths */
