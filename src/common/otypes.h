@@ -43,17 +43,18 @@ typedef struct {
 				/* textures and patterns */
 #define  TP_MIN		(MAT_MIN+MAT_CNT)
 #define  TEX_FUNC	(TP_MIN+0)	/* surface texture function */
-#define  PAT_CFUNC	(TP_MIN+1)	/* color function */
-#define  PAT_BFUNC	(TP_MIN+2)	/* brightness function */
-#define  PAT_CPICT	(TP_MIN+3)	/* color picture */
-#define  PAT_CDATA	(TP_MIN+4)	/* color data */
-#define  PAT_BDATA	(TP_MIN+5)	/* brightness data */
-#define  PAT_CTEXT	(TP_MIN+6)	/* colored text */
-#define  PAT_BTEXT	(TP_MIN+7)	/* monochromatic text */
-#define  MIX_FUNC	(TP_MIN+8)	/* mixing function */
-#define  MIX_DATA	(TP_MIN+9)	/* mixing data */
-#define  MIX_TEXT	(TP_MIN+10)	/* mixing text */
-#define  TP_CNT		11
+#define  TEX_DATA	(TP_MIN+1)	/* surface texture data */
+#define  PAT_CFUNC	(TP_MIN+2)	/* color function */
+#define  PAT_BFUNC	(TP_MIN+3)	/* brightness function */
+#define  PAT_CPICT	(TP_MIN+4)	/* color picture */
+#define  PAT_CDATA	(TP_MIN+5)	/* color data */
+#define  PAT_BDATA	(TP_MIN+6)	/* brightness data */
+#define  PAT_CTEXT	(TP_MIN+7)	/* colored text */
+#define  PAT_BTEXT	(TP_MIN+8)	/* monochromatic text */
+#define  MIX_FUNC	(TP_MIN+9)	/* mixing function */
+#define  MIX_DATA	(TP_MIN+10)	/* mixing data */
+#define  MIX_TEXT	(TP_MIN+11)	/* mixing text */
+#define  TP_CNT		12
 #define  MOD_CNT	(MAT_CNT+TP_CNT)
 				/* number of object types */
 #define  NUMOTYPE	(OBJ_CNT+MAT_CNT+TP_CNT)
@@ -73,7 +74,7 @@ extern int  m_normal();
 extern int  m_dielectric();
 extern int  m_glass();
 extern int  m_clip();
-extern int  t_func();
+extern int  t_func(), t_data();
 extern int  p_cfunc(), p_bfunc();
 extern int  p_pdata(), p_cdata(), p_bdata();
 extern int  mx_func(), mx_data();
@@ -101,6 +102,7 @@ extern int  text();
 			{ "glass", m_glass }, \
 			{ "antimatter", m_clip }, \
 			{ "texfunc", t_func }, \
+			{ "texdata", t_data }, \
 			{ "colorfunc", p_cfunc }, \
 			{ "brightfunc", p_bfunc }, \
 			{ "colorpict", p_pdata }, \

@@ -69,6 +69,7 @@ FUN  ofun[] = {
 	{ "colortext", text },
 	{ "brighttext", text },
 	{ "texfunc", addxform },
+	{ "texdata", addxform },
 	{ "colorfunc", addxform },
 	{ "brightfunc", addxform },
 	{ "colorpict", addxform },
