@@ -113,12 +113,12 @@ char	*pname, *wname;
 		do
 			sleep(8);
 		while ((gwind=xfindwind(theDisplay,rwind,pname,2)) == None);
-	} else {
+	} else
 		XMapRaised(theDisplay, gwind);
-		XFlush(theDisplay);
+	do {
+		XGetWindowAttributes(theDisplay, gwind, &wa);
 		sleep(4);
-	}
-	XGetWindowAttributes(theDisplay, gwind, &wa);
+	} while (wa.map_state != IsViewable);
 	if (wa.width != xres || wa.height != yres) {
 		fprintf(stderr,
 		"%s: warning -- window seems to be the wrong size!\n",
