@@ -10,6 +10,7 @@ static const char RCSid[] = "$Id$";
 #include  "rtmath.h"
 #include  "rterror.h"
 #include  "rtio.h"
+#include  "paths.h"
 
 #include  "octree.h"
 #include  "object.h"

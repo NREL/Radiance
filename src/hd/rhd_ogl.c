@@ -28,6 +28,7 @@ static const char	RCSid[] = "$Id$";
 #include "standard.h"
 #include "rhd_odraw.h"
 #include "rhdisp.h"
+#include "paths.h"
 #ifdef DOBJ
 #include "rhdobj.h"
 #endif

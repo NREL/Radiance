@@ -11,12 +11,9 @@
 #include  <fcntl.h>
 #include  <string.h>
 
-#include  "paths.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 					/* defined in badarg.c */
 extern int	badarg(int ac, char **av, char *fl);
 					/* defined in expandarg.c */
