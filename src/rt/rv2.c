@@ -387,11 +387,13 @@ register char  *s;
 	extern int  directinvis;
 	extern double  srcsizerat;
 	extern int  do_irrad;
+	extern double  specjitter;
+	extern double  specthresh;
 	char  buf[128];
 	
 	if (s[0] == '\0') {
 		(*dev->comout)(
-			"aa ab ad ar as av b dc di dj ds dt i lr lw sp st: ");
+		"aa ab ad ar as av b dc di dj ds dt i lr lw ps pt sj st: ");
 		(*dev->comin)(buf, NULL);
 		s = buf;
 	}
@@ -462,15 +464,27 @@ register char  *s;
 			goto badparam;
 		}
 		break;
-	case 's':			/* sample */
+	case 'p':			/* pixel */
 		switch (s[1]) {
-		case 'p':			/* pixel */
-			if (getparam(s+2, "sample pixel", 'i', &psample))
+		case 's':			/* sample */
+			if (getparam(s+2, "pixel sample", 'i', &psample))
 				pdepth = 0;
 			break;
 		case 't':			/* threshold */
-			if (getparam(s+2, "sample threshold", 'r', &maxdiff))
+			if (getparam(s+2, "pixel threshold", 'r', &maxdiff))
 				pdepth = 0;
+			break;
+		default:
+			goto badparam;
+		}
+		break;
+	case 's':			/* specular */
+		switch (s[1]) {
+		case 'j':			/* jitter */
+			getparam(s+2, "specular jitter", 'r', &specjitter);
+			break;
+		case 't':			/* threshold */
+			getparam(s+2, "specular threshold", 'r', &specthresh);
 			break;
 		default:
 			goto badparam;
