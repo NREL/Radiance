@@ -227,6 +227,7 @@ register RAY  *r;
 			}
 
 	if (r->ro != NULL) {
+		r->robj = objndx(r->ro);
 		for (i = 0; i < 3; i++)
 			r->ron[i] = -r->rdir[i];
 		r->rod = 1.0;
