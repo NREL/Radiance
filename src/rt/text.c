@@ -65,6 +65,8 @@ typedef struct font {
 	struct font  *next;		/* next font in list */
 }  FONT;
 
+extern char  *fgetword();
+
 extern GLYPH  *getglyph();
 
 extern FONT  *getfont();
@@ -204,6 +206,7 @@ FONT *
 getfont(fname)				/* return font fname */
 char  *fname;
 {
+	char  buf[16];
 	FILE  *fp;
 	char  *pathname, *err;
 	int  gn, ngv, gv;
@@ -227,7 +230,10 @@ char  *fname;
 				pathname);
 		error(SYSTEM, errmsg);
 	}
-	while (fscanf(fp, "%d", &gn) == 1) {	/* get each glyph */
+	while (fgetword(buf,sizeof(buf),fp) != NULL) {	/* get each glyph */
+		if (!isint(buf))
+			goto nonint;
+		gn = atoi(buf);
 		if (gn < 0 || gn > 255) {
 			err = "illegal";
 			goto fonterr;
@@ -236,8 +242,8 @@ char  *fname;
 			err = "duplicate";
 			goto fonterr;
 		}
-		if (fscanf(fp, "%d", &ngv) != 1 ||
-				ngv < 0 || ngv > 255) {
+		if (fgetword(buf,sizeof(buf),fp) == NULL || !isint(buf) ||
+				(ngv = atoi(buf)) < 0 || ngv > 255) {
 			err = "bad # vertices for";
 			goto fonterr;
 		}
@@ -248,8 +254,9 @@ char  *fname;
 		*g++ = ngv;
 		ngv *= 2;
 		while (ngv--) {
-			if (fscanf(fp, "%d", &gv) != 1 ||
-					gv < 0 || gv > 255) {
+			if (fgetword(buf,sizeof(buf),fp) == NULL ||
+					!isint(buf) ||
+					(gv = atoi(buf)) < 0 || gv > 255) {
 				err = "bad vertex for";
 				goto fonterr;
 			}
@@ -259,6 +266,9 @@ char  *fname;
 	fclose(fp);
 	f->next = fontlist;
 	return(fontlist = f);
+nonint:
+	sprintf(errmsg, "non-integer in font file \"%s\"", pathname);
+	error(USER, errmsg);
 fonterr:
 	sprintf(errmsg, "%s character (%d) in font file \"%s\"",
 			err, gn, pathname);
