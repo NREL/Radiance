@@ -341,7 +341,7 @@ double	org[3], *sizp;
 
 setdefaults()			/* set default values for unassigned var's */
 {
-	double	org[3], size;
+	double	org[3], lim[3], size;
 	char	buf[128];
 
 	if (!vdef(ZONE)) {
@@ -350,6 +350,16 @@ setdefaults()			/* set default values for unassigned var's */
 				org[1], org[1]+size, org[2], org[2]+size);
 		vval(ZONE) = savqstr(buf);
 		vdef(ZONE)++;
+	}
+	if (!vdef(EYESEP)) {
+		if (sscanf(vval(ZONE), "%*s %lf %lf %lf %lf %lf %lf",
+				&org[0], &lim[0], &org[1], &lim[1],
+				&org[2], &lim[2]) != 6)
+			badvalue(ZONE);
+		sprintf(buf, "%f",
+			0.01*(lim[0]-org[0]+lim[1]-org[1]+lim[2]-org[2]));
+		vval(EYESEP) = savqstr(buf);
+		vdef(EYESEP)++;
 	}
 	if (!vdef(INDIRECT)) {
 		vval(INDIRECT) = "0";
