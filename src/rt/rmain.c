@@ -27,6 +27,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "octree.h"
 
+#include  <sys/types.h>
+
 #include  <signal.h>
 
 #include  "view.h"
@@ -59,8 +61,8 @@ int  (*cmdvec)() = NULL;		/* command error vector */
 int  (*trace)() = NULL;			/* trace call */
 int  do_irrad = 0;			/* compute irradiance? */
 
-extern unsigned long  time();
-unsigned long  tstart;			/* start time */
+extern time_t  time();
+time_t  tstart;				/* start time */
 
 extern int  ambnotify();		/* new object notify functions */
 #if  RTRACE
@@ -155,7 +157,7 @@ char  *argv[];
 	int  rval;
 	int  i;
 					/* record start time */
-	tstart = time((unsigned long *)NULL);
+	tstart = time((time_t *)NULL);
 					/* global program name */
 	progname = argv[0] = fixargv0(argv[0]);
 					/* get library path */
@@ -661,7 +663,7 @@ char  *argv[];
 			while ((rval=fork()) == 0) {	/* keep on forkin' */
 				pflock(1);
 				pfhold();
-				tstart = time((unsigned long *)NULL);
+				tstart = time((time_t *)NULL);
 			}
 			if (rval < 0)
 				error(SYSTEM, "cannot fork child for persist function");
@@ -700,7 +702,7 @@ runagain:
 		if (outfile != NULL)
 			close(duped1);		/* release output handle */
 		pfhold();
-		tstart = time((unsigned long *)NULL);	/* reinitialize */
+		tstart = time((time_t *)NULL);	/* reinitialize */
 		raynum = nrays = 0;
 		goto runagain;
 	}
