@@ -1,0 +1,72 @@
+		LIBRARY ROUTINES AND HEADER FILES
+		SCCSid "$SunId$ LBL"
+
+This directory contains library routines and common header files for
+the RADIANCE programs in the directories on the same level.
+
+calcomp.h	header file for expression parser
+color.h		header for routines using pixel color values
+cone.h		header file for cones (cones, cylinders, rings, cups, tubes)
+face.h		header for routines using polygonal faces
+fvect.h		header file for floating point routines using vectors
+instance.h	header file for routines using octree objects
+linregr.h	header file for linear regression calculation
+mat4.h		definitions for 4x4 matrix operations
+object.h	header file for routines using objects and object sets
+octree.h	header file for routines using octrees
+otypes.h	defines for object types
+random.h	header file for random(3) and urand() function
+rasterfile.h	description of header for files containing raster images
+resolu.h	definitions for resolution line in image file.
+standard.h	standard include file for most programs
+targa.h		header file for reading and writing Targa format files
+view.h		header file for image generation
+xraster.h	header file for X routines using images
+xtwind.h	header for X text window routines
+badarg.c	check argument list against format string
+bcopy.c		substitutes for library routines
+bmalloc.c	memory allocation without overhead (no free lists)
+caldefn.c	store variable definitions
+calexpr.c	compute data values using expression parser
+calfunc.c	routines for calcomp using functions
+calprnt.c	routines for printing calcomp expressions
+color.c		routines for color calculations
+colrops.c	integer operations on COLR scanlines
+cone.c		routines for making cones
+ealloc.c	memory routines which call quit on error
+error.c		standard error reporting function
+face.c		routines dealing with polygonal faces
+fgetline.c	read line with escaped newlines
+fgetword.c	read white space separated words from stream
+frexp.c		find and open a Radiance library file
+fvect.c		routines for float vector calculations
+getpagesize.c	return system page size for non-BSD machine
+getpath.c	function to search for file in a list of directories
+header.c	routines for reading and writing information headers
+image.c		routines for image generation / pixel mapping
+instance.c	routines for octree objects
+lamps.c		load lamp data
+linregr.c	basic linear regression calculation
+malloc.c	fast malloc for memory hogs and VM environments
+mat4.c		routines dealing with 4 X 4 homogeneous matrices
+misc.c		miscellaneous routines used by most programs
+modobject.c	routines for tracking object modifiers
+multisamp.c	binary space partitioning curve for multidimensional sampling
+objset.c	routines for maintaining object sets
+octree.c	routines dealing with octrees and cubes
+otypes.c	object type lookup and error reporting
+peano.c		generate an N-dimensional Peano space-filling curve
+process.c	routines to communicate with separate process via dual pipes
+readfargs.c	allocate, read and free object arguments (RADIANCE parser)
+readobj.c	routines for reading in object descriptions
+readoct.c	routines to read octree information
+resolu.c	read and write image resolutions
+rexpr.c		regular expression parser (ala grep)
+savestr.c	routines for efficient string storage
+savqstr.c	quick and dirty string saver
+spec_rgb.c	convert colors and spectral ranges
+urand.c		anticorrelated random function due to Christophe Schlick
+urind.c		compute pseudo-asyncronous entry point for urand(3)
+words.c		routines for recognizing and moving about words in strings
+x11findwind.c	find a window by its name under X
+xf.c		routines to convert transform arguments into 4X4 matrix
