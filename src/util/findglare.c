@@ -112,6 +112,7 @@ char	*argv[];
 			/* FALL THROUGH */
 		case 'l':
 		case 's':
+		case 'P':
 			rtargv[rtargc++] = argv[i];
 			rtargv[rtargc++] = argv[++i];
 			break;
