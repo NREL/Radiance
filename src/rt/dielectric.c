@@ -16,6 +16,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #ifdef  DISPERSE
 #include  "source.h"
+static  disperse();
 #endif
 
 /*

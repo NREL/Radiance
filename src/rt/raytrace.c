@@ -34,6 +34,8 @@ OBJREC  Lamb = {
 	{0, 5, NULL, Lambfa}, NULL,
 };					/* a Lambertian surface */
 
+static int  raymove(), checkset(), checkhit();
+
 #define  MAXLOOP	128		/* modifier loop detection */
 
 #define  RAYHIT		(-1)		/* return value for intercepted ray */

@@ -15,6 +15,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "random.h"
 
 
+static int  cyl_partit(), flt_partit();
+
+
 double
 nextssamp(r, si)		/* compute sample for source, rtn. distance */
 register RAY  *r;		/* origin is read, direction is set */
