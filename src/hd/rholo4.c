@@ -110,6 +110,14 @@ int	block;
 		disp_result(DS_ENDIMM, 0, NULL);
 		disp_check(0);		/* hack -- delete usu. follows add */
 		break;
+	case DR_ADJSET:
+		if (msg.nbytes % sizeof(PACKHEAD))
+			error(INTERNAL, "bad DR_ADJSET from display process");
+		disp_result(DS_STARTIMM, 0, NULL);
+		bundle_set(BS_ADJ, (PACKHEAD *)buf, msg.nbytes/sizeof(PACKHEAD));
+		disp_result(DS_ENDIMM, 0, NULL);
+		disp_flush();
+		break;
 	case DR_DELSET:
 		if (msg.nbytes % sizeof(PACKHEAD))
 			error(INTERNAL, "bad DR_DELSET from display process");

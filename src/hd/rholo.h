@@ -17,6 +17,7 @@ typedef struct packet {
 	int2	hd;		/* holodeck section (first) */
 	int4	bi;		/* beam index (second) */
 	int4	nr;		/* number of rays (third) */
+	int4	nc;		/* number calculated (fourth) */
 	RAYVAL	ra[RPACKSIZ];	/* ray values (fourth) */
 	float	*offset;	/* offset array if !vbool(OBSTRUCTIONS) */
 	struct packet	*next;	/* next in packet list */
@@ -26,6 +27,7 @@ typedef struct {
 	int2	hd;		/* holodeck section (first) */
 	int4	bi;		/* beam index (second) */
 	int4	nr;		/* number of rays (third) */
+	int4	nc;		/* number calculated (fourth) */
 } PACKHEAD;		/* followed by ray values */
 
 #define packsiz(nr)	(sizeof(PACKHEAD)+(nr)*sizeof(RAYVAL))
@@ -65,7 +67,8 @@ typedef struct {
 				/* bundle set requests */
 #define BS_NEW		1		/* replace current set with new one */
 #define BS_ADD		2		/* add to current set */
-#define BS_DEL		3		/* delete from current set */
+#define BS_ADJ		3		/* adjust current set quantities */
+#define BS_DEL		4		/* delete from current set */
 
 extern char	*progname;	/* our program name */
 extern char	*hdkfile;	/* holodeck file name */

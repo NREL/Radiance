@@ -10,10 +10,8 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #include "rholo.h"
 
-
 #define abs(x)		((x) > 0 ? (x) : -(x))
 #define sgn(x)		((x) > 0 ? 1 : (x) < 0 ? -1 : 0)
-
 
 static PACKHEAD	*complist=NULL;	/* list of beams to compute */
 static int	complen=0;	/* length of complist */
@@ -25,8 +23,7 @@ int
 beamcmp(b0, b1)			/* comparison for descending compute order */
 register PACKHEAD	*b0, *b1;
 {
-	return(	b1->nr*(bnrays(hdlist[b0->hd],b0->bi)+1) -
-		b0->nr*(bnrays(hdlist[b1->hd],b1->bi)+1) );
+	return(	b1->nr*(b0->nc+1) - b0->nr*(b1->nc+1) );
 }
 
 
@@ -58,26 +55,36 @@ int	nents;
 		lastin = -1;		/* flag for initial sort */
 		break;
 	case BS_ADD:			/* add to computation set */
+	case BS_ADJ:			/* adjust set quantities */
 		if (nents <= 0)
 			return;
 					/* merge any common members */
-		for (i = 0; i < complen; i++)
+		for (i = 0; i < complen; i++) {
 			for (n = 0; n < nents; n++)
 				if (clist[n].bi == complist[i].bi &&
 						clist[n].hd == complist[i].hd) {
-					complist[i].nr += clist[n].nr;
+					if (op == BS_ADD)
+						complist[i].nr += clist[n].nr;
+					else /* op == BS_ADJ */
+						complist[i].nr = clist[n].nr;
 					clist[n].nr = 0;
+					clist[n].nc = 1;
 					lastin = -1;	/* flag full sort */
 					break;
 				}
+			if (n >= nents)
+				clist[i].nc = bnrays(hdlist[clist[i].hd],
+						clist[i].bi);
+		}
 					/* sort updated list */
 		sortcomplist();
 					/* sort new entries */
 		qsort((char *)clist, nents, sizeof(PACKHEAD), beamcmp);
 					/* what can't we satisfy? */
-		for (n = 0; n < nents && clist[n].nr >
-				bnrays(hdlist[clist[n].hd],clist[n].bi); n++)
+		for (n = 0; n < nents && clist[n].nr > clist[n].nc; n++)
 			;
+		if (op == BS_ADJ)
+			nents = n;
 		if (n) {		/* allocate space for merged list */
 			PACKHEAD	*newlist;
 			newlist = (PACKHEAD *)malloc(
@@ -116,7 +123,7 @@ int	nents;
 	}
 	if (outdev == NULL)
 		return;
-	n = 8*RPACKSIZ;				/* allocate packet holder */
+	n = 32*RPACKSIZ;		/* allocate packet holder */
 	p = (PACKHEAD *)malloc(packsiz(n));
 	if (p == NULL)
 		goto memerr;
@@ -130,12 +137,19 @@ int	nents;
 					goto memerr;
 			}
 			bcopy((char *)hdbray(b), (char *)packra(p),
-					(p->nr=b->nrm)*sizeof(RAYVAL));
+					b->nrm*sizeof(RAYVAL));
 			p->hd = clist[i].hd;
 			p->bi = clist[i].bi;
+			p->nr = p->nc = b->nrm;
 			disp_packet(p);
 		}
 	free((char *)p);		/* clean up */
+	if (op == BS_NEW) {
+		done_packets(flush_queue());	/* empty queue, so we can... */
+		for (i = 0; i < complen; i++)	/* ...get number computed */
+			complist[i].nc = bnrays(hdlist[complist[i].hd],
+						complist[i].bi);
+	}
 	return;
 memerr:
 	error(SYSTEM, "out of memory in bundle_set");
@@ -273,8 +287,6 @@ sortcomplist()			/* fix our list order */
 	PACKHEAD	*list2;
 	register int	i;
 
-				/* empty queue */
-	done_packets(flush_queue());
 	if (complen <= 0)	/* check to see if there is even a list */
 		return;
 	if (lastin < 0 || listpos*4 >= complen*3)
@@ -290,8 +302,7 @@ sortcomplist()			/* fix our list order */
 		free((char *)list2);
 	}
 					/* drop satisfied requests */
-	for (i = complen; i-- && complist[i].nr <=
-			bnrays(hdlist[complist[i].hd],complist[i].bi); )
+	for (i = complen; i-- && complist[i].nr <= complist[i].nc; )
 		;
 	if (i < 0) {
 		free((char *)complist);
@@ -315,17 +326,12 @@ sortcomplist()			/* fix our list order */
  * a given bundle to move way down in the computation order.  We keep
  * track of where the computed bundle with the highest priority would end
  * up, and if we get further in our compute list than this, we resort the
- * list and start again from the beginning.  We have to flush the queue
- * each time we sort, to ensure that we are not disturbing the order.
- *	If our major assumption is violated, and we have a very steep
- * descent in our weights, then we will end up resorting much more often
- * than necessary, resulting in frequent flushing of the queue.  Since
- * a merge sort is used, the sorting costs will be minimal.
+ * list and start again from the beginning.  Since
+ * a merge sort is used, the sorting costs are minimal.
  */
 next_packet(p)			/* prepare packet for computation */
 register PACKET	*p;
 {
-	int	ncomp;
 	register int	i;
 
 	if (listpos > lastin)		/* time to sort the list */
@@ -334,16 +340,15 @@ register PACKET	*p;
 		return(0);
 	p->hd = complist[listpos].hd;
 	p->bi = complist[listpos].bi;
-	ncomp = bnrays(hdlist[p->hd],p->bi);
-	p->nr = complist[listpos].nr - ncomp;
+	p->nc = complist[listpos].nc;
+	p->nr = complist[listpos].nr - p->nc;
 	if (p->nr <= 0)
 		return(0);
 	if (p->nr > RPACKSIZ)
 		p->nr = RPACKSIZ;
-	ncomp += p->nr;			/* find where this one would go */
-	while (lastin > listpos && complist[listpos].nr *
-		(bnrays(hdlist[complist[lastin].hd],complist[lastin].bi)+1)
-			> complist[lastin].nr * (ncomp+1))
+	complist[listpos].nc += p->nr;	/* find where this one would go */
+	while (lastin > listpos && 
+			beamcmp(complist+lastin, complist+listpos) > 0)
 		lastin--;
 	listpos++;
 	return(1);
