@@ -10,13 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *     9/26/85
  */
 
-#include  <stdio.h>
-
-#ifdef MSDOS
-#include  <fcntl.h>
-#endif
-
-#include  <math.h>
+#include  "standard.h"
 
 #include  <signal.h>
 
@@ -26,7 +20,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "paths.h"
 
-extern char  *malloc();
 extern float  *matchlamp();
 
 #define	 FEQ(a,b)	((a) >= .98*(b) && (a) <= 1.02*(b))
@@ -104,7 +97,7 @@ char  **argv;
 	signal(SIGXFSZ, quit);
 #endif
 
-	progname = argv[0];
+	progname = argv[0] = fixargv0(argv[0]);
 
 	for (i = 1; i < argc; i++)
 		if (argv[i][0] == '-')
