@@ -74,7 +74,7 @@ caldefn.o:	caldefn.c calcomp.h
 calfunc.o:	calfunc.c calcomp.h
 	cc $(CFLAGS) -c -DVARIABLE -DBIGLIB calfunc.c
 
-gensurf.o:	standard.h mat4.h fvect.h
+gensurf.o xf.o:	standard.h mat4.h fvect.h
 
 fvect.o genworm.o replmarks.o:	fvect.h
 
