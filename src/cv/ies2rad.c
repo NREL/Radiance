@@ -968,13 +968,13 @@ char *
 getword(fp)			/* scan a word from fp */
 register FILE	*fp;
 {
-	static char	word[MAXWORD];
+	static char	wrd[MAXWORD];
 	register char	*cp;
 	register int	c;
 
 	while (isspace(c=getc(fp)))
 		;
-	for (cp = word; c != EOF && cp < word+MAXWORD-1;
+	for (cp = wrd; c != EOF && cp < wrd+MAXWORD-1;
 			*cp++ = c, c = getc(fp))
 		if (isspace(c) || c == ',') {
 			while (isspace(c))
@@ -982,31 +982,31 @@ register FILE	*fp;
 			if (c != EOF & c != ',')
 				ungetc(c, fp);
 			*cp = '\0';
-			return(word);
+			return(wrd);
 		}
 	*cp = '\0';
-	return(cp > word ? word : NULL);
+	return(cp > wrd ? wrd : NULL);
 }
 
 
-cvtint(ip, word)		/* convert a word to an integer */
+cvtint(ip, wrd)			/* convert a word to an integer */
 int	*ip;
-char	*word;
+char	*wrd;
 {
-	if (word == NULL || !isint(word))
+	if (wrd == NULL || !isint(wrd))
 		return(0);
-	*ip = atoi(word);
+	*ip = atoi(wrd);
 	return(1);
 }
 
 
-cvtflt(rp, word)		/* convert a word to a double */
+cvtflt(rp, wrd)			/* convert a word to a double */
 double	*rp;
-char	*word;
+char	*wrd;
 {
-	if (word == NULL || !isflt(word))
+	if (wrd == NULL || !isflt(wrd))
 		return(0);
-	*rp = atof(word);
+	*rp = atof(wrd);
 	return(1);
 }
 
