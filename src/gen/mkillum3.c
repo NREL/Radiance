@@ -10,7 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "mkillum.h"
 
-#define  brt(col)	(.295*(col)[0] + .636*(col)[1] + .070*(col)[2])
+#define  brt(col)	(.295*(col)[0] + .635*(col)[1] + .070*(col)[2])
 
 char	DATORD[] = "RGB";		/* data ordering */
 char	DATSUF[] = ".dat";		/* data file suffix */
@@ -102,8 +102,10 @@ FVECT  u, v, w;
 		printf("\n9 red green blue");
 		for (i = 0; i < 3; i++) {
 			dfp = dfopen(il, DATORD[i]);
-			fprintf(dfp, "2\n1 0 %d\n0 %f %d\n", n, 2.*PI, m);
-			colorout(i, da, n*m, 1./il->nsamps/il->col[i], dfp);
+			fprintf(dfp, "2\n%f %f %d\n%f %f %d\n",
+					1.-.5/n, .5/n, n,
+					0., 2.*PI, m+1);
+			colorout(i, da, n, m, 1./il->nsamps/il->col[i], dfp);
 			fclose(dfp);
 			printf(" %s", dfname(il, DATORD[i]));
 		}
@@ -112,8 +114,9 @@ FVECT  u, v, w;
 				il->matname, DSTSUF);
 		printf("\n5 noop");
 		dfp = dfopen(il, 0);
-		fprintf(dfp, "2\n1 0 %d\n0 %f %d\n", n, 2.*PI, m);
-		brightout(da, n*m, 1./il->nsamps/brt(il->col), dfp);
+		fprintf(dfp, "2\n%f %f %d\n%f %f %d\n", 1.-.5/n, .5/n, n,
+				0., 2.*PI, m+1);
+		brightout(da, n, m, 1./il->nsamps/brt(il->col), dfp);
 		fclose(dfp);
 		printf(" %s", dfname(il, 0));
 	}
@@ -140,8 +143,10 @@ int  n, m;
 		printf("\n9 red green blue");
 		for (i = 0; i < 3; i++) {
 			dfp = dfopen(il, DATORD[i]);
-			fprintf(dfp, "2\n1 -1 %d\n0 %f %d\n", n, 2.*PI, m);
-			colorout(i, da, n*m, 1./il->nsamps/il->col[i], dfp);
+			fprintf(dfp, "2\n%f %f %d\n%f %f %d\n",
+					1.-1./n, -1.+1./n, n,
+					0., 2.*PI, m+1);
+			colorout(i, da, n, m, 1./il->nsamps/il->col[i], dfp);
 			fclose(dfp);
 			printf(" %s", dfname(il, DATORD[i]));
 		}
@@ -150,8 +155,9 @@ int  n, m;
 				il->matname, DSTSUF);
 		printf("\n5 noop");
 		dfp = dfopen(il, 0);
-		fprintf(dfp, "2\n1 -1 %d\n0 %f %d\n", n, 2.*PI, m);
-		brightout(da, n*m, 1./il->nsamps/brt(il->col), dfp);
+		fprintf(dfp, "2\n%f %f %d\n%f %f %d\n", 1.-1./n, -1.+1./n, n,
+				0., 2.*PI, m+1);
+		brightout(da, n, m, 1./il->nsamps/brt(il->col), dfp);
 		fclose(dfp);
 		printf(" %s", dfname(il, 0));
 	}
@@ -207,42 +213,64 @@ int  n;
 	for (i = 0; i < 3; i++)
 		il->col[i] /= (double)n*il->nsamps;
 
-	return(brt(il->col) >= il->minbrt);
+	return(brt(il->col) > il->minbrt+FTINY);
 }
 
 
-colorout(p, da, n, mult, fp)	/* put out color distribution data */
+static int	colmcnt = 0;	/* count of columns written */
+
+fputnum(d, fp)			/* put out a number to fp */
+double  d;
+FILE  *fp;
+{
+	if (colmcnt++ % 6 == 0)
+		putc('\n', fp);
+	fprintf(fp, " %11e", d);
+}
+
+
+fputeol(fp)			/* write end of line to fp */
+register FILE  *fp;
+{
+	putc('\n', fp);
+	colmcnt = 0;
+}
+
+
+colorout(p, da, n, m, mult, fp)	/* put out color distribution data */
 int  p;
 register float  *da;
-int  n;
+int  n, m;
 double  mult;
 FILE  *fp;
 {
-	register int  i;
+	register int  i, j;
 
 	for (i = 0; i < n; i++) {
-		if (i%6 == 0)
-			putc('\n', fp);
-		fprintf(fp, " %11e", mult*da[p]);
-		da += 3;
+		for (j = 0; j < m; j++) {
+			fputnum(mult*da[p], fp);
+			da += 3;
+		}
+		fputnum(mult*da[p-3*m], fp);	/* wrap phi */
 	}
-	putc('\n', fp);
+	fputeol(fp);
 }
 
 
-brightout(da, n, mult, fp)	/* put out brightness distribution data */
+brightout(da, n, m, mult, fp)	/* put out brightness distribution data */
 register float  *da;
-int  n;
+int  n, m;
 double  mult;
 FILE  *fp;
 {
-	register int  i;
+	register int  i, j;
 
 	for (i = 0; i < n; i++) {
-		if (i%6 == 0)
-			putc('\n', fp);
-		fprintf(fp, " %11e", mult*brt(da));
-		da += 3;
+		for (j = 0; j < m; j++) {
+			fputnum(mult*brt(da), fp);
+			da += 3;
+		}
+		fputnum(mult*brt(da-3*m), fp);	/* wrap phi */
 	}
-	putc('\n', fp);
+	fputeol(fp);
 }

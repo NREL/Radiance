@@ -88,7 +88,7 @@ char  *nm;
 		    h = ilhash(dim, 3) + i;
 		    multisamp(sp, 2, urand(h));
 		    r1 = (dim[1] + sp[0])/nalt;
-		    r2 = (dim[2] + sp[1])/nazi;
+		    r2 = (dim[2] + sp[1] - .5)/nazi;
 		    flatdir(dn, r1, r2);
 		    for (j = 0; j < 3; j++)
 			dir[j] = -dn[0]*u[j] - dn[1]*v[j] - dn[2]*fa->norm[j];
@@ -166,7 +166,7 @@ char  *nm;
 		    multisamp(sp, 4, urand(ilhash(dim,3)+i));
 					/* random direction */
 		    r1 = (dim[1] + sp[0])/nalt;
-		    r2 = (dim[2] + sp[1])/nazi;
+		    r2 = (dim[2] + sp[1] - .5)/nazi;
 		    rounddir(dir, r1, r2);
 					/* random location */
 		    mkaxes(u, v, dir);		/* yuck! */
@@ -236,7 +236,7 @@ char  *nm;
 		    multisamp(sp, 4, urand(ilhash(dim,3)+i));
 					/* random direction */
 		    r1 = (dim[1] + sp[0])/nalt;
-		    r2 = (dim[2] + sp[1])/nalt;
+		    r2 = (dim[2] + sp[1] - .5)/nazi;
 		    flatdir(dn, r1, r2);
 		    for (j = 0; j < 3; j++)
 			dir[j] = -dn[0]*u[j] - dn[1]*v[j] - dn[2]*co->ad[j];

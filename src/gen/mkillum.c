@@ -336,6 +336,8 @@ char	*nm;
 			if (!isfltd(++cp, " \t\n"))
 				break;
 			thisillum.minbrt = atof(cp);
+			if (thisillum.minbrt < 0.)
+				thisillum.minbrt = 0.;
 			cp = sskip(cp);
 			continue;
 		case 'o':			/* output file */
