@@ -19,7 +19,7 @@ static const char	RCSid[] = "$Id$";
 #include "plocate.h"
 #include "rhdisp.h"
 #include "rhd_qtree.h"
-#include  "x11icon.h"
+#include "x11icon.h"
 
 #ifndef RAYQLEN
 #define RAYQLEN		50000		/* max. rays to queue before flush */
@@ -53,6 +53,8 @@ static const char	RCSid[] = "$Id$";
 #define  levptr(etype)	((etype *)&currentevent)
 
 struct driver	odev;			/* global device driver structure */
+
+TMstruct	*tmGlobal;		/* global tone-mapping structure */
 
 char odev_args[64];			/* command arguments */
 
@@ -165,7 +167,8 @@ dev_open(			/* initialize X11 driver */
 				&myprims[BLU][CIEX],&myprims[BLU][CIEY],
 				&myprims[WHT][CIEX],&myprims[WHT][CIEY]) >= 6)
 		dpri = myprims;
-	if (tmInit(mytmflags(), dpri, gamval) == NULL)
+	tmGlobal = tmInit(mytmflags(), dpri, gamval);
+	if (tmGlobal == NULL)
 		error(SYSTEM, "not enough memory in dev_open");
 					/* open window */
 	ourwinattr.background_pixel = ourblack;
@@ -225,7 +228,7 @@ dev_close(void)			/* close our display */
 	XCloseDisplay(ourdisplay);
 	ourdisplay = NULL;
 	qtFreeLeaves();
-	tmDone(NULL);
+	tmDone(tmGlobal);
 	odev.v.type = 0;
 	odev.hres = odev.vres = 0;
 	odev.ifd = -1;

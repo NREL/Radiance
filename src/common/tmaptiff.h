@@ -12,13 +12,15 @@
 extern "C" {
 #endif
 
-extern int	tmCvL16(TMbright *ls, uint16 *luvs, int len);
-extern int	tmCvLuv24(TMbright *ls, BYTE *cs, uint32 *luvs, int len);
-extern int	tmCvLuv32(TMbright *ls, BYTE *cs, uint32 *luvs, int len);
-extern int	tmLoadTIFF(TMbright **lpp, BYTE **cpp, int *xp, int *yp,
-				char *fname, TIFF *tp);
-extern int	tmMapTIFF(BYTE **psp, int *xp, int *yp, int flags,
-				RGBPRIMP monpri, double gamval,
+extern int	tmCvL16(TMstruct *tms, TMbright *ls, uint16 *luvs, int len);
+extern int	tmCvLuv24(TMstruct *tms, TMbright *ls, BYTE *cs,
+				uint32 *luvs, int len);
+extern int	tmCvLuv32(TMstruct *tms, TMbright *ls, BYTE *cs,
+				uint32 *luvs, int len);
+extern int	tmLoadTIFF(TMstruct *tms, TMbright **lpp, BYTE **cpp,
+				int *xp, int *yp, char *fname, TIFF *tp);
+extern int	tmMapTIFF(BYTE **psp, int *xp, int *yp,
+				int flags, RGBPRIMP monpri, double gamval,
 				double Lddyn, double Ldmax,
 				char *fname, TIFF *tp);
 

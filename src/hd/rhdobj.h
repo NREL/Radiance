@@ -148,6 +148,7 @@ Returns 1 on success, 0 on failure (with COMMAND error message).
 
  ******************************************************************/
 
+extern TMstruct	*tmGlobal;
 
 extern char	rhdcmd[DO_NCMDS][8];
 

@@ -55,6 +55,8 @@ extern int	qtMinNodesiz;	/* minimum node dimension (pixels) */
 
 extern int	rayqleft;	/* number of rays to queue before flush */
 
+extern TMstruct	*tmGlobal;	/* global tone-mapping structure */
+
 /*
 extern int32	encodedir();
 extern double	fdir2diff(), dir2diff();

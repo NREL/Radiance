@@ -316,11 +316,12 @@ odSample(			/* add a sample value */
 		if (id < 0)
 			continue;		/* not good enough */
 							/* convert color */
-		tmCvColrs(&odS.brt[id], odS.chr[id], (COLR *)c, 1);
+		tmCvColrs(tmGlobal, &odS.brt[id], odS.chr[id], (COLR *)c, 1);
 		if (imm_mode | needmapping)		/* if immediate mode */
 			needmapping |= NEWRGB;		/* map it later */
 		else					/* else map it now */
-			tmMapPixels(odS.rgb[id], &odS.brt[id], odS.chr[id], 1);
+			tmMapPixels(tmGlobal, odS.rgb[id], &odS.brt[id],
+					odS.chr[id], 1);
 		SET4(odS.redraw, id);			/* mark for redraw */
 		odView[i].n2redraw++;
 	}
@@ -484,16 +485,16 @@ odUpdate(				/* update this view */
 	if (needmapping & NEWRGB) {
 		if (needmapping & NEWMAP) {
 			if (needmapping & NEWHIST)
-				tmClearHisto();
+				tmClearHisto(tmGlobal);
 			needmapping &= ~NEWHIST;
-			if (tmAddHisto(odS.brt,odS.nsamp,1) != TM_E_OK)
+			if (tmAddHisto(tmGlobal, odS.brt,odS.nsamp,1) != TM_E_OK)
 				return;
-			if (tmComputeMapping(0.,0.,0.) != TM_E_OK)
+			if (tmComputeMapping(tmGlobal, 0.,0.,0.) != TM_E_OK)
 				return;
 			needmapping &= ~NEWMAP;
 			odRedrawAll();			/* redraw everything */
 		}
-		if (tmMapPixels((BYTE *)(odS.rgb), odS.brt,
+		if (tmMapPixels(tmGlobal, (BYTE *)(odS.rgb), odS.brt,
 				(BYTE *)(odS.chr), odS.nsamp) != TM_E_OK)
 			return;
 		needmapping &= ~NEWRGB;

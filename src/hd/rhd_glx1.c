@@ -61,6 +61,8 @@ static const char	RCSid[] = "$Id$";
 
 struct driver	odev;			/* global device driver structure */
 
+TMstruct	*tmGlobal;		/* global tone-mapping structure */
+
 char odev_args[64];			/* command arguments */
 
 static XEvent  currentevent;		/* current event */
@@ -142,7 +144,8 @@ dev_open(
 				&myprims[BLU][CIEX],&myprims[BLU][CIEY],
 				&myprims[WHT][CIEX],&myprims[WHT][CIEY]) >= 6)
 		dpri = myprims;
-	if (tmInit(mytmflags(), dpri, gamval) == NULL)
+	tmGlobal = tmInit(mytmflags(), dpri, gamval);
+	if (tmGlobal == NULL)
 		error(SYSTEM, "not enough memory in dev_open");
 					/* open window */
 	ourwinattr.background_pixel = ourblack;
@@ -211,7 +214,7 @@ dev_close(void)			/* close our display and free resources */
 	XCloseDisplay(ourdisplay);
 	ourdisplay = NULL;
 	qtFreeLeaves();
-	tmDone(NULL);
+	tmDone(tmGlobal);
 	freecones();
 	odev.v.type = 0;
 	odev.hres = odev.vres = 0;

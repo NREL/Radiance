@@ -34,6 +34,8 @@ extern struct ODview {
 
 extern int	odNViews;	/* number of views in our list */
 
+extern TMstruct	*tmGlobal;	/* global tone-mapping structure */
+
 extern struct ODsamp {
 	union ODfunion {
 		float	prox;			/* viewpoint proximity */
