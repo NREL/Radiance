@@ -155,7 +155,8 @@ int	adopt;
 }
 
 
-cbeamadd(bl, n, v, hr, vr)	/* add beams to server list */
+cbeamop(op, bl, n, v, hr, vr)	/* update beams on server list */
+int	op;
 register struct beamcomp	*bl;
 int	n;
 VIEW	*v;
@@ -169,34 +170,13 @@ int	hr, vr;
 	pa = (PACKHEAD *)malloc(n*sizeof(PACKHEAD));
 	if (pa == NULL)
 		error(SYSTEM, "out of memory in cbeamadd");
-	for (i = 0; i < n; i++)
-		pa[i].nr = npixels(v, hr, vr,
-				hdlist[pa[i].hd=bl[i].hd],
-				pa[i].bi=bl[i].bi) / 8;
-
-	serv_request(DR_ADDSET, n*sizeof(PACKHEAD), (char *)pa);
-	free((char *)pa);
-}
-
-
-cbeamdel(bl, n)		/* delete unwanted beam requests */
-register struct beamcomp	*bl;
-int	n;
-{
-	register PACKHEAD	*pa;
-	register int	i;
-
-	if (n <= 0)
-		return;
-	pa = (PACKHEAD *)malloc(n*sizeof(PACKHEAD));
-	if (pa == NULL)
-		error(SYSTEM, "out of memory in cbeamdel");
 	for (i = 0; i < n; i++) {
 		pa[i].hd = bl[i].hd;
 		pa[i].bi = bl[i].bi;
-		pa[i].nr = 0;		/* removes any request */
+		pa[i].nr = v==NULL ? 0 :
+				npixels(v, hr, vr, hdlist[bl[i].hd], bl[i].bi);
 	}
-	serv_request(DR_DELSET, n*sizeof(PACKHEAD), (char *)pa);
+	serv_request(op, n*sizeof(PACKHEAD), (char *)pa);
 	free((char *)pa);
 }
 
@@ -418,6 +398,12 @@ VIEW	*vold, *vnew;
 }
 
 
+beam_sync()		/* synchronize beams on server */
+{
+	cbeamop(DR_NEWSET, cbeam, ncbeams, &odev.v, odev.hres, odev.vres);
+}
+
+
 beam_view(vo, vn)	/* change beam view */
 VIEW	*vo, *vn;
 {
@@ -427,7 +413,7 @@ VIEW	*vo, *vn;
 
 	if (!vn->type) {		/* clear our beam list */
 		set_voxels(vlnew, 0);
-		cbeamdel(cbeam, ncbeams);
+		cbeamop(DR_DELSET, cbeam, ncbeams, NULL, 0, 0);
 		ncbeams = 0;
 		return;
 	}
@@ -444,10 +430,10 @@ VIEW	*vo, *vn;
 		else			/* else add all new cells */
 			doview(&ca, vn);
 					/* inform server of new beams */
-	cbeamadd(cbeam+ncbeams, xcbeams, vn, odev.hres, odev.vres);
+	cbeamop(DR_ADDSET, cbeam+ncbeams, xcbeams, vn, odev.hres, odev.vres);
 					/* sort list to put orphans at end */
 	cbeamsort(0);
 					/* tell server to delete orphans */
-	cbeamdel(cbeam+ncbeams, xcbeams);
+	cbeamop(DR_DELSET, cbeam+ncbeams, xcbeams, NULL, 0, 0);
 	xcbeams = 0;			/* truncate our list */
 }

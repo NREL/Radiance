@@ -17,10 +17,11 @@ extern struct driver {
 
 			/* dev_input() return flags */
 #define	DEV_SHUTDOWN	01	/* user shutdown request */
-#define DEV_NEWVIEW	02	/* view change (new view in odev.v) */
-#define DEV_NEWSIZE	04	/* device resolution change */
-#define DEV_WAIT	010	/* pause computation and wait for input */
+#define	DEV_NEWVIEW	02	/* view change (new view in odev.v) */
+#define	DEV_NEWSIZE	04	/* device resolution change */
+#define	DEV_WAIT	010	/* pause computation and wait for input */
 #define	DEV_RESUME	020	/* resume after pause */
+#define	DEV_REDRAW	040	/* redraw from server */
 
 
 /************************************************************************
