@@ -382,8 +382,11 @@ register VARDEF  *vp;
     errno = 0;
     d = (*vp->lib->f)(vp->lib->fname);
 #ifdef  IEEE
-    if (!finite(d))
-	errno = EDOM;
+    if (errno == 0)
+	if (isnan(d))
+	    errno = EDOM;
+	else if (isinf(d))
+	    errno = ERANGE;
 #endif
     if (errno) {
 	wputs(fname);
