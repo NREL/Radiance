@@ -867,8 +867,8 @@ setglpersp()			/* set perspective view in GL */
 		dev_zmin = odev.v.vfore;
 	if (odev.v.vaft > FTINY)
 		dev_zmax = odev.v.vaft;
-	if (dev_zmin < dev_zmax/100.)
-		dev_zmin = dev_zmax/100.;
+	if (dev_zmin*500. < dev_zmax)
+		dev_zmax = dev_zmin*500.;
 	setzrat();
 	xmax = dev_zmin * tan(PI/180./2. * odev.v.horiz);
 	xmin = -xmax;
