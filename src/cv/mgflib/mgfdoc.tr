@@ -746,9 +746,6 @@ o door
 	o
 o
 
-	i cubfurn.inc -mx -t 405 133.5 0
-o
-
 # Six file cabinets (36" wide each)
 # ("filecab.inc" was given as an earlier example in Section 1.2)
 o filecab.x
@@ -3123,7 +3120,7 @@ following:
 #define MG_E_CMIX		4		/* cmix	*/
 #define MG_E_CSPEC		5		/* cspec	*/
 #define MG_E_CXY		6		/* cxy		*/
-#define MG_E_CYL		7		/* cyl	*/
+#define MG_E_CYL		7		/* cyl		*/
 #define MG_E_ED		8		/* ed		*/
 #define MG_E_FACE		9		/* f		*/
 #define MG_E_INCLUDE	10		/* i		*/
@@ -3268,7 +3265,7 @@ and return one of the non-zero values from "parser.h" listed below:
 #define MG_EUNK		1		/* unknown entity */
 #define MG_EARGC		2		/* wrong number of arguments */
 #define MG_ETYPE		3		/* argument type error */
-#define MG_EILL			4		/* illegal argument value */
+#define MG_EILL				4		/* illegal argument value */
 #define MG_EUNDEF		5		/* undefined reference */
 #define MG_ENOFILE		6		/* cannot open input file */
 #define MG_EINCL		7		/* error in included file */
@@ -3290,7 +3287,7 @@ listed above in the native country's language.
 .SH
 SEE ALSO
 .LP
-mg_fgetpos, mg_handle, mg_init
+mg_fgetpos, mg_handle, mg_init, mg_open
 .ds RH MG_OPEN
 .bp
 .SH
@@ -4489,20 +4486,20 @@ and adopt the following code to convert between CIE and RGB coordinates.
 #define  CIE_y_w		0.3333
 #endif
 
-#define CIE_D		(	CIE_x_r*(CIE_y_g - CIE_y_b) + \\\\
-				CIE_x_g*(CIE_y_b - CIE_y_r) + \\\\
+#define CIE_D		(	CIE_x_r*(CIE_y_g - CIE_y_b) + \\
+				CIE_x_g*(CIE_y_b - CIE_y_r) + \\
 				CIE_x_b*(CIE_y_r - CIE_y_g)	)
-#define CIE_C_rD	( (1./CIE_y_w) * \\\\
-				( CIE_x_w*(CIE_y_g - CIE_y_b) - \\\\
-				  CIE_y_w*(CIE_x_g - CIE_x_b) + \\\\
+#define CIE_C_rD	( (1./CIE_y_w) * \\
+				( CIE_x_w*(CIE_y_g - CIE_y_b) - \\
+				  CIE_y_w*(CIE_x_g - CIE_x_b) + \\
 				  CIE_x_g*CIE_y_b - CIE_x_b*CIE_y_g	) )
-#define CIE_C_gD	( (1./CIE_y_w) * \\\\
-				( CIE_x_w*(CIE_y_b - CIE_y_r) - \\\\
-				  CIE_y_w*(CIE_x_b - CIE_x_r) - \\\\
+#define CIE_C_gD	( (1./CIE_y_w) * \\
+				( CIE_x_w*(CIE_y_b - CIE_y_r) - \\
+				  CIE_y_w*(CIE_x_b - CIE_x_r) - \\
 				  CIE_x_r*CIE_y_b + CIE_x_b*CIE_y_r	) )
-#define CIE_C_bD	( (1./CIE_y_w) * \\\\
-				( CIE_x_w*(CIE_y_r - CIE_y_g) - \\\\
-				  CIE_y_w*(CIE_x_r - CIE_x_g) + \\\\
+#define CIE_C_bD	( (1./CIE_y_w) * \\
+				( CIE_x_w*(CIE_y_r - CIE_y_g) - \\
+				  CIE_y_w*(CIE_x_r - CIE_x_g) + \\
 				  CIE_x_r*CIE_y_g - CIE_x_g*CIE_y_r	) )
 
 #define CIE_rf		(CIE_y_r*CIE_C_rD/CIE_D)
