@@ -55,7 +55,7 @@ char  *dname;
 	 *	For irregularly spaced points, the following can be
 	 *  substituted for begi endi ni:
 	 *
-	 *		@ ni p0i p1i .. pni
+	 *		0 0 ni p0i p1i .. pni
 	 */
 
 	if ((dfname = getpath(dname, libpath, R_OK)) == NULL) {
@@ -82,10 +82,12 @@ char  *dname;
 	for (i = 0; i < dp->nd; i++) {
 		if (fscanf(fp, "%lf %lf %d",
 				&dp->dim[i].org, &dp->dim[i].siz,
-				&dp->dim[i].ne) == 3) {
-			dp->dim[i].siz -= dp->dim[i].org;
-			dp->dim[i].p = NULL;
-		} else if (fscanf(fp, "@ %d", &dp->dim[i].ne) == 1) {
+				&dp->dim[i].ne) != 3)
+			goto scanerr;
+		if (dp->dim[i].ne < 2)
+			goto scanerr;
+		asize *= dp->dim[i].ne;
+		if ((dp->dim[i].siz -= dp->dim[i].org) == 0) {
 			dp->dim[i].p = (double *)malloc(dp->dim[i].ne*sizeof(double));
 			if (dp->dim[i].p == NULL)
 				goto memerr;
@@ -100,10 +102,7 @@ char  *dname;
 			dp->dim[i].siz = dp->dim[i].p[dp->dim[i].ne-1]
 						- dp->dim[i].p[0];
 		} else
-			goto scanerr;
-		if (dp->dim[i].siz == 0.0 || dp->dim[i].ne < 2)
-			goto scanerr;
-		asize *= dp->dim[i].ne;
+			dp->dim[i].p = NULL;
 	}
 	if ((dp->arr = (DATATYPE *)malloc(asize*sizeof(DATATYPE))) == NULL)
 		goto memerr;
@@ -266,6 +265,7 @@ double  *pt;
 {
 	DATARRAY  sd;
 	int  asize;
+	int  lower, upper;
 	register int  i;
 	double  x, y, y0, y1;
 					/* set up dimensions for recursion */
@@ -287,20 +287,24 @@ double  *pt;
 		else if (i > dp->dim[0].ne - 2)
 			i = dp->dim[0].ne - 2;
 	} else {				/* unevenly spaced points */
-		if (dp->dim[0].siz > 0.0)
-			for (i = 0; i < dp->dim[0].ne; i++)
-				if (pt[0] < dp->dim[0].p[i])
-					break;
-		else
-			for (i = 0; i < dp->dim[0].ne; i++)
-				if (pt[0] >= dp->dim[0].p[i])
-					break;
-		if (i <= 0)
+		if (dp->dim[0].siz > 0.0) {
+			lower = 0;
+			upper = dp->dim[0].ne;
+		} else {
+			lower = dp->dim[0].ne;
+			upper = 0;
+		}
+		do {
+			i = (lower + upper) >> 1;
+			if (pt[0] >= dp->dim[0].p[i])
+				lower = i;
+			else if (pt[0] < dp->dim[0].p[i])
+				upper = i;
+		} while (i != (lower + upper) >> 1);
+		if (i < 0)
 			i = 0;
-		else if (i >= dp->dim[0].ne)
+		else if (i > dp->dim[0].ne - 2)
 			i = dp->dim[0].ne - 2;
-		else
-			i--;
 		x = i + (pt[0] - dp->dim[0].p[i]) /
 				(dp->dim[0].p[i+1] - dp->dim[0].p[i]);
 	}
