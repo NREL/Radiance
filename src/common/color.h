@@ -48,7 +48,8 @@ typedef float  COLOR[3];	/* red, green, blue */
 #define  normbright(c)		(int)((67L*(c)[RED]+168L*(c)[GRN]+21L*(c)[BLU])/256)
 #endif
 
-#define  luminance(col)		(470. * bright(col))
+#define  D65EFFICACY		203.		/* luminous efficacy of D65 */
+#define  luminance(col)		(D65EFFICACY * bright(col))
 
 #define  intens(col)		( (col)[0] > (col)[1] \
 				? (col)[0] > (col)[2] ? (col)[0] : (col)[2] \
