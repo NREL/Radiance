@@ -80,3 +80,10 @@ int  flags;
 		in->obj = getscene(o->oargs.sarg[0], flags);
 	return(in);
 }
+
+
+freeinstance(o)		/* free memory associated with instance */
+OBJREC  *o;
+{
+	free(o->os);
+}
