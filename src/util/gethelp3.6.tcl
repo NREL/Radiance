@@ -129,7 +129,7 @@ proc helpopen fname {			# open the named help file
 	.helpwin.txt insert end "Loading $fname..."
 	update
 	set curhelp(fid) [open $fname r]
-	if {! [file exists $ifile] ||
+	if {! [file isfile $ifile] ||
 			[file mtime $fname] > [file mtime $ifile]} {
 		set helpindex(catlist) {}
 		while {[gets $curhelp(fid) li] >= 0} {

@@ -5,7 +5,7 @@
 
 proc amb_delete {} {		# delete ambient file
 	global radvar curmess
-	if {"$radvar(AMBFILE)" == {} || ! [file exists $radvar(AMBFILE)]} {
+	if {"$radvar(AMBFILE)" == {} || ! [file isfile $radvar(AMBFILE)]} {
 		set curmess {No ambient file.}
 		return
 	}

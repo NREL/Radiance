@@ -176,9 +176,12 @@ if {[llength $argv] == 0} {
 } elseif {[llength $argv] == 1} {
 	cd [file dirname $argv]
 	set curfile [file tail $argv]
-	if {! [file exists $curfile]} {
-		newnew $curfile
-		.scene invoke
+	if {! [file isfile $curfile]} {
+		if [newnew $curfile] {
+			.scene invoke
+		} else {
+			.file invoke
+		}
 	} elseif {[newload $curfile]} {
 		if $alldone {
 			set curmess "All renderings are finished."
