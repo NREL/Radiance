@@ -142,7 +142,7 @@ if ($?needfile && "$picture" == '-') then
 	cat > $td/picture
 	set picture=$td/picture
 endif
-if ($decades > 0) then
+if ("$decades" != "0") then
 	set pc1args=($pc1args -e "map(x)=if(x-10^-$decades,log10(x)/$decades+1,0)")
 	set imap="imap(y)=10^((y-1)*$decades)"
 else
