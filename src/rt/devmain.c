@@ -12,13 +12,11 @@ static char SCCSid[] = "$SunId$ LBL";
  *	10/25/89
  */
 
-#include <stdio.h>
+#include "standard.h"
 
 #include "color.h"
 
 #include "driver.h"
-
-int	(*wrnvec)(), (*errvec)(), (*cmdvec)();	/* error vectors, unused */
 
 struct driver	*dev = NULL;			/* output device */
 
@@ -44,13 +42,13 @@ char	*argv[];
 						/* set up I/O */
 	progname = argv[0];
 	if (argc < 3) {
-		stderr_v("arg count\n");
+		eputs("arg count\n");
 		quit(1);
 	}
 	devin = fdopen(atoi(argv[1]), "r");
 	devout = fdopen(atoi(argv[2]), "w");
 	if (devin == NULL || devout == NULL || getw(devin) != COM_SENDM) {
-		stderr_v("connection failure\n");
+		eputs("connection failure\n");
 		quit(1);
 	}
 						/* open device */
@@ -62,7 +60,7 @@ char	*argv[];
 						/* loop on requests */
 	while ((com = getc(devin)) != EOF) {
 		if (com >= NREQUESTS || dev_func[com] == NULL) {
-			stderr_v("invalid request\n");
+			eputs("invalid request\n");
 			quit(1);
 		}
 		(*dev_func[com])();		/* process request */
@@ -182,7 +180,7 @@ register FILE	*fp;
 }
 
 
-stderr_v(s)				/* put string to stderr */
+eputs(s)				/* put string to stderr */
 register char  *s;
 {
 	static int  midline = 0;

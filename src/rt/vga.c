@@ -8,9 +8,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *  vga.c - driver for VGA graphics adaptor under MS-DOS
  */
 
-#include  <stdio.h>
-
-#include  <math.h>
+#include  "standard.h"
 
 #include  <graph.h>
 
@@ -52,8 +50,8 @@ char  *name, *id;
 			break;
 	if (*mp == -1) {
 		_setvideomode(_DEFAULTMODE);
-		stderr_v(name);
-		stderr_v(": card not present or insufficient VGA memory\n");
+		eputs(name);
+		eputs(": card not present or insufficient VGA memory\n");
 		return(NULL);
 	}
 	_getvideoconfig(&config);
@@ -78,10 +76,13 @@ char  *name, *id;
 	_remappalette(1, _BRIGHTWHITE);
 	_settextcolor(1);
 	ms_gcinit(&vga_driver);
-	errvec = vga_errout;
-	cmdvec = vga_comout;
-	if (wrnvec != NULL)
-		wrnvec = vga_comout;
+	erract[USER].pf =
+	erract[SYSTEM].pf =
+	erract[INTERNAL].pf =
+	erract[CONSISTENCY].pf = vga_errout;
+	erract[COMMAND].pf = vga_comout;
+	if (erract[WARNING].pf != NULL)
+		erract[WARNING].pf = vga_comout;
 	return(&vga_driver);
 }
 
@@ -91,12 +92,15 @@ vga_close()					/* close VGA */
 {
 	ms_gcdone(&vga_driver);
 	_setvideomode(_DEFAULTMODE);
-	errvec = stderr_v;			/* reset error vectors */
-	cmdvec = NULL;
-	if (wrnvec != NULL)
-		wrnvec = stderr_v;
+	erract[USER].pf = 			/* reset error vector */
+	erract[SYSTEM].pf =
+	erract[INTERNAL].pf =
+	erract[CONSISTENCY].pf = eputs;
+	erract[COMMAND].pf = NULL;
+	if (erract[WARNING].pf != NULL)
+		erract[WARNING].pf = wputs;
 	if (fatalerr[0])
-		stderr_v(fatalerr);		/* repeat error message */
+		eputs(fatalerr);		/* repeat error message */
 }
 
 

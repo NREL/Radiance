@@ -20,10 +20,6 @@ struct driver {				/* driver functions */
 	int  xsiz, ysiz;			/* device size */
 	int  inpready;				/* input ready on device */
 };
-
-extern int  stderr_v();			/* error vectors */
-extern int  (*wrnvec)(), (*errvec)(), (*cmdvec)();
-
 					/* stream interface */
 extern struct driver  *comm_init(), *slave_init();
 					/* magic numbers for verification */
@@ -61,9 +57,8 @@ extern char  dev_default[];		/* default device name */
  *	The name string identifies the driver,
  *	and the id string identifies the client.
  *	A device can be open by at most one client.
- *	Be verbose in error reports; call stderr_v().
- *	If device has its own error output, set errvec,
- *	cmdvec and wrnvec.
+ *	Be verbose in error reports; call eputs().
+ *	If device has its own error output, set erract.
  *  }
  *  (*dev->close)()
  *  {

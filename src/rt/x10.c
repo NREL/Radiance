@@ -10,8 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *     5/7/87
  */
 
-#include  <stdio.h>
-#include  <math.h>
+#include  "standard.h"
 
 #include  <X/Xlib.h>
 #include  <X/cursors/bcross.cursor>
@@ -80,11 +79,11 @@ char  *name, *id;
 
 	ourdisplay = XOpenDisplay(NULL);
 	if (ourdisplay == NULL) {
-		stderr_v("cannot open X-windows; DISPLAY variable set?\n");
+		eputs("cannot open X-windows; DISPLAY variable set?\n");
 		return(NULL);
 	}
 	if (DisplayPlanes() < 4) {
-		stderr_v("not enough colors\n");
+		eputs("not enough colors\n");
 		return(NULL);
 	}
 				/* make color map */
@@ -105,7 +104,7 @@ char  *name, *id;
 	gwind = XCreate("X10 display driver", progname, NULL, defgeom,
 			&mainframe, MINWIDTH, MINHEIGHT+COMHEIGHT);
 	if (gwind == 0) {
-		stderr_v("can't create window\n");
+		eputs("can't create window\n");
 		return(NULL);
 	}
 	XStoreName(gwind, id);
@@ -116,9 +115,9 @@ char  *name, *id;
 	x_driver.xsiz = gwidth < MINWIDTH ? MINWIDTH : gwidth;
 	x_driver.ysiz = gheight < MINHEIGHT ? MINHEIGHT : gheight;
 	x_driver.inpready = 0;
-	cmdvec = x_comout;			/* set error vectors */
-	if (wrnvec != NULL)
-		wrnvec = x_errout;
+	erract[COMMAND].pf = x_comout;		/* set error vectors */
+	if (erract[WARNING].pf != NULL)
+		erract[WARNING].pf = x_errout;
 	return(&x_driver);
 }
 
@@ -126,9 +125,9 @@ char  *name, *id;
 static
 x_close()			/* close our display */
 {
-	cmdvec = NULL;				/* reset error vectors */
-	if (wrnvec != NULL)
-		wrnvec = stderr_v;
+	erract[COMMAND].pf = NULL;		/* reset error vectors */
+	if (erract[WARNING].pf != NULL)
+		erract[WARNING].pf = wputs;
 	if (ourdisplay == NULL)
 		return;
 	if (comline != NULL) {
@@ -158,7 +157,7 @@ int  xres, yres;
 		XClear(gwind);
 						/* reinitialize color table */
 	if (getpixels() == 0)
-		stderr_v("cannot allocate colors\n");
+		eputs("cannot allocate colors\n");
 	else
 		new_ctab(ncolors);
 						/* open new command line */
@@ -166,7 +165,7 @@ int  xres, yres;
 		xt_close(comline);
 	comline = xt_open(gwind, 0, yres, xres, COMHEIGHT, 0, COMFN);
 	if (comline == NULL) {
-		stderr_v("Cannot open command line window\n");
+		eputs("Cannot open command line window\n");
 		quit(1);
 	}
 	XMapWindow(gwind);			/* make sure it's mapped */
@@ -233,7 +232,7 @@ static
 x_errout(msg)			/* output an error message */
 char  *msg;
 {
-	stderr_v(msg);		/* send to stderr also! */
+	eputs(msg);		/* send to stderr also! */
 	x_comout(msg);
 }
 
@@ -369,7 +368,7 @@ register XExposeEvent  *eexp;
 	}
 					/* remap colors */
 	if (getpixels() == 0) {
-		stderr_v("cannot allocate colors\n");
+		eputs("cannot allocate colors\n");
 		return;
 	}
 	new_ctab(ncolors);
