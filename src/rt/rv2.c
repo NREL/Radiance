@@ -675,8 +675,9 @@ char  *s;
 		if (thisray.rot >= FHUGE)
 			(*dev->comout)("at infinity");
 		else {
-			sprintf(buf, "at (%.6g %.6g %.6g)", thisray.rop[0],
-					thisray.rop[1], thisray.rop[2]);
+			sprintf(buf, "at (%.6g %.6g %.6g) (%.6g)",
+					thisray.rop[0], thisray.rop[1],
+					thisray.rop[2], thisray.rt);
 			(*dev->comout)(buf);
 		}
 		(*dev->comin)(buf, NULL);
