@@ -504,8 +504,15 @@ PACKET	*pl;
 		p->next = freepacks;		/* push onto free list */
 		freepacks = p;
 	}
+#if MAXQTIME
 	if (n2flush > 300/MAXQTIME*totqlen) {
-		hdflush(NULL);			/* flush holodeck buffers */
+#else
+	if (n2flush > 50*totqlen) {
+#endif
+		if (outdev == NULL)
+			hdflush(NULL);		/* flush holodeck buffers */
+		else
+			hdsync(NULL, 1);	/* sync holodeck file */
 		n2flush = 0;
 	}
 }
