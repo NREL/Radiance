@@ -17,6 +17,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "color.h"
 
 extern char  *malloc();
+extern float  *matchlamp();
 
 #define  CHECKRAD	1.5	/* radius to check for filtering */
 
@@ -44,6 +45,8 @@ double  spread = 1e-4;		/* spread for star points */
 
 char  *tfname = NULL;
 
+char  *lampdat = "lamp.tab";	/* lamp data file */
+
 int  xres, yres;		/* resolution of input */
 double  inpaspect = 1.0;	/* pixel aspect ratio of input */
 int  correctaspect = 0;		/* aspect ratio correction? */
@@ -67,6 +70,8 @@ char  **argv;
 	extern long  ftell();
 	extern int  quit(), headline();
 	FILE  *fin;
+	float  *lampcolor;
+	char  *lamptype = NULL;
 	long  fpos;
 	double  outaspect = 0.0;
 	double  d;
@@ -134,6 +139,12 @@ char  **argv;
 				}
 				i++;
 				break;
+			case 'f':
+				lampdat = argv[++i];
+				break;
+			case 't':
+				lamptype = argv[++i];
+				break;
 			case '1':
 				singlepass = 1;
 				break;
@@ -193,6 +204,19 @@ char  **argv;
 	} else {
 		fprintf(stderr, "%s: bad # file arguments\n", progname);
 		quit(1);
+	}
+					/* get lamp data (if necessary) */
+	if (lamptype != NULL) {
+		if (loadlamps(lampdat) < 0)
+			quit(1);
+		if ((lampcolor = matchlamp(lamptype)) == NULL) {
+			fprintf(stderr, "%s: unknown lamp type\n", lamptype);
+			quit(1);
+		}
+		colval(exposure,RED) /= lampcolor[0];
+		colval(exposure,GRN) /= lampcolor[1];
+		colval(exposure,BLU) /= lampcolor[2];
+		freelamps();
 	}
 					/* get header */
 	getheader(fin, headline);

@@ -24,8 +24,10 @@ all:	$(PROGS)
 install:	$(PROGS)
 	cp $(PROGS) $(INSTDIR)
 
-pfilt:	pfilt.o pf2.o pf3.o resolu.o color.o header.o
-	cc $(CFLAGS) -o pfilt pfilt.o pf2.o pf3.o resolu.o color.o header.o -lm
+pfilt:	pfilt.o pf2.o pf3.o resolu.o color.o header.o lamps.o \
+rexpr.o fropen.o spec_rgb.o
+	cc $(CFLAGS) -o pfilt pfilt.o pf2.o pf3.o resolu.o color.o \
+header.o lamps.o rexpr.o fropen.o spec_rgb.o -lm
 
 ttyimage:	ttyimage.o resolu.o color.o colrops.o header.o
 	cc $(CFLAGS) -o ttyimage ttyimage.o resolu.o color.o colrops.o \
@@ -71,8 +73,8 @@ psum:	psum.o color.o resolu.o header.o
 pcompos:	pcompos.o color.o resolu.o header.o
 	cc $(CFLAGS) -o pcompos pcompos.o color.o resolu.o header.o
 
-psign:	psign.o color.o resolu.o
-	cc $(CFLAGS) -o psign psign.o color.o resolu.o
+psign:	psign.o color.o resolu.o fropen.o
+	cc $(CFLAGS) -o psign psign.o color.o resolu.o fropen.o
 
 d48c:	d48c.o color.o resolu.o
 	cc $(CFLAGS) -o d48c d48c.o color.o resolu.o
