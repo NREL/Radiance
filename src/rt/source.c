@@ -14,23 +14,26 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "octree.h"
 
-#include  "source.h"
-
 #include  "otypes.h"
 
-#include  "cone.h"
-
-#include  "face.h"
+#include  "source.h"
 
 #include  "random.h"
 
+/*
+ * Structures used by direct()
+ */
 
-extern double  dstrsrc;			/* source distribution amount */
-extern double  shadthresh;		/* relative shadow threshold */
-extern double  shadcert;		/* shadow testing certainty */
+typedef struct {
+	FVECT  dir;		/* source direction */
+	COLOR  coef;		/* material coefficient */
+	COLOR  val;		/* contribution */
+}  CONTRIB;		/* direct contribution */
 
-SRCREC  *source = NULL;			/* our list of sources */
-int  nsources = 0;			/* the number of sources */
+typedef struct {
+	int  sno;		/* source number */
+	float  brt;		/* brightness (for comparison) */
+}  CNTPTR;		/* contribution pointer */
 
 static CONTRIB  *srccnt;		/* source contributions in direct() */
 static CNTPTR  *cntord;			/* source ordering in direct() */
@@ -41,12 +44,14 @@ marksources()			/* find and mark source objects */
 	int  i;
 	register OBJREC  *o, *m;
 	register SRCREC  *ns;
-
+					/* initialize dispatch table */
+	initstypes();
+					/* find direct sources */
 	for (i = 0; i < nobjects; i++) {
 	
 		o = objptr(i);
 
-		if (o->omod == OVOID)
+		if (!issurface(o->otype) || o->omod == OVOID)
 			continue;
 
 		m = objptr(o->omod);
@@ -63,10 +68,14 @@ marksources()			/* find and mark source objects */
 				m->oargs.farg[3] <= FTINY)
 			continue;			/* don't bother */
 
+		if (sfun[o->otype].of == NULL ||
+				sfun[o->otype].of->setsrc == NULL)
+			objerror(o, USER, "illegal material");
+
 		if ((ns = newsource()) == NULL)
 			goto memerr;
 
-		setsource(ns, o);
+		(*sfun[o->otype].of->setsrc)(ns, o);
 
 		if (m->otype == MAT_GLOW) {
 			ns->sflags |= SPROX;
@@ -91,107 +100,6 @@ marksources()			/* find and mark source objects */
 	return;
 memerr:
 	error(SYSTEM, "out of memory in marksources");
-}
-
-
-SRCREC *
-newsource()			/* allocate new source in our array */
-{
-	if (nsources == 0)
-		source = (SRCREC *)malloc(sizeof(SRCREC));
-	else
-		source = (SRCREC *)realloc((char *)source,
-				(unsigned)(nsources+1)*sizeof(SRCREC));
-	if (source == NULL)
-		return(NULL);
-	source[nsources].sflags = 0;
-	source[nsources].nhits = 1;
-	source[nsources].ntests = 2;	/* initial hit probability = 1/2 */
-	return(&source[nsources++]);
-}
-
-
-setsource(src, so)			/* add a source to the array */
-register SRCREC  *src;
-register OBJREC  *so;
-{
-	double  cos(), tan(), sqrt();
-	double  theta;
-	FACE  *f;
-	CONE  *co;
-	int  j;
-	register int  i;
-	
-	src->sa.success = 2*AIMREQT-1;		/* bitch on second failure */
-	src->so = so;
-
-	switch (so->otype) {
-	case OBJ_SOURCE:
-		if (so->oargs.nfargs != 4)
-			objerror(so, USER, "bad arguments");
-		src->sflags |= SDISTANT;
-		VCOPY(src->sloc, so->oargs.farg);
-		if (normalize(src->sloc) == 0.0)
-			objerror(so, USER, "zero direction");
-		theta = PI/180.0/2.0 * so->oargs.farg[3];
-		if (theta <= FTINY)
-			objerror(so, USER, "zero size");
-		src->ss = theta >= PI/4 ? 1.0 : tan(theta);
-		src->ss2 = 2.0*PI * (1.0 - cos(theta));
-		break;
-	case OBJ_SPHERE:
-		VCOPY(src->sloc, so->oargs.farg);
-		src->ss = so->oargs.farg[3];
-		src->ss2 = PI * src->ss * src->ss;
-		break;
-	case OBJ_FACE:
-						/* get the face */
-		f = getface(so);
-						/* find the center */
-		for (j = 0; j < 3; j++) {
-			src->sloc[j] = 0.0;
-			for (i = 0; i < f->nv; i++)
-				src->sloc[j] += VERTEX(f,i)[j];
-			src->sloc[j] /= (double)f->nv;
-		}
-		if (!inface(src->sloc, f))
-			objerror(so, USER, "cannot hit center");
-		src->sflags |= SFLAT;
-		VCOPY(src->snorm, f->norm);
-		src->ss = sqrt(f->area / PI);
-		src->ss2 = f->area;
-		break;
-	case OBJ_RING:
-						/* get the ring */
-		co = getcone(so, 0);
-		VCOPY(src->sloc, CO_P0(co));
-		if (CO_R0(co) > 0.0)
-			objerror(so, USER, "cannot hit center");
-		src->sflags |= SFLAT;
-		VCOPY(src->snorm, co->ad);
-		src->ss = CO_R1(co);
-		src->ss2 = PI * src->ss * src->ss;
-		break;
-	default:
-		objerror(so, USER, "illegal material");
-	}
-}
-
-
-SPOT *
-makespot(m)			/* make a spotlight */
-register OBJREC  *m;
-{
-	extern double  cos();
-	register SPOT  *ns;
-
-	if ((ns = (SPOT *)malloc(sizeof(SPOT))) == NULL)
-		return(NULL);
-	ns->siz = 2.0*PI * (1.0 - cos(PI/180.0/2.0 * m->oargs.farg[3]));
-	VCOPY(ns->aim, m->oargs.farg+4);
-	if ((ns->flen = normalize(ns->aim)) == 0.0)
-		objerror(m, USER, "zero focus vector");
-	return(ns);
 }
 
 
@@ -282,38 +190,35 @@ register int  sn;		/* source number */
 }
 
 
-sourcehit(r)			/* check to see if ray hit distant source */
-register RAY  *r;
+srcvalue(r)			/* punch ray to source and compute value */
+RAY  *r;
 {
-	int  first, last;
-	register int  i;
+	register SRCREC  *sp;
 
-	if (r->rsrc >= 0) {		/* check only one if aimed */
-		first = last = r->rsrc;
-	} else {			/* otherwise check all */
-		first = 0; last = nsources-1;
+	sp = &source[r->rsrc];
+	if (sp->sflags & SVIRTUAL) {	/* virtual source */
+					/* check intersection */
+		if (!(*ofun[sp->so->otype].funp)(sp->so, r))
+			return;
+		raycont(r);		/* compute contribution */
+		return;
 	}
-	for (i = first; i <= last; i++)
-		if (source[i].sflags & SDISTANT)
-			/*
-			 * Check to see if ray is within
-			 * solid angle of source.
-			 */
-			if (2.0*PI * (1.0 - DOT(source[i].sloc,r->rdir))
-					<= source[i].ss2) {
-				r->ro = source[i].so;
-				if (!(source[i].sflags & SSKIP))
-					break;
-			}
-
-	if (r->ro != NULL) {
-		for (i = 0; i < 3; i++)
-			r->ron[i] = -r->rdir[i];
-		r->rod = 1.0;
-		r->rox = NULL;
-		return(1);
+					/* compute intersection */
+	if (sp->sflags & SDISTANT ? sourcehit(r) :
+			(*ofun[sp->so->otype].funp)(sp->so, r)) {
+		if (sp->sa.success >= 0)
+			sp->sa.success++;
+		raycont(r);		/* compute contribution */
+		return;
 	}
-	return(0);
+	if (sp->sa.success < 0)
+		return;			/* bitched already */
+	sp->sa.success -= AIMREQT;
+	if (sp->sa.success >= 0)
+		return;			/* leniency */
+	sprintf(errmsg, "aiming failure for light source \"%s\"",
+			sp->so->oname);
+	error(WARNING, errmsg);		/* issue warning */
 }
 
 
@@ -360,8 +265,9 @@ char  *p;			/* data for f */
 		cntord[sn].brt = bright(srccnt[sn].coef);
 		if (cntord[sn].brt <= 0.0)
 			continue;
-						/* compute contribution */
-		srcvalue(&sr);
+						/* compute potential */
+		sr.revf = srcvalue;
+		rayvalue(&sr);
 		copycolor(srccnt[sn].val, sr.rcol);
 		multcolor(srccnt[sn].val, srccnt[sn].coef);
 		cntord[sn].brt = bright(srccnt[sn].val);
@@ -429,83 +335,5 @@ char  *p;			/* data for f */
 				(double)source[cntord[sn].sno].ntests;
 		scalecolor(srccnt[cntord[sn].sno].val, prob);
 		addcolor(r->rcol, srccnt[cntord[sn].sno].val);
-	}
-}
-
-
-srcvalue(r)			/* punch ray to source and compute value */
-RAY  *r;
-{
-	register SRCREC  *sp;
-
-	sp = &source[r->rsrc];
-	if (sp->sflags & SVIRTUAL) {		/* virtual source */
-		RAY  nr;
-					/* check intersection */
-		if (!(*ofun[sp->so->otype].funp)(sp->so, r))
-			return;
-					/* relay ray to source */
-		vsrcrelay(&nr, r);
-		srcvalue(&nr);
-		return;
-	}
-					/* compute intersection */
-	if (sp->sflags & SDISTANT ? sourcehit(r) :
-			(*ofun[sp->so->otype].funp)(sp->so, r)) {
-		if (sp->sa.success >= 0)
-			sp->sa.success++;
-		raycont(r);		/* compute contribution */
-		return;
-	}
-	if (sp->sa.success < 0)
-		return;			/* bitched already */
-	sp->sa.success -= AIMREQT;
-	if (sp->sa.success >= 0)
-		return;			/* leniency */
-	sprintf(errmsg, "aiming failure for light source \"%s\"",
-			sp->so->oname);
-	error(WARNING, errmsg);		/* issue warning */
-}
-
-
-#define  wrongsource(m, r)	(m->otype!=MAT_ILLUM && \
-				r->rsrc>=0 && \
-				source[r->rsrc].so!=r->ro)
-
-#define  badambient(m, r)	((r->crtype&(AMBIENT|SHADOW))==AMBIENT && \
-				!(m->otype==MAT_GLOW&&r->rot>m->oargs.farg[3]))
-
-#define  passillum(m, r)	(m->otype==MAT_ILLUM && \
-				!(r->rsrc>=0&&source[r->rsrc].so==r->ro))
-
-
-m_light(m, r)			/* ray hit a light source */
-register OBJREC  *m;
-register RAY  *r;
-{
-						/* check for over-counting */
-	if (wrongsource(m, r) || badambient(m, r))
-		return;
-						/* check for passed illum */
-	if (passillum(m, r)) {
-
-		if (m->oargs.nsargs < 1 || !strcmp(m->oargs.sarg[0], VOIDID))
-			raytrans(r);
-		else
-			rayshade(r, modifier(m->oargs.sarg[0]));
-
-						/* otherwise treat as source */
-	} else {
-						/* check for behind */
-		if (r->rod < 0.0)
-			return;
-						/* get distribution pattern */
-		raytexture(r, m->omod);
-						/* get source color */
-		setcolor(r->rcol, m->oargs.farg[0],
-				  m->oargs.farg[1],
-				  m->oargs.farg[2]);
-						/* modify value */
-		multcolor(r->rcol, r->pcol);
 	}
 }
