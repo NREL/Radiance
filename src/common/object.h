@@ -36,9 +36,9 @@ typedef struct {
 
 #ifndef  OBJECT
 #ifdef  BIGMEM
-#define  OBJECT		int		/* index to object array */
+#define  OBJECT		int4		/* index to object array */
 #else
-#define  OBJECT		short		/* index to object array */
+#define  OBJECT		int2		/* index to object array */
 #endif
 #endif
 
@@ -52,16 +52,17 @@ typedef struct {
 
 #ifndef  MAXOBJBLK
 #ifdef  BIGMEM
-#define  MAXOBJBLK	32767		/* maximum number of object blocks */
+#define  MAXOBJBLK	65535		/* maximum number of object blocks */
 #else
-#define  MAXOBJBLK	511		/* maximum number of object blocks */
+#define  MAXOBJBLK	31		/* maximum number of object blocks */
 #endif
 #endif
 
 extern OBJREC  *objblock[MAXOBJBLK];	/* the object blocks */
 extern OBJECT  nobjects;		/* # of objects */
 
-#define  objptr(obj)	(objblock[(obj)>>6]+((obj)&077))
+#define  OBJBLKSIZ	01000		/* object block size */
+#define  objptr(obj)	(objblock[(obj)>>9]+((obj)&0777))
 
 #define  OVOID		(-1)		/* void object */
 #define  VOIDID		"void"		/* void identifier */
