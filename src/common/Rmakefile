@@ -67,6 +67,9 @@ calfunc.o:	calfunc.c calcomp.h
 getlibpath.o:	getlibpath.c
 	$(CC) $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c getlibpath.c
 
+tmapcolrs.o:	tmapcolrs.c
+	$(CC) $(CFLAGS) -DPCOND=\"pcond\" -c tmapcolrs.c
+
 color.o colrops.o lamps.o spec_rgb.o:	color.h
 
 cone.o:		cone.h
