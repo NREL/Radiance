@@ -206,9 +206,7 @@ char  *argv[];
 #endif
 #if  RPICT	
 		case 'p':				/* pixel aspect */
-			if (argv[i][2] != 'a')
-				goto badopt;
-			check(3,1);
+			check(2,1);
 			pixaspect = atof(argv[++i]);
 			break;
 #endif
@@ -361,7 +359,7 @@ char  *argv[];
 		error(USER, err);
 #endif
 #if  RPICT
-	normaspect(&ourview, &pixaspect, &hresolu, &vresolu);
+	normaspect(viewaspect(&ourview), &pixaspect, &hresolu, &vresolu);
 #endif
 					/* set up signal handling */
 	sigdie(SIGINT, "Interrupt");
@@ -414,7 +412,7 @@ char  *argv[];
 			fprintview(&ourview, stdout);
 			printf("\n");
 		}
-		if (pixaspect > 1.+FTINY || pixaspect < 1.-FTINY)
+		if (pixaspect < .99 || pixaspect > 1.01)
 			fputaspect(pixaspect, stdout);
 #endif
 		printf("\n");
@@ -537,7 +535,7 @@ printdefaults()			/* print default values to stdout */
 	printf("-y  %-9d\t\t\t# y resolution\n", vresolu);
 #endif
 #if  RPICT
-	printf("-pa %f\t\t\t# pixel aspect ratio\n", pixaspect);
+	printf("-p  %f\t\t\t# pixel aspect ratio\n", pixaspect);
 #endif
 	printf("-dt %f\t\t\t# direct threshold\n", shadthresh);
 	printf("-dc %f\t\t\t# direct certainty\n", shadcert);
