@@ -490,7 +490,7 @@ tot_flux is given in watts.
 (Divide total lumens by 179 lumens/watt to get watts.)
 
 The exposure value may either be given as a positive real value, or
-as a real value preceeded by a '+' or '-' indicating a positive or
+as a real value preceded by a '+' or '-' indicating a positive or
 negative number of f-stops (powers of two) from the original value.
 
 If no exposure is given, pfilt will automatically compute the
@@ -707,7 +707,7 @@ The standard view up vector may be set to the positive X axis (+X),
 the positive Y axis (+Y), the positive Z axis (+Z), the negative
 X axis (-X), the negative Y axis (-Y), or the negative Z axis (-Z).
 
-This setting may always be overriden by the "-vu xd yd zd" option,
+This setting may always be overridden by the "-vu xd yd zd" option,
 and will be altered for a particular view if it happens to be
 parallel to the view direction.
 
