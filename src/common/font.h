@@ -10,7 +10,7 @@ typedef unsigned char  GORD;
 
 typedef struct {
 	short  nverts;			/* number of vertices */
-	GORD  start, width;		/* glyph size for prop. spacing */
+	GORD  left, right, top, bottom;	/* glyph extent */
 					/* followed by vertex list */
 }  GLYPH;
 
