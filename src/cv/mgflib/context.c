@@ -63,15 +63,15 @@ register char	**av;
 		lp = lu_find(&clr_tab, av[1]);	/* lookup context */
 		if (lp == NULL)
 			return(MG_EMEM);
+		c_ccolor = (C_COLOR *)lp->data;
 		if (ac == 2) {		/* reestablish previous context */
-			if (lp->data == NULL)
+			if (c_ccolor == NULL)
 				return(MG_EUNDEF);
-			c_ccolor = (C_COLOR *)lp->data;
 			return(MG_OK);
 		}
 		if (av[2][0] != '=' || av[2][1])
 			return(MG_ETYPE);
-		if (lp->key == NULL) {	/* create new color context */
+		if (c_ccolor == NULL) {	/* create new color context */
 			lp->key = (char *)malloc(strlen(av[1])+1);
 			if (lp->key == NULL)
 				return(MG_EMEM);
@@ -79,11 +79,14 @@ register char	**av;
 			lp->data = (char *)malloc(sizeof(C_COLOR));
 			if (lp->data == NULL)
 				return(MG_EMEM);
+			c_ccolor = (C_COLOR *)lp->data;
+			c_ccolor->clock = 0;
 		}
-		c_ccolor = (C_COLOR *)lp->data;
 		if (ac == 3) {		/* use default template */
+			i = c_ccolor->clock;
 			*c_ccolor = c_dfcolor;
-			c_ccolor->name = lp->key;
+			c_ccolor->name = av[1];
+			c_ccolor->clock = i + 1;
 			return(MG_OK);
 		}
 		lp = lu_find(&clr_tab, av[3]);	/* lookup template */
@@ -91,11 +94,10 @@ register char	**av;
 			return(MG_EMEM);
 		if (lp->data == NULL)
 			return(MG_EUNDEF);
+		i = c_ccolor->clock;
 		*c_ccolor = *(C_COLOR *)lp->data;
-		c_ccolor->name = lp->key;
-		c_ccolor->clock = 1;
-		if (ac > 4)
-			return(MG_EARGC);
+		c_ccolor->name = av[1];
+		c_ccolor->clock = i + 1;
 		return(MG_OK);
 	case MG_E_CXY:		/* assign CIE XY value */
 		if (ac != 3)
@@ -155,6 +157,7 @@ c_hmaterial(ac, av)		/* handle material entity */
 int	ac;
 register char	**av;
 {
+	int	i;
 	register LUENT	*lp;
 
 	switch (mg_entity(av[0])) {
@@ -169,15 +172,15 @@ register char	**av;
 		lp = lu_find(&mat_tab, av[1]);	/* lookup context */
 		if (lp == NULL)
 			return(MG_EMEM);
+		c_cmaterial = (C_MATERIAL *)lp->data;
 		if (ac == 2) {		/* reestablish previous context */
-			if (lp->data == NULL)
+			if (c_cmaterial == NULL)
 				return(MG_EUNDEF);
-			c_cmaterial = (C_MATERIAL *)lp->data;
 			return(MG_OK);
 		}
 		if (av[2][0] != '=' || av[2][1])
 			return(MG_ETYPE);
-		if (lp->key == NULL) {	/* create new material context */
+		if (c_cmaterial == NULL) {	/* create new material */
 			lp->key = (char *)malloc(strlen(av[1])+1);
 			if (lp->key == NULL)
 				return(MG_EMEM);
@@ -185,11 +188,14 @@ register char	**av;
 			lp->data = (char *)malloc(sizeof(C_MATERIAL));
 			if (lp->data == NULL)
 				return(MG_EMEM);
+			c_cmaterial = (C_MATERIAL *)lp->data;
+			c_cmaterial->clock = 0;
 		}
-		c_cmaterial = (C_MATERIAL *)lp->data;
 		if (ac == 3) {		/* use default template */
+			i = c_cmaterial->clock;
 			*c_cmaterial = c_dfmaterial;
-			c_cmaterial->name = lp->key;
+			c_cmaterial->name = av[1];
+			c_cmaterial->clock = i + 1;
 			return(MG_OK);
 		}
 		lp = lu_find(&mat_tab, av[3]);	/* lookup template */
@@ -197,11 +203,10 @@ register char	**av;
 			return(MG_EMEM);
 		if (lp->data == NULL)
 			return(MG_EUNDEF);
+		i = c_cmaterial->clock;
 		*c_cmaterial = *(C_MATERIAL *)lp->data;
-		c_cmaterial->name = lp->key;
-		c_cmaterial->clock = 1;
-		if (ac > 4)
-			return(MG_EARGC);
+		c_cmaterial->name = av[1];
+		c_cmaterial->clock = i + 1;
 		return(MG_OK);
 	case MG_E_RD:		/* set diffuse reflectance */
 		if (ac != 2)
@@ -272,6 +277,7 @@ c_hvertex(ac, av)		/* handle a vertex entity */
 int	ac;
 register char	**av;
 {
+	int	i;
 	register LUENT	*lp;
 
 	switch (mg_entity(av[0])) {
@@ -286,15 +292,15 @@ register char	**av;
 		lp = lu_find(&vtx_tab, av[1]);	/* lookup context */
 		if (lp == NULL)
 			return(MG_EMEM);
+		c_cvertex = (C_VERTEX *)lp->data;
 		if (ac == 2) {		/* reestablish previous context */
-			if (lp->data == NULL)
+			if (c_cvertex == NULL)
 				return(MG_EUNDEF);
-			c_cvertex = (C_VERTEX *)lp->data;
 			return(MG_OK);
 		}
 		if (av[2][0] != '=' || av[2][1])
 			return(MG_ETYPE);
-		if (lp->key == NULL) {	/* create new vertex context */
+		if (c_cvertex == NULL) {	/* create new vertex context */
 			lp->key = (char *)malloc(strlen(av[1])+1);
 			if (lp->key == NULL)
 				return(MG_EMEM);
@@ -302,11 +308,13 @@ register char	**av;
 			lp->data = (char *)malloc(sizeof(C_VERTEX));
 			if (lp->data == NULL)
 				return(MG_EMEM);
+			c_cvertex = (C_VERTEX *)lp->data;
 		}
-		c_cvertex = (C_VERTEX *)lp->data;
 		if (ac == 3) {		/* use default template */
+			i = c_cvertex->clock;
 			*c_cvertex = c_dfvertex;
-			c_cvertex->name = lp->key
+			c_cvertex->name = av[1];
+			c_cvertex->clock = i + 1;
 			return(MG_OK);
 		}
 		lp = lu_find(&vtx_tab, av[3]);	/* lookup template */
@@ -314,11 +322,10 @@ register char	**av;
 			return(MG_EMEM);
 		if (lp->data == NULL)
 			return(MG_EUNDEF);
+		i = c_cvertex->clock;
 		*c_cvertex = *(C_VERTEX *)lp->data;
-		c_cvertex->name = lp->key
-		c_cvertex->clock = 1;
-		if (ac > 4)
-			return(MG_EARGC);
+		c_cvertex->name = av[1];
+		c_cvertex->clock = i + 1;
 		return(MG_OK);
 	case MG_E_POINT:	/* set point */
 		if (ac != 4)
