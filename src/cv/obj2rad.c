@@ -7,8 +7,8 @@ static char SCCSid[] = "$SunId$ LBL";
 /*
  * Convert a Wavefront .obj file to Radiance format.
  *
- * Currently, we support only polygonal geometry, and faces
- * must be either quads or triangles for smoothing to work.
+ * Currently, we support only polygonal geometry.  Non-planar
+ * faces are broken rather haphazardly into triangles.
  * Also, texture map indices only work for triangles, though
  * I'm not sure they work correctly.
  */
@@ -465,19 +465,83 @@ register char	*vs;
 }
 
 
-putface(ac, av)				/* put out an N-sided polygon */
+nonplanar(ac, av)			/* are vertices are non-planar? */
 register int	ac;
 register char	**av;
 {
 	VNDX	vi;
-	char	*mod;
+	FLOAT	*p0, *p1;
+	FVECT	v1, v2, nsum, newn;
+	double	d;
+	register int	i;
 
+	if (!cvtndx(vi, av[0]))
+		return(0);
+	if (vi[2] >= 0)
+		return(1);		/* has interpolated normals */
+	if (ac < 4)
+		return(0);		/* it's a triangle! */
+					/* set up */
+	p0 = vlist[vi[0]];
+	if (!cvtndx(vi, av[1]))
+		return(0);		/* error gets caught later */
+	nsum[0] = nsum[1] = nsum[2] = 0.;
+	p1 = vlist[vi[0]];
+	fvsum(v2, p1, p0, -1.0);
+	for (i = 2; i < ac; i++) {
+		VCOPY(v1, v2);
+		if (!cvtndx(vi, av[i]))
+			return(0);
+		p1 = vlist[vi[0]];
+		fvsum(v2, p1, p0, -1.0);
+		fcross(newn, v1, v2);
+		if (normalize(newn) == 0.0) {
+			if (i < 3)
+				return(1);	/* can't deal with this */
+			fvsum(nsum, nsum, nsum, 1./(i-2));
+			continue;
+		}
+		d = fdot(newn,nsum);
+		if (d >= 0) {
+			if (d < (1.0-FTINY)*(i-2))
+				return(1);
+			fvsum(nsum, nsum, newn, 1.0);
+		} else {
+			if (d > -(1.0-FTINY)*(i-2))
+				return(1);
+			fvsum(nsum, nsum, newn, -1.0);
+		}
+	}
+	return(0);
+}
+
+
+putface(ac, av)				/* put out an N-sided polygon */
+int	ac;
+register char	**av;
+{
+	VNDX	vi;
+	char	*mod;
+	register int	i;
+
+	if (nonplanar(ac, av)) {	/* break into quads and triangles */
+		while (ac > 3) {
+			if (!putquad(av[0], av[1], av[2], av[3]))
+				return(0);
+			ac -= 2;		/* remove two vertices */
+			for (i = 1; i < ac; i++)
+				av[i] = av[i+2];
+		}
+		if (ac == 3 && !puttri(av[0], av[1], av[2]))
+			return(0);
+		return(1);
+	}
 	if ((mod = getmtl()) == NULL)
 		return(-1);
 	printf("\n%s polygon %s.%d\n", mod, getonm(), faceno);
 	printf("0\n0\n%d\n", 3*ac);
-	while (ac--) {
-		if (!cvtndx(vi, *av++))
+	for (i = 0; i < ac; i++) {
+		if (!cvtndx(vi, av[i]))
 			return(0);
 		pvect(vlist[vi[0]]);
 	}
@@ -627,7 +691,7 @@ char  *p0, *p1, *p3, *p2;		/* names correspond to binary pos. */
 	axis = norminterp(norm, p0i, p1i, p2i, p3i);
 
 					/* put out quadrilateral? */
-	if (ok1 & ok2 && fdot(vc1,vc2) >= 1.0-FTINY*FTINY) {
+	if (ok1 & ok2 && fabs(fdot(vc1,vc2)) >= 1.0-FTINY) {
 		printf("\n%s ", mod);
 		if (axis != -1) {
 			printf("texfunc %s\n", TEXNAME);
