@@ -381,8 +381,9 @@ register RAY  *r;
 	int  nsamps;
 	RAY  sr;
 	SRCINDEX  si;
-	double  t, lastt, d;
-	COLOR  cumval, ctmp;
+	double  t, d;
+	double  re, ge, be;
+	COLOR  cvext;
 	int  i, j;
 
 	if (r->slights == NULL || r->slights[0] == 0
@@ -397,11 +398,18 @@ register RAY  *r;
 	oldsampndx = samplendx;
 	samplendx = random()&0x7fff;		/* randomize */
 	for (i = r->slights[0]; i > 0; i--) {	/* for each source */
-		setcolor(cumval, 0., 0., 0.);
-		lastt = r->rot;
-		for (j = nsamps; j-- > 0; ) {	/* for each sample position */
+		for (j = 0; j < nsamps; j++) {	/* for each sample position */
 			samplendx++;
 			t = r->rot * (j+frandom())/nsamps;
+							/* extinction */
+			re = t*colval(r->cext,RED);
+			ge = t*colval(r->cext,GRN);
+			be = t*colval(r->cext,BLU);
+			setcolor(cvext,	re > 92. ? 0. : exp(-re),
+					ge > 92. ? 0. : exp(-ge),
+					be > 92. ? 0. : exp(-be));
+			if (intens(cvext) <= FTINY)
+				break;			/* too far away */
 			sr.rorg[0] = r->rorg[0] + r->rdir[0]*t;
 			sr.rorg[1] = r->rorg[1] + r->rdir[1]*t;
 			sr.rorg[2] = r->rorg[2] + r->rdir[2]*t;
@@ -418,33 +426,21 @@ register RAY  *r;
 			rayvalue(&sr);			/* eval. source ray */
 			if (bright(sr.rcol) <= FTINY)
 				continue;
-							/* compute fall-off */
-			d = lastt - t;
-			setcolor(ctmp,	1.-d*colval(r->cext,RED),
-					1.-d*colval(r->cext,GRN),
-					1.-d*colval(r->cext,BLU));
-			multcolor(cumval, ctmp);
-			lastt = t;
 			if (r->gecc <= FTINY)		/* compute P(theta) */
 				d = 1.;
 			else {
 				d = DOT(r->rdir, sr.rdir);
-				d = sqrt(1. + r->gecc*r->gecc - 2.*r->gecc*d);
-				d = (1. - r->gecc*r->gecc) / (d*d*d);
+				d = 1. + r->gecc*r->gecc - 2.*r->gecc*d;
+				d = (1. - r->gecc*r->gecc) / (d*sqrt(d));
 			}
 							/* other factors */
 			d *= si.dom * r->rot / (4.*PI*nsamps);
 			multcolor(sr.rcol, r->cext);
 			multcolor(sr.rcol, r->albedo);
 			scalecolor(sr.rcol, d);
-			addcolor(cumval, sr.rcol);
+			multcolor(sr.rcol, cvext);
+			addcolor(r->rcol, sr.rcol);	/* add it in */
 		}
-						/* final fall-off */
-		setcolor(ctmp,	1.-lastt*colval(r->cext,RED),
-				1.-lastt*colval(r->cext,GRN),
-				1.-lastt*colval(r->cext,BLU));
-		multcolor(cumval, ctmp);
-		addcolor(r->rcol, cumval);	/* sum into ray result */
 	}
 	samplendx = oldsampndx;
 }
