@@ -496,13 +496,19 @@ register RAY  *r;
  * geometry behind (or inside) an effective radiator.
  */
 
-static int weaksrcmod(obj) int obj;	/* efficiency booster function */
-{register OBJREC *o = objptr(obj);
-return((o->otype==MAT_ILLUM)|(o->otype==MAT_GLOW));}
+static int
+weaksrcmat(int obj)		/* identify material */
+{
+	register OBJREC *o = objptr(obj);
+	
+	while (!ismaterial(o->otype))	/* find material */
+		o = objptr(o->omod);
+	return((o->otype==MAT_ILLUM)|(o->otype==MAT_GLOW));
+}
 
 #define  illumblock(m, r)	(!(source[r->rsrc].sflags&SVIRTUAL) && \
 				r->rod > 0.0 && \
-				weaksrcmod(source[r->rsrc].so->omod))
+				weaksrcmat(source[r->rsrc].so->omod))
 
 /* wrongsource *
  *
