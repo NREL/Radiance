@@ -61,7 +61,7 @@ extern char  *malloc(), *getcombuf();
 
 extern char  *progname;
 
-int  x_close(), x_clear(), x_paintr(), x_errout(),
+static int  x_close(), x_clear(), x_paintr(), x_errout(),
 		x_getcur(), x_comout(), x_comin(), x_flush();
 
 static struct driver  x_driver = {
@@ -199,7 +199,7 @@ static
 x_comin(inp, prompt)		/* read in a command line */
 char  *inp, *prompt;
 {
-	int  x_getc(), x_comout();
+	extern int  x_getc();
 
 	if (prompt != NULL)
 		if (fromcombuf(inp, &x_driver))
