@@ -98,7 +98,7 @@ RAY  *r;
 	else if (sourcehit(r))
 		gotmat = rayshade(r, r->ro->omod);
 
-	if (!gotmat)
+	if (r->ro != NULL && !gotmat)
 		objerror(r->ro, USER, "material not found");
 
 	if (trace != NULL)
