@@ -25,11 +25,11 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  S_ALL		3		/* select all */
 
 				/* rtrace command and defaults */
-char  *rtargv[64] = { "rtrace", "-dj", ".25", "-dr", "3", "-ab", "2",
-		"-ad", "256", "-as", "128", "-aa", ".15" };
-int  rtargc = 13;
+char  *rtargv[64] = { "rtrace", "-dj", ".25", "-dr", "3", "-di+",
+		"-ab", "2", "-ad", "256", "-as", "128", "-aa", ".15", };
+int  rtargc = 14;
 				/* overriding rtrace options */
-char  *myrtopts[] = { "-I-", "-i-", "-di+", "-ov", "-h-", "-fff", NULL };
+char  *myrtopts[] = { "-I-", "-i-", "-ov", "-h-", "-fff", NULL };
 
 struct rtproc	rt;		/* our rtrace process */
 
@@ -135,10 +135,11 @@ int  status;
 
 init()				/* start rtrace and set up buffers */
 {
-	extern int  o_face(), o_ring();
+	extern int  o_face(), o_sphere(), o_ring();
 	int	maxbytes;
 					/* set up object functions */
 	ofun[OBJ_FACE].funp = o_face;
+	ofun[OBJ_SPHERE].funp = o_sphere;
 	ofun[OBJ_RING].funp = o_ring;
 					/* set up signal handling */
 	signal(SIGPIPE, quit);
@@ -152,10 +153,10 @@ init()				/* start rtrace and set up buffers */
 	if (maxbytes < 0)
 		error(SYSTEM, "cannot start rtrace process");
 	rt.bsiz = maxbytes/(6*sizeof(float));
-	rt.buf = (float *)malloc(rt.bsiz*(6*sizeof(float)));
-	if (rt.buf == NULL)
+	rt.buf = (float *)malloc(6*sizeof(float)*rt.bsiz--);
+	rt.dest = (float **)malloc(sizeof(float *)*rt.bsiz);
+	if (rt.buf == NULL || rt.dest == NULL)
 		error(SYSTEM, "out of memory in init");
-	rt.bsiz--;			/* allow for flush ray */
 	rt.nrays = 0;
 }
 
@@ -313,12 +314,14 @@ char	*nm;
 			cp = sskip(cp);
 			continue;
 		case 'l':			/* light sources */
-			if (*++cp != '+' && *cp != '-')
-				break;
-			if (*cp++ == '+')
+			cp++;
+			if (*cp == '+')
 				thisillum.flags |= IL_LIGHT;
-			else
+			else if (*cp == '-')
 				thisillum.flags &= ~IL_LIGHT;
+			else
+				break;
+			cp++;
 			continue;
 		case 'o':			/* output file */
 			if (*++cp != '=')
@@ -351,7 +354,7 @@ char	*nm;
 				progname, nerrs);
 	}
 						/* print pure comment */
-	putchar('#'); putchar(' '); fputs(s+2, stdout);
+	printf("# %s", s+2);
 }
 
 
@@ -387,10 +390,10 @@ char  *nm;
 		printf("\n%s %s %s", thisillum.altmat, ALIASID, str);
 		if (fgetword(str, MAXSTR, fp) == NULL)
 			goto readerr;
-		printf(" %s\n", str);
+		printf("\t%s\n", str);
 		return;
 	}
-	thisobj.omod = OVOID;
+	thisobj.omod = OVOID;		/* unused field */
 	if ((thisobj.otype = otype(str)) < 0) {
 		sprintf(errmsg, "(%s): unknown type \"%s\"", nm, str);
 		error(USER, errmsg);
@@ -407,7 +410,7 @@ char  *nm;
 		doit = 0;
 		break;
 	case S_ALL:
-		doit = issurface(thisobj.otype);
+		doit = 1;
 		break;
 	case S_ELEM:
 		doit = !strcmp(thisillum.altmat, matcheck);
@@ -416,17 +419,12 @@ char  *nm;
 		doit = strcmp(thisillum.altmat, matcheck);
 		break;
 	}
-	if (doit && ofun[thisobj.otype].funp == o_default) {
-		sprintf(errmsg, "(%s): cannot make illum for %s \"%s\"",
-				nm, ofun[thisobj.otype].funame, thisobj.oname);
-		error(WARNING, errmsg);
-		doit = 0;
-	}
+	doit = doit && issurface(thisobj.otype);
 						/* print header? */
 	checkhead();
 						/* process object */
 	if (doit)
-		(*ofun[thisobj.otype].funp)(&thisobj, &thisillum, &rt);
+		(*ofun[thisobj.otype].funp)(&thisobj, &thisillum, &rt, nm);
 	else
 		printobj(thisillum.altmat, &thisobj);
 						/* free arguments */
@@ -436,20 +434,3 @@ readerr:
 	sprintf(errmsg, "(%s): error reading scene", nm);
 	error(USER, errmsg);
 }
-
-
-int
-otype(ofname)			/* get object function number from its name */
-char  *ofname;
-{
-	register int  i;
-
-	for (i = 0; i < NUMOTYPE; i++)
-		if (!strcmp(ofun[i].funame, ofname))
-			return(i);
-
-	return(-1);		/* not found */
-}
-
-
-o_default() {}
