@@ -12,6 +12,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include <stdio.h>
 #include <math.h>
+#include <sys/types.h>
 #include <ctype.h>
 #include "color.h"
 #include "paths.h"
@@ -127,6 +128,7 @@ extern char	*strcpy(), *strcat(), *stradd(), *tailtrunc(), *filetrunc(),
 		*filename(), *libname(), *fullname(), *malloc(),
 		*getword(), *atos();
 extern float	*matchlamp();
+extern time_t	fdate();
 
 #define scnint(fp,ip)	cvtint(ip,getword(fp))
 #define scnflt(fp,rp)	cvtflt(rp,getword(fp))
@@ -1048,7 +1050,8 @@ FILE	*outfp;			/* close output file upon return */
 		strcpy(cp, "| oconv - > ");
 		cp += 12;
 		fullname(cp,outname,T_OCT);
-		if (system(buf)) {		/* create octree */
+		if (fdate(inpname) > fdate(outname) &&
+				system(buf)) {		/* create octree */
 			fclose(outfp);
 			return(-1);
 		}
