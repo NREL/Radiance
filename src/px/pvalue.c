@@ -22,7 +22,7 @@ RESOLU	picres;			/* resolution of picture */
 
 int  uniq = 0;			/* print only unique values? */
 
-int  original = 0;		/* convert back to original values? */
+int  doexposure = 0;		/* exposure change? (>100 to print) */
 
 int  dataonly = 0;		/* data only format? */
 
@@ -36,6 +36,8 @@ char  *fmtid = "ascii";		/* format identifier for header */
 int  header = 1;		/* do header? */
 
 int  resolution = 1;		/* put/get resolution string? */
+
+int  original = 0;		/* convert to original values? */
 
 int  wrongformat = 0;		/* wrong input format? */
 
@@ -58,6 +60,7 @@ int  argc;
 char  **argv;
 {
 	extern int  checkhead();
+	double  d, expval = 1.0;
 	int  i;
 
 	progname = argv[0];
@@ -78,9 +81,21 @@ char  **argv;
 				original = argv[i][0] == '-';
 				break;
 			case 'g':		/* gamma correction */
-				gamcor = atof(argv[++i]);
+				gamcor = atof(argv[i+1]);
 				if (argv[i][0] == '+')
 					gamcor = 1.0/gamcor;
+				i++;
+				break;
+			case 'e':		/* exposure correction */
+				d = atof(argv[i+1]);
+				if (argv[i+1][0] == '-' || argv[i+1][0] == '+')
+					d = pow(2.0, d);
+				if (argv[i][0] == '-')
+					doexposure = 100;
+				scalecolor(exposure, d);
+				expval *= d;
+				doexposure++;
+				i++;
 				break;
 			case 'R':		/* reverse byte sequence */
 				if (argv[i][0] == '-') {
@@ -196,6 +211,8 @@ unkopt:
 		}
 						/* add to header */
 		printargs(i, argv, stdout);
+		if (doexposure > 100)
+			fputexpos(expval, stdout);
 		fputformat(COLRFMT, stdout);
 		putchar('\n');
 		fputsresolu(&picres, stdout);	/* always put resolution */
@@ -219,6 +236,8 @@ unkopt:
 		}
 		if (header) {
 			printargs(i, argv, stdout);
+			if (doexposure > 100)
+				fputexpos(expval, stdout);
 			fputformat(fmtid, stdout);
 			putchar('\n');
 		}
@@ -244,11 +263,13 @@ char  *line;
 	} else if (original && isexpos(line)) {
 		d = 1.0/exposval(line);
 		scalecolor(exposure, d);
+		doexposure++;
 	} else if (original && iscolcor(line)) {
 		colcorval(ctmp, line);
 		setcolor(exposure, colval(exposure,RED)/colval(ctmp,RED),
 				colval(exposure,GRN)/colval(ctmp,GRN),
 				colval(exposure,BLU)/colval(ctmp,BLU));
+		doexposure++;
 	} else if (header)
 		fputs(line, stdout);
 }
@@ -286,7 +307,7 @@ pixtoval()				/* convert picture to values */
 					continue;
 				else
 					copycolor(lastc, scanln[x]);
-			if (original)
+			if (doexposure)
 				multcolor(scanln[x], exposure);
 			if (dogamma)
 				setcolor(scanln[x],
@@ -334,6 +355,8 @@ valtopix()			/* convert values to a pixel file */
 					pow(colval(scanln[x],RED), gamcor),
 					pow(colval(scanln[x],GRN), gamcor),
 					pow(colval(scanln[x],BLU), gamcor));
+			if (doexposure)
+				multcolor(scanln[x], exposure);
 		}
 		if (fwritescan(scanln, scanlen(&picres), stdout) < 0) {
 			fprintf(stderr, "%s: write error\n", progname);
