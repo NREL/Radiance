@@ -20,7 +20,7 @@ STDOBJ = fgetline.o fropen.o linregr.o xf.o mat4.o fvect.o urand.o \
 	process.o getpath.o error.o savestr.o savqstr.o \
 	fgetword.o words.o cputs.o wputs.o eputs.o quit.o
 
-SYSOBJ = ealloc.o bmalloc.o # erf.o frexp.o fwrite.o random.o bcopy.o
+SYSOBJ = ealloc.o bmalloc.o erf.o # frexp.o fwrite.o random.o bcopy.o
 
 librt.a:	$(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 	ar rc librt.a $(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
