@@ -64,24 +64,30 @@ double  rw;
 
 
 rayvalue(r)			/* compute a ray's value */
-register RAY  *r;
+RAY  *r;
 {
 	extern int  (*trace)();
 
 	if (localhit(r, &thescene) || sourcehit(r))
-						/* check for clipped object */
-		if (r->clipset != NULL && inset(r->clipset, r->ro->omod))
-			raytrans(r);
-		else
-			rayshade(r, r->ro->omod);
+		raycont(r);
 
 	if (trace != NULL)
 		(*trace)(r);		/* trace execution */
 }
 
 
+raycont(r)			/* check for clipped object and continue */
+register RAY  *r;
+{
+	if (r->clipset != NULL && inset(r->clipset, r->ro->omod))
+		raytrans(r);
+	else
+		rayshade(r, r->ro->omod);
+}
+
+
 raytrans(r)			/* transmit ray as is */
-RAY  *r;
+register RAY  *r;
 {
 	RAY  tr;
 
