@@ -217,7 +217,10 @@ char  *argv[];
 #endif
 		case 'w':				/* warnings */
 			check(2,0);
-			wrnvec = wrnvec==NULL ? stderr_v : NULL;
+			if (wrnvec == NULL)
+				wrnvec = stderr_v;
+			else
+				wrnvec = NULL;
 			break;
 		case 'e':				/* error file */
 			check(2,1);

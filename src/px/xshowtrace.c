@@ -43,7 +43,6 @@ char	*argv[];
 {
 	int	i;
 	char	combuf[256];
-	Cursor	curs;
 
 	progname = argv[0];
 	for (i = 1; i < argc-2; i++)
@@ -175,7 +174,9 @@ double	ipt[2];
 	XWindowAttributes	wa;
 	XColor	xc;
 	XGCValues	gcv;
-	int	pm, rx, ry, wx, wy, rw, cw;
+	int	rx, ry, wx, wy;
+	Window	rw, cw;
+	unsigned int	pm;
 					/* compute pointer location */
 	if (gwind == 0) {
 		XQueryPointer(theDisplay, rwind, &rw, &gwind,

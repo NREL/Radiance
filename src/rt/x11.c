@@ -45,7 +45,7 @@ static char SCCSid[] = "$SunId$ LBL";
 static XEvent  currentevent;		/* current event */
 
 static int  ncolors = 0;		/* color table size */
-static int  *pixval = NULL;		/* allocated pixels */
+static unsigned long  *pixval = NULL;	/* allocated pixels */
 
 static Display  *ourdisplay = NULL;	/* our display */
 
@@ -138,7 +138,7 @@ char  *name, *id;
 	XSetNormalHints(ourdisplay, gwind, &oursizhints);
 	XSelectInput(ourdisplay, gwind, ExposureMask);
 	XMapWindow(ourdisplay, gwind);
-	XWindowEvent(ourdisplay, gwind, ExposureMask, levptr(XExposeEvent));
+	XWindowEvent(ourdisplay, gwind, ExposureMask, levptr(XEvent));
 	gwidth = levptr(XExposeEvent)->width;
 	gheight = levptr(XExposeEvent)->height - COMHEIGHT;
 	x11_driver.xsiz = gwidth < MINWIDTH ? MINWIDTH : gwidth;
@@ -351,7 +351,7 @@ loop:
 	for (ncolors = ourvisual->map_entries;
 			ncolors > ourvisual->map_entries/3;
 			ncolors = ncolors*.937) {
-		pixval = (int *)malloc(ncolors*sizeof(int));
+		pixval = (unsigned long *)malloc(ncolors*sizeof(unsigned long));
 		if (pixval == NULL)
 			return(ncolors = 0);
 		if (XAllocColorCells(ourdisplay,ourmap,0,NULL,0,
