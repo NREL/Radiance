@@ -51,9 +51,11 @@ analyze()			/* analyze our scene */
 	for (v = vsize; v >= -vsize; v--) {
 		close_sources(v);
 #ifndef DEBUG
-		if (verbose)
+		if (verbose) {
 			fprintf(stderr, "%s: analyzing... %3ld%%\r",
 				progname, 100L*(vsize-v)/(2*vsize));
+			fflush(stderr);
+		}
 #endif
 		getviewspan(v, spanbr);
 		left = hsize + 1;
