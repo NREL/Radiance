@@ -93,22 +93,20 @@ int	len;
 		ls[i] = bi;
 		if (cs == TM_NOCHROM)			/* no color? */
 			continue;
+		if (tmTop->flags & TM_F_BW)
+			cmon[RED] = cmon[GRN] = cmon[BLU] = li;
 							/* mesopic adj. */
 		if (tmTop->flags & TM_F_MESOPIC && bi < BMESUPPER) {
 			register int	pf, sli = normscot(cmon);
 			if (bi < BMESLOWER)
 				cmon[RED] = cmon[GRN] = cmon[BLU] = sli;
 			else {
-				if (tmTop->flags & TM_F_BW)
-					cmon[RED] = cmon[GRN] = cmon[BLU] = li;
 				pf = photofact[bi-BMESLOWER];
 				sli *= 256 - pf;
 				cmon[RED] = ( sli + pf*cmon[RED] ) >> 8;
 				cmon[GRN] = ( sli + pf*cmon[GRN] ) >> 8;
 				cmon[BLU] = ( sli + pf*cmon[BLU] ) >> 8;
 			}
-		} else if (tmTop->flags & TM_F_BW) {
-			cmon[RED] = cmon[GRN] = cmon[BLU] = li;
 		}
 		bi = ( (int4)GAMTSZ*cd->clfb[RED]*cmon[RED]/li ) >> 8;
 		cs[3*i  ] = bi>=GAMTSZ ? 255 : cd->gamb[bi];
