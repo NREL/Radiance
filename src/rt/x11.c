@@ -5,9 +5,9 @@ static char SCCSid[] = "$SunId$ LBL";
 /* Copyright (c) 1989 Regents of the University of California */
 
 /*
- *  x11.c - driver for X-windows version 10.4
+ *  x11.c - driver for X-windows version 11.3
  *
- *     1989
+ *     Jan 1990
  */
 
 #include  <stdio.h>
@@ -15,14 +15,17 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <sys/ioctl.h>
 
 #include  <X11/Xlib.h>
-#include <X11/cursorfont.h>
-#include <X11/Xutil.h>
+#include  <X11/cursorfont.h>
+#include  <X11/Xutil.h>
 
 #include  "color.h"
 #include  "driver.h"
 #include  "x11twind.h"
 
 #define GAMMA		2.2		/* exponent for color correction */
+
+#define MINWIDTH	(4*COMCW)	/* minimum graphics window width */
+#define MINHEIGHT	16		/* minimum graphics window height */
 
 #define BORWIDTH	5		/* border width */
 #define COMHEIGHT	(COMLH*COMCH)	/* command line height (pixels) */
@@ -36,13 +39,16 @@ static char SCCSid[] = "$SunId$ LBL";
 #define WFLUSH		30		/* flush after this many rays */
 #endif
 
+#define  ourscreen	DefaultScreen(ourdisplay)
+#define  ourroot	RootWindow(ourdisplay,ourscreen)
+#define  ourwhite	WhitePixel(ourdisplay,ourscreen)
+#define  ourblack	BlackPixel(ourdisplay,ourscreen)
+
 #define  checkinp()	while (XPending(ourdisplay) > 0) getevent()
 
-#define  levptr(etype)	((etype *)&thisevent)
+#define  levptr(etype)	((etype *)&currentevent)
 
-static char  *clientname;		/* calling client's name */
-
-static XEvent  thisevent;		/* current event */
+static XEvent  currentevent;		/* current event */
 
 static int  ncolors = 0;		/* color table size */
 static int  *pixval = NULL;		/* allocated pixels */
@@ -53,8 +59,7 @@ static Window  gwind = 0;		/* our graphics window */
 
 static Cursor  pickcursor = 0;		/* cursor used for picking */
 
-static int  gwidth = 0;			/* graphics window width */
-static int  gheight = 0;		/* graphics window height */
+static int  gwidth, gheight;		/* graphics window size */
 
 static TEXTWIND  *comline = NULL;	/* our command line */
 
@@ -81,6 +86,7 @@ struct driver *
 x11_init(name, id)		/* initialize driver */
 char  *name, *id;
 {
+	XWMHints  ourxwmhints;
 	Pixmap  bmCursorSrc, bmCursorMsk;
 
 	ourdisplay = XOpenDisplay(NULL);
@@ -88,38 +94,35 @@ char  *name, *id;
 		stderr_v("cannot open X-windows; DISPLAY variable set?\n");
 		return(NULL);
 	}
-	if (DisplayPlanes(ourdisplay, DefaultScreen(ourdisplay)) < 4) {
+	if (DisplayPlanes(ourdisplay, ourscreen) < 4) {
 		stderr_v("not enough colors\n");
 		return(NULL);
 	}
-	ourmap = DefaultColormap(ourdisplay,DefaultScreen(ourdisplay));
+	ourmap = DefaultColormap(ourdisplay,ourscreen);
 	make_gmap(GAMMA);			/* make color map */
-	/*
-	bmCursorSrc = XCreateBitmapFromData(ourdisplay, 
-			gwind, bcross_bits, 
-			bcross_width, bcross_height);
-	bmCursorMsk = XCreateBitmapFromData(ourdisplay, 
-			gwind, bcross_mask_bits, 
-			bcross_width, bcross_height);
-
-	pickcursor = XCreatePixmapCursor(ourdisplay,
-			bmCursorSrc, bmCursorMsk, 
-			BlackPixel(ourdisplay, 
-			DefaultScreen(ourdisplay)), 
-			WhitePixel(ourdisplay, 
-			DefaultScreen(ourdisplay)), 
-			bcross_x_hot, bcross_y_hot);
-	XFreePixmap(ourdisplay, bmCursorSrc);
-	XFreePixmap(ourdisplay, bmCursorMsk);
-	*/
 	/* create a cursor */
 	pickcursor = XCreateFontCursor (ourdisplay, XC_diamond_cross);
-	/*  new */
-	clientname = id; 
-	x11_driver.xsiz = DisplayWidth(ourdisplay,DefaultScreen(ourdisplay))
-			- 2*BORWIDTH;
-	x11_driver.ysiz = DisplayHeight(ourdisplay,DefaultScreen(ourdisplay))
-			- (COMHEIGHT + 2*BORWIDTH);
+	/* open window */
+	gwind = XCreateSimpleWindow(ourdisplay, ourroot, 0, 0,
+		DisplayWidth(ourdisplay,ourscreen)-2*BORWIDTH,
+		DisplayHeight(ourdisplay,ourscreen)-2*BORWIDTH,
+		BORWIDTH, ourblack, ourwhite);
+	if (gwind == 0) {
+		stderr_v("cannot create window\n");
+		return(NULL);
+	}
+	XStoreName(ourdisplay, gwind, id);
+	ourgc = XCreateGC(ourdisplay, gwind, 0, NULL);
+	ourxwmhints.flags = InputHint;
+	ourxwmhints.input = True;
+	XSetWMHints(ourdisplay, gwind, &ourxwmhints);
+	XSelectInput(ourdisplay, gwind, ExposureMask);
+	XMapWindow(ourdisplay, gwind);
+	XWindowEvent(ourdisplay, gwind, ExposureMask, levptr(XExposeEvent));
+	gwidth = levptr(XExposeEvent)->width;
+	gheight = levptr(XExposeEvent)->height - COMHEIGHT;
+	x11_driver.xsiz = gwidth < MINWIDTH ? MINWIDTH : gwidth;
+	x11_driver.ysiz = gheight < MINHEIGHT ? MINHEIGHT : gheight;
 	x11_driver.inpready = 0;
 	cmdvec = x11_comout;			/* set error vectors */
 	if (wrnvec != NULL)
@@ -144,7 +147,6 @@ x11_close()			/* close our display */
 		XFreeGC(ourdisplay, ourgc);
 		XDestroyWindow(ourdisplay, gwind);
 		gwind = 0;
-		gwidth = gheight = 0;
 		ourgc = 0;
 	}
 	XFreeCursor(ourdisplay, pickcursor);
@@ -158,55 +160,33 @@ static
 x11_clear(xres, yres)			/* clear our display */
 int  xres, yres;
 {
-	XWMHints  ourxwmhints;
-	XSetWindowAttributes ourwindowattr;
-
 	if (xres != gwidth || yres != gheight) {	/* change window */
 		if (comline != NULL)
 			xt_close(comline);
-		if (gwind == 0) {			/* new window */
-			ourwindowattr.backing_store = Always;
-			ourwindowattr.background_pixel =
-			WhitePixel(ourdisplay, DefaultScreen(ourdisplay));
-			ourwindowattr.border_pixel =
-			BlackPixel(ourdisplay, DefaultScreen(ourdisplay));
-			gwind = XCreateWindow(ourdisplay, 
-				RootWindow(ourdisplay,
-			  	DefaultScreen(ourdisplay)),
-				0, 0, xres, yres+COMHEIGHT, BORWIDTH, 
-				0, InputOutput, CopyFromParent,
-				CWBackingStore|CWBackPixel|CWBorderPixel, 
-				&ourwindowattr);
-			if (gwind == 0)
-				goto fail;
-			XStoreName(ourdisplay, gwind, clientname);
-			ourgc = XCreateGC(ourdisplay, gwind, 0, NULL);
-			ourxwmhints.flags = InputHint;
-			ourxwmhints.input = True;
-			XSetWMHints(ourdisplay, gwind, &ourxwmhints);
-			XSelectInput(ourdisplay, gwind, 
-				     KeyPressMask|ButtonPressMask);
-			XMapWindow(ourdisplay, gwind);
-		} else					/* resize window */
-			XResizeWindow(ourdisplay, gwind, xres, yres+COMHEIGHT);
+		XSelectInput(ourdisplay, gwind, 0);
+		XResizeWindow(ourdisplay, gwind, xres, yres+COMHEIGHT);
 		comline = xt_open(ourdisplay,
-				DefaultGC(ourdisplay,DefaultScreen(ourdisplay)),
+				DefaultGC(ourdisplay,ourscreen),
 				gwind, 0, yres, xres, COMHEIGHT, 0, COMFN);
-		if (comline == NULL)
-			goto fail;
+		if (comline == NULL) {
+			stderr_v("Cannot open command line window\n");
+			quit(1);
+		}
+		XSelectInput(ourdisplay, comline->w, ExposureMask);
 		gwidth = xres;
 		gheight = yres;
-	} else						/* just clear */
-		XClearWindow(ourdisplay, gwind);
+		XSync(ourdisplay, 1);		/* discard input */
+		sleep(2);			/* wait for window manager */
+	}
+	XClearWindow(ourdisplay, gwind);
 						/* reinitialize color table */
-	if (ncolors == 0 && getpixels() == 0)
+	if (getpixels() == 0)
 		stderr_v("cannot allocate colors\n");
 	else
 		new_ctab(ncolors);
-	return;
-fail:
-	stderr_v("Failure opening window in x11_clear\n");
-	quit(1);
+
+	XSelectInput(ourdisplay, gwind,
+		StructureNotifyMask|ExposureMask|KeyPressMask|ButtonPressMask);
 }
 
 
@@ -242,7 +222,10 @@ char  *inp, *prompt;
 	int  x11_getc(), x11_comout();
 
 	if (prompt != NULL)
-		xt_puts(prompt, comline);
+		if (fromcombuf(inp, &x11_driver))
+			return;
+		else
+			xt_puts(prompt, comline);
 	xt_cursor(comline, TBLKCURS);
 	editline(inp, x11_getc, x11_comout);
 	xt_cursor(comline, TNOCURS);
@@ -319,9 +302,10 @@ int  r, g, b;
 static int
 getpixels()				/* get the color map */
 {
-	Visual  *ourvis = DefaultVisual(ourdisplay,DefaultScreen(ourdisplay));
+	Visual  *ourvis = DefaultVisual(ourdisplay,ourscreen);
 
-	freepixels();
+	if (ncolors > 0)
+		return(ncolors);
 	for (ncolors=(ourvis->map_entries)-3; ncolors>12; ncolors=ncolors*.937){
 		pixval = (int *)malloc(ncolors*sizeof(int));
 		if (pixval == NULL)
@@ -362,6 +346,21 @@ getevent()			/* get next event */
 {
 	XNextEvent(ourdisplay, levptr(XEvent));
 	switch (levptr(XEvent)->type) {
+	case ConfigureNotify:
+		resizewindow(levptr(XConfigureEvent));
+		break;
+	case UnmapNotify:
+		freepixels();
+		break;
+	case MapNotify:
+		if (getpixels() == 0)
+			stderr_v("Cannot allocate colors\n");
+		else
+			new_ctab(ncolors);
+		break;
+	case Expose:
+		fixwindow(levptr(XExposeEvent));
+		break;
 	case KeyPress:
 		getkey(levptr(XKeyPressedEvent));
 		break;
@@ -381,15 +380,32 @@ register XKeyPressedEvent  *ekey;
 }
 
 
-#ifdef notdef
 static
 fixwindow(eexp)				/* repair damage to window */
 register XExposeEvent  *eexp;
 {
-	if (eexp->subwindow == 0)
-		repaint(eexp->x, gheight - eexp->y - eexp->height,
+	if (eexp->window == gwind) {
+		sprintf(getcombuf(&x11_driver), "repaint %d %d %d %d\n",
+			eexp->x, gheight - eexp->y - eexp->height,
 			eexp->x + eexp->width, gheight - eexp->y);
-	else if (eexp->subwindow == comline->w)
-		xt_redraw(comline);
+	} else if (eexp->window == comline->w) {
+		if (eexp->count == 0)
+			xt_redraw(comline);
+	}
 }
-#endif
+
+
+static
+resizewindow(ersz)			/* resize window */
+register XConfigureEvent  *ersz;
+{
+	if (ersz->width == gwidth && ersz->height-COMHEIGHT == gheight)
+		return;
+
+	gwidth = ersz->width;
+	gheight = ersz->height-COMHEIGHT;
+	x11_driver.xsiz = gwidth < MINWIDTH ? MINWIDTH : gwidth;
+	x11_driver.ysiz = gheight < MINHEIGHT ? MINHEIGHT : gheight;
+
+	strcpy(getcombuf(&x11_driver), "new\n");
+}
