@@ -9,23 +9,14 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include "glare.h"
-#include <sys/param.h>
-					/* compute rtrace buffer size */
-#ifndef PIPE_BUF
-#define PIPE_BUF	512		/* hyperconservative */
-#endif
-#define MAXPIX		(PIPE_BUF/(6*sizeof(float)) - 1)
-
-#ifndef BSD
-#define vfork		fork
-#endif
+					/* maximum rtrace buffer size */
+#define MAXPIX		(4096/(6*sizeof(float)))
 
 #define MAXSBUF		786432	/* maximum total size of scanline buffer */
 #define HSIZE		317	/* size of scanline hash table */
 #define NRETIRE		16	/* number of scanlines to retire at once */
 
-int	rt_pid = -1;		/* process id for rtrace */
-int	fd_tort, fd_fromrt;	/* pipe descriptors */
+int	rt_pd[3] = {-1,-1,-1};	/* process id & descriptors for rtrace */
 
 FILE	*pictfp = NULL;		/* picture file pointer */
 double	exposure;		/* picture exposure */
@@ -43,6 +34,8 @@ typedef struct scan {
 
 #define	scandata(sl)	((COLR *)((sl)+1))
 #define shash(y)	((y)%HSIZE)
+
+static int	maxpix;		/* maximum number of pixels to buffer */
 
 static SCAN	*freelist;		/* scanline free list */
 static SCAN	*hashtab[HSIZE];	/* scanline hash table */
@@ -181,7 +174,7 @@ getviewpix(vh, vv)		/* compute single view pixel */
 int	vh, vv;
 {
 	FVECT	dir;
-	float	rt_buf[6];
+	float	rt_buf[12];
 	double	res;
 
 	if (compdir(dir, vh, vv) < 0)
@@ -189,7 +182,7 @@ int	vh, vv;
 	npixinvw++;
 	if ((res = pict_val(dir)) >= 0.0)
 		return(res);
-	if (rt_pid == -1) {
+	if (rt_pd[0] == -1) {
 		npixmiss++;
 		return(-1.0);
 	}
@@ -228,12 +221,12 @@ float	*vb;
 		npixinvw++;
 		if ((vb[vh+hsize] = pict_val(dir)) >= 0.0)
 			continue;
-		if (rt_pid == -1) {		/* missing information */
+		if (rt_pd[0] == -1) {		/* missing information */
 			npixmiss++;
 			continue;
 		}
 						/* send to rtrace */
-		if (n >= MAXPIX) {			/* flush */
+		if (n >= maxpix) {			/* flush */
 			rt_compute(rt_buf, n);
 			while (n-- > 0)
 				vb[buf_vh[n]+hsize] = luminance(rt_buf+3*n);
@@ -262,22 +255,15 @@ rt_compute(pb, np)		/* process buffer through rtrace */
 float	*pb;
 int	np;
 {
-	static float	nbuf[6] = {0.,0.,0.,0.,0.,0.};
-
 #ifdef DEBUG
 	if (verbose && np > 1)
 		fprintf(stderr, "%s: sending %d samples to rtrace...\n",
 				progname, np);
 #endif
-	if (writebuf(fd_tort,(char *)pb,6*sizeof(float)*np) < 6*sizeof(float)*np
-		|| writebuf(fd_tort,(char *)nbuf,sizeof(nbuf)) < sizeof(nbuf)) {
-		fprintf(stderr, "%s: error writing to rtrace process\n",
-				progname);
-		exit(1);
-	}
-	if (readbuf(fd_fromrt, (char *)pb, 3*sizeof(float)*np)
-			< 3*sizeof(float)*np) {
-		fprintf(stderr, "%s: error reading from rtrace process\n",
+	pb[6*np+3] = 0.; pb[6*np+4] = 0.; pb[6*np+5] = 0.;
+	if (process(rt_pd, pb, pb, 3*sizeof(float)*np,
+			6*sizeof(float)*(np+1)) < 3*sizeof(float)*np) {
+		fprintf(stderr, "%s: rtrace communication error\n",
 				progname);
 		exit(1);
 	}
@@ -329,89 +315,35 @@ close_pict()			/* done with picture */
 fork_rtrace(av)			/* open pipe and start rtrace */
 char	*av[];
 {
-	int	p0[2], p1[2];
+	int	rval;
 
-	if (pipe(p0) < 0 || pipe(p1) < 0) {
+	rval = open_process(rt_pd, av);
+	if (rval < 0) {
 		perror(progname);
 		exit(1);
 	}
-	if ((rt_pid = vfork()) == 0) {		/* if child */
-		close(p0[1]);
-		close(p1[0]);
-		if (p0[0] != 0) {	/* connect p0 to stdin */
-			dup2(p0[0], 0);
-			close(p0[0]);
-		}
-		if (p1[1] != 1) {	/* connect p1 to stdout */
-			dup2(p1[1], 1);
-			close(p1[1]);
-		}
-		execvp(av[0], av);
-		perror(av[0]);
-		_exit(127);
-	}
-	if (rt_pid == -1) {
-		perror(progname);
+	if (rval == 0) {
+		fprintf(stderr, "%s: command not found\n", av[0]);
 		exit(1);
 	}
-	close(p0[0]);
-	close(p1[1]);
-	fd_tort = p0[1];
-	fd_fromrt = p1[0];
+	maxpix = rval/(6*sizeof(float));
+	if (maxpix > MAXPIX)
+		maxpix = MAXPIX;
+	maxpix--;
 }
 
 
 done_rtrace()			/* wait for rtrace to finish */
 {
-	int	pid, status;
+	int	status;
 
-	if (rt_pid == -1)
-		return;
-	close(fd_tort);
-	close(fd_fromrt);
-	while ((pid = wait(&status)) != -1 && pid != rt_pid)
-		;
-	if (pid == rt_pid && status != 0) {
+	status = close_process(rt_pd);
+	if (status > 0) {
 		fprintf(stderr, "%s: bad status (%d) from rtrace\n",
 				progname, status);
 		exit(1);
 	}
-	rt_pid = -1;
-}
-
-
-int
-readbuf(fd, bpos, siz)
-int	fd;
-char	*bpos;
-int	siz;
-{
-	register int	cc, nrem = siz;
-
-	while (nrem > 0 && (cc = read(fd, bpos, nrem)) > 0) {
-		bpos += cc;
-		nrem -= cc;
-	}
-	if (cc < 0)
-		return(cc);
-	return(siz-nrem);
-}
-
-
-int
-writebuf(fd, bpos, siz)
-char	*bpos;
-int	siz;
-{
-	register int	cc, nrem = siz;
-
-	while (nrem > 0 && (cc = write(fd, bpos, nrem)) > 0) {
-		bpos += cc;
-		nrem -= cc;
-	}
-	if (cc < 0)
-		return(cc);
-	return(siz-nrem);
+	rt_pd[0] = -1;
 }
 
 
