@@ -64,7 +64,7 @@ register RAY  *r;
 		for (i = 0; i < 3; i++)
 			nr.rdir[i] = r->rdir[i] + 2.*r->rod*r->ron[i];
 					/* source we're aiming for next */
-		nr.rsrc = source[r->rsrc].sa.svnext;
+		nr.rsrc = source[r->rsrc].sa.sv.sn;
 	} else {				/* ordinary reflection */
 		FVECT  pnorm;
 		double  pdot;
@@ -84,15 +84,13 @@ register RAY  *r;
 mir_proj(pm, o, s, n)		/* compute a mirror's projection */
 MAT4  pm;
 register OBJREC  *o;
-register SRCREC  *s;
+SRCREC  *s;
 int  n;
 {
 	FVECT  nv;
 	double  od;
 				/* get surface normal and offset */
-	if (sfun[o->otype].of->getpleq == NULL)
-		return(0);		/* reject non-planar case */
-	od = (*sfun[o->otype].of->getpleq)(nv, o);
+	od = getplaneq(nv, o);
 				/* check for behind */
 	if (DOT(s->sloc, nv) <= (s->sflags & SDISTANT ? FTINY : od+FTINY))
 		return(0);
@@ -110,9 +108,9 @@ double  offs;
 	register int  i, j;
 					/* assign matrix */
 	setident4(m);
-	for (i = 0; i < 3; i++)
-		for (j = 0; j < 3; j++)
+	for (j = 0; j < 3; j++) {
+		for (i = 0; i < 3; i++)
 			m[i][j] -= 2.*nv[i]*nv[j];
-	for (j = 0; j < 3; j++)
 		m[3][j] = 2.*offs*nv[j];
+	}
 }

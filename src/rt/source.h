@@ -36,7 +36,10 @@ typedef struct {
 	} sl;			/* localized source information */
 	union {
 		int  success;		/* successes - AIMREQT*failures */
-		int  svnext;		/* next source to aim for */
+		struct {
+			short  pn;		/* projection number */
+			short  sn;		/* next source to aim for */
+		}  sv;			/* virtual source */
 	} sa;			/* source aiming information */
 	long  ntests, nhits;	/* shadow tests and hits */
 	OBJREC  *so;		/* source destination object */

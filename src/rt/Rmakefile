@@ -65,8 +65,10 @@ SURFOBJS = source.o sphere.o srcsupp.o virtuals.o o_face.o o_cone.o \
 SURFSRC = sphere.c source.c srcsupp.c virtuals.c o_face.c \
 		o_cone.c o_instance.c
 
-MATOBJS = normal.o dielectric.o m_clip.o glass.o m_brdf.o m_mirror.o
-MATSRC = normal.c dielectric.c m_clip.c glass.c m_brdf.c m_mirror.c
+MATOBJS = normal.o dielectric.o m_clip.o glass.o m_brdf.o m_mirror.o \
+	m_direct.o
+MATSRC = normal.c dielectric.c m_clip.c glass.c m_brdf.c m_mirror.c \
+	m_direct.c
 
 MODOBJS = p_func.o t_func.o p_data.o t_data.o text.o mx_func.o mx_data.o
 MODSRC = p_func.c t_func.c p_data.c t_data.c text.c mx_func.c mx_data.c
@@ -109,6 +111,8 @@ $(DESTDIR)/rpict:	$(RPOBJS)
 
 $(DESTDIR)/rview:	$(RVOBJS)
 	$(CC) $(CFLAGS) -o $(DESTDIR)/rview $(RVOBJS) $(DLIBS) $(LIBS)
+
+$(DESTDIR)/rtrace $(DESTDIR)/rpict $(DESTDIR)/rview:	../common/librt.a
 
 $(DESTDIR)/lookamb:	lookamb.o
 	$(CC) $(CFLAGS) -o $(DESTDIR)/lookamb lookamb.o
@@ -186,7 +190,7 @@ nwsdev.h:	nwsdev.cps newsconstants.h
 aed.o colortab.o data.o devcomm.o \
 devmain.o lookamb.o rview.o sundev.o x10.o x11.o:	../common/color.h
 
-o_cone.o srcsupp.o:	cone.h
+o_cone.o srcsupp.o:	../common/cone.h
 
 data.o m_brdf.o mx_data.o p_data.o t_data.o:	data.h
 

@@ -104,6 +104,7 @@ int  n;
 	for (i = 0; i < vsmat->nproj; i++)
 		if ((*vsmat->vproj)(proj, o, &source[sn], i))
 			if ((ns = makevsrc(o, sn, proj)) >= 0) {
+				source[ns].sa.sv.pn = i;
 #ifdef DEBUG
 				virtverb(ns, stderr);
 #endif
@@ -134,6 +135,7 @@ MAT4  pm;
 		if (source[sn].sflags & SPROX)
 			return(-1);		/* should never get here! */
 		multv3(nsloc, source[sn].sloc, pm);
+		normalize(nsloc);
 		VCOPY(ourspot.aim, ocent);
 		ourspot.siz = PI*maxrad2;
 		ourspot.flen = 0.;
@@ -169,6 +171,7 @@ MAT4  pm;
 		if (source[sn].sflags & SSPOT) {
 			copystruct(&theirspot, source[sn].sl.s);
 			multv3(theirspot.aim, source[sn].sl.s->aim, pm);
+			normalize(theirspot.aim);
 			if (nsflags & SSPOT) {
 				ourspot.flen = theirspot.flen;
 				d = ourspot.siz;
@@ -191,6 +194,7 @@ MAT4  pm;
 		}
 		if (source[sn].sflags & SFLAT) {	/* behind source? */
 			multv3(nsnorm, source[sn].snorm, pm);
+			normalize(nsnorm);
 			if (!checkspot(&ourspot, nsnorm))
 				return(-1);
 		}
@@ -214,7 +218,7 @@ MAT4  pm;
 	}
 	if (nsflags & SPROX)
 		source[i].sl.prox = source[sn].sl.prox;
-	source[i].sa.svnext = sn;
+	source[i].sa.sv.sn = sn;
 	source[i].so = op;
 	return(i);
 memerr:
@@ -372,7 +376,7 @@ FILE  *fp;
 	fprintf(fp, "\tat (%f,%f,%f)\n",
 		source[sn].sloc[0], source[sn].sloc[1], source[sn].sloc[2]);
 	fprintf(fp, "\tlinked to source %d (%s)\n",
-		source[sn].sa.svnext, source[source[sn].sa.svnext].so->oname);
+		source[sn].sa.sv.sn, source[source[sn].sa.sv.sn].so->oname);
 	if (source[sn].sflags & SFOLLOW)
 		fprintf(fp, "\talways followed\n");
 	else
