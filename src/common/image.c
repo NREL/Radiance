@@ -490,7 +490,7 @@ int
 isview(s)				/* is this a view string? */
 char  *s;
 {
-	static char  *altname[]={NULL,VIEWSTR,"rpict","rvu","rpiece","pinterp",NULL};
+	static char  *altname[]={NULL,VIEWSTR,"rpict","rview","rvu","rpiece","pinterp",NULL};
 	extern char  *progname;
 	register char  *cp;
 	register char  **an;
