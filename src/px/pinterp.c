@@ -16,6 +16,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "color.h"
 
+#include "random.h"
+
 #ifndef BSD
 #define vfork		fork
 #endif
@@ -23,12 +25,16 @@ static char SCCSid[] = "$SunId$ LBL";
 #define pscan(y)	(ourpict+(y)*hresolu)
 #define zscan(y)	(ourzbuf+(y)*hresolu)
 
+#define PMASK		0xfffffff	/* probability mask */
+#define sampval(x)	(long)((x)*(PMASK+1)+.5)
+#define samp(p)		((p) > (random()&PMASK))
+
 #define F_FORE		1		/* fill foreground */
 #define F_BACK		2		/* fill background */
 
 #define PACKSIZ		42		/* calculation packet size */
 
-#define RTCOM		"rtrace -h -ovl -fff -x %d %s"
+#define RTCOM		"rtrace -h -ovl -fff %s"
 
 #define ABS(x)		((x)>0?(x):-(x))
 
@@ -46,9 +52,10 @@ float	*ourzbuf;			/* corresponding z-buffer */
 
 char	*progname;
 
-int	fill = F_FORE|F_BACK;		/* selected fill algorithm */
+int	fillo = F_FORE|F_BACK;		/* selected fill options */
+long	sampprob = 0;			/* sample probability */
 extern int	backfill(), rcalfill();	/* fill functions */
-int	(*deffill)() = backfill;	/* selected fill function */
+int	(*fillfunc)() = backfill;	/* selected fill function */
 COLR	backcolr = BLKCOLR;		/* background color */
 double	backz = 0.0;			/* background z value */
 int	normdist = 1;			/* normalized distance? */
@@ -98,35 +105,39 @@ char	*argv[];
 			switch (argv[i][2]) {
 			case '0':				/* none */
 				check(3,0);
-				fill = 0;
+				fillo = 0;
 				break;
 			case 'f':				/* foreground */
 				check(3,0);
-				fill = F_FORE;
+				fillo = F_FORE;
 				break;
 			case 'b':				/* background */
 				check(3,0);
-				fill = F_BACK;
+				fillo = F_BACK;
 				break;
 			case 'a':				/* all */
 				check(3,0);
-				fill = F_FORE|F_BACK;
+				fillo = F_FORE|F_BACK;
+				break;
+			case 's':				/* sample */
+				check(3,1);
+				sampprob = sampval(atof(argv[++i]));
 				break;
 			case 'c':				/* color */
 				check(3,3);
-				deffill = backfill;
+				fillfunc = backfill;
 				setcolr(backcolr, atof(argv[i+1]),
 					atof(argv[i+2]), atof(argv[i+3]));
 				i += 3;
 				break;
 			case 'z':				/* z value */
 				check(3,1);
-				deffill = backfill;
+				fillfunc = backfill;
 				backz = atof(argv[++i]);
 				break;
 			case 'r':				/* rtrace */
 				check(3,1);
-				deffill = rcalfill;
+				fillfunc = rcalfill;
 				calstart(RTCOM, argv[++i]);
 				break;
 			default:
@@ -188,24 +199,24 @@ char	*argv[];
 	for ( ; i < argc; i += 2)
 		addpicture(argv[i], argv[i+1]);
 							/* fill in spaces */
-	if (fill&F_BACK)
-		backpicture();
+	if (fillo&F_BACK)
+		backpicture(fillfunc, sampprob);
 	else
-		fillpicture();
+		fillpicture(fillfunc);
 							/* close calculation */
 	caldone();
 							/* add to header */
 	printargs(argc, argv, stdout);
 	if (gotvfile) {
-		printf(VIEWSTR);
+		fputs(VIEWSTR, stdout);
 		fprintview(&ourview, stdout);
-		printf("\n");
+		putc('\n', stdout);
 	}
 	if (pixaspect < .99 || pixaspect > 1.01)
 		fputaspect(pixaspect, stdout);
 	if (ourexp > 0 && (ourexp < .995 || ourexp > 1.005))
 		fputexpos(ourexp, stdout);
-	printf("\n");
+	putc('\n', stdout);
 							/* write picture */
 	writepicture();
 							/* write z file */
@@ -225,10 +236,11 @@ userr:
 headline(s)				/* process header string */
 char	*s;
 {
-	static char	*altname[] = {"rview","rpict","pinterp",VIEWSTR,NULL};
+	static char	*altname[] = {VIEWSTR,"rpict","rview","pinterp",NULL};
 	register char	**an;
 
-	printf("\t%s", s);
+	putc('\t', stdout);
+	fputs(s, stdout);
 
 	if (isexpos(s)) {
 		theirexp *= exposval(s);
@@ -419,7 +431,7 @@ double	z;
 	register int	x, y;			/* final position */
 
 					/* compute vector p0p1 */
-	if (fill&F_FORE && ABS(p1->z-p0->z) <= zt) {
+	if (fillo&F_FORE && ABS(p1->z-p0->z) <= zt) {
 		s1x = p1->x - p0->x;
 		s1y = p1->y - p0->y;
 		l1 = ABS(s1x);
@@ -430,7 +442,7 @@ double	z;
 		p1isy = -1;
 	}
 					/* compute vector p0p2 */
-	if (fill&F_FORE && ABS(p2->z-p0->z) <= zt) {
+	if (fillo&F_FORE && ABS(p2->z-p0->z) <= zt) {
 		s2x = p2->x - p0->x;
 		s2y = p2->y - p0->y;
 		if (p1isy == 1)
@@ -459,7 +471,9 @@ double	z;
 }
 
 
-backpicture()				/* background fill algorithm */
+backpicture(fill, prob)			/* background fill algorithm */
+int	(*fill)();
+long	prob;
 {
 	int	*yback, xback;
 	int	y;
@@ -511,10 +525,11 @@ backpicture()				/* background fill algorithm */
 				}
 				/*
 				 * Check to see if we have no background for
-				 * this pixel.  If not, use background color.
+				 * this pixel.  If not, or sampling was
+				 * requested, use the given fill function.
 				 */
-				if (xback < 0 && yback[x] < 0) {
-					(*deffill)(x,y);
+				if ((xback < 0 && yback[x] < 0) || samp(prob)) {
+					(*fill)(x,y);
 					continue;
 				}
 				/*
@@ -541,14 +556,15 @@ backpicture()				/* background fill algorithm */
 }
 
 
-fillpicture()				/* paint in empty pixels with default */
+fillpicture(fill)		/* paint in empty pixels using fill */
+int	(*fill)();
 {
 	register int	x, y;
 
 	for (y = 0; y < vresolu; y++)
 		for (x = 0; x < hresolu; x++)
 			if (zscan(y)[x] <= 0)
-				(*deffill)(x,y);
+				(*fill)(x,y);
 }
 
 
@@ -635,7 +651,7 @@ char	*prog, *args;
 		fprintf(stderr, "%s: too many calculations\n", progname);
 		exit(1);
 	}
-	sprintf(combuf, prog, PACKSIZ, args);
+	sprintf(combuf, prog, args);
 	if (pipe(p0) < 0 || pipe(p1) < 0)
 		syserror();
 	if ((childpid = vfork()) == 0) {	/* fork calculation */
@@ -671,7 +687,9 @@ caldone()				/* done with calculation */
 
 	if (childpid == -1)
 		return;
-	clearqueue(1);
+	clearqueue();
+	fclose(psend);
+	fclose(precv);
 	while ((pid = wait(0)) != -1 && pid != childpid)
 		;
 	childpid = -1;
@@ -682,7 +700,7 @@ rcalfill(x, y)				/* fill with ray-calculated pixel */
 int	x, y;
 {
 	if (queuesiz >= PACKSIZ)	/* flush queue if needed */
-		clearqueue(0);
+		clearqueue();
 					/* add position to queue */
 	queue[queuesiz][0] = x;
 	queue[queuesiz][1] = y;
@@ -690,8 +708,7 @@ int	x, y;
 }
 
 
-clearqueue(done)			/* process queue */
-int	done;
+clearqueue()				/* process queue */
 {
 	FVECT	orig, dir;
 	float	fbuf[6];
@@ -705,7 +722,10 @@ int	done;
 		fbuf[3] = dir[0]; fbuf[4] = dir[1]; fbuf[5] = dir[2];
 		fwrite((char *)fbuf, sizeof(float), 6, psend);
 	}
-	if ((done ? fclose(psend) : fflush(psend)) == EOF)
+					/* flush output and get results */
+	fbuf[3] = fbuf[4] = fbuf[5] = 0.0;		/* mark */
+	fwrite((char *)fbuf, sizeof(float), 6, psend);
+	if (fflush(psend) == EOF)
 		syserror();
 	for (i = 0; i < queuesiz; i++) {
 		if (fread((char *)fbuf, sizeof(float), 4, precv) < 4) {
@@ -722,8 +742,6 @@ int	done;
 				fbuf[0], fbuf[1], fbuf[2]);
 		zscan(queue[i][1])[queue[i][0]] = fbuf[3];
 	}
-	if (done)
-		fclose(precv);
 	queuesiz = 0;
 }
 
