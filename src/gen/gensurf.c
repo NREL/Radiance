@@ -61,7 +61,7 @@ char  *argv[];
 
 	for (i = 8; i < argc; i++)
 		if (!strcmp(argv[i], "-e"))
-			scompile(NULL, argv[++i]);
+			scompile(argv[++i], NULL, 0);
 		else if (!strcmp(argv[i], "-f"))
 			fcompile(argv[++i]);
 		else if (!strcmp(argv[i], "-s"))
@@ -72,11 +72,11 @@ char  *argv[];
 	modname = argv[1];
 	surfname = argv[2];
 	sprintf(stmp, "%s(s,t)=%s;", XNAME, argv[3]);
-	scompile(NULL, stmp);
+	scompile(stmp, NULL, 0);
 	sprintf(stmp, "%s(s,t)=%s;", YNAME, argv[4]);
-	scompile(NULL, stmp);
+	scompile(stmp, NULL, 0);
 	sprintf(stmp, "%s(s,t)=%s;", ZNAME, argv[5]);
-	scompile(NULL, stmp);
+	scompile(stmp, NULL, 0);
 	m = atoi(argv[6]);
 	n = atoi(argv[7]);
 	if (m <= 0 || n <= 0)

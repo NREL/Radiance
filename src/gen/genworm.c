@@ -53,20 +53,20 @@ char  *argv[];
 
 	for (i = 8; i < argc; i++)
 		if (!strcmp(argv[i], "-e"))
-			scompile(NULL, argv[++i]);
+			scompile(argv[++i], NULL, 0);
 		else if (!strcmp(argv[i], "-f"))
 			fcompile(argv[++i]);
 		else
 			goto userror;
 
 	sprintf(stmp, "%s(t)=%s;", XNAME, argv[3]);
-	scompile(NULL, stmp);
+	scompile(stmp, NULL, 0);
 	sprintf(stmp, "%s(t)=%s;", YNAME, argv[4]);
-	scompile(NULL, stmp);
+	scompile(stmp, NULL, 0);
 	sprintf(stmp, "%s(t)=%s;", ZNAME, argv[5]);
-	scompile(NULL, stmp);
+	scompile(stmp, NULL, 0);
 	sprintf(stmp, "%s(t)=%s;", RNAME, argv[6]);
-	scompile(NULL, stmp);
+	scompile(stmp, NULL, 0);
 	nseg = atoi(argv[7]);
 	if (nseg <= 0)
 		goto userror;

@@ -82,7 +82,7 @@ char	*argv[];
 				fcompile(argv[++a]);
 				break;
 			case 'e':
-				scompile(NULL, argv[++a]);
+				scompile(argv[++a], NULL, 0);
 				break;
  			default:
 				goto usage;
