@@ -18,10 +18,6 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #define MAXVOXEL	16	/* maximum number of active voxels */
 
-extern GCOORD	*getviewcells();
-
-static VIEW	dvw;		/* current view corresponding to beam list */
-
 typedef struct {
 	int	hd;		/* holodeck section number (-1 if inactive) */
 	int	i[3];		/* voxel index (may be outside section) */
@@ -32,9 +28,10 @@ static VOXL voxel[MAXVOXEL] = {{-1}};	/* current voxel list */
 #define CBEAMBLK	1024	/* cbeam allocation block size */
 
 static struct beamcomp {
-	unsigned short	wants;	/* flags telling which voxels want us */
-	unsigned short	hd;	/* holodeck section number */
-	int	bi;		/* beam index */
+	unsigned int2	wants;	/* flags telling which voxels want us */
+	unsigned int2	hd;	/* holodeck section number */
+	int4	bi;		/* beam index */
+	int4	nr;		/* number of samples desired */
 } *cbeam = NULL;	/* current beam list */
 
 static int	ncbeams = 0;	/* number of sorted beams in cbeam */
@@ -45,6 +42,8 @@ struct cellact {
 	short	vi;		/* voxel index */
 	short	add;		/* zero means delete */
 	short	rev;		/* reverse ray direction? */
+	VIEW	*vp;		/* view for image */
+	short	hr, vr;		/* image resolution */
 };		/* action for cell */
 
 struct beamact {
@@ -110,7 +109,7 @@ int	hd, bi;
 
 	if (ncbeams <= 0)
 		return(-1);
-	cb.wants = 0; cb.hd = hd; cb.bi = bi;
+	cb.wants = 0; cb.hd = hd; cb.bi = bi; cb.nr = 0;
 	p = (struct beamcomp *)bsearch((char *)&cb, (char *)cbeam, ncbeams,
 			sizeof(struct beamcomp), cbeamcmp);
 	if (p == NULL)
@@ -138,7 +137,7 @@ int	bi;
 	if (bi < 1 | bi > nbeams(hdlist[hd]))
 		error(INTERNAL, "illegal beam index in getcbeam");
 	n = newcbeam();		/* allocate and assign */
-	cbeam[n].wants = 0; cbeam[n].hd = hd; cbeam[n].bi = bi;
+	cbeam[n].wants = cbeam[n].nr = 0; cbeam[n].hd = hd; cbeam[n].bi = bi;
 	return(n);
 }
 
@@ -163,12 +162,10 @@ int	adopt;
 }
 
 
-cbeamop(op, bl, n, v, hr, vr)	/* update beams on server list */
+cbeamop(op, bl, n)		/* update beams on server list */
 int	op;
 register struct beamcomp	*bl;
 int	n;
-VIEW	*v;
-int	hr, vr;
 {
 	register PACKHEAD	*pa;
 	register int	i;
@@ -177,12 +174,11 @@ int	hr, vr;
 		return;
 	pa = (PACKHEAD *)malloc(n*sizeof(PACKHEAD));
 	if (pa == NULL)
-		error(SYSTEM, "out of memory in cbeamadd");
+		error(SYSTEM, "out of memory in cbeamop");
 	for (i = 0; i < n; i++) {
 		pa[i].hd = bl[i].hd;
 		pa[i].bi = bl[i].bi;
-		pa[i].nr = v==NULL ? 0 :
-				npixels(v, hr, vr, hdlist[bl[i].hd], bl[i].bi);
+		pa[i].nr = bl[i].nr;
 		pa[i].nc = 0;
 	}
 	serv_request(op, n*sizeof(PACKHEAD), (char *)pa);
@@ -190,58 +186,17 @@ int	hr, vr;
 }
 
 
-int
-set_voxels(vl, n)	/* set new voxel array */
-VOXL	vl[MAXVOXEL];
-int	n;
-{
-	short	wmap[256];
-	int	vmap[MAXVOXEL];
-	int	comn = 0;
-	int	no;
-	register int	i, j;
-					/* find common voxels */
-	for (j = 0; j < MAXVOXEL && voxel[j].hd >= 0; j++) {
-		vmap[j] = -1;
-		for (i = n; i--; )
-			if (!bcmp((char *)(vl+i), (char *)(voxel+j),
-					sizeof(VOXL))) {
-				vmap[j] = i;
-				comn |= 1<<i;
-				break;
-			}
-	}
-	no = comn ? j : 0;		/* compute flag mapping */
-	for (i = 256; i--; ) {
-		wmap[i] = 0;
-		for (j = no; j--; )
-			if (vmap[j] >= 0 && i & 1<<j)
-				wmap[i] |= 1<<vmap[j];
-	}
-					/* fix cbeam flags */
-	for (i = ncbeams; i--; )
-		cbeam[i].wants = wmap[cbeam[i].wants];
-					/* update our voxel list */
-	bcopy((char *)vl, (char *)voxel, n*sizeof(VOXL));
-	if (n < MAXVOXEL)
-		voxel[n].hd = -1;
-	return(comn);			/* return bit array of common voxels */
-}
-
-
-int
-get_voxels(vl, vp)	/* find voxels corresponding to view point */
-VOXL	vl[MAXVOXEL];
+add_voxels(vp)		/* add voxels corresponding to view point */
 FVECT	vp;
 {
-	int	first, n;
+	int	first, n, rfl = 0;
 	FVECT	gp;
 	double	d;
 	int	dist, bestd = 0x7fff;
 	VOXL	vox;
 	register int	i, j, k;
 					/* count voxels in list already */
-	for (first = 0; first < MAXVOXEL && vl[first].hd >= 0; first++)
+	for (first = 0; first < MAXVOXEL && voxel[first].hd >= 0; first++)
 		;
 					/* find closest voxels */
 	for (n = first, i = 0; n < MAXVOXEL && hdlist[i]; i++) {
@@ -261,19 +216,22 @@ FVECT	vp;
 			if (dist < bestd) {	/* start closer list */
 				n = first;
 				bestd = dist;
+				rfl = 0;
 			}
 						/* check if already in list */
 			for (k = first; k--; )
-				if (vl[k].hd == i &&
-						vl[k].i[0] == vox.i[0] &&
-						vl[k].i[1] == vox.i[1] &&
-						vl[k].i[2] == vox.i[2])
+				if (voxel[k].hd == i &&
+						voxel[k].i[0] == vox.i[0] &&
+						voxel[k].i[1] == vox.i[1] &&
+						voxel[k].i[2] == vox.i[2])
 					break;
-			if (k >= 0)
+			if (k >= 0) {
+				rfl |= 1<<k;
 				continue;
+			}
 			vox.hd = i;		/* add this voxel */
-			copystruct(&vl[n], &vox);
-			n++;
+			copystruct(&voxel[n], &vox);
+			rfl |= 1<<n++;
 		}
 	}
 					/* check for really stupid move */
@@ -282,8 +240,8 @@ FVECT	vp;
 		return(0);
 	}
 	if (n < MAXVOXEL)
-		vl[n].hd = -1;
-	return(n);
+		voxel[n].hd = -1;
+	return(rfl);
 }
 
 
@@ -293,7 +251,7 @@ GCOORD	*gcp;
 register struct beamact	*bp;
 {
 	GCOORD	gc[2];
-	int	bi, i;
+	int	bi, i, n;
 					/* compute beam index */
 	if (bp->ca.rev) {
 		copystruct(gc, &bp->gc);
@@ -307,12 +265,18 @@ register struct beamact	*bp;
 	if (bp->ca.add) {		/* add it in */
 		i = getcbeam(voxel[bp->ca.vi].hd, bi);
 		cbeam[i].wants |= 1<<bp->ca.vi;	/* say we want it */
+		n = npixels(bp->ca.vp, bp->ca.hr, bp->ca.vr,
+				hdlist[cbeam[i].hd], cbeam[i].bi);
+		if (n > cbeam[i].nr)
+			cbeam[i].nr = n;
 		return(i == ncbeams+xcbeams-1);	/* return 1 if totally new */
 	}
 					/* else delete it */
 	i = findcbeam(voxel[bp->ca.vi].hd, bi);
 	if (i >= 0 && cbeam[i].wants & 1<<bp->ca.vi) {
 		cbeam[i].wants &= ~(1<<bp->ca.vi);	/* we don't want it */
+		if (!cbeam[i].wants)
+			cbeam[i].nr = 0;
 		return(1);			/* indicate change */
 	}
 	return(0);
@@ -382,14 +346,13 @@ register struct cellact	*cap;
 
 
 int
-doview(cap, vp)			/* visit cells for a given view */
+doview(cap)			/* visit cells for a given view */
 struct cellact	*cap;
-VIEW	*vp;
 {
 	int	orient;
 	FVECT	org, dir[4];
 					/* compute view pyramid */
-	orient = viewpyramid(org, dir, hdlist[voxel[cap->vi].hd], vp);
+	orient = viewpyramid(org, dir, hdlist[voxel[cap->vi].hd], cap->vp);
 	if (!orient)
 		error(INTERNAL, "unusable view in doview");
 	cap->rev = orient < 0;
@@ -398,115 +361,47 @@ VIEW	*vp;
 }
 
 
-mvview(voxi, vold, vnew)	/* move view for a voxel */
-int	voxi;
-VIEW	*vold, *vnew;
+beam_init()			/* clear beam list for new view(s) */
 {
-	int	netchange = 0;
-	struct cellact	oca, nca;
-	int	ocnt, ncnt;
-	int	nmatch = 0;
-	GCOORD	*ogcl, *ngcl;
-	register int	c;
-	register GCOORD	*ogcp, *ngcp;
-				/* get old and new cell lists */
-	ogcp = ogcl = getviewcells(&ocnt, hdlist[voxel[voxi].hd], vold);
-	ngcp = ngcl = getviewcells(&ncnt, hdlist[voxel[voxi].hd], vnew);
-				/* set up actions */
-	oca.vi = nca.vi = voxi;
-	oca.add = 0; nca.add = 1;
-	if ((oca.rev = ocnt < 0))
-		ocnt = -ocnt;
-	if ((nca.rev = ncnt < 0))
-		ncnt = -ncnt;
-	if (oca.rev == nca.rev) {	/* count matches */
-		int	oc = ocnt, nc = ncnt;
-		while (oc > 0 & nc > 0) {
-			c = cellcmp(ogcp, ngcp);
-			if (c >= 0) { ngcp++; nc--; }
-			if (c <= 0) { ogcp++; oc--; }
-			nmatch += c==0;
-		}
-		ogcp = ogcl; ngcp = ngcl;
-	}
-	if (nmatch < ocnt>>1) {		/* faster to just delete old cells? */
-		for (c = ncbeams; c--; )
-			if (cbeam[c].wants & 1<<voxi) {
-				cbeam[c].wants &= ~(1<<voxi);
-				netchange--;
-			}
-		free((char *)ogcl);
-		ogcl = NULL; ocnt = 0;
-	}
-				/* add and delete cells in order */
-	while (ocnt > 0 & ncnt > 0)
-		if ((c = cellcmp(ogcp, ngcp)) > 0) {	/* new cell */
-			netchange += docell(ngcp++, &nca);
-			ncnt--;
-		} else if (c < 0) {			/* old cell */
-			netchange -= docell(ogcp++, &oca);
-			ocnt--;
-		} else {				/* same cell */
-			ogcp++; ocnt--;
-			ngcp++; ncnt--;
-		}
-				/* take care of list tails */
-	for ( ; ncnt > 0; ncnt--)
-		netchange += docell(ngcp++, &nca);
-	for ( ; ocnt > 0; ocnt--)
-		netchange -= docell(ogcp++, &oca);
-				/* clean up */
-	if (ogcl != NULL) free((char *)ogcl);
-	if (ngcl != NULL) free((char *)ngcl);
-	return(netchange);
+	register int	i;
+					/* clear desire flags */
+	for (i = ncbeams+xcbeams; i--; )
+		cbeam[i].wants = cbeam[i].nr = 0;
+	voxel[0].hd = -1;		/* clear voxel list */
+}
+
+
+beam_view(vn, hr, vr)		/* add beam view (if advisable) */
+VIEW	*vn;
+int	hr, vr;
+{
+	struct cellact	ca;
+	int	vfl;
+					/* sort our list */
+	cbeamsort(1);
+					/* add new voxels */
+	vfl = add_voxels(vn->vp);
+	if (!vfl)
+		return(0);
+	ca.vp = vn; ca.hr = hr; ca.vr = vr;
+	ca.add = 1;			/* update our beam list */
+	for (ca.vi = 0; vfl; vfl >>= 1, ca.vi++)
+		if (vfl & 1)
+			doview(&ca);
+	return(1);
 }
 
 
 int
-beam_sync()		/* synchronize beams on server */
+beam_sync(all)			/* update beam list on server */
+int	all;
 {
-	cbeamop(DR_NEWSET, cbeam, ncbeams, &odev.v, odev.hres, odev.vres);
-	return(ncbeams);
-}
-
-
-beam_view(vn)			/* change beam view (if advisable) */
-VIEW	*vn;
-{
-	struct cellact	ca;
-	VOXL	vlnew[MAXVOXEL];
-	int	n, comn;
-
-	if (vn == NULL || !vn->type) {	/* clear our beam list */
-		set_voxels(vlnew, 0);
-		cbeamop(DR_DELSET, cbeam, ncbeams, NULL, 0, 0);
-		ncbeams = 0;
-		dvw.type = 0;
-		return(1);
-	}
-					/* find our new voxels */
-	n = get_voxels(vlnew, vn->vp);
-	if (dvw.type && !n) {
-		copystruct(vn, &dvw);		/* cancel move */
-		return(0);
-	}
-					/* set the new voxels */
-	comn = set_voxels(vlnew, n);
-	if (!dvw.type)
-		comn = 0;
-	ca.add = 1;			/* update our beam list */
-	for (ca.vi = n; ca.vi--; )
-		if (comn & 1<<ca.vi)	/* change which cells we see */
-			mvview(ca.vi, &dvw, vn);
-		else			/* else add all new cells */
-			doview(&ca, vn);
-					/* inform server of new beams */
-	cbeamop(DR_ADDSET, cbeam+ncbeams, xcbeams, vn, odev.hres, odev.vres);
 					/* sort list to put orphans at end */
 	cbeamsort(0);
-					/* tell server to delete orphans */
-	cbeamop(DR_DELSET, cbeam+ncbeams, xcbeams, NULL, 0, 0);
+	if (all)
+		cbeamop(DR_NEWSET, cbeam, ncbeams);
+	else
+		cbeamop(DR_ADJSET, cbeam, ncbeams+xcbeams);
 	xcbeams = 0;			/* truncate our list */
-	copystruct(&dvw, vn);		/* record new view */
-	return(1);
+	return(ncbeams);
 }
