@@ -7,8 +7,8 @@ static char SCCSid[] = "$SunId$ LBL";
 /*
  * Compute Glare Index given by program name:
  *
- *	gnuth_dgr -	Gnuth discomfort glare rating
- *	gnuth_vcp -	Gnuth visual comfort probability
+ *	guth_dgr -	Guth discomfort glare rating
+ *	guth_vcp -	Guth visual comfort probability
  *
  *		12 April 1991	Greg Ward	EPFL
  */
@@ -21,15 +21,15 @@ extern double	erfc();
 double	posindex();
 int	headline();
 
-double	direct(), gnuth_dgr(), gnuth_vcp();
+double	direct(), guth_dgr(), guth_vcp();
 
 struct named_func {
 	char	*name;
 	double	(*func)();
 } all_funcs[] = {
 	{"direct", direct},
-	{"gnuth_dgr", gnuth_dgr},
-	{"gnuth_vcp", gnuth_vcp},
+	{"guth_dgr", guth_dgr},
+	{"guth_vcp", guth_vcp},
 	{NULL}
 };
 
@@ -155,6 +155,7 @@ read_input()			/* read glare sources from stdin */
 					&gs->dir[0], &gs->dir[1], &gs->dir[2],
 					&gs->dom, &gs->lum) != 5)
 				goto readerr;
+			normalize(gs->dir);
 			gs->next = all_srcs;
 			all_srcs = gs;
 			break;
@@ -247,7 +248,7 @@ FVECT	sd, vd, vu;
 
 
 double
-gnuth_dgr(gd)		/* compute Gnuth discomfort glare rating */
+guth_dgr(gd)		/* compute Guth discomfort glare rating */
 struct glare_dir	*gd;
 {
 #define q(w)	(20.4*w+1.52*pow(w,.2)-.075)
@@ -284,8 +285,8 @@ extern double	erf(), erfc();
 
 
 double
-gnuth_vcp(gd)		/* compute Gnuth visual comfort probability */
+guth_vcp(gd)		/* compute Guth visual comfort probability */
 struct glare_dir	*gd;
 {
-	return(100.*norm_integral(-6.374+1.3227*log(gnuth_dgr(gd))));
+	return(100.*norm_integral(-6.374+1.3227*log(guth_dgr(gd))));
 }
