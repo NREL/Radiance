@@ -43,6 +43,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  ourroot	RootWindow(thedisplay,ourscreen)
 #define  ourgc		DefaultGC(thedisplay,ourscreen)
 
+#define  redraw(x,y,w,h) patch_raster(wind,(x)-xoff,(y)-yoff,x,y,w,h,ourras)
+
 double  gamcor = 2.2;			/* gamma correction */
 
 int  dither = 1;			/* dither colors? */
@@ -51,7 +53,7 @@ int  fast = 0;				/* keep picture in Pixmap? */
 Window  wind = 0;			/* our output window */
 Font  fontid;				/* our font */
 
-long  maxcolors = 0;			/* maximum colors */
+int  maxcolors = 0;			/* maximum colors */
 int  greyscale = 0;			/* in grey */
 
 int  scale = 0;				/* scalefactor; power of two */
@@ -175,12 +177,12 @@ char  *s;
 	static char  *altname[] = {"rview","rpict","pinterp",VIEWSTR,NULL};
 	register char  **an;
 
-	if (!strncmp(s, "EXPOSURE=", 9))
-		exposure *= atof(s+9);
+	if (isexpos(s))
+		exposure *= exposval(s);
 	else
 		for (an = altname; *an != NULL; an++)
 			if (!strncmp(*an, s, strlen(*an))) {
-				if (sscanview(&ourview, s+strlen(*an)) == 0)
+				if (sscanview(&ourview, s+strlen(*an)) > 0)
 					gotview++;
 				return;
 			}
@@ -206,7 +208,8 @@ init()			/* get data and open window */
 	if (wind == 0)
 		quiterr("can't create window");
 	if (maxcolors == 0) {		/* get number of available colors */
-		maxcolors = 1<<DisplayPlanes(thedisplay,ourscreen);
+		i = DisplayPlanes(thedisplay,ourscreen);
+		maxcolors = i > 8 ? 256 : 1<<i;
 		if (maxcolors > 4) maxcolors -= 2;
 	}
 	fontid = XLoadFont(thedisplay, FONTNAME);
@@ -233,9 +236,9 @@ init()			/* get data and open window */
 	}
 				/* store image */
 	getras();
-	XSelectInput(thedisplay, wind, ButtonPressMask|ButtonReleaseMask|
-			StructureNotifyMask|ButtonMotionMask|
-			KeyPressMask|ExposureMask);
+	XSelectInput(thedisplay, wind, ButtonPressMask|ButtonReleaseMask
+			|ButtonMotionMask|StructureNotifyMask
+			|KeyPressMask|ExposureMask);
 	XMapWindow(thedisplay, wind);
 	return;
 memerr:
@@ -359,14 +362,6 @@ getevent()				/* process the next event */
 }
 
 
-redraw(x, y, w, h)			/* redraw section of window */
-int  x, y;
-int  w, h;
-{
-	patch_raster(wind,x-xoff,y-yoff,x,y,w,h,ourras);
-}
-
-
 docom(ekey)					/* execute command */
 XKeyPressedEvent  *ekey;
 {
@@ -419,7 +414,8 @@ XKeyPressedEvent  *ekey;
 		cvx.red = random() & 65535;
 		cvx.green = random() & 65535;
 		cvx.blue = random() & 65535;
-		XStoreColors(thedisplay, ourras->cmap, &cvx, 1);
+		cvx.flags = DoRed|DoGreen|DoBlue;
+		XStoreColor(thedisplay, ourras->cmap, &cvx);
 		return(0);
 	case 'p':				/* position */
 		sprintf(buf, "(%d,%d)", ekey->x-xoff, ymax-1-ekey->y+yoff);
@@ -467,23 +463,25 @@ XKeyPressedEvent  *ekey;
 		redraw(box.xmin, box.ymin, box.xsiz, box.ysiz);
 		return(0);
 	default:
-		XBell(0);
+		XBell(thedisplay, 0);
 		return(-1);
 	}
 }
 
 
-moveimage(ep)				/* shift the image */
-XButtonPressedEvent  *ep;
+moveimage(ebut)				/* shift the image */
+XButtonPressedEvent  *ebut;
 {
-	XButtonPressedEvent  eb;
+	union {
+		XEvent	u;
+		XButtonReleasedEvent	b;
+	} e;
 
-	XMaskEvent(thedisplay, ButtonReleaseMask, &eb);
-	xoff += eb.x - ep->x;
-	yoff += eb.y - ep->y;
+	XMaskEvent(thedisplay, ButtonReleaseMask, &e.u);
+	xoff += e.b.x - ebut->x;
+	yoff += e.b.y - ebut->y;
 	XClearWindow(thedisplay, wind);
 	redraw(0, 0, width, height);
-	return(0);
 }
 
 
@@ -491,16 +489,15 @@ getbox(ebut)				/* get new box */
 XButtonPressedEvent  *ebut;
 {
 	union {
-		XEvent  e;
+		XEvent  u;
 		XButtonReleasedEvent  b;
 		XPointerMovedEvent  m;
 	}  e;
 
-	XMaskEvent(thedisplay, ButtonReleaseMask|ButtonMotionMask, &e.e);
-	while (e.e.type == ButtonMotionMask) {
+	XMaskEvent(thedisplay, ButtonReleaseMask|ButtonMotionMask, &e.u);
+	while (e.u.type == MotionNotify) {
 		revbox(ebut->x, ebut->y, box.xmin = e.m.x, box.ymin = e.m.y);
-		XMaskEvent(thedisplay, ButtonReleaseMask|ButtonMotionMask, 
-				&e.e);
+		XMaskEvent(thedisplay,ButtonReleaseMask|ButtonMotionMask,&e.u);
 		revbox(ebut->x, ebut->y, box.xmin, box.ymin);
 	}
 	box.xmin = e.b.x<0 ? 0 : (e.b.x>=width ? width-1 : e.b.x);
@@ -527,7 +524,6 @@ int  x0, y0, x1, y1;
 
 	if (mygc == 0) {
 		mygc = XCreateGC(thedisplay, wind, 0, 0);
-		XSetPlaneMask(thedisplay, mygc, ~0L);
 		XSetFunction(thedisplay, mygc, GXinvert);
 	}
 	XDrawLine(thedisplay, wind, mygc, x0, y0, x1, y0);

@@ -28,13 +28,5 @@ extern Pixmap	make_rpixmap();
 
 extern XRASTER	*make_raster();
 
-#define put_raster(d,xdst,ydst,xr) \
-		patch_raster(d,0,0,xdst,ydst, \
+#define put_raster(d,xdst,ydst,xr) patch_raster(d,0,0,xdst,ydst, \
 				(xr)->image->width,(xr)->image->height,xr)
-
-#define patch_raster(d,xsrc,ysrc,xdst,ydst,width,height,xr) \
-		(((xr)->pm == 0) \
-		? XPutImage((xr)->disp,d,(xr)->gc,(xr)->image,xsrc,ysrc, \
-				xdst,ydst,width,height) \
-		: XCopyArea((xr)->disp,(xr)->pm,d,(xr)->gc,xsrc,ysrc, \
-				width,height,xdst,ydst))

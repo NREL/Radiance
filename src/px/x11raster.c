@@ -48,7 +48,7 @@ int	bm_pad;
 			ZPixmap,0,data,width,height,bm_pad,0);
 	xr->gc = XCreateGC(disp, RootWindow(disp,scrn), 0, 0);
 	XSetState(disp, xr->gc, BlackPixel(disp,scrn), WhitePixel(disp,scrn),
-			GXcopy, ~0L);
+			GXcopy, AllPlanes);
 	return(xr);
 }
 
@@ -157,6 +157,38 @@ register XRASTER	*xr;
 		return(0);
 	put_raster(pm, 0, 0, xr);
 	return(xr->pm = pm);
+}
+
+
+patch_raster(d, xsrc, ysrc, xdst, ydst, width, height, xr)	/* redraw */
+Drawable	d;
+int	xsrc, ysrc, xdst, ydst;
+int	width, height;
+register XRASTER	*xr;
+{
+	if (xsrc >= xr->image->width || ysrc >= xr->image->height)
+		return;
+	if (xsrc < 0) {
+		xdst -= xsrc; width += xsrc;
+		xsrc = 0;
+	}
+	if (ysrc < 0) {
+		ydst -= ysrc; height += ysrc;
+		ysrc = 0;
+	}
+	if (width <= 0 || height <= 0)
+		return;
+	if (xsrc + width > xr->image->width)
+		width = xr->image->width - xsrc;
+	if (ysrc + height > xr->image->height)
+		height = xr->image->height - ysrc;
+
+	if (xr->pm == 0)
+		XPutImage(xr->disp, d, xr->gc, xr->image, xsrc, ysrc,
+				xdst, ydst, width, height);
+	else
+		XCopyArea(xr->disp, xr->pm, d, xr->gc, xsrc, ysrc,
+				width, height, xdst, ydst);
 }
 
 
