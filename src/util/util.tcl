@@ -29,3 +29,16 @@ proc cardval {var cvl} {	# set variable to one of a set of values
 	}
 	return {} ;		# this would seem to be an error
 }
+
+proc writevars {f vl} {		# write variables to a file
+	foreach v $vl {
+		upvar $v myv
+		if [catch {set il [array names myv]}] {
+			puts $f "set $v [list $myv]"
+		} else {
+			foreach i $il {
+				puts $f "set ${v}($i) [list $myv($i)]"
+			}
+		}
+	}
+}
