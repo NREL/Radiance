@@ -60,10 +60,11 @@ typedef struct {
 				/* user commands */
 #define	DC_SETVIEW	0		/* set the view */
 #define	DC_GETVIEW	1		/* print the current view */
-#define	DC_PAUSE	2		/* pause the current calculation */
-#define	DC_RESUME	3		/* resume the calculation */
-#define	DC_QUIT		4		/* quit the program */
+#define	DC_LASTVIEW	2		/* restore previous view */
+#define	DC_PAUSE	3		/* pause the current calculation */
+#define	DC_RESUME	4		/* resume the calculation */
+#define	DC_QUIT		5		/* quit the program */
 
-#define	DC_NCMDS	5		/* number of commands */
+#define	DC_NCMDS	6		/* number of commands */
 
-#define	DC_INIT		{"VIEW=","where","pause","resume","quit"}
+#define	DC_INIT		{"VIEW=","where","last","pause","resume","quit"}
