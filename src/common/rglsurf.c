@@ -81,7 +81,7 @@ register FVECT	v[];	/* vertex list */
 
 
 static
-glu_error(en)			/* report a tessellation error as a warning */
+glu_error(en)			/* report an error as a warning */
 GLenum	en;
 {
 	sprintf(errmsg, "GLU error %s: %s", glu_rout, gluErrorString(en));
@@ -202,7 +202,6 @@ register OBJREC	*o;
 			(GLdouble)o->oargs.farg[2]);
 	gluSphere(gluqo, (GLdouble)o->oargs.farg[3], NSLICES, NSTACKS);
 	glPopMatrix();
-	rgl_checkerr("creating sphere");
 }
 
 
@@ -263,7 +262,6 @@ register OBJREC *o;
 	gluCylinder(gluqo, o->oargs.farg[6], o->oargs.farg[iscyl ? 6 : 7],
 			h, NSLICES, 1);
 	glPopMatrix();
-	rgl_checkerr("creating cone");
 }
 
 
@@ -312,5 +310,4 @@ register OBJREC	*o;
 		glRotated(d, (GLdouble)x1, (GLdouble)y1, 0.);
 	gluDisk(gluqo, o->oargs.farg[6], o->oargs.farg[7], NSLICES, 1);
 	glPopMatrix();
-	rgl_checkerr("creating ring");
 }
