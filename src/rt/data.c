@@ -125,6 +125,17 @@ scanerr:
 }
 
 
+static double  inpaspect;		/* aspect ratio of input picture */
+
+static
+headaspect(s)				/* check string for aspect ratio */
+char  *s;
+{
+	if (isaspect(s))
+		inpaspect *= aspectval(s);
+}
+
+
 DATARRAY *
 getpict(pname)				/* get picture pname */
 char  *pname;
@@ -158,7 +169,8 @@ char  *pname;
 		error(SYSTEM, errmsg);
 	}
 						/* get dimensions */
-	getheader(fp, NULL);
+	inpaspect = 1.0;
+	getheader(fp, headaspect);
 	if (fgetresolu(&width, &height, fp) != (YMAJOR|YDECR))
 		goto readerr;
 	for (i = 0; i < 3; i++) {
@@ -167,11 +179,11 @@ char  *pname;
 		pp[i].dim[1].ne = height;
 		pp[i].dim[0].org =
 		pp[i].dim[1].org = 0.0;
-		if (width <= height) {
+		if (width <= height*inpaspect) {
 			pp[i].dim[0].siz = 1.0;
-			pp[i].dim[1].siz = (double)height/width;
+			pp[i].dim[1].siz = inpaspect*(double)height/width;
 		} else {
-			pp[i].dim[0].siz = (double)width/height;
+			pp[i].dim[0].siz = (double)width/height/inpaspect;
 			pp[i].dim[1].siz = 1.0;
 		}
 		pp[i].arr = (DATATYPE *)malloc(width*height*sizeof(DATATYPE));
