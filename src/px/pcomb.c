@@ -124,10 +124,13 @@ char	*argv[];
 				goto usage;
 			}
 		else {
-			input[nfiles].name = argv[a];
-			input[nfiles].fp = argv[a][0]=='!' ?
-					popen(argv[a]+1, "r") :
-					fopen(argv[a], "r");
+			if (argv[a][0] == '!') {
+				input[nfiles].name = "<Command>";
+				input[nfiles].fp = popen(argv[a]+1, "r");
+			} else {
+				input[nfiles].name = argv[a];
+				input[nfiles].fp = fopen(argv[a], "r");
+			}
 			if (input[nfiles].fp == NULL) {
 				perror(argv[a]);
 				quit(1);
