@@ -111,8 +111,8 @@ newtess()			/* allocate GLU tessellation object */
 {
 	if ((gluto = gluNewTess()) == NULL)
 		error(INTERNAL, "gluNewTess failed");
-	gluTessCallback(gluto, GLU_TESS_BEGIN, (_GLUfuncptr)glBegin);
-	gluTessCallback(gluto, GLU_TESS_VERTEX, (_GLUfuncptr)glVertex3dv);
+	gluTessCallback(gluto, GLU_TESS_BEGIN, glBegin);
+	gluTessCallback(gluto, GLU_TESS_VERTEX, glVertex3dv);
 	gluTessCallback(gluto, GLU_TESS_END, glEnd);
 	gluTessCallback(gluto, GLU_TESS_COMBINE, myCombine);
 	gluTessCallback(gluto, GLU_TESS_ERROR, glu_error);
