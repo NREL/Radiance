@@ -17,6 +17,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *  formatval(r,s)	copy the format value in s to r
  *  fputformat(s,fp)	write "FORMAT=%s" to fp
  *  getheader(fp,f,p)	read header from fp, calling f(s,p) on each line
+ *  copymatch(pat, str)	copy str into pat if glob match
  *  checkheader(i,p,o)	check header format from i against p and copy to o
  *
  *  To copy header from input to output, use getheader(fin, fputs, fout)
@@ -48,6 +49,7 @@ register FILE  *fp;
 }
 
 
+int
 headidval(r,s)			/* get header id (return true if is id) */
 register char  *r, *s;
 {
@@ -61,6 +63,7 @@ register char  *r, *s;
 }
 
 
+int
 isheadid(s)			/* check to see if line is header id */
 char  *s;
 {
@@ -92,6 +95,7 @@ register FILE  *fp;
 }
 
 
+int
 formatval(r, s)			/* get format value (return true if format) */
 register char  *r;
 register char  *s;
@@ -102,13 +106,15 @@ register char  *s;
 	while (isspace(*s)) s++;
 	if (!*s) return(0);
 	if (r == NULL) return(1);
-	while(*s) *r++ = *s++;
-	while (isspace(r[-1])) r--;
+	do
+		*r++ = *s++;
+	while(*s && !isspace(*s));
 	*r = '\0';
 	return(1);
 }
 
 
+int
 isformat(s)			/* is line a format line? */
 char  *s;
 {
@@ -126,6 +132,7 @@ FILE  *fp;
 }
 
 
+int
 getheader(fp, f, p)		/* get header from file */
 FILE  *fp;
 int  (*f)();
@@ -174,7 +181,7 @@ register struct check  *cp;
  * copies str into pat if there is a match (returning true).
  */
 
-#ifdef COPYMATCH
+int
 copymatch(pat, str)
 char	*pat, *str;
 {
@@ -212,9 +219,6 @@ char	*pat, *str;
 		strcpy(pat, str);
 	return(1);
 }
-#else
-#define copymatch(pat, s)	(!strcmp(pat, s))
-#endif
 
 
 /*
@@ -230,6 +234,7 @@ char	*pat, *str;
  * if fout is not NULL.
  */
 
+int
 checkheader(fin, fmt, fout)
 FILE  *fin;
 char  *fmt;

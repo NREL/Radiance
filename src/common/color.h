@@ -16,17 +16,26 @@
 #define  RED		0
 #define  GRN		1
 #define  BLU		2
-#define  EXP		3
+#define  CIEX		0	/* or, if input is XYZ... */
+#define  CIEY		1
+#define  CIEZ		2
+#define  EXP		3	/* exponent same for either format */
 #define  COLXS		128	/* excess used for exponent */
+#define  WHT		3	/* used for RGBPRIMS type */
 
 typedef unsigned char  BYTE;	/* 8-bit unsigned integer */
 
-typedef BYTE  COLR[4];		/* red, green, blue, exponent */
+typedef BYTE  COLR[4];		/* red, green, blue (or X,Y,Z), exponent */
+
+typedef float  COLOR[3];	/* red, green, blue (or X,Y,Z) */
+
+typedef float  RGBPRIMS[4][2];	/* (x,y) chromaticities for RGBW */
+typedef float  (*RGBPRIMP)[2];	/* pointer to RGBPRIMS array */
+
+typedef float  COLORMAT[3][3];	/* color coordinate conversion matrix */
 
 #define  copycolr(c1,c2)	(c1[0]=c2[0],c1[1]=c2[1], \
 				c1[2]=c2[2],c1[3]=c2[3])
-
-typedef float  COLOR[3];	/* red, green, blue */
 
 #define  colval(col,pri)	((col)[pri])
 
@@ -60,6 +69,9 @@ typedef float  COLOR[3];	/* red, green, blue */
 #define  CIE_y_w		0.3333
 #endif
 
+#define  STDPRIMS	{CIE_x_r,CIE_y_r,CIE_x_g,CIE_y_g, \
+				CIE_x_b,CIE_y_b,CIE_x_w,CIE_y_w}
+
 #define CIE_D		(	CIE_x_r*(CIE_y_g - CIE_y_b) + \
 				CIE_x_g*(CIE_y_b - CIE_y_r) + \
 				CIE_x_b*(CIE_y_r - CIE_y_g)	)
@@ -82,6 +94,8 @@ typedef float  COLOR[3];	/* red, green, blue */
 
 /* As of 9-94, CIE_rf=.265074126, CIE_gf=.670114631 and CIE_bf=.064811243 */
 
+/***** The following definitions are valid for RGB colors only... *****/
+
 #define  bright(col)	(CIE_rf*(col)[RED]+CIE_gf*(col)[GRN]+CIE_bf*(col)[BLU])
 #define  normbright(c)	( ( (long)(CIE_rf*256.+.5)*(c)[RED] + \
 			    (long)(CIE_gf*256.+.5)*(c)[GRN] + \
@@ -98,6 +112,8 @@ typedef float  COLOR[3];	/* red, green, blue */
 
 #define  luminance(col)		(WHTEFFICACY * bright(col))
 
+/***** ...end of stuff specific to RGB colors *****/
+
 #define  intens(col)		( (col)[0] > (col)[1] \
 				? (col)[0] > (col)[2] ? (col)[0] : (col)[2] \
 				: (col)[1] > (col)[2] ? (col)[1] : (col)[2] )
@@ -113,6 +129,9 @@ typedef float  COLOR[3];	/* red, green, blue */
 
 				/* picture format identifier */
 #define  COLRFMT		"32-bit_rle_rgbe"
+#define  CIEFMT			"32-bit_rle_xyze"
+#define  PICFMT			"32-bit_rle_???e"	/* matches either */
+#define  LPICFMT		15			/* max format id len */
 
 				/* macros for exposures */
 #define  EXPOSSTR		"EXPOSURE="
@@ -128,6 +147,24 @@ typedef float  COLOR[3];	/* red, green, blue */
 #define  aspectval(hl)		atof((hl)+LASPECTSTR)
 #define  fputaspect(pa,fp)	fprintf(fp,"%s%f\n",ASPECTSTR,pa)
 
+				/* macros for primary specifications */
+#define  PRIMARYSTR		"PRIMARIES="
+#define  LPRIMARYSTR		10
+#define  isprims(hl)		(!strncmp(hl,PRIMARYSTR,LPRIMARYSTR))
+#define  primsval(p,hl)		sscanf(hl+LPRIMARYSTR, \
+					"%f %f %f %f %f %f %f %f", \
+					&(p)[RED][CIEX],&(p)[RED][CIEY], \
+					&(p)[GRN][CIEX],&(p)[GRN][CIEY], \
+					&(p)[BLU][CIEX],&(p)[BLU][CIEY], \
+					&(p)[WHT][CIEX],&(p)[WHT][CIEY])
+#define  fputprims(p,fp)	fprintf(fp, \
+				"%s %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f\n",\
+					PRIMARYSTR, \
+					(p)[RED][CIEX],(p)[RED][CIEY], \
+					(p)[GRN][CIEX],(p)[GRN][CIEY], \
+					(p)[BLU][CIEX],(p)[BLU][CIEY], \
+					(p)[WHT][CIEX],(p)[WHT][CIEY])
+
 				/* macros for color correction */
 #define  COLCORSTR		"COLORCORR="
 #define  LCOLCORSTR		10
@@ -139,4 +176,24 @@ typedef float  COLOR[3];	/* red, green, blue */
 
 #ifdef  DCL_ATOF
 extern double  atof(), ldexp(), frexp();
+#endif
+
+/*
+ * Conversions to and from XYZ space generally don't apply WHTEFFICACY.
+ * If you need Y to be luminance (cd/m^2), this must be applied when
+ * converting from radiance (watts/sr/m^2).
+ */
+
+extern RGBPRIMS  stdprims;		/* standard primary chromaticities */
+extern COLORMAT  rgb2xyzmat;		/* RGB to XYZ conversion matrix */
+extern COLORMAT  xyz2rgbmat;		/* XYZ to RGB conversion matrix */
+
+#define  cie_rgb(rgb,xyz)	colortrans(rgb,xyz2rgbmat,xyz)
+#define  rgb_cie(xyz,rgb)	colortrans(xyz,rgb2xyzmat,rgb)
+
+#ifdef BSD
+#define  cpcolormat(md,ms)	bcopy((char *)ms,(char *)md,sizeof(COLORMAT))
+#else
+extern char  *memcpy();
+#define  cpcolormat(md,ms)	(void)memcpy((char *)md,(char *)ms,sizeof(COLORMAT))
 #endif
