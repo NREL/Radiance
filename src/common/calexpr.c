@@ -753,14 +753,11 @@ register EPNODE  *ep;
 
     if (ep->type != VAR)
 	return(0);
-    dp = ep->v.ln->def;
-    if (dp != NULL && dp->type != ':')
-	return(0);
-    if ((dp == NULL || dp->v.kid->type != FUNC)
-	    && ((lp = liblookup(ep->v.ln->name)) == NULL
-		    || lp->atyp != ':'))
-	return(0);
-    return(1);
+    if ((dp = ep->v.ln->def) != NULL && dp->v.kid->type == FUNC)
+	return(dp->type == ':');
+    if ((lp = liblookup(ep->v.ln->name)) != NULL)
+	return(lp->atyp == ':');
+    return(0);
 }
 #endif
 #endif
