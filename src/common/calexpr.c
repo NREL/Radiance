@@ -349,7 +349,7 @@ char  *err;
     register int  i;
 
     eputs(linbuf);
-    if (linbuf[0] == '\0' || linbuf[strlen(linbuf)-1] != '\n')
+    if (linbuf[strlen(linbuf)-1] != '\n')
 	eputs("\n");
     for (i = 0; i < linepos-1; i++)
 	eputs(linbuf[i] == '\t' ? "\t" : " ");
