@@ -99,65 +99,65 @@ mod(n,d) : n - floor(n/d)*d;
 tri(n,d) : abs( d - mod(n-d,2*d) );
 linterp(t,p0,p1) : (1-t)*p0 + t*p1;
 
-noop(v) = v;
-clip(v) = bound(0,v,1);
-noneg(v) = if(v,v,0);
-red(r,g,b) = if(r,r,0);
-green(r,g,b) = if(g,g,0);
-blue(r,g,b) = if(b,b,0);
-grey(r,g,b) = noneg(.265074126*r + .670114631*g + .064811243*b);
-clip_r(r,g,b) = bound(0,r,1);
-clip_g(r,g,b) = bound(0,g,1);
-clip_b(r,g,b) = bound(0,b,1);
-clipgrey(r,g,b) = min(grey(r,g,b),1);
+noop(v) : v;
+clip(v) : bound(0,v,1);
+noneg(v) : if(v,v,0);
+red(r,g,b) : if(r,r,0);
+green(r,g,b) : if(g,g,0);
+blue(r,g,b) : if(b,b,0);
+grey(r,g,b) : noneg(.265074126*r + .670114631*g + .064811243*b);
+clip_r(r,g,b) : bound(0,r,1);
+clip_g(r,g,b) : bound(0,g,1);
+clip_b(r,g,b) : bound(0,b,1);
+clipgrey(r,g,b) : min(grey(r,g,b),1);
 
 dot(v1,v2) : v1(1)*v2(1) + v1(2)*v2(2) + v1(3)*v2(3);
 cross(i,v1,v2) : select(i,	v1(2)*v2(3) - v1(3)*v2(2),
 				v1(3)*v2(1) - v1(1)*v2(3),
 				v1(1)*v2(2) - v1(2)*v2(1));
 
-fade(near_val,far_val,dist) = far_val +
+fade(near_val,far_val,dist) : far_val +
 		if (16-dist, (near_val-far_val)/(1+dist*dist), 0);
 
-bezier(p1, p2, p3, p4, t) = 	p1 * (1+t*(-3+t*(3-t))) +
+bezier(p1, p2, p3, p4, t) : 	p1 * (1+t*(-3+t*(3-t))) +
 				p2 * 3*t*(1+t*(-2+t)) +
 				p3 * 3*t*t*(1-t) +
 				p4 * t*t*t ;
 
-bspline(pp, p0, p1, pn, t) =	pp * (1/6+t*(-.5+t*(.5-1/6*t))) +
+bspline(pp, p0, p1, pn, t) :	pp * (1/6+t*(-.5+t*(.5-1/6*t))) +
 				p0 * (2/3+t*t*(-1+.5*t)) +
 				p1 * (1/6+t*(.5+t*(.5-.5*t))) +
 				pn * (1/6*t*t*t) ;
 
-turbulence(x,y,z,s) = if( s-1.01, 0, abs(noise3(x/s,y/s,z/s)*s) +
+turbulence(x,y,z,s) : if( s-1.01, 0, abs(noise3(x/s,y/s,z/s)*s) +
 						turbulence(x,y,z,2*s) );
-turbulencea(x,y,z,s) = if( s-1.01, 0,
+turbulencex(x,y,z,s) : if( s-1.01, 0,
 			sgn(noise3(x/s,y/s,z/s))*noise3x(x/s,y/s,z/s) +
-			turbulencea(x,y,z,2*s) );
-turbulenceb(x,y,z,s) = if( s-1.01, 0,
+			turbulencex(x,y,z,2*s) );
+turbulencey(x,y,z,s) : if( s-1.01, 0,
 			sgn(noise3(x/s,y/s,z/s))*noise3y(x/s,y/s,z/s) +
-			turbulenceb(x,y,z,2*s) );
-turbulencec(x,y,z,s) = if( s-1.01, 0,
+			turbulencey(x,y,z,2*s) );
+turbulencez(x,y,z,s) : if( s-1.01, 0,
 			sgn(noise3(x/s,y/s,z/s))*noise3z(x/s,y/s,z/s) +
-			turbulencec(x,y,z,2*s) );
+			turbulencez(x,y,z,2*s) );
 
 			{ Normal distribution from uniform range (0,1) }
 
-un2`private(t) : t - (2.515517+t*(.802853+t*.010328))/
+un2`P(t) : t - (2.515517+t*(.802853+t*.010328))/
 		(1+t*(1.432788+t*(.189269+t*.001308))) ;
-un1`private(p) : un2`private(sqrt(-2*log(p))) ;
+un1`P(p) : un2`P(sqrt(-2*log(p))) ;
 
-unif2norm(p) : if( .5-p, -un1`private(p), un1`private(1-p) ) ;
+unif2norm(p) : if( .5-p, -un1`P(p), un1`P(1-p) ) ;
 
 nrand(x) = unif2norm(rand(x));
 
 			{ Local (u,v) coordinates for planar surfaces }
-crosslen`private = Nx*Nx + Ny*Ny;
+crosslen`P = Nx*Nx + Ny*Ny;
 			{ U is distance from projected Z-axis }
-U = if( crosslen`private - FTINY,
-		(Py*Nx - Px*Ny)/crosslen`private,
+U = if( crosslen`P - FTINY,
+		(Py*Nx - Px*Ny)/crosslen`P,
 		Px);
 			{ V is defined so that N = U x V }
-V = if( crosslen`private - FTINY,
-		Pz - Nz*(Px*Nx + Py*Ny)/crosslen`private,
+V = if( crosslen`P - FTINY,
+		Pz - Nz*(Px*Nx + Py*Ny)/crosslen`P,
 		Py);
