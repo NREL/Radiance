@@ -24,7 +24,7 @@ int  ac;
 char  *av[];
 {
 	double  atof(), sin(), cos();
-	double  xfmat[4][4], m4[4][4];
+	MAT4  xfmat, m4;
 	double  xfsca, dtmp;
 	int  i, icnt;
 
@@ -139,7 +139,7 @@ int  ac;
 char  *av[];
 {
 	double  atof(), sin(), cos();
-	double  xfmat[4][4], m4[4][4];
+	MAT4  xfmat, m4;
 	double  xfsca, dtmp;
 	int  i, icnt;
 

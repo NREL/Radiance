@@ -16,7 +16,7 @@
 				/* regular transformation */
 typedef struct {
 	MAT4  xfm;				/* transform matrix */
-	double  sca;				/* scalefactor */
+	FLOAT  sca;				/* scalefactor */
 }  XF;
 				/* complemetary tranformation */
 typedef struct {
