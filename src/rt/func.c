@@ -39,7 +39,7 @@ XF  *bx;
 	static long  lastrno = -1;
 					/* check to see if already set */
 	if (m == fobj && r->rno == lastrno)
-		return;
+		return(0);
 					/* initialize if first call */
 	if (initfile != NULL) {
 		loadfunc(initfile);
@@ -67,6 +67,7 @@ XF  *bx;
 		copystruct(&funcxf, bx);
 	lastrno = r->rno;
 	eclock++;		/* notify expression evaluator */
+	return(1);
 }
 
 
@@ -96,8 +97,7 @@ RAY  *r;
 		}
 		m->os = (char *)mxf;
 	}
-	setmap(m, r, mxf);
-	return;
+	return(setmap(m, r, mxf));
 memerr:
 	error(SYSTEM, "out of memory in setfunc");
 }
