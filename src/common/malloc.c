@@ -150,9 +150,6 @@ unsigned	n;
 	register M_HEAD	*mp;
 	register int	bucket;
 	register unsigned	bsiz;
-
-	if (n == 0)
-		return(NULL);
 					/* find first bucket that fits */
 	for (bucket = FIRSTBUCKET, bsiz = 1<<FIRSTBUCKET;
 			bucket < NBUCKETS; bucket++, bsiz <<= 1)
