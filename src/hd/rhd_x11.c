@@ -96,8 +96,10 @@ dev_open(id)			/* initialize X11 driver */
 char  *id;
 {
 	extern char  *getenv();
-	char  *gv;
+	static RGBPRIMS	myprims = STDPRIMS;
+	char  *ev;
 	double	gamval = GAMMA;
+	RGBPRIMP	dpri = stdprims;
 	int  nplanes;
 	XSetWindowAttributes	ourwinattr;
 	XWMHints  ourxwmhints;
@@ -130,10 +132,17 @@ char  *id;
 		ourwhite = WhitePixel(ourdisplay,ourscreen);
 	}
 					/* set gamma and tone mapping */
-	if ((gv = XGetDefault(ourdisplay, "radiance", "gamma")) != NULL
-			|| (gv = getenv("DISPLAY_GAMMA")) != NULL)
-		gamval = atof(gv);
-	if (tmInit(mytmflags(), stdprims, gamval) == NULL)
+	if ((ev = XGetDefault(ourdisplay, "radiance", "gamma")) != NULL
+			|| (ev = getenv("DISPLAY_GAMMA")) != NULL)
+		gamval = atof(ev);
+	if ((ev = getenv("DISPLAY_PRIMARIES")) != NULL &&
+			sscanf(ev, "%f %f %f %f %f %f %f %f",
+				&myprims[RED][CIEX],&myprims[RED][CIEY],
+				&myprims[GRN][CIEX],&myprims[GRN][CIEY],
+				&myprims[BLU][CIEX],&myprims[BLU][CIEY],
+				&myprims[WHT][CIEX],&myprims[WHT][CIEY]) >= 6)
+		dpri = myprims;
+	if (tmInit(mytmflags(), dpri, gamval) == NULL)
 		error(SYSTEM, "not enough memory in dev_open");
 					/* open window */
 	ourwinattr.background_pixel = ourblack;

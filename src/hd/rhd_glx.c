@@ -94,11 +94,13 @@ dev_open(id)			/* initialize X11 driver */
 char  *id;
 {
 	extern char	*getenv();
+	static RGBPRIMS	myprims = STDPRIMS;
 	static int	atlBest[] = {GLX_RGBA, GLX_RED_SIZE,8,
 				GLX_GREEN_SIZE,8, GLX_BLUE_SIZE,8,
 				GLX_DEPTH_SIZE,15, None};
-	char	*gv;
+	char	*ev;
 	double	gamval = GAMMA;
+	RGBPRIMP	dpri = stdprims;
 	XSetWindowAttributes	ourwinattr;
 	XWMHints	ourxwmhints;
 	XSizeHints	oursizhints;
@@ -116,10 +118,17 @@ char  *id;
 					/* get a context */
 	gctx = glXCreateContext(ourdisplay, ourvinf, NULL, GL_TRUE);
 					/* set gamma and tone mapping */
-	if ((gv = XGetDefault(ourdisplay, "radiance", "gamma")) != NULL
-			|| (gv = getenv("DISPLAY_GAMMA")) != NULL)
-		gamval = atof(gv);
-	if (tmInit(mytmflags(), stdprims, gamval) == NULL)
+	if ((ev = XGetDefault(ourdisplay, "radiance", "gamma")) != NULL
+			|| (ev = getenv("DISPLAY_GAMMA")) != NULL)
+		gamval = atof(ev);
+	if ((ev = getenv("DISPLAY_PRIMARIES")) != NULL &&
+			sscanf(ev, "%f %f %f %f %f %f %f %f",
+				&myprims[RED][CIEX],&myprims[RED][CIEY],
+				&myprims[GRN][CIEX],&myprims[GRN][CIEY],
+				&myprims[BLU][CIEX],&myprims[BLU][CIEY],
+				&myprims[WHT][CIEX],&myprims[WHT][CIEY]) >= 6)
+		dpri = myprims;
+	if (tmInit(mytmflags(), dpri, gamval) == NULL)
 		error(SYSTEM, "not enough memory in dev_open");
 					/* open window */
 	ourwinattr.background_pixel = ourblack;
