@@ -379,12 +379,14 @@ char	*p;
 	register M_HEAD	*mp;
 	register int	bucket;
 
-	if (p == NULL || p == DUMMYLOC)
+	if (p == NULL | p == DUMMYLOC)
 		return(1);
 	mp = (M_HEAD *)p - 1;
 	if (mp->a.magic != MAGIC)		/* sanity check */
 		return(0);
 	bucket = mp->a.bucket;
+	if (bucket < FIRSTBUCKET | bucket >= NBUCKETS)
+		return(0);
 	mp->next = free_list[bucket];
 	free_list[bucket] = mp;
 #ifdef MSTATS
