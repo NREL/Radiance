@@ -9,12 +9,14 @@ set octree=$tmpdir/ov$$.oct
 set lights=$tmpdir/lt$$.rad
 set rif=$tmpdir/ov$$.rif
 set tmpfiles="$octree $lights $rif"
+set raddev="x11"
 set up="Z"
 set vw="XYZ"
+set rendopts=""
 set opts=""
 while ($#argv > 0)
 	switch ($argv[1])
-	case -g:
+	case -g*:
 		set usegl
 		breaksw
 	case -u:
@@ -25,13 +27,16 @@ while ($#argv > 0)
 	case -w:
 		set opts=($opts $argv[1])
 		breaksw
+	case -b*:
+		set rendopts=($rendopts -bv)
+		breaksw
 	case -v:
 		shift argv
 		set vw=$argv[1]
 		breaksw
 	case -o:
 		shift argv
-		set opts=($opts -o $argv[1])
+		set raddev="$argv[1]"
 		set radopt
 		breaksw
 	case -V:
@@ -40,14 +45,12 @@ while ($#argv > 0)
 		set radopt
 		breaksw
 	case -S:
-	case -b:
 		set opts=($opts $argv[1])
 		set glradopt
 		breaksw
 	case -*:
 		echo "Bad option: $argv[1]"
 		exit 1
-		breaksw
 	default:
 		break
 	endsw
@@ -89,12 +92,13 @@ UP= $up
 view= $vw
 OCTREE= $octree
 oconv= -f
+render= $rendopts
 _EOF_
 
 if ( $?usegl ) then
 	glrad $opts $rif
 else
-	rad -o x11 $opts $rif
+	rad -o $raddev $opts $rif
 endif
 
 quit:
