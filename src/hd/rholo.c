@@ -332,7 +332,7 @@ register HDGRID	*gp;
 	extern char	*atos();
 	register int	i;
 	int	n;
-	double	len[3], maxlen, d;
+	double	len[3], d;
 	char	buf[64];
 
 	if (!vdef(SECTION)) {
@@ -366,13 +366,15 @@ register HDGRID	*gp;
 				&gp->xv[2][0], &gp->xv[2][1], &gp->xv[2][2],
 				&gp->grid[0], &gp->grid[1], &gp->grid[2]) < 12)
 			badvalue(SECTION);
-		maxlen = 0.;
 		for (i = 0; i < 3; i++)
-			if ((len[i] = VLEN(gp->xv[i])) > maxlen)
-				maxlen = len[i];
-		if (!vdef(GRID))
-			d = 0.125*maxlen;
-		else if ((d = vflt(GRID)) <= FTINY)
+			len[i] = VLEN(gp->xv[i]);
+		if (!vdef(GRID)) {
+			d = 2/5e5*( len[0]*len[0]*(len[1]*len[1] +
+					len[2]*len[2] + 4*len[1]*len[2])
+				+ len[1]*len[1]*len[2]*(len[2] + 4*len[0])
+				+ 4*len[0]*len[1]*len[2]*len[2] );
+			d = sqrt(sqrt(d));
+		} else if ((d = vflt(GRID)) <= FTINY)
 			badvalue(GRID);
 		for (i = 0; i < 3; i++)
 			if (gp->grid[i] <= 0)
