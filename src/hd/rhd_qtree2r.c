@@ -26,13 +26,13 @@ int	l[2][2];
 	my = (y0 + y1) >> 1;
 					/* see what to do */
 	if (l[0][0] > mx)
-		quads &= ~(CHF(2)|CHF(0));
+		quads &= ~(CHF(UL)|CHF(DL));
 	else if (l[0][1] < mx)
-		quads &= ~(CHF(3)|CHF(1));
+		quads &= ~(CHF(UR)|CHF(DR));
 	if (l[1][0] > my)
-		quads &= ~(CHF(1)|CHF(0));
+		quads &= ~(CHF(DR)|CHF(DL));
 	else if (l[1][1] < my)
-		quads &= ~(CHF(3)|CHF(2));
+		quads &= ~(CHF(UR)|CHF(UL));
 	tp->flgs |= quads;		/* mark quadrants for update */
 					/* climb the branches */
 	for (i = 0; i < 4; i++)
