@@ -18,6 +18,8 @@ static char SCCSid[] = "$SunId$ LBL";
 extern char  *malloc(), *realloc();
 #endif
 
+extern char  *fgetline();
+
 
 loadvars(rfname)		/* load variables into vv from file */
 char	*rfname;
