@@ -100,6 +100,7 @@ char  *id;
 	XSizeHints	oursizhints;
 					/* set quadtree globals */
 	qtMinNodesiz = 3;
+	qtDepthEps = 0.07;
 					/* open display server */
 	ourdisplay = XOpenDisplay(NULL);
 	if (ourdisplay == NULL)
@@ -162,7 +163,7 @@ char  *id;
 	XMapWindow(ourdisplay, gwind);
 	dev_input();			/* sets size and view angles */
 					/* allocate our leaf pile */
-	if (!qtAllocLeaves(2 * DisplayWidth(ourdisplay,ourscreen) *
+	if (!qtAllocLeaves(DisplayWidth(ourdisplay,ourscreen) *
 			DisplayHeight(ourdisplay,ourscreen) /
 			(qtMinNodesiz*qtMinNodesiz)))
 		error(SYSTEM, "insufficient memory for value storage");
