@@ -265,33 +265,40 @@ char  *s;
 
 	if (getinterest(s, 0, vc, &mag) < 0)
 		return;
-	moveview(0.0, mag, vc);
+	moveview(0.0, 0.0, mag, vc);
 }
 
 
 getrotate(s)				/* rotate camera */
 char  *s;
 {
-	extern double  normalize();
+	extern double  normalize(), tan(), atan();
 	VIEW  nv;
 	FVECT  v1;
-	double  angle, elev;
+	double  angle, elev, zfact;
 	
-	elev = 0.0;
-	if (sscanf(s, "%lf %lf", &angle, &elev) < 1) {
+	elev = 0.0; zfact = 1.0;
+	if (sscanf(s, "%lf %lf %lf", &angle, &elev, &zfact) < 1) {
 		error(COMMAND, "missing angle");
 		return;
 	}
-	nv.type = ourview.type;
 	VCOPY(nv.vp, ourview.vp);
 	VCOPY(nv.vup, ourview.vup);
-	nv.horiz = ourview.horiz; nv.vert = ourview.vert;
 	nv.hresolu = ourview.hresolu; nv.vresolu = ourview.vresolu;
 	spinvector(nv.vdir, ourview.vdir, ourview.vup, angle*(PI/180.));
 	if (elev != 0.0) {
 		fcross(v1, nv.vdir, ourview.vup);
 		normalize(v1);
 		spinvector(nv.vdir, nv.vdir, v1, elev*(PI/180.));
+	}
+	if ((nv.type = ourview.type) == VT_PAR) {
+		nv.horiz = ourview.horiz / zfact;
+		nv.vert = ourview.vert / zfact;
+	} else {
+		nv.horiz = atan(tan(ourview.horiz*(PI/180./2.))/zfact) /
+				(PI/180./2.);
+		nv.vert = atan(tan(ourview.vert*(PI/180./2.))/zfact) /
+				(PI/180./2.);
 	}
 	newview(&nv);
 }
@@ -301,15 +308,16 @@ getpivot(s)				/* pivot viewpoint */
 register char  *s;
 {
 	FVECT  vc;
-	double  angle, mag;
+	double  angle, elev, mag;
 
-	if (sscanf(s, "%lf", &angle) != 1) {
+	elev = 0.0;
+	if (sscanf(s, "%lf %lf", &angle, &elev) < 1) {
 		error(COMMAND, "missing angle");
 		return;
 	}
-	if (getinterest(sskip(s), 0, vc, &mag) < 0)
+	if (getinterest(sskip(sskip(s)), 0, vc, &mag) < 0)
 		return;
-	moveview(angle, mag, vc);
+	moveview(angle, elev, mag, vc);
 }
 
 
