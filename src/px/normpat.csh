@@ -12,7 +12,7 @@ while ($#argv > 0)
 	switch ($argv[1])
 	case -r:
 		shift argv
-		set pf="$pf -x $argv[1] -y $argv[1] -p 1"
+		set pf="$pf -x $argv[1] -y $argv[1] -p 1 -r .67"
 		breaksw
 	case -f:
 		set ha="$ha -f"
