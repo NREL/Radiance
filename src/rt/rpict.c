@@ -415,6 +415,8 @@ char  *zfile, *oldfile;
 	if (sampdens != NULL)
 		free(sampdens);
 	pctdone = 100.0;
+	if (ralrm > 0)
+		report();
 	return;
 writerr:
 	error(SYSTEM, "write error in render");
