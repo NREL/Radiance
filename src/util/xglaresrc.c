@@ -79,7 +79,7 @@ char	*name;
 				progname);
 		exit(1);
 	}
-	pickcursor = XCreateFontCursor(theDisplay, XC_target);
+	pickcursor = XCreateFontCursor(theDisplay, XC_hand2);
 					/* find our window */
 	while (XGrabPointer(theDisplay, rwind, True, ButtonPressMask,
 			GrabModeAsync, GrabModeAsync, None, pickcursor,
