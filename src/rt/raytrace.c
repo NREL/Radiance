@@ -69,7 +69,11 @@ register RAY  *r;
 	extern int  (*trace)();
 
 	if (localhit(r, &thescene) || sourcehit(r))
-		rayshade(r, r->ro->omod);
+						/* check for clipped object */
+		if (r->clipset != NULL && inset(r->clipset, r->ro->omod))
+			raytrans(r);
+		else
+			rayshade(r, r->ro->omod);
 
 	if (trace != NULL)
 		(*trace)(r);		/* trace execution */
@@ -95,12 +99,6 @@ int  mod;
 {
 	static int  depth = 0;
 	register OBJREC  *m;
-					/* check for clipped surface */
-	if (r->clipset != NULL && r->rot < FHUGE &&
-			inset(r->clipset, mod)) {
-		raytrans(r);
-		return;
-	}
 					/* check for infinite loop */
 	if (depth++ >= MAXLOOP)
 		objerror(r->ro, USER, "possible modifier loop");
