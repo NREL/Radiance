@@ -71,7 +71,7 @@ register VIEW  *v;
 	default:
 		return("unknown view type");
 	}
-	if (v->type == VT_PAR || v->type == VT_PER) {
+	if (v->type != VT_ANG) {
 		v->hvec[0] *= v->hn2;
 		v->hvec[1] *= v->hn2;
 		v->hvec[2] *= v->hn2;
@@ -125,9 +125,7 @@ double  x, y;
 		normalize(direc);
 		return(0);
 	case VT_HEM:			/* hemispherical fisheye */
-		x *= v->horiz/90.0;
-		y *= v->vert/90.0;
-		z = 1.0 - x*x - y*y;
+		z = 1.0 - x*x*v->hn2 - y*y*v->vn2;
 		if (z < 0.0)
 			return(-1);
 		z = sqrt(z);
@@ -177,9 +175,7 @@ FVECT  p;
 	case VT_PAR:			/* parallel view */
 		if (zp != NULL)
 			*zp = DOT(disp,v->vdir);
-		*xp = DOT(disp,v->hvec)/v->hn2 + 0.5 - v->hoff;
-		*yp = DOT(disp,v->vvec)/v->vn2 + 0.5 - v->voff;
-		return;
+		break;
 	case VT_PER:			/* perspective view */
 		d = DOT(disp,v->vdir);
 		if (zp != NULL) {
@@ -195,9 +191,7 @@ FVECT  p;
 			disp[1] *= d;
 			disp[2] *= d;
 		}
-		*xp = DOT(disp,v->hvec)/v->hn2 + 0.5 - v->hoff;
-		*yp = DOT(disp,v->vvec)/v->vn2 + 0.5 - v->voff;
-		return;
+		break;
 	case VT_HEM:			/* hemispherical fisheye */
 		d = normalize(disp);
 		if (zp != NULL) {
@@ -206,9 +200,7 @@ FVECT  p;
 			else
 				*zp = d;
 		}
-		*xp = DOT(disp,v->hvec)*90.0/v->horiz + 0.5 - v->hoff;
-		*yp = DOT(disp,v->vvec)*90.0/v->vert + 0.5 - v->voff;
-		return;
+		break;
 	case VT_ANG:			/* angular fisheye */
 		d = normalize(disp);
 		if (zp != NULL)
@@ -228,6 +220,8 @@ FVECT  p;
 		*yp += DOT(disp,v->vvec)*d*180.0/v->vert;
 		return;
 	}
+	*xp = DOT(disp,v->hvec)/v->hn2 + 0.5 - v->hoff;
+	*yp = DOT(disp,v->vvec)/v->vn2 + 0.5 - v->voff;
 }
 
 
