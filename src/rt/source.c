@@ -152,7 +152,7 @@ register int  sn;		/* source number */
 		for (i = 0; i < 3; i++) {
 			dimlist[ndims] = i + 8831;
 			vd[i] = dstrsrc * source[sn].ss *
-		(1.0 - 2.0*urand(ilhash(dimlist,ndims+1)+samplendx));
+		(1.0 - 2.0*urand(urind(ilhash(dimlist,ndims+1),samplendx)));
 		}
 		ndims--;
 		if (source[sn].sflags & SFLAT) {	/* project offset */
