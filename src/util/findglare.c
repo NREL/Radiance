@@ -16,7 +16,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define VEQ(v1,v2)	(FEQ((v1)[0],(v2)[0])&&FEQ((v1)[1],(v2)[1]) \
 				&&FEQ((v1)[2],(v2)[2]))
 
-char	*rtargv[32] = {"rtrace", "-h", "-ov", "-fff"};
+char	*rtargv[32] = {"rtrace", "-h-", "-ov", "-fff"};
 int	rtargc = 4;
 
 VIEW	ourview = STDVIEW;		/* our view */
