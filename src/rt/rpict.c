@@ -49,8 +49,6 @@ double  pctdone = 0.0;			/* percentage done */
 
 extern long  nrays;			/* number of rays traced */
 
-static int  xres, yres;			/* output x and y resolution */
-
 #define  MAXDIV		32		/* maximum sample size */
 
 #define  pixjitter()	(.5+dstrpix*(.5-frandom()))
@@ -96,45 +94,53 @@ char  *oldfile;
 {
 	COLOR  *scanbar[MAXDIV+1];	/* scanline arrays of pixel values */
 	int  ypos;			/* current scanline */
+	int  xres, yres;		/* rendered x and y resolution */
 	COLOR  *colptr;
 	register int  i;
-
-	if (psample < 1)
+					/* set rendered resolution */
+	xres = ourview.hresolu;
+	yres = ourview.vresolu;
+					/* adjust for sampling */
+	if (psample <= 1)
 		psample = 1;
-	else if (psample > MAXDIV)
-		psample = MAXDIV;
-					/* output resolution may be smaller */
-	xres = ourview.hresolu - (ourview.hresolu % psample);
-	yres = ourview.vresolu - (ourview.vresolu % psample);
-
+	else {
+		if (psample > MAXDIV)
+			psample = MAXDIV;
+					/* rendered resolution may be larger */
+		xres += psample-1 - ((ourview.hresolu-2)%psample);
+		yres += psample-1 - ((ourview.vresolu-2)%psample);
+	}
+					/* allocate scanlines */
 	for (i = 0; i <= psample; i++) {
-		scanbar[i] = (COLOR *)malloc((xres+1)*sizeof(COLOR));
+		scanbar[i] = (COLOR *)malloc(xres*sizeof(COLOR));
 		if (scanbar[i] == NULL)
 			error(SYSTEM, "out of memory in render");
 	}
 					/* write out boundaries */
-	fputresolu(YMAJOR|YDECR, xres, yres, stdout);
+	fputresolu(YMAJOR|YDECR, ourview.hresolu, ourview.vresolu, stdout);
 
-	ypos = yres - salvage(oldfile);	/* find top line */
-	fillscanline(scanbar[0], ypos, psample);	/* top scan */
+	ypos = ourview.vresolu-1 - salvage(oldfile);	/* find top line */
+	fillscanline(scanbar[0], xres, ypos, psample);	/* top scan */
 
 	for (ypos -= psample; ypos > -psample; ypos -= psample) {
 	
-		colptr = scanbar[psample];		/* get last scanline */
+		pctdone = 100.0*(ourview.vresolu-ypos+psample)/ourview.vresolu;
+
+		colptr = scanbar[psample];		/* move base to top */
 		scanbar[psample] = scanbar[0];
 		scanbar[0] = colptr;
 
-		fillscanline(scanbar[0], ypos, psample);	/* base scan */
+		fillscanline(scanbar[0], xres, ypos, psample);	/* fill base */
 	
-		fillscanbar(scanbar, ypos, psample);
+		fillscanbar(scanbar, xres, ypos, psample);	/* fill bar */
 		
-		for (i = psample-1; i >= 0; i--)
-			if (fwritescan(scanbar[i], xres, stdout) < 0)
+		for (i = psample; (ypos>0) ? i > 0 : ypos+i >= 0; i--)
+			if (fwritescan(scanbar[i], ourview.hresolu, stdout) < 0)
 				goto writerr;
 		if (fflush(stdout) == EOF)
 			goto writerr;
-		pctdone = 100.0*(yres-ypos)/yres;
 	}
+	pctdone = 100.0;
 		
 	for (i = 0; i <= psample; i++)
 		free((char *)scanbar[i]);
@@ -144,16 +150,16 @@ writerr:
 }
 
 
-fillscanline(scanline, y, xstep)		/* fill scan line at y */
+fillscanline(scanline, xres, y, xstep)		/* fill scan line at y */
 register COLOR  *scanline;
-int  y, xstep;
+int  xres, y, xstep;
 {
 	int  b = xstep;
 	register int  i;
 	
 	pixvalue(scanline[0], 0, y);
 
-	for (i = xstep; i <= xres; i += xstep) {
+	for (i = xstep; i < xres; i += xstep) {
 	
 		pixvalue(scanline[i], i, y);
 		
@@ -162,9 +168,9 @@ int  y, xstep;
 }
 
 
-fillscanbar(scanbar, y, ysize)		/* fill interior */
+fillscanbar(scanbar, xres, y, ysize)		/* fill interior */
 register COLOR  *scanbar[];
-int  y, ysize;
+int  xres, y, ysize;
 {
 	COLOR  vline[MAXDIV+1];
 	int  b = ysize;
@@ -256,7 +262,8 @@ char  *oldfile;
 
 	if (oldfile == NULL)
 		return(0);
-	else if ((fp = fopen(oldfile, "r")) == NULL) {
+	
+	if ((fp = fopen(oldfile, "r")) == NULL) {
 		sprintf(errmsg, "cannot open recover file \"%s\"", oldfile);
 		error(WARNING, errmsg);
 		return(0);
@@ -271,20 +278,19 @@ char  *oldfile;
 		return(0);
 	}
 
-	if (x != xres || y != yres) {
+	if (x != ourview.hresolu || y != ourview.vresolu) {
 		sprintf(errmsg, "resolution mismatch in recover file \"%s\"",
 				oldfile);
 		error(USER, errmsg);
-		return(0);
 	}
 
-	scanline = (COLR *)malloc(xres*sizeof(COLR));
+	scanline = (COLR *)malloc(ourview.hresolu*sizeof(COLR));
 	if (scanline == NULL)
 		error(SYSTEM, "out of memory in salvage");
-	for (y = 0; y < yres; y++) {
-		if (freadcolrs(scanline, xres, fp) < 0)
+	for (y = 0; y < ourview.vresolu; y++) {
+		if (freadcolrs(scanline, ourview.hresolu, fp) < 0)
 			break;
-		if (fwritecolrs(scanline, xres, stdout) < 0)
+		if (fwritecolrs(scanline, ourview.hresolu, stdout) < 0)
 			goto writerr;
 	}
 	if (fflush(stdout) == EOF)
