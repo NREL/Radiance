@@ -970,13 +970,16 @@ getgrey()			/* get greyscale data */
 getmapped()			/* get color-mapped data */
 {
 	int	y;
+					/* make sure we can do it first */
+	if (fname == NULL)
+		quiterr("cannot map colors from standard input");
 					/* set gamma correction */
 	setcolrgam(gamcor);
 					/* make histogram */
 	new_histo();
 	for (y = 0; y < ymax; y++) {
 		if (getscan(y) < 0)
-			quiterr("seek error in getmapped");
+			break;
 		add2icon(y, scanline);
 		if (scale)
 			shiftcolrs(scanline, xmax, scale);
@@ -987,8 +990,7 @@ getmapped()			/* get color-mapped data */
 	if (!new_clrtab(maxcolors))
 		quiterr("cannot create color map");
 	for (y = 0; y < ymax; y++) {
-		if (getscan(y) < 0)
-			quiterr("seek error in getmapped");
+		getscan(y);
 		if (scale)
 			shiftcolrs(scanline, xmax, scale);
 		colrs_gambs(scanline, xmax);
@@ -1031,6 +1033,12 @@ double	sf;
 getscan(y)
 int  y;
 {
+	static int  trunced = -1;		/* truncated file? */
+skipit:
+	if (trunced >= 0 && y >= trunced) {
+		bzero(scanline, xmax*sizeof(COLR));
+		return(-1);
+	}
 	if (y != cury) {
 		if (scanpos == NULL || scanpos[y] == -1)
 			return(-1);
@@ -1040,9 +1048,12 @@ int  y;
 	} else if (scanpos != NULL && scanpos[y] == -1)
 		scanpos[y] = ftell(fin);
 
-	if (freadcolrs(scanline, xmax, fin) < 0)
-		quiterr("read error");
-
+	if (freadcolrs(scanline, xmax, fin) < 0) {
+		fprintf(stderr, "%s: %s: unfinished picture\n",
+				progname, fname==NULL?"<stdin>":fname);
+		trunced = y;
+		goto skipit;
+	}
 	cury++;
 	return(0);
 }
