@@ -105,12 +105,12 @@ int	block;
 			goto readerr;
 	}
 	switch (msg.type) {		/* take appropriate action */
-	case DR_BUNDLE:
+	case DR_BUNDLE:		/* new bundle to calculate */
 		if (msg.nbytes != sizeof(PACKHEAD))
 			error(INTERNAL, "bad DR_BUNDLE from display process");
 		bundle_set(BS_ADD, (PACKHEAD *)buf, 1);
 		break;
-	case DR_NEWSET:
+	case DR_NEWSET:		/* new calculation set */
 		if (msg.nbytes % sizeof(PACKHEAD))
 			error(INTERNAL, "bad DR_NEWSET from display process");
 		disp_result(DS_STARTIMM, 0, NULL);
@@ -118,7 +118,7 @@ int	block;
 		disp_result(DS_ENDIMM, 0, NULL);
 		disp_flush();
 		break;
-	case DR_ADDSET:
+	case DR_ADDSET:		/* add to calculation set */
 		if (msg.nbytes % sizeof(PACKHEAD))
 			error(INTERNAL, "bad DR_ADDSET from display process");
 		disp_result(DS_STARTIMM, 0, NULL);
@@ -126,7 +126,7 @@ int	block;
 		disp_result(DS_ENDIMM, 0, NULL);
 		disp_check(0);		/* hack -- delete usu. follows add */
 		break;
-	case DR_ADJSET:
+	case DR_ADJSET:		/* adjust calculation set members */
 		if (msg.nbytes % sizeof(PACKHEAD))
 			error(INTERNAL, "bad DR_ADJSET from display process");
 		disp_result(DS_STARTIMM, 0, NULL);
@@ -134,22 +134,22 @@ int	block;
 		disp_result(DS_ENDIMM, 0, NULL);
 		disp_flush();
 		break;
-	case DR_DELSET:
+	case DR_DELSET:		/* delete from calculation set */
 		if (msg.nbytes % sizeof(PACKHEAD))
 			error(INTERNAL, "bad DR_DELSET from display process");
 		bundle_set(BS_DEL, (PACKHEAD *)buf, msg.nbytes/sizeof(PACKHEAD));
 		break;
-	case DR_ATTEN:
+	case DR_ATTEN:		/* block for priority request */
 		if (msg.nbytes)
 			error(INTERNAL, "bad DR_ATTEN from display process");
 					/* send acknowledgement */
 		disp_result(DS_ACKNOW, 0, NULL);
 		return(disp_check(1));	/* block on following request */
-	case DR_SHUTDOWN:
+	case DR_SHUTDOWN:	/* shut down program */
 		if (msg.nbytes)
 			error(INTERNAL, "bad DR_SHUTDOWN from display process");
 		return(0);		/* zero return signals shutdown */
-	case DR_NOOP:
+	case DR_NOOP:		/* do nothing */
 		break;
 	default:
 		error(INTERNAL, "unrecognized request from display process");
