@@ -29,6 +29,7 @@ double  exposure = 1.0;			/* exposure for scene */
 
 double  dstrsrc = 0.0;			/* square source distribution */
 double  shadthresh = .1;		/* shadow threshold */
+double  shadcert = .25;			/* shadow certainty */
 
 int  maxdepth = 4;			/* maximum recursion depth */
 double  minweight = 1e-2;		/* minimum ray weight */
