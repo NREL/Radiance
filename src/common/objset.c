@@ -18,9 +18,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #ifndef  OSTSIZ
 #ifdef  BIGMEM
-#define  OSTSIZ		56437		/* object table size (a prime!) */
+#define  OSTSIZ		262139		/* object table size (a prime!) */
 #else
-#define  OSTSIZ		12329		/* object table size (a prime!) */
+#define  OSTSIZ		32749		/* object table size (a prime!) */
 #endif
 #endif
 
