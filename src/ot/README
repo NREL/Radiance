@@ -8,8 +8,9 @@ plocate.h	header for 3D vector location
 bbox.c		routines for bounding box computation
 clip.c		routine to clip 3D line segments to a box
 getbbox.c	compute bounding box for scene files
+init2otypes.c	initialize ofun[] list for bounding box checker
 initotypes.c	initialize ofun[] list for octree generator
-initotypes2.c	initialize ofun[] list for bounding box checker
+malloc.c	memory allocation routines
 o_cone.c	routines for intersecting cubes with cones
 o_face.c	routines for creating octrees for polygonal faces
 o_instance.c	routines for creating octrees for other octrees
