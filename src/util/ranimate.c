@@ -482,9 +482,9 @@ animate()			/* run animation */
 	i = sscanf(vval(RESOLUTION), "%d %d %f", &xres, &yres, &pa);
 	mult = vflt(OVERSAMP);
 	if (i == 3) {
-		sprintf(rresopt, "-x %d -y %d -pa %f", (int)(mult*xres),
+		sprintf(rresopt, "-x %d -y %d -pa %.3f", (int)(mult*xres),
 				(int)(mult*yres), pa);
-		sprintf(fresopt, "-x %d -y %d -pa %f", xres, yres, pa);
+		sprintf(fresopt, "-x %d -y %d -pa %.3f", xres, yres, pa);
 	} else if (i) {
 		if (i == 1) yres = xres;
 		sprintf(rresopt, "-x %d -y %d", (int)(mult*xres),
