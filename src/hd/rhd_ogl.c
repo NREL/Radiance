@@ -111,7 +111,7 @@ static int	isperspective;		/* perspective/ortho view */
 static int	viewsteady;		/* is view steady? */
 
 static int  resizewindow(), getevent(), getkey(), moveview(), wipeclean(),
-		xferdepth(), setglortho(),
+		xferdepth(), freedepth(), setglortho(),
 		setglpersp(), getframe(), getmove(), fixwindow(), mytmflags();
 
 static double	getdistance();
@@ -119,6 +119,8 @@ static double	getdistance();
 #ifdef STEREO
 static int  pushright(), popright();
 #endif
+
+extern int	gmPortals;	/* GL portal list id */
 
 extern time_t	time();
 
@@ -256,6 +258,9 @@ dev_close()			/* close our display and free resources */
 #ifdef DOBJ
 	dobj_cleanup();
 #endif
+	freedepth();
+	gmEndGeom();
+	gmEndPortal();
 	odDone();
 	glXMakeCurrent(ourdisplay, None, NULL);
 	glXDestroyContext(ourdisplay, gctx);
@@ -332,22 +337,27 @@ register VIEW	*nv;
 }
 
 
-dev_section(ofn)		/* add octree for geometry rendering */
-char	*ofn;
+dev_section(gfn, pfn)		/* add octree for geometry rendering */
+char	*gfn, *pfn;
 {
 	extern char	*index();
 	char	*cp;
 
-	if (ofn == NULL)
-		otEndOctree();
-	else if (access(ofn, R_OK) == 0)
-		otNewOctree(ofn);
+	if (gfn == NULL) {
+		gmEndGeom();
+		gmEndPortal();
+		return;
+	}
+	if (access(gfn, R_OK) == 0)
+		gmNewGeom(gfn);
 #ifdef DEBUG
 	else {
-		sprintf(errmsg, "cannot load octree \"%s\"", ofn);
+		sprintf(errmsg, "cannot load octree \"%s\"", gfn);
 		error(WARNING, errmsg);
 	}
 #endif
+	if (pfn != NULL)
+		gmNewPortal(pfn);
 }
 
 
@@ -419,14 +429,14 @@ dev_flush()			/* flush output as appropriate */
 	if (mapped && isperspective > 0) {
 #ifdef STEREO
 		pushright();			/* draw right eye */
-		otDrawOctrees();
+		gmDrawGeom(0);
 #ifdef DOBJ
 		dobj_render();
 #endif
 		checkglerr("rendering right eye");
 		popright();			/* draw left eye */
 #endif
-		ndrawn = otDrawOctrees();
+		ndrawn = gmDrawGeom(1);
 #ifdef DOBJ
 		ndrawn += dobj_render();
 #endif
@@ -474,6 +484,7 @@ static
 xferdepth()			/* load and clear depth buffer */
 {
 	register GLfloat	*dbp;
+	register GLubyte	*abuf;
 
 	if (depthbuffer == NULL) {
 #ifdef STEREO
@@ -495,12 +506,42 @@ xferdepth()			/* load and clear depth buffer */
 	odDepthMap(1, depthright);
 	glClear(GL_DEPTH_BUFFER_BIT);
 #endif
+				/* read back depth buffer */
 	glReadPixels(0, 0, odev.hres, odev.vres,
 			GL_DEPTH_COMPONENT, GL_FLOAT, depthbuffer);
+				/* read alpha buffer for portals */
+	if (gmPortals)
+		abuf = (GLubyte *)malloc(odev.hres*odev.vres*sizeof(GLubyte));
+	else
+		abuf = NULL;
+	if (abuf != NULL)
+		glReadPixels(0, 0, odev.hres, odev.vres,
+				GL_ALPHA, GL_UNSIGNED_BYTE, abuf);
 	for (dbp = depthbuffer + odev.hres*odev.vres; dbp-- > depthbuffer; )
-		*dbp = mapdepth(*dbp);
+		if (abuf != NULL && abuf[dbp-depthbuffer])
+			*dbp = FHUGE;
+		else
+			*dbp = mapdepth(*dbp);
 	odDepthMap(0, depthbuffer);		/* transfer depth data */
 	glClear(GL_DEPTH_BUFFER_BIT);		/* clear system buffer */
+	if (abuf != NULL)
+		free((char *)abuf);		/* free alpha buffer */
+}
+
+
+static
+freedepth()				/* free recorded depth buffer */
+{
+	if (depthbuffer == NULL)
+		return;
+#ifdef STEREO
+	odDepthMap(1, NULL);
+	free((char *)depthright);
+	depthright = NULL;
+#endif
+	odDepthMap(0, NULL);
+	free((char *)depthbuffer);
+	depthbuffer = NULL;
 }
 
 
@@ -510,6 +551,7 @@ int	dx, dy;
 FVECT	direc;
 {
 	GLfloat	gldepth;
+	GLubyte	glalpha;
 	double	dist;
 
 	if (dx<0 | dx>=odev.hres | dy<0 | dy>=odev.vres)
@@ -519,7 +561,12 @@ FVECT	direc;
 	else {
 		glReadPixels(dx,dy, 1,1, GL_DEPTH_COMPONENT,
 				GL_FLOAT, &gldepth);
-		dist = mapdepth(gldepth);
+		if (gmPortals)
+			glReadPixels(dx,dy, 1,1, GL_ALPHA,
+				GL_UNSIGNED_BYTE, &glalpha);
+		else
+			glalpha = 0;
+		dist = glalpha ? FHUGE : mapdepth(gldepth);
 	}
 	if (dist >= .99*FHUGE)
 		return(FHUGE);
@@ -594,6 +641,7 @@ getevent()			/* get next event */
 		mapped = 0;
 		break;
 	case MapNotify:
+		odRemap(0);
 		mapped = 1;
 		break;
 	case Expose:
@@ -689,7 +737,7 @@ int	dx, dy, mov, orb;
 	if (setview(&nv) != NULL)
 		return(0);	/* illegal view */
 	dev_view(&nv);
-	inpresflags |= DFL(DC_SETVIEW)|DFL(DC_REDRAW);
+	inpresflags |= DFL(DC_SETVIEW);
 	return(1);
 }
 
@@ -723,6 +771,7 @@ XButtonPressedEvent	*ebut;
 {
 	int	movdir = MOVDIR(ebut->button);
 	int	movorb = MOVORB(ebut->state);
+	int	ndrawn;
 	Window	rootw, childw;
 	int	rootx, rooty, wx, wy;
 	unsigned int	statemask;
@@ -746,18 +795,27 @@ XButtonPressedEvent	*ebut;
 #ifdef STEREO
 		pushright();
 		draw_grids(1);
-		otDrawOctrees();
+		gmDrawGeom(0);
 #ifdef DOBJ
 		dobj_render();
 #endif
 		popright();
 #endif
 					/* redraw octrees */
-		otDrawOctrees();
+		ndrawn = gmDrawGeom(1);
 #ifdef DOBJ
-		dobj_render();		/* redraw objects */
+		ndrawn += dobj_render();	/* redraw objects */
 #endif
 		glFlush();
+		if (!ndrawn) {
+			sleep(1);	/* for reasonable interaction */
+#ifdef STEREO
+			pushright();
+			draw_grids(0);
+			popright();
+#endif
+			draw_grids(0);
+		}
 	}
 	if (!(inpresflags & DFL(DC_SETVIEW))) {	/* do final motion */
 		movdir = MOVDIR(levptr(XButtonReleasedEvent)->button);
@@ -776,13 +834,13 @@ register VIEW	*vp;
 	GLfloat	vec[4];
 	double	depthlim[2];
 					/* set depth limits */
-	otDepthLimit(depthlim, odev.v.vp, odev.v.vdir);
+	gmDepthLimit(depthlim, odev.v.vp, odev.v.vdir);
 	if (depthlim[0] >= depthlim[1]) {
 		dev_zmin = 1.;
 		dev_zmax = 100.;
 	} else {
 		dev_zmin = 0.5*depthlim[0];
-		dev_zmax = 1.5*depthlim[1];
+		dev_zmax = 1.75*depthlim[1];
 		if (dev_zmin > dev_zmax/5.)
 			dev_zmin = dev_zmax/5.;
 	}
@@ -857,16 +915,7 @@ wipeclean()			/* prepare for redraw */
 	glClear(GL_DEPTH_BUFFER_BIT);
 	if (viewsteady)			/* clear samples if steady */
 		odClean();
-	if (depthbuffer != NULL) {	/* free recorded depth buffer */
-#ifdef STEREO
-		odDepthMap(1, NULL);
-		free((char *)depthright);
-		depthright = NULL;
-#endif
-		odDepthMap(0, NULL);
-		free((char *)depthbuffer);
-		depthbuffer = NULL;
-	}
+	freedepth();
 	setglpersp(&odev.v);		/* reset view & clipping planes */
 }
 
@@ -917,7 +966,7 @@ register XKeyPressedEvent  *ekey;
 		inpresflags |= DFL(DC_RESUME);
 		return;
 	case CTRL('R'):			/* redraw screen */
-		odRemap();
+		odRemap(0);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 #ifdef STEREO
 		setstereobuf(STEREO_BUFFER_RIGHT);
@@ -932,7 +981,7 @@ register XKeyPressedEvent  *ekey;
 		XFlush(ourdisplay);
 		sleep(1);
 		wipeclean();			/* fresh display */
-		odRemap();			/* new tone mapping */
+		odRemap(1);			/* fresh tone mapping */
 		dev_flush();			/* draw octrees */
 		inpresflags |= DFL(DC_REDRAW);	/* resend values from server */
 		rayqleft = 0;			/* hold off update */
@@ -969,6 +1018,7 @@ register XExposeEvent  *eexp;
 	xmin = eexp->x; xmax = eexp->x + eexp->width;
 	ymin = odev.vres - eexp->y - eexp->height; ymax = odev.vres - eexp->y;
 						/* clear portion of depth */
+	glPushAttrib(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 	glDepthFunc(GL_ALWAYS);
 	glBegin(GL_POLYGON);
@@ -988,8 +1038,7 @@ register XExposeEvent  *eexp;
 	odRedraw(1, xmin, ymin, xmax, ymax);
 	setstereobuf(STEREO_BUFFER_LEFT);
 #endif
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-	glDepthFunc(GL_LEQUAL);
+	glPopAttrib();
 	odRedraw(0, xmin, ymin, xmax, ymax);
 }
 
@@ -1009,5 +1058,5 @@ register XConfigureEvent  *ersz;
 	odev.v.horiz = 2.*180./PI * atan(0.5/VIEWDIST*pwidth*odev.hres);
 	odev.v.vert = 2.*180./PI * atan(0.5/VIEWDIST*pheight*odev.vres);
 
-	inpresflags |= DFL(DC_SETVIEW)|DFL(DC_REDRAW);
+	inpresflags |= DFL(DC_SETVIEW);
 }
