@@ -8,7 +8,7 @@ if ($#argv != 1) then
 	exit 1
 endif
 set ifile=$1
-set td=/usr/tmp
+set td=/tmp
 set gf=$td/av$$.gs
 set cf=$td/av$$.cal
 set tf=($gf $cf)

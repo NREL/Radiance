@@ -3,7 +3,7 @@
 #
 # Compute foveal histogram for picture set
 #
-set tf=/usr/tmp/ph$$
+set tf=/tmp/ph$$
 onintr quit
 if ( $#argv == 0 ) then
 	pfilt -1 -x 128 -y 128 -p 1 \

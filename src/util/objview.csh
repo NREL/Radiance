@@ -4,7 +4,7 @@
 # Make a nice view of an object
 # Arguments are scene input files
 #
-set tmpdir=/usr/tmp
+set tmpdir=/tmp
 set octree=$tmpdir/ov$$.oct
 set lights=$tmpdir/lt$$.rad
 set rif=$tmpdir/ov$$.rif

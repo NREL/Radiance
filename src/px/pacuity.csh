@@ -7,7 +7,7 @@ if ($#argv != 1) then
 	echo "Usage: $0 input.pic > output.pic"
 	exit 1
 endif
-set td=/usr/tmp
+set td=/tmp
 set tfc1=$td/ac$$.cal
 set tf=($td/c{1,2,4,8,16,32}d$$.pic $tfc1)
 set ifile=$1

@@ -54,8 +54,8 @@ _EOF_
 #
 # Next start seedling
 #
-set tree=/usr/tmp/t$$
-set oldtree=/usr/tmp/ot$$
+set tree=/tmp/t$$
+set oldtree=/tmp/ot$$
 set thisrad=.035
 cat << _EOF_ > $tree
 

@@ -5,7 +5,7 @@
 # Command line arguments contain materials and object files
 #
 set objdir=/usr/local/lib/ray/lib
-set tmpdir=/usr/tmp
+set tmpdir=/tmp
 set xres=250
 set yres=250
 set rpict="rpict -av .2 .2 .2 -x $xres -y $yres"

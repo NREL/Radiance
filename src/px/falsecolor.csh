@@ -5,7 +5,7 @@
 #
 # Added user-definable legend 2004/01/20 Rob Guglielmetti
 
-set td=/usr/tmp/fc$$
+set td=/tmp/fc$$
 onintr quit
 set mult=179
 set label=Nits

@@ -48,7 +48,7 @@ while ( $i <= $#argv && ! $firstarg )
 	endsw
 	set i=$i1
 end
-set td=/usr/tmp/xyz$$
+set td=/tmp/xyz$$
 set ecode=1
 onintr quit
 mkdir $td
