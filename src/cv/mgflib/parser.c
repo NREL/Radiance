@@ -89,83 +89,83 @@ mg_init()			/* initialize alternate entity handlers */
 		mg_ehand[MG_E_INCLUDE] = e_include;
 	if (mg_ehand[MG_E_SPH] == NULL) {
 		mg_ehand[MG_E_SPH] = e_sph;
-		ineed |= 1<<MG_E_POINT|1<<MG_E_VERTEX;
+		ineed |= 1L<<MG_E_POINT|1L<<MG_E_VERTEX;
 	} else
-		uneed |= 1<<MG_E_POINT|1<<MG_E_VERTEX|1<<MG_E_XF;
+		uneed |= 1L<<MG_E_POINT|1L<<MG_E_VERTEX|1L<<MG_E_XF;
 	if (mg_ehand[MG_E_CYL] == NULL) {
 		mg_ehand[MG_E_CYL] = e_cyl;
-		ineed |= 1<<MG_E_POINT|1<<MG_E_VERTEX;
+		ineed |= 1L<<MG_E_POINT|1L<<MG_E_VERTEX;
 	} else
-		uneed |= 1<<MG_E_POINT|1<<MG_E_VERTEX|1<<MG_E_XF;
+		uneed |= 1L<<MG_E_POINT|1L<<MG_E_VERTEX|1L<<MG_E_XF;
 	if (mg_ehand[MG_E_CONE] == NULL) {
 		mg_ehand[MG_E_CONE] = e_cone;
-		ineed |= 1<<MG_E_POINT|1<<MG_E_VERTEX;
+		ineed |= 1L<<MG_E_POINT|1L<<MG_E_VERTEX;
 	} else
-		uneed |= 1<<MG_E_POINT|1<<MG_E_VERTEX|1<<MG_E_XF;
+		uneed |= 1L<<MG_E_POINT|1L<<MG_E_VERTEX|1L<<MG_E_XF;
 	if (mg_ehand[MG_E_RING] == NULL) {
 		mg_ehand[MG_E_RING] = e_ring;
-		ineed |= 1<<MG_E_POINT|1<<MG_E_NORMAL|1<<MG_E_VERTEX;
+		ineed |= 1L<<MG_E_POINT|1L<<MG_E_NORMAL|1L<<MG_E_VERTEX;
 	} else
-		uneed |= 1<<MG_E_POINT|1<<MG_E_NORMAL|1<<MG_E_VERTEX|1<<MG_E_XF;
+		uneed |= 1L<<MG_E_POINT|1L<<MG_E_NORMAL|1L<<MG_E_VERTEX|1L<<MG_E_XF;
 	if (mg_ehand[MG_E_PRISM] == NULL) {
 		mg_ehand[MG_E_PRISM] = e_prism;
-		ineed |= 1<<MG_E_POINT|1<<MG_E_VERTEX;
+		ineed |= 1L<<MG_E_POINT|1L<<MG_E_VERTEX;
 	} else
-		uneed |= 1<<MG_E_POINT|1<<MG_E_VERTEX|1<<MG_E_XF;
+		uneed |= 1L<<MG_E_POINT|1L<<MG_E_VERTEX|1L<<MG_E_XF;
 	if (mg_ehand[MG_E_TORUS] == NULL) {
 		mg_ehand[MG_E_TORUS] = e_torus;
-		ineed |= 1<<MG_E_POINT|1<<MG_E_NORMAL|1<<MG_E_VERTEX;
+		ineed |= 1L<<MG_E_POINT|1L<<MG_E_NORMAL|1L<<MG_E_VERTEX;
 	} else
-		uneed |= 1<<MG_E_POINT|1<<MG_E_NORMAL|1<<MG_E_VERTEX|1<<MG_E_XF;
+		uneed |= 1L<<MG_E_POINT|1L<<MG_E_NORMAL|1L<<MG_E_VERTEX|1L<<MG_E_XF;
 	if (mg_ehand[MG_E_COLOR] != NULL) {
 		if (mg_ehand[MG_E_CMIX] == NULL) {
 			mg_ehand[MG_E_CMIX] = e_cmix;
-			ineed |= 1<<MG_E_COLOR|1<<MG_E_CXY|1<<MG_E_CSPEC|1<<MG_E_CMIX|1<<MG_E_CCT;
+			ineed |= 1L<<MG_E_COLOR|1L<<MG_E_CXY|1L<<MG_E_CSPEC|1L<<MG_E_CMIX|1L<<MG_E_CCT;
 		}
 		if (mg_ehand[MG_E_CSPEC] == NULL) {
 			mg_ehand[MG_E_CSPEC] = e_cspec;
-			ineed |= 1<<MG_E_COLOR|1<<MG_E_CXY|1<<MG_E_CSPEC|1<<MG_E_CMIX|1<<MG_E_CCT;
+			ineed |= 1L<<MG_E_COLOR|1L<<MG_E_CXY|1L<<MG_E_CSPEC|1L<<MG_E_CMIX|1L<<MG_E_CCT;
 		}
 		if (mg_ehand[MG_E_CCT] == NULL) {
 			mg_ehand[MG_E_CCT] = e_cct;
-			ineed |= 1<<MG_E_COLOR|1<<MG_E_CXY|1<<MG_E_CSPEC|1<<MG_E_CMIX|1<<MG_E_CCT;
+			ineed |= 1L<<MG_E_COLOR|1L<<MG_E_CXY|1L<<MG_E_CSPEC|1L<<MG_E_CMIX|1L<<MG_E_CCT;
 		}
 	}
 					/* check for consistency */
 	if (mg_ehand[MG_E_FACE] != NULL)
-		uneed |= 1<<MG_E_POINT|1<<MG_E_VERTEX|1<<MG_E_XF;
+		uneed |= 1L<<MG_E_POINT|1L<<MG_E_VERTEX|1L<<MG_E_XF;
 	if (mg_ehand[MG_E_CXY] != NULL || mg_ehand[MG_E_CSPEC] != NULL ||
 			mg_ehand[MG_E_CMIX] != NULL)
-		uneed |= 1<<MG_E_COLOR;
+		uneed |= 1L<<MG_E_COLOR;
 	if (mg_ehand[MG_E_RD] != NULL || mg_ehand[MG_E_TD] != NULL ||
 			mg_ehand[MG_E_IR] != NULL ||
 			mg_ehand[MG_E_ED] != NULL || 
 			mg_ehand[MG_E_RS] != NULL ||
 			mg_ehand[MG_E_TS] != NULL ||
 			mg_ehand[MG_E_SIDES] != NULL)
-		uneed |= 1<<MG_E_MATERIAL;
+		uneed |= 1L<<MG_E_MATERIAL;
 	for (i = 0; i < MG_NENTITIES; i++)
-		if (uneed & 1<<i && mg_ehand[i] == NULL) {
+		if (uneed & 1L<<i && mg_ehand[i] == NULL) {
 			fprintf(stderr, "Missing support for \"%s\" entity\n",
 					mg_ename[i]);
 			exit(1);
 		}
 					/* add support as needed */
-	if (ineed & 1<<MG_E_VERTEX && mg_ehand[MG_E_VERTEX] != c_hvertex)
+	if (ineed & 1L<<MG_E_VERTEX && mg_ehand[MG_E_VERTEX] != c_hvertex)
 		e_supp[MG_E_VERTEX] = c_hvertex;
-	if (ineed & 1<<MG_E_POINT && mg_ehand[MG_E_POINT] != c_hvertex)
+	if (ineed & 1L<<MG_E_POINT && mg_ehand[MG_E_POINT] != c_hvertex)
 		e_supp[MG_E_POINT] = c_hvertex;
-	if (ineed & 1<<MG_E_NORMAL && mg_ehand[MG_E_NORMAL] != c_hvertex)
+	if (ineed & 1L<<MG_E_NORMAL && mg_ehand[MG_E_NORMAL] != c_hvertex)
 		e_supp[MG_E_NORMAL] = c_hvertex;
-	if (ineed & 1<<MG_E_COLOR && mg_ehand[MG_E_COLOR] != c_hcolor)
+	if (ineed & 1L<<MG_E_COLOR && mg_ehand[MG_E_COLOR] != c_hcolor)
 		e_supp[MG_E_COLOR] = c_hcolor;
-	if (ineed & 1<<MG_E_CXY && mg_ehand[MG_E_CXY] != c_hcolor)
+	if (ineed & 1L<<MG_E_CXY && mg_ehand[MG_E_CXY] != c_hcolor)
 		e_supp[MG_E_CXY] = c_hcolor;
-	if (ineed & 1<<MG_E_CSPEC && mg_ehand[MG_E_CSPEC] != c_hcolor)
+	if (ineed & 1L<<MG_E_CSPEC && mg_ehand[MG_E_CSPEC] != c_hcolor)
 		e_supp[MG_E_CSPEC] = c_hcolor;
-	if (ineed & 1<<MG_E_CMIX && mg_ehand[MG_E_CMIX] != c_hcolor)
+	if (ineed & 1L<<MG_E_CMIX && mg_ehand[MG_E_CMIX] != c_hcolor)
 		e_supp[MG_E_CMIX] = c_hcolor;
-	if (ineed & 1<<MG_E_CCT && mg_ehand[MG_E_CCT] != c_hcolor)
+	if (ineed & 1L<<MG_E_CCT && mg_ehand[MG_E_CCT] != c_hcolor)
 		e_supp[MG_E_CCT] = c_hcolor;
 					/* discard remaining entities */
 	for (i = 0; i < MG_NENTITIES; i++)
