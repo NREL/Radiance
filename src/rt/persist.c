@@ -138,6 +138,7 @@ pfhold()		/* holding pattern for idle rendering process */
 	sprintf(buf, "%s %d\n%s\n%s\n%s\n", progname, getpid(),
 			inpname, outpname, errname);
 	n = strlen(buf);
+	lseek(persistfd, 0L, 0);
 	if (write(persistfd, buf, n) < n)
 		error(SYSTEM, "error writing persist file");
 				/* wait TIMELIM for someone to signal us */
@@ -148,12 +149,10 @@ pfhold()		/* holding pattern for idle rendering process */
 	pflock(0);			/* unlock persist file for attach */
 	while (!got_io)
 		pause();		/* wait for attach */
-	pflock(1);			/* grab persist file right back! */
 	alarm(0);			/* turn off alarm */
 	signal(SIGALRM, oldalrm);
 	signal(SIGIO, SIG_DFL);
-	if (lseek(persistfd, 0L, 0) < 0 || ftruncate(persistfd, 0L) < 0)
-		error(SYSTEM, "seek/truncate error on persist file");
+	pflock(1);			/* grab persist file back */
 				/* someone wants us; reopen stdin and stdout */
 	if (freopen(inpname, "r", stdin) == NULL)
 		goto openerr;
@@ -186,15 +185,19 @@ io_process()		/* just act as go-between for actual process */
 	int	fdin, fdout, fderr = -1;
 	fd_set	readfds, writefds, excepfds;
 					/* load persist file */
+	n = 40;
 	while ((nr = read(persistfd, buf, sizeof(buf)-1)) == 0) {
+		if (!n--)
+			error(USER, "unattended persist file?");
 		pflock(0);
 		sleep(15);		/* wait until ready */
 		pflock(1);
 	}
-	pfdetach();			/* close persist file */
 	if (nr < 0)
 		error(SYSTEM, "error reading persist file");
-	buf[nr] = '\0';
+	ftruncate(persistfd, 0L);	/* truncate persist file */
+	pfdetach();			/* close & release persist file */
+	buf[nr] = '\0';			/* parse what we got */
 	if ((cp = index(buf, ' ')) == NULL)
 		goto formerr;
 	*cp++ = '\0';
