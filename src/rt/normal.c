@@ -78,7 +78,7 @@ dirnorm(		/* compute source contribution */
 {
 	register NORMDAT *np = nnp;
 	double  ldot;
-	double  ldiff;
+	double  lrdiff, ltdiff;
 	double  dtmp, d2;
 	FVECT  vtmp;
 	COLOR  ctmp;
@@ -91,18 +91,23 @@ dirnorm(		/* compute source contribution */
 		return;		/* wrong side */
 
 				/* Fresnel estimate */
-	ldiff = np->rdiff;
-	if (np->specfl & SP_PURE && (np->rspec > FTINY) & (ldiff > FTINY))
-		ldiff *= 1. - FRESNE(fabs(ldot));
+	lrdiff = np->rdiff;
+	ltdiff = np->tdiff;
+	if (np->specfl & SP_PURE && np->rspec > FTINY &&
+			(lrdiff > FTINY) | (ltdiff > FTINY)) {
+		dtmp = 1. - FRESNE(fabs(ldot));
+		lrdiff *= dtmp;
+		ltdiff *= dtmp;
+	}
 
-	if (ldot > FTINY && ldiff > FTINY) {
+	if (ldot > FTINY && lrdiff > FTINY) {
 		/*
 		 *  Compute and add diffuse reflected component to returned
 		 *  color.  The diffuse reflected component will always be
 		 *  modified by the color of the material.
 		 */
 		copycolor(ctmp, np->mcolor);
-		dtmp = ldot * omega * ldiff * (1.0/PI);
+		dtmp = ldot * omega * lrdiff * (1.0/PI);
 		scalecolor(ctmp, dtmp);
 		addcolor(cval, ctmp);
 	}
@@ -133,12 +138,12 @@ dirnorm(		/* compute source contribution */
 			addcolor(cval, ctmp);
 		}
 	}
-	if (ldot < -FTINY && np->tdiff > FTINY) {
+	if (ldot < -FTINY && ltdiff > FTINY) {
 		/*
 		 *  Compute diffuse transmission.
 		 */
 		copycolor(ctmp, np->mcolor);
-		dtmp = -ldot * omega * np->tdiff * (1.0/PI);
+		dtmp = -ldot * omega * ltdiff * (1.0/PI);
 		scalecolor(ctmp, dtmp);
 		addcolor(cval, ctmp);
 	}
