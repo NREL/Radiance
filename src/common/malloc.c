@@ -362,7 +362,7 @@ unsigned	n;
 	if (n <= on && (n > on>>1 || on == 1<<FIRSTBUCKET))
 		return(op);		/* same bucket */
 	if ((p = malloc(n)) == NULL)
-		return(NULL);
+		return(n<=on ? op : NULL);
 	if (on) {
 #ifdef  BSD
 		bcopy(op, p, n>on ? on : n);
