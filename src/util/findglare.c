@@ -215,8 +215,8 @@ init()				/* initialize global variables */
 		memerr("indirect illuminances");
 	copystruct(&leftview, &ourview);
 	copystruct(&rightview, &ourview);
-	spinvector(leftview.vdir, ourview.vdir, ourview.vup, -maxtheta);
-	spinvector(rightview.vdir, ourview.vdir, ourview.vup, maxtheta);
+	spinvector(leftview.vdir, ourview.vdir, ourview.vup, maxtheta);
+	spinvector(rightview.vdir, ourview.vdir, ourview.vup, -maxtheta);
 	setview(&leftview);
 	setview(&rightview);
 	indirect[nglarangs].lcos =
@@ -337,7 +337,7 @@ printillum()			/* print out indirect illuminances */
 
 	printf("BEGIN indirect illuminance\n");
 	for (i = 0; i < nglardirs; i++)
-		printf("\t%f\t%f\n", (180.0/PI)*indirect[i].theta,
+		printf("\t%.0f\t%f\n", (180.0/PI)*indirect[i].theta,
 				PI * indirect[i].sum / (double)indirect[i].n);
 	printf("END indirect illuminance\n");
 }
