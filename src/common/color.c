@@ -15,7 +15,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "color.h"
 
 #define  MINELEN	8	/* minimum scanline length for encoding */
-#define  MAXELEN	0x7ffe	/* maximum scanline length for encoding */
+#define  MAXELEN	0x7fff	/* maximum scanline length for encoding */
 #define  MINRUN		4	/* minimum run length */
 
 #ifndef frexp
@@ -100,7 +100,7 @@ int  len;
 register FILE  *fp;
 {
 	register int  i, j;
-	int  code;
+	int  code, val;
 					/* determine scanline type */
 	if (len < MINELEN | len > MAXELEN)
 		return(oldreadcolrs(scanline, len, fp));
@@ -127,9 +127,10 @@ register FILE  *fp;
 		if ((code = getc(fp)) == EOF)
 		    return(-1);
 		if (code > 128) {	/* run */
-		    scanline[j++][i] = getc(fp);
-		    for (code &= 127; --code; j++)
-			scanline[j][i] = scanline[j-1][i];
+		    code &= 127;
+		    val = getc(fp);
+		    while (code--)
+			scanline[j++][i] = val;
 		} else			/* non-run */
 		    while (code--)
 			scanline[j++][i] = getc(fp);
