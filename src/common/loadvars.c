@@ -279,7 +279,7 @@ register FILE	*fp;
 	    for (j = 0; j < vdef(i); j++) {	/* print each assignment */
 		fputs(vnam(i), fp);
 		fputs("= ", fp);
-		k = clipline = ( vv[i].fixval == catvalues ? 64 : 120 )
+		k = clipline = ( vv[i].fixval == catvalues ? 64 : 236 )
 				- strlen(vnam(i)) ;
 		cp = nvalue(i, j);
 		while (*cp) {
