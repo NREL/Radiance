@@ -158,9 +158,9 @@ if ($?DISPLAY && $picture != $nofile) then
 	echo "Displaying glare sources in '$picture'..."
 	xglaresrc $picture $glarefile
 endif
-set ndxnam=("Guth Visual Comfort Probability" "Guth Disability Glare Ratio" "CIE Glare Index")
-set ndxcom=("glarendx -t guth_vcp" "glarendx -t guth_dgr" "glarendx -t cie_cgi")
-set bcdlvl=(50 124 18.5)
+set ndxnam=("Guth Visual Comfort Probability" "Guth Disability Glare Ratio" "CIE Glare Index" "BRS Glare Index" "Unified Glare Rating" "Daylight Glare Index")
+set ndxcom=("glarendx -t guth_vcp" "glarendx -t guth_dgr" "glarendx -t cie_cgi" "glarendx -t brs_gi" "glarendx -t ugr" "glarendx -t dgi")
+set bcdlvl=(50 124 18.5 18.5 18.5 21.7)
 while ( 1 )
 	echo ""
 	echo "	0.  Quit"
