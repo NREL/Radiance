@@ -49,6 +49,7 @@ register RAY  *r;
 	FVECT  pnorm;
 	double  cos2;
 	COLOR  trans, refl;
+	double  transbright;
 	double  d, r1;
 	RAY  p;
 	register int  i;
@@ -79,6 +80,7 @@ register RAY  *r;
 		d = colval(mcolor, i);
 		colval(trans,i) = (1.0-r1)*(1.0-r1)*d / (1.0 - r1*r1*d*d);
 	}
+	transbright = -FTINY;
 						/* transmitted ray */
 	if (rayorigin(&p, r, TRANS, bright(trans)) == 0) {
 		VCOPY(p.rdir, r->rdir);
@@ -86,6 +88,7 @@ register RAY  *r;
 		multcolor(p.rcol, r->pcol);	/* modify */
 		multcolor(p.rcol, trans);
 		addcolor(r->rcol, p.rcol);
+		transbright = bright(p.rcol);
 		r->rt = r->rot + p.rt;
 	}
 
@@ -104,7 +107,7 @@ register RAY  *r;
 		rayvalue(&p);
 		multcolor(p.rcol, refl);
 		addcolor(r->rcol, p.rcol);
-		if (bright(refl) > bright(trans))
+		if (bright(p.rcol) > transbright)
 			r->rt = r->rot + p.rt;
 	}
 }

@@ -57,7 +57,7 @@ register RAY  *r;
 	double  cos1, cos2, nratio;
 	COLOR  mcolor;
 	double  mabsorp;
-	double  refl, trans;
+	double  refl, trans, transbright;
 	FVECT  dnorm;
 	double  d1, d2;
 	RAY  p;
@@ -115,6 +115,7 @@ register RAY  *r;
 
 		refl /= 2.0;
 		trans = 1.0 - refl;
+		transbright = -FTINY;
 
 		if (rayorigin(&p, r, REFRACTED, mabsorp*trans) == 0) {
 
@@ -135,6 +136,7 @@ register RAY  *r;
 				multcolor(mcolor, r->pcol);	/* modify */
 				scalecolor(p.rcol, trans);
 				addcolor(r->rcol, p.rcol);
+				transbright = bright(p.rcol);
 				r->rt = r->rot + p.rt;
 			}
 		}
@@ -151,7 +153,7 @@ register RAY  *r;
 
 		scalecolor(p.rcol, refl);	/* color contribution */
 		addcolor(r->rcol, p.rcol);
-		if (refl > trans)
+		if (bright(p.rcol) > transbright)
 			r->rt = r->rot + p.rt;
 	}
 
