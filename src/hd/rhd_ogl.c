@@ -944,7 +944,7 @@ wipeclean()			/* prepare for redraw */
 		viewflags &= ~VWCHANGE;		/* change noted */
 	} else if (viewflags & VWSTEADY)
 		odRedrawAll();
-	setglpersp(&odev.v);		/* reset view & clipping planes */
+	setglpersp();			/* reset view & clipping planes */
 }
 
 
