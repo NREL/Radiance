@@ -14,8 +14,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "color.h"
 
-#define pscan(y)	(ourpict+(y)*ourview.hresolu)
-#define zscan(y)	(ourzbuf+(y)*ourview.hresolu)
+#define pscan(y)	(ourpict+(y)*hresolu)
+#define zscan(y)	(ourzbuf+(y)*hresolu)
 
 #define F_FORE		1		/* fill foreground */
 #define F_BACK		2		/* fill background */
@@ -28,7 +28,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 struct position {int x,y; float z;};
 
-VIEW	ourview = STDVIEW(512);		/* desired view */
+VIEW	ourview = STDVIEW;		/* desired view */
+int	hresolu = 512;			/* horizontal resolution */
+int	vresolu = 512;			/* vertical resolution */
 
 double	zeps = .02;			/* allowed z epsilon */
 
@@ -45,10 +47,11 @@ double	backz = 0.0;			/* background z value */
 int	normdist = 1;			/* normalized distance? */
 double	ourexp = -1;			/* output picture exposure */
 
-VIEW	theirview = STDVIEW(512);	/* input view */
+VIEW	theirview = STDVIEW;		/* input view */
 int	gotview;			/* got input view? */
-double	theirs2ours[4][4];		/* transformation matrix */
+int	thresolu, tvresolu;		/* input resolution */
 double	theirexp;			/* input picture exposure */
+double	theirs2ours[4][4];		/* transformation matrix */
 
 int	childpid = -1;			/* id of fill process */
 FILE	*psend, *precv;			/* pipes to/from fill calculation */
@@ -65,11 +68,16 @@ char	*argv[];
 	int	gotvfile = 0;
 	char	*zfile = NULL;
 	char	*err;
-	int	i;
+	int	i, rval;
 
 	progname = argv[0];
 
-	for (i = 1; i < argc && argv[i][0] == '-'; i++)
+	for (i = 1; i < argc && argv[i][0] == '-'; i++) {
+		rval = getviewopt(&ourview, argc-i, argv+i);
+		if (rval >= 0) {
+			i += rval;
+			continue;
+		}
 		switch (argv[i][1]) {
 		case 't':				/* threshold */
 			check(2,1);
@@ -124,58 +132,24 @@ char	*argv[];
 			break;
 		case 'x':				/* x resolution */
 			check(2,1);
-			ourview.hresolu = atoi(argv[++i]);
+			hresolu = atoi(argv[++i]);
 			break;
 		case 'y':				/* y resolution */
 			check(2,1);
-			ourview.vresolu = atoi(argv[++i]);
+			vresolu = atoi(argv[++i]);
 			break;
-		case 'v':				/* view */
-			switch (argv[i][2]) {
-			case 't':				/* type */
-				check(4,0);
-				ourview.type = argv[i][3];
-				break;
-			case 'p':				/* point */
-				check(3,3);
-				ourview.vp[0] = atof(argv[++i]);
-				ourview.vp[1] = atof(argv[++i]);
-				ourview.vp[2] = atof(argv[++i]);
-				break;
-			case 'd':				/* direction */
-				check(3,3);
-				ourview.vdir[0] = atof(argv[++i]);
-				ourview.vdir[1] = atof(argv[++i]);
-				ourview.vdir[2] = atof(argv[++i]);
-				break;
-			case 'u':				/* up */
-				check(3,3);
-				ourview.vup[0] = atof(argv[++i]);
-				ourview.vup[1] = atof(argv[++i]);
-				ourview.vup[2] = atof(argv[++i]);
-				break;
-			case 'h':				/* horizontal */
-				check(3,1);
-				ourview.horiz = atof(argv[++i]);
-				break;
-			case 'v':				/* vertical */
-				check(3,1);
-				ourview.vert = atof(argv[++i]);
-				break;
-			case 'f':				/* file */
-				check(3,1);
-				gotvfile = viewfile(argv[++i], &ourview);
-				if (gotvfile < 0) {
-					perror(argv[i]);
-					exit(1);
-				} else if (gotvfile == 0) {
-					fprintf(stderr, "%s: bad view file\n",
-							argv[i]);
-					exit(1);
-				}
-				break;
-			default:
+		case 'v':				/* view file */
+			if (argv[i][2] != 'f')
 				goto badopt;
+			check(3,1);
+			gotvfile = viewfile(argv[++i], &ourview);
+			if (gotvfile < 0) {
+				perror(argv[i]);
+				exit(1);
+			} else if (gotvfile == 0) {
+				fprintf(stderr, "%s: bad view file\n",
+						argv[i]);
+				exit(1);
 			}
 			break;
 		default:
@@ -184,6 +158,7 @@ char	*argv[];
 					progname, argv[i]);
 			goto userr;
 		}
+	}
 						/* check arguments */
 	if ((argc-i)%2)
 		goto userr;
@@ -193,8 +168,8 @@ char	*argv[];
 		exit(1);
 	}
 						/* allocate frame */
-	ourpict = (COLR *)malloc(ourview.hresolu*ourview.vresolu*sizeof(COLR));
-	ourzbuf = (float *)calloc(ourview.hresolu*ourview.vresolu,sizeof(float));
+	ourpict = (COLR *)malloc(hresolu*vresolu*sizeof(COLR));
+	ourzbuf = (float *)calloc(hresolu*vresolu,sizeof(float));
 	if (ourpict == NULL || ourzbuf == NULL)
 		syserror();
 							/* get input */
@@ -226,7 +201,7 @@ char	*argv[];
 	exit(0);
 userr:
 	fprintf(stderr,
-	"Usage: %s [view opts][-t zthresh][-z zout][-fT][-n] pfile zspec ..\n",
+	"Usage: %s [view opts][-t eps][-z zout][-fT][-n] pfile zspec ..\n",
 			progname);
 	exit(1);
 #undef check
@@ -247,7 +222,7 @@ char	*s;
 	}
 	for (an = altname; *an != NULL; an++)
 		if (!strncmp(*an, s, strlen(*an))) {
-			if (sscanview(&theirview, s+strlen(*an)) == 0)
+			if (sscanview(&theirview, s+strlen(*an)) > 0)
 				gotview++;
 			break;
 		}
@@ -274,7 +249,7 @@ char	*pfile, *zspec;
 	gotview = 0;
 	printf("%s:\n", pfile);
 	getheader(pfp, headline);
-	if (!gotview || fgetresolu(&theirview.hresolu, &theirview.vresolu, pfp)
+	if (!gotview || fgetresolu(&thresolu, &tvresolu, pfp)
 			!= (YMAJOR|YDECR)) {
 		fprintf(stderr, "%s: picture view error\n", pfile);
 		exit(1);
@@ -290,10 +265,9 @@ char	*pfile, *zspec;
 					/* compute transformation */
 	pixform(theirs2ours, &theirview, &ourview);
 					/* allocate scanlines */
-	scanin = (COLR *)malloc(theirview.hresolu*sizeof(COLR));
-	zin = (float *)malloc(theirview.hresolu*sizeof(float));
-	plast = (struct position *)calloc(theirview.hresolu,
-						sizeof(struct position));
+	scanin = (COLR *)malloc(thresolu*sizeof(COLR));
+	zin = (float *)malloc(thresolu*sizeof(float));
+	plast = (struct position *)calloc(thresolu, sizeof(struct position));
 	if (scanin == NULL || zin == NULL || plast == NULL)
 		syserror();
 					/* get z specification or file */
@@ -304,18 +278,17 @@ char	*pfile, *zspec;
 			perror(zspec);
 			exit(1);
 		}
-		for (x = 0; x < theirview.hresolu; x++)
+		for (x = 0; x < thresolu; x++)
 			zin[x] = zvalue;
 	}
 					/* load image */
-	for (y = theirview.vresolu-1; y >= 0; y--) {
-		if (freadcolrs(scanin, theirview.hresolu, pfp) < 0) {
+	for (y = tvresolu-1; y >= 0; y--) {
+		if (freadcolrs(scanin, thresolu, pfp) < 0) {
 			fprintf(stderr, "%s: read error\n", pfile);
 			exit(1);
 		}
 		if (zfp != NULL
-			&& fread(zin,sizeof(float),theirview.hresolu,zfp)
-				< theirview.hresolu) {
+			&& fread(zin,sizeof(float),thresolu,zfp) < thresolu) {
 			fprintf(stderr, "%s: read error\n", zspec);
 			exit(1);
 		}
@@ -338,12 +311,12 @@ register VIEW	*vw1, *vw2;
 	double	m4t[4][4];
 
 	setident4(xfmat);
-	xfmat[0][0] = vw1->vhinc[0];
-	xfmat[0][1] = vw1->vhinc[1];
-	xfmat[0][2] = vw1->vhinc[2];
-	xfmat[1][0] = vw1->vvinc[0];
-	xfmat[1][1] = vw1->vvinc[1];
-	xfmat[1][2] = vw1->vvinc[2];
+	xfmat[0][0] = vw1->hvec[0];
+	xfmat[0][1] = vw1->hvec[1];
+	xfmat[0][2] = vw1->hvec[2];
+	xfmat[1][0] = vw1->vvec[0];
+	xfmat[1][1] = vw1->vvec[1];
+	xfmat[1][2] = vw1->vvec[2];
 	xfmat[2][0] = vw1->vdir[0];
 	xfmat[2][1] = vw1->vdir[1];
 	xfmat[2][2] = vw1->vdir[2];
@@ -351,14 +324,14 @@ register VIEW	*vw1, *vw2;
 	xfmat[3][1] = vw1->vp[1];
 	xfmat[3][2] = vw1->vp[2];
 	setident4(m4t);
-	m4t[0][0] = vw2->vhinc[0]/vw2->vhn2;
-	m4t[1][0] = vw2->vhinc[1]/vw2->vhn2;
-	m4t[2][0] = vw2->vhinc[2]/vw2->vhn2;
-	m4t[3][0] = -DOT(vw2->vp,vw2->vhinc)/vw2->vhn2;
-	m4t[0][1] = vw2->vvinc[0]/vw2->vvn2;
-	m4t[1][1] = vw2->vvinc[1]/vw2->vvn2;
-	m4t[2][1] = vw2->vvinc[2]/vw2->vvn2;
-	m4t[3][1] = -DOT(vw2->vp,vw2->vvinc)/vw2->vvn2;
+	m4t[0][0] = vw2->hvec[0]/vw2->hn2;
+	m4t[1][0] = vw2->hvec[1]/vw2->hn2;
+	m4t[2][0] = vw2->hvec[2]/vw2->hn2;
+	m4t[3][0] = -DOT(vw2->vp,vw2->hvec)/vw2->hn2;
+	m4t[0][1] = vw2->vvec[0]/vw2->vn2;
+	m4t[1][1] = vw2->vvec[1]/vw2->vn2;
+	m4t[2][1] = vw2->vvec[2]/vw2->vn2;
+	m4t[3][1] = -DOT(vw2->vp,vw2->vvec)/vw2->vn2;
 	m4t[0][2] = vw2->vdir[0];
 	m4t[1][2] = vw2->vdir[1];
 	m4t[2][2] = vw2->vdir[2];
@@ -378,15 +351,15 @@ struct position	*lasty;		/* input/output */
 	struct position	lastx, newpos;
 	register int	x;
 
-	for (x = theirview.hresolu-1; x >= 0; x--) {
-		pos[0] = x - .5*(theirview.hresolu-1);
-		pos[1] = y - .5*(theirview.vresolu-1);
+	for (x = thresolu-1; x >= 0; x--) {
+		pos[0] = (x+.5)/thresolu + theirview.hoff - .5;
+		pos[1] = (y+.5)/tvresolu + theirview.voff - .5;
 		pos[2] = zline[x];
 		if (theirview.type == VT_PER) {
 			if (normdist)	/* adjust for eye-ray distance */
 				pos[2] /= sqrt( 1.
-					+ pos[0]*pos[0]*theirview.vhn2
-					+ pos[1]*pos[1]*theirview.vvn2 );
+					+ pos[0]*pos[0]*theirview.hn2
+					+ pos[1]*pos[1]*theirview.vn2 );
 			pos[0] *= pos[2];
 			pos[1] *= pos[2];
 		}
@@ -399,14 +372,14 @@ struct position	*lasty;		/* input/output */
 			pos[0] /= pos[2];
 			pos[1] /= pos[2];
 		}
-		pos[0] += .5*ourview.hresolu;
-		pos[1] += .5*ourview.vresolu;
-		newpos.x = pos[0];
-		newpos.y = pos[1];
+		pos[0] += .5 - ourview.hoff;
+		pos[1] += .5 - ourview.voff;
+		newpos.x = pos[0] * hresolu;
+		newpos.y = pos[1] * vresolu;
 		newpos.z = zline[x];
 					/* add pixel to our image */
-		if (pos[0] >= 0 && newpos.x < ourview.hresolu
-				&& pos[1] >= 0 && newpos.y < ourview.vresolu) {
+		if (pos[0] >= 0 && newpos.x < hresolu
+				&& pos[1] >= 0 && newpos.y < vresolu) {
 			addpixel(&newpos, &lastx, &lasty[x], pline[x], pos[2]);
 			lasty[x].x = lastx.x = newpos.x;
 			lasty[x].y = lastx.y = newpos.y;
@@ -477,10 +450,10 @@ backpicture()				/* background fill algorithm */
 	COLR	pfill;
 	register int	x, i;
 							/* get back buffer */
-	yback = (int *)malloc(ourview.hresolu*sizeof(int));
+	yback = (int *)malloc(hresolu*sizeof(int));
 	if (yback == NULL)
 		syserror();
-	for (x = 0; x < ourview.hresolu; x++)
+	for (x = 0; x < hresolu; x++)
 		yback[x] = -2;
 	/*
 	 * Xback and yback are the pixel locations of suitable
@@ -489,19 +462,19 @@ backpicture()				/* background fill algorithm */
 	 * that there is no suitable background in this direction.
 	 */
 							/* fill image */
-	for (y = 0; y < ourview.vresolu; y++) {
+	for (y = 0; y < vresolu; y++) {
 		xback = -2;
-		for (x = 0; x < ourview.hresolu; x++)
+		for (x = 0; x < hresolu; x++)
 			if (zscan(y)[x] <= 0) {		/* empty pixel */
 				/*
 				 * First, find background from above or below.
 				 * (farthest assigned pixel)
 				 */
 				if (yback[x] == -2) {
-					for (i = y+1; i < ourview.vresolu; i++)
+					for (i = y+1; i < vresolu; i++)
 						if (zscan(i)[x] > 0)
 							break;
-					if (i < ourview.vresolu
+					if (i < vresolu
 				&& (y <= 0 || zscan(y-1)[x] < zscan(i)[x]))
 						yback[x] = i;
 					else
@@ -511,10 +484,10 @@ backpicture()				/* background fill algorithm */
 				 * Next, find background from left or right.
 				 */
 				if (xback == -2) {
-					for (i = x+1; i < ourview.hresolu; i++)
+					for (i = x+1; i < hresolu; i++)
 						if (zscan(y)[i] > 0)
 							break;
-					if (i < ourview.hresolu
+					if (i < hresolu
 				&& (x <= 0 || zscan(y)[x-1] < zscan(y)[i]))
 						xback = i;
 					else
@@ -556,8 +529,8 @@ fillpicture()				/* paint in empty pixels with default */
 {
 	register int	x, y;
 
-	for (y = 0; y < ourview.vresolu; y++)
-		for (x = 0; x < ourview.hresolu; x++)
+	for (y = 0; y < vresolu; y++)
+		for (x = 0; x < hresolu; x++)
 			if (zscan(y)[x] <= 0)
 				(*deffill)(x,y);
 }
@@ -567,9 +540,9 @@ writepicture()				/* write out picture */
 {
 	int	y;
 
-	fputresolu(YMAJOR|YDECR, ourview.hresolu, ourview.vresolu, stdout);
-	for (y = ourview.vresolu-1; y >= 0; y--)
-		if (fwritecolrs(pscan(y), ourview.hresolu, stdout) < 0)
+	fputresolu(YMAJOR|YDECR, hresolu, vresolu, stdout);
+	for (y = vresolu-1; y >= 0; y--)
+		if (fwritecolrs(pscan(y), hresolu, stdout) < 0)
 			syserror();
 }
 
@@ -588,23 +561,22 @@ char	*fname;
 		exit(1);
 	}
 	if (donorm
-	&& (zout = (float *)malloc(ourview.hresolu*sizeof(float))) == NULL)
+	&& (zout = (float *)malloc(hresolu*sizeof(float))) == NULL)
 		syserror();
-	for (y = ourview.vresolu-1; y >= 0; y--) {
+	for (y = vresolu-1; y >= 0; y--) {
 		if (donorm) {
 			double	vx, yzn2;
 			register int	x;
-			yzn2 = y - .5*(ourview.vresolu-1);
-			yzn2 = 1. + yzn2*yzn2*ourview.vvn2;
-			for (x = 0; x < ourview.hresolu; x++) {
-				vx = x - .5*(ourview.hresolu-1);
+			yzn2 = y - .5*(vresolu-1);
+			yzn2 = 1. + yzn2*yzn2*ourview.vn2;
+			for (x = 0; x < hresolu; x++) {
+				vx = x - .5*(hresolu-1);
 				zout[x] = zscan(y)[x]
-					* sqrt(vx*vx*ourview.vhn2 + yzn2);
+					* sqrt(vx*vx*ourview.hn2 + yzn2);
 			}
 		} else
 			zout = zscan(y);
-		if (fwrite(zout, sizeof(float), ourview.hresolu, fp)
-				< ourview.hresolu) {
+		if (fwrite(zout, sizeof(float), hresolu, fp) < hresolu) {
 			perror(fname);
 			exit(1);
 		}
@@ -704,7 +676,7 @@ int	x, y;
 		clearqueue();
 	}
 					/* send new ray */
-	rayview(orig, dir, &ourview, x+.5, y+.5);
+	viewray(orig, dir, &ourview, (x+.5)/hresolu, (y+.5)/vresolu);
 	outbuf[0] = orig[0]; outbuf[1] = orig[1]; outbuf[2] = orig[2];
 	outbuf[3] = dir[0]; outbuf[4] = dir[1]; outbuf[5] = dir[2];
 	if (fwrite(outbuf, sizeof(float), 6, psend) < 6)
