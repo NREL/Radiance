@@ -19,7 +19,6 @@ char  *s;
 int  n;
 register FILE  *fp;
 {
-	int  escape = 0;
 	register char  *cp = s;
 	register int  c = EOF;
 
