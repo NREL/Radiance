@@ -414,7 +414,7 @@ FILE  *in;
 	scan2init();
 	yread = 0;
 	for (r = 0; r < nrows; r++) {
-		ycent = (long)r*yres/nrows;
+		ycent = (r+.5)*yres/nrows;
 		while (yread <= ycent+yrad) {
 			if (yread < yres) {
 				if (freadscan(scanin[yread%barsize],
@@ -431,7 +431,7 @@ FILE  *in;
 		if (obarsize > 0)
 			scan2sync(r);
 		for (c = 0; c < ncols; c++) {
-			xcent = (long)c*xres/ncols;
+			xcent = (c+.5)*xres/ncols;
 			if (thresh > FTINY)
 				dothresh(xcent, ycent, c, r);
 			else if (rad > FTINY)
@@ -540,9 +540,9 @@ int  r;
 	register int  c;
 					/* average input scanlines */
 	while (nextrow <= r+orad && nextrow < nrows) {
-		ybot = (long)nextrow*yres/nrows;
+		ybot = (nextrow+.5)*yres/nrows;
 		for (c = 0; c < ncols; c++) {
-			dobox(ctmp, (int)((long)c*xres/ncols),ybot, c,nextrow);
+			dobox(ctmp, (int)((c+.5)*xres/ncols),ybot, c,nextrow);
 			greybar[nextrow%obarsize][c] = (*ourbright)(ctmp);
 		}
 					/* and zero output scanline */
