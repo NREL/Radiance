@@ -1,4 +1,4 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1996 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -24,6 +24,10 @@ extern double  specthresh;		/* specular sampling threshold */
 extern double  specjitter;		/* specular sampling jitter */
 
 extern int  backvis;			/* back faces visible? */
+
+#ifndef  MAXITER
+#define  MAXITER	10		/* maximum # specular ray attempts */
+#endif
 
 static  gaussamp();
 
@@ -338,6 +342,7 @@ register NORMDAT  *np;
 	FVECT  u, v, h;
 	double  rv[2];
 	double  d, sinp, cosp;
+	int  niter;
 	register int  i;
 					/* quick test */
 	if ((np->specfl & (SP_REFL|SP_RBLT)) != SP_REFL &&
@@ -356,52 +361,63 @@ register NORMDAT  *np;
 	if ((np->specfl & (SP_REFL|SP_RBLT)) == SP_REFL &&
 			rayorigin(&sr, r, SPECULAR, np->rspec) == 0) {
 		dimlist[ndims++] = (int)np->mp;
-		d = urand(ilhash(dimlist,ndims)+samplendx);
-		multisamp(rv, 2, d);
-		d = 2.0*PI * rv[0];
-		cosp = cos(d);
-		sinp = sin(d);
-		rv[1] = 1.0 - specjitter*rv[1];
-		if (rv[1] <= FTINY)
-			d = 1.0;
-		else
-			d = sqrt( np->alpha2 * -log(rv[1]) );
-		for (i = 0; i < 3; i++)
-			h[i] = np->pnorm[i] + d*(cosp*u[i] + sinp*v[i]);
-		d = -2.0 * DOT(h, r->rdir) / (1.0 + d*d);
-		for (i = 0; i < 3; i++)
-			sr.rdir[i] = r->rdir[i] + d*h[i];
-		if (DOT(sr.rdir, r->ron) <= FTINY)
-			VCOPY(sr.rdir, np->vrefl);	/* jitter no good */
-		rayvalue(&sr);
-		multcolor(sr.rcol, np->scolor);
-		addcolor(r->rcol, sr.rcol);
+		for (niter = 0; niter < MAXITER; niter++) {
+			if (niter)
+				d = frandom();
+			else
+				d = urand(ilhash(dimlist,ndims)+samplendx);
+			multisamp(rv, 2, d);
+			d = 2.0*PI * rv[0];
+			cosp = cos(d);
+			sinp = sin(d);
+			rv[1] = 1.0 - specjitter*rv[1];
+			if (rv[1] <= FTINY)
+				d = 1.0;
+			else
+				d = sqrt( np->alpha2 * -log(rv[1]) );
+			for (i = 0; i < 3; i++)
+				h[i] = np->pnorm[i] + d*(cosp*u[i] + sinp*v[i]);
+			d = -2.0 * DOT(h, r->rdir) / (1.0 + d*d);
+			for (i = 0; i < 3; i++)
+				sr.rdir[i] = r->rdir[i] + d*h[i];
+			if (DOT(sr.rdir, r->ron) > FTINY) {
+				rayvalue(&sr);
+				multcolor(sr.rcol, np->scolor);
+				addcolor(r->rcol, sr.rcol);
+				break;
+			}
+		}
 		ndims--;
 	}
 					/* compute transmission */
 	if ((np->specfl & (SP_TRAN|SP_TBLT)) == SP_TRAN &&
 			rayorigin(&sr, r, SPECULAR, np->tspec) == 0) {
 		dimlist[ndims++] = (int)np->mp;
-		d = urand(ilhash(dimlist,ndims)+1823+samplendx);
-		multisamp(rv, 2, d);
-		d = 2.0*PI * rv[0];
-		cosp = cos(d);
-		sinp = sin(d);
-		rv[1] = 1.0 - specjitter*rv[1];
-		if (rv[1] <= FTINY)
-			d = 1.0;
-		else
-			d = sqrt( -log(rv[1]) * np->alpha2 );
-		for (i = 0; i < 3; i++)
-			sr.rdir[i] = np->prdir[i] + d*(cosp*u[i] + sinp*v[i]);
-		if (DOT(sr.rdir, r->ron) < -FTINY)
-			normalize(sr.rdir);		/* OK, normalize */
-		else
-			VCOPY(sr.rdir, np->prdir);	/* else no jitter */
-		rayvalue(&sr);
-		scalecolor(sr.rcol, np->tspec);
-		multcolor(sr.rcol, np->mcolor);		/* modified by color */
-		addcolor(r->rcol, sr.rcol);
+		for (niter = 0; niter < MAXITER; niter++) {
+			if (niter)
+				d = frandom();
+			else
+				d = urand(ilhash(dimlist,ndims)+1823+samplendx);
+			multisamp(rv, 2, d);
+			d = 2.0*PI * rv[0];
+			cosp = cos(d);
+			sinp = sin(d);
+			rv[1] = 1.0 - specjitter*rv[1];
+			if (rv[1] <= FTINY)
+				d = 1.0;
+			else
+				d = sqrt( -log(rv[1]) * np->alpha2 );
+			for (i = 0; i < 3; i++)
+				sr.rdir[i] = np->prdir[i] + d*(cosp*u[i] + sinp*v[i]);
+			if (DOT(sr.rdir, r->ron) < -FTINY) {
+				normalize(sr.rdir);	/* OK, normalize */
+				rayvalue(&sr);
+				scalecolor(sr.rcol, np->tspec);
+				multcolor(sr.rcol, np->mcolor);	/* modified */
+				addcolor(r->rcol, sr.rcol);
+				break;
+			}
+		}
 		ndims--;
 	}
 }
