@@ -86,7 +86,7 @@ TEXT  *gettext();
 TLINE  *tlalloc();
 
 
-text(m, r)
+do_text(m, r)
 register OBJREC  *m;
 RAY  *r;
 {
