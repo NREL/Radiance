@@ -56,8 +56,8 @@ CUBE  *cu;
 	in = getinstance(o, IO_BOUNDS);
 					/* check if cube vertex in octree */
 	for (j = 0; j < 3; j++)
-		cumax[j] = (cumin[j] = in->obj->scube.cuorg[j]) +
-				in->obj->scube.cusize;
+		cumax[j] = (cumin[j] = cu->cuorg[j]-FTINY)
+				+ cu->cusize + 2.0*FTINY;
 	vloc = ABOVE | BELOW;
 	vout = 0;
 	for (i = 0; i < 8; i++) {
