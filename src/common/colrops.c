@@ -9,9 +9,10 @@ static const char	RCSid[] = "$Id$";
 
 #include <stdio.h>
 #include <math.h>
+
+#include "rtmisc.h"
 #include "color.h"
 
-extern char	*bmalloc();
 
 #define MAXGSHIFT	31		/* maximum shift for gamma table */
 
@@ -22,7 +23,7 @@ static BYTE	(*g_bval)[256] = NULL;
 
 int
 setcolrcor(f, a2)		/* set brightness correction */
-double	(*f)();
+double	(*f)(double,double);
 double	a2;
 {
 	double	mult;
@@ -44,7 +45,7 @@ double	a2;
 
 int
 setcolrinv(f, a2)		/* set inverse brightness correction */
-double	(*f)();
+double	(*f)(double,double);
 double	a2;
 {
 	double	mult;

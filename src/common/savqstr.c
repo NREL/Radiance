@@ -11,6 +11,7 @@ static const char RCSid[] = "$Id$";
 
 #include <stdlib.h>
 
+#include "rtio.h"
 #include "rterror.h"
 
 

@@ -60,7 +60,7 @@ char	*rfname;
 int
 setvariable(ass, mv)		/* assign variable according to string */
 register char	*ass;
-VARIABLE	*(*mv)();
+VARIABLE	*(*mv)(char*);
 {
 	char	varname[32];
 	int	n;

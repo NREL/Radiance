@@ -12,8 +12,7 @@ static const char	RCSid[] = "$Id$";
 int	nowarn = 0;		/* don't print warnings? */
 
 void
-wputs(s)
-char	*s;
+wputs(char *s)
 {
 	if (!nowarn)
 		eputs(s);

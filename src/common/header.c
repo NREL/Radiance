@@ -187,7 +187,7 @@ FILE  *fp;
 int
 getheader(fp, f, p)		/* get header from file */
 FILE  *fp;
-int  (*f)();
+int  (*f)(char *, char *);
 char  *p;
 {
 	char  buf[MAXLINE];

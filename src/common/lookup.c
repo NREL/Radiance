@@ -156,7 +156,7 @@ char	*key;
 int
 lu_doall(tbl, f)		/* loop through all valid table entries */
 register LUTAB	*tbl;
-int	(*f)();
+int	(*f)(LUENT *);
 {
 	int	rval = 0;
 	register LUENT	*tp;
