@@ -197,7 +197,9 @@ int  ac, fi;
 		for (i = 1; i < fi; i++)
 			avp[i] = av[i];
 		newac = i;
-		cp = argbuf;			/* parse new words */
+		cp = argbuf;		/* parse new words */
+		if (*cp == '!') cp++;
+		if (!strncmp(cp, "xform ", 6)) cp += 6;
 		for ( ; ; ) {
 			while (isspace(*cp))	/* nullify spaces */
 				*cp++ = '\0';
