@@ -272,9 +272,9 @@ COLOR	y, x;
 	register int	i, n;
 
 	for (i = 0; i < 3; i++) {
-		n = NMBNEU;
-		while (n > 0 && colval(x,i) < colval(bramp[--n][0],i))
-			;
+		for (n = 0; n < NMBNEU-2; n++)
+			if (colval(x,i) < colval(bramp[n+1][0],i))
+				break;
 		cv[i] = ((colval(bramp[n+1][0],i) - colval(x,i)) *
 						colval(bramp[n][1],i) +
 				(colval(x,i) - colval(bramp[n][0],i)) *
@@ -452,6 +452,7 @@ putdebug()			/* put out debugging picture */
 		exit(1);
 	}
 						/* finish debug header */
+	fputformat(COLRFMT, debugfp);
 	putc('\n', debugfp);
 	fprtresolu(xmax, ymax, debugfp);
 	for (y = ymax-1; y >= 0; y--) {
