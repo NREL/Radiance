@@ -12,6 +12,8 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "view.h"
 #include "resolu.h"
 
+int	checkdepth = 1;		/* check depth (!-f option)? */
+int	checkrepeats = 0;	/* check for repeats (-c option)? */
 int	frompicz;		/* input from pictures & depth-buffers? */
 int	noutsects;		/* number of output sections */
 char	obstr, unobstr;		/* flag pointer values */
@@ -26,27 +28,40 @@ char	*argv[];
 	int	i;
 
 	progname = argv[0];
-	if (argc < 4)
+	frompicz = -1;
+	for (i = 2; i < argc && argv[i][0] == '-'; i++)
+		switch (argv[i][1]) {
+		case 'c':
+			checkrepeats = 1;
+			break;
+		case 'f':
+			checkdepth = 0;
+			break;
+		case 'h':
+			frompicz = 0;
+			break;
+		case 'p':
+			frompicz = 1;
+			break;
+		default:
+			goto userr;
+		}
+	if (i >= argc || frompicz < 0)
 		goto userr;
-	if (!strcmp(argv[2], "-h"))
-		frompicz = 0;
-	else if (!strcmp(argv[2], "-pz"))
-		frompicz = 1;
-	else
-		goto userr;
-	if (frompicz && (argc-3)%2)
+	if (frompicz && (argc-i)%2)
 		goto userr;
 	noutsects = openholo(argv[1], 1);
 	if (frompicz)
-		for (i = 3; i < argc; i += 2)
+		for ( ; i < argc; i += 2)
 			addpicz(argv[i], argv[i+1]);
 	else
-		for (i = 3; i < argc; i++)
+		for ( ; i < argc; i++)
 			addholo(argv[i]);
 	quit(0);
 userr:
-	fprintf(stderr, "Usage: %s output.hdk -h inp1.hdk ..\n", progname);
-	fprintf(stderr, "   Or: %s output.hdk -pz inp1.pic inp1.zbf ..\n",
+	fprintf(stderr, "Usage: %s output.hdk [-c][-f] -h inp1.hdk ..\n",
+			progname);
+	fprintf(stderr, "   Or: %s output.hdk [-c][-f] -pz inp1.pic inp1.zbf ..\n",
 			progname);
 	exit(1);
 }
@@ -127,11 +142,13 @@ FVECT	ro, rd;
 double	d;
 COLR	cv;
 {
-	int	sn;
+	int	sn, bi, n;
 	register HOLO	*hp;
 	GCOORD	gc[2];
 	BYTE	rr[2][2];
+	BEAM	*bp;
 	double	d0, d1;
+	unsigned	dc;
 	register RAYVAL	*rv;
 				/* check each output section */
 	for (sn = noutsects; sn--; ) {
@@ -139,16 +156,30 @@ COLR	cv;
 		d0 = hdinter(gc, rr, &d1, hp, ro, rd);
 		if (d <= d0 || d1 < -0.001)
 			continue;	/* missed section */
-		if (hp->priv == &obstr && d0 < -0.001)
-			continue;	/* ray starts too late */
-		if (hp->priv == &unobstr && d < 0.999*d1)
-			continue;	/* ray ends too soon */
-					/* should we check for duplicates? */
-		rv = hdnewrays(hp, hdbindex(hp, gc), 1);
+		if (checkdepth) {		/* check depth */
+			if (hp->priv == &obstr && d0 < -0.001)
+				continue;	/* ray starts too late */
+			if (hp->priv == &unobstr && d < 0.999*d1)
+				continue;	/* ray ends too soon */
+		}
+		dc = hdcode(hp, d-d0);
+		bi = hdbindex(hp, gc);		/* check for duplicates */
+		if (checkrepeats && (bp = hdgetbeam(hp, bi)) != NULL) {
+			for (n = bp->nrm, rv = hdbray(bp); n--; rv++)
+				if (rv->d == dc &&
+						rv->r[0][0] == rr[0][0] &&
+						rv->r[0][1] == rr[0][1] &&
+						rv->r[1][0] == rr[1][0] &&
+						rv->r[1][1] == rr[1][1])
+					break;
+			if (n >= 0)
+				continue;	/* found a matching ray */
+		}
+		rv = hdnewrays(hp, bi, 1);
+		rv->d = dc;
 		rv->r[0][0] = rr[0][0]; rv->r[0][1] = rr[0][1];
 		rv->r[1][0] = rr[1][0]; rv->r[1][1] = rr[1][1];
 		copycolr(rv->v, cv);
-		rv->d = hdcode(hp, d-d0);
 	}
 }
 
