@@ -43,11 +43,15 @@ pdfblur.csh pmblur.csh xyzimage.csh
 	cp $(PROGS) $(INSTDIR)
 	cp normpat.csh $(INSTDIR)/normpat
 	cp falsecolor.csh $(INSTDIR)/falsecolor
+	cp pacuity.csh $(INSTDIR)/pacuity
 	cp pdfblur.csh $(INSTDIR)/pdfblur
 	cp pmblur.csh $(INSTDIR)/pmblur
+	cp psquish.csh $(INSTDIR)/psquish
+	cp pveil.csh $(INSTDIR)/pveil
 	cp xyzimage.csh $(INSTDIR)/xyzimage
 	chmod 755 $(INSTDIR)/normpat $(INSTDIR)/falsecolor \
-$(INSTDIR)/pdfblur $(INSTDIR)/pmblur $(INSTDIR)/xyzimage
+$(INSTDIR)/pdfblur $(INSTDIR)/pmblur $(INSTDIR)/xyzimage \
+$(INSTDIR)/pacuity $(INSTDIR)/psquish $(INSTDIR)/pveil
 
 clean:
 	set nonomatch; rm -f x10image aedimage glimage ra_tiff \
