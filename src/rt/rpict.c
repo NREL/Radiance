@@ -20,7 +20,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <sys/resource.h>
 #else
 #include  <sys/times.h>
-#include  <sys/utsname.h>
 #include  <unistd.h>
 #endif
 #endif
@@ -140,15 +139,13 @@ int  code;
 #ifndef NIX
 report()		/* report progress */
 {
+	extern char  *myhostname();
 	double  u, s;
 #ifdef BSD
-	char  hostname[257];
 	struct rusage  rubuf;
 #else
 	struct tms  tbuf;
-	struct utsname  nambuf;
 	double  period;
-#define hostname  nambuf.nodename
 #endif
 
 	tlastrept = time((time_t *)NULL);
@@ -159,7 +156,6 @@ report()		/* report progress */
 	getrusage(RUSAGE_CHILDREN, &rubuf);
 	u += rubuf.ru_utime.tv_sec + rubuf.ru_utime.tv_usec/1e6;
 	s += rubuf.ru_stime.tv_sec + rubuf.ru_stime.tv_usec/1e6;
-	gethostname(hostname, sizeof(hostname));
 #else
 	times(&tbuf);
 #ifdef _SC_CLK_TCK
@@ -169,17 +165,15 @@ report()		/* report progress */
 #endif
 	u = ( tbuf.tms_utime + tbuf.tms_cutime ) * period;
 	s = ( tbuf.tms_stime + tbuf.tms_cstime ) * period;
-	uname(&nambuf);
 #endif
 
 	sprintf(errmsg,
 		"%lu rays, %4.2f%% after %.3fu %.3fs %.3fr hours on %s\n",
 			nrays, pctdone, u/3600., s/3600.,
-			(tlastrept-tstart)/3600., hostname);
+			(tlastrept-tstart)/3600., myhostname());
 	eputs(errmsg);
 #ifndef BSD
 	signal(SIGCONT, report);
-#undef hostname
 #endif
 }
 #else
