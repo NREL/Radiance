@@ -20,12 +20,6 @@ static const char RCSid[] = "$Id$";
 #include "netproc.h"
 #include "paths.h"
 
-PSERVER* addpserver(char*, char*, char*, int);
-void delpserver();
-int startjob(PSERVER*, char*, int(*)());
-int wait4job(PSERVER*, int);
-
-//static fd_set errdesc;
 static int maxfd;
 static char	ourdir[PATH_MAX];
 static char	ourhost[64];
@@ -117,7 +111,12 @@ kill(pid_t pid, int sig)
 	return 0;
 }
 
-int startjob(PSERVER* pPS, char* command, int (*compf)()) {
+int startjob(
+	PSERVER* pPS,
+	char* command,
+	pscompfunc *compf
+)
+{
 	return 0;
 }
 
