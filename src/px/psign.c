@@ -66,7 +66,6 @@ int  nlines, maxline;			/* text dimensions */
 int  maxwidth;				/* maximum line width (dvi) */
 
 extern char  *getenv();
-extern char  *malloc(), *calloc();
 
 
 main(argc, argv)
@@ -165,9 +164,10 @@ makemap()			/* create the bit map */
 	if (ysiz % SSS)
 		ysiz += SSS - ysiz%SSS;
 	xdim = (xsiz+7)/8;
-	ourbitmap = (BYTE *)calloc(ysiz, xdim);
+	ourbitmap = (BYTE *)bmalloc(ysiz*xdim);
 	if (ourbitmap == NULL)
 		error(SYSTEM, "Out of memory in makemap");
+	bzero((char *)ourbitmap, ysiz*xdim);
 }
 
 
