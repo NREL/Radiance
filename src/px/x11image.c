@@ -234,12 +234,34 @@ init()			/* get data and open window */
 	getbestvis();
 				/* store image */
 	getras();
+				/* get size and position */
+	bzero((char *)&oursizhints, sizeof(oursizhints));
+	oursizhints.width = xmax; oursizhints.height = ymax;
+	if (geometry != NULL) {
+		i = XParseGeometry(geometry, &oursizhints.x, &oursizhints.y,
+				(unsigned *)&oursizhints.width,
+				(unsigned *)&oursizhints.height);
+		if ((i&(WidthValue|HeightValue)) == (WidthValue|HeightValue))
+			oursizhints.flags |= USSize;
+		else
+			oursizhints.flags |= PSize;
+		if ((i&(XValue|YValue)) == (XValue|YValue)) {
+			oursizhints.flags |= USPosition;
+			if (i & XNegative)
+				oursizhints.x += DisplayWidth(thedisplay,
+				ourscreen)-1-oursizhints.width-2*BORWIDTH;
+			if (i & YNegative)
+				oursizhints.y += DisplayHeight(thedisplay,
+				ourscreen)-1-oursizhints.height-2*BORWIDTH;
+		}
+	}
 				/* open window */
 	ourwinattr.border_pixel = ourblack;
 	ourwinattr.background_pixel = ourwhite;
 	ourwinattr.colormap = XCreateColormap(thedisplay, ourroot,
 			ourvis.visual, AllocNone);
-	wind = XCreateWindow(thedisplay, ourroot, 0, 0, xmax, ymax, BORWIDTH,
+	wind = XCreateWindow(thedisplay, ourroot, oursizhints.x, oursizhints.y,
+			oursizhints.width, oursizhints.height, BORWIDTH,
 			ourvis.depth, InputOutput, ourvis.visual, 
 			CWBackPixel|CWBorderPixel|CWColormap, &ourwinattr);
 	if (wind == 0)
@@ -258,29 +280,8 @@ init()			/* get data and open window */
 	XDefineCursor(thedisplay, wind, XCreateFontCursor(thedisplay, 
 			XC_diamond_cross));
 	XStoreName(thedisplay, wind, fname == NULL ? progname : fname);
-	if (geometry != NULL) {
-		bzero((char *)&oursizhints, sizeof(oursizhints));
-		i = XParseGeometry(geometry, &oursizhints.x, &oursizhints.y,
-				(unsigned *)&oursizhints.width,
-				(unsigned *)&oursizhints.height);
-		if ((i&(WidthValue|HeightValue)) == (WidthValue|HeightValue))
-			oursizhints.flags |= USSize;
-		else {
-			oursizhints.width = xmax;
-			oursizhints.height = ymax;
-			oursizhints.flags |= PSize;
-		}
-		if ((i&(XValue|YValue)) == (XValue|YValue)) {
-			oursizhints.flags |= USPosition;
-			if (i & XNegative)
-				oursizhints.x += DisplayWidth(thedisplay,
-				ourscreen)-1-oursizhints.width-2*BORWIDTH;
-			if (i & YNegative)
-				oursizhints.y += DisplayHeight(thedisplay,
-				ourscreen)-1-oursizhints.height-2*BORWIDTH;
-		}
+	if (oursizhints.flags)
 		XSetNormalHints(thedisplay, wind, &oursizhints);
-	}
 	ourxwmhints.flags = InputHint|IconPixmapHint;
 	ourxwmhints.input = True;
 	ourxwmhints.icon_pixmap = XCreateBitmapFromData(thedisplay,
