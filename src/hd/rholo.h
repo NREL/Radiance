@@ -2,10 +2,6 @@
 
 /* SCCSid "$SunId$ SGI" */
 
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
-
-/* SCCSid "$SunId$ SGI" */
-
 /*
  * Header file for rholo program
  */
@@ -67,19 +63,21 @@ typedef struct {
 }
 
 				/* bundle set requests */
-#define BS_NEW		0		/* replace current set with new one */
-#define BS_ADD		1		/* add to current set */
-#define BS_DEL		2		/* delete from current set */
+#define BS_NEW		1		/* replace current set with new one */
+#define BS_ADD		2		/* add to current set */
+#define BS_DEL		3		/* delete from current set */
 
 extern char	*progname;	/* our program name */
 extern char	*hdkfile;	/* holodeck file name */
 extern char	froot[];	/* root file name */
 
+extern char	*outdev;	/* output device name */
+
 extern int	nowarn;		/* turn warnings off? */
 
-extern double	expval;		/* global exposure value */
-
 extern int	ncprocs;	/* number of compute processes */
+
+extern double	expval;		/* global exposure value */
 
 extern time_t	starttime;	/* time we got started */
 extern time_t	endtime;	/* time we should end by */
