@@ -423,7 +423,7 @@ stTrace_ray(st,orig,dir,func)
 
     if(QT_FLAG_IS_DONE(f))
       return(TRUE);
-    /*    
+    /*
     d = DOT(orig,dir)/sqrt(DOT(orig,orig));
     VSUM(v,orig,dir,-d);
     */
@@ -449,12 +449,13 @@ stTrace_ray(st,orig,dir,func)
 }
 
 
-stVisit_poly(st,verts,l,root,func)
+stVisit_poly(st,verts,l,root,func,n)
 STREE *st;
 FVECT *verts;
 LIST *l;
 unsigned int root;
 FUNC func;
+int n;
 {
   int id0,id1,id2;
   FVECT tri[3];
@@ -467,12 +468,12 @@ FUNC func;
     VCOPY(tri[0],verts[id0]);
     VCOPY(tri[1],verts[id1]);
     VCOPY(tri[2],verts[id2]);
-    stRoot_visit_tri(st,root,tri,func);
+    stRoot_visit_tri(st,root,tri,func,n);
     id1 = id2;
   }
 }
 
-stVisit_clip(st,i,verts,vcnt,l,cell,func)
+stVisit_clip(st,i,verts,vcnt,l,cell,func,n)
      STREE *st;
      int i;
      FVECT *verts;
@@ -480,6 +481,7 @@ stVisit_clip(st,i,verts,vcnt,l,cell,func)
      LIST *l;
      unsigned int cell;
      FUNC func;
+     int n;
 {
 
   LIST *labove,*lbelow,*endb,*enda;
@@ -571,7 +573,7 @@ stVisit_clip(st,i,verts,vcnt,l,cell,func)
       if(LIST_NEXT(lbelow) && LIST_NEXT(LIST_NEXT(lbelow)))
       {
 	cellb = cell | (1 << i);
-	stVisit_poly(st,verts,lbelow,cellb,func);
+	stVisit_poly(st,verts,lbelow,cellb,func,n);
       }
       else
 	free_list(lbelow);
@@ -579,7 +581,7 @@ stVisit_clip(st,i,verts,vcnt,l,cell,func)
     if(labove)
      {
       if(LIST_NEXT(labove) && LIST_NEXT(LIST_NEXT(labove)))
-	stVisit_poly(st,verts,labove,cell,func);
+	stVisit_poly(st,verts,labove,cell,func,n);
       else
 	free_list(labove);
      }
@@ -591,7 +593,7 @@ stVisit_clip(st,i,verts,vcnt,l,cell,func)
       if(LIST_NEXT(lbelow) && LIST_NEXT(LIST_NEXT(lbelow)))
 	{
 	  cellb = cell | (1 << i);
-	  stVisit_clip(st,i+1,verts,vcnt,lbelow,cellb,func);
+	  stVisit_clip(st,i+1,verts,vcnt,lbelow,cellb,func,n);
 	}
       else
 	free_list(lbelow);
@@ -599,7 +601,7 @@ stVisit_clip(st,i,verts,vcnt,l,cell,func)
     if(labove)
      {
        if(LIST_NEXT(labove) && LIST_NEXT(LIST_NEXT(labove)))
-	 stVisit_clip(st,i+1,verts,vcnt,labove,cell,func);
+	 stVisit_clip(st,i+1,verts,vcnt,labove,cell,func,n);
        else
 	 free_list(labove);
      }
@@ -607,10 +609,11 @@ stVisit_clip(st,i,verts,vcnt,l,cell,func)
 
 }
 
-stVisit(st,tri,func)
+stVisit(st,tri,func,n)
    STREE *st;
    FVECT tri[3];
    FUNC func;
+   int n;
 {
     int r0,r1,r2;
     LIST *l;
@@ -619,7 +622,7 @@ stVisit(st,tri,func)
     r1 = stLocate_root(tri[1]);
     r2 = stLocate_root(tri[2]);
     if(r0 == r1 && r1==r2)
-      stRoot_visit_tri(st,r0,tri,func);
+      stRoot_visit_tri(st,r0,tri,func,n);
     else
       {
 	FVECT verts[ST_CLIP_VERTS];
@@ -633,7 +636,7 @@ stVisit(st,tri,func)
 	l = add_data(l,1,NULL);
 	l = add_data(l,2,NULL);
 	cnt = 3;
-	stVisit_clip(st,0,verts,&cnt,l,0,func);
+	stVisit_clip(st,0,verts,&cnt,l,0,func,n);
       }
 }
 
@@ -689,11 +692,12 @@ stRoot_insert_tri(st,root,tri,f)
   return(qt);
 }
 
-stRoot_visit_tri(st,root,tri,f)
+stRoot_visit_tri(st,root,tri,f,n)
    STREE *st;
    int root;
    FVECT tri[3];
    FUNC f;
+   int n;
 {
   BCOORD b0[3],b1[3],b2[3];
   BCOORD db10[3],db21[3],db02[3];
@@ -711,7 +715,7 @@ stRoot_visit_tri(st,root,tri,f)
   QT_SET_FLAG(ST_QT(st,root));
   /* Visit cells that triangle intersects */
   qtVisit_tri(root,qt,qtRoot[0],qtRoot[1],qtRoot[2],
-       b0,b1,b2,db10,db21,db02,MAXBCOORD2 >> 1,s0,s1,s2, sq0,sq1,sq2,f);
+       b0,b1,b2,db10,db21,db02,MAXBCOORD2 >> 1,s0,s1,s2, sq0,sq1,sq2,f,n);
 
 }
 

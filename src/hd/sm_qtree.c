@@ -744,7 +744,7 @@ FUNC f;
 */
 
 qtVisit_tri(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,scale,
-	    s0,s1,s2,sq0,sq1,sq2,f)
+	    s0,s1,s2,sq0,sq1,sq2,f,n)
 int root;
 QUADTREE qt;
 BCOORD q0[3],q1[3],q2[3];
@@ -753,11 +753,14 @@ BCOORD dt10[3],dt21[3],dt02[3];
 BCOORD scale;
 unsigned int s0,s1,s2,sq0,sq1,sq2;
 FUNC f;
+int n;
 {
   BCOORD a,b,c;
   BCOORD va[3],vb[3],vc[3];
   unsigned int sa,sb,sc;
 
+  if(n == 0)
+    return;
   /* If a tree: trivial reject and recurse on potential children */
   if(QT_IS_TREE(qt))
   {
@@ -780,7 +783,7 @@ FUNC f;
       vb[2] = c;
       vb[0] = vc[0] = a;
       qtVisit_tri(root,QT_NTH_CHILD(qt,0),q0,vc,
-	  vb,t0,t1,t2,dt10,dt21,dt02, scale>>1,sa,s1,s2,sq0,sb,sc,f);
+	  vb,t0,t1,t2,dt10,dt21,dt02, scale>>1,sa,s1,s2,sq0,sb,sc,f,n-1);
       return;
     }
    if(sb==7)
@@ -791,7 +794,7 @@ FUNC f;
      va[2] = c;
      vc[0] = a;
      qtVisit_tri(root,QT_NTH_CHILD(qt,1),vc,q1,va,
-	     t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,sb,s2,sa,sq1,sc,f);
+	     t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,sb,s2,sa,sq1,sc,f,n-1);
      return;
    }
    if(sc==7)
@@ -802,7 +805,7 @@ FUNC f;
      va[2] = vb[2] = c;
      vb[0] = a;
      qtVisit_tri(root,QT_NTH_CHILD(qt,2),vb,va,
-       q2,t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,s1,sc,sa,sb,sq2,f);
+       q2,t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,s1,sc,sa,sb,sq2,f,n-1);
      return;
    }
 
@@ -816,32 +819,32 @@ FUNC f;
    if(sa==0 && sb==0 && sc==0)
    {
      qtVisit_tri_rev(root,QT_NTH_CHILD(qt,3),va,vb,
-       vc,t0,t1,t2,dt10,dt21,dt02, scale>>1,sa,sb,sc,s0,s1,s2,f);
+       vc,t0,t1,t2,dt10,dt21,dt02, scale>>1,sa,sb,sc,s0,s1,s2,f,n-1);
       return;
    }
 
    if(sa)
      qtVisit_tri(root,QT_NTH_CHILD(qt,0),q0,vc,vb,t0,
-	  t1,t2,dt10,dt21,dt02,scale>>1,sa,s1,s2,sq0,sb,sc,f);
+	  t1,t2,dt10,dt21,dt02,scale>>1,sa,s1,s2,sq0,sb,sc,f,n-1);
    if(sb)
      qtVisit_tri(root,QT_NTH_CHILD(qt,1),vc,q1,va,t0,
-	      t1,t2,dt10,dt21,dt02,scale>>1,s0,sb,s2,sa,sq1,sc,f);
+	      t1,t2,dt10,dt21,dt02,scale>>1,s0,sb,s2,sa,sq1,sc,f,n-1);
    if(sc)
      qtVisit_tri(root,QT_NTH_CHILD(qt,2),vb,va,q2,t0,
-	      t1,t2,dt10,dt21,dt02,scale>>1,s0,s1,sc,sa,sb,sq2,f);
+	      t1,t2,dt10,dt21,dt02,scale>>1,s0,s1,sc,sa,sb,sq2,f,n-1);
    qtVisit_tri_rev(root,QT_NTH_CHILD(qt,3),va,vb,vc,t0,
-	     t1,t2,dt10,dt21,dt02,scale>>1,sa,sb,sc,s0,s1,s2,f);
+	     t1,t2,dt10,dt21,dt02,scale>>1,sa,sb,sc,s0,s1,s2,f,n-1);
   }
   /* Leaf node: Do definitive test */
   else
     qtLeaf_visit_tri(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,
-			 scale,s0,s1,s2,sq0,sq1,sq2,f);
+			 scale,s0,s1,s2,sq0,sq1,sq2,f,n);
 
 }
 
 
 qtVisit_tri_rev(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,scale,
-	    s0,s1,s2,sq0,sq1,sq2,f)
+	    s0,s1,s2,sq0,sq1,sq2,f,n)
 int root;
 QUADTREE qt;
 BCOORD q0[3],q1[3],q2[3];
@@ -850,11 +853,14 @@ BCOORD dt10[3],dt21[3],dt02[3];
 BCOORD scale;
 unsigned int s0,s1,s2,sq0,sq1,sq2;
 FUNC f;
+int n;
 {
   BCOORD a,b,c;
   BCOORD va[3],vb[3],vc[3];
   unsigned int sa,sb,sc;
 
+  if(n==0)
+    return;
   /* If a tree: trivial reject and recurse on potential children */
   if(QT_IS_TREE(qt))
   {
@@ -876,7 +882,7 @@ FUNC f;
       vb[2] = c;
       vb[0] = vc[0] = a;
       qtVisit_tri_rev(root,QT_NTH_CHILD(qt,0),q0,vc,
-	  vb,t0,t1,t2,dt10,dt21,dt02, scale>>1,sa,s1,s2,sq0,sb,sc,f);
+	  vb,t0,t1,t2,dt10,dt21,dt02, scale>>1,sa,s1,s2,sq0,sb,sc,f,n-1);
       return;
     }
     if(sb==0)
@@ -887,7 +893,7 @@ FUNC f;
       va[2] = c;
       vc[0] = a;
       qtVisit_tri_rev(root,QT_NTH_CHILD(qt,1),vc,q1,va,
-         t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,sb,s2,sa,sq1,sc,f);
+         t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,sb,s2,sa,sq1,sc,f,n-1);
       return;
     }
     if(sc==0)
@@ -898,7 +904,7 @@ FUNC f;
       va[2] = vb[2] = c;
       vb[0] = a;
       qtVisit_tri_rev(root,QT_NTH_CHILD(qt,2),vb,va,
-	 q2,t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,s1,sc,sa,sb,sq2,f);
+	 q2,t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,s1,sc,sa,sb,sq2,f,n-1);
       return;
     }
     va[0] = q1[0]; 
@@ -911,33 +917,33 @@ FUNC f;
     if(sa==7 && sb==7 && sc==7)
     {
      qtVisit_tri(root,QT_NTH_CHILD(qt,3),va,vb,
-	   vc,t0,t1,t2,dt10,dt21,dt02, scale>>1,sa,sb,sc,s0,s1,s2,f);
+	   vc,t0,t1,t2,dt10,dt21,dt02, scale>>1,sa,sb,sc,s0,s1,s2,f,n-1);
       return;
     }
     if(sa!=7)
       qtVisit_tri_rev(root,QT_NTH_CHILD(qt,0),q0,vc,vb,
-	   t0,t1,t2,dt10,dt21,dt02,scale>>1,sa,s1,s2,sq0,sb,sc,f);
+	   t0,t1,t2,dt10,dt21,dt02,scale>>1,sa,s1,s2,sq0,sb,sc,f,n-1);
     if(sb!=7)
       qtVisit_tri_rev(root,QT_NTH_CHILD(qt,1),vc,q1,va,
-	   t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,sb,s2,sa,sq1,sc,f);
+	   t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,sb,s2,sa,sq1,sc,f,n-1);
     if(sc!=7)
       qtVisit_tri_rev(root,QT_NTH_CHILD(qt,2),vb,va,q2,
-	   t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,s1,sc,sa,sb,sq2,f);
+	   t0,t1,t2,dt10,dt21,dt02,scale>>1,s0,s1,sc,sa,sb,sq2,f,n-1);
 
     qtVisit_tri(root,QT_NTH_CHILD(qt,3),va,vb,vc,t0,t1,
-	      t2,dt10,dt21,dt02,scale>>1,sa,sb,sc,s0,s1,s2,f);
+	      t2,dt10,dt21,dt02,scale>>1,sa,sb,sc,s0,s1,s2,f,n-1);
     return;
   }
   /* Leaf node: Do definitive test */
   else
     qtLeaf_visit_tri_rev(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,
-			 scale,s0,s1,s2,sq0,sq1,sq2,f);
+			 scale,s0,s1,s2,sq0,sq1,sq2,f,n);
 }
 
 
 
 qtLeaf_visit_tri(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,
-		 scale, s0,s1,s2,sq0,sq1,sq2,f)
+		 scale, s0,s1,s2,sq0,sq1,sq2,f,n)
 int root;
 QUADTREE qt;
 BCOORD q0[3],q1[3],q2[3];
@@ -945,13 +951,14 @@ BCOORD t0[3],t1[3],t2[3];
 BCOORD dt10[3],dt21[3],dt02[3];
 unsigned int scale,s0,s1,s2,sq0,sq1,sq2;
 FUNC f;
+int n;
 { 
   double db;
   unsigned int e0,e1,e2;
   char al,ah,bl,bh,cl,ch,testl,testh;
   char test_t0t1,test_t1t2,test_t2t0;
   BCOORD a,b,c;
-
+  
   /* First check if can trivial accept: if vertex in cell */
   if(s0 & s1 & s2)
     goto Lfunc_call;
@@ -1055,9 +1062,11 @@ FUNC f;
   return;
 
 Lfunc_call:
-  f.func(f.argptr,root,qt);
+
+  f.func(f.argptr,root,qt,n);
   if(!QT_IS_EMPTY(qt))
     QT_LEAF_SET_FLAG(qt);
+
 }
 
 
@@ -1065,7 +1074,7 @@ Lfunc_call:
 /* Leaf node: Do definitive test */
 QUADTREE
 qtLeaf_visit_tri_rev(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,
-		 scale, s0,s1,s2,sq0,sq1,sq2,f)
+		 scale, s0,s1,s2,sq0,sq1,sq2,f,n)
 int root;
 QUADTREE qt;
 BCOORD q0[3],q1[3],q2[3];
@@ -1073,6 +1082,7 @@ BCOORD t0[3],t1[3],t2[3];
 BCOORD dt10[3],dt21[3],dt02[3];
 unsigned int scale,s0,s1,s2,sq0,sq1,sq2;
 FUNC f;
+int n;
 { 
   double db;
   unsigned int e0,e1,e2;
@@ -1191,7 +1201,7 @@ FUNC f;
   return;
 
 Lfunc_call:
-  f.func(f.argptr,root,qt);
+  f.func(f.argptr,root,qt,n);
   if(!QT_IS_EMPTY(qt))
     QT_LEAF_SET_FLAG(qt);
 }
