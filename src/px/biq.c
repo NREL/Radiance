@@ -10,6 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *	9/19/88
  */
 
+#include "standard.h"
 #include "ciq.h"
 
 

@@ -9,7 +9,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *	2/26/88
  */
 
-#include <stdio.h>
+#include "standard.h"
 
 #include "color.h"
 
