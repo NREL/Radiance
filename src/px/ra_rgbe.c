@@ -31,12 +31,7 @@ int  argc;
 char  *argv[];
 {
 	int  i;
-#ifdef MSDOS
-	extern int  _fmode;
-	_fmode = O_BINARY;
-	setmode(fileno(stdin), O_BINARY);
-	setmode(fileno(stdout), O_BINARY);
-#endif
+
 	progname = argv[0];
 
 	for (i = 1; i < argc; i++)
@@ -68,6 +63,10 @@ char  *argv[];
 				progname, argv[i+1]);
 		exit(1);
 	}
+#ifdef MSDOS
+	setmode(fileno(stdin), O_BINARY);
+	setmode(fileno(stdout), O_BINARY);
+#endif
 	transfer();
 	exit(0);
 userr:
@@ -90,33 +89,34 @@ char  *err;
 
 transfer()		/* transfer Radiance picture */
 {
+	static char	ourfmt[LPICFMT+1] = PICFMT;
 	int	order;
 	int	xmax, ymax;
 	COLR	*scanin;
 	int	y;
 				/* get header info. */
-	if (checkheader(stdin, COLRFMT, stdout) < 0 ||
+	if ((y = checkheader(stdin, ourfmt, stdout)) < 0 ||
 			(order = fgetresolu(&xmax, &ymax, stdin)) < 0)
 		quiterr("bad picture format");
+	if (!y)
+		strcpy(ourfmt, COLRFMT);
 	fputs(progname, stdout);
 	if (bradj)
-		printf(" -e %+d", bradj);
-	if (doflat)
-		fputs("\n", stdout);
-	else {
-		fputs(" -r\n", stdout);
-		fputformat(COLRFMT, stdout);
-	}
+		fprintf(stdout, " -e %+d", bradj);
+	if (!doflat)
+		fputs(" -r", stdout);
+	fputc('\n', stdout);
 	if (bradj)
 		fputexpos(pow(2.0, (double)bradj), stdout);
-	fputs("\n", stdout);
+	fputformat(ourfmt, stdout);
+	fputc('\n', stdout);
 	fputresolu(order, xmax, ymax, stdout);
 						/* allocate scanline */
 	scanin = (COLR *)malloc(xmax*sizeof(COLR));
 	if (scanin == NULL)
 		quiterr("out of memory in transfer");
 						/* convert image */
-	for (y = ymax-1; y >= 0; y--) {
+	for (y = ymax; y--; ) {
 		if (freadcolrs(scanin, xmax, stdin) < 0)
 			quiterr("error reading input picture");
 		if (bradj)
