@@ -208,9 +208,8 @@ FILE  *fin;
 	FILE  *pin;
 	char  buf[512];
 
-	buf[0] = '\0';
 	fgets(buf, sizeof(buf), fin);
-	if (buf[0] && buf[strlen(buf)-1] == '\n')
+	if (buf[strlen(buf)-1] == '\n')
 		buf[strlen(buf)-1] = '\0';
 	if ((pin = popen(buf+1, "r")) == NULL) {
 		fprintf(stderr, "%s: (%s): cannot execute \"%s\"\n",
