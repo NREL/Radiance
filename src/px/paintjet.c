@@ -67,7 +67,7 @@ char  *fname;
 	for (i = yres-1; i >= 0; i--) {
 		if (freadcolrs(scanline, xres, input) < 0)
 			return(-1);
-		normcolrs(scanline, xres);
+		normcolrs(scanline, xres, 0);
 		plotscan(scanline, xres, i);
 	}
 

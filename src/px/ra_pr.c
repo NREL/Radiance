@@ -291,7 +291,7 @@ register rgbpixel  *l3;
 		quiterr("read error in picreadline3");
 	inpic->nexty = y+1;
 							/* convert scanline */
-	normcolrs(inline, xmax);
+	normcolrs(inline, xmax, 0);
 	for (i = 0; i < xmax; i++) {
 		l3[i].r = inline[i][RED];
 		l3[i].g = inline[i][GRN];

@@ -105,7 +105,7 @@ char	*file;
 			fputs(": read error\n", stderr);
 			exit(1);
 		}
-		normcolrs(scanin, xres);	/* normalize */
+		normcolrs(scanin, xres, 0);	/* normalize */
 		for (x = 0; x < xres; x++)	/* convert */
 			sc_frame_arr[y+ybeg][x+xbeg] =
 			((gammamap[scanin[x][RED]]+(random()&7))&0xf8)<<7

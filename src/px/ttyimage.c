@@ -51,7 +51,7 @@ char  **argv;
 			fprintf(stderr, "%s: read error\n", argv[0]);
 			exit(1);
 		}
-		normcolrs(scanline, xres);
+		normcolrs(scanline, xres, 0);
 		for (j = 0; j < xres; j++)
 			putchar(shade(scanline[j]));
 		putchar('\n');
