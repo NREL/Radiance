@@ -454,7 +454,11 @@ double	z;
 		y1 = p0->y + c1*s1y/l1;
 		for (c2 = l2; c2-- > 0; ) {
 			x = x1 + c2*s2x/l2;
+			if (x < 0 || x >= hresolu)
+				continue;
 			y = y1 + c2*s2y/l2;
+			if (y < 0 || y >= vresolu)
+				continue;
 			if (zscan(y)[x] <= 0 || zscan(y)[x]-z
 						> zeps*zscan(y)[x]) {
 				zscan(y)[x] = z;
