@@ -30,10 +30,11 @@ register RAY  *r;
 	register int  i;
 
 	if ((modset = (OBJECT *)m->os) == NULL) {
-		register OBJECT  mod;
+		OBJECT  obj, mod;
 
 		if (m->oargs.nsargs < 1 || m->oargs.nsargs > MAXSET)
 			objerror(m, USER, "bad # arguments");
+		obj = objndx(m);
 		modset = (OBJECT *)malloc((m->oargs.nsargs+1)*sizeof(OBJECT));
 		if (modset == NULL)
 			error(SYSTEM, "out of memory in m_clip");
@@ -41,7 +42,7 @@ register RAY  *r;
 		for (i = 0; i < m->oargs.nsargs; i++) {
 			if (!strcmp(m->oargs.sarg[i], VOIDID))
 				continue;
-			if ((mod = modifier(m->oargs.sarg[i])) == OVOID) {
+			if ((mod = lastmod(obj, m->oargs.sarg[i])) == OVOID) {
 				sprintf(errmsg, "unknown modifier \"%s\"",
 						m->oargs.sarg[i]);
 				objerror(m, WARNING, errmsg);
