@@ -92,7 +92,7 @@ char  **argv;
 	long  fpos;
 	double	outaspect = 0.0;
 	double	d;
-	int  i, j;
+	int  i;
 #ifdef MSDOS
 	extern int  _fmode;
 	_fmode = O_BINARY;

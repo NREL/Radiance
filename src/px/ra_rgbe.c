@@ -64,7 +64,7 @@ char  *argv[];
 		exit(1);
 	}
 	if (i == argc-2 && freopen(argv[i+1], "w", stdout) == NULL) {
-		fprintf(stderr, "can't open output \"%s\"\n",
+		fprintf(stderr, "%s: can't open output \"%s\"\n",
 				progname, argv[i+1]);
 		exit(1);
 	}
@@ -93,7 +93,6 @@ transfer()		/* transfer Radiance picture */
 	int	order;
 	int	xmax, ymax;
 	COLR	*scanin;
-	register int	x;
 	int	y;
 				/* get header info. */
 	if (checkheader(stdin, COLRFMT, stdout) < 0 ||
