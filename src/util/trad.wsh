@@ -49,10 +49,10 @@ Do you wish to save it now?"
 			.file invoke
 			set curmess {Rename file or uncheck read-only to save.}
 			return 0
-		} else {
-			catch {unset oldradvar}
-			save_vars $rifname
-		}
+		} elseif {[save_vars $rifname]} {
+			gotfile 1
+			return 1
+		} else { return 0 }
 	} else { return 1 }
 }
 
@@ -159,6 +159,7 @@ proc gotfile {{o 1}} {		# set file possession state
 		}
 	} else {
 		set mode disabled
+		.file invoke
 	}
 	foreach b {scene zone views options action results} {
 		.$b configure -state $mode
@@ -168,9 +169,8 @@ proc gotfile {{o 1}} {		# set file possession state
 # Decide where to go and start
 
 if {[llength $argv] == 0} {
-	gotfile 0
 	set curmess "Choose a Radiance project file."
-	.file invoke
+	gotfile 0
 } elseif {[llength $argv] == 1} {
 	cd [file dirname $argv]
 	set curfile [file tail $argv]
