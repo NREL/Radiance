@@ -11,7 +11,6 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include  <stdio.h>
-#include  <signal.h>
 #include  <sys/ioctl.h>
 
 #define INITSTR		""		/* TTY initialization string */
@@ -23,13 +22,11 @@ main(argc, argv)		/* called with pid to signal and pipe fd */
 int	argc;
 char	*argv[];
 {
-	int  sigpid;
 	int  outfd;
 
-	if (argc != 3)
+	if (argc != 2)
 		exit(1);
-	sigpid = atoi(argv[1]);
-	outfd = atoi(argv[2]);
+	outfd = atoi(argv[1]);
 
 	fputs(INITSTR, stdout);
 	fflush(stdout);
@@ -47,8 +44,9 @@ char	*argv[];
 	ioctl(0, TIOCSETP, &ttymode);
 						/* read lines from input */
 	for ( ; ; ) {
-		ungetc(getc(stdin), stdin);	/* notify sigpid */
-		kill(sigpid, SIGIO);
+		ungetc(getc(stdin), stdin);	/* notify caller */
+		putc(' ', stdout);
+		fflush(stdout);
 		sendline();
 	}
 }

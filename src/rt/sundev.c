@@ -57,11 +57,11 @@ extern char  *progname;
 
 
 struct driver *
-dinit(name, id)			/* initialize SunView (independent) */
+sun_init(name, id)		/* initialize SunView */
 char  *name, *id;
 {
-	extern Notify_value	my_notice_destroy();
-	char	*ttyargv[4], arg1[16], arg2[16];
+	extern Notify_value	newinput();
+	char	*ttyargv[3], arg1[16];
 	int	pd[2];
 	int	com;
 
@@ -78,12 +78,10 @@ char  *name, *id;
 		stderr_v("cannot create pipe\n");
 		return(NULL);
 	}
-	sprintf(arg1, "%d", getppid());
-	sprintf(arg2, "%d", pd[1]);
+	sprintf(arg1, "%d", pd[1]);
 	ttyargv[0] = TTYPROG;
 	ttyargv[1] = arg1;
-	ttyargv[2] = arg2;
-	ttyargv[3] = NULL;
+	ttyargv[2] = NULL;
 #ifdef BSD
 	fcntl(pd[0], F_SETFD, 1);
 #endif
@@ -101,6 +99,7 @@ char  *name, *id;
 		stderr_v("cannot open tty\n");
 		return(NULL);
 	}
+	notify_set_input_func(sun_init, newinput, pd[0]);
 	canvas = window_create(frame, CANVAS,
 			CANVAS_RETAINED, FALSE,
 			WIN_INPUT_DESIGNEE, window_get(tty,WIN_DEVICE_NUMBER),
@@ -123,6 +122,7 @@ char  *name, *id;
 }
 
 
+static
 sun_close()				/* all done */
 {
 	if (frame != 0) {
@@ -133,6 +133,19 @@ sun_close()				/* all done */
 }
 
 
+static Notify_value
+newinput(cid, fd)			/* register new input */
+int  (*cid)();
+int  fd;
+{
+	notify_set_input_func(sun_init, NOTIFY_FUNC_NULL, fd);
+	getc(ttyin);
+	sun_driver.inpready++;
+	return(NOTIFY_DONE);
+}
+
+
+static
 sun_clear(nwidth, nheight)		/* clear our canvas */
 int  nwidth, nheight;
 {
@@ -157,6 +170,7 @@ int  nwidth, nheight;
 }
 
 
+static
 sun_paintr(col, xmin, ymin, xmax, ymax)		/* fill a rectangle */
 COLOR  col;
 int  xmin, ymin, xmax, ymax;
@@ -172,9 +186,12 @@ int  xmin, ymin, xmax, ymax;
 }
 
 
+static
 sun_comin(buf, prompt)		/* input a string from the command line */
 char  *buf, *prompt;
 {
+	Notify_value  newinput();
+
 	if (prompt != NULL)
 		sun_comout(prompt);
 						/* echo characters */
@@ -184,10 +201,15 @@ char  *buf, *prompt;
 	} while (buf[0]);
 						/* get result */
 	mygets(buf, ttyin);
+
+	if (sun_driver.inpready > 0)
+		sun_driver.inpready--;
+
+	notify_set_input_func(sun_init, newinput, fileno(ttyin));
 }
 
 
-int
+static int
 sun_getcur(xpp, ypp)			/* get cursor position */
 int  *xpp, *ypp;
 {
@@ -227,6 +249,7 @@ again:
 }
 
 
+static
 sun_comout(s)			/* put string out to tty subwindow */
 register char	*s;
 {
@@ -243,6 +266,7 @@ register char	*s;
 }
 
 
+static
 getmap()				/* allocate color map segments */
 {
 	char  cmsname[20];
@@ -278,6 +302,7 @@ getmap()				/* allocate color map segments */
 }
 
 
+static
 newcolr(ndx, r, g, b)		/* enter a color into hardware table */
 int  ndx;
 unsigned char  r, g, b;
