@@ -85,10 +85,10 @@ char	*argv[];
 	double	f;
 	int	a;
 	
-	funset(vcolin[RED], 1, l_redin);
-	funset(vcolin[GRN], 1, l_grnin);
-	funset(vcolin[BLU], 1, l_bluin);
-	funset(vbrtin, 1, l_brtin);
+	funset(vcolin[RED], 1, '=', l_redin);
+	funset(vcolin[GRN], 1, '=', l_grnin);
+	funset(vcolin[BLU], 1, '=', l_bluin);
+	funset(vbrtin, 1, '=', l_brtin);
 	
 	for (a = 1; a < argc; a++)
 		if (argv[a][0] == '-')

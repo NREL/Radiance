@@ -52,9 +52,9 @@ char  *argv[];
 	char  stmp[256];
 
 	varset("PI", ':', PI);
-	funset("hermite", 5, l_hermite);
-	funset("bezier", 5, l_bezier);
-	funset("bspline", 5, l_bspline);
+	funset("hermite", 5, ':', l_hermite);
+	funset("bezier", 5, ':', l_bezier);
+	funset("bspline", 5, ':', l_bspline);
 
 	if (argc < 8)
 		goto userror;
