@@ -14,7 +14,6 @@ static char SCCSid[] = "$SunId$ SGI";
 #include <GL/glx.h>
 #include <GL/glu.h>
 
-#include "random.h"
 #include "rhd_odraw.h"
 
 #ifndef DEPTHEPS
@@ -318,6 +317,18 @@ int	newhist;
 }
 
 
+odRedrawAll()				/* mark all samples for redraw */
+{
+	register int	i;
+
+	if ((needmapping&(NEWMAP|NEWRGB)) == (NEWMAP|NEWRGB))
+		return;			/* will be called later, anyway */
+	for (i = odS.nsamp; i--; )
+		if (odS.ip[i][0] >= 0)
+			SET4(odS.redraw, i);
+}
+
+
 odRedraw(vn, hmin, vmin, hmax, vmax)	/* redraw view region */
 int	vn, hmin, vmin, hmax, vmax;
 {
@@ -435,17 +446,17 @@ int	vn;
 		if (needmapping & NEWMAP) {
 			if (needmapping & NEWHIST)
 				tmClearHisto();
+			needmapping &= ~NEWHIST;
 			if (tmAddHisto(odS.brt,odS.nsamp,1) != TM_E_OK)
 				return;
 			if (tmComputeMapping(0.,0.,0.) != TM_E_OK)
 				return;
-			for (i = odS.nsamp; i--; )	/* redraw all */
-				if (odS.ip[i][0] >= 0)
-					SET4(odS.redraw, i);
+			needmapping &= ~NEWMAP;
+			odRedrawAll();			/* redraw everything */
 		}
 		if (tmMapPixels(odS.rgb,odS.brt,odS.chr,odS.nsamp) != TM_E_OK)
 			return;
-		needmapping = 0;		/* reset flag */
+		needmapping &= ~NEWRGB;
 	}
 					/* this code segment was too slow */
 #if 0
@@ -454,7 +465,7 @@ int	vn;
 			odDrawSamp(vn, i);
 			CLR4(odS.redraw, i);
 		}
-#endif
+#else
 					/* redraw samples at each end */
 	for (i = odView[vn].sfirst; i < odView[vn].sfirst+31; i++)
 		if (CHK4(odS.redraw, i)) {
@@ -473,6 +484,7 @@ int	vn;
 				odDrawSamp(vn, (j<<5)+i);
 				odS.redraw[j] &= ~(1L<<i);
 			}
+#endif
 }
 
 
@@ -514,7 +526,7 @@ register struct ODview	*vp;
 double	sz;
 {
 	int	na, dv;
-	double	hrad, vrad, phi0, phi;
+	double	hrad, vrad, phi;
 	register int	i;
 
 	DCHECK(sz > 1, CONSISTENCY, "super-unary size in make_arms");
@@ -524,10 +536,9 @@ double	sz;
 	vrad = FANSIZE*sz*vp->vhi/vp->vlow;
 	if (hrad*vrad < 2.25)
 		hrad = vrad = 1.5;
-	phi0 = (2.*PI) * frandom();
 	dv = OMAXDEPTH*sz + 0.5;
 	for (i = 0; i < na; i++) {
-		phi = phi0 + (2.*PI)*i/na;
+		phi = (2.*PI)*i/na;
 		ar[i][0] = cp[0] + tcos(phi)*hrad + 0.5;
 		ar[i][1] = cp[1] + tsin(phi)*vrad + 0.5;
 		ar[i][2] = dv;
@@ -612,12 +623,28 @@ register int	h, v;
 }
 
 
+static int
+blockedge(vp, bi0, bi1)			/* check for edge between blocks? */
+register struct ODview	*vp;
+register int	bi0, bi1;
+{
+	if (bi1 < 0)
+		return(1);		/* end off view */
+	if (CHK4(vp->emap, bi1))
+		return(1);		/* end has edges */
+	if (bi1 == bi0+1 || bi1 == bi0-1 ||
+			bi1 == bi0+vp->hlow || bi1 == bi0-vp->hlow)
+		return(0);		/* end in adjacent block -- no edges */
+	return(1);			/* conservative for rarer case */
+}
+
+
 odDrawSamp(vn, id)			/* draw view sample */
 int	vn;
 register int	id;
 {
 	GLshort	arm[MAXFAN][3];
-	int	narms, blockindex, bi1;
+	int	narms, blockindex;
 	register struct ODview	*vp;
 	double	size;
 	int	home_edges;
@@ -634,12 +661,8 @@ register int	id;
 	if (vp->emap != NULL) {		/* check for edge collisions */
 		home_edges = CHK4(vp->emap, blockindex);
 		for (i = 0; i < narms; i++)
-			/* the following test is flawed, because we could
-			 * be passing through a block on a diagonal run */
-			if (home_edges ||
-				( (bi1 = getblock(vp, arm[i][0], arm[i][1]))
-						!= blockindex &&
-					(bi1 < 0 || CHK4(vp->emap, bi1)) ))
+			if (home_edges || blockedge(vp, blockindex,
+					getblock(vp, arm[i][0], arm[i][1])))
 				clip_edge(arm[i], odS.ip[id], vp);
 	}
 					/* draw triangle fan */
