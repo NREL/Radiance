@@ -13,7 +13,7 @@
 
 #define GLAREBR		7.0		/* glare source is this * avg. lum. */
 
-#define SAMPDENS	50		/* default samples per unit in image */
+#define SAMPDENS	75		/* default samples per unit in image */
 #define TSAMPSTEP	10		/* sample step to compute threshold */
 
 #define SEPS		1		/* sources this close ==> contig. */
@@ -22,6 +22,9 @@
 #define MAXBUDDY	(4.*sqrt(SAMIN/PI))	/* max separation for pairing */
 
 #define TOOSMALL(s)	((s)->brt*(s)->dom < threshold*SAMIN)
+
+#define SABIG		.025		/* solid angle of splittable source */
+#define LCORR		.8		/* linearity of splittable source */
 
 extern VIEW	ourview;		/* our view */
 extern VIEW	pictview;		/* picture view */

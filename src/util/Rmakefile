@@ -31,9 +31,9 @@ makedist:	makedist.o fvect.o setscan.o
 	cc $(CFLAGS) -o makedist makedist.o fvect.o setscan.o -lm
 
 findglare:	findglare.o glareval.o glaresrc.o color.o fvect.o image.o \
-header.o resolu.o setscan.o
+header.o resolu.o setscan.o linregr.o
 	cc $(CFLAGS) -o findglare findglare.o glareval.o glaresrc.o \
-color.o fvect.o image.o header.o resolu.o setscan.o -lm
+color.o fvect.o image.o header.o resolu.o setscan.o linregr.o -lm
 
 glarendx:	glarendx.o image.o header.o erf.o fvect.o resolu.o
 	cc $(CFLAGS) -o glarendx glarendx.o image.o header.o fvect.o \
@@ -60,6 +60,8 @@ setscan.o makedist.o:	setscan.h
 
 findglare.o glareval.o \
 glaresrc.o:	glare.h standard.h mat4.h fvect.h view.h color.h setscan.h
+
+glaresrc.o linregr.o:	linregr.h
 
 image.o xglaresrc.o:	standard.h mat4.h fvect.h view.h
 
