@@ -92,6 +92,8 @@ FILE	*fp;
 	register int	c;
 	register VERTEX	*lastv = NULL;
 
+	printf("# T-mesh from: %s\n", fname);
+
 	picfile[0] = '\0';
 	strcpy(matname, "void");
 
@@ -174,9 +176,12 @@ register VERTEX	*v1, *v2, *v3;
 		printf("4 dx dy dz %s\n", CALNAME);
 		printf("0\n21\n");
 		put_baryc(bvecs);
-		printf("\t%f %f %f\n", v1->nor[0], v1->nor[1], v1->nor[2]);
-		printf("\t%f %f %f\n", v2->nor[0], v2->nor[1], v2->nor[2]);
-		printf("\t%f %f %f\n", v3->nor[0], v3->nor[1], v3->nor[2]);
+		printf("\t%14.12g %14.12g %14.12g\n",
+				v1->nor[0], v2->nor[0], v3->nor[0]);
+		printf("\t%14.12g %14.12g %14.12g\n",
+				v1->nor[1], v2->nor[1], v3->nor[1]);
+		printf("\t%14.12g %14.12g %14.12g\n",
+				v1->nor[2], v2->nor[2], v3->nor[2]);
 	}
 					/* put out pattern (if any) */
 	if (*pn && (v1->flags & v2->flags & v3->flags & V_HASINDX)) {
@@ -185,9 +190,8 @@ register VERTEX	*v1, *v2, *v3;
 		printf("7 noneg noneg noneg %s %s u v\n", pn, CALNAME);
 		printf("0\n18\n");
 		put_baryc(bvecs);
-		printf("\t%f %f\n", v1->ndx[0], v1->ndx[1]);
-		printf("\t%f %f\n", v2->ndx[0], v2->ndx[1]);
-		printf("\t%f %f\n", v3->ndx[0], v3->ndx[1]);
+		printf("\t%f %f %f\n", v1->ndx[0], v2->ndx[0], v3->ndx[0]);
+		printf("\t%f %f %f\n", v1->ndx[1], v2->ndx[1], v3->ndx[1]);
 	}
 					/* put out triangle */
 	printf("\n%s polygon t%d\n", mod, ++ntri);
