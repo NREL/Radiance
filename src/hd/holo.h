@@ -86,8 +86,8 @@ typedef struct {
 
 #define bnrays(hp,i)	((hp)->bl[i]!=NULL ? (hp)->bl[i]->nrm : (hp)->bi[i].nrd)
 
-#define hdflush(hp)	(hdfreebeam(hp,0) && hdsync(hp,0))
-#define hdclobber(hp)	(hdkillbeam(hp,0) && hdsync(hp,0))
+#define hdflush(hp)	(hdfreebeam(hp,0), hdsync(hp,0))
+#define hdclobber(hp)	(hdkillbeam(hp,0), hdsync(hp,0))
 
 extern HOLO	*hdinit(), *hdalloc();
 extern BEAM	*hdgetbeam();
