@@ -19,7 +19,7 @@ INSTALL = cp
 #
 # The following paths must exist and be relative to root:
 #
-DEVDIR = $(INSTDIR)
+DEVDIR = $(INSTDIR)/dev
 LIBDIR = /usr/local/lib/ray
 
 #
@@ -34,7 +34,7 @@ COMPAT = malloc.o
 DOBJS = devtable.o devcomm.o aed.o tty.o editline.o x10.o xtwind.o \
 	colortab.o nwsdev.o
 DLIBS = -lX -lcps
-DRIVERS = $(DEVDIR)/sundev $(DEVDIR)/sun.com $(DEVDIR)/x11dev
+DRIVERS = $(DEVDIR)/sun $(DEVDIR)/sun.com $(DEVDIR)/x11
 
 #
 # Standard object files:
@@ -95,15 +95,15 @@ $(DESTDIR)/rview:	$(RVOBJS)
 $(DESTDIR)/lookamb:	lookamb.o
 	$(CC) $(CFLAGS) -o $(DESTDIR)/lookamb lookamb.o
 
-$(DEVDIR)/sundev:	sundev.o devmain.o colortab.o editline.o
-	$(CC) $(CFLAGS) -o $(DEVDIR)/sundev devmain.o sundev.o colortab.o \
+$(DEVDIR)/sun:	sundev.o devmain.o colortab.o editline.o
+	$(CC) $(CFLAGS) -s -o $(DEVDIR)/sun devmain.o sundev.o colortab.o \
 editline.o -lsuntool -lsunwindow -lpixrect $(LIBS)
 
 $(DEVDIR)/sun.com:	suncom.o editline.o
-	$(CC) $(CFLAGS) -o $(DEVDIR)/sun.com suncom.o editline.o
+	$(CC) $(CFLAGS) -s -o $(DEVDIR)/sun.com suncom.o editline.o
 
-$(DEVDIR)/x11dev:	x11.o x11twind.o colortab.o devmain.o editline.o
-	$(CC) $(CFLAGS) -o $(DEVDIR)/x11dev x11.o x11twind.o devmain.o \
+$(DEVDIR)/x11:	x11.o x11twind.o colortab.o devmain.o editline.o
+	$(CC) $(CFLAGS) -s -o $(DEVDIR)/x11 x11.o x11twind.o devmain.o \
 colortab.o editline.o -lX11 $(LIBS)
 
 #
@@ -130,8 +130,11 @@ rvmain.o:	rmain.c
 #
 # end of dispersion compiles.
 
+devcomm.o:	devcomm.c
+	$(CC) $(CFLAGS) -DDEVPATH=\"$(DEVDIR)\" -c devcomm.c
+
 sundev.o:	sundev.c
-	$(CC) $(CFLAGS) -Dsun_init=dinit -c sundev.c
+	$(CC) $(CFLAGS) -DTTYPROG=\"$(DEVDIR)/sun.com\" -Dsun_init=dinit -c sundev.c
 
 x11.o:	x11.c
 	$(CC) $(CFLAGS) -Dx11_init=dinit -c x11.c
