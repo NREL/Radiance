@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -45,7 +45,10 @@ register char  *fname;
 	do {
 		cp = pname;
 		while (*sp && (*cp = *sp++) != ':')
-			cp++;
+			if (*cp == '\\') {		/* escape */
+				if (*sp) *cp++ = *sp++;
+			} else
+				cp++;
 		if (cp > pname && cp[-1] != '/')
 			*cp++ = '/';
 		strcpy(cp, fname);
