@@ -200,7 +200,6 @@ OBJECT  fore, back;
 double  coef;
 {
 	RAY  fr, br;
-	COLOR  ctmp;
 	int  foremat, backmat;
 	register int  i;
 					/* clip coefficient */
@@ -210,41 +209,35 @@ double  coef;
 		coef = 0.0;
 					/* foreground */
 	copystruct(&fr, r);
-	fr.pert[0] = fr.pert[1] = fr.pert[2] = 0.0;
-	setcolor(fr.pcol, 1.0, 1.0, 1.0);
-	setcolor(fr.rcol, 0.0, 0.0, 0.0);
 	if (fore != OVOID && coef > FTINY)
 		foremat = rayshade(&fr, fore);
 	else
 		foremat = 0;
 					/* background */
 	copystruct(&br, r);
-	br.pert[0] = br.pert[1] = br.pert[2] = 0.0;
-	setcolor(br.pcol, 1.0, 1.0, 1.0);
-	setcolor(br.rcol, 0.0, 0.0, 0.0);
 	if (back != OVOID && coef < 1.0-FTINY)
 		backmat = rayshade(&br, back);
 	else
 		backmat = foremat;
 					/* check */
-	if ((backmat==0) != (foremat==0))
+	if ((foremat==0) != (backmat==0))
 		objerror(r->ro, USER, "mixing material with non-material");
-					/* sum perturbations */
+					/* mix perturbations */
 	for (i = 0; i < 3; i++)
-		r->pert[i] += coef*fr.pert[i] + (1.0-coef)*br.pert[i];
-					/* multiply pattern colors */
+		r->pert[i] = coef*fr.pert[i] + (1.0-coef)*br.pert[i];
+					/* mix pattern colors */
 	scalecolor(fr.pcol, coef);
 	scalecolor(br.pcol, 1.0-coef);
-	copycolor(ctmp, fr.pcol);
-	addcolor(ctmp, br.pcol);
-	multcolor(r->pcol, ctmp);
-					/* sum returned ray values */
-	scalecolor(fr.rcol, coef);
-	scalecolor(br.rcol, 1.0-coef);
-	addcolor(r->rcol, fr.rcol);
-	addcolor(r->rcol, br.rcol);
-	if (foremat)
+	copycolor(r->pcol, fr.pcol);
+	addcolor(r->pcol, br.pcol);
+					/* mix returned ray values */
+	if (foremat) {
+		scalecolor(fr.rcol, coef);
+		scalecolor(br.rcol, 1.0-coef);
+		copycolor(r->rcol, fr.rcol);
+		addcolor(r->rcol, br.rcol);
 		r->rt = bright(fr.rcol) > bright(br.rcol) ? fr.rt : br.rt;
+	}
 					/* return value tells if material */
 	return(foremat);
 }
