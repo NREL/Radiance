@@ -110,7 +110,7 @@ proc do_options w {		# Set up options screen
 			-anchor se
 	helplink $w.revert trad options revert
 	button $w.copy -text Copy -relief raised -command {getfile -grab \
-			-send copyopts -view view_txt -glob $rif_glob}
+			-send copyopts -view view_txt -glob $myglob(rif)}
 	place $w.copy -relwidth .1071 -relheight .0610 -relx .98 -rely .90 \
 			-anchor se
 	helplink $w.copy trad options copy
