@@ -58,17 +58,16 @@ register OBJREC	*op;
 
 
 int
-free_objs(on, no, rn)		/* free no object structures starting w/ on */
+free_objs(on, no)		/* free some object structures */
 register OBJECT	on;
 OBJECT	no;
-long	rn;
 {
 	int	nfreed;
 	register OBJREC	*op;
 
 	for (nfreed = 0; no-- > 0; on++) {
 		op = objptr(on);
-		if (op->os != NULL && op->lastrno < rn)
+		if (op->os != NULL)
 			nfreed += free_os(op);
 	}
 	return(nfreed);
@@ -77,9 +76,7 @@ long	rn;
 
 free_objmem()			/* free all object cache memory */
 {
-	extern long	raynum;
-	
-	free_objs(0, nobjects, raynum);
+	free_objs(0, nobjects);
 	freedata(NULL);
 	freepict(NULL);
 	freefont(NULL);
