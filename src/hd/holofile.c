@@ -407,21 +407,22 @@ hdfiluse(	/* compute file usage (in bytes) */
 )
 {
 	off_t	total = 0;
-	register int	i, j;
+	register int	j;
 
 	for (j = 0; hdlist[j] != NULL; j++) {
 		if (hdlist[j]->fd != fd)
 			continue;
 		total += biglob(hdlist[j])->nrd * sizeof(RAYVAL);
-		i = nbeams(hdlist[j]);
-		total += i*sizeof(BEAMI) + sizeof(HDGRID);
-		for ( ; i > 0; i--)
+		total += nbeams(hdlist[j])*sizeof(BEAMI) + sizeof(HDGRID);
+#if 0
+		for (i = nbeams(hdlist[j]); i > 0; i--)
 			if (hdlist[j]->bl[i] != NULL)
 				total += sizeof(RAYVAL) *
 						(hdlist[j]->bl[i]->nrm -
 						hdlist[j]->bi[i].nrd);
+#endif
 	}
-	return(total);		/* does not include fragments */
+	return(total);		/* doesn't include fragments, unflushed rays */
 }
 
 
