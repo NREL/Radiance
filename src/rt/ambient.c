@@ -21,9 +21,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #ifndef  OCTSCALE
 #define	 OCTSCALE	1.0	/* ceil((valid rad.)/(cube size)) */
 #endif
-#ifndef  AMBVWT
-#define  AMBVWT		250	/* relative ambient value weight (# calcs) */
-#endif
 
 typedef struct ambtree {
 	AMBVAL	*alist;		/* ambient value list */
@@ -222,14 +219,12 @@ FVECT  nrm;
 		return;
 dumbamb:					/* return global value */
 	copycolor(acol, ambval);
-#if  AMBVWT
-	if (nambvals == 0)
+	if (ambvwt <= 0 | nambvals == 0)
 		return;
-	scalecolor(acol, (double)AMBVWT);
+	scalecolor(acol, (double)ambvwt);
 	addcolor(acol, avsum);			/* average in computations */
-	d = 1.0/(AMBVWT+nambvals);
+	d = 1.0/(ambvwt+nambvals);
 	scalecolor(acol, d);
-#endif
 }
 
 
