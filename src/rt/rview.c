@@ -65,7 +65,7 @@ static char  *reserve_mem = NULL;	/* pre-allocated reserve memory */
 
 #define RESERVE_AMT	32768		/* amount of memory to reserve */
 
-#define  CTRL(c)	('c'-'@')
+#define  CTRL(c)	((c)-'@')
 
 
 quit(code)			/* quit program */
@@ -248,7 +248,7 @@ again:
 			goto commerr;
 		getpivot(args);
 		break;
-	case CTRL(R):				/* redraw */
+	case CTRL('R'):				/* redraw */
 		redraw();
 		break;
 	case 'w':				/* write */
@@ -260,10 +260,10 @@ again:
 		if (badcom("quit"))
 			goto commerr;
 		quit(0);
-	case CTRL(C):				/* interrupt */
+	case CTRL('C'):				/* interrupt */
 		goto again;
 #ifdef  SIGTSTP
-	case CTRL(Z):				/* stop */
+	case CTRL('Z'):				/* stop */
 		devclose();
 		kill(0, SIGTSTP);
 		/* pc stops here */
