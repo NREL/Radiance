@@ -228,10 +228,10 @@ OCTREE  ot;
 
 	if (!isfull(ot))
 		goto noderr;
-	i = oseti(ot);
-	if ((os = ostable[i%OSTSIZ]) == NULL)
+	ot = oseti(ot);
+	if ((os = ostable[ot%OSTSIZ]) == NULL)
 		goto noderr;
-	for (i /= OSTSIZ; i--; os += *os + 1)
+	for (i = ot/OSTSIZ; i--; os += *os + 1)
 		if (*os <= 0)
 			goto noderr;
 	for (i = *os; i-- >= 0; )		/* copy set here */
