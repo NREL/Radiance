@@ -5,12 +5,13 @@ static const char	RCSid[] = "$Id$";
  * Convert Radiance scene description to MGF
  */
 
-#include "platform.h"
-#include "standard.h"
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
 
+#include "platform.h"
+#include "rtmath.h"
+#include "rtio.h"
 #include "rtprocess.h"
 #include "object.h"
 #include "color.h"

@@ -47,10 +47,12 @@ float	xyz2rgbmat[3][3] = {		/* XYZ to RGB conversion matrix */
 };
 
 
-mgf2rgb(cin, intensity, cout)		/* convert MGF color to RGB */
-register C_COLOR	*cin;	/* input MGF chrominance */
-double	intensity;		/* input luminance or reflectance */
-register float	cout[3];	/* output RGB color */
+void
+mgf2rgb(		/* convert MGF color to RGB */
+	register C_COLOR	*cin,	/* input MGF chrominance */
+	double	intensity,		/* input luminance or reflectance */
+	register float	cout[3]	/* output RGB color */
+)
 {
 	static double	cie[3];
 					/* get CIE XYZ representation */

@@ -374,6 +374,9 @@ extern void	multv3(FVECT, FVECT, MAT4);	/* v3a = v3b X m4 (vectors) */
 extern void	multp3(FVECT, FVECT, MAT4);	/* p3a = p3b X m4 (points) */
 extern int	xf(XF *, int, char **);		/* interpret transform spec. */
 
+	/* cvrgb.c */
+extern void mgf2rgb(C_COLOR *cin, double intensity, float cout[3]);
+
 
 /************************************************************************
  *	Miscellaneous definitions

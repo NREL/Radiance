@@ -11,17 +11,18 @@ static const char	RCSid[] = "$Id$";
 #include <stdlib.h>
 #include <string.h>
 
-#include "standard.h"
+#include "rterror.h"
 #include "trans.h"
 
 static int idcmp(ID *id1, ID *id2);
 static void fputidlist(IDLIST *qp, FILE *fp);
 static int qtype(char *qnm, register QLIST *qlp);
 
+extern int
 fgetid(		/* read an id up to char in dls from fp */
-ID	*idp,
-char	*dls,
-register FILE	*fp
+	ID	*idp,
+	char	*dls,
+	register FILE	*fp
 )
 {
 	char	dset[256/8];
@@ -65,11 +66,11 @@ register FILE	*fp
 }
 
 
-int
+extern int
 findid(		/* find (or insert) id in list */
-register IDLIST	*idl,
-ID	*idp,
-int	insert
+	register IDLIST	*idl,
+	ID	*idp,
+	int	insert
 )
 {
 	int  upper, lower;
@@ -118,8 +119,8 @@ memerr:
 
 static int
 idcmp(				/* compare two identifiers */
-register ID	*id1,
-register ID *id2
+	register ID	*id1,
+	register ID *id2
 )
 {
 					/* names are greater than numbers */
@@ -136,11 +137,11 @@ register ID *id2
 }
 
 
-void
+extern void
 write_quals(	/* write out qualifier lists */
-QLIST	*qlp,
-IDLIST	idl[],
-FILE	*fp
+	QLIST	*qlp,
+	IDLIST	idl[],
+	FILE	*fp
 )
 {
 	int	i;
@@ -156,8 +157,8 @@ FILE	*fp
 
 static void
 fputidlist(		/* put id list out to fp */
-IDLIST	*qp,
-FILE	*fp
+	IDLIST	*qp,
+	FILE	*fp
 )
 {
 	int	fi;
@@ -185,8 +186,8 @@ FILE	*fp
 
 RULEHD *
 getmapping(		/* read in mapping file */
-char	*file,
-QLIST	*qlp
+	char	*file,
+	QLIST	*qlp
 )
 {
 	char	*err;
@@ -285,8 +286,8 @@ memerr:
 
 static int
 qtype(			/* return number for qualifier name */
-char	*qnm,
-register QLIST	*qlp
+	char	*qnm,
+	register QLIST	*qlp
 )
 {
 	register int	i;
@@ -298,10 +299,10 @@ register QLIST	*qlp
 }
 
 
-int
+extern int
 matchid(			/* see if we match an id */
-register ID	*it,
-register IDMATCH	*im
+	register ID	*it,
+	register IDMATCH	*im
 )
 {
 	if (it->name == NULL) {

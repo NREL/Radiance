@@ -6,8 +6,10 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include <ctype.h>
+#include <stdio.h>
 
-#define NULL		0
+#include "parser.h"
+
 
 int
 badarg(ac, av, fl)		/* check argument list */

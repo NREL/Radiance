@@ -54,6 +54,11 @@ char	*savestr(char *str);
 	/* defined in trans.c */
 RULEHD	*getmapping(char *file, QLIST *qlp);
 
+extern int fgetid(ID *idp, char *dls, FILE *fp);
+extern int findid(IDLIST *idl, ID *idp, int insert);
+extern int matchid(ID *it, IDMATCH *im);
+extern void write_quals(QLIST *qlp, IDLIST idl[], FILE *fp);
+
 
 #ifdef __cplusplus
 }

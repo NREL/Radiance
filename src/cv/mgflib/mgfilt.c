@@ -14,9 +14,10 @@ short	nentlist[MG_VMAJOR] = MG_NELIST;
 
 
 int
-put_entity(ac, av)		/* general output routine */
-register int	ac;
-register char	**av;
+put_entity(		/* general output routine */
+	register int	ac,
+	register char	**av
+)
 {
 	while (ac-- > 0) {
 		fputs(*av++, stdout);
@@ -26,9 +27,11 @@ register char	**av;
 }
 
 
-main(argc, argv)	/* first argument is understood entities, comma-sep. */
-int	argc;
-char	*argv[];
+int
+main(	/* first argument is understood entities, comma-sep. */
+	int	argc,
+	char	*argv[]
+)
 {
 	char	*cp1, *cp2;
 	int	i, en;
