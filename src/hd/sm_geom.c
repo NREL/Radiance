@@ -36,23 +36,41 @@ int
 convex_angle(v0,v1,v2)
 FVECT v0,v1,v2;
 {
-    FVECT cp,cp01,cp12,v10,v02;
-    double dp;
+    double dp,dp1;
+    int test,test1;
+    FVECT nv0,nv1,nv2;
+    FVECT cp01,cp12,cp;
 
     /* test sign of (v0Xv1)X(v1Xv2). v1 */
-    VCROSS(cp01,v0,v1);
-    VCROSS(cp12,v1,v2);
+    /* un-Simplified: */ 
+    VCOPY(nv0,v0);
+    normalize(nv0);
+    VCOPY(nv1,v1);
+    normalize(nv1);
+    VCOPY(nv2,v2);
+    normalize(nv2);
+
+    VCROSS(cp01,nv0,nv1);
+    VCROSS(cp12,nv1,nv2);
     VCROSS(cp,cp01,cp12);
-	
-    dp = DOT(cp,v1);
-#if 0
-    VCOPY(Norm[Ncnt++],cp01);
-    VCOPY(Norm[Ncnt++],cp12);
-    VCOPY(Norm[Ncnt++],cp);
-#endif
-    if(ZERO(dp) || dp < 0.0)
-      return(FALSE);
-    return(TRUE);
+    normalize(cp);
+    dp1 = DOT(cp,nv1);
+    if(dp1 <= 1e-8 || dp1 >= (1-1e-8)) /* Test if on other side,or colinear*/
+      test1 = FALSE;
+    else
+      test1 = TRUE;
+
+    dp =   nv0[2]*nv1[0]*nv2[1] -  nv0[2]*nv1[1]*nv2[0] - nv0[0]*nv1[2]*nv2[1] 
+         + nv0[0]*nv1[1]*nv2[2] +  nv0[1]*nv1[2]*nv2[0] - nv0[1]*nv1[0]*nv2[2];
+    
+    if(dp <= 1e-8 || dp1 >= (1-1e-8))
+      test = FALSE;
+    else
+      test = TRUE;
+
+    if(test != test1)
+      fprintf(stderr,"test %f simplified  %f\n",dp1,dp);
+    return(test1);
 }
 
 /* calculates the normal of a face contour using Newell's formula. e
@@ -90,43 +108,13 @@ int norm;
 
 
 tri_plane_equation(v0,v1,v2,peqptr,norm)
-   FVECT v0,v1,v2;
+   FVECT v0,v1,v2; 
    FPEQ *peqptr;
    int norm;
 {
     tri_normal(v0,v1,v2,FP_N(*peqptr),norm);
 
     FP_D(*peqptr) = -(DOT(FP_N(*peqptr),v0));
-}
-
-/* From quad_edge-code */
-int
-point_in_circle_thru_origin(p,p0,p1)
-FVECT p;
-FVECT p0,p1;
-{
-
-    double dp0,dp1;
-    double dp,det;
-    
-    dp0 = DOT_VEC2(p0,p0);
-    dp1 = DOT_VEC2(p1,p1);
-    dp  = DOT_VEC2(p,p);    
-
-    det = -dp0*CROSS_VEC2(p1,p) + dp1*CROSS_VEC2(p0,p) - dp*CROSS_VEC2(p0,p1);
-    
-    return (det > (1e-10));
-}
-
-
-double
-point_on_sphere(ps,p,c)
-FVECT ps,p,c;
-{
-  double d;
-    VSUB(ps,p,c);    
-    d= normalize(ps);
-    return(d);
 }
 
 
@@ -301,61 +289,6 @@ intersect_edge_plane(e0,e1,peq,pd,r)
   return(hit);
 }
 
-
-int
-point_in_cone(p,p0,p1,p2)
-FVECT p;
-FVECT p0,p1,p2;
-{
-    FVECT np,x_axis,y_axis;
-    double d1,d2;
-    FPEQ peq;
-    
-    /* Find the equation of the circle defined by the intersection
-       of the cone with the plane defined by p1,p2,p3- project p into
-       that plane and do an in-circle test in the plane
-     */
-    
-    /* find the equation of the plane defined by p0-p2 */
-    tri_plane_equation(p0,p1,p2,&peq,FALSE);
-
-    /* define a coordinate system on the plane: the x axis is in
-       the direction of np2-np1, and the y axis is calculated from
-       n cross x-axis
-     */
-    /* Project p onto the plane */
-    /* NOTE: check this: does sideness check?*/
-    if(!intersect_vector_plane(p,peq,NULL,np))
-	return(FALSE);
-
-    /* create coordinate system on  plane: p1-p0 defines the x_axis*/
-    VSUB(x_axis,p1,p0);
-    normalize(x_axis);
-    /* The y axis is  */
-    VCROSS(y_axis,FP_N(peq),x_axis);
-    normalize(y_axis);
-
-    VSUB(p1,p1,p0);
-    VSUB(p2,p2,p0);
-    VSUB(np,np,p0);
-    
-    p1[0] = DOT(p1,x_axis);
-    p1[1] = 0;
-
-    d1 = DOT(p2,x_axis);
-    d2 = DOT(p2,y_axis);
-    p2[0] = d1;
-    p2[1] = d2;
-    
-    d1 = DOT(np,x_axis);
-    d2 = DOT(np,y_axis);
-    np[0] = d1;
-    np[1] = d2;
-
-    /* perform the in-circle test in the new coordinate system */
-    return(point_in_circle_thru_origin(np,p1,p2));
-}
-
 int
 point_set_in_stri(v0,v1,v2,p,n,nset,sides)
 FVECT v0,v1,v2,p;
@@ -418,106 +351,6 @@ int sides[3];
     return(GT_INTERIOR);
 }
 
-
-
- 
-int
-point_in_stri(v0,v1,v2,p)
-FVECT v0,v1,v2,p;
-{
-    double d;
-    FVECT n;  
-
-    VCROSS(n,v0,v1);
-    /* Test the point for sidedness */
-    d  = DOT(n,p);
-    if(d > 0.0)
-      return(FALSE);
-
-    /* Test next edge */
-    VCROSS(n,v1,v2);
-    /* Test the point for sidedness */
-    d  = DOT(n,p);
-    if(d > 0.0)
-       return(FALSE);
-
-    /* Test next edge */
-    VCROSS(n,v2,v0);
-    /* Test the point for sidedness */
-    d  = DOT(n,p);
-    if(d > 0.0)
-       return(FALSE);
-    /* Must be interior to the pyramid */
-    return(GT_INTERIOR);
-}
-
-int
-vertices_in_stri(t0,t1,t2,p0,p1,p2,nset,n,avg,pt_sides)
-FVECT t0,t1,t2,p0,p1,p2;
-int *nset;
-FVECT n[3];
-FVECT avg;
-int pt_sides[3][3];
-
-{
-    int below_plane[3],test;
-
-    SUM_3VEC3(avg,t0,t1,t2); 
-    *nset = 0;
-    /* Test vertex v[i] against triangle j*/
-    /* Check if v[i] lies below plane defined by avg of 3 vectors
-       defining triangle
-       */
-
-    /* test point 0 */
-    if(DOT(avg,p0) < 0.0)
-      below_plane[0] = 1;
-    else
-      below_plane[0] = 0;
-    /* Test if b[i] lies in or on triangle a */
-    test = point_set_in_stri(t0,t1,t2,p0,n,nset,pt_sides[0]);
-    /* If pts[i] is interior: done */
-    if(!below_plane[0])
-      {
-	if(test == GT_INTERIOR) 
-	  return(TRUE);
-      }
-    /* Now test point 1*/
-
-    if(DOT(avg,p1) < 0.0)
-      below_plane[1] = 1;
-    else
-      below_plane[1]=0;
-    /* Test if b[i] lies in or on triangle a */
-    test = point_set_in_stri(t0,t1,t2,p1,n,nset,pt_sides[1]);
-    /* If pts[i] is interior: done */
-    if(!below_plane[1])
-    {
-      if(test == GT_INTERIOR) 
-	return(TRUE);
-    }
-    
-    /* Now test point 2 */
-    if(DOT(avg,p2) < 0.0)
-      below_plane[2] = 1;
-    else
-      below_plane[2] = 0;
-	/* Test if b[i] lies in or on triangle a */
-    test = point_set_in_stri(t0,t1,t2,p2,n,nset,pt_sides[2]);
-
-    /* If pts[i] is interior: done */
-    if(!below_plane[2])
-      {
-	if(test == GT_INTERIOR) 
-	  return(TRUE);
-      }
-
-    /* If all three points below separating plane: trivial reject */
-    if(below_plane[0] && below_plane[1] && below_plane[2])
-       return(FALSE);
-    /* Now check vertices in a against triangle b */
-    return(FALSE);
-}
 
 
 set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
@@ -659,86 +492,46 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
 	SET_NTH_BIT(test[2],2);
 }
 
+double
+point_on_sphere(ps,p,c)
+FVECT ps,p,c;
+{
+  double d;
+    VSUB(ps,p,c);    
+    d= normalize(ps);
+    return(d);
+}
 
 int
-stri_intersect(a1,a2,a3,b1,b2,b3)
-FVECT a1,a2,a3,b1,b2,b3;
+point_in_stri(v0,v1,v2,p)
+FVECT v0,v1,v2,p;
 {
-  int which,test,n_set[2];
-  int sides[2][3][3],i,j,inext,jnext;
-  int tests[2][3];
-  FVECT n[2][3],p,avg[2],t1,t2,t3;
- 
-#ifdef DEBUG
-    tri_normal(b1,b2,b3,p,FALSE);
-    if(DOT(p,b1) > 0)
-      {
-       VCOPY(t3,b1);
-       VCOPY(t2,b2);
-       VCOPY(t1,b3);
-      }
-    else
-#endif
-      {
-       VCOPY(t1,b1);
-       VCOPY(t2,b2);
-       VCOPY(t3,b3);
-      }
+    double d;
+    FVECT n;  
 
-  /* Test the vertices of triangle a against the pyramid formed by triangle
-     b and the origin. If any vertex of a is interior to triangle b, or
-     if all 3 vertices of a are ON the edges of b,return TRUE. Remember
-     the results of the edge normal and sidedness tests for later.
-   */
- if(vertices_in_stri(a1,a2,a3,t1,t2,t3,&(n_set[0]),n[0],avg[0],sides[1]))
-     return(TRUE);
-  
- if(vertices_in_stri(t1,t2,t3,a1,a2,a3,&(n_set[1]),n[1],avg[1],sides[0]))
-     return(TRUE);
+    VCROSS(n,v0,v1);
+    /* Test the point for sidedness */
+    d  = DOT(n,p);
+    if(d > 0.0)
+      return(FALSE);
 
+    /* Test next edge */
+    VCROSS(n,v1,v2);
+    /* Test the point for sidedness */
+    d  = DOT(n,p);
+    if(d > 0.0)
+       return(FALSE);
 
-  set_sidedness_tests(t1,t2,t3,a1,a2,a3,tests[0],sides[0],n_set[1],n[1]);
-  if(tests[0][0]&tests[0][1]&tests[0][2])
-    return(FALSE);
-
-  set_sidedness_tests(a1,a2,a3,t1,t2,t3,tests[1],sides[1],n_set[0],n[0]);
-  if(tests[1][0]&tests[1][1]&tests[1][2])
-    return(FALSE);
-
-  for(j=0; j < 3;j++)
-  {
-    jnext = (j+1)%3;
-    /* IF edge b doesnt cross any great circles of a, punt */
-    if(tests[1][j] & tests[1][jnext])
-      continue;
-    for(i=0;i<3;i++)
-    {
-      inext = (i+1)%3;
-      /* IF edge a doesnt cross any great circles of b, punt */
-      if(tests[0][i] & tests[0][inext])
-	continue;
-      /* Now find the great circles that cross and test */
-      if((NTH_BIT(tests[0][i],j)^(NTH_BIT(tests[0][inext],j))) 
-	  && (NTH_BIT(tests[1][j],i)^NTH_BIT(tests[1][jnext],i)))
-      {
-	VCROSS(p,n[0][i],n[1][j]);
-		     
-	/* If zero cp= done */
-	if(ZERO_VEC3(p))
-	  continue;
-	/* check above both planes */
-	if(DOT(avg[0],p) < 0 || DOT(avg[1],p) < 0)
-	  {
-	    NEGATE_VEC3(p);
-	    if(DOT(avg[0],p) < 0 || DOT(avg[1],p) < 0)
-	      continue;
-	  }
-	return(TRUE);
-      }
-    }
-  } 
-  return(FALSE);
+    /* Test next edge */
+    VCROSS(n,v2,v0);
+    /* Test the point for sidedness */
+    d  = DOT(n,p);
+    if(d > 0.0)
+       return(FALSE);
+    /* Must be interior to the pyramid */
+    return(GT_INTERIOR);
 }
+
 
 int
 ray_intersect_tri(orig,dir,v0,v1,v2,pt)
@@ -858,54 +651,6 @@ int p0id,p1id,p2id;
     }
     return(i);
 }
-
-
-int
-sedge_intersect(a0,a1,b0,b1)
-FVECT a0,a1,b0,b1;
-{
-    FVECT na,nb,avga,avgb,p;
-    double d;
-    int sb0,sb1,sa0,sa1;
-
-    /* First test if edge b straddles great circle of a */
-    VCROSS(na,a0,a1);
-    d = DOT(na,b0);
-    sb0 = ZERO(d)?0:(d<0)? -1: 1;
-    d = DOT(na,b1);
-    sb1 = ZERO(d)?0:(d<0)? -1: 1;
-    /* edge b entirely on one side of great circle a: edges cannot intersect*/
-    if(sb0*sb1 > 0)
-       return(FALSE);
-    /* test if edge a straddles great circle of b */
-    VCROSS(nb,b0,b1);
-    d = DOT(nb,a0);
-    sa0 = ZERO(d)?0:(d<0)? -1: 1;
-    d = DOT(nb,a1);
-    sa1 = ZERO(d)?0:(d<0)? -1: 1;
-    /* edge a entirely on one side of great circle b: edges cannot intersect*/
-    if(sa0*sa1 > 0)
-       return(FALSE);
-
-    /* Find one of intersection points of the great circles */
-    VCROSS(p,na,nb);
-    /* If they lie on same great circle: call an intersection */
-    if(ZERO_VEC3(p))
-       return(TRUE);
-
-    VADD(avga,a0,a1);
-    VADD(avgb,b0,b1);
-    if(DOT(avga,p) < 0 || DOT(avgb,p) < 0)
-    {
-      NEGATE_VEC3(p);
-      if(DOT(avga,p) < 0 || DOT(avgb,p) < 0)
-	return(FALSE);
-    }
-    if((!sb0 || !sb1) && (!sa0 || !sa1))
-      return(FALSE);
-    return(TRUE);
-}
-
 
 /* Find the normalized barycentric coordinates of p relative to
  * triangle v0,v1,v2. Return result in coord

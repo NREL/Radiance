@@ -10,7 +10,7 @@
 
 #include <values.h>
 
-#define F_TINY 1e-5
+#define F_TINY 1e-10
 #define FZERO(x) ((x) < F_TINY && (x) > -F_TINY)
 #define FEQUAL(a,b) FZERO((a) - (b))
 

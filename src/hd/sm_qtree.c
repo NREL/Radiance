@@ -30,8 +30,15 @@ extern FVECT Pick_point[500];
 extern int Pick_q[500];
 
 #endif
-int Incnt=0;
 
+qtremovelast(qt,id)
+QUADTREE qt;
+int id;
+{
+  if(qtqueryset(qt)[(*(qtqueryset(qt)))] != id)
+    error(CONSISTENCY,"not removed\n");
+  ((*(qtqueryset(qt)))--);
+}
 QUADTREE
 qtAlloc()			/* allocate a quadtree */
 {
@@ -281,18 +288,24 @@ int n;
 
   /* First check if can trivial accept: if vertex in cell */
   if(s0 & s1 & s2)
+  {
     goto Lfunc_call;
-
+  }
   /* Assumption: Could not trivial reject*/
   /* IF any coords lie on edge- must be in if couldnt reject */
   a = q1[0];b= q0[1]; c= q0[2];
   if(t0[0]== a || t0[1] == b || t0[2] == c)
+  {
     goto Lfunc_call;
+  }
   if(t1[0]== a || t1[1] == b || t1[2] == c)
+  {
     goto Lfunc_call;
+  }
   if(t2[0]== a || t2[1] == b || t2[2] == c)
+  {
     goto Lfunc_call;
-  
+  }
   /* Test for edge crossings */
   /* Test t0t1,t1t2,t2t0 against a */
   /* Calculate edge crossings */
@@ -411,26 +424,33 @@ int n;
   char testl,testh,test_t0t1,test_t1t2,test_t2t0;
   unsigned int ls0,ls1,ls2;
   
+  
   /* May have gotten passed trivial reject if one/two vertices are ON */
   a = q1[0];b= q0[1]; c= q0[2];
   SIDES_LESS(t0,t1,t2,ls0,ls1,ls2,a,b,c);
   
   /* First check if can trivial accept: if vertex in cell */
   if(ls0 & ls1 & ls2)
+  {
     goto Lfunc_call;
-
+  }
   if(ls0==0 || ls1 == 0 || ls2 ==0)
     return(qt);
   /* Assumption: Could not trivial reject*/
   /* IF any coords lie on edge- must be in if couldnt reject */
 
   if(t0[0]== a || t0[1] == b || t0[2] == c)
+  {
     goto Lfunc_call;
+  }
   if(t1[0]== a || t1[1] == b || t1[2] == c)
+  {
     goto Lfunc_call;
+  }
   if(t2[0]== a || t2[1] == b || t2[2] == c)
+  {
     goto Lfunc_call;
-
+  }
   /* Test for edge crossings */
   /* Test t0t1 against a,b,c */
   /* First test if t0t1 can be trivially rejected */
@@ -454,7 +474,7 @@ int n;
       db = t1[1] + dt21[1]*((double)(a - t1[0]))/dt21[0];
       TEST_INT(testl,testh,db,q1[1],b,bl,bh)
   }
-  test_t2t0 = !(((ls0 & 5)==0) || ((ls1 & 5)==0)|| ((ls2 & 5)==0) || 
+ test_t2t0 = !(((ls0 & 5)==0) || ((ls1 & 5)==0)|| ((ls2 & 5)==0) || 
        ((sq0 & 5)==0) ||((sq1 & 5)==0)|| ((sq2 & 5)==0));
   if(test_t2t0 && (e0 & 4))
   {
@@ -519,7 +539,6 @@ int n;
 
   return(qt);
 Lfunc_call:
-
   qt = f.func(f.argptr,root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,scale,
 	      s0,s1,s2,sq0,sq1,sq2,1,f,n);
   return(qt);
@@ -650,6 +669,7 @@ BCOORD dt10[3],dt21[3],dt02[3];
 BCOORD scale;
 unsigned int s0,s1,s2,sq0,sq1,sq2;
 FUNC f;
+int n;
 {
   BCOORD a,b,c;
   BCOORD va[3],vb[3],vc[3];
@@ -740,7 +760,7 @@ FUNC f;
 /*************************************************************************/
 /* Visit code for applying functions: NOTE THIS IS THE SAME AS INSERT CODE:
   except sets flags: wanted insert to be as efficient as possible: so 
-  broke into two sets of routines
+  broke into two sets of routines. Also traverses only to n levels.
 */
 
 qtVisit_tri(root,qt,q0,q1,q2,t0,t1,t2,dt10,dt21,dt02,scale,
@@ -1205,6 +1225,194 @@ Lfunc_call:
   if(!QT_IS_EMPTY(qt))
     QT_LEAF_SET_FLAG(qt);
 }
+
+
+QUADTREE
+qtInsert_point(root,qt,parent,q0,q1,q2,bc,scale,f,n,doneptr)
+int root;
+QUADTREE qt,parent;
+BCOORD q0[3],q1[3],q2[3],bc[3],scale; 
+FUNC f;
+int n,*doneptr;
+{
+  BCOORD a,b,c;
+  BCOORD va[3],vb[3],vc[3];
+
+  if(QT_IS_TREE(qt))
+  {  
+    a = q1[0] + scale;
+    b = q0[1] + scale;
+    c = q0[2] + scale;
+    if(bc[0] > a)
+    {
+      vc[0] = a; vc[1] = b; vc[2] = q0[2];
+      vb[0] = a; vb[1] = q0[1]; vb[2] = c;
+      QT_NTH_CHILD(qt,0) = qtInsert_point(root,QT_NTH_CHILD(qt,0),
+				  qt,q0,vc,vb,bc,scale>>1,f,n+1,doneptr);
+      if(!*doneptr)
+      {
+	f.func_after(f.argptr,QT_NTH_CHILD(qt,1),f,doneptr);
+	if(!*doneptr)
+	  f.func_after(f.argptr,QT_NTH_CHILD(qt,2),f,doneptr);
+	if(!*doneptr)
+	  f.func_after(f.argptr,QT_NTH_CHILD(qt,3),f,doneptr);
+      }	      
+      return(qt);
+    }
+    if(bc[1] > b)
+    {
+      vc[0] = a; vc[1] = b; vc[2] = q0[2];
+      va[0] = q1[0]; va[1] = b; va[2] = c;
+      QT_NTH_CHILD(qt,1) =qtInsert_point(root,QT_NTH_CHILD(qt,1),
+				 qt,vc,q1,va,bc,scale >>1,f,n+1,doneptr);
+      if(!*doneptr)
+      {
+	f.func_after(f.argptr,QT_NTH_CHILD(qt,0),f,doneptr);
+	if(!*doneptr)
+	  f.func_after(f.argptr,QT_NTH_CHILD(qt,2),f,doneptr);
+	if(!*doneptr)
+	  f.func_after(f.argptr,QT_NTH_CHILD(qt,3),f,doneptr);
+      }	      
+      return(qt);
+    }
+    if(bc[2] > c)
+    {
+      va[0] = q1[0]; va[1] = b; va[2] = c;
+      vb[0] = a; vb[1] = q0[1]; vb[2] = c;
+      QT_NTH_CHILD(qt,2) = qtInsert_point(root,QT_NTH_CHILD(qt,2),
+				  qt,vb,va,q2,bc,scale>>1,f,n+1,doneptr);
+      if(!*doneptr)
+      {
+	f.func_after(f.argptr,QT_NTH_CHILD(qt,0),f,doneptr);
+	if(!*doneptr)
+	  f.func_after(f.argptr,QT_NTH_CHILD(qt,1),f,doneptr);
+	if(!*doneptr)
+	  f.func_after(f.argptr,QT_NTH_CHILD(qt,3),f,doneptr);
+      }	
+      return(qt);
+    }
+    else
+    {
+      va[0] = q1[0]; va[1] = b; va[2] = c;
+      vb[0] = a; vb[1] = q0[1]; vb[2] = c;
+      vc[0] = a; vc[1] = b; vc[2] = q0[2];
+      QT_NTH_CHILD(qt,3) = qtInsert_point_rev(root,QT_NTH_CHILD(qt,3),
+				      qt,va,vb,vc,bc,scale>>1,f,n+1,doneptr);
+      if(!*doneptr)
+      {
+	f.func_after(f.argptr,QT_NTH_CHILD(qt,0),f,doneptr);
+	if(!*doneptr)
+	  f.func_after(f.argptr,QT_NTH_CHILD(qt,1),f,doneptr);
+	if(!*doneptr)
+	  f.func_after(f.argptr,QT_NTH_CHILD(qt,2),f,doneptr);
+      }	
+      return(qt);
+    }
+  }
+  else
+  {
+    qt = f.func(f.argptr,root,qt,parent,q0,q1,q2,bc,scale,0,f,n,doneptr);
+    return(qt);
+  }
+}
+
+
+QUADTREE
+qtInsert_point_rev(root,qt,parent,q0,q1,q2,bc,scale,f,n,doneptr)
+int root;
+QUADTREE qt,parent;
+BCOORD q0[3],q1[3],q2[3],bc[3]; 
+BCOORD scale;
+FUNC f;
+int n,*doneptr;
+{
+  BCOORD a,b,c;
+  BCOORD va[3],vb[3],vc[3];
+
+  if(QT_IS_TREE(qt))
+  {  
+    a = q1[0] - scale;
+    b = q0[1] - scale;
+    c = q0[2] - scale;
+    if(bc[0] < a)
+    {
+      vc[0] = a; vc[1] = b; vc[2] = q0[2];
+      vb[0] = a; vb[1] = q0[1]; vb[2] = c;
+      QT_NTH_CHILD(qt,0) = qtInsert_point_rev(root,QT_NTH_CHILD(qt,0),
+				  qt,q0,vc,vb,bc,scale>>1,f,n+1,doneptr);
+      if(!*doneptr)
+      {
+	f.func_after(f.argptr,QT_NTH_CHILD(qt,1),f,doneptr);
+	if(!*doneptr)
+	  f.func_after(f.argptr,QT_NTH_CHILD(qt,2),f,doneptr);
+	if(!*doneptr)
+	  f.func_after(f.argptr,QT_NTH_CHILD(qt,3),f,doneptr);
+      }	
+      return(qt);
+    }
+    if(bc[1] < b)
+    {
+      vc[0] = a; vc[1] = b; vc[2] = q0[2];
+      va[0] = q1[0]; va[1] = b; va[2] = c;
+      QT_NTH_CHILD(qt,1) = qtInsert_point_rev(root,QT_NTH_CHILD(qt,1),
+				   qt,vc,q1,va,bc,scale>>1,f,n+1,doneptr);
+      if(!*doneptr)
+      {
+	f.func_after(f.argptr,QT_NTH_CHILD(qt,0),f,doneptr);
+	if(!*doneptr)
+	  f.func_after(f.argptr,QT_NTH_CHILD(qt,2),f,doneptr);
+	if(!*doneptr)
+	  f.func_after(f.argptr,QT_NTH_CHILD(qt,3),f,doneptr);
+      }	
+      return(qt);
+    }
+    if(bc[2] < c)
+    {
+      va[0] = q1[0]; va[1] = b; va[2] = c;
+      vb[0] = a; vb[1] = q0[1]; vb[2] = c;
+      QT_NTH_CHILD(qt,2) = qtInsert_point_rev(root,QT_NTH_CHILD(qt,2),
+				qt,vb,va,q2,bc,scale>>1,f,n+1,doneptr);
+      if(!*doneptr)
+      {
+	f.func_after(f.argptr,QT_NTH_CHILD(qt,0),f,doneptr);
+	if(!*doneptr)
+	  f.func_after(f.argptr,QT_NTH_CHILD(qt,1),f,doneptr);
+	if(!*doneptr)
+	  f.func_after(f.argptr,QT_NTH_CHILD(qt,3),f,doneptr);
+      }	
+      return(qt);
+    }
+    else
+    {
+      va[0] = q1[0]; va[1] = b; va[2] = c;
+      vb[0] = a; vb[1] = q0[1]; vb[2] = c;
+      vc[0] = a; vc[1] = b; vc[2] = q0[2];
+      QT_NTH_CHILD(qt,3) = qtInsert_point(root,QT_NTH_CHILD(qt,3),
+				   qt,va,vb,vc,bc,scale>>1,f,n+1,doneptr);
+      if(!*doneptr)
+      {
+	f.func_after(f.argptr,QT_NTH_CHILD(qt,0),f,doneptr);
+	if(!*doneptr)
+	  f.func_after(f.argptr,QT_NTH_CHILD(qt,1),f,doneptr);
+	if(!*doneptr)
+	  f.func_after(f.argptr,QT_NTH_CHILD(qt,2),f,doneptr);
+      }	
+      return(qt);
+    }
+  }
+  else
+  {
+    qt = f.func(f.argptr,root,qt,parent,q0,q1,q2,bc,scale,1,f,n,doneptr);
+    return(qt);
+  }
+}
+
+
+
+
+
+
+
 
 
 

@@ -8,8 +8,9 @@
 
 #ifndef _SM_H_
 #define _SM_H_
-
 #include "rhd_sample.h"
+#include "sm_qtree.h"
+#include "sm_stree.h"
 #define NEWSETS
 
 
@@ -24,30 +25,38 @@
 #define ON_E 3
 #define IN_T 4
 
-#define S_REPLACE_EPS 0.04      /* if (distance on sphere between sample
-				     and a base point) < S_REPLACE_EPS,
-				     replace base: 
-				     */
-#define S_REPLACE_SCALE (5.*5.)   /* if (distance to new point squared) is
-				     > (triangle edge length squared*
-				     S_REPLACE_SCALE):for all edges/triangle
-				     vertices: new point is puncture
-				     point: dont add
-				   */
-#define S_REPLACE_TRI 2e-8		/* .052 radians to the sixth power */
+#ifndef LOWRES
+#define VERT_EPS 5e-4 /* min edge length in radians */
+#define COS_VERT_EPS 0.999999875 /* cos min edge length in radians */
+#define EDGE_EPS 2e-7 /* min distance until considered "on-edge"*/
+#define COLINEAR_EPS 1e-10 /* minimum sine of between edges angle :amount off
+			     180degrees
+			     */
+#define EQUALITY_EPS 1e-10
+#else
+#define VERT_EPS 2e-3 /* min edge length in radians */
+#define COS_VERT_EPS 0.999998 /* cos min edge length in radians */
+#define EDGE_EPS 2e-5 /* min distance until considered "on-edge"*/
+#define COLINEAR_EPS 1e-10 /* minimum sine of between edges angle :amount off
+			     180degrees
+			     */
+#define EQUALITY_EPS 1e-10
+#endif
 
-#define SQRT3_2 0.8660254
+#define EV_EPS EDGE_EPS      /* Minimum edge-vertex distance */
+
+
+#define S_REPLACE_SCALE (5.*5.)   /* if (distance to new point squared) is
+         > (triangle edge length squared*S_REPLACE_SCALE):for all edges/
+	 triangle vertices: new point is puncture point: dont add*/
+#define S_REPLACE_TRI 2e-8              /* .052 radians to the sixth power */
+
+
 
 #define SM_DEFAULT 0
-#define SM_EXTRA_POINTS 162
+#define SM_BASE_POINTS 162
 #define SM_BASE_TRIS 320
-#define SM_EXTRA_VERTS  SM_EXTRA_POINTS
-
-#define SM_INC_PERCENT 0.60            /* If number of new triangles added 
-					  since last full redraw is > 
-					  (SM_INC_PERCENT * total triangles)
-					  do full redraw instead of incremental
-					  */
+#define SM_BASE_VERTS  SM_BASE_POINTS
 
 #define SM_VIEW_FRAC   0.1
 
@@ -68,10 +77,10 @@ typedef struct _EDGE {
 #define E_NTH_TRI(e,i)  ((e>0)?Edges[(e)].tris[(i)]:Edges[-(e)].tris[(1-i)])
 #define SET_E_NTH_TRI(e,i,v) if(e>0) Edges[(e)].tris[(i)]=(v); \
                               else Edges[-(e)].tris[(1-i)]=(v)
-#define eClear_edges() (Ecnt = 0)
+#define eClear_edges() (Ecnt = 0,free(Edges),Edges=NULL)
 
 #define FOR_ALL_EDGES(i) for((i)=1; (i) <= Ecnt; i++)
-#define FOR_ALL_EDGES_FROM(e,i) for((i)=++e; (i) <= Ecnt; i++)
+#define FOR_ALL_EDGES_FROM(e,i) for((i)=e+1; (i) <= Ecnt; i++)
 
 
 typedef struct _TRI {
@@ -88,7 +97,6 @@ typedef struct _TRI {
 #define T_WHICH_V(t,i)     \
          (T_NTH_V(t,0)==(i)?0:T_NTH_V(t,1)==(i)?1:T_NTH_V(t,2)==(i)?2:-1)
 #define T_NEXT_FREE(t) ((t)->nbrs[0])
-#define T_NEXT_AVAILABLE(t) ((t)->nbrs[0])
 #define T_VALID_FLAG(t) ((t)->nbrs[1])
 #define T_IS_VALID(t)  (T_VALID_FLAG(t)!=-1)
 #define T_FLAGS 4
@@ -99,12 +107,9 @@ typedef struct _SM {
     STREE locator;        /* spherical quadtree for point/triangle location */
     int max_tris;         /* Maximum number of triangles */
     int num_tri;          /* Current number of triangles */
-    int sample_tris;      /* Current number of non-base triangles*/
     int free_tris;        /* pointer to free_list */
-    int available_tris;   /* pointer to available_list */
     int max_verts;        /* Maximum number of vertices in the mesh */
     TRI *tris;            /* Pointer to list of triangle structs */
-    VERT *verts;          /* List of vertices */
     int4 *flags[T_FLAGS]; /* Bit 0 set if active(in current frustum) */
                           /* Bit 1 set if not rendered since created */
                           /* Bit 2 set if base triangle */
@@ -120,12 +125,9 @@ typedef struct _SM {
 #define SM_LOCATOR(m)                 (&((m)->locator))
 #define SM_MAX_TRIS(m)                ((m)->max_tris)
 #define SM_NUM_TRI(m)                 ((m)->num_tri)
-#define SM_SAMPLE_TRIS(m)                 ((m)->sample_tris)
 #define SM_FREE_TRIS(m)               ((m)->free_tris)
-#define SM_AVAILABLE_TRIS(m)          ((m)->available_tris)
 #define SM_MAX_VERTS(m)               ((m)->max_verts)
 #define SM_TRIS(m)                    ((m)->tris)
-#define SM_VERTS(m)                   ((m)->verts)
 #define SM_NTH_FLAGS(m,n)             ((m)->flags[(n)])
 #define SM_FLAGS(m)                   ((m)->flags)
 
@@ -150,7 +152,7 @@ typedef struct _SM {
 #define SM_CLR_NTH_T_BG(sm,n)       SM_CLR_NTH_T_FLAG(sm,n,T_BG_FLAG)
 
 #define SM_NTH_TRI(m,n)               (&(SM_TRIS(m)[(n)]))
-#define SM_NTH_VERT(m,n)              (SM_VERTS(m)[(n)])
+#define SM_NTH_VERT(m,n)              S_NTH_INFO(SM_SAMP(m),n)
 
 #define SM_T_ID_VALID(s,t_id) T_IS_VALID(SM_NTH_TRI(s,t_id))
  
@@ -194,25 +196,33 @@ t!=SM_NTH_TRI(sm,SM_NTH_VERT(sm,id)); t=smTri_next_ccw_nbr(sm,t,id))
 
 #define SM_FOR_ALL_SAMPLES(sm,i) for((i)=0;i < SM_NUM_SAMP(sm);(i)++)
 
-#define smInit_locator(sm,c)    (stInit(SM_LOCATOR(sm)), \
-				 ST_SET_CENTER(SM_LOCATOR(sm),c))
-#define smClear_locator(sm)    stClear(SM_LOCATOR(sm))
+#define SM_FOR_ALL_VALID_TRIS(m,i) for((i)=0,(i)=smNext_valid_tri(m,i);(i)< \
+SM_NUM_TRI(m); (i)++,(i)= smNext_valid_tri(m,i))
+
+#define SM_FOR_ALL_FLAGGED_TRIS(m,i,w,b) for(i=0,i=smNext_tri_flag_set(m,i,w,b);i < SM_NUM_TRI(m);i++,i=smNext_tri_flag_set(m,i,w,b))
+#define SM_FOR_ALL_ACTIVE_TRIS(m,i) SM_FOR_ALL_FLAGGED_TRIS(m,i,T_ACTIVE_FLAG,0)
+#define smInit_locator(sm)    stInit(SM_LOCATOR(sm))
 #define smAlloc_locator(sm)   stAlloc(SM_LOCATOR(sm))
-#define smFree_locator(sm)   stClear(SM_LOCATOR(sm))
-#define smPointLocateCell(sm,pt)  stPoint_locate(SM_LOCATOR(sm),pt)
+#define smFree_locator(sm)   stFree(SM_LOCATOR(sm))
 #define smUnalloc_samp(sm,id)  sUnalloc_samp(SM_SAMP(sm),id)
+#define smPoint_locate_cell(sm,pt)  stPoint_locate(SM_LOCATOR(sm),pt)
 #define smFree_samples(sm)     sFree(SM_SAMP(sm))
-#define smClear_samples(sm)    sClear(SM_SAMP(sm))
 #define smInit_samples(sm)     sInit(SM_SAMP(sm))
 
-
+#define SM_S_NTH_QT(sm,s_id)       S_NTH_INFO1(SM_SAMP(sm),s_id)
 #define smClear_vert(sm,id)    (SM_NTH_VERT(sm,id) = INVALID)
+
+#define freebuf(b)  tempbuf(-1)
 
 typedef struct _RT_ARGS_{
   FVECT orig,dir;
   int t_id;
   OBJECT *os;
 }RT_ARGS;
+
+typedef struct _S_ARGS_{
+  int s_id,n_id;
+}S_ARGS;
 
 
 typedef struct _ADD_ARGS {
@@ -221,7 +231,6 @@ typedef struct _ADD_ARGS {
 }ADD_ARGS;
 
 extern SM *smMesh;
-extern int smNew_tri_cnt;
 extern double smDist_sum;
 
 
