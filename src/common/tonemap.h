@@ -78,7 +78,7 @@ extern struct tmStruct {
 
 #ifdef NOPROTO
 
-extern struct tmStruct	*tmInit(), *tmPop();
+extern struct tmStruct	*tmInit(), *tmPop(), *tmDup();
 extern void	tmClearHisto(), tmDone();
 extern int	tmSetSpace(), tmCvColors(), tmCvColrs();
 extern int	tmAddHisto(), tmComputeMapping(), tmMapPixels();
@@ -183,6 +183,7 @@ tmLoadPicture(TMbright **lpp, BYTE **cpp, int *xp, int *yp,
 		char *fname, FILE *fp);
 /*
 	Load Radiance picture and convert to tone mapping representation.
+	Calls tmSetSpace() to calibrate input color space.
 
 	lpp	-	returned array of encoded luminances, English ordering.
 	cpp	-	returned array of encoded chrominances (Note 2).
@@ -245,6 +246,14 @@ tmPush(struct tmStruct *tms);
 	returns	-	0 on success, TM_E_* if tms is invalid.
 */
 
+extern struct tmStruct *
+tmDup(void);
+/*
+	Duplicate the current tone mapping into a new structure on the stack.
+
+	returns	-	pointer to new top, or NULL on error.
+*/
+
 extern void
 tmDone(struct tmStruct *tms);
 /*
@@ -280,7 +289,7 @@ tmDone(struct tmStruct *tms);
 	used during final mapping, setting the cs parameter to TM_NOCHROM
 	on the first pass will save time.)  Another memory saving option
 	if third and subsequent passes are not needed is to use the
-	same array to store the mapped pixels as is used to store
+	same array to store the mapped pixels as used to store
 	the encoded chroma values.  This way, only two extra bytes
 	for storing encoded luminances are required per pixel.  This
 	is the method employed by tmMapPicture(), for example.
