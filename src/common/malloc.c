@@ -239,11 +239,8 @@ register unsigned  n;
 #ifdef MSTATS
 		b_nsbrked += nrem;
 #endif
-		thisamnt = BYTES_WORD - ((unsigned)bpos&(BYTES_WORD-1));
-		if (thisamnt < BYTES_WORD) {		/* align pointer */
-			bpos += thisamnt;
-			nrem -= thisamnt;
-		}
+		bpos += nrem & (BYTES_WORD-1);		/* align pointer */
+		nrem &= ~(BYTES_WORD-1);
 	}
 
 	n = (n+(BYTES_WORD-1))&~(BYTES_WORD-1);		/* word align rqst. */
