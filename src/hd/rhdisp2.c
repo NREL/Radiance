@@ -178,7 +178,7 @@ int	n;
 }
 
 
-int
+static int
 comptodo(tdl, vw)		/* compute holodeck sections in view */
 int	tdl[MAXTODO+1];
 VIEW	*vw;
@@ -221,12 +221,13 @@ VIEW	*vw;
 }
 
 
+int
 addview(hd, vw, hres, vres)	/* add view for section */
 int	hd;
 VIEW	*vw;
 int	hres, vres;
 {
-	int	sampquant;
+	int	sampquant, samptot = 0;
 	int	h, v, shr, svr;
 	GCOORD	gc[2];
 	FVECT	rorg, rdir;
@@ -250,7 +251,9 @@ int	hres, vres;
 				continue;
 			cbeam[getcbeam(hd,hdbindex(hdlist[hd],gc))].nr +=
 					sampquant;
+			samptot += sampquant;
 		}
+	return(samptot);
 }
 
 
@@ -268,23 +271,31 @@ int	fresh;
 }
 
 
+int *
 beam_view(vn, hr, vr)		/* add beam view (if advisable) */
 VIEW	*vn;
 int	hr, vr;
 {
-	int	todo[MAXTODO+1], n;
+	static int	todo[MAXTODO+1];
+	int	n;
 	double	hdgsiz, d;
 	register HOLO	*hp;
 	register int	i;
+					/* find nearby sections */
+	if (!(n = comptodo(todo, vn)))
+		return(NULL);
 					/* sort our list */
 	cbeamsort(1);
-					/* add view to nearby sections */
-	if (!(n = comptodo(todo, vn)))
-		return(0);
+					/* add view to flagged sections */
 	for (i = 0; i < n; i++)
-		addview(todo[i], vn, hr, vr);
-	if (MEYERNG <= FTINY || vn->type == VT_PAR)
-		return(1);
+		if (!addview(todo[i], vn, hr, vr)) {	/* whoops! */
+			register int	j;
+			n--;				/* delete from list */
+			for (j = i--; j <= n; j++)
+				todo[j] = todo[j+1];
+		}
+	if (!n || MEYERNG <= FTINY || vn->type == VT_PAR)
+		return(todo);
 	hdgsiz = 0.;			/* compute mean grid size */
 	for (i = 0; i < n; i++) {
 		hp = hdlist[todo[i]];
@@ -303,7 +314,7 @@ int	hr, vr;
 			cureye.vpt[i] = 0.5*(cureye.vpt[i] + vn->vp[i]);
 		cureye.rng = 0.5*(cureye.rng + MEYERNG*hdgsiz + d);
 	}
-	return(1);
+	return(todo);
 }
 
 

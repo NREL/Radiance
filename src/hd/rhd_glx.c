@@ -320,6 +320,13 @@ register VIEW	*nv;
 }
 
 
+dev_section(ofn)		/* add octree for geometry rendering */
+char	*ofn;
+{
+	/* unimplemented */
+}
+
+
 dev_auxcom(cmd, args)		/* process an auxiliary command */
 char	*cmd, *args;
 {
@@ -703,20 +710,20 @@ register VIEW	*vp;
 	double	d, xmin, xmax, ymin, ymax;
 
 	if (mindpth >= maxdpth) {
-		dev_zmin = 0.1;
+		dev_zmin = 1.;
 		dev_zmax = 100.;
 	} else {
 		dev_zmin = 0.5*mindpth;
 		dev_zmax = 1.5*maxdpth;
-		if (dev_zmin > dev_zmax/100.)
-			dev_zmin = dev_zmax/100.;
+		if (dev_zmin > dev_zmax/5.)
+			dev_zmin = dev_zmax/5.;
 	}
 	if (odev.v.vfore > FTINY)
 		dev_zmin = odev.v.vfore;
 	if (odev.v.vaft > FTINY)
 		dev_zmax = odev.v.vaft;
-	if (dev_zmin < dev_zmax/5000.)
-		dev_zmin = dev_zmax/5000.;
+	if (dev_zmin < dev_zmax/100.)
+		dev_zmin = dev_zmax/100.;
 	xmax = dev_zmin * tan(PI/180./2. * odev.v.horiz);
 	xmin = -xmax;
 	d = odev.v.hoff * (xmax - xmin);

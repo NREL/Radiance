@@ -24,6 +24,8 @@ static char SCCSid[] = "$SunId$ SGI";
 
 HOLO	*hdlist[HDMAX+1];	/* global holodeck list */
 
+char	*hdofn[HDMAX+1];	/* holodeck section octree list */
+
 char	cmdlist[DC_NCMDS][8] = DC_INIT;
 
 int	imm_mode = 0;		/* bundles are being delivered immediately */
@@ -88,10 +90,12 @@ char	*argv[];
 			inp = dev_input();
 			if (inp & DFL(DC_SETVIEW))
 				new_view(&odev.v);
+			else if (inp & DFL(DC_LASTVIEW))
+				new_view(NULL);
+			if (inp & DFL(DC_REDRAW))
+				imm_mode = beam_sync(1) > 0;
 			if (inp & DFL(DC_GETVIEW))
 				printview();
-			if (inp & DFL(DC_LASTVIEW))
-				new_view(NULL);
 			if (inp & DFL(DC_FOCUS))
 				set_focus(odev_args);
 			if (inp & DFL(DC_KILL)) {
@@ -110,8 +114,6 @@ char	*argv[];
 			}
 			if (inp & DFL(DC_PAUSE))
 				pause = 1;
-			if (inp & DFL(DC_REDRAW))
-				imm_mode = beam_sync(1) > 0;
 			if (inp & DFL(DC_QUIT))
 				serv_request(DR_SHUTDOWN, 0, NULL);
 		}
@@ -193,8 +195,9 @@ disp_wait()			/* wait for more input */
 }
 
 
-add_holo(hdg)			/* register a new holodeck section */
+add_holo(hdg, ofn)		/* register a new holodeck section */
 HDGRID	*hdg;
+char	*ofn;
 {
 	VIEW	nv;
 	double	d;
@@ -209,6 +212,7 @@ HDGRID	*hdg;
 		error(SYSTEM, "out of memory in add_holo");
 	bcopy((char *)hdg, (char *)hdlist[hd], sizeof(HDGRID));
 	hdcompgrid(hdlist[hd]);
+	hdofn[hd] = savestr(ofn);
 	if (hd)
 		return;
 					/* set initial viewpoint */
@@ -263,7 +267,7 @@ register VIEW	*v;
 	static VIEW	viewhist[VIEWHISTLEN];
 	static unsigned	nhist;
 	VIEW	*dv;
-	int	i, res[2];
+	int	i, res[2], *slist;
 	char	*err;
 				/* restore previous view? */
 	if (v == NULL) {
@@ -279,25 +283,30 @@ again:
 		error(COMMAND, err);
 		return;
 	}
+	if (!dev_view(v))	/* notify display driver */
+		goto again;
 	if (v->type == VT_PAR) {
 		error(COMMAND, "cannot handle parallel views");
 		return;
 	}
-	if (!dev_view(v))	/* notify display driver */
-		goto again;
-	dev_flush();		/* update screen */
-	beam_init(0);		/* compute new beam set */
-	for (i = 0; (dv = dev_auxview(i, res)) != NULL; i++)
-		if (!beam_view(dv, res[0], res[1])) {
+	beam_init(odev.firstuse);	/* compute new beam set */
+	for (i = 0; (dv = dev_auxview(i, res)) != NULL; i++) {
+		if ((slist = beam_view(dv, res[0], res[1])) == NULL) {
 			if (!nhist) {
 				error(COMMAND, "invalid starting view");
 				return;
 			}
 			copystruct(v, viewhist + ((nhist-1)%VIEWHISTLEN));
-			goto again;
-		}	
+			goto again;	/* poss. overloading dev_section()? */
+		}
+		DCHECK(*slist < 0, WARNING, "no visible sections in new_view");
+		while (*slist >= 0)
+			dev_section(hdofn[*slist++]);
+	}
+	dev_section(NULL);	/* end section list */
+	dev_flush();		/* update display */
 				/* update server */
-	imm_mode = beam_sync(0) > 0;
+	imm_mode = beam_sync(odev.firstuse) > 0;
 				/* record new view */
 	if (v < viewhist || v >= viewhist+VIEWHISTLEN) {
 		copystruct(viewhist + (nhist%VIEWHISTLEN), v);
@@ -477,9 +486,9 @@ serv_result()			/* get next server result and process it */
 		disp_bundle((PACKHEAD *)buf);
 		break;
 	case DS_ADDHOLO:
-		if (msg.nbytes != sizeof(HDGRID))
+		if (msg.nbytes <= sizeof(HDGRID))
 			error(INTERNAL, "bad holodeck record from server");
-		add_holo((HDGRID *)buf);
+		add_holo((HDGRID *)buf, buf+sizeof(HDGRID));
 		break;
 	case DS_OUTSECT:
 		do_outside = 1;
@@ -529,10 +538,8 @@ char	*p;
 	MSGHEAD	msg;
 	int	m;
 				/* consistency checks */
-#ifdef DEBUG
-	if (nbytes < 0 || nbytes > 0 & p == NULL)
-		error(CONSISTENCY, "bad buffer handed to serv_request");
-#endif
+	DCHECK(nbytes < 0 || nbytes > 0 & p == NULL,
+			CONSISTENCY, "bad buffer handed to serv_request");
 				/* get server's attention for big request */
 	if (nbytes >= BIGREQSIZ-sizeof(MSGHEAD)) {
 		serv_request(DR_ATTEN, 0, NULL);

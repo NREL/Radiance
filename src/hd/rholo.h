@@ -45,14 +45,15 @@ typedef struct {
 #define GRID		3		/* target grid size */
 #define OBSTRUCTIONS	4		/* shall we track obstructions? */
 #define OCTREE		5		/* octree file name */
-#define RENDER		6		/* rendering options */
-#define REPORT		7		/* report interval and error file */
-#define RIF		8		/* rad input file */
-#define SECTION		9		/* holodeck section boundaries */
-#define TIME		10		/* maximum rendering time */
-#define VDIST		11		/* virtual distance calculation */
+#define OSECTION	6		/* section octree */
+#define RENDER		7		/* rendering options */
+#define REPORT		8		/* report interval and error file */
+#define RIF		9		/* rad input file */
+#define SECTION		10		/* holodeck section boundaries */
+#define TIME		11		/* maximum rendering time */
+#define VDIST		12		/* virtual distance calculation */
 
-#define NRHVARS		12		/* number of variables */
+#define NRHVARS		13		/* number of variables */
 
 #define RHVINIT { \
 	{"CACHE",	2,	0,	NULL,	fltvalue}, \
@@ -61,6 +62,7 @@ typedef struct {
 	{"GRID",	2,	0,	NULL,	fltvalue}, \
 	{"OBSTRUCTIONS",3,	0,	NULL,	boolvalue}, \
 	{"OCTREE",	3,	0,	NULL,	onevalue}, \
+	{"osection",	2,	0,	NULL,	NULL}, \
 	{"render",	3,	0,	NULL,	catvalues}, \
 	{"REPORT",	3,	0,	NULL,	onevalue}, \
 	{"RIF",		3,	0,	NULL,	onevalue}, \

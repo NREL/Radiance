@@ -267,6 +267,13 @@ VIEW	*nv;
 }
 
 
+dev_section(ofn)		/* add octree for geometry rendering */
+char	*ofn;
+{
+	/* unimplemented */
+}
+
+
 dev_auxcom(cmd, args)		/* process an auxiliary command */
 char	*cmd, *args;
 {
