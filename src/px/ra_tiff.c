@@ -37,11 +37,9 @@ char  *argv[];
 	for (i = 1; i < argc; i++)
 		if (argv[i][0] == '-')
 			switch (argv[i][1]) {
-			/* not allowed to reset gamma...
 			case 'g':
 				gamma = atof(argv[++i]);
 				break;
-			*/
 			case 'e':
 				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
 					goto userr;
