@@ -234,8 +234,11 @@ register PACKHEAD	*p;
 	for (i = p->nr; i--; ) {
 		hdray(ro, rd, hdlist[p->hd], gc, packra(p)[i].r);
 		d = hddepth(hdlist[p->hd], packra(p)[i].d);
-		VSUM(wp, ro, rd, d);		/* might be behind viewpoint */
-		dev_value(packra(p)[i].v, wp, rd);
+		if (d < .99*FHUGE) {
+			VSUM(wp, ro, rd, d);	/* might be behind viewpoint */
+			dev_value(packra(p)[i].v, rd, wp);
+		} else
+			dev_value(packra(p)[i].v, rd, NULL);
 	}
 #ifdef DEBUG
 	if (imm_mode) nimmrays += p->nr;
