@@ -285,13 +285,14 @@ int	hr, vr;
 		addview(todo[i], vn, hr, vr);
 	if (MEYERNG <= FTINY || vn->type == VT_PAR)
 		return(1);
-	hdgsiz = 0.; d = 1./3. / n;	/* compute mean grid size */
+	hdgsiz = 0.;			/* compute mean grid size */
 	for (i = 0; i < n; i++) {
 		hp = hdlist[todo[i]];
-		hdgsiz += d * (	VLEN(hp->xv[0])/hp->grid[0] +
-				VLEN(hp->xv[1])/hp->grid[1] +
-				VLEN(hp->xv[2])/hp->grid[2] ) ;
+		hdgsiz += 	1./3. / VLEN(hp->wg[0]) +
+				1./3. / VLEN(hp->wg[1]) +
+				1./3. / VLEN(hp->wg[2]) ;
 	}
+	hdgsiz /= (double)n;
 					/* add to current eye position */
 	if (cureye.rng <= FTINY) {
 		VCOPY(cureye.vpt, vn->vp);
