@@ -159,7 +159,7 @@ ra2pr()			/* convert Radiance scanlines to 24-bit rasterfile */
 	if (scanin == NULL)
 		quiterr("out of memory in pr2ra");
 						/* compute gamma correction */
-	for (x = 0; x < 256; x++)
+	for (x = 0; x < 1024; x++)
 		gmap[x] = 256.*pow((x+.5)/1024., 1./gamma);
 						/* convert image */
 	for (y = ymax-1; y >= 0; y--) {
