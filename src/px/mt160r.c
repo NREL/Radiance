@@ -38,7 +38,7 @@ char  *fname;
 {
 	FILE  *input;
 	int  xres, yres;
-	COLOR  scanline[NCOLS];
+	COLR  scanline[NCOLS];
 	char  sbuf[256];
 	int  i;
 
@@ -65,7 +65,7 @@ char  *fname;
 	fputs("\033[6~\033[7z", stdout);
 	
 	for (i = yres-1; i >= 0; i--) {
-		if (freadscan(scanline, xres, input) < 0) {
+		if (freadcolrs(scanline, xres, input) < 0) {
 			fprintf(stderr, "%s: read error (y=%d)\n", fname, i);
 			return(-1);
 		}
@@ -81,7 +81,7 @@ char  *fname;
 
 
 plotscan(scan, len, y)			/* plot a scanline */
-COLOR  scan[];
+COLR  scan[];
 int  len;
 int  y;
 {
@@ -111,20 +111,21 @@ int  y;
 }
 
 
-bit(col, x)				/* return bit for color at x */
-COLOR  col;
+bit(clr, x)				/* return bit for color at x */
+COLR  clr;
 register int  x;
 {
-	static float  cerr[NCOLS];
-	static double  err;
-	double  b;
+	static int  cerr[NCOLS];
+	static int  err;
+	COLR  nclr;
+	int  b;
 	register int  isblack;
 
-	b = bright(col);
-	if (b > 1.0) b = 1.0;
+	colr_norm(clr, nclr);
+	b = norm_bright(nclr);
 	err += b + cerr[x];
-	isblack = err < 0.5;
-	if (!isblack) err -= 1.0;
-	cerr[x] = err *= 0.5;
+	isblack = err < 128;
+	if (!isblack) err -= 256;
+	cerr[x] = err /= 2;
 	return(isblack);
 }

@@ -37,7 +37,7 @@ char  *fname;
 {
 	FILE  *input;
 	int  xres, yres;
-	COLOR  scanline[NCOLS];
+	COLR  scanline[NCOLS];
 	int  i;
 
 	if (fname == NULL) {
@@ -65,8 +65,9 @@ char  *fname;
 			((NCOLS-xres)>>4)<<5, xres);
 	
 	for (i = yres-1; i >= 0; i--) {
-		if (freadscan(scanline, xres, input) < 0)
+		if (freadcolrs(scanline, xres, input) < 0)
 			return(-1);
+		normscan(scanline, xres);
 		plotscan(scanline, xres, i);
 	}
 
@@ -78,8 +79,19 @@ char  *fname;
 }
 
 
+normscan(scan, len)			/* normalize a scanline */
+register COLR  scan[];
+int  len;
+{
+	register int  i;
+
+	for (i = 0; i < len; i++)
+		colr_norm(scan[i], scan[i]);
+}
+
+
 plotscan(scan, len, y)			/* plot a scanline */
-COLOR  scan[];
+COLR  scan[];
 int  len;
 int  y;
 {
@@ -103,20 +115,19 @@ int  y;
 
 
 colbit(col, x, a)		/* determine bit value for primary at x */
-COLOR  col;
+COLR  col;
 register int  x;
 register int  a;
 {
-	static float  cerr[NCOLS][3];
-	static double  err[3];
-	double  b;
+	static int  cerr[NCOLS][3];
+	static int  err[3];
+	int  b;
 	register int  ison;
 
-	b = colval(col,a);
-	if (b > 1.0) b = 1.0;
+	b = col[a];
 	err[a] += b + cerr[x][a];
-	ison = err[a] > 0.5;
-	if (ison) err[a] -= 1.0;
-	cerr[x][a] = err[a] *= 0.5;
+	ison = err[a] > 128;
+	if (ison) err[a] -= 256;
+	cerr[x][a] = err[a] /= 2;
 	return(ison);
 }
