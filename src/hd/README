@@ -1,0 +1,30 @@
+	HOLODECK PROGRAMS
+	SCCSid "$SunId$ SGI"
+
+This directory makes rholo and its display drivers and rhcopy.
+
+holo.h		main header file for holodeck handling routines
+rhd_qtree.h	quadtree data structure for display drivers
+rhdisp.h	header for display process communication
+rhdriver.h	header for display drivers
+rholo.h		main header for rholo modules
+x11icon.h	icon output of "bitmap" for rholo X11 and GLX drivers
+Version.c	symbolic link to ../rt/Version.c
+dircode.c	direction vector encoding/decoding
+holo.c		holodeck initialization and manipulation routines
+holofile.c	holodeck file handling routines
+rhcopy.c	program for copying information into holodeck files
+rhd_ctab.c	color table manager for X11 driver
+rhd_glx.c	GLX driver routines
+rhd_qtree.c	quadtree support for display drivers
+rhd_qtree2c.c	routines to draw quadtree leaves as cones
+rhd_qtree2r.c	routines to draw quadtree leaves as rectangles
+rhd_x11.c	X11 driver routines
+rhdisp.c	main routines for display process
+rhdisp2.c	beam list management for display process
+rhdisp3.c	utility routines for display process
+rholo.c		main routines for rholo program
+rholo2.c	rtrace utility routines for rholo
+rholo2l.c	local rtrace process communication
+rholo3.c	beam list management for rholo
+rholo4.c	display process communication routines for rholo
