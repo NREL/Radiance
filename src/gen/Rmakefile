@@ -4,7 +4,9 @@
 # Makefile for object generation programs
 #
 
-CFLAGS = -O -f68881 /usr/lib/f68881.il -DIEEE
+OPT = -O
+MACH = -f68881 /usr/lib/f68881.il -DIEEE
+CFLAGS = $(MACH) $(OPT)
 
 INSTDIR = /usr/local/ray
 

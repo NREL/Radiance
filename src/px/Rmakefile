@@ -4,11 +4,13 @@
 #  Compiles for pixel file plotters.
 #
 
-CFLAGS = -O -f68881 /usr/lib/f68881.il
+OPT = -O
+MACH = -f68881 /usr/lib/f68881.il -DIEEE
+CFLAGS = $(OPT) $(MACH)
 
 INSTDIR = /usr/local/ray
 
-CALDEFS = -DIEEE -DFUNCTION -DVARIABLE -DRCONST -DBIGLIB
+CALDEFS = -DFUNCTION -DVARIABLE -DRCONST -DBIGLIB
 
 PIXAR_INCLUDE=	-I/usr/pixar/include
 PIXAR_LIB=	-L/usr/pixar/host/lib -lpirl -lpicio -lchad -lpixar -lm
