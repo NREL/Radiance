@@ -1,4 +1,4 @@
-/* Copyright (c) 1994 Regents of the University of California */
+/* Copyright (c) 1995 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -301,7 +301,6 @@ register int  sn;	/* target source number */
 	FVECT  offsdir;
 	SRCINDEX  si;
 	double  or, d;
-	int  infront;
 	int  stestlim, ssn;
 	int  nhit, nok;
 	register int  i, n;
@@ -314,7 +313,6 @@ register int  sn;	/* target source number */
 	if (source[sn].sflags & SDISTANT) {
 					/* 32. == heuristic constant */
 		n = 32.*or2/(thescene.cusize*thescene.cusize)*vspretest + .5;
-		infront = DOT(onorm, source[sn].sloc) > 0.;
 	} else {
 		for (i = 0; i < 3; i++)
 			offsdir[i] = source[sn].sloc[i] - oc[i];
@@ -323,7 +321,6 @@ register int  sn;	/* target source number */
 			n = 2.*PI * vspretest + .5;
 		else
 			n = 2.*PI * (1.-sqrt(1./(1.+or2/d)))*vspretest + .5;
-		infront = DOT(onorm, offsdir) > 0.;
 	}
 	if (n < MINSAMPLES) n = MINSAMPLES;
 #ifdef DEBUG
@@ -335,6 +332,7 @@ register int  sn;	/* target source number */
 	stestlim = n*STESTMAX;
 	ssn = 0;
 	nhit = nok = 0;
+	initsrcindex(&si);
 	while (n-- > 0) {
 					/* get sample point */
 		do {
@@ -348,35 +346,29 @@ register int  sn;	/* target source number */
 			for (i = 0; i < 3; i++)
 				offsdir[i] = or*(1. - 2.*offsdir[i]);
 			ssn++;
-			for (i = 0; i < 3; i++)
-				sr.rorg[i] = oc[i] + offsdir[i];
-			d = DOT(offsdir,onorm);
+			d = 1. - DOT(offsdir, onorm);
+			for (i = 0; i < 3; i++) {
+				sr.rorg[i] = oc[i] + offsdir[i] + d*onorm[i];
+				sr.rdir[i] = -onorm[i];
+			}
 			sr.rmax = 0.0;
-			if (infront)
-				for (i = 0; i < 3; i++) {
-					sr.rorg[i] -= (d-.0001)*onorm[i];
-					sr.rdir[i] = -onorm[i];
-				}
-			else
-				for (i = 0; i < 3; i++) {
-					sr.rorg[i] -= (d+.0001)*onorm[i];
-					sr.rdir[i] = onorm[i];
-				}
 			rayorigin(&sr, NULL, PRIMARY, 1.0);
 		} while (!(*ofun[o->otype].funp)(o, &sr));
 					/* check against source */
-		initsrcindex(&si);
-		si.sn = sn;
-		nopart(&si, &sr);
+		VCOPY(sr.rorg, sr.rop);	/* starting from intersection */
 		samplendx++;
-		if (!srcray(&sr, NULL, &si) || sr.rsrc != sn)
-			continue;
+		if (si.sp >= si.np-1 ||
+				!srcray(&sr, NULL, &si) || sr.rsrc != sn) {
+			si.sn = sn-1;		/* reset index to our source */
+			si.np = 0;
+			if (!srcray(&sr, NULL, &si) || sr.rsrc != sn)
+				continue;	/* can't get there from here */
+		}
 		sr.revf = srcvalue;
-		rayvalue(&sr);
+		rayvalue(&sr);			/* check sample validity */
 		if (bright(sr.rcol) <= FTINY)
 			continue;
-		nok++;
-					/* check against obstructions */
+		nok++;			/* got sample; check obstructions */
 		rayclear(&sr);
 		sr.revf = raytrace;
 		rayvalue(&sr);
