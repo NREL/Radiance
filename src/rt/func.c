@@ -15,6 +15,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "otypes.h"
 
 
+#define  INITFILE	"rayinit.cal"
+#define  DEFVNAME	"FILE_LOADED`"
+
 XF  unitxf = {			/* identity transform */
 	1.0, 0.0, 0.0, 0.0,
 	0.0, 1.0, 0.0, 0.0,
@@ -33,30 +36,11 @@ OBJREC  *m;
 register RAY  *r;
 XF  *bx;
 {
-	extern double  l_arg(), l_erf(), l_erfc();
 	extern long  eclock;
-	static char  *initfile = "rayinit.cal";
 	static long  lastrno = -1;
 					/* check to see if already set */
 	if (m == fobj && r->rno == lastrno)
 		return(0);
-					/* initialize if first call */
-	if (initfile != NULL) {
-		scompile("Dx=$1;Dy=$2;Dz=$3;", NULL, 0);
-		scompile("Nx=$4;Ny=$5;Nz=$6;", NULL, 0);
-		scompile("Px=$7;Py=$8;Pz=$9;", NULL, 0);
-		scompile("T=$10;Rdot=$11;", NULL, 0);
-		scompile("S=$12;Tx=$13;Ty=$14;Tz=$15;", NULL, 0);
-		scompile("Ix=$16;Iy=$17;Iz=$18;", NULL, 0);
-		scompile("Jx=$19;Jy=$20;Jz=$21;", NULL, 0);
-		scompile("Kx=$22;Ky=$23;Kz=$24;", NULL, 0);
-		funset("arg", 1, '=', l_arg);
-		funset("erf", 1, ':', l_erf);
-		funset("erfc", 1, ':', l_erfc);
-		setnoisefuncs();
-		loadfunc(initfile);
-		initfile = NULL;
-	}
 	fobj = m;
 	fray = r;
 	if (r->rox != NULL)
@@ -153,6 +137,37 @@ l_erfc()			/* cumulative error function */
 	extern double  erfc();
 
 	return(erfc(argument(1)));
+}
+
+
+funcfile(fname)			/* set context, load file if necessary */
+char  *fname;
+{
+	extern char  *setcontext();
+	static char  initfile[] = INITFILE;
+
+	if (initfile[0]) {		/* initialize on first call */
+		setcontext("");
+		scompile("Dx=$1;Dy=$2;Dz=$3;", NULL, 0);
+		scompile("Nx=$4;Ny=$5;Nz=$6;", NULL, 0);
+		scompile("Px=$7;Py=$8;Pz=$9;", NULL, 0);
+		scompile("T=$10;Rdot=$11;", NULL, 0);
+		scompile("S=$12;Tx=$13;Ty=$14;Tz=$15;", NULL, 0);
+		scompile("Ix=$16;Iy=$17;Iz=$18;", NULL, 0);
+		scompile("Jx=$19;Jy=$20;Jz=$21;", NULL, 0);
+		scompile("Kx=$22;Ky=$23;Kz=$24;", NULL, 0);
+		funset("arg", 1, '=', l_arg);
+		funset("erf", 1, ':', l_erf);
+		funset("erfc", 1, ':', l_erfc);
+		setnoisefuncs();
+		loadfunc(initfile);
+		initfile[0] = '\0';
+	}
+	setcontext(fname);
+	if (!vardefined(DEFVNAME)) {
+		loadfunc(fname);
+		varset(DEFVNAME, ':', 1.0);
+	}
 }
 
 
