@@ -1223,6 +1223,8 @@ char	*opts;
 	sprintf(combuf, "rview %s%s -R %s ", vw, opts, rifname);
 	if (rvdevice != NULL)
 		sprintf(combuf+strlen(combuf), "-o %s ", rvdevice);
+	if (vdef(EXPOSURE))
+		sprintf(combuf+strlen(combuf), "-pe %s ", vval(EXPOSURE));
 	strcat(combuf, oct1name);
 	if (runcom(combuf)) {		/* run it */
 		fprintf(stderr, "%s: error running rview\n", progname);
@@ -1303,7 +1305,7 @@ char	*opts;
 			}
 			sprintf(combuf, "rpict%s %s %s%s %s > %s",
 					rep, vw, res, opts,
-					oct1name, rawfile);
+				oct1name, rawfile);
 		}
 		if (runcom(combuf)) {		/* run rpict */
 			fprintf(stderr, "%s: error rendering view %s\n",
