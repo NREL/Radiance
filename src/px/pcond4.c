@@ -126,11 +126,11 @@ int	y;
 	register int	x, i;
 
 	vy = dy = (y+.5)/numscans(&inpres)*fvyr - .5;
-	if (vy >= fvyr-1) vy--;
+	while (vy >= fvyr-1) vy--;
 	dy -= (double)vy;
 	for (x = 0; x < scanlen(&inpres); x++) {
 		vx = dx = (x+.5)/scanlen(&inpres)*fvxr - .5;
-		if (vx >= fvxr-1) vx--;
+		while (vx >= fvxr-1) vx--;
 		dx -= (double)vx;
 		for (i = 0; i < 3; i++) {
 			lv = (1.-dy)*colval(veilscan(vy)[vx],i) +
@@ -297,10 +297,10 @@ SCANBAR	*sb;
 	}
 					/* compute coordinates for sb */
 	ix = dx = (x+.5)/sb->sampr - .5;
-	if (ix >= sb->len-1) ix--;
+	while (ix >= sb->len-1) ix--;
 	dx -= (double)ix;
 	iy = dy = (y+.5)/sb->sampr - .5;
-	if (iy >= numscans(&inpres)/sb->sampr-1) iy--;
+	while (iy >= numscans(&inpres)/sb->sampr-1) iy--;
 	dy -= (double)iy;
 					/* get scanlines */
 	sl0 = getascan(sb, iy);
