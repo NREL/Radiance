@@ -15,8 +15,6 @@ typedef struct {
 	double	slope, intercept, correlation;
 } LRLIN;
 
-extern double	sqrt();
-
 #define	lrpoint(x,y,l)	((l)->xs+=(x),(l)->ys+=(y),(l)->xxs+=(x)*(x), \
 			(l)->yys+=(y)*(y),(l)->xys+=(x)*(y),++(l)->n)
 

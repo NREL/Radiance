@@ -17,6 +17,10 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  MINELEN	8	/* minimum scanline length for encoding */
 #define  MINRUN		4	/* minimum run length */
 
+#ifndef frexp
+extern double  frexp();
+#endif
+
 
 char *
 tempbuffer(len)			/* get a temporary buffer */
@@ -225,7 +229,6 @@ setcolr(clr, r, g, b)		/* assign a short color value */
 register COLR  clr;
 double  r, g, b;
 {
-	double  frexp();
 	double  d;
 	int  e;
 	

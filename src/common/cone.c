@@ -48,7 +48,6 @@ getcone(o, getxf)			/* get cone structure */
 register OBJREC  *o;
 int  getxf;
 {
-	extern double  sqrt();
 	int  sgn0, sgn1;
 	register CONE  *co;
 
@@ -167,7 +166,6 @@ OBJREC  *o;
 conexform(co)			/* get cone transformation matrix */
 register CONE  *co;
 {
-	extern double  sqrt();
 	MAT4  m4;
 	register double  d;
 	register int  i;

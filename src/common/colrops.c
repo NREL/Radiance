@@ -20,7 +20,9 @@ static BYTE	*g_mant = NULL, *g_nexp = NULL;
 
 static BYTE	(*g_bval)[256] = NULL;
 
+#ifndef pow
 extern double	pow();
+#endif
 
 
 setcolrcor(f, a2)		/* set brightness correction */

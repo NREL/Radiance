@@ -10,6 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *     8/14/85
  */
 
+#include  <math.h>
 #include  "fvect.h"
 
 
@@ -120,7 +121,6 @@ spinvector(vres, vorig, vnorm, theta)	/* rotate vector around normal */
 FVECT  vres, vorig, vnorm;
 double  theta;
 {
-	extern double  cos(), sin();
 	double  sint, cost, normprod;
 	FVECT  vperp;
 	register int  i;
