@@ -809,8 +809,6 @@ int	vwnum;
 			;
 	else if (vwnum >= MAXVIEW || vwl[vwnum].v == NULL)
 		vwnum = 0;
-	if (vwnum == currentview)
-		return;
 	copylastv("standard view");
 	dev_view(vwl[currentview=vwnum].v);
 }
