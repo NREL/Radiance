@@ -1,13 +1,34 @@
-# SCCSid "$SunId$ LBL"
+% SCCSid "$SunId$ LBL"
 
 %
 % By Isaac Kuo
 %
 
 #include "newsconstants.h"
+
 cdef cps_clear()
   textbackground setcolor clippath fill
 cdef initcanvas(x,y,width,height,mb1key,mb2key,mb3key)
+% a couple of definitions of commands in Sun NeWS but not in
+% SiliconGraphics NeWS
+
+currentdict /createcanvas known not % check if they're defined or not
+ {
+  /createcanvas
+   {
+    3 2 roll newcanvas /newcan exch def
+    0 0 4 2 roll newpath rectpath
+    newcan reshapecanvas newpath
+    newcan
+   } def
+  /mapcanvas
+   {
+    /Mapped true put
+   } def
+ } if
+
+% terrific, wasn't it?
+
   /Can framebuffer width height createcanvas def
   Can /Retained true put
   Can setcanvas x y movecanvas currentcanvas mapcanvas
@@ -96,7 +117,18 @@ cdef cps_cleanup() => tag()
   tag tagprint
 cdef getthebox(X,Y,W,H) => tag(X,Y,W,H)
  % Get the coordinates of the box from the user
-  currentcanvas createoverlay setcanvas getwholerect waitprocess
+
+% While Sun NeWS coordinates default to pixels, Silicon Graphics NeWS
+% defaults to "points", which are 4/3 the size of pixels in both directions.
+% Silicon Graphics NeWS does not have "createcanvas" defined, so it is
+% used to determine whether the coordinates should be translated.
+
+  currentcanvas createoverlay setcanvas
+  currentdict /createcanvas known not
+   {
+    .75 .75 scale
+   } if
+  getwholerect waitprocess
   aload pop /y1 exch def /x1 exch def /y0 exch def /x0 exch def
   x0 x1 gt { /x x1 def /w x0 x1 sub def }
            { /x x0 def /w x1 x0 sub def } ifelse
