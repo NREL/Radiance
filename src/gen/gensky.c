@@ -59,9 +59,13 @@ struct {
 	"AST", 60, "ADT", 45,
 	"NST", 52.5, "NDT", 37.5,
 	"GMT", 0, "BST", -15,
-	"WET", -15, "WETDST", -30,
-	"MET", -30, "METDST", -45,
-	"MEZ", -30, "MESZ", -45,
+	"CET", -15, "CEST", -30,
+	"EET", -30, "EEST", -45,
+	"AST", -45, "ADT", -60,
+	"GST", -60, "GDT", -75,
+	"IST", -82.5, "IDT", -97.5,
+	"JST", -135, "NDT", -150,
+	"NZST", -180, "NZDT", -195,
 	"", 0
 };
 					/* required values */
