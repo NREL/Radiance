@@ -111,6 +111,8 @@ panim.o:	scan.h clntrpc.h color.h random.h
 
 pf2.o bnoise.o:	random.h
 
+ra_t16.o:	random.h
+
 pfilt.o pf2.o ttyimage.o t4027.o mt160r.o psum.o psign.o prot.o \
 d48c.o aedimage.o pcompos.o color.o greyscale.o ra_t8.o \
 ra_pr.o pvalue.o image.o pcomb.o:	color.h
