@@ -19,6 +19,7 @@
 #ifndef DEFPATH
 #define DEFPATH		";c:/ray/lib"
 #endif
+extern char  *fixargv0();
 
 #else
 #ifdef AMIGA
@@ -32,6 +33,7 @@
 #ifndef DEFPATH
 #define DEFPATH		";/ray/lib"
 #endif
+#define	 fixargv0(a0)	(a0)
 
 #else
 
@@ -44,6 +46,7 @@
 #ifndef DEFPATH
 #define DEFPATH		":/usr/local/lib/ray"
 #endif
+#define	 fixargv0(a0)	(a0)
 
 #endif
 #endif
