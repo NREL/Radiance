@@ -384,10 +384,10 @@ XKeyEvent  *ekey;
 		switch (*cp) {
 		case '\n':
 		case '\r':				/* radiance */
-			sprintf(buf, "%-3g", intens(cval)/exposure);
+			sprintf(buf, "%.3f", intens(cval)/exposure);
 			break;
 		case 'l':				/* luminance */
-			sprintf(buf, "%-3gn", bright(cval)*683.0/exposure);
+			sprintf(buf, "%.0fn", bright(cval)*683.0/exposure);
 			break;
 		case 'c':				/* color */
 			comp = pow(2.0, (double)scale);
