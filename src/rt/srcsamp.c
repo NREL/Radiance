@@ -92,7 +92,7 @@ nextsample:
 	}
 	if (source[si->sn].sflags & SDISTANT)
 		return(FHUGE);
-	if (si->dom <= FTINY)
+	if (si->dom <= 1e-4)
 		goto nextsample;		/* behind source? */
 	si->dom /= d*d;
 	return(d);		/* sample OK, return distance */
