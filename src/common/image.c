@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -15,6 +15,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "view.h"
 
 #include  "resolu.h"
+
+#include  "paths.h"
 
 VIEW  stdview = STDVIEW;		/* default view parameters */
 
@@ -382,7 +384,7 @@ char  *s;
 	register char  **an;
 					/* add program name to list */
 	if (altname[0] == NULL)
-		if ((cp = rindex(progname, '/')) != NULL)
+		if ((cp = rindex(progname, DIRSEP)) != NULL)
 			altname[0] = cp+1;
 		else
 			altname[0] = progname;
@@ -390,7 +392,7 @@ char  *s;
 	cp = s;
 	while (*cp && *cp != ' ')
 		cp++;
-	while (cp > s && cp[-1] != '/')
+	while (cp > s && cp[-1] != DIRSEP)
 		cp--;
 	for (an = altname; *an != NULL; an++)
 		if (!strncmp(*an, cp, strlen(*an)))

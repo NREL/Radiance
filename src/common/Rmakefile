@@ -82,3 +82,5 @@ calprnt.o:	calcomp.h
 process.o:	vfork.h
 
 font.o:	font.h
+
+fropen.o getpath.o image.o:	paths.h
