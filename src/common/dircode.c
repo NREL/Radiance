@@ -1,5 +1,5 @@
 #ifndef lint
-static const char	RCSid[] = "$Id$";
+static const char RCSid[] = "$Id$";
 #endif
 /*
  * Compute 4-byte direction code (assume this fits into int)
@@ -42,6 +42,8 @@ FVECT	dv;
 		dc |= F2Z | cd[2] << F2SFT;
 	else
 		dc |= cm << F2SFT;
+	if (!dc)	/* don't generate 0 code */
+		dc = F1X;
 	return(dc);
 }
 
