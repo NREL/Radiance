@@ -193,6 +193,14 @@ will use the material type "illum" with the input surface modifier
 as its alternate material.
 The default is
 .I l-.
+.SH EXAMPLES
+The following command generates illum's corresponding to geometry
+in the files "it1.rad" and "it2.rad":
+.IP "" .3i
+mkillum -ab 2 -ad 1024 -av .1 .1 .1 basic.oct "<" it1.rad it2.rad > illums.rad
+.PP
+The output file "illums.rad" would then be combined with the original
+scene geometry to create a more easily rendered composite.
 .SH AUTHOR
 Greg Ward
 .SH ACKNOWLEDGEMENT
