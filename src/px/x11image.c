@@ -81,8 +81,6 @@ double  exposure = 1.0;			/* exposure compensation used */
 
 int  wrongformat = 0;			/* input in another format? */
 
-int  imready = 0;			/* is image up? */
-
 GC	revgc;				/* graphics context with GXinvert */
 
 XRASTER	*ourras;			/* our stored image */
@@ -250,6 +248,7 @@ init()			/* get data and open window */
 	XSetFunction(thedisplay, revgc, GXinvert);
 	XDefineCursor(thedisplay, wind, XCreateFontCursor(thedisplay, 
 			XC_diamond_cross));
+	XStoreName(thedisplay, wind, fname == NULL ? progname : fname);
 	if (geometry != NULL) {
 		bzero((char *)&oursizhints, sizeof(oursizhints));
 		i = XParseGeometry(geometry, &oursizhints.x, &oursizhints.y,
@@ -282,12 +281,6 @@ init()			/* get data and open window */
 			|ButtonMotionMask|StructureNotifyMask
 			|KeyPressMask|ExposureMask);
 	XMapWindow(thedisplay, wind);
-				/* make sure the image is up */
-	do
-		getevent();
-	while (!imready);
-				/* store name as ready signal */
-	XStoreName(thedisplay, wind, fname == NULL ? progname : fname);
 	return;
 memerr:
 	quiterr("out of memory");
@@ -394,7 +387,6 @@ getevent()				/* process the next event */
 		break;
 	case Expose:
 		redraw(e.e.x, e.e.y, e.e.width, e.e.height);
-		imready++;
 		break;
 	case ButtonPress:
 		if (e.b.state & (ShiftMask|ControlMask))
