@@ -261,9 +261,19 @@ int  xmin, ymin, xmax, ymax;
 static
 x11_flush()			/* flush output */
 {
+	int	n;
+	register char	*buf;
+
 	XNoOp(ourdisplay);
 	while (XPending(ourdisplay) > 0)
 		getevent();
+#ifdef FIONREAD
+	if (ioctl(0, FIONREAD, &n) == 0 && n) {		/* from stdin */
+		buf = getcombuf(&x11_driver);
+		n = read(0, buf, n);
+		buf[n] = '\0';
+	}
+#endif
 }
 
 
@@ -271,11 +281,12 @@ static
 x11_comin(inp, prompt)		/* read in a command line */
 char  *inp, *prompt;
 {
-	if (prompt != NULL)
+	if (prompt != NULL) {
+		x11_flush();		/* make sure we get everything */
 		if (fromcombuf(inp, &x11_driver))
 			return;
-		else
-			xt_puts(prompt, comline);
+		xt_puts(prompt, comline);
+	}
 	xt_cursor(comline, TBLKCURS);
 	editline(inp, x11_getc, x11_comout);
 	xt_cursor(comline, TNOCURS);
