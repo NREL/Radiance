@@ -38,10 +38,11 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  SP_TRAN	02		/* has transmitted specular */
 #define  SP_PURE	010		/* purely specular (zero roughness) */
 #define  SP_BADU	020		/* bad u direction calculation */
+#define  SP_FLAT	040		/* reflecting surface is flat */
 
 typedef struct {
-	RAY  *rp;		/* ray pointer */
 	OBJREC  *mp;		/* material pointer */
+	RAY  *rp;		/* ray pointer */
 	short  specfl;		/* specularity flags, defined above */
 	COLOR  mcolor;		/* color of this material */
 	COLOR  scolor;		/* color of specular component */
@@ -92,8 +93,11 @@ double  omega;			/* light source size */
 		 *  Compute specular reflection coefficient using
 		 *  anisotropic gaussian distribution model.
 		 */
-						/* roughness + source */
-		au2 = av2 = omega/(4.0*PI);
+						/* add source width if flat */
+		if (np->specfl & SP_FLAT)
+			au2 = av2 = omega/(4.0*PI);
+		else
+			au2 = av2 = 0.0;
 		au2 += np->u_alpha * np->u_alpha;
 		av2 += np->v_alpha * np->v_alpha;
 						/* half vector */
@@ -160,8 +164,8 @@ register RAY  *r;
 
 	if (m->oargs.nfargs != (m->otype == MAT_TRANS2 ? 8 : 6))
 		objerror(m, USER, "bad number of real arguments");
-	nd.rp = r;
 	nd.mp = m;
+	nd.rp = r;
 						/* get material color */
 	setcolor(nd.mcolor, m->oargs.farg[0],
 			   m->oargs.farg[1],

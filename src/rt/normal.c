@@ -41,6 +41,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  SP_REFL	01		/* has reflected specular component */
 #define  SP_TRAN	02		/* has transmitted specular */
 #define  SP_PURE	010		/* purely specular (zero roughness) */
+#define  SP_FLAT	020		/* flat reflecting surface */
 
 typedef struct {
 	OBJREC  *mp;		/* material pointer */
@@ -66,6 +67,7 @@ double  omega;			/* light source size */
 {
 	double  ldot;
 	double  dtmp;
+	int	i;
 	COLOR  ctmp;
 
 	setcolor(cval, 0.0, 0.0, 0.0);
@@ -91,8 +93,11 @@ double  omega;			/* light source size */
 		 *  Compute specular reflection coefficient using
 		 *  gaussian distribution model.
 		 */
-						/* roughness + source */
-		dtmp = 2.0*np->alpha2 + omega/(2.0*PI);
+						/* roughness */
+		dtmp = 2.0*np->alpha2;
+						/* + source if flat */
+		if (np->specfl & SP_FLAT)
+			dtmp += omega/(2.0*PI);
 						/* gaussian */
 		dtmp = exp((DOT(np->vrefl,ldir)-1.)/dtmp)/(2.*PI)/dtmp;
 						/* worth using? */
@@ -236,6 +241,9 @@ register RAY  *r;
 
 	if (nd.specfl & SP_PURE && nd.rdiff <= FTINY && nd.tdiff <= FTINY)
 		return;				/* 100% pure specular */
+
+	if (r->ro->otype == OBJ_FACE || r->ro->otype == OBJ_RING)
+		nd.specfl |= SP_FLAT;
 
 	if (nd.specfl & (SP_REFL|SP_TRAN) && !(nd.specfl & SP_PURE))
 		gaussamp(r, &nd);
