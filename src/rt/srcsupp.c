@@ -392,7 +392,7 @@ register RAY  *r;
 		first = 0; last = nsources-1;
 	}
 	for (i = first; i <= last; i++)
-		if (source[i].sflags & SDISTANT)
+		if ((source[i].sflags & (SDISTANT|SVIRTUAL)) == SDISTANT)
 			/*
 			 * Check to see if ray is within
 			 * solid angle of source.
