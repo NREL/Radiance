@@ -10,6 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/select.h>
 #include <signal.h>
 #include <fcntl.h>
 #include "netproc.h"
