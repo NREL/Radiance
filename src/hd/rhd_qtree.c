@@ -19,7 +19,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #define MAXANG		20.
 #endif
 
-#define MAXDIFF2	(long)( MAXANG*MAXANG /90./90.*(1L<<15)*(1L<<15))
+#define MAXDIFF2	(PI*PI/180./180.* MAXANG*MAXANG )
 
 #define abs(i)		((i) < 0 ? -(i) : (i))
 
@@ -102,7 +102,7 @@ newleaf()			/* allocate a leaf from our pile */
 }
 
 
-#define	LEAFSIZ		(3*sizeof(float)+2*sizeof(short)+\
+#define	LEAFSIZ		(3*sizeof(float)+sizeof(int4)+\
 			sizeof(TMbright)+6*sizeof(BYTE))
 
 int
@@ -129,7 +129,7 @@ register int	n;
 		return(0);
 				/* assign larger alignment types earlier */
 	qtL.wp = (float (*)[3])qtL.base;
-	qtL.wd = (short (*)[2])(qtL.wp + n);
+	qtL.wd = (int4 *)(qtL.wp + n);
 	qtL.brt = (TMbright *)(qtL.wd + n);
 	qtL.chr = (BYTE (*)[3])(qtL.brt + n);
 	qtL.rgb = (BYTE (*)[3])(qtL.chr + n);
@@ -202,63 +202,93 @@ int	pct;
 }
 
 
-static
-encodedir(pa, dv)		/* encode a normalized direction vector */
-short	pa[2];
+#define	DCSCALE		11585.2		/* (1<<13)*sqrt(2) */
+#define FXNEG		01
+#define FYNEG		02
+#define FZNEG		04
+#define FXACT		010
+#define FZACT		020
+#define F1SFT		5
+#define F2SFT		18
+#define FMASK		0x1fff
+
+static int4
+encodedir(dv)		/* encode a normalized direction vector */
 FVECT	dv;
 {
-	pa[1] = 0;
-	if (dv[2] >= 1.)
-		pa[0] = (1L<<15)-1;
-	else if (dv[2] <= -1.)
-		pa[0] = -((1L<<15)-1);
-	else {
-		pa[0] = ((1L<<15)-1)/(PI/2.) * asin(dv[2]);
-		pa[1] = ((1L<<15)-1)/PI * atan2(dv[1], dv[0]);
-	}
-}
-
-
-#define ALTSHFT		5
-#define NALT		(1<<ALTSHFT)
-#define azisft(alt)	azisftab[abs(alt)>>(15-ALTSHFT)]
-
-static unsigned short	azisftab[NALT];
-
-static
-azisftinit(alt)		/* initialize azimuth scale factor table */
-int	alt;
-{
+	register int4	dc = 0;
+	int	cd[3], cm;
 	register int	i;
 
-	for (i = NALT; i--; )
-		azisftab[i] = 2.*(1L<<15) * cos(PI/2.*(i+.5)/NALT);
-	return(azisft(alt));
+	for (i = 0; i < 3; i++)
+		if (dv[i] < 0.) {
+			cd[i] = dv[i] * -DCSCALE;
+			dc |= 1<<i;
+		} else
+			cd[i] = dv[i] * DCSCALE;
+	if (cd[0] <= cd[1]) {
+		dc |= FXACT | cd[0] << F1SFT;
+		cm = cd[1];
+	} else {
+		dc |= cd[1] << F1SFT;
+		cm = cd[0];
+	}
+	if (cd[2] <= cm)
+		dc |= FZACT | cd[2] << F2SFT;
+	else
+		dc |= cm << F2SFT;
+	return(dc);
 }
 
-#define azisf(alt)	(azisftab[0] ? azisft(alt) : azisftinit(alt)) >> 15
 
-static long
-dir2diff(pa1, pa2)		/* relative distance^2 between directions */
-short	pa1[2], pa2[2];
+static
+decodedir(dv, dc)	/* decode a normalized direction vector */
+FVECT	dv;	/* returned */
+register int4	dc;
 {
-	long	altd2, azid2;
-	int	alt;
+	double	d1, d2, der;
 
-	altd2 = pa1[0] - pa2[0];	/* get altitude difference^2 */
-	altd2 *= altd2;
-	if (altd2 > MAXDIFF2)
-		return(altd2);		/* too large already */
-	azid2 = pa1[1] - pa2[1];	/* get adjusted azimuth difference^2 */
-	if (azid2 < 0) azid2 = -azid2;
-	if (azid2 >= 1L<<15) {		/* wrap sphere */
-		azid2 -= 1L<<16;
-		if (azid2 < 0) azid2 = -azid2;
+	d1 = ((dc>>F1SFT & FMASK)+.5)/DCSCALE;
+	d2 = ((dc>>F2SFT & FMASK)+.5)/DCSCALE;
+	der = sqrt(1. - d1*d1 - d2*d2);
+	if (dc & FXACT) {
+		dv[0] = d1;
+		if (dc & FZACT) { dv[1] = der; dv[2] = d2; }
+		else { dv[1] = d2; dv[2] = der; }
+	} else {
+		dv[1] = d1;
+		if (dc & FZACT) { dv[0] = der; dv[2] = d2; }
+		else { dv[0] = d2; dv[2] = der; }
 	}
-	alt = (pa1[0]+pa2[0])/2;
-	azid2 = azid2*azisf(alt);	/* evaluation order is important */
-	azid2 *= azid2;
-	return(altd2 + azid2);
+	if (dc & FXNEG) dv[0] = -dv[0];
+	if (dc & FYNEG) dv[1] = -dv[1];
+	if (dc & FZNEG) dv[2] = -dv[2];
+}
+
+
+static double
+dir2diff(dc1, dc2)		/* relative radians^2 between directions */
+int4	dc1, dc2;
+{
+	FVECT	v1, v2;
+
+	decodedir(v1, dc1);
+	decodedir(v2, dc2);
+
+	return(2. - 2.*DOT(v1,v2));
+}
+
+
+static double
+fdir2diff(dc1, v2)		/* relative radians^2 between directions */
+int4	dc1;
+register FVECT	v2;
+{
+	FVECT	v1;
+
+	decodedir(v1, dc1);
+
+	return(2. - 2.*DOT(v1,v2));
 }
 
 
@@ -306,11 +336,10 @@ int	li;
 	register RTREE	*tp = &qtrunk;
 	int	x0=0, y0=0, x1=odev.hres, y1=odev.vres;
 	int	lo = -1;
-	long	d2;
-	short	dc[2];
+	double	d2;
 	int	x, y, mx, my;
 	double	z;
-	FVECT	ip, wp;
+	FVECT	ip, wp, vd;
 	register int	q;
 					/* compute leaf location in view */
 	VCOPY(wp, qtL.wp[li]);
@@ -323,9 +352,8 @@ int	li;
 		error(INTERNAL, "bad view assumption in addleaf");
 #endif
 	for (q = 0; q < 3; q++)
-		wp[q] = (wp[q] - odev.v.vp[q])/ip[2];
-	encodedir(dc, wp);		/* compute pixel direction */
-	d2 = dir2diff(dc, qtL.wd[li]);
+		vd[q] = (wp[q] - odev.v.vp[q])/ip[2];
+	d2 = fdir2diff(qtL.wd[li], vd);
 	if (d2 > MAXDIFF2)
 		return(0);			/* leaf dir. too far off */
 	x = ip[0] * odev.hres;
@@ -360,7 +388,7 @@ int	li;
 			if (z > (1.+qtDepthEps)*ip[2])
 				return(0);		/* old one closer */
 			if (z >= (1.-qtDepthEps)*ip[2] &&
-					dir2diff(dc, qtL.wd[lo]) < d2)
+					fdir2diff(qtL.wd[lo], vd) < d2)
 				return(0);		/* old one better */
 			tp->k[q].li = li;		/* else new one is */
 			tp->flgs |= CHF(q);
@@ -374,8 +402,8 @@ int	li;
 		my = ip[1] * odev.vres;
 		if (mx >= (x0 + x1) >> 1) q |= 01;
 		if (my >= (y0 + y1) >> 1) q |= 02;
+		tp->flgs = CH_ANY|LFF(q);	/* all new */
 		tp->k[q].li = lo;
-		tp->flgs |= LFF(q)|CH_ANY;	/* all new */
 	}
 	return(1);		/* done */
 }
@@ -389,7 +417,7 @@ FVECT	p, v;
 
 	li = newleaf();
 	VCOPY(qtL.wp[li], p);
-	encodedir(qtL.wd[li], v);
+	qtL.wd[li] = encodedir(v);
 	tmCvColrs(&qtL.brt[li], qtL.chr[li], c, 1);
 	if (!addleaf(li))
 		ungetleaf(li);

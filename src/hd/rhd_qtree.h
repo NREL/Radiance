@@ -8,6 +8,13 @@
 
 #include "tonemap.h"
 #include "rhdriver.h"
+
+#ifndef int2
+#define int2	short
+#endif
+#ifndef int4
+#define int4	long
+#endif
 				/* child ordering */
 #define	DL		0		/* down left */
 #define	DR		1		/* down right */
@@ -33,7 +40,7 @@ typedef struct rtree {
 
 extern struct rleaves {
 	float		(*wp)[3];	/* world intersection point array */
-	short		(*wd)[2];	/* world direction array */
+	int4		*wd;		/* world direction array */
 	TMbright	*brt;		/* encoded brightness array */
 	BYTE		(*chr)[3];	/* encoded chrominance array */
 	BYTE		(*rgb)[3];	/* tone-mapped color array */
