@@ -14,26 +14,26 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include <math.h>
 
+#include <ctype.h>
+
 #include "parser.h"
 
-#include "lookup.h"
-
-#ifndef PI
-#define PI		3.14159265358979323846
-#endif
+#define O_INV1		1	/* Inventor 1.0 output */
+#define O_INV2		2	/* Inventor 2.0 output */
+#define O_VRML		3	/* VRML output */
 
 #define	TABSTOP		8	/* assumed number of characters per tab */
 #define	SHIFTW		2	/* nesting shift width */
 #define MAXIND		15	/* maximum indent level */
 
-extern int	i_comment(), i_object(), i_xf(), i_include(),
+char	tabs[MAXIND*SHIFTW+1];	/* current tab-in string */
+
+int	outtype = O_INV2;	/* output format */
+
+extern int	i_comment(), i_object(), i_xf(),
 		i_cyl(), i_face(), i_sph();
 
-int	vrmlout = 0;		/* VRML output desired? */
-
-int	instancing = 0;		/* are we in an instance? */
-
-char	tabs[MAXIND*SHIFTW+1];	/* current tab-in string */
+extern char	*to_id();
 
 
 main(argc, argv)
@@ -63,24 +63,39 @@ char	*argv[];
 	mg_ehand[MG_E_TS] = c_hmaterial;	/* they get specular trans. */
 	mg_ehand[MG_E_VERTEX] = c_hvertex;	/* they get vertices */
 	mg_ehand[MG_E_XF] = i_xf;		/* we track transforms */
-	mg_ehand[MG_E_INCLUDE] = i_include;	/* we include files */
 	mg_init();		/* initialize the parser */
-	i = 1;			/* get options and print format line */
-	if (i < argc && !strncmp(argv[i], "-vrml", strlen(argv[i]))) {
-		printf("#VRML 1.0 ascii\n");
-		vrmlout++;
-		i++;
-	} else
+				/* get options and print format line */
+	for (i = 1; i < argc && argv[i][0] == '-'; i++)
+		if (!strcmp(argv[i], "-vrml"))
+			outtype = O_VRML;
+		else if (!strcmp(argv[i], "-1"))
+			outtype = O_INV1;
+		else if (!strcmp(argv[i], "-2"))
+			outtype = O_INV2;
+		else
+			goto userr;
+	switch (outtype) {
+	case O_INV1:
+		printf("#Inventor V1.0 ascii\n");
+		break;
+	case O_INV2:
 		printf("#Inventor V2.0 ascii\n");
+		break;
+	case O_VRML:
+		printf("#VRML 1.0 ascii\n");
+		break;
+	}
 	printf("## Translated from MGF Version %d.%d\n", MG_VMAJOR, MG_VMINOR);
 	printf("Separator {\n");		/* begin root node */
 						/* general properties */
 	printf("MaterialBinding { value OVERALL }\n");
-	printf("NormalBinding { value PER_VERTEX }\n");
-	printf("ShapeHints {\n");
-	printf("\tvertexOrdering CLOCKWISE\n");
-	printf("\tfaceType UNKNOWN_FACE_TYPE\n");
-	printf("}\n");
+	printf("NormalBinding { value PER_VERTEX_INDEXED }\n");
+	if (outtype != O_INV1) {
+		printf("ShapeHints {\n");
+		printf("\tvertexOrdering CLOCKWISE\n");
+		printf("\tfaceType UNKNOWN_FACE_TYPE\n");
+		printf("}\n");
+	}
 	if (i == argc) {	/* load standard input */
 		if (mg_load(NULL) != MG_OK)
 			exit(1);
@@ -101,6 +116,9 @@ char	*argv[];
 	}
 	printf("}\n");				/* close root node */
 	exit(0);
+userr:
+	fprintf(stderr, "%s: [-1|-2|-vrml] [file] ..\n", argv[0]);
+	exit(1);
 }
 
 
@@ -129,8 +147,6 @@ i_comment(ac, av)			/* transfer comment as is */
 int	ac;
 char	**av;
 {
-	if (instancing)
-		return(MG_OK);
 	fputs(tabs, stdout);
 	putchar('#');			/* Inventor comment character */
 	while (--ac > 0) {
@@ -149,10 +165,8 @@ char	**av;
 {
 	static int	objnest;
 
-	if (instancing)
-		return(MG_OK);
 	if (ac == 2) {				/* start group */
-		printf("%sDEF %s Group {\n", tabs, av[1]);
+		printf("%sDEF %s Group {\n", tabs, to_id(av[1]));
 		indent(1);
 		objnest++;
 		return(MG_OK);
@@ -177,8 +191,6 @@ char	**av;
 	static long	xfid;
 	register XF_SPEC	*spec;
 
-	if (instancing)
-		return(MG_OK);
 	if (ac == 1) {			/* end of transform */
 		if ((spec = xf_context) == NULL)
 			return(MG_ECNTXT);
@@ -270,85 +282,6 @@ register XF_SPEC	*spec;
 
 
 int
-i_include(ac, av)		/* include an MGF file */
-int	ac;
-char	**av;
-{
-	static LUTAB	in_tab = LU_SINIT(free,free);	/* instance table */
-	static long	nincl;
-	LUENT	*lp;
-	char	*xfarg[MG_MAXARGC];
-	MG_FCTXT	ictx;
-	register int	i;
-
-	if (ac < 2)
-		return(MG_EARGC);
-	if (ac > 2) {				/* start transform if one */
-		xfarg[0] = mg_ename[MG_E_XF];
-		for (i = 1; i < ac-1; i++)
-			xfarg[i] = av[i+1];
-		xfarg[ac-1] = NULL;
-		if ((i = mg_handle(MG_E_XF, ac-1, xfarg)) != MG_OK)
-			return(i);
-	}
-						/* open include file */
-	if ((i = mg_open(&ictx, av[1])) != MG_OK)
-		return(i);
-						/* check for instance */
-	lp = lu_find(&in_tab, ictx.fname);
-	if (lp == NULL) goto memerr;
-	if (lp->data != NULL) {			/* reference original */
-		instancing++;
-		printf("%sUSE %s\n", tabs, lp->data);
-		lp = NULL;
-	} else {				/* else new original */
-		lp->key = (char *)malloc(strlen(ictx.fname)+1);
-		if (lp->key == NULL) goto memerr;
-		(void)strcpy(lp->key, ictx.fname);
-		if (ac > 2) {			/* use transform group */
-			lp->data = (char *)malloc(16);
-			if (lp->data == NULL) goto memerr;
-			sprintf(lp->data, "_xf%ld", xf_context->xid);
-		} else {			/* else make our own group */
-			lp->data = (char *)malloc(strlen(av[1])+16);
-			if (lp->data == NULL) goto memerr;
-			sprintf(lp->data, "_%s%ld", av[1], ++nincl);
-			printf("%sDEF %s Group {\n", tabs, lp->data);
-			indent(1);
-		}
-	}
-	while ((i = mg_read()) > 0) {		/* load include file */
-		if (i >= MG_MAXLINE-1) {
-			fprintf(stderr, "%s: %d: %s\n", ictx.fname,
-					ictx.lineno, mg_err[MG_ELINE]);
-			mg_close();
-			return(MG_EINCL);
-		}
-		if ((i = mg_parse()) != MG_OK) {
-			fprintf(stderr, "%s: %d: %s:\n%s", ictx.fname,
-					ictx.lineno, mg_err[i],
-					ictx.inpline);
-			mg_close();
-			return(MG_EINCL);
-		}
-	}
-	if (lp == NULL)				/* end instance? */
-		instancing--;
-	else if (ac <= 2) {			/* else end group? */
-		indent(0);
-		printf("%s}\n", tabs);
-	}
-	mg_close();				/* close and end transform */
-	if (ac > 2 && (i = mg_handle(MG_E_XF, 1, xfarg)) != MG_OK)
-		return(i);
-	return(MG_OK);
-memerr:
-	mg_close();
-	return(MG_EMEM);
-}
-
-
-int
 put_material()			/* put out current material */
 {
 	char	*mname = "mat";
@@ -357,22 +290,22 @@ put_material()			/* put out current material */
 	if (c_cmname != NULL)
 		mname = c_cmname;
 	if (!c_cmaterial->clock) {	/* current, just use it */
-		printf("%sUSE %s\n", tabs, mname);
+		printf("%sUSE %s\n", tabs, to_id(mname));
 		return(0);
 	}
 				/* else update definition */
-	printf("%sDEF %s Group {\n", tabs, mname);
+	printf("%sDEF %s Group {\n", tabs, to_id(mname));
 	indent(1);
 	printf("%sMaterial {\n", tabs);
 	indent(1);
 	mgf2rgb(&c_cmaterial->rd_c, c_cmaterial->rd, rgbval);
-	printf("%sambientcolor %.4f %.4f %.4f\n", tabs,
+	printf("%sambientColor %.4f %.4f %.4f\n", tabs,
 			rgbval[0], rgbval[1], rgbval[2]);
-	printf("%sdiffusecolor %.4f %.4f %.4f\n", tabs,
+	printf("%sdiffuseColor %.4f %.4f %.4f\n", tabs,
 			rgbval[0], rgbval[1], rgbval[2]);
 	if (c_cmaterial->rs > FTINY) {
 		mgf2rgb(&c_cmaterial->rs_c, c_cmaterial->rs, rgbval);
-		printf("%sspecularcolor %.4f %.4f %.4f\n", tabs,
+		printf("%sspecularColor %.4f %.4f %.4f\n", tabs,
 				rgbval[0], rgbval[1], rgbval[2]);
 		printf("%sshininess %.3f\n", tabs, 1.-c_cmaterial->rs_a);
 	}
@@ -386,7 +319,8 @@ put_material()			/* put out current material */
 				c_cmaterial->ts + c_cmaterial->td);
 	indent(0);
 	printf("%s}\n", tabs);
-	printf("%sShapeHints { shapeType %s }\n", tabs,
+	if (outtype != O_INV1)
+		printf("%sShapeHints { shapeType %s }\n", tabs,
 			c_cmaterial->sided ? "SOLID" : "UNKNOWN_SHAPE_TYPE");
 	indent(0);
 	printf("%s}\n", tabs);
@@ -404,8 +338,6 @@ char	**av;
 	int	donorms = 1;
 	register int	i;
 
-	if (instancing)
-		return(MG_OK);
 	if (ac < 4)
 		return(MG_EARGC);
 	printf("%sSeparator {\n", tabs);
@@ -420,6 +352,19 @@ char	**av;
 		if (is0vect(vl[i]->n))
 			donorms = 0;
 	}
+				/* put out normal coordinates */
+	if (donorms) {
+		printf("%sNormal {\n", tabs);
+		indent(1);
+		printf("%svector [ %5.3g %5.3g %5.3g", tabs,
+			vl[0]->n[0], vl[0]->n[1], vl[0]->n[2]);
+		for (i = 1; i < ac-1; i++)
+			printf(",\n%s         %5.3g %5.3g %5.3g", tabs,
+					vl[i]->n[0], vl[i]->n[1], vl[i]->n[2]);
+		indent(0);
+		printf(" ]\n%s}\n", tabs);
+	} else
+		printf("%sNormal { }\n", tabs);
 				/* put out vertex coordinates */
 	printf("%sCoordinate3 {\n", tabs);
 	indent(1);
@@ -430,25 +375,18 @@ char	**av;
 			vl[i]->p[0], vl[i]->p[1], vl[i]->p[2]);
 	indent(0);
 	printf(" ]\n%s}\n", tabs);
-				/* put out normal coordinates */
-	if (donorms) {
-		printf("%sNormal {\n", tabs);
-		indent(1);
-		printf("%svector [ %13.9g %13.9g %13.9g", tabs,
-			vl[0]->n[0], vl[0]->p[1], vl[0]->p[2]);
-		for (i = 1; i < ac-1; i++)
-			printf(",\n%s         %13.9g %13.9g %13.9g", tabs,
-					vl[i]->n[0], vl[i]->n[1], vl[i]->n[2]);
-		indent(0);
-		printf(" ]\n%s}\n", tabs);
-	} else
-		printf("%sNormal { }\n", tabs);
 				/* put out actual face */
 	printf("%sIndexedFaceSet {\n", tabs);
 	indent(1);
-	printf("%scoordIndex [", tabs);
-	for (i = 0; i < ac-1; i++)
-		printf(" %d", i);
+	if (donorms) {
+		printf("%snormalIndex [ 0", tabs);
+		for (i = 1; i < ac-1; i++)
+			printf(", %d", i);
+		printf(" ]\n");
+	}
+	printf("%scoordIndex [ 0", tabs);
+	for (i = 1; i < ac-1; i++)
+		printf(", %d", i);
 	printf(" ]\n");
 	indent(0);
 	printf("%s}\n", tabs);
@@ -465,8 +403,6 @@ char	**av;
 {
 	register C_VERTEX	*cent;
 
-	if (instancing)
-		return(MG_OK);
 	if (ac != 3)
 		return(MG_EARGC);
 	printf("%sSeparator {\n", tabs);
@@ -498,8 +434,6 @@ char	**av;
 	FVECT	va;
 	double	length, angle;
 
-	if (instancing)
-		return(MG_OK);
 	if (ac != 4)
 		return(MG_EARGC);
 	printf("%sSeparator {\n", tabs);
@@ -518,16 +452,33 @@ char	**av;
 	va[1] = v2->p[1] - v1->p[1];
 	va[2] = v2->p[2] - v1->p[2];
 	length = sqrt(DOT(va,va));
-	angle = 180./PI * acos(va[1]/length);
-	printf("%sRotation { rotation %.9g %.9g %.9g %.9g }\n", tabs,
-			va[2], 0., -va[0], angle);
+	angle = acos(va[1]/length);
 	printf("%sTranslation { translation %13.9g %13.9g %13.9g }\n", tabs,
 			.5*(v1->p[0]+v2->p[0]), .5*(v1->p[1]+v2->p[1]),
 			.5*(v1->p[2]+v2->p[2]));
+	printf("%sRotation { rotation %.9g %.9g %.9g %.9g }\n", tabs,
+			va[2], 0., -va[0], angle);
 				/* open-ended */
 	printf("%sCylinder { parts SIDES height %13.9g radius %s }\n", tabs,
 			length, av[2]);
 	indent(0);
 	printf("%s}\n", tabs);
 	return(MG_OK);
+}
+
+
+char *
+to_id(name)			/* make sure a name is a valid Inventor ID */
+register char	*name;
+{
+	static char	id[32];
+	register char	*cp;
+
+	for (cp = id; cp < id+sizeof(id)-1 && *name; name++)
+		if (isalnum(*name) || *name == '_')
+			*cp++ = *name;
+		else
+			*cp++ = '_';
+	*cp = '\0';
+	return(id);
 }
