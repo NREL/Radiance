@@ -342,7 +342,7 @@ char	*av[];
 			dup2(p0[0], 0);
 			close(p0[0]);
 		}
-		if (p1[1] != 0) {	/* connect p1 to stdout */
+		if (p1[1] != 1) {	/* connect p1 to stdout */
 			dup2(p1[1], 1);
 			close(p1[1]);
 		}
