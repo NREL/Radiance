@@ -334,8 +334,6 @@ double	(*ourbright)() = rgb_bright;
 static void
 init(void)					/* perform final setup */
 {
-	double	l_colin(char *), l_expos(char *), l_pixaspect(char *),
-			l_ray(char *), l_psize(char *);
 	register int	i;
 						/* define constants */
 	varset("PI", ':', PI);
