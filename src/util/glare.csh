@@ -144,6 +144,7 @@ if ($?DISPLAY && $picture != $nofile) then
 endif
 set ndxnam=("Guth Visual Comfort Probability" "Guth Disability Glare Ratio" "CIE Glare Index")
 set ndxcom=("glarendx -t guth_vcp" "glarendx -t guth_dgr" "glarendx -t cie_cgi")
+set bcdlvl=(50 124 18.5)
 while ( 1 )
 	echo ""
 	echo "	0.  Quit"
@@ -185,6 +186,11 @@ include=line.plt
 include=polar.plt
 title="$ndxnam[$choice]"
 subtitle="$subtitle"
+Bdata=
+	0	$bcdlvl[$choice]
+	360	$bcdlvl[$choice]
+;
+Blabel="BCD level"
 Adata=
 _EOF_
 			getinfo - < $gndxfile >> $plotfile
