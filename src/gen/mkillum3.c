@@ -24,8 +24,8 @@ register OBJREC  *obj;
 {
 	register int  i;
 
-	if (!strcmp(mod, VOIDID))	/* don't print void objects */
-		return;
+	if (issurface(obj->otype) && !strcmp(mod, VOIDID))
+		return;		/* don't print void surfaces */
 	printf("\n%s %s %s", mod, ofun[obj->otype].funame, obj->oname);
 	printf("\n%d", obj->oargs.nsargs);
 	for (i = 0; i < obj->oargs.nsargs; i++)
