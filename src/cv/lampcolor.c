@@ -40,9 +40,9 @@ struct {
 	int	(*check)();
 	char	*help;
 } param[NPARAMS] = {
-	{ "lamp type", "white", typecheck,
+	{ "lamp type", "D65WHITE", typecheck,
 "The lamp type is a string which corresponds to one of the types registered\n\
-in the lamp table file.  A value of \"white\" means an uncolored source,\n\
+in the lamp table file.  A value of \"D65WHITE\" means an uncolored source,\n\
 which may be preferable because it results in a color balanced image." },
 	{ "length unit", "meter", unitcheck,
 "Unit must be one of:  \"meter\", \"centimeter\", \"foot\", or \"inch\".\n\
