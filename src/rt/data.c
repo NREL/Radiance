@@ -31,7 +31,7 @@ char  *dname;
 	char  *dfname;
 	FILE  *fp;
 	int  asize;
-	register int  i;
+	register int  i, j;
 	register DATARRAY  *dp;
 						/* look for array in list */
 	for (dp = dlist; dp != NULL; dp = dp->next)
@@ -44,13 +44,18 @@ char  *dname;
 	 *
 	 *	The file has the following format:
 	 *
-	 *		#dimensions
+	 *		N
 	 *		beg0	end0	n0
 	 *		beg1	end1	n1
 	 *		. . .
+	 *		begN	endN	nN
 	 *		data, later dimensions changing faster
 	 *		. . .
 	 *
+	 *	For irregularly spaced points, the following can be
+	 *  substituted for begi endi ni:
+	 *
+	 *		@ ni p0i p1i .. pni
 	 */
 
 	if ((dfname = getpath(dname, libpath, R_OK)) == NULL) {
@@ -77,9 +82,27 @@ char  *dname;
 	for (i = 0; i < dp->nd; i++) {
 		if (fscanf(fp, "%lf %lf %d",
 				&dp->dim[i].org, &dp->dim[i].siz,
-				&dp->dim[i].ne) != 3)
+				&dp->dim[i].ne) == 3) {
+			dp->dim[i].siz -= dp->dim[i].org;
+			dp->dim[i].p = NULL;
+		} else if (fscanf(fp, "@ %d", &dp->dim[i].ne) == 1) {
+			dp->dim[i].p = (double *)malloc(dp->dim[i].ne*sizeof(double));
+			if (dp->dim[i].p == NULL)
+				goto memerr;
+			for (j = 0; j < dp->dim[i].ne; j++)
+				if (fscanf(fp, "%lf", &dp->dim[i].p[j]) != 1)
+					goto scanerr;
+			for (j = 1; j < dp->dim[i].ne-1; j++)
+				if ((dp->dim[i].p[j-1] < dp->dim[i].p[j]) !=
+					(dp->dim[i].p[j] < dp->dim[i].p[j+1]))
+					goto scanerr;
+			dp->dim[i].org = dp->dim[i].p[0];
+			dp->dim[i].siz = dp->dim[i].p[dp->dim[i].ne-1]
+						- dp->dim[i].p[0];
+		} else
 			goto scanerr;
-		dp->dim[i].siz -= dp->dim[i].org;
+		if (dp->dim[i].siz == 0.0 || dp->dim[i].ne < 2)
+			goto scanerr;
 		asize *= dp->dim[i].ne;
 	}
 	if ((dp->arr = (DATATYPE *)malloc(asize*sizeof(DATATYPE))) == NULL)
@@ -184,6 +207,7 @@ freedata(dname)			/* free memory associated with dname */
 char  *dname;
 {
 	register DATARRAY  *dp, *dpl;
+	register int  i;
 
 	for (dpl = NULL, dp = dlist; dp != NULL; dpl = dp, dp = dp->next)
 		if (!strcmp(dname, dp->name)) {
@@ -192,6 +216,9 @@ char  *dname;
 			else
 				dpl->next = dp->next;
 			free((char *)dp->arr);
+			for (i = 0; i < dp->nd; i++)
+				if (dp->dim[i].p != NULL)
+					free((char *)dp->dim[i].p);
 			freestr(dp->name);
 			free((char *)dp);
 			return;
@@ -229,25 +256,43 @@ double  *pt;
 	int  asize;
 	register int  i;
 	double  x, y, y0, y1;
-
+					/* set up dimensions for recursion */
 	sd.nd = dp->nd - 1;
 	asize = 1;
 	for (i = 0; i < sd.nd; i++) {
 		sd.dim[i].org = dp->dim[i+1].org;
 		sd.dim[i].siz = dp->dim[i+1].siz;
+		sd.dim[i].p = dp->dim[i+1].p;
 		asize *= sd.dim[i].ne = dp->dim[i+1].ne;
 	}
-
-	x = (pt[0] - dp->dim[0].org)/dp->dim[0].siz;
-
-	x *= dp->dim[0].ne - 1;
-
-	i = x;
-	if (i < 0)
-		i = 0;
-	else if (i > dp->dim[0].ne - 2)
-		i = dp->dim[0].ne - 2;
-
+					/* get independent variable */
+	if (dp->dim[0].p == NULL) {		/* evenly spaced points */
+		x = (pt[0] - dp->dim[0].org)/dp->dim[0].siz;
+		x = x * (dp->dim[0].ne - 1);
+		i = x;
+		if (i < 0)
+			i = 0;
+		else if (i > dp->dim[0].ne - 2)
+			i = dp->dim[0].ne - 2;
+	} else {				/* unevenly spaced points */
+		if (dp->dim[0].siz > 0.0)
+			for (i = 0; i < dp->dim[0].ne; i++)
+				if (pt[0] < dp->dim[0].p[i])
+					break;
+		else
+			for (i = 0; i < dp->dim[0].ne; i++)
+				if (pt[0] >= dp->dim[0].p[i])
+					break;
+		if (i <= 0)
+			i = 0;
+		else if (i >= dp->dim[0].ne)
+			i = dp->dim[0].ne - 2;
+		else
+			i--;
+		x = i + (pt[0] - dp->dim[0].p[i]) /
+				(dp->dim[0].p[i+1] - dp->dim[0].p[i]);
+	}
+					/* get dependent variable */
 	if (dp->nd == 1) {
 		y0 = dp->arr[i];
 		y1 = dp->arr[i+1];
@@ -257,7 +302,6 @@ double  *pt;
 		sd.arr = &dp->arr[(i+1)*asize];
 		y1 = datavalue(&sd, pt+1);
 	}
-
 	/*
 	 * Extrapolate as far as one division, then
 	 * taper off harmonically to zero.
