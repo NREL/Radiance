@@ -122,7 +122,7 @@ double  omega;			/* light source size */
 	if (ldot > 0.0 ? np->rspec <= FTINY : np->tspec <= FTINY)
 		return;		/* no specular component */
 					/* set up function */
-	setfunc(np->mp, np->pr);
+	setbrdfunc(np);
 	sa = np->mp->oargs.sarg;
 	errno = 0;
 					/* transform light vector */
@@ -192,7 +192,6 @@ register RAY  *r;
 	double  transtest, transdist;
 	COLOR  ctmp;
 	double  dtmp;
-	FVECT  vec;
 	register int  i;
 						/* check arguments */
 	switch (m->otype) {
@@ -259,15 +258,7 @@ register RAY  *r;
 			loadfunc(m->oargs.sarg[1]);
 	}
 						/* set special variables */
-	setfunc(m, r);
-	multv3(vec, nd.pnorm, funcxf.xfm);
-	varset("NxP", '=', vec[0]/funcxf.sca);
-	varset("NyP", '=', vec[1]/funcxf.sca);
-	varset("NzP", '=', vec[2]/funcxf.sca);
-	varset("RdotP", '=', nd.pdot);
-	varset("CrP", '=', colval(nd.mcolor,RED));
-	varset("CgP", '=', colval(nd.mcolor,GRN));
-	varset("CbP", '=', colval(nd.mcolor,BLU));
+	setbrdfunc(&nd);
 						/* compute transmitted ray */
 	if (m->otype == MAT_BRTDF && nd.tspec > FTINY) {
 		RAY  sr;
@@ -344,4 +335,24 @@ register RAY  *r;
 						/* check distance */
 	if (transtest > bright(r->rcol))
 		r->rt = transdist;
+}
+
+
+setbrdfunc(np)			/* set up brdf function and variables */
+register BRDFDAT  *np;
+{
+	FVECT  vec;
+
+	if (setfunc(np->mp, np->pr) == 0)
+		return(0);	/* it's OK, setfunc says we're done */
+				/* else (re)assign special variables */
+	multv3(vec, np->pnorm, funcxf.xfm);
+	varset("NxP", '=', vec[0]/funcxf.sca);
+	varset("NyP", '=', vec[1]/funcxf.sca);
+	varset("NzP", '=', vec[2]/funcxf.sca);
+	varset("RdotP", '=', np->pdot);
+	varset("CrP", '=', colval(np->mcolor,RED));
+	varset("CgP", '=', colval(np->mcolor,GRN));
+	varset("CbP", '=', colval(np->mcolor,BLU));
+	return(1);
 }
