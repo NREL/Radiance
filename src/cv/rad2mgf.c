@@ -15,6 +15,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "color.h"
 #include "lookup.h"
 
+#define PI	3.14159265358979323846
+
 int	o_face(), o_cone(), o_sphere(), o_ring(), o_cylinder();
 int	o_instance(), o_source(), o_illum();
 int	o_plastic(), o_metal(), o_glass(), o_mirror(), o_trans(), o_light();
@@ -728,6 +730,6 @@ register FUNARGS	*fa;
 	puts("\tc");
 	if (d > FTINY)
 		printf("\t\tcxy %.4f %.4f\n", cxyz[0]/d, cxyz[1]/d);
-	printf("\ted %.4g\n", cxyz[1]*WHTEFFICACY);
+	printf("\ted %.4g\n", cxyz[1]*(PI*WHTEFFICACY));
 	return(0);
 }
