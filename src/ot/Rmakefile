@@ -9,10 +9,10 @@
 #
 
 OPT = -O
-MACH = -DBSD -DSTRUCTASSIGN -f68881 /usr/lib/f68881.il
+MACH = -DBSD -DSTRUCTASSIGN -f68881 /usr/lib/libm.il
 CFLAGS = -DSTRICT $(OPT) $(MACH)
 
-INSTDIR = ../../bin
+INSTDIR = /lumen/lumen/ray/bin.sun3
 
 COMPAT = malloc.o
 
