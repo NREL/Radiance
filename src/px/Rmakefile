@@ -38,11 +38,12 @@ tiff:	ra_tiff
 
 sun:
 
-install:	$(PROGS) $(SPECIAL) normpat.csh falsecolor.csh
+install:	$(PROGS) $(SPECIAL) normpat.csh falsecolor.csh pdfblur.csh
 	cp $(PROGS) $(INSTDIR)
 	cp normpat.csh $(INSTDIR)/normpat
 	cp falsecolor.csh $(INSTDIR)/falsecolor
-	chmod 755 $(INSTDIR)/normpat $(INSTDIR)/falsecolor
+	cp pdfblur.csh $(INSTDIR)/pdfblur
+	chmod 755 $(INSTDIR)/normpat $(INSTDIR)/falsecolor $(INSTDIR)/pdfblur
 
 clean:
 	set nonomatch; rm -f x10image aedimage glimage ra_tiff \
