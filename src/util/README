@@ -22,3 +22,20 @@ rpiece.c	program to control parallel generation of a picture
 setscan.c	convert angle ranges of the form a-b:s,c to discrete values
 x11findwind.c	find an X11 window from its name
 xglaresrc.c	circle glare sources in a displayed image
+trad.wsh	graphical user interface to "rad" based on Tcl/Tk (wish script)
+do_action.tcl	action submenu for trad
+do_file.tcl	file submenu for trad
+do_options.tcl	options submenu for trad
+do_results.tcl	results submenu for trad
+do_scene.tcl	scene submenu for trad
+do_views.tcl	views submenu for trad
+do_zone.tcl	zone submenu for trad
+getfile.tcl	file browsing utility
+gethelp.tcl	help utility
+util.tcl	miscellaneous utilities
+tclIndex	procedure index for Tcl/Tk library directory
+file.hlp	help file for getfile.tcl
+help.hlp	help file for gethelp.tcl
+trad.hlp	help file for trad.wsh
+trad.icon	X11 bitmap for trad icon
+help2roff	script for converting help files to troff/nroff for printing
