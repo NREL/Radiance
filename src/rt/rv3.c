@@ -404,10 +404,16 @@ FVECT  vc;
 		d = 0.0;			/* don't move closer */
 		for (i = 0; i < 3; i++)
 			d += (vc[i] - ourview.vp[i])*ourview.vdir[i];
+		nv.vfore = ourview.vfore;
+		nv.vaft = ourview.vaft;
 	} else {
 		nv.horiz = ourview.horiz;
 		nv.vert = ourview.vert;
 		d = sqrt(dist2(ourview.vp, vc)) / mag;
+		nv.vfore = ourview.vfore + d - d*mag;
+		if (nv.vfore < 0.0) nv.vfore = 0.0;
+		nv.vaft = ourview.vaft + d - d*mag;
+		if (nv.vaft < nv.vfore) nv.vaft = 0.0;
 	}
 	for (i = 0; i < 3; i++)
 		nv.vp[i] = vc[i] - d*nv.vdir[i];
