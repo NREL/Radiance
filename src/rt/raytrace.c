@@ -118,14 +118,6 @@ int  mod;
 {
 	static int  depth = 0;
 	register OBJREC  *m;
-					/* check for irradiance calc. */
-	if (do_irrad && !(r->crtype & ~(PRIMARY|TRANS))) {
-		if (irr_ignore(objptr(mod)->otype))
-			raytrans(r);
-		else
-			(*ofun[Lamb.otype].funp)(&Lamb, r);
-		return;
-	}
 					/* check for infinite loop */
 	if (depth++ >= MAXLOOP)
 		objerror(r->ro, USER, "possible modifier loop");
@@ -137,6 +129,16 @@ int  mod;
 			error(USER, errmsg);
 		}
 		******/
+					/* hack for irradiance calculation */
+		if (do_irrad && !(r->crtype & ~(PRIMARY|TRANS))) {
+			if (irr_ignore(m->otype)) {
+				depth--;
+				raytrans(r);
+				return;
+			}
+			if (m->otype != MAT_ILLUM)
+				m = &Lamb;
+		}
 		(*ofun[m->otype].funp)(m, r);	/* execute function */
 		m->lastrno = r->rno;
 		if (ismaterial(m->otype)) {	/* materials call raytexture */
