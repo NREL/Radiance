@@ -16,8 +16,11 @@ static char SCCSid[] = "$SunId$ SGI";
 #include <GL/glu.h>
 #include <glut.h>
 #endif
+#include "sm_flag.h"
 #include "sm_list.h"
 #include "sm_geom.h"
+#include "sm_qtree.h"
+#include "sm_stree.h"
 #include "sm.h"
 
 #ifdef TEST_DRIVER
@@ -44,20 +47,22 @@ static QT_LUENT	*qt_htbl = NULL;	/* quadtree cache */
 static int	qt_hsiz = 0;		/* quadtree cache size */
 
 
-int
-mark_active_tris(qtptr,fptr,arg1,arg2)
+
+mark_active_tris(qtptr,fptr)
 QUADTREE *qtptr;
-int *fptr,arg1,*arg2;
+int *fptr;
 {
   QUADTREE qt = *qtptr;
   OBJECT *os,*optr;
   register int i,t_id;
+  TRI *tri;
 
-  if (!QT_IS_LEAF(qt))
-    return(TRUE);
-  
+
   if(!QT_FLAG_FILL_TRI(*fptr))
      (*fptr)++;
+
+  if(QT_IS_EMPTY(qt) || QT_LEAF_IS_FLAG(qt))
+    return;
   /* For each triangle in the set, set the which flag*/
   os = qtqueryset(qt);
 
@@ -65,50 +70,26 @@ int *fptr,arg1,*arg2;
   {
     t_id = QT_SET_NEXT_ELEM(optr);
     /* Set the render flag */
-    if(SM_IS_NTH_T_BASE(smMesh,t_id))
+    tri = SM_NTH_TRI(smMesh,t_id);
+    if(!T_IS_VALID(tri) || SM_IS_NTH_T_BASE(smMesh,t_id))
 	continue;
     SM_SET_NTH_T_ACTIVE(smMesh,t_id);
-    /* NOTE:Also set the LRU clock bit: MAY WANT TO CHANGE: */      
-    SM_SET_NTH_T_LRU(smMesh,t_id);
+    /* Set the Active bits of the Vertices */
+    S_SET_FLAG(T_NTH_V(tri,0));
+    S_SET_FLAG(T_NTH_V(tri,1));
+    S_SET_FLAG(T_NTH_V(tri,2));
+
   }
-  return(TRUE);
 }
 
-int
-mark_active_interior(qtptr,q0,q1,q2,t0,t1,t2,n,arg1,arg2,arg3)
-QUADTREE *qtptr;
-FVECT q0,q1,q2;
-FVECT t0,t1,t2;
-int n;
-int *arg1,arg2,*arg3;
-{
-  QUADTREE qt = *qtptr;
-  OBJECT *os,*optr;
-  register int i,t_id;
-
-  if (!QT_IS_LEAF(qt))
-    return(TRUE);
-  /* For each triangle in the set, set the which flag*/
-  os = qtqueryset(qt);
-
-  for (i = QT_SET_CNT(os), optr = QT_SET_PTR(os); i > 0; i--)
-  {
-    t_id = QT_SET_NEXT_ELEM(optr);
-    /* Set the render flag */
-    if(SM_IS_NTH_T_BASE(smMesh,t_id))
-	continue;
-    SM_SET_NTH_T_ACTIVE(smMesh,t_id);
-    /* NOTE:Also set the LRU clock bit: MAY WANT TO CHANGE: */      
-    SM_SET_NTH_T_LRU(smMesh,t_id);
-  }
-  return(TRUE);
-}
+#define mark_active_interior mark_active_tris
 
 mark_tris_in_frustum(view)
 VIEW *view;
 {
     FVECT nr[4],far[4];
-
+    FPEQ peq;
+    int debug=0;
     /* Mark triangles in approx. view frustum as being active:set
        LRU counter: for use in discarding samples when out
        of space
@@ -119,47 +100,14 @@ VIEW *view;
     /* First clear all the quadtree node and triangle active flags */
     qtClearAllFlags();
     smClear_flags(smMesh,T_ACTIVE_FLAG);
+    /* Clear all of the active sample flags*/
+    sClear_all_flags(smMesh->samples);
+
 
     /* calculate the world space coordinates of the view frustum */
     calculate_view_frustum(view->vp,view->hvec,view->vvec,view->horiz,
 			   view->vert, dev_zmin,dev_zmax,nr,far);
 
-    /* Project the view frustum onto the spherical quadtree */
-    /* For every cell intersected by the projection of the faces
-       of the frustum: mark all triangles in the cell as ACTIVE-
-       Also set the triangles LRU clock counter
-       */
-    /* Near face triangles */
-    smLocator_apply_func(smMesh,nr[0],nr[2],nr[3],mark_active_tris,
-			 mark_active_interior,NULL,NULL);
-    smLocator_apply_func(smMesh,nr[2],nr[0],nr[1],mark_active_tris,
-			 mark_active_interior,NULL,NULL);
-    /* Right face triangles */
-    smLocator_apply_func(smMesh,nr[0],far[3],far[0],mark_active_tris,
-			 mark_active_interior,NULL,NULL);
-    smLocator_apply_func(smMesh,far[3],nr[0],nr[3],mark_active_tris,
-			 mark_active_interior,NULL,NULL);
-    /* Left face triangles */
-    smLocator_apply_func(smMesh,nr[1],far[2],nr[2],mark_active_tris,
-			 mark_active_interior,NULL,NULL);
-    smLocator_apply_func(smMesh,far[2],nr[1],far[1],mark_active_tris,
-			 mark_active_interior,NULL,NULL);
-    /* Top face triangles */
-    smLocator_apply_func(smMesh,nr[0],far[0],nr[1],mark_active_tris,
-			 mark_active_interior,NULL,NULL);
-    smLocator_apply_func(smMesh,nr[1],far[0],far[1],mark_active_tris,
-			 mark_active_interior,NULL,NULL);
-    /* Bottom face triangles */
-    smLocator_apply_func(smMesh,nr[3],nr[2],far[3],mark_active_tris,
-			 mark_active_interior,NULL,NULL);
-    smLocator_apply_func(smMesh,nr[2],far[2],far[3],mark_active_tris,
-			 mark_active_interior,NULL,NULL);
-    /* Far face triangles */
-    smLocator_apply_func(smMesh,far[0],far[2],far[1],mark_active_tris,
-			 mark_active_interior,NULL,NULL);
-    
-    smLocator_apply_func(smMesh,far[2],far[0],far[3],mark_active_tris,
-			 mark_active_interior,NULL,NULL);
 #ifdef TEST_DRIVER
     VCOPY(FrustumFar[0],far[0]);
     VCOPY(FrustumFar[1],far[1]);
@@ -170,6 +118,116 @@ VIEW *view;
     VCOPY(FrustumNear[2],nr[2]);
     VCOPY(FrustumNear[3],nr[3]);
 #endif
+    /* Project the view frustum onto the spherical quadtree */
+    /* For every cell intersected by the projection of the faces
+
+       of the frustum: mark all triangles in the cell as ACTIVE-
+       Also set the triangles LRU clock counter
+       */
+    
+    if(EQUAL_VEC3(view->vp,SM_VIEW_CENTER(smMesh)))
+    {/* Near face triangles */
+      smLocator_apply_func(smMesh,nr[3],nr[2],nr[0],mark_active_tris,
+			 mark_active_interior,NULL);
+      smLocator_apply_func(smMesh,nr[1],nr[0],nr[2],mark_active_tris,
+			 mark_active_interior,NULL);
+      return;
+    }
+
+    /* Test the view against the planes: and swap orientation if inside:*/
+    tri_plane_equation(nr[0],nr[2],nr[3], &peq,FALSE);
+    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) > 0.0)
+    {/* Near face triangles */
+      smLocator_apply_func(smMesh,nr[3],nr[2],nr[0],mark_active_tris,
+			   mark_active_interior,NULL);
+      smLocator_apply_func(smMesh,nr[1],nr[0],nr[2],mark_active_tris,
+			 mark_active_interior,NULL);
+    }
+    else
+    {/* Near face triangles */
+      smLocator_apply_func(smMesh,nr[0],nr[2],nr[3],mark_active_tris,
+			   mark_active_interior,NULL);
+      smLocator_apply_func(smMesh,nr[2],nr[0],nr[1],mark_active_tris,
+			 mark_active_interior,NULL);
+    }
+    tri_plane_equation(nr[0],far[3],far[0], &peq,FALSE);
+    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) > 0.0)
+    { /* Right face triangles */
+      smLocator_apply_func(smMesh,far[0],far[3],nr[0],mark_active_tris,
+			   mark_active_interior,NULL);
+      smLocator_apply_func(smMesh,nr[3],nr[0],far[3],mark_active_tris,
+			   mark_active_interior,NULL);
+    }
+    else
+    {/* Right face triangles */
+      smLocator_apply_func(smMesh,nr[0],far[3],far[0],mark_active_tris,
+			   mark_active_interior,NULL);
+      smLocator_apply_func(smMesh,far[3],nr[0],nr[3],mark_active_tris,
+			   mark_active_interior,NULL);
+    }
+
+    tri_plane_equation(nr[1],far[2],nr[2], &peq,FALSE);
+    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) > 0.0)
+    { /* Left face triangles */
+      smLocator_apply_func(smMesh,nr[2],far[2],nr[1],mark_active_tris,
+			   mark_active_interior,NULL);
+      smLocator_apply_func(smMesh,far[1],nr[1],far[2],mark_active_tris,
+			   mark_active_interior,NULL);	
+    }
+    else
+    { /* Left face triangles */
+      smLocator_apply_func(smMesh,nr[1],far[2],nr[2],mark_active_tris,
+			   mark_active_interior,NULL);
+      smLocator_apply_func(smMesh,far[2],nr[1],far[1],mark_active_tris,
+		   mark_active_interior,NULL);
+
+    }
+    tri_plane_equation(nr[0],far[0],nr[1], &peq,FALSE);
+    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) > 0.0)
+    {/* Top face triangles */
+      smLocator_apply_func(smMesh,nr[1],far[0],nr[0],mark_active_tris,
+			   mark_active_interior,NULL);
+      smLocator_apply_func(smMesh,far[1],far[0],nr[1],mark_active_tris,
+			   mark_active_interior,NULL);
+    }
+    else
+    {/* Top face triangles */
+      smLocator_apply_func(smMesh,nr[0],far[0],nr[1],mark_active_tris,
+			   mark_active_interior,NULL);
+      smLocator_apply_func(smMesh,nr[1],far[0],far[1],mark_active_tris,
+			   mark_active_interior,NULL);
+    }
+    tri_plane_equation(nr[3],nr[2],far[3], &peq,FALSE);
+    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) > 0.0)
+    {/* Bottom face triangles */
+      smLocator_apply_func(smMesh,far[3],nr[2],nr[3],mark_active_tris,
+			   mark_active_interior,NULL);
+      smLocator_apply_func(smMesh,far[3],far[2],nr[2],mark_active_tris,
+			   mark_active_interior,NULL);
+    }
+    else
+    { /* Bottom face triangles */
+      smLocator_apply_func(smMesh,nr[3],nr[2],far[3],mark_active_tris,
+			   mark_active_interior,NULL);
+      smLocator_apply_func(smMesh,nr[2],far[2],far[3],mark_active_tris,
+			   mark_active_interior,NULL);
+    }
+     tri_plane_equation(far[2],far[0],far[1], &peq,FALSE);
+    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) > 0.0)
+    {/* Far face triangles */
+      smLocator_apply_func(smMesh,far[0],far[2],far[1],mark_active_tris,
+			   mark_active_interior,NULL);
+      smLocator_apply_func(smMesh,far[2],far[0],far[3],mark_active_tris,
+			   mark_active_interior,NULL);
+    }
+    else
+    {/* Far face triangles */
+      smLocator_apply_func(smMesh,far[1],far[2],far[0],mark_active_tris,
+			   mark_active_interior,NULL);
+      smLocator_apply_func(smMesh,far[3],far[0],far[2],mark_active_tris,
+			   mark_active_interior,NULL);
+    }
+
 }
 
 /*
@@ -321,6 +379,9 @@ int lvl;
       for (n = os[0]; n; n--)
       {
 	tri = SM_NTH_TRI(sm,os[n]);
+	if(!T_IS_VALID(tri))
+	  continue;
+
 	s0 = T_NTH_V(tri,0);
 	s1 = T_NTH_V(tri,1);
 	s2 = T_NTH_V(tri,2);
@@ -374,17 +435,20 @@ int lvl;
   QUADTREE root;
   int i;
   FVECT t0,t1,t2;
+  STREE *st;
 
+  
   if (lvl < 1)
     return;
+  st = SM_LOCATOR(sm);
   glPushAttrib(GL_LIGHTING_BIT);
   glShadeModel(GL_FLAT);
   glBegin(GL_TRIANGLES);
-  for(i=0; i < 4; i++)
+  for(i=0; i < ST_NUM_ROOT_NODES; i++)
   {
-    root = ST_NTH_ROOT(SM_LOCATOR(sm),i);
-    stNth_base_verts(SM_LOCATOR(sm),i,t0,t1,t2); 
-    qtRender_level(root,t0,t1,t2,sm,lvl-1);
+    root = ST_NTH_ROOT(st,i);
+    qtRender_level(root,ST_NTH_V(st,i,0),ST_NTH_V(st,i,1),ST_NTH_V(st,i,2),
+		   sm,lvl-1);
   }
   glEnd();
   glPopAttrib();
@@ -409,7 +473,8 @@ int qual;
     return;
   for (i = QT_MAX_LEVELS; i--; )
     lvlcnt[i] = 0;
-  stCount_level_leaves(lvlcnt, SM_LOCATOR(sm)->root);
+  stCount_level_leaves(lvlcnt, ST_TOP_ROOT(SM_LOCATOR(sm)));
+  stCount_level_leaves(lvlcnt, ST_BOTTOM_ROOT(SM_LOCATOR(sm)));  
   for (ntarget -= lvlcnt[i=0]; i < QT_MAX_LEVELS-1; ntarget -= lvlcnt[++i])
     if (ntarget < lvlcnt[i+1])
       break;
@@ -429,7 +494,7 @@ int clr;
   int j;
 
   tri = SM_NTH_TRI(sm,i);
-  if (clr) SM_CLEAR_NTH_T_NEW(sm,i);
+  if (clr) SM_CLR_NTH_T_NEW(sm,i);
 
   /* NOTE:Triangles are defined clockwise:historical relative to spherical
      tris: could change
@@ -460,7 +525,7 @@ int clr;
   int rgb[3];
 
   tri = SM_NTH_TRI(sm,i);
-  if (clr) SM_CLEAR_NTH_T_NEW(sm,i);
+  if (clr) SM_CLR_NTH_T_NEW(sm,i);
 
   /* NOTE:Triangles are defined clockwise:historical relative to spherical
      tris: could change
@@ -518,7 +583,7 @@ int clr;
   TRI *tri;
   
   tri = SM_NTH_TRI(sm,i);
-  if (clr) SM_CLEAR_NTH_T_NEW(sm,i);
+  if (clr) SM_CLR_NTH_T_NEW(sm,i);
 
   /* NOTE:Triangles are defined clockwise:historical relative to spherical
      tris: could change
@@ -554,20 +619,20 @@ int clr;
   glPushAttrib(GL_DEPTH_BUFFER_BIT);
   
   /* First draw background polygons */
-
   glDisable(GL_DEPTH_TEST);
   glBegin(GL_TRIANGLES);
   SM_FOR_ALL_ACTIVE_BG_TRIS(sm,i)
      smRender_bg_tri(sm,i,vp,d,clr);
   glEnd();
-  
   glEnable(GL_DEPTH_TEST);
   glBegin(GL_TRIANGLES);
   SM_FOR_ALL_ACTIVE_FG_TRIS(sm,i)
   {
+      if(SM_BG_TRI(sm,i))
+	 continue;
       if(!SM_MIXED_TRI(sm,i))
 	smRender_tri(sm,i,vp,clr);
-     else
+   else
 	smRender_mixed_tri(sm,i,vp,clr);
   }
   glEnd();
@@ -740,24 +805,28 @@ smUpdate(view,qual)
      epsilon is calculated as running avg of distance of sample points
      from canonical view: m = 1/(AVG(1/r)): some fraction of this
    */
+
+  if(!smMesh)
+    return;
   d = DIST(view->vp,SM_VIEW_CENTER(smMesh));
   if(qual >= 100 && d > SM_ALLOWED_VIEW_CHANGE(smMesh))
   {
       /* Re-build the mesh */
 #ifdef TEST_DRIVER
     odev.v = *view;
-#endif    
-      smRebuild_mesh(smMesh,view->vp);
+#endif  
+      mark_tris_in_frustum(view);
+      smRebuild_mesh(smMesh,view);
   }
   /* This is our final update iff qual==100 and view==&odev.v */
   last_update = qual>=100 && view==&(odev.v);
   /* Check if we should draw ALL triangles in current frustum */
-  if(smClean_notify || smNew_tri_cnt > SM_NUM_TRIS(smMesh)*SM_INC_PERCENT)
+  if(smClean_notify || smNew_tri_cnt > SM_SAMPLE_TRIS(smMesh)*SM_INC_PERCENT)
   {
 #ifdef TEST_DRIVER
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 #else
-    if (SM_TONE_MAP(smMesh) < SM_NUM_SAMP(smMesh))
+    if ( SM_TONE_MAP(smMesh) < SM_NUM_SAMP(smMesh))
     {
        tmClearHisto();
        tmAddHisto(SM_BRT(smMesh),SM_NUM_SAMP(smMesh),1);
@@ -779,8 +848,8 @@ smUpdate(view,qual)
   }
   /* Do an incremental update instead */
   else
-  {  
-    if(!smNew_tri_cnt)
+  {
+      if(!smNew_tri_cnt)
       return;
 #ifdef TEST_DRIVER
     glDrawBuffer(GL_FRONT);

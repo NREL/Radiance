@@ -18,6 +18,18 @@
 #define FALSE 0
 #endif
 
+typedef struct _FPEQ {
+    FVECT n;
+    double d;
+    char x,y,z;
+}FPEQ;
+
+#define FP_N(f) ((f).n)
+#define FP_D(f) ((f).d)
+#define FP_X(f) ((f).x) 
+#define FP_Y(f) ((f).y) 
+#define FP_Z(f) ((f).z) 
+  
 typedef long BCOORD;
 typedef long BDIR;
 typedef long TINT;
@@ -31,7 +43,9 @@ typedef long TINT;
 
 #define M_2_3_PI PI*2/3
 
+#ifndef INVALID
 #define INVALID -1
+#endif
 
 #define GT_INVALID  0
 #define GT_VERTEX   1
@@ -61,7 +75,10 @@ typedef long TINT;
 
 #define MIN_VEC3(v) ((v)[0]<(v)[1]?((v)[0]<(v)[2]?(v)[0]:v[2]): \
 		     (v)[1]<(v)[2]?(v)[1]:(v)[2])
-   
+#define MAX3(a,b,c) (((b)>(a))?((b) > (c))?(b):(c):((a)>(c))?(a):(c))   
+#define MIN3(a,b,c) (((b)<(a))?((b) < (c))?(b):(c):((a)<(c))?(a):(c))   		   
+#define MAX(a,b)    (((b)>(a))?(b):(a))   
+#define MIN(a,b)  (((b)<(a))?(b):(a))   
 
 #define SUM_3VEC3(r,a,b,c) ((r)[0]=(a)[0]+(b)[0]+(c)[0], \
    (r)[1]=(a)[1]+(b)[1]+(c)[1],(r)[2]=(a)[2]+(b)[2]+(c)[2])
@@ -101,4 +118,7 @@ double tri_normal();
 /* double spherical_edge_normal(FVECT v0,FVECT v1,FVECT n,char norm) */
 double spherical_edge_normal();
 
+#define point_in_stri_n(n0,n1,n2,p) \
+                     ((DOT(n0,p)<=0.0)&&(DOT(n1,p)<=0.0)&&(DOT(n2,p)<=0.0))
 
+#define PT_ON_PLANE(p,peq) (DOT(FP_N(peq),p)+FP_D(peq))

@@ -15,96 +15,75 @@
 #ifndef int4
 #define int4	int
 #endif
-				/* child ordering */
-typedef struct rsamp {
+
+#ifndef INVALID
+#define INVALID  -1
+#endif
+
+typedef struct samp {
 	float		(*wp)[3];	/* world intersection point array */
 	int4		*wd;		/* world direction array */
+#ifndef HP_VERSION
 	TMbright	*brt;		/* encoded brightness array */
+#endif
 	BYTE		(*chr)[3];	/* encoded chrominance array */
 	BYTE		(*rgb)[3];	/* tone-mapped color array */
 	int		max_samp;	/* maximum number of samples */
-	int             max_aux_pt;     /* maximum number of aux points */
-	int             next_aux_pt;      /* next auxilliary point to add */
-	int		replace_samp;      /* next sample to free  */
-	int		num_samp;        /* reached end of list? */
-	int             tone_map;        /* pointer to next value(s) to tonemap*/
-	int             free_samp;       /* list of freed samples */
+	int             max_base_pt;     /* maximum number of aux points */
+	int             next_base_pt;    /* next auxilliary point to add */
+	int		replace_samp;   /* next sample to free  */
+	int		num_samp;       /* current number of samples */
+	int             tone_map;       /* pointer to next value(s)t tonemap*/
+        int             free_samp;      /* Available sample */
 	char		*base;		/* base of allocated memory */
-} RSAMP;
+} SAMP;
 
-#define RS_W_PT(s)               ((s)->wp)
-#define RS_W_DIR(s)              ((s)->wd)
-#define RS_BRT(s)                ((s)->brt)
-#define RS_CHR(s)                ((s)->chr)
-#define RS_RGB(s)                ((s)->rgb)
-#define RS_MAX_SAMP(s)           ((s)->max_samp)
-#define RS_TONE_MAP(s)           ((s)->tone_map)
-#define RS_MAX_POINTS(s)         ((s)->max_aux_pt)
-#define RS_REPLACE_SAMP(s)       ((s)->replace_samp)
-#define RS_NEXT_AUX_PT(s)        ((s)->next_aux_pt)
-#define RS_MAX_AUX_PT(s)         ((s)->max_aux_pt)
-#define RS_BASE(s)               ((s)->base)
-#define RS_NUM_SAMP(s)           ((s)->num_samp)
-#define RS_FREE_SAMP(s)          ((s)->free_samp)
-#define RS_NTH_W_PT(s,n)         (RS_W_PT(s)[(n)])
-#define RS_NTH_W_DIR(s,n)        (RS_W_DIR(s)[(n)])
-#define RS_NTH_RGB(s,n)          (RS_RGB(s)[(n)])
-#define RS_NTH_CHR(s,n)          (RS_CHR(s)[(n)])
-#define RS_NTH_BRT(s,n)          (RS_BRT(s)[(n)])
-#define RS_EOL(s)                (RS_NUM_SAMP(s) >= RS_MAX_SAMP(s))
-extern	RSAMP rsL;			
+/* Sample field access macros */
+#define S_W_PT(s)               ((s)->wp)
+#define S_W_DIR(s)              ((s)->wd)
+#define S_BRT(s)                ((s)->brt)
+#define S_CHR(s)                ((s)->chr)
+#define S_RGB(s)                ((s)->rgb)
+#define S_MAX_SAMP(s)           ((s)->max_samp)
+#define S_MAX_BASE_PT(s)        ((s)->max_base_pt)
+#define S_NEXT_BASE_PT(s)       ((s)->next_base_pt)
+#define S_REPLACE_SAMP(s)       ((s)->replace_samp)
+#define S_NUM_SAMP(s)           ((s)->num_samp)
+#define S_TONE_MAP(s)           ((s)->tone_map)
+#define S_FREE_SAMP(s)           ((s)->free_samp)
+#define S_BASE(s)               ((s)->base)
 
-extern double	rsDepthEps;	/* epsilon to compare depths (z fraction) */
+#define S_MAX_POINTS(s)         ((s)->max_base_pt)
+#define S_NTH_W_PT(s,n)         (S_W_PT(s)[(n)])
+#define S_NTH_W_DIR(s,n)        (S_W_DIR(s)[(n)])
+#define S_NTH_RGB(s,n)          (S_RGB(s)[(n)])
+#define S_NTH_CHR(s,n)          (S_CHR(s)[(n)])
+#ifndef HP_VERSION
+#define S_NTH_BRT(s,n)          (S_BRT(s)[(n)])
+#endif
+/* Sample Flag macros */
+#define S_IS_FLAG(s)		IS_FLAG(samp_flag,s)
+#define S_SET_FLAG(s)		SET_FLAG(samp_flag,s)
+#define S_CLR_FLAG(s)		CLR_FLAG(samp_flag,s)
 
-extern int4	encodedir();
-extern double	fdir2diff(), dir2diff();
-extern void     decodedir();
-/*
- * int
- * smInit(n)		: Initialize/clear data structures for n entries
- * int	n;
- *
- * Initialize sampL and other data structures for at least n samples.
- * If n is 0, then free data structures.  Return number actually allocated.
- *
- *
- * int
- * smNewSamp(c, p, v)	: register new sample point and return index
- * COLR	c;		: pixel color (RGBE)
- * FVECT	p;	: world intersection point
- * FVECT	v;	: ray direction vector
- *
- * Add new sample point to data structures, removing old values as necessary.
- * New sample representation will be output in next call to smUpdate().
- *
- *
- * int
- * smFindSamp(orig, dir): intersect ray with 3D rep. and find closest sample
- * FVECT	orig, dir;
- *
- * Find the closest sample to the given ray.  Return -1 on failure.
- *
- *
- * smClean()		: display has been wiped clean
- *
- * Called after display has been effectively cleared, meaning that all
- * geometry must be resent down the pipeline in the next call to smUpdate().
- *
- *
- * smUpdate(vp, qua)	: update OpenGL output geometry for view vp
- * VIEW	*vp;		: desired view
- * int	qua;		: quality level (percentage on linear time scale)
- *
- * Draw new geometric representation using OpenGL calls.  Assume that the
- * view has already been set up and the correct frame buffer has been
- * selected for drawing.  The quality level is on a linear scale, where 100%
- * is full (final) quality.  It is not necessary to redraw geometry that has
- * been output since the last call to smClean().  (The last view drawn will
- * be vp==&odev.v each time.)
- */
+#define sUnalloc_samp(s,sid)   (S_FREE_SAMP(s) = sid)
+#define sClear_base_points(s)  (S_NEXT_BASE_PT(s) = S_MAX_SAMP(s))
+#define sClear(s)      sInit(s)
+/* Max allowed angle of sample dir from current view */
+#define MAXANG		20
+#define MAXDIFF2	( MAXANG*MAXANG * (PI*PI/180./180.))
+
+extern	SAMP rsL;			
+extern double	sDepthEps;	/* epsilon to compare depths (z fraction) */
+extern int4	encodedir();    /* Encodes FVECT direction */
+extern void     decodedir();    /* Decodes dir-> FVECT */
+extern double	fdir2diff(), dir2diff(); /* Compare dir and FVECT */
+extern int4    *samp_flag;     /* Per/sample flags s */
 
 /* These values are set by the driver, and used in the OGL call for glFrustum*/
 extern double dev_zmin,dev_zmax;
+
+extern SAMP *sAlloc();
 
 
 

@@ -33,13 +33,20 @@ int
 convex_angle(v0,v1,v2)
 FVECT v0,v1,v2;
 {
-    FVECT cp01,cp12,cp;
-    
-    /* test sign of (v0Xv1)X(v1Xv2). v1 */
+    FVECT cp,cp01,cp12,v10,v02;
+    double dp;
+    /*
+      VSUB(v10,v1,v0);
+      VSUB(v02,v0,v2);
+      VCROSS(cp,v10,v02);
+   */
+      /* test sign of (v0Xv1)X(v1Xv2). v1 */
     VCROSS(cp01,v0,v1);
     VCROSS(cp12,v1,v2);
     VCROSS(cp,cp01,cp12);
-    if(DOT(cp,v1) < 0.0)
+	
+    dp = DOT(cp,v1);
+    if(ZERO(dp) || dp < 0.0)
        return(FALSE);
     return(TRUE);
 }
@@ -64,7 +71,6 @@ int norm;
   n[1] = (v0[2] - v1[2]) * (v0[0] + v1[0]) +
 	   (v1[2] - v2[2]) * (v1[0] + v2[0]) +
 	   (v2[2] - v0[2]) * (v2[0] + v0[0]);
-
   
   n[2] = (v0[1] + v1[1]) * (v0[0] - v1[0]) +
          (v1[1] + v2[1]) * (v1[0] - v2[0]) +
@@ -80,14 +86,14 @@ int norm;
 }
 
 
-tri_plane_equation(v0,v1,v2,n,nd,norm)
-   FVECT v0,v1,v2,n;
-   double *nd;
+tri_plane_equation(v0,v1,v2,peqptr,norm)
+   FVECT v0,v1,v2;
+   FPEQ *peqptr;
    int norm;
 {
-    tri_normal(v0,v1,v2,n,norm);
+    tri_normal(v0,v1,v2,FP_N(*peqptr),norm);
 
-    *nd = -(DOT(n,v0));
+    FP_D(*peqptr) = -(DOT(FP_N(*peqptr),v0));
 }
 
 /* From quad_edge-code */
@@ -125,9 +131,9 @@ FVECT ps,p,c;
   * t, if parallel, returns t=FHUGE
   */
 int
-intersect_vector_plane(v,plane_n,plane_d,tptr,r)
-   FVECT v,plane_n;
-   double plane_d;
+intersect_vector_plane(v,peq,tptr,r)
+   FVECT v;
+   FPEQ peq;
    double *tptr;
    FVECT r;
 {
@@ -141,7 +147,7 @@ intersect_vector_plane(v,plane_n,plane_d,tptr,r)
     /* line is  l = p1 + (p2-p1)t, p1=origin */
 
     /* Solve for t: */
-  d = -(DOT(plane_n,v));
+  d = -(DOT(FP_N(peq),v));
   if(ZERO(d))
   {
       t = FHUGE;
@@ -149,7 +155,7 @@ intersect_vector_plane(v,plane_n,plane_d,tptr,r)
   }
   else
   {
-      t =  plane_d/d;
+      t =  FP_D(peq)/d;
       if(t < 0 )
 	 hit = 0;
       else
@@ -167,10 +173,9 @@ intersect_vector_plane(v,plane_n,plane_d,tptr,r)
 }
 
 int
-intersect_ray_plane(orig,dir,plane_n,plane_d,pd,r)
+intersect_ray_plane(orig,dir,peq,pd,r)
    FVECT orig,dir;
-   FVECT plane_n;
-   double plane_d;
+   FPEQ peq;
    double *pd;
    FVECT r;
 {
@@ -185,7 +190,7 @@ intersect_ray_plane(orig,dir,plane_n,plane_d,pd,r)
        line is  l = p1 + (p2-p1)t 
      */
     /* Solve for t: */
-    t =  -(DOT(plane_n,orig) + plane_d)/(DOT(plane_n,dir));
+    t =  -(DOT(FP_N(peq),orig) + FP_D(peq))/(DOT(FP_N(peq),dir));
     if(t < 0)
        hit = 0;
     else
@@ -201,10 +206,42 @@ intersect_ray_plane(orig,dir,plane_n,plane_d,pd,r)
 
 
 int
-intersect_edge_plane(e0,e1,plane_n,plane_d,pd,r)
+intersect_ray_oplane(orig,dir,n,pd,r)
+   FVECT orig,dir;
+   FVECT n;
+   double *pd;
+   FVECT r;
+{
+  double t;
+  int hit;
+    /*
+      Plane is Ax + By + Cz +D = 0:
+      plane[0] = A,plane[1] = B,plane[2] = C,plane[3] = D
+    */
+     /*  A(orig[0] + dxt) + B(orig[1] + dyt) + C(orig[2] + dzt) + pd = 0
+         t = -(DOT(plane_n,orig)+ plane_d)/(DOT(plane_n,d))
+       line is  l = p1 + (p2-p1)t 
+     */
+    /* Solve for t: */
+    t =  -(DOT(n,orig))/(DOT(n,dir));
+    if(t < 0)
+       hit = 0;
+    else
+       hit = 1;
+
+  if(r)
+     VSUM(r,orig,dir,t);
+
+    if(pd)
+       *pd = t;
+  return(hit);
+}
+
+
+int
+intersect_edge_plane(e0,e1,peq,pd,r)
    FVECT e0,e1;
-   FVECT plane_n;
-   double plane_d;
+   FPEQ peq;
    double *pd;
    FVECT r;
 {
@@ -221,7 +258,7 @@ intersect_edge_plane(e0,e1,plane_n,plane_d,pd,r)
      */
     /* Solve for t: */
   VSUB(d,e1,e0);
-  t =  -(DOT(plane_n,e0) + plane_d)/(DOT(plane_n,d));
+  t =  -(DOT(FP_N(peq),e0) + FP_D(peq))/(DOT(FP_N(peq),d));
     if(t < 0)
        hit = 0;
     else
@@ -240,9 +277,9 @@ point_in_cone(p,p0,p1,p2)
 FVECT p;
 FVECT p0,p1,p2;
 {
-    FVECT n;
     FVECT np,x_axis,y_axis;
-    double d1,d2,d;
+    double d1,d2;
+    FPEQ peq;
     
     /* Find the equation of the circle defined by the intersection
        of the cone with the plane defined by p1,p2,p3- project p into
@@ -250,7 +287,7 @@ FVECT p0,p1,p2;
      */
     
     /* find the equation of the plane defined by p1-p3 */
-    tri_plane_equation(p0,p1,p2,n,&d,FALSE);
+    tri_plane_equation(p0,p1,p2,&peq,FALSE);
 
     /* define a coordinate system on the plane: the x axis is in
        the direction of np2-np1, and the y axis is calculated from
@@ -258,14 +295,14 @@ FVECT p0,p1,p2;
      */
     /* Project p onto the plane */
     /* NOTE: check this: does sideness check?*/
-    if(!intersect_vector_plane(p,n,d,NULL,np))
+    if(!intersect_vector_plane(p,peq,NULL,np))
 	return(FALSE);
 
     /* create coordinate system on  plane: p2-p1 defines the x_axis*/
     VSUB(x_axis,p1,p0);
     normalize(x_axis);
     /* The y axis is  */
-    VCROSS(y_axis,n,x_axis);
+    VCROSS(y_axis,FP_N(peq),x_axis);
     normalize(y_axis);
 
     VSUB(p1,p1,p0);
@@ -353,7 +390,7 @@ int sides[3];
 
 
 
-
+ 
 int
 point_in_stri(v0,v1,v2,p)
 FVECT v0,v1,v2,p;
@@ -663,8 +700,8 @@ FVECT orig,dir;
 FVECT v0,v1,v2;
 FVECT pt;
 {
-  FVECT p0,p1,p2,p,n;
-  double pd;
+  FVECT p0,p1,p2,p;
+  FPEQ peq;
   int type;
 
   VSUB(p0,v0,orig);
@@ -674,8 +711,8 @@ FVECT pt;
   if(point_in_stri(p0,p1,p2,dir))
   {
       /* Intersect the ray with the triangle plane */
-      tri_plane_equation(v0,v1,v2,n,&pd,FALSE);
-      return(intersect_ray_plane(orig,dir,n,pd,NULL,pt));
+      tri_plane_equation(v0,v1,v2,&peq,FALSE);
+      return(intersect_ray_plane(orig,dir,peq,NULL,pt));
   }
   return(FALSE);
 }
@@ -1185,52 +1222,233 @@ BCOORD coord[3];
 	 }
 }
 
-/* convert barycentric coordinate b in [-eps,1+eps] to [0,MAXLONG],
-   dir unbounded to [-MAXLONG,MAXLONG]
- */
-bary_dtol(b,db,bi,dbi,t)
-double b[3],db[3][3];
-BCOORD bi[3];
-BDIR dbi[3][3];
-TINT t[3];
+int
+baryi_nth_child(coord,i)
+BCOORD coord[3];
+int i;
 {
-  int i,id,j;
-  double d;
+
+  switch(i){
+  case 0:
+    /* update bary for child */
+    coord[0] = (coord[0]<< 1) - MAXBCOORD;
+    coord[1] <<= 1;
+    coord[2] <<= 1;
+    break;
+  case 1:
+    coord[0] <<= 1;
+    coord[1] = (coord[1] << 1) - MAXBCOORD;
+    coord[2] <<= 1;
+    break;
+  case 2:
+    coord[0] <<= 1;
+    coord[1] <<= 1;
+    coord[2] = (coord[2] << 1) - MAXBCOORD;
+    break;
+  case 3:
+    coord[0] = MAXBCOORD - (coord[0] << 1);
+    coord[1] = MAXBCOORD - (coord[1] << 1);
+    coord[2] = MAXBCOORD - (coord[2] << 1);
+    break;
+  }
+}
+
+
+baryi_children(coord,i,in_tri,rcoord,rin_tri)
+BCOORD coord[3][3];
+int i;
+int in_tri[3];
+BCOORD rcoord[3][3];
+int rin_tri[3];
+{
+  int j;
+
+  for(j=0; j< 3; j++)
+  {
+    if(!in_tri[j])
+    {
+      rin_tri[j]=0;
+      continue;
+    }
+    
+    if(i != 3)
+    {
+      if(coord[j][i] < MAXBCOORD2)
+	{
+	  rin_tri[j] = 0;
+	  continue;
+	}
+    }
+    else
+      if( !(coord[j][0] <= MAXBCOORD2 && coord[j][1] <= MAXBCOORD2 &&
+	    coord[j][2] <= MAXBCOORD2))
+	{
+	  rin_tri[j] = 0;
+	  continue;
+	}
+      
+    rin_tri[j]=1;
+    VCOPY(rcoord[j],coord[j]);
+    baryi_nth_child(rcoord[j],i);
+  }
+
+}
+
+convert_dtol(b,bi)
+double b[3];
+BCOORD bi[3];
+{
+  int i;
 
   for(i=0; i < 2;i++)
   {
+
     if(b[i] <= 0.0)
     {
+#ifdef EXTRA_DEBUG
+      if(b[i] < 0.0)
+	printf("under %f\n",b[i]);
+#endif
       bi[i]= 0;
     }
     else
       if(b[i] >= 1.0)
       {
+#ifdef EXTRA_DEBUG
+	if(b[i] > 1.0)
+	  printf("over %f\n",b[i]);
+#endif
 	bi[i]= MAXBCOORD;
       }
       else
 	bi[i] = (BCOORD)(b[i]*MAXBCOORD);
   }
-  bi[2] = MAXBCOORD - bi[0] - bi[1]; 
-
-  if(bi[2] < 0)
+  bi[2] = bi[0] +  bi[1];
+  if(bi[2] > MAXBCOORD)
   {
+#ifdef EXTRA_DEBUG
+      printf("sum over %f\n",b[0]+b[1]);
+#endif
       bi[2] = 0;
       bi[1] = MAXBCOORD - bi[0];
   }
-  for(j=0; j< 3; j++)
+  else
+    bi[2] = MAXBCOORD - bi[2];
+
+}
+
+/* convert barycentric coordinate b in [-eps,1+eps] to [0,MAXLONG],
+   dir unbounded to [-MAXLONG,MAXLONG]
+ */
+bary_dtol(b,db,bi,dbi,t,w)
+double b[3],db[3][3];
+BCOORD bi[3];
+BDIR dbi[3][3];
+TINT t[3];
+int w;
+{
+  int i,id,j,k;
+  double d;
+
+  convert_dtol(b,bi);
+
+  for(j=w; j< 3; j++)
   {
-    if(t[j]==0)
-      continue;
     if(t[j] == HUGET)
-       max_index(db[j],&d);
-    for(i=0; i< 3; i++)
-       if(t[j] != HUGET)
+    {
+      max_index(db[j],&d);
+      for(i=0; i< 3; i++)
+	dbi[j][i] = (BDIR)(db[j][i]/d*MAXBDIR);
+      break;
+    }
+    else
+    {
+      for(i=0; i< 3; i++)
 	  dbi[j][i] = (BDIR)(db[j][i]*MAXBDIR);
-       else
-	  dbi[j][i] = (BDIR)(db[j][i]/d*MAXBDIR);
+    }
   }
 }
+
+
+/* convert barycentric coordinate b in [-eps,1+eps] to [0,MAXLONG],
+   dir unbounded to [-MAXLONG,MAXLONG]
+ */
+bary_dtol_new(b,db,bi,boi,dbi,t)
+double b[4][3],db[3][3];
+BCOORD bi[3],boi[3][3];
+BDIR dbi[3][3];
+int t[3];
+{
+  int i,id,j,k;
+  double d;
+
+  convert_dtol(b[3],bi);
+
+  for(j=0; j<3;j++)
+  {
+    if(t[j] != 1)
+      continue;
+    convert_dtol(b[j],boi[j]);
+  }
+  for(j=0; j< 3; j++)
+  {
+    k = (j+1)%3;
+    if(t[k]==0)
+      continue;
+    if(t[k] == -1)
+      { 
+	max_index(db[j],&d);
+	for(i=0; i< 3; i++)
+   	  dbi[j][i] = (BDIR)(db[j][i]/d*MAXBDIR);
+	t[k] = 0;
+      }
+    else
+      if(t[j] != 1)
+	for(i=0; i< 3; i++)
+	  dbi[j][i] = (BDIR)(db[j][i]*MAXBDIR);
+    else
+      for(i=0; i< 3; i++)
+	dbi[j][i] = boi[k][i] - boi[j][i];
+    
+  }
+}
+
+
+bary_dtolb(b,bi,in_tri)
+double b[3][3];
+BCOORD bi[3][3];
+int in_tri[3];
+{
+  int i,j;
+
+  for(j=0; j<3;j++)
+  {
+    if(!in_tri[j])
+      continue;
+    for(i=0; i < 2;i++)
+    {
+    if(b[j][i] <= 0.0)
+    {
+      bi[j][i]= 0;
+    }
+    else
+      if(b[j][i] >= 1.0)
+      {
+	bi[j][i]= MAXBCOORD;
+      }
+      else
+	bi[j][i] = (BCOORD)(b[j][i]*MAXBCOORD);
+    }
+    bi[j][2] = MAXBCOORD - bi[j][0] - bi[j][1]; 
+    if(bi[j][2] < 0)
+      {
+	bi[j][2] = 0;
+	bi[j][1] = MAXBCOORD - bi[j][0];
+      }
+  }
+}
+
+
 
 
 
