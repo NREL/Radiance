@@ -120,6 +120,8 @@ int  n;
 	rayvalue(&nr);
 	scalecolor(nr.rcol, coef);
 	addcolor(r->rcol, nr.rcol);
+	if (r->ro != NULL && isflat(r->ro->otype))
+		r->rt = r->rot + nr.rt;
 	return(1);
 computerr:
 	objerror(m, WARNING, "compute error");
