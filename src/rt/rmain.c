@@ -51,6 +51,9 @@ int  (*cmdvec)() = NULL;		/* command error vector */
 
 int  (*trace)() = NULL;			/* trace call */
 
+extern int  ambnotify();		/* new object notify functions */
+int  (*addobjnotify[])() = {ambnotify, NULL};
+
 CUBE  thescene;				/* our scene */
 
 extern int  ralrm;			/* seconds between reports */
@@ -353,6 +356,7 @@ char  *argv[];
 			goto badopt;
 		}
 	}
+	*amblp = NULL;
 #if  RPICT|RVIEW
 	err = setview(&ourview);	/* set viewing parameters */
 	if (err != NULL)
@@ -420,8 +424,7 @@ char  *argv[];
 
 	marksources();			/* find and mark sources */
 
-	*amblp = NULL;			/* initialize ambient calculation */
-	setambient(ambfile);
+	setambient(ambfile);		/* initialize ambient calculation */
 
 #if  RPICT
 	if (ralrm > 0)			/* report init time */
