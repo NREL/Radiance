@@ -40,20 +40,22 @@ typedef struct {
 #define  MAT_LIGHT	23		/* primary light source */
 #define  MAT_ILLUM	24		/* secondary light source */
 #define  MAT_GLOW	25		/* proximity light source */
-#define  MAT_BRTDF	26		/* brtd function */
-#define  MAT_PDATA	27		/* plastic brdf data */
-#define  MAT_MDATA	28		/* metal brdf data */
-#define  MAT_SPOT	29		/* spot light source */
-#define  PAT_CFUNC	30		/* color function */
-#define  MAT_CLIP	31		/* clipping surface */
-#define  PAT_CDATA	32		/* color data */
-#define  PAT_CTEXT	33		/* colored text */
-#define  TEX_DATA	34		/* surface texture data */
-#define  MIX_FUNC	35		/* mixing function */
-#define  MIX_DATA	36		/* mixing data */
-#define  MIX_TEXT	37		/* mixing text */
+#define  MAT_SPOT	26		/* spot light source */
+#define  MAT_TFUNC	27		/* trans brdf function */
+#define  MAT_BRTDF	28		/* brtd function */
+#define  MAT_PDATA	29		/* plastic brdf data */
+#define  MAT_MDATA	30		/* metal brdf data */
+#define  MAT_TDATA	31		/* trans brdf data */
+#define  PAT_CFUNC	32		/* color function */
+#define  MAT_CLIP	33		/* clipping surface */
+#define  PAT_CDATA	34		/* color data */
+#define  PAT_CTEXT	35		/* colored text */
+#define  TEX_DATA	36		/* surface texture data */
+#define  MIX_FUNC	37		/* mixing function */
+#define  MIX_DATA	38		/* mixing data */
+#define  MIX_TEXT	39		/* mixing text */
 				/* number of object types */
-#define  NUMOTYPE	38
+#define  NUMOTYPE	40
 				/* type flags */
 #define  T_S		01		/* surface (object) */
 #define  T_M		02		/* material */
@@ -111,10 +113,12 @@ extern int  o_default();
 				{ "light",	T_M|T_L,	o_default }, \
 				{ "illum",	T_M|T_L,	o_default }, \
 				{ "glow",	T_M|T_L,	o_default }, \
+				{ "spotlight",	T_M|T_L,	o_default }, \
+				{ "transfunc",	T_M|T_F,	o_default }, \
 				{ "BRTDfunc",	T_M|T_F,	o_default }, \
 				{ "plasdata",	T_M|T_D,	o_default }, \
 				{ "metdata",	T_M|T_D,	o_default }, \
-				{ "spotlight",	T_M|T_L,	o_default }, \
+				{ "transdata",	T_M|T_D,	o_default }, \
 				{ "colorfunc",	T_P|T_F,	o_default }, \
 				{ "antimatter",	T_M,		o_default }, \
 				{ "colordata",	T_P|T_D,	o_default }, \
