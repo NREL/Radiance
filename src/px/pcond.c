@@ -7,6 +7,7 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include "platform.h"
+#include "paths.h"
 #include "rtprocess.h"
 #include "pcond.h"
 
@@ -306,7 +307,7 @@ mapimage()				/* map picture and send to stdout */
 
 getfovimg()			/* load foveal sampled image */
 {
-	char	combuf[128];
+	char	combuf[PATH_MAX];
 	FILE	*fp;
 	int	x, y;
 						/* compute image size */
@@ -321,7 +322,7 @@ getfovimg()			/* load foveal sampled image */
 	}
 	if ((fovimg = (COLOR *)malloc(fvxr*fvyr*sizeof(COLOR))) == NULL)
 		syserror("malloc");
-	sprintf(combuf, "pfilt -1 -b -pa 0 -x %d -y %d %s", fvxr, fvyr, infn);
+	sprintf(combuf, "pfilt -1 -b -pa 0 -x %d -y %d \"%s\"", fvxr, fvyr, infn);
 	if ((fp = popen(combuf, "r")) == NULL)
 		syserror("popen");
 	getheader(fp, NULL, NULL);	/* skip header */
