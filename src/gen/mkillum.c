@@ -30,7 +30,8 @@ char  *rtargv[64] = { "rtrace", "-dj", ".25", "-dr", "3", "-dv-",
 		"-ab", "2", "-ad", "256", "-as", "128", "-aa", ".15", };
 int  rtargc = 14;
 				/* overriding rtrace options */
-char  *myrtopts[] = { "-I-", "-i-", "-ov", "-h-", "-fff", "-y", "0", NULL };
+char  *myrtopts[] = { "-I-", "-i-", "-ld-", "-ov", "-h-",
+			"-fff", "-y", "0", NULL };
 
 struct rtproc	rt;		/* our rtrace process */
 
