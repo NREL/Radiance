@@ -9,11 +9,11 @@ static char SCCSid[] = "$SunId$ LBL";
  */
 
 #include "standard.h"
-#include "octree.h"
 #include "object.h"
 #include "otypes.h"
 #include "face.h"
 #include "cone.h"
+#include "instance.h"
 
 
 int
@@ -34,9 +34,9 @@ register OBJREC	*op;
 	case OBJ_INSTANCE:	/* octree instance */
 		getinstance(op, IO_ALL);
 		return(1);
-	default:		/* don't bother */
-		return(0);
 	}
+			/* don't bother with non-surfaces -- too tricky */
+	return(0);
 }
 
 
