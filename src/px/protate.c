@@ -20,6 +20,8 @@ char	buf[1<<20];			/* output buffer */
 
 int	nrows;				/* number of rows output at once */
 
+int	wrongformat = 0;
+
 #define scanbar		((COLR *)buf)
 
 char	*progname;
@@ -28,9 +30,15 @@ char	*progname;
 headline(s)				/* process line from header */
 char	*s;
 {
+	char	fmt[32];
+
 	fputs(s, stdout);
 	if (isaspect(s))
 		inpaspect *= aspectval(s);
+	else if (isformat(s)) {
+		formatval(fmt, s);
+		wrongformat = strcmp(fmt, COLRFMT);
+	}
 }
 
 
@@ -55,7 +63,11 @@ char	*argv[];
 		exit(1);
 	}
 					/* transfer header */
-	getheader(fin, headline);
+	getheader(fin, headline, NULL);
+	if (wrongformat) {
+		fprintf(stderr, "%s: wrong picture format\n", progname);
+		exit(1);
+	}
 					/* add new header info. */
 	if (inpaspect < .99 || inpaspect > 1.01)
 		fputaspect(1./inpaspect/inpaspect, stdout);
