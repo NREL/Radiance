@@ -11,19 +11,17 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "rholo.h"
 #include "rhdisp.h"
 #include "rhdriver.h"
+#include "random.h"
 
 #ifndef MAXDIST
 #define MAXDIST		42	/* maximum distance outside section */
 #endif
+#ifndef NVSAMPS
+#define NVSAMPS		4096	/* number of ray samples per view */
+#endif
 
-#define MAXVOXEL	32	/* maximum number of active voxels */
-
-typedef struct {
-	int	hd;		/* holodeck section number (-1 if inactive) */
-	int	i[3];		/* voxel index (may be outside section) */
-} VOXL;			/* a voxel */
-
-static VOXL voxel[MAXVOXEL] = {{-1}};	/* current voxel list */
+#define MAXTODO		3	/* maximum sections to look at */
+#define MAXDRAT		3.0	/* maximum distance ratio */
 
 #define CBEAMBLK	1024	/* cbeam allocation block size */
 
@@ -36,18 +34,6 @@ static struct beamcomp {
 static int	ncbeams = 0;	/* number of sorted beams in cbeam */
 static int	xcbeams = 0;	/* extra (unregistered) beams past ncbeams */
 static int	maxcbeam = 0;	/* size of cbeam array */
-
-struct cellact {
-	short	vi;		/* voxel index */
-	short	rev;		/* reverse ray direction? */
-	VIEW	*vp;		/* view for image */
-	short	hr, vr;		/* image resolution */
-};		/* action for cell */
-
-struct beamact {
-	struct cellact	ca;	/* cell action */
-	GCOORD	gc;		/* grid coordinate */
-};		/* beam origin and action */
 
 
 int
@@ -184,168 +170,79 @@ int	n;
 }
 
 
-unsigned int4
-add_voxels(vp)		/* add voxels corresponding to view point */
-FVECT	vp;
+int
+comptodo(tdl, vw)		/* compute holodeck sections in view */
+int	tdl[MAXTODO+1];
+VIEW	*vw;
 {
-	int	first, n, rfl = 0;
-	FVECT	gp;
-	double	d;
-	int	dist, bestd = 0x7fff;
-	VOXL	vox;
-	register int	i, j, k;
-					/* count voxels in list already */
-	for (first = 0; first < MAXVOXEL && voxel[first].hd >= 0; first++)
-		;
-					/* find closest voxels */
-	for (n = first, i = 0; n < MAXVOXEL && hdlist[i]; i++) {
-		hdgrid(gp, hdlist[i], vp);
-		for (j = 0; n < MAXVOXEL && j < 8; j++) {
-			dist = 0;
-			for (k = 0; k < 3; k++) {
-				d = gp[k] - .5 + (j>>k & 1);
-				if (d < 0.)
-					dist += -(vox.i[k] = (int)d - 1);
-				else if ((vox.i[k] = d) >= hdlist[i]->grid[k])
-					dist += vox.i[k] -
-							hdlist[i]->grid[k] + 1;
-			}
-			if (dist > bestd)	/* others were closer */
-				continue;
-			if (dist < bestd) {	/* start closer list */
-				n = first;
-				bestd = dist;
-				rfl = 0;
-			}
-						/* check if already in list */
-			for (k = first; k--; )
-				if (voxel[k].hd == i &&
-						voxel[k].i[0] == vox.i[0] &&
-						voxel[k].i[1] == vox.i[1] &&
-						voxel[k].i[2] == vox.i[2])
-					break;
-			if (k >= 0) {
-				rfl |= 1<<k;
-				continue;
-			}
-			vox.hd = i;		/* add this voxel */
-			copystruct(&voxel[n], &vox);
-			rfl |= 1<<n++;
+	int	n = 0;
+	FVECT	gp, dv;
+	double	dist2[MAXTODO+1], thisdist2;
+	register int	i, j;
+					/* find closest MAXTODO sections */
+	for (i = 0; hdlist[i]; i++) {
+		hdgrid(gp, hdlist[i], vw->vp);
+		for (j = 0; j < 3; j++)
+			if (gp[j] < 0.)
+				dv[j] = -gp[j];
+			else if (gp[j] > hdlist[i]->grid[j])
+				dv[j] = gp[j] - hdlist[i]->grid[j];
+			else
+				dv[j] = 0.;
+		thisdist2 = DOT(dv,dv);
+		for (j = n; j > 0 && thisdist2 < dist2[j-1]; j--) {
+			tdl[j] = tdl[j-1];
+			dist2[j] = dist2[j-1];
 		}
+		tdl[j] = i;
+		dist2[j] = thisdist2;
+		if (n < MAXTODO)
+			n++;
 	}
-					/* check for really stupid move */
-	if (bestd > MAXDIST) {
+					/* watch for bad move */
+	if (n && dist2[0] > MAXDIST*MAXDIST) {
 		error(COMMAND, "move past outer limits");
 		return(0);
 	}
-	if (n < MAXVOXEL)
-		voxel[n].hd = -1;
-	return(rfl);
+					/* avoid big differences */
+	for (j = 1; j < n; j++)
+		if (dist2[j] > MAXDRAT*MAXDRAT*dist2[j-1])
+			n = j;
+	tdl[n] = -1;
+	return(n);
 }
 
 
-int
-dobeam(gcp, bp)		/* express interest in a beam */
-GCOORD	*gcp;
-register struct beamact	*bp;
+addview(hd, vw, hres, vres)	/* add view for section */
+int	hd;
+VIEW	*vw;
+int	hres, vres;
 {
+	int	sampquant;
+	int	h, v, shr, svr;
 	GCOORD	gc[2];
-	int	bi, i, n;
-					/* compute beam index */
-	if (bp->ca.rev) {
-		copystruct(gc, &bp->gc);
-		copystruct(gc+1, gcp);
+	FVECT	rorg, rdir;
+				/* compute sampling grid */
+	if (hres|vres && hres*vres <= NVSAMPS) {
+		shr = hres; svr = vres;
+		sampquant = 1;
 	} else {
-		copystruct(gc, gcp);
-		copystruct(gc+1, &bp->gc);
+		shr = sqrt(NVSAMPS/viewaspect(vw)) + .5;
+		svr = (NVSAMPS + shr/2)/shr;
+		sampquant = (hres*vres + shr*svr/2)/(shr*svr);
 	}
-	if ((bi = hdbindex(hdlist[voxel[bp->ca.vi].hd], gc)) <= 0)
-		error(CONSISTENCY, "bad grid coordinate in dobeam");
-					/* add it in */
-	i = getcbeam(voxel[bp->ca.vi].hd, bi);
-	n = npixels(bp->ca.vp, bp->ca.hr, bp->ca.vr,
-			hdlist[cbeam[i].hd], cbeam[i].bi);
-	if (n > cbeam[i].nr)
-		cbeam[i].nr = n;
-	return(i == ncbeams+xcbeams-1);	/* return 1 if totally new */
-}
-
-
-
-int
-docell(gcp, cap)	/* find beams corresponding to cell and voxel */
-GCOORD	*gcp;
-register struct cellact	*cap;
-{
-	register HOLO	*hp = hdlist[voxel[cap->vi].hd];
-	FVECT	org, dir[4];
-	FVECT	vgp, cgp, vc;
-	FVECT	v1, v2;
-	struct beamact	bo;
-	int	axmax, j;
-	double	d, avmax;
-	register int	i;
-				/* compute cell center */
-	cgp[gcp->w>>1] = gcp->w&1 ? hp->grid[gcp->w>>1] : 0 ;
-	cgp[hdwg0[gcp->w]] = gcp->i[0] + .5;
-	cgp[hdwg1[gcp->w]] = gcp->i[1] + .5;
-	hdworld(org, hp, cgp);
-				/* compute direction to voxel center */
-	for (i = 3; i--; )
-		vgp[i] = voxel[cap->vi].i[i] + .5;
-	hdworld(vc, hp, vgp);
-	for (i = 3; i--; )
-		vc[i] -= org[i];
-				/* compute maximum area axis */
-	axmax = -1; avmax = 0;
-	for (i = 3; i--; ) {
-		d = vgp[i] - cgp[i];
-		if (d < 0.) d = -d;
-		if (d > avmax) {
-			avmax = d;
-			axmax = i;
+				/* intersect sample rays with section */
+	for (v = svr; v--; )
+		for (h = shr; h--; ) {
+			if (viewray(rorg, rdir, vw, (v+frandom())/svr,
+						(h+frandom())/shr) < -FTINY)
+				continue;
+			if (hdinter(gc, NULL, NULL, hdlist[hd], rorg, rdir)
+						>= FHUGE)
+				continue;
+			cbeam[getcbeam(hd,hdbindex(hdlist[hd],gc))].nr +=
+					sampquant;
 		}
-	}
-#ifdef DEBUG
-	if (axmax < 0)
-		error(CONSISTENCY, "botched axis computation in docell");
-#endif
-				/* compute offset vectors */
-	d = 0.5/hp->grid[j=(axmax+1)%3];
-	for (i = 3; i--; )
-		v1[i] = hp->xv[j][i] * d;
-	d = 0.5/hp->grid[j=(axmax+2)%3];
-	if (DOT(hp->wg[axmax], vc) < 0.)
-		d = -d;	/* reverse vertex order */
-	for (i = 3; i--; )
-		v2[i] = hp->xv[j][i] * d;
-				/* compute voxel pyramid */
-	for (i = 3; i--; ) {
-		dir[0][i] = vc[i] - v1[i] - v2[i];
-		dir[1][i] = vc[i] + v1[i] - v2[i];
-		dir[2][i] = vc[i] + v1[i] + v2[i];
-		dir[3][i] = vc[i] - v1[i] + v2[i];
-	}
-				/* visit beams for opposite cells */
-	copystruct(&bo.ca, cap);
-	copystruct(&bo.gc, gcp);
-	return(visit_cells(org, dir, hp, dobeam, &bo));
-}
-
-
-int
-doview(cap)			/* visit cells for a given view */
-struct cellact	*cap;
-{
-	int	orient;
-	FVECT	org, dir[4];
-					/* compute view pyramid */
-	orient = viewpyramid(org, dir, hdlist[voxel[cap->vi].hd], cap->vp);
-	if (!orient)
-		error(INTERNAL, "unusable view in doview");
-	cap->rev = orient < 0;
-					/* visit cells within pyramid */
-	return(visit_cells(org, dir, hdlist[voxel[cap->vi].hd], docell, cap));
 }
 
 
@@ -359,7 +256,6 @@ int	fresh;
 	else				/* else clear sample requests */
 		for (i = ncbeams+xcbeams; i--; )
 			cbeam[i].nr = 0;
-	voxel[0].hd = -1;		/* clear voxel list */
 }
 
 
@@ -367,19 +263,15 @@ beam_view(vn, hr, vr)		/* add beam view (if advisable) */
 VIEW	*vn;
 int	hr, vr;
 {
-	struct cellact	ca;
-	unsigned int4	vfl;
+	int	todo[MAXTODO+1];
+	int	n;
 					/* sort our list */
 	cbeamsort(1);
-					/* add new voxels */
-	vfl = add_voxels(vn->vp);
-	if (!vfl)
+					/* add view to nearby sections */
+	if (!(n = comptodo(todo, vn)))
 		return(0);
-	ca.vp = vn; ca.hr = hr; ca.vr = vr;
-					/* update our beam list */
-	for (ca.vi = 0; vfl; vfl >>= 1, ca.vi++)
-		if (vfl & 1)
-			doview(&ca);
+	while (n--)
+		addview(todo[n], vn, hr, vr);
 	return(1);
 }
 
