@@ -10,6 +10,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "standard.h"
 
+#include <sys/fcntl.h>
+
 #include "view.h"
 
 #include "color.h"
@@ -147,7 +149,7 @@ char	*argv[];
 			if (argv[i][2] != 'f')
 				goto badopt;
 			check(3,1);
-			gotvfile = viewfile(argv[++i], &ourview);
+			gotvfile = viewfile(argv[++i], &ourview, 0, 0);
 			if (gotvfile < 0) {
 				perror(argv[i]);
 				exit(1);
@@ -241,7 +243,8 @@ addpicture(pfile, zspec)		/* add picture to output */
 char	*pfile, *zspec;
 {
 	extern double	atof();
-	FILE	*pfp, *zfp;
+	FILE	*pfp;
+	int	zfd;
 	char	*err;
 	COLR	*scanin;
 	float	*zin;
@@ -279,7 +282,7 @@ char	*pfile, *zspec;
 	if (scanin == NULL || zin == NULL || plast == NULL)
 		syserror();
 					/* get z specification or file */
-	if ((zfp = fopen(zspec, "r")) == NULL) {
+	if ((zfd = open(zspec, O_RDONLY)) == -1) {
 		double	zvalue;
 		register int	x;
 		if (!isfloat(zspec) || (zvalue = atof(zspec)) <= 0.0) {
@@ -295,8 +298,8 @@ char	*pfile, *zspec;
 			fprintf(stderr, "%s: read error\n", pfile);
 			exit(1);
 		}
-		if (zfp != NULL
-			&& fread(zin,sizeof(float),thresolu,zfp) < thresolu) {
+		if (zfd != -1 && read(zfd,zin,thresolu*sizeof(float))
+				< thresolu*sizeof(float)) {
 			fprintf(stderr, "%s: read error\n", zspec);
 			exit(1);
 		}
@@ -307,8 +310,8 @@ char	*pfile, *zspec;
 	free((char *)zin);
 	free((char *)plast);
 	fclose(pfp);
-	if (zfp != NULL)
-		fclose(zfp);
+	if (zfd != -1)
+		close(zfd);
 }
 
 
@@ -560,11 +563,11 @@ char	*fname;
 {
 	extern double	sqrt();
 	int	donorm = normdist && ourview.type == VT_PER;
-	FILE	*fp;
+	int	fd;
 	int	y;
 	float	*zout;
 
-	if ((fp = fopen(fname, "w")) == NULL) {
+	if ((fd = open(fname, O_WRONLY|O_CREAT|O_TRUNC, 0666)) == -1) {
 		perror(fname);
 		exit(1);
 	}
@@ -584,14 +587,15 @@ char	*fname;
 			}
 		} else
 			zout = zscan(y);
-		if (fwrite(zout, sizeof(float), hresolu, fp) < hresolu) {
+		if (write(fd, zout, hresolu*sizeof(float))
+				< hresolu*sizeof(float)) {
 			perror(fname);
 			exit(1);
 		}
 	}
 	if (donorm)
 		free((char *)zout);
-	fclose(fp);
+	close(fd);
 }
 
 

@@ -139,7 +139,7 @@ char  *s;
 	if (sscanf(s, "%s", buf) == 1) {	/* get parameters from a file */
 		copyview(&nv, &stdview);
 		if ((fname = getpath(buf, NULL, 0)) == NULL ||
-				(success = viewfile(fname, &nv)) == -1) {
+				(success = viewfile(fname, &nv, 0, 0)) == -1) {
 			sprintf(errmsg, "cannot open \"%s\"", buf);
 			error(COMMAND, errmsg);
 			return;
