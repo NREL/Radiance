@@ -1317,7 +1317,17 @@ char	*opts;
 					/* get pfilt options */
 	pfiltopts(pfopts);
 					/* get resolution, reporting */
-	mult = vscale(QUALITY)+1;
+	switch (vscale(QUALITY)) {
+	case LOW:
+		mult = 1;
+		break;
+	case MEDIUM:
+		mult = 2;
+		break;
+	case HIGH:
+		mult = 3;
+		break;
+	}
 	{
 		int	xres, yres;
 		double	aspect;
