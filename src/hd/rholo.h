@@ -91,6 +91,9 @@ extern time_t	starttime;	/* time we got started */
 extern time_t	endtime;	/* time we should end by */
 extern time_t	reporttime;	/* time for next report */
 
+extern long	nraysdone;	/* number of rays done */
+extern long	npacksdone;	/* number of packets done */
+
 extern int	rtargc;		/* rtrace command */
 extern char	*rtargv[];
 

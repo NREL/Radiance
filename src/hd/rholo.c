@@ -206,7 +206,7 @@ initrholo()			/* get our holodeck running */
 	if (!vdef(TIME) || vflt(TIME) <= FTINY)
 		endtime = 0;
 	else
-		endtime = starttime + vflt(TIME)*3600.;
+		endtime = starttime + vflt(TIME)*3600. + .5;
 						/* set up memory cache */
 	if (outdev == NULL)
 		hdcachesize = 0;	/* manual flushing */
@@ -312,23 +312,6 @@ rholo()				/* holodeck main loop */
 					/* process packets */
 	done_packets(do_packets(pl));
 	return(1);			/* and continue */
-}
-
-
-report(t)			/* report progress so far */
-time_t	t;
-{
-	static time_t	seconds2go = 1000000;
-
-	if (t == 0L)
-		t = time(NULL);
-	sprintf(errmsg, "%ld packets (%ld rays) done after %.2f hours\n",
-			npacksdone, nraysdone, (t-starttime)/3600.);
-	eputs(errmsg);
-	if (seconds2go == 1000000)
-		seconds2go = vdef(REPORT) ? (long)(vflt(REPORT)*60. + .5) : 0L;
-	if (seconds2go)
-		reporttime = t + seconds2go;
 }
 
 

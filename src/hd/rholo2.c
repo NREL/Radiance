@@ -72,7 +72,6 @@ done_rtrace()			/* clean up and close rtrace calculation */
 					/* already closed? */
 	if (!nprocs)
 		return;
-					/* report activity */
 	wputs("closing rtrace process...\n");
 					/* flush beam queue */
 	done_packets(flush_queue());
@@ -92,6 +91,10 @@ new_rtrace()			/* restart rtrace calculation */
 	if (nprocs > 0)			/* already running? */
 		return;
 	wputs("restarting rtrace process...\n");
+	starttime = time(NULL);		/* reset start time and counts */
+	npacksdone = nraysdone = 0L;
+	if (vdef(TIME))			/* reset end time */
+		endtime = starttime + vflt(TIME)*3600. + .5;
 	if (vdef(RIF)) {		/* rerun rad to update octree */
 		sprintf(combuf, "rad -v 0 -s -w %s", vval(RIF));
 		if (system(combuf))
@@ -149,4 +152,21 @@ getradfile()			/* run rad and get needed variables */
 	}
 	rtargc += wordfile(rtargv+rtargc, tf1);	/* get rtrace options */
 	unlink(tf1);			/* clean up */
+}
+
+
+report(t)			/* report progress so far */
+time_t	t;
+{
+	static time_t	seconds2go = 1000000;
+
+	if (t == 0L)
+		t = time(NULL);
+	sprintf(errmsg, "%ld packets (%ld rays) done after %.2f hours\n",
+			npacksdone, nraysdone, (t-starttime)/3600.);
+	eputs(errmsg);
+	if (seconds2go == 1000000)
+		seconds2go = vdef(REPORT) ? (long)(vflt(REPORT)*60. + .5) : 0L;
+	if (seconds2go)
+		reporttime = t + seconds2go;
 }
