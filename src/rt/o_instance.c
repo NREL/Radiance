@@ -46,15 +46,15 @@ register RAY  *r;
 		r->rox = NULL;
 	} else {			/* else use theirs */
 		r->ro = rcont.ro;
-		newrayxf(r);		/* allocate transformation */
-				/* NOTE: r->rox may equal rcont.rox! */
 		if (rcont.rox != NULL) {
+			newrayxf(r);		/* allocate transformation */
+					/* NOTE: r->rox may equal rcont.rox! */
 			multmat4(r->rox->f.xfm, rcont.rox->f.xfm, in->x.f.xfm);
 			r->rox->f.sca = rcont.rox->f.sca * in->x.f.sca;
 			multmat4(r->rox->b.xfm, in->x.b.xfm, rcont.rox->b.xfm);
 			r->rox->b.sca = in->x.b.sca * rcont.rox->b.sca;
 		} else
-			copystruct(r->rox, &in->x);
+			r->rox = &in->x;
 	}
 					/* transform it back */
 	r->rot = rcont.rot * in->x.f.sca;
