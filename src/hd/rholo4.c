@@ -1,4 +1,4 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
+/* Copyright (c) 1999 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -28,7 +28,7 @@ static FILE	*dpout;
 disp_open(dname)		/* open the named display driver */
 char	*dname;
 {
-	char	buf[128], fd0[8], fd1[8], *cmd[5], *sfn;
+	char	buf[sizeof(HDGRID)+512], fd0[8], fd1[8], *cmd[5], *sfn;
 	int	i, n, len;
 				/* get full display program name */
 #ifdef DEVPATH
