@@ -14,6 +14,9 @@ static char SCCSid[] = "$SunId$ SGI";
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#ifndef FRAGWARN
+#define FRAGWARN	20		/* fragmentation for warning (%) */
+#endif
 #ifndef MAXQTIME
 #define MAXQTIME	5		/* target maximum seconds in queue */
 #endif
@@ -269,8 +272,10 @@ memerr:
 
 rholo()				/* holodeck main loop */
 {
+	static long	nextfragwarn = 100*(1L<<20);
 	static int	idle = 0;
 	PACKET	*pl = NULL, *plend;
+	long	fsiz;
 	int	pksiz;
 	register PACKET	*p;
 	time_t	t;
@@ -284,12 +289,21 @@ rholo()				/* holodeck main loop */
 			return(1);
 	} else if (idle)
 		return(0);		/* all done */
-					/* check file size */
-	if (maxdisk > 0 && hdfilen(hdlist[0]->fd) >= maxdisk) {
+	fsiz = hdfilen(hdlist[0]->fd);	/* check file size */
+	if (maxdisk > 0 && fsiz >= maxdisk) {
 		error(WARNING, "file limit exceeded");
 		done_rtrace();
 		return(1);	/* comes back */
 	}
+#if FRAGWARN
+	if (fsiz >= nextfragwarn &&
+		(fsiz-hdfiluse(hdlist[0]->fd,0))/(fsiz/100) > FRAGWARN) {
+		sprintf(errmsg, "holodeck file fragmentation is %.0f%%",
+				100.*(fsiz-hdfiluse(hdlist[0]->fd,1))/fsiz);
+		error(WARNING, errmsg);
+		nextfragwarn = fsiz + (fsiz>>2);	/* decent interval */
+	}
+#endif
 	t = time(NULL);			/* check time */
 	if (endtime > 0 && t >= endtime) {
 		error(WARNING, "time limit exceeded");
