@@ -28,7 +28,7 @@ static const char	RCSid[] = "$Id$";
 #include "rtio.h"
 
 #ifndef  NHASH
-#define  NHASH		509		/* hash table size (prime!) */
+#define  NHASH		2039		/* hash table size (prime!) */
 #endif
 
 typedef struct s_head {
