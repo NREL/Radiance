@@ -37,7 +37,7 @@ thf2rad:	thf2rad.o
 	$(CC) $(CFLAGS) -o thf2rad thf2rad.o
 
 ies2rad:	ies2rad.o
-	$(CC) $(CFLAGS) -o ies2rad ies2rad.o -lrt
+	$(CC) $(CFLAGS) -o ies2rad ies2rad.o -lrt -lm
 
 arch2rad:	arch2rad.o trans.o
 	$(CC) $(CFLAGS) -o arch2rad arch2rad.o trans.o -lrt
