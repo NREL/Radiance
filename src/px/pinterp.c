@@ -608,10 +608,10 @@ char	*fname;
 		if (donorm) {
 			double	vx, yzn2;
 			register int	x;
-			yzn2 = y - .5*(vresolu-1);
+			yzn2 = (y+.5)/vresolu + ourview.voff - .5;
 			yzn2 = 1. + yzn2*yzn2*ourview.vn2;
 			for (x = 0; x < hresolu; x++) {
-				vx = x - .5*(hresolu-1);
+				vx = (x+.5)/hresolu + ourview.hoff - .5;
 				zout[x] = zscan(y)[x]
 					* sqrt(vx*vx*ourview.hn2 + yzn2);
 			}
