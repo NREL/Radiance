@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -736,10 +736,14 @@ XKeyPressedEvent  *ekey;
 	case 't':				/* trace */
 		return(traceray(ekey->x, ekey->y));
 	case 'a':				/* auto exposure */
+		if (fname == NULL)
+			return(-1);
 		tmflags = TM_F_CAMERA;
 		strcpy(buf, "auto exposure...");
 		goto remap;
 	case 'h':				/* human response */
+		if (fname == NULL)
+			return(-1);
 		tmflags = TM_F_HUMAN;
 		strcpy(buf, "human exposure...");
 		goto remap;
