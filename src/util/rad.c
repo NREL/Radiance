@@ -971,6 +971,7 @@ int	n;
 char	*vn;		/* returned view name */
 {
 	register char	*mv = NULL;
+	register int	i;
 
 	if (viewselect != NULL) {		/* command-line selected */
 		if (n)				/* only do one */
@@ -993,9 +994,9 @@ char	*vn;		/* returned view name */
 	}
 	mv = nvalue(vv+VIEW, n);		/* use view n */
 	if (vn != NULL & mv != NULL) {
-		if (*mv != '-')
-			while (*mv && !isspace(*mv))
-				*vn++ = *mv++;
+		if (mv[i=0] != '-')
+			while (mv[i] && !isspace(mv[i]))
+				*vn++ = mv[i++];
 		*vn = '\0';
 	}
 	return(specview(mv));
