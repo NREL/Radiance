@@ -3,6 +3,7 @@
 #  Compiles for image processing and display programs
 #
 
+ARCH = sun
 OPT = -O
 MACH = -DSTRUCTASSIGN -f68881 /usr/lib/libm.il -DIEEE -DBSD
 CFLAGS = $(OPT) $(MACH) -I../common
@@ -25,6 +26,9 @@ x10:	x10image
 
 aed:	aedimage
 	cp aedimage $(INSTDIR)
+
+tiff:	ra_tiff
+	cp ra_tiff $(INSTDIR)
 
 sun:
 
@@ -133,15 +137,15 @@ pcomb:	pcomb.o
 pinterp:	pinterp.o
 	cc $(CFLAGS) -o pinterp pinterp.o ../common/librt.a -lm
 
-ra_tiff:	ra_tiff.o libtiff/libtiff.a
+ra_tiff:	ra_tiff.o libtiff.a
 	cc $(CFLAGS) -o ra_tiff ra_tiff.o ../common/librt.a \
-libtiff/libtiff.a -lm
+libtiff.a -lm
 
-ra_tiff.o:	ra_tiff.c libtiff/tiffio.h libtiff/tiff.h
+ra_tiff.o:	ra_tiff.c
 	cc $(CFLAGS) -Ilibtiff -c ra_tiff.c
 
-libtiff/libtiff.a:
-	maketiff
+libtiff.a:
+	cd libtiff ; make -f Makefile.$(ARCH) ; mv libtiff.a .. ; make clean
 
 ra_pixar:	ra_pixar.o ra_pixar.c
 	cc $(CFLAGS) $(PIXAR_INCLUDE) -o $@ ra_pixar.o ../common/librt.a \
