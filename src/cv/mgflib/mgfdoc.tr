@@ -2225,7 +2225,7 @@ o stylus
 		p 0 0 .005
 	v vend =
 		p 0 0 .05
-	cyl vtip1 .0015
+	cyl vtip1 .0015 vend
 	sph vend .0015
 	cone vtip0 0 vtip1 .0015
 o
