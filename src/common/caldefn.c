@@ -154,12 +154,13 @@ char  *name;
 
 
 #ifdef  OUTCHAN
-chanout()			/* set output channels */
+chanout(cs)			/* set output channels */
+int  (*cs)();
 {
     register EPNODE  *ep;
 
     for (ep = outchan; ep != NULL; ep = ep->sibling)
-	chanset(ep->v.kid->v.chan, evalue(ep->v.kid->sibling));
+	(*cs)(ep->v.kid->v.chan, evalue(ep->v.kid->sibling));
 
 }
 #endif
