@@ -10,120 +10,113 @@
 
 typedef struct {
 	char  *funame;			/* function name */
+	int  flags;			/* type flags */
 	int  (*funp)();			/* pointer to function */
 }  FUN;
-				/* surface types */
-#define  OBJ_MIN	0
-#define  OBJ_SOURCE	(OBJ_MIN+0)	/* distant source */
-#define  OBJ_SPHERE	(OBJ_MIN+1)	/* sphere */
-#define  OBJ_BUBBLE	(OBJ_MIN+2)	/* inverted sphere */
-#define  OBJ_FACE	(OBJ_MIN+3)	/* polygon */
-#define  OBJ_CONE	(OBJ_MIN+4)	/* cone */
-#define  OBJ_CUP	(OBJ_MIN+5)	/* inverted cone */
-#define  OBJ_CYLINDER	(OBJ_MIN+6)	/* cylinder */
-#define  OBJ_TUBE	(OBJ_MIN+7)	/* inverted cylinder */
-#define  OBJ_RING	(OBJ_MIN+8)	/* disk */
-#define  OBJ_INSTANCE	(OBJ_MIN+9)	/* octree instance */
-#define  OBJ_CNT	10
-				/* material types */
-#define  MOD_MIN	MAT_MIN
-#define  MAT_MIN	(OBJ_MIN+OBJ_CNT)
-#define  MAT_LIGHT	(MAT_MIN+0)	/* primary light source */
-#define  MAT_ILLUM	(MAT_MIN+1)	/* secondary light source */
-#define  MAT_GLOW	(MAT_MIN+2)	/* proximity light source */
-#define  MAT_SPOT	(MAT_MIN+3)	/* spot light source */
-#define  MAT_PLASTIC	(MAT_MIN+4)	/* plastic surface */
-#define  MAT_METAL	(MAT_MIN+5)	/* metal surface */
-#define  MAT_TRANS	(MAT_MIN+6)	/* translucent material */
-#define  MAT_DIELECTRIC	(MAT_MIN+7)	/* dielectric material */
-#define  MAT_INTERFACE	(MAT_MIN+8)	/* dielectric interface */
-#define  MAT_GLASS	(MAT_MIN+9)	/* thin glass surface */
-#define  MAT_CLIP	(MAT_MIN+10)	/* clipping surface */
-#define  MAT_PFUNC	(MAT_MIN+11)	/* plastic brdf function */
-#define  MAT_MFUNC	(MAT_MIN+12)	/* metal brdf function */
-#define  MAT_PDATA	(MAT_MIN+13)	/* plastic brdf data */
-#define  MAT_MDATA	(MAT_MIN+14)	/* metal brdf data */
-#define  MAT_CNT	15
-				/* textures and patterns */
-#define  TP_MIN		(MAT_MIN+MAT_CNT)
-#define  TEX_FUNC	(TP_MIN+0)	/* surface texture function */
-#define  TEX_DATA	(TP_MIN+1)	/* surface texture data */
-#define  PAT_CFUNC	(TP_MIN+2)	/* color function */
-#define  PAT_BFUNC	(TP_MIN+3)	/* brightness function */
-#define  PAT_CPICT	(TP_MIN+4)	/* color picture */
-#define  PAT_CDATA	(TP_MIN+5)	/* color data */
-#define  PAT_BDATA	(TP_MIN+6)	/* brightness data */
-#define  PAT_CTEXT	(TP_MIN+7)	/* colored text */
-#define  PAT_BTEXT	(TP_MIN+8)	/* monochromatic text */
-#define  MIX_FUNC	(TP_MIN+9)	/* mixing function */
-#define  MIX_DATA	(TP_MIN+10)	/* mixing data */
-#define  MIX_TEXT	(TP_MIN+11)	/* mixing text */
-#define  TP_CNT		12
-#define  MOD_CNT	(MAT_CNT+TP_CNT)
+				/* object types in decreasing frequency */
+#define  OBJ_FACE	0		/* polygon */
+#define  OBJ_CONE	1		/* cone */
+#define  OBJ_SPHERE	2		/* sphere */
+#define  TEX_FUNC	3		/* surface texture function */
+#define  OBJ_RING	4		/* disk */
+#define  OBJ_CYLINDER	5		/* cylinder */
+#define  OBJ_INSTANCE	6		/* octree instance */
+#define  OBJ_CUP	7		/* inverted cone */
+#define  OBJ_BUBBLE	8		/* inverted sphere */
+#define  OBJ_TUBE	9		/* inverted cylinder */
+#define  MAT_PLASTIC	10		/* plastic surface */
+#define  MAT_METAL	11		/* metal surface */
+#define  OBJ_SOURCE	12		/* distant source */
+#define  MAT_GLASS	13		/* thin glass surface */
+#define  MAT_TRANS	14		/* translucent material */
+#define  MAT_DIELECTRIC	15		/* dielectric material */
+#define  MAT_INTERFACE	16		/* dielectric interface */
+#define  MAT_PFUNC	17		/* plastic brdf function */
+#define  MAT_MFUNC	18		/* metal brdf function */
+#define  PAT_BFUNC	19		/* brightness function */
+#define  PAT_BDATA	20		/* brightness data */
+#define  PAT_BTEXT	21		/* monochromatic text */
+#define  PAT_CPICT	22		/* color picture */
+#define  MAT_LIGHT	23		/* primary light source */
+#define  MAT_ILLUM	24		/* secondary light source */
+#define  MAT_GLOW	25		/* proximity light source */
+#define  MAT_PDATA	26		/* plastic brdf data */
+#define  MAT_MDATA	27		/* metal brdf data */
+#define  MAT_SPOT	28		/* spot light source */
+#define  PAT_CFUNC	29		/* color function */
+#define  MAT_CLIP	30		/* clipping surface */
+#define  PAT_CDATA	31		/* color data */
+#define  PAT_CTEXT	32		/* colored text */
+#define  TEX_DATA	33		/* surface texture data */
+#define  MIX_FUNC	34		/* mixing function */
+#define  MIX_DATA	35		/* mixing data */
+#define  MIX_TEXT	36		/* mixing text */
 				/* number of object types */
-#define  NUMOTYPE	(OBJ_CNT+MAT_CNT+TP_CNT)
+#define  NUMOTYPE	37
+				/* type flags */
+#define  T_S		01		/* surface (object) */
+#define  T_M		02		/* material */
+#define  T_P		04		/* pattern */
+#define  T_T		010		/* texture */
+#define  T_X		020		/* mixture */
+#define  T_V		040		/* volume */
+#define  T_L		0100		/* light source modifier */
+#define  T_F		0200		/* function */
+#define  T_D		0400		/* data */
+#define  T_I		01000		/* picture */
+#define  T_E		02000		/* text */
 
-#define  issurface(t)	((t) >= OBJ_MIN && (t) < OBJ_MIN+OBJ_CNT)
-#define  isvolume(t)	((t) == OBJ_INSTANCE)
-#define  ismodifier(t)	((t) >= MOD_MIN && (t) < MOD_MIN+MOD_CNT)
-#define  ismaterial(t)	((t) >= MAT_MIN && (t) < MAT_MIN+MAT_CNT)
-#define  istexture(t)	((t) >= TP_MIN && (t) < TP_MIN+TP_CNT)
+extern FUN  ofun[];			/* our type list */
 
-extern int  o_source();
-extern int  o_sphere();
-extern int  o_face();
-extern int  o_cone();
-extern int  o_instance();
-extern int  m_light();
-extern int  m_normal();
-extern int  m_dielectric();
-extern int  m_glass();
-extern int  m_clip();
-extern int  m_brdf();
-extern int  t_func(), t_data();
-extern int  p_cfunc(), p_bfunc();
-extern int  p_pdata(), p_cdata(), p_bdata();
-extern int  mx_func(), mx_data();
-extern int  text();
+#define  issurface(t)	(ofun[t].flags & T_S)
+#define  isvolume(t)	(ofun[t].flags & T_V)
+#define  ismodifier(t)	(!issurface(t))
+#define  ismaterial(t)	(ofun[t].flags & T_M)
+#define  istexture(t)	(ofun[t].flags & (T_P|T_T|T_X))
+#define  islight(t)	(ofun[t].flags & T_L)
+#define  hasdata(t)	(ofun[t].flags & (T_D|T_I))
+#define  hasfunc(t)	(ofun[t].flags & (T_F|T_D|T_I))
+#define  hastext(t)	(ofun[t].flags & T_E)
 
-#define  INIT_OTYPE	{ { "source", o_source }, \
-			{ "sphere", o_sphere }, \
-			{ "bubble", o_sphere }, \
-			{ "polygon", o_face }, \
-			{ "cone", o_cone }, \
-			{ "cup", o_cone }, \
-			{ "cylinder", o_cone }, \
-			{ "tube", o_cone }, \
-			{ "ring", o_cone }, \
-			{ "instance", o_instance }, \
-			{ "light", m_light }, \
-			{ "illum", m_light }, \
-			{ "glow", m_light }, \
-			{ "spotlight", m_light }, \
-			{ "plastic", m_normal }, \
-			{ "metal", m_normal }, \
-			{ "trans", m_normal }, \
-			{ "dielectric", m_dielectric }, \
-			{ "interface", m_dielectric }, \
-			{ "glass", m_glass }, \
-			{ "antimatter", m_clip }, \
-			{ "plasfunc", m_brdf }, \
-			{ "metfunc", m_brdf }, \
-			{ "plasdata", m_brdf }, \
-			{ "metdata", m_brdf }, \
-			{ "texfunc", t_func }, \
-			{ "texdata", t_data }, \
-			{ "colorfunc", p_cfunc }, \
-			{ "brightfunc", p_bfunc }, \
-			{ "colorpict", p_pdata }, \
-			{ "colordata", p_cdata }, \
-			{ "brightdata", p_bdata }, \
-			{ "colortext", text }, \
-			{ "brighttext", text }, \
-			{ "mixfunc", mx_func }, \
-			{ "mixdata", mx_data }, \
-			{ "mixtext", text } }
+extern int  o_default();
+					/* type list initialization */
+#define  INIT_OTYPE	{	{ "polygon",	T_S,		o_default }, \
+				{ "cone",	T_S,		o_default }, \
+				{ "sphere",	T_S,		o_default }, \
+				{ "texfunc",	T_T|T_F,	o_default }, \
+				{ "ring",	T_S,		o_default }, \
+				{ "cylinder",	T_S,		o_default }, \
+				{ "instance",	T_S|T_V,	o_default }, \
+				{ "cup",	T_S,		o_default }, \
+				{ "bubble",	T_S,		o_default }, \
+				{ "tube",	T_S,		o_default }, \
+				{ "plastic",	T_M,		o_default }, \
+				{ "metal",	T_M,		o_default }, \
+				{ "source",	T_S,		o_default }, \
+				{ "glass",	T_M,		o_default }, \
+				{ "trans",	T_M,		o_default }, \
+				{ "dielectric",	T_M,		o_default }, \
+				{ "interface",	T_M,		o_default }, \
+				{ "plasfunc",	T_M|T_F,	o_default }, \
+				{ "metfunc",	T_M|T_F,	o_default }, \
+				{ "brightfunc",	T_P|T_F,	o_default }, \
+				{ "brightdata",	T_P|T_D,	o_default }, \
+				{ "brighttext",	T_P|T_E,	o_default }, \
+				{ "colorpict",	T_P|T_I,	o_default }, \
+				{ "light",	T_M|T_L,	o_default }, \
+				{ "illum",	T_M|T_L,	o_default }, \
+				{ "glow",	T_M|T_L,	o_default }, \
+				{ "plasdata",	T_M|T_D,	o_default }, \
+				{ "metdata",	T_M|T_D,	o_default }, \
+				{ "spotlight",	T_M|T_L,	o_default }, \
+				{ "colorfunc",	T_P|T_F,	o_default }, \
+				{ "antimatter",	T_M,		o_default }, \
+				{ "colordata",	T_P|T_D,	o_default }, \
+				{ "colortext",	T_P|T_E,	o_default }, \
+				{ "texdata",	T_T|T_D,	o_default }, \
+				{ "mixfunc",	T_X|T_F,	o_default }, \
+				{ "mixdata",	T_X|T_D,	o_default }, \
+				{ "mixtext",	T_X|T_E,	o_default }, \
+			}
 
 #define  ALIASID	"alias"		/* alias type identifier */
-
-extern FUN  ofun[];
