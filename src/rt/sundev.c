@@ -36,45 +36,48 @@ DEFINE_ICON_FROM_IMAGE(sun_icon, icon_image);
 #define FIRSTCOLOR	2		/* first usable entry */
 #define NCOLORS		251		/* number of usable colors */
 
-int  sun_clear(), sun_paintr(), sun_getcur(),
+int  sun_close(), sun_clear(), sun_paintr(), sun_getcur(),
 		sun_comout(), sun_comin();
 
-int  (*dev_func[NREQUESTS])() = {		/* request handlers */
-	sun_clear, sun_paintr, sun_getcur,
-	sun_comout, sun_comin
+static struct driver  sun_driver = {
+	sun_close, sun_clear, sun_paintr,
+	sun_getcur, sun_comout, sun_comin,
+	1100, 800
 };
 
-FILE  *ttyin;
+static FILE  *ttyin;
 
-Frame  frame = 0;
-Tty  tty = 0;
-Canvas  canvas = 0;
+static Frame  frame = 0;
+static Tty  tty = 0;
+static Canvas  canvas = 0;
 
-int  xres = 0, yres = 0;
+static int  xres = 0, yres = 0;
 
-char  *progname;
+extern char  *progname;
 
 
-main(argc, argv)
-int	argc;
-char	*argv[];
+struct driver *
+dinit(name, id)			/* initialize SunView (independent) */
+char  *name, *id;
 {
 	extern Notify_value	my_notice_destroy();
-	char	*ttyargv[4], arg1[10], arg2[10];
+	char	*ttyargv[4], arg1[16], arg2[16];
 	int	pd[2];
 	int	com;
 
-	progname = argv[0];
-
 	frame = window_create(0, FRAME,
-			FRAME_LABEL, argc > 1 ? argv[1] : argv[0],
+			FRAME_LABEL, id==NULL ? name : id,
 			FRAME_ICON, &sun_icon,
 			WIN_X, 0, WIN_Y, 0,
 			0);
-	if (frame == 0)
-		quit("cannot create frame");
-	if (pipe(pd) == -1)
-		quit("cannot create pipe");
+	if (frame == 0) {
+		stderr_v("cannot create frame\n");
+		return(NULL);
+	}
+	if (pipe(pd) == -1) {
+		stderr_v("cannot create pipe\n");
+		return(NULL);
+	}
 	sprintf(arg1, "%d", getppid());
 	sprintf(arg2, "%d", pd[1]);
 	ttyargv[0] = TTYPROG;
@@ -87,70 +90,54 @@ char	*argv[];
 	tty = window_create(frame, TTY,
 			TTY_ARGV, ttyargv,
 			WIN_ROWS, COMLH,
+			TTY_QUIT_ON_CHILD_DEATH, TRUE,
 			0);
-	if (tty == 0)
-		quit("cannot create tty subwindow");
+	if (tty == 0) {
+		stderr_v("cannot create tty subwindow\n");
+		return(NULL);
+	}
 	close(pd[1]);
-	if ((ttyin = fdopen(pd[0], "r")) == NULL)
-		quit("cannot open tty");
+	if ((ttyin = fdopen(pd[0], "r")) == NULL) {
+		stderr_v("cannot open tty\n");
+		return(NULL);
+	}
 	canvas = window_create(frame, CANVAS,
 			CANVAS_RETAINED, FALSE,
 			WIN_INPUT_DESIGNEE, window_get(tty,WIN_DEVICE_NUMBER),
 			WIN_CONSUME_PICK_EVENTS, WIN_NO_EVENTS,
 				MS_LEFT, MS_MIDDLE, MS_RIGHT, 0,
 			0);
-	if (canvas == 0)
-		quit("cannot create canvas");
-	if (getmap() < 0)
-		quit("not a color screen");
+	if (canvas == 0) {
+		stderr_v("cannot create canvas\n");
+		return(NULL);
+	}
+	if (getmap() < 0) {
+		stderr_v("not a color screen\n");
+		return(NULL);
+	}
 	make_gmap(GAMMA);
 	window_set(canvas, CANVAS_RETAINED, TRUE, 0);
-	notify_interpose_destroy_func(frame, my_notice_destroy);
 
-	while ((com = getc(stdin)) != EOF) {	/* loop on requests */
-		if (com >= NREQUESTS || dev_func[com] == NULL)
-			quit("invalid request");
-		(*dev_func[com])();
-	}
-	window_destroy(tty);
-	quit(NULL);
+	sun_driver.inpready = 0;
+	return(&sun_driver);
 }
 
 
-quit(msg)					/* exit */
-char  *msg;
+sun_close()				/* all done */
 {
-	if (msg != NULL) {
-		fprintf(stderr, "%s: %s\n", progname, msg);
-		kill(getppid(), SIGPIPE);
-		exit(1);
+	if (frame != 0) {
+		window_set(frame, FRAME_NO_CONFIRM, TRUE, 0);
+		window_destroy(frame);
 	}
-	exit(0);
+	frame = 0;
 }
 
 
-Notify_value
-my_notice_destroy(fr, st)		/* we're on our way out */
-Frame	fr;
-Destroy_status	st;
-{
-	if (st != DESTROY_CHECKING) {
-		/*
-		kill((int)window_get(tty, TTY_PID), SIGPIPE);
-		*/
-		kill(getppid(), SIGPIPE);
-	}
-	return(notify_next_destroy_func(fr, st));
-}
-
-
-sun_clear()				/* clear our canvas */
+sun_clear(nwidth, nheight)		/* clear our canvas */
+int  nwidth, nheight;
 {
 	register Pixwin  *pw;
-	int  nwidth, nheight;
 
-	fread(&nwidth, sizeof(nwidth), 1, stdin);
-	fread(&nheight, sizeof(nheight), 1, stdin);
 	pw = canvas_pixwin(canvas);
 	if (nwidth != xres || nheight != yres) {
 		window_set(frame, WIN_SHOW, FALSE, 0);
@@ -170,19 +157,14 @@ sun_clear()				/* clear our canvas */
 }
 
 
-sun_paintr()				/* fill a rectangle */
+sun_paintr(col, xmin, ymin, xmax, ymax)		/* fill a rectangle */
+COLOR  col;
+int  xmin, ymin, xmax, ymax;
 {
 	extern int  newcolr();
-	COLOR  col;
 	int  pval;
-	int  xmin, ymin, xmax, ymax;
 	register Pixwin  *pw;
 
-	fread(col, sizeof(COLOR), 1, stdin);
-	fread(&xmin, sizeof(xmin), 1, stdin);
-	fread(&ymin, sizeof(ymin), 1, stdin);
-	fread(&xmax, sizeof(xmax), 1, stdin);
-	fread(&ymax, sizeof(ymax), 1, stdin);
 	pval = get_pixel(col, newcolr) + FIRSTCOLOR;
 	pw = canvas_pixwin(canvas);
 	pw_rop(pw, xmin, yres-ymax, xmax-xmin, ymax-ymin,
@@ -190,36 +172,24 @@ sun_paintr()				/* fill a rectangle */
 }
 
 
-sun_comout()			/* output a string to command line */
+sun_comin(buf)			/* input a string from the command line */
+char  *buf;
 {
-	char	out[256];
-
-	mygets(out, stdin);
-	ttyputs(out);
-}
-
-
-sun_comin()			/* input a string from the command line */
-{
-	char	buf[256];
 						/* echo characters */
 	do {
 		mygets(buf, ttyin);
-		ttyputs(buf);
+		sun_comout(buf);
 	} while (buf[0]);
 						/* get result */
 	mygets(buf, ttyin);
-						/* send reply */
-	putc(COM_COMIN, stdout);
-	myputs(buf, stdout);
-	fflush(stdout);
 }
 
 
-sun_getcur()			/* get cursor position */
+int
+sun_getcur(xpp, ypp)			/* get cursor position */
+int  *xpp, *ypp;
 {
 	Event	ev;
-	int	xpos, ypos;
 	int	c;
 
 	notify_no_dispatch();			/* allow read to block */
@@ -227,7 +197,8 @@ sun_getcur()			/* get cursor position */
 again:
 	if (window_read_event(canvas, &ev) == -1) {
 		notify_perror();
-		quit("window event read error");
+		stderr_v("window event read error\n");
+		quit(1);
 	}
 	c = event_id(&ev);
 	switch (c) {
@@ -245,43 +216,16 @@ again:
 			goto again;
 		break;
 	}
-	xpos = event_x(&ev);
-	ypos = yres-1 - event_y(&ev);
+	*xpp = event_x(&ev);
+	*ypp = yres-1 - event_y(&ev);
 
 	window_set(canvas, WIN_IGNORE_KBD_EVENT, WIN_ASCII_EVENTS, 0);
 	notify_do_dispatch();
-	putc(COM_GETCUR, stdout);
-	putc(c, stdout);
-	fwrite(&xpos, sizeof(xpos), 1, stdout);
-	fwrite(&ypos, sizeof(ypos), 1, stdout);
-	fflush(stdout);
+	return(c);
 }
 
 
-mygets(s, fp)				/* get string from file (with nul) */
-register char	*s;
-register FILE	*fp;
-{
-	register int	c;
-
-	while ((c = getc(fp)) != EOF)
-		if ((*s++ = c) == '\0')
-			return;
-	*s = '\0';
-}
-
-
-myputs(s, fp)				/* put string to file (with nul) */
-register char	*s;
-register FILE	*fp;
-{
-	do
-		putc(*s, fp);
-	while (*s++);
-}
-
-
-ttyputs(s)			/* put string out to tty subwindow */
+sun_comout(s)			/* put string out to tty subwindow */
 register char	*s;
 {
 	char	buf[256];
@@ -292,6 +236,7 @@ register char	*s;
 			*cp++ = '\r';
 		*cp++ = *s;
 	}
+					/* must be a single call */
 	ttysw_output(tty, buf, cp-buf);
 }
 
