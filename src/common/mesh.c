@@ -504,8 +504,8 @@ register MESH	*mp;
 	if (mp->ldflags & IO_BOUNDS) {
 		if (mp->mcube.cusize <= FTINY)
 			return("illegal octree bounds in mesh");
-		nouvbounds = (mp->uvlim[0][1] - mp->uvlim[0][0] <= FTINY ||
-				mp->uvlim[1][1] - mp->uvlim[1][0] <= FTINY);
+		nouvbounds = (mp->uvlim[1][0] - mp->uvlim[0][0] <= FTINY ||
+				mp->uvlim[1][1] - mp->uvlim[0][1] <= FTINY);
 	}
 					/* check octree */
 	if (mp->ldflags & IO_TREE) {
