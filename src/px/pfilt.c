@@ -16,7 +16,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 
-
 extern char  *malloc();
 
 #define  CHECKRAD	1.5	/* radius to check for filtering */
@@ -46,6 +45,7 @@ double  spread = 1e-4;		/* spread for star points */
 char  *tfname = NULL;
 
 int  xres, yres;		/* resolution of input */
+double  inpaspect = 1.0;	/* pixel aspect ratio of input */
 
 int  xrad;			/* x window size */
 int  yrad;			/* y window size */
@@ -64,9 +64,10 @@ char  **argv;
 	extern char  *mktemp();
 	extern double  atof(), pow();
 	extern long  ftell();
-	extern int  quit();
+	extern int  quit(), headline();
 	FILE  *fin;
 	long  fpos;
+	double  outaspect = 0.0;
 	double  d;
 	int  i;
 
@@ -102,6 +103,10 @@ char  **argv;
 				} else
 					nrows = atoi(argv[i]);
 				break;
+			case 'p':
+				i++;
+				outaspect = atof(argv[i]);
+				break;
 			case 'e':
 				if (argv[i+1][0] == '+' || argv[i+1][0] == '-')
 					d = pow(2.0, atof(argv[i+1]));
@@ -131,7 +136,7 @@ char  **argv;
 			case '2':
 				singlepass = 0;
 				break;
-			case 'p':
+			case 'n':
 				npts = atoi(argv[++i]) / 2;
 				break;
 			case 's':
@@ -185,8 +190,8 @@ char  **argv;
 		fprintf(stderr, "%s: bad # file arguments\n", progname);
 		quit(1);
 	}
-					/* copy header */
-	copyheader(fin, stdout);
+					/* get header */
+	getheader(fin, headline);
 					/* add new header info. */
 	printargs(i, argv, stdout);
 					/* get picture size */
@@ -194,17 +199,22 @@ char  **argv;
 		fprintf(stderr, "%s: bad picture size\n", progname);
 		quit(1);
 	}
-	if (ncols > 0)
-		x_c = (double)ncols/xres;
-	else
+					/* compute output resolution */
+	if (ncols <= 0)
 		ncols = x_c*xres + .5;
-	if (nrows > 0)
-		y_r = (double)nrows/yres;
-	else
+	if (nrows <= 0)
 		nrows = y_r*yres + .5;
+	if (outaspect > .01) {
+		d = inpaspect * yres/xres / outaspect;
+		if (d * ncols > nrows)
+			ncols = nrows / d;
+		else
+			nrows = ncols * d;
+	}
+	x_c = (double)ncols/xres;
+	y_r = (double)nrows/yres;
 
-	if (singlepass) {
-					/* skip exposure, etc. */
+	if (singlepass) {		/* skip exposure, etc. */
 		pass1default();
 		pass2(fin);
 		quit(0);
@@ -221,6 +231,15 @@ char  **argv;
 	pass2(fin);
 
 	quit(0);
+}
+
+
+headline(s)				/* process line from header */
+char  *s;
+{
+	fputs(s, stdout);		/* copy to output */
+	if (isaspect(s))		/* get aspect ratio */
+		inpaspect *= aspectval(s);
 }
 
 
@@ -312,7 +331,7 @@ FILE  *in;
 
 scan2init()			/* prepare scanline arrays */
 {
-	double  e;
+	double  d;
 	register int  i;
 
 	if (rad <= 0.0) {
@@ -341,9 +360,13 @@ scan2init()			/* prepare scanline arrays */
 		fprintf(stderr, "%s: out of memory\n", progname);
 		quit(1);
 	}
-	e = bright(exposure);
-	if (e < 1-1e-7 || e > 1+1e-7)		/* record exposure */
-		fputexpos(e, stdout);
+					/* record pixel aspect and exposure */
+	d = x_c / y_r;
+	if (d < .99 || d > 1.01)
+		fputaspect(d, stdout);
+	d = bright(exposure);
+	if (d < .995 || d > 1.005)
+		fputexpos(d, stdout);
 	printf("\n");
 	fputresolu(YMAJOR|YDECR, ncols, nrows, stdout);	/* resolution */
 }
