@@ -17,6 +17,7 @@
 #endif
 
 extern struct ODview {
+	int	sfirst, snext;	/* first sample and first in next view */
 	short	hhi, vhi;	/* screen image resolution */
 	short	hlow, vlow;	/* block resolution */
 	struct ODblock {
