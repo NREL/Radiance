@@ -52,7 +52,7 @@ typedef struct {
 
 #ifndef  MAXOBJBLK
 #ifdef  BIGMEM
-#define  MAXOBJBLK	4095		/* maximum number of object blocks */
+#define  MAXOBJBLK	32767		/* maximum number of object blocks */
 #else
 #define  MAXOBJBLK	511		/* maximum number of object blocks */
 #endif
