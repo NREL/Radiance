@@ -50,6 +50,8 @@ char  *argv[];
 			}
 		else
 			break;
+						/* set gamma correction */
+	setcolrgam(gamma);
 
 	if (reverse) {
 		if (i > argc-1 || i < argc-2)
@@ -165,25 +167,23 @@ register FILE	*fp;
 
 ra2bn()					/* convert radiance to barneyscan */
 {
-	unsigned char	gmap[1024];
-	register int	i,k,c;
-	register COLOR	*inl;
+	register int	i;
+	register COLR	*inl;
 	int	j;
 
-	if ((inl = (COLOR *)malloc(xmax*sizeof(COLOR))) == NULL)
+	if ((inl = (COLR *)malloc(xmax*sizeof(COLR))) == NULL)
 		quiterr("out of memory");
-	for (i = 0; i < 1024; i++)
-		gmap[i] = 256.*pow((i+.5)/1024., 1./gamma);
 	for (j = 0; j < ymax; j++) {
-		if (freadscan(inl, xmax, rafp) < 0)
+		if (freadcolrs(inl, xmax, rafp) < 0)
 			quiterr("error reading RADIANCE file");
-		for (i = 0; i < xmax; i++)
-			for (k = 0; k < 3; k++) {
-				c = 1024.*colval(inl[i],k);
-				if (c >= 1024)
-					c = 1023;
-				putc(gmap[c], bnfp[k]);
-			}
+		colrs_gambs(inl, xmax);
+		for (i = 0; i < xmax; i++) {
+			putc(inl[i][RED], bnfp[0]);
+			putc(inl[i][GRN], bnfp[1]);
+			putc(inl[i][BLU], bnfp[2]);
+		}
+		if (ferror(bnfp[0]) || ferror(bnfp[1]) || ferror(bnfp[2]))
+			quiterr("error writing Barney files");
 	}
 	free((char *)inl);
 }
@@ -191,23 +191,22 @@ ra2bn()					/* convert radiance to barneyscan */
 
 bn2ra()					/* convert barneyscan to radiance */
 {
-	float	gmap[256];
-	register int	i,k,c;
-	register COLOR	*outline;
+	register int	i;
+	register COLR	*outline;
 	int	j;
 
-	if ((outline = (COLOR *)malloc(xmax*sizeof(COLOR))) == NULL)
+	if ((outline = (COLR *)malloc(xmax*sizeof(COLR))) == NULL)
 		quiterr("out of memory");
-	for (i = 0; i < 256; i++)
-		gmap[i] = pow((i+.5)/256., gamma);
 	for (j = 0; j < ymax; j++) {
-		for (i = 0; i < xmax; i++)
-			for (k = 0; k < 3; k++)
-				if ((c = getc(bnfp[k])) == EOF)
-					quiterr("error reading barney file");
-				else
-					colval(outline[i],k) = gmap[c];
-		if (fwritescan(outline, xmax, rafp) < 0)
+		for (i = 0; i < xmax; i++) {
+			outline[i][RED] = getc(bnfp[0]);
+			outline[i][GRN] = getc(bnfp[1]);
+			outline[i][BLU] = getc(bnfp[2]);
+		}
+		if (feof(bnfp[0]) || feof(bnfp[1]) || feof(bnfp[2]))
+			quiterr("error reading barney file");
+		gambs_colrs(outline, xmax);
+		if (fwritecolrs(outline, xmax, rafp) < 0)
 			quiterr("error writing RADIANCE file");
 	}
 	free((char *)outline);
