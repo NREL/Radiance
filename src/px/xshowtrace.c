@@ -92,7 +92,8 @@ char	*argv[];
 		exit(1);
 					/* loop on input */
 	mainloop();
-
+					/* close pipe and exit */
+	pclose(pin);
 	exit(0);
 }
 
