@@ -100,7 +100,7 @@ grey(r,g,b) = noneg(.263*r + .655*g + .082*b);
 clip_r(r,g,b) = bound(0,r,1);
 clip_g(r,g,b) = bound(0,g,1);
 clip_b(r,g,b) = bound(0,b,1);
-clipgrey(r,g,b) = bound(0,grey(r,g,b),1);
+clipgrey(r,g,b) = min(grey(r,g,b),1);
 
 dot(v1,v2) : v1(1)*v2(1) + v1(2)*v2(2) + v1(3)*v2(3);
 cross(i,v1,v2) : select(i,	v1(2)*v2(3) - v1(3)*v2(2),
