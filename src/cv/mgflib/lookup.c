@@ -5,8 +5,6 @@ static const char	RCSid[] = "$Id$";
  * Table lookup routines
  */
 
-#include "copyright.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 
