@@ -1,4 +1,4 @@
-	$Id: trad.hlp,v 2.17 1996/05/17 14:59:20 greg Exp $
+	$Id: trad.hlp,v 2.18 1998/10/20 11:52:15 gwlarson Exp $
 
 This help file is associated with the trad interface to the Radiance
 rad(1) program.  Trad consists of trad.wsh and one do_*.tcl file for
@@ -722,6 +722,15 @@ X axis (-X), the negative Y axis (-Y), or the negative Z axis (-Z).
 This setting may always be overridden by the "-vu xd yd zd" option,
 and will be altered for a particular view if it happens to be
 parallel to the view direction.
+
+.Views.Eyesep
+
+The eye separation is used for generating stereo views of
+the scene.
+It is the measured distance between a viewer's pupils in world
+coordinate units.
+It is not used directly by rad, but should be set for other programs
+that need it, such as rholo and glrad.
 
 .Views.Picture
 
