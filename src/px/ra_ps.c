@@ -191,8 +191,8 @@ char  *name;
 					/* set up transformation matrix */
 	printf("%f %f translate\n", HMARGIN, VMARGIN);
 	if (pwidth == PHEIGHT) {
-		printf("0 %f translate\n", PHEIGHT);
-		puts("-90 rotate");
+		printf("%f 0 translate\n", PWIDTH);
+		puts("90 rotate");
 	}
 	printf("%f %f translate\n", (pwidth-iwidth)*.5, (pheight-iheight)*.5);
 	printf("%f %f scale\n", iwidth, iheight);
