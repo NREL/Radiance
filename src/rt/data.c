@@ -139,14 +139,13 @@ scanerr:
 }
 
 
-static double  inpaspect;		/* aspect ratio of input picture */
-
 static
-headaspect(s)				/* check string for aspect ratio */
+headaspect(s, iap)			/* check string for aspect ratio */
 char  *s;
+double  *iap;
 {
 	if (isaspect(s))
-		inpaspect *= aspectval(s);
+		*iap *= aspectval(s);
 }
 
 
@@ -155,6 +154,7 @@ getpict(pname)				/* get picture pname */
 char  *pname;
 {
 	extern char  *libpath;
+	double  inpaspect;
 	char  *pfname;
 	FILE  *fp;
 	COLOR  *scanin;
@@ -189,7 +189,7 @@ char  *pname;
 #endif
 						/* get dimensions */
 	inpaspect = 1.0;
-	getheader(fp, headaspect);
+	getheader(fp, headaspect, &inpaspect);
 	if (!fgetsresolu(&inpres, fp))
 		goto readerr;
 	for (i = 0; i < 3; i++) {
