@@ -40,9 +40,9 @@ extern int	hsize;			/* horizontal size */
 
 #define nglardirs	(2*nglarangs+1)
 #define vsize		(sampdens-1)
-#define hscale(v)	sqrt(1.-(double)((v)*(v)/(sampdens*sampdens)))
-#define hlim(v)		(int)(maxtheta*sampdens*hscale(v))
-#define h_theta(h,v)	(-(h)/(sampdens*hscale(v)))
+#define hscale(v)	sqrt((double)(sampdens*sampdens - (v)*(v)))
+#define hlim(v)		(int)(maxtheta*hscale(v))
+#define h_theta(h,v)	(-(h)/hscale(v))
 
 extern struct illum {
 	float	theta;		/* glare direction */
