@@ -66,7 +66,19 @@ char  *nm;
 	distarr = (float *)calloc(n, 3*sizeof(float));
 	if (distarr == NULL)
 		error(SYSTEM, "out of memory in o_face");
-	mkaxes(u, v, fa->norm);
+				/* take first edge longer than sqrt(area) */
+	for (i = 1; i < fa->nv; i++) {
+		for (j = 0; j < 3; j++)
+			u[j] = VERTEX(fa,i)[j] - VERTEX(fa,i-1)[j];
+		if (DOT(u,u) >= fa->area-FTINY)
+			break;
+	}
+	if (i < fa->nv) {	/* got one! -- let's align our axes */
+		normalize(u);
+		fcross(v, fa->norm, u);
+	} else			/* oh well, we'll just have to wing it */
+		mkaxes(u, v, fa->norm);
+				/* now, find limits in (u,v) coordinates */
 	ur[0] = vr[0] = FHUGE;
 	ur[1] = vr[1] = -FHUGE;
 	for (i = 0; i < fa->nv; i++) {
