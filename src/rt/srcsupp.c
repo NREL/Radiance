@@ -180,6 +180,8 @@ OBJREC  *op;
 			ocent[i] += VERTEX(f,j)[i];
 		ocent[i] /= (double)f->nv;
 	}
+	if (f->area == 0.)
+		return(0.);
 	maxrad2 = 0.;
 	for (j = 0; j < f->nv; j++) {
 		d2 = dist2(VERTEX(f,j), ocent);
