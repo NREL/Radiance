@@ -19,18 +19,24 @@ typedef struct {
 	FVECT  vup;		/* view up */
 	double  horiz;		/* horizontal view size */
 	double  vert;		/* vertical view size */
-	int  hresolu;		/* horizontal resolution */
-	int  vresolu;		/* vertical resolution */
-	FVECT  vhinc;		/* computed horizontal increment */
-	FVECT  vvinc;		/* computed vertical increment */
-	double  vhn2;		/* DOT(vhinc,vhinc) */
-	double  vvn2;		/* DOT(vvinc,vvinc) */
+	double  hoff;		/* horizontal image offset */
+	double  voff;		/* vertical image offset */
+	FVECT  hvec;		/* computed horizontal image vector */
+	FVECT  vvec;		/* computed vertical image vector */
+	double  hn2;		/* DOT(hvec,hvec) */
+	double  vn2;		/* DOT(vvec,vvec) */
 } VIEW;			/* view parameters */
 
 extern VIEW  stdview;
 
 extern char  *setview();
 
-#define  STDVIEW(h)	{VT_PER,0.,0.,0.,0.,1.,0.,0.,0.,1.,45.,45.,h,h}
+extern double  sqrt();
+
+#define  viewaspect(v)	sqrt((v)->vn2/(v)->hn2)
+
+#define  copyview(d,s)	bcopy((char *)(s),(char *)(d),sizeof(VIEW))
+
+#define  STDVIEW	{VT_PER,0.,0.,0.,0.,1.,0.,0.,0.,1.,45.,45.,0.,0.}
 
 #define  VIEWSTR	"VIEW="

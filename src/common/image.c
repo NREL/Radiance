@@ -10,106 +10,85 @@ static char SCCSid[] = "$SunId$ LBL";
  *     10/17/85
  */
 
-#include  <ctype.h>
-
 #include  "standard.h"
 
 #include  "view.h"
 
-VIEW  stdview = STDVIEW(512);		/* default view parameters */
+VIEW  stdview = STDVIEW;		/* default view parameters */
 
 
 char *
-sskip(s)		/* skip a word */
-register char  *s;
-{
-	while (isspace(*s)) s++;
-	while (*s && !isspace(*s)) s++;
-	return(s);
-}
-
-
-char *
-setview(v)		/* set vhinc and vvinc, return message on error */
+setview(v)		/* set hvec and vvec, return message on error */
 register VIEW  *v;
 {
-	double  tan(), dt;
-	
+	extern double  tan(), normalize();
+
 	if (normalize(v->vdir) == 0.0)		/* normalize direction */
 		return("zero view direction");
-		
-	fcross(v->vhinc, v->vdir, v->vup);	/* compute horiz dir */
 
-	if (normalize(v->vhinc) == 0.0)
+	fcross(v->hvec, v->vdir, v->vup);	/* compute horiz dir */
+
+	if (normalize(v->hvec) == 0.0)
 		return("illegal view up vector");
-		
-	fcross(v->vvinc, v->vhinc, v->vdir);	/* compute vert dir */
+
+	fcross(v->vvec, v->hvec, v->vdir);	/* compute vert dir */
 
 	if (v->type == VT_PAR)
-		dt =  v->horiz;
+		v->hn2 = v->horiz;
 	else if (v->type == VT_PER)
-		dt = 2.0 * tan(v->horiz*(PI/180.0/2.0));
+		v->hn2 = 2.0 * tan(v->horiz*(PI/180.0/2.0));
 	else
 		return("unknown view type");
 
-	if (dt <= FTINY || dt >= FHUGE)
+	if (v->hn2 <= FTINY || v->hn2 >= FHUGE)
 		return("illegal horizontal view size");
 
-	if (v->hresolu <= 0)
-		return("illegal horizontal resolution");
-
-	dt /= (double)v->hresolu;
-	v->vhinc[0] *= dt;
-	v->vhinc[1] *= dt;
-	v->vhinc[2] *= dt;
+	v->hvec[0] *= v->hn2;
+	v->hvec[1] *= v->hn2;
+	v->hvec[2] *= v->hn2;
+	v->hn2 *= v->hn2;
 
 	if (v->type == VT_PAR)
-		dt = v->vert;
+		v->vn2 = v->vert;
 	else
-		dt = 2.0 * tan(v->vert*(PI/180.0/2.0));
+		v->vn2 = 2.0 * tan(v->vert*(PI/180.0/2.0));
 
-	if (dt <= FTINY || dt >= FHUGE)
+	if (v->vn2 <= FTINY || v->vn2 >= FHUGE)
 		return("illegal vertical view size");
 
-	if (v->vresolu <= 0)
-		return("illegal vertical resolution");
-	
-	dt /= (double)v->vresolu;
-	v->vvinc[0] *= dt;
-	v->vvinc[1] *= dt;
-	v->vvinc[2] *= dt;
-
-	v->vhn2 = DOT(v->vhinc,v->vhinc);
-	v->vvn2 = DOT(v->vvinc,v->vvinc);
+	v->vvec[0] *= v->vn2;
+	v->vvec[1] *= v->vn2;
+	v->vvec[2] *= v->vn2;
+	v->vn2 *= v->vn2;
 
 	return(NULL);
 }
 
 
-rayview(orig, direc, v, x, y)		/* compute ray origin and direction */
+viewray(orig, direc, v, x, y)		/* compute ray origin and direction */
 FVECT  orig, direc;
 register VIEW  *v;
 double  x, y;
 {
-	x -= 0.5 * v->hresolu;
-	y -= 0.5 * v->vresolu;
+	x += v->hoff - 0.5;
+	y += v->voff - 0.5;
 
 	if (v->type == VT_PAR) {	/* parallel view */
-		orig[0] = v->vp[0] + x*v->vhinc[0] + y*v->vvinc[0];
-		orig[1] = v->vp[1] + x*v->vhinc[1] + y*v->vvinc[1];
-		orig[2] = v->vp[2] + x*v->vhinc[2] + y*v->vvinc[2];
+		orig[0] = v->vp[0] + x*v->hvec[0] + y*v->vvec[0];
+		orig[1] = v->vp[1] + x*v->hvec[1] + y*v->vvec[1];
+		orig[2] = v->vp[2] + x*v->hvec[2] + y*v->vvec[2];
 		VCOPY(direc, v->vdir);
 	} else {			/* perspective view */
 		VCOPY(orig, v->vp);
-		direc[0] = v->vdir[0] + x*v->vhinc[0] + y*v->vvinc[0];
-		direc[1] = v->vdir[1] + x*v->vhinc[1] + y*v->vvinc[1];
-		direc[2] = v->vdir[2] + x*v->vhinc[2] + y*v->vvinc[2];
+		direc[0] = v->vdir[0] + x*v->hvec[0] + y*v->vvec[0];
+		direc[1] = v->vdir[1] + x*v->hvec[1] + y*v->vvec[1];
+		direc[2] = v->vdir[2] + x*v->hvec[2] + y*v->vvec[2];
 		normalize(direc);
 	}
 }
 
 
-pixelview(xp, yp, zp, v, p)		/* find image location for point */
+viewpixel(xp, yp, zp, v, p)		/* find image location for point */
 double  *xp, *yp, *zp;
 register VIEW  *v;
 FVECT  p;
@@ -117,7 +96,7 @@ FVECT  p;
 	extern double  sqrt();
 	double  d;
 	FVECT  disp;
-	
+
 	disp[0] = p[0] - v->vp[0];
 	disp[1] = p[1] - v->vp[1];
 	disp[2] = p[2] - v->vp[2];
@@ -136,82 +115,98 @@ FVECT  p;
 		disp[1] *= d;
 		disp[2] *= d;
 	}
-	*xp = DOT(disp,v->vhinc)/v->vhn2 + 0.5*v->hresolu;
-	*yp = DOT(disp,v->vvinc)/v->vvn2 + 0.5*v->vresolu;
+	*xp = DOT(disp,v->hvec)/v->hn2 + 0.5 - v->hoff;
+	*yp = DOT(disp,v->vvec)/v->vn2 + 0.5 - v->voff;
 }
 
 
-sscanview(vp, s)			/* get view parameters */
-register VIEW  *vp;
+int
+getviewopt(v, ac, av)			/* process view argument */
+register VIEW  *v;
+int  ac;
+register char  *av[];
+{
+#define check(c,n)	if ((av[0][c]&&av[0][c]!=' ') || n>=ac) return(-1)
+	extern double  atof();
+
+	if (av[0][0] != '-' || av[0][1] != 'v')
+		return(-1);
+	switch (av[0][2]) {
+	case 't':			/* type */
+		if (!av[0][3] || av[0][3]==' ')
+			return(-1);
+		check(4,0);
+		v->type = av[0][3];
+		return(0);
+	case 'p':			/* point */
+		check(3,3);
+		v->vp[0] = atof(av[1]);
+		v->vp[1] = atof(av[2]);
+		v->vp[2] = atof(av[3]);
+		return(3);
+	case 'd':			/* direction */
+		check(3,3);
+		v->vdir[0] = atof(av[1]);
+		v->vdir[1] = atof(av[2]);
+		v->vdir[2] = atof(av[3]);
+		return(3);
+	case 'u':			/* up */
+		check(3,3);
+		v->vup[0] = atof(av[1]);
+		v->vup[1] = atof(av[2]);
+		v->vup[2] = atof(av[3]);
+		return(3);
+	case 'h':			/* horizontal size */
+		check(3,1);
+		v->horiz = atof(av[1]);
+		return(1);
+	case 'v':			/* vertical size */
+		check(3,1);
+		v->vert = atof(av[1]);
+		return(1);
+	case 's':			/* shift */
+		check(3,1);
+		v->hoff = atof(av[1]);
+		return(1);
+	case 'l':			/* lift */
+		check(3,1);
+		v->voff = atof(av[1]);
+		return(1);
+	default:
+		return(-1);
+	}
+#undef check
+}
+
+
+int
+sscanview(vp, s)			/* get view parameters from string */
+VIEW  *vp;
 register char  *s;
 {
-	for ( ; ; )
-		switch (*s++) {
-		case '\0':
-		case '\n':
-			return(0);
-		case '-':
-			switch (*s++) {
-			case '\0':
-				return(-1);
-			case 'x':
-				if (sscanf(s, "%d", &vp->hresolu) != 1)
-					return(-1);
-				s = sskip(s);
-				continue;
-			case 'y':
-				if (sscanf(s, "%d", &vp->vresolu) != 1)
-					return(-1);
-				s = sskip(s);
-				continue;
-			case 'v':
-				switch (*s++) {
-				case '\0':
-					return(-1);
-				case 't':
-					vp->type = *s++;
-					continue;
-				case 'p':
-					if (sscanf(s, "%lf %lf %lf",
-							&vp->vp[0],
-							&vp->vp[1],
-							&vp->vp[2]) != 3)
-						return(-1);
-					s = sskip(sskip(sskip(s)));
-					continue;
-				case 'd':
-					if (sscanf(s, "%lf %lf %lf",
-							&vp->vdir[0],
-							&vp->vdir[1],
-							&vp->vdir[2]) != 3)
-						return(-1);
-					s = sskip(sskip(sskip(s)));
-					continue;
-				case 'u':
-					if (sscanf(s, "%lf %lf %lf",
-							&vp->vup[0],
-							&vp->vup[1],
-							&vp->vup[2]) != 3)
-						return(-1);
-					s = sskip(sskip(sskip(s)));
-					continue;
-				case 'h':
-					if (sscanf(s, "%lf",
-							&vp->horiz) != 1)
-						return(-1);
-					s = sskip(s);
-					continue;
-				case 'v':
-					if (sscanf(s, "%lf",
-							&vp->vert) != 1)
-						return(-1);
-					s = sskip(s);
-					continue;
-				}
-				continue;
-			}
-			continue;
+	int  ac;
+	char  *av[4];
+	int  na;
+	int  nvopts = 0;
+
+	while (*s == ' ')
+		s++;
+	do {
+		ac = 0;
+		do {
+			av[ac++] = s;
+			while (*s && *s != ' ')
+				s++;
+			while (*s == ' ')
+				s++;
+		} while (*s && ac < 4);
+		if ((na = getviewopt(vp, ac, av)) >= 0) {
+			if (na+1 < ac)
+				s = av[na+1];
+			nvopts++;
 		}
+	} while (*s);
+	return(nvopts);
 }
 
 
@@ -224,7 +219,7 @@ FILE  *fp;
 	fprintf(fp, " -vd %.6g %.6g %.6g", vp->vdir[0], vp->vdir[1], vp->vdir[2]);
 	fprintf(fp, " -vu %.6g %.6g %.6g", vp->vup[0], vp->vup[1], vp->vup[2]);
 	fprintf(fp, " -vh %.6g -vv %.6g", vp->horiz, vp->vert);
-	fprintf(fp, " -x %d -y %d", vp->hresolu, vp->vresolu);
+	fprintf(fp, " -vs %d -vl %d", vp->hoff, vp->voff);
 }
 
 
@@ -241,7 +236,7 @@ char  *s;
 
 	for (an = altname; *an != NULL; an++)
 		if (!strncmp(*an, s, strlen(*an))) {
-			if (sscanview(hview, s+strlen(*an)) == 0)
+			if (sscanview(hview, s+strlen(*an)) > 0)
 				gothview++;
 			return;
 		}
