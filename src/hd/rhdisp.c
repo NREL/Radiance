@@ -203,6 +203,8 @@ serv_result()			/* get next server result and process it */
 	case DS_STARTIMM:
 	case DS_ENDIMM:
 		imm_mode = msg.type==DS_STARTIMM;
+		if (msg.type == DS_ENDIMM)
+			dev_flush();		/* update display NOW */
 		/* fall through */
 	case DS_ACKNOW:
 	case DS_SHUTDOWN:
