@@ -74,7 +74,6 @@ done_rtrace()			/* clean up and close rtrace calculation */
 					/* already closed? */
 	if (!nprocs)
 		return;
-	wputs("closing rtrace process...\n");
 					/* flush beam queue */
 	done_packets(flush_queue());
 					/* sync holodeck */
@@ -82,8 +81,10 @@ done_rtrace()			/* clean up and close rtrace calculation */
 					/* close rtrace */
 	if ((status = end_rtrace()))
 		error(WARNING, "bad exit status from rtrace");
-	if (vdef(REPORT))		/* report time */
+	if (vdef(REPORT)) {		/* report time */
+		eputs("rtrace process ended\n");
 		report(0);
+	}
 	return(status);			/* return status */
 }
 
@@ -94,7 +95,6 @@ new_rtrace()			/* restart rtrace calculation */
 
 	if (nprocs > 0)			/* already running? */
 		return;
-	wputs("restarting rtrace process...\n");
 	starttime = time(NULL);		/* reset start time and counts */
 	npacksdone = nraysdone = 0L;
 	if (vdef(TIME))			/* reset end time */
@@ -106,8 +106,10 @@ new_rtrace()			/* restart rtrace calculation */
 	}
 	if (start_rtrace() < 1)		/* start rtrace */
 		error(WARNING, "cannot restart rtrace");
-	else if (vdef(REPORT))
+	else if (vdef(REPORT)) {
+		eputs("rtrace process restarted\n");
 		report(0);
+	}
 }
 
 
