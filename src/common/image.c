@@ -518,13 +518,14 @@ struct myview {
 };
 
 
-static
+static int
 gethview(s, v)				/* get view from header */
 char  *s;
 register struct myview  *v;
 {
 	if (isview(s) && sscanview(v->hv, s) > 0)
 		v->ok++;
+	return(0);
 }
 
 

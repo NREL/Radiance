@@ -274,6 +274,7 @@ int	np;
 }
 
 
+int
 getexpos(s)			/* get exposure from header line */
 char	*s;
 {
@@ -285,6 +286,7 @@ char	*s;
 		formatval(fmt, s);
 		wrongformat = strcmp(fmt, COLRFMT);
 	}
+	return(0);
 }
 
 

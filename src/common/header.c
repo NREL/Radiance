@@ -153,8 +153,8 @@ char  *p;
 			ungetc(buf[MAXLINE-2], fp);	/* prevent false end */
 			buf[MAXLINE-2] = '\0';
 		}
-		if (f != NULL)
-			(*f)(buf, p);
+		if (f != NULL && (*f)(buf, p) < 0)
+			return(-1);
 	}
 }
 
