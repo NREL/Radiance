@@ -195,8 +195,11 @@ int  mod;
 			error(USER, errmsg);
 		}
 		******/
-		if ((*ofun[m->otype].funp)(m, r))
-			objerror(r->ro, USER, "conflicting materials");
+		if ((*ofun[m->otype].funp)(m, r)) {
+			sprintf(errmsg, "conflicting material \"%s\"",
+					m->oname);
+			objerror(r->ro, USER, errmsg);
+		}
 	}
 	depth--;			/* end here */
 }
