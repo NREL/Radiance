@@ -1,6 +1,8 @@
-#include <stdio.h>
+/* Copyright 1988 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
+
+#include <stdio.h>
 #include "pic.h"
 
 #define red(i) ((i)>>7&0xf8|4)	/* 5 bits red, 5 bits green, 5 bits blue */

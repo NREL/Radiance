@@ -1,6 +1,8 @@
-/* the following three structures are used by ciq */
+/* Copyright 1988 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
+
+/* the following three structures are used by ciq */
 
 typedef int colormap[3][256];
 

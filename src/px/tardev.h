@@ -1,8 +1,6 @@
-/*
+/* Copyright 1988 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
-#include "mk_crefs.h"
- */
 
 /*
  *		Board types used for targa->boardType

@@ -1,8 +1,10 @@
-/*
+/* Copyright 1988 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
+
+/*
  *  biq.c - simple greyscale quantization.
  *
  *	9/19/88

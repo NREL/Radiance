@@ -1,8 +1,10 @@
-/*
+/* Copyright 1988 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
+
+/*
 CUT - Median bisection (k-d tree) algorithm for color image quantization
 
 flaw: doesn't always create as many colors as requested

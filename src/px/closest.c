@@ -1,8 +1,10 @@
-/*
+/* Copyright 1988 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
+
+/*
 CLOSEST - nearest-color lookup by locally ordered search
 we use distance in rgb space as color metric
 
