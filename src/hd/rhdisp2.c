@@ -244,8 +244,8 @@ int	hres, vres;
 				/* intersect sample rays with section */
 	for (v = svr; v--; )
 		for (h = shr; h--; ) {
-			if (viewray(rorg, rdir, vw, (v+frandom())/svr,
-						(h+frandom())/shr) < -FTINY)
+			if (viewray(rorg, rdir, vw, (h+frandom())/shr,
+						(v+frandom())/svr) < -FTINY)
 				continue;
 			if (rad > FTINY) {
 				rorg[0] += (1.-2.*frandom())*rad;
