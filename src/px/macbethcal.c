@@ -52,7 +52,7 @@ COLOR	mbRGB[24];		/* MacBeth RGB values */
 #define	NMBNEU		6	/* Number of MacBeth neutral colors */
 short	mbneu[NMBNEU] = {23,22,21,20,19,18};
 #define NMBMOD		3	/* Number of MacBeth moderate colors */
-short	mbmod[NMBMOD] = {1,3,2};
+short	mbmod[NMBMOD] = {1,2,21};
 #define NMBSAT		6	/* Number of MacBeth saturated colors */
 short	mbsat[NMBSAT] = {14,12,13,15,16,17};
 
@@ -62,7 +62,7 @@ double	imgxfm[3][3];		/* coordinate transformation matrix */
 
 COLOR	picRGB[24];		/* picture colors */
 
-double	bramp[NMBNEU][2];	/* brightness ramp */
+COLOR	bramp[NMBNEU][2];	/* brightness ramp (per primary) */
 double	solmat[3][3];		/* color mapping matrix */
 
 FILE	*debugfp = NULL;
@@ -125,6 +125,7 @@ char	**argv;
 	}
 	init();				/* initialize */
 	getcolors();			/* get picture colors */
+	compute();			/* compute color mapping */
 	putmapping();			/* put out color mapping */
 	putdebug();			/* put out debug picture */
 	exit(0);
@@ -138,9 +139,6 @@ userr:
 init()				/* initialize */
 {
 	double	quad[4][2];
-	COLOR	ctmp;
-	double	d;
-	int	i;
 					/* make coordinate transformation */
 	quad[0][0] = bounds[0][0];
 	quad[0][1] = bounds[0][1];
@@ -154,14 +152,6 @@ init()				/* initialize */
 	if (pmap_quad_rect(0., 0., 6., 4., quad, imgxfm) == PMAP_BAD) {
 		fprintf(stderr, "%s: bad chart boundaries\n", progname);
 		exit(1);
-	}
-					/* map MacBeth colors to RGB space */
-	for (i = 0; i < 24; i++) {
-		d = mbxyY[i][2] / mbxyY[i][1];
-		ctmp[0] = mbxyY[i][0] * d;
-		ctmp[1] = mbxyY[i][2];
-		ctmp[2] = (1. - mbxyY[i][0] - mbxyY[i][1]) * d;
-		cie_rgb(mbRGB[i], ctmp);
 	}
 }
 
@@ -238,64 +228,92 @@ getcolors()				/* load in picture colors */
 }
 
 
-double
-bresp(x)		/* piecewise linear interpolation of brightness */
-double	x;
+bresp(y, x)		/* piecewise linear interpolation of primaries */
+COLOR	y, x;
 {
-	register int	n = NMBNEU;
+	register int	i, n;
 
-	while (n > 0 && x < bramp[--n][0])
-		;
-	return( ((bramp[n+1][0] - x)*bramp[n][1] +
-				(x - bramp[n][0])*bramp[n+1][1]) /
-			(bramp[n+1][0] - bramp[n][0]) );
+	for (i = 0; i < 3; i++) {
+		n = NMBNEU;
+		while (n > 0 && colval(x,i) < colval(bramp[--n][0],i))
+			;
+		colval(y,i) = ((colval(bramp[n+1][0],i) - colval(x,i)) *
+						colval(bramp[n][1],i) +
+				(colval(x,i) - colval(bramp[n][0],i)) *
+						colval(bramp[n+1][1],i)) /
+			(colval(bramp[n+1][0],i) - colval(bramp[n][0],i));
+	}
 }
 
 
-putmapping()			/* compute and print mapping for pcomb -f */
+compute()			/* compute color mapping */
 {
-	float	clrin[NMBMOD][3], clrout[NMBMOD][3];
-	register int	i, j;
+	COLOR	clrin[NMBMOD], clrout[NMBMOD];
+	COLOR	ctmp;
+	double	d;
+	register int	i;
+					/* map MacBeth colors to RGB space */
+	for (i = 0; i < 24; i++) {
+		d = mbxyY[i][2] / mbxyY[i][1];
+		ctmp[0] = mbxyY[i][0] * d;
+		ctmp[1] = mbxyY[i][2];
+		ctmp[2] = (1. - mbxyY[i][0] - mbxyY[i][1]) * d;
+		cie_rgb(mbRGB[i], ctmp);
+	}
 					/* compute piecewise luminance curve */
 	for (i = 0; i < NMBNEU; i++) {
-		bramp[i][0] = bright(picRGB[mbneu[i]]);
-		bramp[i][1] = bright(mbRGB[mbneu[i]]);
+		copycolor(bramp[i][0], picRGB[mbneu[i]]);
+		copycolor(bramp[i][1], mbRGB[mbneu[i]]);
 	}
 					/* compute color matrix */
-	for (i = 0; i < NMBMOD; i++)
-		for (j = 0; j < 3; j++) {
-			clrin[i][j] = bresp(picRGB[mbmod[i]][j]);
-			clrout[i][j] = mbRGB[mbmod[i]][j];
-		}
+	for (i = 0; i < NMBMOD; i++) {
+		bresp(clrin[i], picRGB[mbmod[i]]);
+		copycolor(clrout[i], mbRGB[mbmod[i]]);
+	}
 	compsoln(clrin, clrout, NMBMOD);
+}
+
+
+putmapping()			/* put out color mapping for pcomb -f */
+{
+	static char	cchar[3] = {'r', 'g', 'b'};
+	register int	i, j;
 					/* print brightness mapping */
-	printf("xval(i) : select(i, 0");
-	for (i = 0; i < NMBNEU; i++)
-		printf(", %g", bramp[i][0]);
-	printf(");\n");
-	printf("yval(i) : select(i, 0");
-	for (i = 0; i < NMBNEU; i++)
-		printf(", %g", bramp[i][1]);
-	printf(");\n");
-	printf("ifind(x,f,n) : if(1.5-n, 1, if(x-f(n), n, ifind(x,f,n-1)));\n");
-	printf("binterp(i,x) : ((xval(i+1)-x)*yval(i) + (x-xval(i))*yval(i+1))/\n");
-	printf("\t\t(xval(i+1) - xval(i));\n");
-	printf("bresp(x) : binterp(ifind(x,xval,xval(0)-1), x);\n");
-	printf("nred = bresp(ri(1));\n");
-	printf("ngrn = bresp(gi(1));\n");
-	printf("nblu = bresp(bi(1));\n");
+	for (j = 0; j < 3; j++) {
+		printf("%cxa(i) : select(i", cchar[j]);
+		for (i = 0; i < NMBNEU; i++)
+			printf(",%g", colval(bramp[i][0],j));
+		printf(");\n");
+		printf("%cya(i) : select(i", cchar[j]);
+		for (i = 0; i < NMBNEU; i++)
+			printf(",%g", colval(bramp[i][1],j));
+		printf(");\n");
+		printf("%c = %ci(1);\n", cchar[j], cchar[j]);
+		printf("%cfi(n) = if(n-%g, %d, if(%cxa(n+1)-%c, n, %cfi(n+1)));\n",
+				cchar[j], NMBNEU-1.5, NMBNEU-1, cchar[j],
+				cchar[j], cchar[j]);
+		printf("%cndx = %cfi(1);\n", cchar[j], cchar[j]);
+		printf("%cn = ((%cxa(%cndx+1)-%c)*%cya(%cndx) + ",
+				cchar[j], cchar[j], cchar[j],
+				cchar[j], cchar[j], cchar[j]);
+		printf("(%c-%cxa(%cndx))*%cya(%cndx+1)) /\n",
+				cchar[j], cchar[j], cchar[j],
+				cchar[j], cchar[j]);
+		printf("\t\t(%cxa(%cndx+1) - %cxa(%cndx)) ;\n",
+				cchar[j], cchar[j], cchar[j], cchar[j]);
+	}
 					/* print color mapping */
-	printf("ro = %g*nred + %g*ngrn + %g*nblu\n",
+	printf("ro = %g*rn + %g*gn + %g*bn ;\n",
 			solmat[0][0], solmat[1][0], solmat[2][0]);
-	printf("go = %g*nred + %g*ngrn + %g*nblu\n",
+	printf("go = %g*rn + %g*gn + %g*bn ;\n",
 			solmat[0][1], solmat[1][1], solmat[2][1]);
-	printf("bo = %g*nred + %g*ngrn + %g*nblu\n",
+	printf("bo = %g*rn + %g*gn + %g*bn ;\n",
 			solmat[0][2], solmat[1][2], solmat[2][2]);
 }
 
 
 compsoln(cin, cout, n)		/* solve 3x3 system */
-float	cin[][3], cout[][3];
+COLOR	cin[], cout[];
 int	n;
 {
 	extern double	mx3d_adjoint(), fabs();
@@ -310,7 +328,7 @@ int	n;
 	}
 	for (i = 0; i < 3; i++)
 		for (j = 0; j < 3; j++)
-			mat[i][j] = cin[j][i];
+			mat[i][j] = colval(cin[j],i);
 	det = mx3d_adjoint(mat, invmat);
 	if (fabs(det) < 1e-4) {
 		fprintf(stderr, "%s: cannot compute color mapping\n",
@@ -325,7 +343,7 @@ int	n;
 			invmat[i][j] /= det;
 	for (i = 0; i < 3; i++) {
 		for (j = 0; j < 3; j++)
-			rowv[j] = cout[j][i];
+			rowv[j] = colval(cout[j],i);
 		mx3d_transform(rowv, invmat, colv);
 		for (j = 0; j < 3; j++)
 			solmat[j][i] = colv[j];
@@ -337,18 +355,18 @@ cvtcolor(cout, cin)		/* convert color according to our mapping */
 COLOR	cout, cin;
 {
 	double	r, g, b;
-	double	r1, g1, b1;
 
-	r = bresp(colval(cin,RED));
-	g = bresp(colval(cin,GRN));
-	b = bresp(colval(cin,BLU));
-	r1 = r*solmat[0][0] + g*solmat[1][0] + b*solmat[2][0];
-	if (r1 < 0) r1 = 0;
-	g1 = r*solmat[0][1] + g*solmat[1][1] + b*solmat[2][1];
-	if (g1 < 0) g1 = 0;
-	b1 = r*solmat[0][2] + g*solmat[1][2] + b*solmat[2][2];
-	if (b1 < 0) b1 = 0;
-	setcolor(cout, r1, g1, b1);
+	bresp(cout, cin);
+	r = colval(cout,0)*solmat[0][0] + colval(cout,1)*solmat[1][0]
+			+ colval(cout,2)*solmat[2][0];
+	if (r < 0) r = 0;
+	g = colval(cout,0)*solmat[0][1] + colval(cout,1)*solmat[1][1]
+			+ colval(cout,2)*solmat[2][1];
+	if (g < 0) g = 0;
+	b = colval(cout,0)*solmat[0][2] + colval(cout,1)*solmat[1][2]
+			+ colval(cout,2)*solmat[2][2];
+	if (b < 0) b = 0;
+	setcolor(cout, r, g, b);
 }
 
 
