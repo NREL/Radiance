@@ -203,9 +203,9 @@ register RAY  *r;
 	} else {
 		VCOPY(nd.pnorm, r->ron);
 		nd.pdot = r->rod;
-		if (r->ro != NULL && isflat(r->ro->otype))
-			nd.specfl |= SP_FLAT;
 	}
+	if (r->ro != NULL && isflat(r->ro->otype))
+		nd.specfl |= SP_FLAT;
 	if (nd.pdot < .001)
 		nd.pdot = .001;			/* non-zero for dirnorm() */
 	multcolor(nd.mcolor, r->pcol);		/* modify material color */

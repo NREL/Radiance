@@ -265,8 +265,7 @@ register RAY  *r;
 						/* diffuse reflection */
 	nd.rdiff = 1.0 - nd.trans - nd.rspec;
 
-	if (r->ro != NULL && isflat(r->ro->otype) &&
-			DOT(r->pert,r->pert) <= FTINY*FTINY)
+	if (r->ro != NULL && isflat(r->ro->otype))
 		nd.specfl |= SP_FLAT;
 
 	getacoords(r, &nd);			/* set up coordinates */
