@@ -36,6 +36,7 @@ register RAY  *r;
 {
 	COLOR  mcolor;
 	RAY  nr;
+	int  rpure = 1;
 	register int  i;
 					/* check arguments */
 	if (m->oargs.nfargs != 3 || m->oargs.nsargs > 1)
@@ -76,17 +77,22 @@ register RAY  *r;
 
 		if (rayorigin(&nr, r, REFLECTED, bright(mcolor)) < 0)
 			return(1);
-		pdot = raynormal(pnorm, r);	/* use textures */
-		for (i = 0; i < 3; i++)
-			nr.rdir[i] = r->rdir[i] + 2.*pdot*pnorm[i];
+		if (DOT(r->pert,r->pert) > FTINY*FTINY) {
+			pdot = raynormal(pnorm, r);	/* use textures */
+			for (i = 0; i < 3; i++)
+				nr.rdir[i] = r->rdir[i] + 2.*pdot*pnorm[i];
+			rpure = 0;
+		}
 						/* check for penetration */
-		if (DOT(nr.rdir, r->ron) <= FTINY)
+		if (rpure || DOT(nr.rdir, r->ron) <= FTINY)
 			for (i = 0; i < 3; i++)
 				nr.rdir[i] = r->rdir[i] + 2.*r->rod*r->ron[i];
 	}
 	rayvalue(&nr);
 	multcolor(nr.rcol, mcolor);
 	addcolor(r->rcol, nr.rcol);
+	if (rpure && r->ro != NULL && isflat(r->ro->otype))
+		r->rt = r->rot + nr.rt;
 	return(1);
 }
 

@@ -156,6 +156,9 @@ register RAY  *r;
 {
 	NORMDAT  nd;
 	double  transtest, transdist;
+	double	mirtest, mirdist;
+	int	hastexture;
+	double	d;
 	COLOR  ctmp;
 	register int  i;
 						/* easy shadow test */
@@ -164,6 +167,14 @@ register RAY  *r;
 
 	if (m->oargs.nfargs != (m->otype == MAT_TRANS ? 7 : 5))
 		objerror(m, USER, "bad number of arguments");
+						/* check for back side */
+	if (r->rod < 0.0) {
+		if (!backvis && m->otype != MAT_TRANS) {
+			raytrans(r);
+			return(1);
+		}
+		flipsurface(r);			/* reorient if backvis */
+	}
 	nd.mp = m;
 	nd.rp = r;
 						/* get material color */
@@ -175,22 +186,21 @@ register RAY  *r;
 	nd.alpha2 = m->oargs.farg[4];
 	if ((nd.alpha2 *= nd.alpha2) <= FTINY)
 		nd.specfl |= SP_PURE;
-						/* check for back side */
-	if (r->rod < 0.0) {
-		if (!backvis && m->otype != MAT_TRANS) {
-			raytrans(r);
-			return(1);
-		}
-		flipsurface(r);			/* reorient if backvis */
-	}
+	if (r->ro != NULL && isflat(r->ro->otype))
+		nd.specfl |= SP_FLAT;
 						/* get modifiers */
 	raytexture(r, m->omod);
-	nd.pdot = raynormal(nd.pnorm, r);	/* perturb normal */
+	if (hastexture = DOT(r->pert,r->pert) > FTINY*FTINY)
+		nd.pdot = raynormal(nd.pnorm, r);	/* perturb normal */
+	else {
+		VCOPY(nd.pnorm, r->ron);
+		nd.pdot = r->rod;
+	}
 	if (nd.pdot < .001)
 		nd.pdot = .001;			/* non-zero for dirnorm() */
 	multcolor(nd.mcolor, r->pcol);		/* modify material color */
-	transtest = 0;
-	transdist = r->rot;
+	mirtest = transtest = 0;
+	mirdist = transdist = r->rot;
 						/* get specular component */
 	if ((nd.rspec = m->oargs.farg[3]) > FTINY) {
 		nd.specfl |= SP_REFL;
@@ -205,8 +215,9 @@ register RAY  *r;
 			nd.specfl |= SP_RBLT;
 						/* compute reflected ray */
 		for (i = 0; i < 3; i++)
-			nd.vrefl[i] = r->rdir[i] + 2.0*nd.pdot*nd.pnorm[i];
-		if (DOT(nd.vrefl, r->ron) <= FTINY)	/* penetration? */
+			nd.vrefl[i] = r->rdir[i] + 2.*nd.pdot*nd.pnorm[i];
+						/* penetration? */
+		if (hastexture && DOT(nd.vrefl, r->ron) <= FTINY)
 			for (i = 0; i < 3; i++)		/* safety measure */
 				nd.vrefl[i] = r->rdir[i] + 2.*r->rod*r->ron[i];
 
@@ -217,6 +228,10 @@ register RAY  *r;
 				rayvalue(&lr);
 				multcolor(lr.rcol, nd.scolor);
 				addcolor(r->rcol, lr.rcol);
+				if (!hastexture && nd.specfl & SP_FLAT) {
+					mirtest = 2.*bright(lr.rcol);
+					mirdist = r->rot + lr.rt;
+				}
 			}
 		}
 	}
@@ -231,8 +246,7 @@ register RAY  *r;
 			if (!(nd.specfl & SP_PURE) &&
 					specthresh >= nd.tspec-FTINY)
 				nd.specfl |= SP_TBLT;
-			if (r->crtype & SHADOW ||
-					DOT(r->pert,r->pert) <= FTINY*FTINY) {
+			if (!hastexture || r->crtype & SHADOW) {
 				VCOPY(nd.prdir, r->rdir);
 				transtest = 2;
 			} else {
@@ -261,17 +275,15 @@ register RAY  *r;
 	} else
 		transtest = 0;
 
-	if (r->crtype & SHADOW)			/* the rest is shadow */
+	if (r->crtype & SHADOW) {		/* the rest is shadow */
+		r->rt = transdist;
 		return(1);
+	}
 						/* diffuse reflection */
 	nd.rdiff = 1.0 - nd.trans - nd.rspec;
 
 	if (nd.specfl & SP_PURE && nd.rdiff <= FTINY && nd.tdiff <= FTINY)
 		return(1);			/* 100% pure specular */
-
-	if (r->ro != NULL && (r->ro->otype == OBJ_FACE ||
-			r->ro->otype == OBJ_RING))
-		nd.specfl |= SP_FLAT;
 
 	if (nd.specfl & (SP_REFL|SP_TRAN) && !(nd.specfl & SP_PURE))
 		gaussamp(r, &nd);
@@ -299,8 +311,11 @@ register RAY  *r;
 					/* add direct component */
 	direct(r, dirnorm, &nd);
 					/* check distance */
-	if (transtest > bright(r->rcol))
+	d = bright(r->rcol);
+	if (transtest > d)
 		r->rt = transdist;
+	else if (mirtest > d)
+		r->rt = mirdist;
 
 	return(1);
 }
