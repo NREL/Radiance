@@ -1,4 +1,4 @@
-#!/usr/local/bin/wish -f
+#!/usr/local/bin/wish4.0
 # SCCSid "$SunId$ LBL"
 #
 # TCL/TK-based Rad Input File Editor
@@ -135,11 +135,11 @@ setbutt results
 rename setbutt {}
 button .upper.right.help -text HELP -width 9 \
 		-command "gethelp trad trad intro"
-pack .upper.right.help -side top -pady 10 -anchor se
+pack .upper.right.help -side top -pady 5 -anchor se
 helplink .upper.right.help trad trad help
 button .upper.right.quit -text QUIT \
 		-command {if [chksave] {destroy .}} -width 9
-pack .upper.right.quit -side top -pady 10 -anchor se
+pack .upper.right.quit -side top -pady 5 -anchor se
 helplink .upper.right.quit trad trad quit
 
 if $smallscrn {
