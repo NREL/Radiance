@@ -27,6 +27,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #define wscan(y)	(ourweigh+(y)*hresolu)
 #define zscan(y)	(ourzbuf+(y)*hresolu)
 #define averaging	(ourweigh != NULL)
+#define usematrix	(hasmatrix & !averaging)
+#define zisnorm		(!usematrix | ourview.type != VT_PER)
 
 #define MAXWT		1000.		/* maximum pixel weight (averaging) */
 
@@ -67,7 +69,7 @@ int	(*fillfunc)() = backfill;	/* selected fill function */
 COLR	backcolr = BLKCOLR;		/* background color */
 COLOR	backcolor = BLKCOLOR;		/* background color (float) */
 double	backz = 0.0;			/* background z value */
-int	normdist = 1;			/* normalized distance? */
+int	normdist = 1;			/* i/o normalized distance? */
 double	ourexp = -1;			/* original picture exposure */
 int	expadj = 0;			/* exposure adjustment (f-stops) */
 double	rexpadj = 1;			/* real exposure adjustment */
@@ -584,7 +586,7 @@ register FVECT	pos;
 	
 	if (pos[2] <= 0)		/* empty pixel */
 		return(0);
-	if (!averaging && hasmatrix) {
+	if (usematrix) {
 		pos[0] += theirview.hoff - .5;
 		pos[1] += theirview.voff - .5;
 		if (theirview.type == VT_PER) {
@@ -606,7 +608,7 @@ register FVECT	pos;
 	} else {
 		if (viewray(pt, tdir, &theirview, pos[0], pos[1]) < -FTINY)
 			return(0);
-		if (!normdist && theirview.type == VT_PER)	/* adjust */
+		if (!normdist & theirview.type == VT_PER)	/* adjust */
 			pos[2] *= sqrt(1. + pos[0]*pos[0]*theirview.hn2
 					+ pos[1]*pos[1]*theirview.vn2);
 		pt[0] += tdir[0]*pos[2];
@@ -839,6 +841,7 @@ int	(*fill)();
 clipaft()			/* perform aft clipping as indicated */
 {
 	register int	x, y;
+	int	adjtest = ourview.type == VT_PER & zisnorm;
 	double	tstdist;
 	double	yzn2, vx;
 
@@ -846,14 +849,14 @@ clipaft()			/* perform aft clipping as indicated */
 		return;
 	tstdist = ourview.vaft - ourview.vfore;
 	for (y = 0; y < vresolu; y++) {
-		if (ourview.type == VT_PER) {		/* adjust distance */
+		if (adjtest) {				/* adjust test */
 			yzn2 = (y+.5)/vresolu + ourview.voff - .5;
 			yzn2 = 1. + yzn2*yzn2*ourview.vn2;
 			tstdist = (ourview.vaft - ourview.vfore)*sqrt(yzn2);
 		}
 		for (x = 0; x < hresolu; x++)
 			if (zscan(y)[x] > tstdist) {
-				if (ourview.type == VT_PER) {
+				if (adjtest) {
 					vx = (x+.5)/hresolu + ourview.hoff - .5;
 					if (zscan(y)[x] <= (ourview.vaft -
 							ourview.vfore) *
@@ -894,39 +897,35 @@ writepicture()				/* write out picture (alters buffer) */
 }
 
 
-writedistance(fname)			/* write out z file */
+writedistance(fname)			/* write out z file (alters buffer) */
 char	*fname;
 {
-	int	donorm = normdist && ourview.type == VT_PER &&
-			!averaging && hasmatrix;
+	int	donorm = normdist & !zisnorm ? 1 :
+			ourview.type == VT_PER & !normdist & zisnorm ? -1 : 0;
 	int	fd;
 	int	y;
-	float	*zout;
 
 	if ((fd = open(fname, O_WRONLY|O_CREAT|O_TRUNC, 0666)) == -1)
 		syserror(fname);
-	if (donorm
-	&& (zout = (float *)malloc(hresolu*sizeof(float))) == NULL)
-		syserror(progname);
 	for (y = vresolu-1; y >= 0; y--) {
 		if (donorm) {
-			double	vx, yzn2;
+			double	vx, yzn2, d;
 			register int	x;
 			yzn2 = (y+.5)/vresolu + ourview.voff - .5;
 			yzn2 = 1. + yzn2*yzn2*ourview.vn2;
 			for (x = 0; x < hresolu; x++) {
 				vx = (x+.5)/hresolu + ourview.hoff - .5;
-				zout[x] = zscan(y)[x]
-					* sqrt(vx*vx*ourview.hn2 + yzn2);
+				d = sqrt(vx*vx*ourview.hn2 + yzn2);
+				if (donorm > 0)
+					zscan(y)[x] *= d;
+				else
+					zscan(y)[x] /= d;
 			}
-		} else
-			zout = zscan(y);
-		if (write(fd, (char *)zout, hresolu*sizeof(float))
+		}
+		if (write(fd, (char *)zscan(y), hresolu*sizeof(float))
 				< hresolu*sizeof(float))
 			syserror(fname);
 	}
-	if (donorm)
-		free((char *)zout);
 	close(fd);
 }
 
@@ -1011,6 +1010,7 @@ clearqueue()				/* process queue */
 	float	fbuf[6*(PACKSIZ+1)];
 	register float	*fbp;
 	register int	i;
+	double	vx, vy;
 
 	if (queuesiz == 0)
 		return;
@@ -1045,7 +1045,14 @@ clearqueue()				/* process queue */
 		} else
 			setcolr(pscan(queue[i][1])[queue[i][0]],
 					fbp[0], fbp[1], fbp[2]);
-		zscan(queue[i][1])[queue[i][0]] = fbp[3];
+		if (zisnorm)
+			zscan(queue[i][1])[queue[i][0]] = fbp[3];
+		else {
+			vx = (queue[i][0]+.5)/hresolu + ourview.hoff - .5;
+			vy = (queue[i][1]+.5)/vresolu + ourview.voff - .5;
+			zscan(queue[i][1])[queue[i][0]] = fbp[3] / sqrt(1. +
+					vx*vx*ourview.hn2 + vy*vy*ourview.vn2);
+		}
 		fbp += 4;
 	}
 	queuesiz = 0;
