@@ -17,8 +17,123 @@ static char SCCSid[] = "$SunId$ SGI";
 
 static PACKHEAD	*complist;	/* list of beams to compute */
 static int	complen;	/* length of complist */
-static int	listpos;	/* current list position for next_pack */
-static int	lastin;		/* last ordered position in list */
+static int	listpos;	/* current list position for next_packet */
+static int	lastin = -1;	/* last ordered position in list */
+
+
+int
+beamcmp(b0, b1)			/* comparison for descending compute order */
+register PACKHEAD	*b0, *b1;
+{
+	return(	b1->nr*(bnrays(hdlist[b0->hd],b0->bi)+1) -
+		b0->nr*(bnrays(hdlist[b1->hd],b1->bi)+1) );
+}
+
+
+bundle_set(op, clist, nents)	/* bundle set operation */
+int	op;
+PACKHEAD	*clist;
+int	nents;
+{
+	BEAM	*b;
+	PACKHEAD	*p;
+	register int	i, n;
+
+	switch (op) {
+	case BS_NEW:			/* new computation set */
+		if (complen)
+			free((char *)complist);
+		if (nents <= 0) {
+			complist = NULL;
+			listpos = complen = 0;
+			lastin = -1;
+			return;
+		}
+		complist = (PACKHEAD *)malloc(nents*sizeof(PACKHEAD));
+		if (complist == NULL)
+			goto memerr;
+		bcopy((char *)clist, (char *)complist, nents*sizeof(PACKHEAD));
+		complen = nents;
+		listpos = 0;
+		lastin = -1;		/* flag for initial sort */
+		break;
+	case BS_ADD:			/* add to computation set */
+		if (nents <= 0)
+			return;
+					/* merge any common members */
+		for (i = 0; i < complen; i++)
+			for (n = 0; n < nents; n++)
+				if (clist[n].bi == complist[i].bi &&
+						clist[n].hd == complist[i].hd) {
+					complist[i].nr += clist[n].nr;
+					clist[n].nr = 0;
+					lastin = -1;	/* flag full sort */
+					break;
+				}
+					/* sort updated list */
+		sortcomplist();
+					/* sort new entries */
+		qsort((char *)clist, nents, sizeof(PACKHEAD), beamcmp);
+					/* what can't we satisfy? */
+		for (n = 0; n < nents && clist[n].nr >
+				bnrays(hdlist[clist[n].hd],clist[n].bi); n++)
+			;
+		if (n) {		/* allocate space for merged list */
+			PACKHEAD	*newlist;
+			newlist = (PACKHEAD *)malloc(
+					(complen+n)*sizeof(PACKHEAD) );
+			if (newlist == NULL)
+				goto memerr;
+						/* merge lists */
+			mergeclists(newlist, clist, n, complist, complen);
+			if (complen)
+				free((char *)complist);
+			complist = newlist;
+			complen += n;
+		}
+		listpos = 0;
+		lastin = complen-1;	/* list is now sorted */
+		break;
+	case BS_DEL:			/* delete from computation set */
+		if (nents <= 0)
+			return;
+					/* find each member */
+		for (i = 0; i < complen; i++)
+			for (n = 0; n < nents; n++)
+				if (clist[n].bi == complist[i].bi &&
+						clist[n].hd == complist[i].hd) {
+					if (clist[n].nr == 0 ||
+						clist[n].nr >= complist[i].nr)
+						complist[i].nr = 0;
+					else
+						complist[i].nr -= clist[n].nr;
+					lastin = -1;	/* flag full sort */
+					break;
+				}
+					/* sort updated list */
+		sortcomplist();
+		return;			/* no display */
+	default:
+		error(CONSISTENCY, "bundle_set called with unknown operation");
+	}
+	n = 0;				/* allocate packet holder */
+	for (i = 0; i < nents; i++)
+		if (clist[i].nr > n)
+			n = clist[i].nr;
+	p = (PACKHEAD *)malloc(sizeof(PACKHEAD) + n*sizeof(RAYVAL));
+					/* now, display what we can */
+	for (i = 0; i < nents; i++)
+		if (clist[i].nr > 0 &&
+		(b = hdgetbeam(hdlist[clist[i].hd], clist[i].bi)) != NULL) {
+			bcopy((char *)hdbray(b), (char *)(p+1),
+					(p->nr=b->nrm)*sizeof(RAYVAL));
+			disp_packet((PACKET *)p);
+		}
+	free((char *)p);		/* clean up */
+	return;
+memerr:
+	error(SYSTEM, "out of memory in bundle_set");
+}
 
 
 int
@@ -79,15 +194,6 @@ int	x, y, z, dx, dy, dz;
 		}
 	}
 	return(wres);
-}
-
-
-int
-beamcmp(b0, b1)			/* comparison for descending compute order */
-register PACKHEAD	*b0, *b1;
-{
-	return(	b1->nr*(bnrays(hdlist[b0->hd],b0->bi)+1) -
-		b0->nr*(bnrays(hdlist[b1->hd],b1->bi)+1) );
 }
 
 
@@ -156,8 +262,12 @@ int	n1, n2;
 sortcomplist()			/* fix our list order */
 {
 	PACKHEAD	*list2;
+	register int	i;
+
 				/* empty queue */
 	done_packets(flush_queue());
+	if (complen <= 0)	/* check to see if there even is a list */
+		return;
 	if (lastin < 0)		/* flag to sort entire list */
 		qsort((char *)complist, complen, sizeof(PACKHEAD), beamcmp);
 	else if (listpos) {	/* else sort and merge sublist */
@@ -170,7 +280,25 @@ sortcomplist()			/* fix our list order */
 				complist+listpos, complen-listpos);
 		free((char *)list2);
 	}
-	listpos = 0; lastin = complen-1;
+					/* check for all finished */
+	if (complist[0].nr <= bnrays(hdlist[complist[0].hd],complist[0].bi)) {
+		free((char *)complist);
+		complist = NULL;
+		complen = 0;
+	}
+					/* drop satisfied requests */
+	for (i = complen; i-- && complist[i].nr <=
+			bnrays(hdlist[complist[i].hd],complist[i].bi); )
+		;
+	if (i < complen-1) {
+		list2 = (PACKHEAD *)realloc((char *)complist,
+				(i+1)*sizeof(PACKHEAD));
+		if (list2 != NULL) {
+			complist = list2;
+			complen = i+1;
+		}
+	}
+	listpos = 0; lastin = i;
 }
 
 

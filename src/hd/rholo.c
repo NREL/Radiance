@@ -127,9 +127,9 @@ initrholo()			/* get our holodeck running */
 {
 	extern int	global_packet();
 	register int	i;
-						/* check output device */
-	if (outdev != NULL)
-		open_display(outdev);
+
+	if (outdev != NULL)			/* open output device */
+		disp_open(outdev);
 	else if (ncprocs > 0)			/* else use global ray feed */
 		init_global();
 						/* record end time */
@@ -187,9 +187,10 @@ rholo()				/* holodeck main loop */
 	register PACKET	*p;
 	time_t	t;
 	long	l;
-					/* check display */
-	if (outdev != NULL && !disp_check(idle))
-		return(0);
+
+	if (outdev != NULL)		/* check display */
+		if (!disp_check(idle))
+			return(0);
 					/* display only? */
 	if (ncprocs <= 0)
 		return(1);
@@ -367,9 +368,10 @@ loadholo()			/* start loading a holodeck from fname */
 {
 	FILE	*fp;
 	long	endloc;
-					/* open input file */
-	if ((fp = fopen(hdkfile, "r+")) == NULL) {
-		sprintf(errmsg, "cannot open \"%s\" for appending", hdkfile);
+					/* open holodeck file */
+	if ((fp = fopen(hdkfile, ncprocs>0 ? "r+" : "r")) == NULL) {
+		sprintf(errmsg, "cannot open \"%s\" for %s", hdkfile,
+				ncprocs>0 ? "appending" : "reading");
 		error(SYSTEM, errmsg);
 	}
 					/* load variables from header */
@@ -514,6 +516,8 @@ int	ec;
 {
 	int	status = 0;
 
+	if (outdev != NULL)		/* close display */
+		disp_close();
 	if (hdlist[0] != NULL) {	/* flush holodeck */
 		if (ncprocs > 0) {
 			done_packets(flush_queue());
