@@ -96,7 +96,10 @@ register RAY  *r;
 			for (i = 0; i < 3; i++)		/* perturb direction */
 				p.rdir[i] = r->rdir[i] +
 						2.*(1.-rindex)*r->pert[i];
-			normalize(p.rdir);
+			if (normalize(p.rdir) == 0.0) {
+				objerror(m, WARNING, "bad perturbation");
+				VCOPY(p.rdir, r->rdir);
+			}
 		} else {
 			VCOPY(p.rdir, r->rdir);
 			transtest = 2;
