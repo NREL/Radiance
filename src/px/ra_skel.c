@@ -4,6 +4,8 @@
 static char SCCSid[] = "$SunId$ LBL";
 #endif
 
+/*
+ *  Skeletal 24-bit image conversion program.  Replace "skel"
  *  in this file with a more appropriate image type identifier.
  *
  *  The Makefile entry should look something like this:
