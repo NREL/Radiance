@@ -349,7 +349,9 @@ register int  sn;	/* target source number */
 		nok++;
 					/* check against obstructions */
 		rayclear(&sr);
-		if (!localhit(&sr, &thescene) || sr.ro == source[sn].so)
+		sr.revf = raytrace;
+		rayvalue(&sr);
+		if (bright(sr.rcol) > FTINY)
 			nhit++;
 		if (nhit > 0 && nhit < nok) {
 #ifdef DEBUG
