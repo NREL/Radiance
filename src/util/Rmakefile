@@ -20,7 +20,7 @@ PROGS = findglare xglaresrc glarendx rpiece rad ranimate vwright getinfo vwrays
 all:	$(PROGS)
 
 install:	all objview.csh objpict.csh glare.csh dayfact.csh rlux.csh \
-raddepend.csh trad.wsh objline.csh
+raddepend.csh trad.wsh objline.csh compamb.csh
 	cp $(PROGS) $(INSTDIR)
 	cp objview.csh $(INSTDIR)/objview
 	cp objline.csh $(INSTDIR)/objline
@@ -30,9 +30,11 @@ raddepend.csh trad.wsh objline.csh
 	cp debugcal.csh $(INSTDIR)/debugcal
 	cp rlux.csh $(INSTDIR)/rlux
 	cp raddepend.csh $(INSTDIR)/raddepend
+	cp compamb.csh $(INSTDIR)/compamb
 	chmod 755 $(INSTDIR)/objview $(INSTDIR)/objpict \
 		$(INSTDIR)/glare $(INSTDIR)/dayfact $(INSTDIR)/debugcal \
-		$(INSTDIR)/rlux $(INSTDIR)/raddepend $(INSTDIR)/objline
+		$(INSTDIR)/rlux $(INSTDIR)/raddepend $(INSTDIR)/objline \
+		$(INSTDIR)/compamb
 	csh -f tradinstall.csh $(INSTDIR) $(LIBDIR)/tcl
 
 clean:

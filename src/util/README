@@ -9,6 +9,7 @@ netproc.h	header file for network process routines
 setscan.h	defines for programs using setscan()
 vars.h		header file for loadvars.c routines (used by rad and ranimate)
 Version.c	symbolic link to ../rt/Version.c (current Radiance version)
+compamb.csh	script to compute good ambient value and exposure setting
 findglare.c	find glare sources in a scene or image
 getinfo.c	program to read and manipulate binary file information headers
 glarendx.c	compute Glare Index given by program name or -t option
@@ -26,9 +27,11 @@ x11findwind.c	find an X11 window from its name
 xglaresrc.c	circle glare sources in a displayed image
 dayfact.csh	compute and plot daylight factors on user-specified workplane
 debugcal.csh	C-shell script for debugging .cal files
+glare.csh	interactive script to run findglare, glarendx, xglaresrc
 objpict.csh	script to compute 4-view picture of an object
 objview.csh	script to run rview on an object
-glare.csh	interactive script to run findglare, glarendx, xglaresrc
+raddepend.csh	script to find dependencies in Radiance files
+rlux.csh	script to compute lux values using rtrace
 tradinstall.csh	script called by make to install trad on systems running wish
 trad.wsh	graphical user interface to "rad" based on Tcl/Tk (wish script)
 do_action.tcl	action submenu for trad
