@@ -44,9 +44,8 @@ int  (*addobjnotify[])() = {NULL};	/* new object notifier functions */
 
 main(argc, argv)		/* convert object files to an octree */
 int  argc;
-char  **argv;
+char  *argv[];
 {
-	extern char  *getenv();
 	FVECT  bbmin, bbmax;
 	char  *infile = NULL;
 	int  inpfrozen = 0;
@@ -61,7 +60,6 @@ char  **argv;
 	for (i = 1; i < argc && argv[i][0] == '-'; i++)
 		switch (argv[i][1]) {
 		case '\0':				/* scene from stdin */
-			outflags &= ~IO_FILES;
 			goto breakopt;
 		case 'i':				/* input octree */
 			infile = argv[++i];
