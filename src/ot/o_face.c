@@ -54,7 +54,7 @@ CUBE  *cu;
 				/* get face arguments */
 	f = getface(o);
 	if (f->area == 0.0)		/* empty face */
-		return(0);
+		return(O_MISS);
 					/* compute cube boundaries */
 	for (j = 0; j < 3; j++)
 		cumax[j] = (cumin[j] = cu->cuorg[j]) + cu->cusize;
@@ -64,10 +64,10 @@ CUBE  *cu;
 		if (j = plocate(VERTEX(f,i), cumin, cumax))
 			vloc &= j;
 		else
-			return(1);	/* vertex inside */
+			return(O_HIT);	/* vertex inside */
 
 	if (vloc)			/* all to one side */
-		return(0);
+		return(O_MISS);
 	
 	for (i = 0; i < f->nv; i++) {	/* check edges */
 		if ((j = i + 1) >= f->nv)
@@ -75,7 +75,7 @@ CUBE  *cu;
 		VCOPY(v1, VERTEX(f,i));		/* clip modifies */
 		VCOPY(v2, VERTEX(f,j));		/* the vertices! */
 		if (clip(v1, v2, cumin, cumax))
-			return(1);		/* edge inside */
+			return(O_HIT);		/* edge inside */
 	}
 					/* see if cube cuts plane */
 	for (j = 0; j < 3; j++)
@@ -87,14 +87,14 @@ CUBE  *cu;
 			v2[j] = cumin[j];
 		}
 	if ((d1 = DOT(v1, f->norm) - f->offset) > FTINY)
-		return(0);
+		return(O_MISS);
 	if ((d2 = DOT(v2, f->norm) - f->offset) < -FTINY)
-		return(0);
+		return(O_MISS);
 					/* intersect face */
 	for (j = 0; j < 3; j++)
 		v1[j] = (v1[j]*d2 - v2[j]*d1)/(d2 - d1);
 	if (inface(v1, f))
-		return(1);
+		return(O_HIT);
 	
-	return(0);		/* no intersection */
+	return(O_MISS);		/* no intersection */
 }
