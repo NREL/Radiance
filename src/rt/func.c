@@ -16,8 +16,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 
 typedef struct {
-	double  sca;			/* scalefactor */
 	double  xfm[4][4];		/* transform matrix */
+	double  sca;			/* scalefactor */
 }  XF;
 
 static OBJREC  *fobj;		/* current function object */
@@ -25,11 +25,11 @@ static RAY  *fray;		/* current function ray */
 static XF  fxf;			/* current transformation */
 
 
-setmap(m, r, sca, xfm)		/* set channels for function call */
+setmap(m, r, xfm, sca)		/* set channels for function call */
 OBJREC  *m;
 register RAY  *r;
-double  sca;
 double  xfm[4][4];
+double  sca;
 {
 	extern double  l_noise3(), l_noise3a(), l_noise3b(), l_noise3c();
 	extern double  l_hermite(), l_fnoise3(), l_arg();
@@ -84,7 +84,7 @@ RAY  *r;
 			mxf->sca = -mxf->sca;
 		m->os = (char *)mxf;
 	}
-	setmap(m, r, mxf->sca, mxf->xfm);
+	setmap(m, r, mxf->xfm, mxf->sca);
 	return;
 memerr:
 	error(SYSTEM, "out of memory in setfunc");
