@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1996 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -454,9 +454,9 @@ scan2init()			/* prepare scanline arrays */
 			rad *= (y_r + x_c)/2.0;
 
 		if (thresh > FTINY) {
-			xrad = CHECKRAD*THRESHRAD*rad/x_c + xbrad;
-			yrad = CHECKRAD*THRESHRAD*rad/y_r + ybrad;
 			orad = CHECKRAD*THRESHRAD*rad + 1;
+			xrad = orad/x_c + xbrad;
+			yrad = orad/y_r + ybrad;
 			obarsize = 2*orad + 1;
 		} else {
 			xrad = CHECKRAD*rad/x_c + 1;
@@ -526,7 +526,7 @@ int  r;
 	int  ybot;
 	register int  c;
 					/* average input scanlines */
-	while (nextrow < r+orad && nextrow < nrows) {
+	while (nextrow <= r+orad && nextrow < nrows) {
 		ybot = (long)nextrow*yres/nrows;
 		for (c = 0; c < ncols; c++) {
 			dobox(ctmp, (int)((long)c*xres/ncols),ybot, c,nextrow);
