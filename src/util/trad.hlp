@@ -63,9 +63,9 @@ all over again every time you have a question.
 
 .Trad.Messages
 
-Informative messages, commands executed by rad, and errors 
+Informative messages, commands executed by rad, and errors
 appear in the message window at the bottom of the trad frame.
-Growing the trad window means growing this message window, and 
+Growing the trad window means growing this message window, and
 not much else.
 This is not really necessary, since the window will be grown
 automatically if the message requires it.
@@ -339,7 +339,7 @@ All other variables will be unaffected.
 
 .Scene.Revert
 
-The "Revert" button is a convenient way to revert to the original 
+The "Revert" button is a convenient way to revert to the original
 values in the rad input file.
 Only the variables on the Scene screen will be affected, but any changes
 to these variables since the last save will be lost.
@@ -353,11 +353,11 @@ This zone need not correspond exactly to any interior or exterior
 walls, as it is used primarily to set rendering parameters and
 standard viewpoints.
 
-An interior zone means that standard viewpoints will be selected 
+An interior zone means that standard viewpoints will be selected
 from the inside of this box.
 An exterior zone means that standard viewpoints will be selected
 from the outside of this box.
-The default zone is an exterior one computed from the bounding box 
+The default zone is an exterior one computed from the bounding box
 of the entire scene.
 (Note that this is not usually desirable.)
 
@@ -371,9 +371,9 @@ the rad manual page.
 
 .Zone.Type
 
-There are two types of zones understood by rad, "Interior" and 
+There are two types of zones understood by rad, "Interior" and
 "Exterior".
-An interior zone is indicated when renderings generally take place 
+An interior zone is indicated when renderings generally take place
 inside a specified 3-d box.
 A typical example might be a single room or auditorium.
 An exterior zone is indicated when renderings generally take place
@@ -505,14 +505,14 @@ used for exterior zones and 0.01 for interior zones.
 
 The "Copy" button on the Zone screen takes all values for this
 screen from another rad input file, replacing the current values.
-Specifically, the rad variables "ZONE, DETAIL, INDIRECT, 
+Specifically, the rad variables "ZONE, DETAIL, INDIRECT,
 VARIABILITY and EXPOSURE" will be copied from the named file.
 
 All other variables will be left untouched.
 
 .Zone.Revert
 
-The "Revert" button is a convenient way to revert to the original 
+The "Revert" button is a convenient way to revert to the original
 values in the rad input file.
 Only the variables on the Zone screen will be affected, but any changes
 to these variables since the last save will be lost.
@@ -524,7 +524,7 @@ This screen provides a means of setting the multi-valued
 "view" variable.
 Each view setting is listed by name, or by number if no name has
 been assigned.
-To add a new view, enter a unique name and specify the view 
+To add a new view, enter a unique name and specify the view
 options,
 then press the "Add" or "Set Default" button.
 If a view with the same name already exists, it is unconditionally
@@ -534,7 +534,7 @@ and/or parameters, and press the "Change" button.
 To remove an unwanted view, select it and press the "Delete" button.
 To undo this action, simply press the "Add" button again.
 
-The first view in the list is the default given to rview during 
+The first view in the list is the default given to rview during
 interactive rendering, and is the first view rendered in a batch run.
 To change the default view, select the newly desired view and press
 the "Set Default" button.
@@ -569,7 +569,7 @@ The standard view is "X" is used if no views are specified.
 
 Each view has a unique name, which may be chosen at the user's
 discretion or taken from a list of standard views, described below.
-An invented name should be kept as short as possible, since it is 
+An invented name should be kept as short as possible, since it is
 added to the picture file name along with the standard ".pic" suffix.
 
 The standard views are specified by strings of the form
@@ -582,7 +582,7 @@ means maximum X, lower case "y" means minimum Y and so on.
 The final letter is the view type, where 'v' is perspective (the
 default), 'l' is parallel, 'a' is angular fisheye, and 'h' is
 hemispherical fisheye.
-A perspective view from maximum X, minimum Y would be "Xy" or 
+A perspective view from maximum X, minimum Y would be "Xy" or
 "Xyv".
 A parallel view from maximum Z would be "Zl".
 If "ZONE" is an interior zone, the standard views will
@@ -624,7 +624,7 @@ view options, all of which begin with "-v".
 Just briefly, the "-vt?" option sets the view type, where "?" is
 replaced by one of the letters "v, l, a or h", corresponding to
 perspective, parallel, angular and hemispherical fisheye, respectively.
-The "-vp x y z" option sets the view position (eyepoint), where "x y z" 
+The "-vp x y z" option sets the view position (eyepoint), where "x y z"
 is replaced by the position in 3-space.
 The "-vd xd yd zd" option sets the view direction, where "xd yd zd"
 is a vector pointing in the desired direction.
@@ -633,7 +633,7 @@ the eyepoint from the look-at point.  Vector normalization is
 unnecessary.)
 The "-vh horiz" and "-vv vert" options set the horizontal and
 vertical view sizes, respectively.
-For perspective views, these correspond to full camera angles in 
+For perspective views, these correspond to full camera angles in
 degrees.
 For parallel views (using the "-vtl" option), they correspond to
 image plane size in world coordinates.
@@ -761,7 +761,7 @@ untouched.
 
 .Views.Revert
 
-The "Revert" button is a convenient way to revert to the original 
+The "Revert" button is a convenient way to revert to the original
 values in the rad input file.
 Only the variables on the Views screen will be affected, but any changes
 to these variables since the last save will be lost.
@@ -820,7 +820,7 @@ details.)
 
 .Options.Penumbras
 
-The "Penumbras" setting determines whether or not Radiance will 
+The "Penumbras" setting determines whether or not Radiance will
 make a special effort to generate soft shadows from area light sources.
 Since this is a potentially expensive calculation, penumbras should
 only be switched "On" when they are really needed.
@@ -848,7 +848,7 @@ vary according to the location and characteristics of each zone.
 
 .Options.AmbDelete
 
-The "Delete" button next to the "Ambfile" window on the Options 
+The "Delete" button next to the "Ambfile" window on the Options
 screens allows you to remove the named ambient file.
 This is usually done when a change to one or more rad variables
 casts doubt on the accuracy of the values stored in this file.
@@ -884,7 +884,7 @@ If you wish these reports and errors to be directed to a different
 file, follow the time interval by a space and a file name.
 
 No setting on this variable means do not report rendering progress.
-A zero setting means the same thing, and may be used when a 
+A zero setting means the same thing, and may be used when a
 separate error file is desired but progress reports are not.
 
 .Options.Oconv
@@ -925,7 +925,7 @@ since rad does not have the intelligence to do it for you.
 
 The "render opts" window is used to specify additional options to
 the rview(1) and rpict(1) rendering programs.
-Most of the important parameters are computed by rad, so this 
+Most of the important parameters are computed by rad, so this
 window is usually used to override specific parameters or to give
 additional information, such as which materials to exclude from the
 interreflection calculation.
@@ -978,7 +978,7 @@ foreground.
 The next set of buttons provides for the control of a batch
 rendering process, taking place in the background.
 Finally, the bottom set of buttons allows you to preview what would
-happen during a batch rendering, or (equivalently) make a script of 
+happen during a batch rendering, or (equivalently) make a script of
 UNIX commands for later execution.
 
 When the Action screen is first brought up, the message window
@@ -1053,35 +1053,35 @@ unfortunately.)
 
 .Action.Rview
 
-The "rview" button on the Action screen starts an interactive 
-rendering for the selected view, indicated by the menu button 
+The "rview" button on the Action screen starts an interactive
+rendering for the selected view, indicated by the menu button
 just to the right.
-Other views may be accessed within rview using the "L name" 
-command, and new views can be added with the "V name" 
+Other views may be accessed within rview using the "L name"
+command, and new views can be added with the "V name"
 command.
-(See the rview(1) man page and the "View" topic in the current 
+(See the rview(1) man page and the "View" topic in the current
 help category for more information.)
 
-If the octree is out-of-date, it will be rebuilt before rendering 
+If the octree is out-of-date, it will be rebuilt before rendering
 begins.
 
 .Action.View
 
 The Action screen contains two menus for selecting views.
-The top menu, next to the "rview" button, sets the view to start 
+The top menu, next to the "rview" button, sets the view to start
 with in rview, and is selected from the current view list.
-The second view menu, next to the "Start" button for batch 
+The second view menu, next to the "Start" button for batch
 rendering, selects the view or views to render in batch mode.
-If the special entry "ALL" is selected, then every view in the 
+If the special entry "ALL" is selected, then every view in the
 current list will be rendered if it hasn't been already.
 
-The batch rendering view menu also selects the view or views 
+The batch rendering view menu also selects the view or views
 to use in producing a script during a dry run.
 
 .Action.Start
 
-The "Start" button for batch rendering on the Action screen 
-initiates a rad rendering process in the background using the 
+The "Start" button for batch rendering on the Action screen
+initiates a rad rendering process in the background using the
 selected view or views shown on the menu button to the right.
 
 If any of the rad variables have been changed since the
@@ -1090,40 +1090,40 @@ your changes before starting a background process.
 If you discard these changes, then the batch rendering will be
 conducted using the previously saved values.
 
-Once a background process is going, the "Start" button is 
-disabled, and rendering progress can be monitored by checking 
+Once a background process is going, the "Start" button is
+disabled, and rendering progress can be monitored by checking
 the error file periodically.
-(This file is named by the root of the rad input file followed by 
+(This file is named by the root of the rad input file followed by
 ".err".)
-When a batch process is started or already running, this button 
+When a batch process is started or already running, this button
 will be disabled.
 
-The background process can be killed during this or later 
+The background process can be killed during this or later
 invocations of trad using the "Kill" button.
 
 .Action.Kill
 
-The batch rendering "Kill" button kills the 
+The batch rendering "Kill" button kills the
 background process started earlier with the "Start" button.
-The rad process id is taken from the first line of the error file, 
+The rad process id is taken from the first line of the error file,
 and this process and all its children are killed when the
 button is pressed.
 
-So long as there is an ambient file specified in the Options 
-screen, no data is lost by killing and restarting a batch 
+So long as there is an ambient file specified in the Options
+screen, no data is lost by killing and restarting a batch
 rendering, though some new startup costs will be incurred.
 
-The "Kill" button is disabled if no running batch process is 
+The "Kill" button is disabled if no running batch process is
 detected.
 
 .Action.CheckErr
 
 Pressing the "Check errors" button
-displays the contents of the batch rendering error file, named 
-by the root of the current rad input file followed by the ".err" 
+displays the contents of the batch rendering error file, named
+by the root of the current rad input file followed by the ".err"
 suffix.
-This file will contain the command lines executed by rad so far, 
-and may or may not contain additional progress reports from 
+This file will contain the command lines executed by rad so far,
+and may or may not contain additional progress reports from
 rpict, depending on the initial setting of the "REPORT" variable.
 
 If no error file exists, this button will be disabled.
@@ -1131,11 +1131,11 @@ If no error file exists, this button will be disabled.
 .Action.Script
 
 The dry run "Script" button runs rad with the
-"-n" option so that you may see the commands that would be 
+"-n" option so that you may see the commands that would be
 executed during a batch run without actually executing them.
-If a file is named in the window next to this button, the output 
+If a file is named in the window next to this button, the output
 will simply be written to that file.
-If no file is named, a temporary file is created and an editor 
+If no file is named, a temporary file is created and an editor
 window is opened on it.
 
 Producing a dry run also writes the "Optfile" if one is specified
@@ -1143,43 +1143,43 @@ on the Options screen.
 This may be useful for computing rendering parameters for rtrace(1)
 or rpiece(1).
 
-The view or views are selected by the same menu used for 
+The view or views are selected by the same menu used for
 batch rendering.
-(See the "View" topic under the current help category for more 
+(See the "View" topic under the current help category for more
 information.)
 
 .Action.Edit
 
-The dry run "Edit" button is used to edit the named script file 
+The dry run "Edit" button is used to edit the named script file
 created by pressing the "Script" button.
 If no file is named, this button is ineffective.
 
 .Action.Delete
 
-The "Delete" button removes the named script file, created by the 
+The "Delete" button removes the named script file, created by the
 "Script" button.
-If no file is named, or the named file does not exist, this button has 
+If no file is named, or the named file does not exist, this button has
 no effect.
 
 .Results.Intro
 
 This button selects the trad Results screen.
-This screen permits rendered pictures to be displayed, 
+This screen permits rendered pictures to be displayed,
 converted to other image formats, and printed.
-Only finished pictures may be converted or printed, but 
-incomplete pictures (i.e. aborted renderings or renderings in 
+Only finished pictures may be converted or printed, but
+incomplete pictures (i.e. aborted renderings or renderings in
 progress) may be displayed interactively.
 
 The left-hand window shows a list of completed views, and the
-right-hand window shows views that have been started but not 
+right-hand window shows views that have been started but not
 finished.
-Note that other views may not even be started, thus may not 
+Note that other views may not even be started, thus may not
 appear in either list.
-Also, just because a view appears on the Results screen, it does 
-not mean that view is up-to-date with respect to the Radiance 
+Also, just because a view appears on the Results screen, it does
+not mean that view is up-to-date with respect to the Radiance
 input files.
-(The best way currently to tell which pictures are out-of-date 
-is to press the "Script" button on the Action screen and examine 
+(The best way currently to tell which pictures are out-of-date
+is to press the "Script" button on the Action screen and examine
 the output.)
 
 .Results.Finished
@@ -1212,8 +1212,8 @@ Shift-click also allows views to be added to the selection.
 
 .Results.Rescan
 
-The "Rescan" button on the Results screen is used to update the 
-finished and unfinished view lists, in case one or more pictures 
+The "Rescan" button on the Results screen is used to update the
+finished and unfinished view lists, in case one or more pictures
 has completed since the Results screen was brought up.
 
 .Results.Delete
