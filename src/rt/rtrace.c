@@ -169,7 +169,7 @@ char  *fname;
 		d = normalize(direc);
 		if (d == 0.0) {				/* zero ==> flush */
 			bogusray();
-			if (--nextflush <= 0) {
+			if (--nextflush <= 0 || vcount <= 0) {
 				fflush(stdout);
 				nextflush = hresolu;
 			}
