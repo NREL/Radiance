@@ -102,13 +102,16 @@ char	*dp;
 				} else if (d < -FTINY) {	/* plane -> */
 					if ((t /= d) > lbeg)
 						lbeg = t;
-				} else if (t < 0)		/* outside */
-					goto nextscan;
+				} else if (t < 0) {		/* outside */
+					lend = -1;
+					break;
+				}
 			}
+			if (lbeg >= lend)
+				continue;
 			i = lend + .5;		/* visit cells on this scan */
 			for (gc.i[0] = lbeg + .5; gc.i[0] < i; gc.i[0]++)
 				n += (*vf)(&gc, dp);
-		nextscan:;
 		}
 	}
 	return(n);
