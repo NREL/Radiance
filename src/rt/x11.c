@@ -407,6 +407,8 @@ freepixels()				/* free our pixels */
 	if (ncolors == 0)
 		return;
 	XFreeColors(ourdisplay,ourmap,pixval,ncolors,0L);
+	free((char *)pixval);
+	pixval = NULL;
 	ncolors = 0;
 	if (ourmap != DefaultColormap(ourdisplay,ourscreen))
 		XFreeColormap(ourdisplay, ourmap);
