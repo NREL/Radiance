@@ -431,7 +431,7 @@ o_face(mod, typ, id, fa)		/* print out a polygon */
 char	*mod, *typ, *id;
 FUNARGS	*fa;
 {
-	char	entbuf[512];
+	char	entbuf[2048];
 	register char	*cp;
 	register int	i;
 
