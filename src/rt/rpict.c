@@ -211,7 +211,7 @@ char  *pout, *zout, *prvr;
 	}
 	if (pout != NULL) {
 		sprintf(fbuf, pout, seq);
-		if (!strcmp(prvr, fbuf)) {	/* rename recover file */
+		if (prvr != NULL && !strcmp(prvr, fbuf)) {	/* rename */
 			fbuf2[0] = '\0';
 			if ((cp = rindex(fbuf, '/')) != NULL)
 				strncpy(fbuf2, fbuf, cp-fbuf+1);
