@@ -39,9 +39,9 @@ all:	librt.a $(SPECIAL)
 librt.a:	$(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 	ar rc librt.a $(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ)
 	-ranlib librt.a
+	mv librt.a ../lib/librt.a
 
 install:	all
-	mv librt.a ../lib/librt.a
 	cd $(LIBDIR) ; rm -f $(LIBFILES)
 	cp $(LIBFILES) $(LIBDIR)
 
