@@ -601,20 +601,20 @@ getmono()			/* get monochrome data */
 	register unsigned char	*dp;
 	register int	x, err;
 	int	y;
-	rgbpixel	*inline;
+	rgbpixel	*inl;
 	short	*cerr;
 
-	if ((inline = (rgbpixel *)malloc(xmax*sizeof(rgbpixel))) == NULL
+	if ((inl = (rgbpixel *)malloc(xmax*sizeof(rgbpixel))) == NULL
 			|| (cerr = (short *)calloc(xmax,sizeof(short))) == NULL)
 		quit("out of memory in getmono");
 	dp = ourdata - 1;
 	for (y = 0; y < ymax; y++) {
-		picreadline3(y, inline);
+		picreadline3(y, inl);
 		err = 0;
 		for (x = 0; x < xmax; x++) {
 			if (!(x&7))
 				*++dp = 0;
-			err += rgb_bright(&inline[x]) + cerr[x];
+			err += rgb_bright(&inl[x]) + cerr[x];
 			if (err > 127)
 				err -= 255;
 			else
@@ -622,7 +622,7 @@ getmono()			/* get monochrome data */
 			cerr[x] = err >>= 1;
 		}
 	}
-	free((char *)inline);
+	free((char *)inl);
 	free((char *)cerr);
 }
 
