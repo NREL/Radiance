@@ -28,8 +28,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #define MINSAMP		7
 				/* maximum distance^2 before color reassign */
 #define MAXDST2		12
-				/* maximum frame buffer depth */
-#define FBDEPTH		8
 				/* map a color */
 #define map_col(c,p)	clrmap[p][ colval(c,p)<1. ? \
 				(int)(colval(c,p)*256.) : 255 ]
@@ -47,27 +45,38 @@ static struct tabent {
 	long	sum[3];		/* sum of colors using this entry */
 	long	n;		/* number of colors */
 	short	ent[3];		/* current table value */
-}	clrtab[1<<FBDEPTH];
+}	*clrtab = NULL;
+				/* color cube partition */
+static CNODE	*ctree = NULL;
 				/* our color correction map */
 static BYTE	clrmap[3][256];
 				/* histogram of colors used */
 static unsigned	histo[NRED][NGRN][NBLU];
-				/* initial color cube boundaries */
+				/* initial color cube boundary */
 static int	CLRCUBE[3][2] = {0,NRED,0,NGRN,0,NBLU};
-				/* color cube partition */
-static CNODE	ctree[1<<(FBDEPTH+1)];
 
 
 int
 new_ctab(ncolors)		/* start new color table with max ncolors */
 int	ncolors;
 {
+	int	treesize;
+
 	if (ncolors < 1)
 		return(0);
-	if (ncolors > 1<<FBDEPTH)
-		ncolors = 1<<FBDEPTH;
-				/* clear color table */
-	bzero(clrtab, sizeof(clrtab));
+				/* free old tables */
+	if (clrtab != NULL)
+		free((char *)clrtab);
+	if (ctree != NULL)
+		free((char *)ctree);
+				/* get new tables */
+	for (treesize = 1; treesize < ncolors; treesize <<= 1)
+		;
+	treesize <<= 1;
+	clrtab = (struct tabent *)calloc(ncolors, sizeof(struct tabent));
+	ctree = (CNODE *)malloc(treesize*sizeof(CNODE));
+	if (clrtab == NULL || ctree == NULL)
+		return(0);
 				/* partition color space */
 	cut(ctree, 0, CLRCUBE, 0, ncolors);
 				/* clear histogram */
