@@ -40,6 +40,17 @@ static char SCCSid[] = "$SunId$ SGI";
 #define RAYQLEN		10240		/* max. rays to queue before flush */
 #endif
 
+#ifndef PORTALP
+#define PORTRED		2		/* portal red color */
+#define PORTGRN		-1		/* portal green left alone */
+#define PORTBLU		128		/* portal blue color */
+#define PORTALP		-1		/* don't use alpha channel */
+#endif
+#define isportal(c)	((PORTRED<0 || (c)[0]==PORTRED) && \
+				(PORTGRN<0 || (c)[1]==PORTGRN) && \
+				(PORTBLU<0 || (c)[2]==PORTBLU) && \
+				(PORTALP<0 || (c)[3]==PORTALP))
+
 #ifndef FEQ
 #define FEQ(a,b)	((a)-(b) <= FTINY && (a)-(b) >= -FTINY)
 #endif
@@ -130,9 +141,15 @@ char  *id;
 {
 	extern char	*getenv();
 	static RGBPRIMS	myprims = STDPRIMS;
+#if (PORTALP<0)
 	static int	atlBest[] = {GLX_RGBA, GLX_RED_SIZE,8,
 				GLX_GREEN_SIZE,8, GLX_BLUE_SIZE,8,
 				GLX_DEPTH_SIZE,15, None};
+#else
+	static int	atlBest[] = {GLX_RGBA, GLX_RED_SIZE,8,
+				GLX_GREEN_SIZE,8, GLX_BLUE_SIZE,8,
+				GLX_ALPHA_SIZE,2, GLX_DEPTH_SIZE,15, None};
+#endif
 	char	*ev;
 	double	gamval = GAMMA;
 	RGBPRIMP	dpri = stdprims;
@@ -429,17 +446,21 @@ dev_flush()			/* flush output as appropriate */
 	if (mapped && isperspective > 0) {
 #ifdef STEREO
 		pushright();			/* draw right eye */
-		gmDrawGeom(0);
-#ifdef DOBJ
-		dobj_render();
-#endif
-		checkglerr("rendering right eye");
-		popright();			/* draw left eye */
-#endif
-		ndrawn = gmDrawGeom(1);
+		ndrawn = gmDrawGeom();
 #ifdef DOBJ
 		ndrawn += dobj_render();
 #endif
+		if (ndrawn)
+			gmDrawPortals(PORTRED, PORTGRN, PORTBLU, PORTALP);
+		checkglerr("rendering right eye");
+		popright();			/* draw left eye */
+#endif
+		ndrawn = gmDrawGeom();
+#ifdef DOBJ
+		ndrawn += dobj_render();
+#endif
+		if (ndrawn)
+			gmDrawPortals(PORTRED, PORTGRN, PORTBLU, PORTALP);
 		checkglerr("rendering base view");
 	}
 	if (mapped && viewsteady) {
@@ -484,9 +505,9 @@ static
 xferdepth()			/* load and clear depth buffer */
 {
 	register GLfloat	*dbp;
-	register GLubyte	*abuf;
+	register GLubyte	*cbuf;
 
-	if (depthbuffer == NULL) {
+	if (depthbuffer == NULL) {	/* allocate private depth buffer */
 #ifdef STEREO
 		depthright = (GLfloat *)malloc(
 				odev.hres*odev.vres*sizeof(GLfloat));
@@ -496,36 +517,43 @@ xferdepth()			/* load and clear depth buffer */
 		if (depthbuffer == NULL)
 			error(SYSTEM, "out of memory in xferdepth");
 	}
+				/* allocate alpha buffer for portals */
+	if (gmPortals)
+		cbuf = (GLubyte *)malloc(odev.hres*odev.vres*
+							(4*sizeof(GLubyte)));
+	else
+		cbuf = NULL;
 #ifdef STEREO
 	setstereobuf(STEREO_BUFFER_RIGHT);
 	glReadPixels(0, 0, odev.hres, odev.vres,
 			GL_DEPTH_COMPONENT, GL_FLOAT, depthright);
-	setstereobuf(STEREO_BUFFER_LEFT);
+	if (cbuf != NULL)
+		glReadPixels(0, 0, odev.hres, odev.vres,
+				GL_RGBA, GL_UNSIGNED_BYTE, cbuf);
 	for (dbp = depthright + odev.hres*odev.vres; dbp-- > depthright; )
-		*dbp = mapdepth(*dbp);
-	odDepthMap(1, depthright);
+		if (cbuf != NULL && isportal(cbuf+4*(dbp-depthright)))
+			*dbp = FHUGE;
+		else
+			*dbp = mapdepth(*dbp);
 	glClear(GL_DEPTH_BUFFER_BIT);
+	setstereobuf(STEREO_BUFFER_LEFT);
+	odDepthMap(1, depthright);
 #endif
 				/* read back depth buffer */
 	glReadPixels(0, 0, odev.hres, odev.vres,
 			GL_DEPTH_COMPONENT, GL_FLOAT, depthbuffer);
-				/* read alpha buffer for portals */
-	if (gmPortals)
-		abuf = (GLubyte *)malloc(odev.hres*odev.vres*sizeof(GLubyte));
-	else
-		abuf = NULL;
-	if (abuf != NULL)
+	if (cbuf != NULL)
 		glReadPixels(0, 0, odev.hres, odev.vres,
-				GL_ALPHA, GL_UNSIGNED_BYTE, abuf);
+				GL_RGBA, GL_UNSIGNED_BYTE, cbuf);
 	for (dbp = depthbuffer + odev.hres*odev.vres; dbp-- > depthbuffer; )
-		if (abuf != NULL && abuf[dbp-depthbuffer])
+		if (cbuf != NULL && isportal(cbuf+4*(dbp-depthbuffer)))
 			*dbp = FHUGE;
 		else
 			*dbp = mapdepth(*dbp);
+	glClear(GL_DEPTH_BUFFER_BIT);		/* clear system depth buffer */
+	if (cbuf != NULL)
+		free((char *)cbuf);		/* free our color buffer */
 	odDepthMap(0, depthbuffer);		/* transfer depth data */
-	glClear(GL_DEPTH_BUFFER_BIT);		/* clear system buffer */
-	if (abuf != NULL)
-		free((char *)abuf);		/* free alpha buffer */
 }
 
 
@@ -551,7 +579,7 @@ int	dx, dy;
 FVECT	direc;
 {
 	GLfloat	gldepth;
-	GLubyte	glalpha;
+	GLubyte	glcolor[4];
 	double	dist;
 
 	if (dx<0 | dx>=odev.hres | dy<0 | dy>=odev.vres)
@@ -561,12 +589,13 @@ FVECT	direc;
 	else {
 		glReadPixels(dx,dy, 1,1, GL_DEPTH_COMPONENT,
 				GL_FLOAT, &gldepth);
-		if (gmPortals)
-			glReadPixels(dx,dy, 1,1, GL_ALPHA,
-				GL_UNSIGNED_BYTE, &glalpha);
-		else
-			glalpha = 0;
-		dist = glalpha ? FHUGE : mapdepth(gldepth);
+		if (gmPortals) {
+			glReadPixels(dx,dy, 1,1, GL_RGBA,
+					GL_UNSIGNED_BYTE, glcolor);
+			if (isportal(glcolor))
+				return(FHUGE);
+		}
+		dist = mapdepth(gldepth);
 	}
 	if (dist >= .99*FHUGE)
 		return(FHUGE);
@@ -795,17 +824,21 @@ XButtonPressedEvent	*ebut;
 #ifdef STEREO
 		pushright();
 		draw_grids(1);
-		gmDrawGeom(0);
+		ndrawn = gmDrawGeom();
 #ifdef DOBJ
-		dobj_render();
+		ndrawn += dobj_render();
 #endif
+		if (ndrawn)
+			gmDrawPortals(PORTRED, PORTGRN, PORTBLU, PORTALP);
 		popright();
 #endif
 					/* redraw octrees */
-		ndrawn = gmDrawGeom(1);
+		ndrawn = gmDrawGeom();
 #ifdef DOBJ
 		ndrawn += dobj_render();	/* redraw objects */
 #endif
+		if (ndrawn)
+			gmDrawPortals(PORTRED, PORTGRN, PORTBLU, PORTALP);
 		glFlush();
 		if (!ndrawn) {
 			sleep(1);	/* for reasonable interaction */
