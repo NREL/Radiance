@@ -98,8 +98,7 @@ sun:	$(DEVDIR)/sun $(DEVDIR)/sun.com
 
 x10:	$(DEVDIR)/x10
 
-aed:
-	@echo
+aed:	$(DEVDIR)/aed
 
 clean:
 	rm -f $(PROGS) *.o core
@@ -134,6 +133,10 @@ $(DEVDIR)/x10:	x10.o xtwind.o colortab.o devmain.o editline.o
 	$(CC) $(CFLAGS) -s -o $(DEVDIR)/x10 x10.o xtwind.o devmain.o \
 colortab.o editline.o -lX $(LIBS)
 
+$(DEVDIR)/aed:	aed.o colortab.o tty.o devmain.o editline.o
+	$(CC) $(CFLAGS) -s -o $(DEVDIR)/aed aed.o colortab.o \
+devmain.o tty.o editline.o $(LIBS)
+
 #
 # Special compiles:
 #
@@ -166,6 +169,9 @@ sundev.o:	sundev.c
 
 x10.o:	x10.c
 	$(CC) $(CFLAGS) -Dx_init=dinit -c x10.c
+
+aed.o:	aed.c
+	$(CC) $(CFLAGS) -Daed_init=dinit -c aed.c
 
 ambient.o:	ambient.c
 	$(CC) $(CFLAGS) -DAMBFLUSH=16 -c ambient.c
