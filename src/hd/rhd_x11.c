@@ -49,13 +49,9 @@ static unsigned long  *pixval = NULL;	/* allocated pixels */
 static unsigned long  ourblack=0, ourwhite=1;
 
 static Display  *ourdisplay = NULL;	/* our display */
-
 static XVisualInfo  ourvinfo;		/* our visual information */
-
 static Window  gwind = 0;		/* our graphics window */
-
 static GC  ourgc = 0;			/* our graphics context for drawing */
-
 static Colormap ourmap = 0;		/* our color map */
 
 static double	pwidth, pheight;	/* pixel dimensions (mm) */
@@ -380,6 +376,58 @@ getevent()			/* get next event */
 
 
 static
+ilclip(dp, wp)			/* clip world coordinates to device */
+int	dp[2][2];
+FVECT	wp[2];
+{
+	static FVECT	vmin = {0.,0.,0.}, vmax = {1.,1.,FHUGE};
+	FVECT	ip[2];
+				/* not exactly right, but who cares? */
+	viewloc(ip[0], &odev.v, wp[0]);
+	viewloc(ip[1], &odev.v, wp[1]);
+	if (!clip(ip[0], ip[1], vmin, vmax))
+		return(0);
+	dp[0][0] = ip[0][0]*odev.hres;
+	dp[0][1] = ip[0][1]*odev.vres;
+	dp[1][0] = ip[1][0]*odev.hres;
+	dp[1][1] = ip[1][1]*odev.vres;
+	return(1);
+}
+
+
+static
+draw3dline(wp)			/* draw 3d line in world coordinates */
+FVECT	wp[2];
+{
+	int	dp[2][2];
+
+	if (!ilclip(dp, wp))
+		return;
+	XDrawLine(ourdisplay, gwind, ourgc,
+			dp[0][0], odev.vres-1 - dp[0][1],
+			dp[1][0], odev.vres-1 - dp[1][1]);
+}
+
+
+static
+draw_grids()			/* draw holodeck section grids */
+{
+	static BYTE	gridrgb[3] = {0x0, 0xff, 0xff};
+	unsigned long  pixel;
+
+	if (!mapped || odev.v.type != VT_PER)
+		return;
+	if (ncolors > 0)
+		pixel = pixval[get_pixel(gridrgb, xnewcolr)];
+	else
+		pixel = true_pixel(gridrgb);
+	XSetForeground(ourdisplay, ourgc, pixel);
+					/* draw each grid line */
+	gridlines(draw3dline);
+}
+
+
+static
 moveview(dx, dy, move)		/* move our view */
 int	dx, dy, move;
 {
@@ -432,27 +480,30 @@ XButtonPressedEvent	*ebut;
 	unsigned int	statemask;
 
 	qtMinNodesiz = 16;		/* for quicker update */
+	XNoOp(ourdisplay);
 
-	do {
+	while (!XCheckMaskEvent(ourdisplay,
+			ButtonReleaseMask, levptr(XEvent))) {
+
 		if (!XQueryPointer(ourdisplay, gwind, &rootw, &childw,
 				&rootx, &rooty, &wx, &wy, &statemask))
 			break;		/* on another screen */
 
-		if (!moveview(wx, odev.vres-1-wy, MOVDIR(whichbutton)))
+		if (!moveview(wx, odev.vres-1-wy, MOVDIR(whichbutton))) {
 			sleep(1);
-		else
-			qtUpdate();
-
-	} while (!XCheckMaskEvent(ourdisplay,
-			ButtonReleaseMask, levptr(XEvent)));
-
+			continue;
+		}
+		XClearWindow(ourdisplay, gwind);
+		qtUpdate();
+		draw_grids();
+	}
 	if (!(inpresflags & DEV_NEWVIEW)) {	/* do final motion */
 		whichbutton = levptr(XButtonReleasedEvent)->button;
 		wx = levptr(XButtonReleasedEvent)->x;
 		wy = levptr(XButtonReleasedEvent)->y;
 		moveview(wx, odev.vres-1-wy, MOVDIR(whichbutton));
-		dev_flush();
 	}
+	dev_flush();
 
 	qtMinNodesiz = oldnodesiz;	/* restore quadtree resolution */
 }
@@ -498,6 +549,7 @@ register XKeyPressedEvent  *ekey;
 		if (inpresflags & DEV_REDRAW)
 			return;
 		XClearWindow(ourdisplay, gwind);
+		draw_grids();
 		XFlush(ourdisplay);
 		qtCompost(100);			/* unload the old tree */
 		if (ncolors > 0)

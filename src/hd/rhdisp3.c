@@ -271,3 +271,39 @@ VIEW	*vp;
 memerr:
 	error(SYSTEM, "out of memory in getviewcells");
 }
+
+
+gridlines(f)			/* run through holodeck section grid lines */
+int	(*f)();
+{
+	register int	hd, w, i;
+	int	g0, g1;
+	FVECT	wp[2];
+	double	d;
+					/* do each wall on each section */
+	for (hd = 0; hdlist[hd] != NULL; hd++)
+		for (w = 0; w < 6; w++) {
+			g0 = ((w>>1)+1)%3;
+			g1 = ((w>>1)+2)%3;
+			for (i = hdlist[hd]->grid[g0]; i--; ) {	/* g0 lines */
+				d = (double)i/hdlist[hd]->grid[g0];
+				VSUM(wp[0], hdlist[hd]->orig,
+						hdlist[hd]->xv[g0], d);
+				if (w & 1)
+				    VSUM(wp[0], wp[0],
+						hdlist[hd]->xv[w>>1], 1.);
+				VSUM(wp[1], wp[0], hdlist[hd]->xv[g1], 1.);
+				(*f)(wp);
+			}
+			for (i = hdlist[hd]->grid[g1]; i--; ) {	/* g1 lines */
+				d = (double)i/hdlist[hd]->grid[g1];
+				VSUM(wp[0], hdlist[hd]->orig,
+						hdlist[hd]->xv[g1], d);
+				if (w & 1)
+				    VSUM(wp[0], wp[0],
+						hdlist[hd]->xv[w>>1], 1.);
+				VSUM(wp[1], wp[0], hdlist[hd]->xv[g0], 1.);
+				(*f)(wp);
+			}
+		}
+}
