@@ -125,7 +125,6 @@ pfhold()		/* holding pattern for idle rendering process */
 	inpname[0] = '\0';
 	unlink(outpname);
 	outpname[0] = '\0';
-	clean_slate();		/* reset time and ray counters */
 	return;
 createrr:
 	error(SYSTEM, "cannot create named pipes in pfhold");

@@ -66,6 +66,8 @@ int  (*addobjnotify[])() = {ambnotify, NULL};
 CUBE  thescene;				/* our scene */
 OBJECT	nsceneobjs;			/* number of objects in our scene */
 
+extern long  raynum, nrays;		/* ray counts */
+
 extern int  imm_irrad;			/* calculate immediate irradiance? */
 
 extern int  ralrm;			/* seconds between reports */
@@ -574,6 +576,7 @@ char  *argv[];
 			while ((rval=fork()) == 0) {	/* keep on forkin' */
 				pflock(1);
 				pfhold();
+				tstart = time(0);
 			}
 			if (rval < 0)
 				error(SYSTEM, "cannot fork child for persist function");
@@ -608,7 +611,9 @@ runagain:
 	}
 	if (persist) {			/* wait for a signal then go again */
 		pfhold();
-		dupheader();
+		tstart = time(0);		/* reinitialize counters */
+		raynum = nrays = 0;
+		dupheader();			/* reproduce header */
 		goto runagain;
 	}
 #endif
