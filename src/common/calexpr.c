@@ -136,11 +136,11 @@ register EPNODE  *epar;
 	case VAR:
 	    varfree(epar->v.ln);
 	    break;
-#endif
 	    
 	case SYM:
 	    freestr(epar->v.name);
 	    break;
+#endif
 
 	case NUM:
 	case CHAN:
@@ -437,6 +437,7 @@ EPNODE  *ekid;
 }
 
 
+#if  defined(VARIABLE) || defined(FUNCTION)
 char *
 getname()			/* scan an identifier */
 {
@@ -452,6 +453,7 @@ getname()			/* scan an identifier */
 
     return(str);
 }
+#endif
 
 
 int
