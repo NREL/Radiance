@@ -36,6 +36,37 @@ if ( $?blend ) then
 else
 	mknod $td/hf p
 endif
+cat > $td/coef.fmt << '_EOF_'
+  rcx=${   $1   };   rcy=${   $2   };   rsx=${   $3   };   rsy=${   $4   };
+rcxcy=${   $5   }; rcxsy=${   $6   }; rsxcy=${   $7   }; rsxsy=${   $8   };
+  gcx=${   $9   };   gcy=${  $10   };   gsx=${  $11   };   gsy=${  $12   };
+gcxcy=${  $13   }; gcxsy=${  $14   }; gsxcy=${  $15   }; gsxsy=${  $16   };
+  bcx=${  $17   };   bcy=${  $18   };   bsx=${  $19   };   bsy=${  $20   };
+bcxcy=${  $21   }; bcxsy=${  $22   }; bsxcy=${  $23   }; bsxsy=${  $24   };
+'_EOF_'
+cat > $td/coef.cal << '_EOF_'
+$1=$3*2*cx; $2=$3*2*cy; $3=$3*2*sx; $4=$3*2*sy;
+$5=$3*4*cx*cy; $6=$3*4*cx*sy; $7=$3*4*sx*cy; $8=$3*4*sx*sy;
+$9=$4*2*cx; $10=$4*2*cy; $11=$4*2*sx; $12=$4*2*sy;
+$13=$4*4*cx*cy; $14=$4*4*cx*sy; $15=$4*4*sx*cy; $16=$4*4*sx*sy;
+$17=$5*2*cx; $18=$5*2*cy; $19=$5*2*sx; $20=$5*2*sy;
+$21=$5*4*cx*cy; $22=$5*4*cx*sy; $23=$5*4*sx*cy; $24=$5*4*sx*sy;
+cx=cos(wx); cy=cos(wy);
+sx=sin(wx); sy=sin(wy);
+wx=2*PI*($1+.5)/xres; wy=2*PI*($2+.5)/yres;
+'_EOF_'
+cat > $td/fsub.cal << '_EOF_'
+ro=ri(1)-rcx*cx-rcy*cy-rsx*sx-rsy*sy
+	-rcxcy*cx*cy-rcxsy*cx*sy-rsxcy*sx*cy-rsxsy*sx*sy;
+go=gi(1)-gcx*cx-gcy*cy-gsx*sx-gsy*sy
+	-gcxcy*cx*cy-gcxsy*cx*sy-gsxcy*sx*cy-gsxsy*sx*sy;
+bo=bi(1)-bcx*cx-bcy*cy-bsx*sx-bsy*sy
+	-bcxcy*cx*cy-bcxsy*cx*sy-bsxcy*sx*cy-bsxsy*sx*sy;
+cx=cos(wx); cy=cos(wy);
+sx=sin(wx); sy=sin(wy);
+wx=2*PI*(x+.5)/xres; wy=2*PI*(y+.5)/yres;
+PI=3.14159265358979323846;
+'_EOF_'
 foreach f ($*)
 	if ( $?verb ) then
 		echo $f\:
@@ -54,24 +85,19 @@ _EOF_
 	if ( $?verb ) then
 		echo computing Fourier coefficients...
 	endif
-	set coef=`pfilt -1 -x 32 -y 32 $td/pf | pvalue -h -b | rcalc -e '$1=2*$3*cos(wx);$2=2*$3*cos(wy);$3=2*$3*sin(wx);$4=2*$3*sin(wy);$5=4*$3*cos(wx)*cos(wy);$6=4*$3*cos(wx)*sin(wy);$7=4*$3*sin(wx)*cos(wy);$8=4*$3*sin(wx)*sin(wy);' -e 'wx=2*PI/32*$1;wy=2*PI/32*$2' | total -m`
+	pfilt -1 -x 32 -y 32 $td/pf | pvalue -h \
+		| rcalc -f $td/coef.cal -e 'xres=32;yres=32' \
+		| total -m | rcalc -o $td/coef.fmt \
+		> $td/coef
 	if ( $?verb ) then
-		echo "cosx cosy sinx siny"
-		echo $coef[1-4]
-		echo "cosx*cosy cosx*siny sinx*cosy sinx*siny"
-		echo $coef[5-8]
+		cat $td/coef
 		echo removing low frequencies...
 	endif
 	if ( ! $?blend ) then
 		( getinfo - < $td/hf >> $f & ) > /dev/null
 	endif
-	pcomb -e 'ro=f*ri(1);go=f*gi(1);bo=f*bi(1);f=(i-fc-fs-f0-f1)/i' \
-		-e 'i=.263*ri(1)+.655*gi(1)+.082*bi(1)' \
-		-e "fc=$coef[1]*cos(wx)+$coef[2]*cos(wy)" \
-		-e "fs=$coef[3]*sin(wx)+$coef[4]*sin(wy)" \
-		-e "f0=$coef[5]*cos(wx)*cos(wy)+$coef[6]*cos(wx)*sin(wy)" \
-		-e "f1=$coef[7]*sin(wx)*cos(wy)+$coef[8]*sin(wx)*sin(wy)" \
-		-e "wx=2*3.1416/$resolu[1]*x;wy=2*3.1416/$resolu[2]*y" \
+	pcomb -f $td/fsub.cal -f $td/coef \
+		-e "xres=$resolu[1];yres=$resolu[2]" \
 		$td/pf > $td/hf
 	if ( $?blend ) then
 		if ( $?verb ) then
