@@ -1,4 +1,4 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1997 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -77,6 +77,7 @@ int  parent = 0;			/* number of children, -1 if child */
 int  sequential = 0;			/* display images in sequence */
 
 char  *tout = "od";			/* output of 't' command */
+int  tinterv = 0;			/* interval between mouse reports */
 
 VIEW  ourview = STDVIEW;		/* image view parameters */
 int  gotview = 0;			/* got parameters from file */
@@ -168,6 +169,9 @@ char  *argv[];
 			case 'o':			/* 't' output */
 				tout = argv[i]+2;
 				break;
+			case 't':			/* msec interval */
+				tinterv = atoi(argv[++i]);
+				break;
 			case 'e':			/* exposure comp. */
 				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
 					goto userr;
@@ -228,7 +232,7 @@ char  *argv[];
 		getevent();		/* main loop */
 userr:
 	fprintf(stderr,
-"Usage: %s [-di disp][[-ge] spec][-b][-m][-d][-f][-c nclrs][-e +/-stops][-g gamcor][-s] pic ..\n",
+"Usage: %s [-di disp][[-ge] spec][-b][-m][-d][-f][-c nclrs][-e +/-stops][-g gamcor][-s][-ospec][-t intvl] pic ..\n",
 			progname);
 	exit(1);
 }
@@ -586,10 +590,18 @@ getevent()				/* process the next event */
 	case ButtonPress:
 		if (xev.xbutton.state & (ShiftMask|ControlMask))
 			moveimage(&xev.xbutton);
-		else if (xev.xbutton.button == Button2)
-			traceray(xev.xbutton.x, xev.xbutton.y);
 		else
-			getbox(&xev.xbutton);
+			switch (xev.xbutton.button) {
+			case Button1:
+				getbox(&xev.xbutton);
+				break;
+			case Button2:
+				traceray(xev.xbutton.x, xev.xbutton.y);
+				break;
+			case Button3:
+				trackrays(&xev.xbutton);
+				break;
+			}
 		break;
 	case ClientMessage:
 		if ((xev.xclient.message_type == wmProtocolsAtom) &&
@@ -820,6 +832,25 @@ XButtonPressedEvent  *ebut;
 		box.ymin = ebut->y;
 	} else {
 		box.ysiz = ebut->y - box.ymin + 1;
+	}
+}
+
+
+trackrays(ebut)				/* trace rays as mouse moves */
+XButtonPressedEvent  *ebut;
+{
+	XEvent	e;
+	unsigned long	lastrept;
+
+	traceray(ebut->x, ebut->y);
+	lastrept = ebut->time;
+	XMaskEvent(thedisplay, ButtonReleaseMask|ButtonMotionMask, &e);
+	while (e.type == MotionNotify) {
+		if (e.xmotion.time >= lastrept + tinterv) {
+			traceray(e.xmotion.x, e.xmotion.y);
+			lastrept = e.xmotion.time;
+		}
+		XMaskEvent(thedisplay,ButtonReleaseMask|ButtonMotionMask,&e);
 	}
 }
 
