@@ -1,7 +1,7 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1999 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -674,7 +674,6 @@ register FVECT	pos;
 {
 	FVECT	pt, tdir, odir;
 	double	d;
-	register int	i;
 	
 	if (pos[2] <= 0)		/* empty pixel */
 		return(0);
@@ -719,15 +718,18 @@ register FVECT	pos;
 		return(0);
 	if (!averaging)
 		return(1);
-	if (ourview.type == VT_PAR)		/* compute our direction */
-		VCOPY(odir, ourview.vdir);
-	else
-		for (i = 0; i < 3; i++)
-			odir[i] = (pt[i] - ourview.vp[i])/pos[2];
-	d = DOT(odir,tdir);			/* compute pixel weight */
-	if (d >= 1.-1./MAXWT/MAXWT)
+						/* compute pixel weight */
+	if (ourview.type == VT_PAR) {
+		d = DOT(ourview.vdir,tdir);
+		d = 1. - d*d;
+	} else {
+		VSUB(odir, pt, ourview.vp);
+		d = DOT(odir,tdir);
+		d = 1. - d*d/DOT(odir,odir);
+	}
+	if (d <= 1./MAXWT/MAXWT)
 		return(MAXWT);		/* clip to maximum weight */
-	return(1./sqrt(1.-d));
+	return(1./sqrt(d));
 }
 
 
