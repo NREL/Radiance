@@ -67,7 +67,7 @@ char	*argv[];
 		exit(1);
 	}
 					/* add new header info. */
-	printf("%s\n\n", progname);
+	printf("%s%s\n\n", progname, correctorder?" -c":"");
 					/* get picture size */
 	if ((order = fgetresolu(&xres, &yres, fin)) < 0) {
 		fprintf(stderr, "%s: bad picture size\n", progname);
