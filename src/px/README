@@ -65,4 +65,5 @@ xraster.c	routines to handle images for X10
 xshowtrace.c	display a picture under X11 and watch the rays get traced
 falsecolor.csh 	C-shell script to produce false color pictures
 normpat.csh	C-shell script to normalize pictures for tiling patterns
+pdfview.csh	post-process picture and depth map to simulate depth of field
 libtiff/	TIFF image library
