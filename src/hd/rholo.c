@@ -62,7 +62,7 @@ char	*argv[];
 	int	force = 0;
 						/* mark start time */
 	starttime = time(NULL);
-	initurand(10240);			/* initialize urand */
+	initurand(16384);			/* initialize urand */
 	progname = argv[0];			/* get arguments */
 	for (i = 1; i < argc && argv[i][0] == '-'; i++)
 		switch (argv[i][1]) {
