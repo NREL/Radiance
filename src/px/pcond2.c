@@ -62,14 +62,15 @@ nextscan()				/* read and condition next scanline */
 #endif
 		return(NULL);
 	}
-	if (freadscan(scanbuf, scanlen(&inpres), infp) < 0) {
+	if (what2do&DO_ACUITY)
+		acuscan(scanbuf, nread);
+	else if (freadscan(scanbuf, scanlen(&inpres), infp) < 0) {
 		fprintf(stderr, "%s: %s: scanline read error\n",
 				progname, infn);
 		exit(1);
 	}
-	nread++;
 	if (what2do&DO_VEIL)			/* add veiling */
-		addveil(scanbuf, nread-1);
+		addveil(scanbuf, nread);
 	if (what2do&DO_COLOR)			/* scotopic color loss */
 		scotscan(scanbuf, scanlen(&inpres));
 	if (what2do&DO_LINEAR)			/* map luminances */
@@ -80,6 +81,7 @@ nextscan()				/* read and condition next scanline */
 		mbscan(scanbuf, scanlen(&inpres), &mbcond);
 	else if (lumf == cielum | inprims != outprims)
 		matscan(scanbuf, scanlen(&inpres), mbcond.cmat);
+	nread++;
 	return(scanbuf);
 }
 
@@ -94,6 +96,16 @@ firstscan()				/* return first processed scanline */
 			comprgb2rgbmat(mbcond.cmat, inprims, outprims);
 		else
 			compxyz2rgbmat(mbcond.cmat, outprims);
+	if (what2do&DO_ACUITY) {
+#ifdef DEBUG
+		fprintf(stderr, "%s: initializing acuity sampling...",
+				progname);
+#endif
+		initacuity();
+#ifdef DEBUG
+		fprintf(stderr, "done\n");
+#endif
+	}
 	scanbuf = (COLOR *)malloc(scanlen(&inpres)*sizeof(COLOR));
 	if (scanbuf == NULL)
 		syserror("malloc");

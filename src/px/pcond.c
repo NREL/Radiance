@@ -390,13 +390,11 @@ check2do()		/* check histogram to see what isn't worth doing */
 			break;
 	b = (i+.5)*(bwmax-bwmin)/HISTRES + bwmin;
 	l = Lb(b);
-#if 0
 					/* determine if acuity adj. useful */
 	if (what2do&DO_ACUITY &&
 			hacuity(l) >= (inpres.xr/sqrt(ourview.hn2) +
 			inpres.yr/sqrt(ourview.vn2))/(2.*180./PI*2.))
 		what2do &= ~DO_ACUITY;
-#endif
 					/* color sensitivity loss? */
 	if (l >= 6.0)
 		what2do &= ~DO_COLOR;

@@ -10,6 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "pcond.h"
 
+/************** VEILING STUFF *****************/
 
 #define	VADAPT		0.08		/* fraction of adaptation from veil */
 
@@ -137,4 +138,237 @@ int	y;
 					(1.-dx)*lv + dx*uv;
 		}
 	}
+}
+
+
+/****************** ACUITY STUFF *******************/
+
+typedef struct scanbar {
+	short	sampr;		/* sample area size (power of 2) */
+	short	nscans;		/* number of scanlines in this bar */
+	int	len;		/* individual scanline length */
+	struct scanbar	*next;	/* next higher resolution scanbar */
+	int	nread;		/* number of scanlines loaded */
+			/* followed by the scanline data */
+} SCANBAR;
+
+#define bscan(sb,y)	((COLOR *)((sb)+1)+((y)%(sb)->nscans)*(sb)->len)
+
+SCANBAR	*rootbar;		/* root scan bar (lowest resolution) */
+
+float	*inpacuD;		/* input acuity data (cycles/degree) */
+
+#define tsampr(x,y)	inpacuD[(y)*fvxr+(x)]
+
+
+double
+hacuity(La)			/* return visual acuity in cycles/degree */
+double	La;
+{				/* data due to S. Shaler (we should fit it!) */
+#define NPOINTS	20
+	static float	l10lum[NPOINTS] = {
+		-3.10503,-2.66403,-2.37703,-2.09303,-1.64403,-1.35803,
+		-1.07403,-0.67203,-0.38503,-0.10103,0.29397,0.58097,0.86497,
+		1.25697,1.54397,1.82797,2.27597,2.56297,2.84697,3.24897
+	};
+	static float	resfreq[NPOINTS] = {
+		2.09,3.28,3.79,4.39,6.11,8.83,10.94,18.66,23.88,31.05,37.42,
+		37.68,41.60,43.16,45.30,47.00,48.43,48.32,51.06,51.09
+	};
+	double	l10La;
+	register int	i;
+					/* interpolate/extrapolate data */
+	l10La = log10(La);
+	for (i = 0; i < NPOINTS-2 && l10lum[i+1] <= l10La; i++)
+		;
+	return( ( (l10lum[i+1] - l10La)*resfreq[i] +
+			(l10La - l10lum[i])*resfreq[i+1] ) /
+			(l10lum[i+1] - l10lum[i]) );
+#undef NPOINTS
+}
+
+
+COLOR *
+getascan(sb, y)			/* find/read scanline y for scanbar sb */
+register SCANBAR	*sb;
+int	y;
+{
+	register COLOR	*sl0, *sl1, *mysl;
+	register int	i;
+
+	if (y < sb->nread - sb->nscans) {
+		fprintf(stderr, "%s: internal - cannot backspace in getascan\n",
+				progname);
+		exit(1);
+	}
+	for ( ; y >= sb->nread; sb->nread++) {		/* read as necessary */
+		mysl = bscan(sb, sb->nread);
+		if (sb->sampr == 1) {
+			if (freadscan(mysl, sb->len, infp) < 0) {
+				fprintf(stderr, "%s: %s: scanline read error\n",
+						progname, infn);
+				exit(1);
+			}
+		} else {
+			sl0 = getascan(sb->next, 2*y);
+			sl1 = getascan(sb->next, 2*y+1);
+			for (i = 0; i < sb->len; i++) {
+				copycolor(mysl[i], sl0[2*i]);
+				addcolor(mysl[i], sl0[2*i+1]);
+				addcolor(mysl[i], sl1[2*i]);
+				addcolor(mysl[i], sl1[2*i+1]);
+				scalecolor(mysl[i], 0.25);
+			}
+		}
+	}
+	return(bscan(sb, y));
+}
+
+
+acuscan(scln, y)		/* get acuity-sampled scanline */
+COLOR	*scln;
+int	y;
+{
+	double	sr;
+	double	dx, dy;
+	int	ix, iy;
+	register int	x;
+					/* compute foveal y position */
+	iy = dy = (y+.5)/numscans(&inpres)*fvyr - .5;
+	if (iy >= fvyr-1) iy--;
+	dy -= (double)iy;
+	for (x = 0; x < scanlen(&inpres); x++) {
+					/* compute foveal x position */
+		ix = dx = (x+.5)/scanlen(&inpres)*fvxr - .5;
+		if (ix >= fvxr-1) ix--;
+		dx -= (double)ix;
+					/* interpolate sample rate */
+		sr = (1.-dy)*((1.-dx)*tsampr(ix,iy) + dx*tsampr(ix+1,iy)) +
+			dy*((1.-dx)*tsampr(ix,iy+1) + dx*tsampr(ix+1,iy+1));
+
+		acusample(scln[x], x, y, sr);	/* compute sample */
+	}
+}
+
+
+acusample(col, x, y, sr)	/* interpolate sample at (x,y) using rate sr */
+COLOR	col;
+int	x, y;
+double	sr;
+{
+	COLOR	c1;
+	double	d;
+	register SCANBAR	*sb0;
+
+	for (sb0 = rootbar; sb0->next != NULL && sb0->next->sampr > sr;
+			sb0 = sb0->next)
+		;
+	ascanval(col, x, y, sb0);
+	if (sb0->next == NULL)		/* don't extrapolate highest */
+		return;
+	ascanval(c1, x, y, sb0->next);
+	d = (sb0->sampr - sr)/(sb0->sampr - sb0->next->sampr);
+	scalecolor(col, 1.-d);
+	scalecolor(c1, d);
+	addcolor(col, c1);
+}
+
+
+ascanval(col, x, y, sb)		/* interpolate scanbar at orig. coords (x,y) */
+COLOR	col;
+int	x, y;
+SCANBAR	*sb;
+{
+	COLOR	*sl0, *sl1, c1, c1y;
+	double	dx, dy;
+	int	ix, iy;
+
+	ix = dx = (x+.5)/sb->sampr - .5;
+	if (ix >= sb->len-1) ix--;
+	dx -= (double)ix;
+	iy = dy = (y+.5)/sb->sampr - .5;
+	if (iy >= numscans(&inpres)/sb->sampr-1) iy--;
+	dy -= (double)iy;
+					/* get scanlines */
+	sl0 = getascan(sb, iy);
+	sl1 = getascan(sb, iy+1);
+					/* 2D linear interpolation */
+	copycolor(col, sl0[ix]);
+	scalecolor(col, 1.-dx);
+	copycolor(c1, sl0[ix+1]);
+	scalecolor(c1, dx);
+	addcolor(col, c1);
+	copycolor(c1y, sl1[ix]);
+	scalecolor(c1y, 1.-dx);
+	copycolor(c1, sl1[ix+1]);
+	scalecolor(c1, dx);
+	addcolor(c1y, c1);
+	scalecolor(col, 1.-dy);
+	scalecolor(c1y, dy);
+	addcolor(col, c1y);
+}
+
+
+SCANBAR	*
+sballoc(sr, ns, sl)		/* allocate scanbar */
+int	sr;		/* sampling rate */
+int	ns;		/* number of scanlines */
+int	sl;		/* original scanline length */
+{
+	register SCANBAR	*sb;
+
+	sb = (SCANBAR *)malloc(sizeof(SCANBAR)+(sl/sr)*ns*sizeof(COLOR));
+	if (sb == NULL)
+		syserror("malloc");
+	sb->nscans = ns;
+	sb->len = sl/sr;
+	sb->nread = 0;
+	if ((sb->sampr = sr) > 1)
+		sb->next = sballoc(sr/2, ns*2, sl);
+	else
+		sb->next = NULL;
+	return(sb);
+}
+
+
+initacuity()			/* initialize variable acuity sampling */
+{
+	FVECT	diffx, diffy, cp;
+	double	omega, maxsr;
+	register int	x, y, i;
+
+	compraydir();			/* compute ray directions */
+
+	inpacuD = (float *)malloc(fvxr*fvyr*sizeof(float));
+	if (inpacuD == NULL)
+		syserror("malloc");
+	maxsr = 1.;			/* compute internal sample rates */
+	for (y = 1; y < fvyr-1; y++)
+		for (x = 1; x < fvxr-1; x++) {
+			for (i = 0; i < 3; i++) {
+				diffx[i] = 0.5*fvxr/scanlen(&inpres) *
+						(rdirscan(y)[x+1][i] -
+						rdirscan(y)[x-1][i]);
+				diffy[i] = 0.5*fvyr/numscans(&inpres) *
+						(rdirscan(y+1)[x][i] -
+						rdirscan(y-1)[x][i]);
+			}
+			fcross(cp, diffx, diffy);
+			omega = 0.5 * sqrt(DOT(cp,cp));
+			tsampr(x,y) = PI/180. / sqrt(omega) /
+					hacuity(plum(fovscan(y)[x]));
+			if (tsampr(x,y) > maxsr)
+				maxsr = tsampr(x,y);
+		}
+					/* copy perimeter (easier) */
+	for (x = 1; x < fvxr-1; x++) {
+		tsampr(x,0) = tsampr(x,1);
+		tsampr(x,fvyr-1) = tsampr(x,fvyr-2);
+	}
+	for (y = 0; y < fvyr; y++) {
+		tsampr(y,0) = tsampr(y,1);
+		tsampr(y,fvxr-1) = tsampr(y,fvxr-2);
+	}
+					/* initialize with next power of two */
+	rootbar = sballoc(2<<(int)(log(maxsr)/log(2.)), 2, scanlen(&inpres));
 }
