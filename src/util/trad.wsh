@@ -46,8 +46,8 @@ Do you wish to save it now?"
 			2 { return 0 }
 		}
 		if $readonly {
-			.file invoke
 			set curmess {Rename file or uncheck read-only to save.}
+			.file invoke
 			return 0
 		} elseif {[save_vars $rifname]} {
 			gotfile 1
