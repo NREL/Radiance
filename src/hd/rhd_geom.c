@@ -33,7 +33,7 @@ static struct gmEntry {
 
 #define FORALLPORT(pl,i)		for (i=0;i<MAXPORT&&pl[i]!=NULL;i++)
 
-extern char	*atos(), *sskip(), *sskip2();
+extern char	*nextword();
 
 
 gmNewGeom(file)			/* add new geometry to next list */
@@ -84,7 +84,7 @@ gmEndGeom()			/* make next list current */
 
 
 int
-gmDrawGeom()			/* draw current list of octrees (and ports) */
+gmDrawGeom()			/* draw current list of octrees */
 {
 	register int	n;
 
@@ -145,11 +145,7 @@ char	*pflist;
 
 	if (pflist == NULL)
 		return;
-	while (*pflist) {
-		atos(newfile, sizeof(newfile), pflist);
-		if (!*newfile)
-			break;
-		pflist = sskip(pflist);
+	while ((pflist = nextword(newfile, sizeof(newfile), pflist)) != NULL) {
 		FORALLPORT(newportlist,i)
 			if (!strcmp(newportlist[i], newfile))
 				goto endloop;	/* in list already */
