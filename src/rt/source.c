@@ -261,6 +261,8 @@ char  *p;			/* data for f */
 			l = m;
 		}
 	}
+	if (ncnts == 0)
+		return;		/* no contributions! */
                                                 /* accumulate tail */
         for (sn = ncnts-1; sn > 0; sn--)
                 cntord[sn-1].brt += cntord[sn].brt;
