@@ -142,15 +142,6 @@ extern void	libupdate(char *fn);
 					/* defined in calprnt.c */
 extern void	eprint(EPNODE *ep, FILE *fp);
 extern void	dprint(char *name, FILE *fp);
-					/* defined in savestr.c */
-//extern char	*savestr(char *str);
-//extern void	freestr(char *s);
-//extern int	shash(char *s);
-					/* defined in ealloc.c */
-//extern char	*emalloc(unsigned int n);
-//extern char	*ecalloc(unsigned int ne, unsigned int es);
-//extern char	*erealloc(char *cp, unsigned int n);
-//extern void	efree(char *cp);
 					/* defined by client */
 extern double	chanvalue(int n);
 
