@@ -28,8 +28,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #define vfork		fork
 #endif
 
-extern char	*getpath(), *getenv();
-
 static int	comm_close(), comm_clear(), comm_paintr(), comm_errout(),
 		comm_getcur(), comm_comout(), comm_comin(), comm_flush();
 
@@ -51,7 +49,7 @@ char	*dname, *id;
 	int	p1[2], p2[2];
 	char	pin[16], pout[16];
 						/* find driver program */
-	if ((devname = getpath(dname, DEVPATH, 1)) == NULL) {
+	if ((devname = getpath(dname, DEVPATH, X_OK)) == NULL) {
 		stderr_v(dname);
 		stderr_v(": not found\n");
 		return(NULL);
