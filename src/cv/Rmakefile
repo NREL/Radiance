@@ -45,4 +45,4 @@ lampcolor:	lampcolor.o
 
 arch2rad.o trans.o:	trans.h
 
-ies2rad.o spec_rgb.o:	../common/color.h
+ies2rad.o lampcolor.o:	../common/color.h
