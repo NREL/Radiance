@@ -103,6 +103,7 @@ char  *zfile, *oldfile;
 	COLOR  *scanbar[MAXDIV+1];	/* scanline arrays of pixel values */
 	float  *zbar[MAXDIV+1];		/* z values */
 	int  ypos;			/* current scanline */
+	int  ystep;			/* current y step size */
 	FILE  *zfp;
 	COLOR  *colptr;
 	float  *zptr;
@@ -142,23 +143,28 @@ char  *zfile, *oldfile;
 		error(SYSTEM, "z file seek error in render");
 	ypos = vresolu-1 - i;
 	fillscanline(scanbar[0], zbar[0], hresolu, ypos, psample);
+	ystep = psample;
 						/* compute scanlines */
-	for (ypos -= psample; ypos >= 0; ypos -= psample) {
-	
-		pctdone = 100.0*(vresolu-ypos-psample)/vresolu;
-
-		colptr = scanbar[psample];		/* move base to top */
-		scanbar[psample] = scanbar[0];
+	for (ypos -= ystep; ypos > -ystep; ypos -= ystep) {
+							/* record progress */
+		pctdone = 100.0*(vresolu-ypos-ystep)/vresolu;
+							/* bottom adjust? */
+		if (ypos < 0) {
+			ystep += ypos;
+			ypos = 0;
+		}
+		colptr = scanbar[ystep];		/* move base to top */
+		scanbar[ystep] = scanbar[0];
 		scanbar[0] = colptr;
-		zptr = zbar[psample];
-		zbar[psample] = zbar[0];
+		zptr = zbar[ystep];
+		zbar[ystep] = zbar[0];
 		zbar[0] = zptr;
 							/* fill base line */
 		fillscanline(scanbar[0], zbar[0], hresolu, ypos, psample);
 							/* fill bar */
-		fillscanbar(scanbar, zbar, hresolu, ypos, psample);
+		fillscanbar(scanbar, zbar, hresolu, ypos, ystep);
 							/* write it out */
-		for (i = psample; i > 0; i--) {
+		for (i = ystep; i > 0; i--) {
 			if (zfp != NULL && fwrite(zbar[i],sizeof(float),hresolu,zfp) != hresolu)
 				goto writerr;
 			if (fwritescan(scanbar[i],hresolu,stdout) < 0)
@@ -169,30 +175,15 @@ char  *zfile, *oldfile;
 		if (fflush(stdout) == EOF)
 			goto writerr;
 	}
-						/* compute residual */
-	colptr = scanbar[psample];
-	scanbar[psample] = scanbar[0];
-	scanbar[0] = colptr;
-	zptr = zbar[psample];
-	zbar[psample] = zbar[0];
-	zbar[0] = zptr;
-	if (ypos > -psample) {
-		fillscanline(scanbar[-ypos], zbar[-ypos], hresolu, 0, psample);
-		fillscanbar(scanbar-ypos, zbar-ypos, hresolu, 0, psample+ypos);
-	}
-	for (i = psample; i+ypos >= 0; i--) {
-		if (zfp != NULL && fwrite(zbar[i],sizeof(float),hresolu,zfp) != hresolu)
-			goto writerr;
-		if (fwritescan(scanbar[i], hresolu, stdout) < 0)
-			goto writerr;
-	}
 						/* clean up */
 	if (zfp != NULL) {
+		fwrite(zbar[0], sizeof(float), hresolu, zfp);
 		if (fclose(zfp) == EOF)
 			goto writerr;
 		for (i = 0; i <= psample; i++)
 			free((char *)zbar[i]);
 	}
+	fwritescan(scanbar[0], hresolu, stdout);
 	if (fflush(stdout) == EOF)
 		goto writerr;
 	for (i = 0; i <= psample; i++)
@@ -218,19 +209,16 @@ int  xres, y, xstep;
 	z = pixvalue(scanline[0], 0, y);
 	if (zline) zline[0] = z;
 
-	for (i = xstep; i < xres; i += xstep) {
-	
+	for (i = xstep; i < xres-1+xstep; i += xstep) {
+		if (i >= xres) {
+			xstep += xres-1-i;
+			i = xres-1;
+		}
 		z = pixvalue(scanline[i], i, y);
 		if (zline) zline[i] = z;
 		
 		b = fillsample(scanline+i-xstep, zline ? zline+i-xstep : NULL,
 				i-xstep, y, xstep, 0, b/2);
-	}
-	if (i-xstep < xres-1) {
-		z = pixvalue(scanline[xres-1], xres-1, y);
-		if (zline) zline[xres-1] = z;
-		fillsample(scanline+i-xstep, zline ? zline+i-xstep : NULL,
-				i-xstep, y, xres-1-(i-xstep), 0, b/2);
 	}
 }
 
