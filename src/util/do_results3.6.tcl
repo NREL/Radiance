@@ -79,7 +79,7 @@ proc delpic {} {		# Delete selected pictures
 	}
 	if [tk_dialog .dlg {Verification} \
 			"Really delete picture file(s) $selected_pics?" \
-			questhead 1 {Delete} {Cancel}] {
+			questhead 0 {Delete} {Cancel}] {
 		return
 	}
 	if {! [catch {eval exec rm $selected_pics < /dev/null} curmess]} {

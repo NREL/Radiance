@@ -45,7 +45,7 @@ proc oct_delete {} {		# delete octree file
 	}
 	if [tk_dialog .dlg {Verification} \
 			"Really delete octree file $radvar(OCTREE)?" \
-			questhead 1 {Delete} {Cancel}] {
+			questhead 0 {Delete} {Cancel}] {
 		return 0
 	}
 	if [catch {exec rm $radvar(OCTREE) < /dev/null} curmess] {return 0}
