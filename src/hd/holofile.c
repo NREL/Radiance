@@ -13,7 +13,11 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "holo.h"
 
 #ifndef CACHESIZE
-#define CACHESIZE	16	/* default cache size (Mbytes, 0==inf) */
+#ifdef BIGMEM
+#define CACHESIZE	32	/* default cache size (Mbytes, 0==inf) */
+#else
+#define CACHESIZE	12
+#endif
 #endif
 #ifndef FREEBEAMS
 #define FREEBEAMS	1500	/* maximum beams to free at a time */
