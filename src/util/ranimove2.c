@@ -233,12 +233,13 @@ est_consp(	/* estimate error conspicuity & update */
 						/* worth the bother? */
 	if (eest <= .01)
 		return;
-						/* sum into map */
+						/* put into map */
 	for ( ; y0 < y1; y0++) {
 		float	*em0 = cerrmap + fndx(x0, y0);
 		register float	*emp = em0 + (x1-x0);
 		while (emp-- > em0)
-			*emp += eest;
+			if (eest > *emp)
+				*emp = eest;
 	}
 	cerrzero = 0;
 }
