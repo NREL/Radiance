@@ -67,7 +67,7 @@ RAY  *r;
 	double  phi;
 	register int  i;
 
-	if (rayorigin(&ar, r, AMBIENT, 0.5) < 0)
+	if (rayorigin(&ar, r, AMBIENT, AVGREFL) < 0)
 		return(-1);
 	hlist[0] = r->rno;
 	hlist[1] = dp->t;
@@ -100,9 +100,10 @@ RAY  *r;
 
 
 double
-doambient(acol, r, pg, dg)		/* compute ambient component */
+doambient(acol, r, wt, pg, dg)		/* compute ambient component */
 COLOR  acol;
 RAY  *r;
+double  wt;
 FVECT  pg, dg;
 {
 	double  b, d;
@@ -116,12 +117,12 @@ FVECT  pg, dg;
 					/* initialize color */
 	setcolor(acol, 0.0, 0.0, 0.0);
 					/* initialize hemisphere */
-	inithemi(&hemi, r);
+	inithemi(&hemi, r, wt);
 	ndivs = hemi.nt * hemi.np;
 	if (ndivs == 0)
 		return(0.0);
 					/* set number of super-samples */
-	ns = ambssamp * r->rweight + 0.5;
+	ns = ambssamp * wt + 0.5;
 	if (ns > 0 || pg != NULL || dg != NULL) {
 		div = (AMBSAMP *)malloc(ndivs*sizeof(AMBSAMP));
 		if (div == NULL)
@@ -212,7 +213,7 @@ FVECT  pg, dg;
 		arad = maxarad;
 	else if (arad < minarad)
 		arad = minarad;
-	arad /= sqrt(r->rweight);
+	arad /= sqrt(wt);
 	if (pg != NULL) {		/* clip pos. gradient if too large */
 		d = 4.0*DOT(pg,pg)*arad*arad;
 		if (d > 1.0) {
@@ -229,13 +230,14 @@ oopsy:
 }
 
 
-inithemi(hp, r)			/* initialize sampling hemisphere */
+inithemi(hp, r, wt)		/* initialize sampling hemisphere */
 register AMBHEMI  *hp;
 RAY  *r;
+double  wt;
 {
 	register int  i;
 					/* set number of divisions */
-	hp->nt = sqrt(ambdiv * r->rweight / PI) + 0.5;
+	hp->nt = sqrt(ambdiv * wt / PI) + 0.5;
 	hp->np = PI * hp->nt;
 					/* make axes */
 	VCOPY(hp->uz, r->ron);
