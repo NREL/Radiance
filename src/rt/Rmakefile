@@ -232,18 +232,16 @@ ambient.o ambcomp.o rpict.o rv3.o srcsamp.o:	../common/random.h
 ambient.o ambcomp.o dielectric.o func.o glass.o m_clip.o m_mirror.o \
 m_brdf.o mx_data.o mx_func.o normal.o o_cone.o o_face.o o_instance.o \
 p_data.o p_func.o text.o raytrace.o rpmain.o rtmain.o rvmain.o rpict.o \
-rtrace.o rview.o rv2.o rv3.o source.o srcsupp.o virtuals.o sphere.o \
-t_data.o t_func.o:	ray.h ../common/standard.h ../common/mat4.h \
-../common/fvect.h ../common/object.h ../common/color.h
+rtrace.o rview.o rv2.o rv3.o source.o srcsamp.o srcsupp.o virtuals.o \
+sphere.o t_data.o t_func.o:	ray.h ../common/standard.h \
+../common/mat4.h ../common/fvect.h ../common/object.h ../common/color.h
 
 rv2.o rv3.o rview.o:	rpaint.h driver.h ../common/view.h
 
 mirror.o source.o srcsamp.o srcsupp.o virtuals.o:	source.h
 
-srcsamp.o:	../common/object.h
-
 cone.o data.o devcomm.o initotypes.o \
-octree.o srcsamp.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
+octree.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
 
 initotypes.o raytrace.o:	otspecial.h
 
