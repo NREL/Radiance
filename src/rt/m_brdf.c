@@ -90,10 +90,10 @@ double  omega;			/* light source size */
 	double  dtmp;
 	COLOR  ctmp;
 	FVECT  ldx;
-	double  lddx[3], pt[MAXDIM];
-	double  vldx[4];
+	static double  vldx[5], pt[MAXDIM];
 	register char	**sa;
 	register int	i;
+#define lddx (vldx+1)
 
 	setcolor(cval, 0.0, 0.0, 0.0);
 	
@@ -134,32 +134,32 @@ double  omega;			/* light source size */
 	multv3(ldx, ldir, funcxf.xfm);
 	for (i = 0; i < 3; i++)
 		lddx[i] = ldx[i]/funcxf.sca;
+	lddx[3] = omega;
 					/* compute BRTDF */
 	if (np->mp->otype == MAT_BRTDF) {
 		if (sa[6][0] == '0')		/* special case */
 			colval(ctmp,RED) = 0.0;
 		else
-			colval(ctmp,RED) = funvalue(sa[6], 3, lddx);
+			colval(ctmp,RED) = funvalue(sa[6], 4, lddx);
 		if (!strcmp(sa[7],sa[6]))
 			colval(ctmp,GRN) = colval(ctmp,RED);
 		else
-			colval(ctmp,GRN) = funvalue(sa[7], 3, lddx);
+			colval(ctmp,GRN) = funvalue(sa[7], 4, lddx);
 		if (!strcmp(sa[8],sa[6]))
 			colval(ctmp,BLU) = colval(ctmp,RED);
 		else if (!strcmp(sa[8],sa[7]))
 			colval(ctmp,BLU) = colval(ctmp,GRN);
 		else
-			colval(ctmp,BLU) = funvalue(sa[8], 3, lddx);
+			colval(ctmp,BLU) = funvalue(sa[8], 4, lddx);
 		dtmp = bright(ctmp);
 	} else if (np->dp == NULL) {
-		dtmp = funvalue(sa[0], 3, lddx);
+		dtmp = funvalue(sa[0], 4, lddx);
 		setcolor(ctmp, dtmp, dtmp, dtmp);
 	} else {
 		for (i = 0; i < np->dp->nd; i++)
-			pt[i] = funvalue(sa[3+i], 3, lddx);
+			pt[i] = funvalue(sa[3+i], 4, lddx);
 		vldx[0] = datavalue(np->dp, pt);
-		vldx[1] = lddx[0]; vldx[2] = lddx[1]; vldx[3] = lddx[2];
-		dtmp = funvalue(sa[0], 4, vldx);
+		dtmp = funvalue(sa[0], 5, vldx);
 		setcolor(ctmp, dtmp, dtmp, dtmp);
 	}
 	if (errno) {
@@ -187,6 +187,7 @@ double  omega;			/* light source size */
 		scalecolor(ctmp, dtmp);
 		addcolor(cval, ctmp);
 	}
+#undef lddx
 }
 
 
