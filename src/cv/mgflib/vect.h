@@ -1,6 +1,10 @@
 /* RCSid: $Id$ */
-#ifndef __VECT_H
-#define __VECT_H
+#ifndef _MGF_VECT_H_
+#define _MGF_VECT_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #include <stdio.h>
 
@@ -39,4 +43,8 @@ void mat_decode (Matrix mat, Vector scale, Vector shear, Vector rotate, Vector
 	 transl);
 float mat_inv (Matrix mat1, Matrix mat2);
 
+
+#ifdef __cplusplus
+}
 #endif
+#endif /* _MGF_VECT_H_ */

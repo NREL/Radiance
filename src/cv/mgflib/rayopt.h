@@ -14,8 +14,12 @@
 
 --------------------------------------------------------------------------*/
 
-#ifndef __RAYOPT_H
-#define __RAYOPT_H
+#ifndef _MGF_RAYOPT_H
+#define _MGF_RAYOPT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #include "vect.h"
 
@@ -53,4 +57,9 @@ void abortmsg (char *msg, int exit_code);
 void add_ext (char *fname, char *ext, int force);
 void cleanup_name (char *name);
 
+
+#ifdef __cplusplus
+}
 #endif
+#endif /* _MGF_RAYOPT_H */
+
