@@ -1,4 +1,4 @@
-	$Id: trad.hlp,v 2.6 1994/12/02 14:02:12 greg Exp $
+	$Id: trad.hlp,v 2.7 1994/12/05 10:19:25 greg Exp $
 
 This help file is associated with the trad interface to the Radiance
 rad(1) program.  Trad consists of trad.wsh and one do_*.tcl file for
@@ -1076,6 +1076,11 @@ The second view menu, next to the "Start" button for batch
 rendering, selects the view or views to render in batch mode.
 If the special entry "ALL" is selected, then every view in the
 current list will be rendered if it hasn't been already.
+
+The view menu next to the "rview" button will be disabled if there
+is only one view to choose from.
+The view menu next to the "Start" button will be disabled if there
+is a batch job in progress, and thus the view cannot be changed.
 
 The batch rendering view menu also selects the view or views
 to use in producing a script during a dry run.
