@@ -264,7 +264,7 @@ int	bi;
 
 ambient_list()			/* compute ambient beam list */
 {
-	long	wtotal = 0;
+	int4	wtotal, minrt;
 	double	frac;
 	int	i;
 	register int	j, k;
@@ -275,7 +275,7 @@ ambient_list()			/* compute ambient beam list */
 	complist = (PACKHEAD *)malloc(complen*sizeof(PACKHEAD));
 	CHECK(complist==NULL, SYSTEM, "out of memory in ambient_list");
 					/* compute beam weights */
-	k = 0;
+	k = 0; wtotal = 0;
 	for (j = 0; hdlist[j] != NULL; j++) {
 		frac = 512. * VLEN(hdlist[j]->wg[0]) *
 				VLEN(hdlist[j]->wg[1]) *
@@ -290,13 +290,15 @@ ambient_list()			/* compute ambient beam list */
 	}
 					/* adjust sample weights */
 	if (vdef(DISKSPACE))
-		frac = 1024.*1024.*vflt(DISKSPACE) /
-				(wtotal*sizeof(RAYVAL));
+		frac = 1024.*1024.*vflt(DISKSPACE) / (wtotal*sizeof(RAYVAL));
 	else
-		frac = 1024.*1024.*16384. / (wtotal*sizeof(RAYVAL));
-	if (frac > 1.11 || frac < 0.9)
-		for (k = complen; k--; )
-			complist[k].nr = frac*complist[k].nr + 0.5;
+		frac = 1024.*1024.*2048. / (wtotal*sizeof(RAYVAL));
+	minrt = .02*frac*wtotal/complen + .5;	/* heuristic mimimum */
+	if (minrt > RPACKSIZ)
+		minrt = RPACKSIZ;
+	for (k = complen; k--; )
+		if ((complist[k].nr = frac*complist[k].nr + 0.5) < minrt)
+			complist[k].nr = minrt;
 	listpos = 0; lastin = -1;	/* flag initial sort */
 }
 
