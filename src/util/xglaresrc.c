@@ -83,7 +83,7 @@ char	*name;
 	if (gwind == None) {
 		fprintf(stderr, "%s: cannot find \"%s\" window\n",
 				progname, name);
-		exit(1);
+		exit(2);
 	}
 	XMapRaised(theDisplay, gwind);
 	XGetWindowAttributes(theDisplay, gwind, &wa);
