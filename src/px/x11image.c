@@ -116,10 +116,14 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
+	extern char  *getenv();
+	char  *gv;
 	int  headline();
 	int  i;
 	
 	progname = argv[0];
+	if ((gv = getenv("GAMMA")) != NULL)
+		gamcor = atof(gv);
 
 	for (i = 1; i < argc; i++)
 		if (argv[i][0] == '-')

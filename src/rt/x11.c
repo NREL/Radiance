@@ -23,7 +23,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "x11twind.h"
 #include  "x11icon.h"
 
-#define GAMMA		2.2		/* exponent for color correction */
+#define GAMMA		2.2		/* default exponent correction */
 
 #define MINWIDTH	(32*COMCW)	/* minimum graphics window width */
 #define MINHEIGHT	MINWIDTH	/* minimum graphics window height */
@@ -82,6 +82,8 @@ struct driver *
 x11_init(name, id)		/* initialize driver */
 char  *name, *id;
 {
+	extern char  *getenv();
+	char  *gv;
 	int  nplanes;
 	XSetWindowAttributes	ourwinattr;
 	XWMHints  ourxwmhints;
@@ -117,8 +119,12 @@ char  *name, *id;
 		ourblack = BlackPixel(ourdisplay,ourscreen);
 		ourwhite = WhitePixel(ourdisplay,ourscreen);
 	}
-	make_gmap(GAMMA);
-	/* open window */
+					/* set gamma */
+	if ((gv = getenv("GAMMA")) != NULL)
+		make_gmap(atof(gv));
+	else
+		make_gmap(GAMMA);
+					/* open window */
 	ourwinattr.background_pixel = ourblack;
 	ourwinattr.border_pixel = ourblack;
 					/* this is stupid */
