@@ -114,7 +114,7 @@ register RAY  *r;
 	}
 
 	if (r->crtype & SHADOW)			/* skip reflected ray */
-		return;
+		return(1);
 						/* compute reflectance */
 	for (i = 0; i < 3; i++) {
 		d = colval(mcolor, i);
@@ -132,4 +132,5 @@ register RAY  *r;
 	}
 	if (transtest > bright(r->rcol))
 		r->rt = transdist;
+	return(1);
 }

@@ -157,6 +157,8 @@ register RAY  *r;
 	}
 
 	multcolor(r->rcol, mcolor);		/* multiply by transmittance */
+
+	return(1);
 }
 
 
