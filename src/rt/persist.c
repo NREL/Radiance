@@ -83,8 +83,6 @@ char	*pfn;
 	persistfd = open(pfn, O_WRONLY|O_CREAT|O_EXCL, 0644);
 	if (persistfd >= 0) {
 		persistfname = pfn;
-			/* put something there for faulty lock daemons */
-		write(persistfd, "Initializing...\n", 16);
 		pflock(1);
 		return;
 	}
@@ -124,25 +122,23 @@ pfhold()		/* holding pattern for idle rendering process */
 		goto createrr;
 	sprintf(buf, "%s %d\n%s\n%s\n%s\n", progname, getpid(),
 			inpname, outpname, errname);
-	if (lseek(persistfd, 0L, 0) < 0)
-		error(SYSTEM, "seek error on persist file");
 	n = strlen(buf);
 	if (write(persistfd, buf, n) < n)
 		error(SYSTEM, "error writing persist file");
-	ftruncate(persistfd, (long)n);
-	fsync(persistfd);	/* shouldn't be necessary, but.... */
 				/* wait TIMELIM for someone to signal us */
 	got_io = 0;
 	signal(SIGIO, sig_io);
 	oldalrm = (int (*)())signal(SIGALRM, sig_alrm);
 	alarm(TIMELIM);
-	pflock(0);
+	pflock(0);			/* unlock persist file for attach */
 	while (!got_io)
-		pause();
-	alarm(0);
+		pause();		/* wait for attach */
+	pflock(1);			/* grab persist file right back! */
+	alarm(0);			/* turn off alarm */
 	signal(SIGALRM, oldalrm);
 	signal(SIGIO, SIG_DFL);
-	pflock(1);
+	if (lseek(persistfd, 0L, 0) < 0 || ftruncate(persistfd, 0L) < 0)
+		error(SYSTEM, "seek/truncate error on persist file");
 				/* someone wants us; reopen stdin and stdout */
 	if (freopen(inpname, "r", stdin) == NULL)
 		goto openerr;
@@ -172,11 +168,14 @@ io_process()		/* just act as conduits to and from actual process */
 	register int	nr, n;
 	char	buf[512], *pfin, *pfout, *pferr;
 	int	pid, pid2 = -1;
-				/* load and close persist file */
-	errno = 0;
-	nr = read(persistfd, buf, sizeof(buf)-1);
-	pfdetach();
-	if (nr <= 0)
+					/* load persist file */
+	while ((nr = read(persistfd, buf, sizeof(buf)-1)) == 0) {
+		pflock(0);
+		sleep(15);		/* wait until ready */
+		pflock(1);
+	}
+	pfdetach();			/* close persist file */
+	if (nr < 0)
 		error(SYSTEM, "error reading persist file");
 	buf[nr] = '\0';
 	if ((cp = index(buf, ' ')) == NULL)
