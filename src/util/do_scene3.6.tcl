@@ -56,7 +56,7 @@ proc oct_delete {} {		# delete octree file
 proc getdepend {} {		# get object dependencies
 	global radvar curmess mybox
 	set curmess "Please wait..."
-	update idletasks
+	update
 	foreach newf [eval exec raddepend $radvar(illum) $radvar(scene)] {
 		if {[lsearch -exact $radvar(objects) $newf] < 0} {
 			lappend radvar(objects) $newf
