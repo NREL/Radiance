@@ -72,7 +72,7 @@ analyze()			/* analyze our scene */
 					addsrcspan(newspan(left,h,v,spanbr));
 					left = hsize + 1;
 				}
-				addindirect(h, spanbr[h+hsize]);
+				addindirect(h, v, spanbr[h+hsize]);
 			}
 		}
 		if (left < h)
@@ -83,15 +83,17 @@ analyze()			/* analyze our scene */
 }
 
 
-addindirect(h, br)		/* add brightness to indirect illuminances */
-int	h;
+addindirect(h, v, br)		/* add brightness to indirect illuminances */
+int	h, v;
 double	br;
 {
 	double	tanb, d;
+	int	hl;
 	register int	i;
 
-	if (h <= -hlim) {			/* left region */
-		d = (double)(-h-hlim)/sampdens;
+	hl = hlim(v);
+	if (h <= -hl) {			/* left region */
+		d = (double)(-h-hl)/sampdens;
 		if (d >= 1.0-FTINY)
 			return;
 		tanb = d/sqrt(1.0-d*d);
@@ -104,8 +106,8 @@ double	br;
 		}
 		return;
 	}
-	if (h >= hlim) {			/* right region */
-		d = (double)(-h+hlim)/sampdens;
+	if (h >= hl) {			/* right region */
+		d = (double)(-h+hl)/sampdens;
 		if (d <= -1.0+FTINY)
 			return;
 		tanb = d/sqrt(1.0-d*d);
@@ -120,7 +122,7 @@ double	br;
 	}
 					/* central region */
 	for (i = 0; i < nglardirs; i++) {
-		d = cos(h_theta(h) - indirect[i].theta);
+		d = cos(h_theta(h,v) - indirect[i].theta);
 		if (d > 0.0) {
 			indirect[i].sum += d * br;
 			indirect[i].n += d;
@@ -131,7 +133,6 @@ double	br;
 
 comp_thresh()			/* compute glare threshold */
 {
-	SPANERR	sperr;
 	int	h, v;
 	int	nsamps;
 	double	brsum, br;
@@ -142,9 +143,8 @@ comp_thresh()			/* compute glare threshold */
 	brsum = 0.0;
 	nsamps = 0;
 	for (v = vsize; v >= -vsize; v -= TSAMPSTEP) {
-		setspanerr(&sperr, v);
 		for (h = -hsize; h <= hsize; h += TSAMPSTEP) {
-			if ((br = getviewpix(h, v, &sperr)) < 0.0)
+			if ((br = getviewpix(h, v)) < 0.0)
 				continue;
 			brsum += br;
 			nsamps++;
@@ -281,29 +281,26 @@ register struct source	*sp;
 	FVECT	dthis, dright;
 	register struct srcspan	*ss;
 	int	h, n;
-	double	d;
+	double	hsum, vsum, d;
 
 	sp->dom = 0.0;
-	sp->dir[0] = sp->dir[1] = sp->dir[2] = 0.0;
+	hsum = vsum = 0.0;
 	sp->brt = 0.0;
 	n = 0;
 	for (ss = sp->first; ss != NULL; ss = ss->next) {
 		sp->brt += ss->brsum;
 		n += ss->r - ss->l;
-		if (compdir(dright, ss->r, ss->v, NULL) < 0)
-			compdir(dright, ss->r-2, ss->v, NULL);
-		for (h = ss->r-1; h >= ss->l; h--)
-			if (compdir(dthis, h, ss->v, NULL) == 0) {
-				d = dist2(dthis, dright);
-				fvsum(sp->dir, sp->dir, dthis, d);
-				sp->dom += d;
-				VCOPY(dright, dthis);
-			}
+		for (h = ss->r-1; h >= ss->l; h--) {
+			d = pixsize(h, ss->v);
+			hsum += d*h;
+			vsum += d*ss->v;
+			sp->dom += d;
+		}
 		free((char *)ss);
 	}
 	sp->first = NULL;
 	sp->brt /= (double)n;
-	normalize(sp->dir);
+	compdir(sp->dir, (int)(hsum/sp->dom), (int)(vsum/sp->dom));
 	sp->next = donelist;
 	donelist = sp;
 	if (verbose)
