@@ -20,7 +20,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "color.h"
 #include  "resolu.h"
 
-extern double  atof();
 
 double	gamma = 2.2;			/* gamma correction */
 

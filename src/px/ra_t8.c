@@ -51,7 +51,7 @@ extern char	*ecalloc(), *emalloc();
 
 extern long  ftell();
 
-extern double  atof(), pow();
+extern double  pow();
 
 double	gamma = 2.2;			/* gamma correction */
 

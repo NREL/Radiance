@@ -16,7 +16,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "resolu.h"
 
-extern double  atof(), pow();
+extern double  pow();
 
 double	gamma = 2.0;			/* gamma correction */
 

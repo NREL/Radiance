@@ -16,7 +16,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "resolu.h"
 
-extern double  atof();
 
 extern char  *malloc(), *realloc();
 

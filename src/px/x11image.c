@@ -105,7 +105,7 @@ extern long  ftell();
 
 extern char  *malloc(), *calloc();
 
-extern double  atof(), pow(), log();
+extern double  pow(), log();
 
 Display  *thedisplay;
 

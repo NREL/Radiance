@@ -23,7 +23,7 @@ int  argc;
 char  *argv[];
 {
 	COLOR  col;
-	double  d1,d2,d3, atof(), log();
+	double  d1,d2,d3, log();
 	int  i;
 
 	printargs(argc, argv, stdout);

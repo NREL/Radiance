@@ -39,7 +39,7 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-	double  d, atof();
+	double  d;
 	int  xres, yres;
 	int  an;
 
