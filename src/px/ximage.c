@@ -548,7 +548,7 @@ getmono()			/* get monochrome data */
 {
 	register unsigned short	*dp;
 	register int	x, err;
-	int	y;
+	int	y, errp;
 	rgbpixel	*inl;
 	short	*cerr;
 
@@ -562,12 +562,14 @@ getmono()			/* get monochrome data */
 		for (x = 0; x < xmax; x++) {
 			if (!(x&0xf))
 				*++dp = 0;
+			errp = err;
 			err += rgb_bright(&inl[x]) + cerr[x];
 			if (err > 127)
 				err -= 255;
 			else
 				*dp |= 1<<(x&0xf);
-			cerr[x] = err >>= 1;
+			err /= 3;
+			cerr[x] = err + errp;
 		}
 	}
 	free((char *)inl);
