@@ -17,7 +17,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 				/* set the following to 0 to forgo forking */
 #ifndef MAXFORK
-#define  MAXFORK		2	/* max. unreaped child processes */
+#define  MAXFORK		3	/* allotment of duped processes */
 #endif
 
 				/* rpict command */
@@ -123,7 +123,7 @@ char  *argv[];
 	}
 	init(argc, argv);
 	rpiece();
-	rval = cleanup();
+	rval = cleanup(0);
 	exit(rval);
 }
 
@@ -244,20 +244,20 @@ int  *xp, *yp;
 	if (sscanf(buf, "%d %d", xp, yp) == 2)
 		return(1);
 	fprintf(stderr, "%s: input format error\n", progname);
-	exit(1);
+	exit(cleanup(1));
 }
 
 
 int
-cleanup()			/* close rpict process and clean up */
+cleanup(rstat)			/* close rpict process and clean up */
+int  rstat;
 {
-	register int  pid;
-	int  status, rstat = 0;
+	int  status;
 
 	free((char *)pbuf);
 	fclose(torp);
 	fclose(fromrp);
-	while ((pid = wait(&status)) != -1)
+	while (wait(&status) != -1)
 		if (rstat == 0)
 			rstat = status>>8 & 0xff;
 	return(rstat);
@@ -292,7 +292,7 @@ rpiece()			/* render picture piece by piece */
 		default:
 			fprintf(stderr, "%s: unknown view type '-vt%c'\n",
 					progname, ourview.type);
-			exit(1);
+			exit(cleanup(1));
 		}
 		pview.hoff += xorg - 0.5*(hmult-1);
 		pview.voff += yorg - 0.5*(vmult-1);
@@ -321,29 +321,29 @@ int  xpos, ypos;
 	if (xpos < 0 | ypos < 0 | xpos >= hmult | ypos >= vmult) {
 		fprintf(stderr, "%s: requested piece (%d,%d) out of range\n",
 				progname, xpos, ypos);
-		exit(1);
+		exit(cleanup(1));
 	}
 				/* check header from rpict */
 	getheader(fromrp, NULL);
 	if (fscnresolu(&hr, &vr, fromrp) < 0 || hr != hres || vr != vres) {
 		fprintf(stderr, "%s: resolution mismatch from %s\n",
 				progname, rpargv[0]);
-		exit(1);
+		exit(cleanup(1));
 	}
 				/* load new piece into buffer */
 	for (y = 0; y < vr; y++)
 		if (freadcolrs(pbuf+y*hr, hr, fromrp) < 0) {
 			fprintf(stderr, "%s: read error from %s\n",
 					progname, rpargv[0]);
-			exit(1);
+			exit(cleanup(1));
 		}
 #if MAXFORK
 				/* fork so we don't slow rpict down */
 	if ((pid = fork()) > 0) {
-		if (++nforked > MAXFORK) {
+		if (++nforked >= MAXFORK) {
 			wait(&status);		/* reap a child */
 			if (status)
-				exit(status>>8 & 0xff);
+				exit(cleanup(status>>8 & 0xff));
 			nforked--;
 		}
 		return(pid);
