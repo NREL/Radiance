@@ -47,7 +47,6 @@ main(argc, argv)
 int	argc;
 char	*argv[];
 {
-	extern double	atof();
 	char	*windowname = NULL;
 	FILE	*fp;
 

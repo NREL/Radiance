@@ -63,7 +63,6 @@ main(argc, argv)
 int  argc;
 char  *argv[];
 {
-	double  atof();
 	int  i;
 
 	progname = argv[0];
