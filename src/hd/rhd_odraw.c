@@ -131,6 +131,7 @@ int	n;
 		DCHECK(count<=0 | nextsamp>=n,
 				CONSISTENCY, "counter botch in odInit");
 		if (!i) count = j;
+		odView[i].sfirst = nextsamp;
 		while (j--) {		/* initialize blocks & free lists */
 			odView[i].bmap[j].pthresh = FHUGE;
 			odView[i].bmap[j].first = k = nextsamp;
@@ -142,6 +143,7 @@ int	n;
 			odS.nextfree(k-1) = ENDFREE;
 			odView[i].bmap[j].nused = 0;
 		}
+		odView[i].snext = nextsamp;
 	}
 	CLR4ALL(odS.redraw, odS.nsamp);		/* clear redraw flags */
 	for (i = odS.nsamp; i--; ) {		/* clear values */
@@ -445,8 +447,27 @@ int	vn;
 			return;
 		needmapping = 0;		/* reset flag */
 	}
-					/* draw samples flagged for redraw */
-	for (j = FL4NELS(odS.nsamp); j--; )
+					/* this code segment was too slow */
+#if 0
+	for (i = odView[vn].sfirst; i < odView[vn].snext; i++)
+		if (CHK4(odS.redraw, i)) {
+			odDrawSamp(vn, i);
+			CLR4(odS.redraw, i);
+		}
+#endif
+					/* redraw samples at each end */
+	for (i = odView[vn].sfirst; i < odView[vn].sfirst+31; i++)
+		if (CHK4(odS.redraw, i)) {
+			odDrawSamp(vn, i);
+			CLR4(odS.redraw, i);
+		}
+	for (i = odView[vn].snext-31; i < odView[vn].snext; i++)
+		if (CHK4(odS.redraw, i)) {
+			odDrawSamp(vn, i);
+			CLR4(odS.redraw, i);
+		}
+					/* faster flag checks in middle */
+	for (j = odView[vn].snext>>5; j-- > (odView[vn].sfirst+0x1f)>>5; )
 		for (i = 0; odS.redraw[j]; i++)		/* skips faster */
 			if (odS.redraw[j] & 1L<<i) {
 				odDrawSamp(vn, (j<<5)+i);
@@ -455,6 +476,7 @@ int	vn;
 }
 
 
+					/* this turned out to be unnecessary */
 #if 0
 static
 clip_end(p, o, vp)			/* clip line segment to view */
