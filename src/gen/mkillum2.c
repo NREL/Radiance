@@ -84,10 +84,10 @@ char  *nm;
 		    dim[3] = 1;
 		    r1 = (dim[1]+urand(urind(ilhash(dim,4),i)))/nalt;
 		    dim[3] = 2;
-		    r2 = (dim[2]+urand(urind(ilhash(dim,4),i)))/nalt;
+		    r2 = (dim[2]+urand(urind(ilhash(dim,4),i)))/nazi;
 		    flatdir(dn, r1, r2);
 		    for (j = 0; j < 3; j++)
-			dir[j] = dn[0]*u[j] + dn[1]*v[j] - dn[2]*fa->norm[j];
+			dir[j] = -dn[0]*u[j] - dn[1]*v[j] - dn[2]*fa->norm[j];
 					/* random location */
 		    do {
 			dim[3] = 3;
@@ -133,7 +133,7 @@ char  *nm;
 	int  dim[4];
 	int  n, nalt, nazi;
 	float  *distarr;
-	double  r1, r2;
+	double  r1, r2, r3;
 	FVECT  org, dir;
 	FVECT  u, v;
 	register int  i, j;
@@ -151,28 +151,37 @@ char  *nm;
 	dim[0] = random();
 				/* sample sphere */
 	for (dim[1] = 0; dim[1] < nalt; dim[1]++)
-	    for (dim[2] = 0; dim[2] < nazi; dim[2]++)
+	    for (dim[2] = 0; dim[2] < nazi; dim[2]++) {
+		if (il->nsamps > 2 && nazi > 20) {
+		    rounddir(dir, (dim[1]+.5)/nalt, (dim[2]+.5)/nazi);
+		    mkaxes(u, v, dir);
+		}
 		for (i = 0; i < il->nsamps; i++) {
 					/* random direction */
 		    dim[3] = 1;
 		    r1 = (dim[1]+urand(urind(ilhash(dim,4),i)))/nalt;
 		    dim[3] = 2;
-		    r2 = (dim[2]+urand(urind(ilhash(dim,4),i)))/nalt;
+		    r2 = (dim[2]+urand(urind(ilhash(dim,4),i)))/nazi;
 		    rounddir(dir, r1, r2);
 					/* random location */
-		    mkaxes(u, v, dir);		/* yuck! */
+		    if (il->nsamps <= 2 || nazi <= 20)
+			mkaxes(u, v, dir);		/* yuck! */
 		    dim[3] = 3;
-		    r1 = sqrt(urand(urind(ilhash(dim,4),i)));
+		    r3 = sqrt(urand(urind(ilhash(dim,4),i)));
 		    dim[3] = 4;
 		    r2 = 2.*PI*urand(urind(ilhash(dim,4),i));
-		    for (j = 0; j < 3; j++)
-			org[j] = ob->oargs.farg[j] + ob->oargs.farg[3] *
-					( r1*cos(r2)*u[j] + r1*sin(r2)*v[j]
-						- sqrt(1.01-r1*r1)*dir[j] );
-
+		    r1 = r3*ob->oargs.farg[3]*cos(r2);
+		    r2 = r3*ob->oargs.farg[3]*sin(r2);
+		    r3 = ob->oargs.farg[3]*sqrt(1.01-r3*r3);
+		    for (j = 0; j < 3; j++) {
+			org[j] = ob->oargs.farg[j] + r1*u[j] + r2*v[j] +
+					r3*dir[j];
+			dir[j] = -dir[j];
+		    }
 					/* send sample */
 		    raysamp(distarr+dim[1]*nazi+dim[2], org, dir, rt);
 		}
+	    }
 	rayflush(rt);
 				/* write out the sphere w/ distribution */
 	roundout(il, distarr, nalt, nazi);
@@ -191,7 +200,7 @@ char  *nm;
 	int  dim[4];
 	int  n, nalt, nazi;
 	float  *distarr;
-	double  r1, r2;
+	double  r1, r2, r3;
 	FVECT  dn, org, dir;
 	FVECT  u, v;
 	register CONE  *co;
@@ -219,18 +228,19 @@ char  *nm;
 		    r2 = (dim[2]+urand(urind(ilhash(dim,4),i)))/nalt;
 		    flatdir(dn, r1, r2);
 		    for (j = 0; j < 3; j++)
-			dir[j] = dn[0]*u[j] + dn[1]*v[j] - dn[2]*co->ad[j];
+			dir[j] = -dn[0]*u[j] - dn[1]*v[j] - dn[2]*co->ad[j];
 					/* random location */
 		    dim[3] = 3;
-		    r1 = sqrt(CO_R0(co)*CO_R0(co) +
+		    r3 = sqrt(CO_R0(co)*CO_R0(co) +
 				urand(urind(ilhash(dim,4),i))*
 				(CO_R1(co)*CO_R1(co) - CO_R0(co)*CO_R0(co)));
 		    dim[3] = 4;
 		    r2 = 2.*PI*urand(urind(ilhash(dim,4),i));
+		    r1 = r3*cos(r2);
+		    r2 = r3*sin(r2);
 		    for (j = 0; j < 3; j++)
-			org[j] = CO_P0(co)[j] +
-					r1*cos(r2)*u[j] + r1*sin(r2)*v[j]
-					+ .001*co->ad[j];
+			org[j] = CO_P0(co)[j] + r1*u[j] + r1*v[j] +
+					.001*co->ad[j];
 
 					/* send sample */
 		    raysamp(distarr+dim[1]*nazi+dim[2], org, dir, rt);
