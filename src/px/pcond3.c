@@ -20,6 +20,137 @@ double	mhistot;			/* modified histogram total */
 float	cumf[HISTRES+1];		/* cumulative distribution function */
 
 
+getfixations(fp)		/* load fixation history list */
+FILE	*fp;
+{
+#define	FIXHUNK		128
+	RESOLU	fvres;
+	int	pos[2];
+	register int	px, py, i;
+				/* initialize our resolution struct */
+	if ((fvres.or=inpres.or)&YMAJOR) {
+		fvres.xr = fvxr;
+		fvres.yr = fvyr;
+	} else {
+		fvres.xr = fvyr;
+		fvres.yr = fvxr;
+	}
+				/* read each picture position */
+	while (fscanf(fp, "%d %d", &pos[0], &pos[1]) == 2) {
+				/* convert to closest index in foveal image */
+		loc2pix(pos, &fvres,
+				(pos[0]+.5)/inpres.xr, (pos[1]+.5)/inpres.yr);
+				/* include nine neighborhood samples */
+		for (px = pos[0]-1; px <= pos[0]+1; px++) {
+			if (px < 0 || px >= fvxr)
+				continue;
+			for (py = pos[1]-1; py <= pos[1]+1; py++) {
+				if (py < 0 || py >= fvyr)
+					continue;
+				for (i = nfixations; i-- > 0; )
+					if (fixlst[i][0] == px &&
+							fixlst[i][1] == py)
+						break;
+				if (i >= 0)
+					continue;	/* already there */
+				if (nfixations % FIXHUNK == 0) {
+					if (nfixations)
+						fixlst = (short (*)[2])
+							realloc((char *)fixlst,
+							(nfixations+FIXHUNK)*
+							2*sizeof(short));
+					else
+						fixlst = (short (*)[2])malloc(
+							FIXHUNK*2*sizeof(short)
+							);
+					if (fixlst == NULL)
+						syserror("malloc");
+				}
+				fixlst[nfixations][0] = px;
+				fixlst[nfixations][1] = py;
+				nfixations++;
+			}
+		}
+	}
+	if (!feof(fp)) {
+		fprintf(stderr, "%s: format error reading fixation data\n",
+				progname);
+		exit(1);
+	}
+#undef	FIXHUNK
+}
+
+
+double
+centprob(x, y)			/* center-weighting probability function */
+int	x, y;
+{
+	double	xr, yr, p;
+				/* paraboloid, 0 at 90 degrees from center */
+	xr = (x - .5*(fvxr-1))/90.;	/* 180 degree fisheye has fv?r == 90 */
+	yr = (y - .5*(fvyr-1))/90.;
+	p = 1. - xr*xr - yr*yr;
+	return(p < 0. ? 0. : p);
+}
+
+
+comphist()			/* create foveal sampling histogram */
+{
+	double	l, b, w, lwmin, lwmax;
+	register int	x, y;
+
+	lwmin = 1e10;			/* find extrema */
+	lwmax = 0.;
+	for (y = 0; y < fvyr; y++)
+		for (x = 0; x < fvxr; x++) {
+			l = plum(fovscan(y)[x]);
+			if (l < lwmin) lwmin = l;
+			if (l > lwmax) lwmax = l;
+		}
+	lwmin -= FTINY;
+	lwmax += FTINY;
+	if (lwmin < LMIN) lwmin = LMIN;
+	if (lwmax > LMAX) lwmax = LMAX;
+	bwmin = Bl(lwmin);
+	bwmax = Bl(lwmax);
+					/* (re)compute histogram */
+	bwavg = 0.;
+	histot = 0.;
+	for (x = 0; x < HISTRES; x++)
+		bwhist[x] = 0.;
+					/* global average */
+	if (!(what2do&DO_FIXHIST) || fixfrac < 1.-FTINY)
+		for (y = 0; y < fvyr; y++)
+			for (x = 0; x < fvxr; x++) {
+				l = plum(fovscan(y)[x]);
+				if (l < lwmin) continue;
+				if (l > lwmax) continue;
+				b = Bl(l);
+				bwavg += b;
+				w = what2do&DO_CWEIGHT ? centprob(x,y) : 1.;
+				bwhist[bwhi(b)] += w;
+				histot += w;
+			}
+					/* average fixation points */
+	if (what2do&DO_FIXHIST && nfixations > 0) {
+		if (histot > FTINY)
+			w = fixfrac/(1.-fixfrac)*histot/nfixations;
+		else
+			w = 1.;
+		for (x = 0; x < nfixations; x++) {
+			l = plum(fovscan(fixlst[x][1])[fixlst[x][0]]);
+			if (l < lwmin) continue;
+			if (l > lwmax) continue;
+			b = Bl(l);
+			bwavg += b;
+			bwhist[bwhi(b)] += w;
+			histot += w;
+		}
+	}
+	bwavg /= histot;
+}
+
+
 mkcumf()			/* make cumulative distribution function */
 {
 	register int	i;

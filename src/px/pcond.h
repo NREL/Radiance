@@ -1,4 +1,4 @@
-/* Copyright (c) 1996 Regents of the University of California */
+/* Copyright (c) 1997 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
 
@@ -39,7 +39,8 @@
 #define DO_HSENS	04
 #define DO_COLOR	010
 #define DO_CWEIGHT	020
-#define DO_LINEAR	040
+#define DO_FIXHIST	040
+#define DO_LINEAR	0100
 
 #define DO_HUMAN	(DO_ACUITY|DO_VEIL|DO_HSENS|DO_COLOR)
 
@@ -64,6 +65,10 @@ extern COLOR	*fovimg;		/* foveal (1 degree) averaged image */
 extern short	fvxr, fvyr;		/* foveal image resolution */
 
 #define fovscan(y)	(fovimg+(y)*fvxr)
+
+extern double	fixfrac;		/* histogram share due to fixations */
+extern short	(*fixlst)[2];		/* fixation history list */
+extern int	nfixations;		/* number of fixation points */
 
 extern float	bwhist[HISTRES];	/* luminance histogram */
 extern double	histot;			/* total count of histogram */
