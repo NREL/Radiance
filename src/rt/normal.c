@@ -186,13 +186,14 @@ register RAY  *r;
 		else
 			setcolor(nd.scolor, 1.0, 1.0, 1.0);
 		scalecolor(nd.scolor, nd.rspec);
-		if (nd.specfl & SP_PURE) {		/* improved model */
-			dtmp = exp(-BSPEC(m)*nd.pdot);
-			for (i = 0; i < 3; i++)
-				colval(nd.scolor,i) +=
-						(1.0-colval(nd.scolor,i))*dtmp;
-			nd.rspec += (1.0-nd.rspec)*dtmp;
-		} else if (specthresh > FTINY &&	/* check threshold */
+						/* improved model */
+		dtmp = exp(-BSPEC(m)*nd.pdot);
+		for (i = 0; i < 3; i++)
+			colval(nd.scolor,i) += (1.0-colval(nd.scolor,i))*dtmp;
+		nd.rspec += (1.0-nd.rspec)*dtmp;
+						/* check threshold */
+		if (!(nd.specfl & SP_PURE) &&
+				specthresh > FTINY &&
 				(specthresh >= 1.-FTINY ||
 				specthresh > nd.rspec))
 			nd.specfl |= SP_RBLT;
