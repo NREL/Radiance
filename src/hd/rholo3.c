@@ -1,9 +1,3 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
-
-#ifndef lint
-static char SCCSid[] = "$SunId$ SGI";
-#endif
-
 /*
  * Routines for tracking beam compuatations
  */
@@ -62,6 +56,7 @@ register PACKHEAD	*clist;
 int	nents;
 {
 	int	oldnr;
+	register HDBEAMI	*hb;
 	register int	i, n;
 				/* look for common members */
 	for (n = 0; n < nents; n++) {
@@ -117,8 +112,11 @@ int	nents;
 					/* what can't we satisfy? */
 		for (n = 0; n < nents && clist[n].nr > clist[n].nc; n++)
 			;
-		if (op == BS_ADJ)
-			nents = n;
+		if (op == BS_ADJ) {	/* don't regenerate adjusted beams */
+			for (i = n; i < nents && clist[i].nr > 0; i++)
+				;
+			nents = i;
+		}
 		if (n) {		/* allocate space for merged list */
 			PACKHEAD	*newlist;
 			newlist = (PACKHEAD *)malloc(
@@ -140,17 +138,16 @@ int	nents;
 	default:
 		error(CONSISTENCY, "bundle_set called with unknown operation");
 	}
-	if (outdev != NULL) {		/* load and display beams we have */
-		register HDBEAMI	*hb;
-
-		hb = (HDBEAMI *)malloc(nents*sizeof(HDBEAMI));
-		for (i = 0; i < nents; i++) {
-			hb[i].h = hdlist[clist[i].hd];
-			hb[i].b = clist[i].bi;
-		}
-		hdloadbeams(hb, nents, dispbeam);
-		free((char *)hb);
+	if (outdev == NULL)		/* nothing to display? */
+		return;
+					/* load and display beams we have */
+	hb = (HDBEAMI *)malloc(nents*sizeof(HDBEAMI));
+	for (i = 0; i < nents; i++) {
+		hb[i].h = hdlist[clist[i].hd];
+		hb[i].b = clist[i].bi;
 	}
+	hdloadbeams(hb, nents, dispbeam);
+	free((char *)hb);
 	return;
 memerr:
 	error(SYSTEM, "out of memory in bundle_set");
