@@ -172,7 +172,7 @@ double  (*fptr)();
 		break;
 	libsize++;
     }
-    lp[0].fname = savestr(fname);
+    lp[0].fname = fname;		/* must be static! */
     lp[0].nargs = nargs;
     lp[0].atyp = assign;
     lp[0].f = fptr;
@@ -380,7 +380,7 @@ register VARDEF  *vp;
     }
     lasterrno = errno;
     errno = 0;
-    d = (*vp->lib->f)();
+    d = (*vp->lib->f)(vp->lib->fname);
 #ifdef  IEEE
     if (!finite(d))
 	errno = EDOM;
