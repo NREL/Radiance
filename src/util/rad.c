@@ -535,8 +535,8 @@ ambval()				/* compute ambient value */
 {
 	if (vdef(EXPOSURE)) {
 		if (vval(EXPOSURE)[0] == '+' || vval(EXPOSURE)[0] == '-')
-			return(.5/pow(2.,atof(vval(EXPOSURE))));
-		return(.5/atof(vval(EXPOSURE)));
+			return(.5/pow(2.,vflt(EXPOSURE)));
+		return(.5/vflt(EXPOSURE));
 	}
 	if (vlet(ZONE) == 'E')
 		return(10.);
