@@ -151,7 +151,7 @@ char  *s;
 			newview(&nv);
 		return;
 	}
-	if (oldview.horiz == 0) {	/* no old view! */
+	if (oldview.type == 0) {	/* no old view! */
 		error(COMMAND, "no previous view");
 		return;
 	}
