@@ -60,6 +60,8 @@ int  ar;
 		if (maxarad > thescene.cusize / 2.0)
 			maxarad = thescene.cusize / 2.0;
 	}
+	if (maxarad <= FTINY)
+		maxarad = .001;
 }
 
 
