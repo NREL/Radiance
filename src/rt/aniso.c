@@ -109,15 +109,15 @@ double  omega;			/* light source size */
 		h[0] = ldir[0] - np->rp->rdir[0];
 		h[1] = ldir[1] - np->rp->rdir[1];
 		h[2] = ldir[2] - np->rp->rdir[2];
-		normalize(h);
 						/* ellipse */
 		dtmp1 = DOT(np->u, h);
 		dtmp1 *= dtmp1 / au2;
 		dtmp2 = DOT(np->v, h);
 		dtmp2 *= dtmp2 / av2;
 						/* gaussian */
-		dtmp = (dtmp1 + dtmp2) / (1.0 + DOT(np->pnorm, h));
-		dtmp = exp(-2.0*dtmp) * (1.0/4.0/PI)
+		dtmp = DOT(np->pnorm, h);
+		dtmp = (dtmp1 + dtmp2) / (dtmp*dtmp);
+		dtmp = exp(-dtmp) * (0.25/PI)
 				* sqrt(ldot/(np->pdot*au2*av2));
 						/* worth using? */
 		if (dtmp > FTINY) {
@@ -155,9 +155,9 @@ double  omega;			/* light source size */
 			dtmp = 1.0 - dtmp1*dtmp1/dtmp;
 			if (dtmp > FTINY*FTINY) {
 				dtmp1 = DOT(h,np->u);
-				dtmp1 = dtmp1*dtmp1 / au2;
+				dtmp1 *= dtmp1 / au2;
 				dtmp2 = DOT(h,np->v);
-				dtmp2 = dtmp2*dtmp2 / av2;
+				dtmp2 *= dtmp2 / av2;
 				dtmp = (dtmp1 + dtmp2) / dtmp;
 			}
 		} else
