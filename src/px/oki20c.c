@@ -145,9 +145,15 @@ int  y;
 		fputs("\033\031", stdout);
 
 		for (j = 0; j < 3; j++) {
+			i = (NCOLS + len)/2;		/* center image */
 			fputs("\033%O", stdout);
-			putchar(len & 255);
-			putchar(len >> 8);
+			putchar(i & 255);
+			putchar(i >> 8);
+			while (i-- > len) {
+				putchar(0);
+				putchar(0);
+				putchar(0);
+			}
 			for (i = 0; i < len; i++) {
 				c = lpat[i][j] | colbit(scan[i],i,j);
 							/* repeat this row */
