@@ -205,12 +205,19 @@ char  *pout, *zout, *prvr;
 				cp--;
 			strcpy(cp, RFTEMPLATE);
 			prvr = mktemp(fbuf2);
-			if (rename(fbuf, prvr) < 0 && errno != ENOENT) {
-				sprintf(errmsg,
+			if (rename(fbuf, prvr) < 0)
+				if (errno == ENOENT) {	/* ghost file */
+					sprintf(errmsg,
+						"new output file \"%s\"",
+						fbuf);
+					error(WARNING, errmsg);
+					prvr = NULL;
+				} else {		/* serious error */
+					sprintf(errmsg,
 					"cannot rename \"%s\" to \"%s\"",
 						fbuf, prvr);
-				error(SYSTEM, errmsg);
-			}
+					error(SYSTEM, errmsg);
+				}
 		}
 	}
 	npicts = 0;			/* render sequence */
