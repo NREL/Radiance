@@ -25,10 +25,6 @@ static const char	RCSid[] = "$Id$";
 #define TIMELIM		(8*3600)	/* time limit for holding pattern */
 #endif
 
-#ifndef freebsd
-#define	mkfifo(fn,md)	mknod(fn, S_IFIFO|(md), 0)
-#endif
-
 extern void	io_process();
 
 extern int	headismine;	/* boolean true if header belongs to me */
