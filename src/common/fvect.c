@@ -122,20 +122,20 @@ spinvector(vres, vorig, vnorm, theta)	/* rotate vector around normal */
 FVECT  vres, vorig, vnorm;
 double  theta;
 {
-	extern double  sin(), cos();
-	double  sint, cost, dotp;
+	extern double  cos(), sin();
+	double  sint, cost, normprod;
 	FVECT  vperp;
 	register int  i;
 	
 	if (theta == 0.0) {
-		VCOPY(vres, vorig);
+		if (vres != vorig)
+			VCOPY(vres, vorig);
 		return;
 	}
-	sint = sin(theta);
 	cost = cos(theta);
-	dotp = DOT(vorig, vnorm);
+	sint = sin(theta);
+	normprod = DOT(vorig, vnorm)*(1.-cost);
 	fcross(vperp, vnorm, vorig);
 	for (i = 0; i < 3; i++)
-		vres[i] = vnorm[i]*dotp*(1.-cost) +
-				vorig[i]*cost + vperp[i]*sint;
+		vres[i] = vorig[i]*cost + vnorm[i]*normprod + vperp[i]*sint;
 }
