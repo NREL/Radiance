@@ -8,6 +8,8 @@ OPT = -O
 
 CFLAGS = $(MACH) $(OPT) -I../common -L../lib
 
+CC = cc
+
 INSTDIR = /usr/local/bin
 
 PROGS = findglare xglaresrc glarendx
@@ -28,31 +30,31 @@ clean:
 	set nonomatch; rm -f *.o $(PROGS) core
 
 scanner:	scanner.o
-	cc $(CFLAGS) -o scanner scanner.o -lm
+	$(CC) $(CFLAGS) -o scanner scanner.o -lm
 
 makedist:	makedist.o setscan.o
-	cc $(CFLAGS) -o makedist makedist.o setscan.o -lrt -lm
+	$(CC) $(CFLAGS) -o makedist makedist.o setscan.o -lrt -lm
 
 findglare:	findglare.o glareval.o glaresrc.o setscan.o
-	cc $(CFLAGS) -o findglare findglare.o glareval.o glaresrc.o \
+	$(CC) $(CFLAGS) -o findglare findglare.o glareval.o glaresrc.o \
 setscan.o -lrt -lm
 
 glarendx:	glarendx.o
-	cc $(CFLAGS) -o glarendx glarendx.o -lrt -lm
+	$(CC) $(CFLAGS) -o glarendx glarendx.o -lrt -lm
 
 xglaresrc:	xglaresrc.o x11findwind.o
-	cc $(CFLAGS) -o xglaresrc xglaresrc.o \
+	$(CC) $(CFLAGS) -o xglaresrc xglaresrc.o \
 x11findwind.o -lrt -lX11 -lm
 
 contour:	contour.o
-	cc $(CFLAGS) -o contour contour.o -lm
+	$(CC) $(CFLAGS) -o contour contour.o -lm
 
 pranim:	pranim.o client/libclient.a
-	cc $(CFLAGS) -o pranim pranim.o \
+	$(CC) $(CFLAGS) -o pranim pranim.o \
 client/libclient.a -lrpcsvc
 
 t16anim:	t16anim.o client/libclient.a
-	cc $(CFLAGS) -o t16anim t16anim.o \
+	$(CC) $(CFLAGS) -o t16anim t16anim.o \
 client/libclient.a -lrpcsvc
 
 t16anim.o pranim.o:	client/clnt.h

@@ -6,6 +6,7 @@
 OPT = -O
 MACH = -DBSD
 CFLAGS = $(MACH) $(OPT)
+CC = cc
 
 COMPAT = bmalloc.o erf.o # frexp.o fwrite.o random.o
 
@@ -35,16 +36,16 @@ clean:
 	rm -f $(RTOBJ) $(PICOBJ) $(STDOBJ) $(SYSOBJ) librt.a
 
 fropen.o:	fropen.c
-	cc $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c fropen.c
+	$(CC) $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c fropen.c
 
 calexpr.o:	calexpr.c calcomp.h
-	cc $(CFLAGS) -DVARIABLE -DFUNCTION -DRCONST -c calexpr.c
+	$(CC) $(CFLAGS) -DVARIABLE -DFUNCTION -DRCONST -c calexpr.c
 
 caldefn.o:	caldefn.c calcomp.h
-	cc $(CFLAGS) -DFUNCTION -c caldefn.c
+	$(CC) $(CFLAGS) -DFUNCTION -c caldefn.c
 
 calfunc.o:	calfunc.c calcomp.h
-	cc $(CFLAGS) -DVARIABLE -DBIGLIB -c calfunc.c
+	$(CC) $(CFLAGS) -DVARIABLE -DBIGLIB -c calfunc.c
 
 color.o colrops.o resolu.o spec_rgb.o:	color.h
 
