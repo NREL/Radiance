@@ -56,9 +56,9 @@ char  *argv[];
 	angle = atof(argv[7]);
 	if (argc == 10)
 		if (!strcmp(argv[8], "-r"))
-			rcurv = atof(argv[8]);
+			rcurv = atof(argv[9]);
 		else if (!strcmp(argv[8], "+r"))
-			rcurv = -atof(argv[8]);
+			rcurv = -atof(argv[9]);
 		else
 			goto userr;
 
