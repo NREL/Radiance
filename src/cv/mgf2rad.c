@@ -17,14 +17,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define putv(v)		printf("%18.12g %18.12g %18.12g\n",(v)[0],(v)[1],(v)[2])
 
-#define isgrey(cxy)	((cxy)->cx > .31 && (cxy)->cx < .35 && \
-			(cxy)->cy > .31 && (cxy)->cy < .35)
-
-#define is0vect(v)	((v)[0] == 0. && (v)[1] == 0. && (v)[2] == 0.)
-
-#define BIGFLT		1e8
-
-double	glowdist = 1.5*BIGFLT;		/* glow test distance */
+double	glowdist = FHUGE;		/* glow test distance */
 
 double  emult = 1.;			/* emmitter multiplier */
 
@@ -280,7 +273,7 @@ char	**av;
 		return(MG_EARGC);
 	if ((mat = material()) == NULL)
 		return(MG_EBADMAT);
-	if (ac < 5) {				/* check for surface normals */
+	if (ac <= 5) {				/* check for surface normals */
 		for (i = 1; i < ac; i++) {
 			if ((cv = c_getvert(av[i])) == NULL)
 				return(MG_EUNDEF);
@@ -361,7 +354,6 @@ do_tri(mat, vn1, vn2, vn3)		/* put out smoothed triangle */
 char	*mat, *vn1, *vn2, *vn3;
 {
 	static int	ntris;
-	char	*mod = mat;
 	BARYCCM	bvecs;
 	FLOAT	bcoor[3][3];
 	C_VERTEX	*cv1, *cv2, *cv3;
@@ -375,21 +367,20 @@ char	*mat, *vn1, *vn2, *vn3;
 	xf_xfmpoint(v1, cv1->p);
 	xf_xfmpoint(v2, cv2->p);
 	xf_xfmpoint(v3, cv3->p);
-	if (comp_baryc(&bvecs, v1, v2, v3) == 0) {
-		printf("\n%s texfunc T-nor\n", mod);
-		mod = "T-nor";
-		printf("4 dx dy dz %s\n0\n", TCALNAME);
-		xf_rotvect(n1, cv1->n);
-		xf_rotvect(n2, cv2->n);
-		xf_rotvect(n3, cv3->n);
-		for (i = 0; i < 3; i++) {
-			bcoor[i][0] = n1[i];
-			bcoor[i][1] = n2[i];
-			bcoor[i][2] = n3[i];
-		}
-		put_baryc(&bvecs, bcoor, 3);
+	if (comp_baryc(&bvecs, v1, v2, v3) < 0)
+		return;				/* degenerate triangle! */
+	printf("\n%s texfunc T-nor\n", mat);
+	printf("4 dx dy dz %s\n0\n", TCALNAME);
+	xf_rotvect(n1, cv1->n);
+	xf_rotvect(n2, cv2->n);
+	xf_rotvect(n3, cv3->n);
+	for (i = 0; i < 3; i++) {
+		bcoor[i][0] = n1[i];
+		bcoor[i][1] = n2[i];
+		bcoor[i][2] = n3[i];
 	}
-	printf("\n%s polygon %st%d\n", mod, object(), ++ntris);
+	put_baryc(&bvecs, bcoor, 3);
+	printf("\nT-nor polygon %st%d\n", object(), ++ntris);
 	printf("0\n0\n9\n");
 	putv(v1);
 	putv(v2);
@@ -414,7 +405,7 @@ material()			/* get (and print) current material */
 	if (c_cmaterial->ed > .1) {	/* emitter */
 		cvtcolor(radrgb, &c_cmaterial->ed_c,
 				emult*c_cmaterial->ed/WHTEFFICACY);
-		if (glowdist < BIGFLT) {	/* do a glow */
+		if (glowdist < FHUGE) {		/* do a glow */
 			printf("\nvoid glow %s\n0\n0\n", mname);
 			printf("4 %f %f %f %f\n", colval(radrgb,RED),
 					colval(radrgb,GRN),
