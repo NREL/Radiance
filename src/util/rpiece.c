@@ -109,7 +109,8 @@ char  *argv[];
 			case 'F':		/* syncronization file */
 				if (argv[i][2])
 					break;
-				if ((syncfd = open(argv[++i], O_RDWR)) < 0) {
+				if ((syncfd = open(argv[++i],
+						O_RDWR|O_CREAT, 0666)) < 0) {
 					fprintf(stderr, "%s: cannot open\n",
 							argv[i]);
 					exit(1);
