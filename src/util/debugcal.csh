@@ -23,8 +23,10 @@ foreach d (`echo $RAYPATH | sed 's/:/ /g'`)
 	endif
 end
 
-rtrace -h- -x 1 -odNplL $1 | rcalc -e 'Dx=$1;Dy=$2;Dz=$3' \
+rtrace -h- -x 1 -odNplL $1 | rcalc -u -e 'Dx=$1;Dy=$2;Dz=$3' \
 		-e 'Nx=$4;Ny=$5;Nz=$6;Px=$7;Py=$8;Pz=$9' \
 		-e 'T=$10;Ts=$11' -e 'S:1;Tx:0;Ty:0;Tz:0' \
 		-e 'Ix:1;Iy:0;Iz:0;Jx:0;Jy:1;Jz:0;Kx:0;Ky:0;Kz:1' \
-		-e 'Rdot=-Dx*Nx-Dy*Ny-Dz*Nz' $initfile $argv[2-]:q
+		-e 'Rdot=-Dx*Nx-Dy*Ny-Dz*Nz' -e 'RdotP=Rdot' \
+		-e 'NxP=Nx;NyP=Ny;NzP=Nz' -e 'CrP=A1;CgP=A2;CbP=A3' \
+		$initfile $argv[2-]:q
