@@ -145,7 +145,7 @@ char  *argv[];
 	if (wrong_fmt)
 		quitmsg("input must be a Radiance picture");
 				/* get picture dimensions */
-	if (fgetresolu(&xmax, &ymax, fin) != (YMAJOR|YDECR))
+	if (fgetresolu(&xmax, &ymax, fin) < 0)
 		quitmsg("bad picture size");
 	if (xmax > NCOLS || ymax > NROWS)
 		quitmsg("resolution mismatch");
