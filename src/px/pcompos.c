@@ -17,10 +17,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  MAXFILE	32
 
-#define  SIGNHT		24
-#define  setpscom(b,n)	sprintf(b, "psign -h %d '%.30s'|pfilt -1 -x /2 -y /2",\
-				2*SIGNHT, n)
-
 					/* output picture size */
 int  xsiz = 0;
 int  ysiz = 0;
@@ -31,6 +27,8 @@ int  xmax = 0;
 int  ymax = 0;
 
 COLR  bgcolr = BLKCOLR;			/* background color */
+
+int  labelht = 24;			/* label height */
 
 int  checkthresh = 0;			/* check threshold value */
 
@@ -49,9 +47,7 @@ int  nfile;			/* number of files */
 
 int  wrongformat = 0;
 
-char  tmpbuf[128];
-
-FILE  *popen();
+FILE  *popen(), *lblopen();
 
 
 tabputs(s)			/* print line preceded by a tab */
@@ -75,8 +71,9 @@ char  *argv[];
 {
 	double  atof();
 	int  ncolumns = 0;
-	int  dolabels = 0;
+	int  autolabel = 0;
 	int  curcol = 0, curx = 0, cury = 0;
+	char  *thislabel;
 	int  an;
 
 	progname = argv[0];
@@ -99,7 +96,18 @@ char  *argv[];
 			ncolumns = atoi(argv[++an]);
 			break;
 		case 'l':
-			dolabels++;
+			switch (argv[an][2]) {
+			case 'a':
+				autolabel++;
+				break;
+			case 'h':
+				labelht = atoi(argv[++an]);
+				break;
+			case '\0':
+				goto dofiles;
+			default:
+				goto userr;
+			}
 			break;
 		case '\0':
 		case 't':
@@ -109,20 +117,12 @@ char  *argv[];
 		}
 dofiles:
 	for (nfile = 0; an < argc; nfile++) {
-		if (dolabels) {
-			if (nfile >= MAXFILE-1) {
-				fprintf(stderr,
-				"%s: only %d files allowed with labels\n",
-					progname, MAXFILE/2);
-				quit(1);
-			}
-		} else {
-			if (nfile >= MAXFILE) {
-				fprintf(stderr, "%s: only %d files allowed\n",
-						progname, MAXFILE);
-				quit(1);
-			}
-		}
+		if (nfile >= MAXFILE)
+			goto toomany;
+		if (autolabel)
+			thislabel = argv[an];
+		else
+			thislabel = NULL;
 		input[nfile].hasmin = input[nfile].hasmax = 0;
 		while (an < argc && (argv[an][0] == '-' || argv[an][0] == '+'))
 			switch (argv[an][1]) {
@@ -143,10 +143,15 @@ dofiles:
 				}
 				an += 2;
 				break;
+			case 'l':
+				if (strcmp(argv[an], "-l"))
+					goto userr;
+				thislabel = argv[++an];
+				break;
 			case '\0':
 				if (argv[an][0] == '-')
 					goto getfile;
-			/* fall through */
+				goto userr;
 			default:
 				goto userr;
 			}
@@ -203,20 +208,18 @@ getfile:
 			xmax = input[nfile].xloc+input[nfile].xres;
 		if (input[nfile].yloc+input[nfile].yres > ymax)
 			ymax = input[nfile].yloc+input[nfile].yres;
-		if (dolabels) {
-			input[++nfile].name = "<Label>";
-			setpscom(tmpbuf, input[nfile-1].name);
-			if ((input[nfile].fp = popen(tmpbuf, "r")) == NULL)
-				goto labelerr;
-			if (checkheader(input[nfile].fp, COLRFMT, NULL) < 0)
-				goto labelerr;
-			if (fgetresolu(&input[nfile].xres, &input[nfile].yres,
-					input[nfile].fp) != (YMAJOR|YDECR))
+		if (thislabel != NULL) {
+			if (++nfile >= MAXFILE)
+				goto toomany;
+			input[nfile].name = "<Label>";
+			input[nfile].hasmin = input[nfile].hasmax = 0;
+			if ((input[nfile].fp = lblopen(thislabel,
+					&input[nfile].xres,
+					&input[nfile].yres)) == NULL)
 				goto labelerr;
 			input[nfile].xloc = input[nfile-1].xloc;
 			input[nfile].yloc = input[nfile-1].yloc +
-					input[nfile-1].yres - SIGNHT;
-			input[nfile].hasmin = input[nfile].hasmax = 0;
+					input[nfile-1].yres-input[nfile].yres;
 		}
 	}
 	if (xsiz <= 0)
@@ -232,9 +235,13 @@ getfile:
 	
 	quit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-x xr][-y yr][-b r g b][-a n][-l] ",
+	fprintf(stderr, "Usage: %s [-x xr][-y yr][-b r g b][-a n][-la][-lh h] ",
 			progname);
-	fprintf(stderr, "[-t min1][+t max1] pic1 x1 y1 ..\n");
+	fprintf(stderr, "[-t min1][+t max1][-l lab] pic1 x1 y1 ..\n");
+	quit(1);
+toomany:
+	fprintf(stderr, "%s: only %d files and labels allowed\n",
+			progname, MAXFILE);
 	quit(1);
 labelerr:
 	fprintf(stderr, "%s: error opening label\n", progname);
@@ -314,6 +321,29 @@ register COLR  c1, c2;
 		if (i = c1[j] - c2[j])
 			return(i);
 	return(0);
+}
+
+
+FILE *
+lblopen(s, xp, yp)		/* open pipe to label generator */
+char  *s;
+int  *xp, *yp;
+{
+	char  com[128];
+	FILE  *fp;
+
+	sprintf(com, "psign -h %d '%.30s' | pfilt -1 -x /2 -y /2",
+			2*labelht, s);
+	if ((fp = popen(com, "r")) == NULL)
+		return(NULL);
+	if (checkheader(fp, COLRFMT, NULL) < 0)
+		goto err;
+	if (fgetresolu(xp, yp, fp) != (YMAJOR|YDECR))
+		goto err;
+	return(fp);
+err:
+	pclose(fp);
+	return(NULL);
 }
 
 
