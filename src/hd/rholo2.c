@@ -9,6 +9,7 @@ static char SCCSid[] = "$SunId$ SGI";
  */
 
 #include "rholo.h"
+#include "paths.h"
 #include "random.h"
 
 
@@ -61,4 +62,91 @@ register float	*rvl;
 		rvl += 4;
 	}
 	p->nc += p->nr;
+}
+
+
+int
+done_rtrace()			/* clean up and close rtrace calculation */
+{
+	int	status;
+					/* already closed? */
+	if (!nprocs)
+		return;
+					/* report activity */
+	wputs("closing rtrace process...\n");
+					/* flush beam queue */
+	done_packets(flush_queue());
+					/* close rtrace */
+	if ((status = end_rtrace()))
+		error(WARNING, "bad exit status from rtrace");
+	if (vdef(REPORT))		/* report time */
+		report(0);
+	return(status);			/* return status */
+}
+
+
+new_rtrace()			/* restart rtrace calculation */
+{
+	char	combuf[128];
+
+	if (nprocs > 0)			/* already running? */
+		return;
+	wputs("restarting rtrace process...\n");
+	if (vdef(RIF)) {		/* rerun rad to update octree */
+		sprintf(combuf, "rad -v 0 -s -w %s", vval(RIF));
+		if (system(combuf))
+			error(WARNING, "error running rad");
+	}
+	if (start_rtrace() < 1)		/* start rtrace */
+		error(WARNING, "cannot restart rtrace");
+	else if (vdef(REPORT))
+		report(0);
+}
+
+
+getradfile()			/* run rad and get needed variables */
+{
+	static short	mvar[] = {OCTREE,-1};
+	static char	tf1[] = TEMPLATE;
+	char	tf2[64];
+	char	combuf[256];
+	char	*pippt;
+	register int	i;
+	register char	*cp;
+					/* check if rad file specified */
+	if (!vdef(RIF))
+		return;
+					/* create rad command */
+	mktemp(tf1);
+	sprintf(tf2, "%s.rif", tf1);
+	sprintf(combuf,
+		"rad -v 0 -s -e -w %s OPTFILE=%s | egrep '^[ \t]*(NOMATCH",
+			vval(RIF), tf1);
+	cp = combuf;
+	while (*cp){
+		if (*cp == '|') pippt = cp;
+		cp++;
+	}				/* match unset variables */
+	for (i = 0; mvar[i] >= 0; i++)
+		if (!vdef(mvar[i])) {
+			*cp++ = '|';
+			strcpy(cp, vnam(mvar[i]));
+			while (*cp) cp++;
+			pippt = NULL;
+		}
+	if (pippt != NULL)
+		strcpy(pippt, "> /dev/null");	/* nothing to match */
+	else
+		sprintf(cp, ")[ \t]*=' > %s", tf2);
+	if (system(combuf)) {
+		unlink(tf2);			/* clean up */
+		unlink(tf1);
+		error(SYSTEM, "cannot execute rad command");
+	}
+	if (pippt == NULL) {
+		loadvars(tf2);			/* load variables */
+		unlink(tf2);
+	}
+	rtargc += wordfile(rtargv+rtargc, tf1);	/* get rtrace options */
+	unlink(tf1);			/* clean up */
 }
