@@ -44,7 +44,7 @@ typedef struct {
 
 typedef struct {
 	FVECT  dir;		/* source direction */
-	float  dom;		/* domega for source */
+	COLOR  coef;		/* material coefficient */
 	COLOR  val;		/* contribution */
 }  CONTRIB;		/* direct contribution */
 
