@@ -36,6 +36,34 @@ int  dir_proj();
 VSMATERIAL  direct1_vs = {dir_proj, 1};
 VSMATERIAL  direct2_vs = {dir_proj, 2};
 
+#define fndx(m)		((m)->otype == MAT_DIRECT1 ? 4 : 8)
+
+
+static
+dir_check(m)			/* check arguments and load function file */
+register OBJREC  *m;
+{
+	register FULLXF  *mxf;
+	register int  ff;
+
+	ff = fndx(m)+1;
+	if (ff > m->oargs.nsargs)
+		objerror(m, USER, "too few arguments");
+	if (m->os == NULL) {
+		mxf = (FULLXF *)malloc(sizeof(FULLXF));
+		if (mxf == NULL)
+			error(SYSTEM, "out of memory in dir_check");
+		if (fullxf(mxf, m->oargs.nsargs-ff, m->oargs.sarg+ff) !=
+				m->oargs.nsargs-ff)
+			objerror(m, USER, "bad transform");
+		if (mxf->f.sca < 0.0)
+			mxf->f.sca = -mxf->f.sca;
+		if (mxf->b.sca < 0.0)
+			mxf->b.sca = -mxf->b.sca;
+		m->os = (char *)mxf;
+	}
+}
+
 
 m_direct(m, r)			/* shade redirected ray */
 register OBJREC  *m;
@@ -67,6 +95,7 @@ int  n;
 	register int  j;
 					/* set up function */
 	setmap(m, r, &((FULLXF *)m->os)->b);
+	funcfile(m->oargs.sarg[fndx(m)]);
 	sa = m->oargs.sarg + 4*n;
 					/* compute coefficient */
 	errno = 0;
@@ -139,6 +168,7 @@ int  n;
 		return(0);		/* no intersection! */
 				/* compute redirection */
 	setmap(m, &tr, &((FULLXF *)m->os)->b);
+	funcfile(m->oargs.sarg[fndx(m)]);
 	errno = 0;
 	if (varvalue(sa[0]) <= FTINY)
 		return(0);		/* insignificant */
@@ -172,31 +202,4 @@ int  n;
 computerr:
 	objerror(m, WARNING, "projection compute error");
 	return(0);
-}
-
-
-static
-dir_check(m)			/* check arguments and load function file */
-register OBJREC  *m;
-{
-	register FULLXF  *mxf;
-	register int  ff;
-
-	ff = m->otype == MAT_DIRECT1 ? 5 : 9;
-	if (ff > m->oargs.nsargs)
-		objerror(m, USER, "too few arguments");
-	funcfile(m->oargs.sarg[ff-1]);
-	if (m->os == NULL) {
-		mxf = (FULLXF *)malloc(sizeof(FULLXF));
-		if (mxf == NULL)
-			error(SYSTEM, "out of memory in dir_check");
-		if (fullxf(mxf, m->oargs.nsargs-ff, m->oargs.sarg+ff) !=
-				m->oargs.nsargs-ff)
-			objerror(m, USER, "bad transform");
-		if (mxf->f.sca < 0.0)
-			mxf->f.sca = -mxf->f.sca;
-		if (mxf->b.sca < 0.0)
-			mxf->b.sca = -mxf->b.sca;
-		m->os = (char *)mxf;
-	}
 }
