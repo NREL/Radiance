@@ -118,6 +118,10 @@ char  *fname;
 		sprintf(errmsg, "cannot open input file \"%s\"", fname);
 		error(SYSTEM, errmsg);
 	}
+#ifdef MSDOS
+	if (inform != 'a')
+		setmode(fileno(fp), O_BINARY);
+#endif
 					/* set up output */
 	setoutput(outvals);
 	switch (outform) {

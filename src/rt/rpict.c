@@ -155,6 +155,9 @@ closeheader()			/* done with header output */
 		return;
 	if (fflush(stdout) == EOF || (hfp = fopen(hfname, "r")) == NULL)
 		error(SYSTEM, "error reopening header file");
+#ifdef MSDOS
+	setmode(fileno(hfp), O_BINARY);
+#endif
 }
 
 
@@ -241,6 +244,9 @@ char  *pout, *zout, *prvr;
 					"cannot open output file \"%s\"", fbuf);
 				error(SYSTEM, errmsg);
 			}
+#ifdef MSDOS
+			setmode(fileno(stdout), O_BINARY);
+#endif
 			dupheader();
 		}
 		hres = hresolu; vres = vresolu; pa = pixaspect;
@@ -332,6 +338,9 @@ char  *zfile, *oldfile;
 			sprintf(errmsg, "cannot open z file \"%s\"", zfile);
 			error(SYSTEM, errmsg);
 		}
+#ifdef MSDOS
+		setmode(zfd, O_BINARY);
+#endif
 		for (i = 0; i <= psample; i++) {
 			zbar[i] = (float *)malloc(hres*sizeof(float));
 			if (zbar[i] == NULL)
@@ -589,6 +598,9 @@ char  *oldfile;
 		error(WARNING, errmsg);
 		return(0);
 	}
+#ifdef MSDOS
+	setmode(fileno(fp), O_BINARY);
+#endif
 				/* discard header */
 	getheader(fp, NULL);
 				/* get picture size */

@@ -593,6 +593,9 @@ char  *s;
 		error(COMMAND, errmsg);
 		return;
 	}
+#ifdef MSDOS
+	setmode(fileno(fp), O_BINARY);
+#endif
 	(*dev->comout)("writing \"");
 	(*dev->comout)(fname);
 	(*dev->comout)("\"...\n");
