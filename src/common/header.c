@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1994 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -9,6 +9,9 @@ static char SCCSid[] = "$SunId$ LBL";
  *
  *	8/19/88
  *
+ *  newheader(t,fp)	start new information header identified by string t
+ *  isheadid(s)		returns true if s is a header id line
+ *  headidval(r,s)	copy header identifier value in s to r
  *  printargs(ac,av,fp) print an argument list to fp, followed by '\n'
  *  isformat(s)		returns true if s is of the form "FORMAT=*"
  *  formatval(r,s)	copy the format value in s to r
@@ -30,8 +33,39 @@ static char SCCSid[] = "$SunId$ LBL";
 
 extern char  *index();
 
-char  FMTSTR[] = "FORMAT=";
-int  FMTSTRL = 7;
+char  HDRSTR[] = "#?";		/* information header magic number */
+
+char  FMTSTR[] = "FORMAT=";	/* format identifier */
+
+
+newheader(s, fp)		/* identifying line of information header */
+char  *s;
+register FILE  *fp;
+{
+	fputs(HDRSTR, fp);
+	fputs(s, fp);
+	putc('\n', fp);
+}
+
+
+headidval(r,s)			/* get header id (return true if is id) */
+register char  *r, *s;
+{
+	register char  *cp = HDRSTR;
+
+	while (*cp) if (*cp++ != *s++) return(0);
+	if (r == NULL) return(1);
+	while (*s) *r++ = *s++;
+	*r = '\0';
+	return(1);
+}
+
+
+isheadid(s)			/* check to see if line is header id */
+char  *s;
+{
+	return(headidval(NULL, s));
+}
 
 
 printargs(ac, av, fp)		/* print arguments to a file */
@@ -58,23 +92,27 @@ register FILE  *fp;
 }
 
 
-isformat(s)			/* is line a format line? */
-char  *s;
-{
-	return(!strncmp(s,FMTSTR,FMTSTRL));
-}
-
-
-formatval(r, s)			/* return format value */
+formatval(r, s)			/* get format value (return true if format) */
 register char  *r;
 register char  *s;
 {
-	s += FMTSTRL;
+	register char  *cp = FMTSTR;
+
+	while (*cp) if (*cp++ != *s++) return(0);
 	while (isspace(*s)) s++;
-	if (!*s) { *r = '\0'; return; }
+	if (!*s) return(0);
+	if (r == NULL) return(1);
 	while(*s) *r++ = *s++;
 	while (isspace(r[-1])) r--;
 	*r = '\0';
+	return(1);
+}
+
+
+isformat(s)			/* is line a format line? */
+char  *s;
+{
+	return(formatval(NULL, s));
 }
 
 
@@ -126,9 +164,7 @@ mycheck(s, cp)			/* check a header line for format info. */
 char  *s;
 register struct check  *cp;
 {
-	if (!strncmp(s,FMTSTR,FMTSTRL))
-		formatval(cp->fs, s);
-	else if (cp->fp != NULL)	/* don't copy format info. */
+	if (!formatval(cp->fs, s) && cp->fp != NULL)
 		fputs(s, cp->fp);
 }
 
