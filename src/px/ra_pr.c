@@ -41,7 +41,7 @@ extern char	*ecalloc(), *emalloc();
 
 extern long  ftell();
 
-double	gamma = 2.2;			/* gamma correction */
+double	gamcor = 2.2;			/* gamma correction */
 
 int  bradj = 0;				/* brightness adjustment */
 
@@ -77,7 +77,7 @@ char  *argv[];
 				dither = !dither;
 				break;
 			case 'g':
-				gamma = atof(argv[++i]);
+				gamcor = atof(argv[++i]);
 				break;
 			case 'b':
 				greyscale = !greyscale;
@@ -258,9 +258,9 @@ struct rasterfile  *h;
 					/* convert table */
 	for (i = 0; i < h->ras_maplength/3; i++)
 		setcolr(ctab[i],
-				pow((cmap[0][i]+.5)/256.,gamma),
-				pow((cmap[1][i]+.5)/256.,gamma),
-				pow((cmap[2][i]+.5)/256.,gamma));
+				pow((cmap[0][i]+.5)/256.,gamcor),
+				pow((cmap[1][i]+.5)/256.,gamcor),
+				pow((cmap[2][i]+.5)/256.,gamcor));
 	if (bradj)
 		shiftcolrs(ctab, 256, bradj);
 					/* convert file */
@@ -361,7 +361,7 @@ colormap  map;
 	register int  i, val;
 
 	for (i = 0; i < 256; i++) {
-		val = pow((i+0.5)/256.0, 1.0/gamma) * 256.0;
+		val = pow((i+0.5)/256.0, 1.0/gamcor) * 256.0;
 		map[0][i] = map[1][i] = map[2][i] = val;
 	}
 }
