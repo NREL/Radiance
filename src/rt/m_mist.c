@@ -106,7 +106,8 @@ register int  *sl;
 	for (i = sl[0]; i > 0; i--)
 		if (!inslist(r->slights, sl[i])) {
 			if (r->slights[0] >= MAXSLIST)
-				error(USER, "scattering source list overflow");
+				error(INTERNAL,
+					"scattering source list overflow");
 			r->slights[++r->slights[0]] = sl[i];
 		}
 }
@@ -128,7 +129,7 @@ register RAY  *r;
 					/* get source indices */
 	if (m->oargs.nsargs > 0 && (myslist = (int *)m->os) == NULL) {
 		if (m->oargs.nsargs > MAXSLIST)
-			objerror(m, USER, "too many sources in list");
+			objerror(m, INTERNAL, "too many sources in list");
 		myslist = (int *)malloc((m->oargs.nsargs+1)*sizeof(int));
 		if (myslist == NULL)
 			goto memerr;
