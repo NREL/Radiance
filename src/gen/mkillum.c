@@ -147,6 +147,7 @@ init()				/* start rtrace and set up buffers */
 					/* set up signal handling */
 	signal(SIGPIPE, quit);
 					/* start rtrace process */
+	errno = 0;
 	maxbytes = open_process(rt.pd, rtargv);
 	if (maxbytes == 0) {
 		eputs(rtargv[0]);
