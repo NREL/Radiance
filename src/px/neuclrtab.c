@@ -252,7 +252,7 @@ int	n;
 
 #define initrad			32
 #define radiusdec		30
-#define alphadec;		30
+#define alphadec		30
 
 /* defs for freq and bias */
 #define gammashift  	10
