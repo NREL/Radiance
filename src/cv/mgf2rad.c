@@ -46,6 +46,7 @@ char	*argv[];
 	mg_ehand[MG_E_ED] = c_hmaterial;
 	mg_ehand[MG_E_FACE] = r_face;
 	mg_ehand[MG_E_IES] = r_ies;
+	mg_ehand[MG_E_IR] = c_hmaterial;
 	mg_ehand[MG_E_MATERIAL] = c_hmaterial;
 	mg_ehand[MG_E_NORMAL] = c_hvertex;
 	mg_ehand[MG_E_OBJECT] = obj_handler;
@@ -446,6 +447,33 @@ material()			/* get (and print) current material */
 			c_cmaterial->rs + c_cmaterial->ts;
 	if (d < 0. | d > 1.)
 		return(NULL);
+					/* check for glass/dielectric */
+	if (c_cmaterial->nr > 1.1 &&
+			c_cmaterial->ts > .25 && c_cmaterial->rs <= .125 &&
+			c_cmaterial->td <= .01 && c_cmaterial->rd <= .01 &&
+			c_cmaterial->rs_a <= .01 && c_cmaterial->ts_a <= .01) {
+		cvtcolor(radrgb, &c_cmaterial->ts_c,
+				c_cmaterial->ts + c_cmaterial->rs);
+		if (c_cmaterial->sided) {		/* dielectric */
+			colval(radrgb,RED) = pow(colval(radrgb,RED),
+							1./C_1SIDEDTHICK);
+			colval(radrgb,GRN) = pow(colval(radrgb,GRN),
+							1./C_1SIDEDTHICK);
+			colval(radrgb,BLU) = pow(colval(radrgb,BLU),
+							1./C_1SIDEDTHICK);
+			fprintf(matfp, "\nvoid dielectric %s\n0\n0\n", mname);
+			fprintf(matfp, "5 %g %g %g %f 0\n", colval(radrgb,RED),
+					colval(radrgb,GRN), colval(radrgb,BLU),
+					c_cmaterial->nr);
+			return(mname);
+		}
+							/* glass */
+		fprintf(matfp, "\nvoid glass %s\n0\n0\n", mname);
+		fprintf(matfp, "4 %f %f %f %f\n", colval(radrgb,RED),
+				colval(radrgb,GRN), colval(radrgb,BLU),
+				c_cmaterial->nr);
+		return(mname);
+		}
 					/* check for trans */
 	if (c_cmaterial->td > .01 || c_cmaterial->ts > .01) {
 		double	ts, a5, a6;
