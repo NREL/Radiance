@@ -78,10 +78,10 @@ RAY  *r;
 	if (errno)
 		goto computerr;
 	scalecolor(r->pcol, bval);
-	return;
+	return(0);
 computerr:
 	objerror(m, WARNING, "compute error");
-	return;
+	return(0);
 }
 
 
@@ -125,10 +125,10 @@ RAY  *r;
 	if (errno)
 		goto computerr;
 	multcolor(r->pcol, cval);
-	return;
+	return(0);
 computerr:
 	objerror(m, WARNING, "compute error");
-	return;
+	return(0);
 }
 
 
@@ -164,9 +164,9 @@ RAY  *r;
 	if (errno)
 		goto computerr;
 	multcolor(r->pcol, cval);
-	return;
+	return(0);
 
 computerr:
 	objerror(m, WARNING, "compute error");
-	return;
+	return(0);
 }

@@ -268,7 +268,7 @@ register RAY  *r;
 		transdist = r->rot + sr.rt;
 	}
 	if (r->crtype & SHADOW)			/* the rest is shadow */
-		return;
+		return(1);
 						/* compute reflected ray */
 	setbrdfunc(&nd);
 	errno = 0;
@@ -308,6 +308,8 @@ register RAY  *r;
 						/* check distance */
 	if (transtest > bright(r->rcol))
 		r->rt = transdist;
+
+	return(1);
 }
 
 
@@ -321,7 +323,7 @@ register RAY  *r;
 	double  dtmp;
 						/* always a shadow */
 	if (r->crtype & SHADOW)
-		return;
+		return(1);
 						/* check arguments */
 	if (m->oargs.nsargs < (hasdata(m->otype)?4:2) | m->oargs.nfargs <
 			(m->otype==MAT_TFUNC|m->otype==MAT_TDATA?6:4))
@@ -381,6 +383,8 @@ register RAY  *r;
 	}
 						/* add direct component */
 	direct(r, dirbrdf, &nd);
+
+	return(1);
 }
 
 

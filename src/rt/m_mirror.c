@@ -44,14 +44,14 @@ register RAY  *r;
 	if (m->oargs.nsargs > 0 &&
 			(r->rsrc < 0 || source[r->rsrc].so != r->ro)) {
 		rayshade(r, modifier(m->oargs.sarg[0]));
-		return;
+		return(1);
 	}
 					/* check for bad source ray */
 	if (r->rsrc >= 0 && source[r->rsrc].so != r->ro)
-		return;
+		return(1);
 
 	if (r->rod < 0.)		/* back is black */
-		return;
+		return(1);
 					/* get modifiers */
 	raytexture(r, m->omod);
 					/* assign material color */
@@ -72,7 +72,7 @@ register RAY  *r;
 		double  pdot;
 
 		if (rayorigin(&nr, r, REFLECTED, bright(mcolor)) < 0)
-			return;
+			return(1);
 		pdot = raynormal(pnorm, r);	/* use textures */
 		for (i = 0; i < 3; i++)
 			nr.rdir[i] = r->rdir[i] + 2.*pdot*pnorm[i];
@@ -84,6 +84,7 @@ register RAY  *r;
 	rayvalue(&nr);
 	multcolor(nr.rcol, mcolor);
 	addcolor(r->rcol, nr.rcol);
+	return(1);
 }
 
 
