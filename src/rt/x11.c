@@ -262,18 +262,18 @@ static
 x11_flush()			/* flush output */
 {
 	int	n;
-	register char	*buf;
-
+	char	*buf;
+						/* check for input */
 	XNoOp(ourdisplay);
-	while (XPending(ourdisplay) > 0)
+	n = XPending(ourdisplay);			/* from X server */
+	while (n-- > 0)
 		getevent();
-#ifdef FIONREAD
-	if (ioctl(0, FIONREAD, &n) == 0 && n) {		/* from stdin */
+	if (ioctl(0, FIONREAD, &n) == 0 && n > 0) {	/* from stdin */
 		buf = getcombuf(&x11_driver);
 		n = read(0, buf, n);
-		buf[n] = '\0';
+		if (n > 0)
+			buf[n] = '\0';
 	}
-#endif
 }
 
 
