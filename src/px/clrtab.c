@@ -237,9 +237,9 @@ mktabent(p, box)	/* compute average color for box and assign */
 int	p;
 register int	box[3][2];
 {
-	long	sum[3];
-	int	r, g, n;
-	register int	b, c;
+	unsigned long	sum[3];
+	unsigned	r, g, n;
+	register unsigned	b, c;
 						/* sum pixels in box */
 	n = 0;
 	sum[RED] = sum[GRN] = sum[BLU] = 0;
@@ -254,6 +254,12 @@ register int	box[3][2];
 		    }
 		    histo[r][g][b] = p;		/* assign pixel */
 		}
+	if (n >= (1<<23)/HMAX) {		/* avoid overflow */
+		sum[RED] /= n;
+		sum[GRN] /= n;
+		sum[BLU] /= n;
+		n = 1;
+	}
 	if (n) {				/* compute average */
 		clrtab[p][RED] = sum[RED]*256/NRED/n;
 		clrtab[p][GRN] = sum[GRN]*256/NGRN/n;
