@@ -35,7 +35,7 @@ double  *noise3(), noise3coef(), argument(), frand();
 static long  xlim[3][2];
 static double  xarg[3];
 
-#define  EPSILON	.005		/* error allowed in fractal */
+#define  EPSILON	.0001		/* error allowed in fractal */
 
 #define  frand3(x,y,z)	frand((long)((12.38*(x)-22.30*(y)-42.63*(z))/EPSILON))
 
