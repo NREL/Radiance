@@ -410,14 +410,113 @@ int	(*bf)();		/* callback function (optional) */
 }
 
 
+hdfreefrag(fd, bi)			/* free a file fragment */
+int	fd;
+register BEAMI	*bi;
+{
+	register struct fraglist	*f;
+	register int	j, k;
+
+	if (bi->nrd == 0)
+		return;
+#ifdef DEBUG
+	if (fd < 0 | fd >= nhdfragls || !hdfragl[fd].nlinks)
+		error(CONSISTENCY, "bad file descriptor in hdfreefrag");
+#endif
+	f = &hdfragl[fd];
+	if (f->nfrags % FRAGBLK == 0) {	/* delete empty remnants */
+		for (j = k = 0; k < f->nfrags; j++, k++) {
+			while (f->fi[k].nrd == 0)
+				if (++k >= f->nfrags)
+					goto endloop;
+			if (k > j)
+				copystruct(f->fi+j, f->fi+k);
+		}
+	endloop:
+		f->nfrags = j;
+	}
+	j = f->nfrags++;		/* allocate a slot in free list */
+#if MAXFRAG
+	if (j >= MAXFRAG-1)
+		f->nfrags--;
+#endif
+	if (j % FRAGBLK == 0) {		/* more free list space */
+		if (f->fi == NULL)
+			f->fi = (BEAMI *)malloc(FRAGBLK*sizeof(BEAMI));
+		else
+			f->fi = (BEAMI *)realloc((char *)f->fi,
+					(j+FRAGBLK)*sizeof(BEAMI));
+		if (f->fi == NULL)
+			error(SYSTEM, "out of memory in hdfreefrag");
+	}
+	for ( ; ; j--) {		/* insert in descending list */
+		if (!j || bi->fo < f->fi[j-1].fo) {
+			f->fi[j].fo = bi->fo;
+			f->fi[j].nrd = bi->nrd;
+			break;
+		}
+		copystruct(f->fi+j, f->fi+(j-1));
+	}
+					/* coalesce adjacent fragments */
+						/* successors never empty */
+	if (j && f->fi[j-1].fo == f->fi[j].fo + f->fi[j].nrd*sizeof(RAYVAL)) {
+		f->fi[j].nrd += f->fi[j-1].nrd;
+		f->fi[j-1].nrd = 0;
+	}
+	for (k = j+1; k < f->nfrags; k++)	/* get non-empty predecessor */
+		if (f->fi[k].nrd) {
+			if (f->fi[j].fo == f->fi[k].fo +
+					f->fi[k].nrd*sizeof(RAYVAL)) {
+				f->fi[k].nrd += f->fi[j].nrd;
+				f->fi[j].nrd = 0;
+			}
+			break;
+		}
+}
+
+
+long
+hdallocfrag(fd, nrays)		/* allocate a file fragment */
+int	fd;
+unsigned int4	nrays;
+{
+	register struct fraglist	*f;
+	register int	j, k;
+	long	nfo;
+
+	if (nrays == 0)
+		return(-1L);
+#ifdef DEBUG
+	if (fd < 0 | fd >= nhdfragls || !hdfragl[fd].nlinks)
+		error(CONSISTENCY, "bad file descriptor in hdallocfrag");
+#endif
+	f = &hdfragl[fd];
+	k = -1;				/* find closest-sized fragment */
+	for (j = f->nfrags; j-- > 0; )
+		if (f->fi[j].nrd >= nrays &&
+				(k < 0 || f->fi[j].nrd < f->fi[k].nrd))
+			if (f->fi[k=j].nrd == nrays)
+				break;
+	if (k < 0) {			/* no fragment -- extend file */
+		nfo = f->flen;
+		f->flen += nrays*sizeof(RAYVAL);
+	} else {			/* else use fragment */
+		nfo = f->fi[k].fo;
+		f->fi[k].fo += nrays*sizeof(RAYVAL);
+		f->fi[k].nrd -= nrays;
+	}
+	return(nfo);
+}
+
+
 int
 hdsyncbeam(hp, i)		/* sync beam in memory with beam on disk */
 register HOLO	*hp;
 register int	i;
 {
-	unsigned int	nrays;
-	long	nfo;
+	unsigned int4	nrays;
 	unsigned int	n;
+	long	nfo;
 					/* check file status */
 	if (hdfragl[hp->fd].writerr)
 		return(-1);
@@ -428,81 +527,10 @@ register int	i;
 					/* is current fragment OK? */
 	if (hp->bl[i] == NULL || (nrays = hp->bl[i]->nrm) == hp->bi[i].nrd)
 		return(0);
-					/* locate fragment */
-	if (hp->bi[i].fo + hp->bi[i].nrd*sizeof(RAYVAL) ==
-			hdfragl[hp->fd].flen)		/* EOF special case */
-		hdfragl[hp->fd].flen = (nfo=hp->bi[i].fo) + nrays*sizeof(RAYVAL);
-
-	else {						/* general case */
-		register struct fraglist	*f = &hdfragl[hp->fd];
-		register int	j, k;
-		n = f->nfrags;		/* relinquish old fragment */
-		if (hp->bi[i].nrd) {
-			j = f->nfrags++;
-#if MAXFRAG
-			if (j >= MAXFRAG-1)
-				f->nfrags--;
-#endif
-			if (j % FRAGBLK == 0) {		/* more frag. space */
-				if (f->fi == NULL)
-					f->fi = (BEAMI *)malloc(
-							FRAGBLK*sizeof(BEAMI));
-				else
-					f->fi = (BEAMI *)realloc((char *)f->fi,
-						(j+FRAGBLK)*sizeof(BEAMI));
-				if (f->fi == NULL)
-					error(SYSTEM,
-						"out of memory in hdsyncbeam");
-			}
-			for ( ; ; j--) {	/* insert in descending list */
-				if (!j || hp->bi[i].fo < f->fi[j-1].fo) {
-					f->fi[j].fo = hp->bi[i].fo;
-					f->fi[j].nrd = hp->bi[i].nrd;
-					break;
-				}
-				copystruct(f->fi+j, f->fi+(j-1));
-			}
-					/* coalesce adjacent fragments */
-			if (j && f->fi[j-1].fo == f->fi[j].fo +
-					f->fi[j].nrd*sizeof(RAYVAL)) {
-				f->fi[j].nrd += f->fi[j-1].nrd;
-				f->fi[j-1].nrd = 0;
-				n = j-1;
-			}
-			if (j+1 < f->nfrags && f->fi[j].fo == f->fi[j+1].fo +
-					f->fi[j+1].nrd*sizeof(RAYVAL)) {
-				f->fi[j+1].nrd += f->fi[j].nrd;
-				f->fi[j].nrd = 0;
-				if (j < n) n = j;
-			}
-		}
-		k = -1;			/* find closest-sized fragment */
-		for (j = (nrays ? f->nfrags : 0); j-- > 0; )
-			if (f->fi[j].nrd >= nrays &&
-					(k < 0 || f->fi[j].nrd < f->fi[k].nrd))
-				if (f->fi[k=j].nrd == nrays)
-					break;
-		if (k < 0) {		/* no fragment -- extend file */
-			nfo = f->flen;
-			f->flen += nrays*sizeof(RAYVAL);
-		} else {		/* else use fragment */
-			nfo = f->fi[k].fo;
-			f->fi[k].fo += nrays*sizeof(RAYVAL);
-			if (!(f->fi[k].nrd -= nrays) && k < n)
-				n = k;
-		}
-					/* delete empty remnants */
-		for (j = k = n; k < f->nfrags; j++, k++) {
-			while (f->fi[k].nrd == 0)
-				if (++k >= f->nfrags)
-					goto endloop;
-			if (k > j)
-				copystruct(f->fi+j, f->fi+k);
-		}
-	endloop:
-		f->nfrags = j;
-	}
-	if (nrays) {		/* write the new fragment */
+	if (hp->bi[i].nrd)		/* relinquish old fragment */
+		hdfreefrag(hp->fd, &hp->bi[i]);
+	if (nrays) {			/* get and write new fragment */
+		nfo = hdallocfrag(hp->fd, nrays);
 		errno = 0;
 		if (lseek(hp->fd, nfo, 0) < 0)
 			error(SYSTEM, "cannot seek on holodeck file");
@@ -512,11 +540,12 @@ register int	i;
 			hdsync(NULL, 0);	/* sync directories */
 			error(SYSTEM, "write error in hdsyncbeam");
 		}
-	}
+		hp->bi[i].fo = nfo;
+	} else
+		hp->bi[i].fo = 0L;
 	biglob(hp)->nrd += nrays - hp->bi[i].nrd;
 	hp->bi[i].nrd = nrays;
-	hp->bi[i].fo = nfo;
-	markdirty(hp);		/* section directory now out of date */
+	markdirty(hp);			/* section directory now out of date */
 	return(1);
 }
 
