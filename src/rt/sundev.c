@@ -39,7 +39,7 @@ DEFINE_ICON_FROM_IMAGE(sun_icon, icon_image);
 #define CWIDTH		1100		/* starting canvas width */
 #define CHEIGHT		800		/* starting canvas height */
 
-int  sun_close(), sun_clear(), sun_paintr(), sun_getcur(),
+static int  sun_close(), sun_clear(), sun_paintr(), sun_getcur(),
 		sun_comout(), sun_comin();
 
 static struct driver  sun_driver = {

@@ -53,12 +53,12 @@ int  ambincl = -1;			/* include == 1, exclude == 0 */
 
 static RAY  thisray;			/* for our convenience */
 
-extern int  oputo(), oputd(), oputv(), oputl(), 
+static int  oputo(), oputd(), oputv(), oputl(), 
 		oputp(), oputn(), oputs(), oputw(), oputm();
 
 static int  (*ray_out[10])(), (*every_out[10])();
 
-extern int  puta(), putf(), putd();
+static int  puta(), putf(), putd();
 
 static int  (*putreal)();
 

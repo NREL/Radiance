@@ -235,7 +235,6 @@ int  xres, y, ysize;
 	COLOR  vline[MAXDIV+1];
 	float  zline[MAXDIV+1];
 	int  b = ysize;
-	double  z;
 	register int  i, j;
 	
 	for (i = 0; i < xres; i++) {
