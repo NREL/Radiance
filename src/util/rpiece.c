@@ -433,8 +433,8 @@ rpiece()			/* render picture piece by piece */
 	}
 					/* render each piece */
 	while (nextpiece(&xorg, &yorg)) {
-		pview.hoff = ourview.hoff + xorg - 0.5*(hmult-1);
-		pview.voff = ourview.voff + yorg - 0.5*(vmult-1);
+		pview.hoff = ourview.hoff*hmult + xorg - 0.5*(hmult-1);
+		pview.voff = ourview.voff*vmult + yorg - 0.5*(vmult-1);
 		fputs(VIEWSTR, torp);
 		fprintview(&pview, torp);
 		putc('\n', torp);
