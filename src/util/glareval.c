@@ -410,44 +410,38 @@ SCAN *
 scanretire()			/* retire old scanlines to free list */
 {
 	SCAN	*sold[NRETIRE];
-	SCAN	head;
 	int	n;
 	int	h;
 	register SCAN	*sl;
 	register int	i;
 					/* grab the NRETIRE oldest scanlines */
 	sold[n = 0] = NULL;
-	for (h = 0; h < HSIZE; h++) {
-		head.next = hashtab[h];
-		sl = &head;
-		while (sl->next != NULL) {
-			for (i = n; i && sold[i-1]->lused > sl->next->lused; i--)
-				if (i == NRETIRE) {	/* reallocate */
-					register int	oh;
-					oh = shash(sold[NRETIRE-1]->y);
-					sold[NRETIRE-1]->next = hashtab[oh];
-					if (h == oh) {
-						head.next = sold[NRETIRE-1];
-						if (sl == &head)
-							sl = head.next;
-					} else
-						hashtab[oh] = sold[NRETIRE-1];
-				} else			/* else bubble up */
+	for (h = 0; h < HSIZE; h++)
+		for (sl = hashtab[h]; sl != NULL; sl = sl->next) {
+			for (i = n; i && sold[i-1]->lused > sl->lused; i--)
+				if (i < NRETIRE)
 					sold[i] = sold[i-1];
 			if (i < NRETIRE) {
-				sold[i] = sl->next;
-				sl->next = sl->next->next;
+				sold[i] = sl;
 				if (n < NRETIRE)	/* grow list */
 					n++;
-			} else
-				sl = sl->next;
+			}
 		}
-		hashtab[h] = head.next;
-	}
 					/* put scanlines into free list */
-	for (i = 1; i < n; i++) {
-		sold[i]->next = freelist;
-		freelist = sold[i];
+	for (i = 0; i < n; i++) {
+		h = shash(sold[i]->y);
+		sl = hashtab[h];
+		if (sl == sold[i])
+			hashtab[h] = sl->next;
+		else {
+			while (sl->next != sold[i])	/* IS in list */
+				sl = sl->next;
+			sl->next = sold[i]->next;
+		}
+		if (i > 0) {		/* save oldest as return value */
+			sold[i]->next = freelist;
+			freelist = sold[i];
+		}
 	}
 	return(sold[0]);
 }
