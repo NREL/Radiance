@@ -1,6 +1,5 @@
-# SCCSid "$SunId$ LBL"
-
 #
+# SCCSid "$SunId$ LBL"
 # Makefile for conversion programs
 #
 
@@ -53,15 +52,16 @@ tmesh2rad:	tmesh2rad.o tmesh.o
 obj2rad:	obj2rad.o trans.o tmesh.o
 	$(CC) $(CFLAGS) -o obj2rad obj2rad.o trans.o tmesh.o -lrt $(MLIB)
 
-mgf2rad:	mgf2rad.o ../lib/libmgf.a
+mgf2rad:	MGF_LIB mgf2rad.o tmesh.o
 	$(CC) $(CFLAGS) -o mgf2rad mgf2rad.o tmesh.o -lmgf -lrt $(MLIB)
 
-../lib/libmgf.a:
+MGF_LIB:
 	cd mgflib ; \
 	make libmgf.a CFLAGS="$(OPT) $(MACH) '-DMEM_PTR=char *' -DNOPROTO" ; \
-	mv libmgf.a ../../lib
+	cp libmgf.a ../../lib
 
 mgf2rad.o:	mgflib/parser.h tmesh.h
+	$(CC) $(CFLAGS) '-DMEM_PTR=char *' -DNOPROTO -c mgf2rad.c
 
 arch2rad.o trans.o:	trans.h
 
