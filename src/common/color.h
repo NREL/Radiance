@@ -47,8 +47,8 @@ typedef float  COLOR[3];	/* red, green, blue */
 #define  CIE_y_g		0.710
 #define  CIE_x_b		0.140
 #define  CIE_y_b		0.080
-#define  CIE_x_w		0.333		/* use true white */
-#define  CIE_y_w		0.333
+#define  CIE_x_w		0.3333		/* use true white */
+#define  CIE_y_w		0.3333
 #else
 #define  CIE_x_r		0.640		/* nominal CRT primaries */
 #define  CIE_y_r		0.330
@@ -56,8 +56,8 @@ typedef float  COLOR[3];	/* red, green, blue */
 #define  CIE_y_g		0.600
 #define  CIE_x_b		0.150
 #define  CIE_y_b		0.060
-#define  CIE_x_w		0.333		/* use true white */
-#define  CIE_y_w		0.333
+#define  CIE_x_w		0.3333		/* use true white */
+#define  CIE_y_w		0.3333
 #endif
 
 #define CIE_D		(	CIE_x_r*(CIE_y_g - CIE_y_b) + \
