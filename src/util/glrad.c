@@ -8,15 +8,15 @@ static char SCCSid[] = "$SunId$ SGI";
  * Program to display Radiance scene using OpenGL.
  */
 
-#include "radogl.h"
-#include "view.h"
-#include "paths.h"
 #include <sys/types.h>
 #include <GL/glx.h>
 #ifndef NOSTEREO
 #include <X11/extensions/SGIStereo.h>
 #endif
 #include <ctype.h>
+#include "radogl.h"
+#include "view.h"
+#include "paths.h"
 #include "glradicon.h"
 
 #ifndef MAXVIEW
