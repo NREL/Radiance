@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -48,7 +48,7 @@ getcone(o, getxf)			/* get cone structure */
 register OBJREC  *o;
 int  getxf;
 {
-	double  fabs(), sqrt();
+	extern double  sqrt();
 	int  sgn0, sgn1;
 	register CONE  *co;
 
@@ -60,7 +60,7 @@ int  getxf;
 
 		co->ca = o->oargs.farg;
 						/* get radii */
-		if (o->otype == OBJ_CYLINDER || o->otype == OBJ_TUBE) {
+		if (o->otype == OBJ_CYLINDER | o->otype == OBJ_TUBE) {
 			if (o->oargs.nfargs != 7)
 				goto argcerr;
 			if (co->ca[6] < -FTINY) {
@@ -70,6 +70,7 @@ int  getxf;
 				co->ca[6] = -co->ca[6];
 			} else if (co->ca[6] <= FTINY)
 				goto raderr;
+			co->p0 = 0; co->p1 = 3;
 			co->r0 = co->r1 = 6;
 		} else {
 			if (o->oargs.nfargs != 8)
@@ -82,7 +83,7 @@ int  getxf;
 			else sgn1 = 0;
 			if (sgn0+sgn1 == 0)
 				goto raderr;
-			if (sgn0 < 0 || sgn1 < 0) {
+			if (sgn0 < 0 | sgn1 < 0) {
 				objerror(o, o->otype==OBJ_RING?USER:WARNING,
 					"negative radii");
 				o->otype = o->otype == OBJ_CONE ?
@@ -90,31 +91,37 @@ int  getxf;
 			}
 			co->ca[6] = co->ca[6]*sgn0;
 			co->ca[7] = co->ca[7]*sgn1;
-			co->r0 = 6;
-			co->r1 = 7;
-			if (fabs(co->ca[7] - co->ca[6]) <= FTINY) {
+			if (co->ca[7] - co->ca[6] > FTINY) {
+				if (o->otype == OBJ_RING)
+					co->p0 = co->p1 = 0;
+				else {
+					co->p0 = 0; co->p1 = 3;
+				}
+				co->r0 = 6; co->r1 = 7;
+			} else if (co->ca[6] - co->ca[7] > FTINY) {
+				if (o->otype == OBJ_RING)
+					co->p0 = co->p1 = 0;
+				else {
+					co->p0 = 3; co->p1 = 0;
+				}
+				co->r0 = 7; co->r1 = 6;
+			} else {
 				if (o->otype == OBJ_RING)
 					goto raderr;
 				o->otype = o->otype == OBJ_CONE ?
 						OBJ_CYLINDER : OBJ_TUBE;
 				o->oargs.nfargs = 7;
-				co->r1 = 6;
+				co->p0 = 0; co->p1 = 3;
+				co->r0 = co->r1 = 6;
 			}
 		}
 						/* get axis orientation */
-		co->p0 = 0;
-		if (o->otype == OBJ_RING) {
-			if (co->ca[6] > co->ca[7]) {	/* make r0 smaller */
-				co->r0 = 7;
-				co->r1 = 6;
-			}
-			co->p1 = 0;
+		if (o->otype == OBJ_RING)
 			VCOPY(co->ad, o->oargs.farg+3);
-		} else {
-			co->p1 = 3;
-			co->ad[0] = co->ca[3] - co->ca[0];
-			co->ad[1] = co->ca[4] - co->ca[1];
-			co->ad[2] = co->ca[5] - co->ca[2];
+		else {
+			co->ad[0] = CO_P1(co)[0] - CO_P0(co)[0];
+			co->ad[1] = CO_P1(co)[1] - CO_P0(co)[1];
+			co->ad[2] = CO_P1(co)[2] - CO_P0(co)[2];
 		}
 		co->al = normalize(co->ad);
 		if (co->al == 0.0)
@@ -122,11 +129,11 @@ int  getxf;
 					/* compute axis and side lengths */
 		if (o->otype == OBJ_RING) {
 			co->al = 0.0;
-			co->sl = co->ca[co->r1] - co->ca[co->r0];
-		} else if (o->otype == OBJ_CONE || o->otype == OBJ_CUP) {
+			co->sl = CO_R1(co) - CO_R0(co);
+		} else if (o->otype == OBJ_CONE | o->otype == OBJ_CUP) {
 			co->sl = co->ca[7] - co->ca[6];
 			co->sl = sqrt(co->sl*co->sl + co->al*co->al);
-		} else { /* OBJ_CYLINDER || OBJ_TUBE */
+		} else { /* OBJ_CYLINDER or OBJ_TUBE */
 			co->sl = co->al;
 		}
 		co->tm = NULL;
@@ -160,12 +167,12 @@ OBJREC  *o;
 conexform(co)			/* get cone transformation matrix */
 register CONE  *co;
 {
-	double  sqrt(), fabs();
+	extern double  sqrt();
 	MAT4  m4;
 	register double  d;
 	register int  i;
 
-	co->tm = (FLOAT (*)[4])malloc(sizeof(m4));
+	co->tm = (FLOAT (*)[4])malloc(sizeof(MAT4));
 	if (co->tm == NULL)
 		error(SYSTEM, "out of memory in conexform");
 
@@ -174,10 +181,10 @@ register CONE  *co;
 	if (co->r0 == co->r1)
 		d = 0.0;
 	else
-		d = co->ca[co->r0] / (co->ca[co->r1] - co->ca[co->r0]);
+		d = CO_R0(co) / (CO_R1(co) - CO_R0(co));
 	for (i = 0; i < 3; i++)
-		co->tm[3][i] = d*(co->ca[co->p1+i] - co->ca[co->p0+i])
-				- co->ca[co->p0+i];
+		co->tm[3][i] = d*(CO_P1(co)[i] - CO_P0(co)[i])
+				- CO_P0(co)[i];
 	
 				/* rotate to positive z-axis */
 	setident4(m4);
@@ -201,10 +208,9 @@ register CONE  *co;
 	multmat4(co->tm, co->tm, m4);
 
 				/* scale z-axis */
-	setident4(m4);
-	if (co->p0 != co->p1 && co->r0 != co->r1) {
-		d = fabs(co->ca[co->r1] - co->ca[co->r0]);
-		m4[2][2] = d/co->al;
+	if (co->p0 != co->p1 & co->r0 != co->r1) {
+		setident4(m4);
+		m4[2][2] = (CO_R1(co) - CO_R0(co)) / co->al;
+		multmat4(co->tm, co->tm, m4);
 	}
-	multmat4(co->tm, co->tm, m4);
 }
