@@ -117,10 +117,21 @@ char	*argv[];
 					/* run rad and get views */
 	runrad(argc-i, argv+i);
 					/* check view */
-	if (viewsel != NULL && (currentview = findvw(viewsel)) < 0) {
-		fprintf(stderr, "%s: no such view\n", viewsel);
-		quit(1);
-	}
+	if (viewsel != NULL)
+		if (viewsel[0] == '-') {
+			char	*ve = viewsel;
+			if (!sscanview(&thisview, viewsel) ||
+					(ve = setview(&thisview)) != NULL) {
+				fprintf(stderr, "%s: bad view: %s\n",
+						progname, ve);
+				quit(1);
+			}
+			currentview = -1;
+		} else if ((currentview = findvw(viewsel)) < 0) {
+			fprintf(stderr, "%s: no such view: %s\n",
+						progname, viewsel);
+			quit(1);
+		}
 					/* open GL */
 	dev_open(radfile = argv[i]);
 					/* load octree or scene files */
@@ -130,14 +141,14 @@ char	*argv[];
 	} else
 		displist = rgl_filelist(nscenef, scene);
 					/* set initial view */
-	dev_view(vwl[currentview].v);
+	dev_view(currentview < 0 ? &thisview : vwl[currentview].v);
 					/* input/render loop */
 	while (dev_input(vwintvl))
 		;
 					/* all done */
 	quit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-w][-c #secs][-v view] rfile [VAR=value]..\n",
+	fprintf(stderr, "Usage: %s [-w][-b][-v view] rfile [VAR=value]..\n",
 			argv[0]);
 	quit(1);
 }
@@ -205,6 +216,7 @@ char	**av;
 		expval = atof(cp);
 		if (*cp == '-' | *cp == '+')
 			expval = pow(2., expval);
+		expval *= 0.5;		/* compensate for local shading */
 	}
 						/* look for materials */
 	while ((cp = scan4var(buf, sizeof(buf), "materials", fp)) != NULL) {
@@ -385,6 +397,9 @@ char  *id;
 			DisplayHeight(ourdisplay, ourscreen);
 					/* map the window */
 	XMapWindow(ourdisplay, gwind);
+	do
+		dev_input(0);		/* get resize event */
+	while (hres == 0 & vres == 0);
 	rgl_checkerr("initializing GLX");
 }
 
@@ -557,7 +572,8 @@ XButtonPressedEvent	*ebut;
 	int	rootx, rooty, wx, wy;
 	unsigned int	statemask;
 
-	copylastv("moving");
+	copylastv( movorb ? (movdir ? "left/right" : "up/down") :
+			(movdir ? "fore/back" : "rotate") );
 	XNoOp(ourdisplay);
 
 	while (!XCheckMaskEvent(ourdisplay,
