@@ -158,11 +158,12 @@ VIEW	*v;
 {
 	char	*err;
 
-	if ((err = setview(v)) != NULL)
-		error(INTERNAL, err);
-	dev_view(v);			/* update display driver */
-	dev_flush();			/* update screen */
-	beam_view(v);			/* update beam list */
+	do {
+		if ((err = setview(v)) != NULL)
+			error(INTERNAL, err);
+		dev_view(v);		/* update display driver */
+		dev_flush();		/* update screen */
+	} while (!beam_view(v));	/* update beam list */
 }
 
 
