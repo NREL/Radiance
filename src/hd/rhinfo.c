@@ -77,7 +77,7 @@ gethdinfo(		/* get information on holodeck */
 			samptot, beamtot, (double)samptot/beamtot);
 	fprintf(fout, "%.1f Mbyte file, %.1f%% fragmentation\n",
 			nextloc/(1024.*1024.),
-			100.*(nextloc-hdfiluse(fd,1))/nextloc);
+			100.*(nextloc-hdfiluse(fd))/nextloc);
 						/* don't bother with cleanup */
 #if 0
 	hddone(NULL);				/* free sections */
