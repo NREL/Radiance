@@ -15,9 +15,7 @@ static const char RCSid[] = "$Id$";
  *	4/16/02	Added conditional vertex output
  */
 
-#include  "rtmath.h"
-#include  "rterror.h"
-#include  "rtio.h"
+#include  "standard.h"
 #include  "calcomp.h"
 
 char  XNAME[] =		"X`SYS";		/* x function name */
