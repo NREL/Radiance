@@ -141,7 +141,8 @@ char  *zfile, *oldfile;
 	fputresolu(YMAJOR|YDECR, hresolu, vresolu, stdout);
 					/* recover file and compute first */
 	i = salvage(oldfile);
-	if (zfd != -1 && lseek(zfd, (long)i*hresolu*sizeof(float), 0) == -1)
+	if (zfd != -1 && i > 0 &&
+			lseek(zfd, (long)i*hresolu*sizeof(float), 0) == -1)
 		error(SYSTEM, "z file seek error in render");
 	ypos = vresolu-1 - i;
 	fillscanline(scanbar[0], zbar[0], hresolu, ypos, psample);
