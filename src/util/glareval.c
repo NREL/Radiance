@@ -20,7 +20,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #define vfork		fork
 #endif
 
-#define NSCANS		64		/* number of scanlines to buffer */
+#define MAXSBUF		409580	/* maximum total size of scanline buffer */
+#define HSIZE		227	/* size of scanline hash table */
+#define NRETIRE		16	/* number of scanlines to retire at once */
 
 int	rt_pid = -1;		/* process id for rtrace */
 int	fd_tort, fd_fromrt;	/* pipe descriptors */
@@ -28,38 +30,72 @@ int	fd_tort, fd_fromrt;	/* pipe descriptors */
 FILE	*pictfp = NULL;		/* picture file pointer */
 double	exposure;		/* picture exposure */
 int	pxsiz, pysiz;		/* picture dimensions */
-int	curpos;			/* current scanline */
-long	*scanpos;		/* scanline positions */
-struct {
-	long	lused;		/* for LRU replacement */
+
+static int	curpos;		/* current scanline */
+static long	*scanpos;	/* scanline positions */
+
+typedef struct scan {
 	int	y;		/* scanline position */
-	COLR	*sl;		/* scanline contents */
-} scan[NSCANS];		/* buffered scanlines */
+	long	lused;		/* for LRU replacement */
+	struct scan	*next;	/* next in this hash or free list */
+	/* followed by the scanline data */
+} SCAN;			/* buffered scanline */
+
+#define	scandata(sl)	((COLR *)((sl)+1))
+#define shash(y)	((y)%HSIZE)
+
+static SCAN	*freelist;		/* scanline free list */
+static SCAN	*hashtab[HSIZE];	/* scanline hash table */
 
 static long	ncall = 0L;	/* number of calls to getpictscan */
 static long	nread = 0L;	/* number of scanlines read */
 
+SCAN	*scanretire();
+
 extern long	ftell();
+
+
+SCAN *
+claimscan(y)			/* claim scanline from buffers */
+int	y;
+{
+	int	hi = shash(y);
+	SCAN	*slast;
+	register SCAN	*sl;
+
+	for (sl = hashtab[hi]; sl != NULL; sl = sl->next)
+		if (sl->y == y)				/* active scanline */
+			return(sl);
+	for (slast = NULL, sl = freelist; sl != NULL; slast = sl, sl = sl->next)
+		if (sl->y == -1 || sl->y == y || sl->next == NULL) {
+			if (slast == NULL)		/* remove from free */
+				freelist = sl->next;
+			else
+				slast->next = sl->next;
+			if (sl->y == y) {		/* reclaim */
+				sl->next = hashtab[hi];
+				hashtab[hi] = sl;
+			}
+			return(sl);
+		}
+	return(scanretire());		/* need more free scanlines */
+}
 
 
 COLR *
 getpictscan(y)			/* get picture scanline */
 int	y;
 {
-	int	minused;
+	register SCAN	*sl;
 	register int	i;
 					/* first check our buffers */
-	ncall++;
-	minused = 0;
-	for (i = 0; i < NSCANS; i++) {
-		if (scan[i].y == y) {
-			scan[i].lused = ncall;
-			return(scan[i].sl);
-		}
-		if (scan[i].lused < scan[minused].lused)
-			minused = i;
-	}
-					/* not there, read it in */
+	sl = claimscan(y);
+	if (sl == NULL)
+		memerr("claimscan()");
+	sl->lused = ncall++;
+	if (sl->y == y)			/* scan hit */
+		return(scandata(sl));
+					/* else read in replacement */
 	if (scanpos[y] < 0) {			/* need to search */
 		for (i = y+1; i < curpos; i++)
 			if (scanpos[i] >= 0) {
@@ -70,7 +106,7 @@ int	y;
 			}
 		while (curpos >= y) {
 			scanpos[curpos] = ftell(pictfp);
-			if (freadcolrs(scan[minused].sl, pxsiz, pictfp) < 0)
+			if (freadcolrs(scandata(sl), pxsiz, pictfp) < 0)
 				goto readerr;
 			nread++;
 			curpos--;
@@ -78,14 +114,16 @@ int	y;
 	} else {
 		if (curpos != y && fseek(pictfp, scanpos[y], 0) < 0)
 			goto seekerr;
-		if (freadcolrs(scan[minused].sl, pxsiz, pictfp) < 0)
+		if (freadcolrs(scandata(sl), pxsiz, pictfp) < 0)
 			goto readerr;
 		nread++;
 		curpos = y-1;
 	}
-	scan[minused].lused = ncall;
-	scan[minused].y = y;
-	return(scan[minused].sl);
+	sl->y = y;
+	i = shash(y);			/* add to hash list */
+	sl->next = hashtab[i];
+	hashtab[i] = sl;
+	return(scandata(sl));
 readerr:
 	fprintf(stderr, "%s: picture read error\n", progname);
 	exit(1);
@@ -263,19 +301,7 @@ char	*fn;
 		fprintf("%s: bad picture resolution\n", fn);
 		exit(1);
 	}
-	scanpos = (long *)malloc(pysiz*sizeof(long));
-	if (scanpos == NULL)
-		memerr("scanline positions");
-	for (i = pysiz-1; i >= 0; i--)
-		scanpos[i] = -1L;
-	curpos = pysiz-1;
-	for (i = 0; i < NSCANS; i++) {
-		scan[i].lused = -1;
-		scan[i].y = -1;
-		scan[i].sl = (COLR *)malloc(pxsiz*sizeof(COLR));
-		if (scan[i].sl == NULL)
-			memerr("scanline buffers");
-	}
+	initscans();
 }
 
 
@@ -286,9 +312,7 @@ close_pict()			/* done with picture */
 	if (pictfp == NULL)
 		return;
 	fclose(pictfp);
-	free((char *)scanpos);
-	for (i = 0; i < NSCANS; i++)
-		free((char *)scan[i].sl);
+	donescans();
 	pictfp = NULL;
 }
 
@@ -379,4 +403,97 @@ int	siz;
 	if (cc < 0)
 		return(cc);
 	return(siz-nrem);
+}
+
+
+SCAN *
+scanretire()			/* retire old scanlines to free list */
+{
+	SCAN	*sold[NRETIRE];
+	SCAN	head;
+	int	n;
+	int	h;
+	register SCAN	*sl;
+	register int	i;
+					/* grab the NRETIRE oldest scanlines */
+	sold[n = 0] = NULL;
+	for (h = 0; h < HSIZE; h++) {
+		head.next = hashtab[h];
+		sl = &head;
+		while (sl->next != NULL) {
+			for (i = n; i && sold[i-1]->lused > sl->next->lused; i--)
+				if (i == NRETIRE) {	/* reallocate */
+					register int	oh;
+					oh = shash(sold[NRETIRE-1]->y);
+					sold[NRETIRE-1]->next = hashtab[oh];
+					if (h == oh && sl == &head)
+						head.next = sl = sold[NRETIRE-1];
+					else
+						hashtab[oh] = sold[NRETIRE-1];
+				} else			/* else bubble up */
+					sold[i] = sold[i-1];
+			if (i < NRETIRE) {
+				sold[i] = sl->next;
+				sl->next = sl->next->next;
+				if (n < NRETIRE)	/* grow list */
+					n++;
+			} else
+				sl = sl->next;
+		}
+		hashtab[h] = head.next;
+	}
+					/* put scanlines into free list */
+	for (i = 1; i < n; i++) {
+		sold[i]->next = freelist;
+		freelist = sold[i];
+	}
+	return(sold[0]);
+}
+
+
+static char	*scan_buf;
+
+
+initscans()				/* initialize scanline buffers */
+{
+	int	scansize;
+	register SCAN	*ptr;
+	register int	i;
+					/* initialize positions */
+	scanpos = (long *)malloc(pysiz*sizeof(long));
+	if (scanpos == NULL)
+		memerr("scanline positions");
+	for (i = pysiz-1; i >= 0; i--)
+		scanpos[i] = -1L;
+	curpos = pysiz-1;
+					/* clear hash table */
+	for (i = 0; i < HSIZE; i++)
+		hashtab[i] = NULL;
+					/* allocate scanline buffers */
+	scansize = sizeof(SCAN) + pxsiz*sizeof(COLR);
+#ifdef ALIGN
+	scansize = scansize+(sizeof(ALIGN)-1)) & ~(sizeof(ALIGN)-1);
+#endif
+	i = MAXSBUF / scansize;		/* compute number to allocate */
+	if (i > HSIZE)
+		i = HSIZE;
+	scan_buf = malloc(i*scansize);	/* get in one big chunk */
+	if (scan_buf == NULL)
+		memerr("scanline buffers");
+	ptr = (SCAN *)scan_buf;
+	freelist = NULL;		/* build our free list */
+	while (i-- > 0) {
+		ptr->y = -1;
+		ptr->lused = -1;
+		ptr->next = freelist;
+		freelist = ptr;
+		ptr = (SCAN *)((char *)ptr + scansize);	/* beware of C bugs */
+	}
+}
+
+
+donescans()				/* free up scanlines */
+{
+	free(scan_buf);
+	free((char *)scanpos);
 }
