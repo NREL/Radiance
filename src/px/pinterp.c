@@ -60,6 +60,7 @@ int	gotview;			/* got input view? */
 int	thresolu, tvresolu;		/* input resolution */
 double	theirexp;			/* input picture exposure */
 double	theirs2ours[4][4];		/* transformation matrix */
+int	hasmatrix = 0;			/* has transformation matrix */
 
 int	childpid = -1;			/* id of fill process */
 FILE	*psend, *precv;			/* pipes to/from fill calculation */
@@ -284,7 +285,7 @@ char	*pfile, *zspec;
 		exit(1);
 	}
 					/* compute transformation */
-	pixform(theirs2ours, &theirview, &ourview);
+	hasmatrix = pixform(theirs2ours, &theirview, &ourview);
 					/* allocate scanlines */
 	scanin = (COLR *)malloc(thresolu*sizeof(COLR));
 	zin = (float *)malloc(thresolu*sizeof(float));
@@ -331,6 +332,10 @@ register VIEW	*vw1, *vw2;
 {
 	double	m4t[4][4];
 
+	if (vw1->type != VT_PER && vw1->type != VT_PAR)
+		return(0);
+	if (vw2->type != VT_PER && vw2->type != VT_PAR)
+		return(0);
 	setident4(xfmat);
 	xfmat[0][0] = vw1->hvec[0];
 	xfmat[0][1] = vw1->hvec[1];
@@ -358,6 +363,7 @@ register VIEW	*vw1, *vw2;
 	m4t[2][2] = vw2->vdir[2];
 	m4t[3][2] = -DOT(vw2->vp,vw2->vdir);
 	multmat4(xfmat, xfmat, m4t);
+	return(1);
 }
 
 
@@ -368,34 +374,19 @@ float	*zline;
 struct position	*lasty;		/* input/output */
 {
 	extern double	sqrt();
-	double	pos[3];
+	FVECT	pos;
 	struct position	lastx, newpos;
 	register int	x;
 
 	lastx.z = 0;
 	for (x = thresolu-1; x >= 0; x--) {
-		pos[0] = (x+.5)/thresolu + theirview.hoff - .5;
-		pos[1] = (y+.5)/tvresolu + theirview.voff - .5;
+		pos[0] = (x+.5)/thresolu;
+		pos[1] = (y+.5)/tvresolu;
 		pos[2] = zline[x];
-		if (theirview.type == VT_PER) {
-			if (normdist)	/* adjust for eye-ray distance */
-				pos[2] /= sqrt( 1.
-					+ pos[0]*pos[0]*theirview.hn2
-					+ pos[1]*pos[1]*theirview.vn2 );
-			pos[0] *= pos[2];
-			pos[1] *= pos[2];
-		}
-		multp3(pos, pos, theirs2ours);
-		if (pos[2] <= 0) {
+		if (movepixel(pos) < 0) {
 			lasty[x].z = lastx.z = 0;	/* mark invalid */
 			continue;
 		}
-		if (ourview.type == VT_PER) {
-			pos[0] /= pos[2];
-			pos[1] /= pos[2];
-		}
-		pos[0] += .5 - ourview.hoff;
-		pos[1] += .5 - ourview.voff;
 		newpos.x = pos[0] * hresolu;
 		newpos.y = pos[1] * vresolu;
 		newpos.z = zline[x];
@@ -466,6 +457,45 @@ double	z;
 			}
 		}
 	}
+}
+
+
+movepixel(pos)				/* reposition image point */
+FVECT	pos;
+{
+	FVECT	pt, direc;
+	
+	if (hasmatrix) {
+		pos[0] += theirview.hoff - .5;
+		pos[1] += theirview.voff - .5;
+		if (theirview.type == VT_PER) {
+			if (normdist)	/* adjust for eye-ray distance */
+				pos[2] /= sqrt( 1.
+					+ pos[0]*pos[0]*theirview.hn2
+					+ pos[1]*pos[1]*theirview.vn2 );
+			pos[0] *= pos[2];
+			pos[1] *= pos[2];
+		}
+		multp3(pos, pos, theirs2ours);
+		if (pos[2] <= 0)
+			return(-1);
+		if (ourview.type == VT_PER) {
+			pos[0] /= pos[2];
+			pos[1] /= pos[2];
+		}
+		pos[0] += .5 - ourview.hoff;
+		pos[1] += .5 - ourview.voff;
+		return(0);
+	}
+	if (viewray(pt, direc, &theirview, pos[0], pos[1]) < 0)
+		return(-1);
+	pt[0] += direc[0]*pos[2];
+	pt[1] += direc[1]*pos[2];
+	pt[2] += direc[2]*pos[2];
+	viewpixel(&pos[0], &pos[1], &pos[2], &ourview, pt);
+	if (pos[2] <= 0)
+		return(-1);
+	return(0);
 }
 
 
