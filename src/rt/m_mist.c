@@ -123,7 +123,7 @@ register RAY  *r;
 	double  re, ge, be;
 	register int  i, j;
 					/* check arguments */
-	if (m->oargs.nfargs > 5)
+	if (m->oargs.nfargs > 7)
 		objerror(m, USER, "bad arguments");
 					/* get source indices */
 	if (m->oargs.nsargs > 0 && (myslist = (int *)m->os) == NULL) {
