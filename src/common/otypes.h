@@ -40,19 +40,20 @@ typedef struct {
 #define  MAT_LIGHT	23		/* primary light source */
 #define  MAT_ILLUM	24		/* secondary light source */
 #define  MAT_GLOW	25		/* proximity light source */
-#define  MAT_PDATA	26		/* plastic brdf data */
-#define  MAT_MDATA	27		/* metal brdf data */
-#define  MAT_SPOT	28		/* spot light source */
-#define  PAT_CFUNC	29		/* color function */
-#define  MAT_CLIP	30		/* clipping surface */
-#define  PAT_CDATA	31		/* color data */
-#define  PAT_CTEXT	32		/* colored text */
-#define  TEX_DATA	33		/* surface texture data */
-#define  MIX_FUNC	34		/* mixing function */
-#define  MIX_DATA	35		/* mixing data */
-#define  MIX_TEXT	36		/* mixing text */
+#define  MAT_BRTDF	26		/* brtd function */
+#define  MAT_PDATA	27		/* plastic brdf data */
+#define  MAT_MDATA	28		/* metal brdf data */
+#define  MAT_SPOT	29		/* spot light source */
+#define  PAT_CFUNC	30		/* color function */
+#define  MAT_CLIP	31		/* clipping surface */
+#define  PAT_CDATA	32		/* color data */
+#define  PAT_CTEXT	33		/* colored text */
+#define  TEX_DATA	34		/* surface texture data */
+#define  MIX_FUNC	35		/* mixing function */
+#define  MIX_DATA	36		/* mixing data */
+#define  MIX_TEXT	37		/* mixing text */
 				/* number of object types */
-#define  NUMOTYPE	37
+#define  NUMOTYPE	38
 				/* type flags */
 #define  T_S		01		/* surface (object) */
 #define  T_M		02		/* material */
@@ -110,6 +111,7 @@ extern int  o_default();
 				{ "light",	T_M|T_L,	o_default }, \
 				{ "illum",	T_M|T_L,	o_default }, \
 				{ "glow",	T_M|T_L,	o_default }, \
+				{ "BRTDfunc",	T_M|T_F,	o_default }, \
 				{ "plasdata",	T_M|T_D,	o_default }, \
 				{ "metdata",	T_M|T_D,	o_default }, \
 				{ "spotlight",	T_M|T_L,	o_default }, \
