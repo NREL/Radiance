@@ -207,19 +207,13 @@ FILE  *fin;
 
 	fgetline(buf, sizeof(buf), fin);
 	if (expand) {
-		if (xac > 2) {
-			if ((pin = popen(buf+1, "r")) == NULL) {
-				fprintf(stderr,
-				"%s: (%s): cannot execute \"%s\"\n",
-						progname, fname, buf);
-				exit(1);
-			}
-			xform(buf, pin);
-			pclose(pin);
-		} else {
-			fflush(stdout);
-			system(buf+1);
+		if ((pin = popen(buf+1, "r")) == NULL) {
+			fprintf(stderr, "%s: (%s): cannot execute \"%s\"\n",
+					progname, fname, buf);
+			exit(1);
 		}
+		xform(buf, pin);
+		pclose(pin);
 	} else {
 		printf("\n%s", buf);
 		if (xac > 1) {
