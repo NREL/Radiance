@@ -16,10 +16,11 @@ static char SCCSid[] = "$SunId$ SGI";
 #endif
 				/* maximum allowed angle difference (deg.) */
 #ifndef MAXANG
-#define MAXANG		20.
+#define MAXANG		20
 #endif
-
-#define MAXDIFF2	(PI*PI/180./180.* MAXANG*MAXANG )
+#if MAXANG>0
+#define MAXDIFF2	( MAXANG*MAXANG * (PI*PI/180./180.))
+#endif
 
 #define abs(i)		((i) < 0 ? -(i) : (i))
 
@@ -206,8 +207,8 @@ int	pct;
 #define FXNEG		01
 #define FYNEG		02
 #define FZNEG		04
-#define FXACT		010
-#define FZACT		020
+#define F1X		010
+#define F2Z		020
 #define F1SFT		5
 #define F2SFT		18
 #define FMASK		0x1fff
@@ -227,14 +228,14 @@ FVECT	dv;
 		} else
 			cd[i] = dv[i] * DCSCALE;
 	if (cd[0] <= cd[1]) {
-		dc |= FXACT | cd[0] << F1SFT;
+		dc |= F1X | cd[0] << F1SFT;
 		cm = cd[1];
 	} else {
 		dc |= cd[1] << F1SFT;
 		cm = cd[0];
 	}
 	if (cd[2] <= cm)
-		dc |= FZACT | cd[2] << F2SFT;
+		dc |= F2Z | cd[2] << F2SFT;
 	else
 		dc |= cm << F2SFT;
 	return(dc);
@@ -243,7 +244,7 @@ FVECT	dv;
 
 static
 decodedir(dv, dc)	/* decode a normalized direction vector */
-FVECT	dv;	/* returned */
+register FVECT	dv;	/* returned */
 register int4	dc;
 {
 	double	d1, d2, der;
@@ -251,13 +252,13 @@ register int4	dc;
 	d1 = ((dc>>F1SFT & FMASK)+.5)/DCSCALE;
 	d2 = ((dc>>F2SFT & FMASK)+.5)/DCSCALE;
 	der = sqrt(1. - d1*d1 - d2*d2);
-	if (dc & FXACT) {
+	if (dc & F1X) {
 		dv[0] = d1;
-		if (dc & FZACT) { dv[1] = der; dv[2] = d2; }
+		if (dc & F2Z) { dv[1] = der; dv[2] = d2; }
 		else { dv[1] = d2; dv[2] = der; }
 	} else {
 		dv[1] = d1;
-		if (dc & FZACT) { dv[0] = der; dv[2] = d2; }
+		if (dc & F2Z) { dv[0] = der; dv[2] = d2; }
 		else { dv[0] = d2; dv[2] = der; }
 	}
 	if (dc & FXNEG) dv[0] = -dv[0];
@@ -346,7 +347,7 @@ int	li;
 	viewloc(ip, &odev.v, wp);
 	if (ip[2] <= 0. || ip[0] < 0. || ip[0] >= 1.
 			|| ip[1] < 0. || ip[1] >= 1.)
-		return(0);			/* behind or outside view */
+		return(-1);			/* behind or outside view */
 #ifdef DEBUG
 	if (odev.v.type == VT_PAR | odev.v.vfore > FTINY)
 		error(INTERNAL, "bad view assumption in addleaf");
@@ -354,8 +355,10 @@ int	li;
 	for (q = 0; q < 3; q++)
 		vd[q] = (wp[q] - odev.v.vp[q])/ip[2];
 	d2 = fdir2diff(qtL.wd[li], vd);
+#ifdef MAXDIFF2
 	if (d2 > MAXDIFF2)
 		return(0);			/* leaf dir. too far off */
+#endif
 	x = ip[0] * odev.hres;
 	y = ip[1] * odev.vres;
 	z = ip[2];
