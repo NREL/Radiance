@@ -70,7 +70,7 @@ extern MATREC	*getmatp(char *nam);
 extern int	o_default(OBJREC *o);
 extern int	o_unsupported(OBJREC *o);
 extern MATREC	*newmaterial(char *nam);
-extern void	freemtl(MATREC *mp);
+extern void	freemtl(void *p);
 extern int	m_normal(OBJREC *o);
 extern int	m_aniso(OBJREC *o);
 extern int	m_glass(OBJREC *o);

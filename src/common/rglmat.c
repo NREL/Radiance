@@ -54,7 +54,7 @@ register OBJREC	*o;
 			goto memerr;
 		strcpy(lup->key, o->oname);
 	} else if (lup->data != NULL)
-		freemtl((MATREC *)lup->data);
+		freemtl(lup->data);
 	if ((lup->data = o->os) != NULL)	/* make material reference */
 		((MATREC *)lup->data)->nlinks++;
 	return(0);
@@ -87,7 +87,7 @@ char	*nam;
 			goto memerr;
 		strcpy(lup->key, nam);
 	} else if (lup->data != NULL)
-		freemtl((MATREC *)lup->data);
+		freemtl(lup->data);
 	lup->data = (char *)malloc(sizeof(MATREC));
 	if (lup->data == NULL)
 		goto memerr;
@@ -99,9 +99,11 @@ memerr:
 
 
 void
-freemtl(mp)			/* free a material */
-register MATREC	*mp;
+freemtl(p)			/* free a material */
+void	*p;
 {
+	register MATREC	*mp = (MATREC *)p;
+
 	if (!--mp->nlinks)
 		free((void *)mp);
 }
