@@ -18,6 +18,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "resolu.h"
 
+#include  "paths.h"
+
 extern char  *malloc();
 extern float  *matchlamp();
 
@@ -45,8 +47,6 @@ int  npts = 0;			/* (half) number of points for stars */
 
 double  spread = 1e-4;		/* spread for star points */
 
-#define  TEMPLATE	"/usr/tmp/pfXXXXXX"
-
 char  *tfname = NULL;
 
 char  *lampdat = "lamp.tab";	/* lamp data file */
@@ -72,7 +72,6 @@ main(argc, argv)
 int  argc;
 char  **argv;
 {
-	extern char  *mktemp();
 	extern double  pow();
 	extern long  ftell();
 	extern int  quit(), headline();
