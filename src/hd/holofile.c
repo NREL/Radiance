@@ -1,4 +1,4 @@
-/* Copyright (c) 1999 Silicon Graphics, Inc. */
+/* Copyright (c) 1999 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -52,7 +52,7 @@ HOLO	*hdlist[HDMAX+1];	/* holodeck pointers (NULL term.) */
 
 static struct fraglist {
 	short	nlinks;		/* number of holodeck sections using us */
-	short	writerr;	/* write error encountered */
+	short	writable;	/* 0 read-only, <0 write error encountered */
 	int	nfrags;		/* number of known fragments */
 	BEAMI	*fi;		/* fragments, descending file position */
 	long	flen;		/* last known file length */
@@ -119,8 +119,9 @@ char	*rout;
 }
 
 
-hdattach(fd)		/* start tracking file fragments for some section */
+hdattach(fd, wr)	/* start tracking file fragments for some section */
 register int	fd;
+int	wr;
 {
 	if (fd >= nhdfragls) {
 		hdfragl = (struct fraglist *)hdrealloc((char *)hdfragl,
@@ -130,6 +131,7 @@ register int	fd;
 		nhdfragls = fd+1;
 	}
 	hdfragl[fd].nlinks++;
+	hdfragl[fd].writable = wr;		/* set writable flag */
 	hdfragl[fd].flen = lseek(fd, 0L, 2);	/* get file length */
 }
 
@@ -157,6 +159,7 @@ HDGRID	*hproto;		/* holodeck section grid */
 {
 	long	rtrunc;
 	long	fpos;
+	int	writable;
 	register HOLO	*hp;
 	register int	n;
 					/* prepare for system errors */
@@ -182,7 +185,14 @@ HDGRID	*hproto;		/* holodeck section grid */
 				error(WARNING, "dirty holodeck section");
 				break;
 			}
-	} else {			/* assume we're creating it */
+						/* check writability */
+		if (fd < nhdfragls && hdfragl[fd].nlinks)
+			writable = hdfragl[fd].writable;
+		else
+			writable = lseek(fd, fpos, 0) == fpos &&
+				write(fd, (char *)hp, sizeof(HDGRID)) ==
+							sizeof(HDGRID);
+	} else {			/* else assume we're creating it */
 		if ((hp = hdalloc(hproto)) == NULL)
 			goto memerr;
 						/* write header and skeleton */
@@ -191,12 +201,13 @@ HDGRID	*hproto;		/* holodeck section grid */
 					sizeof(HDGRID) ||
 				write(fd, (char *)(hp->bi+1), n) != n)
 			error(SYSTEM, "cannot write header to holodeck file");
+		writable = 1;
 	}
 	hp->fd = fd;	
 	hp->dirty = 0;
 	biglob(hp)->fo = fpos + sizeof(HDGRID);
 					/* start tracking fragments */
-	hdattach(fd);
+	hdattach(fd, writable);
 					/* check rays on disk */
 	fpos = hdfilen(fd);
 	biglob(hp)->nrd = rtrunc = 0;
@@ -535,6 +546,8 @@ int	i;
 	DCHECK(hp->fd < 0 | hp->fd >= nhdfragls || !hdfragl[hp->fd].nlinks,
 			CONSISTENCY, "bad file descriptor in hdfreefrag");
 	f = &hdfragl[hp->fd];
+	if (!f->writable)
+		return(0);
 	if (f->nfrags % FRAGBLK == 0) {	/* delete empty remnants */
 		for (j = k = 0; k < f->nfrags; j++, k++) {
 			while (f->fi[k].nrd == 0)
@@ -661,8 +674,8 @@ register int	i;
 	unsigned int	n;
 	long	nfo;
 					/* check file status */
-	if (hdfragl[hp->fd].writerr)
-		return(-1);
+	if (hdfragl[hp->fd].writable <= 0)
+		return(hdfragl[hp->fd].writable);
 	DCHECK(i < 1 | i > nbeams(hp),
 			CONSISTENCY, "bad beam index in hdsyncbeam");
 					/* is current fragment OK? */
@@ -677,7 +690,7 @@ register int	i;
 			error(SYSTEM, "cannot seek on holodeck file");
 		n = hp->bl[i]->nrm * sizeof(RAYVAL);
 		if (write(hp->fd, (char *)hdbray(hp->bl[i]), n) != n) {
-			hdfragl[hp->fd].writerr++;
+			hdfragl[hp->fd].writable = -1;
 			hdsync(NULL, 0);	/* sync directories */
 			error(SYSTEM, "write error in hdsyncbeam");
 		}
@@ -705,7 +718,7 @@ register int	i;
 			nchanged += hdfreebeam(hdlist[i], 0);
 		return(nchanged);
 	}
-	if (hdfragl[hp->fd].writerr)	/* check for file error */
+	if (hdfragl[hp->fd].writable < 0)	/* check for file error */
 		return(0);
 	if (i == 0) {			/* clear entire holodeck */
 		if (blglob(hp)->nrm == 0)
@@ -758,8 +771,10 @@ register int	i;
 				CONSISTENCY, "bad beam count in hdkillbeam");
 		return(nchanged);
 	}
-	DCHECK(i < 1 | i > nbeams(hp),
-			CONSISTENCY, "bad beam index to hdkillbeam");
+	DCHECK(i < 1 | i > nbeams(hp), CONSISTENCY,
+			"bad beam index to hdkillbeam");
+	DCHECK(!hdfragl[hp->fd].writable, CONSISTENCY,
+			"hdkillbeam called on read-only holodeck");
 	if (hp->bl[i] != NULL) {	/* free memory */
 		blglob(hp)->nrm -= nchanged = hp->bl[i]->nrm;
 		free((char *)hp->bl[i]);
