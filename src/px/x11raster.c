@@ -35,7 +35,8 @@ int	bm_pad;
 		if (!XMatchVisualInfo(disp,scrn,8,PseudoColor,&ourvinfo))
 			return(NULL);
 	} else if (depth == 24) {
-		if (!XMatchVisualInfo(disp,scrn,24,TrueColor,&ourvinfo))
+		if (!XMatchVisualInfo(disp,scrn,24,TrueColor,&ourvinfo) &&
+			!XMatchVisualInfo(disp,scrn,24,DirectColor,&ourvinfo))
 			return(NULL);
 	} else
 		return(NULL);
@@ -48,6 +49,10 @@ int	bm_pad;
 			depth==1 ? XYBitmap : ZPixmap,
 			0,data,width,height,bm_pad,0);
 	xr->image->bitmap_bit_order = MSBFirst;
+	if (xr->image->bits_per_pixel == 32) {
+		xr->image->bytes_per_line = xr->image->bytes_per_line*24/32;
+		xr->image->bits_per_pixel = 24;
+	}
 	xr->gc = XCreateGC(disp, RootWindow(disp,scrn), 0, 0);
 	XSetState(disp, xr->gc, BlackPixel(disp,scrn), WhitePixel(disp,scrn),
 			GXcopy, AllPlanes);
