@@ -15,6 +15,10 @@
 #define HDMAX		128	/* maximum active holodeck sections */
 #endif
 
+#ifndef MAXDIRSE
+#define MAXDIRSE	32	/* maximum seeks per directory write */
+#endif
+
 #define DCINF	(unsigned)((1L<<16)-1)	/* special value for infinity */
 #define DCLIN	(unsigned)(1L<<11)	/* linear depth limit */
 
@@ -65,7 +69,10 @@ typedef struct holo {
 	FVECT	xv[3];		/* side vectors (second) */
 	int2	grid[3];	/* grid resolution (third) */
 	int	fd;		/* file descriptor */
-	short	dirty;		/* beam index needs update to file */
+	struct {
+		int	s, n;		/* dirty section start, length */
+	} dirseg[MAXDIRSE+1];	/* dirty beam index segments */
+	short	dirty;		/* number of dirty segments */
 	double	tlin;		/* linear range for depth encoding */
 	FVECT	wg[3];		/* wall grid vectors (derived) */
 	double	wo[6];		/* wall grid offsets (derived) */

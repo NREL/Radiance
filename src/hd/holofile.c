@@ -103,21 +103,6 @@ register int	fd;
 }
 
 
-markdirty(hp)			/* mark holodeck section directory dirty */
-register HOLO	*hp;
-{
-	static BEAMI	smudge = {0, -1};
-
-	if (hp->dirty)		/* already marked? */
-		return;
-	hp->dirty = 1;
-	if (lseek(hp->fd, biglob(hp)->fo+(nbeams(hp)-1)*sizeof(BEAMI), 0) < 0
-			|| write(hp->fd, (char *)&smudge,
-					sizeof(BEAMI)) != sizeof(BEAMI))
-		error(SYSTEM, "seek/write error in markdirty");
-}
-
-
 HOLO *
 hdinit(fd, hproto)	/* initialize a holodeck section in a file */
 int	fd;			/* corresponding file descriptor */
@@ -144,8 +129,12 @@ HDGRID	*hproto;		/* holodeck section grid */
 		if (read(fd, (char *)(hp->bi+1), n) != n)
 			error(SYSTEM, "failure loading holodeck directory");
 						/* check that it's clean */
-		if (hp->bi[nbeams(hp)].fo < 0)
-			error(WARNING, "dirty holodeck section");
+		for (n = nbeams(hp); n > 0; n--)
+			if (hp->bi[n].fo < 0) {
+				hp->bi[n].fo = 0;
+				error(WARNING, "dirty holodeck section");
+				break;
+			}
 	} else {			/* assume we're creating it */
 		if ((hp = hdalloc(hproto)) == NULL)
 			goto memerr;
@@ -189,6 +178,54 @@ memerr:
 }
 
 
+markdirty(hp, i)		/* mark holodeck directory position dirty */
+register HOLO	*hp;
+int	i;
+{
+	static BEAMI	smudge = {0, -1};
+	int	mindist, minpos;
+	register int	j;
+
+	if (!hp->dirty++) {			/* write smudge first time */
+		if (lseek(hp->fd, biglob(hp)->fo+(i-1)*sizeof(BEAMI), 0) < 0
+				|| write(hp->fd, (char *)&smudge,
+					sizeof(BEAMI)) != sizeof(BEAMI))
+			error(SYSTEM, "seek/write error in markdirty");
+		hp->dirseg[0].s = i;
+		hp->dirseg[0].n = 1;
+		return;
+	}
+						/* insert into segment list */
+	for (j = hp->dirty; j--; ) {
+		if (!j || hp->dirseg[j-1].s < i) {
+			hp->dirseg[j].s = i;
+			hp->dirseg[j].n = 1;
+			break;
+		}
+		copystruct(hp->dirseg+j, hp->dirseg+(j-1));
+	}
+	mindist = nbeams(hp);			/* find closest neighbors */
+	for (j = hp->dirty; --j; )
+		if (hp->dirseg[j].s - (hp->dirseg[j-1].s + hp->dirseg[j-1].n)
+				< mindist) {
+			mindist = hp->dirseg[j].s -
+					(hp->dirseg[j-1].s + hp->dirseg[j-1].n);
+			minpos = j;
+		}
+	if (hp->dirty > MAXDIRSE || mindist <= BUFSIZ/sizeof(BEAMI)) {
+		j = minpos - 1;			/* coalesce neighbors */
+		if (hp->dirseg[j].s + hp->dirseg[j].n <
+				hp->dirseg[minpos].s + hp->dirseg[minpos].n) {
+			hp->dirseg[j].n = hp->dirseg[minpos].s +
+					hp->dirseg[minpos].n - hp->dirseg[j].s;
+		}
+		hp->dirty--;			/* close the gap */
+		for (j = minpos; j < hp->dirty; j++)
+			copystruct(hp->dirseg+j, hp->dirseg+(j+1));
+	}
+}
+
+
 int
 hdsync(hp, all)			/* update beams and directory on disk */
 register HOLO	*hp;
@@ -208,13 +245,16 @@ int	all;
 			hdsyncbeam(hp, j);
 	if (!hp->dirty)			/* directory clean? */
 		return(0);
-	errno = 0;
-	if (lseek(hp->fd, biglob(hp)->fo, 0) < 0)
-		error(SYSTEM, "cannot seek on holodeck file");
-	n = nbeams(hp)*sizeof(BEAMI);
-	if (write(hp->fd, (char *)(hp->bi+1), n) != n)
-		error(SYSTEM, "cannot update holodeck section directory");
-	hp->dirty = 0;
+	errno = 0;			/* write dirty segments */
+	for (j = 0; j < hp->dirty; j++) {
+		if (lseek(hp->fd, biglob(hp)->fo +
+				(hp->dirseg[j].s-1)*sizeof(BEAMI), 0) < 0)
+			error(SYSTEM, "cannot seek on holodeck file");
+		n = hp->dirseg[j].n * sizeof(BEAMI);
+		if (write(hp->fd, (char *)(hp->bi+hp->dirseg[j].s), n) != n)
+			error(SYSTEM, "cannot update section directory");
+	}
+	hp->dirty = 0;			/* all clean */
 	return(1);
 }
 
@@ -567,7 +607,7 @@ register int	i;
 		hp->bi[i].fo = 0L;
 	biglob(hp)->nrd += nrays - hp->bi[i].nrd;
 	hp->bi[i].nrd = nrays;
-	markdirty(hp);			/* section directory now out of date */
+	markdirty(hp, i);		/* section directory now out of date */
 	return(1);
 }
 
