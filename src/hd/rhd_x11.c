@@ -204,10 +204,10 @@ VIEW	*nv;
 	if (nv != &odev.v) {
 		if (!FEQ(nv->horiz,odev.v.horiz) ||	/* resize window? */
 				!FEQ(nv->vert,odev.v.vert)) {
-			odev.hres = 2.*VIEWDIST*tan(PI/180./2.*nv->horiz) /
-					pwidth;
-			odev.vres = 2.*VIEWDIST*tan(PI/180./2.*nv->vert) /
-					pheight;
+			odev.hres = 2.*VIEWDIST/pwidth *
+					tan(PI/180./2.*nv->horiz);
+			odev.vres = 2.*VIEWDIST/pheight *
+					tan(PI/180./2.*nv->vert);
 			XResizeWindow(ourdisplay, gwind, odev.hres, odev.vres);
 		}
 		copystruct(&odev.v, nv);
@@ -599,13 +599,11 @@ register XConfigureEvent  *ersz;
 	if (ersz->width == odev.hres && ersz->height == odev.vres)
 		return;
 
-	if (odev.hres != 0 && odev.vres != 0) {
-		odev.v.horiz = 2.*180./PI * atan(0.5/VIEWDIST*pwidth*odev.hres);
-		odev.v.vert = 2.*180./PI * atan(0.5/VIEWDIST*pheight*odev.vres);
-		inpresflags |= DEV_NEWVIEW;
-	}
 	odev.hres = ersz->width;
 	odev.vres = ersz->height;
 
-	inpresflags |= DEV_NEWSIZE;
+	odev.v.horiz = 2.*180./PI * atan(0.5/VIEWDIST*pwidth*odev.hres);
+	odev.v.vert = 2.*180./PI * atan(0.5/VIEWDIST*pheight*odev.vres);
+
+	inpresflags |= DEV_NEWSIZE|DEV_NEWVIEW;
 }
