@@ -26,6 +26,13 @@ extern double  stadj(), sdec(), sazi(), salt();
 
 #define  DOT(v1,v2)	(v1[0]*v2[0]+v1[1]*v2[1]+v1[2]*v2[2])
 
+#define  S_CLEAR	1
+#define  S_OVER		2
+#define  S_UNIF		3
+#define  S_INTER	4
+
+#define  overcast	(skytype==S_OVER|skytype==S_UNIF)
+
 double  normsc();
 					/* sun calculation constants */
 extern double  s_latitude;
@@ -37,7 +44,7 @@ double  hour;					/* time */
 int  tsolar;					/* 0=standard, 1=solar */
 double  altitude, azimuth;			/* or solar angles */
 					/* default values */
-int  cloudy = 0;				/* 1=standard, 2=uniform */
+int  skytype = S_CLEAR;				/* sky type */
 int  dosun = 1;
 double  zenithbr = 0.0;
 int	u_zenith = 0;				/* -1=irradiance, 1=radiance */
@@ -87,7 +94,7 @@ char  *argv[];
 		if (argv[i][0] == '-' || argv[i][0] == '+')
 			switch (argv[i][1]) {
 			case 's':
-				cloudy = 0;
+				skytype = S_CLEAR;
 				dosun = argv[i][0] == '+';
 				break;
 			case 'r':
@@ -96,8 +103,16 @@ char  *argv[];
 				solarbr = atof(argv[++i]);
 				break;
 			case 'c':
-				cloudy = argv[i][0] == '+' ? 2 : 1;
+				skytype = S_OVER;
 				dosun = 0;
+				break;
+			case 'u':
+				skytype = S_UNIF;
+				dosun = 0;
+				break;
+			case 'i':
+				skytype = S_INTER;
+				dosun = argv[i][0] == '+';
 				break;
 			case 't':
 				turbidity = atof(argv[++i]);
@@ -154,10 +169,10 @@ computesky()			/* compute sky parameters */
 			st = hour + stadj(jd);
 		altitude = salt(sd, st);
 		azimuth = sazi(sd, st);
-		printf("# Solar altitude and azimuth: %f %f\n",
+		printf("# Solar altitude and azimuth: %.1f %.1f\n",
 				180./PI*altitude, 180./PI*azimuth);
 	}
-	if (!cloudy && altitude > 87.*PI/180.) {
+	if (!overcast && altitude > 87.*PI/180.) {
 		fprintf(stderr,
 "%s: warning - sun too close to zenith, reducing altitude to 87 degrees\n",
 				progname);
@@ -170,23 +185,34 @@ computesky()			/* compute sky parameters */
 	sundir[2] = sin(altitude);
 
 					/* Compute normalization factor */
-	if (cloudy == 2)
+	switch (skytype) {
+	case S_UNIF:
 		normfactor = 1.0;
-	else if (cloudy == 1)
+		break;
+	case S_OVER:
 		normfactor = 0.777778;
-	else {
+		break;
+	case S_CLEAR:
 		F2 = 0.274*(0.91 + 10.0*exp(-3.0*(PI/2.0-altitude)) +
 				0.45*sundir[2]*sundir[2]);
-		normfactor = normsc(altitude)/F2/PI;
+		normfactor = normsc()/F2/PI;
+		break;
+	case S_INTER:
+		F2 = (2.739 + .9891*sin(.3119+2.6*altitude)) *
+			exp(-(PI/2.0-altitude)*(.4441+1.48*altitude));
+		normfactor = normsc()/F2/PI;
+		break;
 	}
 					/* Compute zenith brightness */
 	if (u_zenith == -1)
 		zenithbr /= normfactor*PI;
 	else if (u_zenith == 0) {
-		if (cloudy)
+		if (overcast)
 			zenithbr = 8.6*sundir[2] + .123;
 		else
 			zenithbr = (1.376*turbidity-1.81)*tan(altitude)+0.38;
+		if (skytype == S_INTER)
+			zenithbr = (zenithbr + 8.6*sundir[2] + .123)/2.0;
 		if (zenithbr < 0.0)
 			zenithbr = 0.0;
 		else
@@ -194,13 +220,16 @@ computesky()			/* compute sky parameters */
 	}
 					/* Compute horizontal radiance */
 	groundbr = zenithbr*normfactor;
-	printf("# Ground ambient level: %f\n", groundbr);
+	printf("# Ground ambient level: %.1f\n", groundbr);
 	if (sundir[2] > 0.0 && (!u_solar || solarbr > 0.0)) {
 		if (u_solar == -1)
 			solarbr /= 6e-5*sundir[2];
-		else if (u_solar == 0)
+		else if (u_solar == 0) {
 			solarbr = 1.5e9/SUNEFFICACY *
 			(1.147 - .147/(sundir[2]>.16?sundir[2]:.16));
+			if (skytype == S_INTER)
+				solarbr *= 0.15;	/* fudge factor! */
+		}
 		groundbr += 6e-5/PI*solarbr*sundir[2];
 	} else
 		dosun = 0;
@@ -220,26 +249,39 @@ printsky()			/* print out sky */
 	}
 	
 	printf("\nvoid brightfunc skyfunc\n");
-	printf("2 skybright skybright.cal\n");
+	printf("2 skybr skybright.cal\n");
 	printf("0\n");
-	if (cloudy)
-		printf("3 %d %.2e %.2e\n", cloudy, zenithbr, groundbr);
+	if (overcast)
+		printf("3 %d %.2e %.2e\n", skytype, zenithbr, groundbr);
 	else
-		printf("7 -1 %.2e %.2e %.2e %f %f %f\n", zenithbr, groundbr,
-				F2, sundir[0], sundir[1], sundir[2]);
+		printf("7 %d %.2e %.2e %.2e %f %f %f\n",
+				skytype, zenithbr, groundbr, F2,
+				sundir[0], sundir[1], sundir[2]);
 }
 
 
 printdefaults()			/* print default values */
 {
-	if (cloudy == 1)
+	switch (skytype) {
+	case S_OVER:
 		printf("-c\t\t\t\t# Cloudy sky\n");
-	else if (cloudy == 2)
-		printf("+c\t\t\t\t# Uniform cloudy sky\n");
-	else if (dosun)
-		printf("+s\t\t\t\t# Sunny sky with sun\n");
-	else
-		printf("-s\t\t\t\t# Sunny sky without sun\n");
+		break;
+	case S_UNIF:
+		printf("-u\t\t\t\t# Uniform cloudy sky\n");
+		break;
+	case S_INTER:
+		if (dosun)
+			printf("+i\t\t\t\t# Intermediate sky with sun\n");
+		else
+			printf("-i\t\t\t\t# Intermediate sky without sun\n");
+		break;
+	case S_CLEAR:
+		if (dosun)
+			printf("+s\t\t\t\t# Sunny sky with sun\n");
+		else
+			printf("-s\t\t\t\t# Sunny sky without sun\n");
+		break;
+	}
 	printf("-g %f\t\t\t# Ground plane reflectance\n", gprefl);
 	if (zenithbr > 0.0)
 		printf("-b %f\t\t\t# Zenith radiance (watts/ster/m2\n", zenithbr);
@@ -264,17 +306,22 @@ char  *msg;
 
 
 double
-normsc(theta)			/* compute normalization factor (E0*F2/L0) */
-double  theta;
+normsc()			/* compute normalization factor (E0*F2/L0) */
 {
-	static double  nf[5] = {2.766521, 0.547665,
-				-0.369832, 0.009237, 0.059229};
+	static double  nfc[2][5] = {
+				/* clear sky approx. */
+		{2.766521, 0.547665, -0.369832, 0.009237, 0.059229},
+				/* intermediate sky approx. */
+		{3.5556, -2.7152, -1.3081, 1.0660, 0.60227},
+	};
+	register double  *nf;
 	double  x, nsc;
 	register int  i;
 					/* polynomial approximation */
-	x = (theta - PI/4.0)/(PI/4.0);
-	nsc = nf[4];
-	for (i = 3; i >= 0; i--)
+	nf = nfc[skytype==S_INTER];
+	x = (altitude - PI/4.0)/(PI/4.0);
+	nsc = nf[i=4];
+	while (i--)
 		nsc = nsc*x + nf[i];
 
 	return(nsc);
