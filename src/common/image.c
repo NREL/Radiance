@@ -148,13 +148,9 @@ double  x, y;
 		if (d > 1.0)
 			return(-1);
 		VCOPY(orig, v->vp);
-		if (d <= FTINY) {
-			VCOPY(direc, v->vdir);
-			return(0);
-		}
 		d = sqrt(d);
 		z = cos(PI*d);
-		d = sqrt(1 - z*z)/d;
+		d = d <= FTINY ? PI : sqrt(1 - z*z)/d;
 		x *= d;
 		y *= d;
 		direc[0] = z*v->vdir[0] + x*v->hvec[0] + y*v->vvec[0];
