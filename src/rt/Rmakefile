@@ -230,10 +230,10 @@ rtrace.o rvmain.o rv2.o rv3.o source.o:	../common/octree.h
 
 o_instance.o:	../common/instance.h ../common/octree.h
 
-ambient.c aniso.c dielectric.c freeobjmem.c func.c initotypes.c \
-m_brdf.c m_direct.c m_mirror.c normal.c o_cone.c preload.c \
-raytrace.c rtrace.c rv2.c source.c sphere.c srcsupp.c text.c \
-virtuals.c:	../common/otypes.h
+ambient.o aniso.o dielectric.o freeobjmem.o func.o glass.o initotypes.o \
+m_brdf.o m_direct.o m_mirror.o normal.o o_cone.o preload.o \
+raytrace.o rtrace.o rv2.o source.o sphere.o srcsupp.o text.o \
+virtuals.o:	../common/otypes.h
 
 ambient.o ambcomp.o aniso.o normal.o rpict.o \
 source.o rv3.o srcsamp.o virtuals.o:	../common/random.h
