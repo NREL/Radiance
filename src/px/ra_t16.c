@@ -113,6 +113,7 @@ char  *argv[];
 		if (!goodpic(&head))
 			quiterr("incompatible format");
 					/* put header */
+		newheader("RADIANCE", stdout);
 		printargs(i, argv, stdout);
 		fputformat(COLRFMT, stdout);
 		putchar('\n');

@@ -139,6 +139,7 @@ char	*inpf, *outf;
 	if (outf != NULL && strcmp(outf, "-") &&
 			freopen(outf, "w", stdout) == NULL)
 		quiterr("cannot open Radiance output file");
+	newheader("RADIANCE", stdout);
 	fputs(progname, stdout);
 	if (bradj)
 		printf(" -e %+d", bradj);

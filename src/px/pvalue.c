@@ -199,10 +199,14 @@ unkopt:
 			setmode(fileno(fin), O_BINARY);
 #endif
 					/* get header */
-		if (header && checkheader(fin, fmtid, stdout) < 0) {
-			fprintf(stderr, "%s: wrong input format\n", progname);
-			quit(1);
-		}
+		if (header) {
+			if (checkheader(fin, fmtid, stdout) < 0) {
+				fprintf(stderr, "%s: wrong input format\n",
+						progname);
+				quit(1);
+			}
+		} else
+			newheader("RADIANCE", stdout);
 					/* get resolution */
 		if ((resolution && !fgetsresolu(&picres, fin)) ||
 				picres.xr <= 0 || picres.yr <= 0) {
@@ -257,10 +261,9 @@ char  *line;
 	double	d;
 	COLOR	ctmp;
 
-	if (isformat(line)) {
-		formatval(fmt, line);
+	if (formatval(fmt, line))
 		wrongformat = strcmp(fmt, COLRFMT);
-	} else if (original && isexpos(line)) {
+	else if (original && isexpos(line)) {
 		d = 1.0/exposval(line);
 		scalecolor(exposure, d);
 		doexposure++;

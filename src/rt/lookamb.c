@@ -65,8 +65,10 @@ char  *argv[];
 		if (header) {
 			if (checkheader(fp, "ascii", stdout) < 0)
 				goto formaterr;
-		} else
+		} else {
+			newheader("RADIANCE", stdout);
 			printargs(argc, argv, stdout);
+		}
 		fputformat(AMBFMT, stdout);
 		putchar('\n');
 #ifdef MSDOS

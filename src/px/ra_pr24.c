@@ -99,6 +99,7 @@ char  *argv[];
 				|| head.ras_depth != 24)
 			quiterr("incompatible format");
 					/* put header */
+		newheader("RADIANCE", stdout);
 		printargs(i, argv, stdout);
 		fputformat(COLRFMT, stdout);
 		putchar('\n');

@@ -81,6 +81,7 @@ char  *argv[];
 		if (feof(stdin))
 			quiterr("empty input file");
 					/* put our header */
+		newheader("RADIANCE", stdout);
 		printargs(i, argv, stdout);
 		fputformat(COLRFMT, stdout);
 		putchar('\n');

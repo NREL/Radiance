@@ -70,10 +70,11 @@ char  *s;
 {
 	char  fmt[32];
 
-	if (isformat(s)) {
-		formatval(fmt, s);
+	if (isheadid(s))
+		return;
+	if (formatval(fmt, s))
 		wrongformat = strcmp(fmt, COLRFMT);
-	} else {
+	else {
 		putc('\t', stdout);
 		fputs(s, stdout);
 	}
@@ -143,6 +144,7 @@ char  *argv[];
 			goto userr;
 		}
 dofiles:
+	newheader("RADIANCE", stdout);
 	for (nfile = 0; an < argc; nfile++) {
 		if (nfile >= MAXFILE)
 			goto toomany;

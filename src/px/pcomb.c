@@ -106,6 +106,7 @@ char	*argv[];
 			}
 		break;
 	}
+	newheader("RADIANCE", stdout);	/* start header */
 					/* process files */
 	for (nfiles = 0; nfiles < MAXINP; nfiles++) {
 		setcolor(input[nfiles].coef, 1.0, 1.0, 1.0);
@@ -224,8 +225,9 @@ char	*s;
 	double	d;
 	COLOR	ctmp;
 
-	if (isformat(s)) {			/* check format */
-		formatval(fmt, s);
+	if (isheadid(s))			/* header id */
+		return;		/* don't echo */
+	if (formatval(fmt, s)) {		/* check format */
 		wrongformat = strcmp(fmt, COLRFMT);
 		return;		/* don't echo */
 	}

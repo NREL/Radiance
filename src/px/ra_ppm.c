@@ -99,6 +99,7 @@ char  *argv[];
 		ymax = scanint(stdin);
 		maxval = scanint(stdin);
 					/* put header */
+		newheader("RADIANCE", stdout);
 		printargs(i, argv, stdout);
 		fputformat(COLRFMT, stdout);
 		putchar('\n');

@@ -197,6 +197,8 @@ char	*argv[];
 	if (ourpict == NULL || ourzbuf == NULL)
 		syserror(progname);
 	bzero((char *)ourzbuf, hresolu*vresolu*sizeof(float));
+							/* new header */
+	newheader("RADIANCE", stdout);
 							/* get input */
 	for ( ; i < argc; i += 2)
 		addpicture(argv[i], argv[i+1]);
@@ -241,8 +243,9 @@ char	*s;
 {
 	char	fmt[32];
 
-	if (isformat(s)) {
-		formatval(fmt, s);
+	if (isheadid(s))
+		return;
+	if (formatval(fmt, s)) {
 		wrongformat = strcmp(fmt, COLRFMT);
 		return;
 	}

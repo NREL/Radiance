@@ -125,6 +125,7 @@ char  *argv[];
 		xmax = head.x;
 		ymax = head.y;
 					/* put header */
+		newheader("RADIANCE", stdout);
 		printargs(i, argv, stdout);
 		fputformat(COLRFMT, stdout);
 		putchar('\n');

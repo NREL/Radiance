@@ -88,6 +88,7 @@ char  *argv[];
 			quiterr(errmsg);
 		}
 					/* put header */
+		newheader("RADIANCE", stdout);
 		printargs(i, argv, rafp);
 		fputformat(COLRFMT, rafp);
 		putc('\n', rafp);

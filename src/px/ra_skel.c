@@ -87,6 +87,7 @@ char  *argv[];
 					/* get their image resolution */
 		read_skel_head(&xmax, &ymax);
 					/* put our header */
+		newheader("RADIANCE", stdout);
 		printargs(i, argv, stdout);
 		fputformat(COLRFMT, stdout);
 		putchar('\n');
