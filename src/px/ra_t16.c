@@ -259,9 +259,9 @@ struct hdStruct  *hp;
 			register unsigned char  *dp;
 			dp = (unsigned char *)tarData + i*3*hp->x;
 			for (j = 0; j < hp->x; j++) {
-				setcolor(scanline[j], gmap[dp[0]],
+				setcolor(scanline[j], gmap[dp[2]],
 						gmap[dp[1]],
-						gmap[dp[2]]);
+						gmap[dp[0]]);
 				dp += 3;
 			}
 		}
@@ -308,13 +308,13 @@ struct hdStruct  *hp;
 			register unsigned char  *dp;
 			dp = (unsigned char *)tarData + j*3*hp->x;
 			for (i = 0; i < hp->x; i++) {
-				c = 1024.*colval(inline[i],RED);
+				c = 1024.*colval(inline[i],BLU);
 				if (c > 1023) c = 1023;
 				*dp++ = gmap[c];
 				c = 1024.*colval(inline[i],GRN);
 				if (c > 1023) c = 1023;
 				*dp++ = gmap[c];
-				c = 1024.*colval(inline[i],BLU);
+				c = 1024.*colval(inline[i],RED);
 				if (c > 1023) c = 1023;
 				*dp++ = gmap[c];
 			}
@@ -379,20 +379,20 @@ FILE  *fp;
 			goto readerr;
 		cnt = (c & 0x7f) + 1;
 		if (c & 0x80) {			/* repeated pixel */
-			r = getc(fp); g = getc(fp);
-			if ((b = getc(fp)) == EOF)
+			b = getc(fp); g = getc(fp);
+			if ((r = getc(fp)) == EOF)
 				goto readerr;
 			while (cnt--) {
-				*dp++ = r;
-				*dp++ = g;
 				*dp++ = b;
+				*dp++ = g;
+				*dp++ = r;
 			}
 		} else				/* non-repeating pixels */
 			while (cnt--) {
 				*dp++ = getc(fp); *dp++ = getc(fp);
-				if ((b = getc(fp)) == EOF)
+				if ((r = getc(fp)) == EOF)
 					goto readerr;
-				*dp++ = b;
+				*dp++ = r;
 			}
 	}
 	return;
