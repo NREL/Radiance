@@ -162,7 +162,7 @@ char  *argv[];
 		else
 			userror("bad option");
 
-	if (fabs(s_meridian-s_longitude) > 30*PI/180)
+	if (fabs(s_meridian-s_longitude) > 45*PI/180)
 		fprintf(stderr,
 	"%s: warning: %.1f hours btwn. standard meridian and longitude\n",
 			progname, (s_longitude-s_meridian)*12/PI);
