@@ -91,8 +91,10 @@ double
 getflt(fp)			/* get a floating point number */
 FILE  *fp;
 {
+	long	l;
 	double	d;
 
-	d = (getint(4, fp) + .5) / 0x7fffffff;
+	l = getint(4, fp);
+	d = (l + (l > 0 ? .5 : -.5)) * (1./0x7fffffff);
 	return(ldexp(d, (int)getint(1, fp)));
 }
