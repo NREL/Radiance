@@ -191,10 +191,6 @@ int	bi;
 		VSUM(edgeA, cp[1], cp[0], -1.0);
 		VSUM(edgeB, cp[3], cp[1], -1.0);
 		fcross(crossp[i], edgeA, edgeB);
-		VSUM(edgeA, cp[2], cp[3], -1.0);
-		VSUM(edgeB, cp[0], cp[2], -1.0);
-		fcross(v, edgeA, edgeB);
-		VSUM(crossp[i], crossp[i], v, 1.0);
 					/* compute center */
 		cent[i][0] = 0.5*(cp[0][0] + cp[2][0]);
 		cent[i][1] = 0.5*(cp[0][1] + cp[2][1]);
@@ -203,7 +199,7 @@ int	bi;
 					/* compute difference vector */
 	VSUM(diffv, cent[1], cent[0], -1.0);
 	for (i = 0; i < 2; i++) {	/* compute volume contributions */
-		vol[i] = 0.25*DOT(crossp[i], diffv);
+		vol[i] = 0.5*DOT(crossp[i], diffv);
 		if (vol[i] < 0.) vol[i] = -vol[i];
 	}
 	return(vol[0] + vol[1]);	/* return total volume */
@@ -231,6 +227,7 @@ init_global()			/* initialize global ray computation */
 	for (j = 0; hdlist[j] != NULL; j++) {
 		frac = 512. * hdlist[j]->wg[0] *
 				hdlist[j]->wg[1] * hdlist[j]->wg[2];
+		if (frac < 0.) frac = -frac;
 		for (i = nbeams(hdlist[j]); i > 0; i--) {
 			complist[k].hd = j;
 			complist[k].bi = i;
