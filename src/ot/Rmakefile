@@ -9,7 +9,7 @@
 #
 
 OPT = -O
-MACH = -f68881 /usr/lib/f68881.il
+MACH = -DBSD -DSTRUCTASSIGN -f68881 /usr/lib/f68881.il
 CFLAGS = -DSTRICT $(OPT) $(MACH)
 
 INSTDIR = /usr/local/ray
