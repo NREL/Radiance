@@ -20,7 +20,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 
 extern char  *fgetword();
-extern double  atof();
 
 extern char  *libpath;			/* library search path */
 
