@@ -45,7 +45,7 @@ rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o \
 rhdisp.o rhdisp2.o rhdisp3.o:	rholo.h
 
 rholo4.o:	rhdisp.h rholo4.c
-	$(CC) $(CFLAGS) -DDEVPATH=\"$(DEVDIR)\" -c rholo4.c
+	$(CC) $(CFLAGS) -c rholo4.c
 
 rhdisp.o rhdisp2.o:	rhdisp.h rhdriver.h ../common/view.h
 
