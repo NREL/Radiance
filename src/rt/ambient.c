@@ -21,6 +21,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  OCTSCALE	0.5	/* ceil((valid rad.)/(cube size)) */
 
+#define  WDONE		4	/* stop if wsum/wmin is at or above */
+
 extern CUBE  thescene;		/* contains space boundaries */
 
 extern COLOR  ambval;		/* global ambient component */
@@ -164,8 +166,28 @@ double  s;
 	int  i;
 	register int  j;
 	register AMBVAL  *av;
-					/* do this node */
+
 	wsum = 0.0;
+					/* check children first */
+	if (at->kid != NULL) {
+		s *= 0.5;
+		for (i = 0; i < 8; i++) {
+			for (j = 0; j < 3; j++) {
+				ck0[j] = c0[j];
+				if (1<<j & i)
+					ck0[j] += s;
+				if (r->rop[j] < ck0[j] - OCTSCALE*s)
+					break;
+				if (r->rop[j] > ck0[j] + (1.0+OCTSCALE)*s)
+					break;
+			}
+			if (j == 3)
+				wsum += sumambient(acol, r, at->kid+i, ck0, s);
+		}
+		if (wsum*ambacc >= WDONE)
+			return(wsum);		/* close enough */
+	}
+					/* check this node */
 	for (av = at->alist; av != NULL; av = av->next) {
 		/*
 		 *  Ray strength test.
@@ -203,7 +225,8 @@ double  s;
 		 *  Jittering final test reduces image artifacts.
 		 */
 		wt = sqrt(e1) + sqrt(e2);
-		if (wt > ambacc*(0.9 + 0.2*frandom()))
+		wt *= 0.9 + 0.2*frandom();
+		if (wt > ambacc)
 			continue;
 		if (wt <= 1e-3)
 			wt = 1e3;
@@ -213,23 +236,6 @@ double  s;
 		copycolor(ct, av->val);
 		scalecolor(ct, wt);
 		addcolor(acol, ct);
-	}
-	if (at->kid == NULL)
-		return(wsum);
-					/* do children */
-	s *= 0.5;
-	for (i = 0; i < 8; i++) {
-		for (j = 0; j < 3; j++) {
-			ck0[j] = c0[j];
-			if (1<<j & i)
-				ck0[j] += s;
-			if (r->rop[j] < ck0[j] - OCTSCALE*s)
-				break;
-			if (r->rop[j] > ck0[j] + (1.0+OCTSCALE)*s)
-				break;
-		}
-		if (j == 3)
-			wsum += sumambient(acol, r, at->kid+i, ck0, s);
 	}
 	return(wsum);
 }
