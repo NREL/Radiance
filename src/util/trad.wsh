@@ -27,18 +27,18 @@ proc modified {} {	# check for radvar modification
 
 proc chksave {} {	# check if RIF is saved and accost user if not
 	global readonly rifname oldradvar curmess
-	if $readonly {
-		set warnmess "You have modified variables, but the file\
-\"[file tail $rifname]\" was opened read-only.
-Do you wish to save this information somehow?"
-		set yesmess {Go to File Screen}
-	} else {
-		set warnmess "The file \"[file tail $rifname]\" has been\
-modified since it was last saved.
-Do you wish to save it now?"
-		set yesmess {Save File}
-	}
 	if [modified] {
+		if $readonly {
+			set warnmess "You have modified variables, but the\
+file \"[file tail $rifname]\" was opened read-only.
+Do you wish to save this information somehow?"
+set yesmess {Go to File Screen}
+		} else {
+			set warnmess "The file \"[file tail $rifname]\" has\
+been modified since it was last saved.
+Do you wish to save it now?"
+			set yesmess {Save File}
+		}
 		switch [tk_dialog .dlg {File Modified} $warnmess \
 				warning 0 $yesmess {Discard Changes} \
 				{Cancel Operation}] {
@@ -52,8 +52,10 @@ Do you wish to save it now?"
 		} elseif {[save_vars $rifname]} {
 			gotfile 1
 			return 1
-		} else { return 0 }
-	} else { return 1 }
+		}
+		return 0
+	}
+	return 1
 }
 
 # Set global variable default values
