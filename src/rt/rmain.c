@@ -100,6 +100,7 @@ char  *argv[];
 	int  report();
 	char  *err;
 	char  *recover = NULL;
+	char  *zfile = NULL;
 	char  *errfile = NULL;
 	char  *ambfile = NULL;
 	char  **amblp = amblist;
@@ -260,6 +261,10 @@ char  *argv[];
 			}
 			break;
 #if  RPICT
+		case 'z':				/* z file */
+			check(2,1);
+			zfile = argv[++i];
+			break;
 		case 'r':				/* recover file */
 			check(2,1);
 			recover = argv[++i];
@@ -444,7 +449,7 @@ char  *argv[];
 #if  RPICT
 	if (ralrm > 0)			/* report init time */
 		report();
-	render(recover);		/* render the scene */
+	render(zfile, recover);		/* render the scene */
 #endif
 #if  RTRACE
 	rtrace(NULL);			/* trace rays from stdin */
