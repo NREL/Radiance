@@ -209,7 +209,7 @@ usage:
 	eputs("Usage: ");
 	eputs(argv[0]);
 	eputs(
-" [-w][-x xr][-y yr][-e expr][-f file] [ [-s f][-c r g b] pic ..]\n");
+" [-w][-x xr][-y yr][-e expr][-f file] [ [-o][-s f][-c r g b] pic ..]\n");
 	quit(1);
 }
 
