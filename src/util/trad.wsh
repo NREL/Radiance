@@ -79,12 +79,12 @@ set smallscrn [expr [winfo screenwidth .] < 830]
 
 message .mess -relief ridge -font fixed -textvariable curmess -anchor nw
 if $smallscrn {
-	frame .upper -geometry 640x410
-	frame .upper.right -geometry 120x410
+	frame .upper -width 640 -height 410
+	frame .upper.right -width 120 -height 410
 	.mess configure -width 640
 } else {
-	frame .upper -geometry 830x410
-	frame .upper.right -geometry 130x410
+	frame .upper -width 830 -height 410
+	frame .upper.right -width 130 -height 410
 	.mess configure -width 830
 }
 pack .upper -side top
@@ -106,9 +106,9 @@ proc changescreen {} {		# switch screen according to curmode
 	set curscreen $curmode
 	do_$curscreen .upper.left
 	if $smallscrn {
-		.upper.left configure -geometry 520x410
+		.upper.left configure -width 520 -height 410
 	} else {
-		.upper.left configure -geometry 700x410
+		.upper.left configure -width 700 -height 410
 	}
 	place .upper.left -x 0 -y 0
 }

@@ -27,7 +27,7 @@ proc gethelp {helpfile category topic} {	# Open help window
 		toplevel .helpwin -cursor top_left_arrow
 		wm minsize .helpwin 500 400
 		wm iconbitmap .helpwin question
-		frame .helpwin.but -geometry 150x400
+		frame .helpwin.but -width 150 -height 400
 		pack .helpwin.but -side right -fill none -expand no
 		label .helpwin.but.lab -textvariable curhelp(title)
 		place .helpwin.but.lab -relx .1667 -rely 0
