@@ -34,6 +34,8 @@ static char SCCSid[] = "$SunId$ LBL";
  *	4+	red	grn	blu	specularity	args ..
  */
 
+extern double	funvalue(), varvalue();
+
 #define  BSPEC(m)		(6.0)		/* specular parameter b */
 
 typedef struct {
