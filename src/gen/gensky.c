@@ -17,6 +17,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <math.h>
 
+#include  "color.h"
 
 extern char  *strcpy(), *strcat(), *malloc();
 extern double  stadj(), sdec(), sazi(), salt();
@@ -133,10 +134,10 @@ computesky()			/* compute sky parameters */
 	if (zenithbr <= 0.0)
 		if (cloudy) {
 			zenithbr = 8.6*sundir[2] + .123;
-			zenithbr *= 1000.0*.0064/3.;
+			zenithbr *= 1000.0/SKYEFFICACY;
 		} else {
 			zenithbr = (1.376*turbidity-1.81)*tan(altitude)+0.38;
-			zenithbr *= 1000.0*.0064/3.;
+			zenithbr *= 1000.0/SKYEFFICACY;
 		}
 	if (zenithbr < 0.0)
 		zenithbr = 0.0;
@@ -151,9 +152,10 @@ computesky()			/* compute sky parameters */
 		printf("# Ground ambient level: %f\n", groundbr);
 		if (sundir[2] > 0.0) {
 			if (sundir[2] > .16)
-				solarbr = 2.47e6 - 3.15e5/sundir[2];
+				solarbr = (1.5e9/SUNEFFICACY) *
+					(1.147 - .147/sundir[2]);
 			else
-				solarbr = 5e5;
+				solarbr = 1.5e9/SUNEFFICACY*(1.147-.147/.16);
 			groundbr += solarbr*6e-5*sundir[2]/PI;
 		} else
 			dosun = 0;
@@ -167,7 +169,7 @@ printsky()			/* print out sky */
 	if (dosun) {
 		printf("\nvoid light solar\n");
 		printf("0\n0\n");
-		printf("3 %f %f %f\n", solarbr, solarbr, solarbr);
+		printf("3 %.2e %.2e %.2e\n", solarbr, solarbr, solarbr);
 		printf("\nsolar source sun\n");
 		printf("0\n0\n");
 		printf("4 %f %f %f 0.5\n", sundir[0], sundir[1], sundir[2]);
@@ -177,10 +179,10 @@ printsky()			/* print out sky */
 	printf("2 skybright skybright.cal\n");
 	printf("0\n");
 	if (cloudy)
-		printf("3 1 %f %f\n", zenithbr, groundbr);
+		printf("3 1 %.2e %.2e\n", zenithbr, groundbr);
 	else
-		printf("7 -1 %f %f %f %f %f %f\n", zenithbr, groundbr, F2,
-				sundir[0], sundir[1], sundir[2]);
+		printf("7 -1 %.2e %.2e %.2e %f %f %f\n", zenithbr, groundbr,
+				F2, sundir[0], sundir[1], sundir[2]);
 }
 
 
