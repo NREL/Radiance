@@ -150,7 +150,6 @@ SPOT *
 makespot(m)			/* make a spotlight */
 register OBJREC  *m;
 {
-	extern double  cos();
 	register SPOT  *ns;
 
 	if ((ns = (SPOT *)malloc(sizeof(SPOT))) == NULL)
@@ -228,6 +227,105 @@ OBJREC  *op;
 	co = getcone(op, 0);
 	VCOPY(nvec, co->ad);
 	return(DOT(nvec, CO_P0(co)));
+}
+
+
+commonspot(sp1, sp2, org)	/* set sp1 to intersection of sp1 and sp2 */
+register SPOT  *sp1, *sp2;
+FVECT  org;
+{
+	FVECT  cent;
+	double  rad2, cos1, cos2;
+
+	cos1 = 1. - sp1->siz/(2.*PI);
+	cos2 = 1. - sp2->siz/(2.*PI);
+	if (sp2->siz >= 2.*PI-FTINY)		/* BIG, just check overlap */
+		return(DOT(sp1->aim,sp2->aim) >= cos1*cos2 -
+					sqrt((1.-cos1*cos1)*(1.-cos2*cos2)));
+				/* compute and check disks */
+	rad2 = intercircle(cent, sp1->aim, sp2->aim,
+			1./(cos1*cos1) - 1.,  1./(cos2*cos2) - 1.);
+	if (rad2 <= FTINY || normalize(cent) == 0.)
+		return(0);
+	VCOPY(sp1->aim, cent);
+	sp1->siz = 2.*PI*(1. - 1./sqrt(1.+rad2));
+	return(1);
+}
+
+
+commonbeam(sp1, sp2, dir)	/* set sp1 to intersection of sp1 and sp2 */
+register SPOT  *sp1, *sp2;
+FVECT  dir;
+{
+	FVECT  cent, c1, c2;
+	double  rad2, d;
+	register int  i;
+					/* move centers to common plane */
+	d = DOT(sp1->aim, dir);
+	for (i = 0; i < 3; i++)
+		c1[i] = sp1->aim[i] - d*dir[i];
+	d = DOT(sp2->aim, dir);
+	for (i = 0; i < 3; i++)
+		c2[i] = sp2->aim[i] - d*dir[i];
+					/* compute overlap */
+	rad2 = intercircle(cent, c1, c2, sp1->siz/PI, sp2->siz/PI);
+	if (rad2 <= FTINY)
+		return(0);
+	VCOPY(sp1->aim, cent);
+	sp1->siz = PI*rad2;
+	return(1);
+}
+
+
+checkspot(sp, nrm)		/* check spotlight for behind source */
+register SPOT  *sp;	/* spotlight */
+FVECT  nrm;		/* source surface normal */
+{
+	double  d, d1;
+
+	d = DOT(sp->aim, nrm);
+	if (d > FTINY)			/* center in front? */
+		return(0);
+					/* else check horizon */
+	d1 = 1. - sp->siz/(2.*PI);
+	return(1.-FTINY-d*d > d1*d1);
+}
+
+
+double
+intercircle(cc, c1, c2, r1s, r2s)	/* intersect two circles */
+FVECT  cc;			/* midpoint (return value) */
+FVECT  c1, c2;			/* circle centers */
+double  r1s, r2s;		/* radii squared */
+{
+	double  a2, d2, l;
+	FVECT  disp;
+	register int  i;
+
+	for (i = 0; i < 3; i++)
+		disp[i] = c2[i] - c1[i];
+	d2 = DOT(disp,disp);
+					/* circle within overlap? */
+	if (r1s < r2s) {
+		if (r2s >= r1s + d2) {
+			VCOPY(cc, c1);
+			return(r1s);
+		}
+	} else {
+		if (r1s >= r2s + d2) {
+			VCOPY(cc, c2);
+			return(r2s);
+		}
+	}
+	a2 = .25*(2.*(r1s+r2s) - d2 - (r2s-r1s)*(r2s-r1s)/d2);
+					/* no overlap? */
+	if (a2 <= 0.)
+		return(0.);
+					/* overlap, compute center */
+	l = sqrt((r1s - a2)/d2);
+	for (i = 0; i < 3; i++)
+		cc[i] = c1[i] + l*disp[i];
+	return(a2);
 }
 
 
