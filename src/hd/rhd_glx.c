@@ -6,35 +6,41 @@ static char SCCSid[] = "$SunId$ SGI";
 
 /*
  * OpenGL GLX driver for holodeck display.
- * Based on x11 driver.
+ * Based on old GLX driver using cones.
+ *
+ * Define symbol STEREO for stereo viewing.
+ * Define symbol DOBJ for display object viewing.
  */
 
+#ifdef NOSTEREO
+#ifdef STEREO
+#undef STEREO
+#else
+#undef NOSTEREO
+#endif
+#endif
+
 #include "standard.h"
-#include "rhd_qtree.h"
+#include "rhd_sample.h"
 
-#include  <GL/glx.h>
+#include <sys/types.h>
+#include <GL/glx.h>
+#include <GL/glu.h>
+#ifdef STEREO
+#include <X11/extensions/SGIStereo.h>
+#endif
+#ifdef DOBJ
+#include "rhdobj.h"
+#endif
 
-#include  "x11icon.h"
+#include "x11icon.h"
 
 #ifndef RAYQLEN
-#define RAYQLEN		50000		/* max. rays to queue before flush */
+#define RAYQLEN		250		/* max. rays to queue before flush */
 #endif
 
 #ifndef FEQ
 #define FEQ(a,b)	((a)-(b) <= FTINY && (a)-(b) >= -FTINY)
-#endif
-
-#ifndef MAXCONE
-#define MAXCONE		16		/* number of different cone sizes */
-#endif
-#ifndef MAXVERT
-#define MAXVERT		64		/* maximum number of cone vertices */
-#endif
-#ifndef MINVERT
-#define MINVERT		4		/* minimum number of cone vertices */
-#endif
-#ifndef DEPTHFACT
-#define DEPTHFACT	16.		/* multiplier for depth tests */
 #endif
 
 #define GAMMA		1.4		/* default gamma correction */
@@ -44,12 +50,20 @@ static char SCCSid[] = "$SunId$ SGI";
 #define MOVDEG		(-5)		/* degrees to orbit CW/down /frame */
 #define MOVORB(s)	((s)&ShiftMask ? 1 : (s)&ControlMask ? -1 : 0)
 
+#ifndef TARGETFPS
+#define TARGETFPS	4.0		/* target frames/sec during motion */
+#endif
+
 #define MINWIDTH	480		/* minimum graphics window width */
 #define MINHEIGHT	400		/* minimum graphics window height */
 
 #define VIEWDIST	356		/* assumed viewing distance (mm) */
 
 #define BORWIDTH	5		/* border width */
+
+#define setstereobuf(bid)	(glXWaitGL(), \
+				XSGISetStereoBuffer(ourdisplay, gwind, bid), \
+				glXWaitX())
 
 #define  ourscreen	DefaultScreen(ourdisplay)
 #define  ourroot	RootWindow(ourdisplay,ourscreen)
@@ -59,6 +73,10 @@ static char SCCSid[] = "$SunId$ SGI";
 #define  levptr(etype)	((etype *)&currentevent)
 
 struct driver	odev;			/* global device driver structure */
+
+static VIEW	vwright;		/* right eye view */
+
+static int	rayqleft = 0;		/* rays left to queue before flush */
 
 static XEvent  currentevent;		/* current event */
 
@@ -72,25 +90,25 @@ static GLXContext	gctx;		/* our GLX context */
 
 static double	pwidth, pheight;	/* pixel dimensions (mm) */
 
-static double	curzmax = 1e4;		/* current depth upper limit */
-static double	nxtzmax = 0.;		/* maximum (finite) depth so far */
+static double	mindpth, maxdpth;	/* min. and max. depth */
 
-static struct {
-	double	rad;		/* cone radius */
-	int	nverts;		/* number of vertices */
-	FVECT	*va;		/* allocated vertex array */
-} cone[MAXCONE];	/* precomputed cones for drawing */
+double	dev_zmin, dev_zmax;		/* fore and aft clipping plane dist. */
 
 static int	inpresflags;		/* input result flags */
 
 static int	headlocked = 0;		/* lock vertical motion */
 
-static int  resizewindow(), getevent(), getkey(), moveview(),
-		initcones(), freecones(),
-		getmove(), fixwindow(), mytmflags();
+static int  resizewindow(), getevent(), getkey(), moveview(), wipeclean(),
+		setglpersp(), getmove(), fixwindow(), mytmflags();
+
+#ifdef STEREO
+static int  pushright(), popright();
+#endif
+
+extern time_t	time();
 
 
-dev_open(id)			/* initialize X11 driver */
+dev_open(id)			/* initialize GLX driver */
 char  *id;
 {
 	extern char	*getenv();
@@ -104,13 +122,28 @@ char  *id;
 	XSetWindowAttributes	ourwinattr;
 	XWMHints	ourxwmhints;
 	XSizeHints	oursizhints;
-					/* set quadtree globals */
-	qtMinNodesiz = 3;
-	qtDepthEps = 0.07;
+					/* check for unsupported stereo */
+#ifdef NOSTEREO
+	error(USER, "stereo display driver unavailable");
+#endif
 					/* open display server */
 	ourdisplay = XOpenDisplay(NULL);
 	if (ourdisplay == NULL)
 		error(USER, "cannot open X-windows; DISPLAY variable set?\n");
+#ifdef STEREO
+	switch (XSGIQueryStereoMode(ourdisplay, ourroot)) {
+	case STEREO_TOP:
+	case STEREO_BOTTOM:
+		break;
+	case STEREO_OFF:
+		error(USER,
+	"wrong video mode: run \"/usr/gfx/setmon -n STR_TOP\" first");
+	case X_STEREO_UNSUPPORTED:
+		error(USER, "stereo mode not supported on this screen");
+	default:
+		error(INTERNAL, "unknown stereo mode");
+	}
+#endif
 					/* find a usable visual */
 	ourvinf = glXChooseVisual(ourdisplay, ourscreen, atlBest);
 	if (ourvinf == NULL)
@@ -139,7 +172,11 @@ char  *id;
 				ourvinf->visual, AllocNone);
 	gwind = XCreateWindow(ourdisplay, ourroot, 0, 0,
 		DisplayWidth(ourdisplay,ourscreen)-2*BORWIDTH,
+#ifdef STEREO
+		(DisplayHeight(ourdisplay,ourscreen)-2*BORWIDTH)/2,
+#else
 		DisplayHeight(ourdisplay,ourscreen)-2*BORWIDTH,
+#endif
 		BORWIDTH, ourvinf->depth, InputOutput, ourvinf->visual,
 		CWBackPixel|CWBorderPixel|CWColormap|CWEventMask, &ourwinattr);
 	if (gwind == 0)
@@ -152,62 +189,71 @@ char  *id;
 			gwind, x11icon_bits, x11icon_width, x11icon_height);
 	XSetWMHints(ourdisplay, gwind, &ourxwmhints);
 	oursizhints.min_width = MINWIDTH;
+#ifdef STEREO
+	oursizhints.min_height = MINHEIGHT/2;
+	oursizhints.max_width = DisplayWidth(ourdisplay,ourscreen)-2*BORWIDTH;
+	oursizhints.max_height = (DisplayHeight(ourdisplay,ourscreen) -
+					2*BORWIDTH)/2;
+	oursizhints.flags = PMinSize|PMaxSize;
+#else
 	oursizhints.min_height = MINHEIGHT;
 	oursizhints.flags = PMinSize;
+#endif
 	XSetNormalHints(ourdisplay, gwind, &oursizhints);
 					/* set GLX context */
 	glXMakeCurrent(ourdisplay, gwind, gctx);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
-	glShadeModel(GL_FLAT);
+	glShadeModel(GL_SMOOTH);
 	glDisable(GL_DITHER);
 	glDisable(GL_CULL_FACE);
-	glMatrixMode(GL_PROJECTION);
-	glOrtho(0., 1., 0., 1., -.01, 1.01);
-	glTranslated(0., 0., -1.01);
 					/* figure out sensible view */
 	pwidth = (double)DisplayWidthMM(ourdisplay, ourscreen) /
 			DisplayWidth(ourdisplay, ourscreen);
 	pheight = (double)DisplayHeightMM(ourdisplay, ourscreen) /
 			DisplayHeight(ourdisplay, ourscreen);
+#ifdef STEREO
+	pheight *= 2.;
+	setstereobuf(STEREO_BUFFER_LEFT);
+#endif
 	copystruct(&odev.v, &stdview);
 	odev.v.type = VT_PER;
 					/* map the window */
 	XMapWindow(ourdisplay, gwind);
 	dev_input();			/* sets size and view angles */
-					/* allocate our leaf pile */
-	if (!qtAllocLeaves(DisplayWidth(ourdisplay,ourscreen) *
-			DisplayHeight(ourdisplay,ourscreen) * 3 /
-			(qtMinNodesiz*qtMinNodesiz*2)))
+					/* allocate our samples */
+	if (!smInit(DisplayWidth(ourdisplay,ourscreen) *
+			DisplayHeight(ourdisplay,ourscreen) / 10))
 		error(SYSTEM, "insufficient memory for value storage");
+	mindpth = FHUGE; maxdpth = FTINY;
 	odev.name = id;
 	odev.ifd = ConnectionNumber(ourdisplay);
-					/* initialize cone array */
-	initcones();
 }
 
 
 dev_close()			/* close our display and free resources */
 {
+	smInit(0);
+#ifdef DOBJ
+	dobj_cleanup();
+#endif
 	glXMakeCurrent(ourdisplay, None, NULL);
 	glXDestroyContext(ourdisplay, gctx);
 	XDestroyWindow(ourdisplay, gwind);
 	gwind = 0;
 	XCloseDisplay(ourdisplay);
 	ourdisplay = NULL;
-	qtFreeLeaves();
 	tmDone(NULL);
-	freecones();
 	odev.v.type = 0;
 	odev.hres = odev.vres = 0;
 	odev.ifd = -1;
 }
 
 
-dev_clear()			/* clear our quadtree */
+dev_clear()			/* clear our representation */
 {
-	qtCompost(100);
-	glClear(GL_DEPTH_BUFFER_BIT);
+	smInit(rsL.max_samp);
+	wipeclean();
 	rayqleft = 0;			/* hold off update */
 }
 
@@ -216,17 +262,14 @@ int
 dev_view(nv)			/* assign new driver view */
 register VIEW	*nv;
 {
-	if (nv->type == VT_PAR ||		/* check view legality */
+	double	d;
+
+	if (nv->type != VT_PER ||		/* check view legality */
 			nv->horiz > 160. || nv->vert > 160.) {
 		error(COMMAND, "illegal view type/angle");
 		nv->type = odev.v.type;
 		nv->horiz = odev.v.horiz;
 		nv->vert = odev.v.vert;
-		return(0);
-	}
-	if (nv->vfore > FTINY) {
-		error(COMMAND, "cannot handle fore clipping");
-		nv->vfore = 0.;
 		return(0);
 	}
 	if (nv != &odev.v) {
@@ -237,6 +280,9 @@ register VIEW	*nv;
 
 			dw -= 25;	/* for window frame */
 			dh -= 50;
+#ifdef STEREO
+			dh /= 2;
+#endif
 			odev.hres = 2.*VIEWDIST/pwidth *
 					tan(PI/180./2.*nv->horiz);
 			odev.vres = 2.*VIEWDIST/pheight *
@@ -252,14 +298,17 @@ register VIEW	*nv;
 			XResizeWindow(ourdisplay, gwind, odev.hres, odev.vres);
 			dev_input();	/* get resize event */
 		}
-		copystruct(&odev.v, nv);
+		copystruct(&odev.v, nv);	/* setview() already called */
+		setglpersp(&odev.v);
+#ifdef STEREO
+		copystruct(&vwright, nv);
+		d = eyesepdist / sqrt(nv->hn2);
+		VSUM(vwright.vp, nv->vp, nv->hvec, d);
+		/* setview(&vwright);	-- Unnecessary */
+#endif
+		checkglerr("setting view");
 	}
-	if (nxtzmax > FTINY) {
-		curzmax = nxtzmax;
-		nxtzmax = 0.;
-	}
-	glClear(GL_DEPTH_BUFFER_BIT);
-	qtReplant();
+	wipeclean();
 	return(1);
 }
 
@@ -267,6 +316,10 @@ register VIEW	*nv;
 dev_auxcom(cmd, args)		/* process an auxiliary command */
 char	*cmd, *args;
 {
+#ifdef DOBJ
+	if (dobj_command(cmd, args) >= 0)
+		return;
+#endif
 	sprintf(errmsg, "%s: unknown command", cmd);
 	error(COMMAND, errmsg);
 }
@@ -277,10 +330,14 @@ dev_auxview(n, hvres)		/* return nth auxiliary view */
 int	n;
 int	hvres[2];
 {
-	if (n)
-		return(NULL);
 	hvres[0] = odev.hres; hvres[1] = odev.vres;
-	return(&odev.v);
+	if (n == 0)
+		return(&odev.v);
+#ifdef STEREO
+	if (n == 1)
+		return(&vwright);
+#endif
+	return(NULL);
 }
 
 
@@ -292,59 +349,102 @@ dev_input()			/* get X11 input */
 	do
 		getevent();
 
-	while (XQLength(ourdisplay) > 0);
+	while (XPending(ourdisplay) > 0);
+
+	odev.inpready = 0;
 
 	return(inpresflags);
+}
+
+
+dev_value(c, d, p)		/* add a pixel value to our mesh */
+COLR	c;
+FVECT	d, p;
+{
+	double	depth;
+#ifdef DOBJ
+	if (dobj_lightsamp != NULL) {	/* in light source sampling */
+		(*dobj_lightsamp)(c, d, p);
+		return;
+	}
+#endif
+	smNewSamp(c, d, p);		/* add to display representation */
+	if (p != NULL) {
+		depth = (p[0] - odev.v.vp[0])*d[0] +
+			(p[1] - odev.v.vp[1])*d[1] +
+			(p[2] - odev.v.vp[2])*d[2];
+		if (depth > FTINY) {
+			if (depth < mindpth)
+				mindpth = depth;
+			if (depth > maxdpth)
+				maxdpth = depth;
+		}
+	}
+	if (!--rayqleft)
+		dev_flush();		/* flush output */
 }
 
 
 int
 dev_flush()			/* flush output */
 {
-	qtUpdate();
-	glFlush();
+#ifdef STEREO
+	pushright();			/* update right eye */
+	glClear(GL_DEPTH_BUFFER_BIT);
+	smUpdate(&vwright, 100);
+#ifdef DOBJ
+	dobj_render();			/* usually in foreground */
+#endif
+	popright();			/* update left eye */
+	glClear(GL_DEPTH_BUFFER_BIT);
+#endif
+	smUpdate(&odev.v, 100);
+#ifdef DOBJ
+	dobj_render();
+#endif
+	glFlush();			/* flush OGL */
+	checkglerr("flushing display");
 	rayqleft = RAYQLEN;
-	return(XPending(ourdisplay));
+					/* flush X11 and return # pending */
+	return(odev.inpready = XPending(ourdisplay));
 }
 
 
-dev_cone(rgb, ip, rad)		/* render a cone in view coordinates */
-BYTE	rgb[3];
-FVECT	ip;
-double	rad;
+checkglerr(where)		/* check for GL or GLU error */
+char	*where;
 {
-	register int	ci, j;
-	double	apexh, basez;
-					/* is window mapped? */
-	if (!mapped)
-		return;
-					/* compute apex height (0. to 1.) */
-	if (ip[2] > 1e6)
-		apexh = 1. - 1./DEPTHFACT;
-	else {
-		if (ip[2] > nxtzmax)
-			nxtzmax = ip[2];
-		if (ip[2] >= curzmax)
-			apexh = 1. - 1./DEPTHFACT;
-		else
-			apexh = 1. - ip[2]/(curzmax*DEPTHFACT);
+	register GLenum	errcode;
+
+	while ((errcode = glGetError()) != GL_NO_ERROR) {
+		sprintf(errmsg, "OpenGL error %s: %s",
+				where, gluErrorString(errcode));
+		error(WARNING, errmsg);
 	}
-	rad *= 1.25;			/* find conservative cone match */
-	for (ci = 0; ci < MAXCONE-1; ci++)
-		if (cone[ci].rad >= rad)
-			break;
-					/* draw it */
-	glColor3ub(rgb[0], rgb[1], rgb[2]);
-	glBegin(GL_TRIANGLE_FAN);
-	glVertex3d(ip[0], ip[1], apexh);	/* start with apex */
-	basez = apexh*cone[ci].va[0][2];	/* base z's all the same */
-	for (j = 0; j < cone[ci].nverts; j++)	/* draw each face */
-		glVertex3d(ip[0]+cone[ci].va[j][0], ip[1]+cone[ci].va[j][1],
-				basez);
-						/* connect last to first */
-	glVertex3d(ip[0]+cone[ci].va[0][0], ip[1]+cone[ci].va[0][1], basez);
-	glEnd();				/* all done */
 }
+
+
+#ifdef STEREO
+static
+pushright()			/* push on right view */
+{
+	double	d;
+
+	setstereobuf(STEREO_BUFFER_RIGHT);
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	d = -eyesepdist / sqrt(odev.v.hn2);
+	glTranslated(d*odev.v.hvec[0], d*odev.v.hvec[1], d*odev.v.hvec[2]);
+}
+
+
+static
+popright()			/* pop off right view */
+{
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	setstereobuf(STEREO_BUFFER_LEFT);
+}
+#endif
 
 
 static int
@@ -358,52 +458,10 @@ mytmflags()			/* figure out tone mapping flags */
 			tail = cp+1;
 	for (cp = tail; *cp && *cp != '.'; cp++)
 		;
-	if (cp-tail == 3 && !strncmp(tail, "glx", 3))
-		return(TM_F_CAMERA|TM_F_NOSTDERR);
-	if (cp-tail == 4 && !strncmp(tail, "glxh", 4))
+	if (cp > tail && cp[-1] == 'h')
 		return(TM_F_HUMAN|TM_F_NOSTDERR);
-	error(USER, "illegal driver name");
-}
-
-
-static
-initcones()			/* initialize cone vertices */
-{
-	register int	i, j;
-	double	minrad, d;
-
-	if (cone[0].nverts)
-		freecones();
-	minrad = 2.*qtMinNodesiz/(double)(DisplayWidth(ourdisplay,ourscreen) +
-					DisplayHeight(ourdisplay,ourscreen));
-	for (i = 0; i < MAXCONE; i++) {
-		d = (double)i/(MAXCONE-1); d *= d;	/* x^2 distribution */
-		cone[i].rad = minrad + (1.-minrad)*d;
-		cone[i].nverts = MINVERT + 0.5 + (MAXVERT-MINVERT)*d;
-		cone[i].va = (FVECT *)malloc(cone[i].nverts*sizeof(FVECT));
-		if (cone[i].va == NULL)
-			error(SYSTEM, "out of memory in initcones");
-		for (j = cone[i].nverts; j--; ) {
-			d = 2.*PI * (j+.5) / (cone[i].nverts);
-			cone[i].va[j][0] = cos(d) * cone[i].rad;
-			cone[i].va[j][1] = sin(d) * cone[i].rad;
-			cone[i].va[j][2] = 1. - cone[i].rad;
-		}
-	}
-}
-
-
-static
-freecones()			/* free cone vertices */
-{
-	register int	i;
-
-	for (i = MAXCONE; i--; )
-		if (cone[i].nverts) {
-			free((char *)cone[i].va);
-			cone[i].va = NULL;
-			cone[i].nverts = 0;
-		}
+	else
+		return(TM_F_CAMERA|TM_F_NOSTDERR);
 }
 
 
@@ -447,47 +505,13 @@ static
 draw_grids()			/* draw holodeck section grids */
 {
 	static BYTE	gridrgba[4] = {0x0, 0xff, 0xff, 0x00};
-	double	xmin, xmax, ymin, ymax, zmin, zmax;
-	double	d, cx, sx, crad;
-	FVECT	vx, vy;
-	register int	i, j;
-					/* can we even do it? */
-	if (!mapped || odev.v.type != VT_PER)
+
+	if (!mapped)
 		return;
-					/* compute view frustum */
-	if (normalize(odev.v.vdir) == 0.0)
-		return;
-	zmin = 0.01;
-	zmax = 10000.;
-	if (odev.v.vfore > FTINY)
-		zmin = odev.v.vfore;
-	if (odev.v.vaft > FTINY)
-		zmax = odev.v.vaft;
-	xmax = zmin * tan(PI/180./2. * odev.v.horiz);
-	xmin = -xmax;
-	d = odev.v.hoff * (xmax - xmin);
-	xmin += d; xmax += d;
-	ymax = zmin * tan(PI/180./2. * odev.v.vert);
-	ymin = -ymax;
-	d = odev.v.voff * (ymax - ymin);
-	ymin += d; ymax += d;
-					/* set view matrix */
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	glFrustum(xmin, xmax, ymin, ymax, zmin, zmax);
-	gluLookAt(odev.v.vp[0], odev.v.vp[1], odev.v.vp[2],
-		odev.v.vp[0] + odev.v.vdir[0],
-		odev.v.vp[1] + odev.v.vdir[1],
-		odev.v.vp[2] + odev.v.vdir[2],
-		odev.v.vup[0], odev.v.vup[1], odev.v.vup[2]);
-	glDisable(GL_DEPTH_TEST);	/* write no depth values */
 	glColor4ub(gridrgba[0], gridrgba[1], gridrgba[2], gridrgba[3]);
 	glBegin(GL_LINES);		/* draw each grid line */
 	gridlines(draw3dline);
 	glEnd();
-	glEnable(GL_DEPTH_TEST);	/* restore rendering params */
-	glPopMatrix();
 }
 
 
@@ -496,31 +520,46 @@ moveview(dx, dy, mov, orb)	/* move our view */
 int	dx, dy, mov, orb;
 {
 	VIEW	nv;
-	FVECT	odir, v1;
+	FVECT	odir, v1, wip;
 	double	d;
 	register int	li;
 				/* start with old view */
 	copystruct(&nv, &odev.v);
 				/* change view direction */
+	if (viewray(v1, odir, &odev.v,
+			(dx+.5)/odev.hres, (dy+.5)/odev.vres) < -FTINY)
+		return(0);		/* outside view */
 	if (mov | orb) {
-		if ((li = qtFindLeaf(dx, dy)) < 0)
+#ifdef DOBJ
+		d = dobj_trace(v1, odir);	/* check objects */
+						/* is holodeck in front? */
+		if ((li = smFindSamp(v1, odir)) >= 0 &&
+				(rsL.wp[li][0] - nv.vp[0])*odir[0] +
+				(rsL.wp[li][1] - nv.vp[1])*odir[1] +
+				(rsL.wp[li][2] - nv.vp[2])*odir[2] < d)
+			VCOPY(wip, rsL.wp[li]);
+		else if (d < .99*FHUGE)		/* object is closer */
+			VSUM(wip, nv.vp, odir, d);
+		else				/* nothing visible */
+			return(0);
+#else
+		if ((li = smFindSamp(v1, odir)) < 0)
 			return(0);	/* not on window */
-		VSUM(odir, qtL.wp[li], nv.vp, -1.);
-	} else {
-		if (viewray(nv.vp, nv.vdir, &odev.v,
-				(dx+.5)/odev.hres, (dy+.5)/odev.vres) < -FTINY)
-			return(0);	/* outside view */
-	}
+		VCOPY(wip, rsL.wp[li]);
+#endif
+		VSUM(odir, wip, nv.vp, -1.);
+	} else
+		VCOPY(nv.vdir, odir);
 	if (orb && mov) {		/* orbit left/right */
 		spinvector(odir, odir, nv.vup, d=MOVDEG*PI/180.*mov);
-		VSUM(nv.vp, qtL.wp[li], odir, -1.);
+		VSUM(nv.vp, wip, odir, -1.);
 		spinvector(nv.vdir, nv.vdir, nv.vup, d);
 	} else if (orb) {		/* orbit up/down */
 		fcross(v1, odir, nv.vup);
 		if (normalize(v1) == 0.)
 			return(0);
 		spinvector(odir, odir, v1, d=MOVDEG*PI/180.*orb);
-		VSUM(nv.vp, qtL.wp[li], odir, -1.);
+		VSUM(nv.vp, wip, odir, -1.);
 		spinvector(nv.vdir, nv.vdir, v1, d);
 	} else if (mov) {		/* move forward/backward */
 		d = MOVPCT/100. * mov;
@@ -545,14 +584,16 @@ XButtonPressedEvent	*ebut;
 {
 	int	movdir = MOVDIR(ebut->button);
 	int	movorb = MOVORB(ebut->state);
-	int	oldnodesiz = qtMinNodesiz;
+	int	qlevel = 99;
+	time_t	lasttime, thistime;
+	int	nframes;
 	Window	rootw, childw;
 	int	rootx, rooty, wx, wy;
 	unsigned int	statemask;
 
-	qtMinNodesiz = 24;		/* accelerate update rate */
 	XNoOp(ourdisplay);
 
+	lasttime = time(0); nframes = 0;
 	while (!XCheckMaskEvent(ourdisplay,
 			ButtonReleaseMask, levptr(XEvent))) {
 
@@ -562,12 +603,44 @@ XButtonPressedEvent	*ebut;
 
 		if (!moveview(wx, odev.vres-1-wy, movdir, movorb)) {
 			sleep(1);
+			lasttime++;
 			continue;
 		}
+#ifdef STEREO
+		pushright();
 		glClear(GL_COLOR_BUFFER_BIT);
-		qtUpdate();
 		draw_grids();
+		smUpdate(&vwright, qlevel);
+#ifdef DOBJ
+		dobj_render();
+#endif
+		popright();
+#endif
+		glClear(GL_COLOR_BUFFER_BIT);
+		draw_grids();
+		smUpdate(&odev.v, qlevel);
+#ifdef DOBJ
+		dobj_render();
+#endif
 		glFlush();
+		checkglerr("moving view");
+		nframes++;
+		thistime = time(0);
+		if (thistime - lasttime >= 3 ||
+				nframes > (int)(3*3*TARGETFPS)) {
+			qlevel = thistime<=lasttime ? 1000 :
+				(int)((double)nframes/(thistime-lasttime)
+					/ TARGETFPS * qlevel + 0.5);
+			lasttime = thistime; nframes = 0;
+			if (qlevel > 99) {
+				if (qlevel > 300) {	/* put on the brakes */
+					sleep(1);
+					lasttime++;
+				}
+				qlevel = 99;
+			} else if (qlevel < 1)
+				qlevel = 1;
+		}
 	}
 	if (!(inpresflags & DFL(DC_SETVIEW))) {	/* do final motion */
 		movdir = MOVDIR(levptr(XButtonReleasedEvent)->button);
@@ -575,9 +648,60 @@ XButtonPressedEvent	*ebut;
 		wy = levptr(XButtonReleasedEvent)->y;
 		moveview(wx, odev.vres-1-wy, movdir, movorb);
 	}
-	dev_flush();
+}
 
-	qtMinNodesiz = oldnodesiz;	/* restore quadtree resolution */
+
+static
+setglpersp(vp)			/* set perspective view in GL */
+register VIEW	*vp;
+{
+	double	d, xmin, xmax, ymin, ymax;
+
+	if (mindpth >= maxdpth) {
+		dev_zmin = 0.1;
+		dev_zmax = 100.;
+	} else {
+		dev_zmin = 0.5*mindpth;
+		dev_zmax = 1.5*maxdpth;
+		if (dev_zmin > dev_zmax/100.)
+			dev_zmin = dev_zmax/100.;
+	}
+	if (odev.v.vfore > FTINY)
+		dev_zmin = odev.v.vfore;
+	if (odev.v.vaft > FTINY)
+		dev_zmax = odev.v.vaft;
+	if (dev_zmin < dev_zmax/5000.)
+		dev_zmin = dev_zmax/5000.;
+	xmax = dev_zmin * tan(PI/180./2. * odev.v.horiz);
+	xmin = -xmax;
+	d = odev.v.hoff * (xmax - xmin);
+	xmin += d; xmax += d;
+	ymax = dev_zmin * tan(PI/180./2. * odev.v.vert);
+	ymin = -ymax;
+	d = odev.v.voff * (ymax - ymin);
+	ymin += d; ymax += d;
+					/* set view matrix */
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glFrustum(xmin, xmax, ymin, ymax, dev_zmin, dev_zmax);
+	gluLookAt(odev.v.vp[0], odev.v.vp[1], odev.v.vp[2],
+		odev.v.vp[0] + odev.v.vdir[0],
+		odev.v.vp[1] + odev.v.vdir[1],
+		odev.v.vp[2] + odev.v.vdir[2],
+		odev.v.vup[0], odev.v.vup[1], odev.v.vup[2]);
+}
+
+
+static
+wipeclean()			/* prepare for redraw */
+{
+#ifdef STEREO
+	setstereobuf(STEREO_BUFFER_RIGHT);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	setstereobuf(STEREO_BUFFER_LEFT);
+#endif
+	glClear(GL_DEPTH_BUFFER_BIT);
+	smClean();
 }
 
 
@@ -612,24 +736,23 @@ register XKeyPressedEvent  *ekey;
 		inpresflags |= DFL(DC_RESUME);
 		return;
 	case CTRL('R'):			/* redraw screen */
-		if (nxtzmax > FTINY) {
-			curzmax = nxtzmax;
-			nxtzmax = 0.;
-		}
-		glClear(GL_DEPTH_BUFFER_BIT);
-		qtRedraw(0, 0, odev.hres, odev.vres);
+		wipeclean();
 		return;
 	case CTRL('L'):			/* refresh from server */
 		if (inpresflags & DFL(DC_REDRAW))
 			return;
-		if (nxtzmax > FTINY) {
-			curzmax = nxtzmax;
-			nxtzmax = 0.;
-		}
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glDisable(GL_DEPTH_TEST);
+		draw_grids();
+#ifdef STEREO
+		pushright();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		draw_grids();
+		popright();
+#endif
+		glEnable(GL_DEPTH_TEST);
 		glFlush();
-		qtCompost(100);			/* get rid of old values */
+		smInit(rsL.max_samp);		/* get rid of old values */
 		inpresflags |= DFL(DC_REDRAW);	/* resend values from server */
 		rayqleft = 0;			/* hold off update */
 		return;
@@ -656,24 +779,13 @@ static
 fixwindow(eexp)				/* repair damage to window */
 register XExposeEvent  *eexp;
 {
-	int	xmin, xmax, ymin, ymax;
-
-	if (odev.hres == 0 || odev.vres == 0)	/* first exposure */
+	if (odev.hres == 0 | odev.vres == 0) {	/* first exposure */
 		resizewindow((XConfigureEvent *)eexp);
-	xmin = eexp->x; xmax = eexp->x + eexp->width;
-	ymin = odev.vres - eexp->y - eexp->height; ymax = odev.vres - eexp->y;
-						/* clear portion of depth */
-	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-	glDepthFunc(GL_ALWAYS);
-	glBegin(GL_POLYGON);
-	glVertex3d((double)xmin/odev.hres, (double)ymin/odev.vres, 0.);
-	glVertex3d((double)xmax/odev.hres, (double)ymin/odev.vres, 0.);
-	glVertex3d((double)xmax/odev.hres, (double)ymax/odev.vres, 0.);
-	glVertex3d((double)xmin/odev.hres, (double)ymax/odev.vres, 0.);
-	glEnd();
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-	glDepthFunc(GL_LEQUAL);
-	qtRedraw(xmin, ymin, xmax, ymax);
+		return;
+	}
+	if (eexp->count)		/* wait for final exposure */
+		return;
+	wipeclean();			/* clear depth */
 }
 
 
