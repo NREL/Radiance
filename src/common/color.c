@@ -18,6 +18,8 @@ static const char	RCSid[] = "$Id$";
 #include  "color.h"
 
 #ifdef getc_unlocked		/* avoid horrendous overhead of flockfile */
+#undef getc
+#undef putc
 #define getc    getc_unlocked
 #define putc    putc_unlocked
 #endif
