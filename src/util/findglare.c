@@ -205,13 +205,13 @@ init()				/* initialize global variables */
 	}
 	nglarangs = i;
 	/* nglardirs = 2*nglarangs + 1; */
-	/* vsize = sampdens; */
+	/* vsize = sampdens - 1; */
 	if (nglarangs > 0)
 		maxtheta = (PI/180.)*glarang[nglarangs-1];
 	else
 		maxtheta = 0.0;
 	hlim = sampdens*maxtheta;
-	hsize = sampdens + hlim;
+	hsize = hlim + sampdens - 1;
 	if (hsize > (int)(PI*sampdens))
 		hsize = PI*sampdens;
 	indirect = (struct illum *)calloc(nglardirs, sizeof(struct illum));
@@ -317,7 +317,7 @@ double  theta;
 memerr(s)			/* malloc failure */
 char	*s;
 {
-	fprintf(stderr, "%s: out of memory for %s\n", s);
+	fprintf(stderr, "%s: out of memory for %s\n", progname, s);
 	exit(1);
 }
 

@@ -33,7 +33,7 @@ extern int	hsize;			/* horizontal size */
 extern int	hlim;			/* horizontal limit of central view */
 
 #define nglardirs	(2*nglarangs+1)
-#define vsize		sampdens
+#define vsize		(sampdens-1)
 #define h_theta(h)	(-(double)(h)/(double)sampdens)
 
 extern struct illum {
