@@ -296,6 +296,52 @@ FVECT  nrm;		/* source surface normal */
 
 
 double
+spotdisk(oc, op, sp, pos)	/* intersect spot with object op */
+FVECT  oc;
+OBJREC  *op;
+register SPOT  *sp;
+FVECT  pos;
+{
+	FVECT  onorm;
+	double  offs, d, dist;
+	register int  i;
+
+	offs = getplaneq(onorm, op);
+	d = -DOT(onorm, sp->aim);
+	if (d >= -FTINY && d <= FTINY)
+		return(0.);
+	dist = (DOT(pos, onorm) - offs)/d;
+	if (dist < 0.)
+		return(0.);
+	for (i = 0; i < 3; i++)
+		oc[i] = pos[i] + dist*sp->aim[i];
+	return(sp->siz*dist*dist/PI/(d*d));
+}
+
+
+double
+beamdisk(oc, op, sp, dir)	/* intersect beam with object op */
+FVECT  oc;
+OBJREC  *op;
+register SPOT  *sp;
+FVECT  dir;
+{
+	FVECT  onorm;
+	double  offs, d, dist;
+	register int  i;
+
+	offs = getplaneq(onorm, op);
+	d = -DOT(onorm, dir);
+	if (d >= -FTINY && d <= FTINY)
+		return(0.);
+	dist = (DOT(sp->aim, onorm) - offs)/d;
+	for (i = 0; i < 3; i++)
+		oc[i] = sp->aim[i] + dist*dir[i];
+	return(sp->siz/PI/(d*d));
+}
+
+
+double
 intercircle(cc, c1, c2, r1s, r2s)	/* intersect two circles */
 FVECT  cc;			/* midpoint (return value) */
 FVECT  c1, c2;			/* circle centers */
