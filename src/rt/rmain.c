@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -126,13 +126,14 @@ char  *argv[];
 	extern char  *getenv();
 	char  *err;
 	char  *recover = NULL;
+	char  *outfile = NULL;
 	char  *zfile = NULL;
 	char  *errfile = NULL;
 	char  *ambfile = NULL;
 	char  **amblp = amblist;
 	int  loadflags = ~IO_FILES;
-	int  rval, gotvfile = 0;
-	RESOLU  rs;
+	int  seqstart = 0;
+	int  rval;
 	int  i;
 					/* record start time */
 	tstart = time((long *)0);
@@ -186,8 +187,7 @@ char  *argv[];
 					"bad view file \"%s\"",
 						argv[i]);
 				error(USER, errmsg);
-			} else
-				gotvfile += rval;
+			}
 			break;
 #endif
 		case 'd':				/* direct */
@@ -301,6 +301,14 @@ char  *argv[];
 			bool(2,do_irrad);
 			break;
 #if  RPICT
+		case 'S':				/* slave index */
+			check(2,"i");
+			seqstart = atoi(argv[++i]);
+			break;
+		case 'o':				/* output file */
+			check(2,"s");
+			outfile = argv[++i];
+			break;
 		case 'z':				/* z file */
 			check(2,"s");
 			zfile = argv[++i];
@@ -308,17 +316,6 @@ char  *argv[];
 		case 'r':				/* recover file */
 			check(2,"s");
 			recover = argv[++i];
-			rval = viewfile(recover, &ourview, &rs);
-			if (rval <= 0 || rs.or != PIXSTANDARD) {
-				sprintf(errmsg,
-			"cannot recover view parameters from \"%s\"", recover);
-				error(WARNING, errmsg);
-			} else {
-				gotvfile += rval;
-				pixaspect = 0.0;
-				hresolu = rs.xr;
-				vresolu = rs.yr;
-			}
 			break;
 		case 't':				/* timer */
 			check(2,"i");
@@ -421,6 +418,7 @@ char  *argv[];
 			case 'a':				/* ascii */
 			case 'f':				/* float */
 			case 'd':				/* double */
+			case 'c':				/* color */
 				check(4,"");
 				outform = argv[i][3];
 				break;
@@ -457,9 +455,6 @@ char  *argv[];
 	if (err != NULL)
 		error(USER, err);
 #endif
-#if  RPICT
-	normaspect(viewaspect(&ourview), &pixaspect, &hresolu, &vresolu);
-#endif
 					/* set up signal handling */
 	sigdie(SIGINT, "Interrupt");
 	sigdie(SIGHUP, "Hangup");
@@ -493,31 +488,21 @@ char  *argv[];
 		octname = argv[i];
 	else
 		goto badopt;
-#if  RVIEW|RTRACE
-	if (octname == NULL)
+	if (
+#if  RPICT
+		seqstart > 0 &&
+#endif
+			octname == NULL)
 		error(USER, "missing octree argument");
+#if  RPICT
+	if (outfile != NULL)
+		openheader();
 #endif
 	readoct(octname, loadflags, &thescene, NULL);
 
 	if (loadflags & IO_INFO) {	/* print header */
 		printargs(i, argv, stdout);
 		printf("SOFTWARE= %s\n", VersionID);
-#if  RPICT
-		if (gotvfile) {
-			printf(VIEWSTR);
-			fprintview(&ourview, stdout);
-			printf("\n");
-		}
-		if (pixaspect < .99 || pixaspect > 1.01)
-			fputaspect(pixaspect, stdout);
-		fputformat(COLRFMT, stdout);
-#endif
-#if  RTRACE
-		fputformat(	outform=='a' ? "ascii" :
-				outform=='f' ? "float" :
-				"double",	stdout	);
-#endif
-		printf("\n");
 	}
 
 	marksources();			/* find and mark sources */
@@ -525,7 +510,7 @@ char  *argv[];
 	setambient(ambfile);		/* initialize ambient calculation */
 
 #if  RPICT
-	render(zfile, recover);		/* render the scene */
+	rpict(seqstart, outfile, zfile, recover);
 #endif
 #if  RTRACE
 	rtrace(NULL);			/* trace rays from stdin */
@@ -620,6 +605,7 @@ char  *msg;
 
 printdefaults()			/* print default values to stdout */
 {
+	extern char  *formstr();
 	register char  *cp;
 
 #if  RTRACE
@@ -690,11 +676,7 @@ printdefaults()			/* print default values to stdout */
 #endif
 #if  RTRACE
 	printf("-f%c%c\t\t\t\t# format input/output = %s/%s\n",
-			inform, outform, 
-			inform=='a' ? "ascii" :
-			inform=='f' ? "float" : "double",
-			outform=='a' ? "ascii" :
-			outform=='f' ? "float" : "double");
+			inform, outform, formstr(inform), formstr(outform));
 	printf("-o%s\t\t\t\t# output", outvals);
 	for (cp = outvals; *cp; cp++)
 		switch (*cp) {
@@ -709,7 +691,7 @@ printdefaults()			/* print default values to stdout */
 		case 'w': printf(" weight"); break;
 		case 'm': printf(" modifier"); break;
 		}
-	printf("\n");
+	putchar('\n');
 #endif
 	printf(wrnvec != NULL ? "-w+\t\t\t\t# warning messages on\n" :
 			"-w-\t\t\t\t# warning messages off\n");
