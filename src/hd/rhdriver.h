@@ -20,6 +20,7 @@ extern struct driver {
 #define DEV_NEWVIEW	02	/* view change (new view in odev.v) */
 #define DEV_NEWSIZE	04	/* device resolution change */
 #define DEV_WAIT	010	/* pause computation and wait for input */
+#define	DEV_RESUME	020	/* resume after pause */
 
 
 /************************************************************************
