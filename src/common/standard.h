@@ -22,6 +22,13 @@
 #else
 #define  PI		3.14159265358979323846
 #endif
+
+#ifndef  F_OK			/* mode bits for access(2) call */
+#define  R_OK		4		/* readable */
+#define  W_OK		2		/* writable */
+#define  X_OK		1		/* executable */
+#define  F_OK		0		/* exists */
+#endif
 				/* error codes */
 #define  WARNING	1		/* non-fatal error */
 #define  USER		2		/* fatal user-caused error */
