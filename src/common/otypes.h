@@ -86,7 +86,6 @@ extern FUN  ofun[];			/* our type list */
 #define  isvolume(t)	(ofun[t].flags & T_V)
 #define  ismodifier(t)	(!(ofun[t].flags & (T_S|T_V)))
 #define  ismaterial(t)	(ofun[t].flags & T_M)
-#define  istexture(t)	(ofun[t].flags & (T_P|T_T|T_X))
 #define  islight(t)	(ofun[t].flags & T_L)
 #define  isvlight(t)	(ofun[t].flags & T_LV)
 #define  hasdata(t)	(ofun[t].flags & (T_D|T_I))
