@@ -8,7 +8,7 @@
  *     8/28/85
  */
 
-#define  EPSILON	1e-6		/* acceptable location error */
+#define  EPSILON	FTINY		/* acceptable location error */
 
 #define  XPOS		03		/* x position mask */
 #define  YPOS		014		/* y position mask */
