@@ -19,34 +19,62 @@ static char SCCSid[] = "$SunId$ LBL";
 #define	 GAMMA		2.2		/* exponent for color correction */
 
 
-int  vga_close(), vga_clear(), vga_paintr(), vga_comout(), vga_comin();
+int  vga_close(), vga_clear(), vga_paintr(), vga_comout(), vga_errout(),
+		vga_comin();
 
 static struct driver  vga_driver = {
 	vga_close, vga_clear, vga_paintr, NULL,
-	vga_comout, vga_comin, NULL
+	vga_comout, vga_comin, NULL, 1.0
 };
 
+static char  fatalerr[128];
+
 static struct videoconfig  config;
+
+extern char  *getenv();
 
 
 struct driver *
 vga_init(name, id)			/* open VGA */
 char  *name, *id;
 {
-	if (_setvideomode(_MRES256COLOR) == 0)
+	static short  mode_pref[] = {_XRES256COLOR, _SVRES256COLOR,
+					_MRES256COLOR, -1};
+	char  *ep;
+	register int  i;
+
+	for (i = 0; mode_pref[i] != -1; i++)
+		if (_setvideomode(mode_pref[i]))
+			break;
+	if (mode_pref[i] == -1) {
+		_setvideomode(_DEFAULTMODE);
+		stderr_v(name);
+		stderr_v(": card not present or insufficient VGA memory\n");
 		return(NULL);
+	}
 	_getvideoconfig(&config);
 	_settextwindow(config.numtextrows-2, 1,
 			config.numtextrows, config.numtextcols);
 	vga_driver.xsiz = config.numxpixels;
-	vga_driver.ysiz = config.numypixels*(config.numtextrows-3)
+	vga_driver.ysiz = (long)config.numypixels*(config.numtextrows-3)
 				/config.numtextrows;
-	vga_driver.pixaspect = .75*config.numxpixels/config.numypixels;
+	switch (config.mode) {			/* correct problems */
+	case _XRES256COLOR:
+		vga_driver.ysiz -= 16;
+		break;
+	case _MRES256COLOR:
+		vga_driver.pixaspect = 1.2;
+		break;
+	}
 	_setviewport(0, 0, vga_driver.xsiz, vga_driver.ysiz);
-	make_gmap(GAMMA);				/* make color map */
-	_remappalette(1, 0x303030L);
+	if ((ep = getenv("GAMMA")) != NULL)	/* make gamma map */
+		make_gmap(atof(ep));
+	else
+		make_gmap(GAMMA);
+	_remappalette(1, _BRIGHTWHITE);
 	_settextcolor(1);
-	errvec = vga_comout;
+	ms_gcinit(&vga_driver);
+	errvec = vga_errout;
 	cmdvec = vga_comout;
 	if (wrnvec != NULL)
 		wrnvec = vga_comout;
@@ -57,11 +85,13 @@ char  *name, *id;
 static
 vga_close()					/* close VGA */
 {
-	errvec = stderr_v;			/* reset error vector */
+	_setvideomode(_DEFAULTMODE);
+	errvec = stderr_v;			/* reset error vectors */
 	cmdvec = NULL;
 	if (wrnvec != NULL)
 		wrnvec = stderr_v;
-	_setvideomode(_DEFAULTMODE);
+	if (fatalerr[0])
+		stderr_v(fatalerr);		/* repeat error message */
 }
 
 
@@ -108,7 +138,7 @@ register char  *s;
 			if (*s == '\0')
 				break;
 			tpos = _gettextposition();
-			_settextposition(tpos.row, *s=='\r' ? 0 : tpos.col-1);
+			_settextposition(tpos.row, *s=='\r' ? 1 : tpos.col-1);
 			continue;
 		default:
 			*cp++ = *s;
@@ -116,6 +146,22 @@ register char  *s;
 		}
 		return(0);
 	}
+	fatalerr[0] = '\0';
+}
+
+
+static
+vga_errout(msg)
+register char  *msg;
+{
+	static char  *fep = fatalerr;
+
+	_outtext(msg);
+	while (*msg)
+		*fep++ = *msg++;
+	*fep = '\0';
+	if (fep > fatalerr && fep[-1] == '\n')
+		fep = fatalerr;
 }
 
 
