@@ -32,7 +32,7 @@ int	notified = 0;				/* notified parent of input? */
 
 char	*progname;				/* driver name */
 
-int	r_clear(), r_paintr(), r_getcur(), r_comout(), r_comin(), r_mycomin();
+int	r_clear(), r_paintr(), r_getcur(), r_comout(), r_comin();
 
 int	(*dev_func[NREQUESTS])() = {		/* request handlers */
 		r_clear, r_paintr,
@@ -62,9 +62,9 @@ char	*argv[];
 	if ((dev = dinit(argv[0], argv[3])) == NULL)
 		quit(1);
 	putw(COM_RECVM, devout);		/* verify initialization */
+	fwrite(&dev->pixaspect, sizeof(dev->pixaspect), 1, devout);
 	putw(dev->xsiz, devout);
 	putw(dev->ysiz, devout);
-	fwrite(dev->pixaspect, sizeof(dev->pixaspect), 1, devout);
 	fflush(devout);
 						/* loop on requests */
 	while ((com = getc(devin)) != EOF) {

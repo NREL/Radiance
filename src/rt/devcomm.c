@@ -86,9 +86,9 @@ char	*dname, *id;
 	fflush(devout);
 	if (getw(devin) != COM_RECVM)
 		return(NULL);
+	fread(&comm_driver.pixaspect, sizeof(comm_driver.pixaspect), 1, devin);
 	comm_driver.xsiz = getw(devin);
 	comm_driver.ysiz = getw(devin);
-	fread(comm_driver.pixaspect, sizeof(comm_driver.pixaspect), 1, devin);
 						/* input handling */
 	signal(SIGIO, onsigio);
 						/* set error vectors */
