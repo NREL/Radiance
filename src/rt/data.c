@@ -19,9 +19,9 @@ static char SCCSid[] = "$SunId$ LBL";
 				/* picture memory usage before warning */
 #ifndef PSIZWARN
 #ifdef BIGMEM
-#define PSIZWARN	3000000
+#define PSIZWARN	5000000
 #else
-#define PSIZWARN	1000000
+#define PSIZWARN	1500000
 #endif
 #endif
 
