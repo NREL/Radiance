@@ -18,18 +18,20 @@ register PACKET	*p;
 {
 	static FVECT	ro, rd;
 	GCOORD	gc[2];
-	double	d;
-	long	r1, r2;
+	int	ila[2], hsh;
+	double	d, sl[4];
 	register int	i;
 
 	if (!hdbcoord(gc, hdlist[p->hd], p->bi))
 		error(CONSISTENCY, "bad beam index in packrays");
+	ila[0] = p->hd; ila[1] = p->bi;
+	hsh = ilhash(ila,2) + p->nc;
 	for (i = 0; i < p->nr; i++) {
-		r1 = random(); r2 = random();
-		p->ra[i].r[0][0] = r1 ^ r2>>7;
-		p->ra[i].r[0][1] = r1<<2 ^ r2;
-		p->ra[i].r[1][0] = r1<<4 ^ r2>>15;
-		p->ra[i].r[1][1] = r1<<6 ^ r2>>23;
+		multisamp(sl, 4, urand(hsh+i));
+		p->ra[i].r[0][0] = sl[0] * 256.;
+		p->ra[i].r[0][1] = sl[1] * 256.;
+		p->ra[i].r[1][0] = sl[2] * 256.;
+		p->ra[i].r[1][1] = sl[3] * 256.;
 		d = hdray(ro, rd, hdlist[p->hd], gc, p->ra[i].r);
 		if (p->offset != NULL) {
 			VSUM(ro, ro, rd, d);		/* exterior only */
@@ -58,4 +60,5 @@ register float	*rvl;
 		p->ra[i].d = hdcode(hdlist[p->hd], d);
 		rvl += 4;
 	}
+	p->nc += p->nr;
 }
