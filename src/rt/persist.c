@@ -212,4 +212,8 @@ writerr:
 	error(SYSTEM, "write error in io_process");
 }
 
+#else
+
+pfclean() {}
+
 #endif
