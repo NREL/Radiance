@@ -250,31 +250,58 @@ float	*zline;
 
 fillpicture()				/* fill in empty spaces */
 {
+	int	*yback, xback;
 	int	y;
-	COLR	cfill;
-	register int	x, xblank;
-	
-	for (y = 0; y < ourview.vresolu; y++) {
-		xblank = -1;
-		for (x = 0; x < ourview.hresolu; x++)
-			if (zscan(y)[x] <= 0.0) {
-				if (xblank < 0)
-					xblank = x;
-			} else if (xblank >= 0) {
-				if (xblank == 0 || zscan(y)[xblank-1] < zscan(y)[x])
-					copycolr(cfill, pscan(y)[x]);
-				else
-					copycolr(cfill, pscan(y)[xblank-1]);
-				for ( ; xblank < x; xblank++)
-					copycolr(pscan(y)[xblank], cfill);
-				xblank = -1;
-			}
-		if (xblank > 0) {
-			copycolr(cfill, pscan(y)[xblank-1]);
-			for ( ; xblank < ourview.hresolu; xblank++)
-				copycolr(pscan(y)[xblank], cfill);
-		}
+	COLR	pfill;
+	register int	x, i;
+							/* get back buffer */
+	yback = (int *)malloc(ourview.hresolu*sizeof(int));
+	if (yback == NULL) {
+		perror(progname);
+		return;
 	}
+	for (x = 0; x < ourview.hresolu; x++)
+		yback[x] = -1;
+							/* fill image */
+	for (y = 0; y < ourview.vresolu; y++)
+		for (x = 0; x < ourview.hresolu; x++)
+			if (zscan(y)[x] <= 0.0) {	/* found hole */
+				xback = x-1;
+				do {			/* find boundary */
+					if (yback[x] < 0) {
+						for (i = y+1;
+							i < ourview.vresolu;
+								i++)
+							if (zscan(i)[x] > 0.0)
+								break;
+						if (i < ourview.vresolu
+				&& (y <= 0 || zscan(y-1)[x] < zscan(i)[x]))
+							yback[x] = i;
+						else
+							yback[x] = y-1;
+					}
+				} while (++x < ourview.hresolu
+						&& zscan(y)[x] <= 0.0);
+				i = xback;		/* pick background */
+				if (x < ourview.hresolu
+			&& (i < 0 || zscan(y)[i] < zscan(y)[x]))
+					xback = x;
+							/* fill hole */
+				if (xback < 0) {
+					while (++i < x)
+						if (yback[i] >= 0)
+				copycolr(pscan(y)[i],pscan(yback[i])[i]);
+				} else {
+					while (++i < x)
+						if (yback[i] < 0 ||
+				zscan(yback[i])[i] < zscan(y)[xback])
+					copycolr(pscan(y)[i],pscan(y)[xback]);
+						else
+					copycolr(pscan(y)[i],pscan(yback[i])[i]);
+				}
+		} else
+			yback[x] = -1;			/* clear boundary */
+	free((char *)yback);
 }
 
 
