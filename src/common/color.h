@@ -41,12 +41,49 @@ typedef float  COLOR[3];	/* red, green, blue */
 #define  multcolor(c1,c2)	((c1)[0]*=(c2)[0],(c1)[1]*=(c2)[1],(c1)[2]*=(c2)[2])
 
 #ifdef  NTSC
-#define  bright(col)		(.295*(col)[RED]+.636*(col)[GRN]+.070*(col)[BLU])
-#define  normbright(c)		(int)((74L*(c)[RED]+164L*(c)[GRN]+18L*(c)[BLU])>>8)
+#define  CIE_x_r		0.670		/* standard NTSC primaries */
+#define  CIE_y_r		0.330
+#define  CIE_x_g		0.210
+#define  CIE_y_g		0.710
+#define  CIE_x_b		0.140
+#define  CIE_y_b		0.080
+#define  CIE_x_w		0.333		/* use true white */
+#define  CIE_y_w		0.333
 #else
-#define  bright(col)		(.263*(col)[RED]+.655*(col)[GRN]+.082*(col)[BLU])
-#define  normbright(c)		(int)((67L*(c)[RED]+168L*(c)[GRN]+21L*(c)[BLU])>>8)
+#define  CIE_x_r		0.640		/* nominal CRT primaries */
+#define  CIE_y_r		0.330
+#define  CIE_x_g		0.290
+#define  CIE_y_g		0.600
+#define  CIE_x_b		0.150
+#define  CIE_y_b		0.060
+#define  CIE_x_w		0.333		/* use true white */
+#define  CIE_y_w		0.333
 #endif
+
+#define CIE_D		(	CIE_x_r*(CIE_y_g - CIE_y_b) + \
+				CIE_x_g*(CIE_y_b - CIE_y_r) + \
+				CIE_x_b*(CIE_y_r - CIE_y_g)	)
+#define CIE_C_rD	( (1./CIE_y_w) * \
+				( CIE_x_w*(CIE_y_g - CIE_y_b) - \
+				  CIE_y_w*(CIE_x_g - CIE_x_b) + \
+				  CIE_x_g*CIE_y_b - CIE_x_b*CIE_y_g	) )
+#define CIE_C_gD	( (1./CIE_y_w) * \
+				( CIE_x_w*(CIE_y_b - CIE_y_r) - \
+				  CIE_y_w*(CIE_x_b - CIE_x_r) - \
+				  CIE_x_r*CIE_y_b + CIE_x_b*CIE_y_r	) )
+#define CIE_C_bD	( (1./CIE_y_w) * \
+				( CIE_x_w*(CIE_y_r - CIE_y_g) - \
+				  CIE_y_w*(CIE_x_r - CIE_x_g) + \
+				  CIE_x_r*CIE_y_g - CIE_x_g*CIE_y_r	) )
+
+#define CIE_rf		(CIE_y_r*CIE_C_rD/CIE_D)
+#define CIE_gf		(CIE_y_g*CIE_C_gD/CIE_D)
+#define CIE_bf		(CIE_y_b*CIE_C_bD/CIE_D)
+
+#define  bright(col)	(CIE_rf*(col)[RED]+CIE_gf*(col)[GRN]+CIE_bf*(col)[BLU])
+#define  normbright(c)	( ( (long)(CIE_rf*256.+.5)*(c)[RED] + \
+			    (long)(CIE_gf*256.+.5)*(c)[GRN] + \
+			    (long)(CIE_bf*256.+.5)*(c)[BLU] ) >> 8 )
 
 				/* luminous efficacies over visible spectrum */
 #define  MAXEFFICACY		683.		/* defined maximum at 550 nm */
