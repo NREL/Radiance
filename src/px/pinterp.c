@@ -92,7 +92,7 @@ int	PDesc[3] = {-1,-1,-1};		/* rtrace process descriptor */
 #define childpid	(PDesc[2])
 unsigned short	queue[PACKSIZ][2];	/* pending pixels */
 int	packsiz;			/* actual packet size */
-int	queuesiz;			/* number of pixels pending */
+int	queuesiz = 0;			/* number of pixels pending */
 
 extern double	movepixel();
 
@@ -924,6 +924,8 @@ int	(*fill)();
 		for (x = 0; x < hresolu; x++)
 			if (zscan(y)[x] <= 0)
 				(*fill)(x,y);
+	if (fill == rcalfill)
+		clearqueue();
 }
 
 
@@ -1178,7 +1180,7 @@ clearqueue()				/* process queue */
 		if (averaging) {
 			setcolor(sscan(queue[i][1])[queue[i][0]],
 					fbp[0], fbp[1], fbp[2]);
-			wscan(queue[i][1])[queue[i][0]] = MAXWT;
+			wscan(queue[i][1])[queue[i][0]] = 1;
 		} else
 			setcolr(pscan(queue[i][1])[queue[i][0]],
 					fbp[0], fbp[1], fbp[2]);
