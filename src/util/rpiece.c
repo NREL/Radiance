@@ -172,7 +172,6 @@ char  **av;
 	scanorig = ftell(fp);		/* record position of first scanline */
 	if (fclose(fp) == -1)		/* done with stream i/o */
 		goto filerr;
-	sync();				/* avoid NFS buffering */
 					/* start rpict process */
 	if (open_process(rpd, rpargv) <= 0) {
 		fprintf(stderr, "%s: cannot start %s\n", progname, rpargv[0]);
@@ -304,6 +303,7 @@ rpiece()			/* render picture piece by piece */
 putpiece(xpos, ypos)		/* get next piece from rpict */
 int  xpos, ypos;
 {
+	struct flock  fls;
 	int  hr, vr;
 	int  y;
 
@@ -319,6 +319,9 @@ int  xpos, ypos;
 				progname, rpargv[0]);
 		exit(1);
 	}
+	fls.l_whence = 1;
+	fls.l_start = 0L;
+	fls.l_len = hr*sizeof(COLR);
 	for (y = 0; y < vr; y++) {	/* transfer scanlines */
 		if (freadcolrs(scanline, hr, fromrp) < 0) {
 			fprintf(stderr, "%s: read error from %s\n",
@@ -331,10 +334,14 @@ scanorig+((long)((vmult-1-ypos)*vres+y)*hmult*hres+xpos*hres)*sizeof(COLR),
 			fprintf(stderr, "%s: seek error\n", outfile);
 			exit(1);
 		}
+		fls.l_type = F_WRLCK;
+		fcntl(outfd, F_SETLKW, &fls);
 		if (writebuf(outfd, (char *)scanline, hr*sizeof(COLR)) !=
 				hr*sizeof(COLR)) {
 			fprintf(stderr, "%s: write error\n", outfile);
 			exit(1);
 		}
+		fls.l_type = F_UNLCK;
+		fcntl(outfd, F_SETLKW, &fls);
 	}
 }
