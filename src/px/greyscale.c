@@ -62,7 +62,6 @@ char  *argv[];
 greyscale(col0)			/* output our grey scale */
 COLOR  col0;
 {
-	extern double  exp();
 	COLOR  col1, col2, scanline[512];
 	double  x;
 	int  j;
