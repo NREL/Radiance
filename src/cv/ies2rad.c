@@ -76,8 +76,13 @@ int	gargc;				/* global argc (minus filenames) */
 char	**gargv;			/* global argv */
 
 extern char	*strcpy(), *strcat(), *stradd(), *tailtrunc(), *filetrunc(),
-		*filename(), *libname(), *fullname(), *malloc();
+		*filename(), *libname(), *fullname(), *malloc(),
+		*getword(), *atos();
 extern float	*matchlamp();
+
+#define scnint(fp,ip)	cvtint(ip,getword(fp))
+#define scnflt(fp,rp)	cvtflt(rp,getword(fp))
+#define isint		isflt			/* IES allows real as integer */
 
 
 main(argc, argv)
@@ -407,7 +412,7 @@ char	*inpname, *outname;
 		fprintf(stderr, "%s: not in IES format\n", inpname);
 		goto readerr;
 	}
-	sscanf(buf+TLTSTRLEN, "%s", tltid);
+	atos(tltid, MAXWORD, buf+TLTSTRLEN);
 	if (inpfp == stdin)
 		buf[0] = '\0';
 	else
@@ -464,7 +469,7 @@ char	*dir, *tltspec, *dfltname, *tltid;
 				fclose(datin);
 			return(-1);
 		}
-		if (fscanf(datin, "%d %d", &tlt_type, &nangles) != 2
+		if (!scnint(datin,&tlt_type) || !scnint(datin,&nangles)
 			|| cvdata(datin,datout,1,&nangles,1.,minmax) != 0) {
 			fprintf(stderr, "%s: data format error\n", tltspec);
 			fclose(datout);
@@ -516,10 +521,12 @@ char	*mod, *name;
 	int	nangles[2], pmtype, unitype;
 	double	d1;
 
-	if (fscanf(in, "%*d %*f %lf %d %d %d %d %lf %lf %lf %lf %lf %lf",
-			&mult, &nangles[0], &nangles[1], &pmtype, &unitype,
-			&width, &length, &height, &bfactor, &pfactor,
-			&wattage) != 11) {
+	if (!isint(getword(in)) || !isflt(getword(in)) || !scnflt(in,&mult)
+			|| !scnint(in,&nangles[0]) || !scnint(in,&nangles[1])
+			|| !scnint(in,&pmtype) || !scnint(in,&unitype)
+			|| !scnflt(in,&width) || !scnflt(in,&length)
+			|| !scnflt(in,&height) || !scnflt(in,&bfactor)
+			|| !scnflt(in,&pfactor) || !scnflt(in,&wattage)) {
 		fprintf(stderr, "dosource: bad lamp specification\n");
 		return(-1);
 	}
@@ -812,7 +819,8 @@ double	mult, lim[][2];
 	for (i = 0; i < ndim; i++) {
 		pt[i] = (double *)malloc(npts[i]*sizeof(double));
 		for (j = 0; j < npts[i]; j++)
-			fscanf(in, "%lf", &pt[i][j]);
+			if (!scnflt(in, &pt[i][j]))
+				return(-1);
 		if (lim != NULL) {
 			lim[i][0] = pt[i][0];
 			lim[i][1] = pt[i][npts[i]-1];
@@ -843,10 +851,57 @@ double	mult, lim[][2];
 	for (i = 0; i < total; i++) {
 		if (i%4 == 0)
 			putc('\n', out);
-		if (fscanf(in, "%lf", &val) != 1)
+		if (!scnflt(in, &val))
 			return(-1);
 		fprintf(out, "\t%g", val*mult);
 	}
 	putc('\n', out);
 	return(0);
+}
+
+
+char *
+getword(fp)			/* scan a word from fp */
+register FILE	*fp;
+{
+	static char	word[MAXWORD];
+	register char	*cp;
+	register int	c;
+
+	while (isspace(c=getc(fp)))
+		;
+	for (cp = word; c != EOF && cp < word+MAXWORD-1;
+			*cp++ = c, c = getc(fp))
+		if (isspace(c) || c == ',') {
+			while (isspace(c))
+				c = getc(fp);
+			if (c != EOF & c != ',')
+				ungetc(c, fp);
+			*cp = '\0';
+			return(word);
+		}
+	*cp = '\0';
+	return(cp > word ? word : NULL);
+}
+
+
+cvtint(ip, word)		/* convert a word to an integer */
+int	*ip;
+char	*word;
+{
+	if (word == NULL || !isint(word))
+		return(0);
+	*ip = atoi(word);
+	return(1);
+}
+
+
+cvtflt(rp, word)		/* convert a word to a double */
+double	*rp;
+char	*word;
+{
+	if (word == NULL || !isflt(word))
+		return(0);
+	*rp = atof(word);
+	return(1);
 }
