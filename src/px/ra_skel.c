@@ -28,7 +28,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 extern char  *malloc();
 
-double	gamma = 2.2;			/* gamma correction */
+double	gamcor = 2.2;			/* gamma correction */
 
 int  bradj = 0;				/* brightness adjustment */
 
@@ -50,7 +50,7 @@ char  *argv[];
 		if (argv[i][0] == '-')
 			switch (argv[i][1]) {
 			case 'g':		/* gamma correction */
-				gamma = atof(argv[++i]);
+				gamcor = atof(argv[++i]);
 				break;
 			case 'e':		/* exposure adjustment */
 				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
@@ -82,7 +82,7 @@ char  *argv[];
 	setmode(fileno(stdin), O_BINARY);
 	setmode(fileno(stdout), O_BINARY);
 #endif
-	setcolrgam(gamma);		/* set up gamma correction */
+	setcolrgam(gamcor);		/* set up gamma correction */
 	if (reverse) {
 					/* get their image resolution */
 		read_skel_head(&xmax, &ymax);
