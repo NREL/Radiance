@@ -106,7 +106,8 @@ long	inpflags = 0;		/* flags of which colors were input */
 long	gmtflags = 0;		/* flags of out-of-gamut colors */
 
 COLOR	bramp[NMBNEU][2];	/* brightness ramp (per primary) */
-double	solmat[3][3];		/* color mapping matrix */
+COLORMAT	solmat;		/* color mapping matrix */
+COLOR	colmin, colmax;		/* gamut limits */
 
 FILE	*debugfp = NULL;	/* debug output picture */
 char	*progname;
@@ -158,11 +159,11 @@ char	**argv;
 		}
 							/* open files */
 	if (i < argc && freopen(argv[i], "r", stdin) == NULL) {
-		perror(argv[1]);
+		perror(argv[i]);
 		exit(1);
 	}
 	if (i+1 < argc && freopen(argv[i+1], "w", stdout) == NULL) {
-		perror(argv[2]);
+		perror(argv[i+1]);
 		exit(1);
 	}
 	if (scanning) {			/* load input picture header */
@@ -385,7 +386,7 @@ compute()			/* compute color mapping */
 	COLOR	clrin[24], clrout[24];
 	long	cflags;
 	COLOR	ctmp;
-	register int	i, j, n;
+	register int	i, n;
 					/* did we get what we need? */
 	if ((inpflags & REQFLGS) != REQFLGS) {
 		fprintf(stderr, "%s: missing required input colors\n",
@@ -397,6 +398,23 @@ compute()			/* compute color mapping */
 		copycolor(bramp[i][0], inpRGB[mbneu[i]]);
 		copycolor(bramp[i][1], mbRGB[mbneu[i]]);
 	}
+					/* compute color space gamut */
+	if (scanning) {
+		copycolor(colmin, cblack);
+		copycolor(colmax, cwhite);
+	} else
+		for (i = 0; i < 3; i++) {
+			colval(colmin,i) = colval(bramp[0][0],i) -
+				colval(bramp[0][1],i) *
+				(colval(bramp[1][0],i)-colval(bramp[0][0],i)) /
+				(colval(bramp[1][1],i)-colval(bramp[1][0],i));
+			colval(colmax,i) = colval(bramp[NMBNEU-2][0],i) +
+				(1.-colval(bramp[NMBNEU-2][1],i)) *
+				(colval(bramp[NMBNEU-1][0],i) -
+					colval(bramp[NMBNEU-2][0],i)) /
+				(colval(bramp[NMBNEU-1][1],i) -
+					colval(bramp[NMBNEU-2][1],i));
+		}
 					/* compute color mapping */
 	do {
 		cflags = inpflags & ~gmtflags;
@@ -410,15 +428,8 @@ compute()			/* compute color mapping */
 		compsoln(clrin, clrout, n);
 						/* check out-of-gamut colors */
 		for (i = 0; i < 24; i++)
-			if (cflags & 1L<<i) {
-				cvtcolor(ctmp, mbRGB[i]);
-				for (j = 0; j < 3; j++)
-					if (colval(ctmp,j) <= 1e-6 ||
-						colval(ctmp,j) >= 1.-1e-6) {
-						gmtflags |= 1L<<i;
-						break;
-					}
-			}
+			if (cflags & 1L<<i && cvtcolor(ctmp, mbRGB[i]))
+				gmtflags |= 1L<<i;
 	} while (cflags & gmtflags);
 	if (gmtflags & MODFLGS)
 		fprintf(stderr,
@@ -535,39 +546,30 @@ int	n;
 }
 
 
+int
 cvtcolor(cout, cin)		/* convert color according to our mapping */
 COLOR	cout, cin;
 {
 	COLOR	ctmp;
+	int	clipped;
 
 	if (scanning) {
 		bresp(ctmp, cin);
-		cresp(cout, ctmp);
+		clipped = cresp(cout, ctmp);
 	} else {
-		cresp(ctmp, cin);
+		clipped = cresp(ctmp, cin);
 		bresp(cout, ctmp);
 	}
-	if (colval(cout,RED) < 0.)
-		colval(cout,RED) = 0.;
-	if (colval(cout,GRN) < 0.)
-		colval(cout,GRN) = 0.;
-	if (colval(cout,BLU) < 0.)
-		colval(cout,BLU) = 0.;
+	return(clipped);
 }
 
 
+int
 cresp(cout, cin)		/* transform color according to matrix */
 COLOR	cout, cin;
 {
-	double	r, g, b;
-
-	r = colval(cin,0)*solmat[0][0] + colval(cin,1)*solmat[0][1]
-			+ colval(cin,2)*solmat[0][2];
-	g = colval(cin,0)*solmat[1][0] + colval(cin,1)*solmat[1][1]
-			+ colval(cin,2)*solmat[1][2];
-	b = colval(cin,0)*solmat[2][0] + colval(cin,1)*solmat[2][1]
-			+ colval(cin,2)*solmat[2][2];
-	setcolor(cout, r, g, b);
+	colortrans(cout, solmat, cin);
+	return(clipgamut(cout, bright(cout), CGAMUT, colmin, colmax));
 }
 
 
@@ -582,9 +584,8 @@ register float	xyYin[3];
 	ctmp[0] = xyYin[0] * d;
 	ctmp[1] = xyYin[2];
 	ctmp[2] = (1. - xyYin[0] - xyYin[1]) * d;
-	cie_rgb(rgbout, ctmp);
 				/* allow negative values */
-	colortrans(rgbout, xyz2rgbmat, ctmp, 0);
+	colortrans(rgbout, xyz2rgbmat, ctmp);
 }
 
 
@@ -621,9 +622,11 @@ picdebug()			/* put out debugging picture */
 		for (x = 0; x < xmax; x++) {
 			rg = chartndx(x, y, &i);
 			if (rg == RG_CENT) {
-				if (!(1L<<i & gmtflags) || (x+y)&07)
+				if (!(1L<<i & gmtflags) || (x+y)&07) {
 					copycolor(scan[x], mbRGB[i]);
-				else
+					clipgamut(scan[x], bright(scan[x]),
+						CGAMUT, cblack, cwhite);
+				} else
 					copycolor(scan[x], blkcol);
 			} else if (rg == RG_CORR)
 				cvtcolor(scan[x], scan[x]);
@@ -647,20 +650,25 @@ clrdebug()			/* put out debug picture from color input */
 	static COLR	blkclr = BLKCOLR;
 	COLR	mbclr[24], cvclr[24], orclr[24];
 	COLR	*scan;
-	COLOR	ctmp;
+	COLOR	ctmp, ct2;
 	int	y, i;
 	register int	x, rg;
 						/* convert colors */
 	for (i = 0; i < 24; i++) {
-		setcolr(mbclr[i], colval(mbRGB[i],RED),
-				colval(mbRGB[i],GRN), colval(mbRGB[i],BLU));
+		copycolor(ctmp, mbRGB[i]);
+		clipgamut(ctmp, bright(ctmp), CGAMUT, cblack, cwhite);
+		setcolr(mbclr[i], colval(ctmp,RED),
+				colval(ctmp,GRN), colval(ctmp,BLU));
 		if (inpflags & 1L<<i) {
-			setcolr(orclr[i], colval(inpRGB[i],RED),
-					colval(inpRGB[i],GRN),
-					colval(inpRGB[i],BLU));
-			cvtcolor(ctmp, inpRGB[i]);
-			setcolr(cvclr[i], colval(ctmp,RED),
+			copycolor(ctmp, inpRGB[i]);
+			clipgamut(ctmp, bright(ctmp), CGAMUT, cblack, cwhite);
+			setcolr(orclr[i], colval(ctmp,RED),
 					colval(ctmp,GRN), colval(ctmp,BLU));
+			bresp(ctmp, inpRGB[i]);
+			colortrans(ct2, solmat, ctmp);
+			clipgamut(ct2, bright(ct2), CGAMUT, cblack, cwhite);
+			setcolr(cvclr[i], colval(ct2,RED),
+					colval(ct2,GRN), colval(ct2,BLU));
 		}
 	}
 						/* allocate scanline */

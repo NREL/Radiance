@@ -1,4 +1,4 @@
-/* Copyright (c) 1996 Regents of the University of California */
+/* Copyright (c) 1997 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -21,8 +21,9 @@ double	inpexp = 1.0;			/* input exposure value */
 char	*mbcalfile = NULL;		/* macbethcal mapping file */
 
 static struct mbc {
-	float	xa[3][6], ya[3][6];
 	COLORMAT	cmat;
+	float	xa[3][6], ya[3][6];
+	COLOR	cmin, cmax;
 }	mbcond;				/* macbethcal conditioning struct */
 
 static COLOR	*scanbuf;		/* scanline processing buffer */
@@ -126,6 +127,7 @@ COLORMAT	mat;
 {
 	while (len--) {
 		colortrans(sl[0], mat, sl[0]);
+		clipgamut(sl[0], bright(sl[0]), CGAMUT, cblack, cwhite);
 		sl++;
 	}
 }
@@ -141,6 +143,7 @@ register struct mbc	*mb;
 
 	while (len--) {
 		colortrans(sl[0], mb->cmat, sl[0]);
+		clipgamut(sl[0], bright(sl[0]), CGAMUT, mb->cmin, mb->cmax);
 		for (i = 0; i < 3; i++) {
 			d = colval(sl[0],i);
 			for (j = 0; j < 4 && mb->xa[i][j+1] <= d; j++)
@@ -162,6 +165,7 @@ register struct mbc	*mb;
 	char	buf[128];
 	FILE	*fp;
 	int	inpflags = 0;
+	register int	i;
 
 	if ((fp = fopen(fn, "r")) == NULL)
 		syserror(fn);
@@ -240,4 +244,15 @@ register struct mbc	*mb;
 		exit(1);
 	}
 	fclose(fp);
+					/* compute gamut */
+	for (i = 0; i < 3; i++) {
+		colval(mb->cmin,i) = mb->xa[i][0] -
+				mb->ya[i][0] *
+				(mb->xa[i][1]-mb->xa[i][0]) /
+				(mb->ya[i][1]-mb->ya[i][0]);
+		colval(mb->cmax,i) = mb->xa[i][4] +
+				(1.-mb->ya[i][4]) *
+				(mb->xa[i][5] - mb->xa[i][4]) /
+				(mb->ya[i][5] - mb->ya[i][4]);
+	}
 }
