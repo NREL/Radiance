@@ -20,7 +20,6 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "sm_list.h"
 #include "sm_geom.h"
 #include "sm.h"
-#include "lookup.h"
 
 #ifdef TEST_DRIVER
 #include "sm_draw.h"
@@ -29,36 +28,21 @@ MAKE STATIC LATER: ui.c using for now;
  */
 char smClean_notify = TRUE; 
 #else
-static char smClean_notify = TRUE; 
+static int smClean_notify = TRUE; 
 #endif
 
-extern unsigned long qthash();
-extern int qtcmp();
-extern int free();
-
-static LUTAB qtr_tab = {qthash,qtcmp,NULL,(void (*)())free,0,NULL,0};
-
 typedef struct {
-	BYTE	rgb[3];		/* average color */
 	float	dist;		/* average distance */
+	BYTE	rgb[3];		/* average color */
 } QTRAVG;		/* average quadtree value */
 
+typedef struct {
+	QUADTREE	qt;	/* quadtree node (key & hash value) */
+	QTRAVG		av;	/* node average */
+} QT_LUENT;		/* lookup table entry */
 
-unsigned long
-qthash(qtc)			/* hash a quadtree node value */
-char *qtc;
-{
-    register unsigned long qt = qtc;
-
-    return(qt>>10 ^ qt<<5);
-}
-
-int
-qtcmp(qt1, qt2)
-char *qt1, *qt2;
-{
-    return(qt1 - qt2);
-}
+static QT_LUENT	*qt_htbl = NULL;	/* quadtree hash table */
+static int	qt_hsiz = 0;		/* quadtree hash table size */
 
 
 int
@@ -155,6 +139,73 @@ smClean()
     smClean_notify = TRUE;
 }
 
+int
+qtHash_init(nel)		/* initialize for at least nel elements */
+int	nel;
+{
+	static int  hsiztab[] = {
+		8191, 16381, 32749, 65521, 131071, 262139, 524287, 1048573, 0
+	};
+	register int  i;
+
+	if (nel <= 0) {			/* call to free table */
+		if (qt_hsiz) {
+			free((char *)qt_htbl);
+			qt_htbl = NULL;
+			qt_hsiz = 0;
+		}
+		return(0);
+	}
+	nel += nel>>1;			/* 66% occupancy */
+	for (i = 0; hsiztab[i]; i++)
+		if (hsiztab[i] > nel)
+			break;
+	if (!(qt_hsiz = hsiztab[i]))
+		qt_hsiz = nel*2 + 1;		/* not always prime */
+	qt_htbl = (QT_LUENT *)calloc(qt_hsiz, sizeof(QT_LUENT));
+	if (qt_htbl == NULL)
+		qt_hsiz = 0;
+	for (i = qt_hsiz; i--; )
+		qt_htbl[i].qt = EMPTY;
+	return(qt_hsiz);
+}
+
+QT_LUENT *
+qtHash_find(qt)			/* find a quadtree table entry */
+QUADTREE qt;
+{
+	int	i, n;
+	register int	ndx;
+	register QT_LUENT	*le;
+
+	if (qt_hsiz == 0)
+		qtHash_init(1);
+tryagain:				/* hash table lookup */
+	ndx = (unsigned long)qt % qt_hsiz;
+	for (i = 0, n = 1; i < qt_hsiz; i++, n += 2) {
+		le = &qt_htbl[ndx];
+		if (QT_IS_EMPTY(le->qt) || le->qt == qt)
+			return(le);
+		if ((ndx += n) >= qt_hsiz)	/* this happens rarely */
+			ndx = ndx % qt_hsiz;
+	}
+					/* table is full, reallocate */
+	le = qt_htbl;
+	ndx = qt_hsiz;
+	if (!qtHash_init(ndx+1)) {	/* no more memory! */
+		qt_htbl = le;
+		qt_hsiz = ndx;
+		return(NULL);
+	}
+	if (!ndx)
+		goto tryagain;
+					/* copy old table to new */
+	while (ndx--)
+		if (!QT_IS_EMPTY(le[ndx].qt))
+			copystruct(qtHash_find(le[ndx].qt), &le[ndx]);
+	free((char *)le);
+	goto tryagain;			/* should happen only once! */
+}
 
 stCount_level_leaves(lcnt, qt)	/* count quadtree leaf nodes at each level */
 int lcnt[];
@@ -183,19 +234,17 @@ SM *sm;
 int lvl;
 {
   FVECT a,b,c;
-  LUENT *le;
+  register QT_LUENT *le;
   QTRAVG *rc[4];
-  register QTRAVG *ra;
   
   if (QT_IS_EMPTY(qt))				/* empty leaf node */
     return(NULL);
   if (QT_IS_TREE(qt) && !QT_IS_FLAG(qt))	/* not in our frustum */
     return(NULL);
 					/* else look up node */
-  if ((le = lu_find(&qtr_tab,(char *)qt)) == NULL)
-    goto nomemory;
-  ra = (QTRAVG *)le->data;
-  if (QT_IS_TREE(qt) && (ra == NULL || lvl > 0))
+  if ((le = qtHash_find(qt)) == NULL)
+    error(SYSTEM, "out of memory in qtRender_level");
+  if (QT_IS_TREE(qt) && (QT_IS_EMPTY(le->qt) || lvl > 0))
   {					/* compute children */
     qtSubdivide_tri(v0,v1,v2,a,b,c);
     rc[0] = qtRender_level(QT_NTH_CHILD(qt,0),v0,a,c,sm,lvl-1);
@@ -203,22 +252,21 @@ int lvl;
     rc[2] = qtRender_level(QT_NTH_CHILD(qt,2),c,b,v2,sm,lvl-1);
     rc[3] = qtRender_level(QT_NTH_CHILD(qt,3),b,c,a,sm,lvl-1);
   }
-  if (ra == NULL)
+  if (QT_IS_EMPTY(le->qt))
   {					/* let's make some data! */
     int rgbs[3];
     double distsum;
-    int i;
-    register int n;
+    register int i, n;
 					/* average our triangle vertices */
     rgbs[0] = rgbs[1] = rgbs[2] = 0;
     distsum = 0.; n = 0;
     if(QT_IS_TREE(qt))
     {					/* from subtree */
       for (i = 4; i--; )
-	if ((ra = rc[i]) != NULL)
+	if (rc[i] != NULL)
 	{
-	  rgbs[0] += ra->rgb[0]; rgbs[1] += ra->rgb[1]; rgbs[2] += ra->rgb[2];
-	  distsum += ra->dist; n++;
+	  rgbs[0] += rc[i]->rgb[0]; rgbs[1] += rc[i]->rgb[1];
+	  rgbs[2] += rc[i]->rgb[2]; distsum += rc[i]->dist; n++;
 	}
     }
     else
@@ -247,31 +295,26 @@ int lvl;
     }
     if (!n)
       return(NULL);
-    if ((ra = (QTRAVG *)malloc(sizeof(QTRAVG))) == NULL)
-      goto nomemory;
-    ra->rgb[0] = rgbs[0]/n; ra->rgb[1] = rgbs[1]/n; ra->rgb[2] = rgbs[2]/n;
-    ra->dist = distsum/(double)n;
-    le->key = (char *)qt;
-    le->data = (char *)ra;
+    le->qt = qt;
+    le->av.rgb[0] = rgbs[0]/n; le->av.rgb[1] = rgbs[1]/n;
+    le->av.rgb[2] = rgbs[2]/n; le->av.dist = distsum/(double)n;
   }
   if (lvl == 0 || (lvl > 0 && QT_IS_LEAF(qt)))
   {				/* render this node */
 					/* compute pseudo vertices */
     VCOPY(a,v0); VCOPY(b,v1); VCOPY(c,v2);
     normalize(a); normalize(b); normalize(c);
-    VSUM(a,SM_VIEW_CENTER(sm),a,ra->dist);
-    VSUM(b,SM_VIEW_CENTER(sm),b,ra->dist);
-    VSUM(c,SM_VIEW_CENTER(sm),c,ra->dist);
+    VSUM(a,SM_VIEW_CENTER(sm),a,le->av.dist);
+    VSUM(b,SM_VIEW_CENTER(sm),b,le->av.dist);
+    VSUM(c,SM_VIEW_CENTER(sm),c,le->av.dist);
 					/* draw triangle */
-    glColor3ub(ra->rgb[0],ra->rgb[1],ra->rgb[2]);
+    glColor3ub(le->av.rgb[0],le->av.rgb[1],le->av.rgb[2]);
     /* NOTE: Triangle vertex order may change */
     glVertex3d(c[0],c[1],c[2]);
     glVertex3d(b[0],b[1],b[2]);
     glVertex3d(a[0],a[1],a[2]);
   }
-  return(ra);
-nomemory:
-  error(SYSTEM, "out of memory in qtRender_level");
+  return(&le->av);
 }
 
 
@@ -709,7 +752,7 @@ smUpdate(view,qual)
   {
     smClean_notify = FALSE;
     smNew_tri_cnt = 0;
-    lu_done(&qtr_tab);
+    qtHash_init(0);
   }
 
 }
