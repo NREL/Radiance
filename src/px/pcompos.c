@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1993 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -23,6 +23,9 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  "resolu.h"
 
 #define	 MAXFILE	64
+
+#define  HASMIN		1
+#define  HASMAX		2
 
 					/* output picture size */
 int  xsiz = 0;
@@ -49,7 +52,7 @@ struct {
 	FILE  *fp;			/* stream pointer */
 	int  xres, yres;		/* picture size */
 	int  xloc, yloc;		/* anchor point */
-	int  hasmin, hasmax;		/* has threshold values */
+	int  flags;			/* HASMIN, HASMAX */
 	COLR  thmin, thmax;		/* thresholds */
 } input[MAXFILE];		/* our input files */
 
@@ -84,6 +87,7 @@ char  *argv[];
 	int  ncolumns = 0;
 	int  autolabel = 0;
 	int  curcol = 0, x0 = 0, curx = 0, cury = 0, spacing = 0;
+	int  xsgn, ysgn;
 	char  *thislabel;
 	int  an;
 #ifdef MSDOS
@@ -143,31 +147,43 @@ dofiles:
 		if (nfile >= MAXFILE)
 			goto toomany;
 		thislabel = NULL;
-		input[nfile].hasmin = input[nfile].hasmax = 0;
-		while (an < argc && (argv[an][0] == '-' || argv[an][0] == '+'))
+		input[nfile].flags = 0;
+		xsgn = ysgn = '-';
+		while (an < argc && (argv[an][0] == '-' || argv[an][0] == '+'
+				|| argv[an][0] == '=')) {
 			switch (argv[an][1]) {
 			case 't':
 				checkthresh = 1;
 				if (argv[an][0] == '-') {
-					input[nfile].hasmin = 1;
+					input[nfile].flags |= HASMIN;
 					setcolr(input[nfile].thmin,
 							atof(argv[an+1]),
 							atof(argv[an+1]),
 							atof(argv[an+1]));
-				} else {
-					input[nfile].hasmax = 1;
+				} else if (argv[an][0] == '+') {
+					input[nfile].flags |= HASMAX;
 					setcolr(input[nfile].thmax,
 							atof(argv[an+1]),
 							atof(argv[an+1]),
 							atof(argv[an+1]));
-				}
-				an += 2;
+				} else
+					goto userr;
+				an++;
 				break;
 			case 'l':
 				if (strcmp(argv[an], "-l"))
 					goto userr;
-				thislabel = argv[an+1];
-				an += 2;
+				thislabel = argv[++an];
+				break;
+			case '+':
+			case '-':
+			case '0':
+				if (argv[an][0] != '=')
+					goto userr;
+				xsgn = argv[an][1];
+				ysgn = argv[an][2];
+				if (ysgn != '+' && ysgn != '-' && ysgn != '0')
+					goto userr;
 				break;
 			case '\0':
 				if (argv[an][0] == '-')
@@ -176,6 +192,8 @@ dofiles:
 			default:
 				goto userr;
 			}
+			an++;
+		}
 getfile:
 		if (argc-an < (ncolumns ? 1 : 3))
 			goto userr;
@@ -225,7 +243,15 @@ getfile:
 			curcol++;
 		} else {
 			input[nfile].xloc = atoi(argv[an++]);
+			if (xsgn == '+')
+				input[nfile].xloc -= input[nfile].xres;
+			else if (xsgn == '0')
+				input[nfile].xloc -= input[nfile].xres/2;
 			input[nfile].yloc = atoi(argv[an++]);
+			if (ysgn == '+')
+				input[nfile].yloc -= input[nfile].yres;
+			else if (ysgn == '0')
+				input[nfile].yloc -= input[nfile].yres/2;
 		}
 		if (input[nfile].xloc < xmin)
 			xmin = input[nfile].xloc;
@@ -239,7 +265,7 @@ getfile:
 			if (++nfile >= MAXFILE)
 				goto toomany;
 			input[nfile].name = Label;
-			input[nfile].hasmin = input[nfile].hasmax = 0;
+			input[nfile].flags = 0;
 			input[nfile].xres = input[nfile-1].xres;
 			input[nfile].yres = labelht;
 			if ((input[nfile].fp = lblopen(thislabel,
@@ -272,7 +298,7 @@ userr:
 	fprintf(stderr,
 	"Usage: %s [-x xr][-y yr][-b r g b][-a n][-s p][-o x0 y0][-la][-lh h] ",
 			progname);
-	fprintf(stderr, "[-t min1][+t max1][-l lab] pic1 x1 y1 ..\n");
+	fprintf(stderr, "[-t min1][+t max1][-l lab][=SS] pic1 x1 y1 ..\n");
 	quit(1);
 toomany:
 	fprintf(stderr, "%s: only %d files and labels allowed\n",
@@ -321,10 +347,10 @@ compos()				/* composite pictures */
 				if (x > xsiz)
 					x = xsiz;
 				for (x--; x >= 0 && x >= input[i].xloc; x--) {
-					if (input[i].hasmin &&
+					if (input[i].flags & HASMIN &&
 					cmpcolr(scanin[x], input[i].thmin) <= 0)
 						continue;
-					if (input[i].hasmax &&
+					if (input[i].flags & HASMAX &&
 					cmpcolr(scanin[x], input[i].thmax) >= 0)
 						continue;
 					copycolr(scanout[x], scanin[x]);
