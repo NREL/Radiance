@@ -335,7 +335,8 @@ tmap2bmp(char *fnin, char *fnout, char *expec, RGBPRIMP monpri, double gamval)
 					/* initialize BMP header */
 	if (tmflags & TM_F_BW) {
 		hdr = BMPmappedHeader(xr, yr, 0, 256);
-		hdr->compr = BI_RLE8;
+		if (fnout != NULL)
+			hdr->compr = BI_RLE8;
 	} else
 		hdr = BMPtruecolorHeader(xr, yr, 0);
 	if (hdr == NULL)
