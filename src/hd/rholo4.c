@@ -73,8 +73,10 @@ int	block;
 					/* read message header */
 	n = read(dpd[0], (char *)&msg, sizeof(MSGHEAD));
 	if (n != sizeof(MSGHEAD)) {
-		if (n >= 0)
+		if (n >= 0) {
+			dpout = NULL;
 			error(USER, "display process died");
+		}
 		if (errno != EAGAIN & errno != EINTR)
 			goto readerr;
 		return(2);		/* acceptable failure */
