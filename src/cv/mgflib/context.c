@@ -83,6 +83,7 @@ register char	**av;
 		c_ccolor = (C_COLOR *)lp->data;
 		if (ac == 3) {		/* use default template */
 			*c_ccolor = c_dfcolor;
+			c_ccolor->name = lp->key;
 			return(MG_OK);
 		}
 		lp = lu_find(&clr_tab, av[3]);	/* lookup template */
@@ -91,6 +92,8 @@ register char	**av;
 		if (lp->data == NULL)
 			return(MG_EUNDEF);
 		*c_ccolor = *(C_COLOR *)lp->data;
+		c_ccolor->name = lp->key;
+		c_ccolor->clock = 1;
 		if (ac > 4)
 			return(MG_EARGC);
 		return(MG_OK);
@@ -105,6 +108,7 @@ register char	**av;
 		if (c_ccolor->cx < 0. | c_ccolor->cy < 0. |
 				c_ccolor->cx + c_ccolor->cy > 1.)
 			return(MG_EILL);
+		c_ccolor->clock++;
 		return(MG_OK);
 	case MG_E_CSPEC:	/* assign spectral values */
 		if (ac < 5)
@@ -230,6 +234,7 @@ register char	**av;
 		if (c_cmaterial->td < 0. | c_cmaterial->td > 1.)
 			return(MG_EILL);
 		c_cmaterial->td_c = *c_ccolor;
+		c_cmaterial->clock++;
 		return(MG_OK);
 	case MG_E_RS:		/* set specular reflectance */
 		if (ac != 3)
@@ -301,6 +306,7 @@ register char	**av;
 		c_cvertex = (C_VERTEX *)lp->data;
 		if (ac == 3) {		/* use default template */
 			*c_cvertex = c_dfvertex;
+			c_cvertex->name = lp->key
 			return(MG_OK);
 		}
 		lp = lu_find(&vtx_tab, av[3]);	/* lookup template */
@@ -309,6 +315,8 @@ register char	**av;
 		if (lp->data == NULL)
 			return(MG_EUNDEF);
 		*c_cvertex = *(C_VERTEX *)lp->data;
+		c_cvertex->name = lp->key
+		c_cvertex->clock = 1;
 		if (ac > 4)
 			return(MG_EARGC);
 		return(MG_OK);
@@ -320,6 +328,7 @@ register char	**av;
 		c_cvertex->p[0] = atof(av[1]);
 		c_cvertex->p[1] = atof(av[2]);
 		c_cvertex->p[2] = atof(av[3]);
+		c_cvertex->clock++;
 		return(MG_OK);
 	case MG_E_NORMAL:	/* set normal */
 		if (ac != 4)
@@ -330,6 +339,7 @@ register char	**av;
 		c_cvertex->n[1] = atof(av[2]);
 		c_cvertex->n[2] = atof(av[3]);
 		(void)normalize(c_cvertex->n);
+		c_cvertex->clock++;
 		return(MG_OK);
 	}
 	return(MG_EUNK);
@@ -379,7 +389,7 @@ int
 c_isgrey(clr)			/* check if color is grey */
 register C_COLOR	*clr;
 {
-	if (!clr->flags)
+	if (!(clr->flags & (C_CSXY|C_CSSPEC)))
 		return(1);		/* no settings == grey */
 	c_ccvt(clr, C_CSXY);
 	return(clr->cx >= .323 && clr->cx <= .343 &&
@@ -397,7 +407,7 @@ int	fl;
 
 	if (clr->flags & fl)		/* already done */
 		return;
-	if (!(clr->flags & (C_CSXY|C_CSSPEC)))	/* nothing set */
+	if (!(clr->flags & (C_CSXY|C_CSSPEC)))	/* nothing set! */
 		*clr = c_dfcolor;
 	else if (fl & C_CSXY) {		/* cspec -> cxy */
 		x = y = z = 0.;
@@ -477,6 +487,7 @@ char	**av;
 			clr->ssum += clr->ssamp[i];
 		}
 	clr->flags = C_CDSPEC|C_CSSPEC;
+	clr->clock++;
 	free((MEM_PTR)va);
 	return(MG_OK);
 }
@@ -515,4 +526,5 @@ double	w1, w2;
 		cres->cy = (w1 + w2) * scale;
 		cres->flags = C_CDXY|C_CSXY;
 	}
+	cres->clock++;			/* record the change */
 }
