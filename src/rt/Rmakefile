@@ -104,7 +104,7 @@ aed:	$(DEVDIR)/aed
 
 sgi:	$(DEVDIR)/news
 
-tiff:	
+ogl:	
 
 clean:
 	set nonomatch; rm -f $(PROGS) *.o core
