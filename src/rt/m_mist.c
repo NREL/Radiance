@@ -33,7 +33,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *
  *  Up to five real arguments may be given for MAT_MIST:
  *
- *	[ext_r  ext_g  ext_b  [albedo [gecc]]]
+ *	[ext_r  ext_g  ext_b  [albedo_r albedo_g albedo_b [gecc]]]
  *
  *  The primaries indicate medium extinction per unit length (absorption
  *  plus scattering), which is added to the global extinction coefficient, set
@@ -47,7 +47,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define RELAYDELIM	'>'		/* relay delimiter character */
 
 extern COLOR  cextinction;		/* global coefficient of extinction */
-extern double  salbedo;			/* global scattering albedo */
+extern COLOR  salbedo;			/* global scattering albedo */
 extern double  seccg;			/* global scattering eccentricity */
 
 
@@ -166,10 +166,11 @@ register RAY  *r;
 		p.slights[0] = 0;
 	if (r->rod > 0.) {			/* entering ray */
 		addcolor(p.cext, mext);
-		if (m->oargs.nfargs > 3)
-			p.albedo = m->oargs.farg[3];
-		if (m->oargs.nfargs > 4)
-			p.gecc = m->oargs.farg[4];
+		if (m->oargs.nfargs > 5)
+			setcolor(p.albedo, m->oargs.farg[3],
+					m->oargs.farg[4], m->oargs.farg[5]);
+		if (m->oargs.nfargs > 6)
+			p.gecc = m->oargs.farg[6];
 		add2slist(&p, myslist);			/* add to list */
 	} else {				/* leaving ray */
 		if (myslist != NULL) {			/* delete from list */
@@ -181,10 +182,11 @@ register RAY  *r;
 					p.slights[++i] = p.slights[j];
 			if (p.slights[0] - i < myslist[0]) {	/* fix old */
 				addcolor(r->cext, mext);
-				if (m->oargs.nfargs > 3)
-					r->albedo = m->oargs.farg[3];
-				if (m->oargs.nfargs > 4)
-					r->gecc = m->oargs.farg[4];
+				if (m->oargs.nfargs > 5)
+					setcolor(r->albedo, m->oargs.farg[3],
+					m->oargs.farg[4], m->oargs.farg[5]);
+				if (m->oargs.nfargs > 6)
+					r->gecc = m->oargs.farg[6];
 				add2slist(r, myslist);
 			}
 			p.slights[0] = i;
@@ -199,9 +201,9 @@ register RAY  *r;
 				colval(cextinction,BLU))
 			be = colval(cextinction,BLU);
 		setcolor(p.cext, re, ge, be);
-		if (m->oargs.nfargs > 3)
-			p.albedo = salbedo;
-		if (m->oargs.nfargs > 4)
+		if (m->oargs.nfargs > 5)
+			copycolor(p.albedo, salbedo);
+		if (m->oargs.nfargs > 6)
 			p.gecc = seccg;
 	}
 	rayvalue(&p);				/* calls rayparticipate() */
