@@ -1200,8 +1200,12 @@ int	maxcopies;
 {
 	int	retstatus = 0;
 	int	hostcopies;
-	char	com1buf[10240], *com1, *endcom1;
+	char	buf[10240], *com1;
+	PSERVER	*mps[64];
+	int	nmps = 0;
 	int	status;
+	int	pfd;
+	register int	n;
 	register PSERVER	*ps;
 
 	if (!silent)
@@ -1213,24 +1217,18 @@ int	maxcopies;
 	for (ps = pslist; ps != NULL; ps = ps->next) {
 		hostcopies = 0;
 		if (maxcopies > 1 && ps->nprocs > 1 && ppins != NULL) {
-			strcpy(com1=com1buf, com);	/* build -PP command */
+			strcpy(com1=buf, com);	/* build -PP command */
 			sprintf(com1+(ppins-com), " -PP %s/%s.persist",
 					vval(DIRECTORY), phostname(ps));
 			strcat(com1, ppins);
-			endcom1 = com1 + strlen(com1);
-			sprintf(endcom1, "; kill `sed -n '1s/^[^ ]* //p' %s/%s.persist`",
-					vval(DIRECTORY), phostname(ps));
-		} else {
+			mps[nmps++] = ps;
+		} else
 			com1 = com;
-			endcom1 = NULL;
-		}
 		while (maxcopies > 0 &&
 				startjob(ps, savestr(com1), donecom) != -1) {
-			sleep(10);
+			sleep(60);
 			hostcopies++;
 			maxcopies--;
-			if (endcom1 != NULL)
-				*endcom1 = '\0';
 		}
 		if (!silent && hostcopies) {
 			if (hostcopies > 1)
@@ -1245,6 +1243,21 @@ int	maxcopies;
 	while ((status = wait4job(NULL, -1)) != -1)
 		if (status)
 			retstatus += !serverdown();	/* check server */
+					/* terminate parallel rpict's */
+	while (nmps--) {
+		sprintf(buf, "%s/%s.persist",
+				vval(DIRECTORY), phostname(mps[nmps]));
+		if ((pfd = open(buf, O_RDONLY)) >= 0) {
+			n = read(pfd, buf, sizeof(buf)-1);	/* get PID */
+			buf[n] = '\0';
+			close(pfd);
+			for (n = 0; buf[n] && !isspace(buf[n]); n++)
+				;
+								/* terminate */
+			sprintf(buf, "kill -ALRM %d", atoi(buf+n));
+			wait4job(mps[nmps], startjob(mps[nmps], buf, NULL));
+		}
+	}
 	return(retstatus);
 }
 
