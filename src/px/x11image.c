@@ -366,10 +366,9 @@ char  *err;
 	if (es = err != NULL)
 		fprintf(stderr, "%s: %s: %s\n", progname, 
 				fname==NULL?"<stdin>":fname, err);
-	if (parent > 0 & wind != 0) {
-		XDestroyWindow(thedisplay, wind);
-		XFlush(thedisplay);
-	} else if (parent < 0 & sigrecv == 0)
+	if (thedisplay != NULL)
+		XCloseDisplay(thedisplay);
+	if (parent < 0 & sigrecv == 0)
 		kill(getppid(), SIGCONT);
 	while (parent > 0 && wait(&cs) != -1) {	/* wait for any children */
 		if (es == 0)
