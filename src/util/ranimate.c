@@ -204,8 +204,7 @@ getastat()			/* check/set animation status */
 		goto fmterr;
 	fclose(fp);
 	if (astat.pid != 0) {			/* thinks it's still running */
-		gethostname(buf, sizeof(buf));
-		if (strcmp(buf, astat.host)) {
+		if (strcmp(myhostname(), astat.host)) {
 			fprintf(stderr,
 			"%s: process %d may still be running on host %s\n",
 					progname, astat.pid, astat.host);
@@ -224,7 +223,7 @@ getastat()			/* check/set animation status */
 		return(-1);
 	}
 setours:					/* set our values */
-	gethostname(astat.host, sizeof(astat.host));
+	strcpy(astat.host, myhostname());
 	astat.pid = getpid();
 	strcpy(astat.cfname, cfname);
 	return(0);

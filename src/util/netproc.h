@@ -30,6 +30,8 @@ extern PSERVER	*pslist;	/* global process server list */
 
 extern PSERVER	*addpserver(), *findjob();
 
+extern char	*myhostname();
+
 #define LHOSTNAME	"localhost"	/* accepted name for local host */
 
 #define pserverOK(ps)	(wait4job(ps, startjob(ps, "true", NULL)) == 0)
