@@ -162,9 +162,9 @@ char  *argv[];
 		quiterr("bad picture format");
 				/* gamma compression */
 	if (putprim == Cputprim)
-		setcolrgam(CODE6GAM/devgam);
+		setcolrgam(CODE6GAM);
 	else if (devgam != 1.)
-		setcolrgam(1./devgam);
+		setcolrgam(devgam);
 				/* write header */
 	PSheader(i <= argc-1 ? argv[i] : "<stdin>");
 				/* convert file */
@@ -223,21 +223,24 @@ parsepaper(ps)		/* determine paper size from name */
 char	*ps;
 {
 	static struct psize {char n[12]; float w,h;} p[] = {
-		"letter", 8.5, 11.,
-		"legal", 8.5, 14.,
-		"executive", 7.25, 10.5,
 		"envelope", 4.12, 9.5,
+		"executive", 7.25, 10.5,
+		"letter", 8.5, 11.,
+		"lettersmall", 7.68, 10.16,
+		"legal", 8.5, 14.,
 		"monarch", 3.87, 7.5,
+		"statement", 5.5, 8.5,
 		"tabloid", 11., 17.,
 		"A3", 11.69, 16.54,
 		"A4", 8.27, 11.69,
+		"A4small", 7.47, 10.85,
 		"A5", 6.00, 8.27,
 		"A6", 4.13, 6.00,
 		"B4", 10.12, 14.33,
 		"B5", 7.17, 10.12,
-		"DL", 4.33, 8.66,
 		"C5", 6.38, 9.01,
 		"C6", 4.49, 6.38,
+		"DL", 4.33, 8.66,
 		"hagaki", 3.94, 5.83,
 		"" };
 	register struct psize	*pp;
@@ -266,6 +269,7 @@ char	*ps;
 	fprintf(stderr, "_Name________Width_Height_(inches)\n");
 	for (pp = p; pp->n[0]; pp++)
 		fprintf(stderr, "%-11s  %5.2f  %5.2f\n", pp->n, pp->w, pp->h);
+	fprintf(stderr, "Or use WWxHH size specification\n");
 	exit(1);
 }
 
@@ -389,7 +393,7 @@ char  *nam;
 	for (i = 0; i < 128; i++)	/* clear */
 		itab[i] = -1;
 	for (i = 1; i < 63; i++)	/* assign greys */
-		itab[code[i]] = 256.0*pow((i+.5)/64.0, CODE6GAM);
+		itab[code[i]] = 256.0*pow((i+.5)/64.0, CODE6GAM/devgam);
 	itab[code[0]] = 0;		/* black is black */
 	itab[code[63]] = 255;		/* and white is white */
 	printf("/codetab [");
