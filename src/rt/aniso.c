@@ -117,7 +117,7 @@ double  omega;			/* light source size */
 		dtmp2 *= dtmp2 / av2;
 						/* gaussian */
 		dtmp = (dtmp1 + dtmp2) / (1.0 + DOT(np->pnorm, h));
-		dtmp = exp(-2.0*dtmp) * 1.0/(4.0*PI)
+		dtmp = exp(-2.0*dtmp) * (1.0/4.0/PI)
 				* sqrt(ldot/(np->pdot*au2*av2));
 						/* worth using? */
 		if (dtmp > FTINY) {
@@ -163,7 +163,7 @@ double  omega;			/* light source size */
 		} else
 			dtmp = 0.0;
 						/* gaussian */
-		dtmp = exp(-dtmp) * 1.0/PI
+		dtmp = exp(-dtmp) * (1.0/PI)
 				* sqrt(-ldot/(np->pdot*au2*av2));
 						/* worth using? */
 		if (dtmp > FTINY) {
