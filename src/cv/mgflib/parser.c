@@ -315,7 +315,6 @@ mg_parse()			/* parse current input line */
 {
 	char	abuf[MG_MAXLINE];
 	char	*argv[MG_MAXARGC];
-	int	en;
 	register char	*cp, *cp2, **ap;
 					/* copy line, removing escape chars */
 	cp = abuf; cp2 = mg_file->inpline;
@@ -810,7 +809,7 @@ char	**av;
 		if (rad2 == 0.)
 			return(MG_EILL);
 	} else if (rad2 != 0.) {
-		if (rad1 < 0. ^ rad2 < 0.)
+		if ((rad1 < 0.) ^ (rad2 < 0.))
 			return(MG_EILL);
 	} else {			/* swap */
 		C_VERTEX	*cv;

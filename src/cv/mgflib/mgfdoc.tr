@@ -1903,6 +1903,8 @@ and
 require a normal direction.
 An
 .UL f
+or
+.UL fh
 entity will interpolate vertex normals if given, and
 use the polygon plane normal otherwise.
 See the
@@ -1942,6 +1944,7 @@ SEE ALSO
 .UL cone,
 .UL cyl,
 .UL f,
+.UL fh,
 .UL n,
 .UL p,
 .UL prism,
@@ -1986,6 +1989,7 @@ SEE ALSO
 .UL cone,
 .UL cyl,
 .UL f,
+.UL fh,
 .UL n,
 .UL prism,
 .UL ring,
@@ -2032,6 +2036,7 @@ xf
 SEE ALSO
 .LP
 .UL f,
+.UL fh,
 .UL p,
 .UL prism,
 .UL ring,
@@ -2174,6 +2179,10 @@ either all normals or no normals, and to stick with triangles
 when normals are used.
 Also, specified normals should point in the general direction of the
 surface for best results.
+.LP
+Vertices should not be shared between any two contours.
+I.e., a hole should not share a vertex or edge with the perimeter or
+another hole, or incorrect rendering may result.
 .SH
 EXAMPLE
 .DS
@@ -2241,6 +2250,7 @@ SEE ALSO
 .UL cone,
 .UL cyl,
 .UL f,
+.UL fh,
 .UL m,
 .UL prism,
 .UL ring,
@@ -2298,6 +2308,7 @@ SEE ALSO
 .LP
 .UL cone,
 .UL f,
+.UL fh,
 .UL m,
 .UL prism,
 .UL ring,
@@ -2370,6 +2381,7 @@ SEE ALSO
 .LP
 .UL cyl,
 .UL f,
+.UL fh,
 .UL m,
 .UL prism,
 .UL ring,
@@ -2436,6 +2448,7 @@ SEE ALSO
 .UL cyl,
 .UL cone,
 .UL f,
+.UL fh,
 .UL m,
 .UL ring,
 .UL sph,
@@ -2492,6 +2505,7 @@ SEE ALSO
 .UL cyl,
 .UL cone,
 .UL f,
+.UL fh,
 .UL m,
 .UL prism,
 .UL sph,
@@ -2552,6 +2566,7 @@ SEE ALSO
 .UL cyl,
 .UL cone,
 .UL f,
+.UL fh,
 .UL m,
 .UL prism,
 .UL ring,
