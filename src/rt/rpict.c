@@ -122,6 +122,7 @@ char  *zfile, *oldfile;
 	float  *zbar[MAXDIV+1];		/* z values */
 	int  ypos;			/* current scanline */
 	int  ystep;			/* current y step size */
+	int  hstep;			/* h step size */
 	int  zfd;
 	COLOR  *colptr;
 	float  *zptr;
@@ -172,8 +173,9 @@ char  *zfile, *oldfile;
 #endif
 	signal(SIGALRM, report);
 	ypos = vresolu-1 - i;
-	fillscanline(scanbar[0], zbar[0], hresolu, ypos, psample);
-	ystep = psample;
+	hstep = (psample*140+49)/99;		/* quincunx sampling */
+	ystep = (psample*99+70)/140;
+	fillscanline(scanbar[0], zbar[0], hresolu, ypos, hstep);
 						/* compute scanlines */
 	for (ypos -= ystep; ypos > -ystep; ypos -= ystep) {
 							/* bottom adjust? */
@@ -188,7 +190,7 @@ char  *zfile, *oldfile;
 		zbar[ystep] = zbar[0];
 		zbar[0] = zptr;
 							/* fill base line */
-		fillscanline(scanbar[0], zbar[0], hresolu, ypos, psample);
+		fillscanline(scanbar[0], zbar[0], hresolu, ypos, hstep);
 							/* fill bar */
 		fillscanbar(scanbar, zbar, hresolu, ypos, ystep);
 							/* write it out */
@@ -243,14 +245,15 @@ register COLOR  *scanline;
 register float  *zline;
 int  xres, y, xstep;
 {
+	static int  nc = 0;		/* number of calls */
 	int  b = xstep;
 	double  z;
 	register int  i;
 	
 	z = pixvalue(scanline[0], 0, y);
 	if (zline) zline[0] = z;
-
-	for (i = xstep; i < xres-1+xstep; i += xstep) {
+				/* zig-zag start for quincunx pattern */
+	for (i = nc++ & 1 ? xstep/2 : xstep; i < xres-1+xstep; i += xstep) {
 		if (i >= xres) {
 			xstep += xres-1-i;
 			i = xres-1;
