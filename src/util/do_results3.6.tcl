@@ -79,7 +79,7 @@ proc list_views {} {		# List finished and unfinished pictures
 
 proc delpic {} {		# Delete selected pictures
 	global curmess
-	set selected_pics [get_selpics]
+	set selected_pics [get_selpics 1]
 	if {"$selected_pics" == {}} {
 		set curmess "No pictures selected."
 		return
@@ -95,21 +95,21 @@ proc delpic {} {		# Delete selected pictures
 	list_views
 }
 
-proc get_selpics {} {		# return selected pictures
+proc get_selpics {{getall 0}} {		# return selected pictures
 	global fvwbox ufvwbox radvar rawfroot
 	set sl {}
 	foreach i [$fvwbox curselection] {
 		testappend sl $radvar(PICTURE)_[$fvwbox get $i].pic
-		if {$rawfroot != $radvar(PICTURE)} {
+		if {$getall && $rawfroot != $radvar(PICTURE)} {
 			testappend sl ${rawfroot}_[$fvwbox get $i].pic
 		}
-		if {$radvar(ZFILE) != {}} {
+		if {$getall && $radvar(ZFILE) != {}} {
 			testappend sl $radvar(ZFILE)_[$fvwbox get $i].zbf
 		}
 	}
 	foreach i [$ufvwbox curselection] {
 		testappend sl ${rawfroot}_[$ufvwbox get $i].unf
-		if {$radvar(ZFILE) != {}} {
+		if {$getall && $radvar(ZFILE) != {}} {
 			testappend sl $radvar(ZFILE)_[$ufvwbox get $i].zbf
 		}
 	}
