@@ -453,7 +453,7 @@ int  signo;
 	static int  gotsig = 0;
 
 	if (gotsig++)			/* two signals and we're gone! */
-		_exit(127);
+		_exit(signo);
 
 	eputs("signal - ");
 	eputs(sigerr[signo]);
