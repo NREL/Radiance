@@ -3273,8 +3273,9 @@ and return one of the non-zero values from "parser.h" listed below:
 #define MG_EMEM		8		/* out of memory */
 #define MG_ESEEK		9		/* file seek error */
 #define MG_EBADMAT	10		/* bad material specification */
+#define MG_ELINE		11		/* input line too long */
 
-#define MG_NERRS	11
+#define MG_NERRS	12
 .DE
 If it is inappropriate to send output to standard error, the calling
 program should use the routines listed under
@@ -3358,6 +3359,9 @@ The
 function reads the next input line from the current file,
 returning the number of characters in the line, or zero if the
 end of file is reached or there is a file error.
+If the last character read in the input line is not a newline,
+then the input line was too long, and you
+should return an MG_ELINE error.
 The function skips over escaped newlines, and keeps track of the
 line number in the current file context
 .I mg_file,
