@@ -367,7 +367,7 @@ register struct cellact	*cap;
 	hdworld(org, hp, cgp);
 				/* compute direction to voxel center */
 	for (i = 3; i--; )
-		vgp[i] = voxel[cap->vi].i[i] + 0.5;
+		vgp[i] = voxel[cap->vi].i[i] + .5;
 	hdworld(vc, hp, vgp);
 	for (i = 3; i--; )
 		vc[i] -= org[i];
@@ -440,7 +440,6 @@ VIEW	*vold, *vnew;
 	ngcp = ngcl = getviewcells(&ncnt, hdlist[voxel[voxi].hd], vnew);
 				/* set up actions */
 	oca.vi = nca.vi = voxi;
-	oca.rev = nca.rev = 0;
 	oca.add = 0; nca.add = 1;
 	if ((oca.rev = ocnt < 0))
 		ocnt = -ocnt;
