@@ -298,7 +298,7 @@ char	**av;
 					atof(sskip2(buf+4,1)),
 					atof(sskip2(buf+4,2)));
 		else if (backvis && !strncmp(buf, "-bv", 3) &&
-				(!buf[3] || strchr(" 0-FfNn", buf[3]) != NULL))
+				(!buf[3] || strchr("0-FfNn \n",buf[3])!=NULL))
 			backvis = 0;
 	fclose(fp);
 	unlink(optfile);			/* delete options file */
