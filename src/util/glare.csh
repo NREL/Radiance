@@ -62,6 +62,10 @@ _EOF_
 		echo "You must specify a picture or an octree"
 		exit 1
 	endif
+	if ( $picture == $nofile && "$view" == "" ) then
+		echo "You must give a view if there is no picture"
+		exit 1
+	endif
 	if ( $picture != $nofile ) then
 		if ( ! -r $picture ) then
 			echo "Cannot read $picture"
