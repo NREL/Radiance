@@ -141,13 +141,26 @@ extern int isflt(char *);		/* non-zero if floating point format */
  *	Definitions for 3-d vector manipulation functions
  */
 
-#ifdef SMLFLT
-#define FLOAT	float
+#ifdef  SMLFLT
+#define  FLOAT		float
+#define  FTINY		(1e-3)
 #else
-#define FLOAT	double
+#define  FLOAT		double
+#define  FTINY		(1e-6)
 #endif
+#define  FHUGE		(1e10)
 
 typedef FLOAT  FVECT[3];
+
+#define  VCOPY(v1,v2)	((v1)[0]=(v2)[0],(v1)[1]=(v2)[1],(v1)[2]=(v2)[2])
+#define  DOT(v1,v2)	((v1)[0]*(v2)[0]+(v1)[1]*(v2)[1]+(v1)[2]*(v2)[2])
+#define  VSUM(vr,v1,v2,f)	((vr)[0]=(v1)[0]+(f)*(v2)[0], \
+				(vr)[1]=(v1)[1]+(f)*(v2)[1], \
+				(vr)[2]=(v1)[2]+(f)*(v2)[2])
+
+#define is0vect(v)	(DOT(v,v) < FTINY*FTINY)
+
+#define round0(x)	if (x <= FTINY && x >= -FTINY) x = 0
 
 #ifdef NOPROTO
 extern double	normalize();		/* normalize a vector */
@@ -184,6 +197,9 @@ typedef struct {
 typedef struct {
 	FVECT	p, n;		/* point and normal */
 } C_VERTEX;		/* vertex context */
+
+#define isgrey(cxy)	((cxy)->cx > .31 && (cxy)->cx < .35 && \
+			(cxy)->cy > .31 && (cxy)->cy < .35)
 
 #define C_DEFCOLOR	{.333,.333}
 #define C_DEFMATERIAL	{NULL,1,0.,C_DEFCOLOR,0.,C_DEFCOLOR,0.,C_DEFCOLOR,\
