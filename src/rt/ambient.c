@@ -43,9 +43,11 @@ static int  nunflshed = 0;	/* number of unflushed ambient values */
 #define	 newambval()	(AMBVAL *)bmalloc(sizeof(AMBVAL))
 
 #define	 newambtree()	(AMBTREE *)calloc(8, sizeof(AMBTREE))
+#define  freeambtree(t)	free((char *)(t))
 
 extern long  ftell(), lseek();
-static int  initambfile(), avsave(), avinsert();
+static int  initambfile(), avsave(), avinsert(), loadtree();
+static AMBVAL  *avstore();
 #ifdef  F_SETLKW
 static  aflock();
 #endif
@@ -54,6 +56,7 @@ static  aflock();
 setambres(ar)				/* set ambient resolution */
 int  ar;
 {
+	ambres = ar;			/* may be done already */
 						/* set min & max radii */
 	if (ar <= 0) {
 		minarad = 0.0;
@@ -69,6 +72,24 @@ int  ar;
 }
 
 
+resetambacc(newa)			/* change ambient accuracy setting */
+double  newa;
+{
+	AMBTREE  oldatrunk;
+
+	if (fabs(newa - ambacc) < 0.01)
+		return;			/* insignificant -- don't bother */
+	ambacc = newa;
+	if (ambacc <= FTINY)
+		return;			/* cannot build new tree */
+					/* else need to rebuild tree */
+	copystruct(&oldatrunk, &atrunk);
+	atrunk.alist = NULL;
+	atrunk.kid = NULL;
+	loadtree(&oldatrunk);
+}
+
+
 setambient(afile)			/* initialize calculation */
 char  *afile;
 {
@@ -78,13 +99,19 @@ char  *afile;
 	setambres(ambres);
 	if (afile == NULL)
 		return;
+	if (ambacc <= FTINY) {
+		sprintf(errmsg, "zero ambient accuracy so \"%s\" not loaded",
+				afile);
+		error(WARNING, errmsg);
+		return;
+	}
 						/* open ambient file */
 	if ((ambfp = fopen(afile, "r+")) != NULL) {
 		initambfile(0);
 		headlen = ftell(ambfp);
 		while (readambval(&amb, ambfp))
-			avinsert(&amb, &atrunk, thescene.cuorg,
-					thescene.cusize);
+			avinsert(avstore(&amb), &atrunk,
+					thescene.cuorg, thescene.cusize);
 						/* align */
 		fseek(ambfp, -((ftell(ambfp)-headlen)%AMBVALSIZ), 1);
 	} else if ((ambfp = fopen(afile, "w+")) != NULL)
@@ -338,7 +365,7 @@ static
 avsave(av)				/* insert and save an ambient value */
 AMBVAL	*av;
 {
-	avinsert(av, &atrunk, thescene.cuorg, thescene.cusize);
+	avinsert(avstore(av), &atrunk, thescene.cuorg, thescene.cusize);
 	if (ambfp == NULL)
 		return;
 	if (writambval(av, ambfp) < 0)
@@ -352,26 +379,37 @@ writerr:
 }
 
 
+static AMBVAL *
+avstore(aval)				/* allocate memory and store aval */
+register AMBVAL  *aval;
+{
+	register AMBVAL  *av;
+
+	if ((av = newambval()) == NULL)
+		error(SYSTEM, "out of memory in avstore");
+	copystruct(av, aval);
+	return(av);
+}
+
+
 static
-avinsert(aval, at, c0, s)		/* insert ambient value in a tree */
-AMBVAL	*aval;
+avinsert(av, at, c0, s)			/* insert ambient value in a tree */
+register AMBVAL	 *av;
 register AMBTREE  *at;
 FVECT  c0;
 double	s;
 {
 	FVECT  ck0;
 	int  branch;
-	register AMBVAL	 *av;
 	register int  i;
 
-	if ((av = newambval()) == NULL)
-		goto memerr;
-	copystruct(av, aval);
+	if (av->rad <= FTINY)
+		error(CONSISTENCY, "zero ambient radius in avinsert");
 	VCOPY(ck0, c0);
 	while (s*(OCTSCALE/2) > av->rad*ambacc) {
 		if (at->kid == NULL)
 			if ((at->kid = newambtree()) == NULL)
-				goto memerr;
+				error(SYSTEM, "out of memory in avinsert");
 		s *= 0.5;
 		branch = 0;
 		for (i = 0; i < 3; i++)
@@ -383,9 +421,23 @@ double	s;
 	}
 	av->next = at->alist;
 	at->alist = av;
-	return;
-memerr:
-	error(SYSTEM, "out of memory in avinsert");
+}
+
+
+static
+loadtree(at)				/* move tree to main store */
+register AMBTREE  *at;
+{
+	register AMBVAL  *av;
+	register int  i;
+					/* transfer values at this node */
+	for (av = at->alist; av != NULL; av = at->alist) {
+		at->alist = av->next;
+		avinsert(av, &atrunk, thescene.cuorg, thescene.cusize);
+	}
+	for (i = 0; i < 8; i++)		/* transfer and free children */
+		loadtree(at->kid+i);
+	freeambtree(at->kid);
 }
 
 
@@ -431,7 +483,8 @@ ambsync()			/* synchronize ambient file */
 			error(SYSTEM, "fseek failed in ambsync");
 		while (n >= AMBVALSIZ) {	/* load contributed values */
 			readambval(&avs, ambinp);
-			avinsert(&avs,&atrunk,thescene.cuorg,thescene.cusize);
+			avinsert(avstore(&avs), &atrunk,
+					thescene.cuorg, thescene.cusize);
 			n -= AMBVALSIZ;
 		}
 		if (n)				/* alignment */
