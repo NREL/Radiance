@@ -248,6 +248,7 @@ proc helpupdate {} {			# update help text window
 		set curhelp(next) "$cat $top"
 		.helpwin.but.next configure -state normal
 	} else {
+		set curhelp(next) {}
 		.helpwin.but.next configure -state disabled
 	}
 	.helpwin.txt configure -state disabled
