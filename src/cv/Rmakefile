@@ -17,7 +17,8 @@ INSTDIR = /usr/local/bin
 
 LIBDIR = /usr/local/lib/ray
 
-PROGS = thf2rad ies2rad arch2rad nff2rad lampcolor tmesh2rad obj2rad mgf2rad
+PROGS = thf2rad ies2rad arch2rad nff2rad lampcolor tmesh2rad obj2rad \
+mgf2rad rad2mgf
 
 LIBFILES = source.cal tilt.cal lamp.tab tmesh.cal
 
@@ -56,6 +57,9 @@ obj2rad:	obj2rad.o trans.o tmesh.o
 mgf2rad:	MGF_LIB mgf2rad.o tmesh.o
 	$(CC) $(CFLAGS) -o mgf2rad mgf2rad.o tmesh.o -lmgf -lrt $(MLIB)
 
+rad2mgf:	rad2mgf.o
+	$(CC) $(CFLAGS) -o rad2mgf rad2mgf.o -lrt $(MLIB)
+
 MGF_LIB:
 	cd mgflib ; \
 	make libmgf.a CFLAGS="$(OPT) $(MACH) '-DMEM_PTR=char *' -DNOPROTO" ; \
@@ -76,3 +80,6 @@ obj2rad.o tmesh2rad.o:	tmesh.h \
 obj2rad.o:	trans.h
 
 tmesh.o:	tmesh.h ../common/fvect.h
+
+rad2mgf.o:	../common/fvect.h ../common/object.h ../common/color.h \
+../common/lookup.h
