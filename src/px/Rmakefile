@@ -100,8 +100,8 @@ psign:	psign.o
 d48c:	d48c.o
 	$(CC) $(CFLAGS) -o d48c d48c.o -lrt
 
-ra_gif:	ra_gif.o clrtab.o
-	$(CC) $(CFLAGS) -o ra_gif ra_gif.o clrtab.o -lrt $(MLIB)
+ra_gif:	ra_gif.o clrtab.o neuclrtab.o
+	$(CC) $(CFLAGS) -o ra_gif ra_gif.o clrtab.o neuclrtab.o -lrt $(MLIB)
 
 ra_pr:	ra_pr.o ciq.o cut.o closest.o biq.o
 	$(CC) $(CFLAGS) -o ra_pr ra_pr.o ciq.o cut.o closest.o \
@@ -119,8 +119,8 @@ ra_ps:	ra_ps.o
 ra_ppm:		ra_ppm.o
 	$(CC) $(CFLAGS) -o ra_ppm ra_ppm.o -lrt $(MLIB)
 
-ra_t8:	ra_t8.o clrtab.o
-	$(CC) $(CFLAGS) -o ra_t8 ra_t8.o clrtab.o -lrt $(MLIB)
+ra_t8:	ra_t8.o clrtab.o neuclrtab.o
+	$(CC) $(CFLAGS) -o ra_t8 ra_t8.o clrtab.o neuclrtab.o -lrt $(MLIB)
 
 ra_t16: ra_t16.o
 	$(CC) $(CFLAGS) -o ra_t16 ra_t16.o -lrt $(MLIB)
@@ -186,19 +186,25 @@ xshowtrace:	xshowtrace.o x11findwind.o
 	$(CC) $(CFLAGS) -o xshowtrace xshowtrace.o \
 x11findwind.o -lrt $(MLIB) -lX11
 
+nclrtab.o:	neuclrtab.o
+	ln neuclrtab.c nclrtab.c
+	$(CC) $(CFLAGS) -DCOMPAT_MODE -c nclrtab.c
+	rm -f nclrtab.c
+
 pcomb.o:	../common/calcomp.h
 
 panim.o:	client/scan.h ../common/color.h ../common/random.h
 
 pf2.o bnoise.o ra_ps.o ra_t16.o:	../common/random.h
 
-pfilt.o pf2.o pf3.o ttyimage.o t4027.o mt160r.o psum.o psign.o protate.o \
+neuclrtab.o clrtab.o pfilt.o pf2.o pf3.o ttyimage.o t4027.o mt160r.o \
+psum.o psign.o protate.o \
 pextrem.o ra_pr24.o d48c.o aedimage.o pcompos.o color.o resolu.o colrops.o \
 pflip.o greyscale.o ra_t8.o glimage.o ra_bn.o ra_t16.o ra_tiff.o ra_pict.o \
 ra_ps.o ra_pr.o pvalue.o pcomb.o pinterp.o ximage.o:	../common/color.h
 
-pvalue.o protate.o biq.o ciq.o pinterp.o ximage.o psign.o xshowtrace.o \
-pcomb.o pfilt.o pf3.o image.o:	../common/standard.h \
+neuclrtab.o pvalue.o protate.o biq.o ciq.o pinterp.o ximage.o psign.o \
+xshowtrace.o clrtab.o pcomb.o pfilt.o pf3.o image.o:	../common/standard.h \
 ../common/mat4.h ../common/fvect.h
 
 ximage.o xraster.o:	xraster.h

@@ -33,7 +33,9 @@ extern long  ftell();
 
 long  picstart;
 
-extern BYTE  clrtab[][3];
+BYTE  clrtab[256][3];
+
+extern int  samplefac;
 
 extern int  getgifpix();
 
@@ -67,6 +69,7 @@ char  *argv[];
 	setmode(fileno(stdout), O_BINARY);
 #endif
 	progname = argv[0];
+	samplefac = 0;
 
 	for (i = 1; i < argc; i++)
 		if (argv[i][0] == '-')
@@ -87,6 +90,9 @@ char  *argv[];
 				if (argv[i+1][0] != '+' && argv[i+1][0] != '-')
 					goto userr;
 				bradj = atoi(argv[++i]);
+				break;
+			case 'n':
+				samplefac = atoi(argv[++i]);
 				break;
 			default:
 				goto userr;
@@ -162,7 +168,10 @@ int  y;
 		shiftcolrs(scanln, xmax, bradj);
 	colrs_gambs(scanln, xmax);
 	if (pixscan != NULL)
-		dith_colrs(pixscan, scanln, xmax);
+		if (samplefac)
+			neu_dith_colrs(pixscan, scanln, xmax);
+		else
+			dith_colrs(pixscan, scanln, xmax);
 }
 
 
@@ -171,21 +180,30 @@ int	nc;
 {
 	register int	i;
 
-	new_histo();
+	if ((samplefac ? neu_init(xmax*ymax) : new_histo(xmax*ymax)) == -1)
+		goto memerr;
 	for (i = 0; i < ymax; i++) {
 		getrow(i);
-		cnt_colrs(scanln, xmax);
+		if (samplefac)
+			neu_colrs(scanln, xmax);
+		else
+			cnt_colrs(scanln, xmax);
 	}
-	new_clrtab(nc);
+	if (samplefac)
+		neu_clrtab(nc);
+	else
+		new_clrtab(nc);
 	for (i = 0; i < nc; i++) {
 		rmap[i] = clrtab[i][RED];
 		gmap[i] = clrtab[i][GRN];
 		bmap[i] = clrtab[i][BLU];
 	}
-	if (dither && (pixscan = (BYTE *)malloc(xmax)) == NULL) {
-		fprintf(stderr, "%s: out of memory\n", progname);
-		exit(1);
-	}
+	if (dither && (pixscan = (BYTE *)malloc(xmax)) == NULL)
+		goto memerr;
+	return;
+memerr:
+	fprintf(stderr, "%s: out of memory\n", progname);
+	exit(1);
 }
 
 
@@ -213,7 +231,7 @@ int  x, y;
 		return(normbright(scanln[x]));
 	if (pixscan != NULL)
 		return(pixscan[x]);
-	return(map_pixel(scanln[x]));
+	return(samplefac ? neu_map_pixel(scanln[x]) : map_pixel(scanln[x]));
 }
 
 

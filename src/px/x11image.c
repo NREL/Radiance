@@ -113,7 +113,7 @@ char  *progname;
 
 char  errmsg[128];
 
-extern BYTE  clrtab[256][3];		/* global color map */
+BYTE  clrtab[256][3];			/* global color map */
 
 extern long  ftell();
 
@@ -999,7 +999,8 @@ getmapped()			/* get color-mapped data */
 					/* set gamma correction */
 	setcolrgam(gamcor);
 					/* make histogram */
-	new_histo();
+	if (new_histo((long)xmax*ymax) == -1)
+		quiterr("cannot initialize histogram");
 	for (y = 0; y < ymax; y++) {
 		if (getscan(y) < 0)
 			break;
