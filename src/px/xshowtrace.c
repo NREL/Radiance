@@ -12,15 +12,22 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "standard.h"
 #include "view.h"
+#include "resolu.h"
 #include <X11/Xlib.h>
 
 #define MAXDEPTH	32		/* ridiculous ray tree depth */
+
+#ifdef  SMLFLT
+#define  sscanvec(s,v)	(sscanf(s,"%f %f %f",v,v+1,v+2)==3)
+#else
+#define  sscanvec(s,v)	(sscanf(s,"%lf %lf %lf",v,v+1,v+2)==3)
+#endif
 
 char	rtcom[] = "rtrace -h- -otp -fa -x 1";
 char	xicom[] = "ximage";
 
 VIEW	ourview = STDVIEW;		/* view for picture */
-int	xres, yres;
+RESOLU	ourres;				/* picture resolution */
 
 char	*progname;			/* program name */
 
@@ -31,7 +38,7 @@ FILE	*pin;				/* input stream */
 Display	*theDisplay = NULL;		/* connection to server */
 
 struct node {				/* ray tree node */
-	FVECT	ipt;
+	int	ipt[2];
 	struct node	*sister;
 	struct node	*daughter;
 };
@@ -61,7 +68,7 @@ char	*argv[];
 	}
 	picture = argv[argc-1];
 					/* get the viewing parameters */
-	if (viewfile(picture, &ourview, &xres, &yres) <= 0 ||
+	if (viewfile(picture, &ourview, &ourres) <= 0 ||
 			setview(&ourview) != NULL) {
 		fprintf(stderr, "%s: cannot get view from \"%s\"\n",
 				progname, picture);
@@ -153,14 +160,19 @@ struct node	*tp;
 
 
 strtoipt(ipt, str)		/* convert string x y z to image point */
-FVECT	ipt;
+int	ipt[2];
 char	*str;
 {
-	FVECT	pt;
+	FVECT	im_pt, pt;
 
-	if (sscanf(str, "%lf %lf %lf", &pt[0], &pt[1], &pt[2]) != 3)
+	if (!sscanvec(str, pt))
 		return(-1);
-	viewloc(ipt, &ourview, pt);
+	if (DOT(pt,pt) <= FTINY)		/* origin is really infinity */
+		ipt[0] = ipt[1] = -1;			/* null vector */
+	else {
+		viewloc(im_pt, &ourview, pt);
+		loc2pix(ipt, &ourres, im_pt[0], im_pt[1]);
+	}
 	return(0);
 }
 
@@ -174,7 +186,7 @@ int	xoff, yoff;
 
 
 setvec(ipt)			/* set up vector drawing for pick */
-double	ipt[2];
+int	ipt[2];
 {
 	XWindowAttributes	wa;
 	XColor	xc;
@@ -189,8 +201,8 @@ double	ipt[2];
 		exit(1);
 	}
 	XQueryPointer(theDisplay, gwind, &rw, &cw, &rx, &ry, &wx, &wy, &pm);
-	xoff = wx - ipt[0]*xres;
-	yoff = wy - (1.-ipt[1])*yres;
+	xoff = wx - ipt[0];
+	yoff = wy - ipt[1];
 					/* set graphics context */
 	if (vecGC == 0) {
 		XGetWindowAttributes(theDisplay, gwind, &wa);
@@ -208,11 +220,13 @@ double	ipt[2];
 
 
 vector(ip1, ip2)		/* draw a vector */
-double	ip1[2], ip2[2];
+int	ip1[2], ip2[2];
 {
+	if (ip2[0] == -1 && ip2[1] == -1)
+		return;			/* null vector */
 	XDrawLine(theDisplay, gwind, vecGC,
-			(int)(ip1[0]*xres)+xoff, (int)((1.-ip1[1])*yres)+yoff,
-			(int)(ip2[0]*xres)+xoff, (int)((1.-ip2[1])*yres)+yoff);
+			ip1[0]+xoff, ip1[1]+yoff,
+			ip2[0]+xoff, ip2[1]+yoff);
 	if (slow) {
 		XFlush(theDisplay);
 		sleep(1);
