@@ -205,20 +205,8 @@ pixFlush()			/* done with beams -- flush pixel values */
 	reset_flags();			/* set occupancy flags */
 	meet_neighbors(kill_occl);	/* eliminate occlusion errors */
 	reset_flags();			/* reset occupancy flags */
-	if (pixWeight[0] <= FTINY) {	/* initialize weighting function */
-		register int	i, j, r2;
-		double	d;
-		for (i = 1; i <= MAXRAD; i++)
-			for (j = 0; j <= i; j++) {
-				r2 = i*i + j*j;
-				if (r2 >= MAXRAD2) break;
-				d = sqrt((double)r2);
-				pixWeight[r2] = G0NORM/d;
-				isqrttab[r2] = d + 0.99;
-			}
-		pixWeight[0] = 1.;
-		isqrttab[0] = 0;
-	}
+	if (pixWeight[0] <= FTINY)
+		init_wfunc();		/* initialize weighting function */
 	meet_neighbors(grow_samp);	/* grow valid samples over image */
 	free((char *)pixFlags);		/* free pixel flags */
 	pixFlags = NULL;
@@ -227,7 +215,7 @@ pixFlush()			/* done with beams -- flush pixel values */
 
 reset_flags()			/* allocate/set/reset occupancy flags */
 {
-	register int	p;
+	register int4	p;
 
 	if (pixFlags == NULL) {
 		pixFlags = (int4 *)calloc(FL4NELS(hres*vres), sizeof(int4));
@@ -237,6 +225,25 @@ reset_flags()			/* allocate/set/reset occupancy flags */
 	for (p = hres*vres; p--; )
 		if (myweight[p] > FTINY)
 			SET4(pixFlags, p);
+}
+
+
+init_wfunc()			/* initialize weighting function */
+{
+	register int	i, j;
+	register int4	r2;
+	register double	d;
+
+	for (i = 1; i <= MAXRAD; i++)
+		for (j = 0; j <= i; j++) {
+			r2 = i*i + j*j;
+			if (r2 >= MAXRAD2) break;
+			d = sqrt((double)r2);
+			pixWeight[r2] = G0NORM/d;
+			isqrttab[r2] = d + 0.99;
+		}
+	pixWeight[0] = 1.;
+	isqrttab[0] = 0;
 }
 
 
