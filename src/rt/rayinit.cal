@@ -3,10 +3,6 @@
 {
 	Initialization file for Radiance.
 
-	4/14/86
-}
-
-{
 	The following are predefined:
 
 	Dx, Dy, Dz			- ray direction
@@ -134,3 +130,14 @@ turbulenceb(x,y,z,s) = if( s-1.01, 0,
 turbulencec(x,y,z,s) = if( s-1.01, 0,
 			sgn(noise3(x/s,y/s,z/s))*noise3c(x/s,y/s,z/s) +
 			turbulencec(x,y,z,2*s) );
+
+			{ Local (u,v) coordinates for planar surfaces }
+crosslen`private = Nx*Nx + Ny*Ny;
+			{ U is distance from origin in XY-plane }
+U = if( crosslen`private - FTINY,
+		(Py*Nx - Px*Ny)/crosslen`private,
+		Px);
+			{ V is defined so that N = U x V }
+V = if( crosslen`private - FTINY,
+		Pz - Nz*(Px*Nx + Py*Ny)/crosslen`private,
+		Py);
