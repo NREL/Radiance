@@ -243,9 +243,7 @@ FVECT	wp;
 {
 	FVECT	vt;
 
-	vt[0] = wp[0] - hp->orig[0];
-	vt[1] = wp[1] - hp->orig[1];
-	vt[2] = wp[2] - hp->orig[2];
+	VSUB(vt, wp, hp->orig);
 	gp[0] = DOT(vt, hp->wg[0]);
 	gp[1] = DOT(vt, hp->wg[1]);
 	gp[2] = DOT(vt, hp->wg[2]);
@@ -290,9 +288,7 @@ BYTE	r[2][2];
 					d0*cp[1][j] + d1*cp[2][j];
 	}
 	VCOPY(ro, p[0]);		/* assign ray origin and direction */
-	rd[0] = p[1][0] - p[0][0];
-	rd[1] = p[1][1] - p[0][1];
-	rd[2] = p[1][2] - p[0][2];
+	VSUB(rd, p[1], p[0]);
 	return(normalize(rd));		/* return maximum inside distance */
 }
 
@@ -342,15 +338,11 @@ FVECT	ro, rd;		/* normalization of rd affects distances */
 	if (gc[0].w < 0 | gc[1].w < 0)		/* paranoid check */
 		return(FHUGE);
 						/* compute intersections */
-	for (i = 0; i < 3; i++) {
-		p[0][i] = ro[i] + rd[i]*t0;
-		p[1][i] = ro[i] + rd[i]*t1;
-	}
+	VSUM(p[0], ro, rd, t0);
+	VSUM(p[1], ro, rd, t1);
 					/* now, compute grid coordinates */
 	for (i = 0; i < 2; i++) {
-		vt[0] = p[i][0] - hp->orig[0];
-		vt[1] = p[i][1] - hp->orig[1];
-		vt[2] = p[i][2] - hp->orig[2];
+		VSUB(vt, p[i], hp->orig);
 		v = hp->wg[hdwg0[gc[i].w]];
 		d = DOT(vt, v);
 		if (d < 0. || (gc[i].i[0] = d) >= hp->grid[hdwg0[gc[i].w]])
