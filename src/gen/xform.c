@@ -248,17 +248,17 @@ FILE  *fin;
 				progname, fname, typ);
 		exit(1);
 	}
-	if (issurface(fn))
+	if (ismodifier(fn))
+		printf("\n%s %s ", nam, typ);
+	else
 		printf("\n%s %s ", newmod != NULL ? newmod : nam,
 				invert ? ofun[tinvers[fn]].funame : typ);
-	else
-		printf("\n%s %s ", nam, typ);
 						/* object name */
 	fgetword(nam, sizeof(nam), fin);
-	if (idprefix != NULL && issurface(fn))
-		printf("%s.%s\n", idprefix, nam);
-	else
+	if (idprefix == NULL || ismodifier(fn))
 		printf("%s\n", nam);
+	else
+		printf("%s.%s\n", idprefix, nam);
 						/* transform arguments */
 	if ((*ofun[fn].funp)(fin) < 0) {
 		fprintf(stderr, "%s: (%s): bad %s \"%s\"\n",
