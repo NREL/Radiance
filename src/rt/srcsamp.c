@@ -24,7 +24,7 @@ register SRCINDEX  *si;		/* source index (modified to current) */
 	FVECT  vpos;
 	double  d;
 	register int  i;
-tryagain:
+
 	while (++si->sp >= si->np) {	/* get next sample */
 		if (++si->sn >= nsources)
 			return(0.0);	/* no more */
@@ -74,16 +74,12 @@ tryagain:
 			r->rdir[i] -= r->rorg[i];
 					/* compute distance */
 	if ((d = normalize(r->rdir)) == 0.0)
-		goto tryagain;	/* at source! */
+		return(nextssamp(r, si));	/* at source! */
 
 					/* compute sample size */
 	si->dom  = source[si->sn].ss2;
 	if (source[si->sn].sflags & SFLAT) {
 		si->dom *= sflatform(si->sn, r->rdir);
-		if (si->dom <= FTINY) {		/* behind source */
-			si->np = 0;
-			goto tryagain;
-		}
 		si->dom *= (double)(size[SU]*size[SV])/(MAXSPART*MAXSPART);
 	} else if (source[si->sn].sflags & SCYL) {
 		si->dom *= scylform(si->sn, r->rdir);
@@ -165,8 +161,8 @@ register RAY  *r;
 		return;
 	}
 	safedist2 *= 4.*r->rweight*r->rweight/(srcsizerat*srcsizerat);
-	if (dist2 <= 4.*rad2 ||		/* point too close to subdivide? */
-			dist2cent >= safedist2) {	/* too far? */
+	if (dist2 <= 4.*rad2 ||		/* point too close to subdivide */
+			dist2cent >= safedist2) {	/* or too far */
 		setpart(si->spt, 0, S0);
 		si->np = 1;
 		return;
@@ -218,19 +214,29 @@ double  d2;
 
 flatpart(si, r)				/* partition a flat source */
 register SRCINDEX  *si;
-RAY  *r;
+register RAY  *r;
 {
 	register double  *vp;
+	FVECT  v;
 	double  du2, dv2;
 	int  pi;
 
+	clrpart(si->spt);
+	vp = source[si->sn].sloc;
+	v[0] = r->rorg[0] - vp[0];
+	v[1] = r->rorg[1] - vp[1];
+	v[2] = r->rorg[2] - vp[2];
+	vp = source[si->sn].snorm;
+	if (DOT(v,vp) <= FTINY) {	/* behind source */
+		si->np = 0;
+		return;
+	}
 	dv2 = 2.*r->rweight/srcsizerat;
 	dv2 *= dv2;
 	vp = source[si->sn].ss[SU];
 	du2 = dv2 * DOT(vp,vp);
 	vp = source[si->sn].ss[SV];
 	dv2 *= DOT(vp,vp);
-	clrpart(si->spt);
 	pi = 0;
 	si->np = flt_partit(r->rorg, si->spt, &pi, MAXSPART,
 		source[si->sn].sloc,
