@@ -18,8 +18,33 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "resolu.h"
 #include "pmap.h"
 
-				/* MacBeth colors (CIE 1931, absolute white) */
-				/* computed from spectral measurements */
+				/* MacBeth colors */
+#define	DarkSkin	0
+#define	LightSkin	1
+#define	BlueSky		2
+#define	Foliage		3
+#define	BlueFlower	4
+#define	BluishGreen	5
+#define	Orange		6
+#define	PurplishBlue	7
+#define	ModerateRed	8
+#define	Purple		9
+#define	YellowGreen	10
+#define	OrangeYellow	11
+#define	Blue		12
+#define	Green		13
+#define	Red		14
+#define	Yellow		15
+#define	Magenta		16
+#define	Cyan		17
+#define	White		18
+#define	Neutral8	19
+#define	Neutral65	20
+#define	Neutral5	21
+#define	Neutral35	22
+#define	Black		23
+				/* computed from 5nm spectral measurements */
+				/* CIE 1931 2 degree obs, equal-energy white */
 float	mbxyY[24][3] = {
 		{0.462, 0.3769, 0.0932961},	/* DarkSkin */
 		{0.4108, 0.3542, 0.410348},	/* LightSkin */
@@ -50,11 +75,20 @@ float	mbxyY[24][3] = {
 COLOR	mbRGB[24];		/* MacBeth RGB values */
 
 #define	NMBNEU		6	/* Number of MacBeth neutral colors */
-short	mbneu[NMBNEU] = {23,22,21,20,19,18};
-#define NMBMOD		16	/* Number of MacBeth unsaturated colors */
-short	mbmod[NMBMOD] = {0,1,2,3,4,5,6,7,8,9,10,11,19,20,21,22};
-#define NMBSAT		6	/* Number of MacBeth saturated colors */
-short	mbsat[NMBSAT] = {14,12,13,15,16,17};
+short	mbneu[NMBNEU] = {Black,Neutral35,Neutral5,Neutral65,Neutral8,White};
+
+#define NMBMOD		17	/* Number of MacBeth unsaturated colors */
+short	mbmod[NMBMOD] = {
+		DarkSkin,LightSkin,BlueSky,Foliage,BlueFlower,BluishGreen,
+		Orange,PurplishBlue,ModerateRed,Purple,YellowGreen,
+		Black,Neutral35,Neutral5,Neutral65,Neutral8,White
+	};
+
+#define NMBSAT		8	/* Number of MacBeth saturated colors */
+short	mbsat[NMBSAT] = {
+		Red,Green,Blue,Magenta,Yellow,Cyan,
+		Orange,OrangeYellow
+	};
 
 int	xmax, ymax;		/* input image dimensions */
 int	bounds[4][2];		/* image coordinates of chart corners */
@@ -65,7 +99,7 @@ COLOR	picRGB[24];		/* picture colors */
 COLOR	bramp[NMBNEU][2];	/* brightness ramp (per primary) */
 double	solmat[3][3];		/* color mapping matrix */
 
-FILE	*debugfp = NULL;
+FILE	*debugfp = NULL;	/* debug output picture */
 char	*progname;
 
 extern char	*malloc();
@@ -126,6 +160,9 @@ char	**argv;
 	init();				/* initialize */
 	getcolors();			/* get picture colors */
 	compute();			/* compute color mapping */
+					/* print comment */
+	printf("{ Color correction file computed by %s }\n", progname);
+	printf("{ from scanned MacBetch color chart %s }\n", argv[1]);
 	putmapping();			/* put out color mapping */
 	putdebug();			/* put out debug picture */
 	exit(0);
@@ -315,8 +352,7 @@ putmapping()			/* put out color mapping for pcomb -f */
 }
 
 
-#if NMBMOD == 3
-compsoln(cin, cout, n)		/* solve 3x3 system */
+compsoln(cin, cout, n)		/* solve 3xN system using least-squares */
 COLOR	cin[], cout[];
 int	n;
 {
@@ -324,15 +360,28 @@ int	n;
 	double	mat[3][3], invmat[3][3];
 	double	det;
 	double	colv[3], rowv[3];
-	register int	i, j;
+	register int	i, j, k;
 
-	if (n != 3) {
+	if (n < 3 | n > NMBMOD) {
 		fprintf(stderr, "%s: inconsistent code!\n", progname);
 		exit(1);
 	}
-	for (i = 0; i < 3; i++)
-		for (j = 0; j < 3; j++)
-			mat[i][j] = colval(cin[j],i);
+	if (n == 3)
+		for (i = 0; i < 3; i++)
+			for (j = 0; j < 3; j++)
+				mat[i][j] = colval(cin[j],i);
+	else {				/* compute A^t A */
+		for (i = 0; i < 3; i++)
+			for (j = i; j < 3; j++) {
+				mat[i][j] = 0.;
+				for (k = 0; k < n; k++)
+					mat[i][j] += colval(cin[k],i) *
+							colval(cin[k],j);
+			}
+		for (i = 1; i < 3; i++)		/* using symmetry */
+			for (j = 0; j < i; j++)
+				mat[i][j] = mat[j][i];
+	}
 	det = mx3d_adjoint(mat, invmat);
 	if (fabs(det) < 1e-4) {
 		fprintf(stderr, "%s: cannot compute color mapping\n",
@@ -346,58 +395,21 @@ int	n;
 		for (j = 0; j < 3; j++)
 			invmat[i][j] /= det;
 	for (i = 0; i < 3; i++) {
-		for (j = 0; j < 3; j++)
-			colv[j] = colval(cout[j],i);
+		if (n == 3)
+			for (j = 0; j < 3; j++)
+				colv[j] = colval(cout[j],i);
+		else
+			for (j = 0; j < 3; j++) {
+				colv[j] = 0.;
+				for (k = 0; k < n; k++)
+					colv[j] += colval(cout[k],i) *
+							colval(cin[k],j);
+			}
 		mx3d_transform(colv, invmat, rowv);
 		for (j = 0; j < 3; j++)
 			solmat[i][j] = rowv[j];
 	}
 }
-#else
-compsoln(cin, cout, n)		/* solve 3xN system (N > 3) */
-COLOR	cin[], cout[];
-int	n;
-{
-	double	*au[NMBMOD], *v[3], vv[3][3], auv[NMBMOD][3], w[3];
-	double	b[NMBMOD];
-	register int	i, j;
-
-	if (n > NMBMOD) {
-		fprintf(stderr, "%s: inconsistent code!\n", progname);
-		exit(1);
-	}
-	for (i = 0; i < n; i++)		/* assign rectangular matrix A */
-		for (j = 0; j < 3; j++)
-			auv[i][j] = colval(cin[i],j);
-				/* svdcmp indexing requires pointer offsets */
-	for (j = 0; j < 3; j++)
-		v[j] = vv[j] - 1;
-	for (i = 0; i < n; i++)
-		au[i] = auv[i] - 1;
-				/* compute singular value decomposition */
-fprintf(stderr, "A:\n");
-for (i = 1; i <= n; i++)
-fprintf(stderr, "%g %g %g\n", (au-1)[i][1], (au-1)[i][2], (au-1)[i][3]);
-	svdcmp(au-1, n, 3, w-1, v-1);
-fprintf(stderr, "U:\n");
-for (i = 0; i < n; i++)
-fprintf(stderr, "%g %g %g\n", auv[i][0], auv[i][1], auv[i][2]);
-fprintf(stderr, "V:\n");
-for (i = 0; i < 3; i++)
-fprintf(stderr, "%g %g %g\n", vv[i][0], vv[i][1], vv[i][2]);
-fprintf(stderr, "W: %g %g %g\n", w[0], w[1], w[2]);
-				/* zero out small weights */
-	for (j = 0; j < 3; j++)
-		if (w[j] < 1e-4)
-			w[j] = 0.;
-				/* back substitution for each row vector */
-	for (j = 0; j < 3; j++) {
-		for (i = 0; i < n; i++)
-			b[i] = colval(cout[i],j);
-		svbksb(au-1, w-1, v-1, n, 3, b-1, solmat[j]-1);
-	}
-}
-#endif
 
 
 cvtcolor(cout, cin)		/* convert color according to our mapping */
