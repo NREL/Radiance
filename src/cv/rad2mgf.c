@@ -426,7 +426,7 @@ o_face(mod, typ, id, fa)		/* print out a polygon */
 char	*mod, *typ, *id;
 FUNARGS	*fa;
 {
-	char	entbuf[2048];
+	char	entbuf[2048], *linestart;
 	register char	*cp;
 	register int	i;
 
@@ -434,10 +434,15 @@ FUNARGS	*fa;
 		return(-1);
 	setmat(mod);
 	setobj(id);
-	cp = entbuf;
+	cp = linestart = entbuf;
 	*cp++ = 'f';
 	for (i = 0; i < fa->nfargs; i += 3) {
 		*cp++ = ' ';
+		if (cp - linestart > 72) {
+			*cp++ = '\\'; *cp++ = '\n';
+			linestart = cp;
+			*cp++ = ' '; *cp++ = ' ';
+		}
 		getvertid(cp, fa->farg + i);
 		while (*cp)
 			cp++;
