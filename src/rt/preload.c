@@ -1,4 +1,4 @@
-/* Copyright (c) 1993 Regents of the University of California */
+/* Copyright (c) 1996 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -14,6 +14,8 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "face.h"
 #include "cone.h"
 #include "instance.h"
+#include "color.h"
+#include "data.h"
 
 
 int
@@ -34,9 +36,34 @@ register OBJREC	*op;
 	case OBJ_INSTANCE:	/* octree instance */
 		getinstance(op, IO_ALL);
 		return(1);
+	case PAT_CPICT:		/* color picture */
+		if (op->oargs.nsargs < 4)
+			goto sargerr;
+		getpict(op->oargs.sarg[3]);
+		return(1);
+	case PAT_CDATA:		/* color data */
+		/* FALL THROUGH */
+	case TEX_DATA:		/* texture data */
+		if (op->oargs.nsargs < 6)
+			goto sargerr;
+		getdata(op->oargs.sarg[3]);
+		getdata(op->oargs.sarg[4]);
+		getdata(op->oargs.sarg[5]);
+		return(1);
+	case PAT_BDATA:		/* brightness data */
+		/* FALL THROUGH */
+	case MAT_PDATA:		/* plastic BRDF data */
+	case MAT_MDATA:		/* metal BRDF data */
+	case MAT_TDATA:		/* trans BRDF data */
+		if (op->oargs.nsargs < 2)
+			goto sargerr;
+		getdata(op->oargs.sarg[1]);
+		return(1);
 	}
-			/* don't bother with non-surfaces -- too tricky */
+			/* don't bother with others -- too tricky */
 	return(0);
+sargerr:
+	objerror(op, USER, "too few string arguments");
 }
 
 
