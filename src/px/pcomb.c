@@ -42,6 +42,8 @@ char	*vcolout[3] = {"ro", "go", "bo"};
 
 int	nowarn = 0;			/* no warning messages? */
 
+int	original = 0;			/* origninal values? */
+
 int	xres=0, yres=0;			/* picture resolution */
 
 int	xpos, ypos;			/* picture position */
@@ -50,8 +52,23 @@ int	xpos, ypos;			/* picture position */
 tputs(s)			/* put out string preceded by a tab */
 char	*s;
 {
+	double	d;
+	COLOR	ctmp;
+				/* echo header line */
 	putchar('\t');
 	fputs(s, stdout);
+	if (!original)
+		return;
+				/* check for exposure */
+	if (isexpos(s)) {
+		d = 1.0/exposval(s);
+		scalecolor(input[nfiles].coef, d);
+	} else if (iscolcor(s)) {
+		colcorval(ctmp, s);
+		colval(input[nfiles].coef,RED) /= colval(ctmp,RED);
+		colval(input[nfiles].coef,GRN) /= colval(ctmp,GRN);
+		colval(input[nfiles].coef,BLU) /= colval(ctmp,BLU);
+	}
 }
 
 
@@ -83,6 +100,9 @@ char	*argv[];
 				break;
 			case 'w':
 				nowarn = !nowarn;
+				break;
+			case 'o':
+				original = !original;
 				break;
 			case 'f':
 				fcompile(argv[++a]);
@@ -159,7 +179,8 @@ getfiles:
 usage:
 	eputs("Usage: ");
 	eputs(argv[0]);
-eputs(" [-w][-x xr][-y yr][-e expr][-f file] [ [-s f][-c r g b] picture ..]\n");
+	eputs(
+" [-w][-h][-x xr][-y yr][-e expr][-f file] [ [-s f][-c r g b] pic ..]\n");
 	quit(1);
 }
 
@@ -197,6 +218,8 @@ combine()			/* combine pictures */
 		    }
 	    varset(vypos, (double)ypos);
 	    for (xpos = 0; xpos < xres; xpos++) {
+		for (i = 0; i < nfiles; i++)
+			multcolor(input[i].scan[xpos],input[i].coef);
 		varset(vxpos, (double)xpos);
 		eclock++;
 		if (brtdef != NULL) {
@@ -212,7 +235,6 @@ combine()			/* combine pictures */
 			    colval(scanout[xpos],j) = 0.0;
 			    for (i = 0; i < nfiles; i++)
 				colval(scanout[xpos],j) +=
-					colval(input[i].coef,j) *
 					colval(input[i].scan[xpos],j);
 			}
 			if (colval(scanout[xpos],j) < 0.0)
