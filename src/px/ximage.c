@@ -37,7 +37,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #define  FONTNAME	"9x15"		/* text font we'll use */
 
-#define  CTRL(c)	('c'-'@')
+#define  CTRL(c)	((c)-'@')
 
 #define  BORWIDTH	5		/* border width */
 #define  BARHEIGHT	25		/* menu bar size */
@@ -367,7 +367,7 @@ XKeyEvent  *ekey;
 		return(0);
 	switch (*cp) {			/* interpret command */
 	case 'q':
-	case CTRL(D):				/* quit */
+	case CTRL('D'):				/* quit */
 		quit(0);
 	case '\n':
 	case '\r':
@@ -437,8 +437,8 @@ XKeyEvent  *ekey;
 		free_raster(ourras);
 		getras();
 	/* fall through */
-	case CTRL(R):				/* redraw */
-	case CTRL(L):
+	case CTRL('R'):				/* redraw */
+	case CTRL('L'):
 		unmap_rcolors(ourras);
 		XClear(wind);
 		return(redraw(0, 0, width, height));
