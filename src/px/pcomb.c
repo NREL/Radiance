@@ -534,6 +534,7 @@ register char	*nam;
 	if (ltick[fn] < eclock) {		/* need to compute? */
 		lorg[fn][0] = lorg[fn][1] = lorg[fn][2] = 0.0;
 		ldir[fn][0] = ldir[fn][1] = ldir[fn][2] = 0.0;
+		ldist[fn] = -1.0;
 		if (input[fn].vw.type == 0)
 			errno = EDOM;
 		else {
