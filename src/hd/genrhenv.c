@@ -42,6 +42,8 @@ char	*argv[];
 		error(SYSTEM, "out of memory in main");
 	while (n--)
 		gabmi[n].h = ourhp;
+	fputs("# ", stdout);
+	printargs(argc, argv, stdout);
 	hdcachesize = 0;
 	for (n = 0; n < 6; n++)
 		mkwall(argv[2], sect, n);
