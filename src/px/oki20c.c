@@ -66,9 +66,9 @@ char  *fname;
 		fprintf(stderr, "%s: resolution mismatch\n", fname);
 		return(-1);
 	}
-
-	fputs("\033A\014\0332", stdout);
-	
+				/* set line spacing (overlap for knitting) */
+	fputs("\0333\042", stdout);
+				/* put out scanlines */
 	for (i = yres-1; i >= 0; i--) {
 		if (freadscan(scanline, xres, input) < 0) {
 			fprintf(stderr, "%s: read error (y=%d)\n", fname, i);
@@ -76,7 +76,7 @@ char  *fname;
 		}
 		plotscan(scanline, xres, i);
 	}
-
+				/* advance page */
 	putchar('\f');
 	
 	fclose(input);
@@ -95,7 +95,7 @@ int  y;
 	register long  c;
 	register int  i, j;
 
-	if (bpos = y % 24) {
+	if (bpos = y % 23) {
 
 		for (j = 0; j < 3; j++)
 			for (i = 0; i < len; i++)
@@ -110,8 +110,13 @@ int  y;
 			putchar(len & 255);
 			putchar(len >> 8);
 			for (i = 0; i < len; i++) {
-				c = pat[i][j] | colbit(scan[i],i,j);
-				pat[i][j] = 0;
+				if (y!=0 & i+j) {	/* knit bit */
+					c = pat[i][j];
+					pat[i][j] = colbit(scan[i],i,j) << 23;
+				} else {
+					c = pat[i][j] | colbit(scan[i],i,j);
+					pat[i][j] = 0;
+				}
 				putchar(c>>16);
 				putchar(c>>8 & 255);
 				putchar(c & 255);
