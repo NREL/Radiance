@@ -227,7 +227,7 @@ double  coef;
 	else
 		backmat = foremat;
 					/* check */
-	if (backmat != foremat)
+	if ((backmat==0) != (foremat==0))
 		objerror(r->ro, USER, "mixing material with non-material");
 					/* sum perturbations */
 	for (i = 0; i < 3; i++)
