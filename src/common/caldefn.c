@@ -42,7 +42,7 @@ static double  dvalue();
 
 long  eclock = -1;			/* value storage timer */
 
-static char  context[MAXWORD];		/* current context path */
+static char  context[MAXWORD+1];	/* current context path */
 
 static VARDEF  *hashtbl[NHASH];		/* definition list */
 static int  htndx;			/* index for */		
@@ -195,12 +195,8 @@ register char  *ctx;
     if (*ctx != CNTXMARK)
 	*cpp++ = CNTXMARK;		/* make sure there's a mark */
     do {
-	if (cpp >= context+MAXWORD-1) {
-	    *cpp = '\0';
-	    wputs(context);
-	    wputs(": context path too long\n");
-	    return(NULL);
-	}
+	if (cpp >= context+MAXWORD)
+	    break;			/* just copy what we can */
 	if (isid(*ctx))
 	    *cpp++ = *ctx++;
 	else {
@@ -217,7 +213,7 @@ qualname(nam, lvl)		/* get qualified name */
 register char  *nam;
 int  lvl;
 {
-    static char  nambuf[MAXWORD];
+    static char  nambuf[MAXWORD+1];
     register char  *cp = nambuf, *cpp;
 				/* check for explicit local */
     if (*nam == CNTXMARK)
@@ -229,7 +225,7 @@ int  lvl;
 	return(lvl > 0 ? NULL : nam);
 				/* copy name to static buffer */
     while (*nam) {
-	if (cp >= nambuf+MAXWORD-1)
+	if (cp >= nambuf+MAXWORD)
 		goto toolong;
 	*cp++ = *nam++;
     }
@@ -248,17 +244,13 @@ int  lvl;
 	    ;
     }
     while (*cpp) {		/* copy context to static buffer */
-	if (cp >= nambuf+MAXWORD-1)
+	if (cp >= nambuf+MAXWORD)
 	    goto toolong;
 	*cp++ = *cpp++;
     }
-    *cp = '\0';
-    return(nambuf);		/* return qualified name */
 toolong:
     *cp = '\0';
-    eputs(nambuf);
-    eputs(": name too long\n");
-    quit(1);
+    return(nambuf);		/* return qualified name */
 }
 
 
@@ -543,7 +535,7 @@ getdefn()			/* A -> SYM = E1 */
 {
     register EPNODE  *ep1, *ep2;
 
-    if (!isalpha(nextc))
+    if (!isalpha(nextc) && nextc != CNTXMARK)
 	syntax("illegal variable name");
 
     ep1 = newnode();
