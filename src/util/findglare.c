@@ -31,6 +31,7 @@ char	*progname;			/* global argv[0] */
 
 ANGLE	glarang[180] = {AEND};		/* glare calculation angles */
 int	nglarangs = 0;
+double	maxtheta;			/* maximum angle (in radians) */
 int	hsize;				/* horizontal size */
 int	hlim;				/* central limit of horizontal */
 
@@ -193,15 +194,18 @@ init()				/* initialize global variables */
 						/* set direction vectors */
 	for (i = 0; glarang[i] != AEND; i++)
 		;
-	if (glarang[0] <= 0 || glarang[i-1] >= 180) {
+	if (i > 0 && glarang[0] <= 0 || glarang[i-1] >= 180) {
 		fprintf(stderr, "%s: glare angles must be between 1 and 179\n",
 				progname);
 		exit(1);
 	}
 	nglarangs = i;
 	/* nglardirs = 2*nglarangs + 1; */
-	/* maxtheta = (PI/180.)*glarang[nglarangs-1]; */
 	/* vsize = SAMPDENS; */
+	if (nglarangs > 0)
+		maxtheta = (PI/180.)*glarang[nglarangs-1];
+	else
+		maxtheta = 0.0;
 	hlim = SAMPDENS*maxtheta;
 	hsize = SAMPDENS + hlim;
 	if (hsize > (int)(PI*SAMPDENS))
@@ -335,5 +339,5 @@ printillum()			/* print out indirect illuminances */
 	for (i = 0; i < nglardirs; i++)
 		printf("\t%f\t%f\n", (180.0/PI)*indirect[i].theta,
 				PI * indirect[i].sum / (double)indirect[i].n);
-	printf("END indirect illuminances\n");
+	printf("END indirect illuminance\n");
 }

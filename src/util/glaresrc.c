@@ -52,26 +52,27 @@ analyze()			/* analyze our scene */
 	for (v = vsize; v >= -vsize; v--) {
 		getviewspan(v, spanbr);
 		left = hsize + 1;
-		for (h = -hsize; h <= hsize; h++)
+		for (h = -hsize; h <= hsize; h++) {
 			if (spanbr[h+hsize] < 0.0) {	/* off view */
 				if (left < h) {
-					addsrcspan(newspan(left,h-1,v,spanbr));
+					addsrcspan(newspan(left,h,v,spanbr));
 					left = hsize + 1;
 				}
 				continue;
 			}
 			if (spanbr[h+hsize] > threshold) {	/* in source */
-				if (left >= h)
+				if (left > h)
 					left = h;
 			} else {			/* out of source */
 				if (left < h) {
-					addsrcspan(newspan(left,h-1,v,spanbr));
+					addsrcspan(newspan(left,h,v,spanbr));
 					left = hsize + 1;
 				}
 				addindirect(h, spanbr[h+hsize]);
 			}
+		}
 		if (left < h)
-			addsrcspan(newspan(left,h-1,v,spanbr));
+			addsrcspan(newspan(left,h,v,spanbr));
 		close_sources(v);
 	}
 	close_allsrcs();
@@ -152,10 +153,12 @@ comp_thresh()			/* compute glare threshold */
 		fprintf(stderr, "%s: threshold zero!\n", progname);
 		exit(1);
 	}
-	if (verbose)
+	if (verbose) {
+		pict_stats();
 		fprintf(stderr,
 			"%s: threshold set to %f cd/m2 from %d samples\n",
 				progname, threshold, nsamps);
+	}
 }
 
 
@@ -285,5 +288,6 @@ register struct source	*sp;
 	if (verbose)
 		fprintf(stderr,
 	"%s: found source at (%f,%f,%f), solid angle %f, brightness %f\n",
-			progname, sp->dir[0], sp->dir[1], sp->dir[2], sp->brt);
+			progname, sp->dir[0], sp->dir[1], sp->dir[2], 
+			sp->dom, sp->brt);
 }
