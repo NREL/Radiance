@@ -69,13 +69,13 @@ char *
 fskip(s)			/* skip float in string */
 register char  *s;
 {
-	register char  *cp = s;
+	register char  *cp;
 
-	while (isspace(*cp))
-		cp++;
-	if (*cp == '-' || *cp == '+')
-		cp++;
-	s = cp;
+	while (isspace(*s))
+		s++;
+	if (*s == '-' || *s == '+')
+		s++;
+	cp = s;
 	while (isdigit(*cp))
 		cp++;
 	if (*cp == '.') {
