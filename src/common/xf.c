@@ -23,7 +23,6 @@ register XF  *ret;
 int  ac;
 char  *av[];
 {
-	double  atof(), sin(), cos();
 	MAT4  xfmat, m4;
 	double  xfsca, dtmp;
 	int  i, icnt;
@@ -138,7 +137,6 @@ register XF  *ret;
 int  ac;
 char  *av[];
 {
-	double  atof(), sin(), cos();
 	MAT4  xfmat, m4;
 	double  xfsca, dtmp;
 	int  i, icnt;

@@ -276,7 +276,6 @@ register char  *av[];
 {
 #define check(c,l)	if ((av[0][c]&&av[0][c]!=' ') || \
 			badarg(ac-1,av+1,l)) return(-1)
-	extern double  atof();
 
 	if (ac <= 0 || av[0][0] != '-' || av[0][1] != 'v')
 		return(-1);

@@ -18,7 +18,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "otypes.h"
 
-extern double  atof();
 static double  getflt();
 static long  getint();
 static char  *getstr();
