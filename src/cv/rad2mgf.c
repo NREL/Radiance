@@ -80,6 +80,8 @@ char	**argv;
 				goto unkopt;
 			}
 			break;
+		default:
+			goto unkopt;
 		}
 	init();
 	if (i >= argc)
