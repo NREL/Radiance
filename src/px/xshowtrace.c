@@ -15,7 +15,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define MAXDEPTH	32		/* ridiculous ray tree depth */
 
 char	rtcom[] = "rtrace -h -otp -fa -x 1";
-char	xicom[] = "x11image";
+char	xicom[] = "x11image -f";
 
 VIEW	ourview = STDVIEW;		/* view for picture */
 int	xres, yres;
