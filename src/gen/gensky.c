@@ -39,14 +39,16 @@ double  altitude, azimuth;			/* or solar angles */
 					/* default values */
 int  cloudy = 0;				/* 1=standard, 2=uniform */
 int  dosun = 1;
-double  zenithbr = -1.0;
+double  zenithbr = 0.0;
+int	u_zenith = 0;				/* -1=irradiance, 1=radiance */
 double  turbidity = 2.75;
 double  gprefl = 0.2;
 					/* computed values */
 double  sundir[3];
 double  groundbr;
 double  F2;
-double  solarbr = -1.0;
+double  solarbr = 0.0;
+int	u_solar = 0;				/* -1=irradiance, 1=radiance */
 
 char  *progname;
 char  errmsg[128];
@@ -89,6 +91,8 @@ char  *argv[];
 				dosun = argv[i][0] == '+';
 				break;
 			case 'r':
+			case 'R':
+				u_solar = argv[i][1]=='R' ? -1 : 1;
 				solarbr = atof(argv[++i]);
 				break;
 			case 'c':
@@ -99,6 +103,8 @@ char  *argv[];
 				turbidity = atof(argv[++i]);
 				break;
 			case 'b':
+			case 'B':
+				u_zenith = argv[i][1]=='B' ? -1 : 1;
 				zenithbr = atof(argv[++i]);
 				break;
 			case 'g':
@@ -134,6 +140,7 @@ char  *argv[];
 
 computesky()			/* compute sky parameters */
 {
+	double	normfactor;
 					/* compute solar direction */
 	if (month) {			/* from date and time */
 		int  jd;
@@ -162,37 +169,41 @@ computesky()			/* compute sky parameters */
 	sundir[1] = -cos(azimuth)*cos(altitude);
 	sundir[2] = sin(altitude);
 
-					/* Compute zenith brightness */
-	if (zenithbr <= 0.0)
-		if (cloudy) {
-			zenithbr = 8.6*sundir[2] + .123;
-			zenithbr *= 1000.0/WHTEFFICACY;
-		} else {
-			zenithbr = (1.376*turbidity-1.81)*tan(altitude)+0.38;
-			zenithbr *= 1000.0/SKYEFFICACY;
-		}
-	if (zenithbr < 0.0)
-		zenithbr = 0.0;
-					/* Compute horizontal radiance */
-	if (cloudy) {
-		if (cloudy == 2)
-			groundbr = zenithbr;
-		else
-			groundbr = zenithbr*0.777778;
-		printf("# Ground ambient level: %f\n", groundbr);
-	} else {
+					/* Compute normalization factor */
+	if (cloudy == 2)
+		normfactor = 1.0;
+	else if (cloudy == 1)
+		normfactor = 0.777778;
+	else {
 		F2 = 0.274*(0.91 + 10.0*exp(-3.0*(PI/2.0-altitude)) +
 				0.45*sundir[2]*sundir[2]);
-		groundbr = zenithbr*normsc(altitude)/F2/PI;
-		printf("# Ground ambient level: %f\n", groundbr);
-		if (sundir[2] > 0.0 && solarbr != 0.0) {
-			if (solarbr < 0.0)
-				solarbr = 1.5e9/SUNEFFICACY *
-				(1.147 - .147/(sundir[2]>.16?sundir[2]:.16));
-			groundbr += solarbr*6e-5*sundir[2]/PI;
-		} else
-			dosun = 0;
+		normfactor = normsc(altitude)/F2/PI;
 	}
+					/* Compute zenith brightness */
+	if (u_zenith == -1)
+		zenithbr /= normfactor*PI;
+	else if (u_zenith == 0) {
+		if (cloudy)
+			zenithbr = 8.6*sundir[2] + .123;
+		else
+			zenithbr = (1.376*turbidity-1.81)*tan(altitude)+0.38;
+		if (zenithbr < 0.0)
+			zenithbr = 0.0;
+		else
+			zenithbr *= 1000.0/SKYEFFICACY;
+	}
+					/* Compute horizontal radiance */
+	groundbr = zenithbr*normfactor;
+	printf("# Ground ambient level: %f\n", groundbr);
+	if (sundir[2] > 0.0 && (!u_solar || solarbr > 0.0)) {
+		if (u_solar == -1)
+			solarbr /= 6e-5*sundir[2];
+		else if (u_solar == 0)
+			solarbr = 1.5e9/SUNEFFICACY *
+			(1.147 - .147/(sundir[2]>.16?sundir[2]:.16));
+		groundbr += 6e-5/PI*solarbr*sundir[2];
+	} else
+		dosun = 0;
 	groundbr *= gprefl;
 }
 
