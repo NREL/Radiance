@@ -27,7 +27,9 @@ OBJREC	*m;
 RAY	*r;
 {
 	OBJECT	aobj;
+	OBJREC	*aop;
 	OBJREC	arec;
+	int	rval;
 					/* straight replacement? */
 	if (!m->oargs.nsargs)
 		return(rayshade(r, m->omod));
@@ -37,7 +39,8 @@ RAY	*r;
 	aobj = lastmod(objndx(m), m->oargs.sarg[0]);
 	if (aobj < 0)
 		objerror(m, USER, "bad reference");
-	arec = *objptr(aobj);
+	aop = objptr(aobj);
+	arec = *aop;
 					/* irradiance hack */
 	if (do_irrad && !(r->crtype & ~(PRIMARY|TRANS)) &&
 			m->otype != MAT_CLIP &&
@@ -52,5 +55,12 @@ RAY	*r;
 					/* substitute modifier */
 	arec.omod = m->omod;
 					/* replacement shader */
-	return((*ofun[arec.otype].funp)(&arec, r));
+	rval = (*ofun[arec.otype].funp)(&arec, r);
+					/* save allocated struct */
+	if (arec.os != aop->os) {
+		if (aop->os != NULL)	/* should never happen */
+			free_os(aop);
+		aop->os = arec.os;
+	}
+	return(rval);
 }
