@@ -10,6 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include <stdio.h>
 #include <math.h>
+#include "random.h"
 #include "mgflib/parser.h"
 
 #define	MX(v)	(int)(((1<<14)-1)*(v)[(proj_axis+1)%3])
@@ -49,10 +50,7 @@ char	*argv[];
 		for (i = 8; i < argc; i++) {
 			if (mg_load(argv[i]) != MG_OK)
 				exit(1);
-			if (++layer >= 16) {
-				mendpage();
-				layer = 0;
-			}
+			newlayer();
 		}
 	mendpage();			/* print page */
 	mdone();			/* close output */
@@ -73,7 +71,6 @@ char	**av;
 	register int	i, j;
 	register C_VERTEX	*cv;
 	FVECT	v1, v2, vo;
-	int	newline = 1;
 
 	if (ac < 4)
 		return(MG_EARGC);
@@ -91,10 +88,57 @@ char	**av;
 			v2[j] = (v2[j] - limit[j][0])/(limit[j][1]-limit[j][0]);
 		VCOPY(v1, vo);
 		VCOPY(vo, v2);
-		if (clip(v1, v2, bbmin, bbmax)) {
-			mline(MX(v1), MY(v1), layer/4, 0, layer%4);
-			mdraw(MX(v2), MY(v2));
-		}
+		if (clip(v1, v2, bbmin, bbmax))
+			doline(MX(v1), MY(v1), MX(v2), MY(v2));
 	}
 	return(MG_OK);
+}
+
+
+#define  HTBLSIZ	16381		/* prime hash table size */
+
+short	hshtab[HTBLSIZ][4];		/* done line segments */
+
+#define  hash(mx1,my1,mx2,my2)	((long)(mx1)<<15 ^ (long)(my1)<<10 ^ \
+					(long)(mx2)<<5 ^ (long)(my2))
+
+#define  RANDMASK	((1L<<14)-1)
+
+
+newlayer()				/* start a new layer */
+{
+#ifdef BSD
+	bzero((char *)hshtab, sizeof(hshtab));
+#else
+	(void)memset((char *)hshtab, 0, sizeof(hshtab));
+#endif
+	if (++layer >= 16) {
+		mendpage();
+		layer = 0;
+	}
+}
+
+
+int
+doline(v1x, v1y, v2x, v2y)		/* draw line conditionally */
+int	v1x, v1y, v2x, v2y;
+{
+	register int	h;
+
+	if (v1x > v2x || (v1x == v2x && v1y > v2y)) {	/* sort endpoints */
+		h=v1x; v1x=v2x; v2x=h;
+		h=v1y; v1y=v2y; v2y=h;
+	}
+	h = hash(v1x, v1y, v2x, v2y) % HTBLSIZ;
+	if (hshtab[h][0] == v1x && hshtab[h][1] == v1y &&
+			hshtab[h][2] == v2x && hshtab[h][3] == v2y)
+		return(0);
+	hshtab[h][0] = v1x; hshtab[h][1] = v1y;
+	hshtab[h][2] = v2x; hshtab[h][3] = v2y;
+	if ((long)(v2x-v1x)*(v2x-v1x) + (long)(v2y-v1y)*(v2y-v1y)
+			<= (random()&RANDMASK))
+		return(0);
+	mline(v1x, v1y, layer/4, 0, layer%4);
+	mdraw(v2x, v2y);
+	return(1);
 }
