@@ -1,8 +1,8 @@
-/* Copyright (c) 1989 Regents of the University of California */
-
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
+
+/* Copyright (c) 1989 Regents of the University of California */
 
 /*
  *  genworm.c - program to generate worms (strings with varying thickness).
@@ -30,7 +30,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  max(a,b)	((a) > (b) ? (a) : (b))
 
 
-double  funvalue(), l_hermite(), l_bezier(), argument();
+double  funvalue(), l_hermite(), l_bezier(), l_bspline(), argument();
 
 
 main(argc, argv)
@@ -45,6 +45,7 @@ char  *argv[];
 	varset("PI", PI, NULL);
 	funset("hermite", 5, l_hermite);
 	funset("bezier", 5, l_bezier);
+	funset("bspline", 5, l_bspline);
 
 	if (argc < 8)
 		goto userror;
@@ -176,4 +177,17 @@ l_bezier()
 		argument(2) * 3.*t*(1.+t*(-2.+t)) +
 		argument(3) * 3.*t*t*(1.-t) +
 		argument(4) * t*t*t );
+}
+
+
+double
+l_bspline()
+{
+	double  t;
+
+	t = argument(5);
+	return(	argument(1) * (1./6.+t*(-1./2.+t*(1./2.-1./6.*t))) +
+		argument(2) * (2./3.+t*t*(-1.+1./2.*t)) +
+		argument(3) * (1./6.+t*(1./2.+t*(1./2.-1./2.*t))) +
+		argument(4) * (1./6.*t*t*t) );
 }
