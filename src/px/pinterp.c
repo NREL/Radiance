@@ -362,6 +362,7 @@ struct position	*lasty;		/* input/output */
 	struct position	lastx, newpos;
 	register int	x;
 
+	lastx.z = 0;
 	for (x = thresolu-1; x >= 0; x--) {
 		pos[0] = (x+.5)/thresolu + theirview.hoff - .5;
 		pos[1] = (y+.5)/tvresolu + theirview.voff - .5;
