@@ -195,6 +195,14 @@ dev_close()			/* close our display and free resources */
 }
 
 
+dev_clear()			/* clear our quadtree */
+{
+	qtCompost(100);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	rayqleft = 0;			/* hold off update */
+}
+
+
 int
 dev_view(nv)			/* assign new driver view */
 register VIEW	*nv;

@@ -68,6 +68,13 @@ error(COMMAND, "appropriate user warning").
 
 
 void
+dev_clear()		: clear device memory
+
+Clear the device memory in preparation for fresh data.  Clearing
+the screen is optional.
+
+
+void
 dev_value(c, p, v)	: register new point of light
 COLR	c;		: pixel color (RGBE)
 FVECT	p;		: world intersection point
