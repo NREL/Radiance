@@ -1,8 +1,10 @@
-/*
+/* Copyright (c) 1989 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
+
+/*
  *  genworm.c - program to generate worms (strings with varying thickness).
  *
  *	The program takes as input the functions of t for x, y,

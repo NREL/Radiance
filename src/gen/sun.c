@@ -1,8 +1,10 @@
-/*
+/* Copyright (c) 1989 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
+
+/*
  *           SOLAR CALCULATIONS
  *
  *               3/31/87
