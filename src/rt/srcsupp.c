@@ -1,4 +1,4 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1992 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -526,6 +526,15 @@ register RAY  *r;
 #define  wrongsource(m, r)	(r->rsrc>=0 && source[r->rsrc].so!=r->ro && \
 				(m->otype!=MAT_ILLUM || wrongillum(m,r)))
 
+/* badspecular *
+ *
+ * Any undirected specular ray that hits a light source
+ * should be discarded.  This is because the source contribution to
+ * specular components is calculated separately to reduce variance.
+ */
+
+#define  badspecular(m, r)	(r->rsrc<0 && r->crtype&SPECULAR)
+
 /* distglow *
  *
  * A distant glow is an object that sometimes acts as a light source,
@@ -544,6 +553,14 @@ register RAY  *r;
 
 #define  badambient(m, r)	((r->crtype&(AMBIENT|SHADOW))==AMBIENT && \
 				!distglow(m, r))
+
+/* overcount *
+ *
+ * All overcounting possibilities are contained here.
+ */
+
+#define  overcount(m, r)	(badspecular(m,r) || wrongsource(m,r) || \
+				badambient(m,r))
 
 /* passillum *
  *
@@ -570,7 +587,7 @@ register OBJREC  *m;
 register RAY  *r;
 {
 						/* check for over-counting */
-	if (wrongsource(m, r) || badambient(m, r))
+	if (overcount(m, r))
 		return;
 						/* check for passed illum */
 	if (passillum(m, r)) {
