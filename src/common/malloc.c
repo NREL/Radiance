@@ -52,7 +52,7 @@ register unsigned  n;
 	register char	*p;
 
 	if (pagesz == 0) {				/* initialize */
-		amnt = pagesz = getpagesize();
+		pagesz = amnt = getpagesize();
 		nrem = (int)sbrk(0);			/* page align break */
 		nrem = pagesz - (nrem&(pagesz-1));
 		bpos = sbrk(nrem);			/* word aligned! */
@@ -83,25 +83,23 @@ register unsigned  n;
 
 
 bfree(p, n)			/* free n bytes of random memory */
-char  *p;
-unsigned  n;
+register char  *p;
+register unsigned  n;
 {
-	register M_HEAD	*mp;
 	register int	bucket;
 	register unsigned	bsiz;
 					/* find largest bucket */
 	bucket = 0;
 	for (bsiz = 1; bsiz+sizeof(M_HEAD) <= n; bsiz <<= 1)
 		bucket++;
-	mp = (M_HEAD *)p;
 	while (bucket > FIRSTBUCKET) {
 		bsiz >>= 1;
 		bucket--;
 		if (n < bsiz+sizeof(M_HEAD))	/* nothing for this bucket */
 			continue;
-		mp->next = free_list[bucket];
-		free_list[bucket] = mp;
-		(char *)mp += bsiz+sizeof(M_HEAD);
+		((M_HEAD *)p)->next = free_list[bucket];
+		free_list[bucket] = (M_HEAD *)p;
+		p += bsiz+sizeof(M_HEAD);
 		n -= bsiz+sizeof(M_HEAD);
 	}
 }
@@ -115,6 +113,9 @@ unsigned	n;
 	register int	bucket;
 	register unsigned	bsiz;
 
+	if (n == 0)
+		return(NULL);
+					/* find first bucket that fits */
 	bucket = FIRSTBUCKET;
 	for (bsiz = 1<<FIRSTBUCKET; bsiz < n; bsiz <<= 1)
 		bucket++;
@@ -146,12 +147,11 @@ unsigned	n;
 	if (n <= on && n > on>>1)
 		return(op);		/* same bucket */
 	p = malloc(n);
-	if (p == NULL)
-		return(NULL);
+	if (p != NULL)
 #ifdef  BSD
-	bcopy(op, p, n>on ? on : n);
+		bcopy(op, p, n>on ? on : n);
 #else
-	(void)memcpy(p, op, n>on ? on : n);
+		(void)memcpy(p, op, n>on ? on : n);
 #endif
 	free(op);
 	return(p);
@@ -164,6 +164,8 @@ char	*p;
 	register M_HEAD	*mp;
 	register int	bucket;
 
+	if (p == NULL)
+		return;
 	mp = (M_HEAD *)p - 1;
 	bucket = mp->bucket;
 	mp->next = free_list[bucket];
