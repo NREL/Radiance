@@ -44,6 +44,7 @@ static char SCCSid[] = "$SunId$ LBL";
 static XEvent  currentevent;		/* current event */
 
 static int  ncolors = 0;		/* color table size */
+static int  mapped = 0;			/* window is mapped? */
 static unsigned long  *pixval = NULL;	/* allocated pixels */
 static unsigned long  ourblack=0, ourwhite=1;
 
@@ -160,6 +161,7 @@ char  *name, *id;
 	x11_driver.xsiz = gwidth < MINWIDTH ? MINWIDTH : gwidth;
 	x11_driver.ysiz = gheight < MINHEIGHT ? MINHEIGHT : gheight;
 	x11_driver.inpready = 0;
+	mapped = 1;
 	cmdvec = x11_comout;			/* set error vectors */
 	if (wrnvec != NULL)
 		wrnvec = x11_errout;
@@ -241,12 +243,12 @@ int  xmin, ymin, xmax, ymax;
 	extern unsigned long  true_pixel();
 	unsigned long  pixel;
 
+	if (!mapped)
+		return;
 	if (ncolors > 0)
 		pixel = pixval[get_pixel(col, xnewcolr)];
-	else if (ourvinfo.class == TrueColor || ourvinfo.class == DirectColor)
-		pixel = true_pixel(col);
 	else
-		return;
+		pixel = true_pixel(col);
 	XSetForeground(ourdisplay, ourgc, pixel);
 	XFillRectangle(ourdisplay, gwind, 
 		ourgc, xmin, gheight-ymax, xmax-xmin, ymax-ymin);
@@ -369,8 +371,7 @@ loop:
 		pixval = (unsigned long *)malloc(ncolors*sizeof(unsigned long));
 		if (pixval == NULL)
 			return(ncolors = 0);
-		if (XAllocColorCells(ourdisplay,ourmap,0,NULL,0,
-				pixval,ncolors) != 0)
+		if (XAllocColorCells(ourdisplay,ourmap,0,NULL,0,pixval,ncolors))
 			break;
 		free((char *)pixval);
 		pixval = NULL;
@@ -452,6 +453,7 @@ getevent()			/* get next event */
 		resizewindow(levptr(XConfigureEvent));
 		break;
 	case UnmapNotify:
+		mapped = 0;
 		freepixels();
 		break;
 	case MapNotify:
@@ -461,6 +463,7 @@ getevent()			/* get next event */
 				stderr_v("Cannot allocate colors\n");
 			else
 				new_ctab(ncolors);
+		mapped = 1;
 		break;
 	case Expose:
 		fixwindow(levptr(XExposeEvent));
