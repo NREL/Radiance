@@ -69,6 +69,7 @@ char  *fname;
 			fprintf(stderr, "%s: read error (y=%d)\n", fname, i);
 			return(-1);
 		}
+		normcolrs(scanline, xres);
 		plotscan(scanline, xres, i);
 	}
 
@@ -117,12 +118,10 @@ register int  x;
 {
 	static int  cerr[NCOLS];
 	static int  err;
-	COLR  nclr;
 	int  b;
 	register int  isblack;
 
-	colr_norm(clr, nclr);
-	b = norm_bright(nclr);
+	b = normbright(clr);
 	err += b + cerr[x];
 	isblack = err < 128;
 	if (!isblack) err -= 256;
