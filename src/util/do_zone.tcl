@@ -63,7 +63,7 @@ proc get_bbox {} {
 		if [catch {eval exec getbbox -h $bbargs} bbout] {
 			set curmess $bbout
 		} else {
-			set curmess {}
+			set curmess "Done."
 			set radvar(ZONE) "$zonevar(IE) $bbout"
 		}
 	}
