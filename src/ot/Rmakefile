@@ -50,8 +50,7 @@ sphere.o writeoct.o:	../common/octree.h
 bbox.o o_cone.o o_face.o o_instance.o oconv.o \
 sphere.o writeoct.o:	../common/object.h
 
-bbox.o initotypes.o oconv.o obj2mesh.o \
-sphere.o writeoct.o:	../common/otypes.h
+bbox.o initotypes.o oconv.o obj2mesh.o sphere.o:	../common/otypes.h
 
 oconv.o:	../common/paths.h
 
