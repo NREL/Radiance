@@ -30,15 +30,16 @@ typedef struct {
 #define  MAT_MIN	(OBJ_MIN+OBJ_CNT)
 #define  MAT_LIGHT	(MAT_MIN+0)	/* primary light source */
 #define  MAT_ILLUM	(MAT_MIN+1)	/* secondary light source */
-#define  MAT_GLOW	(MAT_MIN+2)	/* emmissive non-source */
-#define  MAT_PLASTIC	(MAT_MIN+3)	/* plastic surface */
-#define  MAT_METAL	(MAT_MIN+4)	/* metal surface */
-#define  MAT_TRANS	(MAT_MIN+5)	/* translucent material */
-#define  MAT_DIELECTRIC	(MAT_MIN+6)	/* dielectric material */
-#define  MAT_INTERFACE	(MAT_MIN+7)	/* dielectric interface */
-#define  MAT_GLASS	(MAT_MIN+8)	/* thin glass surface */
-#define  MAT_CLIP	(MAT_MIN+9)	/* clipping surface */
-#define  MAT_CNT	10
+#define  MAT_GLOW	(MAT_MIN+2)	/* proximity light source */
+#define  MAT_SPOT	(MAT_MIN+3)	/* spot light source */
+#define  MAT_PLASTIC	(MAT_MIN+4)	/* plastic surface */
+#define  MAT_METAL	(MAT_MIN+5)	/* metal surface */
+#define  MAT_TRANS	(MAT_MIN+6)	/* translucent material */
+#define  MAT_DIELECTRIC	(MAT_MIN+7)	/* dielectric material */
+#define  MAT_INTERFACE	(MAT_MIN+8)	/* dielectric interface */
+#define  MAT_GLASS	(MAT_MIN+9)	/* thin glass surface */
+#define  MAT_CLIP	(MAT_MIN+10)	/* clipping surface */
+#define  MAT_CNT	11
 				/* textures and patterns */
 #define  TP_MIN		(MAT_MIN+MAT_CNT)
 #define  TEX_FUNC	(TP_MIN+0)	/* surface texture function */
@@ -92,6 +93,7 @@ extern int  text();
 			{ "light", m_light }, \
 			{ "illum", m_light }, \
 			{ "glow", m_light }, \
+			{ "spotlight", m_light }, \
 			{ "plastic", m_normal }, \
 			{ "metal", m_normal }, \
 			{ "trans", m_normal }, \
