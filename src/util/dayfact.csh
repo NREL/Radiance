@@ -12,7 +12,7 @@ set wporig=(0 0 0)
 set wpsize=(1 1)
 set rtargs=(-ab 1 -ad 256 -as 128 -aa .15 -av .1 .1 .1)
 
-set maxres=64
+set maxres=128
 set iltemp=/usr/tmp/il$$.pic
 set tempfiles=($iltemp)
 
@@ -35,7 +35,6 @@ if ( "$octree" == "$nofile" || ! -f "$octree" ) then
 	echo "before running this script."
 	exit 1
 endif
-echo ""
 echo "In what scene file is the gensky command located?"
 readvar genskyf
 if ( "$genskyf" == "$nofile" || ! -r "$genskyf" ) then
@@ -43,7 +42,6 @@ if ( "$genskyf" == "$nofile" || ! -r "$genskyf" ) then
 	echo "daylight factors without a gensky file"
 else
 	set extamb=`xform -e $genskyf|sed -n 's/^# Ground ambient level: //p'`
-	echo extamb = $extamb
 endif
 echo -n "Is the z-axis your zenith direction? "
 if ( "$<" !~ [yY]* ) then
@@ -78,16 +76,16 @@ cnt $wpres[2] $wpres[1] \
 		-e '$3='"$wporig[3]" -e '$4=0;$5=0;$6=1' \
 	| rtrace $rtargs -I -ov -faf $octree \
 	| pvalue -r -x $wpres[1] -y $wpres[2] -df \
-	| pfilt -h 20 -n 0 -x 256 -y 256 -p 1 -r 1 > $iltemp
+	| pfilt -h 20 -n 0 -x 350 -y 350 -p 1 -r 1 > $iltemp
 set maxval=`getinfo < $iltemp | rcalc -i 'EXPOSURE=${e}' -e '$1=3/e'`
 if ( "$ilpict" != "$nofile" ) then
 	echo "Making illuminance contour picture $ilpict..."
-	falsecolor -s "$maxval*470" -l Lux -log 2 -cl -pi $iltemp > $ilpict
+	falsecolor -s "$maxval*470" -m 470 -l Lux -cb -pi $iltemp > $ilpict
 endif
 if ( "$dfpict" != "$nofile" ) then
 	echo "Making daylight factor contour picture $dfpict..."
 	falsecolor -s "$maxval/$extamb" -m "1/$extamb" -l DF \
-		-log 2 -cl -pi $iltemp > $dfpict
+		-cb -pi $iltemp > $dfpict
 endif
 echo "Done."
 quit:
