@@ -19,7 +19,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 double	glowdist = FHUGE;		/* glow test distance */
 
-double  emult = 1.;			/* emmitter multiplier */
+double  emult = 1.;			/* emitter multiplier */
 
 int	r_comment(), r_cone(), r_cyl(), r_face(), r_ies(), r_ring(), r_sph();
 char	*material(), *object(), *addarg();
