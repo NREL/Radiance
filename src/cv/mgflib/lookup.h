@@ -56,6 +56,8 @@ typedef struct {
  * The lu_delete routine frees an entry's data (if any) by calling
  * the freed member function, but does not free the key field.  This
  * will be freed later during (or instead of) table reallocation.
+ * It is therefore an error to reuse or do anything with the key
+ * field after calling lu_delete.
  *
  * The lu_done routine calls the given free function once for each
  * assigned table entry (i.e. each entry with an assigned key value).
