@@ -88,6 +88,7 @@ message .mess -relief ridge -font fixed -textvariable curmess \
 		-anchor nw -width 620
 pack .mess -side top -expand yes -fill both
 helplink .mess trad trad messages
+. configure -cursor top_left_arrow
 
 # Make mode buttons
 
