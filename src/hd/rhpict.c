@@ -80,7 +80,7 @@ char	*argv[];
 			seqstart = atoi(argv[++i]);
 			break;
 		case 'v':			/* view file */
-			if (argv[i][1]!='f' || badarg(argc-i-1,argv+i+1,"s"))
+			if (argv[i][2]!='f' || badarg(argc-i-1,argv+i+1,"s"))
 				goto userr;
 			rval = viewfile(argv[++i], &myview, NULL);
 			if (rval < 0) {
@@ -220,22 +220,29 @@ int	fn;
 int
 endpicture()			/* finish and write out pixels */
 {
-	int	nunrend = 0;
-	int	v;
+	int	lastr = -1, nunrend = 0;
+	int4	lastp, lastrp;
+	register int4	p;
 	register double	d;
-	register int	p;
 				/* compute final pixel values */
 	for (p = hres*vres; p--; ) {
 		if (myweight[p] <= FTINY) {
+			if (lastr >= 0)
+				if (p/hres == lastp/hres)
+					copycolor(mypixel[p], mypixel[lastp]);
+				else
+					copycolor(mypixel[p], mypixel[lastrp]);
 			nunrend++;
 			continue;
 		}
 		d = expval/myweight[p];
 		scalecolor(mypixel[p], d);
+		if ((lastp=p)/hres != lastr)
+			lastr = (lastrp=p)/hres;
 	}
 				/* write each scanline */
-	for (v = vres; v--; )
-		if (fwritescan(mypixel+v*hres, hres, stdout) < 0)
+	for (p = vres; p--; )
+		if (fwritescan(mypixel+p*hres, hres, stdout) < 0)
 			return(-1);
 	if (fflush(stdout) == EOF)
 		return(-1);
