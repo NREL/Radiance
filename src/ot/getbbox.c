@@ -50,29 +50,25 @@ char  **argv;
 	if ((libpath = getenv("RAYPATH")) == NULL)
 		libpath = DEFPATH;
 
-	for (i = 1; i < argc && argv[i][0] == '-'; i++)
-		switch (argv[i][1]) {
-		case '\0':				/* scene from stdin */
-			goto breakopt;
-		case 'w':				/* supress warnings */
-			nowarn = 1;
-			break;
-		default:
-			sprintf(errmsg, "unknown option: '%s'", argv[i]);
-			error(USER, errmsg);
-			break;
-		}
+	if (!strcmp(argv[1], "-w")) {
+		nowarn = 1;
+		i = 2;
+	} else
+		i = 1;
 breakopt:
 						/* find bounding box */
 	bbmin[0] = bbmin[1] = bbmin[2] = FHUGE;
 	bbmax[0] = bbmax[1] = bbmax[2] = -FHUGE;
 						/* read input */
-	for ( ; i < argc; i++)
-		if (!strcmp(argv[i], "-"))	/* from stdin */
-			readobj(NULL, addobject);
-		else				/* from file */
-			readobj(argv[i], addobject);
-						/* print it out */
+	if (i >= argc)
+		readobj(NULL, addobject);
+	else
+		for ( ; i < argc; i++)
+			if (!strcmp(argv[i], "-"))	/* from stdin */
+				readobj(NULL, addobject);
+			else				/* from file */
+				readobj(argv[i], addobject);
+						/* print bounding box */
 	printf("      xmin      xmax      ymin      ymax      zmin      zmax\n");
 	printf("%9g %9g %9g %9g %9g %9g\n", bbmin[0], bbmax[0],
 			bbmin[1], bbmax[1], bbmin[2], bbmax[2]);
