@@ -53,8 +53,8 @@ typedef struct {
 	FVECT  vrefl;		/* vector in reflected direction */
 	FVECT  prdir;		/* vector in transmitted direction */
 	FVECT  u, v;		/* u and v vectors orienting anisotropy */
-	double  u_alpha;	/* u roughness */
-	double  v_alpha;	/* v roughness */
+	double  u_alpha2;	/* u roughness squared */
+	double  v_alpha2;	/* v roughness squared */
 	double  rdiff, rspec;	/* reflected specular, diffuse */
 	double  trans;		/* transmissivity */
 	double  tdiff, tspec;	/* transmitted specular, diffuse */
@@ -70,7 +70,7 @@ FVECT  ldir;			/* light source direction */
 double  omega;			/* light source size */
 {
 	double  ldot;
-	double  dtmp, dtmp2;
+	double  dtmp, dtmp1, dtmp2;
 	FVECT  h;
 	double  au2, av2;
 	COLOR  ctmp;
@@ -103,25 +103,26 @@ double  omega;			/* light source size */
 			au2 = av2 = omega/(4.0*PI);
 		else
 			au2 = av2 = 0.0;
-		au2 += np->u_alpha * np->u_alpha;
-		av2 += np->v_alpha * np->v_alpha;
+		au2 += np->u_alpha2;
+		av2 += np->v_alpha2;
 						/* half vector */
 		h[0] = ldir[0] - np->rp->rdir[0];
 		h[1] = ldir[1] - np->rp->rdir[1];
 		h[2] = ldir[2] - np->rp->rdir[2];
 		normalize(h);
 						/* ellipse */
-		dtmp = DOT(np->u, h);
-		dtmp *= dtmp / au2;
+		dtmp1 = DOT(np->u, h);
+		dtmp1 *= dtmp1 / au2;
 		dtmp2 = DOT(np->v, h);
 		dtmp2 *= dtmp2 / av2;
 						/* gaussian */
-		dtmp = (dtmp + dtmp2) / (1.0 + DOT(np->pnorm, h));
-		dtmp = exp(-2.0*dtmp) / (4.0*PI * sqrt(au2*av2));
+		dtmp = (dtmp1 + dtmp2) / (1.0 + DOT(np->pnorm, h));
+		dtmp = exp(-2.0*dtmp) * 1.0/(4.0*PI)
+				* sqrt(ldot/(np->pdot*au2*av2));
 						/* worth using? */
 		if (dtmp > FTINY) {
 			copycolor(ctmp, np->scolor);
-			dtmp *= omega * sqrt(ldot/np->pdot);
+			dtmp *= omega;
 			scalecolor(ctmp, dtmp);
 			addcolor(cval, ctmp);
 		}
@@ -141,12 +142,31 @@ double  omega;			/* light source size */
 		 *  is always modified by material color.
 		 */
 						/* roughness + source */
+		au2 = av2 = omega / PI;
+		au2 += .25 * np->u_alpha2;
+		av2 += .25 * np->v_alpha2;
+						/* "half vector" */
+		h[0] = ldir[0] - np->prdir[0];
+		h[1] = ldir[1] - np->prdir[1];
+		h[2] = ldir[2] - np->prdir[2];
+		dtmp = DOT(h,np->pnorm);
+		dtmp = DOT(h,h) - dtmp*dtmp;
+		if (dtmp > FTINY*FTINY) {
+			dtmp1 = DOT(h,np->u);
+			dtmp1 = dtmp1*dtmp1 / (au2*dtmp);
+			dtmp2 = DOT(h,np->v);
+			dtmp2 = dtmp2*dtmp2 / (av2*dtmp);
+			dtmp = 2. - 2.*DOT(ldir,np->prdir);
+			dtmp *= dtmp1 + dtmp2;
+		} else
+			dtmp = 0.0;
 						/* gaussian */
-		dtmp = 0.0;
+		dtmp = exp(-dtmp) * 1.0/(4.0*PI)
+				* sqrt(-ldot/(np->pdot*au2*av2));
 						/* worth using? */
 		if (dtmp > FTINY) {
 			copycolor(ctmp, np->mcolor);
-			dtmp *= np->tspec * omega * sqrt(ldot/np->pdot);
+			dtmp *= np->tspec * omega;
 			scalecolor(ctmp, dtmp);
 			addcolor(cval, ctmp);
 		}
@@ -176,9 +196,11 @@ register RAY  *r;
 			   m->oargs.farg[2]);
 						/* get roughness */
 	nd.specfl = 0;
-	nd.u_alpha = m->oargs.farg[4];
-	nd.v_alpha = m->oargs.farg[5];
-	if (nd.u_alpha < 1e-6 || nd.v_alpha <= 1e-6)
+	nd.u_alpha2 = m->oargs.farg[4];
+	nd.u_alpha2 *= nd.u_alpha2;
+	nd.v_alpha2 = m->oargs.farg[5];
+	nd.v_alpha2 *= nd.v_alpha2;
+	if (nd.u_alpha2 < FTINY*FTINY || nd.v_alpha2 <= FTINY*FTINY)
 		objerror(m, USER, "roughness too small");
 						/* reorient if necessary */
 	if (r->rod < 0.0)
@@ -216,7 +238,7 @@ register RAY  *r;
 				nd.vrefl[i] = r->rdir[i] + 2.*r->rod*r->ron[i];
 	}
 						/* compute transmission */
-	if (m->otype == MAT_TRANS) {
+	if (m->otype == MAT_TRANS2) {
 		nd.trans = m->oargs.farg[6]*(1.0 - nd.rspec);
 		nd.tspec = nd.trans * m->oargs.farg[7];
 		nd.tdiff = nd.trans - nd.tspec;
@@ -297,7 +319,8 @@ register ANISODAT  *np;
 		np->specfl |= SP_BADU;
 		return;
 	}
-	multv3(np->u, np->u, mf->f->xfm);
+	if (mf->f != &unitxf)
+		multv3(np->u, np->u, mf->f->xfm);
 	fcross(np->v, np->pnorm, np->u);
 	if (normalize(np->v) == 0.0) {
 		objerror(np->mp, WARNING, "illegal orientation vector");
@@ -325,9 +348,9 @@ register ANISODAT  *np;
 		d = urand(ilhash(dimlist,ndims)+samplendx);
 		multisamp(rv, 2, d);
 		d = 2.0*PI * rv[0];
-		cosp = np->u_alpha * cos(d);
-		sinp = np->v_alpha * sin(d);
-		d = sqrt(cosp*cosp + sinp*sinp);
+		cosp = cos(d);
+		sinp = sin(d);
+		d = sqrt(np->u_alpha2*cosp*cosp + np->v_alpha2*sinp*sinp);
 		cosp /= d;
 		sinp /= d;
 		rv[1] = 1.0 - specjitter*rv[1];
@@ -335,8 +358,8 @@ register ANISODAT  *np;
 			d = 1.0;
 		else
 			d = sqrt(-log(rv[1]) /
-				(cosp*cosp/(np->u_alpha*np->u_alpha) +
-				 sinp*sinp/(np->v_alpha*np->v_alpha)));
+				(cosp*cosp/np->u_alpha2 +
+				 sinp*sinp/np->v_alpha2));
 		for (i = 0; i < 3; i++)
 			h[i] = np->pnorm[i] +
 				d*(cosp*np->u[i] + sinp*np->v[i]);
@@ -364,8 +387,8 @@ register ANISODAT  *np;
 			d = 1.0;
 		else
 			d = sqrt(-log(rv[1]) /
-				(cosp*cosp*4./(np->u_alpha*np->u_alpha) +
-				 sinp*sinp*4./(np->v_alpha*np->v_alpha)));
+				(cosp*cosp*4./np->u_alpha2 +
+				 sinp*sinp*4./np->v_alpha2));
 		for (i = 0; i < 3; i++)
 			sr.rdir[i] = np->prdir[i] +
 					d*(cosp*np->u[i] + sinp*np->v[i]);
