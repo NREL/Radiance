@@ -91,8 +91,8 @@ char  *ofn[];
 	if (load & IO_TREE) {
 						/* get the octree */
 		scene->cutree = gettree();
-						/* get the scene */
-		if (nf == 0 && load & IO_SCENE) {
+		if (load & IO_SCENE)		/* get the scene */
+		    if (nf == 0) {
 			for (i = 0; *getstr(sbuf); i++)
 				if ((otypmap[i] = otype(sbuf)) < 0) {
 					sprintf(errmsg, "unknown type \"%s\"",
@@ -101,14 +101,14 @@ char  *ofn[];
 				}
 			while (getobj() != OVOID)
 				;
-		} else if (load & IO_SCENE) {		/* consistency checks */
-						/* check object count */
+		    } else {			/* consistency checks */
+					/* check object count */
 			if (nobjects != objorig+fnobjects)
 				octerror(USER, "bad object count; octree stale?");
-						/* check for non-surfaces */
+					/* check for non-surfaces */
 			if (nonsurfinset(objorig, fnobjects))
-				octerror(USER, "non-surface in set; octree stale?");
-		}
+				octerror(USER, "modifier in tree; octree stale?");
+		    }
 	}
 	fclose(infp);
 	return(nf);
