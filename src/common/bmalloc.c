@@ -26,7 +26,7 @@ static const char	RCSid[] = "$Id$";
 #endif
 #define  BYTES_WORD	sizeof(ALIGNT)
 
-static void  *bposition = NULL;
+static char  *bposition = NULL;
 static size_t  nremain = 0;
 
 
