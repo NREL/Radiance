@@ -350,7 +350,8 @@ register BRDFDAT  *np;
 	varset("NxP", '=', vec[0]/funcxf.sca);
 	varset("NyP", '=', vec[1]/funcxf.sca);
 	varset("NzP", '=', vec[2]/funcxf.sca);
-	varset("RdotP", '=', np->pdot);
+	varset("RdotP", '=', np->pdot <= -1.0 ? -1.0 :
+			np->pdot >= 1.0 ? 1.0 : np->pdot);
 	varset("CrP", '=', colval(np->mcolor,RED));
 	varset("CgP", '=', colval(np->mcolor,GRN));
 	varset("CbP", '=', colval(np->mcolor,BLU));

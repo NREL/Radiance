@@ -175,8 +175,10 @@ register int  n;
 		return(sum * funcxf.sca);
 
 	}
-	if (n == 10)			/* dot product */
-		return(fray->rod);
+	if (n == 10)			/* dot product (range [-1,1]) */
+		return(	fray->rod <= -1.0 ? -1.0 :
+			fray->rod >= 1.0 ? 1.0 :
+			fray->rod );
 
 	if (n == 11)			/* scale */
 		return(funcxf.sca);
