@@ -190,7 +190,7 @@ char	*argv[];
 	fputs(VIEWSTR, stdout);
 	fprintview(&ourview, stdout);
 	printf("\n");
-	fputformat("ASCII", stdout);
+	fputformat("ascii", stdout);
 	printf("\n");
 	printsources();				/* print glare sources */
 	printillum();				/* print illuminances */
