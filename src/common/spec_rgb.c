@@ -13,6 +13,9 @@ static char SCCSid[] = "$SunId$ LBL";
 
 RGBPRIMS  stdprims = STDPRIMS;		/* standard primary chromaticities */
 
+COLOR  cblack = BLKCOLOR;		/* global black color */
+COLOR  cwhite = WHTCOLOR;		/* global white color */
+
 /*
  *	The following table contains the CIE tristimulus integrals
  *  for X, Y, and Z.  The table is cumulative, so that
@@ -109,21 +112,67 @@ int  s, e;		/* starting and ending wavelengths */
 }
 
 
-colortrans(c2, mat, c1, noneg)	/* convert c1 by mat and put into c2 */
+cie_rgb(rgb, xyz)		/* convert CIE color to standard RGB */
+COLOR	rgb, xyz;
+{
+	colortrans(rgb, xyz2rgbmat, xyz);
+	clipgamut(rgb, xyz[CIEY], CGAMUT_LOWER, cblack, cwhite);
+}
+
+
+int
+clipgamut(col, brt, gamut, lower, upper)	/* clip to gamut cube */
+COLOR  col;
+double  brt;
+int  gamut;
+COLOR  lower, upper;
+{
+	int  rflags = 0;
+	double  brtmin, brtmax, v, vv;
+	COLOR  cgry;
+	register int  i;
+					/* check for no check */
+	if (gamut == 0) return(0);
+					/* check brightness limits */
+	brtmin = 1./3.*(lower[0]+lower[1]+lower[2]);
+	if (gamut & CGAMUT_LOWER && brt < brtmin) {
+		copycolor(col, lower);
+		return(CGAMUT_LOWER);
+	}
+	brtmax = 1./3.*(upper[0]+upper[1]+upper[2]);
+	if (gamut & CGAMUT_UPPER && brt > brtmax) {
+		copycolor(col, upper);
+		return(CGAMUT_UPPER);
+	}
+					/* compute equivalent grey */
+	v = (brt - brtmin)/(brtmax - brtmin);
+	for (i = 0; i < 3; i++)
+		cgry[i] = v*upper[i] + (1.-v)*lower[i];
+	vv = 1.;			/* check each limit */
+	for (i = 0; i < 3; i++)
+		if (gamut & CGAMUT_LOWER && col[i] < lower[i]) {
+			v = (lower[i] - cgry[i])/(col[i] - cgry[i]);
+			if (v < vv) vv = v;
+			rflags |= CGAMUT_LOWER;
+		} else if (gamut & CGAMUT_UPPER && col[i] > upper[i]) {
+			v = (upper[i] - cgry[i])/(col[i] - cgry[i]);
+			if (v < vv) vv = v;
+			rflags |= CGAMUT_UPPER;
+		}
+	if (rflags)			/* desaturate to cube face */
+		for (i = 0; i < 3; i++)
+			col[i] = vv*col[i] + (1.-vv)*cgry[i];
+	return(rflags);
+}
+
+
+colortrans(c2, mat, c1)		/* convert c1 by mat and put into c2 */
 register COLORMAT  mat;
 register COLOR  c1, c2;
-int	noneg;
 {
-	static float  cout[3];
-
-	cout[0] = mat[0][0]*c1[0] + mat[0][1]*c1[1] + mat[0][2]*c1[2];
-	cout[1] = mat[1][0]*c1[0] + mat[1][1]*c1[1] + mat[1][2]*c1[2];
-	cout[2] = mat[2][0]*c1[0] + mat[2][1]*c1[1] + mat[2][2]*c1[2];
-	if (!noneg)
-		return;
-	if ((c2[0] = cout[0]) < 0.) c2[0] = 0.;
-	if ((c2[1] = cout[1]) < 0.) c2[1] = 0.;
-	if ((c2[2] = cout[2]) < 0.) c2[2] = 0.;
+	c2[0] = mat[0][0]*c1[0] + mat[0][1]*c1[1] + mat[0][2]*c1[2];
+	c2[1] = mat[1][0]*c1[0] + mat[1][1]*c1[1] + mat[1][2]*c1[2];
+	c2[2] = mat[2][0]*c1[0] + mat[2][1]*c1[1] + mat[2][2]*c1[2];
 }
 
 
