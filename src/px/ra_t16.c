@@ -93,12 +93,12 @@ char  *argv[];
 					/* put header */
 		printargs(argc, argv, stdout);
 		putchar('\n');
-		printf("-Y %d +X %d\n", head.y, head.x);
+		fputresolu(YMAJOR|YDECR, head.x, head.y, stdout);
 					/* convert file */
 		tg2ra(&head);
 	} else {
 		getheader(stdin, NULL);
-		if (scanf("-Y %d +X %d\n", &head.y, &head.x) != 2)
+		if (fgetresolu(&head.x, &head.y, stdin) != (YMAJOR|YDECR))
 			quiterr("bad picture file");
 					/* assign header */
 		head.textSize = 0;

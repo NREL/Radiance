@@ -122,7 +122,7 @@ char  *argv[];
 					/* put header */
 		printargs(argc, argv, stdout);
 		putchar('\n');
-		printf("-Y %d +X %d\n", ymax, xmax);
+		fputresolu(YMAJOR|YDECR, xmax, ymax, stdout);
 					/* convert file */
 		tg2ra(&head);
 	} else {
@@ -280,7 +280,7 @@ register struct hdStruct  *h;
 		return(NULL);
 					/* discard header */
 	getheader(p->fp, NULL);
-	if (fscanf(p->fp, "-Y %d +X %d\n", &ymax, &xmax) != 2)
+	if (fgetresolu(&xmax, &ymax, p->fp) != (YMAJOR|YDECR))
 		quiterr("bad picture size");
 	p->nexty = 0;
 	p->bytes_line = 0;		/* variable length lines */

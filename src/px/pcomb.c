@@ -129,7 +129,8 @@ getfiles:
 		fputs(input[nfiles].name, stdout);
 		fputs(":\n", stdout);
 		getheader(input[nfiles].fp, tputs);
-		if (fscanf(input[nfiles].fp, "-Y %d +X %d\n", &ypos, &xpos) != 2) {
+		if (fgetresolu(&xpos, &ypos, input[nfiles].fp) !=
+				(YMAJOR|YDECR)) {
 			eputs(input[nfiles].name);
 			eputs(": bad picture size\n");
 			quit(1);
@@ -147,7 +148,7 @@ getfiles:
 	}
 	printargs(argc, argv, stdout);
 	putchar('\n');
-	printf("-Y %d +X %d\n", yres, xres);
+	fputresolu(YMAJOR|YDECR, xres, yres, stdout);
 	combine();
 	quit(0);
 usage:

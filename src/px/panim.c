@@ -89,7 +89,7 @@ char	*file;
 	}
 						/* get dimensions */
 	getheader(fp, NULL);
-	if (fscanf(fp, "-Y %d +X %d\n", &yres, &xres) != 2 ||
+	if (fgetresolu(&xres, &yres, fp) != (YMAJOR|YDECR) ||
 			xres > SCANLINE || yres > NUMSCANS) {
 		fputs(file, stderr);
 		fputs(": bad picture size\n", stderr);
