@@ -2,7 +2,9 @@
 static const char RCSid[] = "$Id$";
 #endif
 /*
- * Compute 4-byte direction code (assume this fits into int)
+ * Compute a 4-byte direction code (int4 type defined in standard.h).
+ *
+ * Mean accuracy is 0.0022 degrees, with a maximum error of 0.0058 degrees.
  */
 
 #include "standard.h"

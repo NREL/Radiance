@@ -11,7 +11,7 @@ typedef struct {
 } BARYCCM;
 
 #ifndef COSTOL
-#define COSTOL		0.99985		/* cosine of tolerance for smoothing */
+#define COSTOL		0.999995	/* cosine of tolerance for smoothing */
 #endif
 
 				/* flat_tri() return values */

@@ -197,12 +197,16 @@ register RAY	*r;
 		if (normalize(r->pert) != 0.0)
 			for (i = 0; i < 3; i++)
 				r->pert[i] -= r->ron[i];
-	}
+	} else
+		r->pert[0] = r->pert[1] = r->pert[2] = .0;
+
 	if (flags & MT_UV)		/* interpolate uv coordinates */
 		for (i = 0; i < 2; i++)
 			r->uv[i] = wt[0]*tv[0].uv[i] +
 					wt[1]*tv[1].uv[i] +
 					wt[2]*tv[2].uv[i];
+	else
+		r->uv[0] = r->uv[1] = .0;
 
 					/* return hit */
 	return(1);

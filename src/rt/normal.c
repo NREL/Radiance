@@ -1,5 +1,5 @@
 #ifndef lint
-static const char	RCSid[] = "$Id$";
+static const char RCSid[] = "$Id$";
 #endif
 /*
  *  normal.c - shading function for normal materials.
@@ -197,14 +197,14 @@ register RAY  *r;
 	nd.alpha2 = m->oargs.farg[4];
 	if ((nd.alpha2 *= nd.alpha2) <= FTINY)
 		nd.specfl |= SP_PURE;
-	if (r->ro != NULL && isflat(r->ro->otype))
-		nd.specfl |= SP_FLAT;
 
-	if (hastexture = DOT(r->pert,r->pert) > FTINY*FTINY)
+	if (hastexture = (DOT(r->pert,r->pert) > FTINY*FTINY)) {
 		nd.pdot = raynormal(nd.pnorm, r);	/* perturb normal */
-	else {
+	} else {
 		VCOPY(nd.pnorm, r->ron);
 		nd.pdot = r->rod;
+		if (r->ro != NULL && isflat(r->ro->otype))
+			nd.specfl |= SP_FLAT;
 	}
 	if (nd.pdot < .001)
 		nd.pdot = .001;			/* non-zero for dirnorm() */

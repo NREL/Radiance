@@ -74,7 +74,7 @@ extern OBJECT  nobjects;		/* # of objects */
  *  the objects in ascending order.
  */
 
-#define  MAXSET		127		/* maximum object set size */
+#define  MAXSET		511		/* maximum object set size */
 
 #define setfree(os)	free((void *)(os))
 
