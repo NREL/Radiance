@@ -58,7 +58,7 @@ int  scale = 0;				/* scalefactor; power of two */
 int  xoff = 0;				/* x image offset */
 int  yoff = 0;				/* y image offset */
 
-VIEW  ourview = STDVIEW(0);		/* image view parameters */
+VIEW  ourview = STDVIEW;		/* image view parameters */
 int  gotview = 0;			/* got parameters from file */
 
 COLR  *scanline;			/* scan line buffer */
@@ -146,12 +146,8 @@ char  *argv[];
 	if (fgetresolu(&xmax, &ymax, fin) != (YMAJOR|YDECR))
 		quiterr("bad picture size");
 				/* set view parameters */
-	if (gotview) {
-		ourview.hresolu = xmax;
-		ourview.vresolu = ymax;
-		if (setview(&ourview) != NULL)
-			gotview = 0;
-	}
+	if (gotview && setview(&ourview) != NULL)
+		gotview = 0;
 	if ((scanline = (COLR *)malloc(xmax*sizeof(COLR))) == NULL)
 		quiterr("out of memory");
 
@@ -178,7 +174,7 @@ char  *s;
 	else
 		for (an = altname; *an != NULL; an++)
 			if (!strncmp(*an, s, strlen(*an))) {
-				if (sscanview(&ourview, s+strlen(*an)) == 0)
+				if (sscanview(&ourview, s+strlen(*an)) > 0)
 					gotview++;
 				return;
 			}
@@ -411,8 +407,8 @@ XKeyEvent  *ekey;
 			XFeep(0);
 			return(-1);
 		}
-		rayview(rorg, rdir, &ourview,
-				ekey->x-xoff + .5, ymax-1-ekey->y+yoff + .5);
+		viewray(rorg, rdir, &ourview, (ekey->x-xoff+.5)/xmax,
+				(ymax-1-ekey->y+yoff+.5)/ymax);
 		printf("%e %e %e ", rorg[0], rorg[1], rorg[2]);
 		printf("%e %e %e\n", rdir[0], rdir[1], rdir[2]);
 		fflush(stdout);
