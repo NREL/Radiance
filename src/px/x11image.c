@@ -336,7 +336,7 @@ getras()				/* get raster file */
 	}
 	return;
 fail:
-	quit("could not create raster image");
+	quiterr("could not create raster image");
 }
 
 
@@ -609,7 +609,7 @@ getmono()			/* get monochrome data */
 
 	if ((inl = (rgbpixel *)malloc(xmax*sizeof(rgbpixel))) == NULL
 			|| (cerr = (short *)calloc(xmax,sizeof(short))) == NULL)
-		quit("out of memory in getmono");
+		quiterr("out of memory in getmono");
 	dp = ourdata - 1;
 	for (y = 0; y < ymax; y++) {
 		picreadline3(y, inl);
@@ -674,7 +674,7 @@ int  y;
 		if (scanpos == NULL || scanpos[y] == -1)
 			return(-1);
 		if (fseek(fin, scanpos[y], 0) == -1)
-			quit("fseek error");
+			quiterr("fseek error");
 		cury = y;
 	} else if (scanpos != NULL)
 		scanpos[y] = ftell(fin);
