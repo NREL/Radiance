@@ -128,6 +128,7 @@ extern int  maxdepth;			/* maximum recursion depth */
 extern double  minweight;		/* minimum ray weight */
 
 extern COLOR  ambval;			/* ambient value */
+extern int  ambvwt;			/* initial weight for ambient value */
 extern double  ambacc;			/* ambient accuracy */
 extern int  ambres;			/* ambient resolution */
 extern int  ambdiv;			/* ambient divisions */
@@ -388,6 +389,10 @@ char  *argv[];
 						atof(argv[i+2]),
 						atof(argv[i+3]));
 				i += 3;
+				break;
+			case 'w':				/* weight */
+				check(3,"i");
+				ambvwt = atoi(argv[++i]);
 				break;
 			case 'a':				/* accuracy */
 				check(3,"f");
@@ -897,6 +902,7 @@ printdefaults()			/* print default values to stdout */
 	printf("-st %f\t\t\t# specular threshold\n", specthresh);
 	printf("-av %f %f %f\t# ambient value\n", colval(ambval,RED),
 			colval(ambval,GRN), colval(ambval, BLU));
+	printf("-aw %-9d\t\t\t# ambient value weight\n", ambvwt);
 	printf("-ab %-9d\t\t\t# ambient bounces\n", ambounce);
 	printf("-aa %f\t\t\t# ambient accuracy\n", ambacc);
 	printf("-ar %-9d\t\t\t# ambient resolution\n", ambres);

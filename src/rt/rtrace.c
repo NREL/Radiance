@@ -72,6 +72,7 @@ int  maxdepth = 6;			/* maximum recursion depth */
 double  minweight = 4e-3;		/* minimum ray weight */
 
 COLOR  ambval = BLKCOLOR;		/* ambient value */
+int  ambvwt = 0;			/* initial weight for ambient value */
 double  ambacc = 0.2;			/* ambient accuracy */
 int  ambres = 128;			/* ambient resolution */
 int  ambdiv = 512;			/* ambient divisions */
