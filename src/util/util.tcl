@@ -10,7 +10,12 @@ proc beep {} {		# ring the bell
 proc view_txt fn {		# view a text file
 	global env
 	if [info exists env(EDITOR)] {
-		eval exec xterm -e $env(EDITOR) $fn
+		if {[lsearch -exact {vi vedit view ex edit ed red} \
+				[file tail [lindex $env(EDITOR) 0]]] >= 0} {
+			eval exec xterm +sb -e $env(EDITOR) $fn
+		} else {
+			eval exec $env(EDITOR) $fn
+		}
 	} else {
 		foreach f $fn {
 			exec xedit $f
