@@ -1,4 +1,4 @@
-	$Id: trad.hlp,v 2.3 1994/11/01 14:38:31 greg Exp $
+	$Id: trad.hlp,v 2.4 1994/11/05 09:31:49 greg Exp $
 
 This help file is associated with the trad interface to the Radiance
 rad(1) program.  Trad consists of trad.wsh and one do_*.tcl file for
@@ -648,7 +648,7 @@ In particular, make sure that each option and each argument has a
 space between it and whatever follows.
 
 Hitting return in the "Options" window is equivalent to pressing the
-"Add" button.
+"Add" button followed by the "Clear" button.
 
 .Views.Add
 
