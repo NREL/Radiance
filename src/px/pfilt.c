@@ -88,16 +88,18 @@ char  **argv;
 			switch (argv[i][1]) {
 			case 'x':
 				i++;
-				if (argv[i][0] == '/')
+				if (argv[i][0] == '/') {
 					x_c = 1.0/atof(argv[i]+1);
-				else
+					ncols = 0;
+				} else
 					ncols = atoi(argv[i]);
 				break;
 			case 'y':
 				i++;
-				if (argv[i][0] == '/')
+				if (argv[i][0] == '/') {
 					y_r = 1.0/atof(argv[i]+1);
-				else
+					nrows = 0;
+				} else
 					nrows = atoi(argv[i]);
 				break;
 			case 'e':
