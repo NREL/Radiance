@@ -53,7 +53,7 @@ set conv(types) {GIF-bw GIF-8 PICT PS PPM-asc PPM-bin ras-bw ras-8 ras-24\
 set conv(typ) tga-24
 
 proc list_views {} {		# List finished and unfinished pictures
-	global radvar fvwbox ufvwbox
+	global radvar fvwbox ufvwbox alldone
 	set fpics {}
 	set ufpics {}
 	foreach vw $radvar(view) {
@@ -68,10 +68,11 @@ proc list_views {} {		# List finished and unfinished pictures
 	eval $fvwbox insert end $fpics
 	$ufvwbox delete 0 end
 	eval $ufvwbox insert end $ufpics
+	set alldone [expr [llength $fpics] == [llength $radvar(view)]]
 }
 
 proc delpic {} {		# Delete selected pictures
-	global curmess alldone
+	global curmess
 	set selected_pics [get_selpics]
 	if {"$selected_pics" == {}} {
 		set curmess "No pictures selected."
@@ -86,7 +87,6 @@ proc delpic {} {		# Delete selected pictures
 		set curmess "Deleted [llength $selected_pics] file(s)."
 	}
 	list_views
-	set alldone 0
 }
 
 proc get_selpics {} {		# return selected pictures
