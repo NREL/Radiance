@@ -119,15 +119,20 @@ FVECT  p;
 		if (zp != NULL)
 			*zp = DOT(disp,v->vdir);
 	} else {			/* perspective view */
-		d = 1.0/DOT(disp,v->vdir);
+		d = DOT(disp,v->vdir);
 		if (zp != NULL) {
 			*zp = sqrt(DOT(disp,disp));
 			if (d < 0.0)
 				*zp = -*zp;
 		}
-		disp[0] *= d;
-		disp[1] *= d;
-		disp[2] *= d;
+		if (d < 0.0)		/* fold pyramid */
+			d = -d;
+		if (d > FTINY) {
+			d = 1.0/d;
+			disp[0] *= d;
+			disp[1] *= d;
+			disp[2] *= d;
+		}
 	}
 	*xp = DOT(disp,v->hvec)/v->hn2 + 0.5 - v->hoff;
 	*yp = DOT(disp,v->vvec)/v->vn2 + 0.5 - v->voff;
