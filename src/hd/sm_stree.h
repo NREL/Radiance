@@ -22,6 +22,7 @@ typedef struct _STREE {
 }STREE;
 
 #define ST_ROOT(s)             ((s)->root)
+#define ST_ROOT_PTR(s)             (&(s)->root)
 #define ST_NTH_ROOT(s,n)       QT_NTH_CHILD(ST_ROOT(s),n)
 #define ST_NTH_ROOT_PTR(s,n)   QT_NTH_CHILD_PTR(ST_ROOT(s),n)
 #define ST_CLEAR_ROOT(s)       QT_CLEAR_CHILDREN(ST_ROOT(s))
@@ -36,7 +37,7 @@ typedef struct _STREE {
 				VCOPY(ST_NTH_BASE(s,2),(b)[2]), \
 				VCOPY(ST_NTH_BASE(s,3),(b)[3]))
 #define ST_COORD(s,p,r)         VSUB(r,p,ST_CENTER(s))
-
+#define ST_CLEAR_FLAGS(s)       qtClearAllFlags()
 /* STREE functions
 
 
@@ -57,10 +58,12 @@ typedef struct _STREE {
 	  threshold- merge
 */
 extern int   stTri_verts[4][3];
+extern int   stTri_nbrs[4][3];
 extern FVECT stDefault_base[4];
 
 
-
+extern STREE *stAlloc();
+extern QUADTREE *stPoint_locate_cell();
 
 
 

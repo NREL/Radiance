@@ -99,7 +99,8 @@ extern void     decodedir();
  * view has already been set up and the correct frame buffer has been
  * selected for drawing.  The quality level is on a linear scale, where 100%
  * is full (final) quality.  It is not necessary to redraw geometry that has
- * been output since the last call to smClean().
+ * been output since the last call to smClean().  (The last view drawn will
+ * be vp==&odev.v each time.)
  */
 
 /* These values are set by the driver, and used in the OGL call for glFrustum*/

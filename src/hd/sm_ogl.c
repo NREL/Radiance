@@ -16,7 +16,6 @@ static char SCCSid[] = "$SunId$ SGI";
 #include <GL/glu.h>
 #include <glut.h>
 #endif
-#include "object.h"
 #include "sm_list.h"
 #include "sm_geom.h"
 #include "sm.h"
@@ -41,23 +40,23 @@ typedef struct {
 	QTRAVG		av;	/* node average */
 } QT_LUENT;		/* lookup table entry */
 
-static QT_LUENT	*qt_htbl = NULL;	/* quadtree hash table */
-static int	qt_hsiz = 0;		/* quadtree hash table size */
+static QT_LUENT	*qt_htbl = NULL;	/* quadtree cache */
+static int	qt_hsiz = 0;		/* quadtree cache size */
 
 
 int
 mark_active_tris(qtptr,arg)
 QUADTREE *qtptr;
-char *arg;
+int *arg;
 {
   QUADTREE qt = *qtptr;
-  OBJECT os[QT_MAX_SET+1],*optr;
+  OBJECT *os,*optr;
   register int i,t_id;
 
   if (!QT_IS_LEAF(qt))
     return(TRUE);
   /* For each triangle in the set, set the which flag*/
-  qtgetset(os,qt);
+  os = qtqueryset(qt);
 
   for (i = QT_SET_CNT(os), optr = QT_SET_PTR(os); i > 0; i--)
   {
@@ -140,7 +139,7 @@ smClean()
 }
 
 int
-qtHash_init(nel)		/* initialize for at least nel elements */
+qtCache_init(nel)		/* initialize for at least nel elements */
 int	nel;
 {
 	static int  hsiztab[] = {
@@ -171,15 +170,15 @@ int	nel;
 }
 
 QT_LUENT *
-qtHash_find(qt)			/* find a quadtree table entry */
+qtCache_find(qt)		/* find a quadtree table entry */
 QUADTREE qt;
 {
 	int	i, n;
 	register int	ndx;
 	register QT_LUENT	*le;
 
-	if (qt_hsiz == 0)
-		qtHash_init(1);
+	if (qt_hsiz == 0 && !qtCache_init(1))
+		return(NULL);
 tryagain:				/* hash table lookup */
 	ndx = (unsigned long)qt % qt_hsiz;
 	for (i = 0, n = 1; i < qt_hsiz; i++, n += 2) {
@@ -192,17 +191,15 @@ tryagain:				/* hash table lookup */
 					/* table is full, reallocate */
 	le = qt_htbl;
 	ndx = qt_hsiz;
-	if (!qtHash_init(ndx+1)) {	/* no more memory! */
+	if (!qtCache_init(ndx+1)) {	/* no more memory! */
 		qt_htbl = le;
 		qt_hsiz = ndx;
 		return(NULL);
 	}
-	if (!ndx)
-		goto tryagain;
-					/* copy old table to new */
+					/* copy old table to new and free */
 	while (ndx--)
 		if (!QT_IS_EMPTY(le[ndx].qt))
-			copystruct(qtHash_find(le[ndx].qt), &le[ndx]);
+			copystruct(qtCache_find(le[ndx].qt), &le[ndx]);
 	free((char *)le);
 	goto tryagain;			/* should happen only once! */
 }
@@ -242,7 +239,7 @@ int lvl;
   if (QT_IS_TREE(qt) && !QT_IS_FLAG(qt))	/* not in our frustum */
     return(NULL);
 					/* else look up node */
-  if ((le = qtHash_find(qt)) == NULL)
+  if ((le = qtCache_find(qt)) == NULL)
     error(SYSTEM, "out of memory in qtRender_level");
   if (QT_IS_TREE(qt) && (QT_IS_EMPTY(le->qt) || lvl > 0))
   {					/* compute children */
@@ -271,10 +268,10 @@ int lvl;
     }
     else
     {					/* from triangle set */
-      OBJECT os[QT_MAX_SET+1];
+      OBJECT *os;
       int s0, s1, s2;
 
-      qtgetset(os,qt);
+      os = qtqueryset(qt);
       for (n = os[0]; n; n--)
       {
 	qtTri_from_id(os[n],a,b,c,NULL,NULL,NULL,&s0,&s1,&s2);
@@ -752,7 +749,7 @@ smUpdate(view,qual)
   {
     smClean_notify = FALSE;
     smNew_tri_cnt = 0;
-    qtHash_init(0);
+    qtCache_init(0);
   }
 
 }

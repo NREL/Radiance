@@ -8,9 +8,6 @@ static char SCCSid[] = "$SunId$ SGI";
  *  sm.c
  */
 #include "standard.h"
-
-#include "object.h"
-
 #include "sm_list.h"
 #include "sm_geom.h"
 #include "sm.h"
@@ -20,11 +17,12 @@ SM *smMesh = NULL;
 double smDist_sum=0;
 int smNew_tri_cnt=0;
 
+static int smBase_nbrs[4][3] =  { {3,2,1},{3,0,2},{3,1,0},{1,2,0}};
+
 #ifdef TEST_DRIVER
-VIEW  View = {0,{0,0,0},{0,0,-1},{0,1,0},60,60,0};
 VIEW  Current_View = {0,{0,0,0},{0,0,-1},{0,1,0},60,60,0};
 int Pick_cnt =0;
-int Pick_tri = -1,Picking = FALSE;
+int Pick_tri = -1,Picking = FALSE,Pick_samp=-1;
 FVECT Pick_point[500],Pick_origin,Pick_dir;
 FVECT  Pick_v0[500], Pick_v1[500], Pick_v2[500];
 FVECT P0,P1,P2;
@@ -226,8 +224,6 @@ smInit(n)
 {
   int max_vertices;
 
-  sleep(10);
-  
   /* If n <=0, Just clear the existing structures */
   if(n <= 0)
   {
@@ -260,17 +256,17 @@ smLocator_apply_func(sm,v0,v1,v2,func,arg)
 SM *sm;
 FVECT v0,v1,v2;
 int (*func)();
-char *arg;
+int *arg;
 {
   STREE *st;
-  char found;
+  int found;
   FVECT p0,p1,p2;
 
   st = SM_LOCATOR(sm);
 
-  point_on_sphere(p0,v0,SM_VIEW_CENTER(sm));
-  point_on_sphere(p1,v1,SM_VIEW_CENTER(sm));
-  point_on_sphere(p2,v2,SM_VIEW_CENTER(sm));
+  VSUB(p0,v0,SM_VIEW_CENTER(sm));
+  VSUB(p1,v1,SM_VIEW_CENTER(sm));
+  VSUB(p2,v2,SM_VIEW_CENTER(sm));
 
   found = stApply_to_tri_cells(st,p0,p1,p2,func,arg);
 
@@ -279,23 +275,167 @@ char *arg;
 
 
 int
+add_tri_expand(qtptr,q0,q1,q2,t0,t1,t2,n,arg,t_id)
+QUADTREE *qtptr;
+FVECT q0,q1,q2;
+FVECT t0,t1,t2;
+int n;
+int *arg;
+int t_id;
+{
+    OBJECT tset[QT_MAXSET+1],*optr;	
+    int i,id,found;
+    FVECT v0,v1,v2;
+
+#ifdef DEBUG_TEST_DRIVER
+    Pick_tri = t_id;
+    Picking = TRUE;
+#endif    
+    
+    if(QT_IS_EMPTY(*qtptr))
+    {
+      *qtptr = qtaddelem(*qtptr,t_id);
+      return(TRUE);
+    }
+    
+    optr = qtqueryset(*qtptr);
+    if(!inset(optr,t_id))
+    {
+      if(QT_SET_CNT(optr) < QT_MAXSET)
+	*qtptr = qtaddelem(*qtptr,t_id);
+      else
+	{
+#ifdef DEBUG
+	  eputs("add_tri_expand():no room in set\n");
+#endif
+	  return(FALSE);
+	}
+    }
+    optr = qtqueryset(*qtptr);
+    if(QT_SET_CNT(optr) >= QT_SET_THRESHOLD)
+      if (n < QT_MAX_LEVELS)
+      {
+	qtgetset(tset,*qtptr);
+	/* If set size exceeds threshold: subdivide cell and reinsert tris*/
+	qtfreeleaf(*qtptr);
+	qtSubdivide(qtptr);
+
+	for(optr = QT_SET_PTR(tset),i=QT_SET_CNT(tset); i > 0; i--)
+	{
+	  id = QT_SET_NEXT_ELEM(optr);
+	  qtTri_from_id(id,NULL,NULL,NULL,v0,v1,v2,NULL,NULL,NULL);
+	  found=qtAdd_tri(qtptr,q0,q1,q2,v0,v1,v2,id,n);
+#ifdef DEBUG
+	  if(!found)
+	    eputs("add_tri_expand():Reinsert\n");
+#endif
+	}
+	return(QT_MODIFIED);
+      }
+      else
+	if(QT_SET_CNT(optr) < QT_MAXSET)
+	{
+#ifdef DEBUG_TEST_DRIVER	      
+	  eputs("add_tri_expand():too many levels:can't expand\n");
+#endif
+	  return(TRUE);
+	}
+	else
+	  {
+#ifdef DEBUG	      
+	    eputs("add_tri_expand():too many tris inset:can't add\n");
+#endif
+	    return(FALSE);
+	  }
+}
+
+
+int
+add_tri(qtptr,fptr,t_id)
+   QUADTREE *qtptr;
+   int *fptr;
+   int t_id;
+{
+
+  OBJECT *optr;
+
+#ifdef DEBUG_TEST_DRIVER
+    Pick_tri = t_id;
+    Picking = TRUE;
+#endif    
+    if(QT_IS_EMPTY(*qtptr))
+    {
+	*qtptr = qtaddelem(*qtptr,t_id);
+	if(!QT_FLAG_FILL_TRI(*fptr))
+	  (*fptr)++;
+    }
+    else
+     {
+       optr = qtqueryset(*qtptr);
+       if(!inset(optr,t_id))
+       {
+	 if(QT_SET_CNT(optr) < QT_MAXSET)
+	 {
+	   if(QT_SET_CNT(optr) >= QT_SET_THRESHOLD)
+	     (*fptr) |= QT_EXPAND;
+	   if(!QT_FLAG_FILL_TRI(*fptr))
+	     (*fptr)++;
+	   *qtptr = qtaddelem(*qtptr,t_id);
+	 }
+	 else
+	   {
+#ifdef DEBUG_TESTDRIVER	      
+	     eputs("add_tri():exceeded set size\n");
+#endif
+	     return(FALSE);
+	   }
+       }
+     }
+    return(TRUE);
+}
+
+
+int
+stInsert_tri(st,t_id,t0,t1,t2)
+   STREE *st;
+   int t_id;
+   FVECT t0,t1,t2;
+{
+    int f;
+    FVECT dir;
+    
+  /* First add all of the leaf cells lying on the triangle perimeter:
+     mark all cells seen on the way
+   */
+    ST_CLEAR_FLAGS(st);
+    f = 0;
+    VSUB(dir,t1,t0);
+    stTrace_edge(st,t0,dir,1.0,add_tri,&f,t_id);
+    VSUB(dir,t2,t1);
+    stTrace_edge(st,t1,dir,1.0,add_tri,&f,t_id);
+    VSUB(dir,t0,t2);
+    stTrace_edge(st,t2,dir,1.0,add_tri,&f,t_id);
+    /* Now visit interior */
+    if(QT_FLAG_FILL_TRI(f) || QT_FLAG_UPDATE(f))
+       stVisit_tri_interior(st,t0,t1,t2,add_tri_expand,&f,t_id);
+}
+
 smLocator_add_tri(sm,t_id,v0_id,v1_id,v2_id)
 SM *sm;
 int t_id;
 int v0_id,v1_id,v2_id;  
 {
   STREE *st;
-  FVECT p0,p1,p2;
+  FVECT v0,v1,v2;
   
   st = SM_LOCATOR(sm);
 
-  smDir(sm,p0,v0_id);
-  smDir(sm,p1,v1_id);
-  smDir(sm,p2,v2_id);
+  VSUB(v0,SM_NTH_WV(sm,v0_id),SM_VIEW_CENTER(sm));
+  VSUB(v1,SM_NTH_WV(sm,v1_id),SM_VIEW_CENTER(sm));
+  VSUB(v2,SM_NTH_WV(sm,v2_id),SM_VIEW_CENTER(sm));
 
-  stAdd_tri(st,t_id,p0,p1,p2);
+  stUpdate_tri(st,t_id,v0,v1,v2,add_tri,add_tri_expand);
 
-  return(1);
 }
 
 /* Add a triangle to the base array with vertices v1-v2-v3 */
@@ -383,7 +523,7 @@ double eps;
 	   }
       }
       else
-	if(d1 < d2)
+	if(d1 < d0)
         {
 	  if((eps < 0) ||  d1 < eps)
 	  {
@@ -391,19 +531,13 @@ double eps;
 	    d = d1;
 	  }
 	}
-      else
-	 if((eps < 0) ||  d2 < eps)
-	  {
-	    closest = v2_id;
-	    d = d2;
-	  }
-  }
+    }
     if(v2_id != -1)
     {
       smDir(sm,v,v2_id);
       d2 = DIST(p,v);
       if((eps < 0) ||  d2 < eps)
-	 if(closest== -1 ||(d2 < d))
+	 if(closest == -1 ||(d2 < d))
 	     return(v2_id);
     }
     return(closest);
@@ -426,7 +560,7 @@ FVECT p;
     
     VCOPY(v,SM_NTH_WV(sm,v1_id));
     d1 = DIST(p,v);
-    if(d1 < d2)
+    if(d1 < d0)
     {
       closest = v1_id;
       d = d1;
@@ -444,7 +578,7 @@ smTris_swap_edge(sm,t_id,t1_id,e,e1,tn_id,tn1_id,add,del)
    SM *sm;
    int t_id,t1_id;
    int e,e1;
-   int **tn_id,**tn1_id;
+   int *tn_id,*tn1_id;
    LIST **add,**del;
 
 {
@@ -469,7 +603,6 @@ smTris_swap_edge(sm,t_id,t1_id,e,e1,tn_id,tn1_id,add,del)
     verts[eprev] = T_NTH_V(t,eprev);
     ta_id = smAdd_tri(sm,verts[0],verts[1],verts[2],&ta);
     *add = push_data(*add,ta_id);
-
     verts[e1] = T_NTH_V(t1,e1);
     verts[e1next] = T_NTH_V(t,eprev);
     verts[e1prev] = T_NTH_V(t1,e1prev);
@@ -496,6 +629,7 @@ smTris_swap_edge(sm,t_id,t1_id,e,e1,tn_id,tn1_id,add,del)
     T_NTH_NBR(n,T_NTH_NBR_PTR(t1_id,n)) = tb_id;
 
     /* Delete two parent triangles */
+
     *del = push_data(*del,t_id);
     if(SM_IS_NTH_T_NEW(sm,t_id))
       SM_CLEAR_NTH_T_NEW(sm,t_id);
@@ -581,7 +715,6 @@ LIST *tlist;
 	}
     }
     smUpdate_locator(sm,add_list,del_list);
-
     return(swapped);
 }
 
@@ -614,8 +747,8 @@ int id,nid;
   
   T_NTH_V(tri,T_WHICH_V(tri,id)) = nid;
 
-  t_id = smTri_next_ccw_nbr(sm,t,nid);
-  while((t= SM_NTH_TRI(sm,t_id)) != tri)
+  t_id = smTri_next_ccw_nbr(sm,tri,nid);
+  while((t = SM_NTH_TRI(sm,t_id)) != tri)
   {
       T_NTH_V(t,T_WHICH_V(t,id)) = nid;
       t_id = smTri_next_ccw_nbr(sm,t,nid);
@@ -641,7 +774,7 @@ smReplace_vertex(sm,c,dir,p,tri_id,snew_id,type,which)
    COLR c;
    FVECT dir,p;
    int tri_id,snew_id;
-   char type,which;
+   int type,which;
 {
     int n_id,s_id;
     TRI *tri;
@@ -757,11 +890,10 @@ smInsert_point_in_tri(sm,c,dir,p,s_id,tri_id)
     
 
 int
-smPointLocate(sm,pt,type,which,norm)
+smPointLocate(sm,pt,norm)
 SM *sm;
 FVECT pt;
-char *type,*which;
-char norm;
+int norm;
 {
   STREE *st;
   int tri;
@@ -770,11 +902,11 @@ char norm;
   st = SM_LOCATOR(sm);
   if(norm)
   {
-      point_on_sphere(npt,pt,SM_VIEW_CENTER(sm));
-      tri = stPoint_locate(st,npt,type,which);
+      VSUB(npt,pt,SM_VIEW_CENTER(sm));
+      tri = stPoint_locate(st,npt);
   }
   else
-     tri = stPoint_locate(st,pt,type,which);
+     tri = stPoint_locate(st,pt);
   return(tri);
 }
 
@@ -782,7 +914,7 @@ QUADTREE
 smPointLocateCell(sm,pt,norm,v0,v1,v2)
 SM *sm;
 FVECT pt;
-char norm;
+int norm;
 FVECT v0,v1,v2;
 {
   STREE *st;
@@ -792,7 +924,7 @@ FVECT v0,v1,v2;
   st = SM_LOCATOR(sm);
   if(norm)
   {
-      point_on_sphere(npt,pt,SM_VIEW_CENTER(sm));
+      VSUB(npt,pt,SM_VIEW_CENTER(sm));
   
       qtptr = stPoint_locate_cell(st,npt,v0,v1,v2);
   }
@@ -813,7 +945,6 @@ smAdd_sample_to_mesh(sm,c,dir,pt,s_id)
    int s_id;
 {
     int t_id;
-    char type,which;
     double d;
     FVECT p;
     
@@ -824,15 +955,16 @@ smAdd_sample_to_mesh(sm,c,dir,pt,s_id)
 	d = DIST(pt,SM_VIEW_CENTER(smMesh));
 	smDist_sum += 1.0/d;
 	/************************************/
-	t_id = smPointLocate(smMesh,pt,&type,&which,TRUE); 
-	if(type==GT_FACE)
+	t_id = smPointLocate(smMesh,pt,TRUE); 
+	if(t_id >= 0)
 	   s_id = smInsert_point_in_tri(smMesh,c,dir,pt,s_id,t_id);
-	else
-	   if(type==GT_VERTEX)
-	      s_id = smReplace_vertex(smMesh,c,dir,pt,t_id,s_id,type,which);
 #ifdef DEBUG
 	   else
-	      eputs("smAdd_sample_to_mesh(): unrecognized type\n");
+	     {
+	       c[0] = 255;c[1]=0;c[2]=0;
+	       s_id = smAdd_sample_point(sm,c,dir,pt);	       
+	       eputs("smAdd_sample_to_mesh(): not found fg\n");
+	     }
 #endif
     }
     else if(s_id != -1)
@@ -845,29 +977,24 @@ smAdd_sample_to_mesh(sm,c,dir,pt,s_id)
 	    smDist_sum += 1.0/d;
 	    /************************************/
 	}
-	t_id = smPointLocate(smMesh,p,&type,&which,TRUE); 
-	if(type==GT_FACE)
+	t_id = smPointLocate(smMesh,p,TRUE); 
+	if(t_id != -1)
 	   s_id = smInsert_point_in_tri(smMesh,c,dir,p,s_id,t_id);
-	else
-	   if(type==GT_VERTEX)
-	      s_id = smReplace_vertex(smMesh,c,dir,p,t_id,s_id,type,which);
 #ifdef DEBUG
 	   else
-	      eputs("smAdd_sample_to_mesh(): unrecognized type\n");
+	      eputs("smAdd_sample_to_mesh():not found reinsert\n");
 #endif
     }
     /* Is a BG(sky point) */
     else
        {
-	   t_id = smPointLocate(smMesh,dir,&type,&which,FALSE); 
-	   if(type==GT_FACE)
+	   t_id = smPointLocate(smMesh,dir,FALSE); 
+	   if(t_id != -1)
 	      s_id = smInsert_point_in_tri(smMesh,c,dir,NULL,s_id,t_id);
-	   else
-	      if(type==GT_VERTEX)
-		 s_id = smReplace_vertex(smMesh,c,dir,NULL,t_id,s_id,type,which);
+
 #ifdef DEBUG
 	      else
-		 eputs("smAdd_sample_to_mesh(): unrecognized type\n");
+		 eputs("smAdd_sample_to_mesh(): not found bg\n");
 #endif
        }
     return(s_id);
@@ -892,22 +1019,13 @@ FVECT p;
 
 {
     int s_id;
+    int debug=0;
     
     /* First check if this the first sample: if so initialize mesh */
     if(SM_NUM_SAMP(smMesh) == 0)
-#ifdef TEST_DRIVER
-      smInit_mesh(smMesh,View.vp);
-#else
       smInit_mesh(smMesh,odev.v.vp);
-#endif
-    s_id = smAdd_sample_to_mesh(smMesh,c,dir,p,-1);
-#if 0
-{
-  char buff[100];
-  sprintf(buff,"Added sample %d\n",s_id);
-    eputs(buff);
-}
-#endif
+    if(!debug)
+       s_id = smAdd_sample_to_mesh(smMesh,c,dir,p,-1);
     return(s_id);
     
  }    
@@ -981,7 +1099,7 @@ smCreate_base_mesh(sm,type)
 SM *sm;
 int type;
 {
-  int i,id;
+  int i,id,tri_id,nbr_id;
   int p[4],ids[4];
   int v0_id,v1_id,v2_id;
   TRI *tris[4];
@@ -991,7 +1109,11 @@ int type;
 
   for(i=0; i < 4; i++)
   {
-      VADD(cntr,stDefault_base[i],SM_VIEW_CENTER(sm));
+    VCOPY(cntr,stDefault_base[i]);
+    cntr[0] += .01;
+    cntr[1] += .02;
+    cntr[2] += .03;
+      VADD(cntr,cntr,SM_VIEW_CENTER(sm));
       point_on_sphere(d,cntr,SM_VIEW_CENTER(sm));
       id = smAdd_base_vertex(sm,cntr,d);
     /* test to make sure vertex allocated */
@@ -1012,21 +1134,10 @@ int type;
   }
   /* Set neighbors */
 
-  T_NTH_NBR(tris[0],0) = ids[3];
-  T_NTH_NBR(tris[0],1) = ids[2];
-  T_NTH_NBR(tris[0],2) = ids[1];
+  for(tri_id=0;tri_id < 4; tri_id++)
+     for(nbr_id=0; nbr_id < 3; nbr_id++)
+	T_NTH_NBR(tris[tri_id],nbr_id) = smBase_nbrs[tri_id][nbr_id];
 
-  T_NTH_NBR(tris[1],0) = ids[3];
-  T_NTH_NBR(tris[1],1) = ids[0];
-  T_NTH_NBR(tris[1],2) = ids[2];
-
-  T_NTH_NBR(tris[2],0) = ids[3];
-  T_NTH_NBR(tris[2],1) = ids[1];
-  T_NTH_NBR(tris[2],2) = ids[0];
-
-  T_NTH_NBR(tris[3],0) = ids[1];
-  T_NTH_NBR(tris[3],1) = ids[2];
-  T_NTH_NBR(tris[3],2) = ids[0];
   return(1);
 
 }
@@ -1036,14 +1147,14 @@ int
 smNext_tri_flag_set(sm,i,which,b)
      SM *sm;
      int i,which;
-     char b;
+     int b;
 {
 
   for(; i < SM_TRI_CNT(sm);i++)
   {
-    if(!SM_IS_NTH_T_FLAG(sm,i,which))
-      continue;
 
+      if(!SM_IS_NTH_T_FLAG(sm,i,which))
+	 continue;
     if(!b)
       break;
     if((b==1) && !SM_BG_TRI(sm,i))
@@ -1070,9 +1181,11 @@ smNext_valid_tri(sm,i)
 
 
 
-qtTri_verts_from_id(t_id,v0,v1,v2) 
+qtTri_from_id(t_id,v0,v1,v2,n0,n1,n2,v0_idp,v1_idp,v2_idp) 
 int t_id;
 FVECT v0,v1,v2;
+FVECT n0,n1,n2;
+int *v0_idp,*v1_idp,*v2_idp;
 {
   TRI *t;
   int v0_id,v1_id,v2_id;
@@ -1082,45 +1195,25 @@ FVECT v0,v1,v2;
   v1_id = T_NTH_V(t,1);
   v2_id = T_NTH_V(t,2);
 
-  smDir(smMesh,v0,v0_id);
-  smDir(smMesh,v1,v1_id);
-  smDir(smMesh,v2,v2_id);
+  if(v0)
+  {
+      VCOPY(v0,SM_NTH_WV(smMesh,v0_id));
+      VCOPY(v1,SM_NTH_WV(smMesh,v1_id));
+      VCOPY(v2,SM_NTH_WV(smMesh,v2_id));
+  }
+  if(n0)
+  {
+      smDir(smMesh,n0,v0_id);
+      smDir(smMesh,n1,v1_id);
+      smDir(smMesh,n2,v2_id);
 
- }
-
-
-int
-smIntersectTriSet(sm,t_set,orig,dir,pt)
-   SM *sm;
-   OBJECT *t_set;
-   FVECT orig,dir,pt;
-{
-    OBJECT *optr;
-    int i,t_id,v_id;
-    TRI *tri;
-    FVECT p0,p1,p2;
-    char type,which;
-    int p0_id,p1_id,p2_id;
-    
-    for(optr = QT_SET_PTR(t_set),i = QT_SET_CNT(t_set); i > 0; i--)
-    {
-	t_id = QT_SET_NEXT_ELEM(optr);
-	tri = SM_NTH_TRI(sm,t_id);
-	p0_id = T_NTH_V(tri,0);
-	p1_id = T_NTH_V(tri,1);
-	p2_id = T_NTH_V(tri,2);
-	VCOPY(p0,SM_NTH_WV(sm,p0_id));
-	VCOPY(p1,SM_NTH_WV(sm,p1_id));
-	VCOPY(p2,SM_NTH_WV(sm,p2_id));
-	if(type = ray_intersect_tri(orig,dir,p0,p1,p2,pt,&which))
-        {
-	  if(type==GT_VERTEX)
-	    return(T_NTH_V(tri,which));
-	  v_id = smClosest_vertex_in_w_tri(sm,p0_id,p1_id,p2_id,pt);
-	  return(v_id);
-	}
-    }
-    return(-1);
+  }
+  if(v0_idp)
+     {
+	 *v0_idp = v0_id;
+	 *v1_idp = v1_id;
+	 *v2_idp = v2_id;
+     }
 }
 
 
@@ -1136,7 +1229,7 @@ smFindSamp(orig,dir)
 FVECT orig,dir;
 {
   FVECT r,v0,v1,v2,a,b,p;
-  OBJECT os[MAXCSET+1],t_set[MAXSET+1];
+  OBJECT os[QT_MAXCSET+1],t_set[QT_MAXSET+1],*ts;
   QUADTREE qt;
   int s_id;
   double d;
@@ -1164,9 +1257,9 @@ FVECT orig,dir;
       /* Test triangles in the set for intersection with Ray:returns
 	 first found
       */
-      qtgetset(t_set,qt);
-      s_id = smIntersectTriSet(smMesh,t_set,orig,dir,p);
-#ifdef TEST_DRIVER
+      ts = qtqueryset(qt);
+      s_id = intersect_tri_set(ts,orig,dir,p);
+#ifdef DEBUG_TEST_DRIVER
       VCOPY(Pick_point[0],p);
 #endif
       return(s_id);
@@ -1176,8 +1269,8 @@ FVECT orig,dir;
       /* Starting with orig, Walk along projection of ray onto sphere */
       point_on_sphere(r,orig,SM_VIEW_CENTER(smMesh));
       qt = smPointLocateCell(smMesh,r,FALSE,v0,v1,v2);
-      qtgetset(t_set,qt);
       /* os will contain all triangles seen thus far */
+      qtgetset(t_set,qt);
       setcopy(os,t_set);
 
       /* Calculate ray perpendicular to dir: when projection ray is // to dir,
@@ -1187,8 +1280,8 @@ FVECT orig,dir;
       d = DOT(a,b);
       while(d > 0)
       {
-	  s_id = smIntersectTriSet(smMesh,t_set,orig,dir,p);
-#ifdef TEST_DRIVER
+	  s_id = intersect_tri_set(t_set,orig,dir,p);
+#ifdef DEBUG_TEST_DRIVER
 	  VCOPY(Pick_point[0],p);
 #endif	  
 	  if(s_id != EMPTY)
@@ -1204,16 +1297,16 @@ FVECT orig,dir;
 	  d = DOT(a,r); 
       }
     }
-#ifdef DEBUG  
+#ifdef DEBUG
   eputs("smFindSamp():Pick Ray did not intersect mesh");
 #endif
   return(EMPTY);
 }
   
 
-smRebuild_mesh(sm,vptr)
+smRebuild_mesh(sm,vp)
    SM *sm;
-   VIEW *vptr;
+   FVECT vp;
 {
     int i;
     FVECT dir;
@@ -1221,12 +1314,9 @@ smRebuild_mesh(sm,vptr)
     FVECT p,ov;
 
     /* Clear the mesh- and rebuild using the current sample array */
-#ifdef TEST_DRIVER
-    View = *vptr;
-#endif    
 
-    VSUB(ov,vptr->vp,SM_VIEW_CENTER(sm));
-    smInit_mesh(sm,vptr->vp);
+    VSUB(ov,vp,SM_VIEW_CENTER(sm));
+    smInit_mesh(sm,vp);
     
     SM_FOR_ALL_SAMPLES(sm,i)
     {
@@ -1235,5 +1325,139 @@ smRebuild_mesh(sm,vptr)
 	smAdd_sample_to_mesh(sm,NULL,NULL,NULL,i);	
     }
 }
+
+int
+intersect_tri_set(t_set,orig,dir,pt)
+   OBJECT *t_set;
+   FVECT orig,dir,pt;
+{
+    OBJECT *optr;
+    int i,t_id,id;
+    int pid0,pid1,pid2;
+    FVECT p0,p1,p2,p;
+    TRI *t;
+    
+    optr = QT_SET_PTR(t_set);
+    for(i = QT_SET_CNT(t_set); i > 0; i--)
+    {
+	t_id = QT_SET_NEXT_ELEM(optr);
+
+	t = SM_NTH_TRI(smMesh,t_id);
+	pid0 = T_NTH_V(t,0);
+	pid1 = T_NTH_V(t,1);
+	pid2 = T_NTH_V(t,2);
+	VCOPY(p0,SM_NTH_WV(smMesh,pid0));
+	VCOPY(p1,SM_NTH_WV(smMesh,pid1));
+	VCOPY(p2,SM_NTH_WV(smMesh,pid2));
+	if(ray_intersect_tri(orig,dir,p0,p1,p2,p))
+        {
+	  id = closest_point_in_tri(p0,p1,p2,p,pid0,pid1,pid2);
+
+	  if(pt)
+	     VCOPY(pt,p);
+#ifdef DEBUG_TEST_DRIVER
+	  Pick_tri = t_id;
+	  Pick_samp = id;
+	  VCOPY(Pick_point[0],p);
+#endif
+	  return(id);
+	}
+    }
+    return(-1);
+}
+
+int
+ray_trace_check_set(qtptr,orig,dir,tptr,os)
+   QUADTREE *qtptr;
+   FVECT orig,dir;
+   int *tptr;
+   OBJECT *os;
+{
+    OBJECT tset[QT_MAXSET+1];	
+    double dt,t;
+    int found;
+    FVECT o;
+    
+ 
+    if(!QT_IS_EMPTY(*qtptr))
+     {
+	 VADD(o,orig,SM_VIEW_CENTER(smMesh));
+	 qtgetset(tset,*qtptr);
+	 /* Check triangles in set against those seen so far(os):only
+	    check new triangles for intersection (t_set') 
+	    */
+	 check_set(tset,os);
+	 if((found = intersect_tri_set(tset,o,dir,NULL))!= -1)
+         {
+	     *tptr = found;
+	     return(QT_DONE);
+	 }
+       }
+    return(FALSE);
+}
+
+int
+smFindSamp_opt(orig,dir)
+FVECT orig,dir;
+{
+  FVECT b,p,o;
+  OBJECT *ts;
+  QUADTREE qt;
+  int s_id;
+  double d;
+
+ /*  r is the normalized vector from the view center to the current
+  *  ray point ( starting with "orig"). Find the cell that r falls in,
+  *  and test the ray against all triangles stored in the cell. If
+  *  the test fails, trace the projection of the ray across to the
+  *  next cell it intersects: iterate until either an intersection
+  *  is found, or the projection ray is // to the direction. The sample
+  *  corresponding to the triangle vertex closest to the intersection
+  *  point is returned.
+  */
+  
+  /* First test if "orig" coincides with the View_center or if "dir" is
+     parallel to r formed by projecting "orig" on the sphere. In
+     either case, do a single test against the cell containing the
+     intersection of "dir" and the sphere
+   */
+  /* orig will be updated-so preserve original value */
+  if(!smMesh)
+     return;
+  point_on_sphere(b,orig,SM_VIEW_CENTER(smMesh));
+  d = -DOT(b,dir);
+  if(EQUAL_VEC3(orig,SM_VIEW_CENTER(smMesh)) || EQUAL(fabs(d),1.0))
+  {
+      qt = smPointLocateCell(smMesh,dir,FALSE,NULL,NULL,NULL);
+      /* Test triangles in the set for intersection with Ray:returns
+	 first found
+      */
+      ts = qtqueryset(qt);
+      s_id = intersect_tri_set(ts,orig,dir,p);
+#ifdef DEBUG_TEST_DRIVER
+      VCOPY(Pick_point[0],p);
+#endif
+  }
+  else
+  {
+    OBJECT t_set[QT_MAXCSET+1];
+    /* Test each of the root triangles against point id */
+    QT_CLEAR_SET(t_set);
+    VSUB(o,orig,SM_VIEW_CENTER(smMesh));
+    ST_CLEAR_FLAGS(SM_LOCATOR(smMesh));
+    s_id=stTrace_ray(SM_LOCATOR(smMesh),o,dir,ray_trace_check_set,&s_id,t_set);
+ }    
+  return(s_id);
+}
+
+
+
+
+
+
+
+
+
+
 
 

@@ -11,15 +11,15 @@ static char SCCSid[] = "$SunId$ SGI";
 #include "standard.h"
 
 #include "sm_qtree.h"
-#include "object.h"
 
-#define QTSETIBLK	1024		/* set index allocation block size */
+
+#define QTSETIBLK	2048     	/* set index allocation block size */
 #define QTELEMBLK	8		/* set element allocation block */
 
 #define QTNODESIZ(ne)	((ne) + QTELEMBLK - ((ne) % QTELEMBLK))
 
-static OBJECT	**qtsettab;		/* quadtree leaf node table */
-static QUADTREE  qtnumsets;		/* number of used set indices */
+OBJECT	**qtsettab= NULL;			/* quadtree leaf node table */
+QUADTREE  qtnumsets;			/* number of used set indices */
 static int  qtfreesets = EMPTY;		/* free set index list */
 
 
@@ -59,13 +59,16 @@ OBJECT  id;
 	register QUADTREE  lf;
 	int  oalc, nalc;
 
-	if (QT_IS_EMPTY(qt))
-		return(EMPTY);
-	if (!QT_IS_LEAF(qt))
-		goto noderr;
+#ifdef DEBUG
+	if(id < 0)
+		eputs("qtdelelem():Invalid triangle id\n");
+	if (!QT_IS_LEAF(qt) || (lf = QT_SET_INDEX(qt)) >= qtnumsets)
+		error(CONSISTENCY, "empty/bad node in qtdelelem");
+	if (!inset(qtsettab[lf], id))
+		error(CONSISTENCY, "id not in leaf in qtdelelem");
+#else
 	lf = QT_SET_INDEX(qt);
-	if (lf >= qtnumsets)
-		goto noderr;
+#endif
 	if (qtsettab[lf][0] <= 1) {		/* blow leaf away */
 		free((char *)qtsettab[lf]);
 		qtsettab[lf] = (OBJECT *)qtfreesets;
@@ -79,8 +82,6 @@ OBJECT  id;
 		qtsettab[lf] = (OBJECT *)realloc((char *)qtsettab[lf],
 				nalc*sizeof(OBJECT));
 	return(qt);
-noderr:
-	error(CONSISTENCY, "bad node in qtdelelem");
 }
 
 
@@ -93,15 +94,22 @@ OBJECT  id;
 	register QUADTREE  lf;
 	int  oalc, nalc;
 
+#ifdef DEBUG
+	if(id < 0)
+		eputs("qtaddelem():Invalid triangle id\n");
+#endif
 	if (QT_IS_EMPTY(qt)) {		/* create new leaf */
 		newset[0] = 1; newset[1] = id;
 		return(qtnewleaf(newset));
 	}				/* else add element */
-	if (!QT_IS_LEAF(qt))
-		goto noderr;
+#ifdef DEBUG
+	if (!QT_IS_LEAF(qt) || (lf = QT_SET_INDEX(qt)) >= qtnumsets)
+		error(CONSISTENCY, "bad node in qtaddelem");
+	if (inset(qtsettab[lf], id))
+		error(CONSISTENCY, "id already in leaf in qtaddelem");
+#else
 	lf = QT_SET_INDEX(qt);
-	if (lf >= qtnumsets)
-		goto noderr;
+#endif
 	oalc = QTNODESIZ(qtsettab[lf][0]);
 	nalc = QTNODESIZ(qtsettab[lf][0] + 1);
 	if (nalc != oalc) {
@@ -112,30 +120,21 @@ OBJECT  id;
 	}
 	insertelem(qtsettab[lf], id);
 	return(qt);
-noderr:
-	error(CONSISTENCY, "bad node in qtaddelem");
 }
 
 
-qtgetset(oset, qt)		/* get object set for leaf node */
-register OBJECT  *oset;
+#ifdef DEBUG
+OBJECT *
+qtqueryset(qt)			/* return object set for leaf node */
 QUADTREE  qt;
 {
-	QUADTREE  lf;
-	register OBJECT  *os;
-	register int  i;
+	register QUADTREE  lf;
 
-	if (!QT_IS_LEAF(qt))
-		goto noderr;
-	lf = QT_SET_INDEX(qt);
-	if (lf >= qtnumsets)
-		goto noderr;
-	for (i = *(os = qtsettab[lf]); i-- >= 0; )
-		*oset++ = *os++;
-	return;
-noderr:
-	error(CONSISTENCY, "bad node in qtgetset");
+	if (!QT_IS_LEAF(qt) || (lf = QT_SET_INDEX(qt)) >= qtnumsets)
+		error(CONSISTENCY, "bad node in qtqueryset");
+	return(qtsettab[lf]);
 }
+#endif
 
 
 qtfreeleaf(qt)			/* free set and leaf node */
@@ -147,10 +146,28 @@ QUADTREE  qt;
 		return;
 	osi = QT_SET_INDEX(qt);
 	if (osi >= qtnumsets)
-		error(CONSISTENCY, "bad node in qtfreeleaf");
+		return;
 	free((char *)qtsettab[osi]);
 	qtsettab[osi] = (OBJECT *)qtfreesets;
 	qtfreesets = osi;
+}
+
+
+
+qtfreeleaves()			/* free ALL sets and leaf nodes */
+{
+	register int	i;
+
+	while ((i = qtfreesets) != EMPTY) {
+		qtfreesets = (int)qtsettab[i];
+		qtsettab[i] = NULL;
+	}
+	for (i = qtnumsets; i--; )
+		if (qtsettab[i] != NULL)
+			free((char *)qtsettab[i]);
+	free((char *)qtsettab);
+	qtsettab = NULL;
+	qtnumsets = 0;
 }
 
 
@@ -158,7 +175,7 @@ check_set(os, cs)                /* modify checked set and set to check */
 register OBJECT  *os;                   /* os' = os - cs */
 register OBJECT  *cs;                   /* cs' = cs + os */
 {
-    OBJECT  cset[MAXCSET+MAXSET+1];
+    OBJECT  cset[QT_MAXCSET+QT_MAXSET+1];
     register int  i, j;
     int  k;
                                         /* copy os in place, cset <- cs */
@@ -176,10 +193,11 @@ register OBJECT  *cs;                   /* cs' = cs + os */
        return;                 /* special case */
     while (j <= cs[0])              /* get the rest of cs */
        cset[++cset[0]] = cs[j++];
-    if (cset[0] > MAXCSET)          /* truncate "checked" set if nec. */
-       cset[0] = MAXCSET;
+    if (cset[0] > QT_MAXCSET)          /* truncate "checked" set if nec. */
+       cset[0] = QT_MAXCSET;
     /* setcopy(cs, cset); */        /* copy cset back to cs */
     os = cset;
     for (i = os[0]; i-- >= 0; )
        *cs++ = *os++;
 }
+
