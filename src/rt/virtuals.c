@@ -267,7 +267,7 @@ register int  sn;	/* target source number */
 	FVECT  offsdir;
 	double  or, d;
 	int  infront;
-	int  ssn;
+	int  stestlim, ssn;
 	int  nhit, nok;
 	register int  i, n;
 				/* return if pretesting disabled */
@@ -293,12 +293,13 @@ register int  sn;	/* target source number */
 #endif
 				/* sample */
 	or = sqrt(or2);
-	ssn = STESTMAX*n;
+	stestlim = n*STESTMAX;
+	ssn = 0;
 	nhit = nok = 0;
 	while (n-- > 0) {
 					/* get sample point */
 		do {
-			if (--ssn < 0) {
+			if (ssn >= stestlim) {
 #ifdef DEBUG
 				fprintf(stderr, "\ttoo hard to hit\n");
 #endif
@@ -306,7 +307,8 @@ register int  sn;	/* target source number */
 			}
 			for (i = 0; i < 3; i++)
 				offsdir[i] = or*(1. -
-						2.*urand(931*i+5827+ssn));
+					2.*urand(urind(931*i+5827,ssn)));
+			ssn++;
 			for (i = 0; i < 3; i++)
 				sr.rorg[i] = oc[i] + offsdir[i];
 			d = DOT(offsdir,onorm);
