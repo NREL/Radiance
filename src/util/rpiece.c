@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1993 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -391,16 +391,17 @@ int  xpos, ypos;
 #else
 	pid = -1;		/* no forking */
 #endif
-	fls.l_len = (long)vres*hmult*hres*sizeof(COLR);
-	fls.l_start = scanorig + (vmult-1-ypos)*fls.l_len;
+	fls.l_start = scanorig +
+		((long)(vmult-1-ypos)*vres*hmult+xpos)*hres*sizeof(COLR);
 #if NFS
+	fls.l_len = ((long)(vres-1)*hmult+1)*hres*sizeof(COLR);
 				/* lock file section so NFS doesn't mess up */
 	fls.l_whence = 0;
 	fls.l_type = F_WRLCK;
 	fcntl(outfd, F_SETLKW, &fls);
 #endif
 				/* write new piece to file */
-	if (lseek(outfd, fls.l_start+(long)xpos*hres*sizeof(COLR), 0) == -1)
+	if (lseek(outfd, fls.l_start, 0) == -1)
 		goto seekerr;
 	if (hmult == 1) {
 		if (writebuf(outfd, (char *)pbuf,
