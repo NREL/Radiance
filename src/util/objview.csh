@@ -91,7 +91,7 @@ EXPOSURE= .5
 UP= $up
 view= $vw
 OCTREE= $octree
-oconv= -f -r 16384
+oconv= -f
 render= $rendopts
 _EOF_
 
