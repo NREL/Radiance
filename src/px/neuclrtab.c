@@ -63,7 +63,7 @@ long	npixels;
 	nsamples = npixels/samplefac;
 	if (nsamples < 600)
 		return(-1);
-	thesamples = (BYTE *)malloc((nsamples+1)*3);
+	thesamples = (BYTE *)malloc(nsamples*3);
 	if (thesamples == NULL)
 		return(-1);
 	cursamp = thesamples;
@@ -75,14 +75,17 @@ long	npixels;
 		cumprob = 0.;
 		while ((cumprob += (1.-cumprob)*nsleft/(npleft-sv)) < rval)
 			sv++;
-		setskip(cursamp, sv);
-		cursamp += 3;
-		npleft -= sv;
+		if (nsleft == nsamples)
+			skipcount = sv;
+		else {
+			setskip(cursamp, sv);
+			cursamp += 3;
+		}
+		npleft -= sv+1;
 		nsleft--;
 	}
-	setskip(cursamp, 0);		/* dummy tagged onto end */
+	setskip(cursamp, npleft);	/* tag on end to skip the rest */
 	cursamp = thesamples;
-	skipcount = nskip(cursamp);
 	return(0);
 }
 
@@ -91,11 +94,11 @@ neu_pixel(col)			/* add pixel to our samples */
 register BYTE	col[];
 {
 	if (!skipcount--) {
+		skipcount = nskip(cursamp);
 		cursamp[0] = col[BLU];
 		cursamp[1] = col[GRN];
 		cursamp[2] = col[RED];
 		cursamp += 3;
-		skipcount = nskip(cursamp);
 	}
 }
 
@@ -106,13 +109,13 @@ register int	n;
 {
 	while (n > skipcount) {
 		cs += skipcount;
+		n -= skipcount+1;
+		skipcount = nskip(cursamp);
 		cursamp[0] = cs[0][BLU];
 		cursamp[1] = cs[0][GRN];
 		cursamp[2] = cs[0][RED];
 		cs++;
-		n -= skipcount+1;
 		cursamp += 3;
-		skipcount = nskip(cursamp);
 	}
 	skipcount -= n;
 }
