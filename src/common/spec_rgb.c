@@ -1,4 +1,4 @@
-/* Copyright (c) 1990 Regents of the University of California */
+/* Copyright (c) 1997 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -109,18 +109,21 @@ int  s, e;		/* starting and ending wavelengths */
 }
 
 
-colortrans(c2, mat, c1)		/* convert c1 by mat and put into c2 */
+colortrans(c2, mat, c1, noneg)	/* convert c1 by mat and put into c2 */
 register COLORMAT  mat;
 register COLOR  c1, c2;
+int	noneg;
 {
 	static float  cout[3];
 
 	cout[0] = mat[0][0]*c1[0] + mat[0][1]*c1[1] + mat[0][2]*c1[2];
 	cout[1] = mat[1][0]*c1[0] + mat[1][1]*c1[1] + mat[1][2]*c1[2];
 	cout[2] = mat[2][0]*c1[0] + mat[2][1]*c1[1] + mat[2][2]*c1[2];
-	if((c2[0] = cout[0]) < 0.) c2[0] = 0.;
-	if((c2[1] = cout[1]) < 0.) c2[1] = 0.;
-	if((c2[2] = cout[2]) < 0.) c2[2] = 0.;
+	if (!noneg)
+		return;
+	if ((c2[0] = cout[0]) < 0.) c2[0] = 0.;
+	if ((c2[1] = cout[1]) < 0.) c2[1] = 0.;
+	if ((c2[2] = cout[2]) < 0.) c2[2] = 0.;
 }
 
 

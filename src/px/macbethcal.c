@@ -1,4 +1,4 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1997 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -326,8 +326,8 @@ getcolors()			/* get xyY colors from standard input */
 				fgetval(stdin, 'f', &xyYin[0]) != 1 ||
 				fgetval(stdin, 'f', &xyYin[1]) != 1 ||
 				fgetval(stdin, 'f', &xyYin[2]) != 1 ||
-				xyYin[0] < 0. | xyYin[0] > 1. |
-				xyYin[1] < 0. | xyYin[1] > 1.) {
+				xyYin[0] < 0. | xyYin[1] < 0. ||
+				xyYin[0] + xyYin[1] > 1.) {
 			fprintf(stderr, "%s: bad color input data\n",
 					progname);
 			exit(1);
@@ -583,6 +583,8 @@ register float	xyYin[3];
 	ctmp[1] = xyYin[2];
 	ctmp[2] = (1. - xyYin[0] - xyYin[1]) * d;
 	cie_rgb(rgbout, ctmp);
+				/* allow negative values */
+	colortrans(rgbout, xyz2rgbmat, ctmp, 0);
 }
 
 
