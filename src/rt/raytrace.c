@@ -22,7 +22,7 @@ extern double  minweight;		/* minimum ray weight */
 
 long  nrays = 0L;			/* number of rays traced */
 
-#define  MAXLOOP	1024		/* modifier loop detection */
+#define  MAXLOOP	128		/* modifier loop detection */
 
 #define  RAYHIT		(-1)		/* return value for intercepted ray */
 
