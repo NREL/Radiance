@@ -16,7 +16,7 @@ DEVDIR = $(INSTDIR)/dev
 
 LIBDIR = /usr/local/lib/ray
 
-PROGS = rholo rhcopy genrhenv
+PROGS = rholo rhcopy genrhenv genrhgrid
 
 DEVS = $(DEVDIR)/x11.hdi $(DEVDIR)/x11h.hdi \
 $(DEVDIR)/glx.hdi $(DEVDIR)/glxh.hdi
@@ -38,6 +38,9 @@ rhcopy:	rhcopy.o holo.o holofile.o
 
 genrhenv:	genrhenv.o holo.o holofile.o
 	$(CC) $(CFLAGS) -o genrhenv genrhenv.o holo.o holofile.o -lrt -lm
+
+genrhgrid:	genrhgrid.o holo.o
+	$(CC) $(CFLAGS) -o genrhgrid genrhgrid.o holo.o -lrt -lm
 
 $(DEVDIR)/x11h.hdi:	$(DEVDIR)/x11.hdi
 	rm -f $(DEVDIR)/x11h.hdi
@@ -69,7 +72,7 @@ rhdisp.o rhdisp2.o:	rhdisp.h rhdriver.h ../common/view.h
 
 rhdisp3.o:	rhdisp.h ../common/view.h
 
-holo.o holofile.o rhdisp.o rhdisp2.o rhdisp3.o genrhenv.o \
+holo.o holofile.o rhdisp.o rhdisp2.o rhdisp3.o genrhenv.o genrhgrid.o \
 rhcopy.o rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o:	holo.h \
 ../common/vars.h ../common/color.h \
 ../common/standard.h ../common/mat4.h ../common/fvect.h
