@@ -181,7 +181,7 @@ register int	box[3][2];
 #define c0	r
 	register int	r, g, b;
 	int	pri;
-	int	t[HMAX], med;
+	long	t[HMAX], med;
 					/* find dominant axis */
 	pri = RED;
 	if (box[GRN][1]-box[GRN][0] > box[pri][1]-box[pri][0])
