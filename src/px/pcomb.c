@@ -235,14 +235,14 @@ char	*s;
 	COLOR	ctmp;
 
 	if (isheadid(s))			/* header id */
-		return;		/* don't echo */
+		return(0);	/* don't echo */
 	if (formatval(fmt, s)) {		/* check format */
 		if (globmatch(ourfmt, fmt)) {
 			wrongformat = 0;
 			strcpy(ourfmt, fmt);
 		} else
 			wrongformat = 1;
-		return;		/* don't echo */
+		return(0);	/* don't echo */
 	}
 	if (isexpos(s)) {			/* exposure */
 		d = exposval(s);
@@ -256,7 +256,7 @@ char	*s;
 		gotview++;
 						/* echo line */
 	putchar('\t');
-	fputs(s, stdout);
+	return(fputs(s, stdout));
 }
 
 

@@ -170,6 +170,7 @@ userr:
 }
 
 
+int
 checkhead(line)				/* deal with line from header */
 char  *line;
 {
@@ -181,6 +182,7 @@ char  *line;
 		formatval(fmt, line);
 		wrong_fmt = strcmp(fmt, COLRFMT);
 	}
+	return(0);
 }
 
 

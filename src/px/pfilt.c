@@ -332,6 +332,7 @@ COLOR  clr;
 double	(*ourbright)() = rgb_bright;
 
 
+int
 headline(s)				/* process line from header */
 char  *s;
 {
@@ -352,6 +353,7 @@ char  *s;
 			wrongformat = !globmatch(PICFMT, fmt);
 	} else if (isview(s) && sscanview(&ourview, s) > 0)
 		gotview++;
+	return(0);
 }
 
 

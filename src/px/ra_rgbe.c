@@ -199,6 +199,7 @@ char	*ospec;
 }
 
 
+int
 addhline(s)			/* add a line to our info. header */
 char	*s;
 {
@@ -220,6 +221,7 @@ char	*s;
 	}
 	strcpy(headlines+headlen, s);
 	headlen += n;
+	return(0);
 }
 
 

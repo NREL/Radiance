@@ -34,6 +34,7 @@ int  doflat = -1;			/* produce flat file? */
 char  *progname;
 
 
+int
 headline(s)				/* process header line */
 char	*s;
 {
@@ -46,14 +47,14 @@ char	*s;
 			rgbinp = 0;
 		else
 			rgbinp = -2;
-		return;			/* don't echo */
+		return(0);		/* don't echo */
 	}
 	if (isprims(s)) {		/* get input primaries */
 		primsval(inprims, s);
-		return;			/* don't echo */
+		return(0);		/* don't echo */
 	}
 					/* should I grok colcorr also? */
-	fputs(s, stdout);
+	return(fputs(s, stdout));
 }
 
 

@@ -65,6 +65,7 @@ extern char  *malloc();
 extern double	unit2inch();
 
 
+int
 headline(s)		/* check header line */
 char  *s;
 {
@@ -75,6 +76,7 @@ char  *s;
 		wrongformat = strcmp(fmt, COLRFMT);
 	} else if (isaspect(s))
 		pixaspect *= aspectval(s);
+	return(0);
 }
 
 

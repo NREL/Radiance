@@ -37,7 +37,7 @@ char  *s;
 		wrongformat = strcmp(fmt, COLRFMT);
 	}
 	if (!orig)
-		return;
+		return(0);
 	if (isexpos(s)) {			/* exposure */
 		d = exposval(s);
 		scalecolor(expos, d);
@@ -45,6 +45,7 @@ char  *s;
 		colcorval(ctmp, s);
 		multcolor(expos, ctmp);
 	}
+	return(0);
 }
 
 

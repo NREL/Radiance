@@ -72,7 +72,7 @@ char  *s;
 	char  fmt[32];
 
 	if (isheadid(s))
-		return;
+		return(0);
 	if (formatval(fmt, s)) {
 		if (globmatch(ourfmt, fmt)) {
 			wrongformat = 0;
@@ -83,6 +83,7 @@ char  *s;
 		putc('\t', stdout);
 		fputs(s, stdout);
 	}
+	return(0);
 }
 
 

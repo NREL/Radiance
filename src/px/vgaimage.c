@@ -147,6 +147,7 @@ userr:
 }
 
 
+int
 headline(s)		/* get relevant info from header */
 char  *s;
 {
@@ -158,6 +159,7 @@ char  *s;
 		formatval(fmt, s);
 		wrongformat = strcmp(fmt, COLRFMT);
 	}
+	return(0);
 }
 
 
