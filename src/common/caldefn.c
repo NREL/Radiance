@@ -340,19 +340,26 @@ varinsert(name)			/* get a link to a variable */
 char  *name;
 {
     register VARDEF  *vp;
+    LIBR  *libp;
     int  hv;
     
     if ((vp = varlookup(name)) != NULL) {
 	vp->nlinks++;
 	return(vp);
     }
-    name = qualname(name, 0);		/* use fully qualified name */
+#ifdef  FUNCTION
+    libp = liblookup(name);
+#else
+    libp = NULL;
+#endif
+    if (libp == NULL)			/* if name not in library */
+	name = qualname(name, 0);	/* use fully qualified version */
     hv = hash(name);
     vp = (VARDEF *)emalloc(sizeof(VARDEF));
     vp->name = savestr(name);
     vp->nlinks = 1;
     vp->def = NULL;
-    vp->lib = NULL;
+    vp->lib = libp;
     vp->next = hashtbl[hv];
     hashtbl[hv] = vp;
     return(vp);
@@ -482,7 +489,7 @@ getstatement()			/* get next statement */
 {
     register EPNODE  *ep;
     char  *qname;
-    EPNODE  *lastdef;
+    register VARDEF  *vdef;
 
     if (nextc == ';') {		/* empty statement */
 	scan();
@@ -498,18 +505,19 @@ getstatement()			/* get next statement */
 	ep = getdefn();
 	qname = qualname(dname(ep), 0);
 #ifdef  REDEFW
-	if ((lastdef = dlookup(qname)) != NULL) {
-	    wputs(qname);
-	    if (lastdef->type == ':')
-		wputs(": redefined constant expression\n");
-	    else
-		wputs(": redefined\n");
-	}
+	if ((vdef = varlookup(qname)) != NULL)
+	    if (vdef->def != NULL) {
+		wputs(qname);
+		if (vdef->def->type == ':')
+		    wputs(": redefined constant expression\n");
+		else
+		    wputs(": redefined\n");
+	    }
 #ifdef  FUNCTION
-	else if (ep->v.kid->type == FUNC && liblookup(qname) != NULL) {
-	    wputs(qname);
-	    wputs(": definition hides library function\n");
-	}
+	    else if (ep->v.kid->type == FUNC && vdef->lib != NULL) {
+		wputs(qname);
+		wputs(": definition hides library function\n");
+	    }
 #endif
 #endif
 	if (ep->type == ':')
