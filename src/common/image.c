@@ -30,8 +30,7 @@ register VIEW  *v;
 	static char  ill_horiz[] = "illegal horizontal view size";
 	static char  ill_vert[] = "illegal vertical view size";
 	
-	if (v->vfore < -FTINY || v->vaft < -FTINY ||
-			(v->vaft > FTINY && v->vaft <= v->vfore))
+	if (v->vaft < -FTINY || (v->vaft > FTINY && v->vaft <= v->vfore))
 		return("illegal fore/aft clipping plane");
 
 	if (normalize(v->vdir) == 0.0)		/* normalize direction */
@@ -246,8 +245,7 @@ FVECT  p;
 		d = 1.0/sqrt(d*d + d2*d2);
 		ip[1] = DOT(disp,v->vvec)*d/v->vn2 + 0.5 - v->voff;
 		ip[2] = VLEN(disp);
-		if (v->vfore > FTINY)
-			ip[2] *= (1.0 - v->vfore*d);
+		ip[2] *= (1.0 - v->vfore*d);
 		return;
 	case VT_ANG:			/* angular fisheye */
 		ip[0] = 0.5 - v->hoff;
