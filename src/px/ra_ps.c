@@ -198,7 +198,8 @@ char  *nam;
 	printf("\t{ 0 1 %d { scanline exch\n", xmax-1);
 	printf("\t\t{ decode currentfile read not {stop} if get\n");
 	printf("\tdup 0 lt {pop} {exit} ifelse } loop put } for\n");
-	printf("} stopped {pop pop pop 0 string} {scanline} ifelse } def\n");
+	printf("\t} stopped {pop pop pop 0 string} {scanline} ifelse\n");
+	printf("} bind def\n");
 }
 
 
