@@ -15,6 +15,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "color.h"
 
+#include  "random.h"
+
 #include  "targa.h"
 
 #define  goodpic(h)	(((h)->dataType==IM_RGB || (h)->dataType==IM_CRGB) \
