@@ -12,6 +12,13 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <pwd.h>
 
+#ifndef DIRSEP
+#define DIRSEP		'/'
+#endif
+#ifndef PATHSEP
+#define PATHSEP		':'
+#endif
+
 extern char  *strcpy(), *strcat(), *getenv();
 extern struct passwd  *getpwnam();
 
@@ -30,13 +37,14 @@ int  mode;
 		return(NULL);
 
 	switch (*fname) {
-	case '/':				/* relative to root */
+	case DIRSEP:				/* relative to root */
 	case '.':				/* relative to cwd */
 		strcpy(pname, fname);
 		return(pname);
+#ifndef NIX
 	case '~':				/* relative to home directory */
 		fname++;
-		if (*fname == '\0' || *fname == '/') {		/* ours */
+		if (*fname == '\0' || *fname == DIRSEP) {	/* ours */
 			if ((cp = getenv("HOME")) == NULL)
 				return(NULL);
 			strcpy(pname, cp);
@@ -46,13 +54,14 @@ int  mode;
 		cp = pname;					/* user */
 		do
 			*cp++ = *fname++;
-		while (*fname && *fname != '/');
+		while (*fname && *fname != DIRSEP);
 		*cp = '\0';
 		if ((pwent = getpwnam(pname)) == NULL)
 			return(NULL);
 		strcpy(pname, pwent->pw_dir);
 		strcat(pname, fname);
 		return(pname);
+#endif
 	}
 
 	if (searchpath == NULL) {			/* don't search */
@@ -62,14 +71,10 @@ int  mode;
 							/* check search path */
 	do {
 		cp = pname;
-		while (*searchpath && (*cp = *searchpath++) != ':')
-			if (*cp == '\\') {		/* escape */
-				if (*searchpath)
-					*cp++ = *searchpath++;
-			} else
-				cp++;
-		if (cp > pname && cp[-1] != '/')
-			*cp++ = '/';
+		while (*searchpath && (*cp = *searchpath++) != PATHSEP)
+			cp++;
+		if (cp > pname && cp[-1] != DIRSEP)
+			*cp++ = DIRSEP;
 		strcpy(cp, fname);
 		if (access(pname, mode) == 0)		/* file accessable? */
 			return(pname);
