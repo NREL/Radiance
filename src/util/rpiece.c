@@ -156,7 +156,7 @@ char  **av;
 		goto filerr;
 					/* start rpict process */
 	if (open_process(rpd, rpargv) <= 0) {
-		fprintf(stderr, "%s: cannot start\n", rpargv[0]);
+		fprintf(stderr, "%s: cannot start %s\n", progname, rpargv[0]);
 		exit(1);
 	}
 	if ((fromrp = fdopen(rpd[0], "r")) == NULL ||
@@ -217,6 +217,11 @@ rpiece()			/* render picture piece by piece */
 			pview.vert = ourview.vert / vmult;
 			break;
 		case VT_HEM:
+			pview.horiz = 2.*180./PI*asin(
+					sin(PI/180./2.*ourview.horiz)/hmult );
+			pview.vert = 2.*180./PI*asin(
+					sin(PI/180./2.*ourview.vert)/vmult );
+			break;
 		default:
 			fprintf(stderr, "%s: unknown view type '-vt%c'\n",
 					progname, ourview.type);
@@ -246,14 +251,14 @@ int  xpos, ypos;
 	getheader(fromrp, NULL);	/* discard header info. */
 	if (fscnresolu(&hr, &vr, fromrp) < 0 ||	/* check resolution */
 			hr != hres || vr != vres) {
-		fprintf(stderr, "%s: resolution mismatch from rpict\n",
-				progname);
+		fprintf(stderr, "%s: resolution mismatch from %s\n",
+				progname, rpargv[0]);
 		exit(1);
 	}
 	for (y = 0; y < vr; y++) {	/* transfer scanlines */
 		if (freadcolrs(scanline, hr, fromrp) < 0) {
-			fprintf(stderr, "%s: read error from rpict\n",
-					progname);
+			fprintf(stderr, "%s: read error from %s\n",
+					progname, rpargv[0]);
 			exit(1);
 		}
 		if ((y == 0 || hmult != 1) && lseek(outfd,
