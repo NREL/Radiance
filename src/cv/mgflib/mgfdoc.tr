@@ -233,6 +233,7 @@ p	x y z	set point position for current vertex
 n	dx dy dz	set surface normal for current vertex
 _	_	_
 f	v1 v2 v3 ...	polygon using current material, spec. vertices
+fh	v1 v2 v3 - ...	face with explicit holes
 sph	vc radius	sphere
 cyl	v1 radius v2	truncated right cylinder (open-ended)
 cone	v1 rad1 v2 rad2	truncated right cone (open-ended)
@@ -2069,15 +2070,22 @@ when normals are used.
 Also, specified normals should point in the general direction of the
 surface for best results.
 .LP
-There is no explicit representation of holes in MGF.  A hole must be
-represented implicitly by connecting vertices to form "seams."  For
+There is no explicit representation of holes in this entity, but see
+the
+.UL fh
+entity for an alternative specification.
+.LP
+A hole may be represented implicitly in a face entity
+by connecting vertices to form "seams."
+For
 example, a wall with a window in it might look as shown in Figure 1.
 In many systems, the wall itself would be represented with the first
 list of vertices, (v1,v2,v3,v4) and the hole associated with that
-wall as a second set of vertices (v5,v6,v7,v8).  In MGF, we must
+wall as a second set of vertices (v5,v6,v7,v8).
+Using the face entity, we must
 give the whole thing as a single polygon, connecting the vertices so
 as to create a "seam," as shown in Figure 2.
-This could be written in MGF as "f v1 v2 v3 v4 v5 v6 v7 v8 v5 v4".
+This could be written as "f v1 v2 v3 v4 v5 v6 v7 v8 v5 v4".
 .LP
 It is very important that the order of the hole be opposite to the
 order of the outer perimeter, otherwise the polygon will be
@@ -2126,6 +2134,58 @@ SEE ALSO
 .LP
 .UL cone,
 .UL cyl,
+.UL fh,
+.UL m,
+.UL prism,
+.UL ring,
+.UL sph,
+.UL torus,
+.UL v
+.ds RH FH
+.bp
+.SH
+NAME
+.LP
+fh - create a polygonal face with explicit holes
+.SH
+SYNOPSIS
+.LP
+.B fh
+.I "p1 p2 ... - h1.1 h1.2 ... - h2.1 h2.2 ..."
+.SH
+DESCRIPTION
+.LP
+Create a polygonal face with optional holes made of the current material.
+The first contour is the outer perimeter, with vertices given in
+counter-clockwise order as seen from the front side (the same as the
+.UL f
+entity).
+A hole is indicated by a hyphen ('-') followed by the hole's
+vertices, given in clockwise order as seen from the front side.
+Multiple hole contours are separated by additional hyphens.
+There must be at least three vertices for each contour, and the
+last vertex is implicitly connected to the first.
+If any vertex is undefined, an error will result.
+.LP
+If any vertices have associated surface normals, they will be used
+instead of the average plane normal, though it is safest to specify
+either all normals or no normals, and to stick with triangles
+when normals are used.
+Also, specified normals should point in the general direction of the
+surface for best results.
+.SH
+EXAMPLE
+.DS
+# Make a wall with a window using an explicit hole.
+# (See Figures 1 and 2.)
+fh v1 v2 v3 v4 - v5 v6 v7 v8
+.DE
+.SH
+SEE ALSO
+.LP
+.UL cone,
+.UL cyl,
+.UL f,
 .UL m,
 .UL prism,
 .UL ring,
