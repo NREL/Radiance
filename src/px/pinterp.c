@@ -21,7 +21,12 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "resolu.h"
 
 #define pscan(y)	(ourpict+(y)*hresolu)
+#define sscan(y)	(ourspict+(y)*hresolu)
+#define wscan(y)	(ourweigh+(y)*hresolu)
 #define zscan(y)	(ourzbuf+(y)*hresolu)
+#define averaging	(ourweigh != NULL)
+
+#define MAXWT		100.		/* maximum pixel weight (averaging) */
 
 #define F_FORE		1		/* fill foreground */
 #define F_BACK		2		/* fill background */
@@ -46,7 +51,9 @@ double	pixaspect = 1.0;		/* pixel aspect ratio */
 
 double	zeps = .02;			/* allowed z epsilon */
 
-COLR	*ourpict;			/* output picture */
+COLR	*ourpict;			/* output picture (COLR's) */
+COLOR	*ourspict;			/* output pixel sums (-a option) */
+float	*ourweigh = NULL;		/* output pixel weights (-a option) */
 float	*ourzbuf;			/* corresponding z-buffer */
 
 char	*progname;
@@ -56,6 +63,7 @@ int	fillsamp = 0;			/* sample separation (0 == inf) */
 extern int	backfill(), rcalfill();	/* fill functions */
 int	(*fillfunc)() = backfill;	/* selected fill function */
 COLR	backcolr = BLKCOLR;		/* background color */
+COLOR	backcolor = BLKCOLOR;		/* background color (float) */
 double	backz = 0.0;			/* background z value */
 int	normdist = 1;			/* normalized distance? */
 double	ourexp = -1;			/* output picture exposure */
@@ -65,7 +73,7 @@ int	gotview;			/* got input view? */
 int	wrongformat = 0;		/* input in another format? */
 RESOLU	tresolu;			/* input resolution */
 double	theirexp;			/* input picture exposure */
-double	theirs2ours[4][4];		/* transformation matrix */
+MAT4	theirs2ours;			/* transformation matrix */
 int	hasmatrix = 0;			/* has transformation matrix */
 
 int	PDesc[3] = {-1,-1,-1};		/* rtrace process descriptor */
@@ -73,6 +81,8 @@ int	PDesc[3] = {-1,-1,-1};		/* rtrace process descriptor */
 unsigned short	queue[PACKSIZ][2];	/* pending pixels */
 int	packsiz;			/* actual packet size */
 int	queuesiz;			/* number of pixels pending */
+
+extern double	movepixel();
 
 
 main(argc, argv)			/* interpolate pictures */
@@ -83,6 +93,7 @@ char	*argv[];
 				badarg(argc-i-1,argv+i+1,al)) \
 				goto badopt
 	int	gotvfile = 0;
+	int	doavg = -1;
 	char	*zfile = NULL;
 	char	*err;
 	int	i, rval;
@@ -99,6 +110,14 @@ char	*argv[];
 		case 't':				/* threshold */
 			check(2,"f");
 			zeps = atof(argv[++i]);
+			break;
+		case 'a':				/* average */
+			check(2,NULL);
+			doavg = 1;
+			break;
+		case 'q':				/* quick (no avg.) */
+			check(2,NULL);
+			doavg = 0;
 			break;
 		case 'n':				/* dist. normalized? */
 			check(2,NULL);
@@ -129,8 +148,11 @@ char	*argv[];
 			case 'c':				/* color */
 				check(3,"fff");
 				fillfunc = backfill;
-				setcolr(backcolr, atof(argv[i+1]),
+				setcolor(backcolor, atof(argv[i+1]),
 					atof(argv[i+2]), atof(argv[i+3]));
+				setcolr(backcolr, colval(backcolor,RED),
+						colval(backcolor,GRN),
+						colval(backcolor,BLU));
 				i += 3;
 				break;
 			case 'z':				/* z value */
@@ -197,9 +219,20 @@ char	*argv[];
 	}
 	normaspect(viewaspect(&ourview), &pixaspect, &hresolu, &vresolu);
 						/* allocate frame */
-	ourpict = (COLR *)bmalloc(hresolu*vresolu*sizeof(COLR));
+	if (doavg < 0)
+		doavg = (argc-i) > 2;
+	if (doavg) {
+		ourspict = (COLOR *)bmalloc(hresolu*vresolu*sizeof(COLOR));
+		ourweigh = (float *)bmalloc(hresolu*vresolu*sizeof(float));
+		if (ourspict == NULL | ourweigh == NULL)
+			syserror(progname);
+	} else {
+		ourpict = (COLR *)bmalloc(hresolu*vresolu*sizeof(COLR));
+		if (ourpict == NULL)
+			syserror(progname);
+	}
 	ourzbuf = (float *)bmalloc(hresolu*vresolu*sizeof(float));
-	if (ourpict == NULL || ourzbuf == NULL)
+	if (ourzbuf == NULL)
 		syserror(progname);
 	bzero((char *)ourzbuf, hresolu*vresolu*sizeof(float));
 							/* new header */
@@ -308,7 +341,7 @@ char	*pfile, *zspec;
 	if ((zfd = open(zspec, O_RDONLY)) == -1) {
 		double	zvalue;
 		register int	x;
-		if (!isfloat(zspec) || (zvalue = atof(zspec)) <= 0.0)
+		if (!isflt(zspec) || (zvalue = atof(zspec)) <= 0.0)
 			syserror(zspec);
 		for (x = scanlen(&tresolu); x-- > 0; )
 			zin[x] = zvalue;
@@ -364,7 +397,7 @@ char	*pfile, *zspec;
 
 
 pixform(xfmat, vw1, vw2)		/* compute view1 to view2 matrix */
-register double	xfmat[4][4];
+register MAT4	xfmat;
 register VIEW	*vw1, *vw2;
 {
 	double	m4t[4][4];
@@ -413,38 +446,37 @@ struct position	*lasty;		/* input/output */
 {
 	FVECT	pos;
 	struct position	lastx, newpos;
+	double	wt;
 	register int	x;
 
 	lastx.z = 0;
 	for (x = xl->max; x >= xl->min; x--) {
 		pix2loc(pos, &tresolu, x, y);
 		pos[2] = zline[x];
-		if (movepixel(pos) < 0) {
+		if ((wt = movepixel(pos)) <= FTINY) {
 			lasty[x].z = lastx.z = 0;	/* mark invalid */
 			continue;
 		}
+					/* add pixel to our image */
 		newpos.x = pos[0] * hresolu;
 		newpos.y = pos[1] * vresolu;
 		newpos.z = zline[x];
-					/* add pixel to our image */
-		if (pos[0] >= 0 && newpos.x < hresolu
-				&& pos[1] >= 0 && newpos.y < vresolu) {
-			addpixel(&newpos, &lastx, &lasty[x], pline[x], pos[2]);
-			lasty[x].x = lastx.x = newpos.x;
-			lasty[x].y = lastx.y = newpos.y;
-			lasty[x].z = lastx.z = newpos.z;
-		} else
-			lasty[x].z = lastx.z = 0;	/* mark invalid */
+		addpixel(&newpos, &lastx, &lasty[x], pline[x], wt, pos[2]);
+		lasty[x].x = lastx.x = newpos.x;
+		lasty[x].y = lastx.y = newpos.y;
+		lasty[x].z = lastx.z = newpos.z;
 	}
 }
 
 
-addpixel(p0, p1, p2, pix, z)		/* fill in pixel parallelogram */
+addpixel(p0, p1, p2, pix, w, z)		/* fill in pixel parallelogram */
 struct position	*p0, *p1, *p2;
 COLR	pix;
+double	w;
 double	z;
 {
 	double	zt = 2.*zeps*p0->z;		/* threshold */
+	COLOR	pval;				/* converted+weighted pixel */
 	int	s1x, s1y, s2x, s2y;		/* step sizes */
 	int	l1, l2, c1, c2;			/* side lengths and counters */
 	int	p1isy;				/* p0p1 along y? */
@@ -458,6 +490,8 @@ double	z;
 		l1 = ABS(s1x);
 		if (p1isy = (ABS(s1y) > l1))
 			l1 = ABS(s1y);
+		if (l1 < 1)
+			l1 = 1;
 	} else {
 		l1 = s1x = s1y = 1;
 		p1isy = -1;
@@ -473,9 +507,15 @@ double	z;
 			if (p1isy != 0 && ABS(s2x) > l2)
 				l2 = ABS(s2x);
 		}
+		if (l2 < 1)
+			l2 = 1;
 	} else
 		l2 = s2x = s2y = 1;
 					/* fill the parallelogram */
+	if (averaging) {
+		colr_color(pval, pix);
+		scalecolor(pval, w);
+	}
 	for (c1 = l1; c1-- > 0; ) {
 		x1 = p0->x + c1*s1x/l1;
 		y1 = p0->y + c1*s1y/l1;
@@ -486,30 +526,42 @@ double	z;
 			y = y1 + c2*s2y/l2;
 			if (y < 0 || y >= vresolu)
 				continue;
-			if (zscan(y)[x] <= 0 || zscan(y)[x]-z
+			if (averaging) {
+				if (zscan(y)[x] <= 0 || zscan(y)[x]-z
 						> zeps*zscan(y)[x]) {
-				zscan(y)[x] = z;
+					copycolor(sscan(y)[x], pval);
+					wscan(y)[x] = w;
+					zscan(y)[x] = z;
+				} else if (z-zscan(y)[x] <= zeps*zscan(y)[x]) {
+					addcolor(sscan(y)[x], pval);
+					wscan(y)[x] += w;
+				}
+			} else if (zscan(y)[x] <= 0 || zscan(y)[x]-z
+						> zeps*zscan(y)[x]) {
 				copycolr(pscan(y)[x], pix);
+				zscan(y)[x] = z;
 			}
 		}
 	}
 }
 
 
+double
 movepixel(pos)				/* reposition image point */
 FVECT	pos;
 {
 	double	d0, d1;
-	FVECT	pt, direc;
+	FVECT	pt, tdir, odir;
+	register int	i;
 	
 	if (pos[2] <= 0)		/* empty pixel */
-		return(-1);
+		return(0);
 	if (normdist && theirview.type == VT_PER) {	/* adjust distance */
 		d0 = pos[0] + theirview.hoff - .5;
 		d1 = pos[1] + theirview.voff - .5;
 		pos[2] /= sqrt(1. + d0*d0*theirview.hn2 + d1*d1*theirview.vn2);
 	}
-	if (hasmatrix) {
+	if (!averaging && hasmatrix) {
 		pos[0] += theirview.hoff - .5;
 		pos[1] += theirview.voff - .5;
 		if (theirview.type == VT_PER) {
@@ -518,24 +570,38 @@ FVECT	pos;
 		}
 		multp3(pos, pos, theirs2ours);
 		if (pos[2] <= 0)
-			return(-1);
+			return(0);
 		if (ourview.type == VT_PER) {
 			pos[0] /= pos[2];
 			pos[1] /= pos[2];
 		}
 		pos[0] += .5 - ourview.hoff;
 		pos[1] += .5 - ourview.voff;
-		return(0);
+	} else {
+		if (viewray(pt, tdir, &theirview, pos[0], pos[1]) < -FTINY)
+			return(0);
+		pt[0] += tdir[0]*pos[2];
+		pt[1] += tdir[1]*pos[2];
+		pt[2] += tdir[2]*pos[2];
+		viewloc(pos, &ourview, pt);
+		if (pos[2] <= 0)
+			return(0);
 	}
-	if (viewray(pt, direc, &theirview, pos[0], pos[1]) < -FTINY)
-		return(-1);
-	pt[0] += direc[0]*pos[2];
-	pt[1] += direc[1]*pos[2];
-	pt[2] += direc[2]*pos[2];
-	viewloc(pos, &ourview, pt);
-	if (pos[2] <= 0)
-		return(-1);
-	return(0);
+	if (pos[0] < 0 || pos[0] >= 1-FTINY || pos[1] < 0 || pos[1] >= 1-FTINY)
+		return(0);
+	if (!averaging)
+		return(1);
+	if (ourview.type == VT_PAR)		/* compute our direction */
+		VCOPY(odir, ourview.vdir);
+	else
+		for (i = 0; i < 3; i++)
+			odir[i] = (pt[i] - ourview.vp[i])/pos[2];
+	d0 = DOT(odir,tdir);			/* compute pixel weight */
+	if (d0 <= FTINY)
+		return(0);		/* relative angle >= 90 degrees */
+	if (d0 >= 1.-1./MAXWT/MAXWT)
+		return(MAXWT);		/* clip to maximum weight */
+	return(1./sqrt(1.-d0));
 }
 
 
@@ -578,9 +644,7 @@ int	zfd;
 		for (x = scanlen(&tresolu); (x -= step) > 0; ) {
 			pix2loc(pos, &tresolu, x, y);
 			pos[2] = zline[x];
-			if (movepixel(pos) == 0 && pos[0] >= 0 &&
-					pos[0] < 1 && pos[1] >= 0 &&
-					pos[1] < 1) {
+			if (movepixel(pos) > FTINY) {
 				xl[y].max = x + step - 1;
 				xl[y].min = x - step + 1;	/* x min */
 				if (xl[y].min < 0)
@@ -588,11 +652,7 @@ int	zfd;
 				for (x = step - 1; x < xl[y].max; x += step) {
 					pix2loc(pos, &tresolu, x, y);
 					pos[2] = zline[x];
-					if (movepixel(pos) == 0 &&
-							pos[0] >= 0 &&
-							pos[0] < 1 &&
-							pos[1] >= 0 &&
-							pos[1] < 1) {
+					if (movepixel(pos) > FTINY) {
 						xl[y].min = x - step + 1;
 						break;
 					}
@@ -698,12 +758,25 @@ int	samp;
 						< zscan(y)[xback] ) ) {
 					if (samp > 0 && ABS(x-xback) >= samp)
 						goto fillit;
-					copycolr(pscan(y)[x],pscan(y)[xback]);
+					if (averaging) {
+						copycolor(sscan(y)[x],
+							sscan(y)[xback]);
+						wscan(y)[x] = wscan(y)[xback];
+					} else
+						copycolr(pscan(y)[x],
+							pscan(y)[xback]);
 					zscan(y)[x] = zscan(y)[xback];
 				} else {
 					if (samp > 0 && ABS(y-yback[x]) > samp)
 						goto fillit;
-					copycolr(pscan(y)[x],pscan(yback[x])[x]);
+					if (averaging) {
+						copycolor(sscan(y)[x],
+							sscan(yback[x])[x]);
+						wscan(y)[x] =
+							wscan(yback[x])[x];
+					} else
+						copycolr(pscan(y)[x],
+							pscan(yback[x])[x]);
 					zscan(y)[x] = zscan(yback[x])[x];
 				}
 				continue;
@@ -759,7 +832,10 @@ clipaft()			/* perform aft clipping as indicated */
 						sqrt(vx*vx*ourview.hn2 + yzn2))
 						continue;
 				}
-				bzero(pscan(y)[x], sizeof(COLR));
+				if (averaging)
+					bzero(sscan(y)[x], sizeof(COLOR));
+				else
+					bzero(pscan(y)[x], sizeof(COLR));
 				zscan(y)[x] = 0.0;
 			}
 	}
@@ -769,10 +845,19 @@ clipaft()			/* perform aft clipping as indicated */
 writepicture()				/* write out picture */
 {
 	int	y;
+	register int	x;
+	double	d;
 
 	fprtresolu(hresolu, vresolu, stdout);
 	for (y = vresolu-1; y >= 0; y--)
-		if (fwritecolrs(pscan(y), hresolu, stdout) < 0)
+		if (averaging) {
+			for (x = 0; x < hresolu; x++) {	/* average pixels */
+				d = 1./wscan(y)[x];
+				scalecolor(sscan(y)[x], d);
+			}
+			if (fwritescan(sscan(y), hresolu, stdout) < 0)
+				syserror(progname);
+		} else if (fwritecolrs(pscan(y), hresolu, stdout) < 0)
 			syserror(progname);
 }
 
@@ -813,23 +898,14 @@ char	*fname;
 }
 
 
-isfloat(s)				/* see if string is floating number */
-register char	*s;
-{
-	for ( ; *s; s++)
-		if ((*s < '0' || *s > '9') && *s != '.' && *s != '-'
-				&& *s != 'e' && *s != 'E' && *s != '+')
-			return(0);
-	return(1);
-}
-
-
 backfill(x, y)				/* fill pixel with background */
 int	x, y;
 {
-	register BYTE	*dest = pscan(y)[x];
-
-	copycolr(dest, backcolr);
+	if (averaging) {
+		copycolor(sscan(y)[x], backcolor);
+		wscan(y)[x] = 1;
+	} else
+		copycolr(pscan(y)[x], backcolr);
 	zscan(y)[x] = backz;
 }
 
@@ -929,8 +1005,13 @@ clearqueue()				/* process queue */
 			fbp[1] *= ourexp;
 			fbp[2] *= ourexp;
 		}
-		setcolr(pscan(queue[i][1])[queue[i][0]],
-				fbp[0], fbp[1], fbp[2]);
+		if (averaging) {
+			setcolor(sscan(queue[i][1])[queue[i][0]],
+					fbp[0], fbp[1], fbp[2]);
+			wscan(queue[i][1])[queue[i][0]] = 1;
+		} else
+			setcolr(pscan(queue[i][1])[queue[i][0]],
+					fbp[0], fbp[1], fbp[2]);
 		zscan(queue[i][1])[queue[i][0]] = fbp[3];
 		fbp += 4;
 	}
