@@ -76,11 +76,13 @@ VARIABLE	*matchvar();
 char	*nvalue();
 int	vscale();
 
+#define UPPER(c)	((c)&~0x20)	/* ASCII trick */
+
 #define vnam(vc)	(vv[vc].name)
 #define vdef(vc)	(vv[vc].nass)
 #define vval(vc)	(vv[vc].value)
 #define vint(vc)	atoi(vval(vc))
-#define vlet(vc)	(vval(vc)[0]&~0x20)
+#define vlet(vc)	UPPER(vval(vc)[0])
 #define vbool(vc)	(vlet(vc)=='T')
 
 #define HIGH		2
@@ -168,7 +170,7 @@ char	*argv[];
 	exit(0);
 userr:
 	fprintf(stderr,
-	"Usage: %s [-s][-n][-v view][-o dev] rfile [VAR=value ..]\n",
+	"Usage: %s [-s][-n][-e][-v view][-o dev] rfile [VAR=value ..]\n",
 			progname);
 	exit(1);
 }
@@ -198,10 +200,8 @@ char	*rfname;
 
 	if (rfname == NULL)
 		fp = stdin;
-	else if ((fp = fopen(rfname, "r")) == NULL) {
-		perror(rfname);
-		exit(1);
-	}
+	else if ((fp = fopen(rfname, "r")) == NULL)
+		syserr(rfname);
 	while (fgetline(buf, sizeof(buf), fp) != NULL) {
 		for (cp = buf; *cp; cp++) {
 			switch (*cp) {
@@ -266,10 +266,8 @@ register char	*ass;
 			;
 	i = cp - vp->value;
 	vp->value = realloc(vp->value, i+n+1);
-	if (vp->value == NULL) {
-		perror(progname);
-		exit(1);
-	}
+	if (vp->value == NULL)
+		syserr(progname);
 	strcpy(vp->value+i, ass);
 	vp->nass++;
 }
@@ -318,9 +316,7 @@ int	vc;
 	case 'L':
 		return(LOW);
 	}
-	fprintf(stderr, "%s: illegal value for variable '%s' (%s)\n",
-			progname, vnam(vc), vval(vc));
-	exit(1);
+	badvalue(vc);
 }
 
 
@@ -375,10 +371,8 @@ register char	*fnames;
 		cp = thisfile;
 		while (*fnames && !isspace(*fnames)) *cp++ = *fnames++;
 		*cp = '\0';
-		if ((thisdate = fdate(thisfile)) < 0) {
-			perror(thisfile);
-			exit(1);
-		}
+		if ((thisdate = fdate(thisfile)) < 0)
+			syserr(thisfile);
 		if (thisdate > lastdate)
 			lastdate = thisdate;
 	}
@@ -392,10 +386,8 @@ checkfiles()			/* check for existence and modified times */
 	long	objdate;
 
 	if (!vdef(OCTREE)) {
-		if ((cp = bmalloc(strlen(radname)+5)) == NULL) {
-			perror(progname);
-			exit(1);
-		}
+		if ((cp = bmalloc(strlen(radname)+5)) == NULL)
+			syserr(progname);
 		sprintf(cp, "%s.oct", radname);
 		vval(OCTREE) = cp;
 		vdef(OCTREE)++;
@@ -429,10 +421,8 @@ double	org[3], *sizp;
 	if (osiz <= FTINY) {
 		oconv();		/* does nothing if done already */
 		sprintf(buf, "getinfo -d < %s", vval(OCTREE));
-		if ((fp = popen(buf, "r")) == NULL) {
-			perror("getinfo");
-			exit(1);
-		}
+		if ((fp = popen(buf, "r")) == NULL)
+			syserr("getinfo");
 		if (fscanf(fp, "%lf %lf %lf %lf", &oorg[0], &oorg[1],
 				&oorg[2], &osiz) != 4) {
 			fprintf(stderr,
@@ -457,10 +447,6 @@ setdefaults()			/* set default values for unassigned var's */
 				org[1], org[1]+size, org[2], org[2]+size);
 		vval(ZONE) = savqstr(buf);
 		vdef(ZONE)++;
-	}
-	if (!vdef(UP)) {
-		vval(UP) = "Z";
-		vdef(UP)++;
 	}
 	if (!vdef(INDIRECT)) {
 		vval(INDIRECT) = "0";
@@ -560,15 +546,18 @@ register char	*oo;
 double
 ambval()				/* compute ambient value */
 {
-	if (vdef(EXPOSURE))
+	if (vdef(EXPOSURE)) {
 		if (vval(EXPOSURE)[0] == '+' || vval(EXPOSURE)[0] == '-')
 			return(.5/pow(2.,atof(vval(EXPOSURE))));
-		else
+		if (isdigit(vval(EXPOSURE)[0]) || vval(EXPOSURE)[0] == '.')
 			return(.5/atof(vval(EXPOSURE)));
+		badvalue(EXPOSURE);
+	}
 	if (vlet(ZONE) == 'E')
 		return(10.);
-	else
+	if (vlet(ZONE) == 'I')
 		return(.01);
+	badvalue(ZONE);
 }
 
 
@@ -579,11 +568,8 @@ register char	*op;
 
 	*op = '\0';
 	if (sscanf(vval(ZONE), "%*s %lf %lf %lf %lf %lf %lf", &org[0],
-			&siz[0], &org[1], &siz[1], &org[2], &siz[2]) != 6) {
-		fprintf(stderr, "%s: bad value for variable '%s'\n",
-				progname, vnam(ZONE));
-		exit(1);
-	}
+			&siz[0], &org[1], &siz[1], &org[2], &siz[2]) != 6)
+		badvalue(ZONE);
 	siz[0] -= org[0]; siz[1] -= org[1]; siz[2] -= org[2];
 	getoctcube(org, &d);
 	d *= 3./(siz[0]+siz[1]+siz[2]);
@@ -653,11 +639,8 @@ register char	*op;
 
 	*op = '\0';
 	if (sscanf(vval(ZONE), "%*s %lf %lf %lf %lf %lf %lf", &org[0],
-			&siz[0], &org[1], &siz[1], &org[2], &siz[2]) != 6) {
-		fprintf(stderr, "%s: bad value for variable '%s'\n",
-				progname, vnam(ZONE));
-		exit(1);
-	}
+			&siz[0], &org[1], &siz[1], &org[2], &siz[2]) != 6)
+		badvalue(ZONE);
 	siz[0] -= org[0]; siz[1] -= org[1]; siz[2] -= org[2];
 	getoctcube(org, &d);
 	d *= 3./(siz[0]+siz[1]+siz[2]);
@@ -733,11 +716,8 @@ register char	*op;
 
 	*op = '\0';
 	if (sscanf(vval(ZONE), "%*s %lf %lf %lf %lf %lf %lf", &org[0],
-			&siz[0], &org[1], &siz[1], &org[2], &siz[2]) != 6) {
-		fprintf(stderr, "%s: bad value for variable '%s'\n",
-				progname, vnam(ZONE));
-		exit(1);
-	}
+			&siz[0], &org[1], &siz[1], &org[2], &siz[2]) != 6)
+		badvalue(ZONE);
 	siz[0] -= org[0]; siz[1] -= org[1]; siz[2] -= org[2];
 	getoctcube(org, &d);
 	d *= 3./(siz[0]+siz[1]+siz[2]);
@@ -815,14 +795,10 @@ char	*ro;
 	if (n < 2)
 		return;
 	if (vdef(OPTFILE)) {
-		if ((fd = open(vval(OPTFILE), O_WRONLY|O_CREAT|O_TRUNC, 0666)) == -1) {
-			perror(vval(OPTFILE));
-			exit(1);
-		}
-		if (write(fd, ro+1, n-1) != n-1) {
-			perror(vval(OPTFILE));
-			exit(1);
-		}
+		if ((fd = open(vval(OPTFILE), O_WRONLY|O_CREAT|O_TRUNC, 0666)) == -1)
+			syserr(vval(OPTFILE));
+		if (write(fd, ro+1, n-1) != n-1)
+			syserr(vval(OPTFILE));
 		write(fd, "\n", 1);
 		close(fd);
 		ro[0] = ' ';
@@ -832,10 +808,8 @@ char	*ro;
 #ifdef MSDOS
 	else if (n > 50) {
 		register char	*evp = bmalloc(n+6);
-		if (evp == NULL) {
-			perror(progname);
-			exit(1);
-		}
+		if (evp == NULL)
+			syserr(progname);
 		strcpy(evp, "ROPT=");
 		strcat(evp, ro);
 		if (putenv(evp) != 0) {
@@ -880,17 +854,29 @@ char *
 specview(vs)				/* get proper view spec from vs */
 register char	*vs;
 {
+	static char	vup[7][12] = {"-vu 0 0 -1","-vu 0 -1 0","-vu -1 0 0",
+			"-vu 0 0 1", "-vu 1 0 0","-vu 0 1 0","-vu 0 0 1"};
 	static char	viewopts[128];
 	register char	*cp;
-	int	xpos, ypos, zpos, viewtype;
-	int	exterior;
+	int	xpos, ypos, zpos, viewtype, upax;
+	register int	i;
 	double	cent[3], dim[3], mult, d;
 
 	if (vs == NULL || *vs == '-')
 		return(vs);
+	upax = 0;			/* get the up vector */
+	if (vdef(UP)) {
+		if (vval(UP)[0] == '-' || vval(UP)[0] == '+')
+			upax = 1-'X'+UPPER(vval(UP)[1]);
+		else
+			upax = 1-'X'+vlet(UP);
+		if (upax < 1 | upax > 3)
+			badvalue(UP);
+		if (vval(UP)[0] == '-')
+			upax = -upax;
+	}
 					/* check standard view names */
 	xpos = ypos = zpos = 0;
-	viewtype = 0;
 	if (*vs == 'X') {
 		xpos = 1; vs++;
 	} else if (*vs == 'x') {
@@ -906,55 +892,47 @@ register char	*vs;
 	} else if (*vs == 'z') {
 		zpos = -1; vs++;
 	}
+	viewtype = 'v';
 	if (*vs == 'v' | *vs == 'l' | *vs == 'a' | *vs == 'h')
 		viewtype = *vs++;
-	else if (!*vs || isspace(*vs))
-		viewtype = 'v';
 	cp = viewopts;
-	if (viewtype && (xpos|ypos|zpos)) {	/* got standard view */
+	if ((!*vs || isspace(*vs)) && (xpos|ypos|zpos)) {	/* got one! */
 		*cp++ = '-'; *cp++ = 'v'; *cp++ = 't'; *cp++ = viewtype;
 		if (sscanf(vval(ZONE), "%*s %lf %lf %lf %lf %lf %lf",
 				&cent[0], &dim[0], &cent[1], &dim[1],
-				&cent[2], &dim[2]) != 6) {
-			fprintf(stderr, "%s: bad zone specification\n",
-					progname);
-			exit(1);
+				&cent[2], &dim[2]) != 6)
+			badvalue(ZONE);
+		for (i = 0; i < 3; i++) {
+			dim[i] -= cent[i];
+			cent[i] += .5*dim[i];
 		}
-		dim[0] -= cent[0]; cent[0] += .5*dim[0];
-		dim[1] -= cent[1]; cent[1] += .5*dim[1];
-		dim[2] -= cent[2]; cent[2] += .5*dim[2];
-		exterior = vlet(ZONE) == 'E';
-		mult = exterior ? 2. : .45 ;
+		mult = vlet(ZONE)=='E' ? 2. : .45 ;
 		sprintf(cp, " -vp %.2g %.2g %.2g -vd %.2g %.2g %.2g",
 				cent[0]+xpos*mult*dim[0],
 				cent[1]+ypos*mult*dim[1],
 				cent[2]+zpos*mult*dim[2],
 				-xpos*dim[0], -ypos*dim[1], -zpos*dim[2]);
 		cp += strlen(cp);
-		switch (vlet(UP)) {
-		case 'Z':
-			if (xpos|ypos) {
-				cp = addarg(cp, "-vu 0 0 1");
-				break;
-			}
-		/* fall through */
-		case 'Y':
-			if (xpos|zpos) {
-				cp = addarg(cp, "-vu 0 1 0");
-				break;
-			}
-		/* fall through */
-		case 'X':
-			if (ypos|zpos)
-				cp = addarg(cp, "-vu 1 0 0");
-			else
-				cp = addarg(cp, "-vu 0 0 1");
+					/* redirect up axis if necessary */
+		switch (upax) {
+		case 3:			/* plus or minus Z axis */
+		case -3:
+		case 0:
+			if (!(xpos|ypos))
+				upax = 2;
 			break;
-		default:
-			fprintf(stderr, "%s: illegal value for variable '%s'\n",
-					progname, vnam(UP));
-			exit(1);
+		case 2:			/* plus or minus Y axis */
+		case -2:
+			if (!(xpos|zpos))
+				upax = 1;
+			break;
+		case 1:			/* plus or minus X axis */
+		case -1:
+			if (!(ypos|zpos))
+				upax = 3;
+			break;
 		}
+		cp = addarg(cp, vup[upax+3]);
 		switch (viewtype) {
 		case 'v':
 			cp = addarg(cp, "-vh 45 -vv 45");
@@ -969,11 +947,15 @@ register char	*vs;
 			cp = addarg(cp, "-vh 180 -vv 180");
 			break;
 		}
-	} else
+	} else {
 		while (*vs && !isspace(*vs))	/* else skip id */
 			vs++;
+		if (upax) {			/* specify up vector */
+			strcpy(cp, vup[upax+3]);
+			cp += strlen(cp);
+		}
+	}
 					/* append any additional options */
-	while (isspace(*vs)) vs++;
 	strcpy(cp, vs);
 	return(viewopts);
 }
@@ -1041,8 +1023,8 @@ rpict(opts)				/* run rpict and pfilt for each view */
 char	*opts;
 {
 	char	combuf[1024];
-	char	rawfile[MAXPATH], picfile[MAXPATH], rep[MAXPATH], res[32];
-	char	pfopts[64];
+	char	rawfile[MAXPATH], picfile[MAXPATH], rep[MAXPATH+16], res[32];
+	char	pfopts[128];
 	char	vs[32], *vw;
 	int	vn, mult;
 					/* get pfilt options */
@@ -1060,11 +1042,8 @@ char	*opts;
 		else if (n) {
 			if (n == 1) yres = xres;
 			sprintf(res, "-x %d -y %d", mult*xres, mult*yres);
-		} else {
-			fprintf(stderr, "%s: bad value for variable '%s'\n",
-					progname, vnam(RESOLUTION));
-			exit(1);
-		}
+		} else
+			badvalue(RESOLUTION);
 	}
 	rep[0] = '\0';
 	if (vdef(REPORT)) {
@@ -1075,10 +1054,21 @@ char	*opts;
 			sprintf(rep, " -t %d -e %s", (int)(minutes*60), rawfile);
 		else if (n == 1)
 			sprintf(rep, " -t %d", (int)(minutes*60));
-		else {
-			fprintf(stderr, "%s: bad value for variable '%s'\n",
-					progname, vnam(REPORT));
-			exit(1);
+		else
+			badvalue(REPORT);
+	}
+					/* check date on ambient file */
+	if (vdef(AMBFILE)) {
+		long	afdate = fdate(vval(AMBFILE));
+		if (afdate >= 0 & octreedate > afdate) {
+			if (!silent)
+#ifdef MSDOS
+				printf("\tdel %s\n", vval(AMBFILE));
+#else
+				printf("\trm %s\n", vval(AMBFILE));
+#endif
+			if (!noaction)
+				unlink(vval(AMBFILE));
 		}
 	}
 					/* do each view */
@@ -1154,4 +1144,21 @@ char	*opts;
 		if (!noaction)
 			unlink(rawfile);
 	}
+}
+
+
+badvalue(vc)			/* report bad variable value and exit */
+int	vc;
+{
+	fprintf(stderr, "%s: bad value for variable '%s'\n",
+			progname, vnam(vc));
+	exit(1);
+}
+
+
+syserr(s)			/* report a system error and exit */
+char	*s;
+{
+	perror(s);
+	exit(1);
 }
