@@ -1,0 +1,17 @@
+{ SCCSid "$SunId$ LBL" }
+
+{
+	Phong normal interpolation for surfaces of revolution about z.
+
+	11/7/88
+
+	(A1,A2) =	(Mz,Bz)
+	(A3,A4) =	(Mr,Br)
+}
+
+rev_dx = rev_dr * Px/rev_rad;
+rev_dy = rev_dr * Py/rev_rad;
+rev_dz = Pz*A1 + A2;
+
+rev_dr = rev_rad*A3 + A4;
+rev_rad = sqrt(Px*Px + Py*Py);
