@@ -180,28 +180,16 @@ io_process()		/* just act as conduits to and from actual process */
 			error(SYSTEM, "cannot open output pipe in io_process");
 	}
 				/* pass input to output */
-	cp = buf; n = sizeof(buf);
-				/* do as much as we can each way */
-	while ((nr = read(0, cp, n)) > 0) {
-		nr += cp-buf;
-		if ((n = write(1, buf, nr)) <= 0)
-			goto writerr;
-		cp = buf;
-		while (n < nr)
-			*cp++ = buf[n++];
-		n = sizeof(buf) - (cp-buf);
-	}
+				/* read as much as we can, write all of it */
+	while ((nr = read(0, cp=buf, sizeof(buf))) > 0)
+		do {
+			if ((n = write(1, cp, nr)) <= 0)
+				goto writerr;
+			cp += n;
+		} while ((nr -= n) > 0);
 	if (nr < 0)
 		error(SYSTEM, "read error in io_process");
 	close(0);		/* close input */
-	nr = cp-buf;		/* write remainder */
-	cp = buf;
-	while (nr > 0) {
-		if ((n = write(1, cp, nr)) <= 0)
-			goto writerr;
-		cp += n;
-		nr -= n;
-	}
 	close(1);		/* close output */
 	if (pid)		/* parent waits for child */
 		wait(0);
