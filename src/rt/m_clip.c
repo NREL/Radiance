@@ -1,7 +1,7 @@
-/* Copyright (c) 1986 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -26,15 +26,14 @@ register OBJREC  *m;
 register RAY  *r;
 {
 	OBJECT  cset[MAXSET+1], *modset;
+	OBJECT  obj, mod;
 	int  entering;
 	register int  i;
 
+	obj = objndx(m);
 	if ((modset = (OBJECT *)m->os) == NULL) {
-		OBJECT  obj, mod;
-
 		if (m->oargs.nsargs < 1 || m->oargs.nsargs > MAXSET)
 			objerror(m, USER, "bad # arguments");
-		obj = objndx(m);
 		modset = (OBJECT *)malloc((m->oargs.nsargs+1)*sizeof(OBJECT));
 		if (modset == NULL)
 			error(SYSTEM, "out of memory in m_clip");
@@ -90,7 +89,7 @@ register RAY  *r;
 					inside--;
 		if (inside > 0) {	/* we just hit the object */
 			flipsurface(r);
-			return(rayshade(r, modifier(m->oargs.sarg[0])));
+			return(rayshade(r, lastmod(obj, m->oargs.sarg[0])));
 		}
 	}
 	raytrans(r);			/* else transfer ray */

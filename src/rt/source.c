@@ -1,7 +1,7 @@
-/* Copyright (c) 1995 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -538,7 +538,7 @@ register RAY  *r;
 						/* check for passed illum */
 	if (passillum(m, r)) {
 		if (m->oargs.nsargs && strcmp(m->oargs.sarg[0], VOIDID))
-			return(rayshade(r, modifier(m->oargs.sarg[0])));
+			return(rayshade(r,lastmod(objndx(m),m->oargs.sarg[0])));
 		raytrans(r);
 		return(1);
 	}

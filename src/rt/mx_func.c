@@ -1,7 +1,7 @@
-/* Copyright (c) 1991 Regents of the University of California */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
-static char SCCSid[] = "$SunId$ LBL";
+static char SCCSid[] = "$SunId$ SGI";
 #endif
 
 /*
@@ -33,6 +33,7 @@ mx_func(m, r)			/* compute mixture function */
 register OBJREC  *m;
 RAY  *r;
 {
+	OBJECT	obj;
 	register int  i;
 	double  coef;
 	OBJECT  mod[2];
@@ -40,10 +41,11 @@ RAY  *r;
 
 	if (m->oargs.nsargs < 4)
 		objerror(m, USER, "bad # arguments");
+	obj = objndx(m);
 	for (i = 0; i < 2; i++)
 		if (!strcmp(m->oargs.sarg[i], VOIDID))
 			mod[i] = OVOID;
-		else if ((mod[i] = modifier(m->oargs.sarg[i])) == OVOID) {
+		else if ((mod[i] = lastmod(obj, m->oargs.sarg[i])) == OVOID) {
 			sprintf(errmsg, "undefined modifier \"%s\"",
 					m->oargs.sarg[i]);
 			objerror(m, USER, errmsg);
