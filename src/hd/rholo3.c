@@ -120,15 +120,15 @@ int	nents;
 	for (i = 0; i < nents; i++)
 		if (clist[i].nr > n)
 			n = clist[i].nr;
-	p = (PACKHEAD *)malloc(sizeof(PACKHEAD) + n*sizeof(RAYVAL));
+	p = (PACKHEAD *)malloc(packsiz(n));
 	if (p == NULL)
 		goto memerr;
 					/* display what we have */
 	for (i = 0; i < nents; i++)
 		if ((b = hdgetbeam(hdlist[clist[i].hd], clist[i].bi)) != NULL) {
-			bcopy((char *)hdbray(b), (char *)(p+1),
+			bcopy((char *)hdbray(b), (char *)packrays(p),
 					(p->nr=b->nrm)*sizeof(RAYVAL));
-			disp_packet((PACKET *)p);
+			disp_packet(p);
 		}
 	free((char *)p);		/* clean up */
 	return;
