@@ -45,10 +45,12 @@ DLIBS = -lX11
 #
 
 RTOBJS = rtmain.o rtrace.o duphead.o persist.o preload.o $(ROBJS) Version.o
-RTSRC = rmain.c rtrace.c $(RSRC) Version.c
+RTSRC = rmain.c rtrace.c duphead.c persist.c preload.c $(RSRC) Version.c
 
-RPOBJS = rpmain.o rpict.o duphead.o persist.o preload.o $(ROBJS) Version.o
-RPSRC = rmain.c rpict.c $(RSRC) Version.c
+RPOBJS = rpmain.o rpict.o srcdraw.o duphead.o persist.o preload.o $(ROBJS) \
+Version.o
+RPSRC = rmain.c rpict.c srcdraw.c duphead.c persist.c preload.c $(RSRC) \
+Version.c
 
 RVOBJS = rvmain.o rview.o rv2.o rv3.o freeobjmem.o $(DOBJS) $(ROBJS) Version.o
 RVSRC = rmain.c rview.c rv2.c rv3.c freeobjmem.c $(DSRC) $(RSRC) Version.c
@@ -239,14 +241,14 @@ source.o rv3.o srcsamp.o virtuals.o:	../common/random.h
 ambient.o ambcomp.o aniso.o dielectric.o func.o glass.o m_clip.o m_mirror.o \
 m_brdf.o mx_data.o mx_func.o normal.o o_cone.o o_face.o o_instance.o \
 p_data.o p_func.o text.o raytrace.o rpmain.o rtmain.o rvmain.o rpict.o \
-rtrace.o rview.o rv2.o rv3.o source.o srcsamp.o srcsupp.o virtuals.o \
+rtrace.o rview.o rv2.o rv3.o source.o srcdraw.o srcsamp.o srcsupp.o virtuals.o \
 sphere.o m_mist.o t_data.o t_func.o persist.o:	ray.h ../common/standard.h \
 ../common/mat4.h ../common/fvect.h ../common/object.h ../common/color.h
 
 rv2.o rv3.o rview.o:	rpaint.h driver.h ../common/view.h
 
 m_direct.o m_mirror.o m_mist.o dielectric.o \
-source.o srcsamp.o srcsupp.o virtuals.o:	source.h
+source.o srcdraw.o srcsamp.o srcsupp.o virtuals.o:	source.h
 
 cone.o data.o devcomm.o freeobjmem.o initotypes.o fprism.o \
 duphead.o octree.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
@@ -255,7 +257,7 @@ initotypes.o raytrace.o:	otspecial.h
 
 sundev.o:	suntools.icon
 
-rpmain.o rtmain.o rvmain.o rpict.o:	../common/view.h
+rpmain.o rtmain.o rvmain.o rpict.o srcdraw.o:	../common/view.h
 
 x10.o xtwind.o:	xtwind.h
 

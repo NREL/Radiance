@@ -68,6 +68,7 @@ rv3.c		miscellaneous routines for rview
 rview.c		routines and variables for interactive view generation
 source.c	routines dealing with illumination sources
 sphere.c	compute ray intersection with spheres
+srcdraw.c	routines for drawing small sources into pictures (for rpict)
 srcsamp.c	source sampling routines
 srcsupp.c	support routines for source objects and materials
 suncom.c	program to read and edit raw tty input

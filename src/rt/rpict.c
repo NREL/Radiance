@@ -6,8 +6,6 @@ static char SCCSid[] = "$SunId$ LBL";
 
 /*
  *  rpict.c - routines and variables for picture generation.
- *
- *     8/14/85
  */
 
 #include  "ray.h"
@@ -425,6 +423,9 @@ char  *zfile, *oldfile;
 				hres, ypos, hstep);
 							/* fill bar */
 		fillscanbar(scanbar, zbar, hres, ypos, ystep);
+							/* add bitty sources */
+		drawsources(&ourview, hres, vres, scanbar, zbar,
+				0, hres, ypos, ystep, psample);
 							/* write it out */
 #ifndef	 BSD
 		signal(SIGCONT, SIG_IGN);	/* don't interrupt writes */
@@ -489,7 +490,7 @@ int  xres, y, xstep;
 	int  bl = xstep, b = xstep;
 	double	z;
 	register int  i;
-	
+
 	z = pixvalue(scanline[0], 0, y);
 	if (zline) zline[0] = z;
 				/* zig-zag start for quincunx pattern */
@@ -523,19 +524,17 @@ int  xres, y, ysize;
 	float  zline[MAXDIV+1];
 	int  b = ysize;
 	register int  i, j;
-	
+
 	for (i = 0; i < xres; i++) {
-		
 		copycolor(vline[0], scanbar[0][i]);
 		copycolor(vline[ysize], scanbar[ysize][i]);
 		if (zbar[0]) {
 			zline[0] = zbar[0][i];
 			zline[ysize] = zbar[ysize][i];
 		}
-		
 		b = fillsample(vline, zbar[0] ? zline : (float *)NULL,
 				i, y, 0, ysize, b/2);
-		
+
 		for (j = 1; j < ysize; j++)
 			copycolor(scanbar[j][i], vline[j]);
 		if (zbar[0])
@@ -558,25 +557,23 @@ int  b;
 	COLOR  ctmp;
 	int  ncut;
 	register int  len;
-	
+
 	if (xlen > 0)			/* x or y length is zero */
 		len = xlen;
 	else
 		len = ylen;
-		
+
 	if (len <= 1)			/* limit recursion */
 		return(0);
-	
-	if (b > 0
-	|| (zline && 2.*fabs(zline[0]-zline[len]) > maxdiff*(zline[0]+zline[len]))
+
+	if (b > 0 ||
+	(zline && 2.*fabs(zline[0]-zline[len]) > maxdiff*(zline[0]+zline[len]))
 			|| bigdiff(colline[0], colline[len], maxdiff)) {
-	
+
 		z = pixvalue(colline[len>>1], x + (xlen>>1), y + (ylen>>1));
 		if (zline) zline[len>>1] = z;
 		ncut = 1;
-		
 	} else {					/* interpolate */
-	
 		copycolor(colline[len>>1], colline[len]);
 		ratio = (double)(len>>1) / len;
 		scalecolor(colline[len>>1], ratio);
@@ -590,7 +587,7 @@ int  b;
 	}
 							/* recurse */
 	ncut += fillsample(colline, zline, x, y, xlen>>1, ylen>>1, (b-1)/2);
-	
+
 	ncut += fillsample(colline+(len>>1),
 			zline ? zline+(len>>1) : (float *)NULL,
 			x+(xlen>>1), y+(ylen>>1),
@@ -620,7 +617,7 @@ int  x, y;			/* pixel position */
 	rayvalue(&thisray);			/* trace ray */
 
 	copycolor(col, thisray.rcol);		/* return color */
-	
+
 	return(thisray.rt);			/* return distance */
 }
 
