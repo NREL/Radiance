@@ -348,7 +348,9 @@ char	**av;
 	if (ac < 2)
 		return(MG_EARGC);
 					/* construct output file name */
-	if ((op = strrchr(av[1], '/')) == NULL)
+	if ((op = strrchr(av[1], '/')) != NULL)
+		op++;
+	else
 		op = av[1];
 	(void)strcpy(fname, op);
 	if ((op = strrchr(fname, '.')) == NULL)
