@@ -129,6 +129,53 @@ char  *expr;
 }
 
 
+epcmp(ep1, ep2)			/* compare two expressions for equivalence */
+register EPNODE  *ep1, *ep2;
+{
+	double  d;
+
+	if (ep1->type != ep2->type)
+		return(1);
+
+	switch (ep1->type) {
+
+	case VAR:
+		return(ep1->v.ln != ep2->v.ln);
+
+	case NUM:
+		if (ep2->v.num == 0)
+			return(ep1->v.num != 0);
+		d = ep1->v.num / ep2->v.num;
+		return(d > 1.000000000001 | d < 0.999999999999);
+
+	case CHAN:
+	case ARG:
+		return(ep1->v.chan != ep2->v.chan);
+
+	case '=':
+	case ':':
+		return(epcmp(ep1->v.kid->sibling, ep2->v.kid->sibling));
+
+	case TICK:
+	case SYM:			/* should never get this one */
+		return(0);
+
+	default:
+		ep1 = ep1->v.kid;
+		ep2 = ep2->v.kid;
+		while (ep1 != NULL) {
+			if (ep2 == NULL)
+				return(1);
+			if (epcmp(ep1, ep2))
+				return(1);
+			ep1 = ep1->sibling;
+			ep2 = ep2->sibling;
+		}
+		return(ep2 != NULL);
+	}
+}
+
+
 epfree(epar)			/* free a parse tree */
 register EPNODE	 *epar;
 {
