@@ -79,6 +79,7 @@ while ($#argv > 0)
 end
 mkdir $td
 cat > $td/pc0.cal <<_EOF_
+PI : 3.14159265358979323846 ;
 scale : $scale ;
 mult : $mult ;
 ndivs : $ndivs ;
