@@ -22,7 +22,7 @@ static char SCCSid[] = "$SunId$ SGI";
 #define PCTFREE		15	/* maximum fraction to free (%) */
 #endif
 #ifndef MAXFRAG
-#define MAXFRAG		32767	/* maximum fragments/file to track (0==inf) */
+#define MAXFRAG		8191	/* maximum fragments/file to track (0==inf) */
 #endif
 #ifndef MINDIRSEL
 				/* minimum directory seek length */
