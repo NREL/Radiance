@@ -147,6 +147,8 @@ computesky()			/* compute sky parameters */
 			st = hour + stadj(jd);
 		altitude = salt(sd, st);
 		azimuth = sazi(sd, st);
+		printf("# Solar altitude and azimuth: %f %f\n",
+				180./PI*altitude, 180./PI*azimuth);
 	}
 	if (!cloudy && altitude > 87.*PI/180.) {
 		fprintf(stderr,
