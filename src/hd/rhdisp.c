@@ -312,7 +312,7 @@ usr_input()			/* get user input and process it */
 		sstdin = NULL;
 		return(-1);
 	}
-	if (!*cmd)
+	if (*cmd == '\n')
 		return(DC_RESUME);
 	for (args = cmd; *args && !isspace(*args); args++)
 		;
