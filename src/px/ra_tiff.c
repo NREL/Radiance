@@ -28,7 +28,8 @@ extern char  *malloc();
 #define C_XYZE		0x10		/* Radiance is XYZE */
 #define C_RFLT		0x20		/* Radiance data is float */
 #define C_TFLT		0x40		/* TIFF data is float */
-#define C_PRIM		0x80		/* has assigned primaries */
+#define C_TWRD		0x80		/* TIFF data is 16-bit */
+#define C_PRIM		0x100		/* has assigned primaries */
 
 struct {
 	uint16	flags;		/* conversion flags (defined above) */
@@ -186,7 +187,8 @@ allocbufs()			/* allocate scanline buffers */
 	int	rsiz, tsiz;
 
 	rsiz = CHK(C_RFLT) ? sizeof(COLOR) : sizeof(COLR);
-	tsiz = (CHK(C_TFLT) ? sizeof(float) : sizeof(uint8)) *
+	tsiz = (CHK(C_TFLT) ? sizeof(float) : 
+			CHK(C_TWRD) ? sizeof(uint16) : sizeof(uint8)) *
 			(CHK(C_GRY) ? 1 : 3);
 	cvts.r.p = (char *)malloc(rsiz*cvts.xmax);
 	cvts.t.p = (char *)malloc(tsiz*cvts.xmax);
@@ -280,7 +282,7 @@ initfromtif()		/* initialize conversion from TIFF input */
 			cvts.tf = RGB2Colr;
 		else {
 			cvts.tf = RRGGBB2Color;
-			SET(C_RFLT);
+			SET(C_RFLT|C_TWRD);
 		}
 		break;
 	case PHOTOMETRIC_MINISBLACK:
@@ -297,7 +299,7 @@ initfromtif()		/* initialize conversion from TIFF input */
 			cvts.tf = Gry2Colr;
 		else {
 			cvts.tf = GGry2Color;
-			SET(C_RFLT);
+			SET(C_RFLT|C_TWRD);
 		}
 		break;
 	default:
@@ -521,7 +523,7 @@ uint32	y;
 {
 	register int	x;
 
-	if (CHK(C_RFLT|C_TFLT|C_GRY) != (C_RFLT|C_TFLT))
+	if (CHK(C_RFLT|C_TWRD|C_TFLT|C_GRY) != (C_RFLT|C_TFLT))
 		quiterr("internal error 1 in Luv2Color");
 
 	if (TIFFReadScanline(cvts.tif, cvts.t.p, y, 0) < 0)
@@ -557,7 +559,7 @@ uint32	y;
 	register double	d;
 	register int	x;
 
-	if (CHK(C_RFLT|C_TFLT|C_GRY) != C_RFLT)
+	if (CHK(C_RFLT|C_TWRD|C_TFLT|C_GRY) != (C_TWRD|C_RFLT))
 		quiterr("internal error 1 in RRGGBB2Color");
 
 	if (TIFFReadScanline(cvts.tif, cvts.t.p, y, 0) < 0)
@@ -597,7 +599,7 @@ uint32	y;
 {
 	register int	x;
 
-	if (CHK(C_RFLT|C_TFLT|C_GRY) != (C_RFLT|C_TFLT|C_GRY))
+	if (CHK(C_RFLT|C_TWRD|C_TFLT|C_GRY) != (C_RFLT|C_TFLT|C_GRY))
 		quiterr("internal error 1 in L2Color");
 
 	if (TIFFReadScanline(cvts.tif, cvts.t.p, y, 0) < 0)
@@ -621,7 +623,7 @@ uint32	y;
 	COLOR	ctmp;
 	register int	x;
 
-	if (CHK(C_RFLT|C_TFLT|C_GRY))
+	if (CHK(C_RFLT|C_TWRD|C_TFLT|C_GRY))
 		quiterr("internal error 1 in RGB2Colr");
 
 	if (cvts.pconf == PLANARCONFIG_CONTIG) {
@@ -676,7 +678,7 @@ uint32	y;
 {
 	register int	x;
 
-	if (CHK(C_RFLT|C_TFLT|C_GRY) != C_GRY)
+	if (CHK(C_RFLT|C_TWRD|C_TFLT|C_GRY) != C_GRY)
 		quiterr("internal error 1 in Gry2Colr");
 
 	if (TIFFReadScanline(cvts.tif, cvts.t.p, y, 0) < 0)
@@ -705,7 +707,7 @@ uint32	y;
 	register double	d;
 	register int	x;
 
-	if (CHK(C_TFLT|C_GRY|C_RFLT) != (C_GRY|C_RFLT))
+	if (CHK(C_TFLT|C_TWRD|C_GRY|C_RFLT) != (C_GRY|C_RFLT|C_TWRD))
 		quiterr("internal error 1 in GGry2Color");
 
 	if (TIFFReadScanline(cvts.tif, cvts.t.p, y, 0) < 0)
@@ -733,7 +735,7 @@ uint32	y;
 	double	m = pow(2.,(double)cvts.bradj);
 	register int	x;
 
-	if (CHK(C_RFLT|C_TFLT|C_GRY) != (C_RFLT|C_TFLT|C_GRY))
+	if (CHK(C_RFLT|C_TFLT|C_TWRD|C_GRY) != (C_RFLT|C_TFLT|C_GRY))
 		quiterr("internal error 1 in Color2L");
 
 	if (freadscan(cvts.r.colors, cvts.xmax, cvts.rfp) < 0)
@@ -754,7 +756,7 @@ uint32	y;
 {
 	register int	x;
 
-	if (CHK(C_RFLT|C_TFLT|C_GRY) != (C_RFLT|C_TFLT))
+	if (CHK(C_RFLT|C_TWRD|C_TFLT|C_GRY) != (C_RFLT|C_TFLT))
 		quiterr("internal error 1 in Color2Luv");
 
 	if (freadscan(cvts.r.colors, cvts.xmax, cvts.rfp) < 0)
@@ -787,7 +789,7 @@ uint32	y;
 {
 	register int	x;
 
-	if (CHK(C_RFLT|C_TFLT|C_GRY) != C_GRY)
+	if (CHK(C_RFLT|C_TWRD|C_TFLT|C_GRY) != C_GRY)
 		quiterr("internal error 1 in Colr2Gry");
 
 	if (freadcolrs(cvts.r.colrs, cvts.xmax, cvts.rfp) < 0)
@@ -814,7 +816,7 @@ uint32	y;
 	COLOR	ctmp;
 	register int	x;
 
-	if (CHK(C_RFLT|C_TFLT|C_GRY))
+	if (CHK(C_RFLT|C_TFLT|C_TWRD|C_GRY))
 		quiterr("internal error 1 in Colr2RGB");
 
 	if (freadcolrs(cvts.r.colrs, cvts.xmax, cvts.rfp) < 0)
