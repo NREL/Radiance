@@ -66,9 +66,9 @@ SURFSRC = sphere.c source.c srcsupp.c virtuals.c o_face.c \
 		srcsamp.c o_cone.c o_instance.c
 
 MATOBJS = aniso.o normal.o dielectric.o m_clip.o glass.o m_brdf.o \
-	m_mirror.o m_direct.o
+	m_mirror.o m_direct.o fprism.o
 MATSRC = aniso.c normal.c dielectric.c m_clip.c glass.c m_brdf.c \
-	m_mirror.c m_direct.c
+	m_mirror.c m_direct.c fprism.c
 
 MODOBJS = p_func.o t_func.o p_data.o t_data.o text.o mx_func.o mx_data.o
 MODSRC = p_func.c t_func.c p_data.c t_data.c text.c mx_func.c mx_data.c
@@ -246,7 +246,7 @@ rv2.o rv3.o rview.o:	rpaint.h driver.h ../common/view.h
 m_direct.o m_mirror.o \
 source.o srcsamp.o srcsupp.o virtuals.o:	source.h
 
-cone.o data.o devcomm.o freeobjmem.o initotypes.o \
+cone.o data.o devcomm.o freeobjmem.o initotypes.o fprism.o \
 octree.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
 
 initotypes.o raytrace.o:	otspecial.h
