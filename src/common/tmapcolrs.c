@@ -146,17 +146,18 @@ register struct radhead	*rh;
 			rh->format = FMTCIE;
 		else
 			rh->format = FMTBAD;
-		return;
+		return(0);
 	}
 	if (isexpos(s)) {
 		rh->expos *= exposval(s);
-		return;
+		return(0);
 	}
 	if (isprims(s)) {
 		primsval(rh->mypri, s);
 		rh->primp = rh->mypri;
-		return;
+		return(0);
 	}
+	return(0);
 }
 
 
