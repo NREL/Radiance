@@ -415,9 +415,10 @@ register RAY  *r;
 }
 
 
-#define  wrongsource(m, r)	(m->otype!=MAT_ILLUM && \
-				r->rsrc>=0 && \
-				source[r->rsrc].so!=r->ro)
+#define  wrongsource(m, r)	(r->rsrc>=0 && \
+				source[r->rsrc].so!=r->ro && \
+				(m->otype!=MAT_ILLUM || \
+			objptr(source[r->rsrc].so->omod)->otype==MAT_ILLUM))
 
 #define  distglow(m, r)		(m->otype==MAT_GLOW && \
 				r->rot > m->oargs.farg[3])
