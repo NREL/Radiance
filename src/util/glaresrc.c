@@ -100,7 +100,7 @@ double	br;
 			d = indirect[i].lcos - tanb*indirect[i].lsin;
 			if (d > 0.0) {
 				indirect[i].sum += d * br;
-				indirect[i].n++;
+				indirect[i].n += d;
 			}
 		}
 		return;
@@ -114,7 +114,7 @@ double	br;
 			d = indirect[i].rcos - tanb*indirect[i].rsin;
 			if (d > 0.0) {
 				indirect[i].sum += d * br;
-				indirect[i].n++;
+				indirect[i].n += d;
 			}
 		}
 		return;
@@ -124,7 +124,7 @@ double	br;
 		d = cos(h_theta(h) - indirect[i].theta);
 		if (d > 0.0) {
 			indirect[i].sum += d * br;
-			indirect[i].n++;
+			indirect[i].n += d;
 		}
 	}
 }
@@ -359,15 +359,16 @@ absorb(s)			/* absorb a source into indirect */
 register struct source	*s;
 {
 	FVECT	dir;
-	register int	i, n;
+	double	d;
+	register int	i;
 
 	for (i = 0; i < nglardirs; i++) {
 		spinvector(dir, ourview.vdir, ourview.vup, indirect[i].theta);
-		n = DOT(dir,s->dir)*s->dom*(sampdens*sampdens) + 0.5;
-		if (n == 0)
+		d = DOT(dir,s->dir)*s->dom*(sampdens*sampdens);
+		if (d <= 0.0)
 			continue;
-		indirect[i].sum += n * s->brt;
-		indirect[i].n += n;
+		indirect[i].sum += d * s->brt;
+		indirect[i].n += d;
 	}
 	for ( ; s->first != NULL; s->first = s->first->next)
 		free((char *)s->first);
