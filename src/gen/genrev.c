@@ -1,8 +1,10 @@
-/*
+/* Copyright (c) 1989 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
+
+/*
  *  genrev.c - program to generate functions of rotation about z
  *
  *	The program takes as input the functions of t for z and r

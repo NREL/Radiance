@@ -1,8 +1,10 @@
-/*
+/* Copyright (c) 1989 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
+
+/*
  *  gensurf.c - program to generate functional surfaces
  *
  *	Parametric functions x(s,t), y(s,t) and z(s,t)
