@@ -1,0 +1,49 @@
+/* Copyright (c) 1993 Regents of the University of California */
+
+#ifndef lint
+static char SCCSid[] = "$SunId$ LBL";
+#endif
+
+/*
+ * Preload associated object structures to maximize memory sharing.
+ */
+
+#include "standard.h"
+#include "octree.h"
+#include "object.h"
+#include "otypes.h"
+#include "face.h"
+#include "cone.h"
+
+
+int
+load_os(op)			/* load associated data for object */
+register OBJREC	*op;
+{
+	switch (op->otype) {
+	case OBJ_FACE:		/* polygon */
+		getface(op);
+		return(1);
+	case OBJ_CONE:		/* cone */
+	case OBJ_RING:		/* disk */
+	case OBJ_CYLINDER:	/* cylinder */
+	case OBJ_CUP:		/* inverted cone */
+	case OBJ_TUBE:		/* inverted cylinder */
+		getcone(op, 1);
+		return(1);
+	case OBJ_INSTANCE:	/* octree instance */
+		getinstance(op, IO_ALL);
+		return(1);
+	default:		/* don't bother */
+		return(0);
+	}
+}
+
+
+preload_objs()		/* preload object data structures */
+{
+	register OBJECT on;
+				/* note that nobjects may change during */
+	for (on = 0; on < nobjects; on++)
+		load_os(objptr(on));
+}
