@@ -38,7 +38,6 @@ char  *progname;			/* argv[0] */
 
 char  *libpath;				/* library directory list */
 
-int  diemask = 0;			/* signals we catch */
 char  *sigerr[NSIG];			/* signal error messages */
 
 extern int  stderr_v();			/* standard error output */
@@ -346,9 +345,6 @@ unkopt:
 #endif
 #if  RPICT
 	signal(SIGALRM, report);
-#ifdef  BSD
-	diemask |= sigmask(SIGALRM);
-#endif
 #else
 	sigdie(SIGALRM, "Alarm clock");
 #endif
@@ -454,9 +450,11 @@ register char  *s;
 onsig(signo)				/* fatal signal */
 int  signo;
 {
-#ifdef  BSD
-	sigblock(diemask);
-#endif
+	static int  gotsig = 0;
+
+	if (gotsig++)			/* two signals and we're gone! */
+		_exit(127);
+
 	eputs("signal - ");
 	eputs(sigerr[signo]);
 	eputs("\n");
@@ -470,10 +468,6 @@ char  *msg;
 {
 	if (signal(signo, onsig) == SIG_IGN)
 		signal(signo, SIG_IGN);
-#ifdef  BSD
-	else
-		diemask |= sigmask(signo);
-#endif
 	sigerr[signo] = msg;
 }
 
