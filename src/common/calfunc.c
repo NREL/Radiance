@@ -51,22 +51,22 @@ static double  l_exp(), l_log(), l_log10();
 #ifdef  BIGLIB
 			/* functions must be listed alphabetically */
 static LIBR  library[MAXLIB] = {
-    { "acos", 1, l_acos },
-    { "asin", 1, l_asin },
-    { "atan", 1, l_atan },
-    { "atan2", 2, l_atan2 },
-    { "ceil", 1, l_ceil },
-    { "cos", 1, l_cos },
-    { "exp", 1, l_exp },
-    { "floor", 1, l_floor },
-    { "if", 3, l_if },
-    { "log", 1, l_log },
-    { "log10", 1, l_log10 },
-    { "rand", 1, l_rand },
-    { "select", 1, l_select },
-    { "sin", 1, l_sin },
-    { "sqrt", 1, l_sqrt },
-    { "tan", 1, l_tan },
+    { "acos", 1, ':', l_acos },
+    { "asin", 1, ':', l_asin },
+    { "atan", 1, ':', l_atan },
+    { "atan2", 2, ':', l_atan2 },
+    { "ceil", 1, ':', l_ceil },
+    { "cos", 1, ':', l_cos },
+    { "exp", 1, ':', l_exp },
+    { "floor", 1, ':', l_floor },
+    { "if", 3, ':', l_if },
+    { "log", 1, ':', l_log },
+    { "log10", 1, ':', l_log10 },
+    { "rand", 1, ':', l_rand },
+    { "select", 1, ':', l_select },
+    { "sin", 1, ':', l_sin },
+    { "sqrt", 1, ':', l_sqrt },
+    { "tan", 1, ':', l_tan },
 };
 
 static int  libsize = 16;
@@ -74,11 +74,11 @@ static int  libsize = 16;
 #else
 			/* functions must be listed alphabetically */
 static LIBR  library[MAXLIB] = {
-    { "ceil", 1, l_ceil },
-    { "floor", 1, l_floor },
-    { "if", 3, l_if },
-    { "rand", 1, l_rand },
-    { "select", 1, l_select },
+    { "ceil", 1, ':', l_ceil },
+    { "floor", 1, ':', l_floor },
+    { "if", 3, ':', l_if },
+    { "rand", 1, ':', l_rand },
+    { "select", 1, ':', l_select },
 };
 
 static int  libsize = 5;
@@ -145,9 +145,10 @@ double  *a;
 }
 
 
-funset(fname, nargs, fptr)		/* set a library function */
+funset(fname, nargs, assign, fptr)	/* set a library function */
 char  *fname;
 int  nargs;
+int  assign;
 double  (*fptr)();
 {
     register LIBR  *lp;
@@ -161,6 +162,7 @@ double  (*fptr)();
 	    if (strcmp(lp[-1].fname, fname) > 0) {
 		lp[0].fname = lp[-1].fname;
 		lp[0].nargs = lp[-1].nargs;
+		lp[0].atyp = lp[-1].atyp;
 		lp[0].f = lp[-1].f;
 	    } else
 		break;
@@ -168,6 +170,7 @@ double  (*fptr)();
     }
     lp[0].fname = savestr(fname);
     lp[0].nargs = nargs;
+    lp[0].atyp = assign;
     lp[0].f = fptr;
 }
 

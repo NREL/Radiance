@@ -19,7 +19,8 @@
 
 typedef struct {
     char  *fname;		/* function name */
-    int  nargs;			/* # of required arguments */
+    short  nargs;		/* # of required arguments */
+    short  atyp;		/* assignment type (':' or '=') */
     double  (*f)();		/* pointer to function */
 }  LIBR;		/* a library function */
 
