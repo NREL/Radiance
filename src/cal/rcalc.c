@@ -269,7 +269,7 @@ putout()                /* produce an output record */
 		chanout(bchanset);
 	else
 		chanout(chanset);
-	if (colpos && !bchanset)
+	if (colpos && !bocols)
 		putchar('\n');
 	if (unbuff)
 		fflush(stdout);
