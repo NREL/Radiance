@@ -37,9 +37,14 @@
 #define MINLUM		(1.125352e-7)		/* tmLuminance(MINBRT) */
 
 #define LMESLOWER	(5.62e-3)		/* lower mesopic limit */
-#define BMESLOWER	(-663)			/* encoded LMESLOWER */
 #define	LMESUPPER	(5.62)			/* upper mesopic limit */
+#if	(TM_BRTSCALE==128)
+#define BMESLOWER	(-663)			/* encoded LMESLOWER */
 #define BMESUPPER	(221)			/* encoded LMESUPPER */
+#else
+#define BMESLOWER	((int)(-5.18*TM_BRTSCALE-.5))
+#define BMESUPPER	((int)(1.73*TM_BRTSCALE+.5))
+#endif
 
 #ifndef	int4
 #define	int4		int			/* assume 32-bit integers */
