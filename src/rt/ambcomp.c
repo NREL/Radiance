@@ -54,7 +54,6 @@ AMBSAMP  *d1, *d2;
 }
 
 
-double
 divsample(dp, h, r)			/* sample a division */
 register AMBSAMP  *dp;
 AMBHEMI  *h;
@@ -68,7 +67,7 @@ RAY  *r;
 	register int  i;
 
 	if (rayorigin(&ar, r, AMBIENT, 0.5) < 0)
-		return(0.0);
+		return(-1);
 	hlist[0] = r->rno;
 	hlist[1] = dp->t;
 	hlist[2] = dp->p;
@@ -87,8 +86,8 @@ RAY  *r;
 	rayvalue(&ar);
 	ndims--;
 	addcolor(dp->v, ar.rcol);
-	if (ar.rot < FHUGE)
-		dp->r += 1.0/ar.rot;
+	if (ar.rt < FHUGE)
+		dp->r += 1.0/ar.rt;
 					/* (re)initialize error */
 	if (dp->n++) {
 		b2 = bright(dp->v)/dp->n - bright(ar.rcol);
@@ -96,7 +95,7 @@ RAY  *r;
 		dp->k = b2/(dp->n*dp->n);
 	} else
 		dp->k = 0.0;
-	return(ar.rot);
+	return(0);
 }
 
 
@@ -139,7 +138,7 @@ FVECT  pg, dg;
 			setcolor(dp->v, 0.0, 0.0, 0.0);
 			dp->r = 0.0;
 			dp->n = 0;
-			if ((d = divsample(dp, &hemi, r)) == 0.0)
+			if (divsample(dp, &hemi, r) < 0)
 				goto oopsy;
 			if (div != NULL)
 				dp++;
@@ -149,15 +148,13 @@ FVECT  pg, dg;
 			}
 		}
 	if (ns > 0) {			/* perform super-sampling */
-		comperrs(div, hemi);			/* compute errors */
+		comperrs(div, &hemi);			/* compute errors */
 		qsort(div, ndivs, sizeof(AMBSAMP), ambcmp);	/* sort divs */
 						/* super-sample */
 		for (i = ns; i > 0; i--) {
 			copystruct(&dnew, div);
-			if ((d = divsample(&dnew, &hemi)) == 0.0)
+			if (divsample(&dnew, &hemi, r) < 0)
 				goto oopsy;
-			if (d < FHUGE)
-				arad += 1.0 / d;
 							/* reinsert */
 			dp = div;
 			j = ndivs < i ? ndivs : i;
@@ -253,12 +250,11 @@ register AMBHEMI  *hp;
 				b2 *= b2 * 0.25;
 				dp[0].k += b2;
 				dp[-1].k += b2;
-			}
-			if (j == hp->np-1) {	/* around */
-				b2 = bright(dp[-(hp->np-1)].v) - b;
+			} else {		/* around */
+				b2 = bright(dp[hp->np-1].v) - b;
 				b2 *= b2 * 0.25;
 				dp[0].k += b2;
-				dp[-(hp->np-1)].k += b2;
+				dp[hp->np-1].k += b2;
 			}
 			dp++;
 		}
@@ -316,7 +312,7 @@ AMBHEMI  *hp;
 			dp += hp->np;
 		}
 		if (hp->nt > 1) {
-			mag0 /= (double)(hp->nt-1);
+			mag0 /= (double)hp->np;
 			mag1 /= (double)hp->nt;
 		}
 		phi = 2.0*PI * (double)j/hp->np;
@@ -325,7 +321,7 @@ AMBHEMI  *hp;
 		yd += mag0*sinp + mag1*cosp;
 	}
 	for (i = 0; i < 3; i++)
-		gv[i] = (xd*hp->ux[i] + yd*hp->uy[i])/hp->np;
+		gv[i] = xd*hp->ux[i] + yd*hp->uy[i];
 }
 
 
