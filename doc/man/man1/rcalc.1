@@ -9,6 +9,8 @@ rcalc - record calculator
 ][
 .B \-l
 ][
+.B \-p
+][
 .B \-n
 ][
 .B \-w
@@ -66,6 +68,19 @@ or
 .I \-of
 options do not require a count, as this will be determined by the
 number of output channels in the given expressions.
+.PP
+The
+.I \-p
+option specifies "passive mode," where characters that do not
+match the input format are passed unaltered to the output.
+This option has no effect unless
+.I \-i
+is also specified, and does not make much sense unless
+.I \-o
+is also given.
+With both input and output formats, the passive mode can
+effectively substitute information in the middle of a file
+or stream without affecting the rest of the data.
 .PP
 The variable and function definitions in each
 .I \-f source
