@@ -101,7 +101,7 @@ extern struct device {			/* interactive device */
  *	assuming the in buffer is big enough.  Unless prompt is NULL,
  *	the driver may substitute its own rview command.  This is
  *	the most reliable way to repaint areas of the screen.
- *	If the user enters an unrecognized control character is entered,
+ *	If the user enters an unrecognized control character,
  *	terminate input and return the string with only that character.
  *	The input string should not contain a newline.  The routines in
  *	editline.c may be useful.  Comin must work in consort with comout.
