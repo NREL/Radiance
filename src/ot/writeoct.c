@@ -18,6 +18,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "otypes.h"
 
+static int  putint(), putstr(), puttree(), putobj();
+
 
 writeoct(store, scene, ofn)		/* write octree structures to stdout */
 int  store;
