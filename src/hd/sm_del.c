@@ -85,7 +85,7 @@ memerr:
 adjacent to id. Return set of triangles adjacent to id to delete in delptr
 */
 LIST 
-*smVertexPolygon(sm,id,del_ptr)
+*smVertexStar(sm,id,del_ptr)
 SM *sm;
 int id;
 LIST **del_ptr;
@@ -408,9 +408,9 @@ smFixEdges(sm,add_list)
 	v2_id = T_NTH_V(t0,e0);
 	p_id = T_NTH_V(t1,e1);
 
-	smDir_in_cone(sm,v0,v0_id);
-	smDir_in_cone(sm,v1,v1_id);
-	smDir_in_cone(sm,v2,v2_id);
+	smDir(sm,v0,v0_id);
+	smDir(sm,v1,v1_id);
+	smDir(sm,v2,v2_id);
 	
 	VCOPY(p,SM_NTH_WV(sm,p_id));	
 	VSUB(p,p,SM_VIEW_CENTER(sm));
@@ -468,7 +468,7 @@ smRemoveVertex(sm,id)
        polygon formed by the triangles adjacent to vertex 'id'
      */
     del_list = NULL;
-    b_list = smVertexPolygon(sm,id,&del_list);
+    b_list = smVertexStar(sm,id,&del_list);
     if(!b_list)
     {
       if(del_list)
