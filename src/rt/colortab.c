@@ -27,7 +27,7 @@ static char SCCSid[] = "$SunId$ LBL";
 				/* minimum box count for adaptive partition */
 #define MINSAMP		7
 				/* maximum distance^2 before color reassign */
-#define MAXDST2		5
+#define MAXDST2		12
 				/* maximum frame buffer depth */
 #define FBDEPTH		8
 				/* map a color */
