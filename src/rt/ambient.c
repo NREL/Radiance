@@ -109,18 +109,13 @@ int  ar;
 setambacc(newa)				/* set ambient accuracy */
 double  newa;
 {
-	static double  oldambacc = -1.0;
+	double  ambdiff;
 
-	ambacc = newa < 0.0 ? 0.0 : newa;	/* may be done already */
-	if (oldambacc < -FTINY)
-		oldambacc = ambacc;	/* do nothing first call */
-	if (fabs(newa - oldambacc) < 0.01)
-		return;			/* insignificant -- don't bother */
-	if (ambacc <= FTINY)
-		return;			/* cannot build new tree */
-					/* else need to rebuild tree */
-	sortambvals(1);
-	oldambacc = ambacc;		/* remeber setting for next call */
+	if (newa < 0.0)
+		newa = 0.0;
+	ambdiff = fabs(newa - ambacc);
+	if (ambdiff >= .01 && (ambacc = newa) > FTINY && nambvals > 0)
+		sortambvals(1);			/* rebuild tree */
 }
 
 
@@ -216,7 +211,7 @@ register RAY  *r;
 		scalecolor(acol, 1.0/d);
 		return;
 	}
-	rdepth++;
+	rdepth++;				/* need to cache new value */
 	d = makeambient(acol, r, rdepth-1);
 	rdepth--;
 	if (d > FTINY)
@@ -336,11 +331,11 @@ int  al;
 	FVECT	gp, gd;
 						/* compute weight */
 	amb.weight = pow(AVGREFL, (double)al);
-	if (r->rweight < 0.2*amb.weight)	/* heuristic */
+	if (r->rweight < 0.1*amb.weight)	/* heuristic */
 		amb.weight = r->rweight;
 						/* compute ambient */
 	amb.rad = doambient(acol, r, amb.weight, gp, gd);
-	if (amb.rad == 0.0)
+	if (amb.rad <= FTINY)
 		return(0.0);
 						/* store it */
 	VCOPY(amb.pos, r->rop);
