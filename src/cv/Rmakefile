@@ -6,15 +6,15 @@
 
 OPT = -O
 
-MACH =
+MACH = -f68881 /usr/lib/libm.il -DBSD
 
 CFLAGS = $(OPT) $(MACH)
 
-INSTDIR = ../../bin
+INSTDIR = /lumen/lumen/ray/bin.sun3
 
-LIBDIR = /usr/local/lib/ray
+LIBDIR = /lumen/lumen/ray/lib
 
-PROGS = thf2rad ies2rad arch2rad nff2rad
+PROGS = thf2rad ies2rad arch2rad nff2rad lampcolor
 
 all:	$(PROGS)
 
@@ -36,6 +36,10 @@ arch2rad:	arch2rad.o trans.o savestr.o
 
 nff2rad:	nff2rad.o
 	cc $(CFLAGS) -o nff2rad nff2rad.o
+
+lampcolor:	lampcolor.o lamps.o spec_rgb.o fropen.o rexpr.o
+	cc $(CFLAGS) -o lampcolor lampcolor.o spec_rgb.o \
+lamps.o fropen.o rexpr.o
 
 fropen.o:	fropen.c
 	cc $(CFLAGS) -DDEFPATH=\":$(LIBDIR)\" -c fropen.c
