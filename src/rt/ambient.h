@@ -12,6 +12,7 @@
  * and don't pass these vectors to fvect routines.
  */
 typedef struct ambrec {
+	unsigned long  latick;	/* last accessed tick */
 	float  pos[3];		/* position in space */
 	float  dir[3];		/* normal direction */
 	int  lvl;		/* recursion level of parent ray */

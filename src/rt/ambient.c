@@ -27,6 +27,8 @@ typedef struct ambtree {
 
 extern CUBE  thescene;		/* contains space boundaries */
 
+extern char  *shm_boundary;	/* shared memory boundary */
+
 #define	 MAXASET	511	/* maximum number of elements in ambient set */
 OBJECT	ambset[MAXASET+1]={0};	/* ambient include/exclude set */
 
@@ -38,15 +40,33 @@ static AMBTREE	atrunk;		/* our ambient trunk node */
 static FILE  *ambfp = NULL;	/* ambient file pointer */
 static int  nunflshed = 0;	/* number of unflushed ambient values */
 
+#ifndef SORT_THRESH
+#ifdef BIGMEM
+#define SORT_THRESH	(6*(1L<<20)/sizeof(AMBVAL))
+#else
+#define SORT_THRESH	(2*(1L<<20)/sizeof(AMBVAL))
+#endif
+#endif
+#ifndef SORT_INTVL
+#define SORT_INTVL	(SORT_THRESH*2)
+#endif
+
+static long  ambclock = 0;	/* ambient access clock */
+static int  nambvals = 0;	/* number of stored ambient values */
+static long  lastsort = 0;	/* time of last value sort */
+static long  sortintvl = SORT_INTVL;	/* time until next sort */
+
+#define MAXACLOCK	(1L<<30)	/* clock turnover value */
+#define tracktime	(shm_boundary == NULL || ambfp == NULL)
+#define need2sort	(ambclock > lastsort+sortintvl && \
+				nambvals > SORT_THRESH)
+
 #define	 AMBFLUSH	(BUFSIZ/AMBVALSIZ)
 
 #define	 newambval()	(AMBVAL *)bmalloc(sizeof(AMBVAL))
 
-#define	 newambtree()	(AMBTREE *)calloc(8, sizeof(AMBTREE))
-#define  freeambtree(t)	free((char *)(t))
-
 extern long  ftell(), lseek();
-static int  initambfile(), avsave(), avinsert(), loadatree();
+static int  initambfile(), avsave(), avinsert(), sortambvals();
 static AMBVAL  *avstore();
 #ifdef  F_SETLKW
 static  aflock();
@@ -78,7 +98,6 @@ setambacc(newa)				/* set ambient accuracy */
 double  newa;
 {
 	static double  oldambacc = -1.0;
-	AMBTREE  oldatrunk;
 
 	ambacc = newa < 0.0 ? 0.0 : newa;	/* may be done already */
 	if (oldambacc < -FTINY)
@@ -88,10 +107,7 @@ double  newa;
 	if (ambacc <= FTINY)
 		return;			/* cannot build new tree */
 					/* else need to rebuild tree */
-	copystruct(&oldatrunk, &atrunk);
-	atrunk.alist = NULL;
-	atrunk.kid = NULL;
-	loadatree(&oldatrunk);
+	sortambvals(1);
 	oldambacc = ambacc;		/* remeber setting for next call */
 }
 
@@ -179,6 +195,8 @@ register RAY  *r;
 		return;
 	}
 						/* get ambient value */
+	if (need2sort)
+		sortambvals(0);
 	setcolor(acol, 0.0, 0.0, 0.0);
 	d = sumambient(acol, r, rdepth,
 			&atrunk, thescene.cuorg, thescene.cusize);
@@ -213,6 +231,8 @@ double	s;
 					/* do this node */
 	wsum = 0.0;
 	for (av = at->alist; av != NULL; av = av->next) {
+		if (tracktime)
+			av->latick = ambclock++;
 		/*
 		 *  Ambient level test.
 		 */
@@ -397,7 +417,47 @@ register AMBVAL  *aval;
 	if ((av = newambval()) == NULL)
 		error(SYSTEM, "out of memory in avstore");
 	copystruct(av, aval);
+	av->latick = ambclock;
+	av->next = NULL;
+	nambvals++;
 	return(av);
+}
+
+
+#define ATALLOCSZ	512		/* #/8 trees to allocate at once */
+
+static AMBTREE  *atfreelist = NULL;	/* free ambient tree structures */
+
+
+static
+AMBTREE *
+newambtree()				/* allocate 8 ambient tree structs */
+{
+	register AMBTREE  *atp, *upperlim;
+
+	if (atfreelist == NULL) {	/* get more nodes */
+		atfreelist = (AMBTREE *)bmalloc(ATALLOCSZ*8*sizeof(AMBTREE));
+		if (atfreelist == NULL)
+			return(NULL);
+					/* link new free list */
+		upperlim = atfreelist + 8*(ATALLOCSZ-1);
+		for (atp = atfreelist; atp < upperlim; atp += 8)
+			atp->kid = atp + 8;
+		atp->kid = NULL;
+	}
+	atp = atfreelist;
+	atfreelist = atp->kid;
+	bzero((char *)atp, 8*sizeof(AMBTREE));
+	return(atp);
+}
+
+
+static
+freeambtree(atp)			/* free 8 ambient tree structs */
+AMBTREE  *atp;
+{
+	atp->kid = atfreelist;
+	atfreelist = atp;
 }
 
 
@@ -442,21 +502,132 @@ register AMBVAL	 *av;
 
 
 static
-loadatree(at)				/* move tree to main store */
+unloadatree(at, f)			/* unload an ambient value tree */
 register AMBTREE  *at;
+int	(*f)();
 {
 	register AMBVAL  *av;
 	register int  i;
 					/* transfer values at this node */
 	for (av = at->alist; av != NULL; av = at->alist) {
 		at->alist = av->next;
-		avinsert(av);
+		(*f)(av);
 	}
 	if (at->kid == NULL)
 		return;
 	for (i = 0; i < 8; i++)		/* transfer and free children */
-		loadatree(at->kid+i);
+		unloadatree(at->kid+i, f);
 	freeambtree(at->kid);
+	at->kid = NULL;
+}
+
+
+static AMBVAL	**avlist1, **avlist2;	/* ambient value lists for sorting */
+static int	i_avlist;		/* index for lists */
+
+
+static
+av2list(av)
+AMBVAL	*av;
+{
+	if (i_avlist >= nambvals)
+		error(CONSISTENCY, "too many ambient values in av2list1");
+	avlist1[i_avlist] = avlist2[i_avlist] = av;
+	i_avlist++;
+}
+
+
+static int
+alatcmp(avp1, avp2)			/* compare ambient values for MRA */
+AMBVAL	**avp1, **avp2;
+{
+	return((**avp2).latick - (**avp1).latick);
+}
+
+
+static int
+aposcmp(avp1, avp2)			/* compare ambient value positions */
+AMBVAL	**avp1, **avp2;
+{
+	return(*avp1 - *avp2);
+}
+
+
+static
+sortambvals(always)			/* resort ambient values */
+int	always;
+{
+	AMBTREE  oldatrunk;
+	AMBVAL	tav, *tap, *pnext;
+	register int	i, j;
+	/*
+	 * The idea here is to minimize memory thrashing
+	 * in VM systems by improving reference locality.
+	 * We do this by periodically sorting our stored ambient
+	 * values in memory in order of most recently to least
+	 * recently accessed.  This ordering was chosen so that new
+	 * ambient values (which tend to be less important) go into
+	 * higher memory with the infrequently accessed values.
+	 *	Since we expect our values to need sorting less
+	 * frequently as the process continues, we double our
+	 * waiting interval after each call.
+	 * 	This routine is also called by setambacc() with
+	 * the "always" parameter set to 1 so that the ambient
+	 * tree will be rebuilt with the new accuracy parameter.
+	 */
+	if (tracktime) {
+		avlist1 = (AMBVAL **)malloc(nambvals*sizeof(AMBVAL *));
+		avlist2 = (AMBVAL **)malloc(nambvals*sizeof(AMBVAL *));
+	} else
+		avlist1 = avlist2 = NULL;
+	if (avlist2 == NULL) {		/* rebuild tree? */
+		if (avlist1 != NULL)
+			free((char *)avlist1);
+		if (!always)
+			return;
+		copystruct(&oldatrunk, &atrunk);
+		atrunk.alist = NULL;
+		atrunk.kid = NULL;
+		unloadatree(&oldatrunk, avinsert);
+	} else {			/* sort memory by last access time */
+		i_avlist = 0;
+		unloadatree(&atrunk, av2list);	/* empty current tree */
+		/*
+		 * Sorting memory is tricky because it isn't contiguous.
+		 * We have to sort an array of pointers by MRA and also
+		 * by memory position.  We then copy values in "loops"
+		 * to minimize memory hits.  Nevertheless, we will visit
+		 * everyone at least once, and this is an expensive process
+		 * when we're thrashing, which is when we need to do it.
+		 */
+		qsort((char *)avlist1, nambvals, sizeof(AMBVAL *), alatcmp);
+		qsort((char *)avlist2, nambvals, sizeof(AMBVAL *), aposcmp);
+		for (i = 0; i < nambvals; i++) {
+			if (avlist1[i] == NULL || avlist1[i] == avlist2[i])
+				continue;
+			tap = avlist2[i];
+			copystruct(&tav, tap);
+			for (j = i; (pnext = avlist1[j]) != tap;
+					j = (AMBVAL **)bsearch((char *)&pnext,
+						(char *)(avlist2+i),nambvals-i,
+						sizeof(AMBVAL *),aposcmp) -
+						avlist2) {
+				copystruct(avlist2[j], pnext);
+				avinsert(avlist2[j]);
+				avlist1[j] = NULL;
+			}
+			copystruct(avlist2[j], &tav);
+			avinsert(avlist2[j]);
+			avlist1[j] = NULL;
+		}
+		free((char *)avlist1);
+		free((char *)avlist2);
+		if (sortintvl < MAXACLOCK/4)
+			sortintvl <<= 1;	/* wait twice as long next */
+	}
+	if (ambclock >= MAXACLOCK)
+		ambclock = MAXACLOCK/2;
+	lastsort = ambclock;
 }
 
 
