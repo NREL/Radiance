@@ -246,7 +246,8 @@ register RAY  *r;
 						/* diffuse reflection */
 	nd.rdiff = 1.0 - nd.trans - nd.rspec;
 
-	if (r->ro->otype == OBJ_FACE || r->ro->otype == OBJ_RING)
+	if (r->ro != NULL && (r->ro->otype == OBJ_FACE ||
+			r->ro->otype == OBJ_RING))
 		nd.specfl |= SP_FLAT;
 
 	getacoords(r, &nd);			/* set up coordinates */

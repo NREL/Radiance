@@ -265,7 +265,8 @@ register RAY  *r;
 	if (nd.specfl & SP_PURE && nd.rdiff <= FTINY && nd.tdiff <= FTINY)
 		return;				/* 100% pure specular */
 
-	if (r->ro->otype == OBJ_FACE || r->ro->otype == OBJ_RING)
+	if (r->ro != NULL && (r->ro->otype == OBJ_FACE ||
+			r->ro->otype == OBJ_RING))
 		nd.specfl |= SP_FLAT;
 
 	if (nd.specfl & (SP_REFL|SP_TRAN) && !(nd.specfl & SP_PURE))
