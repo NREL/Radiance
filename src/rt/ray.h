@@ -49,6 +49,7 @@ typedef struct ray {
 	FVECT  pert;		/* surface normal perturbation */
 	COLOR  pcol;		/* pattern color */
 	COLOR  rcol;		/* returned ray value */
+	double  rt;		/* returned effective ray length */
 }  RAY;
 
 extern double  raynormal();
