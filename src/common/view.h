@@ -1,4 +1,4 @@
-/* Copyright (c) 1988 Regents of the University of California */
+/* Copyright (c) 1994 Regents of the University of California */
 
 /* SCCSid "$SunId$ LBL" */
 
@@ -23,6 +23,8 @@ typedef struct {
 	double  vert;		/* vertical view size */
 	double  hoff;		/* horizontal image offset */
 	double  voff;		/* vertical image offset */
+	double  vfore;		/* fore clipping plane */
+	double  vaft;		/* aft clipping plane (<=0 for inf) */
 	FVECT  hvec;		/* computed horizontal image vector */
 	FVECT  vvec;		/* computed vertical image vector */
 	double  hn2;		/* DOT(hvec,hvec) */
@@ -33,10 +35,13 @@ extern VIEW  stdview;
 
 extern char  *setview();
 
+extern double  viewray();
+
 #define  viewaspect(v)	sqrt((v)->vn2/(v)->hn2)
 
 #define  STDVIEW	{VT_PER,{0.,0.,0.},{0.,1.,0.},{0.,0.,1.}, \
-				45.,45.,0.,0.,{0.,0.,0.},{0.,0.,0.},0.,0.}
+				45.,45.,0.,0.,0.,0., \
+				{0.,0.,0.},{0.,0.,0.},0.,0.}
 
 #define  VIEWSTR	"VIEW="
 #define  VIEWSTRL	5

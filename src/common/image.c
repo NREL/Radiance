@@ -1,4 +1,4 @@
-/* Copyright (c) 1992 Regents of the University of California */
+/* Copyright (c) 1994 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -28,6 +28,10 @@ register VIEW  *v;
 	static char  ill_horiz[] = "illegal horizontal view size";
 	static char  ill_vert[] = "illegal vertical view size";
 	
+	if (v->vfore < -FTINY || v->vaft < -FTINY ||
+			(v->vaft > FTINY && v->vaft <= v->vfore))
+		return("illegal fore/aft clipping plane");
+
 	if (normalize(v->vdir) == 0.0)		/* normalize direction */
 		return("zero view direction");
 
@@ -107,6 +111,7 @@ int  *xp, *yp;			/* x and y resolution in (or out if *ap!=0) */
 }
 
 
+double
 viewray(orig, direc, v, x, y)		/* compute ray origin and direction */
 FVECT  orig, direc;
 register VIEW  *v;
@@ -119,35 +124,41 @@ double  x, y;
 
 	switch(v->type) {
 	case VT_PAR:			/* parallel view */
-		orig[0] = v->vp[0] + x*v->hvec[0] + y*v->vvec[0];
-		orig[1] = v->vp[1] + x*v->hvec[1] + y*v->vvec[1];
-		orig[2] = v->vp[2] + x*v->hvec[2] + y*v->vvec[2];
+		orig[0] = v->vp[0] + v->vfore*v->vdir[0]
+				+ x*v->hvec[0] + y*v->vvec[0];
+		orig[1] = v->vp[1] + v->vfore*v->vdir[1]
+				+ x*v->hvec[1] + y*v->vvec[1];
+		orig[2] = v->vp[2] + v->vfore*v->vdir[2]
+				+ x*v->hvec[2] + y*v->vvec[2];
 		VCOPY(direc, v->vdir);
-		return(0);
+		return(v->vaft - v->vfore);
 	case VT_PER:			/* perspective view */
-		VCOPY(orig, v->vp);
 		direc[0] = v->vdir[0] + x*v->hvec[0] + y*v->vvec[0];
 		direc[1] = v->vdir[1] + x*v->hvec[1] + y*v->vvec[1];
 		direc[2] = v->vdir[2] + x*v->hvec[2] + y*v->vvec[2];
-		normalize(direc);
-		return(0);
+		orig[0] = v->vp[0] + v->vfore*direc[0];
+		orig[1] = v->vp[1] + v->vfore*direc[1];
+		orig[2] = v->vp[2] + v->vfore*direc[2];
+		d = normalize(direc);
+		return((v->vaft - v->vfore)*d);
 	case VT_HEM:			/* hemispherical fisheye */
 		z = 1.0 - x*x*v->hn2 - y*y*v->vn2;
 		if (z < 0.0)
-			return(-1);
+			return(-1.0);
 		z = sqrt(z);
-		VCOPY(orig, v->vp);
 		direc[0] = z*v->vdir[0] + x*v->hvec[0] + y*v->vvec[0];
 		direc[1] = z*v->vdir[1] + x*v->hvec[1] + y*v->vvec[1];
 		direc[2] = z*v->vdir[2] + x*v->hvec[2] + y*v->vvec[2];
-		return(0);
+		orig[0] = v->vp[0] + v->vfore*direc[0];
+		orig[1] = v->vp[1] + v->vfore*direc[1];
+		orig[2] = v->vp[2] + v->vfore*direc[2];
+		return(v->vaft - v->vfore);
 	case VT_ANG:			/* angular fisheye */
 		x *= v->horiz/180.0;
 		y *= v->vert/180.0;
 		d = x*x + y*y;
 		if (d > 1.0)
-			return(-1);
-		VCOPY(orig, v->vp);
+			return(-1.0);
 		d = sqrt(d);
 		z = cos(PI*d);
 		d = d <= FTINY ? PI : sqrt(1 - z*z)/d;
@@ -156,9 +167,12 @@ double  x, y;
 		direc[0] = z*v->vdir[0] + x*v->hvec[0] + y*v->vvec[0];
 		direc[1] = z*v->vdir[1] + x*v->hvec[1] + y*v->vvec[1];
 		direc[2] = z*v->vdir[2] + x*v->hvec[2] + y*v->vvec[2];
-		return(0);
+		orig[0] = v->vp[0] + v->vfore*direc[0];
+		orig[1] = v->vp[1] + v->vfore*direc[1];
+		orig[2] = v->vp[2] + v->vfore*direc[2];
+		return(v->vaft - v->vfore);
 	}
-	return(-1);
+	return(-1.0);
 }
 
 
@@ -176,7 +190,7 @@ FVECT  p;
 
 	switch (v->type) {
 	case VT_PAR:			/* parallel view */
-		ip[2] = DOT(disp,v->vdir);
+		ip[2] = DOT(disp,v->vdir) - v->vfore;
 		break;
 	case VT_PER:			/* perspective view */
 		d = DOT(disp,v->vdir);
@@ -184,12 +198,14 @@ FVECT  p;
 		if (d < 0.0) {		/* fold pyramid */
 			ip[2] = -ip[2];
 			d = -d;
-		} else if (d > FTINY) {
+		}
+		if (d > FTINY) {
 			d = 1.0/d;
 			disp[0] *= d;
 			disp[1] *= d;
 			disp[2] *= d;
 		}
+		ip[2] *= (1.0 - v->vfore*d);
 		break;
 	case VT_HEM:			/* hemispherical fisheye */
 		d = normalize(disp);
@@ -197,17 +213,18 @@ FVECT  p;
 			ip[2] = -d;
 		else
 			ip[2] = d;
+		ip[2] -= v->vfore;
 		break;
 	case VT_ANG:			/* angular fisheye */
 		ip[0] = 0.5 - v->hoff;
 		ip[1] = 0.5 - v->voff;
-		ip[2] = normalize(disp);
+		ip[2] = normalize(disp) - v->vfore;
 		d = DOT(disp,v->vdir);
 		if (d >= 1.0-FTINY)
 			return;
 		if (d <= -(1.0-FTINY)) {
-			ip[1] += 180.0/v->horiz;
-			ip[2] += 180.0/v->vert;
+			ip[0] += 180.0/v->horiz;
+			ip[1] += 180.0/v->vert;
 			return;
 		}
 		d = acos(d)/PI / sqrt(1.0 - d*d);
@@ -310,6 +327,14 @@ register char  *av[];
 		check(3,"f");
 		v->vert = atof(av[1]);
 		return(1);
+	case 'o':			/* fore clipping plane */
+		check(3,"f");
+		v->vfore = atof(av[1]);
+		return(1);
+	case 'a':			/* aft clipping plane */
+		check(3,"f");
+		v->vaft = atof(av[1]);
+		return(1);
 	case 's':			/* shift */
 		check(3,"f");
 		v->hoff = atof(av[1]);
@@ -366,6 +391,7 @@ FILE  *fp;
 	fprintf(fp, " -vd %.6g %.6g %.6g", vp->vdir[0], vp->vdir[1], vp->vdir[2]);
 	fprintf(fp, " -vu %.6g %.6g %.6g", vp->vup[0], vp->vup[1], vp->vup[2]);
 	fprintf(fp, " -vh %.6g -vv %.6g", vp->horiz, vp->vert);
+	fprintf(fp, " -vo %.6g -va %.6g", vp->vfore, vp->vaft);
 	fprintf(fp, " -vs %.6g -vl %.6g", vp->hoff, vp->voff);
 }
 
