@@ -19,15 +19,15 @@ static char SCCSid[] = "$SunId$ SGI";
 SM *smMesh = NULL;
 double smDist_sum=0;
 int smNew_tri_cnt=0;
-double smMinSampDiff = 1e-4;
+double smMinSampDiff = 1.7e-3;	/* min edge length in radians */
 
 static FVECT smDefault_base[4] = { {SQRT3_INV, SQRT3_INV, SQRT3_INV},
 			  {-SQRT3_INV, -SQRT3_INV, SQRT3_INV},
 			  {-SQRT3_INV, SQRT3_INV, -SQRT3_INV},
 			  {SQRT3_INV, -SQRT3_INV, -SQRT3_INV}};
-static int smTri_verts[4][3] = { {2,1,0},{3,2,0},{1,3,0},{2,3,1}};
+static int smTri_verts[4][3] = { {0,1,2},{0,2,3},{0,3,1},{1,3,2}};
 
-static int smBase_nbrs[4][3] =  { {3,2,1},{3,0,2},{3,1,0},{1,2,0}};
+static int smBase_nbrs[4][3] =  { {3,1,2},{3,2,0},{3,0,1},{1,0,2}};
 
 #ifdef TEST_DRIVER
 VIEW  Current_View = {0,{0,0,0},{0,0,-1},{0,1,0},60,60,0};
@@ -35,6 +35,7 @@ int Pick_cnt =0;
 int Pick_tri = -1,Picking = FALSE,Pick_samp=-1;
 FVECT Pick_point[500],Pick_origin,Pick_dir;
 FVECT  Pick_v0[500], Pick_v1[500], Pick_v2[500];
+int    Pick_q[500];
 FVECT P0,P1,P2;
 FVECT FrustumNear[4],FrustumFar[4];
 double dev_zmin=.01,dev_zmax=1000;
@@ -490,6 +491,10 @@ OBJECT *del_set;
 
   st = SM_LOCATOR(sm);
 
+#ifdef DEBUG
+  if((v0_id == INVALID) || (v1_id == INVALID) || (v2_id == INVALID))
+    error(CONSISTENCY,"Invalid ids 1\n");
+#endif
 
   VSUB(v0,SM_NTH_WV(sm,v0_id),SM_VIEW_CENTER(sm));
   VSUB(v1,SM_NTH_WV(sm,v1_id),SM_VIEW_CENTER(sm));
@@ -511,7 +516,13 @@ int v0_id,v1_id,v2_id;
 {
     int t_id;
     TRI *t;
-
+#ifdef DEBUG
+    if(v0_id==v1_id || v0_id==v2_id || v1_id==v2_id)
+    {
+	eputs("smAdd_tri: invalid vertex ids\n");
+	return(INVALID);
+	}
+#endif    
     t_id = smAlloc_tri(sm);
 
     if(t_id == -1)
@@ -562,46 +573,48 @@ smTris_swap_edge(sm,t_id,t1_id,e,e1,tn_id,tn1_id,add_ptr,delptr)
 
 {
     int verts[3],enext,eprev,e1next,e1prev;
-    TRI *n;
+    TRI *n,*ta,*tb,*t,*t1;
     FVECT p1,p2,p3;
     int ta_id,tb_id;
-    /* swap diagonal (e relative to t, and e1 relative to t1)
-      defined by quadrilateral
-      formed by t,t1- swap for the opposite diagonal
+    /* form new diagonal (e relative to t, and e1 relative to t1)
+      defined by quadrilateral formed by t,t1- swap for the opposite diagonal
    */
     enext = (e+1)%3;
     eprev = (e+2)%3;
     e1next = (e1+1)%3;
     e1prev = (e1+2)%3;
     verts[e] = T_NTH_V(SM_NTH_TRI(sm,t_id),e);
-    verts[enext] = T_NTH_V(SM_NTH_TRI(sm,t1_id),e1prev);
-    verts[eprev] = T_NTH_V(SM_NTH_TRI(sm,t_id),eprev);
+    verts[enext] = T_NTH_V(SM_NTH_TRI(sm,t_id),enext);
+    verts[eprev] = T_NTH_V(SM_NTH_TRI(sm,t1_id),e1);
     ta_id = smAdd_tri(sm,verts[0],verts[1],verts[2]);
     *add_ptr = push_data(*add_ptr,ta_id);
     verts[e1] = T_NTH_V(SM_NTH_TRI(sm,t1_id),e1);
-    verts[e1next] = T_NTH_V(SM_NTH_TRI(sm,t_id),eprev);
-    verts[e1prev] = T_NTH_V(SM_NTH_TRI(sm,t1_id),e1prev);
+    verts[e1next] = T_NTH_V(SM_NTH_TRI(sm,t1_id),e1next);
+    verts[e1prev] = T_NTH_V(SM_NTH_TRI(sm,t_id),e);
     tb_id = smAdd_tri(sm,verts[0],verts[1],verts[2]);
     *add_ptr = push_data(*add_ptr,tb_id);
 
+    ta = SM_NTH_TRI(sm,ta_id);
+    tb = SM_NTH_TRI(sm,tb_id);
+    t = SM_NTH_TRI(sm,t_id);
+    t1 = SM_NTH_TRI(sm,t1_id);
     /* set the neighbors */
-    T_NTH_NBR(SM_NTH_TRI(sm,ta_id),e) = T_NTH_NBR(SM_NTH_TRI(sm,t1_id),e1next);
-    T_NTH_NBR(SM_NTH_TRI(sm,tb_id),e1) = T_NTH_NBR(SM_NTH_TRI(sm,t_id),enext);
-    T_NTH_NBR(SM_NTH_TRI(sm,ta_id),enext) =tb_id;
-    T_NTH_NBR(SM_NTH_TRI(sm,tb_id),e1next) = ta_id;
-    T_NTH_NBR(SM_NTH_TRI(sm,ta_id),eprev)=T_NTH_NBR(SM_NTH_TRI(sm,t_id),eprev);
-    T_NTH_NBR(SM_NTH_TRI(sm,tb_id),e1prev)=
-      T_NTH_NBR(SM_NTH_TRI(sm,t1_id),e1prev);    
+    T_NTH_NBR(ta,e) = T_NTH_NBR(t1,e1next);
+    T_NTH_NBR(tb,e1) = T_NTH_NBR(t,enext);
+    T_NTH_NBR(ta,enext)= tb_id;
+    T_NTH_NBR(tb,e1next)= ta_id;
+    T_NTH_NBR(ta,eprev)=T_NTH_NBR(t,eprev);
+    T_NTH_NBR(tb,e1prev)=T_NTH_NBR(t1,e1prev);    
 
     /* Reset neighbor pointers of original neighbors */
-    n = SM_NTH_TRI(sm,T_NTH_NBR(SM_NTH_TRI(sm,t_id),enext));
+    n = SM_NTH_TRI(sm,T_NTH_NBR(t,enext));
     T_NTH_NBR(n,T_NTH_NBR_PTR(t_id,n)) = tb_id;
-    n = SM_NTH_TRI(sm,T_NTH_NBR(SM_NTH_TRI(sm,t_id),eprev));
+    n = SM_NTH_TRI(sm,T_NTH_NBR(t,eprev));
     T_NTH_NBR(n,T_NTH_NBR_PTR(t_id,n)) = ta_id;
 
-    n = SM_NTH_TRI(sm,T_NTH_NBR(SM_NTH_TRI(sm,t1_id),e1next));
+    n = SM_NTH_TRI(sm,T_NTH_NBR(t1,e1next));
     T_NTH_NBR(n,T_NTH_NBR_PTR(t1_id,n)) = ta_id;
-    n = SM_NTH_TRI(sm,T_NTH_NBR(SM_NTH_TRI(sm,t1_id),e1prev));
+    n = SM_NTH_TRI(sm,T_NTH_NBR(t1,e1prev));
     T_NTH_NBR(n,T_NTH_NBR_PTR(t1_id,n)) = tb_id;
 
     /* Delete two parent triangles */
@@ -655,7 +668,7 @@ LIST *tlist,*add_list;
 QUADTREE *delptr;
 {
     TRI *t,*t_opp;
-    FVECT p,p1,p2,p3;
+    FVECT p,p0,p1,p2;
     int e,e1,swapped = 0;
     int t_id,t_opp_id;
 
@@ -663,15 +676,23 @@ QUADTREE *delptr;
     while(tlist)
     {
 	t_id = pop_list(&tlist);
+#ifdef DEBUG
+	if(t_id==INVALID || t_id > smMesh->num_tri)
+	  error(CONSISTENCY,"Invalid tri id smFix_tris()\n");
+#endif
         t = SM_NTH_TRI(sm,t_id);
-        e = (T_WHICH_V(t,id)+1)%3;
+        e = T_WHICH_V(t,id);
         t_opp_id = T_NTH_NBR(t,e);
-        t_opp = SM_NTH_TRI(sm,t_opp_id);
-	
-	smDir_in_cone(sm,p1,T_NTH_V(t_opp,0));
-	smDir_in_cone(sm,p2,T_NTH_V(t_opp,1));
-	smDir_in_cone(sm,p3,T_NTH_V(t_opp,2));
-	if(point_in_cone(p,p1,p2,p3))
+#ifdef DEBUG
+	if(t_opp_id==INVALID || t_opp_id > smMesh->num_tri)
+	  error(CONSISTENCY,"Invalid tri id smFix_tris()\n");
+#endif
+	t_opp = SM_NTH_TRI(sm,t_opp_id);
+
+	smDir_in_cone(sm,p0,T_NTH_V(t_opp,0));
+	smDir_in_cone(sm,p1,T_NTH_V(t_opp,1));
+	smDir_in_cone(sm,p2,T_NTH_V(t_opp,2));
+	if(point_in_cone(p,p0,p1,p2))
 	{
 	    swapped = 1;
 	    e1 = T_NTH_NBR_PTR(t_id,t_opp);
@@ -700,7 +721,7 @@ int id;
   int nbr_id;
 
   /* Want the edge for which "id" is the destination */
-  t_id = (T_WHICH_V(t,id)+ 2)% 3;
+  t_id = (T_WHICH_V(t,id)+ 1)% 3;
   nbr_id = T_NTH_NBR(t,t_id);
   return(nbr_id);
 }
@@ -751,23 +772,23 @@ smInsert_samp(sm,s_id,tri_id)
     tri = SM_NTH_TRI(sm,tri_id);
 
     /* Set the neighbor pointers for the new tris */
-    T_NTH_NBR(SM_NTH_TRI(sm,t0_id),0) = t2_id;
-    T_NTH_NBR(SM_NTH_TRI(sm,t0_id),1) = T_NTH_NBR(tri,0);
-    T_NTH_NBR(SM_NTH_TRI(sm,t0_id),2) = t1_id;
-    T_NTH_NBR(SM_NTH_TRI(sm,t1_id),0) = t0_id;
-    T_NTH_NBR(SM_NTH_TRI(sm,t1_id),1) = T_NTH_NBR(tri,1);
-    T_NTH_NBR(SM_NTH_TRI(sm,t1_id),2) = t2_id;
-    T_NTH_NBR(SM_NTH_TRI(sm,t2_id),0) = t1_id;
-    T_NTH_NBR(SM_NTH_TRI(sm,t2_id),1) = T_NTH_NBR(tri,2);
-    T_NTH_NBR(SM_NTH_TRI(sm,t2_id),2) = t0_id;
+    T_NTH_NBR(SM_NTH_TRI(sm,t0_id),0) = T_NTH_NBR(tri,2);
+    T_NTH_NBR(SM_NTH_TRI(sm,t0_id),1) = t1_id;
+    T_NTH_NBR(SM_NTH_TRI(sm,t0_id),2) = t2_id;
+    T_NTH_NBR(SM_NTH_TRI(sm,t1_id),0) = T_NTH_NBR(tri,0);
+    T_NTH_NBR(SM_NTH_TRI(sm,t1_id),1) = t2_id;
+    T_NTH_NBR(SM_NTH_TRI(sm,t1_id),2) = t0_id;
+    T_NTH_NBR(SM_NTH_TRI(sm,t2_id),0) = T_NTH_NBR(tri,1);
+    T_NTH_NBR(SM_NTH_TRI(sm,t2_id),1) = t0_id;
+    T_NTH_NBR(SM_NTH_TRI(sm,t2_id),2) = t1_id;
 
     /* Reset the neigbor pointers for the neighbors of the original */
     nbr = SM_NTH_TRI(sm,T_NTH_NBR(tri,0));
-    T_NTH_NBR(nbr,T_NTH_NBR_PTR(tri_id,nbr)) = t0_id;
-    nbr = SM_NTH_TRI(sm,T_NTH_NBR(tri,1));
     T_NTH_NBR(nbr,T_NTH_NBR_PTR(tri_id,nbr)) = t1_id;
-    nbr = SM_NTH_TRI(sm,T_NTH_NBR(tri,2));
+    nbr = SM_NTH_TRI(sm,T_NTH_NBR(tri,1));
     T_NTH_NBR(nbr,T_NTH_NBR_PTR(tri_id,nbr)) = t2_id;
+    nbr = SM_NTH_TRI(sm,T_NTH_NBR(tri,2));
+    T_NTH_NBR(nbr,T_NTH_NBR_PTR(tri_id,nbr)) = t0_id;
 	
     del_set[0] = 1; del_set[1] = tri_id;
     delnode = qtnewleaf(del_set);
@@ -809,14 +830,14 @@ OBJECT *optr;
     if(EQUAL_VEC3(v0,p) || EQUAL_VEC3(v1,p) || EQUAL_VEC3(v2,p))
        return(t_id);
     
-    VCROSS(n,v1,v0);
+    VCROSS(n,v0,v1);
     if(DOT(n,p) >0.0)
       continue;
-    VCROSS(n,v2,v1);
+    VCROSS(n,v1,v2);
     if(DOT(n,p) > 0.0)
       continue;
 
-    VCROSS(n,v0,v2);
+    VCROSS(n,v2,v0);
     if(DOT(n,p) > 0.0)
       continue;
 
@@ -826,14 +847,14 @@ OBJECT *optr;
 }
 
 int
-smPointLocateTri(sm,id)
+smPointLocateTri(sm,p)
 SM *sm;
-int id;
+FVECT p;
 {
-  FVECT tpt;
   QUADTREE qt,*optr;
-  
-  VSUB(tpt,SM_NTH_WV(sm,id),SM_VIEW_CENTER(sm));
+  FVECT tpt;
+
+  VSUB(tpt,p,SM_VIEW_CENTER(sm));
   qt = smPointLocateCell(sm,tpt);
   if(QT_IS_EMPTY(qt))
     return(INVALID);  
@@ -875,19 +896,20 @@ int id;
      This attempts to throw out points that should be occluded   
 */
 int
-smTest_sample(sm,tri_id,s_id,dir,rptr)
+smTest_sample(sm,tri_id,c,dir,p,o_id,rptr)
    SM *sm;
-   int tri_id,s_id;
-   FVECT dir;
+   int tri_id;
+   COLR c;
+   FVECT dir,p;
+   int o_id;
    int *rptr;
 {
     TRI *tri;
     double d,d2,dnear,dspt,d01,d12,d20,s0,s1,s2,ds,dv;
     int vid[3],i,nearid,norm,dcnt,bcnt;
     FVECT diff[3],spt,npt;
-    FVECT p;
+    int tonemap;
 
-    VCOPY(p,SM_NTH_WV(sm,s_id));
     *rptr = INVALID;
     bcnt = dcnt = 0;
     tri = SM_NTH_TRI(sm,tri_id);
@@ -909,15 +931,15 @@ smTest_sample(sm,tri_id,s_id,dir,rptr)
 	   dcnt++;
 	VSUB(diff[i],SM_NTH_WV(sm,vid[i]),p);
 	/* If same world point: replace */
-	if(ZERO_VEC3(diff[i]))
+	if(FZERO_VEC3(diff[i]))
 	{
-	    sReset_samp(SM_SAMP(sm),vid[i],s_id);
-	    SM_TONE_MAP(sm) = 0;
-	    return(FALSE);
+	  tonemap = (SM_TONE_MAP(sm) > vid[i]);
+	  sInit_samp(SM_SAMP(sm),vid[i],c,dir,p,o_id,tonemap);
+	  return(FALSE);
 	}
     }
-    if(SM_DIR_ID(sm,s_id))
-       return(TRUE);
+    if(!dir)
+      return(TRUE);
     /* TEST 2: If the new sample is close in ws, and close in the spherical
        projection to one of the triangle vertex samples
     */
@@ -949,10 +971,7 @@ smTest_sample(sm,tri_id,s_id,dir,rptr)
 	  VSUB(npt,SM_NTH_WV(sm,nearid),SM_VIEW_CENTER(sm));
 	  normalize(npt);
 	  d = fdir2diff(SM_NTH_W_DIR(sm,nearid), npt);
-	  if(dir)
-	    d2 = 2. - 2.*DOT(dir,spt);
-	  else
-	    d2 = fdir2diff(SM_NTH_W_DIR(sm,s_id), spt);
+	  d2 = 2. - 2.*DOT(dir,spt);
 	  /* The existing sample is a better sample:punt */
 	  if(d2 > d)
 	    return(FALSE);
@@ -1025,16 +1044,25 @@ smTest_sample(sm,tri_id,s_id,dir,rptr)
     if(s2 < S_REPLACE_SCALE*d)
        return(TRUE);    
 
+  /* TEST 5:
+     Check to see if triangle is relatively large and should therefore
+     be subdivided anyway.
+     */
+    dv *= DIST_SQ(SM_NTH_WV(sm,vid[1]),SM_VIEW_CENTER(sm));
+    dv *= DIST_SQ(SM_NTH_WV(sm,vid[2]),SM_VIEW_CENTER(sm));
+    if (d01*d12*d20/dv > S_REPLACE_TRI)
+	return(TRUE);
 
     return(FALSE);
 }
 
 
 int
-smAlloc_samp(sm,c,dir,pt)
+smAlloc_samp(sm,c,dir,pt,o_id)
 SM *sm;
 COLR c;
 FVECT dir,pt;
+int o_id;
 {
   int s_id,replaced,cnt;
   SAMP *s;
@@ -1046,7 +1074,7 @@ FVECT dir,pt;
   cnt=0;
   while(replaced)
   {
-    if(smMesh_remove_vertex(sm,s_id))
+    if(smRemoveVertex(sm,s_id))
       break;
     s_id = sAlloc_samp(s,&replaced);
     cnt++;
@@ -1054,51 +1082,83 @@ FVECT dir,pt;
       error(CONSISTENCY,"smAlloc_samp():unable to find free samp\n");
   }
   
-  if(pt)
-    sInit_samp(s,s_id,c,dir,pt);	  
-  else
-    {
-      VADD(p,dir,SM_VIEW_CENTER(sm));
-      sInit_samp(s,s_id,c,NULL,p);	  
-    }
+  /* If sample is being added in the middle of the sample array: tone 
+     map individually
+   */
+  /* Initialize sample */
+  sInit_samp(s,s_id,c,dir,pt,o_id,(SM_TONE_MAP(sm)>s_id));	  
+  
   return(s_id);
 }
 
 int
-smAdd_samp(sm,s_id,p,dir)
+smAdd_samp(sm,c,dir,p,o_id)
    SM *sm;
-   int s_id;
-   FVECT p,dir;
+   COLR c;
+   FVECT dir,p;
+   int o_id;
 {
-    int t_id,r_id,test;
-    double d;
+  int t_id,s_id,r_id;
+  double d;
+  FVECT wpt;
 
-    r_id = INVALID;
-    t_id = smPointLocateTri(sm,s_id);
+  r_id = INVALID;
+  /* If sample is a world space point */
+  if(p)
+  {
+    t_id = smPointLocateTri(sm,p);
     if(t_id == INVALID)
-    {
-#ifdef DEBUG
-      eputs("smAdd_samp(): tri not found \n");
-#endif
-      return(FALSE);
-    }
-    if(!SM_BASE_ID(sm,s_id))
-    {
-      if(!smTest_sample(sm,t_id,s_id,dir,&r_id))
-	return(FALSE);
-      /* If not a sky point, add distance from the viewcenter to average*/
-      if( !SM_DIR_ID(sm,s_id))
       {
-	  d = DIST(p,SM_VIEW_CENTER(smMesh));
-	  smDist_sum += 1.0/d;
+#ifdef DEBUG
+	eputs("smAddSamp(): unable to locate tri containing sample \n");
+#endif
+	return(INVALID);
       }
+      /* if not a base id, Test to see if this sample should be added */
+    if(!SM_BASE_ID(sm,o_id))
+    {
+      if(!smTest_sample(sm,t_id,c,dir,p,o_id,&r_id))
+	return(INVALID);
+      /* Allocate space for a sample and initialize */
+      s_id = smAlloc_samp(smMesh,c,dir,p,o_id);
     }
-    test = smInsert_samp(smMesh,s_id,t_id);
+    else
+      s_id = o_id;
+  }
+    /* If sample is a direction vector */
+    else
+    {
+      VADD(wpt,dir,SM_VIEW_CENTER(smMesh));
+      t_id = smPointLocateTri(sm,wpt);
+      if(t_id == INVALID)
+	{
+#ifdef DEBUG
+	  eputs("smAddSamp(): unable to locate tri containing sample \n");
+#endif
+	  return(INVALID);
+	}
+      /* Test to see if this sample should be added */
+      if(!smTest_sample(sm,t_id,c,NULL,wpt,o_id,&r_id))
+	return(INVALID);
+      /* Allocate space for a sample and initialize */
+      s_id = smAlloc_samp(smMesh,c,NULL,wpt,o_id);
+    }
+  if(!SM_BASE_ID(sm,s_id) && !SM_DIR_ID(sm,s_id))
+    {
+      /* If not a base or sky point, add distance from the 
+	 viewcenter to average*/
+      d = DIST(SM_NTH_WV(sm,s_id),SM_VIEW_CENTER(smMesh));
+      smDist_sum += 1.0/d;
+    }
+    smInsert_samp(smMesh,s_id,t_id);
 
-    if(test && r_id != INVALID)
-      smMesh_remove_vertex(sm,r_id);
-
-    return(test);
+    /* If new sample replaces existing one- remove that vertex now */
+    if(r_id != INVALID)
+    {
+      smRemoveVertex(sm,r_id);
+      sDelete_samp(SM_SAMP(sm),r_id);
+    }
+    return(s_id);
 }
 
 /*
@@ -1117,47 +1177,18 @@ smNewSamp(c,dir,p)
 COLR c;
 FVECT dir;
 FVECT p;
-
 {
     int s_id;
-   int debug=0;
-    static FILE *fp;
-    static int cnt=0,n=3010;
+
     /* First check if this the first sample: if so initialize mesh */
     if(SM_NUM_SAMP(smMesh) == 0)
-     {
-	 smInit_sm(smMesh,odev.v.vp);
-#if 0
-      fp = fopen("Debug_data.view","w");
-      fprintf(fp,"%d %d %f %f %f ",1280,1024,odev.v.vp[0],odev.v.vp[1],
-              odev.v.vp[2]);
-      fprintf(fp,"%f %f %f ",odev.v.vdir[0],odev.v.vdir[1],
-              odev.v.vdir[2]);
-      fprintf(fp,"%f %f %f ",odev.v.vup[0],odev.v.vup[1],odev.v.vup[2]);
-      fprintf(fp,"%f %f ",odev.v.horiz,odev.v.vert);
-      fclose(fp);
-      fp = fopen("Debug_data","w");
-#endif
-     }
-#if 0
-    fprintf(fp,"%f %f %f %f %f %f ",p[0],p[1],p[2],(float)c[0]/255.0,(float)c[1]/255.0,
-           (float)c[2]/255.0);
-#endif
-
-    /* Allocate space for a sample */
-    s_id = smAlloc_samp(smMesh,c,dir,p);
-#if 0
-    if(cnt==n)
-       return(-1);
-    cnt++;
-#endif
-    /* Add the sample to the mesh */
-    if(!smAdd_samp(smMesh,s_id,p,dir))
-    {  
-      /* If the sample space was not used: return */
-      smUnalloc_samp(smMesh,s_id);
-      s_id = INVALID;
+    {
+      smInit_sm(smMesh,odev.v.vp);
+      sClear_all_flags(SM_SAMP(smMesh));
     }
+    /* Add the sample to the mesh */
+    s_id = smAdd_samp(smMesh,c,dir,p,INVALID);
+
     return(s_id);
     
  }    
@@ -1221,7 +1252,6 @@ int type;
    for(nbr_id=0; nbr_id < 3; nbr_id++)
     T_NTH_NBR(SM_NTH_TRI(sm,ids[tri_id]),nbr_id) = smBase_nbrs[tri_id][nbr_id];
 
-  
   /* Now add the centroids of the faces */
   for(tri_id=0;tri_id < 4; tri_id++)
   {
@@ -1233,7 +1263,7 @@ int type;
       normalize(cntr);
       VADD(cntr,cntr,SM_VIEW_CENTER(sm));
       s_id = smAdd_base_vertex(sm,cntr);
-      smAdd_samp(sm,s_id,NULL,NULL);
+      smAdd_samp(sm,NULL,NULL,cntr,s_id);
   }
  return(1);
 
@@ -1312,13 +1342,13 @@ smRebuild_mesh(sm,v)
     cnt = SM_NUM_SAMP(sm);
     /* Calculate the difference between the current and new viewpoint*/
     /* Will need to subtract this off of sky points */
-    VSUB(ov,v->vp,SM_VIEW_CENTER(sm));
+    VCOPY(ov,SM_VIEW_CENTER(sm));
     /* Initialize the mesh to 0 samples and the base triangles */
 
     /* Go through all samples and add in if in the new view frustum, and
        the dir is <= 30 degrees from new view
      */
-    j=0;
+    smInit_sm(sm,v->vp);
     for(i=0; i < cnt; i++)
     {
       /* First check if sample visible(conservative approx: if one of tris 
@@ -1331,22 +1361,21 @@ smRebuild_mesh(sm,v)
 	{
 	    VSUB(p,SM_NTH_WV(sm,i),v->vp);
 	    normalize(p);
-	    d = fdir2diff(SM_NTH_W_DIR(sm,i), p);
+	    decodedir(dir,SM_NTH_W_DIR(sm,i));
+	    d = 2. - 2.*DOT(dir,p);
 	    if (d > MAXDIFF2)
 	      continue;
+	    VCOPY(p,SM_NTH_WV(sm,i));
+	    smAdd_samp(sm,NULL,dir,p,i);
 	}
-	sReset_samp(SM_SAMP(sm),j,i);
-	j++;
+	else
+	{
+	  VSUB(dir,SM_NTH_WV(sm,i),ov);
+	  smAdd_samp(sm,NULL,dir,NULL,i);
+	}
+
     }
-    smInit_sm(sm,v->vp);
-    for(i=0; i< j; i++)
-    {
-	S_SET_FLAG(i);
-	VCOPY(p,SM_NTH_WV(sm,i));
-	smAdd_samp(sm,i,p,NULL);	
-    }
-    SM_NUM_SAMP(sm) = j;
-    smNew_tri_cnt = SM_SAMPLE_TRIS(sm);
+   smNew_tri_cnt = SM_SAMPLE_TRIS(sm);
 #ifdef DEBUG
     eputs("smRebuild_mesh():done\n");
 #endif
@@ -1367,11 +1396,11 @@ intersect_tri_set(t_set,orig,dir,pt)
     for(i = QT_SET_CNT(t_set); i > 0; i--)
     {
 	t_id = QT_SET_NEXT_ELEM(optr);
-
+	if(SM_IS_NTH_T_BASE(smMesh,t_id))
+	   continue;
 	t = SM_NTH_TRI(smMesh,t_id);
 	if(!T_IS_VALID(t))
 	  continue;
-
 	pid0 = T_NTH_V(t,0);
 	pid1 = T_NTH_V(t,1);
 	pid2 = T_NTH_V(t,2);
@@ -1484,6 +1513,9 @@ FVECT orig,dir;
   /* orig will be updated-so preserve original value */
   if(!smMesh)
      return;
+#ifdef TEST_DRIVER
+  Picking= TRUE;
+#endif  
   point_on_sphere(b,orig,SM_VIEW_CENTER(smMesh));
   d = -DOT(b,dir);
   if(EQUAL_VEC3(orig,SM_VIEW_CENTER(smMesh)) || EQUAL(fabs(d),1.0))

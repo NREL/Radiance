@@ -27,7 +27,10 @@ FVECT v1,v2;
 {
    return(EQUAL(v1[0],v2[0]) && EQUAL(v1[1],v2[1])&& EQUAL(v1[2],v2[2]));
 }
-
+#if 0
+extern FVECT Norm[500];
+extern int Ncnt;
+#endif
 
 int
 convex_angle(v0,v1,v2)
@@ -35,25 +38,26 @@ FVECT v0,v1,v2;
 {
     FVECT cp,cp01,cp12,v10,v02;
     double dp;
-    /*
-      VSUB(v10,v1,v0);
-      VSUB(v02,v0,v2);
-      VCROSS(cp,v10,v02);
-   */
-      /* test sign of (v0Xv1)X(v1Xv2). v1 */
+
+    /* test sign of (v0Xv1)X(v1Xv2). v1 */
     VCROSS(cp01,v0,v1);
     VCROSS(cp12,v1,v2);
     VCROSS(cp,cp01,cp12);
 	
     dp = DOT(cp,v1);
+#if 0
+    VCOPY(Norm[Ncnt++],cp01);
+    VCOPY(Norm[Ncnt++],cp12);
+    VCOPY(Norm[Ncnt++],cp);
+#endif
     if(ZERO(dp) || dp < 0.0)
-       return(FALSE);
+      return(FALSE);
     return(TRUE);
 }
 
 /* calculates the normal of a face contour using Newell's formula. e
 
-               a =  SUMi (yi - yi+1)(zi + zi+1)
+               a =  SUMi (yi - yi+1)(zi + zi+1)smMesh->samples->max_samp+4);
 	       b =  SUMi (zi - zi+1)(xi + xi+1)
 	       c =  SUMi (xi - xi+1)(yi + yi+1)
 */
@@ -78,7 +82,6 @@ int norm;
 
   if(!norm)
      return(0);
-
   
   mag = normalize(n);
 
@@ -179,7 +182,7 @@ intersect_ray_plane(orig,dir,peq,pd,r)
    double *pd;
    FVECT r;
 {
-  double t;
+  double t,d;
   int hit;
     /*
       Plane is Ax + By + Cz +D = 0:
@@ -190,8 +193,12 @@ intersect_ray_plane(orig,dir,peq,pd,r)
        line is  l = p1 + (p2-p1)t 
      */
     /* Solve for t: */
-    t =  -(DOT(FP_N(peq),orig) + FP_D(peq))/(DOT(FP_N(peq),dir));
-    if(t < 0)
+  d = DOT(FP_N(peq),dir);
+  if(ZERO(d))
+     return(0);
+  t =  -(DOT(FP_N(peq),orig) + FP_D(peq))/d; 
+
+  if(t < 0)
        hit = 0;
     else
        hit = 1;
@@ -212,7 +219,7 @@ intersect_ray_oplane(orig,dir,n,pd,r)
    double *pd;
    FVECT r;
 {
-  double t;
+  double t,d;
   int hit;
     /*
       Plane is Ax + By + Cz +D = 0:
@@ -223,7 +230,10 @@ intersect_ray_oplane(orig,dir,n,pd,r)
        line is  l = p1 + (p2-p1)t 
      */
     /* Solve for t: */
-    t =  -(DOT(n,orig))/(DOT(n,dir));
+    d= DOT(n,dir);
+    if(ZERO(d))
+       return(0);
+    t =  -(DOT(n,orig))/d;
     if(t < 0)
        hit = 0;
     else
@@ -286,7 +296,7 @@ FVECT p0,p1,p2;
        that plane and do an in-circle test in the plane
      */
     
-    /* find the equation of the plane defined by p1-p3 */
+    /* find the equation of the plane defined by p0-p2 */
     tri_plane_equation(p0,p1,p2,&peq,FALSE);
 
     /* define a coordinate system on the plane: the x axis is in
@@ -298,7 +308,7 @@ FVECT p0,p1,p2;
     if(!intersect_vector_plane(p,peq,NULL,np))
 	return(FALSE);
 
-    /* create coordinate system on  plane: p2-p1 defines the x_axis*/
+    /* create coordinate system on  plane: p1-p0 defines the x_axis*/
     VSUB(x_axis,p1,p0);
     normalize(x_axis);
     /* The y axis is  */
@@ -338,7 +348,7 @@ int sides[3];
     /* Find the normal to the triangle ORIGIN:v0:v1 */
     if(!NTH_BIT(*nset,0))
     {
-        VCROSS(n[0],v1,v0);
+        VCROSS(n[0],v0,v1);
 	SET_NTH_BIT(*nset,0);
     }
     /* Test the point for sidedness */
@@ -356,7 +366,7 @@ int sides[3];
     /* Test next edge */
     if(!NTH_BIT(*nset,1))
     {
-        VCROSS(n[1],v2,v1);
+        VCROSS(n[1],v1,v2);
 	SET_NTH_BIT(*nset,1);
     }
     /* Test the point for sidedness */
@@ -372,7 +382,7 @@ int sides[3];
     /* Test next edge */
     if(!NTH_BIT(*nset,2))
     {
-        VCROSS(n[2],v0,v2);
+        VCROSS(n[2],v2,v0);
 	SET_NTH_BIT(*nset,2);
     }
     /* Test the point for sidedness */
@@ -398,21 +408,21 @@ FVECT v0,v1,v2,p;
     double d;
     FVECT n;  
 
-    VCROSS(n,v1,v0);
+    VCROSS(n,v0,v1);
     /* Test the point for sidedness */
     d  = DOT(n,p);
     if(d > 0.0)
       return(FALSE);
 
     /* Test next edge */
-    VCROSS(n,v2,v1);
+    VCROSS(n,v1,v2);
     /* Test the point for sidedness */
     d  = DOT(n,p);
     if(d > 0.0)
        return(FALSE);
 
     /* Test next edge */
-    VCROSS(n,v0,v2);
+    VCROSS(n,v2,v0);
     /* Test the point for sidedness */
     d  = DOT(n,p);
     if(d > 0.0)
@@ -506,7 +516,7 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
     if(sides[0][0] == GT_INVALID)
     {
       if(!NTH_BIT(nset,0))
-	VCROSS(n[0],t1,t0);
+	VCROSS(n[0],t0,t1);
       /* Test the point for sidedness */
       d  = DOT(n[0],p0);
       if(d >= 0.0)
@@ -519,7 +529,7 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
     if(sides[0][1] == GT_INVALID)
     {
       if(!NTH_BIT(nset,1))
-	VCROSS(n[1],t2,t1);
+	VCROSS(n[1],t1,t2);
 	/* Test the point for sidedness */
 	d  = DOT(n[1],p0);
 	if(d >= 0.0)
@@ -532,7 +542,7 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
     if(sides[0][2] == GT_INVALID)
     {
       if(!NTH_BIT(nset,2))
-	VCROSS(n[2],t0,t2);
+	VCROSS(n[2],t2,t0);
       /* Test the point for sidedness */
       d  = DOT(n[2],p0);
       if(d >= 0.0)
@@ -548,7 +558,7 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
     if(sides[1][0] == GT_INVALID)
     {
       if(!NTH_BIT(nset,0))
-	VCROSS(n[0],t1,t0);
+	VCROSS(n[0],t0,t1);
       /* Test the point for sidedness */
       d  = DOT(n[0],p1);
       if(d >= 0.0)
@@ -562,7 +572,7 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
     if(sides[1][1] == GT_INVALID)
     {
       if(!NTH_BIT(nset,1))
-	VCROSS(n[1],t2,t1);
+	VCROSS(n[1],t1,t2);
       /* Test the point for sidedness */
       d  = DOT(n[1],p1);
       if(d >= 0.0)
@@ -576,7 +586,7 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
     if(sides[1][2] == GT_INVALID)
     {
       if(!NTH_BIT(nset,2))
-	VCROSS(n[2],t0,t2);
+	VCROSS(n[2],t2,t0);
       /* Test the point for sidedness */
       d  = DOT(n[2],p1);
       if(d >= 0.0)
@@ -592,7 +602,7 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
     if(sides[2][0] == GT_INVALID)
     {
       if(!NTH_BIT(nset,0))
-	VCROSS(n[0],t1,t0);
+	VCROSS(n[0],t0,t1);
       /* Test the point for sidedness */
       d  = DOT(n[0],p2);
       if(d >= 0.0)
@@ -605,7 +615,7 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
     if(sides[2][1] == GT_INVALID)
     {
       if(!NTH_BIT(nset,1))
-	VCROSS(n[1],t2,t1);
+	VCROSS(n[1],t1,t2);
       /* Test the point for sidedness */
       d  = DOT(n[1],p2);
       if(d >= 0.0)
@@ -618,7 +628,7 @@ set_sidedness_tests(t0,t1,t2,p0,p1,p2,test,sides,nset,n)
     if(sides[2][2] == GT_INVALID)
     {
       if(!NTH_BIT(nset,2))
-	VCROSS(n[2],t0,t2);
+	VCROSS(n[2],t2,t0);
       /* Test the point for sidedness */
       d  = DOT(n[2],p2);
       if(d >= 0.0)
@@ -1305,19 +1315,11 @@ BCOORD bi[3];
 
     if(b[i] <= 0.0)
     {
-#ifdef EXTRA_DEBUG
-      if(b[i] < 0.0)
-	printf("under %f\n",b[i]);
-#endif
       bi[i]= 0;
     }
     else
       if(b[i] >= 1.0)
       {
-#ifdef EXTRA_DEBUG
-	if(b[i] > 1.0)
-	  printf("over %f\n",b[i]);
-#endif
 	bi[i]= MAXBCOORD;
       }
       else
@@ -1326,9 +1328,6 @@ BCOORD bi[3];
   bi[2] = bi[0] +  bi[1];
   if(bi[2] > MAXBCOORD)
   {
-#ifdef EXTRA_DEBUG
-      printf("sum over %f\n",b[0]+b[1]);
-#endif
       bi[2] = 0;
       bi[1] = MAXBCOORD - bi[0];
   }

@@ -10,6 +10,11 @@
 
 #include <values.h>
 
+#define F_TINY 1e-3
+
+#define FZERO(x) ((x) < F_TINY && (x) > -F_TINY)
+#define FEQUAL(a,b) FZERO((a) - (b))
+
 #define ZERO(x) ((x) < FTINY && (x) > -FTINY)
 #define EQUAL(a,b) ZERO((a) - (b))
 
@@ -58,6 +63,8 @@ typedef long TINT;
 
 #define ZERO_VEC3(v)     (ZERO(v[0]) && ZERO(v[1]) && ZERO(v[2]) )
 #define EQUAL_VEC3(a,b)  (EQUAL(a[0],b[0])&&EQUAL(a[1],b[1])&&EQUAL(a[2],b[2]))
+#define FZERO_VEC3(v)     (FZERO(v[0]) && FZERO(v[1]) && FZERO(v[2]) )
+#define FEQUAL_VEC3(a,b) (FEQUAL(a[0],b[0])&&FEQUAL(a[1],b[1])&&FEQUAL(a[2],b[2]))
 #define NEGATE_VEC3(v)   ((v)[0] *= -1.0,(v)[1] *= -1.0,(v)[2] *= -1.0)
 #define COPY_VEC2(v1,v2) ((v1)[0]=(v2)[0],(v1)[1]=(v2)[1])
 #define DIST(a,b)         (sqrt(((a)[0]-(b)[0])*((a)[0]-(b)[0]) + \
@@ -119,6 +126,6 @@ double tri_normal();
 double spherical_edge_normal();
 
 #define point_in_stri_n(n0,n1,n2,p) \
-                     ((DOT(n0,p)<=0.0)&&(DOT(n1,p)<=0.0)&&(DOT(n2,p)<=0.0))
+  ((DOT(n0,p)<=F_TINY)&&(DOT(n1,p)<=F_TINY)&&(DOT(n2,p)<=F_TINY))
 
 #define PT_ON_PLANE(p,peq) (DOT(FP_N(peq),p)+FP_D(peq))

@@ -57,12 +57,11 @@ int *fptr;
   register int i,t_id;
   TRI *tri;
 
-
   if(!QT_FLAG_FILL_TRI(*fptr))
      (*fptr)++;
-
   if(QT_IS_EMPTY(qt) || QT_LEAF_IS_FLAG(qt))
     return;
+
   /* For each triangle in the set, set the which flag*/
   os = qtqueryset(qt);
 
@@ -101,7 +100,7 @@ VIEW *view;
     qtClearAllFlags();
     smClear_flags(smMesh,T_ACTIVE_FLAG);
     /* Clear all of the active sample flags*/
-    sClear_all_flags(smMesh->samples);
+    sClear_all_flags(SM_SAMP(smMesh));
 
 
     /* calculate the world space coordinates of the view frustum */
@@ -127,16 +126,17 @@ VIEW *view;
     
     if(EQUAL_VEC3(view->vp,SM_VIEW_CENTER(smMesh)))
     {/* Near face triangles */
-      smLocator_apply_func(smMesh,nr[3],nr[2],nr[0],mark_active_tris,
+
+      smLocator_apply_func(smMesh,nr[0],nr[2],nr[3],mark_active_tris,
 			 mark_active_interior,NULL);
-      smLocator_apply_func(smMesh,nr[1],nr[0],nr[2],mark_active_tris,
+      smLocator_apply_func(smMesh,nr[2],nr[0],nr[1],mark_active_tris,
 			 mark_active_interior,NULL);
       return;
     }
 
     /* Test the view against the planes: and swap orientation if inside:*/
     tri_plane_equation(nr[0],nr[2],nr[3], &peq,FALSE);
-    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) > 0.0)
+    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
     {/* Near face triangles */
       smLocator_apply_func(smMesh,nr[3],nr[2],nr[0],mark_active_tris,
 			   mark_active_interior,NULL);
@@ -151,7 +151,7 @@ VIEW *view;
 			 mark_active_interior,NULL);
     }
     tri_plane_equation(nr[0],far[3],far[0], &peq,FALSE);
-    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) > 0.0)
+    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
     { /* Right face triangles */
       smLocator_apply_func(smMesh,far[0],far[3],nr[0],mark_active_tris,
 			   mark_active_interior,NULL);
@@ -167,7 +167,7 @@ VIEW *view;
     }
 
     tri_plane_equation(nr[1],far[2],nr[2], &peq,FALSE);
-    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) > 0.0)
+    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
     { /* Left face triangles */
       smLocator_apply_func(smMesh,nr[2],far[2],nr[1],mark_active_tris,
 			   mark_active_interior,NULL);
@@ -183,7 +183,7 @@ VIEW *view;
 
     }
     tri_plane_equation(nr[0],far[0],nr[1], &peq,FALSE);
-    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) > 0.0)
+    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
     {/* Top face triangles */
       smLocator_apply_func(smMesh,nr[1],far[0],nr[0],mark_active_tris,
 			   mark_active_interior,NULL);
@@ -198,7 +198,7 @@ VIEW *view;
 			   mark_active_interior,NULL);
     }
     tri_plane_equation(nr[3],nr[2],far[3], &peq,FALSE);
-    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) > 0.0)
+    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
     {/* Bottom face triangles */
       smLocator_apply_func(smMesh,far[3],nr[2],nr[3],mark_active_tris,
 			   mark_active_interior,NULL);
@@ -213,7 +213,7 @@ VIEW *view;
 			   mark_active_interior,NULL);
     }
      tri_plane_equation(far[2],far[0],far[1], &peq,FALSE);
-    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) > 0.0)
+    if(PT_ON_PLANE(SM_VIEW_CENTER(smMesh),peq) < 0.0)
     {/* Far face triangles */
       smLocator_apply_func(smMesh,far[0],far[2],far[1],mark_active_tris,
 			   mark_active_interior,NULL);
@@ -378,10 +378,12 @@ int lvl;
       os = qtqueryset(qt);
       for (n = os[0]; n; n--)
       {
+	if(SM_IS_NTH_T_BASE(sm,os[n]))
+	   continue;
 	tri = SM_NTH_TRI(sm,os[n]);
 	if(!T_IS_VALID(tri))
 	  continue;
-
+	
 	s0 = T_NTH_V(tri,0);
 	s1 = T_NTH_V(tri,1);
 	s2 = T_NTH_V(tri,2);
@@ -419,10 +421,10 @@ int lvl;
     VSUM(c,SM_VIEW_CENTER(sm),c,le->av.dist);
 					/* draw triangle */
     glColor3ub(le->av.rgb[0],le->av.rgb[1],le->av.rgb[2]);
-    /* NOTE: Triangle vertex order may change */
-    glVertex3d(c[0],c[1],c[2]);
-    glVertex3d(b[0],b[1],b[2]);
     glVertex3d(a[0],a[1],a[2]);
+    glVertex3d(b[0],b[1],b[2]);
+    glVertex3d(c[0],c[1],c[2]);
+
   }
   return(&le->av);
 }
@@ -495,11 +497,7 @@ int clr;
 
   tri = SM_NTH_TRI(sm,i);
   if (clr) SM_CLR_NTH_T_NEW(sm,i);
-
-  /* NOTE:Triangles are defined clockwise:historical relative to spherical
-     tris: could change
-     */
-  for(j=2; j>= 0; j--)
+  for(j=0; j <= 2; j++)
   {
 #ifdef DEBUG
     if(SM_BG_SAMPLE(sm,T_NTH_V(tri,j)))
@@ -550,7 +548,7 @@ int clr;
     rgb[0]/=cnt; rgb[1]/=cnt; rgb[2]/=cnt;
     d /= (double)cnt;
   } 
-  for(j=2; j>= 0; j--)
+  for(j=0; j <= 2; j++)
   {
     if(SM_BG_SAMPLE(sm,ids[j]))
     {
@@ -588,7 +586,7 @@ int clr;
   /* NOTE:Triangles are defined clockwise:historical relative to spherical
      tris: could change
      */
-  for(j=2; j>= 0; j--)
+  for(j=0; j <= 2; j++)
   {
       id = T_NTH_V(tri,j);
       glColor3ub(SM_NTH_RGB(sm,id)[0],SM_NTH_RGB(sm,id)[1],
@@ -628,8 +626,6 @@ int clr;
   glBegin(GL_TRIANGLES);
   SM_FOR_ALL_ACTIVE_FG_TRIS(sm,i)
   {
-      if(SM_BG_TRI(sm,i))
-	 continue;
       if(!SM_MIXED_TRI(sm,i))
 	smRender_tri(sm,i,vp,clr);
    else
@@ -651,10 +647,7 @@ int i;
 
   tri = SM_NTH_TRI(sm,i);
 
-  /* Triangles are defined clockwise:historical relative to spherical
-     tris: could change
-     */
-  for(j=2; j >=0; j--)
+  for(j=0; j <= 2; j++)
   {
     VCOPY(ptr,SM_NTH_WV(sm,T_NTH_V(tri,j)));
     glVertex3d(ptr[0],ptr[1],ptr[2]);
@@ -758,7 +751,7 @@ int clr;
 
   /* Turn Depth Test off -- using Painter's algorithm */
   glPushAttrib(GL_DEPTH_BUFFER_BIT);
-  glDisable(GL_DEPTH_TEST);
+  glDepthFunc(GL_ALWAYS);
   d = (dev_zmin+dev_zmax)/2.0;
   /* Now render back-to front */
   /* First render bg triangles */
@@ -872,7 +865,9 @@ smUpdate(view,qual)
     glDrawBuffer(GL_BACK);
 #endif
   }
+
   SM_TONE_MAP(smMesh) = SM_NUM_SAMP(smMesh);
+
   if (last_update)
   {
     smClean_notify = FALSE;

@@ -66,7 +66,8 @@ typedef struct samp {
 #define S_SET_FLAG(s)		SET_FLAG(samp_flag,s)
 #define S_CLR_FLAG(s)		CLR_FLAG(samp_flag,s)
 
-#define sUnalloc_samp(s,sid)   (S_FREE_SAMP(s) = sid)
+#define S_NTH_NEXT(s,n)         S_NTH_W_DIR(s,n)
+#define sUnalloc_samp(s,n) (S_NTH_NEXT(s,n) = S_FREE_SAMP(s),S_FREE_SAMP(s)=n)
 #define sClear_base_points(s)  (S_NEXT_BASE_PT(s) = S_MAX_SAMP(s))
 #define sClear(s)      sInit(s)
 /* Max allowed angle of sample dir from current view */

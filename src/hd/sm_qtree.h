@@ -79,7 +79,7 @@
 #define QT_MAX_LEVELS     12
 #endif
 
-#define QT_FILL_THRESHOLD 3
+#define QT_FILL_THRESHOLD 2
 #define QT_EXPAND   8
 #define QT_COMPRESS 16
 #define QT_DONE 32
