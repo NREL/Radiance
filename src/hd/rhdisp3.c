@@ -115,17 +115,17 @@ char	*dp;
 		if (!(inflags & 1<<gc.w))	/* origin on wrong side */
 			continue;
 					/* scanline algorithm */
-		for (gc.i[1] = hp->grid[((gc.w>>1)+2)%3]; gc.i[1]--; ) {
+		for (gc.i[1] = hp->grid[hdwg1[gc.w]]; gc.i[1]--; ) {
 						/* compute scanline */
 			gp[gc.w>>1] = gc.w&1 ? hp->grid[gc.w>>1] : 0;
-			gp[((gc.w>>1)+1)%3] = 0;
-			gp[((gc.w>>1)+2)%3] = gc.i[1] + 0.5;
+			gp[hdwg0[gc.w]] = 0;
+			gp[hdwg1[gc.w]] = gc.i[1] + 0.5;
 			hdworld(lo, hp, gp);
-			gp[((gc.w>>1)+1)%3] = 1;
+			gp[hdwg0[gc.w]] = 1;
 			hdworld(ld, hp, gp);
 			ld[0] -= lo[0]; ld[1] -= lo[1]; ld[2] -= lo[2];
 						/* find scanline limits */
-			lbeg = 0; lend = hp->grid[((gc.w>>1)+1)%3];
+			lbeg = 0; lend = hp->grid[hdwg0[gc.w]];
 			for (i = 0; i < 4; i++) {
 				t = DOT(pn[i], lo) - po[i];
 				d = -DOT(pn[i], ld);
@@ -299,8 +299,8 @@ int	(*f)();
 					/* do each wall on each section */
 	for (hd = 0; hdlist[hd] != NULL; hd++)
 		for (w = 0; w < 6; w++) {
-			g0 = ((w>>1)+1)%3;
-			g1 = ((w>>1)+2)%3;
+			g0 = hdwg0[w];
+			g1 = hdwg1[w];
 			d = 1.0/hdlist[hd]->grid[g0];
 			mov[0] = d * hdlist[hd]->xv[g0][0];
 			mov[1] = d * hdlist[hd]->xv[g0][1];

@@ -227,9 +227,9 @@ init_global()			/* initialize global ray computation */
 					/* compute beam weights */
 	k = 0;
 	for (j = 0; hdlist[j] != NULL; j++) {
-		frac = 512. * hdlist[j]->wg[0] *
-				hdlist[j]->wg[1] * hdlist[j]->wg[2];
-		if (frac < 0.) frac = -frac;
+		frac = 512. * VLEN(hdlist[j]->wg[0]) *
+				VLEN(hdlist[j]->wg[1]) *
+				VLEN(hdlist[j]->wg[2]);
 		for (i = nbeams(hdlist[j]); i > 0; i--) {
 			complist[k].hd = j;
 			complist[k].bi = i;

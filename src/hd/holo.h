@@ -73,9 +73,8 @@ typedef struct holo {
 	int	fd;		/* file descriptor */
 	short	dirty;		/* beam index needs update to file */
 	double	tlin;		/* linear range for depth encoding */
-	FVECT	wn[3];		/* wall normals (derived) */
-	double	wg[3];		/* wall grid multipliers (derived) */
-	double	wo[6];		/* wall offsets (derived) */
+	FVECT	wg[3];		/* wall grid vectors (derived) */
+	double	wo[6];		/* wall grid offsets (derived) */
 	int	wi[6];		/* wall super-indices (derived) */
 	char	*priv;		/* pointer to private client data */
 	BEAM	**bl;		/* beam pointers (memory cache) */
@@ -109,6 +108,9 @@ extern unsigned long	hdclock;	/* holodeck system clock */
 extern HOLO	*hdlist[HDMAX+1];	/* holodeck pointers (NULL term.) */
 
 extern float	hd_depthmap[];		/* depth conversion map */
+
+extern int	hdwg0[6];		/* wall grid 0 index */
+extern int	hdwg1[6];		/* wall grid 1 index */
 
 #define hddepth(hp,dc)	( (dc) >= DCINF ? FHUGE : \
 				(hp)->tlin * ( (dc) >= DCLIN ? \
