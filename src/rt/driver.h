@@ -24,7 +24,8 @@ struct driver {				/* driver functions */
 extern int  stderr_v();			/* error vectors */
 extern int  (*wrnvec)(), (*errvec)(), (*cmdvec)();
 
-extern struct driver  *comm_init();	/* stream interface */
+					/* stream interface */
+extern struct driver  *comm_init(), *slave_init();
 					/* magic numbers for verification */
 #define COM_SENDM		0x6f37
 #define COM_RECVM		0x51da
