@@ -304,14 +304,19 @@ addxform(fin)			/* add xf arguments to strings */
 FILE  *fin;
 {
 	register int  i;
+	int  resetarr = 0;
 	FUNARGS  fa;
 
 	if (readfargs(&fa, fin) != 1)
 		return(-1);
 					/* string arguments */
-	printf("%d", fa.nsargs + xac-xfa);
+	if (xac > xfa && strcmp(xav[xfa], "-i"))
+		resetarr = 2;
+	printf("%d", fa.nsargs + resetarr + xac-xfa);
 	for (i = 0; i < fa.nsargs; i++)
 		printf(" %s", fa.sarg[i]);
+	if (resetarr)
+		printf(" -i 1");
 	for (i = xfa; i < xac; i++)	/* add xf arguments */
 		printf(" %s", xav[i]);
 	printf("\n");
