@@ -221,13 +221,12 @@ double  s;
 	for (i = 0; i < 8; i++) {
 		for (j = 0; j < 3; j++) {
 			ck0[j] = c0[j];
-			if (1<<j & i) {
+			if (1<<j & i)
 				ck0[j] += s;
-				if (r->rop[j] < ck0[j] - OCTSCALE*s)
-					break;
-			} else
-				if (r->rop[j] > ck0[j] + (1.0+OCTSCALE)*s)
-					break;
+			if (r->rop[j] < ck0[j] - OCTSCALE*s)
+				break;
+			if (r->rop[j] > ck0[j] + (1.0+OCTSCALE)*s)
+				break;
 		}
 		if (j == 3)
 			wsum += sumambient(acol, r, at->kid+i, ck0, s);
