@@ -5,7 +5,7 @@ This directory contains programs for generating and transforming
 Radiance scene descriptions.
 
 mkillum.h	common definitions for mkillum
-genbeads.c	generate a string of spheres using Hermite
+genbeads.c	generate a string of spheres using Hermite curve
 genblinds.c	make some curved or flat venetian blinds
 genbox.c	generate a parallelepiped
 genprism.c	generate a prism
@@ -14,9 +14,13 @@ gensky.c	program to generate sky functions
 gensurf.c	program to generate functional surfaces
 genworm.c	program to generate worms (strings with varying thickness)
 hermite3.c	routines for 3D hermite curves
+illum.cal	function file for mkillum output
 mkillum.c	make illum sources for optimizing rendering process
 mkillum2.c	routines to do the actual calculation for mkillum
 mkillum3.c	routines to print mkillum objects
 replmarks.c	replace markers with objects or instances
+rev.cal		function file for smoothing option of genrev
+skybright.cal	function file for gensky output
 sun.c		solar postion calculations
+surf.cal	function file for gensurf smoothing
 xform.c		program to transform object files
