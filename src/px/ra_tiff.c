@@ -145,7 +145,7 @@ char	*inpf, *outf;
 	fputs(" -r\n", stdout);
 	fputformat(COLRFMT, stdout);
 	putchar('\n');
-	fprtresolu(xmax, ymax, stdout);
+	fprtresolu((int)xmax, (int)ymax, stdout);
 						/* convert image */
 	if (nsamps == 1)
 		pconfig = 1;
