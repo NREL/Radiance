@@ -88,8 +88,7 @@ char	*argv[];
 		goto syserr;
 	bcopy(&comm_default, &comm_driver, sizeof(comm_driver));
 	signal(SIGIO, onsigio);
-	errvec = comm_errout;			/* set error vector */
-	cmdvec = comm_comout;
+	cmdvec = comm_comout;			/* set error vectors */
 	if (wrnvec != NULL)
 		wrnvec = comm_comout;
 	return(&comm_driver);
@@ -104,8 +103,7 @@ comm_close()			/* done with driver */
 {
 	int	pid;
 
-	errvec = stderr_v;			/* reset error vector */
-	cmdvec = NULL;
+	cmdvec = NULL;				/* reset error vectors */
 	if (wrnvec != NULL)
 		wrnvec = stderr_v;
 	signal(SIGIO, SIG_DFL);
@@ -171,7 +169,6 @@ char	*str;
 {
 	putc(COM_COMOUT, devout);
 	myputs(str, devout);
-	fflush(devout);
 }
 
 
