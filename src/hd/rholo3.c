@@ -76,9 +76,9 @@ int	nents;
 	register PACKHEAD	*csm;
 	register int	i;
 					/* search for common members */
-	qsort((char *)clist, nents, sizeof(PACKHEAD), beamidcmp);
 	for (csm = clist+nents; csm-- > clist; )
 		csm->nc = -1;
+	qsort((char *)clist, nents, sizeof(PACKHEAD), beamidcmp);
 	for (i = 0; i < complen; i++) {
 		csm = (PACKHEAD *)bsearch((char *)(complist+i), (char *)clist,
 				nents, sizeof(PACKHEAD), beamidcmp);
@@ -249,6 +249,8 @@ init_global()			/* initialize global ray computation */
 		complist[k].nr = frac*complist[k].nr + 0.5;
 	listpos = 0; lastin = -1;	/* perform initial sort */
 	sortcomplist();
+					/* no view vicinity */
+	myeye.rng = 0;
 }
 
 
