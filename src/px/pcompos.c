@@ -116,6 +116,11 @@ char  *argv[];
 			goto userr;
 		}
 dofiles:
+	if (ysiz > 0 & ncolumns > 0) {
+		fprintf(stderr, "%s: -a option incompatible with -y\n",
+				progname);
+		quit(1);
+	}
 	for (nfile = 0; an < argc; nfile++) {
 		if (nfile >= MAXFILE)
 			goto toomany;
