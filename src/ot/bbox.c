@@ -63,7 +63,7 @@ FVECT  bbmin, bbmax;
 		circle2bbox(CO_P1(co), co->ad, CO_R1(co), bbmin, bbmax);
 		break;
 	case OBJ_INSTANCE:
-		io = getinstance(o, GET_BOUNDS);
+		io = getinstance(o, IO_BOUNDS);
 		for (j = 0; j < 8; j++) {
 			for (i = 0; i < 3; i++) {
 				v[i] = io->obj->scube.cuorg[i];
