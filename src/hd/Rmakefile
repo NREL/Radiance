@@ -18,7 +18,8 @@ LIBDIR = /usr/local/lib/ray
 
 PROGS = rholo rhcopy
 
-DEVS = $(DEVDIR)/x11.hdi $(DEVDIR)/x11h.hdi
+DEVS = $(DEVDIR)/x11.hdi $(DEVDIR)/x11h.hdi \
+$(DEVDIR)/glx.hdi $(DEVDIR)/glxh.hdi
 
 all:	$(PROGS)
 
@@ -44,6 +45,15 @@ rhd_qtree2r.o rhd_ctab.o dircode.o holo.o
 	$(CC) $(CFLAGS) -o $(DEVDIR)/x11.hdi rhdisp.o rhdisp2.o rhdisp3.o \
 rhd_x11.o rhd_qtree.o rhd_qtree2r.o rhd_ctab.o holo.o dircode.o -lrt -lX11 -lm
 
+$(DEVDIR)/glxh.hdi:	$(DEVDIR)/glx.hdi
+	rm -f $(DEVDIR)/glxh.hdi
+	ln $(DEVDIR)/glx.hdi $(DEVDIR)/glxh.hdi
+
+$(DEVDIR)/glx.hdi:	rhdisp.o rhdisp2.o rhdisp3.o rhd_glx.o \
+dircode.o holo.o
+	$(CC) $(CFLAGS) -o $(DEVDIR)/glx.hdi rhdisp.o rhdisp2.o rhdisp3.o \
+rhd_glx.o holo.o dircode.o -lrt -lGLU -lGL -lX11 -lm
+
 rholo.o rholo2.o rholo2l.o rholo3.o rholo4.o \
 rhdisp.o rhdisp2.o rhdisp3.o:	rholo.h
 
@@ -65,8 +75,10 @@ rhcopy.o:	../common/resolu.h
 
 rhcopy.o:	../common/view.h
 
-rhd_x11.o rhd_qtree.o rhd_qtree2r.o:	../common/standard.h \
+rhd_glx.o rhd_x11.o rhd_qtree.o rhd_qtree2r.o:	../common/standard.h \
 ../common/mat4.h ../common/fvect.h
+
+rhd_glx.o:	rhdriver.h ../common/view.h ../common/tonemap.h
 
 rhd_x11.o rhd_qtree.o rhd_qtree2r.o:	rhd_qtree.h rhdriver.h \
 ../common/tonemap.h ../common/color.h
