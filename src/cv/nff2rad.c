@@ -355,7 +355,7 @@ fill()
 		p = 1./p;
 	if (t > .001) {		/* has transmission */
 		printf("\nvoid trans fill\n");
-		printf("0\n0\n7 %g %g %g %g %g %g 1\n", r, g, b, s, p, t);
+		printf("0\n0\n7 %g %g %g %g 0 %g 1\n", r, g, b, s, t);
 	} else {		/* no transmission */
 		printf("\nvoid plastic fill\n");
 		printf("0\n0\n5 %g %g %g %g %g\n", r, g, b, s, p);
