@@ -48,7 +48,10 @@ static int  nunflshed = 0;	/* number of unflushed ambient values */
 #endif
 #endif
 #ifndef SORT_INTVL
-#define SORT_INTVL	(SORT_THRESH*8)
+#define SORT_INTVL	(SORT_THRESH*32)
+#endif
+#ifndef MAX_SORT_INTVL
+#define MAX_SORT_INTVL	(SORT_INTVL<<8)
 #endif
 
 static unsigned long  ambclock = 0;	/* ambient access clock */
@@ -63,8 +66,6 @@ static long  sortintvl = SORT_INTVL;	/* time until next sort */
 	 * claiming our own memory (copy on write).
 	 */
 #define tracktime	(shm_boundary == NULL || ambfp == NULL)
-#define checksort()	if (ambclock > lastsort+sortintvl && \
-			nambvals > SORT_THRESH) sortambvals(0)
 
 #define	 AMBFLUSH	(BUFSIZ/AMBVALSIZ)
 
@@ -200,7 +201,7 @@ register RAY  *r;
 		return;
 	}
 						/* resort memory? */
-	checksort();
+	sortambvals(0);
 						/* get ambient value */
 	setcolor(acol, 0.0, 0.0, 0.0);
 	d = sumambient(acol, r, rdepth,
@@ -586,6 +587,10 @@ int	always;
 	AMBTREE  oldatrunk;
 	AMBVAL	tav, *tap, *pnext;
 	register int	i, j;
+					/* see if it's time yet */
+	if (!always && (ambclock < lastsort+sortintvl ||
+			nambvals < SORT_THRESH))
+		return;
 	/*
 	 * The idea here is to minimize memory thrashing
 	 * in VM systems by improving reference locality.
@@ -653,7 +658,11 @@ int	always;
 		}
 		free((char *)avlist1);
 		free((char *)avlist2);
-		if (sortintvl < SORT_INTVL<<6)
+						/* compute new sort interval */
+		sortintvl = ambclock - lastsort;
+		if (sortintvl > MAX_SORT_INTVL)
+			sortintvl = MAX_SORT_INTVL;
+		else
 			sortintvl <<= 1;	/* wait twice as long next */
 #ifdef DEBUG
 		eputs("done\n");
