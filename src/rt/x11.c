@@ -442,9 +442,12 @@ static
 getkey(ekey)				/* get input key */
 register XKeyPressedEvent  *ekey;
 {
-	c_last += XLookupString(ekey, c_queue+c_last, sizeof(c_queue)-c_last,
+	int  n;
+
+	n = XLookupString(ekey, c_queue+c_last, sizeof(c_queue)-c_last,
 				NULL, NULL);
-	x11_driver.inpready = c_last-c_first;
+	c_last += n;
+	x11_driver.inpready += n;
 }
 
 
