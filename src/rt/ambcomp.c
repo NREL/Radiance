@@ -235,8 +235,8 @@ RAY  *r;
 {
 	register int  i;
 					/* set number of divisions */
-	hp->nt = sqrt(ambdiv * r->rweight * 0.5) + 0.5;
-	hp->np = 2 * hp->nt;
+	hp->nt = sqrt(ambdiv * r->rweight / PI) + 0.5;
+	hp->np = PI * hp->nt;
 					/* make axes */
 	VCOPY(hp->uz, r->ron);
 	hp->uy[0] = hp->uy[1] = hp->uy[2] = 0.0;
