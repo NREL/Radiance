@@ -93,7 +93,7 @@ char	*argv[];
 			if (inp & DFL(DC_PAUSE))
 				pause = 1;
 			if (inp & DFL(DC_REDRAW))
-				imm_mode = beam_sync() > 0;
+				imm_mode = beam_sync(1) > 0;
 			if (inp & DFL(DC_KILL)) {
 				serv_request(DR_KILL, 0, NULL);
 				pause = 0;
@@ -247,6 +247,8 @@ register VIEW	*v;
 {
 	static VIEW	viewhist[VIEWHISTLEN];
 	static unsigned	nhist;
+	VIEW	*dv;
+	int	i, res[2];
 	char	*err;
 				/* restore previous view? */
 	if (v == NULL) {
@@ -266,11 +268,20 @@ again:
 		error(COMMAND, "cannot handle parallel views");
 		return;
 	}
-	if (!dev_view(v))	/* update display driver */
+	if (!dev_view(v))	/* notify display driver */
 		goto again;
 	dev_flush();		/* update screen */
-	if (!beam_view(v))	/* update beam list */
-		goto again;
+	beam_init();		/* compute new beam set */
+	for (i = 0; (dv = dev_auxview(i, res)) != NULL; i++)
+		if (!beam_view(dv, res[0], res[1])) {
+			if (!nhist) {
+				error(COMMAND, "invalid starting view");
+				return;
+			}
+			copystruct(v, viewhist + ((nhist-1)%VIEWHISTLEN));
+			goto again;
+		}
+	beam_sync(0);		/* update server */
 				/* record new view */
 	if (v < viewhist || v >= viewhist+VIEWHISTLEN) {
 		copystruct(viewhist + (nhist%VIEWHISTLEN), v);
@@ -327,7 +338,7 @@ usr_input()			/* get user input and process it */
 		/* handled in main() */
 		break;
 	case DC_REDRAW:			/* redraw from server */
-		imm_mode = beam_sync() > 0;
+		imm_mode = beam_sync(1) > 0;
 		dev_clear();
 		break;
 	case DC_KILL:			/* kill rtrace process(es) */

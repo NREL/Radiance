@@ -10,16 +10,16 @@
 
 extern struct driver {
 	char	*name;		/* holodeck name or title */
-	VIEW	v;		/* preferred view parameters */
-	int	hres, vres;	/* device resolution */
+	VIEW	v;		/* base view parameters */
+	int	hres, vres;	/* base view resolution */
 	int	ifd;		/* input file descriptor (for select) */
 } odev;			/* our open device */
 
 extern int	imm_mode;	/* bundles are being delivered immediately */
 
 				/* user commands */
-#define	DC_SETVIEW	0		/* set the view */
-#define	DC_GETVIEW	1		/* print the current view */
+#define	DC_SETVIEW	0		/* set the base view */
+#define	DC_GETVIEW	1		/* print the current base view */
 #define	DC_LASTVIEW	2		/* restore previous view */
 #define	DC_PAUSE	3		/* pause the current calculation */
 #define	DC_RESUME	4		/* resume the calculation */
@@ -51,15 +51,15 @@ dev_open(nm)		: prepare the device
 char	*nm;		: appropriate title bar annotation
 
 Sets fields of odev structure and prepares the display for i/o.
-The view type, horizontal and vertical view angles and other default
-parameters in odev.v should also be assigned.
+The base view type, horizontal and vertical view angles and other
+default parameters in odev.v should also be assigned.
 
 
 int
-dev_view(nv)		: set display view parameters
+dev_view(nv)		: set base view parameters
 VIEW	*nv;		: the new view
 
-Updates the display for the given view change.
+Updates the display for the given base view change.
 Look for nv==&odev.v when making view current after dev_input()
 returns DEV_NEWVIEW flag.  Return 1 on success, or 0 if the
 new view would conflict with device requirements.  In the latter
@@ -100,6 +100,17 @@ If the DC_VIEW or DC_RESIZE flag is returned, the odev
 structure must be updated beforehand.
 
 
+VIEW *
+dev_auxview(n, hv)	: return nth auxiliary view
+int	n;		: auxiliary view number
+int	hv[2];		: returned horiz. and vert. image resolution
+
+Return the nth auxiliary view associated with the current base view.
+The hv entries are assigned the horizontal and vertical view resolution,
+respectively.  Function returns NULL if there are no more auxiliary
+views.  The zeroeth auxiliary view is the base view itself.
+
+
 void
 dev_close()		: close the display
 
@@ -108,3 +119,6 @@ Set odev.v.type=0 and odev.hres=odev.vres=0 when done.
 
 
  ************************************************************************/
+
+
+extern VIEW	*dev_auxview();

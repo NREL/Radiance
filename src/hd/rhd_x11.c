@@ -265,6 +265,18 @@ VIEW	*nv;
 }
 
 
+VIEW *
+dev_auxview(n, hvres)		/* return nth auxiliary view */
+int	n;
+int	hvres[2];
+{
+	if (n)
+		return(NULL);
+	hvres[0] = odev.hres; hvres[1] = odev.vres;
+	return(&odev.v);
+}
+
+
 int
 dev_input()			/* get X11 input */
 {
