@@ -111,7 +111,8 @@ char  *argv[];
 		libpath = DEFPATH;
 					/* option city */
 	for (i = 1; i < argc && argv[i][0] == '-'; i++) {
-		if (!strcmp(argv[i], "-defaults")) {
+		if (!strcmp(argv[i], "-defaults") ||
+				!strcmp(argv[i], "-help")) {
 			printdefaults();
 			quit(0);
 		}
