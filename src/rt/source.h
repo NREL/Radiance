@@ -47,7 +47,7 @@ typedef struct {
  */
 
 /*
- * Virtual source materials must support the following functions:
+ * Virtual source materials must define the following.
  *
  *	vproj(pm, op, sp, i)	Compute i'th virtual projection
  *				of source sp in object op and assign
@@ -80,6 +80,9 @@ extern SRCREC  *source;			/* our source list */
 extern int  nsources;			/* the number of sources */
 
 extern double  srcray();                /* ray to source */
+extern int  srcvalue();			/* compute source value w/o shadows */
+
+extern double  intercircle();		/* intersect two circles */
 
 extern SPOT  *makespot();		/* make spotlight */
 
@@ -87,3 +90,4 @@ extern double  dstrsrc;			/* source distribution amount */
 extern double  shadthresh;		/* relative shadow threshold */
 extern double  shadcert;		/* shadow testing certainty */
 extern int  directrelay;		/* maximum number of source relays */
+extern int  vspretest;			/* virtual source pretest density */

@@ -11,12 +11,18 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "ray.h"
 
+#include  "octree.h"
+
 #include  "otypes.h"
 
 #include  "source.h"
 
+#include  "random.h"
 
-double  intercircle(), getdisk();
+
+#define  DISKTFRAC	0.25		/* disk area pretest fraction */
+
+double  getdisk();
 
 static OBJECT  *vobject;		/* virtual source objects */
 static int  nvobjects = 0;		/* number of virtual source objects */
@@ -55,8 +61,7 @@ markvirtuals()			/* find and mark virtual sources */
 #endif
 					/* append virtual sources */
 	for (i = nsources; i-- > 0; )
-		if (!(source[i].sflags & SSKIP))
-			addvirtuals(i, directrelay);
+		addvirtuals(i, directrelay);
 					/* done with our object list */
 	free((char *)vobject);
 	nvobjects = 0;
@@ -70,6 +75,8 @@ int  nr;
 	register int  i;
 				/* check relay limit first */
 	if (nr <= 0)
+		return;
+	if (source[sn].sflags & SSKIP)
 		return;
 				/* check each virtual object for projection */
 	for (i = 0; i < nvobjects; i++)
@@ -159,7 +166,11 @@ MAT4  pm;
 				return(-1);
 		}
 	}
-					/* everything is OK, make source */
+					/* pretest visibility */
+	nsflags = vstestvis(nsflags, op, ocent, maxrad2, sn);
+	if (nsflags & SSKIP)
+		return(-1);	/* obstructed */
+					/* it all checks out, so make it */
 	if ((i = newsource()) < 0)
 		goto memerr;
 	source[i].sflags = nsflags;
@@ -212,104 +223,69 @@ register int  sn;
 }
 
 
-commonspot(sp1, sp2, org)	/* set sp1 to intersection of sp1 and sp2 */
-register SPOT  *sp1, *sp2;
-FVECT  org;
+int
+vstestvis(f, o, oc, or2, sn)		/* pretest source visibility */
+int  f;			/* virtual source flags */
+OBJREC  *o;		/* relay object */
+FVECT  oc;		/* relay object center */
+double  or2;		/* relay object radius squared */
+register int  sn;	/* target source number */
 {
-	FVECT  cent;
-	double  rad2, cos1, cos2;
-
-	cos1 = 1. - sp1->siz/(2.*PI);
-	cos2 = 1. - sp2->siz/(2.*PI);
-	if (sp2->siz >= 2.*PI-FTINY)		/* BIG, just check overlap */
-		return(DOT(sp1->aim,sp2->aim) >= cos1*cos2 -
-					sqrt((1.-cos1*cos1)*(1.-cos2*cos2)));
-				/* compute and check disks */
-	rad2 = intercircle(cent, sp1->aim, sp2->aim,
-			1./(cos1*cos1) - 1.,  1./(cos2*cos2) - 1.);
-	if (rad2 <= FTINY || normalize(cent) == 0.)
-		return(0);
-	VCOPY(sp1->aim, cent);
-	sp1->siz = 2.*PI*(1. - 1./sqrt(1.+rad2));
-	return(1);
-}
-
-
-commonbeam(sp1, sp2, dir)	/* set sp1 to intersection of sp1 and sp2 */
-register SPOT  *sp1, *sp2;
-FVECT  dir;
-{
-	FVECT  cent, c1, c2;
-	double  rad2, d;
-	register int  i;
-					/* move centers to common plane */
-	d = DOT(sp1->aim, dir);
-	for (i = 0; i < 3; i++)
-		c1[i] = sp1->aim[i] - d*dir[i];
-	d = DOT(sp2->aim, dir);
-	for (i = 0; i < 3; i++)
-		c2[i] = sp2->aim[i] - d*dir[i];
-					/* compute overlap */
-	rad2 = intercircle(cent, c1, c2, sp1->siz/PI, sp2->siz/PI);
-	if (rad2 <= FTINY)
-		return(0);
-	VCOPY(sp1->aim, cent);
-	sp1->siz = PI*rad2;
-	return(1);
-}
-
-
-checkspot(sp, nrm)		/* check spotlight for behind source */
-register SPOT  *sp;
-FVECT  nrm;
-{
-	double  d, d1;
-
-	d = DOT(sp->aim, nrm);
-	if (d > FTINY)			/* center in front? */
-		return(0);
-					/* else check horizon */
-	d1 = 1. - sp->siz/(2.*PI);
-	return(1.-FTINY-d*d > d1*d1);
-}
-
-
-double
-intercircle(cc, c1, c2, r1s, r2s)	/* intersect two circles */
-FVECT  cc;			/* midpoint (return value) */
-FVECT  c1, c2;			/* circle centers */
-double  r1s, r2s;		/* radii squared */
-{
-	double  a2, d2, l;
-	FVECT  disp;
-	register int  i;
-
-	for (i = 0; i < 3; i++)
-		disp[i] = c2[i] - c1[i];
-	d2 = DOT(disp,disp);
-					/* circle within overlap? */
-	if (r1s < r2s) {
-		if (r2s >= r1s + d2) {
-			VCOPY(cc, c1);
-			return(r1s);
-		}
-	} else {
-		if (r1s >= r2s + d2) {
-			VCOPY(cc, c2);
-			return(r2s);
-		}
+	RAY  sr;
+	FVECT  onorm;
+	FVECT  offsdir;
+	double  or, d;
+	int  nok, nhit;
+	register int  i, n;
+				/* return if pretesting disabled */
+	if (vspretest <= 0)
+		return(f);
+				/* get surface normal */
+	(*sfun[o->otype].of->getpleq)(onorm, o);
+				/* set number of rays to sample */
+	if (source[sn].sflags & SDISTANT)
+		n = (2./3.*PI*PI)*or2/(thescene.cusize*thescene.cusize)*
+				vspretest + .5;
+	else
+		n = or2/dist2(oc,source[sn].sloc)*vspretest + .5;
+	if (n < 1) n = 1;
+				/* limit tests to central region */
+	or = DISKTFRAC*sqrt(or2);
+				/* sample */
+	nhit = nok = 0;
+	while (n-- > 0) {
+		samplendx++;
+		/*
+		 * We're being real sloppy with our sample locations here.
+		 */
+		for (i = 0; i < 3; i++)
+			offsdir[i] = or*(1. - 2.*urand(931*i+5821+n));
+		d = DOT(offsdir,onorm);
+		for (i = 0; i < 3; i++)
+			sr.rorg[i] = oc[i] + (1.-d)*offsdir[i];
+					/* check against source */
+		if (srcray(&sr, NULL, sn) == 0.0)
+			continue;
+		sr.revf = srcvalue;
+		rayvalue(&sr);
+		if (bright(sr.rcol) <= FTINY)
+			continue;
+		nok++;
+					/* check against obstructions */
+		srcray(&sr, NULL, sn);
+		rayvalue(&sr);
+		if (bright(sr.rcol) <= FTINY)
+			continue;
+		nhit++;
 	}
-	a2 = .25*(2.*(r1s+r2s) - d2 - (r2s-r1s)*(r2s-r1s)/d2);
-					/* no overlap? */
-	if (a2 <= 0.)
-		return(0.);
-					/* overlap, compute center */
-	l = sqrt((r1s - a2)/d2);
-	for (i = 0; i < 3; i++)
-		cc[i] = c1[i] + l*disp[i];
-	return(a2);
+				/* interpret results */
+	if (nhit == 0)
+		return(f | SSKIP);	/* 0% hit rate:  totally occluded */
+	if (nhit == nok)
+		return(f & ~SFOLLOW);	/* 100% hit rate:  no occlusion */
+	return(f);		/* no comment */
 }
-
+	
 
 #ifdef DEBUG
 virtverb(sn, fp)	/* print verbose description of virtual source */
