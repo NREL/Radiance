@@ -144,7 +144,7 @@ MAT4  pm;
 		if (source[sn].sflags & SSPOT) {
 			multp3(theirspot.aim, source[sn].sl.s->aim, pm);
 			d = sqrt(dist2(ourspot.aim, theirspot.aim));
-			d = sqrt(source[sn].sl.s->siz/PI) + d*source[sn].ss;
+			d = sqrt(source[sn].sl.s->siz/PI) + d*source[sn].srad;
 			theirspot.siz = PI*d*d;
 			ourspot.flen = theirspot.flen = source[sn].sl.s->flen;
 			d = ourspot.siz;
@@ -169,7 +169,7 @@ MAT4  pm;
 		if (source[sn].sflags & SPROX && d > source[sn].sl.prox)
 			return(-1);		/* too far away */
 		ourspot.flen = 0.;
-		d = (sqrt(maxrad2) + source[sn].ss) / d;
+		d = (sqrt(maxrad2) + source[sn].srad) / d;
 		if (d < 1.-FTINY)
 			ourspot.siz = 2.*PI*(1. - sqrt(1.-d*d));
 		else
@@ -214,9 +214,13 @@ MAT4  pm;
 		goto memerr;
 	source[i].sflags = nsflags;
 	VCOPY(source[i].sloc, nsloc);
+	multv3(source[i].ss[SU], source[sn].ss[SU], pm);
+	multv3(source[i].ss[SV], source[sn].ss[SV], pm);
 	if (nsflags & SFLAT)
 		VCOPY(source[i].snorm, nsnorm);
-	source[i].ss = source[sn].ss; source[i].ss2 = source[sn].ss2;
+	else
+		multv3(source[i].ss[SW], source[sn].ss[SW], pm);
+	source[i].ss2 = source[sn].ss2;
 	if (nsflags & SSPOT) {
 		if ((source[i].sl.s = (SPOT *)malloc(sizeof(SPOT))) == NULL)
 			goto memerr;
@@ -275,6 +279,7 @@ register int  sn;	/* target source number */
 	RAY  sr;
 	FVECT  onorm;
 	FVECT  offsdir;
+	SRCINDEX  si;
 	double  or, d;
 	int  infront;
 	int  stestlim, ssn;
@@ -339,8 +344,11 @@ register int  sn;	/* target source number */
 			rayorigin(&sr, NULL, PRIMARY, 1.0);
 		} while (!(*ofun[o->otype].funp)(o, &sr));
 					/* check against source */
+		initsrcindex(&si);
+		si.sn = sn;
+		nopart(&si, sr.rorg);
 		samplendx++;
-		if (srcray(&sr, NULL, sn) == 0.)
+		if (!srcray(&sr, NULL, &si) || sr.rsrc != sn)
 			continue;
 		sr.revf = srcvalue;
 		rayvalue(&sr);

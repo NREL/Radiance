@@ -18,25 +18,25 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  "source.h"
 
-#include  "random.h"
-
 /*
  * Structures used by direct()
  */
 
 typedef struct {
+	int  sno;		/* source number */
 	FVECT  dir;		/* source direction */
 	COLOR  coef;		/* material coefficient */
 	COLOR  val;		/* contribution */
 }  CONTRIB;		/* direct contribution */
 
 typedef struct {
-	int  sno;		/* source number */
+	int  sndx;		/* source index (to CONTRIB array) */
 	float  brt;		/* brightness (for comparison) */
 }  CNTPTR;		/* contribution pointer */
 
 static CONTRIB  *srccnt;		/* source contributions in direct() */
 static CNTPTR  *cntord;			/* source ordering in direct() */
+static int  maxcntr = 0;		/* size of contribution arrays */
 
 
 marksources()			/* find and mark source objects */
@@ -99,8 +99,10 @@ marksources()			/* find and mark source objects */
 		return;
 	}
 	markvirtuals();			/* find and add virtual sources */
-	srccnt = (CONTRIB *)malloc(nsources*sizeof(CONTRIB));
-	cntord = (CNTPTR *)malloc(nsources*sizeof(CNTPTR));
+				/* allocate our contribution arrays */
+	maxcntr = nsources + MAXSPART*2;	/* start with this many */
+	srccnt = (CONTRIB *)malloc(maxcntr*sizeof(CONTRIB));
+	cntord = (CNTPTR *)malloc(maxcntr*sizeof(CNTPTR));
 	if (srccnt == NULL || cntord == NULL)
 		goto memerr;
 	return;
@@ -109,89 +111,51 @@ memerr:
 }
 
 
-double
-srcray(sr, r, sn)		/* send a ray to a source, return domega */
+srcray(sr, r, si)		/* send a ray to a source, return domega */
 register RAY  *sr;		/* returned source ray */
 RAY  *r;			/* ray which hit object */
-register int  sn;		/* source number */
+SRCINDEX  *si;			/* source sample index */
 {
-	double  ddot;			/* (distance times) cosine */
-	FVECT  vd;
-	double  d;
-	register int  i;
+    double  d;				/* distance to source */
+    FVECT  vd;
+    register SRCREC  *srcp;
+    register int  i;
 
-	if (source[sn].sflags & SSKIP)
-		return(0.0);			/* skip this source */
+    rayorigin(sr, r, SHADOW, 1.0);		/* ignore limits */
 
-	rayorigin(sr, r, SHADOW, 1.0);		/* ignore limits */
-
-	sr->rsrc = sn;				/* remember source */
-						/* get source direction */
-	if (source[sn].sflags & SDISTANT) {
-						/* constant direction */
-		VCOPY(sr->rdir, source[sn].sloc);
-	} else {				/* compute direction */
-		for (i = 0; i < 3; i++)
-			sr->rdir[i] = source[sn].sloc[i] - sr->rorg[i];
-
-		if (source[sn].sflags & SFLAT &&
-			(ddot = -DOT(sr->rdir, source[sn].snorm)) <= FTINY)
-			return(0.0);		/* behind surface! */
-	}
-	if (dstrsrc > FTINY) {
-					/* distribute source direction */
-		dimlist[ndims] = sn + 8831;
-		multisamp(vd, 3, urand(ilhash(dimlist,ndims+1)+samplendx));
-		for (i = 0; i < 3; i++)
-			vd[i] = dstrsrc * source[sn].ss * (1. - 2.*vd[i]);
-		if (source[sn].sflags & SFLAT) {	/* project offset */
-			d = DOT(vd, source[sn].snorm);
+    while ((d = nextssamp(sr->rorg, sr->rdir, si)) != 0.0) {
+	sr->rsrc = si->sn;			/* remember source */
+	srcp = source + si->sn;
+	if (srcp->sflags & SDISTANT) {
+		if (srcp->sflags & SSPOT) {	/* check location */
 			for (i = 0; i < 3; i++)
-				vd[i] -= d * source[sn].snorm[i];
-		}
-		for (i = 0; i < 3; i++)		/* offset source direction */
-			sr->rdir[i] += vd[i];
-						/* normalize */
-		d = normalize(sr->rdir);
-
-	} else if (!(source[sn].sflags & SDISTANT))
-						/* normalize direction */
-		d = normalize(sr->rdir);
-
-	if (source[sn].sflags & SDISTANT) {
-		if (source[sn].sflags & SSPOT) {	/* check location */
-			for (i = 0; i < 3; i++)
-				vd[i] = source[sn].sl.s->aim[i] - sr->rorg[i];
+			    vd[i] = srcp->sl.s->aim[i] - sr->rorg[i];
 			d = DOT(sr->rdir,vd);
 			if (d <= FTINY)
-				return(0.0);
+				continue;
 			d = DOT(vd,vd) - d*d;
-			if (PI*d > source[sn].sl.s->siz)
-				return(0.0);
+			if (PI*d > srcp->sl.s->siz)
+				continue;
 		}
-		return(source[sn].ss2);		/* domega constant */
+		return(1);		/* sample OK */
 	}
-						/* check direction */
-	if (d == 0.0)
-		return(0.0);
+				/* local source */
 						/* check proximity */
-	if (source[sn].sflags & SPROX &&
-			d > source[sn].sl.prox)
-		return(0.0);
-						/* compute dot product */
-	if (source[sn].sflags & SFLAT)
-		ddot /= d;
-	else
-		ddot = 1.0;
+	if (srcp->sflags & SPROX && d > srcp->sl.prox)
+		continue;
 						/* check angle */
-	if (source[sn].sflags & SSPOT) {
-		if (source[sn].sl.s->siz < 2.0*PI *
-				(1.0 + DOT(source[sn].sl.s->aim,sr->rdir)))
-			return(0.0);
-		d += source[sn].sl.s->flen;	/* adjust length */
+	if (srcp->sflags & SSPOT) {
+		if (srcp->sl.s->siz < 2.0*PI *
+				(1.0 + DOT(srcp->sl.s->aim,sr->rdir)))
+			continue;
+					/* adjust solid angle */
+		si->dom *= d*d;
+		d += srcp->sl.s->flen;
+		si->dom /= d*d;
 	}
-						/* compute domega */
-	return(ddot*source[sn].ss2/(d*d));
+	return(1);			/* sample OK */
+    }
+    return(0);			/* no more samples */
 }
 
 
@@ -247,30 +211,34 @@ char  *p;			/* data for f */
 	extern int  (*trace)();
 	extern double  pow();
 	register int  sn;
+	SRCINDEX  si;
 	int  nshadcheck, ncnts;
 	int  nhits;
-	double  dom, prob, ourthresh, hwt;
+	double  prob, ourthresh, hwt;
 	RAY  sr;
 			/* NOTE: srccnt and cntord global so no recursion */
 	if (nsources <= 0)
 		return;		/* no sources?! */
-						/* compute number to check */
-	nshadcheck = pow((double)nsources, shadcert) + .5;
-						/* modify threshold */
-	ourthresh = shadthresh / r->rweight;
 						/* potential contributions */
-	for (sn = 0; sn < nsources; sn++) {
-		cntord[sn].sno = sn;
+	initsrcindex(&si);
+	for (sn = 0; srcray(&sr, r, &si); sn++) {
+		if (sn >= maxcntr) {
+			maxcntr = sn + MAXSPART;
+			srccnt = (CONTRIB *)realloc((char *)srccnt,
+					maxcntr*sizeof(CONTRIB));
+			cntord = (CNTPTR *)realloc((char *)cntord,
+					maxcntr*sizeof(CNTPTR));
+			if (srccnt == NULL || cntord == NULL)
+				error(SYSTEM, "out of memory in direct");
+		}
+		cntord[sn].sndx = sn;
 		cntord[sn].brt = 0.0;
-						/* get source ray */
-		if ((dom = srcray(&sr, r, sn)) == 0.0)
-			continue;
-		VCOPY(srccnt[sn].dir, sr.rdir);
 						/* compute coefficient */
-		(*f)(srccnt[sn].coef, p, srccnt[sn].dir, dom);
+		(*f)(srccnt[sn].coef, p, srccnt[sn].dir, si.dom);
 		cntord[sn].brt = bright(srccnt[sn].coef);
 		if (cntord[sn].brt <= 0.0)
 			continue;
+		VCOPY(srccnt[sn].dir, sr.rdir);
 						/* compute potential */
 		sr.revf = srcvalue;
 		rayvalue(&sr);
@@ -279,11 +247,12 @@ char  *p;			/* data for f */
 		cntord[sn].brt = bright(srccnt[sn].val);
 	}
 						/* sort contributions */
-	qsort(cntord, nsources, sizeof(CNTPTR), cntcmp);
+	qsort(cntord, sn, sizeof(CNTPTR), cntcmp);
 	{					/* find last */
 		register int  l, m;
 
-		sn = 0; ncnts = l = nsources;
+		ncnts = l = sn;
+		sn = 0;
 		while ((m = (sn + ncnts) >> 1) != l) {
 			if (cntord[m].brt > 0.0)
 				sn = m;
@@ -295,6 +264,10 @@ char  *p;			/* data for f */
                                                 /* accumulate tail */
         for (sn = ncnts-1; sn > 0; sn--)
                 cntord[sn-1].brt += cntord[sn].brt;
+						/* compute number to check */
+	nshadcheck = pow((double)ncnts, shadcert) + .5;
+						/* modify threshold */
+	ourthresh = shadthresh / r->rweight;
 						/* test for shadows */
 	nhits = 0;
 	for (sn = 0; sn < ncnts; sn++) {
@@ -303,29 +276,28 @@ char  *p;			/* data for f */
 				cntord[sn].brt-cntord[sn+nshadcheck].brt)
 				< ourthresh*bright(r->rcol))
 			break;
-						/* get statistics */
-		source[cntord[sn].sno].ntests++;
 						/* test for hit */
 		rayorigin(&sr, r, SHADOW, 1.0);
-		VCOPY(sr.rdir, srccnt[cntord[sn].sno].dir);
-		sr.rsrc = cntord[sn].sno;
+		VCOPY(sr.rdir, srccnt[cntord[sn].sndx].dir);
+		sr.rsrc = srccnt[cntord[sn].sndx].sno;
+		source[sr.rsrc].ntests++;	/* keep statistics */
 		if (localhit(&sr, &thescene) &&
-				( sr.ro != source[cntord[sn].sno].so ||
-				source[cntord[sn].sno].sflags & SFOLLOW )) {
+				( sr.ro != source[sr.rsrc].so ||
+				source[sr.rsrc].sflags & SFOLLOW )) {
 						/* follow entire path */
 			raycont(&sr);
 			if (trace != NULL)
 				(*trace)(&sr);	/* trace execution */
 			if (bright(sr.rcol) <= FTINY)
 				continue;	/* missed! */
-			copycolor(srccnt[cntord[sn].sno].val, sr.rcol);
-			multcolor(srccnt[cntord[sn].sno].val,
-					srccnt[cntord[sn].sno].coef);
+			copycolor(srccnt[cntord[sn].sndx].val, sr.rcol);
+			multcolor(srccnt[cntord[sn].sndx].val,
+					srccnt[cntord[sn].sndx].coef);
 		}
 						/* add contribution if hit */
-		addcolor(r->rcol, srccnt[cntord[sn].sno].val);
+		addcolor(r->rcol, srccnt[cntord[sn].sndx].val);
 		nhits++;
-		source[cntord[sn].sno].nhits++;
+		source[sr.rsrc].nhits++;
 	}
 					/* surface hit rate */
 	if (sn > 0)
@@ -339,9 +311,10 @@ char  *p;			/* data for f */
 #endif
 					/* add in untested sources */
 	for ( ; sn < ncnts; sn++) {
-		prob = hwt * (double)source[cntord[sn].sno].nhits /
-				(double)source[cntord[sn].sno].ntests;
-		scalecolor(srccnt[cntord[sn].sno].val, prob);
-		addcolor(r->rcol, srccnt[cntord[sn].sno].val);
+		sr.rsrc = srccnt[cntord[sn].sndx].sno;
+		prob = hwt * (double)source[sr.rsrc].nhits /
+				(double)source[sr.rsrc].ntests;
+		scalecolor(srccnt[cntord[sn].sndx].val, prob);
+		addcolor(r->rcol, srccnt[cntord[sn].sndx].val);
 	}
 }

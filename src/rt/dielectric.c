@@ -173,8 +173,8 @@ double  tr;
 	FVECT  v1, v2, n1, n2;
 	FVECT  dv, v2Xdv;
 	double  v2Xdvv2Xdv;
-	int  sn, success = 0;
-	double  omega;
+	int  success = 0;
+	SRCINDEX  si;
 	FVECT  vtmp1, vtmp2;
 	double  dtmp1, dtmp2;
 	int  l1, l2;
@@ -236,12 +236,11 @@ double  tr;
 	v2Xdvv2Xdv = DOT(v2Xdv, v2Xdv);
 
 					/* check sources */
-	for (sn = 0; sn < nsources; sn++) {
+	initsrcindex(&si);
+	while (srcray(&sray, r, &si)) {
 
-		if ((omega = srcray(&sray, r, sn)) == 0.0 ||
-				DOT(sray.rdir, v2) < MINCOS)
+		if (DOT(sray.rdir, v2) < MINCOS)
 			continue;			/* bad source */
-		
 						/* adjust source ray */
 
 		dtmp1 = DOT(v2Xdv, sray.rdir) / v2Xdvv2Xdv;
@@ -266,7 +265,7 @@ double  tr;
 		 */
 		 
 		fcross(vtmp1, v2Xdv, sray.rdir);
-		dtmp1 = sqrt(omega  / v2Xdvv2Xdv / PI);
+		dtmp1 = sqrt(si.dom  / v2Xdvv2Xdv / PI);
 
 							/* compute first ray */
 		for (i = 0; i < 3; i++)

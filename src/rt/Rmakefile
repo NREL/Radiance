@@ -59,10 +59,10 @@ RSRC = $(RAYSRC) $(SURFSRC) $(MATSRC) \
 RAYOBJS = initotypes.o raytrace.o ambient.o ambcomp.o
 RAYSRC = initotypes.c raytrace.c ambient.c ambcomp.c
 
-SURFOBJS = source.o sphere.o srcsupp.o virtuals.o o_face.o o_cone.o \
-	o_instance.o
+SURFOBJS = source.o sphere.o srcsupp.o srcsamp.o virtuals.o o_face.o \
+	o_cone.o o_instance.o
 SURFSRC = sphere.c source.c srcsupp.c virtuals.c o_face.c \
-		o_cone.c o_instance.c
+		srcsamp.c o_cone.c o_instance.c
 
 MATOBJS = normal.o dielectric.o m_clip.o glass.o m_brdf.o m_mirror.o \
 	m_direct.o
@@ -227,7 +227,7 @@ ambient.o dielectric.o func.o initotypes.o m_brdf.o \
 normal.o o_cone.o text.o raytrace.o rtrace.o \
 rv2.o source.o srcsupp.o virtuals.o sphere.o:	../common/otypes.h
 
-ambient.o ambcomp.o rpict.o rv3.o source.o:	../common/random.h
+ambient.o ambcomp.o rpict.o rv3.o srcsamp.o:	../common/random.h
 
 ambient.o ambcomp.o dielectric.o func.o glass.o m_clip.o m_mirror.o \
 m_brdf.o mx_data.o mx_func.o normal.o o_cone.o o_face.o o_instance.o \
@@ -238,10 +238,12 @@ t_data.o t_func.o:	ray.h ../common/standard.h ../common/mat4.h \
 
 rv2.o rv3.o rview.o:	rpaint.h driver.h ../common/view.h
 
-mirror.o source.o srcsupp.o virtuals.o:	source.h
+mirror.o source.o srcsamp.o srcsupp.o virtuals.o:	source.h
+
+srcsamp.o:	../common/object.h
 
 cone.o data.o devcomm.o initotypes.o \
-octree.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
+octree.o srcsamp.o:	../common/standard.h ../common/mat4.h ../common/fvect.h
 
 initotypes.o raytrace.o:	otspecial.h
 
