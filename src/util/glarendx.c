@@ -25,7 +25,6 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "standard.h"
 #include "view.h"
  
-extern double	erfc();
  
 double	posindex();
  
@@ -407,8 +406,6 @@ struct glare_dir	*gd;
 }
  
  
-extern double	erf(), erfc();
- 
 #ifndef M_SQRT2
 #define	M_SQRT2	1.41421356237309504880
 #endif
@@ -420,6 +417,7 @@ double
 guth_vcp(gd)		/* compute Guth visual comfort probability */
 struct glare_dir	*gd;
 {
+	extern double	erfc();
 	double	dgr;
  
 	dgr = guth_dgr(gd);
