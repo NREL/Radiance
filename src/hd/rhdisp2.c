@@ -94,6 +94,8 @@ register struct beamcomp	*cb1, *cb2;
 
 	if (!cb1->wants)		/* put orphans at the end, unsorted */
 		return(cb2->wants);
+	if (!cb2->wants)
+		return(-1);
 	if ((c = cb1->bi - cb2->bi))	/* sort on beam index first */
 		return(c);
 	return(cb1->hd - cb2->hd);	/* use hd to resolve matches */
