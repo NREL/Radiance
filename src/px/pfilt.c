@@ -443,31 +443,28 @@ scan2init()			/* prepare scanline arrays */
 	}
 	barsize = 2*yrad + 1;
 	scanin = (COLOR **)malloc(barsize*sizeof(COLOR *));
+	if (scanin == NULL)
+		goto memerr;
 	for (i = 0; i < barsize; i++) {
 		scanin[i] = (COLOR *)malloc(xres*sizeof(COLOR));
-		if (scanin[i] == NULL) {
-			fprintf(stderr, "%s: out of memory\n", progname);
-			quit(1);
-		}
+		if (scanin[i] == NULL)
+			goto memerr;
 	}
 	if (obarsize > 0) {
 		scoutbar = (COLOR **)malloc(obarsize*sizeof(COLOR *));
 		greybar = (float **)malloc(obarsize*sizeof(float *));
+		if (scoutbar == NULL | greybar == NULL)
+			goto memerr;
 		for (i = 0; i < obarsize; i++) {
 			scoutbar[i] = (COLOR *)malloc(ncols*sizeof(COLOR));
 			greybar[i] = (float *)malloc(ncols*sizeof(float));
-			if (scoutbar[i] == NULL | greybar[i] == NULL) {
-				fprintf(stderr, "%s: out of memory\n",
-						progname);
-				quit(1);
-			}
+			if (scoutbar[i] == NULL | greybar[i] == NULL)
+				goto memerr;
 		}
 	} else {
 		scanout = (COLOR *)malloc(ncols*sizeof(COLOR));
-		if (scanout == NULL) {
-			fprintf(stderr, "%s: out of memory\n", progname);
-			quit(1);
-		}
+		if (scanout == NULL)
+			goto memerr;
 	}
 					/* record pixel aspect ratio */
 	if (!correctaspect) {
@@ -488,6 +485,10 @@ scan2init()			/* prepare scanline arrays */
 	printf("\n");
 					/* write out resolution */
 	fputresolu(order, ncols, nrows, stdout);
+	return;
+memerr:
+	fprintf(stderr, "%s: out of memory\n", progname);
+	quit(1);
 }
 
 
