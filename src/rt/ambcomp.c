@@ -142,17 +142,17 @@ FVECT  pg, dg;
 		qsort(div, ndivs, sizeof(AMBSAMP), ambcmp);	/* sort divs */
 						/* super-sample */
 		for (i = ns; i > 0; i--) {
-			copystruct(&dnew, div);
+			dnew = *div;
 			if (divsample(&dnew, &hemi, r) < 0)
 				goto oopsy;
 							/* reinsert */
 			dp = div;
 			j = ndivs < i ? ndivs : i;
 			while (--j > 0 && dnew.k < dp[1].k) {
-				copystruct(dp, dp+1);
+				*dp = *(dp+1);
 				dp++;
 			}
-			copystruct(dp, &dnew);
+			*dp = dnew;
 		}
 		if (pg != NULL || dg != NULL)	/* restore order */
 			qsort(div, ndivs, sizeof(AMBSAMP), ambnorm);

@@ -310,7 +310,7 @@ FILE	*fp;
 	char	*err;
 	BEAMLIST	blist;
 
-	copystruct(&curview, &stdview);
+	curview = stdview;
 	while (nextview(&curview, fp) != EOF) {
 		if ((err = setview(&curview)) != NULL) {
 			error(WARNING, err);
@@ -357,10 +357,10 @@ int	n1, n2;
 		else if (!n2) cmp = -1;
 		else cmp = beamcmp(cl1, cl2);
 		if (cmp > 0) {
-			copystruct(cdest, cl2);
+			*cdest = *cl2;
 			cl2++; n2--;
 		} else {
-			copystruct(cdest, cl1);
+			*cdest = *cl1;
 			cl1++; n1--;
 		}
 		cdest++;

@@ -52,10 +52,10 @@ GCOORD	*gc;
 	register int	i, j;
 
 	for (i = 3; i--; ) {
-		copystruct(&gci0, gc);
+		gci0 = *gc;
 		gcshifti(&gci0, 0, i-1, hp);
 		for (j = 3; j--; ) {
-			copystruct(ng+(3*i+j), &gci0);
+			*(ng+(3*i+j)) = gci0;
 			gcshifti(ng+(3*i+j), gci0.w==gc->w, j-1, hp);
 		}
 	}
@@ -80,8 +80,8 @@ int	b;
 				continue;
 			if (wg0[i].w == wg1[j].w)
 				continue;
-			copystruct(bgc, wg0+i);
-			copystruct(bgc+1, wg1+j);
+			*bgc = *(wg0+i);
+			*(bgc+1) = *(wg1+j);
 			bneighlist[bneighrem++] = hdbindex(hp, bgc);
 #ifdef DEBUG
 			if (bneighlist[bneighrem-1] <= 0)

@@ -99,7 +99,7 @@ char  *ofn[];
 	else if (load & IO_SCENE && nf == 0)
 		skiptree();
 		
-	if (load & IO_SCENE)		/* get the scene */
+	if (load & IO_SCENE) {		/* get the scene */
 	    if (nf == 0) {
 					/* load binary scene data */
 		readscene(infp, objsize);
@@ -112,6 +112,7 @@ char  *ofn[];
 		if (dosets(nonsurfinset))
 			octerror(USER, "modifier in tree; octree stale?");
 	    }
+	}
 				/* close the input */
 	if (infn[0] == '!')
 		pclose(infp);

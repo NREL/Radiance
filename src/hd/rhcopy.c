@@ -314,7 +314,7 @@ char	*pcf, *zbf;
 		error(SYSTEM, pcf);
 	}
 				/* load picture header */
-	copystruct(&phd.vw, &stdview);
+	phd.vw = stdview;
 	phd.expos = 1.0;
 	phd.badfmt = phd.gotview = phd.altprims = 0;
 	if (getheader(pfp, picheadline, (char *)&phd) < 0 ||

@@ -349,11 +349,12 @@ dcleanup(		/* clear definitions (0->vars,1->output,2->consts) */
 				/* if context is global, clear all */
     for (i = 0; i < NHASH; i++)
 	for (vp = hashtbl[i]; vp != NULL; vp = vp->next)
-	    if (incontext(vp->name))
+	    if (incontext(vp->name)) {
 		if (lvl >= 2)
 		    dremove(vp->name);
 		else
 		    dclear(vp->name);
+	    }
     if (lvl >= 1) {
 	for (ep = outchan; ep != NULL; ep = ep->sibling)
 	    epfree(ep);
@@ -571,7 +572,7 @@ getstatement(void)			/* get next statement */
     } else {				/* ordinary definition */
 	ep = getdefn();
 	qname = qualname(dname(ep), 0);
-	if (esupport&E_REDEFW && (vdef = varlookup(qname)) != NULL)
+	if (esupport&E_REDEFW && (vdef = varlookup(qname)) != NULL) {
 	    if (vdef->def != NULL && epcmp(ep, vdef->def)) {
 		wputs(qname);
 		if (vdef->def->type == ':')
@@ -582,6 +583,7 @@ getstatement(void)			/* get next statement */
 		wputs(qname);
 		wputs(": definition hides library function\n");
 	    }
+	}
 	if (ep->type == ':')
 	    dremove(qname);
 	else

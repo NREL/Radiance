@@ -186,7 +186,7 @@ int	block;
 	case DR_VIEWPOINT:	/* set target eye position */
 		if (msg.nbytes != sizeof(VIEWPOINT))
 			error(INTERNAL, "bad DR_VIEWPOINT from display process");
-		copystruct(&myeye, (VIEWPOINT *)buf);
+		myeye = *((VIEWPOINT *)buf);
 		break;
 	case DR_ATTEN:		/* block for priority request */
 		if (msg.nbytes)

@@ -85,7 +85,7 @@ register PRIMITIVE  *p
 {
     int  xflag = xlist[comndx(p->com)];
 				/* 1==expand, 0==pass, -1==discard */
-    if (xflag != -1)
+    if (xflag != -1) {
        if (xflag == 1)
           switch (p->com)  {
 
@@ -126,7 +126,7 @@ register PRIMITIVE  *p
           segprim(p);
        else
           writep(p, stdout);
-
+    }
 }
 
 
@@ -247,13 +247,14 @@ char  *fname
     if (fname == NULL)
 	error(USER, "missing include file name in include");
     
-    if (code == 2 || (fp = fopen(fname, "r")) == NULL)
+    if (code == 2 || (fp = fopen(fname, "r")) == NULL) {
 	if (code != 0)
 	    fp = mfopen(fname, "r");
 	else {
 	    sprintf(errmsg, "cannot open user include file \"%s\"", fname);
 	    error(USER, errmsg);
 	}
+    }
     
     exfile(fp);
     fclose(fp);

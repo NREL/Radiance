@@ -185,9 +185,9 @@ register RAY  *r;
 			funcxf.sca = r->rox->b.sca * f->b->sca;
 			multmat4(funcxf.xfm, r->rox->b.xfm, f->b->xfm);
 		} else
-			copystruct(&funcxf, &r->rox->b);
+			funcxf = r->rox->b;
 	else
-		copystruct(&funcxf, f->b);
+		funcxf = *(f->b);
 	lastrno = r->rno;
 	eclock++;		/* notify expression evaluator */
 	return(1);

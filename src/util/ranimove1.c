@@ -79,9 +79,9 @@ next_frame()			/* prepare next frame buffer */
 	char	*err;
 					/* get previous view */
 	if (vw.type != 0)
-		copystruct(&vwprev, &vw);
+		vwprev = vw;
 	else if (fcur > 1 && (fv = getview(fcur-1)) != NULL) {
-		copystruct(&vwprev, fv);
+		vwprev = *fv;
 		if (setview(&vwprev) != NULL)
 			vwprev.type = 0;
 	}
@@ -90,7 +90,7 @@ next_frame()			/* prepare next frame buffer */
 		sprintf(errmsg, "cannot get view for frame %d", fcur);
 		error(USER, errmsg);
 	}
-	copystruct(&vw, fv);
+	vw = *fv;
 	if ((err = setview(&vw)) != NULL) {
 		sprintf(errmsg, "view error at frame %d: %s", fcur, err);
 		error(USER, errmsg);
@@ -640,11 +640,12 @@ init_frame()			/* render base (low quality) frame */
 	restart = (!nobjects || vdef(MOVE));
 	if (!restart && curparams != &lorendparams && nprocs > 1)
 		restart = -1;
-	if (restart > 0)
+	if (restart > 0) {
 		if (nprocs > 1)
 			ray_pdone(1);
 		else
 			ray_done(1);
+	}
 					/* post low quality parameters */
 	if (curparams != &lorendparams)
 		ray_restore(curparams = &lorendparams);

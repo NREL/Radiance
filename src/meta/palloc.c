@@ -25,21 +25,22 @@ PRIMITIVE *
 palloc(void)		/* allocate a primitive */
 
 {
- register PRIMITIVE  *p;
+    register PRIMITIVE  *p;
 
- if (maxalloc > 0 && nalloc >= maxalloc)
-    return(NULL);
+    if (maxalloc > 0 && nalloc >= maxalloc)
+	return(NULL);
 
- if ((p = pop(&freelist)) == NULL)
-    if (morefree())
-       p = pop(&freelist);
-    else {
-       sprintf(errmsg, "out of memory in palloc (nalloc = %d)", nalloc);
-       error(SYSTEM, errmsg);
-       }
+    if ((p = pop(&freelist)) == NULL) {
+	if (morefree())
+	    p = pop(&freelist);
+	else {
+	    sprintf(errmsg, "out of memory in palloc (nalloc = %d)", nalloc);
+	    error(SYSTEM, errmsg);
+	}
+    }
 
- nalloc++;
- return(p);
+    nalloc++;
+    return(p);
 }
 
 

@@ -114,12 +114,13 @@ char  *dname;
 	id = octname!=NULL ? octname : progname;
 						/* check device table */
 	for (i = 0; devtable[i].name; i++)
-		if (!strcmp(dname, devtable[i].name))
+		if (!strcmp(dname, devtable[i].name)) {
 			if ((dev = (*devtable[i].init)(dname, id)) == NULL) {
 				sprintf(errmsg, "cannot initialize %s", dname);
 				error(USER, errmsg);
 			} else
 				return;
+		}
 						/* not there, try exec */
 	if ((dev = comm_init(dname, id)) == NULL) {
 		sprintf(errmsg, "cannot start device \"%s\"", dname);

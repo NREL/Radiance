@@ -414,12 +414,13 @@ int  xmin, ymin, xmax, ymax;
     for (j = ymin; j <= ymax; j++)
 	for (i = xmin; i <= xmax; i++)
 	    if (pattern[(attrib&074)>>2]
-			[(j>>3)%(PATSIZE>>3)][i%PATSIZE] & 1<<(j&07))
+			[(j>>3)%(PATSIZE>>3)][i%PATSIZE] & 1<<(j&07)) {
 
 		if (attrib & 0100) {
 		    pixtog(i,j,attrib&03);
 		} else {
 		    pixmix(i,j,attrib&03);
 		}
+	    }
 
 }

@@ -169,7 +169,7 @@ char  *id;
 			DisplayWidth(ourdisplay, ourscreen);
 	pheight = (double)DisplayHeightMM(ourdisplay, ourscreen) /
 			DisplayHeight(ourdisplay, ourscreen);
-	copystruct(&odev.v, &stdview);
+	odev.v = stdview;
 	odev.name = id;
 	odev.v.type = VT_PER;
 	odev.v.horiz = 2.*180./PI * atan(0.5/VIEWDIST*pwidth*odev.hres);
@@ -207,7 +207,7 @@ VIEW	*nv;
 					tan(PI/180./2.*nv->vert);
 			XResizeWindow(ourdisplay, gwind, odev.hres, odev.vres);
 		}
-		copystruct(&odev.v, nv);
+		odev.v = *nv;
 	}
 	qtReplant();
 }
@@ -468,7 +468,7 @@ int	dx, dy, move;
 	double	d;
 	register int	i, li;
 				/* start with old view */
-	copystruct(&nv, &odev.v);
+	nv = odev.v;
 				/* change view direction */
 	if (move) {
 		if ((li = qtFindLeaf(dx, dy)) < 0)

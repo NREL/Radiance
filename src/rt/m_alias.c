@@ -37,7 +37,7 @@ RAY	*r;
 	aobj = lastmod(objndx(m), m->oargs.sarg[0]);
 	if (aobj < 0)
 		objerror(m, USER, "bad reference");
-	copystruct(&arec, objptr(aobj));
+	arec = *objptr(aobj);
 					/* irradiance hack */
 	if (do_irrad && !(r->crtype & ~(PRIMARY|TRANS)) &&
 			(ofun[arec.otype].flags & (T_M|T_X))) {

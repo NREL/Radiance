@@ -223,7 +223,7 @@ char  *id;
 	setstereobuf(STEREO_BUFFER_LEFT);
 #endif
 	checkglerr("setting rendering parameters");
-	copystruct(&odev.v, &stdview);
+	odev.v = stdview;
 	odev.v.type = VT_PER;
 					/* map the window */
 	XMapWindow(ourdisplay, gwind);
@@ -306,10 +306,10 @@ register VIEW	*nv;
 			XResizeWindow(ourdisplay, gwind, odev.hres, odev.vres);
 			dev_input();	/* get resize event */
 		}
-		copystruct(&odev.v, nv);	/* setview() already called */
+		odev.v = *nv;	/* setview() already called */
 	}
 #ifdef STEREO
-	copystruct(&vwright, nv);
+	vwright = *nv;
 	d = eyesepdist / sqrt(nv->hn2);
 	VSUM(vwright.vp, nv->vp, nv->hvec, d);
 	/* setview(&vwright);	-- Unnecessary */
@@ -559,7 +559,7 @@ int	dx, dy, mov, orb;
 	double	d,d1;
 	register int	li;
 				/* start with old view */
-	copystruct(&nv, &odev.v);
+	nv = odev.v;
 				/* orient our motion */
 	if (viewray(v1, odir, &odev.v,
 			(dx+.5)/odev.hres, (dy+.5)/odev.vres) < -FTINY)

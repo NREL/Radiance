@@ -401,7 +401,7 @@ rpiece()			/* render picture piece by piece */
 	VIEW  pview;
 	int  xorg, yorg;
 					/* compute view parameters */
-	copystruct(&pview, &ourview);
+	pview = ourview;
 	switch (ourview.type) {
 	case VT_PER:
 		pview.horiz = 2.*180./PI*atan(

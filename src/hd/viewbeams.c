@@ -140,7 +140,7 @@ loopexit:
 							/* add samples */
 			add2blist(hd, hdbindex(hdlist[hd],gc), sampquant);
 		}
-	copystruct(blp, &blist);		/* transfer beam list */
+	*blp = blist;		/* transfer beam list */
 	return(sectlist);			/* all done! */
 }
 

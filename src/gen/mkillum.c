@@ -137,12 +137,13 @@ int  status;
 	int	rtstat;
 
 	rtstat = close_process(&(rt.pd));
-	if (status == 0)
+	if (status == 0) {
 		if (rtstat < 0)
 			error(WARNING,
 			"unknown return status from rtrace process");
 		else
 			status = rtstat;
+	}
 	exit(status);
 }
 

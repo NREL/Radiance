@@ -234,8 +234,8 @@ char  *pname;
 	fclose(fp);
 	i = hash(pname);
 	pp[0].next = dtab[i];		/* link into picture list */
-	copystruct(&pp[1], &pp[0]);
-	copystruct(&pp[2], &pp[0]);
+	pp[1] = pp[0];
+	pp[2] = pp[0];
 	pp[0].type = RED;		/* differentiate RGB records */
 	pp[1].type = GRN;
 	pp[2].type = BLU;

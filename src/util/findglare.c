@@ -174,7 +174,7 @@ char	*argv[];
 					progname);
 			exit(1);
 		}
-		copystruct(&ourview, &pictview);
+		ourview = pictview;
 	} else if (picture != NULL && !VEQ(ourview.vp, pictview.vp)) {
 		fprintf(stderr, "%s: picture must have same viewpoint\n",
 				progname);
@@ -269,8 +269,8 @@ init()				/* initialize global variables */
 	if (indirect == NULL)
 		memerr("indirect illuminances");
 	npixinvw = npixmiss = 0L;
-	copystruct(&leftview, &ourview);
-	copystruct(&rightview, &ourview);
+	leftview = ourview;
+	rightview = ourview;
 	spinvector(leftview.vdir, ourview.vdir, ourview.vup, maxtheta);
 	spinvector(rightview.vdir, ourview.vdir, ourview.vup, -maxtheta);
 	setview(&leftview);

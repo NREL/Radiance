@@ -52,7 +52,7 @@ char	*file;
 					/* check if copy in current list */
 	FORALLGEOM(gmCurrent, j)
 		if (!strcmp(file, gmCurrent[j].gfile)) {
-			copystruct(&gmNext[i], &gmCurrent[j]);
+			gmNext[i] = gmCurrent[j];
 			return;
 		}
 					/* else load new octree */

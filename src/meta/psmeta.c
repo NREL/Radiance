@@ -89,7 +89,7 @@ PRIMITIVE  *g;
 	case PINCL:
 		if (g->args == NULL)
 		    error(USER, "missing include file name in include");
-		if (g->arg0 == 2 || (fp = fopen(g->args, "r")) == NULL)
+		if (g->arg0 == 2 || (fp = fopen(g->args, "r")) == NULL) {
 		    if (g->arg0 != 0)
 			fp = mfopen(g->args, "r");
 		    else {
@@ -97,6 +97,7 @@ PRIMITIVE  *g;
 					g->args);
 			error(USER, errmsg);
 		    }
+		}
 		plot(fp);
 		fclose(fp);
 		break;

@@ -116,7 +116,7 @@ loadoctrees()				/* load octrees we've saved up */
 	while (ottab.tsiz) {
 		if (!levelsleft--)
 			error(USER, "too many octree levels -- instance loop?");
-		copystruct(&looptab, &ottab);
+		looptab = ottab;
 		ottab.tsiz = 0;
 		nocts += lu_doall(&looptab, buildoctlist);
 		lu_done(&looptab);

@@ -63,13 +63,14 @@ char  **argv;
 			fclose(fp);
 		}
 	}
-	if (argc == 1)
+	if (argc == 1) {
 		if (dim) {
 			getdim(stdin);
 		} else {
 			getheader(stdin, fputs, stdout);
 			putchar('\n');
 		}
+	}
 	exit(0);
 }
 

@@ -209,11 +209,12 @@ tryagain:
 		ot = oseti(i*OSTSIZ + osentry);
 		if (*os > 0)			/* found it */
 			return(ot);
-		if (!isfull(ot))		/* entry overflow */
+		if (!isfull(ot)) {		/* entry overflow */
 			if (++ntries < OSTSIZ)
 				goto tryagain;
 			else
 				error(INTERNAL, "hash table overflow in fullnode");
+		}
 						/* remember position */
 		i = os - ostable[osentry];
 		os = ostable[osentry] = (OBJECT *)realloc(

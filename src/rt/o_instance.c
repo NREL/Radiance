@@ -23,7 +23,7 @@ register RAY  *r;
 					/* get the octree */
 	ins = getinstance(o, IO_ALL);
 					/* copy and transform ray */
-	copystruct(&rcont, r);
+	rcont = *r;
 	multp3(rcont.rorg, r->rorg, ins->x.b.xfm);
 	multv3(rcont.rdir, r->rdir, ins->x.b.xfm);
 	for (i = 0; i < 3; i++)

@@ -109,7 +109,7 @@ char	*argv[];
 	for (nfiles = 0; nfiles < MAXINP; nfiles++) {
 		setcolor(input[nfiles].coef, 1.0, 1.0, 1.0);
 		setcolor(input[nfiles].expos, 1.0, 1.0, 1.0);
-		copystruct(&input[nfiles].vw, &stdview);
+		input[nfiles].vw = stdview;
 		input[nfiles].pa = 1.0;
 	}
 	nfiles = 0;

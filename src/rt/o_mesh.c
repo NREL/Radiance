@@ -158,7 +158,7 @@ register RAY	*r;
 					/* get the mesh instance */
 	prep_edge_cache(o);
 					/* copy and transform ray */
-	copystruct(&rcont, r);
+	rcont = *r;
 	multp3(rcont.rorg, r->rorg, curmi->x.b.xfm);
 	multv3(rcont.rdir, r->rdir, curmi->x.b.xfm);
 	for (i = 0; i < 3; i++)

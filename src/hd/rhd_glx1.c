@@ -170,7 +170,7 @@ char  *id;
 			DisplayWidth(ourdisplay, ourscreen);
 	pheight = (double)DisplayHeightMM(ourdisplay, ourscreen) /
 			DisplayHeight(ourdisplay, ourscreen);
-	copystruct(&odev.v, &stdview);
+	odev.v = stdview;
 	odev.v.type = VT_PER;
 					/* map the window */
 	XMapWindow(ourdisplay, gwind);
@@ -252,7 +252,7 @@ register VIEW	*nv;
 			XResizeWindow(ourdisplay, gwind, odev.hres, odev.vres);
 			dev_input();	/* get resize event */
 		}
-		copystruct(&odev.v, nv);
+		odev.v = *nv;
 	}
 	if (nxtzmax > FTINY) {
 		curzmax = nxtzmax;
@@ -507,7 +507,7 @@ int	dx, dy, mov, orb;
 	double	d;
 	register int	li;
 				/* start with old view */
-	copystruct(&nv, &odev.v);
+	nv = odev.v;
 				/* change view direction */
 	if (mov | orb) {
 		if ((li = qtFindLeaf(dx, dy)) < 0)

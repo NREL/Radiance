@@ -311,11 +311,12 @@ FILE  *fout;
 	if (!cdat.fs[0])
 		return(0);
 	for (cp = fmt; *cp; cp++)		/* check for globbing */
-		if (*cp == '?' | *cp == '*')
+		if (*cp == '?' | *cp == '*') {
 			if (globmatch(fmt, cdat.fs)) {
 				strcpy(fmt, cdat.fs);
 				return(1);
 			} else
 				return(-1);
+		}
 	return(strcmp(fmt, cdat.fs) ? -1 : 1);	/* literal match */
 }

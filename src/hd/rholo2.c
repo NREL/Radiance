@@ -38,7 +38,7 @@ GCOORD	*gc;
 		gcl->erg2 *= (1./3.) * myeye.rng*myeye.rng;
 	}
 	if (gc != NULL)
-		copystruct(&gcl->gc, gc);
+		gcl->gc = *gc;
 	gcl->gmin[0] = gcl->gmin[1] = FHUGE;
 	gcl->gmax[0] = gcl->gmax[1] = -FHUGE;
 }

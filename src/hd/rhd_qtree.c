@@ -319,7 +319,7 @@ int	drop;
 		tp->k[q].li = lo;
 	}
 dropit:
-	if (drop)
+	if (drop) {
 		if (li+1 == (qtL.tl ? qtL.tl : qtL.nl))
 			qtL.tl = li;		/* special case */
 		else {
@@ -327,6 +327,7 @@ dropit:
 			qtL.wd[li] = falleaves;
 			falleaves = li;
 		}
+	}
 	return(li == lo);
 }
 

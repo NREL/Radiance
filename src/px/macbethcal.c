@@ -241,11 +241,12 @@ char	**argv;
 		printf("}\n");
 		putmapping();			/* put out color mapping */
 	}
-	if (debugfp != NULL)		/* put out debug picture */
+	if (debugfp != NULL) {		/* put out debug picture */
 		if (scanning)
 			picdebug();
 		else
 			clrdebug();
+	}
 	exit(0);
 userr:
 	fprintf(stderr,

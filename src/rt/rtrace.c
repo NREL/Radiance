@@ -285,12 +285,13 @@ double	dmax;
 	thisray.rmax = dmax;
 	rayorigin(&thisray, NULL, PRIMARY, 1.0);
 	if (castonly) {
-		if (!localhit(&thisray, &thescene))
+		if (!localhit(&thisray, &thescene)) {
 			if (thisray.ro == &Aftplane) {	/* clipped */
 				thisray.ro = NULL;
 				thisray.rot = FHUGE;
 			} else
 				sourcehit(&thisray);
+		}
 	} else
 		rayvalue(&thisray);
 	printvals(&thisray);

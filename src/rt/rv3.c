@@ -372,8 +372,8 @@ register VIEW  *vp;
 		sprintf(errmsg, "view not set - %s", err);
 		error(COMMAND, errmsg);
 	} else if (memcmp((char *)vp, (char *)&ourview, sizeof(VIEW))) {
-		copystruct(&oldview, &ourview);
-		copystruct(&ourview, vp);
+		oldview = ourview;
+		ourview = *vp;
 		newimage();
 	}
 }

@@ -9,15 +9,8 @@ static const char	RCSid[] = "$Id$";
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "lookup.h"
-
-#ifdef	NOSTRUCTASS
-#define	 copystruct(d,s)	memcpy((void *)(d),(void *)(s),sizeof(*(d)))
-#else
-#define	 copystruct(d,s)	(*(d) = *(s))
-#endif
 
 
 int
@@ -131,11 +124,12 @@ tryagain:
 	 * recursive call to lu_find().
 	 */
 	while (ndx--)
-		if (le[ndx].key != NULL)
+		if (le[ndx].key != NULL) {
 			if (le[ndx].data != NULL)
-				copystruct(lu_find(tbl,le[ndx].key), &le[ndx]);
+				*lu_find(tbl,le[ndx].key) = le[ndx];
 			else if (tbl->freek != NULL)
 				(*tbl->freek)(le[ndx].key);
+		}
 	free((void *)le);
 	goto tryagain;			/* should happen only once! */
 }
@@ -168,11 +162,12 @@ int	(*f)();
 	register LUENT	*tp;
 
 	for (tp = tbl->tabl + tbl->tsiz; tp-- > tbl->tabl; )
-		if (tp->data != NULL)
+		if (tp->data != NULL) {
 			if (f != NULL)
 				rval += (*f)(tp);
 			else
 				rval++;
+		}
 	return(rval);
 }
 

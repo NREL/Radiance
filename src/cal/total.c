@@ -117,13 +117,14 @@ char  *fname
 	}
 	ltotal = 0;
 	while (!feof(fp)) {
-		if (ltotal == 0)			/* initialize */
+		if (ltotal == 0) {			/* initialize */
 			if (func == MULT)	/* special case */
 				for (n = 0; n < MAXCOL; n++)
 					result[n] = 0.0;
 			else
 				for (n = 0; n < MAXCOL; n++)
 					result[n] = init_val[func];
+		}
 		ncol = 0;
 		for (nlin = 0; (count <= 0 || nlin < count) &&
 				(cp = fgets(buf, sizeof(buf), fp)) != NULL;

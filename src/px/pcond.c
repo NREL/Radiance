@@ -243,7 +243,7 @@ getahead()			/* load picture header */
 		exit(1);
 	}
 	if (!gotview || ourview.type == VT_PAR) {
-		copystruct(&ourview, &stdview);
+		ourview = stdview;
 		ourview.type = VT_PER;
 		if (pixaspect*inpres.yr < inpres.xr) {
 			ourview.horiz = 40.0;

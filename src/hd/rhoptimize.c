@@ -158,9 +158,9 @@ int	n;
 					rva[i].r[1][0]==rva[j].r[1][0] &&
 					rva[i].r[1][1]==rva[j].r[1][1] ) {
 				n--;		/* swap duplicate with end */
-				copystruct(&rtmp, rva+n);
-				copystruct(rva+n, rva+i);
-				copystruct(rva+i, &rtmp);
+				rtmp = *(rva+n);
+				*(rva+n) = *(rva+i);
+				*(rva+i) = rtmp;
 				i--;		/* recheck one we swapped */
 			}
 	return(n);

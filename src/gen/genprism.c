@@ -279,11 +279,12 @@ int  round;
 			rside(i, i+1);
 		else
 			side(i, i+1);
-	if (!iscomplete)
+	if (!iscomplete) {
 		if (round)
 			rside(nverts-1, 0);
 		else
 			side(nverts-1, 0);
+	}
 }
 
 

@@ -318,11 +318,12 @@ char  *argv[];
 		}
 	}
 runagain:
-	if (persist)
+	if (persist) {
 		if (outfile == NULL)			/* if out to stdout */
 			dupheader();			/* send header */
 		else					/* if out to file */
 			duped1 = dup(fileno(stdout));	/* hang onto pipe */
+	}
 #endif
 					/* batch render picture(s) */
 	rpict(seqstart, outfile, zfile, recover);

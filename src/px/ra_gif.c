@@ -158,11 +158,12 @@ int  y;
 	if (bradj)
 		shiftcolrs(scanln, xmax, bradj);
 	colrs_gambs(scanln, xmax);
-	if (pixscan != NULL)
+	if (pixscan != NULL) {
 		if (samplefac)
 			neu_dith_colrs(pixscan, scanln, xmax);
 		else
 			dith_colrs(pixscan, scanln, xmax);
+	}
 }
 
 

@@ -6,13 +6,6 @@
 #define _RAD_RTMISC_H_
 
 #include  <stdlib.h>
-					/* memory operations */
-#ifdef	NOSTRUCTASS
-#include  <string.h>
-#define	 copystruct(d,s)	memcpy((void *)(d),(void *)(s),sizeof(*(d)))
-#else
-#define	 copystruct(d,s)	(*(d) = *(s))
-#endif
 
 #ifdef __cplusplus
 extern "C" {

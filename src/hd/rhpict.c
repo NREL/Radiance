@@ -237,11 +237,12 @@ endpicture()			/* finish and write out pixels */
 				/* compute final pixel values */
 	for (p = hres*vres; p--; ) {
 		if (myweight[p] <= FTINY) {
-			if (lastr >= 0)
+			if (lastr >= 0) {
 				if (p/hres == lastp/hres)
 					copycolor(mypixel[p], mypixel[lastp]);
 				else
 					copycolor(mypixel[p], mypixel[lastrp]);
+			}
 			nunrend++;
 			continue;
 		}

@@ -410,11 +410,12 @@ OBJECT		mo;
 		pn[i] = vid[i] >> 8;
 	}
 				/* normalize material index */
-	if (mo != OVOID)
+	if (mo != OVOID) {
 		if ((mo -= mp->mat0) >= mp->nmats)
 			mp->nmats = mo+1;
 		else if (mo < 0)
 			error(INTERNAL, "modifier range error in addmeshtri");
+	}
 				/* assign triangle */
 	if (pn[0] == pn[1] && pn[1] == pn[2]) {	/* local case */
 		pp = &mp->patch[pn[0]];

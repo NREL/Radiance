@@ -147,7 +147,7 @@ tryagain:				/* hash table lookup */
 					/* copy old table to new and free */
     while (ndx--)
        if (!QT_IS_EMPTY(le[ndx].qt))
-	  copystruct(qtCache_find(le[ndx].qt), &le[ndx]);
+	  *qtCache_find(le[ndx].qt) = le[ndx];
     free((void *)le);
     goto tryagain;			/* should happen only once! */
 }

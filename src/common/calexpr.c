@@ -771,11 +771,12 @@ register EPNODE	 *ep;
 
     if (ep->type != VAR)
 	return(0);
-    if ((dp = ep->v.ln->def) != NULL)
+    if ((dp = ep->v.ln->def) != NULL) {
 	if (dp->v.kid->type == FUNC)
 	    return(dp->type == ':');
 	else
 	    return(0);		/* don't identify masked library functions */
+    }
     if ((lp = ep->v.ln->lib) != NULL)
 	return(lp->atyp == ':');
     return(0);

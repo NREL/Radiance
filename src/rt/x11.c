@@ -251,11 +251,12 @@ int  xres, yres;
 	}
 	XClearWindow(ourdisplay, gwind);
 						/* reinitialize color table */
-	if (ourvinfo.class == PseudoColor || ourvinfo.class == GrayScale)
+	if (ourvinfo.class == PseudoColor || ourvinfo.class == GrayScale) {
 		if (getpixels() == 0)
 			eputs("cannot allocate colors\n");
 		else
 			new_ctab(ncolors);
+	}
 						/* get new command line */
 	if (comline != NULL)
 		xt_close(comline);
@@ -560,11 +561,12 @@ getevent()			/* get next event */
 		break;
 	case MapNotify:
 		if (ourvinfo.class == PseudoColor ||
-				ourvinfo.class == GrayScale)
+				ourvinfo.class == GrayScale) {
 			if (getpixels() == 0)
 				eputs("cannot allocate colors\n");
 			else
 				new_ctab(ncolors);
+		}
 		mapped = 1;
 		break;
 	case Expose:
