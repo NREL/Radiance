@@ -1,4 +1,4 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
+/* Copyright (c) 1999 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -24,6 +24,10 @@ static char SCCSid[] = "$SunId$ SGI";
 #ifndef MAXFRAGB
 #define MAXFRAGB	16	/* fragment blocks/file to track (0==inf) */
 #endif
+#ifndef FF_DEFAULT
+				/* when to free a beam fragment */
+#define FF_DEFAULT	(FF_ALLOC|FF_WRITE|FF_KILL)
+#endif
 #ifndef MINDIRSEL
 				/* minimum directory seek length */
 #define MINDIRSEL	(4*BUFSIZ/sizeof(BEAMI))
@@ -36,8 +40,9 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #define FRAGBLK		512	/* number of fragments to allocate at a time */
 
+int	hdfragflags = FF_DEFAULT;	/* tells when to free fragments */
 unsigned	hdcachesize = CACHESIZE*1024*1024;	/* target cache size */
-unsigned long	hdclock;	/* clock value */
+unsigned long	hdclock;		/* clock value */
 
 HOLO	*hdlist[HDMAX+1];	/* holodeck pointers (NULL term.) */
 
@@ -349,10 +354,9 @@ int	nr;			/* number of new rays desired */
 	RAYVAL	*p;
 	int	n;
 
-	if (nr <= 0)
-		return(NULL);
-	if (i < 1 | i > nbeams(hp))
-		error(CONSISTENCY, "bad beam index given to hdnewrays");
+	if (nr <= 0) return(NULL);
+	CHECK(i < 1 | i > nbeams(hp),
+			CONSISTENCY, "bad beam index given to hdnewrays");
 	if (hp->bl[i] != NULL)
 		hp->bl[i]->tick = hdclock;	/* preempt swap */
 	if (hdcachesize > 0 && hdmemuse(0) >= hdcachesize)
@@ -361,7 +365,7 @@ int	nr;			/* number of new rays desired */
 		n = hp->bi[i].nrd + nr;
 		hp->bl[i] = (BEAM *)hdrealloc(NULL, hdbsiz(n), "hdnewrays");
 		blglob(hp)->nrm += n;
-		if (n = hp->bl[i]->nrm = hp->bi[i].nrd) {
+		if ((n = hp->bl[i]->nrm = hp->bi[i].nrd)) {
 			errno = 0;
 			if (lseek(hp->fd, hp->bi[i].fo, 0) < 0)
 				error(SYSTEM, "seek error on holodeck file");
@@ -375,6 +379,8 @@ int	nr;			/* number of new rays desired */
 				hdbsiz(hp->bl[i]->nrm + nr), "hdnewrays");
 		blglob(hp)->nrm += nr;
 	}
+	if (hdfragflags&FF_ALLOC && hp->bi[i].nrd)
+		hdfreefrag(hp, i);		/* relinquish old fragment */
 	p = hdbray(hp->bl[i]) + hp->bl[i]->nrm;
 	hp->bl[i]->nrm += nr;			/* update in-core structure */
 	bzero((char *)p, nr*sizeof(RAYVAL));
@@ -390,8 +396,8 @@ register int	i;
 {
 	register int	n;
 
-	if (i < 1 | i > nbeams(hp))
-		error(CONSISTENCY, "bad beam index given to hdgetbeam");
+	CHECK(i < 1 | i > nbeams(hp),
+			CONSISTENCY, "bad beam index given to hdgetbeam");
 	if (hp->bl[i] == NULL) {		/* load from disk */
 		if (!(n = hp->bi[i].nrd))
 			return(NULL);
@@ -405,6 +411,8 @@ register int	i;
 		n *= sizeof(RAYVAL);
 		if (read(hp->fd, (char *)hdbray(hp->bl[i]), n) != n)
 			error(SYSTEM, "error reading beam from holodeck file");
+		if (hdfragflags&FF_READ)
+			hdfreefrag(hp, i);	/* relinquish old frag. */
 	}
 	blglob(hp)->tick = hp->bl[i]->tick = hdclock++;	/* update LRU clock */
 	return(hp->bl[i]);
@@ -442,7 +450,7 @@ int	(*bf)();		/* callback function (optional) */
 					/* precheck consistency */
 	if (n <= 0) return;
 	for (i = n; i--; )
-		if (hb[i].h == NULL || hb[i].b < 1 | hb[i].b > nbeams(hb[i].h))
+		if (hb[i].h==NULL || hb[i].b<1 | hb[i].b>nbeams(hb[i].h))
 			error(CONSISTENCY, "bad beam in hdloadbeams");
 					/* sort list for optimal access */
 	qsort((char *)hb, n, sizeof(HDBEAMI), hdfilord);
@@ -475,20 +483,19 @@ int	(*bf)();		/* callback function (optional) */
 }
 
 
-hdfreefrag(fd, bi)			/* free a file fragment */
-int	fd;
-register BEAMI	*bi;
+hdfreefrag(hp, i)			/* free a file fragment */
+HOLO	*hp;
+int	i;
 {
+	register BEAMI	*bi = &hp->bi[i];
 	register struct fraglist	*f;
 	register int	j, k;
 
-	if (bi->nrd == 0)
+	if (bi->nrd <= 0)
 		return;
-#ifdef DEBUG
-	if (fd < 0 | fd >= nhdfragls || !hdfragl[fd].nlinks)
-		error(CONSISTENCY, "bad file descriptor in hdfreefrag");
-#endif
-	f = &hdfragl[fd];
+	DCHECK(hp->fd < 0 | hp->fd >= nhdfragls || !hdfragl[hp->fd].nlinks,
+			CONSISTENCY, "bad file descriptor in hdfreefrag");
+	f = &hdfragl[hp->fd];
 	if (f->nfrags % FRAGBLK == 0) {	/* delete empty remnants */
 		for (j = k = 0; k < f->nfrags; j++, k++) {
 			while (f->fi[k].nrd == 0)
@@ -508,7 +515,7 @@ register BEAMI	*bi;
 			return;		/* new one no better than discard */
 	}
 #endif
-	if (j % FRAGBLK == 0) {		/* more free list space */
+	if (j % FRAGBLK == 0) {		/* more (or less) free list space */
 		register BEAMI	*newp;
 		if (f->fi == NULL)
 			newp = (BEAMI *)malloc((j+FRAGBLK)*sizeof(BEAMI));
@@ -544,6 +551,33 @@ register BEAMI	*bi;
 			}
 			break;
 		}
+	biglob(hp)->nrd -= bi->nrd;		/* tell fragment it's free */
+	bi->nrd = 0;
+	bi->fo = 0;
+}
+
+
+int
+hdfragOK(fd, listlen, listsiz)	/* get fragment list status for file */
+int	fd;
+int	*listlen;
+register int4	*listsiz;
+{
+	register struct fraglist	*f;
+	register int	i;
+
+	if (fd < 0 | fd >= nhdfragls || !(f = &hdfragl[fd])->nlinks)
+		return(0);		/* listless */
+	if (listlen != NULL)
+		*listlen = f->nfrags;
+	if (listsiz != NULL)
+		for (i = f->nfrags, *listsiz = 0; i--; )
+			*listsiz += f->fi[i].nrd;
+#if MAXFRAGB
+	return(f->nfrags < MAXFRAGB*FRAGBLK);
+#else
+	return(1);			/* list never fills up */
+#endif
 }
 
 
@@ -558,10 +592,8 @@ unsigned int4	nrays;
 
 	if (nrays == 0)
 		return(-1L);
-#ifdef DEBUG
-	if (fd < 0 | fd >= nhdfragls || !hdfragl[fd].nlinks)
-		error(CONSISTENCY, "bad file descriptor in hdallocfrag");
-#endif
+	DCHECK(fd < 0 | fd >= nhdfragls || !hdfragl[fd].nlinks,
+			CONSISTENCY, "bad file descriptor in hdallocfrag");
 	f = &hdfragl[fd];
 	k = -1;				/* find closest-sized fragment */
 	for (j = f->nfrags; j-- > 0; )
@@ -592,15 +624,13 @@ register int	i;
 					/* check file status */
 	if (hdfragl[hp->fd].writerr)
 		return(-1);
-#ifdef DEBUG
-	if (i < 1 | i > nbeams(hp))
-		error(CONSISTENCY, "bad beam index in hdsyncbeam");
-#endif
+	DCHECK(i < 1 | i > nbeams(hp),
+			CONSISTENCY, "bad beam index in hdsyncbeam");
 					/* is current fragment OK? */
 	if (hp->bl[i] == NULL || (nrays = hp->bl[i]->nrm) == hp->bi[i].nrd)
 		return(0);
-	if (hp->bi[i].nrd)		/* relinquish old fragment */
-		hdfreefrag(hp->fd, &hp->bi[i]);
+	if (hdfragflags&FF_WRITE && hp->bi[i].nrd)
+		hdfreefrag(hp, i);	/* relinquish old fragment */
 	if (nrays) {			/* get and write new fragment */
 		nfo = hdallocfrag(hp->fd, nrays);
 		errno = 0;
@@ -615,8 +645,7 @@ register int	i;
 		hp->bi[i].fo = nfo;
 	} else
 		hp->bi[i].fo = 0L;
-	biglob(hp)->nrd += nrays - hp->bi[i].nrd;
-	hp->bi[i].nrd = nrays;
+	biglob(hp)->nrd += hp->bi[i].nrd = nrays;
 	markdirty(hp, i);		/* section directory now out of date */
 	return(1);
 }
@@ -644,10 +673,8 @@ register int	i;
 				nchanged += hdfreebeam(hp, i);
 		return(nchanged);
 	}
-#ifdef DEBUG
-	if (i < 1 | i > nbeams(hp))
-		error(CONSISTENCY, "bad beam index to hdfreebeam");
-#endif
+	DCHECK(i < 1 | i > nbeams(hp),
+			CONSISTENCY, "bad beam index to hdfreebeam");
 	if (hp->bl[i] == NULL)
 		return(0);
 					/* check for additions */
@@ -666,7 +693,6 @@ hdkillbeam(hp, i)		/* delete beam from holodeck */
 register HOLO	*hp;
 register int	i;
 {
-	static BEAM	emptybeam;
 	int	nchanged;
 
 	if (hp == NULL) {		/* clobber all holodecks */
@@ -680,24 +706,22 @@ register int	i;
 		for (i = nbeams(hp); i > 0; i--)
 			if (hp->bi[i].nrd > 0 || hp->bl[i] != NULL)
 				nchanged += hdkillbeam(hp, i);
-#ifdef DEBUG
-		if (biglob(hp)->nrd != 0 | blglob(hp)->nrm != 0)
-			error(CONSISTENCY, "bad beam count in hdkillbeam");
-#endif
+		DCHECK(biglob(hp)->nrd != 0 | blglob(hp)->nrm != 0,
+				CONSISTENCY, "bad beam count in hdkillbeam");
 		return(nchanged);
 	}
-#ifdef DEBUG
-	if (i < 1 | i > nbeams(hp))
-		error(CONSISTENCY, "bad beam index to hdkillbeam");
-#endif
+	DCHECK(i < 1 | i > nbeams(hp),
+			CONSISTENCY, "bad beam index to hdkillbeam");
 	if (hp->bl[i] != NULL) {	/* free memory */
 		blglob(hp)->nrm -= nchanged = hp->bl[i]->nrm;
 		free((char *)hp->bl[i]);
 	} else
 		nchanged = hp->bi[i].nrd;
-	if (hp->bi[i].nrd) {		/* free file fragment */
-		hp->bl[i] = &emptybeam;
-		hdsyncbeam(hp, i);
+	if (hp->bi[i].nrd) {
+		if (hdfragflags&FF_KILL)
+			hdfreefrag(hp, i);
+		hp->bi[i].nrd = 0;	/* make sure it's gone */
+		hp->bi[i].fo = 0L;
 	}
 	hp->bl[i] = NULL;
 	return(nchanged);

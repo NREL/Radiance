@@ -1,4 +1,4 @@
-/* Copyright (c) 1998 Silicon Graphics, Inc. */
+/* Copyright (c) 1999 Silicon Graphics, Inc. */
 
 /* SCCSid "$SunId$ SGI" */
 
@@ -104,6 +104,13 @@ extern double	hdray(), hdinter();
 extern unsigned	hdcode();
 extern int	hdfilord();
 
+#define FF_NEVER	0		/* never free fragments */
+#define FF_WRITE	01		/* free fragment on write */
+#define FF_ALLOC	02		/* free fragment on ray alloc */
+#define FF_READ		04		/* free fragment on read */
+#define FF_KILL		010		/* free fragment on beam kill */
+
+extern int	hdfragflags;		/* tells when to free fragments */
 extern unsigned	hdcachesize;		/* target cache size (bytes) */
 extern unsigned long	hdclock;	/* holodeck system clock */
 extern HOLO	*hdlist[HDMAX+1];	/* holodeck pointers (NULL term.) */

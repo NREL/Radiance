@@ -10,20 +10,55 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #include "rholo.h"
 
+#ifndef NFRAG2CHUNK
+#define NFRAG2CHUNK	4096	/* number of fragments to start chunking */
+#endif
+
+#ifndef abs
 #define abs(x)		((x) > 0 ? (x) : -(x))
+#endif
+#ifndef sgn
 #define sgn(x)		((x) > 0 ? 1 : (x) < 0 ? -1 : 0)
+#endif
+
+#define rchunk(n)	(((n)+(RPACKSIZ/2))/RPACKSIZ)
 
 static PACKHEAD	*complist=NULL;	/* list of beams to compute */
 static int	complen=0;	/* length of complist */
 static int	listpos=0;	/* current list position for next_packet */
 static int	lastin= -1;	/* last ordered position in list */
+static int	chunky=0;	/* clump beams together on disk */
 
 
 int
 beamcmp(b0, b1)				/* comparison for compute order */
 register PACKHEAD	*b0, *b1;
 {
-	return(	b1->nr*(b0->nc+1) - b0->nr*(b1->nc+1) );
+	BEAMI	*bip0, *bip1;
+	register long	c;
+					/* first check desired quantities */
+	if (chunky)
+		c = rchunk(b1->nr)*(rchunk(b0->nc)+1) -
+				rchunk(b0->nr)*(rchunk(b1->nc)+1);
+	else
+		c = b1->nr*(b0->nc+1) - b0->nr*(b1->nc+1);
+	if (c) return(c);
+				/* only one file, so skip the following: */
+#if 0
+					/* next, check file descriptors */
+	c = hdlist[b0->hd]->fd - hdlist[b1->hd]->fd;
+	if (c) return(c);
+#endif
+					/* finally, check file positions */
+	bip0 = &hdlist[b0->hd]->bi[b0->bi];
+	bip1 = &hdlist[b1->hd]->bi[b1->bi];
+					/* put diskless beams last */
+	if (!bip0->nrd)
+		return(bip1->nrd > 0);
+	if (!bip1->nrd)
+		return(-1);
+	c = bip0->fo - bip1->fo;
+	return(c < 0 ? -1 : c > 0);
 }
 
 
@@ -159,7 +194,7 @@ int	nents;
 	default:
 		error(CONSISTENCY, "bundle_set called with unknown operation");
 	}
-	if (outdev == NULL)		/* nothing to display? */
+	if (outdev == NULL || !nents)	/* nothing to display? */
 		return;
 					/* load and display beams we have */
 	hbarr = (HDBEAMI *)malloc(nents*sizeof(HDBEAMI));
@@ -169,6 +204,10 @@ int	nents;
 	}
 	hdloadbeams(hbarr, nents, dispbeam);
 	free((char *)hbarr);
+	if (hdfragflags&FF_READ) {
+		listpos = 0;
+		lastin = -1;		/* need to re-sort list */
+	}
 	return;
 memerr:
 	error(SYSTEM, "out of memory in bundle_set");
@@ -280,10 +319,23 @@ int	n1, n2;
 sortcomplist()			/* fix our list order */
 {
 	PACKHEAD	*list2;
+	int	listlen;
 	register int	i;
 
 	if (complen <= 0)	/* check to see if there is even a list */
 		return;
+	if (!chunky)		/* check to see if fragment list is full */
+		if (!hdfragOK(hdlist[0]->fd, &listlen, NULL)
+#if NFRAG2CHUNK
+				|| listlen >= NFRAG2CHUNK
+#endif
+				) {
+#ifdef DEBUG
+			error(WARNING, "using chunky comparison mode");
+#endif
+			chunky++;	/* use "chunky" comparison */
+			lastin = -1;	/* need to re-sort list */
+		}
 	if (lastin < 0 || listpos*4 >= complen*3)
 		qsort((char *)complist, complen, sizeof(PACKHEAD), beamcmp);
 	else if (listpos) {	/* else sort and merge sublist */
@@ -319,7 +371,7 @@ sortcomplist()			/* fix our list order */
  * more or less evenly distributed, such that computing a packet causes
  * a given bundle to move way down in the computation order.  We keep
  * track of where the computed bundle with the highest priority would end
- * up, and if we get further in our compute list than this, we resort the
+ * up, and if we get further in our compute list than this, we re-sort the
  * list and start again from the beginning.  Since
  * a merge sort is used, the sorting costs are minimal.
  */
@@ -346,6 +398,8 @@ int	n;
 	if (p->nr > n)
 		p->nr = n;
 	complist[listpos].nc += p->nr;	/* find where this one would go */
+	if (hdgetbeam(hdlist[p->hd], p->bi) != NULL)
+		hdfreefrag(hdlist[p->hd], p->bi);
 	while (lastin > listpos && 
 			beamcmp(complist+lastin, complist+listpos) > 0)
 		lastin--;
