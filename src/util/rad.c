@@ -110,7 +110,7 @@ long	matdate;		/* date of latest material file */
 int	explicate = 0;		/* explicate variables */
 int	silent = 0;		/* do work silently */
 int	noaction = 0;		/* don't do anything */
-int	vwonly = 0;		/* print view only */
+int	sayview = 0;		/* print view out */
 char	*rvdevice = NULL;	/* rview output device */
 char	*viewselect = NULL;	/* specific view only */
 
@@ -145,8 +145,8 @@ char	*argv[];
 			rvdevice = argv[++i];
 			break;
 		case 'V':
-			vwonly++;
-		/* fall through */
+			sayview++;
+			break;
 		case 'v':
 			viewselect = argv[++i];
 			break;
@@ -171,9 +171,6 @@ char	*argv[];
 				/* print all values if requested */
 	if (explicate)
 		printvals();
-				/* print view and exit? */
-	if (vwonly)
-		exit(printview()==0 ? 0 : 1);
 				/* build octree */
 	oconv();
 				/* check date on ambient file */
@@ -1013,14 +1010,14 @@ char	*vn;		/* returned view name */
 }
 
 
-printview()			/* print out selected view */
+printview(vopts)			/* print out selected view */
+register char	*vopts;
 {
 	extern char	*atos();
 	char	buf[256];
 	FILE	*fp;
-	register char	*vopts, *cp;
+	register char	*cp;
 
-	vopts = getview(0, NULL);
 	if (vopts == NULL)
 		return(-1);
 	fputs("VIEW=", stdout);
@@ -1063,9 +1060,14 @@ printview()			/* print out selected view */
 rview(opts)				/* run rview with first view */
 char	*opts;
 {
+	char	*vw;
 	char	combuf[512];
 					/* build command */
-	sprintf(combuf, "rview %s%s ", getview(0, NULL), opts);
+	if ((vw = getview(0, NULL)) == NULL)
+		return;
+	if (sayview)
+		printview(vw);
+	sprintf(combuf, "rview %s%s ", vw, opts);
 	if (rvdevice != NULL)
 		sprintf(combuf+strlen(combuf), "-o %s ", rvdevice);
 	strcat(combuf, vval(OCTREE));
@@ -1120,6 +1122,8 @@ char	*opts;
 					/* do each view */
 	vn = 0;
 	while ((vw = getview(vn++, vs)) != NULL) {
+		if (sayview)
+			printview(vw);
 		if (!vs[0])
 			sprintf(vs, "%d", vn);
 		sprintf(picfile, "%s_%s.pic", vval(PICTURE), vs);
