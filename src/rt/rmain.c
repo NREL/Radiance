@@ -85,6 +85,7 @@ extern double  dstrpix;			/* square pixel distribution */
 extern double  dstrsrc;			/* square source distribution */
 extern double  shadthresh;		/* shadow threshold */
 extern double  shadcert;		/* shadow testing certainty */
+extern int  directrelay;		/* number of source relays */
 
 extern int  maxdepth;			/* maximum recursion depth */
 extern double  minweight;		/* minimum ray weight */
@@ -182,6 +183,10 @@ char  *argv[];
 			case 'j':				/* jitter */
 				check(3,1);
 				dstrsrc = atof(argv[++i]);
+				break;
+			case 'r':
+				check(3,1);
+				directrelay = atoi(argv[++i]);
 				break;
 			default:
 				goto badopt;
@@ -581,6 +586,7 @@ printdefaults()			/* print default values to stdout */
 	printf("-dt %f\t\t\t# direct threshold\n", shadthresh);
 	printf("-dc %f\t\t\t# direct certainty\n", shadcert);
 	printf("-dj %f\t\t\t# direct jitter\n", dstrsrc);
+	printf("-dr %-9d\t\t\t# direct relays\n", directrelay);
 	printf("-av %f %f %f\t# ambient value\n", colval(ambval,RED),
 			colval(ambval,GRN), colval(ambval, BLU));
 	printf("-ab %-9d\t\t\t# ambient bounces\n", ambounce);

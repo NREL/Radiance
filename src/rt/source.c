@@ -38,8 +38,9 @@ static CNTPTR  *cntord;			/* source ordering in direct() */
 
 marksources()			/* find and mark source objects */
 {
+	int  i;
 	register OBJREC  *o, *m;
-	register int  i;
+	register SRCREC  *ns;
 
 	for (i = 0; i < nobjects; i++) {
 	
@@ -62,42 +63,55 @@ marksources()			/* find and mark source objects */
 				m->oargs.farg[3] <= FTINY)
 			continue;			/* don't bother */
 
-		if (source == NULL)
-			source = (SRCREC *)malloc(sizeof(SRCREC));
-		else
-			source = (SRCREC *)realloc((char *)source,
-					(unsigned)(nsources+1)*sizeof(SRCREC));
-		if (source == NULL)
+		if ((ns = newsource()) == NULL)
 			goto memerr;
 
-		newsource(&source[nsources], o);
+		setsource(ns, o);
 
 		if (m->otype == MAT_GLOW) {
-			source[nsources].sflags |= SPROX;
-			source[nsources].sl.prox = m->oargs.farg[3];
+			ns->sflags |= SPROX;
+			ns->sl.prox = m->oargs.farg[3];
 			if (o->otype == OBJ_SOURCE)
-				source[nsources].sflags |= SSKIP;
+				ns->sflags |= SSKIP;
 		} else if (m->otype == MAT_SPOT) {
-			source[nsources].sflags |= SSPOT;
-			source[nsources].sl.s = makespot(m);
+			ns->sflags |= SSPOT;
+			if ((ns->sl.s = makespot(m)) == NULL)
+				goto memerr;
 		}
-		nsources++;
 	}
 	if (nsources <= 0) {
 		error(WARNING, "no light sources found");
 		return;
 	}
+	markvirtuals();			/* find and add virtual sources */
 	srccnt = (CONTRIB *)malloc(nsources*sizeof(CONTRIB));
 	cntord = (CNTPTR *)malloc(nsources*sizeof(CNTPTR));
 	if (srccnt != NULL && cntord != NULL)
-		return;
-	/* fall through */
+		goto memerr;
+	return;
 memerr:
 	error(SYSTEM, "out of memory in marksources");
 }
 
 
-newsource(src, so)			/* add a source to the array */
+SRCREC *
+newsource()			/* allocate new source in our array */
+{
+	if (nsources == 0)
+		source = (SRCREC *)malloc(sizeof(SRCREC));
+	else
+		source = (SRCREC *)realloc((char *)source,
+				(unsigned)(nsources+1)*sizeof(SRCREC));
+	if (source == NULL)
+		return(NULL);
+	source[nsources].sflags = 0;
+	source[nsources].nhits = 1;
+	source[nsources].ntests = 2;	/* initial hit probability = 1/2 */
+	return(&source[nsources++]);
+}
+
+
+setsource(src, so)			/* add a source to the array */
 register SRCREC  *src;
 register OBJREC  *so;
 {
@@ -108,9 +122,7 @@ register OBJREC  *so;
 	int  j;
 	register int  i;
 	
-	src->sflags = 0;
-	src->aimsuccess = 2*AIMREQT-1;		/* bitch on second failure */
-	src->nhits = 1; src->ntests = 2;	/* start probability = 1/2 */
+	src->sa.success = 2*AIMREQT-1;		/* bitch on second failure */
 	src->so = so;
 
 	switch (so->otype) {
@@ -140,10 +152,12 @@ register OBJREC  *so;
 			src->sloc[j] = 0.0;
 			for (i = 0; i < f->nv; i++)
 				src->sloc[j] += VERTEX(f,i)[j];
-			src->sloc[j] /= f->nv;
+			src->sloc[j] /= (double)f->nv;
 		}
 		if (!inface(src->sloc, f))
 			objerror(so, USER, "cannot hit center");
+		src->sflags |= SFLAT;
+		VCOPY(src->snorm, f->norm);
 		src->ss = sqrt(f->area / PI);
 		src->ss2 = f->area;
 		break;
@@ -153,6 +167,8 @@ register OBJREC  *so;
 		VCOPY(src->sloc, CO_P0(co));
 		if (CO_R0(co) > 0.0)
 			objerror(so, USER, "cannot hit center");
+		src->sflags |= SFLAT;
+		VCOPY(src->snorm, co->ad);
 		src->ss = CO_R1(co);
 		src->ss2 = PI * src->ss * src->ss;
 		break;
@@ -170,7 +186,7 @@ register OBJREC  *m;
 	register SPOT  *ns;
 
 	if ((ns = (SPOT *)malloc(sizeof(SPOT))) == NULL)
-		error(SYSTEM, "out of memory in makespot");
+		return(NULL);
 	ns->siz = 2.0*PI * (1.0 - cos(PI/180.0/2.0 * m->oargs.farg[3]));
 	VCOPY(ns->aim, m->oargs.farg+4);
 	if ((ns->flen = normalize(ns->aim)) == 0.0)
@@ -185,7 +201,6 @@ register RAY  *sr;		/* returned source ray */
 RAY  *r;			/* ray which hit object */
 register int  sn;		/* source number */
 {
-	register double  *norm = NULL;	/* plane normal */
 	double  ddot;			/* (distance times) cosine */
 	FVECT  vd;
 	double  d;
@@ -198,19 +213,23 @@ register int  sn;		/* source number */
 
 	sr->rsrc = sn;				/* remember source */
 						/* get source direction */
-	if (source[sn].sflags & SDISTANT)
+	if (source[sn].sflags & SDISTANT) {
+		if (source[sn].sflags & SSPOT) {	/* check location */
+			for (i = 0; i < 3; i++)
+				vd[i] = sr->rorg[i] - source[sn].sl.s->aim[i];
+			d = DOT(source[sn].sloc,vd);
+			d = DOT(vd,vd) - d*d;
+			if (PI*d > source[sn].sl.s->siz)
+				return(0.0);
+		}
 						/* constant direction */
 		VCOPY(sr->rdir, source[sn].sloc);
-	else {					/* compute direction */
+	} else {				/* compute direction */
 		for (i = 0; i < 3; i++)
 			sr->rdir[i] = source[sn].sloc[i] - sr->rorg[i];
 
-		if (source[sn].so->otype == OBJ_FACE)
- 			norm = getface(source[sn].so)->norm;
-		else if (source[sn].so->otype == OBJ_RING)
-			norm = getcone(source[sn].so,0)->ad;
-
-		if (norm != NULL && (ddot = -DOT(sr->rdir, norm)) <= FTINY)
+		if (source[sn].sflags & SFLAT &&
+			(ddot = -DOT(sr->rdir, source[sn].snorm)) <= FTINY)
 			return(0.0);		/* behind surface! */
 	}
 	if (dstrsrc > FTINY) {
@@ -222,10 +241,10 @@ register int  sn;		/* source number */
 		(1.0 - 2.0*urand(ilhash(dimlist,ndims+1)+samplendx));
 		}
 		ndims--;
-		if (norm != NULL) {		/* project offset */
-			d = DOT(vd, norm);
+		if (source[sn].sflags & SFLAT) {	/* project offset */
+			d = DOT(vd, source[sn].snorm);
 			for (i = 0; i < 3; i++)
-				vd[i] -= d * norm[i];
+				vd[i] -= d * source[sn].snorm[i];
 		}
 		for (i = 0; i < 3; i++)		/* offset source direction */
 			sr->rdir[i] += vd[i];
@@ -247,7 +266,7 @@ register int  sn;		/* source number */
 			d > source[sn].sl.prox)
 		return(0.0);
 						/* compute dot product */
-	if (norm != NULL)
+	if (source[sn].sflags & SFLAT)
 		ddot /= d;
 	else
 		ddot = 1.0;
@@ -341,28 +360,8 @@ char  *p;			/* data for f */
 		cntord[sn].brt = bright(srccnt[sn].val);
 		if (cntord[sn].brt <= 0.0)
 			continue;
-						/* compute intersection */
-		if (source[sn].sflags & SDISTANT ?
-				sourcehit(&sr) :
-				(*ofun[source[sn].so->otype].funp)
-				(source[sn].so, &sr)) {
-			if (source[sn].aimsuccess >= 0)
-				source[sn].aimsuccess++;
-		} else {
-			cntord[sn].brt = 0.0;
-			if (source[sn].aimsuccess < 0)
-				continue;	/* bitched already */
-			source[sn].aimsuccess -= AIMREQT;
-			if (source[sn].aimsuccess >= 0)
-				continue;	/* leniency */
-			sprintf(errmsg,
-				"aiming failure for light source \"%s\"",
-					source[sn].so->oname);
-			error(WARNING, errmsg);
-			continue;
-		}
 						/* compute contribution */
-		raycont(&sr);
+		srcvalue(&sr);
 		multcolor(srccnt[sn].val, sr.rcol);
 		cntord[sn].brt = bright(srccnt[sn].val);
 	}
@@ -398,8 +397,9 @@ char  *p;			/* data for f */
 		VCOPY(sr.rdir, srccnt[cntord[sn].sno].dir);
 		sr.rsrc = cntord[sn].sno;
 		if (localhit(&sr, &thescene) &&
-				sr.ro != source[cntord[sn].sno].so) {
-						/* check for transmission */
+				( sr.ro != source[cntord[sn].sno].so ||
+				source[cntord[sn].sno].sflags & SFOLLOW )) {
+						/* follow entire path */
 			raycont(&sr);
 			if (bright(sr.rcol) <= FTINY)
 				continue;	/* missed! */
@@ -433,12 +433,46 @@ char  *p;			/* data for f */
 }
 
 
+srcvalue(r)			/* punch ray to source and compute value */
+RAY  *r;
+{
+	register SRCREC  *sp;
+
+	sp = &source[r->rsrc];
+	if (sp->sflags & SVIRTUAL) {		/* virtual source */
+		RAY  nr;
+					/* check intersection */
+		if (!(*ofun[sp->so->otype].funp)(sp->so, r))
+			return;
+					/* relay ray to source */
+		vsrcrelay(&nr, r);
+		srcvalue(&nr);
+		return;
+	}
+					/* compute intersection */
+	if (sp->sflags & SDISTANT ? sourcehit(r) :
+			(*ofun[sp->so->otype].funp)(sp->so, r)) {
+		if (sp->sa.success >= 0)
+			sp->sa.success++;
+		raycont(r);		/* compute contribution */
+		return;
+	}
+	if (sp->sa.success < 0)
+		return;			/* bitched already */
+	sp->sa.success -= AIMREQT;
+	if (sp->sa.success >= 0)
+		return;			/* leniency */
+	sprintf(errmsg, "aiming failure for light source \"%s\"",
+			sp->so->oname);
+	error(WARNING, errmsg);		/* issue warning */
+}
+
+
 #define  wrongsource(m, r)	(m->otype!=MAT_ILLUM && \
 				r->rsrc>=0 && \
 				source[r->rsrc].so!=r->ro)
 
 #define  badambient(m, r)	((r->crtype&(AMBIENT|SHADOW))==AMBIENT && \
-				!(r->rtype&REFLECTED) && 	/* hack! */\
 				!(m->otype==MAT_GLOW&&r->rot>m->oargs.farg[3]))
 
 #define  passillum(m, r)	(m->otype==MAT_ILLUM && \
