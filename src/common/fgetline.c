@@ -5,7 +5,7 @@ static char SCCSid[] = "$SunId$ LBL";
 #endif
 
 /*
- * fgetline.c - read line with escaped newlines
+ * fgetline.c - read line with escaped newlines.
  *
  *	10/4/89
  */
@@ -16,22 +16,20 @@ static char SCCSid[] = "$SunId$ LBL";
 char *
 fgetline(s, n, fp)	/* read in line with escapes, elide final newline */
 char  *s;
-register int  n;
-FILE  *fp;
+int  n;
+register FILE  *fp;
 {
-	register char  *cp;
-	register int  c;
+	int  escape = 0;
+	register char  *cp = s;
+	register int  c = EOF;
 
-	cp = s;
-	while (--n > 0 && (c = getc(fp)) != EOF && c != '\n') {
-		if (c == '\\') {
-			if ((c = getc(fp)) == EOF)
-				break;
-		}
+	while (--n > 0 && (c = getc(fp)) != EOF) {
+		if (c == '\n' && (cp == s || cp[-1] != '\\'))
+			break;
 		*cp++ = c;
 	}
-	if (cp == s)
+	if (cp == s && c == EOF)
 		return(NULL);
-	*cp++ = '\0';
+	*cp = '\0';
 	return(s);
 }
