@@ -25,11 +25,11 @@ int	l[2][2];
 	mx = (x0 + x1) >> 1;
 	my = (y0 + y1) >> 1;
 					/* see what to do */
-	if (l[0][0] >= mx)
+	if (l[0][0] > mx)
 		quads &= ~(CHF(2)|CHF(0));
 	else if (l[0][1] < mx)
 		quads &= ~(CHF(3)|CHF(1));
-	if (l[1][0] >= my)
+	if (l[1][0] > my)
 		quads &= ~(CHF(1)|CHF(0));
 	else if (l[1][1] < my)
 		quads &= ~(CHF(3)|CHF(2));
@@ -51,16 +51,32 @@ int	x0, y0, x1, y1;
 	int	csm[3], nc;
 	register BYTE	*cp;
 	BYTE	rgb[3];
+	double	dpth2[4], d2;
 	int	gaps = 0;
 	int	mx, my;
 	register int	i;
+					/* compute leaf depths */
+	d2 = FHUGE*FHUGE;
+	for (i = 0; i < 4; i++)
+		if (tp->flgs & LFF(i)) {
+			FVECT	dv;
+			register float	*wp = qtL.wp[tp->k[i].li];
+
+			dv[0] = wp[0] - odev.v.vp[0];
+			dv[1] = wp[1] - odev.v.vp[1];
+			dv[2] = wp[2] - odev.v.vp[2];
+			dpth2[i] = DOT(dv,dv);
+			if (dpth2[i] < d2)
+				d2 = dpth2[i];
+		}
+	d2 *= (1.+qtDepthEps)*(1.+qtDepthEps);
 					/* compute midpoint */
 	mx = (x0 + x1) >> 1;
 	my = (y0 + y1) >> 1;
+					/* draw leaves */
 	csm[0] = csm[1] = csm[2] = nc = 0;
-					/* do leaves first */
 	for (i = 0; i < 4; i++) {
-		if (tp->flgs & LFF(i)) {
+		if (tp->flgs & LFF(i) && dpth2[i] <= d2) {
 			cp = qtL.rgb[tp->k[i].li];
 			csm[0] += cp[0]; csm[1] += cp[1]; csm[2] += cp[2];
 			nc++;
@@ -70,7 +86,7 @@ int	x0, y0, x1, y1;
 		} else if ((tp->flgs & CHBRF(i)) == CHF(i))
 			gaps |= 1<<i;	/* empty stem */
 	}
-					/* now do branches */
+					/* do branches */
 	for (i = 0; i < 4; i++)
 		if ((tp->flgs & CHBRF(i)) == CHBRF(i)) {
 			update(rgb, tp->k[i].b, i&01 ? mx : x0, i&02 ? my : y0,
