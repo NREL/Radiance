@@ -206,7 +206,8 @@ add2full(			/* add object to full node */
 	objset(oset, cu->cutree);
 	cukid.cusize = cu->cusize * 0.5;
 
-	if (oset[0] < objlim || cukid.cusize < mincusize) {
+	if (inc==O_IN || oset[0] < objlim || cukid.cusize <
+			(oset[0] < MAXSET ? mincusize : mincusize/256.0)) {
 						/* add to set */
 		if (oset[0] >= MAXSET) {
 			sprintf(errmsg, "set overflow in addobject (%s)",
