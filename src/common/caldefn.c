@@ -218,34 +218,35 @@ register char  *nam;
 int  lvl;
 {
     static char  nambuf[MAXWORD];
-    register char  *cp = nambuf, *cpp = context;
-				/* check for explicit global */
+    register char  *cp = nambuf, *cpp;
+				/* check for explicit local */
     if (*nam == CNTXMARK)
-	return(lvl > 0 ? NULL : nam+1);
-				/* check for repeat call */
-    if (nam == nambuf)
-	return(lvl > 0 ? NULL : nambuf);
+	if (lvl > 0)		/* only action is to refuse search */
+	    return(NULL);
+	else
+	    nam++;
+    else if (nam == nambuf)	/* check for repeat call */
+	return(lvl > 0 ? NULL : nam);
 				/* copy name to static buffer */
     while (*nam) {
 	if (cp >= nambuf+MAXWORD-1)
 		goto toolong;
-	if ((*cp++ = *nam++) == CNTXMARK)
-	    cpp = NULL;		/* flag a qualified name */
+	*cp++ = *nam++;
     }
-    if (cpp == NULL) {
+				/* check for explicit global */
+    if (cp > nambuf && cp[-1] == CNTXMARK) {
 	if (lvl > 0)
-	    return(NULL);		/* no higher level */
-	if (cp[-1] == CNTXMARK) {
-	    cp--; cpp = context;	/* current context explicitly */
-	} else
-	    cpp = "";			/* else fully qualified */
-    } else			/* else skip the requested levels */
-	while (lvl-- > 0) {
-	    if (!*cpp)
-		return(NULL);	/* return NULL if past global level */
-	    while (*++cpp && *cpp != CNTXMARK)
-		;
-	}
+	    return(NULL);
+	*--cp = '\0';
+	return(nambuf);		/* already qualified */
+    }
+    cpp = context;		/* else skip the requested levels */
+    while (lvl-- > 0) {
+	if (!*cpp)
+	    return(NULL);	/* return NULL if past global level */
+	while (*++cpp && *cpp != CNTXMARK)
+	    ;
+    }
     while (*cpp) {		/* copy context to static buffer */
 	if (cp >= nambuf+MAXWORD-1)
 	    goto toolong;
