@@ -82,8 +82,8 @@ char	**av;
 		return(MG_ETYPE);
 					/* compute total transformation */
 	if (spec->prev != NULL) {
-		multmat4(spec->xf.xfm, spec->prev->xf.xfm, thisxf.xfm);
-		spec->xf.sca = spec->prev->xf.sca * thisxf.sca;
+		multmat4(spec->xf.xfm, thisxf.xfm, spec->prev->xf.xfm);
+		spec->xf.sca = thisxf.sca * spec->prev->xf.sca;
 	} else
 		spec->xf = thisxf;
 	spec->xid = comp_xfid(spec->xf.xfm);	/* compute unique ID */
