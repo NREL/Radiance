@@ -482,7 +482,10 @@ register char	*args;
 		dobj_unmove();
 		break;
 	case DO_OBJECT:				/* print object statistics */
-		dobj_putstats(na ? alist[0] : curname, sstdout);
+		if (dobj_putstats(na ? alist[0] : curname, sstdout))
+			if (na && alist[0][0] != '*' &&
+					strcmp(alist[0], curname))
+				savedxf(curobj = getdobj(alist[0]));
 		break;
 	case DO_DUP:				/* duplicate object */
 		for (nn = 0; nn < na; nn++)
@@ -506,6 +509,7 @@ register char	*args;
 			dobj_xform(curname, 1, na-nn, alist+nn);
 		else
 			curobj->drawcode = DO_HIDE;
+		savedxf(curobj);
 		break;
 	case DO_SHOW:				/* change rendering option */
 	case DO_LIGHT:
@@ -542,6 +546,10 @@ char	*oct, *nam;
 		error(COMMAND, "illegal name");
 		return(0);
 	}
+	if (getdobj(nam) != NULL) {
+		error(COMMAND, "name already taken (unload first)");
+		return(0);
+	}
 					/* get octree path */
 	if ((fpp = getpath(oct, getlibpath(), R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find octree \"%s\"", oct);
@@ -549,7 +557,6 @@ char	*oct, *nam;
 		return(0);
 	}
 	strcpy(fpath, fpp);
-	freedobj(getdobj(nam));		/* free previous use of nam */
 	op = (DOBJECT *)malloc(sizeof(DOBJECT));
 	if (op == NULL)
 		error(SYSTEM, "out of memory in dobj_load");
@@ -664,8 +671,8 @@ FILE	*fp;
 	}
 	getdcent(ocent, op);
 	fprintf(fp, "%s: %s, center [%f %f %f], radius %f", op->name,
-			op->drawcode==DO_HIDE ? "hid" :
-			op->drawcode==DO_LIGHT && op->ol!=NULL ? "lit" :
+			op->drawcode==DO_HIDE ? "hidden" :
+			op->drawcode==DO_LIGHT && op->ol!=NULL ? "lighted" :
 			"shown",
 			ocent[0],ocent[1],ocent[2], getdrad(op));
 	if (op->xfac)
@@ -722,6 +729,10 @@ char	*oldnm, *nam;
 	}
 	if (*nam == '*' | *nam == '-') {
 		error(COMMAND, "illegal name");
+		return(0);
+	}
+	if (getdobj(nam) != NULL) {
+		error(COMMAND, "name already taken (unload first)");
 		return(0);
 	}
 					/* allocate and copy struct */
@@ -786,18 +797,18 @@ FVECT   rorg, rdir;
 	register DOBJECT	*op;
 	FVECT	xorg, xdir;
 	double	darr[6];
-
+					/* check each visible object? */
 	if (nm == NULL || *nm == '*') {
 		double	dist, mindist = 1.01*FHUGE;
-					/* check each visible object */
+
+		if (nm != NULL) nm[0] = '\0';
 		for (op = dobjects; op != NULL; op = op->next) {
 			if (op->drawcode == DO_HIDE)
 				continue;
 			dist = dobj_trace(op->name, rorg, rdir);
 			if (dist < mindist) {
-				dist = mindist;
-				if (nm != NULL)
-					strcpy(nm, op->name);
+				if (nm != NULL) strcpy(nm, op->name);
+				mindist = dist;
 			}
 		}
 		return(mindist);
@@ -807,7 +818,7 @@ FVECT   rorg, rdir;
 		error(COMMAND, "unknown object");
 		return(FHUGE);
 	}
-	if (op->xfac) {		/* transform ray */
+	if (op->xfac) {		/* put ray in local coordinates */
 		multp3(xorg, rorg, op->xfb.b.xfm);
 		multv3(xdir, rdir, op->xfb.b.xfm);
 		VCOPY(darr, xorg); VCOPY(darr+3, xdir);
@@ -821,7 +832,7 @@ FVECT   rorg, rdir;
 				/* return distance */
 	if (darr[0] >= .99*FHUGE)
 		return(FHUGE);
-	return(darr[0] * op->xfb.f.sca);
+	return(darr[0]*op->xfb.f.sca);
 }
 
 
@@ -887,7 +898,7 @@ dobj_render()			/* render our objects in OpenGL */
 				glLightfv(glightid[i], GL_AMBIENT, vec);
 				glEnable(glightid[i]);
 			}
-		} else {			/* no sources to draw on */
+		} else {			/* fake lighting */
 			vec[0] = vec[1] = vec[2] = 0.; vec[3] = 1.;
 			glLightModelfv(GL_LIGHT_MODEL_AMBIENT, vec);
 			getdcent(v1, op);
@@ -937,8 +948,8 @@ dobj_render()			/* render our objects in OpenGL */
 		else
 			glDisable(GL_LIGHT0);
 					/* check errors */
-		rgl_checkerr("rendering object in dobj_render");
 	}
 	glPopAttrib();			/* restore rendering params */
+	rgl_checkerr("rendering objects in dobj_render");
 	return(1);
 }
