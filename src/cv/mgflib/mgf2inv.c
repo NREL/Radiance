@@ -338,7 +338,7 @@ put_material()			/* put out current material */
 		mgf2rgb(&c_cmaterial->rs_c, c_cmaterial->rs, rgbval);
 		printf("%sspecularColor %.4f %.4f %.4f\n", tabs,
 				rgbval[0], rgbval[1], rgbval[2]);
-		printf("%sshininess %.3f\n", tabs, 1.-c_cmaterial->rs_a);
+		printf("%sshininess %.3f\n", tabs, 1.-sqrt(c_cmaterial->rs_a));
 	}
 	if (c_cmaterial->ed > FTINY) {
 		mgf2rgb(&c_cmaterial->ed_c, 1.0, rgbval);
