@@ -8,10 +8,11 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include  <stdio.h>
-
 #include  <math.h>
 
 #include  "color.h"
+#include  "resolu.h"
+#include  "rterror.h"
 
 
 #define  MAXFILE	8
@@ -94,7 +95,7 @@ char  *argv[];
 						/* get header */
 		fputs(fname[nfile], stdout);
 		fputs(":\n", stdout);
-		getheader(fptr[nfile], tabputs);
+		getheader(fptr[nfile], tabputs, NULL);
 						/* get picture size */
 		if (fgetresolu(&xres, &yres, fptr[nfile]) != (YMAJOR|YDECR)) {
 			fprintf(stderr, "%s: bad picture size\n", progname);
