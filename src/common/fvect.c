@@ -116,7 +116,7 @@ register FVECT  v
 	
 	d = DOT(v, v);
 	
-	if (d <= 0.0)
+	if (d <= FTINY*FTINY)
 		return(0.0);
 	
 	if (d <= 1.0+FTINY && d >= 1.0-FTINY)
