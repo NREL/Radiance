@@ -344,16 +344,18 @@ char  *p;			/* data for f */
 	}
 						/* sort contributions */
 	qsort(cntord, nsources, sizeof(CNTPTR), cntcmp);
-                                                /* find last */
-        sn = 0; ncnts = nsources;
-        while (sn < ncnts-1) {
-                register int  m;
-                m = (sn + ncnts) >> 1;
-                if (cntord[m].brt > 0.0)
-                        sn = m;
-                else
-                        ncnts = m;
-        }
+	{					/* find last */
+		register int  l, m;
+
+		sn = 0; ncnts = l = nsources;
+		while ((m = (sn + ncnts) >> 1) != l) {
+			if (cntord[m].brt > 0.0)
+				sn = m;
+			else
+				ncnts = m;
+			l = m;
+		}
+	}
                                                 /* accumulate tail */
         for (sn = ncnts-1; sn > 0; sn--)
                 cntord[sn-1].brt += cntord[sn].brt;
