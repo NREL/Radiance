@@ -48,14 +48,20 @@ char	*rfname;
 			}
 			break;
 		}
-		setvariable(buf);
+		if (setvariable(buf, matchvar) < 0) {
+			fprintf(stderr, "%s: unknown variable: %s\n",
+					rfname, buf);
+			quit(1);
+		}
 	}
 	fclose(fp);
 }
 
 
-setvariable(ass)		/* assign variable according to string */
+int
+setvariable(ass, mv)		/* assign variable according to string */
 register char	*ass;
+VARIABLE	*(*mv)();
 {
 	char	varname[32];
 	int	n;
@@ -71,27 +77,19 @@ register char	*ass;
 		*cp++ = *ass++;
 	*cp = '\0';
 	if (!varname[0])
-		return;		/* no variable name! */
+		return(0);	/* no variable name! */
 					/* trim value */
 	while (isspace(*ass) || *ass == '=')
 		ass++;
 	for (n = strlen(ass); n > 0; n--)
 		if (!isspace(ass[n-1]))
 			break;
-	if (!n) {
-		if (!nowarn)
-			fprintf(stderr,
-			"%s: warning - missing value for variable '%s'\n",
-					progname, varname);
-		return;
-	}
+	if (!n)
+		return(0);	/* no assignment */
 					/* match variable from list */
-	vp = matchvar(varname);
-	if (vp == NULL) {
-		fprintf(stderr, "%s: unknown variable '%s'\n",
-				progname, varname);
-		quit(1);
-	}
+	vp = (*mv)(varname);
+	if (vp == NULL)
+		return(-1);
 					/* assign new value */
 	if (i = vp->nass) {
 		cp = vp->value;
@@ -118,7 +116,7 @@ register char	*ass;
 	}
 	if (isspace(*cp))		/* remove trailing space */
 		*cp = '\0';
-	vp->nass++;
+	return(++vp->nass);
 }
 
 
