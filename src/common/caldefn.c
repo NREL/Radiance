@@ -299,6 +299,8 @@ toolong:
 incontext(qn)			/* is qualified name in current context? */
 register char  *qn;
 {
+    if (!context[0])			/* global context accepts all */
+	return(1);
     while (*qn && *qn != CNTXMARK)	/* find context mark */
 	qn++;
     return(!strcmp(qn, context));
@@ -327,7 +329,7 @@ int  lvl;
 				/* if context is global, clear all */
     for (i = 0; i < NHASH; i++)
 	for (vp = hashtbl[i]; vp != NULL; vp = vp->next)
-	    if (!context[0] || incontext(vp->name))
+	    if (incontext(vp->name))
 		if (lvl >= 2)
 		    dremove(vp->name);
 		else
