@@ -608,7 +608,7 @@ int	dolower, doupper;
 			lampcolor[2]/shp->area);
 	if (doupper && dolower && shp->type != SPHERE && shp->h > MINDIM) {
 		fprintf(fp, "\n%s glow %s_glow\n", mod, name);
-		fprintf(fp, "0\n0\n4 %g %g %g 0\n",
+		fprintf(fp, "0\n0\n4 %g %g %g -1\n",
 				lampcolor[0]/shp->area,
 				lampcolor[1]/shp->area,
 				lampcolor[2]/shp->area);
