@@ -806,7 +806,7 @@ FILE	*in, *out;
 int	ndim, npts[];
 double	mult, lim[][2];
 {
-	register double	*pt[4];
+	double	*pt[4];
 	register int	i, j;
 	double	val;
 	int	total;
