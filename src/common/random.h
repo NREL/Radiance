@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 /* SCCSid "$SunId$ SGI" */
 
@@ -39,7 +39,7 @@ extern double  drand48();
 
 #else
 
-extern short	*urperm;
+extern unsigned short	*urperm;
 extern int	urmask, initurand();
 
 #define	 urand(i)	((urperm[(i)&urmask]+frandom())/(urmask+1))

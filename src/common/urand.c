@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -12,9 +12,11 @@ static char SCCSid[] = "$SunId$ SGI";
 
 #define  NULL		0
 
+#define  MAXORDER	(8*sizeof(unsigned short))
+
 extern char  *malloc();
 
-short  *urperm = NULL;	/* urand() permutation */
+unsigned short  *urperm = NULL;	/* urand() permutation */
 int  urmask;		/* bits used in permutation */
 
 
@@ -30,9 +32,9 @@ int  size;
 	size--;
 	for (i = 1; size >>= 1; i++)
 		;
-	order = i;
+	order = i>MAXORDER ? MAXORDER : i;
 	urmask = (1<<i) - 1;
-	urperm = (short *)malloc((urmask+1)*sizeof(short));
+	urperm = (unsigned short *)malloc((urmask+1)*sizeof(unsigned short));
 	if (urperm == NULL) {
 		eputs("out of memory in initurand\n");
 		quit(1);
