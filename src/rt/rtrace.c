@@ -70,7 +70,7 @@ extern OBJREC  Lamb;			/* a Lambertian surface */
 
 static RAY  thisray;			/* for our convenience */
 
-static int  oputo(), oputd(), oputv(), oputl(), 
+static int  oputo(), oputd(), oputv(), oputl(), oputL(),
 		oputp(), oputn(), oputs(), oputw(), oputm();
 
 static int  (*ray_out[10])(), (*every_out[10])();
@@ -164,9 +164,12 @@ register char  *vs;
 			*table++ = oputv;
 			castonly = 0;
 			break;
-		case 'l':				/* length */
+		case 'l':				/* effective distance */
 			*table++ = oputl;
 			castonly = 0;
+			break;
+		case 'L':				/* single ray length */
+			*table++ = oputL;
 			break;
 		case 'p':				/* point */
 			*table++ = oputp;
@@ -241,6 +244,7 @@ FILE  *fp;
 {
 	extern char  *fgetword();
 	static float  vf[3];
+	static double  vd[3];
 	char  buf[32];
 	register int  i;
 
@@ -259,8 +263,9 @@ FILE  *fp;
 		vec[0] = vf[0]; vec[1] = vf[1]; vec[2] = vf[2];
 		break;
 	case 'd':					/* binary double */
-		if (fread((char *)vec, sizeof(double), 3, fp) != 3)
+		if (fread((char *)vd, sizeof(double), 3, fp) != 3)
 			return(-1);
+		vec[0] = vd[0]; vec[1] = vd[1]; vec[2] = vd[2];
 		break;
 	}
 	return(0);
@@ -324,10 +329,18 @@ register RAY  *r;
 
 
 static
-oputl(r)				/* print length */
+oputl(r)				/* print effective distance */
 register RAY  *r;
 {
 	(*putreal)(r->rt);
+}
+
+
+static
+oputL(r)				/* print single ray length */
+register RAY  *r;
+{
+	(*putreal)(r->rot);
 }
 
 
