@@ -35,7 +35,7 @@ markvirtuals()			/* find and mark virtual sources */
 	if (directrelay <= 0)
 		return;
 					/* find virtual source objects */
-	for (i = 0; i < nobjects; i++) {
+	for (i = 0; i < nsceneobjs; i++) {
 		o = objptr(i);
 		if (!issurface(o->otype) || o->omod == OVOID)
 			continue;

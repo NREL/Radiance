@@ -54,7 +54,7 @@ marksources()			/* find and mark source objects */
 					/* initialize dispatch table */
 	initstypes();
 					/* find direct sources */
-	for (i = 0; i < nobjects; i++) {
+	for (i = 0; i < nsceneobjs; i++) {
 	
 		o = objptr(i);
 
