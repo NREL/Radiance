@@ -14,6 +14,9 @@ static char SCCSid[] = "$SunId$ SGI";
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#ifndef MAXQTIME
+#define MAXQTIME	5		/* target maximum seconds in queue */
+#endif
 			/* the following must be consistent with rholo.h */
 int	NVARS = NRHVARS;		/* total number of variables */
 
@@ -48,6 +51,7 @@ long	nraysdone = 0L;		/* number of rays done */
 long	npacksdone = 0L;	/* number of packets done */
 
 PACKET	*freepacks;		/* available packets */
+int	avgqlen;		/* average queue length when full */
 
 char  *sigerr[NSIG];		/* signal error messages */
 
@@ -59,8 +63,7 @@ int	argc;
 char	*argv[];
 {
 	int	i;
-						/* mark start time */
-	starttime = time(NULL);
+
 	initurand(16384);			/* initialize urand */
 	progname = argv[0];			/* get arguments */
 	for (i = 1; i < argc && argv[i][0] == '-'; i++)
@@ -199,11 +202,6 @@ initrholo()			/* get our holodeck running */
 		maxdisk = 0;
 	else
 		maxdisk = 1024.*1024.*vflt(DISKSPACE);
-						/* record end time */
-	if (!vdef(TIME) || vflt(TIME) <= FTINY)
-		endtime = 0;
-	else
-		endtime = starttime + vflt(TIME)*3600. + .5;
 						/* set up memory cache */
 	if (outdev == NULL)
 		hdcachesize = 0;	/* manual flushing */
@@ -215,6 +213,13 @@ initrholo()			/* get our holodeck running */
 		if (*s && freopen(s, "a", stderr) == NULL)
 			quit(2);
 	}
+						/* mark the starting time */
+	starttime = time(NULL);
+						/* compute end time */
+	if (!vdef(TIME) || vflt(TIME) <= FTINY)
+		endtime = 0;
+	else
+		endtime = starttime + vflt(TIME)*3600. + .5;
 						/* start rtrace */
 	if (ncprocs > 0) {
 		i = start_rtrace();
@@ -228,6 +233,8 @@ initrholo()			/* get our holodeck running */
 		freepacks = (PACKET *)bmalloc(i*sizeof(PACKET));
 		if (freepacks == NULL)
 			goto memerr;
+		if (!(avgqlen = i/nprocs))	/* record mean queue length */
+			avgqlen = 1;
 		freepacks[--i].nr = 0;
 		freepacks[i].next = NULL;
 		if (!vdef(OBSTRUCTIONS) || !vbool(OBSTRUCTIONS)) {
@@ -266,9 +273,9 @@ rholo()				/* holodeck main loop */
 {
 	static int	idle = 0;
 	PACKET	*pl = NULL, *plend;
+	int	pksiz;
 	register PACKET	*p;
 	time_t	t;
-	long	l;
 					/* check display */
 	if (nprocs <= 0)
 		idle = 1;
@@ -285,9 +292,7 @@ rholo()				/* holodeck main loop */
 		done_rtrace();
 		return(1);	/* comes back */
 	}
-					/* check time */
-	if (endtime > 0 || reporttime > 0)
-		t = time(NULL);
+	t = time(NULL);			/* check time */
 	if (endtime > 0 && t >= endtime) {
 		error(WARNING, "time limit exceeded");
 		done_rtrace();
@@ -295,10 +300,18 @@ rholo()				/* holodeck main loop */
 	}
 	if (reporttime > 0 && t >= reporttime)
 		report(t);
+					/* figure out good packet size */
+#if MAXQTIME
+	pksiz = nraysdone*MAXQTIME/(avgqlen*(t - starttime + 1L));
+	if (pksiz < 1)
+		pksiz = 1;
+	else if (pksiz > RPACKSIZ)
+#endif
+		pksiz = RPACKSIZ;
 	idle = 0;			/* get packets to process */
 	while (freepacks != NULL) {
 		p = freepacks; freepacks = p->next; p->next = NULL;
-		if (!next_packet(p)) {
+		if (!next_packet(p, pksiz)) {
 			p->next = freepacks; freepacks = p;
 			idle = 1;
 			break;
@@ -483,15 +496,15 @@ PACKET	*pl;
 			if (outdev != NULL)	/* display it */
 				disp_packet((PACKHEAD *)p);
 			if (hdcachesize <= 0)	/* manual flushing */
-				n2flush += p->nr;
+				n2flush++;
 			nraysdone += p->nr;
 			npacksdone++;
+			p->nr = 0;
 		}
-		p->nr = 0;			/* push onto free list */
-		p->next = freepacks;
+		p->next = freepacks;		/* push onto free list */
 		freepacks = p;
 	}
-	if (n2flush > 1024*RPACKSIZ*nprocs) {
+	if (n2flush > 300/MAXQTIME*avgqlen*nprocs) {
 		hdflush(NULL);			/* flush holodeck buffers */
 		n2flush = 0;
 	}
