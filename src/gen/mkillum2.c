@@ -26,8 +26,7 @@ char  *nm;
 	sprintf(errmsg, "(%s): cannot make illum for %s \"%s\"",
 			nm, ofun[ob->otype].funame, ob->oname);
 	error(WARNING, errmsg);
-	if (!(il->flags & IL_LIGHT))
-		printobj(il->altmat, ob);
+	printobj(il->altmat, ob);
 }
 
 
@@ -120,7 +119,7 @@ char  *nm;
 		if (il->sampdens > 0)
 			flatout(il, distarr, nalt, nazi, u, v, fa->norm);
 		illumout(il, ob);
-	} else if (!(il->flags & IL_LIGHT))
+	} else
 		printobj(il->altmat, ob);
 				/* clean up */
 	freeface(ob);
@@ -191,7 +190,7 @@ char  *nm;
 		else
 			objerror(ob, WARNING, "diffuse distribution");
 		illumout(il, ob);
-	} else if (!(il->flags & IL_LIGHT))
+	} else
 		printobj(il->altmat, ob);
 				/* clean up */
 	free((char *)distarr);
@@ -259,7 +258,7 @@ char  *nm;
 		if (il->sampdens > 0)
 			flatout(il, distarr, nalt, nazi, u, v, co->ad);
 		illumout(il, ob);
-	} else if (!(il->flags & IL_LIGHT))
+	} else
 		printobj(il->altmat, ob);
 				/* clean up */
 	freecone(ob);
