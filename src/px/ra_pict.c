@@ -20,11 +20,13 @@ static char SCCSid[] = "$SunId$ Auckuni";
  */
 
 #include <stdio.h>
-#include <stdlib.h>
 
 #include "pict.h"
 #include "color.h"
 #include "resolu.h"
+
+extern double	atof();
+extern char	*malloc();
 
 int	outbytes;		    /* This had better be 32 bits! */
 char	*progname;
