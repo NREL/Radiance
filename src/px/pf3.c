@@ -105,15 +105,15 @@ int  c, r;
 
 	wsum = FTINY;
 	setcolor(csum, 0.0, 0.0, 0.0);
-	for (y = ycent+1-yrad; y <= ycent+yrad; y++) {
+	for (y = ycent-yrad; y <= ycent+yrad; y++) {
 		if (y < 0 || y >= yres)
 			continue;
-		dy = (y_r*y - r)/rad;
+		dy = (y_r*(y+.5) - (r+.5))/rad;
 		scan = scanin[y%barsize];
-		for (x = xcent+1-xrad; x <= xcent+xrad; x++) {
+		for (x = xcent-xrad; x <= xcent+xrad; x++) {
 			if (x < 0 || x >= xres)
 				continue;
-			dx = (x_c*x - c)/rad;
+			dx = (x_c*(x+.5) - (c+.5))/rad;
 			weight = lookexp(-(dx*dx + dy*dy));
 			wsum += weight;
 			copycolor(ctmp, scan[x]);

@@ -403,7 +403,7 @@ scan2init()			/* prepare scanline arrays */
 
 		initmask();		/* initialize filter table */
 	}
-	barsize = 2 * yrad;
+	barsize = 2*yrad + 1;
 	scanin = (COLOR **)malloc(barsize*sizeof(COLOR *));
 	for (i = 0; i < barsize; i++) {
 		scanin[i] = (COLOR *)malloc(xres*sizeof(COLOR));
