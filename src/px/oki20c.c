@@ -18,6 +18,10 @@ static char SCCSid[] = "$SunId$ LBL";
 #define  NROWS		1440		/* 10" at 144 dpi */
 #define  NCOLS		960		/* 8" at 120 dpi */
 
+#define  ASPECT		(120./144.)	/* pixel aspect ratio */
+
+#define  FILTER		"pfilt -1 -x %d -y %d -p %f %s",NCOLS,NROWS,ASPECT
+
 /*
  *  Subtractive primaries are ordered:  Yellow, Magenta, Cyan.
  */
@@ -32,6 +36,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 long  lpat[NCOLS][3];
 
+int  dofilter = 0;		/* filter through pfilt first? */
+
 
 main(argc, argv)
 int  argc;
@@ -39,6 +45,10 @@ char  *argv[];
 {
 	int  i, status = 0;
 	
+	if (argc > 1 && !strcmp(argv[1], "-p")) {
+		dofilter++;
+		argv++; argc--;
+	}
 	if (argc < 2)
 		status = printp(NULL) == -1;
 	else
@@ -51,12 +61,22 @@ char  *argv[];
 printp(fname)				/* print a picture */
 char  *fname;
 {
+	char  buf[64];
 	FILE  *input;
 	int  xres, yres;
 	COLR  scanline[NCOLS];
 	int  i;
 
-	if (fname == NULL) {
+	if (dofilter) {
+		if (fname == NULL)
+			fname = "";
+		sprintf(buf, FILTER, fname);
+		if ((input = popen(buf, "r")) == NULL) {
+			fprintf(stderr, "Cannot execute: %s\n", buf);
+			return(-1);
+		}
+		fname = buf;
+	} else if (fname == NULL) {
 		input = stdin;
 		fname = "<stdin>";
 	} else if ((input = fopen(fname, "r")) == NULL) {
@@ -81,6 +101,9 @@ char  *fname;
 	fputs("\0333\042", stdout);
 				/* clear line buffer */
 	clearlbuf();
+#ifdef _IOLBF
+	stdout->_flag &= ~_IOLBF;
+#endif
 				/* put out scanlines */
 	for (i = yres-1; i >= 0; i--) {
 		if (freadcolrs(scanline, xres, input) < 0) {
@@ -93,7 +116,10 @@ char  *fname;
 				/* advance page */
 	putchar('\f');
 	
-	fclose(input);
+	if (dofilter)
+		pclose(input);
+	else
+		fclose(input);
 
 	return(0);
 }
@@ -133,6 +159,7 @@ int  y;
 			putchar('\r');
 		}
 		putchar('\n');
+		fflush(stdout);
 	}
 }
 
