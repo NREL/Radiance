@@ -108,11 +108,11 @@ report()		/* report progress */
 #else
 report()		/* report progress */
 {
-	signal(SIGALRM, report);
 	tlastrept = time((long *)0);
 	sprintf(errmsg, "%ld rays, %4.2f%% done after %5.4f hours\n",
 			nrays, pctdone, (tlastrept-tstart)/3600.0);
 	eputs(errmsg);
+	signal(SIGALRM, report);
 }
 #endif
 
