@@ -14,6 +14,11 @@ static char SCCSid[] = "$SunId$ LBL";
 #include  <math.h>
 #include  <sys/ioctl.h>
 #include  <fcntl.h>
+#ifdef sparc
+#include  <sys/conf.h>
+#include  <sys/file.h>
+#include  <sys/filio.h>
+#endif
 
 #include  <X11/Xlib.h>
 #include  <X11/cursorfont.h>
