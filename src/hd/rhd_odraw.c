@@ -531,7 +531,7 @@ double	sz;
 	register int	i;
 
 	DCHECK(sz > 1, CONSISTENCY, "super-unary size in make_arms");
-	na = MAXFAN*sz*sz + 0.5;		/* keep area constant */
+	na = MAXFAN*sz + 0.5;			/* keep arc length constant */
 	if (na < MINFAN) na = MINFAN;
 	hrad = FANSIZE*sz*vp->hhi/vp->hlow;
 	vrad = FANSIZE*sz*vp->vhi/vp->vlow;
