@@ -39,6 +39,16 @@ static char SCCSid[] = "$SunId$ SGI";
 #ifndef RAYQLEN
 #define RAYQLEN		0		/* max. rays to queue before flush */
 #endif
+#ifndef MINWIDTH
+#define MINWIDTH	480		/* minimum graphics window width */
+#define MINHEIGHT	400		/* minimum graphics window height */
+#endif
+#ifndef VIEWDIST
+#define VIEWDIST	356		/* assumed viewing distance (mm) */
+#endif
+#ifndef BORWIDTH
+#define BORWIDTH	5		/* border width */
+#endif
 
 #ifndef FEQ
 #define FEQ(a,b)	((a)-(b) <= FTINY && (a)-(b) >= -FTINY)
@@ -59,13 +69,6 @@ static char SCCSid[] = "$SunId$ SGI";
 #define MOVDIR(b)	((b)==Button1 ? 1 : (b)==Button2 ? 0 : -1)
 #define MOVDEG		(-5)		/* degrees to orbit CW/down /frame */
 #define MOVORB(s)	((s)&ShiftMask ? 1 : (s)&ControlMask ? -1 : 0)
-
-#define MINWIDTH	480		/* minimum graphics window width */
-#define MINHEIGHT	400		/* minimum graphics window height */
-
-#define VIEWDIST	356		/* assumed viewing distance (mm) */
-
-#define BORWIDTH	5		/* border width */
 
 #define setstereobuf(bid)	(glXWaitGL(), \
 				XSGISetStereoBuffer(ourdisplay, gwind, bid), \
