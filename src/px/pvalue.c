@@ -375,19 +375,16 @@ checkhead(				/* deal with line from header */
 	COLOR	ctmp;
 
 	if (formatval(fmt, line)) {
-		if (!strcmp(fmt, CIEFMT)) {
+		if (!strcmp(fmt, CIEFMT))
 			mybright = &xyz_bright;
-			if (original) {
-				scalecolor(exposure, 1./WHTEFFICACY);
-				doexposure++;
-			}
-		} else if (!strcmp(fmt, COLRFMT))
+		else if (!strcmp(fmt, COLRFMT))
 			mybright = &rgb_bright;
 		else
 			wrongformat++;
 	} else if (original && isexpos(line)) {
 		d = 1.0/exposval(line);
 		scalecolor(exposure, d);
+fprintf(stderr, "scaled exposure by %f, now at %f\n", d, bright(exposure));
 		doexposure++;
 	} else if (original && iscolcor(line)) {
 		colcorval(ctmp, line);

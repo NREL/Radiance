@@ -48,9 +48,12 @@ turns this option off, which is the default.
 .TP
 .BR \-o
 Print original values, before exposure compensation.
+If the input file is in XYZE format, the Y (green) channel
+will correspond to units of candelas/meter^2.
+Otherwise, the RGB values should be in spectral watts/steradian/meter^2.
 Specifying
 .I \+o
-uses final values, which is the default.
+uses final exposed values, which is the default.
 .TP
 .BR \-h
 Do not print header.
