@@ -62,7 +62,7 @@ char	*argv[];
 	if ((dev = dinit(argv[0], argv[3])) == NULL)
 		quit(1);
 	putw(COM_RECVM, devout);		/* verify initialization */
-	fwrite(&dev->pixaspect, sizeof(dev->pixaspect), 1, devout);
+	fwrite((char *)&dev->pixaspect, sizeof(dev->pixaspect), 1, devout);
 	putw(dev->xsiz, devout);
 	putw(dev->ysiz, devout);
 	fflush(devout);
@@ -103,7 +103,7 @@ r_paintr()				/* paint a rectangle */
 	int	xmin, ymin, xmax, ymax;
 
 	nrays += 5;			/* pretend */
-	fread(col, sizeof(COLOR), 1, devin);
+	fread((char *)col, sizeof(COLOR), 1, devin);
 	xmin = getw(devin); ymin = getw(devin);
 	xmax = getw(devin); ymax = getw(devin);
 	(*dev->paintr)(col, xmin, ymin, xmax, ymax);

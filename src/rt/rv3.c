@@ -346,9 +346,9 @@ register VIEW  *vp;
 	if ((err = setview(vp)) != NULL) {
 		sprintf(errmsg, "view not set - %s", err);
 		error(COMMAND, errmsg);
-	} else if (bcmp(vp, &ourview, sizeof(VIEW))) {
-		copyview(&oldview, &ourview);
-		copyview(&ourview, vp);
+	} else if (bcmp((char *)vp, (char *)&ourview, sizeof(VIEW))) {
+		copystruct(&oldview, &ourview);
+		copystruct(&ourview, vp);
 		newimage();		/* newimage() calls with vp=&ourview! */
 	}
 }

@@ -10,7 +10,7 @@ static char SCCSid[] = "$SunId$ LBL";
  *	10/5/88
  */
 
-#include <stdio.h>
+#include "standard.h"
 
 #include <signal.h>
 
@@ -80,13 +80,14 @@ char	*dname, *id;
 		goto syserr;
 	if ((devin = fdopen(p2[0], "r")) == NULL)
 		goto syserr;
-	bcopy(&comm_default, &comm_driver, sizeof(comm_driver));
+	copystruct(&comm_driver, &comm_default);
 						/* verify & get resolution */
 	putw(COM_SENDM, devout);
 	fflush(devout);
 	if (getw(devin) != COM_RECVM)
 		return(NULL);
-	fread(&comm_driver.pixaspect, sizeof(comm_driver.pixaspect), 1, devin);
+	fread((char *)&comm_driver.pixaspect,
+			sizeof(comm_driver.pixaspect), 1, devin);
 	comm_driver.xsiz = getw(devin);
 	comm_driver.ysiz = getw(devin);
 						/* input handling */
@@ -138,7 +139,7 @@ int	xmin, ymin, xmax, ymax;
 	static long	lastflush = 0;	/* ray count at last flush */
 
 	putc(COM_PAINTR, devout);
-	fwrite(col, sizeof(COLOR), 1, devout);
+	fwrite((char *)col, sizeof(COLOR), 1, devout);
 	putw(xmin, devout);
 	putw(ymin, devout);
 	putw(xmax, devout);

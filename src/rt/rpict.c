@@ -167,10 +167,11 @@ char  *zfile, *oldfile;
 		fillscanbar(scanbar, zbar, hresolu, ypos, ystep);
 							/* write it out */
 		for (i = ystep; i > 0; i--) {
-			if (zfd!=-1 && write(zfd,zbar[i],hresolu*sizeof(float))
+			if (zfd != -1 && write(zfd, (char *)zbar[i],
+					hresolu*sizeof(float))
 					< hresolu*sizeof(float))
 				goto writerr;
-			if (fwritescan(scanbar[i],hresolu,stdout) < 0)
+			if (fwritescan(scanbar[i], hresolu, stdout) < 0)
 				goto writerr;
 		}
 		if (fflush(stdout) == EOF)
@@ -178,7 +179,7 @@ char  *zfile, *oldfile;
 	}
 						/* clean up */
 	if (zfd != -1) {
-		if (write(zfd,zbar[0],hresolu*sizeof(float))
+		if (write(zfd, (char *)zbar[0], hresolu*sizeof(float))
 				< hresolu*sizeof(float))
 			goto writerr;
 		close(zfd);

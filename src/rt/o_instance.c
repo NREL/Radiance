@@ -26,7 +26,7 @@ register RAY  *r;
 					/* get the octree */
 	in = getinstance(o, IO_ALL);
 					/* copy old ray */
-	bcopy(r, &rcont, sizeof(RAY));
+	copystruct(&rcont, r);
 					/* transform it */
 	rcont.rno = nrays;
 	rcont.ro = NULL;
