@@ -746,16 +746,40 @@ to maintain a specific pixel aspect ratio (1 by default).
 
 The default value for this variable is "512".
 
-.Views.Rawsave
+.Views.Rawfile
 
-The "Rawsave" check box determines whether or not the raw output picture
+The "Rawfile" entry window determines if and where the raw output picture
 from rpict will be saved.
-The default action (box unchecked) is to remove this file, since it
+If the entry is empty, the file will be removed after rendering and
+filtering.
+This is the normal action, since the raw file
 takes up disk space and is not generally useful.
-However, if you wish to perform some special filtering function on
-the file, this file can be renamed instead of removed by checking this box.
-The final name in this case will be the same as the finished
-picture, except with a ".rwp" suffix.
+However, if you wish to perform some special filtering function,
+this file can be renamed instead of removed by giving a
+root file name in this entry window.
+The final name in this case will be the given root plus and
+underscore plus the view name followed by a ".pic" suffix.
+
+In the special case when the raw file name and picture file name are
+the same, the raw file is saved and no filtering takes place.
+
+.Views.Zfile
+
+The "Zfile" entry window gives the root name of the file in which to
+store the raw (binary floating point) distances to pixels in the
+original generated image.
+If this entry is empty, then no z-file will be saved.
+
+The final z-file name will be the given root plus an underscore plus
+the view name plus a ".zbf" suffix.
+
+To convert this image to human-readable form, the program "od" will
+work on some systems, or the Radiance "pvalue" program may be used
+to first convert it to a greyscale Radiance picture using the
+options "-r -h -b -df `getinfo -d < pictname`" where "pictname" is
+replaced by the raw picture file name.
+(Getinfo simply gets the original image dimensions, which are not
+stored in the z-file.)
 
 .Views.Copy
 

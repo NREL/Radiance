@@ -80,7 +80,7 @@ proc delview {} {			# delete current view
 }
 
 proc copyviews rf {		# copy view settings from another RIF
-	load_vars [file tail $rf] {view UP PICTURE RESOLUTION RAWSAVE}
+	load_vars [file tail $rf] {view UP PICTURE RESOLUTION RAWFILE ZFILE}
 	vnchange viewname {} w
 }
 
@@ -166,21 +166,28 @@ proc do_views w {			# create views screen
 			trad views up
 	# Picture file name
 	label $w.pfl -text Picture:
-	place $w.pfl -relx .0714 -rely .6498
+	place $w.pfl -relx .0714 -rely .6345
 	entry $w.pfe -textvariable radvar(PICTURE) -relief sunken
-	place $w.pfe -relwidth .6429 -relheight .0610 -relx .2857 -rely .6498
+	place $w.pfe -relwidth .5714 -relheight .0610 -relx .2857 -rely .6345
 	helplink $w.pfe trad views picture
 	# Resolution
 	label $w.rzl -text Resolution:
-	place $w.rzl -relx .0714 -rely .7717
+	place $w.rzl -relx .0714 -rely .7107
 	entry $w.rze -textvariable radvar(RESOLUTION) -relief sunken
-	place $w.rze -relwidth .2857 -relheight .0610 -relx .2857 -rely .7717
+	place $w.rze -relwidth .2857 -relheight .0610 -relx .2857 -rely .7107
 	helplink $w.rze trad views resolution
-	# Rawsave
-	checkbutton $w.rawb -relief flat -text Rawsave \
-			-variable radvar(RAWSAVE) -onvalue True -offvalue False
-	place $w.rawb -relx .6429 -rely .7717
-	helplink $w.rawb trad views rawsave
+	# Rawfile
+	label $w.rfl -text Rawfile:
+	place $w.rfl -relx .0714 -rely .7870
+	entry $w.rfe -textvariable radvar(RAWFILE) -relief sunken
+	place $w.rfe -relwidth .5714 -relheight .0610 -relx .2857 -rely .7870
+	helplink $w.rfe trad views rawfile
+	# Zfile
+	label $w.zfl -text Zfile:
+	place $w.zfl -relx .0714 -rely .8632
+	entry $w.zfe -textvariable radvar(ZFILE) -relief sunken
+	place $w.zfe -relwidth .5714 -relheight .0610 -relx .2857 -rely .8632
+	helplink $w.zfe trad views zfile
 	# Revert and Copy buttons
 	button $w.revert -text Revert -relief raised \
 			-command "copyviews $rifname"
