@@ -33,7 +33,9 @@ int  reverse = 0;		/* reverse conversion? */
 int  format = 'a';		/* input/output format */
 char  *fmtid = "ascii";		/* format identifier for header */
 
-int  header = 1;		/* do header */
+int  header = 1;		/* do header? */
+
+int  resolution = 1;		/* put/get resolution string? */
 
 int  wrongformat = 0;		/* wrong input format? */
 
@@ -62,6 +64,9 @@ char  **argv;
 			switch (argv[i][1]) {
 			case 'h':		/* header */
 				header = argv[i][0] == '+';
+				break;
+			case 'H':		/* resolution string */
+				resolution = argv[i][0] == '+';
 				break;
 			case 'u':		/* unique values */
 				uniq = argv[i][0] == '-';
@@ -112,11 +117,13 @@ char  **argv;
 				}
 				break;
 			case 'x':		/* x resolution */
+				resolution = 0;
 				if (argv[i][0] == '-')
 					picres.or |= XDECR;
 				picres.xr = atoi(argv[++i]);
 				break;
 			case 'y':		/* y resolution */
+				resolution = 0;
 				if (argv[i][0] == '-')
 					picres.or |= YDECR;
 				if (picres.xr == 0)
@@ -160,17 +167,17 @@ unkopt:
 			fprintf(stderr, "%s: wrong input format\n", progname);
 			quit(1);
 		}
-		if (picres.xr <= 0 || picres.yr <= 0)	/* get resolution */
-			if (!fgetsresolu(&picres, fin)) {
-				fprintf(stderr, "%s: missing resolution\n",
-						progname);
-				quit(1);
-			}
+					/* get resolution */
+		if ((resolution && !fgetsresolu(&picres, fin)) ||
+				picres.xr <= 0 || picres.yr <= 0) {
+			fprintf(stderr, "%s: missing resolution\n", progname);
+			quit(1);
+		}
 						/* add to header */
 		printargs(i, argv, stdout);
 		fputformat(COLRFMT, stdout);
 		putchar('\n');
-		fputsresolu(&picres, stdout);
+		fputsresolu(&picres, stdout);	/* always put resolution */
 		valtopix();
 	} else {
 						/* get header */
@@ -180,18 +187,17 @@ unkopt:
 					progname);
 			quit(1);
 		}
-
-		if (picres.xr <= 0 || picres.yr <= 0)	/* get picture size */
-			if (!fgetsresolu(&picres, fin)) {
-				fprintf(stderr, "%s: missing resolution\n",
-						progname);
-				quit(1);
-			}
+		if (!fgetsresolu(&picres, fin)) {
+			fprintf(stderr, "%s: missing resolution\n", progname);
+			quit(1);
+		}
 		if (header) {
 			printargs(i, argv, stdout);
 			fputformat(fmtid, stdout);
 			putchar('\n');
 		}
+		if (resolution)			/* put resolution */
+			fputsresolu(&picres, stdout);
 		pixtoval();
 	}
 
