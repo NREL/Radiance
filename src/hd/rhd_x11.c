@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ SGI";
@@ -262,6 +262,14 @@ VIEW	*nv;
 	}
 	qtReplant();
 	return(1);
+}
+
+
+dev_auxcom(cmd, args)		/* process an auxiliary command */
+char	*cmd, *args;
+{
+	sprintf(errmsg, "%s: unknown command", cmd);
+	error(COMMAND, errmsg);
 }
 
 

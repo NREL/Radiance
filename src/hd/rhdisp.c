@@ -303,22 +303,21 @@ usr_input()			/* get user input and process it */
 	if (fgets(cmd, sizeof(cmd), sstdin) == NULL) {
 		fclose(sstdin);
 		sstdin = NULL;
-		return(0);
+		return(-1);
 	}
+	if (!*cmd)
+		return(DC_RESUME);
 	for (args = cmd; *args && !isspace(*args); args++)
 		;
 	while (isspace(*args))
 		*args++ = '\0';
-	if (!*cmd)
-		return(DC_RESUME);
 	if (*args && args[i=strlen(args)-1] == '\n')
 		args[i] = '\0';
 	for (i = 0; i < DC_NCMDS; i++)
 		if (!strcmp(cmd, cmdlist[i]))
 			break;
 	if (i >= DC_NCMDS) {
-		sprintf(errmsg, "unknown command: %s", cmd);
-		error(COMMAND, errmsg);
+		dev_auxcom(cmd, args);
 		return(-1);
 	}
 	switch (i) {

@@ -1,4 +1,4 @@
-/* Copyright (c) 1997 Silicon Graphics, Inc. */
+/* Copyright (c) 1998 Silicon Graphics, Inc. */
 
 /* SCCSid "$SunId$ SGI" */
 
@@ -16,6 +16,8 @@ extern struct driver {
 } odev;			/* our open device */
 
 extern int	imm_mode;	/* bundles are being delivered immediately */
+
+extern double	eyesepdist;	/* world eye separation distance */
 
 				/* user commands */
 #define	DC_SETVIEW	0		/* set the base view */
@@ -98,6 +100,16 @@ Called when odev struct file descriptor shows input is ready.
 Returns flags indicating actions to take in the control process.
 If the DC_VIEW or DC_RESIZE flag is returned, the odev
 structure must be updated beforehand.
+
+void
+dev_auxcom(cmd, args)	: process auxiliary command
+char	*cmd, *args;	: command name and argument string
+
+Execute an auxiliary command (not one of those listed at the head of
+this file).  The cmd argument points to the command name itself, and
+the args argument points to a string with the rest of the input line.
+If the command isn't known or there ARE no auxiliary commands, print
+an appropriate COMMAND error message and return.
 
 
 VIEW *
