@@ -258,7 +258,7 @@ int  *xp, *yp;
 				return(0);
 			}
 		}
-		sprintf(buf, "%d %d\n%d %d\n", hmult, vmult, *xp, *yp);
+		sprintf(buf, "%4d %4d\n%4d %4d\n", hmult, vmult, *xp, *yp);
 		lseek(syncfd, 0L, 0);		/* write new position */
 		write(syncfd, buf, strlen(buf));
 		fls.l_type = F_UNLCK;		/* release sync file */
