@@ -10,4 +10,4 @@
 
 extern long  random();
 
-#define  frandom()	(random()/2147483648.0)
+#define  frandom()	(random()*(1./2147483648.))
