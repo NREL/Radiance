@@ -185,16 +185,16 @@ register FILE	*fp;
 stderr_v(s)				/* put string to stderr */
 register char  *s;
 {
-	static int  inline = 0;
+	static int  midline = 0;
 
-	if (!inline++) {
+	if (!midline++) {
 		fputs(progname, stderr);
 		fputs(": ", stderr);
 	}
 	fputs(s, stderr);
 	if (*s && s[strlen(s)-1] == '\n') {
 		fflush(stderr);
-		inline = 0;
+		midline = 0;
 	}
 }
 
