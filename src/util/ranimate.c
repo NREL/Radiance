@@ -57,8 +57,8 @@ VARIABLE	vv[] = {		/* variable-value pairs */
 	{"ANIMATE",	2,	0,	NULL,	onevalue},
 	{"TRANSFER",	2,	0,	NULL,	onevalue},
 	{"ARCHIVE",	2,	0,	NULL,	onevalue},
-	{"INTERP",	3,	0,	NULL,	intvalue},
-	{"OVERSAMP",	2,	0,	NULL,	fltvalue},
+	{"INTERPOLATE",	3,	0,	NULL,	intvalue},
+	{"OVERSAMPLE",	2,	0,	NULL,	fltvalue},
 	{"MBLUR",	2,	0,	NULL,	onevalue},
 	{"RTRACE",	2,	0,	NULL,	boolvalue},
 	{"DISKSPACE",	3,	0,	NULL,	fltvalue},
@@ -302,9 +302,14 @@ setdefaults()			/* set default values */
 		vdef(START)++;
 	}
 	if (!vdef(END)) {
-		sprintf(buf, "%d", countviews());
+		sprintf(buf, "%d", countviews()+vint(START)-1);
 		vval(END) = savqstr(buf);
 		vdef(END)++;
+	}
+	if (vint(END) < vint(START)) {
+		fprintf(stderr, "%s: ending frame less than starting frame\n",
+				progname);
+		quit(1);
 	}
 	if (!vdef(BASENAME)) {
 		sprintf(buf, "%s/frame%%03d", vval(DIRECTORY));
@@ -829,6 +834,8 @@ int	rvr;
 		if (atoi(vval(MBLUR))) {
 			FILE	*fp;		/* motion blurring */
 			sprintf(fname, "%s/vw0", vval(DIRECTORY));
+			if (access(fname, F_OK) == 0)
+				sleep(10);
 			if ((fp = fopen(fname, "w")) == NULL) {
 				perror(fname); quit(1);
 			}
@@ -1097,18 +1104,19 @@ int	(*rf)();
 	int	pid;
 	register struct pslot	*psl;
 
-	if (!silent)
-		printf("\t%s &\n", com);	/* echo command */
-	if (noaction)
+	if (noaction) {
+		if (!silent)
+			printf("\t%s\n", com);	/* echo command */
 		return(0);
-	fflush(stdout);
+	}
 					/* else start it when we can */
 	while ((pid = startjob(NULL, savestr(com), donecom)) == -1)
 		bwait(1);
-	if (!silent) {
+	if (!silent) {				/* echo command */
 		PSERVER	*ps;
 		int	psn = pid;
 		ps = findjob(&psn);
+		printf("\t%s\n", com);
 		printf("\tProcess started on %s\n", phostname(ps));
 		fflush(stdout);
 	}
