@@ -63,7 +63,6 @@ CUBE  thescene;				/* our scene */
 extern int  imm_irrad;			/* calculate immediate irradiance? */
 
 extern int  ralrm;			/* seconds between reports */
-extern float  pctdone;			/* percentage done */
 
 extern int  greyscale;			/* map colors to brightness? */
 extern char  *devname;			/* output device name */
@@ -107,6 +106,13 @@ int  argc;
 char  *argv[];
 {
 #define  check(olen,narg)	if (argv[i][olen] || narg >= argc-i) goto badopt
+#define  bool(olen,var)		switch (argv[i][olen]) { \
+				case '\0': var = !var; break; \
+				case 'y': case 'Y': case 't': case 'T': \
+				case '+': case '1': var = 1; break; \
+				case 'n': case 'N': case 'f': case 'F': \
+				case '-': case '0': var = 0; break; \
+				default: goto badopt; }
 	double  atof();
 	char  *getenv();
 	int  report();
@@ -194,8 +200,7 @@ char  *argv[];
 				vspretest = atoi(argv[++i]);
 				break;
 			case 'i':
-				check(3,0);
-				directinvis = !directinvis;
+				bool(3,directinvis);
 				break;
 			default:
 				goto badopt;
@@ -240,11 +245,9 @@ char  *argv[];
 			break;
 #endif
 		case 'w':				/* warnings */
-			check(2,0);
-			if (wrnvec == NULL)
-				wrnvec = stderr_v;
-			else
-				wrnvec = NULL;
+			rval = wrnvec != NULL;
+			bool(2,rval);
+			wrnvec = rval ? stderr_v : NULL;
 			break;
 		case 'e':				/* error file */
 			check(2,1);
@@ -265,7 +268,7 @@ char  *argv[];
 			}
 			break;
 		case 'i':				/* irradiance */
-			do_irrad = !do_irrad;
+			bool(2,do_irrad);
 			break;
 #if  RPICT
 		case 'z':				/* z file */
@@ -345,7 +348,7 @@ char  *argv[];
 			break;
 #if  RTRACE
 		case 'I':				/* immed. irradiance */
-			imm_irrad = !imm_irrad;
+			bool(2,imm_irrad);
 			break;
 		case 'f':				/* format i/o */
 			switch (argv[i][2]) {
@@ -485,6 +488,7 @@ badopt:
 	error(USER, errmsg);
 
 #undef  check
+#undef  bool
 }
 
 
@@ -560,6 +564,13 @@ printdefaults()			/* print default values to stdout */
 {
 	register char  *cp;
 
+#if  RTRACE
+	if (imm_irrad)
+		printf("-I+\t\t\t\t# immediate irradiance on\n");
+	else
+#endif
+	printf(do_irrad ? "-i+\t\t\t\t# irradiance calculation on\n" :
+			"-i-\t\t\t\t# irradiance calculation off\n");
 #if  RPICT|RVIEW
 	printf("-vt%c\t\t\t\t# view type %s\n", ourview.type,
 			ourview.type==VT_PER ? "perspective" :
@@ -597,6 +608,8 @@ printdefaults()			/* print default values to stdout */
 	printf("-dj %f\t\t\t# direct jitter\n", dstrsrc);
 	printf("-dr %-9d\t\t\t# direct relays\n", directrelay);
 	printf("-dp %-9d\t\t\t# direct pretest density\n", vspretest);
+	printf(directinvis ? "-di+\t\t\t\t# direct invisibility on\n" :
+			"-di-\t\t\t\t# direct invisibility off\n");
 	printf("-av %f %f %f\t# ambient value\n", colval(ambval,RED),
 			colval(ambval,GRN), colval(ambval, BLU));
 	printf("-ab %-9d\t\t\t# ambient bounces\n", ambounce);
@@ -635,4 +648,6 @@ printdefaults()			/* print default values to stdout */
 		}
 	printf("\n");
 #endif
+	printf(wrnvec != NULL ? "-w+\t\t\t\t# warning messages on\n" :
+			"-w-\t\t\t\t# warning messages off\n");
 }
