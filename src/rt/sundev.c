@@ -63,7 +63,7 @@ struct driver *
 sun_init(name, id)		/* initialize SunView */
 char  *name, *id;
 {
-	extern Notify_value	newinput();
+	extern Notify_value	newinput(), my_destroy_func();
 	extern int	canvas_resize();
 	char	*ttyargv[3], arg1[16];
 	int	pd[2];
@@ -122,6 +122,7 @@ char  *name, *id;
 	make_gmap(GAMMA);
 	window_set(canvas, CANVAS_RETAINED, TRUE, 0);
 
+	notify_interpose_destroy_func(frame, my_destroy_func);
 	sun_driver.inpready = 0;
 	return(&sun_driver);
 }
@@ -150,15 +151,28 @@ int  fd;
 }
 
 
+static Notify_value
+my_destroy_func(dest_frame, status)	/* say bye-bye */
+Frame	dest_frame;
+Destroy_status	status;
+{
+	if (status != DESTROY_CHECKING) {
+		frame = 0;		/* coordinate with sun_close() */
+		quit(1);
+	}
+	return(notify_next_destroy_func(dest_frame, status));
+}
+
+
 static
 canvas_resize(canvas, width, height)	/* canvas being resized */
 Canvas	canvas;
 int	width, height;
 {
-	if (width == sun_driver.xsiz && height == sun_driver.ysiz)
+	if (width == xres && height == yres)
 		return;
-	sun_driver.xsiz = xres = width;
-	sun_driver.ysiz = yres = height;
+	sun_driver.xsiz = width;
+	sun_driver.ysiz = height;
 	strcpy(getcombuf(&sun_driver), "new\n");
 }
 
@@ -171,8 +185,9 @@ int  nwidth, nheight;
 
 	pw = canvas_pixwin(canvas);
 	if (nwidth != xres || nheight != yres) {
-		sun_driver.xsiz = xres = nwidth;
-		sun_driver.ysiz = yres = nheight;
+		xres = nwidth;
+		yres = nheight;
+		window_set(frame, WIN_SHOW, FALSE, 0);
 		window_set(canvas, WIN_WIDTH, nwidth, WIN_HEIGHT, nheight, 0);
 		window_fit(frame);
 		window_set(frame, WIN_SHOW, TRUE, 0);
