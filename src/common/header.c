@@ -1,4 +1,4 @@
-/* Copyright (c) 1994 Regents of the University of California */
+/* Copyright (c) 1996 Regents of the University of California */
 
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
@@ -89,9 +89,8 @@ register FILE  *fp;
 			putc(quote, fp);
 		} else
 			fputs(*av++, fp);
-		putc(' ', fp);
+		putc(ac ? ' ' : '\n', fp);
 	}
-	putc('\n', fp);
 }
 
 
