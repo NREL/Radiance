@@ -7,9 +7,6 @@ static char SCCSid[] = "$SunId$ LBL";
 /*
  *  ambient.c - routines dealing with ambient (inter-reflected) component.
  *
- *  The macro AMBFLUSH (if defined) is the number of ambient values
- *	to wait before flushing to the ambient file.
- *
  *     5/9/86
  */
 
@@ -324,6 +321,9 @@ int  creat;
 		putc('\n', ambfp);
 		putambmagic(ambfp);
 		fflush(ambfp);
+#ifndef  NIX
+		sync();			/* protect against NFS buffering */
+#endif
 	} else if (checkheader(ambfp, AMBFMT, NULL) < 0 || !hasambmagic(ambfp))
 		error(USER, "bad ambient file");
 }
