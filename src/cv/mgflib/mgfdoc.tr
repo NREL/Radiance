@@ -4598,7 +4598,7 @@ familiar Gaussian model of MGF.
 The hardest part is translating the specular power to a roughness value.
 For this, we recommend the following approximation:
 .IP
-roughness = 0.6/sqrt(specular_power)
+roughness = sqrt(2/specular_power)
 .LP
 It is not a perfect correlation, but it is about as close as one can get.
 .NH 3
