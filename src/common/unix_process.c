@@ -12,6 +12,7 @@ static const char	RCSid[] = "$Id$";
 
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 #include "rtprocess.h"
 
@@ -54,6 +55,13 @@ char	*av[]
 	close(p1[1]);
 	pd->r = p1[0];
 	pd->w = p0[1];
+	/*
+	 * Close write stream on exec to avoid multiprocessing deadlock.
+	 * No use in read stream without it, so set flag there as well.
+	 * GW: This bug took me two days to figure out!!
+	 */
+	fcntl(pd->r, F_SETFD, FD_CLOEXEC);
+	fcntl(pd->w, F_SETFD, FD_CLOEXEC);
 	pd->running = 1;
 	return(PIPE_BUF);
 }

@@ -157,7 +157,7 @@ main(		/* compute illum distributions using rtrace */
 }
 
 static void
-killpersist(void)			/* kill persistent process */
+killpersist(void)			/* kill persistent rtrace process */
 {
 	FILE	*fp = fopen(persistfn, "r");
 	int	pid;
