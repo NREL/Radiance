@@ -16,16 +16,14 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include "driver.h"
 
+#include "vfork.h"
+
 #ifndef DEVPATH
 #define DEVPATH		getenv("PATH")	/* device search path */
 #endif
 
 #ifndef DELAY
 #define DELAY		20		/* seconds to wait for response */
-#endif
-
-#ifndef BSD
-#define vfork		fork
 #endif
 
 static int	comm_close(), comm_clear(), comm_paintr(), comm_errout(),
