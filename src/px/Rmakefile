@@ -76,7 +76,7 @@ mt160r:	mt160r.o
 	$(CC) $(CFLAGS) -o mt160r mt160r.o -lrt -lm
 
 getinfo:	getinfo.o
-	$(CC) $(CFLAGS) -n -o getinfo getinfo.o -lrt
+	$(CC) $(CFLAGS) -o getinfo getinfo.o -lrt
 
 greyscale:	greyscale.o
 	$(CC) $(CFLAGS) -o greyscale greyscale.o -lrt -lm
@@ -122,7 +122,7 @@ ra_t16: ra_t16.o
 	$(CC) $(CFLAGS) -o ra_t16 ra_t16.o -lrt -lm
 
 ra_im: ra_im.o
-	$(CC) $(CFLAGS) -n -o ra_im ra_im.o
+	$(CC) $(CFLAGS) -o ra_im ra_im.o
 
 ra_bn: ra_bn.o
 	$(CC) $(CFLAGS) -o ra_bn ra_bn.o -lrt -lm
