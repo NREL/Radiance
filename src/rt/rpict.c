@@ -404,7 +404,8 @@ char  *zfile, *oldfile;
 #endif
 	signal(SIGCONT, report);
 	ypos = vres-1 - i;			/* initialize sampling */
-	init_drawsources(psample);
+	if (directvis)
+		init_drawsources(psample);
 	fillscanline(scanbar[0], zbar[0], sampdens, hres, ypos, hstep);
 						/* compute scanlines */
 	for (ypos -= ystep; ypos > -ystep; ypos -= ystep) {
@@ -424,8 +425,8 @@ char  *zfile, *oldfile;
 				hres, ypos, hstep);
 							/* fill bar */
 		fillscanbar(scanbar, zbar, hres, ypos, ystep);
-							/* add bitty sources */
-		drawsources(scanbar, zbar, 0, hres, ypos, ystep);
+		if (directvis)				/* add bitty sources */
+			drawsources(scanbar, zbar, 0, hres, ypos, ystep);
 							/* write it out */
 #ifndef	 BSD
 		signal(SIGCONT, SIG_IGN);	/* don't interrupt writes */
