@@ -41,15 +41,12 @@ typedef struct {
 	/* but the color table should be filled by writer before open call */
 	RGBquad		palette[3];     /* color palette (extends struct) */
 } BMPHeader;
-
-					/* color palette length */
-#define BMPpalLen(h)    ((h)->bpp <= 8 ? 1<<(h)->bpp : 0)
 				
 					/* access to bit field triple */
 #define BMPbitField(h)  ((uint32 *)(h)->palette)
 
 					/* info buffer access */
-#define BMPinfo(h)      ((char *)((h)->palette + BMPpalLen(h)))
+#define BMPinfo(h)      ((char *)((h)->palette + (h)->nColors))
 
 					/* function return values */
 #define BIR_OK			0		/* all is well */
