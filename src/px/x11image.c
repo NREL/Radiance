@@ -725,7 +725,7 @@ COLOR  clr;
 		return(-1);
 	if (left == ll && right == lr && top == lt && bottom == lb) {
 		copycolor(clr, lc);
-		return;
+		return(0);
 	}
 	for (y = top; y < bottom; y++) {
 		if (getscan(y) == -1)
@@ -754,8 +754,7 @@ getmono()			/* get monochrome data */
 		quiterr("out of memory in getmono");
 	dp = ourdata - 1;
 	for (y = 0; y < ymax; y++) {
-		if (getscan(y) < 0)
-			quiterr("seek error in getmono");
+		getscan(y);
 		normcolrs(scanline, xmax, scale);
 		add2icon(y, scanline);
 		err = 0;
@@ -835,8 +834,7 @@ getfull()			/* get full (24-bit) data */
 					/* read and convert file */
 	dp = (unsigned long *)ourdata;
 	for (y = 0; y < ymax; y++) {
-		if (getscan(y) < 0)
-			quiterr("seek error in getfull");
+		getscan(y);
 		if (scale)
 			shiftcolrs(scanline, xmax, scale);
 		colrs_gambs(scanline, xmax);
@@ -865,8 +863,7 @@ getgrey()			/* get greyscale data */
 					/* read and convert file */
 	dp = ourdata;
 	for (y = 0; y < ymax; y++) {
-		if (getscan(y) < 0)
-			quiterr("seek error in getgrey");
+		getscan(y);
 		if (scale)
 			shiftcolrs(scanline, xmax, scale);
 		colrs_gambs(scanline, xmax);
