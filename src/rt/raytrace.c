@@ -175,6 +175,7 @@ int  mod;
 		******/
 					/* hack for irradiance calculation */
 		if (do_irrad && !(r->crtype & ~(PRIMARY|TRANS)) &&
+				m->otype != MAT_CLIP &&
 				(ofun[m->otype].flags & (T_M|T_X))) {
 			if (irr_ignore(m->otype)) {
 #if  MAXLOOP

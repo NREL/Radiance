@@ -40,6 +40,7 @@ RAY	*r;
 	arec = *objptr(aobj);
 					/* irradiance hack */
 	if (do_irrad && !(r->crtype & ~(PRIMARY|TRANS)) &&
+			m->otype != MAT_CLIP &&
 			(ofun[arec.otype].flags & (T_M|T_X))) {
 		if (irr_ignore(arec.otype)) {
 			raytrans(r);
