@@ -279,14 +279,14 @@ int	n;
 		neigh[i][0] = i;		/* identity is terminator */
 	}
 					/* make neighbor lists */
-	for (r = 0; r < NRED-1; r++)
-	    for (g = 0; g < NGRN-1; g++)
-		for (b = 0; b < NBLU-1; b++) {
-		    if (histo[r][g][b] != histo[r+1][g][b])
+	for (r = 0; r < NRED; r++)
+	    for (g = 0; g < NGRN; g++)
+		for (b = 0; b < NBLU; b++) {
+		    if (r < NRED-1 && histo[r][g][b] != histo[r+1][g][b])
 			addneigh(neigh, histo[r][g][b], histo[r+1][g][b]);
-		    if (histo[r][g][b] != histo[r][g+1][b])
+		    if (g < NGRN-1 && histo[r][g][b] != histo[r][g+1][b])
 			addneigh(neigh, histo[r][g][b], histo[r][g+1][b]);
-		    if (histo[r][g][b] != histo[r][g][b+1])
+		    if (b < NBLU-1 && histo[r][g][b] != histo[r][g][b+1])
 			addneigh(neigh, histo[r][g][b], histo[r][g][b+1]);
 		}
 					/* assign closest values */
