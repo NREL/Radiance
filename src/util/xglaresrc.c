@@ -85,7 +85,7 @@ char	*name;
 			GrabModeAsync, GrabModeAsync, None, pickcursor,
 			CurrentTime) != GrabSuccess)
 		sleep(2);
-	printf("%s: pick point in \"%s\" display window\n", progname, name);
+	printf("%s: click mouse in \"%s\" display window\n", progname, name);
 	XNextEvent(theDisplay, &xev);
 	XUngrabPointer(theDisplay, CurrentTime);
 	if (((XButtonEvent *)&xev)->subwindow == None) {
