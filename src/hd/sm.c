@@ -286,7 +286,7 @@ int t_id;
     OBJECT tset[QT_MAXSET+1],*optr;	
     int i,id,found;
     FVECT v0,v1,v2;
-
+    TRI *tri;
 #ifdef DEBUG_TEST_DRIVER
     Pick_tri = t_id;
     Picking = TRUE;
@@ -323,8 +323,11 @@ int t_id;
 	for(optr = QT_SET_PTR(tset),i=QT_SET_CNT(tset); i > 0; i--)
 	{
 	  id = QT_SET_NEXT_ELEM(optr);
-	  qtTri_from_id(id,NULL,NULL,NULL,v0,v1,v2,NULL,NULL,NULL);
-	  found=qtAdd_tri(qtptr,q0,q1,q2,v0,v1,v2,id,n);
+	  tri = SM_NTH_TRI(smMesh,id);
+	  VSUB(v0,SM_T_NTH_WV(smMesh,tri,0),SM_VIEW_CENTER(smMesh));
+	  VSUB(v1,SM_T_NTH_WV(smMesh,tri,1),SM_VIEW_CENTER(smMesh));
+	  VSUB(v2,SM_T_NTH_WV(smMesh,tri,2),SM_VIEW_CENTER(smMesh));
+	  found = qtAdd_tri(qtptr,q0,q1,q2,v0,v1,v2,id,n);
 #ifdef DEBUG
 	  if(!found)
 	    eputs("add_tri_expand():Reinsert\n");
@@ -631,15 +634,9 @@ smTris_swap_edge(sm,t_id,t1_id,e,e1,tn_id,tn1_id,add,del)
     /* Delete two parent triangles */
 
     *del = push_data(*del,t_id);
-    if(SM_IS_NTH_T_NEW(sm,t_id))
-      SM_CLEAR_NTH_T_NEW(sm,t_id);
-    else
-      SM_CLEAR_NTH_T_BASE(sm,t_id);
+    T_VALID_FLAG(t) = -1;
     *del = push_data(*del,t1_id);
-    if(SM_IS_NTH_T_NEW(sm,t1_id))
-      SM_CLEAR_NTH_T_NEW(sm,t1_id);
-    else
-      SM_CLEAR_NTH_T_BASE(sm,t1_id);
+    T_VALID_FLAG(t1) = -1;
     *tn_id = ta_id;
     *tn1_id = tb_id;
 }
@@ -653,43 +650,40 @@ LIST *add_list,*del_list;
   while(add_list)
   {
     t_id = pop_list(&add_list);
-    if(!SM_IS_NTH_T_NEW(sm,t_id) && !SM_IS_NTH_T_BASE(sm,t_id))
+    t = SM_NTH_TRI(sm,t_id);
+    if(!T_IS_VALID(t))
     {
-      SM_SET_NTH_T_NEW(sm,t_id);
-      smNew_tri_cnt--;
+      T_VALID_FLAG(t) = 1;
       continue;
     }
-    t = SM_NTH_TRI(sm,t_id);
     smLocator_add_tri(sm,t_id,T_NTH_V(t,0),T_NTH_V(t,1),T_NTH_V(t,2));
   }
   
   while(del_list)
   {
     t_id = pop_list(&del_list);
-    if(SM_IS_NTH_T_NEW(sm,t_id))
-    {
-      smDelete_tri(sm,t_id); 
-      continue;
+    t = SM_NTH_TRI(sm,t_id);
+    if(!T_IS_VALID(t))
+    { 
+      smLocator_remove_tri(sm,t_id);
     }
-    smLocator_remove_tri(sm,t_id);
     smDelete_tri(sm,t_id); 
   }
 }
 /* MUST add check for constrained edges */
 int
-smFix_tris(sm,id,tlist)
+smFix_tris(sm,id,tlist,add_list,del_list)
 SM *sm;
 int id;
 LIST *tlist;
+LIST *add_list,*del_list;
 {
     TRI *t,*t_opp;
     FVECT p,p1,p2,p3;
     int e,e1,swapped = 0;
     int t_id,t_opp_id;
-    LIST *add_list,*del_list;
 
 
-    add_list = del_list = NULL;
     VSUB(p,SM_NTH_WV(sm,id),SM_VIEW_CENTER(sm));
     while(tlist)
     {
@@ -698,7 +692,11 @@ LIST *tlist;
         e = (T_WHICH_V(t,id)+1)%3;
         t_opp_id = T_NTH_NBR(t,e);
         t_opp = SM_NTH_TRI(sm,t_opp_id);
-
+	/*
+	VSUB(p1,SM_T_NTH_WV(sm,t_opp,0),SM_VIEW_CENTER(sm));
+	VSUB(p2,SM_T_NTH_WV(sm,t_opp,1),SM_VIEW_CENTER(sm));
+	VSUB(p3,SM_T_NTH_WV(sm,t_opp,2),SM_VIEW_CENTER(sm));
+	*/
 	smDir(sm,p1,T_NTH_V(t_opp,0));
 	smDir(sm,p2,T_NTH_V(t_opp,1));
 	smDir(sm,p3,T_NTH_V(t_opp,2));
@@ -823,9 +821,10 @@ smInsert_point_in_tri(sm,c,dir,p,s_id,tri_id)
     TRI *tri,*t0,*t1,*t2,*nbr;
     int v0_id,v1_id,v2_id,n_id;
     int t0_id,t1_id,t2_id;
-    LIST *tlist;
+    LIST *tlist,*add_list,*del_list;
     FVECT npt;
 
+    add_list = del_list = NULL;
     if(s_id == SM_INVALID)
        s_id = smAdd_sample_point(sm,c,dir,p);
     
@@ -846,12 +845,14 @@ smInsert_point_in_tri(sm,c,dir,p,s_id,tri_id)
     }
     t0_id = smAdd_tri(sm,s_id,v0_id,v1_id,&t0);
     /* Add triangle to the locator */
-    smLocator_add_tri(sm,t0_id,s_id,v0_id,v1_id);
+    
+    add_list = push_data(add_list,t0_id);
 
     t1_id = smAdd_tri(sm,s_id,v1_id,v2_id,&t1);	
-    smLocator_add_tri(sm,t1_id,s_id,v1_id,v2_id);
+    add_list = push_data(add_list,t1_id);
+
     t2_id = smAdd_tri(sm,s_id,v2_id,v0_id,&t2);
-    smLocator_add_tri(sm,t2_id,s_id,v2_id,v0_id);	
+    add_list = push_data(add_list,t2_id);
 
     /* Set the neighbor pointers for the new tris */
     T_NTH_NBR(t0,0) = t2_id;
@@ -872,15 +873,15 @@ smInsert_point_in_tri(sm,c,dir,p,s_id,tri_id)
     nbr = SM_NTH_TRI(sm,T_NTH_NBR(tri,2));
     T_NTH_NBR(nbr,T_NTH_NBR_PTR(tri_id,nbr)) = t2_id;
 	
-    smLocator_remove_tri(sm,tri_id);
-    smDelete_tri(sm,tri_id);
-	
+    del_list = push_data(del_list,tri_id);
+    T_VALID_FLAG(tri) = -1;
+
     /* Fix up the new triangles*/
     tlist = push_data(NULL,t0_id);
     tlist = push_data(tlist,t1_id);
     tlist = push_data(tlist,t2_id);
 
-    smFix_tris(sm,s_id,tlist);
+    smFix_tris(sm,s_id,tlist,add_list,del_list);
 
     if(n_id != -1)
        smDelete_point(sm,n_id);
@@ -1113,9 +1114,10 @@ int type;
     cntr[0] += .01;
     cntr[1] += .02;
     cntr[2] += .03;
-      VADD(cntr,cntr,SM_VIEW_CENTER(sm));
-      point_on_sphere(d,cntr,SM_VIEW_CENTER(sm));
-      id = smAdd_base_vertex(sm,cntr,d);
+    VADD(cntr,cntr,SM_VIEW_CENTER(sm));
+    /* WONT use dir */
+    point_on_sphere(d,cntr,SM_VIEW_CENTER(sm));
+    id = smAdd_base_vertex(sm,cntr,d);
     /* test to make sure vertex allocated */
     if(id != -1)
       p[i] = id;
@@ -1224,84 +1226,7 @@ int *v0_idp,*v1_idp,*v2_idp;
  * Find the closest sample to the given ray.  Returns sample id, -1 on failure.
  * "dir" is assumed to be normalized
  */
-int
-smFindSamp(orig,dir)
-FVECT orig,dir;
-{
-  FVECT r,v0,v1,v2,a,b,p;
-  OBJECT os[QT_MAXCSET+1],t_set[QT_MAXSET+1],*ts;
-  QUADTREE qt;
-  int s_id;
-  double d;
 
- /*  r is the normalized vector from the view center to the current
-  *  ray point ( starting with "orig"). Find the cell that r falls in,
-  *  and test the ray against all triangles stored in the cell. If
-  *  the test fails, trace the projection of the ray across to the
-  *  next cell it intersects: iterate until either an intersection
-  *  is found, or the projection ray is // to the direction. The sample
-  *  corresponding to the triangle vertex closest to the intersection
-  *  point is returned.
-  */
-  
-  /* First test if "orig" coincides with the View_center or if "dir" is
-     parallel to r formed by projecting "orig" on the sphere. In
-     either case, do a single test against the cell containing the
-     intersection of "dir" and the sphere
-   */
-  point_on_sphere(b,orig,SM_VIEW_CENTER(smMesh));
-  d = -DOT(b,dir);
-  if(EQUAL_VEC3(orig,SM_VIEW_CENTER(smMesh)) || EQUAL(fabs(d),1.0))
-  {
-      qt = smPointLocateCell(smMesh,dir,FALSE,NULL,NULL,NULL);
-      /* Test triangles in the set for intersection with Ray:returns
-	 first found
-      */
-      ts = qtqueryset(qt);
-      s_id = intersect_tri_set(ts,orig,dir,p);
-#ifdef DEBUG_TEST_DRIVER
-      VCOPY(Pick_point[0],p);
-#endif
-      return(s_id);
-  }
-  else
-  {
-      /* Starting with orig, Walk along projection of ray onto sphere */
-      point_on_sphere(r,orig,SM_VIEW_CENTER(smMesh));
-      qt = smPointLocateCell(smMesh,r,FALSE,v0,v1,v2);
-      /* os will contain all triangles seen thus far */
-      qtgetset(t_set,qt);
-      setcopy(os,t_set);
-
-      /* Calculate ray perpendicular to dir: when projection ray is // to dir,
-	 the dot product will become negative.
-       */
-      VSUM(a,b,dir,d);
-      d = DOT(a,b);
-      while(d > 0)
-      {
-	  s_id = intersect_tri_set(t_set,orig,dir,p);
-#ifdef DEBUG_TEST_DRIVER
-	  VCOPY(Pick_point[0],p);
-#endif	  
-	  if(s_id != EMPTY)
-	       return(s_id);
-          /* Find next cell that projection of ray intersects */
-	  traceRay(r,dir,v0,v1,v2,r);
-	  qt = smPointLocateCell(smMesh,r,FALSE,v0,v1,v2);
-	  qtgetset(t_set,qt);
-	  /* Check triangles in set against those seen so far(os):only
-	     check new triangles for intersection (t_set') 
-	  */
-	  check_set(t_set,os); 
-	  d = DOT(a,r); 
-      }
-    }
-#ifdef DEBUG
-  eputs("smFindSamp():Pick Ray did not intersect mesh");
-#endif
-  return(EMPTY);
-}
   
 
 smRebuild_mesh(sm,vp)
@@ -1397,7 +1322,7 @@ ray_trace_check_set(qtptr,orig,dir,tptr,os)
 }
 
 int
-smFindSamp_opt(orig,dir)
+smFindSamp(orig,dir)
 FVECT orig,dir;
 {
   FVECT b,p,o;

@@ -73,7 +73,7 @@
 #define MAXCSET          2*QT_MAXSET
 #define QT_MAXCSET       MAXCSET
 #ifndef QT_SET_THRESHOLD
-#define QT_SET_THRESHOLD  30  
+#define QT_SET_THRESHOLD  80  
 #endif
 
 #ifndef QT_MAX_LEVELS
