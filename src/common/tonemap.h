@@ -232,7 +232,7 @@ tmLoadPicture(TMbright **lpp, BYTE **cpp, int *xp, int *yp,
 	malloc(3), and should be freed with free(3) when no longer needed.
 	Calls tmSetSpace() to calibrate input color space.
 
-	lpp	-	returned array of encoded luminances, English ordering.
+	lpp	-	returned array of encoded luminances, picture ordering.
 	cpp	-	returned array of encoded chrominances (Note 2).
 	xp, yp	-	returned picture dimensions.
 	fname	-	picture file name.
@@ -254,7 +254,7 @@ tmMapPicture(BYTE **psp, int *xp, int *yp, int flags,
 	Memory for the final pixel array is allocated using malloc(3),
 	and should be freed with free(3) when it is no longer needed.
 
-	psp	-	returned array of tone mapped pixels, English ordering.
+	psp	-	returned array of tone mapped pixels, picture ordering.
 	xp, yp	-	returned picture dimensions.
 	flags	-	TM_F_* flags indicating what is to be done.
 	monpri	-	display monitor primaries (Note 1).
