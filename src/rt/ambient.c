@@ -124,6 +124,7 @@ double  newa;
 setambient(afile)			/* initialize calculation */
 char  *afile;
 {
+	int	readonly = 0;
 	long  pos, flen;
 	AMBVAL	amb;
 						/* init ambient limits */
@@ -138,12 +139,24 @@ char  *afile;
 		return;
 	}
 						/* open ambient file */
-	if ((ambfp = fopen(afile, "r+")) != NULL) {
-		initambfile(0);
+	if ((ambfp = fopen(afile, "r+")) == NULL)
+		readonly = (ambfp = fopen(afile, "r")) != NULL;
+	if (ambfp != NULL) {
+		initambfile(0);			/* file exists */
 		pos = ftell(ambfp);
 		while (readambval(&amb, ambfp))
 			avinsert(avstore(&amb));
-						/* align */
+		nambshare = nambvals;		/* share loaded values */
+		if (readonly) {
+			sprintf(errmsg,
+				"loaded %u values from read-only ambient file",
+					nambvals);
+			error(WARNING, errmsg);
+			fclose(ambfp);		/* close file so no writes */
+			ambfp = NULL;
+			return;			/* avoid ambsync() */
+		}
+						/* align file pointer */
 		pos += (long)nambvals*AMBVALSIZ;
 		flen = lseek(fileno(ambfp), 0L, 2);
 		if (flen != pos) {
@@ -154,10 +167,9 @@ char  *afile;
 			fseek(ambfp, pos, 0);
 			ftruncate(fileno(ambfp), pos);
 		}
-		nambshare = nambvals;
-	} else if ((ambfp = fopen(afile, "w+")) != NULL)
-		initambfile(1);
-	else {
+	} else if ((ambfp = fopen(afile, "w+")) != NULL) {
+		initambfile(1);			/* else create new file */
+	} else {
 		sprintf(errmsg, "cannot open ambient file \"%s\"", afile);
 		error(SYSTEM, errmsg);
 	}
