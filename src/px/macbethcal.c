@@ -90,8 +90,10 @@ short	mbneu[NMBNEU] = {Black,Neutral35,Neutral5,Neutral65,Neutral8,White};
 #define  REQFLGS	NEUFLGS			/* need these colors */
 #define  MODFLGS	(NEUFLGS|UNSFLGS)	/* should be in gamut */
 
-#define  CENTCVG	0.3	/* measured coverage of square sample */
-#define  FULLCVG	0.9	/* coverage of entire square */
+#define  RG_BORD	0	/* patch border */
+#define  RG_CENT	01	/* central region of patch */
+#define  RG_ORIG	02	/* original color region */
+#define  RG_CORR	04	/* corrected color region */
 
 int	xmax, ymax;		/* input image dimensions */
 int	bounds[4][2];		/* image coordinates of chart corners */
@@ -233,14 +235,13 @@ init()				/* initialize */
 
 
 int
-chartndx(x, y, cvg)			/* find color number for position */
+chartndx(x, y, np)			/* find color number for position */
 int	x, y;
-double	cvg;
+int	*np;
 {
 	double	ipos[3], cpos[3];
 	int	ix, iy;
 	double	fx, fy;
-	double  cmin, cmax;
 
 	ipos[0] = x;
 	ipos[1] = y;
@@ -249,16 +250,19 @@ double	cvg;
 	cpos[0] /= cpos[2];
 	cpos[1] /= cpos[2];
 	if (cpos[0] < 0. || cpos[0] >= 6. || cpos[1] < 0. || cpos[1] >= 4.)
-		return(-1);
+		return(RG_BORD);
 	ix = cpos[0];
 	iy = cpos[1];
 	fx = cpos[0] - ix;
 	fy = cpos[1] - iy;
-	cmin = .5*(1.-cvg);
-	cmax = 1. - cmin;
-	if (fx < cmin || fx >= cmax || fy < cmin || fy >= cmax)
-		return(-1);
-	return(iy*6 + ix);
+	*np = iy*6 + ix;
+	if (fx >= 0.35 && fx < 0.65 && fy >= 0.35 && fy < 0.65)
+		return(RG_CENT);
+	if (fx < 0.05 || fx >= 0.95 || fy < 0.05 || fy >= 0.95)
+		return(RG_BORD);
+	if (fx >= 0.5)			/* right side is corrected */
+		return(RG_CORR);
+	return(RG_ORIG);		/* left side is original */
 }
 
 
@@ -268,8 +272,8 @@ getpicture()				/* load in picture colors */
 	COLOR	pval;
 	int	ccount[24];
 	double	d;
-	int	y;
-	register int	x, i;
+	int	y, i;
+	register int	x;
 
 	scanln = (COLR *)malloc(xmax*sizeof(COLR));
 	if (scanln == NULL) {
@@ -286,14 +290,12 @@ getpicture()				/* load in picture colors */
 					progname);
 			exit(1);
 		}
-		for (x = 0; x < xmax; x++) {
-			i = chartndx(x, y, CENTCVG);
-			if (i >= 0) {
+		for (x = 0; x < xmax; x++)
+			if (chartndx(x, y, &i) == RG_CENT) {
 				colr_color(pval, scanln[x]);
 				addcolor(inpRGB[i], pval);
 				ccount[i]++;
 			}
-		}
 	}
 	for (i = 0; i < 24; i++) {		/* compute averages */
 		if (ccount[i] == 0)
@@ -567,8 +569,8 @@ picdebug()			/* put out debugging picture */
 {
 	static COLOR	blkcol = BLKCOLOR;
 	COLOR	*scan;
-	int	y;
-	register int	x, i;
+	int	y, i;
+	register int	x, rg;
 
 	if (fseek(stdin, 0L, 0) == EOF) {
 		fprintf(stderr, "%s: cannot seek on input picture\n", progname);
@@ -594,12 +596,15 @@ picdebug()			/* put out debugging picture */
 			exit(1);
 		}
 		for (x = 0; x < xmax; x++) {
-			i = chartndx(x, y, CENTCVG);
-			if (i < 0)
+			rg = chartndx(x, y, &i);
+			if (rg == RG_CENT) {
+				if (!(1L<<i & gmtflags) || (x+y)&07)
+					copycolor(scan[x], mbRGB[i]);
+				else
+					copycolor(scan[x], blkcol);
+			} else if (rg == RG_CORR)
 				cvtcolor(scan[x], scan[x]);
-			else if (!(1L<<i & gmtflags) || (x+y)&07)
-				copycolor(scan[x], mbRGB[i]);
-			else
+			else if (rg != RG_ORIG)
 				copycolor(scan[x], blkcol);
 		}
 		if (fwritescan(scan, xmax, debugfp) < 0) {
@@ -617,16 +622,19 @@ picdebug()			/* put out debugging picture */
 clrdebug()			/* put out debug picture from color input */
 {
 	static COLR	blkclr = BLKCOLR;
-	COLR	mbclr[24], cvclr[24];
+	COLR	mbclr[24], cvclr[24], orclr[24];
 	COLR	*scan;
 	COLOR	ctmp;
-	int	y;
-	register int	i, x;
+	int	y, i;
+	register int	x, rg;
 						/* convert colors */
 	for (i = 0; i < 24; i++) {
 		setcolr(mbclr[i], colval(mbRGB[i],RED),
 				colval(mbRGB[i],GRN), colval(mbRGB[i],BLU));
 		if (inpflags & 1L<<i) {
+			setcolr(orclr[i], colval(inpRGB[i],RED),
+					colval(inpRGB[i],GRN),
+					colval(inpRGB[i],BLU));
 			cvtcolor(ctmp, inpRGB[i]);
 			setcolr(cvclr[i], colval(ctmp,RED),
 					colval(ctmp,GRN), colval(ctmp,BLU));
@@ -644,17 +652,20 @@ clrdebug()			/* put out debug picture from color input */
 	fprtresolu(xmax, ymax, debugfp);
 						/* write debug picture */
 	for (y = ymax-1; y >= 0; y--) {
-		for (x = 0; x < xmax; x++)
-			if ((i = chartndx(x, y, CENTCVG)) >= 0) {
+		for (x = 0; x < xmax; x++) {
+			rg = chartndx(x, y, &i);
+			if (rg == RG_CENT) {
 				if (!(1L<<i & gmtflags) || (x+y)&07)
 					copycolr(scan[x], mbclr[i]);
 				else
 					copycolr(scan[x], blkclr);
-			} else if ((i = chartndx(x, y, FULLCVG)) >= 0 &&
-					inpflags & 1L<<i)
-				copycolr(scan[x], cvclr[i]);
-			else
+			} else if (rg == RG_BORD || !(1L<<i & inpflags))
 				copycolr(scan[x], blkclr);
+			else if (rg == RG_ORIG)
+				copycolr(scan[x], orclr[i]);
+			else /* rg == RG_CORR */
+				copycolr(scan[x], cvclr[i]);
+		}
 		if (fwritecolrs(scan, xmax, debugfp) < 0) {
 			fprintf(stderr, "%s: error writing debugging picture\n",
 					progname);
