@@ -546,8 +546,6 @@ register MESH	*mp;
 				if (nouvbounds && pp->uv != NULL)
 					return("unreferenced uv coordinates");
 			}
-			if (pp->ntris + pp->nj1tris + pp->nj2tris <= 0)
-				error(WARNING, "no triangles in patch");
 			if (pp->ntris > 0 && pp->tri == NULL)
 				return("missing patch triangle list");
 			if (pp->nj1tris > 0 && pp->j1tri == NULL)
