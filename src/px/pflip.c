@@ -128,13 +128,14 @@ scanfile()				/* scan to the end of file */
 		memerr();
 	if ((scanin = (COLR *)malloc(xres*sizeof(COLR))) == NULL)
 		memerr();
-	for (y = yres-1; y >= 0; y--) {
+	for (y = yres-1; y > 0; y--) {
 		scanpos[y] = ftell(fin);
 		if (freadcolrs(scanin, xres, fin) < 0) {
 			fprintf(stderr, "%s: read error\n", progname);
 			exit(1);
 		}
 	}
+	scanpos[0] = ftell(fin);
 	free((char *)scanin);
 }
 
@@ -170,5 +171,6 @@ flip()					/* flip the picture */
 		}
 	}
 	free((char *)scanin);
-	free((char *)scanout);
+	if (fhoriz)
+		free((char *)scanout);
 }
