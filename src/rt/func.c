@@ -66,13 +66,12 @@ RAY  *r;
 	register XF  *mxf;
 
 	if ((mxf = (XF *)m->os) == NULL) {
-		register int  n = m->oargs.nsargs;
-		register char  **sa = m->oargs.sarg;
+		register int  n;
+		register char  **sa;
 
-		while (n > 0 && **sa != '-') {
-			n--;
-			sa++;
-		}
+		for (n = m->oargs.nsargs, sa = m->oargs.sarg;
+				n > 0 && **sa != '-'; n--, sa++)
+			;
 		mxf = (XF *)malloc(sizeof(XF));
 		if (mxf == NULL)
 			goto memerr;
