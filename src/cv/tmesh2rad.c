@@ -299,9 +299,9 @@ double	x, y, z;
 {
 	register int	i;
 
-	if (id > nverts) {		/* get some more */
+	if (id >= nverts) {		/* get some more */
 		i = nverts;
-		nverts = CHUNKSIZ*((id%CHUNKSIZ)+1);
+		nverts = CHUNKSIZ*((id/CHUNKSIZ)+1);
 		if (vlist == NULL)
 			vlist = (VERTEX *)malloc(nverts*sizeof(VERTEX));
 		else
