@@ -75,7 +75,7 @@ marksources()			/* find and mark source objects */
 		if ((ns = newsource()) < 0)
 			goto memerr;
 
-		(*sfun[o->otype].of->setsrc)(&source[ns], o);
+		setsource(&source[ns], o);
 
 		if (m->otype == MAT_GLOW) {
 			source[ns].sflags |= SPROX;

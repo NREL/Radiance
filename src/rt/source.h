@@ -83,6 +83,8 @@ extern double  srcray();                /* ray to source */
 extern int  srcvalue();			/* compute source value w/o shadows */
 
 extern double  intercircle();		/* intersect two circles */
+extern double  spotdisk();		/* intersecting disk for spot */
+extern double  beamdisk();		/* intersecting disk for beam */
 
 extern SPOT  *makespot();		/* make spotlight */
 
@@ -91,3 +93,7 @@ extern double  shadthresh;		/* relative shadow threshold */
 extern double  shadcert;		/* shadow testing certainty */
 extern int  directrelay;		/* maximum number of source relays */
 extern int  vspretest;			/* virtual source pretest density */
+
+#define  getplaneq(c,o)		(*sfun[(o)->otype].of->getpleq)(c,o)
+#define  getmaxdisk(c,o)	(*sfun[(o)->otype].of->getdisk)(c,o)
+#define  setsource(s,o)		(*sfun[(o)->otype].of->setsrc)(s,o)
