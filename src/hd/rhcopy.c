@@ -159,18 +159,27 @@ char	*hdf;
 	int	fd;
 	register HOLO	*hp;
 	register BEAM	*bp;
+	register HDBEAMI	*hbl;
 	GCOORD	gc[2];
 	FVECT	ro, rd;
 	double	d;
 	int	i, j;
 	register int	k;
-
-	openholo(hdf, 0);		/* open the holodeck for reading */
+					/* open the holodeck for reading */
+	openholo(hdf, 0);
 	fd = hdlist[noutsects]->fd;	/* remember the file handle */
 	while ((hp = hdlist[noutsects]) != NULL) {	/* load each section */
-		for (j = nbeams(hp); j > 0; j--)	/* load each beam */
-			if ((bp = hdgetbeam(hp, j)) != NULL) {
-				hdbcoord(gc, hp, j);
+		hbl = (HDBEAMI *)malloc(nbeams(hp)*sizeof(HDBEAMI));
+		if (hbl == NULL)
+			error(SYSTEM, "out of memory in addholo");
+		for (j = nbeams(hp); j > 0; j--) {	/* sort the beams */
+			hbl[j].h = hp;
+			hbl[j].b = j;
+		}
+		qsort((char *)hbl, nbeams(hp), sizeof(HDBEAMI), hdfilord);
+		for (j = 0; j < nbeams(hp); j++)	/* load each beam */
+			if ((bp = hdgetbeam(hp, hbl[j].b)) != NULL) {
+				hdbcoord(gc, hp, hbl[j].b);
 				for (k = bp->nrm; k--; ) {
 					d = hdray(ro, rd,
 						hp, gc, hdbray(bp)[k].r);
@@ -181,8 +190,9 @@ char	*hdf;
 					d = hddepth(hp, hdbray(bp)[k].d) - d;
 					addray(ro, rd, d, hdbray(bp)[k].v);
 				}
-				hdfreebeam(hp, j);	/* free the beam */
+				hdfreebeam(hp, hbl[j].b);	/* free beam */
 			}
+		free((char *)hbl);			/* free beam list */
 		hddone(hp);				/* free the section */
 	}
 	close(fd);			/* close the file */
