@@ -53,14 +53,19 @@ int	mg_nqcdivs = MG_NQCD;	/* number of divisions per quarter circle */
 
 /* temporary settings for testing */
 #define e_ies e_any_toss
+#define e_cmix e_any_toss
+#define e_cspec e_any_toss
 				/* alternate handler routines */
 
 static int	e_any_toss(),		/* discard unneeded entity */
 		e_ies(),		/* IES luminaire file */
 		e_include(),		/* include file */
 		e_sph(),		/* sphere */
+		e_cmix(),		/* color mixtures */
+		e_cspec();		/* color spectra */
 		e_cyl(),		/* cylinder */
 		e_cone(),		/* cone */
+		e_prism(),		/* prism */
 		e_ring(),		/* ring */
 		e_torus();		/* torus */
 
@@ -103,11 +108,22 @@ mg_init()			/* initialize alternate entity handlers */
 		ineed |= 1<<MG_E_POINT|1<<MG_E_NORMAL|1<<MG_E_VERTEX;
 	} else
 		uneed |= 1<<MG_E_POINT|1<<MG_E_NORMAL|1<<MG_E_VERTEX|1<<MG_E_XF;
+	if (mg_ehand[MG_E_PRISM] == NULL) {
+		mg_ehand[MG_E_PRISM] = e_prism;
+		ineed |= 1<<MG_E_POINT|1<<MG_E_VERTEX;
+	} else
+		uneed |= 1<<MG_E_POINT|1<<MG_E_VERTEX|1<<MG_E_XF;
 	if (mg_ehand[MG_E_TORUS] == NULL) {
 		mg_ehand[MG_E_TORUS] = e_torus;
 		ineed |= 1<<MG_E_POINT|1<<MG_E_NORMAL|1<<MG_E_VERTEX;
 	} else
 		uneed |= 1<<MG_E_POINT|1<<MG_E_NORMAL|1<<MG_E_VERTEX|1<<MG_E_XF;
+	if (mg_ehand[MG_E_COLOR] != NULL) {
+		if (mg_ehand[MG_E_CMIX] == NULL)
+			mg_ehand[MG_E_CMIX] = e_cmix;
+		if (mg_ehand[MG_E_CSPEC] == NULL)
+			mg_ehand[MG_E_CSPEC] = e_cspec;
+	}
 					/* check for consistency */
 	if (mg_ehand[MG_E_FACE] != NULL)
 		uneed |= 1<<MG_E_POINT|1<<MG_E_VERTEX|1<<MG_E_XF;
@@ -865,6 +881,87 @@ char	**av;
 			if ((rv = handle_it(MG_E_FACE, 5, fent)) != MG_OK)
 				return(rv);
 		}
+	}
+	return(MG_OK);
+}
+
+
+static int
+e_prism(ac, av)			/* turn a prism into polygons */
+int	ac;
+char	**av;
+{
+	static char	p[3][24];
+	static char	*vent[4] = {mg_ename[MG_E_VERTEX],NULL,"="};
+	static char	*pent[5] = {mg_ename[MG_E_POINT],p[0],p[1],p[2]};
+	char	*newav[MG_MAXARGC], nvn[MG_MAXARGC-1][8];
+	double	length;
+	FVECT	v1, v2, v3, norm;
+	register C_VERTEX	*cv;
+	C_VERTEX	*cv0;
+	int	rv;
+	register int	i, j;
+
+	if (ac < 5)
+		return(MG_EARGC);
+	if (!isflt(av[1]))
+		return(MG_ETYPE);
+	length = atof(av[1]);
+	if (length <= FTINY && length >= -FTINY)
+		return(MG_EILL);
+					/* do bottom face */
+	newav[0] = mg_ename[MG_E_FACE];
+	for (i = 1; i < ac-1; i++)
+		newav[i] = av[i+1];
+	newav[i] = NULL;
+	if ((rv = handle_it(MG_E_FACE, i, newav)) != MG_OK)
+		return(rv);
+					/* compute face normal */
+	if ((cv0 = c_getvert(av[2])) == NULL)
+		return(MG_EUNDEF);
+	norm[0] = norm[1] = norm[2] = 0.;
+	v1[0] = v1[1] = v1[2] = 0.;
+	for (i = 2; i < ac-1; i++) {
+		if ((cv = c_getvert(av[i+1])) == NULL)
+			return(MG_EUNDEF);
+		v2[0] = cv->p[0] - cv0->p[0];
+		v2[1] = cv->p[1] - cv0->p[1];
+		v2[2] = cv->p[2] - cv0->p[2];
+		fcross(v3, v1, v2);
+		norm[0] += v3[0];
+		norm[1] += v3[1];
+		norm[2] += v3[2];
+		VCOPY(v1, v2);
+	}
+	if (normalize(norm) == 0.)
+		return(MG_EILL);
+					/* create moved vertices */
+	for (i = 1; i < ac-1; i++) {
+		sprintf(nvn[i-1], "_pv%d", i);
+		vent[1] = nvn[i-1];
+		if ((rv = handle_it(MG_E_VERTEX, 3, vent)) != MG_OK)
+			return(rv);
+		cv = c_getvert(av[i+1]);	/* checked above */
+		for (j = 0; j < 3; j++)
+			sprintf(p[j], FLTFMT, cv->p[j] - length*norm[j]);
+		if ((rv = handle_it(MG_E_POINT, 4, pent)) != MG_OK)
+			return(rv);
+		newav[ac-1-i] = nvn[i-1];	/* reverse */
+	}
+						/* do top face */
+	if ((rv = handle_it(MG_E_FACE, ac-1, newav)) != MG_OK)
+		return(rv);
+						/* do the side faces */
+	newav[5] = NULL;
+	newav[3] = av[ac-1];
+	newav[4] = nvn[ac-3];
+	for (i = 1; i < ac-1; i++) {
+		newav[1] = nvn[i-1];
+		newav[2] = av[i+1];
+		if ((rv = handle_it(MG_E_FACE, 5, newav)) != MG_OK)
+			return(rv);
+		newav[3] = newav[2];
+		newav[4] = newav[1];
 	}
 	return(MG_OK);
 }

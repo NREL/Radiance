@@ -12,30 +12,34 @@
 #define MG_E_COMMENT	0
 #define MG_E_COLOR	1
 #define MG_E_CONE	2
-#define MG_E_CXY	3
-#define MG_E_CYL	4
-#define MG_E_ED		5
-#define MG_E_FACE	6
-#define MG_E_INCLUDE	7
-#define MG_E_IES	8
-#define MG_E_MATERIAL	9
-#define MG_E_NORMAL	10
-#define MG_E_OBJECT	11
-#define MG_E_POINT	12
-#define MG_E_RD		13
-#define MG_E_RING	14
-#define MG_E_RS		15
-#define MG_E_SPH	16
-#define MG_E_TD		17
-#define MG_E_TORUS	18
-#define MG_E_TS		19
-#define MG_E_VERTEX	20
-#define MG_E_XF		21
+#define MG_E_CMIX	3
+#define MG_E_CXY	4
+#define MG_E_CSPEC	5
+#define MG_E_CYL	6
+#define MG_E_ED		7
+#define MG_E_FACE	8
+#define MG_E_INCLUDE	9
+#define MG_E_IES	10
+#define MG_E_MATERIAL	11
+#define MG_E_NORMAL	12
+#define MG_E_OBJECT	13
+#define MG_E_POINT	14
+#define MG_E_PRISM	15
+#define MG_E_RD		16
+#define MG_E_RING	17
+#define MG_E_RS		18
+#define MG_E_SPH	19
+#define MG_E_TD		20
+#define MG_E_TORUS	21
+#define MG_E_TS		22
+#define MG_E_VERTEX	23
+#define MG_E_XF		24
 
-#define MG_NENTITIES	22
+#define MG_NENTITIES	25
 
-#define MG_NAMELIST	{"#","c","cone","cxy","cyl","ed","f","i","ies",\
-	"m","n","o","p","rd","ring","rs","sph","td","torus","ts","v","xf"}
+#define MG_NAMELIST	{"#","c","cone","cmix","cspec","cxy","cyl","ed","f",\
+			"i","ies","m","n","o","p","prism","rd","ring","rs",\
+			"sph","td","torus","ts","v","xf"}
 
 #define MG_MAXELEN	6
 
@@ -173,9 +177,59 @@ extern double	normalize(FVECT);	/* normalize a vector */
  *	(materials, colors, vectors)
  */
 
+/* The following structure will change when we add spectral data support */
 typedef struct {
 	float	cx, cy;		/* XY chromaticity coordinates */
 } C_COLOR;		/* color context */
+
+#ifdef later
+
+#define C_CMAXWL	780		/* maximum wavelength */
+#define C_CMINWL	380		/* minimum wavelength */
+#define C_CNSS		41		/* number of spectral samples */
+#define C_WLINC		((C_MAXWL-C_MINWL)/(C_NSS-1))	/* 10 nm increment */
+#define C_CMAXV		10000		/* nominal maximum sample value */
+
+#define C_CXY		1		/* flag if has xy chromaticity */
+#define C_CSPEC		2		/* flag if has spectrum */
+
+typedef struct {
+	short	flags;			/* what's been set */
+	float	cx, cy;			/* xy chromaticity value */
+	short	ssamp[C_CNSS];		/* spectral samples, min wl to max */
+	long	ssum;			/* straight sum of spectral values */
+} C_COLOR;
+
+#define C_DEFCOLOR	{ C_CXY|C_CSPEC, 1./3., 1./3.,
+			{C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,\
+			C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,\
+			C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,\
+			C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,\
+			C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,\
+			C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,\
+			C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV},\
+			(long)C_CNSS*C_MAXV }
+
+#define C_CIEX		{ C_CXY|C_CSPEC, ???, ???,
+			{14,42,143,435,1344,2839,3483,3362,2908,1954,956,\
+			320,49,93,633,1655,2904,4334,5945,7621,9163,10263,\
+			10622,10026,8544,6424,4479,2835,1649,874,468,227,\
+			114,58,29,14,7,3,2,1,0}, 106836L }
+
+#define C_CIEY		{ C_CXY|C_CSPEC, ???, ???,
+			{0,1,4,12,40,116,230,380,600,910,1390,2080,3230,\
+			5030,7100,8620,9540,9950,9950,9520,8700,7570,6310,\
+			5030,3810,2650,1750,1070,610,320,170,82,41,21,10,\
+			5,2,1,1,0,0}, 106856L }
+
+#define C_CIEZ		{ C_CXY|C_CSPEC, ???, ???,
+			{65,201,679,2074,6456,13856,17471,17721,16692,\
+			12876,8130,4652,2720,1582,782,422,203,87,39,21,17,\
+			11,8,3,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 106770L }
+
+#define c_cval(c,l)	((double)(c)->ssamp[((l)-C_MINWL)/C_WLINC] / (c)->sum)
+
+#endif
 
 typedef struct {
 	char	*name;		/* material name */
@@ -198,8 +252,8 @@ typedef struct {
 	FVECT	p, n;		/* point and normal */
 } C_VERTEX;		/* vertex context */
 
-#define isgrey(cxy)	((cxy)->cx > .31 && (cxy)->cx < .35 && \
-			(cxy)->cy > .31 && (cxy)->cy < .35)
+#define isgrey(cxy)	((cxy)->cx > .32 && (cxy)->cx < .34 && \
+			(cxy)->cy > .32 && (cxy)->cy < .34)
 
 #define C_DEFCOLOR	{.333,.333}
 #define C_DEFMATERIAL	{NULL,1,0.,C_DEFCOLOR,0.,C_DEFCOLOR,0.,C_DEFCOLOR,\
