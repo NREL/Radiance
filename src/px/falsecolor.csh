@@ -89,7 +89,7 @@ while ($#argv > 0)
 		set ndivs="$argv[1]"
 		breaksw
 	default:
-		echo bad option "'$argv[1]'" >/dev/tty
+		echo bad option "'$argv[1]'"
 		exit 1
 	endsw
 	shift argv

@@ -414,6 +414,7 @@ nextview(				/* get and set next view */
 		avgview.vdir[i] += ourview.vdir[i];
 		avgview.vup[i] += ourview.vup[i];
 	}
+	avgview.vdist += ourview.vdist;
 	avgview.horiz += ourview.horiz;
 	avgview.vert += ourview.vert;
 	avgview.hoff += ourview.hoff;
@@ -438,6 +439,7 @@ compavgview(void)				/* compute average view */
 		avgview.vdir[i] *= f;
 		avgview.vup[i] *= f;
 	}
+	avgview.vdist *= f;
 	avgview.horiz *= f;
 	avgview.vert *= f;
 	avgview.hoff *= f;

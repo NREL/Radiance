@@ -30,19 +30,20 @@ ogl:
 sun:
 
 install:	$(PROGS) $(SPECIAL) normpat.csh falsecolor.csh \
-pdfblur.csh pmblur.csh xyzimage.csh pgblur.csh
+pdfblur.csh pmblur.csh pmdblur.csh xyzimage.csh pgblur.csh
 	cp $(PROGS) $(INSTDIR)
 	cp normpat.csh $(INSTDIR)/normpat
 	cp falsecolor.csh $(INSTDIR)/falsecolor
 	cp pdfblur.csh $(INSTDIR)/pdfblur
 	cp pmblur.csh $(INSTDIR)/pmblur
+	cp pmdblur.csh $(INSTDIR)/pmdblur
 	cp xyzimage.csh $(INSTDIR)/xyzimage
 	cp phisto.csh $(INSTDIR)/phisto
 	cp pdelta.csh $(INSTDIR)/pdelta
 	cp pgblur.csh $(INSTDIR)/pgblur
 	cp ra_pfm.csh $(INSTDIR)/ra_pfm
 	cd $(INSTDIR) ; chmod 755 normpat falsecolor pdfblur \
-		pmblur xyzimage phisto pdelta pgblur ra_pfm
+		pmblur pmdblur xyzimage phisto pdelta pgblur ra_pfm
 
 clean:
 	rm -f $(PROGS) $(SPECIAL) *.o core

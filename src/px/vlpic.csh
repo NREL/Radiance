@@ -17,7 +17,7 @@ while ($#argv > 1)
 		set tim="$argv[1]"
 		breaksw
 	default:
-		echo bad option "'$argv[1]'" >/dev/tty
+		echo bad option "'$argv[1]'"
 		exit 1
 	endsw
 	shift argv
