@@ -646,7 +646,7 @@ uint32	y;
 	double	m = pow(2.,(double)cvts.bradj);
 	register int	x;
 
-	if (CHK(C_RFLT|C_TFLT) != (C_RFLT|C_TFLT) | !CHK(C_GRY))
+	if (CHK(C_RFLT|C_TFLT|C_GRY) != (C_RFLT|C_TFLT|C_GRY))
 		quiterr("internal error 1 in Color2L");
 
 	if (freadscan(cvts.r.colors, cvts.xmax, cvts.rfp) < 0)
