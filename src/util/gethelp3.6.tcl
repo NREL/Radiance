@@ -24,7 +24,7 @@ set curhelp(file) {}
 proc gethelp {helpfile category topic} {	# Open help window
 	global curhelp helpfontwidth
 	if {! [winfo exists .helpwin]} {		# Set up window
-		toplevel .helpwin
+		toplevel .helpwin -cursor top_left_arrow
 		wm minsize .helpwin 500 400
 		wm iconbitmap .helpwin question
 		frame .helpwin.but -geometry 150x400

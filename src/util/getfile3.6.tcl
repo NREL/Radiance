@@ -1,8 +1,9 @@
 # SCCSid "$SunId$ LBL"
 #
-# Usage: getfile [-win w] [-perm] [-glob pattern] [-view proc] [-send proc]
+# Usage: getfile [-win w] [-grab] [-perm] [-glob pattern] [-view proc] [-send proc]
 #
 # Create a dialog box (in window w if given) to get file name.
+# If -grab option is given, then getfile does a local grab on its window.
 # Normally, a single file name and return as value.
 # If perm switch is given, keep window up for multiple file entries.
 # If pattern is given, start with list of all the specified files,
@@ -19,6 +20,7 @@ proc getfile args {		# get filename interactively
 	# Set defaults
 	set w .fpwin
 	set topwin 1
+	set dograb 0
 	set curdir .
 	set curpat *
 	set transient 1
@@ -29,6 +31,9 @@ proc getfile args {		# get filename interactively
 				set w [lindex $args 1]
 				set topwin 0
 				set args [lreplace $args 1 1]
+				}
+			-grab {
+				set dograb 1
 				}
 			-perm* {
 				set transient 0
@@ -63,6 +68,8 @@ proc getfile args {		# get filename interactively
 		frame $w -geometry 400x410
 		pack $w
 	}
+	if $dograb { grab $w }
+	$w configure -cursor top_left_arrow
 	label $w.dt -text Directory:
 	place $w.dt -relx .025 -rely .03125
 	helplink $w.dt file directory intro
