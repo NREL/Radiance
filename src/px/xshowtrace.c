@@ -197,10 +197,15 @@ int	ipt[2];
 	Window	rw, cw;
 	unsigned int	pm;
 					/* compute pointer location */
-	if (gwind == 0 &&
-		(gwind = xfindwind(theDisplay, rwind, picture, 4)) == 0) {
-		fprintf(stderr, "%s: cannot find display window!\n", progname);
-		exit(1);
+	if (gwind == 0) {
+		register char	*wn;
+		for (wn = picture; *wn; wn++);
+		while (wn > picture && wn[-1] != '/') wn--;
+		if ((gwind = xfindwind(theDisplay, rwind, wn, 4)) == 0) {
+			fprintf(stderr, "%s: cannot find display window!\n",
+					progname);
+			exit(1);
+		}
 	}
 	XQueryPointer(theDisplay, gwind, &rw, &cw, &rx, &ry, &wx, &wy, &pm);
 	xoff = wx - ipt[0];
