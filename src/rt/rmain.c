@@ -87,7 +87,7 @@ extern double  shadthresh;		/* shadow threshold */
 extern double  shadcert;		/* shadow testing certainty */
 extern int  directrelay;		/* number of source relays */
 extern int  vspretest;			/* virtual source pretest density */
-extern int  directinvis;		/* light sources invisible to eye? */
+extern int  directvis;			/* light sources visible to eye? */
 extern double  srcsizerat;		/* maximum source size/dist. ratio */
 
 extern double  specthresh;		/* specular sampling threshold */
@@ -216,8 +216,8 @@ char  *argv[];
 				check(3,"i");
 				vspretest = atoi(argv[++i]);
 				break;
-			case 'i':				/* invis. */
-				bool(3,directinvis);
+			case 'v':				/* visibility */
+				bool(3,directvis);
 				break;
 			case 's':				/* size */
 				check(3,"f");
@@ -677,8 +677,8 @@ printdefaults()			/* print default values to stdout */
 	printf("-ds %f\t\t\t# direct sampling\n", srcsizerat);
 	printf("-dr %-9d\t\t\t# direct relays\n", directrelay);
 	printf("-dp %-9d\t\t\t# direct pretest density\n", vspretest);
-	printf(directinvis ? "-di+\t\t\t\t# direct invisibility on\n" :
-			"-di-\t\t\t\t# direct invisibility off\n");
+	printf(directvis ? "-dv+\t\t\t\t# direct visibility on\n" :
+			"-dv-\t\t\t\t# direct visibility off\n");
 	printf("-sj %f\t\t\t# specular jitter\n", specjitter);
 	printf("-st %f\t\t\t# specular threshold\n", specthresh);
 	printf("-av %f %f %f\t# ambient value\n", colval(ambval,RED),

@@ -398,7 +398,7 @@ register char  *s;
 	extern int  ambdiv;
 	extern int  ambssamp;
 	extern int  ambounce;
-	extern int  directinvis;
+	extern int  directvis;
 	extern double  srcsizerat;
 	extern int  do_irrad;
 	extern double  specjitter;
@@ -435,9 +435,9 @@ register char  *s;
 		case 't':			/* threshold */
 			getparam(s+2, "direct threshold", 'r', &shadthresh);
 			break;
-		case 'i':			/* invisibility */
-			getparam(s+2, "direct invisibility",
-					'b', &directinvis);
+		case 'v':			/* visibility */
+			getparam(s+2, "direct visibility",
+					'b', &directvis);
 			break;
 		case 's':			/* sampling */
 			getparam(s+2, "direct sampling", 'r', &srcsizerat);

@@ -35,7 +35,7 @@ double	shadthresh = .1;		/* shadow threshold */
 double	shadcert = .25;			/* shadow certainty */
 int  directrelay = 0;			/* number of source relays */
 int  vspretest = 128;			/* virtual source pretest density */
-int  directinvis = 0;			/* sources invisible? */
+int  directvis = 1;			/* sources visible? */
 double	srcsizerat = 0.;		/* maximum ratio source size/dist. */
 
 double	specthresh = .3;		/* specular sampling threshold */

@@ -127,7 +127,7 @@ extern double  shadcert;		/* shadow testing certainty */
 extern double  srcsizerat;		/* max. ratio of source size/dist. */
 extern int  directrelay;		/* maximum number of source relays */
 extern int  vspretest;			/* virtual source pretest density */
-extern int  directinvis;		/* sources invisible? */
+extern int  directvis;			/* sources visible? */
 
 #define  getplaneq(c,o)		(*sfun[(o)->otype].of->getpleq)(c,o)
 #define  getmaxdisk(c,o)	(*sfun[(o)->otype].of->getdisk)(c,o)
