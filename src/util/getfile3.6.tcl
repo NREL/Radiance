@@ -172,6 +172,12 @@ proc update_dir w {			# Update working directory
 		$w.de config -foreground $oldcol
 	}
 	set curdir [pwd]
+	set offset [expr [string length $curdir] - 32]
+	if {$offset > 0} {
+		$w.de view [expr $offset + \
+			[string first / [string range $curdir $offset end]] \
+				+ 1]
+	}
 	$w.fm.fl delete 0 end
 	set ls ../
 	foreach f [glob -nocomplain *] {
