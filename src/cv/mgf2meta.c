@@ -13,13 +13,19 @@ static char SCCSid[] = "$SunId$ LBL";
 #include "random.h"
 #include "mgflib/parser.h"
 
-#define	MX(v)	(int)(((1<<14)-1)*(v)[(proj_axis+1)%3])
-#define	MY(v)	(int)(((1<<14)-1)*(v)[(proj_axis+2)%3])
+#define MSIZE	((1<<14)-1)
+#define	MX(v)	(int)(MSIZE*(v)[(proj_axis+1)%3])
+#define	MY(v)	(int)(MSIZE*(v)[(proj_axis+2)%3])
+
+#ifdef  DCL_ATOF
+extern double  atof();
+#endif
 
 int	r_face();
 int	proj_axis;
 double	limit[3][2];
 int	layer;
+long	rthresh = 1;
 
 extern int	mg_nqcdivs;
 
@@ -37,6 +43,12 @@ char	*argv[];
 	mg_nqcdivs = 3;		/* reduce object subdivision */
 	mg_init();		/* initialize the parser */
 					/* get arguments */
+	if (argc > 9 && !strcmp(argv[1], "-t")) {
+		rthresh = atof(argv[2])*MSIZE + 0.5;
+		rthresh *= rthresh;
+		argv += 2;
+		argc -= 2;
+	}
 	if (argc < 8 || (proj_axis = argv[1][0]-'x') < 0 || proj_axis > 2)
 		goto userr;
 	limit[0][0] = atof(argv[2]); limit[0][1] = atof(argv[3]);
@@ -56,8 +68,8 @@ char	*argv[];
 	mdone();			/* close output */
 	exit(0);
 userr:
-	fprintf(stderr, "Usage: %s {x|y|z} xmin xmax ymin ymax zmin zmax [file.mgf] ..\n",
-			argv[0]);
+	fputs("Usage: mgf2meta [-t thresh] {x|y|z} xmin xmax ymin ymax zmin zmax [file.mgf] ..\n",
+			stderr);
 	exit(1);
 }
 
@@ -102,8 +114,6 @@ short	hshtab[HTBLSIZ][4];		/* done line segments */
 #define  hash(mx1,my1,mx2,my2)	((long)(mx1)<<15 ^ (long)(my1)<<10 ^ \
 					(long)(mx2)<<5 ^ (long)(my2))
 
-#define  RANDMASK	((1L<<14)-1)
-
 
 newlayer()				/* start a new layer */
 {
@@ -136,7 +146,7 @@ int	v1x, v1y, v2x, v2y;
 	hshtab[h][0] = v1x; hshtab[h][1] = v1y;
 	hshtab[h][2] = v2x; hshtab[h][3] = v2y;
 	if ((long)(v2x-v1x)*(v2x-v1x) + (long)(v2y-v1y)*(v2y-v1y)
-			<= (random()&RANDMASK))
+			<= random() % rthresh)
 		return(0);
 	mline(v1x, v1y, layer/4, 0, layer%4);
 	mdraw(v2x, v2y);
