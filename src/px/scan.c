@@ -1,8 +1,7 @@
-/*
-
 #ifndef lint
 static char SCCSid[] = "$SunId$ LBL";
 #endif
+/*
  *  writescan.c - fortran interface to picture output routines.
  *
  *	4/26/88
