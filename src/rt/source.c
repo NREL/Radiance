@@ -339,7 +339,7 @@ char  *p;			/* data for f */
 	}
 						/* sort contributions */
 	qsort(cntord, nsources, sizeof(CNTPTR), cntcmp);
-	hit2 = 0.0; test2 = FTINY;
+	hit2 = 0.5; test2 = 1.0;		/* start with prob=.5 */
 						/* test for shadows */
 	for (sn = 0; sn < nsources; sn++) {
 						/* check threshold */
