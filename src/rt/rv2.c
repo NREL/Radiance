@@ -391,6 +391,7 @@ register char  *s;
 	extern double  minweight;
 	extern int  maxdepth;
 	extern double  dstrsrc;
+	extern double  shadthresh;
 	extern COLOR  ambval;
 	extern double  ambacc;
 	extern double  minarad;
@@ -403,7 +404,7 @@ register char  *s;
 	char  buf[128];
 	
 	if (s[0] == '\0') {
-		(*dev->comout)("aa ab ad ar as av ds lr lw sd sp: ");
+		(*dev->comout)("aa ab ad ar as av dj dt lr lw sd sp: ");
 		(*dev->comin)(buf);
 		s = buf;
 	}
@@ -436,17 +437,33 @@ register char  *s;
 			goto badparam;
 		}
 		break;
-	case 'd':			/* distribute source */
-		if (s[1] != 's')
+	case 'd':			/* direct */
+		switch (s[1]) {
+		case 'j':			/* jitter */
+			if (sscanf(s+2, "%lf", &d0) != 1) {
+				sprintf(buf, "direct jitter (%.6g): ",
+						dstrsrc);
+				(*dev->comout)(buf);
+				(*dev->comin)(buf);
+				if (sscanf(buf, "%lf", &d0) != 1)
+					break;
+			}
+			dstrsrc = d0;
+			break;
+		case 't':			/* threshold */
+			if (sscanf(s+2, "%lf", &d0) != 1) {
+				sprintf(buf, "direct threshold (%.6g): ",
+						shadthresh);
+				(*dev->comout)(buf);
+				(*dev->comin)(buf);
+				if (sscanf(buf, "%lf", &d0) != 1)
+					break;
+			}
+			shadthresh = d0;
+			break;
+		default:
 			goto badparam;
-		if (sscanf(s+2, "%lf", &d0) != 1) {
-			sprintf(buf, "distribute source (%.6g): ", dstrsrc);
-			(*dev->comout)(buf);
-			(*dev->comin)(buf);
-			if (sscanf(buf, "%lf", &d0) != 1)
-				break;
 		}
-		dstrsrc = d0;
 		break;
 	case 'a':			/* ambient */
 		switch (s[1]) {

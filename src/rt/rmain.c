@@ -66,9 +66,10 @@ extern int  vresolu;			/* vertical resolution */
 
 extern int  psample;			/* pixel sample size */
 extern double  maxdiff;			/* max. sample difference */
-
 extern double  dstrpix;			/* square pixel distribution */
+
 extern double  dstrsrc;			/* square source distribution */
+extern double  shadthresh;		/* shadow threshold */
 
 extern int  maxdepth;			/* maximum recursion depth */
 extern double  minweight;		/* minimum ray weight */
@@ -171,15 +172,13 @@ char  *argv[];
 			}
 			break;
 #endif
-		case 'd':				/* distribute */
+		case 'd':				/* direct */
 			switch (argv[i][2]) {
-#if  RPICT
-			case 'p':				/* pixel */
+			case 't':				/* threshold */
 				check(3,1);
-				dstrpix = atof(argv[++i]);
+				shadthresh = atof(argv[++i]);
 				break;
-#endif
-			case 's':				/* source */
+			case 'j':				/* jitter */
 				check(3,1);
 				dstrsrc = atof(argv[++i]);
 				break;
@@ -198,6 +197,12 @@ char  *argv[];
 				check(3,1);
 				maxdiff = atof(argv[++i]);
 				break;
+#if  RPICT
+			case 'j':				/* jitter */
+				check(3,1);
+				dstrpix = atof(argv[++i]);
+				break;
+#endif
 			default:
 				goto badopt;
 			}
@@ -530,13 +535,14 @@ printdefaults()			/* print default values to stdout */
 	printf("-x  %-9d\t\t\t# x resolution\n", hresolu);
 	printf("-y  %-9d\t\t\t# y resolution\n", vresolu);
 #endif
-#if  RPICT
-	printf("-dp %f\t\t\t# distribute pixel\n", dstrpix);
-#endif
-	printf("-ds %f\t\t\t# distribute source\n", dstrsrc);
+	printf("-dt %f\t\t\t# direct threshold\n", shadthresh);
+	printf("-dj %f\t\t\t# direct jitter\n", dstrsrc);
 #if  RPICT|RVIEW
 	printf("-sp %-9d\t\t\t# sample pixel\n", psample);
 	printf("-sd %f\t\t\t# sample difference\n", maxdiff);
+#if  RPICT
+	printf("-sj %f\t\t\t# sample jitter\n", dstrpix);
+#endif
 #endif
 	printf("-av %f %f %f\t# ambient value\n", colval(ambval,RED),
 			colval(ambval,GRN), colval(ambval, BLU));

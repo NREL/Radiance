@@ -35,6 +35,7 @@ int  hresolu = 0;			/* horizontal (scan) size */
 int  vresolu = 0;			/* vertical resolution */
 
 double  dstrsrc = 0.0;			/* square source distribution */
+double  shadthresh = .01;		/* shadow threshold */
 
 int  maxdepth = 6;			/* maximum recursion depth */
 double  minweight = 4e-3;		/* minimum ray weight */
