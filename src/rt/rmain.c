@@ -115,6 +115,8 @@ extern double  srcsizerat;		/* maximum source size/dist. ratio */
 extern double  specthresh;		/* specular sampling threshold */
 extern double  specjitter;		/* specular sampling jitter */
 
+extern int  backvis;			/* back face visibility */
+
 extern int  maxdepth;			/* maximum recursion depth */
 extern double  minweight;		/* minimum ray weight */
 
@@ -215,6 +217,17 @@ char  *argv[];
 				error(USER, errmsg);
 			}
 			break;
+#endif
+		case 'b':				/* back face vis. */
+			if (argv[i][2] == 'v') {
+				bool(3,backvis);
+				break;
+			}
+#if  RVIEW
+			bool(2,greyscale);
+			break;
+#else
+			goto badopt;
 #endif
 		case 'd':				/* direct */
 			switch (argv[i][2]) {
@@ -531,9 +544,6 @@ char  *argv[];
 			break;
 #endif
 #if  RVIEW
-		case 'b':				/* black and white */
-			bool(2,greyscale);
-			break;
 		case 'o':				/* output device */
 			check(2,"s");
 			devname = argv[++i];
@@ -839,6 +849,8 @@ printdefaults()			/* print default values to stdout */
 	printf("-ps %-9d\t\t\t# pixel sample\n", psample);
 	printf("-pt %f\t\t\t# pixel threshold\n", maxdiff);
 #endif
+	printf(backvis ? "-bv+\t\t\t\t# back face visibility on\n" :
+			"-bv-\t\t\t\t# back face visibility off\n");
 	printf("-dt %f\t\t\t# direct threshold\n", shadthresh);
 	printf("-dc %f\t\t\t# direct certainty\n", shadcert);
 	printf("-dj %f\t\t\t# direct jitter\n", dstrsrc);
