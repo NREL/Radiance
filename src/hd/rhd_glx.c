@@ -530,7 +530,7 @@ int	dx, dy, mov, orb;
 		return(0);		/* outside view */
 	if (mov | orb) {
 #ifdef DOBJ
-		d = dobj_trace(v1, odir);	/* check objects */
+		d = dobj_trace(NULL, v1, odir);	/* check objects */
 						/* is holodeck in front? */
 		if ((li = smFindSamp(v1, odir)) >= 0 &&
 				(rsL.wp[li][0] - nv.vp[0])*odir[0] +
