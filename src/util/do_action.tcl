@@ -100,7 +100,7 @@ proc kill_batch {} {		# kill batch rendering
 	switch -glob [exec uname] {
 		SunOS -
 		ULTRIX {set ps "ps -lg"}
-		default {set ps "ps -lu $env(USER)"}
+		default {set ps "ps -lu $env(LOGNAME)"}
 	}
 	set fi [open "|$ps" r]
 	gets $fi li
