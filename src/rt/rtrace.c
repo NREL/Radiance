@@ -86,6 +86,10 @@ static int  (*putreal)();
 quit(code)			/* quit program */
 int  code;
 {
+#ifndef  NIX
+	headclean();		/* delete header file */
+	pfclean();		/* clean up persist files */
+#endif
 	exit(code);
 }
 

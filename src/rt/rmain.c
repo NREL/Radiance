@@ -20,6 +20,12 @@ static char SCCSid[] = "$SunId$ LBL";
 #ifndef	 RVIEW
 #define	 RVIEW		0
 #endif
+					/* persistent processes define */
+#ifndef  NIX
+#if  RPICT|RTRACE
+#define  PERSIST	1
+#endif
+#endif
 
 #include  "ray.h"
 
@@ -129,6 +135,8 @@ char  *argv[];
 	char  **amblp = amblist;
 	int  loadflags = ~IO_FILES;
 	int  seqstart = 0;
+	int  persist = 0;
+	int  duped1;
 	int  rval;
 	int  i;
 					/* record start time */
@@ -455,6 +463,18 @@ char  *argv[];
 			devname = argv[++i];
 			break;
 #endif
+#ifdef  PERSIST
+		case 'P':				/* persist file */
+			if (argv[i][2] == 'P') {
+				check(3,"s");
+				persist = 2;
+			} else {
+				check(2,"s");
+				persist = 1;
+			}
+			persistfile(argv[++i]);
+			break;
+#endif
 		default:
 			goto badopt;
 		}
@@ -504,6 +524,18 @@ char  *argv[];
 #endif
 			octname == NULL)
 		error(USER, "missing octree argument");
+#ifdef  PERSIST
+	if (persist) {
+#if  RPICT
+		if (outfile != NULL)
+			error(USER, "output file cannot be used with persist option");
+		if (seqstart <= 0)
+			error(USER, "persist option only for sequences");
+#endif
+		duped1 = dup(fileno(stdout));	/* don't lose our output */
+		openheader();
+	}
+#endif
 #if  RPICT
 	if (outfile != NULL)
 		openheader();
@@ -532,6 +564,26 @@ char  *argv[];
 
 	setambient(ambfile);		/* initialize ambient calculation */
 
+#ifdef  PERSIST
+	if (persist) {
+		fflush(stdout);
+		if (persist == 2) {	/* multiprocessing */
+			preload_objs();		/* preload scene */
+			while ((rval=fork()) == 0) {	/* keep on forkin' */
+				pflock(1);
+				pfhold();
+			}
+			if (rval < 0)
+				error(SYSTEM, "cannot fork child for persist function");
+			pfdetach();
+			persist = 0;		/* parent shan't persist */
+		}
+		dup2(duped1, fileno(stdout));	/* reconnect stdout */
+		close(duped1);
+		dupheader();
+	}
+runagain:
+#endif
 #if  RPICT
 	rpict(seqstart, outfile, zfile, recover);
 #endif
@@ -540,6 +592,12 @@ char  *argv[];
 #endif
 #if  RVIEW
 	rview();
+#endif
+#ifdef  PERSIST
+	if (persist) {
+		pfhold();		/* loop until killed */
+		goto runagain;
+	}
 #endif
 	quit(0);
 
