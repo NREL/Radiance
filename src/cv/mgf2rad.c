@@ -316,12 +316,13 @@ char	**av;
 }
 
 
+int
 r_ies(ac, av)				/* convert an IES luminaire file */
 int	ac;
 char	**av;
 {
 	int	xa0 = 2;
-	char	combuf[72];
+	char	combuf[128];
 	char	fname[48];
 	char	*oname;
 	register char	*op;
@@ -330,17 +331,23 @@ char	**av;
 	if (ac < 2)
 		return(MG_EARGC);
 	(void)strcpy(combuf, "ies2rad");
-	op = combuf + 7;
+	op = combuf + 7;		/* get -m option (must be first) */
 	if (ac-xa0 >= 2 && !strcmp(av[xa0], "-m")) {
 		if (!isflt(av[xa0+1]))
 			return(MG_ETYPE);
 		op = addarg(addarg(op, "-m"), av[xa0+1]);
 		xa0 += 2;
 	}
-	if (access(av[1], 0) == -1)
+	*op++ = ' ';			/* build IES filename */
+	i = 0;
+	if (mg_file != NULL &&
+			(oname = strrchr(mg_file->fname, '/')) != NULL) {
+		i = oname - mg_file->fname + 1;
+		(void)strcpy(op, mg_file->fname);
+	}
+	(void)strcpy(op+i, av[1]);
+	if (access(op, 0) == -1)
 		return(MG_ENOFILE);
-	*op++ = ' ';			/* IES filename goes last */
-	(void)strcpy(op, av[1]);
 	system(combuf);			/* run ies2rad */
 					/* now let's find the output file */
 	if ((op = strrchr(av[1], '/')) == NULL)
