@@ -146,14 +146,7 @@ x_clear(xres, yres)			/* clear our display */
 int  xres, yres;
 {
 	if (xres != gwidth || yres != gheight) {	/* new window */
-		if (comline != NULL)
-			xt_close(comline);
 		XChangeWindow(gwind, xres, yres+COMHEIGHT);
-		comline = xt_open(gwind, 0, yres, xres, COMHEIGHT, 0, COMFN);
-		if (comline == NULL) {
-			stderr_v("Cannot open command line window\n");
-			quit(1);
-		}
 		gwidth = xres;
 		gheight = yres;
 	} else						/* just clear */
@@ -163,7 +156,14 @@ int  xres, yres;
 		stderr_v("cannot allocate colors\n");
 	else
 		new_ctab(ncolors);
-
+						/* open new command line */
+	if (comline != NULL)
+		xt_close(comline);
+	comline = xt_open(gwind, 0, yres, xres, COMHEIGHT, 0, COMFN);
+	if (comline == NULL) {
+		stderr_v("Cannot open command line window\n");
+		quit(1);
+	}
 	XMapWindow(gwind);			/* make sure it's mapped */
 	XSync(1);				/* discard input */
 	return;
