@@ -263,6 +263,8 @@ char  *oldfile;
 	getheader(fp, NULL);
 				/* get picture size */
 	if (fscanf(fp, "-Y %d +X %d\n", &y, &x) != 2) {
+		sprintf(errmsg, "bad recover file \"%s\"", oldfile);
+		error(WARNING, errmsg);
 		fclose(fp);
 		return(0);
 	}
