@@ -22,7 +22,7 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <ctype.h>
 
-#define  CTRL(c)	('c'-'@')
+#define  CTRL(c)	((c)-'@')
 
 extern char  VersionID[];
 extern char  *progname;
@@ -75,7 +75,7 @@ char  *s;
 	sprintf(buf, "view type (%c): ", ourview.type);
 	(*dev->comout)(buf);
 	(*dev->comin)(buf, NULL);
-	if (buf[0] == CTRL(C)) return;
+	if (buf[0] == CTRL('C')) return;
 	if (buf[0] && buf[0] != ourview.type) {
 		nv.type = buf[0];
 		change++;
@@ -85,7 +85,7 @@ char  *s;
 			ourview.vp[0], ourview.vp[1], ourview.vp[2]);
 	(*dev->comout)(buf);
 	(*dev->comin)(buf, NULL);
-	if (buf[0] == CTRL(C)) return;
+	if (buf[0] == CTRL('C')) return;
 	if (sscanf(buf, "%lf %lf %lf", &nv.vp[0], &nv.vp[1], &nv.vp[2]) == 3)
 		change++;
 	else
@@ -94,7 +94,7 @@ char  *s;
 			ourview.vdir[0], ourview.vdir[1], ourview.vdir[2]);
 	(*dev->comout)(buf);
 	(*dev->comin)(buf, NULL);
-	if (buf[0] == CTRL(C)) return;
+	if (buf[0] == CTRL('C')) return;
 	if (sscanf(buf,"%lf %lf %lf",&nv.vdir[0],&nv.vdir[1],&nv.vdir[2]) == 3)
 		change++;
 	else
@@ -103,7 +103,7 @@ char  *s;
 			ourview.vup[0], ourview.vup[1], ourview.vup[2]);
 	(*dev->comout)(buf);
 	(*dev->comin)(buf, NULL);
-	if (buf[0] == CTRL(C)) return;
+	if (buf[0] == CTRL('C')) return;
 	if (sscanf(buf,"%lf %lf %lf",&nv.vup[0],&nv.vup[1],&nv.vup[2]) == 3)
 		change++;
 	else
@@ -112,7 +112,7 @@ char  *s;
 			ourview.horiz, ourview.vert);
 	(*dev->comout)(buf);
 	(*dev->comin)(buf, NULL);
-	if (buf[0] == CTRL(C)) return;
+	if (buf[0] == CTRL('C')) return;
 	if (sscanf(buf, "%lf %lf", &nv.horiz, &nv.vert) == 2)
 		change++;
 	else {
@@ -122,7 +122,7 @@ char  *s;
 			ourview.hoff, ourview.voff);
 	(*dev->comout)(buf);
 	(*dev->comin)(buf, NULL);
-	if (buf[0] == CTRL(C)) return;
+	if (buf[0] == CTRL('C')) return;
 	if (sscanf(buf, "%lf %lf", &nv.hoff, &nv.voff) == 2)
 		change++;
 	else {
