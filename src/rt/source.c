@@ -141,7 +141,7 @@ register int  sn;		/* source number */
 	if (dstrsrc > FTINY) {
 					/* distribute source direction */
 		dimlist[ndims] = sn + 8831;
-		peano(vd, 3, urand(ilhash(dimlist,ndims+1)+samplendx), .01);
+		multisamp(vd, 3, urand(ilhash(dimlist,ndims+1)+samplendx));
 		for (i = 0; i < 3; i++)
 			vd[i] = dstrsrc * source[sn].ss * (1. - 2.*vd[i]);
 		if (source[sn].sflags & SFLAT) {	/* project offset */

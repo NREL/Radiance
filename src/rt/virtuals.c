@@ -318,7 +318,7 @@ register int  sn;	/* target source number */
 #endif
 				return(f);	/* too small a target! */
 			}
-			peano(offsdir, 3, urand(sn*931+5827+ssn), .005);
+			multisamp(offsdir, 3, urand(sn*931+5827+ssn));
 			for (i = 0; i < 3; i++)
 				offsdir[i] = or*(1. - 2.*offsdir[i]);
 			ssn++;

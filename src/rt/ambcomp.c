@@ -72,7 +72,7 @@ RAY  *r;
 	hlist[0] = r->rno;
 	hlist[1] = dp->t;
 	hlist[2] = dp->p;
-	peano(spt, 2, urand(ilhash(hlist,3)+dp->n), .01);
+	multisamp(spt, 2, urand(ilhash(hlist,3)+dp->n));
 	zd = sqrt((dp->t + spt[0])/h->nt);
 	phi = 2.0*PI * (dp->p + spt[1])/h->np;
 	xd = cos(phi) * zd;
