@@ -145,7 +145,7 @@ calexpr.o:	calexpr.c calcomp.h
 	cc $(CFLAGS) -DVARIABLE -DFUNCTION -DINCHAN -DRCONST -c calexpr.c
 
 caldefn.o:	caldefn.c calcomp.h
-	cc $(CFLAGS) -DFUNCTION -c caldefn.c
+	cc $(CFLAGS) -DFUNCTION -DREDEFW -c caldefn.c
 
 calfunc.o:	calfunc.c calcomp.h
 	cc $(CFLAGS) -DVARIABLE -DBIGLIB -c calfunc.c
