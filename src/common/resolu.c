@@ -75,13 +75,13 @@ str2resolu(rp, buf)		/* convert resolution line to struct */
 register RESOLU  *rp;
 char  *buf;
 {
-	char  *xndx, *yndx;
+	register char  *xndx, *yndx;
 	register char  *cp;
 
 	if (buf == NULL)
 		return(0);
 	xndx = yndx = NULL;
-	for (cp = buf+1; *cp; cp++)
+	for (cp = buf; *cp; cp++)
 		if (*cp == 'X')
 			xndx = cp;
 		else if (*cp == 'Y')
