@@ -416,7 +416,7 @@ FVECT  vc;
 			nv.vaft += d - d*mag;
 			if (nv.vaft <= nv.vfore) nv.vaft = 0.0;
 		}
-		nv.vdist += d - d*mag;
+		nv.vdist /= mag;
 	}
 	for (i = 0; i < 3; i++)
 		nv.vp[i] = vc[i] - d*nv.vdir[i];
