@@ -38,7 +38,7 @@ int	onevalue(), catvalues(), boolvalue(),
 #define ZONE		9		/* simulation zone */
 #define QUALITY		10		/* desired rendering quality */
 #define OCTREE		11		/* octree file name */
-#define PICTURE		12		/* picture file name */
+#define PICTURE		12		/* picture file root name */
 #define AMBFILE		13		/* ambient file name */
 #define OPTFILE		14		/* rendering options file */
 #define EXPOSURE	15		/* picture exposure setting */
@@ -49,9 +49,10 @@ int	onevalue(), catvalues(), boolvalue(),
 #define PENUMBRAS	20		/* shadow penumbras are desired */
 #define VARIABILITY	21		/* level of light variability */
 #define REPORT		22		/* report frequency and errfile */
-#define RAWSAVE		23		/* save raw picture file */
+#define RAWFILE		23		/* raw picture file root name */
+#define ZFILE		24		/* distance file root name */
 				/* total number of variables */
-#define NVARS		24
+#define NVARS		25
 
 VARIABLE	vv[NVARS] = {		/* variable-value pairs */
 	{"objects",	3,	0,	NULL,	catvalues},
@@ -77,7 +78,8 @@ VARIABLE	vv[NVARS] = {		/* variable-value pairs */
 	{"PENUMBRAS",	3,	0,	NULL,	boolvalue},
 	{"VARIABILITY",	3,	0,	NULL,	qualvalue},
 	{"REPORT",	3,	0,	NULL,	onevalue},
-	{"RAWSAVE",	3,	0,	NULL,	boolvalue},
+	{"RAWFILE",	3,	0,	NULL,	onevalue},
+	{"ZFILE",	2,	0,	NULL,	onevalue},
 };
 
 VARIABLE	*matchvar();
@@ -99,7 +101,7 @@ char	*nvalue();
 
 				/* overture calculation file */
 #ifdef NIX
-char	overfile[] = "overture.raw";
+char	overfile[] = "overture.unf";
 #else
 char	overfile[] = "/dev/null";
 #endif
@@ -648,10 +650,6 @@ setdefaults()			/* set default values for unassigned var's */
 	if (!vdef(VARIABILITY)) {
 		vval(VARIABILITY) = "L";
 		vdef(VARIABILITY)++;
-	}
-	if (!vdef(RAWSAVE)) {
-		vval(RAWSAVE) = "F";
-		vdef(RAWSAVE)++;
 	}
 }
 
@@ -1391,7 +1389,8 @@ rpict(opts, po)				/* run rpict and pfilt for each view */
 char	*opts, *po;
 {
 	char	combuf[1024];
-	char	rawfile[MAXPATH], picfile[MAXPATH], rep[MAXPATH+16], res[32];
+	char	rawfile[MAXPATH], picfile[MAXPATH];
+	char	zopt[MAXPATH+4], rep[MAXPATH+16], res[32];
 	char	pfopts[128];
 	char	vs[32], *vw;
 	int	vn, mult;
@@ -1444,12 +1443,17 @@ char	*opts, *po;
 		if (!vs[0])
 			sprintf(vs, "%d", vn);
 		sprintf(picfile, "%s_%s.pic", vval(PICTURE), vs);
+		if (vdef(ZFILE))
+			sprintf(zopt, " -z %s_%s.zbf", vval(ZFILE), vs);
+		else
+			zopt[0] = '\0';
 						/* check date on picture */
 		pfdt = fdate(picfile);
 		if (pfdt >= oct1date)
 			continue;
 						/* get raw file name */
-		sprintf(rawfile, "%s_%s.raw", vval(PICTURE), vs);
+		sprintf(rawfile, "%s_%s.unf",
+			vdef(RAWFILE) ? vval(RAWFILE) : vval(PICTURE), vs);
 		rfdt = fdate(rawfile);
 		if (touchonly) {		/* update times only */
 			if (rfdt) {
@@ -1461,8 +1465,8 @@ char	*opts, *po;
 		}
 						/* build rpict command */
 		if (rfdt >= oct1date)		/* recover */
-			sprintf(combuf, "rpict%s%s%s -ro %s %s",
-					rep, po, opts, rawfile, oct1name);
+			sprintf(combuf, "rpict%s%s%s%s -ro %s %s",
+				rep, po, opts, zopt, rawfile, oct1name);
 		else {
 			if (overture) {		/* run overture calculation */
 				sprintf(combuf,
@@ -1479,32 +1483,34 @@ char	*opts, *po;
 				rmfile(overfile);
 #endif
 			}
-			sprintf(combuf, "rpict%s %s %s%s%s %s > %s",
-					rep, vw, res, po, opts,
-				oct1name, rawfile);
+			sprintf(combuf, "rpict%s %s %s%s%s%s %s > %s",
+					rep, vw, res, po, opts, zopt,
+					oct1name, rawfile);
 		}
 		if (runcom(combuf)) {		/* run rpict */
 			fprintf(stderr, "%s: error rendering view %s\n",
 					progname, vs);
 			exit(1);
 		}
+		if (!vdef(RAWFILE) || strcmp(vval(RAWFILE),vval(PICTURE))) {
 						/* build pfilt command */
-		if (mult > 1)
-			sprintf(combuf, "pfilt%s -x /%d -y /%d %s > %s",
+			if (mult > 1)
+				sprintf(combuf, "pfilt%s -x /%d -y /%d %s > %s",
 					pfopts, mult, mult, rawfile, picfile);
-		else
-			sprintf(combuf, "pfilt%s %s > %s", pfopts,
-					rawfile, picfile);
-		if (runcom(combuf)) {		/* run pfilt */
-			fprintf(stderr,
-			"%s: error filtering view %s\n\t%s removed\n",
-					progname, vs, picfile);
-			unlink(picfile);
-			exit(1);
+			else
+				sprintf(combuf, "pfilt%s %s > %s", pfopts,
+						rawfile, picfile);
+			if (runcom(combuf)) {		/* run pfilt */
+				fprintf(stderr,
+				"%s: error filtering view %s\n\t%s removed\n",
+						progname, vs, picfile);
+				unlink(picfile);
+				exit(1);
+			}
 		}
 						/* remove/rename raw file */
-		if (vbool(RAWSAVE)) {
-			sprintf(combuf, "%s_%s.rwp", vval(PICTURE), vs);
+		if (vdef(RAWFILE)) {
+			sprintf(combuf, "%s_%s.pic", vval(RAWFILE), vs);
 			mvfile(rawfile, combuf);
 		} else
 			rmfile(rawfile);
