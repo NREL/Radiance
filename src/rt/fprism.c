@@ -24,7 +24,6 @@ double x;
 		return(0.);
 	return(sqrt(x));
 }
-#define sqrt(x)	Sqrt(x)
 
 /* definitions de macros utiles */
 
@@ -103,7 +102,7 @@ extern long eclock;
 
 /* Definition des routines */
 
-#define term(a,b) a/sqrt(a*a+b*b)
+#define term(a,b) a/Sqrt(a*a+b*b)
 static
 prepare_matrices()
 {
@@ -209,7 +208,7 @@ FVECT v,v_out;
  FVECT v_temp;
  double det;
 
- det = sqrt( (YY(v)*YY(v)+ZZ(v)*ZZ(v))*(YY(v)*YY(v)+ZZ(v)*ZZ(v))+
+ det = Sqrt( (YY(v)*YY(v)+ZZ(v)*ZZ(v))*(YY(v)*YY(v)+ZZ(v)*ZZ(v))+
          (XX(v)*XX(v)*YY(v)*YY(v))+(XX(v)*XX(v)*ZZ(v)*ZZ(v)) );
  XX(v_temp) = (YY(v)*YY(v)+ZZ(v)*ZZ(v))/det;
  YY(v_temp) = -( XX(v)*YY(v) )/det;
@@ -227,7 +226,7 @@ FVECT v,v_out;
  FVECT v_temp;
  double det;
 
- det = sqrt( (ZZ(v)*ZZ(v)+YY(v)*YY(v)) );
+ det = Sqrt( (ZZ(v)*ZZ(v)+YY(v)*YY(v)) );
  XX(v_temp) = 0.;
  YY(v_temp) = -ZZ(v)/det;
  ZZ(v_temp) = YY(v)/det;
@@ -427,9 +426,9 @@ TRAYON r;
 {
  double det;
  
- det = sqrt(X(r)*X(r)+Y(r)*Y(r)+Z(r)*Z(r));
- sinus = sqrt(Y(r)*Y(r)+Z(r)*Z(r))/det;
- cosinus = sqrt(X(r)*X(r))/det;
+ det = Sqrt(X(r)*X(r)+Y(r)*Y(r)+Z(r)*Z(r));
+ sinus = Sqrt(Y(r)*Y(r)+Z(r)*Z(r))/det;
+ cosinus = Sqrt(X(r)*X(r))/det;
  if (r.n == 1.) rapport = prism.np * prism.np;
  else rapport = 1./(prism.np * prism.np);
  return;
@@ -448,7 +447,7 @@ TRAYON r_incident;
  X(r_reflechi) = -X(r_incident);
  Y(r_reflechi) = Y(r_incident);
  Z(r_reflechi) = Z(r_incident);
- if(sinus > sqrt(rapport) || r_incident.dest == tot_ref)
+ if(sinus > Sqrt(rapport) || r_incident.dest == tot_ref)
 	{
 	 r_reflechi.ppar1 = r_incident.ppar1;
 	 r_reflechi.pper1 = r_incident.pper1;
@@ -458,14 +457,14 @@ TRAYON r_incident;
 	}
  else
 	{ 
-	 r_reflechi.ppar1 = r_incident.ppar1*(rapport*cosinus-sqrt(rapport-
-		 (sinus*sinus)))/(rapport*cosinus+sqrt(rapport-(sinus*sinus)));
- 	 r_reflechi.pper1 = r_incident.pper1*(cosinus-sqrt
-	        (rapport-(sinus*sinus)))/(cosinus+sqrt(rapport-(sinus*sinus)));
- 	 r_reflechi.ppar2 = r_incident.ppar2*(rapport*cosinus-sqrt(rapport-
-		 (sinus*sinus)))/(rapport*cosinus+sqrt(rapport-(sinus*sinus)));
- 	 r_reflechi.pper2 = r_incident.pper2*(cosinus-sqrt
-	        (rapport-(sinus*sinus)))/(cosinus+sqrt(rapport-(sinus*sinus)));
+	 r_reflechi.ppar1 = r_incident.ppar1*(rapport*cosinus-Sqrt(rapport-
+		 (sinus*sinus)))/(rapport*cosinus+Sqrt(rapport-(sinus*sinus)));
+ 	 r_reflechi.pper1 = r_incident.pper1*(cosinus-Sqrt
+	        (rapport-(sinus*sinus)))/(cosinus+Sqrt(rapport-(sinus*sinus)));
+ 	 r_reflechi.ppar2 = r_incident.ppar2*(rapport*cosinus-Sqrt(rapport-
+		 (sinus*sinus)))/(rapport*cosinus+Sqrt(rapport-(sinus*sinus)));
+ 	 r_reflechi.pper2 = r_incident.pper2*(cosinus-Sqrt
+	        (rapport-(sinus*sinus)))/(cosinus+Sqrt(rapport-(sinus*sinus)));
 	 r_reflechi.e = r_incident.e *(((r_reflechi.ppar1*r_reflechi.ppar1+
          r_reflechi.pper1*r_reflechi.pper1)/(r_incident.ppar1*r_incident.ppar1+
 	 r_incident.pper1*r_incident.pper1))+((r_reflechi.ppar2*r_reflechi.ppar2
@@ -487,22 +486,22 @@ TRAYON r_incident;
 
  r_transmis = r_incident;
  trigo(r_incident); 
- if (sinus <= sqrt(rapport) && r_incident.dest != tot_ref) 
+ if (sinus <= Sqrt(rapport) && r_incident.dest != tot_ref) 
  	{
  	 X(r_transmis) = (X(r_incident)/(fabs(X(r_incident))))*
-			 (sqrt(1.-(Y(r_incident)*Y(r_incident)+Z(r_incident)*
+			 (Sqrt(1.-(Y(r_incident)*Y(r_incident)+Z(r_incident)*
 	         	           Z(r_incident))/rapport));
- 	 Y(r_transmis) = Y(r_incident)/sqrt(rapport);
-	 Z(r_transmis) = Z(r_incident)/sqrt(rapport);
-	 r_transmis.ppar1 = r_incident.ppar1*2.*sqrt(rapport)*cosinus/
-		 	   (sqrt(rapport-sinus*sinus)+rapport*cosinus);
-	 r_transmis.pper1 = r_incident.pper1*2.*cosinus/(cosinus+sqrt(rapport
+ 	 Y(r_transmis) = Y(r_incident)/Sqrt(rapport);
+	 Z(r_transmis) = Z(r_incident)/Sqrt(rapport);
+	 r_transmis.ppar1 = r_incident.ppar1*2.*Sqrt(rapport)*cosinus/
+		 	   (Sqrt(rapport-sinus*sinus)+rapport*cosinus);
+	 r_transmis.pper1 = r_incident.pper1*2.*cosinus/(cosinus+Sqrt(rapport
 			   - sinus*sinus));
-	 r_transmis.ppar2 = r_incident.ppar2*2.*sqrt(rapport)*cosinus/
-		 	   (sqrt(rapport-sinus*sinus)+rapport*cosinus);
-	 r_transmis.pper2 = r_incident.pper2*2.*cosinus/(cosinus+sqrt(rapport
+	 r_transmis.ppar2 = r_incident.ppar2*2.*Sqrt(rapport)*cosinus/
+		 	   (Sqrt(rapport-sinus*sinus)+rapport*cosinus);
+	 r_transmis.pper2 = r_incident.pper2*2.*cosinus/(cosinus+Sqrt(rapport
 			   - sinus*sinus));
-	 r_transmis.e = (r_incident.e/2)*(sqrt(rapport-sinus*sinus)/cosinus)
+	 r_transmis.e = (r_incident.e/2)*(Sqrt(rapport-sinus*sinus)/cosinus)
 	    *(((r_transmis.ppar1*r_transmis.ppar1+r_transmis.pper1*
 	        r_transmis.pper1)
 	    /(r_incident.ppar1*r_incident.ppar1+r_incident.pper1*
