@@ -112,6 +112,7 @@ char	*argv[];
 			quit("invalid request");
 		(*dev_func[com])();
 	}
+	window_destroy(tty);
 	quit(NULL);
 }
 
@@ -134,7 +135,9 @@ Frame	fr;
 Destroy_status	st;
 {
 	if (st != DESTROY_CHECKING) {
+		/*
 		kill((int)window_get(tty, TTY_PID), SIGPIPE);
+		*/
 		kill(getppid(), SIGPIPE);
 	}
 	return(notify_next_destroy_func(fr, st));
