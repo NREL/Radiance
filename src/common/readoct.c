@@ -37,6 +37,7 @@ int  load;
 CUBE  *scene;
 char  *ofn[];
 {
+	extern int  fputs();
 	char  sbuf[512];
 	int  nf;
 	OBJECT  fnobjects;
@@ -54,13 +55,11 @@ char  *ofn[];
 		}
 	}
 					/* get header */
-	if (load & IO_INFO)
-		copyheader(infp, stdout);
-	else
-		getheader(infp, NULL);
+	if (checkheader(infp, OCTFMT, load&IO_INFO ? stdout : NULL) < 0)
+		octerror(USER, "not an octree");
 					/* check format */
 	if (getint(2) != OCTMAGIC)
-		octerror(USER, "invalid octree format");
+		octerror(USER, "incompatible octree format");
 					/* get boundaries */
 	if (load & IO_BOUNDS) {
 		for (i = 0; i < 3; i++)
