@@ -266,6 +266,7 @@ register RAY  *r;
 	extern int  ambcmp();
 	extern double  sin(), cos(), sqrt();
 	double  phi, xd, yd, zd;
+	double  b, b2;
 	register AMBSAMP  *div;
 	AMBSAMP  dnew;
 	RAY  ar;
@@ -320,29 +321,29 @@ register RAY  *r;
 				div[ne].n = 0;
 				div[ne].t = i; div[ne].p = j;
 							/* sum errors */
-				xd = bright(ar.rcol);
+				b = bright(ar.rcol);
 				if (i > 0) {		/* from above */
-					yd = bright(div[ne-np].v) - xd;
-					yd *= yd * 0.25;
-					div[ne].k += yd;
+					b2 = bright(div[ne-np].v) - b;
+					b2 *= b2 * 0.25;
+					div[ne].k += b2;
 					div[ne].n++;
-					div[ne-np].k += yd;
+					div[ne-np].k += b2;
 					div[ne-np].n++;
 				}
 				if (j > 0) {		/* from behind */
-					yd = bright(div[ne-1].v) - xd;
-					yd *= yd * 0.25;
-					div[ne].k += yd;
+					b2 = bright(div[ne-1].v) - b;
+					b2 *= b2 * 0.25;
+					div[ne].k += b2;
 					div[ne].n++;
-					div[ne-1].k += yd;
+					div[ne-1].k += b2;
 					div[ne-1].n++;
 				}
 				if (j == np-1) {	/* around */
-					yd = bright(div[ne-(np-1)].v) - xd;
-					yd *= yd * 0.25;
-					div[ne].k += yd;
+					b2 = bright(div[ne-(np-1)].v) - b;
+					b2 *= b2 * 0.25;
+					div[ne].k += b2;
 					div[ne].n++;
-					div[ne-(np-1)].k += yd;
+					div[ne-(np-1)].k += b2;
 					div[ne-(np-1)].n++;
 				}
 				ne++;
@@ -379,9 +380,9 @@ register RAY  *r;
 		addcolor(dnew.v, ar.rcol);
 		dnew.n = div[0].n + 1;
 		dnew.t = div[0].t; dnew.p = div[0].p;
-		yd = bright(dnew.v)/dnew.n - bright(ar.rcol);
-		yd = yd*yd + div[0].k*(div[0].n*div[0].n);
-		dnew.k = yd/(dnew.n*dnew.n);
+		b2 = bright(dnew.v)/dnew.n - bright(ar.rcol);
+		b2 = b2*b2 + div[0].k*(div[0].n*div[0].n);
+		dnew.k = b2/(dnew.n*dnew.n);
 						/* reinsert */
 		for (k = 0; k < ne-1 && dnew.k < div[k+1].k; k++)
 			bcopy(&div[k+1], &div[k], sizeof(AMBSAMP));
