@@ -180,19 +180,25 @@ FVECT  pg, dg;
 			addcolor(acol, dp->v);
 		}
 		b = bright(acol);
-		if (b > FTINY)
+		if (b > FTINY) {
 			b = ndivs/b;
-		else
-			b = 0.0;
-		if (pg != NULL) {
-			posgradient(pg, div, &hemi);
-			for (i = 0; i < 3; i++)
-				pg[i] *= b;
-		}
-		if (dg != NULL) {
-			dirgradient(dg, div, &hemi);
-			for (i = 0; i < 3; i++)
-				dg[i] *= b;
+			if (pg != NULL) {
+				posgradient(pg, div, &hemi);
+				for (i = 0; i < 3; i++)
+					pg[i] *= b;
+			}
+			if (dg != NULL) {
+				dirgradient(dg, div, &hemi);
+				for (i = 0; i < 3; i++)
+					dg[i] *= b;
+			}
+		} else {
+			if (pg != NULL)
+				for (i = 0; i < 3; i++)
+					pg[i] = 0.0;
+			if (dg != NULL)
+				for (i = 0; i < 3; i++)
+					dg[i] = 0.0;
 		}
 		free((char *)div);
 	}
@@ -249,6 +255,11 @@ register AMBHEMI  *hp;
 	dp = da;
 	for (i = 0; i < hp->nt; i++)
 		for (j = 0; j < hp->np; j++) {
+#ifdef  DEBUG
+			if (dp->t != i || dp->p != j)
+				error(CONSISTENCY,
+					"division order in comperrs");
+#endif
 			b = bright(dp[0].v);
 			if (i > 0) {		/* from above */
 				b2 = bright(dp[-hp->np].v) - b;
