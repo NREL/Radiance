@@ -67,11 +67,11 @@ char	*argv[];
 		lseek(hdfd[0], (off_t)nextipos, 0);
 		read(hdfd[0], (char *)&nextipos, sizeof(nextipos));
 					/* get output position; set last */
-		thisopos = lseek(hdfd[1], (off_t)0L, 2);
+		thisopos = lseek(hdfd[1], (off_t)0, 2);
 		if (lastopos > 0L) {
 			lseek(hdfd[1], (off_t)lastopos, 0);
 			write(hdfd[1], (char *)&thisopos, sizeof(thisopos));
-			lseek(hdfd[1], (off_t)0L, 2);
+			lseek(hdfd[1], (off_t)0, 2);
 		}
 		lastopos = thisopos;
 		thisopos = 0L;		/* write place holder */

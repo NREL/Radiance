@@ -431,7 +431,7 @@ HDGRID	*gp;
 	putw(HOLOMAGIC, fp);		/* put magic number */
 	fd = dup(fileno(fp));
 	fclose(fp);			/* flush and close stdio stream */
-	lastloc = lseek(fd, (off_t)0L, 2);
+	lastloc = lseek(fd, (off_t)0, 2);
 	for (n = vdef(SECTION); n--; gp++) {	/* initialize each section */
 		nextloc = 0L;
 		write(fd, (char *)&nextloc, sizeof(nextloc));
