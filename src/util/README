@@ -5,14 +5,19 @@ This directory contains glare calculation programs and other utilites
 that combine functions and do not fit under the usual catagories.
 
 glare.h		common data structures for glare source finding routines
+netproc.h	header file for network process routines
 setscan.h	defines for programs using setscan()
+vars.h		header file for loadvars.c routines (used by rad and ranimate)
 Version.c	symbolic link to ../rt/Version.c (current Radiance version)
 findglare.c	find glare sources in a scene or image
 glarendx.c	compute Glare Index given by program name or -t option
 glaresrc.c	gather samples and compute glare sources
 glareval.c	compute pixels for glare calculation
+loadvars.c	routines to read variables for rad and ranimate
 makedist.c	program to make a source distribution (obsolete with mkillum)
+netproc.c	routines to control processes on local and remote hosts
 rad.c		executive program to run oconv, rpict and pfilt (and rview)
+ranimate.c	animation control program
 rpiece.c	program to control parallel generation of a picture
 setscan.c	convert angle ranges of the form a-b:s,c to discrete values
 vwright.c	short program to read in and modify views
