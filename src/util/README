@@ -17,9 +17,10 @@ glareval.c	compute pixels for glare calculation
 makedist.c	program to make a source distribution (obsolete with mkillum)
 objpict.csh	script to compute 4-view picture of an object
 objview.csh	script to run rview on an object
-rad.c	executive program to run oconv, rpict and pfilt (and rview)
+rad.c		executive program to run oconv, rpict and pfilt (and rview)
 rpiece.c	program to control parallel generation of a picture
 setscan.c	convert angle ranges of the form a-b:s,c to discrete values
+vwright.c	short program to read in and modify views
 x11findwind.c	find an X11 window from its name
 xglaresrc.c	circle glare sources in a displayed image
 trad.wsh	graphical user interface to "rad" based on Tcl/Tk (wish script)
