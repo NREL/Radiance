@@ -12,6 +12,8 @@ OPT = -O
 MACH = -DBSD -DSTRUCTASSIGN -f68881 /usr/lib/libm.il
 CFLAGS = -DSTRICT $(OPT) $(MACH) -I../common -L../lib
 
+COMPAT = malloc.o
+
 LIBDIR = /usr/local/lib/ray
 
 INSTDIR = /lumen/lumen/ray/bin.sun3
@@ -19,10 +21,10 @@ INSTDIR = /lumen/lumen/ray/bin.sun3
 all:	oconv getbbox
 
 oconv:	oconv.o sphere.o writeoct.o o_face.o plocate.o \
-clip.o o_cone.o o_instance.o bbox.o initotypes.o readfargs.o
+clip.o o_cone.o o_instance.o bbox.o initotypes.o readfargs.o $(COMPAT)
 	cc $(CFLAGS) -o oconv oconv.o writeoct.o sphere.o o_face.o \
 plocate.o clip.o o_cone.o o_instance.o bbox.o readfargs.o \
-initotypes.o -lrt -lm
+initotypes.o $(COMPAT) -lrt -lm
 
 getbbox:	getbbox.o readobj2.o bbox.o initotypes2.o
 	cc $(CFLAGS) -o getbbox getbbox.o readobj2.o \
