@@ -64,9 +64,6 @@ extern char  *memcpy(), *memset();
 #define	 rindex			strrchr
 #endif
 
-#ifndef atof
-extern double  atof();
-#endif
 extern char  *sskip();
 extern char  *getpath(), *getenv();
 #ifndef malloc
