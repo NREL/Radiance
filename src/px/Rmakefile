@@ -36,7 +36,7 @@ install:	$(PROGS) normpat.csh falsecolor.csh
 	chmod 755 $(INSTDIR)/normpat $(INSTDIR)/falsecolor
 
 clean:
-	set nonomatch; rm -f $(PROGS) *.o core
+	set nonomatch; rm -f $(PROGS) aedimage x10image *.o core
 
 pfilt:	pfilt.o pf2.o pf3.o
 	cc $(CFLAGS) -o pfilt pfilt.o pf2.o pf3.o ../common/librt.a -lm
