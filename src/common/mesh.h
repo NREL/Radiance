@@ -67,7 +67,7 @@ typedef struct {
 		BYTE		v3;		/* local vertex */
 	}		*j2tri;		/* double joiner triangles */
 	short		nverts;		/* vertex count */
-	short		ntris;		/* triangle count */
+	short		ntris;		/* local triangle count */
 	short		nj1tris;	/* joiner triangle count */
 	short		nj2tris;	/* double joiner triangle count */
 } MESHPATCH;

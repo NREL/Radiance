@@ -116,7 +116,7 @@ int	samplendx = 0;			/* index for this sample */
 void	(*trace)() = NULL;		/* trace call */
 
 extern void	ambnotify();
-void	(*addobjnotify[])() = {ambnotify, NULL};
+void	(*addobjnotify[8])() = {ambnotify, NULL};
 
 int	do_irrad = 0;			/* compute irradiance? */
 

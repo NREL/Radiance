@@ -4,7 +4,7 @@ static const char	RCSid[] = "$Id$";
 /*
  * Find and open a Radiance library file.
  *
- *  External symbols declared in standard.h
+ *  External symbols declared in rtio.h
  */
 
 #include "copyright.h"
@@ -19,7 +19,6 @@ FILE *
 frlibopen(fname)		/* find file and open for reading */
 register char  *fname;
 {
-	extern char  *getrlibpath();
 	FILE  *fp;
 	char  pname[PATH_MAX];
 	register char  *sp, *cp;
