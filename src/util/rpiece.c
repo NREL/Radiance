@@ -386,6 +386,10 @@ int  xpos, ypos;
 				progname, rpargv[0]);
 		exit(cleanup(1));
 	}
+	if (verbose) {				/* notify caller */
+		printf("%d %d begun\n", xpos, ypos);
+		fflush(stdout);
+	}
 	unguard();
 				/* load new piece into buffer */
 	for (y = 0; y < vr; y++) {
