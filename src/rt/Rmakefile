@@ -1,0 +1,195 @@
+# SCCSid "$SunId$ LBL"
+
+#
+#  Compiles for ray tracing programs.
+#
+
+CFLAGS = -DBSD -O -DIEEE -f68881 /usr/lib/f68881.il
+
+#
+# The following are user-definable:
+#
+DESTDIR = .
+INSTDIR = /usr/local/ray
+INSTALL = cp
+
+#
+# The following paths must exist and be relative to root:
+#
+DEVDIR = $(LIBDIR)/lib
+LIBDIR = /usr/local/lib/ray
+
+#
+# Broken library routines:
+#
+COMPAT = malloc.o
+
+#
+# Device drivers for rview (see also devtable.c):
+#
+DOBJS = devtable.o devcomm.o aed.o tty.o editline.o sun.o x10.o xtwind.o
+DLIBS = -lX
+DRIVERS = $(DEVDIR)/sun.dev $(DEVDIR)/sun.com
+
+#
+# Standard object files:
+#
+
+RTOBJS = rtmain.o rtrace.o $(ROBJS)
+
+RPOBJS = rpmain.o rpict.o image.o $(ROBJS)
+
+RVOBJS = rvmain.o rview.o rv2.o rv3.o image.o $(DOBJS) $(ROBJS)
+
+ROBJS = $(OCTOBJS) $(RAYOBJS) $(SURFOBJS) $(MATOBJS) \
+	$(MODOBJS) $(SUPPOBJS) $(MISCOBJS) $(COMPAT)
+
+OCTOBJS = octree.o readobj.o readoct.o objset.o otypes.o
+
+RAYOBJS = raytrace.o ambient.o
+
+SURFOBJS = face.o sphere.o source.o o_face.o cone.o \
+		o_cone.o o_instance.o instance.o
+
+MATOBJS = normal.o dielectric.o m_clip.o glass.o
+
+MODOBJS = p_func.o t_func.o p_data.o text.o mx_func.o mx_data.o
+
+SUPPOBJS = zeroes.o calexpr.o caldefn.o calfunc.o func.o noise3.o data.o
+
+MISCOBJS = misc.o color.o header.o mat4.o xf.o fvect.o savestr.o ealloc.o
+
+#
+# What this makefile produces:
+#
+
+PROGS = $(DESTDIR)/rtrace $(DESTDIR)/rpict $(DESTDIR)/rview $(DESTDIR)/lookamb
+
+all:	$(PROGS) $(DRIVERS)
+
+install:	all
+	sccs check
+	$(INSTALL) $(PROGS) $(INSTDIR)
+
+clean:
+	rm -f *.o core
+
+#
+# Links:
+#
+
+$(DESTDIR)/rtrace:	$(RTOBJS)
+	cc $(CFLAGS) -o $(DESTDIR)/rtrace $(RTOBJS) -lm
+
+$(DESTDIR)/rpict:	$(RPOBJS)
+	cc $(CFLAGS) -o $(DESTDIR)/rpict $(RPOBJS) -lm
+
+$(DESTDIR)/rview:	$(RVOBJS)
+	cc $(CFLAGS) -o $(DESTDIR)/rview $(RVOBJS) $(DLIBS) -lm
+
+$(DESTDIR)/lookamb:	lookamb.o
+	cc $(CFLAGS) -o $(DESTDIR)/lookamb lookamb.o
+
+$(DEVDIR)/sun.dev:	sundev.o
+	cc $(CFLAGS) -o $(DEVDIR)/sun.dev sundev.o \
+-lsuntool -lsunwindow -lpixrect -lm
+
+$(DEVDIR)/sun.com:	suncom.o editline.o
+	cc $(CFLAGS) -o $(DEVDIR)/sun.com suncom.o editline.o
+
+#
+# Special compiles:
+#
+
+rtmain.o:	rmain.c
+	cc $(CFLAGS) -DRTRACE -DNICE=4 -DDEFPATH=\":$(LIBDIR)\" -c rmain.c
+	mv rmain.o rtmain.o
+
+rpmain.o:	rmain.c
+	cc $(CFLAGS) -DRPICT -DNICE=6 -DDEFPATH=\":$(LIBDIR)\" -c rmain.c
+	mv rmain.o rpmain.o
+
+rvmain.o:	rmain.c
+	cc $(CFLAGS) -DRVIEW -DDEFPATH=\":$(LIBDIR)\" -c rmain.c
+	mv rmain.o rvmain.o
+
+#
+# Uncomment the following to model dispersion:
+#
+#dielectric.o:	dielectric.c source.h
+#	cc $(CFLAGS) -DDISPERSE -c dielectric.c
+#
+#color.o:	color.c color.h
+#	cc $(CFLAGS) -DSPEC_RGB -c color.c
+#
+# end of dispersion compiles.
+
+sundev.o:	sundev.c
+	cc $(CFLAGS) -DTTYPROG=\"$(DEVDIR)/sun.com\" -c sundev.c
+
+devcomm.o:	devcomm.c
+	cc $(CFLAGS) -DDEVPATH=\"$(DEVDIR)\" -c devcomm.c
+
+ambient.o:	ambient.c
+	cc $(CFLAGS) -DAMBFLUSH=16 -c ambient.c
+
+calexpr.o:	calexpr.c calcomp.h
+	cc $(CFLAGS) -DVARIABLE -DFUNCTION -DINCHAN -DRCONST -c calexpr.c
+
+caldefn.o:	caldefn.c calcomp.h
+	cc $(CFLAGS) -DFUNCTION -c caldefn.c
+
+calfunc.o:	calfunc.c calcomp.h
+	cc $(CFLAGS) -DVARIABLE -DBIGLIB -c calfunc.c
+
+xf.o:	xf.c
+	cc $(CFLAGS) -DINVXF -c xf.c
+
+#
+# Include dependencies:
+#
+
+caldefn.o calexpr.o calfunc.o:	calcomp.h
+
+aed.o color.o data.o devcomm.o lookamb.o rview.o sundev.o x10.o:	color.h
+
+cone.o o_cone.o source.o:	cone.h
+
+data.o mx_data.o p_data.o:	data.h
+
+aed.o devcomm.o devtable.o sun.o sundev.o tty.o x10.o:	driver.h
+
+face.o o_face.o source.o:	face.h
+
+fvect.o:	fvect.h
+
+cone.o face.o objset.o otypes.o readobj.o readoct.o:	object.h
+
+ambient.o objset.o octree.o raytrace.o readoct.o rmain.o rv2.o:	octree.h
+
+o_instance.o instance.o:	instance.h octree.h
+
+cone.o dielectric.o func.o normal.o o_cone.o otypes.o \
+text.o raytrace.o readobj.o readoct.o rtrace.o \
+rv2.o source.o sphere.o:	otypes.h
+
+ambient.o rpict.o rv3.o source.o:	random.h
+
+ambient.o dielectric.o func.o glass.o image.o m_clip.o \
+mx_data.o mx_func.o normal.o o_cone.o o_face.o o_instance.o \
+p_data.o p_func.o text.o raytrace.o rmain.o rpict.o \
+rtrace.o rv2.o rv3.o source.o \
+sphere.o t_func.o:	ray.h standard.h fvect.h object.h color.h
+
+rv2.o rv3.o rview.o:	rpaint.h driver.h view.h
+
+dielectric.o normal.o source.o:	source.h
+
+cone.o data.o face.o misc.o objset.o octree.o otypes.o \
+readobj.o readoct.o rview.o:	standard.h fvect.h
+
+sundev.o:	suntools.icon
+
+image.o rmain.o rpict.o:	view.h
+
+x10.o xtwind.o:	xtwind.h
