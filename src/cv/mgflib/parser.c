@@ -733,6 +733,7 @@ char	**av;
 	static char	*p4ent[5] = {mg_ename[MG_E_POINT],p4[0],p4[1],p4[2]};
 	static char	*n4ent[5] = {mg_ename[MG_E_NORMAL],n4[0],n4[1],n4[2]};
 	static char	*fent[6] = {mg_ename[MG_E_FACE],"_cv1","_cv2","_cv3","_cv4"};
+	char	*v1n;
 	register C_VERTEX	*cv1, *cv2;
 	register int	i, j;
 	FVECT	u, v, w;
@@ -748,6 +749,7 @@ char	**av;
 	if ((cv1 = c_getvert(av[1])) == NULL ||
 			(cv2 = c_getvert(av[3])) == NULL)
 		return(MG_EUNDEF);
+	v1n = av[1];
 	if (!isflt(av[2]) || !isflt(av[4]))
 		return(MG_ETYPE);
 	rad1 = atof(av[2]);
@@ -766,6 +768,7 @@ char	**av;
 		cv = cv1;
 		cv1 = cv2;
 		cv2 = cv;
+		v1n = av[3];
 		d = rad1;
 		rad1 = rad2;
 		rad2 = d;
@@ -799,7 +802,7 @@ char	**av;
 	if ((rv = mg_handle(MG_E_NORMAL, 4, n3ent)) != MG_OK)
 		return(rv);
 	if (rad1 == 0.) {		/* triangles */
-		v1ent[3] = av[1];
+		v1ent[3] = v1n;
 		if ((rv = mg_handle(MG_E_VERTEX, 4, v1ent)) != MG_OK)
 			return(rv);
 		for (j = 0; j < 3; j++)
