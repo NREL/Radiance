@@ -48,27 +48,32 @@ int	xres=0, yres=0;			/* picture resolution */
 
 int	xpos, ypos;			/* picture position */
 
+int	wrongformat = 0;
+
 
 tputs(s)			/* put out string preceded by a tab */
 char	*s;
 {
+	char	fmt[32];
 	double	d;
 	COLOR	ctmp;
-				/* echo header line */
-	putchar('\t');
-	fputs(s, stdout);
-	if (!original)
-		return;
-				/* check for exposure */
-	if (isexpos(s)) {
+
+	if (isformat(s)) {			/* check format */
+		formatval(fmt, s);
+		wrongformat = strcmp(fmt, COLRFMT);
+	} else if (original && isexpos(s)) {	/* exposure */
 		d = 1.0/exposval(s);
 		scalecolor(input[nfiles].coef, d);
-	} else if (iscolcor(s)) {
+	} else if (original && iscolcor(s)) {	/* color correction */
 		colcorval(ctmp, s);
 		colval(input[nfiles].coef,RED) /= colval(ctmp,RED);
 		colval(input[nfiles].coef,GRN) /= colval(ctmp,GRN);
 		colval(input[nfiles].coef,BLU) /= colval(ctmp,BLU);
+	} else {				/* echo unaffected line */
+		putchar('\t');
+		fputs(s, stdout);
 	}
+
 }
 
 
@@ -153,7 +158,12 @@ getfiles:
 		}
 		fputs(input[nfiles].name, stdout);
 		fputs(":\n", stdout);
-		getheader(input[nfiles].fp, tputs);
+		getheader(input[nfiles].fp, tputs, NULL);
+		if (wrongformat) {
+			eputs(input[nfiles].name);
+			eputs(": not in Radiance picture format\n");
+			quit(1);
+		}
 		if (fgetresolu(&xpos, &ypos, input[nfiles].fp) !=
 				(YMAJOR|YDECR)) {
 			eputs(input[nfiles].name);
@@ -172,6 +182,7 @@ getfiles:
 		nfiles++;
 	}
 	printargs(argc, argv, stdout);
+	fputformat(COLRFMT, stdout);
 	putchar('\n');
 	fputresolu(YMAJOR|YDECR, xres, yres, stdout);
 	combine();

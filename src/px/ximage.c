@@ -72,6 +72,8 @@ int  cury = 0;				/* current scan location */
 
 double  exposure = 1.0;			/* exposure compensation used */
 
+int  wrongformat = 0;			/* input in another format */
+
 struct {
 	int  xmin, ymin, xsiz, ysiz;
 }  box = {0, 0, 0, 0};			/* current box */
@@ -141,9 +143,9 @@ char  *argv[];
 		}
 	}
 				/* get header */
-	getheader(fin, headline);
+	getheader(fin, headline, NULL);
 				/* get picture dimensions */
-	if (fgetresolu(&xmax, &ymax, fin) != (YMAJOR|YDECR))
+	if (wrongformat || fgetresolu(&xmax, &ymax, fin) != (YMAJOR|YDECR))
 		quiterr("bad picture size");
 				/* set view parameters */
 	if (gotview && setview(&ourview) != NULL)
@@ -168,10 +170,14 @@ char  *s;
 {
 	static char  *altname[] = {"rview","rpict",VIEWSTR,NULL};
 	register char  **an;
+	char  fmt[32];
 
 	if (isexpos(s))
 		exposure *= exposval(s);
-	else
+	else if (isformat(s)) {
+		formatval(fmt, s);
+		wrongformat = strcmp(fmt, COLRFMT);
+	} else
 		for (an = altname; *an != NULL; an++)
 			if (!strncmp(*an, s, strlen(*an))) {
 				if (sscanview(&ourview, s+strlen(*an)) > 0)

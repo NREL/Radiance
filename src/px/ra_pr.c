@@ -114,6 +114,7 @@ char  *argv[];
 			quiterr("incompatible format");
 					/* put header */
 		printargs(i, argv, stdout);
+		fputformat(COLRFMT, stdout);
 		putchar('\n');
 		fputresolu(YMAJOR|YDECR, xmax, ymax, stdout);
 					/* convert file */
@@ -185,10 +186,10 @@ register struct rasterfile  *h;
 		p->fp = stdin;
 	else if ((p->fp = fopen(fname, "r")) == NULL)
 		return(NULL);
-					/* discard header */
-	getheader(p->fp, NULL);
-	if (fgetresolu(&xmax, &ymax, p->fp) != (YMAJOR|YDECR))
-		quiterr("bad picture size");
+					/* check header */
+	if (checkheader(p->fp, COLRFMT, NULL) < 0 ||
+			fgetresolu(&xmax, &ymax, p->fp) != (YMAJOR|YDECR))
+		quiterr("bad picture format");
 	p->nexty = 0;
 	p->bytes_line = 0;		/* variable length lines */
 	p->pos.y = (long *)ecalloc(ymax, sizeof(long));

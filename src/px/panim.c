@@ -103,6 +103,11 @@ char	*file;
 	}
 						/* get dimensions */
 	getheader(fp, NULL);
+	if (checkheader(fp, COLRFMT, NULL) < 0) {
+		fputs(file, stderr);
+		fputs(": not a Radiance picture\n", stderr);
+		exit(1);
+	}
 	if (fgetresolu(&xres, &yres, fp) != (YMAJOR|YDECR) ||
 			xres > SCANLINE || yres > NUMSCANS) {
 		fputs(file, stderr);

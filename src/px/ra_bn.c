@@ -69,6 +69,7 @@ char  *argv[];
 		}
 					/* put header */
 		printargs(i, argv, rafp);
+		fputformat(COLRFMT, rafp);
 		putc('\n', rafp);
 		fputresolu(YMAJOR|YDECR, xmax, ymax, rafp);
 					/* convert file */
@@ -84,8 +85,8 @@ char  *argv[];
 			quiterr(errmsg);
 		}
 					/* get header */
-		getheader(rafp, NULL);
-		if (fgetresolu(&xmax, &ymax, rafp) != (YMAJOR|YDECR))
+		if (checkheader(rafp, COLRFMT, NULL) < 0 ||
+			fgetresolu(&xmax, &ymax, rafp) != (YMAJOR|YDECR))
 			quiterr("bad RADIANCE format");
 		if (openbarney(argv[i+1], "w") < 0) {
 			sprintf(errmsg, "cannot open output \"%s\"", argv[i+1]);

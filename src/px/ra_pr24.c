@@ -75,16 +75,16 @@ char  *argv[];
 			quiterr("incompatible format");
 					/* put header */
 		printargs(i, argv, stdout);
+		fputformat(COLRFMT, stdout);
 		putchar('\n');
 		fputresolu(YMAJOR|YDECR, xmax, ymax, stdout);
 					/* convert file */
 		pr2ra();
 	} else {
-					/* discard input header */
-		getheader(stdin, NULL);
-					/* get resolution */
-		if (fgetresolu(&xmax, &ymax, stdin) != (YMAJOR|YDECR))
-			quiterr("bad picture size");
+					/* get header info. */
+		if (checkheader(stdin, COLRFMT, NULL) < 0 ||
+			fgetresolu(&xmax, &ymax, stdin) != (YMAJOR|YDECR))
+			quiterr("bad picture format");
 					/* write rasterfile header */
 		head.ras_magic = RAS_MAGIC;
 		head.ras_width = xmax;

@@ -52,9 +52,14 @@ char	*argv[];
 		exit(1);
 	}
 					/* transfer header */
-	copyheader(fin, stdout);
+	if (checkheader(fin, COLRFMT, stdout) < 0) {
+		fprintf(stderr, "%s: input not a Radiance picture\n",
+				progname);
+		exit(1);
+	}
 					/* add new header info. */
 	printargs(i, argv, stdout);
+	fputformat(COLRFMT, stdout);
 	putchar('\n');
 					/* get picture size */
 	if (fgetresolu(&xres, &yres, fin) != (YMAJOR|YDECR)) {

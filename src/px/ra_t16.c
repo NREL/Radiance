@@ -96,13 +96,14 @@ char  *argv[];
 			quiterr("incompatible format");
 					/* put header */
 		printargs(i, argv, stdout);
+		fputformat(COLRFMT, stdout);
 		putchar('\n');
 		fputresolu(YMAJOR|YDECR, head.x, head.y, stdout);
 					/* convert file */
 		tg2ra(&head);
 	} else {
-		getheader(stdin, NULL);
-		if (fgetresolu(&head.x, &head.y, stdin) != (YMAJOR|YDECR))
+		if (checkheader(stdin, COLRFMT, NULL) < 0 ||
+			fgetresolu(&head.x, &head.y, stdin) != (YMAJOR|YDECR))
 			quiterr("bad picture file");
 					/* assign header */
 		head.textSize = 0;

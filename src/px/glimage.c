@@ -39,7 +39,10 @@ char  *argv[];
 		exit(1);
 	}
 				/* discard header */
-	getheader(input, NULL);
+	if (checkheader(input, COLRFMT, NULL) < 0) {
+		fprintf(stderr, "%s: not a Radiance picture\n", fname);
+		exit(1);
+	}
 				/* get picture dimensions */
 	if (fgetresolu(&xres, &yres, input) != (YMAJOR|YDECR)) {
 		fprintf(stderr, "%s: bad picture size\n", fname);

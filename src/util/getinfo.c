@@ -12,6 +12,8 @@ static char SCCSid[] = "$SunId$ LBL";
 
 #include  <stdio.h>
 
+extern int  fputs();
+
 
 tabstr(s)				/* put out line followed by tab */
 register char  *s;
@@ -51,7 +53,7 @@ char  *argv[];
 				getdim(fp);
 			} else {
 				tabstr(":\n");
-				getheader(fp, tabstr);
+				getheader(fp, tabstr, NULL);
 				putchar('\n');
 			}
 			fclose(fp);
@@ -61,7 +63,7 @@ char  *argv[];
 		if (dim) {
 			getdim(stdin);
 		} else {
-			copyheader(stdin, stdout);
+			getheader(stdin, fputs, stdout);
 			putchar('\n');
 		}
 	exit(0);
