@@ -84,6 +84,7 @@ char  *name, *id;
 {
 	int  nplanes;
 	XVisualInfo  ourvinfo;
+	XSetWindowAttributes	ourwinattr;
 	XWMHints  ourxwmhints;
 
 	ourdisplay = XOpenDisplay(NULL);
@@ -108,18 +109,21 @@ char  *name, *id;
 	}
 	ourvisual = ourvinfo.visual;
 	make_gmap(GAMMA);
-	/* create a cursor */
-	pickcursor = XCreateFontCursor (ourdisplay, XC_diamond_cross);
 	/* open window */
-	gwind = XCreateSimpleWindow(ourdisplay, ourroot, 0, 0,
+	ourwinattr.background_pixel = ourwhite;
+	ourwinattr.border_pixel = ourblack;
+	gwind = XCreateWindow(ourdisplay, ourroot, 0, 0,
 		DisplayWidth(ourdisplay,ourscreen)-2*BORWIDTH,
 		DisplayHeight(ourdisplay,ourscreen)-2*BORWIDTH,
-		BORWIDTH, ourblack, ourwhite);
+		BORWIDTH, nplanes, InputOutput, ourvisual,
+		CWBackPixel|CWBorderPixel, &ourwinattr);
 	if (gwind == 0) {
 		stderr_v("cannot create window\n");
 		return(NULL);
 	}
 	XStoreName(ourdisplay, gwind, id);
+	/* create a cursor */
+	pickcursor = XCreateFontCursor(ourdisplay, XC_diamond_cross);
 	ourgc = XCreateGC(ourdisplay, gwind, 0, NULL);
 	ourxwmhints.flags = InputHint;
 	ourxwmhints.input = True;
@@ -221,8 +225,7 @@ int  xmin, ymin, xmax, ymax;
 static
 x11_flush()			/* flush output */
 {
-	if (ncolors <= 0 && ourvisual->class != TrueColor)	/* dummy */
-		XFillRectangle(ourdisplay, gwind, ourgc, 0, 0, 1 ,1);
+	XNoOp(ourdisplay);
 	while (XPending(ourdisplay) > 0)
 		getevent();
 }
