@@ -18,6 +18,8 @@ INSTDIR = /lumen/lumen/ray/bin.sun3
 
 COMPAT = bmalloc.o
 
+all:	oconv getbbox
+
 oconv:	misc.o objset.o oconv.o octree.o readobj.o \
 readoct.o sphere.o fvect.o otypes.o writeoct.o o_face.o face.o plocate.o xf.o \
 clip.o cone.o o_cone.o instance.o o_instance.o bbox.o savestr.o header.o \
@@ -27,8 +29,17 @@ readobj.o writeoct.o fvect.o otypes.o sphere.o misc.o o_face.o \
 face.o plocate.o clip.o cone.o o_cone.o instance.o o_instance.o mat4.o xf.o \
 bbox.o savestr.o header.o fgetline.o initotypes.o $(COMPAT) -lm
 
-install:	oconv
-	cp oconv $(INSTDIR)
+getbbox:	getbbox.o objset.o octree.o readobj2.o \
+readoct.o fvect.o otypes.o face.o xf.o misc.o \
+cone.o instance.o bbox.o savestr.o header.o \
+mat4.o fgetline.o initotypes2.o $(COMPAT)
+	cc $(CFLAGS) -o getbbox getbbox.o readoct.o octree.o objset.o \
+readobj2.o fvect.o otypes.o misc.o \
+face.o cone.o instance.o mat4.o xf.o \
+bbox.o savestr.o header.o fgetline.o initotypes2.o $(COMPAT) -lm
+
+install:	oconv getbbox
+	cp oconv getbbox $(INSTDIR)
 
 clean:
 	set nonomatch; rm -f oconv *.o core
