@@ -185,7 +185,7 @@ int  (*cs)();
 #endif
 
 
-dcleanup(lvl)			/* clear definitions (0->vars,1->consts,2->output) */
+dcleanup(lvl)		/* clear definitions (0->vars,1->output,2->consts) */
 int  lvl;
 {
     register int  i;
@@ -194,12 +194,12 @@ int  lvl;
 
     for (i = 0; i < NHASH; i++)
 	for (vp = hashtbl[i]; vp != NULL; vp = vp->next)
-	    if (lvl >= 1)
+	    if (lvl >= 2)
 		dremove(vp->name);
 	    else
 		dclear(vp->name);
 #ifdef  OUTCHAN
-    if (lvl >= 2) {
+    if (lvl >= 1) {
 	for (ep = outchan; ep != NULL; ep = ep->sibling)
 	    epfree(ep);
 	outchan = NULL;
