@@ -252,7 +252,6 @@ setvariable(ass)		/* assign variable according to string */
 register char	*ass;
 {
 	char	varname[32];
-	char	varval[512];
 	int	n;
 	register char	*cp;
 	register VARIABLE	*vp;
