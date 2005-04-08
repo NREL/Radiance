@@ -188,6 +188,8 @@ BMPopenReader(int (*cget)(void *), int (*seek)(uint32, void *), void *c_data)
 	br->hdr->hRes = rdint32(br);		/* horizontal resolution */
 	br->hdr->vRes = rdint32(br);		/* vertical resolution */
 	br->hdr->nColors = rdint32(br);		/* # colors used */
+	if (!br->hdr->nColors && br->hdr->bpp <= 8)
+		br->hdr->nColors = 1<<br->hdr->bpp;
 	br->hdr->impColors = rdint32(br);       /* # important colors */
 	if (br->hdr->impColors < 0)
 		goto err;			/* catch premature EOF */
@@ -257,8 +259,8 @@ BMPisGrayscale(const BMPHeader *hdr)
 		return -1;
 	if (hdr->bpp > 8)		/* assume they had a reason for it */
 		return 0;
-	for (rgbp = hdr->palette, n = hdr->nColors; n-- > 0; rgbp++)
-		if (((rgbp->r != rgbp->g) | (rgbp->g != rgbp->b)))
+	for (rgbp = hdr->palette, n = hdr->impColors; n-- > 0; rgbp++)
+		if ((rgbp->r != rgbp->g) | (rgbp->g != rgbp->b))
 			return 0;
 	return 1;			/* all colors neutral in map */
 }
