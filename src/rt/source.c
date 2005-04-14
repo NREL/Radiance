@@ -46,8 +46,6 @@ extern OBJREC *			/* find an object's actual material */
 findmaterial(register OBJREC *o)
 {
 	while (!ismaterial(o->otype)) {
-		if (ismixture(o->otype))
-			return(NULL);   /* reject mixed materials */
 		if (o->otype == MOD_ALIAS && o->oargs.nsargs) {
 			OBJECT  aobj;
 			OBJREC  *ao;
@@ -62,7 +60,7 @@ findmaterial(register OBJREC *o)
 			return(NULL);
 		o = objptr(o->omod);
 	}
-	return(o);
+	return(o);		/* mixtures will return NULL */
 }
 
 
