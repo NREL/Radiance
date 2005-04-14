@@ -14,6 +14,7 @@ static const char	RCSid[] = "$Id$";
 
 #include  "platform.h"
 #include  "ray.h"
+#include  "source.h"
 #include  "ambient.h"
 #include  "otypes.h"
 #include  "rpaint.h"
@@ -725,10 +726,10 @@ char  *s;
 	if (thisray.ro == NULL)
 		(*dev->comout)("ray hit nothing");
 	else {
+		OBJREC	*mat = findmaterial(thisray.ro);
 		sprintf(buf, "ray hit %s%s %s \"%s\"",
 				thisray.rod < 0.0 ? "back of " : "",
-				thisray.ro->omod == OVOID ? VOIDID :
-					objptr(thisray.ro->omod)->oname,
+				mat==NULL ? VOIDID : mat->oname,
 				ofun[thisray.ro->otype].funame,
 				thisray.ro->oname);
 		if ((ino = objptr(thisray.robj)) != thisray.ro)
