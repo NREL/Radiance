@@ -738,9 +738,9 @@ char  *s;
 			strcpy(matspec, "back of ");
 		if (mod != NULL) {
 			strcat(matspec, mod->oname);
-			if (mat != mod)
-				sprintf(matspec+strlen(matspec), " (%s)",
-					mat!=NULL ? mat->oname : VOIDID);
+			if (mat != mod && mat != NULL)
+				sprintf(matspec+strlen(matspec),
+					" (%s)", mat->oname);
 		} else
 			strcat(matspec, VOIDID);
 		sprintf(buf, "ray hit %s %s \"%s\"", matspec,
