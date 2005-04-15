@@ -373,13 +373,11 @@ vstestvis(		/* pretest source visibility */
 			if (!srcray(&sr, NULL, &si) || sr.rsrc != sn)
 				continue;	/* can't get there from here */
 		}
-		sr.revf = srcvalue;
-		rayvalue(&sr);			/* check sample validity */
+		srcvalue(&sr);			/* check sample validity */
 		if (bright(sr.rcol) <= FTINY)
 			continue;
 		nok++;			/* got sample; check obstructions */
 		rayclear(&sr);
-		sr.revf = raytrace;
 		rayvalue(&sr);
 		if (bright(sr.rcol) > FTINY)
 			nhit++;

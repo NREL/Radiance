@@ -394,8 +394,7 @@ direct(					/* add direct component */
 #endif
 		VCOPY(scp->dir, sr.rdir);
 						/* compute potential */
-		sr.revf = srcvalue;
-		rayvalue(&sr);
+		srcvalue(&sr);
 		copycolor(scp->val, sr.rcol);
 		multcolor(scp->val, scp->coef);
 		cntord[sn].brt = bright(scp->val);
