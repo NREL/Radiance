@@ -66,7 +66,7 @@ m_mirror(			/* shade mirrored ray */
 	multcolor(mcolor, r->pcol);
 					/* compute reflected ray */
 	if (r->rsrc >= 0) {			/* relayed light source */
-		rayorigin(&nr, r, REFLECTED, 1.);
+		rayorigin(&nr, REFLECTED, r, mcolor);
 					/* ignore textures */
 		for (i = 0; i < 3; i++)
 			nr.rdir[i] = r->rdir[i] + 2.*r->rod*r->ron[i];
@@ -76,7 +76,7 @@ m_mirror(			/* shade mirrored ray */
 		FVECT  pnorm;
 		double  pdot;
 
-		if (rayorigin(&nr, r, REFLECTED, bright(mcolor)) < 0)
+		if (rayorigin(&nr, REFLECTED, r, mcolor) < 0)
 			return(1);
 		if (DOT(r->pert,r->pert) > FTINY*FTINY) {
 			pdot = raynormal(pnorm, r);	/* use textures */
@@ -90,7 +90,7 @@ m_mirror(			/* shade mirrored ray */
 				nr.rdir[i] = r->rdir[i] + 2.*r->rod*r->ron[i];
 	}
 	rayvalue(&nr);
-	multcolor(nr.rcol, mcolor);
+	multcolor(nr.rcol, nr.rcoef);
 	addcolor(r->rcol, nr.rcol);
 	if (rpure && r->ro != NULL && isflat(r->ro->otype))
 		r->rt = r->rot + nr.rt;

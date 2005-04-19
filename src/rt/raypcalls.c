@@ -43,7 +43,7 @@ static const char	RCSid[] = "$Id$";
  *	myRay.rorg = ( ray origin point )
  *	myRay.rdir = ( normalized ray direction )
  *	myRay.rmax = ( maximum length, or zero for no limit )
- *	rayorigin(&myRay, NULL, PRIMARY, 1.0);
+ *	rayorigin(&myRay, PRIMARY, NULL, NULL);
  *	myRay.rno = ( my personal ray identifier )
  *	if (ray_pqueue(&myRay) == 1)
  *		{ do something with results }

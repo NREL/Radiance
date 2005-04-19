@@ -165,7 +165,7 @@ m_mist(		/* process a ray entering or leaving some mist */
 	} else
 		setcolor(mext, 0., 0., 0.);
 						/* start transmitted ray */
-	if (rayorigin(&p, r, TRANS, 1.) < 0)
+	if (rayorigin(&p, TRANS, r, NULL) < 0)
 		return(1);
 	VCOPY(p.rdir, r->rdir);
 	p.slights = newslist;

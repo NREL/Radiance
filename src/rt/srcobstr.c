@@ -27,7 +27,7 @@ castshadow(int sn, FVECT rorg, FVECT rdir)
 	VCOPY(rt.rorg, rorg);
 	VCOPY(rt.rdir, rdir);
 	rt.rmax = 0;
-	rayorigin(&rt, NULL, PRIMARY, 1.0);
+	rayorigin(&rt, PRIMARY, NULL, NULL);
 					/* check for intersection */
 	while (localhit(&rt, &thescene)) {
 		RAY	rt1 = rt;	/* pretend we were aimed at source */

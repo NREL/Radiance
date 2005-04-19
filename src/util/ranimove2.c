@@ -396,7 +396,7 @@ ray_refine(			/* refine the given pixel by tracing a ray */
 			return(-1);
 		if (nprocs > 1) {
 			int	rval;
-			rayorigin(&ir, NULL, PRIMARY, 1.0);
+			rayorigin(&ir, PRIMARY, NULL, NULL);
 			ir.rno = n;
 			rval = ray_pqueue(&ir);
 			if (!rval)

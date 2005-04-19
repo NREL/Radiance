@@ -108,7 +108,7 @@ double  *mp;
 			return(-1);
 		}
 		if (!direc || ourview.type == VT_PAR) {
-			rayorigin(&thisray, NULL, PRIMARY, 1.0);
+			rayorigin(&thisray, PRIMARY, NULL, NULL);
 			if (!localhit(&thisray, &thescene)) {
 				error(COMMAND, "not a local object");
 				return(-1);
@@ -170,7 +170,7 @@ int  xmin, ymin, xmax, ymax;
 			h/hresolu, v/vresolu)) < -FTINY) {
 		setcolor(thisray.rcol, 0.0, 0.0, 0.0);
 	} else {
-		rayorigin(&thisray, NULL, PRIMARY, 1.0);
+		rayorigin(&thisray, PRIMARY, NULL, NULL);
 		samplendx++;
 		rayvalue(&thisray);
 	}

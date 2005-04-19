@@ -78,7 +78,7 @@ m_clip(			/* clip objects from ray */
 	r->newcset = cset;
 	if (strcmp(m->oargs.sarg[0], VOIDID)) {
 		int  inside = 0;
-		register RAY  *rp;
+		register const RAY  *rp;
 					/* check for penetration */
 		for (rp = r; rp->parent != NULL; rp = rp->parent)
 			if (!(rp->rtype & RAYREFL) && rp->parent->ro != NULL

@@ -305,7 +305,7 @@ getfocus(				/* set focus distance */
 			error(COMMAND, "not on image");
 			return;
 		}
-		rayorigin(&thisray, NULL, PRIMARY, 1.0);
+		rayorigin(&thisray, PRIMARY, NULL, NULL);
 		if (!localhit(&thisray, &thescene)) {
 			error(COMMAND, "not a local object");
 			return;
@@ -719,7 +719,7 @@ char  *s;
 		return;
 	}
 
-	rayorigin(&thisray, NULL, PRIMARY, 1.0);
+	rayorigin(&thisray, PRIMARY, NULL, NULL);
 	
 	rayvalue(&thisray);
 

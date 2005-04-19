@@ -361,7 +361,7 @@ vstestvis(		/* pretest source visibility */
 				sr.rdir[i] = -onorm[i];
 			}
 			sr.rmax = 0.0;
-			rayorigin(&sr, NULL, PRIMARY, 1.0);
+			rayorigin(&sr, PRIMARY, NULL, NULL);
 		} while (!(*ofun[o->otype].funp)(o, &sr));
 					/* check against source */
 		VCOPY(sr.rorg, sr.rop);	/* starting from intersection */

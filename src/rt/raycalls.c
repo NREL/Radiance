@@ -178,7 +178,7 @@ ray_trace(			/* trace a primary ray */
 	RAY	*r
 )
 {
-	rayorigin(r, NULL, PRIMARY, 1.0);
+	rayorigin(r, PRIMARY, NULL, NULL);
 	samplendx++;
 	rayvalue(r);		/* assumes origin and direction are set */
 }

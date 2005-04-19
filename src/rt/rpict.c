@@ -726,7 +726,7 @@ pixvalue(		/* compute pixel value */
 			return(0.0);
 	}
 
-	rayorigin(&thisray, NULL, PRIMARY, 1.0);
+	rayorigin(&thisray, PRIMARY, NULL, NULL);
 
 	rayvalue(&thisray);			/* trace ray */
 

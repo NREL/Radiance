@@ -448,7 +448,7 @@ drawsources(
 				if (source[sp->sn].sflags & SSPOT &&
 						spotout(&sr, source[sp->sn].sl.s))
 					continue;	/* outside spot */
-				rayorigin(&sr, NULL, SHADOW, 1.0);
+				rayorigin(&sr, SHADOW, NULL, NULL);
 				sr.rsrc = sp->sn;
 				rayvalue(&sr);		/* compute value */
 				if (bright(sr.rcol) <= FTINY)
