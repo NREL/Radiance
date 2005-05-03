@@ -50,9 +50,18 @@ putflt(f, fp)			/* put out floating point number */
 double	f;
 FILE  *fp;
 {
+	long  m;
 	int  e;
 
-	putint((long)(frexp(f,&e)*0x7fffffff), 4, fp);
+	m = frexp(f, &e) * 0x7fffffff;
+	if (e > 127) {			/* overflow */
+		m = m > 0 ? (long)0x7fffffff : -(long)0x7fffffff;
+		e = 127;
+	} else if (e < -128) {		/* underflow */
+		m = 0;
+		e = 0;
+	}
+	putint(m, 4, fp);
 	putint((long)e, 1, fp);
 }
 
