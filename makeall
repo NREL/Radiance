@@ -22,7 +22,7 @@ if ( "$1" == library ) then
 	echo ""
 	exit 0
 endif
-set srcdirs=( common meta cv gen ot rt px hd util cal )
+set srcdirs=( common rt meta cv gen ot px hd util cal )
 if ( "$1" == install ) then
 	cat << _EOF_
 
