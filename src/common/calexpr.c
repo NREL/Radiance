@@ -47,6 +47,7 @@ static double  ebotch(EPNODE *);
 unsigned int  esupport =		/* what to support */
 		E_VARIABLE | E_FUNCTION ;
 
+int  eofc = 0;				/* optional end-of-file character */
 int  nextc;				/* lookahead character */
 
 double	(*eoper[])(EPNODE *) = {	/* expression operations */
@@ -413,6 +414,10 @@ scan(void)		/* scan next character, return literal next */
 	    nextc = linbuf[linepos++];
 	if (!lnext)
 		lnext = nextc;
+	if (nextc == eofc) {
+		nextc = EOF;
+		break;
+	}
 	if (nextc == '{') {
 	    scan();
 	    while (nextc != '}')

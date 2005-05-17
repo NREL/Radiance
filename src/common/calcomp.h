@@ -70,6 +70,7 @@ extern unsigned long  eclock;
 extern unsigned int  esupport;
 extern EPNODE	*curfunc;
 extern int  nextc;
+extern int  eofc;
 
 					/* defined in biggerlib.c */
 extern void biggerlib(void);
