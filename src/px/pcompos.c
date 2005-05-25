@@ -20,7 +20,7 @@ static const char	RCSid[] = "$Id$";
 #include  "color.h"
 #include  "resolu.h"
 
-#define	 MAXFILE	64
+#define	 MAXFILE	512
 
 #define  HASMIN		1
 #define  HASMAX		2

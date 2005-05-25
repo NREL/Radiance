@@ -80,7 +80,7 @@ extern void	fcompile(char *fname);
 extern void	scompile(char *str, char *fname, int ln);
 extern double	varvalue(char *vname);
 extern double	evariable(EPNODE *ep);
-extern void	varset(char *fname, int assign, double val);
+extern void	varset(char *vname, int assign, double val);
 extern void	dclear(char *name);
 extern void	dremove(char *name);
 extern int	vardefined(char *name);

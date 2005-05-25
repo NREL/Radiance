@@ -1,3 +1,4 @@
+{ RCSid $Id$ }
 {
 	Compute Lab color space and color differences from XYZ primaries.
 

@@ -9,7 +9,6 @@ static const char RCSid[] = "$Id$";
 #include  <ctype.h>
 
 #include  "platform.h"
-#include  "rtprocess.h"
 #include  "mkillum.h"
 #include  "random.h"
 
@@ -228,8 +227,6 @@ init(int np)				/* start rtrace and set up buffers */
 		}
 		if (maxbytes < 0)
 			error(SYSTEM, "cannot start rtrace process");
-		if (!i && np > 1)
-			sleep(2);	/* wait for persist file */
 		rtp->bsiz = maxbytes/(6*sizeof(float));
 		rtp->buf = (float *)malloc(6*sizeof(float)*rtp->bsiz--);
 		rtp->dest = (float **)calloc(rtp->bsiz, sizeof(float *));
@@ -238,6 +235,8 @@ init(int np)				/* start rtrace and set up buffers */
 		rtp->nrays = 0;
 		if (i == np)		/* last process? */
 			break;
+		if (np > 1)
+			sleep(2);	/* wait for persist file */
 		rtp->next = (struct rtproc *)malloc(sizeof(struct rtproc));
 		if (rtp->next == NULL)
 			error(SYSTEM, "out of memory in init");
