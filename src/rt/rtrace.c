@@ -97,7 +97,7 @@ static putf_t puta, putd, putf;
 
 typedef void oputf_t(RAY *r);
 static oputf_t  oputo, oputd, oputv, oputl, oputL, oputc, oputp,
-		oputn, oputN, oputs, oputw, oputW, oputm, oputM, oputdash;
+		oputn, oputN, oputs, oputw, oputW, oputm, oputM, oputtilde;
 
 static void setoutput(char *vs);
 static void tranotify(OBJECT obj);
@@ -213,7 +213,7 @@ rtrace(				/* trace rays from file */
 	}
 	fflush(stdout);
 	if (vcount > 0)
-		error(USER, "read error");
+		error(USER, "unexpected EOF on input");
 	if (fname != NULL)
 		fclose(fp);
 }
@@ -240,9 +240,11 @@ setoutput(				/* set up output tables */
 	while (*vs)
 		switch (*vs++) {
 		case 'T':				/* trace sources */
+			if (!*vs) break;
 			trace_sources();
 			/* fall through */
 		case 't':				/* trace */
+			if (!*vs) break;
 			*table = NULL;
 			table = every_out;
 			trace = ourtrace;
@@ -296,8 +298,8 @@ setoutput(				/* set up output tables */
 		case 'M':				/* material */
 			*table++ = oputM;
 			break;
-		case '-':				/* dash */
-			*table++ = oputdash;
+		case '~':				/* tilde */
+			*table++ = oputtilde;
 			break;
 		}
 	*table = NULL;
@@ -677,12 +679,11 @@ oputM(				/* print material */
 
 
 static void
-oputdash(			/* output dash (spacer) */
+oputtilde(			/* output tilde (spacer) */
 	RAY  *r
 )
 {
-	putchar('-');
-	putchar('\t');
+	fputs("~\t", stdout);
 }
 
 
