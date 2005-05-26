@@ -105,11 +105,11 @@ glaresrc.o:	../common/linregr.h
 
 rpiece.o:	../common/color.h ../common/view.h ../common/resolu.h
 
-rtcontrib.o:	../common/rtio.h ../common/platform.h ../common/rtprocess.h \
-../common/color.h ../common/resolu.h ../common/lookup.h ../common/calcomp.h \
-../common/rterror.h ../common/selcall.h
+rtcontrib.o:	../common/platform.h ../common/rtprocess.h \
+../common/color.h ../common/resolu.h ../common/lookup.h \
+../common/calcomp.h ../common/selcall.h
 
-rad.o ranimate.o rpiece.o xglaresrc.o:	../common/standard.h \
+rad.o ranimate.o rpiece.o rtcontrib.o xglaresrc.o:	../common/standard.h \
 ../common/rtmisc.h ../common/rtio.h \
 ../common/rtmath.h ../common/mat4.h ../common/fvect.h \
 ../common/rterror.h ../common/tifftypes.h
