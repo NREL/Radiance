@@ -19,7 +19,7 @@ typedef struct ambrec {
 	unsigned long  latick;	/* last accessed tick */
 	float  pos[3];		/* position in space */
 	float  dir[3];		/* normal direction */
-	int  lvl;		/* recursion level of parent ray */
+	int    lvl;		/* recursion level of parent ray */
 	float  weight;		/* weight of parent ray */
 	float  rad;		/* validity radius */
 	COLOR  val;		/* computed ambient value */
@@ -42,9 +42,11 @@ typedef struct {
 }  AMBSAMP;		/* ambient sample division */
 
 typedef struct {
-	COLOR  acoef;		/* coefficient for rayorigin() */
+	COLOR  acoef;		/* ambient contribution coefficient */
+	float  drc;		/* daughter ray coefficient */
 	FVECT  ux, uy, uz;	/* x, y and z axis directions */
 	short  nt, np;		/* number of theta and phi directions */
+	int    ns;		/* number of super-samples */
 }  AMBHEMI;		/* ambient sample hemisphere */
 
 extern double  maxarad;		/* maximum ambient radius */
@@ -73,7 +75,7 @@ extern int	ambsync(void);
 					/* defined in ambcomp.c */
 extern double	doambient(COLOR acol, RAY *r, COLOR ac, double wt,
 					FVECT pg, FVECT dg);
-extern int	inithemi(AMBHEMI *hp, RAY *r, COLOR ac, double wt);
+extern void	inithemi(AMBHEMI *hp, RAY *r, COLOR ac, double wt);
 extern int	divsample(AMBSAMP *dp, AMBHEMI *h, RAY *r);
 extern void	comperrs(AMBSAMP *da, AMBHEMI *hp);
 extern void	posgradient(FVECT gv, AMBSAMP *da, AMBHEMI *hp);
