@@ -437,7 +437,8 @@ direct(					/* add direct component */
 			break;
 		scp = srccnt + cntord[sn].sndx;
 						/* test for hit */
-		rayorigin(&sr, SHADOW, r, scp->coef);
+		rayorigin(&sr, SHADOW, r, NULL);
+		copycolor(sr.rcoef, scp->coef);
 		VCOPY(sr.rdir, scp->dir);
 		sr.rsrc = scp->sno;
 						/* keep statistics */
