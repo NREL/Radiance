@@ -202,8 +202,17 @@ main(int argc, char *argv[])
 				break;
 			case 'f':		/* file or i/o format */
 				if (!argv[i][2]) {
+					char	*fpath;
 					if (i >= argc-1) break;
-					fcompile(argv[++i]);
+					fpath = getpath(argv[++i],
+							getrlibpath(), R_OK);
+					if (fpath == NULL) {
+						sprintf(errmsg,
+							"cannot find file '%s'",
+								argv[i]);
+						error(USER, errmsg);
+					}
+					fcompile(fpath);
 					continue;
 				}
 				setformat(argv[i]+2);
