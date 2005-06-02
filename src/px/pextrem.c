@@ -86,8 +86,8 @@ main(
 		fprintf(stderr, "%s: out of memory\n", argv[0]);
 		exit(1);
 	}
-	setcolr(cmin, 1e10, 1e10, 1e10);
-	setcolr(cmax, 0., 0., 0.);
+	setcolr(cmin, 1e30, 1e30, 1e30);
+	setcolr(cmax, 0., 0., 0.); xmax=ymax=0;
 					/* find extrema */
 	for (y = yres-1; y >= 0; y--) {
 		if (freadcolrs(scan, xres, stdin) < 0) {
