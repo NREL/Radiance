@@ -164,9 +164,10 @@ main(int argc, char *argv[])
 	int	i, j;
 				/* global program name */
 	gargv = argv;
-				/* set up calcomp mode */
+				/* initialize calcomp routines */
 	esupport |= E_VARIABLE|E_FUNCTION|E_INCHAN|E_RCONST|E_REDEFW;
 	esupport &= ~(E_OUTCHAN);
+	varset("PI", ':', PI);
 				/* get our options */
 	for (i = 1; i < argc-1; i++) {
 						/* expand arguments */
