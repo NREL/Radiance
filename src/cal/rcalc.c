@@ -189,10 +189,14 @@ char  *argv[]
 				break;
 			case 'd':
 				bocols = 1;
+				SET_FILE_BINARY(stdout);
 				break;
 			case 'f':
 				bocols = -1;
+				SET_FILE_BINARY(stdout);
 				break;
+			default:
+				goto userr;
 			}
 			break;
 		case 'w':
@@ -208,7 +212,8 @@ char  *argv[]
 eputs(" [-b][-l][-n][-p][-w][-u][-tS][-s svar=sval][-e expr][-f source][-i infmt][-o outfmt] [file]\n");
 			quit(1);
 		}
-
+	if (bocols)
+		SET_FILE_BINARY(stdout);
 	if (noinput) {          /* produce a single output record */
 		if (i < argc) {
 			eputs(argv[0]);
@@ -219,6 +224,8 @@ eputs(" [-b][-l][-n][-p][-w][-u][-tS][-s svar=sval][-e expr][-f source][-i infmt
 		putout();
 		quit(0);
 	}
+	if (nbicols)
+		SET_FILE_BINARY(stdin);
 
 	if (blnkeq)             /* for efficiency */
 		nbsynch();

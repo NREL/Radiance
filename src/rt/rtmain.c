@@ -274,12 +274,8 @@ main(int  argc, char  *argv[])
 		openheader();
 	}
 #endif
-#ifdef	_WIN32
 	if (outform != 'a')
 		SET_FILE_BINARY(stdout);
-	if (octname == NULL)
-		SET_FILE_BINARY(stdin);
-#endif
 	readoct(octname, loadflags, &thescene, NULL);
 	nsceneobjs = nobjects;
 

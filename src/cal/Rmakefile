@@ -55,3 +55,7 @@ histo:	histo.o
 	$(CC) $(CFLAGS) -o histo histo.o $(MLIB)
 
 calc.o ev.o rcalc.o:	../common/calcomp.h
+
+total.o rcalc.o:	../common/platform.h
+
+rcalc.o:	../common/rterror.h ../common/rtmisc.h ../common/rtio.h

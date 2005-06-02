@@ -160,10 +160,8 @@ rtrace(				/* trace rays from file */
 		sprintf(errmsg, "cannot open input file \"%s\"", fname);
 		error(SYSTEM, errmsg);
 	}
-#ifdef _WIN32
 	if (inform != 'a')
 		SET_FILE_BINARY(fp);
-#endif
 					/* set up output */
 	setoutput(outvals);
 	switch (outform) {
