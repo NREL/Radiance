@@ -74,7 +74,7 @@ double  specjitter = 1.;		/* specular sampling jitter */
 
 int  backvis = 1;			/* back face visibility */
 
-int  maxdepth = 8;			/* maximum recursion depth */
+int  maxdepth = -10;			/* maximum recursion depth */
 double  minweight = 2e-3;		/* minimum ray weight */
 
 char  *ambfile = NULL;			/* ambient file name */
