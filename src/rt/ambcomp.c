@@ -192,7 +192,8 @@ doambient(				/* compute ambient component */
 			dp->r = 0.0;
 			dp->n = 0;
 			if (divsample(dp, &hemi, r) < 0) {
-				if (div != NULL) dp++;
+				if (div == NULL) continue;
+				dp++;
 				hemi.ns = 0;	/* incomplete sampling */
 				pg = dg = NULL;
 				continue;
