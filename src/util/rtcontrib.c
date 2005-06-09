@@ -1059,6 +1059,10 @@ recover_output(FILE *fin)
 			ment->data = (char *)mp;
 		}
 	}
+	if (lastout < 0) {
+		error(WARNING, "no existing output to recover");
+		return;
+	}
 						/* seek on all files */
 	nvals = lastout * outvsiz;
 	lu_doall(&ofiletab, myseeko, &nvals);
