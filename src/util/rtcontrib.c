@@ -1045,7 +1045,7 @@ recover_output(FILE *fin)
 				break;		/* no bin separation */
 		}
 		if (!lastout) {			/* empty output */
-			error(WARNING, "no data to recover");
+			error(WARNING, "no previous data to recover");
 			lu_done(&ofiletab);	/* reclose all outputs */
 			return;
 		}
@@ -1060,7 +1060,7 @@ recover_output(FILE *fin)
 		}
 	}
 	if (lastout < 0) {
-		error(WARNING, "no existing output to recover");
+		error(WARNING, "no output files to recover");
 		return;
 	}
 						/* seek on all files */
