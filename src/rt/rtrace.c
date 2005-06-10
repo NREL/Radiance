@@ -50,7 +50,9 @@ void  (*trace)() = NULL;		/* trace call */
 
 char  *tralist[128];			/* list of modifers to trace (or no) */
 int  traincl = -1;			/* include == 1, exclude == 0 */
-#define	 MAXTSET	511		/* maximum number in trace set */
+#ifndef  MAXTSET
+#define	 MAXTSET	1024		/* maximum number in trace set */
+#endif
 OBJECT	traset[MAXTSET+1]={0};		/* trace include/exclude set */
 
 int  hresolu = 0;			/* horizontal (scan) size */

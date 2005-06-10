@@ -16,7 +16,9 @@ static const char RCSid[] = "$Id$";
 #include  "lookup.h"
 #include  "calcomp.h"
 
+#ifndef	MAXMODLIST
 #define	MAXMODLIST	1024		/* maximum modifiers we'll track */
+#endif
 
 int	treebufsiz = BUFSIZ;		/* current tree buffer size */
 
@@ -261,7 +263,9 @@ main(int argc, char *argv[])
 				continue;
 			case 'M':		/* modifier file */
 				if (argv[i][2] || i >= argc-1) break;
-				addmodfile(argv[++i], curout, binval);
+				rtargv[rtargc++] = "-tI";
+				rtargv[rtargc++] = argv[++i];
+				addmodfile(argv[i], curout, binval);
 				continue;
 			}
 		rtargv[rtargc++] = argv[i];	/* assume rtrace option */
