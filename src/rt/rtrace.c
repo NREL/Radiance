@@ -148,7 +148,8 @@ rtrace(				/* trace rays from file */
 	char  *fname
 )
 {
-	long  vcount = hresolu>1 ? hresolu*vresolu : vresolu;
+	unsigned long  vcount = (hresolu > 1) ? (unsigned long)hresolu*vresolu
+					      : vresolu;
 	long  nextflush = hresolu;
 	FILE  *fp;
 	double	d;
@@ -187,7 +188,7 @@ rtrace(				/* trace rays from file */
 		d = normalize(direc);
 		if (d == 0.0) {				/* zero ==> flush */
 			bogusray();
-			if (--nextflush <= 0 || vcount <= 0) {
+			if (--nextflush <= 0 || !vcount) {
 				fflush(stdout);
 				nextflush = hresolu;
 			}
@@ -199,18 +200,18 @@ rtrace(				/* trace rays from file */
 			else
 				rad(orig, direc, lim_dist ? d : 0.0);
 							/* flush if time */
-			if (--nextflush == 0) {
+			if (!--nextflush) {
 				fflush(stdout);
 				nextflush = hresolu;
 			}
 		}
 		if (ferror(stdout))
 			error(SYSTEM, "write error");
-		if (--vcount == 0)			/* check for end */
+		if (vcount && !--vcount)		/* check for end */
 			break;
 	}
 	fflush(stdout);
-	if (vcount > 0)
+	if (vcount)
 		error(USER, "unexpected EOF on input");
 	if (fname != NULL)
 		fclose(fp);
