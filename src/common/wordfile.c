@@ -22,7 +22,7 @@ static const char	RCSid[] = "$Id$";
 
 
 #ifndef MAXFLEN
-#define MAXFLEN		16384	/* file must be smaller than this */
+#define MAXFLEN		65536	/* file must be smaller than this */
 #endif
 
 
