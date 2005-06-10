@@ -468,8 +468,11 @@ addmodfile(char *fname, char *outf, char *binv)
 {
 	char	*mname[MAXMODLIST];
 	int	i;
-					/* load the file & store strings */
-	wordfile(mname, fname);
+					/* find the file & store strings */
+	if (wordfile(mname, getpath(fname, getrlibpath(), R_OK)) < 0) {
+		sprintf(errmsg, "cannot find modifier file '%s'", fname);
+		error(SYSTEM, errmsg);
+	}
 	for (i = 0; mname[i]; i++)	/* add each one */
 		addmodifier(mname[i], outf, binv);
 }
