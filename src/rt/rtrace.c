@@ -46,6 +46,8 @@ char  *outvals = "v";			/* output specification */
 
 int  do_irrad = 0;			/* compute irradiance? */
 
+int  rand_samp = 0;			/* pure Monte Carlo sampling? */
+
 void  (*trace)() = NULL;		/* trace call */
 
 char  *tralist[128];			/* list of modifers to trace (or no) */
@@ -195,7 +197,7 @@ rtrace(				/* trace rays from file */
 				nextflush = hresolu;
 			}
 		} else {
-			samplendx++;
+			samplendx = rand_samp ? random() : samplendx+1;
 							/* compute and print */
 			if (imm_irrad)
 				irrad(orig, direc);

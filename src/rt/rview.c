@@ -33,6 +33,8 @@ void  (*trace)() = NULL;		/* trace call */
 
 int  do_irrad = 0;			/* compute irradiance? */
 
+int  rand_samp = 0;			/* pure Monte Carlo sampling? */
+
 int  psample = 8;			/* pixel sample size */
 double	maxdiff = .15;			/* max. sample difference */
 

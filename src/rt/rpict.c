@@ -67,6 +67,8 @@ void  (*trace)() = NULL;		/* trace call */
 
 int  do_irrad = 0;			/* compute irradiance? */
 
+int  rand_samp = 0;			/* pure Monte Carlo sampling? */
+
 double	dstrsrc = 0.0;			/* square source distribution */
 double	shadthresh = .05;		/* shadow threshold */
 double	shadcert = .5;			/* shadow certainty */
@@ -676,7 +678,10 @@ pixvalue(		/* compute pixel value */
 	}
 	vdist = ourview.vdist;
 
-	samplendx = pixnumber(x,y,hres,vres);	/* set pixel index */
+	if (rand_samp)				/* set pixel index */
+		samplendx = random();
+	else
+		samplendx = pixnumber(x,y,hres,vres);
 
 						/* optional motion blur */
 	if (lastview.type && mblur > FTINY && (lmax = viewray(lorg, ldir,

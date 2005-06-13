@@ -178,6 +178,12 @@ option (below) may be used to override this.
 This option is especially useful in
 conjunction with ximage(1) for computing illuminance at scene points.
 .TP
+.BR \-R
+Boolean switch to control random sampling.
+When "off", a low-discrepancy sequence is used, which reduces
+variance but can result in a brushed appearance in specular highlights.
+When "on", pure Monte Carlo sampling is used in all calculations.
+.TP
 .BR \-I
 Boolean switch to compute irradiance rather than radiance,
 with the input origin and direction interpreted instead

@@ -171,7 +171,7 @@ int  xmin, ymin, xmax, ymax;
 		setcolor(thisray.rcol, 0.0, 0.0, 0.0);
 	} else {
 		rayorigin(&thisray, PRIMARY, NULL, NULL);
-		samplendx++;
+		samplendx = rand_samp ? random() : samplendx+1;
 		rayvalue(&thisray);
 	}
 
