@@ -623,10 +623,8 @@ getofile(const char *ospec, const char *mname, int bn)
 		if (header) {
 			char	info[512];
 			char	*cp = info;
-			if (ofl & OF_MODIFIER) {
-				sprintf(cp, "MODIFIER=%s\n", mname);
-				while (*cp) ++cp;
-			}
+			sprintf(cp, "MODIFIER=%s\n", mname);
+			while (*cp) ++cp;
 			if (ofl & OF_BIN) {
 				sprintf(cp, "BIN=%d\n", bn);
 				while (*cp) ++cp;
