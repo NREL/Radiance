@@ -522,13 +522,13 @@ setparam(				/* get/set program parameter */
 	
 	if (s[0] == '\0') {
 		(*dev->comout)(
-		"aa ab ad ar as av aw b dc dv dj ds dt i lr lw me ma mg ms ps pt R sj st bv: ");
+		"aa ab ad ar as av aw b bv dc dv dj ds dt i lr lw me ma mg ms ps pt sj st u: ");
 		(*dev->comin)(buf, NULL);
 		s = buf;
 	}
 	switch (s[0]) {
-	case 'R':			/* random sampling */
-		getparam(s+1, "random sampling", 'b',
+	case 'u':			/* uncorrelated sampling */
+		getparam(s+1, "uncorrelated sampling", 'b',
 				(void *)&rand_samp);
 		break;
 	case 'l':			/* limit */
