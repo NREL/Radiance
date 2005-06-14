@@ -118,6 +118,8 @@ void	(*addobjnotify[8])() = {ambnotify, NULL};
 
 int	do_irrad = 0;			/* compute irradiance? */
 
+int	rand_samp = 0;			/* pure Monte Carlo sampling? */
+
 double	dstrsrc = 0.0;			/* square source distribution */
 double	shadthresh = .03;		/* shadow threshold */
 double	shadcert = .75;			/* shadow certainty */
