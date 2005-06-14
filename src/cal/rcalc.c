@@ -646,9 +646,12 @@ getrec(void)				/* get next record from file */
 	register struct field  *f;
 
 	while (ipb.chr != EOF) {
-		if (blnkeq)             /* beware of nbsynch() */
+		if (blnkeq) {		/* beware of nbsynch() */
 			while (isblnk(ipb.chr))
 				resetinp();
+			if (ipb.chr == EOF)
+				return(0);
+		}
 		eatline = (!igneol && ipb.chr != '\n');
 		clearrec();		/* start with fresh record */
 		for (f = inpfmt; f != NULL; f = f->next)
