@@ -7,7 +7,6 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
-#include  <sys/types.h>
 #include  <signal.h>
 
 #include  "platform.h"
@@ -229,6 +228,7 @@ main(int  argc, char  *argv[])
 	initotypes();
 					/* initialize urand */
 	initurand(2048);
+	srandom(rand_samp ? (long)time(0) : 0L);
 					/* set up signal handling */
 	sigdie(SIGINT, "Interrupt");
 #ifdef SIGHUP

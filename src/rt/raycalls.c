@@ -90,6 +90,7 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include <string.h>
+#include <time.h>
 
 #include  "ray.h"
 #include  "source.h"
@@ -165,6 +166,7 @@ ray_init(			/* initialize ray-tracing calculation */
 		initotypes();
 					/* initialize urand */
 	initurand(2048);
+	srandom(rand_samp ? (long)time(0) : 0L);
 					/* read scene octree */
 	readoct(octname = otnm, ~(IO_FILES|IO_INFO), &thescene, NULL);
 	nsceneobjs = nobjects;

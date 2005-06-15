@@ -90,7 +90,6 @@ main(
 {
 	int	i;
 
-	initurand(16384);			/* initialize urand */
 	progname = argv[0];			/* get arguments */
 	for (i = 1; i < argc && argv[i][0] == '-'; i++)
 		switch (argv[i][1]) {
