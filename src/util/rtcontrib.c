@@ -1030,8 +1030,13 @@ recover_output(FILE *fin)
 				error(USER, "cannot recover from command");
 						/* open output */
 			fp = fopen(oname, "rb+");
-			if (fp == NULL)
-				break;		/* must be end of modifier */
+			if (fp == NULL) {
+				if (j)
+					break;	/* assume end of modifier */
+				sprintf(errmsg, "missing recover file '%s'",
+						oname);
+				error(USER, errmsg);
+			}
 			nvals = lseek(fileno(fp), 0, SEEK_END);
 			if (nvals <= 0) {
 				lastout = 0;	/* empty output, quit here */
