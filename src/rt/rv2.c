@@ -731,7 +731,7 @@ char  *s;
 		(*dev->comout)("ray hit nothing");
 	else {
 		OBJREC	*mat = NULL;
-		OBJREC	*mod = NULL;;
+		OBJREC	*mod = NULL;
 		char	matspec[256];
 		matspec[0] = '\0';
 		if (thisray.ro->omod != OVOID) {
