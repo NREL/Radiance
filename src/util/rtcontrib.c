@@ -315,11 +315,11 @@ main(int argc, char *argv[])
 		error(USER, "missing octree argument");
 	rtargv[rtargc++] = octree = argv[i];
 	rtargv[rtargc] = NULL;
-				/* start rtrace & compute contributions */
+				/* start rtrace */
 	init(nprocs);
 	if (recover)		/* perform recovery if requested */
 		recover_output(stdin);
-	trace_contribs(stdin);
+	trace_contribs(stdin);	/* compute contributions */
 	quit(0);
 }
 
@@ -1090,6 +1090,11 @@ recover_output(FILE *fin)
 	if (lastout < 0) {
 		error(WARNING, "no output files to recover");
 		return;
+	}
+	if (raysleft && lastout >= raysleft) {
+		error(WARNING, "output appears to be complete");
+		/* XXX should read & discard input? */
+		quit(0);
 	}
 						/* seek on all files */
 	nvals = lastout * outvsiz;
