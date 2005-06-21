@@ -205,7 +205,7 @@ extern int	rayshade(RAY *r, int mod);
 extern void	rayparticipate(RAY *r);
 extern void	raytexture(RAY *r, OBJECT mod);
 extern int	raymixture(RAY *r, OBJECT fore, OBJECT back, double coef);
-extern void	raycontrib(COLOR rc, const RAY *r, int flags);
+extern void	raycontrib(double rc[3], const RAY *r, int flags);
 extern double	raydist(const RAY *r, int flags);
 extern double	raynormal(FVECT norm, RAY *r);
 extern void	newrayxf(RAY *r);

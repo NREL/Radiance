@@ -638,12 +638,12 @@ oputW(				/* print contribution */
 	RAY  *r
 )
 {
-	COLOR	contr;
+	double	contr[3];
 
 	raycontrib(contr, r, PRIMARY);
-	(*putreal)(colval(contr,RED));
-	(*putreal)(colval(contr,GRN));
-	(*putreal)(colval(contr,BLU));
+	(*putreal)(contr[RED]);
+	(*putreal)(contr[GRN]);
+	(*putreal)(contr[BLU]);
 }
 
 
