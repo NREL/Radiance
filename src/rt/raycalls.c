@@ -165,8 +165,8 @@ ray_init(			/* initialize ray-tracing calculation */
 	if (ofun[OBJ_SPHERE].funp == o_default)
 		initotypes();
 					/* initialize urand */
-	initurand(2048);
 	srandom(rand_samp ? (long)time(0) : 0L);
+	initurand(2048);
 					/* read scene octree */
 	readoct(octname = otnm, ~(IO_FILES|IO_INFO), &thescene, NULL);
 	nsceneobjs = nobjects;
