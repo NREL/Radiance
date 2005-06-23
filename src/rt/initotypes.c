@@ -7,7 +7,7 @@ static const char RCSid[] = "$Id$";
 
 #include  "copyright.h"
 
-#include  "standard.h"
+#include  "ray.h"
 #include  "otypes.h"
 #include  "rtotypes.h"
 #include  "otspecial.h"
