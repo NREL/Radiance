@@ -93,10 +93,15 @@ rayorigin(		/* start new ray from old one */
 				colval(ro->cext,RED) : colval(ro->cext,GRN);
 		if (colval(ro->cext,BLU) < re) re = colval(ro->cext,BLU);
 		re *= ro->rot;
-		if (re > .1)
-			r->rweight *= exp(-re);
+		if (re > 0.1)
+			if (re > 92.)
+				r->rweight = 0.0;
+			else
+				r->rweight *= exp(-re);
 	}
 	rayclear(r);
+	if (r->rweight <= 0.0)			/* check for expiration */
+		return(-1);
 	if (r->crtype & SHADOW)			/* shadow commitment */
 		return(0);
 	if (maxdepth <= 0 && rc != NULL) {	/* Russian roulette */
@@ -368,7 +373,7 @@ raycontrib(		/* compute (cumulative) ray contribution */
 	}
 	for (i = 3; i--; )
 		rc[i] *= (eext[i] <= FTINY) ? 1. :
-				(eext[i] > 300.) ? 0. : exp(-eext[i]);
+				(eext[i] > 92.) ? 0. : exp(-eext[i]);
 }
 
 
