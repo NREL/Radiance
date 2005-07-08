@@ -301,12 +301,16 @@ raymixture(		/* mix modifiers */
 	foremat = backmat = 0;
 					/* foreground */
 	fr = *r;
-	if (coef > FTINY)
+	if (coef > FTINY) {
+		scalecolor(fr.rcoef, coef);
 		foremat = rayshade(&fr, fore);
+	}
 					/* background */
 	br = *r;
-	if (coef < 1.0-FTINY)
+	if (coef < 1.0-FTINY) {
+		scalecolor(br.rcoef, 1.0-coef);
 		backmat = rayshade(&br, back);
+	}
 					/* check for transparency */
 	if (backmat ^ foremat) {
 		if (backmat && coef > FTINY)
