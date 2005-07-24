@@ -449,8 +449,8 @@ dev_open(			/* initialize GLX driver */
 					/* set window manager hints */
 	ourxwmhints.flags = InputHint|IconPixmapHint;
 	ourxwmhints.input = True;
-	ourxwmhints.icon_pixmap = XCreateBitmapFromData(ourdisplay,
-		gwind, glradicon_bits, glradicon_width, glradicon_height);
+	ourxwmhints.icon_pixmap = XCreateBitmapFromData(ourdisplay, gwind,
+		(char *)glradicon_bits, glradicon_width, glradicon_height);
 	XSetWMHints(ourdisplay, gwind, &ourxwmhints);
 					/* set GLX context */
 	glXMakeCurrent(ourdisplay, gwind, gctx);

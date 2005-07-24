@@ -397,9 +397,9 @@ init(			/* get data and open window */
    	windowName.encoding = iconName.encoding = XA_STRING;
 	windowName.format = iconName.format = 8;
 	windowName.value = (u_char *)name;
-	windowName.nitems = strlen(windowName.value);
+	windowName.nitems = strlen((char *)windowName.value);
 	iconName.value = (u_char *)name;
-	iconName.nitems = strlen(windowName.value);
+	iconName.nitems = strlen((char *)windowName.value);
 
 	xclshints.res_name = NULL;
 	xclshints.res_class = "Ximage";
@@ -571,7 +571,7 @@ getras(void)				/* get raster file */
 		ourdata = (unsigned char *)malloc(ymax*((xmax+7)/8));
 		if (ourdata == NULL)
 			goto fail;
-		ourras = make_raster(thedisplay, &ourvis, 1, ourdata,
+		ourras = make_raster(thedisplay, &ourvis, 1, (char *)ourdata,
 				xmax, ymax, 8);
 		if (ourras == NULL)
 			goto fail;
@@ -582,7 +582,7 @@ getras(void)				/* get raster file */
 		if (ourdata == NULL)
 			goto fail;
 		ourras = make_raster(thedisplay, &ourvis, datsiz*8,
-				ourdata, xmax, ymax, datsiz*8);
+				(char *)ourdata, xmax, ymax, datsiz*8);
 		if (ourras == NULL)
 			goto fail;
 		getfull();
@@ -590,7 +590,7 @@ getras(void)				/* get raster file */
 		ourdata = (unsigned char *)malloc(xmax*ymax);
 		if (ourdata == NULL)
 			goto fail;
-		ourras = make_raster(thedisplay, &ourvis, 8, ourdata,
+		ourras = make_raster(thedisplay, &ourvis, 8, (char *)ourdata,
 				xmax, ymax, 8);
 		if (ourras == NULL)
 			goto fail;

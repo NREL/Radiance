@@ -235,8 +235,8 @@ char  *id;
 					/* set window manager hints */
 	ourxwmhints.flags = InputHint|IconPixmapHint;
 	ourxwmhints.input = True;
-	ourxwmhints.icon_pixmap = XCreateBitmapFromData(ourdisplay,
-			gwind, x11icon_bits, x11icon_width, x11icon_height);
+	ourxwmhints.icon_pixmap = XCreateBitmapFromData(ourdisplay, gwind,
+			(char *)x11icon_bits, x11icon_width, x11icon_height);
 	XSetWMHints(ourdisplay, gwind, &ourxwmhints);
 	oursizhints.min_width = MINWIDTH;
 #ifdef STEREO
