@@ -4,7 +4,7 @@ static const char	RCSid[] = "$Id$";
 /*
  *  ranimove2.c
  *
- *  Frame refinement routines for ranimate(1).
+ *  Frame refinement routines for ranimove(1).
  *
  *  Created by Gregory Ward on Wed Jan 08 2003.
  */

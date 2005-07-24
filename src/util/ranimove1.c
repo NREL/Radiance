@@ -4,7 +4,7 @@ static const char	RCSid[] = "$Id$";
 /*
  *  ranimove1.c
  *
- *  Basic frame rendering routines for ranimate(1).
+ *  Basic frame rendering routines for ranimove(1).
  *
  *  Created by Gregory Ward on Wed Jan 08 2003.
  */
