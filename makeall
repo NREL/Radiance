@@ -180,7 +180,7 @@ case 8:			# FreeBSD
 	set mach="-DBSD -DNOSTEREO -Dfreebsd -I/usr/X11R6/include -L/usr/X11R6/lib"
 	set opt="-O -DSPEED=200"
 	set compat="erf.o"
-	set extras="CC=cc"
+	set extras='CC=cc MLIB="-lcompat -lm"'
 	set arch=IBMPC
 	breaksw
 case 9:			# Cygwin
