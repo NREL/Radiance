@@ -131,7 +131,7 @@ normtiff:	normtiff.o ../lib/libtiff.a
 	$(CC) $(CFLAGS) -o normtiff normtiff.o -lrt -ltiff $(MLIB)
 
 ../lib/libtiff.a:
-	cd tiff ; configure -quiet -with-CC=$(CC) \
+	cd tiff ; ./configure -quiet -with-CC=$(CC) \
 		"--libdir=`pwd`/../../lib" "--includedir=`pwd`/../../common" \
 		--enable-static --disable-shared --disable-cxx \
 		--enable-logluv --disable-jpeg \
