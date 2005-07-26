@@ -276,7 +276,7 @@ cd ..
 foreach i ( $* )
 	if ( "$i" == clean ) then
 		echo "Removing library archives..."
-		rm -f src/lib/*.[ao]
+		rm -f src/lib/*.{a,o,la}
 	endif
 end
 echo "Done."
