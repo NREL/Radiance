@@ -71,7 +71,7 @@ main(		/* takes both the octree and the image */
 		else
 			break;
 	if (i > argc-2) {
-		fprintf(stderr, "Usage: %s [-s] [rtrace args] octree picture\n",
+		fprintf(stderr, "Usage: %s [-s][-T] [rtrace args] octree picture\n",
 				progname);
 		exit(1);
 	}
