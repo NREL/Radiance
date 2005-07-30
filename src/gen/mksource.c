@@ -234,10 +234,10 @@ get_threshold(const TRITREE *tree)
 	memset((void *)exphisto, 0, sizeof(exphisto));
 	for (i = 0; i < NTRUNKBR; i++)
 		get_ehisto(&tree->kid[i], exphisto);
-						/* use 99th percentile */
+						/* use 98th percentile */
 	for (i = 0; i < 256; i++)
 		samptotal += exphisto[i];
-	samptotal /= 100; 
+	samptotal /= 50; 
 	for (i = 256; (--i > 0) & (samptotal > 0); )
 		samptotal -= exphisto[i];
 	return(ldexp(.75, i-COLXS));
