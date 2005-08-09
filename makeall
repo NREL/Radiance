@@ -16,7 +16,7 @@ if ( "$1" == library ) then
 	echo "Set the environment variable RAYPATH=.:$ldir"
 	echo 'For C-shell users, put the following into ~/.cshrc'
 	echo "	setenv RAYPATH .:$ldir"
-	echo 'For Bourne shell users, put the following into $HOME/profile'
+	echo 'For Bourne shell users, put the following into $HOME/.profile'
 	echo "	RAYPATH=.:$ldir"
 	echo "	export RAYPATH"
 	echo ""
@@ -260,7 +260,7 @@ if (! $inpath ) then
 	echo "Add $idir to the beginning of your execution path:"
 	echo 'For C-shell users, put the following into ~/.cshrc'
 	echo "	set path=( $idir "'$path )'
-	echo 'For Bourne shell users, put the following into $HOME/profile'
+	echo 'For Bourne shell users, put the following into $HOME/.profile'
 	echo "	PATH=$idir"':$PATH'
 	echo "	export PATH"
 endif
