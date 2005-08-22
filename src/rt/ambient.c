@@ -454,7 +454,7 @@ makeambient(		/* make a new ambient value for storage */
 	for (i = al; i-- > 0; )
 		amb.weight *= AVGREFL;
 	if (r->rweight < 0.1*amb.weight)	/* heuristic override */
-		amb.weight = r->rweight;
+		amb.weight = 1.25*r->rweight;
 	setcolor(acol, AVGREFL, AVGREFL, AVGREFL);
 						/* compute ambient */
 	amb.rad = doambient(acol, r, amb.weight, gp, gd);
