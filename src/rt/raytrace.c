@@ -118,7 +118,7 @@ rayorigin(		/* start new ray from old one */
 		r->rweight = minweight;
 		return(0);
 	}
-	return(r->rlvl <= maxdepth && r->rweight >= minweight ? 0 : -1);
+	return(r->rlvl <= abs(maxdepth) && r->rweight >= minweight ? 0 : -1);
 }
 
 
