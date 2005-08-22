@@ -289,6 +289,7 @@ getfocus(				/* set focus distance */
 	char *s
 )
 {
+	char  buf[64];
 	FVECT  vc;
 	double	dist;
 
@@ -316,6 +317,8 @@ getfocus(				/* set focus distance */
 		return;
 	}
 	ourview.vdist = dist;
+	sprintf(buf, "Focus distance set to %f\n", dist);
+	(*dev->comout)(buf);
 }
 
 
