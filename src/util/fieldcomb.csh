@@ -47,11 +47,20 @@ endif
 set curfi=1
 while ($curfi < $#fields)
 	@ nextfi = $curfi + 1
+	if ($curfr < 10) then
+		set fid=000$curfr
+	else if ($curfr < 100) then
+		set fid=00$curfr
+	else if ($curfr < 1000) then
+		set fid=0$curfr
+	else
+		set fid=$curfr
+	endif
 	pcomb -e 'ro=ri(fld); go=gi(fld); bo=bi(fld)' \
 		-e 'yd=yres-1-y; odd=.5*yd-floor(.5*yd)-.25' \
 		-e "fld=if(odd,2-$odd_first,1+$odd_first)" \
 		$fields[$curfi]:q $fields[$nextfi]:q \
-		> "${basenm}C$curfr.$ext"
+		> "${basenm}C$fid.$ext"
 	if ($?remove_orig) rm $fields[$curfi]:q $fields[$nextfi]:q
 	@ curfr++
 	@ curfi = $nextfi + 1
