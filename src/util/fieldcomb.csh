@@ -34,8 +34,12 @@ while ($#argv > 1)
 	endsw
 	shift argv
 end
-if ($#argv < 2 || ($?outfile && $#argv > 2)) then
+if ($#argv < 2) then
 	echo "Usage: $0 [-e|-o][-r] [-f combined.pic] field1.pic field2.pic .."
+	exit 1
+endif
+if ($?outfile && $#argv > 2) then
+	echo "Cannot use -f option with more than two input files"
 	exit 1
 endif
 set f1=$argv[1]:q
@@ -61,7 +65,9 @@ while ($curfi < $#fields)
 		set fid=$curfr
 	endif
        	set outf="${basenm}C$fid.$ext"
-	if ($?outfile) set outf=$outfile:q
+	if ($?outfile) then
+		set outf=$outfile:q
+	endif
 	pcomb -e 'ro=ri(fld); go=gi(fld); bo=bi(fld)' \
 		-e 'yd=yres-1-y; odd=.5*yd-floor(.5*yd)-.25' \
 		-e "fld=if(odd,2-$odd_first,1+$odd_first)" \
