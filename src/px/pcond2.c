@@ -153,7 +153,7 @@ greypoint(			/* compute gamut mapping grey target */
 			gryc[i] = cwhite[i];
 		else if (gryc[i] < cblack[i])
 			gryc[i] = cblack[i];
-	return(bright(gryc));
+	return((*lumf)(gryc,0));
 }
 
 
