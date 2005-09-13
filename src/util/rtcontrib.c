@@ -173,6 +173,13 @@ main(int argc, char *argv[])
 	char	*binval = NULL;
 	char	fmt[8];
 	int	i, j;
+				/* need at least one argument */
+	if (argc < 2) {
+		fprintf(stderr,
+"Usage: %s [-n nprocs][-r][-e expr][-f source][-o ospec][-b binv] {-m mod | -M file} [rtrace options] octree\n",
+			argv[0]);
+		exit(1);
+	}
 				/* global program name */
 	gargv = argv;
 				/* initialize calcomp routines */
