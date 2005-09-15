@@ -16,6 +16,7 @@ static const char	RCSid[] = "$Id$";
 #include "face.h"
 #include "cone.h"
 #include "instance.h"
+#include "mesh.h"
 #include "color.h"
 #include "data.h"
 #include "func.h"
@@ -45,6 +46,9 @@ load_os(			/* load associated data for object */
 		return(1);
 	case OBJ_INSTANCE:	/* octree instance */
 		getinstance(op, IO_ALL);
+		return(1);
+	case OBJ_MESH:		/* mesh instance */
+		getmeshinst(op, IO_ALL);
 		return(1);
 	case PAT_CPICT:		/* color picture */
 		if (op->oargs.nsargs < 4)
