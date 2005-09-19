@@ -29,6 +29,7 @@ static const char	RCSid[] = "$Id$";
 #include  "source.h"
 #include  "otypes.h"
 #include  "resolu.h"
+#include  "random.h"
 
 CUBE  thescene;				/* our scene */
 OBJECT	nsceneobjs;			/* number of objects in our scene */

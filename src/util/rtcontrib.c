@@ -330,12 +330,15 @@ main(int argc, char *argv[])
 	quit(0);
 }
 
+#ifndef SIGALRM
+#define SIGALRM SIGTERM
+#endif
 /* kill persistent rtrace process */
 static void
 killpersist(void)
 {
 	FILE	*fp = fopen(persistfn, "r");
-	int	pid;
+	RT_PID	pid;
 
 	if (fp == NULL)
 		return;

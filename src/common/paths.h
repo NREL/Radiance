@@ -14,9 +14,10 @@
 
 #ifdef _WIN32
   #include <io.h>
-  #include <direct.h> /* getcwd(), chdir(), etc. */
+  #include <direct.h> /* getcwd(), chdir(), _mkdir(), etc. */
 
   #define access _access
+  #define mkdir(dirname,perms) _mkdir(dirname)
   #define PATH_MAX _MAX_PATH
   #define NULL_DEVICE	"NUL"
   #define DIRSEP		'/'

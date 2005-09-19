@@ -157,6 +157,10 @@ main(		/* compute illum distributions using rtrace */
 	quit(0);
 }
 
+
+#ifndef SIGALRM
+#define SIGALRM SIGTERM
+#endif
 static void
 killpersist(void)			/* kill persistent rtrace process */
 {
@@ -169,6 +173,7 @@ killpersist(void)			/* kill persistent rtrace process */
 		unlink(persistfn);
 	fclose(fp);
 }
+
 
 int
 done_rprocs(struct rtproc *rtp)
