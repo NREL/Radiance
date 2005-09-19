@@ -7,6 +7,7 @@ static const char RCSid[] = "$Id$";
 
 #include "ray.h"
 #include "random.h"
+#include "resolu.h"
 
 #define NTRUNKBR	4		/* number of branches at trunk */
 #define NTRUNKVERT	4		/* number of vertices at trunk */
@@ -207,6 +208,7 @@ geosample(int nsamps)
 	return(tree);
 memerr:
 	error(SYSTEM, "out of memory in geosample()");
+	return NULL; /* dummy return */
 }
 
 /* Compute leaf exponent histogram */
@@ -385,7 +387,6 @@ mksources(TRITREE *samptree, double thresh, double maxang)
 	LOSTLIGHT	*lostlightlist = NULL;
 	int		emax;
 	TRITREE		*startleaf;
-	COLOR		cval;
 	double		growstep;
 	FVECT		curcent;
 	double		currad;
