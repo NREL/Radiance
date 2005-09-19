@@ -123,7 +123,7 @@ glareval.o xglaresrc.o:	../common/resolu.h
 
 rad.o ranimate.o:	../common/vars.h
 
-ranimove1.o ranimove2.o:	../common/random.h
+ranimove1.o ranimove2.o vwrays.o:	../common/random.h
 
 rad.o:	../common/paths.h
 
