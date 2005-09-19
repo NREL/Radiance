@@ -35,11 +35,7 @@ static int	CLRCUBE[3][2] = {{0,NRED},{0,NGRN},{0,NBLU}};
 #define MAXERR		20
 				/* define CLOSEST to get closest colors */
 #ifndef CLOSEST
-#ifdef SPEED
-#if  SPEED > 8
 #define CLOSEST		1	/* this step takes a little longer */
-#endif
-#endif
 #endif
 
 

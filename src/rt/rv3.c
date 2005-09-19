@@ -16,11 +16,7 @@ static const char	RCSid[] = "$Id$";
 #include  "random.h"
 
 #ifndef WFLUSH
-#ifdef SPEED
-#define WFLUSH		(5*SPEED)
-#else
-#define WFLUSH		100		/* flush after this many rays */
-#endif
+#define WFLUSH		2048		/* flush after this many rays */
 #endif
 
 #ifdef  SMLFLT

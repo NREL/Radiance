@@ -28,11 +28,7 @@ extern BYTE	clrtab[256][3];
 static int	clrtabsiz;
 
 #ifndef DEFSMPFAC
-#ifdef SPEED
-#define DEFSMPFAC	(240/SPEED+3)
-#else
-#define DEFSMPFAC	30
-#endif
+#define DEFSMPFAC	3
 #endif
 
 int	samplefac = DEFSMPFAC;	/* sampling factor */
