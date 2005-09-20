@@ -716,7 +716,7 @@ add_contrib(const char *modn)
 	bn = (int)(evalue(mp->binv) + .5);
 	if (bn <= 0)
 		bn = 0;
-	else if (bn > mp->nbins) {	/* new bin */
+	else if (bn >= mp->nbins) {	/* new bin */
 		mp = (MODCONT *)realloc(mp, sizeof(MODCONT) +
 						bn*sizeof(DCOLOR));
 		if (mp == NULL)
