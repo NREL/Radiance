@@ -915,7 +915,7 @@ wait_rproc(void)
 				if (rt->bsiz + BUFSIZ <= treebufsiz)
 					rt->bsiz = treebufsiz;
 				else
-					rt->bsiz = treebufsiz += BUFSIZ;
+					treebufsiz = rt->bsiz += BUFSIZ;
 				rt->buf = (char *)realloc(rt->buf, rt->bsiz);
 			}
 			if (rt->buf == NULL)
@@ -1109,7 +1109,7 @@ recover_output(FILE *fin)
 						/* seek on all files */
 	nvals = lastout * outvsiz;
 	lu_doall(&ofiletab, myseeko, &nvals);
-						/* discard input */
+						/* skip repeated input */
 	for (nvals = 0; nvals < lastout; nvals++)
 		if (getinp(oname, fin) <= 0)
 			error(USER, "unexpected EOF on input");
