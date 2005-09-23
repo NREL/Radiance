@@ -23,7 +23,7 @@ unsigned long  nrays = 0;		/* number of calls to localhit */
 static RREAL  Lambfa[5] = {PI, PI, PI, 0.0, 0.0};
 OBJREC  Lamb = {
 	OVOID, MAT_PLASTIC, "Lambertian",
-	{0, 5, NULL, Lambfa}, NULL,
+	{NULL, Lambfa, 0, 5}, NULL
 };					/* a Lambertian surface */
 
 OBJREC  Aftplane;			/* aft clipping plane object */

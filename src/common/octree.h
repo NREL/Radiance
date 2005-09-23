@@ -53,9 +53,9 @@ extern OCTREE  *octblock[MAXOBLK];	/* octree blocks */
  */
 
 typedef struct {
-	OCTREE  cutree;			/* the octree for this cube */
 	FVECT  cuorg;			/* the cube origin */
 	double  cusize;			/* the cube size */
+	OCTREE  cutree;			/* the octree for this cube */
 }  CUBE;
 
 extern CUBE  thescene;			/* the main scene */

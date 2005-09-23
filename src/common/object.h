@@ -22,10 +22,10 @@ extern "C" {
  */
 
 typedef struct {
-	short  nsargs;			/* # of string arguments */
-	short  nfargs;			/* # of real arguments */
 	char  **sarg;			/* string arguments */
 	RREAL  *farg;			/* real arguments */
+	short  nsargs;			/* # of string arguments */
+	short  nfargs;			/* # of real arguments */
 #ifdef  IARGS
 	short  niargs;			/* # of integer arguments */
 	long  *iarg;			/* integer arguments */

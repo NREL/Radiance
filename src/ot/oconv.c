@@ -28,7 +28,7 @@ int  objlim = 6;			/* # of objects before split */
 
 int  resolu = 16384;			/* octree resolution limit */
 
-CUBE  thescene = {EMPTY, {0.0, 0.0, 0.0}, 0.0};		/* our scene */
+CUBE  thescene = {{0.0, 0.0, 0.0}, 0.0, EMPTY};		/* our scene */
 
 char  *ofname[MAXOBJFIL+1];		/* object file names */
 int  nfiles = 0;			/* number of object files */
