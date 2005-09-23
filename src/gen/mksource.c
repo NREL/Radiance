@@ -29,7 +29,7 @@ typedef struct lostlight {
 	COLOR		intens;		/* output times solid angle */
 } LOSTLIGHT;
 
-char	*progname;
+extern char	*progname;
 
 FVECT	scene_cent;		/* center of octree cube */
 RREAL	scene_rad;		/* radius to get outside cube from center */

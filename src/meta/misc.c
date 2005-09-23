@@ -12,7 +12,7 @@ static const char	RCSid[] = "$Id$";
 
 char  coms[] = COML;
 
-char  errmsg[128];
+/* char  errmsg[128];	redundant to error.c in ../commmon */
 
 
 
