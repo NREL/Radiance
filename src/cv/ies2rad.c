@@ -736,8 +736,8 @@ dosource(	/* create source and distribution */
 		fprintf(out, "7 ");
 	else
 		fprintf(out, "5 ");
-	dolower = (bounds[0][0] < 90.);
-	doupper = (bounds[0][1] > 90.);
+	dolower = (bounds[0][0] < 90.-FTINY);
+	doupper = (bounds[0][1] > 90.+FTINY);
 	dosides = (doupper & dolower && sinf->h > MINDIM);
 	fprintf(out, "%s %s source.cal ",
 			sinf->type==SPHERE ? "corr" :
