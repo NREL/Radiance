@@ -69,6 +69,8 @@ char	*argv[];
 					fputs(": illegal input size\n", stderr);
 					exit(1);
 				}
+				if (curbytes)
+					curtab = "";
 				break;
 			case '\0':
 				tabc[nfiles] = curtab;
