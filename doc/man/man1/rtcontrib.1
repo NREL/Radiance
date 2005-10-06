@@ -89,8 +89,11 @@ The actual bin number is computed at run time based on ray direction
 and surface intersection, as described below.
 If the number of bins is known in advance, it should be specified with the
 .I \-bn
-option, especially for output files containing multiple bins.
-Set this to 0 if the number of bins is unknown (the default).
+option, and this is critical for output files containing multiple values
+per record.
+Since bin numbers start from 0, the bin count is always equal to
+the last bin plus 1.
+Set the this value to 0 if the bin count is unknown (the default).
 The most recent
 .I \-b,
 .I \-bn
