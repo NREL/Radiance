@@ -141,6 +141,7 @@ if ( ! $?gotillumpic ) then
 	pfilt -h 20 -n 0 -x 300 -y 300 -p 1 -r 1 $temp1 > $illumpic
 endif
 set maxval=`getinfo < $illumpic | rcalc -i 'EXPOSURE=${e}' -e '$1=3/e'`
+if ("$maxval" == "") set maxval=3
 psign -h 42 " $title " | pfilt -1 -x /2 -y /2 > $tltemp
 '_EOF_'
 if ( $ilpict != $nofile ) then
@@ -149,7 +150,7 @@ if ( $ilpict != $nofile ) then
 		| pcompos -a 1 - $tltemp > $ilpict' >> $sctemp
 endif
 if ( $dfpict != $nofile ) then
-	echo 'falsecolor -cb -l DF -s 50 \\
+	echo 'falsecolor -cb -l DF -s 16 \\
 		$fcopts -m "100/PI/$extamb" -ip $illumpic \\
 		| pcompos -a 1 - $tltemp > $dfpict' >> $sctemp
 endif
