@@ -63,10 +63,13 @@ static void
 closestream(void *p)
 {
 	STREAMOUT	*sop = (STREAMOUT *)p;
+	int		status;
 	if (sop->reclen == CNT_PIPE)
-		pclose(sop->ofp);
+		status = pclose(sop->ofp);
 	else
-		fclose(sop->ofp);
+		status = fclose(sop->ofp);
+	if (status)
+		error(SYSTEM, "error closing output stream");
 	free(p);
 }
 

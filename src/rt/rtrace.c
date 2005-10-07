@@ -215,7 +215,8 @@ rtrace(				/* trace rays from file */
 		if (vcount && !--vcount)		/* check for end */
 			break;
 	}
-	fflush(stdout);
+	if (fflush(stdout) < 0)
+		error(SYSTEM, "write error");
 	if (vcount)
 		error(USER, "unexpected EOF on input");
 	if (fname != NULL)
