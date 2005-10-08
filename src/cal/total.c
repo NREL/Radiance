@@ -294,7 +294,7 @@ char  *fname
 					result[n] = pow(result[n], 1.0/power);
 			}
 			if (func == MULT)
-				result[n] = exp(tally[n]);
+				result[n] = exp(result[n]);
 		}
 		putrecord(result, ncol, stdout);
 		if (!subtotal)
