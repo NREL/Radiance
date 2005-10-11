@@ -1076,7 +1076,7 @@ trace_contribs(FILE *fin)
 			writebuf(rtp->pd.w, inpbuf, iblen);
 		} else {			/* else bypass dummy ray */
 			queue_raytree(rtp);	/* empty tree */
-			if ((yres <= 0) & (waitflush > 0))
+			if ((yres <= 0) | (waitflush > 0))
 				waitflush = 1;	/* flush after this */
 		}
 		if (raysleft && !--raysleft)
