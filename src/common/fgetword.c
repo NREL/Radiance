@@ -15,14 +15,18 @@ static const char	RCSid[] = "$Id$";
 
 
 char *
-fgetword(s, n, fp)		/* get (quoted) word up to n-1 characters */
-char  *s;
-int  n;
-register FILE  *fp;
+fgetword(			/* get (quoted) word up to n-1 characters */
+	char  *s,
+	int  n,
+	register FILE  *fp
+)
 {
 	int  quote = '\0';
 	register char  *cp;
 	register int  c;
+					/* sanity checks */
+	if ((s == NULL) | (n <= 0))
+		return(NULL);
 					/* skip initial white space */
 	do
 		c = getc(fp);
