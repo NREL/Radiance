@@ -325,6 +325,9 @@ main(int argc, char *argv[])
 				rtargv[rtargc++] = argv[++i];
 				addmodfile(argv[i], curout, binval, bincnt);
 				continue;
+			case 'P':		/* persist file */
+				error(USER, "persist file is automatic");
+				break;
 			}
 		rtargv[rtargc++] = argv[i];	/* assume rtrace option */
 	}
