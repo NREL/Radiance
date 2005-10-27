@@ -264,9 +264,9 @@ Or, to graph selected points:
 The commands to plot these files might be:
 .nf
 
-	bgraph -line sine1.plt | impress | ipr
+	bgraph -line sine1.plt | psmeta | lpr
 
-	bgraph -curve +ymin -1 +ymax 1 sine2.plt | t4014
+	bgraph -curve +ymin -1 +ymax 1 sine2.plt | x11meta
 
 .fi
 .SH FILES
@@ -280,5 +280,5 @@ There is no mechanism provided for undefining a variable.
 An axis mapping function which is not invertible (monotonically
 increasing or decreasing) confuses the program terribly.
 .SH "SEE ALSO"
-dgraph(1), gcomp(1), icalc(1), igraph(1), impress(1),
-metafile(5), mx80(1), mt160l(1), t4014(1), x11meta(1)
+dgraph(1), gcomp(1), icalc(1), igraph(1),
+metafile(5), x11meta(1)
