@@ -28,7 +28,7 @@ inithemi(			/* initialize sampling hemisphere */
 	register int  i;
 					/* set number of divisions */
 	if (ambacc <= FTINY &&
-			wt > (d = 0.8*bright(ac)*r->rweight/(ambdiv*minweight)))
+			wt > (d = 0.8*intens(ac)*r->rweight/(ambdiv*minweight)))
 		wt = d;			/* avoid ray termination */
 	hp->nt = sqrt(ambdiv * wt / PI) + 0.5;
 	i = ambacc > FTINY ? 3 : 1;	/* minimum number of samples */

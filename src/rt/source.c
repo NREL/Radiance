@@ -382,7 +382,7 @@ direct(					/* add direct component */
 		scp->sno = sr.rsrc;
 						/* compute coefficient */
 		(*f)(scp->coef, p, sr.rdir, si.dom);
-		cntord[sn].brt = bright(scp->coef);
+		cntord[sn].brt = intens(scp->coef);
 		if (cntord[sn].brt <= 0.0)
 			continue;
 #if SHADCACHE
@@ -399,7 +399,7 @@ direct(					/* add direct component */
 		rayvalue(&sr);
 		multcolor(sr.rcol, sr.rcoef);
 		copycolor(scp->val, sr.rcol);
-		cntord[sn].brt = bright(scp->val);
+		cntord[sn].brt = intens(sr.rcol);
 	}
 						/* sort contributions */
 	qsort(cntord, sn, sizeof(CNTPTR), cntcmp);
