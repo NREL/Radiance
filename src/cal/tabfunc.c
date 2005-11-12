@@ -151,7 +151,9 @@ absc_exp(void)			/* produce expression for abscissa */
 				strcpy(ourexp, "x");
 			else
 				sprintf(ourexp, "x-%g", abscissa[0]-1);
-		} else
+		} else if (fabs(abscissa[0]) < eps)
+			sprintf(ourexp, "x/%g+1", step);
+		else
 			sprintf(ourexp, "(x-%g)/%g+1", abscissa[0], step);
 	} else {
 		printf("X`%s(i):select(i,", locID);
