@@ -53,7 +53,7 @@ fcFixedLog(FCstruct *fcs, double Lwmin, double Lwmax);
  */
 
 extern int
-fcLinearMapping(FCstruct *fcs, TMstruct *tms, int pctile);
+fcLinearMapping(FCstruct *fcs, TMstruct *tms, double pctile);
 /*
 	Compute linear false color map.
 	
@@ -65,7 +65,7 @@ fcLinearMapping(FCstruct *fcs, TMstruct *tms, int pctile);
  */
 
 extern int
-fcLogMapping(FCstruct *fcs, TMstruct *tms, int pctile);
+fcLogMapping(FCstruct *fcs, TMstruct *tms, double pctile);
 /*
 	Compute logarithmic false color map.
 	
