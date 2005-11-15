@@ -89,6 +89,26 @@ fcMapPixels(FCstruct *fcs, BYTE *ps, TMbright *ls, int len);
 	returns	-	0 on success, TM_E_* on failure.
  */
 
+extern int
+fcIsLogMap(FCstruct *fcs);
+/*
+	Determine if false color mapping is logarithmic.
+
+	fcs     -       false color structure pointer.
+
+	returns	-	1 if map follows logarithmic mapping, -1 on error.
+*/
+
+extern FCstruct *
+fcDup(FCstruct *fcs);
+/*
+	Duplicate a false color structure.
+
+	fcs     -       false color structure pointer.
+
+	returns	-	duplicate structure, or NULL if no memory.
+*/
+
 extern void
 fcDone(FCstruct *fcs);
 /*
