@@ -432,8 +432,7 @@ register TMstruct	*tms;
 	cd = (COLRDATA *)tms->pd[colrReg];
 	for (i = 3; i--; )
 		cd->clfb[i] = 0x100*tms->clf[i] + .5;
-	d = TM_BRTSCALE*log(tms->inpsf);
-	cd->inpsfb = d<0. ? d-.5 : d+.5;
+	cd->inpsfb = tmCvLuminance(tms->inpsf);
 	for (i = 3; i--; )
 		for (j = 3; j--; ) {
 			d = tms->cmat[i][j] / tms->inpsf;

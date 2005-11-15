@@ -266,11 +266,7 @@ int	len
 		returnErr(TM_E_ILLEGAL);
 					/* check scaling offset */
 	if (!FEQ(tms->inpsf, lastsf)) {
-		offset = BRT2SCALE(64);
-		if (tms->inpsf > 1.0001)
-			offset -= (int)(TM_BRTSCALE*log(tms->inpsf)+.5);
-		else if (tms->inpsf < 0.9999)
-			offset -= (int)(TM_BRTSCALE*log(tms->inpsf)-.5);
+		offset = BRT2SCALE(64) - tmCvLuminance(tms->inpsf);
 		lastsf = tms->inpsf;
 	}
 					/* convert each pixel */
@@ -295,11 +291,7 @@ TMstruct	*tms;
 		exit(1);
 	}
 	ld = (LUV32DATA *)tms->pd[luv32Reg];
-	ld->offset = BRT2SCALE(64);
-	if (tms->inpsf > 1.0001)
-		ld->offset -= (int)(TM_BRTSCALE*log(tms->inpsf)+.5);
-	else if (tms->inpsf < 0.9999)
-		ld->offset -= (int)(TM_BRTSCALE*log(tms->inpsf)-.5);
+	ld->offset = BRT2SCALE(64) - tmCvLuminance(tms->inpsf);
 	clruvall(ld);
 }
 
@@ -330,11 +322,7 @@ TMstruct *tms;
 		exit(1);
 	}
 	ld = (LUV24DATA *)tms->pd[luv24Reg];
-	ld->offset = BRT2SCALE(12);
-	if (tms->inpsf > 1.0001)
-		ld->offset -= (int)(TM_BRTSCALE*log(tms->inpsf)+.5);
-	else if (tms->inpsf < 0.9999)
-		ld->offset -= (int)(TM_BRTSCALE*log(tms->inpsf)-.5);
+	ld->offset = BRT2SCALE(12) - tmCvLuminance(tms->inpsf);
 	clruvall(ld);
 }
 

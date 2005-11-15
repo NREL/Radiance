@@ -239,6 +239,22 @@ int	len
 }
 
 
+TMbright
+tmCvLuminance(				/* convert a single luminance */
+double	lum
+)
+{
+	double	d;
+
+	if (lum <= TM_NOLUM)
+		return(TM_NOBRT);
+	d = TM_BRTSCALE*log(lum);
+	if (d > 0.)
+		return((TMbright)(d+.5));
+	return((TMbright)(d-.5));
+}
+
+
 int
 tmCvGrays(				/* convert float gray values */
 TMstruct	*tms,

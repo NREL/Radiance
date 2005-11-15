@@ -118,6 +118,11 @@ extern int	tmNumPkgs;	/* number of registered packages */
 
 /****    Library Function Calls    ****/
 
+extern TMbright
+tmCvLuminance(double lum);
+/*
+	Convert a single luminance value to an encoded brightness value.
+ */
 
 extern TMstruct *
 tmInit(int flags, RGBPRIMP monpri, double gamval);
