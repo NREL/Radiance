@@ -338,7 +338,7 @@ rholo(void)				/* holodeck main loop */
 		return(0);		/* all done */
 	fsiz = hdfilen(hdlist[0]->fd);	/* check file size */
 	if (maxdisk > 0 && fsiz >= maxdisk) {
-		error(WARNING, "file limit exceeded");
+		error(USER, "file limit exceeded");
 		done_rtrace();
 		return(1);	/* comes back */
 	}
@@ -356,7 +356,7 @@ rholo(void)				/* holodeck main loop */
 #endif
 	t = time(NULL);			/* check time */
 	if (endtime > 0 && t >= endtime) {
-		error(WARNING, "time limit exceeded");
+		error(USER, "time limit exceeded");
 		done_rtrace();
 		return(1);	/* comes back */
 	}
