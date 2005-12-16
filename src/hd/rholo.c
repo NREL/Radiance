@@ -319,7 +319,7 @@ memerr:
 static int
 rholo(void)				/* holodeck main loop */
 {
-	static long	nextfragwarn = 100L<<20;
+	static off_t	nextfragwarn = 100L<<20;
 	static int	idle = 0;
 	PACKET	*pl = NULL, *plend;
 	off_t	fsiz;
