@@ -132,19 +132,6 @@ $(RCLIB):	$(RLOBJS)
 	-ranlib $(RCLIB)
 
 #
-# Special compiles:
-#
-
-rtmain.o:	rtmain.c
-	$(CC) $(CFLAGS) -DNICE=4 -c rtmain.c
-
-rpmain.o:	rpmain.c
-	$(CC) $(CFLAGS) -DNICE=6 -c rpmain.c
-
-rvmain.o:	rvmain.c
-	$(CC) $(CFLAGS) -c rvmain.c
-
-#
 # Uncomment the following to model dispersion:
 #
 dielectric.o:	dielectric.c source.h
