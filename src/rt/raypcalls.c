@@ -402,20 +402,19 @@ ray_pchild(	/* process rays (never returns) */
 					/* read each ray request set */
 	while ((n = read(fd_in, (char *)r_queue, sizeof(r_queue))) > 0) {
 		int	n2;
-		if (n % sizeof(RAY))
+		if (n < sizeof(RAY))
 			break;
-		n /= sizeof(RAY);
 					/* get smuggled set length */
-		n2 = r_queue[0].crtype - n;
+		n2 = sizeof(RAY)*r_queue[0].crtype - n;
 		if (n2 < 0)
 			error(INTERNAL, "buffer over-read in ray_pchild");
 		if (n2 > 0) {		/* read the rest of the set */
-			i = readbuf(fd_in, (char *)(r_queue+n),
-					sizeof(RAY)*n2);
-			if (i != sizeof(RAY)*n2)
+			i = readbuf(fd_in, (char *)r_queue + n, n2);
+			if (i != n2)
 				break;
 			n += n2;
 		}
+		n /= sizeof(RAY);
 					/* evaluate rays */
 		for (i = 0; i < n; i++) {
 			r_queue[i].crtype = r_queue[i].rtype;
