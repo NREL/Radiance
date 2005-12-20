@@ -762,6 +762,16 @@ filter_frame(void)			/* interpolation, motion-blur, and exposure */
 			continue;
 		nc = getclosest(neigh, NPINTERP, x, y);
 		setcolor(cbuffer[n], 0., 0., 0.);
+		if (nc <= 0) {		/* no acceptable neighbors */
+			if (y < vres-1)
+				nc = fndx(x, y+1);
+			else if (x < hres-1)
+				nc = fndx(x+1, y);
+			else
+				continue;
+			copycolor(cbuffer[n], cbuffer[nc]);
+			continue;
+		}
 		wsum = 0.;
 		while (nc-- > 0) {
 			copycolor(cval, cbuffer[neigh[nc]]);
@@ -771,10 +781,8 @@ filter_frame(void)			/* interpolation, motion-blur, and exposure */
 			addcolor(cbuffer[n], cval);
 			wsum += w;
 		}
-		if (wsum > FTINY) {
-			w = 1.0/wsum;
-			scalecolor(cbuffer[n], w);
-		}
+		w = 1.0/wsum;
+		scalecolor(cbuffer[n], w);
 	    }
 					/* motion blur if requested */
 	if (mblur > .02) {
