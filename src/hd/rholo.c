@@ -534,9 +534,10 @@ loadholo(void)			/* start loading a holodeck from fname */
 			error(SYSTEM, errmsg);
 		}
 		if (ncprocs > 0) {
-			sprintf(errmsg,
-			"\"%s\" opened read-only; new rays will be discarded",
-					hdkfile);
+			sprintf(errmsg, "\"%s\" is read-only", hdkfile);
+			if (outdev == NULL)
+				error(USER, errmsg);
+			strcat(errmsg, "; new rays will be discarded");
 			error(WARNING, errmsg);
 			force = -1;
 		}
