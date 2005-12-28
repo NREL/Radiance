@@ -129,6 +129,7 @@ rad2mgf(		/* convert a Radiance file to MGF */
 	char	*inp
 )
 {
+	char  buf[512];
 	char  mod[128], typ[32], id[128], alias[128];
 	FUNARGS	fa;
 	register FILE	*fp;
