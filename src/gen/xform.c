@@ -416,17 +416,24 @@ xfobject(				/* transform an object */
 				progname, fname, typ);
 		exit(1);
 	}
-	if (ismodifier(fn))
-		printf("\n%s %s ", nam, typ);
-	else
-		printf("\n%s %s ", newmod != NULL ? newmod : nam,
-				invert ? ofun[tinvers[fn]].funame : typ);
+	putchar('\n');
+	if (ismodifier(fn)) {
+		fputword(nam, stdout);
+		printf(" %s ", typ);
+	} else {
+		fputword(newmod != NULL ? newmod : nam, stdout);
+		printf(" %s ", invert ? ofun[tinvers[fn]].funame : typ);
+	}
 						/* object name */
 	fgetword(nam, sizeof(nam), fin);
 	if (idprefix == NULL || ismodifier(fn))
-		printf("%s\n", nam);
-	else
-		printf("%s.%s\n", idprefix, nam);
+		fputword(nam, stdout);
+	else {
+		char	nnam[MAXSTR];
+		sprintf(nnam, "%s.%s", idprefix, nam);
+		fputword(nnam, stdout);
+	}
+	putchar('\n');
 						/* transform arguments */
 	if ((*ofun[fn].funp)(fin) < 0) {
 		fprintf(stderr, "%s: (%s): bad %s \"%s\"\n",
