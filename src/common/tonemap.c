@@ -182,7 +182,7 @@ int	len
 		returnErr(TM_E_TMINVAL);
 	if ((ls == NULL) | (scan == NULL) | (len < 0))
 		returnErr(TM_E_ILLEGAL);
-	if (cs != TM_NOCHROM && fabs(curgam - tms->mongam) < .02) {
+	if (cs != TM_NOCHROM && fabs(tms->mongam - curgam) > .02) {
 		curgam = tms->mongam;			/* (re)build table */
 		for (i = 1024; i--; )
 			gamtab[i] = (int)(256.*pow((i+.5)/1024., 1./curgam));
