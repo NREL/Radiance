@@ -170,9 +170,9 @@ fcIsLogMap(FCstruct *fcs)
 	if (fcs == NULL || fcs->lumap == NULL)
 		return(-1);
 	
-	miderr = fcs->lumap[(fcs->mbrmax - fcs->mbrmin)/2] -
-			128L * (fcs->mbrmax - fcs->mbrmin) /
-				(fcs->mbrmax - fcs->mbrmin + 1);
+	miderr = (fcs->mbrmax - fcs->mbrmin)/2;
+	miderr = fcs->lumap[miderr] -
+			256L * miderr / (fcs->mbrmax - fcs->mbrmin + 1);
 
 	return((-1 <= miderr) & (miderr <= 1));
 }
