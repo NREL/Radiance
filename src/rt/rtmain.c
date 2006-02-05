@@ -435,6 +435,7 @@ printdefaults(void)			/* print default values to stdout */
 		case 'o': printf(" origin"); break;
 		case 'd': printf(" direction"); break;
 		case 'v': printf(" value"); break;
+		case 'V': printf(" contribution"); break;
 		case 'l': printf(" length"); break;
 		case 'L': printf(" first_length"); break;
 		case 'p': printf(" point"); break;
@@ -442,9 +443,9 @@ printdefaults(void)			/* print default values to stdout */
 		case 'N': printf(" unperturbed_normal"); break;
 		case 's': printf(" surface"); break;
 		case 'w': printf(" weight"); break;
+		case 'W': printf(" coefficient"); break;
 		case 'm': printf(" modifier"); break;
 		case 'M': printf(" material"); break;
-		case 'W': printf(" contribution"); break;
 		case '-': printf(" stroke"); break;
 		}
 	putchar('\n');
