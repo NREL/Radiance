@@ -70,7 +70,7 @@ OBJECT  obj;
 	int  upper, lower;
 	register int  cm, i;
 
-	if ((i = os[0]) <= 6) {		/* linear search algorithm */
+	if ((i = os[0]) <= 12) {	/* linear search algorithm */
 		cm = obj;
 		while (i-- > 0)
 			if (*++os == cm)
