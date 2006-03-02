@@ -127,8 +127,8 @@ FACE  *f;
 	register int  xi, yi;
 	register RREAL  *p0, *p1;
 
-	xi = (f->ax+1)%3;
-	yi = (f->ax+2)%3;
+	if ((xi = f->ax + 1) >= 3) xi -= 3;
+	if ((yi = xi + 1) >= 3) yi -= 3;
 	x = p[xi];
 	y = p[yi];
 	n = f->nv;
