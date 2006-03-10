@@ -1,4 +1,4 @@
-/* $Id$ */
+/* RCSid $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -410,7 +410,7 @@ extern	const unsigned char* TIFFGetBitRevTable(int);
 #ifdef LOGLUV_PUBLIC
 #define U_NEU		0.210526316
 #define V_NEU		0.473684211
-#define UVSCALE		410.
+#define UVSCALE		409.6
 extern	double LogL16toY(int);
 extern	double LogL10toY(int);
 extern	void XYZtoRGB24(float*, uint8*);
