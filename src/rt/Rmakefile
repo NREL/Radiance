@@ -30,7 +30,7 @@ LIBDIR = /usr/local/lib/ray
 #
 RLIB = ../lib/libradiance.a
 RCLIB = ../lib/libraycalls.a
-LIBS = -lrt $(MLIB)
+LIBS = -lrtrad $(MLIB)
 
 #
 # Device drivers for rvu (see also devtable.c):

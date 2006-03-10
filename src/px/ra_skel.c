@@ -7,12 +7,12 @@ static const char	RCSid[] = "$Id$";
  *
  *  The Rmakefile entry should look something like this:
  *	ra_skel:	ra_skel.o
- *		cc $(CFLAGS) -o ra_skel ra_skel.o -lrt -lm
+ *		cc $(CFLAGS) -o ra_skel ra_skel.o -lrtrad -lm
  *	ra_skel.o:	../common/color.h ../common/resolu.h
  *
  *  If you like to do things the hard way, you can link directly
  *  to the object files "color.o colrops.o resolu.o header.o" in
- *  the common subdirectory instead of using the -lrt library.
+ *  the common subdirectory instead of using the -lrtrad library.
  */
 
 #include  <stdio.h>
