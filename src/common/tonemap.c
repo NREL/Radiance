@@ -195,6 +195,11 @@ int	len
 			cmon[GRN] = tms->inpsf*scan[i][GRN];
 			cmon[BLU] = tms->inpsf*scan[i][BLU];
 		}
+#ifdef isnan
+		if (isnan(cmon[RED]) || isinf(cmon[RED])) cmon[RED] = .0f;
+		if (isnan(cmon[GRN]) || isinf(cmon[GRN])) cmon[GRN] = .0f;
+		if (isnan(cmon[BLU]) || isinf(cmon[BLU])) cmon[BLU] = .0f;
+#endif
 							/* world luminance */
 		lum =	tms->clf[RED]*cmon[RED] +
 			tms->clf[GRN]*cmon[GRN] +
