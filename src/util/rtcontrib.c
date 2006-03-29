@@ -567,7 +567,7 @@ addmodifier(char *modn, char *outf, char *binv, int bincnt)
 		mp = growmodifier(mp, bincnt);
 	lep->data = (char *)mp;
 					/* allocate output streams */
-	for (i = outf==NULL || outf[0]=='!' ? 0 : bincnt; i--; )
+	for (i = outf==NULL || outf[0]=='!' ? 0 : bincnt; i-- > 0; )
 		getostream(mp->outspec, mp->modname, i, 1);
 	return mp;
 }
