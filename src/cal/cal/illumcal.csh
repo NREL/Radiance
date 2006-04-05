@@ -12,7 +12,7 @@ if ( $#argv < 1 ) then
 endif
 set cal = .
 foreach illum ($*)
-set spc=(`sed -e 1d -e 's/^[ 	]*\([1-9][0-9]*\)[ 	].*$/\1/' -e 3q $illum`)
+set spc=(`sed -e 1d -e 's/^[ 	]*\([1-9][.0-9]*\)[ 	].*$/\1/' -e 3q $illum`)
 rcalc -f $cal/cieresp.cal -f $cal/stdrefl.cal -e "intvl=abs($spc[2]-$spc[1])" \
 	-f $cal/conv1.cal $illum | total >> /tmp/il$$.dat
 end
