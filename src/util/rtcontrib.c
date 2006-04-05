@@ -101,7 +101,7 @@ struct rtproc {
 					/* rtrace command and defaults */
 char		*rtargv[256+2*MAXMODLIST] = { "rtrace",
 				"-dj", ".5", "-dr", "3",
-				"-ab", "1", "-ad", "128", };
+				"-ab", "1", "-ad", "350", };
 
 int  rtargc = 9;
 					/* overriding rtrace options */
