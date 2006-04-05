@@ -47,7 +47,7 @@ char  *outvals = "v";			/* output specification */
 
 int  do_irrad = 0;			/* compute irradiance? */
 
-int  rand_samp = 0;			/* pure Monte Carlo sampling? */
+int  rand_samp = 1;			/* pure Monte Carlo sampling? */
 
 void  (*trace)() = NULL;		/* trace call */
 
