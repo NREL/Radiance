@@ -165,8 +165,13 @@ ray_init(			/* initialize ray-tracing calculation */
 	if (ofun[OBJ_SPHERE].funp == o_default)
 		initotypes();
 					/* initialize urand */
-	srandom(rand_samp ? (long)time(0) : 0L);
-	initurand(2048);
+	if (rand_samp) {
+		srandom((long)time(0));
+		initurand(0);
+	} else {
+		srandom(0L);
+		initurand(2048);
+	}
 					/* read scene octree */
 	readoct(octname = otnm, ~(IO_FILES|IO_INFO), &thescene, NULL);
 	nsceneobjs = nobjects;
@@ -183,7 +188,7 @@ ray_trace(			/* trace a primary ray */
 )
 {
 	rayorigin(r, PRIMARY, NULL, NULL);
-	samplendx = rand_samp ? random() : samplendx+1;
+	samplendx++;
 	rayvalue(r);		/* assumes origin and direction are set */
 }
 

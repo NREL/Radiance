@@ -198,7 +198,7 @@ rtrace(				/* trace rays from file */
 				nextflush = hresolu;
 			}
 		} else {
-			samplendx = rand_samp ? random() : samplendx+1;
+			samplendx++;
 							/* compute and print */
 			if (imm_irrad)
 				irrad(orig, direc);

@@ -226,8 +226,13 @@ main(int  argc, char  *argv[])
 					/* initialize object types */
 	initotypes();
 					/* initialize urand */
-	srandom(rand_samp ? (long)time(0) : 0L);
-	initurand(2048);
+	if (rand_samp) {
+		srandom((long)time(0));
+		initurand(0);
+	} else {
+		srandom(0L);
+		initurand(2048);
+	}
 					/* set up signal handling */
 	sigdie(SIGINT, "Interrupt");
 #ifdef SIGHUP

@@ -677,12 +677,8 @@ pixvalue(		/* compute pixel value */
 		return(0.0);
 	}
 	vdist = ourview.vdist;
-
-	if (rand_samp)				/* set pixel index */
-		samplendx = random();
-	else
-		samplendx = pixnumber(x,y,hres,vres);
-
+						/* set pixel index */
+	samplendx = pixnumber(x,y,hres,vres);
 						/* optional motion blur */
 	if (lastview.type && mblur > FTINY && (lmax = viewray(lorg, ldir,
 					&lastview, hpos, vpos)) >= -FTINY) {

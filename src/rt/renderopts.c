@@ -252,5 +252,5 @@ print_rdefaults(void)		/* print default render values to stdout */
 	printf("-ms %f\t\t\t# mist sampling distance\n", ssampdist);
 	printf("-lr %-9d\t\t\t# limit reflection%s\n", maxdepth,
 			maxdepth<=0 ? " (Russian roulette)" : "");
-	printf("-lw %f\t\t\t# limit weight\n", minweight);
+	printf("-lw %.2e\t\t\t# limit weight\n", minweight);
 }

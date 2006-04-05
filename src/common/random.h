@@ -41,7 +41,8 @@ extern double  drand48();
 extern unsigned short	*urperm;
 extern int	urmask;
 
-#define	 urand(i)	((urperm[(i)&urmask]+frandom())/(urmask+1))
+#define	 urand(i)	(urmask ? ((urperm[(i)&urmask]+frandom())/(urmask+1)) \
+				: frandom())
 
 extern int	initurand(int size);
 
