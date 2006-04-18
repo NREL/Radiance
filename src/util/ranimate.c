@@ -946,6 +946,13 @@ int	rvr
 		usepfilt |= nora_rgbe;
 	} else if (frseq[0] == frame) {		/* no interpolation needed */
 		if (!rvr && frame > 1+vint(INTERP)) {	/* archive previous */
+			if (arcnext - arcargs +
+					strlen(fbase) >= sizeof(arcargs)-8) {
+				fprintf(stderr,
+"%s: too many filenames in archive command -- reduce %s variable\n",
+						progname, vnam(DISKSPACE));
+				quit(1);
+			}
 			*arcnext++ = ' ';
 			sprintf(arcnext, fbase, frame-vint(INTERP)-1);
 			while (*arcnext) arcnext++;
