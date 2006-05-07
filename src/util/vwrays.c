@@ -56,9 +56,11 @@ main(
 				break;
 			case 'f':			/* float */
 				putr = putf;
+				SET_FILE_BINARY(stdout);
 				break;
 			case 'd':			/* double */
 				putr = putd;
+				SET_FILE_BINARY(stdout);
 				break;
 			default:
 				goto userr;

@@ -86,19 +86,25 @@ char	*argv[];
 		} else if (argv[i][0] == '!') {
 			tabc[nfiles] = curtab;
 			bytsiz[nfiles] = curbytes;
-			if ((input[nfiles++] = popen(argv[i]+1, "r")) == NULL) {
+			if ((input[nfiles] = popen(argv[i]+1, "r")) == NULL) {
 				fputs(argv[i], stderr);
 				fputs(": cannot start command\n", stderr);
 				exit(1);
 			}
+			if (bytsiz[nfiles])
+				SET_FILE_BINARY(input[nfiles]);
+			++nfiles;
 		} else {
 			tabc[nfiles] = curtab;
 			bytsiz[nfiles] = curbytes;
-			if ((input[nfiles++] = fopen(argv[i], "r")) == NULL) {
+			if ((input[nfiles] = fopen(argv[i], "r")) == NULL) {
 				fputs(argv[i], stderr);
 				fputs(": cannot open file\n", stderr);
 				exit(1);
 			}
+			if (bytsiz[nfiles])
+				SET_FILE_BINARY(input[nfiles]);
+			++nfiles;
 		}
 		if (nfiles >= MAXFILE) {
 			fputs(argv[0], stderr);
