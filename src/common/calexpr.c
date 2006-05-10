@@ -294,9 +294,12 @@ epow(
     lasterrno = errno;
     errno = 0;
     d = pow(evalue(ep1), evalue(ep1->sibling));
-#ifdef	IEEE
-    if (!finite(d))
-	errno = EDOM;
+#ifdef  isnan
+    if (errno == 0)
+	if (isnan(d))
+	    errno = EDOM;
+	else if (isinf(d))
+	    errno = ERANGE;
 #endif
     if (errno == EDOM || errno == ERANGE) {
 	wputs("Illegal power\n");

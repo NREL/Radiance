@@ -344,7 +344,7 @@ VARDEF  *vp;
     lasterrno = errno;
     errno = 0;
     d = (*lp->f)(lp->fname);
-#ifdef  IEEE
+#ifdef  isnan
     if (errno == 0)
 	if (isnan(d))
 	    errno = EDOM;
