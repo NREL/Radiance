@@ -53,7 +53,7 @@ double	gamval
 		tmnew->clf[GRN] = rgb2xyzmat[1][1];
 		tmnew->clf[BLU] = rgb2xyzmat[1][2];
 	} else {
-		comprgb2xyzWBmat(cmat, tmnew->monpri=monpri);
+		comprgb2xyzmat(cmat, tmnew->monpri=monpri);
 		tmnew->clf[RED] = cmat[1][0];
 		tmnew->clf[GRN] = cmat[1][1];
 		tmnew->clf[BLU] = cmat[1][2];
@@ -116,7 +116,7 @@ MEM_PTR	dat
 			tms->clf[CIEX] = tms->clf[CIEZ] = 0.;
 			tms->clf[CIEY] = 1.;
 		} else {
-			comprgb2xyzWBmat(tms->cmat, tms->monpri);
+			comprgb2xyzmat(tms->cmat, tms->monpri);
 			tms->clf[RED] = tms->cmat[1][0];
 			tms->clf[GRN] = tms->cmat[1][1];
 			tms->clf[BLU] = tms->cmat[1][2];
