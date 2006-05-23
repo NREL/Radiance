@@ -324,6 +324,9 @@ dev_view(			/* assign new driver view */
 	register VIEW	*nv
 )
 {
+#ifdef STEREO
+	double	d;
+#endif
 	if (nv->type != VT_PER ||		/* check view legality */
 			nv->horiz > 160. || nv->vert > 160.) {
 		error(COMMAND, "illegal view type/angle");
