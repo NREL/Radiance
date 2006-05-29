@@ -14,6 +14,8 @@ static const char	RCSid[] = "$Id$";
 struct source	*curlist = NULL;	/* current source list */
 struct source	*donelist = NULL;	/* finished sources */
 
+void	pict_stats(void);
+
 static struct srcspan * newspan(int	l, int	r, int	v, float	*sb);
 static struct srcspan * newspan(int	l, int	r, int	v, float	*sb);
 static void addindirect(int	h, int	v, double	br);

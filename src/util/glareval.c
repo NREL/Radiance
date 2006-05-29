@@ -144,7 +144,7 @@ seekerr:
 
 
 #ifdef DEBUG
-static void
+void
 pict_stats(void)			/* print out picture read statistics */
 {
 	static long	lastcall = 0L;	/* ncall at last report */
