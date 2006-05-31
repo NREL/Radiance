@@ -432,7 +432,6 @@ register TMstruct	*tms;
 	cd = (COLRDATA *)tms->pd[colrReg];
 	for (i = 3; i--; )
 		cd->clfb[i] = 0x1000*tms->clf[i] + .5;
-fprintf(stderr, "(%d %d %d)\n", cd->clfb[0], cd->clfb[1], cd->clfb[2]);
 	cd->inpsfb = tmCvLuminance(tms->inpsf);
 	for (i = 3; i--; )
 		for (j = 3; j--; ) {
