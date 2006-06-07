@@ -232,7 +232,6 @@ int		len
 )
 {
 	static const char funcName[] = "tmCvGrays";
-	double	d;
 	int	i;
 
 	if (tms == NULL)

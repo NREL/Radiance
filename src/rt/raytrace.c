@@ -93,11 +93,13 @@ rayorigin(		/* start new ray from old one */
 				colval(ro->cext,RED) : colval(ro->cext,GRN);
 		if (colval(ro->cext,BLU) < re) re = colval(ro->cext,BLU);
 		re *= ro->rot;
-		if (re > 0.1)
-			if (re > 92.)
+		if (re > 0.1) {
+			if (re > 92.) {
 				r->rweight = 0.0;
-			else
+			} else {
 				r->rweight *= exp(-re);
+			}
+		}
 	}
 	rayclear(r);
 	if (r->rweight <= 0.0)			/* check for expiration */

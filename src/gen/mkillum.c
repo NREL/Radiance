@@ -155,6 +155,7 @@ main(		/* compute illum distributions using rtrace */
 	else
 		filter(stdin, "standard input");
 	quit(0);
+	return 0; /* pro forma return */
 }
 
 

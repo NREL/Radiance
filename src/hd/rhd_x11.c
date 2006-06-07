@@ -295,7 +295,8 @@ dev_view(			/* assign new driver view */
 
 extern void
 dev_section(		/* add octree for geometry rendering */
-	char	*ofn
+	char	*gfn,
+	char	*pfn
 )
 {
 	/* unimplemented */

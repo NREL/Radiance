@@ -7,6 +7,7 @@ static const char	RCSid[] = "$Id$";
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "lookup.h"
 

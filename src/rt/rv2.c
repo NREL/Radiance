@@ -290,7 +290,6 @@ getfocus(				/* set focus distance */
 )
 {
 	char  buf[64];
-	FVECT  vc;
 	double	dist;
 
 	if (sscanf(s, "%lf", &dist) < 1) {

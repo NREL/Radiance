@@ -768,7 +768,10 @@ moveview(	/* move our view */
 {
 	VIEW	nv;
 	FVECT	odir, v1, wip;
-	double	d, d1;
+	double	d;
+#ifdef DOBJ
+	double d1;
+#endif
 				/* start with old view */
 	nv = odev.v;
 				/* orient our motion */
@@ -824,7 +827,10 @@ getframe(				/* get focus frame */
 	int	startx = ebut->x, starty = ebut->y;
 	int	endx, endy, midx, midy;
 	FVECT	odir, v1;
-	double	d, d1;
+	double	d;
+#ifdef DOBJ
+	double d1;
+#endif
 						/* get mouse drag */
 	XMaskEvent(ourdisplay, ButtonReleaseMask, levptr(XEvent));
 	endx = levptr(XButtonReleasedEvent)->x;

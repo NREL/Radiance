@@ -176,7 +176,7 @@ extern void dev_open(char  *id);
 extern void dev_close(void);
 extern void dev_clear(void);
 extern int dev_view(register VIEW *nv);
-//extern void dev_section(char *ofn); /* XXX */
+extern void dev_section(char *gfn, char *pfn);
 extern void dev_auxcom(char *cmd, char *args);
 extern VIEW *dev_auxview(int n, int hvres[2]);
 extern int dev_input(void);

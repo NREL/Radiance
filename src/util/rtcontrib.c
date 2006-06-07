@@ -1132,6 +1132,7 @@ myseeko(const LUENT *e, void *p)
 		sprintf(errmsg, "seek error on file '%s'", e->key);
 		error(SYSTEM, errmsg);
 	}
+	return 0;
 }
 
 /* recover output if possible */

@@ -74,7 +74,7 @@ close_process(		/* close pipes and wait for process */
 SUBPROC *pd
 )
 {
-	int	pid, status;
+	int	status;
 
 	if (!pd->running)
 		return(0);
