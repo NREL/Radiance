@@ -55,6 +55,10 @@ findmaterial(register OBJREC *o)
 			ao = objptr(aobj);
 			if (ismaterial(ao->otype))
 				return(ao);
+			if (ao->otype == MOD_ALIAS) {
+				o = ao;
+				continue;
+			}
 		}
 		if (o->omod == OVOID)
 			return(NULL);
