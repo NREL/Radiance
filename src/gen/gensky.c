@@ -78,7 +78,7 @@ int  skytype = S_CLEAR;				/* sky type */
 int  dosun = 1;
 double  zenithbr = 0.0;
 int	u_zenith = 0;				/* -1=irradiance, 1=radiance */
-double  turbidity = 2.75;
+double  turbidity = 2.45;
 double  gprefl = 0.2;
 					/* computed values */
 double  sundir[3];
