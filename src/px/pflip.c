@@ -76,7 +76,7 @@ main(
 		exit(1);
 	}
 	if ((fin = fopen(argv[i], "r")) == NULL) {
-		fprintf(stderr, "%s: cannot open\n", argv[1]);
+		fprintf(stderr, "%s: cannot open\n", argv[i]);
 		exit(1);
 	}
 	if (i < argc-1 && freopen(argv[i+1], "w", stdout) == NULL) {
