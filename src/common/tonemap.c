@@ -458,10 +458,12 @@ double	gamval
 	if (gamval < MINGAM)
 		gamval = tms->mongam;
 	d = log(expmult/tms->inpsf);
-	for (i = tms->mbrmax-tms->mbrmin+1; i--; )
-		tms->lumap[i] = 256. * exp(
+	for (i = tms->mbrmax-tms->mbrmin+1; i--; ) {
+		double	val = 256. * exp(
 			( d + (tms->mbrmin+i)*(1./TM_BRTSCALE) )
-			/ gamval );
+			/ gamval);
+		tms->lumap[i] = val >= (double)0xffff ? 0xffff : (int)val;
+	}
 	returnOK;
 }
 
