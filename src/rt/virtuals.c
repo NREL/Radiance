@@ -309,7 +309,7 @@ vstestvis(		/* pretest source visibility */
 	FVECT  onorm;
 	FVECT  offsdir;
 	SRCINDEX  si;
-	double  or, d;
+	double  or, d, d1;
 	int  stestlim, ssn;
 	int  nhit, nok;
 	register int  i, n;
@@ -373,14 +373,23 @@ vstestvis(		/* pretest source visibility */
 			if (!srcray(&sr, NULL, &si) || sr.rsrc != sn)
 				continue;	/* can't get there from here */
 		}
-		srcvalue(&sr);			/* check sample validity */
-		if (bright(sr.rcol) <= FTINY)
+		sr.revf = srcvalue;
+		rayvalue(&sr);			/* check sample validity */
+		if ((d = bright(sr.rcol)) <= FTINY)
 			continue;
 		nok++;			/* got sample; check obstructions */
 		rayclear(&sr);
+		sr.revf = raytrace;
 		rayvalue(&sr);
-		if (bright(sr.rcol) > FTINY)
+		if ((d1 = bright(sr.rcol)) > FTINY) {
+			if (d - d1 > FTINY) {
+#ifdef DEBUG
+				fprintf(stderr, "\tpartially shadowed\n");
+#endif
+				return(f);	/* intervening transmitter */
+			}
 			nhit++;
+		}
 		if (nhit > 0 && nhit < nok) {
 #ifdef DEBUG
 			fprintf(stderr, "\tpartially occluded\n");

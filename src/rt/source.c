@@ -457,7 +457,6 @@ direct(					/* add direct component */
 			raycont(&sr);
 			if (trace != NULL)
 				(*trace)(&sr);	/* trace execution */
-			rayparticipate(&sr);
 			if (bright(sr.rcol) <= FTINY) {
 #if SHADCACHE
 				if ((scp <= srccnt || scp[-1].sno != scp->sno)
@@ -467,6 +466,7 @@ direct(					/* add direct component */
 #endif
 				continue;	/* missed! */
 			}
+			rayparticipate(&sr);
 			multcolor(sr.rcol, sr.rcoef);
 			copycolor(scp->val, sr.rcol);
 		} else if (trace != NULL &&
