@@ -211,6 +211,7 @@ tmap_picture(			/* tone map Radiance picture */
 )
 {
 	uint16	orient;
+	double	paspect = (pp->rs.rt & YMAJOR) ? pp->pa : 1./pp->pa;
 	int	xsiz, ysiz;
 	BYTE	*pix;
 					/* read and tone map picture */
@@ -224,7 +225,7 @@ tmap_picture(			/* tone map Radiance picture */
 	orient++;
 					/* put out our image */
 	if (putimage(orient, (uint32)xsiz, (uint32)ysiz,
-			72., 72./pp->pa, 2, pix) != 0)
+			72., 72./paspect, 2, pix) != 0)
 		return(-1);
 					/* free data and we're done */
 	free((void *)pix);
