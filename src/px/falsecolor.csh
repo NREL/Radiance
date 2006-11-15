@@ -60,7 +60,6 @@ while ($#argv > 0)
 		set bluv="$argv[1]"
 		breaksw
 	case -spec:
-		shift argv
 		set redv='1.6*v-.6'
 		set grnv='if(v-.375,1.6-1.6*v,8/3*v)'
 		set bluv='1-8/3*v'
