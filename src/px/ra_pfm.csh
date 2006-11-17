@@ -82,6 +82,6 @@ else
 endif
 exit $status
 userr:
-echo "Usage: $0 input.pfm [output.hdr]"
-echo "   or: $0 -r input.hdr [output.pfm]"
+echo "Usage: $0 input.hdr [output.pfm]"
+echo "   or: $0 -r input.pfm [output.hdr]"
 exit 1
