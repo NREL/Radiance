@@ -449,6 +449,7 @@ register VIEW  *vp;
 	static char  vwstr[128];
 	register char  *cp = vwstr;
 
+	*cp = '\0';
 	if (vp->type != stdview.type) {
 		sprintf(cp, " -vt%c", vp->type);
 		cp += strlen(cp);
