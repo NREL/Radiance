@@ -4,12 +4,10 @@ static const char	RCSid[] = "$Id$";
 /*
  * Portable i/o for binary files
  *
- * External symbols declared in standard.h
+ * External symbols declared in rtio.h
  */
 
 #include "copyright.h"
-
-#include <stdio.h>
 
 #include "rtio.h"
 

@@ -37,6 +37,10 @@ extern char	*getrlibpath(void);
 extern char *gethomedir(char *uname, char *path, int plen);
 					/* defined in getpath.c */
 extern char	*getpath(char *fname, char *searchpath, int mode);
+					/* defined in byteswap.c */
+extern void	swap16(char *wp, int n);
+extern void	swap32(char *wp, int n);
+extern void	swap64(char *wp, int n);
 					/* defined in portio.c */
 extern void	putstr(char *s, FILE *fp);
 extern void	putint(long i, int siz, FILE *fp);
