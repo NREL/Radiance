@@ -138,7 +138,7 @@ int		stdio_fseek(uint32 pos, void *p);
 
 					/* open input file */
 #define BMPopenInputFile(fn)    BMPopenReader(&stdio_getc, &stdio_fseek, \
-					(void *)fopen(fn, "r"))
+					(void *)fopen(fn, "rb"))
 
 					/* close stdio input file or stream */
 #define BMPcloseInput(br)       ( fclose((FILE *)(br)->c_data), \
@@ -151,7 +151,7 @@ int		stdio_fseek(uint32 pos, void *p);
 					/* open stdio output file */
 #define BMPopenOutputFile(fn,hdr) \
 			BMPopenWriter(&stdio_putc, &stdio_fseek, \
-					(void *)fopen(fn, "w"), hdr)
+					(void *)fopen(fn, "wb"), hdr)
 
 					/* close stdio output file or stream */
 #define BMPcloseOutput(bw)      ( fclose((FILE *)(bw)->c_data), \
