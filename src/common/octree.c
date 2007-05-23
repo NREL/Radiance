@@ -34,7 +34,7 @@ octalloc()			/* allocate an octree */
 				(unsigned)OCTBLKSIZ*8*sizeof(OCTREE))) == NULL)
 			return(EMPTY);
 	}
-	treetop += 8;
+	treetop++;
 	return(freet);
 }
 
