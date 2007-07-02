@@ -304,12 +304,14 @@ raymixture(		/* mix modifiers */
 					/* foreground */
 	fr = *r;
 	if (coef > FTINY) {
+		fr.rweight *= coef;
 		scalecolor(fr.rcoef, coef);
 		foremat = rayshade(&fr, fore);
 	}
 					/* background */
 	br = *r;
 	if (coef < 1.0-FTINY) {
+		br.rweight *= 1.0-coef;
 		scalecolor(br.rcoef, 1.0-coef);
 		backmat = rayshade(&br, back);
 	}
