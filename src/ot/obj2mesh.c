@@ -22,7 +22,7 @@ char  *progname;			/* argv[0] */
 
 int  nowarn = 0;			/* supress warnings? */
 
-int  objlim = 15;			/* # of objects before split */
+int  objlim = 9;			/* # of objects before split */
 
 int  resolu = 16384;			/* octree resolution limit */
 
