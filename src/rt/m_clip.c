@@ -55,6 +55,8 @@ m_clip(			/* clip objects from ray */
 		}
 		m->os = (char *)modset;
 	}
+	if (r == NULL)
+		return(0);			/* just initializing */
 	if (r->clipset != NULL)
 		setcopy(cset, r->clipset);
 	else

@@ -86,7 +86,13 @@ marksources(void)			/* find and mark source objects */
 			continue;
 					/* find material */
 		m = findmaterial(objptr(o->omod));
-		if (m == NULL || !islight(m->otype))
+		if (m == NULL)
+			continue;
+		if (m->otype == MAT_CLIP) {
+			markclip(m);	/* special case for antimatter */
+			continue;
+		}
+		if (!islight(m->otype))
 			continue;	/* not source modifier */
 	
 		if (m->oargs.nfargs != (m->otype == MAT_GLOW ? 4 :
