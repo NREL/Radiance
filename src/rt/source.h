@@ -152,10 +152,12 @@ typedef void srcdirf_t(COLOR cv, void *np, FVECT ldir, double omega);
 extern void	direct(RAY *r, srcdirf_t *f, void *p);
 extern void	srcscatter(RAY *r);
 extern int	m_light(OBJREC *m, RAY *r);
+					/* defined in srcobstr.c */
 extern void	initobscache(int sn);
 extern int	srcblocker(RAY *r);
 extern int      srcblocked(RAY *r);
 extern void     freeobscache(SRCREC *s);
+extern void	markclip(OBJREC *m);
 					/* defined in srcsamp.c */
 extern double	nextssamp(RAY *r, SRCINDEX *si);
 extern int	skipparts(int ct[3], int sz[3], int pp[2], unsigned char *pt);
