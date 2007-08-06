@@ -252,9 +252,10 @@ and he'll be happy to provide you with the missing pieces.
 
 Copyright
 =========
-This library is offered free of charge to all those who
-wish to use it for any purpose.  We take no resposibility
-for its use, misuse, correctess, or suitability.
+This library was put in public domain and is offered free
+of charge to all those who wish to use it for any purpose. 
+We take no responsibility for its use, misuse, correctess,
+or suitability.
 
 Questions
 =========
