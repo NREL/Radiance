@@ -129,7 +129,7 @@ dirbrdf(		/* compute source contribution */
 		addcolor(cval, ctmp);
 	}
 	if (ldot > 0.0 ? np->rspec <= FTINY : np->tspec <= FTINY)
-		return;		/* no specular component */
+		return;		/* diffuse only */
 					/* set up function */
 	setbrdfunc(np);
 	sa = np->mp->oargs.sarg;
@@ -145,7 +145,9 @@ dirbrdf(		/* compute source contribution */
 			colval(ctmp,RED) = 0.0;
 		else
 			colval(ctmp,RED) = funvalue(sa[6], 4, lddx);
-		if (!strcmp(sa[7],sa[6]))
+		if (sa[7][0] == '0')
+			colval(ctmp,GRN) = 0.0;
+		else if (!strcmp(sa[7],sa[6]))
 			colval(ctmp,GRN) = colval(ctmp,RED);
 		else
 			colval(ctmp,GRN) = funvalue(sa[7], 4, lddx);
