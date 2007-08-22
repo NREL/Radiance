@@ -249,7 +249,7 @@ init(			/* set up output file and start rpict */
 	hres /= hmult;
 	vres /= vmult;
 	if (hres <= 0 || vres <= 0) {
-		fprintf(stderr, "%s: illegal resolution/subdivision\n");
+		fprintf(stderr, "%s: illegal resolution/subdivision\n", progname);
 		exit(1);
 	}
 	normaspect(viewaspect(&ourview)*hmult/vmult, &pixaspect, &hres, &vres);
