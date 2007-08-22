@@ -248,6 +248,10 @@ init(			/* set up output file and start rpict */
 					/* compute piece size */
 	hres /= hmult;
 	vres /= vmult;
+	if (hres <= 0 || vres <= 0) {
+		fprintf(stderr, "%s: illegal resolution/subdivision\n");
+		exit(1);
+	}
 	normaspect(viewaspect(&ourview)*hmult/vmult, &pixaspect, &hres, &vres);
 	sprintf(hrbuf, "%d", hres);
 	rpargv[rpargc++] = "-x"; rpargv[rpargc++] = hrbuf;
