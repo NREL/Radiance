@@ -109,15 +109,15 @@ vwrays scene_v2.pic scene_v2.zbf > scene_v2.pts
 .PP
 To determine what the dimensions of a given view would be:
 .IP "" .2i
-vwrays -d -vf myview.vf -x 2048 -y 2048
+vwrays \-d \-vf myview.vf \-x 2048 \-y 2048
 .PP
 To generate a RADIANCE picture using
 .I rtrace
 instead of
 .I rpict:
 .IP "" .2i
-vwrays -ff -vf view1.vf -x 1024 -y 1024 |
-rtrace `vwrays -d -vf view1.vf -x 1024 -y 1024` -ffc scene.oct > view1.pic
+vwrays \-ff \-vf view1.vf \-x 1024 \-y 1024 |
+rtrace `vwrays \-d \-vf view1.vf \-x 1024 \-y 1024` \-ffc scene.oct > view1.pic
 .SH AUTHOR
 Greg Ward Larson
 .SH ACKNOWLEDGMENT

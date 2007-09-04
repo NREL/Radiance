@@ -53,13 +53,13 @@ All MGF material information is ignored on the input.
 To project two MGF files along the Z-axis and display them under
 X11:
 .IP "" .2i
-mgf2meta z 0 10 0 15 0 9 building1.mgf building2.mgf | x11meta -r
+mgf2meta z 0 10 0 15 0 9 building1.mgf building2.mgf | x11meta \-r
 .PP
 To convert a RADIANCE scene to a line drawing in RADIANCE picture
 format:
 .IP "" .2i
-rad2mgf scene.rad | mgf2meta x `getbbox -h scene.rad` | meta2tga |
-ra_t8 -r > scene.pic
+rad2mgf scene.rad | mgf2meta x `getbbox \-h scene.rad` | meta2tga |
+ra_t8 \-r > scene.pic
 .SH AUTHOR
 Greg Ward
 .SH "SEE ALSO"

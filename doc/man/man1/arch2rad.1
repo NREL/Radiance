@@ -152,12 +152,12 @@ reference id name "window overhangs" in layer number 3.
 .SH EXAMPLE
 To create a qualifier list for building.txt:
 .IP "" .2i
-arch2rad -n building.txt > building.qual
+arch2rad \-n building.txt > building.qual
 .PP
 To translate building.txt into a RADIANCE file using the mapping
 building.map:
 .IP "" .2i
-arch2rad -m building.map building.txt > building.rad
+arch2rad \-m building.map building.txt > building.rad
 .PP
 To create an octree directly from an Architrion file using the default
 mapping and materials:
