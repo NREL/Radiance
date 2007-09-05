@@ -457,10 +457,7 @@ void process_args (int argc, char *argv[])
     char *env_opt, *option;
 
     printf("\n\nAutodesk 3D Studio to Raytracer file Translator. Feb/96\n");
-    printf("Version 2.0 Copyright (c) 1996 Steve Anger and Jeff Bowermaster\n");
-#ifdef __GNUC__
-    printf ("32 bit version. DOS extender Copyright (c) 1991 DJ Delorie\n");
-#endif
+    printf("Version 2.0 by Steve Anger and Jeff Bowermaster 1996\n");
     printf ("\n");
 
     if (argc < 2) {
