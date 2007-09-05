@@ -2,7 +2,7 @@
 static const char	RCSid[] = "$Id$";
 #endif
 /*
-      3DS2POV.C  Copyright (c) 1996 Steve Anger and Jeff Bowermaster
+      3DS2POV.C  by Steve Anger and Jeff Bowermaster
 			MGF output added by Greg Ward
 
       Reads a 3D Studio .3DS file and writes a POV-Ray, Vivid,
