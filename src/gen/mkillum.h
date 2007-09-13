@@ -26,15 +26,15 @@ struct illum_args {
 	int	sampdens;		/* point sample density */
 	int	nsamps;			/* # of samples in each direction */
 	float	minbrt;			/* minimum average brightness */
-	float	col[3];			/* computed average color */
+	COLOR	col;			/* computed average color */
 };				/* illum options */
 
-extern void printobj(char  *mod, register OBJREC  *obj);
-extern int average(register struct illum_args  *il, float  *da, int  n);
-extern void flatout(struct illum_args  *il, float  *da, int  n, int  m,
-	FVECT  u, FVECT  v, FVECT  w);
-extern void illumout(register struct illum_args  *il, OBJREC  *ob);
-extern void roundout(struct illum_args  *il, float  *da, int  n, int  m);
+extern void printobj(char *mod, register OBJREC *obj);
+extern int average(register struct illum_args *il, COLORV *da, int n);
+extern void flatout(struct illum_args *il, COLORV *da, int n, int m,
+	FVECT u, FVECT v, FVECT w);
+extern void illumout(register struct illum_args *il, OBJREC *ob);
+extern void roundout(struct illum_args *il, COLORV *da, int n, int m);
 
 extern int my_default(OBJREC *, struct illum_args *, char *);
 extern int my_face(OBJREC *, struct illum_args *, char *);
