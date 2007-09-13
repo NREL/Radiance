@@ -317,10 +317,11 @@ main(int  argc, char  *argv[])
 				pflock(1);
 				pfhold();
 				tstart = time((time_t *)NULL);
+				ambsync();		/* load new values */
 			}
 			if (rval < 0)
 				error(SYSTEM, "cannot fork child for persist function");
-			pfdetach();		/* parent exits */
+			pfdetach();		/* parent will run then exit */
 		}
 	}
 runagain:

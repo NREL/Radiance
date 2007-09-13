@@ -309,10 +309,11 @@ main(int  argc, char  *argv[])
 			while ((rval=fork()) == 0) {	/* keep on forkin' */
 				pflock(1);
 				pfhold();
+				ambsync();		/* load new values */
 			}
 			if (rval < 0)
 				error(SYSTEM, "cannot fork child for persist function");
-			pfdetach();		/* parent exits */
+			pfdetach();		/* parent will run then exit */
 		}
 	}
 runagain:
