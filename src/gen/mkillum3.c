@@ -6,6 +6,7 @@ static const char RCSid[] = "$Id$";
  */
 
 #include  "mkillum.h"
+#include  "paths.h"
 
 #define  brt(col)	(.263*(col)[0]+.655*(col)[1]+.082*(col)[2])
 
