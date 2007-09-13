@@ -192,8 +192,7 @@ setambient(void)				/* initialize calculation */
 		sprintf(errmsg, "cannot open ambient file \"%s\"", ambfile);
 		error(SYSTEM, errmsg);
 	}
-	nunflshed++;	/* lie */
-	ambsync();
+	ambsync();			/* load previous values */
 }
 
 
@@ -877,12 +876,10 @@ ambsync(void)			/* synchronize ambient file */
 	AMBVAL	avs;
 	register int  n;
 
-	if (nunflshed == 0)
-		return(0);
 	if (lastpos < 0)	/* initializing (locked in initambfile) */
 		goto syncend;
-				/* gain exclusive access */
-	aflock(F_WRLCK);
+				/* gain appropriate access */
+	aflock(nunflshed ? F_WRLCK : F_RDLCK);
 				/* see if file has grown */
 	if ((flen = lseek(fileno(ambfp), (off_t)0, SEEK_END)) < 0)
 		goto seekerr;
@@ -935,8 +932,6 @@ seekerr:
 extern int
 ambsync(void)			/* flush ambient file */
 {
-	if (nunflshed == 0)
-		return(0);
 	nunflshed = 0;
 	return(fflush(ambfp));
 }
