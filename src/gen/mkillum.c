@@ -72,7 +72,7 @@ main(		/* compute illum distributions using rtrace */
 	directvis = 0;
 	ambounce = 2;
 				/* get options from command line */
-	for (i = 1; i < argc-1; i++) {
+	for (i = 1; i < argc; i++) {
 		while ((rval = expandarg(&argc, &argv, i)) > 0)
 			;
 		if (rval < 0) {
