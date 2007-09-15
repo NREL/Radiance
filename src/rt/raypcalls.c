@@ -308,6 +308,9 @@ ray_presult(		/* check for a completed ray */
 		n = ray_pnprocs - ray_pnidle;
 	if (n <= 0)			/* return if nothing to await */
 		return(0);
+	if (!poll && ray_pnprocs == 1)	/* one process -> skip select() */
+		FD_SET(r_proc[0].fd_recv, &readset);
+
 getready:				/* any children waiting for us? */
 	for (pn = ray_pnprocs; pn--; )
 		if (FD_ISSET(r_proc[pn].fd_recv, &readset) ||
