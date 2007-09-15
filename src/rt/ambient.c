@@ -876,6 +876,8 @@ ambsync(void)			/* synchronize ambient file */
 	AMBVAL	avs;
 	register int  n;
 
+	if (ambfp == NULL)	/* no ambient file? */
+		return(0);
 	if (lastpos < 0)	/* initializing (locked in initambfile) */
 		goto syncend;
 				/* gain appropriate access */
@@ -918,7 +920,7 @@ ambsync(void)			/* synchronize ambient file */
 #endif
 syncend:
 	n = fflush(ambfp);			/* calls write() at last */
-	if (n == EOF) {
+	if ((n == EOF) | (lastpos < 0)) {
 		if ((lastpos = lseek(fileno(ambfp), (off_t)0, SEEK_CUR)) < 0)
 			goto seekerr;
 	} else
@@ -936,6 +938,8 @@ seekerr:
 extern int
 ambsync(void)			/* flush ambient file */
 {
+	if (ambfp == NULL)
+		return(0);
 	nunflshed = 0;
 	return(fflush(ambfp));
 }
