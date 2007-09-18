@@ -55,9 +55,9 @@ xform:	xform.o
 replmarks:	replmarks.o
 	$(CC) $(CFLAGS) -o replmarks replmarks.o -lrtrad $(MLIB)
 
-mkillum:	mkillum.o mkillum2.o mkillum3.o
+mkillum:	mkillum.o mkillum2.o mkillum3.o mkillum4.o
 	$(CC) $(CFLAGS) -o mkillum mkillum.o mkillum2.o mkillum3.o \
--lraycalls -lradiance -lrtrad $(MLIB)
+mkillum4.o -lraycalls -lradiance -lrtrad $(MLIB)
 
 mksource:	mksource.o
 	$(CC) $(CFLAGS) -o mksource mksource.o \
