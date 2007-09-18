@@ -295,6 +295,9 @@ ray_presult(		/* check for a completed ray */
 					/* check queued results first */
 	if (r_recv_first < r_recv_next) {
 		*r = r_queue[r_recv_first++];
+					/* make sure send queue has room */
+		if (sendq_full() && ray_pflush() <= 0)
+			return(-1);
 		return(1);
 	}
 	n = ray_pnprocs - ray_pnidle;	/* pending before flush? */
