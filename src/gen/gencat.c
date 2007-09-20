@@ -91,7 +91,8 @@ char *argv[];
    int  n;
 
    if (argc != 11) {
-      fprintf(stderr, "Usage: gencat material name x0 y0 z0 x1 y1 z1 k d\n");
+      fprintf(stderr, "Usage: %s  material name x0 y0 z0 x1 y1 z1 k d\n",
+      		argv[0]);
       exit(1);
    }      
 
