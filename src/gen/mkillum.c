@@ -26,6 +26,7 @@ static const char RCSid[] = "$Id$";
 struct illum_args  thisillum = {	/* our illum and default values */
 		0,
 		UDzpos,
+		0.,
 		DFLMAT,
 		DFLDAT,
 		0,
@@ -393,6 +394,16 @@ xoptions(			/* process options in string s */
 			if (thisillum.udir == UDunknown || !isspace(*cp))
 				break;
 			continue;
+		case 't':			/* object thickness */
+			if (*++cp != '=')
+				break;
+			if (!isfltd(++cp, " \t\n\r"))
+				break;
+			thisillum.thick = atof(cp);
+			if (thisillum.thick < .0)
+				thisillum.thick = .0;
+			cp = sskip(cp);
+			continue;
 		case '!':			/* processed file! */
 			sprintf(errmsg, "(%s): already processed!", nm);
 			error(WARNING, errmsg);
@@ -460,6 +471,7 @@ printopts(void)			/* print out option default values */
 	case UDunknown:
 		break;
 	}
+	printf("t=%f\t\t\t# object thickness\n", thisillum.thick);
 }
 
 
