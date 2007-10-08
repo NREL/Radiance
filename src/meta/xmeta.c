@@ -10,6 +10,7 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include  "rtprocess.h"
+#include  "string.h"
 #include  "meta.h"
 #include  "plot.h"
 
@@ -30,13 +31,149 @@ static PLIST  recording;
 
 int maxalloc = 0;		/* no limit */
 
+extern void	pXFlush(void);
 
 
+void
+save(p)				/* record primitive */
+PRIMITIVE  *p;
+{
+    register PRIMITIVE  *pnew;
+
+    if ((pnew = palloc()) == NULL)
+	    error(SYSTEM, "out of memory in save");
+    mcopy((char *)pnew, (char *)p, sizeof(PRIMITIVE));
+    add(pnew, &recording);
+}
+
+
+void
+doglobal(g, sf)			/* execute a global command */
+register PRIMITIVE  *g;
+int  sf;
+{
+
+    switch (g->com) {
+
+	case PEOF:
+	    return;
+
+	case PDRAW:
+	    pXFlush();
+	    break;
+
+	case PEOP:
+	    endpage();
+	    plfree(&recording);
+	    set(SALL, NULL);
+	    newpage = TRUE;
+	    return;
+
+	case PSET:
+	    set(g->arg0, g->args);
+	    break;
+
+	case PUNSET:
+	    unset(g->arg0);
+	    break;
+
+	case PRESET:
+	    reset(g->arg0);
+	    break;
+
+	default:
+	    sprintf(errmsg, "unknown command '%c' in doglobal", g->com);
+	    error(WARNING, errmsg);
+	    return;
+	}
+	if (sf)
+	    save(g);
+
+}
+
+
+void
+doprim(p, sf)		/* plot primitive */
+register PRIMITIVE  *p;
+int  sf;
+{
+
+    switch (p->com) {
+
+	case PMSTR:
+	    printstr(p);
+	    break;
+
+	case PLSEG:
+	    plotlseg(p);
+	    break;
+
+	case PRFILL:
+	    fillrect(p);
+	    break;
+
+	case PTFILL:
+	    filltri(p);
+	    break;
+
+	case PPFILL:
+	    fillpoly(p);
+	    break;
+
+	default:
+	    sprintf(errmsg, "unknown command '%c' in doprim", p->com);
+	    error(WARNING, errmsg);
+	    return;
+    }
+    if (sf) {
+	save(p);
+	newpage = FALSE;
+    }
+
+}
+
+
+void
+plot(infp)		/* plot meta-file */
+FILE  *infp;
+{
+    PRIMITIVE  nextp;
+
+    set(SALL, NULL);
+    do {
+	readp(&nextp, infp);
+	while (isprim(nextp.com)) {
+	    doprim(&nextp, 1);
+	    readp(&nextp, infp);
+	}
+	doglobal(&nextp, 1);
+    } while (nextp.com != PEOF);
+
+}
+
+
+void
+replay(xmin, ymin, xmax, ymax)		/* play back region */
+int  xmin, ymin, xmax, ymax;
+{
+    register PRIMITIVE  *p;
+
+    unset(SALL);
+    set(SALL, NULL);
+    for (p = recording.ptop; p != NULL; p = p->pnext)
+	if (isprim(p->com)) {
+	    if (overlap(p, xmin, ymin, xmax, ymax))
+		doprim(p, 0);
+	} else
+	    doglobal(p, 0);
+
+}
+
+
+int
 main(argc, argv)
-
 int  argc;
 char  **argv;
-
 {
  FILE  *fp;
  char  *geometry = NULL;
@@ -96,150 +233,3 @@ char  **argv;
 
  return(0);
  }
-
-
-
-
-void
-plot(infp)		/* plot meta-file */
-
-FILE  *infp;
-
-{
-    PRIMITIVE  nextp;
-
-    set(SALL, NULL);
-    do {
-	readp(&nextp, infp);
-	while (isprim(nextp.com)) {
-	    doprim(&nextp, 1);
-	    readp(&nextp, infp);
-	}
-	doglobal(&nextp, 1);
-    } while (nextp.com != PEOF);
-
-}
-
-
-
-replay(xmin, ymin, xmax, ymax)		/* play back region */
-int  xmin, ymin, xmax, ymax;
-{
-    register PRIMITIVE  *p;
-
-    unset(SALL);
-    set(SALL, NULL);
-    for (p = recording.ptop; p != NULL; p = p->pnext)
-	if (isprim(p->com)) {
-	    if (overlap(p, xmin, ymin, xmax, ymax))
-		doprim(p, 0);
-	} else
-	    doglobal(p, 0);
-
-}
-
-
-
-
-save(p)				/* record primitive */
-PRIMITIVE  *p;
-{
-    register PRIMITIVE  *pnew;
-
-    if ((pnew = palloc()) == NULL)
-	    error(SYSTEM, "out of memory in save");
-    mcopy((char *)pnew, (char *)p, sizeof(PRIMITIVE));
-    add(pnew, &recording);
-}
-
-
-
-
-doglobal(g, sf)			/* execute a global command */
-
-register PRIMITIVE  *g;
-int  sf;
-
-{
-
-    switch (g->com) {
-
-	case PEOF:
-	    return;
-
-	case PDRAW:
-	    XFlush();
-	    break;
-
-	case PEOP:
-	    endpage();
-	    plfree(&recording);
-	    set(SALL, NULL);
-	    newpage = TRUE;
-	    return;
-
-	case PSET:
-	    set(g->arg0, g->args);
-	    break;
-
-	case PUNSET:
-	    unset(g->arg0);
-	    break;
-
-	case PRESET:
-	    reset(g->arg0);
-	    break;
-
-	default:
-	    sprintf(errmsg, "unknown command '%c' in doglobal", g->com);
-	    error(WARNING, errmsg);
-	    return;
-	}
-	if (sf)
-	    save(g);
-
-}
-
-
-
-
-doprim(p, sf)		/* plot primitive */
-
-register PRIMITIVE  *p;
-int  sf;
-
-{
-
-    switch (p->com) {
-
-	case PMSTR:
-	    printstr(p);
-	    break;
-
-	case PLSEG:
-	    plotlseg(p);
-	    break;
-
-	case PRFILL:
-	    fillrect(p);
-	    break;
-
-	case PTFILL:
-	    filltri(p);
-	    break;
-
-	case PPFILL:
-	    fillpoly(p);
-	    break;
-
-	default:
-	    sprintf(errmsg, "unknown command '%c' in doprim", p->com);
-	    error(WARNING, errmsg);
-	    return;
-    }
-    if (sf) {
-	save(p);
-	newpage = FALSE;
-    }
-
-}

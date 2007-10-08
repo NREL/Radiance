@@ -11,6 +11,8 @@ static const char RCSid[] = "$Id$";
 
 #include  "otspecial.h"
 
+#include  "rtotypes.h"
+
 #include  "source.h"
 
 #define ABS(x)  ((x)>0 ? (x) : -(x))

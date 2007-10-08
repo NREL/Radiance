@@ -216,6 +216,7 @@ tmCvRGB48(TMstruct *tms, TMbright *ls, BYTE *cs,
 		if (nshft < 0) {
 			bi = TM_NOBRT;			/* bogus value */
 			lum = 1.;
+			setcolor(cmon, 1., 1., 1.);
 		} else {
 			int	j = GAMTABBITS-16+nshft;
 			int	nshft2;

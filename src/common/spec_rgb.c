@@ -264,7 +264,7 @@ register RGBPRIMS  pr
 
 	if (pr == stdprims) {	/* can use xyz2rgbmat */
 		cpcolormat(mat, xyz2rgbmat);
-		return;
+		return(1);
 	}
 	if (CEQ(pr[WHT][CIEX],0.) | CEQ(pr[WHT][CIEY],0.))
 		return(0);
@@ -324,7 +324,7 @@ register RGBPRIMS  pr
 
 	if (pr == stdprims) {	/* can use rgb2xyzmat */
 		cpcolormat(mat, rgb2xyzmat);
-		return;
+		return(1);
 	}
 	if (CEQ(pr[WHT][CIEX],0.) | CEQ(pr[WHT][CIEY],0.))
 		return(0);
@@ -371,7 +371,7 @@ RGBPRIMS  pr2
 		mat[0][0] = mat[1][1] = mat[2][2] = 1.0;
 		mat[0][1] = mat[0][2] = mat[1][0] =
 		mat[1][2] = mat[2][0] = mat[2][1] = 0.0;
-		return;
+		return(1);
 	}
 	if (!comprgb2xyzmat(pr1toxyz, pr1))
 		return(0);

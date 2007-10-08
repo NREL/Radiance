@@ -91,6 +91,7 @@ extern int
 o_default(OBJREC *o, RAY *r)			/* default action is error */
 {
 	objerror(o, CONSISTENCY, "unexpected object call");
-				/* call to pull in freeobjmem.o */ /* XXX ? */
+				/* unused call to load freeobjmem.o */
 	free_objs(0, 0);
+	return(0);
 }
