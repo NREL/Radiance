@@ -182,7 +182,7 @@ char  *argv[];
 
 userror:
 	fprintf(stderr, "Usage: %s material name ", argv[0]);
-	fprintf(stderr, "x(s,t) y(s,t) z(s,t) m n [-s][-e expr][-f file]\n");
+	fprintf(stderr, "x(s,t) y(s,t) z(s,t) m n [-s][-o][-e expr][-f file]\n");
 	return 1;
 }
 
