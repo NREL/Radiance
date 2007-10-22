@@ -198,6 +198,8 @@ main(
 				continue;
 			case 'w':
 				continue;
+			case 'h':
+				continue;
 			case 'f':
 				fcompile(argv[++a]);
 				continue;
