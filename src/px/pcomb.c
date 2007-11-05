@@ -398,7 +398,7 @@ combine(void)			/* combine pictures */
 	    advance();
 	    varset(vypos, '=', (double)ypos);
 	    for (xpos = 0; xpos < xres; xpos++) {
-		xscan = (long)xpos*xmax/xres;
+		xscan = (xpos+.5)*xmax/xres - .4999;
 		varset(vxpos, '=', (double)xpos);
 		eclock++;
 		if (brtdef != NULL) {
@@ -437,7 +437,7 @@ advance(void)			/* read in data for next scanline */
 	register COLOR	*st;
 	register int	i, j;
 
-	for (ytarget = (long)ypos*ymax/yres; yscan > ytarget; yscan--)
+	for (ytarget = (ypos+.5)*ymax/yres - .4999; yscan > ytarget; yscan--)
 		for (i = 0; i < nfiles; i++) {
 			st = input[i].scan[WINSIZ-1];
 			for (j = WINSIZ-1; j > 0; j--)	/* rotate window */

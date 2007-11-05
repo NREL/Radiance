@@ -28,6 +28,7 @@ typedef enum {
 	UDzpos=3
 } UpDir;
 
+/* XXX need to add per-band data */
 struct BSDF_data {
 	double	om_scale;		/* maximum solid angle (sr/256) */
 	int	ninc;			/* number of incoming directions */
