@@ -51,10 +51,14 @@ int  rand_samp = 1;			/* pure Monte Carlo sampling? */
 
 void  (*trace)() = NULL;		/* trace call */
 
-char  *tralist[128];			/* list of modifers to trace (or no) */
+#ifndef	MAXMODLIST
+#define	MAXMODLIST	1024		/* maximum modifiers we'll track */
+#endif
+
+char  *tralist[MAXMODLIST];		/* list of modifers to trace (or no) */
 int  traincl = -1;			/* include == 1, exclude == 0 */
 #ifndef  MAXTSET
-#define	 MAXTSET	8192		/* maximum number in trace set */
+#define	 MAXTSET	8191		/* maximum number in trace set */
 #endif
 OBJECT	traset[MAXTSET+1]={0};		/* trace include/exclude set */
 
