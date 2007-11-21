@@ -12,12 +12,15 @@ static const char	RCSid[] = "$Id$";
 
 #include  "plot.h"
 
+#include "string.h"
+
 #undef  TRUE
 
 #undef  FALSE
 
 #include  <X11/Xlib.h>
 
+extern void	replay(int xmin, int ymin, int xmax, int ymax);
 
 #define  BORWIDTH  5
 

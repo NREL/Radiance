@@ -14,6 +14,7 @@ static const char	RCSid[] = "$Id$";
 #include  "meta.h"
 #include  "plot.h"
 
+extern void	init(char *name, char *geom);
 
 #define  overlap(p,xmn,ymn,xmx,ymx)  (ov((p)->xy[XMN],(p)->xy[XMX],xmn,xmx) \
 				     &&ov((p)->xy[YMN],(p)->xy[YMX],ymn,ymx))

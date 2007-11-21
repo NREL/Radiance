@@ -7,6 +7,7 @@ static const char RCSid[] = "$Id$";
 
 #include "mkillum.h"
 #include "paths.h"
+#include "random.h"
 #include "ezxml.h"
 
 

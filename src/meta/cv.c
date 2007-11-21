@@ -10,6 +10,9 @@ static const char	RCSid[] = "$Id$";
 
 #include  "meta.h"
 
+extern int scanp(PRIMITIVE  *p, FILE  *fp);
+extern void printp(PRIMITIVE  *p, FILE  *fp);
+extern void printeof(FILE  *fp); 
 
 char  *progname;
 

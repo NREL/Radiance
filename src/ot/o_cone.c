@@ -11,6 +11,7 @@ static const char	RCSid[] = "$Id$";
 #include  "octree.h"
 #include  "object.h"
 #include  "cone.h"
+#include  "plocate.h"
 
 #define  ROOT3		1.732050808
 
