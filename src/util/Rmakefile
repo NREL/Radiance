@@ -46,7 +46,7 @@ genambpos.csh fieldcomb.csh
 	csh -f tradinstall.csh $(INSTDIR) $(LIBDIR)/tcl
 
 clean:
-	set nonomatch; rm -f *.o $(PROGS) glrad core
+	set nonomatch; rm -f *.o $(PROGS) glrad core Version.c x11findwind.c
 
 ogl:	glrad
 	cp glrad $(INSTDIR)
