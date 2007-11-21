@@ -9,11 +9,6 @@ static const char	RCSid[] = "$Id$";
 
 #include  "standard.h"
 #include  <sys/ioctl.h>
-#ifdef sparc
-#include  <sys/conf.h>
-#include  <sys/file.h>
-#include  <sys/filio.h>
-#endif
 #if  !defined(FNDELAY) && defined(O_NONBLOCK)
 #define  FNDELAY  O_NONBLOCK
 #endif
