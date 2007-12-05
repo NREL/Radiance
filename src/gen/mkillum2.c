@@ -22,7 +22,7 @@ newdist(			/* allocate & clear distribution array */
 	int siz
 )
 {
-	if (siz == 0) {
+	if (siz <= 0) {
 		if (distsiz > 0)
 			free((void *)distarr);
 		distarr = NULL;
@@ -46,7 +46,7 @@ process_ray(RAY *r, int rv)
 {
 	COLORV	*colp;
 
-	if (rv == 0)
+	if (rv == 0)			/* no result ready */
 		return(0);
 	if (rv < 0)
 		error(USER, "ray tracing process died");
@@ -127,9 +127,9 @@ rounddir(		/* compute uniform spherical direction */
 }
 
 
-static void
+void
 flatdir(		/* compute uniform hemispherical direction */
-	register FVECT  dv,
+	FVECT  dv,
 	double  alt,
 	double  azi
 )
@@ -413,7 +413,7 @@ my_ring(		/* make an illum ring */
 			r2 = (dim[1] - alti*nazi + sp[1] - .5)/nazi;
 			flatdir(dn, r1, r2);
 			for (j = 0; j < 3; j++)
-			dir[j] = -dn[0]*u[j] - dn[1]*v[j] - dn[2]*co->ad[j];
+				dir[j] = -dn[0]*u[j] - dn[1]*v[j] - dn[2]*co->ad[j];
 		    }
 					/* randomize location */
 		    multisamp(sp, 2, urand(h+8371));
