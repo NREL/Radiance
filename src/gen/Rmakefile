@@ -103,7 +103,11 @@ mkillum.o mkillum2.o mkillum3.o mkillum4.o:	mkillum.h \
 ../common/object.h ../common/color.h \
 ../common/standard.h ../common/rtmisc.h ../common/rtio.h \
 ../common/rtmath.h ../common/mat4.h ../common/fvect.h \
-../common/rterror.h ../common/tifftypes.h
+../common/rterror.h ../common/tifftypes.h ../common/random.h
+
+mkillum2.o:	../rt/source.h ../common/face.h ../common/cone.h
+
+mkillum3.o mkillum4.o:	../common/paths.h
 
 ezxml.o mkillum4.o:	ezxml.h
 

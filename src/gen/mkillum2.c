@@ -139,8 +139,7 @@ srcsamps(			/* sample sources from this surface position */
 			if (i < 0)
 				continue;	/* must not be important */
 			sr.rno = i;
-			d = getBSDF_incrad(il->sd, i);
-			d = 1.0/(PI*d*d);
+			d = 1.0/getBSDF_incohm(il->sd, i);
 		} else {
 			if (v[2] >= -FTINY)
 				continue;	/* only sample transmission */

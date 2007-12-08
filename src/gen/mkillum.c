@@ -8,9 +8,7 @@ static const char RCSid[] = "$Id$";
 #include  <signal.h>
 #include  <ctype.h>
 
-#include  "platform.h"
 #include  "mkillum.h"
-#include  "random.h"
 
 				/* default parameters */
 #define  SAMPDENS	48		/* points per projected steradian */
