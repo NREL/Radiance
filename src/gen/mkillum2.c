@@ -392,7 +392,8 @@ my_face(		/* make an illum face */
 		nalt = sqrt(il->sd->nout/PI) + .5;
 		nazi = PI*nalt + .5;
 		redistribute(il->sd, nalt, nazi, u, v, fa->norm, xfm);
-		il->sampdens = nalt*nazi/PI + .5;
+		if (!il->sampdens)
+			il->sampdens = nalt*nazi/PI + .999;
 	}
 				/* write out the face and its distribution */
 	if (average(il, distarr, n)) {
@@ -586,7 +587,8 @@ my_ring(		/* make an illum ring */
 		nalt = sqrt(il->sd->nout/PI) + .5;
 		nazi = PI*nalt + .5;
 		redistribute(il->sd, nalt, nazi, u, v, co->ad, xfm);
-		il->sampdens = nalt*nazi/PI + .5;
+		if (!il->sampdens)
+			il->sampdens = nalt*nazi/PI + .999;
 	}
 				/* write out the ring and its distribution */
 	if (average(il, distarr, n)) {

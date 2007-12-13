@@ -306,7 +306,7 @@ xoptions(			/* process options in string s */
 			}
 			if (!*++cp || isspace(*cp))
 				continue;
-			if (isintd(++cp, " \t\n\r")) {
+			if (isintd(cp, " \t\n\r")) {
 				thisillum.sampdens = atoi(cp);
 			} else {
 				atos(buf, sizeof(buf), cp);
@@ -383,7 +383,7 @@ xoptions(			/* process options in string s */
 				break;
 			case 'z':
 			case 'Z':
-				thisillum.udir = negax ? UDxneg : UDxpos;
+				thisillum.udir = negax ? UDzneg : UDzpos;
 				break;
 			default:
 				thisillum.udir = UDunknown;
