@@ -204,8 +204,11 @@ doambient(				/* compute ambient component */
 			else
 				addcolor(acol, dp->v);
 		}
-	if (!divcnt)
+	if (!divcnt) {
+		if (div != NULL)
+			free((void *)div);
 		return(0.0);		/* no samples taken */
+	}
 	if (divcnt < hemi.nt*hemi.np) {
 		pg = dg = NULL;		/* incomplete sampling */
 		hemi.ns = 0;
