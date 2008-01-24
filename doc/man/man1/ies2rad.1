@@ -15,7 +15,9 @@ ies2rad - convert IES luminaire data to RADIANCE description
 converts one or more IES luminaire data files to the equivalent RADIANCE
 scene description.
 The light source geometry will always be centered at the origin aimed
-in the negative z direction, with the 0 degree plane along the x axis.
+in the negative Z direction, with the 0 degree plane along the X axis.
+(Note, this means that the IES "width" is actually along the Y axis,
+while "length" corresponds to the X axis.)\0
 Usually, two output files will be created for every input file, one
 scene file (with a ".rad" suffix) and one data file (with a ".dat"
 suffix).
