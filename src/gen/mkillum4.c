@@ -377,6 +377,16 @@ addrot(			/* compute rotation (x,y,z) => (xp,yp,zp) */
 	char	**xfp = xfarg;
 	double	theta;
 
+	if (yp[2]*yp[2] + zp[2]*zp[2] < 2.*FTINY*FTINY) {
+		/* Special case for X' along Z-axis */
+		theta = -atan2(yp[0], yp[1]);
+		*xfp++ = "-ry";
+		*xfp++ = xp[2] < 0.0 ? "90" : "-90";
+		*xfp++ = "-rz";
+		sprintf(bufs[bn], "%f", theta*(180./PI));
+		*xfp++ = bufs[bn++];
+		return(xfp - xfarg);
+	}
 	theta = atan2(yp[2], zp[2]);
 	if (!FEQ(theta,0.0)) {
 		*xfp++ = "-rx";
