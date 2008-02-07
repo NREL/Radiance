@@ -50,7 +50,7 @@ $(DESTDIR)/psmeta:	psmeta.o psplot.o
 	$(CC) $(CFLAGS) -o psmeta psmeta.o psplot.o $(common) -lrtrad
 
 $(DESTDIR)/plotin:	plotin.o primout.o
-	$(CC) $(CFLAGS) -o plotin plotin.o primout.o $(common) -lrtrad
+	$(CC) $(CFLAGS) -o plotin plotin.o primout.o $(common) -lrtrad $(MLIB)
 
 $(DESTDIR)/pexpand:	pexpand.o expand.o segment.o palloc.o
 	$(CC) $(CFLAGS) -o pexpand pexpand.o expand.o segment.o \

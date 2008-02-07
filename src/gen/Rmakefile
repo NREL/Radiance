@@ -47,7 +47,7 @@ genblinds:	genblinds.o
 	$(CC) $(CFLAGS) -o genblinds genblinds.o $(MLIB)
 
 genprism:	genprism.o
-	$(CC) $(CFLAGS) -o genprism genprism.o
+	$(CC) $(CFLAGS) -o genprism genprism.o $(MLIB)
 
 xform:	xform.o
 	$(CC) $(CFLAGS) -o xform xform.o -lrtrad $(MLIB)

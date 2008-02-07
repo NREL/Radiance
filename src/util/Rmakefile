@@ -66,7 +66,7 @@ glarendx:	glarendx.o
 
 xglaresrc:	xglaresrc.o x11findwind.o
 	$(CC) $(CFLAGS) -o xglaresrc xglaresrc.o \
-x11findwind.o -lrtrad -lX11 -$(MLIB)
+x11findwind.o -lrtrad -lX11 $(MLIB)
 
 rad:	rad.o
 	$(CC) $(CFLAGS) -o rad rad.o -lrtrad $(MLIB)
