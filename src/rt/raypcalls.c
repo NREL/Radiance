@@ -131,13 +131,11 @@ static const char	RCSid[] = "$Id$";
  *  process should not be compromised.
  */
 
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/wait.h> /* XXX platform */
-
 #include  "rtprocess.h"
 #include  "ray.h"
 #include  "ambient.h"
+#include  <sys/types.h>
+#include  <sys/wait.h>
 #include  "selcall.h"
 
 #ifndef RAYQLEN
