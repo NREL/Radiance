@@ -28,8 +28,6 @@ ray_pinit(		/* initialize ray-tracing processes */
 	int	nproc
 )
 {
-	if (nproc > 1)
-		error(WARNING, "Only single process supported");
 	ray_pdone(0);
 	ray_init(otnm);
 	ray_popen(nproc);
@@ -70,7 +68,7 @@ ray_presult(		/* check for a completed ray */
 {
 	if (r == NULL)
 		return(0);
-	if (!poll & (ray_pnidle <= 0)) {
+	if (ray_pnidle <= 0) {
 		ray_value(&queued_ray);
 		*r = queued_ray;
 		ray_pnidle = 1;
