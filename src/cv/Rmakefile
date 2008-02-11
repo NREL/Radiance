@@ -39,7 +39,7 @@ clean:
 	cd mgflib ; make clean
 
 ies2rad:	ies2rad.o
-	$(CC) $(CFLAGS) -o ies2rad ies2rad.o -lrtrad
+	$(CC) $(CFLAGS) -o ies2rad ies2rad.o -lrtrad $(MLIB)
 
 arch2rad:	arch2rad.o trans.o
 	$(CC) $(CFLAGS) -o arch2rad arch2rad.o trans.o -lrtrad
