@@ -157,7 +157,7 @@ endif
 echo ""
 echo "############################################"
 echo "# Glazing produced by Radiance glaze script"
-echo '# $Revision$ $Date$'
+echo '# $Revision$'
 if ($?gfiles) then
 	echo "# Loaded: $gfiles:q"
 	echo "# `date`"
@@ -225,8 +225,8 @@ endif
 else
 ### Low-E glazing
 echo "10"
-echo "	sr_lowE_r sr_lowE_g sr_lowE_b"
-echo "	st_lowE_r st_lowE_g st_lowE_b"
+echo "	sr_clear_r sr_clear_g sr_clear_b"
+echo "	st_clear_r st_clear_g st_clear_b"
 echo "	0 0 0"
 echo "	glaze1.cal"
 echo "0"
