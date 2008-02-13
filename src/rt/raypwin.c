@@ -55,7 +55,8 @@ ray_pqueue(			/* queue a ray for computation */
 {
 	if (r == NULL)
 		return(0);
-	ray_value(r);
+	samplendx++;
+	rayvalue(r);
 	return(1);
 }
 
@@ -69,7 +70,8 @@ ray_presult(		/* check for a completed ray */
 	if (r == NULL)
 		return(0);
 	if (ray_pnidle <= 0) {
-		ray_value(&queued_ray);
+		samplendx++;
+		rayvalue(r);
 		*r = queued_ray;
 		ray_pnidle = 1;
 		return(1);
