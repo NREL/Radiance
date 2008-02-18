@@ -15,7 +15,6 @@ static const char	RCSid[] = "$Id$";
 #include  "color.h"
 
 extern char	*eindex(), *expsave();
-extern FILE	*frlibopen();
 
 typedef struct lamp {
 	char	*pattern;			/* search pattern */
