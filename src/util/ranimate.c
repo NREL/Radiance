@@ -1134,7 +1134,6 @@ countviews(void)			/* count views in view file */
 static char *
 getexp(int n)			/* get exposure for nth frame */
 {
-	extern char	*fskip();
 	static char	expval[32];
 	static FILE	*expfp = NULL;
 	static long	*exppos;
