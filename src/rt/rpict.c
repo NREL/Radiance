@@ -710,7 +710,7 @@ pixvalue(		/* compute pixel value */
 			}
 		} else {			/* non-standard view case */
 			double	dfd = PI/4.*dblur*(.5 - frandom());
-			if (ourview.type != VT_ANG) {
+			if (ourview.type != VT_ANG && ourview.type != VT_PLS) {
 				if (ourview.type != VT_CYL)
 					dfh /= sqrt(ourview.hn2);
 				dfv /= sqrt(ourview.vn2);

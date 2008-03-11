@@ -19,6 +19,7 @@ extern "C" {
 #define  VT_PAR		'l'		/* parallel */
 #define  VT_ANG		'a'		/* angular fisheye */
 #define  VT_HEM		'h'		/* hemispherical fisheye */
+#define  VT_PLS		's'		/* planispheric fisheye */
 #define  VT_CYL		'c'		/* cylindrical panorama */
 
 typedef struct {

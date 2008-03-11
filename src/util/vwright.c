@@ -58,6 +58,7 @@ main(
 			case VT_ANG: i=3; break;
 			case VT_HEM: i=4; break;
 			case VT_CYL: i=5; break;
+			case VT_PLS: i=6; break;
 			default: i=0; break;
 		}
 		printf("%st:%d;", argv[1], i);

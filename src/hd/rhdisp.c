@@ -382,6 +382,18 @@ set_focus(			/* set focus frame */
 		vwfocus.horiz = hsiz * odev.v.horiz;
 		vwfocus.vert = vsiz * odev.v.vert;
 		break;
+	case VT_PLS:
+		vwfocus.horiz = hsiz * sin((PI/180./2.)*odev.v.horiz) /
+				(1.0 + cos((PI/180./2.)*odev.v.horiz));
+		vwfocus.horiz *= vwfocus.horiz;
+		vwfocus.horiz = (2.*180./PI)*acos((1. - vwfocus.horiz) /
+						(1. + vwfocus.horiz));
+		vwfocus.vert = vsiz * sin((PI/180./2.)*odev.v.vert) /
+				(1.0 + cos((PI/180./2.)*odev.v.vert));
+		vwfocus.vert *= vwfocus.vert;
+		vwfocus.vert = (2.*180./PI)*acos((1. - vwfocus.vert) /
+						(1. + vwfocus.vert));
+		break;
 	case VT_HEM:
 		vwfocus.horiz = 2.*180./PI*asin(
 				hsiz * sin(PI/180./2.*odev.v.horiz) );

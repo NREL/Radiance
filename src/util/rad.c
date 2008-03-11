@@ -1013,7 +1013,8 @@ specview(				/* get proper view spec from vs */
 		zpos = -1; vs++;
 	}
 	viewtype = 'v';
-	if((*vs == 'v') | (*vs == 'l') | (*vs == 'a') | (*vs == 'h') | (*vs == 'c'))
+	if ((*vs == 'v') | (*vs == 'l') | (*vs == 'a') |
+			(*vs == 'h') | (*vs == 'c') | (*vs == 's'))
 		viewtype = *vs++;
 	cp = viewopts;
 	if ((!*vs || isspace(*vs)) && (xpos|ypos|zpos)) {	/* got one! */

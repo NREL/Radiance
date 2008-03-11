@@ -448,6 +448,18 @@ double  zf;
 		if (vp->vert > 360.)
 			vp->vert = 360.;
 		return;
+	case VT_PLS:				/* planisphere fisheye */
+		vp->horiz = sin((PI/180./2.)*vp->horiz) /
+				(1.0 + cos((PI/180./2.)*vp->horiz)) / zf;
+		vp->horiz *= vp->horiz;
+		vp->horiz = (2.*180./PI)*acos((1. - vp->horiz) /
+						(1. + vp->horiz));
+		vp->vert = sin((PI/180./2.)*vp->vert) /
+				(1.0 + cos((PI/180./2.)*vp->vert)) / zf;
+		vp->vert *= vp->vert;
+		vp->vert = (2.*180./PI)*acos((1. - vp->vert) /
+						(1. + vp->vert));
+		return;
 	case VT_CYL:				/* cylindrical panorama */
 		vp->horiz /= zf;
 		if (vp->horiz > 360.)
