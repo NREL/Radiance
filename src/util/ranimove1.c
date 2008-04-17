@@ -54,6 +54,7 @@ static void setmotion(int	n, FVECT	wpos);
 static void init_frame_sample(void);
 
 
+#if 0
 extern void
 write_map(		/* write out float map (debugging) */
 	float	*mp,
@@ -79,6 +80,7 @@ write_map(		/* write out float map (debugging) */
 	}
 	fclose(fp);
 }
+#endif
 
 
 static void
@@ -664,12 +666,6 @@ init_frame(void)			/* render base (low quality) frame */
 	restart = (!nobjects || vdef(MOVE));
 	if (!restart && curparams != &lorendparams && nprocs > 1)
 		restart = -1;
-	if (restart > 0) {
-		if (nprocs > 1)
-			ray_pdone(0);
-		else
-			ray_done(0);
-	}
 					/* post low quality parameters */
 	if (curparams != &lorendparams)
 		ray_restore(curparams = &lorendparams);
@@ -701,7 +697,7 @@ init_frame(void)			/* render base (low quality) frame */
 	init_frame_sample();
 					/* initialize frame error */
 	comp_frame_error();
-return;
+#if 0
 {
 	float	*ebuf = (float *)malloc(sizeof(float)*hres*vres);
 	char	fnm[256];
@@ -713,6 +709,7 @@ return;
 	write_map(ebuf, fnm);
 	free((void *)ebuf);
 }
+#endif
 }
 
 
