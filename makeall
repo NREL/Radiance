@@ -171,6 +171,8 @@ case 6:			# Linux
 	breaksw
 case 7:			# MacOS X
 	set mach="-DBSD -DNOSTEREO -Dfreebsd -I/usr/X11R6/include -L/usr/X11R6/lib"
+	# Ugly fix for Leopard OpenGL link bug:
+	if (`uname -r` =~ 9.*) set mach="$mach -Wl,-dylib_file,/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib:/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib"
 	set opt="-O2"
 	set arch=PowerPC
 	set extras="CC=cc CONFIGURE_ARCH=powerpc"
