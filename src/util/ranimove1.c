@@ -658,7 +658,6 @@ extern void
 init_frame(void)			/* render base (low quality) frame */
 {
 	int	restart;
-
 					/* allocate/swap buffers */
 	next_frame();
 					/* check rendering status */
@@ -667,9 +666,9 @@ init_frame(void)			/* render base (low quality) frame */
 		restart = -1;
 	if (restart > 0) {
 		if (nprocs > 1)
-			ray_pdone(1);
+			ray_pdone(0);
 		else
-			ray_done(1);
+			ray_done(0);
 	}
 					/* post low quality parameters */
 	if (curparams != &lorendparams)
