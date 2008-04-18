@@ -13,7 +13,7 @@ static const char	RCSid[] = "$Id$";
 #include <math.h>
 #include <ctype.h>
 
-#define MAXCOL		64		/* maximum number of input columns */
+#define MAXCOL		2048		/* maximum number of input columns */
 #define MAXDIV		1024
 
 #define isint(x)	(floor((x)+1e-6) != floor((x)-1e-6))
