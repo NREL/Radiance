@@ -426,8 +426,8 @@ printdefaults(void)			/* print default values to stdout */
 
 	if (imm_irrad)
 		printf("-I+\t\t\t\t# immediate irradiance on\n");
-	printf("-x  %-9d\t\t\t# x resolution (flush interval)\n", hresolu);
-	printf("-y  %-9d\t\t\t# y resolution\n", vresolu);
+	printf("-x %-9d\t\t\t# x resolution (flush interval)\n", hresolu);
+	printf("-y %-9d\t\t\t# y resolution\n", vresolu);
 	printf(lim_dist ? "-ld+\t\t\t\t# limit distance on\n" :
 			"-ld-\t\t\t\t# limit distance off\n");
 	printf("-h%c\t\t\t\t# %s header\n", loadflags & IO_INFO ? '+' : '-',
