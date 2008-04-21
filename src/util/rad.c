@@ -1483,8 +1483,8 @@ wait_process(			/* wait for process(es) to finish */
 	int	all
 )
 {
-	int	ourstatus = 0;
-	RT_PID	pid, status;
+	int	ourstatus = 0, status;
+	RT_PID	pid;
 
 	if (all)
 		all = children_running;
@@ -1521,7 +1521,8 @@ int	all;
 }
 int
 kill(pid, sig) /* win|unix_process.c should also wait and kill */
-RT_PID pid, sig;
+RT_PID pid;
+int sig;
 {
 	return 0;
 }
