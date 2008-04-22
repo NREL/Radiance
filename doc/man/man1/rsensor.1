@@ -7,7 +7,9 @@ rsensor - compute sensor signal from a RADIANCE scene
 [
 .B -n nprocs
 ][
-.B rtrace options
+.B -h
+][
+.B render options
 ]
 [
 .B $EVAR
@@ -58,6 +60,8 @@ Before each sensor file, a separate view may be specified.
 In this case, the view origin and direction will correspond to
 the position and orientation of the sensor, and the view up
 vector will determine the zero azimuthal direction of the sensor.
+The fore clipping distance may be used as well, but other view
+options will be ignored.
 (See
 .I rpict\.1
 for details on how to specify a view.)\0
@@ -84,6 +88,9 @@ option controls the number of ray samples sent at random, and the
 .I \-dn
 option controls the number of rays sent to light sources per sensor.
 .PP
+The
+.I \-h
+option toggles header output, which defaults to "on."
 The
 .I \-n
 option may be used to specify multiple calculation processes on
