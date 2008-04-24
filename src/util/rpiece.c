@@ -9,11 +9,12 @@ static const char	RCSid[] = "$Id$";
 #include <stdio.h>
 #include <signal.h>
 #include <sys/types.h>
+
+#include "platform.h"
 #ifndef NON_POSIX /* XXX need abstraction for process management */
  #include <sys/wait.h>
 #endif
 
-#include "platform.h"
 #include "standard.h"
 #include "color.h"
 #include "view.h"

@@ -14,7 +14,11 @@ static const char RCSid[] = "$Id$";
 #include  <sys/time.h>
 #include  <sys/resource.h>
 #else
+#ifndef MINGW
 #include  <sys/times.h>
+#else
+#include  <sys/time.h>
+#endif
 #include  <unistd.h>
 #endif
 #endif
