@@ -9,24 +9,24 @@ static const char RCSid[] = "$Id$";
 
 #include  <sys/types.h>
 
-#ifndef NON_POSIX
-#ifdef BSD
-#include  <sys/time.h>
-#include  <sys/resource.h>
+#include  "platform.h"
+#ifdef NON_POSIX
+ #ifdef MINGW
+  #include  <sys/time.h>
+ #endif
 #else
-#ifndef MINGW
-#include  <sys/times.h>
-#else
-#include  <sys/time.h>
-#endif
-#include  <unistd.h>
-#endif
+ #ifdef BSD
+  #include  <sys/time.h>
+  #include  <sys/resource.h>
+ #else
+  #include  <sys/times.h>
+  #include  <unistd.h>
+ #endif
 #endif
 
 #include  <time.h>
 #include  <signal.h>
 
-#include  "platform.h"
 #include  "ray.h"
 #include  "paths.h"
 #include  "ambient.h"
