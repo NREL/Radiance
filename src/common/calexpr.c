@@ -145,7 +145,7 @@ epcmp(			/* compare two expressions for equivalence */
 	case ':':
 		return(epcmp(ep1->v.kid->sibling, ep2->v.kid->sibling));
 
-	case TICK:
+	case CLKT:
 	case SYM:			/* should never get this one */
 		return(0);
 
@@ -185,7 +185,7 @@ epfree(			/* free a parse tree */
 	case NUM:
 	case CHAN:
 	case ARG:
-	case TICK:
+	case CLKT:
 	    break;
 
 	default:

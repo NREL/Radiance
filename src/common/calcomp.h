@@ -17,7 +17,7 @@ extern "C" {
 #define	 CHAN		4
 #define	 FUNC		5
 #define	 ARG		6
-#define	 TICK		7
+#define	 CLKT		7
 #define	 SYM		8
 				/* also: '+', '-', '*', '/', '^', '=', ':' */
 

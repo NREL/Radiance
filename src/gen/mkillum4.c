@@ -8,6 +8,7 @@ static const char RCSid[] = "$Id$";
 #include "mkillum.h"
 #include "paths.h"
 #include "ezxml.h"
+#include <ctype.h>
 
 #define MAXLATS		46		/* maximum number of latitudes */
 

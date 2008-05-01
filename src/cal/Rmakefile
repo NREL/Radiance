@@ -49,7 +49,7 @@ rlam:		lam.o
 	$(CC) $(CFLAGS) -o rlam lam.o
 
 tabfunc:	tabfunc.o
-	$(CC) $(CFLAGS) -o tabfunc tabfunc.o -lrtrad
+	$(CC) $(CFLAGS) -o tabfunc tabfunc.o -lrtrad $(MLIB)
 
 histo:	histo.o
 	$(CC) $(CFLAGS) -o histo histo.o $(MLIB)

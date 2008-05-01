@@ -77,7 +77,7 @@ extern struct source {
 extern long	npixinvw;	/* number of samples in view */
 extern long	npixmiss;	/* number of samples missing */
 
-	/* defined in findglare.c */;
+	/* defined in findglare.c */
 extern void memerr(char	*s);
 extern int compdir(FVECT vd, int x, int y);
 extern double pixsize(int x, int y);

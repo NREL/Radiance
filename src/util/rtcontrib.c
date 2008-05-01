@@ -1218,9 +1218,10 @@ myclose(const LUENT *e, void *p)
 	STREAMOUT	*sop = (STREAMOUT *)e->data;
 	
 	if (sop->ofp == NULL)
-		return;
+		return(0);
 	fclose(sop->ofp);
 	sop->ofp = NULL;
+	return(0);
 }
 
 /* load previously accumulated values */

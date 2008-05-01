@@ -99,7 +99,7 @@ getinfo:	getinfo.o
 
 glrad:	glrad.o
 	$(CC) $(CFLAGS) -o glrad glrad.o -lrgl -lrtrad -lGLU -lGL \
--lX11 -lXext
+-lX11 -lXext $(MLIB)
 
 setscan.o:	setscan.h
 

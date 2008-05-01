@@ -647,7 +647,7 @@ getdefn(void)
 
     if (ep1->type == SYM && ep1->sibling->type != NUM) {
 	ep1 = newnode();
-	ep1->type = TICK;
+	ep1->type = CLKT;
 	ep1->v.tick = 0;
 	addekid(ep2, ep1);
 	ep1 = newnode();
