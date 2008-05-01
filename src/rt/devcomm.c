@@ -97,7 +97,7 @@ comm_init(			/* set up and execute driver */
 		close(p2[0]);
 		sprintf(pin, "%d", p1[0]);
 		sprintf(pout, "%d", p2[1]);
-		execl(dvcname, dname, pin, pout, id, 0);
+		execl(dvcname, dname, pin, pout, id, NULL);
 		perror(dvcname);
 		_exit(127);
 	}

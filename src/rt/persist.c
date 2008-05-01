@@ -157,12 +157,6 @@ pfhold(void)		/* holding pattern for idle rendering process */
 	signal(SIGIO, SIG_DFL);
 	pflock(1);			/* grab persist file back */
 				/* someone wants us; reopen stdin and stdout */
-	/*
-	if (freopen(inpname, "r", stdin) == NULL)
-		goto openerr;
-	if (freopen(outpname, "w", stdout) == NULL)
-		goto openerr;
-	*/
 	close(0);
 	if (open(inpname, O_RDONLY) != 0)
 		error(INTERNAL, "unexpected stdin file number");
@@ -185,8 +179,6 @@ pfhold(void)		/* holding pattern for idle rendering process */
 	return;
 createrr:
 	error(SYSTEM, "cannot create named pipes in pfhold");
-openerr:
-	error(SYSTEM, "cannot open named pipes in pfhold");
 }
 
 
