@@ -185,7 +185,7 @@ tmCvRGB48(TMstruct *tms, TMbright *ls, BYTE *cs,
 	if (gv <= 0.)
 		gv = DEFGAM;
 						/* sync input gamma table */
-	if ((gv != 1.) & (gv != cur_gam))
+	if (gv != cur_gam)
 		mkGamTable(gv);
 	if (tmNeedMatrix(tms)) {		/* need floating point */
 		COLOR	*newscan;
