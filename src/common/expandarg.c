@@ -16,7 +16,7 @@ static const char	RCSid[] = "$Id$";
 #include "rtmisc.h"
 
 
-#define MAXARGEXP	512		/* maximum argument expansion */
+#define MAXARGEXP	4096		/* maximum argument expansion */
 
 			/* set the following to suit, -1 to disable */
 int	envexpchr = '$';		/* environment expansion character */
