@@ -587,7 +587,7 @@ getby2(			/* return 2-byte quantity from fp */
 
 	upperb = getc(fp);
 	lowerb = getc(fp);
-	if (upperb == EOF)
+	if (lowerb == EOF)
 		return(EOF);
 	return(upperb<<8 | lowerb);
 }
