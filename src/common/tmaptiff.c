@@ -10,8 +10,8 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include <stdio.h>
-#include "tiffio.h"
 #include "tmprivat.h"
+#include "tiffio.h"
 #include "tmaptiff.h"
 
 					/* input cases we handle */
