@@ -6,7 +6,7 @@
 #ifndef _RAD_BMPFILE_H_
 #define _RAD_BMPFILE_H_
 
-#include "tifftypes.h"
+#include "tiff.h"			/* needed for int32, etc. */
 
 #ifdef __cplusplus
 extern "C" {

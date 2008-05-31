@@ -8,7 +8,7 @@
 
 #include  <math.h>
 
-#include  "tifftypes.h"
+#include  "tiff.h"		/* needed for int32, etc. */
 #include  "mat4.h"
 
 #ifdef __cplusplus
