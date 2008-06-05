@@ -35,6 +35,11 @@
 extern "C" {
 #endif
 
+/* disable MMAP on CYGWIN, seems to cause problems... */
+#ifdef CYGWIN
+#define EZXML_NOMMAP
+#endif
+
 #define EZXML_BUFSIZE 1024 // size of internal memory buffers
 #define EZXML_NAMEM   0x80 // name is malloced
 #define EZXML_TXTM    0x40 // txt is malloced
