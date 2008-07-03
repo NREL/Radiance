@@ -497,7 +497,7 @@ double	Ldmax
 	logLddyn = log(Lddyn);
 	Ldavg = sqrt(Ldmax*Ldmin);
 	i = HISTI(tms->hbrmin);
-	brt0 = MINBRT + HISTEP/2 + i*HISTEP;
+	brt0 = HISTV(i);
 	histlen = HISTI(tms->hbrmax) + 1 - i;
 					/* histogram total and mean */
 	histot = 0; sum = 0;

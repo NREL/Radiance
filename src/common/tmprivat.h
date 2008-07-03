@@ -38,6 +38,7 @@ extern "C" {
 #define MINLUM		(1.125352e-7)		/* tmLuminance(MINBRT) */
 
 #define HISTI(li)	(((li)-MINBRT)/HISTEP)
+#define HISTV(i)	(MINBRT + HISTEP/2 + (i)*HISTEP)
 
 #define LMESLOWER	(5.62e-3)		/* lower mesopic limit */
 #define	LMESUPPER	(5.62)			/* upper mesopic limit */
