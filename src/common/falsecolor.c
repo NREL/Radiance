@@ -88,9 +88,9 @@ fcLinearMapping(FCstruct *fcs, TMstruct *tms, double pctile)
 	if ((fcs == NULL) | (tms == NULL) || (tms->histo == NULL) |
 			(0 > pctile) | (pctile >= 50))
 		return(TM_E_ILLEGAL);
-	i = (tms->hbrmin-MINBRT)/HISTEP;
+	i = HISTI(tms->hbrmin);
 	brt0 = MINBRT + HISTEP/2 + i*HISTEP;
-	histlen = (tms->hbrmax-MINBRT)/HISTEP + 1 - i;
+	histlen = HISTI(tms->hbrmax) + 1 - i;
 	histot = 0;
 	for (i = histlen; i--; )
 		histot += tms->histo[i];
@@ -114,9 +114,9 @@ fcLogMapping(FCstruct *fcs, TMstruct *tms, double pctile)
 	if ((fcs == NULL) | (tms == NULL) || (tms->histo == NULL) |
 			(.0 > pctile) | (pctile >= 50.))
 		return(TM_E_ILLEGAL);
-	i = (tms->hbrmin-MINBRT)/HISTEP;
+	i = HISTI(tms->hbrmin);
 	brt0 = MINBRT + HISTEP/2 + i*HISTEP;
-	histlen = (tms->hbrmax-MINBRT)/HISTEP + 1 - i;
+	histlen = HISTI(tms->hbrmax) + 1 - i;
 	histot = 0;
 	for (i = histlen; i--; )
 		histot += tms->histo[i];

@@ -37,6 +37,8 @@ extern "C" {
 #define MINBRT		(-16*TM_BRTSCALE)	/* minimum usable brightness */
 #define MINLUM		(1.125352e-7)		/* tmLuminance(MINBRT) */
 
+#define HISTI(li)	(((li)-MINBRT)/HISTEP)
+
 #define LMESLOWER	(5.62e-3)		/* lower mesopic limit */
 #define	LMESUPPER	(5.62)			/* upper mesopic limit */
 #if	(TM_BRTSCALE==128)
