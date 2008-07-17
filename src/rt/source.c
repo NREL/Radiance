@@ -409,7 +409,7 @@ direct(					/* add direct component */
 		rayvalue(&sr);
 		multcolor(sr.rcol, sr.rcoef);
 		copycolor(scp->val, sr.rcol);
-		cntord[sn].brt = intens(sr.rcol);
+		cntord[sn].brt = bright(sr.rcol);
 	}
 						/* sort contributions */
 	qsort(cntord, sn, sizeof(CNTPTR), cntcmp);
