@@ -206,8 +206,10 @@ x11_init(		/* initialize driver */
 		x11_driver.comin = x11_comin;
 		x11_driver.comout = x11_comout;
 		erract[COMMAND].pf = x11_comout;
+		/*			doesn't work with raypcalls.c
 		if (erract[WARNING].pf != NULL)
 			erract[WARNING].pf = x11_errout;
+		*/
 		inpcheck = IC_X11;
 	} else {
 		x11_driver.comin = std_comin;

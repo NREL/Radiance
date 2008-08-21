@@ -1197,6 +1197,8 @@ rvu(				/* run rvu with first view */
 	if (sayview)
 		myprintview(vw, stdout);
 	sprintf(combuf, "rvu %s%s%s -R %s ", vw, po, opts, rifname);
+	if (nprocs > 1)
+		sprintf(combuf+strlen(combuf), "-n %d ", nprocs);
 	if (rvdevice != NULL)
 		sprintf(combuf+strlen(combuf), "-o %s ", rvdevice);
 	if (vdef(EXPOSURE))

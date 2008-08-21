@@ -54,8 +54,10 @@ final_connect(void)				/* verify and initialize connection */
 	getstate();
 						/* set error vectors */
 	erract[COMMAND].pf = comm_comout;
+	/*					doesn't work with raypcalls.c
 	if (erract[WARNING].pf != NULL)
 		erract[WARNING].pf = comm_comout;
+	*/
 	return(&comm_driver);
 }
 
