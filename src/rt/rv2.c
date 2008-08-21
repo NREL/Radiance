@@ -726,9 +726,7 @@ traceray(				/* trace a single ray */
 		return;
 	}
 
-	rayorigin(&thisray, PRIMARY, NULL, NULL);
-	
-	rayvalue(&thisray);
+	ray_trace(&thisray);
 
 	if (thisray.ro == NULL)
 		(*dev->comout)("ray hit nothing");
