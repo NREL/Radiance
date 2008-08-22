@@ -85,8 +85,6 @@ rview(void)				/* do a view */
 			(*dev->comout)(buf);
 			refine(&ptrunk, pdepth+1);
 		}
-		if (waitrays() < 0)
-			quit(1);
 		if (dev->inpready)		/* noticed some input */
 			command(": ");
 		else				/* finished this depth */
@@ -109,6 +107,9 @@ again:
 		;
 	if (*args) *args++ = '\0';
 	else *++args = '\0';
+
+	if (waitrays() < 0)			/* clear ray queue */
+		quit(1);
 	
 	switch (inpbuf[0]) {
 	case 'f':				/* new frame (|focus|free) */

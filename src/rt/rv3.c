@@ -25,7 +25,7 @@ static const char	RCSid[] = "$Id$";
 #define  sscanvec(s,v)	(sscanf(s,"%lf %lf %lf",v,v+1,v+2)==3)
 #endif
 
-static int  niflush;			/* flushes since newimage() */
+static unsigned long  niflush;		/* flushes since newimage() */
 
 int
 getrect(				/* get a box */
@@ -155,6 +155,7 @@ paint(			/* compute and paint a rectangle */
 	extern int  ray_pnprocs;
 	static unsigned long  lastflush = 0;
 	static RAY  thisray;
+	int	flushintvl;
 	double  h, v;
 
 	if (p->xmax - p->xmin <= 0 || p->ymax - p->ymin <= 0) {	/* empty */
@@ -188,8 +189,14 @@ paint(			/* compute and paint a rectangle */
 	(*dev->paintr)(greyscale?greyof(p->v):p->v,
 			p->xmin, p->ymin, p->xmax, p->ymax);
 
-	if (dev->flush != NULL && raynum - lastflush >= ray_pnprocs *
-			(ambounce > 0 && niflush < WFLUSH ? niflush : WFLUSH)) {
+	if (ambounce <= 0)			/* shall we check for input? */
+		flushintvl = ray_pnprocs*WFLUSH;
+	else if (niflush < WFLUSH)
+		flushintvl = ray_pnprocs*niflush/(ambounce+1);
+	else
+		flushintvl = ray_pnprocs*WFLUSH/(ambounce+1);
+
+	if (dev->flush != NULL && raynum - lastflush >= flushintvl) {
 		lastflush = raynum;
 		(*dev->flush)();
 		niflush++;
@@ -199,7 +206,7 @@ paint(			/* compute and paint a rectangle */
 
 
 int
-waitrays(void)				/* finish up pending rays */
+waitrays(void)					/* finish up pending rays */
 {
 	int	nwaited = 0;
 	int	rval;
