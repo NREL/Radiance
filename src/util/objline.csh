@@ -3,9 +3,8 @@
 # Create four standard views of scene and present as line drawings
 #
 set oblqxf="-rz 45 -ry 45"
-set d=/tmp/ol$$
 onintr quit
-mkdir $d
+set d=`mktemp -d /tmp/ol.XXXXXX`
 if ($#argv) then
 	set origf=""
 	set oblqf=""

@@ -48,10 +48,9 @@ while ( $i <= $#argv && ! $firstarg )
 	endsw
 	set i=$i1
 end
-set td=/tmp/xyz$$
 set ecode=1
 onintr quit
-mkdir $td
+set td=`mktemp -d /tmp/xyz.XXXXXX`
 if ( ! $firstarg ) then
 	ra_xyze -r -u $popt > $td/stdin
 	if ( $status ) goto quit

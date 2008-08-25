@@ -5,8 +5,8 @@
 #
 # Added user-definable legend 2004/01/20 Rob Guglielmetti
 
-set td=/tmp/fc$$
 onintr quit
+set td=`mktemp -d /tmp/fc.XXXXXX`
 set mult=179
 set label=Nits
 set scale=1000
@@ -100,7 +100,6 @@ while ($#argv > 0)
 	endsw
 	shift argv
 end
-mkdir $td
 if ($?needfile && "$picture" == '-') then
 	cat > $td/picture
 	set picture=$td/picture

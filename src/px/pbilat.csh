@@ -15,8 +15,7 @@ set extrem=`pextrem -o $inp:q | rcalc -e "vmin:$vmin" -e 'max(a,b):if(a-b,a,b);$
 set nseg=`ev "ceil(log10($extrem[2]/$extrem[1])/$sigma)"`
 if ( $nseg > 20 ) set nseg=20
 onintr done
-set tdir=/tmp/blf$$
-mkdir $tdir
+set tdir=`mktemp -d /tmp/blf.XXXXXX`
 set gfunc="sq(x):x*x;gfunc(x):if(sq(x)-sq($sigma),0,sq(1-sq(x/$sigma)))"
 set i=0
 set imglist=()

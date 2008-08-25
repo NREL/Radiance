@@ -22,11 +22,11 @@ while ($#argv > 1)
 	endsw
 	shift argv
 end
-set tc=/tmp/vl$$.cal
-set tp1=/tmp/vl$$r1.pic
-set tp2=/tmp/vl$$r2.pic
-set tp4=/tmp/vl$$r4.pic
-set tp8=/tmp/vl$$r8.pic
+set tc=`mktemp /tmp/vlcal.XXXXXXX`
+set tp1=`mktemp /tmp/vlpic.XXXXXX`
+set tp2=`mktemp /tmp/vlr2pic.XXXXXX`
+set tp4=`mktemp /tmp/vlr4pic.XXXXXX`
+set tp8=`mktemp /tmp/vlr8pic.XXXXXX`
 set tf=($tc $tp1 $tp2 $tp4 $tp8)
 set inpic=$argv[1]
 onintr quit

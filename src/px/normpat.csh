@@ -35,8 +35,7 @@ while ($#argv > 0)
 end
 dofiles:
 onintr quit
-set td=/tmp/np$$
-mkdir $td
+set td=`mktemp -d /tmp/np.XXXXXX`
 goto skipthis
 cat > $td/coef.fmt << '_EOF_'
    rm:${  $25   };    gm:${  $26   };    bm:${  $27   };
