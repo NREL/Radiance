@@ -186,6 +186,18 @@ paint(			/* compute and paint a rectangle */
 	copycolor(p->v, thisray.rcol);
 	scalecolor(p->v, exposure);
 
+	while (p->kid != NULL) {		/* need to propogate down */
+		int  mx = (p->xmin + p->xmax) >> 1;
+		int  my = (p->ymin + p->ymax) >> 1;
+		int  ki;
+		if (p->x >= mx)
+			ki = (p->y >= my) ? UR : DR;
+		else
+			ki = (p->y >= my) ? UL : DL;
+		pcopy(p, p->kid+ki);
+		p = p->kid + ki;
+	}
+
 	(*dev->paintr)(greyscale?greyof(p->v):p->v,
 			p->xmin, p->ymin, p->xmax, p->ymax);
 
