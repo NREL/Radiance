@@ -397,12 +397,5 @@ refine(				/* refine a node */
 		if (my < pframe.u)
 			growth += refine(p->kid+UR, pd-1);
 	}
-						/* recompute sum */
-	if (growth) {
-		setcolor(p->v, 0.0, 0.0, 0.0);
-		for (i = 0; i < 4; i++)
-			addcolor(p->v, p->kid[i].v);
-		scalecolor(p->v, 0.25);
-	}
 	return(growth);
 }

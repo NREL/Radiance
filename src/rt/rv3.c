@@ -377,6 +377,26 @@ findrect(				/* find a rectangle */
 
 
 void
+compavg(				/* recompute averages */
+	PNODE	*p
+)
+{
+	if (p->kid == NULL)
+		return;
+	compavg(p->kid+DL);
+	compavg(p->kid+DR);
+	compavg(p->kid+UL);
+	compavg(p->kid+UR);
+	setcolor(p->v, .0, .0, .0);
+	addcolor(p->v, p->kid[DL].v);
+	addcolor(p->v, p->kid[DR].v);
+	addcolor(p->v, p->kid[UL].v);
+	addcolor(p->v, p->kid[UR].v);
+	scalecolor(p->v, 0.25);
+}
+
+
+void
 scalepict(				/* scale picture values */
 	PNODE  *p,
 	double  sf

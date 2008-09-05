@@ -427,6 +427,7 @@ getexposure(				/* get new exposure */
 			e *= atof(cp);
 	}
 	if (p != NULL) {		/* relative setting */
+		compavg(p);
 		if (bright(p->v) < 1e-15) {
 			error(COMMAND, "cannot normalize to zero");
 			return;

@@ -94,6 +94,7 @@ extern void	redraw(void);
 extern void	repaint(int xmin, int ymin, int xmax, int ymax);
 extern void	paintrect(PNODE *p, RECT *r);
 extern PNODE	*findrect(int x, int y, PNODE *p, int pd);
+extern void	compavg(PNODE *p);
 extern void	scalepict(PNODE *p, double sf);
 extern void	getpictcolrs(int yoff, COLR *scan, PNODE *p,
 			int xsiz, int ysiz);
