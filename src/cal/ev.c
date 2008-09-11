@@ -33,6 +33,9 @@ char  *argv[];
 	for (i = 1; i < argc; i++)
 		printf("%.9g\n", eval(argv[i]));
 
+	if (errno != EDOM && errno != ERANGE)
+		errno = 0;
+
 	quit(errno ? 2 : 0);
 	return (errno ? 2 : 0); /* pro forma return */
 }
