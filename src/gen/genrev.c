@@ -18,7 +18,6 @@ static const char	RCSid[] = "$Id$";
 
 #include  "rterror.h"
 #include  "resolu.h"
-#include  "rterror.h"
 #include  "calcomp.h"
 
 #define  ZNAME		"Z`SYS`"		/* z function name */
