@@ -1279,7 +1279,7 @@ rpict(				/* run rpict and pfilt for each view */
 			myprintview(vw, stdout);
 		if (!vs[0])
 			sprintf(vs, "%d", vn);
-		sprintf(picfile, "%s_%s.pic", vval(PICTURE), vs);
+		sprintf(picfile, "%s_%s.hdr", vval(PICTURE), vs);
 		if (vdef(ZFILE))
 			sprintf(zopt, " -z %s_%s.zbf", vval(ZFILE), vs);
 		else
@@ -1368,7 +1368,7 @@ rpict(				/* run rpict and pfilt for each view */
 		}
 						/* remove/rename raw file */
 		if (vdef(RAWFILE)) {
-			sprintf(combuf, "%s_%s.pic", vval(RAWFILE), vs);
+			sprintf(combuf, "%s_%s.hdr", vval(RAWFILE), vs);
 			mvfile(rawfile, combuf);
 		} else
 			rmfile(rawfile);

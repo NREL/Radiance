@@ -271,7 +271,7 @@ main(int  argc, char  *argv[])
 		getevent();		/* main loop */
 userr:
 	fprintf(stderr,
-"Usage: %s [-di disp][[-ge] spec][-b][-m][-d][-f][-c nclrs][-e spec][-g gamcor][-s][-ospec][-t intvl] pic ..\n",
+"Usage: %s [-di disp][[-ge] spec][-b][-m][-d][-f][-c nclrs][-e spec][-g gamcor][-s][-ospec][-t intvl] hdr ..\n",
 			progname);
 	exit(1);
 }

@@ -137,7 +137,7 @@ main(
 	exit(rval==0 ? 0 : 1);
 userr:
 	fprintf(stderr,
-"Usage: %s [-h][-s][-c][-l][-b][-g gv][-d ld][-u lm][-z][-p xr yr xg yg xb yb xw yw] input.{tif|pic} output.tif\n",
+"Usage: %s [-h][-s][-c][-l][-b][-g gv][-d ld][-u lm][-z][-p xr yr xg yg xb yb xw yw] input.{tif|hdr} output.tif\n",
 			argv[0]);
 	exit(1);
 }

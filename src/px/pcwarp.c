@@ -89,7 +89,7 @@ main(
 	exit(0);
 userr:
 	fprintf(stderr,
-		"Usage: %s [-i][-o][-e|-f] map.cwp [input.pic [output.pic]]\n",
+		"Usage: %s [-i][-o][-e|-f] map.cwp [input.hdr [output.hdr]]\n",
 			progname);
 	exit(1);
 }

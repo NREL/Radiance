@@ -4,7 +4,7 @@
 # Add veiling glare to picture
 #
 if ($#argv != 1) then
-	echo "Usage: $0 input.pic > output.pic"
+	echo "Usage: $0 input.hdr > output.hdr"
 	exit 1
 endif
 set ifile=$1

@@ -274,7 +274,7 @@ convert(			/* convert a T-mesh */
 				if (!strcmp(argv[1], "off"))
 					mapname[0] = '\0';
 				else
-					sprintf(mapname, "%s.pic", argv[1]);
+					sprintf(mapname, "%s.hdr", argv[1]);
 			} else
 				goto unknown;
 			break;

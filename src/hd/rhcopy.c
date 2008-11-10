@@ -85,7 +85,7 @@ main(
 userr:
 	fprintf(stderr, "Usage: %s output.hdk [-u][-d] -h inp1.hdk ..\n",
 			progname);
-	fprintf(stderr, "   Or: %s output.hdk [-u][-d] -p inp1.pic inp1.zbf ..\n",
+	fprintf(stderr, "   Or: %s output.hdk [-u][-d] -p inp1.hdr inp1.zbf ..\n",
 			progname);
 	exit(1);
 }

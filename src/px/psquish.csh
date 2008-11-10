@@ -18,12 +18,12 @@ if ( "$argv[1]" == "-a" ) then
 	shift argv
 endif
 if ( $#argv != 1 ) then
-	echo "Usage: $0 [-a] input.pic > output.pic"
+	echo "Usage: $0 [-a] input.hdr > output.hdr"
 	exit 1
 endif
 set ifile=$1
 set ibase=$ifile:t
-if ( "$ibase" =~ *.pic ) set ibase=$ibase:r
+if ( "$ibase" =~ *.hdr ) set ibase=$ibase:r
 set ibase=$ibase:t
 onintr quit
 pextrem -o $ifile > $tf0

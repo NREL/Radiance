@@ -93,7 +93,7 @@ main(		/* read in T-mesh files and convert */
 			break;
 		default:
 			fprintf(stderr,
-			"Usage: %s [-o obj][-m mat][-p pic] [file ..]\n",
+			"Usage: %s [-o obj][-m mat][-p hdr] [file ..]\n",
 					argv[0]);
 			exit(1);
 		}

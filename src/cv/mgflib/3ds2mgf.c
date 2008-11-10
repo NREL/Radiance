@@ -2950,11 +2950,24 @@ dword read_dword()
 
 float read_float()
 {
+    union { dword i; char c[8]; } u;
     dword data;
 
     data = read_dword();
 
-    return *(float *)&data;
+    if (sizeof(dword) == sizeof(float))
+	return *(float *)&data;
+
+    u.i = 1;
+    if (u.c[0] == 0)
+	return *(float *)&data;	/* assume big-endian */
+
+    if (sizeof(dword) != 2*sizeof(float)) {
+    	fputs("Unsupported word length\n", stderr);
+	exit(1);
+    }
+    u.i = data;
+    return *(float *)&u.c[4];
 }
 
 

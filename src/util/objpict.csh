@@ -11,10 +11,10 @@ set yres=250
 set rpict="rpict -av .2 .2 .2 -x $xres -y $yres"
 set inprad=$tmpdir/op$$.rad
 set octree=$tmpdir/op$$.oct
-set pict1=$tmpdir/op$$a.pic
-set pict2=$tmpdir/op$$b.pic
-set pict3=$tmpdir/op$$c.pic
-set pict4=$tmpdir/op$$d.pic
+set pict1=$tmpdir/op$$a.hdr
+set pict2=$tmpdir/op$$b.hdr
+set pict3=$tmpdir/op$$c.hdr
+set pict4=$tmpdir/op$$d.hdr
 set tmpfiles="$inprad $octree $pict1 $pict2 $pict3 $pict4"
 onintr quit
 if ( $#argv ) then

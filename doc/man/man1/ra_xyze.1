@@ -101,11 +101,11 @@ To convert RGBE output from
 .I rpict(1)
 into run-length encoded XYZE format:
 .IP "" .2i
-rpict [options] scene.oct | ra_xyze \-c > scene_xyz.pic
+rpict [options] scene.oct | ra_xyze \-c > scene_xyz.hdr
 .PP
 To prepare a RADIANCE picture for display on a calibrated NTSC monitor:
 .IP "" .2i
-ra_xyze \-r \-p .670 .330 .210 .710 .140 .080 .333 .333 stand.pic ntsc.pic
+ra_xyze \-r \-p .670 .330 .210 .710 .140 .080 .333 .333 stand.hdr ntsc.hdr
 .SH AUTHOR
 Greg Ward
 .SH BUGS

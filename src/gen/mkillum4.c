@@ -24,7 +24,7 @@ typedef struct {
 
 #define	MAXABASES	3		/* limit on defined bases */
 
-ANGLE_BASIS	abase_list[MAXABASES] = {
+static ANGLE_BASIS	abase_list[MAXABASES] = {
 	{
 		"LBNL/Klems Full", 145,
 		{ {-5., 1},

@@ -234,7 +234,7 @@ usage:
 	eputs("Usage: ");
 	eputs(argv[0]);
 	eputs(
-" [-w][-h][-x xr][-y yr][-e expr][-f file] [ [-o][-s f][-c r g b] pic ..]\n");
+" [-w][-h][-x xr][-y yr][-e expr][-f file] [ [-o][-s f][-c r g b] hdr ..]\n");
 	quit(1);
 	return 1; /* pro forma return */
 }

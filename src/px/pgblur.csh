@@ -25,5 +25,5 @@ pfilt -1 -x /$reduc -y /$reduc $inp:q \
 	| pfilt -1 -r $filt -x $pr[1] -y $pr[2]
 exit 0
 userr:
-echo Usage: "$0 -r radius input.pic"
+echo Usage: "$0 -r radius input.hdr"
 exit 1

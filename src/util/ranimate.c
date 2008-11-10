@@ -708,7 +708,7 @@ transferframes(void)			/* catch up with picture transfers */
 		*cp++ = ' ';
 		sprintf(cp, fbase, i);
 		while (*cp) cp++;
-		strcpy(cp, ".pic");
+		strcpy(cp, ".hdr");
 		cp += 4;
 	}
 	if (runcom(combuf)) {		/* transfer frames */
@@ -1061,7 +1061,7 @@ int	rvr
 	}
 						/* output file name */
 	sprintf(fname0, vval(BASENAME), frame);
-	sprintf(combuf+strlen(combuf), " > %s.pic", fname0);
+	sprintf(combuf+strlen(combuf), " > %s.hdr", fname0);
 	if (rvr)				/* in recovery */
 		return(runcom(combuf));
 	bruncom(combuf, frame, frecover);	/* else run in background */

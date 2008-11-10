@@ -900,7 +900,7 @@ send_frame(void)			/* send frame to destination */
 	int	y;
 					/* open output picture */
 	sprintf(pfname, vval(BASENAME), fcur);
-	strcat(pfname, ".pic");
+	strcat(pfname, ".hdr");
 	fp = fopen(pfname, "w");
 	if (fp == NULL) {
 		sprintf(errmsg, "cannot open output frame \"%s\"", pfname);

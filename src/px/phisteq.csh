@@ -12,7 +12,7 @@ set tf3=$td/histeq$$.cal
 set tf4=$td/cf$$.cal
 set tf=($tf1 $tf1b $tf2 $tf3 $tf4)
 if ( $#argv != 1 ) then
-	echo "Usage: $0 input.pic > output.pic"
+	echo "Usage: $0 input.hdr > output.hdr"
 	exit 1
 endif
 set ifile=$1

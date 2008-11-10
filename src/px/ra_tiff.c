@@ -191,10 +191,10 @@ doneopts:
 	exit(0);
 userr:
 	fprintf(stderr,
-	"Usage: %s [-z|-L|-l|-f|-w][-b][-e +/-stops][-g gamma] {in.pic|-} out.tif\n",
+	"Usage: %s [-z|-L|-l|-f|-w][-b][-e +/-stops][-g gamma] {in.hdr|-} out.tif\n",
 			progname);
 	fprintf(stderr,
-	"   Or: %s -r [-x][-e +/-stops][-g gamma] in.tif [out.pic|-]\n",
+	"   Or: %s -r [-x][-e +/-stops][-g gamma] in.tif [out.hdr|-]\n",
 			progname);
 	exit(1);
 }
