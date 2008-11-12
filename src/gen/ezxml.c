@@ -30,9 +30,9 @@ static const char RCSid[] = "$Id$";
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
-#include <unistd.h>
 #include <sys/types.h>
 #ifndef EZXML_NOMMAP
+#include <unistd.h>
 #include <sys/mman.h>
 #endif // EZXML_NOMMAP
 #include <sys/stat.h>
