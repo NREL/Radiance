@@ -32,7 +32,12 @@ while ($#argv > 0)
 		breaksw
 	case -v:
 		shift argv
-		set vw=$argv[1]
+		set vw="$argv[1]"
+		breaksw
+	case -N:
+		shift argv
+		set opts=($opts -N $argv[1])
+		set radopt
 		breaksw
 	case -o:
 		shift argv
