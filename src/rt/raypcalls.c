@@ -185,12 +185,6 @@ ray_pinit(		/* initialize ray-tracing processes */
 
 	ray_init(otnm);			/* load the shared scene */
 
-	preload_objs();			/* preload auxiliary data */
-
-					/* set shared memory boundary */
-	shm_boundary = (char *)malloc(16);
-	strcpy(shm_boundary, "SHM_BOUNDARY");
-
 	r_send_next = 0;		/* set up queue */
 	r_recv_first = r_recv_next = RAYQLEN;
 
@@ -448,6 +442,12 @@ ray_popen(			/* open the specified # processes */
 	if (nadd <= 0)
 		return;
 	ambsync();			/* load any new ambient values */
+	if (shm_boundary == NULL) {	/* first child process? */
+		preload_objs();		/* preload auxiliary data */
+					/* set shared memory boundary */
+		shm_boundary = (char *)malloc(16);
+		strcpy(shm_boundary, "SHM_BOUNDARY");
+	}
 	fflush(NULL);			/* clear pending output */
 	while (nadd--) {		/* fork each new process */
 		int	p0[2], p1[2];
