@@ -224,6 +224,8 @@ paint(			/* compute and paint a rectangle */
 			flushintvl = nproc*niflush/(ambounce+1);
 		else
 			flushintvl = nproc*WFLUSH/(ambounce+1);
+		if (lastflush > counter)
+			lastflush = 0;		/* counter wrapped */
 
 		if (counter - lastflush >= flushintvl) {
 			lastflush = counter;
