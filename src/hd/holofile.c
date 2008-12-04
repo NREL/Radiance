@@ -18,9 +18,9 @@ static const char	RCSid[] = "$Id$";
 
 #ifndef CACHESIZE
 #ifdef SMLMEM
-#define CACHESIZE	5
+#define CACHESIZE	10
 #else
-#define CACHESIZE	17	/* default cache size (Mbytes, 0==inf) */
+#define CACHESIZE	100	/* default cache size (Mbytes, 0==inf) */
 #endif
 #endif
 #ifndef FREEBEAMS
@@ -30,7 +30,7 @@ static const char	RCSid[] = "$Id$";
 #define PCTFREE		15	/* maximum fraction to free (%) */
 #endif
 #ifndef MAXFRAGB
-#define MAXFRAGB	16	/* fragment blocks/file to track (0==inf) */
+#define MAXFRAGB	64	/* fragment blocks/file to track (0==inf) */
 #endif
 #ifndef FF_DEFAULT
 				/* when to free a beam fragment */

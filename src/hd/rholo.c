@@ -21,7 +21,7 @@ static const char	RCSid[] = "$Id$";
 #define FRAGWARN	20		/* fragmentation for warning (%) */
 #endif
 #ifndef MAXQTIME
-#define MAXQTIME	5		/* target maximum seconds in queue */
+#define MAXQTIME	3		/* target maximum seconds in queue */
 #endif
 					/* manual cache flushing frequency */
 #ifndef RTFLUSH
