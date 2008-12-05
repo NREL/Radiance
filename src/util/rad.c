@@ -208,7 +208,7 @@ main(
 		goto userr;
 	rifname = argv[i];
 				/* check command-line options */
-	if ((nprocs > 1) & (viewselect != NULL))
+	if ((nprocs > 1) & (viewselect != NULL) & (rvdevice == NULL))
 		nprocs = 1;
 				/* assign Radiance root file name */
 	rootname(radname, rifname);
