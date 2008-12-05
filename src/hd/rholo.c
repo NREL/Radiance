@@ -164,7 +164,7 @@ main(
 	quit(0);
 userr:
 	fprintf(stderr,
-"Usage: %s [-n nprocs][-o disp][-w][-r|-f] output.hdk [control.hif|+|- [VAR=val ..]]\n",
+"Usage: %s [-n nprocs][-o disp][-i][-w][-r|-f] output.hdk [control.hif|+|- [VAR=val ..]]\n",
 			progname);
 	quit(1);
 	return 1; /* pro forma return */
