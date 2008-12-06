@@ -26,8 +26,9 @@ extern "C" {
 #define  SSPOT		010		/* source spotlight flag */
 #define  SVIRTUAL	020		/* source virtual flag */
 #define  SFLAT		040		/* source flat flag */
-#define  SCYL		0100		/* source cylindrical flag */
-#define  SFOLLOW	0200		/* source follow path flag */
+#define  SCIR		0100		/* source circular flag */
+#define  SCYL		0200		/* source cylindrical flag */
+#define  SFOLLOW	0400		/* source follow path flag */
 
 typedef struct {
 	FVECT  aim;		/* aim direction or center */

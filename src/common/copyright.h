@@ -2,7 +2,7 @@
 /* ====================================================================
  * The Radiance Software License, Version 1.0
  *
- * Copyright (c) 1990 - 2002 The Regents of the University of California,
+ * Copyright (c) 1990 - 2009 The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory.   All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

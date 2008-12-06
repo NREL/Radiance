@@ -145,7 +145,7 @@ register OBJREC  *so;
 	src->so = so;
 	if (so->oargs.nfargs != 4)
 		objerror(so, USER, "bad arguments");
-	src->sflags |= SDISTANT;
+	src->sflags |= (SDISTANT|SCIR);
 	VCOPY(src->sloc, so->oargs.farg);
 	if (normalize(src->sloc) == 0.0)
 		objerror(so, USER, "zero direction");
@@ -174,13 +174,14 @@ register OBJREC  *so;
 		objerror(so, USER, "bad # arguments");
 	if (so->oargs.farg[3] <= FTINY)
 		objerror(so, USER, "illegal source radius");
+	src->sflags |= SCIR;
 	VCOPY(src->sloc, so->oargs.farg);
 	src->srad = so->oargs.farg[3];
 	src->ss2 = PI * src->srad * src->srad;
 	for (i = 0; i < 3; i++)
 		src->ss[SU][i] = src->ss[SV][i] = src->ss[SW][i] = 0.0;
 	for (i = 0; i < 3; i++)
-		src->ss[i][i] = .7236 * so->oargs.farg[3];
+		src->ss[i][i] = 0.7236 * so->oargs.farg[3];
 }
 
 
@@ -200,7 +201,7 @@ OBJREC  *so;
 	VCOPY(src->sloc, CO_P0(co));
 	if (CO_R0(co) > 0.0)
 		objerror(so, USER, "cannot hit source center");
-	src->sflags |= SFLAT;
+	src->sflags |= (SFLAT|SCIR);
 	VCOPY(src->snorm, co->ad);
 	src->srad = CO_R1(co);
 	src->ss2 = PI * src->srad * src->srad;
