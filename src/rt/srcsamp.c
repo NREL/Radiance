@@ -69,7 +69,7 @@ nextsample:
 	for (i = 0; i < 3; i++)
 		vpos[i] += (double)cent[i]/MAXSPART;
 					/* avoid circular aiming failures */
-	if (source[si->sn].sflags & SCIR) {
+	if ((source[si->sn].sflags & SCIR) && (si->np > 1 || dstrsrc > 0.7)) {
 		FVECT	trim;
 		double	d;
 		if (source[si->sn].sflags & (SFLAT|SDISTANT)) {
