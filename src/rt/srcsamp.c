@@ -71,7 +71,6 @@ nextsample:
 					/* avoid circular aiming failures */
 	if ((source[si->sn].sflags & SCIR) && (si->np > 1 || dstrsrc > 0.7)) {
 		FVECT	trim;
-		double	d;
 		if (source[si->sn].sflags & (SFLAT|SDISTANT)) {
 			d = 1.12837917;		/* correct setflatss() */
 			trim[SU] = d*sqrt(1.0 - 0.5*vpos[SV]*vpos[SV]);
