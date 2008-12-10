@@ -84,9 +84,12 @@ nextsample:
 			d = vpos[SW]*vpos[SW];
 			if (d > trim[SW]) trim[SW] = d;
 			trim[SU] += d;
-			d = 1.0/0.7236;		/* correct sphsetsrc() */
-			trim[SW] = trim[SV] = trim[SU] =
-					d*sqrt(trim[SW]/trim[SU]);
+			if (trim[SU] > FTINY*FTINY) {
+				d = 1.0/0.7236;	/* correct sphsetsrc() */
+				trim[SW] = trim[SV] = trim[SU] =
+						d*sqrt(trim[SW]/trim[SU]);
+			} else
+				trim[SW] = trim[SV] = trim[SU] = 0.0;
 		}
 		for (i = 0; i < 3; i++)
 			vpos[i] *= trim[i];
