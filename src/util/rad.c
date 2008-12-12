@@ -867,7 +867,7 @@ hiqopts(				/* high quality rendering options */
 	}
 	po = addarg(po, "-pt .04");
 	if (vbool(PENUMBRAS))
-		op = addarg(op, "-ds .1 -dj .65");
+		op = addarg(op, "-ds .1 -dj .9");
 	else
 		op = addarg(op, "-ds .2");
 	op = addarg(op, "-dt .05 -dc .75 -dr 3 -sj 1 -st .01");
