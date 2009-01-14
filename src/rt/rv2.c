@@ -534,6 +534,7 @@ setparam(				/* get/set program parameter */
 	char  *s
 )
 {
+	int  prev_newp = newparam;
 	char  buf[128];
 	
 	if (s[0] == '\0') {
@@ -599,6 +600,7 @@ setparam(				/* get/set program parameter */
 		case 'n': case 'N': case 'f': case 'F': case '0': case '-':
 			getparam(s+1, "black and white", 'b',
 					(void *)&greyscale);
+			newparam = prev_newp;
 			break;
 		default:
 			goto badparam;
@@ -681,6 +683,7 @@ setparam(				/* get/set program parameter */
 		default:
 			goto badparam;
 		}
+		newparam = prev_newp;
 		break;
 	case 's':			/* specular */
 		switch (s[1]) {
