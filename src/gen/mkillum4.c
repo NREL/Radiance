@@ -485,12 +485,12 @@ redistribute(		/* pass distarr ray sums through BSDF */
 	int	i, j, k, o;
 	COLOR	col, cinc;
 					/* copy incoming distribution */
-	if (b->ninc != distsiz)
+	if (b->ninc > distsiz)
 		error(INTERNAL, "error 1 in redistribute");
-	idist = (COLORV *)malloc(sizeof(COLOR)*distsiz);
+	idist = (COLORV *)malloc(sizeof(COLOR)*b->ninc);
 	if (idist == NULL)
 		error(SYSTEM, "out of memory in redistribute");
-	memcpy(idist, distarr, sizeof(COLOR)*distsiz);
+	memcpy(idist, distarr, sizeof(COLOR)*b->ninc);
 					/* compose direction transform */
 	for (i = 3; i--; ) {
 		mymat[i][0] = u[i];
