@@ -246,7 +246,7 @@ main(int argc, char *argv[])
 		while ((j = expandarg(&argc, &argv, i)) > 0)
 			;
 		if (j < 0) {
-			fprintf(stderr, "%s: cannot expand '%s'",
+			fprintf(stderr, "%s: cannot expand '%s'\n",
 					argv[0], argv[i]);
 			exit(1);
 		}
