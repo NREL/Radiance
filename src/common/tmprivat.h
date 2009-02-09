@@ -60,10 +60,6 @@ extern "C" {
 
 extern int	tmNewMap(TMstruct *tms);	/* allocate new tone-mapping */
 
-#ifndef	malloc
-MEM_PTR		malloc();
-MEM_PTR		calloc();
-#endif
 extern int	tmErrorReturn(const char *, TMstruct *, int);
 
 						/* lookup for mesopic scaling */

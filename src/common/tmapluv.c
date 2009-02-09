@@ -12,6 +12,7 @@ static const char	RCSid[] = "$Id$";
 #define LOGLUV_PUBLIC		1
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include "tmprivat.h"
