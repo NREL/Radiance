@@ -58,6 +58,8 @@ extern "C" {
 				(int32)(SCO_gf*256.+.5)*(c)[GRN] + \
 				(int32)(SCO_bf*256.+.5)*(c)[BLU]	) >> 8 )
 
+extern int	tmNewMap(TMstruct *tms);	/* allocate new tone-mapping */
+
 #ifndef	malloc
 MEM_PTR		malloc();
 MEM_PTR		calloc();
