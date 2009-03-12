@@ -31,7 +31,7 @@ static const char	RCSid[] = "$Id$";
 #include  "rtio.h"
 #include  "resolu.h"
 
-#define	 MAXLINE	512
+#define	 MAXLINE	2048
 
 char  HDRSTR[] = "#?";		/* information header magic number */
 
