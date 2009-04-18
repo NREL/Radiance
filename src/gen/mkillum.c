@@ -444,8 +444,8 @@ printopts(void)			/* print out option default values */
 		printf("l+\t\t\t\t# light type on\n");
 	else
 		printf("l-\t\t\t\t# light type off\n");
-	printf("d=%d\t\t\t\t# density of points\n", thisillum.sampdens);
-	printf("s=%d\t\t\t\t# samples per point\n", thisillum.nsamps);
+	printf("d=%d\t\t\t\t# density of directions\n", thisillum.sampdens);
+	printf("s=%d\t\t\t\t# samples per direction\n", thisillum.nsamps);
 	printf("b=%f\t\t\t# minimum average brightness\n", thisillum.minbrt);
 	switch (thisillum.udir) {
 	case UDzneg:
