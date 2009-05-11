@@ -700,9 +700,11 @@ pixvalue(		/* compute pixel value */
 						/* optional depth-of-field */
 	if (dblur > FTINY && vdist > FTINY) {
 		double  vc, dfh, dfv;
-						/* PI/4. square/circle conv. */
-		dfh = PI/4.*dblur*(.5 - frandom());
-		dfv = PI/4.*dblur*(.5 - frandom());
+						/* square/circle conv. */
+		dfh = vc = frandom();
+		dfv = frandom();
+		dfh *= .5*dblur*sqrt(1. - .5*dfv*dfv);
+		dfv *= .5*dblur*sqrt(1. - .5*vc*vc);
 		if (ourview.type == VT_PER || ourview.type == VT_PAR) {
 			dfh /= sqrt(ourview.hn2);
 			dfv /= sqrt(ourview.vn2);
