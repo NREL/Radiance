@@ -20,9 +20,9 @@ static const char	RCSid[] = "$Id$";
 				/* picture memory usage before warning */
 #ifndef PSIZWARN
 #ifdef SMLMEM
-#define PSIZWARN	1500000
+#define PSIZWARN	3000000
 #else
-#define PSIZWARN	5000000
+#define PSIZWARN	10000000
 #endif
 #endif
 
@@ -218,8 +218,8 @@ getpict(				/* get picture pname */
 	i = ns*sl*sizeof(COLR);
 #if PSIZWARN
 	if (i > PSIZWARN) {				/* memory warning */
-		sprintf(errmsg, "picture file \"%s\" using %d bytes of memory",
-				pname, i);
+		sprintf(errmsg, "picture file \"%s\" using %.1f MB of memory",
+				pname, i*(1.0/(1024*1024)));
 		error(WARNING, errmsg);
 	}
 #endif
