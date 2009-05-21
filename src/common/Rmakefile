@@ -143,3 +143,6 @@ dircode.o xf.o:	rtmath.h mat4.h fvect.h tiff.h
 error.o:	rterror.h
 
 bmpfile.o:	bmpfile.h tiff.h
+
+header.o readmesh.o readoct.o resolu.o rglinst.o tmapcolrs.o:	resolu.h
+

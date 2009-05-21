@@ -158,7 +158,7 @@ typedef float  COLORMAT[3][3];	/* color coordinate conversion matrix */
 #define  PRIMARYSTR		"PRIMARIES="
 #define  LPRIMARYSTR		10
 #define  isprims(hl)		(!strncmp(hl,PRIMARYSTR,LPRIMARYSTR))
-#define  primsval(p,hl)		sscanf(hl+LPRIMARYSTR, \
+#define  primsval(p,hl)		sscanf((hl)+LPRIMARYSTR, \
 					"%f %f %f %f %f %f %f %f", \
 					&(p)[RED][CIEX],&(p)[RED][CIEY], \
 					&(p)[GRN][CIEX],&(p)[GRN][CIEY], \
@@ -176,7 +176,7 @@ typedef float  COLORMAT[3][3];	/* color coordinate conversion matrix */
 #define  COLCORSTR		"COLORCORR="
 #define  LCOLCORSTR		10
 #define  iscolcor(hl)		(!strncmp(hl,COLCORSTR,LCOLCORSTR))
-#define  colcorval(cc,hl)	sscanf(hl+LCOLCORSTR,"%f %f %f", \
+#define  colcorval(cc,hl)	sscanf((hl)+LCOLCORSTR,"%f %f %f", \
 					&(cc)[RED],&(cc)[GRN],&(cc)[BLU])
 #define  fputcolcor(cc,fp)	fprintf(fp,"%s %f %f %f\n",COLCORSTR, \
 					(cc)[RED],(cc)[GRN],(cc)[BLU])
