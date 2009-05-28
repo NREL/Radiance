@@ -247,6 +247,7 @@ load_bsdf_data(		/* load BSDF distribution for this wavelength */
 				strlen(sdata));
 		error(WARNING, errmsg);
 	}
+	/* XXX should check that BSDF*dOMEGA doesn't sum to more than PI? */
 }
 
 

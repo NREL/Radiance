@@ -153,6 +153,7 @@ srcsamps(			/* sample sources from this surface position */
 			d = 5.*FTINY;
 		for (i = 3; i--; )
 			sr.rorg[i] += d*nrm[i];
+		samplendx++;			/* increment sample counter */
 		if (!srcray(&sr, NULL, &si))
 			break;			/* end of sources */
 						/* index direction */
