@@ -10,7 +10,11 @@ static const char	RCSid[] = "$Id$";
 
 #include  <math.h>
 
-#define  PI  3.141592654
+#ifdef M_PI
+#define  PI	M_PI
+#else
+#define  PI	3.141592653589793
+#endif
 
 double  s_latitude = 0.66;	/* site latitude (radians) */
 double  s_longitude = 2.13;	/* site longitude (radians) */
