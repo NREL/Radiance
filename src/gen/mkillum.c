@@ -68,7 +68,7 @@ main(		/* compute illum distributions using rtrace */
 	gargv = argv;
 	progname = gargv[0];
 				/* set up rendering defaults */
-	dstrsrc = 0.25;
+	dstrsrc = 0.5;
 	directrelay = 3;
 	directvis = 0;
 	ambounce = 2;
