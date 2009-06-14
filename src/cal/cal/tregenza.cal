@@ -39,3 +39,5 @@ tbin = if(-alt, 0,
 		139 + tazi(60),
 		145
 	) );
+
+Ntbins : 146;		{ total number of bins }
