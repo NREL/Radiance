@@ -305,11 +305,12 @@ char  *file
 	
 	while (getinputrec(fp)) {
 		varset("recno", '=', (double)++nrecs);
+		varset("outno", '=', (double)(nout+1));
 		colflg = 0;
 		eclock++;
 		if (!conditional || varvalue("cond") > 0.0) {
-			varset("outno", '=', (double)++nout);
 			putout();
+			++nout;
 		}
 	}
 	fclose(fp);

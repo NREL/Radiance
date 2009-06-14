@@ -4,17 +4,22 @@
 vwright - normalize a RADIANCE view, shift it to the right
 .SH SYNOPSIS
 .B vwright
+.B "[ view options ]"
 .B distance
 .br
 .B vwright
 .B name
 .SH DESCRIPTION
 .I Vwright
-shifts a RADIANCE view from a picture or view file given on the standard input
+shifts a RADIANCE view
 the specified distance to the right, putting out a complete set of
 view parameters in a single line on the standard output.
 This utility is most often used to compute a right-eyed view from
 a left-eye view for stereo imaging.
+.PP
+If no options are specified on the command line,
+.I vwright
+reads a view from its standard input.
 .PP
 The
 .I distance
