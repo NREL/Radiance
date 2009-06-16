@@ -5,6 +5,7 @@
 #
 #	G. Ward
 #
+use strict;
 if ($#ARGV < 0) {
 	print STDERR, "Usage: genklemsamp [-c N ][-f{a|f|d}] [view opts] [geom.rad ..]\n";
 	exit 1;
