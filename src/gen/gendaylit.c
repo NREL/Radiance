@@ -472,8 +472,10 @@ computesky()			/* compute sky parameters */
 /* Compute the ground radiance */
 zenithbr=calc_rel_lum_perez(0.0,radians(sunzenith),radians(sunzenith),skyclearness,skybrightness,coeff_perez);
 zenithbr*=diffnormalization;
+/*
 fprintf(stderr, "gendaylit : the actual zenith radiance(W/m^2/sr) or luminance(cd/m^2) is : %.0lf\n", zenithbr);
-	
+*/
+
 if (skyclearness==1)
 	normfactor = 0.777778;
 		
