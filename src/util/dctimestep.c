@@ -299,7 +299,7 @@ cm_bsdf(const struct BSDF_data *bsdf)
 	int	nneg = 0;
 	int	r, c;
 	
-	for (c = 0; c < cm->ncols; c++, mp += 3) {
+	for (c = 0; c < cm->ncols; c++) {
 		float	dom = getBSDF_incohm(bsdf,c);
 		FVECT	v;
 		
@@ -316,8 +316,9 @@ cm_bsdf(const struct BSDF_data *bsdf)
 
 			if (f <= .0) {
 				nneg += (f < -FTINY);
-				continue;
+				f = .0f;
 			}
+			mp = cm_lval(cm,r,c);
 			mp[0] = mp[1] = mp[2] = f * dom;
 		}
 	}
