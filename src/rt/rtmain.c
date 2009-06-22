@@ -336,7 +336,6 @@ runagain:
 		}
 	}
 	if (persist == PCHILD) {	/* wait for a signal then go again */
-		close(duped1);			/* release output handle */
 		pfhold();
 		raynum = nrays = 0;		/* reinitialize */
 		goto runagain;
