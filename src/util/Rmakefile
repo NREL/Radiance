@@ -103,7 +103,7 @@ glrad:	glrad.o
 -lX11 -lXext $(MLIB)
 
 dctimestep:	dctimestep.o
-	$(CC) $(CFLAGS) -o dctimestep dctimestep.o -lrtrad
+	$(CC) $(CFLAGS) -o dctimestep dctimestep.o -lrtrad $(MLIB)
 
 setscan.o:	setscan.h
 
