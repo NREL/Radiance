@@ -38,7 +38,7 @@ cm_alloc(int nrows, int ncols)
 	CMATRIX	*cm;
 
 	if ((nrows <= 0) | (ncols <= 0))
-		return(NULL);
+		error(USER, "attempt to create empty matrix");
 	cm = (CMATRIX *)malloc(sizeof(CMATRIX) +
 				3*sizeof(COLORV)*(nrows*ncols - 1));
 	if (cm == NULL)
