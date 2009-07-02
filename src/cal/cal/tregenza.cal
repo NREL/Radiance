@@ -26,7 +26,7 @@ Atan2(y,x) : posangle(atan2(y,x));
 alt = Asin(Dz)/DEGREE;
 azi = Atan2(Dx,Dy)/DEGREE;
 
-tazi(inc) = if(azi-(360-.5*inc), 0, floor((azi+.5*inc)/inc));
+tazi(inc) = if(360-.5*inc - azi, floor((azi+.5*inc)/inc), 0);
 
 tbin = if(-alt, 0,
 	select(floor(alt/12) + 1,
