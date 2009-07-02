@@ -13,7 +13,7 @@ static const char	RCSid[] = "$Id$";
 #include  "source.h"
 
 #ifndef NBSDFSAMPS
-#define NBSDFSAMPS	32		/* BSDF resampling count */
+#define NBSDFSAMPS	256		/* BSDF resampling count */
 #endif
 
 COLORV *	distarr = NULL;		/* distribution array */
