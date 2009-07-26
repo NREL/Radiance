@@ -258,7 +258,7 @@ doargf(			/* take argument list from file */
 		for (i = fi+2; i < ac; i++)
 			avp[newac++] = av[i];
 		avp[newac] = NULL;
-		oldid = NULL;
+		newid = oldid = NULL;
 		for (i = 2; i < newac; i++)
 			if (!strcmp(avp[i-1], "-n")) {
 				oldid = avp[i];
