@@ -14,7 +14,7 @@ static const char	RCSid[] = "$Id$";
 #include "calcomp.h"
 #include "view.h"
 
-#define MAXINP		512		/* maximum number of input files */
+#define MAXINP		1024		/* maximum number of input files */
 #define WINSIZ		64		/* scanline window size */
 #define MIDSCN		((WINSIZ-1)/2+1)
 
