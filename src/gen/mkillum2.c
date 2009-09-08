@@ -725,7 +725,10 @@ redistribute(		/* pass distarr ray sums through BSDF */
 			cp = &direct_discount[3*i];
 			copycolor(cdir, cp);
 			scalecolor(cdir, -wt);
-			direct_out = flatindex(dv, nalt, nazi);
+			if (b->nout != b->ninc)
+				direct_out = flatindex(dv, nalt, nazi);
+			else
+				direct_out = i;	/* assumes dist. mirroring */
 		}
 		for (k = nalt; k--; )		/* loop over distribution */
 		  for (j = nazi; j--; ) {
@@ -744,7 +747,8 @@ redistribute(		/* pass distarr ray sums through BSDF */
 			}
 			wt = BSDF_value(b, i, o) * (1./NBSDFSAMPS);
 			copycolor(col, cinc);
-			o = k*nazi + j;
+			if (b->nout != b->ninc)
+				o = k*nazi + j;
 			if (o == direct_out)
 				addcolor(col, cdir);	/* minus direct */
 			scalecolor(col, wt);
