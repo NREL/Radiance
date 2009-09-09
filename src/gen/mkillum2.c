@@ -752,7 +752,7 @@ redistribute(		/* pass distarr ray sums through BSDF */
 			if (o == direct_out)
 				addcolor(col, cdir);	/* minus direct */
 			scalecolor(col, wt);
-			cp = &distarr[3*o];
+			cp = &distarr[3*(k*nazi + j)];
 			addcolor(cp, col);	/* sum into distribution */
 		    }
 		  }
