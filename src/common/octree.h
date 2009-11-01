@@ -88,7 +88,6 @@ extern void	octfree(OCTREE ot);
 extern void	octdone(void);
 extern OCTREE	combine(OCTREE ot);
 extern void	culocate(CUBE *cu, FVECT pt);
-extern void	cucopy(CUBE *cu1, CUBE *cu2);
 extern int	incube(CUBE *cu, FVECT pt);
 
 extern int	readoct(char *fname, int load, CUBE *scene, char *ofn[]);

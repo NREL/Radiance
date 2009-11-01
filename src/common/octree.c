@@ -19,7 +19,7 @@ static OCTREE  treetop = 0;		/* next free node */
 OCTREE
 octalloc()			/* allocate an octree */
 {
-	register OCTREE  freet;
+	OCTREE  freet;
 
 	if ((freet = ofreelist) != EMPTY) {
 		ofreelist = octkid(freet, 0);
@@ -41,9 +41,9 @@ octalloc()			/* allocate an octree */
 
 void
 octfree(ot)			/* free an octree */
-register OCTREE  ot;
+OCTREE  ot;
 {
-	register int  i;
+	int  i;
 
 	if (!istree(ot))
 		return;
@@ -57,7 +57,7 @@ register OCTREE  ot;
 void
 octdone()			/* free EVERYTHING */
 {
-	register int	i;
+	int	i;
 
 	for (i = 0; i < MAXOBLK; i++) {
 		if (octblock[i] == NULL)
@@ -72,10 +72,10 @@ octdone()			/* free EVERYTHING */
 
 OCTREE
 combine(ot)			/* recursively combine nodes */
-register OCTREE  ot;
+OCTREE  ot;
 {
-	register int  i;
-	register OCTREE  ores;
+	int  i;
+	OCTREE  ores;
 
 	if (!istree(ot))	/* not a tree */
 		return(ot);
@@ -93,10 +93,10 @@ register OCTREE  ot;
 
 void
 culocate(cu, pt)		/* locate point within cube */
-register CUBE  *cu;
-register FVECT  pt;
+CUBE  *cu;
+FVECT  pt;
 {
-	register int  i;
+	int  i;
 	int  branch;
 
 	while (istree(cu->cutree)) {
@@ -112,20 +112,10 @@ register FVECT  pt;
 }
 
 
-void
-cucopy(cu1, cu2)		/* copy cu2 into cu1 */
-register CUBE  *cu1, *cu2;
-{
-	cu1->cutree = cu2->cutree;
-	cu1->cusize = cu2->cusize;
-	VCOPY(cu1->cuorg, cu2->cuorg);
-}
-
-
 int
 incube(cu, pt)			/* determine if a point is inside a cube */
-register CUBE  *cu;
-register FVECT  pt;
+CUBE  *cu;
+FVECT  pt;
 {
 	if (cu->cuorg[0] > pt[0] || pt[0] >= cu->cuorg[0] + cu->cusize)
 		return(0);
