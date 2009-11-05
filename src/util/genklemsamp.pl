@@ -84,6 +84,7 @@ if ($#ARGV >= 0) {
 			$bcube[2]+$bcube[3]/2-$width/2*$vd[2]);
 	push @vopts, ("-vh", $width, "-vh", $height);
 	$vwset = `vwright @vopts V`;
+	$sca = sqrt($nsamp/($width*$height));
 	my $xres;
 	my $yres;
 	my $ntot = 0;
@@ -100,7 +101,7 @@ if ($#ARGV >= 0) {
 		$ntot = -s "$td/origins.flt";
 		$ntot /= 3*4;
 		if ($ntot == 0) {
-			if ($sca < sqrt(199/($width*$height))) {
+			if ($nsamp < 200) {
 				$sca = sqrt(200/($width*$height));
 				redo;
 			}
