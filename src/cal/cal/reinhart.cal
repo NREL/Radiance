@@ -5,6 +5,8 @@
 
 	Modified from Tregenza.cal
 
+	Need to specify MF constant before loading (usu. power of two)
+
 	June 2009	G. Ward
 }
 DEGREE : PI/180;
@@ -15,7 +17,6 @@ Atan2(y,x) : posangle(atan2(y,x));
 alt = Asin(Dz)/DEGREE;
 azi = Atan2(Dx,Dy)/DEGREE;
 
-MF : 2^2;			{ Multiplication factor }
 alpha : 90/(MF*7 + .5);		{ Separation between rows in degrees }
 				{ Number of patches per row }
 tnaz(r) : select(r, 30, 30, 24, 24, 18, 12, 6);
