@@ -664,6 +664,10 @@ ofname(char *oname, const char *ospec, const char *mname, int bn)
 				mnp = cp;
 				break;
 			case 'd':
+			case 'i':
+			case 'o':
+			case 'x':
+			case 'X':
 				if (bnp != NULL)
 					return -1;
 				bnp = cp;
