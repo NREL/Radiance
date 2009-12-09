@@ -404,9 +404,9 @@ sum_images(const char *fspec, const CMATRIX *cv)
 	return(fflush(stdout) == 0);
 }
 
-/* check to see if a string contains a %d specification */
-int
-hasDecimalSpec(const char *s)
+/* check to see if a string contains a %d or %o specification */
+static int
+hasNumberFormat(const char *s)
 {
 	while (*s && *s != '%')
 		s++;
@@ -416,7 +416,7 @@ hasDecimalSpec(const char *s)
 		++s;
 	while (isdigit(*s));
 
-	return(*s == 'd');
+	return(*s == 'd' | *s == 'i' | *s == 'o' | *s == 'x' | *s == 'X');
 }
 
 int
@@ -447,7 +447,7 @@ main(int argc, char *argv[])
 	free_BSDF(btdf);
 	cvec = cm_multiply(Tmat, ivec);		/* cvec = component vector */
 	cm_free(Tmat); cm_free(ivec);
-	if (hasDecimalSpec(argv[1])) {		/* generating image */
+	if (hasNumberFormat(argv[1])) {		/* generating image */
 		SET_FILE_BINARY(stdout);
 		newheader("RADIANCE", stdout);
 		printargs(argc, argv, stdout);
