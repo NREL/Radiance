@@ -27,8 +27,9 @@ int  code;
 		printmemstats(stderr);
 #endif
 	if (ray_pnprocs > 0)	/* close children if any */
-		ray_pclose(0);		
-	devclose();
+		ray_pclose(0);
+	else if (!ray_pnprocs)	/* in parent */
+		devclose();
 	exit(code);
 }
 

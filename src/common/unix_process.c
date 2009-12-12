@@ -78,11 +78,12 @@ SUBPROC *pd
 
 	if (!pd->running)
 		return(0);
-	close(pd->r);
 	close(pd->w);
 	pd->running = 0;
-	if (waitpid(pd->pid, &status, 0) == pd->pid)
+	if (waitpid(pd->pid, &status, 0) == pd->pid) {
+		close(pd->r);
 		return(status>>8 & 0xff);
+	}
 	return(-1);		/* ? unknown status */
 }
 
