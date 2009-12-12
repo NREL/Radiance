@@ -14,6 +14,10 @@
 extern "C" {
 #endif
 
+#ifndef RNUMBER
+#define RNUMBER		unsigned long	/* ray counter (>= sizeof pointer) */
+#endif
+
 #define  MAXDIM		32	/* maximum number of dimensions */
 
 				/* ray type flags */
@@ -50,7 +54,7 @@ typedef struct ray {
  	OBJREC	*ro;		/* intersected object (one with material) */
 	FULLXF	*rox;		/* object transformation */
 	int	*slights;	/* list of lights to test for scattering */
-	unsigned long  rno;	/* unique ray number */
+	RNUMBER	rno;		/* unique ray number */
 	int	rlvl;		/* number of reflections for this ray */
 	int	rsrc;		/* source we're aiming for */
 	float	rweight;	/* cumulative weight (for termination) */

@@ -173,7 +173,7 @@ setfunc(			/* set channels for function call */
 	register RAY  *r
 )
 {
-	static unsigned long  lastrno = ~0;
+	static RNUMBER  lastrno = ~0;
 	register MFUNC  *f;
 					/* get function */
 	if ((f = (MFUNC *)m->os) == NULL)

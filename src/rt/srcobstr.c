@@ -180,7 +180,7 @@ initobscache(int sn)
 static OBJECT *			/* return occluder cache entry */
 srcobstructp(register RAY *r)
 {
-	static unsigned long	lastrno = ~0;
+	static RNUMBER	lastrno = ~0;
 	static OBJECT   noobs;
 	static OBJECT	*lastobjp;
 	SRCREC		*srcp;
