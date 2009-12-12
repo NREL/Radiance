@@ -176,6 +176,16 @@ char  *s;
 
 
 void
+quit(ec)			/* make sure exit is called */
+int	ec;
+{
+	if (ray_pnprocs > 0)	/* close children if any */
+		ray_pclose(0);		
+	exit(ec);
+}
+
+
+void
 filter(		/* process stream */
 	register FILE	*infp,
 	char	*name

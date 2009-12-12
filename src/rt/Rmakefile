@@ -111,8 +111,8 @@ lint:	$(RVSRC)
 # Links:
 #
 
-$(DESTDIR)/rtrace:	$(RTOBJS) $(RLIB)
-	$(CC) $(CFLAGS) -o $(DESTDIR)/rtrace $(RTOBJS) $(RLIB) $(LIBS)
+$(DESTDIR)/rtrace:	$(RTOBJS) $(RCLIB) $(RLIB)
+	$(CC) $(CFLAGS) -o $(DESTDIR)/rtrace $(RTOBJS) $(RCLIB) $(RLIB) $(LIBS)
 
 $(DESTDIR)/rpict:	$(RPOBJS) $(RLIB)
 	$(CC) $(CFLAGS) -o $(DESTDIR)/rpict $(RPOBJS) $(RLIB) $(LIBS)

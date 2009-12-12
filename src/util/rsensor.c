@@ -71,6 +71,17 @@ print_defaults()		/* print out default parameters */
 	print_rdefaults();
 }
 
+
+void
+quit(ec)			/* make sure exit is called */
+int	ec;
+{
+	if (ray_pnprocs > 0)	/* close children if any */
+		ray_pclose(0);		
+	exit(ec);
+}
+
+
 int
 main(
 	int	argc,

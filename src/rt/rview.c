@@ -19,6 +19,21 @@ static const char	RCSid[] = "$Id$";
 
 
 void
+quit(code)			/* quit program */
+int  code;
+{
+#ifdef MSTATS
+	if (code == 2 && errno == ENOMEM)
+		printmemstats(stderr);
+#endif
+	if (ray_pnprocs > 0)	/* close children if any */
+		ray_pclose(0);		
+	devclose();
+	exit(code);
+}
+
+
+void
 devopen(				/* open device driver */
 	char  *dname
 )

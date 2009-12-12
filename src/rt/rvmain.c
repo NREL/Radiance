@@ -225,7 +225,7 @@ main(int argc, char *argv[])
 					/* set up output & start process(es) */
 	SET_FILE_BINARY(stdout);
 	
-	ray_pinit(octnm, 0);
+	ray_init(octnm);
 
 	rview();			/* run interactive viewer */
 
