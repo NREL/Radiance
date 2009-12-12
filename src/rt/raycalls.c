@@ -154,7 +154,7 @@ char	*amblist[AMBLLEN+1];		/* ambient include/exclude list */
 int	ambincl = -1;			/* include == 1, exclude == 0 */
 
 
-extern void
+void
 ray_init(			/* initialize ray-tracing calculation */
 	char	*otnm
 )
@@ -182,7 +182,7 @@ ray_init(			/* initialize ray-tracing calculation */
 					/* ready to go... */
 }
 
-extern void
+void
 ray_trace(			/* trace a primary ray */
 	RAY	*r
 )
@@ -193,7 +193,7 @@ ray_trace(			/* trace a primary ray */
 }
 
 
-extern void
+void
 ray_done(		/* free ray-tracing data */
 	int	freall
 )
@@ -221,7 +221,7 @@ ray_done(		/* free ray-tracing data */
 }
 
 
-extern void
+void
 ray_save(			/* save current parameter settings */
 	RAYPARAMS	*rp
 )
@@ -272,7 +272,7 @@ ray_save(			/* save current parameter settings */
 }
 
 
-extern void
+void
 ray_restore(			/* restore parameter settings */
 	RAYPARAMS	*rp
 )
@@ -340,7 +340,7 @@ ray_restore(			/* restore parameter settings */
 }
 
 
-extern void
+void
 ray_defaults(		/* get default parameter values */
 	RAYPARAMS	*rp
 )

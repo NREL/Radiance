@@ -201,6 +201,10 @@ extern int	ray_presult(RAY *r, int poll);
 extern void	ray_pdone(int freall);
 extern void	ray_popen(int nadd);
 extern void	ray_pclose(int nsub);
+					/* defined in ray_fifo.c */
+extern int	(*ray_fifo_out)(RAY *r);
+extern int	ray_fifo_in(RAY *r);
+extern int	ray_fifo_flush(void);
 					/* defined in raytrace.c */
 extern int	rayorigin(RAY *r, int rt, const RAY *ro, const COLOR rc);
 extern void	rayclear(RAY *r);
