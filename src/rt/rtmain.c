@@ -88,6 +88,7 @@ main(int  argc, char  *argv[])
 		;
 	addobjnotify[i] = tranotify;
 					/* set our defaults */
+	rand_samp = 1;
 	maxdepth = -10;
 	minweight = 2e-3;
 					/* option city */
