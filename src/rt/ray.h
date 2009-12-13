@@ -232,8 +232,8 @@ extern void init_drawsources(int rad);
 					/* defined in rt/initotypes.c */
 extern void initotypes(void);
 					/* module main procedures */
-extern void	rtrace(char *fname);
-extern char * formstr(int  f);
+extern void	rtrace(char *fname, int nproc);
+extern char	*formstr(int  f);
 extern void	rview(void);
 extern void	rpict(int seq, char *pout, char *zout, char *prvr);
 

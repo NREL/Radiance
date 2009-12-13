@@ -251,8 +251,6 @@ main(int  argc, char  *argv[])
 	if (nproc > 1) {
 		if (persist)
 			error(USER, "multiprocessing incompatible with persist file");
-		if (imm_irrad)
-			error(USER, "multiprocessing incompatible with immediate irradiance");
 		if (hresolu > 0 && hresolu < nproc)
 			error(WARNING, "number of cores should not exceed horizontal resolution");
 		if (trace != NULL)
@@ -354,10 +352,8 @@ runagain:
 	if (persist)
 		dupheader();			/* send header to stdout */
 #endif
-	if (nproc > 1)			/* start multiprocessing */
-		ray_popen(nproc);
 					/* trace rays */
-	rtrace(NULL);
+	rtrace(NULL, nproc);
 					/* flush ambient file */
 	ambsync();
 #ifdef  PERSIST
