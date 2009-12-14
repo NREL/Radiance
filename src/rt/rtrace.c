@@ -326,6 +326,7 @@ rayirrad(			/* compute irradiance rather than radiance */
 	r->ron[1] = -r->rdir[1];
 	r->ron[2] = -r->rdir[2];
 	r->rod = 1.0;
+	r->revf = raytrace;
 					/* compute result */
 	(*ofun[Lamb.otype].funp)(&Lamb, r);
 }
