@@ -338,24 +338,22 @@ rtcompute(			/* compute and print ray value(s) */
 	double	dmax
 )
 {
-	if (imm_irrad) {		/* set up ray */
+					/* set up ray */
+	rayorigin(&thisray, PRIMARY, NULL, NULL);
+	if (imm_irrad) {
 		VSUM(thisray.rorg, org, dir, 1.1e-4);
 		thisray.rdir[0] = -dir[0];
 		thisray.rdir[1] = -dir[1];
 		thisray.rdir[2] = -dir[2];
 		thisray.rmax = 0.0;
+		thisray.revf = rayirrad;
 	} else {
 		VCOPY(thisray.rorg, org);
 		VCOPY(thisray.rdir, dir);
 		thisray.rmax = dmax;
+		if (castonly)
+			thisray.revf = raycast;
 	}
-	rayorigin(&thisray, PRIMARY, NULL, NULL);
-					/* special case evaluators */
-	if (castonly)
-		thisray.revf = raycast;
-	else if (imm_irrad)
-		thisray.revf = rayirrad;
-
 	if (ray_pnprocs > 1) {		/* multiprocessing FIFO? */
 		if (ray_fifo_in(&thisray) < 0)
 			error(USER, "lost children");
