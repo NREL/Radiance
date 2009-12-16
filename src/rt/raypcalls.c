@@ -71,11 +71,11 @@ static const char	RCSid[] = "$Id$";
  *
  *  If the second argument is 1, the call won't block when
  *  results aren't ready, but will immediately return 0.
- *  (A special value of -1 returns 0 unless a ray is
- *  ready in the queue and no system calls are needed.)
  *  If the second argument is 0, the call will block
  *  until a value is available, returning 0 only if the
- *  queue is completely empty.  A negative return value
+ *  queue is completely empty.  Setting the second argument
+ *  to -1 returns 0 unless a ray is ready in the queue and
+ *  no system calls are needed.  A negative return value
  *  indicates that a rendering process died.  If this
  *  happens, ray_pclose(0) is automatically called to close
  *  all child processes, and ray_pnprocs is set to zero.
@@ -506,6 +506,9 @@ ray_pclose(		/* close one or more child processes */
 	if (inclose)
 		return;
 	inclose++;
+					/* check no child / in child */
+	if (ray_pnprocs <= 0)
+		return;
 					/* check argument */
 	if ((nsub <= 0) | (nsub > ray_pnprocs))
 		nsub = ray_pnprocs;
