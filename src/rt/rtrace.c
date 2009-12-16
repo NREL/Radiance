@@ -160,13 +160,14 @@ rtrace(				/* trace rays from file */
 
 		d = normalize(direc);
 		if (d == 0.0) {				/* zero ==> flush */
-			if (nproc > 1 && ray_fifo_flush() < 0)
-				error(USER, "lost children");
-			bogusray();
 			if (--nextflush <= 0 || !vcount) {
+				if (nproc > 1 && ray_fifo_flush() < 0)
+					error(USER, "lost children");
+				bogusray();
 				fflush(stdout);
 				nextflush = hresolu;
-			}
+			} else
+				bogusray();
 		} else {				/* compute and print */
 			rtcompute(orig, direc, lim_dist ? d : 0.0);
 							/* flush if time */
