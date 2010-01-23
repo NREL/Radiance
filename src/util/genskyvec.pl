@@ -109,7 +109,7 @@ if (@sundir) {
 		my $wt = 1./($ang[$i]+.02)/$wtot * $somega / $dom[$i];
 		my @scolor = split(/\s+/, $tregval[$ndx[$i]]);
 		for my $j (0..2) { $scolor[$j] += $wt * $sunval[$j]; }
-		$tregval[$ndx[$i]] = "@scolor\n";
+		$tregval[$ndx[$i]] = "$scolor[0]\t$scolor[1]\t$scolor[2]\n";
 	}
 }
 # Output our final vector
