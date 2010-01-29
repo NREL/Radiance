@@ -226,8 +226,9 @@ char  *fname
 {
 	double	inpval[MAXCOL];
 	double	tally[MAXCOL];
+	short	rsign[MAXCOL];
 	double  result[MAXCOL];
-	register int  n;
+	int  n;
 	int  nread, ncol;
 	long  nlin, ltotal;
 	FILE  *fp;
@@ -244,8 +245,10 @@ char  *fname
 	while (!feof(fp)) {
 		if (ltotal == 0) {			/* initialize */
 			if (func == MULT)	/* special case */
-				for (n = 0; n < MAXCOL; n++)
+				for (n = 0; n < MAXCOL; n++) {
 					tally[n] = 0.0;
+					rsign[n] = 1;
+				}
 			else
 				for (n = 0; n < MAXCOL; n++)
 					tally[n] = init_val[func];
@@ -267,8 +270,13 @@ char  *fname
 					break;
 				case MULT:
 					if (inpval[n] == 0.0)
-						break;
-					tally[n] += log(fabs(inpval[n]));
+						rsign[n] = 0;
+					else if (inpval[n] < 0.0) {
+						rsign[n] = -rsign[n];
+						inpval[n] = -inpval[n];
+					}
+					if (rsign[n])
+						tally[n] += log(inpval[n]);
 					break;
 				case MAX:
 					if (inpval[n] > tally[n])
@@ -294,7 +302,7 @@ char  *fname
 					result[n] = pow(result[n], 1.0/power);
 			}
 			if (func == MULT)
-				result[n] = exp(result[n]);
+				result[n] = rsign[n] * exp(result[n]);
 		}
 		putrecord(result, ncol, stdout);
 		if (!subtotal)
