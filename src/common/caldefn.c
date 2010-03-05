@@ -624,7 +624,7 @@ getdefn(void)
 	do {
 	    scan();
 	    if (!isalpha(nextc))
-		syntax("illegal variable name");
+		syntax("illegal parameter name");
 	    ep2 = newnode();
 	    ep2->type = SYM;
 	    ep2->v.name = savestr(getname());
