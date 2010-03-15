@@ -198,11 +198,13 @@ startjob(	/* start a job on a process server */
 			if (ps->username[0]) {		/* different user */
 				av[++i] = "-l";
 				av[++i] = ps->username;
-				av[++i] = "cd";
-				udirt[0] = '~';
-				strcpy(udirt+1, ouruser);
-				av[++i] = udirt;
-				av[++i] = ";";
+				if (ps->directory[0] != '/') {
+					av[++i] = "cd";
+					udirt[0] = '~';
+					strcpy(udirt+1, ouruser);
+					av[++i] = udirt;
+					av[++i] = ";";
+				}
 			}
 			if (ps->directory[0]) {		/* change directory */
 				av[++i] = "cd";
