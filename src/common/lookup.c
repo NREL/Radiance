@@ -167,7 +167,7 @@ lu_delete(		/* delete a table entry */
 extern int
 lu_doall(		/* loop through all valid table entries */
 	register const LUTAB	*tbl,
-	//int	(*f)(const LUENT *)
+	/* int	(*f)(const LUENT *) */
 	lut_doallf_t *f,
 	void *p
 )
