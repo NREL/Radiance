@@ -156,12 +156,11 @@ dirnorm(		/* compute source contribution */
 						/* roughness + source */
 		dtmp = np->alpha2 + omega*(1.0/PI);
 						/* gaussian */
-		dtmp = exp((2.*DOT(np->prdir,ldir)-2.)/dtmp) /
-					(PI*np->pdot*dtmp);
+		 dtmp = exp((2.*DOT(np->prdir,ldir)-2.)/dtmp)/(PI*dtmp);
 						/* worth using? */
 		if (dtmp > FTINY) {
 			copycolor(ctmp, np->mcolor);
-			dtmp *= np->tspec * omega;
+			dtmp *= np->tspec * omega * sqrt(-ldot/np->pdot);
 			scalecolor(ctmp, dtmp);
 			addcolor(cval, ctmp);
 		}
