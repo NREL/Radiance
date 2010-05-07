@@ -167,7 +167,7 @@ diraniso(		/* compute source contribution */
 		} else
 			dtmp = 0.0;
 						/* gaussian */
-		dtmp = exp(-dtmp) / (PI * np->pdot * sqrt(au2*av2));
+		dtmp = exp(-dtmp) * (1.0/PI) * sqrt(-ldot/(np->pdot*au2*av2));
 						/* worth using? */
 		if (dtmp > FTINY) {
 			copycolor(ctmp, np->mcolor);
