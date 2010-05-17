@@ -136,6 +136,12 @@ main(
 				}
 				break;
 			case 'p':		/* pixel aspect ratio? */
+				if (argv[i][2] == 'm') {
+					fprintf(stderr, "%s: -pm unsupported\n",
+						argv[0]);
+					++i;
+					continue;
+				}
 				if (argv[i][2] != 'a' || argv[i][3])
 					break;
 				pixaspect = atof(argv[++i]);
@@ -144,7 +150,7 @@ main(
 				if (argv[i][2])
 					break;
 				timelim = atof(argv[++i])*3600. + .5;
-				break;
+				continue;
 			case 'x':		/* overall x resolution */
 				if (argv[i][2])
 					break;
