@@ -1361,7 +1361,7 @@ rpict(				/* run rpict and pfilt for each view */
 				int	xdiv = 8+nprocs/3, ydiv = 8+nprocs/3;
 				rfdt = 0;		/* start fresh */
 				if (!silent)
-					printf("echo %d %d > %s\n",
+					printf("\techo %d %d > %s\n",
 							xdiv, ydiv, sfile);
 				if ((fp = fopen(sfile, "w")) == NULL) {
 					fprintf(stderr, "%s: cannot create\n",
