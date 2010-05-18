@@ -1358,13 +1358,17 @@ rpict(				/* run rpict and pfilt for each view */
 						/* parallel running? */
 		if (do_rpiece) {
 			if (rfdt < oct1date || !fdate(sfile)) {
+				int	xdiv = 8+nprocs/3, ydiv = 8+nprocs/3;
 				rfdt = 0;		/* start fresh */
+				if (!silent)
+					printf("echo %d %d > %s\n",
+							xdiv, ydiv, sfile);
 				if ((fp = fopen(sfile, "w")) == NULL) {
 					fprintf(stderr, "%s: cannot create\n",
 							sfile);
 					quit(1);
 				}
-				fprintf(fp, "%d %d\n", 8+nprocs/3, 8+nprocs/3);
+				fprintf(fp, "%d %d\n", xdiv, ydiv);
 				fclose(fp);
 			}
 		} else if (next_process()) {
