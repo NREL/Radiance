@@ -121,11 +121,3 @@ ray_pclose(		/* close one or more child processes */
 	if ((ray_pnidle -= nsub) < 0)
 		ray_pnidle = 0;
 }
-
-
-void
-quit(ec)			/* make sure exit is called */
-int	ec;
-{
-	exit(ec);
-}

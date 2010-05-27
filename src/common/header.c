@@ -31,6 +31,8 @@ static const char	RCSid[] = "$Id$";
 
 #define	 MAXLINE	2048
 
+extern time_t		timegm(struct tm *tm);
+
 const char  HDRSTR[] = "#?";		/* information header magic number */
 
 const char  FMTSTR[] = "FORMAT=";	/* format identifier */
