@@ -278,6 +278,7 @@ init(			/* set up output file and start rpict */
 		fputs(VIEWSTR, fp);
 		fprintview(&ourview, fp);
 		putc('\n', fp);
+		fputnow(fp);
 		if (pixaspect < .99 || pixaspect > 1.01)
 			fputaspect(pixaspect, fp);
 		fputformat(COLRFMT, fp);
