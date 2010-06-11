@@ -378,14 +378,16 @@ main(int argc, char *argv[])
 	rtargv[rtargc++] = contrib ? RTCONTRIB : RTCOEFF;
 				/* just asking for defaults? */
 	if (!strcmp(argv[i], "-defaults")) {
-		char	sxres[16], syres[16];
+		char	nps[8], sxres[16], syres[16];
 		char	*rtpath;
-		printf("-n %-2d\t\t\t\t# number of processes\n", nprocs);
 		printf("-c %-5d\t\t\t# accumulated rays per record\n",
 				accumulate);
 		printf("-V%c\t\t\t\t# output %s\n", contrib ? '+' : '-',
 				contrib ? "contributions" : "coefficients");
 		fflush(stdout);			/* report OUR options */
+		rtargv[rtargc++] = "-n";
+		sprintf(nps, "%d", nprocs);
+		rtargv[rtargc++] = nps;
 		rtargv[rtargc++] = header ? "-h+" : "-h-";
 		sprintf(fmt, "-f%c%c", inpfmt, outfmt);
 		rtargv[rtargc++] = fmt;
