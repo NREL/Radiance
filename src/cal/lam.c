@@ -53,8 +53,14 @@ char	*argv[];
 				case 'd':
 					curbytes = sizeof(double);
 					break;
-				case 'w':
+				case 'i':
 					curbytes = sizeof(int);
+					break;
+				case 'w':
+					curbytes = 2;
+					break;
+				case 'b':
+					curbytes = 1;
 					break;
 				case 'a':
 					curbytes = argv[i][3] ? 1 : 0;
