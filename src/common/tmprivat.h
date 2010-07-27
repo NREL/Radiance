@@ -32,7 +32,7 @@ extern "C" {
 
 #define BRT2SCALE(l2)	(int)(M_LN2*TM_BRTSCALE*(l2) + ((l2)>0 ? .5 : -.5))
 
-#define HISTEP		8		/* steps in BRTSCALE for each bin */
+#define HISTEP		32		/* steps in BRTSCALE for each bin */
 
 #define MINBRT		(-16*TM_BRTSCALE)	/* minimum usable brightness */
 #define MINLUM		(1.125352e-7)		/* tmLuminance(MINBRT) */
@@ -44,6 +44,7 @@ extern "C" {
 #define	LMESUPPER	(5.62)			/* upper mesopic limit */
 #define BMESLOWER	((int)(-5.18*TM_BRTSCALE-.5))
 #define BMESUPPER	((int)(1.73*TM_BRTSCALE+.5))
+
 						/* approximate scotopic lum. */
 #define	SCO_rf		0.062
 #define SCO_gf		0.608
