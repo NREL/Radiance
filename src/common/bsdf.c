@@ -308,7 +308,7 @@ load_bsdf_data(		/* load BSDF distribution for this wavelength */
 		sdata++;
 	if (*sdata) {
 		sprintf(errmsg, "%d extra characters after BSDF ScatteringData",
-				strlen(sdata));
+				(int)strlen(sdata));
 		error(WARNING, errmsg);
 	}
 }
