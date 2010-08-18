@@ -51,7 +51,7 @@ extern "C" {
 
 /****    Conversion Constants and Table Sizes    ****/
 
-#define	TM_BRTSCALE	512		/* brightness scale factor (integer) */
+#define	TM_BRTSCALE	256		/* brightness scale factor (integer) */
 
 #define TM_NOBRT	(-1<<15)	/* bogus brightness value */
 #define TM_NOLUM	(1e-17)		/* ridiculously small luminance */
