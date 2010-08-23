@@ -125,6 +125,7 @@ $(DESTDIR)/lookamb:	lookamb.o ambio.o
 	$(CC) $(CFLAGS) -o $(DESTDIR)/lookamb lookamb.o ambio.o $(LIBS)
 
 $(RLIB):	$(ROBJS) Version.o
+	rm -f $(RLIB)
 	ar rc $(RLIB) $(ROBJS) Version.o
 	-ranlib $(RLIB)
 
