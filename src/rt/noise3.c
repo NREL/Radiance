@@ -39,9 +39,6 @@ static char  noise_name[4][8] = {"noise3x", "noise3y", "noise3z", "noise3"};
 static char  fnoise_name[] = "fnoise3";
 static char  hermite_name[] = "hermite";
 
-//double  *noise3(), fnoise3(), frand();
-//static  interpolate();
-
 static long  xlim[3][2];
 static double  xarg[3];
 
