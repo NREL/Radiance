@@ -87,8 +87,6 @@ char  *progname;
 static gethfunc headline;
 static brightfunc_t rgb_bright;
 static brightfunc_t xyz_bright;
-//static double rgb_bright(COLOR  clr);
-//static double xyz_bright(COLOR  clr);
 static void copyfile(FILE  *in, FILE  *out);
 static void pass1(FILE  *in);
 static void pass2(FILE  *in);
