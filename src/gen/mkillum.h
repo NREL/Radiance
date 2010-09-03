@@ -53,6 +53,9 @@ extern void rayclean(void);
 extern void flatdir(FVECT  dv, double  alt, double  azi);
 extern int flatindex(FVECT dv, int nalt, int nazi);
 
+extern int printgeom(struct BSDF_data *sd, char *xfrot,
+			FVECT ctr, double s1, double s2);
+
 extern int my_default(OBJREC *, struct illum_args *, char *);
 extern int my_face(OBJREC *, struct illum_args *, char *);
 extern int my_sphere(OBJREC *, struct illum_args *, char *);

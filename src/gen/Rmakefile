@@ -110,7 +110,7 @@ mkillum.o mkillum2.o mkillum3.o:	mkillum.h ../common/bsdf.h \
 
 mkillum2.o:	../rt/source.h ../common/face.h ../common/cone.h
 
-mkillum3.o:	../common/paths.h
+mkillum2.o mkillum3.o:	../common/paths.h
 
 gensky.o:	../common/color.h
 
