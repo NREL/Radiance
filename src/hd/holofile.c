@@ -246,7 +246,8 @@ hdinit(	/* initialize a holodeck section in a file */
 		}
 	if (rtrunc) {
 		sprintf(errmsg, "truncated section, %ld rays lost (%.1f%%)",
-				rtrunc, 100.*rtrunc/(rtrunc+biglob(hp)->nrd));
+				(long)rtrunc,
+				100.*rtrunc/(rtrunc+biglob(hp)->nrd));
 		error(WARNING, errmsg);
 	}
 					/* add to holodeck list */

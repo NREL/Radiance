@@ -55,7 +55,7 @@ typedef struct {
 
 typedef struct {
 	uint32	nrm;		/* number of beam rays bundled in memory */
-	unsigned long	tick;	/* clock tick for LRU replacement */
+	uint32	tick;		/* clock tick for LRU replacement */
 } BEAM;			/* followed by nrm RAYVAL's */
 
 #define hdbray(bp)	((RAYVAL *)((bp)+1))
@@ -132,7 +132,7 @@ extern int	hdwg1[6];		/* wall grid 1 index */
 
 #define HOLOFMT		"Holodeck"	/* file format identifier */
 #define HOLOVERS	0		/* file format version number */
-#define HOLOMAGIC	(323+sizeof(off_t)+8*HOLOVERS)	/* file magic number */
+#define HOLOMAGIC	(323+sizeof(BEAMI)+16*HOLOVERS)	/* file magic number */
 
 /*
  * A holodeck file consists of an information header terminated by a
