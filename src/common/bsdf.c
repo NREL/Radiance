@@ -376,7 +376,7 @@ check_bsdf_data(	/* check that BSDF data is sane */
 )
 {
 	double		*omega_iarr, *omega_oarr;
-	double		dom, contrib, hemi_total;
+	double		dom, contrib, hemi_total, full_total;
 	int		nneg;
 	FVECT		v;
 	int		i, o;
@@ -456,7 +456,7 @@ check_bsdf_data(	/* check that BSDF data is sane */
 		sprintf(errmsg, "%d negative BSDF values (ignored)", nneg);
 		error(WARNING, errmsg);
 	}
-					/* reverse roles and check again */
+	full_total = .0;		/* reverse roles and check again */
 	for (o = 0; o < dp->nout; o++) {
 		hemi_total = .0;
 		for (i = dp->ninc; i--; )
@@ -468,6 +468,13 @@ check_bsdf_data(	/* check that BSDF data is sane */
 					o, 100.*hemi_total);
 			error(WARNING, errmsg);
 		}
+		full_total += hemi_total*omega_oarr[o];
+	}
+	full_total /= PI;
+	if (full_total > 1.02) {
+		sprintf(errmsg, "BSDF transfers %.1f%% of light",
+				100.*full_total);
+		error(WARNING, errmsg);
 	}
 	free(omega_iarr); free(omega_oarr);
 	return(1);
