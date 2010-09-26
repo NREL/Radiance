@@ -237,6 +237,11 @@ extern char	*formstr(int  f);
 extern void	rview(void);
 extern void	rpict(int seq, char *pout, char *zout, char *prvr);
 
+#ifdef __FAST_MATH__
+#define	checknorm(vn)	normalize(vn)
+#else
+#define checknorm(vn)	1.0
+#endif
 
 #ifdef __cplusplus
 }

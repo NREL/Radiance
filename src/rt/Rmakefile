@@ -130,6 +130,7 @@ $(RLIB):	$(ROBJS) Version.o
 	-ranlib $(RLIB)
 
 $(RCLIB):	$(RLOBJS)
+	rm -f $(RCLIB)
 	ar rc $(RCLIB) $(RLOBJS)
 	-ranlib $(RCLIB)
 

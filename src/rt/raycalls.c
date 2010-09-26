@@ -215,7 +215,7 @@ ray_done(		/* free ray-tracing data */
 	}
 	if (nobjects > 0) {
 		sprintf(errmsg, "%ld objects left after call to ray_done()",
-				nobjects);
+				(long)nobjects);
 		error(WARNING, errmsg);
 	}
 }

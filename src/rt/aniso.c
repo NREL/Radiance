@@ -214,7 +214,7 @@ m_aniso(			/* shade ray that hit something anisotropic */
 	nd.specfl = 0;
 	nd.u_alpha = m->oargs.farg[4];
 	nd.v_alpha = m->oargs.farg[5];
-	if (nd.u_alpha < FTINY || nd.v_alpha <= FTINY)
+	if (nd.u_alpha <= FTINY || nd.v_alpha <= FTINY)
 		objerror(m, USER, "roughness too small");
 
 	nd.pdot = raynormal(nd.pnorm, r);	/* perturb normal */
@@ -380,6 +380,7 @@ agaussamp(		/* sample anisotropic gaussian specular */
 			for (i = 0; i < 3; i++)
 				sr.rdir[i] = r->rdir[i] + d*h[i];
 			if (DOT(sr.rdir, r->ron) > FTINY) {
+				checknorm(sr.rdir);
 				rayvalue(&sr);
 				multcolor(sr.rcol, sr.rcoef);
 				addcolor(r->rcol, sr.rcol);

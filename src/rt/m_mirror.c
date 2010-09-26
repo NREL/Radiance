@@ -89,6 +89,7 @@ m_mirror(			/* shade mirrored ray */
 			for (i = 0; i < 3; i++)
 				nr.rdir[i] = r->rdir[i] + 2.*r->rod*r->ron[i];
 	}
+	checknorm(nr.rdir);
 	rayvalue(&nr);
 	multcolor(nr.rcol, nr.rcoef);
 	addcolor(r->rcol, nr.rcol);

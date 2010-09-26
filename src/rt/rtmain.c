@@ -252,7 +252,7 @@ main(int  argc, char  *argv[])
 	if (nproc > 1) {
 		if (persist)
 			error(USER, "multiprocessing incompatible with persist file");
-		if (hresolu > 0 && hresolu < nproc)
+		if (!vresolu && hresolu > 0 && hresolu < nproc)
 			error(WARNING, "number of cores should not exceed horizontal resolution");
 		if (trace != NULL)
 			error(WARNING, "multiprocessing does not work properly with trace mode");
@@ -459,7 +459,8 @@ printdefaults(void)			/* print default values to stdout */
 	if (imm_irrad)
 		printf("-I+\t\t\t\t# immediate irradiance on\n");
 	printf("-n %-2d\t\t\t\t# number of rendering processes\n", nproc);
-	printf("-x %-9d\t\t\t# x resolution (flush interval)\n", hresolu);
+	printf("-x %-9d\t\t\t# %s\n", hresolu,
+			vresolu && hresolu ? "x resolution" : "flush interval");
 	printf("-y %-9d\t\t\t# y resolution\n", vresolu);
 	printf(lim_dist ? "-ld+\t\t\t\t# limit distance on\n" :
 			"-ld-\t\t\t\t# limit distance off\n");

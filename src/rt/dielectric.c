@@ -180,7 +180,8 @@ m_dielectric(	/* color a ray which hit a dielectric interface */
 					p.rdir[i] = nratio*r->rdir[i] +
 							d1*r->ron[i];
 				normalize(p.rdir);	/* not exact */
-			}
+			} else
+				checknorm(p.rdir);
 #ifdef  DISPERSE
 			if (m->otype != MAT_DIELECTRIC
 					|| r->rod > 0.0
@@ -218,7 +219,7 @@ m_dielectric(	/* color a ray which hit a dielectric interface */
 		if (hastexture && DOT(p.rdir,r->ron)*hastexture <= FTINY)
 			for (i = 0; i < 3; i++)		/* ignore texture */
 				p.rdir[i] = r->rdir[i] + 2.0*r->rod*r->ron[i];
-
+		checknorm(p.rdir);
 		rayvalue(&p);			/* reflected ray value */
 
 		multcolor(p.rcol, p.rcoef);	/* color contribution */

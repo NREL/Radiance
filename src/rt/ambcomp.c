@@ -94,6 +94,7 @@ divsample(				/* sample a division */
 		ar.rdir[i] =	xd*h->ux[i] +
 				yd*h->uy[i] +
 				zd*h->uz[i];
+	checknorm(ar.rdir);
 	dimlist[ndims++] = dp->t*h->np + dp->p + 90171;
 	rayvalue(&ar);
 	ndims--;

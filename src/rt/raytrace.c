@@ -512,8 +512,10 @@ localhit(		/* check for hit in the octree */
 		else if (r->rdir[i] < -1e-7)
 			sflags |= 0x10 << i;
 	}
-	if (sflags == 0)
-		error(CONSISTENCY, "zero ray direction in localhit");
+	if (!sflags) {
+		error(WARNING, "zero ray direction in localhit");
+		return(0);
+	}
 					/* start off assuming nothing hit */
 	if (r->rmax > FTINY) {		/* except aft plane if one */
 		r->ro = &Aftplane;

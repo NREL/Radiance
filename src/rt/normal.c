@@ -156,7 +156,7 @@ dirnorm(		/* compute source contribution */
 						/* roughness + source */
 		dtmp = np->alpha2 + omega*(1.0/PI);
 						/* gaussian */
-		 dtmp = exp((2.*DOT(np->prdir,ldir)-2.)/dtmp)/(PI*dtmp);
+		dtmp = exp((2.*DOT(np->prdir,ldir)-2.)/dtmp)/(PI*dtmp);
 						/* worth using? */
 		if (dtmp > FTINY) {
 			copycolor(ctmp, np->mcolor);
@@ -299,6 +299,7 @@ m_normal(			/* color a ray that hit something normal */
 		if (hastexture && DOT(nd.vrefl, r->ron) <= FTINY)
 			for (i = 0; i < 3; i++)		/* safety measure */
 				nd.vrefl[i] = r->rdir[i] + 2.*r->rod*r->ron[i];
+		checknorm(nd.vrefl);
 	}
 						/* reflected ray */
 	if ((nd.specfl&(SP_REFL|SP_PURE|SP_RBLT)) == (SP_REFL|SP_PURE)) {
