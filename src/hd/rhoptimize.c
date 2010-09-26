@@ -40,7 +40,7 @@ main(
 {
 	char	*inpname, *outname;
 	int	hdfd[2];
-	long	nextipos, lastopos, thisopos;
+	int32	nextipos, lastopos, thisopos;
 
 	progname = argv[0];
 	argv++; argc--;			/* duplicate checking flag? */

@@ -134,7 +134,7 @@ openholo(		/* open existing holodeck file for i/o */
 	FILE	*fp;
 	int	fd;
 	int	hflags = 0;
-	long	nextloc;
+	int32	nextloc;
 	int	n;
 					/* open holodeck file */
 	if ((fp = fopen(fname, append ? "r+" : "r")) == NULL) {
