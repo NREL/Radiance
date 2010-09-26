@@ -82,7 +82,7 @@ if ($#ARGV >= 0) {
 	push @vopts, ("-vp", $bcube[0]+$bcube[3]/2-$width/2*$vd[0],
 			$bcube[1]+$bcube[3]/2-$width/2*$vd[1],
 			$bcube[2]+$bcube[3]/2-$width/2*$vd[2]);
-	push @vopts, ("-vh", $width, "-vh", $height);
+	push @vopts, ("-vh", $width, "-vv", $height);
 	$vwset = `vwright @vopts V`;
 	$sca = sqrt($nsamp/($width*$height));
 	my $xres;
@@ -99,7 +99,7 @@ if ($#ARGV >= 0) {
 				q{-e 'nOK=sq(Vdx*$5+Vdy*$6+Vdz*$7)-.999' } .
 				"-if7 -of > $td/origins.flt";
 		$ntot = -s "$td/origins.flt";
-		$ntot /= 3*4;
+		$ntot /= 3*4;		# number of bytes per sample position
 		if ($ntot == 0) {
 			if ($nsamp < 200) {
 				$sca = sqrt(200/($width*$height));
