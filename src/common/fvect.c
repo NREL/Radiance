@@ -119,12 +119,14 @@ FVECT  v
 	if (d == 0.0)
 		return(0.0);
 	
-	if (d <= 1.0+FTINY && d >= 1.0-FTINY)
+	if (d <= 1.0+FTINY && d >= 1.0-FTINY) {
 		len = 0.5 + 0.5*d;	/* first order approximation */
-	else
+		d = 2.0 - len;
+	} else {
 		len = sqrt(d);
-
-	v[0] *= d = 1.0/len;
+		d = 1.0/len;
+	}
+	v[0] *= d;
 	v[1] *= d;
 	v[2] *= d;
 
