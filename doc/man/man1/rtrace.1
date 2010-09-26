@@ -199,7 +199,12 @@ Set the x resolution to
 .I res.
 The output will be flushed after every
 .I res
-input rays.
+input rays if
+.I \-y
+is set to zero.
+A value of one means that every ray will be flushed, whatever
+the setting of
+.I \-y.
 A value of zero means that no output flushing will take place.
 .TP
 .BI -y \ res
