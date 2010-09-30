@@ -11,6 +11,10 @@ static const char	RCSid[] = "$Id$";
 #define NFRAG2CHUNK	4096	/* number of fragments to start chunking */
 #endif
 
+#ifndef MAXADISK
+#define MAXADISK	10240.	/* maximum holodeck size (Megs) for ambient */
+#endif
+
 #ifndef abs
 #define abs(x)		((x) > 0 ? (x) : -(x))
 #endif
@@ -283,6 +287,7 @@ ambient_list(void)			/* compute ambient beam list */
 					/* compute beam weights */
 	k = 0; wtotal = 0;
 	for (j = 0; hdlist[j] != NULL; j++) {
+					/* 512. arbitrary -- adjusted below */
 		frac = 512. * VLEN(hdlist[j]->wg[0]) *
 				VLEN(hdlist[j]->wg[1]) *
 				VLEN(hdlist[j]->wg[2]);
@@ -298,7 +303,7 @@ ambient_list(void)			/* compute ambient beam list */
 	if (vdef(DISKSPACE))
 		frac = 1024.*1024.*vflt(DISKSPACE) / (wtotal*sizeof(RAYVAL));
 	else
-		frac = 1024.*1024.*2048. / (wtotal*sizeof(RAYVAL));
+		frac = 1024.*1024.*MAXADISK / (wtotal*sizeof(RAYVAL));
 	minrt = .02*frac*wtotal/complen + .5;	/* heuristic mimimum */
 	if (minrt > RPACKSIZ)
 		minrt = RPACKSIZ;
