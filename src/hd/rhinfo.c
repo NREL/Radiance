@@ -49,8 +49,7 @@ gethdinfo(		/* get information on holodeck */
 	FILE	*fp;
 	HOLO	*hdsect;
 	int	fd;
-	int32	nextloc;
-	off_t	fsiz;
+	off_t	nextloc, fsiz;
 	int	n;
 					/* open holodeck file */
 	if ((fp = fopen(fname, "r")) == NULL) {
@@ -65,8 +64,8 @@ gethdinfo(		/* get information on holodeck */
 	fd = dup(fileno(fp));			/* dup file handle */
 	nextloc = ftell(fp);			/* get stdio position */
 	fclose(fp);				/* done with stdio */
-	for (n = 0; nextloc > 0L; n++) {	/* get the section(s) */
-		lseek(fd, (off_t)nextloc, SEEK_SET);
+	for (n = 0; nextloc > 0; n++) {		/* get the section(s) */
+		lseek(fd, nextloc, SEEK_SET);
 		read(fd, (char *)&nextloc, sizeof(nextloc));
 		fprintf(fout, "Section %d:\n", n);
 		hdsect = hdinit(fd, NULL);	/* load section directory */
