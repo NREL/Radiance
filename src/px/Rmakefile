@@ -26,12 +26,12 @@ ogl:
 
 sun:
 
-install:	$(PROGS) $(SPECIAL) normpat.csh falsecolor.csh \
+install:	$(PROGS) $(SPECIAL) normpat.csh falsecolor.pl \
 pdfblur.csh pmblur.csh pmdblur.csh xyzimage.csh pgblur.csh ra_pfm.csh \
 pbilat.csh
 	cp $(PROGS) $(INSTDIR)
 	cp normpat.csh $(INSTDIR)/normpat
-	cp falsecolor.csh $(INSTDIR)/falsecolor
+	cp falsecolor.pl $(INSTDIR)/falsecolor
 	cp pdfblur.csh $(INSTDIR)/pdfblur
 	cp pmblur.csh $(INSTDIR)/pmblur
 	cp pmdblur.csh $(INSTDIR)/pmdblur
