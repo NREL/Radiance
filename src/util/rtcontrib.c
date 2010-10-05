@@ -21,7 +21,7 @@ static const char RCSid[] = "$Id$";
 #define	MAXMODLIST	1024		/* maximum modifiers we'll track */
 #endif
 
-int	treebufsiz = BUFSIZ;		/* current tree buffer size */
+size_t	treebufsiz = BUFSIZ;		/* current tree buffer size */
 
 typedef double	DCOLOR[3];		/* double-precision color */
 
@@ -93,9 +93,9 @@ struct rtproc {
 	struct rtproc	*next;		/* next in list of processes */
 	SUBPROC		pd;		/* rtrace pipe descriptors */
 	unsigned long	raynum;		/* ray number for this tree */
-	int		bsiz;		/* ray tree buffer length */
+	size_t		bsiz;		/* ray tree buffer length */
 	char		*buf;		/* ray tree buffer */
-	int		nbr;		/* number of bytes from rtrace */
+	size_t		nbr;		/* number of bytes from rtrace */
 };				/* rtrace process buffer */
 
 					/* rtrace command and defaults */
@@ -1078,7 +1078,7 @@ wait_rproc(void)
 {
 	struct rtproc	*rtfree = NULL;
 	fd_set		readset, errset;
-	int		nr;
+	ssize_t		nr;
 	struct rtproc	*rt;
 	int		n;
 	

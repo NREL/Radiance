@@ -37,15 +37,15 @@ typedef struct {
 	COLOR  v;		/* division sum (partial) */
 	float  r;		/* 1/distance sum */
 	float  k;		/* variance for this division */
-	int  n;			/* number of subsamples */
-	short  t, p;		/* theta, phi indices */
+	int    n;		/* number of subsamples */
+	unsigned short  t, p;	/* theta, phi indices */
 }  AMBSAMP;		/* ambient sample division */
 
 typedef struct {
 	FVECT  ux, uy, uz;	/* x, y and z axis directions */
 	COLOR  acoef;		/* division contribution coefficient */
 	int    ns;		/* number of super-samples */
-	short  nt, np;		/* number of theta and phi directions */
+	int    nt, np;		/* number of theta and phi directions */
 }  AMBHEMI;		/* ambient sample hemisphere */
 
 extern double  maxarad;		/* maximum ambient radius */
