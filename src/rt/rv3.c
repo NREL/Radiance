@@ -203,8 +203,6 @@ paint(			/* compute and paint a rectangle */
 			return(0);
 		if (rval < 0)
 			return(-1);
-						/* random color place holder */
-		setcolor(p->v, frandom(), frandom(), frandom());
 						/* get node for returned ray */
 		p = (PNODE *)thisray.rno;
 	}
