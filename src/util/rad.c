@@ -1366,7 +1366,10 @@ rpict(				/* run rpict and pfilt for each view */
 		"%s: partial output not created with rpiece\n", rawfile);
 					quit(1);
 				}
-				rfdt = 0;		/* start fresh */
+				if (rfdt) {	/* start fresh */
+					rmfile(rawfile);
+					rfdt = 0;
+				}
 				if (!silent)
 					printf("\techo %d %d > %s\n",
 							xdiv, ydiv, sfile);
