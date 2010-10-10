@@ -357,7 +357,7 @@ agaussamp(		/* sample anisotropic Gaussian specular */
 		copycolor(scol, np->scolor);
 		ns2go = 1;
 		if (specjitter > 1.5) {	/* multiple samples? */
-			ns2go = specjitter*sr.rweight + .5;
+			ns2go = specjitter*r->rweight + .5;
 			if (sr.rweight <= minweight*ns2go)
 				ns2go = sr.rweight/minweight;
 			if (ns2go > 1) {
@@ -418,7 +418,7 @@ agaussamp(		/* sample anisotropic Gaussian specular */
 			rayorigin(&sr, SPECULAR, r, sr.rcoef) == 0) {
 		ns2go = 1;
 		if (specjitter > 1.5) {	/* multiple samples? */
-			ns2go = specjitter*sr.rweight + .5;
+			ns2go = specjitter*r->rweight + .5;
 			if (sr.rweight <= minweight*ns2go)
 				ns2go = sr.rweight/minweight;
 			if (ns2go > 1) {
