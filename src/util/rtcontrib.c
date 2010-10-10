@@ -957,8 +957,6 @@ put_contrib(const DCOLOR cnt, FILE *fout)
 	default:
 		error(INTERNAL, "botched output format");
 	}
-	if (waitflush < 0 && frandom() < 0.001)
-		fflush(fout);			/* staggers writes */
 }
 
 /* output ray tallies and clear for next accumulation */
