@@ -14,7 +14,6 @@ static const char RCSid[] = "$Id$";
 #include  "color.h"
 #include  "resolu.h"
 #include  "lookup.h"
-#include  "random.h"
 #include  "calcomp.h"
 
 #ifndef	MAXMODLIST
