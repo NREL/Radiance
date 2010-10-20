@@ -716,15 +716,14 @@ traceray(				/* trace a single ray */
 	char  *s
 )
 {
-	char  buf[128];
-	int  x, y;
-	OBJREC	*ino;
-	RAY  thisray;
+	RAY	thisray;
+	char	buf[512];
 
 	thisray.rmax = 0.0;
 
 	if (!sscanvec(s, thisray.rorg) ||
 			!sscanvec(sskip2(s,3), thisray.rdir)) {
+		int  x, y;
 
 		if (dev->getcur == NULL)
 			return;
@@ -751,6 +750,8 @@ traceray(				/* trace a single ray */
 		OBJREC	*mat = NULL;
 		OBJREC	*mod = NULL;
 		char	matspec[256];
+		OBJREC	*ino;
+
 		matspec[0] = '\0';
 		if (thisray.ro->omod != OVOID) {
 			mod = objptr(thisray.ro->omod);
