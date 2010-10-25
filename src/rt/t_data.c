@@ -74,8 +74,7 @@ t_data(			/* interpolate texture data */
 		d = 1.0 / (mf->f->sca * r->rox->f.sca);
 	} else
 		d = 1.0 / mf->f->sca;
-	for (i = 0; i < 3; i++)
-		r->pert[i] += disp[i] * d;
+	VSUM(r->pert, r->pert, disp, d);
 	return(0);
 computerr:
 	objerror(m, WARNING, "compute error");

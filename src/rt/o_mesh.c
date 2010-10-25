@@ -198,8 +198,7 @@ o_mesh(			/* compute ray intersection with a mesh */
 					wt[2]*tv[2].n[i];
 		multv3(r->pert, rcont.pert, curmi->x.f.xfm);
 		if (normalize(r->pert) != 0.0)
-			for (i = 0; i < 3; i++)
-				r->pert[i] -= r->ron[i];
+			VSUB(r->pert, r->pert, r->ron);
 	} else
 		r->pert[0] = r->pert[1] = r->pert[2] = .0;
 
