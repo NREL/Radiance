@@ -76,8 +76,8 @@ extern char  VersionID[];	/* Radiance version ID string */
 extern CUBE	thescene;	/* our scene */
 extern OBJECT	nsceneobjs;	/* number of objects in our scene */
 
-extern unsigned long	raynum;	/* next ray ID */
-extern unsigned long	nrays;	/* total rays traced so far */
+extern RNUMBER	raynum;		/* next ray ID */
+extern RNUMBER	nrays;		/* total rays traced so far */
 
 extern OBJREC  Lamb;		/* a Lambertian surface */
 extern OBJREC  Aftplane;	/* aft clipping object */
