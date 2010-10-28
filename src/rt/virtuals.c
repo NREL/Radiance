@@ -360,7 +360,6 @@ vstestvis(		/* pretest source visibility */
 				sr.rorg[i] = oc[i] + offsdir[i] + d*onorm[i];
 				sr.rdir[i] = -onorm[i];
 			}
-			sr.rmax = 0.0;
 			rayorigin(&sr, PRIMARY, NULL, NULL);
 		} while (!(*ofun[o->otype].funp)(o, &sr));
 					/* check against source */
