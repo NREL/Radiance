@@ -114,7 +114,7 @@ case 1:			# SPARC Station
 	set arch=sun
 	set mach="-I/usr/openwin/include -L/usr/openwin/lib -DNOSTEREO"
 	set opt="-O"
-	set compat="strcmp.o"
+	set compat="strcmp.o timegm.o"
 	breaksw
 case 2:			# Linux
 	set mach="-Dlinux -D_FILE_OFFSET_BITS=64 -L/usr/X11R6/lib -I/usr/include/X11 -DNOSTEREO"
@@ -152,6 +152,8 @@ case 6:			# Other
 	echo -n "Are you using the GNU C compiler [n]? "
 	if ( "$<" =~ [yY]* ) then
 		set extras="CC=gcc"
+	else
+		set compat="$compat timegm.o"
 	endif
 	set arch=other
 	breaksw
