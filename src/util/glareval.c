@@ -10,6 +10,7 @@ static const char	RCSid[] = "$Id$";
 #include <stdlib.h>
 #include <string.h>
 
+#include "platform.h"
 #include "rtprocess.h" /* Windows: must come first because of conflicts */
 #include "glare.h"
 
@@ -319,6 +320,7 @@ open_pict(			/* open picture file */
 		fprintf(stderr, "%s: cannot open\n", fn);
 		exit(1);
 	}
+	SET_FILE_BINARY(pictfp);
 	exposure = 1.0;
 	getheader(pictfp, getexpos, NULL);
 	if (wrongformat || !fscnresolu(&pxsiz, &pysiz, pictfp)) {

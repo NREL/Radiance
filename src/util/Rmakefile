@@ -138,6 +138,8 @@ xglaresrc.o:	../common/view.h
 
 glareval.o xglaresrc.o:	../common/resolu.h
 
+glareval.o:	../common/platform.h ../common/rtprocess.h
+
 rad.o ranimate.o:	../common/vars.h
 
 ranimove1.o ranimove2.o vwrays.o:	../common/random.h
