@@ -15,8 +15,8 @@ static const char	RCSid[] = "$Id$";
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "tmprivat.h"
 #include "tiffio.h"
+#include "tmprivat.h"
 #include "tmaptiff.h"
 
 #define uvflgop(p,uv,op)	((p)->rgbflg[(uv)>>5] op (1L<<((uv)&0x1f)))

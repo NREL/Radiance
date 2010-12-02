@@ -15,11 +15,11 @@ static const char	RCSid[] = "$Id$";
 #include	<math.h>
 #include	<time.h>
 
-#include	"tmprivat.h"
-#include	"resolu.h"
 #ifdef PCOND
 #include	"rtprocess.h"
 #endif
+#include	"tmprivat.h"
+#include	"resolu.h"
 
 #define GAMTSZ	1024
 

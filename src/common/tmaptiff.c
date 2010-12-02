@@ -11,8 +11,8 @@ static const char	RCSid[] = "$Id$";
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "tmprivat.h"
 #include "tiffio.h"
+#include "tmprivat.h"
 #include "tmaptiff.h"
 
 					/* input cases we handle */
