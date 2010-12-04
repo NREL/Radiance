@@ -10,6 +10,7 @@ static const char	RCSid[] = "$Id$";
 #include <time.h>
 #include <string.h>
 
+#include "platform.h"
 #include "tiffio.h"
 #include "color.h"
 #include "tonemap.h"
@@ -184,6 +185,7 @@ openpicture(			/* open/check Radiance picture file */
 					/* else try opening it */
 	if ((fp = fopen(fname, "r")) == NULL)
 		return(NULL);
+	SET_FILE_BINARY(fp);
 					/* allocate struct */
 	if ((pp = (PICTURE *)malloc(sizeof(PICTURE))) == NULL)
 		return(NULL);		/* serious error -- should exit? */
