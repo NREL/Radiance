@@ -620,7 +620,7 @@ FILE	*fp;
 		t2cnt += pp->nj2tris;
 	}
 	fprintf(fp, "Mesh statistics:\n");
-	fprintf(fp, "\t%ld materials\n", ms->nmats);
+	fprintf(fp, "\t%ld materials\n", (long)ms->nmats);
 	fprintf(fp, "\t%d patches (%.2f MBytes)\n", ms->npatches,
 			(ms->npatches*sizeof(MESHPATCH) +
 			vcnt*3*sizeof(uint32) +
