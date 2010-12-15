@@ -97,7 +97,7 @@ gettree()				/* get a pre-ordered octree */
 		default:
 			mesherror(USER, "damaged mesh octree");
 	}
-	return (OCTREE)NULL; /* pro forma return */
+	return (OCTREE)0;	/* pro forma return */
 }
 
 
