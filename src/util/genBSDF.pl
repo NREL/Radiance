@@ -132,7 +132,7 @@ my $cmd = "cnt $ndiv $ny $nx | rcalc -of -e '$tcal' " .
 	"| rtcontrib -h -ff -n $nproc -c $nsamp -e '$kcal' -b kbin -bn $ndiv " .
 	"-m $modnm -w -ab 5 -ad 700 -lw 3e-6 $octree " .
 	"| rcalc -e '$tcal' " .
-	"-e 'mod(n,d):n-floor(n/d)*d' -e 'Kbin=mod(recno-1,$ndiv)' " .
+	"-e 'mod(n,d):n-floor(n/d)*d' -e 'Kbin=mod(recno-.999,$ndiv)' " .
 	q{-if3 -e '$1=(0.265*$1+0.670*$2+0.065*$3)/KprojOmega'};
 my @darr = `$cmd`;
 die "Failure running: $cmd\n" if ( $? );
