@@ -36,6 +36,9 @@ int  original = 0;		/* convert to original values? */
 int  wrongformat = 0;		/* wrong input format? */
 double	gamcor = 1.0;		/* gamma correction */
 
+RGBPRIMP  outprims = stdprims;	/* output primaries for reverse conversion */
+RGBPRIMS  myprims;
+
 int  ord[3] = {RED, GRN, BLU};	/* RGB ordering */
 int  rord[4];			/* reverse ordering */
 
@@ -146,8 +149,22 @@ main(
 			case 'b':		/* brightness values */
 				putprim = argv[i][0] == '-' ? BRIGHT : ALL;
 				break;
-			case 'p':		/* put primary */
+			case 'p':		/* primary controls */
 				switch (argv[i][2]) {
+				/* these two options affect -r conversion */
+				case '\0':
+					myprims[RED][CIEX] = atof(argv[++i]);
+					myprims[RED][CIEY] = atof(argv[++i]);
+					myprims[GRN][CIEX] = atof(argv[++i]);
+					myprims[GRN][CIEY] = atof(argv[++i]);
+					myprims[BLU][CIEX] = atof(argv[++i]);
+					myprims[BLU][CIEY] = atof(argv[++i]);
+					myprims[WHT][CIEX] = atof(argv[++i]);
+					myprims[WHT][CIEY] = atof(argv[++i]);
+					outprims = myprims;
+					break;
+				case 'x': case 'X': outprims = NULL; break;
+				/* the following options affect +r only */
 				case 'r': case 'R': putprim = RED; break;
 				case 'g': case 'G': putprim = GRN; break;
 				case 'b': case 'B': putprim = BLU; break;
@@ -322,7 +339,12 @@ unkopt:
 		printargs(i, argv, stdout);
 		if (expval < .99 || expval > 1.01)
 			fputexpos(expval, stdout);
-		fputformat(COLRFMT, stdout);
+		if (outprims != NULL) {
+			if (outprims != stdprims)
+				fputprims(outprims, stdout);
+			fputformat(COLRFMT, stdout);
+		} else				/* XYZ data */
+			fputformat(CIEFMT, stdout);
 		putchar('\n');
 		fputsresolu(&picres, stdout);	/* always put resolution */
 		valtopix();
