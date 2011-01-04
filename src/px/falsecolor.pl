@@ -249,10 +249,10 @@ if ($legwidth > 20 && $legheight > 40) {
     $legwidth = 0;
     $legheight = 0;
     open(FHscolpic, ">$scolpic");
-    print FHscolpic '\n-Y 1 +X 1\naaa\n';
+    print FHscolpic "\n-Y 1 +X 1\naaa\n";
     close(FHscolpic);
     open(FHslabpic, ">$slabpic");
-    print FHslabpic '\n-Y 1 +X 1\naaa\n';
+    print FHslabpic "\n-Y 1 +X 1\naaa\n";
     close(FHslabpic);
 }
 
