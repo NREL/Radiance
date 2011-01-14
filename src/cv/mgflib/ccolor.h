@@ -50,4 +50,7 @@ extern C_COLOR		c_dfcolor;		/* default color */
 extern void	c_ccvt(C_COLOR *, int);		/* fix color representation */
 extern int	c_isgrey(C_COLOR *);		/* check if color is grey */
 
+#ifdef __cplusplus
+}
+#endif
 #endif	/* _MGF_COLOR_H_ */
