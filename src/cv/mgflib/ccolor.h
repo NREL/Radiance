@@ -25,7 +25,7 @@ extern "C" {
 
 typedef struct {
 	int	clock;		/* incremented each change */
-	char	*client_data;	/* pointer to private client-owned data */
+	void	*client_data;	/* pointer to private client-owned data */
 	short	flags;		/* what's been set and how */
 	short	ssamp[C_CNSS];	/* spectral samples, min wl to max */
 	long	ssum;		/* straight sum of spectral values */

@@ -49,7 +49,7 @@ struct face {
 
 #define newface(n)	(struct face *)malloc(sizeof(struct face) + \
 				((n) > 3 ? (n)-3 : 0)*sizeof(short))
-#define freeface(f)	free((MEM_PTR)f)
+#define freeface(f)	free(f)
 
 #define	TABSTOP		8	/* assumed number of characters per tab */
 #define	SHIFTW		2	/* nesting shift width */
