@@ -40,6 +40,6 @@ kbinE = kbin(-1,0,0, 0,0,1);	{ East bins }
 kbinS = kbin(0,1,0, 0,0,1);	{ South bins }
 kbinW = kbin(1,0,0, 0,0,1);	{ West bins }
 
-kbinU = kbin(0,0,1, 0,1,0);	{ "Up" bins for skylights }
+kbinD = kbin(0,0,-1, 0,1,0);	{ Skylight bins }
 
-Nkbins : kaccum(knaz(0));	{ total number of bins }
+Nkbins : kaccum(knaz(0));	{ Number of bins for one elevation }
