@@ -76,7 +76,7 @@ if ($#ARGV >= 0) {
 	push @vd, $_;
 	$_ = $vwset; s/^.*Vdz://; s/;.*$//;
 	push @vd, $_;
-	my @bcube = split /\s+/, `getinfo -d < $td/surf.oct`;
+	my @bcube = split ' ', `getinfo -d < $td/surf.oct`;
 	$width = $bcube[3]*sqrt(3);
 	$height = $width;
 	push @vopts, ("-vp", $bcube[0]+$bcube[3]/2-$width/2*$vd[0],

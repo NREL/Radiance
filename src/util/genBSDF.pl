@@ -54,8 +54,7 @@ if ( $mgfin ) {
 	system "rad2mgf $radscn > $mgfscn" if ( $geout );
 }
 if ($#dim != 5) {
-	@dim = split /\s+/, `getbbox -h $radscn`;
-	shift @dim;
+	@dim = split ' ', `getbbox -h $radscn`;
 }
 print STDERR "Warning: Device extends into room\n" if ($dim[5] > 1e-5);
 # Add receiver surface (rectangle)
