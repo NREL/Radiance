@@ -31,7 +31,7 @@ while ($#ARGV >= 0) {
 		shift @ARGV;
 	} elsif ("$ARGV[0]" =~ /^-d/) {
 		userror() if ($#ARGV < 6);
-		@dim = "@ARGV[1..6]";
+		@dim = @ARGV[1..6];
 		shift @ARGV for (1..6);
 	} elsif ("$ARGV[0]" =~ /^[-+]./) {
 		userror();
