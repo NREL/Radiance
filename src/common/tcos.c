@@ -9,7 +9,7 @@ static const char	RCSid[] = "$Id$";
  *
  * No interpolation in this version.
  *
- * External symbols declared in standard.h
+ * External symbols declared in rtmath.h
  */
 
 #include "copyright.h"
@@ -22,16 +22,9 @@ static const char	RCSid[] = "$Id$";
 #define NCOSENTRY	256
 #endif
 
-#ifdef M_PI
-#define PI		((double)M_PI)
-#else
-#define PI		3.14159265358979323846
-#endif
-
 
 double
-tcos(x)				/* approximate cosine */
-register double	x;
+tcos(double x)				/* approximate cosine */
 {
 	static double	costab[NCOSENTRY+1];
 	register int	i;
@@ -43,8 +36,8 @@ register double	x;
 	if (x < 0.)
 		x = -x;
 	i = (NCOSENTRY*2./PI) * x  +  0.5;
-	if (i >= 4*NCOSENTRY)
-		i %= 4*NCOSENTRY;
+	while (i >= 4*NCOSENTRY)
+		i -= 4*NCOSENTRY;
 	switch (i / NCOSENTRY) {
 	case 0:
 		return(costab[i]);
