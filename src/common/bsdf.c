@@ -71,7 +71,7 @@ fequal(double a, double b)
 	return((a <= 1e-6) & (a >= -1e-6));
 }
 
-// returns the name of the given tag
+/* Returns the name of the given tag */
 #ifdef ezxml_name
 #undef ezxml_name
 static char *
@@ -83,7 +83,7 @@ ezxml_name(ezxml_t xml)
 }
 #endif
 
-// returns the given tag's character content or empty string if none
+/* Returns the given tag's character content or empty string if none */
 #ifdef ezxml_txt
 #undef ezxml_txt
 static char *
