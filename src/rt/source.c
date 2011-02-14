@@ -167,6 +167,7 @@ freesources(void)			/* free all source structures */
 		source = NULL;
 		nsources = 0;
 	}
+	markclip(NULL);
 	if (maxcntr <= 0)
 		return;
 	free((void *)srccnt);

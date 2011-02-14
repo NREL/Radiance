@@ -335,6 +335,12 @@ markclip(OBJREC *m)
 {
 	OBJECT  *set2add, *oldset;
 
+	if (m == NULL) {		/* starting over */
+		if (antimodlist != NULL)
+			free((void *)antimodlist);
+		antimodlist = NULL;
+		return;
+	}
 	m_clip(m, NULL);		/* initialize modifier list */
 	if ((set2add = (OBJECT *)m->os) == NULL || !set2add[0])
 		return;
