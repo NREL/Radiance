@@ -59,3 +59,6 @@ calc.o ev.o rcalc.o:	../common/calcomp.h
 total.o rcalc.o:	../common/platform.h
 
 rcalc.o:	../common/rterror.h ../common/rtmisc.h ../common/rtio.h
+
+tabfunc.o:	../common/rtmath.h ../common/mat4.h \
+../common/fvect.h ../common/tiff.h
