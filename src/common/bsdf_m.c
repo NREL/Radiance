@@ -1,3 +1,6 @@
+#ifndef lint
+static const char RCSid[] = "$Id$";
+#endif
 /*
  *  bsdf_m.c
  *  

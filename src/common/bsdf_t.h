@@ -1,3 +1,4 @@
+/* RCSid $Id$ */
 /*
  *  bsdf_t.h
  *  
