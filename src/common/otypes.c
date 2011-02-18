@@ -36,7 +36,7 @@ OBJREC  *o;
 int  etyp;
 char  *msg;
 {
-	char  msgbuf[128];
+	char  msgbuf[512];
 
 	sprintf(msgbuf, "%s for %s \"%s\"",
 			msg, ofun[o->otype].funame,
