@@ -18,7 +18,6 @@ static const char	RCSid[] = "$Id$";
 #include "data.h"
 #include "func.h"
 #include "bsdf.h"
-#include "paths.h"
 
 
 /* KEEP THIS ROUTINE CONSISTENT WITH THE DIFFERENT OBJECT FUNCTIONS! */
@@ -106,10 +105,7 @@ load_os(			/* load associated data for object */
 		if (op->oargs.nsargs < 6)
 			goto sargerr;
 		getfunc(op, 5, 0x1d, 1);
-		sd = SDgetCache(op->oargs.sarg[1]);
-		if (sd != NULL && !SDisLoaded(sd))
-			SDloadFile(sd, getpath(op->oargs.sarg[1],
-						getrlibpath(), R_OK));
+		loadBSDF(op->oargs.sarg[1]);
 		return(1);
 	case MAT_PDATA:		/* plastic BRDF data */
 	case MAT_MDATA:		/* metal BRDF data */
