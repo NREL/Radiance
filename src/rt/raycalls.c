@@ -94,6 +94,7 @@ static const char	RCSid[] = "$Id$";
 
 #include  "ray.h"
 #include  "source.h"
+#include  "bsdf.h"
 #include  "ambient.h"
 #include  "otypes.h"
 #include  "random.h"
@@ -207,10 +208,11 @@ ray_done(		/* free ray-tracing data */
 	octdone();
 	thescene.cutree = EMPTY;
 	octname = NULL;
+	retainfonts = 0;
 	if (freall) {
-		retainfonts = 0;
 		freefont(NULL);
 		freedata(NULL);
+		SDfreeCache(NULL);
 		initurand(0);
 	}
 	if (nobjects > 0) {

@@ -12,6 +12,7 @@ static const char	RCSid[] = "$Id$";
 #include "ray.h"
 #include "otypes.h"
 #include "rtotypes.h"
+#include "bsdf.h"
 #include "face.h"
 #include "cone.h"
 #include "instance.h"
@@ -91,4 +92,5 @@ free_objmem(void)			/* free all object cache memory */
 	free_objs(0, nobjects);
 	freedata(NULL);
 	freefont(NULL);
+	SDfreeCache(NULL);
 }

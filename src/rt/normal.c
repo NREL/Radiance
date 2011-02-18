@@ -405,7 +405,7 @@ gaussamp(			/* sample Gaussian specular */
 				nstarget = 1;
 		}
 		setcolor(scol, 0., 0., 0.);
-		dimlist[ndims++] = (int)np->mp;
+		dimlist[ndims++] = (int)(size_t)np->mp;
 		maxiter = MAXITER*nstarget;
 		for (nstaken = ntrials = 0; nstaken < nstarget &&
 						ntrials < maxiter; ntrials++) {
@@ -469,7 +469,7 @@ gaussamp(			/* sample Gaussian specular */
 			} else
 				nstarget = 1;
 		}
-		dimlist[ndims++] = (int)np->mp;
+		dimlist[ndims++] = (int)(size_t)np->mp;
 		maxiter = MAXITER*nstarget;
 		for (nstaken = ntrials = 0; nstaken < nstarget &&
 						ntrials < maxiter; ntrials++) {

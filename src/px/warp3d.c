@@ -365,7 +365,7 @@ free3dw(			/* free WARP3D data */
 
 static unsigned long
 gridhash(			/* hash a grid point index */
-	const void	*gp
+	const char	*gp
 )
 {
 	return(((unsigned long)((const unsigned char*)gp)[0]<<GNBITS | ((const unsigned char*)gp)[1])<<GNBITS | ((const unsigned char*)gp)[2]);
