@@ -218,7 +218,7 @@ cvtri(
 		fop = objptr(fobj);
 		fop->omod = mo;
 		fop->otype = OBJ_FACE;
-		sprintf(buf, "t%ld", fobj);
+		sprintf(buf, "t%ld", (long)fobj);
 		fop->oname = savqstr(buf);
 		fop->oargs.nfargs = 9;
 		fop->oargs.farg = (RREAL *)malloc(9*sizeof(RREAL));
