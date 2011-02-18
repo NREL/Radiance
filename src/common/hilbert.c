@@ -1,3 +1,6 @@
+#ifndef lint
+static const char RCSid[] = "$Id$";
+#endif
 /* See LICENSE below for information on rights to use, modify and distribute
    this code. */
 
