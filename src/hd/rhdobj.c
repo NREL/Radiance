@@ -34,7 +34,7 @@ void	(*dobj_lightsamp)(COLR clr, FVECT direc, FVECT pos) = NULL;
 #define NALT		11		/* # sampling altitude angles */
 #endif
 #ifndef NAZI
-#define NAZI		((int)(PI/2.*NALT+.5))
+#define NAZI		17
 #endif
 
 typedef struct dlights {
