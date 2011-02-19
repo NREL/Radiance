@@ -40,10 +40,9 @@ extern "C" {
 #define	SDsampAll	0xF		/* include everything */
 
 /* Projected solid angle query flags fos SDsizeBSDF() */
-#define	SDqueryInc	0x1		/* query incoming vector */
-#define	SDqueryOut	0x2		/* query outgoing vector */
-#define	SDqueryMin	0x4		/* query minimum proj. solid angle */
-#define	SDqueryMax	0x8		/* query maximum proj. solid angle */
+#define SDqueryVal	0x0		/* query single value */
+#define	SDqueryMin	0x1		/* query minimum proj. solid angle */
+#define	SDqueryMax	0x2		/* query maximum proj. solid angle */
 
 /* Error codes: normal return, out of memory, file i/o, file format, bad argument,
 		 bad data, unsupported feature, internal error, unknown error */
