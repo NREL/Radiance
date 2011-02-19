@@ -914,7 +914,6 @@ initotypes(void)			/* initialize ofun[] array */
 	ofun[MAT_DIELECTRIC].funp = m_dielectric;
 	ofun[MAT_INTERFACE].funp = m_interface;
 	ofun[MAT_MIST].funp = m_mist;
-	ofun[MAT_BSDF].funp = addxform;
 	ofun[PAT_CTEXT].funp =
 	ofun[PAT_BTEXT].funp =
 	ofun[MIX_TEXT].funp = text;
