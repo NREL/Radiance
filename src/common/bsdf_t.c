@@ -150,7 +150,7 @@ SDavgBox(const SDNode *st, const double *bmin, const double *bmax)
 
 /* Load a variable-resolution BSDF tree from an open XML file */
 SDError
-SDloadTre(SDData *sd, ezxml_t fl)
+SDloadTre(SDData *sd, ezxml_t wtl)
 {
 	return SDEsupport;
 }

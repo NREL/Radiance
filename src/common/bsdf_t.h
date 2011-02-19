@@ -28,7 +28,7 @@ typedef struct SDNode_s {
 } SDNode;
 
 /* Load a variable-resolution BSDF tree from an open XML file */
-extern SDError		SDloadTre(SDData *sd, ezxml_t fl);
+extern SDError		SDloadTre(SDData *sd, ezxml_t wtl);
 
 /* Our matrix handling routines */
 extern const SDFunc	SDhandleTre;

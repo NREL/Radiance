@@ -54,7 +54,7 @@ typedef struct {
 } SDMatCDst;	
 
 /* Load a set of BSDF matrices from an open XML file */
-extern SDError		SDloadMtx(SDData *sd, ezxml_t fl);
+extern SDError		SDloadMtx(SDData *sd, ezxml_t wtl);
 
 /* Our matrix handling routines */
 extern SDFunc		SDhandleMtx;
