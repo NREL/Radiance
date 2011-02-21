@@ -9,6 +9,11 @@
  *	in the surface plane pointed to the right as seen from the front.
  *	This means the Y-axis is "up" and the Z-axis is the surface normal.
  *
+ *  Note that we reverse the identification of "front" and "back" from
+ *	the conventions used in WINDOW 6.  "Front" in our library points
+ *	in the +Z direction, towards the interior of the space rather
+ *	than the exterior.
+ *
  *  BSDF vectors always oriented away from surface, even when "incident."
  *
  *  Created by Greg Ward on 1/10/11.
