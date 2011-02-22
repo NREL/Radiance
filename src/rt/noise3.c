@@ -10,9 +10,7 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
-#include  <math.h>
-
-#include  "calcomp.h"
+#include  "ray.h"
 #include  "func.h"
 
 #define  A		0

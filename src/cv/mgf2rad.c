@@ -11,7 +11,7 @@ static const char	RCSid[] = "$Id$";
 #include <string.h>
 
 #include "platform.h"
-#include "mgflib/parser.h"
+#include "mgf_parser.h"
 #include "color.h"
 #include "tmesh.h"
 

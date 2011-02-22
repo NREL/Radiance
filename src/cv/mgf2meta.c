@@ -12,7 +12,7 @@ static const char	RCSid[] = "$Id$";
 
 #include "meta.h"
 #include "random.h"
-#include "mgflib/parser.h"
+#include "mgf_parser.h"
 #include "plocate.h" /* XXX shouldn't this rather be in rtmath.h? */
 
 #define MSIZE	((1<<14)-1)
