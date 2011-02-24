@@ -7,7 +7,7 @@
 #
 use strict;
 sub userror {
-	print STDERR "Usage: genBSDF [-n Nproc][-c Nsamp][-dim xmin xmax ymin ymax zmin zmax][{+|-}f][{+|-}b][{+|-}mgf][{+|-}geom] [input ..]\n";
+	print STDERR "Usage: genBSDF [-n Nproc][-c Nsamp][-r \"ropts\"][-dim xmin xmax ymin ymax zmin zmax][{+|-}f][{+|-}b][{+|-}mgf][{+|-}geom] [input ..]\n";
 	exit 1;
 }
 my $td = `mktemp -d /tmp/genBSDF.XXXXXX`;
