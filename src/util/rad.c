@@ -772,7 +772,7 @@ lowqopts(			/* low quality rendering options */
 	d = ambval();
 	sprintf(op, " -av %.2g %.2g %.2g", d, d, d);
 	op += strlen(op);
-	op = addarg(op, "-lr 6 -lw .01");
+	op = addarg(op, "-lr 6 -lw .003");
 }
 
 
@@ -850,7 +850,7 @@ medqopts(			/* medium quality rendering options */
 	d = ambval();
 	sprintf(op, " -av %.2g %.2g %.2g", d, d, d);
 	op += strlen(op);
-	op = addarg(op, "-lr 8 -lw .002");
+	op = addarg(op, "-lr 8 -lw 1e-4");
 }
 
 
@@ -926,7 +926,7 @@ hiqopts(				/* high quality rendering options */
 	d = ambval();
 	sprintf(op, " -av %.2g %.2g %.2g", d, d, d);
 	op += strlen(op);
-	op = addarg(op, "-lr 12 -lw .0005");
+	op = addarg(op, "-lr 12 -lw 1e-5");
 }
 
 
