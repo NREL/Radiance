@@ -30,7 +30,7 @@ extern "C" {
 #define	MINLDMAX	1.
 #define	DEFLDMAX	100.
 
-#define BRT2SCALE(l2)	(int)(M_LN2*TM_BRTSCALE*(l2) + ((l2)>0 ? .5 : -.5))
+#define BRT2SCALE(l2)	(int)(M_LN2*TM_BRTSCALE*(l2) + .5 - ((l2) < 0))
 
 #define HISTEP		16		/* steps in BRTSCALE for each bin */
 

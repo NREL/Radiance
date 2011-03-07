@@ -180,9 +180,7 @@ double	lum
 #endif
 		return(TM_NOBRT);
 	d = TM_BRTSCALE*log(lum);
-	if (d > 0.)
-		return((TMbright)(d+.5));
-	return((TMbright)(d-.5));
+	return((TMbright)(d + .5 - (d < 0.)));
 }
 
 

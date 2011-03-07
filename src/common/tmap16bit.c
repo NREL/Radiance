@@ -235,7 +235,7 @@ tmCvRGB48(TMstruct *tms, TMbright *ls, BYTE *cs,
 						((1L<<LOGTABBITS)-1) ];
 			d -= M_LN2*(gv*nshft + nshft2);
 			d = (double)TM_BRTSCALE*(d + log_inpsf);
-			bi = (int)(d>0. ? d+.5 : d-.5);
+			bi = (int)(d + .5 - (d < 0.));
 		}
 							/* world luminance */
 		ls[i] = bi;
