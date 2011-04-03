@@ -350,6 +350,9 @@ sum_images(const char *fspec, const CMATRIX *cv, FILE *fout)
 		FILE		*fp;
 		int		dt, xr, yr;
 		COLORV		*psp;
+							/* check for zero */
+		if ((scv[RED] == .0) & (scv[GRN] == .0) & (scv[BLU] == .0))
+			continue;
 							/* open next picture */
 		sprintf(fname, fspec, i);
 		if ((fp = fopen(fname, "r")) == NULL) {
