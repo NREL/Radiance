@@ -107,8 +107,8 @@ int  rtargc = 9;
 char		*myrtopts[] = { "-h-", "-x", "1", "-y", "0",
 				"-dt", "0", "-as", "0", "-aa", "0", NULL };
 
-#define	RTCOEFF		"-o~~TmWdp"	/* compute coefficients only */
-#define RTCONTRIB	"-o~~TmVdp"	/* compute ray contributions */
+#define	RTCOEFF		"-o~~~~TmWdp"	/* compute coefficients only */
+#define RTCONTRIB	"-o~~~~TmVdp"	/* compute ray contributions */
 
 struct rtproc	rt0;			/* head of rtrace process list */
 
@@ -1120,9 +1120,9 @@ wait_rproc(void)
 			if (nr <= 0)
 				error(USER, "rtrace process died");
 			rt->nbr += nr;		/* advance & check */
-			if (rt->nbr >= 4 && !memcmp(rt->buf+rt->nbr-4,
-							"~\t~\t", 4)) {
-				rt->nbr -= 4;	/* elide terminator */
+			if (rt->nbr >= 8 && !memcmp(rt->buf+rt->nbr-8,
+							"~\t~\t~\t~\t", 8)) {
+				rt->nbr -= 8;	/* elide terminator */
 				queue_raytree(rt);
 				rtfree = rt;	/* ready for next ray */
 			}
