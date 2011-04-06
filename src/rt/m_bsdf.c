@@ -50,7 +50,7 @@ static const char RCSid[] = "$Id$";
  *  Arguments for MAT_BSDF are:
  *	6+	thick	BSDFfile	ux uy uz	funcfile	transform
  *	0
- *	0|3|9	rdf	gdf	bdf
+ *	0|3|6|9	rdf	gdf	bdf
  *		rdb	gdb	bdb
  *		rdt	gdt	bdt
  */

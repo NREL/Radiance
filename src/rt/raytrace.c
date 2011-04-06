@@ -361,7 +361,7 @@ raydist(		/* compute (cumulative) ray distance */
 
 extern void
 raycontrib(		/* compute (cumulative) ray contribution */
-	double  rc[3],
+	RREAL  rc[3],
 	const RAY  *r,
 	int  flags
 )
