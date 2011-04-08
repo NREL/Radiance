@@ -25,7 +25,7 @@ static const char RCSid[] = "$Id$";
  * from his, the first two interfaces and the style of some comments are very
  * much derived from his work. */
 
-
+#include <stdlib.h>
 #include "hilbert.h"
 
 /* implementation of the hilbert functions */
@@ -1256,9 +1256,10 @@ int main()
   printf("How many points? ");
   scanf("%d", &n);
   a = (double*) malloc(2*n*sizeof(double));
-  for (i = 0; i < n; ++i)
-    a[2*i] = drand48()-0.5, a[2*i+1] = drand48()-0.5;
-
+  for (i = 0; i < n; ++i) {
+    a[2*i] = rand()*(1./RAND_MAX) - 0.5;
+    a[2*i+1] = rand()*(1./RAND_MAX) - 0.5;
+  }
   qsort(a, n, 2*sizeof(double), cmp);
 
   for (i = 0; i < n; ++i)
