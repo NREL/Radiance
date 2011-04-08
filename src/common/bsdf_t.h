@@ -2,7 +2,9 @@
 /*
  *  bsdf_t.h
  *  
- *  Support for variable-resolution BSDF trees
+ *  Support for variable-resolution BSDF trees.
+ *  Assumes "bsdf.h" already included.
+ *  Include after "ezxml.h" for SDloadTre() declaration.
  *
  *  Created by Greg Ward on 2/2/11.
  *
@@ -27,8 +29,10 @@ typedef struct SDNode_s {
 	} u;			/* subtrees or values (extends struct) */
 } SDNode;
 
+#ifdef _EZXML_H
 /* Load a variable-resolution BSDF tree from an open XML file */
 extern SDError		SDloadTre(SDData *sd, ezxml_t wtl);
+#endif
 
 /* Our matrix handling routines */
 extern const SDFunc	SDhandleTre;
