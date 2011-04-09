@@ -17,7 +17,7 @@ extern "C" {
 #endif
 #define srandom(s)	srand((unsigned)(s))
 
-#define frandom()	(rand()*(1./RAND_MAX))
+#define frandom()	(rand()*(1./(RAND_MAX+.5)))
 
 #else
 #ifdef	BSD

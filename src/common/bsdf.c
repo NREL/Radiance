@@ -451,7 +451,7 @@ SDmultiSamp(double t[], int n, double randX)
 	bitmask_t	ndx, coord[MS_MAXDIM];
 	
 	while (n > MS_MAXDIM)		/* punt for higher dimensions */
-		t[--n] = rand()*(1./RAND_MAX);
+		t[--n] = rand()*(1./(RAND_MAX+.5));
 	nBits = (8*sizeof(bitmask_t) - 1) / n;
 	ndx = randX * (double)((bitmask_t)1 << (nBits*n));
 					/* get coordinate on Hilbert curve */
@@ -459,7 +459,7 @@ SDmultiSamp(double t[], int n, double randX)
 					/* convert back to [0,1) range */
 	scale = 1. / (double)((bitmask_t)1 << nBits);
 	while (n--)
-		t[n] = scale * ((double)coord[n] + rand()*(1./RAND_MAX));
+		t[n] = scale * ((double)coord[n] + rand()*(1./(RAND_MAX+.5)));
 }
 
 #undef MS_MAXDIM
