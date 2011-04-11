@@ -154,8 +154,8 @@ extern SDSpectralDF	*SDnewSpectralDF(int nc);
 /* Free a spectral distribution function */
 extern void		SDfreeSpectralDF(SDSpectralDF *df);
 
-/* Initialize an unused BSDF struct (clears to zeroes) */
-extern void		SDclearBSDF(SDData *sd);
+/* Initialize an unused BSDF struct and assign name (calls SDclipName) */
+extern void		SDclearBSDF(SDData *sd, const char *fname);
 
 /* Load a BSDF struct from the given file (keeps name unchanged) */
 extern SDError		SDloadFile(SDData *sd, const char *fname);

@@ -269,10 +269,14 @@ SDclipName(char *res, const char *fname)
 
 /* Initialize an unused BSDF struct (simply clears to zeroes) */
 void
-SDclearBSDF(SDData *sd)
+SDclearBSDF(SDData *sd, const char *fname)
 {
-	if (sd != NULL)
-		memset(sd, 0, sizeof(SDData));
+	if (sd == NULL)
+		return;
+	memset(sd, 0, sizeof(SDData));
+	if (fname == NULL)
+		return;
+	SDclipName(sd->name, fname);
 }
 
 /* Free data associated with BSDF struct */
