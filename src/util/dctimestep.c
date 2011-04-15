@@ -300,13 +300,11 @@ cm_bsdf(const COLOR bsdfLamb, const COLOR specCol, const SDMat *bsdf)
 	CMATRIX	*cm = cm_alloc(bsdf->nout, bsdf->ninc);
 	int	nbadohm = 0;
 	int	nneg = 0;
-	float	dom;
-	int	doforward;
 	int	r, c;
 					/* reciprocity is "transparent" */
 	for (c = 0; c < cm->ncols; c++) {
-					/* get projected solid angle */
-		dom = mBSDF_incohm(bsdf,c);
+		const double	dom = mBSDF_incohm(bsdf,c);
+					/* projected solid angle */
 		nbadohm += (dom <= 0);
 
 		for (r = 0; r < cm->nrows; r++) {
