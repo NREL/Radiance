@@ -193,7 +193,9 @@ print "\t\t\t<DeviceType>Integral</DeviceType>\n";
 if ( $geout ) {
 	print "\t\t\t<Geometry format=\"MGF\" unit=\"Meter\">\n";
 	printf "xf -t %.6f %.6f 0\n", -($dim[0]+$dim[1])/2, -($dim[2]+$dim[3])/2;
-	system "cat $mgfscn";
+	open(MGFSCN, "< $mgfscn");
+	while (<MGFSCN>) { print $_; }
+	close MGFSCN;
 	print "xf\n";
 	print "\t\t\t</Geometry>\n";
 }
