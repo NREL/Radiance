@@ -6,11 +6,12 @@
 #	G. Ward
 #
 use strict;
+use File::Temp qw/ :mktemp  /;
 sub userror {
 	print STDERR "Usage: genBSDF [-n Nproc][-c Nsamp][-r \"ropts\"][-dim xmin xmax ymin ymax zmin zmax][{+|-}f][{+|-}b][{+|-}mgf][{+|-}geom] [input ..]\n";
 	exit 1;
 }
-my $td = `mktemp -d /tmp/genBSDF.XXXXXX`;
+my $td = mkdtemp("/tmp/genBSDF.XXXXXX");
 chomp $td;
 my $nsamp = 1000;
 my $rtargs = "-w -ab 5 -ad 700 -lw 3e-6";
@@ -61,7 +62,7 @@ if ( $mgfin ) {
 	die "Could not load MGF input\n" if ( $? );
 	system "mgf2rad $mgfscn > $radscn";
 } else {
-	system "cat @ARGV | xform -e > $radscn";
+	system "xform -e @ARGV > $radscn";
 	die "Could not load Radiance input\n" if ( $? );
 	system "rad2mgf $radscn > $mgfscn" if ( $geout );
 }

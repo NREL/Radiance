@@ -6,11 +6,12 @@
 #	G. Ward
 #
 use strict;
+use File::Temp qw/ :mktemp  /;
 if ($#ARGV < 0) {
 	print STDERR "Usage: genklemsamp [-c N ][-f{a|f|d}] [view opts] [geom.rad ..]\n";
 	exit 1;
 }
-my $td = `mktemp -d /tmp/genklemsamp.XXXXXX`;
+my $td = mkdtemp("/tmp/genklemsamp.XXXXXX");
 chomp $td;
 my $nsamp = 1000;
 my $fmt = "a";
