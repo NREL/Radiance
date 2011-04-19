@@ -165,7 +165,7 @@ spinvector(				/* rotate vector around normal */
 FVECT vres,		/* returned vector */
 const FVECT vorig,		/* original vector */
 const FVECT vnorm,		/* normalized vector for rotation */
-double theta		/* left-hand radians */
+double theta		/* right-hand radians */
 )
 {
 	double  sint, cost, normprod;
