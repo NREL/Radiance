@@ -664,6 +664,10 @@ SDqueryMtxProjSA(double *psa, const FVECT v1, const RREAL *v2,
 					/* get projected solid angles */
 	out_psa = mBSDF_outohm(dp, mBSDF_outndx(dp, v1));
 	inc_psa = mBSDF_incohm(dp, mBSDF_incndx(dp, v2));
+	if ((out_psa <= 0) & (inc_psa <= 0)) {
+		inc_psa = mBSDF_outohm(dp, mBSDF_outndx(dp, v2));
+		out_psa = mBSDF_incohm(dp, mBSDF_incndx(dp, v1));
+	}
 
 	switch (qflags) {		/* record based on flag settings */
 	case SDqueryVal:
