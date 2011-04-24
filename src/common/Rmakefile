@@ -178,7 +178,7 @@ mgf_parser.o:	mgf_mesg.h
 
 bsdf_m.o:	bsdf.h bsdf_m.h
 
-bsdf_t.o:	bsdf.h bsdf_t.h
+bsdf_t.o:	bsdf.h bsdf_t.h hilbert.h
 
 hilbert.o:	hilbert.h
 
