@@ -496,7 +496,7 @@ SDsizeBSDF(double *projSA, const FVECT v1, const RREAL *v2,
 	SDError		ec;
 	int		i;
 					/* check arguments */
-	if ((projSA == NULL) | (v1 == NULL))
+	if ((projSA == NULL) | (v1 == NULL) | (sd == NULL))
 		return SDEargument;
 					/* initialize extrema */
 	switch (qflags) {
@@ -516,11 +516,12 @@ SDsizeBSDF(double *projSA, const FVECT v1, const RREAL *v2,
 		rdf = sd->rf;
 	else
 		rdf = sd->rb;
-	tdf = NULL;			/* transmitted component? */
-	if (v2 != NULL && v1[2] > 0 ^ v2[2] > 0) {
-		rdf = NULL;
-		tdf = sd->tf;
-	}
+	tdf = sd->tf;
+	if (v2 != NULL)			/* bidirectional? */
+		if (v1[2] > 0 ^ v2[2] > 0)
+			rdf = NULL;
+		else
+			tdf = NULL;
 	ec = SDEdata;			/* run through components */
 	for (i = (rdf==NULL) ? 0 : rdf->ncomp; i--; ) {
 		ec = (*rdf->comp[i].func->queryProjSA)(projSA, v1, v2,
