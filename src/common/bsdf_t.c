@@ -975,7 +975,7 @@ subtract_min(SDNode *st)
 	if (vmin <= FTINY)
 		return .0;
 
-	SDsubtractTreMin(st, vmin);
+	SDsubtractTreVal(st, vmin);
 
 	return M_PI * vmin;		/* return hemispherical value */
 }
