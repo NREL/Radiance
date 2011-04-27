@@ -59,7 +59,7 @@ loadBSDF(char *fname)
 	checkDF(sd->name, sd->rLambFront.cieY, sd->rf, "front reflection");
 	checkDF(sd->name, sd->rLambBack.cieY, sd->rb, "rear reflection");
 	checkDF(sd->name, sd->tLamb.cieY, sd->tf, "transmission");
-#if 0
+#if 1
 fprintf(stderr, "Loaded BSDF '%s' (file \"%s\")\n", sd->name, pname);
 fprintf(stderr, "Front diffuse reflectance: %.1f%%\n", sd->rLambFront.cieY*100.);
 fprintf(stderr, "Back diffuse reflectance: %.1f%%\n", sd->rLambBack.cieY*100.);
