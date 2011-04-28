@@ -505,10 +505,6 @@ sscmp(const void *p1, const void *p2)
 	if (h1 < h2)
 		return -1;
 	return 0;
-/*
-	return (int)((*(const struct outdir_s *)p1).hent -
-			(*(const struct outdir_s *)p2).hent);
-*/
 }
 
 /* Create a new cumulative distribution for the given input direction */
@@ -730,10 +726,9 @@ count_values(char *cp)
 	int	n = 0;
 
 	while (next_token(&cp) != '}' && *cp) {
-		if (*cp == '{')
-			return -1;
-		while (*cp && (*cp != ',') & (*cp != '}') & !isspace(*cp))
-			++cp;
+		while (!isspace(*cp) & (*cp != ',') & (*cp != '}'))
+			if (!*++cp)
+				break;
 		++n;
 		eat_token(&cp, ',');
 	}
@@ -778,10 +773,6 @@ load_tree_data(char **spp, int nd)
 	} else {			/* else load value grid */
 		int	bsiz;
 		n = count_values(*spp);	/* see how big the grid is */
-		if (n <= 0) {
-			strcpy(SDerrorDetail, "Bad tensor tree data");
-			return NULL;
-		}
 		for (bsiz = 0; bsiz < 8*sizeof(size_t)-1; bsiz += nd)
 			if (1<<bsiz == n)
 				break;
