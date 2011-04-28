@@ -168,7 +168,6 @@ SDloadFile(SDData *sd, const char *fname)
 		return lastErr;
 				/* try loading variable resolution data */
 	lastErr = SDloadTre(sd, wtl);
-#if 0
 				/* check our result */
 	switch (lastErr) {
 	case SDEformat:
@@ -179,7 +178,6 @@ SDloadFile(SDData *sd, const char *fname)
 	default:		/* variable res. OK else serious error */
 		break;
 	}
-#endif
 				/* done with XML file */
 	ezxml_free(fl);
 	
