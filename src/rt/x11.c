@@ -558,7 +558,7 @@ true_pixel(			/* return true pixel value for color */
 )
 {
 	unsigned long  rval;
-	BYTE  rgb[3];
+	uby8  rgb[3];
 
 	map_color(rgb, col);
 	rval = ourvinfo.red_mask*rgb[RED]/255 & ourvinfo.red_mask;

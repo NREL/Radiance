@@ -59,7 +59,7 @@ extern int	tmNewMap(TMstruct *tms);	/* allocate new tone-mapping */
 extern int	tmErrorReturn(const char *, TMstruct *, int);
 
 						/* lookup for mesopic scaling */
-extern BYTE	tmMesofact[BMESUPPER-BMESLOWER];
+extern uby8	tmMesofact[BMESUPPER-BMESLOWER];
 
 extern void	tmMkMesofact(void);			/* build tmMesofact */
 

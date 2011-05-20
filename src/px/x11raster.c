@@ -61,7 +61,7 @@ make_raster(
 extern int
 init_rcolors(			/* initialize colors */
 	register XRASTER	*xr,
-	BYTE	cmap[][3]
+	uby8	cmap[][3]
 )
 {
 	register unsigned char	*p;

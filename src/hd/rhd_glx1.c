@@ -344,7 +344,7 @@ dev_flush(void)			/* flush output */
 
 extern void
 dev_cone(		/* render a cone in view coordinates */
-	BYTE	rgb[3],
+	uby8	rgb[3],
 	FVECT	ip,
 	double	rad
 )
@@ -484,7 +484,7 @@ draw3dline(			/* draw 3d line in world coordinates */
 static void
 draw_grids(void)			/* draw holodeck section grids */
 {
-	static BYTE	gridrgba[4] = {0x0, 0xff, 0xff, 0x00};
+	static uby8	gridrgba[4] = {0x0, 0xff, 0xff, 0x00};
 	double	xmin, xmax, ymin, ymax, zmin, zmax;
 	double	d;
 					/* can we even do it? */

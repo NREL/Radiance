@@ -39,8 +39,8 @@ extern struct rleaves {
 	float		(*wp)[3];	/* world intersection point array */
 	int32		*wd;		/* world direction array */
 	TMbright	*brt;		/* encoded brightness array */
-	BYTE		(*chr)[3];	/* encoded chrominance array */
-	BYTE		(*rgb)[3];	/* tone-mapped color array */
+	uby8		(*chr)[3];	/* encoded chrominance array */
+	uby8		(*rgb)[3];	/* tone-mapped color array */
 	int		nl;		/* count of leaves in our pile */
 	int		bl, tl;		/* bottom and top (next) leaf index */
 	int		tml;		/* next leaf needing tone-mapping */

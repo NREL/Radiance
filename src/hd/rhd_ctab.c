@@ -43,7 +43,7 @@ static const char	RCSid[] = "$Id$";
 static struct tabent {
 	long	sum[3];		/* sum of colors using this entry */
 	int	n;		/* number of colors */
-	BYTE	ent[3];		/* current table value */
+	uby8	ent[3];		/* current table value */
 }	*clrtab = NULL;
 				/* color cube partition */
 static CNODE	*ctree = NULL;
@@ -90,7 +90,7 @@ new_ctab(		/* start new color table with max ncolors */
 
 extern int
 get_pixel(	/* get pixel for color */
-	BYTE	rgb[3],
+	uby8	rgb[3],
 	void	(*set_pixel)(int h, int r, int g, int b)
 )
 {

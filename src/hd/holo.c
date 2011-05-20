@@ -248,7 +248,7 @@ hdray(	/* compute ray within a beam */
 	FVECT	rd,		/* returned */
 	HOLO	*hp,
 	GCOORD	gc[2],
-	BYTE	r[2][2]
+	uby8	r[2][2]
 )
 {
 	FVECT	cp[4], p[2];
@@ -272,7 +272,7 @@ hdray(	/* compute ray within a beam */
 extern double
 hdinter(	/* compute ray intersection with section */
 	register GCOORD	gc[2],	/* returned */
-	BYTE	r[2][2],	/* returned (optional) */
+	uby8	r[2][2],	/* returned (optional) */
 	double	*ed,		/* returned (optional) */
 	register HOLO	*hp,
 	FVECT	ro,

@@ -2,8 +2,6 @@
 /*
  *  color.h - header for routines using pixel color values.
  *
- *  Must be included after X11 headers, since they declare a BYTE type.
- *
  *  Two color representations are used, one for calculation and
  *  another for storage.  Calculation is done with three floats
  *  for speed.  Stored color values use 4 bytes which contain
@@ -28,10 +26,10 @@ extern "C" {
 #define  COLXS		128	/* excess used for exponent */
 #define  WHT		3	/* used for RGBPRIMS type */
 
-#undef  BYTE
-#define  BYTE 	unsigned char	/* 8-bit unsigned integer */
+#undef uby8
+#define uby8  unsigned char	/* 8-bit unsigned integer */
 
-typedef BYTE  COLR[4];		/* red, green, blue (or X,Y,Z), exponent */
+typedef uby8  COLR[4];		/* red, green, blue (or X,Y,Z), exponent */
 
 typedef float COLORV;
 typedef COLORV  COLOR[3];	/* red, green, blue (or X,Y,Z) */

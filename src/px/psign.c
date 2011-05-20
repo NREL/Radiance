@@ -218,7 +218,7 @@ makemap(void)			/* create the bit map */
 	if (ysiz % SSS)
 		ysiz += SSS - ysiz%SSS;
 	xdim = (xsiz+7)/8;
-	ourbitmap = (BYTE *)bmalloc(ysiz*xdim);
+	ourbitmap = (uby8 *)bmalloc(ysiz*xdim);
 	if (ourbitmap == NULL)
 		error(SYSTEM, "Out of memory in makemap");
 	memset((char *)ourbitmap, '\0', ysiz*xdim);

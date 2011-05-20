@@ -352,7 +352,7 @@ tmap2bmp(char *fnin, char *fnout, char *expec, RGBPRIMP monpri, double gamval)
 	BMPWriter       *wtr;
 	FILE		*fp;
 	int		xr, yr;
-	BYTE		*pa;
+	uby8		*pa;
 	int		i;
 					/* check tone-mapping spec */
 	i = strlen(expec);
@@ -397,7 +397,7 @@ tmap2bmp(char *fnin, char *fnout, char *expec, RGBPRIMP monpri, double gamval)
 		quiterr("cannot allocate writer structure");
 					/* write to BMP file */
 	while (wtr->yscan < yr) {
-		BYTE    *scn = pa + xr*((tmflags & TM_F_BW) ? 1 : 3)*
+		uby8    *scn = pa + xr*((tmflags & TM_F_BW) ? 1 : 3)*
 						(yr-1 - wtr->yscan);
 		if (tmflags & TM_F_BW)
 			memcpy((void *)wtr->scanline, (void *)scn, xr);

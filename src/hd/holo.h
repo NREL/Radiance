@@ -26,7 +26,7 @@ extern "C" {
 #define DCLIN	(unsigned)(1L<<11)	/* linear depth limit */
 
 typedef struct {
-	BYTE 	r[2][2];	/* ray direction index */
+	uby8 	r[2][2];	/* ray direction index */
 	COLR 	v;		/* color value */
 	uint16	d;		/* depth code (from entry wall) */
 } RAYVAL;		/* ray value */
@@ -165,8 +165,8 @@ extern int hdlseg(int	lseg[2][3], HOLO	*hp, GCOORD	gc[2]);
 extern unsigned int hdcode(HOLO *hp, double d);
 extern void hdgrid( FVECT gp, HOLO *hp, FVECT wp);
 extern void hdworld(FVECT wp, HOLO *hp, FVECT gp);
-extern double hdray(FVECT ro, FVECT rd, HOLO *hp, GCOORD gc[2], BYTE r[2][2]);
-extern double hdinter(GCOORD gc[2], BYTE r[2][2], double *ed, HOLO *hp,
+extern double hdray(FVECT ro, FVECT rd, HOLO *hp, GCOORD gc[2], uby8 r[2][2]);
+extern double hdinter(GCOORD gc[2], uby8 r[2][2], double *ed, HOLO *hp,
 		FVECT ro, FVECT rd);
 	/* holofile.c */
 extern HOLO * hdinit(int fd, HDGRID *hproto);

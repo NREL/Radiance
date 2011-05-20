@@ -16,9 +16,9 @@ static const char	RCSid[] = "$Id$";
 
 #define MAXGSHIFT	31		/* maximum shift for gamma table */
 
-static BYTE	*g_mant = NULL, *g_nexp = NULL;
+static uby8	*g_mant = NULL, *g_nexp = NULL;
 
-static BYTE	(*g_bval)[256] = NULL;
+static uby8	(*g_bval)[256] = NULL;
 
 
 int
@@ -30,7 +30,7 @@ double	a2;
 	register int	i, j;
 					/* allocate tables */
 	if (g_bval == NULL && (g_bval =
-			(BYTE (*)[256])bmalloc((MAXGSHIFT+1)*256)) == NULL)
+			(uby8 (*)[256])bmalloc((MAXGSHIFT+1)*256)) == NULL)
 		return(-1);
 					/* compute colr -> gamb mapping */
 	mult = 1.0/256.0;
@@ -51,9 +51,9 @@ double	a2;
 	double	mult;
 	register int	i, j;
 					/* allocate tables */
-	if (g_mant == NULL && (g_mant = (BYTE *)bmalloc(256)) == NULL)
+	if (g_mant == NULL && (g_mant = (uby8 *)bmalloc(256)) == NULL)
 		return(-1);
-	if (g_nexp == NULL && (g_nexp = (BYTE *)bmalloc(256)) == NULL)
+	if (g_nexp == NULL && (g_nexp = (uby8 *)bmalloc(256)) == NULL)
 		return(-1);
 					/* compute gamb -> colr mapping */
 	i = 0;

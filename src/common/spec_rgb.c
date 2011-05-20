@@ -38,7 +38,7 @@ float  xyneu[2] = {1./3., 1./3.};	/* neutral xy chromaticities */
 #define  INCWL		10		/* wavelength increment */
 #define  NINC		40		/* # of values */
 
-static BYTE  chroma[3][NINC] = {
+static uby8  chroma[3][NINC] = {
 	{							/* X */
 		0,   0,   0,   2,   6,   13,  22,  30,  36,  41,
 		42,  43,  43,  44,  46,  52,  60,  71,  87,  106,

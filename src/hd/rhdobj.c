@@ -954,7 +954,7 @@ dobj_render(void)			/* render our objects in OpenGL */
 			continue;
 					/* set up lighting */
 		if (op->drawcode == DO_LIGHT && op->ol != NULL) {
-			BYTE	pval;
+			uby8	pval;
 			double	expval, d;
 						/* use computed sources */
 			if (tmMapPixels(tmGlobal, &pval, &op->ol->larb,

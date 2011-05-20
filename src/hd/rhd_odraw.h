@@ -44,8 +44,8 @@ extern struct ODsamp {
 	} *f;				/* free list next or proximity */
 	short		(*ip)[2];	/* image position array */
 	TMbright	*brt;		/* encoded brightness array */
-	BYTE		(*chr)[3];	/* encoded chrominance array */
-	BYTE		(*rgb)[3];	/* tone-mapped color array */
+	uby8		(*chr)[3];	/* encoded chrominance array */
+	uby8		(*rgb)[3];	/* tone-mapped color array */
 	int32		*redraw;	/* redraw flags */
 	int		nsamp;		/* total number of samples */
 	char		*base;		/* base of allocated memory */

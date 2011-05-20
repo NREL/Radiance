@@ -176,7 +176,7 @@ addray(		/* add a ray to our output holodeck */
 	int	sn, bi, n;
 	register HOLO	*hp;
 	GCOORD	gc[2];
-	BYTE	rr[2][2];
+	uby8	rr[2][2];
 	BEAM	*bp;
 	double	d0, d1;
 	unsigned	dc;

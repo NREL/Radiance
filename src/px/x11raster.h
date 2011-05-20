@@ -27,7 +27,7 @@ typedef struct {
 }	XRASTER;
 
 extern Colormap newcmap(Display	*disp, int	scrn, Visual	*vis);
-extern int init_rcolors(XRASTER	*xr, BYTE	cmap[][3]);
+extern int init_rcolors(XRASTER	*xr, uby8	cmap[][3]);
 extern unsigned long * map_rcolors(XRASTER	*xr, Window	w);
 extern Pixmap make_rpixmap(XRASTER	*xr, Window	w);
 extern XRASTER * make_raster( Display	*disp, XVisualInfo	*vis,

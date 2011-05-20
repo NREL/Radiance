@@ -80,7 +80,7 @@ extern void beam_init(int fresh);
 extern void gridlines(void (*f)(FVECT wp[2]));
 	/* rhd_ctab.c */
 extern int new_ctab(int ncolors);
-extern int get_pixel(BYTE rgb[3], void (*set_pixel)(int h, int r, int g, int b));
+extern int get_pixel(uby8 rgb[3], void (*set_pixel)(int h, int r, int g, int b));
 
 
 #ifdef __cplusplus
