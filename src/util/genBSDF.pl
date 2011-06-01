@@ -315,7 +315,9 @@ print
 		<SourceSpectrum>CIE Illuminant D65 1nm.ssp</SourceSpectrum>
 		<DetectorSpectrum>ASTM E308 1931 Y.dsp</DetectorSpectrum>
 		<WavelengthDataBlock>
-			<WavelengthDataDirection>Reflection $side</WavelengthDataDirection>
+';
+print "\t\t\t<WavelengthDataDirection>Reflection $side</WavelengthDataDirection>\n";
+print '
 			<AngleBasis>LBNL/Shirley-Chiu</AngleBasis>
 			<ScatteringDataType>BRDF</ScatteringDataType>
 			<ScatteringData>
