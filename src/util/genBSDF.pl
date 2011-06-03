@@ -317,8 +317,7 @@ print
 		<WavelengthDataBlock>
 ';
 print "\t\t\t<WavelengthDataDirection>Reflection $side</WavelengthDataDirection>\n";
-print '
-			<AngleBasis>LBNL/Shirley-Chiu</AngleBasis>
+print '			<AngleBasis>LBNL/Shirley-Chiu</AngleBasis>
 			<ScatteringDataType>BRDF</ScatteringDataType>
 			<ScatteringData>
 ';
