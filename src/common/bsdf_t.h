@@ -44,7 +44,8 @@ typedef struct {
 	SD_CDIST_BASE;		/* base fields; must come first */
 	double	clim[2][2];	/* input coordinate limits */
 	double	max_psa;	/* maximum projected solid angle */
-	int	sidef;		/* which side(s) to use */
+	short	sidef;		/* which side(s) to use */
+	short	isodist;	/* isotropic distribution? */
 	int	calen;		/* cumulative array length */
 	struct {
 		unsigned	hndx;	/* hilbert index */
