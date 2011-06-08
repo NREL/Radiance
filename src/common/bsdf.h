@@ -130,9 +130,9 @@ extern struct SDCache_s {
 			*next;
 } *SDcacheList;		/* Global BSDF cache */
 
-/* BSDF cache retention preference */
-#define SDretainNone	0		/* free unreferenced data*/
-#define	SDretainBSDFs	1		/* keep loaded BSDFs in cache */
+/* BSDF cache retention policies */
+#define SDretainNone	0		/* free unreferenced BSDF data */
+#define	SDretainBSDFs	1		/* keep loaded BSDFs in memory */
 #define SDretainAll	2		/* also keep cumulative cache data */
 
 extern int		SDretainSet;	/* =SDretainNone by default */
