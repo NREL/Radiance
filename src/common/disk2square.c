@@ -11,6 +11,7 @@ static const char RCSid[] = "$Id$";
  * Modified interface slightly (G. Ward)
  */
 
+#define	_USE_MATH_DEFINES
 #include <math.h>
 
 /*

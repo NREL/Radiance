@@ -30,6 +30,10 @@
 extern "C" {
 #endif
 
+#ifdef _WIN32
+#define	strcasecmp	stricmp
+#endif
+
 #define	SDnameLn	128		/* maximum BSDF name length */
 #define	SDmaxCh		3		/* maximum # spectral channels */
 

@@ -10,6 +10,7 @@ static const char RCSid[] = "$Id$";
  *
  */
 
+#define	_USE_MATH_DEFINES
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

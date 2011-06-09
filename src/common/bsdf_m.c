@@ -11,6 +11,7 @@ static const char RCSid[] = "$Id$";
  *
  */
 
+#define	_USE_MATH_DEFINES
 #include "rtio.h"
 #include <stdlib.h>
 #include <math.h>
@@ -528,7 +529,7 @@ load_bsdf_data(SDData *sd, ezxml_t wdb, int rowinc)
 		if (*sdnext == ',') sdnext++;
 		if (rowinc) {
 			int	r = i/dp->nout;
-			int	c = i - c*dp->nout;
+			int	c = i - r*dp->nout;
 			mBSDF_value(dp,r,c) = atof(sdata);
 		} else
 			dp->bsdf[i] = atof(sdata);

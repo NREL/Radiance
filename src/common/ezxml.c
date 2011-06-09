@@ -38,6 +38,14 @@ static const char RCSid[] = "$Id$";
 #include <sys/stat.h>
 #include "ezxml.h"
 
+#ifdef _WIN32
+#include <io.h>
+#define snprintf	printf_s
+#define read		_read
+#define open		_open
+#define close		_close	
+#endif
+
 #define EZXML_WS   "\t\r\n "  /* whitespace */
 #define EZXML_ERRL 128        /* maximum error string length */
 
