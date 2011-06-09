@@ -108,7 +108,7 @@ dctimestep:	dctimestep.o
 	$(CC) $(CFLAGS) -o dctimestep dctimestep.o -lrtrad $(MLIB)
 
 rttree_reduce:	rttree_reduce.o
-	$(CC) $(CFLAGS) -o rttree_reduce rttree_reduce.o -lrtrad
+	$(CC) $(CFLAGS) -o rttree_reduce rttree_reduce.o -lrtrad $(MLIB)
 
 setscan.o:	setscan.h
 
