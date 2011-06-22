@@ -1145,7 +1145,7 @@ cvgeometry(
 	strcpy(buf, "mgf2rad ");		/* build mgf2rad command */
 	cp = buf+8;
 	if (!FEQ(sinf->mult, 1.0)) {
-		sprintf(cp, "-m %f ", sinf->mult);
+		sprintf(cp, "-e %f ", sinf->mult);
 		cp += strlen(cp);
 	}
 	sprintf(cp, "-g %f %s ",
