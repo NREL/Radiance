@@ -929,6 +929,7 @@ initotypes(void)			/* initialize ofun[] array */
 	tinvers[OBJ_CYLINDER] = OBJ_TUBE;
 	tinvers[OBJ_TUBE] = OBJ_CYLINDER;
 	tinvers[OBJ_INSTANCE] = OBJ_INSTANCE;	/* oh, well */
+	tinvers[OBJ_MESH] = OBJ_MESH;		/* ditto */
 }
 
 
