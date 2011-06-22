@@ -2,7 +2,7 @@
 static const char	RCSid[] = "$Id$";
 #endif
 /*
- * Read white space separated words from stream
+ * Write word to stream, quoting as necessary
  *
  *  External symbols declared in rtio.h
  */
