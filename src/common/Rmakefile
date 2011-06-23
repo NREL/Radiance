@@ -160,11 +160,7 @@ ezxml.o bsdf.o bsdf_m.o bsdf_t.o:	ezxml.h
 
 bsdf_m.o bsdf_t.o:	rtio.h
 
-bsdf.o:	paths.h
-
-bsdf.o:	bsdf_m.h bsdf_t.h hilbert.h fvect.h
-
-bsdf.o:	bsdf.h standard.h rtmisc.h rtio.h rtmath.h mat4.h rterror.h
+bsdf.o:	bsdf.h fvect.h bsdf_m.h bsdf_t.h hilbert.h ezxml.h fvect.h
 
 bsdf.o bsdf_m.o bsdf_t.o ccolor.o:	ccolor.h
 
