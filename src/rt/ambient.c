@@ -518,7 +518,7 @@ initambfile(		/* initialize ambient file */
 	static char  *mybuf = NULL;
 
 #ifdef	F_SETLKW
-	aflock(creat ? F_WRLCK : F_RDLCK);
+	aflock(cre8 ? F_WRLCK : F_RDLCK);
 #endif
 	SET_FILE_BINARY(ambfp);
 	if (mybuf == NULL)
