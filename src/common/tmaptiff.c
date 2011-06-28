@@ -256,7 +256,7 @@ tmMapTIFF(uby8 **psp, int *xp, int *yp, int flags, RGBPRIMP monpri,
 	double gamval, double Lddyn, double Ldmax, char *fname, TIFF *tp)
 {
 	char	*funcName = fname==NULL ? "tmMapTIFF" : fname;
-	TMstruct	*tms;
+	TMstruct	*tms = NULL;
 	TMbright	*lp;
 	uby8	*cp;
 	int	err;

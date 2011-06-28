@@ -357,7 +357,7 @@ char	*fname;
 FILE	*fp;
 {
 	char	*funcName = fname==NULL ? "tmMapPicture" : fname;
-	TMstruct	*tms;
+	TMstruct	*tms = NULL;
 	uby8	*cp;
 	TMbright	*lp;
 	int	err;

@@ -608,7 +608,6 @@ SDgetTreCDist(const FVECT inVec, SDComponent *sdc)
 {
 	const SDTre	*sdt;
 	double		inCoord[2];
-	int		vflags;
 	int		i;
 	SDTreCDst	*cd, *cdlast;
 					/* check arguments */
@@ -881,7 +880,6 @@ load_bsdf_data(SDData *sd, ezxml_t wdb, int ndim)
 	SDSpectralDF	*df;
 	SDTre		*sdt;
 	char		*sdata;
-	int		i;
 					/* allocate BSDF component */
 	sdata = ezxml_txt(ezxml_child(wdb, "WavelengthDataDirection"));
 	if (!sdata)

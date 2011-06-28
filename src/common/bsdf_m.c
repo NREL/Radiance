@@ -87,18 +87,6 @@ fequal(double a, double b)
 	return (a <= 1e-6) & (a >= -1e-6);
 }
 
-/* Returns the name of the given tag */
-#ifdef ezxml_name
-#undef ezxml_name
-static char *
-ezxml_name(ezxml_t xml)
-{
-	if (xml == NULL)
-		return NULL;
-	return xml->name;
-}
-#endif
-
 /* Returns the given tag's character content or empty string if none */
 #ifdef ezxml_txt
 #undef ezxml_txt
@@ -190,7 +178,7 @@ fo_getndx(const FVECT v, void *p)
 {
 	ANGLE_BASIS	*ab = (ANGLE_BASIS *)p;
 	int	li, ndx;
-	double	pol, azi, d;
+	double	pol, azi;
 
 	if (v == NULL)
 		return -1;

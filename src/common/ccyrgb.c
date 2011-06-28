@@ -38,7 +38,7 @@ rgb2ccy(COLOR cin, C_COLOR *cout)
 	*cout = c_dfcolor;
 	df = xyz[CIEX] + xyz[CIEY] + xyz[CIEZ];
 	if (df <= .0)
-		return;
+		return(.0);
 	df = 1./df;
 	cout->cx = xyz[CIEX]*df;
 	cout->cy = xyz[CIEZ]*df;

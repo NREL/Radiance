@@ -933,7 +933,7 @@ ab_getndx(		/* get index corresponding to the given vector */
 {
 	ANGLE_BASIS  *ab = (ANGLE_BASIS *)p;
 	int	li, ndx;
-	double	pol, azi, d;
+	double	pol, azi;
 
 	if ((v[2] < -1.0) | (v[2] > 1.0))
 		return(-1);
@@ -1173,7 +1173,7 @@ check_bsdf_data(	/* check that BSDF data is sane */
 )
 {
 	double		*omega_iarr, *omega_oarr;
-	double		dom, contrib, hemi_total, full_total;
+	double		dom, hemi_total, full_total;
 	int		nneg;
 	FVECT		v;
 	int		i, o;
