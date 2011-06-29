@@ -238,9 +238,9 @@ extern void	rview(void);
 extern void	rpict(int seq, char *pout, char *zout, char *prvr);
 
 #ifdef __FAST_MATH__
-#define	checknorm(vn)	normalize(vn)
+#define	checknorm(vn)	(void)normalize(vn)
 #else
-#define checknorm(vn)	1.0
+#define checknorm(vn)
 #endif
 
 #ifdef __cplusplus
