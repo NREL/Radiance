@@ -710,7 +710,7 @@ SDsampTreCDist(FVECT ioVec, double randX, const SDCDst *cdp)
 					/* binary search to find position */
 	ilower = 0; iupper = cd->calen;
 	while ((i = (iupper + ilower) >> 1) != ilower)
-		if ((long)target >= (long)cd->carr[i].cuml)
+		if (target >= cd->carr[i].cuml)
 			ilower = i;
 		else
 			iupper = i;
