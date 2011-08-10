@@ -43,6 +43,7 @@ double  normsc();
 /* Perez sky parametrization : epsilon and delta calculations from the direct and diffuse irradiances */
 double sky_brightness();
 double sky_clearness();
+void computesky();
 
 /* calculation of the direct and diffuse components from the Perez parametrization */
 double	diffus_irradiance_from_sky_brightness();
