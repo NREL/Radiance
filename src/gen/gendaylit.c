@@ -273,6 +273,7 @@ char  *argv[];
 }
 
 
+void
 computesky()			/* compute sky parameters */
 {
 

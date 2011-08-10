@@ -242,8 +242,8 @@ get_ehisto(const TRITREE *node, long exphisto[256])
 double
 get_threshold(const TRITREE *tree)
 {
+	long	samptotal = 0;
 	long	exphisto[256];
-	long	samptotal;
 	int	i;
 						/* compute sample histogram */
 	memset((void *)exphisto, 0, sizeof(exphisto));
