@@ -106,7 +106,7 @@ main(		/* get transform options and transform file */
 					sprintf(newp, "%s.%s",
 							idprefix, argv[a]);
 					if (mal_prefix++)
-						free((void *)idprefix);
+						free(idprefix);
 					idprefix = newp;
 				}
 				continue;
@@ -167,7 +167,7 @@ main(		/* get transform options and transform file */
 		}
 
 	if (mal_prefix)
-		free((void *)idprefix);
+		free(idprefix);
 	return(0);
 }
 
@@ -284,7 +284,7 @@ doargf(			/* take argument list from file */
 			sprintf(newid, "%s.%d", oldid, k);
 		err |= main(newac, avp);
 		if (newid != newidbuf)
-			free((void *)newid);
+			free(newid);
 		k++;
 	}
 	fclose(argfp);

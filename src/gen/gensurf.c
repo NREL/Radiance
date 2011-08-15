@@ -229,7 +229,7 @@ loaddata(		/* load point data from file */
 		size--;
 	}
 	if (size == (m+n+1)*pointsize) {	/* no border after all */
-		dp = (RREAL *)realloc((void *)datarec.data,
+		dp = (RREAL *)realloc(datarec.data,
 				m*n*pointsize*sizeof(RREAL));
 		if (dp != NULL)
 			datarec.data = dp;

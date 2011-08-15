@@ -152,7 +152,7 @@ flatout(		/* write hemispherical distribution */
 	printf("\t%f\t%f\t%f\n", v[0], v[1], v[2]);
 	printf("\t%f\t%f\t%f\n", w[0], w[1], w[2]);
 	il->dfnum++;
-	free((void *)Ninv);
+	free(Ninv);
 }
 
 
@@ -207,8 +207,8 @@ roundout(			/* write spherical distribution */
 	printf("\n\t%s il_alt il_azi", FNCFNM);
 	printf("\n0\n0\n");
 	il->dfnum++;
-	free((void *)Ninv);
-	free((void *)Sinv);
+	free(Ninv);
+	free(Sinv);
 }
 
 

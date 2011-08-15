@@ -70,7 +70,6 @@ main(		/* compute illum distributions using rtrace */
 				/* set up rendering defaults */
 	dstrsrc = 0.5;
 	directrelay = 3;
-	directvis = 0;
 	ambounce = 2;
 				/* get options from command line */
 	for (i = 1; i < argc; i++) {
