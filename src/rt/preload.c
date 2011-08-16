@@ -29,7 +29,6 @@ load_os(			/* load associated data for object */
 )
 {
 	DATARRAY  *dp;
-	SDData  *sd;
 
 	switch (op->otype) {
 	case OBJ_FACE:		/* polygon */

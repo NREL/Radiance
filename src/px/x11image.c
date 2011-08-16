@@ -421,7 +421,7 @@ quiterr(		/* print message and exit */
 	register int  es;
 	int  cs;
 
-	if ( (es = err != NULL) )
+	if ( (es = (err != NULL)) )
 		fprintf(stderr, "%s: %s: %s\n", progname, 
 				fname==NULL?"<stdin>":fname, err);
 	if (thedisplay != NULL)

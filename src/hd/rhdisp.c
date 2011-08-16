@@ -543,7 +543,7 @@ serv_result(void)			/* get next server result and process it */
 		break;
 	case DS_STARTIMM:
 	case DS_ENDIMM:
-		if (!(imm_mode = msg.type==DS_STARTIMM))
+		if (!(imm_mode = (msg.type==DS_STARTIMM)))
 			dev_flush();
 #ifdef DEBUG
 		{

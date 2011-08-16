@@ -416,8 +416,6 @@ virtverb(	/* print verbose description of virtual source */
 	FILE  *fp
 )
 {
-	register int  i;
-
 	fprintf(fp, "%s virtual source %d in %s %s\n",
 			source[sn].sflags & SDISTANT ? "distant" : "local",
 			sn, ofun[source[sn].so->otype].funame,

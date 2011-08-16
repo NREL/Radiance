@@ -134,7 +134,7 @@ main(		/* get transform options and transform file */
 
 	a += xf(&tot, argc-a, argv+a);
 
-	if ( (reverse = tot.sca < 0.0) )
+	if ( (reverse = (tot.sca < 0.0)) )
 		tot.sca = -tot.sca;
 	if (invert)
 		reverse = !reverse;

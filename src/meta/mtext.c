@@ -135,7 +135,7 @@ execute(		/* execute a file */
     while (!done) {
         maxlen = 0;
         for (j = 0; j < nlines; j++) {
-            if ((done = fgets(linbuf, MAXLINE, fp) == NULL))
+            if ((done = (fgets(linbuf, MAXLINE, fp) == NULL)))
                 break;
             k = strlen(linbuf);
             if (linbuf[k-1] == '\n')

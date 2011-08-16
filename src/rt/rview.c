@@ -331,7 +331,6 @@ refine(				/* refine a node */
 {
 	int  growth;
 	int  mx, my;
-	int  i;
 
 	if (dev->inpready)			/* quit for input */
 		return(0);

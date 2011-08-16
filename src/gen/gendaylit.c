@@ -279,12 +279,11 @@ computesky()			/* compute sky parameters */
 {
 
 	/* new variables */
-	int 	j, i;
+	int 	j;
 	float 	*lv_mod;  /* 145 luminance values*/
 	  /* 145 directions for the calculation of the normalization coefficient, coefficient Perez model */
 	float 	*theta_o, *phi_o, *coeff_perez;
 	double 	dzeta, gamma;
-	double	diffusion;
 	double	normfactor;
 
 
