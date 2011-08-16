@@ -105,7 +105,7 @@ main(
 			if (argv[i][2] == 'a')
 				pa = atof(argv[++i]);
 			else if (argv[i][2] == 'j')
-				pj= atof(argv[++i]);
+				pj = atof(argv[++i]);
 			else
 				goto userr;
 			break;
