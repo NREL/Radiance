@@ -176,6 +176,8 @@ static int	r_send_next = 0;	/* next send ray placement */
 static int	r_recv_first = RAYQLEN;	/* position of first unreported ray */
 static int	r_recv_next = RAYQLEN;	/* next received ray placement */
 
+static int	samplestep = 1;		/* sample step size */
+
 #define sendq_full()	(r_send_next >= RAYQLEN)
 
 static int ray_pflush(void);
@@ -428,7 +430,7 @@ ray_pchild(	/* process rays (never returns) */
 			r_queue[i].clipset = NULL;
 			r_queue[i].slights = NULL;
 			r_queue[i].rlvl = 0;
-			samplendx++;
+			samplendx += samplestep;
 			rayclear(&r_queue[i]);
 			rayvalue(&r_queue[i]);
 		}
@@ -462,6 +464,7 @@ ray_popen(			/* open the specified # processes */
 		strcpy(shm_boundary, "SHM_BOUNDARY");
 	}
 	fflush(NULL);			/* clear pending output */
+	samplestep = ray_pnprocs + nadd;
 	while (nadd--) {		/* fork each new process */
 		int	p0[2], p1[2];
 		if (pipe(p0) < 0 || pipe(p1) < 0)
@@ -480,8 +483,10 @@ ray_popen(			/* open the specified # processes */
 		if (r_proc[ray_pnprocs].pid < 0)
 			error(SYSTEM, "cannot fork child process");
 		close(p1[0]); close(p0[1]);
-		if (rand_samp)		/* desynchronize random function */
-			srandom((long)r_proc[ray_pnprocs].pid);
+		if (rand_samp)		/* decorrelate random sequence */
+			srandom(random());
+		else
+			samplendx++;
 		/*
 		 * Close write stream on exec to avoid multiprocessing deadlock.
 		 * No use in read stream without it, so set flag there as well.
