@@ -4,7 +4,7 @@
 vwrays - compute rays for a given picture or view
 .SH SYNOPSIS
 .B vwrays
-.B "[ -i -f{a|f|d} | -d ]"
+.B "[ -i -u -f{a|f|d} | -d ]"
 {
 .B "view opts .."
 |
@@ -25,6 +25,9 @@ The
 .I \-i
 option may be used to specify desired pixel positions on the standard
 input rather than generating all the pixels for a given view.
+If the
+.I \-u
+option is also given, output will be unbuffered.
 .PP
 The
 .I \-f

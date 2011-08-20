@@ -31,6 +31,8 @@ int	zfd = -1;
 
 int	fromstdin = 0;
 
+int	unbuffered = 0;
+
 char	*progname;
 
 
@@ -112,6 +114,9 @@ main(
 		case 'i':			/* get pixels from stdin */
 			fromstdin = 1;
 			break;
+		case 'u':			/* unbuffered output */
+			unbuffered = 1;
+			break;
 		default:
 			goto userr;
 		}
@@ -151,7 +156,7 @@ main(
 	exit(0);
 userr:
 	fprintf(stderr,
-	"Usage: %s [ -i -f{a|f|d} | -d ] { view opts .. | picture [zbuf] }\n",
+	"Usage: %s [ -i -u -f{a|f|d} | -d ] { view opts .. | picture [zbuf] }\n",
 			progname);
 	exit(1);
 }
@@ -211,6 +216,8 @@ pix2rays(
 			rdir[0] *= d; rdir[1] *= d; rdir[2] *= d;
 		}
 		(*putr)(rorg, rdir);
+		if (unbuffered)
+			fflush(stdout);
 	}
 	if (!feof(fp)) {
 		fprintf(stderr, "%s: expected px py on input\n", progname);
