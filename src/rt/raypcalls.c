@@ -480,6 +480,8 @@ ray_popen(			/* open the specified # processes */
 		if (r_proc[ray_pnprocs].pid < 0)
 			error(SYSTEM, "cannot fork child process");
 		close(p1[0]); close(p0[1]);
+		if (rand_samp)		/* desynchronize random function */
+			srandom((long)r_proc[ray_pnprocs].pid);
 		/*
 		 * Close write stream on exec to avoid multiprocessing deadlock.
 		 * No use in read stream without it, so set flag there as well.
