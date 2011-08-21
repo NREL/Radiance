@@ -71,10 +71,10 @@ typedef struct {
 } SDValue;
 
 /* Cached, encoded, cumulative distribution for one incident (solid) angle */
-#define SD_CDIST_BASE	double		cTotal;	\
-			struct SDCDst_s	*next
+#define SD_CDIST_BASE(styp)	double		cTotal;	\
+				struct styp	*next
 typedef struct SDCDst_s {
-	SD_CDIST_BASE;			/* base fields first */
+	SD_CDIST_BASE(SDCDst_s);	/* base fields first */
 	/* ...encoded distribution extends struct */
 } SDCDst;
 
