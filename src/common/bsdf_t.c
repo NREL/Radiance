@@ -26,7 +26,7 @@ typedef int	SDtreCallback(float val, const double *cmin,
 
 					/* reference width maximum (1.0) */
 static const unsigned	iwbits = sizeof(unsigned)*4;
-static const unsigned	iwmax = (1<<(sizeof(unsigned)*4))-1;
+static const unsigned	iwmax = 1<<(sizeof(unsigned)*4);
 					/* maximum cumulative value */
 static const unsigned	cumlmax = ~0;
 					/* constant z-vector */
