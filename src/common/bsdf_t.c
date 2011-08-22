@@ -607,19 +607,23 @@ const SDCDst *
 SDgetTreCDist(const FVECT inVec, SDComponent *sdc)
 {
 	const SDTre	*sdt;
-	double		inCoord[2];
+	double		inCoord[2], quantum;
 	int		i;
 	SDTreCDst	*cd, *cdlast;
 					/* check arguments */
 	if ((inVec == NULL) | (sdc == NULL) ||
 			(sdt = (SDTre *)sdc->dist) == NULL)
 		return NULL;
-	if (sdt->st->ndim == 3)		/* isotropic BSDF? */
+	if (sdt->st->ndim == 3) {	/* isotropic BSDF? */
 		inCoord[0] = .5 - .5*sqrt(inVec[0]*inVec[0] + inVec[1]*inVec[1]);
-	else if (sdt->st->ndim == 4)
+	} else if (sdt->st->ndim == 4) {
 		SDdisk2square(inCoord, -inVec[0], -inVec[1]);
-	else
+	} else
 		return NULL;		/* should be internal error */
+					/* quantize to avoid f.p. errors */
+	quantum = SDsmallestLeaf(sdt->st);
+	for (i = sdt->st->ndim - 2; i--; )
+		inCoord[i] = floor(inCoord[i]/quantum)*quantum + .5*quantum;
 	cdlast = NULL;			/* check for direction in cache list */
 	for (cd = (SDTreCDst *)sdc->cdList; cd != NULL;
 					cdlast = cd, cd = cd->next) {
