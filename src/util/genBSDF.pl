@@ -16,7 +16,7 @@ chomp $td;
 my @savedARGV = @ARGV;
 my $tensortree = 0;
 my $ttlog2 = 4;
-my $nsamp = 10000;
+my $nsamp = 2000;
 my $rtargs = "-w -ab 5 -ad 700 -lw 3e-6";
 my $mgfin = 0;
 my $geout = 1;
