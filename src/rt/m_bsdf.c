@@ -109,18 +109,18 @@ direct_bsdf_OK(COLOR cval, FVECT ldir, double omega, BSDFDAT *ndp)
 					/* transform source direction */
 	if (SDmapDir(vsrc, ndp->toloc, ldir) != SDEnone)
 		return(0);
+					/* assign number of samples */
+	ec = SDsizeBSDF(&tomega, ndp->vray, vsrc, SDqueryMin, ndp->sd);
+	if (ec)
+		goto baderror;
 					/* check indirect over-counting */
 	if (ndp->thick != 0 && ndp->pr->crtype & (SPECULAR|AMBIENT)
 				&& vsrc[2] > 0 ^ ndp->vray[2] > 0) {
 		double	dx = vsrc[0] + ndp->vray[0];
 		double	dy = vsrc[1] + ndp->vray[1];
-		if (dx*dx + dy*dy <= omega*(1./PI))
+		if (dx*dx + dy*dy <= omega+tomega)
 			return(0);
 	}
-					/* assign number of samples */
-	ec = SDsizeBSDF(&tomega, ndp->vray, vsrc, SDqueryMin, ndp->sd);
-	if (ec)
-		goto baderror;
 	sf = specjitter * ndp->pr->rweight;
 	if (25.*tomega <= omega)
 		nsamp = 100.*sf + .5;
