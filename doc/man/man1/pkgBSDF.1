@@ -15,6 +15,8 @@ pkgBSDF - package BSDFs provided as XML for Radiance
 takes one or more XML files, each describing the bidirectional scattering
 distribution function of a surface or geometric system, and packages
 them into RADIANCE scene descriptions.
+If the input file(s) do not begin with a '.' or '/', the directories
+in the RAYPATH environment variable will be searched.
 One rectangle is produced for each BSDF that has
 no detail geometry and/or no rear-side reflectance distribution.
 If both front and back reflectance distributions are present with
