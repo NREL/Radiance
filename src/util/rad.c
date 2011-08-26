@@ -1387,7 +1387,7 @@ rpict(				/* run rpict and pfilt for each view */
 				int	xdiv = 8+nprocs/3, ydiv = 8+nprocs/3;
 				if (rfdt >= oct1date) {
 					fprintf(stderr,
-		"%s: partial output not created with rpiece\n", rawfile);
+		"%s: partial output not created with %s\n", rawfile, c_rpiece);
 					quit(1);
 				}
 				if (rfdt) {	/* start fresh */
@@ -1478,8 +1478,8 @@ rpict(				/* run rpict and pfilt for each view */
 			wait_process(1);
 			if (!syncf_done(sfile)) {
 				fprintf(stderr,
-			"%s: rpiece did not complete rendering of view %s\n",
-						progname, vs);
+			"%s: %s did not complete rendering of view %s\n",
+						progname, c_rpiece, vs);
 				quit(1);
 			}
 		}
