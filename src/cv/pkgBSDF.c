@@ -53,12 +53,12 @@ geomBSDF(const SDData *bsp)
 	char	command[SDnameLn+64];
 	int	fd;
 					/* write MGF to temp file */
-	fd = open(mktemp(strcpy(tmpfile,TEMPLATE)), O_WRONLY|O_CREAT|O_EXCL);
+	fd = open(mktemp(strcpy(tmpfile,TEMPLATE)), O_WRONLY|O_CREAT|O_EXCL, 0600);
 	if (fd < 0) {
 		fprintf(stderr, "Cannot open temp file '%s'\n", tmpfile);
 		return(0);
 	}
-	write(fd, bsp->mgf, strlen(bsp->mgf));
+	(void)write(fd, bsp->mgf, strlen(bsp->mgf));
 	close(fd);
 					/* set up command */
 	if (do_instance) {
