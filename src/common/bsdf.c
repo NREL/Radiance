@@ -171,8 +171,10 @@ SDloadFile(SDData *sd, const char *fname)
 	}
 				/* load geometry if present */
 	lastErr = SDloadGeometry(sd, ezxml_child(wtl, "Material"));
-	if (lastErr)
+	if (lastErr) {
+		ezxml_free(fl);
 		return lastErr;
+	}
 				/* try loading variable resolution data */
 	lastErr = SDloadTre(sd, wtl);
 				/* check our result */
