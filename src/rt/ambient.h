@@ -16,6 +16,7 @@ extern "C" {
  * and don't pass these vectors to fvect routines.
  */
 typedef struct ambrec {
+	struct ambrec  *next;	/* next in list */
 	unsigned long  latick;	/* last accessed tick */
 	float  pos[3];		/* position in space */
 	float  dir[3];		/* normal direction */
@@ -25,7 +26,6 @@ typedef struct ambrec {
 	COLOR  val;		/* computed ambient value */
 	float  gpos[3];		/* gradient wrt. position */
 	float  gdir[3];		/* gradient wrt. direction */
-	struct ambrec  *next;	/* next in list */
 }  AMBVAL;			/* ambient value */
 
 typedef struct ambtree {

@@ -117,7 +117,7 @@ with any of the ra_* programs listed in the doc/whatis database.
 
 There is a user interface built on top of this using Tcl/Tk, called trad.
 If you do not have Tcl/Tk installed on your system, you must do so prior
-to building this distribution if you ant trad to install.  (Try a google
+to building this distribution if you want trad to install.  (Try a google
 search on "Tcl/Tk" or go to "http://www.scriptics.com/software/tcltk/".)
 
 ----------------------------------------------------------------------

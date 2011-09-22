@@ -157,6 +157,7 @@ direct_bsdf_OK(COLOR cval, FVECT ldir, double omega, BSDFDAT *ndp)
 	return(ok);
 baderror:
 	objerror(ndp->mp, USER, transSDError(ec));
+	return(0);			/* gratis return */
 }
 
 /* Compute source contribution for BSDF (reflected & transmitted) */
