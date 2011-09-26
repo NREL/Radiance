@@ -544,7 +544,7 @@ comp_sensor(
 				continue;
 			}
 			rr.rmax = .0;
-			rayorigin(&rr, PRIMARY, NULL, NULL);
+			rayorigin(&rr, PRIMARY|SPECULAR, NULL, NULL);
 			scalecolor(rr.rcoef, sf);
 			if (ray_pqueue(&rr) == 1)
 				addcolor(vsum, rr.rcol);
@@ -560,7 +560,7 @@ comp_sensor(
 			continue;
 		}
 		rr.rmax = .0;
-		rayorigin(&rr, PRIMARY, NULL, NULL);
+		rayorigin(&rr, PRIMARY|SPECULAR, NULL, NULL);
 		scalecolor(rr.rcoef, sf);
 		if (ray_pqueue(&rr) == 1)
 			addcolor(vsum, rr.rcol);
