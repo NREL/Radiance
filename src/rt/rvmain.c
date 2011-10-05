@@ -196,10 +196,12 @@ main(int argc, char *argv[])
 		error(USER, err);
 						/* set up signal handling */
 	sigdie(SIGINT, "Interrupt");
-	sigdie(SIGHUP, "Hangup");
 	sigdie(SIGTERM, "Terminate");
+#ifndef _WIN32
+	sigdie(SIGHUP, "Hangup");
 	sigdie(SIGPIPE, "Broken pipe");
 	sigdie(SIGALRM, "Alarm clock");
+#endif
 					/* open error file */
 	if (errfile != NULL) {
 		if (freopen(errfile, "a", stderr) == NULL)
@@ -285,8 +287,10 @@ onsig(				/* fatal signal */
 	if (gotsig++)			/* two signals and we're gone! */
 		_exit(signo);
 
+#ifndef _WIN32
 	alarm(15);			/* allow 15 seconds to clean up */
 	signal(SIGALRM, SIG_DFL);	/* make certain we do die */
+#endif
 	eputs("signal - ");
 	eputs(sigerr[signo]);
 	eputs("\n");

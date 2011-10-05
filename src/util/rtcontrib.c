@@ -16,6 +16,10 @@ static const char RCSid[] = "$Id$";
 #include  "lookup.h"
 #include  "calcomp.h"
 
+#ifdef _WIN32
+typedef long	ssize_t;
+#endif
+
 #ifndef	MAXMODLIST
 #define	MAXMODLIST	1024		/* maximum modifiers we'll track */
 #endif

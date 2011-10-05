@@ -65,6 +65,7 @@ char* type
 	int n, i, mode = 0, append = 0;
 	int ncmds = 0;
 	FILE *inf = NULL;
+	char *s = NULL;
 	HANDLE stdoutRd = NULL, stdoutWr = NULL;
 	HANDLE stdinRd = NULL, stdinWr = NULL;
 	HANDLE stderrWr = NULL;
@@ -80,6 +81,10 @@ char* type
 		eputs(estr);
 		return NULL;
 	}
+	/* single quotes aren't removed, so change to double-quotes */
+	for (s=command; *s; s++)
+		if (*s == '\'')
+			*s = '"';
 
 	stdoutOrig = GetStdHandle(STD_OUTPUT_HANDLE);
 	stdinOrig = GetStdHandle(STD_INPUT_HANDLE);

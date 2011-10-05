@@ -8,6 +8,7 @@ static const char RCSid[] = "$Id$";
 #include  <signal.h>
 #include  <ctype.h>
 
+#include  "rtprocess.h"	/* win_popen() */
 #include  "mkillum.h"
 
 				/* default parameters */

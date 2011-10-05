@@ -10,8 +10,11 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include <sys/types.h>
-#include <sys/wait.h> /* XXX platform specific */
+#ifndef _WIN32
+#include <sys/wait.h>
+#endif
 
+#include "paths.h"
 #include "platform.h"
 #include "standard.h"
 #include "driver.h"
@@ -144,8 +147,10 @@ comm_close(void)			/* done with driver */
 	fclose(devin);
 	if (devchild < 0)
 		return;
+#ifndef _WIN32
 	while ((pid = wait(0)) != -1 && pid != devchild)
 		;
+#endif
 }
 
 
