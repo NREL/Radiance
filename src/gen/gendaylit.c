@@ -23,8 +23,8 @@ static const char RCSid[] = "$Id$";
 #include  <stdlib.h>
 #include  <ctype.h>
 
+#include  "rtmath.h"
 #include  "rtio.h"
-#include  "fvect.h"
 #include  "color.h"
 #include  "paths.h"
 
