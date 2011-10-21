@@ -444,16 +444,22 @@ sum_images(const char *fspec, const CMATRIX *cv, FILE *fout)
 static int
 hasNumberFormat(const char *s)
 {
-	while (*s && *s != '%')
-		s++;
-	if (!*s)
-		return(0);
-	do
-		++s;
-	while (isdigit(*s));
-
-	return((*s == 'd') | (*s == 'i') | (*s == 'o') |
-			(*s == 'x') | (*s == 'X'));
+	while (*s) {
+		while (*s != '%')
+			if (!*s++)
+				return(0);
+		if (*++s == '%') {		/* ignore "%%" */
+			++s;
+			continue;
+		}
+		while (isdigit(*s))		/* field length */
+			++s;
+						/* field we'll use? */
+		if ((*s == 'd') | (*s == 'i') | (*s == 'o') |
+					(*s == 'x') | (*s == 'X'))
+			return(1);
+	}
+	return(0);				/* didn't find one */
 }
 
 int
