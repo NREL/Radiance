@@ -84,7 +84,7 @@ if ( "`ls -tL $rmake $0 |& head -1`" == $rmake ) then
 	goto gotrmake
 endif
 set newrmake
-more src/common/copyright.h
+more License.txt
 echo -n "Do you understand and accept the terms of this agreement [n]? "
 set ans="$<"
 if ( "$ans" !~ [yY]* ) exit
