@@ -846,7 +846,7 @@ o_trans(	/* convert a trans material */
 	COLOR	cxyz, rrgb;
 	double	rough, trans, tspec, d;
 
-	if (typ[4] == '2') {		/* trans2 */
+	if (typ[5] == '2') {		/* trans2 */
 		if (fa->nfargs != 8)
 			return(-1);
 		rough = .5*(fa->farg[4] + fa->farg[5]);
