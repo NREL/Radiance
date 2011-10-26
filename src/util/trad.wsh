@@ -1,5 +1,7 @@
 #!/usr/local/bin/wish4.0
 # RCSid: $Id$
+# the next line restarts using wish in case of shell execution \
+exec wish "$0" "$@"
 #
 # TCL/TK-based Rad Input File Editor
 #
@@ -127,7 +129,7 @@ pack .upper.right.title -side top -pady 10
 proc setbutt v {
 	radiobutton .$v -text [string toupper $v] \
 			-variable curmode -value $v \
-			-width 9 -relief groove -anchor w \
+			-width 10 -relief groove -anchor w \
 			-command changescreen
 	pack .$v -in .upper.right -side top -pady 5
 	helplink .$v trad $v intro
