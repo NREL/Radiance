@@ -291,17 +291,49 @@ load_data()
 		error(WARNING, "binary data past end of expected input");
 }
 
+/* Enforce reciprocity by averaging data values */
+static void
+do_reciprocity()
+{
+	float	*v1p, *v2p;
+
+	if (ttrank == 3) {
+		int	ix, ox, oy;
+		for (ix = 0; ix < 1<<(log2g-1); ix++)
+		    for (ox = 0; ox < 1<<log2g; ox++)
+		        for (oy = 0; oy < 1<<(log2g-1); oy++) {
+				v1p = &dval3(ix,ox,oy);
+				v2p = &dval3(ix,ox,(1<<log2g)-1-oy);
+				*v1p = *v2p = .5f*( *v1p + *v2p );
+			}
+	} else /* ttrank == 4 */ {
+		int	ix, iy, ox, oy;
+		for (ix = 1; ix < 1<<log2g; ix++)
+		    for (iy = 1; iy < 1<<log2g; iy++)
+			for (ox = 0; ox < ix; ox++)
+			    for (oy = 0; oy < iy; oy++) {
+				v1p = &dval4(ix,iy,ox,oy);
+				v2p = &dval4(ox,oy,ix,iy);
+				*v1p = *v2p = .5f*( *v1p + *v2p );
+			    }
+	}
+}
+
 /* Load BSDF array, coalesce uniform regions and format as tensor tree */
 int
 main(int argc, char *argv[])
 {
 	int	doheader = 1;
+	int	recipavg = 0;
 	int	bmin[4];
 	TNODE	gtree;
 	int	i;
 					/* get options and parameters */
 	for (i = 1; i < argc && argv[i][0] == '-'; i++)
 		switch (argv[i][1]) {
+		case 'a':
+			recipavg = !recipavg;
+			break;
 		case 'h':
 			doheader = !doheader;
 			break;
@@ -338,6 +370,8 @@ main(int argc, char *argv[])
 	if (infmt != 'a')
 		SET_FILE_BINARY(stdin);
 	load_data();
+	if (recipavg)
+		do_reciprocity();
 	if (doheader) {
 		for (i = 0; i < argc; i++) {
 			fputs(argv[i], stdout);
