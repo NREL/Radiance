@@ -7,6 +7,7 @@ static const char	RCSid[] = "$Id$";
  *	2/26/88
  */
 
+#include "platform.h"
 #include "standard.h"
 
 #include "color.h"
@@ -80,6 +81,9 @@ main(
 	static char	picfmt[LPICFMT+1] = PICFMT;
 	int	rval;
 	FILE	*fin;
+
+	SET_DEFAULT_BINARY();
+	SET_FILE_BINARY(stdout);
 
 	progname = argv[0];
 
