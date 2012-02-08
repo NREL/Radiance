@@ -134,6 +134,9 @@ main(			/* interpolate pictures */
 	char	*expcomp = NULL;
 	int	i, an, rval;
 
+        SET_DEFAULT_BINARY();
+        SET_FILE_BINARY(stdout);
+
 	progname = argv[0];
 
 	for (an = 1; an < argc && argv[an][0] == '-'; an++) {
