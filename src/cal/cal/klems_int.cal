@@ -7,7 +7,7 @@
 	6/14/2009	G. Ward
 }
 DEGREE : PI/180;
-Acos(x) : if(x-1, 0, if(-1-x, 0, acos(x))) / DEGREE;
+Acos(x) : if(x-1, 0, if(-1-x, PI, acos(x))) / DEGREE;
 posangle(a) : if(-a, a + 2*PI, a) / DEGREE;
 Atan2(y,x) : posangle(atan2(y,x));
 
