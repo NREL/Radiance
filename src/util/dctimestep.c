@@ -382,7 +382,8 @@ sum_images(const char *fspec, const CMATRIX *cv, FILE *fout)
 		int		dt, xr, yr;
 		COLORV		*psp;
 							/* check for zero */
-		if ((scv[RED] == 0) & (scv[GRN] == 0) & (scv[BLU] == 0))
+		if ((scv[RED] == 0) & (scv[GRN] == 0) & (scv[BLU] == 0) &&
+				(myDT != DTfromHeader) | (i < cv->nrows-1))
 			continue;
 							/* open next picture */
 		sprintf(fname, fspec, i);
