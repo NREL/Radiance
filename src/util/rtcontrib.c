@@ -17,7 +17,7 @@ static const char RCSid[] = "$Id$";
 #include  "calcomp.h"
 
 #ifdef _WIN32
-typedef long	ssize_t;
+typedef int	ssize_t;
 #endif
 
 #ifndef	MAXMODLIST
