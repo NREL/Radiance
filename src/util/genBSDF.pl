@@ -463,8 +463,10 @@ $cmd = "cnt $ndiv $ny $nx | rcalc -of -e '$tcal' " .
 system "$cmd" || die "Failure running: $cmd\n";
 @tbarr = `$rccmd $td/$bmodnm.flt`;
 die "Failure running: $rccmd $td/$bmodnm.flt\n" if ( $? );
+chomp(@tbarr);
 @rbarr = `$rccmd $td/$fmodnm.flt`;
 die "Failure running: $rccmd $td/$fmodnm.flt\n" if ( $? );
+chomp(@rbarr);
 }
 # Output angle basis
 print
