@@ -226,6 +226,29 @@ SDnewSpectralDF(int nc)
 	return df;
 }
 
+/* Add component(s) to spectral distribution function */
+SDSpectralDF *
+SDaddComponent(SDSpectralDF *odf, int nadd)
+{
+	SDSpectralDF	*df;
+
+	if (odf == NULL)
+		return SDnewSpectralDF(nadd);
+	if (nadd <= 0)
+		return odf;
+	df = (SDSpectralDF *)realloc(odf, sizeof(SDSpectralDF) +
+				(odf->ncomp+nadd-1)*sizeof(SDComponent));
+	if (df == NULL) {
+		sprintf(SDerrorDetail,
+			"Cannot add %d component(s) to spectral DF", nadd);
+		SDfreeSpectralDF(odf);
+		return NULL;
+	}
+	memset(df->comp+df->ncomp, 0, nadd*sizeof(SDComponent));
+	df->ncomp += nadd;
+	return df;
+}
+
 /* Free cached cumulative distributions for BSDF component */
 void
 SDfreeCumulativeCache(SDSpectralDF *df)

@@ -156,6 +156,9 @@ extern void		SDclipName(char res[SDnameLn], const char *fname);
 /* Allocate new spectral distribution function */
 extern SDSpectralDF	*SDnewSpectralDF(int nc);
 
+/* Add component(s) to spectral distribution function */
+extern SDSpectralDF	*SDaddComponent(SDSpectralDF *odf, int nadd);
+
 /* Free a spectral distribution function */
 extern void		SDfreeSpectralDF(SDSpectralDF *df);
 
