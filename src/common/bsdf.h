@@ -118,6 +118,8 @@ typedef struct {
 /* Loaded BSDF data */
 typedef struct {
 	char		name[SDnameLn];	/* BSDF name (usu. derived from file) */
+	char		matn[SDnameLn];	/* material name */
+	char		makr[SDnameLn];	/* manufacturer */
 	char		*mgf;		/* geometric description (if any) */
 	float		dim[3];		/* width, height, thickness (meters) */
 	SDValue		rLambFront;	/* diffuse front reflectance */
