@@ -113,6 +113,9 @@ cvtBSDF(char *fname)
 			retOK = (freopen(rname, "w", stdout) != NULL);
 		}
 		if (retOK) {
+			if (myBSDF.matn[0] && myBSDF.makr[0])
+				printf("# Material '%s' by '%s'\n\n",
+						myBSDF.matn, myBSDF.makr);
 			if (myBSDF.mgf == NULL) {
 				faceBSDF(&myBSDF, .0);
 			} else {
