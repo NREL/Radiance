@@ -347,6 +347,9 @@ if ($pctcull >= 0) {
 	$cmd .= "$td/" . ($bmodnm,$fmodnm)[$forw] . "_???.flt";
 	print "{\n";
 	system "$cmd" || die "Failure running rcalc";
+	for (my $i = ($tensortree==3)*$ns*$ns*$ns/2; $i-- > 0; ) {
+		print "0\n";
+	}
 	print "}\n";
 }
 print
@@ -380,6 +383,9 @@ if ($pctcull >= 0) {
 	$cmd .= "$td/" . ($fmodnm,$bmodnm)[$forw] . "_???.flt";
 	print "{\n";
 	system "$cmd" || die "Failure running rcalc";
+	for (my $i = ($tensortree==3)*$ns*$ns*$ns/2; $i-- > 0; ) {
+		print "0\n";
+	}
 	print "}\n";
 }
 print
