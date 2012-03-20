@@ -24,7 +24,7 @@ int  code;
 {
 	if (ray_pnprocs > 0)	/* close children if any */
 		ray_pclose(0);
-	else if (!ray_pnprocs)	/* in parent */
+	if (!ray_pnprocs)	/* in parent */
 		devclose();
 	exit(code);
 }
@@ -249,6 +249,8 @@ commerr:
 		error(COMMAND, errmsg);
 		break;
 	}
+	if (newparam && ray_pnprocs)		/* drop into immediate mode */
+		ray_pclose(0);
 #undef	badcom
 }
 
