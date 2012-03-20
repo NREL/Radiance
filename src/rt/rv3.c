@@ -192,7 +192,7 @@ paint(			/* compute and paint a rectangle */
 	if ((thisray.rmax = viewray(thisray.rorg, thisray.rdir, &ourview,
 			h/hresolu, v/vresolu)) < -FTINY) {
 		setcolor(thisray.rcol, 0.0, 0.0, 0.0);
-	} else if (nproc == 1) {		/* immediate mode */
+	} else if (nproc == 1 || newparam) {	/* immediate mode */
 		ray_trace(&thisray);
 	} else {				/* queuing mode */
 		int	rval;
