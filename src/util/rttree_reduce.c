@@ -393,7 +393,7 @@ main(int argc, char *argv[])
 	*/
 	return(0);
 userr:
-	fprintf(stderr, "Usage: %s [-h][-f{a|f|d}][-r {3|4}][-g log2grid][-t trim%%] [input]\n",
+	fprintf(stderr, "Usage: %s [-h][-a][-f{a|f|d}][-r {3|4}][-g log2grid][-t trim%%] [input]\n",
 			argv[0]);
 	return(1);
 }
