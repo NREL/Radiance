@@ -277,9 +277,7 @@ if (($legwidth > 20) && ($legheight > 40)) {
         $value =~ s/(\.[0-9]{3})[0-9]*/$1/;
         $text .= "\n$value";
     }
-    open PSIGN, "| psign -s -.15 -cf 1 1 1 -cb 0 0 0 -h $sheight > $slabpic";
-    print PSIGN "$text";
-    close PSIGN;
+    system "psign -s -.15 -cf 1 1 1 -cb 0 0 0 -h $sheight $text > $slabpic";
 
     # Legend: Create the background colours
     $cmd = qq[pcomb $pc0args];
