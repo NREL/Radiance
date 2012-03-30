@@ -557,7 +557,7 @@ m_bsdf(OBJREC *m, RAY *r)
 		bnorm[2] = -nd.pnorm[2];
 		if (nd.thick != 0) {		/* proxy with offset? */
 			VCOPY(vtmp, r->rop);
-			VSUM(r->rop, vtmp, r->ron, -nd.thick);
+			VSUM(r->rop, vtmp, r->ron, nd.thick);
 			multambient(ctmp, r, bnorm);
 			VCOPY(r->rop, vtmp);
 		} else
