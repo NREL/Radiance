@@ -512,9 +512,12 @@ m_bsdf(OBJREC *m, RAY *r)
 		nd.vray[1] = -r->rdir[1];
 		nd.vray[2] = -r->rdir[2];
 		ec = SDmapDir(nd.vray, nd.toloc, nd.vray);
+	} 
+	if (ec) {
+		objerror(m, WARNING, "Illegal orientation vector");
+		return(1);
 	}
-	if (!ec)
-		ec = SDinvXform(nd.fromloc, nd.toloc);
+	ec = SDinvXform(nd.fromloc, nd.toloc);
 						/* determine BSDF resolution */
 	if (!ec)
 		ec = SDsizeBSDF(nd.sr_vpsa, nd.vray, NULL,
