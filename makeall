@@ -65,13 +65,6 @@ if ( ! -d $idir ) then
 		goto again1
 	endif
 endif
-if ( ! -d $idir/dev ) then
-	mkdir $idir/dev
-	if ( $status ) then
-		echo "Cannot create subdirectory, please reenter"
-		goto again1
-	endif
-endif
 set inpath=0
 foreach i ( $path )
 	if ( "$i" == "$idir" ) then

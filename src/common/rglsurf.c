@@ -115,8 +115,8 @@ newtess()			/* allocate GLU tessellation object */
 	gluTessCallback(gluto, GLU_TESS_BEGIN, glBegin);
 	gluTessCallback(gluto, GLU_TESS_VERTEX, glVertex3dv);
 	gluTessCallback(gluto, GLU_TESS_END, glEnd);
-	gluTessCallback(gluto, GLU_TESS_COMBINE, myCombine);
-	gluTessCallback(gluto, GLU_TESS_ERROR, glu_error);
+	gluTessCallback(gluto, GLU_TESS_COMBINE, (void*)myCombine);
+	gluTessCallback(gluto, GLU_TESS_ERROR, (void*)glu_error);
 	gluTessProperty(gluto, GLU_TESS_WINDING_RULE, GLU_TESS_WINDING_NONZERO);
 }
 
@@ -127,7 +127,7 @@ newquadric()			/* allocate GLU quadric structure */
 	if ((gluqo = gluNewQuadric()) == NULL)
 		error(INTERNAL, "gluNewQuadric failed");
 	gluQuadricDrawStyle(gluqo, GLU_FILL);
-	gluQuadricCallback(gluqo, GLU_ERROR, glu_error);
+	gluQuadricCallback(gluqo, GLU_ERROR, (void*)glu_error);
 }
 
 

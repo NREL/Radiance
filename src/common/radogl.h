@@ -6,7 +6,14 @@
 #define _RAD_RADOGL_H_
 
 #include "standard.h"
-#include <GL/glu.h>
+#ifdef __APPLE__
+  #include <OpenGL/glu.h>
+#else
+  #ifdef _WIN32
+    #include <windows.h>
+  #endif
+  #include <GL/glu.h>
+#endif
 #include "color.h"
 #include "object.h"
 #include "otypes.h"
