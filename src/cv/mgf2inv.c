@@ -29,7 +29,6 @@ static const char	RCSid[] = "$Id$";
 
 #define VERTFMT		"%+16.9e %+16.9e %+16.9e\n%+6.3f %+6.3f %+6.3f"
 #define VZVECT		"+0.000 +0.000 +0.000"
-#define VFSEPPOS	50	/* position of newline in above */
 #define VFLEN		72	/* total vertex string length */
 #define MAXVERT		10240	/* maximum cached vertices */
 
@@ -529,6 +528,7 @@ to_id(			/* make sure a name is a valid Inventor ID */
 void
 flush_cache(void)			/* put out cached faces */
 {
+	int	VFSEPPOS = strchr(vlist[0],'\n') - vlist[0];
 	int	donorms = 0;
 	register struct face	*f;
 	register int	i;
