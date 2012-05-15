@@ -29,7 +29,7 @@ static const char	RCSid[] = "$Id$";
 
 #define VERTFMT		"%+16.9e %+16.9e %+16.9e\n%+6.3f %+6.3f %+6.3f"
 #define VZVECT		"+0.000 +0.000 +0.000"
-#define VFLEN		72	/* total vertex string length */
+#define VFLEN		92	/* total vertex string length */
 #define MAXVERT		10240	/* maximum cached vertices */
 
 #define setvkey(k,v)	sprintf(k,VERTFMT,(v)->p[0],(v)->p[1],(v)->p[2],\
