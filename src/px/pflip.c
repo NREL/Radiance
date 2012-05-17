@@ -70,12 +70,16 @@ main(
 			correctorder++;
 		else
 			break;
+	if (i < argc-2)
+		goto userr;
+	if (!fhoriz && !fvert)
+		fprintf(stderr, "%s: warning - no operation\n", argv[0]);
 	if (i >= argc || argv[i][0] == '-') {
-		fprintf(stderr, "Usage: %s [-h][-v][-c] infile [outfile]\n",
-				progname);
-		exit(1);
-	}
-	if ((fin = fopen(argv[i], "r")) == NULL) {
+		if (fvert)
+			goto userr;
+		SET_FILE_BINARY(stdin);
+		fin = stdin;
+	} else if ((fin = fopen(argv[i], "r")) == NULL) {
 		fprintf(stderr, "%s: cannot open\n", argv[i]);
 		exit(1);
 	}
@@ -106,6 +110,10 @@ main(
 		scanfile();
 	flip();				/* flip the image */
 	exit(0);
+userr:
+	fprintf(stderr, "Usage: %s [-h][-v][-c] infile [outfile]\n",
+			progname);
+	exit(1);
 }
 
 
