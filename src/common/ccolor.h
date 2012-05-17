@@ -52,6 +52,9 @@ extern int	c_isgrey(C_COLOR *);		/* check if color is grey */
 						/* mix two colors */
 extern void	c_cmix(C_COLOR *cres, double w1, C_COLOR *c1,
 				double w2, C_COLOR *c2);
+						/* multiply two colors */
+extern double	c_cmult(C_COLOR *cres, C_COLOR *c1, double y1,
+				C_COLOR *c2, double y2);
 						/* set black body spectrum */
 extern int	c_bbtemp(C_COLOR *clr, double tk);
 						/* convert to RGB color */
