@@ -43,7 +43,6 @@ rgb2ccy(COLOR cin, C_COLOR *cout)
 	cout->cx = xyz[CIEX]*df;
 	cout->cy = xyz[CIEZ]*df;
 	cout->flags = (C_CSXY|C_CDXY);
-	cout->clock++;
 
 	return(xyz[CIEY]);
 }
