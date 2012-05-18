@@ -244,13 +244,13 @@ RGBPRIMS  pr
 	int	i, j;
 	
 	for (i = 0; i < 3; i++) {
-		if ((pr[i][CIEX] <= -1.) | (pr[i][CIEY] <= -1.))
+		if ((pr[i][CIEX] <= -2.) | (pr[i][CIEY] <= -2.))
 			return(0);
-		if ((pr[i][CIEX] >= 2.) | (pr[i][CIEY] >= 2.))
+		if ((pr[i][CIEX] >= 3.) | (pr[i][CIEY] >= 3.))
 			return(0);
-		if (pr[i][CIEX] + pr[i][CIEY] <= -1.)
+		if (pr[i][CIEX] + pr[i][CIEY] <= -2.)
 			return(0);
-		if (pr[i][CIEX] + pr[i][CIEY] >= 2.)
+		if (pr[i][CIEX] + pr[i][CIEY] >= 3.)
 			return(0);
 	}
 	if ((pr[3][CIEX] <= 0.) | (pr[3][CIEX] >= 1.) |
