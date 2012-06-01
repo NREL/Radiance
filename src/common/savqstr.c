@@ -18,10 +18,9 @@ static const char RCSid[] = "$Id$";
 #if 1
 
 char *
-savqstr(s)			/* save a private string */
-register char  *s;
+savqstr(char *s)			/* save a private string */
 {
-	register char  *cp;
+	char  *cp;
 	char  *newp;
 
 	for (cp = s; *cp++; )			/* compute strlen()+1 */
@@ -38,8 +37,7 @@ register char  *s;
 
 
 void
-freeqstr(s)			/* free a private string */
-char  *s;
+freeqstr(char *s)			/* free a private string */
 {
 	if (s != NULL)
 		free((void *)s);
@@ -51,6 +49,8 @@ char  *s;
  *  Save unshared strings, packing them together into
  *  large blocks to optimize paging in VM environments.
  */
+
+#include "rtmisc.h"
 
 #ifdef  SMLMEM
 #ifndef  MINBLOCK
@@ -68,18 +68,15 @@ char  *s;
 #endif
 #endif
 
-extern char  *bmalloc();
-
 
 char *
-savqstr(s)			/* save a private string */
-register char  *s;
+savqstr(char *s)			/* save a private string */
 {
 	static char  *curp = NULL;		/* allocated memory pointer */
 	static unsigned  nrem = 0;		/* bytes remaining in block */
 	static unsigned  nextalloc = MINBLOCK;	/* next block size */
-	register char  *cp;
-	register unsigned  n;
+	char  *cp;
+	unsigned  n;
 
 	for (cp = s; *cp++; )			/* compute strlen()+1 */
 		;
@@ -104,8 +101,7 @@ register char  *s;
 
 
 void
-freeqstr(s)			/* free a private string (not recommended) */
-char  *s;
+freeqstr(char *s)		/* free a private string (not recommended) */
 {
 	bfree(s, strlen(s)+1);
 }
