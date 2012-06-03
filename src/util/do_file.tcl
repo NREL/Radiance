@@ -5,7 +5,7 @@
 
 proc preen {} {			# clean up radvar
 	global radvar rifname
-	foreach n {objects scene materials illum mkillum render oconv pfilt
+	foreach n {objects scene materials illum mkillum render oconv rvu rpict pfilt
 			RAWFILE ZFILE AMBFILE OPTFILE EXPOSURE ZONE REPORT} {
 		if {! [info exists radvar($n)]} {
 			set radvar($n) {}
@@ -85,6 +85,8 @@ proc setradvar stmt {		# assign a rad variable
 		mki* { eval lappend radvar(mkillum) $vval }
 		ren* { eval lappend radvar(render) $vval }
 		oco* { eval lappend radvar(oconv) $vval }
+		rvu { eval lappend radvar(rvu) $vval }
+		rpi* { eval lappend radvar(rpict) $vval }
 		pf* { eval lappend radvar(pfilt) $vval }
 		vi* { lappend radvar(view) $vval }
 		ZO* { set radvar(ZONE) $vval }
