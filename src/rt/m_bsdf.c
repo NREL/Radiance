@@ -500,9 +500,9 @@ m_bsdf(OBJREC *m, RAY *r)
 	upvec[1] = evalue(mf->ep[2]);
 	upvec[2] = evalue(mf->ep[3]);
 						/* return to world coords */
-	if (mf->f != &unitxf) {
-		multv3(upvec, upvec, mf->f->xfm);
-		nd.thick *= mf->f->sca;
+	if (mf->fxp != &unitxf) {
+		multv3(upvec, upvec, mf->fxp->xfm);
+		nd.thick *= mf->fxp->sca;
 	}
 	raynormal(nd.pnorm, r);
 						/* compute local BSDF xform */

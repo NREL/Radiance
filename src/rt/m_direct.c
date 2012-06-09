@@ -111,8 +111,8 @@ redirect(		/* compute n'th ray redirection */
 		if (errno == EDOM || errno == ERANGE)
 			goto computerr;
 	}
-	if (mf->f != &unitxf)
-		multv3(nr.rdir, nr.rdir, mf->f->xfm);
+	if (mf->fxp != &unitxf)
+		multv3(nr.rdir, nr.rdir, mf->fxp->xfm);
 	if (r->rox != NULL)
 		multv3(nr.rdir, nr.rdir, r->rox->f.xfm);
 	if (normalize(nr.rdir) == 0.0)
@@ -190,8 +190,8 @@ dir_proj(		/* compute a director's projection */
 		if (errno == EDOM || errno == ERANGE)
 			goto computerr;
 	}
-	if (mf->f != &unitxf)
-		multv3(newdir, newdir, mf->f->xfm);
+	if (mf->fxp != &unitxf)
+		multv3(newdir, newdir, mf->fxp->xfm);
 					/* normalization unnecessary */
 	newdot = DOT(newdir, nv);
 	if (newdot <= FTINY && newdot >= -FTINY)

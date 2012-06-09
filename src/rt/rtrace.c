@@ -114,7 +114,7 @@ rtrace(				/* trace rays from file */
 )
 {
 	unsigned long  vcount = (hresolu > 1) ? (unsigned long)hresolu*vresolu
-					      : vresolu;
+					      : (unsigned long)vresolu;
 	long  nextflush = (vresolu > 0) & (hresolu > 1) ? 0 : hresolu;
 	FILE  *fp;
 	double	d;

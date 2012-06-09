@@ -325,8 +325,8 @@ getacoords(		/* set up coordinate system */
 		np->specfl |= SP_BADU;
 		return;
 	}
-	if (mf->f != &unitxf)
-		multv3(np->u, np->u, mf->f->xfm);
+	if (mf->fxp != &unitxf)
+		multv3(np->u, np->u, mf->fxp->xfm);
 	fcross(np->v, np->pnorm, np->u);
 	if (normalize(np->v) == 0.0) {
 		objerror(np->mp, WARNING, "illegal orientation vector");
