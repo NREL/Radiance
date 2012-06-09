@@ -13,6 +13,14 @@ static const char	RCSid[] = "$Id$";
 #include  "platform.h"
 #include  "resolu.h"
 
+#ifdef getc_unlocked		/* avoid nasty file-locking overhead */
+#undef getchar
+#undef putchar
+#define getchar		getchar_unlocked
+#define putchar		putchar_unlocked
+#endif
+
+
 static gethfunc tabstr;
 static void getdim(register FILE *fp);
 static void copycat(void);
