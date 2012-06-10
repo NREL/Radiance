@@ -215,10 +215,6 @@ getheader(		/* get header from file */
 			return(-1);
 		if (buf[0] == '\n')
 			return(0);
-#ifdef MSDOS
-		if (buf[0] == '\r' && buf[1] == '\n')
-			return(0);
-#endif
 		if (buf[MAXLINE-2] != '\n') {
 			ungetc(buf[MAXLINE-2], fp);	/* prevent false end */
 			buf[MAXLINE-2] = '\0';
