@@ -17,28 +17,35 @@ static const char	RCSid[] = "$Id$";
 int
 badarg(		/* check argument list */
 int	ac,
-register char	**av,
-register char	*fl
+char	**av,
+char	*fl
 )
 {
-	register int  i;
+	int	i;
+	char	*s;
 
 	if (fl == NULL)
 		fl = "";		/* no arguments? */
 	for (i = 1; *fl; i++,av++,fl++) {
 		if (i > ac || *av == NULL)
 			return(-1);
+		s = *av;
 		switch (*fl) {
 		case 's':		/* string */
-			if (**av == '\0' || isspace(**av))
+			while (isspace(*s))
+				++s;
+			if (*s == '\0')
 				return(i);
+			while (*s)
+				if (!isascii(*s++))
+					return(i);
 			break;
 		case 'i':		/* integer */
-			if (!isintd(*av, " \t\r\n"))
+			if (!isintd(s, " \t\r\n"))
 				return(i);
 			break;
 		case 'f':		/* float */
-			if (!isfltd(*av, " \t\r\n"))
+			if (!isfltd(s, " \t\r\n"))
 				return(i);
 			break;
 		default:		/* bad call! */
