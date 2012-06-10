@@ -14,8 +14,6 @@ static const char	RCSid[] = "$Id$";
 #include "source.h"
 #include "ambient.h"
 
-char	*shm_boundary = NULL;		/* boundary of shared memory */
-
 int	gargc;				/* global argc */
 char	**gargv;			/* global argv */
 char	*octname;			/* global octree name */
@@ -227,7 +225,7 @@ main(int argc, char *argv[])
 			yres = atoi(argv[++i]);
 			break;
 		case 'w':			/* warnings */
-			rval = erract[WARNING].pf != NULL;
+			rval = (erract[WARNING].pf != NULL);
 			bool(2,rval);
 			if (rval) erract[WARNING].pf = wputs;
 			else erract[WARNING].pf = NULL;
@@ -339,12 +337,7 @@ main(int argc, char *argv[])
 
 	setambient();			/* initialize ambient calculation */
 
-	if (nproc > 1) {
-		preload_objs();		/* preload auxiliary data */
-					/* set shared memory boundary */
-		shm_boundary = strcpy((char *)malloc(16), "SHM_BOUNDARY");
-	}
-	rcontrib();			/* trace ray contributions */
+	rcontrib();			/* trace ray contributions (loop) */
 
 	ambsync();			/* flush ambient file */
 
