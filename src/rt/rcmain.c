@@ -54,6 +54,9 @@ printdefaults(void)			/* print default values to stdout */
 {
 	char  *cp;
 
+	printf("-c %-5d\t\t\t# accumulated rays per record\n", accumulate);
+	printf("-V%c\t\t\t\t# output %s\n", contrib ? '+' : '-',
+			contrib ? "contributions" : "coefficients");
 	if (imm_irrad)
 		printf("-I+\t\t\t\t# immediate irradiance on\n");
 	printf("-n %-2d\t\t\t\t# number of rendering processes\n", nproc);
