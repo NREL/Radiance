@@ -430,7 +430,7 @@ parental_loop()
 	flockfile(stdin);		/* avoid lock/unlock overhead */
 #endif
 	while (getvec(orgdir[2*ninq]) == 0 && getvec(orgdir[2*ninq+1]) == 0) {
-		d = normalize(orgdir[1]);
+		d = normalize(orgdir[2*ninq+1]);
 		if (d == 0.0) {				/* asking for flush? */
 			if (accumulate != 1) {
 				if (!ignore_warning_given++)
