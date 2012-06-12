@@ -36,8 +36,8 @@ extern int		account;	/* current accumulation count */
 extern RNUMBER		raysleft;	/* number of rays left to trace */
 extern long		waitflush;	/* how long until next flush */
 
-extern int		lastray;	/* last ray number sent */
-extern int		lastdone;	/* last ray processed */
+extern RNUMBER		lastray;	/* last ray number sent */
+extern RNUMBER		lastdone;	/* last ray processed */
 
 typedef double		DCOLOR[3];	/* double-precision color */
 

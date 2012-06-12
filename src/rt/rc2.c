@@ -677,7 +677,7 @@ recover_output()
 		if (getvec(vdummy) < 0 || getvec(vdummy) < 0)
 			error(USER, "unexpected EOF on input");
 	}
-	lastray = lastdone = lastout * accumulate;
+	lastray = lastdone = (RNUMBER)lastout * accumulate;
 	if (raysleft)
 		raysleft -= lastray;
 }
