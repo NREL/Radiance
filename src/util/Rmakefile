@@ -20,7 +20,7 @@ INSTDIR = /usr/local/bin
 LIBDIR = /usr/local/lib/ray
 
 PROGS = findglare glarendx rpiece rad ranimate ranimove vwright getinfo \
-		vwrays xglaresrc rtcontrib rsensor dctimestep rttree_reduce
+		vwrays xglaresrc rsensor dctimestep rttree_reduce
 
 all:	$(PROGS)
 

@@ -100,6 +100,7 @@ all:	$(PROGS) $(RCLIB) $(SPECIAL)
 install:	all rayinit.cal
 	$(INSTALL) $(PROGS) $(INSTDIR)
 	cd $(INSTDIR) ; rm -f rview ; ln -s rvu rview
+	cd $(INSTDIR) ; rm -f rtcontrib ; ln -s rcontrib rtcontrib
 	rm -f $(LIBDIR)/rayinit.cal
 	cp rayinit.cal $(LIBDIR)
 
