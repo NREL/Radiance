@@ -185,7 +185,7 @@ error: /* cleanup */
 	if(hWrite) CloseHandle(hWrite);
 	if(hCurProc) CloseHandle(hCurProc);
 	proc->running = 0;
-	return 0;
+	return -1;
 	/* There... Are we happy now? */
 }
 
@@ -280,6 +280,7 @@ open_process(SUBPROC *proc, char *av[])
 	char *cmdstr;
 
 	proc->running = 0;
+	if (av == NULL) { return -1; }
 	cmdpath = getpath(av[0], getenv("PATH"), X_OK);
 	cmdstr = quoted_cmdline(cmdpath, av+1);
 	if (cmdstr == NULL) { return 0; }
