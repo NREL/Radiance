@@ -85,16 +85,11 @@ extern LUTAB		ofiletab;	/* output stream table */
 #ifndef	MAXMODLIST
 #define	MAXMODLIST	2048		/* maximum modifiers we'll track */
 #endif
-#ifndef  MAXTSET
-#define	 MAXTSET	16383		/* maximum number in trace set */
-#endif
 
 extern const char	*modname[MAXMODLIST];	/* ordered modifier name list */
 extern int		nmods;			/* number of modifiers */
 
 extern char		RCCONTEXT[];		/* special evaluation context */
-
-extern void		tranotify(OBJECT obj);	/* new trace modifier */
 
 extern char		*formstr(int f);	/* return format identifier */
 

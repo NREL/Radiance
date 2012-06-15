@@ -44,9 +44,9 @@ int	lim_dist = 0;			/* limit distance? */
 const char	*modname[MAXMODLIST];	/* ordered modifier name list */
 int		nmods = 0;		/* number of modifiers */
 
-char	RCCONTEXT[] = "RCONTRIB";	/* our special evaluation context */
+void	(*addobjnotify[8])() = {ambnotify, NULL};
 
-void	(*addobjnotify[8])() = {ambnotify, tranotify, NULL};
+char	RCCONTEXT[] = "RCONTRIB";	/* our special evaluation context */
 
 
 static void
