@@ -115,7 +115,6 @@ extern int		in_rchild(void);
 extern void		end_children(void);
 
 extern void		put_zero_record(int ndx);
-extern void		queue_modifiers(void);
 
 extern void		parental_loop(void);	/* controlling process */
 
