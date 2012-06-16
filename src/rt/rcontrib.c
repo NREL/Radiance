@@ -344,7 +344,7 @@ rcontrib()
 		account = 1;		/* output accumulated totals */
 		done_contrib();
 	}
+	lu_done(&ofiletab);		/* close output files */
 	if (raysleft)
 		error(USER, "unexpected EOF on input");
-	lu_done(&ofiletab);		/* close output files */
 }

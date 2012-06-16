@@ -462,7 +462,7 @@ static int
 next_child_ready()
 {
 	fd_set			writeset, errset;
-	int			i, n, nqr;
+	int			i, n;
 
 	for (i = nchild; i--; )		/* see if there's one free first */
 		if (!kida[i].nr)
