@@ -112,7 +112,7 @@ extern void		recover_output(void);
 extern int		getvec(FVECT vec);
 
 extern int		in_rchild(void);
-extern void		end_children(void);
+extern void		end_children(int immed);
 
 extern void		put_zero_record(int ndx);
 

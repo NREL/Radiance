@@ -315,13 +315,15 @@ in_rchild()
 
 /* Close child processes */
 void
-end_children()
+end_children(int immed)
 {
 	int	status;
 	
 	while (nchild > 0) {
 		nchild--;
-		if ((status = close_process(&kida[nchild].pr)) > 0) {
+		if (immed)		/* error mode -- quick exit */
+			kill(kida[nchild].pr.pid, SIGKILL);
+		if ((status = close_process(&kida[nchild].pr)) > 0 && !immed) {
 			sprintf(errmsg,
 				"rendering process returned bad status (%d)",
 					status);
@@ -543,7 +545,7 @@ feeder_loop()
 	}
 	if (recover)				/* and from before? */
 		queue_modifiers();
-	end_children();				/* free up file descriptors */
+	end_children(0);			/* free up file descriptors */
 	for (i = 0; i < nmods; i++)
 		mod_output(out_bq->mca[i]);	/* output accumulated record */
 	end_record();

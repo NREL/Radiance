@@ -137,7 +137,7 @@ addmodifier(char *modn, char *outf, char *binv, int bincnt)
 }
 
 
-/* add modifiers from a file list */
+/* Add modifiers from a file list */
 void
 addmodfile(char *fname, char *outf, char *binv, int bincnt)
 {
@@ -159,7 +159,7 @@ quit(			/* quit program */
 )
 {
 	if (nchild > 0)		/* close children if any */
-		end_children();
+		end_children(code != 0);
 	exit(code);
 }
 
