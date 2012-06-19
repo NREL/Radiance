@@ -539,8 +539,9 @@ feeder_loop()
 		lastray += kida[i].nr = ninq;
 		ninq = 0;
 	}
-	for (i = nchild; i--; ) {		/* get results */
-		close(kida[i].pr.w);
+	memset(orgdir, 0, sizeof(FVECT)*2);	/* get results */
+	for (i = nchild; i--; ) {
+		writebuf(kida[i].pr.w, (char *)orgdir, sizeof(FVECT)*2);
 		queue_results(i);
 	}
 	if (recover)				/* and from before? */

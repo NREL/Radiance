@@ -336,7 +336,7 @@ rcontrib()
 		if (raysleft && !--raysleft)
 			break;		/* preemptive EOI */
 	}
-	if ((accumulate <= 0) | (account < accumulate)) {
+	if (nchild != -1 && (accumulate <= 0) | (account < accumulate)) {
 		if (account < accumulate) {
 			error(WARNING, "partial accumulation in final record");
 			accumulate -= account;
