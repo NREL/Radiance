@@ -6,6 +6,7 @@ static const char RCSid[] = "$Id$";
  * Controlling process for multiple children
  */
 
+#include <signal.h>
 #include "rcontrib.h"
 #include "platform.h"
 #include "rtprocess.h"
