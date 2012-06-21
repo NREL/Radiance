@@ -9,8 +9,6 @@ static const char	RCSid[] = "$Id$";
 
 #include <signal.h>
 #include "rcontrib.h"
-#include "platform.h"
-#include "paths.h"
 #include "source.h"
 #include "ambient.h"
 

@@ -4,6 +4,8 @@
  * Header file for rcontrib modules
  */
 
+#include "platform.h"
+#include "paths.h"
 #include "ray.h"
 #include "func.h"
 #include "lookup.h"

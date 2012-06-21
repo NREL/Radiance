@@ -9,7 +9,6 @@ static const char RCSid[] = "$Id$";
 #include "rcontrib.h"
 #include "source.h"
 #include "otypes.h"
-#include "platform.h"
 
 char	*shm_boundary = NULL;		/* boundary of shared memory */
 

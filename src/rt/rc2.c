@@ -8,7 +8,6 @@ static const char RCSid[] = "$Id$";
 
 #include "rcontrib.h"
 #include "resolu.h"
-#include "platform.h"
 
 /* Close output stream and free record */
 static void

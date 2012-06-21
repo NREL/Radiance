@@ -8,7 +8,6 @@ static const char RCSid[] = "$Id$";
 
 #include <signal.h>
 #include "rcontrib.h"
-#include "platform.h"
 #include "rtprocess.h"
 #include "selcall.h"
 
@@ -322,8 +321,10 @@ end_children(int immed)
 	
 	while (nchild > 0) {
 		nchild--;
+#ifdef SIGKILL
 		if (immed)		/* error mode -- quick exit */
 			kill(kida[nchild].pr.pid, SIGKILL);
+#endif
 		if ((status = close_process(&kida[nchild].pr)) > 0 && !immed) {
 			sprintf(errmsg,
 				"rendering process returned bad status (%d)",
