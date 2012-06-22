@@ -169,7 +169,6 @@ main(int argc, char *argv[])
 				case 'n': case 'N': case 'f': case 'F': \
 				case '-': case '0': var = 0; break; \
 				default: goto badopt; }
-	int	nprocs = 1;
 	char	*curout = NULL;
 	char	*binval = NULL;
 	int	bincnt = 0;
@@ -336,6 +335,8 @@ main(int argc, char *argv[])
 	nsceneobjs = nobjects;
 
 	marksources();			/* find and mark sources */
+	for (i = 0; i < nsources; i++)	/* tracing to sources as well */
+		source[i].sflags |= SFOLLOW;
 
 	setambient();			/* initialize ambient calculation */
 
