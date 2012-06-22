@@ -6,6 +6,7 @@
 
 #include "platform.h"
 #include "paths.h"
+#include "rtprocess.h"
 #include "ray.h"
 #include "func.h"
 #include "lookup.h"

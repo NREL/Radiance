@@ -8,7 +8,6 @@ static const char RCSid[] = "$Id$";
 
 #include <signal.h>
 #include "rcontrib.h"
-#include "rtprocess.h"
 #include "selcall.h"
 
 #define	MAXIQ		(int)(PIPE_BUF/(sizeof(FVECT)*2))
