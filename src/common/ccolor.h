@@ -46,7 +46,9 @@ typedef struct {
 #define c_cval(c,l)	((c)->ssamp[((l)+(C_CWLI/2.-C_MINWL))/C_CWLI] \
 						/ (double)(c)->ssum)
 
-extern C_COLOR		c_dfcolor;		/* default color */
+extern const C_COLOR	c_dfcolor;		/* default color */
+
+extern const C_COLOR	c_x31, c_y31, c_z31;	/* 1931 standard observer */
 
 						/* set CIE (x,y) chromaticity */
 #define c_cset(c,x,y)	((c)->cx=(x),(c)->cy=(y),(c)->flags=C_CDXY|C_CSXY)
