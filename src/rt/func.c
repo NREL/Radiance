@@ -213,6 +213,9 @@ worldfunc(			/* special function context sans object */
 )
 {
 	static RNUMBER	lastrno = ~0;
+
+	if (rayinitcal[0])		/* initialize on first call */
+		initfunc();
 					/* set evaluator context */
 	setcontext(ctx);
 					/* check if ray already set */
