@@ -335,8 +335,6 @@ main(int argc, char *argv[])
 	nsceneobjs = nobjects;
 
 	marksources();			/* find and mark sources */
-	for (i = 0; i < nsources; i++)	/* tracing to sources as well */
-		source[i].sflags |= SFOLLOW;
 
 	setambient();			/* initialize ambient calculation */
 

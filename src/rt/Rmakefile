@@ -263,7 +263,7 @@ func.h ../common/calcomp.h ../common/rtprocess.h
 
 rcmain.o:	source.h ambient.h
 
-rcontrib.o:	../common/otypes.h
+rcontrib.o:	source.h ../common/otypes.h
 
 rc2.o:	../common/resolu.h
 

@@ -642,8 +642,12 @@ oputW(				/* print coefficient */
 )
 {
 	RREAL	contr[3];
+				/* shadow ray not on source? */
+	if (r->rsrc >= 0 && source[r->rsrc].so != r->ro)
+		setcolor(contr, 0.0, 0.0, 0.0);
+	else
+		raycontrib(contr, r, PRIMARY);
 
-	raycontrib(contr, r, PRIMARY);
 	(*putreal)(contr, 3);
 }
 
