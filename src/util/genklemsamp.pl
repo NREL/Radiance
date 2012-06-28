@@ -99,7 +99,7 @@ sub GetNOrigins {
 }
 # Do we have any Radiance input files?
 if ($#ARGV >= 0) {
-	system "oconv -f @ARGV > $td/surf.oct";
+	system "xform -m void @ARGV | oconv - > $td/surf.oct";
 	# Set our own view center and size based on bounding cube
 	$_ = $vwset; s/^.*Vdx://; s/;.*$//;
 	my @vd = $_;
