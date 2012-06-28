@@ -8,6 +8,8 @@ genskyvec - compute patch radiance averages for a specific sky
 .B "\-m N"
 ][
 .B "\-c r g b"
+][
+.B "\-d"
 ]
 .SH DESCRIPTION
 .I Genskyvec
@@ -42,6 +44,12 @@ option may be used to specify a color for the sky.
 The gray value should equal 1 for proper energy balance
 The default sky color is
 .I "\-c 0.960 1.004 1.118".
+.PP
+The
+.I \-d
+option may be used to produce a sun-only vector, with no sky contributions.
+If a time of day is selected or sky type that has no sun, then a zero vector
+is produced.
 .SH EXAMPLE
 To generate 578 patches corresponding to a 2x2 subdivision of the
 Tregenza sky on a sunny equinox noon:
