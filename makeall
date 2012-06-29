@@ -11,7 +11,7 @@ if ( $#argv < 1 ) then
 endif
 if ( "$1" == library ) then
 	source installib
-	cp -f src/*/*.{cal,tab,hex} $ldir
+	cp -f src/*/*.{cal,tab,hex,dat} $ldir
 	echo ""
 	echo "Set the environment variable RAYPATH=.:$ldir"
 	echo 'For C-shell users, put the following into ~/.cshrc'
