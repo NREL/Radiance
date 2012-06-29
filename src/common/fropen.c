@@ -26,7 +26,7 @@ register char  *fname;
 	if (fname == NULL)
 		return(NULL);
 
-	if (ISDIRSEP(fname[0]) || fname[0] == '.')	/* absolute path */
+	if (ISABS(fname) || fname[0] == '.')	/* absolute path */
 		return(fopen(fname, "r"));
 						/* check search path */
 	sp = getrlibpath();
