@@ -257,6 +257,7 @@ eval_irrad(FVECT org, FVECT dir)
 	rayorigin(&thisray, PRIMARY, NULL, NULL);
 	thisray.rot = 1e-5;		/* pretend we hit surface */
 	thisray.rod = 1.0;
+	VCOPY(thisray.ron, dir);
 	VSUM(thisray.rop, org, dir, 1e-4);
 	samplendx++;			/* compute result */
 	(*ofun[Lamb.otype].funp)(&Lamb, &thisray);
