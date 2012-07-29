@@ -8,7 +8,8 @@ typedef int otype_implf(OBJREC *o, RAY *r);
 extern otype_implf o_sphere, o_face, o_cone, o_instance, o_mesh;
 
 extern otype_implf m_aniso, m_dielectric, m_glass, m_alias, m_light,
-	m_normal, m_mist, m_mirror, m_direct, m_clip, m_brdf, m_brdf2, m_bsdf;
+	m_normal, m_mist, m_mirror, m_direct, m_clip, m_brdf, m_brdf2,
+	m_bsdf, m_ashikhmin;
 
 extern otype_implf t_func, t_data;
 

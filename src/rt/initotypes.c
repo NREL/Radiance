@@ -48,6 +48,8 @@ initotypes(void)			/* initialize ofun array */
 	ofun[MAT_PLASTIC2].flags |= T_OPAQUE;
 	ofun[MAT_METAL2].flags |= T_OPAQUE;
 	ofun[MAT_TRANS2].flags |= T_IRR_IGN;
+	ofun[MAT_ASHIKHMIN].funp = m_ashikhmin;
+	ofun[MAT_ASHIKHMIN].flags |= T_OPAQUE;
 	ofun[MAT_DIELECTRIC].funp =
 	ofun[MAT_INTERFACE].funp = m_dielectric;
 	ofun[MAT_DIELECTRIC].flags |= T_IRR_IGN;
