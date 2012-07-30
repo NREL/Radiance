@@ -280,7 +280,7 @@ m_normal(			/* color a ray that hit something normal */
 		if (m->otype != MAT_METAL) {
 			setcolor(nd.scolor, nd.rspec, nd.rspec, nd.rspec);
 		} else if (fest > FTINY) {
-			d = nd.rspec*(1. - fest);
+			d = m->oargs.farg[3]*(1. - fest);
 			for (i = 0; i < 3; i++)
 				nd.scolor[i] = fest + nd.mcolor[i]*d;
 		} else {
