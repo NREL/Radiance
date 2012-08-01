@@ -282,7 +282,8 @@ m_normal(			/* color a ray that hit something normal */
 		} else if (fest > FTINY) {
 			d = m->oargs.farg[3]*(1. - fest);
 			for (i = 0; i < 3; i++)
-				nd.scolor[i] = fest + nd.mcolor[i]*d;
+				colval(nd.scolor,i) = fest +
+						colval(nd.mcolor,i)*d;
 		} else {
 			copycolor(nd.scolor, nd.mcolor);
 			scalecolor(nd.scolor, nd.rspec);
