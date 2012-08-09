@@ -182,7 +182,7 @@ formatval(			/* get format value (return true if format) */
 	if (r == NULL) return(1);
 	do
 		*r++ = *s++;
-	while(*s && !isspace(*s));
+	while (*s && !isspace(*s));
 	*r = '\0';
 	return(1);
 }
@@ -213,7 +213,7 @@ getheader(		/* get header from file */
 		buf[MAXLINE-2] = '\n';
 		if (fgets(buf, MAXLINE, fp) == NULL)
 			return(-1);
-		if (buf[0] == '\n')
+		if (buf[buf[0]=='\r'] == '\n')
 			return(0);
 		if (buf[MAXLINE-2] != '\n') {
 			ungetc(buf[MAXLINE-2], fp);	/* prevent false end */
@@ -262,7 +262,7 @@ globmatch(			/* check for match of s against pattern p */
 		case '*':			/* match any string */
 			while (p[1] == '*') p++;
 			do
-				if ( (p[1]=='?' || p[1]==*s) &&
+				if ( (p[1]=='?') | (p[1]==*s) &&
 						globmatch(p+1,s) )
 					return(1);
 			while (*s++);
@@ -275,11 +275,11 @@ globmatch(			/* check for match of s against pattern p */
 				if (!*p)
 					return(0);
 				if (*p == '-') {
-					setmatch += p[-1] <= *s && *s <= p[1];
+					setmatch += (p[-1] <= *s && *s <= p[1]);
 					if (!*++p)
 						break;
 				} else
-					setmatch += *p == *s;
+					setmatch += (*p == *s);
 			}
 			if (!setmatch)
 				return(0);
