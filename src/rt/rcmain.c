@@ -45,7 +45,7 @@ int		nmods = 0;		/* number of modifiers */
 
 void	(*addobjnotify[8])() = {ambnotify, NULL};
 
-char	RCCONTEXT[] = "RCONTRIB";	/* our special evaluation context */
+char	RCCONTEXT[] = "RC";		/* our special evaluation context */
 
 
 static void
