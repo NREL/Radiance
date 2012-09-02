@@ -380,7 +380,10 @@ sample_sdf(BSDFDAT *ndp, int sflags)
 
 	if (sflags == SDsampSpT) {
 		unsc = ndp->tunsamp;
-		dfp = ndp->sd->tf;
+		if (ndp->pr->rod > 0)
+			dfp = (ndp->sd->tf != NULL) ? ndp->sd->tf : ndp->sd->tb;
+		else
+			dfp = (ndp->sd->tb != NULL) ? ndp->sd->tb : ndp->sd->tf;
 		cvt_sdcolor(unsc, &ndp->sd->tLamb);
 	} else /* sflags == SDsampSpR */ {
 		unsc = ndp->runsamp;
@@ -470,7 +473,7 @@ m_bsdf(OBJREC *m, RAY *r)
 	} else {
 		if (m->oargs.nfargs < 6) {	/* check invisible backside */
 			if (!backvis && (nd.sd->rb == NULL) &
-						(nd.sd->tf == NULL)) {
+					(nd.sd->tb == NULL)) {
 				SDfreeCache(nd.sd);
 				raytrans(r);
 				return(1);
@@ -567,7 +570,8 @@ m_bsdf(OBJREC *m, RAY *r)
 			flipsurface(r);
 	}
 						/* add direct component */
-	if ((bright(nd.tdiff) <= FTINY) & (nd.sd->tf == NULL)) {
+	if ((bright(nd.tdiff) <= FTINY) & (nd.sd->tf == NULL) &
+					(nd.sd->tb == NULL)) {
 		direct(r, dir_brdf, &nd);	/* reflection only */
 	} else if (nd.thick == 0) {
 		direct(r, dir_bsdf, &nd);	/* thin surface scattering */

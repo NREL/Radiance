@@ -78,6 +78,8 @@ typedef struct SDCDst_s {
 	/* ...encoded distribution extends struct */
 } SDCDst;
 
+extern const SDCDst	SDemptyCD;	/* empty distribution */
+
 /* Forward declaration of BSDF component */
 typedef struct SDComp_s	SDComponent;
 
@@ -125,7 +127,8 @@ typedef struct {
 	SDValue		rLambFront;	/* diffuse front reflectance */
 	SDValue		rLambBack;	/* diffuse rear reflectance */
 	SDValue		tLamb;		/* diffuse transmission */
-	SDSpectralDF	*rf, *rb, *tf;	/* non-diffuse BSDF components */
+	SDSpectralDF	*rf, *rb;	/* non-diffuse BRDF components */
+	SDSpectralDF	*tf, *tb;	/* non-diffuse BTDF components */
 } SDData;
 
 /* List of loaded BSDFs */
