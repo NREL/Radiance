@@ -517,16 +517,13 @@ moveview(					/* move viewpoint */
 )
 {
 	double  d;
-	FVECT  v1;
 	VIEW  nv = ourview;
 	int  i;
 
 	spinvector(nv.vdir, ourview.vdir, ourview.vup, angle*(PI/180.));
-	if (elev != 0.0) {
-		fcross(v1, ourview.vup, nv.vdir);
-		normalize(v1);
-		spinvector(nv.vdir, nv.vdir, v1, elev*(PI/180.));
-	}
+	if (elev != 0.0)
+		geodesic(nv.vdir, nv.vdir, nv.vup, elev*(-PI/180.), GEOD_RAD);
+
 	if (nv.type == VT_PAR) {
 		nv.horiz /= mag;
 		nv.vert /= mag;

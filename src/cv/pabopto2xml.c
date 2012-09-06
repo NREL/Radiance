@@ -487,7 +487,7 @@ migration_step(MIGRATION *mig, double *src_rem, double *dst_rem, const float *pm
 {
 	static double	*src_cost = NULL;
 	int		n_alloc = 0;
-	const double	maxamt = 0.5/(mtx_nrows(mig)*mtx_ncols(mig));
+	const double	maxamt = 2./(mtx_nrows(mig)*mtx_ncols(mig));
 	double		amt = 0;
 	struct {
 		int	s, d;	/* source and destination */
