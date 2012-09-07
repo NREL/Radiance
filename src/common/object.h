@@ -32,7 +32,7 @@ typedef struct {
 #endif
 }  FUNARGS;
 
-#define  MAXSTR		128		/* maximum string length */
+#define  MAXSTR		512		/* maximum string (word) length */
 
 /*
  *	An object is defined as an index into an array of
