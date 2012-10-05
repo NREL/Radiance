@@ -136,6 +136,7 @@ extern short	*xmbuffer;	/* x motion at each pixel */
 extern short	*ymbuffer;	/* y motion at each pixel */
 extern uby8	*abuffer;	/* accuracy at each pixel */
 extern uby8	*sbuffer;	/* sample count per pixel */
+extern COLOR	*outbuffer;	/* output buffer (may equal cbuffer) */
 
 extern VIEW	vwprev;		/* last frame's view */
 extern COLOR	*cprev;		/* last frame colors */
@@ -153,7 +154,6 @@ extern double	hlsmax;		/* maximum high-level saliency */
 
 #define CSF_SMN		(1./0.82)	/* 1/avg_tracking_efficacy */
 
-#define outbuffer	cprev	/* used to hold final output */
 #define wbuffer		zprev	/* used for final filtering */
 
 #define fndx(x,y)	((y)*hres + (x))
