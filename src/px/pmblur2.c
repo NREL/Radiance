@@ -399,8 +399,8 @@ main(int argc, char *argv[])
 				/* get frame range & sampling */
 	switch (sscanf(argv[1], "%lf,%lf/%d", &fstart, &fend, &nsamps)) {
 	case 1:
-		nsamps = 0;
 		fend = fstart;
+		nsamps = 0;
 		break;
 	case 2:
 		nsamps = 0;
@@ -408,6 +408,8 @@ main(int argc, char *argv[])
 	case 3:
 		if (fend < fstart)
 			goto userr;
+		if (fend <= fstart+FTINY)
+			nsamps = 0;
 		break;
 	default:
 		goto userr;
@@ -438,6 +440,6 @@ main(int argc, char *argv[])
 	write_average(stdout);
 	return(fflush(stdout) == EOF);
 userr:
-	fprintf(stderr, "Usage: %s f0,f1 HDRspec ZBUFspec MVOspec\n", progname);
+	fprintf(stderr, "Usage: %s f0,f1[/n] HDRspec ZBUFspec MVOspec\n", progname);
 	return(1);
 }
