@@ -249,8 +249,10 @@ getviewspan(		/* compute a span of view pixels */
 						/* send to rtrace */
 		if (n >= maxpix) {			/* flush */
 			rt_compute(rt_buf, n);
-			while (n-- > 0)
+			while (n > 0) {
+				--n;
 				vb[buf_vh[n]+hsize] = luminance(rt_buf+3*n);
+			}
 		}
 		rt_buf[6*n] = ourview.vp[0];
 		rt_buf[6*n+1] = ourview.vp[1];
