@@ -207,15 +207,14 @@ neigh_zmin(const float *zb, int n)
 }
 
 
-/* Fill in missing pixels from immediate neighbors */
+/* Expand foreground pixels to mitigate aliasing/fill errors */
 static void
 fill_missing(void)
 {
 	int	n, m;
 
 	for (n = imres.xr*imres.yr; n--; )
-		if (zbuf[n] >= .9*FHUGE &&
-				zbuf[m = neigh_zmin(zbuf,n)] < .9*FHUGE)
+		if (zbuf[n] > 1.25*zbuf[m = neigh_zmin(zbuf,n)])
 			copycolor(imbuf[n], imbuf[m]);
 }
 
