@@ -160,9 +160,14 @@ main(int argc, char *argv[])
 		}
 		argv += 2; argc -= 2;
 	}
-	if (argc == 2)
+	if (argc == 2) {			/* open input if given */
 		fpin = fopen(argv[1], "r");
-	else if (argc != 1)
+		if (fpin == NULL) {
+			fprintf(stderr, "%s: cannot open BSDF interpolant '%s'\n",
+					progname, argv[1]);
+			return(1);
+		}
+	} else if (argc != 1)
 		goto userr;
 	SET_FILE_BINARY(fpin);			/* load BSDF interpolant */
 	if (!load_bsdf_rep(fpin))
