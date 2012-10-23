@@ -66,7 +66,8 @@ interp_isotropic()
 			else
 				printf("\t%.3e\n", bsdf);
 		    }
-		free(rbf);
+		if (rbf != NULL)
+			free(rbf);
 	}
 	if (pctcull >= 0) {			/* finish output */
 		if (pclose(ofp)) {
@@ -127,7 +128,8 @@ interp_anisotropic()
 			else
 				printf("\t%.3e\n", bsdf);
 		    }
-		free(rbf);
+		if (rbf != NULL)
+			free(rbf);
 	    }
 	if (pctcull >= 0) {			/* finish output */
 		if (pclose(ofp)) {
@@ -172,7 +174,6 @@ main(int argc, char *argv[])
 	SET_FILE_BINARY(fpin);			/* load BSDF interpolant */
 	if (!load_bsdf_rep(fpin))
 		return(1);
-	draw_edges();
 	/* xml_prologue();				/* start XML output */
 	if (single_plane_incident)		/* resample dist. */
 		interp_isotropic();
