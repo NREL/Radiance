@@ -14,12 +14,13 @@ static const char	RCSid[] = "$Id$";
 
 
 void
-eprint(ep, fp)			/* print a parse tree */
-register EPNODE  *ep;
-FILE  *fp;
+eprint(				/* print a parse tree */
+	EPNODE  *ep,
+	FILE  *fp
+)
 {
     static EPNODE  *curdef = NULL;
-    register EPNODE  *ep1 = NULL;
+    EPNODE  *ep1 = NULL;
 
     switch (ep->type) {
 
@@ -101,11 +102,12 @@ FILE  *fp;
 
 
 void
-dprint(name, fp)		/* print a definition (all if no name) */
-char  *name;
-FILE  *fp;
+dprint(			/* print a definition (all if no name) */
+	char  *name,
+	FILE  *fp
+)
 {
-    register EPNODE  *ep;
+    EPNODE  *ep;
     
     if (name == NULL)
 	for (ep = dfirst(); ep != NULL; ep = dnext()) {
