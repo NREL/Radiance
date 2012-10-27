@@ -354,8 +354,9 @@ double  ly
 {
 	int  x, y;
 
-	x = (lx >= 0.0) ? (int)(lx * rp->xr) : -(int)(-lx * rp->xr);
-	y = (ly >= 0.0) ? (int)(ly * rp->yr) : -(int)(-ly * rp->yr);
+	x = (int)(lx*rp->xr + .5 - (lx < 0.0));
+	y = (int)(ly*rp->yr + .5 - (ly < 0.0));
+
 	if (rp->rt & XDECR)
 		x = rp->xr-1 - x;
 	if (rp->rt & YDECR)
