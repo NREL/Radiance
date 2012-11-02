@@ -436,8 +436,8 @@ cm_loadBSDF(char *fname, COLOR cLamb)
 	if (ec)
 		error(USER, transSDError(ec));
 	ccy2rgb(&myBSDF.tLamb.spec, myBSDF.tLamb.cieY/PI, bsdfLamb);
-	recip = (myBSDF.tf == NULL);
-	tdf = recip ? myBSDF.tb : myBSDF.tf;
+	recip = (myBSDF.tb == NULL);
+	tdf = recip ? myBSDF.tf : myBSDF.tb;
 	if (tdf == NULL) {		/* no non-Lambertian transmission? */
 		if (cLamb != NULL)
 			copycolor(cLamb, bsdfLamb);
