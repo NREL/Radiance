@@ -117,6 +117,7 @@ typedef struct {
 
 extern MESH	*getmesh(char *mname, int flags);
 extern MESHINST	*getmeshinst(OBJREC *o, int flags);
+extern int	nextmeshtri(OBJECT *tip, MESH *mp);
 extern int	getmeshtrivid(int32 tvid[3], OBJECT *mo,
 				MESH *mp, OBJECT ti);
 extern int	getmeshvert(MESHVERT *vp, MESH *mp, int32 vid, int what);
