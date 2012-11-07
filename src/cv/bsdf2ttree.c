@@ -29,14 +29,14 @@ interp_isotropic()
 	char		cmd[128];
 	int		ix, ox, oy;
 	FVECT		ivec, ovec;
-	double		bsdf;
+	float		bsdf;
 #if DEBUG
 	fprintf(stderr, "Writing isotropic order %d ", samp_order);
 	if (pctcull >= 0) fprintf(stderr, "data with %d%% culling\n", pctcull);
 	else fputs("raw data\n", stderr);
 #endif
 	if (pctcull >= 0) {			/* begin output */
-		sprintf(cmd, "rttree_reduce -h -a -fd -r 3 -t %d -g %d",
+		sprintf(cmd, "rttree_reduce -h -a -ff -r 3 -t %d -g %d",
 				pctcull, samp_order);
 		fflush(stdout);
 		ofp = popen(cmd, "w");
@@ -91,14 +91,14 @@ interp_anisotropic()
 	char		cmd[128];
 	int		ix, iy, ox, oy;
 	FVECT		ivec, ovec;
-	double		bsdf;
+	float		bsdf;
 #if DEBUG
 	fprintf(stderr, "Writing anisotropic order %d ", samp_order);
 	if (pctcull >= 0) fprintf(stderr, "data with %d%% culling\n", pctcull);
 	else fputs("raw data\n", stderr);
 #endif
 	if (pctcull >= 0) {			/* begin output */
-		sprintf(cmd, "rttree_reduce -h -a -fd -r 4 -t %d -g %d",
+		sprintf(cmd, "rttree_reduce -h -a -ff -r 4 -t %d -g %d",
 				pctcull, samp_order);
 		fflush(stdout);
 		ofp = popen(cmd, "w");
