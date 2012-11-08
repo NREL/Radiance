@@ -189,13 +189,11 @@ rotate_rbf(RBFNODE *rbf, const FVECT invec)
 	int			pos[2];
 	int			n;
 #ifdef DEBUG
-	{
-		double	tdiff = 180./M_PI*fabs(acos(invec[2])-acos(rbf->invec[2]));
-		if (tdiff >= 1.5)
-			fprintf(stderr,
+	double	tdiff = 180./M_PI*fabs(acos(invec[2])-acos(rbf->invec[2]));
+	if (tdiff >= 1.5)
+		fprintf(stderr,
 			"%s: Warning - rotated theta differs by %.1f degrees\n",
-					progname, tdiff);
-	}
+				progname, tdiff);
 #endif
 	for (n = rbf->nrbf; n-- > 0; ) {
 		ovec_from_pos(outvec, rbf->rbfa[n].gx, rbf->rbfa[n].gy);
