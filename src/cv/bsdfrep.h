@@ -114,6 +114,9 @@ extern void		rev_symmetry(FVECT vec, int sym);
 /* Reverse symmetry for an RBF distribution */
 extern void		rev_rbf_symmetry(RBFNODE *rbf, int sym);
 
+/* Rotate RBF to correspond to given incident vector */
+extern void		rotate_rbf(RBFNODE *rbf, const FVECT invec);
+
 /* Compute volume associated with Gaussian lobe */
 extern double		rbf_volume(const RBFVAL *rbfp);
 

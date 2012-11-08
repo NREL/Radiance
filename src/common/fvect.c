@@ -198,13 +198,13 @@ int meas		/* distance measure (radians, absolute, relative) */
 	double	volen, dotprod, sint, cost;
 	int	i;
 
+	VCOPY(normtarg, vtarg);		/* in case vtarg==vres */
 	if (vres != vorig)
 		VCOPY(vres, vorig);
 	if (t == 0.0)
 		return(VLEN(vres));	/* no rotation requested */
 	if ((volen = normalize(vres)) == 0.0)
 		return(0.0);
-	VCOPY(normtarg, vtarg);
 	if (normalize(normtarg) == 0.0)
 		return(0.0);		/* target vector is zero */
 	dotprod = DOT(vres, normtarg);
