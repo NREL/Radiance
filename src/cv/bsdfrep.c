@@ -485,6 +485,10 @@ load_bsdf_rep(FILE *ifp)
 		rbfh.invec[0] = getflt(ifp);
 		rbfh.invec[1] = getflt(ifp);
 		rbfh.invec[2] = getflt(ifp);
+		if (normalize(rbfh.invec) == 0) {
+			fprintf(stderr, "%s: zero incident vector\n", progname);
+			return(0);
+		}
 		rbfh.vtotal = getflt(ifp);
 		rbfh.nrbf = getint(4, ifp);
 		newrbf = (RBFNODE *)malloc(sizeof(RBFNODE) +

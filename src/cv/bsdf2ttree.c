@@ -32,7 +32,7 @@ interp_isotropic()
 	float		bsdf;
 #if DEBUG
 	fprintf(stderr, "Writing isotropic order %d ", samp_order);
-	if (pctcull >= 0) fprintf(stderr, "data with %f%% culling\n", pctcull);
+	if (pctcull >= 0) fprintf(stderr, "data with %.1f%% culling\n", pctcull);
 	else fputs("raw data\n", stderr);
 #endif
 	if (pctcull >= 0) {			/* begin output */
@@ -94,7 +94,7 @@ interp_anisotropic()
 	float		bsdf;
 #if DEBUG
 	fprintf(stderr, "Writing anisotropic order %d ", samp_order);
-	if (pctcull >= 0) fprintf(stderr, "data with %f%% culling\n", pctcull);
+	if (pctcull >= 0) fprintf(stderr, "data with %.1f%% culling\n", pctcull);
 	else fputs("raw data\n", stderr);
 #endif
 	if (pctcull >= 0) {			/* begin output */
