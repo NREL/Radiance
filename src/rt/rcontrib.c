@@ -326,7 +326,7 @@ rcontrib()
 			lastray = lastdone = 0;
 		++lastray;
 		if (d == 0.0) {				/* zero ==> flush */
-			if ((yres <= 0) | (xres <= 0))
+			if ((yres <= 0) | (xres <= 1))
 				waitflush = 1;		/* flush after */
 			if (nchild == -1)
 				account = 1;
