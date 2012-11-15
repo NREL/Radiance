@@ -316,7 +316,7 @@ rcontrib()
 #endif
 	while (getvec(orig) == 0 && getvec(direc) == 0) {
 		d = normalize(direc);
-		if (nchild != -1 && (d == 0.0) & (accumulate != 1)) {
+		if (nchild != -1 && (d == 0.0) & (accumulate == 0)) {
 			if (!ignore_warning_given++)
 				error(WARNING,
 				"dummy ray(s) ignored during accumulation\n");
@@ -327,8 +327,9 @@ rcontrib()
 		++lastray;
 		if (d == 0.0) {				/* zero ==> flush */
 			if ((yres <= 0) | (xres <= 0))
-				waitflush = 1;		/* flush right after */
-			account = 1;
+				waitflush = 1;		/* flush after */
+			if (nchild == -1)
+				account = 1;
 		} else if (imm_irrad) {			/* else compute */
 			eval_irrad(orig, direc);
 		} else {
