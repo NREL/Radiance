@@ -195,7 +195,7 @@ int meas		/* distance measure (radians, absolute, relative) */
 )
 {
 	FVECT	normtarg;
-	double	volen, dotprod, sint, cost;
+	double	volen, dotprod, sintr, cost;
 	int	i;
 
 	VCOPY(normtarg, vtarg);		/* in case vtarg==vres */
@@ -222,10 +222,10 @@ int meas		/* distance measure (radians, absolute, relative) */
 	else if (meas == GEOD_REL)
 		t *= acos(dotprod);
 	cost = cos(t);
-	sint = sin(t);
+	sintr = sin(t) / sqrt(1. - dotprod*dotprod);
 	for (i = 0; i < 3; i++)
 		vres[i] = volen*( cost*vres[i] +
-				  sint*(normtarg[i] - dotprod*vres[i]) );
+				  sintr*(normtarg[i] - dotprod*vres[i]) );
 
 	return(volen);			/* return vector length */
 }

@@ -260,7 +260,11 @@ make_rbfrep(void)
 	nn = 0;			/* compute sum for normalization */
 	while (nn < newnode->nrbf)
 		newnode->vtotal += rbf_volume(&newnode->rbfa[nn++]);
-
+#ifdef DEBUG
+	fprintf(stderr, "Integrated DSF at (%.1f,%.1f) deg. is %.2f\n",
+			get_theta180(newnode->invec), get_phi360(newnode->invec),
+			newnode->vtotal);
+#endif
 	insert_dsf(newnode);
 
 	return(newnode);

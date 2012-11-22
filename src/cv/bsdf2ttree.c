@@ -180,7 +180,7 @@ xml_prologue(int ac, char *av[])
 	puts("\t\t<DetectorSpectrum>ASTM E308 1931 Y.dsp</DetectorSpectrum>");
 	puts("\t\t<WavelengthDataBlock>");
 	printf("\t\t\t<WavelengthDataDirection>%s</WavelengthDataDirection>\n",
-		bsdf_type[(input_orient>0)<<1 | (output_orient>0)]);
+			bsdf_type[(input_orient>0)<<1 | (output_orient>0)]);
 	puts("\t\t\t<AngleBasis>LBNL/Shirley-Chiu</AngleBasis>");
 	puts("\t\t\t<ScatteringDataType>BTDF</ScatteringDataType>");
 	puts("\t\t\t<ScatteringData>");

@@ -82,7 +82,7 @@ new_input_direction(double new_theta, double new_phi)
 int
 use_symmetry(FVECT vec)
 {
-	double	phi = get_phi360(vec);
+	const double	phi = get_phi360(vec);
 
 	switch (inp_coverage) {
 	case INP_QUAD1|INP_QUAD2|INP_QUAD3|INP_QUAD4:
