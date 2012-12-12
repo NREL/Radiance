@@ -112,8 +112,9 @@ interp_anisotropic()
 						/* run through directions */
 	for (ix = 0; ix < sqres; ix++)
 	    for (iy = 0; iy < sqres; iy++) {
-		RBFNODE	*rbf;
+		RBFNODE	*rbf;			/* Klems reversal */
 		SDsquare2disk(ivec, (ix+.5)/sqres, (iy+.5)/sqres);
+		ivec[0] = -ivec[0]; ivec[1] = -ivec[1];
 		ivec[2] = input_orient *
 				sqrt(1. - ivec[0]*ivec[0] - ivec[1]*ivec[1]);
 		rbf = advect_rbf(ivec);
