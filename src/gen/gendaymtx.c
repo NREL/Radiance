@@ -494,7 +494,7 @@ main(int argc, char *argv[])
 		fprintf(stderr, "%s: done.\n", progname);
 	exit(0);
 userr:
-	fprintf(stderr, "Usage: %s [-v][-d|-s][-m N][-g refl][-c r g b][-o{f|d}] [tape.wea]\n",
+	fprintf(stderr, "Usage: %s [-v][-d|-s][-m N][-g r g b][-c r g b][-o{f|d}] [tape.wea]\n",
 			progname);
 	exit(1);
 fmterr:
