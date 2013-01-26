@@ -190,10 +190,10 @@ extern SDError		SDsampComponent(SDValue *sv, FVECT ioVec,
 extern void		SDmultiSamp(double t[], int n, double randX);
 
 /* Map a [0,1]^2 square to a unit radius disk */
-void			SDsquare2disk(double ds[2], double seedx, double seedy);
+extern void		SDsquare2disk(double ds[2], double seedx, double seedy);
 
 /* Map point on unit disk to a unit square in [0,1]^2 range */
-void			SDdisk2square(double sq[2], double diskx, double disky);
+extern void		SDdisk2square(double sq[2], double diskx, double disky);
 
 /*****************************************************************
  * The calls below are the ones most applications require.
