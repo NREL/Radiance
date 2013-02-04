@@ -156,12 +156,12 @@ typedef float  COLORMAT[3][3];	/* color coordinate conversion matrix */
 #define  PRIMARYSTR		"PRIMARIES="
 #define  LPRIMARYSTR		10
 #define  isprims(hl)		(!strncmp(hl,PRIMARYSTR,LPRIMARYSTR))
-#define  primsval(p,hl)		sscanf((hl)+LPRIMARYSTR, \
+#define  primsval(p,hl)		(sscanf((hl)+LPRIMARYSTR, \
 					"%f %f %f %f %f %f %f %f", \
 					&(p)[RED][CIEX],&(p)[RED][CIEY], \
 					&(p)[GRN][CIEX],&(p)[GRN][CIEY], \
 					&(p)[BLU][CIEX],&(p)[BLU][CIEY], \
-					&(p)[WHT][CIEX],&(p)[WHT][CIEY])
+					&(p)[WHT][CIEX],&(p)[WHT][CIEY]) == 8)
 #define  fputprims(p,fp)	fprintf(fp, \
 				"%s %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f\n",\
 					PRIMARYSTR, \
