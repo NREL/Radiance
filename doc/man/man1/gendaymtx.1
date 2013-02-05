@@ -68,12 +68,17 @@ Alternatively, the
 .I \-s
 option may be used to exclude any direct solar component from the output.
 .PP
+By default,
+.I gendaymtx
+assumes the positive Y-axis points north such that the first sky patch
+is in the Y-axis direction on the horizon, the second patch is just
+west of that, and so on spiraling around to the final patch near the zenith.
 The
 .I \-r
 (or
 .I \-rz)
 option rotates the sky the specified number of degrees counter-clockwise
-about the zenith, i.e., east of South.
+about the zenith, i.e., west of north.
 This is in keeping with the effect of passing the output of
 .I gensky(1)
 or
