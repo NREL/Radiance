@@ -45,6 +45,7 @@ typedef struct {
 #endif
 					/* defined in tcos.c */
 extern double	tcos(double x);
+extern double	aatan2(double y, double x);
 					/* defined in xf.c */
 extern int	xf(XF *ret, int ac, char *av[]);
 extern int	invxf(XF *ret, int ac, char *av[]);

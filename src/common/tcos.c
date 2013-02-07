@@ -50,3 +50,23 @@ tcos(double x)				/* approximate cosine */
 	}
 	return(0.);		/* should never be reached */
 }
+
+
+/* Fast arctangent approximation due to Rajan et al. 2006 */
+double
+aatan2(double y, double x)
+{
+	double	ratio, aratio, val;
+
+	if (x == 0)
+		return (y > 0) ? PI/2. : 3./2.*PI;
+
+	aratio = (ratio = y/x) >= 0 ? ratio : -ratio;
+
+	if (aratio > 1.01)
+		return PI/2. - aatan2(x, y);
+
+	val = PI/4.*ratio - ratio*(aratio - 1.)*(0.2447 + 0.0663*aratio);
+
+	return val + PI*(x < 0);
+}
