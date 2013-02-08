@@ -64,7 +64,7 @@ atan2a(double y, double x)
 	aratio = (ratio = y/x) >= 0 ? ratio : -ratio;
 
 	if (aratio > 1.01)
-		return PI/2. - aatan2(x, y);
+		return PI/2. - atan2a(x, y);
 
 	val = PI/4.*ratio - ratio*(aratio - 1.)*(0.2447 + 0.0663*aratio);
 
