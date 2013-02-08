@@ -54,7 +54,7 @@ tcos(double x)				/* approximate cosine */
 
 /* Fast arctangent approximation due to Rajan et al. 2006 */
 double
-aatan2(double y, double x)
+atan2a(double y, double x)
 {
 	double	ratio, aratio, val;
 

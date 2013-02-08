@@ -33,6 +33,9 @@ typedef struct {
 #define	 PI		3.14159265358979323846
 #endif
 #endif
+					/* defined in tcos.c */
+extern double	tcos(double x);
+extern double	atan2a(double y, double x);
 
 #ifdef  FASTMATH
 #define  tcos			cos
@@ -43,9 +46,6 @@ typedef struct {
 #define  tsin(x)		tcos((x)-(PI/2.))
 #define  ttan(x)		(tsin(x)/tcos(x))
 #endif
-					/* defined in tcos.c */
-extern double	tcos(double x);
-extern double	aatan2(double y, double x);
 					/* defined in xf.c */
 extern int	xf(XF *ret, int ac, char *av[]);
 extern int	invxf(XF *ret, int ac, char *av[]);
