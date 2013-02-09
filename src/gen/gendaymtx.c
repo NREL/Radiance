@@ -556,6 +556,14 @@ ComputeSky(float *parr)
 		sky_brightness = CalcSkyBrightness();
 		sky_clearness =  CalcSkyClearness();
 
+		/* Limit sky clearness */
+		if (sky_clearness > 11.9)
+			sky_clearness = 11.9;
+
+		/* Limit sky brightness */
+		if (sky_brightness < 0.01)
+			sky_brightness = 0.01; 
+
 		/* Calculate illuminance */
 		index = GetCategoryIndex();
 		diff_illum = diff_irrad * CalcDiffuseIllumRatio(index);
@@ -837,7 +845,7 @@ int CalcSkyParamFromIllum()
 		sky_clearness = 12.0;
 
 	/* Limit sky brightness */
-	if (sky_brightness < 0.05)
+	if (sky_brightness < 0.01)
 			sky_brightness = 0.01; 
 
 	while (((fabs(diff_irrad - test1) > 10.0) ||
@@ -861,7 +869,7 @@ int CalcSkyParamFromIllum()
 			sky_clearness = 12.0;
 	
 		/* Limit sky brightness */
-		if (sky_brightness < 0.05)
+		if (sky_brightness < 0.01)
 			sky_brightness = 0.01; 
 	}
 
