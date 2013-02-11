@@ -84,6 +84,29 @@ interp2_realloc(INTERP2 *ip, int nsamps)
 	return(ip);
 }
 
+/* Set minimum distance under which samples will start to merge */
+void
+interp2_spacing(INTERP2 *ip, double mind)
+{
+	if (mind <= 0)
+		return;
+	if ((.998*ip->dmin <= mind) && (mind <= 1.002*ip->dmin))
+		return;
+	if (ip->da != NULL) {	/* will need to recompute distribution */
+		free(ip->da);
+		ip->da = NULL;
+	}
+	ip->dmin = mind;
+}
+
+/* Modify smoothing parameter by the given factor */
+void
+interp2_smooth(INTERP2 *ip, double sf)
+{
+	if ((ip->smf *= sf) < NI2DSMF)
+		ip->smf = NI2DSMF;
+}
+
 /* private call-back to sort position index */
 static int
 cmp_spos(const void *p1, const void *p2)
