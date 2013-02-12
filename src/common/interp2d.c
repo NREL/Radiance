@@ -238,7 +238,7 @@ interp2_analyze(INTERP2 *ip)
 static double
 get_wt(const INTERP2 *ip, const int i, double x, double y)
 {
-	double	dir, rd, d2;
+	double	dir, rd, r2, d2;
 	int	ri;
 				/* get relative direction */
 	x -= ip->spt[i][0];
@@ -251,9 +251,12 @@ get_wt(const INTERP2 *ip, const int i, double x, double y)
 	rd -= (double)ri;
 	rd = (1.-rd)*ip->da[i][ri] + rd*ip->da[i][(ri+1)%NI2DIR];
 	rd = ip->smf * DECODE_DIA(ip, rd);
+	r2 = 2.*rd*rd;
 	d2 = x*x + y*y;
+	if (d2 > 21.*r2)	/* result would be < 1e-9 */
+		return(.0);
 				/* Gaussian times harmonic weighting */
-	return( exp(d2/(-2.*rd*rd)) * ip->dmin/(ip->dmin + sqrt(d2)) );
+	return( exp(-d2/r2) * ip->dmin/(ip->dmin + sqrt(d2)) );
 }
 
 /* Assign full set of normalized weights to interpolate the given position */
