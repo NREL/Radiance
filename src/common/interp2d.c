@@ -71,7 +71,7 @@ interp2_realloc(INTERP2 *ip, int nsamps)
 		interp2_free(ip);
 		return(NULL);
 	}
-	if (nsamps == ip->ns);
+	if (nsamps == ip->ns)
 		return(ip);
 	if (ip->da != NULL) {	/* will need to recompute distribution */
 		free(ip->da);
