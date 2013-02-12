@@ -17,7 +17,7 @@ static const char RCSid[] = "$Id$";
  * each of NI2DIR surrounding directions.  To speed this
  * calculation, we sort the data into half-planes and apply
  * simple tests to see which neighbor is closest in each
- * direction.  Once we have our approximate neighborhood
+ * angular slice.  Once we have our approximate neighborhood
  * for a sample, we can use it in a modified Gaussian weighting
  * with allowing local anisotropy.  Harmonic weighting is added
  * to reduce the influence of distant neighbors.  This yields a
@@ -90,7 +90,7 @@ interp2_spacing(INTERP2 *ip, double mind)
 {
 	if (mind <= 0)
 		return;
-	if ((.998*ip->dmin <= mind) && (mind <= 1.002*ip->dmin))
+	if ((.998*ip->dmin <= mind) & (mind <= 1.002*ip->dmin))
 		return;
 	if (ip->da != NULL) {	/* will need to recompute distribution */
 		free(ip->da);
