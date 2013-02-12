@@ -303,6 +303,8 @@ interp2_topsamp(float wt[], int si[], const int n, INTERP2 *ip, double x, double
 					/* identify top n weights */
 	for (i = ip->ns; i--; ) {
 		const double	wti = get_wt(ip, i, x, y);
+		if (wti <= 1e-9)
+			continue;
 		for (j = nn; j > 0; j--) {
 			if (wt[j-1] >= wti)
 				break;
