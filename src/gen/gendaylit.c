@@ -21,6 +21,8 @@ static const char RCSid[] = "$Id$";
  *			points east, and the Y-axis points north.
 */
 
+#define _USE_MATH_DEFINES
+
 #include  <stdio.h>
 #include  <string.h>
 #include  <math.h>
