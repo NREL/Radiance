@@ -23,8 +23,8 @@ typedef struct {
 	float		dmin;		/* minimum diameter (default=1) */
 	float		smf;		/* smoothing factor (def=NI2DSMF) */
 	float		smin[2];	/* sample minima */
-	float		smul[2];	/* NI2DIM/(smax-smin) */
-	float		grid2;		/* twice grid diameter squared */
+	float		smax[2];	/* sample maxima */
+	float		grid2;		/* grid diameter squared */
 	struct interp2_samp {
 		unsigned short	dia[NI2DIR];
 		unsigned short	blkflg[NI2DIM];
