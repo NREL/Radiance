@@ -17,13 +17,15 @@ static const char RCSid[] = "$Id$";
 
 
 int
-otype(ofname)			/* get object function number from its name */
-register char  *ofname;
+otype(				/* get object function number from its name */
+	char  *ofname
+)
 {
-	register int  i;
+	int  i;
 
 	for (i = 0; i < NUMOTYPE; i++)
-		if (!strcmp(ofun[i].funame, ofname))
+		if (ofun[i].funame[0] == ofname[0] &&
+				!strcmp(ofun[i].funame, ofname))
 			return(i);
 
 	return(-1);		/* not found */
@@ -31,10 +33,11 @@ register char  *ofname;
 
 
 void
-objerror(o, etyp, msg)		/* report error related to object */
-OBJREC  *o;
-int  etyp;
-char  *msg;
+objerror(			/* report error related to object */
+	OBJREC  *o,
+	int  etyp,
+	char  *msg
+)
 {
 	char  msgbuf[512];
 
