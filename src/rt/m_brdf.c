@@ -38,12 +38,12 @@ static const char	RCSid[] = "$Id$";
  *  Arguments for MAT_TFUNC are:
  *	2+	func	funcfile	transform
  *	0
- *	4+	red	grn	blu	rspec	trans	tspec	A7 ..
+ *	6+	red	grn	blu	rspec	trans	tspec	A7 ..
  *
  *  Arguments for MAT_TDATA are:
  *	4+	func	datafile	funcfile	v0 ..	transform
  *	0
- *	4+	red	grn	blu	rspec	trans	tspec	A7 ..
+ *	6+	red	grn	blu	rspec	trans	tspec	A7 ..
  *
  *  Arguments for the more general MAT_BRTDF are:
  *	10+	rrefl	grefl	brefl
