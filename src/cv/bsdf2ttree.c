@@ -122,7 +122,7 @@ eval_isotropic(char *funame)
 						/* run through directions */
 	for (ix = 0; ix < sqres/2; ix++) {
 		RBFNODE	*rbf = NULL;
-		iovec[0] = (ix+.5)/sqres - 1.;
+		iovec[0] = 2.*(ix+.5)/sqres - 1.;
 		iovec[1] = .0;
 		iovec[2] = input_orient * sqrt(1. - iovec[0]*iovec[0]);
 		if (funame == NULL)
