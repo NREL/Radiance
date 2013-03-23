@@ -255,10 +255,10 @@ main(int argc, char *argv[])
 		case 't':
 			switch (argv[i][2]) {
 			case '3':
-				single_plane_incident = 0;
+				single_plane_incident = 1;
 				break;
 			case '4':
-				single_plane_incident = 1;
+				single_plane_incident = 0;
 				break;
 			case '\0':
 				pctcull = atof(argv[++i]);
