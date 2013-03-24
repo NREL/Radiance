@@ -33,7 +33,8 @@ VIEW  *v
 	static char  ill_horiz[] = "illegal horizontal view size";
 	static char  ill_vert[] = "illegal vertical view size";
 	
-	if (v->vaft < -FTINY || (v->vaft > FTINY && v->vaft <= v->vfore))
+	if ((v->vfore < -FTINY) | (v->vaft < -FTINY) ||
+			(v->vaft > FTINY) & (v->vaft <= v->vfore))
 		return("illegal fore/aft clipping plane");
 
 	if (v->vdist <= FTINY)
