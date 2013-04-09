@@ -507,6 +507,10 @@ m_bsdf(OBJREC *m, RAY *r)
 		multv3(upvec, upvec, mf->fxp->xfm);
 		nd.thick *= mf->fxp->sca;
 	}
+	if (r->rox != NULL) {
+		multv3(upvec, upvec, r->rox->f.xfm);
+		nd.thick *= r->rox->f.sca;
+	}
 	raynormal(nd.pnorm, r);
 						/* compute local BSDF xform */
 	ec = SDcompXform(nd.toloc, nd.pnorm, upvec);
