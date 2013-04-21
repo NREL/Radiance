@@ -15,9 +15,9 @@ char *
 transSDError(SDError ec)
 {
 	if (!SDerrorDetail[0])
-		return(strcpy(errmsg, SDerrorEnglish[ec]));
+		return(strcpy(errmsg, SDerrorList[ec]));
 
-	sprintf(errmsg, "%s: %s", SDerrorEnglish[ec], SDerrorDetail);
+	sprintf(errmsg, "%s: %s", SDerrorList[ec], SDerrorDetail);
 	return(errmsg);
 }
 
