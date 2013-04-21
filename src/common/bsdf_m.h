@@ -63,6 +63,53 @@ extern SDError		SDloadMtx(SDData *sd, ezxml_t wtl);
 /* Our matrix handling routines */
 extern SDFunc		SDhandleMtx;
 
+/******** Klems basis declarations for more intimate access ********/
+
+#define MAXLATS		46		/* maximum number of latitudes */
+
+/* BSDF angle specification */
+typedef struct {
+	char	name[64];		/* basis name */
+	int	nangles;		/* total number of directions */
+	struct {
+		float	tmin;			/* starting theta */
+		int	nphis;			/* number of phis (0 term) */
+	} lat[MAXLATS+1];		/* latitudes */
+} ANGLE_BASIS;
+
+#define	MAXABASES	7		/* limit on defined bases */
+
+extern ANGLE_BASIS	abase_list[MAXABASES];
+
+extern int		nabases;	/* current number of defined bases */
+
+/* Get vector for this angle basis index (front exiting) */
+extern b_vecf		fo_getvec;
+
+/* Get index corresponding to the given vector (front exiting) */
+extern b_ndxf		fo_getndx;
+
+/* Get projected solid angle for this angle basis index (universal) */
+extern b_ohmf		io_getohm;
+
+/* Get vector for this angle basis index (back incident) */
+extern b_vecf		bi_getvec;
+
+/* Get index corresponding to the vector (back incident) */
+extern b_ndxf		bi_getndx;
+
+/* Get vector for this angle basis index (back exiting) */
+extern b_vecf		bo_getvec;
+
+/* Get index corresponding to the vector (back exiting) */
+extern b_ndxf		bo_getndx;
+
+/* Get vector for this angle basis index (front incident) */
+extern b_vecf		fi_getvec;
+
+/* Get index corresponding to the vector (front incident) */
+extern b_ndxf		fi_getndx;
+
 #ifdef __cplusplus
 }
 #endif
