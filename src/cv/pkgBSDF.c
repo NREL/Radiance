@@ -100,7 +100,7 @@ cvtBSDF(char *fname)
 		return(0);
 	}
 	SDclearBSDF(&myBSDF, fname);
-	if (SDreportEnglish(SDloadFile(&myBSDF, pname), stderr))
+	if (SDreportError(SDloadFile(&myBSDF, pname), stderr))
 		return(0);
 	retOK = (myBSDF.dim[0] > FTINY) & (myBSDF.dim[1] > FTINY);
 	if (!retOK) {
