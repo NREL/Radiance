@@ -24,7 +24,7 @@ my $nproc = 1;
 my $doforw = 0;
 my $doback = 1;
 my $pctcull = 90;
-my $gunit = "Meter";
+my $gunit = "meter";
 my @dim;
 # Get options
 while ($#ARGV >= 0) {
@@ -123,7 +123,7 @@ print "	</Material>\n";
 # Output MGF description if requested
 if ( $geout ) {
 	print "\t<Geometry format=\"MGF\">\n";
-	print "\t\t<MGFblock unit=\"$gunit\">\n";
+	print "<MGFblock unit=\"$gunit\">\n";
 	printf "xf -t %.6f %.6f 0\n", -($dim[0]+$dim[1])/2, -($dim[2]+$dim[3])/2;
 	open(MGFSCN, "< $mgfscn");
 	while (<MGFSCN>) { print $_; }
