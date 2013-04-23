@@ -602,7 +602,10 @@ SDloadMtx(SDData *sd, ezxml_t wtl)
 					/* separate diffuse components */
 	extract_diffuse(&sd->rLambFront, sd->rf);
 	extract_diffuse(&sd->rLambBack, sd->rb);
-	extract_diffuse(&sd->tLamb, (sd->tf != NULL) ? sd->tf : sd->tb);
+	if (sd->tf != NULL)
+		extract_diffuse(&sd->tLamb, sd->tf);
+	if (sd->tb != NULL)
+		extract_diffuse(&sd->tLamb, sd->tb);
 					/* return success */
 	return SDEnone;
 }
