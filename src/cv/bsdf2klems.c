@@ -17,6 +17,8 @@ static const char RCSid[] = "$Id$";
 #include "calcomp.h"
 #include "bsdfrep.h"
 #include "bsdf_m.h"
+				/* assumed maximum # Klems patches */
+#define MAXPATCHES	145
 				/* global argv[0] */
 char			*progname;
 				/* selected basis function name */
@@ -263,6 +265,7 @@ eval_function(char *funame)
 	double		sum;
 	int		i, j, n;
 
+	initurand(npsamps);
 	data_prologue();			/* begin output */
 	for (j = 0; j < abp->nangles; j++) {	/* run through directions */
 	    for (i = 0; i < abp->nangles; i++) {
@@ -274,9 +277,9 @@ eval_function(char *funame)
 			bo_getvec(iovec+3, j+(n+frandom())/npsamps, abp);
 
 		    if (input_orient > 0)
-			fi_getvec(iovec, i+(n+frandom())/npsamps, abp);
+			fi_getvec(iovec, i+urand(n), abp);
 		    else
-			bi_getvec(iovec, i+(n+frandom())/npsamps, abp);
+			bi_getvec(iovec, i+urand(n), abp);
 
 		    sum += funvalue(funame, 6, iovec);
 		}
@@ -291,7 +294,6 @@ eval_function(char *funame)
 static void
 eval_rbf(void)
 {
-#define MAXPATCHES	145
 	ANGLE_BASIS	*abp = get_basis(kbasis);
 	float		bsdfarr[MAXPATCHES*MAXPATCHES];
 	FVECT		vin, vout;
@@ -332,7 +334,6 @@ eval_rbf(void)
 	    putchar('\n');
 	}
 	data_epilogue();			/* finish output */
-#undef MAXPATCHES
 }
 
 /* Read in BSDF and interpolate as Klems matrix representation */
