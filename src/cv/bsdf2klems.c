@@ -174,7 +174,7 @@ eval_bsdf(const char *fname)
 		    sum = 0;			/* average over patches */
 		    for (n = npsamps; n-- > 0; ) {
 			fo_getvec(vout, j+(n+frandom())/npsamps, abp);
-			fi_getvec(vin, i+(n+frandom())/npsamps, abp);
+			fi_getvec(vin, i+urand(n), abp);
 			ec = SDevalBSDF(&sv, vout, vin, &bsd);
 			if (ec != SDEnone)
 				goto err;
@@ -195,7 +195,7 @@ eval_bsdf(const char *fname)
 		    sum = 0;			/* average over patches */
 		    for (n = npsamps; n-- > 0; ) {
 			bo_getvec(vout, j+(n+frandom())/npsamps, abp);
-			bi_getvec(vin, i+(n+frandom())/npsamps, abp);
+			bi_getvec(vin, i+urand(n), abp);
 			ec = SDevalBSDF(&sv, vout, vin, &bsd);
 			if (ec != SDEnone)
 				goto err;
@@ -216,7 +216,7 @@ eval_bsdf(const char *fname)
 		    sum = 0;			/* average over patches */
 		    for (n = npsamps; n-- > 0; ) {
 			bo_getvec(vout, j+(n+frandom())/npsamps, abp);
-			fi_getvec(vin, i+(n+frandom())/npsamps, abp);
+			fi_getvec(vin, i+urand(n), abp);
 			ec = SDevalBSDF(&sv, vout, vin, &bsd);
 			if (ec != SDEnone)
 				goto err;
@@ -237,7 +237,7 @@ eval_bsdf(const char *fname)
 		    sum = 0;			/* average over patches */
 		    for (n = npsamps; n-- > 0; ) {
 			fo_getvec(vout, j+(n+frandom())/npsamps, abp);
-			bi_getvec(vin, i+(n+frandom())/npsamps, abp);
+			bi_getvec(vin, i+urand(n), abp);
 			ec = SDevalBSDF(&sv, vout, vin, &bsd);
 			if (ec != SDEnone)
 				goto err;
