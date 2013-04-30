@@ -233,7 +233,7 @@ int main(int argc, char** argv)
 				break;
 			
 			case 'O':
-				output = atof(argv[++i]);	/*define the unit of the output of the program : 
+				output = atoi(argv[++i]);	/*define the unit of the output of the program : 
 								sky and sun luminance/radiance (0==W visible, 1==W solar radiation, 2==lm) */
 				break;
 				

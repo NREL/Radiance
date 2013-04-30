@@ -18,6 +18,8 @@ gendaymtx - generate an annual Perez sky matrix from a weather tape
 .B "\-c r g b"
 ][
 .B "-o{f|d}"
+][
+.B "-O{0|1}"
 ]
 [
 .B "tape.wea"
@@ -95,6 +97,10 @@ option may be used to specify binary float or double output, respectively.
 This is much faster to write and to read, and is therefore preferred on
 systems that support it.
 (MS Windows is not one of them.)\0
+The
+.I \-O1
+option specifies that output should be total solar radiance rather
+than visible radiance.
 Finally, the
 .I \-v
 option will enable verbose reporting, which is mostly useful for
