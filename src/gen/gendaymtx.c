@@ -209,7 +209,7 @@ static const CategoryBounds SkyClearCat[8] =
 	{ 1.950, 2.800 },
 	{ 2.800, 4.500 },
 	{ 4.500, 6.200 },
-	{ 6.200, 12.00 }	/* Clear */
+	{ 6.200, 12.01 }	/* Clear */
 };
 
 /* Luminous efficacy model coefficients */
