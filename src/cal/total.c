@@ -13,7 +13,7 @@ static const char	RCSid[] = "$Id$";
 #include  <math.h>
 #include  "platform.h"
 
-#define  MAXCOL		2048		/* maximum number of columns */
+#define  MAXCOL		8192		/* maximum number of columns */
 
 #define  ADD		0		/* add numbers */
 #define  MULT		1		/* multiply numbers */
