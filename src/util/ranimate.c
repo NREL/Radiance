@@ -416,9 +416,9 @@ setdefaults(void)			/* set default values */
 	if (!vdef(DISKSPACE)) {
 		if (!nowarn)
 			fprintf(stderr,
-		"%s: warning - no %s setting, assuming 100 Mbytes available\n",
+		"%s: warning - no %s setting, assuming 1000 Mbytes available\n",
 					progname, vnam(DISKSPACE));
-		vval(DISKSPACE) = "100";
+		vval(DISKSPACE) = "1000";
 		vdef(DISKSPACE)++;
 	}
 	if (!vdef(RSH)) {
