@@ -7,9 +7,29 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
+#define _USE_MATH_DEFINES
 #include  <math.h>
 #include  "fvect.h"
 
+double
+Acos(double x)			/* insurance for touchy math library */
+{
+	if (x <= -1.+FTINY*FTINY)
+		return(M_PI);
+	if (x >= 1.-FTINY*FTINY)
+		return(.0);
+	return(acos(x));
+}
+
+double
+Asin(double x)			/* insurance for touchy math library */
+{
+	if (x <= -1.+FTINY*FTINY)
+		return(-M_PI/2.);
+	if (x >= 1.-FTINY*FTINY)
+		return(M_PI/2);
+	return(asin(x));
+}
 
 double
 fdot(				/* return the dot product of two vectors */

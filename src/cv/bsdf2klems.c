@@ -326,6 +326,8 @@ eval_rbf(void)
 		}
 		bsdfarr[j*abp->nangles + i] = sum*output_orient/npsamps;
 	    }
+	    if (rbf != NULL)
+		free(rbf);
 	}
 	n = 0;					/* write out our matrix */
 	for (j = 0; j < abp->nangles; j++) {

@@ -266,7 +266,7 @@ e_advect_rbf(const MIGRATION *mig, const FVECT invec)
 	int		n, i, j;
 	double		t, full_dist;
 						/* get relative position */
-	t = acos(DOT(invec, mig->rbfv[0]->invec));
+	t = Acos(DOT(invec, mig->rbfv[0]->invec));
 	if (t < M_PI/grid_res) {		/* near first DSF */
 		n = sizeof(RBFNODE) + sizeof(RBFVAL)*(mig->rbfv[0]->nrbf-1);
 		rbf = (RBFNODE *)malloc(n);

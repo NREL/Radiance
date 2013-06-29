@@ -170,7 +170,7 @@ fo_getndx(const FVECT v, void *p)
 		return -1;
 	if ((v[2] < 0) | (v[2] > 1.))
 		return -1;
-	pol = 180.0/M_PI*acos(v[2]);
+	pol = 180.0/M_PI*Acos(v[2]);
 	azi = 180.0/M_PI*atan2(v[1], v[0]);
 	if (azi < 0.0) azi += 360.0;
 	for (li = 1; ab->lat[li].tmin <= pol; li++)
