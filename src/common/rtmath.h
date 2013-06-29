@@ -37,7 +37,7 @@ typedef struct {
 extern double	tcos(double x);
 extern double	atan2a(double y, double x);
 
-#ifdef  FASTMATH
+#ifdef  __FAST_MATH__
 #define  tcos			cos
 #define  tsin			sin
 #define  ttan			tan
