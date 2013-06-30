@@ -96,6 +96,8 @@ init_pabopto_inp(const int i, const char *fname)
 		fputs(": unknown incident angle\n", stderr);
 		return(0);
 	}
+	while (inpfile[i].phi < 0)	/* normalize phi direction */
+		inpfile[i].phi += 360.;
 	return(1);
 }
 
