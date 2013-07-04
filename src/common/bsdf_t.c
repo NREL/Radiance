@@ -728,7 +728,7 @@ SDqueryTreProjSA(double *psa, const FVECT v1, const RREAL *v2,
 	} else {
 		const SDTreCDst	*cd = (const SDTreCDst *)SDgetTreCDist(v1, sdc);
 		if (cd == NULL)
-			return SDEmemory;
+			cd = &SDemptyCD;
 		myPSA[0] = M_PI * (cd->clim[0][1] - cd->clim[0][0]) *
 				(cd->clim[1][1] - cd->clim[1][0]);
 		myPSA[1] = cd->max_psa;
