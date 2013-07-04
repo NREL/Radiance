@@ -618,7 +618,8 @@ SDsizeBSDF(double *projSA, const FVECT v1, const RREAL *v2,
 		projSA[0] = M_PI;
 		if (qflags == SDqueryMin+SDqueryMax)
 			projSA[1] = M_PI;
-	}
+	} else if (qflags == SDqueryMin+SDqueryMax && projSA[0] > projSA[1])
+		projSA[0] = projSA[1];
 	return SDEnone;
 }
 

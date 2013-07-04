@@ -748,7 +748,7 @@ SDqueryTreProjSA(double *psa, const FVECT v1, const RREAL *v2,
 			psa[1] = myPSA[1];
 		/* fall through */
 	case SDqueryMin:
-		if (myPSA[0] < psa[0])
+		if ((myPSA[0] > 0) & (myPSA[0] < psa[0]))
 			psa[0] = myPSA[0];
 		break;
 	}

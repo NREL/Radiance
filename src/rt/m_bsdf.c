@@ -122,7 +122,9 @@ direct_bsdf_OK(COLOR cval, FVECT ldir, double omega, BSDFDAT *ndp)
 			return(0);
 	}
 	sf = specjitter * ndp->pr->rweight;
-	if (25.*tomega <= omega)
+	if (tomega <= .0)
+		nsamp = 1;
+	else if (25.*tomega <= omega)
 		nsamp = 100.*sf + .5;
 	else
 		nsamp = 4.*sf*omega/tomega + .5;
