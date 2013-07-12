@@ -18,10 +18,11 @@ static const char	RCSid[] = "$Id$";
 
 #include "rtmath.h"
 
+#ifndef __FAST_MATH__
+
 #ifndef NCOSENTRY
 #define NCOSENTRY	1024
 #endif
-
 
 double
 tcos(double x)				/* approximate cosine */
@@ -51,6 +52,7 @@ tcos(double x)				/* approximate cosine */
 	return(0.);		/* should never be reached */
 }
 
+#endif
 
 /* Fast arctangent approximation due to Rajan et al. 2006 */
 double
