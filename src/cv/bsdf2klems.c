@@ -288,6 +288,7 @@ static void
 eval_function(char *funame)
 {
 	ANGLE_BASIS	*abp = get_basis(kbasis);
+	int		assignD = (fundefined(funame) < 6);
 	double		iovec[6];
 	double		sum;
 	int		i, j, n;
@@ -308,6 +309,12 @@ eval_function(char *funame)
 		    else
 			bi_getvec(iovec, i+urand(n), abp);
 
+		    if (assignD) {
+			varset("Dx", '=', -iovec[3]);
+			varset("Dy", '=', -iovec[4]);
+			varset("Dz", '=', -iovec[5]);
+			++eclock;
+		    }
 		    sum += funvalue(funame, 6, iovec);
 		}
 		printf("\t%.3e\n", sum/npsamps);
@@ -413,8 +420,11 @@ main(int argc, char *argv[])
 			fprintf(stderr,
 	"%s: need single function with 6 arguments: bsdf(ix,iy,iz,ox,oy,oz)\n",
 					progname);
+			fprintf(stderr, "\tor 3 arguments using Dx,Dy,Dz: bsdf(ix,iy,iz)\n",
+					progname);
 			goto userr;
 		}
+		++eclock;
 		xml_header(argc, argv);			/* start XML output */
 		xml_prologue(NULL);
 		if (dofwd) {
