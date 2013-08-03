@@ -5,6 +5,8 @@ static const char	RCSid[] = "$Id$";
 static	char sccsid[] = "@(#)erf.c 1.1 87/12/21 SMI"; /* from UCB 4.1 12/25/82 */
 #endif
 
+#include "rtmath.h"
+
 /*
 	C program for floating point error function
 
@@ -71,8 +73,7 @@ static double q2[]  = {
 };
 
 double
-erf(arg) double arg;{
-	double erfc();
+erf(double arg) {
 	int sign;
 	double argsq;
 	double d, n;
@@ -97,9 +98,7 @@ erf(arg) double arg;{
 }
 
 double
-erfc(arg) double arg;{
-	double erf();
-	double exp();
+erfc(double arg) {
 	double n, d;
 	int i;
 
