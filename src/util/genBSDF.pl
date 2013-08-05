@@ -277,7 +277,7 @@ $cmd = "rcalc -if3 -e 'Omega:PI/($ns*$ns)' " .
 	q{-e '$1=(0.265*$1+0.670*$2+0.065*$3)/Omega' };
 if ($pctcull >= 0) {
 	$cmd .= "-of $td/" . ($bmodnm,$fmodnm)[$forw] . ".flt " .
-	"| rttree_reduce -a -h -ff -t $pctcull -r $tensortree -g $ttlog2";
+	"| rttree_reduce -h -ff -t $pctcull -r $tensortree -g $ttlog2";
 	system "$cmd" || die "Failure running rttree_reduce";
 } else {
 	$cmd .= "$td/" . ($bmodnm,$fmodnm)[$forw] . ".flt";
