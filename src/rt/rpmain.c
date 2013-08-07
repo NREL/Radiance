@@ -76,7 +76,7 @@ main(int  argc, char  *argv[])
 	int  loadflags = ~IO_FILES;
 	int  seqstart = 0;
 	int  persist = 0;
-	int  duped1;
+	int  duped1 = -1;
 	int  rval;
 	int  i;
 					/* record start time */

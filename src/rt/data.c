@@ -45,7 +45,7 @@ getdata(				/* get data array dname */
 {
 	char  *dfname;
 	FILE  *fp;
-	int  asize;
+	int  asize=0;
 	register int  i, j;
 	register DATARRAY  *dp;
 						/* look for array in list */

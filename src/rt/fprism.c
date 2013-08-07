@@ -776,7 +776,7 @@ l_get_val(
  int val, dir, i, trouve, curseur;
  int nb;
  double valeur;
- TRAYON *rayt, raynull;
+ TRAYON *rayt=NULL, raynull;
  
  if (prismclock < 0 || prismclock < eclock) setprism();
  if (bidon == BADVAL) {

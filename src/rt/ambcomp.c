@@ -156,7 +156,7 @@ doambient(				/* compute ambient component */
 	FVECT  dg
 )
 {
-	double  b, d;
+	double  b, d=0;
 	AMBHEMI  hemi;
 	AMBSAMP  *div;
 	AMBSAMP  dnew;

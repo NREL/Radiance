@@ -50,7 +50,7 @@ m_glass(		/* color a ray which hit a thin glass surface */
 	COLOR  mcolor;
 	double  pdot;
 	FVECT  pnorm;
-	double  rindex, cos2;
+	double  rindex=0, cos2;
 	COLOR  trans, refl;
 	int  hastexture, hastrans;
 	double  d, r1e, r1m;

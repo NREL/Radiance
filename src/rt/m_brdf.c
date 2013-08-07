@@ -206,7 +206,7 @@ m_brdf(			/* color a ray that hit a BRDTfunc material */
 	BRDFDAT  nd;
 	RAY  sr;
 	double  mirtest=0, mirdist=0;
-	double  transtest, transdist;
+	double  transtest=0, transdist=0;
 	int  hasrefl, hastrans;
 	int  hastexture;
 	COLOR  ctmp;

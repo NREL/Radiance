@@ -74,8 +74,8 @@ m_dielectric(	/* color a ray which hit a dielectric interface */
 	COLOR  ctrans;
 	COLOR  talb;
 	int  hastexture;
-	double  transdist, transtest=0;
-	double  mirdist, mirtest=0;
+	double  transdist=0, transtest=0;
+	double  mirdist=0, mirtest=0;
 	int	flatsurface;
 	double  refl, trans;
 	FVECT  dnorm;

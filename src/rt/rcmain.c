@@ -8,6 +8,7 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include <signal.h>
+#include <time.h>
 #include "rcontrib.h"
 #include "random.h"
 #include "source.h"
@@ -51,8 +52,6 @@ char	RCCONTEXT[] = "RC";		/* our special evaluation context */
 static void
 printdefaults(void)			/* print default values to stdout */
 {
-	char  *cp;
-
 	printf("-c %-5d\t\t\t# accumulated rays per record\n", accumulate);
 	printf("-V%c\t\t\t\t# output %s\n", contrib ? '+' : '-',
 			contrib ? "contributions" : "coefficients");

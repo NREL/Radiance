@@ -235,7 +235,6 @@ ashiksamp(		/* sample anisotropic Ashikhmin-Shirley specular */
 	FVECT  h;
 	double  rv[2], dtmp;
 	double  cosph, sinph, costh, sinth;
-	COLOR	scol;
 	int  maxiter, ntrials, nstarget, nstaken;
 	int  i;
 

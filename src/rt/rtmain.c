@@ -77,8 +77,8 @@ main(int  argc, char  *argv[])
 				default: goto badopt; }
 	int  persist = 0;
 	char  *octnm = NULL;
-	char  **tralp;
-	int  duped1;
+	char  **tralp = NULL;
+	int  duped1 = -1;
 	int  rval;
 	int  i;
 					/* global program name */

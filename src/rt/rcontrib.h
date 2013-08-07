@@ -121,4 +121,6 @@ extern void		put_zero_record(int ndx);
 
 extern void		parental_loop(void);	/* controlling process */
 
+extern void		feeder_loop(void);	/* feeder process */
+
 extern void		rcontrib(void);		/* main calculation loop */

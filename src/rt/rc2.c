@@ -8,6 +8,7 @@ static const char RCSid[] = "$Id$";
 
 #include "rcontrib.h"
 #include "resolu.h"
+#include <ctype.h>
 
 /* Close output stream and free record */
 static void
@@ -182,7 +183,6 @@ getostream(const char *ospec, const char *mname, int bn, int noopen)
 		}
 	}
 	if (!noopen && sop->ofp == NULL) {	/* open output stream */
-		long		i;
 		if (oname[0] == '!')		/* output to command */
 			sop->ofp = popen(oname+1, "w");
 		else				/* else open file */
@@ -212,17 +212,6 @@ getostream(const char *ospec, const char *mname, int bn, int noopen)
 			sop->xr = xres; sop->yr = yres;
 		}
 		printresolu(sop->ofp, sop->xr, sop->yr);
-#if 0
-						/* play catch-up */
-		for (i = accumulate > 0 ? lastdone/accumulate : 0; i--; ) {
-			int	j = sop->reclen;
-			if (j <= 0) j = 1;
-			while (j--)
-				put_contrib(nocontrib, sop->ofp);
-			if (outfmt == 'a')
-				putc('\n', sop->ofp);
-		}
-#endif
 		if (waitflush > 0)
 			fflush(sop->ofp);
 	}

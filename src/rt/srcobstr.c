@@ -63,7 +63,7 @@ initobscache(int sn)
 	FVECT		rorg, rdir;
 	RREAL		d;
 	int		i, j, k;
-	int		ax, ax1, ax2;
+	int		ax=0, ax1=1, ax2=2;
 
 	if (srcp->sflags & (SSKIP|SPROX|SSPOT|SVIRTUAL))
 		return;			/* don't cache these */
@@ -200,7 +200,7 @@ srcobstructp(register RAY *r)
 		initobscache(r->rsrc);
 					/* compute cache index */
 	if (srcp->sflags & SDISTANT) {
-		int     ax, ax1, ax2;
+		int     ax=0, ax1=1, ax2=2;
 		double  t;
 		ax = srcp->obscache->p.d.ax;
 		if ((ax1 = ax+1) >= 3) ax1 -= 3;
