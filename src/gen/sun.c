@@ -9,6 +9,7 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include  <math.h>
+#include  "sun.h"
 
 #ifdef M_PI
 #define  PI	M_PI

@@ -118,3 +118,5 @@ mkillum2.o mkillum3.o:	../common/paths.h
 gensky.o:	../common/color.h
 
 gensurf.o genworm.o genrev.o:	../common/calcomp.h
+
+sun.o:	sun.h
