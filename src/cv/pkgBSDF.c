@@ -87,7 +87,7 @@ cvtBSDF(char *fname)
 {
 	int	retOK;
 	SDData	myBSDF;
-	char	*pname;
+	char	*pname, *fnbeg;
 					/* find and load the XML file */
 	retOK = strlen(fname);
 	if (retOK < 5 || strcmp(fname+retOK-4, ".xml")) {
@@ -99,6 +99,9 @@ cvtBSDF(char *fname)
 		fprintf(stderr, "%s: cannot find BSDF file\n", fname);
 		return(0);
 	}
+	fnbeg = strrchr(fname, DIRSEP);
+	if (fnbeg != NULL)		/* eliminate directory */
+		fname = fnbeg+1;
 	SDclearBSDF(&myBSDF, fname);
 	if (SDreportError(SDloadFile(&myBSDF, pname), stderr))
 		return(0);
