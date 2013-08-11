@@ -20,7 +20,6 @@ extern "C" {
 
 struct illum_args {
 	int	flags;			/* flags from list above */
-	double	thick;			/* object thickness */
 	char	matname[MAXSTR];	/* illum material name */
 	char	datafile[MAXSTR];	/* distribution data file name */
 	int	dfnum;			/* data file number */

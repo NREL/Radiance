@@ -24,7 +24,6 @@ static const char RCSid[] = "$Id$";
 
 struct illum_args  thisillum = {	/* our illum and default values */
 		0,
-		0.,
 		DFLMAT,
 		DFLDAT,
 		0,
@@ -360,16 +359,6 @@ xoptions(			/* process options in string s */
 			}
 			doneheader = 0;
 			continue;
-		case 't':			/* object thickness */
-			if (*++cp != '=')
-				break;
-			if (!isfltd(++cp, " \t\n\r"))
-				break;
-			thisillum.thick = atof(cp);
-			if (thisillum.thick < .0)
-				thisillum.thick = .0;
-			cp = sskip(cp);
-			continue;
 		case '!':			/* processed file! */
 			sprintf(errmsg, "(%s): already processed!", nm);
 			error(WARNING, errmsg);
@@ -415,7 +404,6 @@ printopts(void)			/* print out option default values */
 	printf("d=%d\t\t\t\t# density of directions\n", thisillum.sampdens);
 	printf("s=%d\t\t\t\t# samples per direction\n", thisillum.nsamps);
 	printf("b=%f\t\t\t# minimum average brightness\n", thisillum.minbrt);
-	printf("t=%f\t\t\t# object thickness\n", thisillum.thick);
 }
 
 
