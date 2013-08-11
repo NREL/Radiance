@@ -289,6 +289,8 @@ main(int argc, char *argv[])
 			goto badopt;
 		}
 	}
+	if (nmods <= 0)
+		error(USER, "missing required modifier argument");
 					/* override some option settings */
 	override_options();
 					/* initialize object types */
