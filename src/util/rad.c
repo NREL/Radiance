@@ -558,6 +558,7 @@ oconv(void)				/* run oconv and mkillum if necessary */
 			unlink(illumtmp);
 			quit(1);
 		}
+		rmfile(oct0name);
 						/* make octree1 (frozen) */
 		if (octreedate)
 			sprintf(combuf, "%s%s -f -i %s %s > %s", c_oconv,
