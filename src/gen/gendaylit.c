@@ -6,6 +6,7 @@
  *				1 Avenue Eugene Freyssinet, Saint-Quentin-Yvelines, France
 */
 
+#define _USE_MATH_DEFINES
 #include  <stdio.h>
 #include  <string.h>
 #include  <math.h>
