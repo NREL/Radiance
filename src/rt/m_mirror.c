@@ -43,7 +43,8 @@ m_mirror(			/* shade mirrored ray */
 	if (m->oargs.nfargs != 3 || m->oargs.nsargs > 1)
 		objerror(m, USER, "bad number of arguments");
 					/* check for substitute material */
-	if (m->oargs.nsargs > 0 &&
+					/* but avoid double-counting */
+	if (m->oargs.nsargs > 0 && !(r->crtype & (AMBIENT|SPECULAR)) &&
 			(r->rsrc < 0 || source[r->rsrc].so != r->ro)) {
 		if (!strcmp(m->oargs.sarg[0], VOIDID)) {
 			raytrans(r);
