@@ -35,6 +35,8 @@ typedef struct {
 	char	*rec[1];	/* record array (extends struct) */
 } RECINDEX;
 
+int		warnings = 1;	/* report warnings? */
+
 /* free loaded file */
 static void
 free_load(MEMLOAD *mp)
@@ -383,10 +385,10 @@ do_resize(FILE *fp)
 			putc('\t', stdout);
 	} while (--records2go);			/* expected EOD? */
 done:
-	if (columns2go != no_columns)
+	if (warnings && columns2go != no_columns)
 		fprintf(stderr, "Warning -- incomplete final row\n");
-	if (fget_word(word, fp) != NULL)
-		fprintf(stderr, "Warning -- data beyond expected EOF\n");
+	if (warnings && fget_word(word, fp) != NULL)
+		fprintf(stderr, "Warning -- characters beyond expected EOD\n");
 	return(1);
 }
 
@@ -469,6 +471,9 @@ main(int argc, char *argv[])
 				record_width *= atoi(argv[i]+3);
 			}
 			break;
+		case 'w':			/* warnings on/off */
+			warnings = !warnings;
+			break;
 		default:
 			goto userr;
 		}
@@ -488,7 +493,8 @@ main(int argc, char *argv[])
 						/* check for no-op */
 	if (!transpose && (record_width < 0 ||
 			(no_columns == ni_columns) & (no_rows == ni_rows))) {
-		fprintf(stderr, "%s: no-op -- copying input verbatim\n",
+		if (warnings)
+			fprintf(stderr, "%s: no-op -- copying input verbatim\n",
 				argv[0]);
 		if (!output_stream(stdin))
 			return(1);
@@ -522,7 +528,7 @@ main(int argc, char *argv[])
 	return(0);
 userr:
 	fprintf(stderr,
-"Usage: %s [-h][-f[afdb][N]][-t][-ic in_col][-ir in_row][-oc out_col][-or out_row] [input.dat]\n",
+"Usage: %s [-h][-w][-f[afdb][N]][-t][-ic in_col][-ir in_row][-oc out_col][-or out_row] [input.dat]\n",
 			argv[0]);
 	return(1);
 }

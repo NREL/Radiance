@@ -7,6 +7,8 @@ rcollate - resize or transpose matrix data
 [
 .B \-h
 ][
+.B \-w
+][
 .B \-f[afdb][N]]
 ][
 .B \-t
@@ -32,6 +34,9 @@ By default, the file is assumed to include an information header, which
 is copied to the standard output along with the command name, but the
 .I \-h
 option may be used to turn this behavior off.
+The
+.I \-w
+option turns off non-fatal warning messages, such as unexpected EOD.
 .PP
 The input format is assumed to be ASCII, with three white-space separated words
 (typically numbers) in each record.
