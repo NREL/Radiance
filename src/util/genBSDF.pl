@@ -181,7 +181,7 @@ $disk2sq = '
 norm_radians(p) : if(-p - PI/4, p + 2*PI, p);
 in_disk_r = .999995*sqrt(Dx*Dx + Dy*Dy);
 in_disk_phi = norm_radians(atan2(Dy, Dx));
-in_disk_rgn = floor((in_disk_phi + PI/4)/(PI/2)) + 1;
+in_disk_rgn = floor((.999995*in_disk_phi + PI/4)/(PI/2)) + 1;
 out_square_a = select(in_disk_rgn,
 			in_disk_r,
 			(PI/2 - in_disk_phi)*in_disk_r/(PI/4),
