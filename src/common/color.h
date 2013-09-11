@@ -10,6 +10,7 @@
 #ifndef _RAD_COLOR_H_
 #define _RAD_COLOR_H_
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #ifdef __cplusplus
