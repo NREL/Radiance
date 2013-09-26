@@ -184,4 +184,4 @@ extern void		build_mesh(void);
 extern int		get_interp(MIGRATION *miga[3], FVECT invec);
 
 /* Partially advect between recorded incident angles and allocate new RBF */
-extern RBFNODE *	advect_rbf(const FVECT invec);
+extern RBFNODE *	advect_rbf(const FVECT invec, int lobe_lim);

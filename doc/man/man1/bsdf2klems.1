@@ -8,6 +8,8 @@ bsdf2klems - generate XML Klems matrix description of a BSDF
 .B "\-n spp"
 ][
 .B "\-h|\-q"
+][
+.B "\-l maxlobes"
 ]
 [
 .B "bsdf.sir .."
@@ -35,9 +37,9 @@ or
 ][
 .B "{+|-}backward"
 ][
-.B "\-e expr
+.B "\-e expr"
 ][
-.B "\-f file
+.B "\-f file"
 ]
 .B bsdf_func
 .SH DESCRIPTION
@@ -60,6 +62,12 @@ The
 option may be used to reduce this number to 41 patches.
 Neither option is recommended unless the distribution is known to
 be approximately diffuse.
+The
+.I \-l
+option may be used to specify the maximum number of lobes in any
+interpolated radial basis function.
+The default value is 15000, which generally keeps the interpolation tractable.
+Setting the value to 0 turns off this limit.
 .PP
 Normally, multiple samples are taken from random points on each input
 and output patch to improve accuracy.
