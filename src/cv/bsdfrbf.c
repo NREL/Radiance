@@ -54,7 +54,9 @@ add_bsdf_data(double theta_out, double phi_out, double val, int isDSF)
 	ovec[1] = sin((M_PI/180.)*phi_out) * ovec[2];
 	ovec[2] = sqrt(1. - ovec[2]*ovec[2]);
 
-	if (!isDSF)
+	if (val <= 0)			/* truncate to zero */
+		val = 0;
+	else if (!isDSF)
 		val *= ovec[2];		/* convert from BSDF to DSF */
 
 					/* update BSDF histogram */
