@@ -122,8 +122,7 @@ eval_isotropic(char *funame)
 
 	data_prologue();			/* begin output */
 	if (pctcull >= 0) {
-		sprintf(cmd, "rttree_reduce%s -h -ff -r 3 -t %f -g %d",
-				(input_orient>0 ^ output_orient>0) ? "" : " -a",
+		sprintf(cmd, "rttree_reduce -a -h -ff -r 3 -t %f -g %d",
 				pctcull, samp_order);
 		fflush(stdout);
 		ofp = popen(cmd, "w");

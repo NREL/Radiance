@@ -278,6 +278,7 @@ $cmd = "rcalc -if3 -e 'Omega:PI/($ns*$ns)' " .
 if ($pctcull >= 0) {
 	$cmd .= "-of $td/" . ($bmodnm,$fmodnm)[$forw] . ".flt " .
 	"| rttree_reduce -h -ff -t $pctcull -r $tensortree -g $ttlog2";
+	$cmd .= " -a" if ($tensortree == 3);
 	system "$cmd" || die "Failure running rttree_reduce";
 } else {
 	$cmd .= "$td/" . ($bmodnm,$fmodnm)[$forw] . ".flt";
