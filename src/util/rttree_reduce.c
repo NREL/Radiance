@@ -295,25 +295,26 @@ load_data()
 static void
 do_reciprocity()
 {
-	float	*v1p, *v2p;
+	const int	siz = 1<<log2g;
+	float		*v1p, *v2p;
 
 	if (ttrank == 3) {
 		int	ix, ox, oy;
-		for (ix = 0; ix < 1<<(log2g-1); ix++)
-		    for (ox = 0; ox < 1<<log2g; ox++)
-		        for (oy = 0; oy < 1<<(log2g-1); oy++) {
+		for (ix = 0; ix < siz>>1; ix++)
+		    for (ox = 0; ox < siz; ox++)
+		        for (oy = 0; oy < siz>>1; oy++) {
 				v1p = &dval3(ix,ox,oy);
-				v2p = &dval3(ix,ox,(1<<log2g)-1-oy);
+				v2p = &dval3(ix,ox,siz-1-oy);
 				*v1p = *v2p = .5f*( *v1p + *v2p );
 			}
 	} else /* ttrank == 4 */ {
 		int	ix, iy, ox, oy;
-		for (ix = 1; ix < 1<<log2g; ix++)
-		    for (iy = 1; iy < 1<<log2g; iy++)
+		for (ix = 1; ix < siz; ix++)
+		    for (iy = 1; iy < siz; iy++)
 			for (ox = 0; ox < ix; ox++)
 			    for (oy = 0; oy < iy; oy++) {
-				v1p = &dval4(ix,iy,ox,oy);
-				v2p = &dval4(ox,oy,ix,iy);
+				v1p = &dval4(siz-1-ix,siz-1-iy,ox,oy);
+				v2p = &dval4(siz-1-ox,siz-1-oy,ix,iy);
 				*v1p = *v2p = .5f*( *v1p + *v2p );
 			    }
 	}
