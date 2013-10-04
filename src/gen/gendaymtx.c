@@ -622,6 +622,12 @@ ComputeSky(float *parr)
 	/* Calculate relative horizontal illuminance */
 	norm_diff_illum = CalcRelHorzIllum(parr);
 
+	/* Check for zero sky -- make uniform in that case */
+	if (norm_diff_illum <= FTINY) {
+		for (i = 1; i < nskypatch; i++)
+			setcolor(parr+3*i, 1., 1., 1.);
+		norm_diff_illum = PI;
+	}
 	/* Normalization coefficient */
 	norm_diff_illum = diff_illum / norm_diff_illum;
 
