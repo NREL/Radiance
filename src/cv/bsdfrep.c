@@ -27,7 +27,7 @@ int			input_orient = 0;
 int			output_orient = 0;
 
 				/* BSDF histogram */
-int			bsdf_hist[HISTLEN];
+unsigned long		bsdf_hist[HISTLEN];
 
 				/* BSDF value for boundary regions */
 double			bsdf_min = 0;
