@@ -10,7 +10,7 @@
 #define DEBUG		1
 
 #ifndef GRIDRES
-#define GRIDRES		200		/* grid resolution per side */
+#define GRIDRES		(1<<8)		/* grid resolution per side */
 #endif
 					/* convert to/from coded radians */
 #define ANG2R(r)	(int)((r)*((1<<16)/M_PI))
