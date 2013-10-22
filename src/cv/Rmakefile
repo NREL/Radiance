@@ -77,6 +77,17 @@ pabopto2bsdf:	pabopto2bsdf.o bsdfrep.o bsdfrbf.o bsdfmesh.o
 	$(CC) $(CFLAGS) -o pabopto2bsdf pabopto2bsdf.o bsdfrep.o \
 bsdfrbf.o bsdfmesh.o -lrtrad $(MLIB)
 
+pabopto2rad:	pabopto2rad.o bsdfrep.o bsdfrbf.o bsdfmesh.o
+	$(CC) $(CFLAGS) -o pabopto2rad pabopto2rad.o bsdfrep.o \
+bsdfrbf.o bsdfmesh.o -lrtrad $(MLIB)
+
+pabopto2rad.o:	pabopto2bsdf.c
+	$(CC) $(CFLAGS) -c -DTEST_MAIN -o pabopto2rad.o pabopto2bsdf.c
+
+bsdf2rad:	bsdf2rad.o bsdfrep.o bsdfinterp.o
+	$(CC) $(CFLAGS) -o bsdf2rad bsdf2rad.o bsdfrep.o bsdfinterp.o \
+-lrtrad $(MLIB)
+
 bsdf2ttree:	bsdf2ttree.o bsdfrep.o bsdfinterp.o
 	$(CC) $(CFLAGS) -o bsdf2ttree bsdf2ttree.o bsdfrep.o bsdfinterp.o \
 -lrtrad $(MLIB)
