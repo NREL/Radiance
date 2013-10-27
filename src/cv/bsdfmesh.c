@@ -236,7 +236,7 @@ migration_step(MIGRATION *mig, double *src_rem, double *dst_rem, PRICEMAT *pm)
 {
 	const int	max2check = 100;
 	const double	maxamt = 1./(double)pm->ncols;
-	const double	minamt = maxamt*5e-6;
+	const double	minamt = maxamt*1e-4;
 	double		*src_cost;
 	short		(*rord)[2];
 	struct {
