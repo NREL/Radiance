@@ -176,9 +176,12 @@ price_routes(PRICEMAT *pm, const RBFNODE *from_rbf, const RBFNODE *to_rbf)
 	    pm->prow = pricerow(pm,i);
 	    srow = psortrow(pm,i);
 	    for (j = to_rbf->nrbf; j--; ) {
-		double		dprod = DOT(vfrom, vto[j]);
-		pm->prow[j] = ((dprod >= 1.) ? .0 : acos(dprod)) +
-				fabs(R2ANG(to_rbf->rbfa[j].crad) - from_ang);
+		double		d;		/* quadratic cost function */
+		d = DOT(vfrom, vto[j]);
+		d = (d >= 1.) ? .0 : acos(d);
+		pm->prow[j] = d*d;
+		d = R2ANG(to_rbf->rbfa[j].crad) - from_ang;
+		pm->prow[j] += d*d;	
 		srow[j] = j;
 	    }
 	    qsort_r(srow, pm->ncols, sizeof(short), pm, &msrt_cmp);
