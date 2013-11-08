@@ -151,7 +151,7 @@ smooth_region(int x0, int x1, int y0, int y1)
 	rMtx[2][1] = rMtx[1][2];
 	nvs = rMtx[2][2];
 	if (SDinvXform(rMtx, rMtx) != SDEnone)
-		return(0);
+		return(1);		/* colinear values */
 	A = DOT(rMtx[0], xvec);
 	B = DOT(rMtx[1], xvec);
 	C = DOT(rMtx[2], xvec);
