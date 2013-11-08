@@ -147,6 +147,7 @@ smooth_region(int x0, int x1, int y0, int y1)
 			xvec[2] += z;
 		}
 	rMtx[1][0] = rMtx[0][1];
+	rMtx[2][0] = rMtx[0][2];
 	rMtx[2][1] = rMtx[1][2];
 	nvs = rMtx[2][2];
 	if (SDinvXform(rMtx, rMtx) != SDEnone)
