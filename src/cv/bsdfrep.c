@@ -513,8 +513,7 @@ load_bsdf_rep(FILE *ifp)
 				progname);
 		return(0);
 	}
-	rbfh.next = NULL;		/* read each DSF */
-	rbfh.ejl = NULL;
+	memset(&rbfh, 0, sizeof(rbfh));	/* read each DSF */
 	while ((rbfh.ord = getint(4, ifp)) >= 0) {
 		RBFNODE		*newrbf;
 
@@ -531,7 +530,7 @@ load_bsdf_rep(FILE *ifp)
 					sizeof(RBFVAL)*(rbfh.nrbf-1));
 		if (newrbf == NULL)
 			goto memerr;
-		memcpy(newrbf, &rbfh, sizeof(RBFNODE)-sizeof(RBFVAL));
+		*newrbf = rbfh;
 		for (i = 0; i < rbfh.nrbf; i++) {
 			newrbf->rbfa[i].peak = getflt(ifp);
 			newrbf->rbfa[i].crad = getint(2, ifp) & 0xffff;
