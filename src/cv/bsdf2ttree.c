@@ -44,8 +44,9 @@ xml_prologue(int ac, char *av[])
 	puts("<Optical>");
 	puts("<Layer>");
 	puts("\t<Material>");
-	puts("\t\t<Name>Name</Name>");
-	puts("\t\t<Manufacturer>Manufacturer</Manufacturer>");
+	printf("\t\t<Name>%s</Name>\n", bsdf_name[0] ? bsdf_name : "Unknown");
+	printf("\t\t<Manufacturer>%s</Manufacturer>\n",
+			bsdf_manuf[0] ? bsdf_manuf : "Unknown");
 	puts("\t\t<DeviceType>Other</DeviceType>");
 	puts("\t</Material>");
 	puts("\t<DataDefinition>");

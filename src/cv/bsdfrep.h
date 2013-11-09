@@ -57,6 +57,9 @@ typedef struct s_rbfnode {
 #define INP_QUAD3	4		/* 180-270 degree quadrant */
 #define INP_QUAD4	8		/* 270-360 degree quadrant */
 
+				/* name and manufacturer if known */
+extern char		bsdf_name[];
+extern char		bsdf_manuf[];
 				/* active grid resolution */
 extern int		grid_res;
 				/* coverage/symmetry using INP_QUAD? flags */

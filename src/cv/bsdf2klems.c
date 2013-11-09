@@ -58,8 +58,10 @@ xml_header(int ac, char *av[])
 static void
 xml_prologue(const SDData *sd)
 {
-	const char	*matn = (sd && sd->matn[0]) ? sd->matn : "Name";
-	const char	*makr = (sd && sd->makr[0]) ? sd->makr : "Manufacturer";
+	const char	*matn = (sd && sd->matn[0]) ? sd->matn :
+				bsdf_name[0] ? bsdf_name : "Unknown";
+	const char	*makr = (sd && sd->makr[0]) ? sd->makr :
+				bsdf_manuf[0] ? bsdf_manuf : "Unknown";
 	ANGLE_BASIS	*abp = get_basis(kbasis);
 	int		i;
 

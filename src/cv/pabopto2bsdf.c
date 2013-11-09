@@ -70,6 +70,8 @@ init_pabopto_inp(const int i, const char *fname)
 			fclose(fp);
 			return(0);
 		}
+		if (sscanf(buf, "sample_name \"%[^\"]\"", bsdf_name) == 1)
+			continue;
 		if (sscanf(buf, "format: theta phi %s", typ) == 1) {
 			if (!strcasecmp(typ, "DSF")) {
 				inpfile[i].isDSF = 1;
