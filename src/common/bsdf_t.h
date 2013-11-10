@@ -52,7 +52,7 @@ typedef struct SDTreCDst_s {
 	struct {
 		unsigned	hndx;	/* hilbert index */
 		unsigned	cuml;	/* cumulative value */
-	}		carr[1];	/* cumulative array (extends struct) */
+	}	carr[1];	/* cumulative array (extends struct) */
 } SDTreCDst;	
 
 #ifdef _EZXML_H
