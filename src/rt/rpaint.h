@@ -85,6 +85,7 @@ extern void	getaim(char *s);
 extern void	getmove(char *s);
 extern void	getrotate(char *s);
 extern void	getpivot(char *s);
+extern void	getorigin(char *s);
 extern void	getexposure(char *s);
 extern int	getparam(char *str, char *dsc, int typ, void *p);
 extern void	setparam(char *s);
