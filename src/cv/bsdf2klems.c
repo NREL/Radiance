@@ -333,9 +333,10 @@ eval_rbf(void)
 		    else
 			bo_getvec(vout, j+(n+frandom())/npsamps, abp);
 
-		    sum += eval_rbfrep(rbf, vout) / vout[2];
+		    sum += eval_rbfrep(rbf, vout);
 		}
-		bsdfarr[j*abp->nangles + i] = sum*output_orient/npsamps;
+		fo_getvec(vout, j+.5, abp);	/* use centered secant */
+		bsdfarr[j*abp->nangles + i] = sum / (npsamps*vout[2]);
 	    }
 	    if (rbf != NULL)
 		free(rbf);
