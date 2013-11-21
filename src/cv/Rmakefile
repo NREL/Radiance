@@ -88,6 +88,10 @@ bsdf2rad:	bsdf2rad.o bsdfrep.o bsdfinterp.o
 	$(CC) $(CFLAGS) -o bsdf2rad bsdf2rad.o bsdfrep.o bsdfinterp.o \
 -lrtrad $(MLIB)
 
+bsdfquery:	bsdfquery.o bsdfrep.o bsdfinterp.o
+	$(CC) $(CFLAGS) -o bsdfquery bsdfquery.o bsdfrep.o bsdfinterp.o \
+-lrtrad $(MLIB)
+
 bsdf2ttree:	bsdf2ttree.o bsdfrep.o bsdfinterp.o
 	$(CC) $(CFLAGS) -o bsdf2ttree bsdf2ttree.o bsdfrep.o bsdfinterp.o \
 -lrtrad $(MLIB)
