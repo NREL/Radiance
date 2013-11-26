@@ -146,3 +146,5 @@ pabopto2bsdf.o:	bsdfrep.h ../common/bsdf.h ../common/fvect.h ../common/ccolor.h
 bsdf2ttree.o pabopto2bsdf.o:	../common/platform.h
 
 bsdfrep.o:	../common/resolu.h ../common/rtio.h
+
+bsdf2rad.o bsdf2ttree.o:	../common/rtprocess.h

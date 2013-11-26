@@ -12,6 +12,7 @@ static const char RCSid[] = "$Id$";
 #include <stdlib.h>
 #include <math.h>
 #include "platform.h"
+#include "rtprocess.h"
 #include "calcomp.h"
 #include "bsdfrep.h"
 				/* global argv[0] */

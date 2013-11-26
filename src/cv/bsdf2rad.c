@@ -10,6 +10,7 @@ static const char RCSid[] = "$Id$";
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include "rtprocess.h"
 #include "bsdfrep.h"
 
 const float	colarr[6][3] = {
