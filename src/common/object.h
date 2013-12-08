@@ -90,6 +90,7 @@ extern OBJECT	objndx(OBJREC *op);
 extern OBJECT	lastmod(OBJECT obj, char *mname);
 extern OBJECT	modifier(char *name);
 extern OBJECT	object(char *oname);
+extern int	eqreal(double d1, double d2);
 extern int	eqobjects(OBJECT obj1, OBJECT obj2);
 extern void	insertobject(OBJECT obj);
 extern void	clearobjndx(void);
