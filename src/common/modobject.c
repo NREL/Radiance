@@ -107,7 +107,7 @@ eqobjects(			/* check if two objects are equal */
 )
 {
 	OBJREC	*op1, *op2;
-	int	i;
+	int	i, n;
 
 	while (obj1 != obj2) {
 		if (obj1 == OVOID)
@@ -132,29 +132,30 @@ eqobjects(			/* check if two objects are equal */
 		for (i = op1->oargs.nfargs; i-- > 0; )
 			if (!eqreal(op1->oargs.farg[i], op2->oargs.farg[i]))
 				return(0);
-		for (i = op1->oargs.nsargs; i-- > 0; )
-			if (strcmp(op1->oargs.sarg[i], op2->oargs.sarg[i]))
-				return(0);
-		i = 0;
+		n = 0;
 		switch (op1->otype) {	/* special cases (KEEP CONSISTENT!) */
 		case MOD_ALIAS:
 		case MAT_ILLUM:
 		case MAT_MIRROR:
-			i = (op1->oargs.nsargs > 0);
+			n = (op1->oargs.nsargs > 0);
 			break;
 		case MIX_FUNC:
 		case MIX_DATA:
 		case MIX_TEXT:
 		case MIX_PICT:
-			i = 2*(op1->oargs.nsargs >= 2);
+			n = 2*(op1->oargs.nsargs >= 2);
 			break;
 		case MAT_CLIP:
-			i = op1->oargs.nsargs;
+			n = op1->oargs.nsargs;
 			break;
 		}
-		while (i-- > 0)		/* check modifier references */
-			if (!eqobjects( lastmod(obj1, op1->oargs.sarg[i]),
-					lastmod(obj2, op2->oargs.sarg[i]) ))
+					/* check other string arguments */
+		for (i = op1->oargs.nsargs; i-- > n; )
+			if (strcmp(op1->oargs.sarg[i], op2->oargs.sarg[i]))
+				return(0);
+		while (n-- > 0)		/* check modifier references */
+			if (!eqobjects( lastmod(obj1, op1->oargs.sarg[n]),
+					lastmod(obj2, op2->oargs.sarg[n]) ))
 				return(0);
 		obj1 = op1->omod;
 		obj2 = op2->omod;
