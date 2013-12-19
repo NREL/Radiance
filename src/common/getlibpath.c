@@ -4,7 +4,7 @@ static const char	RCSid[] = "$Id$";
 /*
  * Return Radiance library search path
  *
- *  External symbols declared in standard.h
+ *  External symbols declared in rtio.h
  */
 
 #include "copyright.h"

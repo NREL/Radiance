@@ -16,12 +16,13 @@ static const char	RCSid[] = "$Id$";
 
 
 FILE *
-frlibopen(fname)		/* find file and open for reading */
-register char  *fname;
+frlibopen(			/* find file and open for reading */
+	char  *fname
+)
 {
 	FILE  *fp;
 	char  pname[PATH_MAX];
-	register char  *sp, *cp;
+	char  *sp, *cp;
 
 	if (fname == NULL)
 		return(NULL);

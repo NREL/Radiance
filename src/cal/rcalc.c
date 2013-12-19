@@ -8,9 +8,6 @@ static const char RCSid[] = "$Id$";
  */
 
 #include  <stdlib.h>
-#include  <fcntl.h>
-#include  <stdio.h>
-#include  <string.h>
 #include  <math.h>
 #include  <ctype.h>
 
@@ -107,6 +104,7 @@ int  argc,
 char  *argv[]
 )
 {
+	char  *fpath;
 	int  i;
 
 	esupport |= E_VARIABLE|E_FUNCTION|E_INCHAN|E_OUTCHAN|E_RCONST;
@@ -136,7 +134,15 @@ char  *argv[]
 			svpreset(argv[++i]);
 			break;
 		case 'f':
-			fcompile(argv[++i]);
+			fpath = getpath(argv[++i], getrlibpath(), 0);
+			if (fpath == NULL) {
+				eputs(argv[0]);
+				eputs(": cannot find file '");
+				eputs(argv[i]);
+				eputs("'\n");
+				quit(1);
+			}
+			fcompile(fpath);
 			break;
 		case 'e':
 			scompile(argv[++i], NULL, 0);
