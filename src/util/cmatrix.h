@@ -55,8 +55,8 @@ extern CMATRIX *cm_multiply(const CMATRIX *cm1, const CMATRIX *cm2);
 /* print out matrix as ASCII text -- no header */
 extern void cm_print(const CMATRIX *cm, FILE *fp);
 
-/* Load and convert a matrix BSDF from the given XML file */
-extern CMATRIX *cm_loadBSDF(char *fname, COLOR cLamb);
+/* Load and convert a matrix BTDF from the given XML file */
+extern CMATRIX *cm_loadBTDF(char *fname);
 
 #ifdef __cplusplus
 }

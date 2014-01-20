@@ -164,23 +164,18 @@ main(int argc, char *argv[])
 
 	if (argc-a > 2) {			/* VTDs expression */
 		CMATRIX	*smtx, *Dmat, *Tmat, *imtx;
-		COLOR	tLamb;
 						/* get sky vector/matrix */
 		smtx = cm_load(argv[a+3], 0, nsteps, skyfmt);
 						/* load BSDF */
-		Tmat = cm_loadBSDF(argv[a+1], tLamb);
+		Tmat = cm_loadBTDF(argv[a+1]);
 						/* load Daylight matrix */
 		Dmat = cm_load(argv[a+2], Tmat==NULL ? 0 : Tmat->ncols,
 					smtx->nrows, DTfromHeader);
 						/* multiply vector through */
 		imtx = cm_multiply(Dmat, smtx);
 		cm_free(Dmat); cm_free(smtx);
-		if (Tmat == NULL) {		/* diffuse only */
-			cmtx = cm_scale(imtx, tLamb);
-		} else {			/* else apply BTDF matrix */
-			cmtx = cm_multiply(Tmat, imtx);
-			cm_free(Tmat); 
-		}
+		cmtx = cm_multiply(Tmat, imtx);
+		cm_free(Tmat); 
 		cm_free(imtx);
 	} else {				/* sky vector/matrix only */
 		cmtx = cm_load(argv[a+1], 0, nsteps, skyfmt);
