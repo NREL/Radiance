@@ -446,6 +446,7 @@ m_bsdf(OBJREC *m, RAY *r)
 	hitfront = (r->rod > 0);
 						/* load cal file */
 	mf = getfunc(m, 5, 0x1d, 1);
+	setfunc(m, r);
 						/* get thickness */
 	nd.thick = evalue(mf->ep[0]);
 	if ((-FTINY <= nd.thick) & (nd.thick <= FTINY))
