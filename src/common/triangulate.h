@@ -48,7 +48,7 @@ extern Vert2_list *polyAlloc(int nv);
 #define polyFree	free
 
 /* callback for output triangle */
-typedef void tri_out_t(const Vert2_list *tp, int a, int b, int c);
+typedef int tri_out_t(const Vert2_list *tp, int a, int b, int c);
 
 /* triangulate a contour/polygon, places results in STL vector
  * as series of triangles. */

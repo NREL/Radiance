@@ -133,7 +133,7 @@ polyTriangulate(const Vert2_list *contour, tri_out_t *cb)
 
   /* we want a counter-clockwise polygon in V */
 
-  if ( 0.0 < Area(contour) )
+  if ( 0.0 < polyArea(contour) )
     for (v=0; v<contour->nv; v++) V[v] = v;
   else
     for(v=0; v<contour->nv; v++) V[v] = (contour->nv-1)-v;
@@ -165,7 +165,7 @@ polyTriangulate(const Vert2_list *contour, tri_out_t *cb)
       a = V[u]; b = V[v]; c = V[w];
 
       /* output Triangle */
-      (*cb)(contour, a, b, c);
+      if (!(*cb)(contour, a, b, c)) return false;
  
       m++;
 

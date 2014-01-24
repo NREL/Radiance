@@ -75,69 +75,6 @@ nomem:
 }
 
 
-int
-cvpoly(	/* convert a polygon to extended triangles */
-	OBJECT	mo,
-	int	n,
-	FVECT	*vp,
-	FVECT	*vn,
-	RREAL	(*vc)[2]
-)
-{
-	int	tcnt = 0;
-	int	flags;
-	RREAL	*tn[3], *tc[3];
-	int	*ord;
-	int	i, j;
-
-	if (n < 3)		/* degenerate face */
-		return(0);
-	flags = MT_V;
-	if (vn != NULL) {
-		tn[0] = vn[0]; tn[1] = vn[1]; tn[2] = vn[2];
-		flags |= MT_N;
-	} else {
-		tn[0] = tn[1] = tn[2] = NULL;
-	}
-	if (vc != NULL) {
-		tc[0] = vc[0]; tc[1] = vc[1]; tc[2] = vc[2];
-		flags |= MT_UV;
-	} else {
-		tc[0] = tc[1] = tc[2] = NULL;
-	}
-	if (n == 3)		/* output single triangle */
-		return(cvtri(mo, vp[0], vp[1], vp[2],
-				tn[0], tn[1], tn[2],
-				tc[0], tc[1], tc[2]));
-
-				/* decimate polygon (assumes convex) */
-	ord = (int *)malloc(n*sizeof(int));
-	if (ord == NULL)
-		error(SYSTEM, "out of memory in cvpoly");
-	for (i = n; i--; )
-		ord[i] = i;
-	while (n >= 3) {
-		if (flags & MT_N)
-			for (i = 3; i--; )
-				tn[i] = vn[ord[i]];
-		if (flags & MT_UV)
-			for (i = 3; i--; )
-				tc[i] = vc[ord[i]];
-		tcnt += cvtri(mo, vp[ord[0]], vp[ord[1]], vp[ord[2]],
-				tn[0], tn[1], tn[2],
-				tc[0], tc[1], tc[2]);
-			/* remove vertex and rotate */
-		n--;
-		j = ord[0];
-		for (i = 0; i < n-1; i++)
-			ord[i] = ord[i+2];
-		ord[i] = j;
-	}
-	free((void *)ord);
-	return(tcnt);
-}
-
-
 static void
 add2bounds(		/* add point and uv coordinate to bounds */
 	FVECT	vp,
