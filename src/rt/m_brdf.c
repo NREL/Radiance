@@ -363,8 +363,7 @@ m_brdf2(			/* color a ray that hit a BRDF material */
 		objerror(m, USER, "bad # arguments");
 						/* check for back side */
 	if (r->rod < 0.0) {
-		if (!backvis && m->otype != MAT_TFUNC
-				&& m->otype != MAT_TDATA) {
+		if (!backvis) {
 			raytrans(r);
 			return(1);
 		}

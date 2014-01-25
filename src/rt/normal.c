@@ -188,7 +188,7 @@ m_normal(			/* color a ray that hit something normal */
 		objerror(m, USER, "bad number of arguments");
 						/* check for back side */
 	if (r->rod < 0.0) {
-		if (!backvis && m->otype != MAT_TRANS) {
+		if (!backvis) {
 			raytrans(r);
 			return(1);
 		}

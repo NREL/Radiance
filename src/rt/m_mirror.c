@@ -56,8 +56,11 @@ m_mirror(			/* shade mirrored ray */
 	if (r->rsrc >= 0 && source[r->rsrc].so != r->ro)
 		return(1);
 
-	if (r->rod < 0.)		/* back is black */
+	if (r->rod < 0.) {		/* back is black */
+		if (!backvis)
+			raytrans(r);	/* unless back visibility is off */
 		return(1);
+	}
 					/* get modifiers */
 	raytexture(r, m->omod);
 					/* assign material color */

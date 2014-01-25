@@ -194,7 +194,7 @@ m_aniso(			/* shade ray that hit something anisotropic */
 		objerror(m, USER, "bad number of real arguments");
 						/* check for back side */
 	if (r->rod < 0.0) {
-		if (!backvis && m->otype != MAT_TRANS2) {
+		if (!backvis) {
 			raytrans(r);
 			return(1);
 		}

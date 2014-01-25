@@ -65,6 +65,11 @@ m_glass(		/* color a ray which hit a thin glass surface */
 		rindex = m->oargs.farg[3];	/* use their value */
 	else
 		objerror(m, USER, "bad arguments");
+						/* check back face visibility */
+	if (!backvis && r->rod <= 0.0) {
+		raytrans(r);
+		return(1);
+	}
 						/* check transmission */
 	setcolor(mcolor, m->oargs.farg[0], m->oargs.farg[1], m->oargs.farg[2]);
 	if ((hastrans = (intens(mcolor) > 1e-15))) {
