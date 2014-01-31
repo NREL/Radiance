@@ -219,9 +219,9 @@ main(int argc, char *argv[])
 #ifdef DEBUG
 	fprintf(stderr, "Minimum BSDF = %.4f\n", bsdf_min);
 #endif
+	min_log = log(bsdf_min*.5);
 #if 1						/* produce spheres at meas. */
 	puts("void plastic yellow\n0\n0\n5 .6 .4 .01 .04 .08\n");
-	min_log = log(bsdf_min*.5);
 	n = 0;
 	for (i = 0; i < GRIDRES; i++)
 	    for (j = 0; j < GRIDRES; j++)
