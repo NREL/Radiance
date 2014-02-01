@@ -116,6 +116,9 @@ rcollate:	rcollate.o
 
 setscan.o:	setscan.h
 
+eplus_idf.o:	eplus_idf.h \
+../common/lookup.h
+
 findglare.o glareval.o \
 glaresrc.o:	glare.h ../common/standard.h \
 ../common/rtmisc.h ../common/rtio.h \
