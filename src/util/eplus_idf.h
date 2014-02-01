@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 #define	IDF_MAXLINE	512			/* maximum line length */
-#define IDF_MAXARGL	128			/* maximum argument length */
+#define IDF_MAXARGL	104			/* maximum argument length */
 
 /* Input Data File parameter argument list */
 typedef struct s_idf_field {
