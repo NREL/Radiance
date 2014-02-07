@@ -181,3 +181,5 @@ hilbert.o:	hilbert.h
 loadbsdf.o:	bsdf.h rtio.h rterror.h paths.h
 
 interp2d.o:	interp2d.h
+
+triangulate.o:	triangulate.h
