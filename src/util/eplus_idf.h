@@ -40,17 +40,19 @@ typedef struct {
 	char			*hrem;		/* header remarks */
 	IDF_PARAMETER		*pfirst;	/* first parameter in file */
 	IDF_PARAMETER		*plast;		/* last parameter loaded */
-	LUTAB			ptab;		/* parameter table */
+	LUTAB			ptab;		/* parameter hash table */
 } IDF_LOADED;
 
-/* Create a new parameter with empty field list (comment optional) */
+/* Create a new parameter with empty field list (comment & prev optional) */
 extern IDF_PARAMETER	*idf_newparam(IDF_LOADED *idf, const char *pname,
-							const char *comm,
-						IDF_PARAMETER *prev);
+					const char *comm, IDF_PARAMETER *prev);
 
 /* Add a field to the given parameter and follow with the given text */
 extern int		idf_addfield(IDF_PARAMETER *param, const char *fval,
 							const char *comm);
+
+/* Retrieve the indexed field from parameter (first field index is 1) */
+extern IDF_FIELD	*idf_getfield(IDF_PARAMETER *param, int fn);
 
 /* Delete the specified parameter from our IDF */
 extern int		idf_delparam(IDF_LOADED *idf, IDF_PARAMETER *param);
