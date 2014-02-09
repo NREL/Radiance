@@ -120,7 +120,7 @@ eplus_adduvf:	eplus_adduvf.o eplus_idf.o
 
 setscan.o:	setscan.h
 
-eplus_adduvf.o:	../common/triangulate.h
+eplus_adduvf.o:	../common/triangulate.h ../common/rtprocess.h ../common/paths.h
 
 eplus_adduvf.o eplus_idf.o:	eplus_idf.h \
 ../common/lookup.h

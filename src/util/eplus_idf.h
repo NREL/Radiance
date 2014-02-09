@@ -31,6 +31,7 @@ typedef struct s_idf_parameter {
 	const char		*pname;		/* parameter name (type) */
 	struct s_idf_parameter	*pnext;		/* next parameter same type */
 	struct s_idf_parameter	*dnext;		/* next parameter in IDF */
+	int			nfield;		/* field count */
 	IDF_FIELD		*flist;		/* field list */
 	char			rem[1];		/* comment (extends struct) */
 } IDF_PARAMETER;

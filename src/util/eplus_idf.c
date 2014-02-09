@@ -44,6 +44,7 @@ idf_newparam(IDF_LOADED *idf, const char *pname, const char *comm,
 	if (pnew == NULL)
 		return(NULL);
 	strcpy(pnew->rem, comm);
+	pnew->nfield = 0;
 	pnew->flist = NULL;
 	pnew->pname = pent->key;	/* add to table */
 	pnew->pnext = (IDF_PARAMETER *)pent->data;
@@ -94,6 +95,7 @@ idf_addfield(IDF_PARAMETER *param, const char *fval, const char *comm)
 		param->flist = fnew;
 	else
 		flast->next = fnew;
+	param->nfield++;
 	return(fnum);
 }
 
