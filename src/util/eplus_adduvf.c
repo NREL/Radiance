@@ -305,7 +305,7 @@ sample_triangle(const Vert2_list *vl2, int a, int b, int c)
 	samp = (float *)malloc(sizeof(float)*6*ns);
 	if (samp == NULL)
 		return(0);
-	for (i = ns; i--; ) {
+	for (i = ns; i--; ) {		/* stratified Monte Carlo sampling */
 		double	sv[4];
 		multisamp(sv, 4, (i+frandom())/(double)ns);
 		sv[0] *= sv[1] = sqrt(sv[1]);
@@ -379,6 +379,7 @@ compute_uvfs(SUBPROC *pd, ZONE *zp)
 		return(0);
 						/* UVFs from each surface */
 	for (n = zp->nsurf, pptr = zp->pfirst; n--; pptr = pptr->dnext) {
+		double	vfsum = 0;
 						/* send samples to rcontrib */
 		if (!sample_surface(pptr, pd->w))
 			return(0);
@@ -392,6 +393,7 @@ compute_uvfs(SUBPROC *pd, ZONE *zp)
 						/* append UVF fields */
 		for (m = 0, pptr1 = zp->pfirst;
 				m < zp->nsurf; m++, pptr1 = pptr1->dnext) {
+			vfsum += uvfa[3*m + 1];
 			if (pptr1 == pptr) {
 				if (uvfa[3*m + 1] > .001)
 					fprintf(stderr,
@@ -413,6 +415,11 @@ compute_uvfs(SUBPROC *pd, ZONE *zp)
 				return(0);
 			}
 		}
+		if (vfsum < 0.95)
+			fprintf(stderr,
+		"%s: warning - missing %.1f%% of energy from surface '%s'\n",
+					progname, 100.*(1.-vfsum),
+					idf_getfield(pptr,NAME_FLD)->val);
 	}
 	free(uvfa);				/* clean up and return */
 	return(1);
