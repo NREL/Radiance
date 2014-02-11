@@ -16,7 +16,7 @@ static const char RCSid[] = "$Id$";
 #include "rtprocess.h"
 
 #ifndef NSAMPLES
-#define NSAMPLES	10000			/* number of samples to use */
+#define NSAMPLES	80000			/* number of samples to use */
 #endif
 
 char		*progname;			/* global argv[0] */
@@ -409,7 +409,7 @@ compute_uvfs(SUBPROC *pd, ZONE *zp)
 						idf_getfield(pptr,NAME_FLD)->val);
 				continue;	/* don't record self-factor */
 			}
-			sprintf(uvfbuf, "%.6f", uvfa[3*m + 1]);
+			sprintf(uvfbuf, "%.4f", uvfa[3*m + 1]);
 			if (!idf_addfield(pout,
 					idf_getfield(pptr,NAME_FLD)->val, NULL) ||
 				!idf_addfield(pout,
