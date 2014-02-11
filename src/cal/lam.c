@@ -17,7 +17,7 @@ static const char	RCSid[] = "$Id$";
 
 #define MAXFILE		512		/* maximum number of files */
 
-#define MAXLINE		4096		/* maximum input line */
+#define MAXLINE		65536		/* maximum input line */
 
 FILE	*input[MAXFILE];
 int	bytsiz[MAXFILE];
