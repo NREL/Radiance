@@ -167,8 +167,8 @@ start_process(SUBPROC *proc, char *cmdstr)
 	CloseHandle(hFromChildWrite); hFromChildWrite = NULL;
 	CloseHandle(hToChildRead); hToChildRead = NULL;
 	/* get the file descriptors */
-	proc->r = _open_osfhandle((long)hRead, _O_RDONLY);
-	proc->w = _open_osfhandle((long)hWrite, _O_APPEND);
+	proc->r = _open_osfhandle((long)hRead, _O_RDONLY|_O_BINARY);
+	proc->w = _open_osfhandle((long)hWrite, _O_APPEND|_O_BINARY);
 	proc->pid = PInfo.dwProcessId;
 	proc->running = 1;
 	CloseHandle(hCurProc);
