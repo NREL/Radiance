@@ -158,7 +158,7 @@ start_rcontrib(SUBPROC *pd, ZONE *zp)
 {
 #define	BASE_AC		5
 	static char	*base_av[BASE_AC] = {
-				"rcontrib", "-ff", "-h", "-x", "1"
+				"rcontrib", "-fff", "-h", "-x", "1"
 			};
 	char		cbuf[300];
 	char		**av;
@@ -200,7 +200,7 @@ start_rcontrib(SUBPROC *pd, ZONE *zp)
 	}
 	av[i++] = temp_octree;			/* add final octree argument */
 	av[i] = NULL;
-	if (!open_process(pd, av)) {		/* start process */
+	if (open_process(pd, av) <= 0) {	/* start process */
 		fputs(progname, stderr);
 		fputs(": cannot start rcontrib process\n", stderr);
 		return(0);
