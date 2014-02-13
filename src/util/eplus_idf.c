@@ -225,19 +225,21 @@ idf_read_comment(char *buf, int len, FILE *fp)
 {
 	int	incomm = 0;
 	char	*cp = buf;
-	char	dummyc;
+	char	dummys[2];
 	int	c;
 
 	if ((buf == NULL) | (len <= 0)) {
-		buf = &dummyc;
-		len = 1;
+		buf = dummys;
+		len = sizeof(dummys);
 	}
 	while ((c = getc(fp)) != EOF &&
 			(isspace(c) || (incomm += (c == '!')))) {
 		if (c == '\n')
 			incomm = 0;
-		if (cp-buf < len-1)
+		if (cp-buf < len-2)
 			*cp++ = c;
+		else if (cp-buf == len-2)
+			*cp++ = '\n';
 	}
 	*cp = '\0';
 	if (c != EOF)
