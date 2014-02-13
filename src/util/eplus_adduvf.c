@@ -26,7 +26,7 @@ int		nsamps = NSAMPLES;		/* number of samples to use */
 char		temp_octree[128];		/* temporary octree */
 
 const char	UVF_PNAME[] =
-			"ZoneProperty:UserViewFactor:bySurfaceName";
+			"ZoneProperty:UserViewFactors:bySurfaceName";
 
 const char	ADD_HEADER[] =
 			"\n!+++ User View Factors computed by Radiance +++!\n\n";
