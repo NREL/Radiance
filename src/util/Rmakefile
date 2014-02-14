@@ -116,7 +116,8 @@ rcollate:	rcollate.o
 	$(CC) $(CFLAGS) -o rcollate rcollate.o -lrtrad
 
 eplus_adduvf:	eplus_adduvf.o eplus_idf.o
-	$(CC) $(CFLAGS) -o eplus_adduvf eplus_adduvf.o eplus_idf.o -lrtrad
+	$(CC) $(CFLAGS) -o eplus_adduvf eplus_adduvf.o eplus_idf.o \
+-lrtrad $(MLIB)
 
 setscan.o:	setscan.h
 
