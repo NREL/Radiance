@@ -91,8 +91,8 @@ add_bsdf_data(double theta_out, double phi_out, double val, int isDSF)
 static void
 comp_bsdf_min()
 {
-	int	cnt;
-	int	i, target;
+	unsigned long	cnt, target;
+	int		i;
 
 	cnt = 0;
 	for (i = HISTLEN; i--; )

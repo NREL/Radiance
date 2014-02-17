@@ -219,7 +219,7 @@ main(int argc, char *argv[])
 #ifdef DEBUG
 	fprintf(stderr, "Minimum BSDF = %.4f\n", bsdf_min);
 #endif
-	min_log = log(bsdf_min*.5);
+	min_log = log(bsdf_min*.5 + 1e-5);
 #if 1						/* produce spheres at meas. */
 	puts("void plastic yellow\n0\n0\n5 .6 .4 .01 .04 .08\n");
 	n = 0;

@@ -91,7 +91,7 @@ main(int argc, char *argv[])
 #ifdef DEBUG
 	fprintf(stderr, "Minimum BSDF set to %.4f\n", bsdf_min);
 #endif
-	min_log = log(bsdf_min*.5);
+	min_log = log(bsdf_min*.5 + 1e-5);
 						/* output BSDF rep. */
 	for (n = 0; (n < 6) & (2*n+3 < argc); n++) {
 		double	theta = atof(argv[2*n+2]);
