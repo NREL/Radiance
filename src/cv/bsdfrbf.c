@@ -32,10 +32,10 @@ static const char RCSid[] = "$Id$";
 #define RSCA		2.2		/* radius scaling factor (empirical) */
 #endif
 #ifndef SMOOTH_MSE
-#define SMOOTH_MSE	5e-5		/* acceptable mean squared error */
+#define SMOOTH_MSE	2e-5		/* acceptable mean squared error */
 #endif
 #ifndef SMOOTH_MSER
-#define SMOOTH_MSER	0.07		/* acceptable relative MSE */
+#define SMOOTH_MSER	0.03		/* acceptable relative MSE */
 #endif
 #define MAX_RAD		(GRIDRES/8)	/* maximum lobe radius */
 
