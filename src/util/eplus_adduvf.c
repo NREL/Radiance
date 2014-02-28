@@ -176,7 +176,7 @@ add_subsurf(IDF_OBJECT *param)
 static IDF_FIELD *
 get_vlist(IDF_OBJECT *param, const char *zname)
 {
-	static const int	itm_len = sizeof(IDF_FIELD)+6;
+#define	itm_len		(sizeof(IDF_FIELD)+6)
 	static char		fld_buf[4*itm_len];
 	static char		*next_fbp = fld_buf;
 	int			i;
@@ -219,6 +219,7 @@ get_vlist(IDF_OBJECT *param, const char *zname)
 		sprintf(res->val, "%d", i/3);
 	}
 	return(res);
+#undef itm_len
 }
 
 /* Get/allocate surface polygon */
