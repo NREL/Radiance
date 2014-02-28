@@ -37,7 +37,7 @@ char	*fl
 			if (*s == '\0')
 				return(i);
 			while (*s)
-				if (!isascii(*s++))
+				if (!isprint(*s++))
 					return(i);
 			break;
 		case 'i':		/* integer */
