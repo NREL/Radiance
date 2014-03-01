@@ -34,8 +34,6 @@ char	*fl
 		case 's':		/* string */
 			while (*s == ' ')
 				++s;
-			if (!*s)
-				return(i);
 			do
 				if (!isprint(*s))
 					return(i);
