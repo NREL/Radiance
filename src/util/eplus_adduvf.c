@@ -362,7 +362,7 @@ start_rcontrib(SUBPROC *pd, ZONE *zp)
 	IDF_FIELD	*fptr;
 	int		i, j, n;
 						/* start oconv command */
-	sprintf(cbuf, "oconv - > '%s'", temp_octree);
+	sprintf(cbuf, "oconv - > \"%s\"", temp_octree);
 	if ((ofp = popen(cbuf, "w")) == NULL) {
 		fputs(progname, stderr);
 		fputs(": cannot open oconv process\n", stderr);
