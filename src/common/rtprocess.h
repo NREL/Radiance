@@ -26,9 +26,13 @@
   #ifdef __cplusplus
   }
   #endif
-
-  #define popen(cmd,mode) win_popen(cmd,mode)
-  #define pclose(p) win_pclose(p)
+  #ifdef _MSC_VER
+    #define popen(cmd,mode) _popen(cmd,mode)
+    #define pclose(p) _pclose(p)
+  #else
+    #define popen(cmd,mode) win_popen(cmd,mode)
+    #define pclose(p) win_pclose(p)
+  #endif
 #else
   #include <stdio.h>
   #include <sys/param.h>

@@ -183,3 +183,6 @@ loadbsdf.o:	bsdf.h rtio.h rterror.h paths.h
 interp2d.o:	interp2d.h
 
 triangulate.o:	triangulate.h
+
+process.o readobj.o readoct.o rglfile.o \
+tmapcolrs.o unix_process.o win_process.o:	rtprocess.h
