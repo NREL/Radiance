@@ -177,8 +177,7 @@ price_routes(PRICEMAT *pm, const RBFNODE *from_rbf, const RBFNODE *to_rbf)
 	    srow = psortrow(pm,i);
 	    for (j = to_rbf->nrbf; j--; ) {
 		double		d;		/* quadratic cost function */
-		d = DOT(vfrom, vto[j]);
-		d = (d >= 1.) ? .0 : acos(d);
+		d = Acos(DOT(vfrom, vto[j]));
 		pm->prow[j] = d*d;
 		d = R2ANG(to_rbf->rbfa[j].crad) - from_ang;
 		pm->prow[j] += d*d;	

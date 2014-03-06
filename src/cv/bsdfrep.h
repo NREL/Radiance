@@ -106,7 +106,7 @@ extern MIGRATION	*mig_list;
 extern char		*progname;
 
 				/* get theta value in degrees [0,180) range */
-#define get_theta180(v)	((180./M_PI)*acos((v)[2]))
+#define get_theta180(v)	((180./M_PI)*Acos((v)[2]))
 				/* get phi value in degrees, [0,360) range */
 #define	get_phi360(v)	((180./M_PI)*atan2((v)[1],(v)[0]) + 360.*((v)[1]<0))
 
