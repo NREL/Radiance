@@ -32,12 +32,14 @@ char	*fl
 		s = *av;
 		switch (*fl) {
 		case 's':		/* string */
-			while (*s == ' ')
+			while (isspace(*s))
 				++s;
-			do
-				if (!isprint(*s))
-					return(i);
-			while (*++s);
+                        if (!isprint(*s))
+                                return(i);
+                        while (isprint(*s) | isspace(*s))
+                                ++s;
+                        if (*s)
+                                return(i);
 			break;
 		case 'i':		/* integer */
 			if (!isintd(s, " \t\r\n"))
