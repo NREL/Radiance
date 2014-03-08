@@ -16,9 +16,12 @@
 #define ANG2R(r)	(int)((r)*((1<<16)/M_PI))
 #define R2ANG(c)	(((c)+.5)*(M_PI/(1<<16)))
 
-typedef struct {
-	float		vsum;		/* DSF sum */
-	unsigned int	nval;		/* number of values in sum */
+typedef union {
+	struct {
+		float		v;		/* DSF sum */
+		unsigned int	n;		/* number of values in sum */
+	}	sum;			/* sum for averaging */
+	float	val[2];			/* comparison values */
 } GRIDVAL;			/* grid value */
 
 typedef struct {
