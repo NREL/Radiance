@@ -14,6 +14,7 @@ static const char RCSid[] = "$Id$";
 #include <math.h>
 #include "platform.h"
 #include "bsdfrep.h"
+#include "resolu.h"
 				/* global argv[0] */
 char			*progname;
 

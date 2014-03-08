@@ -375,8 +375,7 @@ main(int argc, char *argv[])
 			fprintf(stderr,
 	"%s: need single function with 6 arguments: bsdf(ix,iy,iz,ox,oy,oz)\n",
 					progname);
-			fprintf(stderr, "\tor 3 arguments using Dx,Dy,Dz: bsdf(ix,iy,iz)\n",
-					progname);
+			fprintf(stderr, "\tor 3 arguments using Dx,Dy,Dz: bsdf(ix,iy,iz)\n");
 			goto userr;
 		}
 		++eclock;
