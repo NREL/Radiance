@@ -19,7 +19,6 @@
 typedef struct {
 	float		vsum;		/* DSF sum */
 	unsigned int	nval;		/* number of values in sum */
-	unsigned short	crad;		/* radius (coded angle) */
 } GRIDVAL;			/* grid value */
 
 typedef struct {
