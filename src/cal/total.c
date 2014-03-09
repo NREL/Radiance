@@ -241,6 +241,10 @@ char  *fname
 	}
 	if (nbicols)
 		SET_FILE_BINARY(fp);
+#ifdef getc_unlocked				/* avoid lock/unlock overhead */
+	flockfile(fp);
+#endif
+
 	ltotal = 0;
 	while (!feof(fp)) {
 		if (ltotal == 0) {			/* initialize */
