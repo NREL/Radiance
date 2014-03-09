@@ -20,7 +20,7 @@ static const char RCSid[] = "$Id$";
 #include "bsdfrep.h"
 
 #ifndef NEIGH_FACT2
-#define NEIGH_FACT2	15.	/* empirical neighborhood distance weight */
+#define NEIGH_FACT2	0.1	/* empirical neighborhood distance weight */
 #endif
 				/* number of processes to run */
 int			nprocs = 1;
