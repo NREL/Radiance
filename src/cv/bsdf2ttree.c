@@ -135,6 +135,9 @@ eval_isotropic(char *funame)
 			exit(1);
 		}
 		SET_FILE_BINARY(ofp);
+#ifdef getc_unlocked				/* avoid lock/unlock overhead */
+		flockfile(ofp);
+#endif
 	} else
 		fputs("{\n", stdout);
 						/* need to assign Dx, Dy, Dz? */
@@ -239,6 +242,10 @@ eval_anisotropic(char *funame)
 					progname);
 			exit(1);
 		}
+		SET_FILE_BINARY(ofp);
+#ifdef getc_unlocked				/* avoid lock/unlock overhead */
+		flockfile(ofp);
+#endif
 	} else
 		fputs("{\n", stdout);
 						/* need to assign Dx, Dy, Dz? */
