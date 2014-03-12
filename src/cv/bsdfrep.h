@@ -7,8 +7,6 @@
 
 #include "bsdf.h"
 
-#define DEBUG		1
-
 #ifndef GRIDRES
 #define GRIDRES		(1<<8)		/* grid resolution per side */
 #endif
