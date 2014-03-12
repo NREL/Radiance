@@ -41,7 +41,7 @@ prog_show(double frac)
 	char	pbar[256];
 	int	nchars;
 
-	if (do_prog <= 0) return;
+	if (do_prog <= 1) return;
 	if (do_prog > sizeof(pbar)-2)
 		do_prog = sizeof(pbar)-2;
 	if (frac < 0) frac = 0;
@@ -55,7 +55,17 @@ prog_show(double frac)
 }
 
 /* Finish progress bar */
-#define	prog_done()	if (do_prog) fputc('\n',stderr); else
+static void
+prog_done(void)
+{
+	int	n = do_prog;
+
+	if (n <= 1) return;
+	fputc('\r', stderr);
+	while (n--)
+		fputc(' ', stderr);
+	fputc('\r', stderr);
+}
 
 /* Return angle basis corresponding to the given name */
 static ANGLE_BASIS *

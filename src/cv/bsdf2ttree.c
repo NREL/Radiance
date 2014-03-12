@@ -56,7 +56,17 @@ prog_show(double frac)
 }
 
 /* Finish progress bar */
-#define	prog_done()	if (do_prog) fputc('\n',stderr); else
+static void
+prog_done(void)
+{
+	int	n = do_prog;
+
+	if (n <= 1) return;
+	fputc('\r', stderr);
+	while (n--)
+		fputc(' ', stderr);
+	fputc('\r', stderr);
+}
 
 /* Output XML prologue to stdout */
 static void
