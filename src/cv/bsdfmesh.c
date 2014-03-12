@@ -400,9 +400,7 @@ create_migration(RBFNODE *from_rbf, RBFNODE *to_rbf)
 	for (newmig = from_rbf->ejl; newmig != NULL;
 			newmig = nextedge(from_rbf,newmig))
 		if (newmig->rbfv[1] == to_rbf)
-{fprintf(stderr, "Edge already exists!\n");
 			return(NULL);
-}
 						/* else allocate */
 #ifdef DEBUG
 	fprintf(stderr, "Building path from (theta,phi) (%.1f,%.1f) ",
