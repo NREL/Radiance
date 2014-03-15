@@ -165,9 +165,6 @@ neighborhood_dist2(int x0, int y0, int x1, int y1)
 	double	d;
 	int	p[4];
 	int	i, j;
-
-	if ((x0 == x1) & (y0 == y1))
-		return(0.);
 						/* check radius */
 	p[0] = x0; p[1] = y0; p[2] = x1; p[3] = y1;
 	for (i = 4; i--; ) {
