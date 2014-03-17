@@ -364,12 +364,15 @@ main(int argc, char *argv[])
 	if (i < argc-1)
 		goto userr;
 					/* load input data */
-	if (i == argc-1 && freopen(argv[i], "rb", stdin) == NULL) {
+	if (i == argc-1 && freopen(argv[i], "r", stdin) == NULL) {
 		sprintf(errmsg, "cannot open input file '%s'", argv[i]);
 		error(SYSTEM, errmsg);
 	}
 	if (infmt != 'a')
 		SET_FILE_BINARY(stdin);
+#ifdef getc_unlocked			/* avoid lock/unlock overhead */
+	flockfile(stdin);
+#endif
 	load_data();
 	if (recipavg)
 		do_reciprocity();
