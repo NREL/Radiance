@@ -265,9 +265,10 @@ make_rbfrep()
 	if (build_rbfrep(&rbfarr, &nn, 0, GRIDRES, 0, GRIDRES) <= 0) {
 		if (nn)
 			goto memerr;
-		fprintf(stderr, "%s: no usable data in make_rbfrep()\n",
-				progname);
-		exit(1);
+		fprintf(stderr,
+			"%s: warning - skipping bad incidence (%.1f,%.1f)\n",
+				progname, theta_in_deg, phi_in_deg);
+		return(NULL);
 	}
 				/* (re)allocate RBF array */
 	newnode = (RBFNODE *)realloc(rbfarr,
@@ -295,7 +296,6 @@ make_rbfrep()
 			newnode->vtotal);
 #endif
 	insert_dsf(newnode);
-
 	return(newnode);
 memerr:
 	fprintf(stderr, "%s: Out of memory in make_rbfrep()\n", progname);
