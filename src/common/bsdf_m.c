@@ -488,7 +488,8 @@ load_bsdf_data(SDData *sd, ezxml_t wdb, int rowinc)
 		return RC_FORMERR;
 	}
 	for (i = 0; i < dp->ninc*dp->nout; i++) {
-		char  *sdnext = fskip(sdata);
+		char	*sdnext = fskip(sdata);
+		double	val;
 		if (sdnext == NULL) {
 			sprintf(SDerrorDetail,
 				"Bad/missing BSDF ScatteringData in '%s'",
@@ -498,12 +499,14 @@ load_bsdf_data(SDData *sd, ezxml_t wdb, int rowinc)
 		while (isspace(*sdnext))
 			sdnext++;
 		if (*sdnext == ',') sdnext++;
+		if ((val = atof(sdata)) < 0)
+			val = 0;	/* don't allow negative values */
 		if (rowinc) {
 			int	r = i/dp->nout;
 			int	c = i - r*dp->nout;
-			mBSDF_value(dp,r,c) = atof(sdata);
+			mBSDF_value(dp,r,c) = val;
 		} else
-			dp->bsdf[i] = atof(sdata);
+			dp->bsdf[i] = val;
 		sdata = sdnext;
 	}
 	return get_extrema(df);

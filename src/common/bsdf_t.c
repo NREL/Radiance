@@ -849,7 +849,8 @@ load_values(char **spp, float *va, int n)
 	char	*svnext;
 
 	while (n-- > 0 && (svnext = fskip(*spp)) != NULL) {
-		*v++ = atof(*spp);
+		if ((*v++ = atof(*spp)) < 0)
+			v[-1] = 0;
 		*spp = svnext;
 		eat_token(spp, ',');
 	}
