@@ -129,7 +129,7 @@ add_pabopto_inp(const int i)
 		if (i)			/* process previous incidence */
 			make_rbfrep();
 #ifdef DEBUG
-		fprintf(stderr, "New incident (theta,phi)=(%f,%f)\n",
+		fprintf(stderr, "New incident (theta,phi)=(%.1f,%.1f)\n",
 					inpfile[i].theta, inpfile[i].phi);
 #endif
 		new_bsdf_data(inpfile[i].theta, inpfile[i].phi);
