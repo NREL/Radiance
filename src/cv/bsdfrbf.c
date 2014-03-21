@@ -262,8 +262,13 @@ make_rbfrep()
 	comp_bsdf_min();
 				/* create RBF node list */
 	rbfarr = NULL; nn = 0;
-	if (build_rbfrep(&rbfarr, &nn, 0, GRIDRES, 0, GRIDRES) <= 0)
-		goto memerr;
+	if (build_rbfrep(&rbfarr, &nn, 0, GRIDRES, 0, GRIDRES) <= 0) {
+		if (nn)
+			goto memerr;
+		fprintf(stderr, "%s: no usable data in make_rbfrep()\n",
+				progname);
+		return(NULL);
+	}
 				/* (re)allocate RBF array */
 	newnode = (RBFNODE *)realloc(rbfarr,
 			sizeof(RBFNODE) + sizeof(RBFVAL)*(nn-1));
