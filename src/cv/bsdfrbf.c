@@ -267,7 +267,7 @@ make_rbfrep()
 			goto memerr;
 		fprintf(stderr, "%s: no usable data in make_rbfrep()\n",
 				progname);
-		return(NULL);
+		exit(1);
 	}
 				/* (re)allocate RBF array */
 	newnode = (RBFNODE *)realloc(rbfarr,
