@@ -77,7 +77,9 @@ init_pabopto_inp(const int i, const char *fname)
 				inpfile[i].isDSF = 1;
 				continue;
 			}
-			if (!strcasecmp(typ, "BSDF")) {
+			if (!strcasecmp(typ, "BSDF") ||
+					!strcasecmp(typ, "BRDF") ||
+					!strcasecmp(typ, "BTDF")) {
 				inpfile[i].isDSF = 0;
 				continue;
 			}
