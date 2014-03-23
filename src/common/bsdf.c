@@ -790,7 +790,7 @@ SDsampBSDF(SDValue *sv, FVECT ioVec, double randX, int sflags, const SDData *sd)
 		randX -= sd->tLamb.cieY;
 	}
 					/* else one of cumulative dist. */
-	for (i = 0; i < n && randX < cdarr[i]->cTotal; i++)
+	for (i = 0; i < n && randX > cdarr[i]->cTotal; i++)
 		randX -= cdarr[i]->cTotal;
 	if (i >= n)
 		return SDEinternal;
