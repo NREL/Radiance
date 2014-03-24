@@ -138,7 +138,8 @@ main(int argc, char *argv[])
 			}
 		}
 		fflush(stdout);
-		sprintf(buf, "gensurf tmat bsdf - - - %d %d", GRIDRES-1, GRIDRES-1);
+		sprintf(buf, "gensurf tmat bsdf%d - - - %d %d", n+1,
+						GRIDRES-1, GRIDRES-1);
 		fp = popen(buf, "w");
 		if (fp == NULL) {
 			fprintf(stderr, "%s: cannot open '| %s'\n", progname, buf);
