@@ -612,7 +612,8 @@ load_bsdf_rep(FILE *ifp)
 	if (ifp == NULL)
 		return(0);
 	if (getheader(ifp, headline, NULL) < 0 || (single_plane_incident < 0) |
-			!input_orient | !output_orient) {
+			!input_orient | !output_orient |
+			(grid_res < 16) | (grid_res > 256)) {
 		fprintf(stderr, "%s: missing/bad format for BSDF interpolant\n",
 				progname);
 		return(0);
