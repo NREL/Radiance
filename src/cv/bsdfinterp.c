@@ -215,13 +215,14 @@ get_interp(MIGRATION *miga[3], FVECT invec)
 		    for (miga[0] = rbf->ejl; miga[0] != NULL;
 					miga[0] = nextedge(rbf,miga[0]))
 			if (opp_rbf(rbf,miga[0]) == rbf->next) {
-				double	nf = 1. - rbf->invec[2]*rbf->invec[2];
+				double	nf = 1. -
+					rbf->next->invec[2]*rbf->next->invec[2];
 				if (nf > FTINY) {	/* rotate to match */
 					nf = sqrt((1.-invec[2]*invec[2])/nf);
-					invec[0] = nf*rbf->invec[0];
-					invec[1] = nf*rbf->invec[1];
+					invec[0] = nf*rbf->next->invec[0];
+					invec[1] = nf*rbf->next->invec[1];
 				}
-				return(0);
+				return(0);	/* rotational symmetry */
 			}
 		    break;
 		}
