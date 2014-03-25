@@ -198,7 +198,7 @@ rotate_rbf(RBFNODE *rbf, const FVECT invec)
 	int			pos[2];
 	int			n;
 
-	for (n = ((-.01 > phi) | (phi > .01))*rbf->nrbf; n-- > 0; ) {
+	for (n = (cos(phi) < 1.-FTINY)*rbf->nrbf; n-- > 0; ) {
 		ovec_from_pos(outvec, rbf->rbfa[n].gx, rbf->rbfa[n].gy);
 		spinvector(outvec, outvec, vnorm, phi);
 		pos_from_vec(pos, outvec);
