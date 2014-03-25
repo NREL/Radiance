@@ -213,8 +213,10 @@ putrecord(			/* write out results record */
 		return;
 	}
 						/* ASCII output */
-	while (n-- > 0)
-		fprintf(fp, "%.9g%c", *field++, tabc);
+	while (n-- > 0) {
+		fprintf(fp, "%.9g", *field++);
+		if (n) fputc(tabc, fp);
+	}
 	fputc('\n', fp);
 }
 
