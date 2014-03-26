@@ -12,7 +12,7 @@ CXXFLAGS = $(CFLAGS)
 METACFLAGS = -I../meta
 
 CC = cc
-CXX = g++
+CXX = c++
 
 MLIB = -lm
 

@@ -35,8 +35,13 @@ plan_transport(MIGRATION *mig)
 					mig->rbfv[1]->vtotal;
 					
 	n = 0;					/* minimize EMD */
-	transportSimplex(&srcSig, &dstSig, &lobe_distance, flow, &n);
-
+	try {
+		transportSimplex(&srcSig, &dstSig, &lobe_distance, flow, &n);
+	} catch (...) {
+		fprintf(stderr, "%s: caught exception from transportSimplex()!\n",
+				progname);
+		exit(1);
+	}
 	while (n-- > 0)				/* assign sparse matrix */
 		mtx_coef(mig, flow[n].from, flow[n].to) = flow[n].amount;
 }
