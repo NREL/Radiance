@@ -396,7 +396,7 @@ check_normal_incidence(void)
 	if (create_migration(mir_rbf, near_rbf) == NULL)
 		exit(1);			/* XXX should never happen! */
 	norm_vec[2] = input_orient;		/* interpolate normal dist. */
-	rbf = e_advect_rbf(mig_list, norm_vec, 2*near_rbf->nrbf);
+	rbf = e_advect_rbf(mig_list, norm_vec, 0);
 	nprocs = saved_nprocs;			/* final clean-up */
 	free(mir_rbf);
 	free(mig_list);
