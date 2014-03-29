@@ -42,6 +42,11 @@ plan_transport(MIGRATION *mig)
 				progname);
 		exit(1);
 	}
+	if (n > mtx_nrows(mig)+mtx_ncols(mig)-1) {
+		fprintf(stderr, "%s: signature overflow in plan_transport()!\n",
+				progname);
+		exit(1);
+	}
 	while (n-- > 0)				/* assign sparse matrix */
 		mtx_coef(mig, flow[n].from, flow[n].to) = flow[n].amount;
 }
