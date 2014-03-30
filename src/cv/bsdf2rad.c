@@ -22,7 +22,11 @@ const float	colarr[6][3] = {
 		.5, 1., 1.
 	};
 
+#ifdef _WIN32
 char	validf[] = "-e \"valid(s,t)=X`SYS(s,t)^2+Y`SYS(s,t)^2+Z`SYS(s,t)^2-1e-7\"";
+#else
+char	validf[] = "-e 'valid(s,t)=X`SYS(s,t)^2+Y`SYS(s,t)^2+Z`SYS(s,t)^2-1e-7'";
+#endif
 
 char	*progname;
 
