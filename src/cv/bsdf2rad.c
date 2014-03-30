@@ -22,6 +22,8 @@ const float	colarr[6][3] = {
 		.5, 1., 1.
 	};
 
+char	validf[] = "-e \"valid(s,t)=X`SYS(s,t)^2+Y`SYS(s,t)^2+Z`SYS(s,t)^2-1e-7\"";
+
 char	*progname;
 
 /* Produce a Radiance model plotting the indicated incident direction(s) */
@@ -144,8 +146,8 @@ main(int argc, char *argv[])
 			}
 		}
 		fflush(stdout);
-		sprintf(buf, "gensurf tmat bsdf%d - - - %d %d", n+1,
-						GRIDRES-1, GRIDRES-1);
+		sprintf(buf, "gensurf tmat bsdf%d - - - %d %d %s", n+1,
+						GRIDRES-1, GRIDRES-1, validf);
 		fp = popen(buf, "w");
 		if (fp == NULL) {
 			fprintf(stderr, "%s: cannot open '| %s'\n", progname, buf);
