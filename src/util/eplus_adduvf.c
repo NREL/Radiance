@@ -392,8 +392,8 @@ start_rcontrib(SUBPROC *pd, ZONE *zp)
 						/* now subsurfaces */
 	if (zp->ntotal > zp->nsurf) {
 		if (zp->area_redu != NULL)
-			memset(zp->area_redu, 0, sizeof(float)*zp->nsurf);
-		else if ((zp->area_redu = (float *)calloc(zp->nsurf,
+			memset(zp->area_redu, 0, sizeof(float)*zp->ntotal);
+		else if ((zp->area_redu = (float *)calloc(zp->ntotal,
 						sizeof(float))) == NULL)
 			return(0);
 	}
