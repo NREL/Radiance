@@ -133,8 +133,8 @@ if ( $geout ) {
 	print "\t</Geometry>\n";
 }
 # Set up surface sampling
-my $nx = int(sqrt($nsamp*($dim[1]-$dim[0])/($dim[3]-$dim[2])) + .5);
-my $ny = int($nsamp/$nx + .5);
+my $nx = int(sqrt($nsamp*($dim[1]-$dim[0])/($dim[3]-$dim[2])) + 1);
+my $ny = int($nsamp/$nx + 1);
 $nsamp = $nx * $ny;
 my $ns = 2**$ttlog2;
 my (@pdiv, $disk2sq, $sq2disk, $tcal, $kcal);
