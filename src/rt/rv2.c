@@ -26,11 +26,7 @@ extern double  maxdiff;			/* max. sample difference */
 
 #define  CTRL(c)	((c)-'@')
 
-#ifdef  SMLFLT
-#define  sscanvec(s,v)	(sscanf(s,"%f %f %f",v,v+1,v+2)==3)
-#else
-#define  sscanvec(s,v)	(sscanf(s,"%lf %lf %lf",v,v+1,v+2)==3)
-#endif
+#define  sscanvec(s,v)	(sscanf(s,FVFORMAT,v,v+1,v+2)==3)
 
 extern char  rifname[128];		/* rad input file name */
 

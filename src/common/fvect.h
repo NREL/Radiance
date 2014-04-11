@@ -11,9 +11,11 @@ extern "C" {
 #ifdef  SMLFLT
 #define  RREAL		float
 #define  FTINY		(1e-3)
+#define  FVFORMAT	"%f %f %f"
 #else
 #define  RREAL		double
 #define  FTINY		(1e-6)
+#define  FVFORMAT	"%lf %lf %lf"
 #endif
 #define  FHUGE		(1e10)
 
