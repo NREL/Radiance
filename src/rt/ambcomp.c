@@ -10,10 +10,12 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  "ray.h"
-
 #include  "ambient.h"
-
 #include  "random.h"
+
+#ifdef NEWAMB
+
+#else /* ! NEWAMB */
 
 
 void
@@ -434,3 +436,5 @@ dirgradient(					/* compute direction gradient */
 	for (i = 0; i < 3; i++)
 		gv[i] = xd*hp->ux[i] + yd*hp->uy[i];
 }
+
+#endif	/* ! NEWAMB */
