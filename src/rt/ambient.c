@@ -152,7 +152,7 @@ setambient(void)				/* initialize calculation */
 	ambdone();
 						/* init ambient limits */
 	setambres(ambres);
-	setambacc(ambacc);
+	qambacc = sqrt(sqrt(ambacc *= (ambacc > FTINY)));
 	if (ambfile == NULL || !ambfile[0])
 		return;
 	if (ambacc <= FTINY) {
