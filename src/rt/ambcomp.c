@@ -555,6 +555,15 @@ doambient(				/* compute ambient component */
 			ra[0] = minarad;
 			if (ra[1] < minarad)
 				ra[1] = minarad;
+					/* cap gradient if necessary */
+			if (pg != NULL) {
+				d = (pg[0]*pg[0] + pg[1]*pg[1])*ra[0]*ra[0];
+				if (d > 1.0) {
+					d = 1.0/sqrt(d);
+					pg[0] *= d;
+					pg[1] *= d;
+				}
+			}
 		}
 		ra[0] *= d = 1.0/sqrt(sqrt(wt));
 		if ((ra[1] *= d) > 2.0*ra[0])

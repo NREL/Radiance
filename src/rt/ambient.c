@@ -406,7 +406,7 @@ sumambient(		/* get interpolated ambient value */
 		d = 0.0;
 		for (j = 0; j < 3; j++)
 			d += (r->rop[j] - av->pos[j])*(uvw[2][j] + r->ron[j]);
-		if (d*0.5 < -minarad*ambacc-.001)
+		if (d*0.5 < -minarad*qambacc-.001)
 			continue;
 		/*
 		 *  Extrapolate value and compute final weight (hat function)
