@@ -121,8 +121,9 @@ ambsample(				/* sample an ambient direction */
 	dimlist[ndims++] = i*hp->ns + j + 90171;
 	rayvalue(&ar);			/* evaluate ray */
 	ndims--;
-	if (ar.rt > 20.0*maxarad)	/* limit vertex distance */
-		ar.rt = 20.0*maxarad;
+					/* limit vertex distance */
+	if (ar.rt > 10.0*thescene.cusize)
+		ar.rt = 10.0*thescene.cusize;
 	else if (ar.rt <= FTINY)	/* should never happen! */
 		goto badsample;
 	VSUM(ap->p, ar.rorg, ar.rdir, ar.rt);
@@ -557,7 +558,8 @@ doambient(				/* compute ambient component */
 				ra[1] = minarad;
 					/* cap gradient if necessary */
 			if (pg != NULL) {
-				d = (pg[0]*pg[0] + pg[1]*pg[1])*ra[0]*ra[0];
+				d = pg[0]*pg[0]*ra[0]*ra[0] +
+						pg[1]*pg[1]*ra[1]*ra[1];
 				if (d > 1.0) {
 					d = 1.0/sqrt(d);
 					pg[0] *= d;
