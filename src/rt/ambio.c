@@ -81,16 +81,16 @@ ambvalOK(			/* check consistency of ambient value */
 
 	if (badvec(av->pos)) return(0);
 	if (!av->ndir | !av->udir) return(0);
-	if (av->lvl < 0 || av->lvl > 100) return(0);
-	if (av->weight <= 0. || av->weight > 1.) return(0);
+	if ((av->lvl < 0) | (av->lvl > 100)) return(0);
+	if ((av->weight <= 0.) | (av->weight > 1.)) return(0);
 	if ((av->rad[0] <= 0.) | (av->rad[0] >= FHUGE)) return(0);
 	if ((av->rad[1] <= 0.) | (av->rad[1] >= FHUGE)) return(0);
-	if (colval(av->val,RED) < 0. ||
-			colval(av->val,RED) > FHUGE ||
-			colval(av->val,GRN) < 0. ||
-			colval(av->val,GRN) > FHUGE ||
-			colval(av->val,BLU) < 0. ||
-			colval(av->val,BLU) > FHUGE) return(0);
+	if ((colval(av->val,RED) < 0.) |
+			(colval(av->val,RED) > FHUGE) |
+			(colval(av->val,GRN) < 0.) |
+			(colval(av->val,GRN) > FHUGE) |
+			(colval(av->val,BLU) < 0.) |
+			(colval(av->val,BLU) > FHUGE)) return(0);
 	if (badflt(av->gpos[0]) || badflt(av->gpos[1])) return(0);
 	if (badflt(av->gdir[0]) || badflt(av->gdir[1])) return(0);
 	return(1);
