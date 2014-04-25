@@ -391,16 +391,24 @@ sumambient(		/* get interpolated ambient value */
 		if (delta_r2 >= maxangle*maxangle)
 			continue;
 		/*
+		 *  Modified ray behind test
+		 */
+		VSUB(ck0, av->pos, r->rop);
+		d = DOT(ck0, uvw[2]);
+		if (d < -minarad*qambacc-.001)
+			continue;
+		d /= av->rad[0];
+		delta_t2 = d*d;
+		if (delta_t2 >= qambacc*qambacc)
+			continue;
+		/*
 		 *  Elliptical radii test based on Hessian
 		 */
 		decodedir(uvw[0], av->udir);
 		VCROSS(uvw[1], uvw[2], uvw[0]);
-		VSUB(ck0, av->pos, r->rop);
 		d = DOT(ck0, uvw[0]) / av->rad[0];
-		delta_t2 = d*d;
-		d = DOT(ck0, uvw[1]) / av->rad[1];
 		delta_t2 += d*d;
-		d = DOT(ck0, uvw[2]) / av->rad[0];
+		d = DOT(ck0, uvw[1]) / av->rad[1];
 		delta_t2 += d*d;
 		if (delta_t2 >= qambacc*qambacc)
 			continue;
