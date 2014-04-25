@@ -357,8 +357,10 @@ sumambient(		/* get interpolated ambient value */
 	FVECT  c0,
 	double	s
 )
-{					/* initial limit is ambacc radians */
-	const double	maxangle = (ambacc-PI/2.)*pow(r->rweight,0.13) + PI/2.;
+{			/* initial limit is 5 degrees plus ambacc radians */
+	const double	minangle = 5.0 * PI/180.;
+	const double	maxangle = (minangle+ambacc-PI/2.)*pow(r->rweight,0.13)
+					+ PI/2.;
 	double		wsum = 0.0;
 	FVECT		ck0;
 	int		i, j;
