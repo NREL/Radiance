@@ -70,15 +70,12 @@ inithemi(			/* initialize sampling hemisphere */
 	d = 1.0/(n*n);
 	scalecolor(hp->acoef, d);
 					/* make tangent plane axes */
-	hp->uy[0] = 0.1 - 0.2*frandom();
-	hp->uy[1] = 0.1 - 0.2*frandom();
-	hp->uy[2] = 0.1 - 0.2*frandom();
-	for (i = 0; i < 3; i++)
-		if (r->ron[i] < 0.6 && r->ron[i] > -0.6)
-			break;
-	if (i >= 3)
+	hp->uy[0] = hp->uy[1] = hp->uy[2] = 0;
+	for (i = 3; i--; )
+		if ((0.6 < r->ron[i]) & (r->ron[i] < 0.6))
+			hp->uy[i] = 0.1+frandom();
+	if (DOT(hp->uy,hp->uy) <= FTINY)
 		error(CONSISTENCY, "bad ray direction in inithemi()");
-	hp->uy[i] = 1.0;
 	VCROSS(hp->ux, hp->uy, r->ron);
 	normalize(hp->ux);
 	VCROSS(hp->uy, r->ron, hp->ux);
