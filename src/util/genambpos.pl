@@ -38,7 +38,7 @@ while ($#ARGV >= 0) {
 }
 userror() if ($#ARGV != 0);
 my $cmd = "getinfo < $ARGV[0] " . 
-		q[| sed -n 's/^.* -aa \([.0-9][.0-9]*\) .*$/\1/p'];
+		q[| sed -n 's/^.* -aa \([.0-9][^ ]*\) .*$/\1/p'];
 my $ambacc=`$cmd`;
 die "Missing -aa setting in header\n" if (! $ambacc );
 $scale *= $ambacc**.25;
