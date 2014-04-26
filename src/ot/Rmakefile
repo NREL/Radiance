@@ -39,7 +39,7 @@ install:	$(PROGS)
 	cp $(PROGS) $(INSTDIR)
 
 clean:
-	set nonomatch; rm -f $(PROGS) *.o core
+	set nonomatch; rm -f $(PROGS) *.o
 
 bbox.o initotypes.o o_cone.o o_face.o \
 o_instance.o oconv.o sphere.o \

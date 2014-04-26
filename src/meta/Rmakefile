@@ -30,7 +30,7 @@ install: $(PROGS)
 	cp $(PROGS) $(INSTDIR)
 
 clean:
-	set nonomatch; rm -f *.o $(PROGS) core
+	set nonomatch; rm -f *.o $(PROGS)
 
 # individual targets
 

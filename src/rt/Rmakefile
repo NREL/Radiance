@@ -109,7 +109,7 @@ install:	all rayinit.cal
 ogl:	
 
 clean:
-	set nonomatch; rm -f $(PROGS) *.o core
+	set nonomatch; rm -f $(PROGS) *.o
 
 lint:	$(RVSRC)
 	$(LINT) $(LINTFLAGS) -DRVIEW $(RVSRC) $(LIBS)
