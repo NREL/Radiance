@@ -129,13 +129,11 @@ setambacc(				/* set ambient accuracy */
 	double  newa
 )
 {
-	double  ambdiff;
-
-	if (newa < 0.0)
-		newa = 0.0;
-	ambdiff = fabs(newa - ambacc);
-	if (ambdiff >= .01 && (ambacc = newa) > FTINY) {
-		qambacc = sqrt(sqrt(ambacc));
+	double	olda = qambacc*qambacc*qambacc*qambacc;
+	
+	newa *= (newa > 0);
+	if (fabs(newa - olda) >= .05*(newa + olda)) {
+		qambacc = sqrt(sqrt(ambacc = newa));
 		if (nambvals > 0)
 			sortambvals(1);		/* rebuild tree */
 	}
@@ -152,7 +150,7 @@ setambient(void)				/* initialize calculation */
 	ambdone();
 						/* init ambient limits */
 	setambres(ambres);
-	qambacc = sqrt(sqrt(ambacc *= (ambacc > FTINY)));
+	setambacc(ambacc);
 	if (ambfile == NULL || !ambfile[0])
 		return;
 	if (ambacc <= FTINY) {
