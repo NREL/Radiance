@@ -416,7 +416,7 @@ ambHessian(				/* anisotropic radii & pos. gradient */
 		    rev_hessian(hesscol);
 		    add2hessian(hessian, hessrow[j], hessdia, hesscol, backg);
 		}
-		if (gradient != NULL) {
+		if (gradrow != NULL) {
 		    comp_gradient(graddia, &fftr, hp->rp->ron);
 		    rev_gradient(gradcol);
 		    add2gradient(gradient, gradrow[j], graddia, gradcol, backg);
