@@ -16,11 +16,6 @@ rdz = ndx*rpy - ndy*rpx;
 dgrad = (rdx*dgx + rdy*dgy + rdz*dgz)/sqrt(rpx*rpx + rpy*rpy + rpz*rpz);
 dirfunc = bound(0, 1 + dgrad, 2);
 
-{ Relative hit point }
-rpx = Px - arg(1);
-rpy = Py - arg(2);
-rpz = Pz - arg(3);
-
 { Calculation of positional gradient pattern }
 pgx = arg(4); pgy = arg(5); pgz = arg(6);
 posfunc = bound(0, 1 + (pgx*rpx + pgy*rpy + pgz*rpz), 2);
