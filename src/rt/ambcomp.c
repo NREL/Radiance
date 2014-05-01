@@ -22,17 +22,17 @@ static const char	RCSid[] = "$Id$";
 extern void		SDsquare2disk(double ds[2], double seedx, double seedy);
 
 typedef struct {
+	COLOR	v;		/* hemisphere sample value */
+	FVECT	p;		/* intersection point */
+} AMBSAMP;		/* sample value */
+
+typedef struct {
 	RAY	*rp;		/* originating ray sample */
 	FVECT	ux, uy;		/* tangent axis unit vectors */
 	int	ns;		/* number of samples per axis */
 	COLOR	acoef;		/* division contribution coefficient */
-	struct s_ambsamp {
-		COLOR	v;		/* hemisphere sample value */
-		FVECT	p;		/* intersection point */
-	} sa[1];		/* sample array (extends struct) */
+	AMBSAMP	sa[1];		/* sample array (extends struct) */
 }  AMBHEMI;		/* ambient sample hemisphere */
-
-typedef struct s_ambsamp	AMBSAMP;
 
 #define ambsam(h,i,j)	(h)->sa[(i)*(h)->ns + (j)]
 
