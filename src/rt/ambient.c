@@ -413,7 +413,7 @@ sumambient(		/* get interpolated ambient value */
 		/*
 		 *  Modified ray behind test
 		 */
-		VSUB(ck0, av->pos, r->rop);
+		VSUB(ck0, r->rop, av->pos);
 		d = DOT(ck0, uvw[2]);
 		if (d < -minarad*ambacc-.001)
 			continue;
