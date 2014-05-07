@@ -42,7 +42,8 @@ lookamb(			/* load & convert ambient values from a file */
 						colval(av.val,GRN),
 						colval(av.val,BLU));
 			printf("%f\t%f\t", av.gpos[0], av.gpos[1]);
-			printf("%f\t%f\n", av.gdir[0], av.gdir[1]);
+			printf("%f\t%f\t", av.gdir[0], av.gdir[1]);
+			printf("%u\n", av.corral);
 		} else {
 			printf("\nPosition:\t%f\t%f\t%f\n", av.pos[0],
 					av.pos[1], av.pos[2]);
@@ -56,6 +57,7 @@ lookamb(			/* load & convert ambient values from a file */
 					colval(av.val,GRN), colval(av.val,BLU));
 			printf("Pos.Grad:\t%f\t%f\n", av.gpos[0], av.gpos[1]);
 			printf("Dir.Grad:\t%f\t%f\n", av.gdir[0], av.gdir[1]);
+			printf("Corral:\t\t%8X\n", av.corral);
 		}
 		if (ferror(stdout))
 			exit(1);
@@ -103,6 +105,11 @@ writamb(			/* write binary ambient values to stdout */
 		if (!dataonly)
 			fscanf(fp, "%*s");
 		if (fscanf(fp, "%f %f", &av.gdir[0], &av.gdir[1]) != 2)
+			return;
+		if (dataonly) {
+			if (fscanf(fp, "%u", &av.corral) != 1)
+				return;
+		} else if (fscanf(fp, "%*s %X", &av.corral) != 1)
 			return;
 		av.next = NULL;
 		writambval(&av, stdout);
