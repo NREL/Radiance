@@ -239,7 +239,7 @@ m_normal(			/* color a ray that hit something normal */
 			if (!(nd.specfl & SP_PURE) &&
 					specthresh >= nd.tspec-FTINY)
 				nd.specfl |= SP_TBLT;
-			if (!hastexture || r->crtype & SHADOW) {
+			if (!hastexture || r->crtype & (SHADOW|AMBIENT)) {
 				VCOPY(nd.prdir, r->rdir);
 				transtest = 2;
 			} else {
@@ -306,7 +306,8 @@ m_normal(			/* color a ray that hit something normal */
 			rayvalue(&lr);
 			multcolor(lr.rcol, lr.rcoef);
 			addcolor(r->rcol, lr.rcol);
-			if (!hastexture && nd.specfl & SP_FLAT) {
+			if (nd.specfl & SP_FLAT &&
+					!hastexture | (r->crtype & AMBIENT)) {
 				mirtest = 2.*bright(lr.rcol);
 				mirdist = r->rot + lr.rt;
 			}
