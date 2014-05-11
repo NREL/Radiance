@@ -109,12 +109,12 @@ setambres(				/* set ambient resolution */
 						/* set min & max radii */
 	if (ar <= 0) {
 		minarad = 0;
-		maxarad = thescene.cusize*0.5;
+		maxarad = thescene.cusize*0.2;
 	} else {
 		minarad = thescene.cusize / ar;
 		maxarad = 64.0 * minarad;		/* heuristic */
-		if (maxarad > thescene.cusize*0.5)
-			maxarad = thescene.cusize*0.5;
+		if (maxarad > thescene.cusize*0.2)
+			maxarad = thescene.cusize*0.2;
 	}
 	if (minarad <= FTINY)
 		minarad = 10.0*FTINY;
