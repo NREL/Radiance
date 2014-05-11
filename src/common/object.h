@@ -58,16 +58,16 @@ typedef struct {
 
 #ifndef  MAXOBJBLK
 #ifdef  SMLMEM
-#define  MAXOBJBLK	63		/* maximum number of object blocks */
+#define  MAXOBJBLK	1023		/* maximum number of object blocks */
 #else
-#define  MAXOBJBLK	65535		/* maximum number of object blocks */
+#define  MAXOBJBLK	131071		/* maximum number of object blocks */
 #endif
 #endif
 
 extern OBJREC  *objblock[MAXOBJBLK];	/* the object blocks */
 extern OBJECT  nobjects;		/* # of objects */
 
-#define  OBJBLKSHFT	9
+#define  OBJBLKSHFT	11
 #define  OBJBLKSIZ	(1<<OBJBLKSHFT)	/* object block size */
 #define  objptr(obj)	(objblock[(obj)>>OBJBLKSHFT]+((obj)&(OBJBLKSIZ-1)))
 
