@@ -122,7 +122,7 @@ dgval ring dgdisk${recno}a
 0
 0
 8
-	${ px+dgx*.0002 } ${ py+dgy*.0002 } ${ pz+dgz*.0002 }
+	${ px+dgx/dg*eps*.5 } ${ py+dgy/dg*eps*.5 } ${ pz+dgz/dg*eps*.5 }
 	${ dgx } ${ dgy } ${ dgz }
 	0	${  r0/2  }
 
@@ -130,7 +130,7 @@ dgval ring dgdisk${recno}b
 0
 0
 8
-	${ px-dgx*.001 } ${ py-dgy*.001 } ${ pz-dgz*.001 }
+	${ px-dgx/dg*eps*.5 } ${ py-dgy/dg*eps*.5 } ${ pz-dgz/dg*eps*.5 }
 	${ -dgx } ${ -dgy } ${ -dgz }
 	0	${  r0/2  }
 ';
