@@ -737,7 +737,7 @@ doambient(				/* compute ambient component */
 			if (ra[1] < minarad)
 				ra[1] = minarad;
 		}
-		ra[0] *= d = 1.0/sqrt(sqrt(wt));
+		ra[0] *= d = 1.0/sqrt(wt);
 		if ((ra[1] *= d) > 2.0*ra[0])
 			ra[1] = 2.0*ra[0];
 		if (ra[1] > maxarad) {
