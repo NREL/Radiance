@@ -372,10 +372,8 @@ do_resize(FILE *fp)
 	int	columns2go = no_columns;
 	char	word[256];
 						/* sanity checks */
-	if (comp_size) {
-		fputs("Bad call to do_resize (binary input)\n", stderr);
-		return(0);
-	}
+	if (comp_size)
+		return(output_stream(fp));	/* binary data -- just copy */
 	if (no_columns <= 0) {
 		fprintf(stderr, "Missing -oc specification\n");
 		return(0);
@@ -566,7 +564,7 @@ main(int argc, char *argv[])
 		SET_FILE_BINARY(stdout);
 	}
 						/* check for no-op */
-	if (!transpose && (comp_size ||
+	if (!transpose & (i_header == o_header) && (comp_size ||
 			(no_columns == ni_columns) & (no_rows == ni_rows))) {
 		if (warnings)
 			fprintf(stderr, "%s: no-op -- copying input verbatim\n",
