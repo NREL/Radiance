@@ -69,6 +69,16 @@ Note that the lack of row separators in binary files means that
 does not actually do anything for binary files unless the transpose
 option is given, also.
 .PP
+If an input header is present, it may contain the format, number of components
+and matrix dimensions.
+In such cases, the
+.I \-ic,
+.I \-ir
+and
+.I \-f
+options are not required, but will be checked against the header
+information if provided.
+.PP
 The transpose option,
 .I \-t
 swaps rows and columns on the input.
