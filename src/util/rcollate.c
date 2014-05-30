@@ -237,11 +237,11 @@ output_stream(FILE *fp)
 
 	if (fp == NULL)
 		return(0);
-	fflush(stdout);			/* assumes nothing in input buffer */
-	while ((n = read(fileno(fp), buf, sizeof(buf))) > 0)
+	fflush(stdout);
+	while ((n = fread(buf, 1, sizeof(buf), fp)) > 0)
 		if (write(fileno(stdout), buf, n) != n)
 			return(0);
-	return(n >= 0);
+	return(!ferror(fp));
 }
 
 /* get next word from stream, leaving stream on EOL or start of next word */
