@@ -145,7 +145,8 @@ getostream(const char *ospec, const char *mname, int bn, int noopen)
 			if (outfmt != 'a')
 				SET_FILE_BINARY(stdout);
 			if (header) {
-				sprintf(info, "NCOLS=%d\n", stdos.reclen);
+				sprintf(info, "NCOLS=%d\nNCOMP=3\n",
+						stdos.reclen);
 				printheader(stdout, info);
 			}
 			printresolu(stdout, xres, yres);
@@ -207,7 +208,7 @@ getostream(const char *ospec, const char *mname, int bn, int noopen)
 				sprintf(cp, "BIN=%d\n", bn);
 				while (*cp) ++cp;
 			}
-			sprintf(cp, "NCOLS=%d\n", sop->reclen);
+			sprintf(cp, "NCOLS=%d\nNCOMP=3\n", sop->reclen);
 			printheader(sop->ofp, info);
 		}
 		if (accumulate > 0) {		/* global resolution */
