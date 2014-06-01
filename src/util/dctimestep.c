@@ -286,6 +286,7 @@ main(int argc, char *argv[])
 				newheader("RADIANCE", ofp);
 				printargs(argc, argv, ofp);
 				fputnow(ofp);
+				fprintf(ofp, "NROWS=%d\n", rmtx->nrows);
 				fprintf(ofp, "NCOLS=%d\n", rmtx->ncols);
 				fputs("NCOMP=3\n", ofp);
 				fputformat((char *)cm_fmt_id[outfmt], ofp);
