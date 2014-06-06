@@ -266,7 +266,7 @@ sort_samples(SAMPORD *sord, const INTERP2 *ip, double ang)
 		sord[i].si = i;
 		sord[i].dm = cosd*ip->spt[i][0] + sind*ip->spt[i][1];
 	}
-	qsort(sord, ip->ns, sizeof(SAMPORD), &cmp_spos);
+	qsort(sord, ip->ns, sizeof(SAMPORD), cmp_spos);
 }
 
 /* (Re)compute anisotropic basis function interpolant (normally automatic) */
