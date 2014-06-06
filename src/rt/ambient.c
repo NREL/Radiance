@@ -1194,8 +1194,8 @@ sortambvals(			/* resort ambient values */
 		if (i_avlist < nambvals)
 			error(CONSISTENCY, "missing ambient values in sortambvals");
 #endif
-		qsort((char *)avlist1, nambvals, sizeof(struct avl), &alatcmp);
-		qsort((char *)avlist2, nambvals, sizeof(AMBVAL *), &aposcmp);
+		qsort((char *)avlist1, nambvals, sizeof(struct avl), alatcmp);
+		qsort((char *)avlist2, nambvals, sizeof(AMBVAL *), aposcmp);
 		for (i = 0; i < nambvals; i++) {
 			if (avlist1[i].p == NULL)
 				continue;
