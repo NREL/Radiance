@@ -186,7 +186,7 @@ main(int argc, char *argv[])
 	for (i = 0; i < ninpfiles; i++)
 		if (!init_pabopto_inp(i, argv[i+1]))
 			return(1);
-	qsort(inpfile, ninpfiles, sizeof(PGINPUT), &cmp_indir);
+	qsort(inpfile, ninpfiles, sizeof(PGINPUT), cmp_indir);
 						/* compile measurements */
 	for (i = 0; i < ninpfiles; i++)
 		if (!add_pabopto_inp(i))
