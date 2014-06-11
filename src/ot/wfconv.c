@@ -261,7 +261,7 @@ dominant_axis(char *v1, char *v2, char *v3)
 	for (i = imax = 2; i--; )
 		if (vn[i]*vn[i] > vn[imax]*vn[imax])
 			imax = i;
-	return(vn[imax]*vn[imax] > FTINY ? imax : -1);
+	return(vn[imax]*vn[imax] > FTINY*FTINY ? imax : -1);
 }
 
 /* callback for triangle output from polygon */
