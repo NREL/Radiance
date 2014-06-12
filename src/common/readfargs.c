@@ -14,15 +14,16 @@ static const char	RCSid[] = "$Id$";
 
 
 int
-readfargs(fa, fp)		/* read function arguments from stream */
-register FUNARGS  *fa;
-FILE  *fp;
+readfargs(			/* read function arguments from stream */
+	FUNARGS  *fa,
+	FILE  *fp
+)
 {
 #define getstr(s)	(fgetword(s,sizeof(s),fp)!=NULL)
 #define getint(s)	(getstr(s) && isint(s))
 #define getflt(s)	(getstr(s) && isflt(s))
 	char  sbuf[MAXSTR];
-	register int  n, i;
+	int  n, i;
 
 	if (!getint(sbuf) || (n = atoi(sbuf)) < 0)
 		return(0);
@@ -76,10 +77,11 @@ FILE  *fp;
 
 
 void
-freefargs(fa)			/* free object arguments */
-register FUNARGS  *fa;
+freefargs(				/* free object arguments */
+	FUNARGS  *fa
+)
 {
-	register int  i;
+	int  i;
 
 	if (fa->nsargs) {
 		for (i = 0; i < fa->nsargs; i++)
