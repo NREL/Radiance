@@ -18,7 +18,7 @@ static const char RCSid[] = "$Id$";
 
 #define	 OMARGIN	(10*FTINY)	/* margin around global cube */
 
-#define	 MAXOBJFIL	127		/* maximum number of scene files */
+#define	 MAXOBJFIL	255		/* maximum number of scene files */
 
 char  *progname;			/* argv[0] */
 
