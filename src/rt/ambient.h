@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-#ifdef NEWAMB
+#ifndef OLDAMB
 
 /*
  * Normal and u-vector directions encoded using dircode.c

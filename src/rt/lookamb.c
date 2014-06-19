@@ -19,7 +19,7 @@ int  reverse = 0;
 
 AMBVAL  av;
 
-#ifdef NEWAMB
+#ifndef OLDAMB
 
 
 static void

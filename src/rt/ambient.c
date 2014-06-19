@@ -263,7 +263,7 @@ ambnotify(			/* record new modifier */
 
 /************ THE FOLLOWING ROUTINES DIFFER BETWEEN NEW & OLD ***************/
 
-#ifdef NEWAMB
+#ifndef OLDAMB
 
 #define tfunc(lwr, x, upr)	(((x)-(lwr))/((upr)-(lwr)))
 

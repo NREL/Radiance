@@ -21,7 +21,7 @@ static const char	RCSid[] = "$Id$";
 #include  "ambient.h"
 #include  "random.h"
 
-#ifdef NEWAMB
+#ifndef OLDAMB
 
 extern void		SDsquare2disk(double ds[2], double seedx, double seedy);
 

@@ -39,7 +39,7 @@ FILE  *fp;
 }
 
 
-#ifdef NEWAMB
+#ifndef OLDAMB
 
 #define  putpos(v,fp)	putflt((v)[0],fp);putflt((v)[1],fp);putflt((v)[2],fp)
 
