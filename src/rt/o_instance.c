@@ -12,16 +12,16 @@ static const char RCSid[] = "$Id$";
 #include  "rtotypes.h"
 
 
-extern int
+int
 o_instance(		/* compute ray intersection with octree */
 	OBJREC  *o,
-	register RAY  *r
+	RAY  *r
 )
 {
 	RAY  rcont;
 	double  d;
-	register INSTANCE  *ins;
-	register int  i;
+	INSTANCE  *ins;
+	int  i;
 					/* get the octree */
 	ins = getinstance(o, IO_ALL);
 					/* copy and transform ray */

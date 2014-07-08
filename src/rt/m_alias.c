@@ -23,7 +23,7 @@ static const char RCSid[] = "$Id$";
  *  chain at all.
  */
 
-extern int
+int
 m_alias(			/* transfer shading to alias target */
 	OBJREC	*m,
 	RAY	*r

@@ -13,7 +13,7 @@ static const char	RCSid[] = "$Id$";
 #include  "paths.h"
 
 
-extern int
+int
 getrenderopt(		/* get next render option */
 	int  ac,
 	char  *av[]
@@ -215,7 +215,7 @@ getrenderopt(		/* get next render option */
 }
 
 
-extern void
+void
 print_rdefaults(void)		/* print default render values to stdout */
 {
 	printf(do_irrad ? "-i+\t\t\t\t# irradiance calculation on\n" :

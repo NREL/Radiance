@@ -34,14 +34,14 @@ static const char	RCSid[] = "$Id$";
  */
 
 
-extern int
+int
 p_bfunc(			/* compute brightness pattern */
 	OBJREC  *m,
 	RAY  *r
 )
 {
 	double  bval;
-	register MFUNC  *mf;
+	MFUNC  *mf;
 
 	if (m->oargs.nsargs < 2)
 		objerror(m, USER, "bad # arguments");
@@ -58,14 +58,14 @@ p_bfunc(			/* compute brightness pattern */
 }
 
 
-extern int
+int
 p_cfunc(			/* compute color pattern */
 	OBJREC  *m,
 	RAY  *r
 )
 {
 	COLOR  cval;
-	register MFUNC  *mf;
+	MFUNC  *mf;
 
 	if (m->oargs.nsargs < 4)
 		objerror(m, USER, "bad # arguments");

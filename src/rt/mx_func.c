@@ -26,17 +26,17 @@ static const char	RCSid[] = "$Id$";
  */
 
 
-extern int
+int
 mx_func(			/* compute mixture function */
-	register OBJREC  *m,
+	OBJREC  *m,
 	RAY  *r
 )
 {
 	OBJECT	obj;
-	register int  i;
+	int  i;
 	double  coef;
 	OBJECT  mod[2];
-	register MFUNC  *mf;
+	MFUNC  *mf;
 
 	if (m->oargs.nsargs < 4)
 		objerror(m, USER, "bad # arguments");

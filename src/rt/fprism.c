@@ -823,7 +823,7 @@ l_get_val(
 }
 
 
-extern void
+void
 setprismfuncs(void)  /* declared in func.h */
 {
  funset("fprism_val", 3, '=', l_get_val);

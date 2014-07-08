@@ -39,10 +39,10 @@ VSMATERIAL  direct2_vs = {dir_proj, 2};
 				getfunc(m, 8, 0xff, 1) )
 
 
-extern int
+int
 m_direct(			/* shade redirected ray */
-	register OBJREC  *m,
-	register RAY  *r
+	OBJREC  *m,
+	RAY  *r
 )
 {
 					/* check if source ray */
@@ -68,17 +68,17 @@ redirect(		/* compute n'th ray redirection */
 )
 {
 	MFUNC  *mf;
-	register EPNODE  **va;
+	EPNODE  **va;
 	FVECT  nsdir;
 	RAY  nr;
 	double  coef;
-	register int  j;
+	int  j;
 					/* set up function */
 	mf = getdfunc(m);
 	setfunc(m, r);
 					/* assign direction variable */
 	if (r->rsrc >= 0) {
-		register SRCREC  *sp = source + source[r->rsrc].sa.sv.sn;
+		SRCREC  *sp = source + source[r->rsrc].sa.sv.sn;
 
 		if (sp->sflags & SDISTANT)
 			VCOPY(nsdir, sp->sloc);
@@ -146,7 +146,7 @@ dir_proj(		/* compute a director's projection */
 	EPNODE  **va;
 	FVECT  cent, newdir, nv, h;
 	double  coef, olddot, newdot, od;
-	register int  i, j;
+	int  i, j;
 				/* initialize test ray */
 	getmaxdisk(cent, o);
 	if (s->sflags & SDISTANT)

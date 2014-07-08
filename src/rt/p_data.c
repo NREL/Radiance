@@ -46,17 +46,17 @@ static const char	RCSid[] = "$Id$";
  */
 
 
-extern int
+int
 p_bdata(			/* interpolate brightness data */
-	register OBJREC  *m,
+	OBJREC  *m,
 	RAY  *r
 )
 {
 	double  bval;
 	double  pt[MAXDIM];
 	DATARRAY  *dp;
-	register MFUNC  *mf;
-	register int  i;
+	MFUNC  *mf;
+	int  i;
 
 	if (m->oargs.nsargs < 4)
 		objerror(m, USER, "bad # arguments");
@@ -83,9 +83,9 @@ computerr:
 }
 
 
-extern int
+int
 p_cdata(			/* interpolate color data */
-	register OBJREC  *m,
+	OBJREC  *m,
 	RAY  *r
 )
 {
@@ -94,8 +94,8 @@ p_cdata(			/* interpolate color data */
 	double  pt[MAXDIM];
 	int  nv;
 	DATARRAY  *dp;
-	register MFUNC  *mf;
-	register int  i;
+	MFUNC  *mf;
+	int  i;
 
 	if (m->oargs.nsargs < 8)
 		objerror(m, USER, "bad # arguments");
@@ -132,9 +132,9 @@ computerr:
 }
 
 
-extern int
+int
 p_pdata(			/* interpolate picture data */
-	register OBJREC  *m,
+	OBJREC  *m,
 	RAY  *r
 )
 {
@@ -142,8 +142,8 @@ p_pdata(			/* interpolate picture data */
 	COLOR  cval;
 	double  pt[2];
 	DATARRAY  *dp;
-	register MFUNC  *mf;
-	register int  i;
+	MFUNC  *mf;
+	int  i;
 
 	if (m->oargs.nsargs < 7)
 		objerror(m, USER, "bad # arguments");

@@ -30,9 +30,9 @@ static const char	RCSid[] = "$Id$";
  */
 
 
-extern int
+int
 t_data(			/* interpolate texture data */
-	register OBJREC  *m,
+	OBJREC  *m,
 	RAY  *r
 )
 {
@@ -41,8 +41,8 @@ t_data(			/* interpolate texture data */
 	double  dval[3], pt[MAXDIM];
 	double  d;
 	DATARRAY  *dp;
-	register MFUNC  *mf;
-	register int  i;
+	MFUNC  *mf;
+	int  i;
 
 	if (m->oargs.nsargs < 8)
 		objerror(m, USER, "bad # arguments");

@@ -12,16 +12,16 @@ static const char RCSid[] = "$Id$";
 #include  "rtotypes.h"
 
 
-extern int
+int
 o_face(		/* compute intersection with polygonal face */
 	OBJREC  *o,
-	register RAY  *r
+	RAY  *r
 )
 {
 	double  rdot;		/* direction . normal */
 	double  t;		/* distance to intersection */
 	FVECT  pisect;		/* intersection point */
-	register FACE  *f;	/* face record */
+	FACE  *f;	/* face record */
 
 	f = getface(o);
 		
