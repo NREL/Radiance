@@ -173,7 +173,7 @@ rmx_load(const char *fname)
 #endif
 	dinfo.nrows = dinfo.ncols = dinfo.ncomp = 0;
 	dinfo.dtype = DTascii;
-	if (getheader(fp, &get_dminfo, &dinfo) < 0) {
+	if (getheader(fp, get_dminfo, &dinfo) < 0) {
 		fclose(fp);
 		return(NULL);
 	}
