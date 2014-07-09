@@ -88,6 +88,9 @@ while ($#ARGV >= 0) {
 }
 # Check that we're actually being asked to do something
 die "Must have at least one of +forward or +backward\n" if (!$doforw && !$doback);
+# Issue warning for unhandled reciprocity case
+print STDERR "Warning: recommend both +forward and +backward with -t3" if
+		($tensortree==3 && !($doforw && $doback));
 # Get scene description and dimensions
 
 if ( $mgfin ) {
