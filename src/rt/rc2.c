@@ -152,8 +152,7 @@ getostream(const char *ospec, const char *mname, int bn, int noopen)
 							(xres + !xres) );
 					while (*cp) ++cp;
 				}
-				sprintf(cp, "NCOLS=%d\nNCOMP=3\n",
-						stdos.reclen);
+				sprintf(cp, "NCOLS=%d\n", stdos.reclen);
 				printheader(stdout, info);
 			}
 			printresolu(stdout, xres, yres);
