@@ -40,7 +40,7 @@ nextssamp(			/* compute sample for source, rtn. distance */
 {
 	int  cent[3], size[3], parr[2];
 	SRCREC  *srcp;
-	FVECT  vpos;
+	double  vpos[3];
 	double  d;
 	int  i;
 nextsample:
