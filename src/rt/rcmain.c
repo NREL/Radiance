@@ -271,7 +271,7 @@ main(int argc, char *argv[])
 			break;
 		case 'p':			/* parameter setting(s) */
 			check(2,"s");
-			prms = argv[++i];
+			set_eparams(prms = argv[++i]);
 			break;
 		case 'b':			/* bin expression/count */
 			if (argv[i][2] == 'n') {
