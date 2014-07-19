@@ -274,11 +274,12 @@ trace_contrib(RAY *r)
 	if (mp == NULL)				/* not in our list? */
 		return;
 
-	worldfunc(RCCONTEXT, r);		/* else get bin number */
-	if (mp->params != last_params)
+	worldfunc(RCCONTEXT, r);		/* else set context */
+	if ((mp->params != NULL) & (mp->params != last_params) &&
+			(last_params == NULL || strcmp(mp->params, last_params)))
 		set_eparams(last_params = (char *)mp->params);
-	if ((bval = evalue(mp->binv)) <= -.5)
-		return;				/* silently ignore */
+	if ((bval = evalue(mp->binv)) <= -.5)	/* and get bin number */
+		return;				/* silently ignore negatives */
 	if ((bn = (int)(bval + .5)) >= mp->nbins) {
 		error(WARNING, "bad bin number (ignored)");
 		return;
