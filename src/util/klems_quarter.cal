@@ -1,6 +1,6 @@
 { RCSid $Id$ }
 {
-	Compute interior bin for half Klems BSDF basis (0-72)
+	Compute interior bin for quarter Klems BSDF basis (0-40)
 	Returns -1 for wrong-side rays
 
 	Modified from klems_full.cal
