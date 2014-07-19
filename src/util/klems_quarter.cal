@@ -13,7 +13,7 @@ posangle(a) : if(-a, a + 2*PI, a) / DEGREE;
 Atan2(y,x) : posangle(atan2(y,x));
 
 kqpola(r) : select(r, 9, 27, 46, 66, 90);
-kqnaz(r) : select(r, 1, 88, 12, 12, 8);
+kqnaz(r) : select(r, 1, 8, 12, 12, 8);
 kqaccum(r) : if(r-.5, kqnaz(r) + kqaccum(r-1), 0);
 kqfindrow(r, pol) : if(r-kqpola(0)+.5, r,
 		if(pol-kqpola(r), kqfindrow(r+1, pol), r) );
