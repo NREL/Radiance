@@ -216,6 +216,7 @@ static void
 trace_contrib(RAY *r)
 {
 	MODCONT	*mp;
+	double	bval;
 	int	bn;
 	RREAL	contr[3];
 
@@ -231,8 +232,9 @@ trace_contrib(RAY *r)
 		return;
 
 	worldfunc(RCCONTEXT, r);		/* else get bin number */
-	bn = (int)(evalue(mp->binv) + .5);
-	if ((bn < 0) | (bn >= mp->nbins)) {
+	if ((bval = evalue(mp->binv)) <= -.5)
+		return;				/* silently ignore */
+	if ((bn = (int)(bval + .5)) >= mp->nbins) {
 		error(WARNING, "bad bin number (ignored)");
 		return;
 	}
