@@ -23,7 +23,8 @@ PROGS = findglare glarendx rpiece rad ranimate ranimove vwright getinfo \
 		vwrays xglaresrc rsensor dctimestep rttree_reduce rcollate \
 		eplus_adduvf rfluxmtx rmtxop
 
-LIBFILES = rambpos.cal ambpos.cal tregsamp.dat
+LIBFILES = rambpos.cal ambpos.cal tregsamp.dat \
+klems_full.cal klems_half.cal klems_quarter.cal disk2square.cal
 
 all:	$(PROGS)
 
