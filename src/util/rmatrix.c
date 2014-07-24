@@ -177,12 +177,18 @@ rmx_load(const char *fname)
 		fclose(fp);
 		return(NULL);
 	}
-	if ((dinfo.dtype == DTrgbe) | (dinfo.dtype == DTxyze)) {
+	if ((dinfo.nrows <= 0) | (dinfo.ncols <= 0)) {
 		if (!fscnresolu(&dinfo.ncols, &dinfo.nrows, fp)) {
 			fclose(fp);
 			return(NULL);
 		}
-		dinfo.ncomp = 3;
+		if (dinfo.ncomp <= 0)
+			dinfo.ncomp = 3;
+		else if ((dinfo.dtype == DTrgbe) | (dinfo.dtype == DTxyze) &&
+				dinfo.ncomp != 3) {
+			fclose(fp);
+			return(NULL);
+		}
 	}
 	dnew = rmx_alloc(dinfo.nrows, dinfo.ncols, dinfo.ncomp);
 	if (dnew == NULL) {
