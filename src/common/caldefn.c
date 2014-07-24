@@ -142,6 +142,13 @@ varset(		/* set a variable's value */
 	    return;
 	}
     }
+    if (ep1 != NULL && esupport&E_REDEFW) {
+	wputs(qname);
+	if (ep1->type == ':')
+	    wputs(": reset constant expression\n");
+	else
+	    wputs(": reset expression\n");
+    }
 					/* hand build definition */
     ep1 = newnode();
     ep1->type = assign;
