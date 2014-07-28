@@ -21,6 +21,7 @@ static const char	RCSid[] = "$Id$";
 #endif
 
 #ifdef _WIN32
+#include <process.h>
 #define	execvp	_execvp
 #endif
 
@@ -145,7 +146,7 @@ static void
 copycat(void)			/* copy input to output */
 {
 	char	buf[8192];
-	ssize_t	n;
+	int	n;
 
 	fflush(stdout);
 	while ((n = fread(buf, 1, sizeof(buf), stdin)) > 0)
