@@ -165,7 +165,7 @@ cmbsdf.o:	../common/paths.h ../common/bsdf.h ../common/bsdf_m.h
 
 rfluxmtx.o:	../common/rtio.h ../common/random.h ../common/triangulate.h \
 ../common/rtmath.h ../common/fvect.h ../common/mat4.h ../common/tiff.h \
-../common/platform.h ../common/bsdf.h ../common/bsdf_m.h
+../common/platform.h ../common/bsdf.h ../common/bsdf_m.h ../common/rtprocess.h
 
 dctimestep.o cmatrix.o:	../common/platform.h
 
