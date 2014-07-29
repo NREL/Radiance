@@ -129,15 +129,26 @@ main(
 			/* FALL THROUGH */
 		case 's':
 		case 'P':
+		case 'n':
 			rtargv[rtargc++] = argv[i];
 			rtargv[rtargc++] = argv[++i];
 			break;
 		case 'w':
+		case 'u':
+		case 'b':
 			rtargv[rtargc++] = argv[i];
 			break;
 		case 'a':
 			rtargv[rtargc++] = argv[i];
 			if (argv[i][2] == 'v') {
+				rtargv[rtargc++] = argv[++i];
+				rtargv[rtargc++] = argv[++i];
+			}
+			rtargv[rtargc++] = argv[++i];
+			break;
+		case 'm':
+			rtargv[rtargc++] = argv[i];
+			if ((argv[i][2] == 'e') | (argv[i][2] == 'a')) {
 				rtargv[rtargc++] = argv[++i];
 				rtargv[rtargc++] = argv[++i];
 			}
