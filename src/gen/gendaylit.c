@@ -103,12 +103,6 @@ double  solar_sunrise(int month, int day);
 double  stadj();
 int     jdate(int month, int day);
 
-
-/* sun calculation constants */
-extern double   s_latitude;
-extern double   s_longitude;
-extern double   s_meridian;
-
 const double	AU = 149597890E3;
 const double 	solar_constant_e = 1367;    /* solar constant W/m^2 */
 const double  	solar_constant_l = 127500;   /* solar constant lux */
