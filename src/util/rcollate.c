@@ -572,7 +572,7 @@ main(int argc, char *argv[])
 		SET_FILE_BINARY(stdout);
 	}
 						/* check for no-op */
-	if (!transpose & (i_header == o_header) && (comp_size ||
+	if (!transpose & !i_header & !o_header && (comp_size ||
 			(no_columns == ni_columns) & (no_rows == ni_rows))) {
 		if (warnings)
 			fprintf(stderr, "%s: no-op -- copying input verbatim\n",
