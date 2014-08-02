@@ -22,7 +22,7 @@ typedef struct {
 	int		op;			/* '*' or '+' */
 } ROPERAT;				/* matrix operation */
 
-int	outfmt = DTascii;		/* output format */
+int	outfmt = DTfromHeader;		/* output format */
 int	verbose = 0;			/* verbose reporting? */
 
 static void

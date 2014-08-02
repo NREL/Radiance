@@ -14,8 +14,8 @@ static const char RCSid[] = "$Id$";
 #include "resolu.h"
 
 const char	*cm_fmt_id[] = {
-			"unknown", "ascii", "float", "double",
-			COLRFMT, CIEFMT
+			"unknown", "ascii", COLRFMT, CIEFMT,
+			"float", "double"
 		};
 
 const int	cm_elem_size[] = {
