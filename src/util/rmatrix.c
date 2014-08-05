@@ -191,6 +191,9 @@ rmx_load(const char *fname)
 
 	if (fname == NULL) {			/* reading from stdin? */
 		fname = "<stdin>";
+#ifdef _WIN32
+		_setmode(fileno(stdin), _O_BINARY);
+#endif
 	} else {
 		const char	*sp = fname;	/* check suffix */
 		while (*sp)

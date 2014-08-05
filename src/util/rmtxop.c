@@ -232,6 +232,13 @@ main(int argc, char *argv[])
 	if (mres == NULL)		/* check that we got something */
 		goto userr;
 					/* write result to stdout */
+#ifdef getc_unlocked
+	flockfile(stdout);
+#endif
+#ifdef _WIN32
+	if (outfmt != DTascii)
+		_setmode(fileno(stdout), _O_BINARY);
+#endif
 	newheader("RADIANCE", stdout);
 	printargs(argc, argv, stdout);
 	nbw = rmx_write(mres, outfmt, stdout);
