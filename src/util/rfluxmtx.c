@@ -319,7 +319,7 @@ parse_params(PARAMS *p, char *pargs)
 	int	nparams = 0;
 	int	i;
 
-	for ( ; ; )
+	for ( ; ; ) {
 		switch (*cp++) {
 		case 'h':
 			if (*cp++ != '=')
@@ -342,6 +342,8 @@ parse_params(PARAMS *p, char *pargs)
 				break;
 			if (!get_direction(p->vup, cp))
 				break;
+			while (*cp && !isspace(*cp++))
+				;
 			++nparams;
 			continue;
 		case 'o':
@@ -360,14 +362,16 @@ parse_params(PARAMS *p, char *pargs)
 		case ' ':
 		case '\t':
 		case '\r':
-		case '\n':
 			continue;
+		case '\n':
 		case '\0':
 			return(nparams);
 		default:
 			break;
 		}
-	fprintf(stderr, "%s: bad parameter string '%s'\n", progname, pargs);
+		break;
+	}
+	fprintf(stderr, "%s: bad parameter string: %s", progname, pargs);
 	exit(1);
 	return(-1);	/* pro forma return */
 }
