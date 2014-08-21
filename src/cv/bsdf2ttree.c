@@ -199,8 +199,7 @@ eval_isotropic(char *funame)
 			iovec[5] = output_orient *
 				sqrt(1. - iovec[3]*iovec[3] - iovec[4]*iovec[4]);
 			if (funame == NULL)
-			    bsdf = eval_rbfrep(rbf, iovec+3) *
-						output_orient/iovec[5];
+			    bsdf = eval_rbfrep(rbf, iovec+3);
 			else {
 			    if (assignD) {
 				varset("Dx", '=', -iovec[3]);
@@ -313,8 +312,7 @@ eval_anisotropic(char *funame)
 			iovec[5] = output_orient *
 				sqrt(1. - iovec[3]*iovec[3] - iovec[4]*iovec[4]);
 			if (funame == NULL)
-			    bsdf = eval_rbfrep(rbf, iovec+3) *
-						output_orient/iovec[5];
+			    bsdf = eval_rbfrep(rbf, iovec+3);
 			else {
 			    if (assignD) {
 				varset("Dx", '=', -iovec[3]);

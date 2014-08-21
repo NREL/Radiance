@@ -263,6 +263,8 @@ get_interp(MIGRATION *miga[3], FVECT invec)
 	}
 }
 
+/* 
+
 /* Advect between recorded incident angles and allocate new RBF */
 RBFNODE *
 advect_rbf(const FVECT invec, int lobe_lim)
@@ -280,7 +282,7 @@ advect_rbf(const FVECT invec, int lobe_lim)
 	VCOPY(sivec, invec);			/* find triangle/edge */
 	sym = get_interp(miga, sivec);
 	if (sym < 0)				/* can't interpolate? */
-		return(NULL);
+		return(def_rbf_spec(invec));
 	if (miga[1] == NULL) {			/* advect along edge? */
 		rbf = e_advect_rbf(miga[0], sivec, lobe_lim);
 		if (single_plane_incident)

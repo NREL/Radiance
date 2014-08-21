@@ -377,7 +377,7 @@ eval_rbf(void)
 		    sum += eval_rbfrep(rbf, vout);
 		}
 		fo_getvec(vout, j+.5, abp);	/* use centered secant */
-		bsdfarr[j*abp->nangles + i] = sum / (npsamps*vout[2]);
+		bsdfarr[j*abp->nangles + i] = sum / (double)npsamps;
 	    }
 	    if (rbf != NULL)
 		free(rbf);

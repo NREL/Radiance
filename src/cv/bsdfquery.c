@@ -127,7 +127,7 @@ main(int argc, char *argv[])
 						progname);
 				return(1);
 			}
-			bsdf = eval_rbfrep(rbf, odir)/(output_orient*odir[2]);
+			bsdf = eval_rbfrep(rbf, odir);
 		}
 		switch (outfmt) {		/* write to stdout */
 		case 'a':
