@@ -100,7 +100,7 @@ comp_bsdf_spec(void)
 
 	if (dsf_list == NULL) {
 		bsdf_spec_peak = 0;
-		bsdf_spec_crad = 0;
+		bsdf_spec_rad = 0;
 		return;
 	}
 	for (rbf = dsf_list; rbf != NULL; rbf = rbf->next) {
@@ -112,7 +112,7 @@ comp_bsdf_spec(void)
 		++n;
 	}
 	bsdf_spec_peak = peak_sum/(double)n;
-	bsdf_spec_crad = ANG2R( rad_sum/(double)n );
+	bsdf_spec_rad = rad_sum/(double)n;
 }
 
 /* Create a new migration holder (sharing memory for multiprocessing) */

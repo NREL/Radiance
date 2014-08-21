@@ -90,8 +90,8 @@ extern unsigned long	bsdf_hist[HISTLEN];
 
 				/* BSDF value for boundary regions */
 extern double		bsdf_min;
-extern float		bsdf_spec_peak;
-extern int		bsdf_spec_crad;
+extern double		bsdf_spec_peak;
+extern double		bsdf_spec_rad;
 
 				/* processed incident DSF measurements */
 extern RBFNODE		*dsf_list;
