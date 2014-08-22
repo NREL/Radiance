@@ -290,7 +290,7 @@ eval_rbfrep(const RBFNODE *rp, const FVECT outvec)
 		ovec_from_pos(odir, rbfp->gx, rbfp->gy);
 		res += rbfp->peak * exp((DOT(odir,outvec) - 1.) / rad2);
 	}
-	res /= output_orient*outvec[2];
+	res /= COSF(outvec[2]);
 	if (res < bsdf_min)	/* never return less than bsdf_min */
 		return(bsdf_min);
 	return(res);

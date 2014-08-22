@@ -73,7 +73,7 @@ add_bsdf_data(double theta_out, double phi_out, double val, int isDSF)
 	ovec[2] = sqrt(1. - ovec[2]*ovec[2]);
 
 	if (!isDSF)
-		val *= ovec[2];		/* convert from BSDF to DSF */
+		val *= COSF(ovec[2]);	/* convert from BSDF to DSF */
 
 					/* update BSDF histogram */
 	if (val < BSDF2BIG*ovec[2] && val > BSDF2SML*ovec[2])
