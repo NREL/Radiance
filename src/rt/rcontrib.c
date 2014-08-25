@@ -286,7 +286,8 @@ trace_contrib(RAY *r)
 	if ((bval = evalue(mp->binv)) <= -.5)	/* and get bin number */
 		return;				/* silently ignore negatives */
 	if ((bn = (int)(bval + .5)) >= mp->nbins) {
-		error(WARNING, "bad bin number (ignored)");
+		sprintf(errmsg, "bad bin number (%d ignored)", bn);
+		error(WARNING, errmsg);
 		return;
 	}
 	raycontrib(contr, r, PRIMARY);		/* compute coefficient */
