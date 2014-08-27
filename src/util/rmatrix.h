@@ -20,7 +20,7 @@ typedef struct {
 	double	mtx[1];			/* extends struct */
 } RMATRIX;
 
-#define rmx_lval(rm,r,c,i)	(rm)->mtx[((i)*(rm)->nrows+(r))*(rm)->ncols+(c)]
+#define rmx_lval(rm,r,c,i)	(rm)->mtx[(i)+(rm)->ncomp*((c)+(rm)->ncols*(r))]
 
 /* Allocate a nr x nc matrix with n components */
 extern RMATRIX	*rmx_alloc(int nr, int nc, int n);
