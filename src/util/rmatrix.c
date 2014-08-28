@@ -371,7 +371,7 @@ rmx_write(const RMATRIX *rm, int dtype, FILE *fp)
 		dtype = rm->dtype;
 	else if ((dtype == DTrgbe) & (rm->dtype == DTxyze))
 		dtype = DTxyze;
-	else if ((dtype = DTxyze) & (rm->dtype == DTrgbe))
+	else if ((dtype == DTxyze) & (rm->dtype == DTrgbe))
 		dtype = DTrgbe;
 	if ((dtype != DTrgbe) & (dtype != DTxyze)) {
 		fprintf(fp, "NROWS=%d\n", rm->nrows);
