@@ -77,6 +77,11 @@ void brightfunc pgpat
 0
 6 ${ px } ${ py } ${ pz } ${ pgx } ${ pgy } ${ pgz }
 
+pgpat colorfunc pgpat
+4 1 if(corralled,.1,1) if(corralled,.1,1) ambpos.cal
+0
+7 ${ px } ${ py } ${ pz } ${  ux  } ${  uy  } ${  uz  } ${   cflags    }
+
 pgpat glow pgval
 0
 0
