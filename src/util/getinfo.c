@@ -63,6 +63,7 @@ main(
 	} else if (argc > 2 && !strcmp(argv[1], "-c")) {
 		SET_FILE_BINARY(stdin);
 		SET_FILE_BINARY(stdout);
+		setvbuf(stdin, NULL, _IONBF, 2);
 		getheader(stdin, (gethfunc *)fputs, stdout);
 		printargs(argc-2, argv+2, stdout);
 		fputc('\n', stdout);
