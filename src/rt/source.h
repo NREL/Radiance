@@ -19,6 +19,9 @@ extern "C" {
 #ifndef  SHADCACHE
 #define  SHADCACHE	20		/* shadow cache resolution */
 #endif
+#ifndef  MINSHADCNT
+#define  MINSHADCNT	4		/* test all sources if this few */
+#endif
 
 #define  SDISTANT	01		/* source distant flag */
 #define  SSKIP		02		/* source skip flag */

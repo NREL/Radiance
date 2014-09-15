@@ -440,7 +440,10 @@ direct(					/* add direct component */
 						/* compute number to check */
 	nshadcheck = pow((double)ncnts, shadcert) + .5;
 						/* modify threshold */
-	ourthresh = shadthresh / r->rweight;
+	if (ncnts > MINSHADCNT)
+		ourthresh = shadthresh / r->rweight;
+	else
+		ourthresh = 0;
 						/* test for shadows */
 	for (nhits = 0, hwt = 0.0, sn = 0; sn < ncnts;
 			hwt += (double)source[scp->sno].nhits /
