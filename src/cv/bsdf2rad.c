@@ -124,15 +124,17 @@ main(int argc, char *argv[])
 #ifdef DEBUG
 		if (inpXML)
 			fprintf(stderr, "Hemispherical %s: %.3f\n",
-				(output_orient > 0 ? "reflection" : "transmission"),
+				(output_orient > 0 ^ input_orient > 0 ?
+					"transmission" : "reflection"),
 				SDdirectHemi(idir, SDsampSp|SDsampDf |
-						(output_orient > 0 ?
-						 SDsampR : SDsampT), &myBSDF));
+					(output_orient > 0 ^ input_orient > 0 ?
+						 SDsampT : SDsampR), &myBSDF));
 		else if (rbf == NULL)
 			fputs("Empty RBF\n", stderr);
 		else
 			fprintf(stderr, "Hemispherical %s: %.3f\n",
-				(output_orient > 0 ? "reflection" : "transmission"),
+				(output_orient > 0 ^ input_orient > 0 ?
+					"transmission" : "reflection"),
 				rbf->vtotal);
 #endif
 		printf("void trans tmat\n0\n0\n7 %f %f %f .04 .04 .9 1\n",
