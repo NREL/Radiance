@@ -10,6 +10,8 @@ my $windoz = ($^O eq "MSWin32" or $^O eq "MSWin64");
 my @skycolor = (0.960, 1.004, 1.118);
 my $mf = 4;
 my $dosky = 1;
+my $headout = 1;
+my @origARGV = @ARGV;
 while ($#ARGV >= 0) {
 	if ("$ARGV[0]" eq "-c") {
 		@skycolor = @ARGV[1..3];
@@ -19,6 +21,8 @@ while ($#ARGV >= 0) {
 		shift @ARGV;
 	} elsif ("$ARGV[0]" eq "-d") {
 		$dosky = 0;
+	} elsif ("$ARGV[0]" eq "-h") {
+		$headout = 0;
 	}
 	shift @ARGV;
 }
@@ -143,6 +147,15 @@ if (@sundir) {
 		for my $j (0..2) { $scolor[$j] += $wt * $sunval[$j]; }
 		$tregval[$ndx[$i]] = "$scolor[0]\t$scolor[1]\t$scolor[2]\n";
 	}
+}
+# Output header if requested
+if ($headout) {
+	print "#?RADIANCE\n";
+	print "genskyvec @origARGV\n";
+	print "NROWS=", $#tregval+1, "\n";
+	print "NCOLS=1\nNCOMP=3\n";
+	print "FORMAT=ascii\n";
+	print "\n";
 }
 # Output our final vector
 print @tregval;
