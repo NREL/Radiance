@@ -26,7 +26,7 @@ sum_images(const char *fspec, const CMATRIX *cv, FILE *fout)
 	int	i, y;
 
 	if (cv->ncols != 1)
-		error(INTERNAL, "expected matrix in sum_images()");
+		error(INTERNAL, "expected vector in sum_images()");
 	for (i = 0; i < cv->nrows; i++) {
 		const COLORV	*scv = cv_lval(cv,i);
 		char		fname[1024];
@@ -185,6 +185,7 @@ main(int argc, char *argv[])
 		CMATRIX	*smtx, *Dmat, *Tmat, *imtx;
 						/* get sky vector/matrix */
 		smtx = cm_load(argv[a+3], 0, nsteps, skyfmt);
+		nsteps = smtx->ncols;
 						/* load BSDF */
 		Tmat = cm_loadBTDF(argv[a+1]);
 						/* load Daylight matrix */
@@ -198,6 +199,7 @@ main(int argc, char *argv[])
 		cm_free(imtx);
 	} else {				/* sky vector/matrix only */
 		cmtx = cm_load(argv[a+1], 0, nsteps, skyfmt);
+		nsteps = cmtx->ncols;
 	}
 						/* prepare output stream */
 	if ((ofspec != NULL) & (nsteps == 1) && hasNumberFormat(ofspec)) {
