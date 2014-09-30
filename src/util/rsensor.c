@@ -398,9 +398,8 @@ init_ptable(
 		tvals[i] = 1. - ( (1.-frac)*cos(thdiv[t]) +
 						frac*cos(thdiv[t+1]) );
 				/* offset b/c sensor values are centered */
-		if ((t < sntp[0]-1) & (frac >= 0.5)) {
-			if ((frac -= 0.5) < 0)
-				frac = 0;
+		if ((t < sntp[0]-1) & (!t | (frac >= 0.5))) {
+			frac -= 0.5;
 		} else {
 			frac += 0.5;
 			--t;
