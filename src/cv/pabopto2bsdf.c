@@ -21,7 +21,8 @@ char			*progname;
 
 typedef struct {
 	const char	*fname;		/* input file path */
-	double		theta, phi;	/* input angles */
+	double		theta, phi;	/* input angles (degrees) */
+	double		up_phi;		/* azimuth for "up" direction */
 	int		igp[2];		/* input grid position */
 	int		isDSF;		/* data is DSF (rather than BSDF)? */
 	long		dstart;		/* data start offset in file */
@@ -60,6 +61,7 @@ init_pabopto_inp(const int i, const char *fname)
 	}
 	inpfile[i].fname = fname;
 	inpfile[i].isDSF = -1;
+	inpfile[i].up_phi = 0;
 	inpfile[i].theta = inpfile[i].phi = -10001.;
 				/* read header information */
 	while ((c = getc(fp)) == '#' || c == EOF) {
@@ -84,6 +86,8 @@ init_pabopto_inp(const int i, const char *fname)
 				continue;
 			}
 		}
+		if (sscanf(buf, "upphi %lf", &inpfile[i].up_phi) == 1)
+			continue;
 		if (sscanf(buf, "intheta %lf", &inpfile[i].theta) == 1)
 			continue;
 		if (sscanf(buf, "inphi %lf", &inpfile[i].phi) == 1)
@@ -104,6 +108,8 @@ init_pabopto_inp(const int i, const char *fname)
 		fputs(": unknown incident angle\n", stderr);
 		return(0);
 	}
+				/* convert to Y-up orientation */
+	inpfile[i].phi += 90.-inpfile[i].up_phi;
 				/* convert angle to grid position */
 	dv[2] = sin(M_PI/180.*inpfile[i].theta);
 	dv[0] = cos(M_PI/180.*inpfile[i].phi)*dv[2];
@@ -141,7 +147,8 @@ add_pabopto_inp(const int i)
 #endif
 					/* read scattering data */
 	while (fscanf(fp, "%lf %lf %lf\n", &theta_out, &phi_out, &val) == 3)
-		add_bsdf_data(theta_out, phi_out, val, inpfile[i].isDSF);
+		add_bsdf_data(theta_out, phi_out+90.-inpfile[i].up_phi,
+				val, inpfile[i].isDSF);
 	n = 0;
 	while ((c = getc(fp)) != EOF)
 		n += !isspace(c);
