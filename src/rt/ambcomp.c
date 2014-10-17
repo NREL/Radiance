@@ -180,7 +180,6 @@ ambsupersamp(AMBHEMI *hp, int cnt)
 	float	*earr = getambdiffs(hp);
 	double	e2rem = 0;
 	AMBSAMP	*ap;
-	RAY	ar;
 	float	*ep;
 	int	i, j, n, nss;
 
