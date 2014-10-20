@@ -344,6 +344,7 @@ getfovimg(void)			/* load foveal sampled image */
 	sprintf(combuf, "pfilt -1 -b -pa 0 -x %d -y %d \"%s\"", fvxr, fvyr, infn);
 	if ((fp = popen(combuf, "r")) == NULL)
 		syserror("popen");
+	SET_FILE_BINARY(fp);
 	getheader(fp, NULL, NULL);	/* skip header */
 	if (fgetresolu(&x, &y, fp) < 0 || (x != fvxr) | (y != fvyr))
 		goto readerr;
