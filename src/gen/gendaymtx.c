@@ -520,7 +520,7 @@ main(int argc, char *argv[])
 		printf("NROWS=%d\n", nskypatch);
 		printf("NCOLS=%d\n", ntsteps);
 		printf("NCOMP=3\n");
-		fputformat(getfmtname(outfmt), stdout);
+		fputformat((char *)getfmtname(outfmt), stdout);
 		putchar('\n');
 	}
 					/* patches are rows (outer sort) */
