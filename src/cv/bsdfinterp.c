@@ -263,8 +263,6 @@ get_interp(MIGRATION *miga[3], FVECT invec)
 	}
 }
 
-/* 
-
 /* Advect between recorded incident angles and allocate new RBF */
 RBFNODE *
 advect_rbf(const FVECT invec, int lobe_lim)

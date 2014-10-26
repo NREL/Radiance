@@ -24,6 +24,7 @@ static const char	RCSid[] = "$Id$";
   #define RENAMECMD "mv"
   #include <sys/types.h>
   #include <sys/wait.h>
+  #include <signal.h>
 #endif
 
 				/* variables (alphabetical by name) */

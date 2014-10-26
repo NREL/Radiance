@@ -88,6 +88,7 @@ static const char RCSid[] = "$Id$";
 #include "rtmath.h"
 #include "platform.h"
 #include "color.h"
+#include "resolu.h"
 
 char *progname;								/* Program name */
 char errmsg[128];							/* Error message buffer */
