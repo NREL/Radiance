@@ -137,6 +137,8 @@ main(int argc, char *argv[])
 					"transmission" : "reflection"),
 				rbf->vtotal);
 #endif
+		printf("# Incident direction (theta,phi) = (%.2f,%.2f) deg.\n\n",
+				(180./M_PI)*theta, (180./M_PI)*phi);
 		printf("void trans tmat\n0\n0\n7 %f %f %f .04 .04 .9 1\n",
 				colarr[n][0], colarr[n][1], colarr[n][2]);
 		if (showPeaks && rbf != NULL) {
