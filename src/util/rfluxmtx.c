@@ -516,21 +516,12 @@ make_axes(FVECT uva[2], const FVECT nrm)
 {
 	int	i;
 
-	uva[1][0] = 0.5 - frandom();
-	uva[1][1] = 0.5 - frandom();
-	uva[1][2] = 0.5 - frandom();
-	for (i = 3; i--; )
-		if ((-0.6 < nrm[i]) & (nrm[i] < 0.6))
-			break;
-	if (i < 0) {
+	if (!getperpendicular(uva[0], nrm)) {
 		fputs(progname, stderr);
 		fputs(": bad surface normal in make_axes!\n", stderr);
 		exit(1);
 	}
-	uva[1][i] = 1.0;
-	VCROSS(uva[0], uva[1], nrm);
-	normalize(uva[0]);
-	VCROSS(uva[1], nrm, uva[0]);
+	fcross(uva[1], nrm, uva[0]);
 }
 
 /* Illegal sender surfaces end up here */
