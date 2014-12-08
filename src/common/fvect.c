@@ -106,6 +106,12 @@ const FVECT v1,
 const FVECT v2
 )
 {
+	if ((vres == v1) | (vres == v2)) {
+		FVECT	vtmp;
+		VCROSS(vtmp, v1, v2);
+		VCOPY(vres, vtmp);
+		return;
+	}
 	VCROSS(vres, v1, v2);
 }
 
@@ -151,8 +157,8 @@ FVECT  v
 
 int
 getperpendicular(		/* choose random perpedicular direction */
-	FVECT vp,			/* returns normalized */
-	const FVECT v			/* input vector must be normalized */
+FVECT vp,				/* returns normalized */
+const FVECT v				/* input vector must be normalized */
 )
 {
 	FVECT	v1;
@@ -167,9 +173,10 @@ getperpendicular(		/* choose random perpedicular direction */
 	if (i < 0)
 		return(0);
 	v1[i] = 1.0;
-	VCROSS(vp, v1, v);
+	fcross(vp, v1, v);
 	return(normalize(vp) > 0.0);
 }
+
 
 int
 closestapproach(			/* closest approach of two rays */

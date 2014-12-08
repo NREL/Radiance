@@ -763,8 +763,7 @@ SDsampBSDF(SDValue *sv, FVECT ioVec, double randX, int sflags, const SDData *sd)
 		cdarr[i] = (*rdf->comp[i].func->getCDist)(inVec, &rdf->comp[i]);
 		if (cdarr[i] == NULL)
 			cdarr[i] = &SDemptyCD;
-		else
-			sv->cieY += cdarr[i]->cTotal;
+		sv->cieY += cdarr[i]->cTotal;
 	}
 	if (sv->cieY <= 1e-6) {		/* anything to sample? */
 		sv->cieY = .0;
