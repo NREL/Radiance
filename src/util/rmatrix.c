@@ -246,6 +246,7 @@ rmx_load(const char *fname)
 	case DTascii:
 		if (!rmx_load_ascii(dnew, fp))
 			goto loaderr;
+		dnew->dtype = DTascii;		/* should leave double? */
 		break;
 	case DTfloat:
 		if (!rmx_load_float(dnew, fp))

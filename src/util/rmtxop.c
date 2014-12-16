@@ -234,6 +234,8 @@ main(int argc, char *argv[])
 #ifdef getc_unlocked
 	flockfile(stdout);
 #endif
+	if (outfmt == DTfromHeader)
+		outfmt = mres->dtype;
 #ifdef _WIN32
 	if (outfmt != DTascii)
 		_setmode(fileno(stdout), _O_BINARY);
