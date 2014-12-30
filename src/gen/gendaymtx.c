@@ -393,7 +393,8 @@ main(int argc, char *argv[])
 			break;
 		case '5':			/* 5-phase calculation */
 			nsuns = 1;
-			fixed_sun_sa = 6.797e-05;
+			fixed_sun_sa = PI/360.*atof(argv[++i]);
+			fixed_sun_sa *= fixed_sun_sa*PI;
 			break;
 		default:
 			goto userr;
