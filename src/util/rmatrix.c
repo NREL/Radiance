@@ -418,16 +418,14 @@ RMATRIX *
 rmx_identity(const int dim, const int n)
 {
 	RMATRIX	*rid = rmx_alloc(dim, dim, n);
-	int	i;
+	int	i, k;
 
 	if (rid == NULL)
 		return(NULL);
-	memset(rid->mtx, 0, sizeof(rid->mtx[0])*dim*dim);
+	memset(rid->mtx, 0, sizeof(rid->mtx[0])*n*dim*dim);
 	for (i = dim; i--; )
-		rmx_lval(rid,i,i,0) = 1;
-	for (i = n; --i; )
-		memcpy(rid->mtx+i*(dim*dim), rid->mtx,
-				sizeof(rid->mtx[0])*dim*dim);
+	    for (k = n; k--; )
+		rmx_lval(rid,i,i,k) = 1;
 	return(rid);
 }
 
