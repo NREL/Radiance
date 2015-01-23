@@ -22,7 +22,6 @@ typedef struct {
 	int		op;			/* '*' or '+' */
 } ROPERAT;				/* matrix operation */
 
-int	outfmt = DTfromHeader;		/* output format */
 int	verbose = 0;			/* verbose reporting? */
 
 static void
@@ -165,6 +164,7 @@ get_factors(double da[], int n, char *av[])
 int
 main(int argc, char *argv[])
 {
+	int	outfmt = DTfromHeader;
 	RMATRIX	*mres = NULL;
 	ROPERAT	op;
 	int	i;
