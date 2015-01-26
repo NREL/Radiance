@@ -10,6 +10,8 @@ extern "C" {
 
 #ifdef	_WIN32
 
+#include <stdlib.h>
+
 #if (RAND_MAX <= 65536)
 #define random()	((long)rand()<<16^(long)rand()<<6^(long)rand()>>4)
 #else
