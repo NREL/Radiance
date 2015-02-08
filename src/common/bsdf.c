@@ -199,7 +199,7 @@ SDloadFile(SDData *sd, const char *fname)
 	}
 	wtl = ezxml_child(ezxml_child(fl, "Optical"), "Layer");
 	if (wtl == NULL) {
-		sprintf(SDerrorDetail, "BSDF \"%s\": no optical layers'",
+		sprintf(SDerrorDetail, "BSDF \"%s\": no optical layers",
 				sd->name);
 		ezxml_free(fl);
 		return SDEformat;
