@@ -24,7 +24,8 @@ PROGS = findglare glarendx rpiece rad ranimate ranimove vwright getinfo \
 		eplus_adduvf rfluxmtx rmtxop wrapBSDF
 
 LIBFILES = rambpos.cal ambpos.cal tregsamp.dat reinhartb.cal \
-klems_full.cal klems_half.cal klems_quarter.cal disk2square.cal
+klems_full.cal klems_half.cal klems_quarter.cal disk2square.cal \
+minimalBSDFt.xml WINDOW6BSDFt.xml
 
 all:	$(PROGS)
 
