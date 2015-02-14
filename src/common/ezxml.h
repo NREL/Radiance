@@ -142,6 +142,9 @@ ezxml_t ezxml_set_txt(ezxml_t xml, const char *txt);
 #define ezxml_set_txt_d(xml, txt) \
     ezxml_set_flag(ezxml_set_txt(xml, strdup(txt)), EZXML_TXTM)
 
+/* add text to the current character content, allocating memory as needed */
+ezxml_t ezxml_add_txt(ezxml_t xml, const char *txt);
+
 /* Sets the given tag attribute or adds a new attribute if not found. A value */
 /* of NULL will remove the specified attribute. Returns the tag given. */
 ezxml_t ezxml_set_attr(ezxml_t xml, const char *name, const char *value);
