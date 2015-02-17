@@ -818,7 +818,8 @@ main(int argc, char *argv[])
 				argv[i] = (char *)stdin_name;
 			}
 			data_file[ndataf].fname = argv[i];
-			data_file[ndataf++].spectrum = cur_spectrum;
+			data_file[ndataf].spectrum = cur_spectrum;
+			ndataf++;
 			continue;
 		case 's':		/* spectrum name or input file */
 			if (++i >= argc)
@@ -880,8 +881,6 @@ doneOptions:					/* get XML input */
 	} else {
 		xml_input = argv[i];
 	}
-	if ((xml_input == win6_template) & (angle_basis == ABdefault))
-		angle_basis = ABklemsFull;
 						/* wrap it! */
 	return !wrapBSDF(argv[0]);
 }
