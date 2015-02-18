@@ -775,7 +775,7 @@ main(int argc, char *argv[])
 				UsageExit(argv[0]);
 			continue;
 		case 'c':		/* correct solid angle */
-			correct_solid_angle ^= 1;
+			correct_solid_angle = 1;
 			continue;
 		case 't':		/* transmission */
 			if (i >= argc-1)

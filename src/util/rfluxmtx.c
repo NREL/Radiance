@@ -1360,7 +1360,7 @@ main(int argc, char *argv[])
 	for (i = 0; i < nsbins; i++)	/* send rcontrib ray samples */
 		if (!(*curparams.sample_basis)(&curparams, i, rcfp))
 			return(1);
-	return(pclose(rcfp) == 0);	/* all finished! */
+	return(pclose(rcfp) < 0);	/* all finished! */
 userr:
 	if (a < argc-2)
 		fprintf(stderr, "%s: unsupported option '%s'", progname, argv[a]);
