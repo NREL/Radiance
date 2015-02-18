@@ -1350,7 +1350,7 @@ main(int argc, char *argv[])
 #ifdef getc_unlocked
 	flockfile(rcfp);
 #endif
-	if (verbose) {
+	if (verbose > 0) {
 		fprintf(stderr, "%s: sampling %d directions", progname, nsbins);
 		if (curparams.nsurfs > 1)
 			fprintf(stderr, " (%d elements)\n", curparams.nsurfs);
