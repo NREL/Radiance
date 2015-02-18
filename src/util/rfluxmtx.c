@@ -362,8 +362,8 @@ parse_params(PARAMS *p, char *pargs)
 		case ' ':
 		case '\t':
 		case '\r':
-			continue;
 		case '\n':
+			continue;
 		case '\0':
 			return(nparams);
 		default:
