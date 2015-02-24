@@ -18,6 +18,7 @@ static const char	RCSid[] = "$Id$";
 #include  "random.h"
 #include  "paths.h"
 #include  "view.h"
+#include  "pmapray.h"
 
 extern char  *progname;			/* global argv[0] */
 
@@ -228,11 +229,17 @@ main(int argc, char *argv[])
 	SET_FILE_BINARY(stdout);
 	
 	ray_init(octnm);
+	
+	/* PMAP: set up & load photon maps */
+	ray_init_pmap();
 
 	rview();			/* run interactive viewer */
 
 	devclose();			/* close output device */
 
+	/* PMAP: free photon maps */
+	ray_done_pmap();
+	
 	quit(0);
 
 badopt:

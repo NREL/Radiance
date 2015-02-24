@@ -10,6 +10,7 @@ static const char RCSid[] = "$Id$";
 #include  "ray.h"
 #include  "otypes.h"
 #include  "rtotypes.h"
+#include  "pmapmat.h"
 
 /*
  *  This definition of glass provides for a quick calculation
@@ -58,6 +59,10 @@ m_glass(		/* color a ray which hit a thin glass surface */
 	double  mirtest, mirdist;
 	RAY  p;
 	int  i;
+
+	/* PMAP: skip refracted shadow ray if accounted for in photon map */
+   if (shadowRayInPmap(r))
+		return(1);
 						/* check arguments */
 	if (m->oargs.nfargs == 3)
 		rindex = RINDEX;		/* default value of n */

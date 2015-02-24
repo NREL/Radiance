@@ -17,6 +17,7 @@ static const char	RCSid[] = "$Id$";
 #include  "ambient.h"
 #include  "random.h"
 #include  "paths.h"
+#include  "pmapray.h"
 
 extern char	*progname;		/* global argv[0] */
 
@@ -324,11 +325,13 @@ main(int  argc, char  *argv[])
 		fputformat(formstr(outform), stdout);
 		putchar('\n');
 	}
-
+	
+	ray_init_pmap();     /* PMAP: set up & load photon maps */
+	
 	marksources();			/* find and mark sources */
 
 	setambient();			/* initialize ambient calculation */
-
+	
 #ifdef  PERSIST
 	if (persist) {
 		fflush(stdout);
@@ -374,6 +377,9 @@ runagain:
 		goto runagain;
 	}
 #endif
+
+	ray_done_pmap();           /* PMAP: free photon maps */
+	
 	quit(0);
 
 badopt:
