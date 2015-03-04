@@ -160,6 +160,7 @@ input2str(const char *inpspec)
 			fprintf(stderr, "%s: cannot open\n", inpspec);
 			return "";
 		}
+#ifndef _WIN32				/* XXX somehow broken on Windows */
 		len = lseek(fd, 0L, SEEK_END);
 		if (len > 0) {
 			lseek(fd, 0L, SEEK_SET);
@@ -178,6 +179,7 @@ input2str(const char *inpspec)
 			close(fd);
 			return str;
 		}
+#endif
 		fp = fdopen(fd, "r");		/* not a regular file */
 	}
 						/* reading from stream */

@@ -440,7 +440,7 @@ sub matrix_comp {
 	} elsif ("$spec" eq "CIE-Z") {
 		$cmd .= " -c 0.024 0.123 0.853";
 	}
-	$cmd .= " $src | getinfo -";
+	$cmd .= " $src | rcollate -ho";
 	# print STDERR "Running: $cmd\n";
 	system "$cmd > $dest";
 	die "Failure running rttree_reduce" if ( $? );
