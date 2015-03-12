@@ -371,7 +371,7 @@ sub ttree_comp {
 		close DATOUT;
 	}
 	if ( "$spec" ne "$curspec" ) {
-		$wrapper .= " -s $spec"
+		$wrapper .= " -s $spec";
 		$curspec = $spec;
 	}
 	$wrapper .= " -$typ $dest";
@@ -445,7 +445,7 @@ sub matrix_comp {
 	system "$cmd > $dest";
 	die "Failure running rttree_reduce" if ( $? );
 	if ( "$spec" ne "$curspec" ) {
-		$wrapper .= " -s $spec"
+		$wrapper .= " -s $spec";
 		$curspec = $spec;
 	}
 	$wrapper .= " -$typ $dest";
