@@ -1086,7 +1086,7 @@ add_send_object(FILE *fp)
 	char		thismod[128], otype[32], oname[128];
 	int		n;
 
-	if (fscanf(fp, "%s %s %s", thismod, otype, oname) != 2)
+	if (fscanf(fp, "%s %s %s", thismod, otype, oname) != 3)
 		return(0);		/* must have hit EOF! */
 	if (!strcmp(otype, "alias")) {
 		fscanf(fp, "%*s");	/* skip alias */
