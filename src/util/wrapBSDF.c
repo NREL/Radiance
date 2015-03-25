@@ -454,12 +454,12 @@ writeBSDFblock(const char *caller, struct s_dfile *df)
 		puts("\t\t<DetectorSpectrum>ASTM E308 1931 Z.dsp</DetectorSpectrum>");
 		break;
 	case DSuprime:
-		puts("\t\t<Wavelength unit=\"Integral\">CIE-Z</Wavelength>");
+		puts("\t\t<Wavelength unit=\"Integral\">CIE-u</Wavelength>");
 		puts("\t\tSourceSpectrum>CIE Illuminant D65 1nm.ssp</SourceSpectrum>");
 		puts("\t\t<DetectorSpectrum>ASTM E308 1931 u.dsp</DetectorSpectrum>");
 		break;
 	case DSvprime:
-		puts("\t\t<Wavelength unit=\"Integral\">CIE-Z</Wavelength>");
+		puts("\t\t<Wavelength unit=\"Integral\">CIE-v</Wavelength>");
 		puts("\t\tSourceSpectrum>CIE Illuminant D65 1nm.ssp</SourceSpectrum>");
 		puts("\t\t<DetectorSpectrum>ASTM E308 1931 v.dsp</DetectorSpectrum>");
 		break;

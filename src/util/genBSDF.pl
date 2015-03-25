@@ -328,15 +328,13 @@ sub ttree_comp {
 				qq{-e "$CIEuv" } .
 				q{-e "$1=Yi/Omega"};
 		} elsif ("$spec" eq "CIE-u") {
-			$cmd = qq{rcalc -e "Omega:PI/($ns*$ns)" } .
-				q{-e "Ri=$1;Gi=$2;Bi=$3" } .
+			$cmd = q{rcalc -e "Ri=$1;Gi=$2;Bi=$3" } .
 				qq{-e "$CIEuv" } .
-				q{-e "$1=uprime/Omega"};
+				q{-e "$1=uprime"};
 		} elsif ("$spec" eq "CIE-v") {
-			$cmd = qq{rcalc -e "Omega:PI/($ns*$ns)" } .
-				q{-e "Ri=$1;Gi=$2;Bi=$3" } .
+			$cmd = q{rcalc -e "Ri=$1;Gi=$2;Bi=$3" } .
 				qq{-e "$CIEuv" } .
-				q{-e "$1=vprime/Omega"};
+				q{-e "$1=vprime"};
 		}
 	} else {
 		if ("$spec" eq "Visible") {
@@ -345,15 +343,13 @@ sub ttree_comp {
 				"-e '$CIEuv' " .
 				q{-e '$1=Yi/Omega'};
 		} elsif ("$spec" eq "CIE-u") {
-			$cmd = "rcalc -if3 -e 'Omega:PI/($ns*$ns)' " .
-				q{-e 'Ri=$1;Gi=$2;Bi=$3' } .
+			$cmd = q{rcalc -if3 -e 'Ri=$1;Gi=$2;Bi=$3' } .
 				"-e '$CIEuv' " .
-				q{-e '$1=uprime/Omega'};
+				q{-e '$1=uprime'};
 		} elsif ("$spec" eq "CIE-v") {
-			$cmd = "rcalc -if3 -e 'Omega:PI/($ns*$ns)' " .
-				q{-e 'Ri=$1;Gi=$2;Bi=$3' } .
+			$cmd = q{rcalc -if3 -e 'Ri=$1;Gi=$2;Bi=$3' } .
 				"-e '$CIEuv' " .
-				q{-e '$1=vprime/Omega'};
+				q{-e '$1=vprime'};
 		}
 	}
 	if ($pctcull >= 0) {
