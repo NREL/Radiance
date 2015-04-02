@@ -17,6 +17,8 @@ genBSDF - generate BSDF description from Radiance or MGF input
 ][
 .B "\-t{3|4} Nlog2"
 ][
+.B "{+|-}C"
+][
 .B "{+|-}forward"
 ][
 .B "{+|-}backward"
@@ -60,6 +62,14 @@ To turn off backward components, use the
 option.
 Computing both components takes about twice as long as one component, but
 is recommended when rays will be impinging from either side.
+.PP
+The
+.I \+C
+option specifies that the output XML should include color information,
+which is interpreted by the rendering programs.
+The default operation
+.I \(\-C\)
+reduces all BSDF data to grayscale.
 .PP
 The geometry must fit a rectangular profile, whose width is along the X-axis,
 height is in the Y-axis, and depth is in the Z-axis.

@@ -33,6 +33,7 @@ typedef struct {
 	b_vecf		*ob_vec;	/* get output vector from index */
 	b_ndxf		*ob_ndx;	/* get output index from vector */
 	b_ohmf		*ob_ohm;	/* get output proj. SA for index */
+	C_CHROMA	*chroma;	/* chromaticity data */
 	float		bsdf[1];	/* scattering data (extends struct) */
 } SDMat;
 
@@ -82,6 +83,12 @@ typedef struct {
 extern ANGLE_BASIS	abase_list[MAXABASES];
 
 extern int		nabases;	/* current number of defined bases */
+
+extern C_COLOR	mtx_RGB_prim[3];	/* matrix RGB primaries  */
+extern float	mtx_RGB_coef[3];	/* corresponding Y coefficients */
+
+/* Get color or grayscale value for BSDF in the given directions */
+extern int		mBSDF_color(float coef[], const SDMat *b, int i, int o);
 
 /* Get vector for this angle basis index (front exiting) */
 extern b_vecf		fo_getvec;

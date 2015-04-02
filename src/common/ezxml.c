@@ -74,6 +74,14 @@ ezxml_t ezxml_child(ezxml_t xml, const char *name)
     return xml;
 }
 
+/* returns the given tag's character content or empty string if none */
+char *ezxml_txt(ezxml_t xml)
+{
+	if (xml == NULL)
+		return "";
+	return xml->txt;
+}
+
 /* returns the Nth tag with the same name in the same subsection or NULL if not */
 /* found */
 ezxml_t ezxml_idx(ezxml_t xml, int idx)
