@@ -15,7 +15,6 @@
 #include "pmapdiag.h"
 #include "pmapdata.h"
 #include "standard.h"
-#include <signal.h>
 
 
 
@@ -190,6 +189,8 @@ void pmapBiasCompReport (char *stats)
    void pmapPreCompReport()
    /* Report global photon precomputation progress */
    {
+      char tmp [512];
+      
       repLastTime = time(NULL);
       sprintf(errmsg, "%lu precomputed, ", repProgress);
 

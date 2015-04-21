@@ -20,7 +20,6 @@
 #include "pmapdiag.h"
 #include "rcontrib.h"
 #include "otypes.h"
-#include <signal.h>
 
 
 

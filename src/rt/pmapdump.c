@@ -18,6 +18,7 @@
 #include "rtio.h"
 #include "resolu.h"
 #include "random.h"
+#include "math.h"
 
 
 /* Defaults */
@@ -166,7 +167,7 @@ int main (int argc, char** argv)
          (= sphere distrib density ^-1/3) */
       vol = (maxPos [0] - minPos [0]) * (maxPos [1] - minPos [1]) * 
             (maxPos [2] - minPos [2]);
-      rad = radScale * RADCOEFF * cbrt(vol / numSpheres);
+      rad = radScale * RADCOEFF * pow(vol / numSpheres, 1./3.);
       
       /* Photon dump probability to satisfy target sphere count */
       dumpRatio = numSpheres < numPhotons ? (float)numSpheres / numPhotons

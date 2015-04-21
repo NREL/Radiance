@@ -31,6 +31,13 @@
    #endif
    
    #include  <time.h>   
+   #include  <signal.h>
+   
+   #ifdef _WIN32
+      #ifndef SIGCONT
+         #define SIGCONT	0
+      #endif
+   #endif
    
    
    /* Time at start & last report */

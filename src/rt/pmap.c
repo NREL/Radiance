@@ -20,7 +20,6 @@
 #include "pmapbias.h"
 #include "pmapdiag.h"
 #include "otypes.h"
-#include <signal.h>
 #include <time.h>
 #include <sys/stat.h>
 
@@ -266,7 +265,7 @@ static void preComputeGlobal (PhotonMap *pmap)
    repStartTime = time(NULL);
    signal(SIGCONT, pmapPreCompReport);
    repProgress = 0;
-   bcopy(pmap -> heap, nuHeap, nuHeapSize * sizeof(Photon));
+   memcpy(nuHeap, pmap -> heap, nuHeapSize * sizeof(Photon));
    
    for (i = 0, p = nuHeap; i < nuHeapSize; i++, p++) {
       ray.ro = NULL;
