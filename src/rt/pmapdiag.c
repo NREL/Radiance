@@ -118,7 +118,7 @@ void pmapBiasCompReport (char *stats)
       eputs(errmsg);
       fflush(stderr);
       
-      #ifndef BSD
+      #ifdef SIGCONT
          signal(SIGCONT, pmapPreCompReport);
       #endif
    }
@@ -179,7 +179,7 @@ void pmapBiasCompReport (char *stats)
       eputs(errmsg);
       fflush(stderr);
       
-      #ifndef BSD
+      #ifndef SIGCONT
          signal(SIGCONT, pmapDistribReport);
       #endif
    }

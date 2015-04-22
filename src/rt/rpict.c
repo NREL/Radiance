@@ -198,7 +198,7 @@ report(int dummy)		/* report progress */
 	pmapBiasCompReport(bcStat);
 	
 	sprintf(errmsg,
-			"%lu rays, %s %4.2f%% after %.3fu %.3fs %.3fr hours on %s (PID %d)\n",
+			"%lu rays, %s%4.2f%% after %.3fu %.3fs %.3fr hours on %s (PID %d)\n",
 			nrays, bcStat, pctdone, u*(1./3600.), s*(1./3600.),
 			(tlastrept-tstart)*(1./3600.), myhostname(), getpid());
 	eputs(errmsg);
@@ -217,7 +217,7 @@ report(int dummy)		/* report progress */
 	/* PMAP: Get photon map bias compensation statistics */
 	pmapBiasCompReport(bcStat);
 	
-	sprintf(errmsg, "%lu rays, %s %4.2f%% after %5.4f hours\n",
+	sprintf(errmsg, "%lu rays, %s%4.2f%% after %5.4f hours\n",
 			nrays, bcStat, pctdone, (tlastrept-tstart)/3600.0);
 	eputs(errmsg);
 }
