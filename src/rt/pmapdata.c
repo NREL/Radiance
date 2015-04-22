@@ -384,11 +384,13 @@ void findPhotons (PhotonMap* pmap, const RAY* ray)
                error(WARNING, errmsg);
 #endif
             }
+#ifdef PMAP_LOOKUP_REDO
             else {
                sprintf(errmsg, "max photon lookup radius clamped to %.1e",
                        pmap -> maxDist0);
                error(WARNING, errmsg);
             }
+#endif
          }
          
          /* Reset successful lookup counter */
