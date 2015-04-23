@@ -76,6 +76,7 @@ main(int  argc, char  *argv[])
 				case 'n': case 'N': case 'f': case 'F': \
 				case '-': case '0': var = 0; break; \
 				default: goto badopt; }
+	extern char  *octname;
 	int  persist = 0;
 	char  *octnm = NULL;
 	char  **tralp = NULL;
