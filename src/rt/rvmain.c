@@ -228,11 +228,8 @@ main(int argc, char *argv[])
 					/* set up output & start process(es) */
 	SET_FILE_BINARY(stdout);
 	
-	ray_init(octnm);
+	ray_init(octnm);		/* also calls ray_init_pmap() */
 	
-	/* PMAP: set up & load photon maps */
-	ray_init_pmap();
-
 	rview();			/* run interactive viewer */
 
 	devclose();			/* close output device */

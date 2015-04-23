@@ -315,7 +315,7 @@ main(int  argc, char  *argv[])
 #endif
 	if (outform != 'a')
 		SET_FILE_BINARY(stdout);
-	readoct(octnm, loadflags, &thescene, NULL);
+	readoct(octname = octnm, loadflags, &thescene, NULL);
 	nsceneobjs = nobjects;
 
 	if (loadflags & IO_INFO) {	/* print header */
