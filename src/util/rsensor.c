@@ -15,7 +15,7 @@ static const char RCSid[] = "$Id$";
 
 #define DEGREE		(PI/180.)
 
-#define	MAXNT		180	/* maximum number of theta divisions */
+#define	MAXNT		181	/* maximum number of theta divisions */
 #define MAXNP		360	/* maximum number of phi divisions */
 
 extern char	*progname;	/* global argv[0] */
@@ -424,6 +424,9 @@ init_ptable(
 		}
 		pvals[i*(nphi+1) + nphi] = phdiv[sntp[1]];
 	}
+						/* duplicate final row */
+	memcpy(pvals+ntheta*(nphi+1), pvals+(ntheta-1)*(nphi+1),
+				sizeof(*pvals)*(nphi+1));
 	tvals[0] = .0f;
 	tvals[ntheta] = (float)tsize;
 }
