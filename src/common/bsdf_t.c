@@ -569,12 +569,12 @@ SDqueryTre(const SDTre *sdt, float *coef,
 		return 0;		/* should be internal error */
 					/* get BSDF value */
 	yval = SDlookupTre(sdt->stc[tt_Y], gridPos, hc);
-	if (sdt->stc[tt_u] == NULL || sdt->stc[tt_v] == NULL) {
-		if (coef != NULL) *coef = yval;
-		return 1;		/* no color */
-	}
 	if (coef == NULL)		/* just getting hypercube? */
 		return 1;
+	if ((sdt->stc[tt_u] == NULL) | (sdt->stc[tt_v] == NULL)) {
+		*coef = yval;
+		return 1;		/* no color */
+	}
 					/* else decode color */
 	SDyuv2rgb(yval, SDlookupTre(sdt->stc[tt_u], gridPos, NULL),
 			SDlookupTre(sdt->stc[tt_v], gridPos, NULL), coef);
