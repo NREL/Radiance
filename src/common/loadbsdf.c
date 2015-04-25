@@ -60,7 +60,7 @@ loadBSDF(char *fname)
 	checkDF(sd->name, sd->rLambBack.cieY, sd->rb, "rear reflection");
 	checkDF(sd->name, sd->tLamb.cieY, sd->tf, "front transmission");
 	checkDF(sd->name, sd->tLamb.cieY, sd->tb, "back transmission");
-#if 0
+#ifdef DEBUG
 {
 float	rgb[3];
 fprintf(stderr, "Loaded BSDF '%s' (file \"%s\")\n", sd->name, pname);
