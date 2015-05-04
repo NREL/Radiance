@@ -46,7 +46,9 @@ rmx_free(RMATRIX *rm)
 int
 rmx_newtype(int dtyp1, int dtyp2)
 {
-	if ((dtyp1==DTxyze) | (dtyp1==DTrgbe) && dtyp1 != dtyp2)
+	if ((dtyp1==DTxyze) | (dtyp1==DTrgbe) |
+			(dtyp2==DTxyze) | (dtyp2==DTrgbe)
+			&& dtyp1 != dtyp2)
 		return(0);
 	if (dtyp1 < dtyp2)
 		return(dtyp1);
