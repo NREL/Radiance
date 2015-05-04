@@ -31,8 +31,8 @@ extern void	rmx_free(RMATRIX *rm);
 /* Resolve data type based on two input types (returns 0 for mismatch) */
 extern int	rmx_newtype(int dtyp1, int dtyp2);
 
-/* Load matrix from supported file type */
-extern RMATRIX	*rmx_load(const char *fname);
+/* Load matrix from supported file type (NULL for stdin, '!' with command) */
+extern RMATRIX	*rmx_load(const char *inspec);
 
 /* Append header information associated with matrix data */
 extern int	rmx_addinfo(RMATRIX *rm, const char *info);
