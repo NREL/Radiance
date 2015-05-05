@@ -41,18 +41,21 @@ static int		do_prog = 79;
 static void
 prog_show(double frac)
 {
-	char	pbar[256];
-	int	nchars;
+	static unsigned	call_cnt = 0;
+	static char	lastc[] = "-\\|/";
+	char		pbar[256];
+	int		nchars;
 
-	if (do_prog <= 0) return;
+	if (do_prog <= 1) return;
 	if (do_prog > sizeof(pbar)-2)
 		do_prog = sizeof(pbar)-2;
 	if (frac < 0) frac = 0;
-	else if (frac > 1) frac = 1;
-	nchars = do_prog*frac + .5;
+	else if (frac >= 1) frac = .9999;
+	nchars = do_prog*frac;
 	pbar[0] = '\r';
 	memset(pbar+1, '*', nchars);
-	memset(pbar+1+nchars, '-', do_prog-nchars);
+	pbar[nchars+1] = lastc[call_cnt++ & 3];
+	memset(pbar+2+nchars, '-', do_prog-nchars-1);
 	pbar[do_prog+1] = '\0';
 	fputs(pbar, stderr);
 }
