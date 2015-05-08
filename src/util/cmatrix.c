@@ -11,6 +11,7 @@ static const char RCSid[] = "$Id$";
 #include "standard.h"
 #include "cmatrix.h"
 #include "platform.h"
+#include "rtprocess.h"
 #include "resolu.h"
 
 const char	*cm_fmt_id[] = {

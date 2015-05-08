@@ -10,6 +10,7 @@ static const char RCSid[] = "$Id$";
 #include <string.h>
 #include <fcntl.h>
 #include "resolu.h"
+#include "rtprocess.h"
 #include "rmatrix.h"
 
 static char	rmx_mismatch_warn[] = "WARNING: data type mismatch\n";
