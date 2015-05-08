@@ -1,10 +1,11 @@
 /* 
-   ===============================================================   
+   ==================================================================
    Dump photon maps as RADIANCE scene description to stdout
 
    Roland Schregle (roland.schregle@{hslu.ch, gmail.com})
    (c) Fraunhofer Institute for Solar Energy Systems,
-       Lucerne University of Applied Sciences & Arts   
+   (c) Lucerne University of Applied Sciences and Arts,
+   supported by the Swiss National Science Foundation (SNSF, #147053)
    ==================================================================
    
    $Id$

@@ -6,9 +6,8 @@
       R. Schregle, "Bias Compensation for Photon Maps",
       Computer Graphics Forum, v22:n4, pp. 729-742, Dec. 2003.
 
-   Roland Schregle (roland.schregle@{hslu.ch, gmail.com})
-   (c) Fraunhofer Institute for Solar Energy Systems,
-       Lucerne University of Applied Sciences & Arts
+   Roland Schregle (roland.schregle@gmail.com)
+   (c) Fraunhofer Institute for Solar Energy Systems
    ==================================================================
       
    $Id$

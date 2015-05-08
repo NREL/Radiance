@@ -206,10 +206,12 @@ void tracePhoton (RAY *ray)
    OBJREC* mat;
  
    if (ray -> rlvl > photonMaxBounce) {
+#ifdef PMAP_RUNAWAY_WARN   
       error(WARNING, "runaway photon!");
+#endif      
       return;
    }
-   
+  
    if (colorAvg(ray -> cext) > FTINY && !photonParticipate(ray)) 
       return;
       
