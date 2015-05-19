@@ -1292,7 +1292,12 @@ main(int argc, char *argv[])
 			if (argv[a][2] != 'v') na = 2;
 			break;
 		case 'a':		/* special case */
-			na = (argv[a][2] == 'v') ? 4 : 2;
+			if (argv[a][2] == 'p') {
+				na = 2;	/* photon map [+ bandwidth(s)] */
+				if (a < argc-3 && atoi(argv[a+1]) > 0)
+					na += 1 + (a < argc-4 && atoi(argv[a+2]) > 0);
+			} else
+				na = (argv[a][2] == 'v') ? 4 : 2;
 			break;
 		case 'm':		/* special case */
 			if (!argv[a][2]) goto userr;
