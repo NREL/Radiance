@@ -305,12 +305,15 @@ chanvalue(			/* return channel n to calcomp */
 				fray->ron[2]*funcxf.xfm[2][n-3]	)
 			 / funcxf.sca );
 
-	if (n <= 8)			/* intersection */
+	if (n <= 8) {			/* intersection point */
+		if (fray->rot >= FHUGE)
+			return(0.0);	/* XXX should be runtime error? */
 
 		return( fray->rop[0]*funcxf.xfm[0][n-6] +
 				fray->rop[1]*funcxf.xfm[1][n-6] +
 				fray->rop[2]*funcxf.xfm[2][n-6] +
 					     funcxf.xfm[3][n-6] );
+	}
 
 	if (n == 9)			/* total distance */
 		return(raydist(fray,PRIMARY) * funcxf.sca);
