@@ -11,6 +11,7 @@ static const char	RCSid[] = "$Id$";
 #include  "paths.h"
 #include  "otypes.h"
 #include  "func.h"
+#include <ctype.h>
 
 
 #define  INITFILE	"rayinit.cal"
