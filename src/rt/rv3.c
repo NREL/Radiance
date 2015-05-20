@@ -139,7 +139,7 @@ getinterest(		/* get area of interest */
 }
 
 
-float *		/* keep consistent with COLOR typedef */
+COLORV *
 greyof(				/* convert color to greyscale */
 	COLOR  col
 )
