@@ -60,8 +60,9 @@ m_glass(		/* color a ray which hit a thin glass surface */
 	RAY  p;
 	int  i;
 
-	/* PMAP: skip refracted shadow ray if accounted for in photon map */
-   if (shadowRayInPmap(r))
+	/* PMAP: skip refracted shadow or ambient ray if accounted for in 
+	   photon map */
+   if (shadowRayInPmap(r) || ambRayInPmap(r))
 		return(1);
 						/* check arguments */
 	if (m->oargs.nfargs == 3)
