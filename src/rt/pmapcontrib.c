@@ -23,10 +23,6 @@
 
 
 
-extern int contrib;     /* coeff/contrib flag */
-
-
-
 static void setPmapContribParams (PhotonMap *pmap, LUTAB *srcContrib)
 /* Set parameters for light source contributions */
 {
@@ -103,8 +99,7 @@ void photonContrib (PhotonMap *pmap, RAY *ray, COLOR irrad)
    PhotonSQNode   *sq;
    float          r, invArea;
    RREAL          rayCoeff [3];
-   FVECT          rdir, rop;
-
+ 
    setcolor(irrad, 0, 0, 0);
  
    if (!pmap -> maxGather) 
@@ -115,14 +110,9 @@ void photonContrib (PhotonMap *pmap, RAY *ray, COLOR irrad)
       if (islight(objptr(ray -> ro -> omod) -> otype)) 
          return;
 
-   /* Set context for binning function evaluation and get cumulative path
+   /* Get cumulative path
     * coefficient up to photon lookup point */
-   worldfunc(RCCONTEXT, ray);
    raycontrib(rayCoeff, ray, PRIMARY);
-
-   /* Save incident ray's direction and hitpoint */
-   VCOPY(rdir, ray -> rdir);
-   VCOPY(rop, ray -> rop);
 
    /* Lookup photons */
    pmap -> squeueEnd = 0;
@@ -164,23 +154,36 @@ void photonContrib (PhotonMap *pmap, RAY *ray, COLOR irrad)
       if (pmap -> srcContrib) {
          const PhotonPrimary *primary = pmap -> primary + 
                                         sq -> photon -> primary;
-         OBJREC *srcMod = objptr(source [primary -> srcIdx].so -> omod);
+	 SRCREC *sp = &source[primary -> srcIdx];
+         OBJREC *srcMod = objptr(sp -> so -> omod);
          MODCONT *srcContrib = (MODCONT*)lu_find(pmap -> srcContrib, 
                                                  srcMod -> oname) -> data;
          
          if (srcContrib) {
             /* Photon's emitting light source has modifier whose
              * contributions are sought */
+	    double srcBinReal;
             int srcBin;
+	    RAY srcRay;
 
-            /* Set incident dir and origin of photon's primary ray on
-             * light source for dummy shadow ray, and evaluate binning
-             * function */
-            VCOPY(ray -> rdir, primary -> dir);
-            VCOPY(ray -> rop, primary -> org);
-            srcBin = evalue(srcContrib -> binv) + .5;
-
-            if (srcBin < 0 || srcBin >= srcContrib -> nbins) {
+	    if (srcContrib -> binv -> type != NUM) {
+               /* Use intersection function to set shadow ray parameters
+	        */
+	       rayorigin(&srcRay, SHADOW, NULL, NULL);
+	       srcRay.rsrc = primary -> srcIdx;
+	       VCOPY(srcRay.rorg, primary -> pos);
+	       VCOPY(srcRay.rdir, primary -> dir);
+	       if (!(source [primary -> srcIdx].sflags & SDISTANT ?
+			sourcehit(&srcRay) :
+			(*ofun[sp -> so -> otype].funp)(sp -> so, &srcRay)))
+		    continue;		/* XXX shouldn't happen! */
+	       worldfunc(RCCONTEXT, &srcRay);
+	       set_eparams((char *)srcContrib -> params);
+          }
+	    if ((srcBinReal = evalue(srcContrib -> binv)) < -.5)
+		continue;		/* silently ignore negative bins */
+  
+            if ((srcBin = srcBinReal + .5) >= srcContrib -> nbins) {
                error(WARNING, "bad bin number (ignored)");
                continue;
             }
@@ -204,11 +207,7 @@ void photonContrib (PhotonMap *pmap, RAY *ray, COLOR irrad)
          else fprintf(stderr, "Skipped contrib from %s\n", srcMod -> oname);
       }
    }
-   
-   /* Restore incident ray's direction and hitpoint */
-   VCOPY(ray -> rdir, rdir);
-   VCOPY(ray -> rop, rop);
-     
+        
    return;
 }
 

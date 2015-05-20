@@ -25,6 +25,7 @@ extern XF  unitxf;		/* identity transform */
 extern XF  funcxf;		/* current transform */
 
 extern void	initfunc(void);
+extern void	set_eparams(char *prms);
 extern MFUNC	*getfunc(OBJREC *m, int ff, unsigned int ef, int dofwd);
 extern void	freefunc(OBJREC *m);
 extern int	setfunc(OBJREC *m, RAY *r);

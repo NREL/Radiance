@@ -102,7 +102,7 @@ const PhotonPrimary* addPhotonPrimary (PhotonMap *pmap, const RAY *ray)
    prim -> dir [1] = -ray -> rdir [1];
    prim -> dir [2] = -ray -> rdir [2];
 
-   VCOPY(prim -> org, ray -> rorg);
+   VCOPY(prim -> pos, ray -> rop);
    
    return prim;
 }

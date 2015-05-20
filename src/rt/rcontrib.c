@@ -215,52 +215,6 @@ rcinit()
 
 /************************** MAIN CALCULATION PROCESS ***********************/
 
-/* Set parameters for current bin evaluation */
-void
-set_eparams(char *prms)
-{
-	static char	*last_params = NULL;
-	char		vname[RMAXWORD];
-	double		value;
-	char		*cpd;
-					/* check if already set */
-	if ((prms == NULL) | (prms == last_params))
-		return;
-	if (last_params != NULL && !strcmp(prms, last_params))
-		return;
-	last_params = prms;		/* assign each variable */
-	while (*prms) {
-		if (isspace(*prms)) {
-			++prms; continue;
-		}
-		if (!isalpha(*prms))
-			goto bad_params;
-		cpd = vname;
-		while (*prms && (*prms != '=') & !isspace(*prms)) {
-			if (!isid(*prms))
-				goto bad_params;
-			*cpd++ = *prms++;
-		}
-		if (cpd == vname)
-			goto bad_params;
-		*cpd = '\0';
-		while (isspace(*prms)) prms++;
-		if (*prms++ != '=')
-			goto bad_params;
-		value = atof(prms);
-		if ((prms = fskip(prms)) == NULL)
-			goto bad_params;
-		while (isspace(*prms)) prms++;
-		prms += (*prms == ',') | (*prms == ';');
-		varset(vname, '=', value);
-	}
-	return;
-bad_params:
-	sprintf(errmsg, "bad parameter list '%s'", last_params);
-	error(USER, errmsg);
-}
-
-
 /* Our trace call to sum contributions */
 static void
 trace_contrib(RAY *r)

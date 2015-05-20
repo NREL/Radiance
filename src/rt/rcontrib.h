@@ -105,8 +105,6 @@ extern STREAMOUT *	getostream(const char *ospec, const char *mname,
 extern void		mod_output(MODCONT *mp);
 extern void		end_record(void);
 
-extern void		set_eparams(char *prms);
-
 extern MODCONT		*addmodifier(char *modn, char *outf,
 					char *prms, char *binv, int bincnt);
 extern void		addmodfile(char *fname, char *outf,
