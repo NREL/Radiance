@@ -154,7 +154,7 @@ void photonContrib (PhotonMap *pmap, RAY *ray, COLOR irrad)
       if (pmap -> srcContrib) {
          const PhotonPrimary *primary = pmap -> primary + 
                                         sq -> photon -> primary;
-	 SRCREC *sp = &source[primary -> srcIdx];
+	 const SRCREC *sp = &source[primary -> srcIdx];
          OBJREC *srcMod = objptr(sp -> so -> omod);
          MODCONT *srcContrib = (MODCONT*)lu_find(pmap -> srcContrib, 
                                                  srcMod -> oname) -> data;
@@ -174,11 +174,12 @@ void photonContrib (PhotonMap *pmap, RAY *ray, COLOR irrad)
             rayorigin(&srcRay, SHADOW, NULL, NULL);
 	    srcRay.rsrc = primary -> srcIdx;
             VCOPY(srcRay.rorg, primary -> pos);
-            VCOPY(srcRay.rdir, primary -> dir);
-            if (!(source [primary -> srcIdx].sflags & SDISTANT ?
-			sourcehit(&srcRay) :
-			(*ofun[sp -> so -> otype].funp)(sp -> so, &srcRay)))
+	    decodedir(srcRay.rdir, primary -> dir);
+
+            if (!(sp->sflags & SDISTANT ? sourcehit(&srcRay)
+			: (*ofun[sp -> so -> otype].funp)(sp -> so, &srcRay)))
                 continue;		/* XXX shouldn't happen! */
+
             worldfunc(RCCONTEXT, &srcRay);
             set_eparams((char *)srcContrib -> params);
          }

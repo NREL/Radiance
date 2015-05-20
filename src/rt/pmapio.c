@@ -127,8 +127,7 @@ void savePhotonMap (const PhotonMap *pmap, const char *fname,
          
          putint(prim -> srcIdx, sizeof(prim -> srcIdx), file);
 
-         for (j = 0; j < 3; j++)
-            putflt(prim -> dir [j], file);
+         putint(prim -> dir, sizeof(prim -> dir), file);
             
          for (j = 0; j < 3; j++)
             putflt(prim -> pos [j], file);
@@ -249,8 +248,7 @@ PhotonMapType loadPhotonMap (PhotonMap *pmap, const char *fname)
          
          prim -> srcIdx = getint(sizeof(prim -> srcIdx), file);
          
-         for (j = 0; j < 3; j++)
-            prim -> dir [j] = getflt(file);
+         prim -> dir = getint(sizeof(prim -> dir), file);
             
          for (j = 0; j < 3; j++)
             prim -> pos [j] = getflt(file);

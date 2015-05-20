@@ -34,8 +34,9 @@
 
    /* Primary photon ray for light source contributions */
    typedef struct {
-      short srcIdx;               /* Index of emitting light source */
-      float dir [3], pos [3];     /* Incident dir & hit point */
+      uint32 srcIdx;              /* Index of emitting light source */
+      int32 dir;                  /* Encoded ray direction */
+      float pos [3];              /* Hit point */
    } PhotonPrimary;
       
    #define photonSrcIdx(pm, p) ((pm) -> primary [(p) -> primary].srcIdx)
