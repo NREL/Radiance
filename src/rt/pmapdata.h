@@ -53,7 +53,7 @@
          COLR flux;                  /* Photon flux */
       #endif
 
-      unsigned primary;              /* Index to primary ray */
+      uint32 primary;              /* Index to primary ray */
    } Photon;
    
    /* Photon flag bitmasks and manipulation macros */
