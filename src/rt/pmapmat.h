@@ -34,12 +34,15 @@
                            accounted for by caustic photons in the global,
                            contrib, or dedicated caustic photon map.
    */
+   /*
    #define ambRayInPmap(r)    ((r) -> crtype & AMBIENT && \
                                ((photonMapping && \
                                  (ambounce < 0 || (r) -> rlvl > 1)) || \
                                  causticPhotonMapping || contribPhotonMapping))
+   */
+   #define ambRayInPmap(r)    0
    #define shadowRayInPmap(r) ((r) -> crtype & SHADOW && \
-				photonMapping)
+				(ambounce < 0 || causticPhotonMapping))
    
    /* Check if scattered ray spawns a caustic photon */
    #define PMAP_CAUSTICRAY(r) ((r) -> rtype & SPECULAR)

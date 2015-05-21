@@ -107,6 +107,9 @@ rayorigin(		/* start new ray from old one */
 		return(-1);
 	if (r->crtype & SHADOW)			/* shadow commitment */
 		return(0);
+						/* ambient in photon map? */
+	if (r->crtype & AMBIENT && photonMapping)
+		return(-1);
 	if (maxdepth <= 0 && rc != NULL) {	/* Russian roulette */
 		if (minweight <= 0.0)
 			error(USER, "zero ray weight in Russian roulette");
@@ -182,12 +185,11 @@ raytrans(			/* transmit ray as is */
 {
 	RAY  tr;
 
-	if (rayorigin(&tr, TRANS, r, NULL) == 0) {
-		VCOPY(tr.rdir, r->rdir);
-		rayvalue(&tr);
-		copycolor(r->rcol, tr.rcol);
-		r->rt = r->rot + tr.rt;
-	}
+	rayorigin(&tr, TRANS, r, NULL);		/* always continue */
+	VCOPY(tr.rdir, r->rdir);
+	rayvalue(&tr);
+	copycolor(r->rcol, tr.rcol);
+	r->rt = r->rot + tr.rt;
 }
 
 
