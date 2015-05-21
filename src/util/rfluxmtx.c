@@ -530,7 +530,7 @@ make_axes(FVECT uva[2], const FVECT nrm)
 {
 	int	i;
 
-	if (!getperpendicular(uva[0], nrm)) {
+	if (!getperpendicular(uva[0], nrm, 1)) {
 		fputs(progname, stderr);
 		fputs(": bad surface normal in make_axes!\n", stderr);
 		exit(1);

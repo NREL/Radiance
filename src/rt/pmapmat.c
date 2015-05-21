@@ -199,7 +199,7 @@ static int isoSpecPhotonScatter (NORMDAT *nd, RAY *rayOut)
    int      niter, i = 0;
    
    /* Set up sample coordinates */  
-   getperpendicular(u, nd -> pnorm);   
+   getperpendicular(u, nd -> pnorm, 1);   
    fcross(v, nd -> pnorm, u);
    
    if (nd -> specfl & SP_REFL) {
@@ -263,7 +263,7 @@ static void diffPhotonScatter (FVECT normal, RAY* rayOut)
    int         i = 0;
 
    /* Set up sample coordinates */
-   getperpendicular(u, normal);
+   getperpendicular(u, normal, 1);
    fcross(v, normal, u);
    
    /* Convert theta & phi to cartesian */

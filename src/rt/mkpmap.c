@@ -44,7 +44,7 @@ double seccg = 0;                       /* global scattering eccentricity */
 int ambincl = -1;                       /* photon port flag */
 char *amblist [AMBLLEN + 1];            /* photon port list */
 char *diagFile = NULL;                  /* diagnostics output file */
-
+int rand_samp = 1;			/* uncorrelated random sampling */
 
 
 /* Dummies for linkage */

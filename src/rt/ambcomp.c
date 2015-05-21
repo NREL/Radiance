@@ -235,7 +235,7 @@ samp_hemi(				/* sample indirect hemisphere */
 	d = 1.0/(n*n);
 	scalecolor(hp->acoef, d);
 					/* make tangent plane axes */
-	if (!getperpendicular(hp->ux, r->ron))
+	if (!getperpendicular(hp->ux, r->ron, 1))
 		error(CONSISTENCY, "bad ray direction in samp_hemi");
 	VCROSS(hp->uy, r->ron, hp->ux);
 					/* sample divisions */

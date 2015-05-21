@@ -150,7 +150,7 @@ mkaxes(			/* compute u and v to go with n */
 	FVECT  n
 )
 {
-	getperpendicular(u, n);
+	getperpendicular(u, n, 1);
 	fcross(v, n, u);
 }
 
