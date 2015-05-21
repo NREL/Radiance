@@ -39,8 +39,7 @@
                                  (ambounce < 0 || (r) -> rlvl > 1)) || \
                                  causticPhotonMapping || contribPhotonMapping))
    #define shadowRayInPmap(r) ((r) -> crtype & SHADOW && \
-                               ((photonMapping && ambounce < 0) || \
-                                causticPhotonMapping || contribPhotonMapping))
+				photonMapping)
    
    /* Check if scattered ray spawns a caustic photon */
    #define PMAP_CAUSTICRAY(r) ((r) -> rtype & SPECULAR)

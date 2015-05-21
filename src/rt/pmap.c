@@ -509,7 +509,7 @@ void distribPhotons (PhotonMap **pmaps)
       for (srcIdx = 0; srcIdx < nsources; srcIdx++) {
          unsigned portCnt = 0;
          emap.src = source + srcIdx;
-                  
+
          do {
             emap.port = emap.src -> sflags & SDISTANT ? photonPorts + portCnt 
                                                       : NULL;

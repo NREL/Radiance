@@ -240,7 +240,7 @@ static void nearestNeighbours (PhotonMap* pmap, const float pos [3],
       if (srcIdx < 0 || srcIdx >= nsources)
          error(INTERNAL, "invalid light source index in photon map");
       
-      srcMod = objptr(source [srcIdx].so -> omod);
+      srcMod = findmaterial(source [srcIdx].so);
 
       /* Reject photon if contributions from light source which emitted it
        * are not sought */
