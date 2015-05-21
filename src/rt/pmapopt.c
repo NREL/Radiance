@@ -13,10 +13,8 @@
 
 
 
-#include <stdlib.h>
+#include "ray.h"
 #include "pmapparm.h"
-#include "rtio.h"
-#include "rterror.h"
 
 
 
@@ -35,6 +33,8 @@ int getPmapRenderOpt (int ac, char *av [])
       case 'a':
          switch (av [0][2]) {
             case 'p': /* photon map */
+	       /* Asking for photon map, ergo ambounce != 0 */
+	       ambounce += (ambounce == 0);
                if (!check(3, "s")) {
                   /* File -> assume bwidth = 1 or precomputed pmap */
                   if (++t >= NUM_PMAP_TYPES)
