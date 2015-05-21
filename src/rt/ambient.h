@@ -22,7 +22,7 @@ typedef struct ambrec {
 	float  pos[3];		/* position in space */
 	int32  ndir;		/* encoded surface normal */
 	int32  udir;		/* u-vector direction */
-	int  lvl;		/* recursion level of parent ray */
+	short  lvl;		/* recursion level of parent ray */
 	float  weight;		/* weight of parent ray */
 	float  rad[2];		/* anisotropic radii (rad[0] <= rad[1]) */
 	COLOR  val;		/* computed ambient value */
@@ -78,7 +78,7 @@ typedef struct ambrec {
 	unsigned long  latick;	/* last accessed tick */
 	float  pos[3];		/* position in space */
 	float  dir[3];		/* normal direction */
-	int    lvl;		/* recursion level of parent ray */
+	short  lvl;		/* recursion level of parent ray */
 	float  weight;		/* weight of parent ray */
 	float  rad;		/* validity radius */
 	COLOR  val;		/* computed ambient value */
