@@ -90,6 +90,5 @@ int getPmapRenderOpt (int ac, char *av [])
 void printPmapDefaults ()
 /* Print defaults for photon map render options */
 {
-   puts("-ap file [bwidth1 [bwidth2]]\t# photon map");
    printf("-am %.1f\t\t\t# max photon search radius coeff\n", maxDistCoeff);
 }
