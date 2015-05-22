@@ -108,7 +108,7 @@ rayorigin(		/* start new ray from old one */
 	if (r->crtype & SHADOW)			/* shadow commitment */
 		return(0);
 						/* ambient in photon map? */
-	if (r->crtype & AMBIENT && photonMapping)
+	if (photonMapping && ro != NULL && ro->crtype & AMBIENT)
 		return(-1);
 	if (maxdepth <= 0 && rc != NULL) {	/* Russian roulette */
 		if (minweight <= 0.0)
