@@ -20,7 +20,7 @@
    #define PMAP_FILEVER 160u              /* File format version */
    
    void savePhotonMap (const PhotonMap *pmap, const char *fname,
-                       PhotonMapType type, int argc, char **argv);
+                       int argc, char **argv);
    /* Save portable photon map of specified type to filename,
       along with the corresponding command line. */
 

@@ -20,14 +20,14 @@
 
 
 void savePhotonMap (const PhotonMap *pmap, const char *fname,
-                    PhotonMapType type, int argc, char **argv)
+                    int argc, char **argv)
 {
    unsigned long i, j;
    const Photon* p;
    FILE* file;
 
    if (!pmap || !pmap -> heap || !pmap -> heapSize || 
-       !validPmapType(type)) {
+       !validPmapType(pmap -> type)) {
       error(INTERNAL, "attempt to save empty or invalid photon map");
       return;
    }
@@ -61,7 +61,7 @@ void savePhotonMap (const PhotonMap *pmap, const char *fname,
       fprintf(file, "%d primary rays\n", pmap -> primaryEnd + 1);
    
    /* Write format */
-   fputformat((char*)pmapFormat [type], file);
+   fputformat((char*)pmapFormat [pmap -> type], file);
    fprintf(file, "VERSION=%d\n", PMAP_FILEVER);
    
    /* Empty line = end of header */

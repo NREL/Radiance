@@ -101,7 +101,7 @@ void savePmaps (const PhotonMap **pmaps, int argc, char **argv)
    
    for (t = 0; t < NUM_PMAP_TYPES; t++) {
       if (pmaps [t])
-         savePhotonMap(pmaps [t], pmaps [t] -> fileName, t, argc, argv);
+         savePhotonMap(pmaps [t], pmaps [t] -> fileName, argc, argv);
    }
 }                   
 
