@@ -324,7 +324,7 @@ void distribPhotons (PhotonMap **pmaps)
    double totalFlux = 0;
    PhotonMap *pm;
    
-   for (t = 0; t < NUM_PMAP_TYPES && !photonMaps [t]; t++);
+   for (t = 0; t < NUM_PMAP_TYPES && !pmaps [t]; t++);
    if (t >= NUM_PMAP_TYPES)
       error(USER, "no photon maps defined");
       
@@ -342,7 +342,7 @@ void distribPhotons (PhotonMap **pmaps)
       
    /* Initialise all defined photon maps */
    for (t = 0; t < NUM_PMAP_TYPES; t++)
-      initPhotonMap(photonMaps [t], t);
+      initPhotonMap(pmaps [t], t);
 
    initPhotonEmissionFuncs();
    initPhotonScatterFuncs();
@@ -434,7 +434,7 @@ void distribPhotons (PhotonMap **pmaps)
             sprintf(errmsg, "too many prepasses");
 
             for (t = 0; t < NUM_PMAP_TYPES; t++)
-               if (photonMaps [t] && !photonMaps [t] -> heapEnd) {
+               if (pmaps [t] && !pmaps [t] -> heapEnd) {
                   sprintf(errmsg2, ", no %s photons stored", pmapName [t]);
                   strcat(errmsg, errmsg2);
                }
@@ -447,8 +447,8 @@ void distribPhotons (PhotonMap **pmaps)
          numEmit = FHUGE;
          
          for (t = 0; t < NUM_PMAP_TYPES; t++)
-            if (photonMaps [t])
-               numEmit = min(photonMaps [t] -> distribTarget, numEmit);
+            if (pmaps [t])
+               numEmit = min(pmaps [t] -> distribTarget, numEmit);
                
          numEmit *= preDistrib;
       }
@@ -469,7 +469,7 @@ void distribPhotons (PhotonMap **pmaps)
           * Since this biases the photon density, addPhoton() promotes the
           * flux of stored photons to compensate. */
          for (t = 0; t < NUM_PMAP_TYPES; t++)
-            if ((pm = photonMaps [t])) {
+            if ((pm = pmaps [t])) {
                pm -> distribRatio = (double)pm -> distribTarget / 
                                     pm -> heapEnd - 1;
 
@@ -494,7 +494,7 @@ void distribPhotons (PhotonMap **pmaps)
          /* Normalise distribution ratios and calculate number of photons to
           * emit in main pass */
          for (t = 0; t < NUM_PMAP_TYPES; t++)
-            if ((pm = photonMaps [t]))
+            if ((pm = pmaps [t]))
                pm -> distribRatio /= maxDistribRatio;
                
          if ((numEmit = repProgress * maxDistribRatio) < FTINY)
@@ -581,7 +581,7 @@ void distribPhotons (PhotonMap **pmaps)
       }
       
       for (t = 0; t < NUM_PMAP_TYPES; t++)
-         if (photonMaps [t] && !photonMaps [t] -> heapEnd) {
+         if (pmaps [t] && !pmaps [t] -> heapEnd) {
             /* Double preDistrib in case a photon map is empty and redo
              * pass 1 --> possibility of infinite loop for pathological
              * scenes (e.g. absorbing materials) */
@@ -609,14 +609,14 @@ void distribPhotons (PhotonMap **pmaps)
    totalFlux /= repProgress;
    
    for (t = 0; t < NUM_PMAP_TYPES; t++)
-      if (photonMaps [t]) {
+      if (pmaps [t]) {
          if (photonRepTime) {
             sprintf(errmsg, "\nBuilding %s photon map...\n", pmapName [t]);
             eputs(errmsg);
             fflush(stderr);
          }
       
-         balancePhotons(photonMaps [t], &totalFlux);
+         balancePhotons(pmaps [t], &totalFlux);
       }
       
    /* Precompute photon irradiance if necessary */
