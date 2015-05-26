@@ -11,7 +11,6 @@ static const char	RCSid[] = "$Id$";
 #include  "otypes.h"
 #include  "rtotypes.h"
 #include  "source.h"
-#include  "pmapmat.h"
 
 /*
  * The real arguments for MAT_MIRROR are simply:
@@ -40,11 +39,6 @@ m_mirror(			/* shade mirrored ray */
 	RAY  nr;
 	int  rpure = 1;
 	int  i;
-	
-	/* PMAP: skip specular refl via ambient bounce if already accounted for
-	 * in photon map */
-	if (ambRayInPmap(r))
-		return(1);
 					/* check arguments */
 	if (m->oargs.nfargs != 3 || m->oargs.nsargs > 1)
 		objerror(m, USER, "bad number of arguments");

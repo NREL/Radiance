@@ -13,7 +13,6 @@ static const char RCSid[] = "$Id$";
 #include  "func.h"
 #include  "bsdf.h"
 #include  "random.h"
-#include  "pmapmat.h"
 
 /*
  *	Arguments to this material include optional diffuse colors.
@@ -469,11 +468,6 @@ m_bsdf(OBJREC *m, RAY *r)
 		raytrans(r);			/* hide our proxy */
 		return(1);
 	}
-	
-	/* PMAP: skip ambient ray if accounted for by photon map */
-	if (ambRayInPmap(r))
-	   return(1);
-	
 						/* get BSDF data */
 	nd.sd = loadBSDF(m->oargs.sarg[1]);
 						/* diffuse reflectance */

@@ -14,7 +14,6 @@ static const char RCSid[] = "$Id$";
 #include  "source.h"
 #include  "func.h"
 #include  "random.h"
-#include  "pmapmat.h"
 
 #ifndef  MAXITER
 #define  MAXITER	10		/* maximum # specular ray attempts */
@@ -108,11 +107,6 @@ diraniso(		/* compute source contribution */
 		scalecolor(ctmp, dtmp);
 		addcolor(cval, ctmp);
 	}
-
-	/* PMAP: skip direct specular refl via ambient bounce if already
-	 * accounted for in photon map */
-	if (ambRayInPmap(np->rp))
-		return;
 	
 	if (ldot > FTINY && np->specfl&SP_REFL) {
 		/*
@@ -276,9 +270,7 @@ m_aniso(			/* shade ray that hit something anisotropic */
 
 	getacoords(&nd);			/* set up coordinates */
 
-	/* PMAP: skip indirect specular via ambient bounce if already accounted
-	 * for in photon map */
-	if (!ambRayInPmap(r) && nd.specfl & (SP_REFL|SP_TRAN))
+	if (nd.specfl & (SP_REFL|SP_TRAN))
 		agaussamp(&nd);
 
 	if (nd.rdiff > FTINY) {		/* ambient from this side */
