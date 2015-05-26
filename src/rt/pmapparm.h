@@ -38,8 +38,8 @@
    #define contribPmapParams  (pmapParams [PMAP_TYPE_CONTRIB])
    
    
-   extern float pdfSamples, preDistrib, finalGather, gatherTolerance,
-                maxDistCoeff;
+   extern float pdfSamples, preDistrib, finalGather, gatherTolerance, 
+                maxDistFix;
    extern unsigned long photonHeapSizeInc, photonMaxBounce;
    extern unsigned photonRepTime, maxPreDistrib, defaultGather;
 #ifdef PMAP_ROI                

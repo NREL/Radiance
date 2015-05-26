@@ -72,8 +72,8 @@ int getPmapRenderOpt (int ac, char *av [])
                }
                else return 2;
                
-            case 'm': /* max photon search radius coefficient */
-               if (check(3, "f") || (maxDistCoeff = atof(av [1])) <= 0)
+            case 'm': /* Fixed max photon search radius */
+               if (check(3, "f") || (maxDistFix = atof(av [1])) <= 0)
                   error(USER, "invalid max photon search radius coefficient");
 
                return 1;
@@ -90,5 +90,5 @@ int getPmapRenderOpt (int ac, char *av [])
 void printPmapDefaults ()
 /* Print defaults for photon map render options */
 {
-   printf("-am %.1f\t\t\t# max photon search radius coeff\n", maxDistCoeff);
+   printf("-am %.1f\t\t\t\t# max photon search radius\n", maxDistFix);
 }
