@@ -19,6 +19,7 @@
 #include "otypes.h"
 #include "source.h"
 #include "rcontrib.h"
+#include "random.h"
 
 
 
@@ -229,7 +230,7 @@ static void nearestNeighbours (PhotonMap* pmap, const float pos [3],
    }
 
    /* Reject photon if normal faces away (ignored for volume photons) */
-   if (norm && DOT(norm, p -> norm) <= 0)
+   if (norm && DOT(norm, p -> norm) <= 0.5 * frandom())
       return;
       
    if (isContribPmap(pmap) && pmap -> srcContrib) {
@@ -455,7 +456,7 @@ static void nearest1Neighbour (PhotonMap *pmap, const float pos [3],
    dv [2] = pos [2] - p -> pos [2];
    d2 = DOT(dv, dv);
    
-   if (d2 < pmap -> maxDist && DOT(norm, p -> norm) > 0) {
+   if (d2 < pmap -> maxDist && DOT(norm, p -> norm) > 0.5 * frandom()) {
       /* Closest photon so far with similar normal */
       pmap -> maxDist = d2;
       *photon = p;
