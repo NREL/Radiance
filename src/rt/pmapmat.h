@@ -29,7 +29,8 @@
                            contrib, or dedicated caustic photon map.
    */
    #define shadowRayInPmap(r) ((r) -> crtype & SHADOW && \
-				(ambounce < 0 || causticPhotonMapping))
+				(ambounce < 0 || ((r) -> crtype & AMBIENT ? \
+					photonMapping : causticPhotonMapping)))
    
    /* Check if scattered ray spawns a caustic photon */
    #define PMAP_CAUSTICRAY(r) ((r) -> rtype & SPECULAR)

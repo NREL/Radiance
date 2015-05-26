@@ -34,10 +34,10 @@
 
    /* Macros to test for enabled photon maps */
    #define photonMapping         (globalPmap || preCompPmap || \
-                                  causticPmap ||contribPmap)
-   #define causticPhotonMapping  (causticPmap)
-   #define directPhotonMapping   (directPmap)
-   #define volumePhotonMapping   (volumePmap)
+                                  causticPmap || contribPmap)
+   #define causticPhotonMapping  (causticPmap != NULL)
+   #define directPhotonMapping   (directPmap != NULL)
+   #define volumePhotonMapping   (volumePmap != NULL)
    #define contribPhotonMapping  (contribPmap && contribPmap -> srcContrib)
    
    
