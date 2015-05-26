@@ -224,9 +224,9 @@ paint(			/* compute and paint a rectangle */
 		} else if (ambounce == 0)
 			flushintvl = ray_pnprocs*WFLUSH;
 		else if (niflush < WFLUSH)
-			flushintvl = ray_pnprocs*niflush/(ambounce+1);
+			flushintvl = ray_pnprocs*niflush/(ambounce*(ambounce>0)+1);
 		else
-			flushintvl = ray_pnprocs*WFLUSH/(ambounce+1);
+			flushintvl = ray_pnprocs*WFLUSH/(ambounce*(ambounce>0)+1);
 		if (lastflush > counter)
 			lastflush = 0;		/* counter wrapped */
 
