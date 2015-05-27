@@ -7,8 +7,6 @@ static const char	RCSid[] = "$Id$";
 
 #include "copyright.h"
 
-#include  <stdlib.h>
-
 #include  "standard.h"
 #include  "random.h"
 
@@ -21,12 +19,14 @@ static unsigned short  empty_tab = 0;
 unsigned short  *urperm = &empty_tab;	/* urand() permutation */
 int  urmask = 0;			/* bits used in permutation */
 
+
 int
-initurand(size)		/* initialize urand() for size entries */
-int  size;
+initurand(			/* initialize urand() for size entries */
+	int  size
+)
 {
 	int  order, n;
-	register int  i, offset;
+	int  i, offset;
 
 	if ((urperm != NULL) & (urperm != &empty_tab))
 		free((void *)urperm);
@@ -60,12 +60,13 @@ int  size;
 
 
 int
-ilhash(d, n)			/* hash a set of integer values */
-register int  *d;
-register int  n;
+ilhash(				/* hash a set of integer values */
+	int  *d,
+	int  n
+)
 {
 	static int  tab[8] = {103699,96289,73771,65203,81119,87037,92051,98899};
-	register int  hval;
+	int  hval;
 
 	hval = 0;
 	while (n-- > 0)

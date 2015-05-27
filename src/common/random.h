@@ -23,9 +23,6 @@ extern "C" {
 
 #else
 
-extern long  lrand48();
-extern double  drand48();
-
 #define	 random()	lrand48()
 #define  srandom(s)	srand48((long)(s))
 #define	 frandom()	drand48()
