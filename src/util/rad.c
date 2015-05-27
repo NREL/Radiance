@@ -402,7 +402,7 @@ checkfiles(void)			/* check for existence and modified times */
 		pcmapname = savqstr(fntemp);
 		pcmapdate = fdate(pcmapname);
 		if (pgmapname == NULL && !nowarn)
-			fprintf(stderr, "%s: '%s' assigned without '%s'\n",
+			fprintf(stderr, "%s: warning - '%s' assigned without '%s'\n",
 					progname, vnam(PCMAP), vnam(PGMAP));
 	}
 	matdate = checklast(vval(MATERIAL));
@@ -659,13 +659,13 @@ mkpmap(void)			/* run mkpmap if indicated */
 			else
 				badvalue(REPORT);
 		}
-		if (vdef(PGMAP)) {
+		if (pgmapname != NULL && pgmapdate < oct1date) {
 			cp = addarg(cp, "-apg");
 			addarg(cp, vval(PGMAP));
 			cp = sskip(sskip(cp));	/* remove any bandwidth */
 			*cp = '\0';
 		}
-		if (vdef(PCMAP)) {
+		if (pcmapname != NULL && pcmapdate < oct1date) {
 			cp = addarg(cp, "-apc");
 			addarg(cp, vval(PCMAP));
 			cp = sskip(sskip(cp));	/* remove any bandwidth */
