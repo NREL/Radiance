@@ -401,9 +401,6 @@ checkfiles(void)			/* check for existence and modified times */
 		atos(fntemp, sizeof(fntemp), vval(PCMAP));
 		pcmapname = savqstr(fntemp);
 		pcmapdate = fdate(pcmapname);
-		if (pgmapname == NULL && !nowarn)
-			fprintf(stderr, "%s: warning - '%s' assigned without '%s'\n",
-					progname, vnam(PCMAP), vnam(PGMAP));
 	}
 	matdate = checklast(vval(MATERIAL));
 }	
