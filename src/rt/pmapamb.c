@@ -59,7 +59,8 @@ int ambPmapCaustic (COLOR aval, RAY *r, int rdepth)
    PhotonMap *pmap = contribPhotonMapping ? contribPmap : causticPmap;
 
    /* Get caustic photon density estimate only at primary rays */
-   if (pmap && !rdepth) {
+   if (pmap && (!rdepth || (!globalPmap & !contribPmap & !preCompPmap
+				&& r->crtype & AMBIENT))) {
       /* Temporarily factor ambient value into ray coefficient
        * (required for contribution photon map) */
       copycolor(rcoef, r -> rcoef);      
