@@ -337,10 +337,10 @@ void findPhotons (PhotonMap* pmap, const RAY* ray)
       pmap -> minError = FHUGE;
       pmap -> maxError = -FHUGE;
       pmap -> rmsError = 0;
-      /* Maximum search radius limit is based on avg photon distance to
+      /* SQUARED max search radius limit is based on avg photon distance to
        * centre of gravity, unless fixed by user (maxDistFix > 0) */
       pmap -> maxDist0 = pmap -> maxDistLimit = 
-         maxDistFix > 0 ? maxDistFix
+         maxDistFix > 0 ? maxDistFix * maxDistFix
                         : PMAP_MAXDIST_COEFF * pmap -> squeueSize * 
                           pmap -> CoGdist / pmap -> heapSize;
    }
