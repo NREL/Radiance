@@ -657,12 +657,14 @@ mkpmap(void)			/* run mkpmap if indicated */
 				badvalue(REPORT);
 		}
 		if (pgmapname != NULL && pgmapdate < oct1date) {
+			unlink(pgmapname);
 			cp = addarg(cp, "-apg");
 			addarg(cp, vval(PGMAP));
 			cp = sskip(sskip(cp));	/* remove any bandwidth */
 			*cp = '\0';
 		}
 		if (pcmapname != NULL && pcmapdate < oct1date) {
+			unlink(pcmapname);
 			cp = addarg(cp, "-apc");
 			addarg(cp, vval(PCMAP));
 			cp = sskip(sskip(cp));	/* remove any bandwidth */
