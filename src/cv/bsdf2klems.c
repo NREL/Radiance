@@ -207,6 +207,7 @@ eval_bsdf(const char *fname)
 	double		sum;
 	int		i, j, n;
 
+	initurand(npsamps);
 	SDclearBSDF(&bsd, fname);		/* load BSDF file */
 	if ((ec = SDloadFile(&bsd, fname)) != SDEnone)
 		goto err;
