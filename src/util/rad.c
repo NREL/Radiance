@@ -644,6 +644,8 @@ mkpmap(void)			/* run mkpmap if indicated */
 		for (cp = combuf; *cp; cp++)
 			;
 		mkpmapopts(cp);
+				/* force file overwrite */
+		cp = addarg(cp, "-fo+");
 		if (vdef(REPORT)) {
 			char	errfile[256];
 			int	n;
@@ -657,16 +659,12 @@ mkpmap(void)			/* run mkpmap if indicated */
 				badvalue(REPORT);
 		}
 		if (pgmapname != NULL && pgmapdate < oct1date) {
-			if (pgmapdate)
-				rmfile(pgmapname);
 			cp = addarg(cp, "-apg");
 			addarg(cp, vval(PGMAP));
 			cp = sskip(sskip(cp));	/* remove any bandwidth */
 			*cp = '\0';
 		}
 		if (pcmapname != NULL && pcmapdate < oct1date) {
-			if (pcmapdate)
-				rmfile(pcmapname);
 			cp = addarg(cp, "-apc");
 			addarg(cp, vval(PCMAP));
 			cp = sskip(sskip(cp));	/* remove any bandwidth */
