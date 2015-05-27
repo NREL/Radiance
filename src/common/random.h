@@ -22,13 +22,6 @@ extern "C" {
 #define frandom()	(rand()*(1./(RAND_MAX+.5)))
 
 #else
-#ifdef	BSD
-
-extern long  random();
-
-#define	 frandom()	(random()*(1./2147483648.))
-
-#else
 
 extern long  lrand48();
 extern double  drand48();
@@ -38,12 +31,11 @@ extern double  drand48();
 #define	 frandom()	drand48()
 
 #endif
-#endif
 
 extern unsigned short	*urperm;
 extern int	urmask;
 
-#define	 urand(i)	(urmask ? (urperm[(i)&urmask]+frandom())/(urmask+1) \
+#define	 urand(i)	(urmask ? (urperm[(i)&urmask]+frandom())/(urmask+1.) \
 				: frandom())
 
 extern int	initurand(int size);
