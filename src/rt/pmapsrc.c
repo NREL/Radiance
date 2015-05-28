@@ -748,7 +748,7 @@ void emitPhoton (const EmissionMap* emap, RAY* ray)
    photonOrigin [emap -> src -> so -> otype] ((EmissionMap*)emap);
    /* If we have a local glow source with a maximum radius, then
       restrict our photon to the specified distance (otherwise no limit) */
-   if (mod -> otype == MAT_GLOW && emap -> src -> so -> otype != OBJ_SOURCE
+   if (mod -> otype == MAT_GLOW && !(emap -> src -> sflags & SDISTANT)
 		&& mod -> oargs.farg[3] > FTINY)
       ray -> rmax = mod -> oargs.farg[3];
    else

@@ -34,7 +34,7 @@
 
    /* Primary photon ray for light source contributions */
    typedef struct {
-      uint32 srcIdx;              /* Index of emitting light source */
+      int32 srcIdx;               /* Index of emitting light source */
       int32 dir;                  /* Encoded ray direction */
       float pos [3];              /* Hit point */
    } PhotonPrimary;
