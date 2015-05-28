@@ -135,16 +135,15 @@ marksources(void)			/* find and mark source objects */
 				source[ns].sflags |= SSKIP;
 			}
 		}
-#if  SHADCACHE
-		initobscache(ns);
-#endif
 		foundsource += !(source[ns].sflags & SSKIP);
 	}
 	if (!foundsource) {
 		error(WARNING, "no light sources found");
 		return;
 	}
-	
+#if  SHADCACHE
+	initobscache(ns);
+#endif
 	/* PMAP: disable virtual sources */
 	if (!photonMapping)
 		markvirtuals();			/* find and add virtual sources */
