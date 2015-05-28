@@ -142,7 +142,8 @@ marksources(void)			/* find and mark source objects */
 		return;
 	}
 #if  SHADCACHE
-	initobscache(ns);
+	for (ns = 0; ns < nsources; ns++)	/* initialize obstructor cache */
+		initobscache(ns);
 #endif
 	/* PMAP: disable virtual sources */
 	if (!photonMapping)

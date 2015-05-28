@@ -58,12 +58,12 @@ castshadow(int sn, FVECT rorg, FVECT rdir)
 void					/* initialize occlusion cache */
 initobscache(int sn)
 {
-	register SRCREC *srcp = &source[sn];
-	int		cachelen;
-	FVECT		rorg, rdir;
-	RREAL		d;
-	int		i, j, k;
-	int		ax=0, ax1=1, ax2=2;
+	SRCREC	*srcp = &source[sn];
+	int	cachelen;
+	FVECT	rorg, rdir;
+	RREAL	d;
+	int	i, j, k;
+	int	ax=0, ax1=1, ax2=2;
 
 	if (srcp->sflags & (SSKIP|SPROX|SSPOT|SVIRTUAL))
 		return;			/* don't cache these */
@@ -178,7 +178,7 @@ initobscache(int sn)
 
 
 static OBJECT *			/* return occluder cache entry */
-srcobstructp(register RAY *r)
+srcobstructp(RAY *r)
 {
 	static RNUMBER	lastrno = ~0;
 	static OBJECT   noobs;
@@ -288,7 +288,7 @@ freeobscache(SRCREC *srcp)
 
 	
 int				/* record a source blocker */
-srcblocker(register RAY *r)
+srcblocker(RAY *r)
 {
 	OBJREC  *m;
 
