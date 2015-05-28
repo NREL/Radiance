@@ -83,7 +83,7 @@ proc setradvar stmt {		# assign a rad variable
 		mat* { eval lappend radvar(materials) $vval }
 		ill* { eval lappend radvar(illum) $vval }
 		mki* { eval lappend radvar(mkillum) $vval }
-		mkp* { eval lappend randvar(mkpmap) $vval }
+		mkp* { eval lappend radvar(mkpmap) $vval }
 		ren* { eval lappend radvar(render) $vval }
 		oco* { eval lappend radvar(oconv) $vval }
 		rvu { eval lappend radvar(rvu) $vval }
