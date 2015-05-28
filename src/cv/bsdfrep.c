@@ -50,14 +50,6 @@ double			theta_in_deg, phi_in_deg;
 int
 new_input_direction(double new_theta, double new_phi)
 {
-	if (!input_orient)		/* check input orientation */
-		input_orient = 1 - 2*(new_theta > 90.);
-	else if (input_orient > 0 ^ new_theta < 90.) {
-		fprintf(stderr,
-		"%s: Cannot handle input angles on both sides of surface\n",
-				progname);
-		return(0);
-	}
 					/* normalize angle ranges */
 	while (new_theta < -180.)
 		new_theta += 360.;
@@ -67,12 +59,21 @@ new_input_direction(double new_theta, double new_phi)
 		new_theta = -new_theta;
 		new_phi += 180.;
 	}
-	if ((theta_in_deg = new_theta) < 1.0)
-		return(1);		/* don't rely on phi near normal */
 	while (new_phi < 0)
 		new_phi += 360.;
 	while (new_phi >= 360.)
 		new_phi -= 360.;
+					/* check input orientation */
+	if (!input_orient)
+		input_orient = 1 - 2*(new_theta > 90.);
+	else if (input_orient > 0 ^ new_theta < 90.) {
+		fprintf(stderr,
+		"%s: Cannot handle input angles on both sides of surface\n",
+				progname);
+		return(0);
+	}
+	if ((theta_in_deg = new_theta) < 1.0)
+		return(1);		/* don't rely on phi near normal */
 	if (single_plane_incident > 0)	/* check input coverage */
 		single_plane_incident = (round(new_phi) == round(phi_in_deg));
 	else if (single_plane_incident < 0)
