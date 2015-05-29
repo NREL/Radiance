@@ -27,6 +27,8 @@ wrapBSDF - put XML wrapper around WINDOW6 BSDF data
 ][
 .B "\-rf inp"
 ][
+.B "\-C comm"
+][
 .B "input.xml"
 ]
 .SH DESCRIPTION
@@ -116,6 +118,13 @@ can take data from the standard input by using a hyphen ('-')
 in place of the file, but only one option at most may read from stdin.
 Data input may be read from another program by beginning the input
 specification with a quoted exclamation point ('!') followed by the command.
+.PP
+The
+.I \-C
+option may be used to specify a comment to be inserted near the
+head of the output.
+Up to 30 comment strings may be given, and they will appear one
+after the other in the prologue surrounded by the XML comment syntax.
 .SH EXAMPLE
 Create an WINDOW6 BSDF from computed transmission matrix:
 .IP "" .2i

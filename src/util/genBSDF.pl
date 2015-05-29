@@ -222,13 +222,8 @@ if ( $tensortree ) {
 	do_matrix_bsdf();
 }
 # Output XML
-my $old_fh = select(STDOUT);
-$| = 1;
-select($old_fh);
-print "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-print "<!-- Created by: genBSDF @savedARGV -->\n";
 # print STDERR "Running: $wrapper\n";
-system $wrapper;
+system $wrapper -C "Created by: genBSDF @savedARGV";
 die "Could not wrap BSDF data\n" if ( $? );
 # Clean up temporary files and exit
 exec $rmtmp;
