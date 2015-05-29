@@ -585,6 +585,7 @@ writeBSDF(const char *caller, ezxml_t fl)
 		free(xml);
 		return 0;
 	}
+	puts("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 	fflush(stdout);				/* write previous XML info. */
 	if (write(fileno(stdout), xml, ei) != ei) {
 		free(xml);
