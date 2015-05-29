@@ -225,6 +225,7 @@ if ( $tensortree ) {
 my $old_fh = select(STDOUT);
 $| = 1;
 select($old_fh);
+print "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
 print "<!-- Created by: genBSDF @savedARGV -->\n";
 # print STDERR "Running: $wrapper\n";
 system $wrapper;
