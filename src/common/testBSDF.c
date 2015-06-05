@@ -82,6 +82,8 @@ main(int argc, char *argv[])
 				sprintf(path, "%s/%s", directory, cp2);
 			else
 				strcpy(path, cp2);
+			if (bsdf != NULL)
+				SDfreeCache(bsdf);
 			bsdf = SDcacheFile(path);
 			continue;
 		case 'q':
