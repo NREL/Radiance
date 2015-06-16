@@ -74,7 +74,7 @@ load_stream(MEMLOAD *mp, FILE *fp)
 		return(-1);
 	while ((nr = fread(buf, 1, sizeof(buf), fp)) > 0) {
 		if (!alloced)
-			mp->base = malloc(nr);
+			mp->base = malloc(alloced = nr);
 		else if (mp->len+nr > alloced)
 			mp->base = realloc(mp->base,
 				alloced = alloced*(2+(nr==sizeof(buf)))/2+nr);
