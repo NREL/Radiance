@@ -12,7 +12,7 @@ up_neu : up(1,1,1);
 vp_neu : vp(1,1,1);
 uw = up(Xw,Yw,Zw);
 vw = vp(Xw,Yw,Zw);
-Ls(Yi) : if(Yi/Yw - .01, 116*(Yi/Yw)^(1/3) - 16, 903.3*Yi/Yw);
+Ls(Yi) = if(Yi/Yw - .01, 116*(Yi/Yw)^(1/3) - 16, 903.3*Yi/Yw);
 us(Xi,Yi,Zi) = 13*Ls(Yi)*(up(Xi,Yi,Zi) - uw);
 vs(Xi,Yi,Zi) = 13*Ls(Yi)*(vp(Xi,Yi,Zi) - vw);
 hue_deg(Xi,Yi,Zi) = 180/PI*atan2(vs(Xi,Yi,Zi),us(Xi,Yi,Zi));
