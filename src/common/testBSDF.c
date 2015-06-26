@@ -70,8 +70,7 @@ main(int argc, char *argv[])
 		
 		while (isspace(*cp)) cp++;
 
-		switch (*cp) {
-		case 'l':
+		switch (toupper(*cp)) {
 		case 'L':			/* load/activate BSDF input */
 			cp2 = cp = sskip2(cp, 1);
 			if (!*cp)
@@ -86,7 +85,6 @@ main(int argc, char *argv[])
 				SDfreeCache(bsdf);
 			bsdf = SDcacheFile(path);
 			continue;
-		case 'q':
 		case 'Q':			/* query BSDF value */
 			if (bsdf == NULL)
 				goto noBSDFerr;
@@ -97,7 +95,6 @@ main(int argc, char *argv[])
 			if (!SDreportError(SDevalBSDF(&val, vout, vin, bsdf), stderr))
 				printf("%.3e\n", val.cieY);
 			continue;
-		case 's':
 		case 'S':			/* sample BSDF */
 			if (bsdf == NULL)
 				goto noBSDFerr;
@@ -113,11 +110,8 @@ main(int argc, char *argv[])
 				printf("%.8f %.8f %.8f\n", vin[0], vin[1], vin[2]);
 			}
 			continue;
-		case 'h':
 		case 'H':			/* hemispherical totals */
-		case 'r':
 		case 'R':
-		case 't':
 		case 'T':
 			if (bsdf == NULL)
 				goto noBSDFerr;
@@ -130,7 +124,6 @@ main(int argc, char *argv[])
 			vec_from_deg(vin, atof(sskip2(cp,1)), atof(sskip2(cp,2)));
 			printf("%.4e\n", SDdirectHemi(vin, sflags, bsdf));
 			continue;
-		case 'a':
 		case 'A':			/* resolution in proj. steradians */
 			if (bsdf == NULL)
 				goto noBSDFerr;
