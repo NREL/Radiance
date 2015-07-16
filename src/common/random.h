@@ -4,13 +4,14 @@
  */
 #ifndef _RAD_RANDOM_H_
 #define _RAD_RANDOM_H_
+
+#include <stdlib.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifdef	_WIN32
-
-#include <stdlib.h>
 
 #if (RAND_MAX <= 65536)
 #define random()	((long)rand()<<16^(long)rand()<<6^(long)rand()>>4)

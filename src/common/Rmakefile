@@ -85,7 +85,7 @@ cone.o:		cone.h
 
 face.o:		face.h
 
-fvect.o:	fvect.h
+fvect.o:	fvect.h random.h
 
 instance.o:	instance.h
 
