@@ -111,9 +111,7 @@ static int
 rmx_load_ascii(RMATRIX *rm, FILE *fp)
 {
 	int	i, j, k;
-#ifdef _WIN32
-	_setmode(fileno(fp), _O_TEXT);
-#endif
+
 	for (i = 0; i < rm->nrows; i++)
 	    for (j = 0; j < rm->ncols; j++)
 	        for (k = 0; k < rm->ncomp; k++)
@@ -253,6 +251,9 @@ rmx_load(const char *inspec)
 	dnew->info = dinfo.info;
 	switch (dinfo.dtype) {
 	case DTascii:
+#ifdef _WIN32
+		_setmode(fileno(fp), _O_TEXT);
+#endif
 		if (!rmx_load_ascii(dnew, fp))
 			goto loaderr;
 		dnew->dtype = DTascii;		/* should leave double? */
@@ -300,9 +301,7 @@ static int
 rmx_write_ascii(const RMATRIX *rm, FILE *fp)
 {
 	int	i, j, k;
-#ifdef _WIN32
-	_setmode(fileno(fp), _O_TEXT);
-#endif
+
 	for (i = 0; i < rm->nrows; i++) {
 	    for (j = 0; j < rm->ncols; j++) {
 	        for (k = 0; k < rm->ncomp; k++)
@@ -385,6 +384,9 @@ rmx_write(const RMATRIX *rm, int dtype, FILE *fp)
 
 	if ((rm == NULL) | (fp == NULL))
 		return(0);
+#ifdef getc_unlocked
+	flockfile(fp);
+#endif
 						/* complete header */
 	if (rm->info)
 		fputs(rm->info, fp);
@@ -429,6 +431,9 @@ rmx_write(const RMATRIX *rm, int dtype, FILE *fp)
 		return(0);
 	}
 	ok &= (fflush(fp) == 0);
+#ifdef getc_unlocked
+	funlockfile(fp);
+#endif
 	rmx_free(mydm);
 	return(ok);
 }

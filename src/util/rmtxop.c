@@ -231,9 +231,6 @@ main(int argc, char *argv[])
 	if (mres == NULL)		/* check that we got something */
 		goto userr;
 					/* write result to stdout */
-#ifdef getc_unlocked
-	flockfile(stdout);
-#endif
 	if (outfmt == DTfromHeader)
 		outfmt = mres->dtype;
 #ifdef _WIN32
