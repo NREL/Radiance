@@ -671,7 +671,7 @@ multambient(		/* compute ambient component & multiply by coef. */
 		return;
 
 	/* PMAP: Otherwise factor in ambient from caustic photon map
-	 * (ambCausticPmap() returns zero if caustic photons disabled) and
+	 * (ambPmapCaustic() returns zero if caustic photons disabled) and
 	 * continue with RADIANCE ambient calculation */
 	copycolor(caustic, aval);
 	ambPmapCaustic(caustic, r, rdepth);
