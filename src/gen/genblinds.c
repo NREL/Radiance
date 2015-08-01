@@ -116,14 +116,14 @@ main(
     height = atof(argv[5]);
     nslats  = atoi(argv[6]);
     angle = atof(argv[7]);
-    if (argc == 10)
+    if (argc == 10) {
 	if (!strcmp(argv[8], "-r"))
 	    rcurv = atof(argv[9]);
 	else if (!strcmp(argv[8], "+r"))
 	    rcurv = -atof(argv[9]);
 	else
 	    goto userr;
-
+    }
     /* CURVED BLIND CALCULATION */
 
     if (rcurv != 0.) {

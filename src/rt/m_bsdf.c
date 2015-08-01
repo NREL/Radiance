@@ -464,7 +464,7 @@ m_bsdf(OBJREC *m, RAY *r)
 	}
 						/* check other rays to pass */
 	if (nd.thick != 0 && (!(r->crtype & (SPECULAR|AMBIENT)) ||
-				nd.thick > 0 ^ hitfront)) {
+				(nd.thick > 0) ^ hitfront)) {
 		raytrans(r);			/* hide our proxy */
 		return(1);
 	}

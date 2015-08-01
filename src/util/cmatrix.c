@@ -221,12 +221,13 @@ cm_load(const char *inspec, int nrows, int ncols, int dtype)
 			cm = cm_resize(cm, 2*cm->nrows);
 		    for (c = 0; c < ncols; c++) {
 		        COLORV	*cv = cm_lval(cm,r,c);
-			if (fscanf(fp, COLSPEC, cv, cv+1, cv+2) != 3)
+			if (fscanf(fp, COLSPEC, cv, cv+1, cv+2) != 3) {
 				if ((nrows <= 0) & (r > 0) & !c) {
 					cm = cm_resize(cm, maxrow=r);
 					break;
 				} else
 					goto EOFerror;
+			}
 		    }
 		}
 		while ((c = getc(fp)) != EOF)

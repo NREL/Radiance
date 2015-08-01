@@ -338,11 +338,12 @@ libfunc(				/* execute library function */
     errno = 0;
     d = (*lp->f)(lp->fname);
 #ifdef  isnan
-    if (errno == 0)
+    if (errno == 0) {
 	if (isnan(d))
 	    errno = EDOM;
 	else if (isinf(d))
 	    errno = ERANGE;
+    }
 #endif
     if (errno == EDOM || errno == ERANGE) {
 	wputs(fname);

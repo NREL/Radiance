@@ -9,6 +9,7 @@ static const char	RCSid[] = "$Id$";
 
 #include <ctype.h>
 #include <time.h>
+#include <signal.h>
 
 #include "platform.h"
 #include "rtprocess.h"

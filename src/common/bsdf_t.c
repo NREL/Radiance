@@ -924,7 +924,7 @@ next_token(char **spp)
 }
 
 /* Advance pointer past matching token (or any token if c==0) */
-#define eat_token(spp,c)	(next_token(spp)==(c) ^ !(c) ? *(*(spp))++ : 0)
+#define eat_token(spp,c)	((next_token(spp)==(c)) ^ !(c) ? *(*(spp))++ : 0)
 
 /* Count words from this point in string to '}' */
 static int
