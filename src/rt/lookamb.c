@@ -90,7 +90,7 @@ writamb(			/* write binary ambient values to stdout */
 		av.udir = encodedir(norm);
 		if (!dataonly)
 			fscanf(fp, "%*s");
-		if (fscanf(fp, "%d %f %f %f", &av.lvl, &av.weight,
+		if (fscanf(fp, "%hd %f %f %f", &av.lvl, &av.weight,
 				&av.rad[0], &av.rad[1]) != 4)
 			return;
 		if (!dataonly)

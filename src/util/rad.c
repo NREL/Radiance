@@ -832,19 +832,21 @@ renderopts(			/* set rendering options */
 	if (vdef(RENDER))
 		op = addarg(op, vval(RENDER));
 	if (rvdevice != NULL) {
-		if (vdef(RVU))
+		if (vdef(RVU)) {
 			if (vval(RVU)[0] != '-') {
 				atos(c_rvu, sizeof(c_rvu), vval(RVU));
 				po = addarg(po, sskip2(vval(RVU), 1));
 			} else
 				po = addarg(po, vval(RVU));
+		}
 	} else {
-		if (vdef(RPICT))
+		if (vdef(RPICT)) {
 			if (vval(RPICT)[0] != '-') {
 				atos(c_rpict, sizeof(c_rpict), vval(RPICT));
 				po = addarg(po, sskip2(vval(RPICT), 1));
 			} else
 				po = addarg(po, vval(RPICT));
+		}
 	}
 }
 
@@ -1145,12 +1147,13 @@ pfiltopts(				/* get pfilt options */
 		po = addarg(po, "-m .25");
 		break;
 	}
-	if (vdef(PFILT))
+	if (vdef(PFILT)) {
 		if (vval(PFILT)[0] != '-') {
 			atos(c_pfilt, sizeof(c_pfilt), vval(PFILT));
 			po = addarg(po, sskip2(vval(PFILT), 1));
 		} else
 			po = addarg(po, vval(PFILT));
+	}
 }
 
 
