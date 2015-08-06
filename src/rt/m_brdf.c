@@ -140,17 +140,19 @@ dirbrdf(		/* compute source contribution */
 	lddx[3] = omega;
 					/* compute BRTDF */
 	if (np->mp->otype == MAT_BRTDF) {
-		if (sa[6][0] == '0')		/* special case */
+		if (sa[6][0] == '0' && !sa[6][1])	/* special case */
 			colval(ctmp,RED) = 0.0;
 		else
 			colval(ctmp,RED) = funvalue(sa[6], 4, lddx);
-		if (sa[7][0] == '0')
+		if (sa[7][0] == '0' && !sa[7][1])
 			colval(ctmp,GRN) = 0.0;
 		else if (!strcmp(sa[7],sa[6]))
 			colval(ctmp,GRN) = colval(ctmp,RED);
 		else
 			colval(ctmp,GRN) = funvalue(sa[7], 4, lddx);
-		if (!strcmp(sa[8],sa[6]))
+		if (sa[8][0] == '0' && !sa[8][1])
+			colval(ctmp,BLU) = 0.0;
+		else if (!strcmp(sa[8],sa[6]))
 			colval(ctmp,BLU) = colval(ctmp,RED);
 		else if (!strcmp(sa[8],sa[7]))
 			colval(ctmp,BLU) = colval(ctmp,GRN);
