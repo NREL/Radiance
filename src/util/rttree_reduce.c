@@ -155,7 +155,7 @@ print_tree(const TNODE *tp, const int bmin[], int l2s)
 				bkmin[j] = bmin[j] + (i>>(ttrank-1-j) & 1);
 			val = (ttrank == 3) ? dval3(bkmin[0],bkmin[1],bkmin[2])
 				: dval4(bkmin[0],bkmin[1],bkmin[2],bkmin[3]);
-			printf((0.1<=val)&(val<10.) ? " %.7f" : " %.3e", val);
+			printf((0.001<=val)&(val<10.) ? " %.7f" : " %.3e", val);
 		}
 		fputs(" }\n", stdout);
 		return;
