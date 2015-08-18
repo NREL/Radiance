@@ -1,3 +1,6 @@
+#ifndef lint
+static const char RCSid[] = "$Id$";
+#endif
 /* 
    ==================================================================
    Dump photon maps as RADIANCE scene description to stdout

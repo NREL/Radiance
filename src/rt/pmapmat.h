@@ -1,3 +1,4 @@
+/* RCSid $Id$ */
 /* 
    ==================================================================
    Photon map support routines for scattering by materials. 

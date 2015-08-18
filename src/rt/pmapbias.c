@@ -1,3 +1,6 @@
+#ifndef lint
+static const char RCSid[] = "$Id$";
+#endif
 /* 
    ==================================================================
    Bias compensation for photon density estimates

@@ -1,3 +1,6 @@
+#ifndef lint
+static const char RCSid[] = "$Id$";
+#endif
 /* 
    ==================================================================
    Photon map support routines for emission from light sources

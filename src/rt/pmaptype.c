@@ -1,3 +1,6 @@
+#ifndef lint
+static const char RCSid[] = "$Id$";
+#endif
 /* 
    ==================================================================
    Photon map types and corresponding file format strings

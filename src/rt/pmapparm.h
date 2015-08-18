@@ -1,3 +1,4 @@
+/* RCSid $Id$ */
 /* 
    ==================================================================
    Parameters for photon map generation; used by MKPMAP

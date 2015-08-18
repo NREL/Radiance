@@ -1,3 +1,4 @@
+/* RCSid $Id$ */
 /* 
    ==================================================================
    Photon map types and corresponding file format strings

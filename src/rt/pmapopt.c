@@ -1,3 +1,6 @@
+#ifndef lint
+static const char RCSid[] = "$Id$";
+#endif
 /* 
    ==================================================================
    Photon map interface to RADIANCE render options

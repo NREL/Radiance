@@ -1,3 +1,4 @@
+/* RCSid $Id$ */
 /* 
    ==================================================================
    Bias compensation for photon density estimates

@@ -1,3 +1,4 @@
+/* RCSid $Id$ */
 /* 
    ==================================================================
    Photon map interface to RADIANCE raycalls

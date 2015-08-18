@@ -1,3 +1,4 @@
+/* RCSid $Id$ */
 #ifndef PMAPRAND_H
 #define PMAPRAND_H
 
