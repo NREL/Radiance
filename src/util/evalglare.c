@@ -1,3 +1,6 @@
+#ifndef lint
+static const char RCSid[] = "$Id$";
+#endif
 /* EVALGLARE V1.17
  * Evalglare Software License, Version 1.0
  *

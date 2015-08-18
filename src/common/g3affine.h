@@ -1,3 +1,4 @@
+/* RCSid $Id$ */
 /*
 **	Author: Christian Reetz (chr@riap.de)
 */

@@ -1,3 +1,4 @@
+/* RCSid $Id$ */
 #ifndef	__PICTOOL_H
 #define __PICTOOL_H
 

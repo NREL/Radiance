@@ -1,3 +1,6 @@
+#ifndef lint
+static const char RCSid[] = "$Id$";
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

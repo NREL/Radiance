@@ -1,3 +1,4 @@
+/* RCSid $Id$ */
 #ifndef __G3NAMEDLIST_H
 #define __G3NAMEDLIST_H
 

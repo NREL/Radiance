@@ -1,3 +1,6 @@
+#ifndef lint
+static const char RCSid[] = "$Id$";
+#endif
 #include "pictool.h"
 #include "g3sphere.h"
 #include <math.h>
