@@ -303,7 +303,7 @@ in_rchild()
 		kida[nchild].infp = fdopen(kida[nchild].pr.r, "rb");
 		if (kida[nchild].infp == NULL)
 			error(SYSTEM, "out of memory in in_rchild()");
-#ifdef getc_unlocked
+#if 0
 		flockfile(kida[nchild].infp);	/* avoid mutex overhead */
 #endif
 		kida[nchild++].nr = 0;	/* mark as available */

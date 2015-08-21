@@ -196,7 +196,7 @@ setambient(void)				/* initialize calculation */
 		sprintf(errmsg, "cannot open ambient file \"%s\"", ambfile);
 		error(SYSTEM, errmsg);
 	}
-#ifdef getc_unlocked
+#if 0
 	flockfile(ambfp);			/* application-level lock */
 #endif
 #ifdef  F_SETLKW
