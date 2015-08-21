@@ -63,7 +63,7 @@ RLSRC = raycalls.c raypcalls.c rayfifo.c
 ROBJS = $(RAYOBJS) $(SURFOBJS) $(MATOBJS) \
 	$(MODOBJS) $(SUPPOBJS) $(PMOBJS)
 RSRC = $(RAYSRC) $(SURFSRC) $(MATSRC) \
-	$(MODSRC) $(SUPPSRC)
+	$(MODSRC) $(SUPPSRC) $(PMSRC)
 
 RAYOBJS = ambcomp.o ambient.o ambio.o freeobjmem.o initotypes.o \
 	preload.o raytrace.o renderopts.o
