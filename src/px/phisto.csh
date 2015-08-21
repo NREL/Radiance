@@ -19,6 +19,6 @@ endif
 set Lmin=`total -if -l $tf | rcalc -e 'L=$1*179;$1=if(L-1e-7,log10(L)-.01,-7)'`
 set Lmax=`total -if -u $tf | rcalc -e '$1=log10($1*179)+.01'`
 rcalc -if -e 'L=$1*179;cond=L-1e-7;$1=log10(L)' $tf \
-	| histo $Lmin $Lmax 100
+	| histo $Lmin $Lmax 777
 quit:
 rm -f $tf

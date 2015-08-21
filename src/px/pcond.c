@@ -199,7 +199,7 @@ userr:
 }
 
 
-extern void
+void
 syserror(				/* report system error and exit */
 	char	*s
 )
@@ -365,7 +365,7 @@ check2do(void)		/* check histogram to see what isn't worth doing */
 {
 	double	sum;
 	double	b, l;
-	register int	i;
+	int	i;
 
 					/* check for within display range */
 	if (bwmax - bwmin <= Bldmax - Bldmin)
