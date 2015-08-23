@@ -789,6 +789,7 @@ SDgetTreCDist(const FVECT inVec, SDComponent *sdc)
 	for (i = sdt->stc[tt_Y]->ndim - 2; i--; )
 		inCoord[i] = floor(inCoord[i]/quantum)*quantum + .5*quantum;
 	cdlast = NULL;			/* check for direction in cache list */
+	/* PLACE MUTEX LOCK HERE FOR THREAD-SAFE */
 	for (cd = (SDTreCDst *)sdc->cdList; cd != NULL;
 					cdlast = cd, cd = cd->next) {
 		if (cd->sidef != mode)
@@ -807,6 +808,7 @@ SDgetTreCDist(const FVECT inVec, SDComponent *sdc)
 		cd->next = (SDTreCDst *)sdc->cdList;
 		sdc->cdList = (SDCDst *)cd;
 	}
+	/* END MUTEX LOCK */
 	return (SDCDst *)cd;		/* ready to go */
 }
 

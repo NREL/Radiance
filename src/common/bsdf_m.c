@@ -849,6 +849,7 @@ SDgetMtxCDist(const FVECT inVec, SDComponent *sdc)
 		reverse = 1;
 	}
 	cdlast = NULL;			/* check for it in cache list */
+	/* PLACE MUTEX LOCK HERE FOR THREAD-SAFE */
 	for (cd = (SDMatCDst *)sdc->cdList; cd != NULL;
 					cdlast = cd, cd = cd->next)
 		if (cd->indx == myCD.indx && (cd->calen == myCD.calen) &
@@ -872,6 +873,7 @@ SDgetMtxCDist(const FVECT inVec, SDComponent *sdc)
 		cd->next = (SDMatCDst *)sdc->cdList;
 		sdc->cdList = (SDCDst *)cd;
 	}
+	/* END MUTEX LOCK */
 	return (SDCDst *)cd;		/* ready to go */
 }
 
