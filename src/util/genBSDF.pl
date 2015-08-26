@@ -460,7 +460,7 @@ sub matrix_comp {
 	$cmd .= " $src | rcollate -ho -oc 145";
 	# print STDERR "Running: $cmd\n";
 	system "$cmd > $dest";
-	die "Failure running rttree_reduce" if ( $? );
+	die "Failure running rmtxop" if ( $? );
 	if ( "$spec" ne "$curspec" ) {
 		$wrapper .= " -s $spec";
 		$curspec = $spec;
