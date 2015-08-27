@@ -214,6 +214,7 @@ rmx_load(const char *inspec)
 				return(NULL);
 			dnew = rmx_from_cmatrix(cm);
 			cm_free(cm);
+			dnew->dtype = DTascii;
 			return(dnew);
 		}
 						/* else open it ourselves */
