@@ -36,8 +36,7 @@ cm_bsdf(const COLOR diffBSDF, const SDMat *bsdf)
 				setcolor(mp, .0f, .0f, .0f);
 			} else if (bsdf->chroma != NULL) {
 				C_COLOR	cxy;
-				c_decodeChroma(&cxy,
-					bsdf->chroma[r*bsdf->ninc + c]);
+				c_decodeChroma(&cxy, mBSDF_chroma(bsdf,c,r));
 				ccy2rgb(&cxy, f, mp);
 			} else
 				setcolor(mp, f, f, f);
@@ -103,8 +102,7 @@ cm_bsdf_recip(const COLOR diffBSDF, const SDMat *bsdf)
 				setcolor(mp, .0f, .0f, .0f);
 			} else if (bsdf->chroma != NULL) {
 				C_COLOR	cxy;
-				c_decodeChroma(&cxy,
-					bsdf->chroma[ro*bsdf->ninc + ri]);
+				c_decodeChroma(&cxy, mBSDF_chroma(bsdf,ri,ro));
 				ccy2rgb(&cxy, f, mp);
 			} else
 				setcolor(mp, f, f, f);
