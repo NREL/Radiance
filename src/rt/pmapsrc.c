@@ -10,8 +10,7 @@ static const char RCSid[] = "$Id$";
    (c) Lucerne University of Applied Sciences and Arts,
    supported by the Swiss National Science Foundation (SNSF, #147053)
    ==================================================================
-   
-   $Id$
+ 
 */
 
 

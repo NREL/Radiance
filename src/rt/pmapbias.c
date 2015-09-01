@@ -13,7 +13,6 @@ static const char RCSid[] = "$Id$";
    (c) Fraunhofer Institute for Solar Energy Systems
    ==================================================================
    
-   $Id$    
 */
 
 

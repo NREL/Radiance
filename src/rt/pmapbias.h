@@ -11,7 +11,6 @@
    (c) Fraunhofer Institute for Solar Energy Systems
    ==================================================================
       
-   $Id$
 */
 
 
