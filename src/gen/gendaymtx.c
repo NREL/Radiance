@@ -395,6 +395,11 @@ main(int argc, char *argv[])
 		case '5':			/* 5-phase calculation */
 			nsuns = 1;
 			fixed_sun_sa = PI/360.*atof(argv[++i]);
+			if (fixed_sun_sa <= 0) {
+				fprintf(stderr, "%s: missing solar disk size argument for '-5' option\n",
+						argv[0]);
+				exit(1);
+			}
 			fixed_sun_sa *= fixed_sun_sa*PI;
 			break;
 		default:
