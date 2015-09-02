@@ -293,7 +293,7 @@ rc3.o:	../common/selcall.h
 
 ambient.o: pmapparm.h pmaptype.h pmapamb.h pmapdata.h
 
-dielectric.o glass.o normal.o: \
+aniso.o ashikhmin.o dielectric.o glass.o m_brdf.o m_bsdf.o normal.o: \
    pmapparm.h pmaptype.h pmapmat.h pmap.h pmapdata.h
    
 raycalls.o rpmain.o rcmain.o rtmain.o rvmain.o: \

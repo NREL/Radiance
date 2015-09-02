@@ -14,6 +14,7 @@ static const char RCSid[] = "$Id$";
 #include  "source.h"
 #include  "func.h"
 #include  "random.h"
+#include  "pmapmat.h"
 
 #ifndef  MAXITER
 #define  MAXITER	10		/* maximum # specular ray attempts */
@@ -92,7 +93,7 @@ dirashik(		/* compute source contribution */
 	scalecolor(ctmp, dtmp);		
 	addcolor(cval, ctmp);
 
-	if (!(np->specfl & SPA_REFL))
+	if (!(np->specfl & SPA_REFL) || ambRayInPmap(np->rp))
 		return;
 	/*
 	 *  Compute specular reflection coefficient

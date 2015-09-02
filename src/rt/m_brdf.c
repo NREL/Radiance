@@ -14,6 +14,7 @@ static const char	RCSid[] = "$Id$";
 #include  "otypes.h"
 #include  "rtotypes.h"
 #include  "func.h"
+#include  "pmapmat.h"
 
 /*
  *	Arguments to this material include the color and specularity.
@@ -127,7 +128,8 @@ dirbrdf(		/* compute source contribution */
 		scalecolor(ctmp, dtmp);
 		addcolor(cval, ctmp);
 	}
-	if (ldot > 0.0 ? np->rspec <= FTINY : np->tspec <= FTINY)
+	if ((ldot > 0.0 ? np->rspec <= FTINY : np->tspec <= FTINY) ||
+			ambRayInPmap(np->pr))
 		return;		/* diffuse only */
 					/* set up function */
 	setbrdfunc(np);

@@ -13,6 +13,7 @@ static const char RCSid[] = "$Id$";
 #include  "func.h"
 #include  "bsdf.h"
 #include  "random.h"
+#include  "pmapmat.h"
 
 /*
  *	Arguments to this material include optional diffuse colors.
@@ -200,6 +201,8 @@ dir_bsdf(
 		scalecolor(ctmp, dtmp);
 		addcolor(cval, ctmp);
 	}
+	if (ambRayInPmap(np->pr))
+		return;		/* specular already in photon map */
 	/*
 	 *  Compute scattering coefficient using BSDF.
 	 */
@@ -255,6 +258,8 @@ dir_brdf(
 		scalecolor(ctmp, dtmp);
 		addcolor(cval, ctmp);
 	}
+	if (ambRayInPmap(np->pr))
+		return;		/* specular already in photon map */
 	/*
 	 *  Compute reflection coefficient using BSDF.
 	 */
@@ -304,6 +309,8 @@ dir_btdf(
 		scalecolor(ctmp, dtmp);
 		addcolor(cval, ctmp);
 	}
+	if (ambRayInPmap(np->pr))
+		return;		/* specular already in photon map */
 	/*
 	 *  Compute scattering coefficient using BSDF.
 	 */
