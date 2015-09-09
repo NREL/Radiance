@@ -364,11 +364,13 @@ void findPhotons (PhotonMap* pmap, const RAY* ray)
          nearestNeighbours(pmap, pos, norm, 1);
       }
 
+#ifdef PMAP_ITSYBITSY
       if (pmap -> maxDist < FTINY) {
          sprintf(errmsg, "itsy bitsy teeny weeny photon search radius %e",
                  sqrt(pmap -> maxDist));
          error(WARNING, errmsg);
       }
+#endif
 
       if (pmap -> squeueEnd < pmap -> squeueSize * pmap -> gatherTolerance) {
          /* Short lookup; too few photons found */
