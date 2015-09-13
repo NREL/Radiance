@@ -685,7 +685,7 @@ sample_origin(PARAMS *p, FVECT orig, const FVECT rdir, double x)
 					/* special case for lone surface */
 	if (p->nsurfs == 1) {
 		sp = p->slist;
-		if (DOT(sp->snrm, rdir) >= -FTINY) {
+		if (DOT(sp->snrm, rdir) >= FTINY) {
 			fprintf(stderr,
 				"%s: internal - sample behind sender '%s'\n",
 					progname, sp->sname);
