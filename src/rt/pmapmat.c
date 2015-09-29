@@ -1250,8 +1250,19 @@ static int mx_dataPhotonScatter (OBJREC *mat, RAY *rayIn)
    if (errno) 
       objerror(mat, WARNING, "compute error");
    else {
-      mat = objptr(mod [pmapRandom(rouletteState) < coef ? 0 : 1]);
-      photonScatter [mat -> otype] (mat, rayIn);
+      OBJECT mxMod = mod [pmapRandom(rouletteState) < coef ? 0 : 1];
+      
+      if (mxMod != OVOID) {
+         mat = objptr(mxMod);
+         photonScatter [mat -> otype] (mat, rayIn);
+      }
+      else {
+         /* Transfer ray if no modifier */
+         RAY rayOut;
+         
+         photonRay(rayIn, &rayOut, PMAP_XFER, NULL);
+         tracePhoton(&rayOut);      
+      }            
    }
    
    return 0;
@@ -1303,8 +1314,19 @@ static int mx_pdataPhotonScatter (OBJREC *mat, RAY *rayIn)
    if (errno) 
       objerror(mat, WARNING, "compute error");
    else {
-      mat = objptr(mod [pmapRandom(rouletteState) < coef ? 0 : 1]);
-      photonScatter [mat -> otype] (mat, rayIn);
+      OBJECT mxMod = mod [pmapRandom(rouletteState) < coef ? 0 : 1];
+      
+      if (mxMod != OVOID) {
+         mat = objptr(mxMod);
+         photonScatter [mat -> otype] (mat, rayIn);
+      }
+      else {
+         /* Transfer ray if no modifier */
+         RAY rayOut;
+         
+         photonRay(rayIn, &rayOut, PMAP_XFER, NULL);
+         tracePhoton(&rayOut);      
+      }      
    }   
    
    return 0;
@@ -1343,8 +1365,19 @@ static int mx_funcPhotonScatter (OBJREC *mat, RAY *rayIn)
    if (errno) 
       objerror(mat, WARNING, "compute error");
    else {         
-      mat = objptr(mod [pmapRandom(rouletteState) < coef ? 0 : 1]);
-      photonScatter [mat -> otype] (mat, rayIn);
+      OBJECT mxMod = mod [pmapRandom(rouletteState) < coef ? 0 : 1];
+      
+      if (mxMod != OVOID) {
+         mat = objptr(mxMod);
+         photonScatter [mat -> otype] (mat, rayIn);
+      }
+      else {
+         /* Transfer ray if no modifier */
+         RAY rayOut;
+         
+         photonRay(rayIn, &rayOut, PMAP_XFER, NULL);
+         tracePhoton(&rayOut);      
+      }
    }
    
    return 0;
