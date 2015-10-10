@@ -215,13 +215,13 @@ computesky(void)			/* compute sky parameters */
 		printf("# Solar altitude and azimuth: %.1f %.1f\n",
 				180./PI*altitude, 180./PI*azimuth);
 	}
-	if (!overcast && altitude > 87.*PI/180.) {
+	if (!overcast && altitude > 89.999*PI/180.) {
 		fprintf(stderr,
-"%s: warning - sun too close to zenith, reducing altitude to 87 degrees\n",
+"%s: warning - sun too close to zenith, reducing altitude to 89.999 degrees\n",
 				progname);
 		printf(
-"# warning - sun too close to zenith, reducing altitude to 87 degrees\n");
-		altitude = 87.*PI/180.;
+"# warning - sun too close to zenith, reducing altitude to 89.999 degrees\n");
+		altitude = 89.999*PI/180.;
 	}
 	sundir[0] = -sin(azimuth)*cos(altitude);
 	sundir[1] = -cos(azimuth)*cos(altitude);
