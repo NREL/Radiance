@@ -60,7 +60,7 @@ install(TARGETS meta2tga pexpand psort cv psmeta plotin bgraph igraph dgraph
                 gcomp plot4 meta2bmp
         RUNTIME DESTINATION bin)
 
-add_custom_target(mta 
+add_custom_target(mta ALL
   COMMAND cv "${CMAKE_CURRENT_SOURCE_DIR}/symbols.met" > "${CMAKE_CURRENT_BINARY_DIR}/symbols.mta"
   COMMAND cv "${CMAKE_CURRENT_SOURCE_DIR}/vchars.met" > "${CMAKE_CURRENT_BINARY_DIR}/vchars.mta"
   SOURCES symbols.met vchars.met
