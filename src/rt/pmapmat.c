@@ -978,8 +978,11 @@ static int aliasPhotonScatter (OBJREC *mat, RAY *rayIn)
    
    /* Straight replacement? */
    if (!mat -> oargs.nsargs) {
-      mat = objptr(mat -> omod);
-      photonScatter [mat -> otype] (mat, rayIn);
+      /* Skip void modifier! */
+      if (mat -> omod != OVOID) {
+         mat = objptr(mat -> omod);
+         photonScatter [mat -> otype] (mat, rayIn);
+      }
       
       return 0;
    }
