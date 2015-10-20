@@ -171,7 +171,7 @@ PhotonMapType loadPhotonMap (PhotonMap *pmap, const char *fname)
    
    /* Identify photon map type from format string */
    for (ptype = 0; 
-        strcmp(pmapFormat [ptype], format) && ptype < NUM_PMAP_TYPES;
+        ptype < NUM_PMAP_TYPES && strcmp(pmapFormat [ptype], format);
         ptype++);
       
    if (!validPmapType(ptype)) {
