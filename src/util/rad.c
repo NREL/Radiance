@@ -807,6 +807,7 @@ renderopts(			/* set rendering options */
 	char	pmapf[256], *bw;
 
 	if (vdef(PGMAP)) {
+		*op = '\0';
 		bw = sskip2(vval(PGMAP), 2);
 		atos(pmapf, sizeof(pmapf), vval(PGMAP));
 		op = addarg(addarg(op, "-ap"), pmapf);
