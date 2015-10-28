@@ -1345,7 +1345,7 @@ getview(				/* get view n, or NULL if none */
 	}
 numview:
 	mv = nvalue(VIEWS, n);		/* use view n */
-	if ((vn != NULL) & (mv != NULL))
+	if ((vn != NULL) & (mv != NULL)) {
 		if (*mv != '-') {
 			char	*mv2 = mv;
 			while (*mv2 && !isspace(*mv2))
@@ -1353,7 +1353,7 @@ numview:
 			*vn = '\0';
 		} else
 			sprintf(vn, "%d", n+1);
-
+	}
 	return(specview(mv));
 }
 
@@ -1521,6 +1521,7 @@ rpict(				/* run rpict and pfilt for each view */
 				fprintf(stderr, "%s: cannot create\n", pfile);
 				quit(1);
 			}
+			pfile[-5] = '\0';
 			pfile = NULL;
 		}
 	}
