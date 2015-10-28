@@ -85,7 +85,7 @@ m_dielectric(	/* color a ray which hit a dielectric interface */
 
 	/* PMAP: skip refracted shadow or ambient ray if accounted for in
 	   photon map */
-	if (shadowRayInPmap(r))
+	if (shadowRayInPmap(r) || ambRayInPmap(r))
 		return(1);
 	
 	if (m->oargs.nfargs != (m->otype==MAT_DIELECTRIC ? 5 : 8))

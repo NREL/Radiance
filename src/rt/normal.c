@@ -190,7 +190,7 @@ m_normal(			/* color a ray that hit something normal */
 	int  i;
 
 	/* PMAP: skip transmitted shadow ray if accounted for in photon map */
-	if (shadowRayInPmap(r))
+	if (shadowRayInPmap(r) || ambRayInPmap(r))
 		return(1);
 						/* easy shadow test */
 	if (r->crtype & SHADOW && m->otype != MAT_TRANS)
