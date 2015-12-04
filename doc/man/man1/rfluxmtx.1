@@ -121,8 +121,10 @@ grid over the square.
 Orient the "up" direction for the hemisphere using the indicated axis or direction
 vector.
 .TP
-.BI o =output.mtx
-Send the matrix data for this receiver to the indicated output file.
+.BI o =output_spec
+Send the matrix data for this receiver to the indicated file or command.
+Single or double quotes may be used to contain strings with spaces, and
+commands must begin with an exclamation mark ('!').
 The file format will be determined by the command-line
 .I \-fio
 option and will include an information header unless the

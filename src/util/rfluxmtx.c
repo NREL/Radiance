@@ -329,6 +329,7 @@ parse_params(PARAMS *p, char *pargs)
 {
 	char	*cp = pargs;
 	int	nparams = 0;
+	int	quot;
 	int	i;
 
 	for ( ; ; ) {
@@ -365,14 +366,23 @@ parse_params(PARAMS *p, char *pargs)
 		case 'o':
 			if (*cp++ != '=')
 				break;
+			quot = 0;
+			if ((*cp == '"') | (*cp == '\''))
+				quot = *cp++;
 			i = 0;
-			while (*cp && !isspace(*cp++))
-				i++;
+			while (*cp && (quot ? (*cp != quot) : !isspace(*cp))) {
+				i++; cp++;
+			}
 			if (!i)
 				break;
-			*--cp = '\0';
+			if (!*cp) {
+				if (quot)
+					break;
+				cp[1] = '\0';
+			}
+			*cp = '\0';
 			p->outfn = savqstr(cp-i);
-			*cp++ = ' ';
+			*cp++ = quot ? quot : ' ';
 			++nparams;
 			continue;
 		case ' ':
