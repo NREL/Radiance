@@ -27,11 +27,9 @@ readIOdir(FVECT idir, FVECT odir, FILE *fp, int fmt)
 
 	switch (fmt) {
 	case 'a':
-		if (fscanf(fp, FVFORMAT, dvec, dvec+1, dvec+2) != 3 ||
-				fscanf(fp, FVFORMAT, dvec+3, dvec+4, dvec+5) != 3)
+		if (fscanf(fp, FVFORMAT, &idir[0], &idir[1], &idir[2]) != 3 ||
+				fscanf(fp, FVFORMAT, &odir[0], &odir[1], &odir[2]) != 3)
 			return(0);
-		VCOPY(idir, dvec);
-		VCOPY(odir, dvec+3);
 		break;
 	case 'd':
 		if (fread(dvec, sizeof(double), 6, fp) != 6)
