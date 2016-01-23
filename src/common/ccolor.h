@@ -49,6 +49,7 @@ typedef unsigned short	C_CHROMA;	/* encoded (x,y) chromaticity */
 						/ (double)(c)->ssum)
 
 extern const C_COLOR	c_dfcolor;		/* default color */
+extern const C_CHROMA	c_dfchroma;		/* c_encodeChroma(&c_dfcolor) */
 
 extern const C_COLOR	c_x31, c_y31, c_z31;	/* 1931 standard observer */
 
