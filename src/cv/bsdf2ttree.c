@@ -19,9 +19,9 @@ static const char RCSid[] = "$Id$";
 				/* global argv[0] */
 char			*progname;
 				/* percentage to cull (<0 to turn off) */
-double			pctcull = 90.;
+static double		pctcull = 90.;
 				/* sampling order */
-int			samp_order = 6;
+static int		samp_order = 6;
 				/* super-sampling threshold */
 const double		ssamp_thresh = 0.35;
 				/* number of super-samples */
