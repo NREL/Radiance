@@ -101,7 +101,7 @@ extern unsigned long	bsdf_hist[HISTLEN];
 
 				/* BSDF value for boundary regions */
 extern double		bsdf_min;
-extern double		bsdf_spec_peak;
+extern double		bsdf_spec_val;
 extern double		bsdf_spec_rad;
 
 				/* processed incident DSF measurements */
