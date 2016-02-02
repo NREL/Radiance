@@ -14,7 +14,7 @@ static const char RCSid[] = "$Id$";
 
 #include "platform.h"
 #include "rtio.h"
-#include "rtprocess.h"
+#include "paths.h"
 #include "fvect.h"
 
 #ifdef  M_PI

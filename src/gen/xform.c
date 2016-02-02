@@ -13,7 +13,6 @@ static const char RCSid[] = "$Id$";
 
 #include  "platform.h"
 #include  "paths.h"
-#include  "rtprocess.h" /* win_popen() */
 #include  "rtio.h"
 #include  "rtmath.h"
 #include  "object.h"

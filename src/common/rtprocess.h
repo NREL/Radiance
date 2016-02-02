@@ -9,32 +9,12 @@
 #define _RAD_PROCESS_H_
 
 #include  <errno.h>
+#include <stdio.h>
 #ifdef _WIN32
   #include <windows.h> /* DWORD etc. */
-  #include <stdio.h>
   typedef DWORD RT_PID;
   #include <process.h> /* getpid() and others */
-  #define nice(inc) win_nice(inc)
-
-  #ifdef __cplusplus
-  extern "C" {
-  #endif
-  extern FILE *win_popen(char *command, char *type);
-  extern int win_pclose(FILE *p);
-  int win_kill(RT_PID pid, int sig /* ignored */);
-  #define kill(pid,sig) win_kill(pid,sig)
-  #ifdef __cplusplus
-  }
-  #endif
-  #ifdef _MSC_VER
-    #define popen(cmd,mode) _popen(cmd,mode)
-    #define pclose(p) _pclose(p)
-  #else
-    #define popen(cmd,mode) win_popen(cmd,mode)
-    #define pclose(p) win_pclose(p)
-  #endif
 #else
-  #include <stdio.h>
   #include <sys/param.h>
   #include <sys/types.h>
   typedef pid_t RT_PID;

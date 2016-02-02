@@ -9,7 +9,7 @@ static const char RCSid[] = "$Id$";
 
 #include <ctype.h>
 #include "rtio.h"
-#include "rtprocess.h"
+#include "paths.h"
 #include "ezxml.h"
 #include "bsdf.h"
 #include "bsdf_m.h"

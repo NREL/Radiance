@@ -8,7 +8,7 @@ static const char	RCSid[] = "$Id$";
 
 #include "platform.h"
 #include "paths.h"
-#include "rtprocess.h"
+#include "paths.h"
 #include "pcond.h"
 
 
