@@ -201,10 +201,8 @@ convert_commandline(char *cmd, const int len, char *av[])
 
 	for (cp = cmd; *av != NULL; av++) {
 		const int	n = strlen(*av);
-		if (cp+n >= cmd+(len-3)) {
-			fputs(progname, stderr);
+		if (cp+n >= cmd+(len-3))
 			return(NULL);
-		}
 		if (matchany(*av, SPECIALS)) {
 			const int	quote =
 #ifdef ALTQUOT
