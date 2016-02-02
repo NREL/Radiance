@@ -1,3 +1,6 @@
+#ifndef lint
+static const char RCSid[] = "$Id$";
+#endif
 /*
  *  Convert a set of arguments into a command line for pipe() or system()
  *
