@@ -82,6 +82,8 @@ struct s_dfile {
 
 int		ndataf = 0;		/* number of data files */
 
+int		unlink_datafiles = 0;	/* unlink data files when done */
+
 const char	*spectr_file[MAXFILES];	/* custom spectral curve input */
 
 const char	top_level_name[] = "WindowElement";
@@ -604,7 +606,14 @@ writeBSDF(const char *caller, ezxml_t fl)
 	fputs(xml+ei, stdout);			/* write trailer */
 	free(xml);				/* free string */
 	fputc('\n', stdout);
-	return (fflush(stdout) == 0);
+	if (fflush(stdout) != 0)
+		return 0;
+						/* unlink data files if req. */
+	for (i = ndataf*(unlink_datafiles != 0); i--; )
+		if (data_file[i].fname != stdin_name &&
+				data_file[i].fname[0] != '!')
+			unlink(data_file[i].fname);
+	return 1;
 }
 
 /* Insert BSDF data into XML wrapper */
@@ -767,6 +776,9 @@ main(int argc, char *argv[])
 				return 1;
 			}
 			attr_unit = argv[i];
+			continue;
+		case 'U':		/* unlink data files when done */
+			unlink_datafiles = 1;
 			continue;
 		case 'a':		/* angle basis */
 			if (++i >= argc)
