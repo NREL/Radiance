@@ -137,8 +137,8 @@ add_bsdf_data(double theta_out, double phi_out, const double val[], int isDSF)
 	dsf_grid[pos[0]][pos[1]].sum.n++;
 					/* add in X and Z values */
 	if (rbf_colorimetry == RBCtristimulus) {
-		spec_grid[0][pos[0]][pos[1]] += val[0];
-		spec_grid[1][pos[0]][pos[1]] += val[2];
+		spec_grid[0][pos[0]][pos[1]] += cfact * val[0];
+		spec_grid[1][pos[0]][pos[1]] += cfact * val[2];
 	}
 }
 
