@@ -65,6 +65,7 @@ extern int writebuf(int fd, char *bpos, int siz);
 
 #ifdef _WIN32
 /* any non-negative increment will send the process to IDLE_PRIORITY_CLASS. */
+extern int win_kill(RT_PID pid, int sig /* ignored */);
 extern int win_nice(int inc);
 #endif
 
