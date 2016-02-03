@@ -613,6 +613,10 @@ writeBSDF(const char *caller, ezxml_t fl)
 		if (data_file[i].fname != stdin_name &&
 				data_file[i].fname[0] != '!')
 			unlink(data_file[i].fname);
+	if (unlink_datafiles > 1 && mgf_geometry != NULL &&
+			mgf_geometry != stdin_name &&
+			mgf_geometry[0] != '!')
+		unlink(mgf_geometry);
 	return 1;
 }
 
@@ -778,7 +782,7 @@ main(int argc, char *argv[])
 			attr_unit = argv[i];
 			continue;
 		case 'U':		/* unlink data files when done */
-			unlink_datafiles = 1;
+			unlink_datafiles = 1 + (argv[i][2] == 'U');
 			continue;
 		case 'a':		/* angle basis */
 			if (++i >= argc)
