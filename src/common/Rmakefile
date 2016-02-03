@@ -87,6 +87,9 @@ getlibpath.o:	getlibpath.c
 tmapcolrs.o:	tmapcolrs.c
 	$(CC) $(CFLAGS) -DPCOND=\"pcond\" -c tmapcolrs.c
 
+testBSDF:	testBSDF.c bsdf.h rtio.h
+	$(CC) -L../lib $(CFLAGS) -o testBSDF testBSDF.c -lrtrad -lm
+
 color.o colrops.o lamps.o spec_rgb.o:	color.h
 
 cone.o:		cone.h
