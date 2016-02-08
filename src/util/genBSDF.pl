@@ -223,7 +223,7 @@ if ( $tensortree ) {
 }
 # Output XML
 # print STDERR "Running: $wrapper\n";
-system "$wrapper -C 'Created by: genBSDF @savedARGV'";
+system "$wrapper -C \"Created by: genBSDF @savedARGV\"";
 die "Could not wrap BSDF data\n" if ( $? );
 # Clean up temporary files and exit
 exec $rmtmp;
