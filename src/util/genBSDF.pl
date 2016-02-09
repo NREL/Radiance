@@ -39,7 +39,7 @@ if ($windoz) {
 	$tbz = "$td\\tbz.dat";
 	$rbz = "$td\\rbz.dat";
 	chomp $td;
-	$rmtmp = "rmdir /S /Q $td";
+	$rmtmp = "rd /S /Q $td";
 } else {
 	$td = mkdtemp("/tmp/genBSDF.XXXXXX");
 	chomp $td;
