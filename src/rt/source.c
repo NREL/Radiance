@@ -12,8 +12,8 @@ static const char RCSid[] = "$Id$";
 #include  "rtotypes.h"
 #include  "source.h"
 #include  "random.h"
-#include  "pmap.h"
 #include  "pmapsrc.h"
+#include  "pmapmat.h"
 
 #ifndef MAXSSAMP
 #define MAXSSAMP	16		/* maximum samples per ray */
@@ -683,10 +683,14 @@ weaksrcmat(OBJECT obj)		/* identify material */
  * The same is true for stray specular samples, since the specular
  * contribution from light sources is calculated separately.
  */
-
-#define  badcomponent(m, r)	(r->crtype&(AMBIENT|SPECULAR) && \
+/* PMAP: Also avoid counting sources via transferred ambient rays (e.g.
+ * through glass) when photon mapping is enabled, as these indirect
+ * components are already accounted for. 
+ */
+#define  badcomponent(m, r)   (srcRayInPmap(r) || \
+				(r->crtype&(AMBIENT|SPECULAR) && \
 				!(r->crtype&SHADOW || r->rod < 0.0 || \
-		/* not 100% correct */	distglow(m, r, r->rot)))
+		/* not 100% correct */	distglow(m, r, r->rot))))
 
 /* passillum *
  *
