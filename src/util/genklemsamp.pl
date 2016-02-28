@@ -76,7 +76,7 @@ if ($windoz) {
 			"-e \"and(a,b):if(a,b,a);sq(x):x*x\" -e \"$vwset\" " .
 			q{-e "nOK=sq(Vdx*$5+Vdy*$6+Vdz*$7)-.999" } .
 			" > $td\\origins.txt";
-	$rmtmp = "rmdir /S /Q $td";
+	$rmtmp = "rd /S /Q $td";
 } else {
 	$td = mkdtemp("/tmp/genklemsamp.XXXXXX");
 	chomp $td;
