@@ -67,6 +67,25 @@ putflt(				/* put out floating point number */
 }
 
 
+int
+putbinary(			/* fwrite() replacement for small objects */
+	char *s,
+	int elsiz,
+	int nel,
+	FILE *fp)
+{
+	int	nbytes = elsiz*nel;
+
+	if (nbytes > 512)
+		return(fwrite(s, elsiz, nel, fp));
+	
+	while (nbytes-- > 0)
+		putc(*s++, fp);
+
+	return(nel);
+}
+
+
 char *
 getstr(				/* get null-terminated string */
 	char  *s,
@@ -124,4 +143,26 @@ getflt(				/* get a floating point number */
 	}
 	d = (l + (l > 0 ? .5 : -.5)) * (1./0x7fffffff);
 	return(ldexp(d, (int)getint(1, fp)));
+}
+
+
+int
+getbinary(			/* fread() replacement for small objects */
+	char *s,
+	int elsiz,
+	int nel,
+	FILE *fp)
+{
+	int	nbytes = elsiz*nel;
+	int	c;
+
+	if (nbytes > 512)
+		return(fread(s, elsiz, nel, fp));
+	
+	while (nbytes-- > 0) {
+		if ((c = getc(fp)) == EOF)
+			return((elsiz*nel - nbytes)/elsiz);
+		*s++ = c;
+	}
+	return(nel);
 }

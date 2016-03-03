@@ -34,7 +34,7 @@ extern FILE	*frlibopen(char *fname);
 					/* defined in getlibpath.c */
 extern char	*getrlibpath(void);
 					/* defined in gethomedir.c */
-extern char *gethomedir(char *uname, char *path, int plen);
+extern char	*gethomedir(char *uname, char *path, int plen);
 					/* defined in getpath.c */
 extern char	*getpath(char *fname, char *searchpath, int mode);
 					/* defined in byteswap.c */
@@ -45,9 +45,11 @@ extern void	swap64(char *wp, int n);
 extern void	putstr(char *s, FILE *fp);
 extern void	putint(long i, int siz, FILE *fp);
 extern void	putflt(double f, FILE *fp);
+extern int	putbinary(char *s, int elsiz, int nel, FILE *fp);
 extern char	*getstr(char *s, FILE *fp);
 extern long	getint(int siz, FILE *fp);
 extern double	getflt(FILE *fp);
+extern int	getbinary(char *s, int elsiz, int nel, FILE *fp);
 					/* defined in rexpr.c */
 extern int	ecompile(char *sp, int iflg, int wflag);
 extern char	*expsave(void);
