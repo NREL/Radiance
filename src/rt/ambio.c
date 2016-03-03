@@ -64,7 +64,7 @@ writambval(			/* write ambient value to stream */
 	putint(av->udir, sizeof(av->udir), fp);
 	setcolr(clr, colval(av->val,RED),
 			colval(av->val,GRN), colval(av->val,BLU));
-	fwrite((char *)clr, sizeof(clr), 1, fp);
+	putbinary((char *)clr, sizeof(clr), 1, fp);
 	putv2(av->rad, fp);
 	putv2(av->gpos, fp);
 	putv2(av->gdir, fp);
@@ -112,7 +112,7 @@ readambval(			/* read ambient value from stream */
 	getpos(av->pos, fp);
 	av->ndir = getint(sizeof(av->ndir), fp);
 	av->udir = getint(sizeof(av->udir), fp);
-	if (fread((char *)clr, sizeof(clr), 1, fp) != 1)
+	if (getbinary((char *)clr, sizeof(clr), 1, fp) != 1)
 		return(0);
 	colr_color(av->val, clr);
 	getv2(av->rad, fp);
@@ -144,7 +144,7 @@ FILE  *fp;
 	putvec(av->dir, fp);
 	setcolr(clr, colval(av->val,RED),
 			colval(av->val,GRN), colval(av->val,BLU));
-	fwrite((char *)clr, sizeof(clr), 1, fp);
+	putbinary((char *)clr, sizeof(clr), 1, fp);
 	putflt(av->rad, fp);
 	putvec(av->gpos, fp);
 	putvec(av->gdir, fp);
@@ -190,7 +190,7 @@ FILE  *fp;
 	av->weight = getflt(fp);
 	getvec(av->pos, fp);
 	getvec(av->dir, fp);
-	if (fread((char *)clr, sizeof(clr), 1, fp) != 1)
+	if (getbinary((char *)clr, sizeof(clr), 1, fp) != 1)
 		return(0);
 	colr_color(av->val, clr);
 	av->rad = getflt(fp);
