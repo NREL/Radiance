@@ -11,6 +11,13 @@
 #include  <fcntl.h>
 #include  <string.h>
 
+#ifdef getc_unlocked		/* avoid horrendous overhead of flockfile */
+#undef getc
+#undef putc
+#define getc    getc_unlocked
+#define putc    putc_unlocked
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

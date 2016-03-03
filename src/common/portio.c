@@ -13,13 +13,6 @@ static const char	RCSid[] = "$Id$";
 
 #include <math.h>
 
-#ifdef getc_unlocked		/* avoid horrendous overhead of flockfile */
-#undef getc
-#undef putc
-#define getc    getc_unlocked
-#define putc    putc_unlocked
-#endif
-
 
 void
 putstr(				/* write null-terminated string to fp */
