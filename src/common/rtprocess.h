@@ -57,8 +57,10 @@ typedef struct {
 
 #define SP_INACTIVE {-1,-1,0,0} /* for static initializations */
 
+#define close_process(pd)	close_processes(pd,1)
+
 extern int open_process(SUBPROC *pd, char *av[]);
-extern int close_process(SUBPROC *pd);
+extern int close_processes(SUBPROC pd[], int nproc);
 extern int process(SUBPROC *pd, char *recvbuf, char *sendbuf, int nbr, int nbs);
 extern int readbuf(int fd, char *bpos, int siz);
 extern int writebuf(int fd, char *bpos, int siz);

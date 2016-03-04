@@ -184,7 +184,7 @@ onsig(				/* fatal signal */
 		hdsync(NULL, 0);	/* don't leave w/o saying goodbye */
 		_exit(signo);
 	}
-	alarm(600);			/* allow 10 minutes to clean up */
+	alarm(300);			/* allow 10 minutes to clean up */
 	eputs("signal - ");
 	eputs(sigerr[signo]);
 	eputs("\n");

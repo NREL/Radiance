@@ -324,11 +324,8 @@ end_rtrace(void)			/* close rtrace process(es) */
 
 	if (nprocs > 1)
 		killpersist();
-	while (nprocs > 0) {
-		rv = close_process(&rtpd[--nprocs]);
-		if (rv > 0)
-			status = rv;
-	}
+	status = close_processes(rtpd, nprocs);
+	nprocs = 0;
 	free((void *)rtbuf);
 	rtbuf = NULL;
 	maxqlen = 0;
