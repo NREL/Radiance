@@ -14,11 +14,6 @@ static const char RCSid[] = "$Id$";
 #include  "mesh.h"
 #include  "resolu.h"
 
-#ifdef getc_unlocked		/* avoid horrendous overhead of flockfile */
-#undef getc
-#define getc    getc_unlocked
-#endif
-
 static char	*meshfn;	/* input file name */
 static FILE	*meshfp;	/* mesh file pointer */
 static int	objsize;	/* sizeof(OBJECT) from writer */

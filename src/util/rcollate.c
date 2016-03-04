@@ -20,13 +20,6 @@ static const char RCSid[] = "$Id$";
 #include <sys/mman.h>
 #endif
 
-#ifdef getc_unlocked            /* avoid horrendous overhead of flockfile */
-#undef getc
-#undef putc
-#define getc    getc_unlocked
-#define putc    putc_unlocked
-#endif
-
 typedef struct {
 	void	*base;		/* pointer to base memory */
 	size_t	len;		/* allocated memory length */

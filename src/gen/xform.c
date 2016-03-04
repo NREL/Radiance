@@ -18,11 +18,6 @@ static const char RCSid[] = "$Id$";
 #include  "object.h"
 #include  "otypes.h"
 
-#ifdef getc_unlocked		/* avoid horrendous overhead of flockfile */
-#undef getc
-#define getc    getc_unlocked
-#endif
-
 int  xac;				/* global xform argument count */
 char  **xav;				/* global xform argument pointer */
 int  xfa;				/* start of xf arguments */

@@ -18,11 +18,6 @@ static const char RCSid[] = "$Id$";
 #include "triangulate.h"
 #include "platform.h"
 
-#ifdef getc_unlocked		/* avoid horrendous overhead of flockfile */
-#undef getc
-#define getc    getc_unlocked
-#endif
-
 #define MAXRCARG	512
 
 char		*progname;		/* global argv[0] */

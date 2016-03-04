@@ -18,11 +18,6 @@ static const char	RCSid[] = "$Id$";
 #include  "otypes.h"
 #include  "resolu.h"
 
-#ifdef getc_unlocked		/* avoid horrendous overhead of flockfile */
-#undef getc
-#define getc    getc_unlocked
-#endif
-
 static double  ogetflt(void);
 static long  ogetint(int);
 static char  *ogetstr(char *);
