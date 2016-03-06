@@ -49,7 +49,7 @@ addpserver(
 		register int	len;
 
 		strcpy(ourhost, myhostname());
-		getcwd(dirtmp, sizeof(dirtmp));
+		_getcwd(dirtmp, sizeof(dirtmp));
 		if ((cp = getenv("HOME")) != NULL) {
 			if (!strcmp(cp, dirtmp))
 				ourdir[0] = '\0';

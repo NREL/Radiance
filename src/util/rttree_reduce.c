@@ -44,6 +44,7 @@ double	tthresh;		/* acceptance threshold (TBD) */
 static void
 new_kids(TNODE *pn)
 {
+	/* XXX VC warns about 32 bit shift coerced to 64 bit */
 	pn->kid = (TNODE *)calloc(1<<ttrank, sizeof(TNODE));
 	if (pn->kid == NULL)
 		error(SYSTEM, "out of memory in new_kids");
@@ -276,6 +277,7 @@ load_data(void)
 		error(COMMAND, "unsupported input format");
 		break;
 	}
+	/* XXX VC warns about 32 bit shift coerced to 64 bit */
 	datarr = (float *)calloc(1<<(log2g*ttrank), sizeof(float));
 	if (datarr == NULL)
 		error(SYSTEM, "out of memory in load_data");

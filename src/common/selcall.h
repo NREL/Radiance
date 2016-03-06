@@ -7,7 +7,7 @@
 
 #include <string.h>
 #include <sys/types.h>
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
   /*#include <winsock2.h>*/
 #else
   #include <sys/time.h>
@@ -17,7 +17,7 @@
 #endif
 
 #ifndef FD_SETSIZE
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 #else
   #include <sys/param.h>
 #endif

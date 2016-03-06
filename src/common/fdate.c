@@ -11,7 +11,7 @@ static const char	RCSid[] = "$Id$";
 
 #include  "rtio.h"
 #include  <sys/stat.h>
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
   #include  <sys/utime.h>
 #else
   #include  <utime.h>

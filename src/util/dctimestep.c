@@ -8,6 +8,7 @@ static const char RCSid[] = "$Id$";
  */
 
 #include <ctype.h>
+#include "platform.h"
 #include "standard.h"
 #include "cmatrix.h"
 #include "platform.h"

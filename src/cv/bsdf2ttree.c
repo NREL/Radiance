@@ -495,7 +495,7 @@ eval_anisotropic(char *funame)
 	}
 }
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 /* Execute wrapBSDF command (may never return) */
 static int
 wrap_up(void)

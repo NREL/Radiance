@@ -79,7 +79,7 @@ typedef struct {
 extern LUTAB		ofiletab;	/* output stream table */
 
 #ifndef MAXPROCESS
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 #define MAXPROCESS	1
 #else
 #define MAXPROCESS	128

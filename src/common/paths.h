@@ -12,9 +12,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
   #include <io.h>
   #include <direct.h> /* getcwd(), chdir(), _mkdir(), etc. */
+  #define getcwd _getcwd
+  #define chdir _chdir
 
   #define access		_access
   #define mkdir(dirname,perms)	_mkdir(dirname)
@@ -125,7 +127,7 @@
 extern "C" {
 #endif
 
-#if _WIN32
+#if defined(_WIN32) || defined(_WIN64)
   extern FILE *win_popen(char *command, char *type);
   extern int win_pclose(FILE *p);
   extern char  *fixargv0();

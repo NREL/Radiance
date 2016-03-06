@@ -296,7 +296,7 @@ unkopt:
 	}
 
 	if (reverse) {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 		SET_FILE_BINARY(stdout);
 		if (format != 'a' && format != 'i')
 			SET_FILE_BINARY(fin);
@@ -349,7 +349,7 @@ unkopt:
 		fputsresolu(&picres, stdout);	/* always put resolution */
 		valtopix();
 	} else {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 		SET_FILE_BINARY(fin);
 		if (format != 'a' && format != 'i')
 			SET_FILE_BINARY(stdout);

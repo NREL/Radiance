@@ -10,6 +10,7 @@
 #ifndef _RAD_EPLUS_IDF_H_
 #define _RAD_EPLUS_IDF_H_
 
+#include "platform.h"
 #include "lookup.h"
 
 #ifdef __cplusplus

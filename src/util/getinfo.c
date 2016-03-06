@@ -20,7 +20,7 @@ static const char	RCSid[] = "$Id$";
 #define putchar		putchar_unlocked
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 #include <process.h>
 #define	execvp	_execvp
 #endif

@@ -7,6 +7,7 @@ static const char RCSid[] = "$Id$";
  *	G. Ward		February 2015
  */
 
+#include "platform.h"
 #include <ctype.h>
 #include "rtio.h"
 #include "paths.h"
@@ -165,7 +166,8 @@ input2str(const char *inpspec)
 			fprintf(stderr, "%s: cannot open\n", inpspec);
 			return "";
 		}
-#ifndef _WIN32				/* XXX somehow broken on Windows */
+#if !defined(_WIN32) && !defined(_WIN64)
+				/* XXX somehow broken on Windows */
 		len = lseek(fd, 0L, SEEK_END);
 		if (len > 0) {
 			lseek(fd, 0L, SEEK_SET);

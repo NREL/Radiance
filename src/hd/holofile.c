@@ -42,7 +42,13 @@ static const char	RCSid[] = "$Id$";
 #endif
 
 #ifndef BSD
+#ifdef write /* platform.h renames those for Windows */
+#undef write
+#endif
 #define write	writebuf	/* safe i/o routines */
+#ifdef read
+#undef read
+#endif
 #define read	readbuf
 #endif
 

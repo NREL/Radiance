@@ -9,7 +9,7 @@
 #ifdef __APPLE__
   #include <OpenGL/glu.h>
 #else
-  #ifdef _WIN32
+  #if defined(_WIN32) || defined(_WIN64)
     #include <windows.h>
   #endif
   #include <GL/glu.h>

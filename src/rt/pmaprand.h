@@ -22,7 +22,7 @@
    russian roulette. The pmapSeed() and pmapRandom() macros can be adapted
    to other (better?) RNGs. */   
 
-#if defined(_WIN32) || defined(BSD)
+#if defined(_WIN32) || defined(_WIN64) || defined(BSD)
    /* Assume no erand48(), so use standard RNG without explicit multistate 
       control; the resulting sequences will be suboptimal */      
    #include "random.h"

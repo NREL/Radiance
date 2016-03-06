@@ -46,7 +46,7 @@ extern double	atan2a(double y, double x);
 #define  ttan(x)		(tsin(x)/tcos(x))
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 extern double	erf(double x);
 extern double	erfc(double x);
 #endif

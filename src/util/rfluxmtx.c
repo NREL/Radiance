@@ -181,7 +181,7 @@ popen_arglist(char *av[], char *mode)
 	return(popen(cmd, mode));
 }
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 /* Execute system command (Windows version) */
 static int
 my_exec(char *av[])

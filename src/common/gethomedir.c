@@ -13,7 +13,7 @@ static const char RCSid[] = "$Id$";
 
 #include "rtio.h"
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 
 char *
 gethomedir(char *uname, char *path, int plen)
@@ -41,7 +41,7 @@ gethomedir(char *uname, char *path, int plen)
 	return NULL;
 }
 	
-#else /* _WIN32 */
+#else /* _WIN32 || _WIN64 */
 
 
 #include <unistd.h>
@@ -77,5 +77,5 @@ gethomedir(char *uname, char *path, int plen)
 	return path;
 }
 
-#endif /* _WIN32 */
+#endif /* _WIN32 || _WIN64 */
 

@@ -12,11 +12,12 @@
 extern "C" {
 #endif
 
-#ifdef _WIN32		/* stupid Windows name collisions */
-#undef COORD
-#define COORD	radCOORD
-#undef RECT
-#define RECT	radRECT
+#if defined(_WIN32) || defined(_WIN64)
+  /* stupid Windows name collisions */
+  #undef COORD
+  #define COORD	radCOORD
+  #undef RECT
+  #define RECT	radRECT
 #endif
 
 typedef short  COORD;		/* an image coordinate */

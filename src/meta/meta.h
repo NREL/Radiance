@@ -55,7 +55,7 @@ extern "C" {
 #define  SPAT3  07		/* set pattern 3 */
 
 
-#ifdef  _WIN32  /* XXX */
+#if defined(_WIN32) || defined(_WIN64) /* XXX */
 #define MDIR "C:\\tmp\\" /* XXX we just need something to compile for now */
 #define TTY "CON:"   /* XXX this probably doesn't work */
 #define TDIR "C:\\tmp\\" /* XXX we just need something to compile for now */

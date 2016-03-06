@@ -286,7 +286,7 @@ main(int  argc, char  *argv[])
 #endif
 	if (outfile != NULL)
 		openheader();
-#ifdef	_WIN32
+#if defined(_WIN32) || defined(_WIN64)
 	SET_FILE_BINARY(stdout);
 	if (octname == NULL)
 		SET_FILE_BINARY(stdin);

@@ -1412,7 +1412,7 @@ static int
 rmfile(char *fn)			/* remove a file */
 {
 	if (!silent)
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 		printf("\tdel %s\n", fn);
 #else
 		printf("\trm -f %s\n", fn);

@@ -103,7 +103,7 @@ main(
 		if (read(fileno(stdin), inpbuf, 2) != 2 || inpbuf[0] != 'P')
 			quiterr("input not a Poskanzer Pixmap");
 		ptype = inpbuf[1];
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 		if (ptype > 4)
 			SET_FILE_BINARY(stdin);
 		SET_FILE_BINARY(stdout);
@@ -153,7 +153,7 @@ main(
 				quiterr("unsupported Pixmap type");
 			}
 	} else {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 		SET_FILE_BINARY(stdin);
 		if (binflag)
 			SET_FILE_BINARY(stdout);

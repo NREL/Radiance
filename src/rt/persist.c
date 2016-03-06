@@ -203,9 +203,7 @@ io_process(void)		/* just act as go-between for actual process */
 	}
 	if (nr < 0)
 		error(SYSTEM, "error reading persist file");
-#ifndef _WIN32 /* XXX we need a replacement for that one */
 	ftruncate(persistfd, (off_t)0L);	/* truncate persist file */
-#endif
 	pfdetach();			/* close & release persist file */
 	buf[nr] = '\0';			/* parse what we got */
 	if ((cp = strchr(buf, ' ')) == NULL)

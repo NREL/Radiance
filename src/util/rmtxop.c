@@ -233,7 +233,7 @@ main(int argc, char *argv[])
 					/* write result to stdout */
 	if (outfmt == DTfromHeader)
 		outfmt = mres->dtype;
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 	if (outfmt != DTascii)
 		_setmode(fileno(stdout), _O_BINARY);
 #endif

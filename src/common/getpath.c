@@ -16,7 +16,7 @@ static const char	RCSid[] = "$Id$";
 #include  "paths.h"
 
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 static char *
 core_getpath	/* wrapped below: expand fname, return full path */
 #else
@@ -82,7 +82,7 @@ getpath	/* expand fname, return full path */
 }
 
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 /* This is a wrapper around the above, "emulating" access mode X_OK,
    which is not supported on Windows.
    If we see X_OK and the filename has no extension, then we'll remove

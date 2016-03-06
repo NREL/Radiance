@@ -149,7 +149,7 @@ temp_fd(char *s, size_t len, char *templ)
 
 	ts = prepare_tmpname(s, len, templ);
 	if (ts == NULL) return -1;
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 	ts = mktemp(ts);
 	if (ts == NULL) return -1;
 	return open(ts, O_CREAT|O_EXCL, S_IRUSR|S_IWUSR);

@@ -6,9 +6,10 @@ static const char RCSid[] = "$Id$";
  * File i/o and recovery
  */
 
+#include <ctype.h>
+#include "platform.h"
 #include "rcontrib.h"
 #include "resolu.h"
-#include <ctype.h>
 
 /* Close output stream and free record */
 static void
