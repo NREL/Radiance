@@ -20,7 +20,10 @@
 
   #define access		_access
   #define mkdir(dirname,perms)	_mkdir(dirname)
-  #ifdef _MSC_VER
+  /* The windows _popen with the native shell breaks '\\\n' escapes.
+   * RT_WINPROC (used by SCons) enables our replacement functions to fix that.
+   * XXX This should really not depend on the compiler used! */
+  #if defined(_MSC_VER) && !defined(RT_WINPROC)
     #define popen(cmd,mode)	_popen(cmd,mode)
     #define pclose(p)		_pclose(p)
   #else

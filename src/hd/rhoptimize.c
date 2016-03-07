@@ -125,9 +125,15 @@ rhinitcopy(	/* open files and copy header */
 		error(SYSTEM, errmsg);
 	}
 					/* set up signal handling */
+#ifdef SIGINT
 	if (signal(SIGINT, quit) == SIG_IGN) signal(SIGINT, SIG_IGN);
+#endif
+#ifdef SIGHUP
 	if (signal(SIGHUP, quit) == SIG_IGN) signal(SIGHUP, SIG_IGN);
+#endif
+#ifdef SIGTERM
 	if (signal(SIGTERM, quit) == SIG_IGN) signal(SIGTERM, SIG_IGN);
+#endif
 #ifdef SIGXCPU
 	if (signal(SIGXCPU, quit) == SIG_IGN) signal(SIGXCPU, SIG_IGN);
 	if (signal(SIGXFSZ, quit) == SIG_IGN) signal(SIGXFSZ, SIG_IGN);
