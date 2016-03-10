@@ -131,6 +131,9 @@ m_ashikhmin(			/* shade ray that hit something anisotropic */
 	COLOR  ctmp;
 	double	fres;
 	int  i;
+#ifdef DAYSIM
+	DaysimCoef daylightCoef;
+#endif
 						/* easy shadow test */
 	if (r->crtype & SHADOW)
 		return(1);
@@ -187,7 +190,13 @@ m_ashikhmin(			/* shade ray that hit something anisotropic */
 		copycolor(ctmp, nd.mcolor);	/* modified by material color */		
 		if (nd.specfl & SPA_RBLT)	/* add in specular as well? */
 			addcolor(ctmp, nd.scolor);
+#ifndef DAYSIM
 		multambient(ctmp, r, nd.pnorm);
+#else
+		daysimSet(daylightCoef, colval(ctmp, RED));
+		multambient(ctmp, r, nd.pnorm, daylightCoef);
+		daysimAdd(r->daylightCoef, daylightCoef);
+#endif
 		addcolor(r->rcol, ctmp);	/* add to returned color */
 	}
 	direct(r, dirashik, &nd);		/* add direct component */

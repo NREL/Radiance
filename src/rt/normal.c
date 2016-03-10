@@ -66,7 +66,11 @@ typedef struct {
 	double  pdot;		/* perturbed dot product */
 }  NORMDAT;		/* normal material data */
 
+#ifdef DAYSIM
+static void gaussamp(NORMDAT  *np, DaysimCoef daylightCoef);
+#else
 static void gaussamp(NORMDAT  *np);
+#endif
 
 
 static void
@@ -188,6 +192,9 @@ m_normal(			/* color a ray that hit something normal */
 	double	d;
 	COLOR  ctmp;
 	int  i;
+#ifdef DAYSIM
+	DaysimCoef daylightCoef;
+#endif
 
 	/* PMAP: skip transmitted shadow ray if accounted for in photon map */
 	/* No longer needed?
@@ -278,6 +285,9 @@ m_normal(			/* color a ray that hit something normal */
 			rayvalue(&lr);
 			multcolor(lr.rcol, lr.rcoef);
 			addcolor(r->rcol, lr.rcol);
+#ifdef DAYSIM
+			daysimAddScaled(r->daylightCoef, lr.daylightCoef, colval(lr.rcoef, RED));
+#endif
 			transtest *= bright(lr.rcol);
 			transdist = r->rot + lr.rt;
 		}
@@ -321,6 +331,9 @@ m_normal(			/* color a ray that hit something normal */
 			rayvalue(&lr);
 			multcolor(lr.rcol, lr.rcoef);
 			addcolor(r->rcol, lr.rcol);
+#ifdef DAYSIM
+			daysimAddScaled(r->daylightCoef, lr.daylightCoef, colval(lr.rcoef, RED));
+#endif
 			if (nd.specfl & SP_FLAT &&
 					!hastexture | (r->crtype & AMBIENT)) {
 				mirtest = 2.*bright(lr.rcol);
@@ -335,14 +348,24 @@ m_normal(			/* color a ray that hit something normal */
 		return(1);			/* 100% pure specular */
 
 	if (!(nd.specfl & SP_PURE))
+#ifdef DAYSIM
+		gaussamp(&nd, daylightCoef);		/* checks *BLT flags */
+#else
 		gaussamp(&nd);			/* checks *BLT flags */
+#endif
 
 	if (nd.rdiff > FTINY) {		/* ambient from this side */
 		copycolor(ctmp, nd.mcolor);	/* modified by material color */
 		scalecolor(ctmp, nd.rdiff);
 		if (nd.specfl & SP_RBLT)	/* add in specular as well? */
 			addcolor(ctmp, nd.scolor);
+#ifdef DAYSIM
+		daysimSet(daylightCoef, colval(ctmp, RED)); // combine copy+scale+add
+		multambient(ctmp, r, hastexture ? nd.pnorm : r->ron, daylightCoef);
+		daysimAdd(r->daylightCoef, daylightCoef);
+#else
 		multambient(ctmp, r, hastexture ? nd.pnorm : r->ron);
+#endif
 		addcolor(r->rcol, ctmp);	/* add to returned color */
 	}
 	if (nd.tdiff > FTINY) {		/* ambient from other side */
@@ -351,16 +374,30 @@ m_normal(			/* color a ray that hit something normal */
 			scalecolor(ctmp, nd.trans);
 		else
 			scalecolor(ctmp, nd.tdiff);
+#ifdef DAYSIM
+		daysimSet(daylightCoef, colval(ctmp, RED));
+#endif
 		flipsurface(r);
 		if (hastexture) {
 			FVECT  bnorm;
 			bnorm[0] = -nd.pnorm[0];
 			bnorm[1] = -nd.pnorm[1];
 			bnorm[2] = -nd.pnorm[2];
+#ifdef DAYSIM
+			multambient(ctmp, r, bnorm, daylightCoef);
+#else
 			multambient(ctmp, r, bnorm);
+#endif
 		} else
+#ifdef DAYSIM
+			multambient(ctmp, r, r->ron, daylightCoef);
+#else
 			multambient(ctmp, r, r->ron);
+#endif
 		addcolor(r->rcol, ctmp);
+#ifdef DAYSIM
+		daysimAdd(r->daylightCoef, daylightCoef);
+#endif
 		flipsurface(r);
 	}
 					/* add direct component */
@@ -379,6 +416,9 @@ m_normal(			/* color a ray that hit something normal */
 static void
 gaussamp(			/* sample Gaussian specular */
 	NORMDAT  *np
+#ifdef DAYSIM
+	, DaysimCoef daylightCoef
+#endif
 )
 {
 	RAY  sr;
@@ -411,6 +451,10 @@ gaussamp(			/* sample Gaussian specular */
 				nstarget = 1;
 		}
 		setcolor(scol, 0., 0., 0.);
+#ifdef DAYSIM
+		if (nstarget > 1)
+			daysimSet(daylightCoef, 0.0);
+#endif
 		dimlist[ndims++] = (int)(size_t)np->mp;
 		maxiter = MAXITER*nstarget;
 		for (nstaken = ntrials = 0; nstaken < nstarget &&
@@ -443,10 +487,16 @@ gaussamp(			/* sample Gaussian specular */
 				d = 2./(1. + np->rp->rod/d);
 				scalecolor(sr.rcol, d);
 				addcolor(scol, sr.rcol);
+#ifdef DAYSIM
+				daysimAddScaled(daylightCoef, sr.daylightCoef, d);
+#endif
 			} else {
 				rayvalue(&sr);
 				multcolor(sr.rcol, sr.rcoef);
 				addcolor(np->rp->rcol, sr.rcol);
+#ifdef DAYSIM
+				daysimAddScaled(np->rp->daylightCoef, sr.daylightCoef, colval(sr.rcoef, RED));
+#endif
 			}
 			++nstaken;
 		}
@@ -455,6 +505,9 @@ gaussamp(			/* sample Gaussian specular */
 			d = (double)nstarget/ntrials;
 			scalecolor(scol, d);
 			addcolor(np->rp->rcol, scol);
+#ifdef DAYSIM
+			daysimAddScaled(np->rp->daylightCoef, daylightCoef, colval(sr.rcoef, RED) * d);
+#endif
 		}
 		ndims--;
 	}
@@ -505,6 +558,9 @@ gaussamp(			/* sample Gaussian specular */
 			multcolor(sr.rcol, sr.rcoef);
 			addcolor(np->rp->rcol, sr.rcol);
 			++nstaken;
+#ifdef DAYSIM
+			daysimAddScaled(np->rp->daylightCoef, sr.daylightCoef, colval(sr.rcoef, RED));
+#endif
 		}
 		ndims--;
 	}

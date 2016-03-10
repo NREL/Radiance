@@ -203,6 +203,9 @@ m_dielectric(	/* color a ray which hit a dielectric interface */
 				rayvalue(&p);
 				multcolor(p.rcol, p.rcoef);
 				addcolor(r->rcol, p.rcol);
+#ifdef DAYSIM
+				daysimAddScaled(r->daylightCoef, p.daylightCoef, colval(p.rcoef, RED));
+#endif
 						/* virtual distance */
 				if (flatsurface ||
 					(1.-FTINY <= nratio) &
@@ -228,6 +231,9 @@ m_dielectric(	/* color a ray which hit a dielectric interface */
 
 		multcolor(p.rcol, p.rcoef);	/* color contribution */
 		addcolor(r->rcol, p.rcol);
+#ifdef DAYSIM
+		daysimAddScaled(r->daylightCoef, p.daylightCoef, colval(p.rcoef, RED));
+#endif
 						/* virtual distance */
 		if (flatsurface) {
 			mirtest = 2*bright(p.rcol);
@@ -378,6 +384,9 @@ disperse(  /* check light sources for dispersion */
 		multcolor(ctmp, sray.rcol);
 		scalecolor(ctmp, tr);
 		addcolor(r->rcol, ctmp);
+#ifdef DAYSIM
+		daysimAddScaled( r->daylightCoef, sray.daylightCoef, colval(ctmp, RED)*tr );
+#endif
 		success++;
 	}
 	return(success);
