@@ -276,8 +276,7 @@ load_data(void)
 		error(COMMAND, "unsupported input format");
 		break;
 	}
-	/* XXX VC warns about 32 bit shift coerced to 64 bit */
-	datarr = (float *)calloc(1<<(log2g*ttrank), sizeof(float));
+	datarr = (float *)calloc((size_t)1<<(log2g*ttrank), sizeof(float));
 	if (datarr == NULL)
 		error(SYSTEM, "out of memory in load_data");
 	if (ttrank == 3) {
