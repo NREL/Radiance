@@ -44,8 +44,7 @@ double	tthresh;		/* acceptance threshold (TBD) */
 static void
 new_kids(TNODE *pn)
 {
-	/* XXX VC warns about 32 bit shift coerced to 64 bit */
-	pn->kid = (TNODE *)calloc(1<<ttrank, sizeof(TNODE));
+	pn->kid = (TNODE *)calloc((size_t)1<<ttrank, sizeof(TNODE));
 	if (pn->kid == NULL)
 		error(SYSTEM, "out of memory in new_kids");
 }
