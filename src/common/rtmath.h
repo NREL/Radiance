@@ -46,10 +46,6 @@ extern double	atan2a(double y, double x);
 #define  ttan(x)		(tsin(x)/tcos(x))
 #endif
 
-#if defined(_WIN32) || defined(_WIN64)
-extern double	erf(double x);
-extern double	erfc(double x);
-#endif
 					/* defined in xf.c */
 extern int	xf(XF *ret, int ac, char *av[]);
 extern int	invxf(XF *ret, int ac, char *av[]);
