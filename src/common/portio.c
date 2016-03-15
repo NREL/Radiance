@@ -33,8 +33,9 @@ putint(				/* write a siz-byte integer to fp */
 	FILE  *fp
 )
 {
-	while (siz--)
-		putc((int)(i>>(siz<<3) & 0xff), fp);
+	siz <<= 3;
+	while ((siz -= 8) >= 0)
+		putc((int)(i>>siz & 0xff), fp);
 }
 
 
