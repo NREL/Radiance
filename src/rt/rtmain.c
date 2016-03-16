@@ -83,6 +83,9 @@ main(int  argc, char  *argv[])
 	int  duped1 = -1;
 	int  rval;
 	int  i;
+#ifdef DAYSIM
+	int j;
+#endif
 					/* global program name */
 	progname = argv[0] = fixargv0(argv[0]);
 					/* add trace notify function */
@@ -245,6 +248,53 @@ main(int  argc, char  *argv[])
 				persist = PERSIST;
 			}
 			persistfile(argv[++i]);
+			break;
+#endif
+#ifdef DAYSIM
+		// A number of options have been added to the Daysim version of rtrace
+		// to allow for an efficient calculation of daylight coefficients with
+		// only to rtrace runs. Details of the implementation can be found in
+		// the Daysim manual (www.daysim.com) and in:
+		// Reinhart C F, Walkenhorst O, "Dynamic RADIANCE-based daylight simulations
+		// for a full-scale test office with outer venetian blinds." Energy & Buildings,
+		// 33:7 pp. 683-697, 2001.
+		case 'L':				/* choose luminance of sky segments */
+			daysimLuminousSkySegments = atof(argv[++i]);
+
+			if (daysimLuminousSkySegments == 0)
+				error(USER, "The parameter L must not be set to zero!");
+			break;
+		case 'D':		// switch to set how the daylight coefficients are sorted
+			// -Dm sort by sky segment modifier number (direct calculation)
+			// -Dd sort by loaction of sky segment (diffuse calculation) using 3 ground daylight coefficients
+			// -Dn sort by loaction of sky segment (diffuse calculation) using 1 ground daylight coefficient
+			switch (argv[i][2]) {
+			case 'm':			/* sorts by modifier number */
+				daysimSortMode = 1;
+				break;
+			case 'd':			/* sorts by ray direction (3 ground DC; original version)*/
+				daysimSortMode = 2;
+				break;
+			default:
+				goto badopt;
+			}
+			break;
+		case 'N':	// choose number of daylight coefficients
+			// for the diffuse calculation this number is always 148
+			// for the diffuse calculation the number depends on the number
+			// of direct daylight coefficients chosen which in turn depends on
+			// the geographic latitude of the scene site
+			if (daysimInit(atoi(argv[++i])) == 0)
+				error(USER, "The parameter N must lie between 0 and 148!");
+			break;
+		case 'U':	/* allow rtrace to calculate irradiances and radiances */
+			//   within the same run. The information which sensor
+			//   points have which units is taken from a Daysim header file.
+			NumberOfSensorsInDaysimFile = atoi(argv[++i]);
+			if ((DaysimSensorUnits = (int*)malloc(sizeof(int)* NumberOfSensorsInDaysimFile)) == NULL)
+				error(SYSTEM, "out of memory reading in sensor units");
+			for (j = 0; j < NumberOfSensorsInDaysimFile; j++)
+				DaysimSensorUnits[j] = atoi(argv[++i]);
 			break;
 #endif
 		default:
@@ -500,4 +550,11 @@ printdefaults(void)			/* print default values to stdout */
 			"-w+\t\t\t\t# warning messages on\n" :
 			"-w-\t\t\t\t# warning messages off\n");
 	print_rdefaults();
+#ifdef DAYSIM
+	printf("-L  %f\t\t\t# luminance of sky segments\n", daysimLuminousSkySegments);
+	printf(daysimSortMode == 1 ?
+		"-Dm\t\t\t\t# sort by sky segment modifier number (direct calculation)\n" :
+		"-Dd\t\t\t\t# sort by loaction of sky segment (diffuse calculation)\n");
+	printf("-N  %-9d\t\t\t# number of daylight coefficients\n", daysimGetCoefficients());
+#endif
 }

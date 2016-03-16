@@ -28,6 +28,9 @@ typedef struct {
 	FVECT  dir;		/* source direction */
 	COLOR  coef;		/* material coefficient */
 	COLOR  val;		/* contribution */
+#ifdef DAYSIM
+	DaysimCoef daylightCoef; /* dayligh coefficient */
+#endif
 }  CONTRIB;		/* direct contribution */
 
 typedef struct {
@@ -430,6 +433,9 @@ direct(					/* add direct component */
 		multcolor(sr.rcol, sr.rcoef);
 		copycolor(scp->val, sr.rcol);
 		cntord[sn].brt = bright(sr.rcol);
+#ifdef DAYSIM
+		daysimAssignScaled(scp->daylightCoef, sr.daylightCoef, colval(sr.rcoef, RED));
+#endif
 	}
 						/* sort contributions */
 	qsort(cntord, sn, sizeof(CNTPTR), cntcmp);
@@ -498,6 +504,9 @@ direct(					/* add direct component */
 			rayparticipate(&sr);
 			multcolor(sr.rcol, sr.rcoef);
 			copycolor(scp->val, sr.rcol);
+#ifdef DAYSIM
+			daysimAssignScaled(scp->daylightCoef, sr.daylightCoef, colval(sr.rcoef, RED));
+#endif
 		} else if (trace != NULL &&
 			(source[scp->sno].sflags & (SDISTANT|SVIRTUAL|SFOLLOW))
 						== (SDISTANT|SFOLLOW) &&
@@ -507,6 +516,9 @@ direct(					/* add direct component */
 		}
 						/* add contribution if hit */
 		addcolor(r->rcol, scp->val);
+#ifdef DAYSIM
+		daysimAdd(r->daylightCoef, scp->daylightCoef);
+#endif
 		nhits++;
 		source[scp->sno].nhits++;
 	}
@@ -528,6 +540,9 @@ direct(					/* add direct component */
 		if (prob < 1.0)
 			scalecolor(scp->val, prob);
 		addcolor(r->rcol, scp->val);
+#ifdef DAYSIM
+		daysimAddScaled(r->daylightCoef, scp->daylightCoef, min(1.0, prob));
+#endif
 	}
 }
 
@@ -754,5 +769,22 @@ m_light(				/* ray hit a light source */
 			  m->oargs.farg[2]);
 						/* modify value */
 	multcolor(r->rcol, r->pcol);
+#ifdef DAYSIM
+	if (daysimGetCoefficients() >= 2) {
+		int patch;
+
+		if (daysimSortMode == 1) {
+			patch = atoi(&m->oname[5]) - 1;
+		}
+		if (daysimSortMode == 2) {
+			patch = daysimComputePatch(r->rdir);
+		}
+		if (patch > daysimGetCoefficients()) { /* daysim remove */
+			sprintf(errmsg, "Parameter N has been set lower than detected segment number %i (N = %i)", patch, daysimGetCoefficients());
+			error(WARNING, errmsg);
+		}
+		daysimAddCoef(r->daylightCoef, patch, colval(r->rcol, RED));
+	}
+#endif
 	return(1);
 }

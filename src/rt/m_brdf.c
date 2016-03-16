@@ -218,6 +218,9 @@ m_brdf(			/* color a ray that hit a BRDTfunc material */
 	double  d;
 	MFUNC  *mf;
 	int  i;
+#ifdef DAYSIM
+	DaysimCoef daylightCoef;
+#endif
 						/* check arguments */
 	if ((m->oargs.nsargs < 10) | (m->oargs.nfargs < 9))
 		objerror(m, USER, "bad # arguments");
@@ -286,6 +289,9 @@ m_brdf(			/* color a ray that hit a BRDTfunc material */
 		rayvalue(&sr);
 		multcolor(sr.rcol, sr.rcoef);
 		addcolor(r->rcol, sr.rcol);
+#ifdef DAYSIM
+		daysimAddScaled(r->daylightCoef, sr.daylightCoef, colval(sr.rcoef, RED));
+#endif
 		if (!hastexture) {
 			transtest = 2.0*bright(sr.rcol);
 			transdist = r->rot + sr.rt;
@@ -307,6 +313,9 @@ m_brdf(			/* color a ray that hit a BRDTfunc material */
 		rayvalue(&sr);
 		multcolor(sr.rcol, sr.rcoef);
 		addcolor(r->rcol, sr.rcol);
+#ifdef DAYSIM
+		daysimAddScaled(r->daylightCoef, sr.daylightCoef, colval(sr.rcoef, RED));
+#endif
 		if (!hastexture && r->ro != NULL && isflat(r->ro->otype)) {
 			mirtest = 2.0*bright(sr.rcol);
 			mirdist = r->rot + sr.rt;
@@ -317,7 +326,13 @@ m_brdf(			/* color a ray that hit a BRDTfunc material */
 		if (!hitfront)
 			flipsurface(r);
 		copycolor(ctmp, nd.rdiff);
+#ifndef DAYSIM
 		multambient(ctmp, r, nd.pnorm);
+#else
+		daysimSet(daylightCoef, colval(nd.rdiff, RED));
+		multambient(ctmp, r, nd.pnorm, daylightCoef);
+		daysimAdd(r->daylightCoef, daylightCoef);
+#endif
 		addcolor(r->rcol, ctmp);	/* add to returned color */
 		if (!hitfront)
 			flipsurface(r);
@@ -329,7 +344,13 @@ m_brdf(			/* color a ray that hit a BRDTfunc material */
 		vtmp[1] = -nd.pnorm[1];
 		vtmp[2] = -nd.pnorm[2];
 		copycolor(ctmp, nd.tdiff);
+#ifndef DAYSIM
 		multambient(ctmp, r, vtmp);
+#else
+		daysimSet(daylightCoef, colval(nd.tdiff, RED));
+		multambient(ctmp, r, vtmp, daylightCoef);
+		daysimAdd(r->daylightCoef, daylightCoef);
+#endif
 		addcolor(r->rcol, ctmp);
 		if (hitfront)
 			flipsurface(r);
@@ -358,6 +379,9 @@ m_brdf2(			/* color a ray that hit a BRDF material */
 	COLOR  ctmp;
 	FVECT  vtmp;
 	double  dtmp;
+#ifdef DAYSIM
+	DaysimCoef daylightCoef;
+#endif
 						/* always a shadow */
 	if (r->crtype & SHADOW)
 		return(1);
@@ -413,7 +437,13 @@ m_brdf2(			/* color a ray that hit a BRDF material */
 	if (nd.trans < 1.0-FTINY) {
 		copycolor(ctmp, nd.mcolor);	/* modified by material color */
 		scalecolor(ctmp, 1.0-nd.trans);
+#ifndef DAYSIM
 		multambient(ctmp, r, nd.pnorm);
+#else
+		daysimSet(daylightCoef, colval(ctmp, RED));
+		multambient(ctmp, r, nd.pnorm, daylightCoef);
+		daysimAdd(r->daylightCoef, daylightCoef);
+#endif
 		addcolor(r->rcol, ctmp);	/* add to returned color */
 	}
 	if (nd.trans > FTINY) {		/* from other side */
@@ -423,7 +453,13 @@ m_brdf2(			/* color a ray that hit a BRDF material */
 		vtmp[2] = -nd.pnorm[2];
 		copycolor(ctmp, nd.mcolor);
 		scalecolor(ctmp, nd.trans);
+#ifndef DAYSIM
 		multambient(ctmp, r, vtmp);
+#else // DAYSIM
+		daysimSet(daylightCoef, colval(ctmp, RED));
+		multambient(ctmp, r, vtmp, daylightCoef);
+		daysimAdd(r->daylightCoef, daylightCoef);
+#endif
 		addcolor(r->rcol, ctmp);
 		flipsurface(r);
 	}

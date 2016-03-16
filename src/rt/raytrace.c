@@ -148,6 +148,9 @@ rayclear(			/* clear a ray for (re)evaluation */
 	r->uv[0] = r->uv[1] = 0.0;
 	setcolor(r->pcol, 1.0, 1.0, 1.0);
 	setcolor(r->rcol, 0.0, 0.0, 0.0);
+#ifdef DAYSIM
+	daysimSet(r->daylightCoef, 0.0);
+#endif
 }
 
 
@@ -194,6 +197,9 @@ raytrans(			/* transmit ray as is */
 	rayvalue(&tr);
 	copycolor(r->rcol, tr.rcol);
 	r->rt = r->rot + tr.rt;
+#ifdef DAYSIM
+	daysimCopy(r->daylightCoef, tr.daylightCoef);
+#endif
 }
 
 
@@ -254,6 +260,9 @@ rayparticipate(			/* compute ray medium participation */
 			ge<=FTINY ? 1. : ge>92. ? 0. : exp(-ge),
 			be<=FTINY ? 1. : be>92. ? 0. : exp(-be));
 	multcolor(r->rcol, ce);			/* path extinction */
+#ifdef DAYSIM
+	daysimScale(r->daylightCoef, colval(ce, RED));
+#endif
 	if (r->crtype & SHADOW || intens(r->albedo) <= FTINY)
 		return;				/* no scattering */
 	
@@ -350,6 +359,10 @@ raymixture(		/* mix modifiers */
 	scalecolor(br.rcol, 1.0-coef);
 	copycolor(r->rcol, fr.rcol);
 	addcolor(r->rcol, br.rcol);
+#ifdef DAYSIM
+	daysimAssignScaled(r->daylightCoef, fr.daylightCoef, coef);
+	daysimAddScaled(r->daylightCoef, br.daylightCoef, 1.0 - coef);
+#endif
 	r->rt = bright(fr.rcol) > bright(br.rcol) ? fr.rt : br.rt;
 	return(1);
 }

@@ -98,6 +98,9 @@ m_mirror(			/* shade mirrored ray */
 	rayvalue(&nr);
 	multcolor(nr.rcol, nr.rcoef);
 	addcolor(r->rcol, nr.rcol);
+#ifdef DAYSIM
+	daysimAddScaled(r->daylightCoef, nr.daylightCoef, colval(nr.rcoef, RED));
+#endif
 	if (rpure && r->ro != NULL && isflat(r->ro->otype))
 		r->rt = r->rot + nr.rt;
 	return(1);

@@ -184,7 +184,9 @@ setambient(void)				/* initialize calculation */
 					(flen - lastpos)/AMBVALSIZ);
 			error(WARNING, errmsg);
 			fseek(ambfp, lastpos, SEEK_SET);
+#ifndef _WIN32 /* XXX we need a replacement for that one */
 			ftruncate(fileno(ambfp), (off_t)lastpos);
+#endif
 		}
 	} else if ((ambfp = fopen(ambfile, "w+")) != NULL) {
 		initambfile(1);			/* else create new file */
@@ -262,23 +264,37 @@ ambnotify(			/* record new modifier */
 #define tfunc(lwr, x, upr)	(((x)-(lwr))/((upr)-(lwr)))
 
 static int	plugaleak(RAY *r, AMBVAL *ap, FVECT anorm, double ang);
+#ifndef DAYSIM
 static double	sumambient(COLOR acol, RAY *r, FVECT rn, int al,
 				AMBTREE *at, FVECT c0, double s);
 static int	makeambient(COLOR acol, RAY *r, FVECT rn, int al);
 static int	extambient(COLOR cr, AMBVAL *ap, FVECT pv, FVECT nv, 
 				FVECT uvw[3]);
+#else
+static double	sumambient(COLOR acol, RAY *r, FVECT rn, int al,
+	AMBTREE *at, FVECT c0, double s, DaysimCoef daylightCoef);
+static int	makeambient(COLOR acol, RAY *r, FVECT rn, int al, DaysimCoef daylightCoef);
+static int	extambient(COLOR cr, AMBVAL *ap, FVECT pv, FVECT nv,
+	FVECT uvw[3], DaysimCoef daylightCoef);
+#endif
 
 void
 multambient(		/* compute ambient component & multiply by coef. */
 	COLOR  aval,
 	RAY  *r,
 	FVECT  nrm
+#ifdef DAYSIM
+	, DaysimCoef daylightCoef
+#endif
 )
 {
 	static int  rdepth = 0;			/* ambient recursion */
 	COLOR	acol, caustic;
 	int	ok;
 	double	d, l;
+#ifdef DAYSIM
+	DaysimCoef dcAcol;
+#endif
 
 	/* PMAP: Factor in ambient from photon map, if enabled and ray is
 	 * ambient. Return as all ambient components accounted for, else
@@ -305,12 +321,20 @@ multambient(		/* compute ambient component & multiply by coef. */
 	if (ambacc <= FTINY) {			/* no ambient storage */
 		copycolor(acol, aval);
 		rdepth++;
+#ifndef DAYSIM
 		ok = doambient(acol, r, r->rweight,
 				NULL, NULL, NULL, NULL, NULL);
+#else
+		ok = doambient(acol, r, r->rweight,
+			NULL, NULL, NULL, NULL, NULL, dcAcol);
+#endif
 		rdepth--;
 		if (!ok)
 			goto dumbamb;
 		copycolor(aval, acol);
+#ifdef DAYSIM
+		daysimCopy(daylightCoef, dcAcol);
+#endif
 
 		/* PMAP: add in caustic */
 		addcolor(aval, caustic);
@@ -321,13 +345,22 @@ multambient(		/* compute ambient component & multiply by coef. */
 		sortambvals(0);
 						/* interpolate ambient value */
 	setcolor(acol, 0.0, 0.0, 0.0);
+#ifndef DAYSIM
 	d = sumambient(acol, r, nrm, rdepth,
 			&atrunk, thescene.cuorg, thescene.cusize);
-			
+#else
+	daysimSet(dcAcol, 0.0);
+	d = sumambient(acol, r, nrm, rdepth,
+		&atrunk, thescene.cuorg, thescene.cusize, dcAcol);
+#endif
 	if (d > FTINY) {
 		d = 1.0/d;
 		scalecolor(acol, d);
 		multcolor(aval, acol);
+#ifdef DAYSIM
+		daysimScale(dcAcol, d);
+		daysimMult(daylightCoef, dcAcol);
+#endif
 
 		/* PMAP: add in caustic */
 		addcolor(aval, caustic);
@@ -335,11 +368,18 @@ multambient(		/* compute ambient component & multiply by coef. */
 	}
 	
 	rdepth++;				/* need to cache new value */
-	ok = makeambient(acol, r, nrm, rdepth-1);
+#ifndef DAYSIM
+	ok = makeambient(acol, r, nrm, rdepth - 1);
+#else
+	ok = makeambient(acol, r, nrm, rdepth - 1, dcAcol);
+#endif
 	rdepth--;
 	
 	if (ok) {
 		multcolor(aval, acol);		/* computed new value */
+#ifdef DAYSIM
+		daysimMult(daylightCoef, dcAcol);
+#endif
 
 		/* PMAP: add in caustic */
 		addcolor(aval, caustic);
@@ -349,22 +389,31 @@ multambient(		/* compute ambient component & multiply by coef. */
 dumbamb:					/* return global value */
 	if ((ambvwt <= 0) | (navsum == 0)) {
 		multcolor(aval, ambval);
+#ifdef DAYSIM
+		daysimScale(daylightCoef, colval(ambval, RED));
+#endif
 		
 		/* PMAP: add in caustic */
 		addcolor(aval, caustic);
 		return;
 	}
 	
-	l = bright(ambval);			/* average in computations */	
+	l = bright(ambval);			/* average in computations */
 	if (l > FTINY) {
 		d = (log(l)*(double)ambvwt + avsum) /
 				(double)(ambvwt + navsum);
 		d = exp(d) / l;
 		scalecolor(aval, d);
 		multcolor(aval, ambval);	/* apply color of ambval */
+#ifdef DAYSIM
+		daysimScale(daylightCoef, colval(ambval, RED)*d);
+#endif
 	} else {
 		d = exp( avsum / (double)navsum );
 		scalecolor(aval, d);		/* neutral color */
+#ifdef DAYSIM
+		daysimScale(daylightCoef, d);
+#endif
 	}
 }
 
@@ -423,6 +472,9 @@ sumambient(		/* get interpolated ambient value */
 	AMBTREE	 *at,
 	FVECT  c0,
 	double	s
+#ifdef DAYSIM
+	, DaysimCoef daylightCoef
+#endif
 )
 {			/* initial limit is 10 degrees plus ambacc radians */
 	const double	minangle = 10.0 * PI/180.;
@@ -431,6 +483,9 @@ sumambient(		/* get interpolated ambient value */
 	FVECT		ck0;
 	int		i, j;
 	AMBVAL		*av;
+#ifdef DAYSIM
+	DaysimCoef tempDaylightCoef;
+#endif
 
 	if (at->kid != NULL) {		/* sum children first */				
 		s *= 0.5;
@@ -445,8 +500,12 @@ sumambient(		/* get interpolated ambient value */
 					break;
 			}
 			if (j == 3)
+#ifndef DAYSIM
 				wsum += sumambient(acol, r, rn, al,
 							at->kid+i, ck0, s);
+#else
+				wsum += sumambient(acol, r, rn, al, at->kid + i, ck0, s, daylightCoef);
+#endif
 		}
 					/* good enough? */
 		if (wsum >= 0.05 && s > minarad*10.0)
@@ -509,12 +568,19 @@ sumambient(		/* get interpolated ambient value */
 		/*
 		 *  Extrapolate value and compute final weight (hat function)
 		 */
+#ifndef DAYSIM
 		if (!extambient(ct, av, r->rop, rn, uvw))
+#else
+		if (!extambient(ct, av, r->rop, rn, uvw, tempDaylightCoef))
+#endif
 			continue;
 		d = tfunc(maxangle, sqrt(delta_r2), 0.0) *
 			tfunc(ambacc, sqrt(delta_t2), 0.0);
 		scalecolor(ct, d);
 		addcolor(acol, ct);
+#ifdef DAYSIM
+		daysimAddScaled(daylightCoef, tempDaylightCoef, d);
+#endif
 		wsum += d;
 	}
 	return(wsum);
@@ -527,6 +593,9 @@ makeambient(		/* make a new ambient value for storage */
 	RAY  *r,
 	FVECT  rn,
 	int  al
+#ifdef DAYSIM
+	, DaysimCoef daylightCoef
+#endif
 )
 {
 	AMBVAL	amb;
@@ -540,8 +609,15 @@ makeambient(		/* make a new ambient value for storage */
 		amb.weight = 1.25*r->rweight;
 	setcolor(acol, AVGREFL, AVGREFL, AVGREFL);
 						/* compute ambient */
+#ifndef DAYSIM
 	i = doambient(acol, r, amb.weight,
 			uvw, amb.rad, amb.gpos, amb.gdir, &amb.corral);
+#else
+	daysimSet(daylightCoef, AVGREFL);
+	i = doambient(acol, r, amb.weight,
+		uvw, amb.rad, amb.gpos, amb.gdir, &amb.corral, daylightCoef);
+	daysimScale(daylightCoef, 1. / AVGREFL);
+#endif
 	scalecolor(acol, 1./AVGREFL);		/* undo assumed reflectance */
 	if (i <= 0 || amb.rad[0] <= FTINY)	/* no Hessian or zero radius */
 		return(i);
@@ -551,11 +627,18 @@ makeambient(		/* make a new ambient value for storage */
 	amb.udir = encodedir(uvw[0]);
 	amb.lvl = al;
 	copycolor(amb.val, acol);
+#ifdef DAYSIM
+	daysimCopy(amb.daylightCoef, daylightCoef);
+#endif
 						/* insert into tree */
 	avsave(&amb);				/* and save to file */
 	if (rn != r->ron) {			/* texture */
 		VCOPY(uvw[2], r->ron);
+#ifndef DAYSIM
 		extambient(acol, &amb, r->rop, rn, uvw);
+#else
+		extambient(acol, &amb, r->rop, rn, uvw, daylightCoef);
+#endif
 	}
 	return(1);
 }
@@ -568,6 +651,9 @@ extambient(		/* extrapolate value at pv, nv */
 	FVECT  pv,
 	FVECT  nv,
 	FVECT  uvw[3]
+#ifdef DAYSIM
+	, DaysimCoef daylightCoef
+#endif
 )
 {
 	const double	min_d = 0.05;
@@ -594,6 +680,9 @@ extambient(		/* extrapolate value at pv, nv */
 		d = min_d;
 	copycolor(cr, ap->val);
 	scalecolor(cr, d);
+#ifdef DAYSIM
+	daysimAssignScaled(daylightCoef, ap->daylightCoef, d);
+#endif
 	return(d > min_d);
 }
 
@@ -643,10 +732,17 @@ avinsert(				/* insert ambient value in our tree */
 
 #else /* ! NEWAMB */
 
+#ifndef DAYSIM
 static double	sumambient(COLOR acol, RAY *r, FVECT rn, int al,
 				AMBTREE *at, FVECT c0, double s);
 static double	makeambient(COLOR acol, RAY *r, FVECT rn, int al);
 static void	extambient(COLOR cr, AMBVAL *ap, FVECT pv, FVECT nv);
+#else
+extern double sumambient(COLOR acol, RAY *r, FVECT rn, int al,
+	AMBTREE *at, FVECT c0, double s, DaysimCoef daylightCoef);
+extern double makeambient(COLOR acol, RAY *r, FVECT rn, int al, DaysimCoef daylightCoef);
+extern void	extambient(COLOR cr, AMBVAL *ap, FVECT pv, FVECT nv, DaysimCoef daylightCoef);
+#endif
 
 
 void
@@ -654,11 +750,19 @@ multambient(		/* compute ambient component & multiply by coef. */
 	COLOR  aval,
 	RAY  *r,
 	FVECT  nrm
+#ifdef DAYSIM
+	, DaysimCoef daylightCoef
+#endif
 )
 {
 	static int  rdepth = 0;			/* ambient recursion */
 	COLOR	acol, caustic;
 	double	d, l;
+
+#ifdef DAYSIM
+	DaysimCoef dcAcol;
+	daysimCopy( dcAcol, daylightCoef );
+#endif
 
 	/* PMAP: Factor in ambient from global photon map (if enabled) and return
 	 * as all ambient components accounted for */
@@ -684,14 +788,21 @@ multambient(		/* compute ambient component & multiply by coef. */
 	if (ambacc <= FTINY) {			/* no ambient storage */
 		copycolor(acol, aval);
 		rdepth++;
+#ifdef DAYSIM
+		d = doambient(acol, r, r->rweight, NULL, NULL, dcAcol);
+#else
 		d = doambient(acol, r, r->rweight, NULL, NULL);
+#endif
 		rdepth--;
 		if (d <= FTINY)
 			goto dumbamb;
-		copycolor(aval, acol);		
-	
-	   /* PMAP: add in caustic */
-		addcolor(aval, caustic);	
+		copycolor(aval, acol);
+#ifdef DAYSIM
+		daysimCopy(daylightCoef, dcAcol);
+#endif
+
+		/* PMAP: add in caustic */
+		addcolor(aval, caustic);
 		return;
 	}
 
@@ -699,37 +810,56 @@ multambient(		/* compute ambient component & multiply by coef. */
 		sortambvals(0);
 						/* interpolate ambient value */
 	setcolor(acol, 0.0, 0.0, 0.0);
+#ifndef DAYSIM
 	d = sumambient(acol, r, nrm, rdepth,
 			&atrunk, thescene.cuorg, thescene.cusize);
-			
+#else
+	daysimSet( dcAcol, 0.0 );
+	d = sumambient(acol, r, nrm, rdepth,
+			&atrunk, thescene.cuorg, thescene.cusize, dcAcol);
+#endif
 	if (d > FTINY) {
 		d = 1.0/d;
 		scalecolor(acol, d);
 		multcolor(aval, acol);
-		
+#ifdef DAYSIM
+		daysimScale(dcAcol, d);
+		daysimMult(daylightCoef, dcAcol);
+#endif
+
 		/* PMAP: add in caustic */
-		addcolor(aval, caustic);	
+		addcolor(aval, caustic);
 		return;
 	}
 	
 	rdepth++;				/* need to cache new value */
+#ifndef DAYSIM
 	d = makeambient(acol, r, nrm, rdepth-1);
+#else
+	d = makeambient(acol, r, nrm, rdepth - 1, dcAcol);
+#endif
 	rdepth--;
 	
 	if (d > FTINY) {
 		multcolor(aval, acol);		/* got new value */
+#ifdef DAYSIM
+		daysimMult(daylightCoef, dcAcol);
+#endif
 
 		/* PMAP: add in caustic */
-		addcolor(aval, caustic);			
+		addcolor(aval, caustic);
 		return;
 	}
 	
 dumbamb:					/* return global value */
 	if ((ambvwt <= 0) | (navsum == 0)) {
 		multcolor(aval, ambval);
+#ifdef DAYSIM
+		daysimScale(daylightCoef, colval(ambval, RED));
+#endif
 
 		/* PMAP: add in caustic */
-		addcolor(aval, caustic);	
+		addcolor(aval, caustic);
 		return;
 	}
 	
@@ -740,9 +870,15 @@ dumbamb:					/* return global value */
 		d = exp(d) / l;
 		scalecolor(aval, d);
 		multcolor(aval, ambval);	/* apply color of ambval */
+#ifdef DAYSIM
+		daysimScale(daylightCoef, colval(ambval, RED)*d);
+#endif
 	} else {
 		d = exp( avsum / (double)navsum );
 		scalecolor(aval, d);		/* neutral color */
+#ifdef DAYSIM
+		daysimScale(daylightCoef, d);
+#endif
 	}
 }
 
@@ -756,6 +892,9 @@ sumambient(	/* get interpolated ambient value */
 	AMBTREE	 *at,
 	FVECT  c0,
 	double	s
+#ifdef DAYSIM
+	, DaysimCoef daylightCoef
+#endif
 )
 {
 	double	d, e1, e2, wt, wsum;
@@ -764,6 +903,9 @@ sumambient(	/* get interpolated ambient value */
 	int  i;
 	int  j;
 	AMBVAL	 *av;
+#ifdef DAYSIM
+	DaysimCoef tempDaylightCoef;
+#endif
 
 	wsum = 0.0;
 					/* do this node */
@@ -831,7 +973,12 @@ sumambient(	/* get interpolated ambient value */
 		else
 			wt = 1.0 / wt;
 		wsum += wt;
+#ifndef DAYSIM
 		extambient(ct, av, r->rop, rn);
+#else
+		extambient( ct, av, r->rop, rn, tempDaylightCoef );
+		daysimAddScaled( daylightCoef, tempDaylightCoef, wt );
+#endif
 		scalecolor(ct, wt);
 		addcolor(acol, ct);
 	}
@@ -850,8 +997,11 @@ sumambient(	/* get interpolated ambient value */
 				break;
 		}
 		if (j == 3)
-			wsum += sumambient(acol, r, rn, al,
-						at->kid+i, ck0, s);
+#ifndef DAYSIM
+			wsum += sumambient(acol, r, rn, al, at->kid+i, ck0, s);
+#else
+			wsum += sumambient(acol, r, rn, al, at->kid+i, ck0, s, daylightCoef);
+#endif
 	}
 	return(wsum);
 }
@@ -863,6 +1013,9 @@ makeambient(		/* make a new ambient value for storage */
 	RAY  *r,
 	FVECT  rn,
 	int  al
+#ifdef DAYSIM
+	, DaysimCoef daylightCoef
+#endif
 )
 {
 	AMBVAL	amb;
@@ -876,9 +1029,17 @@ makeambient(		/* make a new ambient value for storage */
 		amb.weight = 1.25*r->rweight;
 	setcolor(acol, AVGREFL, AVGREFL, AVGREFL);
 						/* compute ambient */
+#ifndef DAYSIM
 	amb.rad = doambient(acol, r, amb.weight, gp, gd);
+#else
+	daysimSet( daylightCoef, AVGREFL );
+	amb.rad = doambient( acol, r, amb.weight, gp, gd, daylightCoef );
+#endif
 	if (amb.rad <= FTINY) {
 		setcolor(acol, 0.0, 0.0, 0.0);
+#ifdef DAYSIM
+		daysimSet( daylightCoef, 0.0 );
+#endif
 		return(0.0);
 	}
 	scalecolor(acol, 1./AVGREFL);		/* undo assumed reflectance */
@@ -887,12 +1048,20 @@ makeambient(		/* make a new ambient value for storage */
 	VCOPY(amb.dir, r->ron);
 	amb.lvl = al;
 	copycolor(amb.val, acol);
+#ifdef DAYSIM
+	daysimScale( daylightCoef, 1./AVGREFL );
+	daysimCopy( amb.daylightCoef, daylightCoef );
+#endif
 	VCOPY(amb.gpos, gp);
 	VCOPY(amb.gdir, gd);
 						/* insert into tree */
 	avsave(&amb);				/* and save to file */
 	if (rn != r->ron)
+#ifndef DAYSIM
 		extambient(acol, &amb, r->rop, rn);	/* texture */
+#else
+		extambient(acol, &amb, r->rop, rn, daylightCoef );	/* texture */
+#endif
 	return(amb.rad);
 }
 
@@ -903,6 +1072,9 @@ extambient(		/* extrapolate value at pv, nv */
 	AMBVAL	 *ap,
 	FVECT  pv,
 	FVECT  nv
+#ifdef DAYSIM
+	, DaysimCoef daylightCoef
+#endif
 )
 {
 	FVECT  v1;
@@ -918,10 +1090,16 @@ extambient(		/* extrapolate value at pv, nv */
 	d += DOT(ap->gdir, v1);
 	if (d <= 0.0) {
 		setcolor(cr, 0.0, 0.0, 0.0);
+#ifdef DAYSIM
+		daysimSet( daylightCoef, 0.0 );
+#endif
 		return;
 	}
 	copycolor(cr, ap->val);
 	scalecolor(cr, d);
+#ifdef DAYSIM
+	daysimAssignScaled(daylightCoef, ap->daylightCoef, d);
+#endif
 }
 
 

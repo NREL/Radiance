@@ -445,6 +445,9 @@ m_bsdf(OBJREC *m, RAY *r)
 	FVECT	upvec, vtmp;
 	MFUNC	*mf;
 	BSDFDAT	nd;
+#ifdef DAYSIM
+	DaysimCoef daylightCoef;
+#endif
 						/* check arguments */
 	if ((m->oargs.nsargs < 6) | (m->oargs.nfargs > 9) |
 				(m->oargs.nfargs % 3))
@@ -557,7 +560,13 @@ m_bsdf(OBJREC *m, RAY *r)
 	if (bright(ctmp) > FTINY) {		/* ambient from reflection */
 		if (!hitfront)
 			flipsurface(r);
+#ifndef DAYSIM
 		multambient(ctmp, r, nd.pnorm);
+#else
+		daysimSet(daylightCoef, colval(ctmp, RED));
+		multambient(ctmp, r, nd.pnorm, daylightCoef);
+		daysimAdd(r->daylightCoef, daylightCoef);
+#endif
 		addcolor(r->rcol, ctmp);
 		if (!hitfront)
 			flipsurface(r);
@@ -574,10 +583,23 @@ m_bsdf(OBJREC *m, RAY *r)
 		if (nd.thick != 0) {		/* proxy with offset? */
 			VCOPY(vtmp, r->rop);
 			VSUM(r->rop, vtmp, r->ron, nd.thick);
+#ifndef DAYSIM
 			multambient(ctmp, r, bnorm);
+#else
+			daysimSet(daylightCoef, colval(ctmp, RED));
+			multambient(ctmp, r, bnorm, daylightCoef);
+			daysimAdd(r->daylightCoef, daylightCoef);
+#endif
 			VCOPY(r->rop, vtmp);
-		} else
+		} else {
+#ifndef DAYSIM
 			multambient(ctmp, r, bnorm);
+#else
+			daysimSet(daylightCoef, colval(ctmp, RED));
+			multambient(ctmp, r, bnorm, daylightCoef);
+			daysimAdd(r->daylightCoef, daylightCoef);
+#endif
+		}
 		addcolor(r->rcol, ctmp);
 		if (hitfront)
 			flipsurface(r);

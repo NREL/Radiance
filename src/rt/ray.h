@@ -11,6 +11,10 @@
 #include  "color.h"
 #include  "pmapparm.h"
 
+#ifdef DAYSIM
+#include  "daysim.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -68,6 +72,9 @@ typedef struct ray {
 	OBJECT	robj;		/* intersected object number */
 	short	rtype;		/* ray type */
 	short	crtype;		/* cumulative ray type */
+#ifdef DAYSIM
+	DaysimCoef daylightCoef; /* daylight coefficients */
+#endif
 }  RAY;
 
 #define  rayvalue(r)	(*(r)->revf)(r)
