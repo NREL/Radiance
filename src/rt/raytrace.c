@@ -51,6 +51,8 @@ rayorigin(		/* start new ray from old one */
 		setcolor(r->rcoef, 1., 1., 1.);
 	} else {
 		rw = intens(rc);
+		if (rw > 1.0)
+			rw = 1.0;		/* avoid calculation growth */
 		if (rc != r->rcoef)
 			copycolor(r->rcoef, rc);
 	}
