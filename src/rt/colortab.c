@@ -116,9 +116,9 @@ get_pixel(	/* get pixel for color */
 						/* find pixel in tree */
 	for (tp = ctree, h = 0; is_branch(*tp); h++)
 		if (cv[prim(*tp)] < part(*tp))
-			tp += 1<<h;		/* left branch */
+			tp += (size_t)1<<h;		/* left branch */
 		else
-			tp += 1<<(h+1);		/* right branch */
+			tp += (size_t)1<<(h+1);		/* right branch */
 	h = pval(*tp);
 						/* add to color table */
 	clrtab[h].sum[RED] += r;
@@ -200,11 +200,11 @@ int	c0, c1;
 	memcpy((void *)kb, (void *)box, sizeof(kb));
 						/* do left (lesser) branch */
 	kb[prim(*tree)][1] = part(*tree);
-	cut(tree+(1<<level), level+1, kb, c0, (c0+c1)>>1);
+	cut(tree+((size_t)1<<level), level+1, kb, c0, (c0+c1)>>1);
 						/* do right branch */
 	kb[prim(*tree)][0] = part(*tree);
 	kb[prim(*tree)][1] = box[prim(*tree)][1];
-	cut(tree+(1<<(level+1)), level+1, kb, (c0+c1)>>1, c1);
+	cut(tree+((size_t)1<<(level+1)), level+1, kb, (c0+c1)>>1, c1);
 }
 
 
