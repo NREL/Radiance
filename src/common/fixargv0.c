@@ -10,6 +10,7 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include <ctype.h>
+#include <string.h>
 
 extern char *
 fixargv0(av0)			/* extract command name from full path */
@@ -24,7 +25,8 @@ char  *av0;
 			*cp = '\0';
 			continue;
 		case '\\':			/* remove directory */
-			return(cp+1);
+			strcpy(av0, cp+1);
+			break;
 		default:			/* convert to lower case */
 			*cp = tolower(*cp);
 			continue;
