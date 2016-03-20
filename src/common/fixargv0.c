@@ -16,16 +16,19 @@ extern char *
 fixargv0(av0)			/* extract command name from full path */
 char  *av0;
 {
-	register char  *cp = av0;
+	register char  *cp = av0, *end = av0;
 
 	while (*cp) cp++;		/* start from end */
+	end = cp;
 	while (cp-- > av0)
 		switch (*cp) {		/* fix up command name */
 		case '.':			/* remove extension */
 			*cp = '\0';
+			end = cp;
 			continue;
 		case '\\':			/* remove directory */
-			strcpy(av0, cp+1);
+			/* make sure the original pointer remains the same */
+			memmove(av0, cp+1, end-cp);
 			break;
 		default:			/* convert to lower case */
 			*cp = tolower(*cp);
