@@ -115,6 +115,7 @@ extern time_t	reporttime;	/* time for next report */
 extern long	nraysdone;	/* number of rays done */
 extern long	npacksdone;	/* number of packets done */
 
+#define	MAXRTARGC	256
 extern int	rtargc;		/* rtrace command */
 extern char	*rtargv[];
 

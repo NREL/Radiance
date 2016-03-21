@@ -195,7 +195,7 @@ main(int  argc, char  *argv[])
 					tralp = tralist;
 				}
 				if (argv[i][2] == 'I') {	/* file */
-					rval = wordfile(tralp,
+					rval = wordfile(tralp, MAXMODLIST-(tralp-tralist),
 					getpath(argv[++i],getrlibpath(),R_OK));
 					if (rval < 0) {
 						sprintf(errmsg,
@@ -217,7 +217,7 @@ main(int  argc, char  *argv[])
 					tralp = tralist;
 				}
 				if (argv[i][2] == 'E') {	/* file */
-					rval = wordfile(tralp,
+					rval = wordfile(tralp, MAXMODLIST-(tralp-tralist),
 					getpath(argv[++i],getrlibpath(),R_OK));
 					if (rval < 0) {
 						sprintf(errmsg,

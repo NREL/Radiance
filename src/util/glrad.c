@@ -281,7 +281,7 @@ runrad(				/* run rad and load variables */
 		eyedist = atof(cp);
 						/* look for materials */
 	while ((cp = scan4var(buf, sizeof(buf), "materials", fp)) != NULL) {
-		nscenef += wordstring(scene+nscenef, cp);
+		nscenef += wordstring(scene+nscenef, MAXSCENE-nscenef, cp);
 		buf[0] = '\0';
 	}
 						/* look for octree */
@@ -289,7 +289,7 @@ runrad(				/* run rad and load variables */
 		octree = savqstr(cp);
 						/* look for scene files */
 	while ((cp = scan4var(buf, sizeof(buf), "scene", fp)) != NULL) {
-		nscenef += wordstring(scene+nscenef, cp);
+		nscenef += wordstring(scene+nscenef, MAXSCENE-nscenef, cp);
 		buf[0] = '\0';
 	}
 						/* load view names */

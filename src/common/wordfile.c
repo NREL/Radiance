@@ -22,18 +22,20 @@ static const char	RCSid[] = "$Id$";
 
 
 #ifndef MAXFLEN
-#define MAXFLEN		65536	/* file must be smaller than this */
+#define MAXFLEN		204800	/* file must be smaller than this */
 #endif
 
 
 int
-wordfile(words, fname)		/* get words from fname, put in words */
-char	**words;
-char	*fname;
+wordfile(			/* get words from fname, put in words */
+	char	**words,
+	int	nargs,
+	char	*fname
+)
 {
 	int	fd;
 	char	buf[MAXFLEN];
-	register int	n;
+	int	n;
 					/* load file into buffer */
 	if (fname == NULL)
 		return(-1);			/* no filename */
@@ -47,17 +49,19 @@ char	*fname;
 		while (!isspace(buf[--n]))
 			if (n <= 0)		/* one long word! */
 				return(-1);
-	buf[n] = '\0';			/* terminate */
-	return(wordstring(words, buf));	/* wordstring does the rest */
+	buf[n] = '\0';				/* terminate */
+	return(wordstring(words, nargs, buf));	/* wordstring does the rest */
 }
 
 
 int
-wordstring(avl, str)			/* allocate and load argument list */
-char	**avl;
-char	*str;
+wordstring(				/* allocate and load argument list */
+	char	**avl,
+	int	nargs,
+	char	*str
+)
 {
-	register char	*cp, **ap;
+	char	*cp, **ap;
 	
 	if (str == NULL)
 		return(-1);
@@ -65,13 +69,13 @@ char	*str;
 	if (cp == NULL)			/* ENOMEM */
 		return(-1);
 	strcpy(cp, str);
-	ap = avl;		/* parse into words */
-	for ( ; ; ) {
+					/* parse into words */
+	for (ap = avl; ap-avl < nargs-1; ap++) {
 		while (isspace(*cp))	/* nullify spaces */
 			*cp++ = '\0';
 		if (!*cp)		/* all done? */
 			break;
-		*ap++ = cp;		/* add argument to list */
+		*ap = cp;		/* add argument to list */
 		while (*++cp && !isspace(*cp))
 			;
 	}

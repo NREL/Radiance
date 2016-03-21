@@ -297,8 +297,8 @@ int main (int argc, char* argv [])
                
                if (argv[i][3] == 'O') {	
                   /* Get port modifiers file */
-                  rval = wordfile(portLp, getpath(argv [++i],
-                                  getrlibpath(), R_OK));
+                  rval = wordfile(portLp, AMBLLEN-(portLp-amblist),
+				getpath(argv [++i], getrlibpath(), R_OK));
                   if (rval < 0) {
                       sprintf(errmsg, "cannot open photon port file %s",
                               argv [i]);
@@ -328,8 +328,8 @@ int main (int argc, char* argv [])
                
                if (argv[i][3] == 'S') {	
                   /* Get sensor modifiers from file */
-                  rval = wordfile(sensLp, getpath(argv [++i],
-                                  getrlibpath(), R_OK));
+                  rval = wordfile(sensLp, MAXSET-(sensLp-photonSensorList),
+				getpath(argv [++i], getrlibpath(), R_OK));
                   if (rval < 0) {
                       sprintf(errmsg, "cannot open antimatter sensor file %s",
                               argv [i]);

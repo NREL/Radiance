@@ -144,7 +144,7 @@ getrenderopt(		/* get next render option */
 				amblp = amblist;
 			}
 			if (av[0][2] == 'I') {	/* file */
-				rval = wordfile(amblp,
+				rval = wordfile(amblp, AMBLLEN-(amblp-amblist),
 					getpath(av[1],getrlibpath(),R_OK));
 				if (rval < 0) {
 					sprintf(errmsg,
@@ -165,7 +165,7 @@ getrenderopt(		/* get next render option */
 				amblp = amblist;
 			}
 			if (av[0][2] == 'E') {	/* file */
-				rval = wordfile(amblp,
+				rval = wordfile(amblp, AMBLLEN-(amblp-amblist),
 					getpath(av[1],getrlibpath(),R_OK));
 				if (rval < 0) {
 					sprintf(errmsg,

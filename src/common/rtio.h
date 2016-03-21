@@ -70,8 +70,8 @@ extern int	shash(char *s);
 extern char	*savqstr(char *s);
 extern void	freeqstr(char *s);
 					/* defined in wordfile.c */
-extern int	wordfile(char **words, char *fname);
-extern int	wordstring(char **avl, char *str);
+extern int	wordfile(char **words, int nargs, char *fname);
+extern int	wordstring(char **avl, int nargs, char *str);
 					/* defined in words.c */
 extern char	*atos(char *rs, int nb, char *s);
 extern char	*nextword(char *cp, int nb, char *s);

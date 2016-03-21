@@ -350,7 +350,7 @@ setrendparams(	/* set global rendering parameters */
 	av[ac=0] = NULL;
 				/* load options from file, first */
 	if (optf != NULL && *optf) {
-		ac = wordfile(av, optf);
+		ac = wordfile(av, 1024, optf);
 		if (ac < 0) {
 			sprintf(errmsg, "cannot load options file \"%s\"",
 					optf);
@@ -359,7 +359,7 @@ setrendparams(	/* set global rendering parameters */
 	}
 				/* then from options string */
 	if (qval != NULL && qval[0] == '-')
-		ac += wordstring(av+ac, qval);
+		ac += wordstring(av+ac, 1024-ac, qval);
 
 				/* restore default parameters */
 	ray_restore(NULL);

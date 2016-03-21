@@ -24,10 +24,11 @@ int	filexpchr = '@';		/* file expansion character */
 
 
 int
-expandarg(acp, avp, n)		/* expand list at argument n */
-int	*acp;
-register char	***avp;
-int	n;
+expandarg(		/* expand list at argument n */
+	int	*acp,
+	char	***avp,
+	int	n
+)
 {
 	int	ace;
 	char	*ave[MAXARGEXP];
@@ -37,11 +38,11 @@ int	n;
 		return(0);
 	errno = 0;	
 	if ((*avp)[n][0] == filexpchr) {		/* file name */
-		ace = wordfile(ave, (*avp)[n]+1);
+		ace = wordfile(ave, MAXARGEXP, (*avp)[n]+1);
 		if (ace < 0)
 			return(-1);	/* no such file */
 	} else if ((*avp)[n][0] == envexpchr) {		/* env. variable */
-		ace = wordstring(ave, getenv((*avp)[n]+1));
+		ace = wordstring(ave, MAXARGEXP, getenv((*avp)[n]+1));
 		if (ace < 0)
 			return(-1);	/* no such variable */
 	} else						/* regular argument */

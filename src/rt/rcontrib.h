@@ -87,7 +87,7 @@ extern LUTAB		ofiletab;	/* output stream table */
 #endif
 
 #ifndef	MAXMODLIST
-#define	MAXMODLIST	2048		/* maximum modifiers we'll track */
+#define	MAXMODLIST	10000		/* maximum modifiers we'll track */
 #endif
 
 extern const char	*modname[MAXMODLIST];	/* ordered modifier name list */

@@ -376,7 +376,8 @@ getradfile(void)			/* run rad and get needed variables */
 		loadvars(tf2);			/* load variables */
 		unlink(tf2);
 	}
-	rtargc += wordfile(rtargv+rtargc, tf1);	/* get rtrace options */
+						/* get rtrace options */
+	rtargc += wordfile(rtargv+rtargc, MAXRTARGC-rtargc, tf1);
 	unlink(tf1);			/* clean up */
 	return(1);
 }
