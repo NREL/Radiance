@@ -55,9 +55,11 @@ if (X11_FOUND OR Qt5Widgets_DIR)
   target_link_libraries(rvu raycalls radiance rtrad ${X11_LIBRARIES})
   list(APPEND targets_to_install rvu)
 
-  # only link to rvu-qt-lib if qt is found
-  if(Qt5Widgets_DIR)
-    target_link_libraries(rvu qtrvu)
+  if(NOT BUILD_HEADLESS)
+    # only link to rvu-qt-lib if qt is found
+    if(Qt5Widgets_DIR)
+      target_link_libraries(rvu qtrvu)
+    endif()
   endif()
 endif()
 
