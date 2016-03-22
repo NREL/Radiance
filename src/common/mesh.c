@@ -99,7 +99,7 @@ getmesh(				/* get new mesh data reference */
 	}
 	if ((pathname = getpath(mname, getrlibpath(), R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find mesh file \"%s\"", mname);
-		error(USER, errmsg);
+		error(SYSTEM, errmsg);
 	}
 	flags &= ~ms->ldflags;
 	if (flags)

@@ -50,7 +50,7 @@ loadBSDF(char *fname)
 	pname = getpath(fname, getrlibpath(), R_OK);
 	if (pname == NULL) {
 		sprintf(errmsg, "cannot find BSDF file \"%s\"", fname);
-		error(USER, errmsg);
+		error(SYSTEM, errmsg);
 	}
 	ec = SDloadFile(sd, pname);
 	if (ec)

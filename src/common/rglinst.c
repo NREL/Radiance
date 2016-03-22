@@ -147,7 +147,7 @@ char	*name;
 		path = getpath(name, getrlibpath(), R_OK);
 		if (path == NULL) {
 			sprintf(errmsg, "cannot find octree \"%s\"", name);
-			error(USER, errmsg);
+			error(SYSTEM, errmsg);
 		}
 		op = (OCTINST *)(lp->data = (char *)malloc(sizeof(OCTINST)));
 		strcpy(op->octfile, path);

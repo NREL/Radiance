@@ -74,7 +74,7 @@ getdata(				/* get data array dname */
 
 	if ((dfname = getpath(dname, getrlibpath(), R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find data file \"%s\"", dname);
-		error(USER, errmsg);
+		error(SYSTEM, errmsg);
 	}
 	if ((fp = fopen(dfname, "r")) == NULL) {
 		sprintf(errmsg, "cannot open data file \"%s\"", dfname);
@@ -181,7 +181,7 @@ getpict(				/* get picture pname */
 
 	if ((pfname = getpath(pname, getrlibpath(), R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find picture file \"%s\"", pname);
-		error(USER, errmsg);
+		error(SYSTEM, errmsg);
 	}
 	if ((pp = (DATARRAY *)malloc(3*sizeof(DATARRAY))) == NULL)
 		goto memerr;

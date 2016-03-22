@@ -85,7 +85,7 @@ set_eparams(char *prms)
 			goto bad_params;
 		cpd = vname;
 		while (*prms && (*prms != '=') & !isspace(*prms)) {
-			if (!isid(*prms))
+			if (!isid(*prms) | (cpd-vname >= RMAXWORD-1))
 				goto bad_params;
 			*cpd++ = *prms++;
 		}
@@ -286,7 +286,7 @@ loadfunc(			/* load definition file */
 
 	if ((ffname = getpath(fname, getrlibpath(), R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find function file \"%s\"", fname);
-		error(USER, errmsg);
+		error(SYSTEM, errmsg);
 	}
 	fcompile(ffname);
 }
@@ -298,7 +298,7 @@ l_arg(char *nm)			/* return nth real argument */
 	int  n;
 
 	if (fobj == NULL)
-		error(USER, "arg(n) called without a context");
+		error(INTERNAL, "arg(n) called without a modifier context");
 
 	n = argument(1) + .5;		/* round to integer */
 

@@ -204,7 +204,7 @@ gettext(			/* get text structure for material */
 				getrlibpath(), R_OK)) == NULL) {
 			sprintf(errmsg, "cannot find text file \"%s\"",
 					tm->oargs.sarg[tndx(tm)]);
-			error(USER, errmsg);
+			error(SYSTEM, errmsg);
 		}
 		if ((fp = fopen(s, "r")) == NULL) {
 			sprintf(errmsg, "cannot open text file \"%s\"", s);

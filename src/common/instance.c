@@ -50,7 +50,7 @@ int  flags;
 	}
 	if ((pathname = getpath(sname, getrlibpath(), R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find octree file \"%s\"", sname);
-		error(USER, errmsg);
+		error(SYSTEM, errmsg);
 	}
 	flags &= ~sc->ldflags;		/* skip what's already loaded */
 	if (flags & IO_SCENE)

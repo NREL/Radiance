@@ -149,7 +149,7 @@ cm_loadBTDF(char *fname)
 	fpath = getpath(fname, getrlibpath(), R_OK);
 	if (fpath == NULL) {
 		sprintf(errmsg, "cannot find BSDF file '%s'", fname);
-		error(USER, errmsg);
+		error(SYSTEM, errmsg);
 	}
 	SDclearBSDF(&myBSDF, fname);	/* load XML and check type */
 	ec = SDloadFile(&myBSDF, fpath);

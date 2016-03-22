@@ -42,7 +42,7 @@ char  *fname;
 						/* load the font file */
 	if ((pathname = getpath(fname, getrlibpath(), R_OK)) == NULL) {
 		sprintf(errmsg, "cannot find font file \"%s\"", fname);
-		error(USER, errmsg);
+		error(SYSTEM, errmsg);
 	}
 	f = (FONT *)calloc(1, sizeof(FONT));
 	if (f == NULL)

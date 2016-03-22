@@ -66,7 +66,7 @@ main(		/* compile a .OBJ file into a mesh */
 				sprintf(errmsg,
 					"cannot find library material: '%s'",
 						argv[i]);
-				error(USER, errmsg);
+				error(SYSTEM, errmsg);
 			}
 			matinp[nmatf++] = strcpy(pns, cp);
 			while (*pns++)
