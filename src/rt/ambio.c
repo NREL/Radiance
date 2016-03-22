@@ -10,25 +10,19 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include "ray.h"
-
 #include "ambient.h"
 
 
-#define  putvec(v,fp)	putflt((v)[0],fp);putflt((v)[1],fp);putflt((v)[2],fp)
-
-#define  getvec(v,fp)	(v)[0]=getflt(fp);(v)[1]=getflt(fp);(v)[2]=getflt(fp)
-
 #define  badflt(x)	((x) < -FHUGE || (x) > FHUGE)
 
-#define  badvec(v)	(badflt((v)[0]) || badflt((v)[1]) || badflt((v)[2]))
-
+#define  badvec(v)	(badflt((v)[0]) | badflt((v)[1]) | badflt((v)[2]))
 
 
 void
 putambmagic(fp)			/* write out ambient value magic number */
 FILE  *fp;
 {
-	putint((long)AMBMAGIC, 2, fp);
+	putint(AMBMAGIC, 2, fp);
 }
 
 
@@ -36,7 +30,7 @@ int
 hasambmagic(fp)			/* read in and check validity of magic # */
 FILE  *fp;
 {
-	register int  magic;
+	int  magic;
 
 	magic = getint(2, fp);
 	if (feof(fp))
@@ -45,14 +39,107 @@ FILE  *fp;
 }
 
 
+#ifndef OLDAMB
+
+#define  putpos(v,fp)	putflt((v)[0],fp);putflt((v)[1],fp);putflt((v)[2],fp)
+
+#define  getpos(v,fp)	(v)[0]=getflt(fp);(v)[1]=getflt(fp);(v)[2]=getflt(fp)
+
+#define  putv2(v2,fp)	putflt((v2)[0],fp);putflt((v2)[1],fp)
+
+#define  getv2(v2,fp)	(v2)[0]=getflt(fp);(v2)[1]=getflt(fp)
+
+int
+writambval(			/* write ambient value to stream */
+	AMBVAL  *av,
+	FILE  *fp
+)
+{
+	COLR  col;
+
+	putint(av->lvl, 1, fp);
+	putflt(av->weight, fp);
+	putpos(av->pos, fp);
+	putint(av->ndir, sizeof(av->ndir), fp);
+	putint(av->udir, sizeof(av->udir), fp);
+	setcolr(col, colval(av->val,RED),
+			colval(av->val,GRN), colval(av->val,BLU));
+	fwrite((char *)col, sizeof(col), 1, fp);
+	putv2(av->rad, fp);
+	putv2(av->gpos, fp);
+	putv2(av->gdir, fp);
+	putint(av->corral, sizeof(av->corral), fp);
+	return(ferror(fp) ? -1 : 0);
+}
+
+
+int
+ambvalOK(			/* check consistency of ambient value */
+	AMBVAL  *av
+)
+{
+	double	d;
+
+	if (badvec(av->pos)) return(0);
+	if (!av->ndir | !av->udir) return(0);
+	if ((av->lvl < 0) | (av->lvl > 100)) return(0);
+	if ((av->weight <= 0.) | (av->weight > 1.)) return(0);
+	if ((av->rad[0] <= 0.) | (av->rad[0] >= FHUGE)) return(0);
+	if ((av->rad[1] <= 0.) | (av->rad[1] >= FHUGE)) return(0);
+	if ((colval(av->val,RED) < 0.) |
+			(colval(av->val,RED) > FHUGE) |
+			(colval(av->val,GRN) < 0.) |
+			(colval(av->val,GRN) > FHUGE) |
+			(colval(av->val,BLU) < 0.) |
+			(colval(av->val,BLU) > FHUGE)) return(0);
+	if (badflt(av->gpos[0]) || badflt(av->gpos[1])) return(0);
+	if (badflt(av->gdir[0]) || badflt(av->gdir[1])) return(0);
+	return(1);
+}
+
+
+int
+readambval(			/* read ambient value from stream */
+	AMBVAL  *av,
+	FILE  *fp
+)
+{
+	COLR  col;
+
+	av->lvl = getint(1, fp);
+	if (feof(fp))
+		return(0);
+	av->weight = getflt(fp);
+	getpos(av->pos, fp);
+	av->ndir = getint(sizeof(av->ndir), fp);
+	av->udir = getint(sizeof(av->udir), fp);
+	if (fread((char *)col, sizeof(col), 1, fp) != 1)
+		return(0);
+	colr_color(av->val, col);
+	getv2(av->rad, fp);
+	getv2(av->gpos, fp);
+	getv2(av->gdir, fp);
+	av->corral = (uint32)getint(sizeof(av->corral), fp);
+	return(feof(fp) ? 0 : ambvalOK(av));
+}
+
+
+#else /* ! NEWAMB */
+
+
+#define  putvec(v,fp)	putflt((v)[0],fp);putflt((v)[1],fp);putflt((v)[2],fp)
+
+#define  getvec(v,fp)	(v)[0]=getflt(fp);(v)[1]=getflt(fp);(v)[2]=getflt(fp)
+
+
 int
 writambval(av, fp)		/* write ambient value to stream */
-register AMBVAL  *av;
+AMBVAL  *av;
 FILE  *fp;
 {
 	COLR  col;
 
-	putint((long)av->lvl, 1, fp);
+	putint(av->lvl, 1, fp);
 	putflt(av->weight, fp);
 	putvec(av->pos, fp);
 	putvec(av->dir, fp);
@@ -68,7 +155,7 @@ FILE  *fp;
 
 int
 ambvalOK(av)			/* check consistency of ambient value */
-register AMBVAL  *av;
+AMBVAL  *av;
 {
 	double	d;
 
@@ -93,7 +180,7 @@ register AMBVAL  *av;
 
 int
 readambval(av, fp)		/* read ambient value from stream */
-register AMBVAL  *av;
+AMBVAL  *av;
 FILE  *fp;
 {
 	COLR  col;
@@ -112,3 +199,5 @@ FILE  *fp;
 	getvec(av->gdir, fp);
 	return(feof(fp) ? 0 : ambvalOK(av));
 }
+
+#endif	/* ! NEWAMB */

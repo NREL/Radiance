@@ -213,6 +213,11 @@ again:
 		}
 		getpivot(args);
 		break;
+	case 'o':				/* origin view */
+		if (badcom("origin"))
+			goto commerr;
+		getorigin(args);
+		break;
 	case CTRL('R'):				/* redraw */
 		redraw();
 		break;

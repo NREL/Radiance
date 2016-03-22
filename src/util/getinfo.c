@@ -20,15 +20,19 @@ static const char	RCSid[] = "$Id$";
 #define putchar		putchar_unlocked
 #endif
 
+#ifdef _WIN32
+#include <process.h>
+#define	execvp	_execvp
+#endif
 
 static gethfunc tabstr;
-static void getdim(register FILE *fp);
+static void getdim(FILE *fp);
 static void copycat(void);
 
 
 static int
 tabstr(				/* put out line followed by tab */
-	register char  *s,
+	char  *s,
 	void *p
 )
 {
@@ -55,8 +59,18 @@ main(
 	if (argc > 1 && !strcmp(argv[1], "-d")) {
 		argc--; argv++;
 		dim = 1;
-		SET_DEFAULT_BINARY(); /* for output file */
 		SET_FILE_BINARY(stdin);
+	} else if (argc > 2 && !strcmp(argv[1], "-c")) {
+		SET_FILE_BINARY(stdin);
+		SET_FILE_BINARY(stdout);
+		setvbuf(stdin, NULL, _IONBF, 2);
+		getheader(stdin, (gethfunc *)fputs, stdout);
+		printargs(argc-2, argv+2, stdout);
+		fputc('\n', stdout);
+		fflush(stdout);
+		execvp(argv[2], argv+2);
+		perror(argv[2]);
+		return 1;
 	} else if (argc == 2 && !strcmp(argv[1], "-")) {
 		SET_FILE_BINARY(stdin);
 		SET_FILE_BINARY(stdout);
@@ -75,7 +89,7 @@ main(
 			} else {
 				tabstr(":\n", NULL);
 				getheader(fp, tabstr, NULL);
-				putchar('\n');
+				fputc('\n', stdout);
 			}
 			fclose(fp);
 		}
@@ -84,8 +98,8 @@ main(
 		if (dim) {
 			getdim(stdin);
 		} else {
-			getheader(stdin, (gethfunc*)fputs, stdout);
-			putchar('\n');
+			getheader(stdin, (gethfunc *)fputs, stdout);
+			fputc('\n', stdout);
 		}
 	}
 	return 0;
@@ -94,11 +108,11 @@ main(
 
 static void
 getdim(				/* get dimensions from file */
-	register FILE  *fp
+	FILE  *fp
 )
 {
 	int  j;
-	register int  c;
+	int  c;
 
 	getheader(fp, NULL, NULL);	/* skip header */
 
@@ -113,13 +127,13 @@ getdim(				/* get dimensions from file */
 		getc(fp);
 		j = 0;
 		while ((c = getc(fp)) != EOF)
-			if (c == 0)
+			if (c == 0) {
 				if (++j >= 4)
 					break;
-				else
-					putchar(' ');
-			else
+				putchar(' ');
+			} else {
 				putchar(c);
+			}
 		putchar('\n');
 		break;
 	default:		/* ??? */
@@ -132,8 +146,11 @@ getdim(				/* get dimensions from file */
 static void
 copycat(void)			/* copy input to output */
 {
-	register int	c;
+	char	buf[8192];
+	int	n;
 
-	while ((c = getchar()) != EOF)
-		putchar(c);
+	fflush(stdout);
+	while ((n = fread(buf, 1, sizeof(buf), stdin)) > 0)
+		if (write(fileno(stdout), buf, n) != n)
+			break;
 }

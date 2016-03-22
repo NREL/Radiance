@@ -36,8 +36,8 @@ typedef struct SDNode_s {
 
 /* Variable-resolution BSDF holder */
 typedef struct {
-	int	sidef;		/* transmitted component? */
-	SDNode	*st;		/* BSDF tree */
+	int	sidef;		/* which component */
+	SDNode	*stc[3];	/* BSDF (Y,u,v) trees */
 } SDTre;
 
 /* Holder for cumulative distribution (sum of BSDF * projSA) */
@@ -52,7 +52,7 @@ typedef struct SDTreCDst_s {
 	struct {
 		unsigned	hndx;	/* hilbert index */
 		unsigned	cuml;	/* cumulative value */
-	}		carr[1];	/* cumulative array (extends struct) */
+	}	carr[1];	/* cumulative array (extends struct) */
 } SDTreCDst;	
 
 #ifdef _EZXML_H

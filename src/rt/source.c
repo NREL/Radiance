@@ -12,8 +12,8 @@ static const char RCSid[] = "$Id$";
 #include  "rtotypes.h"
 #include  "source.h"
 #include  "random.h"
-
-extern double  ssampdist;		/* scatter sampling distance */
+#include  "pmap.h"
+#include  "pmapsrc.h"
 
 #ifndef MAXSSAMP
 #define MAXSSAMP	16		/* maximum samples per ray */
@@ -42,8 +42,8 @@ static int  maxcntr = 0;		/* size of contribution arrays */
 static int cntcmp(const void *p1, const void *p2);
 
 
-extern OBJREC *			/* find an object's actual material */
-findmaterial(register OBJREC *o)
+OBJREC *			/* find an object's actual material */
+findmaterial(OBJREC *o)
 {
 	while (!ismaterial(o->otype)) {
 		if (o->otype == MOD_ALIAS && o->oargs.nsargs) {
@@ -68,13 +68,13 @@ findmaterial(register OBJREC *o)
 }
 
 
-extern void
+void
 marksources(void)			/* find and mark source objects */
 {
 	int  foundsource = 0;
 	int  i;
-	register OBJREC  *o, *m;
-	register int  ns;
+	OBJREC  *o, *m;
+	int  ns;
 					/* initialize dispatch table */
 	initstypes();
 					/* find direct sources */
@@ -135,16 +135,20 @@ marksources(void)			/* find and mark source objects */
 				source[ns].sflags |= SSKIP;
 			}
 		}
-#if  SHADCACHE
-		initobscache(ns);
-#endif
 		foundsource += !(source[ns].sflags & SSKIP);
 	}
 	if (!foundsource) {
 		error(WARNING, "no light sources found");
 		return;
 	}
-	markvirtuals();			/* find and add virtual sources */
+#if  SHADCACHE
+	for (ns = 0; ns < nsources; ns++)	/* initialize obstructor cache */
+		initobscache(ns);
+#endif
+	/* PMAP: disable virtual sources */
+	if (!photonMapping)
+		markvirtuals();			/* find and add virtual sources */
+		
 				/* allocate our contribution arrays */
 	maxcntr = nsources + MAXSPART;	/* start with this many */
 	srccnt = (CONTRIB *)malloc(maxcntr*sizeof(CONTRIB));
@@ -157,7 +161,7 @@ memerr:
 }
 
 
-extern void
+void
 freesources(void)			/* free all source structures */
 {
 	if (nsources > 0) {
@@ -180,15 +184,15 @@ freesources(void)			/* free all source structures */
 }
 
 
-extern int
+int
 srcray(				/* send a ray to a source, return domega */
-	register RAY  *sr,		/* returned source ray */
+	RAY  *sr,		/* returned source ray */
 	RAY  *r,			/* ray which hit object */
 	SRCINDEX  *si			/* source sample index */
 )
 {
 	double  d;				/* distance to source */
-	register SRCREC  *srcp;
+	SRCREC  *srcp;
 
 	rayorigin(sr, SHADOW, r, NULL);		/* ignore limits */
 
@@ -222,12 +226,12 @@ srcray(				/* send a ray to a source, return domega */
 }
 
 
-extern void
+void
 srcvalue(			/* punch ray to source and compute value */
-	register RAY  *r
+	RAY  *r
 )
 {
-	register SRCREC  *sp;
+	SRCREC  *sp;
 
 	sp = &source[r->rsrc];
 	if (sp->sflags & SVIRTUAL) {	/* virtual source */
@@ -279,15 +283,15 @@ transillum(			/* check if material is transparent illum */
 }
 
 
-extern int
+int
 sourcehit(			/* check to see if ray hit distant source */
-	register RAY  *r
+	RAY  *r
 )
 {
 	int  glowsrc = -1;
 	int  transrc = -1;
 	int  first, last;
-	register int  i;
+	int  i;
 
 	if (r->rsrc >= 0) {		/* check only one if aimed */
 		first = last = r->rsrc;
@@ -355,8 +359,8 @@ cntcmp(				/* contribution compare (descending) */
 	const void *p2
 )
 {
-	register const CNTPTR  *sc1 = (const CNTPTR *)p1;
-	register const CNTPTR  *sc2 = (const CNTPTR *)p2;
+	const CNTPTR  *sc1 = (const CNTPTR *)p1;
+	const CNTPTR  *sc2 = (const CNTPTR *)p2;
 
 	if (sc1->brt > sc2->brt)
 		return(-1);
@@ -366,20 +370,28 @@ cntcmp(				/* contribution compare (descending) */
 }
 
 
-extern void
+void
 direct(					/* add direct component */
 	RAY  *r,			/* ray that hit surface */
 	srcdirf_t *f,			/* direct component coefficient function */
 	void  *p			/* data for f */
 )
 {
-	register int  sn;
-	register CONTRIB  *scp;
+	int  sn;
+	CONTRIB  *scp;
 	SRCINDEX  si;
 	int  nshadcheck, ncnts;
 	int  nhits;
 	double  prob, ourthresh, hwt;
 	RAY  sr;
+	
+	/* PMAP: Factor in direct photons (primarily for debugging/validation) */
+	if (directPhotonMapping) {
+		(*f)(r -> rcol, p, r -> ron, PI);		
+		multDirectPmap(r);
+		return;
+	}
+	
 			/* NOTE: srccnt and cntord global so no recursion */
 	if (nsources <= 0)
 		return;		/* no sources?! */
@@ -422,7 +434,7 @@ direct(					/* add direct component */
 						/* sort contributions */
 	qsort(cntord, sn, sizeof(CNTPTR), cntcmp);
 	{					/* find last */
-		register int  l, m;
+		int  l, m;
 
 		ncnts = l = sn;
 		sn = 0;
@@ -442,7 +454,10 @@ direct(					/* add direct component */
 						/* compute number to check */
 	nshadcheck = pow((double)ncnts, shadcert) + .5;
 						/* modify threshold */
-	ourthresh = shadthresh / r->rweight;
+	if (ncnts > MINSHADCNT)
+		ourthresh = shadthresh / r->rweight;
+	else
+		ourthresh = 0;
 						/* test for shadows */
 	for (nhits = 0, hwt = 0.0, sn = 0; sn < ncnts;
 			hwt += (double)source[scp->sno].nhits /
@@ -517,9 +532,9 @@ direct(					/* add direct component */
 }
 
 
-extern void
+void
 srcscatter(			/* compute source scattering into ray */
-	register RAY  *r
+	RAY  *r
 )
 {
 	int  oldsampndx;
@@ -528,12 +543,15 @@ srcscatter(			/* compute source scattering into ray */
 	SRCINDEX  si;
 	double  t, d;
 	double  re, ge, be;
-	COLOR  cvext;
+	COLOR  cvext, pmapInscatter;
 	int  i, j;
 
+	/* PMAP: do unconditional inscattering for volume photons ? */
+	/* if (!volumePhotonMapping) */
 	if (r->slights == NULL || r->slights[0] == 0
 			|| r->gecc >= 1.-FTINY || r->rot >= FHUGE)
 		return;
+		
 	if (ssampdist <= FTINY || (nsamps = r->rot/ssampdist + .5) < 1)
 		nsamps = 1;
 #if MAXSSAMP
@@ -588,9 +606,17 @@ srcscatter(			/* compute source scattering into ray */
 			}
 							/* other factors */
 			d *= si.dom * r->rot / (4.*PI*nsamps);
+			scalecolor(sr.rcol, d);
+			
+			/* PMAP: Add ambient inscattering from volume photons once only */
+			if (volumePhotonMapping && i == 1) {
+			   inscatterVolumePmap(&sr, pmapInscatter);
+            scalecolor(pmapInscatter, r -> rot / nsamps);
+            addcolor(sr.rcol, pmapInscatter);
+         }
+			
 			multcolor(sr.rcol, r->cext);
 			multcolor(sr.rcol, r->albedo);
-			scalecolor(sr.rcol, d);
 			multcolor(sr.rcol, cvext);
 			addcolor(r->rcol, sr.rcol);	/* add it in */
 		}
@@ -682,10 +708,10 @@ weaksrcmat(OBJECT obj)		/* identify material */
 				distglow(m, r, raydist(r,PRIMARY)))
 
 
-extern int
+int
 m_light(				/* ray hit a light source */
-	register OBJREC  *m,
-	register RAY  *r
+	OBJREC  *m,
+	RAY  *r
 )
 {
 						/* check for over-counting */

@@ -110,7 +110,7 @@ build_tree(TNODE *tp, const int bmin[], int l2s)
 
 /* Set our trimming threshold */
 static void
-set_threshold()
+set_threshold(void)
 {
 	int	hsum = 0;
 	int	i;
@@ -155,7 +155,7 @@ print_tree(const TNODE *tp, const int bmin[], int l2s)
 				bkmin[j] = bmin[j] + (i>>(ttrank-1-j) & 1);
 			val = (ttrank == 3) ? dval3(bkmin[0],bkmin[1],bkmin[2])
 				: dval4(bkmin[0],bkmin[1],bkmin[2],bkmin[3]);
-			printf(" %.4e", val);
+			printf((0.001<=val)&(val<10.) ? " %.7f" : " %.3e", val);
 		}
 		fputs(" }\n", stdout);
 		return;
@@ -235,9 +235,30 @@ read_double(float *rowp, int n)
 	return(nread);
 }
 
+/* Truncate any negative values to zero */
+static void
+noneg(float *varr, int n)
+{
+	int	nnan = 0;
+
+	while (n-- > 0) {
+#ifdef isnan
+		if (isnan(*varr)) {
+			*varr = 0;
+			++nnan;
+		} else
+#endif
+		if (*varr < 0) *varr = 0;
+		++varr;
+	}
+	if (nnan)
+		fprintf(stderr, "Warning: BSDF data contains %d NaN values\n",
+				nnan);
+}
+
 /* Load data array, filling zeroes for rank 3 demi-tensor */
 static void
-load_data()
+load_data(void)
 {
 	int	(*readf)(float *, int) = NULL;
 	
@@ -289,31 +310,34 @@ load_data()
 		}
 	} else if (getc(stdin) != EOF)
 		error(WARNING, "binary data past end of expected input");
+
+	noneg(datarr, 1<<(log2g*ttrank));	/* take precautions */
 }
 
 /* Enforce reciprocity by averaging data values */
 static void
-do_reciprocity()
+do_reciprocity(void)
 {
-	float	*v1p, *v2p;
+	const int	siz = 1<<log2g;
+	float		*v1p, *v2p;
 
 	if (ttrank == 3) {
 		int	ix, ox, oy;
-		for (ix = 0; ix < 1<<(log2g-1); ix++)
-		    for (ox = 0; ox < 1<<log2g; ox++)
-		        for (oy = 0; oy < 1<<(log2g-1); oy++) {
+		for (ix = 0; ix < siz>>1; ix++)
+		    for (ox = 0; ox < siz; ox++)
+		        for (oy = 0; oy < siz>>1; oy++) {
 				v1p = &dval3(ix,ox,oy);
-				v2p = &dval3(ix,ox,(1<<log2g)-1-oy);
+				v2p = &dval3(ix,ox,siz-1-oy);
 				*v1p = *v2p = .5f*( *v1p + *v2p );
 			}
 	} else /* ttrank == 4 */ {
 		int	ix, iy, ox, oy;
-		for (ix = 1; ix < 1<<log2g; ix++)
-		    for (iy = 1; iy < 1<<log2g; iy++)
+		for (ix = 1; ix < siz; ix++)
+		    for (iy = 1; iy < siz; iy++)
 			for (ox = 0; ox < ix; ox++)
 			    for (oy = 0; oy < iy; oy++) {
-				v1p = &dval4(ix,iy,ox,oy);
-				v2p = &dval4(ox,oy,ix,iy);
+				v1p = &dval4(siz-1-ix,siz-1-iy,ox,oy);
+				v2p = &dval4(siz-1-ox,siz-1-oy,ix,iy);
 				*v1p = *v2p = .5f*( *v1p + *v2p );
 			    }
 	}
@@ -363,12 +387,15 @@ main(int argc, char *argv[])
 	if (i < argc-1)
 		goto userr;
 					/* load input data */
-	if (i == argc-1 && freopen(argv[i], "rb", stdin) == NULL) {
+	if (i == argc-1 && freopen(argv[i], "r", stdin) == NULL) {
 		sprintf(errmsg, "cannot open input file '%s'", argv[i]);
 		error(SYSTEM, errmsg);
 	}
 	if (infmt != 'a')
 		SET_FILE_BINARY(stdin);
+#ifdef getc_unlocked			/* avoid lock/unlock overhead */
+	flockfile(stdin);
+#endif
 	load_data();
 	if (recipavg)
 		do_reciprocity();

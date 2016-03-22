@@ -9,6 +9,7 @@ static const char	RCSid[] = "$Id$";
 
 #include <ctype.h>
 #include <time.h>
+#include <signal.h>
 
 #include "platform.h"
 #include "rtprocess.h"
@@ -24,6 +25,7 @@ static const char	RCSid[] = "$Id$";
   #define RENAMECMD "mv"
   #include <sys/types.h>
   #include <sys/wait.h>
+  #include <signal.h>
 #endif
 
 				/* variables (alphabetical by name) */
@@ -35,28 +37,31 @@ static const char	RCSid[] = "$Id$";
 #define INDIRECT	5		/* indirection in lighting */
 #define MATERIAL	6		/* material files */
 #define MKILLUM		7		/* mkillum options */
-#define OBJECT		8		/* object files */
-#define OCONV		9		/* oconv options */
-#define OCTREE		10		/* octree file name */
-#define OPTFILE		11		/* rendering options file */
-#define PENUMBRAS	12		/* shadow penumbras are desired */
-#define PFILT		13		/* pfilt options */
-#define PICTURE		14		/* picture file root name */
-#define QUALITY		15		/* desired rendering quality */
-#define RAWFILE		16		/* raw picture file root name */
-#define RENDER		17		/* rendering options */
-#define REPORT		18		/* report frequency and errfile */
-#define RESOLUTION	19		/* maximum picture resolution */
-#define RPICT		20		/* rpict parameters */
-#define RVU		21		/* rvu parameters */
-#define SCENE		22		/* scene files */
-#define UP		23		/* view up (X, Y or Z) */
-#define VARIABILITY	24		/* level of light variability */
-#define VIEWS		25		/* view(s) for picture(s) */
-#define ZFILE		26		/* distance file root name */
-#define ZONE		27		/* simulation zone */
+#define MKPMAP		8		/* mkpmap options */
+#define OBJECT		9		/* object files */
+#define OCONV		10		/* oconv options */
+#define OCTREE		11		/* octree file name */
+#define OPTFILE		12		/* rendering options file */
+#define PCMAP		13		/* caustic photon map */
+#define PENUMBRAS	14		/* shadow penumbras are desired */
+#define PFILT		15		/* pfilt options */
+#define PGMAP		16		/* global photon map */
+#define PICTURE		17		/* picture file root name */
+#define QUALITY		18		/* desired rendering quality */
+#define RAWFILE		19		/* raw picture file root name */
+#define RENDER		20		/* rendering options */
+#define REPORT		21		/* report frequency and errfile */
+#define RESOLUTION	22		/* maximum picture resolution */
+#define RPICT		23		/* rpict parameters */
+#define RVU		24		/* rvu parameters */
+#define SCENE		25		/* scene files */
+#define UP		26		/* view up (X, Y or Z) */
+#define VARIABILITY	27		/* level of light variability */
+#define VIEWS		28		/* view(s) for picture(s) */
+#define ZFILE		29		/* distance file root name */
+#define ZONE		30		/* simulation zone */
 				/* total number of variables */
-int NVARS = 28;
+int NVARS = 31;
 
 VARIABLE	vv[] = {		/* variable-value pairs */
 	{"AMBFILE",	3,	0,	NULL,	onevalue},
@@ -67,12 +72,15 @@ VARIABLE	vv[] = {		/* variable-value pairs */
 	{"INDIRECT",	3,	0,	NULL,	intvalue},
 	{"materials",	3,	0,	NULL,	catvalues},
 	{"mkillum",	3,	0,	NULL,	catvalues},
+	{"mkpmap",	3,	0,	NULL,	catvalues},
 	{"objects",	3,	0,	NULL,	catvalues},
 	{"oconv",	3,	0,	NULL,	catvalues},
 	{"OCTREE",	3,	0,	NULL,	onevalue},
 	{"OPTFILE",	3,	0,	NULL,	onevalue},
+	{"PCMAP",	2,	0,	NULL,	onevalue},
 	{"PENUMBRAS",	3,	0,	NULL,	boolvalue},
 	{"pfilt",	2,	0,	NULL,	catvalues},
+	{"PGMAP",	2,	0,	NULL,	onevalue},
 	{"PICTURE",	3,	0,	NULL,	onevalue},
 	{"QUALITY",	3,	0,	NULL,	qualvalue},
 	{"RAWFILE",	3,	0,	NULL,	onevalue},
@@ -107,6 +115,11 @@ time_t	oct0date;		/* date of pre-mkillum octree */
 char	*oct1name;		/* name of post-mkillum octree */
 time_t	oct1date;		/* date of post-mkillum octree (>= matdate) */
 
+char	*pgmapname;		/* name of global photon map */
+time_t	pgmapdate;		/* date of global photon map (>= oct1date) */
+char	*pcmapname;		/* name of caustic photon map */
+time_t	pcmapdate;		/* date of caustic photon map (>= oct1date) */
+
 int	nowarn = 0;		/* no warnings */
 int	explicate = 0;		/* explicate variables */
 int	silent = 0;		/* do work silently */
@@ -121,6 +134,7 @@ char	*viewselect = NULL;	/* specific view only */
 				/* command paths */
 char	c_oconv[256] = "oconv";
 char	c_mkillum[256] = "mkillum";
+char	c_mkpmap[256] = "mkpmap";
 char	c_rvu[256] = "rvu";
 char	c_rpict[256] = DEF_RPICT_PATH;
 char	c_rpiece[] = "rpiece";
@@ -144,9 +158,11 @@ static void checkfiles(void);
 static void getoctcube(double	org[3], double	*sizp);
 static void setdefaults(void);
 static void oconv(void);
+static void mkpmap(void);
 static char * addarg(char	*op, char	*arg);
 static void oconvopts(char	*oo);
 static void mkillumopts(char	*mo);
+static void mkpmapopts(char	*mo);
 static void checkambfile(void);
 static double ambval(void);
 static void renderopts(char	*op, char	*po);
@@ -243,6 +259,8 @@ main(
 		printvars(stdout);
 				/* build octree (and run mkillum) */
 	oconv();
+				/* run mkpmap if indicated */
+	mkpmap();
 				/* check date on ambient file */
 	checkambfile();
 				/* run simulation */
@@ -264,8 +282,8 @@ userr:
 
 static void
 rootname(		/* remove tail from end of fn */
-	register char	*rn,
-	register char	*fn
+	char	*rn,
+	char	*fn
 )
 {
 	char	*tp, *dp;
@@ -282,7 +300,7 @@ rootname(		/* remove tail from end of fn */
 
 static time_t
 checklast(			/* check files and find most recent */
-	register char	*fnames
+	char	*fnames
 )
 {
 	char	thisfile[PATH_MAX];
@@ -312,8 +330,8 @@ newfname(		/* create modified file name */
 	int	pred
 )
 {
-	register char	*cp;
-	register int	n;
+	char	*cp;
+	int	n;
 	int	suffix;
 
 	n = 0; cp = orig; suffix = -1;		/* suffix position, length */
@@ -335,6 +353,7 @@ newfname(		/* create modified file name */
 static void
 checkfiles(void)			/* check for existence and modified times */
 {
+	char	fntemp[256];
 	time_t	objdate;
 
 	if (!vdef(OCTREE)) {
@@ -364,6 +383,26 @@ checkfiles(void)			/* check for existence and modified times */
 				vnam(OCTREE), vnam(SCENE), vnam(ILLUM));
 		quit(1);
 	}
+	if (vdef(PGMAP)) {
+		if (!*sskip2(vval(PGMAP),1)) {
+			fprintf(stderr, "%s: '%s' missing # photons argument\n",
+					progname, vnam(PGMAP));
+			quit(1);
+		}
+		atos(fntemp, sizeof(fntemp), vval(PGMAP));
+		pgmapname = savqstr(fntemp);
+		pgmapdate = fdate(pgmapname);
+	}
+	if (vdef(PCMAP)) {
+		if (!*sskip2(vval(PCMAP),1)) {
+			fprintf(stderr, "%s: '%s' missing # photons argument\n",
+					progname, vnam(PCMAP));
+			quit(1);
+		}
+		atos(fntemp, sizeof(fntemp), vval(PCMAP));
+		pcmapname = savqstr(fntemp);
+		pcmapdate = fdate(pcmapname);
+	}
 	matdate = checklast(vval(MATERIAL));
 }	
 
@@ -378,7 +417,7 @@ getoctcube(		/* get octree bounding cube */
 	double	min[3], max[3];
 	char	buf[1024];
 	FILE	*fp;
-	register int	i;
+	int	i;
 
 	if (osiz <= FTINY) {
 		if (!nprocs && fdate(oct1name) <
@@ -585,10 +624,77 @@ oconv(void)				/* run oconv and mkillum if necessary */
 }
 
 
+static void
+mkpmap(void)			/* run mkpmap if indicated */
+{
+	char	combuf[2048], *cp;
+	time_t	tnow;
+				/* nothing to do? */
+	if ((pgmapname == NULL) | (pgmapdate >= oct1date) &&
+			(pcmapname == NULL) | (pcmapdate >= oct1date))
+		return;
+				/* just update existing file dates? */
+	if (touchonly && (pgmapname == NULL) | (pgmapdate > 0) &&
+			(pcmapname == NULL) | (pcmapdate > 0)) {
+		if (pgmapname != NULL)
+			touch(pgmapname);
+		if (pcmapname != NULL)
+			touch(pcmapname);
+	} else {		/* else need to (re)run pkpmap */
+		strcpy(combuf, c_mkpmap);
+		for (cp = combuf; *cp; cp++)
+			;
+		mkpmapopts(cp);
+				/* force file overwrite */
+		cp = addarg(cp, "-fo+");
+		if (vdef(REPORT)) {
+			char	errfile[256];
+			int	n;
+			double	minutes;
+			n = sscanf(vval(REPORT), "%lf %s", &minutes, errfile);
+			if (n == 2)
+				sprintf(cp, " -t %d -e %s", (int)(minutes*60), errfile);
+			else if (n == 1)
+				sprintf(cp, " -t %d", (int)(minutes*60));
+			else
+				badvalue(REPORT);
+		}
+		if (pgmapname != NULL && pgmapdate < oct1date) {
+			cp = addarg(cp, "-apg");
+			addarg(cp, vval(PGMAP));
+			cp = sskip(sskip(cp));	/* remove any bandwidth */
+			*cp = '\0';
+		}
+		if (pcmapname != NULL && pcmapdate < oct1date) {
+			cp = addarg(cp, "-apc");
+			addarg(cp, vval(PCMAP));
+			cp = sskip(sskip(cp));	/* remove any bandwidth */
+			*cp = '\0';
+		}
+		cp = addarg(cp, oct1name);
+		if (runcom(combuf)) {
+			fprintf(stderr, "%s: error running %s\n",
+					progname, c_mkpmap);
+			if (pgmapname != NULL && pgmapdate < oct1date)
+				unlink(pgmapname);
+			if (pcmapname != NULL && pcmapdate < oct1date)
+				unlink(pcmapname);
+			quit(1);
+		}
+	}
+	tnow = time((time_t *)NULL);
+	if (pgmapname != NULL)
+		pgmapdate = tnow;
+	if (pcmapname != NULL)
+		pcmapdate = tnow;
+	oct1date = tnow;	/* trigger ambient file removal if needed */
+}
+
+
 static char *
 addarg(				/* append argument and advance pointer */
-register char	*op,
-register char	*arg
+char	*op,
+char	*arg
 )
 {
 	while (*op)
@@ -602,18 +708,19 @@ register char	*arg
 
 static void
 oconvopts(				/* get oconv options */
-	register char	*oo
+	char	*oo
 )
 {
 	/* BEWARE:  This may be called via setdefaults(), so no assumptions */
 
 	*oo = '\0';
-	if (vdef(OCONV))
-		if (vval(OCONV)[0] != '-') {
-			atos(c_oconv, sizeof(c_oconv), vval(OCONV));
-			oo = addarg(oo, sskip2(vval(OCONV), 1));
-		} else
-			oo = addarg(oo, vval(OCONV));
+	if (!vdef(OCONV))
+		return;
+	if (vval(OCONV)[0] != '-') {
+		atos(c_oconv, sizeof(c_oconv), vval(OCONV));
+		oo = addarg(oo, sskip2(vval(OCONV), 1));
+	} else
+		oo = addarg(oo, vval(OCONV));
 }
 
 
@@ -628,12 +735,31 @@ mkillumopts(				/* get mkillum options */
 		sprintf(mo, " -n %d", nprocs);
 	else
 		*mo = '\0';
-	if (vdef(MKILLUM))
-		if (vval(MKILLUM)[0] != '-') {
-			atos(c_mkillum, sizeof(c_mkillum), vval(MKILLUM));
-			mo = addarg(mo, sskip2(vval(MKILLUM), 1));
-		} else
-			mo = addarg(mo, vval(MKILLUM));
+	if (!vdef(MKILLUM))
+		return;
+	if (vval(MKILLUM)[0] != '-') {
+		atos(c_mkillum, sizeof(c_mkillum), vval(MKILLUM));
+		mo = addarg(mo, sskip2(vval(MKILLUM), 1));
+	} else
+		mo = addarg(mo, vval(MKILLUM));
+}
+
+
+static void
+mkpmapopts(				/* get mkpmap options */
+	char	*mo
+)
+{
+	/* BEWARE:  This may be called via setdefaults(), so no assumptions */
+
+	*mo = '\0';
+	if (!vdef(MKPMAP))
+		return;
+	if (vval(MKPMAP)[0] != '-') {
+		atos(c_mkpmap, sizeof(c_mkpmap), vval(MKPMAP));
+		mo = addarg(mo, sskip2(vval(MKPMAP), 1));
+	} else
+		mo = addarg(mo, vval(MKPMAP));
 }
 
 
@@ -678,6 +804,15 @@ renderopts(			/* set rendering options */
 	char	*po
 )
 {
+	char	pmapf[256], *bw;
+
+	if (vdef(PGMAP)) {
+		*op = '\0';
+		bw = sskip2(vval(PGMAP), 2);
+		atos(pmapf, sizeof(pmapf), vval(PGMAP));
+		op = addarg(addarg(op, "-ap"), pmapf);
+		if (atoi(bw) > 0) op = addarg(op, bw);
+	}
 	switch(vscale(QUALITY)) {
 	case LOW:
 		lowqopts(op, po);
@@ -689,29 +824,37 @@ renderopts(			/* set rendering options */
 		hiqopts(op, po);
 		break;
 	}
+	if (vdef(PCMAP)) {
+		bw = sskip2(vval(PCMAP), 2);
+		atos(pmapf, sizeof(pmapf), vval(PCMAP));
+		op = addarg(addarg(op, "-ap"), pmapf);
+		if (atoi(bw) > 0) op = addarg(op, bw);
+	}
 	if (vdef(RENDER))
 		op = addarg(op, vval(RENDER));
 	if (rvdevice != NULL) {
-		if (vdef(RVU))
+		if (vdef(RVU)) {
 			if (vval(RVU)[0] != '-') {
 				atos(c_rvu, sizeof(c_rvu), vval(RVU));
 				po = addarg(po, sskip2(vval(RVU), 1));
 			} else
 				po = addarg(po, vval(RVU));
+		}
 	} else {
-		if (vdef(RPICT))
+		if (vdef(RPICT)) {
 			if (vval(RPICT)[0] != '-') {
 				atos(c_rpict, sizeof(c_rpict), vval(RPICT));
 				po = addarg(po, sskip2(vval(RPICT), 1));
 			} else
 				po = addarg(po, vval(RPICT));
+		}
 	}
 }
 
 
 static void
 lowqopts(			/* low quality rendering options */
-	register char	*op,
+	char	*op,
 	char	*po
 )
 {
@@ -779,7 +922,7 @@ lowqopts(			/* low quality rendering options */
 
 static void
 medqopts(			/* medium quality rendering options */
-	register char	*op,
+	char	*op,
 	char	*po
 )
 {
@@ -857,7 +1000,7 @@ medqopts(			/* medium quality rendering options */
 
 static void
 hiqopts(				/* high quality rendering options */
-	register char	*op,
+	char	*op,
 	char	*po
 )
 {
@@ -931,13 +1074,36 @@ hiqopts(				/* high quality rendering options */
 }
 
 
+#ifdef _WIN32
+static void
+setenv(			/* set an environment variable */
+	char	*vname,
+	char	*value
+)
+{
+	char	*evp;
+
+	evp = bmalloc(strlen(vname)+strlen(value)+2);
+	if (evp == NULL)
+		syserr(progname);
+	sprintf(evp, "%s=%s", vname, value);
+	if (putenv(evp) != 0) {
+		fprintf(stderr, "%s: out of environment space\n", progname);
+		quit(1);
+	}
+	if (!silent)
+		printf("set %s\n", evp);
+}
+#endif
+
+
 static void
 xferopts(				/* transfer options if indicated */
 	char	*ro
 )
 {
 	int	fd, n;
-	register char	*cp;
+	char	*cp;
 	
 	n = strlen(ro);
 	if (n < 2)
@@ -966,7 +1132,7 @@ xferopts(				/* transfer options if indicated */
 
 static void
 pfiltopts(				/* get pfilt options */
-	register char	*po
+	char	*po
 )
 {
 	*po = '\0';
@@ -982,19 +1148,20 @@ pfiltopts(				/* get pfilt options */
 		po = addarg(po, "-m .25");
 		break;
 	}
-	if (vdef(PFILT))
+	if (vdef(PFILT)) {
 		if (vval(PFILT)[0] != '-') {
 			atos(c_pfilt, sizeof(c_pfilt), vval(PFILT));
 			po = addarg(po, sskip2(vval(PFILT), 1));
 		} else
 			po = addarg(po, vval(PFILT));
+	}
 }
 
 
 static int
 matchword(			/* match white-delimited words */
-	register char	*s1,
-	register char	*s2
+	char	*s1,
+	char	*s2
 )
 {
 	while (isspace(*s1)) s1++;
@@ -1008,15 +1175,15 @@ matchword(			/* match white-delimited words */
 
 static char *
 specview(				/* get proper view spec from vs */
-	register char	*vs
+	char	*vs
 )
 {
 	static char	vup[7][12] = {"-vu 0 0 -1","-vu 0 -1 0","-vu -1 0 0",
 			"-vu 0 0 1", "-vu 1 0 0","-vu 0 1 0","-vu 0 0 1"};
 	static char	viewopts[128];
-	register char	*cp;
+	char	*cp;
 	int	xpos, ypos, zpos, viewtype, upax;
-	register int	i;
+	int	i;
 	double	cent[3], dim[3], mult, d;
 
 	if (vs == NULL || *vs == '-')
@@ -1076,7 +1243,7 @@ specview(				/* get proper view spec from vs */
 			cent[i] += .5*dim[i];
 		}
 		mult = vlet(ZONE)=='E' ? 2. : .45 ;
-		sprintf(cp, " -vp %.2g %.2g %.2g -vd %.2g %.2g %.2g",
+		sprintf(cp, " -vp %.3g %.3g %.3g -vd %.3g %.3g %.3g",
 				cent[0]+xpos*mult*dim[0],
 				cent[1]+ypos*mult*dim[1],
 				cent[2]+zpos*mult*dim[2],
@@ -1108,7 +1275,7 @@ specview(				/* get proper view spec from vs */
 			break;
 		case VT_PAR:
 			d = sqrt(dim[0]*dim[0]+dim[1]*dim[1]+dim[2]*dim[2]);
-			sprintf(cp, " -vh %.2g -vv %.2g", d, d);
+			sprintf(cp, " -vh %.3g -vv %.3g", d, d);
 			cp += strlen(cp);
 			break;
 		case VT_ANG:
@@ -1148,7 +1315,7 @@ getview(				/* get view n, or NULL if none */
 	char	*vn		/* returned view name */
 )
 {
-	register char	*mv;
+	char	*mv;
 
 	if (viewselect != NULL) {		/* command-line selected */
 		if (n)				/* only do one */
@@ -1178,28 +1345,28 @@ getview(				/* get view n, or NULL if none */
 	}
 numview:
 	mv = nvalue(VIEWS, n);		/* use view n */
-	if ((vn != NULL) & (mv != NULL))
+	if ((vn != NULL) & (mv != NULL)) {
 		if (*mv != '-') {
-			register char	*mv2 = mv;
+			char	*mv2 = mv;
 			while (*mv2 && !isspace(*mv2))
 				*vn++ = *mv2++;
 			*vn = '\0';
 		} else
 			sprintf(vn, "%d", n+1);
-
+	}
 	return(specview(mv));
 }
 
 
 static int
 myprintview(			/* print out selected view */
-	register char	*vopts,
+	char	*vopts,
 	FILE	*fp
 )
 {
 	VIEW	vwr;
 	char	buf[128];
-	register char	*cp;
+	char	*cp;
 #ifdef _WIN32
 /* XXX Should we allow something like this for all platforms? */
 /* XXX Or is it still required at all? */
@@ -1354,6 +1521,7 @@ rpict(				/* run rpict and pfilt for each view */
 				fprintf(stderr, "%s: cannot create\n", pfile);
 				quit(1);
 			}
+			pfile[-5] = '\0';
 			pfile = NULL;
 		}
 	}
@@ -1679,25 +1847,6 @@ finish_process(void)			/* exit a child process */
 		return;			/* in parent -- noop */
 	exit(0);
 }
-
-#ifdef _WIN32
-setenv(vname, value)		/* set an environment variable */
-char	*vname, *value;
-{
-	register char	*evp;
-
-	evp = bmalloc(strlen(vname)+strlen(value)+2);
-	if (evp == NULL)
-		syserr(progname);
-	sprintf(evp, "%s=%s", vname, value);
-	if (putenv(evp) != 0) {
-		fprintf(stderr, "%s: out of environment space\n", progname);
-		quit(1);
-	}
-	if (!silent)
-		printf("set %s\n", evp);
-}
-#endif
 
 
 static void

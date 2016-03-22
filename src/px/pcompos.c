@@ -15,7 +15,7 @@ static const char	RCSid[] = "$Id$";
 #include "copyright.h"
 
 #include  "platform.h"
-#include  "rtprocess.h"
+#include  "paths.h"
 #include  "rterror.h"
 #include  "color.h"
 #include  "resolu.h"
@@ -243,8 +243,8 @@ getfile:
 					input[nfile].name);
 			quit(1);
 		}
-		if (ncolumns > 0) {
-			if (curcol >= ncolumns) {
+		if (ncolumns) {
+			if (curcol >= abs(ncolumns)) {
 				cury = ymax + spacing;
 				curx = x0;
 				curcol = 0;
@@ -297,6 +297,11 @@ getfile:
 		ysiz = ymax;
 	else if (ysiz > ymax)
 		ymax = ysiz;
+	if (ncolumns < 0) {		/* reverse rows if requested */
+		int	i = nfile;
+		while (i--)
+			input[i].yloc = ymax - input[i].yres - input[i].yloc;
+	}
 					/* add new header info. */
 	printargs(argc, argv, stdout);
 	if (strcmp(ourfmt, PICFMT))

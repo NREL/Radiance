@@ -90,7 +90,7 @@ cvtBSDF(char *fname)
 	char	*pname, *fnbeg;
 					/* find and load the XML file */
 	retOK = strlen(fname);
-	if (retOK < 5 || strcmp(fname+retOK-4, ".xml")) {
+	if (retOK < 5 || strcasecmp(fname+retOK-4, ".xml")) {
 		fprintf(stderr, "%s: input does not end in '.xml'\n", fname);
 		return(0);
 	}

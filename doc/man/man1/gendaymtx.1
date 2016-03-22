@@ -7,6 +7,8 @@ gendaymtx - generate an annual Perez sky matrix from a weather tape
 [
 .B "\-v"
 ][
+.B "\-h"
+][
 .B "\-d|\-s"
 ][
 .B "\-r deg"
@@ -53,7 +55,7 @@ yield 8760x3 (26280) values per output line (row).
 The
 .I \-c
 option may be used to specify a color for the sky.
-The gray value should equal 1 for proper energy balance
+The gray value should equal 1 for proper energy balance.
 The default sky color is
 .I "\-c 0.960 1.004 1.118".
 Similarly, the
@@ -101,6 +103,9 @@ The
 .I \-O1
 option specifies that output should be total solar radiance rather
 than visible radiance.
+The
+.I \-h
+option prevents the output of the usual header information.
 Finally, the
 .I \-v
 option will enable verbose reporting, which is mostly useful for

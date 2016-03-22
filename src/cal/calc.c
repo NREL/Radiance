@@ -8,11 +8,10 @@ static const char	RCSid[] = "$Id$";
  */
 
 #include  <stdlib.h>
-#include  <stdio.h>
-#include  <string.h>
 #include  <setjmp.h>
 #include  <ctype.h>
 
+#include  "rtio.h"
 #include  "rterror.h"
 #include  "calcomp.h"
 
@@ -34,7 +33,7 @@ char  *argv[];
 	char  *epos;
 	FILE  *fp;
 	int  i;
-	register char  *cp;
+	char  *cp;
 
 	esupport |= E_VARIABLE|E_INCHAN|E_FUNCTION;
 	esupport &= ~(E_REDEFW|E_RCONST|E_OUTCHAN);
@@ -43,9 +42,17 @@ char  *argv[];
 #endif
 	varset("PI", ':', 3.14159265358979323846);
 
-	for (i = 1; i < argc; i++)
-		fcompile(argv[i]);
-
+	for (i = 1; i < argc; i++) {
+		cp = getpath(argv[i], getrlibpath(), 0);
+		if (cp == NULL) {
+			eputs(argv[0]);
+			eputs(": cannot find file '");
+			eputs(argv[i]);
+			eputs("'\n");
+			quit(1);
+		}
+		fcompile(cp);
+	}
 	setjmp(env);
 	recover = 1;
 	eclock++;
@@ -91,6 +98,11 @@ char  *argv[];
 				;
 			if (!*cp) {
 				eputs("file name required\n");
+				continue;
+			}
+			cp = getpath(cp, getrlibpath(), 0);
+			if (cp == NULL) {
+				eputs("cannot find file\n");
 				continue;
 			}
 			fcompile(cp);

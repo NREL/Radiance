@@ -34,11 +34,12 @@ char	*fl
 		case 's':		/* string */
 			while (isspace(*s))
 				++s;
-			if (*s == '\0')
-				return(i);
-			while (*s)
-				if (!isascii(*s++))
-					return(i);
+                        if (!isprint(*s))
+                                return(i);
+                        while (isprint(*s) | isspace(*s))
+                                ++s;
+                        if (*s)
+                                return(i);
 			break;
 		case 'i':		/* integer */
 			if (!isintd(s, " \t\r\n"))

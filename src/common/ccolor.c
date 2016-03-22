@@ -6,8 +6,12 @@ static const char RCSid[] = "$Id$";
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include "ccolor.h"
+
+#undef frand
+#define frand()	(rand()*(1./(RAND_MAX+.5)))
 
 					/* Sharp primary matrix */
 float	XYZtoSharp[3][3] = {
@@ -23,6 +27,8 @@ float	XYZfromSharp[3][3] = {
 };
 
 const C_COLOR	c_dfcolor = C_DEFCOLOR;
+
+const C_CHROMA	c_dfchroma = 49750;	/* c_encodeChroma(&c_dfcolor) */
 
 				/* CIE 1931 Standard Observer curves */
 const C_COLOR	c_x31 = { 1, NULL, C_CDSPEC|C_CSSPEC|C_CSXY|C_CSEFF,
@@ -96,13 +102,17 @@ c_fromSharpRGB(float cin[3], C_COLOR *cout)
 {
 	double	xyz[3], sf;
 
-	xyz[0] = XYZfromSharp[0][0]*cin[0] + XYZfromSharp[0][1]*cin[1] +
-				XYZfromSharp[0][2]*cin[2];
 	xyz[1] = XYZfromSharp[1][0]*cin[0] + XYZfromSharp[1][1]*cin[1] +
 				XYZfromSharp[1][2]*cin[2];
+	if (xyz[1] <= 1e-6) {
+		*cout = c_dfcolor;	/* punting, here... */
+		return xyz[1];
+	}
+	xyz[0] = XYZfromSharp[0][0]*cin[0] + XYZfromSharp[0][1]*cin[1] +
+				XYZfromSharp[0][2]*cin[2];
 	xyz[2] = XYZfromSharp[2][0]*cin[0] + XYZfromSharp[2][1]*cin[1] +
 				XYZfromSharp[2][2]*cin[2];
-				
+	
 	sf = 1./(xyz[0] + xyz[1] + xyz[2]);
 
 	cout->cx = xyz[0] * sf;
@@ -179,9 +189,9 @@ c_sset(C_COLOR *clr, double wlmin, double wlmax, const float spec[], int nwl)
 				pos++;
 			}
 			if ((wl+1e-7 >= wl0) & (wl-1e-7 <= wl0))
-				clr->ssamp[i] = scale*va[pos] + .5;
+				clr->ssamp[i] = scale*va[pos] + frand();
 			else		/* interpolate if necessary */
-				clr->ssamp[i] = .5 + scale / wlstep *
+				clr->ssamp[i] = frand() + scale / wlstep *
 						( va[pos]*(wl0+wlstep - wl) +
 							va[pos+1]*(wl - wl0) );
 			clr->ssum += clr->ssamp[i];
@@ -239,7 +249,7 @@ c_ccvt(C_COLOR *clr, int fl)
 		clr->ssum = 0;
 		for (i = 0; i < C_CNSS; i++) {
 			clr->ssamp[i] = x*cie_xp.ssamp[i] + y*cie_yp.ssamp[i]
-					+ z*cie_zp.ssamp[i] + .5;
+					+ z*cie_zp.ssamp[i] + frand();
 			if (clr->ssamp[i] < 0)		/* out of gamut! */
 				clr->ssamp[i] = 0;
 			else
@@ -286,7 +296,7 @@ c_cmix(C_COLOR *cres, double w1, C_COLOR *c1, double w2, C_COLOR *c2)
 		scale = C_CMAXV / scale;
 		cres->ssum = 0;
 		for (i = 0; i < C_CNSS; i++)
-			cres->ssum += cres->ssamp[i] = scale*cmix[i] + .5;
+			cres->ssum += cres->ssamp[i] = scale*cmix[i] + frand();
 		cres->flags = C_CDSPEC|C_CSSPEC;
 	} else {					/* CIE xy mixing */
 		c_ccvt(c1, C_CSXY);
@@ -376,7 +386,7 @@ c_bbtemp(C_COLOR *clr, double tk)
 	clr->ssum = 0;
 	for (i = 0; i < C_CNSS; i++) {
 		wl = (C_CMINWL + i*C_CWLI)*1e-9;
-		clr->ssum += clr->ssamp[i] = sf*bbsp(wl,tk) + .5;
+		clr->ssum += clr->ssamp[i] = sf*bbsp(wl,tk) + frand();
 	}
 	clr->flags = C_CDSPEC|C_CSSPEC;
 	return(1);
@@ -386,3 +396,39 @@ c_bbtemp(C_COLOR *clr, double tk)
 #undef	C2
 #undef	bbsp
 #undef	bblm
+
+#define UV_NORMF	410.
+
+/* encode (x,y) chromaticity */
+C_CHROMA
+c_encodeChroma(C_COLOR *clr)
+{
+	double	df;
+	int	ub, vb;
+
+	c_ccvt(clr, C_CSXY);
+	df = UV_NORMF/(-2.*clr->cx + 12.*clr->cy + 3.);
+	ub = 4.*clr->cx*df + frand();
+	ub *= (ub > 0);
+	if (ub > 0xff) ub = 0xff;
+	vb = 9.*clr->cy*df + frand();
+	vb *= (vb > 0);
+	if (vb > 0xff) vb = 0xff;
+
+	return(vb<<8 | ub);
+}
+
+/* decode (x,y) chromaticity */
+void
+c_decodeChroma(C_COLOR *cres, C_CHROMA ccode)
+{
+	double	up = (ccode & 0xff)*(1./UV_NORMF);
+	double	vp = (ccode>>8 & 0xff)*(1./UV_NORMF);
+	double	df = 1./(6.*up - 16.*vp + 12.);
+
+	cres->cx = 9.*up * df;
+	cres->cy = 4.*vp * df;
+	cres->flags = C_CDXY|C_CSXY;
+}
+
+#undef	UV_NORMF

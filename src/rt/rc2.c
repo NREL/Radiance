@@ -112,6 +112,7 @@ printheader(FILE *fout, const char *info)
 	printargs(gargc-1, gargv, fout);	/* add our command */
 	fprintf(fout, "SOFTWARE= %s\n", VersionID);
 	fputnow(fout);
+	fputs("NCOMP=3\n", fout);		/* always RGB */
 	if (info != NULL)			/* add extra info if given */
 		fputs(info, fout);
 	fputformat(formstr(outfmt), fout);
@@ -132,20 +133,31 @@ printresolu(FILE *fout, int xr, int yr)
 STREAMOUT *
 getostream(const char *ospec, const char *mname, int bn, int noopen)
 {
-	/* static const DCOLOR	nocontrib = BLKCOLOR; */
 	static STREAMOUT	stdos;
+	char			info[1024];
 	int			ofl;
 	char			oname[1024];
 	LUENT			*lep;
 	STREAMOUT		*sop;
+	char			*cp;
 	
 	if (ospec == NULL) {			/* use stdout? */
 		if (!noopen & !using_stdout) {
 			if (outfmt != 'a')
 				SET_FILE_BINARY(stdout);
-			if (header)
-				printheader(stdout, NULL);
-			printresolu(stdout, xres, yres);
+			if (header) {
+				cp = info;
+				if (yres > 0) {
+					sprintf(cp, "NROWS=%d\n", yres *
+							(xres + !xres) );
+					while (*cp) ++cp;
+				}
+				if ((xres <= 0) | (stdos.reclen > 1))
+					sprintf(cp, "NCOLS=%d\n", stdos.reclen);
+				printheader(stdout, info);
+			}
+			if (stdos.reclen == 1)
+				printresolu(stdout, xres, yres);
 			if (waitflush > 0)
 				fflush(stdout);
 			stdos.xr = xres; stdos.yr = yres;
@@ -194,9 +206,11 @@ getostream(const char *ospec, const char *mname, int bn, int noopen)
 #ifdef getc_unlocked
 		flockfile(sop->ofp);		/* avoid lock/unlock overhead */
 #endif
+		if (accumulate > 0) {		/* global resolution */
+			sop->xr = xres; sop->yr = yres;
+		}
 		if (header) {
-			char	info[512];
-			char	*cp = info;
+			cp = info;
 			if (ofl & OF_MODIFIER || sop->reclen == 1) {
 				sprintf(cp, "MODIFIER=%s\n", mname);
 				while (*cp) ++cp;
@@ -205,13 +219,17 @@ getostream(const char *ospec, const char *mname, int bn, int noopen)
 				sprintf(cp, "BIN=%d\n", bn);
 				while (*cp) ++cp;
 			}
-			*cp = '\0';
+			if (sop->yr > 0) {
+				sprintf(cp, "NROWS=%d\n", sop->yr *
+						(sop->xr + !sop->xr) );
+				while (*cp) ++cp;
+			}
+			if ((sop->xr <= 0) | (sop->reclen > 1))
+				sprintf(cp, "NCOLS=%d\n", sop->reclen);
 			printheader(sop->ofp, info);
 		}
-		if (accumulate > 0) {		/* global resolution */
-			sop->xr = xres; sop->yr = yres;
-		}
-		printresolu(sop->ofp, sop->xr, sop->yr);
+		if (sop->reclen == 1)
+			printresolu(sop->ofp, sop->xr, sop->yr);
 		if (waitflush > 0)
 			fflush(sop->ofp);
 	}

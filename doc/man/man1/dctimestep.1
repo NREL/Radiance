@@ -7,9 +7,13 @@ dctimestep - compute annual simulation time-step(s) via matrix multiplication
 [
 .B "\-n nsteps"
 ][
+.B "\-h"
+][
 .B "\-o ospec"
 ][
 .B "\-i{f|d}
+][
+.B "\-o{f|d}
 ]
 .B DCspec
 [
@@ -20,12 +24,16 @@ dctimestep - compute annual simulation time-step(s) via matrix multiplication
 [
 .B "\-n nsteps"
 ][
+.B "\-h"
+][
 .B "\-o ospec"
 ][
 .B "\-i{f|d}
+][
+.B "\-o{f|d}
 ]
 .B Vspec
-.B Tbsdf.xml
+.B Tbsdf
 .B Dmat.dat
 [
 .B skyf
@@ -49,37 +57,52 @@ The first argument is the View matrix file that specifies how window output
 directions are related to some set of measured values, such as an array of
 illuminance points or images.
 This matrix is usually computed by
+.I rfluxmtx(1)
+or
 .I rcontrib(1)
 for a particular set of windows or skylight openings.
 The second argument is the window transmission matrix, or BSDF, given as
-a standard XML description.
+a matrix or a standard XML description.
 The third argument is the Daylight matrix file that defines how sky patches
 relate to input directions on the same opening.
 This is usually computed using
-.I genklemsamp(1)
-with
-.I rcontrib
-in a separate run for each window or skylight orientation.
+.I rfluxmtx
+with separate runs for each window or skylight orientation.
 The last file is the sky contribution vector or matrix,
 typically computed by
 .I genskyvec(1)
 or
 .I gendaymtx(1),
 and may be passed on the standard input.
-This data is assumed by default to be in ASCII format, whereas the
-formats of the View and Daylight matrices
-are detected automatically if given as binary data.
+.PP
+If the input sky data lacks a header, the
+.I \-n
+option may be used to indicate the number of time steps, which
+will be 1 for a sky vector.
+The sky input file must contain the number of
+columns (time steps) specified in each sky patch row,
+whether it is read from the standard input or from a file.
+Input starts from the first patch at the first time step, then the
+first patch at the second time step, and so on.
+Note that all matrix elements are RGB triplets, so the actual size
+of the sky vector or matrix is three times the number of steps times
+the number of sky patches.
 The
 .I \-if
 or
 .I \-id
 option may be used to specify that sky data is in float or double
 format, respectively, which is more efficient for large matrices.
-(Note that binary double data may not be read from stdin.)\0
+These options are unnecessary in the when the sky
+input has a header.
 .PP
-Sent to the standard output of
+Any of the matrix or vector files may be read from a command
+instead of a file by
+using quotes and a beginning exclamation point ('!').
+.PP
+The standard output of
 .I dctimestep
-is either an ASCII color vector with as many RGB triplets
+is either a color vector with as many RGB triplets
 as there are rows in the View matrix, or a combined
 .I Radiance
 picture.
@@ -93,18 +116,6 @@ component pictures, which will be summed according to the computed
 vector.
 .PP
 The
-.I \-n
-option may be used to compute multiple time steps in a
-single invocation.
-The sky input file must contain the number of
-columns specified in each sky patch row, whether it is read
-from the standard input or from a file.
-The columns do not need to be given on the same
-line, so long as the number of values totals 3*Nsteps*Npatches.
-Input starts from the first patch at the first time step, then the
-first patch at the second time step, and so on.
-.PP
-The
 .I \-o
 option may be used to specify a file or a set of output files
 to use rather than the standard output.
@@ -112,6 +123,16 @@ If the given specification contains a '%d' format string, this
 will be replaced by the time step index, starting from 1.
 In this way, multiple output pictures may be produced,
 or separate result vectors (one per time step).
+.PP
+A header will normally be produced on the output, unless the
+.I \-h
+option is specified.
+The
+.I \-of
+or
+.I \-od
+option may be used to specify IEEE float or double binary output
+data, respectively.
 .SH EXAMPLES
 To compute workplane illuminances at 3:30pm on Feb 10th:
 .IP "" .2i
@@ -134,16 +155,25 @@ Window2.dmx > view_6-21-12.hdr
 To generate an hourly matrix of sensor value contributions from Skylight3
 using a 3-phase calculation, where output columns are time steps:
 .IP "" .2i
-gendaymtx -of Tampa.wea | dctimestep -if -n 8760 WPpts.vmx
+gendaymtx -of Tampa.wea | dctimestep WPpts.vmx
 shade3.xml Skylight3.dmx > wp_win3.dat
-.IP "" .2i
 .PP
 Generate a series of pictures corresponding to timesteps
 in an annual simulation:
 .IP "" .2i
-gendaymtx NYCity.wea | dctimestep -n 8760 -o tstep%04d.hdr dcomp%03d.hdr
+gendaymtx NYCity.wea | dctimestep -o tstep%04d.hdr dcomp%03d.hdr
+.PP
+To multiply an irradiance view matrix through a pair of XML window layers using
+a given exterior daylight matrix and sky vector:
+.IP "" .2i
+dctimestep Illum.vmx "!rmtxop -ff Blinds1.xml Windo1.xml" Exter.dmx Jan20.sky
+.PP
+To multiply two matrices into a IEEE-float result with header:
+.IP "" .2i
+dctimestep -of Inp1.fmx Inp2.fmx > Inp1xInp2.fmx
 .SH AUTHOR
 Greg Ward
 .SH "SEE ALSO"
-gendaymtx(1), genklemsamp(1), genskyvec(1),
-mkillum(1), rcollate(1), rcontrib(1), rtrace(1), vwrays(1)
+gendaymtx(1), genskyvec(1), getinfo(1),
+mkillum(1), rcollate(1), rcontrib(1),
+rfluxmtx(1), rmtxop(1), rtrace(1), vwrays(1)

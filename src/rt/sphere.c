@@ -12,18 +12,18 @@ static const char RCSid[] = "$Id$";
 #include  "rtotypes.h"
 
 
-extern int
+int
 o_sphere(			/* compute intersection with sphere */
 	OBJREC  *so,
-	register RAY  *r
+	RAY  *r
 )
 {
 	double  a, b, c;	/* coefficients for quadratic equation */
 	double  root[2];	/* quadratic roots */
 	int  nroots;
 	double  t;
-	register RREAL  *ap;
-	register int  i;
+	RREAL  *ap;
+	int  i;
 
 	if (so->oargs.nfargs != 4)
 		objerror(so, USER, "bad # arguments");

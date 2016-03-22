@@ -17,6 +17,7 @@ static const char	RCSid[] = "$Id$";
 #include  "ambient.h"
 #include  "random.h"
 #include  "paths.h"
+#include  "pmapray.h"
 
 extern char	*progname;		/* global argv[0] */
 
@@ -75,6 +76,7 @@ main(int  argc, char  *argv[])
 				case 'n': case 'N': case 'f': case 'F': \
 				case '-': case '0': var = 0; break; \
 				default: goto badopt; }
+	extern char  *octname;
 	int  persist = 0;
 	char  *octnm = NULL;
 	char  **tralp = NULL;
@@ -314,7 +316,7 @@ main(int  argc, char  *argv[])
 #endif
 	if (outform != 'a')
 		SET_FILE_BINARY(stdout);
-	readoct(octnm, loadflags, &thescene, NULL);
+	readoct(octname = octnm, loadflags, &thescene, NULL);
 	nsceneobjs = nobjects;
 
 	if (loadflags & IO_INFO) {	/* print header */
@@ -324,11 +326,13 @@ main(int  argc, char  *argv[])
 		fputformat(formstr(outform), stdout);
 		putchar('\n');
 	}
-
+	
+	ray_init_pmap();     /* PMAP: set up & load photon maps */
+	
 	marksources();			/* find and mark sources */
 
 	setambient();			/* initialize ambient calculation */
-
+	
 #ifdef  PERSIST
 	if (persist) {
 		fflush(stdout);
@@ -374,6 +378,9 @@ runagain:
 		goto runagain;
 	}
 #endif
+
+	ray_done_pmap();           /* PMAP: free photon maps */
+	
 	quit(0);
 
 badopt:

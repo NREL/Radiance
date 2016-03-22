@@ -1,27 +1,61 @@
 cmake_minimum_required(VERSION 2.8.4)
 project("radiance")
 
+if(NOT ${CMAKE_VERSION} VERSION_LESS "2.8.11")
+  cmake_policy(SET CMP0020 NEW)
+  if(NOT ${CMAKE_VERSION} VERSION_LESS "3.0")
+    cmake_policy(SET CMP0042 NEW)
+    if(NOT ${CMAKE_VERSION} VERSION_LESS "3.1")
+      cmake_policy(SET CMP0054 NEW)
+    endif()
+  endif()
+endif()
+
 enable_testing()
 include(CTest)
 
 option(BUILD_SHARED_LIBS "Build radiance using shared libraries?" OFF)
+option(BUILD_HEADLESS "Build radiance without any GUI components?" OFF)
 
+option(CPACK_NREL_SUPPORT "Include OpenStudio ToolFinder Help?" OFF)
+
+if( CPACK_NREL_SUPPORT )
+  # find git so we can query for the current git tag
+  find_program(git git)
+  if (NOT git)
+    message(ERROR "Please specify the path to the git executable")
+  endif()
+
+  # call git log to get output containing the tag
+  execute_process(
+    COMMAND ${git} describe --tag --exact-match
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE git_tag_output)
+
+  # create & install the source version .txt file
+  file(WRITE "NREL_ver.txt" "Radiance version ${git_tag_output}")
+  install(FILES NREL_ver.txt DESTINATION bin/..)
+endif()
+ 
 if(NOT WIN32)
   set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 1)
   install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doc/man/ DESTINATION man)
   set(qt_plugin_term "PLUGIN")
 endif()
 
-
 if (WIN32)
-
-  set(CPACK_NSIS_MODIFY_PATH 0)
-
-  set(CPACK_BINARY_ZIP 1)
-
-  set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "")
+  set(CPACK_NSIS_MODIFY_PATH 1)
   set(qt_plugin_term "LIBRARY")
 
+  # Set RAYPATH on install
+  set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS
+    "WriteRegExpandStr HKLM \\\"SYSTEM\\\\CurrentControlSet\\\\Control\\\\Session Manager\\\\Environment\\\" RAYPATH '\\\$INSTDIR\\\\lib\\\;.'"
+  )
+
+  # Unset RAYPATH on uninstall
+  set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS
+    "DeleteRegValue HKLM \\\"SYSTEM\\\\CurrentControlSet\\\\Control\\\\Session Manager\\\\Environment\\\" RAYPATH"
+  )
 endif()
 
 if(UNIX)
@@ -34,15 +68,16 @@ endif()
 if(APPLE)
   add_definitions(-DBSD -DNOSTEREO -Dfreebsd)
   include_directories(/usr/X11R6/include)
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmacosx-version-min=10.6")
 endif()
 
 IF( BUILD_PACKAGE )
   INCLUDE(radianceCPack.cmake )
 ENDIF( BUILD_PACKAGE )
 
-set(CPACK_PACKAGE_VERSION_MAJOR 4)
-set(CPACK_PACKAGE_VERSION_MINOR 2)
-set(CPACK_PACKAGE_VERSION_PATCH a)
+set(CPACK_PACKAGE_VERSION_MAJOR 5)
+set(CPACK_PACKAGE_VERSION_MINOR 0)
+set(CPACK_PACKAGE_VERSION_PATCH a.8)
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "Radiance")
 SET(CPACK_RESOURCE_FILE_WELCOME "${radiance_SOURCE_DIR}/Welcome.txt")
 SET(CPACK_RESOURCE_FILE_README "${radiance_SOURCE_DIR}/README.txt")
@@ -51,8 +86,10 @@ SET(CPACK_RESOURCE_FILE_LICENSE "${radiance_SOURCE_DIR}/License.txt")
 
 include(CPack)
 
-find_package(Qt4 COMPONENTS QtCore QtGui)
-find_package(X11)
+if(NOT BUILD_HEADLESS)
+  find_package(Qt5Widgets)
+  find_package(X11)
+endif()
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 

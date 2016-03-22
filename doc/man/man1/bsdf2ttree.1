@@ -5,9 +5,13 @@ bsdf2ttree - generate XML tensor tree description of a BSDF
 .SH SYNOPSIS
 .B bsdf2ttree
 [
+.B "\-pC"
+][
 .B "\-g Nlog2"
 ][
-.B "\-t pctcull
+.B "\-t pctcull"
+][
+.B "\-l maxlobes"
 ]
 [
 .B "bsdf.sir .."
@@ -18,17 +22,19 @@ or
 .B bsdf2ttree
 .B "\-t{3|4}"
 [
+.B "\-pC"
+][
 .B "\-g Nlog2"
 ][
-.B "\-t pctcull
+.B "\-t pctcull"
 ][
 .B "{+|-}forward"
 ][
 .B "{+|-}backward"
 ][
-.B "\-e expr
+.B "\-e expr"
 ][
-.B "\-f file
+.B "\-f file"
 ]
 .B bsdf_func
 .SH DESCRIPTION
@@ -39,6 +45,12 @@ based on an intermediate representation (in the first form) or
 a functional description (in the second form).
 A complete XML description is written to the standard output,
 which is normally redirected to a file.
+.PP
+The
+.I \-p
+option by itself turns off the progress bar, whose length may be set
+by an immediately following integer argument.
+(The default progress bar length is 79 characters.)\0
 .PP
 The maximum resolution of the tensor tree may be controlled by the
 .I \-g
@@ -64,6 +76,12 @@ Each intermediate scattering file contains one of
 the four components, and if the first component
 is isotropic, all components must be isotropic.
 A similar rule holds for anisotropic inputs.
+The
+.I \-l
+option may be used to specify the maximum number of lobes in any
+interpolated radial basis function.
+The default value is 15000, which generally keeps the interpolation tractable.
+Setting the value to 0 turns off this limit.
 .PP
 In the second invocation form,
 .I bsdf2ttree
@@ -125,4 +143,5 @@ bsdf2ttree -g 5 -t3 -e 'phong(ix,iy,iz,ox,oy,oz) = if(iz, .1+((iz+oz)/sqrt((ix+o
 .SH AUTHOR
 Greg Ward
 .SH "SEE ALSO"
-bsdf2klems(1), icalc(1), genBSDF(1), pkgBSDF(1)
+bsdf2klems(1), icalc(1), genBSDF(1), pkgBSDF(1), rcontrib(1),
+rfluxmtx(1), wrapBSDF(1)

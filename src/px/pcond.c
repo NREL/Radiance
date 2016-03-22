@@ -8,7 +8,7 @@ static const char	RCSid[] = "$Id$";
 
 #include "platform.h"
 #include "paths.h"
-#include "rtprocess.h"
+#include "paths.h"
 #include "pcond.h"
 
 
@@ -199,7 +199,7 @@ userr:
 }
 
 
-extern void
+void
 syserror(				/* report system error and exit */
 	char	*s
 )
@@ -344,6 +344,7 @@ getfovimg(void)			/* load foveal sampled image */
 	sprintf(combuf, "pfilt -1 -b -pa 0 -x %d -y %d \"%s\"", fvxr, fvyr, infn);
 	if ((fp = popen(combuf, "r")) == NULL)
 		syserror("popen");
+	SET_FILE_BINARY(fp);
 	getheader(fp, NULL, NULL);	/* skip header */
 	if (fgetresolu(&x, &y, fp) < 0 || (x != fvxr) | (y != fvyr))
 		goto readerr;
@@ -364,7 +365,7 @@ check2do(void)		/* check histogram to see what isn't worth doing */
 {
 	double	sum;
 	double	b, l;
-	register int	i;
+	int	i;
 
 					/* check for within display range */
 	if (bwmax - bwmin <= Bldmax - Bldmin)

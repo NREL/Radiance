@@ -324,7 +324,7 @@ vstestvis(		/* pretest source visibility */
 {
 	RAY  sr;
 	FVECT  onorm;
-	FVECT  offsdir;
+	double  offsdir[3];
 	SRCINDEX  si;
 	double  or, d, d1;
 	int  stestlim, ssn;
@@ -340,8 +340,7 @@ vstestvis(		/* pretest source visibility */
 					/* 32. == heuristic constant */
 		n = 32.*or2/(thescene.cusize*thescene.cusize)*vspretest + .5;
 	} else {
-		for (i = 0; i < 3; i++)
-			offsdir[i] = source[sn].sloc[i] - oc[i];
+		VSUB(offsdir, source[sn].sloc, oc);
 		d = DOT(offsdir,offsdir);
 		if (d <= FTINY)
 			n = 2.*PI * vspretest + .5;
@@ -377,6 +376,7 @@ vstestvis(		/* pretest source visibility */
 				sr.rorg[i] = oc[i] + offsdir[i] + d*onorm[i];
 				sr.rdir[i] = -onorm[i];
 			}
+			sr.rmax = 0.0;
 			rayorigin(&sr, PRIMARY, NULL, NULL);
 		} while (!(*ofun[o->otype].funp)(o, &sr));
 					/* check against source */

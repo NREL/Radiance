@@ -23,9 +23,9 @@ static const char	RCSid[] = "$Id$";
 /* KEEP THIS ROUTINE CONSISTENT WITH THE DIFFERENT OBJECT FUNCTIONS! */
 
 
-extern int
+int
 load_os(			/* load associated data for object */
-	register OBJREC	*op
+	OBJREC	*op
 )
 {
 	DATARRAY  *dp;
@@ -134,10 +134,10 @@ sargerr:
 }
 
 
-extern void
+void
 preload_objs(void)		/* preload object data structures */
 {
-	register OBJECT on;
+	OBJECT on;
 				/* note that nobjects may change during loop */
 	for (on = 0; on < nobjects; on++)
 		load_os(objptr(on));

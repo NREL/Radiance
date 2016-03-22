@@ -32,7 +32,7 @@ install:	all $(DEVS) $(SPECIAL)
 	cp $(PROGS) $(INSTDIR)
 
 clean:
-	set nonomatch; rm -f *.o $(PROGS) core Version.c
+	set nonomatch; rm -f *.o $(PROGS) Version.c
 
 ogl:	$(DEVDIR)/ogl.hdi $(DEVDIR)/oglh.hdi \
 	$(DEVDIR)/oglo.hdi $(DEVDIR)/ogloh.hdi \

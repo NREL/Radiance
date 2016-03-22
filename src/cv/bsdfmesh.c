@@ -18,19 +18,142 @@ static const char RCSid[] = "$Id$";
 #include <string.h>
 #include <math.h>
 #include "bsdfrep.h"
+
+#ifndef NEIGH_FACT2
+#define NEIGH_FACT2	0.1	/* empirical neighborhood distance weight */
+#endif
 				/* number of processes to run */
 int			nprocs = 1;
 				/* number of children (-1 in child) */
 static int		nchild = 0;
 
-typedef struct {
-	int		nrows, ncols;	/* array size (matches migration) */
-	float		*price;		/* migration prices */
-	short		*sord;		/* sort for each row, low to high */
-} PRICEMAT;			/* sorted pricing matrix */
+/* Compute average DSF value at the given radius from central vector */
+static double
+eval_DSFsurround(const RBFNODE *rbf, const FVECT outvec, const double rad)
+{
+	const int	ninc = 12;
+	const double	phinc = 2.*M_PI/ninc;
+	double		sum = 0;
+	int		n = 0;
+	FVECT		tvec;
+	int		i;
+						/* compute initial vector */
+	if (output_orient*outvec[2] >= 1.-FTINY) {
+		tvec[0] = tvec[2] = 0;
+		tvec[1] = 1;
+	} else {
+		tvec[0] = tvec[1] = 0;
+		tvec[2] = 1;
+	}
+	geodesic(tvec, outvec, tvec, rad, GEOD_RAD);
+						/* average surrounding DSF */
+	for (i = 0; i < ninc; i++) {
+		if (i) spinvector(tvec, tvec, outvec, phinc);
+		if (tvec[2] > 0 ^ output_orient > 0)
+			continue;
+		sum += eval_rbfrep(rbf, tvec) * COSF(tvec[2]);
+		++n;
+	}
+	if (n < 2)				/* should never happen! */
+		return(sum);
+	return(sum/(double)n);
+}
 
-#define	pricerow(p,i)	((p)->price + (i)*(p)->ncols)
-#define psortrow(p,i)	((p)->sord + (i)*(p)->ncols)
+/* Estimate single-lobe radius for DSF at the given outgoing angle */
+static double
+est_DSFrad(const RBFNODE *rbf, const FVECT outvec)
+{
+	const double	rad_epsilon = 0.03;
+	const double	DSFtarget = 0.60653066 * eval_rbfrep(rbf,outvec) *
+							COSF(outvec[2]);
+	double		inside_rad = rad_epsilon;
+	double		outside_rad = 0.5;
+	double		DSFinside = eval_DSFsurround(rbf, outvec, inside_rad);
+	double		DSFoutside = eval_DSFsurround(rbf, outvec, outside_rad);
+#define	interp_rad	inside_rad + (outside_rad-inside_rad) * \
+				(DSFtarget-DSFinside) / (DSFoutside-DSFinside)
+						/* Newton's method (sort of) */
+	do {
+		double	test_rad = interp_rad;
+		double	DSFtest;
+		if (test_rad >= outside_rad)
+			return(test_rad);
+		if (test_rad <= inside_rad)
+			return(test_rad*(test_rad>0));
+		DSFtest = eval_DSFsurround(rbf, outvec, test_rad);
+		if (DSFtest > DSFtarget) {
+			inside_rad = test_rad;
+			DSFinside = DSFtest;
+		} else {
+			outside_rad = test_rad;
+			DSFoutside = DSFtest;
+		}
+		if (DSFoutside >= DSFinside)
+			return(test_rad);
+	} while (outside_rad-inside_rad > rad_epsilon);
+	return(interp_rad);
+#undef interp_rad
+}
+
+static int
+dbl_cmp(const void *p1, const void *p2)
+{
+	double	d1 = *(const double *)p1;
+	double	d2 = *(const double *)p2;
+
+	if (d1 > d2) return(1);
+	if (d1 < d2) return(-1);
+	return(0);
+}
+
+/* Conservative estimate of average BSDF value from current DSF's */
+static void
+comp_bsdf_spec(void)
+{
+	double		vmod_sum = 0;
+	double		rad_sum = 0;
+	int		n = 0;
+	double		*cost_list = NULL;
+	double		max_cost = 1.;
+	RBFNODE		*rbf;
+	FVECT		sdv;
+						/* sort by incident altitude */
+	for (rbf = dsf_list; rbf != NULL; rbf = rbf->next)
+		n++;
+	if (n >= 10)
+		cost_list = (double *)malloc(sizeof(double)*n);
+	if (cost_list == NULL) {
+		bsdf_spec_val = 0;
+		bsdf_spec_rad = 0;
+		return;
+	}
+	n = 0;
+	for (rbf = dsf_list; rbf != NULL; rbf = rbf->next)
+		cost_list[n++] = rbf->invec[2]*input_orient;
+	qsort(cost_list, n, sizeof(double), dbl_cmp);
+	max_cost = cost_list[(n+3)/4];		/* accept 25% nearest grazing */
+	free(cost_list);
+	n = 0;
+	for (rbf = dsf_list; rbf != NULL; rbf = rbf->next) {
+		double	this_rad, cosfact, vest;
+		if (rbf->invec[2]*input_orient > max_cost)
+			continue;
+		sdv[0] = -rbf->invec[0];
+		sdv[1] = -rbf->invec[1];
+		sdv[2] = rbf->invec[2]*(2*(input_orient==output_orient) - 1);
+		cosfact = COSF(sdv[2]);
+		this_rad = est_DSFrad(rbf, sdv);
+		vest = eval_rbfrep(rbf, sdv) * cosfact *
+				(2.*M_PI) * this_rad*this_rad;
+		if (vest > rbf->vtotal)		/* don't over-estimate energy */
+			vest = rbf->vtotal;
+		vmod_sum += vest / cosfact;	/* remove cosine factor */
+		rad_sum += this_rad;
+		++n;
+	}
+	bsdf_spec_rad = rad_sum/(double)n;
+	bsdf_spec_val = vmod_sum/(2.*M_PI*n*bsdf_spec_rad*bsdf_spec_rad);
+}
 
 /* Create a new migration holder (sharing memory for multiprocessing) */
 static MIGRATION *
@@ -134,154 +257,72 @@ run_subprocess(void)
 
 #endif	/* ! _WIN32 */
 
-/* Comparison routine needed for sorting price row */
-static int
-msrt_cmp(void *b, const void *p1, const void *p2)
-{
-	PRICEMAT	*pm = (PRICEMAT *)b;
-	int		ri = ((const short *)p1 - pm->sord) / pm->ncols;
-	float		c1 = pricerow(pm,ri)[*(const short *)p1];
-	float		c2 = pricerow(pm,ri)[*(const short *)p2];
-
-	if (c1 > c2) return(1);
-	if (c1 < c2) return(-1);
-	return(0);
-}
-
-/* Compute (and allocate) migration price matrix for optimization */
+/* Compute normalized distribution scattering functions for comparison */
 static void
-price_routes(PRICEMAT *pm, const RBFNODE *from_rbf, const RBFNODE *to_rbf)
+compute_nDSFs(const RBFNODE *rbf0, const RBFNODE *rbf1)
 {
-	FVECT	*vto = (FVECT *)malloc(sizeof(FVECT) * to_rbf->nrbf);
-	int	i, j;
+	const double	nf0 = (GRIDRES*GRIDRES) / rbf0->vtotal;
+	const double	nf1 = (GRIDRES*GRIDRES) / rbf1->vtotal;
+	int		x, y;
+	FVECT		dv;
 
-	pm->nrows = from_rbf->nrbf;
-	pm->ncols = to_rbf->nrbf;
-	pm->price = (float *)malloc(sizeof(float) * pm->nrows*pm->ncols);
-	pm->sord = (short *)malloc(sizeof(short) * pm->nrows*pm->ncols);
-	
-	if ((pm->price == NULL) | (pm->sord == NULL) | (vto == NULL)) {
-		fprintf(stderr, "%s: Out of memory in migration_costs()\n",
-				progname);
-		exit(1);
-	}
-	for (j = to_rbf->nrbf; j--; )		/* save repetitive ops. */
-		ovec_from_pos(vto[j], to_rbf->rbfa[j].gx, to_rbf->rbfa[j].gy);
-
-	for (i = from_rbf->nrbf; i--; ) {
-	    const double	from_ang = R2ANG(from_rbf->rbfa[i].crad);
-	    FVECT		vfrom;
-	    ovec_from_pos(vfrom, from_rbf->rbfa[i].gx, from_rbf->rbfa[i].gy);
-	    for (j = to_rbf->nrbf; j--; ) {
-		double		dprod = DOT(vfrom, vto[j]);
-		pricerow(pm,i)[j] = ((dprod >= 1.) ? .0 : acos(dprod)) +
-				fabs(R2ANG(to_rbf->rbfa[j].crad) - from_ang);
-		psortrow(pm,i)[j] = j;
+	for (x = GRIDRES; x--; )
+	    for (y = GRIDRES; y--; ) {
+		ovec_from_pos(dv, x, y);	/* cube root (brightness) */
+		dsf_grid[x][y].val[0] = pow(nf0*eval_rbfrep(rbf0, dv), .3333);
+		dsf_grid[x][y].val[1] = pow(nf1*eval_rbfrep(rbf1, dv), .3333);
 	    }
-	    qsort_r(psortrow(pm,i), pm->ncols, sizeof(short), pm, &msrt_cmp);
-	}
-	free(vto);
-}
+}	
 
-/* Free price matrix */
-static void
-free_routes(PRICEMAT *pm)
-{
-	free(pm->price); pm->price = NULL;
-	free(pm->sord); pm->sord = NULL;
-}
-
-/* Compute minimum (optimistic) cost for moving the given source material */
+/* Compute neighborhood distance-squared (dissimilarity) */
 static double
-min_cost(double amt2move, const double *avail, const PRICEMAT *pm, int s)
+neighborhood_dist2(int x0, int y0, int x1, int y1)
 {
-	double		total_cost = 0;
-	int		j;
-
-	if (amt2move <= FTINY)			/* pre-emptive check */
-		return(.0);
-						/* move cheapest first */
-	for (j = 0; j < pm->ncols && amt2move > FTINY; j++) {
-		int	d = psortrow(pm,s)[j];
-		double	amt = (amt2move < avail[d]) ? amt2move : avail[d];
-
-		total_cost += amt * pricerow(pm,s)[d];
-		amt2move -= amt;
+	int	rad = GRIDRES>>5;
+	double	sum2 = 0.;
+	double	d;
+	int	p[4];
+	int	i, j;
+						/* check radius */
+	p[0] = x0; p[1] = y0; p[2] = x1; p[3] = y1;
+	for (i = 4; i--; ) {
+		if (p[i] < rad) rad = p[i];
+		if (GRIDRES-1-p[i] < rad) rad = GRIDRES-1-p[i];
 	}
-	return(total_cost);
+	for (i = -rad; i <= rad; i++)
+	    for (j = -rad; j <= rad; j++) {
+	    	d = dsf_grid[x0+i][y0+j].val[0] -
+			dsf_grid[x1+i][y1+j].val[1];
+		sum2 += d*d;
+	    }
+	return(sum2 / (4*rad*(rad+1) + 1));
 }
 
-/* Take a step in migration by choosing optimal bucket to transfer */
-static double
-migration_step(MIGRATION *mig, double *src_rem, double *dst_rem, const PRICEMAT *pm)
+/* Compute distance between two RBF lobes */
+double
+lobe_distance(RBFVAL *rbf1, RBFVAL *rbf2)
 {
-	const double	maxamt = 1./(double)pm->ncols;
-	const double	minamt = maxamt*5e-6;
-	double		*src_cost;
-	struct {
-		int	s, d;	/* source and destination */
-		double	price;	/* price estimate per amount moved */
-		double	amt;	/* amount we can move */
-	} cur, best;
-	int		i;
-						/* allocate cost array */
-	src_cost = (double *)malloc(sizeof(double)*pm->nrows);
-	if (src_cost == NULL) {
-		fprintf(stderr, "%s: Out of memory in migration_step()\n",
-				progname);
-		exit(1);
-	}
-	for (i = pm->nrows; i--; )		/* starting costs for diff. */
-		src_cost[i] = min_cost(src_rem[i], dst_rem, pm, i);
-
-						/* find best source & dest. */
-	best.s = best.d = -1; best.price = FHUGE; best.amt = 0;
-	for (cur.s = pm->nrows; cur.s--; ) {
-	    double	cost_others = 0;
-
-	    if (src_rem[cur.s] <= minamt)
-		    continue;
-						/* examine cheapest dest. */
-	    for (i = 0; i < pm->ncols; i++)
-		if (dst_rem[ cur.d = psortrow(pm,cur.s)[i] ] > minamt)
-			break;
-	    if (i >= pm->ncols)
-		break;
-	    if ((cur.price = pricerow(pm,cur.s)[cur.d]) >= best.price)
-		continue;			/* no point checking further */
-	    cur.amt = (src_rem[cur.s] < dst_rem[cur.d]) ?
-				src_rem[cur.s] : dst_rem[cur.d];
-	    if (cur.amt > maxamt) cur.amt = maxamt;
-	    dst_rem[cur.d] -= cur.amt;		/* add up differential costs */
-	    for (i = pm->nrows; i--; )
-		if (i != cur.s)
-			cost_others += min_cost(src_rem[i], dst_rem, pm, i)
-					- src_cost[i];
-	    dst_rem[cur.d] += cur.amt;		/* undo trial move */
-	    cur.price += cost_others/cur.amt;	/* adjust effective price */
-	    if (cur.price < best.price)		/* are we better than best? */
-		    best = cur;
-	}
-	free(src_cost);				/* finish up */
-
-	if ((best.s < 0) | (best.d < 0))	/* nothing left to move? */
-		return(.0);
-						/* else make the actual move */
-	mtx_coef(mig,best.s,best.d) += best.amt;
-	src_rem[best.s] -= best.amt;
-	dst_rem[best.d] -= best.amt;
-	return(best.amt);
+	FVECT	vfrom, vto;
+	double	d, res;
+					/* quadratic cost function */
+	ovec_from_pos(vfrom, rbf1->gx, rbf1->gy);
+	ovec_from_pos(vto, rbf2->gx, rbf2->gy);
+	d = Acos(DOT(vfrom, vto));
+	res = d*d;
+	d = R2ANG(rbf2->crad) - R2ANG(rbf1->crad);
+	res += d*d;
+					/* neighborhood difference */
+	res += NEIGH_FACT2 * neighborhood_dist2( rbf1->gx, rbf1->gy,
+						rbf2->gx, rbf2->gy );
+	return(res);
 }
+
 
 /* Compute and insert migration along directed edge (may fork child) */
 static MIGRATION *
 create_migration(RBFNODE *from_rbf, RBFNODE *to_rbf)
 {
-	const double	end_thresh = 5e-6;
-	PRICEMAT	pmtx;
 	MIGRATION	*newmig;
-	double		*src_rem, *dst_rem;
-	double		total_rem = 1., move_amt;
 	int		i, j;
 						/* check if exists already */
 	for (newmig = from_rbf->ejl; newmig != NULL;
@@ -290,10 +331,10 @@ create_migration(RBFNODE *from_rbf, RBFNODE *to_rbf)
 			return(NULL);
 						/* else allocate */
 #ifdef DEBUG
-	fprintf(stderr, "Building path from (theta,phi) (%.0f,%.0f) ",
+	fprintf(stderr, "Building path from (theta,phi) (%.1f,%.1f) ",
 			get_theta180(from_rbf->invec),
 			get_phi360(from_rbf->invec));
-	fprintf(stderr, "to (%.0f,%.0f) with %d x %d matrix\n",
+	fprintf(stderr, "to (%.1f,%.1f) with %d x %d matrix\n",
 			get_theta180(to_rbf->invec),
 			get_phi360(to_rbf->invec), 
 			from_rbf->nrbf, to_rbf->nrbf);
@@ -301,25 +342,10 @@ create_migration(RBFNODE *from_rbf, RBFNODE *to_rbf)
 	newmig = new_migration(from_rbf, to_rbf);
 	if (run_subprocess())
 		return(newmig);			/* child continues */
-	price_routes(&pmtx, from_rbf, to_rbf);
-	src_rem = (double *)malloc(sizeof(double)*from_rbf->nrbf);
-	dst_rem = (double *)malloc(sizeof(double)*to_rbf->nrbf);
-	if ((src_rem == NULL) | (dst_rem == NULL)) {
-		fprintf(stderr, "%s: Out of memory in create_migration()\n",
-				progname);
-		exit(1);
-	}
-						/* starting quantities */
-	memset(newmig->mtx, 0, sizeof(float)*from_rbf->nrbf*to_rbf->nrbf);
-	for (i = from_rbf->nrbf; i--; )
-		src_rem[i] = rbf_volume(&from_rbf->rbfa[i]) / from_rbf->vtotal;
-	for (j = to_rbf->nrbf; j--; )
-		dst_rem[j] = rbf_volume(&to_rbf->rbfa[j]) / to_rbf->vtotal;
 
-	do {					/* move a bit at a time */
-		move_amt = migration_step(newmig, src_rem, dst_rem, &pmtx);
-		total_rem -= move_amt;
-	} while ((total_rem > end_thresh) & (move_amt > 0));
+						/* compute transport plan */
+	compute_nDSFs(from_rbf, to_rbf);
+	plan_transport(newmig);
 
 	for (i = from_rbf->nrbf; i--; ) {	/* normalize final matrix */
 	    double	nf = rbf_volume(&from_rbf->rbfa[i]);
@@ -329,9 +355,6 @@ create_migration(RBFNODE *from_rbf, RBFNODE *to_rbf)
 		mtx_coef(newmig,i,j) *= nf;	/* row now sums to 1.0 */
 	}
 	end_subprocess();			/* exit here if subprocess */
-	free_routes(&pmtx);			/* free working arrays */
-	free(src_rem);
-	free(dst_rem);
 	return(newmig);
 }
 
@@ -361,7 +384,7 @@ overlaps_tri(const RBFNODE *bv0, const RBFNODE *bv1, const RBFNODE *pv)
 	return(vother[im_rev] != NULL);
 }
 
-/* Find context hull vertex to complete triangle (oriented call) */
+/* Find convex hull vertex to complete triangle (oriented call) */
 static RBFNODE *
 find_chull_vert(const RBFNODE *rbf0, const RBFNODE *rbf1)
 {
@@ -382,7 +405,7 @@ find_chull_vert(const RBFNODE *rbf0, const RBFNODE *rbf1)
 		if (DOT(vp, vmid) <= FTINY)
 			continue;		/* wrong orientation */
 		area2 = .25*DOT(vp,vp);
-		VSUB(vp, rbf->invec, rbf0->invec);
+		VSUB(vp, rbf->invec, vmid);
 		dprod = -DOT(vp, vejn);
 		VSUM(vp, vp, vejn, dprod);	/* above guarantees non-zero */
 		dprod = DOT(vp, vmid) / VLEN(vp);
@@ -421,8 +444,10 @@ mesh_from_edge(MIGRATION *edge)
 				ej1 = create_migration(tvert[0], edge->rbfv[1]);
 			mesh_from_edge(ej0);
 			mesh_from_edge(ej1);
+			return;
 		}
-	} else if (tvert[1] == NULL) {		/* grow mesh on left */
+	}
+	if (tvert[1] == NULL) {			/* grow mesh on left */
 		tvert[1] = find_chull_vert(edge->rbfv[1], edge->rbfv[0]);
 		if (tvert[1] != NULL) {
 			if (tvert[1]->ord > edge->rbfv[0]->ord)
@@ -438,6 +463,79 @@ mesh_from_edge(MIGRATION *edge)
 		}
 	}
 }
+
+/* Add normal direction if missing */
+static void
+check_normal_incidence(void)
+{
+	static FVECT		norm_vec = {.0, .0, 1.};
+	const int		saved_nprocs = nprocs;
+	RBFNODE			*near_rbf, *mir_rbf, *rbf;
+	double			bestd;
+	int			n;
+
+	if (dsf_list == NULL)
+		return;				/* XXX should be error? */
+	near_rbf = dsf_list;
+	bestd = input_orient*near_rbf->invec[2];
+	if (single_plane_incident) {		/* ordered plane incidence? */
+		if (bestd >= 1.-2.*FTINY)
+			return;			/* already have normal */
+	} else {
+		switch (inp_coverage) {
+		case INP_QUAD1:
+		case INP_QUAD2:
+		case INP_QUAD3:
+		case INP_QUAD4:
+			break;			/* quadrilateral symmetry? */
+		default:
+			return;			/* else we can interpolate */
+		}
+		for (rbf = near_rbf->next; rbf != NULL; rbf = rbf->next) {
+			const double	d = input_orient*rbf->invec[2];
+			if (d >= 1.-2.*FTINY)
+				return;		/* seems we have normal */
+			if (d > bestd) {
+				near_rbf = rbf;
+				bestd = d;
+			}
+		}
+	}
+	if (mig_list != NULL) {			/* need to be called first */
+		fprintf(stderr, "%s: Late call to check_normal_incidence()\n",
+				progname);
+		exit(1);
+	}
+#ifdef DEBUG
+	fprintf(stderr, "Interpolating normal incidence by mirroring (%.1f,%.1f)\n",
+			get_theta180(near_rbf->invec), get_phi360(near_rbf->invec));
+#endif
+						/* mirror nearest incidence */
+	n = sizeof(RBFNODE) + sizeof(RBFVAL)*(near_rbf->nrbf-1);
+	mir_rbf = (RBFNODE *)malloc(n);
+	if (mir_rbf == NULL)
+		goto memerr;
+	memcpy(mir_rbf, near_rbf, n);
+	mir_rbf->ord = near_rbf->ord - 1;	/* not used, I think */
+	mir_rbf->next = NULL;
+	mir_rbf->ejl = NULL;
+	rev_rbf_symmetry(mir_rbf, MIRROR_X|MIRROR_Y);
+	nprocs = 1;				/* compute migration matrix */
+	if (create_migration(mir_rbf, near_rbf) == NULL)
+		exit(1);			/* XXX should never happen! */
+	norm_vec[2] = input_orient;		/* interpolate normal dist. */
+	rbf = e_advect_rbf(mig_list, norm_vec, 0);
+	nprocs = saved_nprocs;			/* final clean-up */
+	free(mir_rbf);
+	free(mig_list);
+	mig_list = near_rbf->ejl = NULL;
+	insert_dsf(rbf);			/* insert interpolated normal */
+	return;
+memerr:
+	fprintf(stderr, "%s: Out of memory in check_normal_incidence()\n",
+				progname);
+	exit(1);
+}
 	
 /* Build our triangle mesh from recorded RBFs */
 void
@@ -446,6 +544,10 @@ build_mesh(void)
 	double		best2 = M_PI*M_PI;
 	RBFNODE		*shrt_edj[2];
 	RBFNODE		*rbf0, *rbf1;
+						/* average specular peak */
+	comp_bsdf_spec();
+						/* add normal if needed */
+	check_normal_incidence();
 						/* check if isotropic */
 	if (single_plane_incident) {
 		for (rbf0 = dsf_list; rbf0 != NULL; rbf0 = rbf0->next)

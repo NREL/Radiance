@@ -16,7 +16,7 @@ static const char RCSid[] = "$Id$";
 FUN  ofun[NUMOTYPE] = INIT_OTYPE;
 
 
-extern void
+void
 initotypes(void)			/* initialize ofun array */
 {
 	ofun[OBJ_SPHERE].funp =
@@ -90,7 +90,7 @@ initotypes(void)			/* initialize ofun array */
 }
 
 
-extern int
+int
 o_default(OBJREC *o, RAY *r)			/* default action is error */
 {
 	objerror(o, CONSISTENCY, "unexpected object call");

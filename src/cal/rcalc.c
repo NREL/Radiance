@@ -8,9 +8,6 @@ static const char RCSid[] = "$Id$";
  */
 
 #include  <stdlib.h>
-#include  <fcntl.h>
-#include  <stdio.h>
-#include  <string.h>
 #include  <math.h>
 #include  <ctype.h>
 
@@ -107,6 +104,7 @@ int  argc,
 char  *argv[]
 )
 {
+	char  *fpath;
 	int  i;
 
 	esupport |= E_VARIABLE|E_FUNCTION|E_INCHAN|E_OUTCHAN|E_RCONST;
@@ -136,7 +134,15 @@ char  *argv[]
 			svpreset(argv[++i]);
 			break;
 		case 'f':
-			fcompile(argv[++i]);
+			fpath = getpath(argv[++i], getrlibpath(), 0);
+			if (fpath == NULL) {
+				eputs(argv[0]);
+				eputs(": cannot find file '");
+				eputs(argv[i]);
+				eputs("'\n");
+				quit(1);
+			}
+			fcompile(fpath);
 			break;
 		case 'e':
 			scompile(argv[++i], NULL, 0);
@@ -219,6 +225,9 @@ eputs(" [-b][-l][-n][-p][-w][-u][-tS][-s svar=sval][-e expr][-f source][-i infmt
 		}
 	if (otype != 'a')
 		SET_FILE_BINARY(stdout);
+#ifdef getc_unlocked		/* avoid lock/unlock overhead */
+	flockfile(stdout);
+#endif
 	if (noinput) {          /* produce a single output record */
 		if (i < argc) {
 			eputs(argv[0]);
@@ -229,9 +238,6 @@ eputs(" [-b][-l][-n][-p][-w][-u][-tS][-s svar=sval][-e expr][-f source][-i infmt
 		putout();
 		quit(0);
 	}
-	if (itype != 'a')
-		SET_FILE_BINARY(stdin);
-
 	if (blnkeq)             /* for efficiency */
 		nbsynch();
 
@@ -300,6 +306,11 @@ char  *file
 		eputs(": cannot open\n");
 		quit(1);
 	}
+	if (itype != 'a')
+		SET_FILE_BINARY(fp);
+#ifdef getc_unlocked		/* avoid lock/unlock overhead */
+	flockfile(fp);
+#endif
 	if (inpfmt != NULL)
 		initinp(fp);
 	
@@ -339,7 +350,7 @@ static double
 l_in(char *funame)	/* function call for $channel */
 {
 	int  n;
-	register char  *cp;
+	char  *cp;
 			/* get argument as integer */
 	n = (int)(argument(1) + .5);
 	if (n != 0)	/* return channel value */
@@ -371,7 +382,7 @@ int  n
 )
 {
 	int  i;
-	register char  *cp;
+	char  *cp;
 
 	if (noinput || inpfmt != NULL) {
 		eputs("no column input\n");
@@ -472,7 +483,7 @@ int  output
 	char  *inptr;
 	struct field  fmt;
 	int  res;
-	register struct field  *f;
+	struct field  *f;
 						/* check for inline format */
 	for (inptr = spec; *inptr; inptr++)
 		if (*inptr == '$')
@@ -532,12 +543,12 @@ int  output
 
 static int
 readfield(                   /* get next field in format */
-register char  **pp
+char  **pp
 )
 {
 	int  type = F_NUL;
 	int  width = 0;
-	register char  *cp;
+	char  *cp;
 	
 	cp = inpbuf;
 	while (cp < &inpbuf[INBSIZ-1] && **pp != '\0') {
@@ -602,7 +613,7 @@ getsvar(                         /* get string variable */
 char  *svname
 )
 {
-	register struct strvar  *sv;
+	struct strvar  *sv;
 	
 	for (sv = svhead; sv != NULL; sv = sv->next)
 		if (!strcmp(sv->name, svname))
@@ -621,8 +632,8 @@ svpreset(                    /* preset a string variable */
 char  *eqn
 )
 {
-	register struct strvar  *sv;
-	register char  *val;
+	struct strvar  *sv;
+	char  *val;
 
 	for (val = eqn; *val != '='; val++)
 		if (!*val)
@@ -641,7 +652,7 @@ char  *eqn
 static void
 clearrec(void)			/* clear input record variables */
 {
-	register struct field  *f;
+	struct field  *f;
 
 	for (f = inpfmt; f != NULL; f = f->next)
 		switch (f->type & F_TYP) {
@@ -662,7 +673,7 @@ static int
 getrec(void)				/* get next record from file */
 {
 	int  eatline;
-	register struct field  *f;
+	struct field  *f;
 
 	while (ipb.chr != EOF) {
 		if (blnkeq) {		/* beware of nbsynch() */
@@ -696,14 +707,14 @@ getrec(void)				/* get next record from file */
 
 static int
 getfield(                             /* get next field */
-register struct field  *f
+struct field  *f
 )
 {
 	static char  buf[RMAXWORD+1];            /* no recursion! */
 	int  delim, inword;
 	double  d;
 	char  *np;
-	register char  *cp;
+	char  *cp;
 
 	switch (f->type & F_TYP) {
 	case T_LIT:
@@ -790,10 +801,11 @@ register struct field  *f
 static void
 putrec(void)                                /* output a record */
 {
-	char  fmt[32];
-	register int  n;
-	register struct field  *f;
+	char  fmt[32], typ[16];
+	int  n;
+	struct field  *f;
 	int  adlast, adnext;
+	double  dv, av;
 	
 	adlast = 0;
 	for (f = outfmt; f != NULL; f = f->next) {
@@ -824,13 +836,24 @@ putrec(void)                                /* output a record */
 			break;
 		case T_NUM:
 			n = f->type & F_WID;
-			if (adlast && adnext)
-				strcpy(fmt, "%g");
-			else if (adlast)
-				sprintf(fmt, "%%-%dg", n);
+			dv = evalue(f->f.ne);
+			av = fabs(dv);
+			if (n <= 9)
+				strcpy(typ, "g");
 			else
-				sprintf(fmt, "%%%dg", n);
-			printf(fmt, evalue(f->f.ne));
+				sprintf(typ, ".%de", n-5);
+			if (av < 1L<<31) {
+				long	iv = (int)(av + .5);
+				if (iv && fabs(av-iv) <= av*1e-14)
+					strcpy(typ, ".0f");
+			}
+			if (adlast && adnext)
+				sprintf(fmt, "%%%s", typ);
+			else if (adlast)
+				sprintf(fmt, "%%-%d%s", n, typ);
+			else
+				sprintf(fmt, "%%%d%s", n, typ);
+			printf(fmt, dv);
 			adlast = 1;
 			break;
 		}

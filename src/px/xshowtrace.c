@@ -15,11 +15,7 @@ static const char	RCSid[] = "$Id$";
 
 #define MAXDEPTH	32		/* ridiculous ray tree depth */
 
-#ifdef  SMLFLT
-#define  sscanvec(s,v)	(sscanf(s,"%f %f %f",v,v+1,v+2)==3)
-#else
-#define  sscanvec(s,v)	(sscanf(s,"%lf %lf %lf",v,v+1,v+2)==3)
-#endif
+#define  sscanvec(s,v)	(sscanf(s,FVFORMAT,v,v+1,v+2)==3)
 
 char	rtcom[64] = "rtrace -h- -otp -fa -x 1";
 char	xicom[] = "ximage -c 256";

@@ -26,11 +26,7 @@ extern double  maxdiff;			/* max. sample difference */
 
 #define  CTRL(c)	((c)-'@')
 
-#ifdef  SMLFLT
-#define  sscanvec(s,v)	(sscanf(s,"%f %f %f",v,v+1,v+2)==3)
-#else
-#define  sscanvec(s,v)	(sscanf(s,"%lf %lf %lf",v,v+1,v+2)==3)
-#endif
+#define  sscanvec(s,v)	(sscanf(s,FVFORMAT,v,v+1,v+2)==3)
 
 extern char  rifname[128];		/* rad input file name */
 
@@ -369,6 +365,52 @@ getpivot(				/* pivot viewpoint */
 	if (getinterest(sskip2(s,2), 0, vc, &mag) < 0)
 		return;
 	moveview(angle, elev, mag, vc);
+}
+
+
+void
+getorigin(				/* origin viewpoint */
+	char  *s
+)
+{
+	VIEW	nv = ourview;
+	double	d;
+					/* get new view origin */
+	if (!sscanvec(s, nv.vp)) {
+		int	x, y;
+		RAY	thisray;
+		if (dev->getcur == NULL)
+			return;
+		(*dev->comout)("Pick point on surface for new origin\n");
+		if ((*dev->getcur)(&x, &y) == ABORT)
+			return;
+		if ((thisray.rmax = viewray(thisray.rorg, thisray.rdir,
+			&ourview, (x+.5)/hresolu, (y+.5)/vresolu)) < -FTINY) {
+			error(COMMAND, "not on image");
+			return;
+		}
+		rayorigin(&thisray, PRIMARY, NULL, NULL);
+		if (!localhit(&thisray, &thescene)) {
+			error(COMMAND, "not a local object");
+			return;
+		}
+		if (thisray.rod < 0.0)	/* don't look through other side */
+			flipsurface(&thisray);
+		VSUM(nv.vp, thisray.rop, thisray.ron, 2.0*FTINY);
+		VCOPY(nv.vdir, thisray.ron);
+	} else if (!sscanvec(sskip2(s,3), nv.vdir) || normalize(nv.vdir) == 0.0)
+		VCOPY(nv.vdir, ourview.vdir);
+
+	d = DOT(nv.vdir, nv.vup);	/* need different up vector? */
+	if (d*d >= 1.-2.*FTINY) {
+		int	i;
+		nv.vup[0] = nv.vup[1] = nv.vup[2] = 0.0;
+		for (i = 3; i--; )
+			if (nv.vdir[i]*nv.vdir[i] < 0.34)
+				break;
+		nv.vup[i] = 1.;
+	}
+	newview(&nv);
 }
 
 

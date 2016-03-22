@@ -6,13 +6,17 @@ static const char RCSid[] = "$Id$";
  */
 
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 #include <ctype.h>
 #include "platform.h"
 #include "rtio.h"
 #include "resolu.h"
-#ifndef _WIN32
+#ifdef _WIN32
+#undef ftello
+#define	ftello	ftell
+#undef ssize_t
+#define ssize_t	size_t
+#else
 #include <sys/mman.h>
 #endif
 
@@ -53,6 +57,41 @@ free_load(MEMLOAD *mp)
 	mp->len = 0;
 }
 
+/* load memory from an input stream, starting from current position */
+static int
+load_stream(MEMLOAD *mp, FILE *fp)
+{
+	size_t	alloced = 0;
+	char	buf[8192];
+	size_t	nr;
+
+	if (mp == NULL)
+		return(-1);
+	mp->base = NULL;
+	mp->len = 0;
+	mp->mapped = 0;
+	if (fp == NULL)
+		return(-1);
+	while ((nr = fread(buf, 1, sizeof(buf), fp)) > 0) {
+		if (!alloced)
+			mp->base = malloc(alloced = nr);
+		else if (mp->len+nr > alloced)
+			mp->base = realloc(mp->base,
+				alloced = alloced*(2+(nr==sizeof(buf)))/2+nr);
+		if (mp->base == NULL)
+			return(-1);
+		memcpy((char *)mp->base + mp->len, buf, nr);
+		mp->len += nr;
+	}
+	if (ferror(fp)) {
+		free_load(mp);
+		return(-1);
+	}
+	if (alloced > mp->len*5/4)	/* don't waste too much space */
+		mp->base = realloc(mp->base, mp->len);
+	return(mp->len > 0);
+}
+
 /* load a file into memory */
 static int
 load_file(MEMLOAD *mp, FILE *fp)
@@ -60,6 +99,9 @@ load_file(MEMLOAD *mp, FILE *fp)
 	int	fd;
 	off_t	skip, flen;
 
+#ifdef _WIN32				/* too difficult to fix this */
+	return load_stream(mp, fp);
+#endif
 	if (mp == NULL)
 		return(-1);
 	mp->base = NULL;
@@ -93,37 +135,6 @@ load_file(MEMLOAD *mp, FILE *fp)
 		return(-1);
 	}
 	return(1);
-}
-
-/* load memory from an input stream, starting from current position */
-static int
-load_stream(MEMLOAD *mp, FILE *fp)
-{
-	char	buf[8192];
-	size_t	nr;
-
-	if (mp == NULL)
-		return(-1);
-	mp->base = NULL;
-	mp->len = 0;
-	mp->mapped = 0;
-	if (fp == NULL)
-		return(-1);
-	while ((nr = fread(buf, 1, sizeof(buf), fp)) > 0) {
-		if (!mp->len)
-			mp->base = malloc(nr);
-		else
-			mp->base = realloc(mp->base, mp->len+nr);
-		if (mp->base == NULL)
-			return(-1);
-		memcpy((char *)mp->base + mp->len, buf, nr);
-		mp->len += nr;
-	}
-	if (ferror(fp)) {
-		free_load(mp);
-		return(-1);
-	}
-	return(mp->len > 0);
 }
 
 /* free a record index */
@@ -229,11 +240,11 @@ output_stream(FILE *fp)
 
 	if (fp == NULL)
 		return(0);
-	fflush(stdout);			/* assumes nothing in input buffer */
-	while ((n = read(fileno(fp), buf, sizeof(buf))) > 0)
+	fflush(stdout);
+	while ((n = fread(buf, 1, sizeof(buf), fp)) > 0)
 		if (write(fileno(stdout), buf, n) != n)
 			return(0);
-	return(n >= 0);
+	return(!ferror(fp));
 }
 
 /* get next word from stream, leaving stream on EOL or start of next word */
@@ -259,12 +270,45 @@ fget_word(char buf[256], FILE *fp)
 	return(buf);
 }
 
-char		*fmtid = "ascii";		/* format id */
-int		record_width = 3;		/* words/record (<0 binary) */
+char		*fmtid = NULL;			/* format id */
+int		comp_size = 0;			/* binary bytes/channel */
+int		n_comp = 0;			/* components/record */
 int		ni_columns = 0;			/* number of input columns */
 int		ni_rows = 0;			/* number of input rows */
 int		no_columns = 0;			/* number of output columns */
 int		no_rows = 0;			/* number of output rows */
+int		transpose = 0;			/* transpose rows & cols? */
+int		i_header = 1;			/* input header? */
+int		o_header = 1;			/* output header? */
+
+/* check settings and assign defaults */
+static int
+check_sizes()
+{
+	if (fmtid == NULL) {
+		fmtid = "ascii";
+	} else if (!comp_size) {
+		if (!strcmp(fmtid, "float"))
+			comp_size = sizeof(float);
+		else if (!strcmp(fmtid, "double"))
+			comp_size = sizeof(double);
+		else if (!strcmp(fmtid, "byte"))
+			comp_size = 1;
+		else if (strcmp(fmtid, "ascii")) {
+			fprintf(stderr, "Unsupported format: %s\n", fmtid);
+			return(0);
+		}
+	}
+	if (transpose && (no_rows <= 0) & (no_columns <= 0)) {
+		if (ni_rows > 0) no_columns = ni_rows;
+		if (ni_columns > 0) no_rows = ni_columns;
+	} else if ((no_rows <= 0) & (no_columns > 0) &&
+			!((ni_rows*ni_columns) % no_columns))
+		no_rows = ni_rows*ni_columns/no_columns;
+	if (n_comp <= 0)
+		n_comp = 3;
+	return(1);
+}
 
 /* output transposed ASCII or binary data from memory */
 static int
@@ -280,21 +324,21 @@ do_transpose(const MEMLOAD *mp)
 	if (ni_columns <= 0)
 		ni_columns = no_rows;
 						/* get # records (& index) */
-	if (record_width > 0) {
-		if ((rp = index_records(mp, record_width)) == NULL)
+	if (!comp_size) {
+		if ((rp = index_records(mp, n_comp)) == NULL)
 			return(0);
 		if (ni_columns <= 0)
 			ni_columns = count_columns(rp);
 		nrecords = rp->nrecs;
 	} else if ((ni_rows > 0) & (ni_columns > 0)) {
 		nrecords = ni_rows*ni_columns;
-		if (nrecords > mp->len / -record_width) {
+		if (nrecords > mp->len/(n_comp*comp_size)) {
 			fprintf(stderr,
 			    "Input too small for specified size and type\n");
 			return(0);
 		}
 	} else
-		nrecords = mp->len / -record_width;
+		nrecords = mp->len/(n_comp*comp_size);
 						/* check sizes */
 	if ((ni_rows <= 0) & (ni_columns > 0))
 		ni_rows = nrecords/ni_columns;
@@ -316,8 +360,8 @@ do_transpose(const MEMLOAD *mp)
 			putc(tabEOL[j >= no_columns-1], stdout);
 		} else {			/* binary output */
 			fwrite((char *)mp->base +
-					-record_width*(j*ni_columns + i),
-					-record_width, 1, stdout);
+					(n_comp*comp_size)*(j*ni_columns + i),
+					n_comp*comp_size, 1, stdout);
 		}
 	    if (ferror(stdout)) {
 		fprintf(stderr, "Error writing to stdout\n");
@@ -340,11 +384,8 @@ do_resize(FILE *fp)
 	int	columns2go = no_columns;
 	char	word[256];
 						/* sanity checks */
-	if (record_width <= 0) {
-		fprintf(stderr, "Bad call to do_resize (record_width = %d)\n",
-				record_width);
-		return(0);
-	}
+	if (comp_size || (no_columns == ni_columns) & (no_rows == ni_rows))
+		return(output_stream(fp));	/* no-op -- just copy */
 	if (no_columns <= 0) {
 		fprintf(stderr, "Missing -oc specification\n");
 		return(0);
@@ -360,9 +401,9 @@ do_resize(FILE *fp)
 	do {					/* reshape records */
 		int	n;
 
-		for (n = record_width; n--; ) {
+		for (n = n_comp; n--; ) {
 			if (fget_word(word, fp) == NULL) {
-				if (records2go > 0 || n < record_width-1)
+				if (records2go > 0 || n < n_comp-1)
 					break;
 				goto done;	/* normal EOD */
 			}
@@ -397,15 +438,48 @@ done:
 static int
 headline(char *s, void *p)
 {
-	char	fmt[32];
+	static char	fmt[32];
+	int		n;
 
 	if (formatval(fmt, s)) {
+		if (fmtid == NULL) {
+			fmtid = fmt;
+			return(0);
+		}
 		if (!strcmp(fmt, fmtid))
 			return(0);
 		fprintf(stderr, "Input format '%s' != '%s'\n", fmt, fmtid);
 		return(-1);
 	}
-	fputs(s, stdout);			/* copy header info. */
+	if (!strncmp(s, "NROWS=", 6)) {
+		n = atoi(s+6);
+		if ((ni_rows > 0) & (n != ni_rows)) {
+			fputs("Incorrect input row count\n", stderr);
+			return(-1);
+		}
+		ni_rows = n;
+		return(0);
+	}
+	if (!strncmp(s, "NCOLS=", 6)) {
+		n = atoi(s+6);
+		if ((ni_columns > 0) & (n != ni_columns)) {
+			fputs("Incorrect input column count\n", stderr);
+			return(-1);
+		}
+		ni_columns = n;
+		return(0);
+	}
+	if (!strncmp(s, "NCOMP=", 6)) {
+		n = atoi(s+6);
+		if ((n_comp > 0) & (n != n_comp)) {
+			fputs("Incorrect number of components\n", stderr);
+			return(-1);
+		}
+		n_comp = n;
+		return(0);
+	}
+	if (o_header)
+		fputs(s, stdout);		/* copy header info. */
 	return(0);
 }
 
@@ -413,64 +487,75 @@ headline(char *s, void *p)
 int
 main(int argc, char *argv[])
 {
-	int	do_header = 1;			/* header i/o? */
-	int	transpose = 0;			/* transpose rows & cols? */
-	int	i;
+	int	a;
 
-	for (i = 1; i < argc && argv[i][0] == '-'; i++)
-		switch (argv[i][1]) {
+	for (a = 1; a < argc && argv[a][0] == '-'; a++)
+		switch (argv[a][1]) {
 		case 'i':			/* input */
-			if (argv[i][2] == 'c')	/* columns */
-				ni_columns = atoi(argv[++i]);
-			else if (argv[i][2] == 'r')
-				ni_rows = atoi(argv[++i]);
+			if (argv[a][2] == 'c')	/* columns */
+				ni_columns = atoi(argv[++a]);
+			else if (argv[a][2] == 'r')
+				ni_rows = atoi(argv[++a]);
 			else
 				goto userr;
 			break;
 		case 'o':			/* output */
-			if (argv[i][2] == 'c')	/* columns */
-				no_columns = atoi(argv[++i]);
-			else if (argv[i][2] == 'r')
-				no_rows = atoi(argv[++i]);
+			if (argv[a][2] == 'c')	/* columns */
+				no_columns = atoi(argv[++a]);
+			else if (argv[a][2] == 'r')
+				no_rows = atoi(argv[++a]);
 			else
 				goto userr;
 			break;
-		case 'h':			/* header on/off */
-			do_header = !do_header;
+		case 'h':			/* turn off header */
+			switch (argv[a][2]) {
+			case 'i':
+				i_header = 0;
+				break;
+			case 'o':
+				o_header = 0;
+				break;
+			case '\0':
+				i_header = o_header = 0;
+				break;
+			default:
+				goto userr;
+			}
 			break;
 		case 't':			/* transpose on/off */
 			transpose = !transpose;
 			break;
 		case 'f':			/* format */
-			switch (argv[i][2]) {
+			switch (argv[a][2]) {
 			case 'a':		/* ASCII */
 			case 'A':
 				fmtid = "ascii";
-				record_width = 1;
+				comp_size = 0;
 				break;
 			case 'f':		/* float */
 			case 'F':
 				fmtid = "float";
-				record_width = -(int)sizeof(float);
+				comp_size = sizeof(float);
 				break;
 			case 'd':		/* double */
 			case 'D':
 				fmtid = "double";
-				record_width = -(int)sizeof(double);
+				comp_size = sizeof(double);
 				break;
 			case 'b':		/* binary (bytes) */
 			case 'B':
 				fmtid = "byte";
-				record_width = -1;
+				comp_size = 1;
 				break;
 			default:
 				goto userr;
 			}
-			if (argv[i][3]) {
-				if (!isdigit(argv[i][3]))
+			if (argv[a][3]) {
+				if (!isdigit(argv[a][3]))
 					goto userr;
-				record_width *= atoi(argv[i]+3);
-			}
+				n_comp = atoi(argv[a]+3);
+			} else
+				n_comp = 1;
 			break;
 		case 'w':			/* warnings on/off */
 			warnings = !warnings;
@@ -478,22 +563,20 @@ main(int argc, char *argv[])
 		default:
 			goto userr;
 		}
-	if (!record_width)
-		goto userr;
-	if (i < argc-1)				/* arg count OK? */
+	if (a < argc-1)				/* arg count OK? */
 		goto userr;
 						/* open input file? */
-	if (i == argc-1 && freopen(argv[i], "r", stdin) == NULL) {
-		fprintf(stderr, "%s: cannot open for reading\n", argv[i]);
+	if (a == argc-1 && freopen(argv[a], "r", stdin) == NULL) {
+		fprintf(stderr, "%s: cannot open for reading\n", argv[a]);
 		return(1);
 	}
-	if (record_width < 0) {
+	if (comp_size) {
 		SET_FILE_BINARY(stdin);
 		SET_FILE_BINARY(stdout);
 	}
 						/* check for no-op */
-	if (!transpose && (record_width < 0 ||
-			(no_columns == ni_columns) & (no_rows == ni_rows))) {
+	if (!transpose & (i_header == o_header) &&
+			(no_columns == ni_columns) & (no_rows == ni_rows)) {
 		if (warnings)
 			fprintf(stderr, "%s: no-op -- copying input verbatim\n",
 				argv[0]);
@@ -501,19 +584,33 @@ main(int argc, char *argv[])
 			return(1);
 		return(0);
 	}
-	if (do_header) {			/* read/write header */
-		if (getheader(stdin, &headline, NULL) < 0)
+	if (i_header) {				/* read header */
+		if (getheader(stdin, headline, NULL) < 0)
 			return(1);
-		printargs(argc, argv, stdout);
+		if (!check_sizes())
+			return(1);
+		if (comp_size) {		/* a little late... */
+			SET_FILE_BINARY(stdin);
+			SET_FILE_BINARY(stdout);
+		}
+	} else if (!check_sizes())
+		return(1);
+	if (o_header) {				/* write header */
+		printargs(a, argv, stdout);
+		if (no_rows > 0)
+			printf("NROWS=%d\n", no_rows);
+		if (no_columns > 0)
+			printf("NCOLS=%d\n", no_columns);
+		printf("NCOMP=%d\n", n_comp);
 		fputformat(fmtid, stdout);
 		fputc('\n', stdout);		/* finish new header */
 	}
 	if (transpose) {			/* transposing rows & columns? */
-		MEMLOAD	myMem;			/* need to load into memory */
-		if (i == argc-1) {
+		MEMLOAD	myMem;			/* need to map into memory */
+		if (a == argc-1) {
 			if (load_file(&myMem, stdin) <= 0) {
 				fprintf(stderr, "%s: error loading file into memory\n",
-						argv[i]);
+						argv[a]);
 				return(1);
 			}
 		} else if (load_stream(&myMem, stdin) <= 0) {
@@ -523,13 +620,13 @@ main(int argc, char *argv[])
 		}
 		if (!do_transpose(&myMem))
 			return(1);
-		/* free_load(&myMem); */
-	} else if (!do_resize(stdin))		/* just reshaping input */
+		/* free_load(&myMem);	about to exit, so don't bother */
+	} else if (!do_resize(stdin))		/* reshaping input */
 		return(1);
 	return(0);
 userr:
 	fprintf(stderr,
-"Usage: %s [-h][-w][-f[afdb][N]][-t][-ic in_col][-ir in_row][-oc out_col][-or out_row] [input.dat]\n",
+"Usage: %s [-h[io]][-w][-f[afdb][N]][-t][-ic in_col][-ir in_row][-oc out_col][-or out_row] [input.dat]\n",
 			argv[0]);
 	return(1);
 }

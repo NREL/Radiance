@@ -94,7 +94,7 @@ ezxml_t ezxml_idx(ezxml_t xml, int idx);
 #define ezxml_name(xml) ((xml) ? xml->name : NULL)
 
 /* returns the given tag's character content or empty string if none */
-#define ezxml_txt(xml) ((xml) ? xml->txt : "")
+char *ezxml_txt(ezxml_t xml);
 
 /* returns the value of the requested tag attribute, or NULL if not found */
 const char *ezxml_attr(ezxml_t xml, const char *attr);
@@ -141,6 +141,9 @@ ezxml_t ezxml_set_txt(ezxml_t xml, const char *txt);
 /* wrapper for ezxml_set_txt() that strdup()s txt */
 #define ezxml_set_txt_d(xml, txt) \
     ezxml_set_flag(ezxml_set_txt(xml, strdup(txt)), EZXML_TXTM)
+
+/* add text to the current character content, allocating memory as needed */
+ezxml_t ezxml_add_txt(ezxml_t xml, const char *txt);
 
 /* Sets the given tag attribute or adds a new attribute if not found. A value */
 /* of NULL will remove the specified attribute. Returns the tag given. */

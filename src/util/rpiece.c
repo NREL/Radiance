@@ -37,7 +37,11 @@ main(
 #ifndef NFS
 #define  NFS			1
 #endif
-				/* set the following to 0 to forgo forking */
+
+#ifndef RHAS_FORK_EXEC
+#undef MAXFORK
+#define MAXFORK			0
+#endif
 #ifndef MAXFORK
 #if NFS
 #define  MAXFORK		3	/* allotment of duped processes */
@@ -101,7 +105,7 @@ main(
 	char  *argv[]
 )
 {
-	register int  i, rval;
+	int  i, rval;
 	
 	progname = argv[0];
 	for (i = 1; i < argc; i++) {
@@ -392,13 +396,13 @@ nextpiece(		/* get next piece assignment */
 
 static int
 rvrpiece(		/* check for recoverable pieces */
-	register int	*xp,
-	register int	*yp
+	int	*xp,
+	int	*yp
 )
 {
 	static char  *pdone = NULL;	/* which pieces are done */
 	static long  readpos = -1;	/* how far we've read */
-	register int  i;
+	int  px, py, i;
 	/*
 	 * This routine is called by nextpiece() with an
 	 * exclusive lock on syncfp and the file pointer at the
@@ -407,15 +411,15 @@ rvrpiece(		/* check for recoverable pieces */
 	if (rvrlim < 0)
 		return(0);		/* only check if asked */
 	if (pdone == NULL)		/* first call */
-		pdone = calloc(hmult*vmult, sizeof(char));
+		pdone = (char *)calloc(hmult*vmult, sizeof(char));
 	if (pdone == NULL) {
 		fprintf(stderr, "%s: out of memory\n", progname);
 		exit(1);
 	}
 	if (readpos != -1)		/* mark what's been done */
 		fseek(syncfp, readpos, 0);
-	while (fscanf(syncfp, "%d %d", xp, yp) == 2)
-		pdone[*xp*vmult+*yp] = 1;
+	while (fscanf(syncfp, "%d %d", &px, &py) == 2)
+		pdone[px*vmult+py] = 1;
 	if (!feof(syncfp)) {
 		fprintf(stderr, "%s: format error in sync file\n", progname);
 		exit(1);
@@ -522,7 +526,7 @@ int	ypos
 	struct flock  fls;
 	int  pid, status;
 	int  hr, vr;
-	register int  y;
+	int  y;
 				/* check bounds */
 	if ((xpos < 0) | (ypos < 0) | (xpos >= hmult) | (ypos >= vmult)) {
 		fprintf(stderr, "%s: requested piece (%d,%d) out of range\n",

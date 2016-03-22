@@ -15,7 +15,7 @@ static const char RCSid[] = "$Id$";
 
 #define DEGREE		(PI/180.)
 
-#define	MAXNT		180	/* maximum number of theta divisions */
+#define	MAXNT		181	/* maximum number of theta divisions */
 #define MAXNP		360	/* maximum number of phi divisions */
 
 extern char	*progname;	/* global argv[0] */
@@ -209,6 +209,7 @@ load_sensor(
 {
 	int	warnedneg;
 	char	linebuf[8192];
+	int	last_pos_val = 0;
 	int	nelem = 1000;
 	float	*sarr = (float *)malloc(sizeof(float)*nelem);
 	FILE	*fp;
@@ -236,7 +237,7 @@ load_sensor(
 		cp = fskip(cp);
 		if (cp == NULL)
 			break;
-		if (ntp[1] > 1 && sarr[ntp[1]+1] <= sarr[ntp[1]]) {
+		if (ntp[1] > 1 && sarr[ntp[1]+1] <= sarr[ntp[1]]+FTINY) {
 			sprintf(errmsg,
 		"Phi values not monotinically increasing in sensor file '%s'",
 					sfile);
@@ -262,17 +263,18 @@ load_sensor(
 			cp = fskip(cp);
 			if (cp == NULL)
 				break;
-			if (i && sarr[i] < .0) {
+			if (sarr[i] < .0) {
 				if (!warnedneg++) {
 					sprintf(errmsg,
 		"Negative value(s) in sensor file '%s' (ignored)\n", sfile);
 					error(WARNING, errmsg);
 				}
 				sarr[i] = .0;
-			}
+			} else if (sarr[i] > FTINY && i > ntp[0]*(ntp[1]+1))
+				last_pos_val = i;
 			++i;
 		}
-		if (i == ntp[0]*(ntp[1]+1))
+		if (i == ntp[0]*(ntp[1]+1))	/* empty line? */
 			break;
 		if (ntp[0] > 1 && sarr[ntp[0]*(ntp[1]+1)] <=
 					sarr[(ntp[0]-1)*(ntp[1]+1)]) {
@@ -288,24 +290,26 @@ load_sensor(
 			error(USER, errmsg);
 		}
 	}
-	nelem = i;
+						/* truncate zero region */
+	ntp[0] = (last_pos_val + ntp[1])/(ntp[1]+1) - 1;
+	nelem = (ntp[0]+1)*(ntp[1]+1);
 	fclose(fp);
 	errmsg[0] = '\0';			/* sanity checks */
-	if (ntp[0] <= 0)
-		sprintf(errmsg, "no data in sensor file '%s'", sfile);
+	if (!last_pos_val)
+		sprintf(errmsg, "no positive sensor values in file '%s'", sfile);
 	else if (fabs(sarr[ntp[1]+1]) > FTINY)
 		sprintf(errmsg, "minimum theta must be 0 in sensor file '%s'",
 				sfile);
 	else if (fabs(sarr[1]) > FTINY)
 		sprintf(errmsg, "minimum phi must be 0 in sensor file '%s'",
 				sfile);
-	else if (sarr[ntp[1]] <= FTINY)
+	else if (sarr[ntp[1]] < 270.-FTINY)
 		sprintf(errmsg,
-			"maximum phi must be positive in sensor file '%s'",
+			"maximum phi must be 270 or greater in sensor file '%s'",
 				sfile);
-	else if (sarr[ntp[0]*(ntp[1]+1)] <= FTINY)
+	else if (sarr[ntp[1]] >= 360.-FTINY)
 		sprintf(errmsg,
-			"maximum theta must be positive in sensor file '%s'",
+			"maximum phi must be less than 360 in sensor file '%s'",
 				sfile);
 	if (errmsg[0])
 		error(USER, errmsg);
@@ -366,7 +370,7 @@ init_ptable(
 	psize = PI*tsize/maxtheta;
 	if (sntp[0]*sntp[1] < samptot)	/* don't overdo resolution */
 		samptot = sntp[0]*sntp[1];
-	ntheta = (int)(sqrt((double)samptot*tsize/psize) + 0.5);
+	ntheta = (int)(sqrt((double)samptot*tsize/psize)*sntp[0]/sntp[1]) + 1;
 	if (ntheta > MAXNT)
 		ntheta = MAXNT;
 	nphi = samptot/ntheta;
@@ -398,9 +402,9 @@ init_ptable(
 		tvals[i] = 1. - ( (1.-frac)*cos(thdiv[t]) +
 						frac*cos(thdiv[t+1]) );
 				/* offset b/c sensor values are centered */
-		if (!t || (t < sntp[0]-1) & (frac >= 0.5))
+		if ((t < sntp[0]-1) & (!t | (frac >= 0.5))) {
 			frac -= 0.5;
-		else {
+		} else {
 			frac += 0.5;
 			--t;
 		}
@@ -424,6 +428,9 @@ init_ptable(
 		}
 		pvals[i*(nphi+1) + nphi] = phdiv[sntp[1]];
 	}
+						/* duplicate final row */
+	memcpy(pvals+ntheta*(nphi+1), pvals+(ntheta-1)*(nphi+1),
+				sizeof(*pvals)*(nphi+1));
 	tvals[0] = .0f;
 	tvals[ntheta] = (float)tsize;
 }

@@ -93,7 +93,7 @@ int	ncolors;
 }
 
 
-extern int
+int
 get_pixel(	/* get pixel for color */
 	COLOR	col,
 	dr_newcolrf_t *newcolr
@@ -101,8 +101,8 @@ get_pixel(	/* get pixel for color */
 {
 	int	r, g, b;
 	int	cv[3];
-	register CNODE	*tp;
-	register int	h;
+	CNODE	*tp;
+	int	h;
 						/* map color */
 	r = map_col(col,RED);
 	g = map_col(col,GRN);
@@ -152,7 +152,7 @@ void
 make_gmap(gam)			/* make gamma correction map */
 double	gam;
 {
-	register int	i;
+	int	i;
 	
 	for (i = 0; i < 256; i++)
 		clrmap[RED][i] =
@@ -184,9 +184,9 @@ COLOR	col;
 
 static void
 cut(tree, level, box, c0, c1)		/* partition color space */
-register CNODE	*tree;
+CNODE	*tree;
 int	level;
-register int	box[3][2];
+int	box[3][2];
 int	c0, c1;
 {
 	int	kb[3][2];
@@ -210,10 +210,10 @@ int	c0, c1;
 
 static int
 split(box)				/* find median cut for box */
-register int	box[3][2];
+int	box[3][2];
 {
 #define c0	r
-	register int	r, g, b;
+	int	r, g, b;
 	int	pri;
 	long	t[HMAX], med;
 					/* find dominant axis */

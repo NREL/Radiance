@@ -14,6 +14,7 @@ static const char RCSid[] = "$Id$";
 #include  "source.h"
 #include  "func.h"
 #include  "random.h"
+#include  "pmapmat.h"
 
 #ifndef  MAXITER
 #define  MAXITER	10		/* maximum # specular ray attempts */
@@ -41,7 +42,6 @@ static const char RCSid[] = "$Id$";
 #define  SP_FLAT	04		/* reflecting surface is flat */
 #define  SP_RBLT	010		/* reflection below sample threshold */
 #define  SP_TBLT	020		/* transmission below threshold */
-#define  SP_BADU	040		/* bad u direction calculation */
 
 typedef struct {
 	OBJREC  *mp;		/* material pointer */
@@ -98,7 +98,21 @@ diraniso(		/* compute source contribution */
 		scalecolor(ctmp, dtmp);
 		addcolor(cval, ctmp);
 	}
-	if (ldot > FTINY && (np->specfl&(SP_REFL|SP_BADU)) == SP_REFL) {
+
+	if ((ldot < -FTINY) & (np->tdiff > FTINY)) {
+		/*
+		 *  Compute diffuse transmission.
+		 */
+		copycolor(ctmp, np->mcolor);
+		dtmp = -ldot * omega * np->tdiff * (1.0/PI);
+		scalecolor(ctmp, dtmp);
+		addcolor(cval, ctmp);
+	}
+	
+	if (ambRayInPmap(np->rp))
+		return;		/* specular accounted for in photon map */
+
+	if (ldot > FTINY && np->specfl&SP_REFL) {
 		/*
 		 *  Compute specular reflection coefficient using
 		 *  anisotropic Gaussian distribution model.
@@ -131,16 +145,8 @@ diraniso(		/* compute source contribution */
 			addcolor(cval, ctmp);
 		}
 	}
-	if ((ldot < -FTINY) & (np->tdiff > FTINY)) {
-		/*
-		 *  Compute diffuse transmission.
-		 */
-		copycolor(ctmp, np->mcolor);
-		dtmp = -ldot * omega * np->tdiff * (1.0/PI);
-		scalecolor(ctmp, dtmp);
-		addcolor(cval, ctmp);
-	}
-	if (ldot < -FTINY && (np->specfl&(SP_TRAN|SP_BADU)) == SP_TRAN) {
+	
+	if (ldot < -FTINY && np->specfl&SP_TRAN) {
 		/*
 		 *  Compute specular transmission.  Specular transmission
 		 *  is always modified by material color.
@@ -194,7 +200,7 @@ m_aniso(			/* shade ray that hit something anisotropic */
 		objerror(m, USER, "bad number of real arguments");
 						/* check for back side */
 	if (r->rod < 0.0) {
-		if (!backvis && m->otype != MAT_TRANS2) {
+		if (!backvis) {
 			raytrans(r);
 			return(1);
 		}
@@ -268,7 +274,7 @@ m_aniso(			/* shade ray that hit something anisotropic */
 
 	getacoords(&nd);			/* set up coordinates */
 
-	if (nd.specfl & (SP_REFL|SP_TRAN) && !(nd.specfl & SP_BADU))
+	if (nd.specfl & (SP_REFL|SP_TRAN))
 		agaussamp(&nd);
 
 	if (nd.rdiff > FTINY) {		/* ambient from this side */
@@ -279,6 +285,7 @@ m_aniso(			/* shade ray that hit something anisotropic */
 		multambient(ctmp, r, nd.pnorm);
 		addcolor(r->rcol, ctmp);	/* add to returned color */
 	}
+	
 	if (nd.tdiff > FTINY) {		/* ambient from other side */
 		FVECT  bnorm;
 
@@ -301,7 +308,6 @@ m_aniso(			/* shade ray that hit something anisotropic */
 	return(1);
 }
 
-
 static void
 getacoords(		/* set up coordinate system */
 	ANISODAT  *np
@@ -315,20 +321,20 @@ getacoords(		/* set up coordinate system */
 	errno = 0;
 	for (i = 0; i < 3; i++)
 		np->u[i] = evalue(mf->ep[i]);
-	if ((errno == EDOM) | (errno == ERANGE)) {
-		objerror(np->mp, WARNING, "compute error");
-		np->specfl |= SP_BADU;
-		return;
-	}
+	if ((errno == EDOM) | (errno == ERANGE))
+		np->u[0] = np->u[1] = np->u[2] = 0.0;
 	if (mf->fxp != &unitxf)
 		multv3(np->u, np->u, mf->fxp->xfm);
 	fcross(np->v, np->pnorm, np->u);
 	if (normalize(np->v) == 0.0) {
-		objerror(np->mp, WARNING, "illegal orientation vector");
-		np->specfl |= SP_BADU;
-		return;
-	}
-	fcross(np->u, np->v, np->pnorm);
+		if (fabs(np->u_alpha - np->v_alpha) > 0.001)
+			objerror(np->mp, WARNING, "illegal orientation vector");
+		getperpendicular(np->u, np->pnorm, 1);	/* punting */
+		fcross(np->v, np->pnorm, np->u);
+		np->u_alpha = np->v_alpha = sqrt( 0.5 *
+			(np->u_alpha*np->u_alpha + np->v_alpha*np->v_alpha) );
+	} else
+		fcross(np->u, np->v, np->pnorm);
 }
 
 

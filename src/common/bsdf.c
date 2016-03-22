@@ -199,7 +199,7 @@ SDloadFile(SDData *sd, const char *fname)
 	}
 	wtl = ezxml_child(ezxml_child(fl, "Optical"), "Layer");
 	if (wtl == NULL) {
-		sprintf(SDerrorDetail, "BSDF \"%s\": no optical layers'",
+		sprintf(SDerrorDetail, "BSDF \"%s\": no optical layers",
 				sd->name);
 		ezxml_free(fl);
 		return SDEformat;
@@ -422,6 +422,7 @@ SDcacheFile(const char *fname)
 	if (fname == NULL || !*fname)
 		return NULL;
 	SDerrorDetail[0] = '\0';
+	/* PLACE MUTEX LOCK HERE FOR THREAD-SAFE */
 	if ((sd = SDgetCache(fname)) == NULL) {
 		SDreportError(SDEmemory, stderr);
 		return NULL;
@@ -429,8 +430,9 @@ SDcacheFile(const char *fname)
 	if (!SDisLoaded(sd) && (ec = SDloadFile(sd, fname))) {
 		SDreportError(ec, stderr);
 		SDfreeCache(sd);
-		return NULL;
+		sd = NULL;
 	}
+	/* END MUTEX LOCK */
 	return sd;
 }
 
@@ -558,8 +560,7 @@ SDdiffuseSamp(FVECT outVec, int outFront, double randX)
 	SDmultiSamp(outVec, 2, randX);
 	SDsquare2disk(outVec, outVec[0], outVec[1]);
 	outVec[2] = 1. - outVec[0]*outVec[0] - outVec[1]*outVec[1];
-	if (outVec[2] > 0)		/* a bit of paranoia */
-		outVec[2] = sqrt(outVec[2]);
+	outVec[2] = sqrt(outVec[2]*(outVec[2]>0));
 	if (!outFront)			/* going out back? */
 		outVec[2] = -outVec[2];
 }
@@ -596,11 +597,12 @@ SDsizeBSDF(double *projSA, const FVECT v1, const RREAL *v2,
 		rdf = sd->rb;
 		tdf = (sd->tb != NULL) ? sd->tb : sd->tf;
 	}
-	if (v2 != NULL)			/* bidirectional? */
+	if (v2 != NULL) {		/* bidirectional? */
 		if (v1[2] > 0 ^ v2[2] > 0)
 			rdf = NULL;
 		else
 			tdf = NULL;
+	}
 	ec = SDEdata;			/* run through components */
 	for (i = (rdf==NULL) ? 0 : rdf->ncomp; i--; ) {
 		ec = (*rdf->comp[i].func->queryProjSA)(projSA, v1, v2,
@@ -764,8 +766,7 @@ SDsampBSDF(SDValue *sv, FVECT ioVec, double randX, int sflags, const SDData *sd)
 		cdarr[i] = (*rdf->comp[i].func->getCDist)(inVec, &rdf->comp[i]);
 		if (cdarr[i] == NULL)
 			cdarr[i] = &SDemptyCD;
-		else
-			sv->cieY += cdarr[i]->cTotal;
+		sv->cieY += cdarr[i]->cTotal;
 	}
 	if (sv->cieY <= 1e-6) {		/* anything to sample? */
 		sv->cieY = .0;
@@ -790,7 +791,7 @@ SDsampBSDF(SDValue *sv, FVECT ioVec, double randX, int sflags, const SDData *sd)
 		randX -= sd->tLamb.cieY;
 	}
 					/* else one of cumulative dist. */
-	for (i = 0; i < n && randX < cdarr[i]->cTotal; i++)
+	for (i = 0; i < n && randX > cdarr[i]->cTotal; i++)
 		randX -= cdarr[i]->cTotal;
 	if (i >= n)
 		return SDEinternal;

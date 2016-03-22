@@ -29,7 +29,7 @@ install:	$(PROGS) $(LIBFILES) glaze.csh
 	cp $(LIBFILES) $(LIBDIR)
 
 clean:
-	set nonomatch; rm -f $(PROGS) *.o core
+	set nonomatch; rm -f $(PROGS) *.o
 
 genbeads:	genbeads.o hermite3.o
 	$(CC) $(CFLAGS) -o genbeads genbeads.o hermite3.o $(MLIB)
@@ -119,4 +119,7 @@ gensky.o:	../common/color.h
 
 gensurf.o genworm.o genrev.o:	../common/calcomp.h
 
-sun.o:	sun.h
+gendaylit.o gensky.o sun.o:	sun.h
+
+gendaymtx.o:	../common/platform.h ../common/rtmath.h \
+../common/mat4.h ../common/fvect.h ../common/color.h

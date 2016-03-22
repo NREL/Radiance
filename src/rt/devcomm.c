@@ -65,7 +65,7 @@ final_connect(void)				/* verify and initialize connection */
 }
 
 
-extern struct driver *
+struct driver *
 slave_init(			/* run rview in slave mode */
 	char	*dname,
 	char	*id
@@ -78,7 +78,7 @@ slave_init(			/* run rview in slave mode */
 }
 
 
-extern struct driver *
+struct driver *
 comm_init(			/* set up and execute driver */
 	char	*dname,
 	char	*id
@@ -250,11 +250,11 @@ comm_comin(			/* read string from command line */
 
 static void
 mygets(				/* get string from file (with nul) */
-	register char	*s,
-	register FILE	*fp
+	char	*s,
+	FILE	*fp
 )
 {
-	register int	c;
+	int	c;
 
 	while ((c = getc(fp)) != EOF)
 		if ((*s++ = c) == '\0')
@@ -265,8 +265,8 @@ mygets(				/* get string from file (with nul) */
 
 static void
 myputs(				/* put string to file (with nul) */
-	register char	*s,
-	register FILE	*fp
+	char	*s,
+	FILE	*fp
 )
 {
 	do

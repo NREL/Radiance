@@ -457,7 +457,7 @@ mksources(TRITREE *samptree, double thresh, double maxang)
 						thisethresh);
 			if (normalize(vsum) == .0)
 				break;
-			movedist = acos(DOT(vsum,curcent));
+			movedist = Acos(DOT(vsum,curcent));
 			if (movedist > growstep) {
 				VSUB(vsum, vsum, curcent);
 				movedist = growstep/VLEN(vsum); 

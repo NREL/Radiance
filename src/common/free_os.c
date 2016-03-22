@@ -20,8 +20,9 @@ static const char	RCSid[] = "$Id$";
 
 
 int
-free_os(op)			/* free unneeded memory for object */
-register OBJREC	*op;
+free_os(			/* free unneeded memory for object */
+	OBJREC	*op
+)
 {
 	if (op->os == NULL)
 		return(0);

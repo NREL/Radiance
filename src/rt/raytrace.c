@@ -14,6 +14,7 @@ static const char RCSid[] = "$Id$";
 #include  "otypes.h"
 #include  "otspecial.h"
 #include  "random.h"
+#include  "pmap.h"
 
 #define  MAXCSET	((MAXSET+1)*2-1)	/* maximum check set size */
 
@@ -35,7 +36,7 @@ static int checkhit(RAY  *r, CUBE  *cu, OBJECT  *cxs);
 static void checkset(OBJECT  *os, OBJECT  *cs);
 
 
-extern int
+int
 rayorigin(		/* start new ray from old one */
 	RAY  *r,
 	int  rt,
@@ -106,6 +107,13 @@ rayorigin(		/* start new ray from old one */
 		return(-1);
 	if (r->crtype & SHADOW)			/* shadow commitment */
 		return(0);
+						/* ambient in photon map? */
+	if (ro != NULL && ro->crtype & AMBIENT) {
+		if (causticPhotonMapping)
+			return(-1);
+		if (photonMapping && rt != TRANS)
+			return(-1);
+	}
 	if (maxdepth <= 0 && rc != NULL) {	/* Russian roulette */
 		if (minweight <= 0.0)
 			error(USER, "zero ray weight in Russian roulette");
@@ -124,7 +132,7 @@ rayorigin(		/* start new ray from old one */
 }
 
 
-extern void
+void
 rayclear(			/* clear a ray for (re)evaluation */
 	RAY  *r
 )
@@ -143,7 +151,7 @@ rayclear(			/* clear a ray for (re)evaluation */
 }
 
 
-extern void
+void
 raytrace(			/* trace a ray and compute its value */
 	RAY  *r
 )
@@ -163,7 +171,7 @@ raytrace(			/* trace a ray and compute its value */
 }
 
 
-extern void
+void
 raycont(			/* check for clipped object and continue */
 	RAY  *r
 )
@@ -174,23 +182,22 @@ raycont(			/* check for clipped object and continue */
 }
 
 
-extern void
+void
 raytrans(			/* transmit ray as is */
 	RAY  *r
 )
 {
 	RAY  tr;
 
-	if (rayorigin(&tr, TRANS, r, NULL) == 0) {
-		VCOPY(tr.rdir, r->rdir);
-		rayvalue(&tr);
-		copycolor(r->rcol, tr.rcol);
-		r->rt = r->rot + tr.rt;
-	}
+	rayorigin(&tr, TRANS, r, NULL);		/* always continue */
+	VCOPY(tr.rdir, r->rdir);
+	rayvalue(&tr);
+	copycolor(r->rcol, tr.rcol);
+	r->rt = r->rot + tr.rt;
 }
 
 
-extern int
+int
 rayshade(		/* shade ray r with material mod */
 	RAY  *r,
 	int  mod
@@ -225,7 +232,7 @@ rayshade(		/* shade ray r with material mod */
 }
 
 
-extern void
+void
 rayparticipate(			/* compute ray medium participation */
 	RAY  *r
 )
@@ -249,16 +256,21 @@ rayparticipate(			/* compute ray medium participation */
 	multcolor(r->rcol, ce);			/* path extinction */
 	if (r->crtype & SHADOW || intens(r->albedo) <= FTINY)
 		return;				/* no scattering */
-	setcolor(ca,
-		colval(r->albedo,RED)*colval(ambval,RED)*(1.-colval(ce,RED)),
-		colval(r->albedo,GRN)*colval(ambval,GRN)*(1.-colval(ce,GRN)),
-		colval(r->albedo,BLU)*colval(ambval,BLU)*(1.-colval(ce,BLU)));
-	addcolor(r->rcol, ca);			/* ambient in scattering */
+	
+	/* PMAP: indirect inscattering accounted for by volume photons? */
+	if (!volumePhotonMapping) {
+		setcolor(ca,
+			colval(r->albedo,RED)*colval(ambval,RED)*(1.-colval(ce,RED)),
+			colval(r->albedo,GRN)*colval(ambval,GRN)*(1.-colval(ce,GRN)),
+			colval(r->albedo,BLU)*colval(ambval,BLU)*(1.-colval(ce,BLU)));
+		addcolor(r->rcol, ca);			/* ambient in scattering */
+	}
+	
 	srcscatter(r);				/* source in scattering */
 }
 
 
-extern void
+void
 raytexture(			/* get material modifiers */
 	RAY  *r,
 	OBJECT  mod
@@ -283,7 +295,7 @@ raytexture(			/* get material modifiers */
 }
 
 
-extern int
+int
 raymixture(		/* mix modifiers */
 	RAY  *r,
 	OBJECT  fore,
@@ -343,7 +355,7 @@ raymixture(		/* mix modifiers */
 }
 
 
-extern double
+double
 raydist(		/* compute (cumulative) ray distance */
 	const RAY  *r,
 	int  flags
@@ -359,7 +371,7 @@ raydist(		/* compute (cumulative) ray distance */
 }
 
 
-extern void
+void
 raycontrib(		/* compute (cumulative) ray contribution */
 	RREAL  rc[3],
 	const RAY  *r,
@@ -385,7 +397,7 @@ raycontrib(		/* compute (cumulative) ray contribution */
 }
 
 
-extern double
+double
 raynormal(		/* compute perturbed normal for ray */
 	FVECT  norm,
 	RAY  *r
@@ -421,7 +433,7 @@ raynormal(		/* compute perturbed normal for ray */
 }
 
 
-extern void
+void
 newrayxf(			/* get new tranformation matrix for ray */
 	RAY  *r
 )
@@ -459,7 +471,7 @@ newrayxf(			/* get new tranformation matrix for ray */
 }
 
 
-extern void
+void
 flipsurface(			/* reverse surface orientation */
 	RAY  *r
 )
@@ -474,7 +486,7 @@ flipsurface(			/* reverse surface orientation */
 }
 
 
-extern void
+void
 rayhit(			/* standard ray hit test */
 	OBJECT  *oset,
 	RAY  *r
@@ -491,7 +503,7 @@ rayhit(			/* standard ray hit test */
 }
 
 
-extern int
+int
 localhit(		/* check for hit in the octree */
 	RAY  *r,
 	CUBE  *scene

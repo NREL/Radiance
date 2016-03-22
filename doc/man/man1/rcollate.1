@@ -5,11 +5,11 @@ rcollate - resize or transpose matrix data
 .SH SYNOPSIS
 .B rcollate
 [
-.B \-h
+.B \-h[io]
 ][
 .B \-w
 ][
-.B \-f[afdb][N]]
+.B \-f[afdb][N]
 ][
 .B \-t
 ][
@@ -31,9 +31,15 @@ the number of columns specified by the
 .I \-oc
 option.
 By default, the file is assumed to include an information header, which
-is copied to the standard output along with the command name, but the
+is copied to the standard output along with the command name.
+The
+.I \-hi
+option may be used to turn off the expectation of a header on input.
+The
+.I \-ho
+option turns off header output, and
 .I \-h
-option may be used to turn this behavior off.
+by itself turns off both input and output headers.
 The
 .I \-w
 option turns off non-fatal warning messages, such as unexpected EOD.
@@ -69,6 +75,16 @@ Note that the lack of row separators in binary files means that
 does not actually do anything for binary files unless the transpose
 option is given, also.
 .PP
+If an input header is present, it may contain the format, number of components
+and matrix dimensions.
+In such cases, the
+.I \-ic,
+.I \-ir
+and
+.I \-f
+options are not required, but will be checked against the header
+information if provided.
+.PP
 The transpose option,
 .I \-t
 swaps rows and columns on the input.
@@ -88,7 +104,7 @@ For large transpose operations on Unix systems, it is most efficient
 to specify the input file on the command line, rather than reading
 from the standard input, since
 .I rcollate
-can map the file directly into memory.
+can map the file directly into virtual memory.
 .SH EXAMPLE
 To change put 8760 color triplets per row in a matrix with no header:
 .IP "" .2i
@@ -97,6 +113,11 @@ rcollate -h \-oc 8760 input.dat > col8760.dat
 To transpose a binary file with 145 float triplets per input row:
 .IP "" .2i
 rcollate -ff3 -ic 145 -t orig.flt > transpose.flt
+.PP
+To create an appropriate header for a binary float matrix as required by
+.I rmtxop(1)\:
+.IP "" .2i
+rcollate -hi -ff3 -or 145 -oc 8760 input.smx | rmtxop dcoef.dmx - > res.txt
 .SH AUTHOR
 Greg Ward
 .SH NOTES
@@ -114,4 +135,4 @@ without a transpose,
 .I rcollate
 issues a warning and simply copies its input to its standard output.
 .SH "SEE ALSO"
-cnt(1), histo(1), neaten(1), rcalc(1), rlam(1), tabfunc(1), total(1)
+cnt(1), histo(1), neaten(1), rcalc(1), rlam(1), rmtxop(1), tabfunc(1), total(1)

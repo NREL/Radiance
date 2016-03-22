@@ -8,6 +8,10 @@ bsdf2klems - generate XML Klems matrix description of a BSDF
 .B "\-n spp"
 ][
 .B "\-h|\-q"
+][
+.B "\-pC"
+][
+.B "\-l maxlobes"
 ]
 [
 .B "bsdf.sir .."
@@ -20,6 +24,8 @@ or
 .B "\-n spp"
 ][
 .B "\-h|\-q"
+][
+.B "\-pC"
 ]
 .B bsdf_in.xml
 .br
@@ -31,13 +37,15 @@ or
 ][
 .B "\-h|\-q"
 ][
+.B "\-pC"
+][
 .B "{+|-}forward"
 ][
 .B "{+|-}backward"
 ][
-.B "\-e expr
+.B "\-e expr"
 ][
-.B "\-f file
+.B "\-f file"
 ]
 .B bsdf_func
 .SH DESCRIPTION
@@ -60,6 +68,19 @@ The
 option may be used to reduce this number to 41 patches.
 Neither option is recommended unless the distribution is known to
 be approximately diffuse.
+.PP
+The
+.I \-p
+option by itself turns off the progress bar, whose length may be set
+by an immediately following integer argument.
+(The default progress bar length is 79 characters.)\0
+.PP
+The
+.I \-l
+option may be used to specify the maximum number of lobes in any
+interpolated radial basis function.
+The default value is 15000, which generally keeps the interpolation tractable.
+Setting the value to 0 turns off this limit.
 .PP
 Normally, multiple samples are taken from random points on each input
 and output patch to improve accuracy.
@@ -146,4 +167,5 @@ bsdf2klems -e 'phong(ix,iy,iz,ox,oy,oz) = if(iz, .1+((iz+oz)/sqrt((ix+ox)^2+(iy+
 Greg Ward
 .SH "SEE ALSO"
 bsdf2ttree(1), dctimestep(1), icalc(1), gendaymtx(1), genklemsamp(1),
-genskyvec(1), mkillum(1), genBSDF(1), pkgBSDF(1), rcontrib(1), rtrace(1)
+genskyvec(1), mkillum(1), genBSDF(1), pkgBSDF(1), rcontrib(1), rfluxmtx(1),
+rmtxop(1), wrapBSDF(1)

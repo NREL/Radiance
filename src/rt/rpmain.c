@@ -18,6 +18,7 @@ static const char	RCSid[] = "$Id$";
 #include  "random.h"
 #include  "paths.h"
 #include  "view.h"
+#include  "pmapray.h"
 
 					/* persistent processes define */
 #ifdef  F_SETLKW
@@ -297,11 +298,13 @@ main(int  argc, char  *argv[])
 		printargs(i, argv, stdout);
 		printf("SOFTWARE= %s\n", VersionID);
 	}
+	          
+	ray_init_pmap();     /* PMAP: set up & load photon maps */
 
 	marksources();			/* find and mark sources */
 
 	setambient();			/* initialize ambient calculation */
-
+	
 #ifdef  PERSIST
 	if (persist) {
 		fflush(stdout);
@@ -356,6 +359,10 @@ runagain:
 		goto runagain;
 	}
 #endif
+
+
+	ray_done_pmap();           /* PMAP: free photon maps */
+	
 	quit(0);
 
 badopt:

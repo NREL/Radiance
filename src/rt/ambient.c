@@ -1,6 +1,4 @@
-#ifndef lint
 static const char	RCSid[] = "$Id$";
-#endif
 /*
  *  ambient.c - routines dealing with ambient (inter-reflected) component.
  *
@@ -17,6 +15,7 @@ static const char	RCSid[] = "$Id$";
 #include  "resolu.h"
 #include  "ambient.h"
 #include  "random.h"
+#include  "pmapamb.h"
 
 #ifndef  OCTSCALE
 #define	 OCTSCALE	1.0	/* ceil((valid rad.)/(cube size)) */
@@ -39,9 +38,9 @@ static int  nunflshed = 0;	/* number of unflushed ambient values */
 
 #ifndef SORT_THRESH
 #ifdef SMLMEM
-#define SORT_THRESH	((3L<<20)/sizeof(AMBVAL))
+#define SORT_THRESH	((16L<<20)/sizeof(AMBVAL))
 #else
-#define SORT_THRESH	((9L<<20)/sizeof(AMBVAL))
+#define SORT_THRESH	((64L<<20)/sizeof(AMBVAL))
 #endif
 #endif
 #ifndef SORT_INTVL
@@ -50,6 +49,7 @@ static int  nunflshed = 0;	/* number of unflushed ambient values */
 #ifndef MAX_SORT_INTVL
 #define MAX_SORT_INTVL	(SORT_INTVL<<6)
 #endif
+
 
 static double  avsum = 0.;		/* computed ambient value sum (log) */
 static unsigned int  navsum = 0;	/* number of values in avsum */
@@ -84,9 +84,10 @@ static AMBVAL *avstore(AMBVAL  *aval);
 static AMBTREE *newambtree(void);
 static void freeambtree(AMBTREE  *atp);
 
-typedef void unloadtf_t(void *);
+typedef void unloadtf_t(AMBVAL *);
 static unloadtf_t avinsert;
 static unloadtf_t av2list;
+static unloadtf_t avfree;
 static void unloadatree(AMBTREE  *at, unloadtf_t *f);
 
 static int aposcmp(const void *avp1, const void *avp2);
@@ -98,7 +99,7 @@ static void aflock(int  typ);
 #endif
 
 
-extern void
+void
 setambres(				/* set ambient resolution */
 	int  ar
 )
@@ -107,36 +108,37 @@ setambres(				/* set ambient resolution */
 						/* set min & max radii */
 	if (ar <= 0) {
 		minarad = 0;
-		maxarad = thescene.cusize / 2.0;
+		maxarad = thescene.cusize*0.2;
 	} else {
 		minarad = thescene.cusize / ar;
-		maxarad = 64 * minarad;			/* heuristic */
-		if (maxarad > thescene.cusize / 2.0)
-			maxarad = thescene.cusize / 2.0;
+		maxarad = 64.0 * minarad;		/* heuristic */
+		if (maxarad > thescene.cusize*0.2)
+			maxarad = thescene.cusize*0.2;
 	}
 	if (minarad <= FTINY)
-		minarad = 10*FTINY;
+		minarad = 10.0*FTINY;
 	if (maxarad <= minarad)
-		maxarad = 64 * minarad;
+		maxarad = 64.0 * minarad;
 }
 
 
-extern void
+void
 setambacc(				/* set ambient accuracy */
 	double  newa
 )
 {
-	double  ambdiff;
-
-	if (newa < 0.0)
-		newa = 0.0;
-	ambdiff = fabs(newa - ambacc);
-	if (ambdiff >= .01 && (ambacc = newa) > FTINY && nambvals > 0)
-		sortambvals(1);			/* rebuild tree */
+	static double	olda;		/* remember previous setting here */
+	
+	newa *= (newa > 0);
+	if (fabs(newa - olda) >= .05*(newa + olda)) {
+		ambacc = newa;
+		if (nambvals > 0)
+			sortambvals(1);		/* rebuild tree */
+	}
 }
 
 
-extern void
+void
 setambient(void)				/* initialize calculation */
 {
 	int	readonly = 0;
@@ -162,7 +164,7 @@ setambient(void)				/* initialize calculation */
 		initambfile(0);			/* file exists */
 		lastpos = ftell(ambfp);
 		while (readambval(&amb, ambfp))
-			avinsert(avstore(&amb));
+			avstore(&amb);
 		nambshare = nambvals;		/* share loaded values */
 		if (readonly) {
 			sprintf(errmsg,
@@ -200,7 +202,7 @@ setambient(void)				/* initialize calculation */
 }
 
 
-extern void
+void
 ambdone(void)			/* close ambient file and free memory */
 {
 	if (ambfp != NULL) {		/* close ambient file */
@@ -214,7 +216,7 @@ ambdone(void)			/* close ambient file and free memory */
 		lastpos = -1;
 	}
 					/* free ambient tree */
-	unloadatree(&atrunk, free);
+	unloadatree(&atrunk, &avfree);
 					/* reset state variables */
 	avsum = 0.;
 	navsum = 0;
@@ -226,7 +228,7 @@ ambdone(void)			/* close ambient file and free memory */
 }
 
 
-extern void
+void
 ambnotify(			/* record new modifier */
 	OBJECT	obj
 )
@@ -255,8 +257,20 @@ ambnotify(			/* record new modifier */
 		}
 }
 
+/************ THE FOLLOWING ROUTINES DIFFER BETWEEN NEW & OLD ***************/
 
-extern void
+#ifndef OLDAMB
+
+#define tfunc(lwr, x, upr)	(((x)-(lwr))/((upr)-(lwr)))
+
+static int	plugaleak(RAY *r, AMBVAL *ap, FVECT anorm, double ang);
+static double	sumambient(COLOR acol, RAY *r, FVECT rn, int al,
+				AMBTREE *at, FVECT c0, double s);
+static int	makeambient(COLOR acol, RAY *r, FVECT rn, int al);
+static int	extambient(COLOR cr, AMBVAL *ap, FVECT pv, FVECT nv, 
+				FVECT uvw[3]);
+
+void
 multambient(		/* compute ambient component & multiply by coef. */
 	COLOR  aval,
 	RAY  *r,
@@ -264,9 +278,401 @@ multambient(		/* compute ambient component & multiply by coef. */
 )
 {
 	static int  rdepth = 0;			/* ambient recursion */
-	COLOR	acol;
+	COLOR	acol, caustic;
+	int	ok;
 	double	d, l;
 
+	/* PMAP: Factor in ambient from photon map, if enabled and ray is
+	 * ambient. Return as all ambient components accounted for, else
+	 * continue. */
+	if (ambPmap(aval, r, rdepth))
+		return;
+
+	/* PMAP: Factor in specular-diffuse ambient (caustics) from photon
+	 * map, if enabled and ray is primary, else caustic is zero.  Continue
+	 * with RADIANCE ambient calculation */
+	copycolor(caustic, aval);
+	ambPmapCaustic(caustic, r, rdepth);
+	
+	if (ambdiv <= 0)			/* no ambient calculation */
+		goto dumbamb;
+						/* check number of bounces */
+	if (rdepth >= ambounce)
+		goto dumbamb;
+						/* check ambient list */
+	if (ambincl != -1 && r->ro != NULL &&
+			ambincl != inset(ambset, r->ro->omod))
+		goto dumbamb;
+
+	if (ambacc <= FTINY) {			/* no ambient storage */
+		copycolor(acol, aval);
+		rdepth++;
+		ok = doambient(acol, r, r->rweight,
+				NULL, NULL, NULL, NULL, NULL);
+		rdepth--;
+		if (!ok)
+			goto dumbamb;
+		copycolor(aval, acol);
+
+		/* PMAP: add in caustic */
+		addcolor(aval, caustic);
+		return;
+	}
+
+	if (tracktime)				/* sort to minimize thrashing */
+		sortambvals(0);
+						/* interpolate ambient value */
+	setcolor(acol, 0.0, 0.0, 0.0);
+	d = sumambient(acol, r, nrm, rdepth,
+			&atrunk, thescene.cuorg, thescene.cusize);
+			
+	if (d > FTINY) {
+		d = 1.0/d;
+		scalecolor(acol, d);
+		multcolor(aval, acol);
+
+		/* PMAP: add in caustic */
+		addcolor(aval, caustic);
+		return;
+	}
+	
+	rdepth++;				/* need to cache new value */
+	ok = makeambient(acol, r, nrm, rdepth-1);
+	rdepth--;
+	
+	if (ok) {
+		multcolor(aval, acol);		/* computed new value */
+
+		/* PMAP: add in caustic */
+		addcolor(aval, caustic);
+		return;
+	}
+	
+dumbamb:					/* return global value */
+	if ((ambvwt <= 0) | (navsum == 0)) {
+		multcolor(aval, ambval);
+		
+		/* PMAP: add in caustic */
+		addcolor(aval, caustic);
+		return;
+	}
+	
+	l = bright(ambval);			/* average in computations */	
+	if (l > FTINY) {
+		d = (log(l)*(double)ambvwt + avsum) /
+				(double)(ambvwt + navsum);
+		d = exp(d) / l;
+		scalecolor(aval, d);
+		multcolor(aval, ambval);	/* apply color of ambval */
+	} else {
+		d = exp( avsum / (double)navsum );
+		scalecolor(aval, d);		/* neutral color */
+	}
+}
+
+
+/* Plug a potential leak where ambient cache value is occluded */
+static int
+plugaleak(RAY *r, AMBVAL *ap, FVECT anorm, double ang)
+{
+	const double	cost70sq = 0.1169778;	/* cos(70deg)^2 */
+	RAY		rtst;
+	FVECT		vdif;
+	double		normdot, ndotd, nadotd;
+	double		a, b, c, t[2];
+
+	ang += 2.*PI*(ang < 0);			/* check direction flags */
+	if ( !(ap->corral>>(int)(ang*(16./PI)) & 1) )
+		return(0);
+	/*
+	 * Generate test ray, targeting 20 degrees above sample point plane
+	 * along surface normal from cache position.  This should be high
+	 * enough to miss local geometry we don't really care about.
+	 */
+	VSUB(vdif, ap->pos, r->rop);
+	normdot = DOT(anorm, r->ron);
+	ndotd = DOT(vdif, r->ron);
+	nadotd = DOT(vdif, anorm);
+	a = normdot*normdot - cost70sq;
+	b = 2.0*(normdot*ndotd - nadotd*cost70sq);
+	c = ndotd*ndotd - DOT(vdif,vdif)*cost70sq;
+	if (quadratic(t, a, b, c) != 2)
+		return(1);			/* should rarely happen */
+	if (t[1] <= FTINY)
+		return(0);			/* should fail behind test */
+	rayorigin(&rtst, SHADOW, r, NULL);
+	VSUM(rtst.rdir, vdif, anorm, t[1]);	/* further dist. > plane */
+	rtst.rmax = normalize(rtst.rdir);	/* short ray test */
+	while (localhit(&rtst, &thescene)) {	/* check for occluder */
+		if (rtst.ro->omod != OVOID &&
+				(rtst.clipset == NULL ||
+					!inset(rtst.clipset, rtst.ro->omod)))
+			return(1);		/* plug light leak */
+		VCOPY(rtst.rorg, rtst.rop);	/* skip invisible surface */
+		rtst.rmax -= rtst.rot;
+		rayclear(&rtst);
+	}
+	return(0);				/* seems we're OK */
+}
+
+
+static double
+sumambient(		/* get interpolated ambient value */
+	COLOR  acol,
+	RAY  *r,
+	FVECT  rn,
+	int  al,
+	AMBTREE	 *at,
+	FVECT  c0,
+	double	s
+)
+{			/* initial limit is 10 degrees plus ambacc radians */
+	const double	minangle = 10.0 * PI/180.;
+	double		maxangle = minangle + ambacc;
+	double		wsum = 0.0;
+	FVECT		ck0;
+	int		i, j;
+	AMBVAL		*av;
+
+	if (at->kid != NULL) {		/* sum children first */				
+		s *= 0.5;
+		for (i = 0; i < 8; i++) {
+			for (j = 0; j < 3; j++) {
+				ck0[j] = c0[j];
+				if (1<<j & i)
+					ck0[j] += s;
+				if (r->rop[j] < ck0[j] - OCTSCALE*s)
+					break;
+				if (r->rop[j] > ck0[j] + (1.0+OCTSCALE)*s)
+					break;
+			}
+			if (j == 3)
+				wsum += sumambient(acol, r, rn, al,
+							at->kid+i, ck0, s);
+		}
+					/* good enough? */
+		if (wsum >= 0.05 && s > minarad*10.0)
+			return(wsum);
+	}
+					/* adjust maximum angle */
+	if (at->alist != NULL && (at->alist->lvl <= al) & (r->rweight < 0.6))
+		maxangle = (maxangle - PI/2.)*pow(r->rweight,0.13) + PI/2.;
+					/* sum this node */
+	for (av = at->alist; av != NULL; av = av->next) {
+		double	u, v, d, delta_r2, delta_t2;
+		COLOR	ct;
+		FVECT	uvw[3];
+					/* record access */
+		if (tracktime)
+			av->latick = ambclock;
+		/*
+		 *  Ambient level test
+		 */
+		if (av->lvl > al ||	/* list sorted, so this works */
+				(av->lvl == al) & (av->weight < 0.9*r->rweight))
+			break;
+		/*
+		 *  Direction test using unperturbed normal
+		 */
+		decodedir(uvw[2], av->ndir);
+		d = DOT(uvw[2], r->ron);
+		if (d <= 0.0)		/* >= 90 degrees */
+			continue;
+		delta_r2 = 2.0 - 2.0*d;	/* approx. radians^2 */
+		if (delta_r2 >= maxangle*maxangle)
+			continue;
+		/*
+		 *  Modified ray behind test
+		 */
+		VSUB(ck0, r->rop, av->pos);
+		d = DOT(ck0, uvw[2]);
+		if (d < -minarad*ambacc-.001)
+			continue;
+		d /= av->rad[0];
+		delta_t2 = d*d;
+		if (delta_t2 >= ambacc*ambacc)
+			continue;
+		/*
+		 *  Elliptical radii test based on Hessian
+		 */
+		decodedir(uvw[0], av->udir);
+		VCROSS(uvw[1], uvw[2], uvw[0]);
+		d = (u = DOT(ck0, uvw[0])) / av->rad[0];
+		delta_t2 += d*d;
+		d = (v = DOT(ck0, uvw[1])) / av->rad[1];
+		delta_t2 += d*d;
+		if (delta_t2 >= ambacc*ambacc)
+			continue;
+		/*
+		 *  Test for potential light leak
+		 */
+		if (av->corral && plugaleak(r, av, uvw[2], atan2a(v,u)))
+			continue;
+		/*
+		 *  Extrapolate value and compute final weight (hat function)
+		 */
+		if (!extambient(ct, av, r->rop, rn, uvw))
+			continue;
+		d = tfunc(maxangle, sqrt(delta_r2), 0.0) *
+			tfunc(ambacc, sqrt(delta_t2), 0.0);
+		scalecolor(ct, d);
+		addcolor(acol, ct);
+		wsum += d;
+	}
+	return(wsum);
+}
+
+
+static int
+makeambient(		/* make a new ambient value for storage */
+	COLOR  acol,
+	RAY  *r,
+	FVECT  rn,
+	int  al
+)
+{
+	AMBVAL	amb;
+	FVECT	uvw[3];
+	int	i;
+
+	amb.weight = 1.0;			/* compute weight */
+	for (i = al; i-- > 0; )
+		amb.weight *= AVGREFL;
+	if (r->rweight < 0.1*amb.weight)	/* heuristic override */
+		amb.weight = 1.25*r->rweight;
+	setcolor(acol, AVGREFL, AVGREFL, AVGREFL);
+						/* compute ambient */
+	i = doambient(acol, r, amb.weight,
+			uvw, amb.rad, amb.gpos, amb.gdir, &amb.corral);
+	scalecolor(acol, 1./AVGREFL);		/* undo assumed reflectance */
+	if (i <= 0 || amb.rad[0] <= FTINY)	/* no Hessian or zero radius */
+		return(i);
+						/* store value */
+	VCOPY(amb.pos, r->rop);
+	amb.ndir = encodedir(r->ron);
+	amb.udir = encodedir(uvw[0]);
+	amb.lvl = al;
+	copycolor(amb.val, acol);
+						/* insert into tree */
+	avsave(&amb);				/* and save to file */
+	if (rn != r->ron) {			/* texture */
+		VCOPY(uvw[2], r->ron);
+		extambient(acol, &amb, r->rop, rn, uvw);
+	}
+	return(1);
+}
+
+
+static int
+extambient(		/* extrapolate value at pv, nv */
+	COLOR  cr,
+	AMBVAL	 *ap,
+	FVECT  pv,
+	FVECT  nv,
+	FVECT  uvw[3]
+)
+{
+	const double	min_d = 0.05;
+	static FVECT	my_uvw[3];
+	FVECT		v1;
+	int		i;
+	double		d = 1.0;	/* zeroeth order */
+
+	if (uvw == NULL) {		/* need local coordinates? */
+		decodedir(my_uvw[2], ap->ndir);
+		decodedir(my_uvw[0], ap->udir);
+		VCROSS(my_uvw[1], my_uvw[2], my_uvw[0]);
+		uvw = my_uvw;
+	}
+	for (i = 3; i--; )		/* gradient due to translation */
+		d += (pv[i] - ap->pos[i]) *
+			(ap->gpos[0]*uvw[0][i] + ap->gpos[1]*uvw[1][i]);
+
+	VCROSS(v1, uvw[2], nv);		/* gradient due to rotation */
+	for (i = 3; i--; )
+		d += v1[i] * (ap->gdir[0]*uvw[0][i] + ap->gdir[1]*uvw[1][i]);
+	
+	if (d < min_d)			/* should not use if we can avoid it */
+		d = min_d;
+	copycolor(cr, ap->val);
+	scalecolor(cr, d);
+	return(d > min_d);
+}
+
+
+static void
+avinsert(				/* insert ambient value in our tree */
+	AMBVAL *av
+)
+{
+	AMBTREE  *at;
+	AMBVAL  *ap;
+	AMBVAL  avh;
+	FVECT  ck0;
+	double	s;
+	int  branch;
+	int  i;
+
+	if (av->rad[0] <= FTINY)
+		error(CONSISTENCY, "zero ambient radius in avinsert");
+	at = &atrunk;
+	VCOPY(ck0, thescene.cuorg);
+	s = thescene.cusize;
+	while (s*(OCTSCALE/2) > av->rad[1]*ambacc) {
+		if (at->kid == NULL)
+			if ((at->kid = newambtree()) == NULL)
+				error(SYSTEM, "out of memory in avinsert");
+		s *= 0.5;
+		branch = 0;
+		for (i = 0; i < 3; i++)
+			if (av->pos[i] > ck0[i] + s) {
+				ck0[i] += s;
+				branch |= 1 << i;
+			}
+		at = at->kid + branch;
+	}
+	avh.next = at->alist;		/* order by increasing level */
+	for (ap = &avh; ap->next != NULL; ap = ap->next)
+		if ( ap->next->lvl > av->lvl ||
+				(ap->next->lvl == av->lvl) &
+				(ap->next->weight <= av->weight) )
+			break;
+	av->next = ap->next;
+	ap->next = (AMBVAL*)av;
+	at->alist = avh.next;
+}
+
+
+#else /* ! NEWAMB */
+
+static double	sumambient(COLOR acol, RAY *r, FVECT rn, int al,
+				AMBTREE *at, FVECT c0, double s);
+static double	makeambient(COLOR acol, RAY *r, FVECT rn, int al);
+static void	extambient(COLOR cr, AMBVAL *ap, FVECT pv, FVECT nv);
+
+
+void
+multambient(		/* compute ambient component & multiply by coef. */
+	COLOR  aval,
+	RAY  *r,
+	FVECT  nrm
+)
+{
+	static int  rdepth = 0;			/* ambient recursion */
+	COLOR	acol, caustic;
+	double	d, l;
+
+	/* PMAP: Factor in ambient from global photon map (if enabled) and return
+	 * as all ambient components accounted for */
+	if (ambPmap(aval, r, rdepth))
+		return;
+
+	/* PMAP: Otherwise factor in ambient from caustic photon map
+	 * (ambPmapCaustic() returns zero if caustic photons disabled) and
+	 * continue with RADIANCE ambient calculation */
+	copycolor(caustic, aval);
+	ambPmapCaustic(caustic, r, rdepth);
+	
 	if (ambdiv <= 0)			/* no ambient calculation */
 		goto dumbamb;
 						/* check number of bounces */
@@ -284,7 +690,10 @@ multambient(		/* compute ambient component & multiply by coef. */
 		rdepth--;
 		if (d <= FTINY)
 			goto dumbamb;
-		copycolor(aval, acol);
+		copycolor(aval, acol);		
+	
+	   /* PMAP: add in caustic */
+		addcolor(aval, caustic);	
 		return;
 	}
 
@@ -294,24 +703,38 @@ multambient(		/* compute ambient component & multiply by coef. */
 	setcolor(acol, 0.0, 0.0, 0.0);
 	d = sumambient(acol, r, nrm, rdepth,
 			&atrunk, thescene.cuorg, thescene.cusize);
+			
 	if (d > FTINY) {
 		d = 1.0/d;
 		scalecolor(acol, d);
 		multcolor(aval, acol);
+		
+		/* PMAP: add in caustic */
+		addcolor(aval, caustic);	
 		return;
 	}
+	
 	rdepth++;				/* need to cache new value */
 	d = makeambient(acol, r, nrm, rdepth-1);
 	rdepth--;
+	
 	if (d > FTINY) {
 		multcolor(aval, acol);		/* got new value */
+
+		/* PMAP: add in caustic */
+		addcolor(aval, caustic);			
 		return;
 	}
+	
 dumbamb:					/* return global value */
 	if ((ambvwt <= 0) | (navsum == 0)) {
 		multcolor(aval, ambval);
+
+		/* PMAP: add in caustic */
+		addcolor(aval, caustic);	
 		return;
 	}
+	
 	l = bright(ambval);			/* average in computations */
 	if (l > FTINY) {
 		d = (log(l)*(double)ambvwt + avsum) /
@@ -326,7 +749,7 @@ dumbamb:					/* return global value */
 }
 
 
-extern double
+static double
 sumambient(	/* get interpolated ambient value */
 	COLOR  acol,
 	RAY  *r,
@@ -353,10 +776,9 @@ sumambient(	/* get interpolated ambient value */
 		/*
 		 *  Ambient level test.
 		 */
-		if (av->lvl > al)	/* list sorted, so this works */
+		if (av->lvl > al ||	/* list sorted, so this works */
+				(av->lvl == al) & (av->weight < 0.9*r->rweight))
 			break;
-		if (av->weight < 0.9*r->rweight)
-			continue;
 		/*
 		 *  Ambient radius test.
 		 */
@@ -437,7 +859,7 @@ sumambient(	/* get interpolated ambient value */
 }
 
 
-extern double
+static double
 makeambient(		/* make a new ambient value for storage */
 	COLOR  acol,
 	RAY  *r,
@@ -477,7 +899,7 @@ makeambient(		/* make a new ambient value for storage */
 }
 
 
-extern void
+static void
 extambient(		/* extrapolate value at pv, nv */
 	COLOR  cr,
 	AMBVAL	 *ap,
@@ -504,6 +926,52 @@ extambient(		/* extrapolate value at pv, nv */
 	scalecolor(cr, d);
 }
 
+
+static void
+avinsert(				/* insert ambient value in our tree */
+	AMBVAL *av
+)
+{
+	AMBTREE  *at;
+	AMBVAL  *ap;
+	AMBVAL  avh;
+	FVECT  ck0;
+	double	s;
+	int  branch;
+	int  i;
+
+	if (av->rad <= FTINY)
+		error(CONSISTENCY, "zero ambient radius in avinsert");
+	at = &atrunk;
+	VCOPY(ck0, thescene.cuorg);
+	s = thescene.cusize;
+	while (s*(OCTSCALE/2) > av->rad*ambacc) {
+		if (at->kid == NULL)
+			if ((at->kid = newambtree()) == NULL)
+				error(SYSTEM, "out of memory in avinsert");
+		s *= 0.5;
+		branch = 0;
+		for (i = 0; i < 3; i++)
+			if (av->pos[i] > ck0[i] + s) {
+				ck0[i] += s;
+				branch |= 1 << i;
+			}
+		at = at->kid + branch;
+	}
+	avh.next = at->alist;		/* order by increasing level */
+	for (ap = &avh; ap->next != NULL; ap = ap->next)
+		if ( ap->next->lvl > av->lvl ||
+				(ap->next->lvl == av->lvl) &
+				(ap->next->weight <= av->weight) )
+			break;
+	av->next = ap->next;
+	ap->next = (AMBVAL*)av;
+	at->alist = avh.next;
+}
+
+#endif	/* ! NEWAMB */
+
+/************* FOLLOWING ROUTINES SAME FOR NEW & OLD METHODS ***************/
 
 static void
 initambfile(		/* initialize ambient file */
@@ -546,7 +1014,7 @@ avsave(				/* insert and save an ambient value */
 	AMBVAL	*av
 )
 {
-	avinsert(avstore(av));
+	avstore(av);
 	if (ambfp == NULL)
 		return;
 	if (writambval(av, ambfp) < 0)
@@ -561,7 +1029,7 @@ writerr:
 
 
 static AMBVAL *
-avstore(				/* allocate memory and store aval */
+avstore(				/* allocate memory and save aval */
 	AMBVAL  *aval
 )
 {
@@ -579,6 +1047,7 @@ avstore(				/* allocate memory and store aval */
 		avsum += log(d);
 		navsum++;
 	}
+	avinsert(av);			/* insert in our cache tree */
 	return(av);
 }
 
@@ -621,47 +1090,6 @@ freeambtree(			/* free 8 ambient tree structs */
 
 
 static void
-avinsert(				/* insert ambient value in our tree */
-	void *av
-)
-{
-	AMBTREE  *at;
-	AMBVAL  *ap;
-	AMBVAL  avh;
-	FVECT  ck0;
-	double	s;
-	int  branch;
-	int  i;
-
-	if (((AMBVAL*)av)->rad <= FTINY)
-		error(CONSISTENCY, "zero ambient radius in avinsert");
-	at = &atrunk;
-	VCOPY(ck0, thescene.cuorg);
-	s = thescene.cusize;
-	while (s*(OCTSCALE/2) > ((AMBVAL*)av)->rad*ambacc) {
-		if (at->kid == NULL)
-			if ((at->kid = newambtree()) == NULL)
-				error(SYSTEM, "out of memory in avinsert");
-		s *= 0.5;
-		branch = 0;
-		for (i = 0; i < 3; i++)
-			if (((AMBVAL*)av)->pos[i] > ck0[i] + s) {
-				ck0[i] += s;
-				branch |= 1 << i;
-			}
-		at = at->kid + branch;
-	}
-	avh.next = at->alist;		/* order by increasing level */
-	for (ap = &avh; ap->next != NULL; ap = ap->next)
-		if (ap->next->lvl >= ((AMBVAL*)av)->lvl)
-			break;
-	((AMBVAL*)av)->next = ap->next;
-	ap->next = (AMBVAL*)av;
-	at->alist = avh.next;
-}
-
-
-static void
 unloadatree(			/* unload an ambient value tree */
 	AMBTREE  *at,
 	unloadtf_t *f
@@ -693,8 +1121,14 @@ static int	i_avlist;		/* index for lists */
 static int alatcmp(const void *av1, const void *av2);
 
 static void
+avfree(AMBVAL *av)
+{
+	free(av);
+}
+
+static void
 av2list(
-	void *av
+	AMBVAL *av
 )
 {
 #ifdef DEBUG
@@ -702,7 +1136,7 @@ av2list(
 		error(CONSISTENCY, "too many ambient values in av2list1");
 #endif
 	avlist1[i_avlist].p = avlist2[i_avlist] = (AMBVAL*)av;
-	avlist1[i_avlist++].t = ((AMBVAL*)av)->latick;
+	avlist1[i_avlist++].t = av->latick;
 }
 
 
@@ -735,7 +1169,7 @@ aposcmp(			/* compare ambient value positions */
 	return(diff > 0);
 }
 
-#if 1
+
 static int
 avlmemi(				/* find list position from address */
 	AMBVAL	*avaddr
@@ -744,15 +1178,11 @@ avlmemi(				/* find list position from address */
 	AMBVAL  **avlpp;
 
 	avlpp = (AMBVAL **)bsearch((char *)&avaddr, (char *)avlist2,
-			nambvals, sizeof(AMBVAL *), aposcmp);
+			nambvals, sizeof(AMBVAL *), &aposcmp);
 	if (avlpp == NULL)
 		error(CONSISTENCY, "address not found in avlmemi");
 	return(avlpp - avlist2);
 }
-#else
-#define avlmemi(avaddr)	((AMBVAL **)bsearch((char *)&avaddr,(char *)avlist2, \
-				nambvals,sizeof(AMBVAL *),aposcmp) - avlist2)
-#endif
 
 
 static void
@@ -796,7 +1226,7 @@ sortambvals(			/* resort ambient values */
 			oldatrunk = atrunk;
 			atrunk.alist = NULL;
 			atrunk.kid = NULL;
-			unloadatree(&oldatrunk, avinsert);
+			unloadatree(&oldatrunk, &avinsert);
 		}
 	} else {			/* sort memory by last access time */
 		/*
@@ -813,7 +1243,7 @@ sortambvals(			/* resort ambient values */
 		eputs(errmsg);
 #endif
 		i_avlist = 0;
-		unloadatree(&atrunk, av2list);	/* empty current tree */
+		unloadatree(&atrunk, &av2list);	/* empty current tree */
 #ifdef DEBUG
 		if (i_avlist < nambvals)
 			error(CONSISTENCY, "missing ambient values in sortambvals");
@@ -870,7 +1300,7 @@ aflock(			/* lock/unlock ambient file */
 }
 
 
-extern int
+int
 ambsync(void)			/* synchronize ambient file */
 {
 	long  flen;
@@ -900,7 +1330,7 @@ ambsync(void)			/* synchronize ambient file */
 				error(WARNING, errmsg);
 				break;
 			}
-			avinsert(avstore(&avs));
+			avstore(&avs);
 			n -= AMBVALSIZ;
 		}
 		lastpos = flen - n;
@@ -923,9 +1353,9 @@ seekerr:
 	return -1; /* pro forma return */
 }
 
-#else
+#else	/* ! F_SETLKW */
 
-extern int
+int
 ambsync(void)			/* flush ambient file */
 {
 	if (ambfp == NULL)
@@ -934,4 +1364,4 @@ ambsync(void)			/* flush ambient file */
 	return(fflush(ambfp));
 }
 
-#endif
+#endif	/* ! F_SETLKW */

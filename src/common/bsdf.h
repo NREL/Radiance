@@ -126,7 +126,7 @@ typedef struct {
 	char		matn[SDnameLn];	/* material name */
 	char		makr[SDnameLn];	/* manufacturer */
 	char		*mgf;		/* geometric description (if any) */
-	float		dim[3];		/* width, height, thickness (meters) */
+	double		dim[3];		/* width, height, thickness (meters) */
 	SDValue		rLambFront;	/* diffuse front reflectance */
 	SDValue		rLambBack;	/* diffuse rear reflectance */
 	SDValue		tLamb;		/* diffuse transmission */

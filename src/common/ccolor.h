@@ -33,6 +33,8 @@ typedef struct {
 	float	eff;		/* efficacy (lumens/watt) */
 } C_COLOR;
 
+typedef unsigned short	C_CHROMA;	/* encoded (x,y) chromaticity */
+
 #define C_DEFCOLOR	{ 1, NULL, C_CDXY|C_CSXY|C_CSSPEC|C_CSEFF,\
 			{C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,\
 			C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,C_CMAXV,\
@@ -47,6 +49,7 @@ typedef struct {
 						/ (double)(c)->ssum)
 
 extern const C_COLOR	c_dfcolor;		/* default color */
+extern const C_CHROMA	c_dfchroma;		/* c_encodeChroma(&c_dfcolor) */
 
 extern const C_COLOR	c_x31, c_y31, c_z31;	/* 1931 standard observer */
 
@@ -70,6 +73,10 @@ extern double	c_cmult(C_COLOR *cres, C_COLOR *c1, double y1,
 extern void	c_toSharpRGB(C_COLOR *cin, double cieY, float cout[3]);
 						/* convert from sharpened RGB */
 extern double	c_fromSharpRGB(float cin[3], C_COLOR *cout);
+						/* encode (x,y) chromaticity */
+extern C_CHROMA	c_encodeChroma(C_COLOR *clr);
+						/* decode (x,y) chromaticity */
+extern void	c_decodeChroma(C_COLOR *cres, C_CHROMA ccode);
 
 /* The following two routines are not defined in ccolor.c */
 						/* convert to RGB color */

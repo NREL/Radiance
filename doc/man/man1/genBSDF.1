@@ -11,7 +11,13 @@ genBSDF - generate BSDF description from Radiance or MGF input
 ][
 .B "\-r 'rcontrib opts...'"
 ][
+.B "\-W"
+][
+.B "\-s 'x=string;y=string'"
+][
 .B "\-t{3|4} Nlog2"
+][
+.B "{+|-}C"
 ][
 .B "{+|-}forward"
 ][
@@ -57,6 +63,14 @@ option.
 Computing both components takes about twice as long as one component, but
 is recommended when rays will be impinging from either side.
 .PP
+The
+.I \+C
+option specifies that the output XML should include color information,
+which is interpreted by the rendering programs.
+The default option
+.I \-C
+reduces all BSDF data to grayscale.
+.PP
 The geometry must fit a rectangular profile, whose width is along the X-axis,
 height is in the Y-axis, and depth is in the Z-axis.
 The positive Z-axis points into the room, and the input geometry should
@@ -93,6 +107,20 @@ option may be used to specify a set of quoted arguments to be
 included on the
 .I rcontrib
 command line.
+.PP
+The
+.I \-W
+option is passed to
+.I wrapBSDF(1)
+to prepare the XML file for WINDOW6.
+Any
+.I \-s
+parameters are passed to the
+.I \-f
+option of
+.I wrapBSDF,
+controlling XML fields such as
+the Manufacturer (e.g., -s m=MF) and device Name (e.g, -s n=NM).
 .PP
 The
 .I \-t4
@@ -152,4 +180,4 @@ directions using the Klems directions or similar.
 Greg Ward
 .SH "SEE ALSO"
 dctimestep(1), gendaymtx(1), genklemsamp(1), genskyvec(1), mkillum(1),
-pkgBSDF(1), rcontrib(1), rtrace(1)
+pkgBSDF(1), rcontrib(1), rfluxmtx(1), rmtxop(1), rtrace(1) wrapBSDF(1)

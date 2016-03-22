@@ -167,8 +167,8 @@ start_process(SUBPROC *proc, char *cmdstr)
 	CloseHandle(hFromChildWrite); hFromChildWrite = NULL;
 	CloseHandle(hToChildRead); hToChildRead = NULL;
 	/* get the file descriptors */
-	proc->r = _open_osfhandle((long)hRead, _O_RDONLY);
-	proc->w = _open_osfhandle((long)hWrite, _O_APPEND);
+	proc->r = _open_osfhandle((long)hRead, _O_RDONLY|_O_BINARY);
+	proc->w = _open_osfhandle((long)hWrite, _O_APPEND|_O_BINARY);
 	proc->pid = PInfo.dwProcessId;
 	proc->running = 1;
 	CloseHandle(hCurProc);
@@ -279,6 +279,10 @@ open_process(SUBPROC *proc, char *av[])
 	char *cmdpath;
 	char *cmdstr;
 
+	if (av == NULL || av[0] == NULL) {
+		fputs("Illegal call to open_process()!\n", stderr);
+		return -1;
+	}
 	proc->running = 0;
 	if (av == NULL) { return -1; }
 	cmdpath = getpath(av[0], getenv("PATH"), X_OK);

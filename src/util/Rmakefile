@@ -20,17 +20,23 @@ INSTDIR = /usr/local/bin
 LIBDIR = /usr/local/lib/ray
 
 PROGS = findglare glarendx rpiece rad ranimate ranimove vwright getinfo \
-		vwrays xglaresrc rsensor dctimestep rttree_reduce rcollate
+		vwrays xglaresrc rsensor dctimestep rttree_reduce rcollate \
+		eplus_adduvf rfluxmtx rmtxop wrapBSDF evalglare
+
+LIBFILES = rambpos.cal ambpos.cal tregsamp.dat reinhartb.cal \
+klems_full.cal klems_half.cal klems_quarter.cal disk2square.cal \
+minimalBSDFt.xml WINDOW6BSDFt.xml
 
 all:	$(PROGS)
 
-install:	all $(SPECIAL) objview.csh objpict.csh glare.csh dayfact.csh \
+install:	all $(SPECIAL) objview.pl objpict.pl glare.csh dayfact.csh \
 rlux.csh raddepend.csh trad.wsh objline.csh compamb.csh vinfo.csh \
-genambpos.csh fieldcomb.csh genklemsamp.pl genskyvec.pl genBSDF.pl tregsamp.dat
+ltview.pl ltpict.pl genambpos.pl fieldcomb.csh genklemsamp.pl \
+genskyvec.pl genBSDF.pl $(LIBFILES)
 	cp $(PROGS) $(INSTDIR)
-	cp objview.csh $(INSTDIR)/objview
+	cp objview.pl $(INSTDIR)/objview
 	cp objline.csh $(INSTDIR)/objline
-	cp objpict.csh $(INSTDIR)/objpict
+	cp objpict.pl $(INSTDIR)/objpict
 	cp glare.csh $(INSTDIR)/glare
 	cp dayfact.csh $(INSTDIR)/dayfact
 	cp debugcal.csh $(INSTDIR)/debugcal
@@ -38,20 +44,23 @@ genambpos.csh fieldcomb.csh genklemsamp.pl genskyvec.pl genBSDF.pl tregsamp.dat
 	cp raddepend.csh $(INSTDIR)/raddepend
 	cp compamb.csh $(INSTDIR)/compamb
 	cp vinfo.csh $(INSTDIR)/vinfo
-	cp genambpos.csh $(INSTDIR)/genambpos
+	cp genambpos.pl $(INSTDIR)/genambpos
 	cp fieldcomb.csh $(INSTDIR)/fieldcomb
 	cp genklemsamp.pl $(INSTDIR)/genklemsamp
 	cp genskyvec.pl $(INSTDIR)/genskyvec
 	cp genBSDF.pl $(INSTDIR)/genBSDF
+	cp ltview.pl $(INSTDIR)/ltview
+	cp ltpict.pl $(INSTDIR)/ltpict
 	cd $(INSTDIR) ; chmod 755 objview objpict \
 		glare dayfact debugcal rlux raddepend objline \
 		compamb vinfo genambpos fieldcomb genklemsamp \
 		genskyvec genBSDF
-	cp tregsamp.dat $(LIBDIR)
+	cd $(LIBDIR) && rm -f $(LIBFILES)
+	cp $(LIBFILES) $(LIBDIR)
 	csh -f tradinstall.csh $(INSTDIR) $(LIBDIR)/tcl
 
 clean:
-	set nonomatch; rm -f *.o $(PROGS) glrad core Version.c x11findwind.c
+	set nonomatch; rm -f *.o $(PROGS) glrad Version.c x11findwind.c
 
 ogl:	glrad
 	cp glrad $(INSTDIR)
@@ -88,9 +97,6 @@ rsensor:	rsensor.o
 rpiece:	rpiece.o Version.o
 	$(CC) $(CFLAGS) -o rpiece rpiece.o Version.o -lrtrad $(MLIB)
 
-rtcontrib:	rtcontrib.o Version.o
-	$(CC) $(CFLAGS) -o rtcontrib rtcontrib.o Version.o -lrtrad $(MLIB)
-
 vwright:	vwright.o
 	$(CC) $(CFLAGS) -o vwright vwright.o -lrtrad $(MLIB)
 
@@ -104,8 +110,9 @@ glrad:	glrad.o
 	$(CC) $(CFLAGS) -o glrad glrad.o -lrgl -lrtrad -lGLU -lGL \
 -lX11 -lXext $(MLIB)
 
-dctimestep:	dctimestep.o
-	$(CC) $(CFLAGS) -o dctimestep dctimestep.o -lrtrad $(MLIB)
+dctimestep:	dctimestep.o cmbsdf.o cmatrix.o
+	$(CC) $(CFLAGS) -o dctimestep dctimestep.o cmbsdf.o cmatrix.o \
+-lrtrad $(MLIB)
 
 rttree_reduce:	rttree_reduce.o
 	$(CC) $(CFLAGS) -o rttree_reduce rttree_reduce.o -lrtrad $(MLIB)
@@ -113,7 +120,31 @@ rttree_reduce:	rttree_reduce.o
 rcollate:	rcollate.o
 	$(CC) $(CFLAGS) -o rcollate rcollate.o -lrtrad
 
+eplus_adduvf:	eplus_adduvf.o eplus_idf.o
+	$(CC) $(CFLAGS) -o eplus_adduvf eplus_adduvf.o eplus_idf.o \
+-lrtrad $(MLIB)
+
+rfluxmtx:	rfluxmtx.o
+	$(CC) $(CFLAGS) -o rfluxmtx rfluxmtx.o -lrtrad $(MLIB)
+
+rmtxop:	rmtxop.o rmatrix.o cmatrix.o cmbsdf.o
+	$(CC) $(CFLAGS) -o rmtxop rmtxop.o rmatrix.o cmatrix.o cmbsdf.o \
+-lrtrad $(MLIB)
+
+wrapBSDF:	wrapBSDF.o
+	$(CC) $(CFLAGS) -o wrapBSDF wrapBSDF.o -lrtrad $(MLIB)
+
+evalglare:	evalglare.o pictool.o
+	$(CC) $(CFLAGS) -o evalglare evalglare.o pictool.o -lreetz -lrtrad $(MLIB)
+
 setscan.o:	setscan.h
+
+eplus_adduvf.o:	../common/triangulate.h ../common/rtprocess.h \
+../common/paths.h ../common/rtio.h ../common/random.h \
+../common/rtmath.h ../common/mat4.h ../common/fvect.h
+
+eplus_adduvf.o eplus_idf.o:	eplus_idf.h \
+../common/lookup.h
 
 findglare.o glareval.o \
 glaresrc.o:	glare.h ../common/standard.h \
@@ -128,14 +159,24 @@ rpiece.o:	../common/color.h ../common/view.h ../common/resolu.h
 dctimestep.o:	../common/standard.h \
 ../common/rtmisc.h ../common/rtio.h \
 ../common/rtmath.h ../common/mat4.h ../common/fvect.h \
-../common/rterror.h ../common/platform.h ../common/paths.h \
-../common/color.h ../common/bsdf.h ../common/bsdf_m.h ../common/resolu.h
+../common/rterror.h ../common/resolu.h
 
-rtcontrib.o:	../common/platform.h ../common/rtprocess.h \
-../common/color.h ../common/resolu.h ../common/lookup.h \
-../common/calcomp.h ../common/selcall.h
+dctimestep.o cmatrix.o cmbsdf.o:	cmatrix.h ../common/color.h
 
-rad.o ranimate.o rpiece.o rtcontrib.o xglaresrc.o:	../common/standard.h \
+cmatrix.o cmbsdf.o:	../common/standard.h \
+../common/rtmisc.h ../common/rtio.h \
+../common/rtmath.h ../common/mat4.h ../common/fvect.h \
+../common/rterror.h
+
+cmbsdf.o:	../common/paths.h ../common/bsdf.h ../common/bsdf_m.h
+
+rfluxmtx.o:	../common/rtio.h ../common/random.h ../common/triangulate.h \
+../common/rtmath.h ../common/fvect.h ../common/mat4.h ../common/tiff.h \
+../common/platform.h ../common/bsdf.h ../common/bsdf_m.h ../common/rtprocess.h
+
+dctimestep.o cmatrix.o:	../common/platform.h
+
+rad.o ranimate.o rpiece.o xglaresrc.o:	../common/standard.h \
 ../common/rtmisc.h ../common/rtio.h \
 ../common/rtmath.h ../common/mat4.h ../common/fvect.h \
 ../common/rterror.h
@@ -192,3 +233,17 @@ x11findwind.c:	../common/x11findwind.c
 	cp ../common/x11findwind.c .
 
 rttree_reduce.o:	../common/rtio.h ../common/rterror.h
+
+rmatrix.o:	rmatrix.h cmatrix.h ../common/resolu.h
+
+rmtxop.o:	rmatrix.h cmatrix.h ../common/rtio.h ../common/resolu.h
+
+wrapBSDF.o:	../common/rtio.h ../common/rtprocess.h ../common/ezxml.h \
+../common/bsdf.h ../common/bsdf_m.h ../common/fvect.h ../common/ccolor.h
+
+pictool.o evalglare.o:	pictool.h ../common/g3vector.h ../common/g3affine.h \
+../common/g3flist.h ../common/fvect.h ../common/gbasic.h
+
+evalglare.o:	../common/rtio.h
+
+pictool.o:	../common/view.h ../common/color.h

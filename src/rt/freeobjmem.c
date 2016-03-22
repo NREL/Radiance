@@ -22,9 +22,9 @@ static const char	RCSid[] = "$Id$";
 #include "mesh.h"
 
 
-extern int
+int
 free_os(			/* free unneeded memory for object */
-	register OBJREC	*op
+	OBJREC	*op
 )
 {
 	if (op->os == NULL)
@@ -68,14 +68,14 @@ free_os(			/* free unneeded memory for object */
 }
 
 
-extern int
+int
 free_objs(		/* free some object structures */
-	register OBJECT	on,
+	OBJECT	on,
 	OBJECT	no
 )
 {
 	int	nfreed;
-	register OBJREC	*op;
+	OBJREC	*op;
 
 	for (nfreed = 0; no-- > 0; on++) {
 		op = objptr(on);
@@ -86,7 +86,7 @@ free_objs(		/* free some object structures */
 }
 
 
-extern void
+void
 free_objmem(void)			/* free all object cache memory */
 {
 	free_objs(0, nobjects);

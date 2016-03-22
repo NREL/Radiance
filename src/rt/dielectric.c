@@ -10,6 +10,7 @@ static const char	RCSid[] = "$Id$";
 #include  "ray.h"
 #include  "otypes.h"
 #include  "rtotypes.h"
+#include  "pmapmat.h"
 
 #ifdef  DISPERSE
 #include  "source.h"
@@ -50,7 +51,6 @@ static double mylog(double  x);
 
 #define  MINCOS		0.997		/* minimum dot product for dispersion */
 
-
 static double
 mylog(		/* special log for extinction coefficients */
 	double  x
@@ -64,10 +64,10 @@ mylog(		/* special log for extinction coefficients */
 }
 
 
-extern int
+int
 m_dielectric(	/* color a ray which hit a dielectric interface */
 	OBJREC  *m,
-	register RAY  *r
+	RAY  *r
 )
 {
 	double  cos1, cos2, nratio;
@@ -81,8 +81,13 @@ m_dielectric(	/* color a ray which hit a dielectric interface */
 	FVECT  dnorm;
 	double  d1, d2;
 	RAY  p;
-	register int  i;
+	int  i;
 
+	/* PMAP: skip refracted shadow or ambient ray if accounted for in
+	   photon map */
+	if (shadowRayInPmap(r) || ambRayInPmap(r))
+		return(1);
+	
 	if (m->oargs.nfargs != (m->otype==MAT_DIELECTRIC ? 5 : 8))
 		objerror(m, USER, "bad arguments");
 
@@ -94,7 +99,8 @@ m_dielectric(	/* color a ray which hit a dielectric interface */
 		VCOPY(dnorm, r->ron);
 		cos1 = r->rod;
 	}
-	flatsurface = !hastexture && r->ro != NULL && isflat(r->ro->otype);
+	flatsurface = r->ro != NULL && isflat(r->ro->otype) &&
+			!hastexture | (r->crtype & AMBIENT);
 
 						/* index of refraction */
 	if (m->otype == MAT_DIELECTRIC)
@@ -199,8 +205,8 @@ m_dielectric(	/* color a ray which hit a dielectric interface */
 				addcolor(r->rcol, p.rcol);
 						/* virtual distance */
 				if (flatsurface ||
-					(1.-FTINY <= nratio &&
-						nratio <= 1.+FTINY)) {
+					(1.-FTINY <= nratio) &
+						(nratio <= 1.+FTINY)) {
 					transtest = 2*bright(p.rcol);
 					transdist = r->rot + p.rt;
 				}
@@ -380,7 +386,7 @@ disperse(  /* check light sources for dispersion */
 
 static int
 lambda(			/* compute lambda for material */
-	register OBJREC  *m,
+	OBJREC  *m,
 	FVECT  v2,
 	FVECT  dv,
 	FVECT  lr

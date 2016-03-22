@@ -365,15 +365,14 @@ accuracy and rendering time.
 .TP
 .BR -bv
 Boolean switch for back face visibility.
-With this switch off, back faces of opaque objects will be invisible
-to all rays.
+With this switch off, back faces of all objects will be invisible
+to view rays.
 This is dangerous unless the model was constructed such that
-all surface normals on opaque objects face outward.
+all surface normals face outward.
 Although turning off back face visibility does not save much
 computation time under most circumstances, it may be useful as a
 tool for scene debugging, or for seeing through one-sided walls from
 the outside.
-This option has no effect on transparent or translucent materials.
 .TP
 .BI -av " red grn blu"
 Set the ambient value to a radiance of
@@ -406,9 +405,17 @@ indirect contributions, such as when both indoor and outdoor
 .BI -ab \ N
 Set the number of ambient bounces to
 .I N.
-This is the maximum number of diffuse bounces 
-computed by the indirect calculation.
-A value of zero implies no indirect calculation.
+This is the maximum number of diffuse bounces computed by the indirect
+calculation. A value of zero implies no indirect calculation. 
+.IP
+This value defaults to 1 in photon mapping mode (see
+.I -ap
+below), implying that global photon irradiance is always computed via
+.I one
+ambient bounce; this behaviour applies to any positive number of ambient
+bounces, regardless of the actual value specified.  A negative value enables
+a preview mode that directly visualises the irradiance from the global
+photon map without any ambient bounces.
 .TP
 .BI -ar \ res
 Set the ambient resolution to
@@ -517,6 +524,57 @@ Same as
 except read modifiers to be included from
 .I file.
 .TP
+.BI -ap " file [bwidth1 [bwidth2]]"
+Enable photon mapping mode. Loads a photon map generated with
+.I mkpmap(1)
+from
+.I file,
+and evaluates the indirect irradiance depending on the photon type 
+(automagically detected) using density estimates with a bandwidth of
+.I bwidth1
+photons, or the default bandwidth if none is specified (a warning will be
+issued in this case).
+.IP
+Global photon irradiance is evaluated as part of the ambient calculation (see
+.I \-ab
+above), caustic photon irradiance is evaluated at primary rays, and 
+indirect inscattering in 
+.I mist
+is accounted for by volume photons.
+.IP
+Additionally specifying 
+.I bwidth2
+enables bias compensation for the density estimates with a
+minimum and maximum bandwidth of
+.I bwidth1
+and
+.I bwidth2,
+respectively.
+.IP
+Global photon irradiance may be optionally precomputed by
+.I mkpmap(1),
+in which case the bandwidth, if specified, is ignored, as the nearest photon
+is invariably looked up.
+.IP
+Using direct photons replaces the direct calculation with density estimates
+for debugging and validation of photon emission.       
+.TP
+.BI -am " frac"
+Maximum search radius for photon map lookups.  Without this option, an
+initial maximum search radius is estimated for each photon map from the
+average photon distance to the distribution's centre of gravity.  It is then
+adapted to the photon density in subsequent lookups.  This option imposes a
+global fixed maximum search radius for
+.I all
+photon maps, thus defeating the automatic adaptation.  It is useful when
+multiple warnings about short photon lookups are issued.  Note that this
+option does not conflict with the bandwidth specified with the
+.I \-ap
+option; the number of photons found will not exceed the latter, but may be
+lower if the maximum search radius contains fewer photons, thus resulting in
+short lookups.  Setting this radius too large, on the other hand, may
+degrade performance.
+.TP
 .BI -me " rext gext bext"
 Set the global medium extinction coefficient to the indicated color,
 in units of 1/distance (distance in world coordinates).
@@ -566,7 +624,7 @@ option (above) may be used to override this.
 .BR \-u
 Boolean switch to control uncorrelated random sampling.
 When "off", a low-discrepancy sequence is used, which reduces
-variance but can result in a brushed appearance in specular highlights.
+variance but can result in a dithered appearance in specular highlights.
 When "on", pure Monte Carlo sampling is used in all calculations.
 .TP
 .BI -lr \ N
@@ -800,6 +858,13 @@ this option turns them off.
 rpict \-vp 10 5 3 \-vd 1 \-.5 0 scene.oct > scene.hdr
 .PP
 rpict \-S 1 \-o frame%02d.hdr scene.oct < keyframes.vf
+.PP
+To render ambient illuminance in photon mapping mode from a global photon 
+map global.pm via one ambient bounce, and from a caustic photon map 
+caustic.pm:
+.IP "" .2i
+rpict -ab 1 -ap global.pm 50 -ap caustic.pm 50 -vf scene.vf scene.oct > 
+scene.hdr
 .SH ENVIRONMENT
 RAYPATH		the directories to check for auxiliary files.
 .SH FILES
@@ -819,5 +884,5 @@ option.
 .SH AUTHOR
 Greg Ward
 .SH "SEE ALSO"
-getinfo(1), lookamb(1), oconv(1), pdfblur(1), pfilt(1), pinterp(1), pmblur(1),
-printf(3), ra_rgbe(1), rad(1), rtrace(1), rvu(1)
+getinfo(1), lookamb(1), mkpmap(1), oconv(1), pdfblur(1), pfilt(1), 
+pinterp(1), pmblur(1), printf(3), ra_rgbe(1), rad(1), rtrace(1), rvu(1)

@@ -10,6 +10,7 @@ static const char RCSid[] = "$Id$";
 #include  "ray.h"
 #include  "otypes.h"
 #include  "rtotypes.h"
+#include  "pmapmat.h"
 
 /*
  *  This definition of glass provides for a quick calculation
@@ -41,10 +42,10 @@ static const char RCSid[] = "$Id$";
 #define  RINDEX		1.52		/* refractive index of glass */
 
 
-extern int
+int
 m_glass(		/* color a ray which hit a thin glass surface */
 	OBJREC  *m,
-	register RAY  *r
+	RAY  *r
 )
 {
 	COLOR  mcolor;
@@ -57,7 +58,12 @@ m_glass(		/* color a ray which hit a thin glass surface */
 	double  transtest, transdist;
 	double  mirtest, mirdist;
 	RAY  p;
-	register int  i;
+	int  i;
+
+	/* PMAP: skip refracted shadow or ambient ray if accounted for in 
+	   photon map */
+	if (shadowRayInPmap(r) || ambRayInPmap(r))
+		return(1);
 						/* check arguments */
 	if (m->oargs.nfargs == 3)
 		rindex = RINDEX;		/* default value of n */
@@ -65,6 +71,11 @@ m_glass(		/* color a ray which hit a thin glass surface */
 		rindex = m->oargs.farg[3];	/* use their value */
 	else
 		objerror(m, USER, "bad arguments");
+						/* check back face visibility */
+	if (!backvis && r->rod <= 0.0) {
+		raytrans(r);
+		return(1);
+	}
 						/* check transmission */
 	setcolor(mcolor, m->oargs.farg[0], m->oargs.farg[1], m->oargs.farg[2]);
 	if ((hastrans = (intens(mcolor) > 1e-15))) {
@@ -111,7 +122,7 @@ m_glass(		/* color a ray which hit a thin glass surface */
 		multcolor(trans, r->pcol);	/* modify by pattern */
 						/* transmitted ray */
 		if (rayorigin(&p, TRANS, r, trans) == 0) {
-			if (!(r->crtype & SHADOW) && hastexture) {
+			if (!(r->crtype & (SHADOW|AMBIENT)) && hastexture) {
 				VSUM(p.rdir, r->rdir, r->pert, 2.*(1.-rindex));
 				if (normalize(p.rdir) == 0.0) {
 					objerror(m, WARNING, "bad perturbation");
@@ -146,7 +157,8 @@ m_glass(		/* color a ray which hit a thin glass surface */
 		rayvalue(&p);
 		multcolor(p.rcol, p.rcoef);
 		addcolor(r->rcol, p.rcol);
-		if (!hastexture && r->ro != NULL && isflat(r->ro->otype)) {
+		if (r->ro != NULL && isflat(r->ro->otype) &&
+				!hastexture | (r->crtype & AMBIENT)) {
 			mirtest = 2.0*bright(p.rcol);
 			mirdist = r->rot + p.rt;
 		}

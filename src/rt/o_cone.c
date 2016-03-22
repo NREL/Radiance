@@ -13,18 +13,18 @@ static const char RCSid[] = "$Id$";
 #include  "cone.h"
 
 
-extern int
+int
 o_cone(			/* intersect ray with cone */
 	OBJREC  *o,
-	register RAY  *r
+	RAY  *r
 )
 {
 	FVECT  rox, rdx;
 	double  a, b, c;
 	double  root[2];
 	int  nroots, rn;
-	register CONE  *co;
-	register int  i;
+	CONE  *co;
+	int  i;
 
 						/* get cone structure */
 	co = getcone(o, 1);

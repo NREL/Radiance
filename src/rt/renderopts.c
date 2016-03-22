@@ -11,9 +11,10 @@ static const char	RCSid[] = "$Id$";
 
 #include  "ray.h"
 #include  "paths.h"
+#include  "pmapopt.h"
 
 
-extern int
+int
 getrenderopt(		/* get next render option */
 	int  ac,
 	char  *av[]
@@ -208,14 +209,18 @@ getrenderopt(		/* get next render option */
 		}
 		break;
 	}
-	return(-1);		/* unknown option */
+	
+	/* PMAP: Parse photon mapping options */
+	return(getPmapRenderOpt(ac, av));
+	
+/*	return(-1); */		/* unknown option */
 
 #undef	check
 #undef	bool
 }
 
 
-extern void
+void
 print_rdefaults(void)		/* print default render values to stdout */
 {
 	printf(do_irrad ? "-i+\t\t\t\t# irradiance calculation on\n" :
@@ -253,4 +258,7 @@ print_rdefaults(void)		/* print default render values to stdout */
 	printf("-lr %-9d\t\t\t# limit reflection%s\n", maxdepth,
 			maxdepth<=0 ? " (Russian roulette)" : "");
 	printf("-lw %.2e\t\t\t# limit weight\n", minweight);
+	
+	/* PMAP: output photon map defaults */
+	printPmapDefaults();
 }

@@ -1,6 +1,7 @@
 { RCSid $Id$ }
 {
 	Compute interior bin for (full) Klems BSDF basis (0-144)
+	Returns -1 for wrong-side rays
 
 	Modified from Tregenza.cal, which is similar but different
 
@@ -19,7 +20,8 @@ kfindrow(r, pol) : if(r-kpola(0)+.5, r,
 
 kazn(azi,inc) : if((360-.5*inc)-azi, floor((azi+.5*inc)/inc), 0);
 
-kbin2(pol,azi) = select(kfindrow(1, pol),
+kbin2(pol,azi) = if(pol-90, -1,
+	select(kfindrow(1, pol),
 		kazn(azi,360/knaz(1)),
 		kaccum(1) + kazn(azi,360/knaz(2)),
 		kaccum(2) + kazn(azi,360/knaz(3)),
@@ -29,11 +31,13 @@ kbin2(pol,azi) = select(kfindrow(1, pol),
 		kaccum(6) + kazn(azi,360/knaz(7)),
 		kaccum(7) + kazn(azi,360/knaz(8)),
 		kaccum(8) + kazn(azi,360/knaz(9))
-	);
+	) );
+
+RHS = 1;	{ set to -1 for left-handed system }
 
 kbin(Nx,Ny,Nz,Ux,Uy,Uz) = kbin2(Acos(-Dx*Nx-Dy*Ny-Dz*Nz),
-	Atan2(-Dx*Ux-Dy*Uy-Dz*Uz,
-		-Dx*(Uy*Nz-Uz*Ny) - Dy*(Uz*Nx-Ux*Nz) - Dz*(Ux*Ny-Uy*Nx)));
+	Atan2(-Dx*Ux-Dy*Uy-Dz*Uz + (Nx*Dx+Ny*Dy+Nz*Dz)*(Nx*Ux+Ny*Uy+Nz*Uz),
+		-RHS*(Dx*(Uy*Nz-Uz*Ny) + Dy*(Uz*Nx-Ux*Nz) + Dz*(Ux*Ny-Uy*Nx))));
 				
 kbinN = kbin(0,-1,0, 0,0,1);	{ North bins }
 kbinE = kbin(-1,0,0, 0,0,1);	{ East bins }

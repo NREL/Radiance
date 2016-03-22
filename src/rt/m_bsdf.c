@@ -13,6 +13,7 @@ static const char RCSid[] = "$Id$";
 #include  "func.h"
 #include  "bsdf.h"
 #include  "random.h"
+#include  "pmapmat.h"
 
 /*
  *	Arguments to this material include optional diffuse colors.
@@ -200,6 +201,8 @@ dir_bsdf(
 		scalecolor(ctmp, dtmp);
 		addcolor(cval, ctmp);
 	}
+	if (ambRayInPmap(np->pr))
+		return;		/* specular already in photon map */
 	/*
 	 *  Compute scattering coefficient using BSDF.
 	 */
@@ -255,6 +258,8 @@ dir_brdf(
 		scalecolor(ctmp, dtmp);
 		addcolor(cval, ctmp);
 	}
+	if (ambRayInPmap(np->pr))
+		return;		/* specular already in photon map */
 	/*
 	 *  Compute reflection coefficient using BSDF.
 	 */
@@ -304,6 +309,8 @@ dir_btdf(
 		scalecolor(ctmp, dtmp);
 		addcolor(cval, ctmp);
 	}
+	if (ambRayInPmap(np->pr))
+		return;		/* specular already in photon map */
 	/*
 	 *  Compute scattering coefficient using BSDF.
 	 */
@@ -446,6 +453,7 @@ m_bsdf(OBJREC *m, RAY *r)
 	hitfront = (r->rod > 0);
 						/* load cal file */
 	mf = getfunc(m, 5, 0x1d, 1);
+	setfunc(m, r);
 						/* get thickness */
 	nd.thick = evalue(mf->ep[0]);
 	if ((-FTINY <= nd.thick) & (nd.thick <= FTINY))
@@ -456,9 +464,14 @@ m_bsdf(OBJREC *m, RAY *r)
 			raytrans(r);		/* pass-through */
 		return(1);			/* or shadow */
 	}
+						/* check backface visibility */
+	if (!hitfront & !backvis) {
+		raytrans(r);
+		return(1);
+	}
 						/* check other rays to pass */
 	if (nd.thick != 0 && (!(r->crtype & (SPECULAR|AMBIENT)) ||
-				nd.thick > 0 ^ hitfront)) {
+				(nd.thick > 0) ^ hitfront)) {
 		raytrans(r);			/* hide our proxy */
 		return(1);
 	}
@@ -473,15 +486,9 @@ m_bsdf(OBJREC *m, RAY *r)
 					m->oargs.farg[1],
 					m->oargs.farg[2]);
 	} else {
-		if (m->oargs.nfargs < 6) {	/* check invisible backside */
-			if (!backvis && (nd.sd->rb == NULL) &
-					(nd.sd->tb == NULL)) {
-				SDfreeCache(nd.sd);
-				raytrans(r);
-				return(1);
-			}
+		if (m->oargs.nfargs < 6)
 			setcolor(nd.rdiff, .0, .0, .0);
-		} else
+		else
 			setcolor(nd.rdiff, m->oargs.farg[3],
 					m->oargs.farg[4],
 					m->oargs.farg[5]);

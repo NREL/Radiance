@@ -1,7 +1,7 @@
 set(VERSION_FILE "${radiance_BINARY_DIR}/src/util/Version.c")
 create_version_file("${VERSION_FILE}")
 
-add_executable(dctimestep dctimestep.c)
+add_executable(dctimestep dctimestep.c cmbsdf.c cmatrix.c)
 target_link_libraries(dctimestep rtrad)
 
 add_executable(findglare findglare.c glareval.c glaresrc.c setscan.c)
@@ -47,6 +47,21 @@ target_link_libraries(rttree_reduce rtrad)
 add_executable(rcollate rcollate.c)
 target_link_libraries(rcollate rtrad)
 
+add_executable(rmtxop rmtxop.c rmatrix.c cmbsdf.c cmatrix.c)
+target_link_libraries(rmtxop rtrad)
+
+add_executable(wrapBSDF wrapBSDF.c)
+target_link_libraries(wrapBSDF rtrad)
+
+add_executable(eplus_adduvf eplus_adduvf.c eplus_idf.c)
+target_link_libraries(eplus_adduvf rtrad)
+
+add_executable(rfluxmtx rfluxmtx.c)
+target_link_libraries(rfluxmtx rtrad)
+
+add_executable(evalglare evalglare.c pictool.c)
+target_link_libraries(evalglare rtrad libreetz)
+
 if(X11_FOUND)
   add_executable(xglaresrc
     xglaresrc.c ${CMAKE_CURRENT_SOURCE_DIR}/../common/x11findwind.c)
@@ -75,7 +90,7 @@ find_file(HAVE_SGISTEREO_H "SGIStereo.h" ${OPENGL_INCLUDE_DIR})
 if(NOT HAVE_SGISTEREO_H)
 	add_definitions(-DNOSTEREO)
 endif()
-if(UNIX)
+if(UNIX AND X11_FOUND)
 	add_executable(glrad glrad.c)
 	target_link_libraries(glrad rgl rtrad ${OPENGL_LIBRARIES} ${X11_LIBRARIES})
 	install(TARGETS rpiece RUNTIME DESTINATION bin)
@@ -84,22 +99,32 @@ if(UNIX)
   endif()
 endif()
 install(TARGETS dctimestep findglare getinfo glarendx rad ranimate
-                vwrays vwright ranimove rsensor rttree_reduce rcollate
-        RUNTIME DESTINATION bin)
+    vwrays vwright ranimove rsensor rttree_reduce rcollate
+		eplus_adduvf rfluxmtx rmtxop wrapBSDF evalglare
+    RUNTIME DESTINATION bin)
+
+install(FILES rambpos.cal ambpos.cal tregsamp.dat reinhartb.cal 
+    klems_full.cal klems_half.cal klems_quarter.cal disk2square.cal
+    WINDOW6BSDFt.xml minimalBSDFt.xml
+    DESTINATION lib)
 
 if(WIN32)
   install(PROGRAMS genBSDF.pl DESTINATION bin)
   install(PROGRAMS genklemsamp.pl DESTINATION bin)
   install(PROGRAMS genskyvec.pl DESTINATION bin)
-  install(FILES tregsamp.dat DESTINATION lib)
-  install(PROGRAMS objview.rb DESTINATION bin)
+  install(PROGRAMS ltview.pl DESTINATION bin)
+  install(PROGRAMS ltpict.pl DESTINATION bin)
+  install(PROGRAMS objview.pl DESTINATION bin)
+  install(PROGRAMS objpict.pl DESTINATION bin)
 else()
   install(PROGRAMS genBSDF.pl DESTINATION bin RENAME genBSDF)
   install(PROGRAMS genklemsamp.pl DESTINATION bin RENAME genklemsamp)
   install(PROGRAMS genskyvec.pl DESTINATION bin RENAME genskyvec)
-  install(PROGRAMS objview.csh DESTINATION bin RENAME objview)
-  install(PROGRAMS objview.rb DESTINATION bin)
-  install(PROGRAMS objpict.csh DESTINATION bin RENAME objpict)
+  install(PROGRAMS genambpos.csh DESTINATION bin RENAME genambpos)
+  install(PROGRAMS ltview.pl DESTINATION bin)
+  install(PROGRAMS ltpict.pl DESTINATION bin)
+  install(PROGRAMS objview.pl DESTINATION bin RENAME objview)
+  install(PROGRAMS objpict.pl DESTINATION bin RENAME objpict)
   install(PROGRAMS glare.csh DESTINATION bin RENAME glare)
   install(PROGRAMS dayfact.csh DESTINATION bin RENAME dayfact)
   install(PROGRAMS rlux.csh DESTINATION bin RENAME rlux)
@@ -108,7 +133,5 @@ else()
   install(PROGRAMS objline.csh DESTINATION bin RENAME objline)
   install(PROGRAMS compamb.csh DESTINATION bin RENAME compamb)
   install(PROGRAMS vinfo.csh DESTINATION bin RENAME vinfo)
-  install(PROGRAMS genambpos.csh DESTINATION bin RENAME genambpos)
   install(PROGRAMS fieldcomb.csh DESTINATION bin RENAME fieldcomb)
-  install(FILES tregsamp.dat DESTINATION lib)
 endif()

@@ -16,7 +16,7 @@ static const char	RCSid[] = "$Id$";
 #include	<time.h>
 
 #ifdef PCOND
-#include	"rtprocess.h"
+#include	"paths.h"
 #endif
 #include	"tmprivat.h"
 #include	"resolu.h"

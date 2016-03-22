@@ -9,6 +9,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+					/* sun calculation constants */
+extern double  s_latitude;
+extern double  s_longitude;
+extern double  s_meridian;
 
 extern int jdate(int month, int day);
 extern double stadj(int  jd);

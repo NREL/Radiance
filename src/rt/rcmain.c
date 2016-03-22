@@ -13,6 +13,8 @@ static const char	RCSid[] = "$Id$";
 #include "random.h"
 #include "source.h"
 #include "ambient.h"
+#include "pmapray.h"
+#include "pmapcontrib.h"
 
 int	gargc;				/* global argc */
 char	**gargv;			/* global argv */
@@ -169,6 +171,7 @@ main(int argc, char *argv[])
 				case '-': case '0': var = 0; break; \
 				default: goto badopt; }
 	char	*curout = NULL;
+	char	*prms = NULL;
 	char	*binval = NULL;
 	int	bincnt = 0;
 	int	rval;
@@ -268,6 +271,10 @@ main(int argc, char *argv[])
 		case 'h':			/* header output */
 			bool(2,header);
 			break;
+		case 'p':			/* parameter setting(s) */
+			check(2,"s");
+			set_eparams(prms = argv[++i]);
+			break;
 		case 'b':			/* bin expression/count */
 			if (argv[i][2] == 'n') {
 				check(3,"s");
@@ -279,11 +286,11 @@ main(int argc, char *argv[])
 			break;
 		case 'm':			/* modifier name */
 			check(2,"s");
-			addmodifier(argv[++i], curout, binval, bincnt);
+			addmodifier(argv[++i], curout, prms, binval, bincnt);
 			break;
 		case 'M':			/* modifier file */
 			check(2,"s");
-			addmodfile(argv[++i], curout, binval, bincnt);
+			addmodfile(argv[++i], curout, prms, binval, bincnt);
 			break;
 		default:
 			goto badopt;
@@ -335,19 +342,28 @@ main(int argc, char *argv[])
 	readoct(octname, ~(IO_FILES|IO_INFO), &thescene, NULL);
 	nsceneobjs = nobjects;
 
+	/* PMAP: set up & load photon maps */
+	ray_init_pmap();     
+	
 	marksources();			/* find and mark sources */
+	
+	/* PMAP: init photon map for light source contributions */
+	initPmapContrib(&modconttab, nmods);
 
 	setambient();			/* initialize ambient calculation */
-
+	
 	rcontrib();			/* trace ray contributions (loop) */
 
 	ambsync();			/* flush ambient file */
 
+	/* PMAP: free photon maps */
+	ray_done_pmap();     
+	
 	quit(0);	/* exit clean */
 
 badopt:
 	fprintf(stderr,
-"Usage: %s [-n nprocs][-V][-r][-e expr][-f source][-o ospec][-b binv][-bn N] {-m mod | -M file} [rtrace options] octree\n",
+"Usage: %s [-n nprocs][-V][-r][-e expr][-f source][-o ospec][-p p1=V1,p2=V2][-b binv][-bn N] {-m mod | -M file} [rtrace options] octree\n",
 			progname);
 	sprintf(errmsg, "command line error at '%s'", argv[i]);
 	error(USER, errmsg);

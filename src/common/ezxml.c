@@ -74,6 +74,14 @@ ezxml_t ezxml_child(ezxml_t xml, const char *name)
     return xml;
 }
 
+/* returns the given tag's character content or empty string if none */
+char *ezxml_txt(ezxml_t xml)
+{
+	if (xml == NULL)
+		return "";
+	return xml->txt;
+}
+
 /* returns the Nth tag with the same name in the same subsection or NULL if not */
 /* found */
 ezxml_t ezxml_idx(ezxml_t xml, int idx)
@@ -374,8 +382,8 @@ short ezxml_internal_dtd(ezxml_root_t root, char *s, size_t len)
             if (*(s = t + strcspn(t, EZXML_WS ">")) == '>') continue;
             else *s = '\0'; /* null terminate tag name */
             for (i = 0; root->attr[i] && strcmp(n, root->attr[i][0]); i++);
-
-            while (*(n = ++s + strspn(s, EZXML_WS)) && *n != '>') {
+	    ++s;
+            while (*(n = s + strspn(s, EZXML_WS)) && *n != '>') {
                 if (*(s = n + strcspn(n, EZXML_WS))) *s = '\0'; /* attr name */
                 else { ezxml_err(root, t, "malformed <!ATTLIST"); break; }
 
@@ -416,6 +424,7 @@ short ezxml_internal_dtd(ezxml_root_t root, char *s, size_t len)
                 root->attr[i][j + 1] = (v) ? ezxml_decode(v, root->ent, *c)
                                            : NULL;
                 root->attr[i][j] = n; /* attribute name  */
+		++s;
             }
         }
         else if (! strncmp(s, "<!--", 4)) s = strstr(s + 4, "-->"); /* comments */
@@ -921,10 +930,28 @@ ezxml_t ezxml_add_child(ezxml_t xml, const char *name, size_t off)
 ezxml_t ezxml_set_txt(ezxml_t xml, const char *txt)
 {
     if (! xml) return NULL;
+    if (txt == xml->txt) return xml;
     if (xml->flags & EZXML_TXTM) free(xml->txt); /* existing txt was malloced */
     xml->flags &= ~EZXML_TXTM;
     xml->txt = (char *)txt;
     return xml;
+}
+
+/* add text to the current character content, allocating memory as needed (GW) */
+ezxml_t ezxml_add_txt(ezxml_t xml, const char *txt)
+{
+	int	len;
+	if (! xml) return NULL;
+	if (!*txt) return xml;
+	len = strlen(xml->txt) + strlen(txt) + 1;
+	if (xml->flags & EZXML_TXTM) {
+		xml->txt = (char *)realloc(xml->txt, len);
+	} else {
+		xml->txt = strcpy((char *)malloc(len), xml->txt);
+		xml->flags |= EZXML_TXTM;
+	}
+	strcat(xml->txt, txt);
+	return xml;
 }
 
 /* Sets the given tag attribute or adds a new attribute if not found. A value */

@@ -6,6 +6,8 @@ static const char RCSid[] = "$Id$";
  * Initialization and calculation routines
  */
 
+#include "copyright.h"
+
 #include "rcontrib.h"
 #include "otypes.h"
 #include "source.h"
@@ -88,7 +90,7 @@ formstr(				/* return format identifier */
 
 /* Add modifier to our list to track */
 MODCONT *
-addmodifier(char *modn, char *outf, char *binv, int bincnt)
+addmodifier(char *modn, char *outf, char *prms, char *binv, int bincnt)
 {
 	LUENT	*lep = lu_find(&modconttab,modn);
 	MODCONT	*mp;
@@ -101,6 +103,10 @@ addmodifier(char *modn, char *outf, char *binv, int bincnt)
 	}
 	if (nmods >= MAXMODLIST)
 		error(INTERNAL, "too many modifiers");
+	if (!strcmp(modn, VOIDID)) {
+		sprintf(errmsg, "cannot track '%s' modifier", VOIDID);
+		error(USER, errmsg);
+	}
 	modname[nmods++] = modn;	/* XXX assumes static string */
 	lep->key = modn;		/* XXX assumes static string */
 	if (binv == NULL)
@@ -125,6 +131,7 @@ addmodifier(char *modn, char *outf, char *binv, int bincnt)
 		error(SYSTEM, "out of memory in addmodifier");
 	mp->outspec = outf;		/* XXX assumes static string */
 	mp->modname = modn;		/* XXX assumes static string */
+	mp->params = prms;
 	mp->binv = ebinv;
 	mp->nbins = bincnt;
 	memset(mp->cbin, 0, sizeof(DCOLOR)*bincnt);
@@ -138,7 +145,7 @@ addmodifier(char *modn, char *outf, char *binv, int bincnt)
 
 /* Add modifiers from a file list */
 void
-addmodfile(char *fname, char *outf, char *binv, int bincnt)
+addmodfile(char *fname, char *outf, char *prms, char *binv, int bincnt)
 {
 	char	*mname[MAXMODLIST];
 	int	i;
@@ -148,7 +155,7 @@ addmodfile(char *fname, char *outf, char *binv, int bincnt)
 		error(SYSTEM, errmsg);
 	}
 	for (i = 0; mname[i]; i++)	/* add each one */
-		addmodifier(mname[i], outf, binv, bincnt);
+		addmodifier(mname[i], outf, prms, binv, bincnt);
 }
 
 
@@ -216,24 +223,28 @@ static void
 trace_contrib(RAY *r)
 {
 	MODCONT	*mp;
+	double	bval;
 	int	bn;
 	RREAL	contr[3];
 
 	if (r->ro == NULL || r->ro->omod == OVOID)
+		return;
+						/* shadow ray not on source? */
+	if (r->rsrc >= 0 && source[r->rsrc].so != r->ro)
 		return;
 
 	mp = (MODCONT *)lu_find(&modconttab,objptr(r->ro->omod)->oname)->data;
 
 	if (mp == NULL)				/* not in our list? */
 		return;
-						/* shadow ray not on source? */
-	if (r->rsrc >= 0 && source[r->rsrc].so != r->ro)
-		return;
 
-	worldfunc(RCCONTEXT, r);		/* else get bin number */
-	bn = (int)(evalue(mp->binv) + .5);
-	if ((bn < 0) | (bn >= mp->nbins)) {
-		error(WARNING, "bad bin number (ignored)");
+	worldfunc(RCCONTEXT, r);		/* else set context */
+	set_eparams((char *)mp->params);
+	if ((bval = evalue(mp->binv)) <= -.5)	/* and get bin number */
+		return;				/* silently ignore negatives */
+	if ((bn = (int)(bval + .5)) >= mp->nbins) {
+		sprintf(errmsg, "bad bin number (%d ignored)", bn);
+		error(WARNING, errmsg);
 		return;
 	}
 	raycontrib(contr, r, PRIMARY);		/* compute coefficient */

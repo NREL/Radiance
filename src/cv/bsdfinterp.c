@@ -94,10 +94,14 @@ on_edge(const MIGRATION *ej, const FVECT ivec)
 	cos_a = DOT(ej->rbfv[0]->invec, ivec);
 	if (cos_a <= 0)
 		return(0);
+	if (cos_a >= 1.)		/* handles rounding error */
+		return(1);
 
 	cos_b = DOT(ej->rbfv[1]->invec, ivec);
 	if (cos_b <= 0)
 		return(0);
+	if (cos_b >= 1.)
+		return(1);
 
 	cos_aplusb = cos_a*cos_b - sqrt((1.-cos_a*cos_a)*(1.-cos_b*cos_b));
 	if (cos_aplusb <= 0)
@@ -204,20 +208,21 @@ get_interp(MIGRATION *miga[3], FVECT invec)
 	if (single_plane_incident) {		/* isotropic BSDF? */
 	    RBFNODE	*rbf;			/* find edge we're on */
 	    for (rbf = dsf_list; rbf != NULL; rbf = rbf->next) {
-		if (input_orient*rbf->invec[2] < input_orient*invec[2])
+		if (input_orient*rbf->invec[2] < input_orient*invec[2]-FTINY)
 			break;
 		if (rbf->next != NULL && input_orient*rbf->next->invec[2] <
-							input_orient*invec[2]) {
+						input_orient*invec[2]+FTINY) {
 		    for (miga[0] = rbf->ejl; miga[0] != NULL;
 					miga[0] = nextedge(rbf,miga[0]))
 			if (opp_rbf(rbf,miga[0]) == rbf->next) {
-				double	nf = 1. - rbf->invec[2]*rbf->invec[2];
+				double	nf = 1. -
+					rbf->next->invec[2]*rbf->next->invec[2];
 				if (nf > FTINY) {	/* rotate to match */
 					nf = sqrt((1.-invec[2]*invec[2])/nf);
-					invec[0] = nf*rbf->invec[0];
-					invec[1] = nf*rbf->invec[1];
+					invec[0] = nf*rbf->next->invec[0];
+					invec[1] = nf*rbf->next->invec[1];
 				}
-				return(0);
+				return(0);	/* rotational symmetry */
 			}
 		    break;
 		}
@@ -258,87 +263,11 @@ get_interp(MIGRATION *miga[3], FVECT invec)
 	}
 }
 
-/* Advect and allocate new RBF along edge */
-static RBFNODE *
-e_advect_rbf(const MIGRATION *mig, const FVECT invec)
-{
-	RBFNODE		*rbf;
-	int		n, i, j;
-	double		t, full_dist;
-						/* get relative position */
-	t = Acos(DOT(invec, mig->rbfv[0]->invec));
-	if (t < M_PI/grid_res) {		/* near first DSF */
-		n = sizeof(RBFNODE) + sizeof(RBFVAL)*(mig->rbfv[0]->nrbf-1);
-		rbf = (RBFNODE *)malloc(n);
-		if (rbf == NULL)
-			goto memerr;
-		memcpy(rbf, mig->rbfv[0], n);	/* just duplicate */
-		rbf->next = NULL; rbf->ejl = NULL;
-		return(rbf);
-	}
-	full_dist = acos(DOT(mig->rbfv[0]->invec, mig->rbfv[1]->invec));
-	if (t > full_dist-M_PI/grid_res) {	/* near second DSF */
-		n = sizeof(RBFNODE) + sizeof(RBFVAL)*(mig->rbfv[1]->nrbf-1);
-		rbf = (RBFNODE *)malloc(n);
-		if (rbf == NULL)
-			goto memerr;
-		memcpy(rbf, mig->rbfv[1], n);	/* just duplicate */
-		rbf->next = NULL; rbf->ejl = NULL;
-		return(rbf);
-	}
-	t /= full_dist;	
-	n = 0;					/* count migrating particles */
-	for (i = 0; i < mtx_nrows(mig); i++)
-	    for (j = 0; j < mtx_ncols(mig); j++)
-		n += (mtx_coef(mig,i,j) > FTINY);
-#ifdef DEBUG
-	fprintf(stderr, "Input RBFs have %d, %d nodes -> output has %d\n",
-			mig->rbfv[0]->nrbf, mig->rbfv[1]->nrbf, n);
-#endif
-	rbf = (RBFNODE *)malloc(sizeof(RBFNODE) + sizeof(RBFVAL)*(n-1));
-	if (rbf == NULL)
-		goto memerr;
-	rbf->next = NULL; rbf->ejl = NULL;
-	VCOPY(rbf->invec, invec);
-	rbf->nrbf = n;
-	rbf->vtotal = 1.-t + t*mig->rbfv[1]->vtotal/mig->rbfv[0]->vtotal;
-	n = 0;					/* advect RBF lobes */
-	for (i = 0; i < mtx_nrows(mig); i++) {
-	    const RBFVAL	*rbf0i = &mig->rbfv[0]->rbfa[i];
-	    const float		peak0 = rbf0i->peak;
-	    const double	rad0 = R2ANG(rbf0i->crad);
-	    FVECT		v0;
-	    float		mv;
-	    ovec_from_pos(v0, rbf0i->gx, rbf0i->gy);
-	    for (j = 0; j < mtx_ncols(mig); j++)
-		if ((mv = mtx_coef(mig,i,j)) > FTINY) {
-			const RBFVAL	*rbf1j = &mig->rbfv[1]->rbfa[j];
-			double		rad1 = R2ANG(rbf1j->crad);
-			FVECT		v;
-			int		pos[2];
-			rbf->rbfa[n].peak = peak0 * mv * rbf->vtotal;
-			rbf->rbfa[n].crad = ANG2R(sqrt(rad0*rad0*(1.-t) +
-							rad1*rad1*t));
-			ovec_from_pos(v, rbf1j->gx, rbf1j->gy);
-			geodesic(v, v0, v, t, GEOD_REL);
-			pos_from_vec(pos, v);
-			rbf->rbfa[n].gx = pos[0];
-			rbf->rbfa[n].gy = pos[1];
-			++n;
-		}
-	}
-	rbf->vtotal *= mig->rbfv[0]->vtotal;	/* turn ratio into actual */
-	return(rbf);
-memerr:
-	fprintf(stderr, "%s: Out of memory in e_advect_rbf()\n", progname);
-	exit(1);
-	return(NULL);	/* pro forma return */
-}
-
-/* Partially advect between recorded incident angles and allocate new RBF */
+/* Advect between recorded incident angles and allocate new RBF */
 RBFNODE *
-advect_rbf(const FVECT invec)
+advect_rbf(const FVECT invec, int lobe_lim)
 {
+	double		cthresh = FTINY;
 	FVECT		sivec;
 	MIGRATION	*miga[3];
 	RBFNODE		*rbf;
@@ -351,9 +280,9 @@ advect_rbf(const FVECT invec)
 	VCOPY(sivec, invec);			/* find triangle/edge */
 	sym = get_interp(miga, sivec);
 	if (sym < 0)				/* can't interpolate? */
-		return(NULL);
+		return(def_rbf_spec(invec));
 	if (miga[1] == NULL) {			/* advect along edge? */
-		rbf = e_advect_rbf(miga[0], sivec);
+		rbf = e_advect_rbf(miga[0], sivec, lobe_lim);
 		if (single_plane_incident)
 			rotate_rbf(rbf, invec);
 		else
@@ -361,9 +290,9 @@ advect_rbf(const FVECT invec)
 		return(rbf);
 	}
 #ifdef DEBUG
-	if (miga[0]->rbfv[0] != miga[2]->rbfv[0] |
-			miga[0]->rbfv[1] != miga[1]->rbfv[0] |
-			miga[1]->rbfv[1] != miga[2]->rbfv[1]) {
+	if ((miga[0]->rbfv[0] != miga[2]->rbfv[0]) |
+			(miga[0]->rbfv[1] != miga[1]->rbfv[0]) |
+			(miga[1]->rbfv[1] != miga[2]->rbfv[1])) {
 		fprintf(stderr, "%s: Triangle vertex screw-up!\n", progname);
 		exit(1);
 	}
@@ -379,13 +308,19 @@ advect_rbf(const FVECT invec)
 	geodesic(v1, miga[0]->rbfv[0]->invec, miga[0]->rbfv[1]->invec,
 			s, GEOD_REL);
 	t = acos(DOT(v1,sivec)) / acos(DOT(v1,miga[1]->rbfv[1]->invec));
+tryagain:
 	n = 0;					/* count migrating particles */
 	for (i = 0; i < mtx_nrows(miga[0]); i++)
 	    for (j = 0; j < mtx_ncols(miga[0]); j++)
-		for (k = (mtx_coef(miga[0],i,j) > FTINY) *
+		for (k = (mtx_coef(miga[0],i,j) > cthresh) *
 					mtx_ncols(miga[2]); k--; )
-			n += (mtx_coef(miga[2],i,k) > FTINY ||
-				mtx_coef(miga[1],j,k) > FTINY);
+			n += (mtx_coef(miga[2],i,k) > cthresh ||
+				mtx_coef(miga[1],j,k) > cthresh);
+						/* are we over our limit? */
+	if ((lobe_lim > 0) & (n > lobe_lim)) {
+		cthresh = cthresh*2. + 10.*FTINY;
+		goto tryagain;
+	}
 #ifdef DEBUG
 	fprintf(stderr, "Input RBFs have %d, %d, %d nodes -> output has %d\n",
 			miga[0]->rbfv[0]->nrbf, miga[0]->rbfv[1]->nrbf,
@@ -408,30 +343,44 @@ advect_rbf(const FVECT invec)
 	    const RBFVAL	*rbf0i = &miga[0]->rbfv[0]->rbfa[i];
 	    const float		w0i = rbf0i->peak;
 	    const double	rad0i = R2ANG(rbf0i->crad);
+	    C_COLOR		cc0;
 	    ovec_from_pos(v0, rbf0i->gx, rbf0i->gy);
+	    c_decodeChroma(&cc0, rbf0i->chroma);
 	    for (j = 0; j < mtx_ncols(miga[0]); j++) {
 		const float	ma = mtx_coef(miga[0],i,j);
 		const RBFVAL	*rbf1j;
-		double		rad1j, srad2;
-		if (ma <= FTINY)
+		C_COLOR		ccs;
+		double		srad2;
+		if (ma <= cthresh)
 			continue;
 		rbf1j = &miga[0]->rbfv[1]->rbfa[j];
-		rad1j = R2ANG(rbf1j->crad);
-		srad2 = (1.-s)*(1.-t)*rad0i*rad0i + s*(1.-t)*rad1j*rad1j;
+		c_decodeChroma(&ccs, rbf1j->chroma);
+		c_cmix(&ccs, 1.-s, &cc0, s, &ccs);
+		srad2 = R2ANG(rbf1j->crad);
+		srad2 = (1.-s)*(1.-t)*rad0i*rad0i + s*(1.-t)*srad2*srad2;
 		ovec_from_pos(v1, rbf1j->gx, rbf1j->gy);
 		geodesic(v1, v0, v1, s, GEOD_REL);
 		for (k = 0; k < mtx_ncols(miga[2]); k++) {
 		    float		mb = mtx_coef(miga[1],j,k);
 		    float		mc = mtx_coef(miga[2],i,k);
 		    const RBFVAL	*rbf2k;
-		    double		rad2k;
+		    double		rad2;
 		    int			pos[2];
-		    if ((mb <= FTINY) & (mc <= FTINY))
+		    if ((mb <= cthresh) & (mc <= cthresh))
 			continue;
 		    rbf2k = &miga[2]->rbfv[1]->rbfa[k];
-		    rbf->rbfa[n].peak = w0i * ma * (mb*mbfact + mc*mcfact);
-		    rad2k = R2ANG(rbf2k->crad);
-		    rbf->rbfa[n].crad = ANG2R(sqrt(srad2 + t*rad2k*rad2k));
+		    rad2 = R2ANG(rbf2k->crad);
+		    rad2 = srad2 + t*rad2*rad2;
+		    rbf->rbfa[n].peak = w0i * ma * (mb*mbfact + mc*mcfact) *
+					rad0i*rad0i/rad2;
+		    if (rbf_colorimetry == RBCtristimulus) {
+			C_COLOR	cres;
+			c_decodeChroma(&cres, rbf2k->chroma);
+			c_cmix(&cres, 1.-t, &ccs, t, &cres);
+			rbf->rbfa[n].chroma = c_encodeChroma(&cres);
+		    } else
+			rbf->rbfa[n].chroma = c_dfchroma;
+		    rbf->rbfa[n].crad = ANG2R(sqrt(rad2));
 		    ovec_from_pos(v2, rbf2k->gx, rbf2k->gy);
 		    geodesic(v2, v1, v2, t, GEOD_REL);
 		    pos_from_vec(pos, v2);

@@ -14,7 +14,7 @@ static const char RCSid[] = "$Id$";
 
 #include "platform.h"
 #include "rtio.h"
-#include "rtprocess.h"
+#include "paths.h"
 #include "fvect.h"
 
 #ifdef  M_PI
@@ -406,7 +406,7 @@ addrot(		/* compute rotation (x,y,z) => (xp,yp,zp) */
 		while (*xf) ++xf;
 		n += 2;
 	}
-	theta = asin(-xp[2]);
+	theta = Asin(-xp[2]);
 	if (!FEQ(theta,0.0)) {
 		sprintf(xf, " -ry %f", theta*(180./PI));
 		while (*xf) ++xf;

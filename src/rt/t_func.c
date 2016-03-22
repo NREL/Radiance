@@ -28,16 +28,16 @@ static const char	RCSid[] = "$Id$";
  */
 
 
-extern int
+int
 t_func(			/* compute texture for ray */
-	register OBJREC  *m,
-	register RAY  *r
+	OBJREC  *m,
+	RAY  *r
 )
 {
 	FVECT  disp;
 	double  d;
-	register MFUNC  *mf;
-	register int  i;
+	MFUNC  *mf;
+	int  i;
 
 	if (m->oargs.nsargs < 4)
 		objerror(m, USER, "bad # arguments");

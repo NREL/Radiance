@@ -18,13 +18,14 @@ static const char	RCSid[] = "$Id$";
 
 
 char *
-fgetline(s, n, fp)	/* read in line with escapes, elide final newline */
-char  *s;
-int  n;
-register FILE  *fp;
+fgetline(		/* read in line with escapes, elide final newline */
+	char  *s,
+	int  n,
+	FILE  *fp
+)
 {
-	register char  *cp = s;
-	register int  c = EOF;
+	char  *cp = s;
+	int  c = EOF;
 
 	while (--n > 0 && (c = getc(fp)) != EOF) {
 		if (c == '\r' && (c = getc(fp)) != '\n') {
@@ -35,7 +36,7 @@ register FILE  *fp;
 			break;
 		*cp++ = c;
 	}
-	if (cp == s && c == EOF)
+	if ((cp == s) & (c == EOF))
 		return(NULL);
 	*cp = '\0';
 	return(s);

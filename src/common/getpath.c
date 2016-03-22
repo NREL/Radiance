@@ -4,7 +4,7 @@ static const char	RCSid[] = "$Id$";
 /*
  *  getpath.c - function to search for file in a list of directories
  *
- *  External symbols declared in standard.h
+ *  External symbols declared in rtio.h
  */
 
 #include "copyright.h"
@@ -24,14 +24,14 @@ char *
 getpath	/* expand fname, return full path */
 #endif
 (
-register char  *fname,
-register char  *searchpath,
-int  mode
+	char  *fname,
+	char  *searchpath,
+	int  mode
 )
 {
 	static char  pname[PATH_MAX];
 	char uname[512];
-	register char  *cp;
+	char  *cp;
 	int i;
 
 	if (fname == NULL) { return(NULL); }
@@ -93,12 +93,12 @@ int  mode
 */
 char *
 getpath(	/* expand fname, return full path */
-register char  *ffname,
-register char  *searchpath,
-int  mode
+	char  *ffname,
+	char  *searchpath,
+	int  mode
 )
 {
-	register char  *cp;
+	char  *cp;
 	char fname[PATH_MAX];
 
 	if (ffname == NULL)
