@@ -3,22 +3,18 @@ static const char	RCSid[] = "$Id$";
 #endif
 /*
  * Load whitespace separated words from a file into an array.
- * Assume the passed pointer array is big enough to hold them all.
  *
- * External symbols declared in standard.h
+ * External symbols declared in rtio.h
  */
 
 #include "copyright.h"
 
 #include <ctype.h>
 #include <string.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 
 #include "platform.h"
-#include "standard.h"
+#include "rtio.h"
+#include "rtmisc.h"
 
 
 #define MAXWLEN		4096	/* words must be shorter than this */
