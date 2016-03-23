@@ -57,11 +57,10 @@ wordfile(			/* get words from fname, put in words */
 			wrdcnt = -1;		/* memory error */
 			break;
 		}
-		words += n;
-		nargs -= n;
+		words += n; nargs -= n;
 		wrdcnt += n;
 		if ((n = crem) > 0)		/* move remainder */
-			strncpy(buf, buf+MAXWLEN-crem, crem);
+			memmove(buf, buf+MAXWLEN-crem, crem);
 	}
 done:
 	close(fd);
