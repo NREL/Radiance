@@ -149,7 +149,7 @@ char	*argv[];
 			puteol++;
 			break;
 		}
-	while (--incnt) {			/* main loop */
+	do {					/* main loop */
 		for (i = 0; i < nfiles; i++) {
 			if (bytsiz[i]) {		/* binary file */
 				if (fread(buf, bytsiz[i], 1, input[i]) < 1)
@@ -172,6 +172,6 @@ char	*argv[];
 			putchar('\n');
 		if (unbuff)
 			fflush(stdout);
-	}
+	} while (--incnt);
 	return(0);
 }

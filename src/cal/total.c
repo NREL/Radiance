@@ -327,6 +327,8 @@ char  *fname
 			break;
 		if (!subtotal)
 			ltotal = 0;
+		if (incnt > 0 && nlin >= incnt)
+			break;
 	}
 							/* close input */
 	return(fclose(fp));
