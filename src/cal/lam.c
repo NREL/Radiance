@@ -19,6 +19,8 @@ static const char	RCSid[] = "$Id$";
 
 #define MAXLINE		65536		/* maximum input line */
 
+long	incnt = 0;			/* limit number of records? */
+
 FILE	*input[MAXFILE];
 int	bytsiz[MAXFILE];
 char	*tabc[MAXFILE];
@@ -52,6 +54,9 @@ char	*argv[];
 				break;
 			case 'i':
 				switch (argv[i][2]) {
+				case 'n':
+					incnt = atol(argv[++i]);
+					break;
 				case 'f':
 					curbytes = sizeof(float);
 					break;
@@ -138,13 +143,13 @@ char	*argv[];
 		flockfile(input[i]);
 	flockfile(stdout);
 #endif
-	puteol = 0;				/* check for ASCII output */
+	puteol = 0;				/* any ASCII output at all? */
 	for (i = nfiles; i--; )
 		if (!bytsiz[i] || isprint(tabc[i][0]) || tabc[i][0] == '\t') {
 			puteol++;
 			break;
 		}
-	for ( ; ; ) {				/* main loop */
+	while (--incnt) {			/* main loop */
 		for (i = 0; i < nfiles; i++) {
 			if (bytsiz[i]) {		/* binary file */
 				if (fread(buf, bytsiz[i], 1, input[i]) < 1)

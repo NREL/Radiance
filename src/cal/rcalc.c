@@ -73,6 +73,9 @@ struct field  *inpfmt = NULL;   /* input record format */
 struct field  *outfmt = NULL;   /* output record structure */
 struct strvar  *svhead = NULL;  /* string variables */
 
+long  incnt = 0;		/* limit number of input records? */
+long  outcnt = 0;		/* limit number of output records? */
+
 int  blnkeq = 1;                /* blanks compare equal? */
 int  igneol = 0;                /* ignore end of line? */
 int  passive = 0;		/* passive mode (transmit unmatched input) */
@@ -157,6 +160,9 @@ char  *argv[]
 				nbicols = 0;
 				readfmt(argv[++i], 0);
 				break;
+			case 'n':
+				incnt = atol(argv[++i]);
+				break;
 			case 'a':
 				itype = 'a';
 				nbicols = 0;
@@ -196,6 +202,9 @@ char  *argv[]
 			case '\0':
 				otype = 'a';
 				readfmt(argv[++i], 1);
+				break;
+			case 'n':
+				outcnt = atol(argv[++i]);
 				break;
 			case 'a':
 				otype = 'a';
@@ -323,6 +332,10 @@ char  *file
 			putout();
 			++nout;
 		}
+		if (incnt && nrecs >= incnt)
+			break;
+		if (outcnt && nout >= outcnt)
+			break;
 	}
 	fclose(fp);
 }
