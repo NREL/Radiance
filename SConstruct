@@ -3,14 +3,15 @@ import os
 import sys
 import string
 
-PATHFILE = 'raypaths.py'
-OPTFILE = 'rayopts.py'
-def set_pre_opts(env):
+PATHFILE = 'scbuild/raypaths.py'
+OPTFILE = 'scbuild/rayopts.py'
+def set_pre_opts():
 	vars = Variables(OPTFILE, ARGUMENTS)
 	vars.Add('SKIP', 'Skip Display of License terms', 0)
-	vars.Add('RAD_DEBUG',   'Build a debug version',  0)
-	vars.Update(env) 
-	vars.Save(OPTFILE, env)
+	vars.Add('RAD_DEBUG',  'Build a debug version',  0)
+	vars.Add('MSVC_VERSION', 'Microsoft VC Version',  '12.0')
+	vars.Add('TARGET_ARCH',  'Windows only: "x68" or "amd64"',  '')
+	return vars
 
 def set_opts(env):
 	vars = Variables(PATHFILE, ARGUMENTS)
@@ -31,6 +32,7 @@ def allplats_setup(env):
 	find_libs.find_x11(env)
 	find_libs.find_gl(env) # OpenGL
 	find_libs.find_libtiff(env)
+	find_libs.find_pyinstaller(env)
 
 def post_common_setup(env):
 	env.Append(CPPPATH = [os.path.join('#src', 'common')])
@@ -46,30 +48,25 @@ def shareinstall_setup(env):
 	if 'install' in sys.argv or 'maninstall' in sys.argv:
 		install.install_manfiles(env)
 
-_arch = None
-for item in sys.argv[1:]:
-	if item.startswith('TARGET_ARCH'):
-		res = item.split('=')
-		if len(res) == 2:
-			_arch = res[1].strip()
 
+# set stuff before loading platforms
+prevars = set_pre_opts()
 # Set up build environment
-env = Environment(TARGET_ARCH=_arch)
+env = Environment(variables=prevars)
+prevars.Save(OPTFILE, env)
 env.Decider('timestamp-match')
 
+from build_utils import install
+script_b = Builder(action = install.install_script, suffix = '')
+env.Append(BUILDERS={'InstallScript': script_b})
 if os.name == 'posix':
-	from build_utils import install
-	script_b = Builder(action = install.install_script, suffix = '')
-	env.Append(BUILDERS={'InstallScript': script_b})
 	tclscript_b = Builder(action = install.install_tclscript, suffix = '')
 	env.Append(BUILDERS={'InstallTCLScript': tclscript_b})
 
-# set debug before loading platforms
-set_pre_opts(env)
 
 # configure platform-specific stuff
 from build_utils import load_plat
-load_plat.load_plat(env, vars, arch=_arch)
+load_plat.load_plat(env)
 
 # override options
 set_opts(env)
@@ -93,8 +90,13 @@ else:
 	SConscript(os.path.join('src', 'common', 'SConscript'),
 			variant_dir=os.path.join(env['RAD_BUILDOBJ'],'common'), duplicate=0)
 	post_common_setup(env)
-	for d in Split('meta cv gen ot rt px hd util cal'):
-		print d
+	dirs = Split('''meta cv gen ot rt px hd util cal''')
+	if os.path.isfile('src/winimage/SConscript'):
+		dirs.append('winimage')
+	if os.path.isfile('src/winrview/SConscript'):
+		dirs.append('winrview')
+	for d in dirs:
+		print(d)
 		SConscript(os.path.join('src', d, 'SConscript'),
 				variant_dir=os.path.join(env['RAD_BUILDOBJ'], d), duplicate=0)
 
@@ -108,7 +110,7 @@ env.Alias('bininstall',  '$RAD_BINDIR')
 env.Alias('rlibinstall', '$RAD_RLIBDIR')
 env.Alias('maninstall',  '$RAD_MANDIR')
 
-env.Alias('build',   ['$RAD_BUILDBIN'])
+env.Alias('build',   ['$RAD_BUILDBIN', '$RAD_BUILDRLIB'])
 env.Alias('test',    ['#test'])
 env.Alias('install', ['bininstall', 'rlibinstall', 'maninstall'])
 
