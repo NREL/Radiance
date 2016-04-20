@@ -107,7 +107,7 @@ void glow tipglow
 0
 4 ${2*agr} ${2*agg} ${2*agb} 0
 
-tipglow sphere atip
+tipglow sphere atip${recno}
 0
 0
 4 ${   cx1   } ${   cy1   } ${   cz1   } ${psiz/7}
