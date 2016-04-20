@@ -53,13 +53,13 @@ static const char	RCSid[] = "$Id$";
 int
 o_sphere(			/* determine if sphere intersects cube */
 	OBJREC  *o,
-	register CUBE  *cu
+	CUBE  *cu
 )
 {
 	FVECT  v1;
 	double  d1, d2;
-	register RREAL  *fa;
-	register int  i;
+	RREAL  *fa;
+	int  i;
 #define  cent		fa
 #define  rad		fa[3]
 					/* get arguments */
@@ -71,8 +71,10 @@ o_sphere(			/* determine if sphere intersects cube */
 		o->otype = o->otype == OBJ_SPHERE ?
 				OBJ_BUBBLE : OBJ_SPHERE;
 		rad = -rad;
-	} else if (rad <= FTINY)
-		objerror(o, USER, "zero radius");
+	} else if (rad <= FTINY) {
+		objerror(o, WARNING, "zero radius");
+		return(O_MISS);
+	}
 
 	d1 = ROOT3/2.0 * cu->cusize;	/* bounding radius for cube */
 
