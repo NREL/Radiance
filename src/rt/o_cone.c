@@ -28,6 +28,8 @@ o_cone(			/* intersect ray with cone */
 
 						/* get cone structure */
 	co = getcone(o, 1);
+	if (co == NULL)
+		objerror(o, INTERNAL, "unexpected illegal");
 
 	/*
 	 *     To intersect a ray with a cone, we transform the

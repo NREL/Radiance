@@ -41,12 +41,13 @@ static const char	RCSid[] = "$Id$";
 
 
 CONE *
-getcone(o, getxf)			/* get cone structure */
-register OBJREC  *o;
-int  getxf;
+getcone(				/* get cone structure */
+	OBJREC  *o,
+	int  getxf
+)
 {
 	int  sgn0, sgn1;
-	register CONE  *co;
+	CONE  *co;
 
 	if ((co = (CONE *)o->os) == NULL) {
 
@@ -120,8 +121,11 @@ int  getxf;
 			co->ad[2] = CO_P1(co)[2] - CO_P0(co)[2];
 		}
 		co->al = normalize(co->ad);
-		if (co->al == 0.0)
-			objerror(o, USER, "zero orientation");
+		if (co->al == 0.0) {
+			objerror(o, WARNING, "unknown orientation");
+			free(co);
+			return(NULL);
+		}
 					/* compute axis and side lengths */
 		if (o->otype == OBJ_RING) {
 			co->al = 0.0;
@@ -142,16 +146,16 @@ int  getxf;
 argcerr:
 	objerror(o, USER, "bad # arguments");
 raderr:
-	objerror(o, USER, "illegal radii");
-	return NULL; /* pro forma return */
+	objerror(o, WARNING, "illegal radii");
+	free(co);
+	return(NULL);
 }
 
 
 void
-freecone(o)			/* free memory associated with cone */
-OBJREC  *o;
+freecone(OBJREC *o)		/* free memory associated with cone */
 {
-	register CONE  *co = (CONE *)o->os;
+	CONE  *co = (CONE *)o->os;
 
 	if (co == NULL)
 		return;
@@ -163,12 +167,11 @@ OBJREC  *o;
 
 
 void
-conexform(co)			/* get cone transformation matrix */
-register CONE  *co;
+conexform(CONE *co)			/* get cone transformation matrix */
 {
 	MAT4  m4;
-	register double  d;
-	register int  i;
+	double  d;
+	int  i;
 
 	co->tm = (RREAL (*)[4])malloc(sizeof(MAT4));
 	if (co->tm == NULL)
