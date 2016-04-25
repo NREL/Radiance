@@ -29,9 +29,9 @@ static const char	RCSid[] = "$Id$";
 
 #define ZOOMPCT		9		/* percent to zoom at a time */
 
-#define MOVPCT		7		/* percent distance to move /frame */
+#define MOVPCT		4		/* percent distance to move /frame */
 #define MOVDIR(b)	((b)==Button1 ? 1 : (b)==Button2 ? 0 : -1)
-#define MOVDEG		(-5)		/* degrees to orbit CW/down /frame */
+#define MOVDEG		(-1.5)		/* degrees to orbit CW/down /frame */
 #define MOVORB(s)	((s)&ShiftMask ? 1 : (s)&ControlMask ? -1 : 0)
 
 #define BORWIDTH	5		/* border width */
