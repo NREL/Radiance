@@ -22,7 +22,15 @@ class ProcMixin():
 	'''Process and pipeline management for Python Radiance scripts
 	'''
 	def raise_on_error(self, actstr, e):
-		raise Error('Unable to %s - %s' % (actstr, str(e)))
+		try: self._strtypes
+		except AttributeError: self.__configure_subprocess()
+		if hasattr(e, 'strerror'): eb = e.strerror
+		elif isinstance(e, self._strtypes): eb = e
+		else: eb = e
+		if isinstance(eb, type(b'')):
+			estr = eb.decode(encoding='utf-8', errors='ignore')
+		else: estr = eb
+		raise Error('Unable to %s - %s' % (actstr, estr)) #
 
 	def __configure_subprocess(self):
 		'''Prevent subprocess module failure in frozen scripts on Windows.
@@ -52,8 +60,6 @@ class ProcMixin():
 		else: self._pipeargs = {}
 		# type names vary between Py2.7 and 3.x
 		self._strtypes = (type(b''), type(u''))
-		# private attribute to indicate established configuration
-		self.__proc_mixin_setup = True
 
 	def qjoin(self, sl):
 		'''Join a list with quotes around each element containing whitespace.
@@ -67,13 +73,15 @@ class ProcMixin():
 		return  ' '.join([_q(s) for s in sl])
 
 	def __parse_args(self, _in, out):
-		try: self.__proc_mixin_setup
+		try: self._strtypes
 		except AttributeError: self.__configure_subprocess()
 		instr = ''
 		if _in == PIPE:
 			stdin = _in
 		elif isinstance(_in, self._strtypes):
-			stdin = open(_in, 'rb')
+			if not getattr(self, 'donothing', None):
+				stdin = open(_in, 'rb')
+			else: stdin = None
 			instr = ' < "%s"' % _in
 		elif hasattr(_in, 'read'):
 			stdin = _in
@@ -83,7 +91,9 @@ class ProcMixin():
 		if out == PIPE:
 			stdout = out
 		elif isinstance(out, self._strtypes):
-			stdout = open(out, 'wb')
+			if not getattr(self, 'donothing', None):
+				stdout = open(out, 'wb')
+			else: stdout = None
 			outstr = ' > "%s"' % out
 		elif hasattr(out, 'write'):
 			stdout = out
@@ -124,7 +134,7 @@ class ProcMixin():
 					stdin=stdin, stdout=stdout, stderr=self._stderr,
 					universal_newlines=universal_newlines, **self._pipeargs)
 			except Exception as e:
-				self.raise_on_error(actstr, str(e))
+				self.raise_on_error(actstr, e)
 			if stdin != PIPE and stdout != PIPE:
 				# caller needs to wait after reading or writing (else deadlock)
 				res = p.wait()
@@ -154,7 +164,7 @@ class ProcMixin():
 					stdin=stdin, stdout=PIPE, stderr=self._stderr,
 					**self._pipeargs)
 			except Exception as e:
-				self.raise_on_error(actstr_1, str(e))
+				self.raise_on_error(actstr_1, e)
 		if getattr(self, 'verbose', None):
 			sys.stderr.write(self.qjoin(cmdl_2) + outstr + '\n')
 		if not getattr(self, 'donothing', None):
@@ -164,7 +174,7 @@ class ProcMixin():
 						universal_newlines=universal_newlines, **self._pipeargs)
 				p1.stdout.close()
 			except Exception as e:
-				self.raise_on_error(actstr_2, str(e))
+				self.raise_on_error(actstr_2, e)
 			if stdin != PIPE and stdout != PIPE:
 				# caller needs to wait after reading or writing (else deadlock)
 				res = p1.wait()
@@ -209,7 +219,7 @@ class ProcMixin():
 						stdout=PIPE, stderr=self._stderr, **self._pipeargs)
 				procs.append(prevproc)
 			except Exception as e:
-				self.raise_on_error(actstr, str(e))
+				self.raise_on_error(actstr, e)
 
 		for cmdl in cmdlines[1:-1]:
 			if getattr(self, 'verbose', None):
@@ -222,7 +232,7 @@ class ProcMixin():
 					prevproc.stdout.close()
 					prevproc = nextproc
 				except Exception as e:
-					self.raise_on_error(actstr, str(e))
+					self.raise_on_error(actstr, e)
 
 		if getattr(self, 'verbose', None):
 			sys.stderr.write(self.qjoin(cmdlines[-1]) + outstr + '\n')
@@ -235,7 +245,7 @@ class ProcMixin():
 				procs.append(lastproc)
 				prevproc.stdout.close()
 			except Exception as e:
-				self.raise_on_error(actstr, str(e))
+				self.raise_on_error(actstr, e)
 
 			if stdin != PIPE and stdout!= PIPE:
 				# caller needs to wait after reading or writing (else deadlock)
