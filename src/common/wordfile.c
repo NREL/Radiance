@@ -41,7 +41,7 @@ wordfile(			/* get words from fname, put in words */
 	words[0] = NULL;
 	while (nargs > 1 && (n += read(fd, buf+n, MAXWLEN-n)) > 0) {
 		int	crem = 0;
-		if (n >= MAXWLEN)		/* still something left? */
+		if (n > MAXWLEN/2)		/* check for mid-word end */
 			while (!isspace(buf[--n])) {
 				if (n <= 0)	/* one long word! */
 					goto done;
