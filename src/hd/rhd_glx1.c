@@ -465,7 +465,14 @@ getevent(void)			/* get next event */
 		getkey(levptr(XKeyPressedEvent));
 		break;
 	case ButtonPress:
-		getmove(levptr(XButtonPressedEvent));
+		switch (levptr(XButtonPressedEvent)->button) {
+		case Button4:		/* wheel up */
+		case Button5:		/* wheel down */
+			break;
+		default:
+			getmove(levptr(XButtonPressedEvent));
+			break;
+		}
 		break;
 	}
 }
