@@ -38,6 +38,7 @@ wordfile(			/* get words from fname, put in words */
 		return(-1);
 	if ((fd = open(fname, 0)) < 0)
 		return(-1);			/* open error */
+	SET_FD_BINARY(fd);			/* Windows bug workaround */
 	words[0] = NULL;
 	while (nargs > 1 && (n += read(fd, buf+n, MAXWLEN-n)) > 0) {
 		int	crem = 0;
