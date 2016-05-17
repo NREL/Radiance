@@ -1,4 +1,5 @@
 /* RCSid $Id$ */
+
 /* 
    ==================================================================
    Photon map interface to RADIANCE raycalls
@@ -9,6 +10,7 @@
    supported by the Swiss National Science Foundation (SNSF, #147053)
    ==================================================================   
    
+   $Id$
 */
 
 

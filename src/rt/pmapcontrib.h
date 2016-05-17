@@ -1,4 +1,5 @@
 /* RCSid $Id$ */
+
 /* 
    ==================================================================
    Photon map support for light source contributions
@@ -8,17 +9,18 @@
    supported by the Swiss National Science Foundation (SNSF, #147053)
    ==================================================================
    
+   $Id$
 */
 
-#ifndef PMAP_CONTRIB_H
-   #define PMAP_CONTRIB_H
+#ifndef PMAPCONTRIB_H
+   #define PMAPCONTRIB_H
 
    #include "pmapdata.h"   
    
    void initPmapContrib (LUTAB *srcContrib, unsigned numSrcContrib);
    /* Set up photon map contributions (interface to rcmain.c) */
 
-   void distribPhotonContrib (PhotonMap *pmap);
+   void distribPhotonContrib (PhotonMap *pmap, unsigned numProc);
    /* Emit photons from light sources with tagged contributions, and
     * build photon map */
 

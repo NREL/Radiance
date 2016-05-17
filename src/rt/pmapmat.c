@@ -106,23 +106,25 @@ void photonRay (const RAY *rayIn, RAY *rayOut,
 {
    rayorigin(rayOut, rayOutType, rayIn, NULL);
    
-   /* Transfer flux */
-   copycolor(rayOut -> rcol, rayIn -> rcol);
-   
-   /* Copy caustic flag & direction for transferred rays */
-   if (rayOutType == PMAP_XFER) {
-      /* rayOut -> rtype |= rayIn -> rtype & SPECULAR; */
-      rayOut -> rtype |= rayIn -> rtype;
-      VCOPY(rayOut -> rdir, rayIn -> rdir);
-   }
-   else if (fluxAtten) {
-      /* Attenuate and normalise flux for scattered rays */
-      multcolor(rayOut -> rcol, fluxAtten);
-      colorNorm(rayOut -> rcol);
-   }
+   if (rayIn) {
+      /* Transfer flux */
+      copycolor(rayOut -> rcol, rayIn -> rcol);
+      
+      /* Copy caustic flag & direction for transferred rays */
+      if (rayOutType == PMAP_XFER) {
+         /* rayOut -> rtype |= rayIn -> rtype & SPECULAR; */
+         rayOut -> rtype |= rayIn -> rtype;
+         VCOPY(rayOut -> rdir, rayIn -> rdir);
+      }
+      else if (fluxAtten) {
+         /* Attenuate and normalise flux for scattered rays */
+         multcolor(rayOut -> rcol, fluxAtten);
+         colorNorm(rayOut -> rcol);
+      }
 
-   /* Propagate index of emitting light source */
-   rayOut -> rsrc = rayIn -> rsrc;
+      /* Propagate index of emitting light source */
+      rayOut -> rsrc = rayIn -> rsrc;
+   }
 }
 
 
@@ -132,17 +134,17 @@ static void addPhotons (const RAY *r)
 {
    if (!r -> rlvl)
       /* Add direct photon map at primary hitpoint */
-      addPhoton(directPmap, r);
+      newPhoton(directPmap, r);
    else {
       /* Add global or precomputed photon map at indirect hitpoint */
-      addPhoton(preCompPmap ? preCompPmap : globalPmap, r);
+      newPhoton(preCompPmap ? preCompPmap : globalPmap, r);
 
       /* Store caustic photon if specular flag set */
       if (PMAP_CAUSTICRAY(r))
-         addPhoton(causticPmap, r);
+         newPhoton(causticPmap, r);
          
       /* Store in contribution photon map */
-      addPhoton(contribPmap, r);
+      newPhoton(contribPmap, r);
    }
 }
 
@@ -979,7 +981,7 @@ static int aliasPhotonScatter (OBJREC *mat, RAY *rayIn)
    /* Straight replacement? */
    if (!mat -> oargs.nsargs) {
       /* Skip void modifier! */
-      if (mat -> omod != OVOID) {
+      if (mat -> omod != OVOID) {   
          mat = objptr(mat -> omod);
          photonScatter [mat -> otype] (mat, rayIn);
       }

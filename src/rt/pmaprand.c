@@ -1,6 +1,7 @@
 #ifndef lint
 static const char RCSid[] = "$Id$";
 #endif
+
 /* 
    ==================================================================
    Random number generators for photon distribution
@@ -11,6 +12,7 @@ static const char RCSid[] = "$Id$";
    supported by the Swiss National Science Foundation (SNSF, #147053)
    ==================================================================
    
+   $Id$
 */
 
 

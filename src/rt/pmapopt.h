@@ -1,4 +1,5 @@
 /* RCSid $Id$ */
+
 /* 
    ==================================================================
    Photon map interface to RADIANCE render options
@@ -9,13 +10,18 @@
    supported by the Swiss National Science Foundation (SNSF, #147053)
    ==================================================================   
    
+   $Id$
 */
 
 
 
-int getPmapRenderOpt (int ac, char *av []);
-/* Parse next render option for photon map; interface to getrenderopt();
- * return -1 if parsing failed, else number of parameters consumed */
+#ifndef PMAPOPT_H
+   #define PMAPOPT_H
 
-void printPmapDefaults ();
-/* Print defaults for photon map render options */
+   int getPmapRenderOpt (int ac, char *av []);
+   /* Parse next render option for photon map; interface to getrenderopt();
+    * return -1 if parsing failed, else number of parameters consumed */
+
+   void printPmapDefaults ();
+   /* Print defaults for photon map render options */
+#endif

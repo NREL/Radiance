@@ -1,4 +1,5 @@
 /* RCSid $Id$ */
+
 /* 
    ==================================================================
    Photon map interface to RADIANCE ambient calculation
@@ -9,11 +10,12 @@
    supported by the Swiss National Science Foundation (SNSF, #147053)
    ==================================================================   
    
+   $Id$
 */
 
 
 #ifndef PMAPAMB_H
-#define PMAPAMB_H
+   #define PMAPAMB_H
 
    #include "pmapdata.h"   
 
