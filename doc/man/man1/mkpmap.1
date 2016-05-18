@@ -207,6 +207,10 @@ with the \fB\-apv\fR option. See \fIrpict(1)\fR for details.
 Set the global scattering eccentricity for participating media in conjunction
 with the \fB\-apv\fR option. See \fIrpict(1)\fR for details.
 
+.IP "\fB\-n \fInproc\fR"
+Use \fInproc\fR processes for parallel photon distribution. There is no
+benefit in specifying more than the number of physical CPU cores available.
+
 .IP "\fB\-t \fIinterval\fR"
 Output a progress report every \fIinterval\fR seconds. This includes 
 statistics about the currently emitting light source (including number of
