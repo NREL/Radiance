@@ -752,7 +752,10 @@ mkpmapopts(				/* get mkpmap options */
 {
 	/* BEWARE:  This may be called via setdefaults(), so no assumptions */
 
-	*mo = '\0';
+	if (nprocs > 1)
+		sprintf(mo, " -n %d", nprocs);
+	else
+		*mo = '\0';
 	if (!vdef(MKPMAP))
 		return;
 	if (vval(MKPMAP)[0] != '-') {
