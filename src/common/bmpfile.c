@@ -453,7 +453,7 @@ BMPdecodePixel(int i, const BMPReader *br)
 	case 8:
 		return br->hdr->palette[br->scanline[i]];
 	case 1:
-		return br->hdr->palette[br->scanline[i>>3]>>((7-i)&7) & 1];
+		return br->hdr->palette[br->scanline[i>>3]>>(7-(i&7)) & 1];
 	case 4:
 		return br->hdr->palette[br->scanline[i>>1]>>(i&1?4:0) & 0xf];
 	case 16:
