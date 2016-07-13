@@ -152,8 +152,14 @@ if ( $mgfin ) {
 if ($#dim != 5) {
 	@dim = split ' ', `getbbox -h $radscn`;
 }
-print STDERR "Warning: Device extends into room\n" if ($dim[5] > 1e-5);
-$wrapper .= ' -f "t=' . ($dim[5] - $dim[4]) . ';w=' . ($dim[1] - $dim[0]) .
+die "Device entirely inside room!\n" if ($dim[4] >= 0);
+if ($dim[5] > 1e-5) {
+	print STDERR "Warning: Device extends into room\n";
+} elsif ($dim[5]*$dim[5] < .01*($dim[1]-$dim[0])*($dim[3]-$dim[2])) {
+	print STDERR "Warning: Device far behind Z==0 plane\n";
+}
+# Assume Zmax==0 to derive thickness so pkgBSDF will work
+$wrapper .= ' -f "t=' . (-$dim[4]) . ';w=' . ($dim[1] - $dim[0]) .
 		';h=' . ($dim[3] - $dim[2]) . '"';
 # Generate octree
 system "oconv -w $radscn > $octree";
