@@ -74,6 +74,8 @@ typedef struct	pict {
 
 enum {
 	PICT_GSN = 0,
+	PICT_Z1_GSN ,
+	PICT_Z2_GSN ,
 	PICT_NPIX,
 	PICT_AVPOSX,
 	PICT_AVPOSY,
@@ -89,6 +91,8 @@ enum {
 };
 
 #define	pict_get_num(p,i)		(g3fl_get(p->glareinfo,i)[PICT_GSN])
+#define	pict_get_z1_gsn(p,i)	(g3fl_get(p->glareinfo,i)[PICT_Z1_GSN])
+#define	pict_get_z2_gsn(p,i)	(g3fl_get(p->glareinfo,i)[PICT_Z2_GSN])
 #define	pict_get_npix(p,i)		(g3fl_get(p->glareinfo,i)[PICT_NPIX])
 #define	pict_get_av_posx(p,i)	(g3fl_get(p->glareinfo,i)[PICT_AVPOSX])
 #define	pict_get_av_posy(p,i)	(g3fl_get(p->glareinfo,i)[PICT_AVPOSY])
