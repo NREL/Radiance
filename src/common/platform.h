@@ -45,7 +45,7 @@
     #undef rad8
     #undef rad9
   #endif
-  #define sleep(s) Sleep(s*1000)
+  #define sleep(s) Sleep((DWORD)((s)*1000))
 
   #define NON_POSIX
 
