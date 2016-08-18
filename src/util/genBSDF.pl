@@ -155,7 +155,7 @@ if ($#dim != 5) {
 die "Device entirely inside room!\n" if ($dim[4] >= 0);
 if ($dim[5] > 1e-5) {
 	print STDERR "Warning: Device extends into room\n";
-} elsif ($dim[5]*$dim[5] < .01*($dim[1]-$dim[0])*($dim[3]-$dim[2])) {
+} elsif ($dim[5]*$dim[5] > .01*($dim[1]-$dim[0])*($dim[3]-$dim[2])) {
 	print STDERR "Warning: Device far behind Z==0 plane\n";
 }
 # Assume Zmax==0 to derive thickness so pkgBSDF will work
