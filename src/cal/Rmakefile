@@ -37,7 +37,7 @@ rcalc:	rcalc.o
 	$(CC) $(CFLAGS) -o rcalc rcalc.o -lrtrad $(MLIB)
 
 total:	total.o
-	$(CC) $(CFLAGS) -o total total.o $(MLIB)
+	$(CC) $(CFLAGS) -o total total.o -lrtrad $(MLIB)
 
 cnt:		cnt.o
 	$(CC) $(CFLAGS) -o cnt cnt.o
