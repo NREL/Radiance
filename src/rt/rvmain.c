@@ -55,6 +55,7 @@ static void onsig(int  signo);
 static void sigdie(int  signo, char  *msg);
 static void printdefaults(void);
 
+int
 main(int argc, char *argv[])
 {
 #define	 check(ol,al)		if (argv[i][ol] || \

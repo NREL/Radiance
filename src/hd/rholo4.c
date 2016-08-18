@@ -282,9 +282,9 @@ disp_result(	/* queue result message to display process */
 		return;
 	msg.type = type;
 	msg.nbytes = nbytes;
-	fwrite((char *)&msg, sizeof(MSGHEAD), 1, dpout);
+	putbinary(&msg, sizeof(MSGHEAD), 1, dpout);
 	if (nbytes > 0)
-		fwrite(p, 1, nbytes, dpout);
+		putbinary(p, 1, nbytes, dpout);
 }
 
 

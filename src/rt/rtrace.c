@@ -410,12 +410,12 @@ getvec(		/* get a vector from fp */
 		}
 		break;
 	case 'f':					/* binary float */
-		if (getbinary((char *)vf, sizeof(float), 3, fp) != 3)
+		if (getbinary(vf, sizeof(float), 3, fp) != 3)
 			return(-1);
 		VCOPY(vec, vf);
 		break;
 	case 'd':					/* binary double */
-		if (getbinary((char *)vd, sizeof(double), 3, fp) != 3)
+		if (getbinary(vd, sizeof(double), 3, fp) != 3)
 			return(-1);
 		VCOPY(vec, vd);
 		break;

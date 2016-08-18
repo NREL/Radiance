@@ -46,7 +46,7 @@ neaten:	neat.o
 	$(CC) $(CFLAGS) -o neaten neat.o
 
 rlam:		lam.o
-	$(CC) $(CFLAGS) -o rlam lam.o
+	$(CC) $(CFLAGS) -o rlam lam.o -lrtrad
 
 tabfunc:	tabfunc.o
 	$(CC) $(CFLAGS) -o tabfunc tabfunc.o -lrtrad $(MLIB)

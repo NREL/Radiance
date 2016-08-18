@@ -362,9 +362,9 @@ do_transpose(const MEMLOAD *mp)
 			print_record(rp, j*ni_columns + i);
 			putc(tabEOL[j >= no_columns-1], stdout);
 		} else {			/* binary output */
-			fwrite((char *)mp->base +
+			putbinary((char *)mp->base +
 					(n_comp*comp_size)*(j*ni_columns + i),
-					n_comp*comp_size, 1, stdout);
+					comp_size, n_comp, stdout);
 		}
 	    if (ferror(stdout)) {
 		fprintf(stderr, "Error writing to stdout\n");

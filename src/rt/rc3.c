@@ -248,7 +248,7 @@ queue_results(int k)
 	bq->nadded = kida[k].nr;
 					/* read from child */
 	for (j = 0; j < nmods; j++)
-		if (fread(bq->mca[j]->cbin, sizeof(DCOLOR), bq->mca[j]->nbins,
+		if (getbinary(bq->mca[j]->cbin, sizeof(DCOLOR), bq->mca[j]->nbins,
 					kida[k].infp) != bq->mca[j]->nbins)
 			error(SYSTEM, "read error from render process");
 			
