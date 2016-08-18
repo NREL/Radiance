@@ -209,3 +209,5 @@ g3affine.o g3sphere.o:	g3sphere.h
 g3flist.o:	g3flist.h
 
 maxheap.o:	maxheap.h
+
+ezxml.o readmesh.o readobj.o readoct.o rglinst.o wordfile.o:	platform.h
