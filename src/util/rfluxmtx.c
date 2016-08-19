@@ -558,7 +558,7 @@ ssamp_poly(FVECT orig, SURF *sp, double x)
 
 	if (ptp == NULL) {		/* need to triangulate */
 		ptp = (POLYTRIS *)malloc(sizeof(POLYTRIS) +
-				sizeof(struct ptri)*(sp->nfargs/3 - 3));
+				sizeof(struct ptri)*(sp->nfargs/3 - 1));
 		if (ptp == NULL)
 			goto memerr;
 		if (sp->nfargs == 3) {	/* simple case */
