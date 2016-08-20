@@ -1129,8 +1129,6 @@ void CalcSkyPatchLumin( float *parr )
 	double sspa;			/* Sun-sky point angle */
 	double zsa;				/* Zenithal sun angle */
 
-	perez_param[0], perez_param[1], perez_param[2], perez_param[3], perez_param[4]);
-
 	for (i = 1; i < nskypatch; i++)
 	{
 		/* Calculate sun-sky point azimuthal angle */
