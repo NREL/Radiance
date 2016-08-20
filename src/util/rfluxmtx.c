@@ -64,7 +64,7 @@ typedef struct {
 	FVECT	uva[2];			/* tangent axes */
 	int	ntris;			/* number of triangles */
 	struct ptri {
-		float	afrac;			/* fraction of total area */
+		double	afrac;			/* fraction of total area */
 		short	vndx[3];		/* vertex indices */
 	}	tri[1];			/* triangle array (extends struct) */
 } POLYTRIS;			/* triangulated polygon */
