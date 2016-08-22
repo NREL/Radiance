@@ -322,7 +322,7 @@ memerr:
 static double
 interp2val(const PGINTERP *pgint, double px, double py)
 {
-#define	NSMP	12
+#define	NSMP	36
 	float	wt[NSMP];
 	int	si[NSMP];
 	int	n = interp2_topsamp(wt, si, NSMP, pgint->ip2, px, py);
