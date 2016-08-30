@@ -32,3 +32,6 @@ yoff = (y-yc)*(1-rmult);
 ro=if(.5-mapped_r, ri(1,xoff,yoff), 0);
 go=if(.5-mapped_r, gi(1,xoff,yoff), 0);
 bo=if(.5-mapped_r, bi(1,xoff,yoff), 0);
+
+{ Radius adjustment for equisolid-angle projection to equidistant (-vta) }
+mapsolid(r):2/PI*asin(r*sqrt(2));
