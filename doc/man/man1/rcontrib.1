@@ -158,7 +158,10 @@ The
 option may be used to further define
 a "bin number" within each object if finer resolution is needed, and
 this will be applied to a "%d" format in the output file
-specification if present.
+specification if present. 
+(The final integer will be offset incrementally
+if the output is a RADIANCE picture and more than one modifier has
+the same format specification.)\0
 The actual bin number is computed at run time based on ray direction
 and surface intersection, as described below.
 The number of bins must be specified in advance with the

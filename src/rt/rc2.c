@@ -184,7 +184,7 @@ getostream(const char *ospec, const char *mname, int bn, int noopen)
 		sop = (STREAMOUT *)malloc(sizeof(STREAMOUT));
 		if (sop == NULL)
 			error(SYSTEM, "out of memory in getostream");
-		sop->outpipe = oname[0] == '!';
+		sop->outpipe = (oname[0] == '!');
 		sop->reclen = 0;
 		sop->ofp = NULL;		/* open iff noopen==0 */
 		sop->xr = xres; sop->yr = yres;
@@ -194,6 +194,12 @@ getostream(const char *ospec, const char *mname, int bn, int noopen)
 			errno = EEXIST;		/* file exists */
 			goto openerr;
 		}
+	} else if (noopen && outfmt == 'c' &&	/* stream exists to picture? */
+			(sop->xr > 0) & (sop->yr > 0)) {
+		if (ofl & OF_BIN)
+			return(NULL);		/* let caller offset bins */
+		sprintf(errmsg, "output '%s' not a valid picture", oname);
+		error(WARNING, errmsg);
 	}
 	if (!noopen && sop->ofp == NULL) {	/* open output stream */
 		if (oname[0] == '!')		/* output to command */
@@ -331,17 +337,17 @@ put_contrib(const DCOLOR cnt, FILE *fout)
 void
 mod_output(MODCONT *mp)
 {
-	STREAMOUT	*sop = getostream(mp->outspec, mp->modname, 0, 0);
+	STREAMOUT	*sop = getostream(mp->outspec, mp->modname, mp->bin0, 0);
 	int		j;
 
 	put_contrib(mp->cbin[0], sop->ofp);
 	if (mp->nbins > 3 &&	/* minor optimization */
-			sop == getostream(mp->outspec, mp->modname, 1, 0)) {
+			sop == getostream(mp->outspec, mp->modname, mp->bin0+1, 0)) {
 		for (j = 1; j < mp->nbins; j++)
 			put_contrib(mp->cbin[j], sop->ofp);
 	} else {
 		for (j = 1; j < mp->nbins; j++) {
-			sop = getostream(mp->outspec, mp->modname, j, 0);
+			sop = getostream(mp->outspec, mp->modname, mp->bin0+j, 0);
 			put_contrib(mp->cbin[j], sop->ofp);
 		}
 	}
