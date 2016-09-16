@@ -13,7 +13,7 @@ sub userror {
 	exit 1;
 }
 my ($td,$radscn,$mgfscn,$octree,$fsender,$bsender,$receivers,$facedat,$behinddat,$rmtmp);
-my ($tf,$rf,$tb,$rb,$tfx,$rfx,$tbx,$rbx,$tfz,$rfz,$tbz,$rbz,$cph,$sav);
+my ($tf,$rf,$tb,$rb,$tfx,$rfx,$tbx,$rbx,$tfz,$rfz,$tbz,$rbz,$cph);
 my ($curphase, $recovery);
 if ($#ARGV == 1 && "$ARGV[0]" =~ /^-rec/) {
 	$td = $ARGV[1];
