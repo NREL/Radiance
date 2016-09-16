@@ -588,6 +588,7 @@ recover_output()
 				sprintf(errmsg, "missing recover file '%s'",
 						oname);
 				error(WARNING, errmsg);
+				lastout = 0;
 				break;
 			}
 			nvals = lseek(fileno(sop->ofp), 0, SEEK_END);
@@ -620,7 +621,8 @@ recover_output()
 		}
 		if (!lastout) {			/* empty output */
 			error(WARNING, "no previous data to recover");
-			lu_done(&ofiletab);	/* reclose all outputs */
+						/* reclose all outputs */
+			lu_doall(&ofiletab, &myclose, NULL);
 			return;
 		}
 	}
