@@ -61,6 +61,8 @@ add2bbox(		/* expand bounding box to fit object */
 	case OBJ_TUBE:
 	case OBJ_RING:
 		co = getcone(o, 0);
+		if (co == NULL)
+			break;
 		if (o->otype != OBJ_RING)
 			circle2bbox(CO_P0(co), co->ad, CO_R0(co), bbmin, bbmax);
 		circle2bbox(CO_P1(co), co->ad, CO_R1(co), bbmin, bbmax);

@@ -81,8 +81,9 @@ getcone(				/* get cone structure */
 			if (sgn0+sgn1 == 0)
 				goto raderr;
 			if ((sgn0 < 0) | (sgn1 < 0)) {
-				objerror(o, o->otype==OBJ_RING?USER:WARNING,
-					"negative radii");
+				if (o->otype == OBJ_RING)
+					goto raderr;
+				objerror(o, WARNING, "negative radii");
 				o->otype = o->otype == OBJ_CONE ?
 						OBJ_CUP : OBJ_CONE;
 			}
