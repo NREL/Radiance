@@ -21,6 +21,7 @@ if ($#ARGV == 1 && "$ARGV[0]" =~ /^-rec/) {
 	@ARGV = <MYAVH>;
 	close MYAVH;
 	chomp @ARGV;
+	$recovery = 0;
 	if (open(MYPH, "< $td/phase.txt")) {
 		while (<MYPH>) {
 			chomp($recovery = $_);
