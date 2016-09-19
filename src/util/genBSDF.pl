@@ -353,7 +353,11 @@ sub do_ttree_dir {
 			$cmd = "$rfluxmtx$r -h -ff $sender $receivers -i $octree";
 		}
 	}
-	run_check $cmd;
+	if ( $dop ) {
+		# print STDERR "Running: $cmd\n";
+		system $cmd;
+		die "Failure running rfluxmtx" if ( $? );
+	}
 	ttree_out($forw);
 }	# end of do_ttree_dir()
 
@@ -482,7 +486,12 @@ sub do_matrix_dir {
 	my $dop = do_phase();
 	my $r = ($dop < 0) ? " -r" : "";
 	my $sender = ($bsender,$fsender)[$forw];
-	run_check "$rfluxmtx$r -fd $sender $receivers -i $octree";
+	my $cmd = "$rfluxmtx$r -fd $sender $receivers -i $octree";
+	if ( $dop ) {
+		# print STDERR "Running: $cmd\n";
+		system $cmd;
+		die "Failure running rfluxmtx" if ( $? );
+	}
 	matrix_out($forw);
 }	# end of do_matrix_dir()
 
