@@ -105,8 +105,10 @@ void initPhotonHeap (PhotonMap *pmap)
       /* Open heap file */
       if (!(pmap -> heap = tmpfile()))
          error(SYSTEM, "failed opening heap file in initPhotonHeap");
+#ifdef F_SETFL	/* XXX is there an alternate needed for Windows? */
       fdFlags = fcntl(fileno(pmap -> heap), F_GETFL);
       fcntl(fileno(pmap -> heap), F_SETFL, fdFlags | O_APPEND);
+#endif
 /*      ftruncate(fileno(pmap -> heap), 0); */
    }
 }
