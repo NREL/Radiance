@@ -141,10 +141,11 @@ void flushPhotonHeap (PhotonMap *pmap)
    /*if (pwrite(fd, pmap -> heapBuf, len, lseek(fd, 0, SEEK_END)) != len) */
    if (write(fd, pmap -> heapBuf, len) != len)
       error(SYSTEM, "failed append to heap file in flushPhotonHeap");
-   
+
+#if !defined(_WIN32) && !defined(_WIN64)
    if (fsync(fd))
       error(SYSTEM, "failed fsync in flushPhotonHeap");
-      
+#endif
    pmap -> heapBufLen = 0;
 }
 
