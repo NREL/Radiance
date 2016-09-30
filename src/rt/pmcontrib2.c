@@ -23,8 +23,6 @@ static const char RCSid[] = "$Id$";
 #include "pmapdiag.h"
 #include "rcontrib.h"
 #include "otypes.h"
-#include <sys/mman.h>
-#include <sys/wait.h>
 
 
 
