@@ -584,7 +584,8 @@ material(void)			/* get (and print) current material */
 		return(mname);
 	}
 					/* check for plastic */
-	if (c_cmaterial->rs < .1) {
+	if (c_cmaterial->rs < .08 && (c_cmaterial->rs < .1*c_cmaterial->rd ||
+					c_isgrey(&c_cmaterial->rs_c))) {
 		cvtcolor(radrgb, &c_cmaterial->rd_c,
 					c_cmaterial->rd/(1.-c_cmaterial->rs));
 		fprintf(matfp, "\nvoid plastic %s\n0\n0\n", mname);
