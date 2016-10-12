@@ -27,7 +27,7 @@ static int		samp_order = 6;
 const double		ssamp_thresh = 0.35;
 				/* number of super-samples */
 #ifndef NSSAMP
-#define	NSSAMP		100
+#define	NSSAMP		64
 #endif
 				/* limit on number of RBF lobes */
 static int		lobe_lim = 15000;
