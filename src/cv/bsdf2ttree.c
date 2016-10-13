@@ -38,7 +38,7 @@ static int		do_prog = 79;
 static char		*wrapBSDF[MAXCARG] = {"wrapBSDF", "-U"};
 static int		wbsdfac = 2;
 
-/* Add argument to wrapBSDF, allocating space if isstatic */
+/* Add argument to wrapBSDF, allocating space if !isstatic */
 static void
 add_wbsdf(const char *arg, int isstatic)
 {
