@@ -191,6 +191,7 @@ fo_getndx(const FVECT v, void *p)
 double
 io_getohm(int ndx, void *p)
 {
+	static void	*last_p = NULL;
 	static int	last_li = -1;
 	static double	last_ohm;
 	ANGLE_BASIS	*ab = (ANGLE_BASIS *)p;
@@ -201,8 +202,9 @@ io_getohm(int ndx, void *p)
 		return -1.;
 	for (li = 0; ndx >= ab->lat[li].nphis; li++)
 		ndx -= ab->lat[li].nphis;
-	if (li == last_li)			/* cached latitude? */
+	if ((p == last_p) & (li == last_li))		/* cached latitude? */
 		return last_ohm;
+	last_p = p;
 	last_li = li;
 	theta = M_PI/180. * ab->lat[li].tmin;
 	theta1 = M_PI/180. * ab->lat[li+1].tmin;

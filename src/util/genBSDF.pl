@@ -535,7 +535,7 @@ sub matrix_comp {
 	} elsif ("$spec" eq "CIE-Z") {
 		$cmd .= " -c 0.0241 0.1229 0.8530";
 	}
-	$cmd .= " $src | rcollate -ho -oc 145";
+	$cmd .= " $src | getinfo -";
 	run_check "$cmd > $dest";
 	if ( "$spec" ne "$curspec" ) {
 		$wrapper .= " -s $spec";
