@@ -28,3 +28,6 @@ void ray_save_pmap (RAYPARAMS *rp);
 
 void ray_restore_pmap (RAYPARAMS *rp);
 /* Interface to ray_restore(); restore photon mapping params */
+
+void ray_defaults_pmap (RAYPARAMS *rp);
+/* Interface to ray_defaults(); set photon mapping defaults */

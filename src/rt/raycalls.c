@@ -392,4 +392,7 @@ ray_defaults(		/* get default parameter values */
 	memset(rp->amblval, '\0', sizeof(rp->amblval));
 	for (i = AMBLLEN+1; i--; )
 		rp->amblndx[i] = -1;
+	
+	/* PMAP: restore photon mapping defaults */
+	ray_defaults_pmap(rp);
 }
