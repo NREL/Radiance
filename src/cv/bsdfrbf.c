@@ -32,7 +32,7 @@ static const char RCSid[] = "$Id$";
 #define RSCA		2.0		/* radius scaling factor (empirical) */
 #endif
 #ifndef MAXSLOPE
-#define MAXSLOPE	1000.0		/* maximum slope for smooth region */
+#define MAXSLOPE	200.0		/* maximum slope for smooth region */
 #endif
 #ifndef SMOOTH_MSE
 #define SMOOTH_MSE	5e-5		/* acceptable mean squared error */
