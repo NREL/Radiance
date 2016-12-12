@@ -23,6 +23,8 @@ while ($#ARGV >= 0) {
 		$dosky = 0;
 	} elsif ("$ARGV[0]" eq "-h") {
 		$headout = 0;
+	} else {
+		die "Unexpected command-line argument: $ARGV[0]\n";
 	}
 	shift @ARGV;
 }
