@@ -24,6 +24,7 @@ extern "C" {
 					/* defined in badarg.c */
 extern int	badarg(int ac, char **av, char *fl);
 					/* defined in expandarg.c */
+extern int	envexpchr, filexpchr;
 extern int	expandarg(int *acp, char ***avp, int n);
 					/* defined in fdate.c */
 extern time_t	fdate(char *fname);
