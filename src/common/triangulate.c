@@ -5,7 +5,9 @@ static const char RCSid[] = "$Id$";
  *  triangulate.c
  *  
  *  Adapted by Greg Ward on 1/23/14.
- *  Copyright 2014 Anyhere Software. All rights reserved.
+ *  Fixes for polygons with seams/holes and co-linear vertices added
+ *  by Nathaniel Jones on 12/21/16.
+ *  Copyright 2016 Anyhere Software. All rights reserved.
  *
  */
 
