@@ -1305,7 +1305,11 @@ main(int argc, char *argv[])
 			fputs(": -i, -I supported for pass-through only\n", stderr);
 			return(1);
 		}
-		fmtopt[2] = (sizeof(RREAL)==sizeof(double)) ? 'd' : 'f';
+#ifdef SMLFLT
+		fmtopt[2] = 'f';
+#else
+		fmtopt[2] = 'd';
+#endif
 		if (sampcnt <= 0) sampcnt = 10000;
 	}
 	sprintf(sampcntbuf, "%d", sampcnt);
