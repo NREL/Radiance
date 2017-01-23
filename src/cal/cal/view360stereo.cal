@@ -46,7 +46,7 @@ ydir = sinazi * cosalt;
 zdir = sinalt;
 
 { Transform the viewpoint to account for the eye position }
-EY = if($1 - YD/2, 0.5*IPD, -0.5*IPD);
+EY = if($1 - YD/2, -0.5*IPD, 0.5*IPD);
 xpos = X + xdir*EX - sinazi*EY - cosazi*sinalt*EZ;
 ypos = Y + ydir*EX + cosazi*EY - sinazi*sinalt*EZ;
 zpos = Z + zdir*EX +      0*EY + cosalt*EZ;
