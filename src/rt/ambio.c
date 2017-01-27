@@ -13,7 +13,7 @@ static const char	RCSid[] = "$Id$";
 #include "ambient.h"
 
 
-#define  badflt(x)	((x) < -FHUGE || (x) > FHUGE)
+#define  badflt(x)	(((x) < -FHUGE) | ((x) > FHUGE))
 
 #define  badvec(v)	(badflt((v)[0]) | badflt((v)[1]) | badflt((v)[2]))
 

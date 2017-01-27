@@ -276,7 +276,7 @@ multambient(		/* compute ambient component & multiply by coef. */
 {
 	static int  rdepth = 0;			/* ambient recursion */
 	COLOR	acol, caustic;
-	int	ok;
+	int	i, ok;
 	double	d, l;
 
 	/* PMAP: Factor in ambient from photon map, if enabled and ray is
@@ -302,13 +302,27 @@ multambient(		/* compute ambient component & multiply by coef. */
 		goto dumbamb;
 
 	if (ambacc <= FTINY) {			/* no ambient storage */
+		FVECT	uvd[2];
+		float	dgrad[2], *dgp = NULL;
+
+		if (nrm != r->ron && DOT(nrm,r->ron) < 0.9999)
+			dgp = dgrad;		/* compute rotational grad. */
 		copycolor(acol, aval);
 		rdepth++;
 		ok = doambient(acol, r, r->rweight,
-				NULL, NULL, NULL, NULL, NULL);
+				uvd, NULL, NULL, dgp, NULL);
 		rdepth--;
 		if (!ok)
 			goto dumbamb;
+		if ((ok > 0) & (dgp != NULL)) {	/* apply texture */
+			FVECT	v1;
+			VCROSS(v1, r->ron, nrm);
+			d = 1.0;
+			for (i = 3; i--; )
+				d += v1[i] * (dgp[0]*uvd[0][i] + dgp[1]*uvd[1][i]);
+			if (d >= 0.05)
+				scalecolor(acol, d);
+		}
 		copycolor(aval, acol);
 
 		/* PMAP: add in caustic */
@@ -1313,10 +1327,10 @@ ambsync(void)			/* synchronize ambient file */
 	if ((flen = lseek(fileno(ambfp), (off_t)0, SEEK_END)) < 0)
 		goto seekerr;
 	if ((n = flen - lastpos) > 0) {		/* file has grown */
-		if (ambinp == NULL) {		/* use duplicate filedes */
-			ambinp = fdopen(dup(fileno(ambfp)), "r");
+		if (ambinp == NULL) {		/* get new file pointer */
+			ambinp = fopen(ambfile, "rb");
 			if (ambinp == NULL)
-				error(SYSTEM, "fdopen failed in ambsync");
+				error(SYSTEM, "fopen failed in ambsync");
 		}
 		if (fseek(ambinp, lastpos, SEEK_SET) < 0)
 			goto seekerr;
@@ -1331,24 +1345,18 @@ ambsync(void)			/* synchronize ambient file */
 			avstore(&avs);
 			n -= AMBVALSIZ;
 		}
-		lastpos = flen - n;
-		/*** seek always as safety measure
-		if (n) ***/			/* alignment */
-			if (lseek(fileno(ambfp), (off_t)lastpos, SEEK_SET) < 0)
-				goto seekerr;
+		lastpos = flen - n;		/* check alignment */
+		if (n && lseek(fileno(ambfp), (off_t)lastpos, SEEK_SET) < 0)
+			goto seekerr;
 	}
 	n = fflush(ambfp);			/* calls write() at last */
-	if (n != EOF)
-		lastpos += (long)nunflshed*AMBVALSIZ;
-	else if ((lastpos = lseek(fileno(ambfp), (off_t)0, SEEK_CUR)) < 0)
-		goto seekerr;
-		
+	lastpos += (long)nunflshed*AMBVALSIZ;
 	aflock(F_UNLCK);			/* release file */
 	nunflshed = 0;
 	return(n);
 seekerr:
 	error(SYSTEM, "seek failed in ambsync");
-	return -1; /* pro forma return */
+	return(EOF);	/* pro forma return */
 }
 
 #else	/* ! F_SETLKW */
