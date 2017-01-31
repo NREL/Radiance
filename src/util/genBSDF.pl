@@ -249,13 +249,6 @@ if ( !defined $recovery ) {
 	}
 	print STDERR "Recover using: $0 -recover $td\n";
 }
-# Open unbuffered progress file
-open(MYPH, ">> $td/phase.txt");
-{
-	my $ofh = select MYPH;
-	$| = 1;
-	select $ofh;
-}
 $curphase = 0;
 # Create data segments (all the work happens here)
 if ( $tensortree ) {
@@ -279,7 +272,9 @@ sub do_phase {
 		if ( $recovery > $curphase ) { return 0; }
 		if ( $recovery == $curphase ) { return -1; }
 	}
+	open(MYPH, ">> $td/phase.txt");
 	print MYPH "$curphase\n";
+	close MYPH;
 	return 1;
 }
 
