@@ -102,9 +102,9 @@ main(int argc, char *argv[])
 				goto noBSDFerr;
 			printf("Material: '%s'\n", bsdf->matn);
 			printf("Manufacturer: '%s'\n", bsdf->makr);
-			printf("Has geometry: %s\n", bsdf->mgf!=NULL ? "yes" : "no");
 			printf("Width, Height, Thickness (m): %.4e, %.4e, %.4e\n",
 					bsdf->dim[0], bsdf->dim[1], bsdf->dim[2]);
+			printf("Has geometry: %s\n", bsdf->mgf!=NULL ? "yes" : "no");
 			continue;
 		case 'C':			/* report constant values */
 			if (bsdf == NULL)
