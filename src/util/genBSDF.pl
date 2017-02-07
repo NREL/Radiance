@@ -84,7 +84,7 @@ if ($windoz) {
 	$rmtmp = "rm -rf $td";
 }
 my @savedARGV = @ARGV;
-my $rfluxmtx = "rfluxmtx -ab 5 -ad 700 -lw 3e-6";
+my $rfluxmtx = "rfluxmtx -ab 5 -ad 700 -lw 3e-6 -w-";
 my $wrapper = "wrapBSDF";
 my $tensortree = 0;
 my $ttlog2 = 4;
@@ -170,7 +170,7 @@ if ( !defined $recovery ) {
 	}
 }
 if ( $#dim != 5 ) {
-	@dim = split ' ', `getbbox -h $radscn`;
+	@dim = split ' ', `getbbox -h -w $radscn`;
 }
 die "Device entirely inside room!\n" if ( $dim[4] >= 0 );
 if ( $dim[5] > 1e-5 ) {
@@ -201,7 +201,7 @@ if ( !defined $recovery ) {
 	}
 	close MYAVH;
 	# Generate octree
-	system "oconv -w $radscn > $octree";
+	system "oconv -w -f $radscn > $octree";
 	die "Could not compile scene\n" if ( $? );
 	# Add MGF description if requested
 	if ( $geout ) {

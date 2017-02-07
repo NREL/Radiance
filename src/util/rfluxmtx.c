@@ -138,6 +138,10 @@ oconv_command(int ac, char *av[])
 	
 	if (ac-- <= 0)
 		return(NULL);
+	if (verbose < 0) {	/* turn off warnings */
+		strcpy(cp, "-w- ");
+		cp += 4;
+	}
 	while (ac-- > 0) {
 		strcpy(cp, *av++);
 		while (*cp) cp++;
