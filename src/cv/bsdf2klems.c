@@ -202,7 +202,6 @@ eval_bsdf(const char *fname)
 				goto err;
 			sum += sdv.cieY;
 			if (rbf_colorimetry == RBCtristimulus) {
-				c_ccvt(&sdv.spec, C_CSXY);
 				xsum += sdv.cieY * sdv.spec.cx;
 				ysum += sdv.cieY * sdv.spec.cy;
 			}
@@ -252,7 +251,6 @@ eval_bsdf(const char *fname)
 				goto err;
 			sum += sdv.cieY;
 			if (rbf_colorimetry == RBCtristimulus) {
-				c_ccvt(&sdv.spec, C_CSXY);
 				xsum += sdv.cieY * sdv.spec.cx;
 				ysum += sdv.cieY * sdv.spec.cy;
 			}
@@ -301,7 +299,6 @@ eval_bsdf(const char *fname)
 				goto err;
 			sum += sdv.cieY;
 			if (rbf_colorimetry == RBCtristimulus) {
-				c_ccvt(&sdv.spec, C_CSXY);
 				xsum += sdv.cieY * sdv.spec.cx;
 				ysum += sdv.cieY * sdv.spec.cy;
 			}
@@ -351,7 +348,6 @@ eval_bsdf(const char *fname)
 				goto err;
 			sum += sdv.cieY;
 			if (rbf_colorimetry == RBCtristimulus) {
-				c_ccvt(&sdv.spec, C_CSXY);
 				xsum += sdv.cieY * sdv.spec.cx;
 				ysum += sdv.cieY * sdv.spec.cy;
 			}
@@ -471,7 +467,6 @@ eval_rbf(void)
 		    eval_rbfcol(&sdv, rbf, vout);
 		    sum += sdv.cieY;
 		    if (rbf_colorimetry == RBCtristimulus) {
-			c_ccvt(&sdv.spec, C_CSXY);
 			xsum += sdv.cieY * sdv.spec.cx;
 			ysum += sdv.cieY * sdv.spec.cy;
 		    }

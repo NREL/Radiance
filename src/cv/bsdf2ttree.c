@@ -206,7 +206,6 @@ eval_isotropic(char *funame)
 			    eval_rbfcol(&sdv, rbf, iovec+3);
 			    bsdf = sdv.cieY;
 			    if (rbf_colorimetry == RBCtristimulus) {
-				c_ccvt(&sdv.spec, C_CSXY);
 				uv[0] = uv[1] = 1. /
 				    (-2.*sdv.spec.cx + 12.*sdv.spec.cy + 3.);
 				uv[0] *= 4.*sdv.spec.cx;
@@ -398,7 +397,6 @@ eval_anisotropic(char *funame)
 			    eval_rbfcol(&sdv, rbf, iovec+3);
 			    bsdf = sdv.cieY;
 			    if (rbf_colorimetry == RBCtristimulus) {
-				c_ccvt(&sdv.spec, C_CSXY);
 				uv[0] = uv[1] = 1. /
 				    (-2.*sdv.spec.cx + 12.*sdv.spec.cy + 3.);
 				uv[0] *= 4.*sdv.spec.cx;
