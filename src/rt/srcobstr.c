@@ -15,10 +15,13 @@ static const char RCSid[] = "$Id$";
 
 #include  "source.h"
 
-#define ABS(x)  ((x)>0 ? (x) : -(x))
-
-
 #if  SHADCACHE			/* preemptive shadow checking */
+
+#ifndef MAX2SHADE
+#define	MAX2SHADE	200		/* limit # of sources to precheck */
+#endif
+
+#define ABS(x)  ((x)>0 ? (x) : -(x))
 
 
 OBJECT *	antimodlist = NULL;	/* set of clipped materials */
@@ -111,6 +114,10 @@ initobscache(int sn)
 					/* clear cache */
 	for (i = cachelen; i--; )
 		srcp->obscache->obs[i] = OVOID;
+#if (MAX2SHADE >= 0)
+	if (sn >= MAX2SHADE)		/* limit on prechecking */
+		return;
+#endif
 					/* cast shadow rays */
 	if (srcp->sflags & SDISTANT) {
 		for (k = 3; k--; )
