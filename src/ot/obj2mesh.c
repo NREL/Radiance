@@ -40,6 +40,7 @@ main(		/* compile a .OBJ file into a mesh */
 )
 {
 	int  nmatf = 0;
+	int  verbose = 0;
 	char  pathnames[12800];
 	char  *pns = pathnames;
 	char  *matinp[128];
@@ -74,6 +75,9 @@ main(		/* compile a .OBJ file into a mesh */
 			break;
 		case 'w':				/* supress warnings */
 			nowarn = 1;
+			break;
+		case 'v':				/* print mesh stats */
+			verbose = 1;
 			break;
 		default:
 			sprintf(errmsg, "unknown option: '%s'", argv[i]);
@@ -121,7 +125,8 @@ main(		/* compile a .OBJ file into a mesh */
 
 	writemesh(ourmesh, stdout);	/* write mesh to output */
 	
-	/* printmeshstats(ourmesh, stderr); */
+	if (verbose)
+		printmeshstats(ourmesh, stderr);
 
 	quit(0);
 	return 0; /* pro forma return */
