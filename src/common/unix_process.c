@@ -88,7 +88,8 @@ int nproc
 			close(pd[i].w);
 			close(pd[i].r);
 			pd[i].running = 0;
-		}
+		} else 
+			togo -= (pd[i].pid < 0);
 	if (nproc == 1) {			/* await specific process? */
 		if (waitpid(pd->pid, &status, 0) != pd->pid)
 			return(-1);
