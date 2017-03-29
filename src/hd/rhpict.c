@@ -285,7 +285,7 @@ initialize(void)			/* initialize holodeck and buffers */
 	int	fd;
 	FILE	*fp;
 	int	n;
-	int32	nextloc;
+	off_t	nextloc;
 					/* open holodeck file */
 	if ((fp = fopen(hdkfile, "r")) == NULL) {
 		sprintf(errmsg, "cannot open \"%s\" for reading", hdkfile);
@@ -303,7 +303,7 @@ initialize(void)			/* initialize holodeck and buffers */
 	fd = dup(fileno(fp));			/* dup file descriptor */
 	fclose(fp);				/* done with stdio */
 	for (n = 0; nextloc > 0L; n++) {	/* initialize each section */
-		lseek(fd, (off_t)nextloc, SEEK_SET);
+		lseek(fd, nextloc, SEEK_SET);
 		read(fd, (char *)&nextloc, sizeof(nextloc));
 		hdinit(fd, NULL);
 	}
