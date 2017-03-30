@@ -57,7 +57,7 @@ photons, and output to file \fIfile\fR. This only accounts for direct
 illumination and is intended for debugging and validation of photon emission
 from the light sources, as the quality is too low for actual rendering.
 
-.IP "\fB\-apC \fIfile nphotons \fB(EXPERIMENTAL)\fR" 
+.IP "\fB\-apC \fIfile nphotons\fR" 
 Generate a contribution photon map containing approximately
 \fInphotons\fR photons, and output to file \fIfile\fR. This may then be
 used by \fIrcontrib(1)\fR to compute light source contributions.
@@ -285,7 +285,7 @@ mkpmap \-apg refRoom.gpm 1m \-apo glazingMat refRoom.oct
 Generate a contribution photon map containing 200000 photons suitable for 
 obtaining light source contributions with \fIrcontrib(1)\fR:
 .IP
-mkpmap \-apl bonzo-contrib.gpm 200k bonzo.oct
+mkpmap \-apC bonzo-contrib.gpm 200k bonzo.oct
 
 .SH BUGS
 The focus of a spotlight source, as defined by the length of its direction
