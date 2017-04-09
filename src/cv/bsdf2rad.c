@@ -524,7 +524,7 @@ static void
 put_source(void)
 {
 	printf("\n# Overhead parallel light source\n");
-	printf("\nvoid light bright\n0\n0\n3 1000 1000 1000\n");
+	printf("\nvoid light bright\n0\n0\n3 2000 2000 2000\n");
 	printf("\nbright source light\n0\n0\n4 0 0 1 2\n");
 	printf("\n# Material used for labels\n");
 	printf("\nvoid trans vellum\n0\n0\n7 1 1 1 0 0 .5 0\n");
@@ -582,21 +582,21 @@ put_scale(void)
 	const double	leg_width = 2.*.75*(sph_xoffset - sph_rad);
 	const double	leg_height = 2.*sph_rad;
 	const int	text_lines = 6;
-	const int	text_digits = 7;
+	const int	text_digits = 8;
 	char		fmt[16];
 	int		i;
 
 	printf("\n# BSDF legend with falsecolor scale\n");
 	printf("\nvoid colorfunc lscale\n10 sca_red(Py) sca_grn(Py) sca_blu(Py)");
 	printf("\n\tbsdf2rad.cal -s %f -t 0 %f 0\n0\n0\n", leg_height, -.5*leg_height);
-	sprintf(fmt, "%%%dg", text_digits-2);
+	sprintf(fmt, "%%.%df", text_digits-3);
 	for (i = 0; i < text_lines; i++) {
 		char	vbuf[16];
 		sprintf(vbuf, fmt, pow(10., (i+.5)/text_lines*(max_log10-min_log10)+min_log10));
 		printf("\nlscale brighttext lscale\n");
 		printf("3 helvet.fnt . %s\n0\n12\n", vbuf);
 		printf("\t%f %f 0\n", -.45*leg_width, ((i+.9)/text_lines-.5)*leg_height);
-		printf("\t%f 0 0\n", .9*leg_width/strlen(vbuf));
+		printf("\t%f 0 0\n", .8*leg_width/strlen(vbuf));
 		printf("\t0 %f 0\n", -.9/text_lines*leg_height);
 		printf("\t.01 1 -.1\n");
 	}
