@@ -540,14 +540,13 @@ put_source(void)
 static void
 put_hemispheres(void)
 {
+	const int	nsegs = 131;
+
 	printf("\n# Hemisphere(s) for showing BSDF appearance (if XML file)\n");
-	printf("\nvoid antimatter anti_sph\n2 void %s\n0\n0\n", sph_mat);
 	if (front_comp) {
-		printf("\n%s sphere Front\n0\n0\n4 %f 0 0 %f\n",
-				sph_mat, sph_xoffset, sph_rad);
-		printf("\n!genbox anti_sph sph_eraser %f %f %f | xform -t %f %f %f\n",
-				2.02*sph_rad, 2.02*sph_rad, 1.02*sph_rad,
-				-1.01*sph_rad + sph_xoffset, -1.01*sph_rad, -1.01*sph_rad);
+		printf(
+"\n!genrev %s Front \"R*sin(A*t)\" \"R*cos(A*t)\" %d -e \"R:%g;A:%f\" -s | xform -t %g 0 0\n",
+				sph_mat, nsegs, sph_rad, 0.495*PI, sph_xoffset);
 		printf("\nvoid brighttext front_text\n3 helvet.fnt . FRONT\n0\n");
 		printf("12\n\t%f %f 0\n\t%f 0 0\n\t0 %f 0\n\t.01 1 -.1\n",
 				-.22*sph_rad + sph_xoffset, -1.4*sph_rad,
@@ -561,11 +560,9 @@ put_hemispheres(void)
 				.25*sph_rad + sph_xoffset, -1.3*sph_rad );
 	}
 	if (back_comp) {
-		printf("\n%s bubble Back\n0\n0\n4 %f 0 0 %f\n",
-				sph_mat, -sph_xoffset, sph_rad);
-		printf("\n!genbox anti_sph sph_eraser %f %f %f | xform -t %f %f %f\n",
-				2.02*sph_rad, 2.02*sph_rad, 1.02*sph_rad,
-				-1.01*sph_rad - sph_xoffset, -1.01*sph_rad, -1.01*sph_rad);
+		printf(
+"\n!genrev %s Back \"R*cos(A*t)\" \"R*sin(A*t)\" %d -e \"R:%g;A:%f\" -s | xform -t %g 0 0\n",
+				sph_mat, nsegs, sph_rad, 0.495*PI, -sph_xoffset);
 		printf("\nvoid brighttext back_text\n3 helvet.fnt . BACK\n0\n");
 		printf("12\n\t%f %f 0\n\t%f 0 0\n\t0 %f 0\n\t.01 1 -.1\n",
 				-.22*sph_rad - sph_xoffset, -1.4*sph_rad,
