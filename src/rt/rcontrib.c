@@ -41,7 +41,7 @@ COLOR	salbedo = BLKCOLOR;		/* global scattering albedo */
 double	seccg = 0.;			/* global scattering eccentricity */
 double	ssampdist = 0.;			/* scatter sampling distance */
 
-double	specthresh = .15;		/* specular sampling threshold */
+double	specthresh = .02;		/* specular sampling threshold */
 double	specjitter = 1.;		/* specular sampling jitter */
 
 int	backvis = 1;			/* back face visibility */
