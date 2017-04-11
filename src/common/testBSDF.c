@@ -47,6 +47,10 @@ vec_from_deg(FVECT v, double theta, double phi)
 static void
 printXYZ(const char *intro, const SDValue *vp)
 {
+	if (vp->cieY <= 1e-9) {
+		printf("%s0 0 0\n", intro);
+		return;
+	}
 	printf("%s%.3e %.3e %.3e\n", intro,
 			vp->spec.cx/vp->spec.cy*vp->cieY,
 			vp->cieY,
