@@ -749,27 +749,34 @@ main(int argc, char *argv[])
 		strcpy(bsdf_manuf, myBSDF.makr);
 		put_matBSDF(argv[1]);
 	} else {
-		FILE	*fp;
+		FILE	*fp[4];
+		if (argc > 5) {
+			fprintf(stderr, "%s: too many input files\n", progname);
+			return(1);
+		}
 		for (n = 1; n < argc; n++) {
-			fp = fopen(argv[n], "rb");
-			if (fp == NULL) {
+			fp[n-1] = fopen(argv[n], "rb");
+			if (fp[n-1] == NULL) {
 				fprintf(stderr, "%s: cannot open BSDF interpolant '%s'\n",
 						progname, argv[n]);
 				return(1);
 			}
-			if (getheader(fp, rbf_headline, NULL) < 0) {
+			if (getheader(fp[n-1], rbf_headline, NULL) < 0) {
 				fprintf(stderr, "%s: bad BSDF interpolant '%s'\n",
 						progname, argv[n]);
 				return(1);
 			}
-			fclose(fp);
 		}
 		set_minlog();
 		for (n = 1; n < argc; n++) {
-			fp = fopen(argv[n], "rb");
-			if (!load_bsdf_rep(fp))
+			if (fseek(fp[n-1], 0L, SEEK_SET) < 0) {
+				fprintf(stderr, "%s: cannot seek on '%s'\n",
+						progname, argv[n]);
 				return(1);
-			fclose(fp);
+			}
+			if (!load_bsdf_rep(fp[n-1]))
+				return(1);
+			fclose(fp[n-1]);
 			if (!build_wRBF())
 				return(1);
 		}
