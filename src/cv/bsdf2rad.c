@@ -26,10 +26,10 @@ double	overall_max = .0;		/* overall maximum BSDF value */
 
 char	ourTempDir[TEMPLEN] = "";	/* our temporary directory */
 
-const char	frpref[] = "frefl";
-const char	ftpref[] = "ftrans";
-const char	brpref[] = "brefl";
-const char	btpref[] = "btrans";
+const char	frpref[] = "rf";
+const char	ftpref[] = "tf";
+const char	brpref[] = "rb";
+const char	btpref[] = "tb";
 const char	dsuffix[] = ".txt";
 
 const char	sph_fmat[] = "fBSDFmat";
@@ -381,7 +381,6 @@ put_BSDFs(void)
 	printf("\nvoid glow arrow_glow\n0\n0\n4 1 0 1 0\n");
 	printf("\nvoid mixfunc arrow_mat\n4 arrow_glow void 0.25 .\n0\n0\n");
 
-	if (front_comp & SDsampR)			/* front reflection */
 	for (i = 0; i < NINCIDENT; i++) {
 		get_ivector(ivec, i);
 		nrm[0] = -ivec[0]; nrm[1] = -ivec[1]; nrm[2] = ivec[2];
