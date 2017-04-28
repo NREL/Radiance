@@ -953,7 +953,9 @@ int CalcSkyParamFromIllum()
 		/* Convert illuminance to irradiance */
 		index = GetCategoryIndex();
 		diff_irrad = diff_illum / CalcDiffuseIllumRatio(index);
-		dir_irrad = dir_illum / CalcDirectIllumRatio(index);
+		dir_irrad = CalcDirectIllumRatio(index);
+		if (dir_irrad > 0.1)
+			dir_irrad = dir_illum / dir_irrad;
 	
 		/* Calculate sky brightness and clearness */
 		sky_brightness = CalcSkyBrightness();
