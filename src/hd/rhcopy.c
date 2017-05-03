@@ -398,6 +398,8 @@ addpicz(		/* add a picture + depth-buffer */
 			error(USER, errmsg);
 		}
 		for (i = scanlen(&prs); i--; ) {	/* do each pixel */
+			if (zscn[i] <= 0.0)
+				continue;		/* illegal depth */
 			pix2loc(vl, &prs, i, j);
 			aftd = viewray(ro, rd, &phd.vw, vl[0], vl[1]);
 			if (aftd < -FTINY)
