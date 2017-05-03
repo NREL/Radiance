@@ -359,7 +359,7 @@ addpicz(		/* add a picture + depth-buffer */
 		error(USER, errmsg);
 	}
 	if (phd.altprims) {
-		sprintf(errmsg, "ignoring primary values in picture \"%s\"",
+		sprintf(errmsg, "ignoring color primaries in picture \"%s\"",
 				pcf);
 		error(WARNING, errmsg);
 	}
