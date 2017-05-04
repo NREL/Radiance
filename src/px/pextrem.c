@@ -112,11 +112,11 @@ main(
 		}
 	}
 	free((void *)scan);
-	printf("%d %d\t%e %e %e\n", xmin, ymin,
+	printf("%d %d\t%.2e %.2e %.2e\n", xmin, ymin,
 			colrval(cmin,RED)/colval(expos,RED),
 			colrval(cmin,GRN)/colval(expos,GRN),
 			colrval(cmin,BLU)/colval(expos,BLU));
-	printf("%d %d\t%e %e %e\n", xmax, ymax,
+	printf("%d %d\t%.2e %.2e %.2e\n", xmax, ymax,
 			colrval(cmax,RED)/colval(expos,RED),
 			colrval(cmax,GRN)/colval(expos,GRN),
 			colrval(cmax,BLU)/colval(expos,BLU));
