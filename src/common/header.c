@@ -207,20 +207,23 @@ getheader(		/* get header from file */
 	void  *p
 )
 {
+	int   rtotal = 0;
 	char  buf[MAXLINE];
 
 	for ( ; ; ) {
+		int	rval = 0;
 		buf[MAXLINE-2] = '\n';
 		if (fgets(buf, MAXLINE, fp) == NULL)
 			return(-1);
 		if (buf[buf[0]=='\r'] == '\n')
-			return(0);
+			return(rtotal);
 		if (buf[MAXLINE-2] != '\n') {
 			ungetc(buf[MAXLINE-2], fp);	/* prevent false end */
 			buf[MAXLINE-2] = '\0';
 		}
-		if (f != NULL && (*f)(buf, p) < 0)
+		if (f != NULL && (rval = (*f)(buf, p)) < 0)
 			return(-1);
+		rtotal += rval;
 	}
 }
 
