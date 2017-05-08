@@ -133,7 +133,7 @@ extern "C" {
 #if defined(_WIN32) || defined(_WIN64)
   extern FILE *win_popen(char *command, char *type);
   extern int win_pclose(FILE *p);
-  extern char  *fixargv0();
+  extern char  *fixargv0(char *arg0);
 #endif
 
 /* Check if any of the characters in str2 are found in str1 */

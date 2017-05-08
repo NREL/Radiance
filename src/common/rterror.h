@@ -23,7 +23,7 @@ extern "C" {
 				/* error struct */
 extern struct erract {
 	char	pre[16];		/* prefix message */
-	void	(*pf)();		/* put function (resettable) */
+	void	(*pf)(char *s);		/* put function (resettable) */
 	int	ec;			/* exit code (0 means non-fatal) */
 } erract[NERRS];	/* list of error actions */
 
