@@ -103,8 +103,6 @@ set_eparams(char *prms)
 				goto bad_params;
 			*cpd++ = *prms++;
 		}
-		if (cpd == vname)
-			goto bad_params;
 		*cpd = '\0';
 		while (isspace(*prms)) prms++;
 		if (*prms++ != '=')
