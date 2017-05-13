@@ -114,6 +114,7 @@ set_eparams(char *prms)
 		prms += (*prms == ',') | (*prms == ';');
 		varset(vname, '=', value);
 	}
+	eclock++;		/* notify expression evaluator */
 	return;
 bad_params:
 	sprintf(errmsg, "bad parameter list '%s'", last_params);
