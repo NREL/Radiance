@@ -646,10 +646,10 @@ SDevalBSDF(SDValue *sv, const FVECT outVec, const FVECT inVec, const SDData *sd)
 	} else if (!(inFront | outFront)) {
 		*sv = sd->rLambBack;
 		sdf = sd->rb;
-	} else if (inFront) {
+	} else if (outFront) {
 		*sv = sd->tLamb;
 		sdf = (sd->tf != NULL) ? sd->tf : sd->tb;
-	} else /* inBack */ {
+	} else /* inFront & !outFront */ {
 		*sv = sd->tLamb;
 		sdf = (sd->tb != NULL) ? sd->tb : sd->tf;
 	}
