@@ -42,7 +42,8 @@ const double	sph_xoffset = 15.;
 
 #define	FEQ(a,b)	((a)-(b) <= 1e-7 && (b)-(a) <= 1e-7)
 
-#define	set_minlog()	(min_log10 = log10(overall_min + 1e-5) - .1)
+#define	set_minlog()	overall_min = (overall_min < 1e-5) ? 1e-5 : overall_min; \
+				min_log10 = log10(overall_min) - .1
 
 char	*progname;
 
