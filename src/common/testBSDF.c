@@ -195,7 +195,7 @@ main(int argc, char *argv[])
 			vec_from_deg(vin, atof(sskip2(cp,1)), atof(sskip2(cp,2)));
 			if (*sskip2(cp,4)) {
 				vec_from_deg(vout, atof(sskip2(cp,3)), atof(sskip2(cp,4)));
-				if (SDreportError(SDsizeBSDF(proja, vin, vout,
+				if (SDreportError(SDsizeBSDF(proja, vout, vin,
 						SDqueryMin+SDqueryMax, bsdf), stderr))
 					continue;
 			} else if (SDreportError(SDsizeBSDF(proja, vin, NULL,
