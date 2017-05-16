@@ -491,7 +491,7 @@ check_normal_incidence(void)
 		default:
 			return;			/* else we can interpolate */
 		}
-		for (rbf = near_rbf->next; rbf != NULL; rbf = rbf->next) {
+		for (rbf = dsf_list; rbf != NULL; rbf = rbf->next) {
 			const double	d = input_orient*rbf->invec[2];
 			if (d >= 1.-2.*FTINY)
 				return;		/* seems we have normal */

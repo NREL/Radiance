@@ -128,7 +128,10 @@ init_pabopto_inp(const int i, const char *fname)
 	dv[0] = cos(M_PI/180.*inpfile[i].phi)*dv[2];
 	dv[1] = sin(M_PI/180.*inpfile[i].phi)*dv[2];
 	dv[2] = sqrt(1. - dv[2]*dv[2]);
-	pos_from_vec(inpfile[i].igp, dv);
+	if (inpfile[i].theta <= FTINY)
+		inpfile[i].igp[0] = inpfile[i].igp[1] = grid_res/2 - 1;
+	else
+		pos_from_vec(inpfile[i].igp, dv);
 	return(1);
 }
 
