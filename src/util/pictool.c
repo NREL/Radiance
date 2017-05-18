@@ -217,8 +217,11 @@ gethinfo(				/* get view from header */
 )
 {
         if(strstr(s, EXPOSSTR) != NULL && strstr(s, "\t") != NULL)  {
-                fprintf(stderr,"error: header contains invalid exposure !!!!\n");
-                fprintf(stderr,"check exposure and remove tab !\n");
+                
+                fprintf(stderr,"error: header contains invalid exposure entry!!!!\n");
+                fprintf(stderr,"check exposure and correct header setting !\n");
+                
+                
                 fprintf(stderr,"stopping !!!!\n");
                 exit(1);
                 }
