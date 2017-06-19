@@ -116,7 +116,7 @@ while ($#ARGV >= 0) {
 		shift @ARGV;
 	} elsif ("$ARGV[0]" =~ /^[-+]C/) {
 		$docolor = ("$ARGV[0]" =~ /^\+/);
-	} elsif ("$ARGV[0" =~ /^[-+]a/) {
+	} elsif ("$ARGV[0]" =~ /^[-+]a/) {
 		$dorecip = ("$ARGV[0]" =~ /^\+/);
 	} elsif ("$ARGV[0]" =~ /^[-+]f/) {
 		$doforw = ("$ARGV[0]" =~ /^\+/);
