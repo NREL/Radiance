@@ -106,7 +106,7 @@
 	#define CURDIR		'.'
     #define DEFAULT_TEMPDIRS	{"/var/tmp", "/usr/tmp", "/tmp", ".", NULL}
     #define TEMPLATE		"/tmp/rtXXXXXX"
-    #define TEMPLEN		17
+    #define TEMPLEN		13
     #define ULIBVAR		"RAYPATH"
     #ifndef DEFPATH
       #define DEFPATH		":/usr/local/lib/ray"
