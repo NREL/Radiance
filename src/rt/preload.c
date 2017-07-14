@@ -28,7 +28,10 @@ load_os(			/* load associated data for object */
 	OBJREC	*op
 )
 {
-	DATARRAY  *dp;
+	DATARRAY	*dp;
+	SDData		*sd;
+
+	SDretainSet = SDretainAll;
 
 	switch (op->otype) {
 	case OBJ_FACE:		/* polygon */
@@ -104,7 +107,8 @@ load_os(			/* load associated data for object */
 		if (op->oargs.nsargs < 6)
 			goto sargerr;
 		getfunc(op, 5, 0x1d, 1);
-		loadBSDF(op->oargs.sarg[1]);
+		sd = loadBSDF(op->oargs.sarg[1]);
+		if (sd != NULL) SDfreeCache(sd);
 		return(1);
 	case MAT_PDATA:		/* plastic BRDF data */
 	case MAT_MDATA:		/* metal BRDF data */
