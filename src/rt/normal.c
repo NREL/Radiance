@@ -331,9 +331,13 @@ m_normal(			/* color a ray that hit something normal */
 						/* diffuse reflection */
 	nd.rdiff = 1.0 - nd.trans - nd.rspec;
 
-	if (nd.specfl & SP_PURE && nd.rdiff <= FTINY && nd.tdiff <= FTINY)
+	if (nd.specfl & SP_PURE && nd.rdiff <= FTINY && nd.tdiff <= FTINY) {
+		if (mirtest > transtest+FTINY)
+			r->rt = mirdist;
+		else if (transtest > FTINY)
+			r->rt = transdist;
 		return(1);			/* 100% pure specular */
-
+	}
 	if (!(nd.specfl & SP_PURE))
 		gaussamp(&nd);			/* checks *BLT flags */
 
