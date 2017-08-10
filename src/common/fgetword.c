@@ -45,7 +45,10 @@ fgetword(			/* get (quoted) word up to n-1 characters */
 		c = getc(fp);
 	}
 	*cp = '\0';
-	if ((c != EOF) & !quote)	/* replace space */
+	if (c == EOF) {			/* hit end-of-file? */
+		if (cp == s)		/* and got nothing? */
+			return(NULL);
+	} else if (!quote)		/* replace white character */
 		ungetc(c, fp);
 	return(s);
 }
