@@ -47,7 +47,7 @@ while (@ARGV) {
 		# Let rad do any error handling...
 		$vw = $ARGV[1];
 		shift @ARGV;
-	} elsif (m/^-N\b/) {   # No. of parallel processes
+	} elsif (m/^-[nN]\b/) {   # No. of parallel processes
 		$opts .= ' -N ' . $ARGV[1];
 		$radopt = 1;
 		shift @ARGV;
