@@ -19,7 +19,6 @@ static const char RCSid[] = "$Id$";
 
 #include "pmapparm.h"
 #include "pmapdata.h"
-#include "standard.h"
 #include <ctype.h>
 
 
@@ -48,12 +47,12 @@ unsigned long  pmapCacheSize     = 1e6;   /* OOC cache size in photons */
 #endif
 
 
-#ifdef PMAP_ROI
-/* Region of interest bbox: {xmin, xmax, ymin, ymax, zmin, zmax} */
-float pmapROI [6] = {-FHUGE, FHUGE, -FHUGE, FHUGE, -FHUGE, FHUGE};                                        
-#endif                                        
+/* Regions of interest */
+unsigned pmapNumROI = 0;
+PhotonMapROI *pmapROI = NULL;
 
 
+unsigned verbose = 0;                  /* Verbose console output */
 unsigned long photonMaxBounce = 5000;  /* Runaway photon bounce limit */
 unsigned photonRepTime        = 0,     /* Seconds between reports */
          maxPreDistrib        = 4,     /* Max predistrib passes */

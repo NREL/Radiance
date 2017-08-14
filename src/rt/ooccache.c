@@ -1,3 +1,8 @@
+#ifndef lint
+static const char RCSid[] = "$Id$";
+#endif
+
+
 /* 
    =======================================================================
    Cache for out-of-core octree.
@@ -20,6 +25,9 @@
    $Id$
 */
 
+
+#if !defined(_WIN32) && !defined(_WIN64) || defined(PMAP_OOC)
+/* No Windoze support for now */
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -420,3 +428,5 @@ void OOC_DeleteCache (OOC_Cache *cache)
    cache -> pageCnt = 0;
    cache -> mru = cache -> lru = OOC_CACHEIDX_NULL;
 }
+
+#endif /* NIX / PMAP_OOC */

@@ -81,11 +81,18 @@ void initPmapContrib (LUTAB *srcContrib, unsigned numSrcContrib)
    
    if (contribPhotonMapping) {
       if (contribPmap -> maxGather < numSrcContrib) {
+#if 0          
          /* Adjust density estimate bandwidth if lower than modifier
           * count, otherwise contributions are missing */
          error(WARNING, "contrib density estimate bandwidth too low, "
                         "adjusting to modifier count");
          contribPmap -> maxGather = numSrcContrib;
+#else
+         /* Warn if density estimate bandwidth is lower than modifier
+          * count, since some contributions will be missing */
+         error(WARNING, "photon density estimate bandwidth too low,"
+                        " contributions may be underestimated");
+#endif
       }
       
       /* Sanity check */

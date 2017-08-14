@@ -1,14 +1,14 @@
 /* RCSid $Id$ */
 
 /* 
-   ==================================================================
+   ======================================================================
    Photon map main header
 
    Roland Schregle (roland.schregle@{hslu.ch, gmail.com})
    (c) Fraunhofer Institute for Solar Energy Systems,
    (c) Lucerne University of Applied Sciences and Arts,
-   supported by the Swiss National Science Foundation (SNSF, #147053)
-   ==================================================================
+       supported by the Swiss National Science Foundation (SNSF, #147053)
+   ======================================================================
    
    $Id$
 */
@@ -16,6 +16,14 @@
 
 #ifndef PMAP_H
    #define PMAP_H
+
+   #ifndef NIX
+      #if defined(_WIN32) || defined(_WIN64)
+         #define NIX 0
+      #else
+         #define NIX 1
+      #endif
+   #endif
 
    #include "pmapparm.h"
    #include "pmapdata.h"

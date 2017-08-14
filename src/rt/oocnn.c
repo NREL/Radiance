@@ -1,3 +1,8 @@
+#ifndef lint
+static const char RCSid[] = "$Id$";
+#endif
+
+
 /* 
    =========================================================================
    k-nearest neighbour lookup routines for out-of-core octree data structure
@@ -11,6 +16,8 @@
 */
 
 
+#if !defined(_WIN32) && !defined(_WIN64) || defined(PMAP_OOC)
+/* No Windoze support for now */
 
 #include "oocnn.h"
 #include "oocsort.h"
@@ -318,3 +325,4 @@ float OOC_Find1Nearest (OOC_Octree *oct, OOC_Node *node, OOC_DataIdx dataIdx,
    return maxDist2;
 }
 
+#endif /* NIX / PMAP_OOC */

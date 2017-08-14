@@ -1,3 +1,8 @@
+#ifndef lint
+static const char RCSid[] = "$Id$";
+#endif
+
+
 /* 
    ======================================================================
    Out-of-core octree data structure
@@ -11,6 +16,8 @@
 */
 
 
+#if !defined(_WIN32) && !defined(_WIN64) || defined(PMAP_OOC)
+/* No Windoze support for now */
 
 #include "oococt.h"
 #include "rtio.h"
@@ -340,13 +347,6 @@ int OOC_SaveOctree (const OOC_Octree *oct, FILE *out)
       putflt(oct -> org [i], out);
       
    putflt(oct -> size, out);
-
-#if 0   
-   for (i = 0; i < 3; i++)
-      putflt(oct -> bound [i], out);
-      
-   putint(oct -> mortonScale, sizeof(oct -> mortonScale),   out);
-#endif   
    putint(oct -> recSize,     sizeof(oct -> recSize),       out);
    putint(oct -> numData,     sizeof(oct -> numData),       out);
    putint(oct -> numNodes,    sizeof(oct -> numNodes),      out);
@@ -403,23 +403,9 @@ int OOC_LoadOctree (OOC_Octree *oct, FILE *nodeFile,
       oct -> org [i] = getflt(nodeFile);
 
    oct -> size = getflt(nodeFile);
-   
-#if 0   
-   for (i = 0; i < 3; i++)
-      oct -> bound [i] = getflt(nodeFile);
-      
-   oct -> mortonScale   = getint(sizeof(oct -> mortonScale),   nodeFile);
-#else
    oct -> bound [0] = oct -> bound [1] = oct -> bound [2] = oct -> size;
    VADD(oct -> bound, oct -> bound, oct -> org);   
-   
    oct -> mortonScale   = OOC_MORTON_MAX / oct -> size;
-#endif
-   
-#if 0
-   fprintf(stderr, "OOC_LoadOctree: mortonScale = %lf\n", oct -> mortonScale);
-#endif      
-
    oct -> recSize       = getint(sizeof(oct -> recSize),       nodeFile);
    oct -> numData       = getint(sizeof(oct -> numData),       nodeFile);
    oct -> numNodes      = getint(sizeof(oct -> numNodes),      nodeFile);
@@ -477,3 +463,5 @@ void OOC_Delete (OOC_Octree *oct)
    if (oct -> cache)
       OOC_DeleteCache(oct -> cache);
 }
+
+#endif /* NIX / PMAP_OOC */

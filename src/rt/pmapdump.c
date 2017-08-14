@@ -185,9 +185,13 @@ int main (int argc, char** argv)
       /* Skip primary rays */
       pm.numPrimary = getint(sizeof(pm.numPrimary), pmapFile);
       while (pm.numPrimary-- > 0) {
+         /* Skip source index & incident dir */
          getint(sizeof(pri.srcIdx) + sizeof(pri.dir), pmapFile);
+#ifdef PMAP_PRIMARYPOS         
+         /* Skip primary hitpoint */
          for (j = 0; j < 3; j++)
             getflt(pmapFile);
+#endif
       }
 
 #ifdef PMAP_OOC

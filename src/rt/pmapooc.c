@@ -1,20 +1,17 @@
 /* 
-   ==================================================================
+   ======================================================================
    Photon map interface to out-of-core octree
 
    Roland Schregle (roland.schregle@{hslu.ch, gmail.com})
    (c) Lucerne University of Applied Sciences and Arts,
-   supported by the Swiss National Science Foundation (SNSF, #147053)
-   ==================================================================
+       supported by the Swiss National Science Foundation (SNSF, #147053)
+   ======================================================================
    
    $Id$
 */
 
 
-#ifndef PMAP_OOC
-   /* Checked in pmapdata.h */
-   #define PMAP_OOC
-#endif
+
 #include "pmapdata.h"   /* Includes pmapooc.h */
 #include "source.h"
 #include "oocsort.h"

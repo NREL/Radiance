@@ -34,11 +34,11 @@ void savePhotonMap (const PhotonMap *pmap, const char *fname,
       return;
    }
       
-   if (photonRepTime) {
+   if (verbose) {
       if (pmap -> numPrimary)
-         sprintf(errmsg, "Saving %s (%ld photons, %d primaries)...\n", 
+         sprintf(errmsg, "Saving %s (%ld photons, %d primaries)\n", 
                  fname, pmap -> numPhotons, pmap -> numPrimary);
-      else sprintf(errmsg, "Saving %s (%ld photons)...\n", fname, 
+      else sprintf(errmsg, "Saving %s (%ld photons)\n", fname, 
                    pmap -> numPhotons);
                    
       eputs(errmsg);

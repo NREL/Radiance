@@ -1,3 +1,8 @@
+#ifndef lint
+static const char RCSid[] = "$Id$";
+#endif
+
+
 /* 
    =========================================================================
    Routines to generate and compare Morton Codes, i.e. indices on space
@@ -12,6 +17,8 @@
 */
 
 
+#if !defined(_WIN32) && !defined(_WIN64) || defined(PMAP_OOC)
+/* No Windoze support for now */
 
 #include "oocmorton.h"
 
@@ -33,3 +40,5 @@ OOC_MortonIdx OOC_Key2Morton (const FVECT key, const FVECT org, RREAL scale)
    return OOC_BitInterleave(k [0]) | OOC_BitInterleave(k [1]) << 1 |
           OOC_BitInterleave(k [2]) << 2;
 }
+
+#endif /* NIX / PMAP_OOC */
