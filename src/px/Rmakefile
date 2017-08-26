@@ -169,7 +169,7 @@ nclrtab.o:	neuclrtab.o
 
 pcomb.o:	../common/calcomp.h
 
-psketch.o pf2.o ra_ps.o ra_t16.o:	../common/random.h
+pf2.o ra_ps.o ra_t16.o:	../common/random.h
 
 neuclrtab.o clrtab.o pfilt.o pf2.o pf3.o ttyimage.o \
 psign.o protate.o ra_hexbit.o pextrem.o pcompos.o \
