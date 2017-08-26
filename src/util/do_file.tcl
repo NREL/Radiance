@@ -126,12 +126,6 @@ proc putradvar {fi vn} {	# print out a rad variable
 		}
 		return
 	}
-	if {[lsearch -exact {ZONE QUALITY OCTREE PICTURE AMBFILE OPTFILE
-			EXPOSURE RESOLUTION UP INDIRECT DETAIL PENUMBRAS
-			EYESEP RAWFILE ZFILE VARIABILITY REPORT} $vn] >= 0} {
-		puts $fi "$vn= $radvar($vn)"
-		return
-	}
 	puts -nonewline $fi "$vn="
 	set vnl [expr [string length $vn] + 1]
 	set pos $vnl
