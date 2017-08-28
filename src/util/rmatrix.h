@@ -52,6 +52,9 @@ extern RMATRIX	*rmx_transpose(const RMATRIX *rm);
 /* Multiply (concatenate) two matrices and allocate the result */
 extern RMATRIX	*rmx_multiply(const RMATRIX *m1, const RMATRIX *m2);
 
+/* Element-wise multiplication (or division) of m2 into m1 */
+extern int	rmx_elemult(RMATRIX *m1, const RMATRIX *m2, int divide);
+
 /* Sum second matrix into first, applying scale factor beforehand */
 extern int	rmx_sum(RMATRIX *msum, const RMATRIX *madd, const double sf[]);
 
