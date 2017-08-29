@@ -204,7 +204,7 @@ ra_tiff.o ttyimage.o:	../common/resolu.h
 
 psketch.o:	../common/resolu.h ../common/color.h
 
-pfilt.o:	../common/paths.h
+psketch.o pfilt.o:	../common/paths.h
 
 psign.o:	../common/font.h
 
