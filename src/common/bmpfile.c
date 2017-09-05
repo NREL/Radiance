@@ -753,9 +753,9 @@ BMPwriteScanline(BMPWriter *bw)
 		}
 		if (n <= 0)			/* was that it? */
 			break;
-		val = *sp;			/* output run */
-		for (cnt = 1; --n && cnt < 255; cnt++)
-			if (*++sp != val)
+		val = *sp++;			/* output run */
+		for (cnt = 1; --n && cnt < 255; cnt++, sp++)
+			if (*sp != val)
 				break;
 		wrbyte(cnt, bw);
 		wrbyte(val, bw);
