@@ -12,7 +12,7 @@ my $td = tempdir( CLEANUP => 0 );
 my $octree = "$td/bv$$.oct";
 my $ambf = "$td/af$$.amb";
 my $raddev = "x11";	# default output device. Overwrite with -o
-my $qual = "Low";
+my $qual = "Med";
 my $usetrad = 0;
 
 my $opts = "";	# Options common to rad
