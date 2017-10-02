@@ -13,9 +13,12 @@ static const char RCSid[] = "$Id$";
 #include "resolu.h"
 #include "bsdfrep.h"
 
+#ifndef NINCIDENT
 #define NINCIDENT	37		/* number of samples/hemisphere */
-
+#endif
+#ifndef GRIDSTEP
 #define	GRIDSTEP	2		/* our grid step size */
+#endif
 #define SAMPRES		(GRIDRES/GRIDSTEP)
 
 int	front_comp = 0;			/* front component flags (SDsamp*) */
@@ -24,7 +27,7 @@ double	overall_min = 1./PI;		/* overall minimum BSDF value */
 double	min_log10;			/* smallest log10 value for plotting */
 double	overall_max = .0;		/* overall maximum BSDF value */
 
-char	ourTempDir[TEMPLEN] = "";	/* our temporary directory */
+char	ourTempDir[TEMPLEN+1] = "";	/* our temporary directory */
 
 const char	frpref[] = "rf";
 const char	ftpref[] = "tf";
@@ -77,7 +80,7 @@ cvt_sposition(FVECT sp, const FVECT iv, int inc_side)
 static char *
 tfile_name(const char *prefix, const char *suffix, int i)
 {
-	static char	buf[128];
+	static char	buf[256];
 
 	if (!ourTempDir[0]) {		/* create temporary directory */
 		mktemp(strcpy(ourTempDir,TEMPLATE));
