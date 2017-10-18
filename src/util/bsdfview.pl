@@ -118,7 +118,7 @@ EndOfRif
 close(FH);
 
 if ($usetrad) {
-	system "trad $rif";
+	system "rad -v 0 $rif ; trad $rif";
 } else {
 	system "rad -o $raddev $opts $rif";
 }
