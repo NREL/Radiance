@@ -180,6 +180,9 @@ main(int argc, char *argv[])
 	progname = argv[0] = fixargv0(argv[0]);
 	gargv = argv;
 	gargc = argc;
+#if defined(_WIN32) || defined(_WIN64)
+	_setmaxstdio(2048);		/* increase file limit to maximum */
+#endif
 					/* initialize calcomp routines early */
 	initfunc();
 	setcontext(RCCONTEXT);
