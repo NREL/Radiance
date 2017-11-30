@@ -190,8 +190,8 @@ comphist(void)			/* create foveal sampling histogram */
 	for (y = 0; y < fvyr; y++)
 		for (x = 0; x < fvxr; x++) {
 			l = plum(fovscan(y)[x]);
-			if ((l < lwmin) & (l > LMIN)) lwmin = l;
-			if ((l > lwmax) & (l < LMAX)) lwmax = l;
+			if (l < lwmin) lwmin = l;
+			if (l > lwmax) lwmax = l;
 		}
 	lwmax *= 1.01;
 	if (lwmax > LMAX)

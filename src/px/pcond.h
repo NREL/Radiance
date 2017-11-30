@@ -29,7 +29,7 @@ extern "C" {
 #define MAXPREHIST	1024		/* maximum precomputed histogram */
 
 #define LMIN		1e-7		/* minimum visible world luminance */
-#define LMAX		1e5		/* maximum visible world luminance */
+#define LMAX		1e7		/* maximum visible world luminance */
 
 #define Bl(Lw)		log(Lw)		/* brightness function */
 #define Bl1(Lw)		(1.0/(Lw))	/* first derivative of Bl(Lw) */
