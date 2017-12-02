@@ -274,10 +274,13 @@ direct_specular_OK(COLOR cval, FVECT ldir, double omega, BSDFDAT *ndp)
 		if (tomega2 < .12*tomega)
 			continue;	/* not safe to include */
 		cvt_sdcolor(csmp, &sv);
-					/* weight average by Y */
-		scalecolor(csmp, sv.cieY);
+
+		if (sf < 2.5*tsr) {	/* weight by Y for small sources */
+			scalecolor(csmp, sv.cieY);
+			wtot += sv.cieY;
+		} else
+			wtot += 1.;
 		addcolor(cval, csmp);
-		wtot += sv.cieY;
 	}
 	if (wtot <= FTINY)		/* no valid specular samples? */
 		return(0);
