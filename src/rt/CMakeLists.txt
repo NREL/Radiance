@@ -63,8 +63,8 @@ if(NOT BUILD_HEADLESS)
   endif()
 endif()
 
-add_test(rtrace_Version ${EXECUTABLE_OUTPUT_PATH}/rtrace -version)
-set_tests_properties(rtrace_Version PROPERTIES
+add_test(rtrace_version ${RUNTIME_OUTPUT_DIRECTORY}/rtrace -version)
+set_tests_properties(rtrace_version PROPERTIES
   PASS_REGULAR_EXPRESSION "RADIANCE")
 
 install(TARGETS ${targets_to_install}

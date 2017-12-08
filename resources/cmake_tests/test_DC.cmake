@@ -3,7 +3,6 @@ include(setup_paths.cmake)
 file(MAKE_DIRECTORY "${test_output_dir}/dc")
 
 set(view_def -x 50 -y 50 -vf model.vp)
-message(STATUS "view_def=${view_def}")
 
 file(WRITE ${office_dir}/test/raytest_dc.sky 
 "void glow skyglow\n0\n0\n4\n1 1 1 0\n\nskyglow source sky\n0\n0\n4\n0 0 1 360
