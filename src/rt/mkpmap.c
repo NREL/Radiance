@@ -271,7 +271,7 @@ int main (int argc, char* argv [])
                pmapROI = realloc(pmapROI,
                                  ++pmapNumROI * sizeof(PhotonMapROI));
                if (!pmapROI)
-1                  error(SYSTEM, "failed to allocate ROI");
+                  error(SYSTEM, "failed to allocate ROI");
                   
                pmapROI [n].min [0] = atof(argv [++i]);
                pmapROI [n].min [1] = atof(argv [++i]);
