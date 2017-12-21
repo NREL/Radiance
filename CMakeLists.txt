@@ -1,13 +1,25 @@
-cmake_minimum_required(VERSION 2.8.4)
-project("radiance")
+cmake_minimum_required(VERSION 3.0)
+cmake_policy(SET CMP0020 NEW)
+cmake_policy(SET CMP0048 NEW)
+if(NOT ${CMAKE_VERSION} VERSION_LESS "3.1")
+  cmake_policy(SET CMP0054 NEW)
+endif()
 
-if(NOT ${CMAKE_VERSION} VERSION_LESS "2.8.11")
-  cmake_policy(SET CMP0020 NEW)
-  if(NOT ${CMAKE_VERSION} VERSION_LESS "3.0")
-    cmake_policy(SET CMP0042 NEW)
-    if(NOT ${CMAKE_VERSION} VERSION_LESS "3.1")
-      cmake_policy(SET CMP0054 NEW)
-    endif()
+project(radiance VERSION 5.1.0)
+
+set(PROJECT_VERSION_TWEAK "Unknown" CACHE STRING "Commit Hash")
+find_package(Git)
+if(GIT_FOUND)
+  execute_process(COMMAND "${GIT_EXECUTABLE}" "rev-parse" "--short=10" "HEAD"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    TIMEOUT 10
+    RESULT_VARIABLE RESULT
+    OUTPUT_VARIABLE GIT_VERSION
+    ERROR_QUIET
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  if(${RESULT} EQUAL 0 AND NOT "${GIT_VERSION}" EQUAL "${PROJECT_VERSION_TWEAK}")
+    set(PROJECT_VERSION_TWEAK ${GIT_VERSION} CACHE STRING "Commit Hash" FORCE)
   endif()
 endif()
 
@@ -17,34 +29,15 @@ include(CTest)
 option(BUILD_SHARED_LIBS "Build radiance using shared libraries?" OFF)
 option(BUILD_HEADLESS "Build radiance without any GUI components?" OFF)
 option(BUILD_PABOPTO_UTILS "Build PABOpto Utilities?" OFF)
+option(BUILD_LIBTIFF "Build libtiff?" OFF)
 
-option(CPACK_NREL_SUPPORT "Enable NREL/OpenStudio release tagging?" OFF)
-
-if( CPACK_NREL_SUPPORT )
-  # find git so we can query for the current git tag
-  find_program(git git)
-  if (NOT git)
-    message(ERROR "Please specify the path to the git executable")
-  endif()
-
-  # call git log to get output containing the tag
-  execute_process(
-    COMMAND ${git} describe --tag --exact-match
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    OUTPUT_VARIABLE git_tag_output)
-
-  # create & install the source version .txt file
-  file(WRITE "NREL_ver.txt" "Radiance version ${git_tag_output}")
-  install(FILES NREL_ver.txt DESTINATION bin/..)
-endif()
- 
 if(NOT WIN32)
   set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 1)
-  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doc/man/ DESTINATION man)
+  install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/doc/man/" DESTINATION man)
   set(qt_plugin_term "PLUGIN")
 endif()
 
-if (WIN32)
+if(WIN32)
   set(CPACK_NSIS_MODIFY_PATH 1)
   set(qt_plugin_term "LIBRARY")
 
@@ -69,20 +62,44 @@ endif()
 if(APPLE)
   add_definitions(-DBSD -DNOSTEREO -Dfreebsd)
   include_directories(/usr/X11R6/include)
-  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmacosx-version-min=10.6")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmacosx-version-min=10.6")
 endif()
 
-IF( BUILD_PACKAGE )
-  INCLUDE(radianceCPack.cmake )
-ENDIF( BUILD_PACKAGE )
+if(BUILD_LIBTIFF)
+  include(ExternalProject)
+  set(LIBTIFF_URL http://download.osgeo.org/libtiff/tiff-4.0.9.tar.gz)
+  if(WIN32)
+    ExternalProject_Add(libtiff
+      URL ${LIBTIFF_URL}
+      CONFIGURE_COMMAND ${CMAKE_COMMAND} -G "NMake Makefiles" -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release ../libtiff
+      BUILD_COMMAND nmake
+      INSTALL_COMMAND "")
+    set(TIFF_LIBRARY ${CMAKE_BINARY_DIR}/libtiff-prefix/src/libtiff-build/libtiff/tiff.lib)
+  else()
+    ExternalProject_Add(libtiff
+      URL ${LIBTIFF_URL}
+      CONFIGURE_COMMAND ${CMAKE_COMMAND} -G "Unix Makefiles" -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release ../libtiff
+      BUILD_COMMAND make
+      INSTALL_COMMAND "")
+  endif()
+  set(TIFF_INCLUDE_DIR ${CMAKE_BINARY_DIR}/libtiff/src/libtiff/libtiff)
+endif()
 
-set(CPACK_PACKAGE_VERSION_MAJOR 5)
-set(CPACK_PACKAGE_VERSION_MINOR 1)
-set(CPACK_PACKAGE_VERSION_PATCH 0)
+if(BUILD_PACKAGE)
+  include(radianceCPack.cmake)
+endif()
+
+set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "Radiance")
-SET(CPACK_RESOURCE_FILE_WELCOME "${radiance_SOURCE_DIR}/Welcome.txt")
-SET(CPACK_RESOURCE_FILE_README "${radiance_SOURCE_DIR}/README.txt")
-SET(CPACK_RESOURCE_FILE_LICENSE "${radiance_SOURCE_DIR}/License.txt") 
+set(CPACK_RESOURCE_FILE_WELCOME "${radiance_SOURCE_DIR}/Welcome.txt")
+set(CPACK_RESOURCE_FILE_README "${radiance_SOURCE_DIR}/README.txt")
+set(CPACK_RESOURCE_FILE_LICENSE "${radiance_SOURCE_DIR}/License.txt")
+
+if(UNIX AND NOT APPLE)
+  set(CPACK_GENERATOR "TGZ")
+endif()
 
 include(CPack)
 
@@ -91,8 +108,11 @@ if(NOT BUILD_HEADLESS)
   find_package(X11)
 endif()
 
-SET(RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 
+if(MSVC)
+  add_definitions(/MP)
+endif()
 if(WIN32 AND "${CMAKE_C_COMPILER_ID}" MATCHES "^(Intel)$")
   set(_INTEL_WINDOWS 1)
 endif()
@@ -105,10 +125,13 @@ endif()
 
 add_subdirectory("src")
 
-option(BUILD_TESTING "Enable testing?" ON)
-if(BUILD_TESTING)
-  add_subdirectory(resources/cmake_tests)
-endif()
-  
+set(test_dir "${CMAKE_CURRENT_SOURCE_DIR}/test/test data")
+
+add_subdirectory(resources)
+
+install(DIRECTORY "${CMAKE_BINARY_DIR}/lib/"
+  DESTINATION "lib"
+)
+
 include(InstallRequiredSystemLibraries)
 add_subdirectory(InstallRules)

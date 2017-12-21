@@ -1,10 +1,10 @@
 include(setup_paths.cmake)
 
 execute_process(
-    WORKING_DIRECTORY ${test_output_dir}
-    COMMAND evalglare${CMAKE_EXECUTABLE_SUFFIX} -L 400 500 0.6 1.2 -B 0.4 -b 2500 -d -c outputimage.hdr @resources_dir@/evalglare/testimage.hdr 
-    OUTPUT_FILE evalglare_out.txt
-    RESULT_VARIABLE res
+  WORKING_DIRECTORY ${test_output_dir}
+  COMMAND evalglare${CMAKE_EXECUTABLE_SUFFIX} -L 400 500 0.6 1.2 -B 0.4 -b 2500 -d -c outputimage.hdr ${resources_dir}/evalglare/testimage.hdr
+  OUTPUT_FILE evalglare_out.txt
+  RESULT_VARIABLE res
 )
 
 file(READ ${test_output_dir}/evalglare_out.txt test_output)

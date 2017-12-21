@@ -1,7 +1,6 @@
 include(FindPerl)
 
-set(resources_dir
-  "${CMAKE_SOURCE_DIR}/resources")
+set(resources_dir "${CMAKE_SOURCE_DIR}/resources")
 
 configure_file(setup_paths.cmake.in setup_paths.cmake @ONLY)
 # configure these files so that they will be in the binary
@@ -19,29 +18,36 @@ configure_file(test_evalglare.cmake test_evalglare.cmake COPYONLY)
 
 add_test(test_setup ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/test_setup.cmake)
 
-add_test(test_rtrace
-  ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/test_rtrace.cmake)
-set_tests_properties(test_rtrace PROPERTIES PASS_REGULAR_EXPRESSION "passed"
-                                            FAIL_REGULAR_EXPRESSION "failed")
-add_test(test_rpict
-  ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/test_rpict.cmake)
-set_tests_properties(test_rpict PROPERTIES PASS_REGULAR_EXPRESSION "passed"
-                                            FAIL_REGULAR_EXPRESSION "failed")
-add_test(test_getinfo
-  ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/test_getinfo.cmake)
+add_test(test_rtrace ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/test_rtrace.cmake)
+set_tests_properties(test_rtrace PROPERTIES
+  PASS_REGULAR_EXPRESSION "passed"
+  FAIL_REGULAR_EXPRESSION "failed"
+)
 
-add_test(test_pcond
-  ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/test_pcond.cmake)
-set_tests_properties(test_pcond PROPERTIES PASS_REGULAR_EXPRESSION "passed"
-                                            FAIL_REGULAR_EXPRESSION "failed")
-add_test(test_evalglare
-  ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/test_evalglare.cmake)
-set_tests_properties(test_evalglare PROPERTIES PASS_REGULAR_EXPRESSION "passed"
-                                            FAIL_REGULAR_EXPRESSION "failed")
+add_test(test_rpict ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/test_rpict.cmake)
+set_tests_properties(test_rpict PROPERTIES
+  PASS_REGULAR_EXPRESSION "passed"
+  FAIL_REGULAR_EXPRESSION "failed"
+)
+
+add_test(test_getinfo ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/test_getinfo.cmake)
+
+add_test(test_pcond ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/test_pcond.cmake)
+set_tests_properties(test_pcond PROPERTIES
+  PASS_REGULAR_EXPRESSION "passed"
+  FAIL_REGULAR_EXPRESSION "failed"
+)
+
+add_test(test_evalglare ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/test_evalglare.cmake)
+set_tests_properties(test_evalglare PROPERTIES
+  PASS_REGULAR_EXPRESSION "passed"
+  FAIL_REGULAR_EXPRESSION "failed"
+)
 
 if(PERL_FOUND)
-  add_test(test_falsecolor
-    ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/test_falsecolor.cmake)
-  set_tests_properties(test_falsecolor PROPERTIES PASS_REGULAR_EXPRESSION "passed"
-                                              FAIL_REGULAR_EXPRESSION "failed")
+  add_test(test_falsecolor ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/test_falsecolor.cmake)
+  set_tests_properties(test_falsecolor PROPERTIES
+    PASS_REGULAR_EXPRESSION "passed"
+    FAIL_REGULAR_EXPRESSION "failed"
+  )
 endif()

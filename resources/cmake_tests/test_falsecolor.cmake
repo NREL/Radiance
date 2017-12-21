@@ -1,7 +1,7 @@
 include(setup_paths.cmake)
 
 execute_process(
-  COMMAND ${perl} ${rpath}/falsecolor${CMAKE_EXECUTABLE_SUFFIX} -e -i @resources_dir@/evalglare/testimage.hdr
+  COMMAND ${perl} ${rpath}/falsecolor${CMAKE_EXECUTABLE_SUFFIX} -e -i ${resources_dir}/evalglare/testimage.hdr
   OUTPUT_FILE ${test_output_dir}/falsecolor_out.hdr
   RESULT_VARIABLE res
 )

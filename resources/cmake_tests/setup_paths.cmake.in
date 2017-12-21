@@ -1,26 +1,24 @@
 if(WIN32)
-    set(sep ";")
+  set(sep ";")
 else()
-    set(sep ":")
-    set(rtcontrib_threads "-n;2;")
+  set(sep ":")
+  set(rtcontrib_threads "-n;2;")
 endif()
 
 file(TO_NATIVE_PATH "@PERL_EXECUTABLE@" perl)
-set(resources_dir @resources_dir@)
+set(resources_dir "@CMAKE_SOURCE_DIR@/resources")
 
 if(WIN32)
-    # fix!
-    file(TO_NATIVE_PATH "@radiance_BINARY_DIR@/bin/Release" rpath)
+  # TODO
+  file(TO_NATIVE_PATH "@CMAKE_BINARY_DIR@/bin/Release" rpath)
 else()
-    # update!
-    file(TO_NATIVE_PATH "/Users/rgugliel/src/Radiance/build/_CPack_Packages/Darwin/PackageMaker/radiance-5.1.0-Darwin/usr/local/radiance/bin" rpath)
-    file(TO_NATIVE_PATH "/Users/rgugliel/src/Radiance/build/_CPack_Packages/Darwin/PackageMaker/radiance-5.1.0-Darwin/usr/local/radiance/lib" rlibpath)
+  file(TO_NATIVE_PATH "@CMAKE_BINARY_DIR@/bin" rpath)
+  file(TO_NATIVE_PATH "@CMAKE_BINARY_DIR@/lib" rlibpath)
 endif()
 
 set(ENV{PATH} "${rpath}")
 set(ENV{RAYPATH} "${rlibpath}")
-set(test_output_dir
-    @radiance_BINARY_DIR@/testfiles)
+set(test_output_dir "@CMAKE_BINARY_DIR@/testfiles")
 set(CMAKE_EXECUTABLE_SUFFIX @CMAKE_EXECUTABLE_SUFFIX@)
 message(STATUS "path: $ENV{PATH}")
 message(STATUS "raypath: $ENV{RAYPATH}")
