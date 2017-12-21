@@ -113,10 +113,6 @@ if(NOT TIFF_FOUND)
       set(TIFF_INCLUDE_DIR "${TIFF_INCLUDE_DIR}" CACHE PATH "Directory containing tiff.h" FORCE)
     endif()
   endif()
-  #if tiff.h couldn't be found, default to the version in the support tarball
-  if(NOT TIFF_INCLUDE_DIR)
-    set(TIFF_INCLUDE_DIR "${radiance_BINARY_DIR}/Downloads/Source/radiance_support/src/px/tiff/libtiff" CACHE PATH "Directory containing tiff.h" FORCE)
-  endif()
 
   find_library(Z_LIBRARY z)
   if(TIFF_LIBRARY AND Z_LIBRARY)
@@ -136,6 +132,10 @@ if(TIFF_FOUND)
   target_link_libraries(ra_tiff rtrad ${TIFF_LIBRARIES})
   add_executable(normtiff normtiff.c)
   target_link_libraries(normtiff rtrad ${TIFF_LIBRARIES})
+  if(BUILD_LIBTIFF)
+    add_dependencies(ra_tiff libtiff)
+    add_dependencies(normtiff libtiff)
+  endif()
   install(TARGETS ra_tiff normtiff
     RUNTIME DESTINATION "bin"
   )

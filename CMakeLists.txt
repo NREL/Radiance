@@ -68,25 +68,24 @@ endif()
 if(BUILD_LIBTIFF)
   include(ExternalProject)
   set(LIBTIFF_URL http://download.osgeo.org/libtiff/tiff-4.0.9.tar.gz)
+  set(LIBTIFF_MD5 54BAD211279CC93EB4FCA31BA9BFDC79)
   if(WIN32)
     ExternalProject_Add(libtiff
       URL ${LIBTIFF_URL}
-      CONFIGURE_COMMAND ${CMAKE_COMMAND} -G "NMake Makefiles" -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release ../libtiff
+      URL_MD5 ${LIBTIFF_MD5}
+      CONFIGURE_COMMAND ${CMAKE_COMMAND} -G "NMake Makefiles" -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -Dzlib=OFF ../libtiff
       BUILD_COMMAND nmake
       INSTALL_COMMAND "")
     set(TIFF_LIBRARY ${CMAKE_BINARY_DIR}/libtiff-prefix/src/libtiff-build/libtiff/tiff.lib)
   else()
     ExternalProject_Add(libtiff
       URL ${LIBTIFF_URL}
-      CONFIGURE_COMMAND ${CMAKE_COMMAND} -G "Unix Makefiles" -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release ../libtiff
+      URL_MD5 ${LIBTIFF_MD5}
+      CONFIGURE_COMMAND ${CMAKE_COMMAND} -G "Unix Makefiles" -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -Dzlib=OFF ../libtiff
       BUILD_COMMAND make
       INSTALL_COMMAND "")
   endif()
   set(TIFF_INCLUDE_DIR ${CMAKE_BINARY_DIR}/libtiff/src/libtiff/libtiff)
-endif()
-
-if(BUILD_PACKAGE)
-  include(radianceCPack.cmake)
 endif()
 
 set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
@@ -97,7 +96,9 @@ set(CPACK_RESOURCE_FILE_WELCOME "${radiance_SOURCE_DIR}/Welcome.txt")
 set(CPACK_RESOURCE_FILE_README "${radiance_SOURCE_DIR}/README.txt")
 set(CPACK_RESOURCE_FILE_LICENSE "${radiance_SOURCE_DIR}/License.txt")
 
-if(UNIX AND NOT APPLE)
+if(APPLE)
+  set(CPACK_GENERATOR "PackageMaker")
+elseif(UNIX)
   set(CPACK_GENERATOR "TGZ")
 endif()
 
