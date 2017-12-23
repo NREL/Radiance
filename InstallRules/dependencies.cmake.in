@@ -11,4 +11,4 @@ list(APPEND plugins "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/plugins/imageforma
 list(APPEND plugins "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/plugins/imageformats/@TIFF_PLUGIN_NAME@")
 list(APPEND plugins "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/plugins/platforms/@QPA_PLUGIN_NAME@")
 
-fixup_bundle("${CMAKE_INSTALL_PREFIX}/bin/rtrace@CMAKE_EXECUTABLE_SUFFIX@" "${plugins}" "@QT_LIBRARY_DIR@;@X11_LIBRARY_DIR@;@TIFF_LIBRARY_DIRS@")
+fixup_bundle("${CMAKE_INSTALL_PREFIX}/bin/rvu@CMAKE_EXECUTABLE_SUFFIX@" "${plugins}" "@QT_LIBRARY_DIR@;@X11_LIBRARY_DIR@")

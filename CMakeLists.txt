@@ -106,6 +106,9 @@ include(CPack)
 
 if(NOT BUILD_HEADLESS)
   find_package(Qt5Widgets)
+  get_target_property(QT_LIBRARY_DIR Qt5::Core LOCATION)
+  get_filename_component(QT_LIBRARY_DIR ${QT_LIBRARY_DIR} PATH)
+  get_filename_component(QT_LIBRARY_DIR "${QT_LIBRARY_DIR}/.." ABSOLUTE)
   find_package(X11)
 endif()
 
