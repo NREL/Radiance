@@ -60,9 +60,10 @@ else()
 endif()
 
 if(APPLE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c11 -std=c++11 -stdlib=libc++")
   add_definitions(-DBSD -DNOSTEREO -Dfreebsd)
   include_directories(/usr/X11R6/include)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmacosx-version-min=10.6")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmacosx-version-min=10.7")
 endif()
 
 if(BUILD_LIBTIFF)
