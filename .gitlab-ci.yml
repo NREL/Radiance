@@ -1,0 +1,38 @@
+build:mac:
+  stage: build
+  tags:
+    - mac
+  cache:
+    key: "$CI_COMMIT_SHA.$CI_RUNNER_TAGS"
+    paths:
+      - build
+    policy: push
+  variables:
+    CMAKE_OSX_ARCHITECTURES: x86_64
+    MACOSX_DEPLOYMENT_TARGET: "10.7"
+    SDKROOT: /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk
+  before_script:
+    - export PATH=$PATH:~/Qt/5.10.0/clang_64/bin
+  script:
+    - mkdir build
+    - cd build
+    - cmake -DCMAKE_BUILD_TYPE=Release ..
+    - make package -j8
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - build/*.dmg
+
+test:mac:
+  stage: test
+  tags:
+    - mac
+  cache:
+    key: "$CI_COMMIT_SHA.$CI_RUNNER_TAGS"
+    paths:
+      - build
+    policy: pull
+  dependencies: []
+  script:
+    - cd build
+    - ctest
