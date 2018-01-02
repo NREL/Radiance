@@ -181,7 +181,7 @@ if(WIN32)
     DESTINATION "bin"
   )
   file(COPY falsecolor.pl
-    DESTINATION "${CMAKE_BINARY_DIR}/bin"
+    DESTINATION "${CMAKE_BINARY_DIR}/bin/Release"
   )
 else()
   install_and_copy_without_extension(

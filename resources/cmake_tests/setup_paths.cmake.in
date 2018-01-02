@@ -9,16 +9,17 @@ file(TO_NATIVE_PATH "@PERL_EXECUTABLE@" perl)
 set(resources_dir "@CMAKE_SOURCE_DIR@/resources")
 
 if(WIN32)
-  # TODO
+  set(CMAKE_PERL_SUFFIX ".pl")
   file(TO_NATIVE_PATH "@CMAKE_BINARY_DIR@/bin/Release" rpath)
 else()
   file(TO_NATIVE_PATH "@CMAKE_BINARY_DIR@/bin" rpath)
-  file(TO_NATIVE_PATH "@CMAKE_BINARY_DIR@/lib" rlibpath)
 endif()
+file(TO_NATIVE_PATH "@CMAKE_BINARY_DIR@/lib" rlibpath)
 
 set(ENV{PATH} "${rpath}")
 set(ENV{RAYPATH} "${rlibpath}")
 set(test_output_dir "@CMAKE_BINARY_DIR@/testfiles")
 set(CMAKE_EXECUTABLE_SUFFIX @CMAKE_EXECUTABLE_SUFFIX@)
+
 message(STATUS "path: $ENV{PATH}")
 message(STATUS "raypath: $ENV{RAYPATH}")

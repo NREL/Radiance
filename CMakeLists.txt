@@ -74,17 +74,27 @@ if(BUILD_LIBTIFF)
     ExternalProject_Add(libtiff
       URL ${LIBTIFF_URL}
       URL_MD5 ${LIBTIFF_MD5}
-      CONFIGURE_COMMAND ${CMAKE_COMMAND} -G "NMake Makefiles" -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -Dzlib=OFF ../libtiff
-      BUILD_COMMAND nmake
-      INSTALL_COMMAND "")
+      CMAKE_GENERATOR "NMake Makefiles"
+      CMAKE_ARGS
+        "-DBUILD_SHARED_LIBS=OFF"
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-Dzlib=OFF"
+        "../libtiff"
+      INSTALL_COMMAND ""
+    )
     set(TIFF_LIBRARY ${CMAKE_BINARY_DIR}/libtiff-prefix/src/libtiff-build/libtiff/tiff.lib)
   else()
     ExternalProject_Add(libtiff
       URL ${LIBTIFF_URL}
       URL_MD5 ${LIBTIFF_MD5}
-      CONFIGURE_COMMAND ${CMAKE_COMMAND} -G "Unix Makefiles" -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -Dzlib=OFF ../libtiff
-      BUILD_COMMAND make
-      INSTALL_COMMAND "")
+      CMAKE_ARGS
+        "-DBUILD_SHARED_LIBS=OFF"
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-Dzlib=OFF"
+        "../libtiff"
+      INSTALL_COMMAND ""
+    )
+    set(TIFF_LIBRARY ${CMAKE_BINARY_DIR}/libtiff-prefix/src/libtiff-build/libtiff/libtiff.a)
   endif()
   set(TIFF_INCLUDE_DIR ${CMAKE_BINARY_DIR}/libtiff/src/libtiff/libtiff)
 endif()

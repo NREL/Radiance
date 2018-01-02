@@ -3,9 +3,9 @@ build:mac:
   tags:
     - mac
   cache:
-    key: "$CI_COMMIT_SHA.$CI_RUNNER_TAGS"
+    key: $CI_COMMIT_SHA-$CI_RUNNER_TAGS
     paths:
-      - build
+      - build/
     policy: push
   variables:
     CMAKE_OSX_ARCHITECTURES: x86_64
@@ -16,23 +16,60 @@ build:mac:
   script:
     - mkdir build
     - cd build
-    - cmake -DCMAKE_BUILD_TYPE=Release ..
+    - cmake -DBUILD_LIBTIFF=ON -DCMAKE_BUILD_TYPE=Release ..
+    - cmake ..
     - make package -j8
   artifacts:
     expire_in: 1 day
     paths:
-      - build/*.dmg
+      - build/radiance-*.dmg
+
+build:windows:
+  stage: build
+  tags:
+    - windows
+  cache:
+    key: "%CI_COMMIT_SHA%-%CI_RUNNER_TAGS%"
+    paths:
+      - build/
+    policy: push
+  before_script:
+    - set PATH=%PATH%;C:\Qt\5.10.0\msvc2017_64\bin
+  script:
+    - mkdir build
+    - cd build
+    - '"C:\Program Files\CMake\bin\cmake.exe" -G "Visual Studio 15 2017 Win64" -DBUILD_LIBTIFF=ON ..'
+    - '"C:\Program Files\CMake\bin\cmake.exe" ..'
+    - '"C:\Program Files\CMake\bin\cmake.exe" --build . --config Release --target PACKAGE'
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - build/radiance-*.exe
 
 test:mac:
   stage: test
   tags:
     - mac
   cache:
-    key: "$CI_COMMIT_SHA.$CI_RUNNER_TAGS"
+    key: $CI_COMMIT_SHA-$CI_RUNNER_TAGS
     paths:
-      - build
+      - build/
     policy: pull
   dependencies: []
   script:
     - cd build
     - ctest
+
+test:windows:
+  stage: test
+  tags:
+    - windows
+  cache:
+    key: "%CI_COMMIT_SHA%-%CI_RUNNER_TAGS%"
+    paths:
+      - build/
+    policy: pull
+  dependencies: []
+  script:
+    - cd build
+    - '"C:\Program Files\CMake\bin\ctest.exe"'
