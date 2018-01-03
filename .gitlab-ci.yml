@@ -24,6 +24,27 @@ build:mac:
     paths:
       - build/radiance-*.dmg
 
+build:ubuntu:
+  stage: build
+  tags:
+    - ubuntu
+  cache:
+    key: $CI_COMMIT_SHA-$CI_RUNNER_TAGS
+    paths:
+      - build/
+    policy: push
+  before_script:
+    - export PATH=$PATH:/opt/Qt/5.10.0/gcc_64/bin
+  script:
+    - mkdir build
+    - cd build
+    - cmake -DCMAKE_BUILD_TYPE=Release ..
+    - make package -j8
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - build/radiance-*.tar.gz
+
 build:windows:
   stage: build
   tags:
@@ -50,6 +71,20 @@ test:mac:
   stage: test
   tags:
     - mac
+  cache:
+    key: $CI_COMMIT_SHA-$CI_RUNNER_TAGS
+    paths:
+      - build/
+    policy: pull
+  dependencies: []
+  script:
+    - cd build
+    - ctest
+
+test:ubuntu:
+  stage: test
+  tags:
+    - ubuntu
   cache:
     key: $CI_COMMIT_SHA-$CI_RUNNER_TAGS
     paths:
