@@ -84,7 +84,14 @@ extern const SDCDst	SDemptyCD;	/* empty distribution */
 typedef struct SDComp_s	SDComponent;
 
 /* Methods needed to handle BSDF components (nothing is optional) */
+#ifdef __cplusplus
+/* in C++, the const puts the type into the local anonymous namespace,
+   making it a private (and different) type for each file using this header.
+*/
+typedef struct {
+#else
 typedef const struct {
+#endif
 					/* return non-diffuse BSDF */
 	int		(*getBSDFs)(float coef[SDmaxCh], const FVECT outVec,
 				    const FVECT inVec, SDComponent *sdc);
