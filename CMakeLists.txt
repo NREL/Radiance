@@ -5,7 +5,7 @@ if(NOT ${CMAKE_VERSION} VERSION_LESS "3.1")
   cmake_policy(SET CMP0054 NEW)
 endif()
 
-project(radiance VERSION 5.1.0)
+project(radiance VERSION 5.2.0)
 
 set(PROJECT_VERSION_TWEAK "Unknown" CACHE STRING "Commit Hash")
 find_package(Git)
@@ -58,6 +58,8 @@ if(UNIX)
 else()
   set(CPACK_PACKAGING_INSTALL_PREFIX "/")
 endif()
+
+set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK}-${CMAKE_SYSTEM_NAME}")
 
 if(APPLE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c11 -std=c++11 -stdlib=libc++")
