@@ -908,7 +908,7 @@ SDsampMtxCDist(FVECT ioVec, double randX, const SDCDst *cdp)
 }
 
 /* Fixed resolution BSDF methods */
-SDFunc			SDhandleMtx = {
+const SDFunc		SDhandleMtx = {
 				&SDgetMtxBSDF,
 				&SDqueryMtxProjSA,
 				&SDgetMtxCDist,

@@ -63,7 +63,7 @@ extern SDError		SDloadMtx(SDData *sd, ezxml_t wtl);
 #endif
 
 /* Our matrix handling routines */
-extern SDFunc		SDhandleMtx;
+extern const SDFunc	SDhandleMtx;
 
 /******** Klems basis declarations for more intimate access ********/
 

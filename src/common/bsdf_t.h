@@ -61,7 +61,7 @@ extern SDError		SDloadTre(SDData *sd, ezxml_t wtl);
 #endif
 
 /* Our matrix handling routines */
-extern SDFunc	SDhandleTre;
+extern const SDFunc	SDhandleTre;
 
 #ifdef __cplusplus
 }

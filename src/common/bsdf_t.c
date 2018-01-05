@@ -1421,7 +1421,7 @@ SDloadTre(SDData *sd, ezxml_t wtl)
 }
 
 /* Variable resolution BSDF methods */
-SDFunc SDhandleTre = {
+const SDFunc SDhandleTre = {
 	&SDgetTreBSDF,
 	&SDqueryTreProjSA,
 	&SDgetTreCDist,
