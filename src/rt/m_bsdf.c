@@ -106,7 +106,7 @@ compute_through(BSDFDAT *ndp)
 					{0, -1.6},
 					{1.6, 0},
 				};
-	const double	peak_over = 2.0;
+	const double	peak_over = 1.5;
 	SDSpectralDF	*dfp;
 	FVECT		pdir;
 	double		tomega, srchrad;
@@ -142,7 +142,7 @@ compute_through(BSDFDAT *ndp)
 			goto baderror;
 		cvt_sdcolor(vcol, &sv);
 		addcolor(vsum, vcol);
-		if (bright(vcol) > bright(vpeak)) {
+		if (sv.cieY > bright(vpeak)) {
 			copycolor(vpeak, vcol);
 			VCOPY(pdir, tdir);
 		}
