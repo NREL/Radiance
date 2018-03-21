@@ -66,6 +66,7 @@ add_library(radiance
 )
 
 if(WIN32)
+  target_sources(radiance PRIVATE ../common/win_usleep.c)
   set(rayp_SOURCES raypwin.c)
 else()
   set(rayp_SOURCES raypcalls.c)
