@@ -1,5 +1,5 @@
 #ifndef lint
-static const char RCSid[] = "$Id: radcompare.c,v 2.1 2018/10/15 17:52:52 greg Exp $";
+static const char RCSid[] = "$Id: radcompare.c,v 2.3 2018/10/15 18:31:15 greg Exp $";
 #endif
 /*
  * Compare Radiance files for significant differences
@@ -74,6 +74,7 @@ char		*progname = NULL;
 const char	stdin_name[] = "<stdin>";
 const char	*f1name=NULL, *f2name=NULL;
 FILE		*f1in=NULL, *f2in=NULL;
+
 				/* running real differences */
 double	diff2sum = 0;
 int	nsum = 0;
@@ -138,10 +139,11 @@ equiv_string(char *s1, char *s2)
 				/* skip whitespace at beginning */
 	while (isspace(*s1)) s1++;
 	while (isspace(*s2)) s2++;
-	if (!strcmp(s1, s2))	/* quick check */
-		return(1);
 	while (*s1) {		/* check each word */
-		int	inquote = *s1;
+		int	inquote;
+		if (!*s2)	/* unexpected EOL in s2? */
+			return(0);
+		inquote = *s1;
 		if ((inquote != '\'') & (inquote != '"'))
 			inquote = 0;
 		if (inquote) {	/* quoted text must match exactly */
@@ -205,6 +207,7 @@ setheadvar(char *val, void *p)
 	int	kln, vln;
 	int	n;
 
+	adv_linecnt(htp);	/* side-effect is to count lines */
 	if (!isalpha(*val))	/* key must start line */
 		return(0);
 	key = val++;
@@ -235,7 +238,6 @@ setheadvar(char *val, void *p)
 	if (tep->data)
 		free(tep->data);
 	tep->data = strcpy(malloc(vln+1), val);
-	adv_linecnt(htp);
 	return(1);
 }
 
@@ -316,12 +318,12 @@ identify_type(const char *name, FILE *fin, LUTAB *htp)
 		char	sbuf[32];
 		if (!fgets(sbuf, sizeof(sbuf), fin))
 			goto badeof;
+		adv_linecnt(htp);		/* for #?ID string */
 		if (report >= REP_WARN && strncmp(sbuf, "RADIANCE", 8)) {
 			fputs(name, stderr);
 			fputs(": warning - unexpected header ID: ", stderr);
 			fputs(sbuf, stderr);
 		}
-		adv_linecnt(htp);		/* for #?ID string */
 		if (getheader(fin, setheadvar, htp) < 0) {
 			fputs(name, stderr);
 			fputs(": Unknown error reading header\n", stderr);
