@@ -108,7 +108,15 @@ set(CPACK_RESOURCE_FILE_README "${radiance_SOURCE_DIR}/README.txt")
 set(CPACK_RESOURCE_FILE_LICENSE "${radiance_SOURCE_DIR}/License.txt")
 
 if(APPLE)
-  set(CPACK_GENERATOR "PackageMaker")
+  # first tried just swapping out PM for productbuild
+  #set(CPACK_GENERATOR "PackageMaker")
+  set(CPACK_GENERATOR "productbuild")
+  # then tried adding 
+  set(CPACK_PRODUCTBUILD_RESOURCES_DIR ${PROJECT_BINARY_DIR})
+  # made some crazy recursive package directory...
+endif()
+
+
 elseif(UNIX)
   set(CPACK_GENERATOR "TGZ")
 endif()
