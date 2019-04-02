@@ -7,22 +7,36 @@
 # usage: [ruby]test_lib[.rb] -n x [testname]
 # usage: [ruby]test_lib[.rb] -n x all
 
-test_in = ARGV[0]
-
-
+$stderr.sync = true
 require 'optparse'
+require 'etc'
+# default options
+flag    = false
+tst  = "all"
 
-options = {}
-OptionParser.new do |opts|
-  opts.banner = "Usage: test_lib.rb [options]"
+tproc = Etc.nprocessors
+nproc = tproc / 2 # half cores by default, override with -n 
+list    = ["x", "y", "z"]
 
-  opts.on("-n", "--nproc", 'Integer', "Number of processors for Radiance MP tools") do |n|
-    options[:nproc] = n
-  end
-end.parse!
+# parse arguments
+file = __FILE__
+ARGV.options do |opts|
+  opts.on("-f", "--flag")              { flag = true }
+  opts.on("-t", "--test=val", String)   { |val| tst = val }
+  opts.on("-n", "--nproc=val", Integer)  { |val| nproc = val }
+  opts.on("--list=[x,y,z]", Array)     { |val| list = val }
+  opts.on_tail("-h", "--help")         { exec "grep ^#/<'#{file}'|cut -c4-" }
+  opts.parse!
+end
 
-p options
-p ARGV
+# print opts
+warn "ARGV:     #{ARGV.inspect}"
+warn "flag:     #{flag.inspect}"
+warn "test:   #{tst.inspect}"
+warn "cores:  #{nproc.inspect} (of #{tproc} total)"
+warn "list:     #{list.join(',')}"
+
+test_in = tst
 
 test_total = 0
 @test_pass = 0
@@ -48,7 +62,7 @@ def rcpf
 end
 
 # Number of processes to use on tests that run multi-core
-NPROC = options[:nproc]
+NPROC = nproc
 
 # Image reduction for comparisons
 RDU_PFILT = "pfilt -1 -r 1 -x 128 -y 128 -pa 1"
@@ -209,6 +223,7 @@ end
 
 def gen_rtmirror_fish_hdr
     Dir.chdir('../test/renders') do
+        puts "generating input file: rtmirror_fish.hdr"
         cmd = "rad -v 0 mirror.rif OPT=mirror.opt"
         system(cmd)
         cmd = "vwrays -ff -vf fish.vf -x 2048 -y 2048 | rtrace -n #{NPROC} @mirror.opt -ffc -x 2048 -y 2048 mirror.oct | pfilt -1 -e +3 -r .6 -x /2 -y /2 > rtmirror_fish.hdr"
@@ -255,7 +270,8 @@ def gen_dielectric_oct
 end
 
 def test_dielectric_def     #ref/dielectric_def.hdr dielectric_def.hdr
-    gen_dielectric_oct if !File.exist?("../test/renders/dielectric.oct")
+    gen_dielectric_def if !File.exist?("../test/renders/dielectric_def.hdr")
+    gen_dielectric_def_ref if !File.exist?("../test/renders/ref/dielectric_def.hdr")
     Dir.chdir('../test/renders') do
         cmd = "#{RDU_PFILT} dielectric_def.hdr | #{IMG_CMP} ref/dielectric_def.hdr -"
         puts("command: #{cmd}")
