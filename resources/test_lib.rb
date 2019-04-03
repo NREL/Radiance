@@ -4,8 +4,9 @@
 
 # Use with cmake build system deployed by NREL
 # Run from [build]/resources
-# usage: [ruby]test_lib[.rb] -n x [testname]
-# usage: [ruby]test_lib[.rb] -n x all
+# usage: [ruby]test_lib[.rb] (runs all tests with all available cores passed to radiance MP tools)
+# usage: [ruby]test_lib[.rb] -n [n] -t ['testname', 'all']
+
 
 $stderr.sync = true
 require 'optparse'
@@ -21,20 +22,15 @@ list    = ["x", "y", "z"]
 # parse arguments
 file = __FILE__
 ARGV.options do |opts|
-  opts.on("-f", "--flag")              { flag = true }
   opts.on("-t", "--test=val", String)   { |val| tst = val }
   opts.on("-n", "--nproc=val", Integer)  { |val| nproc = val }
-  opts.on("--list=[x,y,z]", Array)     { |val| list = val }
-  opts.on_tail("-h", "--help")         { exec "grep ^#/<'#{file}'|cut -c4-" }
   opts.parse!
 end
 
 # print opts
 warn "ARGV:     #{ARGV.inspect}"
-warn "flag:     #{flag.inspect}"
 warn "test:   #{tst.inspect}"
 warn "cores:  #{nproc.inspect} (of #{tproc} total)"
-warn "list:     #{list.join(',')}"
 
 test_in = tst
 
@@ -576,7 +572,7 @@ end
 
 ### END test/cal ###
 
-
+### END test methods ###
 
 # call the test already
 
