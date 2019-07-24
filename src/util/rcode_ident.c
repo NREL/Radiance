@@ -1,5 +1,5 @@
 #ifndef lint
-static const char RCSid[] = "$Id: rcode_ident.c,v 2.4 2019/07/23 17:23:25 greg Exp $";
+static const char RCSid[] = "$Id: rcode_ident.c,v 2.6 2019/07/24 00:25:51 greg Exp $";
 #endif
 /*
  * Create or read identifier index map
@@ -91,7 +91,7 @@ create_index(const char *fname, int hdrflags, int ndxbytes, int xres, int yres)
 	char	**idmap;
 	int	idmlen;
 	int	nextID = 0;
-	LUTAB	hashtab = LU_SINIT(free,NULL);
+	LUTAB	hashtab;
 	RESOLU	rs;
 	long	n;
 	int	ndx;
@@ -134,6 +134,10 @@ create_index(const char *fname, int hdrflags, int ndxbytes, int xres, int yres)
 		fputs(": unsupported bits/pixel\n", stderr);
 		return 0;
 	}
+	memset(&hashtab, 0, sizeof(hashtab));
+	hashtab.hashf = lu_shash;
+	hashtab.keycmp = strcmp;
+	hashtab.freek = free;
 	if (!idmap || !lu_init(&hashtab, idmlen))
 		goto memerr;
 	fputc('\n', stdout);		/* end of info header */
@@ -210,7 +214,7 @@ memerr:
 }
 
 
-/* print out table IDs */
+/* print out ID table */
 void
 print_IDs(IDMAP *idmp)
 {
@@ -230,7 +234,7 @@ int
 decode_select(const char *fname, int hdrflags)
 {
 	IDMAP	*idmp = idmap_ropen(fname, hdrflags);
-	int	x, y;
+	int	i, j;
 
 	if (!idmp)
 		return 0;
@@ -244,25 +248,25 @@ decode_select(const char *fname, int hdrflags)
 		idmap_close(idmp);
 		return 0;
 	}
-	while (scanf("%d %d", &x, &y) == 2) {
-		x = idmap_seek(idmp, x, idmp->res.yr-1 - y);
-		if (!x) {
+	while (scanf("%d %d", &i, &j) == 2) {
+		i = idmap_seek(idmp, i, idmp->res.yr-1 - j);
+		if (!i) {
 			fputs(progname, stderr);
 			fputs(": warning - pixel index is off map\n", stderr);
 			continue;
 		}
-		if (x > 0)
-			x = idmap_next_i(idmp);
-		if (x < 0) {
+		if (i > 0)
+			i = idmap_next_i(idmp);
+		if (i < 0) {
 			fputs(fname, stderr);
 			fputs(": read/seek error in decode_select()\n", stderr);
 			idmap_close(idmp);
 			return 0;
 		}
 		if (numeric) {
-			printf("%d", x);
+			printf("%d", i);
 		} else {
-			const char	*id = mapID(idmp, x);
+			const char	*id = mapID(idmp, i);
 			if (!id) {
 				fputs(fname, stderr);
 				fputs(": bad ID index in file\n", stderr);
@@ -304,7 +308,7 @@ decode_all(const char *fname, int hdrflags)
 		print_IDs(idmp);
 
 	for (n = idmp->res.xr*idmp->res.yr; n-- > 0; ) {
-		int	ndx = idmap_next_i(idmp);
+		const int	ndx = idmap_next_i(idmp);
 		if (ndx < 0) {
 			fputs(fname, stderr);
 			fputs(": unexpected EOF\n", stderr);
