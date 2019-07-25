@@ -1,5 +1,5 @@
 #ifndef lint
-static const char	RCSid[] = "$Id: rtrace.c,v 2.81 2019/07/04 01:25:07 greg Exp $";
+static const char	RCSid[] = "$Id: rtrace.c,v 2.83 2019/07/25 16:59:19 greg Exp $";
 #endif
 /*
  *  rtrace.c - program and variables for individual ray tracing.
@@ -664,9 +664,16 @@ oputN(				/* print unperturbed normal */
 	RAY  *r
 )
 {
-	if (r->rot < FHUGE)
-		(*putreal)(r->ron, 3);
-	else
+	if (r->rot < FHUGE) {
+		if (r->rflips & 1) {	/* undo any flippin' flips */
+			FVECT	unrm;
+			unrm[0] = -r->ron[0];
+			unrm[1] = -r->ron[1];
+			unrm[2] = -r->ron[2];
+			(*putreal)(unrm, 3);
+		} else
+			(*putreal)(r->ron, 3);
+	} else
 		(*putreal)(vdummy, 3);
 }
 
