@@ -76,6 +76,7 @@ set(rtrad_SOURCES
   savestr.c
   savqstr.c
   sceneio.c
+  strlcpy.c
   spec_rgb.c
   tcos.c
   timegm.c
