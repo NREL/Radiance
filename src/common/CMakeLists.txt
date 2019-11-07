@@ -20,6 +20,7 @@ set(rtrad_SOURCES
   colrops.c
   cone.c
   cvtcmd.c
+  depthcodec.c
   dircode.c
   disk2square.c
   ealloc.c
@@ -35,6 +36,7 @@ set(rtrad_SOURCES
   fgetval.c
   fgetword.c
   fixargv0.c
+  fltdepth.c
   font.c
   fputword.c
   free_os.c
@@ -45,6 +47,7 @@ set(rtrad_SOURCES
   getpath.c
   header.c
   hilbert.c
+  idmap.c
   image.c
   instance.c
   interp2d.c
@@ -59,6 +62,7 @@ set(rtrad_SOURCES
   modobject.c
   multisamp.c
   myhostname.c
+  normcodec.c
   objset.c
   octree.c
   otypes.c
