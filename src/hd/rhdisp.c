@@ -22,7 +22,7 @@ static const char	RCSid[] = "$Id: rhdisp.c,v 3.55 2018/10/05 19:19:16 greg Exp $
 #define FSIZDEF		0.125	/* default focus frame size */
 #endif
 
-#if defined(freebsd)
+#if defined(__FreeBSD__)
 #define fbufcnt(f)	((f)->_r)
 #elif defined(__GNUC__)
 #define fbufcnt(f)	((f)->_IO_read_end - (f)->_IO_read_ptr)
