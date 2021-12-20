@@ -22,7 +22,9 @@ static const char RCSid[] = "$Id: pmapdiag.c,v 2.8 2021/03/26 23:47:03 rschregle
 #include "pmapdata.h"
 #include "standard.h"
 
-
+#if defined(__FreeBSD__)
+#include <sys/resource.h>
+#endif
 
 time_t repStartTime, repLastTime = 0;   /* Time at start & last report */
 unsigned long repProgress,              /* Report progress counter */
